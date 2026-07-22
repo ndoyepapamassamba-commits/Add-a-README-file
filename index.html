@@ -84,7 +84,9 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop
 @media(max-width:720px){.products{grid-template-columns:repeat(2,1fr)}}
 .prod{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:transform .14s,box-shadow .14s}
 .prod:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
-.prod .img{aspect-ratio:1/1;display:grid;place-items:center;font-size:3.4rem;position:relative}
+.prod .img{aspect-ratio:1/1;position:relative;overflow:hidden}
+.prod .img .emoji-ph{position:absolute;inset:0;display:grid;place-items:center;font-size:3.4rem}
+.prod .img .pimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff}
 .prod .promo{position:absolute;top:.6rem;left:.6rem;background:var(--brand);color:#fff;font-weight:900;font-size:.72rem;padding:.25rem .55rem;border-radius:999px}
 .prod .stock{position:absolute;bottom:.6rem;right:.6rem;background:rgba(255,255,255,.92);color:var(--green);font-weight:800;font-size:.68rem;padding:.2rem .5rem;border-radius:999px}
 .prod .info{padding:.85rem .9rem 1rem;display:flex;flex-direction:column;flex:1}
@@ -286,30 +288,34 @@ const CONFIG = {
 };
 
 /* ============================================================
-   🛍️  PRODUITS — Ajoute / modifie tes produits ici.
-   Astuce marges : prix conseillé ≈ 2,5 à 3× ton prix d'achat.
-   emoji = image provisoire (remplace par une vraie photo, voir README).
+   🛍️  PRODUITS — produits RÉELS & sourçables (marché sénégalais).
+   Champs :
+     buy   = ton prix d'ACHAT indicatif (FCFA) — NON affiché, sert à suivre ta marge.
+     price = ton prix de VENTE (affiché).   old = ancien prix barré.
+     img   = photo du produit (dépose "images/pX.jpg" — voir README).
+     emoji = image de repli automatique si la photo n'est pas encore là.
+   💡 Marge = price − buy − livraison. Vise price ≈ 2,5 à 3× buy.
    ============================================================ */
 const PRODUCTS = [
-  {id:"p1", cat:"Téléphone", emoji:"🎧", bg:"linear-gradient(135deg,#e0f2ff,#bfe3ff)", name:"Écouteurs sans fil Bluetooth", price:8900, old:15000, promo:"-40%", stock:true},
-  {id:"p2", cat:"Téléphone", emoji:"🔋", bg:"linear-gradient(135deg,#e8f7ee,#c7edd6)", name:"Power Bank 20 000 mAh", price:12500, old:18000, promo:"Promo", stock:true},
-  {id:"p3", cat:"Téléphone", emoji:"⚡", bg:"linear-gradient(135deg,#fff1e6,#ffd9bd)", name:"Chargeur rapide 3 ports", price:5900, old:9000, promo:"-34%", stock:true},
-  {id:"p4", cat:"Téléphone", emoji:"📱", bg:"linear-gradient(135deg,#f0e9ff,#d8c7ff)", name:"Support téléphone voiture", price:4500, old:7000, stock:true},
+  {id:"p1", cat:"Téléphone", img:"images/p1.jpg", emoji:"🎧", bg:"linear-gradient(135deg,#e0f2ff,#bfe3ff)", name:"Écouteurs Bluetooth sans fil (TWS)", buy:2500, price:7900, old:12000, promo:"-34%", stock:true},
+  {id:"p2", cat:"Téléphone", img:"images/p2.jpg", emoji:"🔋", bg:"linear-gradient(135deg,#e8f7ee,#c7edd6)", name:"Power Bank 10 000 mAh", buy:5000, price:12900, old:18000, promo:"Promo", stock:true},
+  {id:"p3", cat:"Téléphone", img:"images/p3.jpg", emoji:"⚡", bg:"linear-gradient(135deg,#fff1e6,#ffd9bd)", name:"Chargeur rapide 20W + câble", buy:2000, price:5900, old:9000, stock:true},
+  {id:"p4", cat:"Téléphone", img:"images/p4.jpg", emoji:"🔌", bg:"linear-gradient(135deg,#f0e9ff,#d8c7ff)", name:"Câble USB-C tressé (lot de 2)", buy:900, price:2900, old:4500, stock:true},
+  {id:"p5", cat:"Téléphone", img:"images/p5.jpg", emoji:"⌚", bg:"linear-gradient(135deg,#eceff4,#cfd6e2)", name:"Montre connectée sport", buy:5500, price:14900, old:25000, promo:"-40%", stock:true},
 
-  {id:"p5", cat:"Maison", emoji:"🍳", bg:"linear-gradient(135deg,#fff6e0,#ffe3a3)", name:"Plateau chauffant repas", price:16900, old:25000, promo:"Top vente", stock:true},
-  {id:"p6", cat:"Maison", emoji:"🥤", bg:"linear-gradient(135deg,#e6faf5,#b8f0e2)", name:"Mixeur portable rechargeable", price:11900, old:17000, promo:"-30%", stock:true},
-  {id:"p7", cat:"Maison", emoji:"🧺", bg:"linear-gradient(135deg,#eef1f7,#d3d9e8)", name:"Organisateur multi-rangement", price:6500, old:9500, stock:true},
-  {id:"p8", cat:"Maison", emoji:"💡", bg:"linear-gradient(135deg,#fff8d6,#ffe98a)", name:"Lampe LED rechargeable", price:7900, old:12000, stock:true},
+  {id:"p6", cat:"Créateurs", img:"images/p6.jpg", emoji:"🔆", bg:"linear-gradient(135deg,#fff8d6,#ffe98a)", name:"Ring light + trépied téléphone", buy:3500, price:9900, old:15000, promo:"TikTok", stock:true},
+  {id:"p7", cat:"Créateurs", img:"images/p7.jpg", emoji:"🤳", bg:"linear-gradient(135deg,#e9f0ff,#c9dbff)", name:"Perche selfie / trépied Bluetooth", buy:3000, price:8900, old:13000, stock:true},
+  {id:"p8", cat:"Créateurs", img:"images/p8.jpg", emoji:"🎙️", bg:"linear-gradient(135deg,#f3ecff,#dcc9ff)", name:"Micro-cravate pour téléphone", buy:2500, price:7900, old:12000, promo:"Nouveau", stock:true},
 
-  {id:"p9", cat:"Beauté", emoji:"🧴", bg:"linear-gradient(135deg,#ffe9f2,#ffc7de)", name:"Sérum visage éclat naturel", price:9900, old:14000, promo:"Nouveau", stock:true},
-  {id:"p10", cat:"Beauté", emoji:"💆", bg:"linear-gradient(135deg,#f3ecff,#dcc9ff)", name:"Huile capillaire fortifiante", price:6900, old:10000, stock:true},
-  {id:"p11", cat:"Beauté", emoji:"🧼", bg:"linear-gradient(135deg,#eafbef,#c4efcf)", name:"Savon artisanal (lot de 3)", price:5500, old:8000, promo:"-31%", stock:true},
+  {id:"p9", cat:"Maison", img:"images/p9.jpg", emoji:"🥤", bg:"linear-gradient(135deg,#e6faf5,#b8f0e2)", name:"Blender portable rechargeable", buy:4500, price:11900, old:17000, promo:"-30%", stock:true},
+  {id:"p10", cat:"Maison", img:"images/p10.jpg", emoji:"💡", bg:"linear-gradient(135deg,#fff6e0,#ffe3a3)", name:"Lampe LED rechargeable", buy:2500, price:6900, old:10000, stock:true},
+  {id:"p11", cat:"Maison", img:"images/p11.jpg", emoji:"⚖️", bg:"linear-gradient(135deg,#eef1f7,#d3d9e8)", name:"Balance de cuisine numérique", buy:2800, price:6900, old:9500, stock:true},
 
-  {id:"p12", cat:"Auto", emoji:"🚗", bg:"linear-gradient(135deg,#eef1f7,#cfd6e6)", name:"Rangement écart de siège", price:7500, old:12000, promo:"Malin", stock:true},
-  {id:"p13", cat:"Auto", emoji:"🧹", bg:"linear-gradient(135deg,#e8f0ff,#c6dbff)", name:"Aspirateur voiture portatif", price:14900, old:22000, stock:true},
+  {id:"p12", cat:"Auto", img:"images/p12.jpg", emoji:"📱", bg:"linear-gradient(135deg,#eef1f7,#cfd6e6)", name:"Support téléphone voiture magnétique", buy:1500, price:4900, old:7500, promo:"Malin", stock:true},
+  {id:"p13", cat:"Auto", img:"images/p13.jpg", emoji:"🧹", bg:"linear-gradient(135deg,#e8f0ff,#c6dbff)", name:"Aspirateur voiture portatif", buy:6000, price:14900, old:22000, stock:true},
 
-  {id:"p14", cat:"Gadgets", emoji:"⌚", bg:"linear-gradient(135deg,#eceff4,#cfd6e2)", name:"Montre connectée sport", price:15900, old:25000, promo:"-36%", stock:true},
-  {id:"p15", cat:"Gadgets", emoji:"🌬️", bg:"linear-gradient(135deg,#e6f7ff,#b9e8ff)", name:"Mini ventilateur rechargeable", price:4900, old:7500, stock:true},
+  {id:"p14", cat:"Beauté", img:"images/p14.jpg", emoji:"💆", bg:"linear-gradient(135deg,#ffe9f2,#ffc7de)", name:"Huile capillaire fortifiante", buy:2000, price:6900, old:10000, stock:true},
+  {id:"p15", cat:"Beauté", img:"images/p15.jpg", emoji:"💧", bg:"linear-gradient(135deg,#f3ecff,#dcc9ff)", name:"Rouleau de massage visage", buy:1500, price:5500, old:8000, promo:"Beauté", stock:true},
 ];
 
 /* ============================================================
@@ -338,9 +344,10 @@ function renderProducts(){
   productsEl.innerHTML = list.map(p=>`
     <div class="prod">
       <div class="img" style="background:${p.bg}">
-        ${p.promo?`<span class="promo">${p.promo}</span>`:""}
-        ${p.stock?`<span class="stock">● En stock</span>`:""}
-        <span>${p.emoji}</span>
+        <div class="emoji-ph">${p.emoji}</div>
+        <img class="pimg" src="${p.img}" alt="${p.name}" loading="lazy" onerror="this.style.display='none'">
+        ${p.promo?`<span class="promo" style="z-index:2">${p.promo}</span>`:""}
+        ${p.stock?`<span class="stock" style="z-index:2">● En stock</span>`:""}
       </div>
       <div class="info">
         <span class="cat-lab">${p.cat}</span>
@@ -373,7 +380,7 @@ function updateCart(){
   } else {
     items.innerHTML = entries.map(([id,q])=>{const p=PRODUCTS.find(x=>x.id===id);return `
       <div class="ci">
-        <div class="ci-img" style="background:${p.bg}">${p.emoji}</div>
+        <div class="ci-img" style="background:${p.bg};overflow:hidden"><img src="${p.img}" alt="" onerror="this.remove()" style="width:100%;height:100%;object-fit:cover">${p.emoji}</div>
         <div class="ci-b">
           <h4>${p.name}</h4>
           <div class="ci-price">${fmt(p.price*q)} ${CONFIG.currency}</div>

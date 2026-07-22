@@ -103,14 +103,43 @@ La boutique est déjà pré-remplie avec des exemples dans ces catégories : rem
 
 ---
 
-## 🖼️ Mettre de vraies photos (au lieu des emojis)
+## 💵 Tes produits, tes marges (à sourcer)
 
-Par défaut chaque produit a un `emoji` (image provisoire). Pour une vraie photo :
-1. Mets ton image dans un dossier `images/` (ex : `images/ecouteurs.jpg`).
-2. Dans le produit, la façon la plus simple est de garder la structure et d'utiliser l'URL de l'image.
-   (Si tu veux, demande-moi et je te modifie le code pour afficher de vraies photos — c'est rapide.)
+La boutique est déjà remplie avec **15 produits réels et accessibles** au Sénégal. Voici,
+pour chacun, un **prix d'achat indicatif** (à confirmer avec ton grossiste), le **prix de vente**
+déjà réglé dans le site, et **ta marge brute**. Ajuste librement dans `PRODUCTS` (champs `buy` / `price` / `old`).
 
-> De bonnes photos = **plus de ventes**. Prends-les toi-même sur fond clair, ou utilise celles du fournisseur.
+| Produit | Achat ~ | Vente | Marge brute | Où sourcer / photo |
+|---|--:|--:|--:|---|
+| Écouteurs Bluetooth TWS | 2 500 | 7 900 | **+5 400** | Sandaga/HLM · AliExpress · Jumia (réf. prix) |
+| Power Bank 10 000 mAh | 5 000 | 12 900 | **+7 900** | Grossiste Dakar · Nova/Soumari (réf.) |
+| Chargeur rapide 20W + câble | 2 000 | 5 900 | **+3 900** | Sandaga · AliExpress |
+| Câble USB-C tressé (lot 2) | 900 | 2 900 | **+2 000** | Gros marché · 1688 (lot) |
+| Montre connectée sport | 5 500 | 14 900 | **+9 400** | AliExpress/Alibaba · grossiste |
+| Ring light + trépied 📸 | 3 500 | 9 900 | **+6 400** | AliExpress · idéal pour tes fans créateurs |
+| Perche selfie / trépied BT | 3 000 | 8 900 | **+5 900** | AliExpress · Sandaga |
+| Micro-cravate téléphone | 2 500 | 7 900 | **+5 400** | AliExpress · niche créateurs |
+| Blender portable | 4 500 | 11 900 | **+7 400** | Alibaba (lot) · grossiste Dakar |
+| Lampe LED rechargeable | 2 500 | 6 900 | **+4 400** | Marché HLM · AliExpress |
+| Balance de cuisine | 2 800 | 6 900 | **+4 100** | Grossiste · AliExpress |
+| Support téléphone voiture | 1 500 | 4 900 | **+3 400** | Sandaga · AliExpress |
+| Aspirateur voiture portatif | 6 000 | 14 900 | **+8 900** | Alibaba · grossiste auto |
+| Huile capillaire fortifiante | 2 000 | 6 900 | **+4 900** | Fournisseur cosmétique local · Anka |
+| Rouleau de massage visage | 1 500 | 5 500 | **+4 000** | AliExpress · beauté |
+
+> ⚠️ Ces prix d'achat sont des **repères** : confirme-les avec ton grossiste (ils varient selon la quantité).
+> Ta **marge nette** = marge brute − livraison (~1 500) − une réserve retours (~10–15 %).
+> Astuce : **les accessoires créateurs** (ring light, micro, trépied) parlent direct à ton audience TikTok.
+
+## 🖼️ Mettre les vraies photos (2 minutes)
+
+Le système de photos est **déjà câblé**. Il te reste juste à déposer les images :
+1. Récupère la photo de chaque produit (chez le fournisseur, ou prends-la toi-même sur fond clair).
+2. Renomme-la **`p1.jpg`, `p2.jpg` … `p15.jpg`** (la correspondance exacte est dans **`images/README.md`**).
+3. Mets-la dans le dossier **`images/`**. Elle s'affiche **automatiquement**.
+
+> Tant qu'une photo manque, le produit montre un repli propre (icône + couleur) — **rien ne casse**.
+> Une bonne photo carrée sur fond clair peut **doubler** tes ventes.
 
 ---
 
