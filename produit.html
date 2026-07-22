@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Produit — Teranga Shop</title>
+<meta name="description" content="Détail produit — Teranga Shop. Paiement à la livraison, Wave & Orange Money, livraison Dakar & régions.">
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#fff; --ink:#171a2b; --muted:#6b7183; --line:#e8eaf2;
+  --brand:#ff6b2c; --brand-d:#e8551a; --green:#1eae67; --gold:#ffb703;
+  --radius:16px; --shadow:0 10px 30px rgba(20,25,55,.08); --shadow-lg:0 24px 60px rgba(20,25,55,.18);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+.wrap{width:min(1120px,94%);margin-inline:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border:none;font-weight:800;
+  padding:.9rem 1.3rem;border-radius:12px;transition:transform .1s,filter .12s,background .12s;font-size:1rem}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--brand);color:#fff}.btn-primary:hover{background:var(--brand-d)}
+.btn-wa{background:#25D366;color:#04240f}.btn-wa:hover{filter:brightness(1.05)}
+.btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn-block{width:100%}
+/* Header */
+header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.head{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.7rem 0}
+.logo{display:flex;align-items:center;gap:.5rem;font-weight:900;font-size:1.2rem;letter-spacing:-.02em}
+.logo .mk{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:1.15rem;
+  background:linear-gradient(135deg,var(--brand),var(--gold));color:#fff}
+.cart-btn{position:relative;background:var(--ink);color:#fff;border:none;border-radius:12px;padding:.6rem .9rem;font-weight:800;display:flex;gap:.45rem;align-items:center}
+.cart-count{position:absolute;top:-7px;right:-7px;background:var(--brand);color:#fff;font-size:.7rem;font-weight:900;min-width:20px;height:20px;border-radius:999px;display:grid;place-items:center;padding:0 5px}
+/* Breadcrumb */
+.crumb{padding:1rem 0 .2rem;color:var(--muted);font-size:.88rem}
+.crumb a:hover{color:var(--ink)}
+/* Layout */
+.detail{display:grid;grid-template-columns:1fr 1fr;gap:2.2rem;padding:1.4rem 0 2rem}
+@media(max-width:820px){.detail{grid-template-columns:1fr;gap:1.4rem}}
+.gallery .main{aspect-ratio:1/1;border-radius:20px;overflow:hidden;position:relative;box-shadow:var(--shadow)}
+.gallery .main .emoji-ph{position:absolute;inset:0;display:grid;place-items:center;font-size:7rem}
+.gallery .main .pimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.gallery .promo{position:absolute;top:1rem;left:1rem;background:var(--brand);color:#fff;font-weight:900;font-size:.85rem;padding:.35rem .7rem;border-radius:999px;z-index:2}
+.thumbs{display:flex;gap:.6rem;margin-top:.8rem}
+.thumbs div{flex:1;aspect-ratio:1/1;border-radius:12px;display:grid;place-items:center;font-size:1.8rem;border:1px solid var(--line);opacity:.75}
+.info .cat-lab{font-size:.8rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.info h1{font-size:clamp(1.5rem,3.5vw,2.1rem);margin:.3rem 0 .6rem;line-height:1.15;font-weight:900}
+.rating{color:var(--gold);font-weight:700;font-size:.9rem;margin-bottom:.8rem}.rating span{color:var(--muted)}
+.prices{display:flex;align-items:baseline;gap:.7rem;margin-bottom:.4rem}
+.p-now{font-size:2rem;font-weight:900}.p-old{font-size:1.1rem;color:var(--muted);text-decoration:line-through}
+.save{display:inline-block;background:#eafaf1;color:var(--green);font-weight:800;font-size:.82rem;padding:.25rem .6rem;border-radius:999px;margin-bottom:1rem}
+.desc{color:#3a3f52;margin:1rem 0}
+.feats{list-style:none;padding:0;margin:1rem 0;display:grid;gap:.5rem}
+.feats li{display:flex;gap:.6rem;align-items:flex-start;font-size:.95rem}
+.feats li::before{content:"✓";color:var(--green);font-weight:900}
+.buy-row{display:flex;gap:.8rem;align-items:center;margin:1.4rem 0 1rem;flex-wrap:wrap}
+.qty{display:inline-flex;align-items:center;gap:.8rem;background:#fff;border:1px solid var(--line);border-radius:12px;padding:.35rem}
+.qty button{width:38px;height:38px;border:none;background:var(--bg);border-radius:8px;font-weight:900;font-size:1.2rem}
+.qty span{min-width:26px;text-align:center;font-weight:800;font-size:1.1rem}
+.actions{display:grid;gap:.7rem;margin-top:.4rem}
+.trust-mini{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:1.4rem}
+.tm{display:flex;gap:.55rem;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:.7rem .8rem;font-size:.85rem}
+.tm .ic{font-size:1.3rem}.tm b{display:block;font-size:.85rem}.tm span{color:var(--muted);font-size:.75rem}
+/* Related */
+.related h2{font-size:1.3rem;font-weight:900;margin:2rem 0 1rem}
+.rel-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+@media(max-width:820px){.rel-grid{grid-template-columns:repeat(2,1fr)}}
+.rel{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:transform .12s}
+.rel:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.rel .ri{aspect-ratio:1/1;position:relative;overflow:hidden}
+.rel .ri .emoji-ph{position:absolute;inset:0;display:grid;place-items:center;font-size:2.6rem}
+.rel .ri img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.rel .rb{padding:.7rem .8rem .9rem}.rel h3{font-size:.9rem;margin:0 0 .3rem;line-height:1.2}
+.rel .rp{font-weight:900}
+footer{background:var(--ink);color:#c7c9de;margin-top:2.5rem;padding:2rem 0;text-align:center;font-size:.88rem}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ink);color:#fff;padding:.8rem 1.3rem;border-radius:12px;font-weight:700;z-index:200;transition:transform .25s;box-shadow:var(--shadow-lg);display:flex;gap:.8rem;align-items:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast a{color:var(--gold);text-decoration:underline;font-weight:800}
+.notfound{text-align:center;padding:5rem 1rem}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap head">
+    <a href="index.html" class="logo"><span class="mk">🛍️</span> Teranga Shop</a>
+    <a href="index.html" class="cart-btn">🛒 Panier <span class="cart-count" id="cartCount">0</span></a>
+  </div>
+</header>
+
+<main class="wrap" id="app"></main>
+
+<footer>© <span id="year"></span> Teranga Shop · Paiement à la livraison · Wave & Orange Money · Livraison Dakar & régions</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   ⚙️  CONFIG — DOIT correspondre à celle de index.html
+   ============================================================ */
+const CONFIG = {
+  shopName:"Teranga Shop",
+  whatsapp:"221XXXXXXXXX",   // ← ton numéro WhatsApp (identique à index.html)
+  currency:"FCFA",
+  deliveryDakar:1500
+};
+
+/* ============================================================
+   🛍️  PRODUITS — mêmes produits que index.html + description & atouts.
+   ⚠️ Si tu modifies un produit, mets à jour index.html ET ce fichier
+      (ou demande-moi de le faire, c'est rapide).
+   ============================================================ */
+const PRODUCTS = [
+  {id:"p1",cat:"Téléphone",img:"images/p1.jpg",emoji:"🎧",bg:"linear-gradient(135deg,#e0f2ff,#bfe3ff)",name:"Écouteurs Bluetooth sans fil (TWS)",price:7900,old:12000,promo:"-34%",
+    desc:"Des écouteurs sans fil confortables avec un son clair et une bonne autonomie, parfaits pour la musique, les appels et le sport. Boîtier de charge inclus.",
+    feats:["Bluetooth stable, connexion rapide","Boîtier de charge portable","Son net, basses présentes","Compatible tous téléphones (Android & iPhone)"]},
+  {id:"p2",cat:"Téléphone",img:"images/p2.jpg",emoji:"🔋",bg:"linear-gradient(135deg,#e8f7ee,#c7edd6)",name:"Power Bank 10 000 mAh",price:12900,old:18000,promo:"Promo",
+    desc:"Ne tombe plus jamais en panne de batterie. Cette power bank recharge ton téléphone plusieurs fois, idéale pour les journées chargées et les coupures.",
+    feats:["Capacité 10 000 mAh","Recharge 2–3 fois un smartphone","Double sortie USB","Compacte, tient dans la poche"]},
+  {id:"p3",cat:"Téléphone",img:"images/p3.jpg",emoji:"⚡",bg:"linear-gradient(135deg,#fff1e6,#ffd9bd)",name:"Chargeur rapide 20W + câble",price:5900,old:9000,
+    desc:"Recharge ton téléphone beaucoup plus vite grâce à la charge rapide 20W. Câble fourni, prêt à l'emploi.",
+    feats:["Charge rapide 20W","Câble inclus","Protection contre la surchauffe","Compatible charge rapide Android & iPhone"]},
+  {id:"p4",cat:"Téléphone",img:"images/p4.jpg",emoji:"🔌",bg:"linear-gradient(135deg,#f0e9ff,#d8c7ff)",name:"Câble USB-C tressé (lot de 2)",price:2900,old:4500,
+    desc:"Deux câbles USB-C renforcés en nylon tressé, résistants et durables. Fini les câbles qui cassent au bout d'une semaine.",
+    feats:["Lot de 2 câbles","Nylon tressé anti-casse","Charge + transfert de données","Longueur 1 mètre"]},
+  {id:"p5",cat:"Téléphone",img:"images/p5.jpg",emoji:"⌚",bg:"linear-gradient(135deg,#eceff4,#cfd6e2)",name:"Montre connectée sport",price:14900,old:25000,promo:"-40%",
+    desc:"Suis tes pas, ton rythme cardiaque, tes notifications et bien plus, directement à ton poignet. Élégante et pratique au quotidien.",
+    feats:["Écran tactile","Notifications appels & messages","Suivi pas, sport & sommeil","Autonomie plusieurs jours"]},
+
+  {id:"p6",cat:"Créateurs",img:"images/p6.jpg",emoji:"🔆",bg:"linear-gradient(135deg,#fff8d6,#ffe98a)",name:"Ring light + trépied téléphone",price:9900,old:15000,promo:"TikTok",
+    desc:"La lumière qui change tout pour tes vidéos et photos. Ring light réglable + trépied avec support téléphone. Indispensable pour créer du contenu qui brille.",
+    feats:["3 tons de lumière, intensité réglable","Trépied ajustable inclus","Support téléphone rotatif","Parfait pour TikTok, Live & selfies"]},
+  {id:"p7",cat:"Créateurs",img:"images/p7.jpg",emoji:"🤳",bg:"linear-gradient(135deg,#e9f0ff,#c9dbff)",name:"Perche selfie / trépied Bluetooth",price:8900,old:13000,
+    desc:"Perche à selfie qui se transforme en trépied, avec télécommande Bluetooth. Filme-toi et prends tes photos sans bouger le téléphone.",
+    feats:["2-en-1 : perche + trépied","Télécommande Bluetooth incluse","Pliable et léger","Compatible tous smartphones"]},
+  {id:"p8",cat:"Créateurs",img:"images/p8.jpg",emoji:"🎙️",bg:"linear-gradient(135deg,#f3ecff,#dcc9ff)",name:"Micro-cravate pour téléphone",price:7900,old:12000,promo:"Nouveau",
+    desc:"Un son professionnel pour tes vidéos. Ce micro-cravate se clipse et se branche sur ton téléphone pour une voix claire, sans bruit de fond.",
+    feats:["Son clair, voix nette","Se clipse discrètement","Long câble","Idéal interviews, vlogs, TikTok"]},
+
+  {id:"p9",cat:"Maison",img:"images/p9.jpg",emoji:"🥤",bg:"linear-gradient(135deg,#e6faf5,#b8f0e2)",name:"Blender portable rechargeable",price:11900,old:17000,promo:"-30%",
+    desc:"Prépare tes jus, smoothies et bissap partout, sans prise électrique. Rechargeable par USB, il se lave en un rinçage.",
+    feats:["Sans fil, rechargeable USB","Lames puissantes","Fait aussi office de gourde","Facile à nettoyer"]},
+  {id:"p10",cat:"Maison",img:"images/p10.jpg",emoji:"💡",bg:"linear-gradient(135deg,#fff6e0,#ffe3a3)",name:"Lampe LED rechargeable",price:6900,old:10000,
+    desc:"Une lampe puissante et rechargeable, parfaite en cas de coupure de courant. Longue autonomie, plusieurs modes d'éclairage.",
+    feats:["Rechargeable, longue autonomie","Éclairage puissant","Plusieurs modes","Anti-coupures de courant"]},
+  {id:"p11",cat:"Maison",img:"images/p11.jpg",emoji:"⚖️",bg:"linear-gradient(135deg,#eef1f7,#d3d9e8)",name:"Balance de cuisine numérique",price:6900,old:9500,
+    desc:"Pèse tes ingrédients au gramme près pour des recettes toujours réussies. Écran clair, précise et compacte.",
+    feats:["Précision au gramme","Écran numérique clair","Compacte, facile à ranger","Pour cuisine & commerce"]},
+
+  {id:"p12",cat:"Auto",img:"images/p12.jpg",emoji:"📱",bg:"linear-gradient(135deg,#eef1f7,#cfd6e6)",name:"Support téléphone voiture magnétique",price:4900,old:7500,promo:"Malin",
+    desc:"Garde ton téléphone à portée de vue en conduisant. Fixation magnétique solide, installation en 2 secondes.",
+    feats:["Aimant puissant","Rotation 360°","Installation sans outil","Vue GPS sécurisée"]},
+  {id:"p13",cat:"Auto",img:"images/p13.jpg",emoji:"🧹",bg:"linear-gradient(135deg,#e8f0ff,#c6dbff)",name:"Aspirateur voiture portatif",price:14900,old:22000,
+    desc:"Garde ta voiture propre sans effort. Cet aspirateur portatif aspire poussière, miettes et saletés dans les moindres recoins.",
+    feats:["Puissant et léger","Embouts pour tous recoins","Se branche sur l'allume-cigare","Filtre lavable"]},
+
+  {id:"p14",cat:"Beauté",img:"images/p14.jpg",emoji:"💆",bg:"linear-gradient(135deg,#ffe9f2,#ffc7de)",name:"Huile capillaire fortifiante",price:6900,old:10000,
+    desc:"Nourris et renforce tes cheveux avec cette huile capillaire. Pour des cheveux plus doux, brillants et en meilleure santé.",
+    feats:["Nourrit en profondeur","Renforce et fait briller","Convient à tous types de cheveux","Application facile"]},
+  {id:"p15",cat:"Beauté",img:"images/p15.jpg",emoji:"💧",bg:"linear-gradient(135deg,#f3ecff,#dcc9ff)",name:"Rouleau de massage visage",price:5500,old:8000,promo:"Beauté",
+    desc:"Offre-toi un moment de soin. Ce rouleau de massage aide à décongestionner, tonifier et détendre la peau du visage.",
+    feats:["Effet tonifiant & relaxant","Aide à réduire les gonflements","Facile à utiliser","Idéal soin du soir"]},
+];
+
+/* ============================================================
+   ⚙️  MOTEUR (ne pas modifier)
+   ============================================================ */
+const fmt = n => n.toLocaleString("fr-FR");
+function loadCart(){try{return JSON.parse(localStorage.getItem("teranga_cart")||"{}")}catch(e){return{}}}
+function saveCart(c){try{localStorage.setItem("teranga_cart",JSON.stringify(c))}catch(e){}}
+function cartCount(){const c=loadCart();return Object.values(c).reduce((a,b)=>a+b,0);}
+function refreshCount(){document.getElementById("cartCount").textContent=cartCount();}
+
+let qty=1;
+const id=new URLSearchParams(location.search).get("id");
+const p=PRODUCTS.find(x=>x.id===id);
+const app=document.getElementById("app");
+
+if(!p){
+  app.innerHTML=`<div class="notfound"><h1>Produit introuvable 🤔</h1><p>Ce produit n'existe pas ou a été retiré.</p><a class="btn btn-primary" href="index.html">← Retour à la boutique</a></div>`;
+}else{
+  document.title=p.name+" — Teranga Shop";
+  const save=p.old?p.old-p.price:0;
+  const related=PRODUCTS.filter(x=>x.cat===p.cat&&x.id!==p.id).slice(0,4);
+  app.innerHTML=`
+    <div class="crumb"><a href="index.html">Boutique</a> › <a href="index.html">${p.cat}</a> › <span>${p.name}</span></div>
+    <div class="detail">
+      <div class="gallery">
+        <div class="main" style="background:${p.bg}">
+          <div class="emoji-ph">${p.emoji}</div>
+          <img class="pimg" src="${p.img}" alt="${p.name}" onerror="this.style.display='none'">
+          ${p.promo?`<span class="promo">${p.promo}</span>`:""}
+        </div>
+        <div class="thumbs">
+          <div style="background:${p.bg}">${p.emoji}</div>
+          <div style="background:${p.bg}">${p.emoji}</div>
+          <div style="background:${p.bg}">${p.emoji}</div>
+        </div>
+      </div>
+      <div class="info">
+        <span class="cat-lab">${p.cat}</span>
+        <h1>${p.name}</h1>
+        <div class="rating">★★★★★ <span>· En stock, prêt à livrer</span></div>
+        <div class="prices">
+          <span class="p-now">${fmt(p.price)} <span style="font-size:.9rem">${CONFIG.currency}</span></span>
+          ${p.old?`<span class="p-old">${fmt(p.old)} ${CONFIG.currency}</span>`:""}
+        </div>
+        ${save?`<span class="save">Tu économises ${fmt(save)} ${CONFIG.currency}</span>`:""}
+        <p class="desc">${p.desc}</p>
+        <ul class="feats">${p.feats.map(f=>`<li>${f}</li>`).join("")}</ul>
+        <div class="buy-row">
+          <div class="qty"><button onclick="setQty(-1)">−</button><span id="q">1</span><button onclick="setQty(1)">＋</button></div>
+          <span style="color:var(--muted);font-size:.9rem">Total : <b id="lineTotal" style="color:var(--ink)">${fmt(p.price)} ${CONFIG.currency}</b></span>
+        </div>
+        <div class="actions">
+          <button class="btn btn-wa btn-block" onclick="orderNow()">✅ Commander maintenant sur WhatsApp</button>
+          <button class="btn btn-ghost btn-block" onclick="addCart()">＋ Ajouter au panier</button>
+        </div>
+        <div class="trust-mini">
+          <div class="tm"><span class="ic">💵</span><div><b>Paiement à la livraison</b><span>Tu paies en recevant</span></div></div>
+          <div class="tm"><span class="ic">🚚</span><div><b>Livraison rapide</b><span>Dakar & régions</span></div></div>
+          <div class="tm"><span class="ic">🔄</span><div><b>Échange facile</b><span>Si non conforme</span></div></div>
+          <div class="tm"><span class="ic">🌊</span><div><b>Wave · Orange Money</b><span>ou espèces</span></div></div>
+        </div>
+      </div>
+    </div>
+    ${related.length?`<div class="related"><h2>Tu aimeras aussi</h2><div class="rel-grid">
+      ${related.map(r=>`<a class="rel" href="produit.html?id=${r.id}">
+        <div class="ri" style="background:${r.bg}"><div class="emoji-ph">${r.emoji}</div><img src="${r.img}" alt="" onerror="this.style.display='none'"></div>
+        <div class="rb"><h3>${r.name}</h3><span class="rp">${fmt(r.price)} ${CONFIG.currency}</span></div>
+      </a>`).join("")}
+    </div></div>`:""}
+    <p style="margin:2rem 0"><a class="btn btn-ghost" href="index.html">← Continuer mes achats</a></p>`;
+}
+
+function setQty(d){qty=Math.max(1,qty+d);document.getElementById("q").textContent=qty;
+  document.getElementById("lineTotal").textContent=fmt(p.price*qty)+" "+CONFIG.currency;}
+
+function addCart(){const c=loadCart();c[p.id]=(c[p.id]||0)+qty;saveCart(c);refreshCount();
+  toast(`✅ Ajouté au panier`,`<a href="index.html">Voir le panier →</a>`);}
+
+function orderNow(){
+  let msg=`🛍️ *Commande — ${CONFIG.shopName}*%0A%0A• ${qty}× ${p.name}%0APrix : ${fmt(p.price*qty)} ${CONFIG.currency}%0A%0AJe souhaite commander ce produit. Voici mes infos :%0A👤 Nom :%0A📍 Quartier/Ville :%0A💳 Paiement (livraison / Wave / OM) :`;
+  window.open(`https://wa.me/${CONFIG.whatsapp}?text=${msg}`,"_blank");
+}
+
+let tT;
+function toast(m,link){const t=document.getElementById("toast");t.innerHTML=m+(link?" "+link:"");t.classList.add("show");clearTimeout(tT);tT=setTimeout(()=>t.classList.remove("show"),3200);}
+
+document.getElementById("year").textContent=new Date().getFullYear();
+refreshCount();
+</script>
+</body>
+</html>

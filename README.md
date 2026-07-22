@@ -4,8 +4,18 @@ Boutique en ligne **prête à l'emploi**, pensée pour le marché sénégalais :
 **paiement à la livraison (Cash on Delivery)**, **Wave / Orange Money**, commande
 confirmée sur **WhatsApp**, livraison moto (« tiak-tiak ») / Yobante / Paps.
 
-Tout tient dans un seul fichier : **`index.html`**. Aucun serveur, aucun abonnement.
-Tu l'ouvres, tu le mets en ligne gratuitement, tu vends.
+Aucun serveur, aucun abonnement. Tu ouvres, tu mets en ligne gratuitement, tu vends.
+
+### 📂 Les fichiers
+| Fichier | Rôle |
+|---|---|
+| **`index.html`** | La boutique : catalogue, panier, commande, **aperçu rapide** d'un produit. |
+| **`produit.html`** | La **page détaillée** d'un produit (`produit.html?id=p1`) — parfaite pour **envoyer un lien précis** à un client. |
+| **`images/`** | Les photos produits (`p1.jpg` … `p15.jpg`). Voir `images/README.md`. |
+| **`FOURNISSEURS.md`** | 📇 Répertoire de **grossistes & fournisseurs** (local Dakar + import). |
+| **`README.md`** | Ce guide. |
+
+> Le panier est **partagé** entre les pages (il se souvient de tes articles d'une page à l'autre).
 
 ---
 
@@ -20,7 +30,8 @@ Tu l'ouvres, tu le mets en ligne gratuitement, tu vends.
 3. **Mets tes produits** : juste en dessous, dans `const PRODUCTS = [`, modifie/ajoute tes articles.
 
 > ⚠️ **Important** : tant que `whatsapp` contient `XXXX`, les commandes ne t'arriveront pas.
-> C'est la **première** chose à changer.
+> C'est la **première** chose à changer. Mets le **même numéro** dans le `CONFIG` de
+> **`index.html`** ET de **`produit.html`**.
 
 ---
 

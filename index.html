@@ -84,7 +84,10 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop
 @media(max-width:720px){.products{grid-template-columns:repeat(2,1fr)}}
 .prod{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:transform .14s,box-shadow .14s}
 .prod:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
-.prod .img{aspect-ratio:1/1;position:relative;overflow:hidden}
+.prod .img{display:block;aspect-ratio:1/1;position:relative;overflow:hidden;cursor:pointer}
+.prod h3 a,.prod .info>a{color:inherit}
+.prod h3{transition:color .1s}
+.prod .info>a:hover h3{color:var(--brand-d)}
 .prod .img .emoji-ph{position:absolute;inset:0;display:grid;place-items:center;font-size:3.4rem}
 .prod .img .pimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff}
 .prod .promo{position:absolute;top:.6rem;left:.6rem;background:var(--brand);color:#fff;font-weight:900;font-size:.72rem;padding:.25rem .55rem;border-radius:999px}
@@ -149,6 +152,30 @@ footer h4{color:#fff;margin:0 0 .7rem;font-size:.95rem}
 footer a{color:#c7c9de;display:block;margin-bottom:.4rem;font-size:.9rem}
 footer a:hover{color:#fff}
 .copyright{border-top:1px solid rgba(255,255,255,.1);margin-top:2rem;padding-top:1.2rem;font-size:.82rem;opacity:.75}
+/* Détail / aperçu rapide */
+.detail-modal{position:fixed;z-index:100;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);opacity:0;pointer-events:none;
+  width:min(860px,94%);max-height:92vh;overflow:auto;background:#fff;border-radius:20px;box-shadow:var(--shadow-lg);transition:.2s}
+.detail-modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.dm-x{position:absolute;top:1rem;right:1rem;z-index:3}
+.dm-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem;padding:1.4rem}
+@media(max-width:700px){.dm-grid{grid-template-columns:1fr}}
+.dm-img{aspect-ratio:1/1;border-radius:16px;position:relative;overflow:hidden}
+.dm-img .emoji-ph{position:absolute;inset:0;display:grid;place-items:center;font-size:5rem}
+.dm-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dm-img .promo{position:absolute;top:.8rem;left:.8rem;background:var(--brand);color:#fff;font-weight:900;font-size:.8rem;padding:.3rem .6rem;border-radius:999px}
+.dm-info h2{font-size:1.4rem;margin:.3rem 0 .4rem;font-weight:900;line-height:1.2}
+.dm-info .cat-lab{font-size:.75rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.dm-info .rating{color:var(--gold);font-weight:700;font-size:.85rem;margin-bottom:.5rem}.dm-info .rating span{color:var(--muted)}
+.dm-info .prices{display:flex;align-items:baseline;gap:.6rem}.dm-info .p-now{font-size:1.6rem;font-weight:900}.dm-info .p-old{color:var(--muted);text-decoration:line-through}
+.dm-info .save{display:inline-block;background:#eafaf1;color:var(--green);font-weight:800;font-size:.8rem;padding:.2rem .55rem;border-radius:999px;margin:.5rem 0}
+.dm-info .desc{color:#3a3f52;font-size:.95rem;margin:.6rem 0}
+.dm-info .feats{list-style:none;padding:0;margin:.6rem 0;display:grid;gap:.4rem}
+.dm-info .feats li{display:flex;gap:.5rem;font-size:.9rem}.dm-info .feats li::before{content:"✓";color:var(--green);font-weight:900}
+.dm-info .buy-row{display:flex;align-items:center;gap:.8rem;margin:1rem 0}
+.dm-info .qty{display:inline-flex;align-items:center;gap:.7rem;border:1px solid var(--line);border-radius:10px;padding:.3rem}
+.dm-info .qty button{width:34px;height:34px;border:none;background:var(--bg);border-radius:8px;font-weight:900;font-size:1.1rem}
+.dm-info .qty span{min-width:22px;text-align:center;font-weight:800}
+.dm-page{display:inline-block;margin-top:.8rem;color:var(--brand-d);font-weight:700;font-size:.9rem;text-decoration:underline}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ink);color:#fff;
   padding:.8rem 1.3rem;border-radius:12px;font-weight:700;z-index:200;transition:transform .25s;box-shadow:var(--shadow-lg)}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -271,6 +298,13 @@ footer a:hover{color:#fff}
   </div>
 </aside>
 
+<!-- Aperçu rapide produit -->
+<div class="overlay" id="detailOverlay" onclick="closeDetail()"></div>
+<div class="detail-modal" id="detailModal">
+  <button class="x dm-x" onclick="closeDetail()">×</button>
+  <div id="detailBody"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -318,11 +352,32 @@ const PRODUCTS = [
   {id:"p15", cat:"Beauté", img:"images/p15.jpg", emoji:"💧", bg:"linear-gradient(135deg,#f3ecff,#dcc9ff)", name:"Rouleau de massage visage", buy:1500, price:5500, old:8000, promo:"Beauté", stock:true},
 ];
 
+/* Descriptions & atouts (utilisés par l'aperçu rapide). Mêmes textes que produit.html. */
+const DETAILS = {
+  p1:{desc:"Écouteurs sans fil confortables, son clair et bonne autonomie. Boîtier de charge inclus.",feats:["Bluetooth stable","Boîtier de charge","Son net, basses présentes","Android & iPhone"]},
+  p2:{desc:"Ne tombe plus jamais en panne de batterie. Recharge ton téléphone plusieurs fois.",feats:["10 000 mAh","Recharge 2–3 fois","Double sortie USB","Compacte"]},
+  p3:{desc:"Recharge beaucoup plus vite grâce à la charge rapide 20W. Câble fourni.",feats:["Charge rapide 20W","Câble inclus","Protection surchauffe","Android & iPhone"]},
+  p4:{desc:"Deux câbles USB-C renforcés nylon tressé, résistants et durables.",feats:["Lot de 2","Anti-casse","Charge + données","1 mètre"]},
+  p5:{desc:"Suis tes pas, ton rythme cardiaque et tes notifications à ton poignet.",feats:["Écran tactile","Notifications","Suivi sport & sommeil","Autonomie plusieurs jours"]},
+  p6:{desc:"La lumière qui change tout pour tes vidéos. Ring light réglable + trépied téléphone.",feats:["3 tons réglables","Trépied inclus","Support rotatif","Parfait TikTok & Live"]},
+  p7:{desc:"Perche à selfie qui se transforme en trépied, avec télécommande Bluetooth.",feats:["2-en-1","Télécommande BT","Pliable & léger","Tous smartphones"]},
+  p8:{desc:"Un son pro pour tes vidéos. Micro-cravate qui se clipse et se branche au téléphone.",feats:["Voix nette","Se clipse discret","Long câble","Vlogs & interviews"]},
+  p9:{desc:"Prépare tes jus et smoothies partout, sans prise. Rechargeable USB, facile à laver.",feats:["Sans fil USB","Lames puissantes","Fait gourde","Facile à nettoyer"]},
+  p10:{desc:"Lampe puissante et rechargeable, parfaite en cas de coupure de courant.",feats:["Rechargeable","Éclairage puissant","Plusieurs modes","Anti-coupures"]},
+  p11:{desc:"Pèse tes ingrédients au gramme près. Écran clair, précise et compacte.",feats:["Précision au gramme","Écran clair","Compacte","Cuisine & commerce"]},
+  p12:{desc:"Garde ton téléphone à portée de vue en conduisant. Fixation magnétique solide.",feats:["Aimant puissant","Rotation 360°","Sans outil","Vue GPS"]},
+  p13:{desc:"Garde ta voiture propre sans effort. Aspire poussière et miettes dans les recoins.",feats:["Puissant & léger","Embouts multiples","Allume-cigare","Filtre lavable"]},
+  p14:{desc:"Nourris et renforce tes cheveux. Plus doux, brillants et en meilleure santé.",feats:["Nourrit en profondeur","Renforce & fait briller","Tous cheveux","Facile à appliquer"]},
+  p15:{desc:"Un moment de soin : décongestionne, tonifie et détend la peau du visage.",feats:["Tonifiant & relaxant","Réduit les gonflements","Facile à utiliser","Soin du soir"]},
+};
+
 /* ============================================================
    ⚙️  MOTEUR (pas besoin de modifier en dessous)
    ============================================================ */
 const fmt = n => n.toLocaleString("fr-FR");
-let cart = {};       // {id: qty}
+function loadCart(){try{return JSON.parse(localStorage.getItem("teranga_cart")||"{}")}catch(e){return{}}}
+function saveCart(){try{localStorage.setItem("teranga_cart",JSON.stringify(cart))}catch(e){}}
+let cart = loadCart();   // {id: qty} — partagé entre index.html et produit.html
 let activeCat = "Tous";
 let search = "";
 
@@ -343,7 +398,7 @@ function renderProducts(){
   document.getElementById("prodCount").textContent = list.length+" produit"+(list.length>1?"s":"");
   productsEl.innerHTML = list.map(p=>`
     <div class="prod">
-      <div class="img" style="background:${p.bg}">
+      <div class="img" onclick="openDetail('${p.id}')" style="background:${p.bg}">
         <div class="emoji-ph">${p.emoji}</div>
         <img class="pimg" src="${p.img}" alt="${p.name}" loading="lazy" onerror="this.style.display='none'">
         ${p.promo?`<span class="promo" style="z-index:2">${p.promo}</span>`:""}
@@ -351,7 +406,7 @@ function renderProducts(){
       </div>
       <div class="info">
         <span class="cat-lab">${p.cat}</span>
-        <h3>${p.name}</h3>
+        <h3 onclick="openDetail('${p.id}')" style="cursor:pointer">${p.name}</h3>
         <div class="prices">
           <span class="p-now">${fmt(p.price)} <span style="font-size:.7rem">${CONFIG.currency}</span></span>
           ${p.old?`<span class="p-old">${fmt(p.old)}</span>`:""}
@@ -371,6 +426,7 @@ function subtotal(){return Object.entries(cart).reduce((s,[id,q])=>s+PRODUCTS.fi
 function shipping(){const s=subtotal();if(s===0)return 0;if(CONFIG.freeShipFrom&&s>=CONFIG.freeShipFrom)return 0;return CONFIG.deliveryDakar;}
 
 function updateCart(){
+  saveCart();
   document.getElementById("cartCount").textContent = cartCount();
   const items = document.getElementById("cartItems");
   const entries = Object.entries(cart);
@@ -444,6 +500,44 @@ function waContact(){window.open(`https://wa.me/${CONFIG.whatsapp}?text=${encode
 // Toast
 let toastT;
 function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),1800);}
+
+// Aperçu rapide (détail produit)
+let dQty=1, dId=null;
+function openDetail(id){
+  dId=id; dQty=1;
+  const p=PRODUCTS.find(x=>x.id===id); const d=DETAILS[id]||{desc:"",feats:[]};
+  const save=p.old?p.old-p.price:0;
+  document.getElementById("detailBody").innerHTML=`
+    <div class="dm-grid">
+      <div class="dm-img" style="background:${p.bg}">
+        <div class="emoji-ph">${p.emoji}</div>
+        <img src="${p.img}" alt="${p.name}" onerror="this.style.display='none'">
+        ${p.promo?`<span class="promo">${p.promo}</span>`:""}
+      </div>
+      <div class="dm-info">
+        <span class="cat-lab">${p.cat}</span>
+        <h2>${p.name}</h2>
+        <div class="rating">★★★★★ <span>· En stock, prêt à livrer</span></div>
+        <div class="prices"><span class="p-now">${fmt(p.price)} ${CONFIG.currency}</span>${p.old?`<span class="p-old">${fmt(p.old)} ${CONFIG.currency}</span>`:""}</div>
+        ${save?`<span class="save">Tu économises ${fmt(save)} ${CONFIG.currency}</span>`:""}
+        <p class="desc">${d.desc}</p>
+        <ul class="feats">${d.feats.map(f=>`<li>${f}</li>`).join("")}</ul>
+        <div class="buy-row">
+          <div class="qty"><button onclick="dSetQty(-1)">−</button><span id="dq">1</span><button onclick="dSetQty(1)">＋</button></div>
+          <span class="muted">Total : <b id="dTotal" style="color:var(--ink)">${fmt(p.price)} ${CONFIG.currency}</b></span>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="dAdd()">＋ Ajouter au panier</button>
+        <a class="dm-page" href="produit.html?id=${id}">Voir la page complète / partager ce produit →</a>
+      </div>
+    </div>`;
+  document.getElementById("detailModal").classList.add("open");
+  document.getElementById("detailOverlay").classList.add("show");
+  document.body.style.overflow="hidden";
+}
+function closeDetail(){document.getElementById("detailModal").classList.remove("open");document.getElementById("detailOverlay").classList.remove("show");document.body.style.overflow="";}
+function dSetQty(x){const p=PRODUCTS.find(y=>y.id===dId);dQty=Math.max(1,dQty+x);document.getElementById("dq").textContent=dQty;document.getElementById("dTotal").textContent=fmt(p.price*dQty)+" "+CONFIG.currency;}
+function dAdd(){cart[dId]=(cart[dId]||0)+dQty;updateCart();const p=PRODUCTS.find(y=>y.id===dId);toast(`✅ ${dQty}× ${p.name} ajouté`);closeDetail();}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeDetail();closeCart();}});
 
 document.getElementById("year").textContent=new Date().getFullYear();
 renderProducts();updateCart();
