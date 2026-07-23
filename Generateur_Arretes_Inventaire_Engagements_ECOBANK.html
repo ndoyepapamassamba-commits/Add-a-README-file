@@ -112,10 +112,12 @@
           <tr><td>Encours début période (T)</td><td>Encours au bilan de l'arrêté précédent</td></tr>
           <tr><td>Montant utilisé / débloqué (Z)</td><td>Ototal Including PDO</td></tr>
           <tr><td>Capital restant dû (AQ)</td><td>Ototal Including PDO</td></tr>
-          <tr><td>Classification (AR)</td><td>Status P/NP + Classification + restructuration</td></tr>
+          <tr><td>Classification (AR)</td><td>Grille BCEAO : I/IA/II&rarr;Sain · III/IV&rarr;Douteux · V&rarr;Litigieux · restructuré prioritaire</td></tr>
           <tr><td>Présence d'impayés (AS)</td><td>PDO Amount / Interest In Suspense / Status</td></tr>
           <tr><td>Impayés capital (AT)</td><td>PDO Amount In Local Currency</td></tr>
           <tr><td>Impayés intérêt (AU)</td><td>Interest In Suspense In Local Currency</td></tr>
+          <tr><td>Date &amp; antériorité impayé (AV/AW)</td><td>Date In PDO / Date in NP &rarr; ancienneté en mois à l'arrêté</td></tr>
+          <tr><td>Garanties (AH/AK)</td><td>Sûretés éligibles uniquement (Security Code débutant par <b>3</b> ou <b>54</b>) ; part couverte = collatéral éligible / encours</td></tr>
           <tr><td>Encours total au bilan (AY)</td><td>Ototal Including PDO</td></tr>
           <tr><td>Montant provisionné (BA)</td><td>CProvisions Per Local Regulatory</td></tr>
           <tr><td>Taux d'intérêt (AE) — nouveaux</td><td>Loan Interest Rate</td></tr>
@@ -414,17 +416,67 @@ function readSheetRows(ws){
 }
 
 // dynamic column indexes (1-based) in base
-const COL={S:19,T:20,Z:26,AE:31,V:22,W:23,AQ:43,AR:44,AS:45,AT:46,AU:47,AV:48,AW:49,AY:51,AZ:52,BA:53,BS:71,A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,I:9};
+const COL={S:19,T:20,Z:26,AE:31,V:22,W:23,gAH:34,gAI:35,gAJ:36,gAK:37,AQ:43,AR:44,AS:45,AT:46,AU:47,AV:48,AW:49,AX:50,AY:51,AZ:52,BA:53,BS:71,A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,I:9};
 
+// Classification réglementaire (grille BCEAO/IFRS9) : classes I/IA/II = saines (FRR<=8) ;
+// III/IV = douteuses ; V = perte -> litigieuse. Restructuré prioritaire.
 function classify(prow){
-  const st=idNorm(pv(prow,'Status (P/NP)')).toUpperCase();
   const restr=pv(prow,'Initial Product Code for Restructured loan');
-  const cls=idNorm(pv(prow,'Classification')).toUpperCase();
   if(restr!=null && String(restr).trim()!=='') return 'Restructuré';
-  if(st==='NP'||['III','IV','V','D','L'].includes(cls)) {
-    return (['V','L'].includes(cls))?'Litigieux':'Douteux';
-  }
+  const cls=idNorm(pv(prow,'Classification')).toUpperCase();
+  const st=idNorm(pv(prow,'Status (P/NP)')).toUpperCase();
+  const frrN=parseInt(String(pv(prow,'FRR')==null?'':pv(prow,'FRR')).replace(/[^0-9]/g,''))||0;
+  if(cls==='V'||cls==='PERTE') return 'Litigieux';
+  if(cls==='III'||cls==='IV') return 'Douteux';
+  if(['I','IA','II','IIA','IIN'].includes(cls)) return 'Sain';
+  if(st==='NP'||frrN>=9) return (frrN>=10?'Litigieux':'Douteux');
   return 'Sain';
+}
+
+// Antériorité en mois entre deux dates (impayé -> arrêté)
+function monthsBetween(d1,d2){ if(!d1||!d2) return null; d1=new Date(d1); d2=new Date(d2);
+  if(isNaN(d1)||isNaN(d2)) return null;
+  let m=(d2.getFullYear()-d1.getFullYear())*12+(d2.getMonth()-d1.getMonth());
+  if(d2.getDate()<d1.getDate()) m--; return m<0?0:m; }
+
+// Garanties éligibles : seules les sûretés dont le Security Code commence par 3 ou 54 sont retenues.
+function guarantee(prow,encours){
+  const code=idNorm(pv(prow,'Security Code'));
+  const elig = code.startsWith('3')||code.startsWith('54');
+  const coll = elig ? Math.abs(num(pv(prow,'Collateral value In Local Currency'))) : 0;
+  let part=0; if(coll>0) part = encours>0 ? Math.min(coll/encours,1) : 1;
+  return {elig,coll,part,code};
+}
+
+// Remplit les colonnes impayés/souffrance (AS,AT,AU,AV,AW) selon le portefeuille
+function fillImpayes(vals,prow,arrDate){
+  const pdo=num(pv(prow,'PDO Amount In Local Currency'));
+  const iis=num(pv(prow,'Interest In Suspense In Local Currency'));
+  const st=idNorm(pv(prow,'Status (P/NP)')).toUpperCase();
+  const impaye=(pdo>0||iis>0||st==='NP');
+  vals[COL.AS]=impaye?'Oui':'Non';
+  if(impaye){
+    vals[COL.AT]=pdo>0?pdo:(num(vals[COL.AT])||null);
+    vals[COL.AU]=iis>0?iis:(num(vals[COL.AU])||null);
+    const dImp=pv(prow,'Date In PDO')||pv(prow,'Date in NP');
+    if(dImp){ vals[COL.AV]=dImp; const mo=monthsBetween(dImp,arrDate); if(mo!=null) vals[COL.AW]=mo; }
+  } else { vals[COL.AT]=null; vals[COL.AU]=null; vals[COL.AV]=null; vals[COL.AW]=null; }
+  return impaye;
+}
+
+// Applique la règle garanties 3/54 sur les colonnes AH/AI/AJ/AK
+function fillGaranties(vals,prow,encours,name){
+  const g=guarantee(prow,encours);
+  if(g.coll>0){
+    vals[COL.gAH]='Oui';
+    vals[COL.gAK]=g.part;
+    if(!idNorm(vals[COL.gAI])) vals[COL.gAI]='Sûreté réelle éligible (Security Code '+g.code+')';
+    if(!idNorm(vals[COL.gAJ])) vals[COL.gAJ]=idNorm(vals[COL.B])||name||'';
+  } else {
+    vals[COL.gAH]='Non';
+    vals[COL.gAK]=0;
+  }
+  return g;
 }
 
 function updateContract(pr,prow,arrDate){
@@ -442,13 +494,10 @@ function updateContract(pr,prow,arrDate){
   vals[COL.Z]=outstanding;            // montant utilisé
   vals[COL.AQ]=outstanding;           // capital restant dû
   vals[COL.AY]=outstanding;           // encours total au bilan
-  vals[COL.AR]=classify(prow);        // classification
-  const impaye=(pdo>0||iis>0||st==='NP');
-  vals[COL.AS]=impaye?'Oui':'Non';
-  vals[COL.AT]=pdo>0?pdo:(vals[COL.AT]&&impaye?vals[COL.AT]:null);
-  vals[COL.AU]=iis>0?iis:(impaye?vals[COL.AU]:null);
-  if(pdo>0){ const dp=pv(prow,'Date In PDO')||pv(prow,'Date in NP'); if(dp) vals[COL.AV]=dp; }
-  vals[COL.BA]=prov>0?prov:null;
+  vals[COL.AR]=classify(prow);        // classification (grille BCEAO)
+  fillImpayes(vals,prow,arrDate);     // impayés / souffrance (AS,AT,AU,AV,AW)
+  fillGaranties(vals,prow,outstanding,idNorm(vals[COL.B])); // garanties éligibles 3/54
+  vals[COL.BA]=prov>0?prov:null;      // provisionnement réglementaire
   // AZ (30 juin) : renseigné pour l'arrêté 30.06 lui-même
   if(arrDate.getMonth()===5) vals[COL.AZ]=outstanding;
   return {vals};
@@ -477,13 +526,8 @@ function newContract(prow,arrDate,cl,cfg){
   vals[COL.AQ]=outstanding;
   vals[COL.AY]=outstanding;
   vals[COL.AR]=classify(prow);
-  const pdo=num(pv(prow,'PDO Amount In Local Currency'));
-  const iis=num(pv(prow,'Interest In Suspense In Local Currency'));
-  const st=idNorm(pv(prow,'Status (P/NP)')).toUpperCase();
-  const impaye=(pdo>0||iis>0||st==='NP');
-  vals[COL.AS]=impaye?'Oui':'Non';
-  if(pdo>0) vals[COL.AT]=pdo;
-  if(iis>0) vals[COL.AU]=iis;
+  fillImpayes(vals,prow,arrDate);
+  fillGaranties(vals,prow,outstanding,name);
   const prov=num(pv(prow,'CProvisions Per Local Regulatory In Local Currency')); if(prov>0) vals[COL.BA]=prov;
   if(arrDate.getMonth()===5) vals[COL.AZ]=outstanding;
   vals[COL.BS]='Nouveau contrat intégré à cet arrêté — champs descriptifs à compléter.';
