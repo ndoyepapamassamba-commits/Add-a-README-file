@@ -102,6 +102,7 @@ class Pool{
     m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap*3).fill(1), 3); m.instanceColor.setUsage(THREE.DynamicDrawUsage);
     if(this.extras) for(const k in this.extras){ const n = this.extras[k], old = this.geo.getAttribute(k); const a = new THREE.InstancedBufferAttribute(new Float32Array(cap*n), n); a.setUsage(THREE.DynamicDrawUsage);
       if(old) a.array.set(old.array.subarray(0, Math.min(old.array.length, a.array.length))); this.geo.setAttribute(k, a); }
+    if(this.o.depth) m.customDepthMaterial = this.o.depth;
     if(this.o.order !== undefined) m.renderOrder = this.o.order; if(this.o.layer) m.layers.set(this.o.layer); scene.add(m); return m; }
   link(geo, mat, cast=false){ const lm = new THREE.InstancedMesh(geo, mat, this.cap); lm.instanceMatrix = this.mesh.instanceMatrix; lm.count = 0; lm.frustumCulled = false; lm.castShadow = cast; scene.add(lm); this.linked.push(lm); return lm; }
   grow(){ if(this.o.fixed) return false; const cap = this.cap*2, old = this.mesh; const m = this.make(cap);
@@ -211,16 +212,16 @@ function nightEmissiveMaterial(base=.25, night=2.2){ // enseignes, éclairages :
 function swayMaterial(ever){
   const m = new THREE.MeshStandardMaterial({ vertexColors:true, roughness:.92, envMapIntensity:.3 }); if(ever) m.defines = { EVER:'' };
   m.onBeforeCompile = sh => { Object.assign(sh.uniforms, { uTime:U.uTime, uSnow:U.uSnow, uSeasonW:U.uSeasonW });
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTime; varying float vUp; varying vec3 vIP, vLP;')
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTime; varying float vUp; varying vec3 vLP; varying float vHs;')
       .replace('#include <begin_vertex>', `#include <begin_vertex>
-        vUp = normal.y; vLP = position; vIP = vec3(0.0);
+        vUp = normal.y; vLP = position; vHs = 0.5;
         #ifdef USE_INSTANCING
-        vec3 ip = instanceMatrix[3].xyz; vIP = ip; float sw = sin(uTime*1.3 + ip.x*0.07 + ip.z*0.05) * 0.035 * max(position.y - 0.25, 0.0);
+        vec3 ip = instanceMatrix[3].xyz; vHs = fract(sin(dot(floor(ip.xz), vec2(12.9898,78.233)))*43758.5453); float sw = sin(uTime*1.3 + ip.x*0.07 + ip.z*0.05) * 0.035 * max(position.y - 0.25, 0.0);
         transformed.x += sw; transformed.z += sw*0.6;
         #endif`);
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uSnow; uniform vec4 uSeasonW; varying float vUp; varying vec3 vIP, vLP;')
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uSnow; uniform vec4 uSeasonW; varying float vUp; varying vec3 vLP; varying float vHs;')
       .replace('#include <color_fragment>', `#include <color_fragment>
-        { float leaf = step(diffuseColor.r*1.05, diffuseColor.g); float hs = fract(sin(dot(vIP.xz, vec2(12.9898,78.233)))*43758.5453);
+        { float leaf = step(diffuseColor.r*1.05, diffuseColor.g); float hs = vHs;
           #ifndef EVER
           vec3 aut = mix(vec3(0.42,0.1,0.02), vec3(0.62,0.36,0.03), hs);
           diffuseColor.rgb = mix(diffuseColor.rgb, aut, leaf*uSeasonW.w*(0.6+0.4*hs));

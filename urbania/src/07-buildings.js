@@ -56,6 +56,7 @@ function ctx(b){ const cs = Math.cos(b.ang), sn = Math.sin(b.ang), r = mulberry3
     facC:(lx,ly,lz,rad,h,color,st) => part(P.facC, lx,ly,lz,rad,h,rad,color,{ aStyle:ST[st][0], aStyle2:ST[st][1] }),
     tree:(lx, lz, h, type='D') => { const [x,z] = W(lx,lz); const t = addTree(x, z, h, type, r, false); if(t){ b.parts.push(t.h); b.pp.push(null); } },
     emit:(lx, ly, lz, rate, shade, big=0) => { const [x,z] = W(lx,lz); b.emit.push({ x, y:b.y+ly, z, rate, shade, acc:0, big }); emitDirty = true; },
+    asset:(name, lx, ly, lz, sx, sy, sz, wall, roof, accent, lit=.5, rot=0) => { const A = ASSETS[name]; if(!A) return null; return part(assetPool(A), lx, ly, lz, sx, sy, sz, wall, assetExtras(roof, accent, r(), lit), rot); },
     fence:(color='#9a958c', h=1.1) => { part(P.equip, -b.hw+.3, 0, 0, .12, h, b.hd*2-.6, color); part(P.equip, b.hw-.3, 0, 0, .12, h, b.hd*2-.6, color); part(P.equip, 0, 0, -b.hd+.3, b.hw*2-.6, h, .12, color); },
   }; }
 const LV = (b) => b.level;
@@ -269,6 +270,7 @@ function buildModel(b){
   const C = ctx(b);
   if(b.burned){ C.part(P.pad, 0, -.4, 0, b.hw*2-.3, .45, b.hd*2-.3, '#2d2a27'); for(let k=0;k<6;k++) C.part(P.equip, (C.r()-.5)*b.hw*1.4, 0, (C.r()-.5)*b.hd*1.4, 2+C.r()*3, .6+C.r()*1.8, 2+C.r()*3, '#232120'); b.top = 3; return; }
   if(b.kind === 'svc') svcGen[b.type](b, C);
+  else if(zoneAsset(b, C)){ /* modèle SketchUp (07b-assetgen.js) */ }
   else if(b.zone <= 1) genHouse(b, C); else if(b.zone === 2) genApartments(b, C); else if(b.zone === 3) genShop(b, C); else if(b.zone === 4) genBigShop(b, C);
   else if(b.zone === 5) genIndustry(b, C); else genOffice(b, C);
   if(b.abandoned) for(const h of b.parts){ if(!h.pool || h.pool === TREES.D || h.pool === TREES.C || h.pool === TREES.P) continue; const a = h.pool.mesh.instanceColor.array; a[h.i*3]*=.42; a[h.i*3+1]*=.4; a[h.i*3+2]*=.38; }
