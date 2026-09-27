@@ -16,7 +16,7 @@ controls.panSpeed = 1.1; controls.rotateSpeed = .6;
 
 /* ---------- uniformes partagées ---------- */
 const U = {
-  uTime:{value:0}, uNight:{value:0}, uLitMul:{value:1}, uWet:{value:0}, uSnow:{value:0},
+  uTime:{value:0}, uNight:{value:0}, uLitMul:{value:1}, uWet:{value:0}, uSnow:{value:0}, uSeasonW:{value:new THREE.Vector4(0,0,1,0)},
   uHalf:{value:HALF}, uEHalf:{value:EHALF}, uCell:{value:CELL}, uNE1:{value:NE1},
   uOver:{value:null}, uOverOn:{value:0}, uDist:{value:null}, uDistOn:{value:0}, uDetail:{value:null}, uHTex:{value:null},
   uBrush:{value:new THREE.Vector4(0,0,0,0)}, uBrushCol:{value:new THREE.Color(0xf2b33d)}, uUnder:{value:0},
@@ -208,19 +208,32 @@ function nightEmissiveMaterial(base=.25, night=2.2){ // enseignes, éclairages :
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n totalEmissiveRadiance += diffuseColor.rgb * (${base.toFixed(2)} + uNight*${night.toFixed(2)});`); };
   m.customProgramCacheKey = () => 'nightEm'+base+night; return m;
 }
-function swayMaterial(){
-  const m = new THREE.MeshStandardMaterial({ vertexColors:true, roughness:.92, envMapIntensity:.3 });
-  m.onBeforeCompile = sh => { Object.assign(sh.uniforms, { uTime:U.uTime, uSnow:U.uSnow });
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTime; varying float vUp;')
+function swayMaterial(ever){
+  const m = new THREE.MeshStandardMaterial({ vertexColors:true, roughness:.92, envMapIntensity:.3 }); if(ever) m.defines = { EVER:'' };
+  m.onBeforeCompile = sh => { Object.assign(sh.uniforms, { uTime:U.uTime, uSnow:U.uSnow, uSeasonW:U.uSeasonW });
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTime; varying float vUp; varying vec3 vIP, vLP;')
       .replace('#include <begin_vertex>', `#include <begin_vertex>
-        vUp = normal.y;
+        vUp = normal.y; vLP = position; vIP = vec3(0.0);
         #ifdef USE_INSTANCING
-        vec3 ip = instanceMatrix[3].xyz; float sw = sin(uTime*1.3 + ip.x*0.07 + ip.z*0.05) * 0.035 * max(position.y - 0.25, 0.0);
+        vec3 ip = instanceMatrix[3].xyz; vIP = ip; float sw = sin(uTime*1.3 + ip.x*0.07 + ip.z*0.05) * 0.035 * max(position.y - 0.25, 0.0);
         transformed.x += sw; transformed.z += sw*0.6;
         #endif`);
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uSnow; varying float vUp;')
-      .replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.92,0.94,0.96), uSnow*smoothstep(0.1,0.7,vUp)*0.85);'); };
-  m.customProgramCacheKey = () => 'sway'; return m;
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uSnow; uniform vec4 uSeasonW; varying float vUp; varying vec3 vIP, vLP;')
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        { float leaf = step(diffuseColor.r*1.05, diffuseColor.g); float hs = fract(sin(dot(vIP.xz, vec2(12.9898,78.233)))*43758.5453);
+          #ifndef EVER
+          vec3 aut = mix(vec3(0.42,0.1,0.02), vec3(0.62,0.36,0.03), hs);
+          diffuseColor.rgb = mix(diffuseColor.rgb, aut, leaf*uSeasonW.w*(0.6+0.4*hs));
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.07,0.055,0.04), leaf*uSeasonW.x*0.9);
+          if(leaf > 0.5){ float n = fract(sin(dot(floor(vLP*11.0), vec3(1.7,9.2,3.1)))*4375.5); if(n < uSeasonW.x*0.72 + uSeasonW.w*hs*0.25) discard; }
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9,0.5,0.62), leaf*uSeasonW.y*step(0.72,hs)*0.7);
+          diffuseColor.rgb *= 1.0 + leaf*uSeasonW.y*0.2;
+          #else
+          diffuseColor.rgb *= 1.0 - leaf*uSeasonW.x*0.2;
+          #endif
+        }
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.92,0.94,0.96), uSnow*smoothstep(0.1,0.7,vUp)*0.85);`); };
+  m.customProgramCacheKey = () => 'sway2'+(ever ? 'e' : ''); return m;
 }
 function fieldMaterial(){ // champs agricoles : sillons en coordonnées monde
   const m = new THREE.MeshStandardMaterial({ roughness:.95, envMapIntensity:.25 });
@@ -270,7 +283,7 @@ const MAT = {
   field: fieldMaterial(),
   solar: new THREE.MeshStandardMaterial({ color:0x1b2a44, roughness:.12, metalness:.8, envMapIntensity:1.1 }),
   poolw: new THREE.MeshStandardMaterial({ color:0x2a9fc7, roughness:.05, metalness:.1, envMapIntensity:1 }),
-  tree: swayMaterial(),
+  tree: swayMaterial(), treeEver: swayMaterial(true),
   veh: new THREE.MeshStandardMaterial({ vertexColors:true, roughness:.3, metalness:.55, envMapIntensity:1 }),
   vlight: new THREE.MeshBasicMaterial({ vertexColors:true }),
   siren: sirenMaterial(),
@@ -335,6 +348,8 @@ const VEH = {
     ...[[1.05,3.4],[-1.05,3.4],[1.05,-3.2],[-1.05,-3.2],[1.05,-4.4],[-1.05,-4.4]].map(([x,z]) => wheel(x,z,.48,.32)) ]), lights:lightsFor(10.2,.95,1.15), len:10.2 },
   bus:{ geo:mergeGeometries([ bx(2.5,2.9,12,0,1.75,0,'#ffffff'), bx(2.54,1.0,10.6,0,2.2,-.3,'#1b2530'), bx(2.4,1.3,.1,0,2.1,6.01,'#1b2530'), bx(2.3,.25,6,0,3.3,-1,'#cfd4d8'),
     ...[[1.15,4],[-1.15,4],[1.15,-3.6],[-1.15,-3.6]].map(([x,z]) => wheel(x,z,.5,.34)) ]), lights:lightsFor(12,.85,1.25), len:12 },
+  tram:{ geo:mergeGeometries([ bx(2.4,2.9,27,0,1.85,0,'#ffffff'), bx(2.44,1.15,25.6,0,2.35,0,'#1b2530'), bx(2.3,1.3,.1,0,2.2,13.51,'#1b2530'), bx(2.3,1.3,.1,0,2.2,-13.51,'#1b2530'),
+    bx(2.46,.4,27,0,.75,0,'#2d3238'), bx(2.2,.3,26,0,3.45,0,'#c9ced3'), bx(.08,1.8,.9,0,4.4,2,'#2a2c2f'), bx(1.6,.08,.3,0,5.3,2,'#2a2c2f'), ...[-6.5,6.5].map(z => bx(2.47,2.6,.25,0,1.8,z,'#2d3238')) ]), lights:lightsFor(27,.95,1.1), len:27 },
   fire:{ geo:mergeGeometries([ bx(2.45,2.6,8.4,0,1.65,0,'#ffffff'), bx(2.3,.8,.1,0,2.3,4.21,'#1c232b'), bx(.9,.3,6.5,0,3.1,-.6,'#c9ccd0'), bx(2.5,.22,8.4,0,.95,0,'#f2f2f2'),
     ...[[1.1,2.9],[-1.1,2.9],[1.1,-2.6],[-1.1,-2.6]].map(([x,z]) => wheel(x,z,.5,.34)) ]), lights:lightsFor(8.4,.9,1.2), len:8.4, siren:mergeGeometries([bx(.7,.2,.3,.5,3.0,3.6,'#ff2020'), bx(.7,.2,.3,-.5,3.0,3.6,'#2050ff')]) },
   police:{ geo:mergeGeometries([ bx(1.8,.62,4.6,0,.64,0,'#ffffff'), bx(1.6,.56,2.3,0,1.22,-.2,'#1c232b'), bx(1.82,.2,2.6,0,.75,.1,'#1d3f86'), ...[[.84,1.45],[-.84,1.45],[.84,-1.4],[-.84,-1.4]].map(([x,z]) => wheel(x,z)) ]),
@@ -347,6 +362,10 @@ const VEH = {
   train:{ geo:mergeGeometries([ bx(3,3.6,15.5,0,2.5,0,'#ffffff'), bx(3.04,.9,13,0,3.0,0,'#1b2530'), bx(2.6,.3,15,0,.55,0,'#2a2a2a'), bx(3.02,.25,15.5,0,1.25,0,'#c8201f') ]), lights:lightsFor(15.5,1.2,1.3), len:16 },
   plane:{ geo:mergeGeometries([ cy(2,2,34,0,0,0,'#f4f5f6',14,Math.PI/2).rotateY(Math.PI/2), prep(new THREE.SphereGeometry(2,14,10).scale(1,1,2).translate(0,0,17), '#f4f5f6'), prep(new THREE.ConeGeometry(2,7,14).rotateX(-Math.PI/2).translate(0,.3,-20), '#f4f5f6'),
     bx(34,.5,5,0,-.6,1,'#dfe2e6'), bx(12,.4,3,0,.8,-19,'#dfe2e6'), bx(.4,6,4,0,3.5,-19,'#1d4f91'), cy(1,1,4,-7,-1.8,2,'#b8bcc2',10,Math.PI/2).rotateY(Math.PI/2).translate(0,0,0), cy(1,1,4,7,-1.8,2,'#b8bcc2',10,Math.PI/2).rotateY(Math.PI/2) ]), len:40 },
+  mono:{ geo:mergeGeometries([ bx(3,3.2,34,0,.4,0,'#ffffff'), bx(3.04,1.2,31,0,.9,0,'#16202a'), prep(new THREE.SphereGeometry(1.5,12,8).scale(1,1.05,2.4).translate(0,.4,17), '#ffffff'),
+    prep(new THREE.SphereGeometry(1.5,12,8).scale(1,1.05,2.4).translate(0,.4,-17), '#ffffff'), bx(1.2,1.6,32,0,-1.6,0,'#3a3f45') ]), len:40 },
+  ferry:{ geo:mergeGeometries([ bx(9,3,34,0,.8,0,'#ffffff'), prep(new THREE.ConeGeometry(4.5,8,4,1).rotateY(Math.PI/4).scale(1,1,.9).rotateX(Math.PI/2).translate(0,.8,20.5), '#ffffff'), bx(9.1,.5,34,0,-.4,0,'#1d4f91'),
+    bx(7.6,2.6,22,0,3.6,-2,'#f4f4f0'), bx(7.7,.9,21,0,3.9,-2,'#1b2530'), bx(6,2.2,8,0,6.2,2,'#f4f4f0'), bx(6.1,.8,7,0,6.6,2.5,'#1b2530'), bx(1.4,3,1.4,0,8,-4,'#d23b2b') ]), len:40 },
   ship:{ geo:mergeGeometries([ bx(22,8,110,0,2,0,'#2a3440'), bx(22.2,1.2,110,0,5.4,0,'#8d2a22'), bx(18,10,14,0,11,-44,'#f0f0ec'), bx(14,3,8,0,17,-44,'#1c232b'),
     ...Array.from({length:6},(_,k)=>bx(19,6,11,0,9,-28+k*13,['#b83a2d','#2d6fa8','#3f8a4a','#c9922b','#6d7780','#a44a8a'][k])) ]), len:110 },
 };

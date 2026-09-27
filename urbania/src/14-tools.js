@@ -3,7 +3,7 @@ SVC.dam = { name:'Barrage hydroélectrique', cat:'power', w:0, d:0, cost:40000, 
 svcGen.dam = (b, C) => { const L = b.hw*2; C.part(P.equip, 0, 0, 0, L, b.crest - b.y + .6, 8, '#a9a6a0'); C.part(P.equip, 0, b.crest - b.y + .6, 0, L, .8, 10, '#8f8c86');
   for(let x=-L/2+6; x<L/2-4; x+=12) C.part(P.equip, x, b.crest - b.y - 10, -5, 3, 10, 3, '#9a978f'); b.top = b.crest - b.y + 2; };
 const CATS = [
-  { id:'roads', label:'Routes', items:['street','oneway','avenue','busave','boulevard','highway','ramp','path','rail'] },
+  { id:'roads', label:'Routes', items:['street','oneway','avenue','busave','tramst','tramave','boulevard','highway','ramp','path','rail'] },
   { id:'zones', label:'Zonage', items:['z1','z2','z3','z4','z5','z6','z0'] },
   { id:'districts', label:'Quartiers', items:['distNew','distPaint','distErase'] },
   { id:'power', label:'Électricité', items:['wind','solar','coal','dam'] },
@@ -13,9 +13,10 @@ const CATS = [
   { id:'fire', label:'Pompiers', items:['fire'] },
   { id:'police', label:'Police', items:['police'] },
   { id:'edu', label:'Éducation', items:['school','lycee','univ'] },
-  { id:'transit', label:'Transports', items:['busline','depot','metroline','metro','station','port','airport'] },
+  { id:'transit', label:'Transports', items:['busline','depot','tramline','tramdepot','metroline','metro','monoline','monost','ferryline','pier','station','port','airport'] },
   { id:'parks', label:'Parcs', items:['park','playground','plaza','bigpark','sports','cityhall','stadium','tower'] },
   { id:'terrain', label:'Terrain', items:['raise','lower','level','soften','wsource'] },
+  { id:'disaster', label:'Catastrophes', items:['dMeteor','dQuake','dTornado','dTsunami'] },
   { id:'bull', label:'Démolir', items:['bull'] },
 ];
 const CAT_ICON = {
@@ -23,7 +24,7 @@ const CAT_ICON = {
   districts:'<path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/>', power:'<path d="M13 2L5 14h6l-1 8 8-12h-6z"/>', water:'<path d="M12 3c4 5 6 8 6 11a6 6 0 01-12 0c0-3 2-6 6-11z"/>',
   garbage:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>', health:'<path d="M12 5v14M5 12h14"/><rect x="3" y="3" width="18" height="18" rx="4"/>', fire:'<path d="M12 3c4 4 6 7 6 11a6 6 0 01-12 0c0-2 1-4 3-6 0 2 1 3 2 3 0-3 0-5 1-8z"/>',
   police:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>', edu:'<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/>', transit:'<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14M8 21l2-4M16 21l-2-4"/>',
-  parks:'<path d="M12 3a5 5 0 015 5 4 4 0 01-2 7H9a4 4 0 01-2-7 5 5 0 015-5zM12 15v6"/>', terrain:'<path d="M2 20l6-10 4 6 3-4 7 8z"/>', bull:'<path d="M4 7h16M6 7l1 13h10l1-13M10 11v6M14 11v6"/>' };
+  parks:'<path d="M12 3a5 5 0 015 5 4 4 0 01-2 7H9a4 4 0 01-2-7 5 5 0 015-5zM12 15v6"/>', terrain:'<path d="M2 20l6-10 4 6 3-4 7 8z"/>', disaster:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>', bull:'<path d="M4 7h16M6 7l1 13h10l1-13M10 11v6M14 11v6"/>' };
 const TDEF = {};
 for(const k in RT) TDEF[k] = { kind:'road', type:k, label:RT[k].name, cost:`${RT[k].cost} $/m` };
 for(const z in ZONES) TDEF['z'+z] = { kind:'zone', zone:+z, label:ZONES[z].name, cost:'Gratuit' };
@@ -31,24 +32,28 @@ TDEF.z0 = { kind:'zone', zone:0, label:'Dézoner', cost:'' };
 TDEF.distNew = { kind:'dist', mode:'new', label:'Nouveau quartier' }; TDEF.distPaint = { kind:'dist', mode:'paint', label:'Étendre un quartier' }; TDEF.distErase = { kind:'dist', mode:'erase', label:'Effacer' };
 for(const k in SVC) TDEF[k] = { kind:k === 'dam' ? 'dam' : 'svc', svc:k, label:SVC[k].name, cost:money(SVC[k].cost), upkeep:SVC[k].upkeep };
 TDEF.busline = { kind:'line', line:'bus', label:'Ligne de bus', cost:'Arrêts gratuits' }; TDEF.metroline = { kind:'line', line:'metro', label:'Ligne de métro', cost:'Relie des stations' };
+TDEF.tramline = { kind:'line', line:'tram', label:'Ligne de tramway', cost:'Arrêts sur voies de tram' }; TDEF.monoline = { kind:'line', line:'mono', label:'Ligne de monorail', cost:'Voie aérienne 60 $/m' };
+TDEF.ferryline = { kind:'line', line:'ferry', label:'Ligne de ferry', cost:'Relie des embarcadères' };
+for(const [k,t,l] of [['dMeteor','meteor','Météorite'],['dQuake','quake','Séisme'],['dTornado','tornado','Tornade'],['dTsunami','tsunami','Tsunami']]) TDEF[k] = { kind:'disaster', t, label:l, cost:'Déclencher' };
 for(const [k,l] of [['raise','Élever'],['lower','Abaisser'],['level','Niveler'],['soften','Adoucir']]) TDEF[k] = { kind:'terrain', t:k, label:l, cost:'selon volume' };
 TDEF.wsource = { kind:'wsource', label:'Source d\'eau', cost:'Gratuit' }; TDEF.bull = { kind:'bull', label:'Démolir', cost:'' }; TDEF.select = { kind:'select', label:'Sélection' };
-const CAT_COLOR = { power:'#e0b43a', water:'#3b8fe0', garbage:'#8a6a3a', health:'#d63a4a', fire:'#e5532d', police:'#2a4f9a', edu:'#b06be0', transit:'#1fb3b3', parks:'#4f9a3a', districts:'#f2b33d', terrain:'#8a7a5a', bull:'#ea5a4f' };
+const CAT_COLOR = { power:'#e0b43a', water:'#3b8fe0', garbage:'#8a6a3a', health:'#d63a4a', fire:'#e5532d', police:'#2a4f9a', edu:'#b06be0', transit:'#1fb3b3', parks:'#4f9a3a', districts:'#f2b33d', terrain:'#8a7a5a', disaster:'#c0392b', bull:'#ea5a4f' };
 function drawThumb(cv, key){ const g = cv.getContext('2d'), w = cv.width = 128, h = cv.height = 96; const d = TDEF[key]; g.fillStyle = '#1c252e'; g.fillRect(0,0,w,h);
   if(d.kind === 'road'){ const t = RT[d.type], s = 3.2, cw = t.cw*s, hw = t.hw*s; g.fillStyle = '#6c7a3e'; g.fillRect(0,0,w,h);
     if(t.net === 'rail'){ g.fillStyle = '#7a756c'; g.fillRect(w/2-hw, 0, hw*2, h); g.fillStyle = '#5a4a3a'; for(let y=0;y<h;y+=7) g.fillRect(w/2-hw+2, y, hw*2-4, 3); g.fillStyle = '#b9bec3'; for(const o of [-9,-4,4,9]) g.fillRect(w/2+o*s*.7-1, 0, 2, h); }
     else { g.fillStyle = '#a7a39a'; g.fillRect(w/2-hw, 0, hw*2, h); g.fillStyle = t.net === 'ped' ? '#b8ab8e' : '#45474b'; g.fillRect(w/2-cw, 0, cw*2, h);
       if(d.type === 'boulevard'){ g.fillStyle = '#56703a'; g.fillRect(w/2-5, 0, 10, h); } if(d.type === 'highway'){ g.fillStyle = '#aaa7a1'; g.fillRect(w/2-3, 0, 6, h); }
+      if(t.tram){ g.fillStyle = '#9aa0a6'; for(const o of [-2.7,-1.3,1.3,2.7]) g.fillRect(w/2+o*s-1, 0, 2, h); }
       if(d.type === 'busave'){ g.fillStyle = '#7d3a30'; g.fillRect(w/2-cw, 0, cw*.5, h); g.fillRect(w/2+cw*.5, 0, cw*.5, h); }
       g.strokeStyle = '#e8e6de'; g.setLineDash([8,10]); g.lineWidth = 2; for(const l of t.lanes){ if(Math.abs(l.off) < 2.5) continue; } g.beginPath(); g.moveTo(w/2, 0); g.lineTo(w/2, h); if(d.type !== 'boulevard' && d.type !== 'highway' && t.net !== 'ped') g.stroke(); g.setLineDash([]);
       if(t.oneway){ g.fillStyle = '#fff'; g.beginPath(); g.moveTo(w/2-8, 60); g.lineTo(w/2+8, 60); g.lineTo(w/2, 44); g.fill(); } } return; }
   if(d.kind === 'zone'){ g.fillStyle = d.zone ? ZONES[d.zone].color : '#44505a'; g.globalAlpha = .9; g.fillRect(16, 12, 96, 72); g.globalAlpha = 1; g.strokeStyle = '#fff'; g.lineWidth = 3; g.strokeRect(16, 12, 96, 72);
     g.fillStyle = 'rgba(0,0,0,.35)'; if(d.zone === 1) { g.fillRect(44,44,40,28); g.beginPath(); g.moveTo(40,46); g.lineTo(64,28); g.lineTo(88,46); g.fill(); } else if(d.zone) for(let k=0;k<3;k++) g.fillRect(30+k*24, 76-(20+k*12+(d.zone===6?16:0)), 18, 20+k*12+(d.zone===6?16:0)); if(!d.zone){ g.strokeStyle = '#ea5a4f'; g.beginPath(); g.moveTo(30,24); g.lineTo(98,72); g.stroke(); } return; }
-  const cat = d.kind === 'svc' || d.kind === 'dam' ? SVC[d.svc].cat : d.kind === 'line' ? 'transit' : d.kind === 'dist' ? 'districts' : d.kind === 'terrain' || d.kind === 'wsource' ? 'terrain' : 'bull';
+  const cat = d.kind === 'svc' || d.kind === 'dam' ? SVC[d.svc].cat : d.kind === 'line' ? 'transit' : d.kind === 'dist' ? 'districts' : d.kind === 'terrain' || d.kind === 'wsource' ? 'terrain' : d.kind === 'disaster' ? 'disaster' : 'bull';
   const cc = CAT_COLOR[cat] || '#888'; g.fillStyle = cc; g.globalAlpha = .9; g.beginPath(); g.roundRect(20, 10, 88, 76, 12); g.fill(); g.globalAlpha = 1;
   const p = new Path2D(); const tmp = document.createElementNS('http://www.w3.org/2000/svg','svg'); g.save(); g.translate(40, 24); g.scale(2, 2); g.strokeStyle = '#fff'; g.lineWidth = 1.8; g.lineCap = 'round'; g.lineJoin = 'round';
   const src = CAT_ICON[cat] || ''; for(const m of src.matchAll(/<path d="([^"]+)"/g)) g.stroke(new Path2D(m[1])); for(const m of src.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/g)) g.strokeRect(+m[1], +m[2], +m[3], +m[4]); g.restore();
-  g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '600 13px sans-serif'; g.textAlign = 'center'; if(d.kind === 'line') g.fillText(d.line === 'bus' ? 'BUS' : 'MÉTRO', 64, 82); if(d.kind === 'terrain') g.fillText(d.label, 64, 82); }
+  g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '600 13px sans-serif'; g.textAlign = 'center'; if(d.kind === 'line') g.fillText(LINE_T[d.line].n.toUpperCase(), 64, 82); if(d.kind === 'terrain' || d.kind === 'disaster') g.fillText(d.label, 64, 82); }
 
 let tool = TDEF.select; tool.id = 'select'; let cat = null;
 const roadOpt = { mode:'straight', elev:0, snap:true, radius:32 }, zoneOpt = { brush:'small' }, distOpt = { current:0, R:40 };
@@ -225,14 +230,19 @@ function onClick(x, z, e){
   if(d.kind === 'wsource'){ const ex = WATER.sources.find(s => !s.natural && Math.hypot(s.x-x, s.z-z) < 30); if(ex){ WATER.sources.splice(WATER.sources.indexOf(ex), 1); rebuildSources(); toast('Source retirée.', true); } else { addWaterSource(x, z, 35); toast('Source d\'eau ajoutée (35 m³/s).', true); } return; }
   if(d.kind === 'bull'){ const b = buildingAt(x, z); if(b){ removeBuilding(b); blip(200, .12, .07, 'sawtooth'); return; } const r = nearestSeg(x, z, 12); if(r && r.d < RT[r.sg.type].hw + 1){ bulldozeSeg(r.sg); return; }
     for(const L of lines) for(const st of L.stops) if(Math.hypot(st.x-x, st.z-z) < 6){ removeLine(L); toast('Ligne supprimée.', true); return; } return; }
-  if(d.kind === 'line'){
-    if(d.line === 'bus'){ if(!lineDraft) lineDraft = newLine('bus'); const first = lineDraft.stops[0];
+  if(d.kind === 'disaster'){ startDisaster(d.t, x, z); return; }
+  if(d.kind === 'line'){ const LT = LINE_T[d.line];
+    if(LT.road){ if(!lineDraft) lineDraft = newLine(d.line); const first = lineDraft.stops[0];
       if(first && lineDraft.stops.length >= 2 && Math.hypot(first.x-x, first.z-z) < 14){ finishLine(lineDraft); toast(`${lineDraft.name} créée avec ${lineDraft.stops.length} arrêts.`, true); lineDraft = null; return; }
-      const st = stopFromPoint(x, z); if(!st){ toast('Placez les arrêts le long d\'une route.'); return; } addStopVisual(st); lineDraft.stops.push(st); return; }
-    const stn = [...buildings.values()].filter(b => b.type === 'metro').find(b => Math.hypot(b.x-x, b.z-z) < 26); if(!lineDraft) lineDraft = newLine('metro');
-    if(!stn){ toast('Cliquez sur une station de métro.'); return; } const first = lineDraft.stops[0];
-    if(first && first.b === stn && lineDraft.stops.length >= 2){ finishLine(lineDraft); toast(`${lineDraft.name} créée.`, true); lineDraft = null; return; }
-    if(lineDraft.stops.some(s => s.b === stn)) return; lineDraft.stops.push({ x:stn.x, z:stn.z, b:stn, wait:0 }); return; }
+      const st = stopFromPoint(x, z, d.line); if(!st){ toast(d.line === 'tram' ? 'Placez les arrêts le long d\'une rue ou avenue avec tramway.' : 'Placez les arrêts le long d\'une route.'); return; } addStopVisual(st); lineDraft.stops.push(st); return; }
+    const stn = [...buildings.values()].filter(b => b.type === LT.st).find(b => Math.hypot(b.x-x, b.z-z) < Math.max(b.hw, b.hd) + 12); if(!lineDraft) lineDraft = newLine(d.line);
+    if(!stn){ toast({ metro:'Cliquez sur une station de métro.', mono:'Cliquez sur une station de monorail.', ferry:'Cliquez sur un embarcadère de ferry.' }[d.line]); return; } const first = lineDraft.stops[0];
+    const st = stationStop(d.line, stn), prev = lineDraft.stops[lineDraft.stops.length-1];
+    const target = first && first.b === stn && lineDraft.stops.length >= 2 ? first : st;
+    if(prev && d.line === 'ferry'){ let dry = 0; for(let k=1;k<20;k++) if(!isWet(lerp(prev.x, target.x, k/20), lerp(prev.z, target.z, k/20), .8)) dry++; if(dry > 2){ toast('Le trajet du ferry doit rester sur l\'eau.'); return; } }
+    if(prev && d.line === 'mono'){ const cost = Math.hypot(target.x-prev.x, target.z-prev.z)*60; if(state.money < cost){ toast('Fonds insuffisants.'); return; } state.money -= cost; }
+    if(target === first){ finishLine(lineDraft); toast(`${lineDraft.name} créée.`, true); lineDraft = null; return; }
+    if(lineDraft.stops.some(s => s.b === stn)) return; lineDraft.stops.push(st); return; }
 }
 let svcRot = 0;
 function onHover(x, z){
@@ -255,7 +265,8 @@ function onHover(x, z){
     showTip(`${SVC[d.svc].name} · ${money(SVC[d.svc].cost)} · entretien ${money(SVC[d.svc].upkeep)}/jour${why ? `<br><span class="bad">${why}</span>` : ''}`); return; }
   if(d.kind === 'dam'){ if(draft.length){ const A = draft[0], ev = evalDam(A, { x, z }); setGhost([{ x:A.x, y:heightAt(A.x,A.z), z:A.z }, { x, y:heightAt(x,z), z }], 5, !ev.why); showTip(`Barrage · ${money(SVC.dam.cost)}${ev.why ? `<br><span class="bad">${ev.why}</span>` : ''}`); } else showTip('Barrage : cliquez une rive, puis l\'autre'); return; }
   if(d.kind === 'line'){ if(lineDraft && lineDraft.stops.length){ const pts = lineDraft.stops.map(s => ({ x:s.x, y:heightAt(s.x,s.z), z:s.z })); pts.push({ x, y:heightAt(x,z), z }); setGhost(pts, 1.2, true); ghostMat.color.set(lineDraft.color); }
-    showTip(lineDraft ? `${lineDraft.name} · ${lineDraft.stops.length} ${d.line === 'bus' ? 'arrêts' : 'stations'}` : d.label); return; }
+    showTip(lineDraft ? `${lineDraft.name} · ${lineDraft.stops.length} ${LINE_T[d.line].stop}` : d.label); return; }
+  if(d.kind === 'disaster'){ U.uBrush.value.set(x, z, DIS_R[d.t], 1); U.uBrushCol.value.set('#ea5a4f'); showTip(`${d.label} · cliquez pour déclencher ici`); return; }
   if(d.kind === 'bull'){ const b = buildingAt(x, z); if(b){ _c.set('#ea5a4f'); place(prevPool, b.x, b.y, b.z, b.hw*2+.6, b.top+1, b.hd*2+.6, b.ang, _c); showTip(`Démolir : ${b.kind === 'svc' ? SVC[b.type].name : ZONES[b.zone].short}`); return; }
     const r = nearestSeg(x, z, 12); if(r && r.d < RT[r.sg.type].hw + 1){ const pts = []; for(let i=0;i<=r.sg.n;i+=2) pts.push({ x:r.sg.P[i*3], y:r.sg.P[i*3+1], z:r.sg.P[i*3+2] }); setGhost(pts, RT[r.sg.type].hw, false); showTip(`Démolir : ${r.sg.name} (remboursement ${money(r.sg.len*RT[r.sg.type].cost*.4)})`); return; } showTip(null); return; }
   if(d.kind === 'wsource') showTip('Ajouter ou retirer une source d\'eau');

@@ -27,7 +27,7 @@ terrainMat.onBeforeCompile = sh => {
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos; varying float vUp;')
     .replace('#include <project_vertex>', '#include <project_vertex>\nvWPos = (modelMatrix*vec4(transformed,1.0)).xyz; vUp = normal.y;');
   sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-    varying vec3 vWPos; varying float vUp; uniform float uHalf, uOverOn, uDistOn, uNight, uWet, uSnow; uniform vec4 uBrush; uniform vec3 uBrushCol;
+    varying vec3 vWPos; varying float vUp; uniform float uHalf, uOverOn, uDistOn, uNight, uWet, uSnow; uniform vec4 uBrush, uSeasonW; uniform vec3 uBrushCol;
     uniform sampler2D uOver, uGlow, uDetail, uDist;`)
   .replace('#include <color_fragment>', `#include <color_fragment>
     vec2 cuv = (vWPos.xz + uHalf) / (2.0*uHalf);
@@ -35,6 +35,9 @@ terrainMat.onBeforeCompile = sh => {
     float d1 = texture2D(uDetail, vWPos.xz/6.0).r, d2 = texture2D(uDetail, vWPos.xz/37.0+0.37).r, d3 = texture2D(uDetail, vWPos.xz/211.0+0.71).r;
     diffuseColor.rgb *= 0.7 + 0.2*d1 + 0.22*d2 + 0.18*d3;
     diffuseColor.rgb *= 1.0 - uWet*0.22;
+    { vec3 c = diffuseColor.rgb; float gr = clamp((c.g - c.r)*9.0, 0.0, 1.0)*smoothstep(0.55,0.9,vUp); float l = dot(c, vec3(0.3,0.55,0.15));
+      c = mix(c, vec3(l*1.35, l*1.02, l*0.42), gr*uSeasonW.w*0.75); c = mix(c, vec3(l*1.12, l*0.98, l*0.78), gr*uSeasonW.x*0.8);
+      c = mix(c, c*vec3(0.9,1.12,0.88), gr*uSeasonW.y); c = mix(c, c*vec3(1.1,1.02,0.78), gr*uSeasonW.z*0.45); diffuseColor.rgb = c; }
     diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9,0.92,0.95)*(0.9+0.1*d1), uSnow*smoothstep(0.55,0.85,vUp));
     vec4 ov = texture2D(uOver, cuv);
     diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.52,0.54,0.52), ov.rgb, ov.a), uOverOn*inside);
@@ -141,7 +144,7 @@ function terraform(x, z, dt){
 }
 
 /* ---------- arbres ---------- */
-const TREES = { D:new Pool(TREE_D, MAT.tree, 16384), C:new Pool(TREE_C, MAT.tree, 16384), P:new Pool(TREE_P, MAT.tree, 4096) };
+const TREES = { D:new Pool(TREE_D, MAT.tree, 16384), C:new Pool(TREE_C, MAT.treeEver, 16384), P:new Pool(TREE_P, MAT.tree, 4096) };
 const treeGrid = new Map(); // cellule de 32 m -> liste d'arbres
 const tKey = (x,z) => (Math.floor((x+EHALF)/32))*200 + Math.floor((z+EHALF)/32);
 function addTree(x, z, h, type, r=rnd, reg=true){

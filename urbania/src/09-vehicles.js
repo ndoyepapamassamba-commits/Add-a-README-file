@@ -1,6 +1,6 @@
 /* ================= véhicules et piétons ================= */
 const VP = {}; // pools par modèle
-for(const k of ['sedan','hatch','suv','van','truck','bus','fire','police','ambulance','garbage','hearse','train']){ const v = VEH[k];
+for(const k of ['sedan','hatch','suv','van','truck','bus','tram','fire','police','ambulance','garbage','hearse','train']){ const v = VEH[k];
   VP[k] = new Pool(v.geo, MAT.veh, k === 'sedan' || k === 'hatch' ? 1024 : 256, { receive:false });
   if(v.lights) VP[k].link(v.lights, MAT.vlight); if(v.siren) VP[k].link(v.siren, MAT.siren); }
 VP.ped = new Pool(PED, MAT.walker, 1024, { receive:false });
@@ -15,7 +15,8 @@ let agentCount = { v:0, p:0 };
 function laneIndexFor(sg, dir, kind, turn){
   const t = RT[sg.type]; let best = -1, bv = 0; const cands = [];
   t.lanes.forEach((l, i) => { if(l.dir !== dir && !(kind === 'ped')) return; if(kind === 'ped') return;
-    const ok = l.kind === 'car' || (l.kind === 'bus' && (kind === 'bus' || kind === 'fire' || kind === 'police' || kind === 'ambulance')) || (l.kind === 'rail' && kind === 'train');
+    if(kind === 'tram'){ if(l.kind === 'tram' || l.kind === 'tramonly') cands.push(i); return; } if(l.kind === 'tramonly') return;
+    const ok = l.kind === 'car' || l.kind === 'tram' || (l.kind === 'bus' && (kind === 'bus' || kind === 'fire' || kind === 'police' || kind === 'ambulance')) || (l.kind === 'rail' && kind === 'train');
     if(kind === 'train' && l.kind !== 'rail') return; if(ok && (kind !== 'train' || l.kind === 'rail')) cands.push(i); });
   if(!cands.length) return -1;
   if(turn > .3){ for(const i of cands){ const v = t.lanes[i].off*dir; if(best < 0 || v > bv){ best = i; bv = v; } } return best; }
@@ -85,7 +86,7 @@ function updateAgents(dt, simSpeed){
     if(mdt > 0){ a.age += mdt;
       if(a.dwell > 0){ a.dwell -= mdt; if(a.dwell <= 0 && a.afterDwell){ const f = a.afterDwell; a.afterDwell = null; f(a); } positionAgent(a); writeMatrix(a); continue; }
       if(!stepAgent(a, mdt)){ if(a.loop && a.loop(a)){ positionAgent(a); writeMatrix(a); continue; } const cb = a.onArrive; removeAgent(idx); if(cb) cb(a); continue; }
-      if(a.age > 900 || (a.wait > 45 && a.kind !== 'bus')){ const cb = a.onFail || a.onArrive; removeAgent(idx); if(cb) cb(a, true); continue; } }
+      if(a.age > 900 || (a.wait > 45 && a.kind !== 'bus' && a.kind !== 'tram')){ const cb = a.onFail || a.onArrive; removeAgent(idx); if(cb) cb(a, true); continue; } }
     positionAgent(a); let dy = angDiff(a.tyaw, a.yaw); a.yaw += dy*Math.min(1, dt*10); writeMatrix(a);
     if(a.train) placeTrainCars(a); }
 }

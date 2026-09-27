@@ -72,10 +72,10 @@ const bus = { h:{}, on(e,f){ (this.h[e] ||= []).push(f); }, emit(e,...a){ for(co
 
 /* ---------- état de la partie ---------- */
 const state = {
-  name:'Val-Clair', seed:1337, money:120000, time:8*60, speed:1, lastSpeed:1, dayCycle:true,
+  name:'Val-Clair', seed:1337, money:120000, time:16*1440 + 8*60, speed:1, lastSpeed:1, dayCycle:true,
   taxes:{ Rl:9, Rh:9, Cl:9, Ch:9, I:9, O:9 },
   budgets:{ power:100, water:100, garbage:100, health:100, fire:100, police:100, edu:100, transit:100, parks:100, roads:100 },
-  loans:[], policies:{}, weatherMode:'auto',
+  loans:[], policies:{}, weatherMode:'auto', disAuto:true,
   pop:0, popPrev:0, workers:0, jobs:0, unemployed:0, students:0, happy:.7, tourists:0,
   demand:{ R:.7, C:.2, I:.5, O:-.2 },
   income:{}, expense:{}, net:0,
@@ -85,12 +85,20 @@ const state = {
 };
 const DAY = 1440;
 const MONTHS = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
-function dateStr(t){ const d = new Date(Date.UTC(2026,0,1) + Math.floor(t/DAY)*86400000); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`; }
+/* calendrier accéléré : une année de jeu dure YEAR_D jours pour que les saisons défilent */
+const YEAR_D = 48, SEASONS = ['Hiver','Printemps','Été','Automne'];
+function dateStr(t){ const day = Math.floor(t/DAY), doy = day % YEAR_D, m = Math.floor(doy/(YEAR_D/12)), dd = 1 + Math.floor((doy % (YEAR_D/12))*28/(YEAR_D/12));
+  return `${dd} ${MONTHS[m]} ${2026 + Math.floor(day/YEAR_D)}`; }
+const yearPhase = () => ((state.time/DAY) % YEAR_D)/YEAR_D;
+function seasonWeights(out){ const ph = yearPhase()*4; let s = 0; // centres : mi-janvier, mi-avril, mi-juillet, mi-octobre
+  for(let k=0;k<4;k++){ let d = ph - (k + .17); d -= Math.round(d/4)*4; const w = Math.max(0, Math.cos(d*Math.PI/2.6)); out[k] = w*w*w; s += out[k]; }
+  for(let k=0;k<4;k++) out[k] /= s; return out; }
+const seasonIdx = () => Math.floor((((yearPhase()*4 - .17 + .5) % 4) + 4) % 4);
 const hourOf = () => (state.time % DAY)/60;
 const dayOf = () => Math.floor(state.time/DAY);
 
 /* ---------- noms ---------- */
 const FIRST = ['Awa','Moussa','Fatou','Ibrahima','Aminata','Cheikh','Mariama','Ousmane','Khady','Mamadou','Léa','Hugo','Chloé','Louis','Emma','Gabriel','Inès','Jules','Sarah','Adam','Lina','Nathan','Jade','Rayan','Manon','Yanis','Camille','Noah','Zoé','Karim','Nadia','Omar','Sofia','Malik','Anta','Pape','Ndeye','Babacar','Coumba','Modou','Marie','Pierre','Julie','Thomas','Elise','Paul','Alice','Victor','Clara','Lucas','Ama','Kofi','Yasmine','Idrissa','Seynabou','Alioune','Rokhaya','Samba','Dieynaba','Lamine'];
 const LAST = ['Diop','Ndiaye','Fall','Sow','Ba','Diallo','Sarr','Faye','Gueye','Cissé','Martin','Bernard','Dubois','Thomas','Robert','Richard','Petit','Durand','Leroy','Moreau','Simon','Laurent','Lefebvre','Michel','Garcia','David','Bertrand','Roux','Vincent','Fournier','Mbaye','Seck','Kane','Thiam','Niang','Camara','Touré','Traoré','Keita','Dieng','Mendy','Gomis','Sy','Wade','Lo','Ly','Ka','Samb','Tall','Sène'];
-const STREET_T = { street:['Rue','Rue','Allée','Impasse'], oneway:['Rue'], avenue:['Avenue'], busave:['Avenue'], boulevard:['Boulevard'], highway:['Autoroute'], ramp:['Bretelle'], path:['Chemin','Sentier'], rail:['Ligne'] };
+const STREET_T = { street:['Rue','Rue','Allée','Impasse'], oneway:['Rue'], avenue:['Avenue'], busave:['Avenue'], tramst:['Rue'], tramave:['Avenue','Cours'], boulevard:['Boulevard'], highway:['Autoroute'], ramp:['Bretelle'], path:['Chemin','Sentier'], rail:['Ligne'] };
 const STREET_N = ['des Lilas','des Baobabs','de la Gare','du Port','Victor Hugo','Léopold Sédar Senghor','des Tilleuls','de la République','Jean Jaurès','du Fleuve','des Artisans','Cheikh Anta Diop','des Écoles','du Marché','des Pêcheurs','Mariama Bâ','des Acacias','de la Liberté','Pasteur','des Roses','du Moulin','Blaise Diagne','Émile Zola','des Flamboyants','de la Corniche','du Stade','des Palmiers','Molière','Ousmane Sembène','des Jardins','de l\'Université','du Parc','Aimé Césaire','des Cerisiers','de la Lagune','du Belvédère','des Tisserands','Kennedy','Lamine Guèye','des Mimosas','du Soleil','de Gorée','des Vignes','Pompidou','de la Paix','des Dunes','du Phare','des Manguiers','Sainte-Anne','du Plateau'];

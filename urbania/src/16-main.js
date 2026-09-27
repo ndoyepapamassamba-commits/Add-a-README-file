@@ -26,14 +26,14 @@ function frame(now){
   const sdt = dt*sp;
   if(sp) waterTick(Math.min(1, sdt*18));
   updateLights(sdt); updateAgents(dt, sp); updateFires(sdt); tickTimers(sdt); tickGrowth(sdt); updateMetro(sdt); drawMetro(); updatePortAir(sdt); trainService(sdt);
-  updateWeather(dt, gdt); updateSun(); updateSmoke(dt);
+  updateDisasters(sdt); updateWeather(dt, gdt); updateSun(); updateSmoke(dt);
   for(const b of buildings.values()) if(b.rotor) b.rotor.rotation.z -= dt*1.4*windF;
   rebuildChunks(2); if(zoneDirty) rebuildZoneMesh(); if(glowDirty) rebuildGlow(); if(districtsDirty) refreshDistricts(); if(transitDirty) rebuildTransitMesh();
   trafT += dt; if(trafT > 3){ trafT = 0; decayTraffic(); if(overlay === 'traffic') rebuildTrafficMesh(); }
   updateKeys(dt); controls.update(); clampCamera(dt); applyTerraform(dt); updateLabels(); updateAudio(dt);
   agentCount = { v:0, p:0 }; for(const a of agents){ if(a.kind === 'ped') agentCount.p++; else agentCount.v++; }
   for(const p of POOLS) p.sync();
-  updateShadow(); composer.render();
+  updateShadow(); const shk = shakeOffset(); camera.position.add(shk); composer.render(); camera.position.sub(shk);
   const day = dayOf(); if(day !== lastDay){ if(lastDay >= 0) save(); lastDay = day; }
   fpsN++; fpsT += dt; if(fpsT >= 1){ fpsAvg = fpsN/fpsT; fpsN = 0; fpsT = 0;
     if(quality === 'auto' && now > autoT){ let ns = resScale; if(fpsAvg < 40) ns = Math.max(.5, resScale-.1); else if(fpsAvg > 57) ns = Math.min(1, resScale+.05);
@@ -48,13 +48,13 @@ function frame(now){
   await setupComposer(); updateSun(); updateEnv();
   let loaded = false; try { loaded = !!localStorage.getItem(SAVE_KEY) && await load(); } catch(e){ console.warn(e); loaded = false; }
   if(!loaded) await newGame('demo', 1337);
-  setSpeed(1); lastDay = dayOf();
+  setSpeed(1); lastDay = dayOf(); $('#disSel').value = state.disAuto === false ? '0' : '1';
   let seen = false; try { seen = !!localStorage.getItem('urbania-help2'); localStorage.setItem('urbania-help2', '1'); } catch(_){}
   if(!seen) $('#mHelp').hidden = false;
   addEventListener('pagehide', save); document.addEventListener('visibilitychange', () => { if(document.hidden) save(); });
   if(location.hash === '#debug') window.__dbg = { renderer, scene, state, agents, buildings, segs, nodes, cells, POOLS, camera, controls, lines, CZ, get cimTop(){ return cimTop; }, setOverlay, setTool, newGame,
     commitRoad, buildRoundabout, snapRoad, svcPlacement, svcValid, placeService, cellsInRadius, setZone, terraform, TERRA, addWaterSource, placeDam, evalDam, newLine, stopFromPoint, addStopVisual, finishLine,
-    save, load, roadOpt, upgradeSeg, bulldozeSeg, removeBuilding, districts, newDistrict, paintDistrict, weather, WATER, fires, REQ, renderBudget, renderStats, renderLines, select, showInfo,
-    fast(n){ for(let k=0;k<n;k++){ state.time += 2; simTick(); updateAgents(.5, 1); tickTimers(.5); updateFires(.5); updateLights(.5); tickGrowth(.5); updateMetro(.5); trainService(.5); updatePortAir(.5); if(k%4===0) stepWater(.25); } } };
+    save, load, roadOpt, DIS, startDisaster, U, SW, upgradeSeg, bulldozeSeg, removeBuilding, districts, newDistrict, paintDistrict, weather, WATER, fires, REQ, renderBudget, renderStats, renderLines, select, showInfo,
+    fast(n){ for(let k=0;k<n;k++){ state.time += 2; simTick(); updateAgents(.5, 1); tickTimers(.5); updateFires(.5); updateLights(.5); tickGrowth(.5); updateMetro(.5); trainService(.5); updatePortAir(.5); updateDisasters(.5); if(k%4===0) stepWater(.25); } } };
   requestAnimationFrame(t => { last = t; frame(t); });
 })().catch(err => { console.error(err); progress('Erreur au démarrage : '+err.message, 1); });

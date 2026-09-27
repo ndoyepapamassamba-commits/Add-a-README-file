@@ -172,6 +172,9 @@ const SVC = {
   univ:{ name:'Université', cat:'edu', w:72, d:56, cost:40000, upkeep:2200, radius:1400, students:2200, eduLv:3, jobs:[6,10,20,40] },
   depot:{ name:'Dépôt de bus', cat:'transit', w:40, d:32, cost:12000, upkeep:600, jobs:[4,10,4,0] },
   metro:{ name:'Station de métro', cat:'transit', w:16, d:16, cost:8000, upkeep:400, jobs:[2,4,2,0] },
+  tramdepot:{ name:'Dépôt de tramways', cat:'transit', w:48, d:32, cost:16000, upkeep:700, jobs:[4,10,4,0], desc:'À relier à une rue ou avenue avec tramway' },
+  monost:{ name:'Station de monorail', cat:'transit', w:24, d:16, cost:11000, upkeep:500, jobs:[2,4,2,0], desc:'Station surélevée reliée par une voie aérienne' },
+  pier:{ name:'Embarcadère de ferry', cat:'transit', w:24, d:24, cost:9000, upkeep:450, shore:true, jobs:[2,4,2,0], desc:'Au bord de l\'eau : relie les rives par ferry' },
   station:{ name:'Gare', cat:'transit', w:64, d:24, cost:25000, upkeep:1100, rail:true, jobs:[6,12,8,2], desc:'À placer le long d\'une voie ferrée' },
   port:{ name:'Port de fret', cat:'transit', w:64, d:48, cost:38000, upkeep:1500, shore:true, jobs:[20,30,10,2], noise:3, desc:'Exporte les marchandises par bateau' },
   airport:{ name:'Aéroport', cat:'transit', w:320, d:110, cost:110000, upkeep:4000, jobs:[30,60,60,40], noise:4, unique:true, desc:'Attire les touristes' },
@@ -221,6 +224,12 @@ const svcGen = {
     C.fac(0, 0, 18, 8, 30, 8, '#b5a383', 'svc'); C.part(P.cone, 0, 30, 18, 5.5, 8, 5.5, '#4a4f55'); C.part(P.pad, 0, 0, 0, 30, .06, 4, '#b3a78d'); for(let k=0;k<8;k++) C.tree(-30+k*8.5, 0, 9); b.top = 40; },
   depot(b, C){ C.part(P.pad, 0, -.4, 0, 39, .45, 31, '#5d5f62'); C.fac(-6, 0, 6, 26, 8, 16, '#8f9aa3', 'ware'); for(let k=0;k<4;k++) C.part(P.equip, 10, 0, -12+k*4, 12, 3, 2.5, '#d8b43a'); b.top = 10; },
   metro(b, C){ C.part(P.pad, 0, -.4, 0, 15, .45, 15, '#8d8a83'); C.part(P.glass, 0, 0, 1, 10, 4, 7, '#8fb6cc'); C.part(P.equip, 0, 4, 1, 11, .4, 8, '#2f3338'); C.part(P.sign, 0, 5, 1, 2.2, 2.2, .3, '#e0b43a'); b.top = 7; },
+  tramdepot(b, C){ C.part(P.pad, 0, -.4, 0, 47, .45, 31, '#5d5f62'); C.fac(0, 0, 4, 40, 9, 18, '#8a9a8a', 'ware'); for(let k=0;k<4;k++) C.part(P.pad, -15+k*10, .05, -10, 2.6, .05, 12, '#6a6d70');
+    for(let k=0;k<2;k++) C.part(P.equip, -10+k*20, 0, -11, 2.4, 3, 11, '#3fae57'); b.top = 11; },
+  monost(b, C){ C.part(P.pad, 0, -.4, 0, 23, .45, 15, '#8d8a83'); for(const [x,z] of [[-9,-5],[9,-5],[-9,5],[9,5]]) C.part(P.equip, x, 0, z, 1.2, 12, 1.2, '#b9bcbf');
+    C.part(P.equip, 0, 12, 0, 22, .8, 14, '#d9dcdf'); C.part(P.glass, 0, 12.8, 3.5, 20, 3.2, 5, '#8fb6cc'); C.part(P.equip, 0, 16, 0, 23, .4, 15, '#3a3f45'); C.part(P.metal, 8, 0, 0, 3, 12, 3, '#c9ccd0'); C.part(P.sign, 0, 16.6, 7.6, 4, 1.2, .2, '#1fb3b3'); b.top = 17; },
+  pier(b, C){ C.part(P.pad, 0, -.4, 0, 23, .45, 23, '#8d8a83'); C.fac(0, 0, 5, 14, 5, 9, '#d8d4cc', 'svc'); C.part(P.equip, 0, 5, 5, 15, .5, 10, '#1d4f91');
+    C.part(P.pad, 0, -.2, -16, 5, .5, 16, '#7a6a55'); for(const z of [-10, -18]) for(const x of [-2.4, 2.4]) C.part(P.equip, x, -4, z, .5, 4.4, .5, '#5a4a3a'); b.top = 7; },
   station(b, C){ C.part(P.pad, 0, -.4, 0, 63, .45, 23, '#8d8a83'); C.fac(0, 0, 4, 36, 12, 12, '#d6c6a4', 'svc'); C.part(P.roofG, 0, 12, 4, 37, 5, 12.6, '#51565b'); C.fac(0, 0, 4, 8, 22, 8, '#cbb993', 'svc');
     C.part(P.equip, 0, 3.5, -8, 60, .3, 6, '#6c7075'); for(let x=-28;x<=28;x+=8) C.part(P.equip, x, 0, -8, .3, 3.5, .3, '#3d4145'); b.top = 24; },
   port(b, C){ C.part(P.pad, 0, -.4, 0, 63, .45, 47, '#6e6c68'); for(let k=0;k<30;k++) C.part(P.cont, -26+(k%6)*5.2, (Math.floor(k/12))*2.6, 4+Math.floor(k%12/6)*6.5, 1, 1, 1, pick(PAL.awn, C.r), null, Math.PI/2);

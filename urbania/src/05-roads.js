@@ -13,6 +13,12 @@ const RT = {
   busave:{ name:'Avenue avec voies de bus', hw:10, cw:7, lanes:[L(-5.25,-1,'bus'),L(-1.75,-1),L(1.75,1),L(5.25,1,'bus')], ped:[-8.5,8.5], speed:16.7, zoning:true, cost:30, rank:2, lamps:1,
     prof:[[-10,'SK','side'],[-10,.18,'side'],[-7,.18,'walk'],[-7,0,'curb'],[7,0,'asph'],[7,.18,'curb'],[10,.18,'walk'],[10,'SK','side']],
     marks:[{off:-5.25,w:3.3,k:'bus',fill:1},{off:5.25,w:3.3,k:'bus',fill:1},{off:-.16,w:.12,k:'yel'},{off:.16,w:.12,k:'yel'},{off:-3.5,w:.25,k:'mark'},{off:3.5,w:.25,k:'mark'}], noise:2 },
+  tramst:{ name:'Rue avec tramway', hw:7, cw:4, tram:true, lanes:[L(-2,-1,'tram'),L(2,1,'tram')], ped:[-5.6,5.6], speed:12.5, zoning:true, cost:28, rank:1, lamps:1,
+    prof:[[-7,'SK','side'],[-7,.18,'side'],[-4,.18,'walk'],[-4,0,'curb'],[4,0,'asph'],[4,.18,'curb'],[7,.18,'walk'],[7,'SK','side']],
+    marks:[{off:-.12,w:.1,k:'yel'},{off:.12,w:.1,k:'yel'},{off:-2.72,w:.1,k:'railc',dy:.03},{off:-1.28,w:.1,k:'railc',dy:.03},{off:1.28,w:.1,k:'railc',dy:.03},{off:2.72,w:.1,k:'railc',dy:.03},{off:-2,w:.04,k:'wire',dy:6.2},{off:2,w:.04,k:'wire',dy:6.2}], noise:1, catenary:true },
+  tramave:{ name:'Avenue avec tramway', hw:12, cw:9, tram:true, lanes:[L(-6.3,-1),L(-1.75,-1,'tramonly'),L(1.75,1,'tramonly'),L(6.3,1)], ped:[-10.5,10.5], speed:16.7, zoning:true, cost:48, rank:2, lamps:1,
+    prof:[[-12,'SK','side'],[-12,.18,'side'],[-9,.18,'walk'],[-9,0,'curb'],[-3.6,0,'asph'],[-3.6,.12,'curb'],[3.6,.12,'grassT'],[3.6,0,'curb'],[9,0,'asph'],[9,.18,'curb'],[12,.18,'walk'],[12,'SK','side']],
+    marks:[{off:-2.47,w:.1,k:'railc',dy:.16},{off:-1.03,w:.1,k:'railc',dy:.16},{off:1.03,w:.1,k:'railc',dy:.16},{off:2.47,w:.1,k:'railc',dy:.16},{off:-1.75,w:.04,k:'wire',dy:6.3},{off:1.75,w:.04,k:'wire',dy:6.3}], noise:2, catenary:true },
   boulevard:{ name:'Boulevard', hw:15, cw:12, lanes:[L(-10.25,-1),L(-6.75,-1),L(-3.25,-1),L(3.25,1),L(6.75,1),L(10.25,1)], ped:[-13.5,13.5], speed:16.7, zoning:true, cost:45, rank:3, lamps:1, trees:true,
     prof:[[-15,'SK','side'],[-15,.18,'side'],[-12,.18,'walk'],[-12,0,'curb'],[-1.5,0,'asph'],[-1.5,.18,'curb'],[1.5,.18,'med'],[1.5,0,'curb'],[12,0,'asph'],[12,.18,'curb'],[15,.18,'walk'],[15,'SK','side']],
     marks:[{off:-5,w:.14,dash:[3,9],k:'mark'},{off:-8.5,w:.14,dash:[3,9],k:'mark'},{off:5,w:.14,dash:[3,9],k:'mark'},{off:8.5,w:.14,dash:[3,9],k:'mark'}], noise:3 },
@@ -27,9 +33,9 @@ const RT = {
   rail:{ name:'Voie ferrée', hw:4, cw:4, lanes:[L(-2,-1,'rail'),L(2,1,'rail')], speed:25, cost:40, rank:5, lamps:0, net:'rail', noise:2,
     prof:[[-4,'SK','side'],[-4,0,'ballast'],[-3.1,.4,'ballast'],[3.1,.4,'ballast'],[4,0,'ballast'],[4,'SK','side']], marks:[] },
 };
-for(const k in RT){ RT[k].key = k; RT[k].net ||= 'road'; RT[k].car = RT[k].lanes.some(l => l.kind === 'car'); RT[k].pedOK = !!RT[k].ped; }
+for(const k in RT){ RT[k].key = k; RT[k].net ||= 'road'; RT[k].car = RT[k].lanes.some(l => l.kind === 'car' || l.kind === 'tram'); RT[k].pedOK = !!RT[k].ped; }
 const ROADC = { asph:col('#45474b'), walk:col('#a7a39a'), curb:col('#8e8a82'), side:col('#6c685f'), med:col('#56703a'), conc:col('#aaa7a1'), guard:col('#b9bcbf'),
-  ballast:col('#726d64'), sleeper:col('#5a4a3a'), railc:col('#9aa0a6'), mark:col('#e8e6de'), yel:col('#e3b53c'), bus:col('#7d3a30'), path:col('#b8ab8e'), deck:col('#8f8c86') };
+  ballast:col('#726d64'), sleeper:col('#5a4a3a'), railc:col('#9aa0a6'), mark:col('#e8e6de'), yel:col('#e3b53c'), wire:col('#2a2c2f'), grassT:col('#5b7a3c'), bus:col('#7d3a30'), path:col('#b8ab8e'), deck:col('#8f8c86') };
 
 const nodes = new Map(), segs = new Map(); let nodeSeq = 1, segSeq = 1, NET_VERSION = 0;
 /* ---------- géométrie des courbes ---------- */
@@ -218,7 +224,7 @@ function buildSegGeo(sg){
   const strip = (off, w, sa, sb, dy, cc) => { let prev = null; const ss = [sa]; for(const r of rows) if(r.s > sa && r.s < sb) ss.push(r.s); ss.push(sb);
     for(const s of ss){ const p = segPoint(sg, s, _sp2), rx = -p.dz, rz = p.dx; const cur = [[p.x+rx*(off-w/2), p.y+dy, p.z+rz*(off-w/2)], [p.x+rx*(off+w/2), p.y+dy, p.z+rz*(off+w/2)]];
       if(prev) quad(g, prev[0], prev[1], cur[1], cur[0], cc, [0,1,0]); prev = cur; } };
-  for(const mk of t.marks){ const cc = ROADC[mk.k], dy = mk.fill ? .01 : .02;
+  for(const mk of t.marks){ const cc = ROADC[mk.k], dy = mk.dy ?? (mk.fill ? .01 : .02);
     if(mk.dash){ const [on, per] = mk.dash; for(let s = Math.ceil(s0/per)*per; s < s1; s += per){ const a = Math.max(s, s0+.5), b = Math.min(s+on, s1-.5); if(b > a) strip(mk.off, mk.w, a, b, dy, cc); } }
     else strip(mk.off, mk.w, s0+.3, s1-.3, dy, cc); }
   // passages piétons et lignes d'arrêt aux carrefours
@@ -320,7 +326,7 @@ function updateLights(dt){
 }
 
 /* ---------- recherche d'itinéraire ---------- */
-const netOK = (t, mode) => mode === 'ped' ? (t.pedOK && t.net !== 'rail') : mode === 'rail' ? t.net === 'rail' : (t.car || (mode === 'bus' && t.lanes.some(l => l.kind === 'bus')));
+const netOK = (t, mode) => mode === 'tram' ? !!t.tram : mode === 'ped' ? (t.pedOK && t.net !== 'rail') : mode === 'rail' ? t.net === 'rail' : (t.car || (mode === 'bus' && t.lanes.some(l => l.kind === 'bus')));
 function canTraverse(sg, fromNode, mode){ const t = RT[sg.type]; if(!netOK(t, mode)) return false; if(mode === 'ped') return true; return !t.oneway || sg.a === fromNode; }
 function segCost(sg, mode, truck){ const t = RT[sg.type]; if(mode === 'ped') return sg.len/1.4;
   let c = sg.len / t.speed * (1 + Math.min(4, sg.load*.25)); if(truck && sg.heavyBan) c *= 8; return c; }

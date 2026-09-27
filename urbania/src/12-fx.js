@@ -2,13 +2,18 @@
 const WEATHER = { clear:{ n:'Ensoleillé', cloud:.12, rain:0, snow:0, fog:0 }, cloudy:{ n:'Nuageux', cloud:.62, rain:0, snow:0, fog:.1 }, rain:{ n:'Pluie', cloud:.86, rain:1, snow:0, fog:.25 },
   storm:{ n:'Orage', cloud:1, rain:1.5, snow:0, fog:.3 }, fog:{ n:'Brouillard', cloud:.4, rain:0, snow:0, fog:1 }, snow:{ n:'Neige', cloud:.8, rain:0, snow:1, fog:.35 } };
 const weather = { kind:'clear', cloud:.12, rain:0, snow:0, fog:0, next:600, flashT:0 };
-function pickWeather(){ const r = rnd(); return r < .42 ? 'clear' : r < .66 ? 'cloudy' : r < .82 ? 'rain' : r < .88 ? 'storm' : r < .95 ? 'fog' : 'snow'; }
+const SEASON_W = [ { clear:.28, cloudy:.27, snow:.3, fog:.15 }, { clear:.4, cloudy:.25, rain:.25, storm:.05, fog:.05 }, { clear:.6, cloudy:.13, rain:.1, storm:.17 }, { clear:.25, cloudy:.3, rain:.3, storm:.05, fog:.1 } ];
+const SW = [0,0,1,0];
+function pickWeather(){ const t = SEASON_W[seasonIdx()]; let r = rnd(); for(const k in t){ r -= t[k]; if(r <= 0) return k; } return 'clear'; }
+function temperature(){ const h = hourOf(); return SW[0]*1 + SW[1]*13 + SW[2]*26 + SW[3]*12 + 4*Math.sin((h-9)/24*Math.PI*2) - weather.rain*2 - weather.snow*2; }
 function updateWeather(dt, gdt){
+  seasonWeights(SW); U.uSeasonW.value.set(SW[0], SW[1], SW[2], SW[3]);
   if(state.weatherMode === 'auto'){ weather.next -= gdt; if(weather.next <= 0){ weather.kind = pickWeather(); weather.next = 240 + rnd()*600; } } else weather.kind = state.weatherMode;
   const T = WEATHER[weather.kind], k = Math.min(1, dt*.08);
   weather.cloud = lerp(weather.cloud, T.cloud, k); weather.rain = lerp(weather.rain, T.rain, k); weather.snow = lerp(weather.snow, T.snow, k); weather.fog = lerp(weather.fog, T.fog, k);
   U.uWet.value = weather.rain > .15 ? Math.min(1, U.uWet.value + dt*.05) : Math.max(0, U.uWet.value - dt*.012);
-  U.uSnow.value = weather.snow > .2 ? Math.min(1, U.uSnow.value + dt*.02*(gdt ? 1 : 0)+dt*.004) : Math.max(0, U.uSnow.value - dt*.006);
+  U.uSnow.value = weather.snow > .2 ? Math.min(1, U.uSnow.value + dt*.02*(gdt ? 1 : 0)+dt*.004) : Math.max(0, U.uSnow.value - dt*(SW[0] > .5 && weather.kind !== 'rain' ? .0008 : .006)*(gdt ? 1 : .3));
+  WATER.rain = weather.rain;
   cloudMat.uniforms.uCover.value = weather.cloud*.75 + .12;
   if(weather.kind === 'storm'){ weather.flashT -= dt; if(weather.flashT <= 0){ weather.flashT = 4 + rnd()*12; flash.intensity = 6; setTimeout(() => audioThunder(), 400 + rnd()*2500); } }
   flash.intensity = Math.max(0, flash.intensity - dt*25);
@@ -60,7 +65,8 @@ function updateSmoke(dt){
 const sunDir = new THREE.Vector3(), lightDir = new THREE.Vector3(), fogDay = col('#b9c7d3'), fogGold = col('#d6a57c'), fogNight = col('#0a1018'), fogGrey = col('#8f99a3'), hemiDay = col('#c3d6f0'), hemiNight = col('#26324a');
 let bloom = null;
 function updateSun(){
-  const hr = state.dayCycle ? hourOf() : 13.5, elev = 62*Math.sin((hr-6)/12*Math.PI), theta = Math.PI*.5 - (hr-6)/12*Math.PI + .35;
+  const rise = 6 + 1.4*SW[0] - 1.2*SW[2], span = 24 - 2*rise, maxE = 50 - 20*SW[0] + 18*SW[2] + 4*(SW[1]+SW[3]);
+  const hr = state.dayCycle ? hourOf() : 13.5, elev = maxE*Math.sin((hr-rise)/span*Math.PI), theta = Math.PI*.5 - (hr-rise)/span*Math.PI + .35;
   sunDir.setFromSphericalCoords(1, THREE.MathUtils.degToRad(90-elev), theta); su.sunPosition.value.copy(sunDir);
   su.turbidity.value = 4.5 + weather.cloud*6; su.rayleigh.value = 1.25 + weather.cloud*1.2;
   const day = smooth(-3,10,elev), night = smooth(5,-5,elev), gold = smooth(-2,4,elev)*smooth(24,6,elev), cl = 1 - weather.cloud*.62;

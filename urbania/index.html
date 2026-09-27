@@ -285,6 +285,8 @@ hr{border:0;border-top:1px solid var(--edge);margin:0}
     <option value="auto">Variable</option><option value="clear">Ensoleillé</option><option value="cloudy">Nuageux</option><option value="rain">Pluie</option><option value="storm">Orage</option><option value="fog">Brouillard</option><option value="snow">Neige</option></select><span></span></div>
   <div class="slider"><label for="dayLen">Cycle jour/nuit</label><select id="dayLen" style="background:var(--glass);border:1px solid var(--edge);border-radius:6px;padding:5px">
     <option value="1">Actif</option><option value="0">Toujours jour</option></select><span></span></div>
+  <div class="slider"><label for="disSel">Catastrophes</label><select id="disSel" style="background:var(--glass);border:1px solid var(--edge);border-radius:6px;padding:5px">
+    <option value="1">Aléatoires</option><option value="0">Désactivées</option></select><span></span></div>
   <div class="lbl">Son</div>
   <div class="slider"><label for="vMaster">Volume général</label><input type="range" id="vMaster" min="0" max="100" value="70"><span id="vMasterV">70</span></div>
   <div class="slider"><label for="vAmb">Ambiance</label><input type="range" id="vAmb" min="0" max="100" value="70"><span id="vAmbV">70</span></div>
@@ -392,10 +394,10 @@ const bus = { h:{}, on(e,f){ (this.h[e] ||= []).push(f); }, emit(e,...a){ for(co
 
 /* ---------- état de la partie ---------- */
 const state = {
-  name:'Val-Clair', seed:1337, money:120000, time:8*60, speed:1, lastSpeed:1, dayCycle:true,
+  name:'Val-Clair', seed:1337, money:120000, time:16*1440 + 8*60, speed:1, lastSpeed:1, dayCycle:true,
   taxes:{ Rl:9, Rh:9, Cl:9, Ch:9, I:9, O:9 },
   budgets:{ power:100, water:100, garbage:100, health:100, fire:100, police:100, edu:100, transit:100, parks:100, roads:100 },
-  loans:[], policies:{}, weatherMode:'auto',
+  loans:[], policies:{}, weatherMode:'auto', disAuto:true,
   pop:0, popPrev:0, workers:0, jobs:0, unemployed:0, students:0, happy:.7, tourists:0,
   demand:{ R:.7, C:.2, I:.5, O:-.2 },
   income:{}, expense:{}, net:0,
@@ -405,14 +407,22 @@ const state = {
 };
 const DAY = 1440;
 const MONTHS = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
-function dateStr(t){ const d = new Date(Date.UTC(2026,0,1) + Math.floor(t/DAY)*86400000); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`; }
+/* calendrier accéléré : une année de jeu dure YEAR_D jours pour que les saisons défilent */
+const YEAR_D = 48, SEASONS = ['Hiver','Printemps','Été','Automne'];
+function dateStr(t){ const day = Math.floor(t/DAY), doy = day % YEAR_D, m = Math.floor(doy/(YEAR_D/12)), dd = 1 + Math.floor((doy % (YEAR_D/12))*28/(YEAR_D/12));
+  return `${dd} ${MONTHS[m]} ${2026 + Math.floor(day/YEAR_D)}`; }
+const yearPhase = () => ((state.time/DAY) % YEAR_D)/YEAR_D;
+function seasonWeights(out){ const ph = yearPhase()*4; let s = 0; // centres : mi-janvier, mi-avril, mi-juillet, mi-octobre
+  for(let k=0;k<4;k++){ let d = ph - (k + .17); d -= Math.round(d/4)*4; const w = Math.max(0, Math.cos(d*Math.PI/2.6)); out[k] = w*w*w; s += out[k]; }
+  for(let k=0;k<4;k++) out[k] /= s; return out; }
+const seasonIdx = () => Math.floor((((yearPhase()*4 - .17 + .5) % 4) + 4) % 4);
 const hourOf = () => (state.time % DAY)/60;
 const dayOf = () => Math.floor(state.time/DAY);
 
 /* ---------- noms ---------- */
 const FIRST = ['Awa','Moussa','Fatou','Ibrahima','Aminata','Cheikh','Mariama','Ousmane','Khady','Mamadou','Léa','Hugo','Chloé','Louis','Emma','Gabriel','Inès','Jules','Sarah','Adam','Lina','Nathan','Jade','Rayan','Manon','Yanis','Camille','Noah','Zoé','Karim','Nadia','Omar','Sofia','Malik','Anta','Pape','Ndeye','Babacar','Coumba','Modou','Marie','Pierre','Julie','Thomas','Elise','Paul','Alice','Victor','Clara','Lucas','Ama','Kofi','Yasmine','Idrissa','Seynabou','Alioune','Rokhaya','Samba','Dieynaba','Lamine'];
 const LAST = ['Diop','Ndiaye','Fall','Sow','Ba','Diallo','Sarr','Faye','Gueye','Cissé','Martin','Bernard','Dubois','Thomas','Robert','Richard','Petit','Durand','Leroy','Moreau','Simon','Laurent','Lefebvre','Michel','Garcia','David','Bertrand','Roux','Vincent','Fournier','Mbaye','Seck','Kane','Thiam','Niang','Camara','Touré','Traoré','Keita','Dieng','Mendy','Gomis','Sy','Wade','Lo','Ly','Ka','Samb','Tall','Sène'];
-const STREET_T = { street:['Rue','Rue','Allée','Impasse'], oneway:['Rue'], avenue:['Avenue'], busave:['Avenue'], boulevard:['Boulevard'], highway:['Autoroute'], ramp:['Bretelle'], path:['Chemin','Sentier'], rail:['Ligne'] };
+const STREET_T = { street:['Rue','Rue','Allée','Impasse'], oneway:['Rue'], avenue:['Avenue'], busave:['Avenue'], tramst:['Rue'], tramave:['Avenue','Cours'], boulevard:['Boulevard'], highway:['Autoroute'], ramp:['Bretelle'], path:['Chemin','Sentier'], rail:['Ligne'] };
 const STREET_N = ['des Lilas','des Baobabs','de la Gare','du Port','Victor Hugo','Léopold Sédar Senghor','des Tilleuls','de la République','Jean Jaurès','du Fleuve','des Artisans','Cheikh Anta Diop','des Écoles','du Marché','des Pêcheurs','Mariama Bâ','des Acacias','de la Liberté','Pasteur','des Roses','du Moulin','Blaise Diagne','Émile Zola','des Flamboyants','de la Corniche','du Stade','des Palmiers','Molière','Ousmane Sembène','des Jardins','de l\'Université','du Parc','Aimé Césaire','des Cerisiers','de la Lagune','du Belvédère','des Tisserands','Kennedy','Lamine Guèye','des Mimosas','du Soleil','de Gorée','des Vignes','Pompidou','de la Paix','des Dunes','du Phare','des Manguiers','Sainte-Anne','du Plateau'];
 
 /* ===== 02-render.js ===== */
@@ -434,7 +444,7 @@ controls.panSpeed = 1.1; controls.rotateSpeed = .6;
 
 /* ---------- uniformes partagées ---------- */
 const U = {
-  uTime:{value:0}, uNight:{value:0}, uLitMul:{value:1}, uWet:{value:0}, uSnow:{value:0},
+  uTime:{value:0}, uNight:{value:0}, uLitMul:{value:1}, uWet:{value:0}, uSnow:{value:0}, uSeasonW:{value:new THREE.Vector4(0,0,1,0)},
   uHalf:{value:HALF}, uEHalf:{value:EHALF}, uCell:{value:CELL}, uNE1:{value:NE1},
   uOver:{value:null}, uOverOn:{value:0}, uDist:{value:null}, uDistOn:{value:0}, uDetail:{value:null}, uHTex:{value:null},
   uBrush:{value:new THREE.Vector4(0,0,0,0)}, uBrushCol:{value:new THREE.Color(0xf2b33d)}, uUnder:{value:0},
@@ -626,19 +636,32 @@ function nightEmissiveMaterial(base=.25, night=2.2){ // enseignes, éclairages :
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n totalEmissiveRadiance += diffuseColor.rgb * (${base.toFixed(2)} + uNight*${night.toFixed(2)});`); };
   m.customProgramCacheKey = () => 'nightEm'+base+night; return m;
 }
-function swayMaterial(){
-  const m = new THREE.MeshStandardMaterial({ vertexColors:true, roughness:.92, envMapIntensity:.3 });
-  m.onBeforeCompile = sh => { Object.assign(sh.uniforms, { uTime:U.uTime, uSnow:U.uSnow });
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTime; varying float vUp;')
+function swayMaterial(ever){
+  const m = new THREE.MeshStandardMaterial({ vertexColors:true, roughness:.92, envMapIntensity:.3 }); if(ever) m.defines = { EVER:'' };
+  m.onBeforeCompile = sh => { Object.assign(sh.uniforms, { uTime:U.uTime, uSnow:U.uSnow, uSeasonW:U.uSeasonW });
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTime; varying float vUp; varying vec3 vIP, vLP;')
       .replace('#include <begin_vertex>', `#include <begin_vertex>
-        vUp = normal.y;
+        vUp = normal.y; vLP = position; vIP = vec3(0.0);
         #ifdef USE_INSTANCING
-        vec3 ip = instanceMatrix[3].xyz; float sw = sin(uTime*1.3 + ip.x*0.07 + ip.z*0.05) * 0.035 * max(position.y - 0.25, 0.0);
+        vec3 ip = instanceMatrix[3].xyz; vIP = ip; float sw = sin(uTime*1.3 + ip.x*0.07 + ip.z*0.05) * 0.035 * max(position.y - 0.25, 0.0);
         transformed.x += sw; transformed.z += sw*0.6;
         #endif`);
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uSnow; varying float vUp;')
-      .replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.92,0.94,0.96), uSnow*smoothstep(0.1,0.7,vUp)*0.85);'); };
-  m.customProgramCacheKey = () => 'sway'; return m;
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uSnow; uniform vec4 uSeasonW; varying float vUp; varying vec3 vIP, vLP;')
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        { float leaf = step(diffuseColor.r*1.05, diffuseColor.g); float hs = fract(sin(dot(vIP.xz, vec2(12.9898,78.233)))*43758.5453);
+          #ifndef EVER
+          vec3 aut = mix(vec3(0.42,0.1,0.02), vec3(0.62,0.36,0.03), hs);
+          diffuseColor.rgb = mix(diffuseColor.rgb, aut, leaf*uSeasonW.w*(0.6+0.4*hs));
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.07,0.055,0.04), leaf*uSeasonW.x*0.9);
+          if(leaf > 0.5){ float n = fract(sin(dot(floor(vLP*11.0), vec3(1.7,9.2,3.1)))*4375.5); if(n < uSeasonW.x*0.72 + uSeasonW.w*hs*0.25) discard; }
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9,0.5,0.62), leaf*uSeasonW.y*step(0.72,hs)*0.7);
+          diffuseColor.rgb *= 1.0 + leaf*uSeasonW.y*0.2;
+          #else
+          diffuseColor.rgb *= 1.0 - leaf*uSeasonW.x*0.2;
+          #endif
+        }
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.92,0.94,0.96), uSnow*smoothstep(0.1,0.7,vUp)*0.85);`); };
+  m.customProgramCacheKey = () => 'sway2'+(ever ? 'e' : ''); return m;
 }
 function fieldMaterial(){ // champs agricoles : sillons en coordonnées monde
   const m = new THREE.MeshStandardMaterial({ roughness:.95, envMapIntensity:.25 });
@@ -688,7 +711,7 @@ const MAT = {
   field: fieldMaterial(),
   solar: new THREE.MeshStandardMaterial({ color:0x1b2a44, roughness:.12, metalness:.8, envMapIntensity:1.1 }),
   poolw: new THREE.MeshStandardMaterial({ color:0x2a9fc7, roughness:.05, metalness:.1, envMapIntensity:1 }),
-  tree: swayMaterial(),
+  tree: swayMaterial(), treeEver: swayMaterial(true),
   veh: new THREE.MeshStandardMaterial({ vertexColors:true, roughness:.3, metalness:.55, envMapIntensity:1 }),
   vlight: new THREE.MeshBasicMaterial({ vertexColors:true }),
   siren: sirenMaterial(),
@@ -753,6 +776,8 @@ const VEH = {
     ...[[1.05,3.4],[-1.05,3.4],[1.05,-3.2],[-1.05,-3.2],[1.05,-4.4],[-1.05,-4.4]].map(([x,z]) => wheel(x,z,.48,.32)) ]), lights:lightsFor(10.2,.95,1.15), len:10.2 },
   bus:{ geo:mergeGeometries([ bx(2.5,2.9,12,0,1.75,0,'#ffffff'), bx(2.54,1.0,10.6,0,2.2,-.3,'#1b2530'), bx(2.4,1.3,.1,0,2.1,6.01,'#1b2530'), bx(2.3,.25,6,0,3.3,-1,'#cfd4d8'),
     ...[[1.15,4],[-1.15,4],[1.15,-3.6],[-1.15,-3.6]].map(([x,z]) => wheel(x,z,.5,.34)) ]), lights:lightsFor(12,.85,1.25), len:12 },
+  tram:{ geo:mergeGeometries([ bx(2.4,2.9,27,0,1.85,0,'#ffffff'), bx(2.44,1.15,25.6,0,2.35,0,'#1b2530'), bx(2.3,1.3,.1,0,2.2,13.51,'#1b2530'), bx(2.3,1.3,.1,0,2.2,-13.51,'#1b2530'),
+    bx(2.46,.4,27,0,.75,0,'#2d3238'), bx(2.2,.3,26,0,3.45,0,'#c9ced3'), bx(.08,1.8,.9,0,4.4,2,'#2a2c2f'), bx(1.6,.08,.3,0,5.3,2,'#2a2c2f'), ...[-6.5,6.5].map(z => bx(2.47,2.6,.25,0,1.8,z,'#2d3238')) ]), lights:lightsFor(27,.95,1.1), len:27 },
   fire:{ geo:mergeGeometries([ bx(2.45,2.6,8.4,0,1.65,0,'#ffffff'), bx(2.3,.8,.1,0,2.3,4.21,'#1c232b'), bx(.9,.3,6.5,0,3.1,-.6,'#c9ccd0'), bx(2.5,.22,8.4,0,.95,0,'#f2f2f2'),
     ...[[1.1,2.9],[-1.1,2.9],[1.1,-2.6],[-1.1,-2.6]].map(([x,z]) => wheel(x,z,.5,.34)) ]), lights:lightsFor(8.4,.9,1.2), len:8.4, siren:mergeGeometries([bx(.7,.2,.3,.5,3.0,3.6,'#ff2020'), bx(.7,.2,.3,-.5,3.0,3.6,'#2050ff')]) },
   police:{ geo:mergeGeometries([ bx(1.8,.62,4.6,0,.64,0,'#ffffff'), bx(1.6,.56,2.3,0,1.22,-.2,'#1c232b'), bx(1.82,.2,2.6,0,.75,.1,'#1d3f86'), ...[[.84,1.45],[-.84,1.45],[.84,-1.4],[-.84,-1.4]].map(([x,z]) => wheel(x,z)) ]),
@@ -765,6 +790,10 @@ const VEH = {
   train:{ geo:mergeGeometries([ bx(3,3.6,15.5,0,2.5,0,'#ffffff'), bx(3.04,.9,13,0,3.0,0,'#1b2530'), bx(2.6,.3,15,0,.55,0,'#2a2a2a'), bx(3.02,.25,15.5,0,1.25,0,'#c8201f') ]), lights:lightsFor(15.5,1.2,1.3), len:16 },
   plane:{ geo:mergeGeometries([ cy(2,2,34,0,0,0,'#f4f5f6',14,Math.PI/2).rotateY(Math.PI/2), prep(new THREE.SphereGeometry(2,14,10).scale(1,1,2).translate(0,0,17), '#f4f5f6'), prep(new THREE.ConeGeometry(2,7,14).rotateX(-Math.PI/2).translate(0,.3,-20), '#f4f5f6'),
     bx(34,.5,5,0,-.6,1,'#dfe2e6'), bx(12,.4,3,0,.8,-19,'#dfe2e6'), bx(.4,6,4,0,3.5,-19,'#1d4f91'), cy(1,1,4,-7,-1.8,2,'#b8bcc2',10,Math.PI/2).rotateY(Math.PI/2).translate(0,0,0), cy(1,1,4,7,-1.8,2,'#b8bcc2',10,Math.PI/2).rotateY(Math.PI/2) ]), len:40 },
+  mono:{ geo:mergeGeometries([ bx(3,3.2,34,0,.4,0,'#ffffff'), bx(3.04,1.2,31,0,.9,0,'#16202a'), prep(new THREE.SphereGeometry(1.5,12,8).scale(1,1.05,2.4).translate(0,.4,17), '#ffffff'),
+    prep(new THREE.SphereGeometry(1.5,12,8).scale(1,1.05,2.4).translate(0,.4,-17), '#ffffff'), bx(1.2,1.6,32,0,-1.6,0,'#3a3f45') ]), len:40 },
+  ferry:{ geo:mergeGeometries([ bx(9,3,34,0,.8,0,'#ffffff'), prep(new THREE.ConeGeometry(4.5,8,4,1).rotateY(Math.PI/4).scale(1,1,.9).rotateX(Math.PI/2).translate(0,.8,20.5), '#ffffff'), bx(9.1,.5,34,0,-.4,0,'#1d4f91'),
+    bx(7.6,2.6,22,0,3.6,-2,'#f4f4f0'), bx(7.7,.9,21,0,3.9,-2,'#1b2530'), bx(6,2.2,8,0,6.2,2,'#f4f4f0'), bx(6.1,.8,7,0,6.6,2.5,'#1b2530'), bx(1.4,3,1.4,0,8,-4,'#d23b2b') ]), len:40 },
   ship:{ geo:mergeGeometries([ bx(22,8,110,0,2,0,'#2a3440'), bx(22.2,1.2,110,0,5.4,0,'#8d2a22'), bx(18,10,14,0,11,-44,'#f0f0ec'), bx(14,3,8,0,17,-44,'#1c232b'),
     ...Array.from({length:6},(_,k)=>bx(19,6,11,0,9,-28+k*13,['#b83a2d','#2d6fa8','#3f8a4a','#c9922b','#6d7780','#a44a8a'][k])) ]), len:110 },
 };
@@ -813,7 +842,7 @@ terrainMat.onBeforeCompile = sh => {
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos; varying float vUp;')
     .replace('#include <project_vertex>', '#include <project_vertex>\nvWPos = (modelMatrix*vec4(transformed,1.0)).xyz; vUp = normal.y;');
   sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-    varying vec3 vWPos; varying float vUp; uniform float uHalf, uOverOn, uDistOn, uNight, uWet, uSnow; uniform vec4 uBrush; uniform vec3 uBrushCol;
+    varying vec3 vWPos; varying float vUp; uniform float uHalf, uOverOn, uDistOn, uNight, uWet, uSnow; uniform vec4 uBrush, uSeasonW; uniform vec3 uBrushCol;
     uniform sampler2D uOver, uGlow, uDetail, uDist;`)
   .replace('#include <color_fragment>', `#include <color_fragment>
     vec2 cuv = (vWPos.xz + uHalf) / (2.0*uHalf);
@@ -821,6 +850,9 @@ terrainMat.onBeforeCompile = sh => {
     float d1 = texture2D(uDetail, vWPos.xz/6.0).r, d2 = texture2D(uDetail, vWPos.xz/37.0+0.37).r, d3 = texture2D(uDetail, vWPos.xz/211.0+0.71).r;
     diffuseColor.rgb *= 0.7 + 0.2*d1 + 0.22*d2 + 0.18*d3;
     diffuseColor.rgb *= 1.0 - uWet*0.22;
+    { vec3 c = diffuseColor.rgb; float gr = clamp((c.g - c.r)*9.0, 0.0, 1.0)*smoothstep(0.55,0.9,vUp); float l = dot(c, vec3(0.3,0.55,0.15));
+      c = mix(c, vec3(l*1.35, l*1.02, l*0.42), gr*uSeasonW.w*0.75); c = mix(c, vec3(l*1.12, l*0.98, l*0.78), gr*uSeasonW.x*0.8);
+      c = mix(c, c*vec3(0.9,1.12,0.88), gr*uSeasonW.y); c = mix(c, c*vec3(1.1,1.02,0.78), gr*uSeasonW.z*0.45); diffuseColor.rgb = c; }
     diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9,0.92,0.95)*(0.9+0.1*d1), uSnow*smoothstep(0.55,0.85,vUp));
     vec4 ov = texture2D(uOver, cuv);
     diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.52,0.54,0.52), ov.rgb, ov.a), uOverOn*inside);
@@ -927,7 +959,7 @@ function terraform(x, z, dt){
 }
 
 /* ---------- arbres ---------- */
-const TREES = { D:new Pool(TREE_D, MAT.tree, 16384), C:new Pool(TREE_C, MAT.tree, 16384), P:new Pool(TREE_P, MAT.tree, 4096) };
+const TREES = { D:new Pool(TREE_D, MAT.tree, 16384), C:new Pool(TREE_C, MAT.treeEver, 16384), P:new Pool(TREE_P, MAT.tree, 4096) };
 const treeGrid = new Map(); // cellule de 32 m -> liste d'arbres
 const tKey = (x,z) => (Math.floor((x+EHALF)/32))*200 + Math.floor((z+EHALF)/32);
 function addTree(x, z, h, type, r=rnd, reg=true){
@@ -966,7 +998,7 @@ const WNN = WN*WN, WN1 = WN+1;
 const wb = new Float32Array(WNN), wwall = new Float32Array(WNN), wd = new Float32Array(WNN), wp = new Float32Array(WNN), wp2 = new Float32Array(WNN);
 const fR = new Float32Array(WNN), fL = new Float32Array(WNN), fB = new Float32Array(WNN), fT = new Float32Array(WNN);
 const wFixed = new Uint8Array(WNN), wSrc = new Float32Array(WNN), wSrcP = new Float32Array(WNN);
-const WATER = { sources:[], dams:[], steps:0, flowIn:0 };
+const WATER = { sources:[], dams:[], steps:0, flowIn:0, sea:SEA, surge:0, rain:0 };
 const wIdx = (x,z) => { const a = Math.floor((x+EHALF)/WC), b = Math.floor((z+EHALF)/WC); return (a<0||b<0||a>=WN||b>=WN) ? -1 : b*WN+a; };
 const wcx = a => -EHALF+(a+.5)*WC;
 function sampleBed(a,b){ const x = wcx(a), z = wcx(b); return (heightAt(x,z)*2 + heightAt(x-5,z-5) + heightAt(x+5,z-5) + heightAt(x-5,z+5) + heightAt(x+5,z+5))/6; }
@@ -985,6 +1017,10 @@ function addWaterSource(x, z, q, natural=false){ const c = wIdx(x,z); if(c < 0) 
 function rebuildSources(){ wSrc.fill(0); for(const s of WATER.sources){ const a = s.c%WN, b = (s.c/WN)|0; for(let db=-1;db<=1;db++) for(let da=-1;da<=1;da++){ const aa=a+da, bb=b+db; if(aa<0||bb<0||aa>=WN||bb>=WN) continue; wSrc[bb*WN+aa] += s.q/9; } } }
 function stepWater(dt){
   const g = 9.81, K = dt*g*WC*.5, area = WC*WC, damp = .995; let inflow = 0;
+  // niveau de la mer : marée (deux cycles par jour) + surcote (tsunami)
+  const sea = SEA + .45*Math.sin(state.time/DAY*Math.PI*4) + WATER.surge; WATER.sea = sea;
+  // pluie : ruissellement ; infiltration dans le sol pour les faibles lames d'eau
+  const rainR = WATER.rain*.0007*dt, infl = .0008*dt;
   for(let b=0;b<WN;b++) for(let a=0;a<WN;a++){ const c = b*WN+a, d = wd[c], h = wb[c]+wwall[c]+d;
     let r = 0, l = 0, bt = 0, t = 0;
     if(a < WN-1){ const n = c+1, dh = h - (wb[n]+wwall[n]+wd[n]); r = Math.max(0, fR[c]*damp + K*dh); }
@@ -1000,7 +1036,8 @@ function stepWater(dt){
     const outV = fR[c]+fL[c]+fB[c]+fT[c], d0 = wd[c]; inV += wSrc[c]; inP += wSrcP[c]; inflow += wSrc[c];
     let d = d0 + (inV - outV)*dt/area; if(d < 1e-4) d = 0;
     const mass = wp[c]*d0*area + (inP - wp[c]*outV)*dt; wp2[c] = d > .01 ? clamp(mass/(d*area), 0, 1)*.9995 : 0;
-    if(wFixed[c]){ d = Math.max(0, SEA - wb[c]); wp2[c] *= .9; }
+    if(rainR > 0) d += rainR; if(d > 0 && d < .4) d = Math.max(0, d - infl*(1 - d/.4));
+    if(wFixed[c]){ d = Math.max(0, sea - wb[c]); wp2[c] *= .9; }
     wd[c] = d; }
   wp.set(wp2); WATER.steps++; WATER.flowIn = inflow;
   // barrages : turbines entre l'amont et l'aval
@@ -1035,7 +1072,7 @@ waterMat.onBeforeCompile = sh => {
     vec3 deep = vec3(0.012,0.07,0.1), shallow = vec3(0.07,0.24,0.25);
     diffuseColor.rgb = mix(shallow, deep, smoothstep(0.5, 8.0, dep));
     diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.28,0.22,0.12), clamp(vW.w*1.6,0.0,0.85));
-    float foam = (1.0 - smoothstep(0.05, 0.7, dep))*0.55 + smoothstep(0.6, 2.2, spd)*0.35;
+    float foam = (1.0 - smoothstep(0.05, 0.7, dep))*0.55 + smoothstep(0.6, 2.2, spd)*0.35 + (1.0 - smoothstep(0.3, 3.0, dep))*smoothstep(0.55, 1.0, sin(dep*4.0 - uTime*1.7 + vWP.x*0.02))*0.6;
     float fn = texture2D(uWN, vWP.xz/9.0 + uTime*0.02).r;
     diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.85,0.9,0.9), clamp(foam*fn,0.0,0.7));
     diffuseColor.a = clamp(0.35 + dep*0.55, 0.35, 0.94);
@@ -1051,10 +1088,11 @@ waterMat.onBeforeCompile = sh => {
 waterMat.customProgramCacheKey = () => 'water2';
 const waterMesh = new THREE.Mesh(wGeo, waterMat); waterMesh.receiveShadow = true; waterMesh.renderOrder = 1; scene.add(waterMesh);
 // océan au-delà de la zone simulée
+let oceanMesh = null;
 const oceanMat = new THREE.MeshStandardMaterial({ color:0x0c2833, roughness:.1, metalness:.05, normalMap:waterNormal, normalScale:new THREE.Vector2(.25,.25), envMapIntensity:.55 });
 waterNormal.repeat.set(1,1);
 { const S = 40000, g = []; for(const [x,z,w,d] of [[0,-EHALF-S/2,S*2,S],[0,EHALF+S/2,S*2,S],[-EHALF-S/2,0,S,EHALF*2],[EHALF+S/2,0,S,EHALF*2]]){ const p = new THREE.PlaneGeometry(w,d).rotateX(-Math.PI/2).translate(x,SEA-.05,z); const uv = p.attributes.uv; const pos = p.attributes.position; for(let i=0;i<uv.count;i++) uv.setXY(i, pos.getX(i)/40, pos.getZ(i)/40); g.push(p); }
-  const ocean = new THREE.Mesh(mergeGeometries(g), oceanMat); scene.add(ocean); }
+  oceanMesh = new THREE.Mesh(mergeGeometries(g), oceanMat); scene.add(oceanMesh); }
 
 let wFrame = 0;
 function updateWaterMesh(){
@@ -1065,7 +1103,7 @@ function updateWaterMesh(){
     const v = b*WN1+a;
     if(n){ wPos[v*3+1] = s/n; wAttr[v*4] = dep/n; wAttr[v*4+1] = vx/n; wAttr[v*4+2] = vz/n; wAttr[v*4+3] = pol/n; }
     else { wPos[v*3+1] = bed - 1.5; wAttr[v*4] = 0; wAttr[v*4+1] = 0; wAttr[v*4+2] = 0; wAttr[v*4+3] = 0; } }
-  wGeo.attributes.position.needsUpdate = true; wGeo.attributes.aW.needsUpdate = true;
+  wGeo.attributes.position.needsUpdate = true; wGeo.attributes.aW.needsUpdate = true; if(oceanMesh) oceanMesh.position.y = WATER.sea - SEA;
 }
 function waterTick(dtGame){ // dtGame : secondes de simulation à avancer
   let steps = Math.min(4, Math.max(1, Math.round(dtGame/.25))); for(let k=0;k<steps;k++) stepWater(.25);
@@ -1098,6 +1136,12 @@ const RT = {
   busave:{ name:'Avenue avec voies de bus', hw:10, cw:7, lanes:[L(-5.25,-1,'bus'),L(-1.75,-1),L(1.75,1),L(5.25,1,'bus')], ped:[-8.5,8.5], speed:16.7, zoning:true, cost:30, rank:2, lamps:1,
     prof:[[-10,'SK','side'],[-10,.18,'side'],[-7,.18,'walk'],[-7,0,'curb'],[7,0,'asph'],[7,.18,'curb'],[10,.18,'walk'],[10,'SK','side']],
     marks:[{off:-5.25,w:3.3,k:'bus',fill:1},{off:5.25,w:3.3,k:'bus',fill:1},{off:-.16,w:.12,k:'yel'},{off:.16,w:.12,k:'yel'},{off:-3.5,w:.25,k:'mark'},{off:3.5,w:.25,k:'mark'}], noise:2 },
+  tramst:{ name:'Rue avec tramway', hw:7, cw:4, tram:true, lanes:[L(-2,-1,'tram'),L(2,1,'tram')], ped:[-5.6,5.6], speed:12.5, zoning:true, cost:28, rank:1, lamps:1,
+    prof:[[-7,'SK','side'],[-7,.18,'side'],[-4,.18,'walk'],[-4,0,'curb'],[4,0,'asph'],[4,.18,'curb'],[7,.18,'walk'],[7,'SK','side']],
+    marks:[{off:-.12,w:.1,k:'yel'},{off:.12,w:.1,k:'yel'},{off:-2.72,w:.1,k:'railc',dy:.03},{off:-1.28,w:.1,k:'railc',dy:.03},{off:1.28,w:.1,k:'railc',dy:.03},{off:2.72,w:.1,k:'railc',dy:.03},{off:-2,w:.04,k:'wire',dy:6.2},{off:2,w:.04,k:'wire',dy:6.2}], noise:1, catenary:true },
+  tramave:{ name:'Avenue avec tramway', hw:12, cw:9, tram:true, lanes:[L(-6.3,-1),L(-1.75,-1,'tramonly'),L(1.75,1,'tramonly'),L(6.3,1)], ped:[-10.5,10.5], speed:16.7, zoning:true, cost:48, rank:2, lamps:1,
+    prof:[[-12,'SK','side'],[-12,.18,'side'],[-9,.18,'walk'],[-9,0,'curb'],[-3.6,0,'asph'],[-3.6,.12,'curb'],[3.6,.12,'grassT'],[3.6,0,'curb'],[9,0,'asph'],[9,.18,'curb'],[12,.18,'walk'],[12,'SK','side']],
+    marks:[{off:-2.47,w:.1,k:'railc',dy:.16},{off:-1.03,w:.1,k:'railc',dy:.16},{off:1.03,w:.1,k:'railc',dy:.16},{off:2.47,w:.1,k:'railc',dy:.16},{off:-1.75,w:.04,k:'wire',dy:6.3},{off:1.75,w:.04,k:'wire',dy:6.3}], noise:2, catenary:true },
   boulevard:{ name:'Boulevard', hw:15, cw:12, lanes:[L(-10.25,-1),L(-6.75,-1),L(-3.25,-1),L(3.25,1),L(6.75,1),L(10.25,1)], ped:[-13.5,13.5], speed:16.7, zoning:true, cost:45, rank:3, lamps:1, trees:true,
     prof:[[-15,'SK','side'],[-15,.18,'side'],[-12,.18,'walk'],[-12,0,'curb'],[-1.5,0,'asph'],[-1.5,.18,'curb'],[1.5,.18,'med'],[1.5,0,'curb'],[12,0,'asph'],[12,.18,'curb'],[15,.18,'walk'],[15,'SK','side']],
     marks:[{off:-5,w:.14,dash:[3,9],k:'mark'},{off:-8.5,w:.14,dash:[3,9],k:'mark'},{off:5,w:.14,dash:[3,9],k:'mark'},{off:8.5,w:.14,dash:[3,9],k:'mark'}], noise:3 },
@@ -1112,9 +1156,9 @@ const RT = {
   rail:{ name:'Voie ferrée', hw:4, cw:4, lanes:[L(-2,-1,'rail'),L(2,1,'rail')], speed:25, cost:40, rank:5, lamps:0, net:'rail', noise:2,
     prof:[[-4,'SK','side'],[-4,0,'ballast'],[-3.1,.4,'ballast'],[3.1,.4,'ballast'],[4,0,'ballast'],[4,'SK','side']], marks:[] },
 };
-for(const k in RT){ RT[k].key = k; RT[k].net ||= 'road'; RT[k].car = RT[k].lanes.some(l => l.kind === 'car'); RT[k].pedOK = !!RT[k].ped; }
+for(const k in RT){ RT[k].key = k; RT[k].net ||= 'road'; RT[k].car = RT[k].lanes.some(l => l.kind === 'car' || l.kind === 'tram'); RT[k].pedOK = !!RT[k].ped; }
 const ROADC = { asph:col('#45474b'), walk:col('#a7a39a'), curb:col('#8e8a82'), side:col('#6c685f'), med:col('#56703a'), conc:col('#aaa7a1'), guard:col('#b9bcbf'),
-  ballast:col('#726d64'), sleeper:col('#5a4a3a'), railc:col('#9aa0a6'), mark:col('#e8e6de'), yel:col('#e3b53c'), bus:col('#7d3a30'), path:col('#b8ab8e'), deck:col('#8f8c86') };
+  ballast:col('#726d64'), sleeper:col('#5a4a3a'), railc:col('#9aa0a6'), mark:col('#e8e6de'), yel:col('#e3b53c'), wire:col('#2a2c2f'), grassT:col('#5b7a3c'), bus:col('#7d3a30'), path:col('#b8ab8e'), deck:col('#8f8c86') };
 
 const nodes = new Map(), segs = new Map(); let nodeSeq = 1, segSeq = 1, NET_VERSION = 0;
 /* ---------- géométrie des courbes ---------- */
@@ -1303,7 +1347,7 @@ function buildSegGeo(sg){
   const strip = (off, w, sa, sb, dy, cc) => { let prev = null; const ss = [sa]; for(const r of rows) if(r.s > sa && r.s < sb) ss.push(r.s); ss.push(sb);
     for(const s of ss){ const p = segPoint(sg, s, _sp2), rx = -p.dz, rz = p.dx; const cur = [[p.x+rx*(off-w/2), p.y+dy, p.z+rz*(off-w/2)], [p.x+rx*(off+w/2), p.y+dy, p.z+rz*(off+w/2)]];
       if(prev) quad(g, prev[0], prev[1], cur[1], cur[0], cc, [0,1,0]); prev = cur; } };
-  for(const mk of t.marks){ const cc = ROADC[mk.k], dy = mk.fill ? .01 : .02;
+  for(const mk of t.marks){ const cc = ROADC[mk.k], dy = mk.dy ?? (mk.fill ? .01 : .02);
     if(mk.dash){ const [on, per] = mk.dash; for(let s = Math.ceil(s0/per)*per; s < s1; s += per){ const a = Math.max(s, s0+.5), b = Math.min(s+on, s1-.5); if(b > a) strip(mk.off, mk.w, a, b, dy, cc); } }
     else strip(mk.off, mk.w, s0+.3, s1-.3, dy, cc); }
   // passages piétons et lignes d'arrêt aux carrefours
@@ -1405,7 +1449,7 @@ function updateLights(dt){
 }
 
 /* ---------- recherche d'itinéraire ---------- */
-const netOK = (t, mode) => mode === 'ped' ? (t.pedOK && t.net !== 'rail') : mode === 'rail' ? t.net === 'rail' : (t.car || (mode === 'bus' && t.lanes.some(l => l.kind === 'bus')));
+const netOK = (t, mode) => mode === 'tram' ? !!t.tram : mode === 'ped' ? (t.pedOK && t.net !== 'rail') : mode === 'rail' ? t.net === 'rail' : (t.car || (mode === 'bus' && t.lanes.some(l => l.kind === 'bus')));
 function canTraverse(sg, fromNode, mode){ const t = RT[sg.type]; if(!netOK(t, mode)) return false; if(mode === 'ped') return true; return !t.oneway || sg.a === fromNode; }
 function segCost(sg, mode, truck){ const t = RT[sg.type]; if(mode === 'ped') return sg.len/1.4;
   let c = sg.len / t.speed * (1 + Math.min(4, sg.load*.25)); if(truck && sg.heavyBan) c *= 8; return c; }
@@ -1736,6 +1780,9 @@ const SVC = {
   univ:{ name:'Université', cat:'edu', w:72, d:56, cost:40000, upkeep:2200, radius:1400, students:2200, eduLv:3, jobs:[6,10,20,40] },
   depot:{ name:'Dépôt de bus', cat:'transit', w:40, d:32, cost:12000, upkeep:600, jobs:[4,10,4,0] },
   metro:{ name:'Station de métro', cat:'transit', w:16, d:16, cost:8000, upkeep:400, jobs:[2,4,2,0] },
+  tramdepot:{ name:'Dépôt de tramways', cat:'transit', w:48, d:32, cost:16000, upkeep:700, jobs:[4,10,4,0], desc:'À relier à une rue ou avenue avec tramway' },
+  monost:{ name:'Station de monorail', cat:'transit', w:24, d:16, cost:11000, upkeep:500, jobs:[2,4,2,0], desc:'Station surélevée reliée par une voie aérienne' },
+  pier:{ name:'Embarcadère de ferry', cat:'transit', w:24, d:24, cost:9000, upkeep:450, shore:true, jobs:[2,4,2,0], desc:'Au bord de l\'eau : relie les rives par ferry' },
   station:{ name:'Gare', cat:'transit', w:64, d:24, cost:25000, upkeep:1100, rail:true, jobs:[6,12,8,2], desc:'À placer le long d\'une voie ferrée' },
   port:{ name:'Port de fret', cat:'transit', w:64, d:48, cost:38000, upkeep:1500, shore:true, jobs:[20,30,10,2], noise:3, desc:'Exporte les marchandises par bateau' },
   airport:{ name:'Aéroport', cat:'transit', w:320, d:110, cost:110000, upkeep:4000, jobs:[30,60,60,40], noise:4, unique:true, desc:'Attire les touristes' },
@@ -1785,6 +1832,12 @@ const svcGen = {
     C.fac(0, 0, 18, 8, 30, 8, '#b5a383', 'svc'); C.part(P.cone, 0, 30, 18, 5.5, 8, 5.5, '#4a4f55'); C.part(P.pad, 0, 0, 0, 30, .06, 4, '#b3a78d'); for(let k=0;k<8;k++) C.tree(-30+k*8.5, 0, 9); b.top = 40; },
   depot(b, C){ C.part(P.pad, 0, -.4, 0, 39, .45, 31, '#5d5f62'); C.fac(-6, 0, 6, 26, 8, 16, '#8f9aa3', 'ware'); for(let k=0;k<4;k++) C.part(P.equip, 10, 0, -12+k*4, 12, 3, 2.5, '#d8b43a'); b.top = 10; },
   metro(b, C){ C.part(P.pad, 0, -.4, 0, 15, .45, 15, '#8d8a83'); C.part(P.glass, 0, 0, 1, 10, 4, 7, '#8fb6cc'); C.part(P.equip, 0, 4, 1, 11, .4, 8, '#2f3338'); C.part(P.sign, 0, 5, 1, 2.2, 2.2, .3, '#e0b43a'); b.top = 7; },
+  tramdepot(b, C){ C.part(P.pad, 0, -.4, 0, 47, .45, 31, '#5d5f62'); C.fac(0, 0, 4, 40, 9, 18, '#8a9a8a', 'ware'); for(let k=0;k<4;k++) C.part(P.pad, -15+k*10, .05, -10, 2.6, .05, 12, '#6a6d70');
+    for(let k=0;k<2;k++) C.part(P.equip, -10+k*20, 0, -11, 2.4, 3, 11, '#3fae57'); b.top = 11; },
+  monost(b, C){ C.part(P.pad, 0, -.4, 0, 23, .45, 15, '#8d8a83'); for(const [x,z] of [[-9,-5],[9,-5],[-9,5],[9,5]]) C.part(P.equip, x, 0, z, 1.2, 12, 1.2, '#b9bcbf');
+    C.part(P.equip, 0, 12, 0, 22, .8, 14, '#d9dcdf'); C.part(P.glass, 0, 12.8, 3.5, 20, 3.2, 5, '#8fb6cc'); C.part(P.equip, 0, 16, 0, 23, .4, 15, '#3a3f45'); C.part(P.metal, 8, 0, 0, 3, 12, 3, '#c9ccd0'); C.part(P.sign, 0, 16.6, 7.6, 4, 1.2, .2, '#1fb3b3'); b.top = 17; },
+  pier(b, C){ C.part(P.pad, 0, -.4, 0, 23, .45, 23, '#8d8a83'); C.fac(0, 0, 5, 14, 5, 9, '#d8d4cc', 'svc'); C.part(P.equip, 0, 5, 5, 15, .5, 10, '#1d4f91');
+    C.part(P.pad, 0, -.2, -16, 5, .5, 16, '#7a6a55'); for(const z of [-10, -18]) for(const x of [-2.4, 2.4]) C.part(P.equip, x, -4, z, .5, 4.4, .5, '#5a4a3a'); b.top = 7; },
   station(b, C){ C.part(P.pad, 0, -.4, 0, 63, .45, 23, '#8d8a83'); C.fac(0, 0, 4, 36, 12, 12, '#d6c6a4', 'svc'); C.part(P.roofG, 0, 12, 4, 37, 5, 12.6, '#51565b'); C.fac(0, 0, 4, 8, 22, 8, '#cbb993', 'svc');
     C.part(P.equip, 0, 3.5, -8, 60, .3, 6, '#6c7075'); for(let x=-28;x<=28;x+=8) C.part(P.equip, x, 0, -8, .3, 3.5, .3, '#3d4145'); b.top = 24; },
   port(b, C){ C.part(P.pad, 0, -.4, 0, 63, .45, 47, '#6e6c68'); for(let k=0;k<30;k++) C.part(P.cont, -26+(k%6)*5.2, (Math.floor(k/12))*2.6, 4+Math.floor(k%12/6)*6.5, 1, 1, 1, pick(PAL.awn, C.r), null, Math.PI/2);
@@ -1969,7 +2022,7 @@ function recomputeCoverage(){ for(const k of ['police','fire','health','edu','en
     if(d.cat === 'police') stamp(fld.police, b.x, b.z, d.radius*eff, 1); if(d.cat === 'fire') stamp(fld.fire, b.x, b.z, d.radius*eff, 1);
     if(d.beds) stamp(fld.health, b.x, b.z, d.radius*eff, 1); if(d.students) stamp(fld.edu, b.x, b.z, d.radius*eff, d.eduLv/3*.4+.6);
     if(d.ent) stamp(fld.ent, b.x, b.z, d.radius*Math.min(1.2, eff), Math.min(1, .5 + d.ent*.15));
-    if(b.type === 'metro' || b.type === 'station') stamp(fld.transit, b.x, b.z, 380, 1); }
+    if(b.type === 'metro' || b.type === 'station' || b.type === 'monost' || b.type === 'pier') stamp(fld.transit, b.x, b.z, 380, 1); }
   for(const ln of lines) for(const st of ln.stops) stamp(fld.transit, st.x, st.z, 260, .8);
   covDirty = false; }
 function updateFields(){
@@ -2009,7 +2062,7 @@ function distributeUtilities(){
   let useP = 0, useW = 0, useS = 0;
   const order = [...buildings.values()].sort((a,b) => a.id - b.id);
   for(const b of order){ if(b.abandoned || b.burned) continue; const nres = b.res.length, nj = b.work.length + (b.kind === 'svc' ? 4 : 0);
-    const pol = policyAt(b); const pn = (nres*.006 + nj*.008 + (b.kind === 'svc' ? .3 : .02))*(pol.powerSave ? .85 : 1)*(pol.lights ? 1.05 : 1), wn = (nres*.009 + nj*.006 + .02)*(pol.waterSave ? .85 : 1);
+    const pol = policyAt(b); const pn = (nres*.006 + nj*.008 + (b.kind === 'svc' ? .3 : .02))*(pol.powerSave ? .85 : 1)*(pol.lights ? 1.05 : 1)*(1 + .28*SW[0] + .1*SW[2]), wn = (nres*.009 + nj*.006 + .02)*(pol.waterSave ? .85 : 1);
     const s = get(compOf(b)); useP += pn; useW += wn; useS += wn;
     if(b.kind === 'svc' && SVC[b.type].power){ b.powered = true; } else { b.powered = s.pu + pn <= s.p + 1e-6; if(b.powered) s.pu += pn; }
     b.watered = s.wu + wn <= s.w + 1e-6; if(b.watered) s.wu += wn; b.sewered = s.su + wn <= s.s + 1e-6; if(b.sewered) s.su += wn; b.waterPoll = s.poll; }
@@ -2198,7 +2251,7 @@ state.jobsBy = { C:0, I:0, O:0, S:0 }; state.eduCount = [0,0,0,0];
 /* ===== 09-vehicles.js ===== */
 /* ================= véhicules et piétons ================= */
 const VP = {}; // pools par modèle
-for(const k of ['sedan','hatch','suv','van','truck','bus','fire','police','ambulance','garbage','hearse','train']){ const v = VEH[k];
+for(const k of ['sedan','hatch','suv','van','truck','bus','tram','fire','police','ambulance','garbage','hearse','train']){ const v = VEH[k];
   VP[k] = new Pool(v.geo, MAT.veh, k === 'sedan' || k === 'hatch' ? 1024 : 256, { receive:false });
   if(v.lights) VP[k].link(v.lights, MAT.vlight); if(v.siren) VP[k].link(v.siren, MAT.siren); }
 VP.ped = new Pool(PED, MAT.walker, 1024, { receive:false });
@@ -2213,7 +2266,8 @@ let agentCount = { v:0, p:0 };
 function laneIndexFor(sg, dir, kind, turn){
   const t = RT[sg.type]; let best = -1, bv = 0; const cands = [];
   t.lanes.forEach((l, i) => { if(l.dir !== dir && !(kind === 'ped')) return; if(kind === 'ped') return;
-    const ok = l.kind === 'car' || (l.kind === 'bus' && (kind === 'bus' || kind === 'fire' || kind === 'police' || kind === 'ambulance')) || (l.kind === 'rail' && kind === 'train');
+    if(kind === 'tram'){ if(l.kind === 'tram' || l.kind === 'tramonly') cands.push(i); return; } if(l.kind === 'tramonly') return;
+    const ok = l.kind === 'car' || l.kind === 'tram' || (l.kind === 'bus' && (kind === 'bus' || kind === 'fire' || kind === 'police' || kind === 'ambulance')) || (l.kind === 'rail' && kind === 'train');
     if(kind === 'train' && l.kind !== 'rail') return; if(ok && (kind !== 'train' || l.kind === 'rail')) cands.push(i); });
   if(!cands.length) return -1;
   if(turn > .3){ for(const i of cands){ const v = t.lanes[i].off*dir; if(best < 0 || v > bv){ best = i; bv = v; } } return best; }
@@ -2283,7 +2337,7 @@ function updateAgents(dt, simSpeed){
     if(mdt > 0){ a.age += mdt;
       if(a.dwell > 0){ a.dwell -= mdt; if(a.dwell <= 0 && a.afterDwell){ const f = a.afterDwell; a.afterDwell = null; f(a); } positionAgent(a); writeMatrix(a); continue; }
       if(!stepAgent(a, mdt)){ if(a.loop && a.loop(a)){ positionAgent(a); writeMatrix(a); continue; } const cb = a.onArrive; removeAgent(idx); if(cb) cb(a); continue; }
-      if(a.age > 900 || (a.wait > 45 && a.kind !== 'bus')){ const cb = a.onFail || a.onArrive; removeAgent(idx); if(cb) cb(a, true); continue; } }
+      if(a.age > 900 || (a.wait > 45 && a.kind !== 'bus' && a.kind !== 'tram')){ const cb = a.onFail || a.onArrive; removeAgent(idx); if(cb) cb(a, true); continue; } }
     positionAgent(a); let dy = angDiff(a.tyaw, a.yaw); a.yaw += dy*Math.min(1, dt*10); writeMatrix(a);
     if(a.train) placeTrainCars(a); }
 }
@@ -2420,42 +2474,64 @@ const lines = []; let lineSeq = 1;
 const LINE_COLORS = ['#e8453c','#2f7fd6','#3fae57','#e8a23a','#8e5bd6','#1fb3b3','#d6457f','#8a6a3a','#5a6bd6','#b3b31f'];
 const shelterPool = new Pool(SHELTER, MAT.vc, 256);
 VP.ship = new Pool(VEH.ship.geo, MAT.vc, 8); VP.plane = new Pool(VEH.plane.geo, MAT.vc, 8);
-function newLine(type){ const L = { id:lineSeq++, type, name:(type === 'bus' ? 'Bus ' : 'Métro ') + (lines.filter(l => l.type === type).length + 1), color:LINE_COLORS[(lineSeq-2) % LINE_COLORS.length], stops:[], closed:false, veh:[], pass:0, passDay:0, trains:[] }; return L; }
-function stopFromPoint(x, z){ const r = nearestSeg(x, z, 30, s => RT[s.type].car && !s.tunnel); if(!r) return null; const p = segPoint(r.sg, r.s, {}), t = RT[r.sg.type];
+const LINE_T = { bus:{ n:'Bus', stop:'arrêts', veh:'bus', road:true }, tram:{ n:'Tram', stop:'arrêts', veh:'rames', road:true }, metro:{ n:'Métro', stop:'stations', veh:'rames', st:'metro', speed:20 },
+  mono:{ n:'Monorail', stop:'stations', veh:'rames', st:'monost', speed:24 }, ferry:{ n:'Ferry', stop:'embarcadères', veh:'ferries', st:'pier', speed:9 } };
+function newLine(type){ const L = { id:lineSeq++, type, name:LINE_T[type].n + ' ' + (lines.filter(l => l.type === type).length + 1), color:LINE_COLORS[(lineSeq-2) % LINE_COLORS.length], stops:[], closed:false, veh:[], pass:0, passDay:0, trains:[] }; return L; }
+function stopFromPoint(x, z, type='bus'){ const r = nearestSeg(x, z, 30, s => (type === 'tram' ? RT[s.type].tram : RT[s.type].car) && !s.tunnel); if(!r) return null; const p = segPoint(r.sg, r.s, {}), t = RT[r.sg.type];
   const side = ((x-p.x)*(-p.dz) + (z-p.z)*p.dx) >= 0 ? 1 : -1; const off = t.cw + (t.hw - t.cw)*.5;
   return { sg:r.sg, s:clamp(r.s, 3, r.sg.len-3), side, x:p.x - p.dz*off*side, z:p.z + p.dx*off*side, y:p.y, ang:Math.atan2(-p.dz*side, p.dx*side), wait:0 }; }
 function addStopVisual(st){ _c.setRGB(1,1,1); st.h = place(shelterPool, st.x, st.y + .18, st.z, 1, 1, 1, st.ang + Math.PI, _c); }
 function finishLine(L){ L.closed = true; lines.push(L); covDirty = true; L.len = 0;
-  if(L.type === 'bus'){ for(let k=0;k<L.stops.length;k++){ const a = L.stops[k], b = L.stops[(k+1)%L.stops.length]; L.len += Math.hypot(a.x-b.x, a.z-b.z); } setTimeout0(() => refillBuses(L), 1); }
-  else { for(let k=0;k<L.stops.length;k++){ const a = L.stops[k], b = L.stops[(k+1)%L.stops.length]; L.len += Math.hypot(a.x-b.x, a.z-b.z); } const n = Math.max(1, Math.round(L.len/900)); for(let k=0;k<n;k++) L.trains.push({ seg:Math.floor(k*L.stops.length/n), t:0, dwell:0, pass:0 }); }
+  if(LINE_T[L.type].road){ for(let k=0;k<L.stops.length;k++){ const a = L.stops[k], b = L.stops[(k+1)%L.stops.length]; L.len += Math.hypot(a.x-b.x, a.z-b.z); } setTimeout0(() => refillBuses(L), 1); }
+  else { if(L.type === 'mono') buildMonoTrack(L); for(let k=0;k<L.stops.length;k++){ const a = L.stops[k], b = L.stops[(k+1)%L.stops.length]; L.len += Math.hypot(a.x-b.x, a.z-b.z); } const n = Math.max(1, Math.round(L.len/(L.type === 'ferry' ? 1400 : 900))); for(let k=0;k<n;k++){ const tr = { seg:Math.floor(k*L.stops.length/n), t:0, dwell:0, pass:0 }; if(L.type !== 'metro'){ _c.set(L.type === 'ferry' ? '#ffffff' : L.color); tr.h = place(L.type === 'mono' ? monoPool : ferryPool, 0, -300, 0, 1, 1, 1, 0, _c); } L.trains.push(tr); } }
   transitDirty = true; }
-function removeLine(L){ const i = lines.indexOf(L); if(i >= 0) lines.splice(i,1); for(const st of L.stops) if(st.h) shelterPool.remove(st.h);
+function removeLine(L){ const i = lines.indexOf(L); if(i >= 0) lines.splice(i,1); for(const st of L.stops) if(st.h) shelterPool.remove(st.h); for(const tr of L.trains) if(tr.h) tr.h.pool.remove(tr.h); if(L.track){ scene.remove(L.track); L.track.geometry.dispose(); }
   for(let k=agents.length-1;k>=0;k--) if(agents[k].line === L) removeAgent(k); covDirty = true; transitDirty = true; }
 function stopAccess(st){ return { sg:st.sg, s:st.s, x:st.x, z:st.z }; }
-function refillBuses(L){ if(!lines.includes(L) || L.type !== 'bus') return;
+function refillBuses(L){ if(!lines.includes(L) || !LINE_T[L.type].road) return; const tram = L.type === 'tram';
   const want = Math.max(1, Math.round(L.len/700*budgetEff('transit'))); const have = agents.filter(a => a.line === L).length;
-  const depots = [...buildings.values()].filter(b => b.type === 'depot' && b.access);
-  if(!depots.length){ hint('depot'); setTimeout0(() => refillBuses(L), 60); return; }
+  const depots = [...buildings.values()].filter(b => b.type === (tram ? 'tramdepot' : 'depot') && b.access);
+  if(!depots.length){ if(tram) toast('Construisez un dépôt de tramways relié aux voies de tram.'); else hint('depot'); setTimeout0(() => refillBuses(L), 60); return; }
   for(let k=have;k<want;k++){ const st = L.stops[(k*Math.max(1, Math.floor(L.stops.length/want))) % L.stops.length]; const dep = depots.reduce((a,b) => dist2(a.x,a.z,st.x,st.z) < dist2(b.x,b.z,st.x,st.z) ? a : b);
-    const route = routeBetween(dep.access, stopAccess(st), 'bus'); if(!route) continue;
-    spawnAgent({ kind:'bus', model:'bus', route, color:L.color, line:L, next:L.stops.indexOf(st), onboard:0, loop:busLoop }); }
+    const route = routeBetween(tram ? tramAccess(dep) : dep.access, stopAccess(st), tram ? 'tram' : 'bus'); if(!route) continue;
+    spawnAgent({ kind:tram ? 'tram' : 'bus', model:tram ? 'tram' : 'bus', route, color:L.color, line:L, next:L.stops.indexOf(st), onboard:0, loop:busLoop }); }
   setTimeout0(() => refillBuses(L), 120); }
 function busLoop(a){ // arrivée à un arrêt : échange de voyageurs puis trajet vers l'arrêt suivant
   const L = a.line; if(!lines.includes(L)) return false; const st = L.stops[a.next]; if(!st) return false;
-  const off = Math.round(a.onboard*(.3 + rnd()*.4)); a.onboard -= off; const on = Math.min(st.wait, 60 - a.onboard); st.wait -= on; a.onboard += on; L.pass += on; state.fares = (state.fares||0) + on;
-  const ni = (a.next+1) % L.stops.length, nx = L.stops[ni]; const route = routeBetween(stopAccess(st), stopAccess(nx), 'bus'); if(!route) return false;
+  const off = Math.round(a.onboard*(.3 + rnd()*.4)); a.onboard -= off; const on = Math.min(st.wait, (a.kind === 'tram' ? 180 : 60) - a.onboard); st.wait -= on; a.onboard += on; L.pass += on; state.fares = (state.fares||0) + on;
+  const ni = (a.next+1) % L.stops.length, nx = L.stops[ni]; const route = routeBetween(stopAccess(st), stopAccess(nx), a.kind === 'tram' ? 'tram' : 'bus'); if(!route) return false;
   resetAgentRoute(a, route); a.next = ni; a.dwell = 5 + on*.08; return true; }
 function resetAgentRoute(a, route){ const legs = legPrep(route, a.kind); if(!legs) return false; if(a.node) leaveNode(a); else leaveLane(a); a.legs = legs; a.li = 0; a.s = legs[0].from; a.v = 0; a.age = 0; a.wait = 0; enterLane(a); return true; }
-function transitNear(b){ if(!b) return null; for(const L of lines){ for(const st of L.stops){ const R = L.type === 'bus' ? 320 : 480; if(dist2(st.x, st.z, b.x, b.z) < R*R) return { L, st }; } } return null; }
-function transitTrip(from, to){ for(const L of lines){ let sa = null, sb = null; const R = L.type === 'bus' ? 320 : 480;
+function transitNear(b){ if(!b) return null; for(const L of lines){ for(const st of L.stops){ const R = LINE_T[L.type].road ? 320 : 480; if(dist2(st.x, st.z, b.x, b.z) < R*R) return { L, st }; } } return null; }
+function transitTrip(from, to){ for(const L of lines){ let sa = null, sb = null; const R = LINE_T[L.type].road ? 320 : 480;
     for(const st of L.stops){ if(!sa && dist2(st.x,st.z,from.x,from.z) < R*R) sa = st; if(!sb && dist2(st.x,st.z,to.x,to.z) < R*R) sb = st; }
-    if(sa && sb){ if(L.type === 'bus') sa.wait = Math.min(200, sa.wait + 1); else { L.pass++; state.fares = (state.fares||0) + 1; } return true; } } return false; }
+    if(sa && sb){ if(LINE_T[L.type].road) sa.wait = Math.min(200, sa.wait + 1); else { L.pass++; state.fares = (state.fares||0) + 1; } return true; } } return false; }
 /* métro : rames souterraines entre les stations */
 const metroPool = new Pool(new THREE.BoxGeometry(3, 3.4, 60).translate(0, 1.7, 0), MAT.vc, 64, { cast:false });
-function updateMetro(dt){ for(const L of lines){ if(L.type !== 'metro') continue; const n = L.stops.length; if(n < 2) continue;
+function updateMetro(dt){ for(const L of lines){ if(LINE_T[L.type].road) continue; const n = L.stops.length; if(n < 2) continue; const spd = LINE_T[L.type].speed;
     for(const tr of L.trains){ if(tr.dwell > 0){ tr.dwell -= dt; continue; } const a = L.stops[tr.seg % n], b = L.stops[(tr.seg+1) % n]; const len = Math.hypot(b.x-a.x, b.z-a.z) || 1;
-      tr.t += dt*20*budgetEff('transit')/len; if(tr.t >= 1){ tr.t = 0; tr.seg = (tr.seg+1) % n; tr.dwell = 15; }
-      const x = lerp(a.x, b.x, tr.t), z = lerp(a.z, b.z, tr.t); tr.x = x; tr.z = z; tr.ang = Math.atan2(b.x-a.x, b.z-a.z); } } }
+      tr.t += dt*spd*budgetEff('transit')/len; if(tr.t >= 1){ tr.t = 0; tr.seg = (tr.seg+1) % n; tr.dwell = L.type === 'ferry' ? 25 : 15; if(L.type !== 'metro'){ const m = Math.round(4 + rnd()*20); L.pass += m; state.fares = (state.fares||0) + m*(L.type === 'ferry' ? 2 : 1); } }
+      const e = smooth(0, 1, tr.t)*.7 + tr.t*.3, x = lerp(a.x, b.x, e), z = lerp(a.z, b.z, e); tr.x = x; tr.z = z; tr.ang = Math.atan2(b.x-a.x, b.z-a.z);
+      if(tr.h){ let y; if(L.type === 'mono') y = monoY(a, b, e); else { y = waterSurfAt(x, z) - .3; tr.bob = Math.sin(U.uTime.value*1.3 + tr.seg)*.04; }
+        _e.set(tr.bob||0, tr.ang, 0, 'YXZ'); _q.setFromEuler(_e); _m.compose(_p.set(x, y, z), _q, _s.set(1,1,1)); tr.h.pool.setMatrix(tr.h, _m); } } } }
+/* monorail : poutre surélevée sur piliers entre les stations */
+const MONO_H = 14; const monoPool = new Pool(VEH.mono.geo, MAT.veh, 64); const ferryPool = new Pool(VEH.ferry.geo, MAT.veh, 48);
+function monoY(a, b, t){ const ya = (a.b ? a.b.y : heightAt(a.x, a.z)) + MONO_H, yb = (b.b ? b.b.y : heightAt(b.x, b.z)) + MONO_H; const x = lerp(a.x, b.x, t), z = lerp(a.z, b.z, t);
+  return Math.max(lerp(ya, yb, t), Math.max(heightAt(x, z), SEA) + 9); }
+function buildMonoTrack(L){ const g = GB(), n = L.stops.length, beam = col('#d9dcdf'), pil = col('#b9bcbf');
+  const box = (x, y, z, w, h, d, ang, cc) => { const ca = Math.cos(ang), sa = Math.sin(ang), P = (dx, dy, dz) => [x + dx*ca + dz*sa, y + dy, z - dx*sa + dz*ca];
+    const v = [P(-w,0,-d),P(w,0,-d),P(w,0,d),P(-w,0,d),P(-w,h,-d),P(w,h,-d),P(w,h,d),P(-w,h,d)];
+    quad(g, v[4],v[7],v[6],v[5], cc, [0,1,0]); quad(g, v[0],v[1],v[5],v[4], cc, [-sa,0,-ca]); quad(g, v[2],v[3],v[7],v[6], cc, [sa,0,ca]); quad(g, v[3],v[0],v[4],v[7], cc, [-ca,0,sa]); quad(g, v[1],v[2],v[6],v[5], cc, [ca,0,-sa]); };
+  for(let k=0;k<n;k++){ const a = L.stops[k], b = L.stops[(k+1)%n], len = Math.hypot(b.x-a.x, b.z-a.z), ang = Math.atan2(b.x-a.x, b.z-a.z), m = Math.max(1, Math.ceil(len/6));
+    for(let i=0;i<m;i++){ const t0 = i/m, t1 = (i+1)/m, tm = (t0+t1)/2, x = lerp(a.x, b.x, tm), z = lerp(a.z, b.z, tm), y = monoY(a, b, tm); box(x, y - 3.4, z, .9, 1.6, len/m/2 + .05, ang, beam); }
+    for(let s=20; s<len-10; s+=34){ const t = s/len, x = lerp(a.x, b.x, t), z = lerp(a.z, b.z, t), gy = Math.max(heightAt(x, z), isWet(x, z) ? wb[wIdx(x, z)] ?? SEA - 4 : -1e9), y = monoY(a, b, t);
+      box(x, gy - .5, z, .8, y - 3.4 - gy + .5, .8, ang, pil); box(x, y - 4.2, z, 1.3, .8, 1.3, ang, pil); } }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(g.p,3)); geo.setAttribute('normal', new THREE.Float32BufferAttribute(g.n,3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(g.c,3));
+  L.track = new THREE.Mesh(geo, MAT.vc); L.track.castShadow = L.track.receiveShadow = true; scene.add(L.track); }
+function stationStop(type, b){ return type === 'ferry' ? { ...pierDock(b), b, wait:0 } : { x:b.x, z:b.z, b, wait:0 }; }
+function tramAccess(dep){ const r = nearestSeg(dep.x, dep.z, Math.max(dep.hw, dep.hd) + 40, s => RT[s.type].tram); return r ? { sg:r.sg, s:clamp(r.s, 2, r.sg.len-2), x:r.x, z:r.z } : null; }
+/* embarcadère : point d'accostage côté eau */
+function pierDock(b){ return { x:b.x - b.front[0]*(b.hd + 14), z:b.z - b.front[1]*(b.hd + 14) }; }
 function drawMetro(){ metroPool.clear(); if(overlay !== 'transit') return; for(const L of lines){ if(L.type !== 'metro') continue; for(const tr of L.trains){ if(tr.x === undefined) continue; _c.set(L.color); place(metroPool, tr.x, heightAt(tr.x, tr.z)+3, tr.z, 1, 1, 1, tr.ang, _c); } } }
 /* ruban d'affichage des lignes (vue « Transports ») */
 let transitMesh = null, transitDirty = true;
@@ -2464,7 +2540,7 @@ function rebuildTransitMesh(){ transitDirty = false; if(transitMesh){ scene.remo
   const ribbon = (pts, cc, w, lift) => { for(let i=0;i<pts.length-1;i++){ const [x0,z0] = pts[i], [x1,z1] = pts[i+1]; const dx = x1-x0, dz = z1-z0, l = Math.hypot(dx,dz)||1, nx = -dz/l*w, nz = dx/l*w;
       const y0 = Math.max(heightAt(x0,z0), SEA)+lift, y1 = Math.max(heightAt(x1,z1), SEA)+lift; quad(g, [x0-nx,y0,z0-nz],[x0+nx,y0,z0+nz],[x1+nx,y1,z1+nz],[x1-nx,y1,z1-nz], cc, [0,1,0]); } };
   for(const L of lines){ const cc = col(L.color);
-    if(L.type === 'bus'){ for(let k=0;k<L.stops.length;k++){ const a = L.stops[k], b = L.stops[(k+1)%L.stops.length]; const r = routeBetween(stopAccess(a), stopAccess(b), 'bus'); if(!r) continue; const pts = [];
+    if(LINE_T[L.type].road){ for(let k=0;k<L.stops.length;k++){ const a = L.stops[k], b = L.stops[(k+1)%L.stops.length]; const r = routeBetween(stopAccess(a), stopAccess(b), L.type === 'tram' ? 'tram' : 'bus'); if(!r) continue; const pts = [];
         for(const leg of r){ const n = Math.max(2, Math.ceil(Math.abs(leg.to-leg.from)/6)); for(let i=0;i<=n;i++){ const p = segPoint(leg.sg, lerp(leg.from, leg.to, i/n), _sp); pts.push([p.x, p.z]); } } ribbon(pts, cc, 1.6, 1.2); } }
     else { const pts = L.stops.map(s => [s.x, s.z]); pts.push(pts[0]); const dense = []; for(let k=0;k<pts.length-1;k++) for(let i=0;i<8;i++) dense.push([lerp(pts[k][0], pts[k+1][0], i/8), lerp(pts[k][1], pts[k+1][1], i/8)]); dense.push(pts[pts.length-1]); ribbon(dense, cc, 2.4, 1.6); } }
   const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(g.p,3)); geo.setAttribute('normal', new THREE.Float32BufferAttribute(g.n,3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(g.c,3));
@@ -2588,13 +2664,18 @@ function repayLoan(k){ const L = state.loans.find(x => x.k === k); if(!L) return
 const WEATHER = { clear:{ n:'Ensoleillé', cloud:.12, rain:0, snow:0, fog:0 }, cloudy:{ n:'Nuageux', cloud:.62, rain:0, snow:0, fog:.1 }, rain:{ n:'Pluie', cloud:.86, rain:1, snow:0, fog:.25 },
   storm:{ n:'Orage', cloud:1, rain:1.5, snow:0, fog:.3 }, fog:{ n:'Brouillard', cloud:.4, rain:0, snow:0, fog:1 }, snow:{ n:'Neige', cloud:.8, rain:0, snow:1, fog:.35 } };
 const weather = { kind:'clear', cloud:.12, rain:0, snow:0, fog:0, next:600, flashT:0 };
-function pickWeather(){ const r = rnd(); return r < .42 ? 'clear' : r < .66 ? 'cloudy' : r < .82 ? 'rain' : r < .88 ? 'storm' : r < .95 ? 'fog' : 'snow'; }
+const SEASON_W = [ { clear:.28, cloudy:.27, snow:.3, fog:.15 }, { clear:.4, cloudy:.25, rain:.25, storm:.05, fog:.05 }, { clear:.6, cloudy:.13, rain:.1, storm:.17 }, { clear:.25, cloudy:.3, rain:.3, storm:.05, fog:.1 } ];
+const SW = [0,0,1,0];
+function pickWeather(){ const t = SEASON_W[seasonIdx()]; let r = rnd(); for(const k in t){ r -= t[k]; if(r <= 0) return k; } return 'clear'; }
+function temperature(){ const h = hourOf(); return SW[0]*1 + SW[1]*13 + SW[2]*26 + SW[3]*12 + 4*Math.sin((h-9)/24*Math.PI*2) - weather.rain*2 - weather.snow*2; }
 function updateWeather(dt, gdt){
+  seasonWeights(SW); U.uSeasonW.value.set(SW[0], SW[1], SW[2], SW[3]);
   if(state.weatherMode === 'auto'){ weather.next -= gdt; if(weather.next <= 0){ weather.kind = pickWeather(); weather.next = 240 + rnd()*600; } } else weather.kind = state.weatherMode;
   const T = WEATHER[weather.kind], k = Math.min(1, dt*.08);
   weather.cloud = lerp(weather.cloud, T.cloud, k); weather.rain = lerp(weather.rain, T.rain, k); weather.snow = lerp(weather.snow, T.snow, k); weather.fog = lerp(weather.fog, T.fog, k);
   U.uWet.value = weather.rain > .15 ? Math.min(1, U.uWet.value + dt*.05) : Math.max(0, U.uWet.value - dt*.012);
-  U.uSnow.value = weather.snow > .2 ? Math.min(1, U.uSnow.value + dt*.02*(gdt ? 1 : 0)+dt*.004) : Math.max(0, U.uSnow.value - dt*.006);
+  U.uSnow.value = weather.snow > .2 ? Math.min(1, U.uSnow.value + dt*.02*(gdt ? 1 : 0)+dt*.004) : Math.max(0, U.uSnow.value - dt*(SW[0] > .5 && weather.kind !== 'rain' ? .0008 : .006)*(gdt ? 1 : .3));
+  WATER.rain = weather.rain;
   cloudMat.uniforms.uCover.value = weather.cloud*.75 + .12;
   if(weather.kind === 'storm'){ weather.flashT -= dt; if(weather.flashT <= 0){ weather.flashT = 4 + rnd()*12; flash.intensity = 6; setTimeout(() => audioThunder(), 400 + rnd()*2500); } }
   flash.intensity = Math.max(0, flash.intensity - dt*25);
@@ -2646,7 +2727,8 @@ function updateSmoke(dt){
 const sunDir = new THREE.Vector3(), lightDir = new THREE.Vector3(), fogDay = col('#b9c7d3'), fogGold = col('#d6a57c'), fogNight = col('#0a1018'), fogGrey = col('#8f99a3'), hemiDay = col('#c3d6f0'), hemiNight = col('#26324a');
 let bloom = null;
 function updateSun(){
-  const hr = state.dayCycle ? hourOf() : 13.5, elev = 62*Math.sin((hr-6)/12*Math.PI), theta = Math.PI*.5 - (hr-6)/12*Math.PI + .35;
+  const rise = 6 + 1.4*SW[0] - 1.2*SW[2], span = 24 - 2*rise, maxE = 50 - 20*SW[0] + 18*SW[2] + 4*(SW[1]+SW[3]);
+  const hr = state.dayCycle ? hourOf() : 13.5, elev = maxE*Math.sin((hr-rise)/span*Math.PI), theta = Math.PI*.5 - (hr-rise)/span*Math.PI + .35;
   sunDir.setFromSphericalCoords(1, THREE.MathUtils.degToRad(90-elev), theta); su.sunPosition.value.copy(sunDir);
   su.turbidity.value = 4.5 + weather.cloud*6; su.rayleigh.value = 1.25 + weather.cloud*1.2;
   const day = smooth(-3,10,elev), night = smooth(5,-5,elev), gold = smooth(-2,4,elev)*smooth(24,6,elev), cl = 1 - weather.cloud*.62;
@@ -2730,6 +2812,79 @@ function radioSchedule(){ if(!AUDIO.ctx || AUDIO.vol.radio <= 0 || !AUDIO.on) { 
     if(pos === 0 || pos === 5){ const o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(45, t+.15); g.gain.setValueAtTime(.18, t); g.gain.exponentialRampToValueAtTime(.001, t+.2); o.connect(g); g.connect(AUDIO.radio); o.start(t); o.stop(t+.22); }
     RADIO.step++; RADIO.next += beat; } }
 
+/* ===== 12b-disasters.js ===== */
+/* ================= catastrophes naturelles ================= */
+const DIS = { list:[], shake:0, dead:0, ruined:0 }; const DIS_R = { meteor:90, quake:500, tornado:30, tsunami:0 };
+const DIS_N = { meteor:'Météorite', quake:'Séisme', tornado:'Tornade', tsunami:'Tsunami' };
+const meteorMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(8, 1), new THREE.MeshBasicMaterial({ color:new THREE.Color(4, 2.2, .8) })); meteorMesh.visible = false; scene.add(meteorMesh);
+const tornadoMat = new THREE.ShaderMaterial({ transparent:true, depthWrite:false, side:THREE.DoubleSide, uniforms:{ uTime:U.uTime, uLight:{ value:1 } },
+  vertexShader:`uniform float uTime; varying vec2 vUv; void main(){ vUv = uv; vec3 p = position; float a = uTime*3.0 + p.y*0.05; float h = p.y/260.0;
+    p.x += sin(uTime*0.7 + h*4.0)*h*h*30.0; p.z += cos(uTime*0.6 + h*3.0)*h*h*24.0; float ca = cos(a), sa = sin(a); p.xz = mat2(ca, -sa, sa, ca)*p.xz;
+    gl_Position = projectionMatrix*modelViewMatrix*vec4(p, 1.0); }`,
+  fragmentShader:`uniform float uTime, uLight; varying vec2 vUv; float h(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5); }
+    float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f); return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y); }
+    void main(){ float s = n(vec2(vUv.x*14.0 + vUv.y*6.0 - uTime*2.5, vUv.y*5.0 - uTime*0.8)) * 0.7 + n(vec2(vUv.x*40.0, vUv.y*16.0 - uTime*3.0))*0.3;
+      float a = smoothstep(0.25, 0.8, s) * (0.35 + 0.45*(1.0-vUv.y)) * smoothstep(0.0, 0.08, vUv.y) * smoothstep(1.0, 0.8, vUv.y);
+      gl_FragColor = vec4(vec3(0.36, 0.33, 0.3)*uLight*(0.7+0.3*s), a); }` });
+const tornadoMesh = new THREE.Mesh(new THREE.CylinderGeometry(55, 7, 260, 32, 16, true).translate(0, 130, 0), tornadoMat); tornadoMesh.visible = false; tornadoMesh.renderOrder = 4; scene.add(tornadoMesh);
+
+function dust(x, y, z, R, n, shade=.55){ for(let k=0;k<n;k++){ const a = rnd()*6.28, r = rnd()*R; spawnParticle(x + Math.cos(a)*r, y + rnd()*4, z + Math.sin(a)*r, (rnd()-.5)*3, 1 + rnd()*3, (rnd()-.5)*3, 6 + rnd()*6, 8 + rnd()*10, shade); } }
+function ruin(b, kill){ // un bâtiment est détruit : ruines, victimes et habitants délogés
+  if(!buildings.has(b.id) || b.burned || b.dam) return; let dead = 0;
+  for(const i of b.res.slice()){ if(rnd() < kill) dead++; removeCim(i); }
+  for(const i of b.work.slice()) CZ.work[i] = 0; b.work.length = 0; b.jl = [0,0,0,0]; if(b.fire){ b.fire = null; fires.delete(b); }
+  b.burned = true; b.ruinT = 0; buildModel(b); dust(b.x, b.y, b.z, Math.max(b.hw, b.hd), 6); DIS.dead += dead; DIS.ruined++; covDirty = true; }
+function bldsNear(x, z, R){ const out = []; for(const b of buildings.values()) if(!b.burned && dist2(b.x, b.z, x, z) < (R + Math.max(b.hw, b.hd))**2) out.push(b); return out; }
+
+function startDisaster(type, x, z){
+  if(type === 'tsunami'){ x = 0; z = coastZ(0) + 200; }
+  const e = { type, x, z, t:0, warn:type === 'meteor' ? 0 : 6, dur:{ meteor:9, quake:14, tornado:70, tsunami:150 }[type], done:false };
+  if(type === 'tornado'){ const a = rnd()*6.28; e.vx = Math.cos(a)*9; e.vz = Math.sin(a)*9; }
+  if(type === 'meteor'){ const a = rnd()*6.28; e.sx = x + Math.cos(a)*900; e.sz = z + Math.sin(a)*900; }
+  e.r0 = DIS.ruined; e.d0 = DIS.dead; DIS.list.push(e); state.disLast = state.time;
+  toast(`Alerte : ${DIS_N[type].toLowerCase()} ${type === 'tsunami' ? 'en approche depuis la mer' : 'imminent' + (type === 'tornado' ? 'e' : '')} !`); feed('Protection civile', `Alerte ${DIS_N[type].toLowerCase()} : mettez-vous à l'abri.`);
+  audioThunder(); return e; }
+
+function updateDisasters(dt){ // dt : secondes de simulation
+  if(!dt) return;
+  if(state.disAuto && state.time > (state.disNext ??= state.time + DAY*16)){ state.disNext = state.time + DAY*(18 + rnd()*22);
+    const bl = bldArr.filter(b => b.kind === 'zone'); if(bl.length > 40){ const t = pick(['meteor','quake','tornado','tornado','tsunami'], rnd), b = pick(bl, rnd); startDisaster(t, b.x + (rnd()-.5)*200, b.z + (rnd()-.5)*200); } }
+  meteorMesh.visible = false; tornadoMesh.visible = false;
+  for(const e of DIS.list){ e.t += dt; const T = e.t - e.warn; if(T < 0) continue;
+    if(e.type === 'meteor'){ const f = Math.min(1, T/6), gy = heightAt(e.x, e.z);
+      if(f < 1){ const x = lerp(e.sx, e.x, f), z = lerp(e.sz, e.z, f), y = lerp(1400, gy, f); meteorMesh.visible = true; meteorMesh.position.set(x, y, z); meteorMesh.rotation.x += dt*2;
+        for(let k=0;k<4;k++) spawnParticle(x + (rnd()-.5)*8, y + (rnd()-.5)*8, z + (rnd()-.5)*8, 0, 0, 0, 1.5 + rnd(), 14 + rnd()*10, .5, 1); spawnParticle(x, y, z, 0, 0, 0, 12, 22, .3); }
+      else if(!e.hit){ e.hit = true; DIS.shake = 3; flash.intensity = 9; audioThunder(); audioThunder();
+        const tool = TERRA.tool, size = TERRA.size, str = TERRA.strength; for(const b of bldsNear(e.x, e.z, 70)) ruin(b, .45);
+        for(const sg of [...segs.values()]){ if(!segs.has(sg.id)) continue; for(let i=0;i<=sg.n;i+=2) if(dist2(sg.P[i*3], sg.P[i*3+2], e.x, e.z) < 40*40){ removeSeg(sg); break; } }
+        TERRA.tool = 'lower'; TERRA.size = 60; TERRA.strength = 3; for(let k=0;k<8;k++) terraform(e.x, e.z, .5); TERRA.tool = 'raise'; TERRA.size = 90; TERRA.strength = .35; terraform(e.x, e.z, .5);
+        TERRA.tool = tool; TERRA.size = size; TERRA.strength = str; removeTrees((x, z) => dist2(x, z, e.x, e.z) < 110*110, e.x-110, e.z-110, e.x+110, e.z+110);
+        for(const b of bldsNear(e.x, e.z, 170)) if(!b.burned && !b.fire && rnd() < .35){ b.fire = { t:0, hp:100 }; addFire(b); queueReq('fire', b); }
+        for(let k=0;k<60;k++){ const a = rnd()*6.28, s = 8 + rnd()*30; spawnParticle(e.x, gy + 4, e.z, Math.cos(a)*s, 6 + rnd()*20, Math.sin(a)*s, 2 + rnd()*2, 16 + rnd()*14, .6, 1); }
+        dust(e.x, gy, e.z, 80, 80, .35); e.done = true; } }
+    if(e.type === 'quake'){ const k = Math.sin(Math.min(1, T/e.dur)*Math.PI); DIS.shake = Math.max(DIS.shake, 2.4*k);
+      if(!e.list) e.list = bldsNear(e.x, e.z, 500).map(b => ({ b, at:rnd()*e.dur*.8, p:clamp(.08 + (b.top||10)/180 - (b.level||1)*.015, .05, .55)*(1 - Math.hypot(b.x-e.x, b.z-e.z)/650) }));
+      for(const q of e.list) if(!q.done && T > q.at){ q.done = true; if(rnd() < q.p) ruin(q.b, .15); }
+      if(rnd() < dt*3) dust(e.x + (rnd()-.5)*700, heightAt(e.x, e.z), e.z + (rnd()-.5)*700, 30, 6);
+      if(T > e.dur) e.done = true; }
+    if(e.type === 'tornado'){ e.vx += (rnd()-.5)*dt*4; e.vz += (rnd()-.5)*dt*4; const sp = Math.hypot(e.vx, e.vz); if(sp > 12){ e.vx *= 12/sp; e.vz *= 12/sp; }
+      e.x += e.vx*dt; e.z += e.vz*dt; const gy = heightAt(e.x, e.z); const f = smooth(0, 5, T)*smooth(e.dur, e.dur - 8, T);
+      tornadoMesh.visible = true; tornadoMesh.position.set(e.x, Math.max(gy, SEA), e.z); tornadoMesh.scale.set(f, .3 + .7*f, f); tornadoMat.uniforms.uLight.value = lerp(.25, 1, 1 - U.uNight.value);
+      if(f > .6){ for(const b of bldsNear(e.x, e.z, 22)) if(rnd() < dt*2.5) ruin(b, .1); removeTrees((x, z) => dist2(x, z, e.x, e.z) < 26*26, e.x-26, e.z-26, e.x+26, e.z+26); }
+      for(let k=0;k<3;k++){ const a = rnd()*6.28, r = 12 + rnd()*30; spawnParticle(e.x + Math.cos(a)*r, gy + rnd()*6, e.z + Math.sin(a)*r, -Math.sin(a)*14, 6 + rnd()*10, Math.cos(a)*14, 3 + rnd()*3, 10 + rnd()*8, .45); }
+      DIS.shake = Math.max(DIS.shake, .25*f); if(T > e.dur || Math.abs(e.x) > HALF + 200 || Math.abs(e.z) > HALF + 200) e.done = true; }
+    if(e.type === 'tsunami'){ // la mer se retire, puis une vague déferle et reflue
+      WATER.surge = T < 25 ? -4*smooth(0, 25, T) : T < 60 ? lerp(-4, 11, smooth(25, 45, T)) : 11*smooth(e.dur, 60, T);
+      if(T > 40 && (e.chk = (e.chk||0) + dt) > 2){ e.chk = 0; for(const b of bldArr) if(!b.burned && b.kind === 'zone' && waterDepthAt(b.x, b.z) > 2.2 && heightAt(b.x, b.z) < waterSurfAt(b.x, b.z) - 2 && rnd() < .25) ruin(b, .2); }
+      if(T > e.dur){ WATER.surge = 0; e.done = true; } } }
+  for(let i=DIS.list.length-1;i>=0;i--) if(DIS.list[i].done){ const e = DIS.list.splice(i, 1)[0], nr = DIS.ruined - e.r0, nd = DIS.dead - e.d0;
+    const msg = `${DIS_N[e.type]} terminé${e.type === 'meteor' ? 'e' : ''}${e.type === 'tornado' ? 'e' : ''} : ${nr} bâtiment${nr > 1 ? 's' : ''} détruit${nr > 1 ? 's' : ''}, ${nd} victime${nd > 1 ? 's' : ''}.`;
+    toast(msg); feed('Protection civile', msg); }
+  DIS.shake = Math.max(0, DIS.shake - dt*.8);
+}
+const shakeV = new THREE.Vector3();
+function shakeOffset(){ const s = DIS.shake; if(s <= 0) return shakeV.set(0,0,0); const t = U.uTime.value*40; return shakeV.set(Math.sin(t*1.3)*s, Math.sin(t*1.7+1)*s*.6, Math.cos(t*1.1)*s); }
+
 /* ===== 13-ui.js ===== */
 /* ================= interface ================= */
 let quietToasts = false;
@@ -2751,7 +2906,7 @@ function randomChirp(){ if(!cimTop || rnd() < .4) return; const i = Math.floor(r
 /* ---------- barre du haut ---------- */
 function hud(){
   $('#dDate').textContent = dateStr(state.time); const h = Math.floor(hourOf()), m = Math.floor(state.time%60); $('#dTime').textContent = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
-  $('#wIcon').textContent = WEATHER[weather.kind].n;
+  $('#wIcon').textContent = `${SEASONS[seasonIdx()]} · ${WEATHER[weather.kind].n} · ${Math.round(temperature())} °C`;
   $('#sPop').textContent = fmt.format(state.pop); const dp = state.pop - (state.histPop||state.pop); $('#sPopD').textContent = state.pop ? `${state.students ? fmt.format(state.students)+' élèves' : ''}` : ''; $('#sPopD').className = 'd num';
   const mEl = $('#sMoney'); mEl.textContent = money(state.money); mEl.className = 'v num'+(state.money < 0 ? ' neg' : '');
   const dEl = $('#sDelta'); dEl.textContent = (state.net >= 0 ? '+' : '−')+fmt.format(Math.abs(Math.round(state.net||0)))+' $/jour'; dEl.className = 'd num '+(state.net >= 0 ? 'pos' : 'neg');
@@ -2850,7 +3005,7 @@ function showInfo(){
     const i = o.cim; const title = i >= 0 && i !== undefined ? cimName(i) : { truck:'Camion de marchandises', bus:'Bus '+(o.line?.name||''), fire:'Camion de pompiers', police:'Voiture de police', ambulance:'Ambulance', garbage:'Camion poubelle', hearse:'Corbillard', train:'Train de voyageurs', car:'Véhicule', ped:'Piéton' }[o.kind] || 'Véhicule';
     const rows = []; if(i >= 0 && i !== undefined){ const home = buildings.get(CZ.home[i]), work = buildings.get(CZ.work[i]), sc = buildings.get(CZ.school[i]);
       rows.push(['Âge', Math.floor(CZ.age[i])+' ans'], ['Éducation', EDU_NAMES[CZ.edu[i]]], ['Santé', Math.round(CZ.health[i])+' %'], ['Bonheur', CZ.happy[i]+' %'], ['Domicile', home ? addressOf(home) : '—'], ['Travail', work ? addressOf(work) : sc ? 'Étudiant' : CZ.age[i] >= 65 ? 'Retraité' : 'Sans emploi'], ['Activité', cimActivity(i)]); }
-    if(o.kind === 'bus') rows.push(['Passagers', o.onboard||0]); if(o.mission) rows.push(['Mission', { garbage:'Ramassage des déchets', crime:'Intervention', fire:'Incendie', sick:'Transport d\'un malade', dead:'Prise en charge d\'un défunt' }[o.mission.kind]]);
+    if(o.kind === 'bus' || o.kind === 'tram') rows.push(['Passagers', o.onboard||0]); if(o.mission) rows.push(['Mission', { garbage:'Ramassage des déchets', crime:'Intervention', fire:'Incendie', sick:'Transport d\'un malade', dead:'Prise en charge d\'un défunt' }[o.mission.kind]]);
     const L = o.legs[o.li]; rows.push(['Rue', L ? L.sg.name : '—'], ['Vitesse', Math.round(o.v*3.6)+' km/h']);
     html = `<h3>${title}</h3>${rowsHtml(rows)}<div class="act"><button class="btn" id="iFollow">${followAgent === o ? 'Arrêter de suivre' : 'Suivre'}</button><button class="btn" id="iClose">Fermer</button></div>`; }
   else if(kind === 'seg'){ if(!segs.has(o.id)){ select(null); return; } selBox.visible = false; const t = RT[o.type];
@@ -2934,8 +3089,8 @@ function renderStats(){ const H = state.history, body = $('#statsBody'); const S
   requestAnimationFrame(() => { drawChart($('#chPop'), H, 'pop', '#63c35f', v => fmt.format(Math.round(v))); drawChart($('#chMoney'), H, 'money', '#f2b33d', v => money(v)); drawChart($('#chHappy'), H, 'happy', '#4ea3f0', v => Math.round(v*100)+' %'); drawChart($('#chUnemp'), H, 'unemp', '#ea5a4f', v => Math.round(v*100)+' %'); }); }
 /* ---------- lignes ---------- */
 $('#bLines').addEventListener('click', () => { $('#mLines').hidden = false; renderLines(); });
-function renderLines(){ const body = $('#linesBody'); if(!lines.length){ body.innerHTML = '<p>Aucune ligne. Créez une ligne de bus ou de métro dans la catégorie Transports.</p>'; return; }
-  body.innerHTML = lines.map(L => `<div class="ln"><span class="sw" style="background:${L.color}"></span><span><b>${L.name}</b><br><span style="color:var(--mute);font-size:12.5px">${L.stops.length} ${L.type === 'bus' ? 'arrêts' : 'stations'} · ${L.type === 'bus' ? agents.filter(a => a.line === L).length+' bus' : L.trains.length+' rames'} · ${fmt.format(L.passDay || L.pass)} voyageurs/jour</span></span>
+function renderLines(){ const body = $('#linesBody'); if(!lines.length){ body.innerHTML = '<p>Aucune ligne. Créez une ligne de bus, tram, métro, monorail ou ferry dans la catégorie Transports.</p>'; return; }
+  body.innerHTML = lines.map(L => `<div class="ln"><span class="sw" style="background:${L.color}"></span><span><b>${L.name}</b><br><span style="color:var(--mute);font-size:12.5px">${L.stops.length} ${LINE_T[L.type].stop} · ${LINE_T[L.type].road ? agents.filter(a => a.line === L).length : L.trains.length} ${LINE_T[L.type].veh} · ${fmt.format(L.passDay || L.pass)} voyageurs/jour</span></span>
     <button class="btn sm" data-view="${L.id}">Voir</button><button class="btn sm danger" data-del="${L.id}">Supprimer</button></div>`).join('');
   body.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { removeLine(lines.find(l => l.id === +b.dataset.del)); renderLines(); });
   body.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { $('#mLines').hidden = true; $('#viewsPanel').hidden = false; $('#bViews').setAttribute('aria-pressed', true); setOverlay('transit'); }); }
@@ -2952,6 +3107,7 @@ for(const [id, kind] of [['#mNewDemo','demo'],['#mNewEmpty','empty'],['#mNewSeed
   await newGame(kind === 'demo' ? 'demo' : 'empty', kind === 'random' ? Math.floor(rnd()*1e6) : 1337); });
 $('#quality').addEventListener('change', e => { quality = e.target.value; try{ localStorage.setItem('urbania-q', quality); }catch(_){} setupComposer(); });
 $('#weatherSel').addEventListener('change', e => { state.weatherMode = e.target.value; });
+$('#disSel').addEventListener('change', e => { state.disAuto = e.target.value === '1'; });
 $('#dayLen').addEventListener('change', e => { state.dayCycle = e.target.value === '1'; });
 for(const k of ['Master','Amb','Radio']) $('#v'+k).addEventListener('input', e => { AUDIO.vol[k.toLowerCase()] = e.target.value/100; $('#v'+k+'V').textContent = e.target.value; setVolumes(); });
 $('#bSound').addEventListener('click', () => { AUDIO.on = !AUDIO.on; $('#bSound').setAttribute('aria-pressed', AUDIO.on); if(AUDIO.on){ audioInit(); AUDIO.ctx.resume(); } setVolumes(); toast(AUDIO.on ? 'Son activé. Réglez les volumes et la radio dans le menu.' : 'Son coupé.', true); });
@@ -2962,7 +3118,7 @@ SVC.dam = { name:'Barrage hydroélectrique', cat:'power', w:0, d:0, cost:40000, 
 svcGen.dam = (b, C) => { const L = b.hw*2; C.part(P.equip, 0, 0, 0, L, b.crest - b.y + .6, 8, '#a9a6a0'); C.part(P.equip, 0, b.crest - b.y + .6, 0, L, .8, 10, '#8f8c86');
   for(let x=-L/2+6; x<L/2-4; x+=12) C.part(P.equip, x, b.crest - b.y - 10, -5, 3, 10, 3, '#9a978f'); b.top = b.crest - b.y + 2; };
 const CATS = [
-  { id:'roads', label:'Routes', items:['street','oneway','avenue','busave','boulevard','highway','ramp','path','rail'] },
+  { id:'roads', label:'Routes', items:['street','oneway','avenue','busave','tramst','tramave','boulevard','highway','ramp','path','rail'] },
   { id:'zones', label:'Zonage', items:['z1','z2','z3','z4','z5','z6','z0'] },
   { id:'districts', label:'Quartiers', items:['distNew','distPaint','distErase'] },
   { id:'power', label:'Électricité', items:['wind','solar','coal','dam'] },
@@ -2972,9 +3128,10 @@ const CATS = [
   { id:'fire', label:'Pompiers', items:['fire'] },
   { id:'police', label:'Police', items:['police'] },
   { id:'edu', label:'Éducation', items:['school','lycee','univ'] },
-  { id:'transit', label:'Transports', items:['busline','depot','metroline','metro','station','port','airport'] },
+  { id:'transit', label:'Transports', items:['busline','depot','tramline','tramdepot','metroline','metro','monoline','monost','ferryline','pier','station','port','airport'] },
   { id:'parks', label:'Parcs', items:['park','playground','plaza','bigpark','sports','cityhall','stadium','tower'] },
   { id:'terrain', label:'Terrain', items:['raise','lower','level','soften','wsource'] },
+  { id:'disaster', label:'Catastrophes', items:['dMeteor','dQuake','dTornado','dTsunami'] },
   { id:'bull', label:'Démolir', items:['bull'] },
 ];
 const CAT_ICON = {
@@ -2982,7 +3139,7 @@ const CAT_ICON = {
   districts:'<path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/>', power:'<path d="M13 2L5 14h6l-1 8 8-12h-6z"/>', water:'<path d="M12 3c4 5 6 8 6 11a6 6 0 01-12 0c0-3 2-6 6-11z"/>',
   garbage:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>', health:'<path d="M12 5v14M5 12h14"/><rect x="3" y="3" width="18" height="18" rx="4"/>', fire:'<path d="M12 3c4 4 6 7 6 11a6 6 0 01-12 0c0-2 1-4 3-6 0 2 1 3 2 3 0-3 0-5 1-8z"/>',
   police:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>', edu:'<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/>', transit:'<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14M8 21l2-4M16 21l-2-4"/>',
-  parks:'<path d="M12 3a5 5 0 015 5 4 4 0 01-2 7H9a4 4 0 01-2-7 5 5 0 015-5zM12 15v6"/>', terrain:'<path d="M2 20l6-10 4 6 3-4 7 8z"/>', bull:'<path d="M4 7h16M6 7l1 13h10l1-13M10 11v6M14 11v6"/>' };
+  parks:'<path d="M12 3a5 5 0 015 5 4 4 0 01-2 7H9a4 4 0 01-2-7 5 5 0 015-5zM12 15v6"/>', terrain:'<path d="M2 20l6-10 4 6 3-4 7 8z"/>', disaster:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>', bull:'<path d="M4 7h16M6 7l1 13h10l1-13M10 11v6M14 11v6"/>' };
 const TDEF = {};
 for(const k in RT) TDEF[k] = { kind:'road', type:k, label:RT[k].name, cost:`${RT[k].cost} $/m` };
 for(const z in ZONES) TDEF['z'+z] = { kind:'zone', zone:+z, label:ZONES[z].name, cost:'Gratuit' };
@@ -2990,24 +3147,28 @@ TDEF.z0 = { kind:'zone', zone:0, label:'Dézoner', cost:'' };
 TDEF.distNew = { kind:'dist', mode:'new', label:'Nouveau quartier' }; TDEF.distPaint = { kind:'dist', mode:'paint', label:'Étendre un quartier' }; TDEF.distErase = { kind:'dist', mode:'erase', label:'Effacer' };
 for(const k in SVC) TDEF[k] = { kind:k === 'dam' ? 'dam' : 'svc', svc:k, label:SVC[k].name, cost:money(SVC[k].cost), upkeep:SVC[k].upkeep };
 TDEF.busline = { kind:'line', line:'bus', label:'Ligne de bus', cost:'Arrêts gratuits' }; TDEF.metroline = { kind:'line', line:'metro', label:'Ligne de métro', cost:'Relie des stations' };
+TDEF.tramline = { kind:'line', line:'tram', label:'Ligne de tramway', cost:'Arrêts sur voies de tram' }; TDEF.monoline = { kind:'line', line:'mono', label:'Ligne de monorail', cost:'Voie aérienne 60 $/m' };
+TDEF.ferryline = { kind:'line', line:'ferry', label:'Ligne de ferry', cost:'Relie des embarcadères' };
+for(const [k,t,l] of [['dMeteor','meteor','Météorite'],['dQuake','quake','Séisme'],['dTornado','tornado','Tornade'],['dTsunami','tsunami','Tsunami']]) TDEF[k] = { kind:'disaster', t, label:l, cost:'Déclencher' };
 for(const [k,l] of [['raise','Élever'],['lower','Abaisser'],['level','Niveler'],['soften','Adoucir']]) TDEF[k] = { kind:'terrain', t:k, label:l, cost:'selon volume' };
 TDEF.wsource = { kind:'wsource', label:'Source d\'eau', cost:'Gratuit' }; TDEF.bull = { kind:'bull', label:'Démolir', cost:'' }; TDEF.select = { kind:'select', label:'Sélection' };
-const CAT_COLOR = { power:'#e0b43a', water:'#3b8fe0', garbage:'#8a6a3a', health:'#d63a4a', fire:'#e5532d', police:'#2a4f9a', edu:'#b06be0', transit:'#1fb3b3', parks:'#4f9a3a', districts:'#f2b33d', terrain:'#8a7a5a', bull:'#ea5a4f' };
+const CAT_COLOR = { power:'#e0b43a', water:'#3b8fe0', garbage:'#8a6a3a', health:'#d63a4a', fire:'#e5532d', police:'#2a4f9a', edu:'#b06be0', transit:'#1fb3b3', parks:'#4f9a3a', districts:'#f2b33d', terrain:'#8a7a5a', disaster:'#c0392b', bull:'#ea5a4f' };
 function drawThumb(cv, key){ const g = cv.getContext('2d'), w = cv.width = 128, h = cv.height = 96; const d = TDEF[key]; g.fillStyle = '#1c252e'; g.fillRect(0,0,w,h);
   if(d.kind === 'road'){ const t = RT[d.type], s = 3.2, cw = t.cw*s, hw = t.hw*s; g.fillStyle = '#6c7a3e'; g.fillRect(0,0,w,h);
     if(t.net === 'rail'){ g.fillStyle = '#7a756c'; g.fillRect(w/2-hw, 0, hw*2, h); g.fillStyle = '#5a4a3a'; for(let y=0;y<h;y+=7) g.fillRect(w/2-hw+2, y, hw*2-4, 3); g.fillStyle = '#b9bec3'; for(const o of [-9,-4,4,9]) g.fillRect(w/2+o*s*.7-1, 0, 2, h); }
     else { g.fillStyle = '#a7a39a'; g.fillRect(w/2-hw, 0, hw*2, h); g.fillStyle = t.net === 'ped' ? '#b8ab8e' : '#45474b'; g.fillRect(w/2-cw, 0, cw*2, h);
       if(d.type === 'boulevard'){ g.fillStyle = '#56703a'; g.fillRect(w/2-5, 0, 10, h); } if(d.type === 'highway'){ g.fillStyle = '#aaa7a1'; g.fillRect(w/2-3, 0, 6, h); }
+      if(t.tram){ g.fillStyle = '#9aa0a6'; for(const o of [-2.7,-1.3,1.3,2.7]) g.fillRect(w/2+o*s-1, 0, 2, h); }
       if(d.type === 'busave'){ g.fillStyle = '#7d3a30'; g.fillRect(w/2-cw, 0, cw*.5, h); g.fillRect(w/2+cw*.5, 0, cw*.5, h); }
       g.strokeStyle = '#e8e6de'; g.setLineDash([8,10]); g.lineWidth = 2; for(const l of t.lanes){ if(Math.abs(l.off) < 2.5) continue; } g.beginPath(); g.moveTo(w/2, 0); g.lineTo(w/2, h); if(d.type !== 'boulevard' && d.type !== 'highway' && t.net !== 'ped') g.stroke(); g.setLineDash([]);
       if(t.oneway){ g.fillStyle = '#fff'; g.beginPath(); g.moveTo(w/2-8, 60); g.lineTo(w/2+8, 60); g.lineTo(w/2, 44); g.fill(); } } return; }
   if(d.kind === 'zone'){ g.fillStyle = d.zone ? ZONES[d.zone].color : '#44505a'; g.globalAlpha = .9; g.fillRect(16, 12, 96, 72); g.globalAlpha = 1; g.strokeStyle = '#fff'; g.lineWidth = 3; g.strokeRect(16, 12, 96, 72);
     g.fillStyle = 'rgba(0,0,0,.35)'; if(d.zone === 1) { g.fillRect(44,44,40,28); g.beginPath(); g.moveTo(40,46); g.lineTo(64,28); g.lineTo(88,46); g.fill(); } else if(d.zone) for(let k=0;k<3;k++) g.fillRect(30+k*24, 76-(20+k*12+(d.zone===6?16:0)), 18, 20+k*12+(d.zone===6?16:0)); if(!d.zone){ g.strokeStyle = '#ea5a4f'; g.beginPath(); g.moveTo(30,24); g.lineTo(98,72); g.stroke(); } return; }
-  const cat = d.kind === 'svc' || d.kind === 'dam' ? SVC[d.svc].cat : d.kind === 'line' ? 'transit' : d.kind === 'dist' ? 'districts' : d.kind === 'terrain' || d.kind === 'wsource' ? 'terrain' : 'bull';
+  const cat = d.kind === 'svc' || d.kind === 'dam' ? SVC[d.svc].cat : d.kind === 'line' ? 'transit' : d.kind === 'dist' ? 'districts' : d.kind === 'terrain' || d.kind === 'wsource' ? 'terrain' : d.kind === 'disaster' ? 'disaster' : 'bull';
   const cc = CAT_COLOR[cat] || '#888'; g.fillStyle = cc; g.globalAlpha = .9; g.beginPath(); g.roundRect(20, 10, 88, 76, 12); g.fill(); g.globalAlpha = 1;
   const p = new Path2D(); const tmp = document.createElementNS('http://www.w3.org/2000/svg','svg'); g.save(); g.translate(40, 24); g.scale(2, 2); g.strokeStyle = '#fff'; g.lineWidth = 1.8; g.lineCap = 'round'; g.lineJoin = 'round';
   const src = CAT_ICON[cat] || ''; for(const m of src.matchAll(/<path d="([^"]+)"/g)) g.stroke(new Path2D(m[1])); for(const m of src.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/g)) g.strokeRect(+m[1], +m[2], +m[3], +m[4]); g.restore();
-  g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '600 13px sans-serif'; g.textAlign = 'center'; if(d.kind === 'line') g.fillText(d.line === 'bus' ? 'BUS' : 'MÉTRO', 64, 82); if(d.kind === 'terrain') g.fillText(d.label, 64, 82); }
+  g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '600 13px sans-serif'; g.textAlign = 'center'; if(d.kind === 'line') g.fillText(LINE_T[d.line].n.toUpperCase(), 64, 82); if(d.kind === 'terrain' || d.kind === 'disaster') g.fillText(d.label, 64, 82); }
 
 let tool = TDEF.select; tool.id = 'select'; let cat = null;
 const roadOpt = { mode:'straight', elev:0, snap:true, radius:32 }, zoneOpt = { brush:'small' }, distOpt = { current:0, R:40 };
@@ -3184,14 +3345,19 @@ function onClick(x, z, e){
   if(d.kind === 'wsource'){ const ex = WATER.sources.find(s => !s.natural && Math.hypot(s.x-x, s.z-z) < 30); if(ex){ WATER.sources.splice(WATER.sources.indexOf(ex), 1); rebuildSources(); toast('Source retirée.', true); } else { addWaterSource(x, z, 35); toast('Source d\'eau ajoutée (35 m³/s).', true); } return; }
   if(d.kind === 'bull'){ const b = buildingAt(x, z); if(b){ removeBuilding(b); blip(200, .12, .07, 'sawtooth'); return; } const r = nearestSeg(x, z, 12); if(r && r.d < RT[r.sg.type].hw + 1){ bulldozeSeg(r.sg); return; }
     for(const L of lines) for(const st of L.stops) if(Math.hypot(st.x-x, st.z-z) < 6){ removeLine(L); toast('Ligne supprimée.', true); return; } return; }
-  if(d.kind === 'line'){
-    if(d.line === 'bus'){ if(!lineDraft) lineDraft = newLine('bus'); const first = lineDraft.stops[0];
+  if(d.kind === 'disaster'){ startDisaster(d.t, x, z); return; }
+  if(d.kind === 'line'){ const LT = LINE_T[d.line];
+    if(LT.road){ if(!lineDraft) lineDraft = newLine(d.line); const first = lineDraft.stops[0];
       if(first && lineDraft.stops.length >= 2 && Math.hypot(first.x-x, first.z-z) < 14){ finishLine(lineDraft); toast(`${lineDraft.name} créée avec ${lineDraft.stops.length} arrêts.`, true); lineDraft = null; return; }
-      const st = stopFromPoint(x, z); if(!st){ toast('Placez les arrêts le long d\'une route.'); return; } addStopVisual(st); lineDraft.stops.push(st); return; }
-    const stn = [...buildings.values()].filter(b => b.type === 'metro').find(b => Math.hypot(b.x-x, b.z-z) < 26); if(!lineDraft) lineDraft = newLine('metro');
-    if(!stn){ toast('Cliquez sur une station de métro.'); return; } const first = lineDraft.stops[0];
-    if(first && first.b === stn && lineDraft.stops.length >= 2){ finishLine(lineDraft); toast(`${lineDraft.name} créée.`, true); lineDraft = null; return; }
-    if(lineDraft.stops.some(s => s.b === stn)) return; lineDraft.stops.push({ x:stn.x, z:stn.z, b:stn, wait:0 }); return; }
+      const st = stopFromPoint(x, z, d.line); if(!st){ toast(d.line === 'tram' ? 'Placez les arrêts le long d\'une rue ou avenue avec tramway.' : 'Placez les arrêts le long d\'une route.'); return; } addStopVisual(st); lineDraft.stops.push(st); return; }
+    const stn = [...buildings.values()].filter(b => b.type === LT.st).find(b => Math.hypot(b.x-x, b.z-z) < Math.max(b.hw, b.hd) + 12); if(!lineDraft) lineDraft = newLine(d.line);
+    if(!stn){ toast({ metro:'Cliquez sur une station de métro.', mono:'Cliquez sur une station de monorail.', ferry:'Cliquez sur un embarcadère de ferry.' }[d.line]); return; } const first = lineDraft.stops[0];
+    const st = stationStop(d.line, stn), prev = lineDraft.stops[lineDraft.stops.length-1];
+    const target = first && first.b === stn && lineDraft.stops.length >= 2 ? first : st;
+    if(prev && d.line === 'ferry'){ let dry = 0; for(let k=1;k<20;k++) if(!isWet(lerp(prev.x, target.x, k/20), lerp(prev.z, target.z, k/20), .8)) dry++; if(dry > 2){ toast('Le trajet du ferry doit rester sur l\'eau.'); return; } }
+    if(prev && d.line === 'mono'){ const cost = Math.hypot(target.x-prev.x, target.z-prev.z)*60; if(state.money < cost){ toast('Fonds insuffisants.'); return; } state.money -= cost; }
+    if(target === first){ finishLine(lineDraft); toast(`${lineDraft.name} créée.`, true); lineDraft = null; return; }
+    if(lineDraft.stops.some(s => s.b === stn)) return; lineDraft.stops.push(st); return; }
 }
 let svcRot = 0;
 function onHover(x, z){
@@ -3214,7 +3380,8 @@ function onHover(x, z){
     showTip(`${SVC[d.svc].name} · ${money(SVC[d.svc].cost)} · entretien ${money(SVC[d.svc].upkeep)}/jour${why ? `<br><span class="bad">${why}</span>` : ''}`); return; }
   if(d.kind === 'dam'){ if(draft.length){ const A = draft[0], ev = evalDam(A, { x, z }); setGhost([{ x:A.x, y:heightAt(A.x,A.z), z:A.z }, { x, y:heightAt(x,z), z }], 5, !ev.why); showTip(`Barrage · ${money(SVC.dam.cost)}${ev.why ? `<br><span class="bad">${ev.why}</span>` : ''}`); } else showTip('Barrage : cliquez une rive, puis l\'autre'); return; }
   if(d.kind === 'line'){ if(lineDraft && lineDraft.stops.length){ const pts = lineDraft.stops.map(s => ({ x:s.x, y:heightAt(s.x,s.z), z:s.z })); pts.push({ x, y:heightAt(x,z), z }); setGhost(pts, 1.2, true); ghostMat.color.set(lineDraft.color); }
-    showTip(lineDraft ? `${lineDraft.name} · ${lineDraft.stops.length} ${d.line === 'bus' ? 'arrêts' : 'stations'}` : d.label); return; }
+    showTip(lineDraft ? `${lineDraft.name} · ${lineDraft.stops.length} ${LINE_T[d.line].stop}` : d.label); return; }
+  if(d.kind === 'disaster'){ U.uBrush.value.set(x, z, DIS_R[d.t], 1); U.uBrushCol.value.set('#ea5a4f'); showTip(`${d.label} · cliquez pour déclencher ici`); return; }
   if(d.kind === 'bull'){ const b = buildingAt(x, z); if(b){ _c.set('#ea5a4f'); place(prevPool, b.x, b.y, b.z, b.hw*2+.6, b.top+1, b.hd*2+.6, b.ang, _c); showTip(`Démolir : ${b.kind === 'svc' ? SVC[b.type].name : ZONES[b.zone].short}`); return; }
     const r = nearestSeg(x, z, 12); if(r && r.d < RT[r.sg.type].hw + 1){ const pts = []; for(let i=0;i<=r.sg.n;i+=2) pts.push({ x:r.sg.P[i*3], y:r.sg.P[i*3+1], z:r.sg.P[i*3+2] }); setGhost(pts, RT[r.sg.type].hw, false); showTip(`Démolir : ${r.sg.name} (remboursement ${money(r.sg.len*RT[r.sg.type].cost*.4)})`); return; } showTip(null); return; }
   if(d.kind === 'wsource') showTip('Ajouter ou retirer une source d\'eau');
@@ -3270,6 +3437,7 @@ function applyTerraform(dt){ if(!stroke || !stroke.terra || !hoverPt) return; co
 /* ===== 15-save.js ===== */
 /* ================= nouvelle partie, ville d'exemple, sauvegarde ================= */
 function resetWorld(){
+  DIS.list.length = 0; DIS.shake = 0; WATER.surge = 0; state.disNext = undefined;
   for(let i=agents.length-1;i>=0;i--) removeAgent(i); laneLists.clear(); timers.length = 0; fires.clear(); for(const k in REQ) REQ[k].length = 0;
   for(const b of [...buildings.values()]){ for(const m of b.meshes) scene.remove(m); } buildings.clear(); bldGrid.clear(); growing.clear(); bldSeq = 1;
   for(const sg of segs.values()) clearDeco(sg); for(const nd of nodes.values()) clearDeco(nd); segs.clear(); nodes.clear(); nodeSeq = 1; segSeq = 1; NET_VERSION++;
@@ -3314,7 +3482,7 @@ async function buildDemo(ext){
   // axe principal : boulevard depuis l'autoroute
   R(hwEnd.x, hwEnd.z, 600, MAP.hwZ, 'boulevard'); R(600, MAP.hwZ, 136, MAP.hwZ, 'boulevard');
   const XS = [40, 136, 232, 328, 424, 520], ZS = [-342, -246, -150, -54, 42, 138, 234];
-  for(const x of XS) for(let k=0;k<ZS.length-1;k++){ const t = x === 232 ? 'avenue' : x === 424 && k > 1 ? 'busave' : 'street'; R(x, ZS[k], x, ZS[k+1], t); }
+  for(const x of XS) for(let k=0;k<ZS.length-1;k++){ const t = x === 232 ? 'tramave' : x === 424 && k > 1 ? 'busave' : 'street'; R(x, ZS[k], x, ZS[k+1], t); }
   for(const z of ZS){ if(z === MAP.hwZ) { R(40, z, 136, z, 'avenue'); continue; } for(let k=0;k<XS.length-1;k++){ const t = z === 42 ? 'avenue' : 'street'; R(XS[k], z, XS[k+1], z, t); } }
   await nextFrame();
   // pont vers l'ouest et banlieue en courbes
@@ -3345,7 +3513,7 @@ async function buildDemo(ext){
     else if(x < 20) zz = c.r < 2 && rnd() < .12 ? 3 : 1;
     else if(z > 250) zz = rnd() < .5 ? 1 : 2;
     else if(d < 150) zz = rnd() < .55 ? 6 : 4;
-    else if(d < 260) zz = sg.type === 'avenue' || sg.type === 'boulevard' || sg.type === 'busave' ? (rnd() < .6 ? 4 : 2) : (rnd() < .7 ? 2 : 3);
+    else if(d < 260) zz = sg.type === 'avenue' || sg.type === 'boulevard' || sg.type === 'busave' || sg.type === 'tramave' ? (rnd() < .6 ? 4 : 2) : (rnd() < .7 ? 2 : 3);
     else if(d < 380) zz = sg.type !== 'street' ? 3 : (rnd() < .55 ? 2 : 1);
     else zz = rnd() < .8 ? 1 : 3;
     if(z < -290 && x > 20 && x < 560) zz = rnd() < .5 ? 5 : 1;
@@ -3360,6 +3528,7 @@ async function buildDemo(ext){
   S('police', 180, 90); S('police', W0 - 110, 100); S('fire', 380, -100); S('fire', W0 - 220, 20); S('clinic', W0 - 90, -20); S('hospital', 470, 90);
   S('school', 90, -200); S('school', W0 - 250, 90); S('school', 380, 180); S('lycee', 180, 300); S('univ', 470, -300); S('cemetery', 70, 300); S('recycle', 650, -200);
   S('park', 280, 20); S('plaza', 180, -100); S('bigpark', 360, 300); S('playground', W0 - 280, -20); S('park', 280, -200); S('sports', 90, 180); S('cityhall', 280, -100);
+  S('tramdepot', 180, -320); S('monost', 330, -250); S('monost', 60, -120); S('monost', W0 - 170, -150); S('pier', riverX(-60) + 45, -60); S('pier', riverX(-60) - 45, -60); S('pier', riverX(300) + 45, 300);
   S('depot', 470, -200); S('metro', 185, -10); S('metro', 380, 90); S('metro', 470, -100); S('station', -60, MAP.railZ + 20); S('port', 310, coastZ(310) - 40);
   await nextFrame();
   // quartiers
@@ -3388,7 +3557,9 @@ async function buildDemo(ext){
   const bus1 = newLine('bus'); for(const [x,z] of [[136,-60],[232,-150],[330,-150],[424,-60],[424,40],[330,40],[232,40],[136,40]]){ const st = stopFromPoint(x, z); if(st){ addStopVisual(st); bus1.stops.push(st); } } if(bus1.stops.length > 2) finishLine(bus1);
   const bus2 = newLine('bus'); for(const [x,z] of [[40,40],[W0-60,42],[W0-150,-60],[W0-150,120],[W0-100,42]]){ const st = stopFromPoint(x, z); if(st){ addStopVisual(st); bus2.stops.push(st); } } if(bus2.stops.length > 2) finishLine(bus2);
   const mets = [...buildings.values()].filter(b => b.type === 'metro'); if(mets.length >= 2){ const m = newLine('metro'); for(const b of mets) m.stops.push({ x:b.x, z:b.z, b, wait:0 }); finishLine(m); }
-  state.money = 185000; state.time = 7.5*60; state.milestones = 0;
+  const tr = newLine('tram'); for(const z of [-300,-150,-54,42,138,234]){ const st = stopFromPoint(232, z + 20, 'tram'); if(st){ addStopVisual(st); tr.stops.push(st); } } if(tr.stops.length > 2) finishLine(tr);
+  for(const [type, key] of [['mono','monost'],['ferry','pier']]){ const bs = [...buildings.values()].filter(b => b.type === key); if(bs.length >= 2){ const L = newLine(type); for(const b of bs) L.stops.push(stationStop(type, b)); finishLine(L); } }
+  state.money = 185000; state.time = 16*DAY + 7.5*60; state.disNext = state.time + 20*DAY; state.milestones = 0;
   for(let k=0;k<4;k++){ simTick(); }
   updateStats(); state.milestones = MILESTONES.filter(m => state.pop >= m[0]).reduce((a,m) => m[0], 0); quietToasts = false;
 }
@@ -3408,9 +3579,9 @@ function save(){ try {
     : b.type === 'dam' ? ['d', b.id, b.dam.x0, b.dam.z0, b.dam.x1, b.dam.z1, b.dam.crest] : ['s', b.id, b.type, +b.x.toFixed(2), +b.z.toFixed(2), +b.ang.toFixed(4), Math.round(b.store||0)]);
   const n = cimTop, pack = (A) => b64(new Uint8Array(A.buffer, 0, n*A.BYTES_PER_ELEMENT));
   const C_ = { n, home:pack(CZ.home), work:pack(CZ.work), school:pack(CZ.school), age:pack(CZ.age), edu:pack(CZ.edu), health:pack(CZ.health), flags:pack(CZ.flags), name:pack(CZ.name), jl:pack(CZ.jl) };
-  const L_ = lines.map(L => ({ type:L.type, name:L.name, color:L.color, stops:L.stops.map(s => L.type === 'bus' ? [s.x, s.z] : [s.b.id]) }));
+  const L_ = lines.map(L => ({ type:L.type, name:L.name, color:L.color, stops:L.stops.map(s => LINE_T[L.type].road ? [s.x, s.z] : [s.b.id]) }));
   const D_ = [...districts.values()].map(d => [d.id, d.name, d.color, d.policies, d.spec]);
-  const data = { v:2, seed:state.seed, name:state.name, st:{ money:state.money, time:state.time, taxes:state.taxes, budgets:state.budgets, loans:state.loans, policies:state.policies, weatherMode:state.weatherMode, milestones:state.milestones, history:state.history.slice(-240) },
+  const data = { v:2, seed:state.seed, name:state.name, st:{ money:state.money, time:state.time, taxes:state.taxes, budgets:state.budgets, loans:state.loans, policies:state.policies, weatherMode:state.weatherMode, disAuto:state.disAuto, disNext:state.disNext, milestones:state.milestones, history:state.history.slice(-240) },
     h:b64(new Uint8Array(hs.buffer)), wd:b64(new Uint8Array(wdd.buffer)), src:WATER.sources.filter(s => !s.natural).map(s => [s.x, s.z, s.q]),
     nodes:N_, segs:S_, zones:Z_, blds:B_, cims:C_, lines:L_, dist:D_, dgrid:rle(distGrid),
     cam:[camera.position.x, camera.position.y, camera.position.z, controls.target.x, controls.target.y, controls.target.z] };
@@ -3444,7 +3615,7 @@ async function load(){ let data; try { data = JSON.parse(localStorage.getItem(SA
   for(const b of buildings.values()) fixJobCounts(b);
   for(const [id,name,color,pol,spec] of data.dist){ districts.set(id, { id, name, color, policies:pol||{}, spec:spec||'', cx:0, cz:0, n:0 }); distSeq = Math.max(distSeq, id+1); } unrle(data.dgrid, distGrid); districtsDirty = true;
   for(const Ld of data.lines){ const L = newLine(Ld.type); L.name = Ld.name; L.color = Ld.color;
-    for(const s of Ld.stops){ if(Ld.type === 'bus'){ const st = stopFromPoint(s[0], s[1]); if(st){ addStopVisual(st); L.stops.push(st); } } else { const b = buildings.get(s[0]); if(b) L.stops.push({ x:b.x, z:b.z, b, wait:0 }); } } if(L.stops.length >= 2) finishLine(L); }
+    for(const s of Ld.stops){ if(LINE_T[Ld.type].road){ const st = stopFromPoint(s[0], s[1], Ld.type); if(st){ addStopVisual(st); L.stops.push(st); } } else { const b = buildings.get(s[0]); if(b) L.stops.push(stationStop(Ld.type, b)); } } if(L.stops.length >= 2) finishLine(L); }
   Object.assign(state, data.st); state.history = data.st.history || [];
   rebuildChunks(999); refreshDistricts(); distributeUtilities(); updateFields(); updateStats(); refreshIcons();
   if(data.cam){ camera.position.set(data.cam[0], data.cam[1], data.cam[2]); controls.target.set(data.cam[3], data.cam[4], data.cam[5]); }
@@ -3483,14 +3654,14 @@ function frame(now){
   const sdt = dt*sp;
   if(sp) waterTick(Math.min(1, sdt*18));
   updateLights(sdt); updateAgents(dt, sp); updateFires(sdt); tickTimers(sdt); tickGrowth(sdt); updateMetro(sdt); drawMetro(); updatePortAir(sdt); trainService(sdt);
-  updateWeather(dt, gdt); updateSun(); updateSmoke(dt);
+  updateDisasters(sdt); updateWeather(dt, gdt); updateSun(); updateSmoke(dt);
   for(const b of buildings.values()) if(b.rotor) b.rotor.rotation.z -= dt*1.4*windF;
   rebuildChunks(2); if(zoneDirty) rebuildZoneMesh(); if(glowDirty) rebuildGlow(); if(districtsDirty) refreshDistricts(); if(transitDirty) rebuildTransitMesh();
   trafT += dt; if(trafT > 3){ trafT = 0; decayTraffic(); if(overlay === 'traffic') rebuildTrafficMesh(); }
   updateKeys(dt); controls.update(); clampCamera(dt); applyTerraform(dt); updateLabels(); updateAudio(dt);
   agentCount = { v:0, p:0 }; for(const a of agents){ if(a.kind === 'ped') agentCount.p++; else agentCount.v++; }
   for(const p of POOLS) p.sync();
-  updateShadow(); composer.render();
+  updateShadow(); const shk = shakeOffset(); camera.position.add(shk); composer.render(); camera.position.sub(shk);
   const day = dayOf(); if(day !== lastDay){ if(lastDay >= 0) save(); lastDay = day; }
   fpsN++; fpsT += dt; if(fpsT >= 1){ fpsAvg = fpsN/fpsT; fpsN = 0; fpsT = 0;
     if(quality === 'auto' && now > autoT){ let ns = resScale; if(fpsAvg < 40) ns = Math.max(.5, resScale-.1); else if(fpsAvg > 57) ns = Math.min(1, resScale+.05);
@@ -3505,14 +3676,14 @@ function frame(now){
   await setupComposer(); updateSun(); updateEnv();
   let loaded = false; try { loaded = !!localStorage.getItem(SAVE_KEY) && await load(); } catch(e){ console.warn(e); loaded = false; }
   if(!loaded) await newGame('demo', 1337);
-  setSpeed(1); lastDay = dayOf();
+  setSpeed(1); lastDay = dayOf(); $('#disSel').value = state.disAuto === false ? '0' : '1';
   let seen = false; try { seen = !!localStorage.getItem('urbania-help2'); localStorage.setItem('urbania-help2', '1'); } catch(_){}
   if(!seen) $('#mHelp').hidden = false;
   addEventListener('pagehide', save); document.addEventListener('visibilitychange', () => { if(document.hidden) save(); });
   if(location.hash === '#debug') window.__dbg = { renderer, scene, state, agents, buildings, segs, nodes, cells, POOLS, camera, controls, lines, CZ, get cimTop(){ return cimTop; }, setOverlay, setTool, newGame,
     commitRoad, buildRoundabout, snapRoad, svcPlacement, svcValid, placeService, cellsInRadius, setZone, terraform, TERRA, addWaterSource, placeDam, evalDam, newLine, stopFromPoint, addStopVisual, finishLine,
-    save, load, roadOpt, upgradeSeg, bulldozeSeg, removeBuilding, districts, newDistrict, paintDistrict, weather, WATER, fires, REQ, renderBudget, renderStats, renderLines, select, showInfo,
-    fast(n){ for(let k=0;k<n;k++){ state.time += 2; simTick(); updateAgents(.5, 1); tickTimers(.5); updateFires(.5); updateLights(.5); tickGrowth(.5); updateMetro(.5); trainService(.5); updatePortAir(.5); if(k%4===0) stepWater(.25); } } };
+    save, load, roadOpt, DIS, startDisaster, U, SW, upgradeSeg, bulldozeSeg, removeBuilding, districts, newDistrict, paintDistrict, weather, WATER, fires, REQ, renderBudget, renderStats, renderLines, select, showInfo,
+    fast(n){ for(let k=0;k<n;k++){ state.time += 2; simTick(); updateAgents(.5, 1); tickTimers(.5); updateFires(.5); updateLights(.5); tickGrowth(.5); updateMetro(.5); trainService(.5); updatePortAir(.5); updateDisasters(.5); if(k%4===0) stepWater(.25); } } };
   requestAnimationFrame(t => { last = t; frame(t); });
 })().catch(err => { console.error(err); progress('Erreur au démarrage : '+err.message, 1); });
 

@@ -1,5 +1,6 @@
 /* ================= nouvelle partie, ville d'exemple, sauvegarde ================= */
 function resetWorld(){
+  DIS.list.length = 0; DIS.shake = 0; WATER.surge = 0; state.disNext = undefined;
   for(let i=agents.length-1;i>=0;i--) removeAgent(i); laneLists.clear(); timers.length = 0; fires.clear(); for(const k in REQ) REQ[k].length = 0;
   for(const b of [...buildings.values()]){ for(const m of b.meshes) scene.remove(m); } buildings.clear(); bldGrid.clear(); growing.clear(); bldSeq = 1;
   for(const sg of segs.values()) clearDeco(sg); for(const nd of nodes.values()) clearDeco(nd); segs.clear(); nodes.clear(); nodeSeq = 1; segSeq = 1; NET_VERSION++;
@@ -44,7 +45,7 @@ async function buildDemo(ext){
   // axe principal : boulevard depuis l'autoroute
   R(hwEnd.x, hwEnd.z, 600, MAP.hwZ, 'boulevard'); R(600, MAP.hwZ, 136, MAP.hwZ, 'boulevard');
   const XS = [40, 136, 232, 328, 424, 520], ZS = [-342, -246, -150, -54, 42, 138, 234];
-  for(const x of XS) for(let k=0;k<ZS.length-1;k++){ const t = x === 232 ? 'avenue' : x === 424 && k > 1 ? 'busave' : 'street'; R(x, ZS[k], x, ZS[k+1], t); }
+  for(const x of XS) for(let k=0;k<ZS.length-1;k++){ const t = x === 232 ? 'tramave' : x === 424 && k > 1 ? 'busave' : 'street'; R(x, ZS[k], x, ZS[k+1], t); }
   for(const z of ZS){ if(z === MAP.hwZ) { R(40, z, 136, z, 'avenue'); continue; } for(let k=0;k<XS.length-1;k++){ const t = z === 42 ? 'avenue' : 'street'; R(XS[k], z, XS[k+1], z, t); } }
   await nextFrame();
   // pont vers l'ouest et banlieue en courbes
@@ -75,7 +76,7 @@ async function buildDemo(ext){
     else if(x < 20) zz = c.r < 2 && rnd() < .12 ? 3 : 1;
     else if(z > 250) zz = rnd() < .5 ? 1 : 2;
     else if(d < 150) zz = rnd() < .55 ? 6 : 4;
-    else if(d < 260) zz = sg.type === 'avenue' || sg.type === 'boulevard' || sg.type === 'busave' ? (rnd() < .6 ? 4 : 2) : (rnd() < .7 ? 2 : 3);
+    else if(d < 260) zz = sg.type === 'avenue' || sg.type === 'boulevard' || sg.type === 'busave' || sg.type === 'tramave' ? (rnd() < .6 ? 4 : 2) : (rnd() < .7 ? 2 : 3);
     else if(d < 380) zz = sg.type !== 'street' ? 3 : (rnd() < .55 ? 2 : 1);
     else zz = rnd() < .8 ? 1 : 3;
     if(z < -290 && x > 20 && x < 560) zz = rnd() < .5 ? 5 : 1;
@@ -90,6 +91,7 @@ async function buildDemo(ext){
   S('police', 180, 90); S('police', W0 - 110, 100); S('fire', 380, -100); S('fire', W0 - 220, 20); S('clinic', W0 - 90, -20); S('hospital', 470, 90);
   S('school', 90, -200); S('school', W0 - 250, 90); S('school', 380, 180); S('lycee', 180, 300); S('univ', 470, -300); S('cemetery', 70, 300); S('recycle', 650, -200);
   S('park', 280, 20); S('plaza', 180, -100); S('bigpark', 360, 300); S('playground', W0 - 280, -20); S('park', 280, -200); S('sports', 90, 180); S('cityhall', 280, -100);
+  S('tramdepot', 180, -320); S('monost', 330, -250); S('monost', 60, -120); S('monost', W0 - 170, -150); S('pier', riverX(-60) + 45, -60); S('pier', riverX(-60) - 45, -60); S('pier', riverX(300) + 45, 300);
   S('depot', 470, -200); S('metro', 185, -10); S('metro', 380, 90); S('metro', 470, -100); S('station', -60, MAP.railZ + 20); S('port', 310, coastZ(310) - 40);
   await nextFrame();
   // quartiers
@@ -118,7 +120,9 @@ async function buildDemo(ext){
   const bus1 = newLine('bus'); for(const [x,z] of [[136,-60],[232,-150],[330,-150],[424,-60],[424,40],[330,40],[232,40],[136,40]]){ const st = stopFromPoint(x, z); if(st){ addStopVisual(st); bus1.stops.push(st); } } if(bus1.stops.length > 2) finishLine(bus1);
   const bus2 = newLine('bus'); for(const [x,z] of [[40,40],[W0-60,42],[W0-150,-60],[W0-150,120],[W0-100,42]]){ const st = stopFromPoint(x, z); if(st){ addStopVisual(st); bus2.stops.push(st); } } if(bus2.stops.length > 2) finishLine(bus2);
   const mets = [...buildings.values()].filter(b => b.type === 'metro'); if(mets.length >= 2){ const m = newLine('metro'); for(const b of mets) m.stops.push({ x:b.x, z:b.z, b, wait:0 }); finishLine(m); }
-  state.money = 185000; state.time = 7.5*60; state.milestones = 0;
+  const tr = newLine('tram'); for(const z of [-300,-150,-54,42,138,234]){ const st = stopFromPoint(232, z + 20, 'tram'); if(st){ addStopVisual(st); tr.stops.push(st); } } if(tr.stops.length > 2) finishLine(tr);
+  for(const [type, key] of [['mono','monost'],['ferry','pier']]){ const bs = [...buildings.values()].filter(b => b.type === key); if(bs.length >= 2){ const L = newLine(type); for(const b of bs) L.stops.push(stationStop(type, b)); finishLine(L); } }
+  state.money = 185000; state.time = 16*DAY + 7.5*60; state.disNext = state.time + 20*DAY; state.milestones = 0;
   for(let k=0;k<4;k++){ simTick(); }
   updateStats(); state.milestones = MILESTONES.filter(m => state.pop >= m[0]).reduce((a,m) => m[0], 0); quietToasts = false;
 }
@@ -138,9 +142,9 @@ function save(){ try {
     : b.type === 'dam' ? ['d', b.id, b.dam.x0, b.dam.z0, b.dam.x1, b.dam.z1, b.dam.crest] : ['s', b.id, b.type, +b.x.toFixed(2), +b.z.toFixed(2), +b.ang.toFixed(4), Math.round(b.store||0)]);
   const n = cimTop, pack = (A) => b64(new Uint8Array(A.buffer, 0, n*A.BYTES_PER_ELEMENT));
   const C_ = { n, home:pack(CZ.home), work:pack(CZ.work), school:pack(CZ.school), age:pack(CZ.age), edu:pack(CZ.edu), health:pack(CZ.health), flags:pack(CZ.flags), name:pack(CZ.name), jl:pack(CZ.jl) };
-  const L_ = lines.map(L => ({ type:L.type, name:L.name, color:L.color, stops:L.stops.map(s => L.type === 'bus' ? [s.x, s.z] : [s.b.id]) }));
+  const L_ = lines.map(L => ({ type:L.type, name:L.name, color:L.color, stops:L.stops.map(s => LINE_T[L.type].road ? [s.x, s.z] : [s.b.id]) }));
   const D_ = [...districts.values()].map(d => [d.id, d.name, d.color, d.policies, d.spec]);
-  const data = { v:2, seed:state.seed, name:state.name, st:{ money:state.money, time:state.time, taxes:state.taxes, budgets:state.budgets, loans:state.loans, policies:state.policies, weatherMode:state.weatherMode, milestones:state.milestones, history:state.history.slice(-240) },
+  const data = { v:2, seed:state.seed, name:state.name, st:{ money:state.money, time:state.time, taxes:state.taxes, budgets:state.budgets, loans:state.loans, policies:state.policies, weatherMode:state.weatherMode, disAuto:state.disAuto, disNext:state.disNext, milestones:state.milestones, history:state.history.slice(-240) },
     h:b64(new Uint8Array(hs.buffer)), wd:b64(new Uint8Array(wdd.buffer)), src:WATER.sources.filter(s => !s.natural).map(s => [s.x, s.z, s.q]),
     nodes:N_, segs:S_, zones:Z_, blds:B_, cims:C_, lines:L_, dist:D_, dgrid:rle(distGrid),
     cam:[camera.position.x, camera.position.y, camera.position.z, controls.target.x, controls.target.y, controls.target.z] };
@@ -174,7 +178,7 @@ async function load(){ let data; try { data = JSON.parse(localStorage.getItem(SA
   for(const b of buildings.values()) fixJobCounts(b);
   for(const [id,name,color,pol,spec] of data.dist){ districts.set(id, { id, name, color, policies:pol||{}, spec:spec||'', cx:0, cz:0, n:0 }); distSeq = Math.max(distSeq, id+1); } unrle(data.dgrid, distGrid); districtsDirty = true;
   for(const Ld of data.lines){ const L = newLine(Ld.type); L.name = Ld.name; L.color = Ld.color;
-    for(const s of Ld.stops){ if(Ld.type === 'bus'){ const st = stopFromPoint(s[0], s[1]); if(st){ addStopVisual(st); L.stops.push(st); } } else { const b = buildings.get(s[0]); if(b) L.stops.push({ x:b.x, z:b.z, b, wait:0 }); } } if(L.stops.length >= 2) finishLine(L); }
+    for(const s of Ld.stops){ if(LINE_T[Ld.type].road){ const st = stopFromPoint(s[0], s[1], Ld.type); if(st){ addStopVisual(st); L.stops.push(st); } } else { const b = buildings.get(s[0]); if(b) L.stops.push(stationStop(Ld.type, b)); } } if(L.stops.length >= 2) finishLine(L); }
   Object.assign(state, data.st); state.history = data.st.history || [];
   rebuildChunks(999); refreshDistricts(); distributeUtilities(); updateFields(); updateStats(); refreshIcons();
   if(data.cam){ camera.position.set(data.cam[0], data.cam[1], data.cam[2]); controls.target.set(data.cam[3], data.cam[4], data.cam[5]); }

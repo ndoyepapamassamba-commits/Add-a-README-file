@@ -38,7 +38,7 @@ function recomputeCoverage(){ for(const k of ['police','fire','health','edu','en
     if(d.cat === 'police') stamp(fld.police, b.x, b.z, d.radius*eff, 1); if(d.cat === 'fire') stamp(fld.fire, b.x, b.z, d.radius*eff, 1);
     if(d.beds) stamp(fld.health, b.x, b.z, d.radius*eff, 1); if(d.students) stamp(fld.edu, b.x, b.z, d.radius*eff, d.eduLv/3*.4+.6);
     if(d.ent) stamp(fld.ent, b.x, b.z, d.radius*Math.min(1.2, eff), Math.min(1, .5 + d.ent*.15));
-    if(b.type === 'metro' || b.type === 'station') stamp(fld.transit, b.x, b.z, 380, 1); }
+    if(b.type === 'metro' || b.type === 'station' || b.type === 'monost' || b.type === 'pier') stamp(fld.transit, b.x, b.z, 380, 1); }
   for(const ln of lines) for(const st of ln.stops) stamp(fld.transit, st.x, st.z, 260, .8);
   covDirty = false; }
 function updateFields(){
@@ -78,7 +78,7 @@ function distributeUtilities(){
   let useP = 0, useW = 0, useS = 0;
   const order = [...buildings.values()].sort((a,b) => a.id - b.id);
   for(const b of order){ if(b.abandoned || b.burned) continue; const nres = b.res.length, nj = b.work.length + (b.kind === 'svc' ? 4 : 0);
-    const pol = policyAt(b); const pn = (nres*.006 + nj*.008 + (b.kind === 'svc' ? .3 : .02))*(pol.powerSave ? .85 : 1)*(pol.lights ? 1.05 : 1), wn = (nres*.009 + nj*.006 + .02)*(pol.waterSave ? .85 : 1);
+    const pol = policyAt(b); const pn = (nres*.006 + nj*.008 + (b.kind === 'svc' ? .3 : .02))*(pol.powerSave ? .85 : 1)*(pol.lights ? 1.05 : 1)*(1 + .28*SW[0] + .1*SW[2]), wn = (nres*.009 + nj*.006 + .02)*(pol.waterSave ? .85 : 1);
     const s = get(compOf(b)); useP += pn; useW += wn; useS += wn;
     if(b.kind === 'svc' && SVC[b.type].power){ b.powered = true; } else { b.powered = s.pu + pn <= s.p + 1e-6; if(b.powered) s.pu += pn; }
     b.watered = s.wu + wn <= s.w + 1e-6; if(b.watered) s.wu += wn; b.sewered = s.su + wn <= s.s + 1e-6; if(b.sewered) s.su += wn; b.waterPoll = s.poll; }

@@ -18,7 +18,7 @@ function randomChirp(){ if(!cimTop || rnd() < .4) return; const i = Math.floor(r
 /* ---------- barre du haut ---------- */
 function hud(){
   $('#dDate').textContent = dateStr(state.time); const h = Math.floor(hourOf()), m = Math.floor(state.time%60); $('#dTime').textContent = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
-  $('#wIcon').textContent = WEATHER[weather.kind].n;
+  $('#wIcon').textContent = `${SEASONS[seasonIdx()]} · ${WEATHER[weather.kind].n} · ${Math.round(temperature())} °C`;
   $('#sPop').textContent = fmt.format(state.pop); const dp = state.pop - (state.histPop||state.pop); $('#sPopD').textContent = state.pop ? `${state.students ? fmt.format(state.students)+' élèves' : ''}` : ''; $('#sPopD').className = 'd num';
   const mEl = $('#sMoney'); mEl.textContent = money(state.money); mEl.className = 'v num'+(state.money < 0 ? ' neg' : '');
   const dEl = $('#sDelta'); dEl.textContent = (state.net >= 0 ? '+' : '−')+fmt.format(Math.abs(Math.round(state.net||0)))+' $/jour'; dEl.className = 'd num '+(state.net >= 0 ? 'pos' : 'neg');
@@ -117,7 +117,7 @@ function showInfo(){
     const i = o.cim; const title = i >= 0 && i !== undefined ? cimName(i) : { truck:'Camion de marchandises', bus:'Bus '+(o.line?.name||''), fire:'Camion de pompiers', police:'Voiture de police', ambulance:'Ambulance', garbage:'Camion poubelle', hearse:'Corbillard', train:'Train de voyageurs', car:'Véhicule', ped:'Piéton' }[o.kind] || 'Véhicule';
     const rows = []; if(i >= 0 && i !== undefined){ const home = buildings.get(CZ.home[i]), work = buildings.get(CZ.work[i]), sc = buildings.get(CZ.school[i]);
       rows.push(['Âge', Math.floor(CZ.age[i])+' ans'], ['Éducation', EDU_NAMES[CZ.edu[i]]], ['Santé', Math.round(CZ.health[i])+' %'], ['Bonheur', CZ.happy[i]+' %'], ['Domicile', home ? addressOf(home) : '—'], ['Travail', work ? addressOf(work) : sc ? 'Étudiant' : CZ.age[i] >= 65 ? 'Retraité' : 'Sans emploi'], ['Activité', cimActivity(i)]); }
-    if(o.kind === 'bus') rows.push(['Passagers', o.onboard||0]); if(o.mission) rows.push(['Mission', { garbage:'Ramassage des déchets', crime:'Intervention', fire:'Incendie', sick:'Transport d\'un malade', dead:'Prise en charge d\'un défunt' }[o.mission.kind]]);
+    if(o.kind === 'bus' || o.kind === 'tram') rows.push(['Passagers', o.onboard||0]); if(o.mission) rows.push(['Mission', { garbage:'Ramassage des déchets', crime:'Intervention', fire:'Incendie', sick:'Transport d\'un malade', dead:'Prise en charge d\'un défunt' }[o.mission.kind]]);
     const L = o.legs[o.li]; rows.push(['Rue', L ? L.sg.name : '—'], ['Vitesse', Math.round(o.v*3.6)+' km/h']);
     html = `<h3>${title}</h3>${rowsHtml(rows)}<div class="act"><button class="btn" id="iFollow">${followAgent === o ? 'Arrêter de suivre' : 'Suivre'}</button><button class="btn" id="iClose">Fermer</button></div>`; }
   else if(kind === 'seg'){ if(!segs.has(o.id)){ select(null); return; } selBox.visible = false; const t = RT[o.type];
@@ -201,8 +201,8 @@ function renderStats(){ const H = state.history, body = $('#statsBody'); const S
   requestAnimationFrame(() => { drawChart($('#chPop'), H, 'pop', '#63c35f', v => fmt.format(Math.round(v))); drawChart($('#chMoney'), H, 'money', '#f2b33d', v => money(v)); drawChart($('#chHappy'), H, 'happy', '#4ea3f0', v => Math.round(v*100)+' %'); drawChart($('#chUnemp'), H, 'unemp', '#ea5a4f', v => Math.round(v*100)+' %'); }); }
 /* ---------- lignes ---------- */
 $('#bLines').addEventListener('click', () => { $('#mLines').hidden = false; renderLines(); });
-function renderLines(){ const body = $('#linesBody'); if(!lines.length){ body.innerHTML = '<p>Aucune ligne. Créez une ligne de bus ou de métro dans la catégorie Transports.</p>'; return; }
-  body.innerHTML = lines.map(L => `<div class="ln"><span class="sw" style="background:${L.color}"></span><span><b>${L.name}</b><br><span style="color:var(--mute);font-size:12.5px">${L.stops.length} ${L.type === 'bus' ? 'arrêts' : 'stations'} · ${L.type === 'bus' ? agents.filter(a => a.line === L).length+' bus' : L.trains.length+' rames'} · ${fmt.format(L.passDay || L.pass)} voyageurs/jour</span></span>
+function renderLines(){ const body = $('#linesBody'); if(!lines.length){ body.innerHTML = '<p>Aucune ligne. Créez une ligne de bus, tram, métro, monorail ou ferry dans la catégorie Transports.</p>'; return; }
+  body.innerHTML = lines.map(L => `<div class="ln"><span class="sw" style="background:${L.color}"></span><span><b>${L.name}</b><br><span style="color:var(--mute);font-size:12.5px">${L.stops.length} ${LINE_T[L.type].stop} · ${LINE_T[L.type].road ? agents.filter(a => a.line === L).length : L.trains.length} ${LINE_T[L.type].veh} · ${fmt.format(L.passDay || L.pass)} voyageurs/jour</span></span>
     <button class="btn sm" data-view="${L.id}">Voir</button><button class="btn sm danger" data-del="${L.id}">Supprimer</button></div>`).join('');
   body.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { removeLine(lines.find(l => l.id === +b.dataset.del)); renderLines(); });
   body.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { $('#mLines').hidden = true; $('#viewsPanel').hidden = false; $('#bViews').setAttribute('aria-pressed', true); setOverlay('transit'); }); }
@@ -219,6 +219,7 @@ for(const [id, kind] of [['#mNewDemo','demo'],['#mNewEmpty','empty'],['#mNewSeed
   await newGame(kind === 'demo' ? 'demo' : 'empty', kind === 'random' ? Math.floor(rnd()*1e6) : 1337); });
 $('#quality').addEventListener('change', e => { quality = e.target.value; try{ localStorage.setItem('urbania-q', quality); }catch(_){} setupComposer(); });
 $('#weatherSel').addEventListener('change', e => { state.weatherMode = e.target.value; });
+$('#disSel').addEventListener('change', e => { state.disAuto = e.target.value === '1'; });
 $('#dayLen').addEventListener('change', e => { state.dayCycle = e.target.value === '1'; });
 for(const k of ['Master','Amb','Radio']) $('#v'+k).addEventListener('input', e => { AUDIO.vol[k.toLowerCase()] = e.target.value/100; $('#v'+k+'V').textContent = e.target.value; setVolumes(); });
 $('#bSound').addEventListener('click', () => { AUDIO.on = !AUDIO.on; $('#bSound').setAttribute('aria-pressed', AUDIO.on); if(AUDIO.on){ audioInit(); AUDIO.ctx.resume(); } setVolumes(); toast(AUDIO.on ? 'Son activé. Réglez les volumes et la radio dans le menu.' : 'Son coupé.', true); });

@@ -7,16 +7,18 @@ Un seul fichier HTML, sans installation : ouvrez `index.html` dans Chrome, Edge 
 
 | Système | Contenu |
 |---|---|
-| Routes | Graphe de nœuds et de segments de Bézier, 9 types (rue, sens unique, avenue, avenue avec voies de bus, boulevard, autoroute, bretelle, chemin piéton, voie ferrée), tracé droit ou courbe, rond-points, viaducs, ponts automatiques, tunnels, amélioration, feux tricolores |
+| Routes | Graphe de nœuds et de segments de Bézier, 11 types (rue, sens unique, avenue, avenue avec voies de bus, rue et avenue avec tramway, boulevard, autoroute, bretelle, chemin piéton, voie ferrée), tracé droit ou courbe, rond-points, viaducs, ponts automatiques, tunnels, amélioration, feux tricolores |
 | Trafic | Véhicules sur des voies, choix de voie avant de tourner, distance de sécurité, feux et priorités, itinéraires qui évitent les bouchons |
 | Zonage | Cellules de 8 m le long des routes (jusqu'à 4 de profondeur), 6 types de zones, lots de 1×1 à 4×4, niveaux 1 à 5 pour le résidentiel et 1 à 3 pour les commerces, l'industrie et les bureaux |
 | Habitants | Agents individuels : nom, âge, éducation, domicile, emploi ou école, santé, bonheur, naissances, décès, arrivées et départs |
 | Services | Police, pompiers, cliniques et hôpitaux, cimetières et crématoriums, écoles, lycées, universités, décharges, incinérateurs et recyclage, avec véhicules envoyés en mission |
 | Réseaux | Électricité éolienne, solaire, thermique et hydraulique, pompage et châteaux d'eau, rejets et stations d'épuration, distribués par le réseau routier |
-| Transports | Lignes de bus et dépôt, métro, trains de voyageurs, port de fret, aéroport, autoroute et voie ferrée vers l'extérieur |
+| Transports | Lignes de bus et dépôt, tramway et dépôt, métro, monorail sur voie aérienne, ferries entre embarcadères, trains de voyageurs, port de fret, aéroport, autoroute et voie ferrée vers l'extérieur |
 | Économie | Impôts par zone, budget par service, prêts, politiques, importations et exportations, tourisme |
 | Quartiers | Quartiers peints au pinceau, 9 politiques, spécialisations industrielles, commerciales et technologiques |
-| Terrain et eau | Terraformation (élever, abaisser, niveler, adoucir), simulation de l'eau avec écoulement, sources, barrages, pollution de l'eau |
+| Terrain et eau | Terraformation (élever, abaisser, niveler, adoucir), simulation de l'eau avec écoulement, ruissellement de la pluie et infiltration, marées, sources, barrages, pollution de l'eau |
+| Catastrophes | Météorite (cratère, incendies), séisme, tornade, tsunami ; déclenchables à la main ou aléatoires (option du menu) |
+| Saisons | Année de 48 jours de jeu : feuillage (floraison, automne, arbres nus), herbe, météo, température, durée du jour, chauffage en hiver |
 | Ambiance | Cycle jour et nuit, soleil, pluie, orage, brouillard, neige, sons procéduraux et radio générative |
 
 ## Développement

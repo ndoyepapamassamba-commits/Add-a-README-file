@@ -3,7 +3,7 @@ const WNN = WN*WN, WN1 = WN+1;
 const wb = new Float32Array(WNN), wwall = new Float32Array(WNN), wd = new Float32Array(WNN), wp = new Float32Array(WNN), wp2 = new Float32Array(WNN);
 const fR = new Float32Array(WNN), fL = new Float32Array(WNN), fB = new Float32Array(WNN), fT = new Float32Array(WNN);
 const wFixed = new Uint8Array(WNN), wSrc = new Float32Array(WNN), wSrcP = new Float32Array(WNN);
-const WATER = { sources:[], dams:[], steps:0, flowIn:0 };
+const WATER = { sources:[], dams:[], steps:0, flowIn:0, sea:SEA, surge:0, rain:0 };
 const wIdx = (x,z) => { const a = Math.floor((x+EHALF)/WC), b = Math.floor((z+EHALF)/WC); return (a<0||b<0||a>=WN||b>=WN) ? -1 : b*WN+a; };
 const wcx = a => -EHALF+(a+.5)*WC;
 function sampleBed(a,b){ const x = wcx(a), z = wcx(b); return (heightAt(x,z)*2 + heightAt(x-5,z-5) + heightAt(x+5,z-5) + heightAt(x-5,z+5) + heightAt(x+5,z+5))/6; }
@@ -22,6 +22,10 @@ function addWaterSource(x, z, q, natural=false){ const c = wIdx(x,z); if(c < 0) 
 function rebuildSources(){ wSrc.fill(0); for(const s of WATER.sources){ const a = s.c%WN, b = (s.c/WN)|0; for(let db=-1;db<=1;db++) for(let da=-1;da<=1;da++){ const aa=a+da, bb=b+db; if(aa<0||bb<0||aa>=WN||bb>=WN) continue; wSrc[bb*WN+aa] += s.q/9; } } }
 function stepWater(dt){
   const g = 9.81, K = dt*g*WC*.5, area = WC*WC, damp = .995; let inflow = 0;
+  // niveau de la mer : marée (deux cycles par jour) + surcote (tsunami)
+  const sea = SEA + .45*Math.sin(state.time/DAY*Math.PI*4) + WATER.surge; WATER.sea = sea;
+  // pluie : ruissellement ; infiltration dans le sol pour les faibles lames d'eau
+  const rainR = WATER.rain*.0007*dt, infl = .0008*dt;
   for(let b=0;b<WN;b++) for(let a=0;a<WN;a++){ const c = b*WN+a, d = wd[c], h = wb[c]+wwall[c]+d;
     let r = 0, l = 0, bt = 0, t = 0;
     if(a < WN-1){ const n = c+1, dh = h - (wb[n]+wwall[n]+wd[n]); r = Math.max(0, fR[c]*damp + K*dh); }
@@ -37,7 +41,8 @@ function stepWater(dt){
     const outV = fR[c]+fL[c]+fB[c]+fT[c], d0 = wd[c]; inV += wSrc[c]; inP += wSrcP[c]; inflow += wSrc[c];
     let d = d0 + (inV - outV)*dt/area; if(d < 1e-4) d = 0;
     const mass = wp[c]*d0*area + (inP - wp[c]*outV)*dt; wp2[c] = d > .01 ? clamp(mass/(d*area), 0, 1)*.9995 : 0;
-    if(wFixed[c]){ d = Math.max(0, SEA - wb[c]); wp2[c] *= .9; }
+    if(rainR > 0) d += rainR; if(d > 0 && d < .4) d = Math.max(0, d - infl*(1 - d/.4));
+    if(wFixed[c]){ d = Math.max(0, sea - wb[c]); wp2[c] *= .9; }
     wd[c] = d; }
   wp.set(wp2); WATER.steps++; WATER.flowIn = inflow;
   // barrages : turbines entre l'amont et l'aval
@@ -72,7 +77,7 @@ waterMat.onBeforeCompile = sh => {
     vec3 deep = vec3(0.012,0.07,0.1), shallow = vec3(0.07,0.24,0.25);
     diffuseColor.rgb = mix(shallow, deep, smoothstep(0.5, 8.0, dep));
     diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.28,0.22,0.12), clamp(vW.w*1.6,0.0,0.85));
-    float foam = (1.0 - smoothstep(0.05, 0.7, dep))*0.55 + smoothstep(0.6, 2.2, spd)*0.35;
+    float foam = (1.0 - smoothstep(0.05, 0.7, dep))*0.55 + smoothstep(0.6, 2.2, spd)*0.35 + (1.0 - smoothstep(0.3, 3.0, dep))*smoothstep(0.55, 1.0, sin(dep*4.0 - uTime*1.7 + vWP.x*0.02))*0.6;
     float fn = texture2D(uWN, vWP.xz/9.0 + uTime*0.02).r;
     diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.85,0.9,0.9), clamp(foam*fn,0.0,0.7));
     diffuseColor.a = clamp(0.35 + dep*0.55, 0.35, 0.94);
@@ -88,10 +93,11 @@ waterMat.onBeforeCompile = sh => {
 waterMat.customProgramCacheKey = () => 'water2';
 const waterMesh = new THREE.Mesh(wGeo, waterMat); waterMesh.receiveShadow = true; waterMesh.renderOrder = 1; scene.add(waterMesh);
 // océan au-delà de la zone simulée
+let oceanMesh = null;
 const oceanMat = new THREE.MeshStandardMaterial({ color:0x0c2833, roughness:.1, metalness:.05, normalMap:waterNormal, normalScale:new THREE.Vector2(.25,.25), envMapIntensity:.55 });
 waterNormal.repeat.set(1,1);
 { const S = 40000, g = []; for(const [x,z,w,d] of [[0,-EHALF-S/2,S*2,S],[0,EHALF+S/2,S*2,S],[-EHALF-S/2,0,S,EHALF*2],[EHALF+S/2,0,S,EHALF*2]]){ const p = new THREE.PlaneGeometry(w,d).rotateX(-Math.PI/2).translate(x,SEA-.05,z); const uv = p.attributes.uv; const pos = p.attributes.position; for(let i=0;i<uv.count;i++) uv.setXY(i, pos.getX(i)/40, pos.getZ(i)/40); g.push(p); }
-  const ocean = new THREE.Mesh(mergeGeometries(g), oceanMat); scene.add(ocean); }
+  oceanMesh = new THREE.Mesh(mergeGeometries(g), oceanMat); scene.add(oceanMesh); }
 
 let wFrame = 0;
 function updateWaterMesh(){
@@ -102,7 +108,7 @@ function updateWaterMesh(){
     const v = b*WN1+a;
     if(n){ wPos[v*3+1] = s/n; wAttr[v*4] = dep/n; wAttr[v*4+1] = vx/n; wAttr[v*4+2] = vz/n; wAttr[v*4+3] = pol/n; }
     else { wPos[v*3+1] = bed - 1.5; wAttr[v*4] = 0; wAttr[v*4+1] = 0; wAttr[v*4+2] = 0; wAttr[v*4+3] = 0; } }
-  wGeo.attributes.position.needsUpdate = true; wGeo.attributes.aW.needsUpdate = true;
+  wGeo.attributes.position.needsUpdate = true; wGeo.attributes.aW.needsUpdate = true; if(oceanMesh) oceanMesh.position.y = WATER.sea - SEA;
 }
 function waterTick(dtGame){ // dtGame : secondes de simulation à avancer
   let steps = Math.min(4, Math.max(1, Math.round(dtGame/.25))); for(let k=0;k<steps;k++) stepWater(.25);
