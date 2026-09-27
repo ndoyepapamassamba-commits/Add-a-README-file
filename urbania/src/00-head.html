@@ -1,0 +1,304 @@
+<title>Urbania</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --glass:rgba(14,20,26,.84);--glass2:rgba(22,30,38,.96);--edge:rgba(255,255,255,.09);--hover:rgba(255,255,255,.07);
+  --ink:#eef2f4;--mute:#97a4ae;--dim:#5f6b75;--amber:#f2b33d;--amber-ink:#1b1406;
+  --ok:#5cc46f;--bad:#ea5a4f;--warn:#e9a23b;--info:#4ea3f0;
+  --zR:#7ed36b;--zRh:#3f9d4a;--zC:#6fa9e8;--zCh:#2f6fc9;--zI:#e8c13c;--zO:#3fc6c6;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;overflow:hidden;background:#0b1015;color:var(--ink);
+  font-family:'Barlow Semi Condensed',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+#view{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+input,select{font:inherit;color:var(--ink)}
+.panel{background:var(--glass);-webkit-backdrop-filter:blur(12px) saturate(1.15);backdrop-filter:blur(12px) saturate(1.15);
+  border:1px solid var(--edge);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.28)}
+.num{font-variant-numeric:tabular-nums}
+.lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);font-weight:600}
+.pos{color:var(--ok)}.neg{color:var(--bad)}
+.btn{padding:7px 12px;border-radius:7px;background:rgba(255,255,255,.08);font-weight:600;white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.14)}
+.btn.primary{background:var(--amber);color:var(--amber-ink)}
+.btn.danger{background:rgba(234,90,79,.18);color:#ffb4ad}
+.btn.sm{padding:4px 9px;font-size:13px}
+.btn[aria-pressed="true"]{background:rgba(242,179,61,.2);box-shadow:inset 0 0 0 1px var(--amber)}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.pill.ok{background:rgba(92,196,111,.18);color:#9fe3ab}.pill.bad{background:rgba(234,90,79,.2);color:#ffb0a8}.pill.warn{background:rgba(233,162,59,.2);color:#ffd08a}
+svg.ic{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* barre du haut */
+#top{position:fixed;z-index:5;top:calc(8px + env(safe-area-inset-top,0px));left:8px;right:8px;display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;pointer-events:none}
+#top>*{pointer-events:auto}
+.blk{display:flex;align-items:center;gap:10px;padding:6px 12px}
+.city .cname{font-weight:700;font-size:18px;line-height:1.1;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.city .clock{color:var(--mute);font-size:13px}
+.speed{padding:4px;gap:2px}
+.speed button{width:32px;height:32px;border-radius:7px;display:grid;place-items:center;color:var(--mute)}
+.speed button:hover{background:var(--hover);color:var(--ink)}
+.speed button[aria-pressed="true"]{background:var(--amber);color:var(--amber-ink)}
+.speed svg{width:15px;height:15px}
+#wIcon{display:flex;align-items:center;gap:6px;color:var(--mute);font-size:13px;padding:0 6px 0 4px}
+.stats{gap:18px;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column;line-height:1.15}
+.stat .v{font-size:17px;font-weight:600}
+.stat .d{font-size:12px}
+.demand{gap:6px;padding:6px 10px}
+.dbar{display:flex;flex-direction:column;align-items:center;gap:3px}
+.dbar .track{width:10px;height:34px;border-radius:3px;background:rgba(255,255,255,.08);position:relative;overflow:hidden}
+.dbar .track i{position:absolute;left:0;right:0;bottom:0;height:0;border-radius:3px;transition:height .5s}
+.dbar b{font-size:11px;font-weight:700;color:var(--mute)}
+.menu{margin-left:auto;padding:4px;gap:2px}
+.menu button{padding:7px 10px;border-radius:7px;font-weight:600;display:flex;align-items:center;gap:6px}
+.menu button:hover{background:var(--hover)}
+.menu button[aria-pressed="true"]{background:rgba(242,179,61,.18);color:var(--amber)}
+
+/* barre d'outils */
+#tools{position:fixed;z-index:5;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));
+  display:flex;flex-direction:column;align-items:center;gap:6px;width:min(1100px,calc(100% - 16px))}
+#panel{width:100%;padding:8px;display:flex;flex-direction:column;gap:8px}
+#panelHead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#panelHead h4{margin:0;font-size:15px;font-weight:700}
+#opts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto}
+#opts .sep{width:1px;height:22px;background:var(--edge);margin:0 4px}
+#opts label{display:flex;align-items:center;gap:6px;color:var(--mute);font-size:13px}
+#opts input[type=range]{width:90px;accent-color:var(--amber)}
+#cards{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.card{flex:none;width:112px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px 7px;border-radius:8px;background:rgba(255,255,255,.04);text-align:center}
+.card:hover{background:rgba(255,255,255,.09)}
+.card[aria-pressed="true"]{background:rgba(242,179,61,.16);box-shadow:inset 0 0 0 1px var(--amber)}
+.card canvas{width:64px;height:48px;border-radius:5px}
+.card .n{font-size:12.5px;font-weight:600;line-height:1.15;min-height:29px;display:flex;align-items:center}
+.card .c{font-size:11.5px;color:var(--mute)}
+.cats{display:flex;gap:2px;padding:5px;overflow-x:auto;max-width:100%;scrollbar-width:thin}
+.cats button{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:66px;padding:7px 6px 5px;border-radius:8px;color:var(--mute);font-size:11.5px;font-weight:600;flex:none}
+.cats button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.cats button:hover{background:var(--hover);color:var(--ink)}
+.cats button[aria-pressed="true"]{background:var(--amber);color:var(--amber-ink)}
+
+/* vues d'information */
+#viewsPanel{position:fixed;z-index:5;left:8px;top:calc(96px + env(safe-area-inset-top,0px));width:212px;padding:10px;display:flex;flex-direction:column;gap:8px;max-height:calc(100% - 330px);overflow:auto}
+#views{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+#views button{padding:6px 7px;border-radius:6px;font-size:12.5px;text-align:left;color:var(--mute);font-weight:500;line-height:1.15}
+#views button:hover{background:var(--hover);color:var(--ink)}
+#views button[aria-pressed="true"]{background:rgba(255,255,255,.12);color:var(--ink);box-shadow:inset 2px 0 0 var(--amber)}
+#legend{font-size:12px;color:var(--mute);display:flex;flex-direction:column;gap:4px}
+#legend .bar{height:8px;border-radius:4px}
+#legend .ends{display:flex;justify-content:space-between}
+#viewNote{font-size:12.5px;color:var(--mute);line-height:1.35}
+
+/* fil d'actualité */
+#feedPanel{position:fixed;z-index:4;right:8px;top:calc(96px + env(safe-area-inset-top,0px));width:250px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;max-height:260px}
+#feed{display:flex;flex-direction:column;gap:7px;overflow:auto;font-size:13px;line-height:1.3}
+#feed .it b{color:var(--amber);font-weight:600}
+#feed .it span{color:var(--mute)}
+
+/* info */
+#info{position:fixed;z-index:6;right:8px;bottom:calc(206px + env(safe-area-inset-bottom,0px));width:300px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;max-height:calc(100% - 330px);overflow:auto}
+#info h3{margin:0;font-size:18px;text-wrap:balance;line-height:1.15}
+#info .sub{color:var(--mute);font-size:13px;margin-top:-4px}
+#info .rows{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:13.5px}
+#info .rows>span:nth-child(odd){color:var(--mute)}
+#info .rows>span:nth-child(even){text-align:right;font-variant-numeric:tabular-nums}
+#info .act{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+#info .meter{height:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
+#info .meter i{display:block;height:100%}
+#info .pols{display:flex;flex-direction:column;gap:4px}
+#info .pols label{display:flex;align-items:center;gap:8px;font-size:13px;padding:3px 0}
+#info .pols input{accent-color:var(--amber)}
+#info input[type=text]{background:var(--glass2);border:1px solid var(--edge);border-radius:6px;padding:5px 8px;width:100%;box-sizing:border-box}
+
+#toasts{position:fixed;z-index:7;top:calc(104px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:min(460px,calc(100% - 32px))}
+.toast{padding:9px 14px;font-size:13.5px;animation:tin .25s ease-out;border-left:3px solid var(--warn)}
+.toast.good{border-left-color:var(--ok)}
+@keyframes tin{from{transform:translateY(-6px);opacity:0}to{transform:none;opacity:1}}
+#tip{position:fixed;z-index:8;pointer-events:none;padding:5px 9px;font-size:12.5px;border-radius:6px;background:var(--glass2);border:1px solid var(--edge);white-space:nowrap;line-height:1.35}
+#tip .bad{color:#ff9d94}#tip .mute{color:var(--mute)}
+#labels{position:fixed;inset:0;pointer-events:none;z-index:3;overflow:hidden}
+#labels div{position:absolute;transform:translate(-50%,-50%);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);white-space:nowrap}
+
+/* fenêtres */
+.modal{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:rgba(5,8,11,.5);padding:16px}
+.dlg{background:var(--glass2);border:1px solid var(--edge);border-radius:12px;padding:18px 20px;width:min(640px,100%);max-height:calc(100% - 32px);overflow:auto;display:flex;flex-direction:column;gap:12px;box-sizing:border-box}
+.dlg.wide{width:min(860px,100%)}
+.dlg h2{margin:0;font-size:22px}
+.dlg p{margin:0;color:var(--mute);line-height:1.45}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--edge);padding-bottom:6px;flex-wrap:wrap}
+.tabs button{padding:6px 12px;border-radius:6px;font-weight:600;color:var(--mute)}
+.tabs button[aria-selected="true"]{background:rgba(255,255,255,.1);color:var(--ink)}
+.g2{display:grid;grid-template-columns:1fr auto;gap:5px 16px;font-size:14px}
+.g2>span:nth-child(even){text-align:right;font-variant-numeric:tabular-nums}
+.slider{display:grid;grid-template-columns:150px 1fr 52px;align-items:center;gap:10px;font-size:14px}
+.slider input{width:100%;accent-color:var(--amber)}
+.slider span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.loan{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:10px 12px;border-radius:8px;background:rgba(255,255,255,.04)}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.charts figure{margin:0;display:flex;flex-direction:column;gap:6px}
+.charts figcaption{font-size:13px;color:var(--mute);display:flex;justify-content:space-between}
+.charts canvas{width:100%;height:150px;background:rgba(255,255,255,.03);border-radius:6px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.keys kbd{font-family:inherit;font-weight:700;background:rgba(255,255,255,.1);border-radius:5px;padding:1px 7px;white-space:nowrap}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+hr{border:0;border-top:1px solid var(--edge);margin:0}
+.lines{display:flex;flex-direction:column;gap:6px}
+.lines .ln{display:grid;grid-template-columns:18px 1fr auto auto;gap:10px;align-items:center;padding:6px 8px;border-radius:7px;background:rgba(255,255,255,.04)}
+.lines .sw{width:14px;height:14px;border-radius:4px}
+
+#loader{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 60%,#1a2733,#0b1015 70%)}
+.ld{width:min(360px,80%);display:flex;flex-direction:column;gap:12px}
+.ld .t{font-size:42px;font-weight:700;letter-spacing:.02em}
+.ld .t span{color:var(--amber)}
+.ld .bar{height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
+.ld .bar i{display:block;height:100%;width:0;background:var(--amber);transition:width .2s}
+#ldMsg{color:var(--mute)}
+
+@media (max-width:1100px){ .stats .opt{display:none} #feedPanel{display:none} }
+@media (max-width:760px){
+  .city .cname{font-size:15px;max-width:120px}
+  .stats{gap:12px}.stat .v{font-size:15px}
+  .demand{display:none}
+  .menu button span{display:none}
+  #viewsPanel{top:auto;bottom:calc(250px + env(safe-area-inset-bottom,0px));max-height:40%}
+  #info{left:8px;right:8px;width:auto;bottom:calc(250px + env(safe-area-inset-bottom,0px))}
+  .card{width:92px}
+  .charts{grid-template-columns:1fr}
+  .slider{grid-template-columns:110px 1fr 46px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<!--BODY-->
+<canvas id="view" tabindex="0" aria-label="Vue 3D de la ville"></canvas>
+<div id="labels"></div>
+
+<div id="loader"><div class="ld">
+  <div class="t">Urbania<span>.</span></div>
+  <div class="bar"><i id="ldFill"></i></div>
+  <div id="ldMsg">Chargement du moteur 3D…</div>
+</div></div>
+
+<header id="top">
+  <div class="panel blk city">
+    <div><div class="cname" id="cityName">Val-Clair</div>
+    <div class="clock num"><span id="dDate">1 janv. 2026</span> · <span id="dTime">08:00</span></div></div>
+    <div id="wIcon" title="Météo"></div>
+  </div>
+  <div class="panel blk speed" role="group" aria-label="Vitesse du temps">
+    <button data-speed="0" title="Pause (Espace)" aria-label="Pause"><svg viewBox="0 0 16 16"><rect x="3" y="2" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="9.5" y="2" width="3.5" height="12" rx="1" fill="currentColor"/></svg></button>
+    <button data-speed="1" title="Vitesse normale" aria-label="Vitesse 1"><svg viewBox="0 0 16 16"><path d="M4 2l9 6-9 6z" fill="currentColor"/></svg></button>
+    <button data-speed="2" title="Vitesse ×2" aria-label="Vitesse 2"><svg viewBox="0 0 16 16"><path d="M1 3l7 5-7 5zM8 3l7 5-7 5z" fill="currentColor"/></svg></button>
+    <button data-speed="4" title="Vitesse ×4" aria-label="Vitesse 4"><svg viewBox="0 0 16 16"><path d="M0 3l5 5-5 5zM5 3l5 5-5 5zM10 3l5 5-5 5z" fill="currentColor"/></svg></button>
+  </div>
+  <div class="panel blk stats">
+    <div class="stat"><span class="lbl">Population</span><span class="v num" id="sPop">0</span><span class="d num" id="sPopD"></span></div>
+    <div class="stat"><span class="lbl">Trésorerie</span><span class="v num" id="sMoney">0 $</span><span class="d num" id="sDelta">+0 $/jour</span></div>
+    <div class="stat"><span class="lbl">Bonheur</span><span class="v num" id="sHappy">–</span></div>
+    <div class="stat opt"><span class="lbl">Chômage</span><span class="v num" id="sUnemp">–</span></div>
+  </div>
+  <div class="panel blk demand" title="Demande : Résidentiel, Commercial, Industriel, Bureaux">
+    <div class="dbar"><div class="track"><i id="dR" style="background:var(--zR)"></i></div><b>R</b></div>
+    <div class="dbar"><div class="track"><i id="dC" style="background:var(--zC)"></i></div><b>C</b></div>
+    <div class="dbar"><div class="track"><i id="dI" style="background:var(--zI)"></i></div><b>I</b></div>
+    <div class="dbar"><div class="track"><i id="dO" style="background:var(--zO)"></i></div><b>B</b></div>
+  </div>
+  <div class="panel blk menu">
+    <button id="bViews" aria-pressed="false" title="Vues d'information"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/></svg><span>Vues</span></button>
+    <button id="bStats" title="Statistiques"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Stats</span></button>
+    <button id="bBudget" title="Économie et politiques"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9.5c-.6-1-1.7-1.5-3-1.5-1.8 0-3 .9-3 2.2 0 3 6 1.6 6 4.6 0 1.3-1.3 2.2-3 2.2-1.4 0-2.6-.6-3.1-1.6M12 6v2M12 16v2"/></svg><span>Économie</span></button>
+    <button id="bLines" title="Lignes de transport"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14M8 21l2-4M16 21l-2-4"/><circle cx="9" cy="14" r=".6"/><circle cx="15" cy="14" r=".6"/></svg><span>Lignes</span></button>
+    <button id="bSound" aria-pressed="false" title="Son et radio"><svg class="ic" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></svg><span>Son</span></button>
+    <button id="bMenu" title="Menu"><svg class="ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Menu</span></button>
+  </div>
+</header>
+
+<aside id="viewsPanel" class="panel" hidden>
+  <div class="lbl">Vues d'information</div>
+  <div id="views"></div>
+  <div id="legend" hidden><div class="bar" id="lgBar"></div><div class="ends"><span id="lgA"></span><span id="lgB"></span></div></div>
+  <div id="viewNote"></div>
+</aside>
+
+<aside id="feedPanel" class="panel">
+  <div class="lbl">Fil d'Urbania</div>
+  <div id="feed" aria-live="polite"></div>
+</aside>
+
+<div id="info" class="panel" hidden></div>
+<div id="toasts" aria-live="polite"></div>
+<div id="tip" hidden></div>
+
+<nav id="tools" aria-label="Outils de construction">
+  <div id="panel" class="panel" hidden>
+    <div id="panelHead"><h4 id="panelTitle"></h4><div id="opts"></div></div>
+    <div id="cards"></div>
+  </div>
+  <div class="cats panel" id="cats"></div>
+</nav>
+
+<div class="modal" id="mBudget" hidden><div class="dlg wide" role="dialog" aria-labelledby="hB">
+  <div class="row" style="justify-content:space-between"><h2 id="hB">Économie</h2><button class="btn" data-close>Fermer</button></div>
+  <div class="tabs" role="tablist" id="budgetTabs">
+    <button role="tab" data-tab="taxes" aria-selected="true">Impôts et bilan</button>
+    <button role="tab" data-tab="services" aria-selected="false">Budgets des services</button>
+    <button role="tab" data-tab="loans" aria-selected="false">Prêts</button>
+    <button role="tab" data-tab="policies" aria-selected="false">Politiques de la ville</button>
+    <button role="tab" data-tab="trade" aria-selected="false">Commerce extérieur</button>
+  </div>
+  <div id="budgetBody" style="display:flex;flex-direction:column;gap:10px"></div>
+</div></div>
+
+<div class="modal" id="mStats" hidden><div class="dlg wide" role="dialog" aria-labelledby="hS">
+  <div class="row" style="justify-content:space-between"><h2 id="hS">Statistiques de la ville</h2><button class="btn" data-close>Fermer</button></div>
+  <div id="statsBody" style="display:flex;flex-direction:column;gap:12px"></div>
+</div></div>
+
+<div class="modal" id="mLines" hidden><div class="dlg" role="dialog" aria-labelledby="hL">
+  <div class="row" style="justify-content:space-between"><h2 id="hL">Lignes de transport</h2><button class="btn" data-close>Fermer</button></div>
+  <div id="linesBody" class="lines"></div>
+</div></div>
+
+<div class="modal" id="mMenu" hidden><div class="dlg" role="dialog" aria-labelledby="hM">
+  <div class="row" style="justify-content:space-between"><h2 id="hM">Menu</h2><button class="btn primary" data-close>Reprendre</button></div>
+  <p>La partie est sauvegardée automatiquement dans ce navigateur chaque jour de jeu.</p>
+  <div class="row"><button class="btn" id="mSave">Sauvegarder</button><button class="btn" id="mLoad">Charger la sauvegarde</button><button class="btn" id="mHelpBtn">Commandes</button></div>
+  <hr>
+  <div class="lbl">Nouvelle partie</div>
+  <div class="row"><button class="btn" id="mNewDemo">Ville d'exemple</button><button class="btn" id="mNewEmpty">Carte vierge</button><button class="btn" id="mNewSeed">Carte aléatoire</button></div>
+  <p id="confirmNew" hidden style="color:var(--warn)">La ville actuelle sera remplacée. Cliquez à nouveau pour confirmer.</p>
+  <hr>
+  <div class="lbl">Graphismes</div>
+  <div class="slider"><label for="quality">Qualité</label><select id="quality" style="background:var(--glass);border:1px solid var(--edge);border-radius:6px;padding:5px">
+    <option value="auto">Auto (adaptatif)</option><option value="low">Performance</option><option value="mid">Équilibré</option><option value="ultra">Ultra</option></select><span></span></div>
+  <div class="slider"><label for="weatherSel">Météo</label><select id="weatherSel" style="background:var(--glass);border:1px solid var(--edge);border-radius:6px;padding:5px">
+    <option value="auto">Variable</option><option value="clear">Ensoleillé</option><option value="cloudy">Nuageux</option><option value="rain">Pluie</option><option value="storm">Orage</option><option value="fog">Brouillard</option><option value="snow">Neige</option></select><span></span></div>
+  <div class="slider"><label for="dayLen">Cycle jour/nuit</label><select id="dayLen" style="background:var(--glass);border:1px solid var(--edge);border-radius:6px;padding:5px">
+    <option value="1">Actif</option><option value="0">Toujours jour</option></select><span></span></div>
+  <div class="lbl">Son</div>
+  <div class="slider"><label for="vMaster">Volume général</label><input type="range" id="vMaster" min="0" max="100" value="70"><span id="vMasterV">70</span></div>
+  <div class="slider"><label for="vAmb">Ambiance</label><input type="range" id="vAmb" min="0" max="100" value="70"><span id="vAmbV">70</span></div>
+  <div class="slider"><label for="vRadio">Radio Urbania</label><input type="range" id="vRadio" min="0" max="100" value="45"><span id="vRadioV">45</span></div>
+</div></div>
+
+<div class="modal" id="mHelp" hidden><div class="dlg" role="dialog" aria-labelledby="hH">
+  <h2 id="hH">Construire votre ville</h2>
+  <p>Tracez des routes, zonez le long des routes, puis fournissez électricité, eau, égouts et services. Les habitants s'installent, travaillent, vont à l'école, tombent malades, vieillissent. Les barres R C I B indiquent la demande.</p>
+  <div class="keys">
+    <kbd>Clic gauche</kbd><span>Utiliser l'outil. Route : clic de départ, puis clic d'arrivée (mode courbe : 3 clics)</span>
+    <kbd>Clic droit</kbd><span>Annuler le tracé en cours · glisser pour tourner la caméra</span>
+    <kbd>Molette</kbd><span>Zoom vers le curseur</span>
+    <kbd>ZQSD ou flèches</kbd><span>Déplacer la caméra</span>
+    <kbd>A / E</kbd><span>Rotation de la caméra</span>
+    <kbd>Page haut / bas</kbd><span>Hauteur de la route (viaduc ou tunnel)</span>
+    <kbd>Maj</kbd><span>Désactiver l'aimantation pendant le tracé</span>
+    <kbd>Échap</kbd><span>Outil Sélection (cliquez un bâtiment, un véhicule ou un habitant)</span>
+    <kbd>Espace</kbd><span>Pause</span>
+    <kbd>1 à 9</kbd><span>Catégories d'outils · <kbd>0</kbd> Démolir · <kbd>R</kbd> tourner un bâtiment</span>
+    <kbd>Tactile</kbd><span>1 doigt : outil, 2 doigts : déplacement, zoom et rotation</span>
+  </div>
+  <div class="row" style="justify-content:flex-end"><button class="btn primary" data-close>C'est parti</button></div>
+</div></div>
