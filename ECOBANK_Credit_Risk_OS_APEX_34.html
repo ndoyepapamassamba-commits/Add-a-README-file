@@ -10767,6 +10767,7 @@ function pmStyles(sx,defs){ // ajoute polices, remplissages, bordure et formats 
   const fonts=[],fills=[]; defs.forEach(d=>{ fonts.push(`<font>${d.b?'<b/>':''}${d.u?'<u/>':''}${d.i?'<i/>':''}<sz val="${d.sz||10}"/><color rgb="FF${d.c||'12333F'}"/><name val="${d.f||'Segoe UI'}"/></font>`);
     fills.push(d.bg?`<fill><patternFill patternType="solid"><fgColor rgb="FF${d.bg}"/><bgColor indexed="64"/></patternFill></fill>`:'<fill><patternFill patternType="none"/></fill>'); });
   const codes=[...new Set(defs.filter(d=>d.nfc).map(d=>d.nfc))], nfId={}; if(codes.length){ let id=Math.max(179,...[...sx.matchAll(/numFmtId="(\d+)"/g)].map(m=>+m[1])); const items=codes.map(c=>{ nfId[c]=++id; return `<numFmt numFmtId="${id}" formatCode="${PM_X(c)}"/>`; });
+    sx=sx.replace(/<numFmts\b[^>]*\/>/,'');
     if(/<numFmts\b[^>]*count="\d+"[^>]*>/.test(sx)) sx=sx.replace(/<numFmts\b[^>]*count="(\d+)"[^>]*>/,(m,n)=>`<numFmts count="${+n+items.length}">`+items.join('')); else sx=sx.replace(/(<styleSheet\b[^>]*>)/,(m)=>m+`<numFmts count="${items.length}">${items.join('')}</numFmts>`); defs.forEach(d=>{ if(d.nfc) d.nf=nfId[d.nfc]; }); }
   const f0=add('fonts',fonts), fi0=add('fills',fills), b0=add('borders',['<border><left style="thin"><color rgb="FFCFE0E7"/></left><right style="thin"><color rgb="FFCFE0E7"/></right><top style="thin"><color rgb="FFCFE0E7"/></top><bottom style="thin"><color rgb="FFCFE0E7"/></bottom><diagonal/></border>']);
   if(f0==null||fi0==null||b0==null) return null;
@@ -10783,7 +10784,7 @@ const PM_XDEF=[
   {k:'kl',bg:'EEF4F7',c:'3E5C6B',b:1,sz:8.5,h:'center',bd:1},{k:'kv',bg:'FFFFFF',c:'00415E',b:1,f:'Consolas',sz:16,h:'center',bd:1,nf:3},
   {k:'in',bg:'FFF4CC',c:'00415E',b:1,f:'Consolas',sz:11,nf:3,bd:1,h:'right'},{k:'inp',bg:'FFF4CC',c:'00415E',b:1,f:'Consolas',sz:11,nf:10,bd:1,h:'right'},
   {k:'out',bg:'E8F4D5',c:'1E5E12',b:1,f:'Consolas',sz:11,nf:3,bd:1,h:'right'},{k:'outp',bg:'E8F4D5',c:'1E5E12',b:1,f:'Consolas',sz:11,nf:10,bd:1,h:'right'},
-  {k:'lab',c:'12333F',b:1,sz:10,bd:1,bg:'F7FAFC'},{k:'sc',bg:'00415E',c:'FFFFFF',b:1,sz:10.5,h:'center',bd:1},{k:'bar',c:'8CC63F',sz:10,bd:1,f:'Consolas'},{k:'ver',c:'12333F',b:1,sz:10,h:'center',bd:1},{k:'bgz',bg:'EAF1F5',c:'12333F',sz:9},{k:'kvm',bg:'FFFFFF',c:'00415E',b:1,f:'Consolas',sz:16,h:'center',bd:1,nfc:'#,##0,," M"'}];
+  {k:'lab',c:'12333F',b:1,sz:10,bd:1,bg:'F7FAFC'},{k:'sc',bg:'00415E',c:'FFFFFF',b:1,sz:10.5,h:'center',bd:1},{k:'bar',c:'8CC63F',sz:10,bd:1,f:'Consolas'},{k:'ver',c:'12333F',b:1,sz:10,h:'center',bd:1},{k:'bgz',bg:'EAF1F5',c:'12333F',sz:9},{k:'srch',bg:'FFF4CC',c:'00415E',b:1,sz:11,bd:1},{k:'srl',bg:'00415E',c:'FFFFFF',b:1,sz:9.5,h:'center',bd:1},{k:'srr',bg:'EAF1F5',c:'005C83',b:1,u:1,sz:10},{k:'kvp',bg:'FFFFFF',c:'00415E',b:1,f:'Consolas',sz:16,h:'center',bd:1,nf:10},{k:'kvm',bg:'FFFFFF',c:'00415E',b:1,f:'Consolas',sz:16,h:'center',bd:1,nfc:'[>=1000000000]#,##0.0,,," Md";#,##0,," M"'}];
 function pmCell(ref,v,s,f){ if(f!=null) return `<c r="${ref}" s="${s}"${typeof v==='string'?' t="str"':''}><f>${PM_X(f)}</f></c>`;
   if(v==null||v==='') return `<c r="${ref}" s="${s}"/>`; if(typeof v==='number') return `<c r="${ref}" s="${s}"><v>${isFinite(v)?v:0}</v></c>`;
   return `<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${PM_X(v)}</t></is></c>`; }
@@ -10957,7 +10958,7 @@ async function pmSheetDash(z,s,pl,G,S){ const p=s.path, relP=p.replace('workshee
   // largeur utile du tableau de bord = largeur du tableau (min 980 px)
   let W=0; const cx=[0]; for(let c=0;c<nC;c++){ W+=colPx(c+1); cx.push(W); } const DW=W;
   // --- zone : hauteurs de lignes (points)
-  const nZ=H, hts=[]; hts[1]=40; hts[2]=18; hts[3]=20; hts[4]=38; hts[5]=8; const band=236, nb=Math.max(1,nZ-5); for(let r=6;r<=nZ;r++) hts[r]=band/nb; if(nZ<6) return null;
+  const nZ=H, hts=[]; hts[1]=40; hts[2]=18; hts[3]=20; hts[4]=38; hts[5]=26; const band=236, nb=Math.max(1,nZ-5); for(let r=6;r<=nZ;r++) hts[r]=band/nb; if(nZ<6) return null;
   const yOf=r=>{ let y=0; for(let i=1;i<r;i++) y+=hts[i]; return y; };   // points
   // --- tuiles (cellules SOUS.TOTAL) sur la moitié gauche
   const half=cx.findIndex(v=>v>=DW*0.5); const leftCols=Math.max(1,Math.min(nC,half<0?nC:half)); const nT=Math.min(4,leftCols), per=Math.floor(leftCols/nT);
@@ -10970,6 +10971,16 @@ async function pmSheetDash(z,s,pl,G,S){ const p=s.path, relP=p.replace('workshee
   if(nC>1){ merges.push(ref(0,1)+':'+ref(nC-1,1),ref(0,2)+':'+ref(nC-1,2)); }
   tiles.forEach((t,i)=>{ const c0=i*per, c1=i===tiles.length-1?leftCols-1:c0+per-1; put(3,c0,pmCell(ref(c0,3),t[0],S.kl)); put(4,c0,pmCell(ref(c0,4),0,t[2]==='m'?S.kvm:S.kv,t[1]));
     for(let c=c0+1;c<=c1;c++){ put(3,c,`<c r="${ref(c,3)}" s="${S.kl}"/>`); put(4,c,`<c r="${ref(c,4)}" s="${t[2]==='m'?S.kvm:S.kv}"/>`); } if(c1>c0) merges.push(ref(c0,3)+':'+ref(c1,3),ref(c0,4)+':'+ref(c1,4)); });
+  // --- recherche client (ligne 5) : code, nom, référence… ; surlignage des lignes et lien vers le 1er résultat
+  const sCols=pl.cols.filter(o=>/client|relationship|nom|name|code|référence|reference|compte|contrat|contrepartie|gestionnaire/i.test(o.h)||!o.num).slice(0,6); let srch=null;
+  if(sCols.length&&nC>=4){ const lw=Math.max(1,Math.min(2,Math.floor(nC/5))), iw=Math.max(1,Math.min(3,Math.floor(nC/3))), c0=0, ci=lw, cr=ci+iw, inp='$'+XLSX.utils.encode_col(ci)+'$5';
+    const cat=r=>sCols.map(o=>(r?'$'+XLSX.utils.encode_col(o.c)+r:'$'+XLSX.utils.encode_col(o.c)+'$'+first+':$'+XLSX.utils.encode_col(o.c)+'$'+lastR)).join('&" "&');
+    put(5,c0,pmCell(ref(c0,5),'🔍 RECHERCHER',S.srl)); for(let c=c0+1;c<ci;c++) put(5,c,`<c r="${ref(c,5)}" s="${S.srl}"/>`); if(ci-1>c0) merges.push(ref(c0,5)+':'+ref(ci-1,5));
+    put(5,ci,`<c r="${ref(ci,5)}" s="${S.srch}"/>`); for(let c=ci+1;c<cr;c++) put(5,c,`<c r="${ref(c,5)}" s="${S.srch}"/>`); if(cr-1>ci) merges.push(ref(ci,5)+':'+ref(cr-1,5));
+    const cnt=`IF(${inp}="","← tapez un code client, un nom, une référence… (${sCols.map(o=>o.h).slice(0,3).join(', ')})",SUMPRODUCT(--ISNUMBER(SEARCH(${inp},${cat()})))&" résultat(s)")`;
+    put(5,cr,pmCell(ref(cr,5),'x',S.srr,cnt)); const ce=Math.min(nC-1,cr+2); for(let c=cr+1;c<=ce;c++) put(5,c,`<c r="${ref(c,5)}" s="${S.srr}"/>`); if(ce>cr) merges.push(ref(cr,5)+':'+ref(ce,5));
+    if(ce+1<nC){ const cl=ce+1; put(5,cl,pmCell(ref(cl,5),'x',S.srr,`IF(${inp}="","",IFERROR(HYPERLINK("#"&ADDRESS(MATCH(TRUE,INDEX(ISNUMBER(SEARCH(${inp},${cat()})),0),0)+${first-1},1),"→ aller au 1er résultat"),"aucun résultat"))`)); const ce2=Math.min(nC-1,cl+1); for(let c=cl+1;c<=ce2;c++) put(5,c,`<c r="${ref(c,5)}" s="${S.srr}"/>`); if(ce2>cl) merges.push(ref(cl,5)+':'+ref(ce2,5)); }
+    srch=`<conditionalFormatting sqref="${ref(0,first)}:${ref(nC-1,lastR)}"><cfRule type="expression" dxfId="${G.dxHi}" priority="99"><formula>${PM_X(`AND(${inp}<>"",ISNUMBER(SEARCH(${inp},${cat(first)})))`)}</formula></cfRule></conditionalFormatting>`; }
   // --- table d'aide (colonnes masquées à droite) : agrégats sur les lignes visibles
   const hc=nC+40, charts=[]; let hr0=1; const ofs=c=>`OFFSET(${abs(c,first)},ROW(${rngL(c)})-ROW(${abs(c,first)}),0)`;
   const valF=(cond)=>M?`SUMPRODUCT(SUBTOTAL(109,${ofs(M.c)}),${cond})`:`SUMPRODUCT(SUBTOTAL(103,${ofs(0)}),${cond})`;
@@ -11046,10 +11057,137 @@ async function pmSheetDash(z,s,pl,G,S){ const p=s.path, relP=p.replace('workshee
     x=/<extLst>/.test(x)?x.replace(/<extLst>/,'<extLst>'+ext):x.replace('</worksheet>','<extLst>'+ext+'</extLst></worksheet>'); }
   if(!/xmlns:r=/.test(x.slice(0,800))) x=x.replace('<worksheet ','<worksheet xmlns:r="'+PM_NS_R+'" ');
   x=x.replace(/<dimension ref="[^"]*"\/>/,`<dimension ref="A1:${ref(Math.max(hc+1,nC-1),Math.max(lastR,hr0))}"/>`);
+  if(srch) x=pmInsertTail(x,'conditionalFormatting',srch);
   z.file(p,x); z.file(relP,rels); return {charts:charts.length,slicers:sl.length}; }
 function pmInsertTail(x,tag,xml){ // insère un élément de fin de feuille à la bonne place du schéma
   const order=['sheetCalcPr','sheetProtection','protectedRanges','scenarios','autoFilter','sortState','dataConsolidate','customSheetViews','mergeCells','phoneticPr','conditionalFormatting','dataValidations','hyperlinks','printOptions','pageMargins','pageSetup','headerFooter','rowBreaks','colBreaks','customProperties','cellWatches','ignoredErrors','smartTags','drawing','legacyDrawing','legacyDrawingHF','drawingHF','picture','oleObjects','controls','webPublishItems','tableParts','extLst'];
   const i=order.indexOf(tag); for(let j=i+1;j<order.length;j++){ const m=x.match(new RegExp('<'+order[j]+'[\\s>/]')); if(m) return x.slice(0,m.index)+xml+x.slice(m.index); } return x.replace('</worksheet>',()=>xml+'</worksheet>'); }
+/* ---------- graphiques natifs avancés (anneau, jauge, courbe, barres empilées 100 %, combiné barres + courbe) ---------- */
+function pmCh(spec){ const T=spec.type, esc=PM_X;
+  const sc=(o)=>`<c:strRef><c:f>${esc(o.ref)}</c:f><c:strCache><c:ptCount val="${o.vals.length}"/>${o.vals.map((v,i)=>`<c:pt idx="${i}"><c:v>${esc(v)}</c:v></c:pt>`).join('')}</c:strCache></c:strRef>`;
+  const nc=(o,f)=>`<c:numRef><c:f>${esc(o.ref)}</c:f><c:numCache><c:formatCode>${f||'General'}</c:formatCode><c:ptCount val="${o.vals.length}"/>${o.vals.map((v,i)=>`<c:pt idx="${i}"><c:v>${isFinite(v)?v:0}</c:v></c:pt>`).join('')}</c:numCache></c:numRef>`;
+  const fill=c=>c==='none'?'<a:noFill/>':`<a:solidFill><a:srgbClr val="${c}"/></a:solidFill>`;
+  const grad=c=>`<a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:srgbClr val="${c}"><a:lumMod val="75000"/></a:srgbClr></a:gs><a:gs pos="100000"><a:srgbClr val="${c}"><a:lumMod val="110000"/></a:srgbClr></a:gs></a:gsLst><a:lin ang="16200000" scaled="0"/></a:gradFill>`;
+  const lbl=(fmt,pos,sz,col,pct)=>`<c:dLbls><c:numFmt formatCode="${esc(fmt)}" sourceLinked="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${pmTxPr(sz||800,col||'00415E')}${pos?`<c:dLblPos val="${pos}"/>`:''}<c:showLegendKey val="0"/><c:showVal val="${pct?0:1}"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="${pct?1:0}"/><c:showBubbleSize val="0"/></c:dLbls>`;
+  const noLbl='<c:dLbls><c:delete val="1"/></c:dLbls>';
+  const cat=(id,cross,pos,del)=>`<c:catAx><c:axId val="${id}"/><c:scaling><c:orientation val="${pos==='l'?'maxMin':'minMax'}"/></c:scaling><c:delete val="${del?1:0}"/><c:axPos val="${pos}"/><c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln w="9525"><a:solidFill><a:srgbClr val="CFE0E7"/></a:solidFill></a:ln></c:spPr>${pmTxPr(800,'3E5C6B')}<c:crossAx val="${cross}"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx>`;
+  const val=(id,cross,pos,fmt,del,grid,crosses,mx)=>`<c:valAx><c:axId val="${id}"/><c:scaling><c:orientation val="minMax"/>${mx!=null?`<c:max val="${mx}"/><c:min val="0"/>`:''}</c:scaling><c:delete val="${del?1:0}"/><c:axPos val="${pos}"/>${grid?'<c:majorGridlines><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="E3EDF2"/></a:solidFill></a:ln></c:spPr></c:majorGridlines>':''}<c:numFmt formatCode="${esc(fmt||'#,##0')}" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln><a:noFill/></a:ln></c:spPr>${pmTxPr(750,'6B8796')}<c:crossAx val="${cross}"/><c:crosses val="${crosses||'autoZero'}"/><c:crossBetween val="between"/></c:valAx>`;
+  const ser=(s,i,extra)=>`<c:ser><c:idx val="${i}"/><c:order val="${i}"/><c:tx><c:v>${esc(s.name)}</c:v></c:tx><c:spPr>${s.line?`<a:ln w="31750" cap="rnd"><a:solidFill><a:srgbClr val="${s.color}"/></a:solidFill><a:round/></a:ln>`:(s.grad?grad(s.color):fill(s.color))}${s.line?'':'<a:ln><a:noFill/></a:ln>'}</c:spPr>${extra||''}${(s.colors||[]).map((c,j)=>`<c:dPt><c:idx val="${j}"/>${T==='doughnut'||T==='gauge'?'<c:bubble3D val="0"/>':'<c:invertIfNegative val="0"/><c:bubble3D val="0"/>'}<c:spPr>${c==='none'?'<a:noFill/>':(s.grad?grad(c):fill(c))}<a:ln w="${T==='doughnut'?19050:0}">${T==='doughnut'?'<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>':'<a:noFill/>'}</a:ln></c:spPr></c:dPt>`).join('')}${s.lbl||''}<c:cat>${sc(spec.cats)}</c:cat><c:val>${nc(s,s.fmt)}</c:val>${s.line?'<c:smooth val="1"/>':''}</c:ser>`;
+  let plot='', legend='';
+  if(T==='doughnut'||T==='gauge'){ const s=spec.series[0]; plot=`<c:doughnutChart><c:varyColors val="1"/>${ser(Object.assign({},s,{lbl:T==='gauge'?noLbl:lbl('0%',null,900,'FFFFFF',1)}),0)}<c:firstSliceAng val="${T==='gauge'?270:0}"/><c:holeSize val="${T==='gauge'?68:60}"/></c:doughnutChart>`;
+    if(T==='doughnut') legend=`<c:legend><c:legendPos val="r"/><c:overlay val="0"/>${pmTxPr(850,'12333F')}</c:legend>`; }
+  else if(T==='line'){ plot=`<c:lineChart><c:grouping val="standard"/><c:varyColors val="0"/>${spec.series.map((s,i)=>ser(Object.assign({line:1,lbl:i===0?lbl(s.fmt||'0.00%','t',800,'00415E'):noLbl},s),i,`<c:marker><c:symbol val="circle"/><c:size val="7"/><c:spPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:ln w="22225"><a:solidFill><a:srgbClr val="${s.color}"/></a:solidFill></a:ln></c:spPr></c:marker>`)).join('')}<c:marker val="1"/><c:axId val="7001"/><c:axId val="7002"/></c:lineChart>${cat(7001,7002,'b')}${val(7002,7001,'l',spec.fmt||'0.0%',0,1)}`; }
+  else if(T==='col'||T==='barh'){ const h=T==='barh'; plot=`<c:barChart><c:barDir val="${h?'bar':'col'}"/><c:grouping val="clustered"/><c:varyColors val="0"/>${spec.series.map((s,i)=>ser(Object.assign({grad:1,lbl:lbl(s.fmt||'#,##0',h?'outEnd':'outEnd',800,'00415E')},s),i,'<c:invertIfNegative val="0"/>')).join('')}<c:gapWidth val="${h?45:55}"/><c:axId val="7101"/><c:axId val="7102"/></c:barChart>${cat(7101,7102,h?'l':'b')}${val(7102,7101,h?'b':'l','#,##0',1,!h)}`;
+    if(spec.series.length>1) legend=`<c:legend><c:legendPos val="t"/><c:overlay val="0"/>${pmTxPr(800,'12333F')}</c:legend>`; }
+  else if(T==='stack100h'){ plot=`<c:barChart><c:barDir val="bar"/><c:grouping val="percentStacked"/><c:varyColors val="0"/>${spec.series.map((s,i)=>ser(Object.assign({lbl:noLbl},s),i,'<c:invertIfNegative val="0"/>')).join('')}<c:gapWidth val="30"/><c:overlap val="100"/><c:axId val="7201"/><c:axId val="7202"/></c:barChart>${cat(7201,7202,'l',1)}${val(7202,7201,'b','0%',1,0)}`;
+    legend=`<c:legend><c:legendPos val="b"/><c:overlay val="0"/>${pmTxPr(850,'12333F')}</c:legend>`; }
+  else if(T==='combo'){ const b=spec.series[0], l=spec.series[1];
+    plot=`<c:barChart><c:barDir val="col"/><c:grouping val="clustered"/><c:varyColors val="0"/>${ser(Object.assign({grad:1,lbl:noLbl},b),0,'<c:invertIfNegative val="0"/>')}<c:gapWidth val="45"/><c:axId val="7301"/><c:axId val="7302"/></c:barChart>`
+      +`<c:lineChart><c:grouping val="standard"/><c:varyColors val="0"/>${ser(Object.assign({line:1,lbl:noLbl},l),1,`<c:marker><c:symbol val="circle"/><c:size val="6"/><c:spPr><a:solidFill><a:srgbClr val="${l.color}"/></a:solidFill><a:ln><a:noFill/></a:ln></c:spPr></c:marker>`)}<c:marker val="1"/><c:axId val="7303"/><c:axId val="7304"/></c:lineChart>`
+      +cat(7301,7302,'b')+val(7302,7301,'l','#,##0,,," Md"',0,1)+cat(7303,7304,'b',1)+val(7304,7303,'r','#,##0,,," Md"',0,0,'max');
+    legend=`<c:legend><c:legendPos val="t"/><c:overlay val="0"/>${pmTxPr(800,'12333F')}</c:legend>`; }
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace xmlns:c="${PM_C}" xmlns:a="${PM_A}" xmlns:r="${PM_NS_R}"><c:roundedCorners val="1"/><c:chart>${spec.title?`<c:title>${pmRich(spec.title,1200,'00415E',1)}<c:overlay val="0"/></c:title><c:autoTitleDeleted val="0"/>`:'<c:autoTitleDeleted val="1"/>'}<c:plotArea><c:layout/>${plot}<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr></c:plotArea>${legend}<c:plotVisOnly val="0"/><c:dispBlanksAs val="gap"/></c:chart>`
+    +`<c:spPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:ln w="12700"><a:solidFill><a:srgbClr val="D6E6EE"/></a:solidFill></a:ln><a:effectLst><a:outerShdw blurRad="88900" dist="25400" dir="5400000" algn="t" rotWithShape="0"><a:srgbClr val="00415E"><a:alpha val="20000"/></a:srgbClr></a:outerShdw></a:effectLst></c:spPr><c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr><a:latin typeface="Segoe UI"/></a:defRPr></a:pPr><a:endParaRPr lang="fr-FR"/></a:p></c:txPr></c:chartSpace>`; }
+
+/* ---------- Sommaire vivant : feuille de données + graphiques natifs + segments ---------- */
+function pmLiveData(){ try{ const R=(S.rows||[]).filter(l=>!l.titre); if(R.length<5) return null; const A=S.agg&&S.agg.clients;
+  const rows=R.map(l=>{ const c=A?A.get(l.clc):null; return [String((c&&c.rel)||l.clc||'—').slice(0,80)||'—',String(l.clc||''),String(l.bseg||'AUTRES').trim().replace(/_/g,' ').toUpperCase()||'AUTRES',String(l.classification||'').trim().toUpperCase()||'N/A','Stage '+(+l.stage||1),String(l.prod||'').trim()||'N/A',Math.round(Math.max(0,l.ototal||0)),Math.round(l.ecl||0),Math.round(l.pdo>0?l.pdo:0),Math.round(l.dj||0),l.npl&&!l.excl?'Oui':'Non']; });
+  const C=pmCtx(); return {rows,hist:(S.hist||[]).filter(m=>m.agg&&m.agg.enc>0).sort((a,b)=>a.date-b.date).slice(-12).map(m=>({lab:fmtDate(new Date(m.date)).slice(0,5),enc:m.agg.enc,npl:m.agg.nplRatio!=null?m.agg.nplRatio:(m.agg.nplEnc||0)/m.agg.enc,ecl:m.agg.ecl||0})),sol:C.fpe&&C.rwa?C.fpe/C.rwa:null,arrete:S.arrete?fmtDate(S.arrete):''}; }catch(e){ console.warn('données sommaire',e); return null; } }
+const PM_DH=['Client','Code client','Segment','Classe','Stage','Produit','Encours XOF','ECL XOF','Impayés XOF','Jours impayé','NPL','Visible'];
+function pmLiveDataXml(L,S2){ const n=L.rows.length, h=PM_DH.map((t,i)=>pmCell(XLSX.utils.encode_col(i)+'1',t,S2.h)).join('');
+  const body=L.rows.map((r,i)=>{ const rr=i+2; return `<row r="${rr}">`+r.map((v,c)=>{ const a=XLSX.utils.encode_col(c)+rr; return typeof v==='number'?`<c r="${a}" s="${S2.num}"><v>${v}</v></c>`:`<c r="${a}" t="inlineStr"><is><t>${PM_X(v)}</t></is></c>`; }).join('')+`<c r="L${rr}"><f>SUBTOTAL(103,A${rr})</f><v>1</v></c></row>`; }).join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${PM_NS_R}"><sheetPr><tabColor rgb="FF19B5A5"/></sheetPr><dimension ref="A1:L${n+1}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols><col min="1" max="1" width="38" customWidth="1"/><col min="2" max="6" width="16" customWidth="1"/><col min="7" max="9" width="17" customWidth="1"/><col min="10" max="12" width="11" customWidth="1"/></cols><sheetData><row r="1" ht="24" customHeight="1">${h}</row>${body}</sheetData><pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/></worksheet>`; }
+async function pmLiveSummary(z,G,S2,L,nav,title,sumPath,dataName,dataPath){ const n=L.rows.length, last=n+1, dq="'"+dataName.replace(/'/g,"''")+"'!", col=i=>dq+'$'+XLSX.utils.encode_col(i)+'$2:$'+XLSX.utils.encode_col(i)+'$'+last;
+  const VIS=col(11), ENC=col(6), ECL=col(7), IMP=col(8), JRS=col(9), NPL=col(10), SEG=col(2), CLS=col(3), STG=col(4), CLI=col(0);
+  const rows={}, put=(r,c,x)=>{ (rows[r]=rows[r]||{})[c]=x; }, M=[], ref=(c,r)=>XLSX.utils.encode_col(c)+r, NCOL=12, hts={};
+  const sumif=(extra)=>`SUMIFS(${ENC},${VIS},1${extra||''})`;
+  // bandeau
+  for(let c=0;c<NCOL;c++){ put(1,c,`<c r="${ref(c,1)}" s="${S2.ban}"/>`); put(2,c,`<c r="${ref(c,2)}" s="${S2.ban2}"/>`); put(3,c,`<c r="${ref(c,3)}" s="${S2.ban3}"/>`); }
+  put(1,0,pmCell('A1','TABLEAU DE BORD DU PORTEFEUILLE',S2.ban)); put(2,0,pmCell('A2',title+'  ·  Ecobank Sénégal · Credit Risk OS  ·  arrêté du '+(L.arrete||'—'),S2.ban2));
+  put(3,0,pmCell('A3','Tableau de bord vivant : cliquez sur les segments (Segment, Classe, Stage) — tuiles et graphiques se recalculent sur la sélection',S2.ban3)); M.push('A1:L1','A2:L2','A3:L3'); hts[1]=38; hts[2]=20; hts[3]=18; hts[4]=26;
+  { const inp='$C$4', cat=[0,1,5,2].map(i=>col(i)).join('&" "&');
+    put(4,0,pmCell('A4','🔍 RECHERCHER UN CLIENT',S2.srl)); put(4,1,'<c r="B4" s="'+S2.srl+'"/>'); M.push('A4:B4'); ['C','D','E'].forEach(c=>put(4,c.charCodeAt(0)-65,`<c r="${c}4" s="${S2.srch}"/>`)); M.push('C4:E4');
+    put(4,5,pmCell('F4','x',S2.srr,`IF(${inp}="","← tapez un code client, un nom, un produit ou un segment",SUMPRODUCT(--ISNUMBER(SEARCH(${inp},${cat})))&" ligne(s) trouvée(s)")`)); ['G','H'].forEach(c=>put(4,c.charCodeAt(0)-65,`<c r="${c}4" s="${S2.srr}"/>`)); M.push('F4:H4');
+    put(4,8,pmCell('I4','x',S2.srr,`IF(${inp}="","",IFERROR(HYPERLINK("#${dq.replace(/"/g,'""')}A"&(MATCH(TRUE,INDEX(ISNUMBER(SEARCH(${inp},${cat})),0),0)+1),"→ voir dans les données"),"aucun résultat"))`)); ['J','K','L'].forEach(c=>put(4,c.charCodeAt(0)-65,`<c r="${c}4" s="${S2.srr}"/>`)); M.push('I4:L4'); }
+  // tuiles vivantes (2 colonnes chacune)
+  const H=30, hx=c=>ref(H+c,0); // colonnes d'aide
+  const tiles=[['ENCOURS',sumif(),S2.kvm],['RATIO NPL',`IFERROR(${sumif(`,${NPL},"Oui"`)}/${sumif()},0)`,S2.kvp],['ECL IFRS 9',`SUMIFS(${ECL},${VIS},1)`,S2.kvm],['IMPAYÉS',`SUMIFS(${IMP},${VIS},1)`,S2.kvm],['LIGNES',`SUM(${VIS})`,S2.kv],['COUVERTURE ECL / NPL',`IFERROR(SUMIFS(${ECL},${VIS},1)/${sumif(`,${NPL},"Oui"`)},0)`,S2.kvp]];
+  tiles.forEach((t,i)=>{ const c0=i*2; put(5,c0,pmCell(ref(c0,5),t[0],S2.kl)); put(5,c0+1,`<c r="${ref(c0+1,5)}" s="${S2.kl}"/>`); put(6,c0,pmCell(ref(c0,6),0,t[2],t[1])); put(6,c0+1,`<c r="${ref(c0+1,6)}" s="${t[2]}"/>`); M.push(ref(c0,5)+':'+ref(c0+1,5),ref(c0,6)+':'+ref(c0+1,6)); });
+  hts[5]=18; hts[6]=36; hts[7]=8; hts[8]=62; hts[9]=8;   // ligne 8 : segments
+  // aide : agrégats (colonnes AE:AH masquées)
+  let hr=1; const series={}; const addH=(key,cats,forms,vals)=>{ const r1=hr; cats.forEach((k,i)=>{ put(r1+i,H,pmCell(ref(H,r1+i),k,S2.txt)); put(r1+i,H+1,pmCell(ref(H+1,r1+i),vals[i]||0,S2.num,forms[i])); }); series[key]={cat:{ref:`'${'Sommaire'}'`,vals:cats},r1,r2:r1+cats.length-1,vals}; hr=r1+cats.length+1; };
+  const tally=(fk,fv)=>{ const m=new Map(); L.rows.forEach(r=>{ const k=fk(r); m.set(k,(m.get(k)||0)+fv(r)); }); return m; };
+  const stg=['Stage 1','Stage 2','Stage 3'], sm=tally(r=>r[4],r=>r[6]); addH('stg',stg,stg.map(k=>sumif(`,${STG},"${k}"`)),stg.map(k=>sm.get(k)||0));
+  const cls=['I','IA','II','III','IV','V'], cm=tally(r=>r[3],r=>r[6]); cls.forEach(k=>addH('cls_'+k,[k],[sumif(`,${CLS},"${k}"`)],[cm.get(k)||0]));
+  const segs=[...tally(r=>r[2],r=>r[6]).entries()].sort((a,b)=>b[1]-a[1]).slice(0,7); addH('seg',segs.map(s=>s[0]),segs.map(s=>sumif(`,${SEG},"${s[0].replace(/"/g,'""')}"`)),segs.map(s=>s[1]));
+  const tops=[...tally(r=>r[0],r=>r[6]).entries()].sort((a,b)=>b[1]-a[1]).slice(0,8); addH('top',tops.map(s=>s[0].slice(0,28)),tops.map(s=>sumif(`,${CLI},"${s[0].replace(/"/g,'""')}"`)),tops.map(s=>s[1]));
+  const B=[['0-30 j',0,30],['31-60 j',31,60],['61-90 j',61,90],['91-180 j',91,180],['181-360 j',181,360],['> 360 j',361,99999]];
+  addH('age',B.map(b=>b[0]),B.map(b=>`SUMIFS(${IMP},${VIS},1,${JRS},">=${b[1]}",${JRS},"<=${b[2]}")`),B.map(b=>L.rows.reduce((s,r)=>r[9]>=b[1]&&r[9]<=b[2]?s+r[8]:s,0)));
+  const covF=`IFERROR(SUMIFS(${ECL},${VIS},1)/${sumif(`,${NPL},"Oui"`)},0)`, covV=(()=>{ const npl=L.rows.reduce((s,r)=>r[10]==='Oui'?s+r[6]:s,0), ecl=L.rows.reduce((s,r)=>s+r[7],0); return npl?ecl/npl:0; })();
+  addH('gauge',['Couverture','Reste','Base'],[`MIN(1,${covF}/1.5)`,`1-MIN(1,${covF}/1.5)`,'1'],[Math.min(1,covV/1.5),1-Math.min(1,covV/1.5),1]);
+  const HI=L.hist.length?L.hist:[{lab:'actuel',enc:L.rows.reduce((s,r)=>s+r[6],0),npl:0,ecl:L.rows.reduce((s,r)=>s+r[7],0)}];
+  addH('hEnc',HI.map(h=>h.lab),HI.map(()=>null),HI.map(h=>h.enc)); const rN=hr; HI.forEach((h,i)=>put(rN+i,H+1,pmCell(ref(H+1,rN+i),h.npl,S2.num))); const rE=rN+HI.length+1; HI.forEach((h,i)=>put(rE+i,H+1,pmCell(ref(H+1,rE+i),h.ecl,S2.num))); hr=rE+HI.length+1;
+  put(hr,H,pmCell(ref(H,hr),'Couverture',S2.txt)); put(hr,H+1,pmCell(ref(H+1,hr),0,S2.kvp,covF)); const covCell='$'+XLSX.utils.encode_col(H+1)+'$'+hr; hr++;
+  const SQ="'"+'Sommaire APEX'.replace(/'/g,"''")+"'!"; // remplacé plus bas par le vrai nom
+  // grille des graphiques : lignes de 20 pt
+  const R0=10, band=[14,14,14], rowsOf=[]; let rr=R0; band.forEach(b=>{ rowsOf.push([rr,rr+b-1]); for(let i=0;i<b;i++) hts[rr+i]=20; rr+=b; hts[rr]=8; rr++; });
+  // navigation sous la grille
+  let nr=rr+1; put(nr,0,pmCell(ref(0,nr),'NAVIGATION — cliquez sur une feuille pour l’ouvrir',S2.sec)); nr++;
+  [['#',0],['Feuille',1],['',2],['',3],['Lignes',4],['Plage',5],['Accès',6]].forEach(([t,c])=>put(nr,c,pmCell(ref(c,nr),t,S2.h))); M.push(ref(1,nr)+':'+ref(3,nr)); nr++;
+  nav.forEach((s,i)=>{ const q="'"+s.name.replace(/'/g,"''")+"'"; put(nr,0,`<c r="${ref(0,nr)}" s="${S2.num}"><v>${i+1}</v></c>`); put(nr,1,pmCell(ref(1,nr),s.name,S2.lnk,'HYPERLINK("#'+q+'!A1","'+s.name.replace(/"/g,'""')+'")')); put(nr,2,`<c r="${ref(2,nr)}" s="${S2.lnk}"/>`); put(nr,3,`<c r="${ref(3,nr)}" s="${S2.lnk}"/>`); M.push(ref(1,nr)+':'+ref(3,nr));
+    put(nr,4,`<c r="${ref(4,nr)}" s="${S2.num}"><v>${s.rows||0}</v></c>`); put(nr,5,pmCell(ref(5,nr),s.dim||'',S2.txt)); put(nr,6,pmCell(ref(6,nr),'→ ouvrir',S2.lnk,'HYPERLINK("#'+q+'!A1","→ ouvrir")')); nr++; });
+  // fond du tableau de bord
+  for(let r=4;r<rr;r++) for(let c=0;c<NCOL;c++) if(!(rows[r]&&rows[r][c])) put(r,c,`<c r="${ref(c,r)}" s="${S2.bgz}"/>`);
+  const Rs=Object.keys(rows).map(Number).sort((a,b)=>a-b);
+  const xml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${PM_NS_R}"><sheetPr><tabColor rgb="FF8CC63F"/><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${ref(H+1,Math.max(nr,hr))}"/><sheetViews><sheetView showGridLines="0" tabSelected="1" workbookViewId="0" zoomScale="90" zoomScaleNormal="90"/></sheetViews><sheetFormatPr defaultRowHeight="18"/>`
+    +`<cols><col min="1" max="12" width="15.7" customWidth="1"/><col min="${H+1}" max="${H+2}" width="16" hidden="1" customWidth="1"/></cols><sheetData>`
+    +Rs.map(r=>`<row r="${r}"${hts[r]?` ht="${hts[r]}" customHeight="1"`:''}>${Object.keys(rows[r]).map(Number).sort((a,b)=>a-b).map(c=>rows[r][c]).join('')}</row>`).join('')+'</sheetData>'
+    +`<mergeCells count="${M.length}">${M.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>`
+    +'<pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/><headerFooter><oddFooter>&amp;L&amp;8Ecobank Sénégal · Credit Risk OS · Confidentiel&amp;R&amp;8Page &amp;P / &amp;N</oddFooter></headerFooter>';
+  return {xml,series,H,rowsOf,covCell,HI,rN,rE,tops,segs,cls,cm,stg,sm,B}; }
+async function pmLiveAttach(z,G,S2,L,P,sumName,sumPath,dataName,dataPath){ const sq="'"+sumName.replace(/'/g,"''")+"'!", H=P.H, cr=(c,r)=>'$'+XLSX.utils.encode_col(c)+'$'+r;
+  const S=P.series, rng=(k,c)=>sq+cr(H+c,S[k].r1)+':'+cr(H+c,S[k].r2), cats=k=>({ref:rng(k,0),vals:S[k].cat.vals});
+  const HIc={ref:sq+cr(H,S.hEnc.r1)+':'+cr(H,S.hEnc.r2),vals:P.HI.map(h=>h.lab)};
+  const specs=[
+    {pos:[0,0,3],type:'doughnut',title:'Stages IFRS 9 — encours',cats:cats('stg'),series:[{name:'Encours',ref:rng('stg',1),vals:S.stg.vals,colors:['2EA3D6','F2B632','E0674F']}]},
+    {pos:[0,3,3],type:'line',title:'Ratio NPL par arrêté',cats:HIc,fmt:'0.0%',series:[{name:'Ratio NPL',ref:sq+cr(H+1,P.rN)+':'+cr(H+1,P.rN+P.HI.length-1),vals:P.HI.map(h=>h.npl),color:'005C83',fmt:'0.00%'}]},
+    {pos:[0,6,3],type:'stack100h',title:'Classes BCEAO — répartition',cats:{ref:sq+cr(H,S.cls_I.r1),vals:['Encours']},series:P.cls.map((k,i)=>({name:'Classe '+k,ref:rng('cls_'+k,1),vals:S['cls_'+k].vals,color:['2EA3D6','7FC7E8','8CC63F','F2B632','E08A3C','C0392B'][i]}))},
+    {pos:[0,9,3],type:'gauge',title:'Couverture ECL / NPL (échelle 150 %)',cats:cats('gauge'),series:[{name:'Couverture',ref:rng('gauge',1),vals:S.gauge.vals,colors:['8CC63F','E3EDF2','none']}]},
+    {pos:[1,0,6],type:'combo',title:'Encours et ECL par arrêté (milliards XOF)',cats:HIc,series:[{name:'Encours',ref:rng('hEnc',1),vals:S.hEnc.vals,color:'005C83'},{name:'ECL',ref:sq+cr(H+1,P.rE)+':'+cr(H+1,P.rE+P.HI.length-1),vals:P.HI.map(h=>h.ecl),color:'8CC63F'}]},
+    {pos:[1,6,6],type:'barh',title:'Top 8 contreparties — encours',cats:cats('top'),series:[{name:'Encours',ref:rng('top',1),vals:S.top.vals,color:'005C83',fmt:'#,##0,," M"'}]},
+    {pos:[2,0,6],type:'col',title:'Encours par segment',cats:cats('seg'),series:[{name:'Encours',ref:rng('seg',1),vals:S.seg.vals,color:'2EA3D6',fmt:'#,##0,,," Md"',colors:S.seg.vals.map((v,i)=>i===0?'8CC63F':['2EA3D6','005C83','19B5A5','7B8FE8','F2B632','E08A3C'][i%6])}]},
+    {pos:[2,6,6],type:'col',title:'Impayés par ancienneté',cats:cats('age'),series:[{name:'Impayés',ref:rng('age',1),vals:S.age.vals,color:'2EA3D6',fmt:'#,##0,," M"',colors:['2EA3D6','2EA3D6','F2B632','E08A3C','E0674F','C0392B']}]}];
+  const PXE2=9525, PT2=12700, anchors=[]; let sid=1200; const ch=[];
+  const anc=(c0,r0,c1,r1,inner,dx)=>`<xdr:twoCellAnchor editAs="oneCell"><xdr:from><xdr:col>${c0}</xdr:col><xdr:colOff>${(dx||5)*PXE2}</xdr:colOff><xdr:row>${r0-1}</xdr:row><xdr:rowOff>${2*PT2}</xdr:rowOff></xdr:from><xdr:to><xdr:col>${c1}</xdr:col><xdr:colOff>${108*PXE2}</xdr:colOff><xdr:row>${r1-1}</xdr:row><xdr:rowOff>${18*PT2}</xdr:rowOff></xdr:to>${inner}<xdr:clientData/></xdr:twoCellAnchor>`;
+  specs.forEach(sp=>{ const k=++G.chart, rid='rIdApexLC'+k; z.file('xl/charts/chartApex'+k+'.xml',pmCh(sp)); G.ct.push(`<Override PartName="/xl/charts/chartApex${k}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>`); ch.push({rid,k});
+    const [band,c0,w]=sp.pos, [r0,r1]=P.rowsOf[band]; anchors.push(anc(c0,r0,c0+w-1,r1,`<xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="${++sid}" name="Graphique ${k}"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="${PM_C}"><c:chart xmlns:c="${PM_C}" xmlns:r="${PM_NS_R}" r:id="${rid}"/></a:graphicData></a:graphic></xdr:graphicFrame>`));
+    if(sp.type==='gauge') anchors.push(`<xdr:twoCellAnchor editAs="oneCell"><xdr:from><xdr:col>${c0}</xdr:col><xdr:colOff>${40*PXE2}</xdr:colOff><xdr:row>${r0+5}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>${c0+w-1}</xdr:col><xdr:colOff>${70*PXE2}</xdr:colOff><xdr:row>${r0+8}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to><xdr:sp macro="" textlink="${P.covCell}"><xdr:nvSpPr><xdr:cNvPr id="${++sid}" name="Valeur jauge"/><xdr:cNvSpPr txBox="1"/></xdr:nvSpPr><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></xdr:spPr><xdr:txBody><a:bodyPr wrap="none" anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:fld id="{5F2D8E1A-3C4B-4A5E-9B7C-1D2E3F4A5B6C}" type="TxLink"><a:rPr lang="fr-FR" sz="2600" b="1"><a:solidFill><a:srgbClr val="00415E"/></a:solidFill><a:latin typeface="Segoe UI"/></a:rPr><a:t>${Math.round(S.gauge.vals[0]*150)} %</a:t></a:fld></a:p></xdr:txBody></xdr:sp><xdr:clientData/></xdr:twoCellAnchor>`); });
+  // tableau Excel sur la feuille de données + segments posés sur le Sommaire
+  const tId=++G.tableId, tName='APEX_Portefeuille_'+tId, tRef='A1:L'+(L.rows.length+1);
+  z.file('xl/tables/tableApex'+tId+'.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="${tId}" name="${tName}" displayName="${tName}" ref="${tRef}" totalsRowShown="0"><autoFilter ref="${tRef}"/><tableColumns count="12">${PM_DH.map((h,i)=>`<tableColumn id="${i+1}" name="${PM_X(h)}"/>`).join('')}</tableColumns><tableStyleInfo name="TableStyleMedium2" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/></table>`);
+  G.ct.push(`<Override PartName="/xl/tables/tableApex${tId}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml"/>`);
+  const drel=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdApexT${tId}" Type="${PM_NS_R}/table" Target="../tables/tableApex${tId}.xml"/></Relationships>`;
+  z.file(dataPath.replace('worksheets/','worksheets/_rels/')+'.rels',drel);
+  let dx=await z.file(dataPath).async('string'); dx=dx.replace('</worksheet>',`<tableParts count="1"><tablePart r:id="rIdApexT${tId}"/></tableParts></worksheet>`); z.file(dataPath,dx);
+  const slc=[[2,'Segment'],[3,'Classe'],[4,'Stage']].map(([c,h],i)=>{ const n=++G.slicer; return {c,h,n,cache:'Segment_Sommaire_'+pmSlName(h)+'_'+n,name:h+' (tableau de bord)',cols:h==='Segment'?4:h==='Classe'?6:3}; });
+  slc.forEach(q=>{ z.file('xl/slicerCaches/slicerCacheApex'+q.n+'.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><slicerCacheDefinition xmlns="${PM_X14}" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="x" xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main" name="${q.cache}" sourceName="${q.h}"><extLst><x:ext uri="{2F2917AC-EB37-4324-AD4E-5DD8C200BD13}" xmlns:x15="${PM_X15}"><x15:tableSlicerCache tableId="${tId}" column="${q.c+1}"/></x:ext></extLst></slicerCacheDefinition>`);
+    G.ct.push(`<Override PartName="/xl/slicerCaches/slicerCacheApex${q.n}.xml" ContentType="application/vnd.ms-excel.slicerCache+xml"/>`); G.caches.push({n:q.n,cache:q.cache}); });
+  const spath='xl/slicers/slicerApexSum.xml'; z.file(spath,`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><slicers xmlns="${PM_X14}" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="x" xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${slc.map(q=>`<slicer name="${PM_X(q.name)}" cache="${q.cache}" caption="${PM_X(q.h)}" columnCount="${q.cols}" rowHeight="190500" style="SlicerStyleDark1"/>`).join('')}</slicers>`);
+  G.ct.push(`<Override PartName="/${spath}" ContentType="application/vnd.ms-excel.slicer+xml"/>`);
+  slc.forEach((q,i)=>anchors.push(anc(i*4,8,i*4+3,8,`<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"><mc:Choice xmlns:sle15="http://schemas.microsoft.com/office/drawing/2012/slicer" Requires="sle15"><xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="${++sid}" name="${PM_X(q.name)}"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/drawing/2010/slicer"><sle:slicer xmlns:sle="http://schemas.microsoft.com/office/drawing/2010/slicer" name="${PM_X(q.name)}"/></a:graphicData></a:graphic></xdr:graphicFrame></mc:Choice><mc:Fallback><xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="${++sid}" name="Repli ${q.n}"/><xdr:cNvSpPr><a:spLocks noTextEdit="1"/></xdr:cNvSpPr></xdr:nvSpPr><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1828800" cy="495300"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:ln w="1"><a:solidFill><a:srgbClr val="005C83"/></a:solidFill></a:ln></xdr:spPr><xdr:txBody><a:bodyPr vertOverflow="clip" horzOverflow="clip"/><a:lstStyle/><a:p><a:r><a:rPr lang="fr-FR" sz="900"/><a:t>Segment ${PM_X(q.h)} : Excel 2013 ou ultérieur</a:t></a:r></a:p></xdr:txBody></xdr:sp></mc:Fallback></mc:AlternateContent>`,4)));
+  const dn='xl/drawings/drawingApexSum.xml'; z.file(dn,`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="${PM_XDR}" xmlns:a="${PM_A}">${anchors.join('')}</xdr:wsDr>`);
+  z.file('xl/drawings/_rels/drawingApexSum.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${ch.map(c=>`<Relationship Id="${c.rid}" Type="${PM_NS_R}/chart" Target="../charts/chartApex${c.k}.xml"/>`).join('')}</Relationships>`);
+  G.ct.push(`<Override PartName="/${dn}" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>`);
+  z.file(sumPath.replace('worksheets/','worksheets/_rels/')+'.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdApexSD" Type="${PM_NS_R}/drawing" Target="../drawings/drawingApexSum.xml"/><Relationship Id="rIdApexSS" Type="http://schemas.microsoft.com/office/2007/relationships/slicer" Target="../slicers/slicerApexSum.xml"/></Relationships>`);
+  let sx=P.xml+`<drawing r:id="rIdApexSD"/><extLst><ext uri="{3A4CF648-6AED-40f4-86FF-DC5316D8AED3}" xmlns:x14="${PM_X14}"><x14:slicerList><x14:slicer r:id="rIdApexSS"/></x14:slicerList></ext></extLst></worksheet>`;
+  z.file(sumPath,sx); }
+/* décale toutes les lignes d'une feuille simple de k lignes vers le bas (place pour le tableau de bord) */
+function pmShift(x,k){ if(/<f[\s>]|<drawing\b|<legacyDrawing|<tableParts|<oleObjects|<controls/.test(x)) return null;
+  const sh=str=>str.replace(/(\$?[A-Z]{1,3}\$?)(\d+)/g,(m,c,r)=>c+(+r+k));
+  x=x.replace(/<row r="(\d+)"/g,(m,r)=>'<row r="'+(+r+k)+'"').replace(/<c r="([A-Z]+)(\d+)"/g,(m,c,r)=>'<c r="'+c+(+r+k)+'"');
+  x=x.replace(/\b(ref|sqref|activeCell|topLeftCell)="([^"]+)"/g,(m,a,v)=>a+'="'+sh(v)+'"').replace(/<formula>([^<]*)<\/formula>/g,(m,v)=>'<formula>'+sh(v)+'</formula>');
+  x=x.replace(/<pane\b([^>]*)ySplit="(\d+)"/,(m,a,y)=>'<pane'+a+'ySplit="'+(+y+k)+'"');
+  return x; }
 async function pmXlsx(buf,name){ const z=await JSZip.loadAsync(buf,{createFolders:false}); let wb=await z.file('xl/workbook.xml').async('string');
   if(z.file('xl/worksheets/sheetApex1.xml')) return null; const stF=z.file('xl/styles.xml'); if(!stF) return null;
   const st=pmStyles(await stF.async('string'),PM_XDEF); if(!st) return null; const S=st.S, C=pmCtx(), P=C.P;
@@ -11063,7 +11201,7 @@ async function pmXlsx(buf,name){ const z=await JSZip.loadAsync(buf,{createFolder
   ['B','C','D','E','F','G','H'].forEach(c=>{ put(1,c,pmCell(c+'1','',S.ban)); put(2,c,pmCell(c+'2','',S.ban2)); put(3,c,pmCell(c+'3','',S.ban3)); });
   put(1,'B',pmCell('B1','ECOBANK SÉNÉGAL · CREDIT RISK OS',S.ban)); put(2,'B',pmCell('B2',title,S.ban2)); put(3,'B',pmCell('B3','Généré par APEX le '+C.today+(P&&P.arrete?' · arrêté du '+P.arrete:'')+' · '+vis.length+' feuille(s) · document confidentiel',S.ban3));
   M.push('B1:H1','B2:H2','B3:H3'); let r=5;
-  const DD=pmDashData(); let png=null, dashRow=0; if(DD){ try{ png=await pmDashPng(DD,title); }catch(e){ console.warn('tableau de bord',e); } }
+  const LIVE=pmLiveData(); const DD=LIVE?null:pmDashData(); let png=null, dashRow=0; if(DD){ try{ png=await pmDashPng(DD,title); }catch(e){ console.warn('tableau de bord',e); } }
   if(png){ dashRow=r; r+=32; }
   else if(P){ put(r,'B',pmCell('B'+r,'TABLEAU DE BORD',S.sec)); r++;
     const K=[['Encours',P.enc/1e6,S.kv,'M XOF'],['Ratio NPL',null,S.kv,pmPct(P.nplRatio)],['ECL IFRS 9',P.ecl/1e6,S.kv,'M XOF'],['Impayés',P.pdo/1e6,S.kv,'M XOF'],['Clients',P.clients,S.kv,''],['Solvabilité',null,S.kv,C.fpe&&C.rwa?pmPct(C.fpe/C.rwa):'—']];
@@ -11098,7 +11236,7 @@ async function pmXlsx(buf,name){ const z=await JSZip.loadAsync(buf,{createFolder
       +`<conditionalFormatting sqref="D25:G25"><cfRule type="containsText" dxfId="${st.dxRed}" priority="2" operator="containsText" text="SOUS"><formula>NOT(ISERROR(SEARCH("SOUS",D25)))</formula></cfRule><cfRule type="containsText" dxfId="${st.dxGreen}" priority="3" operator="containsText" text="CONFORME"><formula>NOT(ISERROR(SEARCH("CONFORME",D25)))</formula></cfRule></conditionalFormatting>`;
     simXml=pmSheetXml(R2,{cols:[2.5,46,16,19,19,19,19],merges:M2,cf,tab:'E0674F',heights:{1:34,2:22,3:18,27:48}}); }
   /* --- assemblage dans le classeur --- */
-  const add=[{n:SUMN,x:sumXml},...(simXml?[{n:'Simulateur de stress',x:simXml}]:[])];
+  const DATAN='Données du tableau de bord'; const add=[{n:SUMN,x:sumXml},...(LIVE?[{n:DATAN,x:pmLiveDataXml(LIVE,S)}]:[]),...(simXml?[{n:'Simulateur de stress',x:simXml}]:[])];
   let maxId=Math.max(0,...[...wb.matchAll(/sheetId="(\d+)"/g)].map(m=>+m[1])); let ct=await z.file('[Content_Types].xml').async('string'); let rl=rel;
   const tags=add.map((a,i)=>{ const f='xl/worksheets/sheetApex'+(i+1)+'.xml'; z.file(f,a.x); const id='rIdApex'+(i+1);
     rl=rl.replace('</Relationships>',`<Relationship Id="${id}" Type="${PM_NS_R}/worksheet" Target="worksheets/sheetApex${i+1}.xml"/></Relationships>`);
@@ -11115,15 +11253,20 @@ async function pmXlsx(buf,name){ const z=await JSZip.loadAsync(buf,{createFolder
   let pi=0; for(const s of sheets){ if(s.path&&z.file(s.path)){ let x=await z.file(s.path).async('string'); x=x.replace(/\s*tabSelected="1"/g,'');
       if(!s.hidden){ try{ x=pmPolishSheet(x,{ss,lnkStyle:S.lnk,idx:pi++,sum:SUMN}); }catch(e){ console.warn('finition feuille',s.name,e); } } z.file(s.path,x); } }
   // tableaux de bord vivants avant l'en-tête de chaque feuille
-  const G={tableId:0,slicer:0,chart:0,ct:[],caches:[],slNames:new Set(),sum:SUMN}; for(const f of Object.keys(z.files).filter(n=>/^xl\/tables\/.+\.xml$/.test(n))){ const id=+((await z.file(f).async('string')).match(/<table\b[^>]*\bid="(\d+)"/)||[])[1]||0; if(id>G.tableId) G.tableId=id; }
+  const G={tableId:0,slicer:0,chart:0,ct:[],caches:[],slNames:new Set(),sum:SUMN,dxHi:st.dxGreen}; for(const f of Object.keys(z.files).filter(n=>/^xl\/tables\/.+\.xml$/.test(n))){ const id=+((await z.file(f).async('string')).match(/<table\b[^>]*\bid="(\d+)"/)||[])[1]||0; if(id>G.tableId) G.tableId=id; }
   let src=null; try{ src=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true}); }catch(e){}
   const dashNC={}; let nDash=0;
   if(src&&PM.dash!==false) for(const s of sheets){ if(s.hidden||!s.path||!z.file(s.path)||!src.Sheets[s.name]) continue;
-    try{ const aoa=XLSX.utils.sheet_to_json(src.Sheets[s.name],{header:1,raw:true,defval:''}); const pl=pmPlan(aoa); if(!pl) continue;
-      pl.aoa0=(aoa[0]||[]).find(v=>typeof v==='string'&&v.trim())||''; pl.aoa1=(aoa[1]||[]).find(v=>typeof v==='string'&&v.trim())||'';
+    try{ const aoa0=XLSX.utils.sheet_to_json(src.Sheets[s.name],{header:1,raw:true,defval:''}); let aoa=aoa0, pl=pmPlan(aoa), orig=null;
+      if(!pl){ const h0=axHeader(aoa0), wbDn=/localSheetId=/.test(wb); if(h0>=0&&h0<5&&!wbDn){ const x0=await z.file(s.path).async('string'), xs=pmShift(x0.replace(/<c r="[A-Z]+\d+"[^>]*><f>HYPERLINK\([^<]*◀ Sommaire[^<]*<\/f>(?:<v>[^<]*<\/v>)?<\/c>/g,''),9-h0);
+          if(xs){ aoa=Array.from({length:9-h0},()=>[]).concat(aoa0); pl=pmPlan(aoa); if(pl){ orig=x0; z.file(s.path,xs); } } } }
+      if(!pl) continue;
+      pl.aoa0=orig&&axHeader(aoa0)===0?s.name.toUpperCase():((aoa0[0]||[]).find(v=>typeof v==='string'&&v.trim())||s.name); pl.aoa1=orig?'Feuille « '+s.name+' »':(aoa0[1]||[]).find(v=>typeof v==='string'&&v.trim())||'';
       const snap={}; for(const k of Object.keys(z.files)) snap[k]=z.files[k]; const nCt=G.ct.length, nCa=G.caches.length, nSl=new Set(G.slNames);
-      try{ const r=await pmSheetDash(z,s,pl,G,S); if(r){ dashNC[s.name]=pl.nC; nDash++; } }
-      catch(e){ console.warn('tableau de bord feuille',s.name,e); G.ct.length=nCt; G.caches.length=nCa; G.slNames=nSl; for(const k of Object.keys(z.files)) if(!snap[k]) delete z.files[k]; for(const k in snap) z.files[k]=snap[k]; } }catch(e){ console.warn('analyse feuille',s.name,e); } }
+      try{ const r=await pmSheetDash(z,s,pl,G,S); if(r){ dashNC[s.name]=pl.nC; nDash++; } else if(orig) z.file(s.path,orig); }
+      catch(e){ console.warn('tableau de bord feuille',s.name,e); if(orig) snap[s.path]=null; G.ct.length=nCt; G.caches.length=nCa; G.slNames=nSl; for(const k of Object.keys(z.files)) if(!snap[k]) delete z.files[k]; for(const k in snap) if(snap[k]) z.files[k]=snap[k]; if(orig) z.file(s.path,orig); } }catch(e){ console.warn('analyse feuille',s.name,e); } }
+  if(LIVE){ try{ const navL=[{name:DATAN,rows:LIVE.rows.length+1,dim:'A1:L'+(LIVE.rows.length+1)},...vis]; const P=await pmLiveSummary(z,G,S,LIVE,navL,title,'xl/worksheets/sheetApex1.xml',DATAN,'xl/worksheets/sheetApex2.xml');
+      await pmLiveAttach(z,G,S,LIVE,P,SUMN,'xl/worksheets/sheetApex1.xml',DATAN,'xl/worksheets/sheetApex2.xml'); nDash++; }catch(e){ console.warn('sommaire vivant',e); } }
   if(G.caches.length){ G.caches.forEach(q=>{ rl=rl.replace('</Relationships>',`<Relationship Id="rIdApexSC${q.n}" Type="http://schemas.microsoft.com/office/2007/relationships/slicerCache" Target="slicerCaches/slicerCacheApex${q.n}.xml"/></Relationships>`); });
     const dn=G.caches.map(q=>`<definedName name="${q.cache}">#N/A</definedName>`).join('');
     wb=/<definedNames>/.test(wb)?wb.replace('<definedNames>','<definedNames>'+dn):wb.replace('</sheets>','</sheets><definedNames>'+dn+'</definedNames>');
@@ -11131,7 +11274,7 @@ async function pmXlsx(buf,name){ const z=await JSZip.loadAsync(buf,{createFolder
     wb=/<extLst>/.test(wb)?wb.replace('<extLst>','<extLst>'+ext):wb.replace('</workbook>','<extLst>'+ext+'</extLst></workbook>'); }
   if(G.ct.length) ct=ct.replace('</Types>',G.ct.join('')+'</Types>');
   z.file('xl/workbook.xml',wb); z.file('xl/_rels/workbook.xml.rels',rl); z.file('[Content_Types].xml',ct); z.file('xl/styles.xml',st.sx);
-  const sm=z.file('xl/worksheets/sheetApex1.xml'); let smx=(await sm.async('string')).replace('<sheetView ','<sheetView tabSelected="1" ');
+  const sm=z.file('xl/worksheets/sheetApex1.xml'); let smx=await sm.async('string'); if(!/tabSelected="1"/.test(smx)) smx=smx.replace('<sheetView ','<sheetView tabSelected="1" ');
   if(png){ const EMU=9525, cx=1150*EMU, cy=Math.round(1150*1240/2000)*EMU, A='http://schemas.openxmlformats.org/drawingml/2006/main';
     z.file('xl/media/imageApexDash.png',png);
     z.file('xl/drawings/drawingApex1.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="${A}"><xdr:oneCellAnchor><xdr:from><xdr:col>1</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${dashRow-1}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="${cx}" cy="${cy}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="Tableau de bord APEX"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip xmlns:r="${PM_NS_R}" r:embed="rIdImg"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`);
@@ -11234,15 +11377,19 @@ async function pmPptx(buf,name){ const z=await JSZip.loadAsync(buf,{createFolder
 /* ---------------- interception des téléchargements ---------------- */
 async function pmFinish(blob,name){ const k=/\.xlsx$/i.test(name)?'x':/\.docx$/i.test(name)?'w':/\.pptx$/i.test(name)?'p':null; if(!k||!PM.on) return null;
   const buf=await blob.arrayBuffer(); return k==='x'?pmXlsx(buf,name):k==='w'?pmDocx(buf,name):pmPptx(buf,name); }
-(function(){ const A=HTMLAnchorElement.prototype, oc=A.click, od=A.dispatchEvent;
+function pmHook(win){ try{ if(!win||win.__pmHooked||!win.HTMLAnchorElement) return; win.__pmHooked=true;
+  const A=win.HTMLAnchorElement.prototype, oc=A.click, od=A.dispatchEvent;
   const take=a=>PM.on&&!a.__pm&&a.download&&/^blob:|^data:/.test(a.href)&&/\.(xlsx|docx|pptx)$/i.test(a.download);
-  const run=a=>{ const name=a.download, href=a.href; fetch(href).then(r=>r.blob()).then(async b=>{ let out=null; try{ out=await pmFinish(b,name); }catch(e){ console.warn('finition premium',e); }
+  const run=a=>{ const name=a.download, href=a.href; (win.fetch||fetch).call(win,href).then(r=>r.blob()).then(async b0=>{ const b=new Blob([await b0.arrayBuffer()],{type:b0.type}); let out=null; try{ out=await pmFinish(b,name); }catch(e){ console.warn('finition premium',e); }
       const n=document.createElement('a'); n.__pm=true; n.download=name; n.href=URL.createObjectURL(out||b); document.body.appendChild(n); n.click(); n.remove();
-      if(out) toast('✨ Finition premium appliquée : '+({x:'Sommaire cliquable et Simulateur de stress',w:'page de garde, tableau de bord, sommaire et pagination',p:'Sommaire interactif, progression et navigation'})[/\.xlsx$/i.test(name)?'x':/\.docx$/i.test(name)?'w':'p'],3500); })
+      if(out) toast('✨ Finition premium appliquée : '+({x:'tableaux de bord vivants, segments, graphiques et recherche client',w:'page de garde, tableau de bord, sommaire et pagination',p:'Sommaire interactif, progression et navigation'})[/\.xlsx$/i.test(name)?'x':/\.docx$/i.test(name)?'w':'p'],3500); })
       .catch(()=>{ a.__pm=true; oc.call(a); }); };
   A.click=function(){ if(take(this)){ run(this); return; } return oc.apply(this,arguments); };
   A.dispatchEvent=function(ev){ if(ev&&ev.type==='click'&&take(this)){ run(this); return true; } return od.apply(this,arguments); };
-})();
+}catch(e){ console.warn('crochet export',e); } }
+pmHook(window);
+/* salles embarquées (DRAFT, Control Tower, Atelier, Centrale…) : leurs exports passent aussi par la finition premium */
+setInterval(()=>{ document.querySelectorAll('iframe').forEach(fr=>{ try{ pmHook(fr.contentWindow); }catch(e){} }); },800);
 
 </script>
 <script>
