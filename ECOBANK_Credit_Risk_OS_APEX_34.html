@@ -10826,6 +10826,85 @@ function pmPolishSheet(x,{ss,lnkStyle,idx,sum}){ const hasBack=/◀ Sommaire/.te
   if(!/<headerFooter\b/.test(x)){ const hf='<headerFooter><oddHeader>&amp;L&amp;8&amp;K005C83ECOBANK SÉNÉGAL · Credit Risk OS&amp;R&amp;8&amp;K3E5C6B&amp;A</oddHeader><oddFooter>&amp;L&amp;8Confidentiel — usage interne&amp;R&amp;8Page &amp;P / &amp;N</oddFooter></headerFooter>';
     x=x.replace(/(<pageSetup\b[^>]*\/>|<pageSetup\b[\s\S]*?<\/pageSetup>)/,'$1'+hf); }
   return x; }
+/* ---------- tableau de bord ECOBANK BLUE (image HD) pour le Sommaire des classeurs ---------- */
+function pmDashData(){ try{ const R=(S.rows||[]).filter(l=>!l.titre); if(!R.length) return null; const C=pmCtx(), P=C.P||{};
+  const sum=(a,f)=>a.reduce((s,x)=>s+(f(x)||0),0), enc=sum(R,l=>Math.max(0,l.ototal));
+  const st=[1,2,3].map(k=>sum(R.filter(l=>+l.stage===k),l=>Math.max(0,l.ototal)));
+  const clsK=['I','IA','II','III','IV','V'], cls=clsK.map(k=>sum(R.filter(l=>String(l.classification||'').trim().toUpperCase()===k),l=>Math.max(0,l.ototal)));
+  const sg={}; R.forEach(l=>{ const k=String(l.bseg||'AUTRES').trim().toUpperCase().replace(/_/g,' ')||'AUTRES'; sg[k]=(sg[k]||0)+Math.max(0,l.ototal); });
+  const seg=Object.entries(sg).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const bands=[['0-30',0,30],['31-60',31,60],['61-90',61,90],['91-180',91,180],['181-360',181,360],['> 360',361,1e9]].map(([k,a,b])=>[k,sum(R.filter(l=>l.pdo>0&&(l.dj||0)>=a&&(l.dj||0)<=b),l=>l.pdo)]);
+  const npl=sum(R.filter(l=>l.npl&&!l.excl),l=>Math.max(0,l.ototal)), ecl=sum(R,l=>l.ecl);
+  const H=(S.hist||[]).filter(m=>m.agg&&m.agg.enc>0).sort((a,b)=>a.date-b.date).slice(-12).map(m=>({lab:fmtDate(new Date(m.date)).slice(0,5),enc:m.agg.enc,npl:m.agg.nplRatio!=null?m.agg.nplRatio:(m.agg.nplEnc||0)/m.agg.enc,ecl:m.agg.ecl||0}));
+  const top=[...(S.agg&&S.agg.clients?S.agg.clients.values():[])].map(c=>[c.rel||c.clc,sum(c.lines.filter(l=>!l.titre),l=>Math.max(0,l.ototal))]).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  return {enc,st,clsK,cls,seg,bands,npl,ecl,nplRatio:P.nplRatio!=null?P.nplRatio:(enc?npl/enc:0),pdo:sum(R,l=>l.pdo>0?l.pdo:0),H,top,clients:S.agg&&S.agg.clients?S.agg.clients.size:0,lignes:R.length,
+    sol:C.fpe&&C.rwa?C.fpe/C.rwa:null,cov:npl?ecl/npl:null,arrete:S.arrete?fmtDate(S.arrete):(P.arrete||''),s2:st[1]}; }catch(e){ console.warn('dash',e); return null; } }
+async function pmDashPng(D,title){ const W=2000,Hh=1240, cv=document.createElement('canvas'); cv.width=W; cv.height=Hh; const g=cv.getContext('2d');
+  const B='#00415E',B2='#005C83',B3='#2EA3D6',L='#8CC63F',T='#12333F',M='#6B8796',BG='#EAF1F5',F='Segoe UI, Arial, sans-serif';
+  const mds=v=>(v/1e9).toLocaleString('fr-FR',{maximumFractionDigits:1}), pc=(v,d=1)=>(v*100).toLocaleString('fr-FR',{maximumFractionDigits:d})+' %';
+  const rr=(x,y,w,h,r)=>{ r=Math.max(0,Math.min(r,w/2,h/2)); g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); };
+  const card=(x,y,w,h,t,sub)=>{ g.save(); g.shadowColor='rgba(0,65,94,.14)'; g.shadowBlur=26; g.shadowOffsetY=8; g.fillStyle='#fff'; rr(x,y,w,h,20); g.fill(); g.restore();
+    g.fillStyle=T; g.font='700 25px '+F; g.fillText(t,x+26,y+44); if(sub){ g.fillStyle=M; g.font='500 17px '+F; g.fillText(sub,x+26,y+70); }
+    g.fillStyle=L; rr(x+w-96,y+24,70,26,13); g.fill(); g.fillStyle=B; g.font='700 14px '+F; g.textAlign='center'; g.fillText('APEX',x+w-61,y+42); g.textAlign='left'; };
+  const txt=(s,x,y,sz,c,w,al)=>{ g.fillStyle=c||T; g.font=(w||600)+' '+sz+'px '+F; g.textAlign=al||'left'; g.fillText(s,x,y); g.textAlign='left'; };
+  g.fillStyle=BG; g.fillRect(0,0,W,Hh);
+  // barre latérale et en-tête
+  const gr=g.createLinearGradient(0,0,0,Hh); gr.addColorStop(0,B); gr.addColorStop(1,'#012B3F'); g.fillStyle=gr; rr(20,20,96,Hh-40,24); g.fill();
+  ['◉','▤','◈','⚑','⌂','✓'].forEach((ic,i)=>{ g.fillStyle=i===1?L:'rgba(255,255,255,.14)'; rr(42,120+i*92,52,52,14); g.fill(); txt(ic,68,155+i*92,24,i===1?B:'#DDEEF5',700,'center'); });
+  g.fillStyle=L; g.beginPath(); g.arc(68,66,24,0,7); g.fill(); txt('E',68,75,26,B,800,'center');
+  txt('TABLEAU DE BORD DU PORTEFEUILLE',150,70,34,B,800); txt((title||'')+'  ·  Ecobank Sénégal · Credit Risk OS  ·  arrêté du '+(D.arrete||'—'),150,104,19,M,500);
+  // grille : 4 colonnes
+  const X=[150,610,1070,1530], CW=[440,440,440,450], y1=130, h1=330, y2=480, h2=360, y3=860, h3=360;
+  /* 1. anneau des stages IFRS 9 */
+  card(X[0],y1,CW[0],h1,'Stages IFRS 9','répartition de l’encours'); { const cx=X[0]+150, cy=y1+205, r=100, tot=D.st.reduce((a,b)=>a+b,0)||1, col=[B3,'#F2B632','#E0674F']; let a=-Math.PI/2;
+    g.lineWidth=34; g.strokeStyle='#E3EDF2'; g.beginPath(); g.arc(cx,cy,r,0,7); g.stroke(); g.lineCap='round';
+    D.st.forEach((v,i)=>{ const da=v/tot*Math.PI*2; if(da>0.01){ g.strokeStyle=col[i]; g.beginPath(); g.arc(cx,cy,r,a+0.03,a+da-0.03); g.stroke(); } a+=da; }); g.lineCap='butt';
+    txt(pc(D.st[0]/tot,0),cx,cy+6,40,B,800,'center'); txt('Stage 1',cx,cy+34,16,M,600,'center');
+    D.st.forEach((v,i)=>{ const yy=y1+150+i*46; g.fillStyle=col[i]; rr(X[0]+285,yy-14,18,18,5); g.fill(); txt('Stage '+(i+1),X[0]+312,yy,17,T,700); txt(mds(v)+' Mds',X[0]+312,yy+21,15,M,500); }); }
+  /* 2. ratio NPL par arrêté */
+  card(X[1],y1,CW[1],h1,'Ratio NPL','évolution sur les arrêtés en mémoire'); { const S2=D.H.length>1?D.H:[{lab:'actuel',npl:D.nplRatio}]; const x0=X[1]+40,x1=X[1]+CW[1]-30,y0=y1+290,yt=y1+105;
+    const mx=Math.max(...S2.map(s=>s.npl))*1.25||0.1, mn=Math.min(...S2.map(s=>s.npl))*0.8; const px=i=>x0+(S2.length>1?i/(S2.length-1):0.5)*(x1-x0), py=v=>y0-(v-mn)/(mx-mn||1)*(y0-yt);
+    g.strokeStyle='#E3EDF2'; g.lineWidth=1; for(let k=0;k<4;k++){ const yy=yt+k*(y0-yt)/3; g.beginPath(); g.moveTo(x0,yy); g.lineTo(x1,yy); g.stroke(); }
+    const ga=g.createLinearGradient(0,yt,0,y0); ga.addColorStop(0,'rgba(46,163,214,.35)'); ga.addColorStop(1,'rgba(46,163,214,0)'); g.fillStyle=ga; g.beginPath(); g.moveTo(px(0),y0); S2.forEach((s,i)=>g.lineTo(px(i),py(s.npl))); g.lineTo(px(S2.length-1),y0); g.fill();
+    g.strokeStyle=B2; g.lineWidth=4; g.beginPath(); S2.forEach((s,i)=>i?g.lineTo(px(i),py(s.npl)):g.moveTo(px(i),py(s.npl))); g.stroke();
+    S2.forEach((s,i)=>{ g.fillStyle=i===S2.length-1?L:'#fff'; g.strokeStyle=B2; g.lineWidth=3; g.beginPath(); g.arc(px(i),py(s.npl),7,0,7); g.fill(); g.stroke(); if(S2.length<=8||i%2===0) txt(s.lab,px(i),y0+24,13,M,600,'center'); });
+    txt(pc(D.nplRatio,2),X[1]+CW[1]-30,y1+104,30,D.nplRatio>0.1?'#C0392B':B,800,'right'); }
+  /* 3. encours par classe (barre segmentée) */
+  card(X[2],y1,CW[2],h1,'Classes BCEAO','encours par classe de risque'); { const tot=D.cls.reduce((a,b)=>a+b,0)||1, col=[B3,'#7FC7E8',L,'#F2B632','#E08A3C','#C0392B']; let xx=X[2]+26; const bw=CW[2]-52;
+    txt(mds(tot)+' Mds',X[2]+26,y1+120,30,B,800); D.cls.forEach((v,i)=>{ const w=v/tot*bw; g.fillStyle=col[i]; rr(xx,y1+140,Math.max(w-3,0.5),34,6); g.fill(); xx+=w; });
+    D.clsK.forEach((k,i)=>{ const cx=X[2]+26+(i%3)*140, cy=y1+215+Math.floor(i/3)*52; g.fillStyle=col[i]; g.beginPath(); g.arc(cx+8,cy-6,8,0,7); g.fill(); txt('Classe '+k,cx+24,cy,16,T,700); txt(pc(D.cls[i]/tot,1),cx+24,cy+21,15,M,600); }); }
+  /* 4. jauge solvabilité / couverture */
+  card(X[3],y1,CW[3],h1+(h2+20),'Solidité','solvabilité et couverture'); { const cx=X[3]+CW[3]/2, cy=y1+285, r=150, v=D.sol!=null?D.sol:D.cov, lab=D.sol!=null?'Solvabilité':'Couverture ECL / NPL', mx=D.sol!=null?0.35:1.5, min=D.sol!=null?0.115:1;
+    g.lineWidth=30; g.lineCap='round'; g.strokeStyle='#E3EDF2'; g.beginPath(); g.arc(cx,cy,r,Math.PI,2*Math.PI); g.stroke();
+    const f=Math.max(0,Math.min(1,(v||0)/mx)); const gg=g.createLinearGradient(cx-r,0,cx+r,0); gg.addColorStop(0,'#E0674F'); gg.addColorStop(0.45,'#F2B632'); gg.addColorStop(1,L); g.strokeStyle=gg; g.beginPath(); g.arc(cx,cy,r,Math.PI,Math.PI+f*Math.PI); g.stroke(); g.lineCap='butt';
+    const am=Math.PI+Math.min(1,min/mx)*Math.PI; g.strokeStyle=B; g.lineWidth=4; g.beginPath(); g.moveTo(cx+Math.cos(am)*(r-30),cy+Math.sin(am)*(r-30)); g.lineTo(cx+Math.cos(am)*(r+30),cy+Math.sin(am)*(r+30)); g.stroke();
+    txt(v!=null?pc(v,1):'—',cx,cy-20,48,B,800,'center'); txt(lab,cx,cy+16,17,M,600,'center'); txt('seuil '+(D.sol!=null?'11,5 %':'100 %'),cx+Math.cos(am)*(r+50),cy+Math.sin(am)*(r+50),14,B,700,'center');
+    // tuile date + chiffres
+    const ty=y1+360; g.fillStyle='#F3F8FA'; rr(X[3]+26,ty,CW[3]-52,300,18); g.fill(); g.fillStyle=B; rr(X[3]+46,ty+22,120,120,16); g.fill();
+    const d=(D.arrete||'').split('/'); txt(['JANV','FÉVR','MARS','AVR','MAI','JUIN','JUIL','AOÛT','SEPT','OCT','NOV','DÉC'][(+d[1]||1)-1]||'',X[3]+106,ty+58,17,L,800,'center'); txt(d[0]||'—',X[3]+106,ty+118,54,'#fff',800,'center');
+    [['Encours',mds(D.enc)+' Mds'],['ECL IFRS 9',mds(D.ecl)+' Mds'],['Impayés',mds(D.pdo)+' Mds']].forEach((k,i)=>{ const yy=ty+50+i*36; txt(k[0],X[3]+190,yy,16,M,600); txt(k[1],X[3]+CW[3]-46,yy,18,B,800,'right'); });
+    [['Clients',D.clients.toLocaleString('fr-FR')],['Lignes',D.lignes.toLocaleString('fr-FR')],['Stage 2',mds(D.s2)+' Mds'],['Encours NPL',mds(D.npl)+' Mds']].forEach((k,i)=>{ const xx=X[3]+46+(i%2)*190, yy=ty+185+Math.floor(i/2)*56; txt(k[0],xx,yy,15,M,600); txt(k[1],xx,yy+24,20,B,800); }); }
+  /* 5. encours par arrêté (large) */
+  card(X[0],y2,CW[0]+CW[1]+20,h2,'Encours et ECL','par arrêté en mémoire, en milliards XOF'); { const S2=D.H.length?D.H:[{lab:'actuel',enc:D.enc,ecl:D.ecl}], x0=X[0]+60, x1=X[1]+CW[1]-40, y0=y2+h2-50, yt=y2+100, mx=Math.max(...S2.map(s=>s.enc))*1.1||1, n=S2.length, bw=Math.min(46,(x1-x0)/n*0.5);
+    g.strokeStyle='#E3EDF2'; g.lineWidth=1; for(let k=0;k<=4;k++){ const yy=yt+k*(y0-yt)/4; g.beginPath(); g.moveTo(x0,yy); g.lineTo(x1,yy); g.stroke(); txt(mds(mx*(1-k/4)),x0-10,yy+5,13,M,600,'right'); }
+    S2.forEach((s,i)=>{ const cx=x0+(i+0.5)*(x1-x0)/n, h=s.enc/mx*(y0-yt); const gb=g.createLinearGradient(0,y0-h,0,y0); gb.addColorStop(0,B3); gb.addColorStop(1,B2); g.fillStyle=gb; rr(cx-bw/2,y0-h,bw,h,bw/2.6); g.fill();
+      const he=s.ecl/mx*(y0-yt); g.fillStyle=L; rr(cx+bw/2+4,y0-he,bw*0.45,he,6); g.fill(); txt(s.lab,cx,y0+24,13,M,600,'center'); });
+    g.fillStyle=B2; rr(x1-230,y2+32,16,16,4); g.fill(); txt('Encours',x1-206,y2+46,15,T,600); g.fillStyle=L; rr(x1-120,y2+32,16,16,4); g.fill(); txt('ECL',x1-96,y2+46,15,T,600); }
+  /* 6. top contreparties */
+  card(X[2],y2,CW[2],h2,'Top contreparties','8 plus gros encours'); { const mx=(D.top[0]||[0,1])[1]||1; D.top.forEach((t,i)=>{ const yy=y2+100+i*31, w=(CW[2]-230)*t[1]/mx;
+    txt(String(t[0]).slice(0,17),X[2]+26,yy+12,14,T,600); g.fillStyle='#E3EDF2'; rr(X[2]+180,yy,CW[2]-230,16,8); g.fill(); const gb=g.createLinearGradient(X[2]+180,0,X[2]+180+w,0); gb.addColorStop(0,B2); gb.addColorStop(1,B3); g.fillStyle=gb; rr(X[2]+180,yy,Math.max(w,8),16,8); g.fill();
+    txt(mds(t[1]),X[2]+CW[2]-26,yy+13,13,B,700,'right'); }); }
+  /* 7. segments (barres arrondies) */
+  card(X[0],y3,CW[0]+CW[1]+20,h3,'Encours par segment','en milliards XOF'); { const n=D.seg.length||1, x0=X[0]+50, x1=X[1]+CW[1]-30, y0=y3+h3-60, yt=y3+125, mx=Math.max(...D.seg.map(s=>s[1]))||1, bw=(x1-x0)/n*0.55;
+    D.seg.forEach((s,i)=>{ const cx=x0+(i+0.5)*(x1-x0)/n, h=s[1]/mx*(y0-yt); const gb=g.createLinearGradient(0,y0-h,0,y0); gb.addColorStop(0,i===0?L:B3); gb.addColorStop(1,i===0?'#6BA23A':B2); g.fillStyle=gb; rr(cx-bw/2,y0-h,bw,h,Math.min(bw/2,24)); g.fill();
+      txt(mds(s[1]),cx,y0-h-10,16,B,800,'center'); txt(String(s[0]).replace(/ BANKING$/,'').slice(0,14),cx,y0+26,13,M,700,'center'); }); }
+  /* 8. impayés par ancienneté */
+  card(X[2],y3,CW[2]+CW[3]+20,h3,'Impayés par ancienneté','montant des impayés par tranche de jours, en millions XOF'); { const n=D.bands.length, x0=X[2]+50, x1=X[3]+CW[3]-40, y0=y3+h3-60, yt=y3+120, mx=Math.max(...D.bands.map(b=>b[1]))||1, bw=(x1-x0)/n*0.36, col=[B3,B3,'#F2B632','#E08A3C','#E0674F','#C0392B'];
+    g.strokeStyle='#E3EDF2'; g.lineWidth=1; for(let k=0;k<=3;k++){ const yy=yt+k*(y0-yt)/3; g.beginPath(); g.moveTo(x0,yy); g.lineTo(x1,yy); g.stroke(); }
+    D.bands.forEach((b,i)=>{ const cx=x0+(i+0.5)*(x1-x0)/n, h=Math.max(4,b[1]/mx*(y0-yt)); g.fillStyle='#E3EDF2'; rr(cx-bw/2,yt,bw,y0-yt,bw/2); g.fill(); g.fillStyle=col[i]; rr(cx-bw/2,y0-h,bw,h,bw/2); g.fill();
+      txt((b[1]/1e6).toLocaleString('fr-FR',{maximumFractionDigits:0}),cx,Math.max(yt-8,y0-h-10),15,B,800,'center'); txt(b[0]+' j',cx,y0+26,14,M,700,'center'); }); }
+  txt('Source : APEX Credit Risk OS · données de l’arrêté affiché et arrêtés en mémoire · document confidentiel',150,Hh-18,15,M,500);
+  const bl=await new Promise(r=>cv.toBlob(r,'image/png')); return new Uint8Array(await bl.arrayBuffer()); }
 async function pmXlsx(buf,name){ const z=await JSZip.loadAsync(buf,{createFolders:false}); let wb=await z.file('xl/workbook.xml').async('string');
   if(z.file('xl/worksheets/sheetApex1.xml')) return null; const stF=z.file('xl/styles.xml'); if(!stF) return null;
   const st=pmStyles(await stF.async('string'),PM_XDEF); if(!st) return null; const S=st.S, C=pmCtx(), P=C.P;
@@ -10839,21 +10918,23 @@ async function pmXlsx(buf,name){ const z=await JSZip.loadAsync(buf,{createFolder
   ['B','C','D','E','F','G','H'].forEach(c=>{ put(1,c,pmCell(c+'1','',S.ban)); put(2,c,pmCell(c+'2','',S.ban2)); put(3,c,pmCell(c+'3','',S.ban3)); });
   put(1,'B',pmCell('B1','ECOBANK SÉNÉGAL · CREDIT RISK OS',S.ban)); put(2,'B',pmCell('B2',title,S.ban2)); put(3,'B',pmCell('B3','Généré par APEX le '+C.today+(P&&P.arrete?' · arrêté du '+P.arrete:'')+' · '+vis.length+' feuille(s) · document confidentiel',S.ban3));
   M.push('B1:H1','B2:H2','B3:H3'); let r=5;
-  if(P){ put(r,'B',pmCell('B'+r,'TABLEAU DE BORD',S.sec)); r++;
+  const DD=pmDashData(); let png=null, dashRow=0; if(DD){ try{ png=await pmDashPng(DD,title); }catch(e){ console.warn('tableau de bord',e); } }
+  if(png){ dashRow=r; r+=32; }
+  else if(P){ put(r,'B',pmCell('B'+r,'TABLEAU DE BORD',S.sec)); r++;
     const K=[['Encours',P.enc/1e6,S.kv,'M XOF'],['Ratio NPL',null,S.kv,pmPct(P.nplRatio)],['ECL IFRS 9',P.ecl/1e6,S.kv,'M XOF'],['Impayés',P.pdo/1e6,S.kv,'M XOF'],['Clients',P.clients,S.kv,''],['Solvabilité',null,S.kv,C.fpe&&C.rwa?pmPct(C.fpe/C.rwa):'—']];
     K.forEach((k,i)=>{ const c=String.fromCharCode(66+i); put(r,c,pmCell(c+r,k[0].toUpperCase(),S.kl)); put(r+1,c,k[1]!=null?`<c r="${c}${r+1}" s="${S.kv}"><v>${Math.round(k[1])}</v></c>`:pmCell(c+(r+1),k[3],S.kv)); put(r+2,c,pmCell(c+(r+2),k[1]!=null?k[3]:'',S.kl)); });
     r+=4; }
   put(r,'B',pmCell('B'+r,'NAVIGATION — cliquez sur une feuille pour l’ouvrir',S.sec)); r++;
   [['B','#'],['C','Feuille'],['D',''],['E',''],['F','Lignes'],['G','Plage'],['H','Accès']].forEach(([c,t])=>put(r,c,pmCell(c+r,t,S.h))); M.push('C'+r+':E'+r); r++;
-  const nav=[...(P?[{name:'Simulateur de stress',sim:1}]:[]),...vis];
+  const nav=[...vis];
   nav.forEach((s,i)=>{ const q="'"+s.name.replace(/'/g,"''")+"'"; put(r,'B',`<c r="B${r}" s="${S.num}"><v>${i+1}</v></c>`);
     put(r,'C',pmCell('C'+r,s.name,S.lnk,'HYPERLINK("#'+q+'!A1","'+s.name.replace(/"/g,'""')+'")')); put(r,'D',pmCell('D'+r,'',S.lnk)); put(r,'E',pmCell('E'+r,'',S.lnk)); M.push('C'+r+':E'+r); put(r,'F',s.sim?pmCell('F'+r,'interactif',S.txt):`<c r="F${r}" s="${S.num}"><v>${s.rows||0}</v></c>`);
     put(r,'G',pmCell('G'+r,s.sim?'cellules jaunes':s.dim||'',S.txt)); put(r,'H',pmCell('H'+r,'→ ouvrir',S.lnk,'HYPERLINK("#'+q+'!A1","→ ouvrir")')); r++; });
-  r++; put(r,'B',pmCell('B'+r,'Ce classeur est produit par APEX Credit Risk OS. Le Sommaire et le Simulateur sont ajoutés automatiquement ; les feuilles de données sont inchangées. Dans le Simulateur, modifiez les cellules jaunes : tous les résultats se recalculent dans Excel.',S.mut)); M.push('B'+r+':H'+r);
+  r++; put(r,'B',pmCell('B'+r,'Ce classeur est produit par APEX Credit Risk OS. Le tableau de bord est calculé sur l’arrêté affiché et les arrêtés en mémoire. Cliquez sur une feuille pour l’ouvrir ; « ◀ Sommaire » en haut de chaque feuille ramène ici.',S.mut)); M.push('B'+r+':H'+r);
   const sumXml=pmSheetXml(rows,{cols:[2.5,19,19,19,19,19,19,19],merges:M,tab:'8CC63F',heights:{1:34,2:22,3:18,[r]:40}});
   /* --- Simulateur de stress (formules Excel vivantes) --- */
   let simXml=null;
-  if(P){ const R2={}, p2=(r,c,x)=>{ (R2[r]=R2[r]||{})[c]=x; }, M2=['B1:G1','B2:G2','B3:G3'];
+  if(false&&P){ const R2={}, p2=(r,c,x)=>{ (R2[r]=R2[r]||{})[c]=x; }, M2=['B1:G1','B2:G2','B3:G3'];
     ['B','C','D','E','F','G'].forEach(c=>{ p2(1,c,pmCell(c+'1','',S.ban)); p2(2,c,pmCell(c+'2','',S.ban2)); p2(3,c,pmCell(c+'3','',S.ban3)); });
     p2(1,'B',pmCell('B1','SIMULATEUR DE STRESS — impact en capital',S.ban)); p2(2,'B',pmCell('B2','Modifiez les cellules jaunes : NPL, pertes, fonds propres et solvabilité se recalculent instantanément',S.ban2));
     p2(3,'B',pmCell('B3','Données APEX '+(P.arrete||'')+' · minimum de solvabilité UMOA 11,5 % · montants en XOF',S.ban3));
@@ -10889,7 +10970,16 @@ async function pmXlsx(buf,name){ const z=await JSZip.loadAsync(buf,{createFolder
   let pi=0; for(const s of sheets){ if(s.path&&z.file(s.path)){ let x=await z.file(s.path).async('string'); x=x.replace(/\s*tabSelected="1"/g,'');
       if(!s.hidden){ try{ x=pmPolishSheet(x,{ss,lnkStyle:S.lnk,idx:pi++,sum:SUMN}); }catch(e){ console.warn('finition feuille',s.name,e); } } z.file(s.path,x); } }
   z.file('xl/workbook.xml',wb); z.file('xl/_rels/workbook.xml.rels',rl); z.file('[Content_Types].xml',ct); z.file('xl/styles.xml',st.sx);
-  const sm=z.file('xl/worksheets/sheetApex1.xml'); z.file('xl/worksheets/sheetApex1.xml',(await sm.async('string')).replace('<sheetView ','<sheetView tabSelected="1" '));
+  const sm=z.file('xl/worksheets/sheetApex1.xml'); let smx=(await sm.async('string')).replace('<sheetView ','<sheetView tabSelected="1" ');
+  if(png){ const EMU=9525, cx=1150*EMU, cy=Math.round(1150*1240/2000)*EMU, A='http://schemas.openxmlformats.org/drawingml/2006/main';
+    z.file('xl/media/imageApexDash.png',png);
+    z.file('xl/drawings/drawingApex1.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="${A}"><xdr:oneCellAnchor><xdr:from><xdr:col>1</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${dashRow-1}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="${cx}" cy="${cy}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="Tableau de bord APEX"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip xmlns:r="${PM_NS_R}" r:embed="rIdImg"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`);
+    z.file('xl/drawings/_rels/drawingApex1.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdImg" Type="${PM_NS_R}/image" Target="../media/imageApexDash.png"/></Relationships>`);
+    z.file('xl/worksheets/_rels/sheetApex1.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdDash" Type="${PM_NS_R}/drawing" Target="../drawings/drawingApex1.xml"/></Relationships>`);
+    smx=smx.replace('</worksheet>','<drawing r:id="rIdDash"/></worksheet>');
+    let ct2=await z.file('[Content_Types].xml').async('string'); if(!/Extension="png"/i.test(ct2)) ct2=ct2.replace(/<Default /,'<Default Extension="png" ContentType="image/png"/><Default ');
+    ct2=ct2.replace('</Types>','<Override PartName="/xl/drawings/drawingApex1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/></Types>'); z.file('[Content_Types].xml',ct2); }
+  z.file('xl/worksheets/sheetApex1.xml',smx);
   await fdDropCalcChain(z); return z.generateAsync({type:'blob',compression:'DEFLATE',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}); }
 
 /* ---------------- WORD ---------------- */
