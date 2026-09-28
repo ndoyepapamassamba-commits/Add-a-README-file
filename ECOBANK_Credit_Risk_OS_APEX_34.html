@@ -10251,7 +10251,13 @@ function dcTabFdSyn(){ if(!FD.book) return fdEmpty();
   const fpe=fdV('EP02','F16'), rwa=fdV('EP08','E34'), solv=fdV('EP02','F12'), gr=fdV('EP01','G14');
   const pc=v=>typeof v==='number'?(v*100).toLocaleString('fr-FR',{maximumFractionDigits:2})+' %':'—';
   const col=s=>/INFRACTION/i.test(String(s))?'#C0392B':'#4E8A2E';
-  return `<div class="dc-card" style="margin-bottom:12px"><div class="in" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+  const PU=prudGet(), fromF=/^FODEP/.test(PU.source||''), puF=PU.fpe>0?PU.fpe/1e6:null, puR=PU.rwa>0?PU.rwa/1e6:null, onF=('EP02!F16' in FD.edits)||('EP08!E34' in FD.edits);
+  const diff=puF!=null&&!fromF&&(Math.abs(puF-(fpe||0))>0.5||(puR!=null&&Math.abs(puR-(rwa||0))>0.5));
+  const prBan=(diff||onF)?`<div class="dc-card" style="margin-bottom:12px;border-left:5px solid #F2B632"><div class="in" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <b style="color:#00415E">Prudentiel UMOA (Conformité)</b><span style="color:#3E5C6B;font-size:12px">${PU.source||'saisie'} : FPE <b>${fdMio(puF)} M</b>${puR!=null?' · APR <b>'+fdMio(puR)+' M</b>':''}
+      ${onF?' · <b style="color:#4E8A2E">appliqué au FODEP</b> (EP02!F16 / EP08!E34 remplacent le calcul des états)':' · le FODEP calcule FPE <b>'+fdMio(fpe)+' M</b> et APR <b>'+fdMio(rwa)+' M</b> à partir de ses états'}</span><span style="flex:1"></span>
+      ${diff?'<button class="dc-btn lime" style="color:#12333F" id="fdFromPrud">← Appliquer au FODEP</button>':''}${onF?'<button class="dc-btn" id="fdUnPrud">Rétablir le calcul du FODEP</button>':''}</div></div>`:'';
+  return `${prBan}<div class="dc-card" style="margin-bottom:12px"><div class="in" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
       <b style="color:#00415E">Rapport de base (gabarit) :</b><select id="fdBase" style="padding:6px;border-radius:8px;border:1px solid #CFE0E7">${FD.list.map(r=>`<option value="${r.key}"${r.key===FD.base.key?' selected':''}>${fmtDate(new Date(r.date))} · ${r.name}</option>`).join('')}</select>
       <b style="color:#00415E">Arrêté déclaré :</b><input id="fdPeriod" type="date" value="${FD.period?FD.period.toISOString().slice(0,10):''}" style="padding:6px;border-radius:8px;border:1px solid #CFE0E7">
       <span style="color:#3E5C6B;font-size:11.5px">${nEd} saisie(s) sur la base · recalcul automatique</span><span style="flex:1"></span>
@@ -10324,6 +10330,9 @@ function fdBind(){ const $i=id=>document.getElementById(id);
   const rs=$i('fdReset'); if(rs) rs.onclick=async()=>{ if(!confirm('Effacer toutes les saisies sur ce rapport de base ?')) return; FD.edits={}; await fdSaveDraft(); await fdPrepare(true); dcRender(); };
   const pr=$i('fdPrud'); if(pr) pr.onclick=()=>{ const fpe=fdV('EP02','F16'), rwa=fdV('EP08','E34'); if(!(fpe>0)){ toast('FPE introuvable dans EP02'); return; }
     prudSet({fpe:fpe*1e6,rwa:rwa>0?rwa*1e6:0,source:'FODEP '+(FD.period?fmtDate(FD.period):fmtDate(new Date(FD.base.date)))}); toast('✅ Fonds propres ('+fdMio(fpe)+' M) et actifs pondérés ('+fdMio(rwa)+' M) publiés vers Prudentiel UMOA, DRAFT et la conformité'); };
+  const fp=$i('fdFromPrud'); if(fp) fp.onclick=async()=>{ const P=prudGet(); if(!(P.fpe>0)) return; if(!confirm('Remplacer dans le FODEP les fonds propres effectifs (EP02!F16) et les actifs pondérés (EP08!E34) calculés par les états par la saisie Prudentiel UMOA ? Les normes EP01 seront recalculées ; les états détaillés (EP03…) ne seront plus cohérents avec ces totaux.')) return;
+    fdSet('EP02','F16',P.fpe/1e6); if(P.rwa>0) fdSet('EP08','E34',P.rwa/1e6); toast('✅ Prudentiel UMOA appliqué au FODEP · normes recalculées'); dcRender(); };
+  const up=$i('fdUnPrud'); if(up) up.onclick=async()=>{ ['EP02!F16','EP08!E34'].forEach(k=>{ delete FD.edits[k]; }); await fdSaveDraft(); await fdPrepare(true); dcRender(); toast('Calcul du FODEP rétabli'); };
   const sh=$i('fdSheet'); if(sh) sh.onchange=()=>{ FD.sheet=sh.value; dcRender(); };
   document.querySelectorAll('#dcBody .fd-grid input[data-a]').forEach(inp=>inp.onchange=()=>{ const raw=inp.value.trim(); const num=raw===''?null:+raw.replace(/\s/g,'').replace(',','.');
     fdSet(FD.sheet,inp.dataset.a,raw===''?null:(isNaN(num)?raw:num)); const sc=document.getElementById('dcBody').scrollTop, gs=document.querySelector('#dcBody .fd-grid').parentNode.scrollTop; dcRender(); document.getElementById('dcBody').scrollTop=sc; const g=document.querySelector('#dcBody .fd-grid'); if(g) g.parentNode.scrollTop=gs; });
