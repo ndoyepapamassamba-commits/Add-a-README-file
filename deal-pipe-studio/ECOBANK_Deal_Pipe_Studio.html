@@ -333,15 +333,21 @@ table.dt td.wr{white-space:normal;min-width:180px}
 @media(max-width:760px){.top,.nav{position:static}.brand img{height:34px}}
 .v3card{padding:12px}.v3bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-bottom:10px}.v3act{display:flex;flex-wrap:wrap;gap:6px}
 .v3wrap{position:relative;border-radius:14px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(140,198,63,.35),0 18px 40px -18px rgba(0,65,94,.55)}
-#v3c{display:block;width:100%;height:min(66vh,640px);min-height:380px;cursor:grab;touch-action:none}
+#v3c,.v3c{display:block;width:100%;height:min(66vh,640px);min-height:380px;cursor:grab;touch-action:none}
 .v3tip{position:absolute;pointer-events:none;background:rgba(0,40,58,.94);color:#e3eff5;border:1px solid #8cc63f;border-radius:10px;padding:9px 12px;font-size:12px;line-height:1.5;max-width:260px;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s;box-shadow:0 10px 24px rgba(0,0,0,.35)}
 .v3tip.on{opacity:1;transform:none}.v3tip b{color:#a6d867;display:block;margin-bottom:2px}.v3help{font-size:12px;color:var(--mut);margin-top:9px}
+.rooms{margin-left:6px;box-shadow:0 2px 0 #c9d7e2}.rooms button{padding:8px 14px;font-size:12.5px}.rooms button.on{background:linear-gradient(135deg,var(--navy),var(--blue));box-shadow:inset 0 -3px 0 var(--lime)}
+.hon{font-size:11.5px;font-weight:750;color:var(--navy);text-transform:uppercase;letter-spacing:.04em;margin:2px 0 6px}
+.pod{list-style:none;margin:0;padding:0}.pod li{display:flex;align-items:center;gap:9px;padding:6px 4px;border-bottom:1px solid var(--soft)}.pod li b{flex:1;font-size:12.5px;color:var(--ink)}.pod li i{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--navy);font-weight:700}
+.rk{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:#fff;background:var(--mut2)}.rk.r0{background:linear-gradient(135deg,#e2b33c,#b8860b)}.rk.r1{background:linear-gradient(135deg,#c9d3da,#8a9aa5)}.rk.r2{background:linear-gradient(135deg,#d49a62,#a0612b)}
+.hm td{border-left:1px solid #fff}.hm td.r small{display:block}
 @media print{.top,.nav,.drawer,.ov,.sheet,.toast,.no-print{display:none!important}body{background:#fff}.panel:not(.on),#drop{display:none!important}.card,.kpi{box-shadow:none}.river{-webkit-print-color-adjust:exact;print-color-adjust:exact}.tw{max-height:none}}
 </style>
 </head>
 <body>
 <header class="top" id="top">
-  <div class="brand"><img id="logoTop" alt="Ecobank"><div><b>Deal Pipe Studio</b><span>Pipeline des dossiers de crédit · FACTORY</span></div></div>
+  <div class="brand"><img id="logoTop" alt="Ecobank"><div><b>Deal Pipe Studio</b><span id="brandSub">Pipeline des dossiers de crédit · FACTORY</span></div></div>
+  <div class="seg rooms" id="rooms"><button data-r="pipe" class="on">Salle Pipe</button><button data-r="prod">Salle Production</button></div>
   <div class="sp"></div>
   <div class="fld" id="fSitu" hidden>Situation au <input type="date" id="situ"></div>
   <div class="fld" id="fHor" hidden>Revenus <select id="hor"><option value="file">selon le fichier</option><option value="m">à fin de mois</option><option value="q">à fin de trimestre</option><option value="y">à fin d'année</option></select></div>
@@ -384,6 +390,30 @@ table.dt td.wr{white-space:normal;min-width:180px}
   <section class="panel" id="p-det"></section>
   <section class="panel" id="p-mail"></section>
 </main>
+<section id="roomProd" hidden>
+<nav class="nav" id="pnav" hidden>
+  <div class="tabs" id="ptabs"></div>
+  <div class="filters">
+    <label>Canal</label><div class="seg" id="pfCh"><button data-v="" class="on">Tous</button><button data-v="RM">RM</button><button data-v="Direct Banking">Direct Banking</button></div>
+    <label for="pfSeg">Segment</label><select id="pfSeg"></select>
+    <label for="pfAg">Agence</label><select id="pfAg"></select>
+    <label for="pfWk">Semaine</label><select id="pfWk"></select>
+    <label for="pfMo">Mois</label><select id="pfMo"></select>
+    <button class="btn sm" id="pfReset">Réinitialiser</button>
+    <span class="fnote" id="pfNote"></span>
+  </div>
+</nav>
+<main class="wrap">
+  <section class="drop" id="pdrop">
+    <div class="dh"><img id="logoDropP" alt="Ecobank"><h1>Salle Production</h1><p>Les performances de production des crédits mis en place : par agence, par segment semaine après semaine et mois après mois, par RM — avec tableau d'honneur, projection de fin de mois, vue 3D et lien avec le pipe FACTORY.</p></div>
+    <div class="db"><div class="zone" id="pzone"><b>Déposez l'export de production ici</b><span>ou cliquez pour le choisir — rapport Flexcube « Report » (.xlsx). Rien ne quitte ce poste.</span></div>
+    <div class="foot">Colonnes reconnues : REFERENCE, DR_PROD_AC, NOM_CLIENT, BOOKING_DATE, AMOUNT_INIT, LCY_BALANCE, TAUX, FRAIS_DOSSIER, INTERETS_PREVUS, PRODUIT, DESCRIPTION, SEGMENT1, SOUS_SEGMENT, ACC_OFCR, OFFICER_NAME, SECT_ACTV. Agence = code en tête de la référence (L34IELA… → L34 ROUME). Le canal Direct Banking est isolé du classement des RM. Le fichier est aussi reconnu s'il est déposé dans la Salle Pipe.</div></div>
+  </section>
+  <section class="panel" id="pp-syn"></section><section class="panel" id="pp-ag"></section><section class="panel" id="pp-seg"></section><section class="panel" id="pp-rm"></section>
+  <section class="panel" id="pp-p3"></section><section class="panel" id="pp-prd"></section><section class="panel" id="pp-det"></section><section class="panel" id="pp-mail"></section>
+</main>
+<div class="foot" id="pfoot"></div>
+</section>
 <div class="foot" id="foot" hidden></div>
 <div class="ov" id="ov"></div>
 <aside class="drawer" id="drawer" aria-label="Fiche dossier"></aside>
@@ -997,6 +1027,7 @@ async function loadFile(f){
   busy(true,'Lecture de '+f.name+'…'); await tick();
   try{
     const buf=await f.arrayBuffer(); const wb=XLSX.read(buf,{type:'array',cellDates:true});
+    if(prodDetect(wb)){ loadProd(wb,f.name); busy(false); return; }
     let best=null, sheet=''; wb.SheetNames.forEach(n=>{ const t=findTable(wb.Sheets[n]); if(t&&(!best||t.score>best.score||(t.score===best.score&&t.n>best.n))){ best=t; sheet=n; } });
     if(!best) throw new Error('Aucune feuille ne contient à la fois une colonne « client » et une colonne « volume / montant ».');
     const m=best.m, g=(r,k)=>m[k]==null?null:r[m[k]];
@@ -1020,7 +1051,7 @@ async function loadFile(f){
     S.hor=S.hasRev?'file':'y'; $('#hor').value=S.hor;
     S.prev=histSave(deals);
     S.F={cli:'',ao:'',pg:'',ty:'',stage:''}; S.q='';
-    fillFilters(); showApp(); renderAll();
+    fillFilters(); showApp(); renderAll(); setRoom('pipe');
     toast('✅ '+deals.length+' dossiers lus — feuille « '+sheet+' »');
   }catch(e){ console.error(e); toast('⚠️ '+e.message,6000); }
   busy(false); }
@@ -1561,6 +1592,409 @@ function rMail(){ $('#p-mail').innerHTML=`<div class="grid g12"><div class="card
   $('#mCopy').onclick=()=>copyRich(mailHtml('data',CH));
   $('#mHtml').onclick=()=>dl(new Blob([mailHtml('data',CH)],{type:MIME.html}),'Point_des_dossiers_'+stamp()+'.html'); }
 
+
+/* =====================================================================
+   SALLE PRODUCTION — crédits mis en place (export Flexcube « Report »)
+   Par agence, par segment × semaine / mois, par RM · 3D · lien avec le pipe
+   ===================================================================== */
+const P={rows:[],F:{seg:'',ag:'',wk:'',mo:'',ch:''},tab:'syn',charts:{},q:'',sort:{k:'amt',d:-1},file:'',sheet:'',v3:{mode:'ag',yaw:-0.6,pitch:0.55,zoom:1,auto:false,raf:0,polys:[],hover:null,drag:null,cv:null,sc:null}};
+let ROOM='pipe';
+const AGK='ecobank_prod_agences_v1';
+const AG_DEF={L01:'AGP',L02:'TILENE',L03:'LAMINE GUEYE',L04:'BOURGUIBA',L05:'THIAROYE',L06:'TOUBA SIEGE',L07:'GOUYE MBIND',L08:'PARCELLES',L09:'VDN',L10:'HLM',L11:'KAOLACK',L12:'PIKINE',L13:'MEDINA',L14:'CASTORS',L15:'POINT E',L16:'ALMADIES',L17:'FAIDHERBE',L18:'MARISTES',L19:'THIES',L20:'ST LOUIS SIEGE',L21:'NDAR TOUTE',L22:'OUAKAM',L23:'MBOUR',L24:'GOLF',L25:'LOUGA',L26:'YOFF',L27:'YEUMBEUL',L28:'KEUR MASSAR',L29:'ZIGUINCHOR',L30:'KOLDA',L31:'TAMBA',L32:'KEDOUGOU',L33:'DIOURBEL',L34:'ROUME',L37:'SEA PLAZA',L38:'SATREC',L39:'ZONE INDUSTRIELLE',L40:'TOUBA SANDAGA'};
+function agNames(){ let o={}; try{ o=JSON.parse(localStorage.getItem(AGK)||'{}'); }catch(e){} return Object.assign({},AG_DEF,o); }
+function agLib(code){ const n=agNames()[code]; return n?n+' · '+code:'Agence '+code; }
+const PCOLS=[
+  ['ref',/^REFERENCE$|^REF(ERENCE)? ?(PRET|CREDIT|LOAN)?$|CONTRACT_REF/],
+  ['acct',/DR_PROD_AC|^COMPTE|ACCOUNT_NO/],
+  ['cust',/CUSTOMER_ID|^CIF|ID_CLIENT/],
+  ['client',/NOM_CLIENT|^CLIENT|^NOM|CUSTOMER_NAME/],
+  ['book',/BOOKING_DATE|DATE ?MISE ?EN ?PLACE|DATE_DEBLOCAGE/],
+  ['mat',/MATURITY|ECHEANCE/],
+  ['amt',/AMOUNT_INIT|MONTANT|^AMOUNT/],
+  ['bal',/LCY_BALANCE|ENCOURS|SOLDE|BALANCE/],
+  ['rate',/^TAUX|^RATE|INTEREST_RATE/],
+  ['fees',/FRAIS/],
+  ['intp',/INTERETS_PREVUS|INTERETS? ATTENDUS/],
+  ['prod',/^PRODUIT$|^PRODUCT(_CODE)?$/],
+  ['desc',/DESCRIPTION|LIBELLE/],
+  ['sseg',/SOUS_?SEGMENT|SUB_?SEGMENT/],
+  ['seg',/^SEGMENT/],
+  ['rmc',/ACC_OFCR|OFFICER_CODE|CODE_RM/],
+  ['rm',/OFFICER_NAME|GESTIONNAIRE|^RM$|CHARGE/],
+  ['sector',/SECT_ACTV|SECTEUR/],
+  ['statut',/STATUT_LOAN|^STATUT/],
+  ['ag',/^AGENCE|BRANCH/]];
+function prodDetect(wb){ for(const n of wb.SheetNames){ const aoa=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:null});
+    for(let r=0;r<Math.min(10,aoa.length);r++){ const h=(aoa[r]||[]).map(norm); if(h.some(x=>/BOOKING_DATE|DATE ?MISE ?EN ?PLACE/.test(x))&&h.some(x=>/AMOUNT_INIT|MONTANT/.test(x))&&h.some(x=>/OFFICER|GESTIONNAIRE|^RM$/.test(x))) return {n,aoa,r}; } }
+  return null; }
+function pMap(row){ const m={}; row.forEach((h,i)=>{ const t=norm(h); if(!t) return; for(const [k,re] of PCOLS){ if(m[k]==null&&re.test(t)){ m[k]=i; break; } } }); return m; }
+function isoWeek(d){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=t.getUTCDay()||7; t.setUTCDate(t.getUTCDate()+4-day); const y0=new Date(Date.UTC(t.getUTCFullYear(),0,1)); return {y:t.getUTCFullYear(),w:Math.ceil(((t-y0)/DAY+1)/7)}; }
+function pSeg(v){ const u=norm(v); if(/CONSUM|RETAIL|PARTIC/.test(u)) return 'Consumer (CSB)'; if(/COMER|COMMER|CORPOR|ENTREP/.test(u)) return 'Commercial (CMB)'; return u?titleCase(u):'Non renseigné'; }
+function pDesc(v){ let s=String(v||'').replace(/ /g,' ').replace(/\(DANS LE CADRE[^)]*\)/i,'').replace(/EQUPEMENT/i,'EQUIPEMENT').replace(/\s+/g,' ').trim(); if(!s) return 'Non renseigné';
+  s=s.replace(/\s+(NORMAL|AMORTI)(\s+TRADE)?$/i,'').replace(/\s+(NORMAL|AMORTI)$/i,''); return titleCase(s).replace(/\bMt\b/,'MT').replace(/\bCt\b/,'CT'); }
+function loadProd(wb,fname){ const d=prodDetect(wb); if(!d) throw new Error('Aucune feuille de production reconnue (BOOKING_DATE, AMOUNT_INIT, OFFICER_NAME).');
+  const m=pMap(d.aoa[d.r]); const g=(r,k)=>m[k]==null?null:r[m[k]]; const rows=[];
+  d.aoa.slice(d.r+1).forEach((r,ix)=>{ if(!r) return; const amt=toNum(g(r,'amt')), book=toDate(g(r,'book')); if(!(amt>0)||!book) return;
+    const ref=String(g(r,'ref')||'').trim(); const agc=m.ag!=null?String(g(r,'ag')||'').trim():(ref.match(/^[A-Z]\d{2}/)||[''])[0]||'—';
+    const rmRaw=String(g(r,'rm')||'').trim(); const db=/DIRECT ?BANK/i.test(rmRaw); const w=isoWeek(book);
+    rows.push({id:rows.length,row:ix,ref,ag:agc,acct:String(g(r,'acct')==null?'':g(r,'acct')),cust:String(g(r,'cust')==null?'':g(r,'cust')),client:String(g(r,'client')||'').replace(/\s+/g,' ').trim(),
+      book,mat:toDate(g(r,'mat')),amt,bal:toNum(g(r,'bal')),rate:toRate(g(r,'rate')),fees:toNum(g(r,'fees')),intp:toNum(g(r,'intp')),prodc:String(g(r,'prod')||''),prod:pDesc(g(r,'desc')||g(r,'prod')),
+      seg:pSeg(g(r,'seg')),sseg:String(g(r,'sseg')||'').trim()||'Non renseigné',rmc:String(g(r,'rmc')||''),rm:rmRaw?(db?titleCase(rmRaw):rmRaw.split(/\s+/).map(x=>/^[A-ZÀ-Ý]{2,}$/.test(x)?x:titleCase(x)).join(' ')):'Non affecté',
+      ch:db?'Direct Banking':rmRaw?'RM':'Non affecté',sector:titleCase(String(g(r,'sector')||'Non renseigné').replace(/¿/g,'…')),statut:String(g(r,'statut')||''),
+      wk:w.y+'-S'+String(w.w).padStart(2,'0'),mo:book.getFullYear()+'-'+String(book.getMonth()+1).padStart(2,'0')}); });
+  if(!rows.length) throw new Error('Le fichier de production ne contient aucun crédit.');
+  P.rows=rows; P.file=fname; P.sheet=d.n; P.F={seg:'',ag:'',wk:'',mo:'',ch:''}; P.q='';
+  P.last=new Date(Math.max(...rows.map(r=>+r.book)));
+  P.weeks=[...new Set(rows.map(r=>r.wk))].sort(); P.months=[...new Set(rows.map(r=>r.mo))].sort();
+  P.wkLib={}; P.weeks.forEach(k=>{ const L=rows.filter(r=>r.wk===k).map(r=>+r.book); const a=new Date(Math.min(...L)), b=new Date(Math.max(...L)); P.wkLib[k]={s:k.split('-')[1],r:a.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+(+a!==+b?'–'+b.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}):'')}; });
+  P.moLib={}; P.months.forEach(k=>{ const [y,mm]=k.split('-').map(Number); P.moLib[k]=new Date(y,mm-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'}); });
+  pFillFilters(); setRoom('prod'); pGo('syn');
+  toast('✅ '+rows.length+' crédits mis en place lus — Salle Production'); }
+
+/* ---------- agrégats ---------- */
+function pView(){ const F=P.F; return P.rows.filter(r=>(!F.seg||r.seg===F.seg)&&(!F.ag||r.ag===F.ag)&&(!F.wk||r.wk===F.wk)&&(!F.mo||r.mo===F.mo)&&(!F.ch||r.ch===F.ch)); }
+function pGrp(list,f,lib){ const m=new Map(); list.forEach(r=>{ const k=f(r); const o=m.get(k)||{k,lib:lib?lib(k,r):k,n:0,vol:0,fees:0,intp:0,wr:0,wk:{},mo:{},wkn:{},sub:{}}; o.n++; o.vol+=r.amt; o.fees+=r.fees; o.intp+=r.intp; o.wr+=r.amt*r.rate;
+    o.wk[r.wk]=(o.wk[r.wk]||0)+r.amt; o.wkn[r.wk]=(o.wkn[r.wk]||0)+1; o.mo[r.mo]=(o.mo[r.mo]||0)+r.amt; m.set(k,o); });
+  return [...m.values()].map(o=>(o.rate=o.vol?o.wr/o.vol:0,o.ticket=o.n?o.vol/o.n:0,o)).sort((a,b)=>b.vol-a.vol); }
+function bdays(a,b){ let n=0; const d=new Date(a); while(d<=b){ const w=d.getDay(); if(w&&w<6) n++; d.setDate(d.getDate()+1); } return n; }
+function pAgg(){ const L=pView(); const A={list:L,n:L.length,vol:0,fees:0,intp:0,wr:0,bal:0};
+  L.forEach(r=>{ A.vol+=r.amt; A.fees+=r.fees; A.intp+=r.intp; A.wr+=r.amt*r.rate; A.bal+=r.bal; });
+  A.rate=A.vol?A.wr/A.vol:0; A.ticket=A.n?A.vol/A.n:0;
+  A.byAg=pGrp(L,r=>r.ag,k=>agLib(k)); A.bySeg=pGrp(L,r=>r.seg); A.bySseg=pGrp(L,r=>r.seg+' · '+r.sseg); A.byRm=pGrp(L.filter(r=>r.ch==='RM'),r=>r.rm);
+  A.byCh=pGrp(L,r=>r.ch); A.byProd=pGrp(L,r=>r.prod); A.bySect=pGrp(L,r=>r.sector);
+  A.weeks=P.weeks.filter(w=>!P.F.wk||w===P.F.wk); A.months=P.months.filter(m=>!P.F.mo||m===P.F.mo);
+  A.byWk=A.weeks.map(w=>{ const S2=L.filter(r=>r.wk===w); return {k:w,n:S2.length,vol:S2.reduce((s,r)=>s+r.amt,0)}; });
+  A.byMo=A.months.map(m=>{ const S2=L.filter(r=>r.mo===m); return {k:m,n:S2.length,vol:S2.reduce((s,r)=>s+r.amt,0)}; });
+  const days=[...new Set(L.map(r=>+r.book))].sort((a,b)=>a-b); A.byDay=days.map(t=>{ const S2=L.filter(r=>+r.book===t); return {d:new Date(t),n:S2.length,vol:S2.reduce((s,r)=>s+r.amt,0)}; });
+  // projection fin de mois (dernier mois du fichier, jours ouvrés)
+  const lm=P.months[P.months.length-1], [y,mm]=lm.split('-').map(Number), m0=new Date(y,mm-1,1), m1=new Date(y,mm,0);
+  const cur=L.filter(r=>r.mo===lm), done=bdays(m0,P.last), tot=bdays(m0,m1); A.proj={mo:lm,vol:cur.reduce((s,r)=>s+r.amt,0),n:cur.length,done,tot}; A.proj.est=done?A.proj.vol/done*tot:0; A.proj.rest=tot-done;
+  // semaine à semaine
+  const W=A.byWk; A.wLast=W[W.length-1]; A.wPrev=W[W.length-2];
+  const wd=k=>new Set(P.rows.filter(r=>r.wk===k&&r.book.getDay()%6).map(r=>+r.book)).size||1; // jours ouvrés avec production
+  if(A.wLast){ A.wLast.days=wd(A.wLast.k); A.wLast.part=A.wLast.days<(A.wPrev?wd(A.wPrev.k):5); }
+  A.wDelta=A.wPrev&&A.wPrev.vol?(A.wLast.vol/A.wLast.days)/(A.wPrev.vol/wd(A.wPrev.k))-1:null;
+  // tableau d'honneur RM : progression et décrochage (deux dernières semaines)
+  const full=A.wLast&&A.wLast.part?W.slice(0,-1):W; A.hL=full[full.length-1]; A.hP=full[full.length-2];
+  if(A.hL&&A.hP){ A.rmUp=A.byRm.map(g=>({g,d:(g.wk[A.hL.k]||0)-(g.wk[A.hP.k]||0)})).filter(x=>x.d>0).sort((a,b)=>b.d-a.d).slice(0,5);
+    A.rmDown=A.byRm.filter(g=>!g.wk[A.hL.k]&&(g.wk[A.hP.k]||0)>0).sort((a,b)=>(b.wk[A.hP.k]||0)-(a.wk[A.hP.k]||0)).slice(0,5); } else { A.rmUp=[]; A.rmDown=[]; }
+  A.db=A.byCh.find(c=>c.k==='Direct Banking')||{n:0,vol:0};
+  A.top5ag=A.vol?A.byAg.slice(0,5).reduce((s,g)=>s+g.vol,0)/A.vol:0;
+  A.link=pLink(L);
+  return A; }
+/* ---------- lien pipe FACTORY ↔ production (par numéro de compte) ---------- */
+function pLink(L){ if(!S.deals||!S.deals.length) return null; const acc=new Map(); L.forEach(r=>{ if(r.acct) acc.set(r.acct,r); });
+  const hit=S.deals.filter(d=>d.acct&&acc.has(d.acct)).map(d=>({d,r:acc.get(d.acct)}));
+  const wait=S.deals.filter(d=>(d.stageK==='OPS'||d.stageK==='CAD')&&!(d.acct&&acc.has(d.acct)));
+  const lead=hit.filter(x=>x.d.dintro).map(x=>Math.max(0,Math.round((x.r.book-x.d.dintro)/DAY)));
+  return {hit,wait,waitVol:wait.reduce((s,d)=>s+d.vol,0),hitVol:hit.reduce((s,x)=>s+x.r.amt,0),lead:lead.length?lead.reduce((a,b)=>a+b,0)/lead.length:null}; }
+function pNarr(A){ const T=[]; const lm=P.moLib[A.proj.mo];
+  T.push({c:'#005c83',t:`<b>${A.n} crédits</b> mis en place pour <b>${fmtX(A.vol)} XOF</b> (ticket moyen ${fmtM(A.ticket)}, taux moyen pondéré ${pct(A.rate,2)}), générant <b>${fmtM(A.fees)} XOF</b> de frais de dossier et <b>${fmtM(A.intp)} XOF</b> d'intérêts prévus.`});
+  if(A.byAg[0]) T.push({c:'#00415e',t:`L'agence <b>${esc(A.byAg[0].lib)}</b> mène la production avec ${fmtM(A.byAg[0].vol)} XOF (${pct(A.vol?A.byAg[0].vol/A.vol:0,0)}) ; les cinq premières agences pèsent ${pct(A.top5ag,0)} du volume.`});
+  const sg=A.bySeg.map(s=>`${esc(s.k)} ${pct(A.vol?s.vol/A.vol:0,0)}`).join(' · '); T.push({c:'#6ba23a',t:`Répartition par segment : ${sg}.`});
+  if(A.db.n) T.push({c:'#1a86b3',t:`Le canal <b>Direct Banking</b> porte ${A.db.n} crédits (${fmtM(A.db.vol)} XOF, ${pct(A.vol?A.db.vol/A.vol:0,0)} du volume) ; il est isolé du classement des RM.`});
+  if(A.byRm[0]) T.push({c:'#8cc63f',t:`Meilleur RM : <b>${esc(A.byRm[0].k)}</b> — ${fmtM(A.byRm[0].vol)} XOF sur ${A.byRm[0].n} crédits.`});
+  if(A.wDelta!=null) T.push({c:A.wDelta>=0?'#4e8a2e':'#c0392b',t:`Semaine ${P.wkLib[A.wLast.k].s} (${P.wkLib[A.wLast.k].r}) : ${fmtM(A.wLast.vol)} XOF, ${A.wLast.part?` en ${A.wLast.days} jour${A.wLast.days>1?'s':''} ouvré${A.wLast.days>1?'s':''} (semaine en cours)`:''} ; rythme par jour ouvré <b>${A.wDelta>=0?'+':''}${pct(A.wDelta,0)}</b> par rapport à la semaine ${P.wkLib[A.wPrev.k].s}.`});
+  if(!P.F.mo&&!P.F.wk) T.push({c:'#d4a13a',t:`Projection ${lm} : au rythme de ${fmtM(A.proj.done?A.proj.vol/A.proj.done:0)} XOF par jour ouvré (${A.proj.done}/${A.proj.tot} jours), la production atteindrait <b>${fmtM(A.proj.est)} XOF</b> en fin de mois.`});
+  if(A.link) T.push({c:'#3e5c6b',t:`Lien avec le pipe FACTORY : <b>${A.link.hit.length} dossiers</b> du pipe sont déjà mis en place (${fmtM(A.link.hitVol)} XOF)${A.link.lead!=null?`, en ${Math.round(A.link.lead)} jours en moyenne depuis leur introduction`:''} ; ${A.link.wait.length} dossiers en OPS / CAD (${fmtM(A.link.waitVol)} XOF) constituent la production des prochains jours.`});
+  return T; }
+
+/* ---------- interface ---------- */
+const PTABS=[['syn','Synthèse'],['ag','Agences'],['seg','Segments · semaines & mois'],['rm','RM'],['p3','Production 3D'],['prd','Produits & secteurs'],['det','Crédits'],['mail','Mail production']];
+function setRoom(r){ ROOM=r; $$('#rooms button').forEach(b=>b.classList.toggle('on',b.dataset.r===r)); const pipe=r==='pipe', hp=S.deals.length>0, hq=P.rows.length>0;
+  $('#main').hidden=!pipe; $('#nav').hidden=!pipe||!hp; $('#fSitu').hidden=!pipe||!hp; $('#fHor').hidden=!pipe||!hp; $('#foot').hidden=!pipe||!hp;
+  $('#roomProd').hidden=pipe; $('#xp').hidden=pipe?!hp:!hq; $('#pnav').hidden=!hq; $('#pdrop').hidden=hq;
+  $('#brandSub').textContent=pipe?'Pipeline des dossiers de crédit · FACTORY':'Production des crédits mis en place';
+  v3Stop(); pv3Stop(); setTopH(); if(pipe){ if(hp) renderAll(); } else if(hq) pGo(P.tab||'syn'); }
+function pFillFilters(){ const o=(arr,all)=>`<option value="">${all}</option>`+arr.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join('');
+  $('#pfSeg').innerHTML=o([...new Set(P.rows.map(r=>r.seg))].sort().map(x=>[x,x]),'Tous');
+  $('#pfAg').innerHTML=o([...new Set(P.rows.map(r=>r.ag))].sort().map(x=>[x,agLib(x)]),'Toutes');
+  $('#pfWk').innerHTML=o(P.weeks.map(w=>[w,P.wkLib[w].s+' · '+P.wkLib[w].r]),'Toutes');
+  $('#pfMo').innerHTML=o(P.months.map(m=>[m,P.moLib[m]]),'Tous');
+  $$('#pfCh button').forEach(b=>b.classList.toggle('on',b.dataset.v==='')); }
+function pFilterLabel(){ const F=P.F,t=[]; if(F.seg) t.push(F.seg); if(F.ag) t.push(agLib(F.ag)); if(F.wk) t.push(P.wkLib[F.wk].s); if(F.mo) t.push(P.moLib[F.mo]); if(F.ch) t.push(F.ch); return t.length?'Périmètre filtré : '+t.join(' · '):''; }
+function pGo(k){ P.tab=k; $('#ptabs').innerHTML=PTABS.map(([t,l])=>`<button class="tab${t===k?' on':''}" data-t="${t}">${l}${t==='det'?`<span class="ct">${pView().length}</span>`:''}</button>`).join('');
+  $$('#ptabs .tab').forEach(b=>b.onclick=()=>{ pGo(b.dataset.t); window.scrollTo({top:0}); });
+  $$('#roomProd .panel').forEach(p=>p.classList.toggle('on',p.id==='pp-'+k)); pRender(); }
+function pRender(){ pv3Stop(); Object.values(P.charts).forEach(c=>{ try{ c.destroy(); }catch(e){} }); P.charts={}; P.A=pAgg();
+  $('#pfNote').textContent=pFilterLabel()||`${P.rows.length} crédits · ${P.file}`;
+  $('#pfoot').innerHTML=`Source : <b>${esc(P.file)}</b> (feuille « ${esc(P.sheet)} ») · mises en place du ${fmtD(new Date(Math.min(...P.rows.map(r=>+r.book))))} au <b>${fmtD(P.last)}</b> · agence = code en tête de la référence du prêt (L01…) · montants initiaux en XOF · document interne.`;
+  ({syn:pSyn,ag:pAg,seg:pSegV,rm:pRm,p3:pP3,prd:pPrd,det:pDet,mail:pMail})[P.tab](); }
+function pmk(id,cfg){ const el=document.getElementById(id); if(!el||!window.Chart) return; P.charts[id]=new Chart(el,cfg); }
+const PAL=['#00415e','#005c83','#8cc63f','#1a86b3','#6ba23a','#d4a13a','#3e5c6b','#a6d867','#0a6f95','#c0392b','#2a8c96','#72b553'];
+function heatCol(v,mx){ if(!v) return 'transparent'; const t=Math.sqrt(v/mx); const a=[227,239,245],b=[0,92,131],c=[140,198,63]; const mix=(p,q,f)=>p.map((x,i)=>Math.round(x+(q[i]-x)*f)); const k=t<0.6?mix(a,b,t/0.6):mix(b,c,(t-0.6)/0.4); return `rgb(${k})`; }
+function heatHtml(rows,cols,colLib,get,opt){ opt=opt||{}; const mx=Math.max(1,...rows.flatMap(r=>cols.map(c=>get(r,c)||0)));
+  const tot=cols.map(c=>rows.reduce((s,r)=>s+(get(r,c)||0),0)), T=tot.reduce((a,b)=>a+b,0);
+  return `<div class="tw" style="max-height:${opt.h||520}px"><table class="dt hm"><thead><tr><th>${opt.head||''}</th>${cols.map(c=>`<th class="r">${colLib(c)}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>
+  ${rows.map(r=>{ const rt=cols.reduce((s,c)=>s+(get(r,c)||0),0); return `<tr${opt.click?` data-k="${esc(r.k)}"`:''}><td><b>${esc(r.lib||r.k)}</b></td>${cols.map(c=>{ const v=get(r,c)||0, t=v?Math.sqrt(v/mx):0; return `<td class="r mono" style="background:${heatCol(v,mx)};color:${t>0.45?'#fff':'var(--ink)'}">${v?fmtM(v):'·'}</td>`; }).join('')}<td class="r mono"><b>${fmtM(rt)}</b></td></tr>`; }).join('')}
+  <tr class="tot"><td>Total</td>${tot.map(v=>`<td class="r mono">${fmtM(v)}</td>`).join('')}<td class="r mono">${fmtM(T)}</td></tr></tbody></table></div>`; }
+function wkLab(w){ return `${P.wkLib[w].s}<br><small style="font-weight:500">${P.wkLib[w].r}</small>`; }
+
+function pSyn(){ const A=P.A, N=pNarr(A), lm=P.moLib[A.proj.mo];
+  const link=A.link?card('Du pipe à la production','dossiers FACTORY retrouvés dans la production (même numéro de compte)',`<div class="grid g3">${kpi('Déjà mis en place',A.link.hit.length+' <small>dossiers</small>',fmtM(A.link.hitVol)+' XOF','#6ba23a')}${kpi('Délai moyen',A.link.lead!=null?Math.round(A.link.lead)+' <small>jours</small>':'—','de l\'introduction FACTORY au booking','#005c83')}${kpi('Production attendue',fmtM(A.link.waitVol),A.link.wait.length+' dossiers en OPS / CAD','#d4a13a')}</div>
+    <div class="tw" style="max-height:260px;margin-top:10px"><table class="dt"><thead><tr><th>N° dossier</th><th>Client</th><th>Étape pipe</th><th class="r">Montant pipe</th><th>Réf. prêt</th><th>Booking</th><th class="r">Montant mis en place</th></tr></thead><tbody>${A.link.hit.map(x=>`<tr><td><span class="tag">${esc(x.d.ref)}</span></td><td><b>${esc(x.r.client)}</b></td><td><span class="pill" style="background:${x.d.stage.col}">${esc(x.d.stage.lib)}</span></td><td class="r">${fmtX(x.d.vol)}</td><td class="mono">${esc(x.r.ref)}</td><td>${fmtD(x.r.book)}</td><td class="r"><b>${fmtX(x.r.amt)}</b></td></tr>`).join('')||'<tr><td colspan="7">Aucun rapprochement.</td></tr>'}</tbody></table></div>`)
+    :card('Du pipe à la production','',`<div class="empty">Chargez aussi l'export FACTORY dans la Salle Pipe : les dossiers déjà mis en place seront rapprochés automatiquement (par numéro de compte), avec le délai moyen de mise en place et la production attendue des prochains jours.</div>`);
+  $('#pp-syn').innerHTML=`<div class="river"><div class="rt"><div><div class="cap">Production mise en place${pFilterLabel()?' · '+esc(pFilterLabel().toLowerCase()):''}</div><div class="big">${fmtX(A.vol)}<small>XOF</small></div></div>
+    <div class="side"><div>Crédits<b>${A.n}</b></div><div>Ticket moyen<b>${fmtM(A.ticket)}</b></div><div>Taux moyen<b>${pct(A.rate,2)}</b></div><div>Frais de dossier<b>${fmtM(A.fees)}</b></div><div>Intérêts prévus<b>${fmtM(A.intp)}</b></div></div></div><div class="rule"></div>
+    <div class="flow">${A.byWk.map((w,i)=>`<button class="stg" style="--sc:${stageColor(i,A.byWk.length)}" data-w="${w.k}"><div class="n">${fmtM(w.vol)}</div><div class="lb">Semaine ${P.wkLib[w.k].s}</div><div class="vv">${P.wkLib[w.k].r} · ${w.n} crédits</div><div class="bar"><i style="width:${(w.vol/Math.max(1,...A.byWk.map(x=>x.vol))*100).toFixed(1)}%"></i></div></button>`).join('')}</div>
+    <div class="hint">Une flèche par semaine ISO. Cliquez une semaine pour filtrer toute la salle.</div></div>
+  <div class="grid g6" style="margin-top:14px">${kpi('Projection '+esc(lm),fmtM(A.proj.est),`${A.proj.done}/${A.proj.tot} jours ouvrés · rythme ${fmtM(A.proj.done?A.proj.vol/A.proj.done:0)}/j`,'#d4a13a')}
+    ${kpi('Rythme semaine / semaine',A.wDelta==null?'—':(A.wDelta>=0?'+':'')+pct(A.wDelta,0),A.wLast?'par jour ouvré · '+P.wkLib[A.wLast.k].s+(A.wLast.part?' (en cours)':'')+' vs '+(A.wPrev?P.wkLib[A.wPrev.k].s:'—'):'',A.wDelta==null||A.wDelta>=0?'#4e8a2e':'#c0392b')}
+    ${kpi('Agence n°1',esc(A.byAg[0]?(agNames()[A.byAg[0].k]||A.byAg[0].k):'—'),A.byAg[0]?A.byAg[0].k+' · '+fmtM(A.byAg[0].vol)+' XOF · '+A.byAg[0].n+' crédits':'','#00415e')}
+    ${kpi('RM n°1',esc(((A.byRm[0]||{}).k||'—').split(' ').slice(0,2).join(' ')),A.byRm[0]?fmtM(A.byRm[0].vol)+' XOF · '+A.byRm[0].n+' crédits':'','#6ba23a')}
+    ${kpi('Direct Banking',pct(A.vol?A.db.vol/A.vol:0,0),A.db.n+' crédits · '+fmtM(A.db.vol)+' XOF','#1a86b3')}
+    ${kpi('Encours au '+fmtD(P.last),fmtM(A.bal),pct(A.vol?A.bal/A.vol:0,1)+' du montant initial','#3e5c6b')}</div>
+  <div class="grid g21" style="margin-top:14px">${card('Production jour par jour','barres : volume du jour · courbe : cumul','<div class="chart tall"><canvas id="pcDay"></canvas></div>')}
+    ${card('Le point production','lecture rédigée, reprise dans le mail',`<ul class="pts">${N.map(p=>`<li style="--pc:${p.c}">${p.t}</li>`).join('')}</ul>`)}</div>
+  <div class="grid g2" style="margin-top:14px">${card('Tableau d\'honneur','top 5 agences et RM · progressions et décrochages de la semaine',honourHtml(A))}${card('Production par segment','volume XOF','<div class="chart"><canvas id="pcSeg"></canvas></div>')}</div>
+  <div style="margin-top:14px">${link}</div>`;
+  $$('#pp-syn .stg').forEach(b=>b.onclick=()=>{ P.F.wk=b.dataset.w; $('#pfWk').value=P.F.wk; pRender(); });
+  let cum=0; pmk('pcDay',{data:{labels:A.byDay.map(d=>d.d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})),datasets:[{type:'bar',label:'Volume du jour',data:A.byDay.map(d=>d.vol),backgroundColor:A.byDay.map(d=>stageColor(P.weeks.indexOf(isoWeek(d.d).y+'-S'+String(isoWeek(d.d).w).padStart(2,'0')),P.weeks.length)),borderRadius:5,yAxisID:'y'},{type:'line',label:'Cumul',data:A.byDay.map(d=>cum+=d.vol),borderColor:'#8cc63f',backgroundColor:'rgba(140,198,63,.12)',fill:true,tension:.25,pointRadius:2,yAxisID:'y2'}]},
+    options:{plugins:{tooltip:tipX},scales:{x:{grid:{display:false}},y:{...axM,position:'left'},y2:{...axM,position:'right',grid:{display:false}}}}});
+  pmk('pcSeg',{type:'doughnut',data:{labels:A.bySseg.map(s=>s.k),datasets:[{data:A.bySseg.map(s=>s.vol),backgroundColor:PAL,borderColor:'#fff',borderWidth:2}]},options:{cutout:'55%',plugins:{legend:{position:'right',labels:{font:{size:11}}},tooltip:tipX}}}); }
+function honourHtml(A){ const li=(arr,f)=>arr.length?arr.map(f).join(''):'<li style="--pc:#cfe0e7">—</li>';
+  return `<div class="grid g2"><div><div class="hon">Top 5 agences</div><ol class="pod">${A.byAg.slice(0,5).map((g,i)=>`<li><span class="rk r${i}">${i+1}</span><b>${esc(g.lib)}</b><i>${fmtM(g.vol)}</i></li>`).join('')}</ol></div>
+  <div><div class="hon">Top 5 RM</div><ol class="pod">${A.byRm.slice(0,5).map((g,i)=>`<li><span class="rk r${i}">${i+1}</span><b>${esc(g.k)}</b><i>${fmtM(g.vol)}</i></li>`).join('')}</ol></div></div>
+  ${A.hL&&A.hP?`<div class="grid g2" style="margin-top:10px"><div><div class="hon">▲ Plus fortes progressions (${P.wkLib[A.hL.k].s} vs ${P.wkLib[A.hP.k].s})</div><ul class="pts">${li(A.rmUp,x=>`<li style="--pc:#6ba23a"><b>${esc(x.g.k)}</b> +${fmtM(x.d)}</li>`)}</ul></div>
+  <div><div class="hon">▼ À relancer (actifs en ${P.wkLib[A.hP.k].s}, rien en ${P.wkLib[A.hL.k].s})</div><ul class="pts">${li(A.rmDown,g=>`<li style="--pc:#c0392b"><b>${esc(g.k)}</b> ${fmtM(g.wk[A.hP.k])} la semaine précédente</li>`)}</ul></div></div>`:''}`; }
+
+function pAg(){ const A=P.A, G=A.byAg;
+  $('#pp-ag').innerHTML=`<div class="grid g4">${kpi('Agences actives',G.length,'au moins un crédit mis en place')}${kpi('Agence n°1',esc(G[0]?G[0].lib:'—'),G[0]?fmtM(G[0].vol)+' XOF · '+G[0].n+' crédits':'','#00415e')}${kpi('Production moyenne / agence',fmtM(G.length?A.vol/G.length:0),'XOF','#005c83')}${kpi('Concentration top 5',pct(A.top5ag,0),'du volume','#6ba23a')}</div>
+  <div class="grid g2" style="margin-top:14px">${card('Classement des agences','volume mis en place, couleur par segment dominant',`<div class="chart" style="height:${Math.max(360,G.length*22+60)}px"><canvas id="pcAg"></canvas></div>`)}
+   ${card('Agences × semaines','carte de chaleur du volume XOF — cliquez une agence pour filtrer',heatHtml(G,A.weeks,wkLab,(r,c)=>r.wk[c],{head:'Agence',click:1,h:Math.max(360,G.length*22+60)}))}</div>
+  <div style="margin-top:14px">${card('Tableau des agences',`<button class="btn sm" id="agNm">Nommer les agences</button>`,`<div class="tw"><table class="dt"><thead><tr><th>Agence</th><th class="r">Crédits</th><th class="r">Volume</th><th class="r">Part</th><th class="r">Ticket moyen</th><th class="r">Taux moyen</th><th class="r">Frais</th><th class="r">Intérêts prévus</th><th>Segment dominant</th><th>RM n°1</th></tr></thead><tbody>
+   ${G.map(g=>{ const L=A.list.filter(r=>r.ag===g.k); const sg=pGrp(L,r=>r.seg)[0], rm=pGrp(L.filter(r=>r.ch==='RM'),r=>r.rm)[0]; return `<tr data-k="${esc(g.k)}"><td><b>${esc(g.lib)}</b></td><td class="r">${g.n}</td><td class="r">${fmtX(g.vol)}</td><td class="r">${pct(A.vol?g.vol/A.vol:0,1)}</td><td class="r">${fmtX(g.ticket)}</td><td class="r">${pct(g.rate,2)}</td><td class="r">${fmtX(g.fees)}</td><td class="r">${fmtX(g.intp)}</td><td>${esc(sg?sg.k:'—')}</td><td>${esc(rm?rm.k:'Direct Banking')}</td></tr>`; }).join('')}</tbody></table></div>`)}</div>`;
+  $$('#pp-ag tr[data-k]').forEach(tr=>tr.onclick=()=>{ P.F.ag=tr.dataset.k; $('#pfAg').value=P.F.ag; pRender(); });
+  $('#agNm').onclick=agEditor;
+  const segs=[...new Set(P.rows.map(r=>r.seg))];
+  pmk('pcAg',{type:'bar',data:{labels:G.map(g=>g.lib),datasets:segs.map((s,i)=>({label:s,data:G.map(g=>A.list.filter(r=>r.ag===g.k&&r.seg===s).reduce((t,r)=>t+r.amt,0)),backgroundColor:PAL[i%PAL.length],borderRadius:3}))},options:{indexAxis:'y',plugins:{tooltip:tipX,legend:{position:'bottom'}},scales:{x:{stacked:true,...axM},y:{stacked:true,grid:{display:false},ticks:{font:{size:11}}}}}}); }
+function agEditor(){ const codes=[...new Set([...Object.keys(AG_DEF),...P.rows.map(r=>r.ag)])].sort(), N=agNames();
+  $('#sheet').innerHTML=`<div class="card" style="max-width:620px;margin:auto"><div class="hd"><h3>Référentiel des agences</h3><small>mémorisé sur ce poste</small></div>
+   <div style="font-size:12.5px;color:var(--mut);margin-bottom:10px">L'agence est le code en tête de la référence du prêt (L34IELA… → L34 = ROUME). Le référentiel Ecobank Sénégal est intégré ; modifiez un nom ou complétez un nouveau code ici, il sera repris partout (écrans, Excel, PowerPoint, mail).</div>
+   <div class="tw" style="max-height:52vh"><table class="dt"><tbody>${codes.map(c=>`<tr><td style="width:80px"><b>${c}</b></td><td><input data-c="${c}" value="${esc(N[c]||'')}" placeholder="Nom de l'agence" style="width:100%;padding:6px 8px;border:1px solid var(--line2);border-radius:7px"></td></tr>`).join('')}</tbody></table></div>
+   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn" id="agX">Annuler</button><button class="btn lime" id="agOk">Enregistrer</button></div></div>`;
+  $('#sheet').classList.add('on'); $('#ov').classList.add('on'); $('#agX').onclick=closeAll;
+  $('#agOk').onclick=()=>{ const o={}; $$('#sheet input[data-c]').forEach(i=>{ const v=i.value.trim(); if(v&&v!==AG_DEF[i.dataset.c]) o[i.dataset.c]=v; }); try{ localStorage.setItem(AGK,JSON.stringify(o)); }catch(e){} closeAll(); pFillFilters(); pRender(); toast('✅ Référentiel des agences enregistré'); }; }
+
+function pSegV(){ const A=P.A; const segs=A.bySeg, ss=A.bySseg;
+  const monthT=heatHtml(ss,A.months,m=>P.moLib[m],(r,c)=>r.mo[c],{head:'Segment · sous-segment',h:420});
+  $('#pp-seg').innerHTML=`<div class="grid g4">${segs.slice(0,4).map((s,i)=>kpi(esc(s.k),fmtM(s.vol)+' <small>XOF</small>',s.n+' crédits · '+pct(A.vol?s.vol/A.vol:0,0)+' du volume · ticket '+fmtM(s.ticket),PAL[i])).join('')}</div>
+   <div class="grid g2" style="margin-top:14px">${card('Segments par semaine','volume XOF empilé','<div class="chart tall"><canvas id="pcSegW"></canvas></div>')}${card('Nombre de crédits par semaine','par segment','<div class="chart tall"><canvas id="pcSegN"></canvas></div>')}</div>
+   <div style="margin-top:14px">${card('Segment · sous-segment × semaine','volume XOF — carte de chaleur',heatHtml(ss,A.weeks,wkLab,(r,c)=>r.wk[c],{head:'Segment · sous-segment'}))}</div>
+   <div class="grid g2" style="margin-top:14px">${card('Segment · sous-segment × mois',A.months.length<2?'le fichier couvre un seul mois : les mois suivants s\'ajouteront en colonnes':'volume XOF',monthT)}
+     ${card('Synthèse par sous-segment','',`<div class="tw" style="max-height:420px"><table class="dt"><thead><tr><th>Segment · sous-segment</th><th class="r">Crédits</th><th class="r">Volume</th><th class="r">Ticket</th><th class="r">Taux</th><th class="r">Frais</th></tr></thead><tbody>${ss.map(g=>`<tr><td><b>${esc(g.k)}</b></td><td class="r">${g.n}</td><td class="r">${fmtX(g.vol)}</td><td class="r">${fmtM(g.ticket)}</td><td class="r">${pct(g.rate,2)}</td><td class="r">${fmtX(g.fees)}</td></tr>`).join('')}</tbody></table></div>`)}</div>`;
+  const lab=A.weeks.map(w=>P.wkLib[w].s+' '+P.wkLib[w].r);
+  pmk('pcSegW',{type:'bar',data:{labels:lab,datasets:segs.map((s,i)=>({label:s.k,data:A.weeks.map(w=>s.wk[w]||0),backgroundColor:PAL[i%PAL.length],borderRadius:5}))},options:{plugins:{tooltip:tipX,legend:{position:'bottom'}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,...axM}}}});
+  pmk('pcSegN',{type:'line',data:{labels:lab,datasets:segs.map((s,i)=>({label:s.k,data:A.weeks.map(w=>s.wkn[w]||0),borderColor:PAL[i%PAL.length],backgroundColor:PAL[i%PAL.length],tension:.3,pointRadius:4}))},options:{plugins:{legend:{position:'bottom'}},scales:{x:{grid:{display:false}},y:{grid:{color:'#eef2f5'},beginAtZero:true}}}}); }
+
+function spark(g,weeks){ const v=weeks.map(w=>g.wk[w]||0), mx=Math.max(1,...v); return `<svg width="${weeks.length*14}" height="22" viewBox="0 0 ${weeks.length*14} 22">${v.map((x,i)=>`<rect x="${i*14+2}" y="${22-Math.max(1,x/mx*20)}" width="10" height="${Math.max(1,x/mx*20)}" rx="2" fill="${x?stageColor(i,weeks.length):'#dfe8ee'}"/>`).join('')}</svg>`; }
+function pRm(){ const A=P.A, G=A.byRm;
+  $('#pp-rm').innerHTML=`<div class="grid g4">${kpi('RM actifs',G.length,'hors Direct Banking')}${kpi('RM n°1',esc(G[0]?G[0].k:'—'),G[0]?fmtM(G[0].vol)+' XOF · '+G[0].n+' crédits':'','#00415e')}${kpi('Production moyenne / RM',fmtM(G.length?G.reduce((s,g)=>s+g.vol,0)/G.length:0),'XOF','#005c83')}${kpi('Direct Banking',fmtM(A.db.vol),A.db.n+' crédits · canal distinct','#1a86b3')}</div>
+   <div class="grid g2" style="margin-top:14px">${card('Top 15 RM','volume XOF, par segment',`<div class="chart" style="height:460px"><canvas id="pcRm"></canvas></div>`)}${card('Tableau d\'honneur','',honourHtml(A))}</div>
+   <div style="margin-top:14px">${card('Performance des RM','semaine par semaine — la mini-barre montre le rythme de chaque RM',`<div class="tw"><table class="dt"><thead><tr><th>#</th><th>RM</th><th>Agence principale</th><th class="r">Crédits</th><th class="r">Volume</th><th class="r">Part</th><th class="r">Ticket</th><th class="r">Taux</th><th class="r">Frais</th>${A.weeks.map(w=>`<th class="r">${P.wkLib[w].s}</th>`).join('')}<th>Rythme</th></tr></thead><tbody>
+    ${G.map((g,i)=>{ const L=A.list.filter(r=>r.rm===g.k); const ag=pGrp(L,r=>r.ag)[0]; return `<tr data-k="${esc(g.k)}"><td>${i+1}</td><td><b>${esc(g.k)}</b></td><td>${esc(ag?agLib(ag.k):'—')}</td><td class="r">${g.n}</td><td class="r">${fmtX(g.vol)}</td><td class="r">${pct(A.vol?g.vol/A.vol:0,1)}</td><td class="r">${fmtM(g.ticket)}</td><td class="r">${pct(g.rate,2)}</td><td class="r">${fmtX(g.fees)}</td>${A.weeks.map(w=>`<td class="r mono">${g.wk[w]?fmtM(g.wk[w]):'·'}</td>`).join('')}<td>${spark(g,A.weeks)}</td></tr>`; }).join('')}</tbody></table></div>`)}</div>`;
+  $$('#pp-rm tr[data-k]').forEach(tr=>tr.onclick=()=>{ P.q=tr.dataset.k; pGo('det'); });
+  const T=G.slice(0,15), segs=[...new Set(P.rows.map(r=>r.seg))];
+  pmk('pcRm',{type:'bar',data:{labels:T.map(g=>g.k),datasets:segs.map((s,i)=>({label:s,data:T.map(g=>A.list.filter(r=>r.rm===g.k&&r.seg===s).reduce((t,r)=>t+r.amt,0)),backgroundColor:PAL[i%PAL.length],borderRadius:3}))},options:{indexAxis:'y',plugins:{tooltip:tipX,legend:{position:'bottom'}},scales:{x:{stacked:true,...axM},y:{stacked:true,grid:{display:false}}}}}); }
+
+function pPrd(){ const A=P.A;
+  $('#pp-prd').innerHTML=`<div class="grid g2">${card('Production par produit','libellés Flexcube harmonisés','<div class="chart tall"><canvas id="pcPr"></canvas></div>')}${card('Production par secteur d\'activité','','<div class="chart tall"><canvas id="pcSe"></canvas></div>')}</div>
+   <div style="margin-top:14px">${card('Produits × semaines','volume XOF',heatHtml(A.byProd,A.weeks,wkLab,(r,c)=>r.wk[c],{head:'Produit'}))}</div>`;
+  pmk('pcPr',{type:'bar',data:{labels:A.byProd.map(g=>g.k),datasets:[{label:'Volume',data:A.byProd.map(g=>g.vol),backgroundColor:A.byProd.map((_,i)=>PAL[i%PAL.length]),borderRadius:5}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:tipX},scales:{x:axM,y:{grid:{display:false},ticks:{font:{size:10.5}}}}}});
+  const se=A.bySect.slice(0,10); pmk('pcSe',{type:'doughnut',data:{labels:se.map(g=>g.k),datasets:[{data:se.map(g=>g.vol),backgroundColor:PAL,borderColor:'#fff',borderWidth:2}]},options:{cutout:'55%',plugins:{legend:{position:'right',labels:{font:{size:10.5}}},tooltip:tipX}}}); }
+
+const PTC={ref:['Référence',r=>`<span class="mono">${esc(r.ref)}</span>`,r=>r.ref],book:['Booking',r=>fmtD(r.book),r=>+r.book],client:['Client',r=>`<b>${esc(r.client)}</b>`,r=>r.client],ag:['Agence',r=>esc(agLib(r.ag)),r=>r.ag],seg:['Segment',r=>esc(r.seg),r=>r.seg],sseg:['Sous-segment',r=>esc(r.sseg),r=>r.sseg],
+  rm:['RM / canal',r=>esc(r.rm),r=>r.rm],prod:['Produit',r=>esc(r.prod),r=>r.prod],amt:['Montant',r=>fmtX(r.amt),r=>r.amt,1],rate:['Taux',r=>pct(r.rate,2),r=>r.rate,1],fees:['Frais',r=>fmtX(r.fees),r=>r.fees,1],intp:['Intérêts prévus',r=>fmtX(r.intp),r=>r.intp,1],mat:['Échéance',r=>fmtD(r.mat),r=>r.mat?+r.mat:0],wk:['Semaine',r=>P.wkLib[r.wk].s,r=>r.wk]};
+function pDet(){ const A=P.A, q=norm(P.q); let L=A.list.filter(r=>!q||norm(r.ref+' '+r.acct+' '+r.cust+' '+r.client+' '+r.rm+' '+r.ag+' '+agLib(r.ag)+' '+r.prod+' '+r.sseg).includes(q));
+  const c=PTC[P.sort.k]; L=[...L].sort((a,b)=>{ const x=c[2](a),y=c[2](b); return (x>y?1:x<y?-1:0)*P.sort.d; }); const cols=['book','wk','ref','client','ag','seg','sseg','rm','prod','amt','rate','fees','intp','mat'];
+  $('#pp-det').innerHTML=`<div class="card"><div class="ctrl"><input type="search" id="pq" placeholder="Rechercher une référence, un compte, un client, un RM, une agence…" value="${esc(P.q)}"><span style="font-size:12.5px;color:var(--mut)"><b style="color:var(--navy)">${L.length}</b> crédits · <b style="color:var(--navy)">${fmtX(L.reduce((s,r)=>s+r.amt,0))}</b> XOF</span></div>
+   <div class="tw"><table class="dt" id="ptD"><thead><tr>${cols.map(k=>`<th class="${PTC[k][3]?'r':''}" data-c="${k}">${PTC[k][0]}${P.sort.k===k?(P.sort.d>0?' ▲':' ▼'):''}</th>`).join('')}</tr></thead><tbody>${L.slice(0,1500).map(r=>`<tr>${cols.map(k=>`<td class="${PTC[k][3]?'r':''}">${PTC[k][1](r)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+  const i=$('#pq'); i.oninput=()=>{ P.q=i.value; clearTimeout(i._t); i._t=setTimeout(()=>{ pDet(); const n=$('#pq'); n.focus(); n.setSelectionRange(n.value.length,n.value.length); },180); };
+  $$('#ptD th').forEach(th=>th.onclick=()=>{ const k=th.dataset.c; P.sort={k,d:P.sort.k===k?-P.sort.d:(PTC[k][3]?-1:1)}; pDet(); }); }
+
+/* ---------- Production 3D ---------- */
+const PV3_MODES=[['ag','Agences × semaines'],['seg','Sous-segments × semaines'],['rm','Top RM × semaines']];
+function pv3Scene(mode,A){ const W=A.weeks, n=W.length, SP=1.9, X=i=>(i-(n-1)/2)*SP; const top=5;
+  const G=mode==='ag'?A.byAg.slice(0,12):mode==='seg'?A.bySseg.slice(0,10):A.byRm.slice(0,12); const m=G.length, Z=j=>(j-(m-1)/2)*1.1;
+  const mx=Math.max(1,...G.flatMap(g=>W.map(w=>g.wk[w]||0))); const objs=[], labels=[];
+  G.forEach((g,j)=>{ W.forEach((w,i)=>{ const v=g.wk[w]||0; if(!v) return; const h=Math.max(0.05,v/mx*top), s=0.42, col=stageColor(i,n);
+      objs.push({k:'box',x0:X(i)-s,x1:X(i)+s,y0:0,y1:h,z0:Z(j)-s,z1:Z(j)+s,col,own:{g:g.k,w,title:`${g.lib||g.k} · ${P.wkLib[w].s}`,lines:[`${fmtX(v)} XOF · ${g.wkn[w]} crédits`,`${P.wkLib[w].r}`,`total : ${fmtM(g.vol)} XOF`]}}); });
+    labels.push({p:[X(0)-1.3,0,Z(j)],t:String(g.lib||g.k).slice(0,26),c:'#e3eff5',f:'600 11px',al:'right'}); });
+  const floor={x0:X(0)-1.1,x1:X(n-1)+1.1,z0:Z(0)-0.8,z1:Z(Math.max(0,m-1))+0.8};
+  const st=W.map((w,i)=>({lib:P.wkLib[w].s,col:stageColor(i,n)})); st.forEach((s,i)=>labels.push({p:[X(i),0,floor.z0-0.55],t:s.lib+' · '+P.wkLib[W[i]].r,c:v3Hex(s.col,1.6),f:'800 12px'}));
+  return {objs,labels,floor,span:Math.max(n*SP/2,m*0.55)*1.45+1.2,top,st,X,SP}; }
+function pv3Stop(){ cancelAnimationFrame(P.v3.raf); P.v3.raf=0; }
+function pv3Draw(){ const V=P.v3, cv=V.cv; if(!cv||!cv.isConnected) return; const dpr=window.devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight;
+  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
+  const x=cv.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0); if(!V.sc) V.sc=pv3Scene(V.mode,P.A); V.polys=v3Render(x,W,H,V.sc,V,V.hover); }
+function pv3Snap(mode,title,sub){ const W=1600,H=800,c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d'); if(!x) return null;
+  v3Render(x,W,H,pv3Scene(mode,P.A),{yaw:-0.6,pitch:0.55,zoom:1.02},null);
+  x.textAlign='left'; x.textBaseline='alphabetic'; x.fillStyle='#fff'; x.font='700 34px "Segoe UI",Arial'; x.fillText(title,48,64); x.fillStyle='#a6d867'; x.font='500 20px "Segoe UI",Arial'; x.fillText(sub,48,96); x.fillStyle='#8cc63f'; x.fillRect(48,112,90,5);
+  x.textAlign='right'; x.fillStyle='rgba(255,255,255,.55)'; x.font='600 15px "Segoe UI",Arial'; x.fillText('ECOBANK SÉNÉGAL · Salle Production · 3D',W-40,H-26); return c.toDataURL('image/png'); }
+function pP3(){ const V=P.v3;
+  $('#pp-p3').innerHTML=`<div class="card v3card"><div class="v3bar"><div class="seg" id="pv3m">${PV3_MODES.map(([k,l])=>`<button data-v="${k}" class="${V.mode===k?'on':''}">${l}</button>`).join('')}</div>
+   <div class="v3act"><button class="btn" id="pv3a">${V.auto?'⏸ Pause':'⟳ Rotation auto'}</button><button class="btn" id="pv3f">Vue de face</button><button class="btn" id="pv3t">Vue de dessus</button><button class="btn" id="pv3r">Réinitialiser</button><button class="btn lime" id="pv3p">Exporter l'image</button></div></div>
+   <div class="v3wrap"><canvas id="pv3c" class="v3c"></canvas><div class="v3tip" id="pv3tip"></div></div>
+   <div class="v3help">Une rangée par agence, sous-segment ou RM, une tour par semaine ISO (du bleu au lime). Hauteur = volume mis en place. Glissez pour tourner, molette pour zoomer, cliquez une tour pour filtrer.</div></div>`;
+  V.cv=$('#pv3c'); V.sc=null; V.hover=null; const cv=V.cv, tip=$('#pv3tip');
+  $$('#pv3m button').forEach(b=>b.onclick=()=>{ V.mode=b.dataset.v; V.sc=null; $$('#pv3m button').forEach(x=>x.classList.toggle('on',x===b)); pv3Draw(); });
+  const loop=()=>{ pv3Stop(); if(!V.auto) return; const st=()=>{ if(!V.cv||!V.cv.isConnected||P.tab!=='p3'||ROOM!=='prod'){ V.raf=0; return; } V.yaw+=0.004; pv3Draw(); V.raf=requestAnimationFrame(st); }; V.raf=requestAnimationFrame(st); };
+  $('#pv3a').onclick=e=>{ V.auto=!V.auto; e.target.textContent=V.auto?'⏸ Pause':'⟳ Rotation auto'; loop(); };
+  $('#pv3f').onclick=()=>{ V.yaw=0; V.pitch=0.18; pv3Draw(); }; $('#pv3t').onclick=()=>{ V.yaw=0; V.pitch=1.35; pv3Draw(); }; $('#pv3r').onclick=()=>{ V.yaw=-0.6; V.pitch=0.55; V.zoom=1; pv3Draw(); };
+  $('#pv3p').onclick=()=>{ const u=pv3Snap(V.mode,'Production 3D — '+PV3_MODES.find(m=>m[0]===V.mode)[1],pFilterLabel()||P.A.n+' crédits · '+fmtM(P.A.vol)+' XOF'); if(u) dl(g3Blob(u),'Production_3D_'+V.mode+'_'+stampP()+'.png'); };
+  cv.onpointerdown=e=>{ V.drag={x:e.clientX,y:e.clientY,yaw:V.yaw,pitch:V.pitch,moved:false}; cv.setPointerCapture(e.pointerId); };
+  cv.onpointermove=e=>{ const r=cv.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+    if(V.drag){ const dx=e.clientX-V.drag.x, dy=e.clientY-V.drag.y; if(Math.abs(dx)+Math.abs(dy)>3) V.drag.moved=true; V.yaw=V.drag.yaw+dx*0.008; V.pitch=Math.max(0.08,Math.min(1.45,V.drag.pitch+dy*0.006)); tip.classList.remove('on'); if(!V.auto) pv3Draw(); return; }
+    const h=v3Hit(V.polys,mx,my); if(h!==V.hover){ V.hover=h; if(!V.auto) pv3Draw(); } cv.style.cursor=h?'pointer':'grab';
+    if(h){ tip.innerHTML=`<b>${esc(h.title)}</b>${h.lines.map(l=>`<div>${l}</div>`).join('')}`; tip.style.left=Math.min(mx+14,r.width-260)+'px'; tip.style.top=(my+14)+'px'; tip.classList.add('on'); } else tip.classList.remove('on'); };
+  cv.onpointerup=()=>{ const d=V.drag; V.drag=null; if(d&&d.moved) return; const h=V.hover; if(!h) return;
+    if(V.mode==='ag'){ P.F.ag=h.g; $('#pfAg').value=h.g; } else if(V.mode==='rm'){ P.q=h.g; } P.F.wk=h.w; $('#pfWk').value=h.w; pGo('det'); };
+  cv.onpointerleave=()=>{ V.hover=null; tip.classList.remove('on'); if(!V.auto) pv3Draw(); };
+  cv.onwheel=e=>{ e.preventDefault(); V.zoom=Math.max(0.5,Math.min(2.6,V.zoom*(e.deltaY<0?1.08:0.93))); if(!V.auto) pv3Draw(); };
+  pv3Draw(); loop(); }
+window.addEventListener('resize',()=>{ if(ROOM==='prod'&&P.tab==='p3'&&!P.v3.auto) pv3Draw(); });
+
+/* ---------- visuels d'export ---------- */
+function stampP(){ return (P.last||new Date()).toISOString().slice(0,10); }
+function pHeatImg(o){ const n=o.rows.length, g=g3Canvas(o.w||900,Math.max(260,110+n*28)); if(!g) return null; const x=g.x; g3Title(g,o.title,o.sub);
+  const top=84,left=o.left||250,cw=(g.w-left-100)/o.cols.length,rh=Math.min(28,(g.h-top-20)/Math.max(1,n)); const mx=Math.max(1,...o.m.flat());
+  x.font='700 12px "Segoe UI",Arial'; x.fillStyle=G3.navy; x.textAlign='center'; o.cols.forEach((c,j)=>x.fillText(c,left+cw*(j+0.5),top-12)); x.fillText('Total',g.w-50,top-12);
+  o.rows.forEach((r,i)=>{ const y=top+rh*i; x.textAlign='right'; x.fillStyle=G3.ink; x.font='600 11.5px "Segoe UI",Arial'; x.fillText(String(r).slice(0,34),left-10,y+rh/2+4);
+    let t=0; o.cols.forEach((_,j)=>{ const v=o.m[i][j]||0; t+=v; x.fillStyle=v?heatCol(v,mx):'#f4f8fa'; x.beginPath(); x.roundRect?x.roundRect(left+cw*j+2,y+2,cw-4,rh-4,4):x.rect(left+cw*j+2,y+2,cw-4,rh-4); x.fill();
+      x.fillStyle=v&&Math.sqrt(v/mx)>0.45?'#fff':G3.ink; x.font='11px Consolas,monospace'; x.textAlign='center'; x.fillText(v?g3Md(v):'·',left+cw*(j+0.5),y+rh/2+4); });
+    x.fillStyle=G3.navy; x.font='700 11px Consolas,monospace'; x.fillText(g3Md(t),g.w-50,y+rh/2+4); });
+  return g3Out(g); }
+function pCharts(tall){ const A=P.A, H=tall?{h:560}:{}, sub=(pFilterLabel()||'toute la production')+' · au '+fmtD(P.last), out={};
+  try{ const W=A.weeks, wl=W.map(w=>P.wkLib[w].s);
+    out.wk=g3Bars({...H,title:'Production par semaine',sub:sub+' · XOF',labels:W.map(w=>P.wkLib[w].s+' '+P.wkLib[w].r),values:A.byWk.map(w=>w.vol),colors:W.map((_,i)=>stageColor(i,W.length))});
+    let c=0; out.cum=g3Lines({...H,title:'Production cumulée',sub,labels:A.byDay.map(d=>d.d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})),series:[{name:'Cumul XOF',values:A.byDay.map(d=>c+=d.vol),color:G3.blue}],fmt:v=>g3Md(v)});
+    const G=A.byAg.slice(0,15); out.ag=g3HBars({...H,title:'Classement des agences',sub:sub+' · XOF',labels:G.map(g=>g.lib),values:G.map(g=>g.vol),colors:G.map((_,i)=>i<3?G3.lime:G3.blue),left:230});
+    const R=A.byRm.slice(0,15); out.rm=g3HBars({...H,title:'Top 15 RM',sub:'hors Direct Banking · XOF',labels:R.map(g=>g.k),values:R.map(g=>g.vol),colors:R.map((_,i)=>i<3?G3.lime:G3.navy),left:230});
+    out.seg=g3Donut({...H,title:'Production par segment · sous-segment',sub:'XOF',labels:A.bySseg.map(s=>s.k),values:A.bySseg.map(s=>s.vol),center:g3Md(A.vol)});
+    out.hSeg=pHeatImg({title:'Segments × semaines',sub:'volume mis en place XOF',rows:A.bySseg.map(s=>s.k),cols:wl,m:A.bySseg.map(s=>W.map(w=>s.wk[w]||0))});
+    const G2=A.byAg.slice(0,20); out.hAg=pHeatImg({title:'Agences × semaines',sub:'vingt premières agences · XOF',rows:G2.map(g=>g.lib),cols:wl,m:G2.map(g=>W.map(w=>g.wk[w]||0))});
+    out.p3=pv3Snap('ag','Production 3D — agences × semaines',sub); out.p3s=pv3Snap('seg','Production 3D — sous-segments × semaines',sub);
+  }catch(e){ console.warn('visuels production',e); }
+  return out; }
+
+/* ---------- Excel ---------- */
+async function pExcel(){ busy(true,'Construction du classeur Production…'); await tick();
+  try{ const A=P.A, CH=pCharts(), wb=XLSX.utils.book_new(), CFS={}; const W=A.weeks, M=A.months;
+    const sheet=(name,title,comment,head,rows,fmts,widths,opt)=>{ opt=opt||{}; const aoa=[[title],[comment],[],head,...rows]; const w=XLSX.utils.aoa_to_sheet(aoa);
+      w['A1'].s=X3.title(); w['A2'].s=X3.sub(); for(let c=1;c<head.length;c++) w[XLSX.utils.encode_cell({r:0,c})]={t:'s',v:'',s:X3.title()};
+      head.forEach((_,c)=>{ const a=XLSX.utils.encode_cell({r:3,c}); if(w[a]) w[a].s=X3.hdr(); });
+      rows.forEach((r,i)=>r.forEach((v,c)=>{ const a=XLSX.utils.encode_cell({r:4+i,c}); if(!w[a]) return; const f=fmts[c], tot=r.__total;
+        let s=f==='n'?X3.cell(i,{numFmt:'#,##0',font:{name:'Consolas',sz:9.5,bold:tot,color:{rgb:'12333F'}},alignment:{horizontal:'right'}}):f==='p'?X3.cell(i,{numFmt:'0.00%',font:{name:'Consolas',sz:9.5,color:{rgb:'12333F'}},alignment:{horizontal:'right'}}):f==='d'?X3.cell(i,{numFmt:'dd/mm/yyyy',alignment:{horizontal:'center'}}):X3.cell(i,{font:{name:'Segoe UI',sz:9.5,bold:tot||c===0,color:{rgb:'12333F'}}});
+        if(tot) s.fill={patternType:'solid',fgColor:{rgb:'E6F2D0'}}; w[a].s=s; }));
+      w['!cols']=widths.map(x=>({wch:x})); w['!merges']=[{s:{r:0,c:0},e:{r:0,c:head.length-1}},{s:{r:1,c:0},e:{r:1,c:head.length-1}}]; w['!rows']=[{hpt:30},{hpt:30},{hpt:6},{hpt:32}];
+      const body=rows.filter(r=>!r.__total).length; w['!autofilter']={ref:'A4:'+colL(head.length-1)+(4+body)};
+      const last=4+body, rules=[]; if(body>1) fmts.forEach((f,c)=>{ const ref=colL(c)+'5:'+colL(c)+last; if(f==='n'&&opt.heat&&c>=opt.heat[0]&&c<=opt.heat[1]) return; if(f==='n'&&(!opt.bars||opt.bars.includes(c))) rules.push({type:'dataBar',ref,color:c%2?'005C83':'8CC63F'}); });
+      if(opt.heat&&body) rules.push({type:'colorScale',ref:colL(opt.heat[0])+'5:'+colL(opt.heat[1])+last,colors:['FFFFFF','8FC1D6','8CC63F']});
+      CFS[name]=rules; XLSX.utils.book_append_sheet(wb,w,name); };
+    const tot=(lab,vals)=>{ const r=[lab,...vals]; r.__total=true; return r; };
+    const N=pNarr(A); sheet('Synthèse','SALLE PRODUCTION — CRÉDITS MIS EN PLACE',`Ecobank Sénégal · ${P.file} · au ${fmtD(P.last)}${pFilterLabel()?' · '+pFilterLabel():''}`,['Indicateur','Valeur','Commentaire'],
+      [['Production (XOF)',Math.round(A.vol),A.n+' crédits'],['Ticket moyen',Math.round(A.ticket),''],['Taux moyen pondéré',A.rate,''],['Frais de dossier',Math.round(A.fees),''],['Intérêts prévus',Math.round(A.intp),''],['Encours actuel',Math.round(A.bal),''],
+       ['Projection fin '+P.moLib[A.proj.mo],Math.round(A.proj.est),A.proj.done+'/'+A.proj.tot+' jours ouvrés'],['Direct Banking',Math.round(A.db.vol),A.db.n+' crédits'],...N.map((p,i)=>['Lecture '+(i+1),'',p.t.replace(/<[^>]+>/g,'')])],
+      ['s','n','s'],[34,20,110],{bars:[]});
+    const ws0=wb.Sheets['Synthèse']; ws0['B7'].s=X3.cell(2,{numFmt:'0.00%',font:{name:'Consolas',sz:9.5},alignment:{horizontal:'right'}});
+    sheet('Par agence','PRODUCTION PAR AGENCE','Agence = code en tête de la référence du prêt ; noms selon le référentiel de ce poste.',['Agence','Crédits','Volume','Part','Ticket moyen','Taux moyen','Frais','Intérêts prévus'],
+      [...A.byAg.map(g=>[g.lib,g.n,Math.round(g.vol),A.vol?g.vol/A.vol:0,Math.round(g.ticket),g.rate,Math.round(g.fees),Math.round(g.intp)]),tot('TOTAL',[A.n,Math.round(A.vol),1,Math.round(A.ticket),A.rate,Math.round(A.fees),Math.round(A.intp)])],['s','n','n','p','n','p','n','n'],[32,10,18,9,15,11,15,16]);
+    const mat=(G,keys,get,lab)=>[...G.map(g=>[g.lib||g.k,...keys.map(k=>Math.round(get(g,k)||0)),Math.round(g.vol)]),tot('TOTAL',[...keys.map(k=>Math.round(G.reduce((s,g)=>s+(get(g,k)||0),0))),Math.round(G.reduce((s,g)=>s+g.vol,0))])];
+    const wh=W.map(w=>P.wkLib[w].s+' ('+P.wkLib[w].r+')'), mh=M.map(m=>P.moLib[m]);
+    sheet('Agence x semaine','AGENCES × SEMAINES','Volume mis en place par semaine ISO (XOF).',['Agence',...wh,'Total'],mat(A.byAg,W,(g,k)=>g.wk[k]),['s',...W.map(()=>'n'),'n'],[32,...W.map(()=>16),18],{heat:[1,W.length]});
+    sheet('Segment x semaine','SEGMENTS · SOUS-SEGMENTS × SEMAINES','Volume mis en place par semaine ISO (XOF).',['Segment · sous-segment',...wh,'Total'],mat(A.bySseg,W,(g,k)=>g.wk[k]),['s',...W.map(()=>'n'),'n'],[40,...W.map(()=>16),18],{heat:[1,W.length]});
+    sheet('Segment x mois','SEGMENTS · SOUS-SEGMENTS × MOIS','Volume mis en place par mois (XOF). Les mois suivants s\'ajoutent en colonnes.',['Segment · sous-segment',...mh,'Total'],mat(A.bySseg,M,(g,k)=>g.mo[k]),['s',...M.map(()=>'n'),'n'],[40,...M.map(()=>18),18],{heat:[1,M.length]});
+    sheet('Nb crédits segment x sem.','NOMBRE DE CRÉDITS PAR SEGMENT ET PAR SEMAINE','Nombre de mises en place.',['Segment',...wh,'Total'],[...A.bySeg.map(g=>[g.k,...W.map(w=>g.wkn[w]||0),g.n]),tot('TOTAL',[...W.map(w=>A.bySeg.reduce((s,g)=>s+(g.wkn[w]||0),0)),A.n])],['s',...W.map(()=>'n'),'n'],[30,...W.map(()=>16),12],{heat:[1,W.length]});
+    sheet('Par RM','PERFORMANCE DES RM','Hors canal Direct Banking (présenté séparément). Colonnes semaines en XOF.',['RM','Agence principale','Crédits','Volume','Part','Ticket moyen','Taux moyen','Frais',...wh],
+      A.byRm.map(g=>{ const ag=pGrp(A.list.filter(r=>r.rm===g.k),r=>r.ag)[0]; return [g.k,ag?agLib(ag.k):'',g.n,Math.round(g.vol),A.vol?g.vol/A.vol:0,Math.round(g.ticket),g.rate,Math.round(g.fees),...W.map(w=>Math.round(g.wk[w]||0))]; }),
+      ['s','s','n','n','p','n','p','n',...W.map(()=>'n')],[30,26,9,16,8,14,10,13,...W.map(()=>14)],{bars:[3],heat:[8,7+W.length]});
+    sheet('Canaux','PRODUCTION PAR CANAL','RM, Direct Banking et crédits non affectés.',['Canal','Crédits','Volume','Part','Ticket moyen',...wh],A.byCh.map(g=>[g.k,g.n,Math.round(g.vol),A.vol?g.vol/A.vol:0,Math.round(g.ticket),...W.map(w=>Math.round(g.wk[w]||0))]),['s','n','n','p','n',...W.map(()=>'n')],[20,10,18,9,14,...W.map(()=>14)]);
+    sheet('Par produit','PRODUCTION PAR PRODUIT','Libellés Flexcube harmonisés.',['Produit','Crédits','Volume','Part','Ticket moyen','Taux moyen','Frais'],A.byProd.map(g=>[g.k,g.n,Math.round(g.vol),A.vol?g.vol/A.vol:0,Math.round(g.ticket),g.rate,Math.round(g.fees)]),['s','n','n','p','n','p','n'],[60,10,18,9,14,11,14]);
+    if(A.link) sheet('Lien pipe','DU PIPE FACTORY À LA PRODUCTION','Dossiers du pipe retrouvés dans la production (même numéro de compte).',['N° dossier','Client','Étape pipe','Montant pipe','Référence prêt','Booking','Montant mis en place','Délai (j)'],
+      A.link.hit.map(x=>[x.d.ref,x.r.client,x.d.stage.lib,Math.round(x.d.vol),x.r.ref,x.r.book,Math.round(x.r.amt),x.d.dintro?Math.round((x.r.book-x.d.dintro)/DAY):'']),['s','s','s','n','s','d','n','n'],[12,40,12,16,20,12,18,9]);
+    const L=[...A.list].sort((a,b)=>a.book-b.book||b.amt-a.amt);
+    sheet('Détail','DÉTAIL DES CRÉDITS MIS EN PLACE',A.n+' crédits, classés par date de booking.',['Booking','Semaine','Référence','Compte','Client','Agence','Segment','Sous-segment','RM / canal','Produit','Montant','Taux','Frais','Intérêts prévus','Échéance'],
+      L.map(r=>[r.book,P.wkLib[r.wk].s,r.ref,r.acct,r.client,agLib(r.ag),r.seg,r.sseg,r.rm,r.prod,Math.round(r.amt),r.rate,Math.round(r.fees),Math.round(r.intp),r.mat||'']),['d','s','s','s','s','s','s','s','s','s','n','p','n','n','d'],[11,8,19,15,36,22,17,22,24,40,15,8,12,14,11],{bars:[10]});
+    const raw=XLSX.write(wb,{bookType:'xlsx',type:'base64'}); const idx=n=>wb.SheetNames.indexOf(n)+1; const attach=[];
+    const side=(n,imgs)=>{ if(!wb.Sheets[n]) return; const ref=XLSX.utils.decode_range(wb.Sheets[n]['!ref']); const col=Math.min(24,ref.e.c+2); attach.push({sheet:idx(n),cf:CFS[n]||[],imgs:imgs.filter(Boolean).map((p,i)=>({png:p,col,row:3+i*21,cols:9,rows:20}))}); };
+    side('Synthèse',[CH.wk,CH.cum,CH.p3]); side('Par agence',[CH.ag]); side('Agence x semaine',[CH.hAg]); side('Segment x semaine',[CH.hSeg,CH.p3s]); side('Segment x mois',[CH.seg]); side('Nb crédits segment x sem.',[]); side('Par RM',[CH.rm]); side('Canaux',[]); side('Par produit',[]); side('Lien pipe',[]); side('Détail',[]);
+    const res=await xlsxAttach(raw,attach,{logo:await g3LogoBadge(),gradient:true});
+    dl(new Blob([res.u8],{type:MIME.xlsx}),'Production_'+stampP()+'.xlsx'); toast('✅ Classeur Production exporté — '+wb.SheetNames.length+' feuilles');
+  }catch(e){ console.error(e); toast('⚠️ Export Excel : '+e.message,6000); }
+  busy(false); }
+
+/* ---------- PowerPoint ---------- */
+async function pPptx(){ const PP=window.PptxGenJS; if(!PP){ toast('Moteur PowerPoint indisponible'); return; } busy(true,'Construction de la présentation Production…'); await tick();
+  try{ const A=P.A, CH=pCharts(true), CF=pCharts(), badge=await g3LogoBadge(); const pp=new PP(); pp.layout='LAYOUT_WIDE'; pp.title='Production — '+fmtD(P.last); pp.company='Ecobank Sénégal';
+    const foot='Salle Production · Ecobank Sénégal · au '+fmtD(P.last)+(pFilterLabel()?' · '+pFilterLabel():''); let n=0, s;
+    s=pp.addSlide(); s.background={color:PX.NV}; s.addShape(pp.ShapeType.ellipse,{x:8.6,y:-2.2,w:7,h:7,fill:{color:PX.LM,transparency:86},line:{color:PX.LM,transparency:100}});
+    if(badge) s.addImage({data:badge,x:0.7,y:0.7,w:3.1,h:1.13}); s.addText('Performances de production',{x:0.7,y:2.55,w:11,h:0.9,fontSize:38,bold:true,color:'FFFFFF',fontFace:'Segoe UI'});
+    s.addShape(pp.ShapeType.rect,{x:0.72,y:3.5,w:1.4,h:0.07,fill:{color:PX.LM}}); s.addText('Agences · segments · RM — au '+fmtD(P.last),{x:0.7,y:3.7,w:11,h:0.5,fontSize:18,color:PX.L2,fontFace:'Segoe UI'});
+    s.addText(A.n+' crédits · '+fmtX(A.vol)+' XOF',{x:0.7,y:4.3,w:10,h:0.5,fontSize:16,color:'CFE0EE',fontFace:'Segoe UI'});
+    s=pp.addSlide(); pptBand(pp,s,'Synthèse de la production','volume, rythme et projection',foot,++n,badge);
+    pptKpis(pp,s,[['Production',fmtX(A.vol),PX.NV,A.n+' crédits'],['Projection '+P.moLib[A.proj.mo],fmtM(A.proj.est),PX.AM,A.proj.done+'/'+A.proj.tot+' j ouvrés'],['Frais de dossier',fmtX(A.fees),PX.GR,'taux moyen '+pct(A.rate,2)],['Direct Banking',pct(A.vol?A.db.vol/A.vol:0,0),PX.BL,fmtM(A.db.vol)+' XOF']],1.3);
+    if(CF.wk) s.addImage({data:CF.wk,x:0.5,y:2.6,w:8.2,h:4.1}); s.addText(pNarr(A).slice(0,5).map(p=>({text:p.t.replace(/<[^>]+>/g,''),options:{bullet:{code:'25B8'},color:PX.INK,paraSpaceAfter:6}})),{x:8.9,y:2.6,w:4,h:4.4,fontSize:10,fontFace:'Segoe UI',valign:'top'});
+    const big=(t,st,u)=>{ if(!u) return; s=pp.addSlide(); pptBand(pp,s,t,st,foot,++n,badge); s.addImage({data:u,x:1.47,y:1.3,w:10.4,h:5.2}); };
+    s=pp.addSlide(); pptBand(pp,s,'Performance par agence','classement et contribution',foot,++n,badge); if(CH.ag) s.addImage({data:CH.ag,x:0.45,y:1.35,w:6.1,h:4.49});
+    pptTable(s,['Agence','Crédits','Volume','Part'],A.byAg.slice(0,14).map(g=>[g.lib,String(g.n),fmtX(g.vol),pct(A.vol?g.vol/A.vol:0,1)]),{x:6.8,y:1.35,w:6.05,colW:[2.6,0.9,1.6,0.95],right:[1,2,3],fs:9,rowH:0.34});
+    big('Agences × semaines','volume mis en place par semaine ISO',CF.hAg);
+    big('Segments × semaines','sous-segments et rythme hebdomadaire',CF.hSeg);
+    s=pp.addSlide(); pptBand(pp,s,'Performance des RM','hors Direct Banking',foot,++n,badge); if(CH.rm) s.addImage({data:CH.rm,x:0.45,y:1.35,w:6.1,h:4.49});
+    pptTable(s,['RM','Crédits','Volume','Ticket'],A.byRm.slice(0,14).map(g=>[g.k,String(g.n),fmtX(g.vol),fmtM(g.ticket)]),{x:6.8,y:1.35,w:6.05,colW:[2.6,0.9,1.6,0.95],right:[1,2,3],fs:9,rowH:0.34,pills:(ri,ci)=>ci===0&&ri<3?PX.GR:null});
+    s=pp.addSlide(); pptBand(pp,s,'Tableau d\'honneur','top 5 · progressions · RM à relancer',foot,++n,badge);
+    pptTable(s,['#','Top 5 agences','Volume'],A.byAg.slice(0,5).map((g,i)=>[String(i+1),g.lib,fmtM(g.vol)]),{x:0.5,y:1.35,w:6,colW:[0.5,4,1.5],right:[2],fs:11,rowH:0.42,pills:(ri,ci)=>ci===0?PX.LM:null});
+    pptTable(s,['#','Top 5 RM','Volume'],A.byRm.slice(0,5).map((g,i)=>[String(i+1),g.k,fmtM(g.vol)]),{x:6.83,y:1.35,w:6,colW:[0.5,4,1.5],right:[2],fs:11,rowH:0.42,pills:(ri,ci)=>ci===0?PX.LM:null});
+    if(A.rmUp.length) pptTable(s,['▲ Progressions','Écart'],A.rmUp.map(x=>[x.g.k,'+'+fmtM(x.d)]),{x:0.5,y:4.3,w:6,colW:[4.5,1.5],right:[1],fs:10,rowH:0.36});
+    if(A.rmDown.length) pptTable(s,['▼ À relancer','Semaine précédente'],A.rmDown.map(g=>[g.k,fmtM(g.wk[A.hP.k])]),{x:6.83,y:4.3,w:6,colW:[4,2],right:[1],fs:10,rowH:0.36});
+    big('Production en 3D','agences × semaines — hauteur = volume',CF.p3);
+    s=pp.addSlide(); s.background={color:PX.NV}; if(badge) s.addImage({data:badge,x:5.1,y:2.2,w:3.1,h:1.13}); s.addText('Salle Production · Deal Pipe Studio · Ecobank Sénégal',{x:0,y:3.8,w:13.33,h:0.5,fontSize:16,color:'CFE0EE',align:'center',fontFace:'Segoe UI'});
+    await pp.writeFile({fileName:'Production_'+stampP()+'.pptx'}); toast('✅ Présentation Production exportée — '+(n+2)+' diapositives');
+  }catch(e){ console.error(e); toast('⚠️ Export PowerPoint : '+e.message,6000); }
+  busy(false); }
+
+/* ---------- Word ---------- */
+async function pWord(){ busy(true,'Rédaction de la note Production…'); await tick();
+  try{ const A=P.A, CH=pCharts(); const media=[]; const add=u=>{ if(!u) return null; const u8=g3Bytes(u); media.push(u8); return {rid:'rIdImg'+media.length,id:100+media.length,u8}; };
+    const bdg=await g3LogoBadge(); const logo=add(bdg||LOGO_SRC); let body='';
+    body+=`<w:tbl><w:tblPr><w:tblW w:w="9638" w:type="dxa"/></w:tblPr><w:tblGrid><w:gridCol w:w="9638"/></w:tblGrid><w:tr><w:trPr><w:trHeight w:val="3200"/></w:trPr>`+dxCell(dxP(dxImg(logo.rid,logo.id,logo.u8,bdg?6:4.2),{after:220})+dxP(dxRun('PERFORMANCES DE PRODUCTION',{b:true,sz:36,color:'FFFFFF'}),{after:60})+dxP(dxRun('Agences · segments · RM — au '+fmtD(P.last),{sz:24,color:'A6D867'}),{after:0}),{w:9638,fill:'00415E',va:'center'})+'</w:tr></w:tbl>'+dxP('',{after:160});
+    body+=dxKpis([['Production',fmtX(A.vol),'00415E',A.n+' crédits'],['Projection',fmtM(A.proj.est),'B67D1C',P.moLib[A.proj.mo]],['Frais de dossier',fmtX(A.fees),'4E8A2E','taux '+pct(A.rate,2)],['Direct Banking',pct(A.vol?A.db.vol/A.vol:0,0),'005C83',fmtM(A.db.vol)+' XOF']]);
+    const img=(u,w)=>{ const m=add(u); if(m) body+=dxP(dxImg(m.rid,m.id,m.u8,w||16.5),{after:120,align:'center'}); };
+    body+=dxP(dxRun('1. Le point production'),{style:'Titre1'}); pNarr(A).forEach(p=>body+=dxRich('▸ '+p.t,{after:80,ind:120})); img(CH.wk,15);
+    body+=dxP(dxRun('2. Par agence'),{style:'Titre1'}); body+=dxTableS(['Agence','Crédits','Volume','Part','Ticket'],A.byAg.map(g=>[g.lib,g.n,fmtX(g.vol),pct(A.vol?g.vol/A.vol:0,1),fmtM(g.ticket)]),[3638,1000,2000,1300,1700],[1,2,3,4]); img(CH.hAg);
+    body+=dxP(dxRun('3. Par segment, semaine et mois'),{style:'Titre1'}); img(CH.hSeg); img(CH.seg,14);
+    body+=dxP(dxRun('4. Par RM'),{style:'Titre1'}); body+=dxTableS(['RM','Crédits','Volume','Ticket','Taux'],A.byRm.slice(0,30).map(g=>[g.k,g.n,fmtX(g.vol),fmtM(g.ticket),pct(g.rate,2)]),[3638,1000,2000,1500,1500],[1,2,3,4]); img(CH.rm,15);
+    body+=dxP(dxRun('5. Vue 3D'),{style:'Titre1'}); img(CH.p3);
+    const u8=await docxBuild(body,media,'Ecobank Sénégal · Salle Production · au '+fmtD(P.last)); dl(new Blob([u8],{type:MIME.docx}),'Production_Note_'+stampP()+'.docx'); toast('✅ Note Word Production exportée');
+  }catch(e){ console.error(e); toast('⚠️ Export Word : '+e.message,6000); }
+  busy(false); }
+
+/* ---------- Mail production ---------- */
+function pMailHtml(mode,CH){ const A=P.A, src=k=>mode==='cid'?'cid:'+k:(k==='logo'?LOGO_SRC:CH[k]); const W=A.weeks;
+  const th=(t,r)=>`<td ${r?'align="right"':''} style="${MTD}background:#00415e;color:#fff;font-size:11px;font-weight:700;padding:7px 8px">${t}</td>`;
+  const td=(v,i,r,b)=>`<td ${r?'align="right"':''} style="${MTD}padding:6px 8px;border-bottom:1px solid #e7eef3;font-size:12px;${r?'font-family:Consolas,monospace;white-space:nowrap;':''}${b?'font-weight:700;color:#00415e;':''}background:${i%2?'#f6fafc':'#fff'}">${v}</td>`;
+  const mxS=Math.max(1,...A.bySseg.flatMap(s=>W.map(w=>s.wk[w]||0)));
+  const segT=`<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #cfe0e7"><tr>${th('Segment · sous-segment')}${W.map(w=>th(P.wkLib[w].s,1)).join('')}${th('Total',1)}</tr>${A.bySseg.map((s,i)=>`<tr>${td(mEsc(s.k),i,0,1)}${W.map(w=>{ const v=s.wk[w]||0, t=v?Math.sqrt(v/mxS):0; return `<td align="right" style="${MTD}padding:6px 8px;font-size:11.5px;font-family:Consolas,monospace;white-space:nowrap;background:${v?heatCol(v,mxS):'#fff'};color:${t>0.45?'#fff':'#12333f'};border-bottom:1px solid #e7eef3">${v?fmtM(v):'·'}</td>`; }).join('')}${td(fmtM(s.vol),i,1,1)}</tr>`).join('')}</table>`;
+  const agT=`<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #cfe0e7"><tr>${th('#')}${th('Agence')}${th('Crédits',1)}${th('Volume',1)}${th('Part',1)}</tr>${A.byAg.slice(0,10).map((g,i)=>`<tr>${td(i+1,i)}${td(mEsc(g.lib),i,0,1)}${td(g.n,i,1)}${td(fmtX(g.vol),i,1,1)}${td(pct(A.vol?g.vol/A.vol:0,1),i,1)}</tr>`).join('')}</table>`;
+  const rmT=`<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #cfe0e7"><tr>${th('#')}${th('RM')}${th('Crédits',1)}${th('Volume',1)}${th('Ticket',1)}</tr>${A.byRm.slice(0,10).map((g,i)=>`<tr>${td(i<3?['🥇','🥈','🥉'][i]:i+1,i)}${td(mEsc(g.k),i,0,1)}${td(g.n,i,1)}${td(fmtX(g.vol),i,1,1)}${td(fmtM(g.ticket),i,1)}</tr>`).join('')}</table>`;
+  let b=mKpis([{l:'Production',v:fmtM(A.vol),s:A.n+' crédits',c:MC.navy},{l:'Projection fin de mois',v:fmtM(A.proj.est),s:P.moLib[A.proj.mo],c:MC.amber},{l:'Frais de dossier',v:fmtM(A.fees),s:'taux moyen '+pct(A.rate,2),c:MC.emerald},{l:'Direct Banking',v:pct(A.vol?A.db.vol/A.vol:0,0),s:fmtM(A.db.vol)+' XOF',c:MC.blue}]);
+  b+=mP('Bonjour à tous,')+mP(`Veuillez trouver ci-dessous les performances de production au <b>${fmtD(P.last)}</b>${pFilterLabel()?' ('+mEsc(pFilterLabel().toLowerCase())+')':''} : par agence, par segment (semaine et mois) et par RM.`);
+  b+=mH('Le point production')+mCallout(pNarr(A).map(p=>`<div style="margin:0 0 7px"><span style="color:${p.c};font-weight:800">▸</span> ${p.t}</div>`).join(''),MC.blue);
+  if(CH.wk) b+=mImg(src('wk'),'Production par semaine');
+  b+=mH('Top 10 agences')+agT; b+=mH('Segments × semaines')+segT; b+=mH('Top 10 RM (hors Direct Banking)')+rmT;
+  if(CH.p3) b+=mH('La production en 3D')+mImg(src('p3'),'Production 3D');
+  b+=mP('<br>Bien cordialement,');
+  return mailShell({logo:src('logo'),title:'Performances de production — agences, segments, RM',sub:'Au '+fmtD(P.last)+' · '+A.n+' crédits · XOF '+fmtX(A.vol),right:'Ecobank Sénégal<br><b style="color:#fff">'+fmtD(P.last)+'</b>',body:b,foot:'Généré par <b style="color:#00415e">Deal Pipe Studio · Salle Production</b> — Ecobank Sénégal · INTERNAL USE ONLY · montants en XOF.'}); }
+function pMail(){ const subj='PERFORMANCES DE PRODUCTION — au '+fmtD(P.last)+' — '+P.A.n+' crédits · XOF '+fmtX(P.A.vol);
+  $('#pp-mail').innerHTML=`<div class="grid g12"><div class="card"><div class="hd"><h3>Envoyer le point production</h3></div>
+    <div style="font-size:12px;color:var(--mut);margin-bottom:4px">Destinataires</div><input id="pmTo" style="width:100%;padding:8px;border:1px solid var(--line2);border-radius:8px;margin-bottom:10px" value="${esc(P.mailTo||'')}" placeholder="allesn-ccbheads@ecobank.com">
+    <div style="font-size:12px;color:var(--mut);margin-bottom:4px">Objet</div><input id="pmSu" style="width:100%;padding:8px;border:1px solid var(--line2);border-radius:8px;margin-bottom:14px" value="${esc(subj)}">
+    <button class="btn lime" id="pmEml" style="width:100%;justify-content:center;margin-bottom:8px">Ouvrir dans Outlook (graphiques intégrés)</button><button class="btn" id="pmCopy" style="width:100%;justify-content:center;margin-bottom:8px">Copier le mail mis en forme</button><button class="btn" id="pmHtml" style="width:100%;justify-content:center">Télécharger en .html</button>
+    <div style="font-size:12px;color:var(--mut);margin-top:14px">Le mail suit les filtres actifs de la Salle Production.</div></div>
+    <div class="card" style="padding:0;overflow:hidden"><iframe id="pmFrame" title="Aperçu du mail" style="width:100%;height:78vh;border:0;background:#eef4f7"></iframe></div></div>`;
+  const CH=pCharts(); $('#pmFrame').srcdoc=pMailHtml('data',CH); $('#pmTo').oninput=e=>P.mailTo=e.target.value;
+  $('#pmEml').onclick=()=>{ const imgs=[['logo',LOGO_SRC],...['wk','p3'].filter(k=>CH[k]).map(k=>[k,CH[k]])]; dl(new Blob([emlBuild(pMailHtml('cid',CH),imgs,$('#pmTo').value,$('#pmSu').value)],{type:MIME.eml}),'Production_'+stampP()+'.eml'); toast('📧 Brouillon .eml prêt'); };
+  $('#pmCopy').onclick=()=>copyRich(pMailHtml('data',CH)); $('#pmHtml').onclick=()=>dl(new Blob([pMailHtml('data',CH)],{type:MIME.html}),'Production_'+stampP()+'.html'); }
+
 /* ---------- initialisation ---------- */
 (function init(){ chartDefaults(); $('#logoTop').src=LOGO_SRC; $('#logoDrop').src=LOGO_SRC;
   $('#dropSteps').innerHTML=STAGE_DEF.filter(s=>!s.opt).map((s,i)=>`<i style="background:${stageColor(i,STAGE_DEF.length)}" title="${s.lib}"></i>`).join('');
@@ -1574,7 +2008,11 @@ function rMail(){ $('#p-mail').innerHTML=`<div class="grid g12"><div class="card
   $$('#fCli button').forEach(b=>b.onclick=()=>{ S.F.cli=b.dataset.v; $$('#fCli button').forEach(x=>x.classList.toggle('on',x===b)); renderAll(); });
   $('#fAo').onchange=e=>{ S.F.ao=e.target.value; renderAll(); }; $('#fPg').onchange=e=>{ S.F.pg=e.target.value; renderAll(); }; $('#fTy').onchange=e=>{ S.F.ty=e.target.value; renderAll(); };
   $('#fReset').onclick=()=>{ S.F={cli:'',ao:'',pg:'',ty:'',stage:''}; S.q=''; fillFilters(); renderAll(); };
-  $('#bXl').onclick=exportExcel; $('#bPpt').onclick=exportPptx; $('#bDoc').onclick=exportWord; $('#bMail').onclick=()=>goTab('mail'); $('#bPrint').onclick=()=>window.print();
+  $('#bXl').onclick=()=>ROOM==='prod'?pExcel():exportExcel(); $('#bPpt').onclick=()=>ROOM==='prod'?pPptx():exportPptx(); $('#bDoc').onclick=()=>ROOM==='prod'?pWord():exportWord(); $('#bMail').onclick=()=>ROOM==='prod'?pGo('mail'):goTab('mail');
+  $$('#rooms button').forEach(b=>b.onclick=()=>setRoom(b.dataset.r)); $('#logoDropP').src=LOGO_SRC; $('#pzone').onclick=pick;
+  $$('#pfCh button').forEach(b=>b.onclick=()=>{ P.F.ch=b.dataset.v; $$('#pfCh button').forEach(x=>x.classList.toggle('on',x===b)); pGo(P.tab); });
+  [['#pfSeg','seg'],['#pfAg','ag'],['#pfWk','wk'],['#pfMo','mo']].forEach(([id,k])=>$(id).onchange=e=>{ P.F[k]=e.target.value; pGo(P.tab); });
+  $('#pfReset').onclick=()=>{ P.F={seg:'',ag:'',wk:'',mo:'',ch:''}; P.q=''; pFillFilters(); pGo(P.tab); }; $('#bPrint').onclick=()=>window.print();
   $('#ov').onclick=closeAll; document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAll(); });
   setTopH(); })();
 
