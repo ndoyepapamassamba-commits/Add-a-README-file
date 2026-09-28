@@ -10301,15 +10301,25 @@ function dcTabFdHist(){ if(!FD.book) return fdEmpty(); const H=FD.hist; if(!H) r
   return `<div class="dc-grid" style="grid-template-columns:1.4fr 1fr;margin-bottom:12px">${dcCard('Normes EP01 par arrêté','niveau observé · rouge = infraction',`<div style="overflow:auto"><table class="t"><thead><tr><th>Norme</th><th class="r">Seuil</th>${R.map(r=>`<th class="r">${r.label}</th>`).join('')}</tr></thead><tbody>${(R[R.length-1]||{norms:[]}).norms.map((n,i)=>`<tr><td><b>${n.code}</b> ${String(n.lib||'').slice(0,46)}</td><td class="r m">${pc(n.req)}</td>${R.map(r=>{ const x=r.norms[i]||{}; return `<td class="r m" style="${/INFRACTION/i.test(String(x.st))?'color:#C0392B;font-weight:700':''}">${pc(x.obs)}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`)}
     ${dcCard('Fonds propres, actifs pondérés et solvabilité','millions XOF',`<table class="t"><thead><tr><th>Arrêté</th><th class="r">FPE</th><th class="r">APR</th><th class="r">Solvabilité</th></tr></thead><tbody>${R.map(r=>`<tr><td>${r.label}</td><td class="r m">${fdMio(r.fpe)}</td><td class="r m">${fdMio(r.rwa)}</td><td class="r m"><b>${pc(r.solv)}</b></td></tr>`).join('')}</tbody></table>`)}</div>`; }
 /* ---------- génération : gabarit intact, seules les valeurs sont remplacées ---------- */
-function fdXmlEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fdXmlEsc(s){ return String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* une cellule maîtresse de formule partagée devient une saisie : ses cellules « filles » reçoivent leur formule explicite (sinon Excel déclare le fichier corrompu) */
+function fdUnshare(x,f,Sc,cellXml){ const si=(f.match(/\bsi="(\d+)"/)||[])[1]; if(!/t="shared"/.test(f)||si==null||!/\bref="/.test(f)) return x;
+  return x.replace(/<c r="([A-Z]+\d+)"([^>\/]*)>([\s\S]*?)<\/c>/g,(all,a,at,inner)=>{ if(all===cellXml) return all; const m=inner.match(/<f\b[^>]*\/>|<f\b[^>]*>[\s\S]*?<\/f>/); if(!m||!/t="shared"/.test(m[0])||(m[0].match(/\bsi="(\d+)"/)||[])[1]!==si) return all;
+    const fx=Sc&&Sc[a]&&Sc[a].f; if(!fx) return all; return '<c r="'+a+'"'+at+'>'+inner.replace(m[0],'<f>'+fdXmlEsc(fx)+'</f>')+'</c>'; }); }
+/* la chaîne de calcul référence les anciennes formules : on la supprime, Excel la reconstruit à l'ouverture */
+async function fdDropCalcChain(z){ if(z.file('xl/calcChain.xml')){ z.remove('xl/calcChain.xml');
+    const r=z.file('xl/_rels/workbook.xml.rels'); if(r) z.file('xl/_rels/workbook.xml.rels',(await r.async('string')).replace(/<Relationship\b[^>]*calcChain[^>]*\/>/g,''));
+    const c=z.file('[Content_Types].xml'); if(c) z.file('[Content_Types].xml',(await c.async('string')).replace(/<Override\b[^>]*calcChain[^>]*\/>/g,'')); }
+  Object.keys(z.files).forEach(k=>{ if(z.files[k].dir) delete z.files[k]; }); /* pas d'entrées « dossier » dans un paquet Office */ }
 async function fdGenerate(){ if(!FD.book){ toast('Importez d\'abord un rapport FODEP'); return; } toast('⏳ Génération du FODEP…',3000);
-  const z=await JSZip.loadAsync(FD.baseBuf); const wbx=await z.file('xl/workbook.xml').async('string'), rel=await z.file('xl/_rels/workbook.xml.rels').async('string');
+  const z=await JSZip.loadAsync(FD.baseBuf,{createFolders:false}); const wbx=await z.file('xl/workbook.xml').async('string'), rel=await z.file('xl/_rels/workbook.xml.rels').async('string');
   const rid={}; rel.replace(/<Relationship\b[^>]*>/g,t=>{ const id=(t.match(/Id="([^"]+)"/)||[])[1], tg=(t.match(/Target="([^"]+)"/)||[])[1]; if(id&&tg) rid[id]=tg.replace(/^\/?xl\//,'').replace(/^\//,''); return t; });
   const path={}; wbx.replace(/<sheet\b[^>]*>/g,t=>{ const nm=(t.match(/name="([^"]+)"/)||[])[1], id=(t.match(/r:id="([^"]+)"/)||[])[1]; if(nm&&id) path[nm.replace(/&amp;/g,'&').replace(/&apos;/g,"'")]='xl/'+rid[id]; return t; });
   let nV=0,nF=0;
   for(const sh of FD.names){ const p=path[sh]; if(!p||!z.file(p)) continue; const Sc=FD.cells[sh]; let x=await z.file(p).async('string'); let changed=false;
     const upd=(a,nv,isF)=>{ const re=new RegExp('<c r="'+a+'"(\\s[^>]*?)?(/>|>([\\s\\S]*?)</c>)'); const m=x.match(re); if(!m) return false;
-      let at=(m[1]||'').replace(/\s+t="[^"]*"/,''); let inner=m[3]||''; const f=(inner.match(/<f\b[^>]*\/>|<f\b[^>]*>[\s\S]*?<\/f>/)||[''])[0];
+      let at=(m[1]||'').replace(/\s+t="[^"]*"/,'').replace(/\s+(cm|vm)="[^"]*"/g,''); let inner=m[3]||''; const f=(inner.match(/<f\b[^>]*\/>|<f\b[^>]*>[\s\S]*?<\/f>/)||[''])[0];
+      if(!isF&&f) x=fdUnshare(x,f,Sc,m[0]);
       let t='', vx='';
       if(nv==null||nv===''){ vx=''; } else if(nv&&nv.__err){ t=' t="e"'; vx='<v>'+fdXmlEsc(nv.__err)+'</v>'; } else if(typeof nv==='boolean'){ t=' t="b"'; vx='<v>'+(nv?1:0)+'</v>'; }
       else if(typeof nv==='number'){ vx='<v>'+(Number.isFinite(nv)?String(nv):'0')+'</v>'; } else { if(isF){ t=' t="str"'; vx='<v>'+fdXmlEsc(nv)+'</v>'; } else { t=' t="inlineStr"'; vx='<is><t>'+fdXmlEsc(nv)+'</t></is>'; } }
@@ -10319,6 +10329,7 @@ async function fdGenerate(){ if(!FD.book){ toast('Importez d\'abord un rapport F
     if(changed) z.file(p,x); }
   let w2=wbx; if(/<calcPr\b/.test(w2)) w2=w2.replace(/<calcPr\b([^>]*?)\/>/,(m,at)=>'<calcPr'+at.replace(/\s+fullCalcOnLoad="[^"]*"/,'')+' fullCalcOnLoad="1"/>'); else w2=w2.replace('</workbook>','<calcPr fullCalcOnLoad="1"/></workbook>'); z.file('xl/workbook.xml',w2);
   const d=FD.period||new Date(FD.base.date), p2=n=>String(n).padStart(2,'0'); const name='ESN_FODEP_'+p2(d.getUTCDate())+p2(d.getUTCMonth()+1)+d.getUTCFullYear()+'.xlsx';
+  await fdDropCalcChain(z);
   const out=await z.generateAsync({type:'blob',compression:'DEFLATE',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   dcDl(out,name); toast('✅ '+name+' : '+nV+' saisie(s), '+nF+' résultat(s) de formule mis à jour · présentation du gabarit intacte',5000); return {blob:out,name,nV,nF}; }
 
@@ -10627,13 +10638,14 @@ function u3XlHudRender(){ const x=U3D.xl, L=x.L, dm=x.dims[L.sh]||{rows:0}, ne=O
   $('x3flat').onclick=()=>{ x.flat=!x.flat; u3XlBars(false); u3Fly(U3DO.th,x.flat?0.12:0.85,Math.max(x.PW,x.PH)*(x.flat?1.05:0.9)+4); u3XlHudRender(); };
   $('x3dl').onclick=()=>u3XlDownload().catch(e=>toast('Export impossible : '+e.message,5000)); }
 async function u3XlDownload(){ const x=U3D.xl; if(x.src==='fodep') return fdGenerate();
-  const z=await JSZip.loadAsync(x.buf); const wbx=await z.file('xl/workbook.xml').async('string'), rel=await z.file('xl/_rels/workbook.xml.rels').async('string');
+  const z=await JSZip.loadAsync(x.buf,{createFolders:false}); const wbx=await z.file('xl/workbook.xml').async('string'), rel=await z.file('xl/_rels/workbook.xml.rels').async('string');
   const rid={}; rel.replace(/<Relationship\b[^>]*>/g,t=>{ const id=(t.match(/Id="([^"]+)"/)||[])[1], tg=(t.match(/Target="([^"]+)"/)||[])[1]; if(id&&tg) rid[id]=tg.replace(/^\/?xl\//,'').replace(/^\//,''); return t; });
   const path={}; wbx.replace(/<sheet\b[^>]*>/g,t=>{ const nm=(t.match(/name="([^"]+)"/)||[])[1], id=(t.match(/r:id="([^"]+)"/)||[])[1]; if(nm&&id) path[nm.replace(/&amp;/g,'&').replace(/&apos;/g,"'")]='xl/'+rid[id]; return t; });
   let nV=0,nF=0;
   for(const sh of x.names){ const p=path[sh]; if(!p||!z.file(p)) continue; const Sc=x.cells[sh]; let xm=await z.file(p).async('string'), ch=false;
     const upd=(a,nv,isF)=>{ const re=new RegExp('<c r="'+a+'"(\\s[^>]*?)?(/>|>([\\s\\S]*?)</c>)'); const m=xm.match(re); if(!m) return false;
-      const at=(m[1]||'').replace(/\s+t="[^"]*"/,''); const f=((m[3]||'').match(/<f\b[^>]*\/>|<f\b[^>]*>[\s\S]*?<\/f>/)||[''])[0]; let t='',vx='';
+      const at=(m[1]||'').replace(/\s+t="[^"]*"/,'').replace(/\s+(cm|vm)="[^"]*"/g,''); const f=((m[3]||'').match(/<f\b[^>]*\/>|<f\b[^>]*>[\s\S]*?<\/f>/)||[''])[0]; let t='',vx='';
+      if(!isF&&f) xm=fdUnshare(xm,f,Sc,m[0]);
       if(nv==null||nv===''){} else if(nv&&nv.__err){ t=' t="e"'; vx='<v>'+fdXmlEsc(nv.__err)+'</v>'; } else if(typeof nv==='boolean'){ t=' t="b"'; vx='<v>'+(nv?1:0)+'</v>'; }
       else if(typeof nv==='number') vx='<v>'+(Number.isFinite(nv)?String(nv):'0')+'</v>'; else if(isF){ t=' t="str"'; vx='<v>'+fdXmlEsc(nv)+'</v>'; } else { t=' t="inlineStr"'; vx='<is><t>'+fdXmlEsc(nv)+'</t></is>'; }
       xm=xm.replace(m[0],'<c r="'+a+'"'+at+t+'>'+(isF?f:'')+vx+'</c>'); return true; };
@@ -10641,6 +10653,7 @@ async function u3XlDownload(){ const x=U3D.xl; if(x.src==='fodep') return fdGene
     for(const a in Sc){ const c=Sc[a]; if(!c.f||(sh+'!'+a in x.edits)||/\[\d+\]/.test(c.f)) continue; const v=x.book.get(sh,a), o=c.v; if((typeof v==='number'&&typeof o==='number'&&Math.abs(v-o)<1e-12)||v===o) continue; if(upd(a,v,true)){ nF++; ch=true; } }
     if(ch) z.file(p,xm); }
   let w2=wbx; w2=/<calcPr\b/.test(w2)?w2.replace(/<calcPr\b([^>]*?)\/>/,(m,at)=>'<calcPr'+at.replace(/\s+fullCalcOnLoad="[^"]*"/,'')+' fullCalcOnLoad="1"/>'):w2.replace('</workbook>','<calcPr fullCalcOnLoad="1"/></workbook>'); z.file('xl/workbook.xml',w2);
+  await fdDropCalcChain(z);
   const out=await z.generateAsync({type:'blob',compression:'DEFLATE',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const nm=String(x.name).replace(/\.xlsx?$/i,'')+'_3D.xlsx'; dcDl(out,nm); toast('✅ '+nm+' : '+nV+' saisie(s), '+nF+' formule(s) mises à jour · mise en forme d’origine conservée',5000); }
 
