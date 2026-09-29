@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- ondes infrarouges -->
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="3.5" android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M44,33 Q54,25 64,33" />
+    <path android:strokeColor="#BBDEFB" android:strokeWidth="3.5" android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M38,27 Q54,15 70,27" />
+    <!-- corps de la télécommande -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M46,38 L62,38 Q67,38 67,43 L67,84 Q67,89 62,89 L46,89 Q41,89 41,84 L41,43 Q41,38 46,38 Z" />
+    <!-- bouton marche -->
+    <path android:fillColor="#E53935"
+        android:pathData="M54,42.5 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+    <!-- croix directionnelle -->
+    <path android:fillColor="#1976D2"
+        android:pathData="M54,58 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M54,58 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0" />
+    <!-- touches -->
+    <path android:fillColor="#90A4AE"
+        android:pathData="M46,69 h4 v4 h-4 z M52,69 h4 v4 h-4 z M58,69 h4 v4 h-4 z M46,75 h4 v4 h-4 z M52,75 h4 v4 h-4 z M58,75 h4 v4 h-4 z M46,81 h4 v4 h-4 z M52,81 h4 v4 h-4 z M58,81 h4 v4 h-4 z" />
+</vector>
