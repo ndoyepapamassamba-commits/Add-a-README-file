@@ -4,17 +4,43 @@ Appli Android qui transforme ton téléphone en **télécommande infrarouge** po
 ELACTRON (ou n'importe quelle autre marque), avec en bonus une **lampe torche**
 (LED arrière à pleine puissance ou écran lumineux de la couleur de ton choix).
 
-➡️ **Fichier à installer : [`TelecommandeTV.apk`](TelecommandeTV.apk)** (version 1.1, ≈ 135 Ko)
+➡️ **Fichier à installer : [`TelecommandeTV.apk`](TelecommandeTV.apk)** (version 2.0, ≈ 155 Ko)
 
-> Mise à jour depuis la 1.0 : installe simplement la nouvelle version par-dessus l'ancienne,
-> ta télé reste configurée.
+> Mise à jour depuis une version précédente : installe simplement la nouvelle version
+> par-dessus l'ancienne, tes réglages sont gardés.
+
+**Deux façons de piloter la télé :**
+- **📶 Par le Wi-Fi** (nouveau, recommandé pour les télés ELACTRON Smart / Android TV) :
+  marche sur **n'importe quel téléphone Android**, même sans infrarouge. Réponse immédiate,
+  tous les boutons marchent tout de suite, aucun code à chercher.
+- **🔴 Par infrarouge** : pour les télés non connectées, avec un téléphone qui a un émetteur
+  infrarouge.
 
 Lien direct à partager (WhatsApp, mail, SMS…) :
 https://github.com/ndoyepapamassamba-commits/Add-a-README-file/raw/claude/admiring-cray-uua1sz/telecommande-tv/TelecommandeTV.apk
 
 ---
 
-## ⚠️ Condition indispensable : un téléphone avec infrarouge
+## 📶 Piloter la télé par le Wi-Fi (Android TV)
+
+Les télés **ELACTRON Smart** fonctionnent sous **Android TV**. L'appli utilise le même protocole
+que la télécommande de l'appli officielle Google TV (« Android TV Remote v2 ») :
+
+1. Allume la télé et vérifie qu'elle est connectée au Wi-Fi (**Réglages → Réseau**).
+2. Connecte le téléphone **au même Wi-Fi** (la même box, pas la 4G).
+3. Ouvre l'appli → **📶 Connecter ma télé en Wi-Fi**. L'appli cherche la télé toute seule
+   (sinon, tape son adresse IP, visible dans les réglages réseau de la télé).
+4. Touche ta télé : un **code de 6 caractères** s'affiche sur l'écran de la télé. Tape-le.
+5. C'est fini : la télécommande Wi-Fi s'ouvre, et s'ouvrira directement les fois suivantes.
+
+Boutons : Marche/Arrêt, Source, Muet, Réglages, Accueil, Info, croix directionnelle + OK,
+Retour, Lecture/Pause, Volume et Chaînes (maintenir pour répéter), chiffres, et lancement direct
+de **Netflix, YouTube et Prime Video**. Le volume de la télé s'affiche en haut.
+
+> ℹ️ Quand la télé est en veille profonde, elle ne répond plus en Wi-Fi : allume-la avec son
+> bouton (ou avec l'infrarouge), puis l'appli se reconnecte toute seule.
+
+## ⚠️ Pour l'infrarouge : un téléphone avec émetteur infrarouge
 
 Une télé classique se pilote en **infrarouge**. Le téléphone doit avoir un **émetteur
 infrarouge** (une petite fenêtre noire sur le dessus, souvent à côté de la prise casque).
@@ -118,6 +144,10 @@ Bouton **🔦** en haut de la télécommande (ou sur l'écran d'accueil) :
 | `app/src/main/java/.../Suggest.java` | Classe les codes à essayer pour un bouton (vote des dispositions pondéré par les boutons confirmés / refusés, suite des chiffres) |
 | `app/src/main/java/.../MainActivity.java` | Accueil, recherche auto, choix par marque, télécommande, assistant de réglage, scan libre |
 | `app/src/main/java/.../LampActivity.java` | Lampe torche LED / écran couleur |
+| `app/src/main/java/.../AtvClient.java` | Client Wi-Fi « Android TV Remote v2 » : appairage (port 6467, code à 6 caractères), touches et liens d'applis (port 6466), TLS avec certificat client |
+| `app/src/main/java/.../AtvCert.java`, `Proto.java` | Certificat X.509 auto-signé du téléphone (encodé en DER) et mini-encodeur protobuf |
+| `app/src/main/java/.../AtvFinder.java` | Recherche des Android TV sur le Wi-Fi (mDNS `_androidtvremote2._tcp` + balayage du réseau local) |
+| `tools/test/fake_tv.py` | Fausse Android TV pour les tests (appairage vérifié, pings, journal des touches reçues) |
 | `tools/builddb.py` | Construit `codes.txt` à partir de [Flipper-IRDB](https://github.com/Lucaslhm/Flipper-IRDB) |
 | `build.sh` | Compile l'APK **sans Android Studio** (outils téléchargés depuis Maven Central) |
 
@@ -132,6 +162,10 @@ Recompiler : `./build.sh` (Java 17+, Python 3, curl). Régénérer la base :
   défilement, télécommande, répétition du volume, réglage d'un bouton, marques, aide,
   lampe LED / écran, et le **cas réel** « code 16 + disposition BGH » (Volume + retrouvé en
   3 essais, Marche/Arrêt jamais envoyé pendant le scan libre) ;
+- Wi-Fi : la fausse Android TV (`tools/test/fake_tv.py`, décodage strict avec les messages
+  protobuf de la bibliothèque de référence `androidtvremote2`) a d'abord été validée avec cette
+  bibliothèque, puis l'appli a été testée contre elle : appairage, mauvais code refusé, touches,
+  répétition, Netflix, reconnexion au redémarrage ;
 - APK signé v1 + v2 et vérifié avec apksig.
 
 La clé de signature (`debug.keystore`) n'est pas publiée : une version recompilée

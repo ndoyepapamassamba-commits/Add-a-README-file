@@ -10,6 +10,7 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.RippleDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -17,8 +18,10 @@ import android.text.Editable;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Base64;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,12 +34,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends Activity {
 
@@ -53,7 +60,7 @@ public class MainActivity extends Activity {
     private static final long SCAN_INTERVAL_MS = 1600;
     private static final long EXPLORE_INTERVAL_MS = 1300;
 
-    private enum Screen { HOME, SCAN, BRANDS, REMOTE, DONE, SETUP, ASSIST, DISCOVER, HELP }
+    private enum Screen { HOME, SCAN, BRANDS, REMOTE, DONE, SETUP, ASSIST, DISCOVER, HELP, WIFI_FIND, WIFI_PAIR }
 
     private CodeDb db;
     private IrSender sender;
@@ -81,6 +88,20 @@ public class MainActivity extends Activity {
     private int assistFound;
     private final Map<String, Set<Long>> rejected = new HashMap<String, Set<Long>>();
 
+    // Télécommande Wi-Fi (Android TV Remote v2) : réseau sur un fil dédié
+    private final ExecutorService net = Executors.newSingleThreadExecutor();
+    private AtvClient atv;
+    private AtvFinder finder;
+    private final List<String[]> foundTvs = new ArrayList<String[]>();
+    private boolean searching;
+    private AtvClient.Pairing pairing;
+    private String pairHost;
+    private String pairName;
+    private TextView wifiStatusView;
+    private String wifiStatusText = "";
+    private int wifiStatusColor = SUB;
+    private volatile boolean wifiConnecting;
+
     // État du scan libre de tous les codes
     private long[] discoverCmds;
     private int discoverPos;
@@ -101,8 +122,14 @@ public class MainActivity extends Activity {
             throw new IllegalStateException("Base de codes illisible", e);
         }
         profile = db.findById(prefs.getString("profile", null));
-        if (profile != null) showRemote();
+        if (wifiMode() || profile != null) showRemote();
         else showHome();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (screen == Screen.REMOTE && wifiMode()) wifiWarmUp();
     }
 
     @Override
@@ -110,6 +137,13 @@ public class MainActivity extends Activity {
         super.onPause();
         stopAuto();
         stopRepeat();
+        if (finder != null) finder.stop();
+        net.execute(new Runnable() {
+            @Override
+            public void run() {
+                if (atv != null) atv.disconnect();
+            }
+        });
     }
 
     @Override
@@ -118,7 +152,11 @@ public class MainActivity extends Activity {
             case SCAN:
             case BRANDS:
             case HELP:
+            case WIFI_FIND:
                 showHome();
+                break;
+            case WIFI_PAIR:
+                showWifiFind();
                 break;
             case DONE:
             case SETUP:
@@ -147,6 +185,9 @@ public class MainActivity extends Activity {
         c.addView(title("📺 Télécommande TV"));
         c.addView(text("Universelle · faite pour les télés ELACTRON et les autres marques", 15, SUB, false));
         c.addView(space(12));
+        c.addView(wifiCard());
+        c.addView(text("Télécommande infrarouge", 17, Color.WHITE, true));
+        c.addView(space(6));
         c.addView(irStatusCard());
 
         if (profile != null) {
@@ -154,10 +195,11 @@ public class MainActivity extends Activity {
             card.addView(text("Télé configurée", 13, SUB, false));
             card.addView(text(profile.label, 17, Color.WHITE, true));
             card.addView(space(8));
-            Button open = key("🎮  Ouvrir la télécommande", GREEN, 18);
+            Button open = key("🎮  Télécommande infrarouge", GREEN, 18);
             open.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    prefs.edit().putString("mode", "ir").apply();
                     showRemote();
                 }
             });
@@ -218,6 +260,48 @@ public class MainActivity extends Activity {
         c.addView(space(16));
         c.addView(text("Base : " + db.profiles.size() + " familles de codes, " + db.brands().size()
                 + " marques (Flipper-IRDB).", 12, SUB, false));
+    }
+
+    private View wifiCard() {
+        LinearLayout card = card();
+        card.addView(text("📶 Par le Wi-Fi (télés Android TV)", 17, Color.WHITE, true));
+        card.addView(text("Pour les télés ELACTRON Smart / Android TV : pas besoin d'infrarouge, réponse "
+                + "immédiate, et tous les boutons marchent tout de suite. Le téléphone et la télé doivent être "
+                + "sur le même Wi-Fi.", 14, SUB, false));
+        card.addView(space(8));
+        String host = prefs.getString("atv_host", null);
+        if (host != null) {
+            card.addView(text("Télé Wi-Fi : " + prefs.getString("atv_name", host), 15, 0xFF81C784, true));
+            card.addView(space(6));
+            Button open = key("🎮  Télécommande Wi-Fi", GREEN, 18);
+            open.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    prefs.edit().putString("mode", "wifi").apply();
+                    showRemote();
+                }
+            });
+            card.addView(open, fullWidth(62));
+            card.addView(space(8));
+            Button other = key("🔄  Changer de télé Wi-Fi", KEY, 15);
+            other.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showWifiFind();
+                }
+            });
+            card.addView(other, fullWidth(50));
+        } else {
+            Button connect = key("📶  Connecter ma télé en Wi-Fi", BLUE, 18);
+            connect.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showWifiFind();
+                }
+            });
+            card.addView(connect, fullWidth(62));
+        }
+        return card;
     }
 
     private View irStatusCard() {
@@ -550,11 +634,73 @@ public class MainActivity extends Activity {
 
     private void showRemote() {
         stopAuto();
-        if (profile == null) {
+        final boolean wifi = wifiMode();
+        if (profile == null && !wifi) {
             showHome();
             return;
         }
+        if (wifi) setupMode = false;
         LinearLayout c = page(Screen.REMOTE);
+        if (wifi) {
+            LinearLayout head = row();
+            TextView name = text("📶 " + prefs.getString("atv_name", "Android TV"), 14, SUB, false);
+            name.setSingleLine(true);
+            name.setEllipsize(TextUtils.TruncateAt.END);
+            name.setGravity(Gravity.CENTER_VERTICAL);
+            head.addView(name, weight(4, 44));
+            Button lamp = key("🔦", KEY, 18);
+            lamp.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    openLamp();
+                }
+            });
+            head.addView(lamp, weight(1, 44));
+            Button menu = key("⚙", KEY, 18);
+            menu.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showHome();
+                }
+            });
+            head.addView(menu, weight(1, 44));
+            c.addView(head);
+            wifiStatusView = text(wifiStatusText, 13, wifiStatusColor, true);
+            c.addView(wifiStatusView);
+            wifiWarmUp();
+        }
+        if (!wifi) irHeader(c);
+        c.addView(space(10));
+
+        c.addView(keyRow(new String[] {"POWER", "SOURCE", "MUTE"}, 60));
+        c.addView(keyRow(new String[] {"MENU", "HOME", "INFO"}, 52));
+        c.addView(space(8));
+        c.addView(keyRow(new String[] {null, "UP", null}, 62));
+        c.addView(keyRow(new String[] {"LEFT", "OK", "RIGHT"}, 62));
+        c.addView(keyRow(new String[] {null, "DOWN", null}, 62));
+        c.addView(keyRow(new String[] {"BACK", "EXIT"}, 52));
+        c.addView(space(8));
+        c.addView(keyRow(new String[] {"VOL_UP", "CH_UP"}, 62));
+        c.addView(keyRow(new String[] {"VOL_DN", "CH_DN"}, 62));
+        c.addView(space(8));
+        c.addView(keyRow(new String[] {"N1", "N2", "N3"}, 54));
+        c.addView(keyRow(new String[] {"N4", "N5", "N6"}, 54));
+        c.addView(keyRow(new String[] {"N7", "N8", "N9"}, 54));
+        c.addView(keyRow(new String[] {null, "N0", null}, 54));
+        c.addView(space(8));
+        c.addView(keyRow(new String[] {"NETFLIX", "YOUTUBE", "PRIME"}, 52));
+        c.addView(space(12));
+        if (wifi) {
+            c.addView(text("Commande par Wi-Fi : garde le doigt sur VOL / CH / flèches pour répéter. Si la télé "
+                    + "ne répond plus, vérifie qu'elle est allumée et sur le même Wi-Fi.", 12, SUB, false));
+        } else {
+            c.addView(text("Un bouton ne marche pas ? « 🛠 Régler » → Assistant. Appui long sur un bouton = le "
+                    + "régler seul. Garde le doigt sur VOL / CH / flèches pour répéter.", 12, SUB, false));
+        }
+    }
+
+    /** En-tête de la télécommande infrarouge : famille de codes, lampe, réglage, accueil. */
+    private void irHeader(LinearLayout c) {
         LinearLayout head = row();
         TextView name = text("📺 " + profile.label, 14, SUB, false);
         name.setSingleLine(true);
@@ -603,28 +749,6 @@ public class MainActivity extends Activity {
             c.addView(text("Mode réglage : touche le bouton qui ne marche pas pour lui trouver le bon code.",
                     14, 0xFFFFCC80, true));
         }
-        c.addView(space(10));
-
-        c.addView(keyRow(new String[] {"POWER", "SOURCE", "MUTE"}, 60));
-        c.addView(keyRow(new String[] {"MENU", "HOME", "INFO"}, 52));
-        c.addView(space(8));
-        c.addView(keyRow(new String[] {null, "UP", null}, 62));
-        c.addView(keyRow(new String[] {"LEFT", "OK", "RIGHT"}, 62));
-        c.addView(keyRow(new String[] {null, "DOWN", null}, 62));
-        c.addView(keyRow(new String[] {"BACK", "EXIT"}, 52));
-        c.addView(space(8));
-        c.addView(keyRow(new String[] {"VOL_UP", "CH_UP"}, 62));
-        c.addView(keyRow(new String[] {"VOL_DN", "CH_DN"}, 62));
-        c.addView(space(8));
-        c.addView(keyRow(new String[] {"N1", "N2", "N3"}, 54));
-        c.addView(keyRow(new String[] {"N4", "N5", "N6"}, 54));
-        c.addView(keyRow(new String[] {"N7", "N8", "N9"}, 54));
-        c.addView(keyRow(new String[] {null, "N0", null}, 54));
-        c.addView(space(8));
-        c.addView(keyRow(new String[] {"NETFLIX", "YOUTUBE", "PRIME"}, 52));
-        c.addView(space(12));
-        c.addView(text("Un bouton ne marche pas ? « 🛠 Régler » → Assistant. Appui long sur un bouton = le "
-                + "régler seul. Garde le doigt sur VOL / CH / flèches pour répéter.", 12, SUB, false));
     }
 
     private LinearLayout keyRow(String[] buttons, int heightDp) {
@@ -640,17 +764,20 @@ public class MainActivity extends Activity {
     }
 
     private Button remoteKey(final String button) {
-        Signal s = signalFor(button);
-        int color = button.equals("POWER") ? RED : button.equals("OK") ? BLUE : (s == null ? KEY_MISSING : KEY);
-        final Button b = key(label(button), color, button.startsWith("N") && button.length() == 2 ? 18 : 16);
+        final boolean wifi = wifiMode();
+        Signal s = wifi ? null : signalFor(button);
+        boolean available = wifi || s != null;
+        int color = button.equals("POWER") ? RED : button.equals("OK") ? BLUE : (available ? KEY : KEY_MISSING);
+        final Button b = key(wifi ? wifiLabel(button) : label(button), color,
+                button.startsWith("N") && button.length() == 2 ? 18 : 16);
         if (button.equals("POWER")) {
             b.setText("");
             b.setContentDescription("Marche/Arrêt");
             Drawable icon = new LayerDrawable(new Drawable[] {rounded(RED), new PowerIcon(Color.WHITE, dp(3))});
             b.setBackground(new RippleDrawable(ColorStateList.valueOf(0x55FFFFFF), icon, null));
         }
-        if (button.equals("NETFLIX") && s != null) b.setTextColor(0xFFE50914);
-        if (s == null) b.setTextColor(0xFF5C6670);
+        if (button.equals("NETFLIX") && available) b.setTextColor(0xFFE50914);
+        if (!available) b.setTextColor(0xFF5C6670);
         if (setupMode) b.setTextColor(0xFFFFCC80);
         final boolean repeats = button.startsWith("VOL") || button.startsWith("CH") || button.equals("UP")
                 || button.equals("DOWN") || button.equals("LEFT") || button.equals("RIGHT");
@@ -682,13 +809,15 @@ public class MainActivity extends Activity {
                     else press(button);
                 }
             });
-            b.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    openExplorer(button);
-                    return true;
-                }
-            });
+            if (!wifi) {
+                b.setOnLongClickListener(new View.OnLongClickListener() {
+                    @Override
+                    public boolean onLongClick(View v) {
+                        openExplorer(button);
+                        return true;
+                    }
+                });
+            }
         }
         return b;
     }
@@ -699,6 +828,10 @@ public class MainActivity extends Activity {
     }
 
     private void press(String button) {
+        if (wifiMode()) {
+            wifiPress(button, true);
+            return;
+        }
         Signal s = signalFor(button);
         if (s == null) {
             toast("Ce bouton n'est pas connu pour ta télé. Touche « 🛠 Régler » puis ce bouton pour le trouver.");
@@ -713,8 +846,12 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 if (repeatTask != this) return;
-                Signal s = signalFor(button);
-                if (s != null) sender.send(s, false);
+                if (wifiMode()) {
+                    wifiPress(button, false);
+                } else {
+                    Signal s = signalFor(button);
+                    if (s != null) sender.send(s, false);
+                }
                 ui.postDelayed(this, 200);
             }
         };
@@ -1327,6 +1464,425 @@ public class MainActivity extends Activity {
         autoTask = null;
     }
 
+    // ------------------------------------------------------------------ Wi-Fi (Android TV)
+
+    private boolean wifiMode() {
+        return "wifi".equals(prefs.getString("mode", "")) && prefs.getString("atv_host", null) != null;
+    }
+
+    private static String wifiLabel(String button) {
+        if (button.equals("MENU")) return "⚙ Réglages";
+        if (button.equals("EXIT")) return "⏯ Lecture";
+        return label(button);
+    }
+
+    /** Touche Android (KEYCODE_*) envoyée pour chaque bouton de la télécommande. */
+    static int wifiKey(String button) {
+        switch (button) {
+            case "POWER": return 26;
+            case "SOURCE": return 178;
+            case "MUTE": return 164;
+            case "MENU": return 176;
+            case "HOME": return 3;
+            case "INFO": return 165;
+            case "UP": return 19;
+            case "DOWN": return 20;
+            case "LEFT": return 21;
+            case "RIGHT": return 22;
+            case "OK": return 23;
+            case "BACK": return 4;
+            case "EXIT": return 85;
+            case "VOL_UP": return 24;
+            case "VOL_DN": return 25;
+            case "CH_UP": return 166;
+            case "CH_DN": return 167;
+            default:
+                if (button.length() == 2 && button.charAt(0) == 'N') return 7 + (button.charAt(1) - '0');
+                return -1;
+        }
+    }
+
+    static String wifiLink(String button) {
+        if (button.equals("NETFLIX")) return "https://www.netflix.com/title";
+        if (button.equals("YOUTUBE")) return "https://www.youtube.com";
+        if (button.equals("PRIME")) return "https://app.primevideo.com";
+        return null;
+    }
+
+    private void setWifiStatus(String textValue, int color) {
+        wifiStatusText = textValue;
+        wifiStatusColor = color;
+        if (wifiStatusView != null) {
+            wifiStatusView.setText(textValue);
+            wifiStatusView.setTextColor(color);
+        }
+    }
+
+    private void postWifiStatus(final String textValue, final int color) {
+        ui.post(new Runnable() {
+            @Override
+            public void run() {
+                setWifiStatus(textValue, color);
+            }
+        });
+    }
+
+    /** À appeler sur le fil réseau : identité du téléphone (créée une seule fois) et client. */
+    private AtvClient atvClient() throws GeneralSecurityException {
+        if (atv != null) return atv;
+        AtvCert id = null;
+        String k = prefs.getString("atv_key", null);
+        String c = prefs.getString("atv_cert", null);
+        if (k != null && c != null) {
+            try {
+                id = AtvCert.load(Base64.decode(k, Base64.NO_WRAP), Base64.decode(c, Base64.NO_WRAP));
+            } catch (GeneralSecurityException | IllegalArgumentException e) {
+                id = null;
+            }
+        }
+        if (id == null) {
+            id = AtvCert.generate("Telecommande TV");
+            prefs.edit()
+                    .putString("atv_key", Base64.encodeToString(id.keyBytes(), Base64.NO_WRAP))
+                    .putString("atv_cert", Base64.encodeToString(id.certBytes(), Base64.NO_WRAP))
+                    .apply();
+        }
+        atv = new AtvClient(id, "Télécommande TV (" + Build.MANUFACTURER + " " + Build.MODEL + ")");
+        atv.setListener(new AtvClient.Listener() {
+            @Override
+            public void onConnection(boolean connected, String message) {
+                if (connected) postWifiStatus("● Connecté à la télé", 0xFF81C784);
+                else postWifiStatus("○ Déconnecté (" + message + ") — touche un bouton pour reconnecter", SUB);
+            }
+
+            @Override
+            public void onVolume(int level, int max, boolean muted) {
+                postWifiStatus("● Connecté · volume " + level + (max > 0 ? "/" + max : "") + (muted ? " (muet)" : ""),
+                        0xFF81C784);
+            }
+        });
+        return atv;
+    }
+
+    /** Ouvre la connexion à l'avance pour que le premier appui soit instantané. */
+    private void wifiWarmUp() {
+        final String host = prefs.getString("atv_host", null);
+        if (host == null) return;
+        net.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    AtvClient c = atvClient();
+                    if (c.isConnected()) {
+                        postWifiStatus("● Connecté à la télé", 0xFF81C784);
+                        return;
+                    }
+                    postWifiStatus("… Connexion à la télé", 0xFFFFCC80);
+                    wifiConnecting = true;
+                    c.connect(host);
+                } catch (Exception e) {
+                    postWifiStatus("✕ Télé injoignable : allumée ? même Wi-Fi ?", 0xFFE57373);
+                } finally {
+                    wifiConnecting = false;
+                }
+            }
+        });
+    }
+
+    /** {@code firstPress} = vrai appui (pas une répétition) : on reconnecte si besoin. */
+    private void wifiPress(String button, boolean firstPress) {
+        final int keyCode = wifiKey(button);
+        final String link = wifiLink(button);
+        if (keyCode < 0 && link == null) return;
+        if (firstPress) getWindow().getDecorView().performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+        if (!firstPress && (wifiConnecting || atv == null || !atv.isConnected())) return;
+        final String host = prefs.getString("atv_host", null);
+        net.execute(new Runnable() {
+            @Override
+            public void run() {
+                for (int attempt = 0; attempt < 2; attempt++) {
+                    try {
+                        AtvClient c = atvClient();
+                        if (!c.isConnected()) {
+                            postWifiStatus("… Connexion à la télé", 0xFFFFCC80);
+                            wifiConnecting = true;
+                            try {
+                                c.connect(host);
+                            } finally {
+                                wifiConnecting = false;
+                            }
+                        }
+                        if (link != null) c.launchApp(link);
+                        else c.sendKey(keyCode);
+                        return;
+                    } catch (Exception e) {
+                        if (atv != null) atv.disconnect();
+                    }
+                }
+                postWifiStatus("✕ Télé injoignable : vérifie qu'elle est allumée et sur le même Wi-Fi", 0xFFE57373);
+            }
+        });
+    }
+
+    private LinearLayout foundList;
+    private TextView searchStatus;
+
+    private void showWifiFind() {
+        stopAuto();
+        LinearLayout c = page(Screen.WIFI_FIND);
+        c.addView(title("📶 Télé en Wi-Fi"));
+        c.addView(text("1. Allume la télé et vérifie qu'elle est connectée au Wi-Fi (Réglages → Réseau).\n"
+                + "2. Connecte ce téléphone au même Wi-Fi (la même box).\n"
+                + "3. Choisis ta télé ci-dessous, puis tape le code qui s'affiche sur l'écran de la télé.",
+                14, SUB, false));
+        c.addView(space(10));
+        searchStatus = text("", 15, Color.WHITE, true);
+        c.addView(searchStatus);
+        c.addView(space(6));
+        foundList = col();
+        c.addView(foundList);
+        c.addView(space(6));
+        Button again = key("🔄  Rechercher à nouveau", KEY, 15);
+        again.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startSearch();
+            }
+        });
+        c.addView(again, fullWidth(50));
+        c.addView(space(14));
+        c.addView(text("Ta télé n'apparaît pas ? Tape son adresse IP (sur la télé : Réglages → Réseau et "
+                + "Internet → ton Wi-Fi, par exemple 192.168.1.25) :", 14, SUB, false));
+        final EditText ip = new EditText(this);
+        ip.setHint("192.168.1.25");
+        ip.setHintTextColor(SUB);
+        ip.setTextColor(Color.WHITE);
+        ip.setSingleLine(true);
+        ip.setInputType(InputType.TYPE_CLASS_PHONE);
+        ip.setBackground(rounded(CARD));
+        ip.setPadding(dp(14), dp(10), dp(14), dp(10));
+        c.addView(ip, fullWidth(52));
+        c.addView(space(6));
+        Button go = key("Se connecter à cette adresse", BLUE, 16);
+        go.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String host = ip.getText().toString().trim();
+                if (!host.matches("\\d{1,3}(\\.\\d{1,3}){3}")) {
+                    toast("Adresse invalide : 4 nombres séparés par des points, par exemple 192.168.1.25");
+                    return;
+                }
+                startPairing(host, host);
+            }
+        });
+        c.addView(go, fullWidth(52));
+        c.addView(space(12));
+        c.addView(text("Ça marche avec les télés Android TV / Google TV (ELACTRON Smart, TCL, Hisense Android, "
+                + "Sony, Xiaomi…). Si ta télé n'est pas une Android TV, utilise la télécommande infrarouge.",
+                12, SUB, false));
+        startSearch();
+    }
+
+    private void startSearch() {
+        if (finder != null) finder.stop();
+        foundTvs.clear();
+        searching = true;
+        refreshFoundList();
+        finder = new AtvFinder(this, ui, new AtvFinder.Callback() {
+            @Override
+            public void found(String host, String name) {
+                for (String[] t : foundTvs) {
+                    if (t[0].equals(host)) {
+                        if (!name.equals("Android TV")) t[1] = name; // le nom mDNS est plus parlant
+                        refreshFoundList();
+                        return;
+                    }
+                }
+                foundTvs.add(new String[] {host, name});
+                refreshFoundList();
+            }
+
+            @Override
+            public void done() {
+                searching = false;
+                refreshFoundList();
+            }
+        });
+        finder.start();
+    }
+
+    private void refreshFoundList() {
+        if (screen != Screen.WIFI_FIND || foundList == null) return;
+        if (searching) searchStatus.setText("🔍 Recherche des télés sur le Wi-Fi…");
+        else if (foundTvs.isEmpty()) searchStatus.setText("Aucune télé trouvée. Vérifie le Wi-Fi, ou tape l'adresse IP.");
+        else searchStatus.setText(foundTvs.size() + " télé(s) trouvée(s) : touche la tienne.");
+        foundList.removeAllViews();
+        for (final String[] t : foundTvs) {
+            Button b = key("📺  " + t[1] + "\n" + t[0], GREEN, 15);
+            b.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    startPairing(t[0], t[1]);
+                }
+            });
+            LinearLayout.LayoutParams lp = fullWidth(66);
+            lp.bottomMargin = dp(6);
+            foundList.addView(b, lp);
+        }
+    }
+
+    private void startPairing(final String host, final String name) {
+        if (finder != null) finder.stop();
+        pairHost = host;
+        pairName = name;
+        pairing = null;
+        showWifiPair("… Connexion à la télé " + host, true);
+        net.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    AtvClient c = atvClient();
+                    c.disconnect();
+                    try { // déjà appairée ? on passe directement à la télécommande
+                        c.connect(host);
+                        onPaired(host, c.tvName().isEmpty() ? name : c.tvName());
+                        return;
+                    } catch (IOException notPaired) {
+                        c.disconnect();
+                    }
+                    AtvClient.Pairing p = c.pair(host);
+                    p.start();
+                    pairing = p;
+                    if (!c.tvName().isEmpty()) pairName = c.tvName();
+                    ui.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            showWifiPair(null, false);
+                        }
+                    });
+                } catch (final Exception e) {
+                    ui.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            showWifiPair("❌ Impossible de joindre la télé (" + e.getMessage() + ").\n"
+                                    + "Vérifie qu'elle est allumée, sur le même Wi-Fi, et que c'est bien une "
+                                    + "Android TV.", false);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void onPaired(final String host, final String name) {
+        prefs.edit().putString("atv_host", host).putString("atv_name", name).putString("mode", "wifi").apply();
+        ui.post(new Runnable() {
+            @Override
+            public void run() {
+                toast("📶 Télé connectée en Wi-Fi !");
+                showRemote();
+            }
+        });
+    }
+
+    private void showWifiPair(String note, boolean busy) {
+        LinearLayout c = page(Screen.WIFI_PAIR);
+        c.addView(title("🔐 Appairage"));
+        c.addView(text("Télé : " + pairName + (pairName.equals(pairHost) ? "" : " (" + pairHost + ")"), 15, SUB, false));
+        c.addView(space(10));
+        if (note != null) {
+            c.addView(text(note, 15, busy ? 0xFFFFCC80 : 0xFFE57373, true));
+            c.addView(space(10));
+        }
+        if (busy) return;
+        if (pairing != null) {
+            c.addView(text("Un code de 6 caractères (chiffres et lettres A à F) s'affiche sur l'écran de la télé. "
+                    + "Tape-le ici :", 16, Color.WHITE, true));
+            c.addView(space(8));
+            final EditText code = new EditText(this);
+            code.setHint("ex. 4B7A2F");
+            code.setHintTextColor(SUB);
+            code.setTextColor(Color.WHITE);
+            code.setTextSize(TypedValue.COMPLEX_UNIT_SP, 28);
+            code.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+            code.setGravity(Gravity.CENTER);
+            code.setSingleLine(true);
+            code.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+                    | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+            code.setFilters(new android.text.InputFilter[] {new android.text.InputFilter.LengthFilter(6),
+                new android.text.InputFilter.AllCaps()});
+            code.setBackground(rounded(CARD));
+            c.addView(code, fullWidth(70));
+            c.addView(space(10));
+            Button ok = key("✅  Valider le code", GREEN, 18);
+            ok.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    finishPairing(code.getText().toString());
+                }
+            });
+            c.addView(ok, fullWidth(60));
+            c.addView(space(10));
+        }
+        Button retry = key("🔄  Recommencer (nouveau code)", KEY, 15);
+        retry.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startPairing(pairHost, pairName);
+            }
+        });
+        c.addView(retry, fullWidth(52));
+        c.addView(space(8));
+        Button back = key("↩  Retour à la liste des télés", KEY, 15);
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showWifiFind();
+            }
+        });
+        c.addView(back, fullWidth(52));
+    }
+
+    private void finishPairing(final String code) {
+        final AtvClient.Pairing p = pairing;
+        final String host = pairHost;
+        if (p == null) return;
+        if (!code.trim().toUpperCase(java.util.Locale.US).matches("[0-9A-F]{6}")) {
+            toast("Le code fait 6 caractères : chiffres 0-9 et lettres A-F.");
+            return;
+        }
+        showWifiPair("… Vérification du code", true);
+        net.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (!p.finish(code)) {
+                        p.close();
+                        ui.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                toast("Code incorrect : un nouveau code va s'afficher sur la télé.");
+                                startPairing(pairHost, pairName);
+                            }
+                        });
+                        return;
+                    }
+                    pairing = null;
+                    AtvClient c = atvClient();
+                    c.connect(host);
+                    onPaired(host, c.tvName().isEmpty() ? pairName : c.tvName());
+                } catch (final Exception e) {
+                    ui.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            showWifiPair("❌ Échec : " + e.getMessage(), false);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
     // ------------------------------------------------------------------ aide
 
     private void showHelp() {
@@ -1334,6 +1890,16 @@ public class MainActivity extends Activity {
         LinearLayout c = page(Screen.HELP);
         c.addView(title("❓ Aide"));
         String[][] items = {
+            {"Mon téléphone n'a pas d'infrarouge",
+                "Si ta télé est une Android TV (c'est le cas des ELACTRON Smart), passe par le Wi-Fi : "
+                + "Accueil → « 📶 Connecter ma télé en Wi-Fi ». Télé et téléphone sur le même Wi-Fi, choisis "
+                + "la télé, tape le code à 6 caractères affiché sur la télé : c'est fini, tous les boutons "
+                + "marchent tout de suite."},
+            {"La télé Wi-Fi n'est pas trouvée",
+                "Vérifie que la télé est allumée et connectée au Wi-Fi (Réglages → Réseau), et que le "
+                + "téléphone est sur la même box (pas en 4G). Tu peux aussi taper l'adresse IP de la télé, "
+                + "visible dans Réglages → Réseau et Internet. En veille profonde, la télé ne répond plus en "
+                + "Wi-Fi : allume-la avec son bouton."},
             {"Mon téléphone peut-il servir de télécommande ?",
                 "Il faut un émetteur infrarouge (une petite fenêtre noire sur le dessus du téléphone). "
                 + "L'écran d'accueil de l'appli te le dit tout de suite. On en trouve sur beaucoup de "

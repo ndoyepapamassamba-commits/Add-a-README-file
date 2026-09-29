@@ -321,6 +321,83 @@ public class AppTest {
         a.onBackPressed();
     }
 
+    /**
+     * Parcours Wi-Fi complet contre la fausse Android TV (tools/fake_tv.py) lancée sur 127.0.0.1:6466/6467 ;
+     * FAKE_TV_DIR = son dossier de travail (code.txt, events.jsonl). Ignoré si elle ne tourne pas.
+     */
+    @Test
+    public void wifiPairingAndKeys() throws Exception {
+        String dir = System.getenv("FAKE_TV_DIR");
+        org.junit.Assume.assumeTrue("fausse télé non lancée", dir != null);
+        java.io.File codeFile = new java.io.File(dir, "code.txt");
+        codeFile.delete();
+        ActivityController<MainActivity> ctl = Robolectric.buildActivity(MainActivity.class).setup();
+        MainActivity a = ctl.get();
+        assertTrue(dump(a), has(a, "Par le Wi-Fi"));
+        click(a, "Connecter ma télé en Wi-Fi");
+        assertTrue(dump(a), has(a, "Télé en Wi-Fi"));
+        EditText ip = null;
+        for (View v : all(root(a))) if (v instanceof EditText) ip = (EditText) v;
+        ip.setText("127.0.0.1");
+        click(a, "Se connecter à cette adresse");
+        waitFor(a, "Tape-le ici", 15000);
+        assertTrue(dump(a), has(a, "Fake ELACTRON"));
+        String code = new String(java.nio.file.Files.readAllBytes(codeFile.toPath())).trim();
+        // mauvais code d'abord : nouveau code demandé
+        EditText field = null;
+        for (View v : all(root(a))) if (v instanceof EditText) field = (EditText) v;
+        field.setText(code.substring(0, 5) + (code.charAt(5) == '0' ? '1' : '0'));
+        codeFile.delete();
+        click(a, "Valider le code");
+        waitFor(a, "Tape-le ici", 15000);
+        for (int i = 0; i < 50 && !codeFile.exists(); i++) Thread.sleep(50);
+        code = new String(java.nio.file.Files.readAllBytes(codeFile.toPath())).trim();
+        for (View v : all(root(a))) if (v instanceof EditText) field = (EditText) v;
+        field.setText(code.toLowerCase());
+        click(a, "Valider le code");
+        waitFor(a, "Connecté", 15000);
+        assertTrue(dump(a), has(a, "ELACTRON"));
+        assertTrue(has(a, "Réglages"));
+        assertTrue(has(a, "Lecture"));
+        // touches : Volume + (maintenu), OK, Netflix, chiffre 5
+        Button vol = button(a, "VOL +");
+        touch(vol, MotionEvent.ACTION_DOWN);
+        idle();
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(900));
+        touch(vol, MotionEvent.ACTION_UP);
+        click(a, "OK");
+        click(a, "Netflix");
+        click(a, "5");
+        Thread.sleep(800);
+        String events = new String(java.nio.file.Files.readAllBytes(new java.io.File(dir, "events.jsonl").toPath()));
+        int vols = events.split("\"key\": 24").length - 1;
+        assertTrue("volume + répété : " + vols, vols >= 3);
+        assertTrue(events.contains("\"key\": 23"));
+        assertTrue(events.contains("\"key\": 12"));
+        assertTrue(events.contains("https://www.netflix.com/title"));
+        assertTrue(events.contains("\"result\": \"bad_secret\"") || events.contains("\"code\""));
+        // redémarrage de l'appli : télécommande Wi-Fi directement, connexion automatique
+        ctl.pause().stop().destroy();
+        ActivityController<MainActivity> ctl2 = Robolectric.buildActivity(MainActivity.class).setup();
+        MainActivity b = ctl2.get();
+        waitFor(b, "Connecté", 15000);
+        click(b, "Accueil");
+        Thread.sleep(500);
+        events = new String(java.nio.file.Files.readAllBytes(new java.io.File(dir, "events.jsonl").toPath()));
+        assertTrue(events.contains("\"key\": 3"));
+        ctl2.pause().stop().destroy();
+    }
+
+    static void waitFor(Activity a, String text, long ms) throws InterruptedException {
+        long end = System.currentTimeMillis() + ms;
+        while (System.currentTimeMillis() < end) {
+            idle();
+            if (has(a, text)) return;
+            Thread.sleep(50);
+        }
+        fail("attendu « " + text + " » ; écran : " + dump(a));
+    }
+
     /** Lit {@code n} bits (poids faible d'abord) d'une trame NEC à partir du bit {@code from}. */
     static int bits(int[] p, int from, int n) {
         int v = 0;
