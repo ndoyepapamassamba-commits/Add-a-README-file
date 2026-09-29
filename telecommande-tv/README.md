@@ -63,6 +63,26 @@ infrarouge ». La lampe torche, elle, marche sur tous les téléphones Android.
    touche **« Plus de détails » → « Installer quand même »**.
 4. L'icône bleue **Télécommande TV** apparaît.
 
+### L'installation est bloquée (« restriction », « bloqué », « non autorisé ») ?
+L'appli n'est pas en cause : c'est une **protection du téléphone** contre les applis hors Play Store.
+Selon le message affiché :
+- **« Votre téléphone n'est pas autorisé à installer des applis inconnues de cette source »** :
+  touche **Paramètres** → active **Autoriser cette source** → reviens et touche **Installer**.
+- **Samsung – « Blocage automatique » / « Auto Blocker »** : Paramètres → **Sécurité et
+  confidentialité** → **Blocage automatique** → **Désactivé**. Installe, puis réactive-le.
+- **Huawei / Honor – « Mode pur »** : Paramètres → Système (ou Sécurité) → **Mode pur** →
+  **Désactiver**.
+- **Xiaomi / Redmi / POCO** : dans l'écran d'analyse, touche **Installer quand même** ; si c'est
+  refusé, ouvre l'appli **Sécurité** → ⚙ → désactive l'**analyse avant installation** (un compte
+  Xiaomi peut être demandé).
+- **Oppo / Realme / Tecno / Infinix / itel / Vivo** : Paramètres → **Sécurité** → désactive
+  l'option qui **vérifie ou bloque les installations** d'applis.
+- **Téléphone professionnel ou contrôle parental (Family Link)** : l'installation n'est
+  possible qu'avec l'accord de l'administrateur ou du parent.
+
+**Plan B sans installer d'APK** (pour le Wi-Fi seulement) : l'appli officielle **Google TV**
+du Play Store contient aussi une télécommande Wi-Fi pour les Android TV.
+
 ### Le téléchargement tourne sans jamais finir ?
 Le fichier ne fait que 110 Ko : il doit arriver en une seconde. S'il « tourne » :
 - **Dans Chrome**, regarde **en bas de l'écran** : Chrome met les .apk en pause et demande
