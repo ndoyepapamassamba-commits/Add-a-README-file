@@ -4,7 +4,10 @@ Appli Android qui transforme ton téléphone en **télécommande infrarouge** po
 ELACTRON (ou n'importe quelle autre marque), avec en bonus une **lampe torche**
 (LED arrière à pleine puissance ou écran lumineux de la couleur de ton choix).
 
-➡️ **Fichier à installer : [`TelecommandeTV.apk`](TelecommandeTV.apk)** (≈ 110 Ko)
+➡️ **Fichier à installer : [`TelecommandeTV.apk`](TelecommandeTV.apk)** (version 1.1, ≈ 135 Ko)
+
+> Mise à jour depuis la 1.0 : installe simplement la nouvelle version par-dessus l'ancienne,
+> ta télé reste configurée.
 
 Lien direct à partager (WhatsApp, mail, SMS…) :
 https://github.com/ndoyepapamassamba-commits/Add-a-README-file/raw/claude/admiring-cray-uua1sz/telecommande-tv/TelecommandeTV.apk
@@ -66,16 +69,32 @@ donc les codes) d'autres fabricants. L'appli contient **496 familles de codes** 
    **⏩ Défilement automatique** (un code toutes les 1,6 s).
 5. Dès que la télé **s'éteint**, appuie sur **✅** (ou **✋ STOP** pendant le défilement,
    puis vérifie avec TESTER / ◀).
-6. La télécommande s'ouvre. Rallume la télé avec le bouton **⏻** de l'appli.
+6. Rallume la télé avec le **gros bouton rouge** de l'appli, puis appuie sur
+   **TESTER VOLUME +** : si le volume monte, c'est prêt ; sinon, l'appli lance l'**assistant**
+   (voir ci-dessous).
 
 💡 Tu ne veux pas éteindre la télé pendant la recherche ? Choisis **🔇 Muet** ou
 **🔉 Volume −** comme bouton de test : le symbole s'affiche à l'écran quand c'est le bon code.
 
-## 🛠 Un bouton ne marche pas ?
+## 🛠 La télé s'éteint mais les autres boutons ne marchent pas ?
 
-Touche **🛠 Régler** en haut de la télécommande, puis le bouton en question (ou fais un
-**appui long** dessus). L'appli essaie tous les codes possibles de ta télé : appuie sur
-**✅ C'est ce code !** quand la télé fait la bonne action. Le réglage est gardé en mémoire.
+C'est normal : **plusieurs modèles de télés partagent le même code Marche/Arrêt**, mais pas
+les autres boutons (exemple réel : une ELACTRON qui répond au code Hisense « 00 BF » mais
+dont les boutons suivent la disposition BGH). Touche **🛠 Régler** en haut de la télécommande :
+
+- **✨ Assistant (recommandé)** : l'appli passe les boutons en revue (Volume, Muet, Chaînes,
+  Source, Menu, flèches, OK, Retour, chiffres, Netflix / YouTube / Prime Video). Pour chacun :
+  **TESTER** → **✅ Oui** ou **❌ Non** (le code suivant part tout seul). Elle propose d'abord
+  les codes les plus probables d'après **620 dispositions de télécommandes connues** et
+  **apprend de tes réponses** : en général 2 à 3 essais par bouton, et les chiffres se
+  déduisent les uns des autres.
+- **👆 Régler un seul bouton** : touche ensuite le bouton à corriger (ou fais un **appui long**
+  dessus depuis la télécommande).
+- **🔎 Scanner tous les codes** : l'appli envoie tous les codes de ta télé un par un (sauf
+  Marche/Arrêt, pour ne pas l'éteindre) ; à chaque réaction, tu dis de quel bouton il s'agit.
+- **↺ Effacer mes réglages** pour revenir aux codes d'origine.
+
+Tous les réglages sont gardés en mémoire.
 
 ## 🔦 Lampe torche
 
@@ -95,8 +114,9 @@ Bouton **🔦** en haut de la télécommande (ou sur l'écran d'accueil) :
 | Élément | Rôle |
 |---|---|
 | `app/src/main/java/.../IrCodec.java` | Génère les trames IR : NEC, NECext, NEC42, Samsung32, RC5, RC5X, RC6, SIRC 12/15/20, Kaseikyo, RCA, Pioneer, brut |
-| `app/src/main/java/.../CodeDb.java` | Charge la base `assets/codes.txt` (familles triées de la plus courante à la plus rare) |
-| `app/src/main/java/.../MainActivity.java` | Accueil, recherche auto, choix par marque, télécommande, réglage bouton par bouton |
+| `app/src/main/java/.../CodeDb.java` | Charge la base `assets/codes.txt` : familles triées de la plus courante à la plus rare + dispositions complètes de télécommandes |
+| `app/src/main/java/.../Suggest.java` | Classe les codes à essayer pour un bouton (vote des dispositions pondéré par les boutons confirmés / refusés, suite des chiffres) |
+| `app/src/main/java/.../MainActivity.java` | Accueil, recherche auto, choix par marque, télécommande, assistant de réglage, scan libre |
 | `app/src/main/java/.../LampActivity.java` | Lampe torche LED / écran couleur |
 | `tools/builddb.py` | Construit `codes.txt` à partir de [Flipper-IRDB](https://github.com/Lucaslhm/Flipper-IRDB) |
 | `build.sh` | Compile l'APK **sans Android Studio** (outils téléchargés depuis Maven Central) |
@@ -105,12 +125,13 @@ Recompiler : `./build.sh` (Java 17+, Python 3, curl). Régénérer la base :
 `python3 tools/builddb.py <Flipper-IRDB> app/src/main/assets/codes.txt <tv.ir>`.
 
 **Vérifications faites :**
-- les 3 095 codes de la base donnent des trames **identiques au bit près** à celles des
+- les 3 137 codes de la base donnent des trames **identiques au bit près** à celles des
   encodeurs du firmware Flipper Zero (compilés en C pour comparaison, `app/src/test/java/XCheck.java`) ;
 - codes de référence connus : LG `20DF10EF`, Samsung `E0E040BF`, Sony `A90` ×3 ;
 - tests d'interface Robolectric (`app/src/test/.../AppTest.java`) : recherche auto,
   défilement, télécommande, répétition du volume, réglage d'un bouton, marques, aide,
-  lampe LED / écran ;
+  lampe LED / écran, et le **cas réel** « code 16 + disposition BGH » (Volume + retrouvé en
+  3 essais, Marche/Arrêt jamais envoyé pendant le scan libre) ;
 - APK signé v1 + v2 et vérifié avec apksig.
 
 La clé de signature (`debug.keystore`) n'est pas publiée : une version recompilée

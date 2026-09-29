@@ -262,7 +262,7 @@ public class LampActivity extends Activity {
         }), weight(1, 48));
         panel.addView(tabs);
 
-        Button power = key(running ? "⏻  ÉTEINDRE" : "⏻  ALLUMER", running ? 0xFFD32F2F : 0xFF2E7D32, 20);
+        Button power = key(running ? "✖  ÉTEINDRE" : "💡  ALLUMER", running ? 0xFFD32F2F : 0xFF2E7D32, 20);
         power.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

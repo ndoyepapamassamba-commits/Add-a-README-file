@@ -41,7 +41,30 @@ public final class CodeDb {
         }
     }
 
+    /** Disposition complète d'une télécommande connue (protocole + adresse communs). */
+    public static final class Layout {
+        public final String label;
+        public final int files;
+        public final Map<String, Long> cmds = new LinkedHashMap<String, Long>();
+
+        Layout(String label, int files) {
+            this.label = label;
+            this.files = files;
+        }
+    }
+
     public final List<Profile> profiles = new ArrayList<Profile>();
+    private final Map<String, List<Layout>> layouts = new java.util.HashMap<String, List<Layout>>();
+
+    private static String layoutKey(String proto, long addr) {
+        return proto + ":" + Long.toHexString(addr);
+    }
+
+    /** Dispositions connues pour ce protocole et cette adresse (liste vide si aucune). */
+    public List<Layout> layouts(String proto, long addr) {
+        List<Layout> l = layouts.get(layoutKey(proto, addr));
+        return l == null ? Collections.<Layout>emptyList() : l;
+    }
 
     public static CodeDb load(InputStream in) throws IOException {
         CodeDb db = new CodeDb();
@@ -69,6 +92,21 @@ public final class CodeDb {
                         cur.buttons.put(f[1], Signal.raw(Integer.parseInt(f[2]), raw));
                     }
                     break;
+                case "L": {
+                    Layout lay = new Layout(f[3], Integer.parseInt(f[4]));
+                    for (String item : f[5].split(",")) {
+                        int c = item.indexOf(':');
+                        lay.cmds.put(item.substring(0, c), Long.parseLong(item.substring(c + 1), 16));
+                    }
+                    String k = layoutKey(f[1], Long.parseLong(f[2], 16));
+                    List<Layout> list = db.layouts.get(k);
+                    if (list == null) {
+                        list = new ArrayList<Layout>();
+                        db.layouts.put(k, list);
+                    }
+                    list.add(lay);
+                    break;
+                }
                 default:
                     break;
             }

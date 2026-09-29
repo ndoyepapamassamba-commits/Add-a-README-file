@@ -6,7 +6,9 @@ import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -29,7 +31,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class MainActivity extends Activity {
 
@@ -46,7 +53,7 @@ public class MainActivity extends Activity {
     private static final long SCAN_INTERVAL_MS = 1600;
     private static final long EXPLORE_INTERVAL_MS = 1300;
 
-    private enum Screen { HOME, SCAN, BRANDS, REMOTE, EXPLORER, HELP }
+    private enum Screen { HOME, SCAN, BRANDS, REMOTE, DONE, SETUP, ASSIST, DISCOVER, HELP }
 
     private CodeDb db;
     private IrSender sender;
@@ -64,10 +71,20 @@ public class MainActivity extends Activity {
     private String scanButton = "POWER";
     private String scanBrand;
 
-    // État de l'explorateur de codes
-    private String exploreButton;
-    private long[] exploreCmds;
-    private int explorePos;
+    // État de l'assistant de réglage (un ou plusieurs boutons)
+    private String[] assistQueue;
+    private int assistIndex;
+    private boolean assistSingle;
+    private String assistFor;
+    private Suggest.Result assistCands;
+    private int assistPos;
+    private int assistFound;
+    private final Map<String, Set<Long>> rejected = new HashMap<String, Set<Long>>();
+
+    // État du scan libre de tous les codes
+    private long[] discoverCmds;
+    private int discoverPos;
+    private boolean discoverPicking;
 
     // ------------------------------------------------------------------ cycle de vie
 
@@ -103,7 +120,10 @@ public class MainActivity extends Activity {
             case HELP:
                 showHome();
                 break;
-            case EXPLORER:
+            case DONE:
+            case SETUP:
+            case ASSIST:
+            case DISCOVER:
                 showRemote();
                 break;
             case REMOTE:
@@ -142,6 +162,15 @@ public class MainActivity extends Activity {
                 }
             });
             card.addView(open, fullWidth(64));
+            card.addView(space(8));
+            Button tuneAll = key("🛠  Régler mes boutons", KEY, 16);
+            tuneAll.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showSetup();
+                }
+            });
+            card.addView(tuneAll, fullWidth(54));
             c.addView(card);
         }
 
@@ -229,7 +258,7 @@ public class MainActivity extends Activity {
 
         c.addView(text("Bouton utilisé pour le test :", 13, SUB, false));
         LinearLayout choice = row();
-        addScanChoice(choice, "POWER", "⏻ Marche/Arrêt");
+        addScanChoice(choice, "POWER", "🔴 Marche/Arrêt");
         addScanChoice(choice, "MUTE", "🔇 Muet");
         addScanChoice(choice, "VOL_DN", "🔉 Volume −");
         c.addView(choice);
@@ -374,9 +403,52 @@ public class MainActivity extends Activity {
 
     private void chooseProfile(CodeDb.Profile p) {
         profile = p;
+        rejected.clear();
         prefs.edit().putString("profile", p.id()).apply();
-        toast("Télécommande configurée ! Si un bouton ne marche pas, appuie longuement dessus pour le régler.");
-        showRemote();
+        if (reference() != null && profile.buttons.containsKey("VOL_UP")) showDone();
+        else showRemote();
+    }
+
+    /** Juste après la recherche : on vérifie qu'un 2e bouton marche avant d'ouvrir la télécommande. */
+    private void showDone() {
+        stopAuto();
+        LinearLayout c = page(Screen.DONE);
+        c.addView(title("🎉 La télé a réagi !"));
+        c.addView(text("Famille trouvée : " + profile.label + ".", 15, SUB, false));
+        c.addView(space(6));
+        c.addView(text("Plusieurs modèles de télés partagent ce code Marche/Arrêt mais pas les autres boutons. "
+                + "Vérifions : rallume la télé si besoin, appuie sur TESTER VOLUME + et regarde l'écran.",
+                15, Color.WHITE, false));
+        c.addView(space(12));
+        Button test = key("🔊  TESTER VOLUME +", ORANGE, 19);
+        test.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                press("VOL_UP");
+            }
+        });
+        c.addView(test, fullWidth(66));
+        c.addView(space(12));
+        Button yes = key("✅  Le volume a monté : c'est prêt", GREEN, 17);
+        yes.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showRemote();
+            }
+        });
+        c.addView(yes, fullWidth(60));
+        c.addView(space(10));
+        Button no = key("❌  Rien, ou autre chose → régler les boutons", KEY, 16);
+        no.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openAssistant(ASSIST_ORDER, false);
+            }
+        });
+        c.addView(no, fullWidth(60));
+        c.addView(space(10));
+        c.addView(text("L'assistant propose d'abord les codes les plus probables pour ta télé : en général "
+                + "2 ou 3 essais par bouton suffisent.", 13, SUB, false));
     }
 
     // ------------------------------------------------------------------ marques
@@ -447,11 +519,12 @@ public class MainActivity extends Activity {
     // ------------------------------------------------------------------ télécommande
 
     private static final String[][] LABELS = {
-        {"POWER", "⏻"}, {"SOURCE", "Source"}, {"MUTE", "🔇"},
+        {"POWER", "Marche/Arrêt"}, {"SOURCE", "Source"}, {"MUTE", "🔇"},
         {"MENU", "Menu"}, {"HOME", "⌂ Accueil"}, {"INFO", "Info"},
         {"UP", "▲"}, {"DOWN", "▼"}, {"LEFT", "◀"}, {"RIGHT", "▶"}, {"OK", "OK"},
         {"BACK", "↩ Retour"}, {"EXIT", "Quitter"},
         {"VOL_UP", "VOL +"}, {"VOL_DN", "VOL −"}, {"CH_UP", "CH +"}, {"CH_DN", "CH −"},
+        {"NETFLIX", "Netflix"}, {"YOUTUBE", "YouTube"}, {"PRIME", "Prime Video"},
     };
 
     private static String label(String button) {
@@ -467,6 +540,11 @@ public class MainActivity extends Activity {
         if (button.equals("VOL_DN")) return "Volume −";
         if (button.equals("CH_UP")) return "Chaîne +";
         if (button.equals("CH_DN")) return "Chaîne −";
+        if (button.equals("UP")) return "Flèche haut ▲";
+        if (button.equals("DOWN")) return "Flèche bas ▼";
+        if (button.equals("LEFT")) return "Flèche gauche ◀";
+        if (button.equals("RIGHT")) return "Flèche droite ▶";
+        if (button.startsWith("N") && button.length() == 2) return "Chiffre " + button.substring(1);
         return label(button);
     }
 
@@ -495,8 +573,12 @@ public class MainActivity extends Activity {
         tune.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setupMode = !setupMode;
-                showRemote();
+                if (setupMode) {
+                    setupMode = false;
+                    showRemote();
+                } else {
+                    showSetup();
+                }
             }
         });
         head.addView(tune, weight(2, 44));
@@ -538,9 +620,11 @@ public class MainActivity extends Activity {
         c.addView(keyRow(new String[] {"N4", "N5", "N6"}, 54));
         c.addView(keyRow(new String[] {"N7", "N8", "N9"}, 54));
         c.addView(keyRow(new String[] {null, "N0", null}, 54));
+        c.addView(space(8));
+        c.addView(keyRow(new String[] {"NETFLIX", "YOUTUBE", "PRIME"}, 52));
         c.addView(space(12));
-        c.addView(text("Astuce : appui long sur un bouton = le régler. Garde le doigt sur VOL / CH / flèches "
-                + "pour répéter.", 12, SUB, false));
+        c.addView(text("Un bouton ne marche pas ? « 🛠 Régler » → Assistant. Appui long sur un bouton = le "
+                + "régler seul. Garde le doigt sur VOL / CH / flèches pour répéter.", 12, SUB, false));
     }
 
     private LinearLayout keyRow(String[] buttons, int heightDp) {
@@ -558,7 +642,14 @@ public class MainActivity extends Activity {
     private Button remoteKey(final String button) {
         Signal s = signalFor(button);
         int color = button.equals("POWER") ? RED : button.equals("OK") ? BLUE : (s == null ? KEY_MISSING : KEY);
-        final Button b = key(label(button), color, button.equals("POWER") ? 24 : 17);
+        final Button b = key(label(button), color, button.startsWith("N") && button.length() == 2 ? 18 : 16);
+        if (button.equals("POWER")) {
+            b.setText("");
+            b.setContentDescription("Marche/Arrêt");
+            Drawable icon = new LayerDrawable(new Drawable[] {rounded(RED), new PowerIcon(Color.WHITE, dp(3))});
+            b.setBackground(new RippleDrawable(ColorStateList.valueOf(0x55FFFFFF), icon, null));
+        }
+        if (button.equals("NETFLIX") && s != null) b.setTextColor(0xFFE50914);
         if (s == null) b.setTextColor(0xFF5C6670);
         if (setupMode) b.setTextColor(0xFFFFCC80);
         final boolean repeats = button.startsWith("VOL") || button.startsWith("CH") || button.equals("UP")
@@ -645,7 +736,50 @@ public class MainActivity extends Activity {
         return o != null ? o : profile.buttons.get(button);
     }
 
-    // ------------------------------------------------------------------ explorateur de codes
+    // ------------------------------------------------------------------ réglage des boutons
+
+    /** Ordre de l'assistant : Menu avant les flèches, pour voir la sélection bouger. */
+    private static final String[] ASSIST_ORDER = {
+        "VOL_UP", "VOL_DN", "MUTE", "CH_UP", "CH_DN", "SOURCE", "MENU", "UP", "DOWN", "LEFT", "RIGHT", "OK",
+        "BACK", "EXIT", "HOME", "INFO", "N1", "N2", "N3", "N4", "N5", "N6", "N7", "N8", "N9", "N0",
+        "NETFLIX", "YOUTUBE", "PRIME",
+    };
+
+    private static String hint(String button) {
+        switch (button) {
+            case "VOL_UP":
+            case "VOL_DN":
+                return "La barre de volume doit s'afficher et bouger.";
+            case "MUTE":
+                return "Le son doit se couper (symbole « muet » à l'écran).";
+            case "CH_UP":
+            case "CH_DN":
+                return "La télé doit changer de chaîne (en mode TV).";
+            case "SOURCE":
+                return "La liste des entrées (TV, HDMI, AV…) doit s'afficher.";
+            case "MENU":
+                return "Le menu ou les réglages de la télé doivent s'ouvrir. Laisse-le ouvert pour la suite.";
+            case "UP":
+            case "DOWN":
+            case "LEFT":
+            case "RIGHT":
+                return "Garde un menu ouvert à l'écran : la sélection doit se déplacer.";
+            case "OK":
+                return "Dans un menu, l'élément sélectionné doit s'ouvrir.";
+            case "BACK":
+            case "EXIT":
+                return "Avec un menu ouvert : il doit se fermer ou revenir en arrière.";
+            case "HOME":
+                return "L'écran d'accueil de la télé (applis) doit s'afficher.";
+            case "NETFLIX":
+            case "YOUTUBE":
+            case "PRIME":
+                return "L'appli doit se lancer sur la télé.";
+            default:
+                if (button.startsWith("N")) return "Le chiffre doit s'afficher, ou la chaîne changer.";
+                return "Regarde l'écran de la télé.";
+        }
+    }
 
     /** Code de référence (protocole + adresse de la télé) à partir duquel on essaie les commandes. */
     private Signal reference() {
@@ -655,70 +789,451 @@ public class MainActivity extends Activity {
         return null;
     }
 
-    private void openExplorer(String button) {
-        stopAuto();
-        exploreButton = null;
-        showExplorer(button);
+    private Map<String, Signal> overrides() {
+        Map<String, Signal> m = new LinkedHashMap<String, Signal>();
+        for (String b : allButtons()) {
+            Signal s = Signal.deserialize(prefs.getString(overrideKey(b), null));
+            if (s != null) m.put(b, s);
+        }
+        return m;
     }
 
-    private void showExplorer(final String button) {
+    private static String[] allButtons() {
+        String[] all = new String[ASSIST_ORDER.length + 1];
+        all[0] = "POWER";
+        System.arraycopy(ASSIST_ORDER, 0, all, 1, ASSIST_ORDER.length);
+        return all;
+    }
+
+    private void saveOverride(String button, Signal s) {
+        prefs.edit().putString(overrideKey(button), s.serialize()).apply();
+    }
+
+    private void backButton(LinearLayout c) {
+        Button back = key("↩  Retour à la télécommande", KEY, 16);
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showRemote();
+            }
+        });
+        c.addView(back, fullWidth(54));
+    }
+
+    private void showSetup() {
+        stopAuto();
+        setupMode = false;
+        LinearLayout c = page(Screen.SETUP);
+        c.addView(title("🛠 Régler mes boutons"));
+        if (reference() == null) {
+            c.addView(text("Pour cette famille de télés, la base ne contient que des codes enregistrés : "
+                    + "impossible de chercher d'autres codes. Relance la recherche automatique pour essayer "
+                    + "une autre famille.", 15, SUB, false));
+            c.addView(space(10));
+            backButton(c);
+            return;
+        }
+        c.addView(text("Ta télé a réagi au code Marche/Arrêt, mais d'autres modèles utilisent le même code "
+                + "avec des boutons différents. Règle-les ici : l'appli propose d'abord les codes les plus "
+                + "probables pour ta télé.", 14, SUB, false));
+        c.addView(space(12));
+        Button assist = key("✨  Assistant : tous les boutons, un par un", GREEN, 17);
+        assist.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openAssistant(ASSIST_ORDER, false);
+            }
+        });
+        c.addView(assist, fullWidth(62));
+        c.addView(text("Recommandé · 2 à 3 essais par bouton en général.", 12, SUB, false));
+        c.addView(space(12));
+        Button one = key("👆  Régler un seul bouton", KEY, 16);
+        one.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                setupMode = true;
+                showRemote();
+            }
+        });
+        c.addView(one, fullWidth(56));
+        c.addView(space(8));
+        Button scan = key("🔎  Scanner tous les codes de la télé", KEY, 16);
+        scan.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openDiscover();
+            }
+        });
+        c.addView(scan, fullWidth(56));
+        c.addView(text("L'appli envoie tous les codes un par un ; à chaque réaction de la télé, tu dis "
+                + "de quel bouton il s'agit.", 12, SUB, false));
+        c.addView(space(8));
+        Button reset = key("↺  Effacer tous mes réglages", KEY, 15);
+        reset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SharedPreferences.Editor e = prefs.edit();
+                for (String b : allButtons()) e.remove(overrideKey(b));
+                e.apply();
+                rejected.clear();
+                toast("Réglages effacés : retour aux codes d'origine.");
+                showSetup();
+            }
+        });
+        c.addView(reset, fullWidth(52));
+        c.addView(space(8));
+        backButton(c);
+    }
+
+    // ---- assistant (un ou plusieurs boutons)
+
+    private void openExplorer(String button) {
+        openAssistant(new String[] {button}, true);
+    }
+
+    private void openAssistant(String[] queue, boolean single) {
+        stopAuto();
+        stopRepeat();
+        assistQueue = queue;
+        assistIndex = 0;
+        assistSingle = single;
+        assistFor = null;
+        assistFound = 0;
+        showAssistant(null);
+    }
+
+    private void computeCandidates(String button, Signal ref) {
+        Signal cur = signalFor(button);
+        Long current = cur != null && !cur.isRaw() && cur.proto.equals(ref.proto) && cur.addr == ref.addr
+                ? Long.valueOf(cur.cmd) : null;
+        Map<String, Long> confirmed = Suggest.confirmed(ref, profile.power(), overrides());
+        assistCands = Suggest.candidates(db.layouts(ref.proto, ref.addr), ref, button, confirmed, rejected, current);
+        assistPos = 0;
+        assistFor = button;
+    }
+
+    private void showAssistant(String note) {
         stopRepeat();
         final Signal ref = reference();
-        LinearLayout c = page(Screen.EXPLORER);
+        LinearLayout c = page(Screen.ASSIST);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        c.addView(title("🛠 Régler « " + friendly(button) + " »"));
         if (ref == null) {
-            c.addView(text("Pour cette famille de télés, la base ne contient que des codes enregistrés : "
-                    + "impossible de chercher d'autres codes. Essaie une autre famille avec la recherche "
-                    + "automatique.", 15, SUB, false));
-            Button back = key("↩  Retour à la télécommande", KEY, 16);
+            c.addView(title("🛠 Réglage impossible"));
+            c.addView(text("Pour cette famille de télés, la base ne contient que des codes enregistrés.",
+                    15, SUB, false));
+            backButton(c);
+            return;
+        }
+        final String button = assistQueue[assistIndex];
+        if (!button.equals(assistFor) || assistCands == null) computeCandidates(button, ref);
+        final Signal candidate = ref.withCommand(assistCands.cmds[assistPos]);
+
+        c.addView(title(assistSingle ? "🛠 Régler un bouton" : "✨ Assistant de réglage"));
+        if (!assistSingle) {
+            c.addView(text("Bouton " + (assistIndex + 1) + " / " + assistQueue.length + "  ·  " + assistFound
+                    + " réglé(s)", 13, SUB, false));
+        }
+        TextView big = text(friendly(button), 30, Color.WHITE, true);
+        big.setGravity(Gravity.CENTER);
+        big.setPadding(0, dp(8), 0, dp(4));
+        c.addView(big);
+        TextView h = text(hint(button), 14, SUB, false);
+        h.setGravity(Gravity.CENTER);
+        c.addView(h);
+        c.addView(space(10));
+
+        LinearLayout card = card();
+        TextView counter = text("Essai " + (assistPos + 1) + " / " + assistCands.cmds.length, 22, Color.WHITE,
+                true);
+        counter.setGravity(Gravity.CENTER);
+        card.addView(counter);
+        String origin = assistCands.origins[assistPos];
+        String detail = assistPos < assistCands.suggested
+                ? "💡 Code probable" + (origin.isEmpty() ? "" : " (" + origin + ")")
+                : "Code n° " + IrCodec.commandNumber(candidate) + " (recherche complète)";
+        TextView d = text(detail, 14, assistPos < assistCands.suggested ? 0xFF81C784 : SUB, false);
+        d.setGravity(Gravity.CENTER);
+        card.addView(d);
+        c.addView(card);
+        if (note != null) {
+            c.addView(text(note, 14, 0xFFFFCC80, true));
+            c.addView(space(6));
+        }
+
+        LinearLayout nav = row();
+        Button prev = key("◀", KEY, 22);
+        prev.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stopAuto();
+                if (assistPos > 0) assistPos--;
+                showAssistant(null);
+                sender.send(ref.withCommand(assistCands.cmds[assistPos]), true);
+            }
+        });
+        Button test = key("TESTER", ORANGE, 21);
+        test.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sender.send(candidate, true);
+            }
+        });
+        Button next = key("▶", KEY, 22);
+        next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stopAuto();
+                assistStep(ref, false);
+            }
+        });
+        nav.addView(prev, weight(1, 68));
+        nav.addView(test, weight(2, 68));
+        nav.addView(next, weight(1, 68));
+        c.addView(nav);
+        c.addView(space(8));
+
+        final boolean running = autoTask != null;
+        Button yes = key(running ? "✋  STOP, la télé a réagi !" : "✅  Oui, ça marche !", GREEN, 18);
+        yes.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (autoTask != null) {
+                    stopAuto();
+                    showAssistant("Vérifie : appuie sur TESTER (◀ pour le code d'avant si rien ne se passe), "
+                            + "puis sur ✅.");
+                    return;
+                }
+                saveOverride(button, candidate);
+                assistFound++;
+                if (assistSingle) {
+                    toast("« " + friendly(button) + " » enregistré.");
+                    showRemote();
+                } else {
+                    assistNextButton();
+                }
+            }
+        });
+        c.addView(yes, fullWidth(60));
+        c.addView(space(8));
+        Button no = key("❌  Non, essayer le code suivant", KEY, 16);
+        no.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stopAuto();
+                assistStep(ref, true);
+            }
+        });
+        c.addView(no, fullWidth(54));
+        c.addView(space(8));
+        Button auto = key(running ? "⏸  Pause du défilement" : "⏩  Défilement automatique", running ? KEY : BLUE,
+                15);
+        auto.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (autoTask != null) {
+                    stopAuto();
+                    showAssistant(null);
+                } else {
+                    startAutoAssist(ref);
+                }
+            }
+        });
+        c.addView(auto, fullWidth(52));
+        c.addView(space(10));
+
+        LinearLayout bottom = row();
+        if (assistSingle) {
+            Button reset = key("↺ Code d'origine", KEY, 14);
+            reset.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    prefs.edit().remove(overrideKey(button)).apply();
+                    toast("Code d'origine remis pour « " + friendly(button) + " ».");
+                    showRemote();
+                }
+            });
+            Button back = key("↩ Télécommande", KEY, 14);
             back.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     showRemote();
                 }
             });
-            c.addView(back, fullWidth(56));
+            bottom.addView(reset, weight(1, 50));
+            bottom.addView(back, weight(1, 50));
+        } else {
+            Button skip = key("⏭ Passer ce bouton", KEY, 14);
+            skip.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    assistNextButton();
+                }
+            });
+            Button done = key("✔ Terminer", KEY, 14);
+            done.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    finishAssistant();
+                }
+            });
+            bottom.addView(skip, weight(1, 50));
+            bottom.addView(done, weight(1, 50));
+        }
+        c.addView(bottom);
+        c.addView(space(8));
+        c.addView(text("⚠️ Certains codes ouvrent des menus spéciaux de la télé. Si ça arrive, appuie sur "
+                + "Retour/Quitter, ou éteins la télé avec son bouton.", 12, SUB, false));
+    }
+
+    /** Passe au code suivant et l'envoie ; {@code refuse} = l'utilisateur a dit que ce code ne marche pas. */
+    private void assistStep(Signal ref, boolean refuse) {
+        String button = assistQueue[assistIndex];
+        if (refuse) {
+            Set<Long> r = rejected.get(button);
+            if (r == null) {
+                r = new HashSet<Long>();
+                rejected.put(button, r);
+            }
+            r.add(assistCands.cmds[assistPos]);
+        }
+        if (assistPos < assistCands.cmds.length - 1) {
+            assistPos++;
+            showAssistant(null);
+            sender.send(ref.withCommand(assistCands.cmds[assistPos]), true);
+        } else {
+            showAssistant("Tous les codes ont été essayés pour ce bouton : passe au suivant.");
+        }
+    }
+
+    private void assistNextButton() {
+        stopAuto();
+        if (assistIndex < assistQueue.length - 1) {
+            assistIndex++;
+            assistFor = null;
+            showAssistant(null);
+        } else {
+            finishAssistant();
+        }
+    }
+
+    private void finishAssistant() {
+        stopAuto();
+        toast("🎉 Réglage terminé : " + assistFound + " bouton(s) enregistré(s).");
+        showRemote();
+    }
+
+    private void startAutoAssist(final Signal ref) {
+        autoTask = new Runnable() {
+            @Override
+            public void run() {
+                if (autoTask != this) return;
+                if (assistPos < assistCands.cmds.length - 1) {
+                    assistPos++;
+                    showAssistant(null);
+                    sender.send(ref.withCommand(assistCands.cmds[assistPos]), true);
+                    ui.postDelayed(this, EXPLORE_INTERVAL_MS);
+                } else {
+                    stopAuto();
+                    showAssistant("Fin de la liste pour ce bouton.");
+                }
+            }
+        };
+        showAssistant(null);
+        sender.send(ref.withCommand(assistCands.cmds[assistPos]), true);
+        ui.postDelayed(autoTask, EXPLORE_INTERVAL_MS);
+    }
+
+    // ---- scan libre : tous les codes, on dit ce que fait la télé
+
+    private void openDiscover() {
+        stopAuto();
+        Signal ref = reference();
+        if (ref == null) {
+            showSetup();
             return;
         }
-        if (!button.equals(exploreButton) || exploreCmds == null) {
-            exploreButton = button;
-            exploreCmds = IrCodec.commandRange(ref);
-            explorePos = 0;
-            Signal cur = signalFor(button);
-            if (cur != null && !cur.isRaw() && cur.proto.equals(ref.proto) && cur.addr == ref.addr) {
-                for (int i = 0; i < exploreCmds.length; i++) if (exploreCmds[i] == cur.cmd) explorePos = i;
-            }
+        long[] all = IrCodec.commandRange(ref);
+        Signal power = profile.power();
+        int n = 0;
+        long[] cmds = new long[all.length];
+        for (long c : all) {
+            // on saute Marche/Arrêt pour ne pas éteindre la télé pendant le scan
+            if (power != null && !power.isRaw() && c == power.cmd) continue;
+            cmds[n++] = c;
         }
-        final Signal candidate = ref.withCommand(exploreCmds[explorePos]);
+        discoverCmds = java.util.Arrays.copyOf(cmds, n);
+        discoverPos = 0;
+        discoverPicking = false;
+        showDiscover(null);
+    }
 
-        c.addView(text("On essaie tous les codes de ta télé. Appuie sur ENVOYER (ou lance le défilement) "
-                + "et regarde l'écran : quand la télé fait « " + friendly(button) + " », appuie sur ✅.",
-                14, SUB, false));
-        c.addView(space(6));
-        c.addView(text("⚠️ Certains codes ouvrent des menus spéciaux de la télé. Si ça arrive, appuie sur "
-                + "Retour/Quitter ou éteins la télé avec son bouton.", 13, 0xFFFFCC80, false));
-        c.addView(space(10));
-
+    private void showDiscover(String note) {
+        final Signal ref = reference();
+        LinearLayout c = page(Screen.DISCOVER);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        final Signal candidate = ref.withCommand(discoverCmds[discoverPos]);
+        c.addView(title("🔎 Scanner tous les codes"));
+        c.addView(text("L'appli envoie un par un tous les codes de ta télé (sauf Marche/Arrêt). Dès que la "
+                + "télé fait quelque chose, appuie sur ✋ et dis ce qui s'est passé.", 14, SUB, false));
+        c.addView(space(8));
         LinearLayout card = card();
-        TextView counter = text("Essai " + (explorePos + 1) + " / " + exploreCmds.length, 26, Color.WHITE, true);
+        TextView counter = text("Code " + (discoverPos + 1) + " / " + discoverCmds.length, 24, Color.WHITE, true);
         counter.setGravity(Gravity.CENTER);
         card.addView(counter);
-        TextView detail = text("Commande n° " + IrCodec.commandNumber(candidate) + "  ·  " + ref.proto, 14, SUB,
-                false);
-        detail.setGravity(Gravity.CENTER);
-        card.addView(detail);
+        TextView d = text("n° " + IrCodec.commandNumber(candidate), 14, SUB, false);
+        d.setGravity(Gravity.CENTER);
+        card.addView(d);
         c.addView(card);
+        if (note != null) {
+            c.addView(text(note, 14, 0xFFFFCC80, true));
+            c.addView(space(6));
+        }
+
+        if (discoverPicking) {
+            c.addView(text("Qu'a fait la télé avec ce code ?", 16, Color.WHITE, true));
+            c.addView(space(6));
+            String[] all = ASSIST_ORDER;
+            LinearLayout r = null;
+            for (int i = 0; i < all.length; i++) {
+                if (i % 3 == 0) {
+                    r = row();
+                    c.addView(r);
+                }
+                final String b = all[i];
+                Button pick = key(friendly(b), KEY, 13);
+                pick.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        saveOverride(b, candidate);
+                        discoverPicking = false;
+                        toast("« " + friendly(b) + " » enregistré.");
+                        showDiscover(null);
+                    }
+                });
+                r.addView(pick, weight(1, 50));
+            }
+            c.addView(space(6));
+            Button cancel = key("Rien d'utile / annuler", KEY, 15);
+            cancel.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    discoverPicking = false;
+                    showDiscover(null);
+                }
+            });
+            c.addView(cancel, fullWidth(52));
+            return;
+        }
 
         LinearLayout nav = row();
-        Button prev = key("◀", KEY, 24);
+        Button prev = key("◀", KEY, 22);
         prev.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 stopAuto();
-                explorePos = (explorePos - 1 + exploreCmds.length) % exploreCmds.length;
-                showExplorer(button);
-                sender.send(ref.withCommand(exploreCmds[explorePos]), true);
+                if (discoverPos > 0) discoverPos--;
+                showDiscover(null);
+                sender.send(ref.withCommand(discoverCmds[discoverPos]), true);
             }
         });
         Button send = key("ENVOYER", ORANGE, 20);
@@ -728,96 +1243,82 @@ public class MainActivity extends Activity {
                 sender.send(candidate, true);
             }
         });
-        Button next = key("▶", KEY, 24);
+        Button next = key("▶", KEY, 22);
         next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 stopAuto();
-                explorePos = (explorePos + 1) % exploreCmds.length;
-                showExplorer(button);
-                sender.send(ref.withCommand(exploreCmds[explorePos]), true);
+                if (discoverPos < discoverCmds.length - 1) discoverPos++;
+                showDiscover(null);
+                sender.send(ref.withCommand(discoverCmds[discoverPos]), true);
             }
         });
-        nav.addView(prev, weight(1, 70));
-        nav.addView(send, weight(2, 70));
-        nav.addView(next, weight(1, 70));
+        nav.addView(prev, weight(1, 68));
+        nav.addView(send, weight(2, 68));
+        nav.addView(next, weight(1, 68));
         c.addView(nav);
-        c.addView(space(10));
-
-        boolean running = autoTask != null;
-        Button auto = key(running ? "⏸  Pause" : "⏩  Défilement automatique", running ? KEY : BLUE, 17);
+        c.addView(space(8));
+        final boolean running = autoTask != null;
+        Button react = key(running ? "✋  STOP, la télé a réagi !" : "✋  La télé a réagi : attribuer ce code",
+                GREEN, 17);
+        react.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (autoTask != null) {
+                    stopAuto();
+                    showDiscover("Vérifie avec ENVOYER (◀ pour le code d'avant, la télé réagit parfois avec "
+                            + "un temps de retard), puis attribue le code.");
+                    return;
+                }
+                discoverPicking = true;
+                showDiscover(null);
+            }
+        });
+        c.addView(react, fullWidth(60));
+        c.addView(space(8));
+        Button auto = key(running ? "⏸  Pause du défilement" : "⏩  Défilement automatique", running ? KEY : BLUE,
+                15);
         auto.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (autoTask != null) {
                     stopAuto();
-                    showExplorer(button);
+                    showDiscover(null);
                 } else {
-                    startAutoExplore(button, ref);
+                    startAutoDiscover(ref);
                 }
             }
         });
-        c.addView(auto, fullWidth(56));
+        c.addView(auto, fullWidth(52));
         c.addView(space(10));
-
-        Button ok = key(running ? "✋  STOP, ça a marché !" : "✅  C'est ce code !", GREEN, 18);
-        ok.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (autoTask != null) {
-                    stopAuto();
-                    showExplorer(button);
-                    toast("Vérifie avec ENVOYER (◀ pour le code d'avant), puis appuie sur ✅.");
-                    return;
-                }
-                prefs.edit().putString(overrideKey(button), candidate.serialize()).apply();
-                toast("Bouton « " + friendly(button) + " » enregistré.");
-                exploreButton = null;
-                showRemote();
-            }
-        });
-        c.addView(ok, fullWidth(62));
-        c.addView(space(10));
-
-        LinearLayout bottom = row();
-        Button reset = key("↺ Code d'origine", KEY, 14);
-        reset.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                stopAuto();
-                prefs.edit().remove(overrideKey(button)).apply();
-                exploreButton = null;
-                toast("Code d'origine remis pour « " + friendly(button) + " ».");
-                showRemote();
-            }
-        });
-        Button back = key("↩ Télécommande", KEY, 14);
-        back.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                stopAuto();
-                exploreButton = null;
-                showRemote();
-            }
-        });
-        bottom.addView(reset, weight(1, 50));
-        bottom.addView(back, weight(1, 50));
-        c.addView(bottom);
+        StringBuilder found = new StringBuilder();
+        for (String b : overrides().keySet()) {
+            if (found.length() > 0) found.append(", ");
+            found.append(friendly(b));
+        }
+        if (found.length() > 0) c.addView(text("Déjà réglés : " + found, 13, 0xFF81C784, false));
+        c.addView(space(8));
+        backButton(c);
     }
 
-    private void startAutoExplore(final String button, final Signal ref) {
+    private void startAutoDiscover(final Signal ref) {
         autoTask = new Runnable() {
             @Override
             public void run() {
                 if (autoTask != this) return;
-                explorePos = (explorePos + 1) % exploreCmds.length;
-                showExplorer(button);
-                sender.send(ref.withCommand(exploreCmds[explorePos]), true);
-                ui.postDelayed(this, EXPLORE_INTERVAL_MS);
+                if (discoverPos < discoverCmds.length - 1) {
+                    discoverPos++;
+                    showDiscover(null);
+                    sender.send(ref.withCommand(discoverCmds[discoverPos]), true);
+                    ui.postDelayed(this, EXPLORE_INTERVAL_MS);
+                } else {
+                    stopAuto();
+                    showDiscover("Tous les codes ont été envoyés.");
+                }
             }
         };
-        showExplorer(button);
-        sender.send(ref.withCommand(exploreCmds[explorePos]), true);
+        showDiscover(null);
+        sender.send(ref.withCommand(discoverCmds[discoverPos]), true);
         ui.postDelayed(autoTask, EXPLORE_INTERVAL_MS);
     }
 
@@ -842,11 +1343,12 @@ public class MainActivity extends Activity {
                 "Utilise la recherche automatique : allume la télé avec son bouton, pointe le téléphone "
                 + "vers elle et appuie sur TESTER, puis ▶ pour le code suivant (ou lance le défilement "
                 + "automatique). Dès que la télé s'éteint, appuie sur ✅. Rallume-la ensuite avec le "
-                + "bouton ⏻ de l'appli."},
+                + "gros bouton rouge de l'appli."},
             {"La télé s'éteint mais d'autres boutons ne marchent pas",
-                "Touche « 🛠 Régler » en haut de la télécommande, puis le bouton qui ne marche pas. "
-                + "L'appli essaie alors tous les codes possibles de ta télé : appuie sur ✅ quand la télé "
-                + "fait la bonne action. Le réglage est gardé en mémoire."},
+                "C'est normal : plusieurs modèles partagent le même code Marche/Arrêt. Touche "
+                + "« 🛠 Régler » → « ✨ Assistant » : pour chaque bouton, appuie sur TESTER puis ✅ ou ❌. "
+                + "L'appli propose d'abord les codes les plus probables (souvent 2 ou 3 essais) et "
+                + "apprend de tes réponses. Les réglages sont gardés en mémoire."},
             {"Je préfère ne pas éteindre la télé pendant la recherche",
                 "Choisis « 🔇 Muet » ou « 🔉 Volume − » comme bouton de test : le symbole s'affiche à "
                 + "l'écran quand le code est le bon."},
@@ -871,7 +1373,7 @@ public class MainActivity extends Activity {
 
     private LinearLayout page(Screen s) {
         stopRepeat();
-        if (s != Screen.SCAN && s != Screen.EXPLORER) {
+        if (s != Screen.SCAN && s != Screen.ASSIST && s != Screen.DISCOVER) {
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
         screen = s;

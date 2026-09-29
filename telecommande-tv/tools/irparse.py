@@ -68,6 +68,9 @@ def norm(name):
         ('BACK', r'(back|return|ret|goback|previous|prev)'),
         ('EXIT', r'(exit|quit)'),
         ('INFO', r'(info|display|disp|information)'),
+        ('NETFLIX', r'(netflix|nflx)'),
+        ('YOUTUBE', r'(youtube|yt)'),
+        ('PRIME', r'(primevideo|prime|amazon|amazonprime|amazonvideo)'),
     ]
     for key, rx in table:
         if re.fullmatch(rx, n): return key

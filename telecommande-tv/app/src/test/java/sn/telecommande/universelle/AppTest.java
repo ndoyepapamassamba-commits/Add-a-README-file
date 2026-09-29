@@ -140,16 +140,25 @@ public class AppTest {
         // Bouton de test Muet
         click(a, "Muet");
         assertTrue(has(a, "Code 1 /"));
-        click(a, "⏻ Marche/Arrêt");
+        click(a, "Marche/Arrêt");
 
-        // Valider le 1er code -> télécommande
+        // Valider le 1er code -> écran de vérification -> télécommande
         click(a, "Ça marche, c'est ma télé");
+        assertTrue(dump(a), has(a, "La télé a réagi"));
+        int beforeCheck = FakeIr.sent.size();
+        click(a, "TESTER VOLUME +");
+        waitSent(beforeCheck + 1);
+        click(a, "Le volume a monté");
         assertTrue(dump(a), has(a, "VOL +"));
         SharedPreferences prefs = a.getSharedPreferences("telecommande", Context.MODE_PRIVATE);
         assertNotNull(prefs.getString("profile", null));
 
         int before = FakeIr.sent.size();
-        click(a, "⏻");
+        Button power = null;
+        for (View v : all(root(a))) if ("Marche/Arrêt".contentEquals(String.valueOf(v.getContentDescription()))) power = (Button) v;
+        assertEquals("symbole dessiné, pas de caractère", "", power.getText().toString());
+        assertTrue(power.performClick());
+        idle();
         waitSent(before + 1);
         // Appui maintenu sur VOL + : envoi immédiat puis répétitions
         Button vol = button(a, "VOL +");
@@ -160,6 +169,7 @@ public class AppTest {
         touch(vol, MotionEvent.ACTION_UP);
         idle();
         waitSent(before + 3);
+        Thread.sleep(300); // laisse finir un envoi déjà parti vers l'émetteur
         int afterUp = FakeIr.sent.size();
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(1000));
         Thread.sleep(100);
@@ -168,17 +178,19 @@ public class AppTest {
         // Chiffres
         click(a, "5");
 
-        // Mode réglage -> explorateur pour Source
+        // Régler -> un seul bouton -> Source
         click(a, "Régler");
+        assertTrue(dump(a), has(a, "Régler mes boutons"));
+        click(a, "Régler un seul bouton");
         assertTrue(has(a, "Mode réglage"));
         click(a, "Source");
-        assertTrue(dump(a), has(a, "Régler « Source »"));
+        assertTrue(dump(a), has(a, "Régler un bouton"));
         assertTrue(has(a, "Essai "));
         before = FakeIr.sent.size();
         click(a, "▶");
         waitSent(before + 1);
-        click(a, "ENVOYER");
-        click(a, "C'est ce code");
+        click(a, "TESTER");
+        click(a, "Oui, ça marche");
         assertTrue(has(a, "VOL +"));
         String key = null;
         for (String k : prefs.getAll().keySet()) if (k.startsWith("ovr:") && k.endsWith(":SOURCE")) key = k;
@@ -187,9 +199,10 @@ public class AppTest {
         // Appui long -> explorateur, défilement auto puis retour
         assertTrue(button(a, "Menu").performLongClick());
         idle();
-        assertTrue(has(a, "Régler « Menu »"));
+        assertTrue(has(a, "Régler un bouton"));
         click(a, "Défilement automatique");
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2800));
+        assertTrue(dump(a), has(a, "Essai 3 /"));
         click(a, "Pause");
         click(a, "Code d'origine");
         assertTrue(has(a, "VOL +"));
@@ -220,6 +233,99 @@ public class AppTest {
         click(b, "Lampe torche");
         Intent next = shadowOf(b).getNextStartedActivity();
         assertEquals(LampActivity.class.getName(), next.getComponent().getClassName());
+    }
+
+    /** Cas réel : télé qui répond au code 16 (NEC 00 BF, Power 0x0D) mais avec la disposition BGH. */
+    @Test
+    public void assistantFindsButtonsForSharedAddress() throws Exception {
+        ActivityController<MainActivity> ctl = Robolectric.buildActivity(MainActivity.class).setup();
+        MainActivity a = ctl.get();
+        click(a, "Recherche automatique");
+        for (int i = 1; i < 16; i++) click(a, "▶");
+        assertTrue(dump(a), has(a, "Code 16 /"));
+        assertTrue(has(a, "Hisense"));
+        click(a, "Ça marche, c'est ma télé");
+        click(a, "Rien, ou autre chose");
+        assertTrue(dump(a), has(a, "Assistant de réglage"));
+        assertTrue(has(a, "Volume +"));
+        assertTrue(has(a, "Bouton 1 /"));
+        assertTrue(has(a, "Code probable"));
+        // 1er essai = code Hisense (0x44) : la télé ne réagit pas
+        int before = FakeIr.sent.size();
+        click(a, "TESTER");
+        waitSent(before + 1);
+        int[] p = FakeIr.sent.get(FakeIr.sent.size() - 1);
+        assertEquals(0x44, bits(p, 16, 8));
+        int tries = 1;
+        while (bits(p, 16, 8) != 0x16) {
+            assertTrue("0x16 (BGH) doit être dans les 3 premières propositions", tries < 3);
+            click(a, "Non, essayer le code suivant");
+            tries++;
+            waitSent(before + tries);
+            p = FakeIr.sent.get(FakeIr.sent.size() - 1);
+        }
+        assertEquals(0xE9, bits(p, 24, 8));
+        System.out.println("Volume + trouvé en " + tries + " essais");
+        click(a, "Oui, ça marche");
+        // Volume − : la disposition BGH (0x1A) doit maintenant passer en tête ou juste après
+        assertTrue(has(a, "Volume −"));
+        before = FakeIr.sent.size();
+        click(a, "TESTER");
+        waitSent(before + 1);
+        int first = bits(FakeIr.sent.get(FakeIr.sent.size() - 1), 16, 8);
+        if (first != 0x1A) {
+            click(a, "Non, essayer le code suivant");
+            waitSent(before + 2);
+            assertEquals(0x1A, bits(FakeIr.sent.get(FakeIr.sent.size() - 1), 16, 8));
+        }
+        click(a, "Oui, ça marche");
+        click(a, "Passer ce bouton");
+        assertTrue(has(a, "Chaîne +"));
+        click(a, "Terminer");
+        assertTrue(has(a, "VOL +"));
+        SharedPreferences prefs = a.getSharedPreferences("telecommande", Context.MODE_PRIVATE);
+        int saved = 0;
+        for (String k : prefs.getAll().keySet()) if (k.startsWith("ovr:")) saved++;
+        assertEquals(2, saved);
+        // VOL + envoie désormais le code réglé
+        before = FakeIr.sent.size();
+        Button vol = button(a, "VOL +");
+        touch(vol, MotionEvent.ACTION_DOWN);
+        touch(vol, MotionEvent.ACTION_UP);
+        idle();
+        waitSent(before + 1);
+        assertEquals(0x16, bits(FakeIr.sent.get(FakeIr.sent.size() - 1), 16, 8));
+
+        // Scan libre : attribuer un code à « Netflix »
+        click(a, "Régler");
+        click(a, "Scanner tous les codes");
+        assertTrue(dump(a), has(a, "Code 1 /"));
+        before = FakeIr.sent.size();
+        final int scanStart = before;
+        click(a, "ENVOYER");
+        waitSent(before + 1);
+        assertTrue("Power (0x0D) jamais envoyé pendant le scan", bits(FakeIr.sent.get(FakeIr.sent.size() - 1), 16, 8) != 0x0D);
+        click(a, "Défilement automatique");
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(1400 * 14));
+        click(a, "STOP, la télé a réagi");
+        click(a, "attribuer ce code");
+        assertTrue(has(a, "Qu'a fait la télé"));
+        click(a, "Netflix");
+        assertTrue(dump(a), has(a, "Déjà réglés"));
+        assertTrue(FakeIr.sent.size() > scanStart + 10);
+        for (int i = scanStart; i < FakeIr.sent.size(); i++) {
+            assertTrue("Marche/Arrêt jamais envoyé pendant le scan", bits(FakeIr.sent.get(i), 16, 8) != 0x0D);
+        }
+        click(a, "Retour à la télécommande");
+        assertTrue(has(a, "Netflix"));
+        a.onBackPressed();
+    }
+
+    /** Lit {@code n} bits (poids faible d'abord) d'une trame NEC à partir du bit {@code from}. */
+    static int bits(int[] p, int from, int n) {
+        int v = 0;
+        for (int i = 0; i < n; i++) if (p[3 + 2 * (from + i)] > 1000) v |= 1 << i;
+        return v;
     }
 
     @Test
