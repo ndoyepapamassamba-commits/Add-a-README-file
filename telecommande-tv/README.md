@@ -34,6 +34,17 @@ infrarouge ». La lampe torche, elle, marche sur tous les téléphones Android.
    touche **« Plus de détails » → « Installer quand même »**.
 4. L'icône bleue **Télécommande TV** apparaît.
 
+### Le téléchargement tourne sans jamais finir ?
+Le fichier ne fait que 110 Ko : il doit arriver en une seconde. S'il « tourne » :
+- **Dans Chrome**, regarde **en bas de l'écran** : Chrome met les .apk en pause et demande
+  « Ce type de fichier peut endommager votre appareil » → touche **Télécharger quand même**.
+  Si le message a disparu : **⋮ → Téléchargements** et relance le fichier « en attente ».
+- **Depuis l'appli Claude, WhatsApp ou un autre navigateur** (Opera Mini…) : copie le lien
+  et ouvre-le dans **Chrome**.
+- **Toujours bloqué ?** Prends la version **ZIP** (Chrome la télécharge sans avertissement) :
+  https://github.com/ndoyepapamassamba-commits/Add-a-README-file/raw/claude/admiring-cray-uua1sz/telecommande-tv/TelecommandeTV.zip
+  puis ouvre-la avec l'appli **Fichiers** → **Extraire** → touche `TelecommandeTV.apk`.
+
 ### Envoyer l'appli à quelqu'un
 - **WhatsApp** : 📎 → **Document** → choisis `TelecommandeTV.apk`. La personne n'a qu'à
   toucher le fichier pour l'installer.
