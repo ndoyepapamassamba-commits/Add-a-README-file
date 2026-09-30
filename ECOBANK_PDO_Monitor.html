@@ -2329,10 +2329,13 @@ function renderActualiseur(){
     }catch(err){wlog('ERREUR : '+err.message);console.error(err);}
     btn.disabled=false;btn.innerHTML=old;
   };
-  $('#actExp').onclick=()=>{ if(!__ACTE7M)return;
-    const aoa=[__ACTE7M.cols.slice()];
-    for(const r of __ACTE7M.rows){aoa.push(r.map(x=>{if(x instanceof Date){const p=n=>String(n).padStart(2,'0');return p(x.getUTCDate())+'/'+p(x.getUTCMonth()+1)+'/'+x.getUTCFullYear();}return x===undefined?null:x;}));}
-    const ws=XLSX.utils.aoa_to_sheet(aoa),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'ACTE 7');XLSX.writeFile(wb,'ACTE7_Actualise.xlsx');};
+  $('#actExp').onclick=async()=>{ if(!__ACTE7M)return;
+    const T=__ACTE7M,p2=n=>String(n).padStart(2,'0');
+    const cols=T.cols.map(c=>({header:c,width:/Contracts\/Accounts|Relationship|Group Name|Name/i.test(c)?26:(/Local Currency/i.test(c)?22:15)}));
+    const rows=T.rows.map(r=>r.map(x=>{if(x instanceof Date)return p2(x.getUTCDate())+'/'+p2(x.getUTCMonth()+1)+'/'+x.getUTCFullYear();return x===undefined?null:x;}));
+    const ic=T.idx['Classification'];
+    try{ await gdBrandedExport('ACTE 7',cols,rows,ic!==undefined?ic+1:null,'ACTE7_Actualise','PDO Monitor — ACTE 7 actualisé (moteur M)'); }
+    catch(e){console.error(e);alert('Export : '+e.message);} };
   $('#actExpVides').onclick=()=>{ if(!__ACTE7M)return; actExportVides(__ACTE7M).catch(e=>{console.error(e);alert('Export : '+e.message);}); };
 }
 /* Export « vides » : pour chaque colonne à compléter, une feuille listant les lignes ACTE 7 où elle est vide
@@ -2600,7 +2603,7 @@ function xlStampLogo(wb){try{if(typeof LOGO!=='string')return;const i=LOGO.index
     ws.headerFooter=ws.headerFooter||{};ws.headerFooter.oddFooter='&L&8&K6E8593Ecobank PDO Monitor&R&8&K6E8593Page &P / &N';
   }catch(e){}});
 }catch(e){}}
-async function gdBrandedExport(name,cols,rows,clsCol,fileLabel){
+async function gdBrandedExport(name,cols,rows,clsCol,fileLabel,subtitle){
   const wbk=new ExcelJS.Workbook();wbk.creator='Ecobank PDO Monitor';wbk.created=new Date();
   const ncol=cols.length;
   const ws=wbk.addWorksheet(name,{properties:{tabColor:{argb:GOLD}},views:[{state:'frozen',ySplit:7,showGridLines:false}]});
@@ -2608,7 +2611,7 @@ async function gdBrandedExport(name,cols,rows,clsCol,fileLabel){
   for(let r=1;r<=5;r++)for(let c=1;c<=ncol;c++)ws.getCell(r,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:NAVY}};
   ws.mergeCells(1,1,1,ncol);ws.mergeCells(2,1,2,ncol);
   const t1=ws.getCell(1,1);t1.value='ECOBANK SÉNÉGAL   ·   '+name.toUpperCase();t1.font={name:'Georgia',bold:true,size:16,color:{argb:GOLD}};t1.alignment={vertical:'middle',indent:1};ws.getRow(1).height=26;
-  const t2=ws.getCell(2,1);t2.value='PDO Monitor — Garanties dispatchées · arrêté '+(STATE.reportDate||fmtFR(STATE.today));t2.font={italic:true,size:9.5,color:{argb:'FFB9C2D0'}};t2.alignment={vertical:'middle',indent:1};ws.getRow(2).height=16;
+  const t2=ws.getCell(2,1);t2.value=(subtitle||'PDO Monitor — Garanties dispatchées')+' · arrêté '+(STATE.reportDate||fmtFR(STATE.today));t2.font={italic:true,size:9.5,color:{argb:'FFB9C2D0'}};t2.alignment={vertical:'middle',indent:1};ws.getRow(2).height=16;
   const num=i=>{let s=0;rows.forEach(r=>{const v=r[i];if(typeof v==='number')s+=v;});return s;};
   const amtIdx=[];cols.forEach((c,i)=>{if(/XOF|Collateral|Encours|Ototal|Provision|Net|Value|Montant/i.test(String(c.header||''))&&amtIdx.length<5)amtIdx.push(i);});
   const cliIdx=cols.findIndex(c=>/code client/i.test(String(c.header||'')));
@@ -2639,7 +2642,7 @@ async function gdBrandedExport(name,cols,rows,clsCol,fileLabel){
       else if(amtIdxSet.has(col-1)){const n=gdNum(c.value);c.value=n;c.numFmt='#,##0.####';c.alignment={horizontal:'right'};}   // montants : séparateur de milliers, sans arrondi
       else if(typeof c.value==='number'){c.numFmt=Number.isInteger(c.value)?'#,##0':'#,##0.####';c.alignment={horizontal:'right'};}
       c.font={color:{argb:INK},size:10};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:band}};
-      if(clsCol&&col===clsCol){const k=String(c.value);if(CLSARGB[k]){c.font={bold:true,color:{argb:'FFFFFFFF'},size:10};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:CLSARGB[k]}};c.alignment={horizontal:'center'};}}});
+      if(clsCol&&col===clsCol){const k0=String(c.value).trim(),k=(k0==='IIA'||k0==='IIN')?'II':k0;if(CLSARGB[k]){c.font={bold:true,color:{argb:'FFFFFFFF'},size:10};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:CLSARGB[k]}};c.alignment={horizontal:'center'};}}});
   });
   ws.autoFilter={from:{row:7,column:1},to:{row:7,column:ncol}};
   xlStampLogo(wbk);const buf=await wbk.xlsx.writeBuffer();
