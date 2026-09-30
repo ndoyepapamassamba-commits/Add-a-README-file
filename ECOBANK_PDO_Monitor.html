@@ -2337,7 +2337,7 @@ function renderActualiseur(){
 }
 /* Export « vides » : pour chaque colonne à compléter, une feuille listant les lignes ACTE 7 où elle est vide
    (Code Client · Contracts/Accounts · Relationship · colonne vide). Même source que l'export ACTE 7 actualisé. */
-const ACT_VIDES_COLS=['Relationship','Sic Code','Segment Code','Product Code','Credit Program','Domicile of the Repayment Source','Account Officer'];
+const ACT_VIDES_GROUPS=[['Relationship'],['Sic Code','Segment Code'],['Product Code'],['Credit Program'],['Domicile of the Repayment Source'],['Account Officer']];   // Sic Code & Segment Code : même feuille, côte à côte
 async function actExportVides(T){
   const ix=T.idx,cCli=ix['Code Client'],cRef=ix['Contracts/Accounts'],cRel=ix['Relationship'];
   if(cCli===undefined||cRef===undefined){alert('Colonnes « Code Client » / « Contracts/Accounts » introuvables dans l\'ACTE 7.');return;}
@@ -2347,24 +2347,28 @@ async function actExportVides(T){
   const txt=v=>v==null?'':String(v).trim();
   const wbk=new ExcelJS.Workbook();wbk.creator='Ecobank PDO Monitor';wbk.created=new Date();
   const recap=[];
-  for(const col of ACT_VIDES_COLS){
-    const j=ix[col]; if(j===undefined){recap.push([col,'colonne absente de l\'ACTE 7']);continue;}
-    const isRel=(col==='Relationship');
-    const head=isRel?['Code Client','Contracts/Accounts','Relationship']:['Code Client','Contracts/Accounts','Relationship',col];
+  for(const grp of ACT_VIDES_GROUPS){
+    const label=grp.join(' + ');
+    const js=grp.map(c=>ix[c]);
+    if(js.some(j=>j===undefined)){recap.push([label,'colonne absente de l\'ACTE 7']);continue;}
+    const isRel=(grp.length===1&&grp[0]==='Relationship');
+    const head=isRel?['Code Client','Contracts/Accounts','Relationship']:['Code Client','Contracts/Accounts','Relationship'].concat(grp);
     const rows=[];
-    for(const r of T.rows){ if(!empty(r[j]))continue;
-      rows.push(isRel?[txt(r[cCli]),txt(r[cRef]),'']:[txt(r[cCli]),txt(r[cRef]),cRel===undefined?'':txt(r[cRel]),'']); }
-    const name=col.length>31?col.slice(0,31):col;
+    for(const r of T.rows){ if(!js.some(j=>empty(r[j])))continue;   // ligne listée si au moins une colonne du groupe est vide
+      rows.push(isRel?[txt(r[cCli]),txt(r[cRef]),'']:[txt(r[cCli]),txt(r[cRef]),cRel===undefined?'':txt(r[cRel])].concat(js.map(j=>txt(r[j])))); }
+    const name=label.length>31?label.slice(0,31):label;
+    const nFixed=3;
     const ws=wbk.addWorksheet(name,{properties:{tabColor:{argb:GOLD}},views:[{state:'frozen',ySplit:1,showGridLines:false}]});
     ws.columns=head.map((h,k)=>({width:k===0?16:k===1?26:k===2?34:30}));
     const hr=ws.addRow(head);hr.height=24;
     hr.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:NAVY}};c.font={bold:true,color:{argb:GOLD},size:10};c.alignment={vertical:'middle',horizontal:'center',wrapText:true};c.border={top:{style:'medium',color:{argb:GOLD}},bottom:{style:'medium',color:{argb:GOLD}},left:thin,right:thin};});
     rows.forEach((r,i)=>{const row=ws.addRow(r);const band=i%2?'FFF2F6FC':'FFFFFFFF';
       row.eachCell({includeEmpty:true},(c,k)=>{c.border=BD;c.font={color:{argb:INK},size:10};c.numFmt='@';c.alignment={horizontal:'left'};
-        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:(k===head.length)?'FFFFF4D6':band}};});   // colonne à compléter surlignée
+        const toFill=isRel?(k===3):(k>nFixed&&empty(c.value));   // cellules vides à compléter surlignées
+        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:toFill?'FFFFF4D6':band}};});
     });
     ws.autoFilter={from:{row:1,column:1},to:{row:1,column:head.length}};
-    recap.push([col,rows.length]);
+    recap.push([label,rows.length]);
   }
   xlStampLogo(wbk);
   const buf=await wbk.xlsx.writeBuffer();
