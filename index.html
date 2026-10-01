@@ -43,7 +43,8 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop
 .search{flex:1;display:flex;align-items:center;gap:.5rem;background:var(--bg);border:1px solid var(--line);
   border-radius:12px;padding:.55rem .8rem;max-width:440px}
 .search input{border:none;background:none;outline:none;width:100%;font-size:.95rem;color:var(--ink)}
-@media(max-width:720px){.search{display:none}}
+#catalogue{scroll-margin-top:72px}   /* le catalogue ne passe pas sous l'en-tête fixe */
+@media(max-width:720px){.head{flex-wrap:wrap;row-gap:.6rem}.search{order:3;flex-basis:100%;max-width:none}.search input{font-size:16px}.cart-btn{margin-left:auto}#catalogue{scroll-margin-top:130px}}
 .cart-btn{position:relative;background:var(--ink);color:#fff;border:none;border-radius:12px;padding:.6rem .9rem;font-weight:800;display:flex;gap:.45rem;align-items:center}
 .cart-count{position:absolute;top:-7px;right:-7px;background:var(--brand);color:#fff;font-size:.7rem;font-weight:900;
   min-width:20px;height:20px;border-radius:999px;display:grid;place-items:center;padding:0 5px}
@@ -391,10 +392,20 @@ catsEl.querySelectorAll(".cat").forEach(b=>b.onclick=()=>{activeCat=b.dataset.c;
 function syncCats(){catsEl.querySelectorAll(".cat").forEach(b=>b.classList.toggle("active",b.dataset.c===activeCat));}
 function filterCat(c){activeCat=c;syncCats();renderProducts();document.getElementById("catalogue").scrollIntoView({behavior:"smooth"});}
 
-document.getElementById("searchInput").addEventListener("input",e=>{search=e.target.value.toLowerCase();renderProducts();});
+// Recherche : sans accents, dans le nom, la catégorie, la description et les atouts. Chaque mot tapé doit être trouvé.
+const norm = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+const STOP = new Set("le la les l de des du d un une et en pour par avec sur au aux mes mon ma".split(" "));
+const searchText = Object.fromEntries(PRODUCTS.map(p=>{const d=DETAILS[p.id]||{desc:"",feats:[]};const t=norm([p.name,p.cat,d.desc,...d.feats].join(" "));return [p.id,{t,sq:t.replace(/[^a-z0-9]/g,"")}];}));
+function matches(p,q){const s=searchText[p.id];return norm(q).split(/[^a-z0-9]+/).filter(w=>w.length>=2&&!STOP.has(w)).every(w=>s.t.includes(w)||s.sq.includes(w));}
+
+document.getElementById("searchInput").addEventListener("input",e=>{
+  search=e.target.value;renderProducts();
+  // Sur téléphone, le catalogue est sous la bannière : on y descend pour montrer les résultats.
+  const cat=document.getElementById("catalogue");if(cat.getBoundingClientRect().top>innerHeight/2)cat.scrollIntoView({behavior:"smooth"});
+});
 
 function renderProducts(){
-  const list = PRODUCTS.filter(p=>(activeCat==="Tous"||p.cat===activeCat) && p.name.toLowerCase().includes(search));
+  const list = PRODUCTS.filter(p=>(activeCat==="Tous"||p.cat===activeCat) && matches(p,search));
   document.getElementById("prodCount").textContent = list.length+" produit"+(list.length>1?"s":"");
   productsEl.innerHTML = list.map(p=>`
     <div class="prod">
