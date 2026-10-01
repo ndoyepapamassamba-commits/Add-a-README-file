@@ -742,6 +742,9 @@ function xKpis(ws,kpis){ // kpis: [{label,value,sub,color}] — tuiles 4 par lig
     kpis.slice(i,i+per).forEach((k,j)=>{ const [c0,c1]=bounds[j]; const col=k.color||XC.BLUE;
       [[k.label.toUpperCase(),{name:'Segoe UI',size:8.5,bold:true,color:{argb:XC.INK2}},20],[k.value,{name:'Consolas',size:16,bold:true,color:{argb:col}},28],[k.sub||'',{name:'Segoe UI',size:8.5,color:{argb:XC.INK2}},18]]
       .forEach(([v,f,h],rr)=>{ if(c1>c0) ws.mergeCells(r+rr,c0,r+rr,c1); const c=ws.getCell(r+rr,c0); c.value=v; c.font=f;
+        if(rr===1&&typeof v==='string'){ const sv=v.replace(/[\s\u202f\u00a0]/g,'');
+          if(/^[+-]?\d+$/.test(sv)){ c.value=Number(sv); c.numFmt=sv[0]==='+'?'+#,##0;-#,##0':'#,##0'; }
+          else if(/^-?\d+(,\d+)?%$/.test(sv)){ const d=(sv.split(',')[1]||'').replace('%','').length; c.value=Number(sv.replace('%','').replace(',','.'))/100; c.numFmt='0'+(d?'.'+'0'.repeat(d):'')+'%'; } }
         c.alignment={vertical:'middle',indent:1,shrinkToFit:true}; ws.getRow(r+rr).height=h;
         for(let cc=c0;cc<=c1;cc++){ const x=ws.getCell(r+rr,cc); x.fill=xFill(XC.TILE);
           x.border={left:cc===c0?{style:'thick',color:{argb:col}}:undefined,right:cc===c1?{style:'thin',color:{argb:XC.WHITE}}:undefined,
@@ -928,8 +931,12 @@ function detailTable(ws,R){
   const data=R.map(r=>COLS.map(c=>{ const v=r[c.k]; if(c.k==='isStaffLoan') return v?'OUI':''; if(c.k==='nature') return NATURE_SHORT[v]||v||''; return v==null?'':v; }));
   if(R.length) data.push(Object.assign(COLS.map((c,i)=>i===0?'TOTAL':c.k==='montantXOF'?sum(R,'montantXOF'):c.k==='client'?`${R.length} contrats`:''),{__total:true}));
   const ni=COLS.map((c,i)=>c.num?i:-1).filter(i=>i>=0), iSt=COLS.findIndex(c=>c.k==='status'), iPe=COLS.findIndex(c=>c.k==='isStaffLoan');
-  xTable(ws,COLS.map(c=>c.t),data,{num:ni,bars:[7],filter:true,freeze:true,
+  const hr=xTable(ws,COLS.map(c=>c.t),data,{num:ni,bars:[7],filter:true,
     pills:(ri,i,v)=>i===1?NAT_X[R[ri].nature]:(i===iSt&&v==='NP'?XC.RISK:(i===iPe&&v==='OUI'?XC.GREEN:null))});
+  // lien d'accès direct à la liste (les graphiques restent au-dessus de l'en-tête)
+  const lk=ws.getCell(4,1); lk.value={text:`▼ Aller à la liste des ${nf.format(R.length)} contrats (ligne ${hr})`,hyperlink:`#'${ws.name.replace(/'/g,"''")}'!A${hr}`};
+  lk.font={name:'Segoe UI',size:10,bold:true,underline:true,color:{argb:XC.BLUE}}; ws.getRow(4).height=18;
+  ws.views=[{state:'normal',showGridLines:false,zoomScale:90,topLeftCell:'A1'}];
 }
 
 /* ============================================================================
@@ -1229,7 +1236,8 @@ function init(){
   $('#btnTheme').onclick=()=>{ const d=document.documentElement.getAttribute('data-theme')==='dark'; if(d) document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme','dark'); persist(); render(); };
   $('#btnFull').onclick=()=>{ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); };
   const pick=()=>$('#fileInput').click();
-  $('#btnImport').onclick=pick; $('#welcomeDrop').onclick=pick;
+  $('#btnImport').onclick=pick;
+  $('#btnMail').onclick=()=>{ if(!hasData()) return toast("Chargez d'abord le fichier Excel."); $$('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view==='mailer')); state.view='mailer'; persist(); render(); window.scrollTo({top:0}); }; $('#welcomeDrop').onclick=pick;
   $('#fileInput').onchange=e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); e.target.value=''; };
   ['dragenter','dragover'].forEach(ev=>window.addEventListener(ev,e=>{ e.preventDefault(); $('#dropzone').classList.add('show'); }));
   $('#dropzone').addEventListener('dragleave',e=>{ if(e.target===$('#dropzone')) $('#dropzone').classList.remove('show'); });

@@ -45,7 +45,7 @@ a{color:var(--sky)}
 /* ---------- Layout ---------- */
 .app{display:flex;min-height:100vh}
 .side{width:256px;flex-shrink:0;position:sticky;top:0;height:100vh;z-index:30;display:flex;flex-direction:column;
-  padding:18px 14px;gap:4px;color:#fff;overflow:hidden;
+  padding:18px 14px;gap:4px;color:#fff;overflow-x:hidden;overflow-y:auto;scrollbar-width:thin;
   background:linear-gradient(180deg,#00415E 0%,#00374F 55%,#002B3E 100%);box-shadow:6px 0 30px -14px rgba(0,43,62,.6)}
 .side::before{content:"";position:absolute;right:-120px;top:-60px;width:300px;height:300px;border-radius:50%;
   border:26px solid rgba(255,255,255,.05);pointer-events:none}
@@ -124,6 +124,9 @@ html[data-theme="dark"] .btn{color:var(--ink)}
 .hero-back:hover{background:var(--lime-2)}
 .flowbar .fl b{font-weight:800}
 
+@media (max-height:860px){.nav{padding:7px 12px}.navlbl{padding:8px 12px 3px}.brand .bt{margin-top:8px}.side-foot{padding:8px 10px;font-size:10px}}
+@media (max-height:720px){.side-foot{display:none}.brand .logo-tile{max-width:170px}}
+.iconbtn.mail{background:linear-gradient(135deg,var(--green),var(--lime));color:#fff;border-color:transparent}
 /* ---------- Mailer ---------- */
 .mailer{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
 .mailer .opts{position:sticky;top:84px}
@@ -367,6 +370,7 @@ html[data-theme="dark"] .busy .bx div{color:#fff}
         <button data-p="CAE2">M+1</button>
         <button data-p="BOTH">Cumul</button>
       </div>
+      <div class="iconbtn mail" id="btnMail" title="Mailer CAE — synthèse hors Personnel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></div>
       <div class="iconbtn" id="btnImport" title="Charger le fichier Excel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
       <div class="iconbtn" id="btnTheme" title="Mode jour / nuit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
       <div class="iconbtn" id="btnFull" title="Plein écran"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></div>
