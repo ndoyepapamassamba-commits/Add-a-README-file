@@ -359,7 +359,7 @@ table.dt td.wr{white-space:normal;min-width:180px}
     <button class="btn navy" id="bDoc">Word</button>
     <button class="btn" id="bPrint">PDF</button>
   </div>
-  <input type="file" id="file" accept=".xlsx,.xlsm,.xlsb,.xls,.csv" hidden>
+  <input type="file" id="file" accept=".xlsx,.xlsm,.xlsb,.xls,.csv" hidden><input type="file" id="fileInp" accept=".xlsx,.xlsm,.xlsb,.xls,.csv" hidden>
 </header>
 <nav class="nav" id="nav" hidden>
   <div class="tabs" id="tabs"></div>
@@ -394,6 +394,7 @@ table.dt td.wr{white-space:normal;min-width:180px}
 <nav class="nav" id="pnav" hidden>
   <div class="tabs" id="ptabs"></div>
   <div class="filters">
+    <label>Attribution</label><div class="seg" id="pfAt"><button data-v="off">Officer Flexcube</button><button data-v="inp" class="on">Inputeur FACTORY</button></div>
     <label>Canal</label><div class="seg" id="pfCh"><button data-v="" class="on">Tous</button><button data-v="RM">RM</button><button data-v="Direct Banking">Direct Banking</button></div>
     <label for="pfSeg">Segment</label><select id="pfSeg"></select>
     <label for="pfAg">Agence</label><select id="pfAg"></select>
@@ -409,7 +410,7 @@ table.dt td.wr{white-space:normal;min-width:180px}
     <div class="db"><div class="zone" id="pzone"><b>Déposez l'export de production ici</b><span>ou cliquez pour le choisir — rapport Flexcube « Report » (.xlsx). Rien ne quitte ce poste.</span></div>
     <div class="foot">Colonnes reconnues : REFERENCE, DR_PROD_AC, NOM_CLIENT, BOOKING_DATE, AMOUNT_INIT, LCY_BALANCE, TAUX, FRAIS_DOSSIER, INTERETS_PREVUS, PRODUIT, DESCRIPTION, SEGMENT1, SOUS_SEGMENT, ACC_OFCR, OFFICER_NAME, SECT_ACTV. Agence = code en tête de la référence (L34IELA… → L34 ROUME). Le canal Direct Banking est isolé du classement des RM. Le fichier est aussi reconnu s'il est déposé dans la Salle Pipe.</div></div>
   </section>
-  <section class="panel" id="pp-syn"></section><section class="panel" id="pp-ag"></section><section class="panel" id="pp-seg"></section><section class="panel" id="pp-rm"></section>
+  <section class="panel" id="pp-syn"></section><section class="panel" id="pp-ag"></section><section class="panel" id="pp-seg"></section><section class="panel" id="pp-rm"></section><section class="panel" id="pp-inp"></section>
   <section class="panel" id="pp-p3"></section><section class="panel" id="pp-prd"></section><section class="panel" id="pp-det"></section><section class="panel" id="pp-mail"></section>
 </main>
 <div class="foot" id="pfoot"></div>
@@ -1028,6 +1029,7 @@ async function loadFile(f){
   try{
     const buf=await f.arrayBuffer(); const wb=XLSX.read(buf,{type:'array',cellDates:true});
     if(prodDetect(wb)){ loadProd(wb,f.name); busy(false); return; }
+    if(f.__inp||(ROOM==='prod'&&P.rows.length)){ if(inpDetect(wb)){ loadInp(wb,f.name); busy(false); return; } }
     let best=null, sheet=''; wb.SheetNames.forEach(n=>{ const t=findTable(wb.Sheets[n]); if(t&&(!best||t.score>best.score||(t.score===best.score&&t.n>best.n))){ best=t; sheet=n; } });
     if(!best) throw new Error('Aucune feuille ne contient à la fois une colonne « client » et une colonne « volume / montant ».');
     const m=best.m, g=(r,k)=>m[k]==null?null:r[m[k]];
@@ -1643,12 +1645,12 @@ function loadProd(wb,fname){ const d=prodDetect(wb); if(!d) throw new Error('Auc
       ch:db?'Direct Banking':rmRaw?'RM':'Non affecté',sector:titleCase(String(g(r,'sector')||'Non renseigné').replace(/¿/g,'…')),statut:String(g(r,'statut')||''),
       wk:w.y+'-S'+String(w.w).padStart(2,'0'),mo:book.getFullYear()+'-'+String(book.getMonth()+1).padStart(2,'0')}); });
   if(!rows.length) throw new Error('Le fichier de production ne contient aucun crédit.');
-  P.rows=rows; P.file=fname; P.sheet=d.n; P.F={seg:'',ag:'',wk:'',mo:'',ch:''}; P.q='';
+  P.rows=rows; pAttrib(); P.file=fname; P.sheet=d.n; P.F={seg:'',ag:'',wk:'',mo:'',ch:''}; P.q='';
   P.last=new Date(Math.max(...rows.map(r=>+r.book)));
   P.weeks=[...new Set(rows.map(r=>r.wk))].sort(); P.months=[...new Set(rows.map(r=>r.mo))].sort();
   P.wkLib={}; P.weeks.forEach(k=>{ const L=rows.filter(r=>r.wk===k).map(r=>+r.book); const a=new Date(Math.min(...L)), b=new Date(Math.max(...L)); P.wkLib[k]={s:k.split('-')[1],r:a.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+(+a!==+b?'–'+b.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}):'')}; });
   P.moLib={}; P.months.forEach(k=>{ const [y,mm]=k.split('-').map(Number); P.moLib[k]=new Date(y,mm-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'}); });
-  pFillFilters(); setRoom('prod'); pGo('syn');
+  pFillFilters(); pAttrSeg(); setRoom('prod'); pGo('syn');
   toast('✅ '+rows.length+' crédits mis en place lus — Salle Production'); }
 
 /* ---------- agrégats ---------- */
@@ -1660,7 +1662,7 @@ function bdays(a,b){ let n=0; const d=new Date(a); while(d<=b){ const w=d.getDay
 function pAgg(){ const L=pView(); const A={list:L,n:L.length,vol:0,fees:0,intp:0,wr:0,bal:0};
   L.forEach(r=>{ A.vol+=r.amt; A.fees+=r.fees; A.intp+=r.intp; A.wr+=r.amt*r.rate; A.bal+=r.bal; });
   A.rate=A.vol?A.wr/A.vol:0; A.ticket=A.n?A.vol/A.n:0;
-  A.byAg=pGrp(L,r=>r.ag,k=>agLib(k)); A.bySeg=pGrp(L,r=>r.seg); A.bySseg=pGrp(L,r=>r.seg+' · '+r.sseg); A.byRm=pGrp(L.filter(r=>r.ch==='RM'),r=>r.rm);
+  A.byAg=pGrp(L,r=>r.ag,k=>agLib(k)); A.bySeg=pGrp(L,r=>r.seg); A.bySseg=pGrp(L,r=>r.seg+' · '+r.sseg); A.byRm=pGrp(L.filter(r=>rmKey(r)),r=>rmKey(r));
   A.byCh=pGrp(L,r=>r.ch); A.byProd=pGrp(L,r=>r.prod); A.bySect=pGrp(L,r=>r.sector);
   A.weeks=P.weeks.filter(w=>!P.F.wk||w===P.F.wk); A.months=P.months.filter(m=>!P.F.mo||m===P.F.mo);
   A.byWk=A.weeks.map(w=>{ const S2=L.filter(r=>r.wk===w); return {k:w,n:S2.length,vol:S2.reduce((s,r)=>s+r.amt,0)}; });
@@ -1678,7 +1680,7 @@ function pAgg(){ const L=pView(); const A={list:L,n:L.length,vol:0,fees:0,intp:0
   const full=A.wLast&&A.wLast.part?W.slice(0,-1):W; A.hL=full[full.length-1]; A.hP=full[full.length-2];
   if(A.hL&&A.hP){ A.rmUp=A.byRm.map(g=>({g,d:(g.wk[A.hL.k]||0)-(g.wk[A.hP.k]||0)})).filter(x=>x.d>0).sort((a,b)=>b.d-a.d).slice(0,5);
     A.rmDown=A.byRm.filter(g=>!g.wk[A.hL.k]&&(g.wk[A.hP.k]||0)>0).sort((a,b)=>(b.wk[A.hP.k]||0)-(a.wk[A.hP.k]||0)).slice(0,5); } else { A.rmUp=[]; A.rmDown=[]; }
-  A.db=A.byCh.find(c=>c.k==='Direct Banking')||{n:0,vol:0};
+  A.db=A.byCh.find(c=>c.k==='Direct Banking')||{n:0,vol:0}; A.dbm=A.list.filter(r=>r.ch==='Direct Banking'&&r.inp);
   A.top5ag=A.vol?A.byAg.slice(0,5).reduce((s,g)=>s+g.vol,0)/A.vol:0;
   A.link=pLink(L);
   return A; }
@@ -1692,7 +1694,7 @@ function pNarr(A){ const T=[]; const lm=P.moLib[A.proj.mo];
   T.push({c:'#005c83',t:`<b>${A.n} crédits</b> mis en place pour <b>${fmtX(A.vol)} XOF</b> (ticket moyen ${fmtM(A.ticket)}, taux moyen pondéré ${pct(A.rate,2)}), générant <b>${fmtM(A.fees)} XOF</b> de frais de dossier et <b>${fmtM(A.intp)} XOF</b> d'intérêts prévus.`});
   if(A.byAg[0]) T.push({c:'#00415e',t:`L'agence <b>${esc(A.byAg[0].lib)}</b> mène la production avec ${fmtM(A.byAg[0].vol)} XOF (${pct(A.vol?A.byAg[0].vol/A.vol:0,0)}) ; les cinq premières agences pèsent ${pct(A.top5ag,0)} du volume.`});
   const sg=A.bySeg.map(s=>`${esc(s.k)} ${pct(A.vol?s.vol/A.vol:0,0)}`).join(' · '); T.push({c:'#6ba23a',t:`Répartition par segment : ${sg}.`});
-  if(A.db.n) T.push({c:'#1a86b3',t:`Le canal <b>Direct Banking</b> porte ${A.db.n} crédits (${fmtM(A.db.vol)} XOF, ${pct(A.vol?A.db.vol/A.vol:0,0)} du volume) ; il est isolé du classement des RM.`});
+  if(A.db.n) T.push({c:'#1a86b3',t:`Le canal <b>Direct Banking</b> porte ${A.db.n} crédits (${fmtM(A.db.vol)} XOF, ${pct(A.vol?A.db.vol/A.vol:0,0)} du volume) ; ${P.inpOn&&P.attr==='inp'?`<b>${A.dbm.length}</b> d'entre eux (${fmtM(A.dbm.reduce((s,r)=>s+r.amt,0))} XOF) sont réattribués au gestionnaire inputeur FACTORY ; les autres restent hors classement.`:'il est isolé du classement des RM.'}`});
   if(A.byRm[0]) T.push({c:'#8cc63f',t:`Meilleur RM : <b>${esc(A.byRm[0].k)}</b> — ${fmtM(A.byRm[0].vol)} XOF sur ${A.byRm[0].n} crédits.`});
   if(A.wDelta!=null) T.push({c:A.wDelta>=0?'#4e8a2e':'#c0392b',t:`Semaine ${P.wkLib[A.wLast.k].s} (${P.wkLib[A.wLast.k].r}) : ${fmtM(A.wLast.vol)} XOF, ${A.wLast.part?` en ${A.wLast.days} jour${A.wLast.days>1?'s':''} ouvré${A.wLast.days>1?'s':''} (semaine en cours)`:''} ; rythme par jour ouvré <b>${A.wDelta>=0?'+':''}${pct(A.wDelta,0)}</b> par rapport à la semaine ${P.wkLib[A.wPrev.k].s}.`});
   if(!P.F.mo&&!P.F.wk) T.push({c:'#d4a13a',t:`Projection ${lm} : au rythme de ${fmtM(A.proj.done?A.proj.vol/A.proj.done:0)} XOF par jour ouvré (${A.proj.done}/${A.proj.tot} jours), la production atteindrait <b>${fmtM(A.proj.est)} XOF</b> en fin de mois.`});
@@ -1700,10 +1702,10 @@ function pNarr(A){ const T=[]; const lm=P.moLib[A.proj.mo];
   return T; }
 
 /* ---------- interface ---------- */
-const PTABS=[['syn','Synthèse'],['ag','Agences'],['seg','Segments · semaines & mois'],['rm','RM'],['p3','Production 3D'],['prd','Produits & secteurs'],['det','Crédits'],['mail','Mail production']];
+const PTABS=[['syn','Synthèse'],['ag','Agences'],['seg','Segments · semaines & mois'],['rm','RM'],['inp','Inputeurs FACTORY'],['p3','Production 3D'],['prd','Produits & secteurs'],['det','Crédits'],['mail','Mail production']];
 function setRoom(r){ ROOM=r; $$('#rooms button').forEach(b=>b.classList.toggle('on',b.dataset.r===r)); const pipe=r==='pipe', hp=S.deals.length>0, hq=P.rows.length>0;
   $('#main').hidden=!pipe; $('#nav').hidden=!pipe||!hp; $('#fSitu').hidden=!pipe||!hp; $('#fHor').hidden=!pipe||!hp; $('#foot').hidden=!pipe||!hp;
-  $('#roomProd').hidden=pipe; $('#xp').hidden=pipe?!hp:!hq; $('#pnav').hidden=!hq; $('#pdrop').hidden=hq;
+  $('#roomProd').hidden=pipe; if(!pipe&&hq){ pAttrib(); pAttrSeg(); } $('#xp').hidden=pipe?!hp:!hq; $('#pnav').hidden=!hq; $('#pdrop').hidden=hq;
   $('#brandSub').textContent=pipe?'Pipeline des dossiers de crédit · FACTORY':'Production des crédits mis en place';
   v3Stop(); pv3Stop(); setTopH(); if(pipe){ if(hp) renderAll(); } else if(hq) pGo(P.tab||'syn'); }
 function pFillFilters(){ const o=(arr,all)=>`<option value="">${all}</option>`+arr.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join('');
@@ -1719,7 +1721,7 @@ function pGo(k){ P.tab=k; $('#ptabs').innerHTML=PTABS.map(([t,l])=>`<button clas
 function pRender(){ pv3Stop(); Object.values(P.charts).forEach(c=>{ try{ c.destroy(); }catch(e){} }); P.charts={}; P.A=pAgg();
   $('#pfNote').textContent=pFilterLabel()||`${P.rows.length} crédits · ${P.file}`;
   $('#pfoot').innerHTML=`Source : <b>${esc(P.file)}</b> (feuille « ${esc(P.sheet)} ») · mises en place du ${fmtD(new Date(Math.min(...P.rows.map(r=>+r.book))))} au <b>${fmtD(P.last)}</b> · agence = code en tête de la référence du prêt (L01…) · montants initiaux en XOF · document interne.`;
-  ({syn:pSyn,ag:pAg,seg:pSegV,rm:pRm,p3:pP3,prd:pPrd,det:pDet,mail:pMail})[P.tab](); }
+  ({inp:pInp,syn:pSyn,ag:pAg,seg:pSegV,rm:pRm,p3:pP3,prd:pPrd,det:pDet,mail:pMail})[P.tab](); }
 function pmk(id,cfg){ const el=document.getElementById(id); if(!el||!window.Chart) return; P.charts[id]=new Chart(el,cfg); }
 const PAL=['#00415e','#005c83','#8cc63f','#1a86b3','#6ba23a','#d4a13a','#3e5c6b','#a6d867','#0a6f95','#c0392b','#2a8c96','#72b553'];
 function heatCol(v,mx){ if(!v) return 'transparent'; const t=Math.sqrt(v/mx); const a=[227,239,245],b=[0,92,131],c=[140,198,63]; const mix=(p,q,f)=>p.map((x,i)=>Math.round(x+(q[i]-x)*f)); const k=t<0.6?mix(a,b,t/0.6):mix(b,c,(t-0.6)/0.4); return `rgb(${k})`; }
@@ -1763,7 +1765,7 @@ function pAg(){ const A=P.A, G=A.byAg;
   <div class="grid g2" style="margin-top:14px">${card('Classement des agences','volume mis en place, couleur par segment dominant',`<div class="chart" style="height:${Math.max(360,G.length*22+60)}px"><canvas id="pcAg"></canvas></div>`)}
    ${card('Agences × semaines','carte de chaleur du volume XOF — cliquez une agence pour filtrer',heatHtml(G,A.weeks,wkLab,(r,c)=>r.wk[c],{head:'Agence',click:1,h:Math.max(360,G.length*22+60)}))}</div>
   <div style="margin-top:14px">${card('Tableau des agences',`<button class="btn sm" id="agNm">Nommer les agences</button>`,`<div class="tw"><table class="dt"><thead><tr><th>Agence</th><th class="r">Crédits</th><th class="r">Volume</th><th class="r">Part</th><th class="r">Ticket moyen</th><th class="r">Taux moyen</th><th class="r">Frais</th><th class="r">Intérêts prévus</th><th>Segment dominant</th><th>RM n°1</th></tr></thead><tbody>
-   ${G.map(g=>{ const L=A.list.filter(r=>r.ag===g.k); const sg=pGrp(L,r=>r.seg)[0], rm=pGrp(L.filter(r=>r.ch==='RM'),r=>r.rm)[0]; return `<tr data-k="${esc(g.k)}"><td><b>${esc(g.lib)}</b></td><td class="r">${g.n}</td><td class="r">${fmtX(g.vol)}</td><td class="r">${pct(A.vol?g.vol/A.vol:0,1)}</td><td class="r">${fmtX(g.ticket)}</td><td class="r">${pct(g.rate,2)}</td><td class="r">${fmtX(g.fees)}</td><td class="r">${fmtX(g.intp)}</td><td>${esc(sg?sg.k:'—')}</td><td>${esc(rm?rm.k:'Direct Banking')}</td></tr>`; }).join('')}</tbody></table></div>`)}</div>`;
+   ${G.map(g=>{ const L=A.list.filter(r=>r.ag===g.k); const sg=pGrp(L,r=>r.seg)[0], rm=pGrp(L.filter(r=>rmKey(r)),r=>rmKey(r))[0]; return `<tr data-k="${esc(g.k)}"><td><b>${esc(g.lib)}</b></td><td class="r">${g.n}</td><td class="r">${fmtX(g.vol)}</td><td class="r">${pct(A.vol?g.vol/A.vol:0,1)}</td><td class="r">${fmtX(g.ticket)}</td><td class="r">${pct(g.rate,2)}</td><td class="r">${fmtX(g.fees)}</td><td class="r">${fmtX(g.intp)}</td><td>${esc(sg?sg.k:'—')}</td><td>${esc(rm?rm.k:'Direct Banking')}</td></tr>`; }).join('')}</tbody></table></div>`)}</div>`;
   $$('#pp-ag tr[data-k]').forEach(tr=>tr.onclick=()=>{ P.F.ag=tr.dataset.k; $('#pfAg').value=P.F.ag; pRender(); });
   $('#agNm').onclick=agEditor;
   const segs=[...new Set(P.rows.map(r=>r.seg))];
@@ -1789,13 +1791,13 @@ function pSegV(){ const A=P.A; const segs=A.bySeg, ss=A.bySseg;
 
 function spark(g,weeks){ const v=weeks.map(w=>g.wk[w]||0), mx=Math.max(1,...v); return `<svg width="${weeks.length*14}" height="22" viewBox="0 0 ${weeks.length*14} 22">${v.map((x,i)=>`<rect x="${i*14+2}" y="${22-Math.max(1,x/mx*20)}" width="10" height="${Math.max(1,x/mx*20)}" rx="2" fill="${x?stageColor(i,weeks.length):'#dfe8ee'}"/>`).join('')}</svg>`; }
 function pRm(){ const A=P.A, G=A.byRm;
-  $('#pp-rm').innerHTML=`<div class="grid g4">${kpi('RM actifs',G.length,'hors Direct Banking')}${kpi('RM n°1',esc(G[0]?G[0].k:'—'),G[0]?fmtM(G[0].vol)+' XOF · '+G[0].n+' crédits':'','#00415e')}${kpi('Production moyenne / RM',fmtM(G.length?G.reduce((s,g)=>s+g.vol,0)/G.length:0),'XOF','#005c83')}${kpi('Direct Banking',fmtM(A.db.vol),A.db.n+' crédits · canal distinct','#1a86b3')}</div>
+  $('#pp-rm').innerHTML=`<div class="grid g4">${kpi('Gestionnaires actifs',G.length,(P.attr==='inp'&&P.inpOn?'attribution inputeur FACTORY':'officer Flexcube, hors Direct Banking'))}${kpi('RM n°1',esc(G[0]?G[0].k:'—'),G[0]?fmtM(G[0].vol)+' XOF · '+G[0].n+' crédits':'','#00415e')}${kpi('Production moyenne / RM',fmtM(G.length?G.reduce((s,g)=>s+g.vol,0)/G.length:0),'XOF','#005c83')}${kpi('Direct Banking',fmtM(A.db.vol),A.db.n+' crédits · canal distinct','#1a86b3')}</div>
    <div class="grid g2" style="margin-top:14px">${card('Top 15 RM','volume XOF, par segment',`<div class="chart" style="height:460px"><canvas id="pcRm"></canvas></div>`)}${card('Tableau d\'honneur','',honourHtml(A))}</div>
    <div style="margin-top:14px">${card('Performance des RM','semaine par semaine — la mini-barre montre le rythme de chaque RM',`<div class="tw"><table class="dt"><thead><tr><th>#</th><th>RM</th><th>Agence principale</th><th class="r">Crédits</th><th class="r">Volume</th><th class="r">Part</th><th class="r">Ticket</th><th class="r">Taux</th><th class="r">Frais</th>${A.weeks.map(w=>`<th class="r">${P.wkLib[w].s}</th>`).join('')}<th>Rythme</th></tr></thead><tbody>
-    ${G.map((g,i)=>{ const L=A.list.filter(r=>r.rm===g.k); const ag=pGrp(L,r=>r.ag)[0]; return `<tr data-k="${esc(g.k)}"><td>${i+1}</td><td><b>${esc(g.k)}</b></td><td>${esc(ag?agLib(ag.k):'—')}</td><td class="r">${g.n}</td><td class="r">${fmtX(g.vol)}</td><td class="r">${pct(A.vol?g.vol/A.vol:0,1)}</td><td class="r">${fmtM(g.ticket)}</td><td class="r">${pct(g.rate,2)}</td><td class="r">${fmtX(g.fees)}</td>${A.weeks.map(w=>`<td class="r mono">${g.wk[w]?fmtM(g.wk[w]):'·'}</td>`).join('')}<td>${spark(g,A.weeks)}</td></tr>`; }).join('')}</tbody></table></div>`)}</div>`;
+    ${G.map((g,i)=>{ const L=A.list.filter(r=>rmKey(r)===g.k); const ag=pGrp(L,r=>r.ag)[0]; return `<tr data-k="${esc(g.k)}"><td>${i+1}</td><td><b>${esc(g.k)}</b></td><td>${esc(ag?agLib(ag.k):'—')}</td><td class="r">${g.n}</td><td class="r">${fmtX(g.vol)}</td><td class="r">${pct(A.vol?g.vol/A.vol:0,1)}</td><td class="r">${fmtM(g.ticket)}</td><td class="r">${pct(g.rate,2)}</td><td class="r">${fmtX(g.fees)}</td>${A.weeks.map(w=>`<td class="r mono">${g.wk[w]?fmtM(g.wk[w]):'·'}</td>`).join('')}<td>${spark(g,A.weeks)}</td></tr>`; }).join('')}</tbody></table></div>`)}</div>`;
   $$('#pp-rm tr[data-k]').forEach(tr=>tr.onclick=()=>{ P.q=tr.dataset.k; pGo('det'); });
   const T=G.slice(0,15), segs=[...new Set(P.rows.map(r=>r.seg))];
-  pmk('pcRm',{type:'bar',data:{labels:T.map(g=>g.k),datasets:segs.map((s,i)=>({label:s,data:T.map(g=>A.list.filter(r=>r.rm===g.k&&r.seg===s).reduce((t,r)=>t+r.amt,0)),backgroundColor:PAL[i%PAL.length],borderRadius:3}))},options:{indexAxis:'y',plugins:{tooltip:tipX,legend:{position:'bottom'}},scales:{x:{stacked:true,...axM},y:{stacked:true,grid:{display:false}}}}}); }
+  pmk('pcRm',{type:'bar',data:{labels:T.map(g=>g.k),datasets:segs.map((s,i)=>({label:s,data:T.map(g=>A.list.filter(r=>rmKey(r)===g.k&&r.seg===s).reduce((t,r)=>t+r.amt,0)),backgroundColor:PAL[i%PAL.length],borderRadius:3}))},options:{indexAxis:'y',plugins:{tooltip:tipX,legend:{position:'bottom'}},scales:{x:{stacked:true,...axM},y:{stacked:true,grid:{display:false}}}}}); }
 
 function pPrd(){ const A=P.A;
   $('#pp-prd').innerHTML=`<div class="grid g2">${card('Production par produit','libellés Flexcube harmonisés','<div class="chart tall"><canvas id="pcPr"></canvas></div>')}${card('Production par secteur d\'activité','','<div class="chart tall"><canvas id="pcSe"></canvas></div>')}</div>
@@ -1804,9 +1806,9 @@ function pPrd(){ const A=P.A;
   const se=A.bySect.slice(0,10); pmk('pcSe',{type:'doughnut',data:{labels:se.map(g=>g.k),datasets:[{data:se.map(g=>g.vol),backgroundColor:PAL,borderColor:'#fff',borderWidth:2}]},options:{cutout:'55%',plugins:{legend:{position:'right',labels:{font:{size:10.5}}},tooltip:tipX}}}); }
 
 const PTC={ref:['Référence',r=>`<span class="mono">${esc(r.ref)}</span>`,r=>r.ref],book:['Booking',r=>fmtD(r.book),r=>+r.book],client:['Client',r=>`<b>${esc(r.client)}</b>`,r=>r.client],ag:['Agence',r=>esc(agLib(r.ag)),r=>r.ag],seg:['Segment',r=>esc(r.seg),r=>r.seg],sseg:['Sous-segment',r=>esc(r.sseg),r=>r.sseg],
-  rm:['RM / canal',r=>esc(r.rm),r=>r.rm],prod:['Produit',r=>esc(r.prod),r=>r.prod],amt:['Montant',r=>fmtX(r.amt),r=>r.amt,1],rate:['Taux',r=>pct(r.rate,2),r=>r.rate,1],fees:['Frais',r=>fmtX(r.fees),r=>r.fees,1],intp:['Intérêts prévus',r=>fmtX(r.intp),r=>r.intp,1],mat:['Échéance',r=>fmtD(r.mat),r=>r.mat?+r.mat:0],wk:['Semaine',r=>P.wkLib[r.wk].s,r=>r.wk]};
-function pDet(){ const A=P.A, q=norm(P.q); let L=A.list.filter(r=>!q||norm(r.ref+' '+r.acct+' '+r.cust+' '+r.client+' '+r.rm+' '+r.ag+' '+agLib(r.ag)+' '+r.prod+' '+r.sseg).includes(q));
-  const c=PTC[P.sort.k]; L=[...L].sort((a,b)=>{ const x=c[2](a),y=c[2](b); return (x>y?1:x<y?-1:0)*P.sort.d; }); const cols=['book','wk','ref','client','ag','seg','sseg','rm','prod','amt','rate','fees','intp','mat'];
+  rm:['Officer Flexcube',r=>esc(r.rm),r=>r.rm],gest:['Inputeur FACTORY',r=>r.inp?`<b>${esc(inpName(r.inp))}</b>${inpName(r.inp)!==r.inp?` <span class="tag">${esc(r.inp)}</span>`:''}`:'—',r=>r.gest||''],prod:['Produit',r=>esc(r.prod),r=>r.prod],amt:['Montant',r=>fmtX(r.amt),r=>r.amt,1],rate:['Taux',r=>pct(r.rate,2),r=>r.rate,1],fees:['Frais',r=>fmtX(r.fees),r=>r.fees,1],intp:['Intérêts prévus',r=>fmtX(r.intp),r=>r.intp,1],mat:['Échéance',r=>fmtD(r.mat),r=>r.mat?+r.mat:0],wk:['Semaine',r=>P.wkLib[r.wk].s,r=>r.wk]};
+function pDet(){ const A=P.A, q=norm(P.q); let L=A.list.filter(r=>!q||norm(r.ref+' '+r.acct+' '+r.cust+' '+r.client+' '+r.rm+' '+(r.gest||'')+' '+(r.inp||'')+' '+r.ag+' '+agLib(r.ag)+' '+r.prod+' '+r.sseg).includes(q));
+  const c=PTC[P.sort.k]; L=[...L].sort((a,b)=>{ const x=c[2](a),y=c[2](b); return (x>y?1:x<y?-1:0)*P.sort.d; }); const cols=['book','wk','ref','client','ag','seg','sseg','rm',...(P.inpOn?['gest']:[]),'prod','amt','rate','fees','intp','mat'];
   $('#pp-det').innerHTML=`<div class="card"><div class="ctrl"><input type="search" id="pq" placeholder="Rechercher une référence, un compte, un client, un RM, une agence…" value="${esc(P.q)}"><span style="font-size:12.5px;color:var(--mut)"><b style="color:var(--navy)">${L.length}</b> crédits · <b style="color:var(--navy)">${fmtX(L.reduce((s,r)=>s+r.amt,0))}</b> XOF</span></div>
    <div class="tw"><table class="dt" id="ptD"><thead><tr>${cols.map(k=>`<th class="${PTC[k][3]?'r':''}" data-c="${k}">${PTC[k][0]}${P.sort.k===k?(P.sort.d>0?' ▲':' ▼'):''}</th>`).join('')}</tr></thead><tbody>${L.slice(0,1500).map(r=>`<tr>${cols.map(k=>`<td class="${PTC[k][3]?'r':''}">${PTC[k][1](r)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
   const i=$('#pq'); i.oninput=()=>{ P.q=i.value; clearTimeout(i._t); i._t=setTimeout(()=>{ pDet(); const n=$('#pq'); n.focus(); n.setSelectionRange(n.value.length,n.value.length); },180); };
@@ -1869,7 +1871,7 @@ function pCharts(tall){ const A=P.A, H=tall?{h:560}:{}, sub=(pFilterLabel()||'to
     out.wk=g3Bars({...H,title:'Production par semaine',sub:sub+' · XOF',labels:W.map(w=>P.wkLib[w].s+' '+P.wkLib[w].r),values:A.byWk.map(w=>w.vol),colors:W.map((_,i)=>stageColor(i,W.length))});
     let c=0; out.cum=g3Lines({...H,title:'Production cumulée',sub,labels:A.byDay.map(d=>d.d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})),series:[{name:'Cumul XOF',values:A.byDay.map(d=>c+=d.vol),color:G3.blue}],fmt:v=>g3Md(v)});
     const G=A.byAg.slice(0,15); out.ag=g3HBars({...H,title:'Classement des agences',sub:sub+' · XOF',labels:G.map(g=>g.lib),values:G.map(g=>g.vol),colors:G.map((_,i)=>i<3?G3.lime:G3.blue),left:230});
-    const R=A.byRm.slice(0,15); out.rm=g3HBars({...H,title:'Top 15 RM',sub:'hors Direct Banking · XOF',labels:R.map(g=>g.k),values:R.map(g=>g.vol),colors:R.map((_,i)=>i<3?G3.lime:G3.navy),left:230});
+    const R=A.byRm.slice(0,15); out.rm=g3HBars({...H,title:'Top 15 RM',sub:(P.attr==='inp'&&P.inpOn?'attribution inputeur FACTORY':'officer Flexcube, hors Direct Banking')+' · XOF',labels:R.map(g=>g.k),values:R.map(g=>g.vol),colors:R.map((_,i)=>i<3?G3.lime:G3.navy),left:230});
     out.seg=g3Donut({...H,title:'Production par segment · sous-segment',sub:'XOF',labels:A.bySseg.map(s=>s.k),values:A.bySseg.map(s=>s.vol),center:g3Md(A.vol)});
     out.hSeg=pHeatImg({title:'Segments × semaines',sub:'volume mis en place XOF',rows:A.bySseg.map(s=>s.k),cols:wl,m:A.bySseg.map(s=>W.map(w=>s.wk[w]||0))});
     const G2=A.byAg.slice(0,20); out.hAg=pHeatImg({title:'Agences × semaines',sub:'vingt premières agences · XOF',rows:G2.map(g=>g.lib),cols:wl,m:G2.map(g=>W.map(w=>g.wk[w]||0))});
@@ -1906,18 +1908,24 @@ async function pExcel(){ busy(true,'Construction du classeur Production…'); aw
     sheet('Segment x mois','SEGMENTS · SOUS-SEGMENTS × MOIS','Volume mis en place par mois (XOF). Les mois suivants s\'ajoutent en colonnes.',['Segment · sous-segment',...mh,'Total'],mat(A.bySseg,M,(g,k)=>g.mo[k]),['s',...M.map(()=>'n'),'n'],[40,...M.map(()=>18),18],{heat:[1,M.length]});
     sheet('Nb crédits segment x sem.','NOMBRE DE CRÉDITS PAR SEGMENT ET PAR SEMAINE','Nombre de mises en place.',['Segment',...wh,'Total'],[...A.bySeg.map(g=>[g.k,...W.map(w=>g.wkn[w]||0),g.n]),tot('TOTAL',[...W.map(w=>A.bySeg.reduce((s,g)=>s+(g.wkn[w]||0),0)),A.n])],['s',...W.map(()=>'n'),'n'],[30,...W.map(()=>16),12],{heat:[1,W.length]});
     sheet('Par RM','PERFORMANCE DES RM','Hors canal Direct Banking (présenté séparément). Colonnes semaines en XOF.',['RM','Agence principale','Crédits','Volume','Part','Ticket moyen','Taux moyen','Frais',...wh],
-      A.byRm.map(g=>{ const ag=pGrp(A.list.filter(r=>r.rm===g.k),r=>r.ag)[0]; return [g.k,ag?agLib(ag.k):'',g.n,Math.round(g.vol),A.vol?g.vol/A.vol:0,Math.round(g.ticket),g.rate,Math.round(g.fees),...W.map(w=>Math.round(g.wk[w]||0))]; }),
+      A.byRm.map(g=>{ const ag=pGrp(A.list.filter(r=>rmKey(r)===g.k),r=>r.ag)[0]; return [g.k,ag?agLib(ag.k):'',g.n,Math.round(g.vol),A.vol?g.vol/A.vol:0,Math.round(g.ticket),g.rate,Math.round(g.fees),...W.map(w=>Math.round(g.wk[w]||0))]; }),
       ['s','s','n','n','p','n','p','n',...W.map(()=>'n')],[30,26,9,16,8,14,10,13,...W.map(()=>14)],{bars:[3],heat:[8,7+W.length]});
     sheet('Canaux','PRODUCTION PAR CANAL','RM, Direct Banking et crédits non affectés.',['Canal','Crédits','Volume','Part','Ticket moyen',...wh],A.byCh.map(g=>[g.k,g.n,Math.round(g.vol),A.vol?g.vol/A.vol:0,Math.round(g.ticket),...W.map(w=>Math.round(g.wk[w]||0))]),['s','n','n','p','n',...W.map(()=>'n')],[20,10,18,9,14,...W.map(()=>14)]);
     sheet('Par produit','PRODUCTION PAR PRODUIT','Libellés Flexcube harmonisés.',['Produit','Crédits','Volume','Part','Ticket moyen','Taux moyen','Frais'],A.byProd.map(g=>[g.k,g.n,Math.round(g.vol),A.vol?g.vol/A.vol:0,Math.round(g.ticket),g.rate,Math.round(g.fees)]),['s','n','n','p','n','p','n'],[60,10,18,9,14,11,14]);
     if(A.link) sheet('Lien pipe','DU PIPE FACTORY À LA PRODUCTION','Dossiers du pipe retrouvés dans la production (même numéro de compte).',['N° dossier','Client','Étape pipe','Montant pipe','Référence prêt','Booking','Montant mis en place','Délai (j)'],
       A.link.hit.map(x=>[x.d.ref,x.r.client,x.d.stage.lib,Math.round(x.d.vol),x.r.ref,x.r.book,Math.round(x.r.amt),x.d.dintro?Math.round((x.r.book-x.d.dintro)/DAY):'']),['s','s','s','n','s','d','n','n'],[12,40,12,16,20,12,18,9]);
     const L=[...A.list].sort((a,b)=>a.book-b.book||b.amt-a.amt);
-    sheet('Détail','DÉTAIL DES CRÉDITS MIS EN PLACE',A.n+' crédits, classés par date de booking.',['Booking','Semaine','Référence','Compte','Client','Agence','Segment','Sous-segment','RM / canal','Produit','Montant','Taux','Frais','Intérêts prévus','Échéance'],
-      L.map(r=>[r.book,P.wkLib[r.wk].s,r.ref,r.acct,r.client,agLib(r.ag),r.seg,r.sseg,r.rm,r.prod,Math.round(r.amt),r.rate,Math.round(r.fees),Math.round(r.intp),r.mat||'']),['d','s','s','s','s','s','s','s','s','s','n','p','n','n','d'],[11,8,19,15,36,22,17,22,24,40,15,8,12,14,11],{bars:[10]});
+    sheet('Détail','DÉTAIL DES CRÉDITS MIS EN PLACE',A.n+' crédits, classés par date de booking.',['Booking','Semaine','Référence','Compte','Client','Agence','Segment','Sous-segment','Officer Flexcube','Inputeur FACTORY','Gestionnaire retenu','Produit','Montant','Taux','Frais','Intérêts prévus','Échéance','Rapprochement'],
+      L.map(r=>[r.book,P.wkLib[r.wk].s,r.ref,r.acct,r.client,agLib(r.ag),r.seg,r.sseg,r.rm,r.inp?inpName(r.inp)+(inpName(r.inp)!==r.inp?' ('+r.inp+')':''):'',rmKey(r)||'Hors classement',r.prod,Math.round(r.amt),r.rate,Math.round(r.fees),Math.round(r.intp),r.mat||'',r.inpQ||'']),['d','s','s','s','s','s','s','s','s','s','s','s','n','p','n','n','d','s'],[11,8,19,15,36,22,17,22,24,26,26,40,15,8,12,14,11,16],{bars:[12]});
+    if(P.inpOn){ const IG=pGrp(A.list.filter(r=>r.inp),r=>r.inp), T=inpStats(A);
+      sheet('Inputeurs','INPUTEURS FACTORY — RÉATTRIBUTION DES CRÉDITS',`Rapprochement par numéro de compte (puis montant et date) avec ${P.inp.rows.length} dossiers FACTORY : ${T.mn}/${T.n} crédits rapprochés, Direct Banking réattribué ${T.dbm}/${T.db} (${fmtM(T.dbmv)} XOF).`,['Identifiant','Nom','Crédits','Volume','dont Direct Banking','Volume Direct Banking','Agence principale',...wh],
+        IG.map(g=>{ const L2=A.list.filter(r=>r.inp===g.k), db=L2.filter(r=>r.ch==='Direct Banking'), ag=pGrp(L2,r=>r.ag)[0]; return [g.k,inpName(g.k)===g.k?'':inpName(g.k),g.n,Math.round(g.vol),db.length,Math.round(db.reduce((s,r)=>s+r.amt,0)),ag?agLib(ag.k):'',...W.map(w=>Math.round(g.wk[w]||0))]; }),
+        ['s','s','n','n','n','n','s',...W.map(()=>'n')],[14,28,9,16,10,16,24,...W.map(()=>14)],{bars:[3,5],heat:[7,6+W.length]});
+      if(T.dbu.length) sheet('DB non rapproché','DIRECT BANKING NON RAPPROCHÉ','Comptes absents des exports FACTORY chargés : à compléter avec un export plus ancien ou à vérifier.',['Booking','Référence','Compte','Client','Agence','Produit','Montant'],
+        [...T.dbu].sort((a,b)=>b.amt-a.amt).map(r=>[r.book,r.ref,r.acct,r.client,agLib(r.ag),r.prod,Math.round(r.amt)]),['d','s','s','s','s','s','n'],[11,19,15,36,22,40,15]); }
     const raw=XLSX.write(wb,{bookType:'xlsx',type:'base64'}); const idx=n=>wb.SheetNames.indexOf(n)+1; const attach=[];
     const side=(n,imgs)=>{ if(!wb.Sheets[n]) return; const ref=XLSX.utils.decode_range(wb.Sheets[n]['!ref']); const col=Math.min(24,ref.e.c+2); attach.push({sheet:idx(n),cf:CFS[n]||[],imgs:imgs.filter(Boolean).map((p,i)=>({png:p,col,row:3+i*21,cols:9,rows:20}))}); };
-    side('Synthèse',[CH.wk,CH.cum,CH.p3]); side('Par agence',[CH.ag]); side('Agence x semaine',[CH.hAg]); side('Segment x semaine',[CH.hSeg,CH.p3s]); side('Segment x mois',[CH.seg]); side('Nb crédits segment x sem.',[]); side('Par RM',[CH.rm]); side('Canaux',[]); side('Par produit',[]); side('Lien pipe',[]); side('Détail',[]);
+    side('Synthèse',[CH.wk,CH.cum,CH.p3]); side('Par agence',[CH.ag]); side('Agence x semaine',[CH.hAg]); side('Segment x semaine',[CH.hSeg,CH.p3s]); side('Segment x mois',[CH.seg]); side('Nb crédits segment x sem.',[]); side('Par RM',[CH.rm]); side('Canaux',[]); side('Par produit',[]); side('Lien pipe',[]); side('Détail',[]); side('Inputeurs',[]); side('DB non rapproché',[]);
     const res=await xlsxAttach(raw,attach,{logo:await g3LogoBadge(),gradient:true});
     dl(new Blob([res.u8],{type:MIME.xlsx}),'Production_'+stampP()+'.xlsx'); toast('✅ Classeur Production exporté — '+wb.SheetNames.length+' feuilles');
   }catch(e){ console.error(e); toast('⚠️ Export Excel : '+e.message,6000); }
@@ -1939,7 +1947,7 @@ async function pPptx(){ const PP=window.PptxGenJS; if(!PP){ toast('Moteur PowerP
     pptTable(s,['Agence','Crédits','Volume','Part'],A.byAg.slice(0,14).map(g=>[g.lib,String(g.n),fmtX(g.vol),pct(A.vol?g.vol/A.vol:0,1)]),{x:6.8,y:1.35,w:6.05,colW:[2.6,0.9,1.6,0.95],right:[1,2,3],fs:9,rowH:0.34});
     big('Agences × semaines','volume mis en place par semaine ISO',CF.hAg);
     big('Segments × semaines','sous-segments et rythme hebdomadaire',CF.hSeg);
-    s=pp.addSlide(); pptBand(pp,s,'Performance des RM','hors Direct Banking',foot,++n,badge); if(CH.rm) s.addImage({data:CH.rm,x:0.45,y:1.35,w:6.1,h:4.49});
+    s=pp.addSlide(); pptBand(pp,s,'Performance des gestionnaires',(P.attr==='inp'&&P.inpOn?'attribution inputeur FACTORY':'officer Flexcube, hors Direct Banking'),foot,++n,badge); if(CH.rm) s.addImage({data:CH.rm,x:0.45,y:1.35,w:6.1,h:4.49});
     pptTable(s,['RM','Crédits','Volume','Ticket'],A.byRm.slice(0,14).map(g=>[g.k,String(g.n),fmtX(g.vol),fmtM(g.ticket)]),{x:6.8,y:1.35,w:6.05,colW:[2.6,0.9,1.6,0.95],right:[1,2,3],fs:9,rowH:0.34,pills:(ri,ci)=>ci===0&&ri<3?PX.GR:null});
     s=pp.addSlide(); pptBand(pp,s,'Tableau d\'honneur','top 5 · progressions · RM à relancer',foot,++n,badge);
     pptTable(s,['#','Top 5 agences','Volume'],A.byAg.slice(0,5).map((g,i)=>[String(i+1),g.lib,fmtM(g.vol)]),{x:0.5,y:1.35,w:6,colW:[0.5,4,1.5],right:[2],fs:11,rowH:0.42,pills:(ri,ci)=>ci===0?PX.LM:null});
@@ -1980,7 +1988,7 @@ function pMailHtml(mode,CH){ const A=P.A, src=k=>mode==='cid'?'cid:'+k:(k==='log
   b+=mP('Bonjour à tous,')+mP(`Veuillez trouver ci-dessous les performances de production au <b>${fmtD(P.last)}</b>${pFilterLabel()?' ('+mEsc(pFilterLabel().toLowerCase())+')':''} : par agence, par segment (semaine et mois) et par RM.`);
   b+=mH('Le point production')+mCallout(pNarr(A).map(p=>`<div style="margin:0 0 7px"><span style="color:${p.c};font-weight:800">▸</span> ${p.t}</div>`).join(''),MC.blue);
   if(CH.wk) b+=mImg(src('wk'),'Production par semaine');
-  b+=mH('Top 10 agences')+agT; b+=mH('Segments × semaines')+segT; b+=mH('Top 10 RM (hors Direct Banking)')+rmT;
+  b+=mH('Top 10 agences')+agT; b+=mH('Segments × semaines')+segT; b+=mH('Top 10 gestionnaires ('+(P.attr==='inp'&&P.inpOn?'attribution inputeur FACTORY':'officer Flexcube, hors Direct Banking')+')')+rmT;
   if(CH.p3) b+=mH('La production en 3D')+mImg(src('p3'),'Production 3D');
   b+=mP('<br>Bien cordialement,');
   return mailShell({logo:src('logo'),title:'Performances de production — agences, segments, RM',sub:'Au '+fmtD(P.last)+' · '+A.n+' crédits · XOF '+fmtX(A.vol),right:'Ecobank Sénégal<br><b style="color:#fff">'+fmtD(P.last)+'</b>',body:b,foot:'Généré par <b style="color:#00415e">Deal Pipe Studio · Salle Production</b> — Ecobank Sénégal · INTERNAL USE ONLY · montants en XOF.'}); }
@@ -1994,6 +2002,69 @@ function pMail(){ const subj='PERFORMANCES DE PRODUCTION — au '+fmtD(P.last)+'
   const CH=pCharts(); $('#pmFrame').srcdoc=pMailHtml('data',CH); $('#pmTo').oninput=e=>P.mailTo=e.target.value;
   $('#pmEml').onclick=()=>{ const imgs=[['logo',LOGO_SRC],...['wk','p3'].filter(k=>CH[k]).map(k=>[k,CH[k]])]; dl(new Blob([emlBuild(pMailHtml('cid',CH),imgs,$('#pmTo').value,$('#pmSu').value)],{type:MIME.eml}),'Production_'+stampP()+'.eml'); toast('📧 Brouillon .eml prêt'); };
   $('#pmCopy').onclick=()=>copyRich(pMailHtml('data',CH)); $('#pmHtml').onclick=()=>dl(new Blob([pMailHtml('data',CH)],{type:MIME.html}),'Production_'+stampP()+'.html'); }
+
+
+/* =====================================================================
+   INPUTEURS FACTORY — réattribution des crédits (notamment Direct Banking)
+   au gestionnaire qui a inputé le dossier dans FACTORY (colonne inputer)
+   Rapprochement : numéro de compte (DR_PROD_AC = Compte), puis montant et date.
+   ===================================================================== */
+const INPK='ecobank_inputeurs_v1', ANNK='ecobank_inputeurs_noms_v1';
+P.inp={rows:[],files:[]}; P.attr='inp';
+function inpLoadStore(){ try{ const o=JSON.parse(localStorage.getItem(INPK)||'null'); if(o&&o.rows){ P.inp={rows:o.rows.map(x=>({acct:x[0],inp:x[1],amt:x[2],intro:x[3]?new Date(x[3]):null,ref:x[4]})),files:o.files||[]}; } }catch(e){} }
+function inpSave(){ try{ localStorage.setItem(INPK,JSON.stringify({files:P.inp.files,rows:P.inp.rows.map(r=>[r.acct,r.inp,Math.round(r.amt),r.intro?+r.intro:0,r.ref])})); }catch(e){ console.warn('mémoire inputeurs',e); } }
+function annuaire(){ try{ return JSON.parse(localStorage.getItem(ANNK)||'{}'); }catch(e){ return {}; } }
+function inpDetect(wb){ let best=null; wb.SheetNames.forEach(n=>{ const t=findTable(wb.Sheets[n]); if(t&&t.m.acct!=null&&t.m.ao!=null&&(!best||t.n>best.n)) best=t; }); return best; }
+function loadInp(wb,fname){ const t=inpDetect(wb); if(!t) throw new Error('Aucune colonne Compte + inputer reconnue.'); const m=t.m, g=(r,k)=>m[k]==null?null:r[m[k]];
+  const seen=new Set(P.inp.rows.map(r=>r.ref+'|'+r.acct)); let add=0;
+  t.rows.forEach(r=>{ if(!r) return; const acct=String(g(r,'acct')==null?'':g(r,'acct')).trim(), inp=String(g(r,'ao')||'').trim().toLowerCase(); if(!acct||!inp) return;
+    const ref=String(g(r,'ref')==null?'':g(r,'ref')).trim(), k=ref+'|'+acct; if(seen.has(k)) return; seen.add(k);
+    P.inp.rows.push({acct,inp,amt:toNum(g(r,'vol')),intro:toDate(g(r,'dintro')),ref}); add++; });
+  P.inp.files=[...P.inp.files.filter(f=>f.name!==fname),{name:fname,n:t.rows.length,at:new Date().toISOString()}]; inpSave(); pAttrib();
+  if(P.rows.length){ P.attr='inp'; pAttrSeg(); pGo('inp'); } toast('✅ '+add+' dossiers inputés ajoutés au référentiel ('+P.inp.rows.length+' au total)'); }
+/* sources : fichier(s) inputeurs mémorisés + pipe FACTORY chargé dans la Salle Pipe */
+function inpIndex(){ const m=new Map(); const push=(acct,o)=>{ if(!acct) return; const L=m.get(acct)||[]; L.push(o); m.set(acct,L); };
+  P.inp.rows.forEach(r=>push(r.acct,r)); (S.deals||[]).forEach(d=>{ if(d.acct&&d.aoK&&d.aoK!=='—') push(d.acct,{acct:d.acct,inp:d.aoK.toLowerCase(),amt:d.vol,intro:d.dintro,ref:d.ref,pipe:1}); }); return m; }
+function inpLearn(){ // login → nom Flexcube, appris sur les crédits portés par un RM nommé (≥ 3 crédits et ≥ 60 %)
+  const c=new Map(); P.rows.forEach(r=>{ if(r.inp&&r.ch==='RM'){ const o=c.get(r.inp)||new Map(); o.set(r.rm,(o.get(r.rm)||0)+1); c.set(r.inp,o); } });
+  const out={}; c.forEach((o,k)=>{ const tot=[...o.values()].reduce((a,b)=>a+b,0), top=[...o.entries()].sort((a,b)=>b[1]-a[1])[0]; if(top&&top[1]>=3&&top[1]/tot>=0.6) out[k]=top[0]; }); return out; }
+function inpName(login){ const a=P.ann||{}; return a[login]||login; }
+function pAttrib(){ if(!P.rows.length) return; const idx=inpIndex();
+  P.rows.forEach(r=>{ r.inp=null; r.inpQ=null; const L=idx.get(r.acct); if(!L||!L.length) return;
+    const sc=x=>(Math.abs((x.amt||0)-r.amt)<1?0:1e6)+(x.intro?Math.abs(r.book-x.intro)/DAY+(x.intro>r.book?500:0):900);
+    const b=[...L].sort((a,c)=>sc(a)-sc(c))[0]; r.inp=b.inp; r.inpQ=Math.abs((b.amt||0)-r.amt)<1?'compte + montant':'compte'; r.inpRef=b.ref; r.inpPipe=!!b.pipe; });
+  P.learn=inpLearn(); P.ann=annuaire();
+  P.rows.forEach(r=>{ r.gest=r.inp?inpName(r.inp):(r.ch==='RM'?r.rm:null); }); P.inpOn=P.rows.some(r=>r.inp); }
+function rmKey(r){ return P.attr==='inp'&&P.inpOn?r.gest:(r.ch==='RM'?r.rm:null); }
+function pAttrSeg(){ $$('#pfAt button').forEach(b=>{ b.classList.toggle('on',b.dataset.v===(P.inpOn?P.attr:'off')); b.disabled=b.dataset.v==='inp'&&!P.inpOn; }); }
+function inpStats(A){ const L=A.list, m=L.filter(r=>r.inp), db=L.filter(r=>r.ch==='Direct Banking'), dbm=db.filter(r=>r.inp), s=a=>a.reduce((t,r)=>t+r.amt,0);
+  return {n:L.length,mn:m.length,mv:s(m),v:s(L),db:db.length,dbv:s(db),dbm:dbm.length,dbmv:s(dbm),dbu:db.filter(r=>!r.inp),q2:m.filter(r=>r.inpQ==='compte + montant').length}; }
+function pInp(){ const A=P.A;
+  if(!P.inpOn){ $('#pp-inp').innerHTML=`<div class="card"><div class="hd"><h3>Inputeurs FACTORY</h3><small>réattribuer les crédits Direct Banking au gestionnaire qui les a inputés</small></div>
+     <div class="empty" style="text-align:left;line-height:1.7">Les crédits Direct Banking (${A.db.n} crédits, ${fmtM(A.db.vol)} XOF) faussent le classement des RM : ils ont été montés par des gestionnaires mais Flexcube les porte sur un officer générique.<br>
+     Chargez un <b>export FACTORY</b> (colonnes Numéro Dossier, Compte, montantSolicite, inputer…) : chaque crédit mis en place sera rapproché de son dossier FACTORY par le <b>numéro de compte</b>, puis par le montant et la date, et attribué au gestionnaire de la colonne <b>inputer</b>. Le référentiel est mémorisé sur ce poste et s'enrichit à chaque chargement.</div>
+     <button class="btn lime" id="inpLoad" style="margin-top:10px">Charger un export FACTORY (inputeurs)</button></div>`; $('#inpLoad').onclick=()=>$('#fileInp').click(); return; }
+  const T=inpStats(A); const G=pGrp(A.list.filter(r=>r.inp),r=>r.inp);
+  const ann=P.ann||{}, lr=P.learn||{};
+  $('#pp-inp').innerHTML=`<div class="grid g4">${kpi('Crédits rapprochés',T.mn+' <small>/ '+T.n+'</small>',pct(T.n?T.mn/T.n:0,0)+' des crédits · '+pct(T.v?T.mv/T.v:0,0)+' du volume · '+T.q2+' avec montant identique','#00415e')}
+    ${kpi('Direct Banking réattribué',T.dbm+' <small>/ '+T.db+'</small>',fmtM(T.dbmv)+' XOF sur '+fmtM(T.dbv)+' ('+pct(T.dbv?T.dbmv/T.dbv:0,0)+')','#6ba23a')}
+    ${kpi('Direct Banking non rapproché',T.dbu.length+' <small>crédits</small>',fmtM(T.dbu.reduce((s,r)=>s+r.amt,0))+' XOF — compte absent des exports FACTORY chargés','#c0392b')}
+    ${kpi('Inputeurs identifiés',G.length,P.inp.rows.length+' dossiers FACTORY en mémoire'+(S.deals.length?' + pipe du jour':''),'#005c83')}</div>
+  <div class="card" style="margin-top:14px"><div class="hd"><h3>Comment l'attribution fonctionne</h3><small>${P.inp.files.map(f=>esc(f.name)).join(' · ')||'pipe FACTORY du jour'}</small></div>
+    <div style="font-size:12.5px;line-height:1.65;color:var(--ink)">Chaque crédit mis en place est rapproché d'un dossier FACTORY ayant le <b>même numéro de compte</b> ; à plusieurs candidats, on retient celui de <b>même montant</b> introduit le plus près avant le booking. Le crédit est alors attribué au <b>gestionnaire inputeur</b> (colonne K « inputer »). Le sélecteur <b>Attribution</b> de la barre de filtres bascule toute la salle (RM, tableau d'honneur, 3D, exports, mail) entre l'officer Flexcube et l'inputeur FACTORY. Les identifiants de connexion peuvent être traduits en noms dans la colonne « Nom » ; l'app propose des suggestions (identifiant qui inpute ≥ 3 crédits dont ≥ 60 % pour le même officer Flexcube), à valider avant d'être appliquées.</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" id="inpLoad">Ajouter un export FACTORY</button><button class="btn" id="inpSaveN">Enregistrer les noms</button>${Object.keys(lr).some(k=>!ann[k])?`<button class="btn" id="inpSug">Accepter les ${Object.keys(lr).filter(k=>!ann[k]).length} suggestions</button>`:''}<button class="btn" id="inpClear">Vider le référentiel</button></div></div>
+  <div class="grid g2" style="margin-top:14px">${card('Top 15 inputeurs','volume XOF — dont Direct Banking réattribué','<div class="chart" style="height:460px"><canvas id="pcInp"></canvas></div>')}
+    ${card('Avant / après','top 10 des gestionnaires selon l\'attribution',`<div class="grid g2">${['off','inp'].map(md=>{ const sv=P.attr; P.attr=md; const R=pGrp(A.list.filter(r=>rmKey(r)),r=>rmKey(r)).slice(0,10); P.attr=sv; return `<div><div class="hon">${md==='off'?'Officer Flexcube':'Inputeur FACTORY'}</div><ol class="pod">${R.map((g,i)=>`<li><span class="rk r${i}">${i+1}</span><b>${esc(g.k)}</b><i>${fmtM(g.vol)}</i></li>`).join('')}</ol></div>`; }).join('')}</div>`)}</div>
+  <div style="margin-top:14px">${card('Tableau des inputeurs','saisissez un nom pour traduire un identifiant ; il est repris partout',`<div class="tw"><table class="dt" id="inpT"><thead><tr><th>Identifiant</th><th>Nom</th><th class="r">Crédits</th><th class="r">Volume</th><th class="r">dont Direct Banking</th><th class="r">dont portés par un RM</th><th>Officers Flexcube servis</th><th>Agence principale</th>${A.weeks.map(w=>`<th class="r">${P.wkLib[w].s}</th>`).join('')}</tr></thead><tbody>
+    ${G.map(g=>{ const L=A.list.filter(r=>r.inp===g.k), db=L.filter(r=>r.ch==='Direct Banking'), of=pGrp(L.filter(r=>r.ch==='RM'),r=>r.rm).slice(0,3), ag=pGrp(L,r=>r.ag)[0];
+      return `<tr><td class="mono"><b>${esc(g.k)}</b></td><td><input data-l="${esc(g.k)}" value="${esc(ann[g.k]||'')}" placeholder="${esc(lr[g.k]?'suggestion : '+lr[g.k]:'nom du gestionnaire')}" style="width:190px;padding:5px 7px;border:1px solid var(--line2);border-radius:7px"></td><td class="r">${g.n}</td><td class="r"><b>${fmtX(g.vol)}</b></td><td class="r">${db.length?`<span class="tag ok">${db.length} · ${fmtM(db.reduce((s,r)=>s+r.amt,0))}</span>`:'—'}</td><td class="r">${L.length-db.length||'—'}</td><td style="font-size:11.5px">${of.map(o=>esc(o.k)+' ('+o.n+')').join(', ')||'—'}</td><td>${esc(ag?agLib(ag.k):'—')}</td>${A.weeks.map(w=>`<td class="r mono">${g.wk[w]?fmtM(g.wk[w]):'·'}</td>`).join('')}</tr>`; }).join('')}</tbody></table></div>`)}</div>
+  <div style="margin-top:14px">${card('Direct Banking non rapproché','comptes introuvables dans les exports FACTORY chargés — à compléter avec un export plus ancien ou à vérifier',T.dbu.length?`<div class="tw" style="max-height:420px"><table class="dt"><thead><tr><th>Booking</th><th>Référence</th><th>Compte</th><th>Client</th><th>Agence</th><th>Produit</th><th class="r">Montant</th></tr></thead><tbody>${T.dbu.sort((a,b)=>b.amt-a.amt).map(r=>`<tr><td>${fmtD(r.book)}</td><td class="mono">${esc(r.ref)}</td><td class="mono">${esc(r.acct)}</td><td><b>${esc(r.client)}</b></td><td>${esc(agLib(r.ag))}</td><td>${esc(r.prod)}</td><td class="r">${fmtX(r.amt)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Tous les crédits Direct Banking sont rapprochés.</div>')}</div>`;
+  $('#inpLoad').onclick=()=>$('#fileInp').click();
+  $('#inpSaveN').onclick=()=>{ const o=annuaire(); $$('#inpT input[data-l]').forEach(i=>{ const v=i.value.trim(); if(v) o[i.dataset.l]=v; else delete o[i.dataset.l]; }); try{ localStorage.setItem(ANNK,JSON.stringify(o)); }catch(e){} pAttrib(); pGo('inp'); toast('✅ Noms des inputeurs enregistrés'); };
+  if($('#inpSug')) $('#inpSug').onclick=()=>{ $$('#inpT input[data-l]').forEach(i=>{ if(!i.value.trim()&&lr[i.dataset.l]) i.value=lr[i.dataset.l]; }); toast('Suggestions reportées dans la colonne Nom — vérifiez puis « Enregistrer les noms »'); };
+  $('#inpClear').onclick=()=>{ if(!confirm('Vider le référentiel des inputeurs mémorisé sur ce poste ?')) return; P.inp={rows:[],files:[]}; try{ localStorage.removeItem(INPK); }catch(e){} pAttrib(); pAttrSeg(); pGo('inp'); };
+  const T15=G.slice(0,15); pmk('pcInp',{type:'bar',data:{labels:T15.map(g=>inpName(g.k)===g.k?g.k:inpName(g.k)+' ('+g.k+')'),datasets:[{label:'Direct Banking réattribué',data:T15.map(g=>A.list.filter(r=>r.inp===g.k&&r.ch==='Direct Banking').reduce((s,r)=>s+r.amt,0)),backgroundColor:'#8cc63f',borderRadius:3},{label:'Crédits portés par un RM',data:T15.map(g=>A.list.filter(r=>r.inp===g.k&&r.ch!=='Direct Banking').reduce((s,r)=>s+r.amt,0)),backgroundColor:'#005c83',borderRadius:3}]},
+    options:{indexAxis:'y',plugins:{tooltip:tipX,legend:{position:'bottom'}},scales:{x:{stacked:true,...axM},y:{stacked:true,grid:{display:false},ticks:{font:{size:11}}}}}}); }
 
 /* ---------- initialisation ---------- */
 (function init(){ chartDefaults(); $('#logoTop').src=LOGO_SRC; $('#logoDrop').src=LOGO_SRC;
@@ -2010,6 +2081,9 @@ function pMail(){ const subj='PERFORMANCES DE PRODUCTION — au '+fmtD(P.last)+'
   $('#fReset').onclick=()=>{ S.F={cli:'',ao:'',pg:'',ty:'',stage:''}; S.q=''; fillFilters(); renderAll(); };
   $('#bXl').onclick=()=>ROOM==='prod'?pExcel():exportExcel(); $('#bPpt').onclick=()=>ROOM==='prod'?pPptx():exportPptx(); $('#bDoc').onclick=()=>ROOM==='prod'?pWord():exportWord(); $('#bMail').onclick=()=>ROOM==='prod'?pGo('mail'):goTab('mail');
   $$('#rooms button').forEach(b=>b.onclick=()=>setRoom(b.dataset.r)); $('#logoDropP').src=LOGO_SRC; $('#pzone').onclick=pick;
+  $('#fileInp').onchange=e=>{ const f=e.target.files[0]; if(f){ f.__inp=1; loadFile(f); } e.target.value=''; };
+  $$('#pfAt button').forEach(b=>b.onclick=()=>{ if(b.disabled) return; P.attr=b.dataset.v; pAttrSeg(); pGo(P.tab); });
+  inpLoadStore();
   $$('#pfCh button').forEach(b=>b.onclick=()=>{ P.F.ch=b.dataset.v; $$('#pfCh button').forEach(x=>x.classList.toggle('on',x===b)); pGo(P.tab); });
   [['#pfSeg','seg'],['#pfAg','ag'],['#pfWk','wk'],['#pfMo','mo']].forEach(([id,k])=>$(id).onchange=e=>{ P.F[k]=e.target.value; pGo(P.tab); });
   $('#pfReset').onclick=()=>{ P.F={seg:'',ag:'',wk:'',mo:'',ch:''}; P.q=''; pFillFilters(); pGo(P.tab); }; $('#bPrint').onclick=()=>window.print();
