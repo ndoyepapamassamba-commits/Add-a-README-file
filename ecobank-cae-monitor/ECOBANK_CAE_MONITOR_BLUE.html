@@ -124,6 +124,19 @@ html[data-theme="dark"] .btn{color:var(--ink)}
 .hero-back:hover{background:var(--lime-2)}
 .flowbar .fl b{font-weight:800}
 
+/* ---------- Mailer ---------- */
+.mailer{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+.mailer .opts{position:sticky;top:84px}
+.mailer .opts .ffield{margin-bottom:12px}
+.mailer .opts .ffield input,.mailer .opts .ffield select{width:100%;min-width:0}
+.mailer .opts .chk{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);margin:6px 0;font-weight:600}
+.mailer .opts .acts{display:grid;gap:8px;margin-top:14px}
+.mailer .opts .acts .btn{justify-content:center}
+.mailer .excl{font-size:12px;color:var(--ink-2);background:var(--field);border-left:3px solid var(--amber);border-radius:8px;padding:10px 12px;line-height:1.55;margin-top:12px}
+.mailer .excl b{color:var(--navy)} html[data-theme="dark"] .mailer .excl b{color:#fff}
+.mailer iframe{width:100%;height:1400px;border:0;border-radius:12px;background:#eef4f7;box-shadow:var(--sh)}
+@media (max-width:1100px){.mailer{grid-template-columns:1fr}.mailer .opts{position:static}}
+
 /* ---------- Héros ---------- */
 .hero{position:relative;overflow:hidden;border-radius:20px;padding:26px 28px 22px;margin-bottom:18px;color:#fff;
   background:linear-gradient(120deg,#00344B 0%,#00415E 35%,#005C83 100%);box-shadow:var(--sh-lg)}
@@ -799,6 +812,8 @@ function pptTable(s,head,rows,o){ o=o||{}; const right=o.right||[];
     <div class="nav" data-view="impact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Impact portefeuille</span></div>
     <div class="nav" data-view="staff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg><span>Crédits Personnel</span></div>
     <div class="nav" data-view="detail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/></svg><span>Détail des contrats</span></div>
+    <div class="navlbl">Diffusion</div>
+    <div class="nav" data-view="mailer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg><span>Mailer CAE</span></div>
     <div class="spacer"></div>
     <div class="side-foot">
       <div>Arrêté CAE : <b id="foot-ar">—</b></div>
@@ -848,6 +863,7 @@ function pptTable(s,head,rows,o){ o=o||{}; const right=o.right||[];
       <section class="view" id="view-impact"></section>
       <section class="view" id="view-staff"></section>
       <section class="view" id="view-detail"></section>
+      <section class="view" id="view-mailer"></section>
     </div>
   </div>
 </div>
@@ -1908,6 +1924,100 @@ function renderTable(){
 }
 
 /* ============================================================================
+   VUE 9 — MAILER CAE (hors crédits du Personnel) — esprit « PDO MAILER »
+   ========================================================================== */
+const mail={period:null,to:'',cc:'',subject:'',top:15,charts:true,ags:true};
+const isStaffRow=r=>r.isStaffLoan||r.isExStaffLoan||/STAFF/i.test(String(r.creditProgram||''));
+function mailRows(){ const p=mail.period||state.period; const base=p==='BOTH'?(DATA.CAE1||[]).concat(DATA.CAE2||[]):(DATA[p]||[]);
+  const sf=state.f.staffOnly; state.f.staffOnly=false; const R=fApply(base); state.f.staffOnly=sf;
+  return {all:R,keep:R.filter(r=>!isStaffRow(r)),out:R.filter(isStaffRow),p}; }
+const mNum=v=>`<span style="white-space:nowrap">${fSp(v)}</span>`;
+function mTable(head,rows,o){ o=o||{}; const right=o.right||[], TD=`${MTD}font-size:11.5px;padding:7px 8px;border-bottom:1px solid #e3edf2;`;
+  const th=head.map((h,i)=>`<th style="${MTD}font-size:10.5px;font-weight:700;color:#fff;background:${MC.navy};padding:8px;text-align:${right.includes(i)?'right':'left'};border-bottom:3px solid ${MC.lime};white-space:nowrap">${mEsc(h)}</th>`).join('');
+  const tr=rows.map((r,ri)=>{ const kind=r.__grand?'grand':r.__total?'total':''; const bg=kind==='grand'?MC.navy:kind==='total'?'#e6f2d0':(ri%2?'#f6fafc':'#ffffff');
+    const col=kind==='grand'?'#ffffff':kind==='total'?MC.navy:MC.ink;
+    return '<tr>'+r.map((c,i)=>{ const sw=o.swatch&&!kind&&i===0?o.swatch(ri):null;
+      return `<td style="${TD}background:${bg};color:${col};${kind?'font-weight:700;':''}text-align:${right.includes(i)?'right':'left'};${right.includes(i)?'font-family:Consolas,monospace;white-space:nowrap;':''}${sw?`border-left:5px solid ${sw};`:''}">${c}</td>`; }).join('')+'</tr>'; }).join('');
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid ${MC.line};margin:4px 0 6px"><tr>${th}</tr>${tr}</table>`; }
+function buildMail(useCid){
+  const {keep:R,out,p}=mailRows(), A=analyse(R), tot=A.tot||1, lab=PERIOD_LABEL[p], labS=lab.split(' (')[0];
+  const imgs=[], img=(k,u,alt)=>{ if(!u) return ''; imgs.push([k,u]); return mImg(useCid?'cid:'+k:u,alt); };
+  const logo=useCid?'cid:logo':LOGO_SRC; if(useCid) imgs.push(['logo',LOGO_SRC]);
+  const I=insights(A), wk=A.wk, cl=A.cl.slice(0,mail.top);
+  const firstEch=id=>R.filter(r=>(r.codeClient||r.client)===id).map(r=>pdate(r.dateEcheance)).filter(Boolean).sort((a,b)=>a-b)[0];
+  const natRows=NAT_KEYS.filter(k=>A.byNat[k]).map(k=>[`<b style="color:${NATURE_COL[k]}">${NATURE_SHORT[k]}</b>`,String(A.cnt[k]||0),mNum(A.byNat[k]),fPct(100*A.byNat[k]/tot,1)]);
+  natRows.push(Object.assign(['TOTAL hors Personnel',String(R.length),mNum(A.tot),'100 %'],{__total:true}));
+  if(out.length) natRows.push(Object.assign(['Total y compris Personnel',String(R.length+out.length),mNum(A.tot+sum(out,'montantXOF')),''],{__grand:true}));
+  const natKeys=NAT_KEYS.filter(k=>A.byNat[k]);
+  const cats=Object.entries(groupSum(R,'categorie')).sort((a,b)=>b[1]-a[1]); const cc=groupCount(R,'categorie');
+  const catRows=cats.map(([c,v])=>[mEsc(c),NATURE_SHORT[CAT_NATURE[c]]||'',String(cc[c]),mNum(v),fPct(100*v/tot,1)]);
+  catRows.push(Object.assign(['TOTAL','',String(R.length),mNum(A.tot),'100 %'],{__total:true}));
+  let cu=0; const wkRows=wk.map(w=>{ const t=wkTot(w); cu+=t; const e=new Date(w.start); e.setDate(e.getDate()+6);
+    return [`${dShort(w.start)} – ${dShort(e)}${w===A.peak?' <b style="color:'+MC.amber+'">▲ pic</b>':''}`,String(w.n),mNum(w.EMPLOI),mNum(w.RESSOURCE),mNum(w.ENGAGEMENT),mNum(t),fPct(100*cu/tot,0)]; });
+  wkRows.push(Object.assign(['TOTAL',String(R.length),mNum(A.emp),mNum(A.res),mNum(A.eng),mNum(A.tot),'100 %'],{__total:true}));
+  const clRows=cl.map((e,i)=>{ const rr=R.filter(r=>(r.codeClient||r.client)===e.id); const nat=Object.entries(groupSum(rr,'nature')).sort((a,b)=>b[1]-a[1])[0][0]; const fe=firstEch(e.id);
+    return [String(i+1),`<b>${mEsc(e.nm)}</b>`,`<span style="white-space:nowrap">${mEsc(agL(rr[0].agence))}</span>`,`<span style="color:${NATURE_COL[nat]};font-weight:700">${NATURE_SHORT[nat]}</span>`,fe?fe.toLocaleDateString('fr-FR'):'—',mNum(e.v),fPct(100*e.v/tot,1)]; });
+  const topSum=cl.reduce((s,e)=>s+e.v,0);
+  clRows.push(Object.assign(['',`Top ${cl.length}`,'','','',mNum(topSum),fPct(100*topSum/tot,1)],{__total:true}));
+  const ags=Object.entries(groupSum(R,'agence')).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const agRows=ags.map(([a,v])=>{ const rr=R.filter(r=>(r.agence||'N/D')===a); return [mEsc(agL(a)),String(rr.length),String(uniqClients(rr)),mNum(v),fPct(100*v/tot,1)]; });
+  const np=A.np;
+  const body=
+    mP('Bonjour à tous,')+
+    mP(`Veuillez trouver ci-dessous la synthèse des <b>créances à échoir — ${mEsc(lab)}</b>, arrêté au <b>${mEsc(ARRETE)}</b>, <b>hors crédits du Personnel</b> (Staff Loan et EX-Staff Loan).`)+
+    mKpis([{l:'Total à échoir',v:fSp(A.tot),s:`${R.length} contrats · XOF`,c:MC.navy},{l:'Emplois',v:fMd(A.emp),s:`${A.cnt.EMPLOI||0} crédits à terme`,c:'#6ba23a'},
+      {l:'Ressources',v:fMd(A.res),s:`${A.cnt.RESSOURCE||0} dépôts`,c:'#d4a13a'},{l:'Engagements',v:fMd(A.eng),s:`${A.cnt.ENGAGEMENT||0} hors-bilan`,c:MC.blue}])+
+    mKpis([{l:'Contreparties',v:String(uniqClients(R)),s:`Top 5 = ${fPct(100*A.top5/tot,0)}`,c:MC.blue},{l:'Semaine pic',v:A.peak?dShort(A.peak.start):'—',s:A.peak?fMd(wkTot(A.peak)):'',c:MC.amber},
+      {l:'Flux net',v:(A.net>=0?'+':'')+fMd(A.net),s:'Emplois − Ressources',c:A.net>=0?MC.emerald:MC.rose},{l:'NP à échoir',v:fMd(sum(np,'montantXOF')),s:`${np.length} contrat(s)`,c:np.length?MC.rose:MC.emerald}])+
+    mH('Lecture')+mCallout('<b>Constats</b><br>'+I.c.map(t=>'▸ '+mEsc(t)).join('<br>')+(I.v.length?'<br><br><b style="color:'+MC.amber+'">Points de vigilance</b><br>'+I.v.map(t=>'▸ '+mEsc(t)).join('<br>'):'')+(I.r.length?'<br><br><b style="color:'+MC.emerald+'">Recommandations</b><br>'+I.r.filter(t=>!/Personnel/.test(t)).map(t=>'▸ '+mEsc(t)).join('<br>'):''),MC.lime)+
+    mH('Répartition par nature')+mTable(['Nature','Contrats','Montant XOF','%'],natRows,{right:[1,2,3],swatch:i=>NATURE_COL[natKeys[i]]})+
+    (mail.charts?img('weeks',g3Stack({title:'Mur des échéances — hors Personnel',sub:`${labS} · flux hebdomadaires (XOF)`,labels:wk.map(w=>dShort(w.start)),series:NAT_KEYS.map(k=>({name:NATURE_SHORT[k],values:wk.map(w=>w[k]),color:PAL_NAT[k]}))}),'Mur des échéances'):'')+
+    mH('Échéancier hebdomadaire')+mTable(['Semaine','Contrats','Emplois','Ressources','Engagements','Total','% cumulé'],wkRows,{right:[1,2,3,4,5,6]})+
+    mH('Par catégorie de produit')+mTable(['Catégorie','Nature','Contrats','Montant XOF','%'],catRows,{right:[2,3,4],swatch:i=>NATURE_COL[CAT_NATURE[cats[i][0]]]||MC.blue})+
+    mH(`Top ${cl.length} contreparties à échoir`)+
+    (mail.charts?img('top',g3HBars({title:`Top ${Math.min(10,cl.length)} contreparties — hors Personnel`,sub:'Montants XOF',labels:cl.slice(0,10).map(e=>e.nm),values:cl.slice(0,10).map(e=>e.v),colors:cl.slice(0,10).map((e,i)=>i<3?'#00415e':'#005c83')}),'Top contreparties'):'')+
+    mTable(['#','Contrepartie','Agence','Nature','1ʳᵉ échéance','Montant XOF','%'],clRows,{right:[0,5,6]})+
+    (mail.ags?mH('Top 10 agences')+mTable(['Agence','Contrats','Clients','Montant XOF','%'],agRows,{right:[1,2,3,4]}):'')+
+    (out.length?mCallout(`<b>Périmètre exclu — crédits du Personnel :</b> ${out.length} contrat(s) pour ${mNum(sum(out,'montantXOF'))} XOF (Staff Loan / EX-Staff Loan), traités séparément.`,MC.amber):'')+
+    mP('<br>Cordialement,<br><b>Direction des Engagements — Cellule Portefeuille</b><br>Ecobank Sénégal');
+  const html=mailShell({logo,title:`Créances à échoir — ${labS} · hors Personnel`,sub:`${scopeLabel()} · arrêté ${ARRETE}`,right:`Arrêté<br><b style="color:#fff;font-size:13px">${mEsc(ARRETE)}</b>`,body,
+    foot:'ECOBANK SÉNÉGAL · Direction des Engagements · Cellule Portefeuille — Document interne, diffusion restreinte (INTERNAL USE ONLY). Généré le '+today()+'.'});
+  return {html,imgs,subject:mail.subject||`[CAE] Créances à échoir ${labS} — hors Personnel — ${fMd(A.tot)} XOF (arrêté ${ARRETE})`,R,out};
+}
+function viewMailer(){
+  if(!mail.period) mail.period=state.period;
+  const {keep,out}=mailRows();
+  const pOpt=k=>`<option value="${k}" ${mail.period===k?'selected':''}>${esc(k==='BOTH'?'Cumul '+PERIOD_LABEL.CAE1.split(' (')[0]+' + '+PERIOD_LABEL.CAE2.split(' (')[0]:PERIOD_LABEL[k])}</option>`;
+  $('#view-mailer').innerHTML=`<div class="mailer">
+    <div class="panel opts"><div class="phead"><div class="pt"><span class="dot"></span>Paramètres du mail</div></div>
+      <div class="ffield"><label>Période</label><select id="mlP">${['CAE1','CAE2','BOTH'].map(pOpt).join('')}</select></div>
+      <div class="ffield"><label>Destinataires (À)</label><input id="mlTo" placeholder="comex@ecobank.com; …" value="${esc(mail.to)}"></div>
+      <div class="ffield"><label>Copie (Cc)</label><input id="mlCc" placeholder="risques@ecobank.com" value="${esc(mail.cc)}"></div>
+      <div class="ffield"><label>Objet (vide = automatique)</label><input id="mlSub" placeholder="Objet automatique" value="${esc(mail.subject)}"></div>
+      <div class="ffield"><label>Nombre de contreparties</label><select id="mlTop">${[10,15,20,30].map(n=>`<option ${mail.top===n?'selected':''}>${n}</option>`).join('')}</select></div>
+      <label class="chk"><input type="checkbox" id="mlCh" ${mail.charts?'checked':''}> Graphiques 3D intégrés</label>
+      <label class="chk"><input type="checkbox" id="mlAg" ${mail.ags?'checked':''}> Tableau des agences</label>
+      <div class="excl"><b>Hors Personnel :</b> ${out.length} contrat(s) Staff Loan / EX-Staff Loan exclus (${fMd(sum(out,'montantXOF'))}).<br>
+        <b>Périmètre du mail :</b> ${keep.length} contrats · ${fMd(sum(keep,'montantXOF'))} XOF.<br><span style="opacity:.8">Les filtres globaux (nature, agence…) s'appliquent aussi.</span></div>
+      <div class="acts">
+        <button class="btn pri" id="mlEml">${svg('<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>')}Brouillon Outlook couleur (.eml)</button>
+        <button class="btn xl" id="mlCopy">${svg('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>')}Copier le mail mis en forme</button>
+        <button class="btn" id="mlHtml">${svg(IC.pdf)}Télécharger en .html</button>
+      </div></div>
+    <div class="panel"><div class="phead"><div class="pt"><span class="dot"></span>Aperçu du mail</div><div class="ps" id="mlSubj"></div></div><iframe id="mlFrame" title="Aperçu du mail"></iframe></div></div>`;
+  const upd=()=>{ const M=buildMail(false); $('#mlFrame').srcdoc=M.html; $('#mlSubj').textContent='Objet : '+M.subject; };
+  const bind=(id,k,f)=>$(id).addEventListener('change',e=>{ mail[k]=f?f(e.target):e.target.value; if(k==='period') return viewMailer(); upd(); });
+  bind('#mlP','period'); bind('#mlTo','to'); bind('#mlCc','cc'); bind('#mlSub','subject'); bind('#mlTop','top',t=>+t.value); bind('#mlCh','charts',t=>t.checked); bind('#mlAg','ags',t=>t.checked);
+  const fn=ext=>`Ecobank_CAE_hors_Personnel_${(mail.period||'').replace('BOTH','Cumul')}_${ARRETE.replace(/\//g,'-')}.${ext}`;
+  $('#mlEml').onclick=()=>busy('Préparation du brouillon Outlook…',async()=>{ const M=buildMail(true);
+    let e=emlBuild(M.html,M.imgs,mail.to,M.subject); if(mail.cc) e=e.replace('\r\nSubject:',`\r\nCc: ${mail.cc}\r\nSubject:`);
+    dl(new Blob([e],{type:'message/rfc822'}),fn('eml')); toast('Brouillon .eml généré — double-cliquez pour l\'ouvrir dans Outlook'); });
+  $('#mlCopy').onclick=()=>{ const M=buildMail(false); copyRich(M.html); };
+  $('#mlHtml').onclick=()=>{ const M=buildMail(false); dl(new Blob(['<!doctype html><meta charset="utf-8"><title>'+mEsc(M.subject)+'</title>'+M.html],{type:'text/html;charset=utf-8'}),fn('html')); toast('Mail .html téléchargé'); };
+  upd();
+}
+
+/* ============================================================================
    NAVIGATION / RENDU / MÉMOIRE
    ========================================================================== */
 const VIEW_TITLES=()=>({synthese:['Synthèse exécutive',`Vision consolidée des contrats à échoir · ${PERIOD_LABEL.CAE1.split(' (')[0]} & ${PERIOD_LABEL.CAE2.split(' (')[0]}`],
@@ -1917,7 +2027,8 @@ const VIEW_TITLES=()=>({synthese:['Synthèse exécutive',`Vision consolidée des
   segments:['Segments & Agences','Structure des montants à échoir par segment et réseau'],
   impact:['Impact portefeuille','Jointure contrat réelle · cadre IFRS 9 / BCEAO'],
   staff:['Crédits Personnel','Contrats Staff Loan par croisement code client × portefeuille'],
-  detail:['Détail des contrats','Tableau interactif enrichi · recherche, tri, export']});
+  detail:['Détail des contrats','Tableau interactif enrichi · recherche, tri, export'],
+  mailer:['Mailer CAE','Synthèse e-mail des créances à échoir hors crédits du Personnel · Outlook couleur']});
 function render(){
   const ok=hasData();
   $('#welcome').hidden=ok; $('#filterBar').hidden=!ok; $$('.view').forEach(s=>s.hidden=!ok);
@@ -1928,7 +2039,7 @@ function render(){
   if(!ok) return;
   $$('.view').forEach(s=>s.classList.remove('show')); $('#view-'+v).classList.add('show');
   ({synthese:viewSynthese,echeancier:viewEcheancier,categories:viewCategories,concentration:viewConcentration,
-    segments:viewSegments,impact:viewImpact,staff:viewStaff,detail:viewDetail}[v])();
+    segments:viewSegments,impact:viewImpact,staff:viewStaff,detail:viewDetail,mailer:viewMailer}[v])();
 }
 function persist(){ try{localStorage.setItem('cae_state_blue',JSON.stringify({f:state.f,period:state.period,view:state.view,fp:state.fonds_propres,pond:state.ponderation,theme:document.documentElement.getAttribute('data-theme')}));}catch(e){} }
 function restore(){ try{ const s=JSON.parse(localStorage.getItem('cae_state_blue')); if(s){ state.f=Object.assign(state.f,s.f||{}); state.period=s.period||'CAE1'; state.view=s.view||'synthese';

@@ -124,6 +124,19 @@ html[data-theme="dark"] .btn{color:var(--ink)}
 .hero-back:hover{background:var(--lime-2)}
 .flowbar .fl b{font-weight:800}
 
+/* ---------- Mailer ---------- */
+.mailer{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+.mailer .opts{position:sticky;top:84px}
+.mailer .opts .ffield{margin-bottom:12px}
+.mailer .opts .ffield input,.mailer .opts .ffield select{width:100%;min-width:0}
+.mailer .opts .chk{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);margin:6px 0;font-weight:600}
+.mailer .opts .acts{display:grid;gap:8px;margin-top:14px}
+.mailer .opts .acts .btn{justify-content:center}
+.mailer .excl{font-size:12px;color:var(--ink-2);background:var(--field);border-left:3px solid var(--amber);border-radius:8px;padding:10px 12px;line-height:1.55;margin-top:12px}
+.mailer .excl b{color:var(--navy)} html[data-theme="dark"] .mailer .excl b{color:#fff}
+.mailer iframe{width:100%;height:1400px;border:0;border-radius:12px;background:#eef4f7;box-shadow:var(--sh)}
+@media (max-width:1100px){.mailer{grid-template-columns:1fr}.mailer .opts{position:static}}
+
 /* ---------- Héros ---------- */
 .hero{position:relative;overflow:hidden;border-radius:20px;padding:26px 28px 22px;margin-bottom:18px;color:#fff;
   background:linear-gradient(120deg,#00344B 0%,#00415E 35%,#005C83 100%);box-shadow:var(--sh-lg)}
@@ -335,6 +348,8 @@ html[data-theme="dark"] .busy .bx div{color:#fff}
     <div class="nav" data-view="impact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Impact portefeuille</span></div>
     <div class="nav" data-view="staff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg><span>Crédits Personnel</span></div>
     <div class="nav" data-view="detail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/></svg><span>Détail des contrats</span></div>
+    <div class="navlbl">Diffusion</div>
+    <div class="nav" data-view="mailer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg><span>Mailer CAE</span></div>
     <div class="spacer"></div>
     <div class="side-foot">
       <div>Arrêté CAE : <b id="foot-ar">—</b></div>
@@ -384,6 +399,7 @@ html[data-theme="dark"] .busy .bx div{color:#fff}
       <section class="view" id="view-impact"></section>
       <section class="view" id="view-staff"></section>
       <section class="view" id="view-detail"></section>
+      <section class="view" id="view-mailer"></section>
     </div>
   </div>
 </div>

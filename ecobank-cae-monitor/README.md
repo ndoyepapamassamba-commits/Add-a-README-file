@@ -14,6 +14,10 @@ des contrats à échoir (mois M et M+1).
     impression A4 paysage, pied de page « INTERNAL USE ONLY ».
   - **PDF** : couverture marine, bandeau + logo sur chaque page, visuels 3D, tableaux à pastilles.
   - **PowerPoint** : couverture, diapositives à bandeau, KPI, visuels, tableaux, clôture.
+- **Mailer CAE** (onglet Diffusion) : synthèse e-mail des créances à échoir **hors crédits du Personnel**
+  (Staff Loan / EX-Staff Loan), aperçu en direct, brouillon Outlook couleur `.eml` (images intégrées),
+  copie mise en forme, export `.html`.
+- Noms des agences (L01 · AGP …) dans les filtres, graphiques, tableaux et exports.
 
 ## Construire
 
