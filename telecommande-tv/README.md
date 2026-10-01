@@ -24,33 +24,73 @@ https://github.com/ndoyepapamassamba-commits/Add-a-README-file/raw/claude/admiri
 ## 🌐 Version web : TV en direct (IPTV) + télécommande Wi-Fi, sur téléphone et ordinateur
 
 Rien à installer sur le téléphone : une seule page web,
-**[`web/TelecommandeTV.html`](web/TelecommandeTV.html)** (≈ 680 Ko). Le tout est aussi dans
-**[`TelecommandeTV-Web.zip`](TelecommandeTV-Web.zip)** (≈ 220 Ko), à envoyer par WhatsApp ou par mail.
+**[`web/TelecommandeTV.html`](web/TelecommandeTV.html)** (≈ 700 Ko). Le tout est aussi dans
+**[`TelecommandeTV-Web.zip`](TelecommandeTV-Web.zip)** (≈ 235 Ko), à envoyer par WhatsApp ou par mail.
 Ce zip contient la page, la passerelle et le mode d'emploi `LISEZMOI.txt`.
 
 ### 📡 TV en direct, avec bascule automatique
 - Ouvre `TelecommandeTV.html` avec **Chrome** : sur le téléphone, *Fichiers → Téléchargements →
   Ouvrir avec Chrome* ; sur l'ordinateur, double-clic.
-- Choisis un bouquet : 🇸🇳 Sénégal, 🌍 Afrique, 🇫🇷 France, 🗣 En français, 📰 Infos, ⚽ Sport,
-  🎬 Films, 🎵 Musique, 🧸 Enfants, 🕌 Religion, 🦁 Documentaires, 🌐 Monde entier (≈ 12 000 chaînes).
-- Les chaînes sont **cherchées en direct sur GitHub**. Ce sont les listes publiques de chaînes
+- Choisis un bouquet : 🇸🇳 Sénégal, 🌍 Afrique, 🇫🇷 France, 🗣 En français, 🌐 Monde entier, et
+  des thèmes (📰 Infos, ⚽ Sport, 🎬 Films, 🎵 Musique, 🧸 Enfants, 🕌 Religion, 🦁 Documentaires).
+- **🗺 Tour du monde** : « Tous les pays… » ouvre les **250 pays** et **16 régions**
+  (Afrique de l'Ouest, Maghreb, monde arabe, Europe…), avec une recherche.
+- Les chaînes sont **cherchées en direct sur GitHub**. Ce sont les bases publiques de chaînes
   **gratuites et légales** [iptv-org](https://github.com/iptv-org/iptv) et
   [Free-TV](https://github.com/Free-TV/IPTV), mises à jour chaque jour.
-  Si `iptv-org.github.io` ne répond pas, l'appli passe par le miroir `raw.githubusercontent.com`.
+  - L'appli lit aussi la **base complète** d'iptv-org (`streams.json`). Les listes publiques ne
+    gardent qu'**un lien par chaîne** ; la base complète apporte les **liens de secours** et les
+    chaînes absentes des listes.
+  - Monde entier : **13 787 chaînes et 19 488 liens**, au lieu de 12 153 chaînes avec un seul lien
+    chacune.
+  - Si `iptv-org.github.io` ne répond pas, l'appli passe par le miroir `raw.githubusercontent.com`
+    et réessaie une fois.
 - **Quand un lien saute**, l'appli essaie aussitôt un autre lien de la même chaîne. S'il n'y en a
   plus, elle **bascule toute seule sur une autre chaîne qui marche**, avec un bouton « ↩ Réessayer ».
 - Les chaînes de la liste sont **testées en arrière-plan**, en commençant par celles qui suivent la
-  chaîne en cours, pour que la bascule soit immédiate.
-  Pastilles : 🟢 marche, 🟡 joignable, 🔴 en panne.
+  chaîne en cours, pour que la bascule soit immédiate. Avec la passerelle, l'ordinateur teste
+  **toute** la liste (40 chaînes par requête) et descend jusqu'à la liste des segments vidéo.
+  Pastilles :
+  - 🟢 marche ;
+  - 🟡 à essayer : la chaîne est vivante mais le navigateur la bloque ;
+  - 🟣 interdite ici : pays ou droits de diffusion ;
+  - 🔴 morte ;
+  - ⭕ décodeur requis.
+
+  Une chaîne n'est plus déclarée « morte » quand c'est seulement le navigateur qui la refuse.
 - **Coupure d'internet** : l'appli ne pénalise pas les chaînes. Elle affiche « Pas de connexion
   internet » et reprend toute seule au retour du réseau.
 - ⭐ Favoris, recherche, « Qui marchent » (cache les chaînes en panne), plein écran (touche F),
   chaîne précédente / suivante (P / N).
 - « ➕ Mes listes » : ajoute le lien d'une liste M3U ou un fichier `.m3u`.
+- 💾 enregistre les chaînes qui marchent en liste `.m3u`, à ouvrir avec VLC ou une appli IPTV de
+  la télé.
 
-> Des chaînes restent rouges ? Le lien est mort ou réservé à un pays (🌍 « restreinte ») : c'est
-> normal, l'appli les saute. Sur ordinateur, **la passerelle débloque beaucoup plus de chaînes**,
-> car elle relaie celles que le navigateur refuse (CORS, Referer exigé).
+### 🧩 Le décodeur : pour faire marcher les chaînes difficiles
+Le lecteur essaie les solutions dans l'ordre et s'arrête dès que l'une marche :
+1. le lecteur du navigateur ;
+2. le lecteur du téléphone (Android, il ignore les blocages du navigateur) ;
+3. le **relais** de la passerelle, qui ajoute les en-têtes Referer / User-Agent qu'exigent certaines
+   chaînes ;
+4. le **décodeur FFmpeg**, en réemballant le flux : seul le son est converti ;
+5. le **décodeur FFmpeg** en conversion complète, en H.264 + AAC.
+
+L'appli saute directement aux étapes utiles : un lien mort ne passe pas par le décodeur.
+
+- **Sur le téléphone** : le bouton **▶ VLC** ouvre la chaîne dans [VLC](https://play.google.com/store/apps/details?id=org.videolan.vlc)
+  (gratuit sur le Play Store), qui décode presque tout.
+- **Sur l'ordinateur** : avec la passerelle, le bouton **Installer le décodeur (65 Mo)** télécharge
+  FFmpeg tout seul sous Windows. Il ne prend que `ffmpeg.exe` dans l'archive officielle de 200 Mo.
+  Mac : `brew install ffmpeg` ; Linux : `sudo apt install ffmpeg`.
+- Le décodeur lit ce que les navigateurs refusent :
+  - son AC-3 / E-AC-3 ;
+  - image HEVC (H.265) ;
+  - flux DASH, RTMP, RTSP, TS ou FLV bruts.
+
+  La vidéo convertie est servie au téléphone par le Wi-Fi.
+
+> Ce qu'aucun décodeur ne peut réparer : un serveur arrêté (🔴), une chaîne réservée à un pays
+> (🟣) ou une chaîne cryptée (DRM). L'appli les reconnaît et les saute.
 
 ### 🎮 Télécommande Wi-Fi depuis la page web
 Un navigateur n'a pas le droit d'ouvrir la connexion TLS à certificat client qu'exige la télé.
@@ -227,8 +267,8 @@ Bouton **🔦** en haut de la télécommande (ou sur l'écran d'accueil) :
 | `build.sh` | Compile l'APK **sans Android Studio** (outils téléchargés depuis Maven Central) |
 | `web/app.html` | Page web (source) : lecteur IPTV avec bascule automatique, listes iptv-org / Free-TV, télécommande Wi-Fi, QR code |
 | `web/build_web.py` | Intègre [hls.js](https://github.com/video-dev/hls.js) (Apache-2.0) → `web/TelecommandeTV.html` autonome, et crée `TelecommandeTV-Web.zip` |
-| `web/passerelle_tv.py` | Passerelle Wi-Fi en Python pur : clé RSA + certificat X.509 générés sans bibliothèque, appairage et touches Android TV Remote v2, recherche des télés (mDNS + balayage), relais vidéo HLS (réécrit les listes, ajoute Referer / User-Agent, refuse les adresses du réseau local) |
-| `web/test/` | Tests de bout en bout : faux serveur IPTV (`streams.py`), Chromium piloté par Playwright (`web_test.js`), `run_tests.sh` |
+| `web/passerelle_tv.py` | Passerelle Wi-Fi en Python pur : clé RSA + certificat X.509 générés sans bibliothèque, appairage et touches Android TV Remote v2, recherche des télés (mDNS + balayage), relais vidéo HLS (réécrit les listes, ajoute Referer / User-Agent, refuse les adresses du réseau local), tests de liens en profondeur par lots, décodeur FFmpeg (réemballage ou conversion H.264/AAC en HLS, installation par téléchargement partiel du zip officiel) |
+| `web/test/` | Tests de bout en bout : faux serveur IPTV (`streams.py`, dont son AC-3, DASH, chaîne interdite), Chromium piloté par Playwright (`web_test.js`), tests unitaires de la passerelle (`test_passerelle.py`), `run_tests.sh` |
 
 Recompiler : `./build.sh` (Java 17+, Python 3, curl). Régénérer la base :
 `python3 tools/builddb.py <Flipper-IRDB> app/src/main/assets/codes.txt <tv.ir>`.
@@ -246,7 +286,7 @@ Recompiler : `./build.sh` (Java 17+, Python 3, curl). Régénérer la base :
   bibliothèque, puis l'appli a été testée contre elle : appairage, mauvais code refusé, touches,
   répétition, Netflix, reconnexion au redémarrage ;
 - APK signé v1 + v2 et vérifié avec apksig ;
-- version web (`web/test/run_tests.sh`, 37 vérifications) :
+- version web (`web/test/run_tests.sh`, 55 vérifications) :
   - lien mort écarté ;
   - deux liens morts → bascule sur une autre chaîne ;
   - lien qui saute **en pleine lecture** → lien suivant de la même chaîne ;
@@ -255,11 +295,23 @@ Recompiler : `./build.sh` (Java 17+, Python 3, curl). Régénérer la base :
   - coupure d'internet → reprise sans pénaliser la chaîne ;
   - favoris, recherche et filtre ;
   - QR codes relus par un décodeur ;
+  - classement : 403 → « interdite ici », flux refusé par le navigateur → « à essayer »,
+    DASH sans décodeur → « décodeur requis » ;
   - avec la passerelle et la fausse télé : appairage, touches, appui long, clavier, Netflix,
-    volume, relais des flux sans CORS ou exigeant un Referer.
+    volume, relais des flux sans CORS ou exigeant un Referer ;
+  - décodeur FFmpeg : son AC-3 et flux DASH lus ;
+  - installation : `ffmpeg.exe` extrait intact d'une archive distante, archive abîmée refusée,
+    fichiers locaux et réseau local refusés.
 
-  Les listes réelles iptv-org et Free-TV ont aussi été chargées dans Chromium :
-  16 chaînes pour le Sénégal, 164 pour l'Afrique, 459 en français, 12 153 dans le monde entier.
+  Le vrai `ffmpeg.exe` (168 Mo) a aussi été extrait de l'archive officielle en n'en téléchargeant
+  que 65 Mo.
+
+  Les bases réelles iptv-org et Free-TV ont aussi été chargées dans Chromium :
+  - 16 chaînes pour le Sénégal ;
+  - 19 chaînes pour la Côte d'Ivoire ;
+  - 289 chaînes et 502 liens pour l'Afrique de l'Ouest ;
+  - 13 787 chaînes et 19 488 liens dans le monde entier ;
+  - 250 pays dans le « tour du monde ».
 
 La clé de signature (`debug.keystore`) n'est pas publiée : une version recompilée
 ailleurs devra être installée après avoir désinstallé l'ancienne.

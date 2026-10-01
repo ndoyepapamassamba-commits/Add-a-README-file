@@ -4,6 +4,9 @@
                    nom contenant « dies »   : le flux meurt 12 s après le premier segment demandé
                    nom contenant « nocors » : pas d'en-tête CORS (le navigateur refuse)
                    nom contenant « ref »    : 403 sans l'en-tête Referer attendu
+                   nom contenant « ac3 »    : son AC-3 (illisible par le navigateur : il faut le décodeur)
+/dash/manifest.mpd flux DASH (le navigateur ne sait pas le lire seul : il faut le décodeur)
+/geo403.m3u8       chaîne interdite dans le pays
 /dead404.m3u8      lien mort
 /clip.webm         vidéo simple (lecteur natif)
 /list.m3u          liste de test
@@ -48,6 +51,12 @@ http://127.0.0.1:1/bravo.m3u8
 {b}/live/golf-ref.m3u8
 #EXTINF:-1 tvg-id="Hotel.sn@SD" group-title="Movies",Hotel (vidéo)
 {b}/clip.webm
+#EXTINF:-1 tvg-id="Kilo.sn@SD" group-title="Sports",Kilo (son AC-3)
+{b}/live/kilo-ac3.m3u8
+#EXTINF:-1 tvg-id="Lima.sn@SD" group-title="General",Lima (DASH)
+{b}/dash/manifest.mpd
+#EXTINF:-1 tvg-id="Mike.sn@SD" group-title="General",Mike
+{b}/geo403.m3u8
 """
 
 
@@ -78,6 +87,12 @@ class H(BaseHTTPRequestHandler):
         if path == '/clip.webm':
             with open(os.path.join(MEDIA, 'clip.webm'), 'rb') as f:
                 return self.send(200, f.read(), 'video/webm')
+        if path == '/geo403.m3u8':
+            return self.send(403, b'pas dans ton pays', 'text/plain')
+        d = re.match(r'^/dash/([\w.-]+)$', path)
+        if d and os.path.exists(os.path.join(MEDIA, 'dash', d.group(1))):
+            with open(os.path.join(MEDIA, 'dash', d.group(1)), 'rb') as f:
+                return self.send(200, f.read(), 'application/dash+xml' if path.endswith('.mpd') else 'video/webm')
         m = re.match(r'^/live/([\w-]+)(\.m3u8|/(init\.mp4|seg\d+\.m4s))$', path)
         if not m:
             return self.send(404, b'introuvable', 'text/plain')
@@ -97,7 +112,7 @@ class H(BaseHTTPRequestHandler):
             for i in range(first, k + 1):
                 lines += ['#EXTINF:2.000000,', '%s/%s' % (name, SEGS[i])]
             return self.send(200, ('\n'.join(lines) + '\n').encode(), 'application/vnd.apple.mpegurl', cors)
-        f = os.path.join(MEDIA, m.group(3))
+        f = os.path.join(MEDIA, 'ac3' if 'ac3' in name else '', m.group(3))
         if not os.path.exists(f):
             return self.send(404, b'', 'text/plain', cors)
         with open(f, 'rb') as fh:

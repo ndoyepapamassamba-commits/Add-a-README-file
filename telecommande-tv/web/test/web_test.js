@@ -11,6 +11,7 @@ const TV_DIR = process.env.FAKE_TV_DIR;
 const PY = process.env.PYTHON || 'python3';
 const PAGE = 'file://' + path.resolve(__dirname, '..', 'TelecommandeTV.html');
 const ONLY = process.env.ONLY || '';
+const N_CHANNELS = 12;
 
 let failures = 0;
 function check(cond, msg) {
@@ -33,11 +34,11 @@ async function openPage(browser, url) {
 }
 
 async function addTestList(page) {
-  await page.locator('#bouquets .chip', { hasText: 'Mes listes' }).click();
+  await page.locator('.chips .chip', { hasText: 'Mes listes' }).click();
   await page.fill('#mineUrl', STREAMS + '/list.m3u');
   await page.click('#mineAdd');
   await page.click('#mineShow');
-  await page.waitForFunction(() => document.querySelectorAll('#list .ch').length === 9, null, { timeout: 15000 });
+  await page.waitForFunction(n => document.querySelectorAll('#list .ch').length === n, N_CHANNELS, { timeout: 15000 });
 }
 
 const now = page => page.evaluate(() => ({
@@ -74,7 +75,12 @@ async function standalone(browser) {
   console.log('--- Page seule (fichier ouvert dans le navigateur, sans passerelle)');
   const { ctx, page } = await openPage(browser, PAGE);
   await addTestList(page);
-  check(true, 'liste M3U ajoutée : 9 chaînes affichées');
+  check(true, 'liste M3U ajoutée : ' + N_CHANNELS + ' chaînes affichées');
+  const dotOf = name => page.locator('#list .ch', { hasText: name }).first().locator('.dot').getAttribute('class');
+  await page.waitForFunction(() => /geo/.test((Array.from(document.querySelectorAll('#list .ch')).find(r => /Mike/.test(r.textContent)) || {}).innerHTML || ''), null, { timeout: 30000 }).catch(() => {});
+  check(/geo/.test(await dotOf('Mike')), 'Mike (403) : classée « interdite ici », pas « morte »');
+  check(/dec/.test(await dotOf('Lima')), 'Lima (DASH) : classée « décodeur requis » sans passerelle');
+  check(/maybe/.test(await dotOf('Echo')), 'Echo (sans CORS) : « à essayer », pas « morte »');
 
   await clickChannel(page, 'Alpha TV');
   check(await waitPlaying(page, { is: 'Alpha TV' }), 'Alpha TV : lecture (lien mort écarté)');
@@ -107,6 +113,11 @@ async function standalone(browser) {
   await clickChannel(page, 'Hotel');
   check(await waitPlaying(page, { is: 'Hotel (vidéo)' }), 'Hotel : vidéo simple lue par le lecteur du navigateur');
 
+  await clearToasts(page);
+  await clickChannel(page, 'Kilo');
+  check(await waitPlaying(page, { not: 'Kilo (son AC-3)' }), 'Kilo (son AC-3 illisible, sans décodeur) : bascule sur une chaîne qui marche');
+  check(/décodeur|passerelle/.test(await page.textContent('#decBox')), 'conseil affiché : passerelle / décodeur pour plus de chaînes');
+
   // Coupure d'internet : ne pas accuser les chaînes, reprendre tout seul
   await clickChannel(page, 'Charlie');
   check(await waitPlaying(page, { is: 'Charlie' }), 'Charlie : lecture');
@@ -122,10 +133,10 @@ async function standalone(browser) {
 
   // Favoris, recherche, filtre
   await page.locator('#list .ch', { hasText: 'Foxtrot' }).first().locator('.star').click();
-  await page.locator('#bouquets .chip', { hasText: 'Favoris' }).click();
+  await page.locator('.chips .chip', { hasText: 'Favoris' }).click();
   check(await page.locator('#list .ch').count() === 1, 'favori : Foxtrot dans « Favoris »');
-  await page.locator('#bouquets .chip', { hasText: 'Mes listes' }).click();
-  await page.waitForFunction(() => document.querySelectorAll('#list .ch').length === 9);
+  await page.locator('.chips .chip', { hasText: 'Mes listes' }).click();
+  await page.waitForFunction(n => document.querySelectorAll('#list .ch').length === n, N_CHANNELS);
   await page.fill('#search', 'foxt');
   await page.waitForTimeout(400);
   check(await page.locator('#list .ch').count() === 1, 'recherche « foxt » : 1 chaîne');
@@ -208,6 +219,18 @@ async function withBridge(browser) {
   check(/via la passerelle/.test((await now(page)).info), 'Echo : « via la passerelle » affiché');
   await clickChannel(page, 'Golf');
   check(await waitPlaying(page, { is: 'Golf' }), 'Golf (exige un Referer) : lu grâce au relais');
+
+  // Décodeur FFmpeg de la passerelle
+  check(/Décodeur FFmpeg actif/.test(await page.textContent('#decBox')), 'décodeur FFmpeg signalé actif');
+  await clickChannel(page, 'Kilo');
+  check(await waitPlaying(page, { is: 'Kilo (son AC-3)' }, 90000), 'Kilo (son AC-3) : lu grâce au décodeur');
+  check(/décodeur/.test((await now(page)).info), 'Kilo : « décodeur » affiché');
+  await clickChannel(page, 'Lima');
+  check(await waitPlaying(page, { is: 'Lima (DASH)' }, 90000), 'Lima (DASH) : lu grâce au décodeur');
+  await page.waitForFunction(() => /✗ \d+ mortes/.test(document.querySelector('#lstat').textContent), null, { timeout: 30000 }).catch(() => {});
+  const stat = await page.textContent('#lstat');
+  console.log('  bilan :', stat);
+  check(/🌍 1 interdites ici/.test(stat) && !/décodeur/.test(stat), 'tests par la passerelle : Mike interdite, plus aucune chaîne « décodeur requis »');
   await ctx.close();
 }
 

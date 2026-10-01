@@ -34,7 +34,7 @@ button { cursor: pointer; border: 0; background: none; }
 
 /* TV en direct */
 .tv { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 16px; max-width: 1500px; margin: 0 auto; }
-@media (min-width: 980px) { .tv { grid-template-columns: minmax(0, 1fr) 400px; align-items: start; } .list-col { position: sticky; top: calc(var(--head) + 16px); max-height: calc(100vh - var(--head) - 32px); display: flex; flex-direction: column; } .list { flex: 1; min-height: 0; } }
+@media (min-width: 980px) { .tv { grid-template-columns: minmax(0, 1fr) 400px; align-items: start; } .list-col { position: sticky; top: calc(var(--head) + 16px); max-height: calc(100vh - var(--head) - 32px); display: flex; flex-direction: column; } .list-col > * { flex-shrink: 0; } .list-col > .list { flex: 1 1 auto; min-height: 0; } }
 
 .player { position: relative; background: #000; border-radius: var(--radius); overflow: hidden; aspect-ratio: 16 / 9; }
 .player video { width: 100%; height: 100%; display: block; background: #000; }
@@ -44,6 +44,13 @@ button { cursor: pointer; border: 0; background: none; }
 .overlay .t1 { font-size: 18px; font-weight: 700; max-width: 90%; }
 .overlay .t2 { color: var(--muted); max-width: 90%; }
 .overlay button { pointer-events: auto; background: var(--accent); color: #1b0f00; font-weight: 700; padding: 10px 18px; border-radius: 999px; }
+.overlay button.alt { background: #ff7a00; background: rgba(255,255,255,.12); color: var(--text); }
+.dec { margin-top: 10px; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.dec .btn { padding: 6px 12px; font-size: 13px; }
+.btn.icon { padding: 7px 10px; }
+.card.wide { width: min(760px, 100%); }
+.grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.grid .chip { font-size: 13px; }
 .spin { width: 38px; height: 38px; border-radius: 50%; border: 4px solid rgba(255,255,255,.15); border-top-color: var(--accent); animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .live { position: absolute; top: 10px; left: 10px; background: var(--bad); color: #fff; font-weight: 800; font-size: 12px; padding: 3px 8px; border-radius: 6px; letter-spacing: .5px; pointer-events: none; }
@@ -60,9 +67,9 @@ button { cursor: pointer; border: 0; background: none; }
 .btn.primary { background: var(--accent); color: #1b0f00; border-color: var(--accent); }
 
 .list-col { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; min-width: 0; }
-.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
-@media (min-width: 980px) { .chips { flex-wrap: wrap; overflow: visible; } }
-@media (max-width: 979px) { .chips { -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); padding-right: 40px; } }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding: 0 40px 6px 0; scrollbar-width: thin;
+  -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+#themes .chip { padding: 5px 10px; font-size: 13px; }
 .chip { flex: none; padding: 7px 11px; border-radius: 999px; font-size: 14px; }
 .chip.on { background: var(--accent); color: #1b0f00; border-color: var(--accent); }
 .tools { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
@@ -85,6 +92,8 @@ button { cursor: pointer; border: 0; background: none; }
 .dot.maybe { background: var(--warn); }
 .dot.bad { background: var(--bad); }
 .dot.test { background: var(--blue); animation: pulse 1s ease-in-out infinite; }
+.dot.geo { background: #a77bff; }
+.dot.dec { background: transparent; border: 2px solid #8fa0bd; }
 @keyframes pulse { 50% { opacity: .3; } }
 .star { padding: 6px; font-size: 18px; color: #56627a; flex: none; }
 .star.on { color: var(--warn); }
@@ -94,6 +103,7 @@ button { cursor: pointer; border: 0; background: none; }
 
 /* Petits écrans : lecteur compact, collé en haut pendant qu'on parcourt la liste */
 @media (max-width: 979px) {
+  .dec { padding: 0 16px; } .dec:not(.act) { display: none; }
   .player-col { position: sticky; top: var(--head); z-index: 10; background: var(--bg); margin: -16px -16px 0; padding: 0 0 8px; box-shadow: 0 8px 16px rgba(0,0,0,.35); }
   .now, .ctrls { padding: 0 16px; } .player { border-radius: 0 !important; }
   .now { margin-top: 8px; min-height: 40px; } .now img, .now .ph { width: 40px; height: 40px; } .now .nm { font-size: 16px; }
@@ -184,6 +194,7 @@ button { cursor: pointer; border: 0; background: none; }
         <div class="t1" id="ovT1">Choisis une chaîne dans la liste</div>
         <div class="t2" id="ovT2">Les chaînes gratuites sont cherchées en direct sur GitHub. Si un lien saute, l'appli bascule toute seule sur un autre qui marche.</div>
         <button id="ovBtn" hidden></button>
+        <button id="ovVlc" class="alt" hidden>▶ Ouvrir dans VLC</button>
       </div>
     </div>
     <div class="now">
@@ -194,21 +205,26 @@ button { cursor: pointer; border: 0; background: none; }
       <button id="bPrev" title="Chaîne précédente (P)">⏮ Préc.</button>
       <button id="bNext" title="Chaîne suivante (N)">Suiv. ⏭</button>
       <button id="bSwitch" title="Essayer un autre lien">🔁 Autre lien</button>
+      <button id="bVlc" hidden title="Ouvrir dans VLC : il lit presque tous les formats">▶ VLC</button>
       <button id="bFav">☆ Favori</button>
       <button id="bFull" title="Plein écran (F)">⛶ Plein écran</button>
+      <button id="bCopy" title="Copier le lien du flux (pour VLC…)">📋 Lien</button>
       <label><input type="checkbox" id="autoSw" checked> Bascule auto</label>
     </div>
+    <div class="dec" id="decBox" hidden></div>
   </div>
 
   <div class="list-col">
     <div class="chips" id="bouquets"></div>
+    <div class="chips" id="themes"></div>
     <div class="tools">
       <input type="search" id="search" placeholder="🔎 Chercher…" autocomplete="off">
-      <label title="Cacher les chaînes qui ne répondent pas"><input type="checkbox" id="onlyOk"> Qui marchent</label>
+      <label title="Cacher les chaînes mortes ou interdites ici"><input type="checkbox" id="onlyOk"> Qui marchent</label>
+      <button class="btn icon" id="bExport" title="Enregistrer ces chaînes en liste .m3u (VLC, appli IPTV de la télé)">💾</button>
     </div>
     <div class="lstat" id="lstat"></div>
     <div class="list" id="list"></div>
-    <div class="legend"><span><i class="dot ok"></i>marche</span><span><i class="dot maybe"></i>joignable</span><span><i class="dot bad"></i>en panne</span><span><i class="dot test"></i>test…</span><span><i class="dot"></i>pas encore testée</span></div>
+    <div class="legend"><span><i class="dot ok"></i>marche</span><span><i class="dot maybe"></i>à essayer</span><span><i class="dot geo"></i>interdite ici</span><span><i class="dot bad"></i>morte</span><span><i class="dot dec"></i>décodeur requis</span><span><i class="dot test"></i>test…</span><span><i class="dot"></i>pas encore testée</span></div>
   </div>
 </section>
 
@@ -300,6 +316,18 @@ button { cursor: pointer; border: 0; background: none; }
   </div>
 </div>
 
+<div class="modal" id="paysModal" hidden>
+  <div class="card wide">
+    <h2>🗺 Tour du monde des chaînes</h2>
+    <div class="row"><input type="text" id="paysSearch" placeholder="🔎 Un pays, une région…" autocomplete="off"></div>
+    <h3>Régions</h3>
+    <div class="grid" id="regionList"></div>
+    <h3>Pays</h3>
+    <div class="grid" id="paysList"></div>
+    <div class="row"><button class="btn" id="paysClose">Fermer</button></div>
+  </div>
+</div>
+
 <div class="modal" id="phoneModal" hidden>
   <div class="card" style="text-align:center">
     <h2>📱 Ouvrir sur le téléphone</h2>
@@ -333,26 +361,78 @@ const store = {
   keys() { try { return Object.keys(localStorage).filter(k => k.startsWith('tv:')).map(k => k.slice(3)); } catch (e) { return []; } },
 };
 
-// ------------------------------------------------------------ sources de chaînes (listes publiques sur GitHub)
+// ------------------------------------------------------------ base locale (IndexedDB) : listes en cache, santé des liens
+const idb = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise(res => {
+    try {
+      const r = indexedDB.open('telecommande-tv', 1);
+      r.onupgradeneeded = () => { r.result.createObjectStore('cache'); r.result.createObjectStore('health'); };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => res(null);
+      r.onblocked = () => res(null);
+    } catch (e) { res(null); }
+  }));
+  const run = async (name, mode, fn) => {
+    const db = await open();
+    if (!db) return undefined;
+    return new Promise(res => {
+      try {
+        const tx = db.transaction(name, mode);
+        const req = fn(tx.objectStore(name));
+        tx.oncomplete = () => res(req && 'result' in req ? req.result : true);
+        tx.onerror = tx.onabort = () => res(undefined);
+      } catch (e) { res(undefined); }
+    });
+  };
+  return {
+    get: (n, k) => run(n, 'readonly', st => st.get(k)),
+    put: (n, k, v) => run(n, 'readwrite', st => st.put(v, k)),
+    putMany: (n, kv) => run(n, 'readwrite', st => { kv.forEach(([k, v]) => st.put(v, k)); }),
+    del: (n, ks) => run(n, 'readwrite', st => { ks.forEach(k => st.delete(k)); }),
+    all: async n => {
+      const db = await open();
+      if (!db) return null;
+      return new Promise(res => {
+        const out = new Map();
+        try {
+          const tx = db.transaction(n);
+          const c = tx.objectStore(n).openCursor();
+          c.onsuccess = () => { const k = c.result; if (k) { out.set(k.key, k.value); k.continue(); } };
+          tx.oncomplete = () => res(out);
+          tx.onerror = () => res(out);
+        } catch (e) { res(out); }
+      });
+    },
+  };
+})();
+
+// ------------------------------------------------------------ sources de chaînes (bases publiques sur GitHub)
 const IO = ['https://iptv-org.github.io/iptv/', 'https://raw.githubusercontent.com/iptv-org/iptv/gh-pages/'];
+const API = ['https://iptv-org.github.io/api/', 'https://raw.githubusercontent.com/iptv-org/api/gh-pages/'];
 const FREE_TV = ['https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8'];
-const AFRICA = ['sn', 'ci', 'ml', 'bf', 'gn', 'cm', 'cd', 'cg', 'ga', 'bj', 'tg', 'ne', 'mr', 'gm', 'gw', 'cv', 'td', 'cf', 'ma', 'dz', 'tn', 'ng', 'gh', 'mg', 'rw', 'bi', 'dj', 'km', 'mu', 'sc'];
 const BOUQUETS = [
   { id: 'fav', label: '⭐ Favoris' },
-  { id: 'sn', label: '🇸🇳 Sénégal', io: ['countries/sn.m3u'], ft: ['Senegal'] },
-  { id: 'af', label: '🌍 Afrique', io: AFRICA.map(c => 'countries/' + c + '.m3u'), ft: ['Nigeria', 'Ghana', 'Senegal', 'Ivory Coast', 'Cameroon', 'Morocco', 'Algeria', 'Tunisia'] },
-  { id: 'fr', label: '🇫🇷 France', io: ['countries/fr.m3u'], ft: ['France'] },
+  { id: 'sn', label: '🇸🇳 Sénégal', io: ['countries/sn.m3u'], ft: ['Senegal'], cc: 'sn' },
+  { id: 'af', label: '🌍 Afrique', io: ['regions/afr.m3u'], ft: ['Nigeria', 'Ghana', 'Senegal', 'Ivory Coast', 'Cameroon', 'Chad', 'Kenya', 'Somalia', 'Egypt'] },
+  { id: 'fr', label: '🇫🇷 France', io: ['countries/fr.m3u'], ft: ['France'], cc: 'fr' },
   { id: 'fra', label: '🗣 En français', io: ['languages/fra.m3u'], ft: ['France'] },
-  { id: 'news', label: '📰 Infos', io: ['categories/news.m3u'], ft: ['News'], prefer: true },
-  { id: 'sports', label: '⚽ Sport', io: ['categories/sports.m3u'], prefer: true },
-  { id: 'movies', label: '🎬 Films', io: ['categories/movies.m3u'], prefer: true },
-  { id: 'music', label: '🎵 Musique', io: ['categories/music.m3u'], prefer: true },
-  { id: 'kids', label: '🧸 Enfants', io: ['categories/kids.m3u'], prefer: true },
-  { id: 'religious', label: '🕌 Religion', io: ['categories/religious.m3u'], prefer: true },
-  { id: 'docs', label: '🦁 Documentaires', io: ['categories/documentary.m3u'], prefer: true },
-  { id: 'world', label: '🌐 Monde entier', io: ['index.m3u'], ft: ['*'] },
-  { id: 'mine', label: '➕ Mes listes' },
+  { id: 'pays', label: '🗺 Tous les pays…' },
+  { id: 'world', label: '🌐 Monde entier', io: ['index.m3u'], ft: ['*'], all: true },
+  { id: 'news', t: 1, label: '📰 Infos', io: ['categories/news.m3u'], ft: ['News', 'News (AR)', 'News (ES)', 'Business', 'Weather'], prefer: true },
+  { id: 'sports', t: 1, label: '⚽ Sport', io: ['categories/sports.m3u'], prefer: true },
+  { id: 'movies', t: 1, label: '🎬 Films', io: ['categories/movies.m3u'], ft: ['VOD Movies (EN)'], prefer: true },
+  { id: 'music', t: 1, label: '🎵 Musique', io: ['categories/music.m3u'], ft: ['Music (EN)'], prefer: true },
+  { id: 'kids', t: 1, label: '🧸 Enfants', io: ['categories/kids.m3u'], prefer: true },
+  { id: 'religious', t: 1, label: '🕌 Religion', io: ['categories/religious.m3u'], prefer: true },
+  { id: 'docs', t: 1, label: '🦁 Documentaires', io: ['categories/documentary.m3u'], ft: ['Documentaries (AR)', 'Documentaries (EN)'], prefer: true },
+  { id: 'mine', t: 1, label: '➕ Mes listes' },
 ];
+const REGIONS = [['waf', 'Afrique de l\'Ouest'], ['maghreb', 'Maghreb'], ['ssa', 'Afrique subsaharienne'], ['eaf', 'Afrique de l\'Est'],
+  ['saf', 'Afrique australe'], ['arab', 'Monde arabe'], ['mena', 'Moyen-Orient et Afrique du Nord'], ['eur', 'Europe'], ['amer', 'Amériques'],
+  ['latam', 'Amérique latine'], ['noram', 'Amérique du Nord'], ['carib', 'Caraïbes'], ['asia', 'Asie'], ['sas', 'Asie du Sud'],
+  ['sea', 'Asie du Sud-Est'], ['oce', 'Océanie']];
+const FT_ALIAS = { GB: 'UK', US: 'USA', KR: 'Korea', JP: '日本 / Japan', TT: 'Trinidad' };
 const GROUPS = { general: 'Généraliste', news: 'Infos', music: 'Musique', religious: 'Religion', movies: 'Films', kids: 'Enfants', sports: 'Sport',
   entertainment: 'Divertissement', education: 'Éducation', culture: 'Culture', documentary: 'Documentaires', undefined: '', series: 'Séries',
   lifestyle: 'Art de vivre', business: 'Économie', comedy: 'Humour', cooking: 'Cuisine', classic: 'Classiques', animation: 'Animation',
@@ -365,13 +445,6 @@ function fetchT(url, ms, opts) {
   return fetch(url, Object.assign({}, opts || {}, ctl ? { signal: ctl.signal } : {})).finally(() => clearTimeout(t));
 }
 
-function cachePut(key, text) {
-  if (text.length > 450000) return;
-  if (store.set(key, { t: Date.now(), x: text })) return;
-  store.keys().filter(k => k.startsWith('pl:')).forEach(k => store.del(k));  // place pleine : on vide le vieux cache
-  store.set(key, { t: Date.now(), x: text });
-}
-
 // Premier miroir qui répond ; si le premier traîne plus de 4 s, on interroge aussi le suivant
 function fetchFirst(urls) {
   return new Promise((resolve, reject) => {
@@ -382,7 +455,7 @@ function fetchFirst(urls) {
       const u = urls[i++];
       active++;
       const hedge = setTimeout(next, 4000);
-      fetchT(u, 30000, { cache: 'no-cache' })
+      fetchT(u, 60000, { cache: 'no-cache' })
         .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
         .then(x => { active--; clearTimeout(hedge); if (!done) { done = true; resolve(x); } },
           e => { active--; last = e; clearTimeout(hedge); next(); });
@@ -393,11 +466,12 @@ function fetchFirst(urls) {
 
 async function getText(urls, maxAge) {
   const key = 'pl:' + urls[0];
-  const c = store.get(key, null);
+  const c = (await idb.get('cache', key)) || store.get(key, null);
   if (c && Date.now() - c.t < maxAge) return c.x;
   try {
-    const x = await fetchFirst(urls);
-    cachePut(key, x);
+    // Connexion faible : un second essai 3 s plus tard avant d'abandonner
+    const x = await fetchFirst(urls).catch(() => new Promise(r => setTimeout(r, 3000)).then(() => fetchFirst(urls)));
+    if ((await idb.put('cache', key, { t: Date.now(), x })) === undefined && x.length < 450000) store.set(key, { t: Date.now(), x });
     return x;
   } catch (e) {
     if (c) return c.x;  // hors ligne : dernière version connue
@@ -405,7 +479,7 @@ async function getText(urls, maxAge) {
   }
 }
 
-// ------------------------------------------------------------ lecture des listes M3U
+// ------------------------------------------------------------ lecture des listes
 function parseM3U(text) {
   const out = [];
   let cur = null;
@@ -443,68 +517,145 @@ function parseM3U(text) {
 function cleanName(n) {
   const tags = [];
   let q = '';
-  n = n.replace(/\s*\((\d{3,4}[pi])\)/i, (m, p) => { q = p; return ''; });
+  n = (n || '').replace(/\s*\((\d{3,4}[pi])\)/i, (m, p) => { q = p; return ''; });
   n = n.replace(/\s*\[([^\]]*)\]/g, (m, t) => { if (/geo/i.test(t)) tags.push('geo'); else if (/24\/7/.test(t)) tags.push('pas 24h/24'); return ''; });
   if (/Ⓖ/.test(n)) tags.push('geo');
-  n = n.replace(/[Ⓐ-ⓩ]/g, '').replace(/\s+/g, ' ').trim();
+  n = n.replace(/[\u24B6-\u24E9]/g, '').replace(/\s+/g, ' ').trim();
   return { name: n || 'Chaîne', q, tags };
 }
 
-const playable = u => /^https?:\/\//i.test(u) && !/(youtube\.com|youtu\.be|twitch\.tv|dailymotion\.com\/video|facebook\.com|\.mpd(\?|$))/i.test(u);
-const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const playable = u => /^(https?|rtmps?|rtsp|mmsh|mmst|srt):\/\//i.test(u) && !/(youtube\.com|youtu\.be|twitch\.tv|dailymotion\.com\/video|facebook\.com)/i.test(u);
+const needsDecoder = u => !/^https?:/i.test(u) || /\.(mpd|flv|ts)(\?|$)/i.test(u);  // DASH, flux bruts, RTMP/RTSP…
+const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const chKey = id => id.toLowerCase().replace(/@sd$/, '');
+const nameKey = n => 'n:' + norm(n).replace(/[^a-z0-9]+/g, '');
 const known = new Map();  // toutes les chaînes déjà vues, par clé
 
+function channelFor(map, key, name, logo, group) {
+  let ch = map.get(key);
+  if (!ch) {
+    ch = known.get(key) || { key, name, logo: '', group: '', tags: [], sources: [] };
+    if (!ch.group && group) ch.group = group.split(';').map(g => GROUPS[g.trim().toLowerCase()] != null ? GROUPS[g.trim().toLowerCase()] : g.trim()).filter(Boolean).join(', ');
+    map.set(key, ch);
+    known.set(key, ch);
+  }
+  if (!ch.logo && /^https?:/i.test(logo || '')) ch.logo = logo;
+  return ch;
+}
+function addSource(ch, src, tags) {
+  (tags || []).forEach(t => { if (!ch.tags.includes(t)) ch.tags.push(t); });
+  if (ch.sources.some(s => s.url === src.url)) return false;
+  ch.sources.push(src);
+  return true;
+}
 function addEntries(map, entries) {
   for (const e of entries) {
     if (!playable(e.url)) continue;
     const c = cleanName(e.name);
-    const key = e.id ? e.id.toLowerCase().replace(/@sd$/, '') : 'n:' + norm(c.name).replace(/[^a-z0-9]+/g, '');
-    let ch = map.get(key);
-    if (!ch) {
-      ch = known.get(key) || { key, name: c.name, logo: '', group: '', tags: [], sources: [] };
-      if (!ch.group && e.group) ch.group = e.group.split(';').map(g => GROUPS[g.trim().toLowerCase()] != null ? GROUPS[g.trim().toLowerCase()] : g.trim()).filter(Boolean).join(', ');
-      map.set(key, ch);
-      known.set(key, ch);
-    }
-    if (!ch.logo && /^https?:/i.test(e.logo)) ch.logo = e.logo;
-    c.tags.forEach(t => { if (!ch.tags.includes(t)) ch.tags.push(t); });
-    if (!ch.sources.some(s => s.url === e.url)) ch.sources.push({ url: e.url, ref: e.ref, ua: e.ua, q: c.q });
+    const ch = channelFor(map, e.id ? chKey(e.id) : nameKey(c.name), c.name, e.logo, e.group);
+    addSource(ch, { url: e.url, ref: e.ref, ua: e.ua, q: c.q }, c.tags);
   }
 }
 
+// Base complète d'iptv-org (≈ 18 000 liens) : les listes publiques n'en gardent qu'un par chaîne.
+// On y prend les liens de secours, et les chaînes qui manquent aux listes.
+let worldP = null, world = null;
+function loadWorld() {
+  if (!worldP) {
+    worldP = getText(API.map(b => b + 'streams.json'), 12 * 3600e3).then(t => {
+      const byKey = new Map(), orphans = [];
+      for (const x of JSON.parse(t)) {
+        if (!x || !x.url || !playable(x.url)) continue;
+        const tags = (x.labels || []).map(l => /geo/i.test(l) ? 'geo' : /24\/7/.test(l) ? 'pas 24h/24' : '').filter(Boolean);
+        const e = { name: x.title || '', src: { url: x.url, ref: x.referrer || '', ua: x.user_agent || '', q: x.quality || '' }, tags };
+        if (x.channel) {
+          const k = chKey(x.channel + (x.feed ? '@' + x.feed : ''));
+          let a = byKey.get(k);
+          if (!a) byKey.set(k, a = []);
+          a.push(e);
+        } else orphans.push(e);
+      }
+      world = { byKey, orphans, count: byKey.size + orphans.length };
+      return world;
+    }).catch(e => { worldP = null; throw e; });
+  }
+  return worldP;
+}
+function enrich(map, b) {
+  if (!world) return 0;
+  let added = 0;
+  const add = (ch, list) => list.forEach(a => { if (addSource(ch, Object.assign({}, a.src), a.tags)) added++; });
+  for (const ch of map.values()) { const alts = world.byKey.get(ch.key); if (alts) add(ch, alts); }
+  if (b.cc || b.all) {
+    for (const [key, alts] of world.byKey) {
+      if (map.has(key)) continue;
+      if (b.cc && key.split('@')[0].split('.').pop() !== b.cc) continue;
+      add(channelFor(map, key, cleanName(alts[0].name).name, '', ''), alts);
+    }
+  }
+  if (b.all) world.orphans.forEach(a => { const c = cleanName(a.name); add(channelFor(map, nameKey(c.name), c.name, '', ''), [a]); });
+  return added;
+}
+
 // ------------------------------------------------------------ santé des liens (mémorisée)
-const H = store.get('health', {});
-let saveT = null;
+// 1 marche · 0 joignable (bloquée par le navigateur ou à décoder) · -1 morte · -2 interdite (pays, droits)
+const H = new Map();
+const dirty = new Set();
+let flushT = null;
 function health(url) {
-  const h = H[url];
+  const h = H.get(url);
   if (!h) return null;
-  const age = Date.now() - h[1];
-  const ttl = h[2] === 'v' ? (h[0] > 0 ? 6 : 2) * 3600e3 : 30 * 60e3;
-  return age > ttl ? null : h[0];
+  const hours = h[0] === 1 ? (h[2] === 'v' ? 12 : 3) : h[0] === -2 ? 12 : 1;
+  return Date.now() - h[1] > hours * 3600e3 ? null : h[0];
 }
 function setHealth(url, s, kind) {
-  H[url] = [s, Date.now(), kind];
-  clearTimeout(saveT);
-  saveT = setTimeout(() => {
-    const ks = Object.keys(H);
-    const old = Date.now() - 86400e3;
-    ks.forEach(k => { if (H[k][1] < old) delete H[k]; });
-    const left = Object.keys(H);
-    if (left.length > 4000) left.sort((a, b) => H[a][1] - H[b][1]).slice(0, left.length - 4000).forEach(k => delete H[k]);
-    store.set('health', H);
-  }, 1500);
+  H.set(url, [s, Date.now(), kind]);
+  touchHealth(url);
 }
+function forgetHealth(url) {
+  H.delete(url);
+  touchHealth(url);
+}
+function touchHealth(url) {
+  dirty.add(url);
+  if (!flushT) flushT = setTimeout(flushHealth, 3000);
+}
+async function flushHealth() {
+  flushT = null;
+  const put = [], del = [];
+  dirty.forEach(u => { const h = H.get(u); if (h) put.push([u, h]); else del.push(u); });
+  dirty.clear();
+  if (put.length) await idb.putMany('health', put);
+  if (del.length) await idb.del('health', del);
+}
+async function loadHealth() {
+  const m = await idb.all('health');
+  const old = Date.now() - 3 * 86400e3, gone = [];
+  if (m) m.forEach((v, k) => { if (v[1] < old) gone.push(k); else H.set(k, v); });
+  if (gone.length) idb.del('health', gone);
+  const legacy = store.get('health', null);  // version précédente : localStorage
+  if (legacy) {
+    Object.keys(legacy).forEach(k => { if (!H.has(k) && legacy[k][1] > old) setHealth(k, legacy[k][0], legacy[k][2]); });
+    if (m) { store.del('health'); store.keys().filter(k => k.startsWith('pl:')).forEach(k => store.del(k)); }
+  }
+}
+const decoderOn = () => !!(bridge && bridge.decoder && bridge.decoder.ok);
+const usable = s => (!needsDecoder(s.url) || decoderOn()) && (!mixedBlocked(s.url) || bridge);
+const DEAD = { bad: 1, geo: 1, dec: 1 };
 function chStatus(ch) {
   if (probe.busy.has(ch.key)) return 'test';
-  let bad = 0, maybe = false;
+  let n = 0, k = 0, maybe = false, geo = false;
   for (const s of ch.sources) {
+    if (!usable(s)) continue;
+    k++;
     const h = health(s.url);
     if (h === 1) return 'ok';
     if (h === 0) maybe = true;
-    if (h === -1) bad++;
+    else if (h === -2) { geo = true; n++; } else if (h === -1) n++;
   }
   if (maybe) return 'maybe';
-  return bad && bad === ch.sources.length ? 'bad' : 'unknown';
+  if (!k) return ch.sources.length ? 'dec' : 'bad';
+  return n === k ? (geo ? 'geo' : 'bad') : 'unknown';
 }
 
 // ------------------------------------------------------------ passerelle (facultative)
@@ -513,20 +664,29 @@ const pageHttps = location.protocol === 'https:';
 const mixedBlocked = u => pageHttps && /^http:/i.test(u);
 const qs = o => Object.keys(o).filter(k => o[k]).map(k => k + '=' + encodeURIComponent(o[k])).join('&');
 const proxyUrl = s => '/proxy?' + qs({ u: s.url, r: s.ref, ua: s.ua });
+function hash(str) {
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
+}
+const txUrl = (s, full) => '/tx/' + hash([s.url, s.ref, s.ua, full ? 1 : 0].join('|')) + '/index.m3u8?' + qs({ u: s.url, r: s.ref, ua: s.ua, x: full ? '1' : '' });
 
 function orderSources(ch) {
   const score = s => {
     const h = health(s.url);
-    let sc = h === 1 ? 100 : h === -1 ? -100 : h === 0 ? 10 : 0;
+    let sc = h === 1 ? 100 : h === -1 ? -100 : h === -2 ? -90 : h === 0 ? 10 : 0;
     if ((s.ref || s.ua) && !bridge) sc -= 20;
-    if (mixedBlocked(s.url) && !bridge) sc -= 50;
+    if (needsDecoder(s.url)) sc -= 5;  // plus long à démarrer
+    if (!usable(s)) sc -= 200;
     return sc;
   };
   return ch.sources.map((s, i) => ({ s, i, sc: score(s) })).sort((a, b) => b.sc - a.sc || a.i - b.i).map(x => x.s);
 }
 
 // ------------------------------------------------------------ test des chaînes en arrière-plan
-const probe = { queue: [], running: 0, busy: new Set() };
+const probe = { queue: [], running: 0, busy: new Set(), tries: new Map() };
 async function readHead(r, n) {
   if (!r.body || !r.body.getReader) return (await r.text()).slice(0, n);
   const rd = r.body.getReader();
@@ -537,48 +697,64 @@ async function readHead(r, n) {
   } finally { rd.cancel().catch(() => {}); }
   return s;
 }
-async function probeSource(s) {
-  if (bridge) {
-    try { const j = await (await fetchT('/api/probe?' + qs({ u: s.url, r: s.ref, ua: s.ua }), 15000)).json(); return j.ok ? 1 : -1; } catch (e) { return 0; }
-  }
-  if (mixedBlocked(s.url)) return 0;
+const probeTargets = ch => orderSources(ch).filter(s => usable(s) && health(s.url) == null && (probe.tries.get(s.url) || 0) < 2);
+const tried = s => probe.tries.set(s.url, (probe.tries.get(s.url) || 0) + 1);
+async function probeLocal(s) {  // sans passerelle : ce que le navigateur peut voir
+  if (needsDecoder(s.url)) return 0;
   try {
-    const r = await fetchT(s.url, 9000, { cache: 'no-store' });
+    const r = await fetchT(s.url, 10000, { cache: 'no-store' });
+    if (r.status === 401 || r.status === 403 || r.status === 451) return -2;
     if (!r.ok) return -1;
-    return /#EXTM3U/.test(await readHead(r, 2048)) ? 1 : 0;
+    return /#EXTM3U/.test(await readHead(r, 4096)) ? 1 : 0;
   } catch (e) {
-    if (e && e.name === 'AbortError') return -1;
-    try { await fetchT(s.url, 9000, { mode: 'no-cors', cache: 'no-store' }); return 0; } catch (e2) { return -1; }  // CORS : joignable quand même ?
+    if (e && e.name === 'AbortError') return null;  // trop lent : on réessaiera
+    try { await fetchT(s.url, 10000, { mode: 'no-cors', cache: 'no-store' }); return 0; }  // bloquée par le navigateur, mais vivante
+    catch (e2) { return e2 && e2.name === 'AbortError' ? null : -1; }
   }
 }
-async function probeChannel(ch) {
-  for (const s of orderSources(ch)) {
-    if (health(s.url) != null) { if (health(s.url) === 1) return; continue; }
-    const r = await probeSource(s);
+async function probeChannelLocal(ch) {
+  for (const s of probeTargets(ch)) {
+    tried(s);
+    const r = await probeLocal(s);
     if (!navigator.onLine) return;
-    setHealth(s.url, r, 'p');
+    if (r !== null) setHealth(s.url, r, 'p');
     if (r === 1) return;
   }
 }
+async function probeBatch(chs) {  // avec la passerelle : 40 chaînes par requête, testées par l'ordinateur
+  const items = [], owners = [];
+  chs.forEach(ch => { const s = probeTargets(ch)[0]; if (s) { tried(s); items.push({ u: s.url, r: s.ref, ua: s.ua }); owners.push(s); } });
+  if (!items.length) return;
+  const r = await fetchT('/api/probe', 90000, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items }) });
+  const res = (await r.json()).results || [];
+  res.forEach((x, i) => { if (x && x.s != null && owners[i]) setHealth(owners[i].url, x.s, 'p'); });
+}
 function scheduleProbes(first) {
-  const seen = new Set();
-  const list = (first || []).concat(view.slice(0, 250));
-  probe.queue = list.filter(c => !seen.has(c.key) && seen.add(c.key) && chStatus(c) === 'unknown');
+  const seen = new Set(), q = [];
+  const add = c => { if (c && !seen.has(c.key)) { seen.add(c.key); if (chStatus(c) === 'unknown') q.push(c); } };
+  (first || []).forEach(add);
+  const n = bridge ? view.length : Math.min(view.length, rendered + 30);  // sans passerelle : ce qui est à l'écran
+  for (let i = 0; i < n; i++) add(view[i]);
+  probe.queue = q;
   pumpProbes();
 }
 function pumpProbes() {
-  while (probe.running < 5 && probe.queue.length) {
-    const ch = probe.queue.shift();
-    if (chStatus(ch) !== 'unknown') continue;
+  const ready = c => chStatus(c) === 'unknown' && probeTargets(c).length;
+  while (probe.running < (bridge ? 3 : 6) && probe.queue.length) {
+    const batch = [];
+    while (batch.length < (bridge ? 40 : 1) && probe.queue.length) { const c = probe.queue.shift(); if (ready(c)) batch.push(c); }
+    if (!batch.length) break;
     probe.running++;
-    probe.busy.add(ch.key);
-    paint(ch);
-    probeChannel(ch).catch(() => {}).finally(() => {
+    batch.forEach(c => { probe.busy.add(c.key); paint(c); });
+    (bridge ? probeBatch(batch) : probeChannelLocal(batch[0])).catch(() => {}).finally(() => {
       probe.running--;
-      probe.busy.delete(ch.key);
-      paint(ch);
-      updateStat();
-      if (onlyOk.checked && chStatus(ch) === 'bad') hideRow(ch);
+      batch.forEach(c => {
+        probe.busy.delete(c.key);
+        paint(c);
+        if (onlyOk.checked && DEAD[chStatus(c)]) hideRow(c);
+        if (ready(c)) probe.queue.unshift(c);  // il reste des liens à tester
+      });
+      statSoon();
       pumpProbes();
     });
   }
@@ -595,14 +771,14 @@ function initials(name) {
   const w = name.replace(/[^\p{L}\p{N} ]/gu, '').split(' ').filter(Boolean);
   return ((w[0] || '?')[0] + (w[1] ? w[1][0] : (w[0] || '')[1] || '')).toUpperCase();
 }
-function logoEl(ch, cls) {
+function logoEl(ch) {
   if (ch.logo) {
-    const img = el('img', cls);
+    const img = el('img');
     img.loading = 'lazy';
     img.referrerPolicy = 'no-referrer';
     img.alt = '';
     img.src = ch.logo;
-    img.onerror = () => img.replaceWith(Object.assign(el('div', 'ph' + (cls ? ' ' + cls : ''), initials(ch.name))));
+    img.onerror = () => img.replaceWith(el('div', 'ph', initials(ch.name)));
     return img;
   }
   return el('div', 'ph', initials(ch.name));
@@ -610,12 +786,15 @@ function logoEl(ch, cls) {
 function row(ch) {
   const b = el('button', 'ch');
   b.dataset.key = ch.key;
+  b._n = ch.sources.length;
   if (cur && cur.key === ch.key) b.classList.add('cur');
   b.appendChild(el('i', 'dot ' + chStatus(ch)));
   b.appendChild(logoEl(ch));
   const tx = el('span', 'tx');
   tx.appendChild(el('b', null, ch.name));
-  const bits = [ch.group, ch.sources[0] && ch.sources[0].q, ch.sources.length > 1 ? ch.sources.length + ' liens' : '', ch.tags.includes('geo') ? '🌍 restreinte' : '', ch.tags.includes('pas 24h/24') ? 'pas 24h/24' : ''];
+  const q = (ch.sources.find(s => s.q) || {}).q;
+  const bits = [ch.group, q, ch.sources.length > 1 ? ch.sources.length + ' liens' : '', ch.tags.includes('geo') ? '🌍 restreinte' : '',
+    ch.tags.includes('pas 24h/24') ? 'pas 24h/24' : '', ch.sources.every(s => needsDecoder(s.url)) ? '🧩 décodeur' : ''];
   tx.appendChild(el('small', null, bits.filter(Boolean).join(' · ') || ' '));
   b.appendChild(tx);
   const st = el('span', 'star' + (isFav(ch) ? ' on' : ''), isFav(ch) ? '★' : '☆');
@@ -639,14 +818,20 @@ function appendMore() {
   const end = Math.min(view.length, rendered + 120);
   const frag = document.createDocumentFragment();
   for (let i = rendered; i < end; i++) frag.appendChild(row(view[i]));
+  const grew = end > rendered;
   rendered = end;
   list.insertBefore(frag, moreEl);
   moreEl.textContent = rendered < view.length ? 'Afficher plus (' + (view.length - rendered) + ')…' : '';
+  if (grew && !bridge) scheduleProbes(cur ? neighbours(cur, 6) : []);
 }
 moreEl.onclick = appendMore;
-function computeView(keepScroll) {
+function matches(c) {
   const q = norm(search.value.trim());
-  view = channels.filter(c => (!q || norm(c.name).includes(q) || norm(c.group).includes(q)) && (!onlyOk.checked || chStatus(c) !== 'bad' || (cur && cur.key === c.key)));
+  if (q && !(c._q || (c._q = norm(c.name + ' ' + c.group))).includes(q)) return false;
+  return !onlyOk.checked || !DEAD[chStatus(c)] || (cur && cur.key === c.key);
+}
+function computeView(keepScroll) {
+  view = channels.filter(matches);
   rows.clear();
   list.textContent = '';
   list.appendChild(moreEl);
@@ -657,29 +842,91 @@ function computeView(keepScroll) {
   updateStat();
   scheduleProbes(cur ? neighbours(cur, 6) : []);
 }
+// Nouvelles chaînes ou nouveaux liens arrivés en arrière-plan : on complète sans tout redessiner
+function extendView() {
+  const nv = channels.filter(matches);
+  for (let i = 0; i < rendered; i++) if (nv[i] !== view[i]) return computeView(true);
+  view = nv;
+  rows.forEach((r, k) => { const ch = known.get(k); if (ch && r._n !== ch.sources.length) r.replaceWith(row(ch)); });
+  moreEl.textContent = rendered < view.length ? 'Afficher plus (' + (view.length - rendered) + ')…' : '';
+  updateStat();
+  scheduleProbes(cur ? neighbours(cur, 6) : []);
+}
+let statT = null;
+const statSoon = () => { if (!statT) statT = setTimeout(() => { statT = null; updateStat(); }, 500); };
+const fmt = n => n.toLocaleString('fr-FR');
 function updateStat(msg) {
   if (msg) { lstat.textContent = msg; return; }
   if (!curBouquet || lstat.dataset.busy) return;
-  let ok = 0, bad = 0;
-  for (const c of channels) { const s = chStatus(c); if (s === 'ok') ok++; else if (s === 'bad') bad++; }
-  lstat.textContent = channels.length ? channels.length + ' chaînes · ✓ ' + ok + ' qui marchent · ✗ ' + bad + ' en panne' + (view.length !== channels.length ? ' · ' + view.length + ' affichées' : '') + listWarn
+  const c = { ok: 0, maybe: 0, geo: 0, bad: 0, dec: 0, unknown: 0, test: 0 };
+  let links = 0;
+  for (const ch of channels) { c[chStatus(ch)]++; links += ch.sources.length; }
+  const parts = [fmt(channels.length) + ' chaînes (' + fmt(links) + ' liens)', '✓ ' + fmt(c.ok) + ' marchent'];
+  if (c.maybe) parts.push('◐ ' + fmt(c.maybe) + ' à essayer');
+  if (c.geo) parts.push('🌍 ' + fmt(c.geo) + ' interdites ici');
+  if (c.bad) parts.push('✗ ' + fmt(c.bad) + ' mortes');
+  if (c.dec) parts.push('🧩 ' + fmt(c.dec) + ' avec décodeur');
+  if (c.unknown + c.test) parts.push('⏳ ' + fmt(c.unknown + c.test) + ' à tester');
+  if (view.length !== channels.length) parts.push(fmt(view.length) + ' affichées');
+  lstat.textContent = channels.length ? parts.join(' · ') + listWarn
     : (curBouquet.id === 'fav' ? 'Aucun favori : touche ☆ à côté d\'une chaîne.' : 'Aucune chaîne.');
 }
 
+// ------------------------------------------------------------ bouquets, pays et régions
+let countries = new Map();
+const flag = cc => String.fromCodePoint(...cc.toUpperCase().split('').map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
+let regionNames = null;
+try { regionNames = new Intl.DisplayNames(['fr'], { type: 'region' }); } catch (e) { /* vieux navigateur */ }
+const frName = (cc, fallback) => { try { return (regionNames && regionNames.of(cc.toUpperCase())) || fallback || cc; } catch (e) { return fallback || cc; } };
+async function loadCountries() {
+  if (countries.size) return countries;
+  try {
+    JSON.parse(await getText(API.map(b => b + 'countries.json'), 7 * 86400e3)).forEach(c => countries.set(c.code.toLowerCase(), c));
+  } catch (e) { /* hors ligne */ }
+  return countries;
+}
+function bouquetById(id) {
+  const b = BOUQUETS.find(x => x.id === id && x.id !== 'pays');
+  if (b) return b;
+  let m = /^c:([a-z]{2})$/.exec(id || '');
+  if (m) {
+    const cc = m[1], info = countries.get(cc);
+    const ft = [FT_ALIAS[cc.toUpperCase()] || (info && info.name)].filter(Boolean);
+    return { id, label: flag(cc) + ' ' + frName(cc, info && info.name), io: ['countries/' + cc + '.m3u'], ft, cc };
+  }
+  m = /^r:([a-z]+)$/.exec(id || '');
+  if (m) {
+    const r = REGIONS.find(x => x[0] === m[1]);
+    return { id, label: '🌐 ' + (r ? r[1] : m[1]), io: ['regions/' + m[1] + '.m3u'] };
+  }
+  return BOUQUETS[1];
+}
 function buildBouquets() {
-  const box = $('#bouquets');
   BOUQUETS.forEach(b => {
+    const box = $(b.t ? '#themes' : '#bouquets');
     const c = el('button', 'chip', b.label);
     c.dataset.id = b.id;
-    c.onclick = () => b.id === 'mine' && !store.get('mine', []).length && !store.get('mineFile', null) ? openMine() : selectBouquet(b.id);
+    c.onclick = () => {
+      if (b.id === 'pays') openPays();
+      else if (b.id === 'mine' && !store.get('mine', []).length && !store.get('mineFile', null)) openMine();
+      else selectBouquet(b.id);
+    };
     box.appendChild(c);
+    if (b.id === 'pays') { const d = el('button', 'chip on', ''); d.id = 'dynChip'; d.hidden = true; box.appendChild(d); }
   });
 }
 async function selectBouquet(id) {
-  const b = BOUQUETS.find(x => x.id === id) || BOUQUETS[1];
+  if (/^c:/.test(id)) await loadCountries();
+  const b = bouquetById(id);
   curBouquet = b;
   store.set('bouquet', b.id);
-  document.querySelectorAll('#bouquets .chip').forEach(c => c.classList.toggle('on', c.dataset.id === b.id));
+  const dyn = $('#dynChip');
+  dyn.hidden = !/^[cr]:/.test(b.id);
+  dyn.textContent = b.label;
+  dyn.dataset.id = b.id;
+  dyn.onclick = () => selectBouquet(b.id);
+  document.querySelectorAll('.chips .chip').forEach(c => c.classList.toggle('on', c.dataset.id === b.id));
+  if (!dyn.hidden && dyn.scrollIntoView) dyn.scrollIntoView({ block: 'nearest', inline: 'center' });
   const gen = ++loadGen;
   listWarn = '';
   if (b.id === 'fav') {
@@ -688,19 +935,20 @@ async function selectBouquet(id) {
     return;
   }
   lstat.dataset.busy = '1';
-  updateStat('🔎 Recherche des chaînes gratuites sur GitHub…');
+  updateStat(b.all ? '🌍 Tour du monde : chargement de toutes les bases de chaînes sur GitHub (≈ 20 000 liens)…' : '🔎 Recherche des chaînes gratuites sur GitHub…');
   list.textContent = '';
   const map = new Map();
   const jobs = [];
   const maxAge = 6 * 3600e3;
   (b.io || []).forEach((p, i) => jobs.push(getText(IO.map(base => base + p), maxAge).then(t => ({ t }), e => { if (!i) e.main = true; throw e; })));
-  if (b.ft) jobs.push(getText(FREE_TV, maxAge).then(t => ({ t, ft: b.ft })));
+  if (b.ft && b.ft.length) jobs.push(getText(FREE_TV, maxAge).then(t => ({ t, ft: b.ft })));
   if (b.prefer) jobs.push(getText(IO.map(base => base + 'languages/fra.m3u'), maxAge).then(t => ({ t, french: true })));
   if (b.id === 'mine') {
     store.get('mine', []).forEach(u => jobs.push(getText([u], 3600e3).then(t => ({ t }))));
     const f = store.get('mineFile', null);
     if (f) jobs.push(Promise.resolve({ t: f.x }));
   }
+  if (b.all) jobs.push(loadWorld().then(() => ({ world: true })));
   const res = await Promise.allSettled(jobs);
   if (gen !== loadGen) return;
   let french = null, okLists = 0;
@@ -709,27 +957,39 @@ async function selectBouquet(id) {
     if (r.status !== 'fulfilled') continue;
     okLists++;
     const v = r.value;
+    if (v.world) continue;
     if (v.french) { french = new Set(parseM3U(v.t).map(e => e.url)); continue; }
     let entries = parseM3U(v.t);
     if (v.ft && v.ft[0] !== '*') entries = entries.filter(e => v.ft.includes(e.group));
     addEntries(map, entries);
   }
+  enrich(map, b);
   channels = Array.from(map.values());
   if (french) {
     const af = c => /\.(sn|ci|ml|bf|gn|cm|cd|cg|ga|bj|tg|ne|mr|ma|dz|tn)(@|$)/.test(c.key) ? 1 : 0;
     const fr = c => c.sources.some(s => french.has(s.url)) ? 2 : 0;
     channels.forEach((c, i) => { c._o = i; c._s = fr(c) + af(c); });
-    channels.sort((a, b) => b._s - a._s || a._o - b._o);
+    channels.sort((a, b2) => b2._s - a._s || a._o - b2._o);
   }
   delete lstat.dataset.busy;
-  if (!okLists) updateStat('⚠ Impossible de joindre GitHub. Vérifie la connexion internet puis touche à nouveau le bouquet.');
+  const noNet = '⚠ Impossible de joindre GitHub. Vérifie la connexion internet puis touche à nouveau le bouquet.';
+  if (!okLists) updateStat(noNet);
   computeView();
-  if (!okLists) updateStat('⚠ Impossible de joindre GitHub. Vérifie la connexion internet puis touche à nouveau le bouquet.');
+  if (!okLists) updateStat(noNet);
   refreshFavSources();
+  if (!world && b.id !== 'mine') {  // liens de secours dès que la base mondiale est arrivée
+    loadWorld().then(() => {
+      if (gen !== loadGen) return;
+      const before = map.size;
+      if (!enrich(map, b)) return;
+      channels = channels.concat(Array.from(map.values()).slice(before));
+      extendView();
+    }).catch(() => {});
+  }
 }
 function refreshFavSources() {
   let changed = false;
-  favs.forEach(f => { const k = known.get(f.key); if (k && JSON.stringify(k.sources) !== JSON.stringify(f.sources)) { f.sources = k.sources; changed = true; } });
+  favs.forEach(f => { const k = known.get(f.key); if (k && k.sources.length !== (f.sources || []).length) { f.sources = k.sources; changed = true; } });
   if (changed) store.set('favs', favs);
 }
 function toggleFav(ch) {
@@ -741,6 +1001,46 @@ function toggleFav(ch) {
   updateFavBtn();
 }
 
+async function openPays() {
+  $('#paysModal').hidden = false;
+  $('#paysSearch').value = '';
+  document.querySelectorAll('#paysList button, #regionList button').forEach(b => { b.hidden = false; });
+  const rl = $('#regionList');
+  if (!rl.children.length) {
+    REGIONS.forEach(([code, name]) => {
+      const b = el('button', 'chip', '🌐 ' + name);
+      b.onclick = () => { $('#paysModal').hidden = true; selectBouquet('r:' + code); };
+      rl.appendChild(b);
+    });
+  }
+  const pl = $('#paysList');
+  if (!pl.children.length) {
+    pl.appendChild(el('p', 'hint', 'Chargement de la liste des pays…'));
+    await loadCountries();
+    pl.textContent = '';
+    const all = Array.from(countries.values()).map(c => ({ cc: c.code.toLowerCase(), name: frName(c.code, c.name), en: c.name }));
+    all.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    all.forEach(c => {
+      const b = el('button', 'chip', flag(c.cc) + ' ' + c.name);
+      b.dataset.q = norm(c.name + ' ' + c.en + ' ' + c.cc);
+      b.onclick = () => { $('#paysModal').hidden = true; selectBouquet('c:' + c.cc); };
+      pl.appendChild(b);
+    });
+    if (!all.length) pl.appendChild(el('p', 'hint', '⚠ Liste des pays indisponible (connexion internet ?).'));
+  }
+  $('#paysSearch').focus();
+}
+$('#paysSearch').addEventListener('input', e => {
+  const q = norm(e.target.value.trim());
+  $('#paysList').querySelectorAll('button').forEach(b => { b.hidden = q && !b.dataset.q.includes(q); });
+  $('#regionList').querySelectorAll('button').forEach(b => { b.hidden = q && !norm(b.textContent).includes(q); });
+});
+$('#paysClose').onclick = () => { $('#paysModal').hidden = true; };
+$('#paysModal').onclick = e => { if (e.target.id === 'paysModal') $('#paysModal').hidden = true; };
+
+document.querySelectorAll('.chips').forEach(c => c.addEventListener('wheel', e => {
+  if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && c.scrollWidth > c.clientWidth) { c.scrollLeft += e.deltaY; e.preventDefault(); }
+}, { passive: false }));
 list.addEventListener('click', e => {
   const b = e.target.closest('.ch');
   if (!b) return;
@@ -750,15 +1050,38 @@ list.addEventListener('click', e => {
   play(ch);
 });
 let searchT = null;
-search.addEventListener('input', () => { clearTimeout(searchT); searchT = setTimeout(() => computeView(), 200); });
+search.addEventListener('input', () => { clearTimeout(searchT); searchT = setTimeout(() => computeView(), 250); });
 onlyOk.addEventListener('change', () => { store.set('onlyOk', onlyOk.checked); computeView(true); });
+
+// Liste .m3u des chaînes qui marchent (VLC, appli IPTV de la télé…)
+$('#bExport').onclick = () => {
+  const rank = { ok: 0, maybe: 1, unknown: 2, test: 2 };
+  const chs = view.filter(c => rank[chStatus(c)] != null).sort((a, b) => rank[chStatus(a)] - rank[chStatus(b)]);
+  const lines = ['#EXTM3U'];
+  chs.forEach(c => {
+    const s = orderSources(c)[0];
+    if (!s) return;
+    const id = c.key.startsWith('n:') ? '' : ' tvg-id="' + c.key + '"';
+    lines.push('#EXTINF:-1' + id + (c.logo ? ' tvg-logo="' + c.logo + '"' : '') + ' group-title="' + (c.group || '').replace(/"/g, '') + '",' + c.name);
+    if (s.ref) lines.push('#EXTVLCOPT:http-referrer=' + s.ref);
+    if (s.ua) lines.push('#EXTVLCOPT:http-user-agent=' + s.ua);
+    lines.push(s.url);
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lines.join('\n') + '\n'], { type: 'audio/x-mpegurl' }));
+  a.download = 'chaines-' + (curBouquet ? curBouquet.id.replace(/\W/g, '') : 'tv') + '.m3u';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  toast('💾 ' + fmt(chs.length) + ' chaînes enregistrées : ouvre le fichier avec VLC ou une appli IPTV');
+};
 
 // ------------------------------------------------------------ lecteur avec bascule automatique
 const video = $('#video');
 const autoSw = $('#autoSw');
 let cur = null;
 const P = { tok: 0, srcs: [], si: 0, modes: [], mi: 0, hls: null, timer: null, started: false, lastT: -1, lastMove: 0, ticks: 0,
-  recovered: false, chain: 0, marks: [], srcStart: 0, waitTap: false };
+  recov: 0, chain: 0, marks: [], srcStart: 0, waitTap: false };
 const hlsOk = () => !!(window.Hls && window.Hls.isSupported());
 const nativeHls = !!video.canPlayType('application/vnd.apple.mpegurl');
 const android = /Android/i.test(navigator.userAgent);
@@ -767,14 +1090,18 @@ const isHlsUrl = u => !/\.(mp4|webm|ogg|ogv|mp3|aac|m4a|mkv|mov)(\?|$)/i.test(u)
 const retry = (n, d, m) => ({ maxNumRetry: n, retryDelayMs: d, maxRetryDelayMs: m });
 const pol = (ttfb, load, tr, er) => ({ default: { maxTimeToFirstByteMs: ttfb, maxLoadTimeMs: load, timeoutRetry: tr, errorRetry: er } });
 const HLS_CFG = {
-  enableWorker: true, lowLatencyMode: false, backBufferLength: 30, maxBufferLength: 30,
+  enableWorker: true, lowLatencyMode: false, backBufferLength: 30, maxBufferLength: 30, capLevelToPlayerSize: true,
+  abrEwmaDefaultEstimate: 400000, startFragPrefetch: true,  // démarre en qualité modeste : plus rapide en 3G/4G
   manifestLoadPolicy: pol(10000, 15000, retry(1, 0, 0), retry(1, 500, 1000)),
   playlistLoadPolicy: pol(10000, 15000, retry(2, 0, 0), retry(2, 1000, 4000)),
   fragLoadPolicy: pol(10000, 30000, retry(3, 0, 0), retry(3, 1000, 4000)),
 };
+const HLS_TX = Object.assign({}, HLS_CFG, { manifestLoadPolicy: pol(60000, 60000, retry(0, 0, 0), retry(1, 1000, 2000)) });
+const MODE_LABEL = { proxy: 'via la passerelle', tx: '🧩 décodeur (réemballé)', tx264: '🧩 décodeur (converti)', native: 'lecteur du téléphone' };
 
 function modesFor(s) {
   const m = [];
+  if (needsDecoder(s.url)) return decoderOn() ? ['tx', 'tx264'] : m;
   const hlsUrl = isHlsUrl(s.url);
   const viaProxy = bridge && (s.ref || s.ua || mixedBlocked(s.url));
   if (viaProxy) m.push('proxy');
@@ -784,7 +1111,27 @@ function modesFor(s) {
     else { if (hlsOk()) m.push('hls'); if (nativeHls || android) m.push('native'); }  // le lecteur d'Android ignore CORS
   }
   if (bridge && !viaProxy) m.push('proxy');
+  if (decoderOn()) m.push('tx', 'tx264');
   return m;
+}
+// Quelle façon de lire peut encore réussir après cet échec ?
+function allowed(next, cls, from) {
+  if (cls === 'gone') return false;
+  if (from === 'proxy' || from === 'tx') return cls === 'media' && (next === 'tx' || next === 'tx264') && next !== from;
+  if (from === 'tx264') return false;
+  if (cls === 'forbidden') return next === 'proxy';
+  if (cls === 'media') return next !== 'proxy';
+  return true;
+}
+function classify(d) {
+  const code = d.response && d.response.code;
+  const relay = P.modes[P.mi] !== 'hls' && P.modes[P.mi] !== 'native';
+  if (code === 404 || code === 410) return 'gone';
+  if (code === 401 || code === 403 || code === 451) return 'forbidden';
+  if (relay && (code === 400 || code === 502 || code === 504)) return 'gone';  // l'ordinateur non plus n'y arrive pas
+  if (/keySystem|EME/i.test(d.details || '')) return 'gone';  // chaîne cryptée (DRM)
+  if (d.type === window.Hls.ErrorTypes.MEDIA_ERROR || /Codec|Parsing|Incompatible|bufferAdd|bufferAppend/i.test(d.details || '')) return 'media';
+  return 'net';
 }
 
 function overlay(t1, t2, opts) {
@@ -796,6 +1143,8 @@ function overlay(t1, t2, opts) {
   const b = $('#ovBtn');
   b.hidden = !opts.btn;
   if (opts.btn) { b.textContent = opts.btn[0]; b.onclick = opts.btn[1]; }
+  const v = $('#ovVlc');
+  v.hidden = !(opts.vlc && cur && android);
   $('#live').hidden = true;
 }
 const hideOverlay = () => { $('#overlay').hidden = true; };
@@ -828,14 +1177,13 @@ function setNow() {
   updateFavBtn();
   setInfo();
 }
-function setInfo(extra) {
+function setInfo() {
   if (!cur) { $('#nowInfo').textContent = '—'; return; }
   const s = P.srcs[P.si];
   const bits = [];
   if (P.srcs.length) bits.push('lien ' + Math.min(P.si + 1, P.srcs.length) + '/' + P.srcs.length);
   if (s) bits.push(host(s.url));
-  if (P.modes[P.mi] === 'proxy') bits.push('via la passerelle');
-  if (extra) bits.push(extra);
+  if (MODE_LABEL[P.modes[P.mi]] && s) bits.push(MODE_LABEL[P.modes[P.mi]]);
   $('#nowInfo').textContent = bits.join(' · ');
 }
 function updateFavBtn() { $('#bFav').textContent = cur && isFav(cur) ? '★ Favori' : '☆ Favori'; }
@@ -856,9 +1204,10 @@ function play(ch, opts) {
   opts = opts || {};
   if (!opts.auto) { P.chain = 0; P.marks = []; }
   cur = ch;
-  P.srcs = orderSources(ch);
+  P.srcs = orderSources(ch).filter(usable);
   P.si = 0;
   P.waitTap = false;
+  P.lastVerdict = null;
   store.set('last', { key: ch.key, name: ch.name, logo: ch.logo, group: ch.group, tags: ch.tags, sources: ch.sources });
   setNow();
   highlight();
@@ -881,18 +1230,23 @@ function attempt() {
   const tok = ++P.tok;
   teardown();
   const s = P.srcs[P.si], mode = P.modes[P.mi];
-  P.started = false; P.lastT = -1; P.lastMove = Date.now(); P.ticks = 0; P.recovered = false;
-  overlay('Connexion à « ' + cur.name + ' »…', P.srcs.length > 1 ? 'Lien ' + (P.si + 1) + ' sur ' + P.srcs.length : '', { spin: true });
+  P.started = false; P.lastT = -1; P.lastMove = Date.now(); P.ticks = 0; P.recov = 0;
+  overlay((mode.startsWith('tx') ? '🧩 Décodage de « ' : 'Connexion à « ') + cur.name + ' »…',
+    (P.srcs.length > 1 ? 'Lien ' + (P.si + 1) + ' sur ' + P.srcs.length : '') + (mode.startsWith('tx') ? ' · l\'ordinateur prépare la vidéo' : ''), { spin: true });
   setInfo();
-  const url = mode === 'proxy' ? proxyUrl(s) : s.url;
-  const useHls = mode === 'hls' || (mode === 'proxy' && isHlsUrl(s.url) && hlsOk());
+  const url = mode === 'proxy' ? proxyUrl(s) : mode === 'tx' ? txUrl(s, false) : mode === 'tx264' ? txUrl(s, true) : s.url;
+  const useHls = hlsOk() && (mode === 'hls' || mode.startsWith('tx') || (mode === 'proxy' && isHlsUrl(s.url)));
   if (useHls) {
-    const h = new window.Hls(HLS_CFG);
+    const h = new window.Hls(mode.startsWith('tx') ? HLS_TX : HLS_CFG);
     P.hls = h;
     h.on(window.Hls.Events.ERROR, (ev, d) => {
       if (tok !== P.tok || !d.fatal) return;
-      if (d.type === window.Hls.ErrorTypes.MEDIA_ERROR && !P.recovered) { P.recovered = true; h.recoverMediaError(); return; }
-      fail(tok, d.details || 'erreur', d.response ? d.response.code : undefined);
+      if (d.type === window.Hls.ErrorTypes.MEDIA_ERROR && P.recov < 2) {  // réparations classiques avant d'abandonner
+        if (P.recov++ === 1) h.swapAudioCodec();
+        h.recoverMediaError();
+        return;
+      }
+      fail(tok, d.details || 'erreur', classify(d));
     });
     h.on(window.Hls.Events.MANIFEST_PARSED, () => { if (tok === P.tok) tryPlay(tok); });
     h.loadSource(url);
@@ -916,7 +1270,8 @@ function tryPlay(tok) {
 
 video.addEventListener('error', () => {
   if (P.hls || !video.getAttribute('src')) return;
-  fail(P.tok, 'lecteur', undefined);
+  const e = video.error;
+  fail(P.tok, 'lecteur', e && e.code === 3 ? 'media' : 'net');
 });
 video.addEventListener('playing', () => { if (!P.waitTap) hideOverlay(); });
 video.addEventListener('volumechange', () => { if (!video.muted) $('#unmute').hidden = true; });
@@ -934,8 +1289,9 @@ function watchdog(tok) {
     return;
   }
   if (video.paused && (P.started || P.waitTap)) { P.lastMove = now; return; }  // en pause : on attend
-  if (video.ended) return fail(tok, 'fin du flux', undefined);
-  if (now - P.lastMove > (P.started ? 15000 : 20000)) fail(tok, P.started ? 'image figée' : 'trop long à démarrer', -2);
+  if (video.ended) return fail(tok, 'fin du flux', 'net');
+  const limit = P.started ? 15000 : P.modes[P.mi].startsWith('tx') ? 60000 : 20000;
+  if (now - P.lastMove > limit) fail(tok, P.started ? 'image figée' : 'trop long à démarrer', 'net');
 }
 
 function started(tok) {
@@ -948,19 +1304,36 @@ function started(tok) {
   hideOverlay();
   $('#live').hidden = false;
   setInfo();
-  updateStat();
+  statSoon();
+  // Son sans image : la vidéo est dans un format que ce téléphone ne sait pas décoder
+  setTimeout(() => {
+    if (tok !== P.tok || !P.hls || video.paused) return;
+    const lv = P.hls.levels && P.hls.levels[Math.max(0, P.hls.currentLevel)];
+    if (lv && (lv.width > 0 || lv.videoCodec) && video.videoWidth === 0) fail(tok, 'image illisible', 'media');
+  }, 5000);
 }
 
-async function fail(tok, why, code) {
+async function reachable(url) {
+  if (mixedBlocked(url)) return true;
+  try { await fetchT(url, 6000, { mode: 'no-cors', cache: 'no-store' }); return true; } catch (e) { return false; }
+}
+
+async function fail(tok, why, cls) {
   if (tok !== P.tok) return;
-  const s = P.srcs[P.si];
+  const s = P.srcs[P.si], from = P.modes[P.mi];
   if (!navigator.onLine) return offline();
-  // Le même lien d'une autre façon (lecteur du téléphone, passerelle) si le navigateur l'a bloqué
-  const hard = code >= 400 || code === -2 || /TimeOut/i.test(why) || Date.now() - P.srcStart > 30000;
-  if (!P.started && !hard && P.mi + 1 < P.modes.length) { P.mi++; return attempt(); }
+  // Une autre façon de lire le même lien : lecteur du téléphone, relais, décodeur
+  if ((!P.started || cls === 'media') && Date.now() - P.srcStart < 90000) {
+    for (let i = P.mi + 1; i < P.modes.length; i++) if (allowed(P.modes[i], cls, from)) { P.mi = i; return attempt(); }
+  }
   const wasPlaying = P.started;
-  setHealth(s.url, -1, 'v');
+  P.tok++;
+  let verdict = cls === 'forbidden' ? -2 : -1;
+  if (cls === 'net' && !bridge && !wasPlaying && await reachable(s.url)) verdict = 0;  // bloquée par le navigateur ≠ morte
+  if (P.tok !== tok + 1) return;
+  setHealth(s.url, verdict, 'v');
   P.marks.push(s.url);
+  P.lastVerdict = verdict;
   paint(cur);
   P.si++;
   if (P.si < P.srcs.length) {
@@ -968,6 +1341,13 @@ async function fail(tok, why, code) {
     return startSource();
   }
   channelDown(wasPlaying);
+}
+
+function whyDown() {
+  if (cur && cur.sources.length && !P.srcs.length) return '🧩 Cette chaîne a besoin du décodeur FFmpeg (passerelle sur un ordinateur)' + (android ? ', ou de VLC.' : '.');
+  if (P.lastVerdict === -2) return 'Interdite dans ton pays (droits de diffusion).';
+  if (P.lastVerdict === 0) return bridge ? 'Le navigateur refuse ce flux.' : 'Le navigateur refuse ce flux : essaie VLC, ou la passerelle sur un ordinateur.';
+  return 'Le serveur de la chaîne ne répond plus.';
 }
 
 async function channelDown(wasPlaying) {
@@ -980,19 +1360,11 @@ async function channelDown(wasPlaying) {
     if (!(await internetOk())) return offline();
     if (tok !== P.tok) return;
   }
-  if (!autoSw.checked) {
-    overlay('« ' + ch.name + ' » ne répond pas', 'Choisis une autre chaîne, ou active « Bascule auto ».', { btn: ['🔁 Réessayer', () => play(ch)] });
-    return;
-  }
-  if (P.chain > 30) {
-    overlay('Aucune chaîne ne répond pour le moment', 'Essaie un autre bouquet ou réessaie plus tard.', { btn: ['🔁 Réessayer', () => play(ch)] });
-    return;
-  }
+  const retryBtn = { btn: ['🔁 Réessayer', () => play(ch)], vlc: true };
+  if (!autoSw.checked) { overlay('« ' + ch.name + ' » ne répond pas', whyDown(), retryBtn); return; }
+  if (P.chain > 30) { overlay('Aucune chaîne ne répond pour le moment', 'Essaie un autre bouquet ou réessaie plus tard.', retryBtn); return; }
   const next = nextWorking(ch, 1);
-  if (!next) {
-    overlay('« ' + ch.name + ' » ne répond pas', 'Aucune autre chaîne disponible dans cette liste.', { btn: ['🔁 Réessayer', () => play(ch)] });
-    return;
-  }
+  if (!next) { overlay('« ' + ch.name + ' » ne répond pas', whyDown() + ' Aucune autre chaîne disponible dans cette liste.', retryBtn); return; }
   toast((wasPlaying ? '📡 « ' + ch.name + ' » est coupée' : '📡 « ' + ch.name + ' » ne répond pas') + ' → je passe sur « ' + next.name + ' »',
     { action: ['↩ Réessayer', () => play(ch)], ms: 8000 });
   play(next, { auto: true });
@@ -1013,9 +1385,9 @@ function nextWorking(from, dir) {
   if (i < 0) i = dir > 0 ? -1 : 0;
   const order = [];
   for (let k = 1; k <= n; k++) order.push(v[(((i + dir * k) % n) + n) % n]);
-  return order.find(c => c !== from && chStatus(c) === 'ok')
-    || order.find(c => c !== from && chStatus(c) !== 'bad' && chStatus(c) !== 'test')
-    || order.find(c => c !== from && chStatus(c) !== 'bad') || null;
+  const st = c => c === from ? 'x' : chStatus(c);
+  return order.find(c => st(c) === 'ok') || order.find(c => st(c) === 'maybe' || st(c) === 'unknown')
+    || order.find(c => st(c) === 'test') || null;
 }
 function step(dir) {
   const v = view.length ? view : channels;
@@ -1025,7 +1397,7 @@ function step(dir) {
   const n = v.length;
   for (let k = 1; k <= n; k++) {
     const c = v[(((i + dir * k) % n) + n) % n];
-    if (chStatus(c) !== 'bad' || k === n) return play(c);
+    if (!DEAD[chStatus(c)] || k === n) return play(c);
   }
 }
 
@@ -1038,17 +1410,96 @@ function offline() {
   const ch = cur;
   P.tok++;
   teardown();
-  P.marks.forEach(u => { delete H[u]; });  // ce n'étaient pas les chaînes, c'était la connexion
+  P.marks.forEach(u => forgetHealth(u));  // ce n'étaient pas les chaînes, c'était la connexion
   P.marks = [];
   P.chain = 0;
-  if (ch) ch.sources.forEach(s => { if (H[s.url] && H[s.url][0] === -1) delete H[s.url]; });
+  if (ch) ch.sources.forEach(s => { const h = H.get(s.url); if (h && h[0] < 0 && h[2] === 'v') forgetHealth(s.url); });
   overlay('📶 Pas de connexion internet', 'La lecture reprendra toute seule dès que la connexion revient…', { spin: true });
   clearInterval(offT);
   offT = setInterval(async () => {
-    if (await internetOk()) { clearInterval(offT); if (ch && cur === ch) play(ch); }
+    if (await internetOk()) { clearInterval(offT); offT = null; if (ch && cur === ch) play(ch); }
   }, 5000);
 }
 window.addEventListener('online', () => { if (offT && cur) { clearInterval(offT); offT = null; play(cur); } });
+
+// ------------------------------------------------------------ lecteurs externes (VLC) et lien
+function vlcIntent(s, name) {
+  const m = /^([a-z0-9+.-]+):\/\/([^#]*)/i.exec(s.url);
+  if (!m) return null;
+  return 'intent://' + m[2] + '#Intent;scheme=' + m[1] + ';type=video/*;package=org.videolan.vlc;S.title=' + encodeURIComponent(name)
+    + ';S.browser_fallback_url=' + encodeURIComponent('https://play.google.com/store/apps/details?id=org.videolan.vlc') + ';end';
+}
+function openVlc() {
+  if (!cur) return;
+  const s = P.srcs[Math.min(P.si, P.srcs.length - 1)] || orderSources(cur)[0];
+  const u = s && vlcIntent(s, cur.name);
+  if (u) location.href = u;
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* page non sécurisée : autre méthode */ }
+  const ta = el('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) { /* rien */ }
+  ta.remove();
+  return ok;
+}
+$('#bVlc').hidden = !android;
+$('#bVlc').onclick = openVlc;
+$('#ovVlc').onclick = openVlc;
+$('#bCopy').onclick = async () => {
+  if (!cur) return;
+  const s = P.srcs[Math.min(P.si, P.srcs.length - 1)] || orderSources(cur)[0];
+  if (!s) return;
+  if (await copyText(s.url)) toast('📋 Lien copié : dans VLC, « Média → Ouvrir un flux réseau » puis colle-le');
+  else window.prompt('Copie ce lien :', s.url);
+};
+
+// ------------------------------------------------------------ décodeur FFmpeg (sur l'ordinateur de la passerelle)
+let decPoll = null;
+function renderDecoder() {
+  const box = $('#decBox');
+  box.textContent = '';
+  box.hidden = false;
+  box.classList.toggle('act', !!bridge);
+  if (!bridge) {
+    box.appendChild(el('span', null, '💡 Pour débloquer plus de chaînes : ' + (android ? '« ▶ VLC » sur ce téléphone, ou ' : '') + 'la passerelle sur un ordinateur (relais + décodeur FFmpeg).'));
+    return;
+  }
+  const d = bridge.decoder || {};
+  if (d.ok) { box.appendChild(el('span', null, '🧩 Décodeur FFmpeg actif : formats spéciaux, son AC-3, DASH, RTMP… convertis par l\'ordinateur.')); return; }
+  const inst = d.install || {};
+  if (inst.state === 'running') {
+    box.appendChild(el('span', null, '🧩 Installation du décodeur FFmpeg… ' + (inst.progress || 0) + ' %'));
+  } else if (d.auto) {
+    box.appendChild(el('span', null, '🧩 Décodeur FFmpeg absent' + (inst.state === 'error' ? ' (' + inst.error + ')' : '') + ' : il lit les formats que le navigateur refuse. '));
+    const b = el('button', 'btn primary', 'Installer (' + (d.size || 65) + ' Mo)');
+    b.onclick = async () => { try { await api('/api/decoder/install'); } catch (e) { toast('⚠ ' + e.message, { err: true }); } watchDecoder(); };
+    box.appendChild(b);
+  } else {
+    box.appendChild(el('span', null, '🧩 Pour le décodeur, installe FFmpeg sur l\'ordinateur (' + (d.hint || 'ffmpeg') + ') puis relance la passerelle.'));
+  }
+  if (inst.state === 'running') watchDecoder();
+}
+function watchDecoder() {
+  if (decPoll) return;
+  decPoll = setInterval(async () => {
+    try {
+      const j = await (await fetchT('/api/state', 5000, { cache: 'no-store' })).json();
+      applyState(j);
+      renderDecoder();
+      if (!j.decoder || j.decoder.install.state !== 'running') {
+        clearInterval(decPoll);
+        decPoll = null;
+        if (j.decoder && j.decoder.ok) { toast('🧩 Décodeur installé : les chaînes difficiles vont maintenant marcher'); probe.tries.clear(); computeView(true); }
+      }
+    } catch (e) { /* passerelle arrêtée */ }
+  }, 2000);
+}
 
 $('#bPrev').onclick = () => step(-1);
 $('#bNext').onclick = () => step(1);
@@ -1142,6 +1593,7 @@ let rstate = null, pollT = null;
 function applyState(s) {
   rstate = s;
   bridge = s;
+  renderDecoder();
   if ($('#pageRm').hidden) return;
   renderRemote();
 }
@@ -1402,6 +1854,7 @@ $('#phoneModal').onclick = e => { if (e.target.id === 'phoneModal') $('#phoneMod
 async function init() {
   buildBouquets();
   onlyOk.checked = store.get('onlyOk', false);
+  await loadHealth();
   if (/^https?:$/.test(location.protocol)) {
     try {
       const r = await fetchT('/api/state', 3000, { cache: 'no-store' });
@@ -1410,6 +1863,7 @@ async function init() {
     } catch (e) { /* page ouverte sans la passerelle */ }
   }
   $('#phoneBtn').hidden = !(bridge && bridge.urls && bridge.urls.length && /^(localhost|127\.)/.test(location.hostname));
+  renderDecoder();
   if (!window.Hls && !nativeHls) toast('⚠ Le lecteur vidéo n\'a pas pu se charger. Mets à jour ton navigateur (Chrome conseillé).', { err: true, ms: 10000 });
   const last = store.get('last', null);
   if (last && last.sources) {

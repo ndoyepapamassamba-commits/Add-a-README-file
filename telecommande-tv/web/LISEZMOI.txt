@@ -11,6 +11,13 @@ TÉLÉCOMMANDE TV : VERSION WEB (téléphone et ordinateur)
   puis bascule toute seule sur une autre chaîne qui marche.
   Pastilles : verte = marche, jaune = joignable, rouge = en panne.
 - ⭐ pour les favoris, « ➕ Mes listes » pour ajouter ta propre liste M3U.
+- « 🗺 Tous les pays… » : le tour du monde, 250 pays et 16 régions.
+  « 🌐 Monde entier » : environ 13 800 chaînes et 19 500 liens.
+- Pastilles : vert = marche, jaune = à essayer (le navigateur la bloque),
+  violet = interdite dans ton pays, rouge = morte, rond vide = décodeur requis.
+- Sur le téléphone, « ▶ VLC » ouvre la chaîne dans VLC (gratuit sur le
+  Play Store), qui décode presque tout.
+- 💾 enregistre les chaînes qui marchent en liste .m3u (VLC, appli IPTV de la télé).
 
 2) TÉLÉCOMMANDE WI-FI (télés Android TV / Google TV)
 ----------------------------------------------------
@@ -29,7 +36,10 @@ Un navigateur ne peut pas parler directement à la télé : la petite
      (une seule fois).
 
 Bonus : avec la passerelle, encore plus de chaînes se lisent
-(elle relaie celles que le navigateur refuse).
+(elle relaie celles que le navigateur refuse), et le bouton
+« Installer le décodeur » (Windows, 65 Mo) ajoute FFmpeg. FFmpeg lit
+le son AC-3, l'image HEVC et les flux DASH, RTMP ou RTSP.
+Mac : brew install ffmpeg. Linux : sudo apt install ffmpeg.
 
 Sans ordinateur : l'appli Google TV (Play Store) contient aussi une
 télécommande Wi-Fi.

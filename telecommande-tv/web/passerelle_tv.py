@@ -14,27 +14,33 @@ navigateur refuse de lire directement (CORS, en-têtes Referer / User-Agent).
 Aucune installation à part Python 3.7+ : seulement la bibliothèque standard.
 Lancement :  python3 passerelle_tv.py   (Windows : double-clic sur Lancer-passerelle-Windows.bat)
 """
+import atexit
 import base64
 import hashlib
 import ipaddress
 import json
 import os
+import platform
 import re
 import secrets
+import shutil
 import socket
 import ssl
 import struct
+import subprocess
 import sys
+import tempfile
 import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 import webbrowser
+import zlib
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = '3.0'
+VERSION = '3.1'
 CLIENT_NAME = 'Telecommande TV'
 HERE = os.path.dirname(os.path.abspath(__file__))
 PAGE = 'TelecommandeTV.html'
@@ -656,6 +662,7 @@ class Bridge:
             'pairing': self.pairing is not None,
             'error': self.error,
             'urls': ['http://%s:%d/' % (ip, HTTP_PORT[0]) for ip in local_ips()],
+            'decoder': DECODER.info(),
         }
 
     def ensure_connected(self):
@@ -765,17 +772,30 @@ _OPENER = urllib.request.build_opener(_PublicRedirects)
 _INSECURE_OPENER = urllib.request.build_opener(_PublicRedirects, urllib.request.HTTPSHandler(context=_insecure))
 
 
-def public_url(url):
-    p = urllib.parse.urlsplit(url)
-    if p.scheme not in ('http', 'https') or not p.hostname:
+TX_SCHEMES = ('rtmp', 'rtmps', 'rtsp', 'mmsh', 'mmst', 'srt')
+
+
+def public_url(url, schemes=('http', 'https')):
+    """Le relais et le décodeur ne vont que sur internet, jamais vers le réseau local ni vers un fichier."""
+    try:
+        p = urllib.parse.urlsplit(url)
+        host, port = p.hostname, p.port
+    except ValueError:
+        return False
+    if p.scheme not in schemes or not host:
         return False
     if PROXY_LOCAL:
         return True
     try:
-        infos = socket.getaddrinfo(p.hostname, p.port or (443 if p.scheme == 'https' else 80))
+        infos = socket.getaddrinfo(host, port or 443)
     except OSError:
         return True  # l'erreur DNS sera signalée par la requête
     return all(ipaddress.ip_address(i[4][0].split('%')[0]).is_global for i in infos)
+
+
+def is_timeout(e):
+    reason = getattr(e, 'reason', None)
+    return isinstance(e, socket.timeout) or isinstance(reason, socket.timeout) or 'timed out' in str(e).lower()
 
 
 def fetch(url, ref=None, ua=None, rng=None, timeout=15):
@@ -825,6 +845,341 @@ def is_playlist(url, ctype, head):
         or urllib.parse.urlsplit(url).path.lower().endswith(('.m3u8', '.m3u'))
 
 
+def probe_one(url, ref=None, ua=None):
+    """Teste un lien jusqu'à la liste des segments, comme le ferait le lecteur.
+
+    s : 1 marche, 0 joignable (à essayer / à décoder), -1 mort, -2 interdit (pays, droits), None trop lent.
+    """
+    scheme = url.split(':', 1)[0].lower()
+    if scheme in TX_SCHEMES:
+        return {'s': 0 if DECODER.path() and public_url(url, TX_SCHEMES) else -1, 'code': 0}
+    if not public_url(url):
+        return {'s': -1, 'code': 0}
+
+    def get(u):
+        r = fetch(u, ref, ua, timeout=8)
+        with r:
+            return r.status, r.geturl(), r.headers.get('Content-Type') or '', r.read(65536)
+
+    def failed(e):
+        if isinstance(e, urllib.error.HTTPError):
+            return {'s': -2 if e.code in (401, 403, 451) else -1, 'code': e.code}
+        return {'s': None if is_timeout(e) else -1, 'code': 0}
+
+    try:
+        status, final, ctype, head = get(url)
+    except Exception as e:  # noqa: BLE001
+        return failed(e)
+    text = head.decode('utf-8', 'replace')
+    if is_playlist(final, ctype, head[:2048]):
+        if '#EXT-X-STREAM-INF' in text:  # liste principale : on vérifie la première qualité
+            variant, after = None, False
+            for line in text.splitlines():
+                line = line.strip()
+                if line.startswith('#EXT-X-STREAM-INF'):
+                    after = True
+                elif after and line and not line.startswith('#'):
+                    variant = urllib.parse.urljoin(final, line)
+                    break
+            if not variant:
+                return {'s': -1, 'code': status}
+            try:
+                _, _, _, head = get(variant)
+            except Exception as e:  # noqa: BLE001
+                return failed(e)
+            text = head.decode('utf-8', 'replace')
+        return {'s': 1 if '#EXTINF' in text else -1, 'code': status}
+    if '<MPD' in text[:4096]:  # DASH : lisible par le décodeur, sauf s'il est chiffré (DRM)
+        return {'s': -1 if 'ContentProtection' in text else (1 if DECODER.path() else 0), 'code': status}
+    kind = ctype.split(';')[0].strip().lower()
+    if kind in ('video/mp4', 'video/webm', 'audio/mpeg', 'audio/aac', 'audio/mp4', 'audio/ogg'):
+        return {'s': 1, 'code': status}
+    if head[:1] == b'\x47' or head[:3] == b'FLV' or kind.startswith(('video/', 'audio/')) or kind == 'application/octet-stream':
+        return {'s': 1 if DECODER.path() else 0, 'code': status}  # flux brut (TS, FLV…) : il faut le décodeur
+    return {'s': -1, 'code': status}  # page web, message d'erreur…
+
+
+PROBE_POOL = ThreadPoolExecutor(max_workers=24)
+
+
+# ---------------------------------------------------------------- décodeur FFmpeg
+
+FFMPEG_ZIP = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-%s-gpl.zip'
+TX_TEST = os.environ.get('TELECOMMANDE_TX_TEST') == '1'  # tests : VP9/Opus en fMP4 (le Chromium de test n'a pas H.264)
+TX_IDLE = 45  # secondes sans lecteur avant d'arrêter une conversion
+TX_MAX = 3
+
+
+def _range_get(url, a, b):
+    req = urllib.request.Request(url, headers={'Range': 'bytes=%d-%d' % (a, b), 'User-Agent': UA_DEFAULT})
+    return urllib.request.urlopen(req, timeout=60)
+
+
+def extract_from_remote_zip(url, suffix, out, progress=None):
+    """Télécharge un seul fichier d'une archive zip distante (requêtes partielles) : 65 Mo au lieu de 200."""
+    with _range_get(url, 0, 0) as r:
+        total = int((r.headers.get('Content-Range') or '/0').rsplit('/', 1)[1])
+    if total < 22:
+        raise IOError('le serveur ne permet pas le téléchargement partiel')
+    with _range_get(url, max(0, total - 65536), total - 1) as r:
+        tail = r.read()
+    i = tail.rfind(b'PK\x05\x06')
+    if i < 0:
+        raise IOError('archive illisible')
+    cd_size, cd_off = struct.unpack('<II', tail[i + 12:i + 20])
+    with _range_get(url, cd_off, cd_off + cd_size - 1) as r:
+        cd = r.read()
+    p = 0
+    while p + 46 <= len(cd):
+        (_, _, _, _, method, _, _, crc, csize, _, nlen, elen, clen, _, _, _, off) = struct.unpack('<IHHHHHHIIIHHHHHII', cd[p:p + 46])
+        name = cd[p + 46:p + 46 + nlen].decode('utf-8', 'replace')
+        if name.endswith(suffix):
+            break
+        p += 46 + nlen + elen + clen
+    else:
+        raise IOError('%s introuvable dans l\'archive' % suffix)
+    if 0xFFFFFFFF in (csize, off) or method not in (0, 8):
+        raise IOError('format d\'archive non pris en charge')
+    with _range_get(url, off, off + 29) as r:
+        local = r.read()
+    nlen2, elen2 = struct.unpack('<HH', local[26:30])
+    start = off + 30 + nlen2 + elen2
+    unz = zlib.decompressobj(-15) if method == 8 else None
+    tmp, got, check = out + '.part', 0, 0
+    with _range_get(url, start, start + csize - 1) as r, open(tmp, 'wb') as f:
+        while True:
+            chunk = r.read(256 * 1024)
+            if not chunk:
+                break
+            got += len(chunk)
+            data = unz.decompress(chunk) if unz else chunk
+            check = zlib.crc32(data, check)
+            f.write(data)
+            if progress:
+                progress(min(99, got * 100 // max(1, csize)))
+        if unz:
+            data = unz.flush()
+            check = zlib.crc32(data, check)
+            f.write(data)
+    if got != csize or (check & 0xFFFFFFFF) != crc:
+        os.remove(tmp)
+        raise IOError('téléchargement incomplet, réessaie')
+    os.replace(tmp, out)
+
+
+class TxJob:
+    """Une conversion FFmpeg : n'importe quel flux (HLS, DASH, TS, RTMP, RTSP…) → HLS lisible partout."""
+
+    def __init__(self, ffmpeg, url, ref, ua, x264):
+        self.dir = tempfile.mkdtemp(prefix='telecommande-tx-')
+        self.last = time.time()
+        self.started = time.time()
+        cmd = [ffmpeg, '-hide_banner', '-nostdin', '-loglevel', 'error', '-fflags', '+genpts+discardcorrupt', '-re']
+        scheme = url.split(':', 1)[0].lower()
+        if scheme in ('http', 'https'):
+            cmd += ['-user_agent', ua or UA_DEFAULT, '-reconnect', '1', '-reconnect_streamed', '1',
+                    '-reconnect_delay_max', '4', '-rw_timeout', '15000000']
+            if ref:
+                cmd += ['-headers', 'Referer: %s\r\n' % ref]
+        elif scheme == 'rtsp':
+            cmd += ['-rtsp_transport', 'tcp']
+        # Jamais de fichier local en entrée, même si une liste distante en désigne un
+        cmd += ['-protocol_whitelist', 'http,https,tcp,tls,crypto,rtmp,rtmps,rtsp,rtp,udp,srt,mmsh,mmst,httpproxy',
+                '-i', url, '-map', '0:v:0?', '-map', '0:a:0?', '-sn', '-dn']
+        segment = 'ts'
+        if TX_TEST:
+            video = ['-c:v', 'libvpx-vp9', '-deadline', 'realtime', '-cpu-used', '8', '-b:v', '300k', '-g', '50']
+            audio = ['-c:a', 'libopus', '-b:a', '48k', '-ac', '2']
+            segment = 'fmp4'
+        else:
+            video = ['-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency', '-crf', '23', '-maxrate', '3000k',
+                     '-bufsize', '6000k', '-vf', "scale='min(1280,iw)':-2", '-pix_fmt', 'yuv420p', '-profile:v', 'main',
+                     '-g', '50', '-keyint_min', '25', '-sc_threshold', '0']
+            audio = ['-c:a', 'aac', '-b:a', '128k', '-ac', '2', '-ar', '48000']
+        if not x264:
+            video = ['-c:v', 'copy']  # image recopiée telle quelle : rapide ; seul le son est converti
+        cmd += video + audio + ['-f', 'hls', '-hls_time', '2', '-hls_list_size', '10', '-hls_allow_cache', '0',
+                                '-hls_flags', 'delete_segments+omit_endlist+independent_segments+temp_file']
+        if segment == 'fmp4':
+            cmd += ['-hls_segment_type', 'fmp4', '-hls_fmp4_init_filename', 'init.mp4',
+                    '-hls_segment_filename', os.path.join(self.dir, 's%06d.m4s')]
+        else:
+            cmd += ['-hls_segment_filename', os.path.join(self.dir, 's%06d.ts')]
+        cmd.append(os.path.join(self.dir, 'index.m3u8'))
+        self.log = open(os.path.join(self.dir, 'ffmpeg.log'), 'wb')
+        flags = 0x08000000 if os.name == 'nt' else 0  # CREATE_NO_WINDOW : pas de fenêtre noire de plus
+        self.proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=self.log,
+                                     creationflags=flags)
+
+    def _segments(self):
+        try:
+            with open(os.path.join(self.dir, 'index.m3u8'), encoding='utf-8', errors='replace') as f:
+                return f.read().count('#EXTINF')
+        except OSError:
+            return 0
+
+    def wait_ready(self, timeout=45):
+        end = time.time() + timeout
+        while time.time() < end:
+            n = self._segments()
+            if n >= 2 or (n >= 1 and time.time() - self.started > 15):
+                return True
+            if self.proc.poll() is not None:
+                return n >= 1
+            time.sleep(0.25)
+        return False
+
+    def alive(self):
+        return self.proc.poll() is None or self._segments() > 0
+
+    def error(self):
+        try:
+            with open(os.path.join(self.dir, 'ffmpeg.log'), 'rb') as f:
+                f.seek(0, 2)
+                f.seek(max(0, f.tell() - 600))
+                tail = f.read().decode('utf-8', 'replace').strip()
+        except OSError:
+            tail = ''
+        return tail.splitlines()[-1] if tail else 'le décodeur n\'a rien pu lire'
+
+    def playlist(self):
+        self.last = time.time()
+        with open(os.path.join(self.dir, 'index.m3u8'), encoding='utf-8', errors='replace') as f:
+            text = f.read()
+        out = []
+        for line in text.splitlines():
+            line = line.strip()
+            if line and not line.startswith('#'):
+                line = os.path.basename(line.replace('\\', '/'))
+            elif line.startswith('#EXT-X-MAP'):
+                line = re.sub(r'URI="([^"]+)"', lambda m: 'URI="%s"' % os.path.basename(m.group(1).replace('\\', '/')), line)
+            out.append(line)
+        return '\n'.join(out) + '\n'
+
+    def read(self, name):
+        self.last = time.time()
+        try:
+            with open(os.path.join(self.dir, name), 'rb') as f:
+                return f.read()
+        except OSError:
+            return None
+
+    def stop(self):
+        try:
+            self.proc.kill()
+            self.proc.wait(5)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        try:
+            self.log.close()
+        except OSError:
+            pass
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+
+class Decoder:
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.jobs = {}
+        self.install = {'state': 'idle', 'progress': 0, 'error': ''}
+        self._path = None
+        threading.Thread(target=self._reaper, daemon=True).start()
+
+    def path(self):
+        if self._path and os.path.isfile(self._path):
+            return self._path
+        for c in (os.environ.get('TELECOMMANDE_FFMPEG'),
+                  os.path.join(CONF_DIR, 'ffmpeg', 'ffmpeg.exe' if os.name == 'nt' else 'ffmpeg'),
+                  shutil.which('ffmpeg')):
+            if c and os.path.isfile(c):
+                self._path = c
+                return c
+        return None
+
+    def info(self):
+        machine = platform.machine().upper()
+        auto = os.name == 'nt' and machine in ('AMD64', 'X86_64', 'ARM64')
+        hint = '' if auto else ('brew install ffmpeg' if sys.platform == 'darwin' else 'sudo apt install ffmpeg')
+        return {'ok': bool(self.path()), 'install': dict(self.install), 'auto': auto, 'hint': hint, 'size': 65}
+
+    def start_install(self):
+        with self.lock:
+            if self.install['state'] == 'running' or self.path():
+                return
+            self.install = {'state': 'running', 'progress': 0, 'error': ''}
+        threading.Thread(target=self._install, daemon=True).start()
+
+    def _install(self):
+        try:
+            if os.name != 'nt':
+                raise IOError('installe-le avec : ' + self.info()['hint'])
+            arch = 'winarm64' if platform.machine().upper() == 'ARM64' else 'win64'
+            dest = os.path.join(CONF_DIR, 'ffmpeg')
+            os.makedirs(dest, exist_ok=True)
+            log('Téléchargement du décodeur FFmpeg (≈ 65 Mo)…')
+
+            def progress(pct):
+                self.install['progress'] = pct
+            extract_from_remote_zip(FFMPEG_ZIP % arch, '/bin/ffmpeg.exe', os.path.join(dest, 'ffmpeg.exe'), progress)
+            self._path = None
+            self.install = {'state': 'done', 'progress': 100, 'error': ''}
+            log('Décodeur FFmpeg installé.')
+        except Exception as e:  # noqa: BLE001
+            self.install = {'state': 'error', 'progress': 0, 'error': str(e) or e.__class__.__name__}
+            log('Décodeur non installé :', e)
+
+    def job(self, jid, params):
+        with self.lock:
+            j = self.jobs.get(jid)
+            if j and j.alive():
+                j.last = time.time()
+                return j
+            if j:
+                self.jobs.pop(jid).stop()
+            ffmpeg = self.path()
+            if not ffmpeg:
+                raise LookupError('décodeur FFmpeg non installé')
+            url = params.get('u', '')
+            if not public_url(url, ('http', 'https') + TX_SCHEMES):
+                raise LookupError('adresse refusée')
+            while len(self.jobs) >= TX_MAX:  # on arrête la conversion la plus ancienne
+                old = min(self.jobs, key=lambda k: self.jobs[k].last)
+                self.jobs.pop(old).stop()
+            j = TxJob(ffmpeg, url, params.get('r'), params.get('ua'), params.get('x') == '1')
+            self.jobs[jid] = j
+            log('Décodeur :', 'conversion complète' if params.get('x') == '1' else 'réemballage', url[:90])
+            return j
+
+    def get(self, jid):
+        with self.lock:
+            return self.jobs.get(jid)
+
+    def drop(self, jid):
+        with self.lock:
+            j = self.jobs.pop(jid, None)
+        if j:
+            j.stop()
+
+    def _reaper(self):
+        while True:
+            time.sleep(5)
+            with self.lock:
+                idle = [k for k, j in self.jobs.items() if time.time() - j.last > TX_IDLE]
+                gone = [self.jobs.pop(k) for k in idle]
+            for j in gone:
+                j.stop()
+
+    def stop_all(self):
+        with self.lock:
+            jobs, self.jobs = list(self.jobs.values()), {}
+        for j in jobs:
+            j.stop()
+
+
+DECODER = Decoder()
+atexit.register(DECODER.stop_all)
+
+
 # ---------------------------------------------------------------- serveur HTTP
 
 class Handler(BaseHTTPRequestHandler):
@@ -863,7 +1218,10 @@ class Handler(BaseHTTPRequestHandler):
             if url.path == '/proxy':
                 return self.proxy(q.get('u', ''), q.get('r'), q.get('ua'))
             if url.path == '/api/probe':
-                return self.probe(q.get('u', ''), q.get('r'), q.get('ua'))
+                return self.reply(200, probe_one(q.get('u', ''), q.get('r'), q.get('ua')))
+            m = re.match(r'^/tx/([0-9a-z]{6,32})/([\w.]+)$', url.path)
+            if m:
+                return self.tx(m.group(1), m.group(2), q)
             self.reply(404, {'error': 'introuvable'})
         except (BrokenPipeError, ConnectionResetError):
             pass
@@ -904,6 +1262,13 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/forget':
                 BRIDGE.forget()
                 return self.reply(200, {'ok': True, 'state': BRIDGE.state()})
+            if path == '/api/probe':
+                items = [i for i in (data.get('items') or [])[:100] if isinstance(i, dict)]
+                results = list(PROBE_POOL.map(lambda i: probe_one(str(i.get('u', '')), i.get('r') or None, i.get('ua') or None), items))
+                return self.reply(200, {'results': results})
+            if path == '/api/decoder/install':
+                DECODER.start_install()
+                return self.reply(200, {'ok': True, 'state': BRIDGE.state()})
             self.reply(404, {'error': 'introuvable'})
         except (BrokenPipeError, ConnectionResetError):
             pass
@@ -926,19 +1291,30 @@ class Handler(BaseHTTPRequestHandler):
         self.reply(404, '<meta charset="utf-8"><p>Mets <b>%s</b> dans le même dossier que la passerelle.' % PAGE,
                    'text/html; charset=utf-8')
 
-    def probe(self, url, ref, ua):
-        if not public_url(url):
-            return self.reply(400, {'ok': False, 'error': 'adresse refusée'})
-        try:
-            r = fetch(url, ref, ua, timeout=8)
-            head = r.read(4096)
-            r.close()
-            return self.reply(200, {'ok': 200 <= r.status < 400, 'status': r.status,
-                                    'playlist': is_playlist(r.geturl(), r.headers.get('Content-Type'), head)})
-        except urllib.error.HTTPError as e:
-            return self.reply(200, {'ok': False, 'status': e.code})
-        except Exception as e:  # noqa: BLE001
-            return self.reply(200, {'ok': False, 'status': 0, 'error': str(e)[:200]})
+    def tx(self, jid, name, q):
+        if name == 'index.m3u8':
+            try:
+                job = DECODER.job(jid, q) if q.get('u') else DECODER.get(jid)
+            except LookupError as e:
+                return self.reply(400, str(e), 'text/plain; charset=utf-8')
+            if job is None:
+                return self.reply(404, b'', 'text/plain')
+            if not job.wait_ready():
+                err = job.error()
+                DECODER.drop(jid)
+                code = 404 if re.search(r'\b404\b|Not Found', err) else 403 if re.search(r'\b40[13]\b|Forbidden', err) else 502
+                return self.reply(code, err, 'text/plain; charset=utf-8')
+            if job.proc.poll() not in (None, 0):
+                DECODER.drop(jid)  # le flux s'est arrêté : le lecteur passera au lien suivant
+                return self.reply(502, b'', 'text/plain')
+            return self.reply(200, job.playlist(), 'application/vnd.apple.mpegurl')
+        if not re.fullmatch(r's\d{6}\.(ts|m4s)|init\.mp4', name):
+            return self.reply(404, b'', 'text/plain')
+        job = DECODER.get(jid)
+        data = job.read(name) if job else None
+        if data is None:
+            return self.reply(404, b'', 'text/plain')
+        return self.reply(200, data, 'video/mp2t' if name.endswith('.ts') else 'video/mp4')
 
     def proxy(self, url, ref, ua):
         if not public_url(url):
@@ -947,8 +1323,8 @@ class Handler(BaseHTTPRequestHandler):
             r = fetch(url, ref, ua, rng=self.headers.get('Range'))
         except urllib.error.HTTPError as e:
             return self.reply(e.code, b'', 'text/plain')
-        except Exception as e:  # noqa: BLE001
-            return self.reply(502, str(e)[:200], 'text/plain; charset=utf-8')
+        except Exception as e:  # noqa: BLE001 — 504 : trop lent ; 502 : injoignable (le lecteur n'insiste pas)
+            return self.reply(504 if is_timeout(e) else 502, str(e)[:200], 'text/plain; charset=utf-8')
         with r:
             ctype = r.headers.get('Content-Type') or 'application/octet-stream'
             length = r.headers.get('Content-Length')
@@ -1017,10 +1393,16 @@ def main():
     print('=' * 60, flush=True)
     if '--no-browser' not in args:
         threading.Timer(0.8, lambda: webbrowser.open(local)).start()
+    if DECODER.path():
+        print(' Décodeur FFmpeg : actif (' + DECODER.path() + ')')
+    else:
+        print(' Décodeur FFmpeg : absent (installable depuis la page, onglet TV)')
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print('Passerelle arrêtée.')
+    finally:
+        DECODER.stop_all()
 
 
 if __name__ == '__main__':
