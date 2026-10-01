@@ -21,6 +21,61 @@ https://github.com/ndoyepapamassamba-commits/Add-a-README-file/raw/claude/admiri
 
 ---
 
+## 🌐 Version web : TV en direct (IPTV) + télécommande Wi-Fi, sur téléphone et ordinateur
+
+Rien à installer sur le téléphone : une seule page web,
+**[`web/TelecommandeTV.html`](web/TelecommandeTV.html)** (≈ 680 Ko). Le tout est aussi dans
+**[`TelecommandeTV-Web.zip`](TelecommandeTV-Web.zip)** (≈ 220 Ko), à envoyer par WhatsApp ou par mail.
+Ce zip contient la page, la passerelle et le mode d'emploi `LISEZMOI.txt`.
+
+### 📡 TV en direct, avec bascule automatique
+- Ouvre `TelecommandeTV.html` avec **Chrome** : sur le téléphone, *Fichiers → Téléchargements →
+  Ouvrir avec Chrome* ; sur l'ordinateur, double-clic.
+- Choisis un bouquet : 🇸🇳 Sénégal, 🌍 Afrique, 🇫🇷 France, 🗣 En français, 📰 Infos, ⚽ Sport,
+  🎬 Films, 🎵 Musique, 🧸 Enfants, 🕌 Religion, 🦁 Documentaires, 🌐 Monde entier (≈ 12 000 chaînes).
+- Les chaînes sont **cherchées en direct sur GitHub**. Ce sont les listes publiques de chaînes
+  **gratuites et légales** [iptv-org](https://github.com/iptv-org/iptv) et
+  [Free-TV](https://github.com/Free-TV/IPTV), mises à jour chaque jour.
+  Si `iptv-org.github.io` ne répond pas, l'appli passe par le miroir `raw.githubusercontent.com`.
+- **Quand un lien saute**, l'appli essaie aussitôt un autre lien de la même chaîne. S'il n'y en a
+  plus, elle **bascule toute seule sur une autre chaîne qui marche**, avec un bouton « ↩ Réessayer ».
+- Les chaînes de la liste sont **testées en arrière-plan**, en commençant par celles qui suivent la
+  chaîne en cours, pour que la bascule soit immédiate.
+  Pastilles : 🟢 marche, 🟡 joignable, 🔴 en panne.
+- **Coupure d'internet** : l'appli ne pénalise pas les chaînes. Elle affiche « Pas de connexion
+  internet » et reprend toute seule au retour du réseau.
+- ⭐ Favoris, recherche, « Qui marchent » (cache les chaînes en panne), plein écran (touche F),
+  chaîne précédente / suivante (P / N).
+- « ➕ Mes listes » : ajoute le lien d'une liste M3U ou un fichier `.m3u`.
+
+> Des chaînes restent rouges ? Le lien est mort ou réservé à un pays (🌍 « restreinte ») : c'est
+> normal, l'appli les saute. Sur ordinateur, **la passerelle débloque beaucoup plus de chaînes**,
+> car elle relaie celles que le navigateur refuse (CORS, Referer exigé).
+
+### 🎮 Télécommande Wi-Fi depuis la page web
+Un navigateur n'a pas le droit d'ouvrir la connexion TLS à certificat client qu'exige la télé.
+La petite **passerelle** [`web/passerelle_tv.py`](web/passerelle_tv.py) fait l'intermédiaire
+depuis un ordinateur du même Wi-Fi. Elle n'a besoin que de Python 3.7 ou plus récent, sans aucune
+bibliothèque à ajouter.
+
+1. Installe [Python](https://www.python.org/downloads/). Sous Windows, coche « Add python.exe to PATH ».
+2. Lance la passerelle :
+   - Windows : double-clic sur **`Lancer-passerelle-Windows.bat`** ;
+   - Mac ou Linux : `python3 passerelle_tv.py`.
+
+   Si le pare-feu demande, autorise l'accès sur les « Réseaux privés ».
+3. La page s'ouvre sur l'ordinateur → onglet **🎮 Télécommande**.
+   - **Sur le téléphone** : scanne le QR code affiché, ou tape l'adresse indiquée
+     (ex. `http://192.168.1.20:8765`).
+4. **🔎 Chercher ma télé**, puis tape le code à 6 caractères qui s'affiche sur la télé
+   (une seule fois).
+
+Tous les boutons de l'appli Android sont là : appui long pour répéter, Netflix / YouTube / Prime,
+volume de la télé affiché. Sur ordinateur, le clavier marche aussi : flèches, Entrée,
+Échap, + / −, Page ↑/↓, chiffres.
+
+---
+
 ## 📶 Piloter la télé par le Wi-Fi (Android TV)
 
 Les télés **ELACTRON Smart** fonctionnent sous **Android TV**. L'appli utilise le même protocole
@@ -170,6 +225,10 @@ Bouton **🔦** en haut de la télécommande (ou sur l'écran d'accueil) :
 | `tools/test/fake_tv.py` | Fausse Android TV pour les tests (appairage vérifié, pings, journal des touches reçues) |
 | `tools/builddb.py` | Construit `codes.txt` à partir de [Flipper-IRDB](https://github.com/Lucaslhm/Flipper-IRDB) |
 | `build.sh` | Compile l'APK **sans Android Studio** (outils téléchargés depuis Maven Central) |
+| `web/app.html` | Page web (source) : lecteur IPTV avec bascule automatique, listes iptv-org / Free-TV, télécommande Wi-Fi, QR code |
+| `web/build_web.py` | Intègre [hls.js](https://github.com/video-dev/hls.js) (Apache-2.0) → `web/TelecommandeTV.html` autonome, et crée `TelecommandeTV-Web.zip` |
+| `web/passerelle_tv.py` | Passerelle Wi-Fi en Python pur : clé RSA + certificat X.509 générés sans bibliothèque, appairage et touches Android TV Remote v2, recherche des télés (mDNS + balayage), relais vidéo HLS (réécrit les listes, ajoute Referer / User-Agent, refuse les adresses du réseau local) |
+| `web/test/` | Tests de bout en bout : faux serveur IPTV (`streams.py`), Chromium piloté par Playwright (`web_test.js`), `run_tests.sh` |
 
 Recompiler : `./build.sh` (Java 17+, Python 3, curl). Régénérer la base :
 `python3 tools/builddb.py <Flipper-IRDB> app/src/main/assets/codes.txt <tv.ir>`.
@@ -186,7 +245,21 @@ Recompiler : `./build.sh` (Java 17+, Python 3, curl). Régénérer la base :
   protobuf de la bibliothèque de référence `androidtvremote2`) a d'abord été validée avec cette
   bibliothèque, puis l'appli a été testée contre elle : appairage, mauvais code refusé, touches,
   répétition, Netflix, reconnexion au redémarrage ;
-- APK signé v1 + v2 et vérifié avec apksig.
+- APK signé v1 + v2 et vérifié avec apksig ;
+- version web (`web/test/run_tests.sh`, 37 vérifications) :
+  - lien mort écarté ;
+  - deux liens morts → bascule sur une autre chaîne ;
+  - lien qui saute **en pleine lecture** → lien suivant de la même chaîne ;
+  - chaîne qui coupe → autre chaîne qui marche ;
+  - flux refusé par le navigateur ;
+  - coupure d'internet → reprise sans pénaliser la chaîne ;
+  - favoris, recherche et filtre ;
+  - QR codes relus par un décodeur ;
+  - avec la passerelle et la fausse télé : appairage, touches, appui long, clavier, Netflix,
+    volume, relais des flux sans CORS ou exigeant un Referer.
+
+  Les listes réelles iptv-org et Free-TV ont aussi été chargées dans Chromium :
+  16 chaînes pour le Sénégal, 164 pour l'Afrique, 459 en français, 12 153 dans le monde entier.
 
 La clé de signature (`debug.keystore`) n'est pas publiée : une version recompilée
 ailleurs devra être installée après avoir désinstallé l'ancienne.

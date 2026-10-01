@@ -1,0 +1,1423 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f17">
+<meta name="color-scheme" content="dark">
+<title>Télécommande TV</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='10' width='56' height='38' rx='6' fill='%23ff8a1f'/%3E%3Crect x='10' y='16' width='44' height='26' rx='3' fill='%230b0f17'/%3E%3Cpath d='M26 22l12 7-12 7z' fill='%23ff8a1f'/%3E%3Crect x='22' y='52' width='20' height='4' rx='2' fill='%23ff8a1f'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #0b0f17; --panel: #131a27; --panel2: #1a2333; --line: #27324a; --text: #e9eef6; --muted: #95a3b8;
+  --accent: #ff8a1f; --accent2: #ffb35c; --ok: #2fd47a; --warn: #ffc53d; --bad: #ff5a5f; --blue: #4da3ff;
+  --radius: 14px; --head: 56px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif; }
+body { min-height: 100vh; overflow-x: hidden; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; border: 0; background: none; }
+[hidden] { display: none !important; }
+.muted { color: var(--muted); }
+
+/* En-tête */
+.top { position: sticky; top: 0; z-index: 20; height: var(--head); display: flex; align-items: center; gap: 12px;
+  padding: 0 16px; background: rgba(11,15,23,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.brand { font-weight: 700; font-size: 17px; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+.brand b { color: var(--accent); }
+.tabs { display: flex; gap: 4px; margin-left: auto; background: var(--panel); padding: 4px; border-radius: 999px; }
+.tabs button { padding: 7px 14px; border-radius: 999px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+.tabs button.on { background: var(--accent); color: #1b0f00; }
+#phoneBtn { padding: 7px 12px; border-radius: 999px; background: var(--panel); white-space: nowrap; }
+@media (max-width: 560px) { .brand span { display: none; } .tabs button { padding: 7px 11px; } #phoneBtn { display: none; } }
+
+/* TV en direct */
+.tv { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 16px; max-width: 1500px; margin: 0 auto; }
+@media (min-width: 980px) { .tv { grid-template-columns: minmax(0, 1fr) 400px; align-items: start; } .list-col { position: sticky; top: calc(var(--head) + 16px); max-height: calc(100vh - var(--head) - 32px); display: flex; flex-direction: column; } .list { flex: 1; min-height: 0; } }
+
+.player { position: relative; background: #000; border-radius: var(--radius); overflow: hidden; aspect-ratio: 16 / 9; }
+.player video { width: 100%; height: 100%; display: block; background: #000; }
+.player:fullscreen, .player:-webkit-full-screen { border-radius: 0; aspect-ratio: auto; width: 100%; height: 100%; }
+.overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  text-align: center; padding: 20px; background: radial-gradient(ellipse at center, rgba(11,15,23,.75), rgba(11,15,23,.92)); pointer-events: none; }
+.overlay .t1 { font-size: 18px; font-weight: 700; max-width: 90%; }
+.overlay .t2 { color: var(--muted); max-width: 90%; }
+.overlay button { pointer-events: auto; background: var(--accent); color: #1b0f00; font-weight: 700; padding: 10px 18px; border-radius: 999px; }
+.spin { width: 38px; height: 38px; border-radius: 50%; border: 4px solid rgba(255,255,255,.15); border-top-color: var(--accent); animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.live { position: absolute; top: 10px; left: 10px; background: var(--bad); color: #fff; font-weight: 800; font-size: 12px; padding: 3px 8px; border-radius: 6px; letter-spacing: .5px; pointer-events: none; }
+.unmute { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,.7); padding: 8px 12px; border-radius: 999px; font-weight: 600; }
+.now { display: flex; align-items: center; gap: 12px; margin-top: 12px; min-height: 48px; }
+.now img, .now .ph { width: 48px; height: 48px; border-radius: 10px; object-fit: contain; background: var(--panel2); flex: none; }
+.now .nm { font-weight: 700; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.now .info { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.now > div { min-width: 0; }
+.ctrls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.ctrls button, .chip, .btn { background: var(--panel2); border: 1px solid var(--line); padding: 8px 12px; border-radius: 10px; font-weight: 600; white-space: nowrap; }
+.ctrls button:hover, .chip:hover, .btn:hover { border-color: #3a4867; }
+.ctrls label { display: flex; align-items: center; gap: 6px; color: var(--muted); padding: 0 4px; }
+.btn.primary { background: var(--accent); color: #1b0f00; border-color: var(--accent); }
+
+.list-col { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; min-width: 0; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
+@media (min-width: 980px) { .chips { flex-wrap: wrap; overflow: visible; } }
+@media (max-width: 979px) { .chips { -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); padding-right: 40px; } }
+.chip { flex: none; padding: 7px 11px; border-radius: 999px; font-size: 14px; }
+.chip.on { background: var(--accent); color: #1b0f00; border-color: var(--accent); }
+.tools { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+.tools input[type=search] { flex: 1; min-width: 0; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; outline: none; }
+.tools input[type=search]:focus { border-color: var(--accent); }
+.tools label { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.lstat { font-size: 13px; color: var(--muted); margin: 2px 2px 8px; min-height: 18px; }
+.list { overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+@media (max-width: 979px) { .list { overflow: visible; } }
+.ch { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 7px 8px; border-radius: 10px; }
+.ch:hover { background: var(--panel2); }
+.ch.cur { background: rgba(255,138,31,.14); outline: 1px solid rgba(255,138,31,.5); }
+.ch img, .ch .ph { width: 40px; height: 40px; object-fit: contain; border-radius: 8px; background: var(--panel2); flex: none; }
+.ph { display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--accent2); font-size: 14px; }
+.ch .tx { flex: 1; min-width: 0; }
+.ch .tx b { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ch .tx small { display: block; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: #48536a; flex: none; }
+.dot.ok { background: var(--ok); box-shadow: 0 0 8px rgba(47,212,122,.6); }
+.dot.maybe { background: var(--warn); }
+.dot.bad { background: var(--bad); }
+.dot.test { background: var(--blue); animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+.star { padding: 6px; font-size: 18px; color: #56627a; flex: none; }
+.star.on { color: var(--warn); }
+.more { padding: 14px; text-align: center; color: var(--muted); }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+
+/* Petits écrans : lecteur compact, collé en haut pendant qu'on parcourt la liste */
+@media (max-width: 979px) {
+  .player-col { position: sticky; top: var(--head); z-index: 10; background: var(--bg); margin: -16px -16px 0; padding: 0 0 8px; box-shadow: 0 8px 16px rgba(0,0,0,.35); }
+  .now, .ctrls { padding: 0 16px; } .player { border-radius: 0 !important; }
+  .now { margin-top: 8px; min-height: 40px; } .now img, .now .ph { width: 40px; height: 40px; } .now .nm { font-size: 16px; }
+  .ctrls { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-top: 8px; } .ctrls::-webkit-scrollbar { display: none; }
+  .ctrls button { padding: 7px 10px; font-size: 14px; }
+  .overlay { gap: 6px; padding: 12px; } .overlay .t1 { font-size: 16px; } .overlay .t2 { font-size: 13px; } .spin { width: 30px; height: 30px; }
+}
+@media (max-width: 979px) and (max-height: 500px) { .player-col { position: static; } }
+
+/* Toasts */
+.toasts { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 8px; width: min(560px, calc(100vw - 32px)); pointer-events: none; }
+.player .toasts { position: absolute; }
+.toast { background: rgba(26,35,51,.97); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 12px; padding: 10px 14px; box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  display: flex; gap: 10px; align-items: center; pointer-events: auto; animation: tin .25s ease-out; }
+.toast.err { border-left-color: var(--bad); }
+.toast button { margin-left: auto; color: var(--accent2); font-weight: 700; white-space: nowrap; }
+@keyframes tin { from { transform: translateY(10px); opacity: 0; } }
+
+/* Fenêtres */
+.modal { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; width: min(520px, 100%); max-height: calc(100vh - 32px); overflow: auto; }
+.card h2 { margin: 0 0 10px; font-size: 19px; }
+.card h3 { margin: 16px 0 6px; font-size: 15px; }
+.card p, .card li { color: #cdd6e4; }
+.card ol { padding-left: 20px; }
+.row { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+.row input[type=text], .row input[type=url] { flex: 1; min-width: 180px; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; outline: none; }
+.row input:focus { border-color: var(--accent); }
+.lst { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.lst .it { display: flex; gap: 8px; align-items: center; background: var(--panel2); border-radius: 10px; padding: 8px 10px; word-break: break-all; font-size: 13px; }
+.lst .it button { margin-left: auto; color: var(--bad); }
+.qr { background: #fff; padding: 10px; border-radius: 12px; width: 220px; height: 220px; margin: 8px auto; }
+.qr svg { width: 100%; height: 100%; display: block; }
+.big { font-size: 18px; font-weight: 700; color: var(--accent2); word-break: break-all; text-align: center; }
+
+/* Télécommande */
+.rm { max-width: 980px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); justify-items: center; }
+@media (min-width: 900px) { .rm.side { grid-template-columns: 400px 1fr; align-items: start; justify-items: stretch; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; width: 100%; max-width: 440px; }
+.panel h2 { margin: 0 0 8px; font-size: 18px; }
+.rhead { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.rhead .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rhead .st { font-size: 13px; color: var(--muted); }
+.rhead .st.on { color: var(--ok); }
+.rhead button { margin-left: auto; color: var(--muted); font-size: 13px; text-decoration: underline; }
+.vol { height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; margin: 0 0 14px; }
+.vol i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .2s; }
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+.k { background: var(--panel2); border: 1px solid var(--line); border-radius: 14px; min-height: 52px; font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: transform .06s, background .1s; }
+.k:active, .k.hit { transform: scale(.95); background: #26324a; }
+.k.power { background: #3a1517; border-color: #6b2125; color: #ff8d90; font-size: 22px; }
+.k.wide { grid-column: span 3; }
+.dpad { grid-column: span 3; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 64px); gap: 8px; margin: 6px 0; }
+.dpad .k { font-size: 22px; }
+.dpad .ok { background: var(--accent); color: #1b0f00; border-color: var(--accent); border-radius: 50%; width: 76px; height: 76px; justify-self: center; align-self: center; font-size: 18px; }
+.rock { display: grid; grid-template-rows: 52px 30px 52px; gap: 4px; text-align: center; }
+.rock span { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; font-weight: 700; }
+.k.app { font-size: 14px; }
+.k.netflix { color: #e50914; } .k.youtube { color: #ff3b3b; } .k.prime { color: #36b6ff; }
+.code { font-size: 28px; letter-spacing: 8px; text-align: center; text-transform: uppercase; font-family: ui-monospace, Consolas, monospace; }
+.tvs { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.tvs button { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-align: left; font-weight: 600; }
+.tvs button small { display: block; color: var(--muted); font-weight: 400; }
+.hint { font-size: 13px; color: var(--muted); }
+.kbd { font-size: 12px; color: var(--muted); margin-top: 12px; text-align: center; }
+@media (max-width: 420px) { .k { font-size: 14px; padding: 0 4px; } .pad { gap: 8px; } .kbd { display: none; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">📺 <span>Télécommande <b>TV</b></span></div>
+  <nav class="tabs" role="tablist">
+    <button id="tabTv" class="on" role="tab">📡 TV en direct</button>
+    <button id="tabRm" role="tab">🎮 Télécommande</button>
+  </nav>
+  <button id="phoneBtn" hidden>📱 Téléphone</button>
+</header>
+
+<main>
+<section id="pageTv" class="tv">
+  <div class="player-col">
+    <div class="player" id="player">
+      <video id="video" playsinline controls preload="none"></video>
+      <div class="live" id="live" hidden>EN DIRECT</div>
+      <button class="unmute" id="unmute" hidden>🔇 Touchez pour le son</button>
+      <div class="overlay" id="overlay">
+        <div class="spin" id="ovSpin" hidden></div>
+        <div class="t1" id="ovT1">Choisis une chaîne dans la liste</div>
+        <div class="t2" id="ovT2">Les chaînes gratuites sont cherchées en direct sur GitHub. Si un lien saute, l'appli bascule toute seule sur un autre qui marche.</div>
+        <button id="ovBtn" hidden></button>
+      </div>
+    </div>
+    <div class="now">
+      <div class="ph" id="nowPh">TV</div><img id="nowLogo" alt="" hidden referrerpolicy="no-referrer">
+      <div><div class="nm" id="nowName">Aucune chaîne</div><div class="info" id="nowInfo">—</div></div>
+    </div>
+    <div class="ctrls">
+      <button id="bPrev" title="Chaîne précédente (P)">⏮ Préc.</button>
+      <button id="bNext" title="Chaîne suivante (N)">Suiv. ⏭</button>
+      <button id="bSwitch" title="Essayer un autre lien">🔁 Autre lien</button>
+      <button id="bFav">☆ Favori</button>
+      <button id="bFull" title="Plein écran (F)">⛶ Plein écran</button>
+      <label><input type="checkbox" id="autoSw" checked> Bascule auto</label>
+    </div>
+  </div>
+
+  <div class="list-col">
+    <div class="chips" id="bouquets"></div>
+    <div class="tools">
+      <input type="search" id="search" placeholder="🔎 Chercher…" autocomplete="off">
+      <label title="Cacher les chaînes qui ne répondent pas"><input type="checkbox" id="onlyOk"> Qui marchent</label>
+    </div>
+    <div class="lstat" id="lstat"></div>
+    <div class="list" id="list"></div>
+    <div class="legend"><span><i class="dot ok"></i>marche</span><span><i class="dot maybe"></i>joignable</span><span><i class="dot bad"></i>en panne</span><span><i class="dot test"></i>test…</span><span><i class="dot"></i>pas encore testée</span></div>
+  </div>
+</section>
+
+<section id="pageRm" hidden>
+  <div class="rm" id="rmWrap">
+    <!-- Sans passerelle -->
+    <div class="panel" id="rmNoBridge" hidden>
+      <h2>🎮 Télécommande Wi-Fi</h2>
+      <p>Un navigateur web n'a pas le droit d'ouvrir la connexion sécurisée spéciale qu'exige la télé (comme le fait l'appli Google TV). Une petite <b>passerelle</b> sur un ordinateur du même Wi-Fi fait l'intermédiaire.</p>
+      <ol>
+        <li>Sur l'ordinateur : installe <b>Python</b> (gratuit, <span class="muted">python.org</span>), puis double-clique sur <b>Lancer-passerelle-Windows.bat</b> (Mac/Linux : <code>python3 passerelle_tv.py</code>).</li>
+        <li>La télécommande s'ouvre sur l'ordinateur. Sur le téléphone, scanne le QR code affiché ou tape l'adresse indiquée (ex. <b>192.168.1.20:8765</b>).</li>
+        <li>« Chercher ma télé », puis tape le code qui s'affiche sur la télé. C'est fait une seule fois.</li>
+      </ol>
+      <h3>Déjà lancée ? Adresse de la passerelle :</h3>
+      <div class="row"><input type="text" id="bridgeAddr" placeholder="192.168.1.20:8765" inputmode="url" autocapitalize="off"><button class="btn primary" id="bridgeGo">Ouvrir</button></div>
+      <p class="hint">Sans ordinateur : l'appli <b>Google TV</b> (Play Store) contient aussi une télécommande Wi-Fi pour les télés Android.</p>
+    </div>
+
+    <!-- Appairage -->
+    <div class="panel" id="rmSetup" hidden>
+      <h2>📺 Trouver la télé</h2>
+      <p class="hint">La télé (Android TV / Google TV) et cet appareil doivent être sur le même Wi-Fi. Allume la télé.</p>
+      <button class="btn primary" id="scanBtn">🔎 Chercher ma télé</button>
+      <div class="tvs" id="tvList"></div>
+      <div id="codeBox" hidden>
+        <h3>Tape le code affiché sur la télé</h3>
+        <div class="row"><input type="text" id="codeIn" class="code" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="A1B2C3"></div>
+        <div class="row"><button class="btn primary" id="codeBtn">✅ Valider</button><button class="btn" id="codeCancel">Annuler</button></div>
+      </div>
+      <h3>Ou par son adresse IP</h3>
+      <p class="hint">Sur la télé : Paramètres → Réseau → l'adresse ressemble à 192.168.1.35.</p>
+      <div class="row"><input type="text" id="ipIn" placeholder="192.168.1.35" inputmode="decimal"><button class="btn" id="ipBtn">Connecter</button></div>
+    </div>
+
+    <!-- Télécommande -->
+    <div class="panel" id="rmPad" hidden>
+      <div class="rhead">
+        <div>📺</div>
+        <div style="min-width:0"><div class="nm" id="tvName">Télé</div><div class="st" id="tvSt">…</div></div>
+        <button id="forgetBtn">Changer de télé</button>
+      </div>
+      <div class="vol" title="Volume de la télé"><i id="volBar"></i></div>
+      <div class="pad" id="pad">
+        <button class="k power" data-k="26" title="Marche / Arrêt">⏻</button>
+        <button class="k" data-k="178">📥 Source</button>
+        <button class="k" data-k="164" title="Muet (M)">🔇 Muet</button>
+        <button class="k" data-k="176">⚙ Réglages</button>
+        <button class="k" data-k="3" title="Accueil (H)">🏠 Accueil</button>
+        <button class="k" data-k="165">ℹ Info</button>
+        <div class="dpad">
+          <span></span><button class="k" data-k="19" data-rep="1" title="Haut">▲</button><span></span>
+          <button class="k" data-k="21" data-rep="1" title="Gauche">◀</button><button class="k ok" data-k="23" title="OK (Entrée)">OK</button><button class="k" data-k="22" data-rep="1" title="Droite">▶</button>
+          <span></span><button class="k" data-k="20" data-rep="1" title="Bas">▼</button><span></span>
+        </div>
+        <div class="rock"><button class="k" data-k="24" data-rep="1" title="Volume + (+)">＋</button><span>VOL</span><button class="k" data-k="25" data-rep="1" title="Volume − (−)">－</button></div>
+        <div class="rock"><button class="k" data-k="4" title="Retour (Échap)">↩ Retour</button><span></span><button class="k" data-k="85" title="Lecture / Pause (Espace)">⏯ Lecture</button></div>
+        <div class="rock"><button class="k" data-k="166" data-rep="1" title="Chaîne + (Page préc.)">＋</button><span>CH</span><button class="k" data-k="167" data-rep="1" title="Chaîne − (Page suiv.)">－</button></div>
+        <button class="k" data-k="8">1</button><button class="k" data-k="9">2</button><button class="k" data-k="10">3</button>
+        <button class="k" data-k="11">4</button><button class="k" data-k="12">5</button><button class="k" data-k="13">6</button>
+        <button class="k" data-k="14">7</button><button class="k" data-k="15">8</button><button class="k" data-k="16">9</button>
+        <button class="k" data-k="89" data-rep="1" title="Retour rapide">⏪</button><button class="k" data-k="7">0</button><button class="k" data-k="90" data-rep="1" title="Avance rapide">⏩</button>
+        <button class="k app netflix" data-app="https://www.netflix.com/title">NETFLIX</button>
+        <button class="k app youtube" data-app="https://www.youtube.com">▶ YouTube</button>
+        <button class="k app prime" data-app="https://app.primevideo.com">prime</button>
+      </div>
+      <div class="kbd">Clavier : flèches, Entrée = OK, Échap = Retour, + / − = volume, Page ↑/↓ = chaînes, M = muet, H = accueil</div>
+    </div>
+
+    <div class="panel" id="rmPhone" hidden>
+      <h2>📱 Sur ton téléphone</h2>
+      <p class="hint">Connecte le téléphone au même Wi-Fi, puis scanne ce code avec l'appareil photo (ou tape l'adresse dans Chrome).</p>
+      <div class="qr" id="qrRm"></div>
+      <div class="big" id="urlRm"></div>
+      <p class="hint">Laisse la fenêtre noire de la passerelle ouverte sur l'ordinateur.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="modal" id="mineModal" hidden>
+  <div class="card">
+    <h2>➕ Mes listes IPTV</h2>
+    <p class="hint">Ajoute le lien d'une liste M3U (ou un fichier .m3u). Ses chaînes profitent aussi de la bascule automatique.</p>
+    <div class="row"><input type="url" id="mineUrl" placeholder="https://…/liste.m3u"><button class="btn primary" id="mineAdd">Ajouter</button></div>
+    <div class="row"><label class="btn">📂 Choisir un fichier .m3u<input type="file" id="mineFile" accept=".m3u,.m3u8,audio/x-mpegurl,application/vnd.apple.mpegurl,text/plain" hidden></label></div>
+    <div class="lst" id="mineList"></div>
+    <div class="row"><button class="btn primary" id="mineShow">📺 Voir les chaînes</button><button class="btn" id="mineClose">Fermer</button></div>
+  </div>
+</div>
+
+<div class="modal" id="phoneModal" hidden>
+  <div class="card" style="text-align:center">
+    <h2>📱 Ouvrir sur le téléphone</h2>
+    <p class="hint">Même Wi-Fi que cet ordinateur. Scanne avec l'appareil photo ou tape l'adresse :</p>
+    <div class="qr" id="qrModal"></div>
+    <div class="big" id="urlModal"></div>
+    <div class="row" style="justify-content:center"><button class="btn" id="phoneClose">Fermer</button></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<!--HLSJS-->
+<script>
+'use strict';
+(function () {
+const $ = s => document.querySelector(s);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+// ------------------------------------------------------------ stockage (peut être indisponible)
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('tv:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('tv:' + k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  del(k) { try { localStorage.removeItem('tv:' + k); } catch (e) { /* rien */ } },
+  keys() { try { return Object.keys(localStorage).filter(k => k.startsWith('tv:')).map(k => k.slice(3)); } catch (e) { return []; } },
+};
+
+// ------------------------------------------------------------ sources de chaînes (listes publiques sur GitHub)
+const IO = ['https://iptv-org.github.io/iptv/', 'https://raw.githubusercontent.com/iptv-org/iptv/gh-pages/'];
+const FREE_TV = ['https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8'];
+const AFRICA = ['sn', 'ci', 'ml', 'bf', 'gn', 'cm', 'cd', 'cg', 'ga', 'bj', 'tg', 'ne', 'mr', 'gm', 'gw', 'cv', 'td', 'cf', 'ma', 'dz', 'tn', 'ng', 'gh', 'mg', 'rw', 'bi', 'dj', 'km', 'mu', 'sc'];
+const BOUQUETS = [
+  { id: 'fav', label: '⭐ Favoris' },
+  { id: 'sn', label: '🇸🇳 Sénégal', io: ['countries/sn.m3u'], ft: ['Senegal'] },
+  { id: 'af', label: '🌍 Afrique', io: AFRICA.map(c => 'countries/' + c + '.m3u'), ft: ['Nigeria', 'Ghana', 'Senegal', 'Ivory Coast', 'Cameroon', 'Morocco', 'Algeria', 'Tunisia'] },
+  { id: 'fr', label: '🇫🇷 France', io: ['countries/fr.m3u'], ft: ['France'] },
+  { id: 'fra', label: '🗣 En français', io: ['languages/fra.m3u'], ft: ['France'] },
+  { id: 'news', label: '📰 Infos', io: ['categories/news.m3u'], ft: ['News'], prefer: true },
+  { id: 'sports', label: '⚽ Sport', io: ['categories/sports.m3u'], prefer: true },
+  { id: 'movies', label: '🎬 Films', io: ['categories/movies.m3u'], prefer: true },
+  { id: 'music', label: '🎵 Musique', io: ['categories/music.m3u'], prefer: true },
+  { id: 'kids', label: '🧸 Enfants', io: ['categories/kids.m3u'], prefer: true },
+  { id: 'religious', label: '🕌 Religion', io: ['categories/religious.m3u'], prefer: true },
+  { id: 'docs', label: '🦁 Documentaires', io: ['categories/documentary.m3u'], prefer: true },
+  { id: 'world', label: '🌐 Monde entier', io: ['index.m3u'], ft: ['*'] },
+  { id: 'mine', label: '➕ Mes listes' },
+];
+const GROUPS = { general: 'Généraliste', news: 'Infos', music: 'Musique', religious: 'Religion', movies: 'Films', kids: 'Enfants', sports: 'Sport',
+  entertainment: 'Divertissement', education: 'Éducation', culture: 'Culture', documentary: 'Documentaires', undefined: '', series: 'Séries',
+  lifestyle: 'Art de vivre', business: 'Économie', comedy: 'Humour', cooking: 'Cuisine', classic: 'Classiques', animation: 'Animation',
+  family: 'Famille', legislative: 'Parlement', outdoor: 'Nature', relax: 'Détente', science: 'Sciences', shop: 'Achats', travel: 'Voyage',
+  weather: 'Météo', auto: 'Auto' };
+
+function fetchT(url, ms, opts) {
+  const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const t = setTimeout(() => ctl && ctl.abort(), ms);
+  return fetch(url, Object.assign({}, opts || {}, ctl ? { signal: ctl.signal } : {})).finally(() => clearTimeout(t));
+}
+
+function cachePut(key, text) {
+  if (text.length > 450000) return;
+  if (store.set(key, { t: Date.now(), x: text })) return;
+  store.keys().filter(k => k.startsWith('pl:')).forEach(k => store.del(k));  // place pleine : on vide le vieux cache
+  store.set(key, { t: Date.now(), x: text });
+}
+
+// Premier miroir qui répond ; si le premier traîne plus de 4 s, on interroge aussi le suivant
+function fetchFirst(urls) {
+  return new Promise((resolve, reject) => {
+    let i = 0, active = 0, done = false, last = null;
+    const next = () => {
+      if (done) return;
+      if (i >= urls.length) { if (!active) reject(last || new Error('liste introuvable')); return; }
+      const u = urls[i++];
+      active++;
+      const hedge = setTimeout(next, 4000);
+      fetchT(u, 30000, { cache: 'no-cache' })
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(x => { active--; clearTimeout(hedge); if (!done) { done = true; resolve(x); } },
+          e => { active--; last = e; clearTimeout(hedge); next(); });
+    };
+    next();
+  });
+}
+
+async function getText(urls, maxAge) {
+  const key = 'pl:' + urls[0];
+  const c = store.get(key, null);
+  if (c && Date.now() - c.t < maxAge) return c.x;
+  try {
+    const x = await fetchFirst(urls);
+    cachePut(key, x);
+    return x;
+  } catch (e) {
+    if (c) return c.x;  // hors ligne : dernière version connue
+    throw e;
+  }
+}
+
+// ------------------------------------------------------------ lecture des listes M3U
+function parseM3U(text) {
+  const out = [];
+  let cur = null;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (/^#EXTINF/i.test(line)) {
+      let q = false, cut = -1;
+      for (let i = 7; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') q = !q;
+        else if (ch === ',' && !q) { cut = i; break; }
+      }
+      const head = cut < 0 ? line : line.slice(0, cut);
+      const attrs = {};
+      head.replace(/([\w-]+)="([^"]*)"/g, (m, k, v) => { attrs[k.toLowerCase()] = v; });
+      cur = { name: (cut < 0 ? attrs['tvg-name'] || '' : line.slice(cut + 1)).trim(), id: attrs['tvg-id'] || '', logo: attrs['tvg-logo'] || '',
+        group: attrs['group-title'] || '', ref: attrs['http-referrer'] || '', ua: attrs['http-user-agent'] || '' };
+    } else if (/^#EXTVLCOPT:/i.test(line)) {
+      if (!cur) continue;
+      const m = line.slice(11).match(/^([\w-]+)=(.*)$/);
+      if (m && m[1].toLowerCase() === 'http-referrer') cur.ref = m[2].trim();
+      if (m && m[1].toLowerCase() === 'http-user-agent') cur.ua = m[2].trim();
+    } else if (line[0] === '#') {
+      continue;
+    } else if (cur) {
+      cur.url = line;
+      out.push(cur);
+      cur = null;
+    }
+  }
+  return out;
+}
+
+function cleanName(n) {
+  const tags = [];
+  let q = '';
+  n = n.replace(/\s*\((\d{3,4}[pi])\)/i, (m, p) => { q = p; return ''; });
+  n = n.replace(/\s*\[([^\]]*)\]/g, (m, t) => { if (/geo/i.test(t)) tags.push('geo'); else if (/24\/7/.test(t)) tags.push('pas 24h/24'); return ''; });
+  if (/Ⓖ/.test(n)) tags.push('geo');
+  n = n.replace(/[Ⓐ-ⓩ]/g, '').replace(/\s+/g, ' ').trim();
+  return { name: n || 'Chaîne', q, tags };
+}
+
+const playable = u => /^https?:\/\//i.test(u) && !/(youtube\.com|youtu\.be|twitch\.tv|dailymotion\.com\/video|facebook\.com|\.mpd(\?|$))/i.test(u);
+const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const known = new Map();  // toutes les chaînes déjà vues, par clé
+
+function addEntries(map, entries) {
+  for (const e of entries) {
+    if (!playable(e.url)) continue;
+    const c = cleanName(e.name);
+    const key = e.id ? e.id.toLowerCase().replace(/@sd$/, '') : 'n:' + norm(c.name).replace(/[^a-z0-9]+/g, '');
+    let ch = map.get(key);
+    if (!ch) {
+      ch = known.get(key) || { key, name: c.name, logo: '', group: '', tags: [], sources: [] };
+      if (!ch.group && e.group) ch.group = e.group.split(';').map(g => GROUPS[g.trim().toLowerCase()] != null ? GROUPS[g.trim().toLowerCase()] : g.trim()).filter(Boolean).join(', ');
+      map.set(key, ch);
+      known.set(key, ch);
+    }
+    if (!ch.logo && /^https?:/i.test(e.logo)) ch.logo = e.logo;
+    c.tags.forEach(t => { if (!ch.tags.includes(t)) ch.tags.push(t); });
+    if (!ch.sources.some(s => s.url === e.url)) ch.sources.push({ url: e.url, ref: e.ref, ua: e.ua, q: c.q });
+  }
+}
+
+// ------------------------------------------------------------ santé des liens (mémorisée)
+const H = store.get('health', {});
+let saveT = null;
+function health(url) {
+  const h = H[url];
+  if (!h) return null;
+  const age = Date.now() - h[1];
+  const ttl = h[2] === 'v' ? (h[0] > 0 ? 6 : 2) * 3600e3 : 30 * 60e3;
+  return age > ttl ? null : h[0];
+}
+function setHealth(url, s, kind) {
+  H[url] = [s, Date.now(), kind];
+  clearTimeout(saveT);
+  saveT = setTimeout(() => {
+    const ks = Object.keys(H);
+    const old = Date.now() - 86400e3;
+    ks.forEach(k => { if (H[k][1] < old) delete H[k]; });
+    const left = Object.keys(H);
+    if (left.length > 4000) left.sort((a, b) => H[a][1] - H[b][1]).slice(0, left.length - 4000).forEach(k => delete H[k]);
+    store.set('health', H);
+  }, 1500);
+}
+function chStatus(ch) {
+  if (probe.busy.has(ch.key)) return 'test';
+  let bad = 0, maybe = false;
+  for (const s of ch.sources) {
+    const h = health(s.url);
+    if (h === 1) return 'ok';
+    if (h === 0) maybe = true;
+    if (h === -1) bad++;
+  }
+  if (maybe) return 'maybe';
+  return bad && bad === ch.sources.length ? 'bad' : 'unknown';
+}
+
+// ------------------------------------------------------------ passerelle (facultative)
+let bridge = null;
+const pageHttps = location.protocol === 'https:';
+const mixedBlocked = u => pageHttps && /^http:/i.test(u);
+const qs = o => Object.keys(o).filter(k => o[k]).map(k => k + '=' + encodeURIComponent(o[k])).join('&');
+const proxyUrl = s => '/proxy?' + qs({ u: s.url, r: s.ref, ua: s.ua });
+
+function orderSources(ch) {
+  const score = s => {
+    const h = health(s.url);
+    let sc = h === 1 ? 100 : h === -1 ? -100 : h === 0 ? 10 : 0;
+    if ((s.ref || s.ua) && !bridge) sc -= 20;
+    if (mixedBlocked(s.url) && !bridge) sc -= 50;
+    return sc;
+  };
+  return ch.sources.map((s, i) => ({ s, i, sc: score(s) })).sort((a, b) => b.sc - a.sc || a.i - b.i).map(x => x.s);
+}
+
+// ------------------------------------------------------------ test des chaînes en arrière-plan
+const probe = { queue: [], running: 0, busy: new Set() };
+async function readHead(r, n) {
+  if (!r.body || !r.body.getReader) return (await r.text()).slice(0, n);
+  const rd = r.body.getReader();
+  let s = '';
+  const dec = new TextDecoder();
+  try {
+    while (s.length < n) { const x = await rd.read(); if (x.done) break; s += dec.decode(x.value, { stream: true }); }
+  } finally { rd.cancel().catch(() => {}); }
+  return s;
+}
+async function probeSource(s) {
+  if (bridge) {
+    try { const j = await (await fetchT('/api/probe?' + qs({ u: s.url, r: s.ref, ua: s.ua }), 15000)).json(); return j.ok ? 1 : -1; } catch (e) { return 0; }
+  }
+  if (mixedBlocked(s.url)) return 0;
+  try {
+    const r = await fetchT(s.url, 9000, { cache: 'no-store' });
+    if (!r.ok) return -1;
+    return /#EXTM3U/.test(await readHead(r, 2048)) ? 1 : 0;
+  } catch (e) {
+    if (e && e.name === 'AbortError') return -1;
+    try { await fetchT(s.url, 9000, { mode: 'no-cors', cache: 'no-store' }); return 0; } catch (e2) { return -1; }  // CORS : joignable quand même ?
+  }
+}
+async function probeChannel(ch) {
+  for (const s of orderSources(ch)) {
+    if (health(s.url) != null) { if (health(s.url) === 1) return; continue; }
+    const r = await probeSource(s);
+    if (!navigator.onLine) return;
+    setHealth(s.url, r, 'p');
+    if (r === 1) return;
+  }
+}
+function scheduleProbes(first) {
+  const seen = new Set();
+  const list = (first || []).concat(view.slice(0, 250));
+  probe.queue = list.filter(c => !seen.has(c.key) && seen.add(c.key) && chStatus(c) === 'unknown');
+  pumpProbes();
+}
+function pumpProbes() {
+  while (probe.running < 5 && probe.queue.length) {
+    const ch = probe.queue.shift();
+    if (chStatus(ch) !== 'unknown') continue;
+    probe.running++;
+    probe.busy.add(ch.key);
+    paint(ch);
+    probeChannel(ch).catch(() => {}).finally(() => {
+      probe.running--;
+      probe.busy.delete(ch.key);
+      paint(ch);
+      updateStat();
+      if (onlyOk.checked && chStatus(ch) === 'bad') hideRow(ch);
+      pumpProbes();
+    });
+  }
+}
+
+// ------------------------------------------------------------ liste des chaînes
+let channels = [], view = [], rendered = 0, curBouquet = null, loadGen = 0, listWarn = '';
+const rows = new Map();
+const list = $('#list'), lstat = $('#lstat'), search = $('#search'), onlyOk = $('#onlyOk');
+let favs = store.get('favs', []);
+const isFav = ch => favs.some(f => f.key === ch.key);
+
+function initials(name) {
+  const w = name.replace(/[^\p{L}\p{N} ]/gu, '').split(' ').filter(Boolean);
+  return ((w[0] || '?')[0] + (w[1] ? w[1][0] : (w[0] || '')[1] || '')).toUpperCase();
+}
+function logoEl(ch, cls) {
+  if (ch.logo) {
+    const img = el('img', cls);
+    img.loading = 'lazy';
+    img.referrerPolicy = 'no-referrer';
+    img.alt = '';
+    img.src = ch.logo;
+    img.onerror = () => img.replaceWith(Object.assign(el('div', 'ph' + (cls ? ' ' + cls : ''), initials(ch.name))));
+    return img;
+  }
+  return el('div', 'ph', initials(ch.name));
+}
+function row(ch) {
+  const b = el('button', 'ch');
+  b.dataset.key = ch.key;
+  if (cur && cur.key === ch.key) b.classList.add('cur');
+  b.appendChild(el('i', 'dot ' + chStatus(ch)));
+  b.appendChild(logoEl(ch));
+  const tx = el('span', 'tx');
+  tx.appendChild(el('b', null, ch.name));
+  const bits = [ch.group, ch.sources[0] && ch.sources[0].q, ch.sources.length > 1 ? ch.sources.length + ' liens' : '', ch.tags.includes('geo') ? '🌍 restreinte' : '', ch.tags.includes('pas 24h/24') ? 'pas 24h/24' : ''];
+  tx.appendChild(el('small', null, bits.filter(Boolean).join(' · ') || ' '));
+  b.appendChild(tx);
+  const st = el('span', 'star' + (isFav(ch) ? ' on' : ''), isFav(ch) ? '★' : '☆');
+  st.dataset.star = '1';
+  st.title = 'Favori';
+  b.appendChild(st);
+  rows.set(ch.key, b);
+  return b;
+}
+function paint(ch) {
+  const r = rows.get(ch.key);
+  if (r) r.firstChild.className = 'dot ' + chStatus(ch);
+}
+function hideRow(ch) {
+  const r = rows.get(ch.key);
+  if (r && !(cur && cur.key === ch.key)) r.hidden = true;
+}
+const moreEl = el('div', 'more', '');
+const io = typeof IntersectionObserver !== 'undefined' ? new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) appendMore(); }, { root: null, rootMargin: '600px' }) : null;
+function appendMore() {
+  const end = Math.min(view.length, rendered + 120);
+  const frag = document.createDocumentFragment();
+  for (let i = rendered; i < end; i++) frag.appendChild(row(view[i]));
+  rendered = end;
+  list.insertBefore(frag, moreEl);
+  moreEl.textContent = rendered < view.length ? 'Afficher plus (' + (view.length - rendered) + ')…' : '';
+}
+moreEl.onclick = appendMore;
+function computeView(keepScroll) {
+  const q = norm(search.value.trim());
+  view = channels.filter(c => (!q || norm(c.name).includes(q) || norm(c.group).includes(q)) && (!onlyOk.checked || chStatus(c) !== 'bad' || (cur && cur.key === c.key)));
+  rows.clear();
+  list.textContent = '';
+  list.appendChild(moreEl);
+  rendered = 0;
+  appendMore();
+  if (io) { io.disconnect(); io.observe(moreEl); }
+  if (!keepScroll) list.scrollTop = 0;
+  updateStat();
+  scheduleProbes(cur ? neighbours(cur, 6) : []);
+}
+function updateStat(msg) {
+  if (msg) { lstat.textContent = msg; return; }
+  if (!curBouquet || lstat.dataset.busy) return;
+  let ok = 0, bad = 0;
+  for (const c of channels) { const s = chStatus(c); if (s === 'ok') ok++; else if (s === 'bad') bad++; }
+  lstat.textContent = channels.length ? channels.length + ' chaînes · ✓ ' + ok + ' qui marchent · ✗ ' + bad + ' en panne' + (view.length !== channels.length ? ' · ' + view.length + ' affichées' : '') + listWarn
+    : (curBouquet.id === 'fav' ? 'Aucun favori : touche ☆ à côté d\'une chaîne.' : 'Aucune chaîne.');
+}
+
+function buildBouquets() {
+  const box = $('#bouquets');
+  BOUQUETS.forEach(b => {
+    const c = el('button', 'chip', b.label);
+    c.dataset.id = b.id;
+    c.onclick = () => b.id === 'mine' && !store.get('mine', []).length && !store.get('mineFile', null) ? openMine() : selectBouquet(b.id);
+    box.appendChild(c);
+  });
+}
+async function selectBouquet(id) {
+  const b = BOUQUETS.find(x => x.id === id) || BOUQUETS[1];
+  curBouquet = b;
+  store.set('bouquet', b.id);
+  document.querySelectorAll('#bouquets .chip').forEach(c => c.classList.toggle('on', c.dataset.id === b.id));
+  const gen = ++loadGen;
+  listWarn = '';
+  if (b.id === 'fav') {
+    channels = favs.map(f => known.get(f.key) || Object.assign({ tags: [] }, f));
+    computeView();
+    return;
+  }
+  lstat.dataset.busy = '1';
+  updateStat('🔎 Recherche des chaînes gratuites sur GitHub…');
+  list.textContent = '';
+  const map = new Map();
+  const jobs = [];
+  const maxAge = 6 * 3600e3;
+  (b.io || []).forEach((p, i) => jobs.push(getText(IO.map(base => base + p), maxAge).then(t => ({ t }), e => { if (!i) e.main = true; throw e; })));
+  if (b.ft) jobs.push(getText(FREE_TV, maxAge).then(t => ({ t, ft: b.ft })));
+  if (b.prefer) jobs.push(getText(IO.map(base => base + 'languages/fra.m3u'), maxAge).then(t => ({ t, french: true })));
+  if (b.id === 'mine') {
+    store.get('mine', []).forEach(u => jobs.push(getText([u], 3600e3).then(t => ({ t }))));
+    const f = store.get('mineFile', null);
+    if (f) jobs.push(Promise.resolve({ t: f.x }));
+  }
+  const res = await Promise.allSettled(jobs);
+  if (gen !== loadGen) return;
+  let french = null, okLists = 0;
+  listWarn = res.some(r => r.status === 'rejected' && r.reason && r.reason.main) ? ' · ⚠ une liste n\'a pas répondu : touche à nouveau le bouquet pour réessayer' : '';
+  for (const r of res) {
+    if (r.status !== 'fulfilled') continue;
+    okLists++;
+    const v = r.value;
+    if (v.french) { french = new Set(parseM3U(v.t).map(e => e.url)); continue; }
+    let entries = parseM3U(v.t);
+    if (v.ft && v.ft[0] !== '*') entries = entries.filter(e => v.ft.includes(e.group));
+    addEntries(map, entries);
+  }
+  channels = Array.from(map.values());
+  if (french) {
+    const af = c => /\.(sn|ci|ml|bf|gn|cm|cd|cg|ga|bj|tg|ne|mr|ma|dz|tn)(@|$)/.test(c.key) ? 1 : 0;
+    const fr = c => c.sources.some(s => french.has(s.url)) ? 2 : 0;
+    channels.forEach((c, i) => { c._o = i; c._s = fr(c) + af(c); });
+    channels.sort((a, b) => b._s - a._s || a._o - b._o);
+  }
+  delete lstat.dataset.busy;
+  if (!okLists) updateStat('⚠ Impossible de joindre GitHub. Vérifie la connexion internet puis touche à nouveau le bouquet.');
+  computeView();
+  if (!okLists) updateStat('⚠ Impossible de joindre GitHub. Vérifie la connexion internet puis touche à nouveau le bouquet.');
+  refreshFavSources();
+}
+function refreshFavSources() {
+  let changed = false;
+  favs.forEach(f => { const k = known.get(f.key); if (k && JSON.stringify(k.sources) !== JSON.stringify(f.sources)) { f.sources = k.sources; changed = true; } });
+  if (changed) store.set('favs', favs);
+}
+function toggleFav(ch) {
+  if (isFav(ch)) favs = favs.filter(f => f.key !== ch.key);
+  else favs.push({ key: ch.key, name: ch.name, logo: ch.logo, group: ch.group, tags: ch.tags, sources: ch.sources });
+  store.set('favs', favs);
+  const r = rows.get(ch.key);
+  if (r) { const st = r.querySelector('.star'); st.className = 'star' + (isFav(ch) ? ' on' : ''); st.textContent = isFav(ch) ? '★' : '☆'; }
+  updateFavBtn();
+}
+
+list.addEventListener('click', e => {
+  const b = e.target.closest('.ch');
+  if (!b) return;
+  const ch = view.find(c => c.key === b.dataset.key);
+  if (!ch) return;
+  if (e.target.dataset.star) { toggleFav(ch); return; }
+  play(ch);
+});
+let searchT = null;
+search.addEventListener('input', () => { clearTimeout(searchT); searchT = setTimeout(() => computeView(), 200); });
+onlyOk.addEventListener('change', () => { store.set('onlyOk', onlyOk.checked); computeView(true); });
+
+// ------------------------------------------------------------ lecteur avec bascule automatique
+const video = $('#video');
+const autoSw = $('#autoSw');
+let cur = null;
+const P = { tok: 0, srcs: [], si: 0, modes: [], mi: 0, hls: null, timer: null, started: false, lastT: -1, lastMove: 0, ticks: 0,
+  recovered: false, chain: 0, marks: [], srcStart: 0, waitTap: false };
+const hlsOk = () => !!(window.Hls && window.Hls.isSupported());
+const nativeHls = !!video.canPlayType('application/vnd.apple.mpegurl');
+const android = /Android/i.test(navigator.userAgent);
+const apple = nativeHls && /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent);
+const isHlsUrl = u => !/\.(mp4|webm|ogg|ogv|mp3|aac|m4a|mkv|mov)(\?|$)/i.test(u);
+const retry = (n, d, m) => ({ maxNumRetry: n, retryDelayMs: d, maxRetryDelayMs: m });
+const pol = (ttfb, load, tr, er) => ({ default: { maxTimeToFirstByteMs: ttfb, maxLoadTimeMs: load, timeoutRetry: tr, errorRetry: er } });
+const HLS_CFG = {
+  enableWorker: true, lowLatencyMode: false, backBufferLength: 30, maxBufferLength: 30,
+  manifestLoadPolicy: pol(10000, 15000, retry(1, 0, 0), retry(1, 500, 1000)),
+  playlistLoadPolicy: pol(10000, 15000, retry(2, 0, 0), retry(2, 1000, 4000)),
+  fragLoadPolicy: pol(10000, 30000, retry(3, 0, 0), retry(3, 1000, 4000)),
+};
+
+function modesFor(s) {
+  const m = [];
+  const hlsUrl = isHlsUrl(s.url);
+  const viaProxy = bridge && (s.ref || s.ua || mixedBlocked(s.url));
+  if (viaProxy) m.push('proxy');
+  if (!mixedBlocked(s.url)) {
+    if (!hlsUrl) m.push('native');
+    else if (apple) { m.push('native'); if (hlsOk()) m.push('hls'); }
+    else { if (hlsOk()) m.push('hls'); if (nativeHls || android) m.push('native'); }  // le lecteur d'Android ignore CORS
+  }
+  if (bridge && !viaProxy) m.push('proxy');
+  return m;
+}
+
+function overlay(t1, t2, opts) {
+  opts = opts || {};
+  $('#overlay').hidden = false;
+  $('#ovT1').textContent = t1;
+  $('#ovT2').textContent = t2 || '';
+  $('#ovSpin').hidden = !opts.spin;
+  const b = $('#ovBtn');
+  b.hidden = !opts.btn;
+  if (opts.btn) { b.textContent = opts.btn[0]; b.onclick = opts.btn[1]; }
+  $('#live').hidden = true;
+}
+const hideOverlay = () => { $('#overlay').hidden = true; };
+
+function toast(msg, opts) {
+  opts = opts || {};
+  const box = $('#toasts');
+  const host = document.fullscreenElement || document.webkitFullscreenElement;
+  if (host && box.parentNode !== host) host.appendChild(box);
+  else if (!host && box.parentNode !== document.body) document.body.appendChild(box);
+  const t = el('div', 'toast' + (opts.err ? ' err' : ''));
+  t.appendChild(el('span', null, msg));
+  if (opts.action) {
+    const b = el('button', null, opts.action[0]);
+    b.onclick = () => { t.remove(); opts.action[1](); };
+    t.appendChild(b);
+  }
+  box.appendChild(t);
+  while (box.children.length > 3) box.firstChild.remove();
+  setTimeout(() => t.remove(), opts.ms || 6000);
+}
+
+function host(u) { try { return new URL(u).host; } catch (e) { return ''; } }
+function setNow() {
+  $('#nowName').textContent = cur ? cur.name : 'Aucune chaîne';
+  const img = $('#nowLogo'), ph = $('#nowPh');
+  if (cur && cur.logo) { img.hidden = false; ph.hidden = true; img.src = cur.logo; img.onerror = () => { img.hidden = true; ph.hidden = false; }; }
+  else { img.hidden = true; ph.hidden = false; }
+  ph.textContent = cur ? initials(cur.name) : 'TV';
+  updateFavBtn();
+  setInfo();
+}
+function setInfo(extra) {
+  if (!cur) { $('#nowInfo').textContent = '—'; return; }
+  const s = P.srcs[P.si];
+  const bits = [];
+  if (P.srcs.length) bits.push('lien ' + Math.min(P.si + 1, P.srcs.length) + '/' + P.srcs.length);
+  if (s) bits.push(host(s.url));
+  if (P.modes[P.mi] === 'proxy') bits.push('via la passerelle');
+  if (extra) bits.push(extra);
+  $('#nowInfo').textContent = bits.join(' · ');
+}
+function updateFavBtn() { $('#bFav').textContent = cur && isFav(cur) ? '★ Favori' : '☆ Favori'; }
+function highlight() {
+  rows.forEach((r, k) => r.classList.toggle('cur', !!cur && k === cur.key));
+  const r = cur && rows.get(cur.key);
+  if (r && r.scrollIntoView && window.innerWidth >= 980) r.scrollIntoView({ block: 'nearest' });
+}
+
+function teardown() {
+  clearInterval(P.timer);
+  if (P.hls) { try { P.hls.destroy(); } catch (e) { /* déjà détruit */ } P.hls = null; }
+  video.removeAttribute('src');
+  try { video.load(); } catch (e) { /* rien */ }
+}
+
+function play(ch, opts) {
+  opts = opts || {};
+  if (!opts.auto) { P.chain = 0; P.marks = []; }
+  cur = ch;
+  P.srcs = orderSources(ch);
+  P.si = 0;
+  P.waitTap = false;
+  store.set('last', { key: ch.key, name: ch.name, logo: ch.logo, group: ch.group, tags: ch.tags, sources: ch.sources });
+  setNow();
+  highlight();
+  startSource();
+  scheduleProbes(neighbours(ch, 8));  // pré-test des suivantes : la bascule sera immédiate
+}
+
+function startSource() {
+  while (P.si < P.srcs.length) {
+    P.modes = modesFor(P.srcs[P.si]);
+    P.mi = 0;
+    P.srcStart = Date.now();
+    if (P.modes.length) return attempt();
+    P.si++;
+  }
+  channelDown();
+}
+
+function attempt() {
+  const tok = ++P.tok;
+  teardown();
+  const s = P.srcs[P.si], mode = P.modes[P.mi];
+  P.started = false; P.lastT = -1; P.lastMove = Date.now(); P.ticks = 0; P.recovered = false;
+  overlay('Connexion à « ' + cur.name + ' »…', P.srcs.length > 1 ? 'Lien ' + (P.si + 1) + ' sur ' + P.srcs.length : '', { spin: true });
+  setInfo();
+  const url = mode === 'proxy' ? proxyUrl(s) : s.url;
+  const useHls = mode === 'hls' || (mode === 'proxy' && isHlsUrl(s.url) && hlsOk());
+  if (useHls) {
+    const h = new window.Hls(HLS_CFG);
+    P.hls = h;
+    h.on(window.Hls.Events.ERROR, (ev, d) => {
+      if (tok !== P.tok || !d.fatal) return;
+      if (d.type === window.Hls.ErrorTypes.MEDIA_ERROR && !P.recovered) { P.recovered = true; h.recoverMediaError(); return; }
+      fail(tok, d.details || 'erreur', d.response ? d.response.code : undefined);
+    });
+    h.on(window.Hls.Events.MANIFEST_PARSED, () => { if (tok === P.tok) tryPlay(tok); });
+    h.loadSource(url);
+    h.attachMedia(video);
+  } else {
+    video.src = url;
+    tryPlay(tok);
+  }
+  P.timer = setInterval(() => watchdog(tok), 1000);
+}
+
+function tryPlay(tok) {
+  const p = video.play();
+  if (p && p.catch) p.catch(err => {
+    if (tok !== P.tok || !err || err.name !== 'NotAllowedError') return;
+    if (!video.muted) { video.muted = true; $('#unmute').hidden = false; tryPlay(tok); return; }
+    P.waitTap = true;
+    overlay('▶ Prêt', cur ? cur.name : '', { btn: ['▶ Lancer', () => { P.waitTap = false; hideOverlay(); video.play().catch(() => {}); }] });
+  });
+}
+
+video.addEventListener('error', () => {
+  if (P.hls || !video.getAttribute('src')) return;
+  fail(P.tok, 'lecteur', undefined);
+});
+video.addEventListener('playing', () => { if (!P.waitTap) hideOverlay(); });
+video.addEventListener('volumechange', () => { if (!video.muted) $('#unmute').hidden = true; });
+$('#unmute').onclick = () => { video.muted = false; $('#unmute').hidden = true; };
+
+function watchdog(tok) {
+  if (tok !== P.tok) return;
+  const now = Date.now(), t = video.currentTime;
+  if (t !== P.lastT) {
+    const d = t - P.lastT;
+    if (P.lastT >= 0 && d > 0 && d < 3 && !video.paused) P.ticks++;
+    P.lastT = t;
+    P.lastMove = now;
+    if (!P.started && P.ticks >= 2) started(tok);
+    return;
+  }
+  if (video.paused && (P.started || P.waitTap)) { P.lastMove = now; return; }  // en pause : on attend
+  if (video.ended) return fail(tok, 'fin du flux', undefined);
+  if (now - P.lastMove > (P.started ? 15000 : 20000)) fail(tok, P.started ? 'image figée' : 'trop long à démarrer', -2);
+}
+
+function started(tok) {
+  if (tok !== P.tok) return;
+  P.started = true;
+  P.chain = 0;
+  P.marks = [];
+  setHealth(P.srcs[P.si].url, 1, 'v');
+  paint(cur);
+  hideOverlay();
+  $('#live').hidden = false;
+  setInfo();
+  updateStat();
+}
+
+async function fail(tok, why, code) {
+  if (tok !== P.tok) return;
+  const s = P.srcs[P.si];
+  if (!navigator.onLine) return offline();
+  // Le même lien d'une autre façon (lecteur du téléphone, passerelle) si le navigateur l'a bloqué
+  const hard = code >= 400 || code === -2 || /TimeOut/i.test(why) || Date.now() - P.srcStart > 30000;
+  if (!P.started && !hard && P.mi + 1 < P.modes.length) { P.mi++; return attempt(); }
+  const wasPlaying = P.started;
+  setHealth(s.url, -1, 'v');
+  P.marks.push(s.url);
+  paint(cur);
+  P.si++;
+  if (P.si < P.srcs.length) {
+    toast((wasPlaying ? '⚡ Le lien de « ' + cur.name + ' » a sauté' : '⚡ Lien ' + P.si + ' de « ' + cur.name + ' » en panne') + ' → lien ' + (P.si + 1) + '/' + P.srcs.length);
+    return startSource();
+  }
+  channelDown(wasPlaying);
+}
+
+async function channelDown(wasPlaying) {
+  const ch = cur;
+  const tok = ++P.tok;
+  teardown();
+  P.chain++;
+  if (P.chain >= 3 && P.chain % 3 === 0) {
+    overlay('Vérification de la connexion internet…', '', { spin: true });
+    if (!(await internetOk())) return offline();
+    if (tok !== P.tok) return;
+  }
+  if (!autoSw.checked) {
+    overlay('« ' + ch.name + ' » ne répond pas', 'Choisis une autre chaîne, ou active « Bascule auto ».', { btn: ['🔁 Réessayer', () => play(ch)] });
+    return;
+  }
+  if (P.chain > 30) {
+    overlay('Aucune chaîne ne répond pour le moment', 'Essaie un autre bouquet ou réessaie plus tard.', { btn: ['🔁 Réessayer', () => play(ch)] });
+    return;
+  }
+  const next = nextWorking(ch, 1);
+  if (!next) {
+    overlay('« ' + ch.name + ' » ne répond pas', 'Aucune autre chaîne disponible dans cette liste.', { btn: ['🔁 Réessayer', () => play(ch)] });
+    return;
+  }
+  toast((wasPlaying ? '📡 « ' + ch.name + ' » est coupée' : '📡 « ' + ch.name + ' » ne répond pas') + ' → je passe sur « ' + next.name + ' »',
+    { action: ['↩ Réessayer', () => play(ch)], ms: 8000 });
+  play(next, { auto: true });
+}
+
+function neighbours(ch, n) {
+  const v = view.length ? view : channels;
+  const i = v.indexOf(ch);
+  const out = [];
+  for (let k = 1; k <= n && k < v.length; k++) out.push(v[(i + k) % v.length]);
+  return out;
+}
+function nextWorking(from, dir) {
+  const v = view.length ? view : channels;
+  const n = v.length;
+  if (!n) return null;
+  let i = v.indexOf(from);
+  if (i < 0) i = dir > 0 ? -1 : 0;
+  const order = [];
+  for (let k = 1; k <= n; k++) order.push(v[(((i + dir * k) % n) + n) % n]);
+  return order.find(c => c !== from && chStatus(c) === 'ok')
+    || order.find(c => c !== from && chStatus(c) !== 'bad' && chStatus(c) !== 'test')
+    || order.find(c => c !== from && chStatus(c) !== 'bad') || null;
+}
+function step(dir) {
+  const v = view.length ? view : channels;
+  if (!v.length) return;
+  let i = cur ? v.indexOf(cur) : -1;
+  if (i < 0 && dir < 0) i = 0;
+  const n = v.length;
+  for (let k = 1; k <= n; k++) {
+    const c = v[(((i + dir * k) % n) + n) % n];
+    if (chStatus(c) !== 'bad' || k === n) return play(c);
+  }
+}
+
+async function internetOk() {
+  try { await fetchT(IO[1] + 'countries/sn.m3u', 7000, { method: 'HEAD', cache: 'no-store' }); return true; } catch (e) { /* essai suivant */ }
+  try { await fetchT('https://www.google.com/generate_204', 7000, { mode: 'no-cors', cache: 'no-store' }); return true; } catch (e) { return false; }
+}
+let offT = null;
+function offline() {
+  const ch = cur;
+  P.tok++;
+  teardown();
+  P.marks.forEach(u => { delete H[u]; });  // ce n'étaient pas les chaînes, c'était la connexion
+  P.marks = [];
+  P.chain = 0;
+  if (ch) ch.sources.forEach(s => { if (H[s.url] && H[s.url][0] === -1) delete H[s.url]; });
+  overlay('📶 Pas de connexion internet', 'La lecture reprendra toute seule dès que la connexion revient…', { spin: true });
+  clearInterval(offT);
+  offT = setInterval(async () => {
+    if (await internetOk()) { clearInterval(offT); if (ch && cur === ch) play(ch); }
+  }, 5000);
+}
+window.addEventListener('online', () => { if (offT && cur) { clearInterval(offT); offT = null; play(cur); } });
+
+$('#bPrev').onclick = () => step(-1);
+$('#bNext').onclick = () => step(1);
+$('#bSwitch').onclick = () => {
+  if (!cur) return;
+  if (P.si + 1 < P.srcs.length) { P.tok++; P.si++; toast('🔁 Lien ' + (P.si + 1) + '/' + P.srcs.length); startSource(); }
+  else { const n = nextWorking(cur, 1); if (n) { toast('🔁 Plus d\'autre lien pour « ' + cur.name + ' » → « ' + n.name + ' »'); play(n); } }
+};
+$('#bFav').onclick = () => cur && toggleFav(cur);
+autoSw.checked = store.get('autoSw', true);
+autoSw.onchange = () => store.set('autoSw', autoSw.checked);
+function fullscreen() {
+  const p = $('#player');
+  const fs = document.fullscreenElement || document.webkitFullscreenElement;
+  if (fs) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+  const req = p.requestFullscreen || p.webkitRequestFullscreen;
+  if (req) {
+    Promise.resolve(req.call(p)).then(() => { try { screen.orientation.lock('landscape').catch(() => {}); } catch (e) { /* rien */ } }).catch(() => {});
+  } else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();  // iPhone
+}
+$('#bFull').onclick = fullscreen;
+video.addEventListener('dblclick', e => { e.preventDefault(); fullscreen(); });
+
+// ------------------------------------------------------------ mes listes
+function openMine() { renderMine(); $('#mineModal').hidden = false; }
+function renderMine() {
+  const box = $('#mineList');
+  box.textContent = '';
+  store.get('mine', []).forEach(u => {
+    const it = el('div', 'it', u);
+    const x = el('button', null, '✕');
+    x.title = 'Retirer';
+    x.onclick = () => { store.set('mine', store.get('mine', []).filter(v => v !== u)); renderMine(); };
+    it.appendChild(x);
+    box.appendChild(it);
+  });
+  const f = store.get('mineFile', null);
+  if (f) {
+    const it = el('div', 'it', '📂 ' + f.name);
+    const x = el('button', null, '✕');
+    x.onclick = () => { store.del('mineFile'); renderMine(); };
+    it.appendChild(x);
+    box.appendChild(it);
+  }
+}
+$('#mineAdd').onclick = () => {
+  const u = $('#mineUrl').value.trim();
+  if (!/^https?:\/\//i.test(u)) { toast('Le lien doit commencer par http:// ou https://', { err: true }); return; }
+  const l = store.get('mine', []);
+  if (!l.includes(u)) l.push(u);
+  store.set('mine', l);
+  $('#mineUrl').value = '';
+  renderMine();
+};
+$('#mineFile').onchange = e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    if (!store.set('mineFile', { name: f.name, x: String(r.result) })) toast('Fichier trop gros pour être mémorisé', { err: true });
+    renderMine();
+  };
+  r.readAsText(f);
+};
+$('#mineShow').onclick = () => { $('#mineModal').hidden = true; selectBouquet('mine'); };
+$('#mineClose').onclick = () => { $('#mineModal').hidden = true; if (curBouquet && curBouquet.id === 'mine') selectBouquet('mine'); };
+$('#mineModal').onclick = e => { if (e.target.id === 'mineModal') $('#mineModal').hidden = true; };
+
+// ------------------------------------------------------------ onglets
+function showTab(t) {
+  $('#tabTv').classList.toggle('on', t === 'tv');
+  $('#tabRm').classList.toggle('on', t === 'rm');
+  $('#pageTv').hidden = t !== 'tv';
+  $('#pageRm').hidden = t !== 'rm';
+  if (t === 'rm') remoteShow(); else remoteHide();
+  try { history.replaceState(null, '', t === 'rm' ? '#telecommande' : '#tv'); } catch (e) { /* file:// */ }
+}
+$('#tabTv').onclick = () => showTab('tv');
+$('#tabRm').onclick = () => showTab('rm');
+
+// ------------------------------------------------------------ télécommande (via la passerelle)
+async function api(path, body) {
+  const r = await fetchT(path, 20000, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  let j = {};
+  try { j = await r.json(); } catch (e) { /* vide */ }
+  if (j.state) applyState(j.state);
+  if (!r.ok) throw new Error(j.error || 'erreur ' + r.status);
+  return j;
+}
+let rstate = null, pollT = null;
+function applyState(s) {
+  rstate = s;
+  bridge = s;
+  if ($('#pageRm').hidden) return;
+  renderRemote();
+}
+function renderRemote() {
+  const s = rstate;
+  $('#rmNoBridge').hidden = !!s;
+  const local = /^(localhost|127\.|\[::1\])/.test(location.hostname);
+  const url = s && s.urls && s.urls[0];
+  $('#rmPhone').hidden = !(s && local && url);
+  $('#rmWrap').classList.toggle('side', !$('#rmPhone').hidden);
+  if ($('#rmPhone').hidden === false && $('#urlRm').textContent !== url) { $('#urlRm').textContent = url.replace(/\/$/, ''); $('#qrRm').innerHTML = qrSvg(url); }
+  if (!s) { $('#rmSetup').hidden = true; $('#rmPad').hidden = true; return; }
+  const pairedView = s.paired && !forceSetup;
+  $('#rmSetup').hidden = pairedView;
+  $('#rmPad').hidden = !pairedView;
+  $('#tvName').textContent = s.name || s.host || 'Télé';
+  const st = $('#tvSt');
+  st.textContent = s.connected ? '● connectée' : (s.error ? '○ ' + s.error : '○ en attente (appuie sur une touche)');
+  st.className = 'st' + (s.connected ? ' on' : '');
+  const v = s.volume;
+  $('#volBar').style.width = v && v.max ? Math.round(100 * v.level / v.max) + '%' : '0';
+  $('#volBar').style.background = v && v.muted ? 'var(--muted)' : '';
+}
+async function refreshState() {
+  try { const r = await fetchT('/api/state', 5000, { cache: 'no-store' }); const j = await r.json(); if (j.bridge) applyState(j); } catch (e) { /* passerelle arrêtée ? */ }
+}
+let warmed = false;
+function remoteShow() {
+  renderRemote();
+  if (!rstate) {
+    $('#bridgeAddr').value = store.get('bridgeAddr', '');
+    return;
+  }
+  clearInterval(pollT);
+  pollT = setInterval(() => { if (!document.hidden) refreshState(); }, 3000);
+  if (rstate.paired && !rstate.connected && !warmed) { warmed = true; api('/api/connect').catch(() => {}); }
+}
+function remoteHide() { clearInterval(pollT); }
+$('#bridgeGo').onclick = () => {
+  let a = $('#bridgeAddr').value.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  if (!a) return;
+  if (!/:\d+$/.test(a)) a += ':8765';
+  store.set('bridgeAddr', a);
+  location.href = 'http://' + a + '/#telecommande';
+};
+
+let forceSetup = false;
+$('#scanBtn').onclick = async () => {
+  const b = $('#scanBtn'), box = $('#tvList');
+  b.disabled = true;
+  b.textContent = '🔎 Recherche… (quelques secondes)';
+  box.textContent = '';
+  try {
+    const j = await api('/api/scan');
+    if (!j.tvs.length) box.appendChild(el('p', 'hint', 'Aucune télé trouvée. Vérifie qu\'elle est allumée et sur le même Wi-Fi, ou entre son adresse IP ci-dessous.'));
+    j.tvs.forEach(t => {
+      const tb = el('button');
+      tb.appendChild(el('span', null, '📺 ' + t.name));
+      tb.appendChild(el('small', null, t.host));
+      tb.onclick = () => pair(t.host, t.name);
+      box.appendChild(tb);
+    });
+  } catch (e) { toast('⚠ ' + e.message, { err: true }); }
+  b.disabled = false;
+  b.textContent = '🔎 Chercher à nouveau';
+};
+$('#ipBtn').onclick = () => { const ip = $('#ipIn').value.trim(); if (ip) pair(ip, ''); };
+async function pair(hostAddr, name) {
+  toast('Connexion à ' + (name || hostAddr) + '…', { ms: 3000 });
+  try {
+    const j = await api('/api/pair', { host: hostAddr, name });
+    if (j.status === 'connected') { forceSetup = false; toast('✅ Télé connectée'); renderRemote(); return; }
+    $('#codeBox').hidden = false;
+    $('#codeIn').value = '';
+    $('#codeIn').focus();
+    toast('📺 Un code s\'affiche sur la télé', { ms: 5000 });
+  } catch (e) { toast('⚠ ' + e.message, { err: true }); }
+}
+$('#codeIn').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^0-9A-F]/g, '').slice(0, 6); });
+$('#codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('#codeBtn').click(); });
+$('#codeBtn').onclick = async () => {
+  const code = $('#codeIn').value;
+  if (code.length !== 6) { toast('Le code a 6 caractères (chiffres et lettres A à F)', { err: true }); return; }
+  try {
+    const j = await api('/api/code', { code });
+    if (j.ok) { $('#codeBox').hidden = true; forceSetup = false; toast('✅ C\'est appairé ! La télécommande est prête.'); renderRemote(); return; }
+    if (j.result === 'refused') { toast('Code refusé par la télé : un nouveau code va s\'afficher', { err: true }); $('#codeBox').hidden = true; return; }
+    toast('Code incorrect, vérifie-le (0 et O, 8 et B…)', { err: true });
+  } catch (e) { toast('⚠ ' + e.message, { err: true }); }
+};
+$('#codeCancel').onclick = () => { $('#codeBox').hidden = true; };
+$('#forgetBtn').onclick = () => { forceSetup = true; renderRemote(); };
+
+let keyQ = Promise.resolve(), pending = 0;
+function sendKey(code, isRepeat) {
+  if (isRepeat && pending > 1) return;
+  pending++;
+  keyQ = keyQ.then(() => api('/api/key', { code })).catch(e => { if (!isRepeat) toast('⚠ ' + e.message, { err: true }); }).finally(() => { pending--; });
+}
+function sendApp(link) {
+  keyQ = keyQ.then(() => api('/api/app', { link })).catch(e => toast('⚠ ' + e.message, { err: true }));
+}
+function pressBtn(b, isRepeat) {
+  if (b.dataset.app) sendApp(b.dataset.app); else sendKey(+b.dataset.k, isRepeat);
+  if (!isRepeat && navigator.vibrate) { try { navigator.vibrate(20); } catch (e) { /* rien */ } }
+  b.classList.add('hit');
+  setTimeout(() => b.classList.remove('hit'), 120);
+}
+let holdT = null, holdI = null;
+const stopHold = () => { clearTimeout(holdT); clearInterval(holdI); holdT = holdI = null; };
+const pad = $('#pad');
+pad.addEventListener('pointerdown', e => {
+  const b = e.target.closest('[data-k],[data-app]');
+  if (!b) return;
+  e.preventDefault();
+  stopHold();
+  pressBtn(b);
+  if (b.dataset.rep) holdT = setTimeout(() => { holdI = setInterval(() => pressBtn(b, true), 150); }, 450);
+});
+['pointerup', 'pointercancel', 'pointerleave'].forEach(t => pad.addEventListener(t, stopHold));
+pad.addEventListener('click', e => { const b = e.target.closest('[data-k],[data-app]'); if (b && e.detail === 0) pressBtn(b); });  // clavier
+pad.addEventListener('contextmenu', e => e.preventDefault());
+
+const KEYMAP = { ArrowUp: 19, ArrowDown: 20, ArrowLeft: 21, ArrowRight: 22, Enter: 23, Escape: 4, Backspace: 4, '+': 24, '=': 24, '-': 25,
+  PageUp: 166, PageDown: 167, m: 164, M: 164, h: 3, H: 3, ' ': 85 };
+document.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input, textarea')) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (!$('#pageRm').hidden) {
+    if (!rstate || $('#rmPad').hidden) return;
+    let k = KEYMAP[e.key];
+    if (k == null && /^[0-9]$/.test(e.key)) k = 7 + +e.key;
+    if (k == null) return;
+    e.preventDefault();
+    const b = pad.querySelector('[data-k="' + k + '"]');
+    if (b) pressBtn(b, e.repeat); else sendKey(k, e.repeat);
+    return;
+  }
+  if (e.key === 'f' || e.key === 'F') fullscreen();
+  else if (e.key === 'n' || e.key === 'N') step(1);
+  else if (e.key === 'p' || e.key === 'P') step(-1);
+});
+
+// ------------------------------------------------------------ QR code (pour ouvrir sur le téléphone)
+function qrSvg(text) {
+  const ECC = [0, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26], BLOCKS = [0, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5];  // niveau M
+  const data = Array.from(new TextEncoder().encode(text));
+  const rawMods = v => { let r = (16 * v + 128) * v + 64; if (v >= 2) { const na = Math.floor(v / 7) + 2; r -= (25 * na - 10) * na - 55; if (v >= 7) r -= 36; } return r; };
+  let ver = 1;
+  while (ver <= 9 && 4 + 8 + data.length * 8 > (Math.floor(rawMods(ver) / 8) - ECC[ver] * BLOCKS[ver]) * 8) ver++;
+  if (ver > 9) return '';
+  const cap = Math.floor(rawMods(ver) / 8) - ECC[ver] * BLOCKS[ver];
+  const bits = [];
+  const put = (v, n) => { for (let i = n - 1; i >= 0; i--) bits.push((v >>> i) & 1); };
+  put(4, 4); put(data.length, 8); data.forEach(b => put(b, 8));
+  put(0, Math.min(4, cap * 8 - bits.length));
+  while (bits.length % 8) bits.push(0);
+  const cw = [];
+  for (let i = 0; i < bits.length; i += 8) cw.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+  for (let p = 0xEC; cw.length < cap; p ^= 0xEC ^ 0x11) cw.push(p);
+  const mul = (x, y) => { let z = 0; for (let i = 7; i >= 0; i--) { z = (z << 1) ^ ((z >>> 7) * 0x11D); z ^= ((y >>> i) & 1) * x; } return z; };
+  const deg = ECC[ver];
+  const div = new Array(deg).fill(0); div[deg - 1] = 1;
+  for (let i = 0, root = 1; i < deg; i++) { for (let j = 0; j < deg; j++) { div[j] = mul(div[j], root); if (j + 1 < deg) div[j] ^= div[j + 1]; } root = mul(root, 2); }
+  const rem = d => { const r = new Array(deg).fill(0); d.forEach(b => { const f = b ^ r.shift(); r.push(0); div.forEach((c, i) => { r[i] ^= mul(c, f); }); }); return r; };
+  const nb = BLOCKS[ver], raw = Math.floor(rawMods(ver) / 8), nShort = nb - raw % nb, shortLen = Math.floor(raw / nb);
+  const blocks = [];
+  for (let i = 0, k = 0; i < nb; i++) {
+    const d = cw.slice(k, k + shortLen - deg + (i < nShort ? 0 : 1));
+    k += d.length;
+    const e = rem(d);
+    if (i < nShort) d.push(0);
+    blocks.push(d.concat(e));
+  }
+  const all = [];
+  for (let i = 0; i < blocks[0].length; i++) blocks.forEach((b, j) => { if (i !== shortLen - deg || j >= nShort) all.push(b[i]); });
+  const size = ver * 4 + 17;
+  const M = [], F = [];
+  for (let y = 0; y < size; y++) { M.push(new Array(size).fill(false)); F.push(new Array(size).fill(false)); }
+  const set = (x, y, d) => { M[y][x] = d; F[y][x] = true; };
+  for (let i = 0; i < size; i++) { set(6, i, i % 2 === 0); set(i, 6, i % 2 === 0); }
+  const finder = (x, y) => { for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const d = Math.max(Math.abs(dx), Math.abs(dy)), xx = x + dx, yy = y + dy; if (xx >= 0 && xx < size && yy >= 0 && yy < size) set(xx, yy, d !== 2 && d !== 4); } };
+  finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+  if (ver > 1) {
+    const na = Math.floor(ver / 7) + 2, stepA = Math.floor((ver * 8 + na * 3 + 5) / (na * 4 - 4)) * 2, pos = [6];
+    for (let p = size - 7; pos.length < na; p -= stepA) pos.splice(1, 0, p);
+    pos.forEach((a, i) => pos.forEach((b, j) => {
+      if ((i === 0 && j === 0) || (i === 0 && j === na - 1) || (i === na - 1 && j === 0)) return;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) set(a + dx, b + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+    }));
+  }
+  const fmt = mask => {
+    const d = (0 << 3) | mask;  // niveau M = 00
+    let r = d;
+    for (let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
+    const b = ((d << 10) | r) ^ 0x5412, g = i => ((b >>> i) & 1) === 1;
+    for (let i = 0; i <= 5; i++) set(8, i, g(i));
+    set(8, 7, g(6)); set(8, 8, g(7)); set(7, 8, g(8));
+    for (let i = 9; i < 15; i++) set(14 - i, 8, g(i));
+    for (let i = 0; i < 8; i++) set(size - 1 - i, 8, g(i));
+    for (let i = 8; i < 15; i++) set(8, size - 15 + i, g(i));
+    set(8, size - 8, true);
+  };
+  fmt(0);
+  if (ver >= 7) {  // version écrite deux fois
+    let r = ver;
+    for (let i = 0; i < 12; i++) r = (r << 1) ^ ((r >>> 11) * 0x1F25);
+    const b = (ver << 12) | r;
+    for (let i = 0; i < 18; i++) { const bit = ((b >>> i) & 1) === 1, a = size - 11 + i % 3, c = Math.floor(i / 3); set(a, c, bit); set(c, a, bit); }
+  }
+  let bi = 0;
+  for (let right = size - 1; right >= 1; right -= 2) {
+    if (right === 6) right = 5;
+    for (let v = 0; v < size; v++) for (let j = 0; j < 2; j++) {
+      const x = right - j, y = ((right + 1) & 2) === 0 ? size - 1 - v : v;
+      if (!F[y][x] && bi < all.length * 8) { M[y][x] = ((all[bi >>> 3] >>> (7 - (bi & 7))) & 1) === 1; bi++; }
+    }
+  }
+  const MASKS = [(x, y) => (x + y) % 2 === 0, (x, y) => y % 2 === 0, x => x % 3 === 0, (x, y) => (x + y) % 3 === 0,
+    (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0, (x, y) => x * y % 2 + x * y % 3 === 0,
+    (x, y) => (x * y % 2 + x * y % 3) % 2 === 0, (x, y) => ((x + y) % 2 + x * y % 3) % 2 === 0];
+  const applyMask = m => { for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (!F[y][x] && MASKS[m](x, y)) M[y][x] = !M[y][x]; };
+  const penalty = () => {
+    let p = 0, dark = 0;
+    const lines = [];
+    for (let y = 0; y < size; y++) { lines.push(M[y].map(b => b ? 1 : 0).join('')); lines.push(M.map(r => r[y] ? 1 : 0).join('')); }
+    lines.forEach(l => {
+      (l.match(/0{5,}|1{5,}/g) || []).forEach(run => { p += run.length - 2; });
+      const f = (l.match(/(?=10111010000|00001011101)/g) || []).length;
+      p += f * 40;
+    });
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      if (M[y][x]) dark++;
+      if (x < size - 1 && y < size - 1 && M[y][x] === M[y][x + 1] && M[y][x] === M[y + 1][x] && M[y][x] === M[y + 1][x + 1]) p += 3;
+    }
+    return p + Math.floor(Math.abs(dark * 20 - size * size * 10) / (size * size)) * 10;
+  };
+  let best = 0, bestP = Infinity;
+  for (let m = 0; m < 8; m++) { applyMask(m); fmt(m); const p = penalty(); if (p < bestP) { bestP = p; best = m; } applyMask(m); }
+  applyMask(best); fmt(best);
+  let path = '';
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (M[y][x]) path += 'M' + (x + 4) + ',' + (y + 4) + 'h1v1h-1z';
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + (size + 8) + ' ' + (size + 8) + '" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="' + path + '" fill="#000"/></svg>';
+}
+window.qrSvg = qrSvg;  // pour les tests
+
+$('#phoneBtn').onclick = () => {
+  const url = bridge && bridge.urls && bridge.urls[0];
+  if (!url) return;
+  $('#urlModal').textContent = url.replace(/\/$/, '');
+  $('#qrModal').innerHTML = qrSvg(url);
+  $('#phoneModal').hidden = false;
+};
+$('#phoneClose').onclick = () => { $('#phoneModal').hidden = true; };
+$('#phoneModal').onclick = e => { if (e.target.id === 'phoneModal') $('#phoneModal').hidden = true; };
+
+// ------------------------------------------------------------ démarrage
+async function init() {
+  buildBouquets();
+  onlyOk.checked = store.get('onlyOk', false);
+  if (/^https?:$/.test(location.protocol)) {
+    try {
+      const r = await fetchT('/api/state', 3000, { cache: 'no-store' });
+      const j = await r.json();
+      if (j && j.bridge) { bridge = j; rstate = j; }
+    } catch (e) { /* page ouverte sans la passerelle */ }
+  }
+  $('#phoneBtn').hidden = !(bridge && bridge.urls && bridge.urls.length && /^(localhost|127\.)/.test(location.hostname));
+  if (!window.Hls && !nativeHls) toast('⚠ Le lecteur vidéo n\'a pas pu se charger. Mets à jour ton navigateur (Chrome conseillé).', { err: true, ms: 10000 });
+  const last = store.get('last', null);
+  if (last && last.sources) {
+    known.set(last.key, last);
+    cur = last;
+    setNow();
+    overlay('Reprendre « ' + last.name + ' » ?', '', { btn: ['▶ Regarder', () => play(known.get(last.key) || last)] });
+  }
+  showTab(/telecommande|remote/.test(location.hash) ? 'rm' : 'tv');
+  await selectBouquet(store.get('bouquet', 'sn'));
+  if (cur && known.get(cur.key) && known.get(cur.key) !== cur) cur = known.get(cur.key);
+}
+init();
+})();
+</script>
+</body>
+</html>

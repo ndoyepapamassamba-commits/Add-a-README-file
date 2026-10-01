@@ -14,7 +14,7 @@ Aucun serveur, aucun abonnement. Tu ouvres, tu mets en ligne gratuitement, tu ve
 | **`images/`** | Les photos produits (`p1.jpg` … `p15.jpg`). Voir `images/README.md`. |
 | **`FOURNISSEURS.md`** | 📇 Répertoire de **grossistes & fournisseurs** (local Dakar + import). |
 | **`README.md`** | Ce guide. |
-| **`telecommande-tv/`** | 📺 Appli Android **télécommande TV universelle** (ELACTRON & autres) + lampe torche — voir [`telecommande-tv/README.md`](telecommande-tv/README.md). |
+| **`telecommande-tv/`** | 📺 Appli Android **télécommande TV universelle** (ELACTRON & autres) + lampe torche, et **version web** : TV en direct (IPTV gratuite, bascule automatique) + télécommande Wi-Fi sur téléphone et ordinateur. Voir [`telecommande-tv/README.md`](telecommande-tv/README.md). |
 
 > Le panier est **partagé** entre les pages (il se souvient de tes articles d'une page à l'autre).
 

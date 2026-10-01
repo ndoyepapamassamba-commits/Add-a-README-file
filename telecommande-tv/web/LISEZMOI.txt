@@ -1,0 +1,35 @@
+TÉLÉCOMMANDE TV : VERSION WEB (téléphone et ordinateur)
+========================================================
+
+1) TV EN DIRECT (IPTV) : RIEN À INSTALLER
+------------------------------------------
+- Ouvre TelecommandeTV.html avec Chrome (téléphone ou ordinateur).
+- Choisis un bouquet (Sénégal, Afrique, France, Infos, Sport…), puis touche une chaîne.
+- Les chaînes gratuites sont cherchées en direct sur GitHub (listes publiques
+  iptv-org et Free-TV, mises à jour chaque jour par des bénévoles).
+- Si un lien saute, l'appli essaie aussitôt un autre lien de la même chaîne,
+  puis bascule toute seule sur une autre chaîne qui marche.
+  Pastilles : verte = marche, jaune = joignable, rouge = en panne.
+- ⭐ pour les favoris, « ➕ Mes listes » pour ajouter ta propre liste M3U.
+
+2) TÉLÉCOMMANDE WI-FI (télés Android TV / Google TV)
+----------------------------------------------------
+Un navigateur ne peut pas parler directement à la télé : la petite
+« passerelle » sur un ordinateur du même Wi-Fi fait l'intermédiaire.
+
+  a. Installe Python (gratuit) : https://www.python.org/downloads/
+     Windows : coche « Add python.exe to PATH » pendant l'installation.
+  b. Windows : double-clique sur Lancer-passerelle-Windows.bat
+     Mac / Linux : python3 passerelle_tv.py
+     (Si le pare-feu demande : autorise sur les « Réseaux privés ».)
+  c. La page s'ouvre sur l'ordinateur → onglet « Télécommande ».
+     Sur le téléphone : scanne le QR code affiché, ou tape l'adresse
+     indiquée dans Chrome (par ex. http://192.168.1.20:8765).
+  d. « Chercher ma télé », puis tape le code qui s'affiche sur la télé
+     (une seule fois).
+
+Bonus : avec la passerelle, encore plus de chaînes se lisent
+(elle relaie celles que le navigateur refuse).
+
+Sans ordinateur : l'appli Google TV (Play Store) contient aussi une
+télécommande Wi-Fi.
