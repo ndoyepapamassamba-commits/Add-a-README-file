@@ -108,6 +108,22 @@ html[data-theme="dark"] .btn{color:var(--ink)}
 .btn.pri{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;border-color:transparent;box-shadow:0 8px 18px -10px rgba(0,65,94,.9)}
 .btn.xl:hover,.btn.pri:hover{filter:brightness(1.08);color:#fff}
 
+/* ---------- Filtres actifs ---------- */
+.activefilters{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:-6px 0 16px;padding:10px 14px;border-radius:12px;
+  background:linear-gradient(90deg,rgba(140,198,63,.16),rgba(0,92,131,.06));border:1px solid rgba(140,198,63,.45)}
+.af-l{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;font-weight:800;color:var(--green-2);margin-right:4px}
+.af-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 6px 5px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:12px;color:var(--ink-2)}
+.af-chip b{color:var(--navy)} html[data-theme="dark"] .af-chip b{color:#fff}
+.af-chip button{width:20px;height:20px;border-radius:50%;border:0;cursor:pointer;background:var(--bg-2);color:var(--navy);font-weight:900;line-height:1}
+.af-chip button:hover{background:var(--risk);color:#fff}
+.af-all{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:9px;border:0;cursor:pointer;font:700 12px var(--ff);
+  color:#fff;background:linear-gradient(135deg,var(--navy),var(--blue));box-shadow:0 6px 14px -8px rgba(0,65,94,.9)}
+.af-all svg,.hero-back svg{width:14px;height:14px}
+.hero-back{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:10px;cursor:pointer;font:800 12.5px var(--ff);
+  color:#00344B;background:var(--lime);border:0;box-shadow:0 8px 18px -8px rgba(0,0,0,.6)}
+.hero-back:hover{background:var(--lime-2)}
+.flowbar .fl b{font-weight:800}
+
 /* ---------- Héros ---------- */
 .hero{position:relative;overflow:hidden;border-radius:20px;padding:26px 28px 22px;margin-bottom:18px;color:#fff;
   background:linear-gradient(120deg,#00344B 0%,#00415E 35%,#005C83 100%);box-shadow:var(--sh-lg)}
@@ -823,6 +839,7 @@ function pptTable(s,head,rows,o){ o=o||{}; const right=o.right||[];
         </div>
       </section>
       <div class="filters" id="filterBar"></div>
+      <div class="activefilters" id="activeFilters" hidden></div>
       <section class="view show" id="view-synthese"></section>
       <section class="view" id="view-echeancier"></section>
       <section class="view" id="view-categories"></section>
@@ -1394,12 +1411,19 @@ const CAT_NATURE = {};
 ['DAT','CASH COLLATERAL'].forEach(c=>CAT_NATURE[c]='RESSOURCE');
 Object.values(LC_PRODUCT_META).forEach(([nat,cat])=>CAT_NATURE[cat]=nat);
 const CAT_ORDER=['ESCOMPTE','CREDIT COURT TERME','CREDIT MOYEN TERME','LC IMPORT','LC EXPORT','AVAL DE TRAITE','CAUTION DE SOUMISSION',"CAUTION D'AVANCE DE DÉMARRAGE",'CAUTION DE BONNE EXÉCUTION','CAUTION EN DOUANE','CAUTION DE RETENUE DE GARANTIE','GARANTIE BANCAIRE ÉMISE','GARANTIE INTERBANCAIRE','AUTRES CAUTIONS','CAUTION IRU / BOURSE','AUTRE ENGAGEMENT','DAT','CASH COLLATERAL'];
+const AGENCES={L01:'AGP',L02:'TILENE',L03:'LAMINE GUEYE',L04:'BOURGUIBA',L05:'THIAROYE',L06:'TOUBA SIEGE',L07:'GOUYE MBIND',L08:'PARCELLES',
+  L09:'VDN',L10:'HLM',L11:'KAOLACK',L12:'PIKINE',L13:'MEDINA',L14:'CASTORS',L15:'POINT E',L16:'ALMADIES',L17:'FAIDHERBE',L18:'MARISTES',
+  L19:'THIES',L20:'ST LOUIS SIEGE',L21:'NDAR TOUTE',L22:'OUAKAM',L23:'MBOUR',L24:'GOLF',L25:'LOUGA',L26:'YOFF',L27:'YEUMBEUL',L28:'KEUR MASSAR',
+  L29:'ZIGUINCHOR',L30:'KOLDA',L31:'TAMBA',L32:'KEDOUGOU',L33:'DIOURBEL',L34:'ROUME',L37:'SEA PLAZA',L38:'SATREC',L39:'ZONE INDUSTRIELLE',L40:'TOUBA SANDAGA'};
+const agNom=c=>AGENCES[String(c||'').trim().toUpperCase()]||'';
+const agL=c=>{ const n=agNom(c); return n?`${c} · ${n}`:(c||'N/D'); };
+function enrich(D){ ['CAE1','CAE2'].forEach(k=>(D[k]||[]).forEach(r=>{ r.agenceNom=agNom(r.agence); })); return D; }
 const CLS_ORDER=['I','IA','IIA','IIN','III','IV','V'];
 const CLS_LABEL={I:'I — Normal',IA:'IA — Sous surveillance',IIA:'IIA — Watch-list',IIN:'IIN — Substandard',III:'III — Douteux',IV:'IV — Compromis',V:'V — Pertes'};
 const clsColor=k=>['I','IA'].includes(k)?COL.s1:k==='IIA'?COL.s2:COL.s3;
 
 /* ---------- Données (embarquées ou chargées) ---------- */
-let DATA = window.__CAE__ || {CAE1:[],CAE2:[],meta:{}};
+let DATA = enrich(window.__CAE__ || {CAE1:[],CAE2:[],meta:{}});
 let PF = window.__PF__ || {};
 let META = DATA.meta || {};
 let ARRETE = META.arrete || PF.reportingDate || 'N/D';
@@ -1444,13 +1468,13 @@ function fApply(arr){ const f=state.f, q=(f.search||'').toLowerCase();
     if(f.segment && r.segment!==f.segment) return false;
     if(f.agence && r.agence!==f.agence) return false;
     if(f.staffOnly && !r.isStaffLoan) return false;
-    if(q){ const hay=(r.client+' '+r.ref+' '+(r.codeClient||'')+' '+(r.gestionnaire||'')).toLowerCase(); if(!hay.includes(q)) return false; }
+    if(q){ const hay=(r.client+' '+r.ref+' '+(r.codeClient||'')+' '+(r.gestionnaire||'')+' '+(r.agenceNom||'')).toLowerCase(); if(!hay.includes(q)) return false; }
     return true; }); }
 function rawRows(){ if(state.period==='BOTH') return (DATA.CAE1||[]).concat(DATA.CAE2||[]); return DATA[state.period]||[]; }
 const rows=()=>fApply(rawRows());
 function scopeLabel(){ const f=state.f, p=[];
   if(f.nature) p.push('Nature : '+(NATURE_SHORT[f.nature]||f.nature)); if(f.categorie) p.push('Catégorie : '+f.categorie);
-  if(f.segment) p.push('Segment : '+f.segment); if(f.agence) p.push('Agence : '+f.agence);
+  if(f.segment) p.push('Segment : '+f.segment); if(f.agence) p.push('Agence : '+agL(f.agence));
   if(f.staffOnly) p.push('Staff Loan uniquement'); if(f.search) p.push('Recherche : « '+f.search+' »');
   return p.length?'Périmètre filtré — '+p.join(' · '):'Périmètre complet (aucun filtre)'; }
 const sum=(arr,key)=>arr.reduce((s,r)=>s+(r[key]||0),0);
@@ -1523,6 +1547,17 @@ const IC={
   ppt:'<rect x="3" y="3" width="18" height="14" rx="2"/><path d="M8 21h8M12 17v4M8 12V9M12 12V7M16 12v-2"/>',
   print:'<path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/>' };
 const svg=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${p}</svg>`;
+function activeCount(){ const f=state.f; return ['nature','categorie','segment','agence','search'].filter(k=>f[k]).length+(f.staffOnly?1:0); }
+function resetFilters(){ state.f={nature:'',categorie:'',segment:'',agence:'',search:'',staffOnly:false}; tbl.page=1; persist(); buildFilters(); render(); }
+function renderChips(){ const el=$('#activeFilters'); if(!el) return; const f=state.f, ch=[];
+  if(f.nature) ch.push(['nature','Nature',NATURE_SHORT[f.nature]||f.nature]); if(f.categorie) ch.push(['categorie','Catégorie',f.categorie]);
+  if(f.segment) ch.push(['segment','Segment',f.segment]); if(f.agence) ch.push(['agence','Agence',agL(f.agence)]);
+  if(f.staffOnly) ch.push(['staffOnly','Personnel','Staff Loan']); if(f.search) ch.push(['search','Recherche','« '+f.search+' »']);
+  el.hidden=!ch.length||!hasData(); if(!ch.length) return;
+  el.innerHTML='<span class="af-l">Filtres actifs</span>'+ch.map(([k,l,v])=>`<span class="af-chip">${l} : <b>${esc(v)}</b><button data-k="${k}" title="Retirer ce filtre">×</button></span>`).join('')
+    +`<button class="af-all" id="afAll">${svg(IC.reset)}Revenir à la vue complète</button>`;
+  $$('.af-chip button',el).forEach(b=>b.onclick=()=>{ state.f[b.dataset.k]=b.dataset.k==='staffOnly'?false:''; tbl.page=1; persist(); buildFilters(); render(); });
+  $('#afAll').onclick=resetFilters; }
 function uniq(key){ return Array.from(new Set(rawRows().map(r=>r[key]).filter(Boolean))).sort(); }
 function buildFilters(){
   const bar=$('#filterBar');
@@ -1531,7 +1566,7 @@ function buildFilters(){
     + fld('Nature','nature',uniq('nature'),state.f.nature,o=>NATURE_SHORT[o]||o)
     + fld('Catégorie','categorie',uniq('categorie').sort(catSort),state.f.categorie)
     + fld('Segment','segment',uniq('segment'),state.f.segment)
-    + fld('Agence','agence',uniq('agence'),state.f.agence)
+    + fld('Agence','agence',uniq('agence'),state.f.agence,agL)
     + `<div class="ffield"><label>Personnel</label><select data-f="staffOnly"><option value="">Tous</option><option value="1" ${state.f.staffOnly?'selected':''}>Staff Loan uniquement</option></select></div>`
     + `<div class="spacer"></div>`
     + `<button class="btn" id="btnReset">${svg(IC.reset)}Réinitialiser</button>`
@@ -1541,7 +1576,7 @@ function buildFilters(){
     + `<button class="btn" id="btnPrint">${svg(IC.print)}Imprimer</button>`;
   $$('[data-f]',bar).forEach(el=>{ const ev=el.tagName==='INPUT'?'input':'change';
     el.addEventListener(ev,()=>{ state.f[el.dataset.f]=el.dataset.f==='staffOnly'?(el.value==='1'):el.value; tbl.page=1; persist(); render(); }); });
-  $('#btnReset').onclick=()=>{ state.f={nature:'',categorie:'',segment:'',agence:'',search:'',staffOnly:false}; persist(); buildFilters(); render(); };
+  $('#btnReset').onclick=resetFilters;
   $('#btnXlsx').onclick=()=>busy('Construction du classeur Excel Ecobank…',exportExcel);
   $('#btnPdf').onclick=()=>busy('Construction du rapport PDF…',exportPDF);
   $('#btnPpt').onclick=()=>busy('Construction de la présentation…',exportPPT);
@@ -1561,10 +1596,11 @@ function viewSynthese(){
   $('#view-synthese').innerHTML=`
    <div class="hero">
      <div class="hero-top">
-       <div><div class="eyebrow">Total à échoir · ${esc(PERIOD_LABEL[state.period])}</div>
+       <div><div class="eyebrow">Total à échoir · ${esc(PERIOD_LABEL[state.period])}${activeCount()?' · périmètre filtré':''}</div>
          <div class="hero-total">${fSp(A.tot)}<span class="u">XOF</span></div>
          <div class="lead"><b>${nf.format(R.length)} contrats</b> · ${nf.format(uniqClients(R))} contreparties · arrêté <b>${esc(ARRETE)}</b>${partPF!=null?` · <b>${fPct(partPF,2)}</b> de l'encours brut du portefeuille`:''}.</div></div>
-       <img class="hero-logo" data-logo src="${LOGO_SRC}" alt="Ecobank">
+       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px"><img class="hero-logo" data-logo src="${LOGO_SRC}" alt="Ecobank">
+         ${activeCount()?`<button class="hero-back" id="heroBack">${svg(IC.reset)}Vue complète</button>`:''}</div>
      </div>
      <div class="hero-stats">
        <div class="hstat"><div class="l"><i style="background:${COL.lime}"></i>Emplois · recouvrements</div><div class="v">${fMd(A.emp)}</div><div class="s">${A.cnt.EMPLOI||0} crédits à terme</div></div>
@@ -1573,7 +1609,7 @@ function viewSynthese(){
        <div class="hstat"><div class="l"><i style="background:#fff"></i>Flux net de trésorerie</div><div class="v" style="color:${A.net>=0?COL.lime2:'#F5C26B'}">${A.net>=0?'+':''}${fMd(A.net)}</div><div class="s">Emplois − Ressources</div></div>
      </div>
      <div class="flowbar"><div class="fb">${seg(A.emp,COL.lime,'EMPLOI')}${seg(A.res,COL.amber,'RESSOURCE')}${seg(A.eng,'#4FA3C7','ENGAGEMENT')}</div>
-       <div class="fl"><span>Composition du mur d'échéances — cliquez une zone pour filtrer la nature</span><span>${A.peak?`Pic : semaine du ${dShort(A.peak.start)} · ${fMd(wkTot(A.peak))}`:''}</span></div></div>
+       <div class="fl"><span>${state.f.nature?`Filtre actif : <b style="color:#fff">${NATURE_SHORT[state.f.nature]}</b> — recliquez la zone ou utilisez « Vue complète »`:"Composition du mur d'échéances — cliquez une zone pour filtrer la nature"}</span><span>${A.peak?`Pic : semaine du ${dShort(A.peak.start)} · ${fMd(wkTot(A.peak))}`:''}</span></div></div>
    </div>
    <div class="kpis k4">
      ${kpi('1ʳᵉ contrepartie',fMd(top1.v),`<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(top1.nm)}</span>`,COL.navy)}
@@ -1595,7 +1631,8 @@ function viewSynthese(){
      <div class="panel"><div class="phead"><div class="pt"><span class="dot"></span>Ventilation par catégorie</div></div>
        <div class="chartwrap"><canvas id="c_cat"></canvas></div></div>
    </div>`;
-  $$('#view-synthese .flowbar i').forEach(i=>i.onclick=()=>{ state.f.nature=i.dataset.nat; persist(); buildFilters(); render(); });
+  $$('#view-synthese .flowbar i').forEach(i=>i.onclick=()=>{ state.f.nature=state.f.nature===i.dataset.nat?'':i.dataset.nat; tbl.page=1; persist(); buildFilters(); render(); });
+  const bk=$('#heroBack'); if(bk) bk.onclick=resetFilters;
   drawTimeline('c_timeline',R);
   const natOrder=['EMPLOI','RESSOURCE','ENGAGEMENT','SURETE'].filter(k=>A.byNat[k]);
   mkChart('c_nature',{type:'doughnut',data:{labels:natOrder.map(k=>NATURE_SHORT[k]),datasets:[{data:natOrder.map(k=>A.byNat[k]),
@@ -1736,8 +1773,8 @@ function viewSegments(){
   $('#leg_seg').innerHTML=segs.map((s,i)=>`<div class="row"><span class="sw" style="background:${COL.cats[i%COL.cats.length]}"></span><span class="nm">${esc(s[0])}</span><span class="vl">${fPct(100*s[1]/tot)}</span></div>`).join('');
   mkChart('c_segnat',{type:'bar',data:{labels:segKeys,datasets:NAT_KEYS.map((n,i)=>({label:NATURE_SHORT[n],data:matrix[i],backgroundColor:grad(NATURE_COL[n]),stack:'s',borderRadius:4,maxBarThickness:52}))},
     options:{plugins:{legend:legendTop(),tooltip:{...tipStyle,callbacks:{label:c=>` ${c.dataset.label}: ${fXOF(c.raw)}`}}},scales:{x:{stacked:true,...baseScales().x},y:{stacked:true,...baseScales({money:true}).y}},maintainAspectRatio:false}});
-  mkChart('c_ag',{type:'bar',data:{labels:ags.map(a=>a[0]),datasets:[{data:ags.map(a=>a[1]),backgroundColor:grad(COL.blue),borderRadius:6,maxBarThickness:28}]},
-    options:{plugins:{legend:{display:false},tooltip:{...tipStyle,callbacks:{label:c=>' '+fXOF(c.raw)}}},scales:baseScales({money:true}),maintainAspectRatio:false}});
+  mkChart('c_ag',{type:'bar',data:{labels:ags.map(a=>agL(a[0])),datasets:[{data:ags.map(a=>a[1]),backgroundColor:grad(COL.blue,true),borderRadius:6,maxBarThickness:18}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{...tipStyle,callbacks:{label:c=>' '+fXOF(c.raw)}}},scales:baseScales({x:{ticks:{callback:v=>fMd(v),color:tickColor()}}}),maintainAspectRatio:false}});
   mkChart('c_ao',{type:'bar',data:{labels:aos.map(a=>short(a[0],22)),datasets:[{data:aos.map(a=>a[1]),backgroundColor:grad(COL.green,true),borderRadius:6,maxBarThickness:16}]},
     options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{...tipStyle,callbacks:{label:c=>' '+fXOF(c.raw)}}},scales:baseScales({x:{ticks:{callback:v=>fMd(v),color:tickColor()}}}),maintainAspectRatio:false}});
 }
@@ -1805,7 +1842,7 @@ function viewStaff(){
   const tbody=R.slice().sort((a,b)=>(b.montantXOF||0)-(a.montantXOF||0)).map(r=>`<tr>
     <td class="strong">${esc(r.client||'—')}</td><td>${esc(r.codeClient||'—')}</td><td>${esc(r.ref||'—')}</td>
     <td><span class="chip ${natCls(r.nature)}">${NATURE_SHORT[r.nature]}</span></td><td>${esc(r.categorie||'—')}</td><td class="num">${fXOF(r.montantXOF)}</td><td>${esc(r.dateEcheance||'—')}</td>
-    <td>${esc(r.agence||'—')}</td><td>${esc(r.gestionnaire||'—')}</td><td>${r.classification?`<span class="chip ${['I','IA'].includes(r.classification)?'emp':'bad'}">${esc(r.classification)}</span>`:'—'}</td></tr>`).join('');
+    <td>${esc(agL(r.agence))}</td><td>${esc(r.gestionnaire||'—')}</td><td>${r.classification?`<span class="chip ${['I','IA'].includes(r.classification)?'emp':'bad'}">${esc(r.classification)}</span>`:'—'}</td></tr>`).join('');
   $('#view-staff').innerHTML=`
     <div class="note"><b>Crédits Personnel (Staff Loan).</b> Contrats à échoir dont le client est identifié <b>« Credit Program = Staff_Loan »</b> dans le portefeuille (croisement par code client).
     Portefeuille global : <b>${pfS.count}</b> contrats Staff_Loan (${fMd(pfS.total)}, ${pfS.nbClients} clients) + <b>${pfE.count}</b> contrats EX_Staff_Loan (${fMd(pfE.total)}, ${pfE.nbClients} clients, agents sortis).</div>
@@ -1823,7 +1860,7 @@ function viewStaff(){
       <div class="tablewrap"><table class="dt"><thead><tr><th>Client</th><th>Code</th><th>Contrat</th><th>Nature</th><th>Catégorie</th><th style="text-align:right">Montant</th><th>Échéance</th><th>Agence</th><th>Gestionnaire</th><th>Classe</th></tr></thead>
       <tbody>${tbody||'<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--ink-3)">Aucun contrat Staff Loan sur la période sélectionnée.</td></tr>'}</tbody></table></div></div>`;
   const ags=Object.entries(groupSum(R,'agence')).sort((a,b)=>b[1]-a[1]);
-  mkChart('c_staffag',{type:'bar',data:{labels:ags.map(a=>a[0]),datasets:[{data:ags.map(a=>a[1]),backgroundColor:grad(COL.green),borderRadius:6,maxBarThickness:30}]},
+  mkChart('c_staffag',{type:'bar',data:{labels:ags.map(a=>agL(a[0])),datasets:[{data:ags.map(a=>a[1]),backgroundColor:grad(COL.green),borderRadius:6,maxBarThickness:30}]},
     options:{plugins:{legend:{display:false},tooltip:{...tipStyle,callbacks:{label:c=>' '+fXOF(c.raw)}}},scales:baseScales({money:true}),maintainAspectRatio:false}});
   const cp=Object.entries(PF.creditProgram||{}).sort((a,b)=>b[1].total-a[1].total).slice(0,8);
   mkChart('c_cpmix',{type:'doughnut',data:{labels:cp.map(x=>x[0]),datasets:[{data:cp.map(x=>x[1].total),backgroundColor:cp.map((x,i)=>x[0].includes('Staff')?COL.lime:COL.cats[i%COL.cats.length]),borderColor:css('--card'),borderWidth:2,cutout:'55%'}]},
@@ -1838,7 +1875,7 @@ const COLS=[
   {k:'categorie',t:'Catégorie',w:24},{k:'nature',t:'Nature',w:13},{k:'client',t:'Contrepartie',w:34},{k:'codeClient',t:'Code',w:12},
   {k:'ref',t:'N° contrat',w:19},{k:'devise',t:'Dev.',w:7},{k:'montant',t:'Montant',num:1,w:17},{k:'montantXOF',t:'Montant XOF',num:1,w:18},
   {k:'dateValeur',t:'Date valeur',date:1,w:12},{k:'dateEcheance',t:'Échéance',date:1,w:12},{k:'joursAvantEcheance',t:'J. restants',num:1,w:10},
-  {k:'segment',t:'Segment',w:14},{k:'agence',t:'Agence',w:9},{k:'gestionnaire',t:'Gestionnaire',w:24},{k:'produit',t:'Produit',w:10},
+  {k:'segment',t:'Segment',w:14},{k:'agence',t:'Agence',w:9},{k:'agenceNom',t:'Nom agence',w:20},{k:'gestionnaire',t:'Gestionnaire',w:24},{k:'produit',t:'Produit',w:10},
   {k:'frr',t:'FRR',num:1,w:7},{k:'classification',t:'Classe',w:8},{k:'stageIFRS9',t:'Stage',num:1,w:7},{k:'status',t:'Statut',w:8},
   {k:'creditProgram',t:'Credit Program',w:15},{k:'isStaffLoan',t:'Personnel',w:10} ];
 function viewDetail(){
@@ -1862,7 +1899,7 @@ function renderTable(){
       if(c.k==='status') return `<td>${v?`<span class="chip ${v==='NP'?'bad':'emp'}">${esc(v)}</span>`:'—'}</td>`;
       if(c.num) return `<td class="num">${v==null?'—':nf.format(v)}</td>`;
       return `<td ${c.k==='client'?'class="strong"':''}>${v==null||v===''?'—':esc(v)}</td>`; }).join('')+'</tr>').join('');
-  $('#dt-wrap').innerHTML=`<table class="dt"><thead><tr>${head}</tr></thead><tbody>${body||'<tr><td colspan="21" style="text-align:center;padding:30px;color:var(--ink-3)">Aucun contrat ne correspond aux filtres.</td></tr>'}</tbody></table>`;
+  $('#dt-wrap').innerHTML=`<table class="dt"><thead><tr>${head}</tr></thead><tbody>${body||'<tr><td colspan="22" style="text-align:center;padding:30px;color:var(--ink-3)">Aucun contrat ne correspond aux filtres.</td></tr>'}</tbody></table>`;
   $$('#dt-wrap th[data-s]').forEach(th=>th.onclick=()=>{const k=th.dataset.s; if(tbl.sort===k) tbl.dir*=-1; else {tbl.sort=k;tbl.dir=-1;} renderTable();});
   let h=`<button ${tbl.page<=1?'disabled':''} data-p="prev">‹</button>`;
   for(let i=1;i<=pages;i++){ if(i===1||i===pages||Math.abs(i-tbl.page)<=2) h+=`<button class="${i===tbl.page?'on':''}" data-p="${i}">${i}</button>`; else if(Math.abs(i-tbl.page)===3) h+='<span style="color:var(--ink-3);padding:0 4px">…</span>'; }
@@ -1887,6 +1924,7 @@ function render(){
   const v=state.view, T=VIEW_TITLES()[v];
   $('#vtitle').childNodes[0].nodeValue=ok?T[0]:'Bienvenue';
   $('#vsub').textContent=ok?T[1]:'Chargez le fichier CRÉANCES À ÉCHOIR pour démarrer';
+  renderChips();
   if(!ok) return;
   $$('.view').forEach(s=>s.classList.remove('show')); $('#view-'+v).classList.add('show');
   ({synthese:viewSynthese,echeancier:viewEcheancier,categories:viewCategories,concentration:viewConcentration,
@@ -2111,13 +2149,13 @@ async function exportExcel(){
     xKpis(ws,segs.slice(0,4).map(([s,v],i)=>({label:s,value:fSp(v),sub:`${fPct(100*v/(A.tot||1),1)} du total`,color:[XC.NAVY,XC.BLUE,XC.GREEN,XC.SKY][i]})));
     xSection(ws,'Visualisations');
     xImages(wb,ws,[g3Donut({title:'Répartition par segment',sub:'Montants XOF',labels:segs.map(s=>s[0]),values:segs.map(s=>s[1])}),
-      g3HBars({title:'Top 12 agences',sub:'Montants XOF',labels:ags.slice(0,12).map(a=>a[0]),values:ags.slice(0,12).map(a=>a[1]),color:'#005c83',left:140})]);
+      g3HBars({title:'Top 12 agences',sub:'Montants XOF',labels:ags.slice(0,12).map(a=>agL(a[0])),values:ags.slice(0,12).map(a=>a[1]),color:'#005c83',left:230})]);
     xSection(ws,'Segment × nature');
     xTable(ws,['Segment','Emplois','Ressources','Engagements','Total','% total'],
       segs.map(([s,v])=>{ const R=ALL.filter(r=>r.segment===s); const g=groupSum(R,'nature'); return [s,g.EMPLOI||0,g.RESSOURCE||0,g.ENGAGEMENT||0,v,v/(A.tot||1)]; })
         .concat([Object.assign(['TOTAL',A.emp,A.res,A.eng,A.tot,1],{__total:true})]),{num:[1,2,3,4],pct:[5],bars:[4]});
     xSection(ws,'Agences');
-    xTable(ws,['Agence','Contrats','Clients','Montant XOF','% total'],ags.map(([a,v])=>{ const R=ALL.filter(r=>(r.agence||'N/D')===a); return [a,R.length,uniqClients(R),v,v/(A.tot||1)]; }),{num:[1,2,3],pct:[4],bars:[3]});
+    xTable(ws,['Agence','Contrats','Clients','Montant XOF','% total'],ags.map(([a,v])=>{ const R=ALL.filter(r=>(r.agence||'N/D')===a); return [agL(a),R.length,uniqClients(R),v,v/(A.tot||1)]; }),{num:[1,2,3],pct:[4],bars:[3]});
 
     /* 6 — Impact portefeuille */
     ws=xSheet(wb,'Impact portefeuille',XC.RISK,[34,14,20,18,14,14,14,14]);
@@ -2148,7 +2186,7 @@ async function exportExcel(){
     xSection(ws,'Visualisations');
     const sag=Object.entries(groupSum(SA,'agence')).sort((a,b)=>b[1]-a[1]).slice(0,12);
     const sn=NAT_KEYS.filter(k=>groupSum(SA,'nature')[k]);
-    xImages(wb,ws,[g3HBars({title:'Staff Loan par agence',sub:'Montants XOF',labels:sag.map(a=>a[0]),values:sag.map(a=>a[1]),color:'#6ba23a',left:140}),
+    xImages(wb,ws,[g3HBars({title:'Staff Loan par agence',sub:'Montants XOF',labels:sag.map(a=>agL(a[0])),values:sag.map(a=>a[1]),color:'#6ba23a',left:230}),
       g3Donut({title:'Staff Loan par nature',sub:'Montants XOF',labels:sn.map(k=>NATURE_SHORT[k]),values:sn.map(k=>groupSum(SA,'nature')[k]),colors:sn.map(k=>PAL_NAT[k])})]);
     xSection(ws,'Détail des contrats Personnel');
     detailTable(ws,SA);
@@ -2173,9 +2211,9 @@ async function exportExcel(){
 function detailTable(ws,R){
   const data=R.map(r=>COLS.map(c=>{ const v=r[c.k]; if(c.k==='isStaffLoan') return v?'OUI':''; if(c.k==='nature') return NATURE_SHORT[v]||v||''; return v==null?'':v; }));
   if(R.length) data.push(Object.assign(COLS.map((c,i)=>i===0?'TOTAL':c.k==='montantXOF'?sum(R,'montantXOF'):c.k==='client'?`${R.length} contrats`:''),{__total:true}));
-  const ni=COLS.map((c,i)=>c.num?i:-1).filter(i=>i>=0);
+  const ni=COLS.map((c,i)=>c.num?i:-1).filter(i=>i>=0), iSt=COLS.findIndex(c=>c.k==='status'), iPe=COLS.findIndex(c=>c.k==='isStaffLoan');
   xTable(ws,COLS.map(c=>c.t),data,{num:ni,bars:[7],filter:true,freeze:true,
-    pills:(ri,i,v)=>i===1?NAT_X[R[ri].nature]:(i===18&&v==='NP'?XC.RISK:(i===20&&v==='OUI'?XC.GREEN:null))});
+    pills:(ri,i,v)=>i===1?NAT_X[R[ri].nature]:(i===iSt&&v==='NP'?XC.RISK:(i===iPe&&v==='OUI'?XC.GREEN:null))});
 }
 
 /* ============================================================================
@@ -2273,7 +2311,7 @@ async function exportPDF(){
     header('CRÉDITS PERSONNEL — STAFF LOAN','Croisement code client × Credit Program du portefeuille');
     y=tiles(92,[{l:'Staff Loan à échoir',v:money(sum(SA,'montantXOF')),s:`${SA.length} contrats`,c:COL.green},{l:'Clients Personnel (PF)',v:nf.format((PF.staffLoan||{}).nbClients||0),s:`${(PF.staffLoan||{}).count||0} contrats au total`,c:COL.navy},
       {l:'Encours Staff Loan (PF)',v:money((PF.staffLoan||{}).total||0),s:'toutes échéances',c:COL.blue},{l:'EX-Staff Loan (PF)',v:money((PF.exStaffLoan||{}).total||0),s:`${(PF.exStaffLoan||{}).count||0} contrats`,c:COL.amber}]);
-    table(y,['Client','Code','Contrat','Nature','Montant XOF','Échéance','Agence'],SA.slice(0,200).map(r=>[r.client,r.codeClient||'',r.ref,NATURE_SHORT[r.nature],money(r.montantXOF),r.dateEcheance||'',r.agence||'']),
+    table(y,['Client','Code','Contrat','Nature','Montant XOF','Échéance','Agence'],SA.slice(0,200).map(r=>[r.client,r.codeClient||'',r.ref,NATURE_SHORT[r.nature],money(r.montantXOF),r.dateEcheance||'',agL(r.agence)]),
       {cs:{4:{halign:'right',font:'courier'}},pill:(ri,ci)=>ci===3&&SA[ri]?NATURE_COL[SA[ri].nature]:null});
 
     // Détail
@@ -2343,7 +2381,7 @@ async function exportPPT(){
     s=slide('Crédits Personnel — Staff Loan','Croisement code client × Credit Program');
     pptKpis(pp,s,[['Staff Loan à échoir',m(sum(SA,'montantXOF')),PX.GR,`${SA.length} contrats`],['Clients Personnel',nf.format((PF.staffLoan||{}).nbClients||0),PX.NV,'au portefeuille'],['Encours Staff Loan',m((PF.staffLoan||{}).total||0),PX.BL,'portefeuille'],['EX-Staff Loan',m((PF.exStaffLoan||{}).total||0),PX.AM,`${(PF.exStaffLoan||{}).count||0} contrats`]],1.3);
     const ts=SA.slice(0,12);
-    pptTable(s,['Client','Nature','Montant XOF','Échéance','Agence'],ts.map(r=>[short(r.client,40),NATURE_SHORT[r.nature],m(r.montantXOF),r.dateEcheance||'',r.agence||'']),
+    pptTable(s,['Client','Nature','Montant XOF','Échéance','Agence'],ts.map(r=>[short(r.client,40),NATURE_SHORT[r.nature],m(r.montantXOF),r.dateEcheance||'',agL(r.agence)]),
       {y:2.65,colW:[5.2,1.6,2.4,1.6,1.53],right:[2],fs:9,rowH:0.3,pills:(ri,i)=>i===1&&ts[ri]?NATURE_COL[ts[ri].nature].slice(1):null});
     // Clôture
     s=pp.addSlide(); s.background={color:PX.NV};
@@ -2451,7 +2489,7 @@ function handleFile(file){
       const got=reproduceFromWorkbook(wb);
       if(!got.sheets){ toast('Feuilles attendues introuvables (LISTE DES EMPLOIS, LISTE DES RESSOURCES, ETAT DES LC).'); return res(); }
       if(!got.CAE1.length&&!got.CAE2.length){ toast('Aucune créance détectée sur le mois courant / mois prochain.'); return res(); }
-      META=got.meta; ARRETE=META.arrete; DATA={CAE1:got.CAE1,CAE2:got.CAE2,meta:META}; PF=got.pfSummary; tbl.page=1;
+      META=got.meta; ARRETE=META.arrete; DATA=enrich({CAE1:got.CAE1,CAE2:got.CAE2,meta:META}); PF=got.pfSummary; tbl.page=1;
       PERIOD_LABEL.CAE1=META.cae1Label; PERIOD_LABEL.CAE2=META.cae2Label; PERIOD_LABEL.BOTH=META.cae1Label+' + '+META.cae2Label;
       $('#foot-ar').textContent=ARRETE; $('#foot-pf').textContent=PF.reportingDate||'—'; periodButtons();
       buildFilters(); render();

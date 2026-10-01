@@ -108,6 +108,22 @@ html[data-theme="dark"] .btn{color:var(--ink)}
 .btn.pri{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;border-color:transparent;box-shadow:0 8px 18px -10px rgba(0,65,94,.9)}
 .btn.xl:hover,.btn.pri:hover{filter:brightness(1.08);color:#fff}
 
+/* ---------- Filtres actifs ---------- */
+.activefilters{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:-6px 0 16px;padding:10px 14px;border-radius:12px;
+  background:linear-gradient(90deg,rgba(140,198,63,.16),rgba(0,92,131,.06));border:1px solid rgba(140,198,63,.45)}
+.af-l{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;font-weight:800;color:var(--green-2);margin-right:4px}
+.af-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 6px 5px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:12px;color:var(--ink-2)}
+.af-chip b{color:var(--navy)} html[data-theme="dark"] .af-chip b{color:#fff}
+.af-chip button{width:20px;height:20px;border-radius:50%;border:0;cursor:pointer;background:var(--bg-2);color:var(--navy);font-weight:900;line-height:1}
+.af-chip button:hover{background:var(--risk);color:#fff}
+.af-all{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:9px;border:0;cursor:pointer;font:700 12px var(--ff);
+  color:#fff;background:linear-gradient(135deg,var(--navy),var(--blue));box-shadow:0 6px 14px -8px rgba(0,65,94,.9)}
+.af-all svg,.hero-back svg{width:14px;height:14px}
+.hero-back{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:10px;cursor:pointer;font:800 12.5px var(--ff);
+  color:#00344B;background:var(--lime);border:0;box-shadow:0 8px 18px -8px rgba(0,0,0,.6)}
+.hero-back:hover{background:var(--lime-2)}
+.flowbar .fl b{font-weight:800}
+
 /* ---------- Héros ---------- */
 .hero{position:relative;overflow:hidden;border-radius:20px;padding:26px 28px 22px;margin-bottom:18px;color:#fff;
   background:linear-gradient(120deg,#00344B 0%,#00415E 35%,#005C83 100%);box-shadow:var(--sh-lg)}
@@ -359,6 +375,7 @@ html[data-theme="dark"] .busy .bx div{color:#fff}
         </div>
       </section>
       <div class="filters" id="filterBar"></div>
+      <div class="activefilters" id="activeFilters" hidden></div>
       <section class="view show" id="view-synthese"></section>
       <section class="view" id="view-echeancier"></section>
       <section class="view" id="view-categories"></section>
