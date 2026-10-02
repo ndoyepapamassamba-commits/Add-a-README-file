@@ -61,6 +61,8 @@ def build_subtitles(scenes: list[dict], durations: list[float], dest: Path) -> P
         t = t0 + 0.3
         for line in dialogue:
             span = usable * len(line["text"]) / total
+            if "start" in line:  # timing exact connu (aperçu animé)
+                t, span = t0 + line["start"], line["end"] - line["start"]
             text = f"{line['speaker']} : {line['text']}"
             lines.append(f"Dialogue: 0,{_ts(t)},{_ts(t + span)},Main,{_escape(text)}")
             t += span

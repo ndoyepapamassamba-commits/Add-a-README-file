@@ -77,6 +77,9 @@ La vidéo reste téléchargeable 14 jours dans l'onglet *Actions*.
   (en brouillon, cochez-la dans l'app).
 - Creator Rewards demande des vidéos **> 1 minute** et **originales** : chaque sketch est unique,
   l'historique (`state/history.json`) empêche de refaire le même thème.
-- Coût : quelques dollars par vidéo selon le modèle d'animation (Veo 3 est le plus cher, Kling et
-  Grok Imagine moins). Vérifiez les tarifs sur fal.ai. Testez d'abord avec `--mock`.
+- Coût indicatif d'une vidéo de 64 s (tarifs fal.ai, octobre 2026 — à revérifier) :
+  Grok Imagine 720p ≈ 0,07 $/s → **≈ 4,5 $** · Kling 2.6 Pro avec audio ≈ 0,14 $/s → **≈ 9 $** ·
+  Veo 3.1 Fast avec audio ≈ 0,15 $/s → **≈ 10 $**. Images + scénario : quelques centimes en plus.
+- Testez d'abord gratuitement avec `--mock` : aperçu animé dessiné avec voix de synthèse, pour valider
+  le rythme et les répliques avant de payer l'animation IA.
 - Relisez les premières vidéos : l'IA peut rater un visage ou une réplique. Le mode `draft` sert à ça.
