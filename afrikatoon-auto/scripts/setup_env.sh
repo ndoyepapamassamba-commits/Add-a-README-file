@@ -8,8 +8,8 @@ command -v espeak-ng >/dev/null || need_apt="$need_apt espeak-ng"
 if [ -n "$need_apt" ]; then
   (apt-get install -y -q $need_apt >/dev/null 2>&1 || (apt-get update -q >/dev/null 2>&1 && apt-get install -y -q $need_apt >/dev/null 2>&1))
 fi
-python3 -c "import bpy, PIL, numpy, requests, dotenv" 2>/dev/null || \
-  pip install -q bpy pillow numpy requests python-dotenv anthropic >/dev/null 2>&1
+python3 -c "import bpy, PIL, numpy, requests, dotenv, cairosvg" 2>/dev/null || \
+  pip install -q bpy pillow numpy requests python-dotenv anthropic cairosvg >/dev/null 2>&1
 # Chatterbox (voix clonées, ~2 Go) seulement si les modèles sont téléchargeables (huggingface.co autorisé)
 if curl -s -o /dev/null -m 5 https://huggingface.co; then
   python3 -c "import chatterbox" 2>/dev/null || pip install -q chatterbox-tts >/dev/null 2>&1 || true
