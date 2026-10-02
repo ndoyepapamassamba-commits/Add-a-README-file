@@ -261,10 +261,7 @@ S({id:'kpi',k:'Vue d’ensemble',t:'Les indicateurs clés',ok:m=>(m.seg==='ALL'&
       ${kp('Encours crédit',cnt(m.enc,'mds'),plural(m.nCli,'client'),'#00415e','big')}${kp('Créances NP',cnt(m.np,'mds'),'Ratio NPL '+fPct(m.npl),'#c0392b','big')}
       ${kp('Impayés',cnt(m.impT,'mds'),plural(m.impN,'ligne'),'#005c83','big')}${kp('Solde débiteur',cnt(m.debT,'mds'),plural(m.debN,'compte'),'#1a86b3','big')}
       ${kp('COD à déclasser',cnt(m.codT,'mds'),plural(m.codN,'compte'),'#b67d1c')}${kp('Clients à déclasser',cnt(m.decN,'int'),'Exposition nette '+fMds(m.decExpo),'#e07b39')}
-      ${kp('Provision BCEAO requise',cnt(m.decProv,'mds'),'sur les déclassements','#6ba23a')}${kp('Complément douteux',cnt(m.douCompl,'mds'),plural(m.douN,'dossier')+' douteux','#c0392b')}</div>`; },
-  ppt:(pp,s,m)=>{ if(m.seg==='ALL'&&D.tiles.length){ const t=D.tiles.slice(0,12); for(let r=0;r<3;r++) pptKpis(pp,s,t.slice(r*4,r*4+4).map((x,i)=>[x.l,x.v,'',['00415E','005C83','1A86B3','6BA23A'][i]]),1.5+r*1.75); }
-    else { pptKpis(pp,s,[['Encours crédit',fMds(m.enc),'00415E'],['Créances NP',fMds(m.np),'C0392B'],['Impayés',fMds(m.impT),'005C83'],['Solde débiteur',fMds(m.debT),'1A86B3']],1.6);
-      pptKpis(pp,s,[['COD à déclasser',fMds(m.codT),'B67D1C'],['Clients à déclasser',fInt(m.decN),'E07B39'],['Provision BCEAO',fMds(m.decProv),'6BA23A'],['Complément douteux',fMds(m.douCompl),'C0392B']],3.4); } }});
+      ${kp('Provision BCEAO requise',cnt(m.decProv,'mds'),'sur les déclassements','#6ba23a')}${kp('Complément douteux',cnt(m.douCompl,'mds'),plural(m.douN,'dossier')+' douteux','#c0392b')}</div>`; }});
 
 S({id:'npl',k:'Qualité du portefeuille',t:'Ratio NPL & classification',ok:m=>m.hasA7,html:m=>{ const a=cid(), b=cid();
   return `${head('Qualité du portefeuille','Ratio NPL & classification',`Encours ${fMds(m.enc)} · ${plural(m.nCtr,'contrat')} · exclusions BCEAO symétriques (OA, LGMO, LTB, CC, CKU, LCU, segment 8110)`)}
@@ -281,8 +278,7 @@ S({id:'npl',k:'Qualité du portefeuille',t:'Ratio NPL & classification',ok:m=>m.
   </div>`; },
   after:(m,el)=>{ const [a,b]=ids(el);
     mk(a,barCfg(m.byCl.map(x=>x.c+' · '+CLS_LIB[x.c]),m.byCl.map(x=>x.amt),m.byCl.map(x=>clsCol(x.c)),{click:i=>drillA7Class(m.byCl[i].c),tip:c=>' '+fSmart(c.raw)+' XOF · '+plural(m.byCl[c.dataIndex].n,'contrat')}));
-    mk(b,donutCfg(m.bySt.map(x=>'Stade '+x.s),m.bySt.map(x=>x.amt),['#4e8a2e','#d4a13a','#c0392b'],{t:fPct(m.enc?m.bySt[2].amt/m.enc*100:0,1),s:'en stade 3'},{click:i=>drillA7Stage(i+1)})); },
-  ppt:(pp,s,m,img)=>{ pptKpis(pp,s,[['Ratio NPL',fPct(m.npl),'C0392B'],['Encours',fMds(m.enc),'00415E'],['Créances NP',fMds(m.np),'C0392B'],['Provisions régl.',fMds(m.ploc),'6BA23A']],1.35); img(0,0.5,2.75,7.3,4.2); img(1,8.0,2.75,4.85,4.2); }});
+    mk(b,donutCfg(m.bySt.map(x=>'Stade '+x.s),m.bySt.map(x=>x.amt),['#4e8a2e','#d4a13a','#c0392b'],{t:fPct(m.enc?m.bySt[2].amt/m.enc*100:0,1),s:'en stade 3'},{click:i=>drillA7Stage(i+1)})); }});
 
 S({id:'seg',k:'Segmentation',t:'Lecture par segment',ok:m=>m.bySeg.length>0,html:m=>{ const a=cid(), b=cid();
   const T={enc:sum(m.bySeg,x=>x.enc),np:sum(m.bySeg,x=>x.np),imp:sum(m.bySeg,x=>x.imp),nimp:sum(m.bySeg,x=>x.nimp)};
@@ -299,8 +295,7 @@ S({id:'seg',k:'Segmentation',t:'Lecture par segment',ok:m=>m.bySeg.length>0,html
     mk(a,donutCfg(m.bySeg.map(x=>x.s),m.bySeg.map(x=>x.enc),cols,{t:fMds(sum(m.bySeg,x=>x.enc),0),s:'encours'},{click:i=>setSeg(m.bySeg[i].s)}));
     mk(b,barCfg(m.bySeg.map(x=>x.s),m.bySeg.map(x=>x.npl),cols,{fmt:v=>fPct(v),tip:c=>' '+fPct(c.raw)+' · NP '+fSmart(m.bySeg[c.dataIndex].np)+' XOF',click:i=>setSeg(m.bySeg[i].s),thick:110}));
     CH[b].options.scales.y.ticks.callback=v=>fPct(v,0); CH[b].update('none');
-    el.querySelectorAll('tr[data-seg]').forEach(tr=>tr.onclick=()=>setSeg(tr.dataset.seg)); },
-  ppt:(pp,s,m,img)=>{ pptTable(s,['Segment','Clients','Encours XOF','Créances NP','Ratio NPL','Impayés XOF','Lignes'],m.bySeg.map(x=>[x.s,fInt(x.ncli),fInt(x.enc),fInt(x.np),fPct(x.npl),fInt(x.imp),fInt(x.nimp)]),{right:[1,2,3,4,5,6],y:1.35,pills:(r,i)=>i===0?SEG_COL[m.bySeg[r].s].slice(1).toUpperCase():null}); img(0,0.5,3.0,6.1,4.0); img(1,6.75,3.0,6.1,4.0); }});
+    el.querySelectorAll('tr[data-seg]').forEach(tr=>tr.onclick=()=>setSeg(tr.dataset.seg)); }});
 
 S({id:'conc',k:'Concentration',t:'Les 10 premières expositions',ok:m=>m.hasA7&&m.top10.length,html:m=>{ const a=cid();
   const t1=m.groups[0];
@@ -315,10 +310,7 @@ S({id:'conc',k:'Concentration',t:'Les 10 premières expositions',ok:m=>m.hasA7&&
     </div>
   </div>`; },
   after:(m,el)=>{ const [a]=ids(el); mk(a,barCfg(m.top10.map(g=>g.k),m.top10.map(g=>g.amt),m.top10.map((g,i)=>i===0?'#00415e':g.np>0?'#c0392b':'#1a86b3'),{h:true,click:i=>drillGroup(m.top10[i].k),
-    fmt:(v)=>fMds(v)+'  ·  '+fPct(m.enc?v/m.enc*100:0,1),tip:c=>[' '+fInt(c.raw)+' XOF',' '+plural(m.top10[c.dataIndex].n,'contrat')+(m.top10[c.dataIndex].np?' · dont NP '+fSmart(m.top10[c.dataIndex].np):'')]})); CH[a].options.layout.padding.right=190; CH[a].update('none'); },
-  ppt:(pp,s,m,img)=>{ img(0,0.5,1.35,8.6,5.6); const t1=m.groups[0];
-    [['Poids du top 10',fPct(m.top10Sh,1),fMds(sum(m.top10,g=>g.amt))+' sur '+fMds(m.enc),'00415E'],['1re exposition',fPct(m.enc?t1.amt/m.enc*100:0,1),t1.k,'005C83'],['Groupes / clients',fInt(m.groups.length),'contreparties distinctes','6BA23A']]
-      .forEach((k,i)=>pptKpiBox(pp,s,9.35,1.35+i*1.5,3.5,k)); }});
+    fmt:(v)=>fMds(v)+'  ·  '+fPct(m.enc?v/m.enc*100:0,1),tip:c=>[' '+fInt(c.raw)+' XOF',' '+plural(m.top10[c.dataIndex].n,'contrat')+(m.top10[c.dataIndex].np?' · dont NP '+fSmart(m.top10[c.dataIndex].np):'')]})); CH[a].options.layout.padding.right=190; CH[a].update('none'); }});
 
 S({id:'imp',k:'Impayés',t:'Anatomie des impayés',ok:m=>m.impN>0,html:m=>{ const a=cid(), b=cid();
   return `${head('Impayés','Anatomie des impayés',`${plural(m.impN,'ligne')} · ${plural(m.impCli,'client')} · ancienneté maximale ${fInt(m.impMaxJ)} jours`)}
@@ -332,8 +324,7 @@ S({id:'imp',k:'Impayés',t:'Anatomie des impayés',ok:m=>m.impN>0,html:m=>{ cons
   </div>`; },
   after:(m,el)=>{ const [a,b]=ids(el);
     mk(a,barCfg(m.impAge.map(x=>x.l),m.impAge.map(x=>x.amt),m.impAge.map(x=>x.c),{click:i=>drillImp(r=>ageOf(r.j)===i,'Impayés '+AGE[i][0]),tip:c=>' '+fSmart(c.raw)+' XOF · '+plural(m.impAge[c.dataIndex].n,'ligne')}));
-    mk(b,donutCfg(m.impCl.map(x=>x.c+' · '+CLS_LIB[x.c]),m.impCl.map(x=>x.amt),m.impCl.map(x=>clsCol(x.c)),{t:fMds(m.impT),s:'impayés'},{click:i=>drillImp(r=>r.cl===m.impCl[i].c,'Impayés classe '+m.impCl[i].c)})); },
-  ppt:(pp,s,m,img)=>{ pptKpis(pp,s,[['Total impayés',fMds(m.impT),'005C83'],['> 90 jours',fMds(m.imp90T),'C0392B'],['1er débiteur',fPct(m.impTop1Sh,1),'00415E'],['Lignes',fInt(m.impN),'6BA23A']],1.35); img(0,0.5,2.75,6.1,4.2); img(1,6.75,2.75,6.1,4.2); }});
+    mk(b,donutCfg(m.impCl.map(x=>x.c+' · '+CLS_LIB[x.c]),m.impCl.map(x=>x.amt),m.impCl.map(x=>clsCol(x.c)),{t:fMds(m.impT),s:'impayés'},{click:i=>drillImp(r=>r.cl===m.impCl[i].c,'Impayés classe '+m.impCl[i].c)})); }});
 
 S({id:'imptop',k:'Impayés',t:'Les 12 premiers impayés',ok:m=>m.impN>0,html:m=>{ const t=m.impByCli.slice(0,12), mx=t[0]?t[0].amt:1;
   return `${head('Impayés','Les 12 premiers impayés','Consolidés par client · cliquez une ligne pour ouvrir la fiche 360°')}
@@ -341,8 +332,7 @@ S({id:'imptop',k:'Impayés',t:'Les 12 premiers impayés',ok:m=>m.impN>0,html:m=>
   ${t.map((x,i)=>`<tr data-cli="${esc(x.code)}"><td><span class="rk">${i+1}</span></td><td><b>${esc(x.client)}</b></td><td>${esc(x.seg)}</td><td>${esc(x.g)}</td><td class="r">${x.n}</td><td class="r">${jpill(x.j)}</td><td>${pill(x.cl)}</td><td class="r"><b>${fInt(x.amt)}</b></td><td><span class="bar-in" style="width:${Math.max(3,x.amt/mx*150)}px"></span> <small>${fPct(x.amt/m.impT*100,1)}</small></td></tr>`).join('')}
   <tr class="tot"><td></td><td>TOTAL TOP 12</td><td></td><td></td><td class="r">${sum(t,x=>x.n)}</td><td></td><td></td><td class="r">${fInt(sum(t,x=>x.amt))}</td><td>${fPct(sum(t,x=>x.amt)/m.impT*100,1)} du stock</td></tr>
   </tbody></table></div></div>`; },
-  after:(m,el)=>bindCli(el),
-  ppt:(pp,s,m)=>{ const t=m.impByCli.slice(0,12); pptTable(s,['#','Client','Segment','Lignes','Jours max','Classe','Montant XOF'],t.map((x,i)=>[i+1,x.client,x.seg,x.n,x.j,x.cl||'—',fInt(x.amt)]),{right:[3,4,6],colW:[0.5,4.6,1.6,0.9,1.2,1.0,2.53],pills:(r,i)=>i===5?clsCol(t[r].cl).slice(1).toUpperCase():null}); }});
+  after:(m,el)=>bindCli(el)});
 
 S({id:'cro',k:'Impayés × engagements',t:'Croisement impayés / engagements',ok:m=>m.cro.length>0,html:m=>{ const a=cid();
   const hi=m.cro.filter(r=>r.taux>=50);
@@ -363,8 +353,7 @@ S({id:'cro',k:'Impayés × engagements',t:'Croisement impayés / engagements',ok
       onHover:(e,els)=>{ e.native.target.style.cursor=els.length?'pointer':'default'; },
       plugins:{legend:{position:'top',align:'end'},tooltip:{callbacks:{title:c=>c[0].raw._.client,label:c=>[' Engagements '+fSmart(c.raw._.eng)+' XOF',' Impayés '+fSmart(c.raw._.imp)+' XOF ('+fPct(c.raw._.taux,1)+')',' '+fInt(c.raw._.j)+' j · classe '+c.raw._.cl]}}},
       scales:{x:{type:'logarithmic',grid:{color:gridC},border:{display:false},min:1e5,title:{display:true,text:'Engagements XOF (log. · ≤ 100 000 regroupés à gauche)',font:{weight:'700'}},ticks:{maxRotation:0,callback:v=>{ const l=Math.log10(v); return Math.abs(l-Math.round(l))<1e-9?fSmart(v):''; }}},
-              y:{min:0,max:105,grid:{color:gridC},border:{display:false},title:{display:true,text:'Part en impayé',font:{weight:'700'}},ticks:{callback:v=>v<=100?v+' %':''}}}}}); },
-  ppt:(pp,s,m,img)=>{ img(0,0.5,1.35,12.3,5.7); }});
+              y:{min:0,max:105,grid:{color:gridC},border:{display:false},title:{display:true,text:'Part en impayé',font:{weight:'700'}},ticks:{callback:v=>v<=100?v+' %':''}}}}}); }});
 
 S({id:'deb',k:'Débiteurs',t:'Comptes débiteurs',ok:m=>m.debN>0,html:m=>{ const a=cid();
   const t=m.debTop.slice(0,8);
@@ -379,9 +368,7 @@ S({id:'deb',k:'Débiteurs',t:'Comptes débiteurs',ok:m=>m.debN>0,html:m=>{ const
       ${t.map(x=>`<tr data-cli="${esc(x.code)}"><td style="max-width:290px"><b>${esc(x.client)}</b></td><td class="r">${fInt(x.solde)}</td><td class="r">${x.lim?fInt(x.lim):'<span style="color:#c0392b;font-weight:700">aucune</span>'}</td><td>${pill(x.cl)}</td></tr>`).join('')}</tbody></table></div>
   </div>`; },
   after:(m,el)=>{ const [a]=ids(el); const DAGE=[[0,0],...AGE.map(x=>[x[1],x[2]])];
-    mk(a,barCfg(m.debAge.map(x=>x.l),m.debAge.map(x=>x.amt),m.debAge.map(x=>x.c),{click:i=>drillDeb(r=>r.j>=DAGE[i][0]&&r.j<=DAGE[i][1],'Débiteurs '+m.debAge[i].l),tip:c=>' '+fSmart(c.raw)+' XOF · '+plural(m.debAge[c.dataIndex].n,'compte')})); bindCli(el); },
-  ppt:(pp,s,m,img)=>{ pptKpis(pp,s,[['Solde débiteur',fMds(m.debT),'005C83'],['Sans limite',fMds(m.debNoLimT),'C0392B'],['Dépassements',fMds(m.debOverT),'B67D1C'],['Comptes',fInt(m.debN),'6BA23A']],1.35); img(0,0.5,2.75,6.1,4.2);
-    const t=m.debTop.slice(0,10); pptTable(s,['Client','Solde XOF','Limite','Classe'],t.map(x=>[x.client,fInt(x.solde),x.lim?fInt(x.lim):'aucune',x.cl||'—']),{x:6.75,y:2.75,w:6.1,colW:[2.9,1.4,1.1,0.7],right:[1,2],fs:8.5,rowH:0.34,pills:(r,i)=>i===3?clsCol(t[r].cl).slice(1).toUpperCase():null}); }});
+    mk(a,barCfg(m.debAge.map(x=>x.l),m.debAge.map(x=>x.amt),m.debAge.map(x=>x.c),{click:i=>drillDeb(r=>r.j>=DAGE[i][0]&&r.j<=DAGE[i][1],'Débiteurs '+m.debAge[i].l),tip:c=>' '+fSmart(c.raw)+' XOF · '+plural(m.debAge[c.dataIndex].n,'compte')})); bindCli(el); }});
 
 S({id:'cod',k:'Débiteurs',t:'COD à déclasser',ok:m=>m.codN>0,html:m=>{ const a=cid(), b=cid();
   return `${head('Débiteurs','COD à déclasser',`${plural(m.codN,'compte')} courant débiteur relevant d’une classe dégradée — ancienneté moyenne ${fInt(m.codJ)} jours`)}
@@ -397,8 +384,7 @@ S({id:'cod',k:'Débiteurs',t:'COD à déclasser',ok:m=>m.codN>0,html:m=>{ const 
   after:(m,el)=>{ const [a,b]=ids(el);
     mk(a,donutCfg(m.codCl.map(x=>x.c+' · '+CLS_LIB[x.c]),m.codCl.map(x=>x.n),m.codCl.map(x=>clsCol(x.c)),{t:fInt(m.codN),s:'comptes'},{fmt:v=>plural(v,'compte'),click:i=>drillCod(r=>r.cl===m.codCl[i].c,'COD à déclasser classe '+m.codCl[i].c)}));
     CH[a].options.plugins.legend.position='bottom'; CH[a].update('none');
-    const t=m.codByG.slice(0,10); mk(b,barCfg(t.map(x=>x.g),t.map(x=>x.n),'#005c83',{h:true,fmt:v=>String(v),tip:c=>' '+plural(c.raw,'compte')+' · '+fSmart(t[c.dataIndex].amt)+' XOF',click:i=>drillCod(r=>(r.g||'(non renseigné)')===t[i].g,'COD à déclasser — '+t[i].g)})); CH[b].options.scales.x.ticks.callback=v=>v; CH[b].options.layout.padding.right=40; CH[b].update('none'); },
-  ppt:(pp,s,m,img)=>{ pptKpis(pp,s,[['Solde à déclasser',fMds(m.codT),'C0392B'],['Comptes',fInt(m.codN),'B67D1C'],['Ancienneté moy.',fInt(m.codJ)+' j','005C83']],1.35); img(0,0.5,2.75,6.1,4.2); img(1,6.75,2.75,6.1,4.2); }});
+    const t=m.codByG.slice(0,10); mk(b,barCfg(t.map(x=>x.g),t.map(x=>x.n),'#005c83',{h:true,fmt:v=>String(v),tip:c=>' '+plural(c.raw,'compte')+' · '+fSmart(t[c.dataIndex].amt)+' XOF',click:i=>drillCod(r=>(r.g||'(non renseigné)')===t[i].g,'COD à déclasser — '+t[i].g)})); CH[b].options.scales.x.ticks.callback=v=>v; CH[b].options.layout.padding.right=40; CH[b].update('none'); }});
 
 S({id:'dec',k:'Déclassements',t:'Clients à déclasser',ok:m=>m.decN>0,html:m=>{ const t=m.dec.slice(0,9);
   return `${head('Déclassements','Clients à déclasser',`${plural(m.decN,'client')} · exposition nette ${fMds(m.decExpo)} · provision BCEAO requise ${fMds(m.decProv)}`)}
@@ -415,9 +401,7 @@ S({id:'dec',k:'Déclassements',t:'Clients à déclasser',ok:m=>m.decN>0,html:m=>
       ${kp('Encours contaminé',cnt(m.decEnc,'mds'),'garanties hypo. '+fMds(m.decHyp),'#00415e')}
     </div>
   </div>`; },
-  after:(m,el)=>{ bindCli(el); const mr=el.querySelector('[data-more]'); if(mr) mr.onclick=()=>drillDec(); },
-  ppt:(pp,s,m)=>{ const t=m.dec.slice(0,14); pptTable(s,['Client','Motif','Jours','Classe','Expo nette','Provision'],t.map(x=>[x.client,x.motif,x.j,x.cl,fInt(x.expo),fInt(x.prov)]),{colW:[3.3,4.4,0.8,0.9,1.5,1.43],right:[2,4,5],fs:8.5,rowH:0.33,pills:(r,i)=>i===3?clsCol(t[r].cl).slice(1).toUpperCase():null});
-    s.addText('Provision BCEAO requise : '+fInt(m.decProv)+' XOF  ·  exposition nette '+fInt(m.decExpo)+' XOF',{x:0.5,y:6.7,w:12.3,h:0.4,fontSize:12,bold:true,color:PX.NV,fontFace:'Segoe UI'}); }});
+  after:(m,el)=>{ bindCli(el); const mr=el.querySelector('[data-more]'); if(mr) mr.onclick=()=>drillDec(); }});
 
 S({id:'dou',k:'Douteux',t:'Douteux 292 — besoin de provision',ok:m=>m.douN>0,html:m=>{ const a=cid(), t=m.douTop.slice(0,8);
   return `${head('Douteux','Douteux 292 — besoin de provision',`${plural(m.douN,'dossier')} · encours ${fMds(m.douEnc)} · couverture actuelle ${fPct(m.douCov,1)}`)}
@@ -430,9 +414,7 @@ S({id:'dou',k:'Douteux',t:'Douteux 292 — besoin de provision',ok:m=>m.douN>0,h
     <div class="card rv" style="grid-column:3/5;--i:5;overflow:hidden"><table class="tb" style="font-size:14px"><thead><tr><th>Client</th><th class="r">Encours</th><th class="r">Complément</th></tr></thead><tbody>
       ${t.map(x=>`<tr data-cli="${esc(x.code)}"><td style="max-width:330px"><b>${esc(x.client)}</b></td><td class="r">${fInt(x.enc)}</td><td class="r"><b style="color:#c0392b">${fInt(x.compl)}</b></td></tr>`).join('')}</tbody></table></div>
   </div>`; },
-  after:(m,el)=>{ const [a]=ids(el); mk(a,barCfg(['Encours','Provision requise','Provision locale','Complément'],[m.douEnc,m.douReq,m.douPloc,m.douCompl],['#00415e','#1a86b3','#6ba23a','#c0392b'],{thick:120,click:i=>i===3&&drillDou()})); bindCli(el); },
-  ppt:(pp,s,m,img)=>{ pptKpis(pp,s,[['Encours douteux',fMds(m.douEnc),'00415E'],['Provision locale',fMds(m.douPloc),'6BA23A'],['Gar. hypo.',fMds(m.douHyp),'1A86B3'],['Complément',fMds(m.douCompl),'C0392B']],1.35); img(0,0.5,2.75,6.1,4.2);
-    const t=m.douTop.slice(0,10); pptTable(s,['Client','Encours','Complément'],t.map(x=>[x.client,fInt(x.enc),fInt(x.compl)]),{x:6.75,y:2.75,w:6.1,colW:[3.1,1.5,1.5],right:[1,2],fs:8.5,rowH:0.34}); }});
+  after:(m,el)=>{ const [a]=ids(el); mk(a,barCfg(['Encours','Provision requise','Provision locale','Complément'],[m.douEnc,m.douReq,m.douPloc,m.douCompl],['#00415e','#1a86b3','#6ba23a','#c0392b'],{thick:120,click:i=>i===3&&drillDou()})); bindCli(el); }});
 
 S({id:'gest',k:'Gestionnaires',t:'Mobilisation des gestionnaires',ok:m=>m.impByG.length>0,html:m=>{ const a=cid();
   const t=m.impByG.slice(0,12);
@@ -445,8 +427,7 @@ S({id:'gest',k:'Gestionnaires',t:'Mobilisation des gestionnaires',ok:m=>m.impByG
   after:(m,el)=>{ const [a]=ids(el); const t=m.impByG.slice(0,12);
     const go=i=>drillImp(r=>(r.g||'(non renseigné)')===t[i].g,'Impayés — '+t[i].g);
     mk(a,barCfg(t.map(x=>x.g),t.map(x=>x.amt),t.map(x=>x.n90?'#c0392b':'#005c83'),{h:true,click:go,tip:c=>[' '+fSmart(c.raw)+' XOF',' '+plural(t[c.dataIndex].n,'ligne')+' · '+t[c.dataIndex].n90+' > 90 j']}));
-    el.querySelectorAll('tr[data-g]').forEach(tr=>tr.onclick=()=>go(+tr.dataset.g)); },
-  ppt:(pp,s,m,img)=>{ img(0,0.5,1.35,8.0,5.6); const t=m.impByG.slice(0,12); pptTable(s,['Gestionnaire','Lignes','> 90 j'],t.map(x=>[x.g,x.n,x.n90]),{x:8.7,y:1.35,w:4.15,colW:[2.75,0.7,0.7],right:[1,2],fs:8.5,rowH:0.36}); }});
+    el.querySelectorAll('tr[data-g]').forEach(tr=>tr.onclick=()=>go(+tr.dataset.g)); }});
 
 S({id:'read',k:'Synthèse',t:'Constats & actions proposées',html:m=>{ const L=lecture(m);
   return `${head('Synthèse','Constats & actions proposées','Lecture rédigée générée à partir des chiffres du fichier')}
@@ -454,12 +435,7 @@ S({id:'read',k:'Synthèse',t:'Constats & actions proposées',html:m=>{ const L=l
     <div class="ins">${L.c.map((t,i)=>`<div class="in rv" style="--i:${i};--c:${['#00415e','#005c83','#1a86b3','#c0392b','#b67d1c','#6ba23a'][i%6]}"><i>${i+1}</i><div>${t}</div></div>`).join('')}</div>
     <div class="card rv" style="--i:3;background:linear-gradient(160deg,#fff,#f3f9ec)"><div class="cb"><h3 style="font-size:22px">Actions proposées</h3>
       <div class="ins" style="margin-top:16px">${L.a.map((t,i)=>`<div class="in rv" style="--i:${i+4};--c:#8cc63f;box-shadow:none"><i style="color:#10300a">✓</i><div>${t}</div></div>`).join('')}</div></div></div>
-  </div>`; },
-  ppt:(pp,s,m)=>{ const L=lecture(m), tx=h=>h.replace(/<[^>]+>/g,'');
-    s.addText(L.c.map(t=>({text:tx(t),options:{bullet:{code:'25A0'},breakLine:true}})),{x:0.5,y:1.4,w:7.2,h:5.6,fontSize:13,color:PX.INK,fontFace:'Segoe UI',paraSpaceAfter:8,valign:'top'});
-    s.addShape(pp.ShapeType.roundRect,{x:7.95,y:1.4,w:4.9,h:5.6,fill:{color:'F3F9EC'},line:{color:'CFE0E7'},rectRadius:0.12});
-    s.addText('Actions proposées',{x:8.15,y:1.5,w:4.5,h:0.45,fontSize:16,bold:true,color:PX.NV,fontFace:'Segoe UI'});
-    s.addText(L.a.map(t=>({text:tx(t),options:{bullet:{code:'2713'},breakLine:true}})),{x:8.15,y:2.0,w:4.5,h:4.9,fontSize:12,color:PX.INK,fontFace:'Segoe UI',paraSpaceAfter:8,valign:'top'}); }});
+  </div>`; }});
 
 S({id:'end',dark:true,k:'Clôture',t:'Merci',html:m=>`
   <div class="disc" style="width:900px;height:900px;left:-300px;bottom:-480px;background:rgba(140,198,63,.12)"></div>
@@ -597,42 +573,273 @@ function search(){ $('#modal').innerHTML=`<div class="dh"><small>Recherche</smal
     out.querySelectorAll('tr[data-cli]').forEach(tr=>tr.onclick=()=>{ closeAll(); openCli(tr.dataset.cli); }); };
   q.oninput=run; run(); $('#modal').querySelector('.x').onclick=closeAll; $('#modal').classList.add('on'); $('#ov').classList.add('on'); setTimeout(()=>q.focus(),50); }
 
-/* ---------- export PowerPoint ---------- */
+/* =====================================================================
+   EXPORT POWERPOINT INTERACTIF
+   - graphiques NATIFS PowerPoint (valeurs au survol, données éditables dans Excel)
+   - sommaire et barre de navigation cliquables (◀ ⌂ ▶) sur chaque diapositive
+   - approfondissement : classes, groupes et fiches clients en annexe, avec « Retour »
+   - animations d'entrée en cascade, transitions, notes du présentateur
+   Les liens et animations sont ajoutés par post-traitement XML (JSZip).
+   ===================================================================== */
+const PF='Segoe UI';
+const hx=c=>String(c).replace('#','').toUpperCase();
+const cut=(t,n)=>{ t=String(t==null?'':t); return t.length>n?t.slice(0,n-1)+'…':t; };
+const unitOf=mx=>mx>=5e9?{d:1e9,l:'Mds XOF',f:'#,##0.00'}:{d:1e6,l:'M XOF',f:'#,##0.0'};
+const CHB={fontFace:PF,catAxisLabelColor:'3E5C6B',valAxisLabelColor:'6E8794',catAxisLabelFontSize:10,valAxisLabelFontSize:9,catAxisLabelFontFace:PF,valAxisLabelFontFace:PF,
+  valGridLine:{color:'E3EDF2',size:0.75},catGridLine:{style:'none'},catAxisLineShow:false,valAxisLineShow:false,showValue:true,dataLabelFontSize:9,dataLabelColor:'00415E',
+  dataLabelFontBold:true,dataLabelFontFace:PF,showLegend:false,barGapWidthPct:55};
+
 function pptKpiBox(pp,s,x,y,w,k){ s.addShape(pp.ShapeType.roundRect,{x,y,w,h:1.3,fill:{color:'FFFFFF'},line:{color:'CFE0E7',width:1},rectRadius:0.1,shadow:{type:'outer',blur:3,offset:1.5,angle:90,color:'00415E',opacity:0.12}});
   s.addShape(pp.ShapeType.rect,{x,y:y+0.14,w:0.07,h:1.02,fill:{color:k[3]}});
-  s.addText(k[0].toUpperCase(),{x:x+0.2,y:y+0.08,w:w-0.3,h:0.28,fontSize:8.5,bold:true,color:PX.MU,fontFace:'Segoe UI'});
-  s.addText(k[1],{x:x+0.2,y:y+0.36,w:w-0.3,h:0.5,fontSize:20,bold:true,color:k[3],fontFace:'Consolas'});
-  s.addText(k[2],{x:x+0.2,y:y+0.88,w:w-0.3,h:0.3,fontSize:9,color:PX.MU,fontFace:'Segoe UI',fit:'shrink'}); }
+  s.addText(String(k[0]).toUpperCase(),{x:x+0.2,y:y+0.08,w:w-0.3,h:0.28,fontSize:8.5,bold:true,color:PX.MU,fontFace:PF});
+  s.addText(String(k[1]),{x:x+0.2,y:y+0.36,w:w-0.3,h:0.5,fontSize:20,bold:true,color:k[3],fontFace:'Consolas'});
+  if(k[2]) s.addText(String(k[2]),{x:x+0.2,y:y+0.88,w:w-0.3,h:0.3,fontSize:9,color:PX.MU,fontFace:PF,fit:'shrink'}); }
+
+/* contexte de construction d'une diapositive */
+function pptCtx(pp,s,num){
+  const X={pp,s,
+    link(x,y,w,h,key){ s.addText(' ',{x,y,w,h,fill:{color:'FFFFFF',transparency:100},line:{color:'FFFFFF',transparency:100},objectName:'LNK|'+key}); },
+    btn(x,y,w,label,key,o={}){ const h=o.h||0.34;
+      s.addText(label,{x,y,w,h,shape:pp.ShapeType.roundRect,rectRadius:0.08,fill:{color:o.fill||'FFFFFF'},line:{color:o.line||'1A86B3',width:1},fontSize:o.fs||9.5,bold:true,
+        color:o.color||PX.NV,align:'center',valign:'middle',fontFace:PF,margin:0,objectName:'LNK|'+key,shadow:{type:'outer',blur:2,offset:1,angle:90,color:'00415E',opacity:0.15}}); },
+    card(x,y,w,h,title,sub){ s.addShape(pp.ShapeType.roundRect,{x,y,w,h,fill:{color:'FFFFFF'},line:{color:'CFE0E7',width:1},rectRadius:0.08,shadow:{type:'outer',blur:4,offset:2,angle:90,color:'00415E',opacity:0.13}});
+      s.addShape(pp.ShapeType.rect,{x,y:y+0.12,w:0.06,h:0.3,fill:{color:PX.LM}});
+      if(title) s.addText([{text:title,options:{bold:true,color:PX.NV,fontSize:12}},...(sub?[{text:'   '+sub,options:{color:'6E8794',fontSize:9}}]:[])],{x:x+0.15,y:y+0.06,w:w-0.3,h:0.42,fontFace:PF,valign:'middle'}); },
+    bar(x,y,w,h,labels,vals,cols,o={}){ const u=o.unit||unitOf(Math.max(...vals,0)); const horiz=!!o.h;
+      s.addChart(pp.ChartType.bar,[{name:o.name||u.l,labels:labels.map(l=>cut(l,horiz?34:22)),values:vals.map(v=>o.raw?v:+(v/u.d).toFixed(3))}],
+        Object.assign({},CHB,{x,y,w,h,barDir:horiz?'bar':'col',chartColors:(Array.isArray(cols)?cols:[cols]).map(hx),dataLabelFormatCode:o.raw?(o.fmt||'#,##0'):u.f,
+          valAxisLabelFormatCode:o.raw?(o.fmt||'#,##0'):u.f,catAxisOrientation:horiz?'maxMin':'minMax',valAxisHidden:horiz,valGridLine:horiz?{style:'none'}:CHB.valGridLine,
+          dataLabelPosition:'outEnd',showValAxisTitle:!horiz,valAxisTitle:o.raw?(o.axis||''):u.l,valAxisTitleFontSize:9,valAxisTitleColor:'6E8794'},o.opt||{})); },
+    donut(x,y,w,h,labels,vals,cols,o={}){
+      s.addChart(pp.ChartType.doughnut,[{name:o.name||'Répartition',labels,values:vals}],{x,y,w,h,holeSize:58,chartColors:cols.map(hx),showPercent:true,showValue:false,showLegend:true,legendPos:'r',
+        legendFontSize:10,legendFontFace:PF,legendColor:'12333F',dataLabelColor:'FFFFFF',dataLabelFontSize:9,dataLabelFontBold:true,dataLabelFormatCode:'0.0%',fontFace:PF}); },
+    notes(t){ if(t) s.addNotes(String(t).replace(/<[^>]+>/g,'')); }
+  };
+  return X;
+}
+
+/* tableau + zones cliquables par ligne (hauteur de ligne fixe, libellés tronqués pour éviter tout retour à la ligne) */
+function pptTableLinked(X,head,rows,o){ const rowH=o.rowH||0.3, y=o.y||1.35;
+  pptTable(X.s,head,rows,Object.assign({rowH,y},o));
+  if(o.links) o.links.forEach((k,i)=>{ if(k) X.link(o.x||0.5,y+rowH*(i+1),o.w||12.33,rowH,k); }); }
+
+/* ---------- construction ---------- */
 async function exportPptx(){ const P=window.PptxGenJS; if(!P){ toast('Moteur PowerPoint indisponible'); return; }
-  busy(true,'Construction du PowerPoint…','Capture des graphiques et mise en page'); await tick();
-  try{ const badge=await g3LogoBadge(); const pp=new P(); pp.layout='LAYOUT_WIDE'; pp.title='PDO Monitor — '+M.date; pp.company='Ecobank Sénégal';
-    const foot='PDO Monitor · arrêté au '+M.date+' · '+segLbl()+' · Ecobank Sénégal · INTERNAL USE ONLY'; let n=0;
-    for(const sd of VIS){
-      if(sd.id==='cover'){ const s=pp.addSlide(); s.background={color:PX.NV};
+  busy(true,'Construction du PowerPoint interactif…','Graphiques natifs, liens et animations'); await tick();
+  try{
+    const m=M, badge=await g3LogoBadge(), pp=new P(); pp.layout='LAYOUT_WIDE'; pp.title='PDO Monitor — '+m.date; pp.company='Ecobank Sénégal'; pp.author='Direction des Engagements';
+    const foot='PDO Monitor · arrêté au '+m.date+' · '+segLbl()+' · INTERNAL USE ONLY';
+    const LC=lecture(m), noteFor=re=>(LC.c.find(t=>re.test(t))||'');
+    /* 1. plan : diapositives principales puis annexes */
+    const main=VIS.filter(s=>s.id!=='end').map(s=>s.id);
+    const ann=[];
+    const clsA=m.hasA7?m.byCl.map(x=>x.c):[]; clsA.forEach(c=>ann.push('cls:'+c));
+    const grpA=m.hasA7?m.top10.slice(0,5).map(g=>g.k):[]; grpA.forEach((g,i)=>ann.push('grp:'+i));
+    const fiche=[], from={}; const addF=(code,src)=>{ if(code&&IDX[code]&&!fiche.includes(code)){ fiche.push(code); from[code]=src; } };
+    if(main.includes('imptop')) m.impByCli.slice(0,12).forEach(x=>addF(x.code,'imptop'));
+    if(main.includes('dec')) m.dec.slice(0,14).forEach(x=>addF(x.code,'dec'));
+    if(main.includes('dou')) m.douTop.slice(0,10).forEach(x=>addF(x.code,'dou'));
+    if(main.includes('deb')) m.debTop.slice(0,10).forEach(x=>addF(x.code,'deb'));
+    fiche.forEach(c=>ann.push('cli:'+c));
+    const plan=[...main,'end',...(ann.length?['annex',...ann]:[])];
+    const NUM={}; plan.forEach((k,i)=>NUM[k]=i+1);
+    const has=k=>NUM[k]!=null;
+    const back={}; clsA.forEach(c=>back['cls:'+c]='npl'); grpA.forEach((g,i)=>back['grp:'+i]='conc'); fiche.forEach(c=>back['cli:'+c]=from[c]);
+    const cliLink=code=>has('cli:'+code)?'cli:'+code:null;
+    const navBar=(X,key)=>{ const i=NUM[key]; const y=7.225;
+      if(has('agenda')&&key!=='agenda') X.btn(9.55,y,1.05,'⌂ Sommaire','agenda',{h:0.25,fs:8});
+      if(i>1) X.btn(10.7,y,0.45,'◀','#'+(i-1),{h:0.25,fs:8});
+      if(i<plan.length) X.btn(11.25,y,0.45,'▶','#'+(i+1),{h:0.25,fs:8}); };
+    const band=(key,t,st)=>{ const s=pp.addSlide(); pptBand(pp,s,t,st,foot,NUM[key],badge); const X=pptCtx(pp,s); navBar(X,key);
+      if(back[key]) X.btn(8.15,7.225,1.3,'↩ Retour','#'+NUM[back[key]],{h:0.25,fs:8,fill:'E6F2D0',line:'6BA23A'}); return X; };
+    const BUILD={
+      cover(){ const s=pp.addSlide(); s.background={color:PX.NV}; const X=pptCtx(pp,s);
         s.addShape(pp.ShapeType.ellipse,{x:8.6,y:-2.2,w:7,h:7,fill:{color:PX.LM,transparency:86},line:{color:PX.LM,transparency:100}});
         s.addShape(pp.ShapeType.ellipse,{x:10.4,y:3.6,w:4.6,h:4.6,fill:{color:'1A86B3',transparency:80},line:{color:'1A86B3',transparency:100}});
         if(badge) s.addImage({data:badge,x:0.7,y:0.7,w:3.1,h:1.13});
-        s.addText('PDO Monitor',{x:0.7,y:2.4,w:10,h:1.0,fontSize:44,bold:true,color:'FFFFFF',fontFace:'Segoe UI'});
-        s.addShape(pp.ShapeType.rect,{x:0.72,y:3.45,w:1.4,h:0.07,fill:{color:PX.LM}});
-        s.addText('Revue du risque de crédit — arrêté au '+M.date,{x:0.7,y:3.65,w:11,h:0.5,fontSize:20,color:PX.L2,fontFace:'Segoe UI'});
-        const h=[]; if(M.hasA7){ h.push(['Encours crédit',fMds(M.enc)],['Ratio NPL',fPct(M.npl)]); } h.push(['Impayés',fMds(M.impT)],['Clients à déclasser',fInt(M.decN)]);
-        h.forEach((k,i)=>{ const x=0.7+i*3.05; s.addShape(pp.ShapeType.roundRect,{x,y:4.7,w:2.85,h:1.2,fill:{color:'FFFFFF',transparency:90},line:{color:'FFFFFF',transparency:75},rectRadius:0.12});
-          s.addText(k[0].toUpperCase(),{x:x+0.2,y:4.8,w:2.5,h:0.3,fontSize:9,bold:true,color:'A9CDE0',fontFace:'Segoe UI'}); s.addText(k[1],{x:x+0.2,y:5.1,w:2.6,h:0.6,fontSize:24,bold:true,color:i===1&&M.hasA7?PX.L2:'FFFFFF',fontFace:'Segoe UI'}); });
-        s.addText('Ecobank Sénégal · Direction des Engagements · '+segLbl(),{x:0.7,y:6.6,w:11,h:0.4,fontSize:11,color:'9FC3D8',fontFace:'Segoe UI'}); continue; }
-      if(sd.id==='end'){ const s=pp.addSlide(); s.background={color:PX.NV}; if(badge) s.addImage({data:badge,x:5.1,y:2.2,w:3.1,h:1.13});
-        s.addText('Merci',{x:0,y:3.6,w:13.33,h:0.8,fontSize:36,bold:true,color:'FFFFFF',align:'center',fontFace:'Segoe UI'});
-        s.addText('PDO Monitor · Ecobank Sénégal · INTERNAL USE ONLY',{x:0,y:4.5,w:13.33,h:0.5,fontSize:14,color:'CFE0EE',align:'center',fontFace:'Segoe UI'}); continue; }
-      if(!sd.ppt) continue;
-      const s=pp.addSlide(); pptBand(pp,s,sd.t,sd.k+' · '+segLbl(),foot,++n,badge);
-      const cs=[...sd.el.querySelectorAll('canvas')].map(c=>CH[c.id]).filter(Boolean);
-      const img=(k,x,y,w,h)=>{ const ch=cs[k]; if(!ch) return; ch.stop(); ch.update('none'); const r=ch.canvas.width/ch.canvas.height; let W=w,H=w/r; if(H>h){ H=h; W=h*r; }
-        s.addShape(pp.ShapeType.roundRect,{x,y,w,h,fill:{color:'FFFFFF'},line:{color:'CFE0E7',width:1},rectRadius:0.08,shadow:{type:'outer',blur:4,offset:2,angle:90,color:'00415E',opacity:0.15}});
-        s.addImage({data:ch.toBase64Image('image/png',1),x:x+(w-W)/2,y:y+(h-H)/2,w:W*0.96,h:H*0.96}); };
-      sd.ppt(pp,s,M,img); }
-    await pp.writeFile({fileName:'ECOBANK_PDO_Slides_'+(M.date||'').split('/').reverse().join('-')+(SEG!=='ALL'?'_'+SEG:'')+'.pptx'});
-    toast('✅ PowerPoint exporté'); }
+        s.addText('REVUE DU RISQUE DE CRÉDIT · '+segLbl().toUpperCase(),{x:0.7,y:2.15,w:10,h:0.4,fontSize:13,bold:true,color:PX.L2,charSpacing:4,fontFace:PF});
+        s.addText([{text:'PDO ',options:{color:'FFFFFF'}},{text:'Monitor',options:{color:PX.L2}}],{x:0.7,y:2.55,w:10,h:1.1,fontSize:54,bold:true,fontFace:PF});
+        s.addShape(pp.ShapeType.rect,{x:0.72,y:3.7,w:1.4,h:0.07,fill:{color:PX.LM}});
+        s.addText('Arrêté au '+m.date+' · Comité des Risques',{x:0.7,y:3.9,w:11,h:0.5,fontSize:20,color:'D6E8F1',fontFace:PF});
+        const h=[]; if(m.hasA7){ h.push(['Encours crédit',fMds(m.enc),'npl'],['Ratio NPL',fPct(m.npl),'npl']); } h.push(['Impayés',fMds(m.impT),'imp'],['Clients à déclasser',fInt(m.decN),'dec']);
+        h.forEach((k,i)=>{ const x=0.7+i*3.05; s.addShape(pp.ShapeType.roundRect,{x,y:4.75,w:2.85,h:1.2,fill:{color:'FFFFFF',transparency:90},line:{color:'FFFFFF',transparency:75},rectRadius:0.12});
+          s.addText(k[0].toUpperCase(),{x:x+0.2,y:4.85,w:2.5,h:0.3,fontSize:9,bold:true,color:'A9CDE0',fontFace:PF});
+          s.addText(k[1],{x:x+0.2,y:5.15,w:2.6,h:0.6,fontSize:24,bold:true,color:i===1&&m.hasA7?PX.L2:'FFFFFF',fontFace:PF}); if(has(k[2])) X.link(x,4.75,2.85,1.2,k[2]); });
+        if(has('agenda')) X.btn(0.7,6.35,2.4,'Commencer  ▶','agenda',{fill:PX.LM,line:PX.LM,color:'10300A',h:0.45,fs:12});
+        s.addText('Ecobank Sénégal · Direction des Engagements · Source : '+D.file,{x:3.3,y:6.38,w:9.5,h:0.4,fontSize:10,color:'9FC3D8',fontFace:PF});
+        X.notes('PDO Monitor, arrêté au '+m.date+'. '+LC.c.slice(0,2).join(' ')); },
+      agenda(){ const X=band('agenda','Au programme','Cliquez une rubrique pour y aller — ⌂ Sommaire ramène ici depuis chaque diapositive');
+        const items=main.filter(k=>!['cover','agenda'].includes(k)); const cols=3, w=3.95, h=0.78, gx=0.2, gy=0.16;
+        items.forEach((k,i)=>{ const sd=SL.find(s=>s.id===k), x=0.5+(i%cols)*(w+gx), y=1.4+Math.floor(i/cols)*(h+gy), col=i%2?PX.GR:PX.BL;
+          X.s.addShape(pp.ShapeType.roundRect,{x,y,w,h,fill:{color:'FFFFFF'},line:{color:'CFE0E7',width:1},rectRadius:0.1,shadow:{type:'outer',blur:3,offset:1.5,angle:90,color:'00415E',opacity:0.12}});
+          X.s.addText(String(i+1).padStart(2,'0'),{x:x+0.12,y,w:0.75,h,fontSize:22,bold:true,color:col,fontFace:PF,valign:'middle'});
+          X.s.addText([{text:sd.t,options:{bold:true,color:PX.NV,fontSize:13,breakLine:true}},{text:sd.k+'  ▸',options:{color:'6E8794',fontSize:9}}],{x:x+0.85,y,w:w-0.95,h,fontFace:PF,valign:'middle'});
+          X.link(x,y,w,h,k); });
+        if(ann.length) X.btn(0.5,6.6,3.2,'Annexes : détails & fiches clients  ▸','annex',{h:0.38}); },
+      kpi(){ const X=band('kpi','Les indicateurs clés','Vue d’ensemble · '+segLbl());
+        if(m.seg==='ALL'&&D.tiles.length){ const t=D.tiles.slice(0,12); for(let r=0;r<3;r++) pptKpis(pp,X.s,t.slice(r*4,r*4+4).map((x,i)=>[x.l,x.v,['00415E','005C83','1A86B3','6BA23A'][i]]),1.5+r*1.75); }
+        else { pptKpis(pp,X.s,[['Encours crédit',fMds(m.enc),'00415E'],['Créances NP',fMds(m.np),'C0392B'],['Impayés',fMds(m.impT),'005C83'],['Solde débiteur',fMds(m.debT),'1A86B3']],1.6);
+          pptKpis(pp,X.s,[['COD à déclasser',fMds(m.codT),'B67D1C'],['Clients à déclasser',fInt(m.decN),'E07B39'],['Provision BCEAO',fMds(m.decProv),'6BA23A'],['Complément douteux',fMds(m.douCompl),'C0392B']],3.4); }
+        X.notes(LC.c.join('\n')); },
+      npl(){ const X=band('npl','Ratio NPL & classification','Encours '+fMds(m.enc)+' · exclusions BCEAO symétriques (OA, LGMO, LTB, CC, CKU, LCU, segment 8110)');
+        pptKpis(pp,X.s,[['Ratio NPL',fPct(m.npl),'C0392B'],['Encours',fMds(m.enc),'00415E'],['Créances NP',fMds(m.np),'C0392B'],['Provisions régl.',fMds(m.ploc),'6BA23A']],1.3);
+        X.card(0.5,2.6,7.4,4.5,'Encours par classe','survolez les barres · cliquez une classe ci-dessous pour le détail');
+        X.bar(0.6,3.05,7.2,3.45,m.byCl.map(x=>x.c),m.byCl.map(x=>x.amt),m.byCl.map(x=>clsCol(x.c)));
+        m.byCl.forEach((x,i)=>X.btn(0.65+i*1.2,6.6,1.12,'Classe '+x.c+' ▸','cls:'+x.c,{h:0.32,fs:8.5,fill:hx(clsCol(x.c)),line:hx(clsCol(x.c)),color:'FFFFFF'}));
+        X.card(8.1,2.6,4.73,4.5,'Stades IFRS9','part de l’encours');
+        X.donut(8.2,3.05,4.55,3.9,m.bySt.map(x=>'Stade '+x.s),m.bySt.map(x=>x.amt),['4E8A2E','D4A13A','C0392B']);
+        X.notes(noteFor(/ratio NPL/)); },
+      seg(){ const X=band('seg','Lecture par segment','Corporate, Commercial, Consumer — encours, ratio NPL et impayés');
+        pptTable(X.s,['Segment','Clients','Encours XOF','Créances NP','Ratio NPL','Impayés XOF','Lignes'],m.bySeg.map(x=>[x.s,fInt(x.ncli),fInt(x.enc),fInt(x.np),fPct(x.npl),fInt(x.imp),fInt(x.nimp)]),{right:[1,2,3,4,5,6],y:1.3,pills:(r,i)=>i===0?hx(SEG_COL[m.bySeg[r].s]):null});
+        X.card(0.5,2.85,6.1,4.25,'Encours par segment','part de l’encours');
+        X.donut(0.6,3.3,5.9,3.7,m.bySeg.map(x=>x.s),m.bySeg.map(x=>x.enc),m.bySeg.map(x=>SEG_COL[x.s]));
+        X.card(6.75,2.85,6.08,4.25,'Ratio NPL par segment','% de l’encours');
+        X.bar(6.85,3.3,5.9,3.7,m.bySeg.map(x=>x.s),m.bySeg.map(x=>x.npl/100),m.bySeg.map(x=>SEG_COL[x.s]),{raw:true,fmt:'0.00%',axis:'Ratio NPL',name:'Ratio NPL'}); },
+      conc(){ const X=band('conc','Les 10 premières expositions','Par groupe (ou client hors groupe) · base crédit du ratio NPL'); const t1=m.groups[0];
+        X.card(0.5,1.3,8.6,5.8,'Top 10 groupes','encours · survolez les barres');
+        X.bar(0.6,1.75,8.4,5.25,m.top10.map(g=>g.k),m.top10.map(g=>g.amt),m.top10.map((g,i)=>i===0?'00415E':g.np>0?'C0392B':'1A86B3'),{h:true});
+        [['Poids du top 10',fPct(m.top10Sh,1),fMds(sum(m.top10,g=>g.amt))+' sur '+fMds(m.enc),'00415E'],['1re exposition',fPct(m.enc?t1.amt/m.enc*100:0,1),cut(t1.k,40),'005C83']].forEach((k,i)=>pptKpiBox(pp,X.s,9.35,1.3+i*1.45,3.5,k));
+        X.s.addText('CONTRATS DÉTAILLÉS',{x:9.35,y:4.25,w:3.5,h:0.3,fontSize:9,bold:true,color:PX.MU,fontFace:PF});
+        grpA.forEach((g,i)=>X.btn(9.35,4.6+i*0.47,3.5,cut(g,30)+'  ▸','grp:'+i,{h:0.38,fs:9}));
+        X.notes(noteFor(/premières expositions/)); },
+      imp(){ const X=band('imp','Anatomie des impayés',plural(m.impN,'ligne')+' · '+plural(m.impCli,'client')+' · ancienneté max '+fInt(m.impMaxJ)+' j');
+        pptKpis(pp,X.s,[['Total impayés',fMds(m.impT),'005C83'],['> 90 jours',fMds(m.imp90T),'C0392B'],['1er débiteur',fPct(m.impTop1Sh,1),'00415E'],['Lignes',fInt(m.impN),'6BA23A']],1.3);
+        X.card(0.5,2.6,6.1,4.5,'Par ancienneté','montant'); X.bar(0.6,3.05,5.9,3.95,m.impAge.map(x=>x.l),m.impAge.map(x=>x.amt),m.impAge.map(x=>x.c));
+        X.card(6.75,2.6,6.08,4.5,'Par classe','montant'); X.donut(6.85,3.05,5.9,3.95,m.impCl.map(x=>x.c+' · '+CLS_LIB[x.c]),m.impCl.map(x=>x.amt),m.impCl.map(x=>clsCol(x.c)));
+        if(has('imptop')) X.btn(10.55,2.67,2.15,'Top 12 impayés  ▸','imptop',{h:0.3,fs:9});
+        X.notes(noteFor(/impayés totalisent/)); },
+      imptop(){ const X=band('imptop','Les 12 premiers impayés','Consolidés par client · cliquez une ligne pour ouvrir la fiche client'); const t=m.impByCli.slice(0,12);
+        pptTableLinked(X,['#','Client','Segment','Lignes','Jours max','Classe','Montant XOF','Fiche'],t.map((x,i)=>[i+1,cut(x.client,40),x.seg,x.n,x.j,x.cl||'—',fInt(x.amt),'Voir ▸']),
+          {right:[3,4,6],colW:[0.45,4.4,1.5,0.85,1.1,0.95,2.0,1.08],rowH:0.36,fs:10,pills:(r,i)=>i===5?hx(clsCol(t[r].cl)):i===7?'1A86B3':null,links:t.map(x=>cliLink(x.code))}); },
+      cro(){ const X=band('cro','Croisement impayés / engagements','Chaque bulle est un client : engagements (échelle log.) × part en impayé · taille = montant impayé');
+        const pts=m.cro.filter(r=>r.eng>0).sort((a,b)=>b.imp-a.imp).slice(0,400); const cls=[...new Set(pts.map(r=>r.cl||'—'))].sort((a,b)=>clsRank(a)-clsRank(b));
+        const xs=pts.map(r=>Math.max(1e5,r.eng)/1e6);
+        const data=[{name:'Engagements (M XOF)',values:xs},...cls.map(c=>({name:c+' · '+(CLS_LIB[c]||''),values:pts.map(r=>(r.cl||'—')===c?+Math.min(100,r.taux).toFixed(1):null),sizes:pts.map(r=>(r.cl||'—')===c?Math.max(0.05,r.imp/1e6):null)}))];
+        X.card(0.5,1.3,9.0,5.8,'Carte des clients en impayé','400 plus gros impayés · survolez une bulle');
+        X.s.addChart(pp.ChartType.bubble,data,{x:0.6,y:1.75,w:8.8,h:5.25,chartColors:cls.map(c=>hx(clsCol(c))),fontFace:PF,showLegend:true,legendPos:'t',legendFontSize:9,
+          valAxisMinVal:0,valAxisMaxVal:110,valAxisLabelFormatCode:'0"%"',showValAxisTitle:true,valAxisTitle:'Part en impayé',valAxisTitleFontSize:9,showCatAxisTitle:true,catAxisTitle:'Engagements M XOF (log.)',catAxisTitleFontSize:9,
+          catAxisLabelFormatCode:'#,##0',valGridLine:{color:'E3EDF2',size:0.75},catAxisLabelFontSize:9,valAxisLabelFontSize:9,dataLabelFontSize:8,showValue:false,objectName:'BUBBLE'});
+        const hi=m.cro.filter(r=>r.taux>=50);
+        [['Clients croisés',fInt(m.cro.length),'en impayé ce jour','005C83'],['Engagements concernés',fMds(sum(m.cro,r=>r.eng)),'impayés '+fMds(sum(m.cro,r=>r.imp)),'00415E'],['Impayé ≥ 50 % de l’engagement',fInt(hi.length),fMds(sum(hi,r=>r.imp))+' en jeu','C0392B']].forEach((k,i)=>pptKpiBox(pp,X.s,9.7,1.3+i*1.5,3.15,k)); },
+      deb(){ const X=band('deb','Comptes débiteurs',plural(m.debN,'compte')+' · '+fMds(m.debT)+' de solde débiteur');
+        pptKpis(pp,X.s,[['Solde débiteur',fMds(m.debT),'005C83'],['Sans limite',fMds(m.debNoLimT),'C0392B'],['Dépassements',fMds(m.debOverT),'B67D1C'],['Comptes NP',fMds(sum(m.debNP,r=>r.solde)),'7B1E16']],1.3);
+        X.card(0.5,2.6,6.1,4.5,'Solde par ancienneté','survolez les barres'); X.bar(0.6,3.05,5.9,3.95,m.debAge.map(x=>x.l),m.debAge.map(x=>x.amt),m.debAge.map(x=>x.c));
+        const t=m.debTop.slice(0,10); pptTableLinked(X,['Client','Solde XOF','Limite','Cl.'],t.map(x=>[cut(x.client,30),fInt(x.solde),x.lim?fInt(x.lim):'aucune',x.cl||'—']),
+          {x:6.75,y:2.6,w:6.08,colW:[2.88,1.35,1.2,0.65],right:[1,2],fs:8.5,rowH:0.4,pills:(r,i)=>i===3?hx(clsCol(t[r].cl)):null,links:t.map(x=>cliLink(x.code))});
+        X.notes(noteFor(/solde débiteur/)); },
+      cod(){ const X=band('cod','COD à déclasser',plural(m.codN,'compte')+' · ancienneté moyenne '+fInt(m.codJ)+' jours');
+        pptKpis(pp,X.s,[['Solde à déclasser',fMds(m.codT),'C0392B'],['Comptes',fInt(m.codN),'B67D1C'],['Ancienneté moy.',fInt(m.codJ)+' j','005C83'],['Gestionnaires',fInt(m.codByG.length),'6BA23A']],1.3);
+        X.card(0.5,2.6,5.4,4.5,'Par classe','nombre de comptes'); X.donut(0.6,3.05,5.2,3.95,m.codCl.map(x=>x.c+' · '+CLS_LIB[x.c]),m.codCl.map(x=>x.n),m.codCl.map(x=>clsCol(x.c)));
+        const t=m.codByG.slice(0,10); X.card(6.05,2.6,6.78,4.5,'Par gestionnaire','top 10 · nombre de comptes');
+        X.bar(6.15,3.05,6.58,3.95,t.map(x=>x.g),t.map(x=>x.n),'005C83',{h:true,raw:true,name:'Comptes'}); },
+      dec(){ const X=band('dec','Clients à déclasser',plural(m.decN,'client')+' · exposition nette '+fMds(m.decExpo)+' · provision BCEAO '+fMds(m.decProv)+' · cliquez une ligne'); const t=m.dec.slice(0,14);
+        pptTableLinked(X,['Client','Motif','Jours','Classe','Taux','Expo nette','Provision'],t.map(x=>[cut(x.client,32),cut(x.motif,52),x.j,x.cl,fTaux(x.taux),fInt(x.expo),fInt(x.prov)]),
+          {colW:[3.2,4.3,0.7,0.8,0.8,1.3,1.23],right:[2,4,5,6],fs:8.5,rowH:0.34,pills:(r,i)=>i===3?hx(clsCol(t[r].cl)):null,links:t.map(x=>cliLink(x.code))});
+        X.s.addText('Provision BCEAO requise : '+fInt(m.decProv)+' XOF  ·  exposition nette '+fInt(m.decExpo)+' XOF'+(m.decN>t.length?'  ·  '+(m.decN-t.length)+' autres clients dans l’application':''),{x:0.5,y:6.55,w:12.3,h:0.4,fontSize:12,bold:true,color:PX.NV,fontFace:PF});
+        X.notes(noteFor(/à déclasser/)); },
+      dou(){ const X=band('dou','Douteux 292 — besoin de provision',plural(m.douN,'dossier')+' · encours '+fMds(m.douEnc)+' · couverture '+fPct(m.douCov,1));
+        pptKpis(pp,X.s,[['Encours douteux',fMds(m.douEnc),'00415E'],['Provision locale',fMds(m.douPloc),'6BA23A'],['Gar. hypo.',fMds(m.douHyp),'1A86B3'],['Complément',fMds(m.douCompl),'C0392B']],1.3);
+        X.card(0.5,2.6,6.1,4.5,'De l’encours au besoin','survolez les barres'); X.bar(0.6,3.05,5.9,3.95,['Encours','Provision requise','Provision locale','Complément'],[m.douEnc,m.douReq,m.douPloc,m.douCompl],['00415E','1A86B3','6BA23A','C0392B']);
+        const t=m.douTop.slice(0,10); pptTableLinked(X,['Client','Encours','Complément'],t.map(x=>[cut(x.client,32),fInt(x.enc),fInt(x.compl)]),{x:6.75,y:2.6,w:6.08,colW:[3.08,1.5,1.5],right:[1,2],fs:8.5,rowH:0.4,links:t.map(x=>cliLink(x.code))});
+        X.notes(noteFor(/douteux 292/)); },
+      gest(){ const X=band('gest','Mobilisation des gestionnaires','Top 12 des portefeuilles par montant impayé'); const t=m.impByG.slice(0,12);
+        X.card(0.5,1.3,8.0,5.8,'Impayés par gestionnaire','survolez les barres'); X.bar(0.6,1.75,7.8,5.25,t.map(x=>x.g),t.map(x=>x.amt),t.map(x=>x.n90?'C0392B':'005C83'),{h:true});
+        pptTable(X.s,['Gestionnaire','Lignes','> 90 j'],t.map(x=>[cut(x.g,28),x.n,x.n90]),{x:8.7,y:1.3,w:4.13,colW:[2.43,0.85,0.85],right:[1,2],fs:8.5,rowH:0.4}); },
+      read(){ const X=band('read','Constats & actions proposées','Lecture rédigée à partir des chiffres du fichier'), tx=h=>h.replace(/<[^>]+>/g,''), s=X.s;
+        s.addText(LC.c.map(t=>({text:tx(t),options:{bullet:{code:'25A0'},breakLine:true}})),{x:0.5,y:1.35,w:7.2,h:5.7,fontSize:13,color:PX.INK,fontFace:PF,paraSpaceAfter:8,valign:'top'});
+        s.addShape(pp.ShapeType.roundRect,{x:7.95,y:1.35,w:4.9,h:5.7,fill:{color:'F3F9EC'},line:{color:'CFE0E7'},rectRadius:0.12});
+        s.addText('Actions proposées',{x:8.15,y:1.45,w:4.5,h:0.45,fontSize:16,bold:true,color:PX.NV,fontFace:PF});
+        s.addText(LC.a.map(t=>({text:tx(t),options:{bullet:{code:'2713'},breakLine:true}})),{x:8.15,y:1.95,w:4.5,h:5.0,fontSize:12,color:PX.INK,fontFace:PF,paraSpaceAfter:8,valign:'top'});
+        X.notes(LC.a.join('\n')); },
+      end(){ const s=pp.addSlide(); s.background={color:PX.NV}; const X=pptCtx(pp,s); if(badge) s.addImage({data:badge,x:5.1,y:2.0,w:3.1,h:1.13});
+        s.addText('Merci',{x:0,y:3.4,w:13.33,h:0.8,fontSize:40,bold:true,color:'FFFFFF',align:'center',fontFace:PF});
+        s.addText('Questions & échanges · PDO Monitor · arrêté au '+m.date,{x:0,y:4.25,w:13.33,h:0.5,fontSize:15,color:'CFE0EE',align:'center',fontFace:PF});
+        if(has('agenda')) X.btn(4.6,5.3,1.9,'⌂ Sommaire','agenda',{h:0.42,fs:11});
+        if(ann.length) X.btn(6.8,5.3,1.9,'Annexes ▸','annex',{h:0.42,fs:11,fill:PX.LM,line:PX.LM,color:'10300A'}); },
+      annex(){ const X=band('annex','Annexes','Détails par classe, par groupe et fiches clients — cliquez pour ouvrir'), s=X.s, R=17;
+        const col=(x,title,items)=>{ if(!items.length) return; s.addText(title,{x,y:1.25,w:3,h:0.35,fontSize:11,bold:true,color:PX.NV,fontFace:PF});
+          items.slice(0,R).forEach((it,i)=>X.btn(x,1.65+i*0.315,2.95,cut(it[0],30)+'  ▸',it[1],{h:0.27,fs:8})); };
+        col(0.5,'Détail par classe & groupe',clsA.map(c=>['Classe '+c+' · '+CLS_LIB[c],'cls:'+c]).concat(grpA.map((g,i)=>['Groupe '+g,'grp:'+i])));
+        const F=fiche.map(c=>[IDX[c].name,'cli:'+c]);
+        [0,1,2].forEach(k=>col(3.6+k*3.1,k?'Fiches clients (suite)':'Fiches clients',F.slice(k*R,(k+1)*R))); }
+    };
+    const contractSlide=(key,title,sub,rs)=>{ const X=band(key,title,sub); rs=[...rs].sort((a,b)=>b.ot-a.ot); const t=rs.slice(0,15);
+      pptTableLinked(X,['Client','Contrat','Produit','Segment','Gestionnaire','Cl.','P/NP','Encours XOF'],t.map(r=>[cut(r.client,30),r.ref,r.prod,r.bseg,cut(r.off,22),r.cl||'—',r.stat,fInt(r.ot)]),
+        {colW:[3.0,1.9,0.8,1.3,2.2,0.6,0.6,1.93],right:[7],fs:8.5,rowH:0.33,pills:(r,i)=>i===5?hx(clsCol(t[r].cl)):null,links:t.map(r=>cliLink(r.code))});
+      X.s.addText(plural(rs.length,'contrat')+' · total '+fInt(sum(rs,r=>r.ot))+' XOF'+(rs.length>15?' · 15 plus gros affichés':''),{x:0.5,y:6.75,w:7.5,h:0.35,fontSize:11,bold:true,color:PX.NV,fontFace:PF}); };
+    const ficheSlide=code=>{ const o=IDX[code], key='cli:'+code, a7=o.A7, np=sum(a7.filter(r=>r.stat==='NP'),r=>r.ot);
+      const worst=[...a7,...o.IMP,...o.DEB].reduce((w,r)=>clsRank(r.cl)>clsRank(w)?r.cl:w,'');
+      const X=band(key,'Fiche client · '+cut(o.name,40),'Code '+o.code+' · '+(o.seg||'—')+' · '+(o.g||'—')+(a7[0]&&a7[0].grp?' · Groupe '+cut(a7[0].grp,30):''));
+      pptKpis(pp,X.s,[['Engagements',fSmart(sum(a7,r=>r.ot)),'00415E'],['Impayés',o.IMP.length?fSmart(sum(o.IMP,r=>r.m))+' · '+plural(o.IMP.length,'ligne'):'Aucun','005C83'],['Créances NP',fSmart(np),'C0392B'],['Classe la plus dégradée',worst?worst+' · '+(CLS_LIB[worst]||''):'—',hx(clsCol(worst))]],1.3);
+      let y=2.65; const s=X.s;
+      const txt=[]; o.DEC.forEach(r=>txt.push('Déclassement proposé : '+r.motif+' · classe '+r.cl+' · taux '+fTaux(r.taux)+' · provision '+fInt(r.prov)+' XOF'));
+      o.DOU.forEach(r=>txt.push('Douteux 292 : encours '+fInt(r.enc)+' · provision locale '+fInt(r.ploc)+' · complément à doter '+fInt(r.compl)+' XOF'));
+      if(txt.length){ s.addShape(pp.ShapeType.roundRect,{x:0.5,y,w:12.33,h:0.3+0.28*txt.length,fill:{color:'FDF1EE'},line:{color:'E8B4AA'},rectRadius:0.08});
+        s.addText(txt.map(t=>({text:t,options:{bullet:true,breakLine:true}})),{x:0.6,y,w:12.1,h:0.3+0.28*txt.length,fontSize:10,color:'7B1E16',bold:true,fontFace:PF,valign:'middle'}); y+=0.45+0.28*txt.length; }
+      const imp=[...o.IMP].sort((a,b)=>b.m-a.m).slice(0,8), ctr=[...a7].sort((a,b)=>b.ot-a.ot).slice(0,8);
+      s.addText('IMPAYÉS',{x:0.5,y,w:6,h:0.3,fontSize:10,bold:true,color:PX.NV,fontFace:PF}); s.addText('CONTRATS ACTE 7',{x:6.75,y,w:6,h:0.3,fontSize:10,bold:true,color:PX.NV,fontFace:PF}); y+=0.32;
+      if(imp.length) pptTable(s,['Référence','Produit','Jours','Cl.','Montant'],imp.map(r=>[cut(r.ref,18),r.prod,r.j,r.cl||'—',fInt(r.m)]),{x:0.5,y,w:6.1,colW:[2.0,0.8,0.8,0.7,1.8],right:[2,4],fs:8.5,rowH:0.3,pills:(r,i)=>i===3?hx(clsCol(imp[r].cl)):null});
+      else s.addText('Aucun impayé',{x:0.5,y,w:6,h:0.3,fontSize:10,italic:true,color:'6E8794',fontFace:PF});
+      if(ctr.length) pptTable(s,['Contrat','Produit','Cl.','P/NP','Encours'],ctr.map(r=>[cut(r.ref,18),r.prod,r.cl||'—',r.stat,fInt(r.ot)]),{x:6.75,y,w:6.08,colW:[2.0,0.8,0.7,0.7,1.88],right:[4],fs:8.5,rowH:0.3,pills:(r,i)=>i===2?hx(clsCol(ctr[r].cl)):null});
+      else s.addText('Aucun contrat ACTE 7',{x:6.75,y,w:6,h:0.3,fontSize:10,italic:true,color:'6E8794',fontFace:PF}); };
+    /* 2. construction dans l'ordre du plan */
+    const base=baseA7();
+    for(const k of plan){
+      if(BUILD[k]) BUILD[k]();
+      else if(k.startsWith('cls:')){ const c=k.slice(4); contractSlide(k,'Détail · classe '+c+' — '+CLS_LIB[c],'Contrats de la classe '+c+' · base NPL · cliquez une ligne pour la fiche client',base.filter(r=>r.cl===c)); }
+      else if(k.startsWith('grp:')){ const g=grpA[+k.slice(4)]; contractSlide(k,'Détail · '+cut(g,45),'Contrats du groupe · cliquez une ligne pour la fiche client',base.filter(r=>(r.grp||r.client||r.code)===g)); }
+      else if(k.startsWith('cli:')) ficheSlide(k.slice(4));
+    }
+    /* 3. post-traitement : liens, transitions, animations, axe log. */
+    busy(true,'Ajout des liens et animations…',plan.length+' diapositives'); await tick();
+    const buf=await pp.write({outputType:'arraybuffer'});
+    const z=await JSZip.loadAsync(buf);
+    for(let i=1;i<=plan.length;i++){
+      const sp='ppt/slides/slide'+i+'.xml', rp='ppt/slides/_rels/slide'+i+'.xml.rels'; let x=await z.file(sp).async('string'), r=await z.file(rp).async('string');
+      const rels={}; let rn=0;
+      x=x.replace(/<p:cNvPr id="(\d+)" name="LNK\|([^"]*)"([^>]*?)(\/?)>/g,(all,id,key,rest,sc)=>{ const n=key.startsWith('#')?+key.slice(1):NUM[key]; if(!n) return all;
+        const rid=rels[n]||(rels[n]='rIdLk'+(++rn)); const h=`<a:hlinkClick r:id="${rid}" action="ppaction://hlinksldjump"/>`;
+        return `<p:cNvPr id="${id}" name="Lien ${esc(key)}"${rest}>`+h+(sc?'</p:cNvPr>':''); });
+      const add=Object.entries(rels).map(([n,rid])=>`<Relationship Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="../slides/slide${n}.xml"/>`).join('');
+      if(add) r=r.replace('</Relationships>',add+'</Relationships>');
+      const key=plan[i-1], tr=key==='cover'||key==='end'?'<p:fade/>':key.startsWith('cli:')||key.startsWith('cls:')||key.startsWith('grp:')?'<p:zoom/>':'<p:push dir="u"/>';
+      const tim=pptTiming(x,key==='cover'||key==='end');
+      x=x.replace(/<\/p:clrMapOvr>/,'</p:clrMapOvr><p:transition spd="med">'+tr+'</p:transition>'+tim);
+      z.file(sp,x); z.file(rp,r); }
+    for(const f of Object.keys(z.files).filter(f=>/^ppt\/charts\/chart\d+\.xml$/.test(f))){ let x=await z.file(f).async('string');
+      if(x.includes('<c:bubbleChart>')||x.includes('<c:bubbleChart ')){ x=x.replace(/<c:pt idx="\d+"><c:v><\/c:v><\/c:pt>/g,'');
+        x=x.replace(/<c:valAx>([\s\S]*?)<\/c:valAx>/,(all,inner)=>inner.includes('<c:axPos val="b"/>')?'<c:valAx>'+inner.replace('<c:scaling>','<c:scaling><c:logBase val="10"/>').replace(/<c:numFmt formatCode="[^"]*"/,'<c:numFmt formatCode="#,##0"')+'</c:valAx>':all);
+        z.file(f,x); } }
+    const blob=await z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.presentationml.presentation'});
+    dl(blob,'ECOBANK_PDO_Slides_'+(m.date||'').split('/').reverse().join('-')+(SEG!=='ALL'?'_'+SEG:'')+'.pptx');
+    toast('✅ PowerPoint interactif exporté — '+plan.length+' diapositives (lancez le diaporama : F5)'); }
   catch(e){ console.error(e); toast('⚠️ Export PowerPoint impossible : '+e.message); }
   busy(false); }
+
+/* animations d'entrée : cascade fondu (formes) et balayage vers le haut (graphiques), démarrage automatique */
+function pptTiming(x,dark){
+  const EMU=914400, items=[];
+  const re=/<(p:sp|p:pic|p:graphicFrame)>([\s\S]*?)<\/\1>/g; let mm;
+  while((mm=re.exec(x))){ const tag=mm[1], body=mm[2]; const id=(body.match(/<p:cNvPr id="(\d+)" name="([^"]*)"/)||[]); if(!id[1]) continue;
+    if(/^Lien /.test(id[2])) continue;
+    const off=body.match(/<a:off x="(-?\d+)" y="(-?\d+)"\/>/); const y=off?+off[2]/EMU:0, xx=off?+off[1]/EMU:0;
+    if(!dark&&(y<1.07||y>=7.15)) continue; if(dark&&(y<0||xx>8)) continue;
+    const chart=tag==='p:graphicFrame'&&body.includes('/chart'); const txt=tag==='p:sp'&&body.includes('<p:txBody>');
+    items.push({id:id[1],y,x:xx,chart,txt}); }
+  if(!items.length) return '';
+  items.sort((a,b)=>Math.round(a.y*4)-Math.round(b.y*4)||a.x-b.x);
+  let n=3; const eff=items.map((it,i)=>{ const d=Math.min(i,40)*70; const a=++n,b=++n,c=++n;
+    const set=`<p:set><p:cBhvr><p:cTn id="${b}" dur="1" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst></p:cTn><p:tgtEl><p:spTgt spid="${it.id}"/></p:tgtEl><p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="visible"/></p:to></p:set>`;
+    const fx=it.chart?`<p:animEffect transition="in" filter="wipe(up)"><p:cBhvr><p:cTn id="${c}" dur="700"/><p:tgtEl><p:spTgt spid="${it.id}"/></p:tgtEl></p:cBhvr></p:animEffect>`
+                     :`<p:animEffect transition="in" filter="fade"><p:cBhvr><p:cTn id="${c}" dur="450"/><p:tgtEl><p:spTgt spid="${it.id}"/></p:tgtEl></p:cBhvr></p:animEffect>`;
+    return `<p:par><p:cTn id="${a}" presetID="${it.chart?22:10}" presetClass="entr" presetSubtype="${it.chart?4:0}" fill="hold" grpId="0" nodeType="withEffect"><p:stCondLst><p:cond delay="${d}"/></p:stCondLst><p:childTnLst>${set}${fx}</p:childTnLst></p:cTn></p:par>`; }).join('');
+  const bld=items.map(it=>it.chart?`<p:bldGraphic spid="${it.id}" grpId="0"><p:bldAsOne/></p:bldGraphic>`:it.txt?`<p:bldP spid="${it.id}" grpId="0" animBg="1"/>`:'').join('');
+  return `<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst><p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst>`+
+    `<p:par><p:cTn id="3" fill="hold"><p:stCondLst><p:cond delay="indefinite"/><p:cond evt="onBegin" delay="0"><p:tn val="2"/></p:cond></p:stCondLst><p:childTnLst>`+
+    `<p:par><p:cTn id="${++n}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>${eff}</p:childTnLst></p:cTn></p:par>`+
+    `</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn><p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst><p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst>`+
+    (bld?`<p:bldLst>${bld}</p:bldLst>`:'')+`</p:timing>`;
+}
 
 /* ---------- minuteur ---------- */
 let T0=0; function startTimer(){ T0=Date.now(); clearInterval(startTimer._i); startTimer._i=setInterval(()=>{ const s=Math.floor((Date.now()-T0)/1000); $('#timer').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); },1000); }

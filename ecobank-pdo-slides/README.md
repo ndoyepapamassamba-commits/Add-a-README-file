@@ -33,7 +33,24 @@ Constats & actions proposées (rédigés automatiquement) · Clôture.
 - **Clic sur un graphique** : liste détaillée (classe, stade, groupe, ancienneté, gestionnaire…).
 - **Clic sur une ligne ou une bulle** : fiche client 360° (contrats ACTE 7, impayés, débiteurs, déclassement, douteux).
 - Compteurs animés, jauge NPL, transitions, minuteur de présentation.
-- **Export PowerPoint** (.pptx natif, bandeau marine + filet lime + badge logo) et **PDF** via l'impression (1 diapositive par page).
+- **PDF** via l'impression (1 diapositive par page).
+
+## Export PowerPoint interactif
+
+Le bouton **PowerPoint** produit un .pptx à utiliser **en mode diaporama (F5)** :
+
+- **Graphiques natifs PowerPoint** (barres, anneaux, bulles en échelle log.) : valeurs au survol,
+  données modifiables dans Excel (clic droit › Modifier les données).
+- **Navigation cliquable** : bouton « Commencer » et tuiles de la couverture, sommaire cliquable,
+  barre `⌂ Sommaire ◀ ▶` sur chaque diapositive.
+- **Approfondissement** : boutons « Classe … ▸ » (contrats par classe), « Contrats détaillés » (top 5 groupes),
+  lignes des tableaux Top impayés / Débiteurs / Déclassements / Douteux → **fiche client** ;
+  chaque diapositive de détail a un bouton « ↩ Retour ». Page **Annexes** indexant toutes les fiches.
+- **Animations** d'entrée en cascade (fondu pour les cartes, balayage vers le haut pour les graphiques),
+  démarrage automatique, et **transitions** entre diapositives.
+- **Notes du présentateur** reprenant la lecture rédigée.
+
+Les liens et animations sont ajoutés par post-traitement du XML (JSZip) après la génération PptxGenJS.
 
 ## Règles de calcul
 
