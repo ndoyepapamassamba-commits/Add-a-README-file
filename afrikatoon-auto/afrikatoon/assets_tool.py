@@ -15,7 +15,7 @@ def _chroma(img: Image.Image) -> Image.Image | None:
     """Incrustation sur fond vert (si l'image a un fond vert uni) : détourage net + suppression du reflet vert."""
     a = np.array(img.convert("RGB")).astype(np.int16)
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
-    green = (g > 110) & (g > r * 1.35) & (g > b * 1.35)
+    green = (g > 150) & (g > r * 1.6) & (g > b * 1.6)
     border = np.concatenate([green[0], green[-1], green[:, 0], green[:, -1]])
     if border.mean() < 0.6:
         return None
