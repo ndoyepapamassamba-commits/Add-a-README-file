@@ -365,6 +365,19 @@ def build_audio(lines, workdir: Path, index: int, total: float) -> Path:
     return out
 
 
+def envelope(audio: Path, fps: int) -> list[float]:
+    """Ouverture de bouche (0 à 1) image par image, calculée sur le volume réel de la voix."""
+    import numpy as np
+    raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", str(audio), "-ac", "1", "-ar", "16000",
+                          "-f", "s16le", "-"], capture_output=True, check=True).stdout
+    x = np.frombuffer(raw, dtype=np.int16).astype(float) / 32768
+    hop = 16000 // fps
+    rms = np.array([np.sqrt((x[i:i + hop] ** 2).mean()) if len(x[i:i + hop]) else 0 for i in range(0, len(x), hop)])
+    if rms.max() > 0:
+        rms = np.clip(rms / (np.percentile(rms[rms > 0.01], 90) if (rms > 0.01).any() else rms.max()), 0, 1)
+    return [float(v) if v > 0.12 else 0.0 for v in rms]
+
+
 def needed_duration(lines, workdir: Path, index: int, minimum: float) -> float:
     total = 0.4
     for j, line in enumerate(lines):

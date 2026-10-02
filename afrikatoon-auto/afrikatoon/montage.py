@@ -29,6 +29,7 @@ def normalize(src: Path, dest: Path) -> Path:
         cmd += ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", "-shortest"]
     cmd += ["-map", "0:v:0", "-map", "0:a:0" if has_audio(src) else "1:a:0",
             "-vf", vf, "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+            "-af", "afade=t=in:d=0.04,areverse,afade=t=in:d=0.08,areverse",  # pas de clic entre les scènes
             "-c:a", "aac", "-ar", "44100", "-ac", "2", str(dest)]
     subprocess.run(cmd, check=True)
     return dest
@@ -84,7 +85,7 @@ def assemble(clips: list[Path], scenes: list[dict], workdir: Path, final: Path,
     concat_list.write_text("".join(f"file '{p.resolve()}'\n" for p in norm))
     joined = workdir / "joined.mp4"
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0",
-                    "-i", str(concat_list), "-c", "copy", str(joined)], check=True)
+                    "-i", str(concat_list), "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", str(joined)], check=True)
     if not subtitles:
         joined.replace(final)
         return final

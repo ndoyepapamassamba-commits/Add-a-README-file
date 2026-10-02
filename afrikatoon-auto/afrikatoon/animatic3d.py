@@ -269,7 +269,7 @@ def build_character(name, x, facing, prompt):
                 teeth=teeth, arms=arms, hr=hr, facing=facing, sweat=sweat, h=h, x=x, marks=marks)
 
 
-def pose(c, emotion, t, speaking, target_x=None):
+def pose(c, emotion, t, speaking, target_x=None, mouth=None):
     hr = c["hr"]
     bob = 0.02 * math.sin(t * 9) if speaking else 0.006 * math.sin(t * 2)
     if emotion == "laugh":
@@ -301,7 +301,11 @@ def pose(c, emotion, t, speaking, target_x=None):
         b.rotation_euler[1] = math.radians(tilt)
         b.location.z = hr * (0.78 if big else 0.6) + (hr * 0.12 if emotion == "unimpressed" and k == 1 else 0)
     # bouche
-    open_amt = (abs(math.sin(t * 15)) * 0.8 + 0.2) if speaking else 0
+    if mouth is not None:  # volume réel de la voix → lèvres synchronisées
+        open_amt = mouth if speaking else 0
+        speaking = speaking and mouth > 0
+    else:
+        open_amt = (abs(math.sin(t * 15)) * 0.8 + 0.2) if speaking else 0
     m = c["mouth"]
     if emotion == "shock":
         m.scale = (hr * 0.22, hr * 0.1, hr * 0.3)
@@ -365,6 +369,7 @@ def render_clip(scene: dict, index: int, dest: Path, setting: str = "cour", is_l
     freeze = 1.6 if is_last else 0
     duration += freeze
     audio = animatic.build_audio(lines, workdir, index, duration)
+    env = animatic.envelope(audio, FPS)
     events = []
     if scene.get("beat") == "twist":
         events.append(("dun", 0.0))
@@ -421,7 +426,8 @@ def render_clip(scene: dict, index: int, dest: Path, setting: str = "cour", is_l
             emo = emotions[nm]
             if frozen and nm == names[-1]:
                 emo = "shock"
-            pose(c, emo, 0 if frozen else t, speaker == nm and not frozen)
+            pose(c, emo, 0 if frozen else t, speaker == nm and not frozen,
+                 mouth=env[f] if f < len(env) else 0.0)
         if frozen:
             c = chars[names[-1]]
             k = min(1.0, (t - (duration - freeze)) / 0.3)
