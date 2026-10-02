@@ -1,0 +1,730 @@
+<title>Papa Massamba Ndoye</title>
+<meta name="description" content="Curriculum vitae interactif de Papa Massamba NDOYE — Credit Risk, reporting réglementaire BCEAO & Groupe, automatisation (Ecobank Sénégal).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* Layout : une feuille de banquier — bandeau marine à filet lime, colonne principale + rail latéral,
+   et au centre un « laboratoire » où chaque automatisation se rejoue sous les yeux du lecteur. */
+:root{
+  --marine:#00415E; --eco:#005C83; --sky:#1A86B3; --lime:#8CC63F; --lime2:#A6D867; --leaf:#4E8A2E;
+  --risk:#C0392B; --amber:#B67D1C;
+  --bg:#F3F7F9; --paper:#FFFFFF; --ink:#12333F; --ink2:#3E5C6B; --mute:#6B8794;
+  --line:#CFE0E7; --tint:#EEF4F7; --tint2:#E4EEF3;
+  --hero-ink:#FFFFFF; --hero-mute:#B9D3DF;
+  --sh:0 1px 2px rgba(0,65,94,.06),0 8px 28px -12px rgba(0,65,94,.22);
+  --f-display:"Cormorant Garamond","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --f-body:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",Consolas,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#071C26; --paper:#0C2733; --ink:#E4F0F5; --ink2:#A9C4CF; --mute:#7C9AA7;
+  --line:#1C4152; --tint:#0F3040; --tint2:#123848; --sky:#4FB3DD; --lime:#9AD34F; --leaf:#9AD34F;
+  --sh:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#071C26; --paper:#0C2733; --ink:#E4F0F5; --ink2:#A9C4CF; --mute:#7C9AA7;
+  --line:#1C4152; --tint:#0F3040; --tint2:#123848; --sky:#4FB3DD; --lime:#9AD34F; --leaf:#9AD34F;
+  --sh:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.6); color-scheme:dark}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--f-body);margin:0}
+html[lang="fr"] .en, html[lang="en"] .fr{display:none!important}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:clamp(16px,3vw,32px)}
+h1,h2,h3{text-wrap:balance;margin:0}
+.num,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+a{color:var(--sky)}
+:focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-radius:4px}
+
+/* ---------- Barre d'outils ---------- */
+.tools{display:flex;justify-content:flex-end;gap:8px;padding-block:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;background:var(--paper);overflow:hidden}
+.seg button{all:unset;cursor:pointer;padding:6px 14px;font:600 12px/1 var(--f-body);letter-spacing:.08em;color:var(--ink2)}
+.seg button[aria-pressed="true"]{background:var(--marine);color:#fff}
+
+/* ---------- Héros ---------- */
+.hero{position:relative;overflow:hidden;border-radius:20px;color:var(--hero-ink);
+  background:radial-gradient(120% 140% at 100% 0%,#0A6F95 0%,var(--eco) 38%,var(--marine) 78%);box-shadow:var(--sh)}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:linear-gradient(90deg,var(--lime),#A6D867 60%,#0A6F95)}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.55;pointer-events:none}
+.hero-in{position:relative;display:grid;grid-template-columns:auto 1fr;gap:clamp(20px,4vw,44px);align-items:center;padding:clamp(24px,4vw,48px)}
+.photo{position:relative;width:clamp(128px,17vw,184px);aspect-ratio:1;max-width:100%;border-radius:50%;cursor:pointer;
+  background:conic-gradient(from 210deg,var(--lime),#A6D867,#0A6F95,var(--lime));padding:5px}
+.photo .disc{width:100%;height:100%;border-radius:50%;overflow:hidden;background:#06364D;display:grid;place-items:center;border:3px solid #06364D}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.photo .mono-init{font:600 clamp(40px,5vw,58px)/1 var(--f-display);color:#fff;letter-spacing:.02em}
+.photo .hint{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);white-space:nowrap;background:var(--lime);color:#0B2A12;font:700 10px/1 var(--f-body);letter-spacing:.08em;text-transform:uppercase;padding:6px 9px;border-radius:999px}
+.photo.has-img .hint{display:none}
+.eyebrow{font:700 11px/1.2 var(--f-body);letter-spacing:.22em;text-transform:uppercase;color:var(--lime2)}
+.hero h1{font:600 clamp(38px,6.2vw,72px)/.95 var(--f-display);letter-spacing:-.01em;margin-top:10px}
+.hero h1 b{font-weight:700;letter-spacing:.04em}
+.role{font:500 clamp(15px,1.7vw,19px)/1.45 var(--f-body);color:#DDEBF1;margin-top:12px;max-width:62ch}
+.role strong{color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.07);color:#fff;border-radius:999px;padding:6px 12px;font-size:13px}
+.chip button{all:unset;cursor:pointer;font:700 10px/1 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--lime2)}
+.kpis{position:relative;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid rgba(255,255,255,.14)}
+.kpi{padding:18px clamp(14px,2.4vw,28px) 22px;border-right:1px solid rgba(255,255,255,.1)}
+.kpi:last-child{border-right:0}
+.kpi .v{font:700 clamp(22px,2.6vw,32px)/1 var(--f-mono);color:#fff;font-variant-numeric:tabular-nums}
+.kpi .v i{font-style:normal;color:var(--lime2)}
+.kpi .l{font-size:12px;color:var(--hero-mute);margin-top:6px;line-height:1.35}
+
+/* ---------- Sections ---------- */
+main{display:grid;gap:28px;padding-block:28px 48px}
+.sec-h{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.sec-h h2{font:600 clamp(26px,3vw,34px)/1.05 var(--f-display);color:var(--ink)}
+.sec-h .tag{font:700 11px/1 var(--f-body);letter-spacing:.2em;text-transform:uppercase;color:var(--eco);padding-bottom:4px;border-bottom:3px solid var(--lime)}
+:root[data-theme="dark"] .sec-h .tag{color:var(--sky)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .sec-h .tag{color:var(--sky)}}
+.sec-h p{flex-basis:100%;color:var(--ink2);margin:4px 0 0;max-width:75ch}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh)}
+
+/* Profil */
+.profile{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:28px;padding:clamp(20px,3vw,32px)}
+.profile p{margin:0 0 12px;max-width:68ch;color:var(--ink)}
+.profile .lead{font:500 clamp(19px,2vw,23px)/1.45 var(--f-display);font-style:italic;color:var(--ink)}
+.pillars{display:grid;gap:10px;align-content:start}
+.pillar{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start;padding:12px 14px;border-radius:12px;background:var(--tint)}
+.pillar svg{width:34px;height:34px}
+.pillar b{display:block;font-size:14px}
+.pillar span{font-size:13px;color:var(--ink2);line-height:1.45}
+
+/* ---------- Laboratoire ---------- */
+.lab{display:grid;grid-template-columns:300px minmax(0,1fr);overflow:hidden}
+.lab-nav{background:var(--tint);border-right:1px solid var(--line);padding:16px 12px;display:grid;gap:4px;align-content:start}
+.lab-nav .grp{font:700 10.5px/1 var(--f-body);letter-spacing:.18em;text-transform:uppercase;color:var(--mute);padding:14px 10px 6px}
+.lab-nav .grp:first-child{padding-top:4px}
+.lab-nav button{all:unset;cursor:pointer;display:grid;grid-template-columns:10px 1fr;gap:10px;align-items:center;padding:9px 10px;border-radius:10px;font:600 13.5px/1.3 var(--f-body);color:var(--ink)}
+.lab-nav button i{width:10px;height:10px;border-radius:3px;background:var(--line)}
+.lab-nav button:hover{background:var(--tint2)}
+.lab-nav button[aria-selected="true"]{background:var(--marine);color:#fff}
+.lab-nav button[aria-selected="true"] i{background:var(--lime)}
+.lab-body{padding:clamp(18px,3vw,30px);min-width:0;display:grid;gap:18px;align-content:start}
+.lab-top{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.lab-top h3{font:600 clamp(24px,2.6vw,30px)/1.1 var(--f-display)}
+.lab-top .scope{font:600 11px/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--eco);margin-bottom:8px}
+:root[data-theme="dark"] .lab-top .scope{color:var(--sky)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .lab-top .scope{color:var(--sky)}}
+.run{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:10px;background:var(--lime);color:#0B2A12;font:800 13px/1 var(--f-body);letter-spacing:.04em;padding:12px 18px;border-radius:999px;box-shadow:0 6px 18px -8px rgba(78,138,46,.8)}
+.run:hover{filter:brightness(1.05)}
+.run svg{width:14px;height:14px}
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ba div{border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.5}
+.ba .b{background:var(--tint);color:var(--ink2)}
+.ba .a{background:linear-gradient(135deg,rgba(140,198,63,.16),rgba(140,198,63,.05));border:1px solid rgba(140,198,63,.45)}
+.ba small{display:block;font:700 10.5px/1 var(--f-body);letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px;color:var(--mute)}
+.ba .a small{color:var(--leaf)}
+.stage{position:relative;border-radius:14px;background:var(--tint);border:1px solid var(--line);padding:16px;min-height:250px;overflow-x:auto}
+.stage .demo-tag{position:absolute;top:10px;right:12px;font:600 10px/1 var(--f-mono);letter-spacing:.06em;color:var(--mute);text-transform:uppercase}
+.stage svg{display:block;width:100%;height:auto;min-width:560px}
+.how{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px}
+.how ul{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.how li{position:relative;padding-left:18px;font-size:14px;color:var(--ink)}
+.how li::before{content:"";position:absolute;left:0;top:.6em;width:8px;height:8px;border-radius:2px;background:var(--lime)}
+.how h4{margin:0 0 8px;font:700 11px/1 var(--f-body);letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.outs{display:flex;flex-wrap:wrap;gap:6px}
+.outs span{font:600 12px/1 var(--f-body);padding:7px 10px;border-radius:8px;background:var(--marine);color:#fff}
+.outs span.l{background:transparent;color:var(--ink2);border:1px solid var(--line)}
+
+/* ---------- Parcours ---------- */
+.two{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:28px;align-items:start}
+.tl{padding:clamp(18px,3vw,28px)}
+.tl ol{list-style:none;margin:0;padding:0;position:relative}
+.tl ol::before{content:"";position:absolute;left:104px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--lime),var(--eco) 40%,var(--line))}
+.tl ol>li{display:grid;grid-template-columns:92px 1fr;gap:28px;padding-bottom:20px;position:relative}
+.tl ol>li:last-child{padding-bottom:0}
+.tl ol>li::before{content:"";position:absolute;left:99px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:3px solid var(--eco)}
+.tl ol>li.now::before{background:var(--lime);border-color:var(--lime);box-shadow:0 0 0 5px rgba(140,198,63,.22)}
+.tl .when{font:600 12.5px/1.4 var(--f-mono);color:var(--eco);text-align:right;font-variant-numeric:tabular-nums}
+:root[data-theme="dark"] .tl .when{color:var(--sky)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tl .when{color:var(--sky)}}
+.tl b{display:block;font-size:15px}
+.tl .org{font-size:13px;color:var(--mute);font-weight:600;letter-spacing:.02em}
+.tl p{margin:6px 0 0;font-size:14px;color:var(--ink2)}
+.tl ul{margin:8px 0 0;padding-left:18px;font-size:13.5px;color:var(--ink2);display:grid;gap:3px}
+.side{display:grid;gap:18px}
+.card{padding:20px 22px}
+.card h3{font:700 11px/1 var(--f-body);letter-spacing:.18em;text-transform:uppercase;color:var(--mute);margin-bottom:14px}
+.skill{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;margin-bottom:11px}
+.skill span{font-size:14px;font-weight:600}
+.skill em{font-style:normal;font-size:12px;color:var(--mute)}
+.skill .bar{grid-column:1/-1;height:6px;border-radius:6px;background:var(--tint2);overflow:hidden}
+.skill .bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--eco),var(--lime))}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags span{font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:8px;background:var(--tint);color:var(--ink)}
+.edu{display:grid;gap:12px}
+.edu>div{display:grid;grid-template-columns:76px 1fr;gap:12px;font-size:13.5px}
+.edu .y{font:600 12px/1.5 var(--f-mono);color:var(--eco)}
+:root[data-theme="dark"] .edu .y{color:var(--sky)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .edu .y{color:var(--sky)}}
+.edu b{display:block;font-size:14px}
+.edu span{color:var(--ink2)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13.5px}
+.kv dt{color:var(--mute)}
+.kv dd{margin:0;font-weight:600}
+.ops{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:20px 22px}
+.ops div{padding:14px;border-radius:12px;background:var(--tint)}
+.ops b{display:block;font-size:14px;margin-bottom:6px}
+.ops ul{margin:0;padding-left:16px;font-size:13px;color:var(--ink2);display:grid;gap:2px}
+footer{color:var(--mute);font-size:12.5px;text-align:center;padding-block:0 32px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--marine);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;box-shadow:var(--sh)}
+.print-only{display:none}
+
+/* ---------- Responsive ---------- */
+@media (max-width:980px){
+  .lab{grid-template-columns:1fr}
+  .lab-nav{border-right:0;border-bottom:1px solid var(--line);grid-auto-flow:column;grid-auto-columns:max-content;overflow-x:auto;padding:10px}
+  .lab-nav .grp{display:none}
+  .two,.profile{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .kpi:nth-child(3){border-right:0}
+  .kpi:nth-child(n+4){border-top:1px solid rgba(255,255,255,.1)}
+}
+@media (max-width:640px){
+  .hero-in{grid-template-columns:1fr;justify-items:start}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpi{border-right:0;border-top:1px solid rgba(255,255,255,.1)}
+  .ba,.how,.ops{grid-template-columns:1fr}
+  .tl ol::before{left:6px}
+  .tl ol>li{grid-template-columns:1fr;gap:2px;padding-left:28px}
+  .tl ol>li::before{left:1px}
+  .tl .when{text-align:left}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- Impression / PDF ---------- */
+@page{size:A4;margin:11mm 11mm 12mm}
+@media print{
+  :root{--bg:#fff;--paper:#fff;--ink:#12333F;--ink2:#3E5C6B;--mute:#6B8794;--line:#CFE0E7;--tint:#EEF4F7;--tint2:#E4EEF3;--sky:#1A86B3;--lime:#8CC63F;--leaf:#4E8A2E;--sh:none;color-scheme:light}
+  body{font-size:8.6pt;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .tools,.lab,.photo .hint,.chip button,.no-print,.sec-h p{display:none!important}
+  .print-only{display:block}
+  .wrap{max-width:none;padding:0}
+  .hero{border-radius:10px}
+  .hero canvas{display:none}
+  .hero-in{padding:18px 22px;gap:22px}
+  .photo{width:118px}
+  .hero h1{font-size:40px}
+  .role{font-size:11pt;margin-top:8px}
+  .chips{margin-top:10px;gap:5px}.chip{padding:3px 9px;font-size:8.5pt}
+  .kpi{padding:10px 14px 12px}.kpi .v{font-size:18pt}.kpi .l{font-size:7.5pt}
+  main{gap:10px;padding-block:12px 0}
+  .sec-h{margin-bottom:8px}.sec-h h2{font-size:17pt}
+  .panel{box-shadow:none}
+  .profile{grid-template-columns:1.6fr 1fr;padding:12px 14px;gap:14px}
+  .profile .lead{font-size:12pt}.profile p{margin-bottom:6px}
+  .pillar{padding:7px 9px;gap:9px;grid-template-columns:26px 1fr}.pillar svg{width:26px;height:26px}.pillar b{font-size:9pt}.pillar span{font-size:8pt}
+  .kpis{grid-template-columns:repeat(5,1fr)}
+  .kpi{border-top:0!important;border-right:1px solid rgba(255,255,255,.1)!important}
+  .pc{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+  .pc article{border:1px solid var(--line);border-left:4px solid var(--eco);border-radius:8px;padding:8px 10px;break-inside:avoid}
+  .pc h4{margin:0 0 3px;font:700 9.5pt/1.2 var(--f-body);color:var(--marine)}
+  .pc p{margin:0 0 4px;font-size:7.6pt;color:var(--ink2);line-height:1.4}
+  .pc .outs span{font-size:7pt;padding:3px 5px}
+  .page-break{break-before:page}
+  .pc article:last-child,.print-hide{display:none!important}
+  .two{grid-template-columns:1.55fr 1fr;gap:12px}
+  .tl{padding:10px 12px}
+  .tl ol::before{left:78px}
+  .tl ol>li{grid-template-columns:68px 1fr;gap:22px;padding-bottom:6px}
+  .tl ol>li::before{left:73px}
+  .tl .when{font-size:8pt}.tl b{font-size:9.5pt}.tl .org{font-size:7.5pt}.tl p,.tl ul{font-size:7.8pt;margin-top:2px;gap:1px}
+  .side{gap:10px}.card{padding:10px 12px;break-inside:avoid}.card h3{margin-bottom:8px}
+  .skill{margin-bottom:6px}.skill span{font-size:8.6pt}
+  .tags span{font-size:7.6pt;padding:3px 6px}
+  .edu{gap:6px}.edu>div{grid-template-columns:52px 1fr;font-size:8pt}.edu b{font-size:8.6pt}.edu .y{font-size:7.6pt}
+  .kv{font-size:8.2pt;gap:3px 10px}
+  .ops{padding:10px 12px;gap:8px}.ops div{padding:8px 10px}.ops b{font-size:9pt}.ops ul{font-size:7.6pt}
+  .skill .bar{height:4px}
+  footer{padding-block:8px 0;font-size:7.5pt}
+}
+</style>
+
+<div class="wrap">
+  <div class="tools no-print">
+    <div class="seg" role="group" aria-label="Langue / Language">
+      <button type="button" id="lang-fr" aria-pressed="true">FR</button>
+      <button type="button" id="lang-en" aria-pressed="false">EN</button>
+    </div>
+  </div>
+
+  <!-- ===================== HÉROS ===================== -->
+  <header class="hero">
+    <canvas id="ledger" aria-hidden="true"></canvas>
+    <div class="hero-in">
+      <label class="photo" id="photo" title="Cliquer pour ajouter la photo">
+        <span class="disc" id="photo-disc"><span class="mono-init">PM<span style="color:var(--lime2)">N</span></span></span>
+        <span class="hint"><span class="fr">Ajouter photo</span><span class="en">Add photo</span></span>
+        <input type="file" id="photo-input" accept="image/*" hidden>
+      </label>
+      <div style="min-width:0">
+        <div class="eyebrow"><span class="fr">Ecobank Sénégal · Credit Administration · Reporting réglementaire & Groupe</span><span class="en">Ecobank Senegal · Credit Administration · Regulatory & Group Reporting</span></div>
+        <h1>Papa Massamba <b>NDOYE</b></h1>
+        <p class="role fr"><strong>Analyste reporting Credit Risk & automatisation.</strong> Je transforme les arrêtés de portefeuille, l'Impairment Data Template IFRS 9, les états FODEP et la Centrale des Risques en chaînes automatisées, contrôlées et prêtes pour le COMEX.</p>
+        <p class="role en"><strong>Credit Risk reporting analyst & automation builder.</strong> I turn portfolio closings, the IFRS 9 Impairment Data Template, BCEAO FODEP returns and Central Risk Register filings into automated, controlled, board-ready pipelines.</p>
+        <div class="chips">
+          <span class="chip">Dakar · HLM Gibraltar 1</span>
+          <span class="chip"><span class="mono">+221 77 659 30 79</span><button type="button" data-copy="+221776593079">Copier</button></span>
+          <span class="chip"><span class="mono">pndoye@ecobank.com</span><button type="button" data-copy="pndoye@ecobank.com">Copier</button></span>
+          <span class="chip"><span class="mono">ndoyepapamassamba@gmail.com</span><button type="button" data-copy="ndoyepapamassamba@gmail.com">Copier</button></span>
+        </div>
+      </div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="v">15<i>+</i></div><div class="l"><span class="fr">années chez Ecobank Sénégal (depuis 2011)</span><span class="en">years at Ecobank Senegal (since 2011)</span></div></div>
+      <div class="kpi"><div class="v" data-count="16359">16 359</div><div class="l"><span class="fr">contrats classés par arrêté, sans retraitement manuel</span><span class="en">facilities classified per closing, no manual rework</span></div></div>
+      <div class="kpi"><div class="v">7<i>/7</i></div><div class="l"><span class="fr">actes du moteur ACTE7 rejoués en JavaScript</span><span class="en">ACTE7 engine steps rebuilt in JavaScript</span></div></div>
+      <div class="kpi"><div class="v">100<i>%</i></div><div class="l"><span class="fr">hors-ligne : un fichier HTML, aucune installation</span><span class="en">offline: one HTML file, nothing to install</span></div></div>
+      <div class="kpi"><div class="v">4</div><div class="l"><span class="fr">formats d'export : Excel, PowerPoint, Word, mail Outlook</span><span class="en">export formats: Excel, PowerPoint, Word, Outlook mail</span></div></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===================== PROFIL ===================== -->
+    <section>
+      <div class="sec-h"><span class="tag">Profil</span><h2 class="fr">Le métier du risque, outillé par l'automatisation</h2><h2 class="en">Credit risk know-how, powered by automation</h2></div>
+      <div class="panel profile">
+        <div>
+          <p class="lead fr">Quinze ans à l'intérieur de la banque, des opérations aux engagements : je connais la donnée parce que je l'ai traitée à la main avant de l'automatiser.</p>
+          <p class="lead en">Fifteen years inside the bank, from operations to credit: I know the data because I processed it by hand before automating it.</p>
+          <p class="fr">Au sein du Credit Administration Department (CAD) d'Ecobank Sénégal, je produis depuis 2021 les reportings réglementaires BCEAO et les reportings Groupe. J'ai reconstruit les traitements Power Query du portefeuille en applications HTML autonomes qui lisent les extractions brutes, appliquent la grille BCEAO / IFRS 9, réconcilient avec la comptabilité et livrent des sorties homogènes à la charte Ecobank.</p>
+          <p class="en">Within Ecobank Senegal's Credit Administration Department (CAD), I have produced BCEAO regulatory returns and Group reporting since 2021. I rebuilt the portfolio's Power Query workflows as standalone HTML applications that read raw extracts, apply the BCEAO / IFRS 9 grid, reconcile against the ledger and deliver consistent, Ecobank-branded outputs.</p>
+          <p class="fr print-hide">Ces outils sont conçus pour être répliqués : même logique de lecture tolérante, mêmes contrôles, même chaîne d'exports. Ils peuvent servir de socle à d'autres filiales du Groupe.</p>
+          <p class="en print-hide">The tools are built to be replicated: same tolerant file reading, same controls, same export chain. They can serve as a foundation for other Group affiliates.</p>
+        </div>
+        <div class="pillars">
+          <div class="pillar"><svg viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="1" width="32" height="32" rx="9" fill="#00415E"/><path d="M9 23V13M15 23V9M21 23v-7M27 23v-4" stroke="#8CC63F" stroke-width="3" stroke-linecap="round"/></svg><div><b class="fr">Risque de crédit</b><b class="en">Credit risk</b><span class="fr">Classification BCEAO, stages IFRS 9, PDO, NPL, provisions</span><span class="en">BCEAO classification, IFRS 9 staging, PDO, NPL, provisions</span></div></div>
+          <div class="pillar"><svg viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="1" width="32" height="32" rx="9" fill="#005C83"/><path d="M10 9h14v16H10z" fill="none" stroke="#fff" stroke-width="2"/><path d="M13 14h8M13 18h8M13 22h5" stroke="#8CC63F" stroke-width="2" stroke-linecap="round"/></svg><div><b class="fr">Réglementaire & Groupe</b><b class="en">Regulatory & Group</b><span class="fr">FODEP, Centrale des Risques, Impairment Data Template</span><span class="en">FODEP, Central Risk Register, Impairment Data Template</span></div></div>
+          <div class="pillar"><svg viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="1" width="32" height="32" rx="9" fill="#4E8A2E"/><path d="M8 17h5l3-6 4 12 3-6h3" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><div><b class="fr">Automatisation & IA</b><b class="en">Automation & AI</b><span class="fr">Power Query M, SQL, HTML/JS hors-ligne, IA générative</span><span class="en">Power Query M, SQL, offline HTML/JS, generative AI</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== LABORATOIRE ===================== -->
+    <section id="automatisations">
+      <div class="sec-h"><span class="tag" >Lab</span>
+        <h2 class="fr">Automatisations réalisées</h2><h2 class="en">Automations delivered</h2>
+        <p class="fr">Choisissez un outil, puis « Rejouer » pour voir la chaîne de traitement s'exécuter. Les volumes de l'arrêté de référence sont réels ; les lignes de détail sont des exemples anonymisés.</p>
+        <p class="en">Pick a tool, then “Replay” to watch the pipeline run. Reference-closing volumes are real; row-level details are anonymised examples.</p>
+      </div>
+      <div class="panel lab">
+        <nav class="lab-nav" id="lab-nav" role="tablist" aria-label="Automatisations"></nav>
+        <div class="lab-body" id="lab-body" role="tabpanel"></div>
+      </div>
+      <div class="print-only pc" id="print-cards"></div>
+    </section>
+
+    <!-- ===================== PARCOURS + RAIL ===================== -->
+    <section class="two page-break">
+      <div>
+        <div class="sec-h"><span class="tag fr">Parcours</span><span class="tag en">Career</span><h2 class="fr">Expérience professionnelle</h2><h2 class="en">Professional experience</h2></div>
+        <div class="panel tl">
+          <ol>
+            <li class="now"><div class="when"><span class="fr">2021 →<br>aujourd'hui</span><span class="en">2021 →<br>present</span></div><div>
+              <b class="fr">Agent CAD, reportings réglementaires & Groupe</b><b class="en">CAD Officer, Regulatory & Group Reporting</b>
+              <div class="org">ECOBANK SÉNÉGAL · CREDIT ADMINISTRATION / RISK</div>
+              <ul class="fr"><li>Production du portefeuille mensuel (ESN Portfolio) et de l'Impairment Data Template IFRS 9 pour le Groupe</li><li>États FODEP et déclarations à la Centrale des Risques BCEAO</li><li>Conception d'applications de pilotage pour le COMEX et le Comité des Risques (PDO, NPL, IFRS 9, CAE)</li><li>Revue critique de l'automatisation du portefeuille livrée par un prestataire, par rapprochement avec le portefeuille publié</li></ul>
+              <ul class="en"><li>Monthly portfolio production (ESN Portfolio) and IFRS 9 Impairment Data Template for Group</li><li>BCEAO FODEP returns and Central Risk Register filings</li><li>Built monitoring apps for the Executive Committee and Risk Committee (PDO, NPL, IFRS 9, maturities)</li><li>Independent review of a vendor's portfolio automation against the published portfolio</li></ul>
+            </div></li>
+            <li><div class="when">2017 – 2021</div><div>
+              <b class="fr">Agent des opérations</b><b class="en">Operations Officer</b>
+              <div class="org">ECOBANK SÉNÉGAL · OPÉRATIONS</div>
+              <p class="fr">Recruté en décembre 2017. Administrateur Ecobank Omni, virements RTGS de plus de 50 millions XOF, rapprochement des SWIFT émis et reçus.</p>
+              <p class="en">Hired permanently in December 2017. Ecobank Omni administrator, RTGS transfers above XOF 50 million, reconciliation of inbound and outbound SWIFT messages.</p>
+            </div></li>
+            <li><div class="when">2013 – 2017</div><div>
+              <b class="fr">Opérations bancaires (intérim)</b><b class="en">Banking operations (temporary staff)</b>
+              <div class="org">ECOBANK SÉNÉGAL · DÉPARTEMENT DES OPÉRATIONS</div>
+              <p class="fr">Paiement des salaires, virements UEMOA et internationaux, chèques certifiés, enrôlement clients Omni. Premier à tester l'automatisation des paiements de redevances à la DGID.</p>
+              <p class="en">Payroll, WAEMU and international transfers, certified cheques, Omni client onboarding. First to pilot automated tax payments to the DGID.</p>
+              <ul class="fr"><li>2015 : membre de l'ESN Process Review, mise à jour des processus opérationnels</li><li>2014 : formation Groupe à Accra (Ghana) sur Ecobank Omni et Omniflow (automatisation des virements et des SWIFT)</li></ul>
+              <ul class="en"><li>2015: member of ESN Process Review, updating operating procedures</li><li>2014: Group training in Accra (Ghana) on Ecobank Omni and Omniflow (transfer and SWIFT automation)</li></ul>
+            </div></li>
+            <li><div class="when">2011 – 2013</div><div>
+              <b class="fr">Stagiaire, Portefeuille local</b><b class="en">Intern, Local Portfolio</b>
+              <div class="org">ECOBANK SÉNÉGAL · OPÉRATIONS</div>
+            </div></li>
+            <li><div class="when">2010 – 2011</div><div>
+              <b class="fr">Enseignant en comptabilité générale</b><b class="en">Accounting lecturer</b>
+              <div class="org">SUPTIC · DAKAR</div>
+            </div></li>
+            <li><div class="when">2007</div><div>
+              <b class="fr">Stagiaire comptable (3 mois)</b><b class="en">Accounting intern (3 months)</b>
+              <div class="org">FT DISTRIBUTION</div>
+            </div></li>
+          </ol>
+        </div>
+      </div>
+
+      <aside class="side">
+        <div class="panel card">
+          <h3 class="fr">Outils & langages</h3><h3 class="en">Tools & languages</h3>
+          <div class="skill"><span>Excel · Power Query M</span><em class="fr">Expert</em><em class="en">Expert</em><div class="bar"><i style="width:96%"></i></div></div>
+          <div class="skill"><span>Power BI</span><em class="fr">Expert</em><em class="en">Expert</em><div class="bar"><i style="width:90%"></i></div></div>
+          <div class="skill"><span>HTML · JavaScript</span><em class="fr">Avancé</em><em class="en">Advanced</em><div class="bar"><i style="width:82%"></i></div></div>
+          <div class="skill"><span>SQL</span><em class="fr">Avancé</em><em class="en">Advanced</em><div class="bar"><i style="width:78%"></i></div></div>
+          <div class="skill"><span class="fr">IA générative (automatisation)</span><span class="en">Generative AI (automation)</span><em class="fr">Avancé</em><em class="en">Advanced</em><div class="bar"><i style="width:84%"></i></div></div>
+          <div class="skill"><span>Access · Word</span><em class="fr">Bon</em><em class="en">Good</em><div class="bar"><i style="width:72%"></i></div></div>
+          <div class="tags" style="margin-top:14px"><span>SWIFT Access</span><span>SICA</span><span>RTGS / STAR-UEMOA</span><span>Ecobank Omni</span><span>Omniflow</span><span>SheetJS</span><span>Chart.js</span><span>PptxGenJS</span></div>
+        </div>
+        <div class="panel card">
+          <h3 class="fr">Formation</h3><h3 class="en">Education</h3>
+          <div class="edu">
+            <div><span class="y">2010–11</span><div><b class="fr">Master 1 Finance & Comptabilité</b><b class="en">Master's (M1) Finance & Accounting</b><span>IFACE · UCAD Dakar</span></div></div>
+            <div><span class="y">2007–08</span><div><b class="fr">Licence Finance & Comptabilité</b><b class="en">Bachelor's Finance & Accounting</b><span>IFACE · UCAD Dakar</span></div></div>
+            <div><span class="y">2006–07</span><div><b class="fr">DUG 2 Administration & création d'entreprises</b><b class="en">DUG 2 Business Administration</b><span>IFACE · UCAD Dakar</span></div></div>
+            <div><span class="y">2005–06</span><div><b class="fr">DUES Sciences physiques & chimie</b><b class="en">DUES Physics & Chemistry</b><span class="fr">Faculté des Sciences · UCAD</span><span class="en">Faculty of Science · UCAD</span></div></div>
+            <div><span class="y">2003</span><div><b class="fr">Baccalauréat S2</b><b class="en">Baccalaureate S2 (sciences)</b><span>Lycée Jean de La Fontaine</span></div></div>
+          </div>
+        </div>
+        <div class="panel card">
+          <h3 class="fr">Langues & savoir-être</h3><h3 class="en">Languages & strengths</h3>
+          <dl class="kv">
+            <dt class="fr">Français</dt><dt class="en">French</dt><dd class="fr">Courant, langue de travail</dd><dd class="en">Fluent, working language</dd>
+            <dt class="fr">Anglais</dt><dt class="en">English</dt><dd class="fr">Intermédiaire, écrit professionnel</dd><dd class="en">Intermediate, professional writing</dd>
+            <dt>Wolof</dt><dd class="fr">Langue maternelle</dd><dd class="en">Native</dd>
+          </dl>
+          <div class="tags" style="margin-top:14px">
+            <span class="fr">Rigueur</span><span class="en">Rigour</span>
+            <span class="fr">Discrétion</span><span class="en">Discretion</span>
+            <span class="fr">Esprit d'équipe</span><span class="en">Team spirit</span>
+            <span class="fr">Détermination</span><span class="en">Determination</span>
+            <span class="fr">Dévouement</span><span class="en">Commitment</span>
+          </div>
+          <dl class="kv" style="margin-top:14px">
+            <dt class="fr">Âge</dt><dt class="en">Age</dt><dd class="fr">41 ans</dd><dd class="en">41</dd>
+            <dt class="fr">Situation</dt><dt class="en">Family</dt><dd class="fr">Marié, deux enfants</dd><dd class="en">Married, two children</dd>
+          </dl>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ===================== OPÉRATIONS ===================== -->
+    <section class="print-hide">
+      <div class="sec-h"><span class="tag">Operations</span><h2 class="fr">Le socle opérationnel</h2><h2 class="en">Operational groundwork</h2></div>
+      <div class="panel ops">
+        <div><b class="fr">Paiements & flux</b><b class="en">Payments & flows</b>
+          <ul class="fr"><li>Virements RTGS de plus de 50 M XOF</li><li>Virements interbancaires et zone UEMOA</li><li>Transferts internationaux, rapprochement SWIFT</li><li>Paiement des salaires, virements permanents</li></ul>
+          <ul class="en"><li>RTGS transfers above XOF 50M</li><li>Interbank and WAEMU transfers</li><li>International transfers, SWIFT reconciliation</li><li>Payroll, standing orders</li></ul></div>
+        <div><b>Ecobank Omni</b>
+          <ul class="fr"><li>Administrateur de la plateforme</li><li>Enrôlement et suivi des comptes clients</li><li>Automatisation des transactions (Cash-In)</li><li>Suivi DGID : redevances par notification</li></ul>
+          <ul class="en"><li>Platform administrator</li><li>Client onboarding and account monitoring</li><li>Transaction automation (Cash-In)</li><li>DGID tax payments via notifications</li></ul></div>
+        <div><b class="fr">Comptabilité & clients</b><b class="en">Accounting & clients</b>
+          <ul class="fr"><li>Opérations du service comptabilité (EBS)</li><li>Chèques certifiés, ouvertures de compte</li><li>Réclamations et assistance clientèle</li><li>Revue des processus (ESN Process Review)</li></ul>
+          <ul class="en"><li>Accounting department operations (EBS)</li><li>Certified cheques, account opening</li><li>Claims handling and client support</li><li>Process review (ESN Process Review)</li></ul></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span class="fr">Papa Massamba NDOYE · CV interactif conçu et codé par ses soins · octobre 2026</span>
+    <span class="en">Papa Massamba NDOYE · interactive CV, self-designed and coded · October 2026</span>
+  </footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* Photo intégrée : coller ici un dataURL (data:image/jpeg;base64,...) pour l'embarquer dans le fichier. */
+const PHOTO = "data:image/jpeg;base64,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";
+
+const AUTOS = [
+ {id:"portfolio", grp:{fr:"Portefeuille & IFRS 9",en:"Portfolio & IFRS 9"}, demo:"pipeline",
+  name:{fr:"Portefeuille ESN · moteur ACTE7",en:"ESN Portfolio · ACTE7 engine"},
+  scope:{fr:"Arrêté mensuel · Groupe & BCEAO",en:"Monthly closing · Group & BCEAO"},
+  before:{fr:"Chaîne Power Query lourde sur plusieurs classeurs, lente à rafraîchir, difficile à auditer et sensible aux formats d'extraction.",en:"Heavy Power Query chain across several workbooks: slow to refresh, hard to audit, fragile to extract formats."},
+  after:{fr:"Un fichier HTML hors-ligne : dépôt du PRERAPPORT, sept actes enchaînés, classification et stages attribués, sortie au format Groupe.",en:"One offline HTML file: drop the PRERAPPORT, seven chained steps, classification and stages assigned, Group-format output."},
+  how:{fr:["Lecture CSV « | » avec guillemets : fin des sorties à 0 ligne","ACTE1 : PDO ajouté à l'Ototal · ACTE4 : règle de contagion par client","ACTE5 : jours d'impayé → FRR · ACTE6 : classes I à IV et stages 1 à 3","Exclusions symétriques numérateur / dénominateur pour le ratio NPL"],en:["Pipe-delimited, quoted CSV parsing: no more zero-row outputs","ACTE1: PDO added to Ototal · ACTE4: per-client contagion rule","ACTE5: days past due → FRR · ACTE6: classes I to IV and stages 1 to 3","Symmetric numerator / denominator exclusions for the NPL ratio"]},
+  outs:["ESN_Portfolio.xlsx","CSV Groupe","NPL","Stages IFRS 9"]},
+ {id:"impairment", grp:{fr:"Portefeuille & IFRS 9",en:"Portfolio & IFRS 9"}, demo:"fill",
+  name:{fr:"Impairment Data Template IFRS 9",en:"IFRS 9 Impairment Data Template"},
+  scope:{fr:"Reporting Groupe ETI · ECL",en:"ETI Group reporting · ECL"},
+  before:{fr:"Colonnes de structure de remboursement et montants PDO complétés ligne par ligne avant chaque envoi au Groupe.",en:"Repayment-structure columns and PDO amounts filled row by row before each Group submission."},
+  after:{fr:"Remplissage croisé automatique à partir de l'échéancier, contrôle des statuts NP, fichier conforme au gabarit Groupe.",en:"Automatic cross-fill from the repayment schedule, NP status checks, file matching the Group template."},
+  how:{fr:["Structures PRINCIPAL / INTEREST déduites de la fréquence, jamais du composant","Contrats « 1… » → structure B ; sinon fréquence de l'échéancier, puis mode de la famille","Statut NP : PDO Amount = Ototal Including PDO","Échéancier IFRS 9 reconstruit (13 colonnes) avec les 5 correctifs moteur"],en:["PRINCIPAL / INTEREST structures derived from frequency, never from component","Contracts starting with “1” → structure B; else schedule frequency, then family mode","NP status: PDO Amount = Ototal Including PDO","IFRS 9 schedule rebuilt (13 columns) with the 5 engine fixes"]},
+  outs:["Impairment Data Template","Échéancier IFRS 9","Stage 1 / 2 / 3"]},
+ {id:"recon", grp:{fr:"Portefeuille & IFRS 9",en:"Portfolio & IFRS 9"}, demo:"recon",
+  name:{fr:"Réconciliation Emplois ↔ Portefeuille",en:"Ledger ↔ Portfolio reconciliation"},
+  scope:{fr:"Contrôle comptable · provisions",en:"Accounting control · provisions"},
+  before:{fr:"Écarts entre balance des emplois et portefeuille recherchés à la main, provisions réparties au cas par cas.",en:"Gaps between the ledger and the portfolio traced by hand, provisions allocated case by case."},
+  after:{fr:"Rapprochement contrat par contrat, provisions affectées automatiquement, reliquat isolé sur une ligne DIVERS traçable.",en:"Contract-by-contract matching, provisions allocated automatically, residual isolated on a traceable DIVERS line."},
+  how:{fr:["Comparaison en somme signée absolue, par contrat","Exclusions alignées sur la règle NPL (OA, LCU, CC, CKU, segment 8110)","Provisions du compte 299 sommées par client lié, affectées au plus fort encours","Écart final justifié ligne à ligne"],en:["Absolute signed-sum comparison, per contract","Exclusions aligned with the NPL rule (OA, LCU, CC, CKU, segment 8110)","Account 299 provisions summed per related customer, booked to the largest exposure","Final gap justified line by line"]},
+  outs:["Rapport d'écarts","Provisions affectées","DIVERS"]},
+ {id:"fodep", grp:{fr:"Réglementaire BCEAO",en:"BCEAO regulatory"}, demo:"checks",
+  name:{fr:"États FODEP",en:"FODEP returns"},
+  scope:{fr:"Dispositif prudentiel BCEAO",en:"BCEAO prudential framework"},
+  before:{fr:"États préparés depuis plusieurs extractions, avec des contrôles de cohérence faits visuellement en fin de chaîne.",en:"Returns built from several extracts, with consistency checks done visually at the end."},
+  after:{fr:"Alimentation automatique depuis le portefeuille consolidé, contrôles bloquants avant production, piste d'audit conservée.",en:"Fed automatically from the consolidated portfolio, blocking checks before production, audit trail kept."},
+  how:{fr:["Correspondance gl_code → postes réglementaires","Contrôles inter-états et rapprochement avec la comptabilité","Classification BCEAO (Instruction 026-11-2016) appliquée en amont","Anomalies listées avant l'envoi, jamais après"],en:["gl_code → regulatory line mapping","Cross-return checks and ledger reconciliation","BCEAO classification (Instruction 026-11-2016) applied upstream","Anomalies listed before submission, never after"]},
+  outs:["États FODEP","Journal des contrôles"]},
+ {id:"cdr", grp:{fr:"Réglementaire BCEAO",en:"BCEAO regulatory"}, demo:"funnel",
+  name:{fr:"Centrale des Risques",en:"Central Risk Register"},
+  scope:{fr:"Déclaration BCEAO des engagements",en:"BCEAO credit exposure filing"},
+  before:{fr:"Agrégation des engagements par bénéficiaire et correction des identifiants faites manuellement avant chaque déclaration.",en:"Exposure aggregation per borrower and ID fixes done manually before each filing."},
+  after:{fr:"Agrégation, contrôle des identifiants et des doublons, puis fichier déclaratif généré depuis le portefeuille du mois.",en:"Aggregation, ID and duplicate checks, then the filing generated from the month's portfolio."},
+  how:{fr:["Regroupement des facilités par bénéficiaire et par groupe","Détection des identifiants manquants ou incohérents","Rapprochement des encours déclarés avec le portefeuille publié","Fichier prêt à transmettre, anomalies documentées"],en:["Facilities grouped per borrower and per group","Missing or inconsistent identifiers flagged","Declared exposures matched to the published portfolio","Ready-to-send file, anomalies documented"]},
+  outs:["Fichier déclaratif","Liste d'anomalies"]},
+ {id:"pdo", grp:{fr:"Pilotage COMEX",en:"Executive reporting"}, demo:"dash",
+  name:{fr:"PDO Monitor & Comité des Risques",en:"PDO Monitor & Risk Committee app"},
+  scope:{fr:"COMEX · Comité des Risques",en:"Executive & Risk Committees"},
+  before:{fr:"Tableaux statiques reconstruits à chaque comité, commentaires rédigés à part.",en:"Static tables rebuilt for every committee, commentary written separately."},
+  after:{fr:"Tableau de bord interactif : impayés par ancienneté, NPL, mouvements d'un arrêté à l'autre, lecture rédigée générée.",en:"Interactive dashboard: arrears by ageing, NPL, closing-to-closing movements, generated written commentary."},
+  how:{fr:["Filtres globaux appliqués aux vues et aux exports","Fiche détaillée par client en un clic","Mémoire des arrêtés précédents pour calculer les variations","Comparaison IFRS 9 et suivi des créances à échoir (CAE)"],en:["Global filters applied to views and exports","One-click client drill-down","Previous closings remembered to compute movements","IFRS 9 comparison and maturity (CAE) tracking"]},
+  outs:["Excel 3D","PowerPoint","Word","Mail Outlook"]},
+ {id:"mail", grp:{fr:"Pilotage COMEX",en:"Executive reporting"}, demo:"mail",
+  name:{fr:"Exports & mail couleur",en:"Exports & colour email"},
+  scope:{fr:"Même identité sur chaque support",en:"Same identity on every output"},
+  before:{fr:"Captures d'écran collées dans les mails, mises en forme différentes selon l'auteur.",en:"Screenshots pasted into emails, formatting varying by author."},
+  after:{fr:"Un clic produit l'Excel stylé, le PowerPoint, le Word et un brouillon Outlook en couleur, graphiques intégrés.",en:"One click produces the styled Excel, the PowerPoint, the Word file and a colour Outlook draft with embedded charts."},
+  how:{fr:["Graphiques 3D générés en image pour chaque support","Charte Ecobank : marine, bleu, filet lime","Brouillon .eml avec images intégrées, ouvert directement dans Outlook","Montants XOF au format 2 359 078 494, jamais coupés"],en:["3D charts rendered as images for every output","Ecobank palette: navy, blue, lime rule","Draft .eml with embedded images, opens directly in Outlook","XOF amounts formatted 2 359 078 494, never wrapped"]},
+  outs:[".xlsx",".pptx",".docx",".eml"]}
+];
+
+let lang = "fr", cur = "portfolio", timers = [];
+const $ = s => document.querySelector(s);
+const T = o => (o && typeof o === "object" && !Array.isArray(o)) ? o[lang] : o;
+const fmt = n => Math.round(n).toLocaleString("fr-FR").replace(/ | /g, " ");
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,1800)}
+
+/* ---------- Langue ---------- */
+function setLang(l){
+  lang=l; document.documentElement.lang=l;
+  $("#lang-fr").setAttribute("aria-pressed",l==="fr"); $("#lang-en").setAttribute("aria-pressed",l==="en");
+  document.querySelectorAll("[data-copy]").forEach(b=>b.textContent=l==="fr"?"Copier":"Copy");
+  $("#photo").title = l==="fr"?"Cliquer pour ajouter la photo":"Click to add a photo";
+  try{localStorage.setItem("cv-lang",l)}catch(e){}
+  renderNav(); renderLab(); renderPrint();
+}
+$("#lang-fr").onclick=()=>setLang("fr"); $("#lang-en").onclick=()=>setLang("en");
+
+/* ---------- Copier ---------- */
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-copy]"); if(!b) return;
+  e.preventDefault();
+  const v=b.dataset.copy, ok=()=>toast((lang==="fr"?"Copié : ":"Copied: ")+v);
+  try{navigator.clipboard.writeText(v).then(ok,()=>toast(v))}catch(err){toast(v)}
+});
+
+/* ---------- Photo ---------- */
+function showPhoto(src){
+  if(!src) return;
+  $("#photo-disc").innerHTML=""; const i=new Image(); i.alt="Papa Massamba NDOYE"; i.src=src;
+  $("#photo-disc").appendChild(i); $("#photo").classList.add("has-img");
+}
+$("#photo-input").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=()=>{
+    const img=new Image(); img.onload=()=>{ // recadrage carré 480 px
+      const c=document.createElement("canvas"),s=Math.min(img.width,img.height); c.width=c.height=480;
+      c.getContext("2d").drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,480,480);
+      const d=c.toDataURL("image/jpeg",.88); showPhoto(d);
+      try{localStorage.setItem("cv-photo",d)}catch(err){}
+    }; img.src=r.result;
+  }; r.readAsDataURL(f);
+});
+(function(){let p=PHOTO; if(!p){try{p=localStorage.getItem("cv-photo")}catch(e){}} showPhoto(p)})();
+
+/* ---------- Laboratoire ---------- */
+function renderNav(){
+  const nav=$("#lab-nav"); nav.innerHTML=""; let g="";
+  AUTOS.forEach(a=>{
+    if(T(a.grp)!==g){g=T(a.grp); const d=document.createElement("div"); d.className="grp"; d.textContent=g; nav.appendChild(d)}
+    const b=document.createElement("button"); b.type="button"; b.role="tab"; b.id="tab-"+a.id;
+    b.setAttribute("aria-selected",a.id===cur); b.innerHTML="<i></i><span></span>"; b.lastChild.textContent=T(a.name);
+    b.onclick=()=>{cur=a.id; renderNav(); renderLab()}; nav.appendChild(b);
+  });
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function renderLab(){
+  const a=AUTOS.find(x=>x.id===cur), L=lang==="fr";
+  $("#lab-body").innerHTML=`
+   <div class="lab-top"><div style="min-width:0"><div class="scope">${esc(T(a.scope))}</div><h3>${esc(T(a.name))}</h3></div>
+     <button class="run" type="button" id="run"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg>${L?"Rejouer":"Replay"}</button></div>
+   <div class="ba"><div class="b"><small>${L?"Avant":"Before"}</small>${esc(T(a.before))}</div><div class="a"><small>${L?"Après":"After"}</small>${esc(T(a.after))}</div></div>
+   <div class="stage" id="stage"><span class="demo-tag">${L?"démonstration":"live demo"}</span><div id="svg"></div></div>
+   <div class="how"><div><h4>${L?"Ce que fait le moteur":"What the engine does"}</h4><ul>${T(a.how).map(h=>`<li>${esc(h)}</li>`).join("")}</ul></div>
+     <div><h4>${L?"Livrables":"Deliverables"}</h4><div class="outs">${a.outs.map((o,i)=>`<span class="${i>1?"l":""}">${esc(o)}</span>`).join("")}</div></div></div>`;
+  $("#run").onclick=()=>play(a);
+  play(a);
+}
+function renderPrint(){
+  $("#print-cards").innerHTML=AUTOS.map(a=>`<article><h4>${esc(T(a.name))}</h4><p>${esc(T(a.after))}</p><div class="outs">${a.outs.map(o=>`<span>${esc(o)}</span>`).join("")}</div></article>`).join("");
+}
+
+/* ---------- Démos SVG ---------- */
+function clear(){timers.forEach(clearTimeout); timers=[]}
+function later(fn,ms){timers.push(setTimeout(fn,reduce?0:ms))}
+function svg(w,h,inner){$("#svg").innerHTML=`<svg viewBox="0 0 ${w} ${h}" role="img">${inner}</svg>`; return $("#svg svg")}
+function stageCol(i,n){ // marine → bleu → lime
+  const st=[[0,65,94],[10,111,149],[140,198,63]], t=n<=1?1:i/(n-1), k=t<.5?0:1, u=t<.5?t*2:(t-.5)*2;
+  const c=st[k].map((v,j)=>Math.round(v+(st[k+1][j]-v)*u)); return `rgb(${c})`;
+}
+function countUp(el,to,ms){ if(reduce){el.textContent=fmt(to);return}
+  const t0=performance.now(); const f=t=>{const p=Math.min(1,(t-t0)/ms); el.textContent=fmt(to*(1-Math.pow(1-p,3))); if(p<1) timers.push(requestAnimationFrame(f))}; requestAnimationFrame(f)}
+
+const DEMOS={
+ pipeline(){
+  const steps=["PRERAPPORT","ACTE1","ACTE4","ACTE5","ACTE6","ACTE7"], sub=lang==="fr"?["filtres ESN","+ PDO","contagion","FRR","classes · stages","sortie"]:["ESN filters","+ PDO","contagion","FRR","classes · stages","output"];
+  const W=900,cw=140,gap=10,ink=css("--ink"),mute=css("--mute");
+  let g="";
+  steps.forEach((s,i)=>{const x=10+i*(cw+gap);
+    g+=`<g class="st" data-i="${i}" opacity=".25"><path d="M${x} 20h${cw-14}l14 26-14 26H${x}${i?"l14-26z":"z"}" fill="${stageCol(i,steps.length)}"/>
+    <text x="${x+cw/2+4}" y="44" text-anchor="middle" fill="#fff" font-family="JetBrains Mono, Consolas, monospace" font-size="13" font-weight="700">${s}</text>
+    <text x="${x+cw/2}" y="92" text-anchor="middle" fill="${mute}" font-family="Manrope, Segoe UI, sans-serif" font-size="12">${sub[i]}</text></g>`});
+  const cls=[["I",14350],["IA",908],["IIA",109],["IIN",147],["III",289],["IV",1066]], tot=16869;
+  const cc=["#4E8A2E","#8CC63F","#D4A13A","#B67D1C","#C0392B","#7A1F16"];
+  let x=10,bars="";
+  cls.forEach(([k,v],i)=>{const w=Math.max(880*v/tot,26);
+    bars+=`<g class="cl" opacity="0"><rect x="${x}" y="150" width="${w-3}" height="34" rx="4" fill="${cc[i]}"/>
+      <text x="${x+(w-3)/2}" y="171" text-anchor="middle" fill="#fff" font-family="JetBrains Mono, Consolas, monospace" font-size="11.5" font-weight="700">${k}</text>
+      <text x="${x+(w-3)/2}" y="204" text-anchor="middle" fill="${ink}" font-family="JetBrains Mono, Consolas, monospace" font-size="11">${fmt(v)}</text></g>`; x+=w});
+  svg(W,240,`${g}<text x="10" y="132" fill="${mute}" font-family="Manrope, Segoe UI, sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">${lang==="fr"?"CLASSIFICATION FINALE · ARRÊTÉ DE RÉFÉRENCE":"FINAL CLASSIFICATION · REFERENCE CLOSING"}</text>
+    <text x="890" y="132" text-anchor="end" fill="${ink}" font-family="JetBrains Mono, Consolas, monospace" font-size="15" font-weight="700"><tspan id="cnt">0</tspan> ${lang==="fr"?"contrats":"facilities"}</text>${bars}`);
+  document.querySelectorAll("#svg .st").forEach((e,i)=>later(()=>{e.style.transition="opacity .35s";e.setAttribute("opacity",1)},250*i));
+  later(()=>{countUp(document.getElementById("cnt"),16359,1100);document.querySelectorAll("#svg .cl").forEach((e,i)=>later(()=>{e.style.transition="opacity .3s";e.setAttribute("opacity",1)},120*i))},1550);
+ },
+ fill(){
+  const rows=[["1004217731","—","—","Q","1"],["2003390125","—","—","M","1"],["1006652201","—","—","B","2"],["2007781964","—","—","M","3"],["2001124590","—","—","S","1"],["1009904417","—","—","B","2"]];
+  const ink=css("--ink"),mute=css("--mute"),line=css("--line"),paper=css("--paper");
+  const hd=lang==="fr"?["CONTRAT","PRINCIPAL_STRUCT.","INTEREST_STRUCT.","SOURCE","STAGE"]:["CONTRACT","PRINCIPAL_STRUCT.","INTEREST_STRUCT.","SOURCE","STAGE"];
+  const xs=[16,200,380,560,740];
+  let h=`<rect x="6" y="6" width="888" height="34" rx="6" fill="#00415E"/><rect x="6" y="38" width="888" height="3" fill="#8CC63F"/>`;
+  hd.forEach((t,i)=>h+=`<text x="${xs[i]}" y="28" fill="#fff" font-family="Manrope, Segoe UI, sans-serif" font-size="11.5" font-weight="700" letter-spacing="1">${t}</text>`);
+  rows.forEach((r,j)=>{const y=48+j*32; const val=r[0][0]==="1"?"B":r[3];
+    const src=r[0][0]==="1"?(lang==="fr"?"règle « 1… »":"“1…” rule"):(lang==="fr"?"échéancier":"schedule");
+    const sc={"1":"#4E8A2E","2":"#D4A13A","3":"#C0392B"}[r[4]];
+    h+=`<rect x="6" y="${y}" width="888" height="30" rx="4" fill="${j%2?paper:"transparent"}" stroke="${line}"/>
+     <text x="16" y="${y+20}" fill="${ink}" font-family="JetBrains Mono, Consolas, monospace" font-size="12.5">${r[0]}</text>
+     <g class="f" data-v="${val}" data-s="${esc(src)}" data-y="${y}" data-c="${sc}" data-st="${r[4]}">
+       <text class="p" x="200" y="${y+20}" fill="${mute}" font-family="JetBrains Mono, Consolas, monospace" font-size="12.5">—</text>
+       <text class="q" x="380" y="${y+20}" fill="${mute}" font-family="JetBrains Mono, Consolas, monospace" font-size="12.5">—</text>
+       <text class="s" x="560" y="${y+20}" fill="${mute}" font-family="Manrope, Segoe UI, sans-serif" font-size="12"></text>
+       <g class="g" opacity="0"><rect x="740" y="${y+6}" width="70" height="19" rx="9.5" fill="${sc}"/><text x="775" y="${y+20}" text-anchor="middle" fill="#fff" font-family="Manrope, Segoe UI, sans-serif" font-size="11" font-weight="700">Stage ${r[4]}</text></g></g>`});
+  svg(900,250,h);
+  document.querySelectorAll("#svg .f").forEach((g,i)=>later(()=>{
+    ["p","q"].forEach(k=>{const t=g.querySelector("."+k); t.textContent=g.dataset.v; t.setAttribute("fill","#4E8A2E"); t.setAttribute("font-weight","700")});
+    g.querySelector(".s").textContent=g.dataset.s; const s=g.querySelector(".g"); s.style.transition="opacity .3s"; s.setAttribute("opacity",1);
+  },350+i*320));
+ },
+ recon(){
+  const ink=css("--ink"),mute=css("--mute");
+  const L=lang==="fr";
+  svg(900,240,`
+   <text x="10" y="24" fill="${mute}" font-family="Manrope, Segoe UI, sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">${L?"BALANCE DES EMPLOIS":"LEDGER"}</text>
+   <rect x="10" y="34" width="820" height="30" rx="5" fill="#005C83"/>
+   <text x="10" y="94" fill="${mute}" font-family="Manrope, Segoe UI, sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">${L?"PORTEFEUILLE ACTE7":"ACTE7 PORTFOLIO"}</text>
+   <rect id="pb" x="10" y="104" width="640" height="30" rx="5" fill="#8CC63F"/>
+   <rect id="gap" x="650" y="104" width="180" height="30" rx="5" fill="none" stroke="#C0392B" stroke-width="2" stroke-dasharray="5 4"/>
+   <text id="gapt" x="740" y="124" text-anchor="middle" fill="#C0392B" font-family="JetBrains Mono, Consolas, monospace" font-size="12" font-weight="700">${L?"écart":"gap"}</text>
+   <g font-family="JetBrains Mono, Consolas, monospace" font-size="12.5" fill="${ink}">
+    <text x="10" y="172">${L?"Écart résiduel":"Residual gap"}</text><text id="g1" x="420" y="172" text-anchor="end" font-weight="700" fill="#C0392B">1 284 559 210</text>
+    <text x="10" y="196">${L?"Provisions 299 affectées":"Account 299 provisions booked"}</text><text id="g2" x="420" y="196" text-anchor="end">0</text>
+    <text x="10" y="220">${L?"Ligne DIVERS (200000005)":"DIVERS line (200000005)"}</text><text id="g3" x="420" y="220" text-anchor="end">0</text>
+   </g>
+   <g id="ok" opacity="0"><rect x="560" y="166" width="270" height="44" rx="22" fill="#4E8A2E"/><text x="695" y="194" text-anchor="middle" fill="#fff" font-family="Manrope, Segoe UI, sans-serif" font-size="14" font-weight="800">${L?"Réconcilié · écart 0":"Reconciled · gap 0"}</text></g>`);
+  const pb=document.getElementById("pb"),gp=document.getElementById("gap"),g1=document.getElementById("g1"),g2=document.getElementById("g2"),g3=document.getElementById("g3");
+  const tot=1284559210,prov=1201330785;
+  const t0=performance.now(),ms=reduce?1:1600;
+  later(()=>{const f=t=>{const p=Math.min(1,(t-t0-400)/ms); if(p<0){timers.push(requestAnimationFrame(f));return}
+    const e=1-Math.pow(1-p,3); pb.setAttribute("width",640+180*e); gp.setAttribute("x",650+180*e); gp.setAttribute("width",180*(1-e));
+    g2.textContent=fmt(prov*e); g3.textContent=fmt((tot-prov)*e); g1.textContent=fmt(tot*(1-e));
+    if(p<1) timers.push(requestAnimationFrame(f)); else {document.getElementById("gapt").textContent=""; g1.setAttribute("fill","#4E8A2E"); const o=document.getElementById("ok"); o.style.transition="opacity .4s"; o.setAttribute("opacity",1)}};
+    requestAnimationFrame(f)},0);
+ },
+ checks(){
+  const L=lang==="fr",ink=css("--ink"),mute=css("--mute"),line=css("--line");
+  const items=L?["Chargement du portefeuille consolidé","Mapping gl_code → postes réglementaires","Contrôle : total états = balance comptable","Contrôle : classification BCEAO cohérente","Contrôle inter-états (encours, provisions)","Génération des états FODEP"]
+               :["Load consolidated portfolio","Map gl_code → regulatory lines","Check: returns total = ledger balance","Check: BCEAO classification consistent","Cross-return check (exposure, provisions)","Generate FODEP returns"];
+  let h="";
+  items.forEach((t,i)=>{const y=12+i*36;
+    h+=`<g class="ck"><rect x="6" y="${y}" width="888" height="30" rx="6" fill="transparent" stroke="${line}"/>
+     <circle class="dot" cx="26" cy="${y+15}" r="8" fill="${line}"/><path class="tick" d="M22 ${y+15}l3 3 5-6" stroke="#fff" stroke-width="2" fill="none" opacity="0"/>
+     <text x="46" y="${y+20}" fill="${ink}" font-family="Manrope, Segoe UI, sans-serif" font-size="13" font-weight="600">${t}</text>
+     <text class="stt" x="880" y="${y+20}" text-anchor="end" fill="${mute}" font-family="JetBrains Mono, Consolas, monospace" font-size="11.5">${L?"en attente":"pending"}</text></g>`});
+  svg(900,232,h);
+  document.querySelectorAll("#svg .ck").forEach((g,i)=>{
+    later(()=>{g.querySelector(".stt").textContent=L?"en cours…":"running…"; g.querySelector(".dot").setAttribute("fill","#1A86B3")},i*420);
+    later(()=>{g.querySelector(".dot").setAttribute("fill","#4E8A2E"); g.querySelector(".tick").setAttribute("opacity",1); const s=g.querySelector(".stt"); s.textContent="OK"; s.setAttribute("fill","#4E8A2E"); s.setAttribute("font-weight","700")},i*420+330);
+  });
+ },
+ funnel(){
+  const L=lang==="fr",ink=css("--ink"),mute=css("--mute");
+  const st=L?[["Facilités du portefeuille",16359],["Bénéficiaires agrégés",9874],["Identifiants à corriger",37],["Lignes déclarées",9874]]
+            :[["Portfolio facilities",16359],["Aggregated borrowers",9874],["IDs to fix",37],["Filed records",9874]];
+  let h="";
+  st.forEach(([t,v],i)=>{const y=10+i*54, w=[880,640,220,640][i], x=10+(880-w)/2, c=i===2?"#C0392B":stageCol(i===3?3:i,4);
+    h+=`<g class="fu" opacity=".15"><rect x="${x}" y="${y}" width="${w}" height="42" rx="8" fill="${c}"/>
+      <text x="${x+16}" y="${y+26}" fill="#fff" font-family="Manrope, Segoe UI, sans-serif" font-size="13" font-weight="700">${t}</text>
+      <text class="n" data-v="${v}" x="${x+w-16}" y="${y+26}" text-anchor="end" fill="#fff" font-family="JetBrains Mono, Consolas, monospace" font-size="14" font-weight="700">0</text></g>`});
+  svg(900,226,h);
+  document.querySelectorAll("#svg .fu").forEach((g,i)=>later(()=>{g.style.transition="opacity .35s"; g.setAttribute("opacity",1); countUp(g.querySelector(".n"),+g.querySelector(".n").dataset.v,700)},i*480));
+ },
+ dash(){
+  const L=lang==="fr",ink=css("--ink"),mute=css("--mute"),line=css("--line"),paper=css("--paper");
+  const pts=[7.9,7.6,7.8,7.2,6.9,6.6,6.8,6.3,6.1,5.8,5.9,5.5];
+  const X=i=>380+i*44, Y=v=>200-(v-4)*30;
+  const path=pts.map((v,i)=>(i?"L":"M")+X(i)+" "+Y(v)).join(" ");
+  const ages=[["1–30 j",42],["31–90 j",23],["91–180 j",14],["181–360 j",9],["> 360 j",12]];
+  let bars="";
+  ages.forEach(([k,v],i)=>{const y=40+i*34; bars+=`<text x="10" y="${y+15}" fill="${ink}" font-family="JetBrains Mono, Consolas, monospace" font-size="11.5">${k}</text>
+    <rect x="96" y="${y+2}" width="220" height="18" rx="4" fill="${line}"/><rect class="ab" data-w="${220*v/42}" x="96" y="${y+2}" width="0" height="18" rx="4" fill="${stageCol(i,5)}"/>
+    <text x="326" y="${y+15}" fill="${mute}" font-family="JetBrains Mono, Consolas, monospace" font-size="11">${v}%</text>`});
+  svg(900,236,`
+   <text x="10" y="22" fill="${mute}" font-family="Manrope, Segoe UI, sans-serif" font-size="11.5" font-weight="700" letter-spacing="1.4">${L?"PDO PAR ANCIENNETÉ":"PDO BY AGEING"}</text>${bars}
+   <text x="380" y="22" fill="${mute}" font-family="Manrope, Segoe UI, sans-serif" font-size="11.5" font-weight="700" letter-spacing="1.4">${L?"RATIO NPL · 12 ARRÊTÉS":"NPL RATIO · 12 CLOSINGS"}</text>
+   ${[5,6,7,8].map(v=>`<line x1="380" x2="884" y1="${Y(v)}" y2="${Y(v)}" stroke="${line}"/><text x="888" y="${Y(v)+4}" fill="${mute}" font-family="JetBrains Mono, Consolas, monospace" font-size="10">${v}%</text>`).join("")}
+   <path d="${path} L${X(11)} 200 L380 200Z" fill="#8CC63F" opacity=".14"/>
+   <path id="nl" d="${path}" fill="none" stroke="#005C83" stroke-width="2.5" stroke-linejoin="round"/>
+   <circle cx="${X(11)}" cy="${Y(5.5)}" r="5" fill="#8CC63F" stroke="${paper}" stroke-width="2"/>
+   <text x="${X(11)-8}" y="${Y(5.5)-12}" text-anchor="end" fill="${ink}" font-family="JetBrains Mono, Consolas, monospace" font-size="13" font-weight="700">5,5 %</text>
+   <text x="380" y="226" fill="${mute}" font-family="Manrope, Segoe UI, sans-serif" font-size="11">${L?"Données illustratives":"Illustrative data"}</text>`);
+  const nl=document.getElementById("nl"),len=nl.getTotalLength(); nl.style.strokeDasharray=len; nl.style.strokeDashoffset=reduce?0:len;
+  later(()=>{nl.style.transition="stroke-dashoffset 1.4s ease-out"; nl.style.strokeDashoffset=0},100);
+  document.querySelectorAll("#svg .ab").forEach((b,i)=>later(()=>{b.style.transition="width .6s ease-out"; b.setAttribute("width",b.dataset.w)},150+i*120));
+ },
+ mail(){
+  const L=lang==="fr",ink=css("--ink"),mute=css("--mute"),line=css("--line"),paper=css("--paper");
+  const files=[[".xlsx","#4E8A2E"],[".pptx","#B67D1C"],[".docx","#1A86B3"],[".eml","#00415E"]];
+  let f="";
+  files.forEach(([t,c],i)=>{const x=20+i*100; f+=`<g class="fl" opacity="0" transform="translate(0,10)"><rect x="${x}" y="70" width="82" height="100" rx="8" fill="${paper}" stroke="${line}"/><path d="M${x+58} 70v22h24" fill="none" stroke="${line}"/>
+    <rect x="${x+12}" y="120" width="58" height="26" rx="5" fill="${c}"/><text x="${x+41}" y="138" text-anchor="middle" fill="#fff" font-family="JetBrains Mono, Consolas, monospace" font-size="12" font-weight="700">${t}</text></g>`});
+  svg(900,232,`
+   <text x="20" y="40" fill="${mute}" font-family="Manrope, Segoe UI, sans-serif" font-size="11.5" font-weight="700" letter-spacing="1.4">${L?"UN CLIC · QUATRE SORTIES":"ONE CLICK · FOUR OUTPUTS"}</text>${f}
+   <g id="ml" opacity="0"><rect x="460" y="14" width="430" height="206" rx="10" fill="${paper}" stroke="${line}"/>
+    <rect x="460" y="14" width="430" height="44" rx="10" fill="#00415E"/><rect x="460" y="48" width="430" height="10" fill="#00415E"/><rect x="460" y="58" width="430" height="3" fill="#8CC63F"/>
+    <text x="478" y="42" fill="#fff" font-family="Manrope, Segoe UI, sans-serif" font-size="13" font-weight="700">${L?"Suivi PDO · arrêté du 30/09/2026":"PDO tracker · closing 30/09/2026"}</text>
+    ${[0,1,2].map(i=>`<rect x="${478+i*134}" y="74" width="122" height="46" rx="6" fill="${css("--tint")}"/><rect x="${478+i*134}" y="74" width="4" height="46" fill="${stageCol(i,3)}"/>
+      <text x="${490+i*134}" y="92" fill="${mute}" font-family="Manrope, Segoe UI, sans-serif" font-size="10">${(L?["Encours","PDO","NPL"]:["Exposure","PDO","NPL"])[i]}</text>
+      <text x="${490+i*134}" y="110" fill="${ink}" font-family="JetBrains Mono, Consolas, monospace" font-size="12" font-weight="700">${["412 908 117 450","9 774 330 812","5,5 %"][i]}</text>`).join("")}
+    ${[0,1,2,3].map(i=>`<rect x="478" y="${134+i*20}" width="${[300,240,270,180][i]}" height="8" rx="4" fill="${line}"/>`).join("")}
+    <text x="872" y="210" text-anchor="end" fill="${mute}" font-family="Manrope, Segoe UI, sans-serif" font-size="10">${L?"Données illustratives":"Illustrative data"}</text></g>`);
+  document.querySelectorAll("#svg .fl").forEach((g,i)=>later(()=>{g.style.transition="opacity .35s, transform .35s"; g.setAttribute("opacity",1); g.setAttribute("transform","translate(0,0)")},i*220));
+  later(()=>{const m=document.getElementById("ml"); m.style.transition="opacity .5s"; m.setAttribute("opacity",1)},950);
+ }
+};
+function play(a){clear(); DEMOS[a.demo]()}
+
+/* ---------- Fond animé du héros : grille de grand livre ---------- */
+(function(){
+  const c=$("#ledger"), x=c.getContext("2d"); let W,H,cols,raf;
+  const digits="0123456789";
+  function size(){const r=c.getBoundingClientRect(),d=devicePixelRatio||1; W=c.width=r.width*d; H=c.height=r.height*d; x.setTransform(d,0,0,d,0,0);
+    cols=Array.from({length:Math.ceil(r.width/120)},(_,i)=>({x:i*120+20,y:Math.random()*r.height,s:.2+Math.random()*.35}))}
+  function draw(){const r=c.getBoundingClientRect(); x.clearRect(0,0,r.width,r.height);
+    x.strokeStyle="rgba(255,255,255,.05)"; x.lineWidth=1;
+    for(let gy=0;gy<r.height;gy+=28){x.beginPath();x.moveTo(0,gy+.5);x.lineTo(r.width,gy+.5);x.stroke()}
+    x.font="11px JetBrains Mono, monospace";
+    cols.forEach(k=>{for(let j=0;j<6;j++){const yy=(k.y+j*28)%(r.height+40)-20; x.fillStyle=`rgba(166,216,103,${.05+.05*(j/6)})`;
+      let s=""; for(let n=0;n<9;n++){s+=digits[(Math.floor(k.y/28)+j*7+n*3)%10]; if(n===2||n===5) s+=" "} x.fillText(s,k.x,yy)}
+      if(!reduce) k.y+=k.s});
+    if(!reduce) raf=requestAnimationFrame(draw)}
+  size(); draw(); addEventListener("resize",()=>{cancelAnimationFrame(raf);size();draw()});
+})();
+
+/* ---------- Démarrage ---------- */
+(function(){let l="fr"; try{l=localStorage.getItem("cv-lang")||"fr"}catch(e){}
+  if(location.hash==="#en") l="en"; setLang(l)})();
+</script>
