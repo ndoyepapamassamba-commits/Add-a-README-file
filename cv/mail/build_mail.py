@@ -8,7 +8,6 @@ from email.header import Header
 
 HERE = pathlib.Path(__file__).parent
 CV = HERE.parent
-LINK = "https://claude.ai/artifact/EKUafAUqnPB7hQxnkuqAYG"
 F = "Segoe UI,Helvetica,Arial,sans-serif"
 MARINE, ECO, LIME, LEAF, INK, INK2, TINT = "#00415E", "#005C83", "#8CC63F", "#4E8A2E", "#12333F", "#3E5C6B", "#EEF4F7"
 
@@ -39,26 +38,30 @@ def tiles(lang):
         rows += f"<tr>{cells}</tr>"
     return f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">{rows}</table>'
 
-def button(label):
-    return f'''<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-<td bgcolor="{LIME}" style="background:{LIME};border-radius:24px;padding:12px 24px;mso-padding-alt:12px 24px;">
-<a href="{LINK}" style="font-family:{F};font-size:14px;font-weight:bold;color:#0B2A12;text-decoration:none;white-space:nowrap;">{label}&nbsp;&rarr;</a>
+def button(info):
+    name, hint = info
+    return f'''<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F2F8EA;border:1px solid #CFE6B0;">
+<tr><td width="52" valign="middle" style="padding:12px 0 12px 14px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="{ECO}" style="background:{ECO};border-radius:6px;padding:8px 7px;font-family:Consolas,monospace;font-size:11px;font-weight:bold;color:#FFFFFF;">HTML</td></tr></table></td>
+<td valign="middle" style="padding:12px 14px;font-family:{F};">
+<div style="font-family:Consolas,monospace;font-size:13px;font-weight:bold;color:{MARINE};">{name}</div>
+<div style="font-size:12.5px;color:{INK2};line-height:1.45;padding-top:3px;">{hint}</div>
 </td></tr></table>'''
 
 def section(lang):
     if lang == "fr":
-        tag, hello = "VERSION FRANÇAISE", "Bonjour [Madame / Monsieur NOM],"
+        tag, hello = "VERSION FRANÇAISE", "Bonjour Serge,"
         p1 = "Comme demandé, je vous transmets mon CV en pièce jointe, en français et en anglais."
         p2 = ("Vous y trouverez notamment les automatisations que j'ai réalisées au sein du "
               "Credit Administration Department d'Ecobank Sénégal :")
-        p3 = "Une version interactive du CV présente une démonstration animée de chaque outil."
-        btn, p4, bye = "Voir le CV interactif", "Je reste à votre disposition pour tout complément d'information.", "Bien cordialement,"
+        p3 = "Je joins également une version interactive du CV, qui présente une démonstration animée de chaque outil :"
+        btn, p4, bye = ("CV_NDOYE_Papa_Massamba.html", "Double-cliquez sur la pièce jointe : elle s'ouvre dans votre navigateur (Chrome ou Edge), sans installation ni connexion."), "Je reste à votre disposition pour tout complément d'information.", "Bien cordialement,"
     else:
-        tag, hello = "ENGLISH VERSION", "Dear [Mr / Ms NAME],"
+        tag, hello = "ENGLISH VERSION", "Hello Serge,"
         p1 = "As requested, please find my CV attached, in French and English."
         p2 = "It includes the automations I built within Ecobank Senegal's Credit Administration Department:"
-        p3 = "An interactive version of the CV shows an animated demonstration of each tool."
-        btn, p4, bye = "View interactive CV", "Please do not hesitate to contact me should you need any further information.", "Kind regards,"
+        p3 = "I am also attaching an interactive version of the CV, with an animated demonstration of each tool:"
+        btn, p4, bye = ("CV_NDOYE_Papa_Massamba.html", "Double-click the attachment: it opens in your browser (Chrome or Edge), with no installation or internet connection needed."), "Please do not hesitate to contact me should you need any further information.", "Kind regards,"
     P = f"font-family:{F};font-size:15px;line-height:1.6;color:{INK};margin:0 0 14px 0;"
     return f'''<tr><td style="padding:28px 32px 8px 32px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
@@ -107,7 +110,7 @@ def build(photo_src):
 </td></tr></table></td></tr>
 
 <tr><td bgcolor="{MARINE}" style="background:{MARINE};padding:12px 32px;font-family:{F};font-size:11px;color:#B9D3DF;">
-Pièces jointes / Attachments : CV_NDOYE_Papa_Massamba_FR.pdf · CV_NDOYE_Papa_Massamba_EN.pdf</td></tr>
+Pièces jointes / Attachments : CV_NDOYE_Papa_Massamba.html · CV_NDOYE_Papa_Massamba_FR.pdf · CV_NDOYE_Papa_Massamba_EN.pdf</td></tr>
 </table></td></tr></table></body></html>'''
 
 photo = (CV / "photo.jpg").read_bytes()
@@ -124,6 +127,8 @@ rel = MIMEMultipart("related")
 rel.attach(MIMEText(build("cid:photo_pmn"), "html", "utf-8"))
 img = MIMEImage(photo, "jpeg"); img.add_header("Content-ID", "<photo_pmn>"); img.add_header("Content-Disposition", "inline", filename="photo.jpg")
 rel.attach(img); msg.attach(rel)
+h = MIMEText((CV / "CV_NDOYE_Papa_Massamba.html").read_text(encoding="utf-8"), "html", "utf-8")
+h.add_header("Content-Disposition", "attachment", filename="CV_NDOYE_Papa_Massamba.html"); msg.attach(h)
 for l in ("FR", "EN"):
     n = f"CV_NDOYE_Papa_Massamba_{l}.pdf"
     a = MIMEApplication((CV / n).read_bytes(), "pdf"); a.add_header("Content-Disposition", "attachment", filename=n); msg.attach(a)
