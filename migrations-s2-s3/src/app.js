@@ -195,7 +195,7 @@ function narrative(X){const A=S;const s3a2=X.byA(A.s3,2),s3a1=X.byA(A.s3,1);
 const TABS=[['syn','Synthèse'],['s3','S3 incoming'],['s2','S2 incoming'],['mx','Matrice'],['imp','Impairment']];
 function show(id){document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.t===id));}
 function render(){const A=S,X=S.X,V=S.V;
-  $('#drop').hidden=true;$('#nav').hidden=false;$('#bXl').hidden=false;$('#foot').hidden=false;
+  $('#drop').hidden=true;$('#nav').hidden=false;$('#bXl').hidden=false;$('#bPpt').hidden=false;$('#bDoc').hidden=false;$('#foot').hidden=false;
   $('#tabs').innerHTML=TABS.map(([k,l])=>`<button class="tab" data-t="${k}">${l}${k==='s3'?`<span class="ct">${A.s3.length}</span>`:k==='s2'?`<span class="ct">${A.s2.length}</span>`:''}</button>`).join('');
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>show(t.dataset.t));
   const kp=(l,v,s,c)=>`<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
@@ -323,12 +323,12 @@ async function buildXlsx(){
     {type:'cellIs',operator:'equal',formulae:['1'],priority:3,style:{fill:{type:'pattern',pattern:'solid',bgColor:{argb:'FFE3F1D3'}},font:{bold:true,color:{argb:'FF3F7A1E'}}}}]});}
   const dbar=(ws,ref,col)=>ws.addConditionalFormatting({ref,rules:[{type:'dataBar',priority:10,minLength:0,maxLength:100,gradient:true,cfvo:[{type:'num',value:0},{type:'max'}],color:{argb:argb(col)}}]});
 
-  const ws0=wb.addWorksheet('SYNTHESE',{views:[{state:'frozen',ySplit:4,showGridLines:false,zoomScale:90}]});
-  const wsI=wb.addWorksheet('IMPAIRMENT',{views:[{showGridLines:false,zoomScale:90}]});
+  const ws0=wb.addWorksheet('SYNTHESE',{views:[{state:'frozen',ySplit:4,showGridLines:false,showRowColHeaders:false,zoomScale:90}]});
+  const wsI=wb.addWorksheet('IMPAIRMENT',{views:[{showGridLines:false,showRowColHeaders:false,zoomScale:90}]});
   const HR=16;
   const sheetOpts={views:[{state:'frozen',xSplit:3,ySplit:HR,showGridLines:false,zoomScale:90}]};
   const ws3=wb.addWorksheet('S3 INCOMING',sheetOpts),ws2=wb.addWorksheet('S2 INCOMING',sheetOpts);
-  const wsM=wb.addWorksheet('MATRICE MIGRATION',{views:[{showGridLines:false,zoomScale:90}]});
+  const wsM=wb.addWorksheet('MATRICE MIGRATION',{views:[{showGridLines:false,showRowColHeaders:false,zoomScale:90}]});
   const wsD=wb.addWorksheet('DETAIL CONTRATS',{views:[{state:'frozen',xSplit:4,ySplit:HR,showGridLines:false,zoomScale:90}]});
   const wsB=wb.addWorksheet('BASE CLIENTS',sheetOpts);
 
@@ -348,7 +348,7 @@ async function buildXlsx(){
   const CC=[['Code client','cli',null,12],['Nom client','nom',null,36],['Segment','seg',null,13],['Gestionnaire','gest',null,20],['Produits','prod',null,15],['Nb contrats','nb',INT,9],
     ['Flux','flux',null,13],['Stage '+rd.slice(0,5),'stgA','stg',9],['Stage '+cd.slice(0,5),'stg','stg',9],['Classe '+rd.slice(0,5),'clsA',null,10],['Classe '+cd.slice(0,5),'cls',null,10],['Jours PDO max','dpd',INT,10],
     ['EAD '+rd.slice(0,5),'eadA',AMT,15],['EAD '+cd.slice(0,5),'ead',AMT,15],['Impayés PDO '+cd.slice(0,5),'pdo',AMT,14],['Garanties nettes','coll',AMT,15],['Provision IFRS9 '+rd.slice(0,5),'provA',AMT,15],
-    ['ECL Best estimate','be',AMT,14],['ECL Optimiste','o',AMT,14],['ECL Downturn','dn',AMT,14],['ECL simulé '+cd.slice(0,5),'=ECL',AMT,15],['Impairment à prendre','=IMP',AMT,16],['Couverture ECL / EAD','=COV',PCT,11]];
+    ['ECL Best estimate','be',AMT,14],['ECL Optimiste','o',AMT,14],['ECL Downturn','dn',AMT,14],['ECL simulé '+cd.slice(0,5),'=ECL',AMT,15],['Impairment à prendre','=IMP',AMT,16],['Couverture ECL / EAD','=COV',PCT,11],['Décision Comité','dec',null,20],['Commentaire','com',null,30]];
   const REF={};
   function clientSheet(ws,L,tname,title,sub,color,imgs){
     const last=1+CC.length,col={};CC.forEach(([, k],i)=>col[k]=2+i);const Lc=k=>CL(col[k]);
@@ -381,7 +381,16 @@ async function buildXlsx(){
     let x=ws.getCell(tr,col['=COV']);x.value=fx(`IFERROR(${Lc('=ECL')}${tr}/${Lc('ead')}${tr},0)`,T.ead?T.ecl/T.ead:0);x.numFmt=PCT;x.font={name:NUMF,size:10,bold:true,color:{argb:'FFFFFFFF'}};
     ws.getRow(tr).height=22;
     stageCF(ws,Lc('stgA')+r1+':'+Lc('stg')+r2);dbar(ws,rg('ead'),C.BLUE);dbar(ws,rg('=IMP'),C.RED);dbar(ws,rg('provA'),C.LIME);
-    ws.addConditionalFormatting({ref:rg('dpd'),rules:[{type:'colorScale',priority:20,cfvo:[{type:'num',value:0},{type:'num',value:90},{type:'num',value:180}],color:[{argb:'FFFFFFFF'},{argb:'FFF8EBCB'},{argb:'FFF1A9A0'}]}]});
+    ws.addConditionalFormatting({ref:rg('dpd'),rules:[{type:'colorScale',priority:20,cfvo:[{type:'num',value:0},{type:'num',value:90},{type:'num',value:180}],color:[{argb:'FFFFFFFF'},{argb:'FFF8EBCB'},{argb:'FFF1A9A0'}]},
+      {type:'iconSet',priority:21,iconSet:'3Flags',reverse:true,showValue:true,cfvo:[{type:'num',value:0},{type:'num',value:90},{type:'num',value:180}]}]});
+    ws.addConditionalFormatting({ref:rg('=COV'),rules:[{type:'iconSet',priority:22,iconSet:'3Symbols2',reverse:false,showValue:true,cfvo:[{type:'num',value:0},{type:'num',value:0.2},{type:'num',value:0.5}]}]});
+    // suivi Comité : liste déroulante + couleurs de décision
+    ws.dataValidations.add(rg('dec'),{type:'list',allowBlank:true,showErrorMessage:true,errorTitle:'Décision Comité',error:'Choisir une valeur de la liste',
+      formulae:['"À revoir,Dotation validée,Garantie à vérifier,Reprise à confirmer,Sortie attendue"']});
+    for(let r=r1;r<=r2;r++){const a=ws.getCell(r,col.dec),b=ws.getCell(r,col.com);a.fill=fill('FFFBEA');b.fill=fill('FFFBEA');a.alignment={horizontal:'center',vertical:'middle'};}
+    ws.getCell(HR,col.dec).note='Liste déroulante : décision du Comité des Risques pour ce nom (cellules jaunes à renseigner).';
+    const dcf=(t,bg,fc,pr)=>({type:'cellIs',operator:'equal',formulae:['"'+t+'"'],priority:pr,style:{fill:{type:'pattern',pattern:'solid',bgColor:{argb:'FF'+bg}},font:{bold:true,color:{argb:'FF'+fc}}}});
+    ws.addConditionalFormatting({ref:rg('dec'),rules:[dcf('Dotation validée','E3F1D3','3F7A1E',40),dcf('À revoir','F8EBCB','8A5A00',41),dcf('Garantie à vérifier','DCEBF2','005C83',42),dcf('Reprise à confirmer','F6D5D1','C0392B',43),dcf('Sortie attendue','EEF4F7','3E5C6B',44)]});
     [['Segment',2,3,1,'SlicerStyleDark1'],['Flux',4,6,1,'SlicerStyleDark2'],['Classe '+cd.slice(0,5),7,8,1,'SlicerStyleDark3'],['Produits',9,12,2,'SlicerStyleDark5'],['Gestionnaire',13,21,3,'SlicerStyleDark6']]
       .forEach(([cn,a,b,cc,st])=>SL.push({sheet:ws.name,table:tname,col:cn,cap:cn.replace(/ \d\d\/\d\d$/,''),anc:[a-1,10,b,HR-2],st,cc}));
     const xc=last+2;ws.getColumn(xc-1).width=3;for(let i=xc;i<xc+12;i++)ws.getColumn(i).width=11;
@@ -567,8 +576,30 @@ async function buildXlsx(){
     x=ws0.getCell(r,10);x.value=ans;x.font=font({size:9});x.alignment={wrapText:true,vertical:'middle'};
     x=ws0.getCell(r,14);x.value={text:'→ '+sh,hyperlink:`#'${sh}'!A1`};x.font=font({size:9.5,bold:true,color:{argb:argb(C.SKY)},underline:true});x.alignment={horizontal:'center',vertical:'middle'};
     for(let c=3;c<=15;c++)ws0.getCell(r,c).border={bottom:thinB};ws0.getRow(r).height=48;});
-  section(ws0,17,2,15,'VISUELS');
-  const h1=img(ws0,'flows',2,18,640);img(ws0,'heat',9,18,640);let y=18+Math.floor(h1/20)+1;
+  // barre de navigation (boutons hyperliens)
+  ws0.getRow(9).height=24;
+  [['S3 INCOMING',C.RED],['S2 INCOMING',C.AMB],['IMPAIRMENT',C.NAVY],['MATRICE MIGRATION',C.BLUE],['DETAIL CONTRATS',C.GREEN],['BASE CLIENTS',C.MUT]].forEach(([sh,col],i)=>{
+    const c1=2+i*2+(i>2?1:0)-(i>2?1:0);ws0.mergeCells(9,c1,9,c1+1);const b=ws0.getCell(9,c1);b.value={text:'▸ '+sh,hyperlink:`#'${sh}'!A1`};
+    b.fill={type:'gradient',gradient:'angle',degree:90,stops:[{position:0,color:{argb:'FF'+g3Shade('#'+col,0.18).slice(1).toUpperCase()}},{position:1,color:{argb:'FF'+col}}]};
+    b.font=font({size:9,bold:true,color:{argb:'FFFFFFFF'}});b.alignment={horizontal:'center',vertical:'middle'};
+    b.border={left:{style:'thin',color:{argb:'FFFFFFFF'}},right:{style:'thin',color:{argb:'FFFFFFFF'}},bottom:{style:'medium',color:{argb:argb(C.LIME)}}};});
+  x=ws0.getCell(9,14);ws0.mergeCells(9,14,9,15);x.value='Navigation · cliquer pour ouvrir';x.font=font({size:8.5,italic:true,color:{argb:argb(C.MUT)}});x.alignment={horizontal:'center',vertical:'middle'};
+  // Top 10 des noms
+  section(ws0,17,2,15,'TOP 10 DES NOMS — IMPAIRMENT À PRENDRE (scénario pondéré)');
+  header(ws0,18,2,['Rang','Nom client','','','Catégorie','Segment','Gestionnaire','','EAD '+cd,'Provision '+rd,'ECL simulé','Impairment','% cumulé','']);
+  [[3,5],[8,9],[14,15]].forEach(([a,b])=>ws0.mergeCells(18,a,18,b));
+  const top10=[...A.s3.map(c=>Object.assign({cat:'S3 incoming'},c)),...A.s2.map(c=>Object.assign({cat:'S2 incoming'},c))].sort((a,b)=>b.imp-a.imp).slice(0,10);
+  let cum=0;top10.forEach((c,i)=>{const r=19+i;cum+=c.imp;[[3,5],[8,9],[14,15]].forEach(([a,b])=>ws0.mergeCells(r,a,r,b));
+    x=ws0.getCell(r,2);x.value=i+1;x.fill=fill(i<3?C.NAVY:C.BLUE);x.font={name:NUMF,size:11,bold:true,color:{argb:'FFFFFFFF'}};x.alignment={horizontal:'center',vertical:'middle'};
+    x=ws0.getCell(r,3);x.value=c.nom;body(x,null,{bold:true});
+    x=ws0.getCell(r,6);x.value=c.cat;x.fill=fill(c.cat[1]==='3'?'F6D5D1':'F8EBCB');x.font=font({size:9,bold:true,color:{argb:c.cat[1]==='3'?argb(C.RED):'FF8A5A00'}});x.alignment={horizontal:'center',vertical:'middle'};x.border={bottom:thinB};
+    x=ws0.getCell(r,7);x.value=c.seg;body(x,null,{align:'center'});x=ws0.getCell(r,8);x.value=c.gest;body(x);
+    [[10,c.ead],[11,c.provA],[12,c.ecl],[13,c.imp]].forEach(([cc,v])=>{x=ws0.getCell(r,cc);x.value=Math.round(v);body(x,AMT,{bold:cc===13,color:cc===13?C.RED:C.INK});});
+    x=ws0.getCell(r,14);x.value=X.tot?cum/X.tot:0;body(x,PCT,{align:'center'});ws0.getRow(r).height=19;});
+  dbar(ws0,'M19:M28',C.RED);dbar(ws0,'N19:N28',C.LIME);
+  x=ws0.getCell(29,2);x.value='Valeurs au scénario pondéré retenu à la génération · le détail vivant (formules, filtres) est dans les onglets S3 / S2 INCOMING.';x.font=font({size:8.5,italic:true,color:{argb:argb(C.MUT)}});
+  section(ws0,31,2,15,'VISUELS');
+  const h1=img(ws0,'flows',2,32,640);img(ws0,'heat',9,32,640);let y=32+Math.floor(h1/20)+1;
   const h2=img(ws0,'seg3',2,y,640);img(ws0,'seg2',9,y,640);y+=Math.floor(h2/20)+1;img(ws0,'card',2,y,1290);
 
   const buf=await wb.xlsx.writeBuffer();
@@ -627,6 +658,11 @@ async function xlsxSurgery(buf,SL){
       `<mc:Fallback><${px}sp macro="" textlink=""><${px}nvSpPr><${px}cNvPr id="0" name=""/><${px}cNvSpPr><a:spLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noTextEdit="1"/></${px}cNvSpPr></${px}nvSpPr><${px}spPr><a:xfrm xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:off x="0" y="0"/><a:ext cx="1828800" cy="1000000"/></a:xfrm><a:prstGeom xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" prst="rect"><a:avLst/></a:prstGeom></${px}spPr>`+
       `<${px}txBody><a:bodyPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/><a:lstStyle xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/><a:p xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:r><a:rPr lang="fr-FR" sz="900"/><a:t>Segment « ${xe(s.cap)} » : Excel 2013 ou ultérieur.</a:t></a:r></a:p></${px}txBody></${px}sp></mc:Fallback></mc:AlternateContent><${px}clientData/></${px}twoCellAnchor>`;}).join('');
     dx=dx.replace(new RegExp('</'+px+'wsDr>'),anchors+'</'+px+'wsDr>');wr(dpath,dx);}
+  // visuels en relief : coins arrondis, ombre portée, biseau doux (sauf badge logo)
+  const PIC3D='<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 3500"/></a:avLst></a:prstGeom><a:effectLst><a:outerShdw blurRad="114300" dist="57150" dir="2700000" algn="tl" rotWithShape="0"><a:srgbClr val="00344B"><a:alpha val="42000"/></a:srgbClr></a:outerShdw></a:effectLst><a:scene3d><a:camera prst="orthographicFront"/><a:lightRig rig="threePt" dir="t"/></a:scene3d><a:sp3d><a:bevelT w="44450" h="19050" prst="softRound"/></a:sp3d>';
+  for(const n of Object.keys(z.files).filter(n=>/^xl\/drawings\/drawing\d+\.xml$/.test(n))){let dx=await rd(n);
+    dx=dx.replace(/<xdr:(oneCellAnchor|twoCellAnchor)\b[\s\S]*?<\/xdr:\1>/g,a=>{if(!/<xdr:pic>/.test(a)||/cx="2028825"/.test(a))return a;
+      return a.replace(/<a:prstGeom prst="rect">\s*<a:avLst\s*\/>\s*<\/a:prstGeom>|<a:prstGeom prst="rect"\s*\/>/,PIC3D);});wr(n,dx);}
   // classeur
   const dnx=dn.map(n=>`<definedName name="${n}">#N/A</definedName>`).join('');
   wbx=/<definedNames>/.test(wbx)?wbx.replace('<definedNames>','<definedNames>'+dnx):wbx.replace('</sheets>','</sheets><definedNames>'+dnx+'</definedNames>');
@@ -640,9 +676,193 @@ async function exportXlsx(){
   if(!S)return;try{busy(true,'Construction du classeur Excel…');await tick();
     const blob=await buildXlsx();const d=S.cur.rep||new Date();
     const name='ECOBANK_MIGRATIONS_S2_S3_'+String(d.getDate()).padStart(2,'0')+String(d.getMonth()+1).padStart(2,'0')+d.getFullYear()+'.xlsx';
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);
+    dl(blob,name);
     busy(false);toast('Classeur généré : '+name);
   }catch(e){console.error(e);busy(false);toast('Erreur export : '+e.message);}
+}
+
+
+/* =====================================================================
+   POWERPOINT — LAYOUT_WIDE, bandeau marine / filet lime / badge 3D
+   ===================================================================== */
+const stampD=()=>{const d=S.cur.rep||new Date();return String(d.getDate()).padStart(2,'0')+String(d.getMonth()+1).padStart(2,'0')+d.getFullYear();};
+const cut=(t,n)=>{t=String(t||'');return t.length>n?t.slice(0,n-1)+'…':t;};
+function fitImg(s,u,x,y,w,h){if(!u)return;const z=pngSizeB64(u);let iw=w,ih=w*z.h/z.w;if(ih>h){ih=h;iw=h*z.w/z.h;}s.addImage({data:u,x:x+(w-iw)/2,y:y+(h-ih)/2,w:iw,h:ih});}
+async function exportPptx(){
+  const PG=window.PptxGenJS;if(!PG||!S){toast('Moteur PowerPoint indisponible');return;}
+  busy(true,'Construction de la présentation…');await tick();
+  try{const A=S,X=S.X,V=S.V,badge=V.badge,cd=dFR(A.cur.rep),rd=dFR(A.ref.rep);const provT=X.T3.prov+X.T2.prov,dnImp=X.T3.dn+X.T2.dn-provT;
+    const pp=new PG();pp.layout='LAYOUT_WIDE';pp.title='Migrations S2 & S3 — '+cd;pp.company='Ecobank Sénégal';pp.author='PNDOYE · ESN-RISK';
+    const foot=`Migrations S2 & S3 · arrêté ${cd} vs ${rd} · Ecobank Sénégal – Direction des Risques · INTERNAL USE ONLY`;let n=0,s;
+    const F='Segoe UI';
+    /* 1. couverture */
+    s=pp.addSlide();s.background={color:PX.NV};
+    s.addShape(pp.ShapeType.ellipse,{x:8.4,y:-2.4,w:7.4,h:7.4,fill:{color:PX.LM,transparency:86},line:{color:PX.LM,transparency:100}});
+    s.addShape(pp.ShapeType.ellipse,{x:10.6,y:3.7,w:4.8,h:4.8,fill:{color:'1A86B3',transparency:78},line:{color:'1A86B3',transparency:100}});
+    s.addShape(pp.ShapeType.ellipse,{x:-1.4,y:5.6,w:3.2,h:3.2,fill:{color:PX.LM,transparency:90},line:{color:PX.LM,transparency:100}});
+    s.addImage({data:badge,x:0.7,y:0.65,w:3.1,h:1.06});
+    s.addText('MIGRATIONS S2 & S3',{x:0.7,y:2.25,w:9,h:0.9,fontSize:42,bold:true,color:'FFFFFF',fontFace:F,charSpacing:1});
+    s.addShape(pp.ShapeType.rect,{x:0.72,y:3.2,w:1.5,h:0.07,fill:{color:PX.LM}});
+    s.addText(`Entrées en Stage 2 et Stage 3 · arrêté ${cd} vs ${rd}`,{x:0.7,y:3.4,w:9.5,h:0.5,fontSize:19,color:PX.L2,fontFace:F});
+    s.addText('Impairment simulé avec le moteur ECL du PDO Monitor (PwC · Vasicek · 3 scénarios)',{x:0.7,y:3.92,w:9.5,h:0.4,fontSize:13,color:'CFE0EE',fontFace:F});
+    s.addShape(pp.ShapeType.roundRect,{x:0.7,y:4.65,w:5.6,h:1.35,fill:{color:'FFFFFF',transparency:88},line:{color:PX.L2,width:1.25},rectRadius:0.12});
+    s.addText('IMPAIRMENT À PRENDRE',{x:0.95,y:4.75,w:5.2,h:0.32,fontSize:10.5,bold:true,color:PX.L2,fontFace:F,charSpacing:2});
+    s.addText([{text:fmt(X.tot),options:{bold:true,color:'FFFFFF'}},{text:'  XOF',options:{fontSize:16,color:'CFE0EE'}}],{x:0.95,y:5.08,w:5.3,h:0.7,fontSize:34,fontFace:'Consolas'});
+    s.addText(`S3 ${fM(X.T3.imp)}  ·  S2 ${fM(X.T2.imp)}  ·  downturn ${fM(dnImp)}`,{x:0.95,y:5.68,w:5.3,h:0.28,fontSize:10.5,color:'CFE0EE',fontFace:F});
+    s.addText('Réponse à M. CISSE Massokhna [ESN-RISK] · Ecobank Sénégal · Direction des Risques – Cellule Portefeuille · INTERNAL USE ONLY',{x:0.7,y:6.75,w:11.5,h:0.35,fontSize:10.5,color:'9FC3D8',fontFace:F});
+    /* 2. synthèse — réponses */
+    s=pp.addSlide();pptBand(pp,s,'Synthèse — les réponses','S3 incoming · impairment à prendre · S2 incoming · détail des noms',foot,++n,badge);
+    pptKpis(pp,s,[['S3 incoming',A.s3.length+' clients',PX.RK,fM(X.T3.ead)+' d’EAD'],['Impairment S3',fM(X.T3.imp),PX.RK,'ECL − provision '+rd.slice(0,5)],['S2 incoming',A.s2.length+' clients',PX.AM,fM(X.T2.ead)+' d’EAD'],
+      ['Impairment S2',fM(X.T2.imp),PX.AM,'ECL − provision '+rd.slice(0,5)],['Total à doter',fM(X.tot),PX.NV,'downturn '+fM(dnImp)]],1.28);
+    const s3a=k=>X.byA(A.s3,k);
+    const QA=[[PX.RK,'S3 incoming',`${A.s3.length} clients basculés en Stage 3 : ${s3a(2).length} depuis le Stage 2 (${fM(sum(s3a(2),c=>c.ead))}), ${s3a(1).length} directement depuis le Stage 1, ${s3a(0).length} nouveaux noms.`],
+      [PX.NV,'Impairment à prendre ?',`Oui — ${fM(X.tot)} XOF nets (${fM(X.dot)} de dotations, ${fM(-X.rep)} de reprises théoriques) ; ${fM(dnImp)} en downturn.`],
+      [PX.AM,'S2 incoming',`${A.s2.length} clients passés du Stage 1 (IA / I) à IIA ; les 20 premiers noms pèsent ${Math.round(X.top20*100)} % de l’impairment.`],
+      [PX.GR,'Le détail des noms S2 & S3',`Listes nominatives en annexe et dans le classeur Excel (slicers par segment, flux, classe, produit, gestionnaire) — ${A.det.length} contrats.`]];
+    QA.forEach(([col,q,t],i)=>{const y=2.6+i*1.08;s.addShape(pp.ShapeType.roundRect,{x:0.5,y,w:12.33,h:0.95,fill:{color:i%2?'F4F9FB':'FFFFFF'},line:{color:'CFE0E7',width:0.75},rectRadius:0.08,shadow:{type:'outer',blur:3,offset:1.2,angle:90,color:'00415E',opacity:0.10}});
+      s.addShape(pp.ShapeType.roundRect,{x:0.5,y,w:0.85,h:0.95,fill:{color:col},rectRadius:0.08});
+      s.addText(String(i+1),{x:0.5,y,w:0.85,h:0.95,fontSize:26,bold:true,color:'FFFFFF',align:'center',valign:'middle',fontFace:'Consolas'});
+      s.addText(q,{x:1.55,y:y+0.08,w:11.1,h:0.32,fontSize:13,bold:true,color:PX.NV,fontFace:F});
+      s.addText(t,{x:1.55,y:y+0.4,w:11.1,h:0.48,fontSize:11,color:PX.INK,fontFace:F,valign:'top'});});
+    /* 3. impairment */
+    s=pp.addSlide();pptBand(pp,s,'Impairment à prendre','ECL simulé '+cd+' − provision IFRS9 '+rd+' · par flux de migration',foot,++n,badge);
+    pptKpis(pp,s,[['Total à doter',fmt(X.tot),PX.NV,'XOF · scénario pondéré'],['Dotations brutes',fmt(X.dot),PX.RK,'clients à impairment > 0'],['Reprises théoriques',fmt(X.rep),PX.GR,'provision > ECL simulé'],['Stress downturn',fmt(dnImp),PX.AM,'z = +1,96 · collatéral ×0,95']],1.28);
+    const fl=['S1 → S3','S2 → S3','Nouveau → S3','S1 → S2'].map(k=>[k,X.flows[k]||{n:0,ead:0,prov:0,ecl:0,imp:0}]);
+    const fr=fl.map(([k,f])=>[k,String(f.n),fM(f.ead),fM(f.prov),fM(f.ecl),fM(f.imp)]);const ft=['TOTAL',String(X.T3.n+X.T2.n),fM(X.T3.ead+X.T2.ead),fM(provT),fM(X.T3.ecl+X.T2.ecl),fM(X.tot)];ft.__total=true;fr.push(ft);
+    pptTable(s,['Flux','Clients','EAD','Provision','ECL simulé','Impairment'],fr,{x:0.5,y:2.65,w:6.3,colW:[1.4,0.8,1.05,1.0,1.0,1.05],right:[1,2,3,4,5],rowH:0.42,fs:10.5,
+      pills:(ri,ci)=>ci===0&&ri<4?(fl[ri][0].endsWith('S3')?'C0392B':'B67D1C'):null});
+    fitImg(s,V.flows,6.95,2.55,5.9,4.5);
+    /* 4. matrice */
+    s=pp.addSlide();pptBand(pp,s,'Matrice de migration','niveau client · stage le plus dégradé · '+rd+' → '+cd,foot,++n,badge);
+    const L3=['Stage 1','Stage 2','Stage 3'];
+    const mh=[{text:rd.slice(0,5)+' \\ '+cd.slice(0,5),options:{bold:true,color:'FFFFFF',fill:{color:PX.NV},fontSize:11,fontFace:F}},...L3.map(t=>({text:t,options:{bold:true,color:'FFFFFF',fill:{color:PX.NV},fontSize:11,align:'center',fontFace:F}}))];
+    const mr=A.cnt.map((r,i)=>[{text:L3[i],options:{bold:true,color:PX.NV,fill:{color:PX.SF},fontSize:12,fontFace:F}},...r.map((v,j)=>({text:fmt(v),options:{fontSize:15,bold:true,align:'center',fontFace:'Consolas',color:j>i?'A51F1A':j<i?'3F6F1F':PX.NV,fill:{color:j>i?'FBE3E2':j<i?'E6F2D0':'E3EFF5'}}}))]);
+    s.addTable([mh,...mr],{x:0.5,y:1.45,w:6.2,colW:[1.7,1.5,1.5,1.5],rowH:0.75,border:{type:'solid',pt:1,color:'FFFFFF'}});
+    s.addText([{text:'Lecture  ',options:{bold:true,color:PX.NV}},{text:`vert = cure, rouge = dégradation. ${A.cnt[0][1]} clients S1→S2 et ${A.cnt[1][2]} S2→S3 ; en sens inverse ${A.outS2S1.length} cures S2→S1 et ${A.outS3S1.length} sorties S3→S1.`,options:{color:PX.INK}}],
+      {x:0.5,y:4.75,w:6.2,h:1.1,fontSize:11.5,fontFace:F,valign:'top'});
+    fitImg(s,V.heat,6.95,1.35,5.9,5.6);
+    /* 5-8. S3 / S2 */
+    const listSlides=(L,lab,col,iTop,iImp,iSeg,T)=>{
+      s=pp.addSlide();pptBand(pp,s,lab+' — Top 15 des noms',`${L.length} clients · EAD ${fM(T.ead)} · impairment ${fM(T.imp)}`,foot,++n,badge);
+      const top=L.slice().sort((a,b)=>b.imp-a.imp).slice(0,15);
+      const rows=top.map((c,i)=>[String(i+1),cut(c.nom,34),c.seg,c.flux,(c.clsA||'–')+' → '+c.cls,String(c.dpd),fM(c.ead),fM(c.provA),fM(c.ecl),fM(c.imp)]);
+      const tt=['','TOTAL '+L.length+' noms','','','','',fM(T.ead),fM(T.prov),fM(T.ecl),fM(T.imp)];tt.__total=true;rows.push(tt);
+      pptTable(s,['#','Nom client','Segment','Flux','Classe','Jours PDO','EAD','Provision','ECL simulé','Impairment'],rows,{x:0.5,y:1.3,w:12.33,colW:[0.4,3.4,1.15,1.05,1.15,0.9,1.07,1.07,1.07,1.07],right:[5,6,7,8,9],rowH:0.33,fs:9.5,
+        pills:(ri,ci)=>ci===0&&ri<top.length?(ri<3?PX.NV:PX.BL):(ci===3&&ri<top.length?col:null)});
+      s=pp.addSlide();pptBand(pp,s,lab+' — profil','concentration, impairment par nom et répartition par segment',foot,++n,badge);
+      fitImg(s,V[iImp],0.45,1.3,6.2,5.75);fitImg(s,V[iSeg],6.75,1.3,6.1,2.85);fitImg(s,V[iTop],6.75,4.2,6.1,2.9);};
+    listSlides(A.s3,'S3 incoming',PX.RK,'top3','imp3','seg3',X.T3);
+    listSlides(A.s2,'S2 incoming',PX.AM,'top2','imp2','seg2',X.T2);
+    /* 9. sensibilité & fiabilité */
+    s=pp.addSlide();pptBand(pp,s,'Sensibilité et fiabilité du moteur','scénarios macro (Vasicek) et back-test sur l’arrêté '+rd,foot,++n,badge);
+    fitImg(s,V.scen,0.45,1.3,6.2,4.5);fitImg(s,V.bt,6.7,1.3,6.2,4.5);
+    const bt=A.bt;s.addText([1,2,3].map(k=>({text:`Stage ${k} : provision ${fM(bt[k][1])} vs simulé ${fM(bt[k][2])} (${pct(bt[k][1]?bt[k][2]/bt[k][1]-1:0)})`,options:{bullet:{code:'25B8'},color:PX.INK,paraSpaceAfter:4}})),
+      {x:6.8,y:5.9,w:6.0,h:1.15,fontSize:10.5,fontFace:F,valign:'top'});
+    s.addText([{text:'Optimiste ',options:{bold:true,color:PX.GR}},{text:fM(X.T3.o+X.T2.o-provT)+'   ',options:{color:PX.INK}},{text:'Best ',options:{bold:true,color:PX.BL}},{text:fM(X.T3.be+X.T2.be-provT)+'   ',options:{color:PX.INK}},
+      {text:'Downturn ',options:{bold:true,color:PX.RK}},{text:fM(dnImp),options:{color:PX.INK}}],{x:0.5,y:5.95,w:6.1,h:0.5,fontSize:12,fontFace:F});
+    s.addText('Impairment à prendre selon le scénario (ECL − provision '+rd+')',{x:0.5,y:6.45,w:6.1,h:0.4,fontSize:9.5,italic:true,color:PX.MU,fontFace:F});
+    /* 10. lecture */
+    s=pp.addSlide();pptBand(pp,s,'Lecture et recommandations','constats chiffrés, impairment, actions proposées au Comité',foot,++n,badge);fitImg(s,V.card,0.9,1.3,11.5,5.75);
+    /* 11. méthodologie */
+    s=pp.addSlide();pptBand(pp,s,'Méthodologie','périmètre, règles de migration et moteur ECL',foot,++n,badge);
+    const meth=[`Rapprochement des onglets ${A.ref.name} (${fmt(A.ref.rows.length)} lignes) et ${A.cur.name} (${fmt(A.cur.rows.length)} lignes) du fichier PORTEFEUILLE au niveau Code Client.`,
+      'Stage client = stage IFRS9 le plus dégradé de ses contrats. S3 incoming : Stage 3 au '+cd+' et < 3 au '+rd+'. S2 incoming : Stage 2 au '+cd+' et Stage 1 ou absent au '+rd+'.',
+      `Noms à exposition nulle exclus des listes (${A.z3} en S3, ${A.z2} en S2).`,
+      'ECL = réplique du moteur eclRun() du PDO Monitor : PD 12 mois (S1) ou lifetime S&P (S2) conditionnée Vasicek (ρ 0,15), PD 100 % en S3, LGD par segment nette des garanties (haircuts PwC), cure rate, actualisation 8 %.',
+      'Pondération des scénarios : best '+Math.round(P.W.be*100)+' %, optimiste '+Math.round(P.W.o*100)+' %, downturn '+Math.round(P.W.dn*100)+' %.',
+      'Impairment à prendre = ECL simulé '+cd+' − provision IFRS9 comptabilisée au '+rd+'. Un montant négatif est une reprise théorique, à confirmer par revue individuelle.'];
+    s.addText(meth.map(t=>({text:t,options:{bullet:{code:'25B8'},color:PX.INK,paraSpaceAfter:10}})),{x:0.6,y:1.4,w:12.1,h:5.5,fontSize:13,fontFace:F,valign:'top'});
+    /* 12. clôture */
+    s=pp.addSlide();s.background={color:PX.NV};
+    s.addShape(pp.ShapeType.ellipse,{x:-2,y:-2.5,w:6,h:6,fill:{color:PX.LM,transparency:90},line:{color:PX.LM,transparency:100}});
+    s.addShape(pp.ShapeType.ellipse,{x:10,y:4,w:5,h:5,fill:{color:'1A86B3',transparency:80},line:{color:'1A86B3',transparency:100}});
+    s.addImage({data:badge,x:5.1,y:2.15,w:3.1,h:1.06});s.addShape(pp.ShapeType.rect,{x:5.9,y:3.5,w:1.5,h:0.06,fill:{color:PX.LM}});
+    s.addText('Merci',{x:0,y:3.7,w:13.33,h:0.6,fontSize:28,bold:true,color:'FFFFFF',align:'center',fontFace:F});
+    s.addText('Migrations S2 & S3 · Ecobank Sénégal · Direction des Risques · INTERNAL USE ONLY',{x:0,y:4.35,w:13.33,h:0.4,fontSize:13,color:'CFE0EE',align:'center',fontFace:F});
+    const blob=await pp.write({outputType:'blob'});dl(blob,'ECOBANK_MIGRATIONS_S2_S3_'+stampD()+'.pptx');
+    busy(false);toast('Présentation générée — '+(n+2)+' diapositives');
+  }catch(e){console.error(e);busy(false);toast('Erreur PowerPoint : '+e.message);}
+}
+
+/* =====================================================================
+   WORD — note au Comité (A4, couverture marine, titres soulignés lime)
+   ===================================================================== */
+async function exportWord(){
+  if(!S)return;busy(true,'Rédaction de la note Word…');await tick();
+  try{const A=S,X=S.X,V=S.V,cd=dFR(A.cur.rep),rd=dFR(A.ref.rep),provT=X.T3.prov+X.T2.prov,dnImp=X.T3.dn+X.T2.dn-provT;
+    const media=[];const add=u=>{const u8=g3Bytes(u);media.push(u8);return {rid:'rIdImg'+media.length,id:100+media.length,u8};};
+    const H1=t=>dxP(dxRun(t),{style:'Titre1'}),H2=t=>dxP(dxRun(t),{style:'Titre2'});
+    const img=(k,w)=>{if(!V[k])return '';const m=add(V[k]);return dxP(dxImg(m.rid,m.id,m.u8,w||16.5),{after:140,align:'center'});};
+    const call=(html,col)=>dxRich(html,{shade:'EEF4F7',border:col||'005C83',after:140,ind:80});
+    let body='';const lg=add(V.badge);
+    // couverture
+    body+=`<w:tbl><w:tblPr><w:tblW w:w="9638" w:type="dxa"/><w:tblBorders><w:bottom w:val="single" w:sz="36" w:color="8CC63F"/></w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="9638"/></w:tblGrid><w:tr><w:trPr><w:trHeight w:val="5200"/></w:trPr>`+
+      dxCell(dxP(dxImg(lg.rid,lg.id,lg.u8,6.2),{after:420,ind:200})+
+        dxP(dxRun('NOTE AU COMITÉ DES RISQUES',{b:true,sz:18,color:'A6D867'}),{after:80,ind:200})+
+        dxP(dxRun('MIGRATIONS S2 & S3',{b:true,sz:52,color:'FFFFFF'}),{after:60,ind:200})+
+        dxP(dxRun(`Entrées en Stage 2 et Stage 3 · arrêté ${cd} vs ${rd}`,{sz:24,color:'CFE0EE'}),{after:260,ind:200})+
+        dxP([dxRun('Impairment à prendre  ',{sz:20,color:'A6D867',b:true}),dxRun(fmt(X.tot)+' XOF',{sz:36,b:true,color:'FFFFFF',font:'Consolas'})],{after:60,ind:200})+
+        dxP(dxRun(`S3 incoming ${fM(X.T3.imp)} · S2 incoming ${fM(X.T2.imp)} · downturn ${fM(dnImp)}`,{sz:17,color:'CFE0EE'}),{after:300,ind:200})+
+        dxP(dxRun('Réponse à M. CISSE Massokhna [ESN-RISK] · Ecobank Sénégal · Direction des Risques – Cellule Portefeuille · INTERNAL USE ONLY',{sz:15,color:'9FC3D8'}),{after:0,ind:200}),
+        {w:9638,fill:'00415E',va:'center'})+'</w:tr></w:tbl>';
+    body+=dxP('',{after:200});
+    body+=dxKpis([['Impairment à prendre',fM(X.tot),'C0392B','scénario pondéré'],['S3 incoming',A.s3.length+' noms','C0392B',fM(X.T3.ead)+' d’EAD'],['S2 incoming',A.s2.length+' noms','B67D1C',fM(X.T2.ead)+' d’EAD'],['Downturn',fM(dnImp),'00415E','z = +1,96']]);
+    body+=call(`<b>En bref.</b> ${A.s3.length} clients entrent en Stage 3 et ${A.s2.length} en Stage 2 entre le ${rd} et le ${cd}. Le moteur ECL du PDO Monitor chiffre l’impairment complémentaire à <b>${fM(X.tot)} XOF</b> (${fM(X.dot)} de dotations brutes, ${fM(-X.rep)} de reprises théoriques).`,'8CC63F');
+    // 1. réponses
+    body+=H1('1. Réponses aux questions');
+    const s3a=k=>X.byA(A.s3,k);
+    const qa=[['1','S3 incoming',`${A.s3.length} clients : ${s3a(2).length} depuis le Stage 2, ${s3a(1).length} depuis le Stage 1, ${s3a(0).length} nouveaux.`,fM(X.T3.imp)],
+      ['2','Impairment à prendre ?',`Oui, ${fM(X.tot)} nets ; ${fM(dnImp)} en downturn.`,fM(X.tot)],
+      ['3','S2 incoming',`${A.s2.length} clients passés de IA / I à IIA.`,fM(X.T2.imp)],
+      ['4','Détail des noms',`Sections 4 et 5 (liste exhaustive) et classeur Excel.`,'—']];
+    const qc=['C0392B','00415E','B67D1C','6BA23A'];
+    body+=dxTableS(['#','Question','Réponse','Impairment'],qa,[600,2300,5238,1500],[3],(ri,ci)=>ci===0?qc[ri]:null);
+    // 2. impairment
+    body+=H1('2. Impairment à prendre');
+    const fl=['S1 → S3','S2 → S3','Nouveau → S3','S1 → S2'].map(k=>[k,X.flows[k]||{n:0,ead:0,prov:0,ecl:0,imp:0}]);
+    const fr=fl.map(([k,f])=>[k,f.n,fmt(f.ead),fmt(f.prov),fmt(f.ecl),fmt(f.imp)]);const ft=['TOTAL',X.T3.n+X.T2.n,fmt(X.T3.ead+X.T2.ead),fmt(provT),fmt(X.T3.ecl+X.T2.ecl),fmt(X.tot)];ft.__total=true;fr.push(ft);
+    body+=dxTableS(['Flux','Clients','EAD '+cd.slice(0,5),'Provision '+rd.slice(0,5),'ECL simulé','Impairment'],fr,[1500,900,1900,1800,1800,1738],[1,2,3,4,5],(ri,ci)=>ci===0&&ri<4?(fl[ri][0].endsWith('S3')?'C0392B':'B67D1C'):null);
+    body+=img('flows',15.5);
+    body+=H2('Sensibilité aux scénarios');
+    body+=dxTableS(['Scénario','Pondération','ECL entrants','Impairment à prendre'],[['Optimiste',pct(P.W.o),fmt(X.T3.o+X.T2.o),fmt(X.T3.o+X.T2.o-provT)],['Best estimate',pct(P.W.be),fmt(X.T3.be+X.T2.be),fmt(X.T3.be+X.T2.be-provT)],
+      ['Downturn',pct(P.W.dn),fmt(X.T3.dn+X.T2.dn),fmt(dnImp)],Object.assign(['Pondéré (retenu)','100 %',fmt(X.T3.ecl+X.T2.ecl),fmt(X.tot)],{__total:true})],[2600,1800,2600,2638],[1,2,3]);
+    body+=img('scen',14);
+    // 3. matrice
+    body+=H1('3. Matrice de migration');
+    const L3=['Stage 1','Stage 2','Stage 3'];
+    body+=dxTableS([rd.slice(0,5)+' \\ '+cd.slice(0,5),...L3],A.cnt.map((r,i)=>[L3[i],...r.map(fmt)]),[2638,2333,2333,2334],[1,2,3],(ri,ci)=>ci>0&&ci-1!==ri?(ci-1>ri?'C0392B':'6BA23A'):null);
+    body+=dxRich(`<b>Lecture.</b> Rouge = dégradation, vert = cure. En sens inverse : ${A.outS2S1.length} clients S2→S1 et ${A.outS3S1.length} S3→S1.`,{after:120});
+    body+=img('heat',14);
+    // 4-5. listes nominatives
+    const listSec=(no,lab,L,T,col,iTop,iSeg)=>{body+=H1(no+'. '+lab+' — détail des noms');
+      body+=call(`<b>${L.length} clients</b> · EAD ${fM(T.ead)} · provision ${rd} ${fM(T.prov)} · ECL simulé ${fM(T.ecl)} · <b>impairment ${fM(T.imp)}</b>.`,col);
+      body+=img(iTop,15.5);
+      const rows=L.map((c,i)=>[i+1,cut(c.nom,34),String(c.seg||'').slice(0,4),c.flux,fmt(c.ead),fmt(c.provA),fmt(c.ecl),fmt(c.imp)]);
+      const tt=['','TOTAL '+L.length+' noms','','',fmt(T.ead),fmt(T.prov),fmt(T.ecl),fmt(T.imp)];tt.__total=true;rows.push(tt);
+      body+=dxTableS(['#','Nom client','Seg.','Flux','EAD','Provision','ECL simulé','Impairment'],rows,[430,2458,850,900,1250,1250,1250,1250],[0,4,5,6,7],(ri,ci)=>ci===3&&ri<L.length?col:null);
+      body+=img(iSeg,13);};
+    listSec(4,'S3 incoming',A.s3,X.T3,'C0392B','imp3','seg3');
+    listSec(5,'S2 incoming',A.s2,X.T2,'B67D1C','imp2','seg2');
+    // 6. lecture
+    body+=H1('6. Lecture et recommandations');
+    narrative(X).forEach(b=>{body+=H2(b.h);b.items.forEach(t=>body+=dxRich('▸ '+t,{after:80,ind:160}));});
+    body+=img('card',16.5);
+    // annexes
+    body+=H1('Annexe A — Fiabilité du moteur (back-test '+rd+')');
+    const bt=A.bt;body+=dxTableS(['Stage','Contrats','Provision comptabilisée','ECL simulé','Écart'],[1,2,3].map(k=>['Stage '+k,fmt(bt[k][0]),fmt(bt[k][1]),fmt(bt[k][2]),pct(bt[k][1]?bt[k][2]/bt[k][1]-1:0)]),[1600,1500,2400,2400,1738],[1,2,3,4]);
+    body+=img('bt',14);
+    body+=H1('Annexe B — Méthodologie et paramètres');
+    [`Rapprochement des onglets ${A.ref.name} et ${A.cur.name} du fichier PORTEFEUILLE au niveau Code Client ; stage client = stage IFRS9 le plus dégradé.`,
+     `Noms à exposition nulle exclus des listes (${A.z3} en S3, ${A.z2} en S2).`,
+     'PD 12 mois (Stage 1) ou lifetime S&P (Stage 2) conditionnée par Vasicek (ρ = 0,15 ; z = 0 / −1 / +1,96) ; PD = 100 % en Stage 3.',
+     'LGD par segment (CORPORATE / COMMERCIAL / CONSUMER) nette des garanties (haircuts PwC par type, codes 6xxx–8xxx exclus), réduite du taux de cure ; actualisation 8 % sur la maturité résiduelle.',
+     'Impairment à prendre = ECL simulé '+cd+' − provision IFRS9 '+rd+'. Note interne, ne constitue pas un avis réglementaire.']
+     .forEach(t=>body+=dxRich('▸ '+t,{after:80,ind:160}));
+    body+=dxTableS(['Notation (FRR)','PD 12 mois','S&P','PD cumulée 1 an','PD cumulée 5 ans'],Array.from({length:10},(_,i)=>{const rk=i+1,sp=P.rankToSP[rk];
+      return [rk,(P.pd12[rk]*100).toFixed(3).replace('.',',')+' %',sp,sp==='D'?'100 %':pct(P.spCum[sp][0]),sp==='D'?'100 %':pct(P.spCum[sp][4])];}),[1800,1900,1600,2200,2138],[1,3,4]);
+    const u8=await docxBuild(body,media,'Ecobank Sénégal · Migrations S2 & S3 · arrêté '+cd+' · INTERNAL USE ONLY');
+    dl(new Blob([u8],{type:MIME.docx}),'ECOBANK_MIGRATIONS_S2_S3_Note_'+stampD()+'.docx');busy(false);toast('Note Word générée');
+  }catch(e){console.error(e);busy(false);toast('Erreur Word : '+e.message);}
 }
 
 /* ------------------------------------------------------------------ init */
@@ -653,6 +873,6 @@ async function exportXlsx(){
   const z=$('#zone');['dragover','dragenter'].forEach(ev=>z.addEventListener(ev,e=>{e.preventDefault();z.classList.add('over');}));
   ['dragleave','drop'].forEach(ev=>z.addEventListener(ev,e=>{e.preventDefault();z.classList.remove('over');}));
   z.addEventListener('drop',e=>{const x=e.dataTransfer.files[0];if(x)loadFile(x);});
-  $('#bXl').onclick=exportXlsx;
+  $('#bXl').onclick=exportXlsx;$('#bPpt').onclick=exportPptx;$('#bDoc').onclick=exportWord;
   $('#selCur').onchange=()=>compute();$('#selRef').onchange=()=>compute();
 })();
