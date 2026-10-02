@@ -163,6 +163,9 @@ def clone(character: str, description: str = "") -> str:
 
 
 def speak(character: str, text: str, dest: Path) -> Path:
+    if config.VOICE_MODE == "local":  # Chatterbox gratuit
+        from . import voices_local
+        return voices_local.speak(character, text, dest.with_suffix(".wav"))
     voice_id = load_voices().get(character) or config.ELEVENLABS_DEFAULT_VOICE
     if not voice_id:
         raise RuntimeError(f"Pas de voix pour {character} : `python run.py voix cloner \"{character}\"`")

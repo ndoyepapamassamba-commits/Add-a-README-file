@@ -356,6 +356,21 @@ def setup_render(frames_dir: Path):
     s = bpy.context.scene
     s.render.engine = "CYCLES"
     s.cycles.device = "CPU"
+    try:  # carte graphique (ex. Google Colab) : rendu ~20x plus rapide
+        prefs = bpy.context.preferences.addons["cycles"].preferences
+        for backend in ("OPTIX", "CUDA"):
+            try:
+                prefs.compute_device_type = backend
+                prefs.get_devices()
+                if any(d.type == backend for d in prefs.devices):
+                    for d in prefs.devices:
+                        d.use = d.type == backend
+                    s.cycles.device = "GPU"
+                    break
+            except TypeError:
+                continue
+    except Exception:
+        pass
     s.cycles.samples = SAMPLES
     s.cycles.use_denoising = True
     s.cycles.max_bounces = 3

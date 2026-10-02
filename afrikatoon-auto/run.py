@@ -5,6 +5,7 @@
     python run.py run [--idea "..."]        # tout : scénario → images → clips → montage → TikTok
     python run.py run --mock --no-upload    # test gratuit du montage, sans aucune API
     python run.py upload output/<dossier>   # (re)publier une vidéo déjà montée
+    python run.py monter mes_clips_grok/ --kit kit.json   # assembler vos clips Grok (gratuit)
     python run.py voix creer BAYE           # 3 voix inédites proposées d'après la description
     python run.py voix garder BAYE <id>     # garder la meilleure
     python run.py voix utiliser BAYE <voice_id>   # ou une voix de la Voice Library ElevenLabs
@@ -129,6 +130,29 @@ def cmd_upload(args):
     print(f"TikTok : {res['status']} (publish_id {res['publish_id']})")
 
 
+def cmd_monter(args):
+    """Assemble des clips déjà générés (ex. téléchargés depuis Grok gratuitement) en une vidéo finale."""
+    src = Path(args.dossier)
+    clips = sorted(p for p in src.iterdir() if p.suffix.lower() in (".mp4", ".mov", ".webm"))
+    if not clips:
+        sys.exit(f"Aucun clip vidéo dans {src}")
+    kit = json.loads(Path(args.kit).read_text(encoding="utf-8")) if args.kit else \
+        {"title": src.name, "caption": "", "hashtags": [], "scenes": [{} for _ in clips]}
+    scenes = (kit["scenes"] + [{}] * len(clips))[:len(clips)]
+    work = new_workdir(kit)
+    final = montage.assemble(clips, scenes, work, work / "final.mp4", subtitles=bool(args.kit))
+    length = montage.duration(final)
+    print(f"Montage : {final} ({length:.1f} s, {len(clips)} clips)")
+    if length < 60:
+        print(f"ATTENTION : {length:.0f} s < 60 s — ajoutez des clips pour la monétisation.")
+    if kit.get("caption"):
+        (work / "caption.txt").write_text(caption_of(kit), encoding="utf-8")
+        scenario.save_kit(kit, work / "kit.json")
+        if args.publier:
+            res = tiktok.publish(final, caption_of(kit))
+            print(f"TikTok : {res['status']}")
+
+
 def cmd_voix(args):
     if args.action == "creer":
         for p in voices.design(args.cible):
@@ -174,6 +198,11 @@ def main(argv=None):
     up.add_argument("folder")
     up.add_argument("--mode", choices=["draft", "direct"], default=None)
     up.set_defaults(func=cmd_upload)
+    mo = sub.add_parser("monter", help="Assembler vos clips (ex. Grok) en une vidéo > 1 min")
+    mo.add_argument("dossier", help="Dossier contenant les clips, dans l'ordre alphabétique (01.mp4, 02.mp4…)")
+    mo.add_argument("--kit", help="kit.json du sketch (sous-titres + légende)")
+    mo.add_argument("--publier", action="store_true", help="Envoyer ensuite sur TikTok")
+    mo.set_defaults(func=cmd_monter)
     vx = sub.add_parser("voix", help="Voix clonées des personnages (ElevenLabs)")
     vx.add_argument("action", choices=["creer", "garder", "utiliser", "auto", "extraire", "cloner", "tester"])
     vx.add_argument("cible", help="extraire : chemin de la vidéo ; cloner/tester : nom du personnage")

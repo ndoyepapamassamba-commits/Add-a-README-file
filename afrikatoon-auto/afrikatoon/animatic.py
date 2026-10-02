@@ -318,9 +318,19 @@ def draw_character(img, name, cx, emotion, t, speaking, facing, prompt):
 # --- Audio ---------------------------------------------------------------------
 
 def tts(line: dict, dest: Path) -> float:
-    """Synthèse vocale d'une réplique ; renvoie sa durée (0 si muette)."""
+    """Synthèse vocale d'une réplique ; renvoie sa durée (0 si muette). Réutilise le fichier s'il existe."""
+    if dest.exists() and dest.stat().st_size > 1000:
+        with wave.open(str(dest)) as w:
+            return w.getnframes() / w.getframerate()
     text = line["text"].strip().strip(".…").strip()
-    if not text or not shutil.which("espeak-ng"):
+    if not text:
+        return 0.0
+    from . import config, voices_local
+    if config.VOICE_MODE == "local" and voices_local.available():
+        voices_local.speak(line["speaker"], line["text"].strip(), dest)
+        with wave.open(str(dest)) as w:
+            return w.getnframes() / w.getframerate()
+    if not shutil.which("espeak-ng"):
         return 0.0
     voice, pitch, speed = VOICES.get(line["speaker"], ("fr", 50, 160))
     if "!" in text:  # répliques criées : plus aiguës et plus rapides

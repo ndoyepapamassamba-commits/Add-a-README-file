@@ -9,6 +9,19 @@ Claude (scénario 3 actes, 8 scènes)  →  Nano Banana (images, personnages coh
    →  API officielle TikTok (brouillon ou publication)
 ```
 
+## 100 % gratuit (sans aucun abonnement)
+
+| Étape | Outil gratuit |
+|---|---|
+| Scénario | Claude (claude.ai, skill Afrikatoon) → kit.json |
+| Personnages + animation | **Grok** (quota gratuit) — les prompts contiennent maintenant une description de voix fixe par personnage pour que Grok garde la même voix |
+| Montage > 1 min | `python run.py monter mes_clips_grok/ --kit kit.json` (fond flouté, sous-titres) |
+| Voix africaines clonées | **Chatterbox Multilingual** (licence MIT, usage commercial autorisé), à partir d'extraits de VOS vidéos |
+| Version 3D entièrement automatique | Blender + Chatterbox, sur **Google Colab gratuit** : ouvrir `colab/afrikatoon_gratuit.ipynb` |
+
+Sur Colab : https://colab.research.google.com → *Fichier → Importer un notebook → GitHub* (ou envoyer le
+fichier `.ipynb`), choisir un GPU T4, puis exécuter les cellules dans l'ordre.
+
 ## Ce que fait chaque étape
 
 | Étape | Outil | Détail |

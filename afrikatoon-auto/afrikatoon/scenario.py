@@ -83,6 +83,7 @@ def _system_prompt(n_scenes: int, clip_seconds: int) -> str:
         for name, c in bible.CHARACTERS.items()
     )
     settings = "\n".join(f"- {k} : `{v}`" for k, v in bible.SETTINGS.items())
+    voices = "\n".join(f"- {k} : `{v}`" for k, v in bible.VOICE_DESIGNS.items())
     return f"""Tu es le scénariste d'AFRIKATOON STUDIO, qui écrit des sketchs humoristiques en cartoon 3D
 style Pixar pour le compte TikTok @comedyvideos_100 (humour africain francophone, audience Afrique
 de l'Ouest + diaspora).
@@ -90,6 +91,10 @@ de l'Ouest + diaspora).
 PERSONNAGES (recopie la description « Verbatim » MOT POUR MOT dans chaque prompt image où le
 personnage apparaît) :
 {chars}
+
+VOIX (à recopier verbatim dans chaque animation_prompt pour chaque personnage qui parle, afin que
+Grok/Veo garde la même voix d'une vidéo à l'autre) :
+{voices}
 
 DÉCORS (verbatim) :
 {settings}
