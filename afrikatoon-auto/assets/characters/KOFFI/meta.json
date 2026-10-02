@@ -1,42 +1,42 @@
 {
   "neutral": {
     "mouth": [
-      160,
-      131
+      184,
+      116
     ],
-    "mouth_w": 33,
+    "mouth_w": 32,
     "faces": "right"
   },
   "angry": {
     "mouth": [
-      179,
-      129
+      208,
+      134
     ],
-    "mouth_w": 35,
+    "mouth_w": 26,
     "faces": "right"
   },
   "shock": {
     "mouth": [
-      145,
-      128
+      160,
+      130
     ],
-    "mouth_w": 40,
+    "mouth_w": 30,
     "faces": "right"
   },
   "smug": {
     "mouth": [
-      175,
-      128
+      191,
+      105
     ],
-    "mouth_w": 33,
+    "mouth_w": 36,
     "faces": "right"
   },
   "laugh": {
     "mouth": [
-      262,
-      118
+      268,
+      124
     ],
-    "mouth_w": 39,
+    "mouth_w": 40,
     "faces": "right"
   }
 }

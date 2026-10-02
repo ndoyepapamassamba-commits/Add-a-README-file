@@ -12,8 +12,8 @@ python3 -c "import bpy, PIL, numpy, requests, dotenv, cairosvg" 2>/dev/null || \
   pip install -q bpy pillow numpy requests python-dotenv anthropic cairosvg >/dev/null 2>&1
 # Chatterbox (voix clonées, ~2 Go) seulement si les modèles sont téléchargeables (huggingface.co autorisé)
 if curl -s -o /dev/null -m 5 https://huggingface.co; then
-  python3 -c "import rembg, cv2" 2>/dev/null || \
-  pip install -q "rembg[cpu]" "opencv-python-headless==4.10.0.84" "numpy<2" >/dev/null 2>&1
+  python3 -c "import rembg, cv2, mediapipe" 2>/dev/null || \
+  pip install -q "rembg[cpu]" "opencv-python-headless==4.10.0.84" "mediapipe==0.10.14" "numpy<2" >/dev/null 2>&1
 python3 -c "import chatterbox" 2>/dev/null || pip install -q chatterbox-tts >/dev/null 2>&1 || true
 fi
 echo "Afrikatoon : environnement prêt (Blender, voix, ffmpeg)."

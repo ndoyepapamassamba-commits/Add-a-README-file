@@ -93,7 +93,32 @@ def background(setting: str, size=(W, H)) -> Image.Image:
             bg = bg.resize((int(bg.width * k) + 1, int(bg.height * k) + 1), Image.LANCZOS)
             l, t = (bg.width - size[0]) // 2, (bg.height - size[1]) // 2
             return bg.crop((l, t, l + size[0], t + size[1]))
-    return Image.new("RGB", size, (200, 150, 100))
+    return bokeh(setting, size)
+
+
+def bokeh(setting: str, size=(W, H)) -> Image.Image:
+    """Fond provisoire « arrière-plan de film » : dégradé chaud + lumières floues (en attendant un vrai décor)."""
+    import random
+    rnd = random.Random(setting)
+    top, bottom = {"salon": ((40, 90, 100), (120, 80, 60)), "maquis": ((20, 15, 40), (90, 50, 40))}.get(
+        setting, ((235, 170, 110), (150, 90, 50)))
+    grad = np.linspace(0, 1, size[1])[:, None, None]
+    arr = (np.array(top) * (1 - grad) + np.array(bottom) * grad).repeat(size[0], axis=1).astype(np.uint8)
+    img = Image.fromarray(arr)
+    layer = Image.new("RGBA", size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    palette = [(255, 220, 150), (255, 170, 90), (250, 120, 80), (255, 240, 200), (120, 200, 160)]
+    for _ in range(45):
+        x, y, r = rnd.randint(0, size[0]), rnd.randint(0, int(size[1] * 0.75)), rnd.randint(40, 160)
+        c = rnd.choice(palette)
+        d.ellipse([x - r, y - r, x + r, y + r], fill=(*c, rnd.randint(40, 110)))
+    layer = layer.filter(ImageFilter.GaussianBlur(25))
+    img = img.convert("RGBA")
+    img.alpha_composite(layer)
+    ground = Image.new("RGBA", size, (0, 0, 0, 0))
+    ImageDraw.Draw(ground).rectangle([0, int(size[1] * 0.8), size[0], size[1]], fill=(110, 70, 40, 140))
+    img.alpha_composite(ground.filter(ImageFilter.GaussianBlur(40)))
+    return img.convert("RGB")
 
 
 def available(names) -> bool:

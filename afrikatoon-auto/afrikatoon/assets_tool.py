@@ -40,7 +40,42 @@ def _cutout(img: Image.Image) -> Image.Image:
     return remove(img.convert("RGB"), session=_cutout.session)
 
 
+_MESH = None
+
+
+def mesh_mouth(img: Image.Image) -> tuple[list[int], int] | None:
+    """Bouche repérée par détection des points du visage (MediaPipe), avec une 2e tentative agrandie."""
+    global _MESH
+    try:
+        import mediapipe as mp
+    except ImportError:
+        return None
+    if _MESH is None:
+        _MESH = mp.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1,
+                                                min_detection_confidence=0.3)
+    for scale, pad in ((1, 0), (2, 200)):
+        bg = Image.new("RGB", (img.width * scale + 2 * pad, img.height * scale + 2 * pad), (255, 255, 255))
+        im = img.resize((img.width * scale, img.height * scale)) if scale > 1 else img
+        bg.paste(im, (pad, pad), im)
+        r = _MESH.process(np.array(bg))
+        if r.multi_face_landmarks:
+            L = r.multi_face_landmarks[0].landmark
+            w, h = bg.size
+            x = ((L[13].x + L[14].x) / 2 * w - pad) / scale
+            y = ((L[13].y + L[14].y) / 2 * h - pad) / scale
+            width = abs(L[291].x - L[61].x) * w / scale
+            return [int(x), int(y)], int(max(width * 0.8, 12))
+    return None
+
+
 def guess_mouth(img: Image.Image) -> tuple[list[int], int]:
+    found = mesh_mouth(img)
+    if found:
+        return found
+    return _guess_mouth_shape(img)
+
+
+def _guess_mouth_shape(img: Image.Image) -> tuple[list[int], int]:
     """Bouche estimée : on suit la tête depuis le sommet du crâne (sans les bras levés ou tendus)."""
     a = np.array(img)[:, :, 3] > 40
     ys = np.where(a.any(axis=1))[0]
