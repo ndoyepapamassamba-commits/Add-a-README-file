@@ -174,7 +174,13 @@ def cmd_monter(args):
 
 def cmd_assets(args):
     from afrikatoon import assets_tool
-    if args.action == "importer":
+    if args.action == "planches":  # une planche de 5 expressions par personnage, fichier nommé NOM.png
+        for c in args.chemins:
+            p = Path(c)
+            name = args.perso or p.stem.replace("_", " ")
+            for f in assets_tool.import_sheet(p, name, args.regard):
+                print(" ", f)
+    elif args.action == "importer":
         files = []
         for c in args.chemins:
             p = Path(c)
@@ -240,7 +246,7 @@ def main(argv=None):
     mo.add_argument("--publier", action="store_true", help="Envoyer ensuite sur TikTok")
     mo.set_defaults(func=cmd_monter)
     asp = sub.add_parser("assets", help="Importer les images des personnages (détourage + bouche)")
-    asp.add_argument("action", choices=["importer", "planche"])
+    asp.add_argument("action", choices=["importer", "planches", "planche"])
     asp.add_argument("chemins", nargs="*", help="Images NOM_pose.png ou dossiers")
     asp.add_argument("--perso", help="Nom du personnage si les fichiers ne le contiennent pas")
     asp.add_argument("--regard", default="right", choices=["left", "right", "front"])

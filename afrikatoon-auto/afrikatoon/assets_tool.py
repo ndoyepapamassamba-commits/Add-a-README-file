@@ -53,6 +53,43 @@ def import_images(paths: list[Path], name: str | None = None, faces: str = "righ
     return done
 
 
+SHEET_ORDER = ("neutral", "angry", "shock", "smug", "laugh")
+
+
+def import_sheet(path: Path, name: str, faces: str = "right") -> list[Path]:
+    """Planche « 5 expressions côte à côte » → 5 images détourées (ordre : neutre, colère, choc,
+    mauvaise foi, fou rire)."""
+    cut = _cutout(Image.open(path))
+    a = np.array(cut)[:, :, 3] > 40
+    cols = a.sum(axis=0) > a.shape[0] * 0.01
+    segs, start = [], None
+    for x, v in enumerate(list(cols) + [False]):
+        if v and start is None:
+            start = x
+        elif not v and start is not None:
+            segs.append((start, x))
+            start = None
+    segs = sorted(sorted(segs, key=lambda s: s[1] - s[0], reverse=True)[:5])
+    if len(segs) < 5:  # personnages qui se touchent : découpage en 5 colonnes égales
+        w = cut.width / 5
+        segs = [(int(i * w), int((i + 1) * w)) for i in range(5)]
+    folder = ASSETS / "characters" / name.upper().replace(" ", "_")
+    folder.mkdir(parents=True, exist_ok=True)
+    meta_p = folder / "meta.json"
+    meta = json.loads(meta_p.read_text()) if meta_p.exists() else {}
+    done = []
+    for pose, (x0, x1) in zip(SHEET_ORDER, segs):
+        part = cut.crop((x0, 0, x1, cut.height))
+        part = part.crop(part.getbbox())
+        dest = folder / f"{pose}.png"
+        part.save(dest)
+        mouth, mw = guess_mouth(part)
+        meta[pose] = {"mouth": mouth, "mouth_w": mw, "faces": faces}
+        done.append(dest)
+    meta_p.write_text(json.dumps(meta, indent=2))
+    return done
+
+
 def contact_sheet(dest: Path) -> Path:
     """Planche de tous les personnages avec la bouche estimée (croix rouge) pour vérification."""
     tiles = []
