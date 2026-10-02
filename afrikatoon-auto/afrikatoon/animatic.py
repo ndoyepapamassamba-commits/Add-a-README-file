@@ -373,6 +373,33 @@ def needed_duration(lines, workdir: Path, index: int, minimum: float) -> float:
     return max(minimum, total + 0.6)
 
 
+# --- bruitages synthétisés (libres de droits) -----------------------------------------
+
+SFX = {
+    "boing": ("aevalsrc=0.6*sin(2*PI*(180+140*sin(2*PI*7*t))*t)*exp(-3*t):s=22050:d=0.9", 0.9),
+    "dun": ("aevalsrc=0.7*(sin(2*PI*110*t)*lt(t\\,0.35)+sin(2*PI*104*t)*gte(t\\,0.4)*lt(t\\,0.75)"
+            "+sin(2*PI*82*t)*gte(t\\,0.8))*exp(-0.8*t):s=22050:d=1.8", 1.8),
+    "whoosh": ("anoisesrc=d=0.5:c=pink:a=0.5:r=22050,afade=t=in:d=0.25,afade=t=out:st=0.25:d=0.25", 0.5),
+}
+
+
+def add_sfx(audio: Path, events, out: Path, total: float) -> Path:
+    if not events:
+        return audio
+    inputs, chains = ["-i", str(audio)], []
+    for k, (name, at) in enumerate(events):
+        src, _ = SFX[name]
+        inputs += ["-f", "lavfi", "-i", src]
+        ms = int(at * 1000)
+        chains.append(f"[{k + 1}:a]aresample=22050,aformat=channel_layouts=mono,adelay={ms}|{ms}[s{k}]")
+    mix = ";".join(chains) + ";[0:a]aresample=22050,aformat=channel_layouts=mono[v];[v]" + \
+        "".join(f"[s{k}]" for k in range(len(events))) + \
+        f"amix=inputs={len(events) + 1}:normalize=0:duration=first[out]"
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", mix, "-map", "[out]",
+                    "-t", f"{total}", str(out)], check=True)
+    return out
+
+
 # --- Rendu d'une scène ----------------------------------------------------------
 
 def render_clip(scene: dict, index: int, dest: Path, setting: str = "cour", is_last: bool = False,

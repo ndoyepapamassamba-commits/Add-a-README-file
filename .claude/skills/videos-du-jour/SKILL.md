@@ -1,6 +1,6 @@
 ---
 name: videos-du-jour
-description: Produire les 2 à 3 vidéos TikTok Afrikatoon du jour pour @comedyvideos_100, entièrement dans la session (Claude écrit les sketchs, Blender les rend en 3D, voix gratuites), puis les envoyer à l'utilisateur prêtes à publier. Se déclenche avec "vidéos du jour", "fais mes vidéos", "génère 3 vidéos", "lot du jour", "production du jour", ou une routine quotidienne Afrikatoon.
+description: Produire les 2 à 3 vidéos TikTok Afrikatoon du jour pour @comedyvideos_100, entièrement dans la session (Claude écrit les sketchs, rendu dessin animé 2D propre ou 3D Blender, voix gratuites), puis les envoyer à l'utilisateur prêtes à publier. Se déclenche avec "vidéos du jour", "fais mes vidéos", "génère 3 vidéos", "lot du jour", "production du jour", ou une routine quotidienne Afrikatoon.
 ---
 
 # Vidéos du jour — Afrikatoon 3D
@@ -27,12 +27,21 @@ Un fichier JSON par vidéo dans `afrikatoon-auto/kits/<AAAA-MM-JJ>/<NN>-<slug>.j
 `kit_exemple.json` : `title, concept, characters, setting, theme{conflict,twist,setting}, scenes[],
 hook_text, caption, hashtags, score`.
 
-Contraintes techniques du rendu 3D (sinon ça ne s'affiche pas) :
-- Personnages : uniquement MODOU, BAYE, TANTIE AWA, PETIT MAMADOU, COUMBA, TONTON DIENG ; 1 à 3 par scène.
-- Décors (`setting`) : cour, salon, plage, marche, village, ceremonie.
-- Accessoires dessinés si le mot est dans `image_prompt` : `ram` (mouton, + `ribbon`), `air conditioner`,
-  `receipt` (dans la main de PETIT MAMADOU), `chicken`. Le reste du gag passe par les répliques et les
-  émotions.
+Moteur par défaut : **2D propre** (`--mock 2d`, ≈ 5-7 min par vidéo). 3D (`--mock 3d`) seulement si
+demandé (≈ 30-60 min par vidéo, et seuls les 6 premiers personnages ont un modèle 3D dédié).
+
+Contraintes du rendu (sinon ça ne s'affiche pas) :
+- Personnages (18, voir `bible.CHARACTERS`) : MODOU, BAYE, TANTIE AWA, PETIT MAMADOU, COUMBA,
+  TONTON DIENG, MAITRE KONE, DOCTEUR SYLLA, FATOU, ADJOUA, KOFFI, GRAND-PERE NDIAYE, MAMIE BINTOU,
+  ALIOU, CHEF TRAORE, AMINATA, BOUBACAR, MAMAN NOUNOU ; 1 à 3 par scène (2 de préférence).
+  Leurs accessoires (téléphone de Fatou/Aminata, canne, lunettes, stéthoscope, panier…) sont automatiques.
+- Décors (`setting`) : cour, salon, plage, marche, village, ceremonie, hopital, ecole, maquis, taxi,
+  salon_coiffure.
+- Accessoires de décor dessinés si le mot est dans `image_prompt` : `ram` (mouton, + `ribbon`),
+  `air conditioner`, `receipt` (dans la main de PETIT MAMADOU), `chicken`/`yassa`, `TV`, `cooking pot`.
+  Le reste du gag passe par les répliques et les émotions.
+- Variété : dans chaque lot, au moins un personnage peu utilisé (vérifier l'historique) et des décors
+  différents. 18 personnages × 11 décors × 30 conflits × 11 twists = des milliers de combinaisons.
 - Émotions reconnues dans `image_prompt` (dans la phrase qui commence par `NOM:` du personnage) :
   `furious finger pointing` (colère, « !! » rouges), `smug innocent shrug` (mauvaise foi),
   `jaw dropped… shock` / `eyes bulging out` (choc, « ?! »), `hands on head in despair`,
@@ -41,7 +50,11 @@ Contraintes techniques du rendu 3D (sinon ça ne s'affiche pas) :
   écrites pour l'oral (la synthèse vocale les lit telles quelles : écrire les nombres en lettres si
   ambigu, éviter les abréviations).
 
-Règles d'écriture pour un **score de percée élevé** :
+Règles d'écriture pour un **score de percée élevé** (l'audience veut « mourir de rire » : chaque
+vidéo doit être plus drôle que la précédente) :
+0. Combiner au moins 3 procédés de `bible.COMIC_DEVICES` (règle de trois, callback, mauvaise foi,
+   ironie dramatique, exagération croissante, quiproquo de langue, regard caméra après un mensonge…).
+   Une réplique drôle toutes les 3 secondes : toute réplique purement informative est réécrite.
 1. **Hook** : la 1re réplique est une accusation, un cri ou une révélation, dans la seconde 1.
    `hook_text` (3-7 mots, affiché en géant 3 s) pose une énigme : « Il a juré sur son climatiseur »,
    « L'enfant a tout balancé ».
@@ -64,9 +77,9 @@ Auto-évaluation obligatoire avant rendu (`score`, sur 10) : `hook`, `universali
 ## 3. Rendu (en arrière-plan)
 
 ```bash
-cd afrikatoon-auto && python run.py lot kits/<date>/*.json --mock 3d > /tmp/lot.log 2>&1
+cd afrikatoon-auto && python run.py lot kits/<date>/*.json --mock 2d > /tmp/lot.log 2>&1
 ```
-Lancer avec `run_in_background` (≈ 30 à 60 min par vidéo sur le CPU de la session). Prévenir
+Lancer avec `run_in_background` (2D ≈ 5-7 min par vidéo ; 3D ≈ 30-60 min). Prévenir
 l'utilisateur du délai, ne pas attendre avec `sleep`. Si `VOICE_MODE=local` et Chatterbox est
 installé (huggingface.co autorisé dans le réseau), les voix clonées de `state/voice_refs/` sont
 utilisées ; sinon voix MBROLA.
@@ -74,7 +87,8 @@ utilisées ; sinon voix MBROLA.
 ## 4. Livrer
 
 Pour chaque vidéo terminée (`afrikatoon-auto/output/*/final.mp4`) :
-- l'envoyer avec SendUserFile (`status: proactive`, `display: render`), légende = titre ;
+- l'envoyer avec SendUserFile (`status: proactive`, `display: render`), légende = titre — **toujours
+  afficher les vidéos ici dans la conversation**, dès que chacune est prête ;
 - donner dans le message : `caption.txt` prêt à coller, l'heure de publication conseillée
   (12h-14h ou 19h-22h GMT, espacer les vidéos d'au moins 3 h) et le rappel de cocher
   « contenu généré par IA » dans TikTok.

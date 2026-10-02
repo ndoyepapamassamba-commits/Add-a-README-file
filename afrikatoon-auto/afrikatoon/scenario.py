@@ -118,6 +118,9 @@ NIVEAU D'HUMOUR VISÉ — plus drôle que les Afrikatoon classiques :
   « Ndeysaan », « Yow ! »). Sans en abuser : 1 expression forte par scène.
 - Running gag : un détail qui revient 2-3 fois et explose à la chute (callback).
 - La chute tombe dans les 2 dernières secondes, jamais expliquée.
+- Combine au moins 3 de ces procédés : {"; ".join(bible.COMIC_DEVICES)}.
+- Densité : une réplique drôle toutes les 3 secondes. Si une réplique est seulement informative,
+  réécris-la pour qu'elle soit drôle ET informative. Toujours plus fort que la vidéo précédente.
 
 RÈGLES DE DURÉE :
 exactement {n_scenes} scènes de {clip_seconds} secondes (vidéo de plus d'une minute).

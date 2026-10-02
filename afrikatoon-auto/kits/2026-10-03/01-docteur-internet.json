@@ -1,0 +1,195 @@
+{
+  "title": "Docteur Internet",
+  "concept": "Modou fait le mourant pour ne pas aller au baptême. Il cite sans arrêt « Docteur Internet », mange un poulet yassa et la télé est sur le match. Le petit Mamadou vient annoncer le but des Lions : Modou hurle de joie et se trahit.",
+  "characters": [
+    "COUMBA",
+    "MODOU",
+    "PETIT MAMADOU"
+  ],
+  "setting": "salon",
+  "theme": {
+    "conflict": "Le faux malade qui guérit miraculeusement (match de foot, plat préféré)",
+    "twist": "Le témoin inattendu (PETIT MAMADOU voit tout et le dit)",
+    "setting": "salon"
+  },
+  "scenes": [
+    {
+      "act": 1,
+      "beat": "hook",
+      "characters": [
+        "COUMBA",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in modest African living room, patterned sofa, old TV, family photos on teal wall. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with arms crossed, unimpressed raised eyebrow. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes, with hands on head in despair.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. COUMBA voice: Young West African woman in her late 20s, French with a Senegalese accent, calm cold and elegant, slow ironic delivery, unimpressed, sharp. MODOU voice: Thin West African man in his 40s from Abidjan, Ivory Coast, speaking French with a strong Ivorian accent, slightly nasal, whiny and outraged comedic tone, fast talker, expressive and dramatic. Dialogue in French with West African accent — COUMBA: \"Modou ! Le baptême commence dans dix minutes !\" MODOU: \"Coumba… je meurs. Dis à ma mère que je l'aimais.\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "COUMBA",
+          "text": "Modou ! Le baptême commence dans dix minutes !"
+        },
+        {
+          "speaker": "MODOU",
+          "text": "Coumba… je meurs. Dis à ma mère que je l'aimais."
+        }
+      ]
+    },
+    {
+      "act": 1,
+      "beat": "escalade",
+      "characters": [
+        "COUMBA",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in modest African living room, patterned sofa, old TV, family photos on teal wall. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with arms crossed, unimpressed raised eyebrow. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes, with sweating nervously, forced smile.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. COUMBA voice: Young West African woman in her late 20s, French with a Senegalese accent, calm cold and elegant, slow ironic delivery, unimpressed, sharp. MODOU voice: Thin West African man in his 40s from Abidjan, Ivory Coast, speaking French with a strong Ivorian accent, slightly nasal, whiny and outraged comedic tone, fast talker, expressive and dramatic. Dialogue in French with West African accent — MODOU: \"Le docteur a dit : pas de baptême pendant trois ans.\" COUMBA: \"Quel docteur ?\" MODOU: \"Docteur Internet.\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "MODOU",
+          "text": "Le docteur a dit : pas de baptême pendant trois ans."
+        },
+        {
+          "speaker": "COUMBA",
+          "text": "Quel docteur ?"
+        },
+        {
+          "speaker": "MODOU",
+          "text": "Docteur Internet."
+        }
+      ]
+    },
+    {
+      "act": 1,
+      "beat": "escalade",
+      "characters": [
+        "COUMBA",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in modest African living room, patterned sofa, old TV, family photos on teal wall. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with piercing judgmental side-eye. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes, with sweating nervously, forced smile. A plate of chicken yassa on a small table. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. COUMBA voice: Young West African woman in her late 20s, French with a Senegalese accent, calm cold and elegant, slow ironic delivery, unimpressed, sharp. MODOU voice: Thin West African man in his 40s from Abidjan, Ivory Coast, speaking French with a strong Ivorian accent, slightly nasal, whiny and outraged comedic tone, fast talker, expressive and dramatic. Dialogue in French with West African accent — COUMBA: \"Et ce poulet yassa, il est malade aussi ?\" MODOU: \"C'est mon médicament. Docteur Internet a dit : beaucoup d'oignons.\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "COUMBA",
+          "text": "Et ce poulet yassa, il est malade aussi ?"
+        },
+        {
+          "speaker": "MODOU",
+          "text": "C'est mon médicament. Docteur Internet a dit : beaucoup d'oignons."
+        }
+      ]
+    },
+    {
+      "act": 2,
+      "beat": "escalade",
+      "characters": [
+        "COUMBA",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in modest African living room, patterned sofa, old TV, family photos on teal wall. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with arms crossed, unimpressed raised eyebrow. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes, with smug innocent shrug, palms open. An old TV showing a football match. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. COUMBA voice: Young West African woman in her late 20s, French with a Senegalese accent, calm cold and elegant, slow ironic delivery, unimpressed, sharp. MODOU voice: Thin West African man in his 40s from Abidjan, Ivory Coast, speaking French with a strong Ivorian accent, slightly nasal, whiny and outraged comedic tone, fast talker, expressive and dramatic. Dialogue in French with West African accent — COUMBA: \"Pourquoi la télé est sur le match des Lions ?\" MODOU: \"Les malades regardent le foot. C'est scientifique.\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "COUMBA",
+          "text": "Pourquoi la télé est sur le match des Lions ?"
+        },
+        {
+          "speaker": "MODOU",
+          "text": "Les malades regardent le foot. C'est scientifique."
+        }
+      ]
+    },
+    {
+      "act": 2,
+      "beat": "escalade",
+      "characters": [
+        "COUMBA",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in modest African living room, patterned sofa, old TV, family photos on teal wall. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with smug innocent shrug, palms open. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes, with eyes bulging out.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. COUMBA voice: Young West African woman in her late 20s, French with a Senegalese accent, calm cold and elegant, slow ironic delivery, unimpressed, sharp. MODOU voice: Thin West African man in his 40s from Abidjan, Ivory Coast, speaking French with a strong Ivorian accent, slightly nasal, whiny and outraged comedic tone, fast talker, expressive and dramatic. Dialogue in French with West African accent — COUMBA: \"D'accord. Je reste avec toi. On regarde ensemble.\" MODOU: \"Non ! Va au baptême ! Le malade a besoin de calme !\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "COUMBA",
+          "text": "D'accord. Je reste avec toi. On regarde ensemble."
+        },
+        {
+          "speaker": "MODOU",
+          "text": "Non ! Va au baptême ! Le malade a besoin de calme !"
+        }
+      ]
+    },
+    {
+      "act": 2,
+      "beat": "escalade",
+      "characters": [
+        "COUMBA",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in modest African living room, patterned sofa, old TV, family photos on teal wall. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with piercing judgmental side-eye. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes, with hands on head in despair.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. COUMBA voice: Young West African woman in her late 20s, French with a Senegalese accent, calm cold and elegant, slow ironic delivery, unimpressed, sharp. MODOU voice: Thin West African man in his 40s from Abidjan, Ivory Coast, speaking French with a strong Ivorian accent, slightly nasal, whiny and outraged comedic tone, fast talker, expressive and dramatic. Dialogue in French with West African accent — COUMBA: \"Tu sais que les Lions jouent maintenant ?\" MODOU: \"Walay, je ne savais même pas qu'il y avait un match.\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "COUMBA",
+          "text": "Tu sais que les Lions jouent maintenant ?"
+        },
+        {
+          "speaker": "MODOU",
+          "text": "Walay, je ne savais même pas qu'il y avait un match."
+        }
+      ]
+    },
+    {
+      "act": 3,
+      "beat": "twist",
+      "characters": [
+        "PETIT MAMADOU",
+        "COUMBA",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 3 African characters in modest African living room, patterned sofa, old TV, family photos on teal wall. PETIT MAMADOU: small African boy around 8 years old, oversized yellow football jersey, big curious eyes, cheeky smile, with cheeky smile, running in. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with arms crossed, unimpressed raised eyebrow. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes, with sweating nervously, forced smile.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Quick zoom on Modou's face. PETIT MAMADOU voice: Cheeky 8-year-old West African boy, high bright voice, French with a light Senegalese accent, innocent and mischievous, speaks clearly and proudly. Dialogue in French with West African accent — PETIT MAMADOU: \"Papa ! Les Lions ont marqué ! Tu m'as dit de venir te le dire !\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "PETIT MAMADOU",
+          "text": "Papa ! Les Lions ont marqué ! Tu m'as dit de venir te le dire !"
+        }
+      ]
+    },
+    {
+      "act": 3,
+      "beat": "chute",
+      "characters": [
+        "COUMBA",
+        "PETIT MAMADOU",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 3 African characters in modest African living room, patterned sofa, old TV, family photos on teal wall. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with smug innocent shrug, palms open. PETIT MAMADOU: small African boy around 8 years old, oversized yellow football jersey, big curious eyes, cheeky smile, with laughing so hard leaning backwards. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes, with jaw dropped to the floor in cartoon shock.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. COUMBA voice: Young West African woman in her late 20s, French with a Senegalese accent, calm cold and elegant, slow ironic delivery, unimpressed, sharp. MODOU voice: Thin West African man in his 40s from Abidjan, Ivory Coast, speaking French with a strong Ivorian accent, slightly nasal, whiny and outraged comedic tone, fast talker, expressive and dramatic. Dialogue in French with West African accent — MODOU: \"BUUUUT ! … Aïe. Ma tête.\" COUMBA: \"Docteur Internet dit : baptême. Maintenant.\". Comedic timing, expressive faces. freeze on MODOU's shocked face looking directly at camera",
+      "dialogue": [
+        {
+          "speaker": "MODOU",
+          "text": "BUUUUT ! … Aïe. Ma tête."
+        },
+        {
+          "speaker": "COUMBA",
+          "text": "Docteur Internet dit : baptême. Maintenant."
+        }
+      ]
+    }
+  ],
+  "hook_text": "Malade… jusqu'au but",
+  "caption": "Il était mourant… jusqu'au but 😭 Ton mari aussi a un « Docteur Internet » ? Team Coumba ou team Modou ?",
+  "hashtags": [
+    "#drole",
+    "#comedy",
+    "#humourafricain",
+    "#pourtoi",
+    "#couple",
+    "#lionsdusenegal",
+    "#mariage"
+  ],
+  "score": {
+    "hook": 8,
+    "universalite": 9,
+    "reproductibilite": 9
+  }
+}

@@ -88,8 +88,10 @@ def cmd_run(args):
         if args.mock:
             if args.mock == "3d":
                 from afrikatoon import animatic3d as animatic
-            else:
+            elif args.mock == "brouillon":
                 from afrikatoon import animatic
+            else:
+                from afrikatoon import cartoon2d as animatic
             animatic.render_clip(sc, i, clip, setting=kit.get("setting", "cour"),
                                  is_last=i == len(kit["scenes"]) - 1, title=kit["title"],
                                  min_seconds=config.CLIP_SECONDS)
@@ -120,7 +122,7 @@ def cmd_run(args):
         res = tiktok.publish(final, caption_of(kit), mode=args.mode)
         print(f"TikTok : {res['status']} (publish_id {res['publish_id']})")
         entry["tiktok"] = res["status"]
-    if args.mock != "2d":  # les tests 2D ne comptent pas dans l'historique
+    if args.mock != "brouillon":  # les brouillons de test ne comptent pas dans l'historique
         save_history(entry)
 
 
@@ -204,8 +206,8 @@ def main(argv=None):
                         help="sketch (histoire en 3 actes) ou blagues (compilation « la blague du jour »)")
         sp.set_defaults(func=func)
         if name == "run":
-            sp.add_argument("--mock", nargs="?", const="2d", choices=["2d", "3d"],
-                            help="Aperçu gratuit sans API : 2d (rapide) ou 3d (Blender, ~1 h)")
+            sp.add_argument("--mock", nargs="?", const="2d", choices=["2d", "3d", "brouillon"],
+                            help="Vidéo sans API : 2d (dessin propre, ~5 min), 3d (Blender), brouillon (test)")
             sp.add_argument("--no-upload", action="store_true", help="Ne pas publier sur TikTok")
             sp.add_argument("--no-subs", action="store_true", help="Sans sous-titres incrustés")
             sp.add_argument("--mode", choices=["draft", "direct"], default=None)
@@ -215,7 +217,7 @@ def main(argv=None):
     up.set_defaults(func=cmd_upload)
     lo = sub.add_parser("lot", help="Fabriquer plusieurs vidéos d'affilée (kits déjà écrits)")
     lo.add_argument("kits", nargs="+")
-    lo.add_argument("--mock", nargs="?", const="3d", default="3d", choices=["2d", "3d"])
+    lo.add_argument("--mock", nargs="?", const="2d", default="2d", choices=["2d", "3d", "brouillon"])
     lo.set_defaults(func=cmd_lot)
     mo = sub.add_parser("monter", help="Assembler vos clips (ex. Grok) en une vidéo > 1 min")
     mo.add_argument("dossier", help="Dossier contenant les clips, dans l'ordre alphabétique (01.mp4, 02.mp4…)")

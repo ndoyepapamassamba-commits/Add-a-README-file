@@ -1,0 +1,195 @@
+{
+  "title": "Tonton revient de Paris",
+  "concept": "Tonton Dieng rentre au village et raconte sa vie de star à Paris : dîner avec le président, tour Eiffel achetée, neige dans la valise. Le petit Mamadou sort le ticket de car de sa poche : Dakar–Thiès.",
+  "characters": [
+    "MODOU",
+    "PETIT MAMADOU",
+    "TONTON DIENG"
+  ],
+  "setting": "village",
+  "theme": {
+    "conflict": "Le retour du « boss » du village qui vivait en ville (mytho)",
+    "twist": "L'objet qui trahit (téléphone luxe, climatiseur, mouton gras, reçu qui tombe de la poche)",
+    "setting": "village"
+  },
+  "scenes": [
+    {
+      "act": 1,
+      "beat": "hook",
+      "characters": [
+        "TONTON DIENG",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in village with thatched-roof huts, baobab tree, dusty red road. TONTON DIENG: middle-aged African man, open floral shirt over white vest, flat cap, gold-tone watch, exaggerated storytelling gestures, with laughing so hard leaning backwards. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes, with jaw dropped to the floor in cartoon shock.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. TONTON DIENG voice: Middle-aged West African man, French with a strong Ivorian accent, loud boastful storyteller, big laugh, exaggerated superlatives, energetic, comedic. MODOU voice: Thin West African man in his 40s from Abidjan, Ivory Coast, speaking French with a strong Ivorian accent, slightly nasal, whiny and outraged comedic tone, fast talker, expressive and dramatic. Dialogue in French with West African accent — TONTON DIENG: \"Le village ! Moi-même personnellement, je rentre de Paris !\" MODOU: \"Paris ?! Tonton, raconte !\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "TONTON DIENG",
+          "text": "Le village ! Moi-même personnellement, je rentre de Paris !"
+        },
+        {
+          "speaker": "MODOU",
+          "text": "Paris ?! Tonton, raconte !"
+        }
+      ]
+    },
+    {
+      "act": 1,
+      "beat": "escalade",
+      "characters": [
+        "TONTON DIENG",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in village with thatched-roof huts, baobab tree, dusty red road. TONTON DIENG: middle-aged African man, open floral shirt over white vest, flat cap, gold-tone watch, exaggerated storytelling gestures, with smug innocent shrug, palms open. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes, with eyes bulging out.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. TONTON DIENG voice: Middle-aged West African man, French with a strong Ivorian accent, loud boastful storyteller, big laugh, exaggerated superlatives, energetic, comedic. MODOU voice: Thin West African man in his 40s from Abidjan, Ivory Coast, speaking French with a strong Ivorian accent, slightly nasal, whiny and outraged comedic tone, fast talker, expressive and dramatic. Dialogue in French with West African accent — TONTON DIENG: \"À Paris, je dînais chaque soir avec le Président.\" MODOU: \"Quel président ?\" TONTON DIENG: \"Le président… de Paris.\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "TONTON DIENG",
+          "text": "À Paris, je dînais chaque soir avec le Président."
+        },
+        {
+          "speaker": "MODOU",
+          "text": "Quel président ?"
+        },
+        {
+          "speaker": "TONTON DIENG",
+          "text": "Le président… de Paris."
+        }
+      ]
+    },
+    {
+      "act": 1,
+      "beat": "escalade",
+      "characters": [
+        "TONTON DIENG",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in village with thatched-roof huts, baobab tree, dusty red road. TONTON DIENG: middle-aged African man, open floral shirt over white vest, flat cap, gold-tone watch, exaggerated storytelling gestures, with smug innocent shrug, palms open. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes, with jaw dropped to the floor in cartoon shock.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. TONTON DIENG voice: Middle-aged West African man, French with a strong Ivorian accent, loud boastful storyteller, big laugh, exaggerated superlatives, energetic, comedic. MODOU voice: Thin West African man in his 40s from Abidjan, Ivory Coast, speaking French with a strong Ivorian accent, slightly nasal, whiny and outraged comedic tone, fast talker, expressive and dramatic. Dialogue in French with West African accent — TONTON DIENG: \"J'ai même acheté la tour Eiffel.\" MODOU: \"Elle est où ?\" TONTON DIENG: \"Trop grande pour la valise.\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "TONTON DIENG",
+          "text": "J'ai même acheté la tour Eiffel."
+        },
+        {
+          "speaker": "MODOU",
+          "text": "Elle est où ?"
+        },
+        {
+          "speaker": "TONTON DIENG",
+          "text": "Trop grande pour la valise."
+        }
+      ]
+    },
+    {
+      "act": 2,
+      "beat": "escalade",
+      "characters": [
+        "TONTON DIENG",
+        "PETIT MAMADOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in village with thatched-roof huts, baobab tree, dusty red road. TONTON DIENG: middle-aged African man, open floral shirt over white vest, flat cap, gold-tone watch, exaggerated storytelling gestures, with laughing so hard leaning backwards. PETIT MAMADOU: small African boy around 8 years old, oversized yellow football jersey, big curious eyes, cheeky smile, with arms crossed, unimpressed raised eyebrow.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. TONTON DIENG voice: Middle-aged West African man, French with a strong Ivorian accent, loud boastful storyteller, big laugh, exaggerated superlatives, energetic, comedic. PETIT MAMADOU voice: Cheeky 8-year-old West African boy, high bright voice, French with a light Senegalese accent, innocent and mischievous, speaks clearly and proudly. Dialogue in French with West African accent — TONTON DIENG: \"Là-bas il fait si froid que mes mots gelaient dans l'air.\" PETIT MAMADOU: \"Et comment les gens t'entendaient ?\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "TONTON DIENG",
+          "text": "Là-bas il fait si froid que mes mots gelaient dans l'air."
+        },
+        {
+          "speaker": "PETIT MAMADOU",
+          "text": "Et comment les gens t'entendaient ?"
+        }
+      ]
+    },
+    {
+      "act": 2,
+      "beat": "escalade",
+      "characters": [
+        "TONTON DIENG",
+        "PETIT MAMADOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in village with thatched-roof huts, baobab tree, dusty red road. TONTON DIENG: middle-aged African man, open floral shirt over white vest, flat cap, gold-tone watch, exaggerated storytelling gestures, with sweating nervously, forced smile. PETIT MAMADOU: small African boy around 8 years old, oversized yellow football jersey, big curious eyes, cheeky smile, with piercing judgmental side-eye.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. TONTON DIENG voice: Middle-aged West African man, French with a strong Ivorian accent, loud boastful storyteller, big laugh, exaggerated superlatives, energetic, comedic. PETIT MAMADOU voice: Cheeky 8-year-old West African boy, high bright voice, French with a light Senegalese accent, innocent and mischievous, speaks clearly and proudly. Dialogue in French with West African accent — TONTON DIENG: \"Ils attendaient l'été. En juin, j'ai parlé pendant trois jours.\" PETIT MAMADOU: \"Tonton, tu as amené la neige ?\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "TONTON DIENG",
+          "text": "Ils attendaient l'été. En juin, j'ai parlé pendant trois jours."
+        },
+        {
+          "speaker": "PETIT MAMADOU",
+          "text": "Tonton, tu as amené la neige ?"
+        }
+      ]
+    },
+    {
+      "act": 2,
+      "beat": "escalade",
+      "characters": [
+        "TONTON DIENG",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in village with thatched-roof huts, baobab tree, dusty red road. TONTON DIENG: middle-aged African man, open floral shirt over white vest, flat cap, gold-tone watch, exaggerated storytelling gestures, with smug innocent shrug, palms open. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes, with laughing so hard leaning backwards.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. TONTON DIENG voice: Middle-aged West African man, French with a strong Ivorian accent, loud boastful storyteller, big laugh, exaggerated superlatives, energetic, comedic. MODOU voice: Thin West African man in his 40s from Abidjan, Ivory Coast, speaking French with a strong Ivorian accent, slightly nasal, whiny and outraged comedic tone, fast talker, expressive and dramatic. Dialogue in French with West African accent — TONTON DIENG: \"Elle a fondu à la douane. Walay, c'est la douane qui l'a bue.\" MODOU: \"Ndeysaan, la douane a soif.\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "TONTON DIENG",
+          "text": "Elle a fondu à la douane. Walay, c'est la douane qui l'a bue."
+        },
+        {
+          "speaker": "MODOU",
+          "text": "Ndeysaan, la douane a soif."
+        }
+      ]
+    },
+    {
+      "act": 3,
+      "beat": "twist",
+      "characters": [
+        "PETIT MAMADOU",
+        "MODOU",
+        "TONTON DIENG"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 3 African characters in village with thatched-roof huts, baobab tree, dusty red road. PETIT MAMADOU: small African boy around 8 years old, oversized yellow football jersey, big curious eyes, cheeky smile, with cheeky smile holding a receipt. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes, with eyes bulging out. TONTON DIENG: middle-aged African man, open floral shirt over white vest, flat cap, gold-tone watch, exaggerated storytelling gestures, with sweating nervously, forced smile. A small receipt in the boy's hand. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Quick zoom on the receipt. PETIT MAMADOU voice: Cheeky 8-year-old West African boy, high bright voice, French with a light Senegalese accent, innocent and mischievous, speaks clearly and proudly. Dialogue in French with West African accent — PETIT MAMADOU: \"Tonton, ton ticket est tombé. Car rapide : Dakar… Thiès.\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "PETIT MAMADOU",
+          "text": "Tonton, ton ticket est tombé. Car rapide : Dakar… Thiès."
+        }
+      ]
+    },
+    {
+      "act": 3,
+      "beat": "chute",
+      "characters": [
+        "MODOU",
+        "PETIT MAMADOU",
+        "TONTON DIENG"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 3 African characters in village with thatched-roof huts, baobab tree, dusty red road. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes, with laughing so hard leaning backwards. PETIT MAMADOU: small African boy around 8 years old, oversized yellow football jersey, big curious eyes, cheeky smile, with cheeky smile. TONTON DIENG: middle-aged African man, open floral shirt over white vest, flat cap, gold-tone watch, exaggerated storytelling gestures, with jaw dropped to the floor in cartoon shock.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. TONTON DIENG voice: Middle-aged West African man, French with a strong Ivorian accent, loud boastful storyteller, big laugh, exaggerated superlatives, energetic, comedic. Dialogue in French with West African accent — TONTON DIENG: \"Thiès… c'est un quartier de Paris. Tout le monde sait ça.\". Comedic timing, expressive faces. freeze on TONTON DIENG's shocked face looking directly at camera",
+      "dialogue": [
+        {
+          "speaker": "TONTON DIENG",
+          "text": "Thiès… c'est un quartier de Paris. Tout le monde sait ça."
+        }
+      ]
+    }
+  ],
+  "hook_text": "Il dit qu'il vient de Paris…",
+  "caption": "Tout le monde a un tonton qui « revient de Paris » 😭 Tague-le 👇",
+  "hashtags": [
+    "#drole",
+    "#comedy",
+    "#humourafricain",
+    "#pourtoi",
+    "#paris",
+    "#tonton",
+    "#village"
+  ],
+  "score": {
+    "hook": 8,
+    "universalite": 10,
+    "reproductibilite": 9
+  }
+}
