@@ -75,7 +75,10 @@ def cmd_run(args):
     for i, sc in enumerate(kit["scenes"]):
         clip = work / f"clip_{i:02d}.mp4"
         if args.mock:
-            from afrikatoon import animatic
+            if args.mock == "3d":
+                from afrikatoon import animatic3d as animatic
+            else:
+                from afrikatoon import animatic
             animatic.render_clip(sc, i, clip, setting=kit.get("setting", "cour"),
                                  is_last=i == len(kit["scenes"]) - 1, title=kit["title"],
                                  min_seconds=config.CLIP_SECONDS)
@@ -122,7 +125,8 @@ def main(argv=None):
         sp.add_argument("--kit", help="Réutiliser un kit.json existant au lieu d'en écrire un")
         sp.set_defaults(func=func)
         if name == "run":
-            sp.add_argument("--mock", action="store_true", help="Aperçu animé gratuit (dessins + voix de synthèse), sans API")
+            sp.add_argument("--mock", nargs="?", const="2d", choices=["2d", "3d"],
+                            help="Aperçu gratuit sans API : 2d (rapide) ou 3d (Blender, ~1 h)")
             sp.add_argument("--no-upload", action="store_true", help="Ne pas publier sur TikTok")
             sp.add_argument("--no-subs", action="store_true", help="Sans sous-titres incrustés")
             sp.add_argument("--mode", choices=["draft", "direct"], default=None)

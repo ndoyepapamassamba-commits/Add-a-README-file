@@ -24,6 +24,8 @@ Claude (scénario 3 actes, 8 scènes)  →  Nano Banana (images, personnages coh
 ```bash
 cd afrikatoon-auto
 pip install -r requirements.txt     # + ffmpeg installé sur la machine
+# Aperçus gratuits : voix  → apt install espeak-ng mbrola mbrola-fr1 mbrola-fr4
+#                    3D    → pip install bpy   (Blender en module Python)
 cp .env.example .env                # puis remplir les clés
 ```
 
@@ -41,7 +43,8 @@ cp .env.example .env                # puis remplir les clés
 ## Utilisation
 
 ```bash
-python run.py run --mock --no-upload                  # test gratuit du montage (aucune API)
+python run.py run --mock --no-upload                  # aperçu 2D gratuit (~1 min de calcul)
+python run.py run --mock 3d --no-upload               # aperçu 3D gratuit avec Blender (~1 h de calcul)
 python run.py scenario                                # juste le scénario + prompts (kit.json)
 python run.py run                                     # tout, envoi en brouillon TikTok
 python run.py run --idea "le mouton de Tabaski échangé en douce"

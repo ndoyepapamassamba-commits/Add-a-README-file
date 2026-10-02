@@ -34,10 +34,16 @@ LOOKS = {
 DEFAULT_LOOK = dict(height=400, width=140, top=(200, 60, 60), bottom=(60, 60, 60), hair=(30, 20, 20),
                     outfit="tshirt")
 
-VOICES = {  # espeak-ng : voix, hauteur, vitesse
+VOICES = {  # espeak-ng : voix, hauteur, vitesse (voix MBROLA plus naturelles si installées)
     "MODOU": ("fr+m3", 45, 160), "BAYE": ("fr+m1", 25, 145), "TANTIE AWA": ("fr+f2", 50, 160),
     "PETIT MAMADOU": ("fr+f4", 85, 175), "COUMBA": ("fr+f3", 60, 155), "TONTON DIENG": ("fr+m2", 35, 170),
 }
+MBROLA_VOICES = {
+    "MODOU": ("mb-fr1", 55, 165), "BAYE": ("mb-fr1", 20, 135), "TANTIE AWA": ("mb-fr4", 35, 160),
+    "PETIT MAMADOU": ("mb-fr4", 95, 180), "COUMBA": ("mb-fr4", 55, 150), "TONTON DIENG": ("mb-fr1", 40, 175),
+}
+if Path("/usr/share/mbrola/fr1").exists() or Path("/usr/share/mbrola/fr1/fr1").exists():
+    VOICES = MBROLA_VOICES
 
 BACKGROUNDS = {
     "cour": dict(sky=((250, 200, 120), (255, 235, 190)), wall=(200, 120, 60), ground=(225, 190, 130)),
@@ -317,6 +323,8 @@ def tts(line: dict, dest: Path) -> float:
     if not text or not shutil.which("espeak-ng"):
         return 0.0
     voice, pitch, speed = VOICES.get(line["speaker"], ("fr", 50, 160))
+    if "!" in text:  # répliques criées : plus aiguës et plus rapides
+        pitch, speed = min(99, pitch + 15), speed + 15
     subprocess.run(["espeak-ng", "-v", voice, "-p", str(pitch), "-s", str(speed), "-w", str(dest), text],
                    check=True, capture_output=True)
     with wave.open(str(dest)) as w:
