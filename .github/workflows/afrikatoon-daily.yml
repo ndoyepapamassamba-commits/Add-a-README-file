@@ -33,9 +33,13 @@ jobs:
           sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
           pip install -r requirements.txt
       - name: Générer et publier
+        # Secrets optionnels : ELEVENLABS_API_KEY (voix clonées)
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           FAL_KEY: ${{ secrets.FAL_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          VOICE_MODE: ${{ vars.VOICE_MODE || 'native' }}
+          STORY_FORMAT: ${{ vars.STORY_FORMAT || 'sketch' }}
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}

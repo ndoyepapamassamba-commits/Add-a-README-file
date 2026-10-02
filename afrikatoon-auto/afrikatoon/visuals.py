@@ -46,8 +46,8 @@ def _download(url: str, dest: Path) -> Path:
     return dest
 
 
-def _data_uri(path: Path) -> str:
-    mime = mimetypes.guess_type(path.name)[0] or "image/png"
+def _data_uri(path: Path, mime: str | None = None) -> str:
+    mime = mime or mimetypes.guess_type(path.name)[0] or "image/png"
     return f"data:{mime};base64,{base64.b64encode(path.read_bytes()).decode()}"
 
 

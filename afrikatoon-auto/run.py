@@ -5,6 +5,9 @@
     python run.py run [--idea "..."]        # tout : scénario → images → clips → montage → TikTok
     python run.py run --mock --no-upload    # test gratuit du montage, sans aucune API
     python run.py upload output/<dossier>   # (re)publier une vidéo déjà montée
+    python run.py voix extraire ma_video.mp4 --debut 3 --fin 9 --perso MODOU
+    python run.py voix cloner MODOU         # crée la voix clonée (ElevenLabs)
+    python run.py voix tester MODOU "Baye ! Mes 50 000 francs !"
 """
 import argparse
 import json
@@ -13,7 +16,7 @@ import sys
 import time
 from pathlib import Path
 
-from afrikatoon import config, montage, scenario, tiktok, visuals
+from afrikatoon import config, montage, scenario, tiktok, visuals, voices
 
 HISTORY = config.STATE_DIR / "history.json"
 
@@ -52,6 +55,8 @@ def cmd_auth(_args):
 
 
 def get_kit(args) -> dict:
+    if getattr(args, "format", None):
+        config.STORY_FORMAT = args.format
     if args.kit:
         return json.loads(Path(args.kit).read_text(encoding="utf-8"))
     return scenario.generate_kit(idea=args.idea, history=load_history())
@@ -86,7 +91,12 @@ def cmd_run(args):
             print(f"[2/4] Scène {i + 1}/{len(kit['scenes'])} : image…")
             img = visuals.scene_image(sc, work / f"scene_{i:02d}.png")
             print(f"[3/4] Scène {i + 1}/{len(kit['scenes'])} : animation…")
-            visuals.scene_clip(sc, img, clip)
+            if config.VOICE_MODE == "clone":
+                raw = visuals.scene_clip(sc, img, work / f"raw_{i:02d}.mp4")
+                audio = voices.scene_audio(sc, work, i, config.CLIP_SECONDS)
+                voices.lipsync(raw, audio, clip)
+            else:
+                visuals.scene_clip(sc, img, clip)
         clips.append(clip)
 
     final = montage.assemble(clips, kit["scenes"], work, work / "final.mp4",
@@ -115,6 +125,17 @@ def cmd_upload(args):
     print(f"TikTok : {res['status']} (publish_id {res['publish_id']})")
 
 
+def cmd_voix(args):
+    if args.action == "extraire":
+        print("Extrait enregistré :", voices.extract_sample(Path(args.cible), args.debut, args.fin, args.perso))
+    elif args.action == "cloner":
+        print(f"Voix clonée pour {args.cible} :", voices.clone(args.cible))
+    elif args.action == "tester":
+        dest = config.OUTPUT_DIR / f"test_voix_{slug(args.cible)}.mp3"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        print("Écoutez :", voices.speak(args.cible, args.texte, dest))
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description="Afrikatoon Auto")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -123,6 +144,8 @@ def main(argv=None):
         sp = sub.add_parser(name)
         sp.add_argument("--idea", help="Idée imposée (ex: « Tabaski, mouton échangé »)")
         sp.add_argument("--kit", help="Réutiliser un kit.json existant au lieu d'en écrire un")
+        sp.add_argument("--format", choices=["sketch", "blagues"],
+                        help="sketch (histoire en 3 actes) ou blagues (compilation « la blague du jour »)")
         sp.set_defaults(func=func)
         if name == "run":
             sp.add_argument("--mock", nargs="?", const="2d", choices=["2d", "3d"],
@@ -134,6 +157,14 @@ def main(argv=None):
     up.add_argument("folder")
     up.add_argument("--mode", choices=["draft", "direct"], default=None)
     up.set_defaults(func=cmd_upload)
+    vx = sub.add_parser("voix", help="Voix clonées des personnages (ElevenLabs)")
+    vx.add_argument("action", choices=["extraire", "cloner", "tester"])
+    vx.add_argument("cible", help="extraire : chemin de la vidéo ; cloner/tester : nom du personnage")
+    vx.add_argument("texte", nargs="?", default="Walay, je te jure que je n'ai rien !")
+    vx.add_argument("--debut", type=float, default=0)
+    vx.add_argument("--fin", type=float, default=10)
+    vx.add_argument("--perso", help="Personnage auquel appartient l'extrait (extraire)")
+    vx.set_defaults(func=cmd_voix)
     args = p.parse_args(argv)
     args.func(args)
 

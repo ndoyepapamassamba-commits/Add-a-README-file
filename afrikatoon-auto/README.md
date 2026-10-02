@@ -54,6 +54,31 @@ python run.py upload output/<dossier> --mode direct   # republier une vidéo mon
 
 Chaque vidéo est rangée dans `output/<date>-<titre>/` : `kit.json`, images, clips, `final.mp4`, `caption.txt`.
 
+## Deux formats d'écriture
+
+- `--format sketch` (défaut) : une histoire en 3 actes (accusation → mensonges → retournement).
+- `--format blagues` : « La blague du jour », compilation de 4 blagues originales d'environ 15 s,
+  avec une chute toutes les 15 s, idéale pour garder les spectateurs jusqu'au bout.
+
+## Voix africaines clonées (ElevenLabs)
+
+Par défaut, les voix sont générées par le modèle vidéo (Grok/Veo, accent demandé dans le prompt).
+Pour avoir **toujours la même voix** par personnage, clonez-la :
+
+```bash
+# 1. Découper 3 à 6 extraits propres par personnage dans VOS vidéos (une seule voix, sans musique)
+python run.py voix extraire ma_video.mp4 --debut 2.5 --fin 8 --perso MODOU
+# 2. Cloner (abonnement ElevenLabs Starter ou plus), puis tester
+python run.py voix cloner MODOU
+python run.py voix tester MODOU "Baye ! Mes 50 000 francs, ça fait huit mois !"
+# 3. Activer dans .env : VOICE_MODE=clone  → chaque clip est re-synchronisé sur la voix clonée
+```
+
+N'utilisez que des voix dont vous avez les droits : la vôtre, celles générées pour votre compte, ou
+des comédiens qui ont donné leur accord écrit. Copier la voix d'un autre studio ou d'un comédien
+(par exemple les doublages Afrikatoon/Gbich!) est interdit et entraîne des réclamations qui
+coupent la monétisation.
+
 ## Automatique tous les jours (GitHub Actions)
 
 Le fichier `.github/workflows/afrikatoon-daily.yml` lance tout chaque jour à 18h15 GMT.
@@ -73,6 +98,7 @@ La vidéo reste téléchargeable 14 jours dans l'onglet *Actions*.
 
 ## Points importants pour la monétisation
 
+- Les clips au format paysage sont automatiquement centrés sur un fond flouté en 9:16.
 - **N'utilisez plus d'images trouvées sur internet** (ex. dessins de presse signés et filigranés) :
   c'est le premier motif de démonétisation et de suppression pour droits d'auteur. Ce programme crée
   des personnages 100 % originaux.

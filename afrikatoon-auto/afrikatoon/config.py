@@ -52,6 +52,16 @@ IMAGE_EDIT_MODEL = os.getenv("IMAGE_EDIT_MODEL", "fal-ai/nano-banana/edit")
 
 TARGET_SECONDS = int(os.getenv("TARGET_SECONDS", "64"))  # > 60 s pour Creator Rewards
 
+# Format : "sketch" (une histoire en 3 actes) ou "blagues" (compilation de 4 blagues courtes)
+STORY_FORMAT = os.getenv("STORY_FORMAT", "sketch")
+
+# Voix : "native" (voix générées par le modèle vidéo) ou "clone" (voix clonées ElevenLabs + lip-sync)
+VOICE_MODE = os.getenv("VOICE_MODE", "native")
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
+ELEVENLABS_MODEL = os.getenv("ELEVENLABS_MODEL", "eleven_multilingual_v2")
+ELEVENLABS_DEFAULT_VOICE = os.getenv("ELEVENLABS_DEFAULT_VOICE", "")
+LIPSYNC_MODEL = os.getenv("LIPSYNC_MODEL", "fal-ai/sync-lipsync/v2")
+
 TIKTOK_CLIENT_KEY = os.getenv("TIKTOK_CLIENT_KEY", "")
 TIKTOK_CLIENT_SECRET = os.getenv("TIKTOK_CLIENT_SECRET", "")
 TIKTOK_REDIRECT_URI = os.getenv("TIKTOK_REDIRECT_URI", "")

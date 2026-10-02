@@ -63,6 +63,20 @@ SCRIPT_TOOL = {
 }
 
 
+FORMATS = {
+    "sketch": """FORMAT « SKETCH » — une seule histoire en 3 actes sur le même conflit :
+Acte 1 accusation (la scène 1 est le HOOK : conflit déjà en cours, première réplique = accusation,
+cri ou révélation, jamais d'exposition) → Acte 2 fausse preuve d'innocence / escalade, chaque
+réplique plus absurde → Acte 3 twist (renversement : l'accusateur est coupable, le faible gagne,
+l'enfant dit la vérité, l'objet caché apparaît) puis chute. Chaque acte a sa micro-punchline.""",
+    "blagues": """FORMAT « LA BLAGUE DU JOUR » — compilation de 4 blagues ORIGINALES indépendantes, une
+toutes les ~15 s, chacune = 2 scènes (mise en place express, puis chute). Lieux variés (hôpital,
+école, maquis, marché, taxi, mairie, salon de coiffure). Mêmes personnages récurrents. Le champ
+"act" indique le numéro de la blague (1 à 4) ; "beat" vaut "setup" ou "chute". La 1re blague est
+la plus forte (rétention). Titre du kit du type « La blague du jour : spécial menteurs ».""",
+}
+
+
 def _system_prompt(n_scenes: int, clip_seconds: int) -> str:
     chars = "\n".join(
         f"- {name} — {c['role']}. Registre : {c['voice']}.\n  Verbatim : `{c['visual']}`"
@@ -84,12 +98,22 @@ STYLE GLOBAL à inclure dans chaque prompt image : `{bible.STYLE}`
 
 ÉMOTIONS utiles : {", ".join(bible.EMOTIONS)}
 
-STRUCTURE OBLIGATOIRE — vidéo de plus d'une minute (monétisation Creator Rewards) :
-exactement {n_scenes} scènes de {clip_seconds} secondes, réparties en 3 actes sur le même conflit :
-Acte 1 accusation (la scène 1 est le HOOK : conflit déjà en cours, première réplique = accusation,
-cri ou révélation, jamais d'exposition) → Acte 2 fausse preuve d'innocence / escalade, chaque
-réplique plus absurde → Acte 3 twist (renversement : l'accusateur est coupable, le faible gagne,
-l'enfant dit la vérité, l'objet caché apparaît) puis chute. Chaque acte a sa micro-punchline.
+{FORMATS.get(config.STORY_FORMAT, FORMATS["sketch"])}
+
+NIVEAU D'HUMOUR VISÉ — plus drôle que les Afrikatoon classiques :
+- Comique de PERSONNAGE : chacun a un défaut énorme et assumé (radin, menteur, vantard, jaloux) qui
+  dicte toutes ses répliques ; il ne se rend jamais compte qu'il se trahit.
+- Comique de GESTE écrit dans les prompts : corps élastiques, démarche d'ivrogne, ventre qui rebondit,
+  yeux qui sortent, chute par terre, regard caméra gêné. Chaque scène a au moins un gag visuel.
+- Logique absurde mais imparable (« Le docteur a dit : pas de dettes »), mauvaise foi totale.
+- Répliques en français d'Afrique de l'Ouest, savoureux et oral : nouchi ivoirien (« on dit quoi »,
+  « c'est pas mon palabre », « tu m'as eu », « yako », « ça va aller »), wolof (« Walay », « Dëgg »,
+  « Ndeysaan », « Yow ! »). Sans en abuser : 1 expression forte par scène.
+- Running gag : un détail qui revient 2-3 fois et explose à la chute (callback).
+- La chute tombe dans les 2 dernières secondes, jamais expliquée.
+
+RÈGLES DE DURÉE :
+exactement {n_scenes} scènes de {clip_seconds} secondes (vidéo de plus d'une minute).
 
 RÈGLES DES PROMPTS :
 - image_prompt (anglais) : "3D animated cartoon, Pixar/DreamWorks style. [N] African characters in

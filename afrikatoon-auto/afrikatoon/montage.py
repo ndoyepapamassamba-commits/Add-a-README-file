@@ -20,8 +20,10 @@ def has_audio(path: Path) -> bool:
 
 def normalize(src: Path, dest: Path) -> Path:
     """Met chaque clip au même format (9:16, 30 i/s, AAC stéréo) pour un assemblage propre."""
-    vf = ("scale=1080:1920:force_original_aspect_ratio=decrease,"
-          "pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30")
+    # clip paysage ou carré : on le centre sur une copie floutée de lui-même (comme sur TikTok)
+    vf = ("split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
+          "boxblur=30:2,eq=brightness=-0.08[bg];[b]scale=1080:1920:force_original_aspect_ratio=decrease[fg];"
+          "[bg][fg]overlay=(W-w)/2:(H-h)/2,setsar=1,fps=30")
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", str(src)]
     if not has_audio(src):
         cmd += ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", "-shortest"]
