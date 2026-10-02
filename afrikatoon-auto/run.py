@@ -5,6 +5,7 @@
     python run.py run [--idea "..."]        # tout : scénario → images → clips → montage → TikTok
     python run.py run --mock --no-upload    # test gratuit du montage, sans aucune API
     python run.py upload output/<dossier>   # (re)publier une vidéo déjà montée
+    python run.py voix auto ma_video.mp4    # découpe auto des voix (aiguë / grave) à trier
     python run.py voix extraire ma_video.mp4 --debut 3 --fin 9 --perso MODOU
     python run.py voix cloner MODOU         # crée la voix clonée (ElevenLabs)
     python run.py voix tester MODOU "Baye ! Mes 50 000 francs !"
@@ -126,7 +127,11 @@ def cmd_upload(args):
 
 
 def cmd_voix(args):
-    if args.action == "extraire":
+    if args.action == "auto":
+        for f in voices.auto_split(Path(args.cible)):
+            print(" ", f)
+        print("Écoutez ces extraits et déplacez les bons dans state/voice_samples/<PERSONNAGE>/")
+    elif args.action == "extraire":
         print("Extrait enregistré :", voices.extract_sample(Path(args.cible), args.debut, args.fin, args.perso))
     elif args.action == "cloner":
         print(f"Voix clonée pour {args.cible} :", voices.clone(args.cible))
@@ -158,7 +163,7 @@ def main(argv=None):
     up.add_argument("--mode", choices=["draft", "direct"], default=None)
     up.set_defaults(func=cmd_upload)
     vx = sub.add_parser("voix", help="Voix clonées des personnages (ElevenLabs)")
-    vx.add_argument("action", choices=["extraire", "cloner", "tester"])
+    vx.add_argument("action", choices=["auto", "extraire", "cloner", "tester"])
     vx.add_argument("cible", help="extraire : chemin de la vidéo ; cloner/tester : nom du personnage")
     vx.add_argument("texte", nargs="?", default="Walay, je te jure que je n'ai rien !")
     vx.add_argument("--debut", type=float, default=0)

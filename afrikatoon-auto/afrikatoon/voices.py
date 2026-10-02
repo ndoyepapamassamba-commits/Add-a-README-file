@@ -39,6 +39,58 @@ def extract_sample(video: Path, start: float, end: float, character: str) -> Pat
     return dest
 
 
+def auto_split(video: Path, threshold_hz: float = 210, min_len: float = 0.8) -> list[Path]:
+    """Découpe automatiquement la parole d'une vidéo en extraits « aigue » / « grave » à trier à l'écoute.
+
+    Les extraits vont dans state/voice_samples/_a_trier/ ; déplacez les bons dans le dossier du
+    personnage (ex. state/voice_samples/MODOU/) avant de lancer `voix cloner`.
+    """
+    import wave
+    import numpy as np
+
+    out_dir = SAMPLES_DIR / "_a_trier"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    wav = out_dir / "_tmp.wav"
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(video), "-vn", "-ac", "1", "-ar", "16000",
+                    str(wav)], check=True)
+    with wave.open(str(wav)) as w:
+        sr = w.getframerate()
+        x = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(float) / 32768
+    wav.unlink()
+
+    def pitch(fr):
+        fr = fr - fr.mean()
+        if np.sqrt((fr ** 2).mean()) < 0.03:
+            return 0
+        c = np.correlate(fr, fr, "full")[len(fr) - 1:]
+        lo, hi = int(sr / 450), int(sr / 70)
+        k = lo + int(np.argmax(c[lo:hi]))
+        return sr / k if c[k] > 0.35 * c[0] else 0
+
+    step, n = 0.25, int(0.04 * sr)
+    labels = []
+    for i in range(int(len(x) / sr / step)):
+        seg = x[int(i * step * sr):int((i + 1) * step * sr)]
+        vals = [v for v in (pitch(seg[j:j + n]) for j in range(0, len(seg) - n, n // 2)) if v]
+        labels.append(None if len(vals) < 2 else ("aigue" if np.median(vals) >= threshold_hz else "grave"))
+
+    runs, start = [], 0
+    for i in range(1, len(labels) + 1):
+        if i == len(labels) or labels[i] != labels[start]:
+            if labels[start] and (i - start) * step >= min_len:
+                runs.append((labels[start], start * step, i * step))
+            start = i
+    paths = []
+    stem = video.stem[:20]
+    for k, (lab, a, b) in enumerate(runs):
+        dest = out_dir / f"{lab}_{stem}_{k:02d}_{a:.1f}s-{b:.1f}s.wav"
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", str(a), "-to", str(b), "-i", str(video),
+                        "-vn", "-ac", "1", "-ar", "44100", "-af", "highpass=f=80,lowpass=f=9000",
+                        str(dest)], check=True)
+        paths.append(dest)
+    return paths
+
+
 def clone(character: str, description: str = "") -> str:
     samples = sorted((SAMPLES_DIR / character.replace(" ", "_")).glob("*.wav"))
     if not samples:

@@ -2,3 +2,4 @@ anthropic>=0.40
 requests>=2.31
 python-dotenv>=1.0
 pillow>=10
+numpy>=1.24
