@@ -1,4 +1,9 @@
-"""Voix clonées des personnages (ElevenLabs) + synchronisation des lèvres (fal.ai).
+"""Voix des personnages (ElevenLabs) + synchronisation des lèvres (fal.ai).
+
+Trois façons d'obtenir une voix par personnage, toutes sans problème de droits :
+  1. `voix creer`  : voix inédite générée à partir d'une description (Voice Design) — recommandé ;
+  2. `voix utiliser` : une voix de la Voice Library ElevenLabs (accents africains disponibles) ;
+  3. `voix cloner` : clone d'extraits de VOS vidéos ou de comédiens ayant donné leur accord.
 
 Usage : extraire quelques extraits propres de VOS vidéos pour chaque personnage (30 s à 2 min au total,
 une seule voix à la fois, sans musique), cloner, puis chaque réplique est dite avec cette voix.
@@ -89,6 +94,55 @@ def auto_split(video: Path, threshold_hz: float = 210, min_len: float = 0.8) -> 
                         str(dest)], check=True)
         paths.append(dest)
     return paths
+
+
+def design(character: str, description: str | None = None, sample_text: str | None = None) -> list[dict]:
+    """Crée 3 propositions de voix inédites à partir d'une description (ElevenLabs Voice Design).
+
+    Les extraits sont enregistrés dans state/voice_samples/_propositions/ pour écoute ; gardez la meilleure
+    avec `voix garder PERSONNAGE <id>`.
+    """
+    from . import bible
+    description = description or bible.VOICE_DESIGNS.get(character)
+    if not description:
+        raise RuntimeError(f"Pas de description de voix pour {character}")
+    text = sample_text or ("Walay, je te jure sur la tête de ma mère, je n'ai même pas cent francs ! "
+                           "Toi-même tu sais que je suis un homme honnête. Mais qui t'a dit ça ? Hein ? Qui ?")
+    r = requests.post(f"{API}/text-to-voice/create-previews", headers=_key(), timeout=180,
+                      json={"voice_description": description, "text": text})
+    r.raise_for_status()
+    out_dir = SAMPLES_DIR / "_propositions"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    import base64
+    previews = []
+    for k, p in enumerate(r.json().get("previews", [])):
+        f = out_dir / f"{character.replace(' ', '_')}_{k + 1}_{p['generated_voice_id']}.mp3"
+        f.write_bytes(base64.b64decode(p["audio_base_64"]))
+        previews.append({"file": f, "id": p["generated_voice_id"]})
+    return previews
+
+
+def keep(character: str, generated_voice_id: str) -> str:
+    """Enregistre définitivement la proposition choisie comme voix du personnage."""
+    from . import bible
+    r = requests.post(f"{API}/text-to-voice/create-voice-from-preview", headers=_key(), timeout=120,
+                      json={"voice_name": f"Afrikatoon {character}", "generated_voice_id": generated_voice_id,
+                            "voice_description": bible.VOICE_DESIGNS.get(character, character)})
+    r.raise_for_status()
+    voice_id = r.json()["voice_id"]
+    voices = load_voices()
+    voices[character] = voice_id
+    VOICES_FILE.parent.mkdir(parents=True, exist_ok=True)
+    VOICES_FILE.write_text(json.dumps(voices, indent=2))
+    return voice_id
+
+
+def use_library_voice(character: str, voice_id: str) -> None:
+    """Associe à un personnage une voix de la Voice Library ElevenLabs (copier son ID depuis le site)."""
+    voices = load_voices()
+    voices[character] = voice_id
+    VOICES_FILE.parent.mkdir(parents=True, exist_ok=True)
+    VOICES_FILE.write_text(json.dumps(voices, indent=2))
 
 
 def clone(character: str, description: str = "") -> str:

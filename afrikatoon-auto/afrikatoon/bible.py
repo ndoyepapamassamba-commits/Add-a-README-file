@@ -44,6 +44,22 @@ CHARACTERS = {
     },
 }
 
+# Descriptions de voix pour ElevenLabs Voice Design (voix inédites, libres de droits)
+VOICE_DESIGNS = {
+    "MODOU": "Thin West African man in his 40s from Abidjan, Ivory Coast, speaking French with a strong Ivorian "
+             "accent, slightly nasal, whiny and outraged comedic tone, fast talker, expressive and dramatic.",
+    "BAYE": "Plump Senegalese man in his 50s, deep warm bass voice, French with a strong Wolof/Senegalese accent, "
+            "slow theatrical delivery, smug and falsely innocent, loves swearing oaths, comedic.",
+    "TANTIE AWA": "Loud West African woman in her 50s, French with a strong Ivorian accent, powerful bossy voice, "
+                  "sharp rapid-fire scolding, sarcastic, market-woman energy, comedic.",
+    "PETIT MAMADOU": "Cheeky 8-year-old West African boy, high bright voice, French with a light Senegalese accent, "
+                     "innocent and mischievous, speaks clearly and proudly.",
+    "COUMBA": "Young West African woman in her late 20s, French with a Senegalese accent, calm cold and elegant, "
+              "slow ironic delivery, unimpressed, sharp.",
+    "TONTON DIENG": "Middle-aged West African man, French with a strong Ivorian accent, loud boastful storyteller, "
+                    "big laugh, exaggerated superlatives, energetic, comedic.",
+}
+
 SETTINGS = {
     "cour": "sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal",
     "salon": "modest African living room, patterned sofa, old TV, family photos on teal wall",

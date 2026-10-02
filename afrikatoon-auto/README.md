@@ -60,10 +60,24 @@ Chaque vidéo est rangée dans `output/<date>-<titre>/` : `kit.json`, images, cl
 - `--format blagues` : « La blague du jour », compilation de 4 blagues originales d'environ 15 s,
   avec une chute toutes les 15 s, idéale pour garder les spectateurs jusqu'au bout.
 
-## Voix africaines clonées (ElevenLabs)
+## Voix africaines (ElevenLabs)
 
-Par défaut, les voix sont générées par le modèle vidéo (Grok/Veo, accent demandé dans le prompt).
-Pour avoir **toujours la même voix** par personnage, clonez-la :
+Par défaut, les voix sont générées par le modèle vidéo (Grok/Veo), donc différentes à chaque vidéo.
+Pour que chaque personnage ait **toujours la même voix**, trois solutions, toutes sans problème de droits
+(abonnement ElevenLabs Starter 5 $/mois minimum pour l'usage commercial) :
+
+**A. Voix inédite sur description (recommandé)** : chaque personnage a déjà sa description dans
+`afrikatoon/bible.py` (accent ivoirien ou sénégalais, ton comique).
+
+```bash
+python run.py voix creer BAYE              # 3 propositions à écouter dans state/voice_samples/_propositions/
+python run.py voix garder BAYE <id>        # garder la meilleure
+```
+
+**B. Voix de la Voice Library ElevenLabs** (voix africaines francophones partagées avec accord) :
+`python run.py voix utiliser BAYE <voice_id>`
+
+**C. Clone de vos propres extraits** (vos vidéos Grok, ou comédiens sous contrat) :
 
 ```bash
 # 1. Découper 3 à 6 extraits propres par personnage dans VOS vidéos (une seule voix, sans musique)
