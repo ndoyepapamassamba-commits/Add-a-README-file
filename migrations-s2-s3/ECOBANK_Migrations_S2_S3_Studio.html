@@ -1209,10 +1209,10 @@ async function buildXlsx(){
   const ws0=wb.addWorksheet('SYNTHESE',{views:[{state:'frozen',ySplit:4,showGridLines:false,showRowColHeaders:false,zoomScale:90}]});
   const wsI=wb.addWorksheet('IMPAIRMENT',{views:[{showGridLines:false,showRowColHeaders:false,zoomScale:90}]});
   const HR=16;
-  const sheetOpts={views:[{state:'frozen',xSplit:3,ySplit:HR,showGridLines:false,zoomScale:90}]};
+  const sheetOpts={views:[{state:'frozen',xSplit:3,ySplit:0,showGridLines:false,zoomScale:85}]};   // colonnes figées seulement : l'en-tête du tableau Excel remplace A,B,C au défilement
   const ws3=wb.addWorksheet('S3 INCOMING',sheetOpts),ws2=wb.addWorksheet('S2 INCOMING',sheetOpts);
   const wsM=wb.addWorksheet('MATRICE MIGRATION',{views:[{showGridLines:false,showRowColHeaders:false,zoomScale:90}]});
-  const wsD=wb.addWorksheet('DETAIL CONTRATS',{views:[{state:'frozen',xSplit:4,ySplit:HR,showGridLines:false,zoomScale:90}]});
+  const wsD=wb.addWorksheet('DETAIL CONTRATS',{views:[{state:'frozen',xSplit:4,ySplit:0,showGridLines:false,zoomScale:85}]});
   const wsB=wb.addWorksheet('BASE CLIENTS',sheetOpts);
 
   /* --- IMPAIRMENT : pondérations (noms définis) */
@@ -1516,6 +1516,7 @@ async function xlsxSurgery(buf,SL){
     wr(n,sx);if(rels)wr(relp,rels);}
   const tables={};
   for(const n of Object.keys(z.files).filter(n=>/^xl\/tables\/table\d+\.xml$/.test(n))){let x=await rd(n);let k=0;
+    x=x.replace(/<autoFilter ref="([^"]+)">[\s\S]*?<\/autoFilter>/,'<autoFilter ref="$1"/>');   // aucun critère de filtre résiduel
     x=x.replace(/<tableColumn\b([^>]*?)\bid="\d+"/g,(m,pre)=>'<tableColumn'+pre+'id="'+(++k)+'"').replace(' totalsRowShown="1"',' totalsRowShown="0"');wr(n,x);
     const tid=(x.match(/<table\b[^>]*\bid="(\d+)"/)||[])[1],nm=(x.match(/displayName="([^"]+)"/)||[])[1];const cols={};
     x.replace(/<tableColumn\b[^>]*>/g,m=>{const id=(m.match(/\bid="(\d+)"/)||[])[1],name=(m.match(/\bname="([^"]+)"/)||[])[1];if(name)cols[name.replace(/&amp;/g,'&').replace(/&apos;/g,"'")]=id;return m;});
