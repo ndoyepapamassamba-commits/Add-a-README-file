@@ -620,6 +620,13 @@ async function xlsxSurgery(buf,SL){
   const relT={};wbr.replace(/<Relationship\b[^>]*>/g,m=>{const id=(m.match(/Id="([^"]+)"/)||[])[1],t=(m.match(/Target="([^"]+)"/)||[])[1];if(id)relT[id]=t;return m;});
   const sheetPath={};wbx.replace(/<sheet\b[^>]*>/g,m=>{const n=(m.match(/name="([^"]+)"/)||[])[1],id=(m.match(/r:id="([^"]+)"/)||[])[1];
     let t=relT[id];t=t.replace(/^\//,'');if(!t.startsWith('xl/'))t='xl/'+t;sheetPath[n.replace(/&amp;/g,'&')]=t;return m;});
+  // conformité au schéma SpreadsheetML (corrige les écarts d'ExcelJS qui déclenchent la « réparation » d'Excel)
+  for(const n of Object.values(sheetPath)){let sx=await rd(n);if(!sx)continue;
+    sx=sx.replace(/<extLst><ext uri="\{B025F937-C7B1-47D3-B67F-A62EFF666E3E\}"[^>]*><x14:id\/><\/ext><\/extLst>/g,'');   // x14:id vides dans les cfRule
+    const ld=sx.match(/<legacyDrawing\b[^>]*\/>/);                                                                         // ordre : drawing → legacyDrawing → tableParts
+    if(ld){sx=sx.replace(ld[0],'');sx=/<drawing\b[^>]*\/>/.test(sx)?sx.replace(/(<drawing\b[^>]*\/>)/,'$1'+ld[0]):sx.replace(/(<tableParts\b|<extLst>(?![\s\S]*<extLst>)|<\/worksheet>)/,ld[0]+'$1');}
+    wr(n,sx);}
+  for(const n of Object.keys(z.files).filter(n=>/^xl\/drawings\/drawing\d+\.xml$/.test(n))){let dx=await rd(n);wr(n,dx.replace(/<xdr:oneCellAnchor editAs="[^"]*">/g,'<xdr:oneCellAnchor>'));}
   // liens internes : location sans « # » et sans relation externe parasite
   for(const n of Object.values(sheetPath)){let sx=await rd(n);if(!sx||!/<hyperlink /.test(sx))continue;const relp=n.replace('worksheets/','worksheets/_rels/')+'.rels';let rels=await rd(relp);
     sx=sx.replace(/<hyperlink ref="([^"]+)" r:id="([^"]+)" location="#([^"]*)"\/>/g,(m,ref,id,loc)=>{if(rels)rels=rels.replace(new RegExp('<Relationship Id="'+id+'"[^>]*/>'),'');return `<hyperlink ref="${ref}" location="${loc}" display="${loc.replace(/&apos;/g,"'").replace(/'/g,'&apos;')}"/>`;});
@@ -647,7 +654,8 @@ async function xlsxSurgery(buf,SL){
     ct=ct.replace('</Types>',`<Override PartName="/xl/slicers/slicer${j}.xml" ContentType="application/vnd.ms-excel.slicer+xml"/></Types>`);
     rels=rels.replace('</Relationships>','<Relationship Id="rIdSl1" Type="http://schemas.microsoft.com/office/2007/relationships/slicer" Target="../slicers/slicer'+j+'.xml"/></Relationships>');wr(relp,rels);
     const ext=`<ext uri="{3A4CF648-6AED-40f4-86FF-DC5316D8AED3}" xmlns:x15="${NS15}"><x14:slicerList xmlns:x14="${NS14}"><x14:slicer xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rIdSl1"/></x14:slicerList></ext>`;
-    sx=/<extLst>/.test(sx)?sx.replace('</extLst>',ext+'</extLst>'):sx.replace('</worksheet>','<extLst>'+ext+'</extLst></worksheet>');wr(path,sx);
+    // extLst de NIVEAU FEUILLE uniquement (ExcelJS place aussi des extLst dans les règles de barres de données)
+    sx=/<\/extLst><\/worksheet>\s*$/.test(sx)?sx.replace(/<\/extLst><\/worksheet>\s*$/,ext+'</extLst></worksheet>'):sx.replace(/<\/worksheet>\s*$/,'<extLst>'+ext+'</extLst></worksheet>');wr(path,sx);
     // ancres dans le dessin
     const dm=rels.match(/Target="([^"]*drawings\/drawing\d+\.xml)"/);if(!dm)continue;
     const dpath='xl/'+dm[1].replace(/^\.\.\//,'').replace(/^\/?xl\//,'');let dx=await rd(dpath);
