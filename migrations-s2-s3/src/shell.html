@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ECOBANK — Migrations S2 &amp; S3 · Studio</title>
+<script>/*@@VXLSX@@*/</script>
+<script>/*@@VZIP@@*/</script>
+<script>/*@@VEXCELJS@@*/</script>
+<style>
+/*@@CSS@@*/
+.qa{display:grid;grid-template-columns:54px 1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.qa .n{display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff}
+.qa .b{padding:12px 16px;border-bottom:1px solid #edf3f6}
+.qa .b h4{margin:0 0 4px;color:var(--navy);font-size:14px}
+.qa .b p{margin:0;font-size:13px;line-height:1.55;color:var(--ink2)}
+.qa .b .m{display:flex;gap:18px;flex-wrap:wrap;margin-top:6px;font-size:12px;color:var(--mut)}
+.qa .b .m b{color:var(--navy);font-family:var(--mono)}
+.qa .b .m b.r{color:var(--risk)}
+.vis img{width:100%;height:auto;display:block}
+.params{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.params label{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}
+.params input{width:100%;border:1px solid var(--line2);border-radius:9px;padding:8px 10px;font-size:14px;font-family:var(--mono);background:#fff4b8}
+.sel2{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.sel2 select{border:1px solid var(--line2);border-radius:8px;padding:6px 8px;font-size:12.5px}
+.prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:14px}
+.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--lime));transition:width .2s}
+</style>
+</head>
+<body>
+<header class="top" id="top">
+  <div class="brand"><img id="logoTop" alt="Ecobank"><div><b>Migrations S2 &amp; S3 · Studio</b><span>Entrées Stage 2 / Stage 3 · impairment simulé (moteur ECL PDO Monitor)</span></div></div>
+  <div class="sp"></div>
+  <div class="fld" id="fCur" hidden>Arrêté <select id="selCur"></select></div>
+  <div class="fld" id="fRef" hidden>vs <select id="selRef"></select></div>
+  <button class="btn" id="bLoad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>Charger PORTEFEUILLE</button>
+  <button class="btn lime" id="bXl" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg>Générer ECOBANK_MIGRATIONS.xlsx</button>
+  <input type="file" id="file" accept=".xlsx,.xlsm,.xlsb,.xls" hidden>
+</header>
+<nav class="nav" id="nav" hidden><div class="tabs" id="tabs"></div></nav>
+<main class="wrap" id="main">
+  <section class="drop" id="drop">
+    <div class="dh"><img id="logoDrop" alt="Ecobank"><h1>Migrations S2 &amp; S3</h1><p>Chargez le fichier PORTEFEUILLE (un onglet par arrêté, ex. 31082026 et 30092026) : l'application identifie les entrées en Stage 2 et Stage 3, simule l'impairment à prendre avec le moteur ECL du PDO Monitor et génère le classeur Excel premium ECOBANK_MIGRATIONS (slicers, visuels 3D, formules vivantes).</p></div>
+    <div class="db">
+      <div class="zone" id="zone"><b>Déposez le fichier PORTEFEUILLE ici</b><span>ou cliquez pour le choisir — .xlsx. Rien ne quitte ce poste : tout est calculé dans le navigateur.</span></div>
+      <div class="prog" id="prog" hidden><i id="progI"></i></div>
+      <p class="foot" id="dropMsg">Colonnes attendues : Contracts/Accounts, Code Client, Relationship, Stage IFRS9 Model, Classification, FRR, ORR, Ototal Including PDO, Ftotal, Collateral value, Security Code, Date In PDO, Maturity Date, Reporting Date, Cprovisions IFRS9, BUSINESS_SEGMENT…</p>
+    </div>
+  </section>
+  <section class="panel" id="p-syn"></section>
+  <section class="panel" id="p-s3"></section>
+  <section class="panel" id="p-s2"></section>
+  <section class="panel" id="p-mx"></section>
+  <section class="panel" id="p-imp"></section>
+</main>
+<div class="foot" id="foot" hidden></div>
+<div class="toast" id="toast"></div>
+<div class="busy" id="busy"><i></i><span id="busyT">Préparation…</span></div>
+<script>
+const LOGO_B64='/*@@LOGO@@*/';
+var LOGO_SRC='data:image/png;base64,'+LOGO_B64;
+var G3S=1.6;
+/*@@KIT@@*/
+/*@@APP@@*/
+</script>
+</body>
+</html>
