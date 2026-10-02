@@ -23,7 +23,7 @@ W, H, FPS = 1080, 1920, 24
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 EMO_FALLBACK = {"angry": ["angry", "neutral"], "shock": ["shock", "neutral"], "smug": ["smug", "neutral"],
                 "laugh": ["laugh", "smug", "neutral"], "despair": ["despair", "shock", "neutral"],
-                "sweat": ["sweat", "shock", "neutral"], "unimpressed": ["unimpressed", "angry", "neutral"],
+                "sweat": ["sweat", "shock", "neutral"], "unimpressed": ["unimpressed", "neutral"],
                 "neutral": ["neutral"]}
 
 
