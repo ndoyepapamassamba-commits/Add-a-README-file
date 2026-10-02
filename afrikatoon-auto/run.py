@@ -88,6 +88,8 @@ def cmd_run(args):
         if args.mock:
             if args.mock == "3d":
                 from afrikatoon import animatic3d as animatic
+            elif args.mock == "photo":
+                from afrikatoon import photoanim as animatic
             elif args.mock == "brouillon":
                 from afrikatoon import animatic
             else:
@@ -170,6 +172,19 @@ def cmd_monter(args):
             print(f"TikTok : {res['status']}")
 
 
+def cmd_assets(args):
+    from afrikatoon import assets_tool
+    if args.action == "importer":
+        files = []
+        for c in args.chemins:
+            p = Path(c)
+            files += sorted(q for q in p.iterdir() if q.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp")) \
+                if p.is_dir() else [p]
+        for f in assets_tool.import_images(files, args.perso, args.regard):
+            print(" ", f)
+    print("Planche de contrôle :", assets_tool.contact_sheet(config.OUTPUT_DIR / "planche_assets.png"))
+
+
 def cmd_voix(args):
     if args.action == "creer":
         for p in voices.design(args.cible):
@@ -206,7 +221,7 @@ def main(argv=None):
                         help="sketch (histoire en 3 actes) ou blagues (compilation « la blague du jour »)")
         sp.set_defaults(func=func)
         if name == "run":
-            sp.add_argument("--mock", nargs="?", const="2d", choices=["2d", "3d", "brouillon"],
+            sp.add_argument("--mock", nargs="?", const="2d", choices=["2d", "3d", "brouillon", "photo"],
                             help="Vidéo sans API : 2d (dessin propre, ~5 min), 3d (Blender), brouillon (test)")
             sp.add_argument("--no-upload", action="store_true", help="Ne pas publier sur TikTok")
             sp.add_argument("--no-subs", action="store_true", help="Sans sous-titres incrustés")
@@ -217,13 +232,19 @@ def main(argv=None):
     up.set_defaults(func=cmd_upload)
     lo = sub.add_parser("lot", help="Fabriquer plusieurs vidéos d'affilée (kits déjà écrits)")
     lo.add_argument("kits", nargs="+")
-    lo.add_argument("--mock", nargs="?", const="2d", default="2d", choices=["2d", "3d", "brouillon"])
+    lo.add_argument("--mock", nargs="?", const="photo", default="photo", choices=["2d", "3d", "brouillon", "photo"])
     lo.set_defaults(func=cmd_lot)
     mo = sub.add_parser("monter", help="Assembler vos clips (ex. Grok) en une vidéo > 1 min")
     mo.add_argument("dossier", help="Dossier contenant les clips, dans l'ordre alphabétique (01.mp4, 02.mp4…)")
     mo.add_argument("--kit", help="kit.json du sketch (sous-titres + légende)")
     mo.add_argument("--publier", action="store_true", help="Envoyer ensuite sur TikTok")
     mo.set_defaults(func=cmd_monter)
+    asp = sub.add_parser("assets", help="Importer les images des personnages (détourage + bouche)")
+    asp.add_argument("action", choices=["importer", "planche"])
+    asp.add_argument("chemins", nargs="*", help="Images NOM_pose.png ou dossiers")
+    asp.add_argument("--perso", help="Nom du personnage si les fichiers ne le contiennent pas")
+    asp.add_argument("--regard", default="right", choices=["left", "right", "front"])
+    asp.set_defaults(func=cmd_assets)
     vx = sub.add_parser("voix", help="Voix clonées des personnages (ElevenLabs)")
     vx.add_argument("action", choices=["creer", "garder", "utiliser", "auto", "extraire", "cloner", "tester"])
     vx.add_argument("cible", help="extraire : chemin de la vidéo ; cloner/tester : nom du personnage")

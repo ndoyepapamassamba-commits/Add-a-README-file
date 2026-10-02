@@ -27,8 +27,12 @@ Un fichier JSON par vidéo dans `afrikatoon-auto/kits/<AAAA-MM-JJ>/<NN>-<slug>.j
 `kit_exemple.json` : `title, concept, characters, setting, theme{conflict,twist,setting}, scenes[],
 hook_text, caption, hashtags, score`.
 
-Moteur par défaut : **2D propre** (`--mock 2d`, ≈ 5-7 min par vidéo). 3D (`--mock 3d`) seulement si
-demandé (≈ 30-60 min par vidéo, et seuls les 6 premiers personnages ont un modèle 3D dédié).
+Moteur par défaut : **photo** (`--mock photo`) — anime les images réalistes de l'utilisateur
+(`afrikatoon-auto/assets/`, voir `assets/README.md`) : ≈ 5-8 min par vidéo. N'utiliser que des
+personnages et décors présents dans `assets/` (`python run.py assets planche` pour voir la galerie).
+L'utilisateur a rejeté le rendu 2D dessiné par code ; 3D Blender (`--mock 3d`) seulement si demandé.
+Nouvelles images reçues → `python run.py assets importer <fichiers> [--perso NOM]`, puis regarder la
+planche de contrôle et corriger `mouth` dans `meta.json` si la croix rouge n'est pas sur la bouche.
 
 Contraintes du rendu (sinon ça ne s'affiche pas) :
 - Personnages (18, voir `bible.CHARACTERS`) : MODOU, BAYE, TANTIE AWA, PETIT MAMADOU, COUMBA,
@@ -77,9 +81,9 @@ Auto-évaluation obligatoire avant rendu (`score`, sur 10) : `hook`, `universali
 ## 3. Rendu (en arrière-plan)
 
 ```bash
-cd afrikatoon-auto && python run.py lot kits/<date>/*.json --mock 2d > /tmp/lot.log 2>&1
+cd afrikatoon-auto && python run.py lot kits/<date>/*.json --mock photo > /tmp/lot.log 2>&1
 ```
-Lancer avec `run_in_background` (2D ≈ 5-7 min par vidéo ; 3D ≈ 30-60 min). Prévenir
+Lancer avec `run_in_background` (photo ≈ 5-8 min par vidéo ; 3D ≈ 30-60 min). Prévenir
 l'utilisateur du délai, ne pas attendre avec `sleep`. Si `VOICE_MODE=local` et Chatterbox est
 installé (huggingface.co autorisé dans le réseau), les voix clonées de `state/voice_refs/` sont
 utilisées ; sinon voix MBROLA.

@@ -114,6 +114,56 @@ CHARACTERS = {
                   "basket of tomatoes on her head, hands on hips",
         "voice": "crie les prix, « Pour toi c'est cadeau… 5 000 », négociation sans fin",
     },
+    "GENERAL ZONGO": {
+        "role": "l'entrepreneur toujours « en chantier », promet des immeubles et n'a jamais fini un mur",
+        "visual": "GENERAL ZONGO: cheerful West African building contractor, yellow hard hat, orange safety vest over denim shirt, rolled blueprints under arm, phone glued to his ear",
+        "voice": "promesses énormes au téléphone, « c'est presque fini ! »",
+    },
+    "TATA PRISCA": {
+        "role": "la coiffeuse qui sait tout sur tout le monde, son salon est la radio du quartier",
+        "visual": "TATA PRISCA: curvy glamorous Ivorian hairdresser, big afro with pink headband, pink apron full of combs and scissors, hairdryer in hand, knowing smile",
+        "voice": "« Ma chérie, assieds-toi, je vais te raconter… », potins en rafale",
+    },
+    "AGENT DOUMBIA": {
+        "role": "le policier qui veut toujours « arranger » la situation, débordé par plus malin que lui",
+        "visual": "AGENT DOUMBIA: stout West African police officer, light blue uniform and navy cap, notepad and pen, suspicious squinting eyes",
+        "voice": "« Papiers ! … On peut s'arranger », autorité qui s'effondre",
+    },
+    "MECANO ISSA": {
+        "role": "le mécanicien qui répare tout avec n'importe quoi, et facture « la pièce qui vient de Dubaï »",
+        "visual": "MECANO ISSA: lanky West African mechanic, grease-stained blue overalls, cap backwards, big wrench, oil smudge on cheek, confident grin",
+        "voice": "diagnostics farfelus, « ça c'est le moteur qui est fatigué »",
+    },
+    "SOEUR AWA": {
+        "role": "l'infirmière au grand cœur mais brutalement directe, qui dit tout haut ce que le docteur cache",
+        "visual": "SOEUR AWA: West African nurse in her 30s, white-and-pink nurse uniform, stethoscope, braided bun, clipboard, eyebrow raised",
+        "voice": "calme, cash, « Monsieur, vous n'êtes pas malade, vous êtes paresseux »",
+    },
+    "TIEKORO": {
+        "role": "le vendeur de gadgets, roi des bons plans foireux et des lives TikTok",
+        "visual": "TIEKORO: energetic young West African street vendor, red backwards cap, headphones around neck, camera on strap, phone on selfie stick, huge grin",
+        "voice": "« Promo ! Promo ! », pitch commercial non-stop",
+    },
+    "PETIT MOUSSA": {
+        "role": "l'enfant malin et espiègle, toujours un coup d'avance sur les adultes",
+        "visual": "PETIT MOUSSA: small West African schoolboy around 7, white school shirt, navy shorts, backpack, running with fist raised, mischievous grin",
+        "voice": "répliques courtes et assassines",
+    },
+    "PETITE AYA": {
+        "role": "l'enfant curieuse qui pose trop de questions, toujours la mauvaise au mauvais moment",
+        "visual": "PETITE AYA: little West African girl around 6, two puffy afro buns with pink bows, pink flowered dress, purple backpack, teddy bear, innocent big eyes",
+        "voice": "« Pourquoi ? », questions innocentes qui font tout exploser",
+    },
+    "MAMA DEDE": {
+        "role": "la vendeuse de remèdes miracles qui a une potion pour tout, même pour retrouver un ex",
+        "visual": "MAMA DEDE: plump West African herbal-remedy seller, colorful headwrap, layers of bead necklaces, bundle of green leaves and a gourd, bottles on her stall, sly wink",
+        "voice": "« Ça, ça soigne tout : palu, jalousie et dettes »",
+    },
+    "IMAM KARIM": {
+        "role": "le sage respecté du quartier, qui remet calmement tout le monde sur le droit chemin (jamais tourné en ridicule)",
+        "visual": "IMAM KARIM: calm West African man in his 40s, white embroidered kufi cap, cream boubou with patterned stole, short beard, gentle wise smile, raised finger",
+        "voice": "calme, bienveillant, une phrase juste qui clôt le débat",
+    },
 }
 
 # Descriptions de voix pour ElevenLabs Voice Design (voix inédites, libres de droits)
@@ -142,6 +192,16 @@ VOICE_DESIGNS = {
     "AMINATA": "Teenage West African girl, French with light Ivorian accent, bubbly influencer voice, fast and excited.",
     "BOUBACAR": "Very round cheerful West African man, French with Senegalese accent, deep jolly voice, talks with mouth full.",
     "MAMAN NOUNOU": "Strong West African market woman, French with Ivorian accent, loud hawker voice, unstoppable bargainer.",
+    "GENERAL ZONGO": "Cheerful West African contractor, French with Burkinabe/Ivorian accent, loud enthusiastic salesman voice, always on the phone.",
+    "TATA PRISCA": "Glamorous Ivorian hairdresser, French with strong Abidjan accent, gossiping sing-song voice, dramatic gasps.",
+    "AGENT DOUMBIA": "Stout West African police officer, French with Malian/Ivorian accent, deep official voice that turns sheepish.",
+    "MECANO ISSA": "Lanky West African mechanic, French with Senegalese accent, laid-back confident voice, technical nonsense.",
+    "SOEUR AWA": "West African nurse in her 30s, French with Ivorian accent, calm warm voice, blunt and dry.",
+    "TIEKORO": "Energetic young West African vendor, French with Malian accent, fast hype salesman voice, shouting promos.",
+    "PETIT MOUSSA": "Mischievous 7-year-old West African boy, French with Senegalese accent, high cheeky voice.",
+    "PETITE AYA": "Innocent 6-year-old West African girl, French with Ivorian accent, tiny sweet voice, asks questions.",
+    "MAMA DEDE": "Plump West African remedy seller, French with Beninese/Ivorian accent, mysterious theatrical voice, sly laughs.",
+    "IMAM KARIM": "Calm West African man in his 40s, French with Senegalese accent, gentle warm wise voice, measured pace.",
 }
 
 SETTINGS = {

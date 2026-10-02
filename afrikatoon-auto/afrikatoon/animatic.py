@@ -41,6 +41,14 @@ VOICES = {  # espeak-ng : voix, hauteur, vitesse (voix MBROLA plus naturelles si
 MBROLA_VOICES = {
     "MODOU": ("mb-fr1", 55, 165), "BAYE": ("mb-fr1", 20, 135), "TANTIE AWA": ("mb-fr4", 35, 160),
     "PETIT MAMADOU": ("mb-fr4", 95, 180), "COUMBA": ("mb-fr4", 55, 150), "TONTON DIENG": ("mb-fr1", 40, 175),
+    "MAITRE KONE": ("mb-fr1", 50, 140), "DOCTEUR SYLLA": ("mb-fr1", 30, 140), "FATOU": ("mb-fr4", 50, 175),
+    "ADJOUA": ("mb-fr4", 70, 165), "KOFFI": ("mb-fr1", 60, 180), "GRAND-PERE NDIAYE": ("mb-fr1", 25, 120),
+    "MAMIE BINTOU": ("mb-fr4", 80, 150), "ALIOU": ("mb-fr1", 45, 185), "CHEF TRAORE": ("mb-fr1", 15, 130),
+    "AMINATA": ("mb-fr4", 90, 190), "BOUBACAR": ("mb-fr1", 20, 150), "MAMAN NOUNOU": ("mb-fr4", 40, 175),
+    "GENERAL ZONGO": ("mb-fr1", 45, 175), "TATA PRISCA": ("mb-fr4", 60, 170), "AGENT DOUMBIA": ("mb-fr1", 20, 145),
+    "MECANO ISSA": ("mb-fr1", 40, 150), "SOEUR AWA": ("mb-fr4", 45, 150), "TIEKORO": ("mb-fr1", 55, 195),
+    "PETIT MOUSSA": ("mb-fr4", 95, 185), "PETITE AYA": ("mb-fr4", 99, 170), "MAMA DEDE": ("mb-fr4", 30, 140),
+    "IMAM KARIM": ("mb-fr1", 35, 135),
 }
 if Path("/usr/share/mbrola/fr1").exists() or Path("/usr/share/mbrola/fr1/fr1").exists():
     VOICES = MBROLA_VOICES
