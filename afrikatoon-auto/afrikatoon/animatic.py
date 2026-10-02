@@ -49,6 +49,10 @@ MBROLA_VOICES = {
     "MECANO ISSA": ("mb-fr1", 40, 150), "SOEUR AWA": ("mb-fr4", 45, 150), "TIEKORO": ("mb-fr1", 55, 195),
     "PETIT MOUSSA": ("mb-fr4", 95, 185), "PETITE AYA": ("mb-fr4", 99, 170), "MAMA DEDE": ("mb-fr4", 30, 140),
     "IMAM KARIM": ("mb-fr1", 35, 135),
+    "MONSIEUR DIARRA": ("mb-fr1", 55, 150), "MAITRE COULIBALY": ("mb-fr4", 45, 165), "AGENT BAKARY": ("mb-fr1", 30, 140),
+    "TANTIE AWA SARR": ("mb-fr4", 40, 165), "PROFESSEUR SAMBA": ("mb-fr1", 40, 130), "MADAME COUMBA": ("mb-fr4", 50, 155),
+    "DJECKY": ("mb-fr1", 45, 175), "PETIT IBRAHIMA": ("mb-fr4", 90, 175), "PETITE KHADIJA": ("mb-fr4", 99, 160),
+    "AGENT GORA": ("mb-fr1", 35, 150),
 }
 if Path("/usr/share/mbrola/fr1").exists() or Path("/usr/share/mbrola/fr1/fr1").exists():
     VOICES = MBROLA_VOICES

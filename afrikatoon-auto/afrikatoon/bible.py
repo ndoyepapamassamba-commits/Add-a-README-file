@@ -164,6 +164,56 @@ CHARACTERS = {
         "visual": "IMAM KARIM: calm West African man in his 40s, white embroidered kufi cap, cream boubou with patterned stole, short beard, gentle wise smile, raised finger",
         "voice": "calme, bienveillant, une phrase juste qui clôt le débat",
     },
+    "MONSIEUR DIARRA": {
+        "role": "le comptable qui compte tout, même les grains de riz du repas offert",
+        "visual": "MONSIEUR DIARRA: thin West African accountant, beige kufi cap, cream shirt with embroidered vest, thin mustache and goatee, calculator and stack of papers, raised finger",
+        "voice": "« Attends, je calcule… », facture tout à tout le monde",
+    },
+    "MAITRE COULIBALY": {
+        "role": "l'avocate qui complique tout, transforme une dispute de voisins en procès",
+        "visual": "MAITRE COULIBALY: confident West African lawyer woman, black lawyer robe with white jabot, colorful headwrap, gold hoop earrings, folders under arm, arms crossed",
+        "voice": "« Objection ! », jargon juridique pour tout",
+    },
+    "AGENT BAKARY": {
+        "role": "le douanier qui trouve toujours quelque chose à taxer, même dans une valise vide",
+        "visual": "AGENT BAKARY: West African customs officer, green uniform and green cap marked DOUANE, walkie-talkie, holding a passport, suspicious wide eyes",
+        "voice": "« Qu'est-ce qu'il y a dans la valise ? », taxe l'impossible",
+    },
+    "TANTIE AWA SARR": {
+        "role": "la restauratrice qui régale tout le quartier et sait qui doit combien",
+        "visual": "TANTIE AWA SARR: joyful plump West African restaurant cook, red and orange headwrap, yellow wax dress, black apron, wooden spoon over a big steaming pot",
+        "voice": "« Venez manger ! », éclats de rire, crédit noté dans sa tête",
+    },
+    "PROFESSEUR SAMBA": {
+        "role": "l'intellectuel qui sait tout (ou presque) et commente l'actualité de travers",
+        "visual": "PROFESSEUR SAMBA: slim West African intellectual, embroidered kufi cap, purple and gold boubou, thin mustache and goatee, newspaper and coffee cup, raised eyebrow",
+        "voice": "phrases savantes inventées, « comme disait Socrate… »",
+    },
+    "MADAME COUMBA": {
+        "role": "la voisine curieuse et indiscrète, toujours derrière la clôture",
+        "visual": "MADAME COUMBA: plump West African neighbor woman, blue and orange flowered headwrap and matching wax dress, finger on lips, suspicious side-eye",
+        "voice": "« Chut ! Je n'ai rien vu… mais… »",
+    },
+    "DJECKY": {
+        "role": "le jeune du quartier toujours « dans les plans », jamais dans le travail",
+        "visual": "DJECKY: athletic young West African man, red basketball jersey number 23, backwards black cap, gold chain, basketball under arm, cocky grin",
+        "voice": "nouchi, « Bro, j'ai un plan ! »",
+    },
+    "PETIT IBRAHIMA": {
+        "role": "l'enfant intelligent qui veut réussir et corrige les adultes",
+        "visual": "PETIT IBRAHIMA: smart West African boy around 8, white school shirt, backpack, notebook titled MON REVE with a rocket, thumbs up, bright smile",
+        "voice": "sérieux et enthousiaste, « Quand je serai grand… »",
+    },
+    "PETITE KHADIJA": {
+        "role": "l'enfant rêveuse qui pose mille questions",
+        "visual": "PETITE KHADIJA: dreamy little West African girl around 6, two puffy afro buns with pink bows, flowered blouse, chin in hands, pencil, books",
+        "voice": "« Et pourquoi… ? », questions rêveuses",
+    },
+    "AGENT GORA": {
+        "role": "le vigile très débrouillard et philosophe de la vie",
+        "visual": "AGENT GORA: cheerful West African security guard, light blue uniform shirt, black cap marked SECURITE, flashlight, bunch of keys, wink and thumbs up",
+        "voice": "proverbes de vigile, « Ici on dort pas, on surveille les yeux fermés »",
+    },
 }
 
 # Descriptions de voix pour ElevenLabs Voice Design (voix inédites, libres de droits)
@@ -202,6 +252,16 @@ VOICE_DESIGNS = {
     "PETITE AYA": "Innocent 6-year-old West African girl, French with Ivorian accent, tiny sweet voice, asks questions.",
     "MAMA DEDE": "Plump West African remedy seller, French with Beninese/Ivorian accent, mysterious theatrical voice, sly laughs.",
     "IMAM KARIM": "Calm West African man in his 40s, French with Senegalese accent, gentle warm wise voice, measured pace.",
+    "MONSIEUR DIARRA": "Thin West African accountant, French with Malian accent, precise nasal voice, counts everything.",
+    "MAITRE COULIBALY": "Confident West African lawyer woman, French with Ivorian accent, sharp articulate courtroom voice.",
+    "AGENT BAKARY": "West African customs officer, French with Senegalese accent, suspicious slow official voice.",
+    "TANTIE AWA SARR": "Joyful plump West African cook, French with Senegalese accent, warm loud laughing voice.",
+    "PROFESSEUR SAMBA": "Slim West African intellectual, French with Senegalese accent, pompous slow professorial voice.",
+    "MADAME COUMBA": "Plump West African neighbor woman, French with Senegalese accent, conspiratorial whispering voice.",
+    "DJECKY": "Athletic young Ivorian man, French with strong Abidjan nouchi accent, cool cocky laid-back voice.",
+    "PETIT IBRAHIMA": "Smart 8-year-old West African boy, French with Senegalese accent, bright clear eager voice.",
+    "PETITE KHADIJA": "Dreamy 6-year-old West African girl, French with Ivorian accent, soft tiny curious voice.",
+    "AGENT GORA": "Cheerful West African security guard, French with Senegalese accent, relaxed philosophical voice.",
 }
 
 SETTINGS = {
@@ -216,6 +276,9 @@ SETTINGS = {
     "ecole": "West African primary school classroom, green blackboard with chalk writing, wooden desks",
     "maquis": "lively Ivorian maquis open-air restaurant at night, plastic tables, string lights, grill smoke",
     "taxi": "busy West African street with a yellow taxi parked at the curb, colorful shop signs",
+    "tribunal": "small West African courthouse room, wooden benches, judge desk, ceiling fan",
+    "douane": "West African border customs post, barrier, suitcases on a table, green booth",
+    "bureau": "cluttered West African office, desk piled with papers, old computer, fan",
     "salon_coiffure": "colorful African hair salon, mirrors, hair dryers, wig mannequins, posters of hairstyles",
 }
 
