@@ -1,0 +1,194 @@
+{
+  "title": "Le mouton de la dette",
+  "concept": "Modou réclame les 50 000 F qu'il a prêtés à Baye, qui jure être ruiné malgré un mouton gras, un climatiseur neuf et un téléphone qui sonne. Le petit Mamadou débarque avec le reçu : le mouton a été payé avec l'argent de Modou.",
+  "characters": [
+    "MODOU",
+    "BAYE",
+    "PETIT MAMADOU"
+  ],
+  "setting": "cour",
+  "theme": {
+    "conflict": "L'argent prêté jamais rendu",
+    "twist": "Le témoin inattendu (PETIT MAMADOU voit tout et le dit)",
+    "setting": "cour"
+  },
+  "scenes": [
+    {
+      "act": 1,
+      "beat": "hook",
+      "characters": [
+        "MODOU",
+        "BAYE"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes with furious finger pointing, standing at the gate. BAYE: plump African man in his 50s, immaculate shiny royal-blue boubou with gold embroidery, prayer beads, smug innocent face with smug innocent shrug, palms open, sitting on a plastic chair. A fat white ram tied to a pole behind Baye. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension between characters, 9:16 vertical, high detail, clean composition.",
+      "animation_prompt": "Modou storms in pointing at Baye; Baye spreads his palms slowly. Quick zoom on Modou's face. Dialogue in French with West African accent — MODOU: \"Baye ! Mes 50 000 francs, ça fait huit mois !\" BAYE: \"Modou, mon frère… je n'ai même pas 100 francs.\". Comedic timing, expressive faces, natural gestures.",
+      "dialogue": [
+        {
+          "speaker": "MODOU",
+          "text": "Baye ! Mes 50 000 francs, ça fait huit mois !"
+        },
+        {
+          "speaker": "BAYE",
+          "text": "Modou, mon frère… je n'ai même pas 100 francs."
+        }
+      ]
+    },
+    {
+      "act": 1,
+      "beat": "escalade",
+      "characters": [
+        "MODOU",
+        "BAYE"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes with eyes bulging out, pointing at the ram. BAYE: plump African man in his 50s, immaculate shiny royal-blue boubou with gold embroidery, prayer beads, smug innocent face sweating nervously, forced smile. A fat white ram with a red ribbon chewing grass behind Baye. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension between characters, 9:16 vertical, high detail, clean composition.",
+      "animation_prompt": "Modou points at the ram; Baye steps in front of it. Static shot. Dialogue in French with West African accent — MODOU: \"Et ce mouton gras là, c'est quoi ?\" BAYE: \"Ce mouton ? C'est un cadeau… du mouton lui-même.\". Comedic timing, expressive faces, natural gestures.",
+      "dialogue": [
+        {
+          "speaker": "MODOU",
+          "text": "Et ce mouton gras là, c'est quoi ?"
+        },
+        {
+          "speaker": "BAYE",
+          "text": "Ce mouton ? C'est un cadeau… du mouton lui-même."
+        }
+      ]
+    },
+    {
+      "act": 1,
+      "beat": "escalade",
+      "characters": [
+        "MODOU",
+        "BAYE"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes with hands on head in despair. BAYE: plump African man in his 50s, immaculate shiny royal-blue boubou with gold embroidery, prayer beads, smug innocent face with prayer beads raised, theatrical oath pose. A brand-new air conditioner box leaning against the wall. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension between characters, 9:16 vertical, high detail, clean composition.",
+      "animation_prompt": "Baye raises his prayer beads to the sky; Modou grabs his head. Slow push-in on Baye. Dialogue in French with West African accent — BAYE: \"Walay, je jure sur la tête de mon climatiseur !\" MODOU: \"Tu as un climatiseur maintenant ?!\". Comedic timing, expressive faces, natural gestures.",
+      "dialogue": [
+        {
+          "speaker": "BAYE",
+          "text": "Walay, je jure sur la tête de mon climatiseur !"
+        },
+        {
+          "speaker": "MODOU",
+          "text": "Tu as un climatiseur maintenant ?!"
+        }
+      ]
+    },
+    {
+      "act": 2,
+      "beat": "escalade",
+      "characters": [
+        "BAYE",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. BAYE: plump African man in his 50s, immaculate shiny royal-blue boubou with gold embroidery, prayer beads, smug innocent face with a fake cough, hand on chest, lying back on the chair. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes arms crossed, unimpressed raised eyebrow. A plate of grilled chicken hidden under the chair. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension between characters, 9:16 vertical, high detail, clean composition.",
+      "animation_prompt": "Baye coughs dramatically and slumps; Modou crosses his arms. Static shot. Dialogue in French with West African accent — BAYE: \"Je suis malade, Modou… le docteur a dit : pas de dettes.\" MODOU: \"Le docteur a dit ça ?\". Comedic timing, expressive faces, natural gestures.",
+      "dialogue": [
+        {
+          "speaker": "BAYE",
+          "text": "Je suis malade, Modou… le docteur a dit : pas de dettes."
+        },
+        {
+          "speaker": "MODOU",
+          "text": "Le docteur a dit ça ?"
+        }
+      ]
+    },
+    {
+      "act": 2,
+      "beat": "escalade",
+      "characters": [
+        "BAYE",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. BAYE: plump African man in his 50s, immaculate shiny royal-blue boubou with gold embroidery, prayer beads, smug innocent face showing an empty wallet with smug innocent face. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes with piercing judgmental side-eye. A shiny latest-model smartphone sticking out of Baye's boubou pocket. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension between characters, 9:16 vertical, high detail, clean composition.",
+      "animation_prompt": "Baye opens an empty wallet; the phone in his pocket starts ringing loudly. Quick zoom on the ringing pocket. Dialogue in French with West African accent — BAYE: \"Regarde, portefeuille vide. Même pas pour le pain.\" MODOU: \"Et ton téléphone qui sonne là, il est vide aussi ?\". Comedic timing, expressive faces, natural gestures.",
+      "dialogue": [
+        {
+          "speaker": "BAYE",
+          "text": "Regarde, portefeuille vide. Même pas pour le pain."
+        },
+        {
+          "speaker": "MODOU",
+          "text": "Et ton téléphone qui sonne là, il est vide aussi ?"
+        }
+      ]
+    },
+    {
+      "act": 2,
+      "beat": "escalade",
+      "characters": [
+        "BAYE",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. BAYE: plump African man in his 50s, immaculate shiny royal-blue boubou with gold embroidery, prayer beads, smug innocent face sweating nervously, forced smile, holding the phone at arm's length. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes leaning in, eyes bulging out. The phone screen glowing with a bank notification. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension between characters, 9:16 vertical, high detail, clean composition.",
+      "animation_prompt": "Baye declines the call; a loud notification voice rings out. Slow push-in on the phone screen. Dialogue in French with West African accent — BAYE: \"C'est… la radio.\" MODOU: \"Une radio qui dit « dépôt de 300 000 francs » ?!\". Comedic timing, expressive faces, natural gestures.",
+      "dialogue": [
+        {
+          "speaker": "BAYE",
+          "text": "C'est… la radio."
+        },
+        {
+          "speaker": "MODOU",
+          "text": "Une radio qui dit « dépôt de 300 000 francs » ?!"
+        }
+      ]
+    },
+    {
+      "act": 3,
+      "beat": "twist",
+      "characters": [
+        "PETIT MAMADOU",
+        "BAYE",
+        "MODOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 3 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. PETIT MAMADOU: small African boy around 8 years old, oversized yellow football jersey, big curious eyes, cheeky smile running in from the house, waving a paper. BAYE: plump African man in his 50s, immaculate shiny royal-blue boubou with gold embroidery, prayer beads, smug innocent face with jaw dropped to the floor in cartoon shock. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes turning around surprised. A receipt for a ram purchase in Petit Mamadou's hand. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension between characters, 9:16 vertical, high detail, clean composition.",
+      "animation_prompt": "Petit Mamadou runs in waving a receipt; Baye freezes. Quick zoom on the receipt. Dialogue in French with West African accent — PETIT MAMADOU: \"Papa ! Tu as oublié le reçu du mouton !\" BAYE: \"Mamadou… rentre à la maison.\". Comedic timing, expressive faces, natural gestures.",
+      "dialogue": [
+        {
+          "speaker": "PETIT MAMADOU",
+          "text": "Papa ! Tu as oublié le reçu du mouton !"
+        },
+        {
+          "speaker": "BAYE",
+          "text": "Mamadou… rentre à la maison."
+        }
+      ]
+    },
+    {
+      "act": 3,
+      "beat": "chute",
+      "characters": [
+        "PETIT MAMADOU",
+        "MODOU",
+        "BAYE"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 3 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. PETIT MAMADOU: small African boy around 8 years old, oversized yellow football jersey, big curious eyes, cheeky smile with cheeky smile reading the receipt. MODOU: thin African man in his 40s, short hair, faded green t-shirt and brown trousers, plastic sandals, expressive tired eyes laughing so hard leaning backwards. BAYE: plump African man in his 50s, immaculate shiny royal-blue boubou with gold embroidery, prayer beads, smug innocent face with eyes bulging out. The receipt clearly showing '50 000 F'. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension between characters, 9:16 vertical, high detail, clean composition.",
+      "animation_prompt": "Petit Mamadou reads aloud; Modou bursts out laughing; Baye turns slowly to camera. Slow push-in on Baye's face. Dialogue in French with West African accent — PETIT MAMADOU: \"Payé avec l'argent de tonton Modou, c'est écrit !\" BAYE: \"…\". Comedic timing, expressive faces, natural gestures. freeze on BAYE's shocked face looking directly at camera",
+      "dialogue": [
+        {
+          "speaker": "PETIT MAMADOU",
+          "text": "Payé avec l'argent de tonton Modou, c'est écrit !"
+        },
+        {
+          "speaker": "BAYE",
+          "text": "…"
+        }
+      ]
+    }
+  ],
+  "caption": "Il a juré sur son climatiseur 😭 Team Modou ou team Baye ? Tu connais un Baye dans ta famille ?",
+  "hashtags": [
+    "#drole",
+    "#comedy",
+    "#humourafricain",
+    "#pourtoi",
+    "#tabaski",
+    "#senegal",
+    "#dette"
+  ],
+  "score": {
+    "hook": 8,
+    "universalite": 9,
+    "reproductibilite": 8
+  }
+}

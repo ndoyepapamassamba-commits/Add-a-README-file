@@ -1,0 +1,4 @@
+.env
+output/
+state/tiktok_tokens.json
+__pycache__/
