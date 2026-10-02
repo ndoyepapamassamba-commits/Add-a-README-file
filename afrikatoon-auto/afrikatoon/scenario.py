@@ -47,6 +47,8 @@ SCRIPT_TOOL = {
                                  "animation_prompt", "dialogue"],
                 },
             },
+            "hook_text": {"type": "string",
+                          "description": "Titre d'accroche affiché 3 s à l'écran, 3 à 7 mots, intrigant"},
             "caption": {"type": "string", "description": "Légende TikTok avec question d'engagement"},
             "hashtags": {"type": "array", "items": {"type": "string"}},
             "score": {

@@ -44,17 +44,20 @@ def _escape(text: str) -> str:
     return text.replace("\\", "").replace("{", "(").replace("}", ")").replace("\n", " ")
 
 
-def build_subtitles(scenes: list[dict], durations: list[float], dest: Path) -> Path:
+def build_subtitles(scenes: list[dict], durations: list[float], dest: Path, hook: str = "") -> Path:
     """Sous-titres gros et jaunes ; chaque réplique occupe une part du clip proportionnelle à sa longueur."""
     lines = [
         "[Script Info]", "ScriptType: v4.00+", "PlayResX: 1080", "PlayResY: 1920", "",
         "[V4+ Styles]",
         "Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, "
         "BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV",
-        "Style: Main,DejaVu Sans,64,&H0000FFFF,&H00000000,&H64000000,1,1,5,2,2,60,60,380", "",
+        "Style: Main,DejaVu Sans,64,&H0000FFFF,&H00000000,&H64000000,1,1,5,2,2,60,60,380",
+        "Style: Hook,DejaVu Sans,78,&H00FFFFFF,&H00000000,&H96000000,1,3,6,0,8,50,50,170", "",
         "[Events]",
         "Format: Layer, Start, End, Style, Text",
     ]
+    if hook:  # titre d'accroche en haut pendant les 3 premières secondes (arrête le scroll)
+        lines.append(f"Dialogue: 1,{_ts(0)},{_ts(3.0)},Hook,{{\\fad(0,200)}}{_escape(hook.upper())}")
     t0 = 0.0
     for scene, d in zip(scenes, durations):
         dialogue = scene.get("dialogue") or []
@@ -74,7 +77,7 @@ def build_subtitles(scenes: list[dict], durations: list[float], dest: Path) -> P
 
 
 def assemble(clips: list[Path], scenes: list[dict], workdir: Path, final: Path,
-             subtitles: bool = True) -> Path:
+             subtitles: bool = True, hook: str = "") -> Path:
     norm = [normalize(c, workdir / f"norm_{i:02d}.mp4") for i, c in enumerate(clips)]
     durations = [duration(c) for c in norm]
     concat_list = workdir / "concat.txt"
@@ -85,7 +88,7 @@ def assemble(clips: list[Path], scenes: list[dict], workdir: Path, final: Path,
     if not subtitles:
         joined.replace(final)
         return final
-    ass = build_subtitles(scenes, durations, workdir / "subs.ass")
+    ass = build_subtitles(scenes, durations, workdir / "subs.ass", hook)
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(joined),
                     "-vf", f"ass={ass}", "-c:v", "libx264", "-preset", "medium", "-crf", "20",
                     "-c:a", "copy", "-movflags", "+faststart", str(final)], check=True)

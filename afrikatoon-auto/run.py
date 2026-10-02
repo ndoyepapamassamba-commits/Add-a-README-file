@@ -5,6 +5,7 @@
     python run.py run [--idea "..."]        # tout : scénario → images → clips → montage → TikTok
     python run.py run --mock --no-upload    # test gratuit du montage, sans aucune API
     python run.py upload output/<dossier>   # (re)publier une vidéo déjà montée
+    python run.py lot kits/2026-10-03/*.json      # plusieurs vidéos 3D d'affilée (sans API)
     python run.py monter mes_clips_grok/ --kit kit.json   # assembler vos clips Grok (gratuit)
     python run.py voix creer BAYE           # 3 voix inédites proposées d'après la description
     python run.py voix garder BAYE <id>     # garder la meilleure
@@ -105,7 +106,7 @@ def cmd_run(args):
         clips.append(clip)
 
     final = montage.assemble(clips, kit["scenes"], work, work / "final.mp4",
-                             subtitles=not args.no_subs)
+                             subtitles=not args.no_subs, hook=kit.get("hook_text", ""))
     length = montage.duration(final)
     print(f"[4/4] Montage terminé : {final} ({length:.1f} s)")
     if length < 60:
@@ -119,7 +120,7 @@ def cmd_run(args):
         res = tiktok.publish(final, caption_of(kit), mode=args.mode)
         print(f"TikTok : {res['status']} (publish_id {res['publish_id']})")
         entry["tiktok"] = res["status"]
-    if not args.mock:
+    if args.mock != "2d":  # les tests 2D ne comptent pas dans l'historique
         save_history(entry)
 
 
@@ -128,6 +129,20 @@ def cmd_upload(args):
     kit = json.loads((work / "kit.json").read_text(encoding="utf-8"))
     res = tiktok.publish(work / "final.mp4", caption_of(kit), mode=args.mode)
     print(f"TikTok : {res['status']} (publish_id {res['publish_id']})")
+
+
+def cmd_lot(args):
+    """Fabrique plusieurs vidéos d'affilée à partir de kits déjà écrits."""
+    done = []
+    for k in args.kits:
+        print(f"\n===== {k} =====")
+        ns = argparse.Namespace(kit=k, idea=None, format=None, mock=args.mock, no_upload=True, no_subs=False,
+                                mode=None)
+        cmd_run(ns)
+        done.append(sorted(config.OUTPUT_DIR.glob("*/final.mp4"), key=lambda p: p.stat().st_mtime)[-1])
+    print("\nVidéos prêtes :")
+    for f in done:
+        print(" ", f, "\n   légende :", (f.parent / "caption.txt").read_text(encoding="utf-8"))
 
 
 def cmd_monter(args):
@@ -198,6 +213,10 @@ def main(argv=None):
     up.add_argument("folder")
     up.add_argument("--mode", choices=["draft", "direct"], default=None)
     up.set_defaults(func=cmd_upload)
+    lo = sub.add_parser("lot", help="Fabriquer plusieurs vidéos d'affilée (kits déjà écrits)")
+    lo.add_argument("kits", nargs="+")
+    lo.add_argument("--mock", nargs="?", const="3d", default="3d", choices=["2d", "3d"])
+    lo.set_defaults(func=cmd_lot)
     mo = sub.add_parser("monter", help="Assembler vos clips (ex. Grok) en une vidéo > 1 min")
     mo.add_argument("dossier", help="Dossier contenant les clips, dans l'ordre alphabétique (01.mp4, 02.mp4…)")
     mo.add_argument("--kit", help="kit.json du sketch (sous-titres + légende)")
