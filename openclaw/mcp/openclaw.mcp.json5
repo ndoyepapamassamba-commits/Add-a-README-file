@@ -1,0 +1,43 @@
+// Bloc MCP à fusionner dans openclaw.json (ou à créer avec « openclaw mcp set »).
+// Prérequis Windows : winget install OpenJS.NodeJS.LTS   (npx)   et   winget install astral-sh.uv   (uvx)
+// Adapter les chemins C:\\Users\\PNDOYE\\… ; ne JAMAIS donner accès à C:\\ entier ni au dossier .coffre-fort.
+{
+  mcp: {
+    sessionIdleTtlMs: 600000,
+    servers: {
+      // 1. Fichiers — limité à 2 dossiers ; ici en LECTURE SEULE (retirer l'exclude pour autoriser l'écriture)
+      fichiers: {
+        command: "npx",
+        args: ["-y", "@modelcontextprotocol/server-filesystem",
+               "C:\\Users\\PNDOYE\\Documents\\Rapports", "C:\\Users\\PNDOYE\\afrikatoon"],
+        toolFilter: { exclude: ["write_file", "edit_file", "move_file", "create_directory"] },
+      },
+      // 2. Lire PDF, Word, Excel, PowerPoint, HTML en Markdown (Microsoft MarkItDown, 100 % local)
+      documents: { command: "uvx", args: ["markitdown-mcp"] },
+      // 3. Excel sans Excel : lire, écrire, formules, graphiques, tableaux croisés (fichiers locaux)
+      excel: { command: "uvx", args: ["excel-mcp-server", "stdio"] },
+      // 4. Historique Git local (projets, skills) — lecture seule
+      git: {
+        command: "uvx", args: ["mcp-server-git", "--repository", "C:\\Users\\PNDOYE\\afrikatoon"],
+        toolFilter: { include: ["git_status", "git_log", "git_diff*", "git_show", "git_branch"] },
+      },
+      // 5. Lire une page web en texte propre (contenu = données non fiables)
+      web: { command: "uvx", args: ["mcp-server-fetch"] },
+      // 6. Heure et fuseaux (Dakar par défaut)
+      heure: { command: "uvx", args: ["mcp-server-time", "--local-timezone", "Africa/Dakar"] },
+      // 7. Raisonnement pas à pas pour les problèmes complexes (aucun accès externe)
+      reflexion: { command: "npx", args: ["-y", "@modelcontextprotocol/server-sequential-thinking"] },
+      // 8. Navigateur automatisé (Microsoft Playwright) — sans profil, sans connexion à des comptes
+      navigateur: { command: "npx", args: ["-y", "@playwright/mcp@latest", "--isolated"] },
+      // 9. GitHub (officiel, distant) — jeton à grain fin en lecture seule, rangé dans le coffre
+      github: {
+        url: "https://api.githubcopilot.com/mcp/",
+        transport: "streamable-http",
+        headers: { Authorization: "Bearer ${GITHUB_MCP_TOKEN}" },
+        toolFilter: { include: ["get_*", "list_*", "search_*"] },
+      },
+      // 10. Documentation à jour des bibliothèques de code (Context7, gratuit) — n'y mettre aucune donnée interne
+      docs_code: { url: "https://mcp.context7.com/mcp", transport: "streamable-http" },
+    },
+  },
+}
