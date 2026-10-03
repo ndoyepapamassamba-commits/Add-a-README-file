@@ -120,3 +120,18 @@ Niveaux : contrepartie, segment, portefeuille, scénario / stress.
 - **SCÉNARIO** : les facteurs de stress ×1,5 et ×2,0 sur les dégradations sont des hypothèses **STRESS**. Monte Carlo des entrées en douteux en montants : **SIMULATED**.
 - **ACTION** : l'effet de chaque levier (régularisation, règlement partiel, levée des signaux) est recalculé par le code.
 - Exports Excel et Word de la salle → finition premium automatique (`pmHook`).
+
+## 9. Credit Risk Intelligence — exports Excel « produit »
+- Composition d'une application web : HEADER (barre deep blue) → HERO (dégradé Deep → Ecobank → Bright, date et périmètre) → filet or → NAVIGATION (onglet actif bleu et souligné or) → KPI CARDS → ANALYTICS → VISUALISATIONS → INSIGHTS → WATCHLIST → ACTION PLAN.
+- Cartes KPI : titre, valeur au format Md/M, unité, variation ▲▼ colorée selon le sens métier, sparkline et rappel « vs N-1 ». Variantes blanc, bleu clair, dégradé bleu et dégradé cyan pour créer du rythme.
+- Visualisations natives :
+  - tendance en aire et courbes sur deux axes ;
+  - anneau, avec les étiquettes masquées sous 4 % ;
+  - pont des impayés en cascade, avec étiquettes signées ;
+  - heatmaps colorées par le code (bleu clair → bleu → orange → rouge) ;
+  - matrice risque × exposition ;
+  - Pareto ;
+  - carte à bulles ;
+  - data bars, flèches et badges CRITICAL / HIGH / WATCH / CURED.
+- Une seule source (`riModel`) pour l'écran, l'Excel et le PDF. Les insights sont calculés, jamais génériques. Les contrôles sont restitués dans la feuille AUDIT.
+- Léger : moins de 200 Ko pour le classeur complet de 700 clients, données agrégées dans une feuille `_data` masquée.
