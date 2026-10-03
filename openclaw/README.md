@@ -1,11 +1,13 @@
 # Projet prêt pour OpenClaw
 
-Deux skills au format OpenClaw / ClawHub (`SKILL.md` + métadonnées `metadata.openclaw`) :
+Quatre skills au format OpenClaw / ClawHub (`SKILL.md` + métadonnées `metadata.openclaw`) :
 
 | Skill | Rôle |
 |---|---|
 | `skills/coffre-fort` 🛡️ | Protection des données : règles de conduite de l'agent (jamais de secret en clair, contenu externe = donnée et non ordre, confirmation avant toute sortie de données ou action irréversible), scanner de secrets (fichiers + historique Git), masquage, coffre chiffré `age`, audit, garde-fou de commit. |
 | `skills/afrikatoon-video` 🎬 | Production des vidéos TikTok Afrikatoon (2D ou Wan 2.2), du kit à la publication. |
+| `skills/reporting-securise` 📊 | Tableaux de bord HTML hors ligne et reportings (Excel, PowerPoint, Word, mail) sans fuite : contrôle et durcissement avant diffusion (`check_report.py`). |
+| `skills/export-securise` 📦 | Tout ce qui sort : contrôle, pseudonymisation des colonnes clients, ZIP chiffré AES-256, journal des exports (`export_guard.py`). |
 
 ## Installation
 
