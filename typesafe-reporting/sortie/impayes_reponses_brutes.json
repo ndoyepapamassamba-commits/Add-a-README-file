@@ -1,17 +1,17 @@
 {
- "LD9000001": {
+ "LD9000001|8ee9cbfece5c": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:17",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "parapublique",
     "confidence": 1.0,
     "probabilities": {
-     "parapublique": 1.0,
      "particulier": 0.0,
-     "privee": 0.0,
-     "publique": 0.0
+     "parapublique": 1.0,
+     "publique": 0.0,
+     "privee": 0.0
     }
    },
    "intra_groupe": {
@@ -20,27 +20,27 @@
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.17
+    "noul": 0.21
    },
    "motif": {
     "type": "choice",
     "choice": "retard_technique",
-    "confidence": 0.92,
+    "confidence": 0.9,
     "probabilities": {
-     "litige_juridique": 0.0,
-     "aucun_motif": 0.0,
+     "retard_technique": 0.92,
      "sante_deces": 0.0,
-     "tension_tresorerie": 0.01,
-     "perte_revenus": 0.0,
      "client_injoignable": 0.0,
+     "tension_tresorerie": 0.01,
      "fraude_detournement": 0.0,
-     "retard_technique": 0.93,
-     "regularisation_annoncee": 0.06
+     "perte_revenus": 0.0,
+     "aucun_motif": 0.0,
+     "litige_juridique": 0.0,
+     "regularisation_annoncee": 0.07
     }
    },
    "promesse_datee": {
     "type": "noul",
-    "noul": 0.97
+    "noul": 0.96
    },
    "credibilite": {
     "type": "score",
@@ -63,36 +63,36 @@
    },
    "incoherence": {
     "type": "noul",
-    "noul": 0.07
+    "noul": 0.08
    },
    "statut_propose": {
     "type": "choice",
     "choice": "promesse_reglement",
-    "confidence": 0.87,
+    "confidence": 0.74,
     "probabilities": {
-     "a_faire": 0.0,
-     "regularise_a_verifier": 0.1,
-     "escalade_contentieux": 0.0,
-     "promesse_reglement": 0.9,
      "restructuration": 0.0,
-     "en_cours": 0.0
+     "en_cours": 0.0,
+     "a_faire": 0.0,
+     "regularise_a_verifier": 0.21,
+     "escalade_contentieux": 0.0,
+     "promesse_reglement": 0.79
     }
    }
   }
  },
- "LD9000002": {
+ "LD9000002|2d3eb1df327a": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:17",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "publique",
     "confidence": 1.0,
     "probabilities": {
-     "parapublique": 0.0,
      "particulier": 0.0,
-     "publique": 1.0,
-     "privee": 0.0
+     "parapublique": 0.0,
+     "privee": 0.0,
+     "publique": 1.0
     }
    },
    "intra_groupe": {
@@ -106,27 +106,27 @@
    "motif": {
     "type": "choice",
     "choice": "tension_tresorerie",
-    "confidence": 0.63,
+    "confidence": 0.59,
     "probabilities": {
      "client_injoignable": 0.0,
+     "sante_deces": 0.0,
+     "regularisation_annoncee": 0.0,
+     "retard_technique": 0.36,
+     "perte_revenus": 0.0,
+     "litige_juridique": 0.0,
      "aucun_motif": 0.0,
      "fraude_detournement": 0.0,
-     "tension_tresorerie": 0.68,
-     "litige_juridique": 0.0,
-     "retard_technique": 0.32,
-     "regularisation_annoncee": 0.0,
-     "perte_revenus": 0.0,
-     "sante_deces": 0.0
+     "tension_tresorerie": 0.64
     }
    },
    "promesse_datee": {
     "type": "noul",
-    "noul": 0.97
+    "noul": 0.96
    },
    "credibilite": {
     "type": "score",
-    "score": 3.61,
-    "confidence": 0.67,
+    "score": 3.57,
+    "confidence": 0.64,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -137,9 +137,9 @@
     "probabilities": {
      "0": 0.0,
      "1": 0.0,
-     "2": 0.06,
-     "3": 0.26,
-     "4": 0.68
+     "2": 0.07,
+     "3": 0.28,
+     "4": 0.65
     }
    },
    "incoherence": {
@@ -151,29 +151,29 @@
     "choice": "promesse_reglement",
     "confidence": 0.94,
     "probabilities": {
-     "escalade_contentieux": 0.0,
-     "a_faire": 0.0,
-     "promesse_reglement": 0.95,
      "en_cours": 0.03,
+     "promesse_reglement": 0.95,
+     "a_faire": 0.0,
      "restructuration": 0.0,
+     "escalade_contentieux": 0.0,
      "regularise_a_verifier": 0.02
     }
    }
   }
  },
- "LD9000003": {
+ "LD9000003|9113eecd94af": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:17",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "publique",
     "confidence": 1.0,
     "probabilities": {
-     "parapublique": 0.0,
+     "privee": 0.0,
      "particulier": 0.0,
      "publique": 1.0,
-     "privee": 0.0
+     "parapublique": 0.0
     }
    },
    "intra_groupe": {
@@ -189,15 +189,15 @@
     "choice": "client_injoignable",
     "confidence": 1.0,
     "probabilities": {
+     "regularisation_annoncee": 0.0,
      "aucun_motif": 0.0,
-     "retard_technique": 0.0,
-     "perte_revenus": 0.0,
      "litige_juridique": 0.0,
-     "sante_deces": 0.0,
-     "client_injoignable": 1.0,
+     "retard_technique": 0.0,
      "fraude_detournement": 0.0,
      "tension_tresorerie": 0.0,
-     "regularisation_annoncee": 0.0
+     "perte_revenus": 0.0,
+     "client_injoignable": 1.0,
+     "sante_deces": 0.0
     }
    },
    "promesse_datee": {
@@ -206,8 +206,8 @@
    },
    "credibilite": {
     "type": "score",
-    "score": 0.19,
-    "confidence": 0.84,
+    "score": 0.17,
+    "confidence": 0.85,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -216,8 +216,8 @@
      "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
     },
     "probabilities": {
-     "0": 0.81,
-     "1": 0.19,
+     "0": 0.83,
+     "1": 0.17,
      "2": 0.0,
      "3": 0.0,
      "4": 0.0
@@ -230,55 +230,55 @@
    "statut_propose": {
     "type": "choice",
     "choice": "en_cours",
-    "confidence": 0.67,
+    "confidence": 0.61,
     "probabilities": {
-     "en_cours": 0.73,
-     "escalade_contentieux": 0.26,
+     "a_faire": 0.01,
+     "promesse_reglement": 0.0,
      "restructuration": 0.0,
      "regularise_a_verifier": 0.0,
-     "a_faire": 0.01,
-     "promesse_reglement": 0.0
+     "escalade_contentieux": 0.31,
+     "en_cours": 0.68
     }
    }
   }
  },
- "LD9000004": {
+ "LD9000004|c66b0ea74598": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:17",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "parapublique",
     "confidence": 0.98,
     "probabilities": {
+     "parapublique": 0.99,
+     "publique": 0.01,
      "privee": 0.0,
-     "publique": 0.02,
-     "particulier": 0.0,
-     "parapublique": 0.98
+     "particulier": 0.0
     }
    },
    "intra_groupe": {
     "type": "noul",
-    "noul": 0.05
+    "noul": 0.04
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.47
+    "noul": 0.45
    },
    "motif": {
     "type": "choice",
     "choice": "regularisation_annoncee",
-    "confidence": 0.98,
+    "confidence": 0.99,
     "probabilities": {
      "client_injoignable": 0.0,
-     "retard_technique": 0.0,
+     "sante_deces": 0.0,
      "tension_tresorerie": 0.0,
-     "litige_juridique": 0.0,
-     "perte_revenus": 0.0,
      "regularisation_annoncee": 0.99,
-     "fraude_detournement": 0.0,
      "aucun_motif": 0.01,
-     "sante_deces": 0.0
+     "retard_technique": 0.0,
+     "perte_revenus": 0.0,
+     "litige_juridique": 0.0,
+     "fraude_detournement": 0.0
     }
    },
    "promesse_datee": {
@@ -287,8 +287,8 @@
    },
    "credibilite": {
     "type": "score",
-    "score": 0.83,
-    "confidence": 0.85,
+    "score": 0.8,
+    "confidence": 0.83,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -297,8 +297,8 @@
      "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
     },
     "probabilities": {
-     "0": 0.18,
-     "1": 0.82,
+     "0": 0.21,
+     "1": 0.79,
      "2": 0.0,
      "3": 0.0,
      "4": 0.0
@@ -306,36 +306,36 @@
    },
    "incoherence": {
     "type": "noul",
-    "noul": 0.85
+    "noul": 0.87
    },
    "statut_propose": {
     "type": "choice",
     "choice": "regularise_a_verifier",
     "confidence": 1.0,
     "probabilities": {
-     "escalade_contentieux": 0.0,
-     "regularise_a_verifier": 1.0,
+     "restructuration": 0.0,
      "a_faire": 0.0,
-     "en_cours": 0.0,
      "promesse_reglement": 0.0,
-     "restructuration": 0.0
+     "regularise_a_verifier": 1.0,
+     "escalade_contentieux": 0.0,
+     "en_cours": 0.0
     }
    }
   }
  },
- "LD9000005": {
+ "LD9000005|afa5b613c1fe": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:17",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "privee",
     "confidence": 0.99,
     "probabilities": {
-     "privee": 0.99,
      "parapublique": 0.01,
-     "particulier": 0.0,
-     "publique": 0.0
+     "privee": 0.99,
+     "publique": 0.0,
+     "particulier": 0.0
     }
    },
    "intra_groupe": {
@@ -344,22 +344,22 @@
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.43
+    "noul": 0.45
    },
    "motif": {
     "type": "choice",
     "choice": "perte_revenus",
-    "confidence": 0.99,
+    "confidence": 1.0,
     "probabilities": {
-     "client_injoignable": 0.0,
+     "tension_tresorerie": 0.0,
      "aucun_motif": 0.0,
-     "retard_technique": 0.01,
-     "perte_revenus": 0.99,
      "fraude_detournement": 0.0,
+     "perte_revenus": 1.0,
+     "client_injoignable": 0.0,
+     "retard_technique": 0.0,
      "regularisation_annoncee": 0.0,
-     "sante_deces": 0.0,
      "litige_juridique": 0.0,
-     "tension_tresorerie": 0.0
+     "sante_deces": 0.0
     }
    },
    "promesse_datee": {
@@ -368,8 +368,8 @@
    },
    "credibilite": {
     "type": "score",
-    "score": 1.28,
-    "confidence": 0.7,
+    "score": 1.21,
+    "confidence": 0.76,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -379,9 +379,9 @@
     },
     "probabilities": {
      "0": 0.04,
-     "1": 0.76,
-     "2": 0.08,
-     "3": 0.12,
+     "1": 0.8,
+     "2": 0.06,
+     "3": 0.1,
      "4": 0.0
     }
    },
@@ -392,31 +392,31 @@
    "statut_propose": {
     "type": "choice",
     "choice": "promesse_reglement",
-    "confidence": 1.0,
+    "confidence": 0.99,
     "probabilities": {
-     "promesse_reglement": 1.0,
-     "a_faire": 0.0,
-     "regularise_a_verifier": 0.0,
-     "escalade_contentieux": 0.0,
      "en_cours": 0.0,
-     "restructuration": 0.0
+     "restructuration": 0.0,
+     "a_faire": 0.0,
+     "escalade_contentieux": 0.0,
+     "regularise_a_verifier": 0.0,
+     "promesse_reglement": 1.0
     }
    }
   }
  },
- "LD9000006": {
+ "LD9000006|549a97a405b7": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:17",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "privee",
-    "confidence": 1.0,
+    "confidence": 0.99,
     "probabilities": {
-     "parapublique": 0.0,
      "privee": 1.0,
-     "publique": 0.0,
-     "particulier": 0.0
+     "parapublique": 0.0,
+     "particulier": 0.0,
+     "publique": 0.0
     }
    },
    "intra_groupe": {
@@ -432,25 +432,25 @@
     "choice": "perte_revenus",
     "confidence": 1.0,
     "probabilities": {
+     "sante_deces": 0.0,
      "tension_tresorerie": 0.0,
+     "client_injoignable": 0.0,
+     "regularisation_annoncee": 0.0,
+     "fraude_detournement": 0.0,
+     "perte_revenus": 1.0,
      "aucun_motif": 0.0,
      "retard_technique": 0.0,
-     "perte_revenus": 1.0,
-     "client_injoignable": 0.0,
-     "fraude_detournement": 0.0,
-     "regularisation_annoncee": 0.0,
-     "litige_juridique": 0.0,
-     "sante_deces": 0.0
+     "litige_juridique": 0.0
     }
    },
    "promesse_datee": {
     "type": "noul",
-    "noul": 0.58
+    "noul": 0.55
    },
    "credibilite": {
     "type": "score",
-    "score": 0.86,
-    "confidence": 0.87,
+    "score": 0.85,
+    "confidence": 0.86,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -459,8 +459,8 @@
      "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
     },
     "probabilities": {
-     "0": 0.15,
-     "1": 0.85,
+     "0": 0.16,
+     "1": 0.84,
      "2": 0.0,
      "3": 0.0,
      "4": 0.0
@@ -475,63 +475,24 @@
     "choice": "restructuration",
     "confidence": 1.0,
     "probabilities": {
+     "promesse_reglement": 0.0,
      "en_cours": 0.0,
-     "restructuration": 1.0,
      "a_faire": 0.0,
-     "regularise_a_verifier": 0.0,
      "escalade_contentieux": 0.0,
-     "promesse_reglement": 0.0
+     "restructuration": 1.0,
+     "regularise_a_verifier": 0.0
     }
    }
   }
  },
- "LD9000007": {
+ "LD9000007|5928fe2587e1": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:17",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
-   "nature_entite": {
-    "type": "choice",
-    "choice": "particulier",
-    "confidence": 0.45,
-    "probabilities": {
-     "particulier": 0.59,
-     "privee": 0.41,
-     "parapublique": 0.0,
-     "publique": 0.0
-    }
-   },
-   "intra_groupe": {
-    "type": "noul",
-    "noul": 0.08
-   },
-   "segment_douteux": {
-    "type": "noul",
-    "noul": 0.58
-   },
-   "motif": {
-    "type": "choice",
-    "choice": "aucun_motif",
-    "confidence": 0.91,
-    "probabilities": {
-     "regularisation_annoncee": 0.01,
-     "perte_revenus": 0.0,
-     "fraude_detournement": 0.0,
-     "litige_juridique": 0.0,
-     "aucun_motif": 0.93,
-     "retard_technique": 0.0,
-     "sante_deces": 0.0,
-     "client_injoignable": 0.0,
-     "tension_tresorerie": 0.06
-    }
-   },
-   "promesse_datee": {
-    "type": "noul",
-    "noul": 0.97
-   },
    "credibilite": {
     "type": "score",
-    "score": 0.98,
-    "confidence": 0.98,
+    "score": 0.99,
+    "confidence": 0.99,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -556,19 +517,58 @@
     "choice": "promesse_reglement",
     "confidence": 1.0,
     "probabilities": {
+     "en_cours": 0.0,
      "escalade_contentieux": 0.0,
      "a_faire": 0.0,
-     "regularise_a_verifier": 0.0,
-     "en_cours": 0.0,
      "promesse_reglement": 1.0,
-     "restructuration": 0.0
+     "restructuration": 0.0,
+     "regularise_a_verifier": 0.0
     }
+   },
+   "nature_entite": {
+    "type": "choice",
+    "choice": "particulier",
+    "confidence": 0.47,
+    "probabilities": {
+     "parapublique": 0.0,
+     "particulier": 0.6,
+     "publique": 0.0,
+     "privee": 0.4
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.07
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.56
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "aucun_motif",
+    "confidence": 0.92,
+    "probabilities": {
+     "perte_revenus": 0.0,
+     "client_injoignable": 0.0,
+     "litige_juridique": 0.0,
+     "sante_deces": 0.0,
+     "aucun_motif": 0.93,
+     "tension_tresorerie": 0.05,
+     "retard_technique": 0.01,
+     "fraude_detournement": 0.0,
+     "regularisation_annoncee": 0.01
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.97
    }
   }
  },
- "LD9000008": {
+ "LD9000008|5c04735bba65": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:17",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
@@ -576,9 +576,9 @@
     "confidence": 1.0,
     "probabilities": {
      "parapublique": 0.0,
-     "particulier": 1.0,
      "publique": 0.0,
-     "privee": 0.0
+     "privee": 0.0,
+     "particulier": 1.0
     }
    },
    "intra_groupe": {
@@ -587,22 +587,22 @@
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.07
+    "noul": 0.06
    },
    "motif": {
     "type": "choice",
     "choice": "litige_juridique",
     "confidence": 1.0,
     "probabilities": {
-     "perte_revenus": 0.0,
-     "client_injoignable": 0.0,
-     "litige_juridique": 1.0,
-     "sante_deces": 0.0,
-     "aucun_motif": 0.0,
      "tension_tresorerie": 0.0,
+     "perte_revenus": 0.0,
+     "sante_deces": 0.0,
+     "litige_juridique": 1.0,
+     "client_injoignable": 0.0,
+     "aucun_motif": 0.0,
+     "regularisation_annoncee": 0.0,
      "retard_technique": 0.0,
-     "fraude_detournement": 0.0,
-     "regularisation_annoncee": 0.0
+     "fraude_detournement": 0.0
     }
    },
    "promesse_datee": {
@@ -637,29 +637,29 @@
     "choice": "escalade_contentieux",
     "confidence": 0.99,
     "probabilities": {
-     "a_faire": 0.0,
      "en_cours": 0.01,
+     "a_faire": 0.0,
      "escalade_contentieux": 0.99,
+     "regularise_a_verifier": 0.0,
      "restructuration": 0.0,
-     "promesse_reglement": 0.0,
-     "regularise_a_verifier": 0.0
+     "promesse_reglement": 0.0
     }
    }
   }
  },
- "LD9000009": {
+ "LD9000009|73f216843e35": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:17",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "particulier",
-    "confidence": 0.72,
+    "confidence": 0.68,
     "probabilities": {
-     "particulier": 0.8,
-     "publique": 0.0,
-     "privee": 0.2,
-     "parapublique": 0.0
+     "privee": 0.24,
+     "parapublique": 0.0,
+     "particulier": 0.76,
+     "publique": 0.0
     }
    },
    "intra_groupe": {
@@ -668,21 +668,21 @@
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.22
+    "noul": 0.23
    },
    "motif": {
     "type": "choice",
     "choice": "sante_deces",
     "confidence": 1.0,
     "probabilities": {
-     "retard_technique": 0.0,
-     "sante_deces": 1.0,
      "client_injoignable": 0.0,
-     "tension_tresorerie": 0.0,
-     "fraude_detournement": 0.0,
-     "perte_revenus": 0.0,
-     "aucun_motif": 0.0,
+     "sante_deces": 1.0,
      "litige_juridique": 0.0,
+     "aucun_motif": 0.0,
+     "perte_revenus": 0.0,
+     "retard_technique": 0.0,
+     "fraude_detournement": 0.0,
+     "tension_tresorerie": 0.0,
      "regularisation_annoncee": 0.0
     }
    },
@@ -692,8 +692,8 @@
    },
    "credibilite": {
     "type": "score",
-    "score": 0.25,
-    "confidence": 0.79,
+    "score": 0.29,
+    "confidence": 0.76,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -702,74 +702,74 @@
      "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
     },
     "probabilities": {
-     "0": 0.79,
-     "1": 0.17,
-     "2": 0.04,
+     "0": 0.76,
+     "1": 0.19,
+     "2": 0.05,
      "3": 0.0,
      "4": 0.0
     }
    },
    "incoherence": {
     "type": "noul",
-    "noul": 0.05
+    "noul": 0.04
    },
    "statut_propose": {
     "type": "choice",
     "choice": "en_cours",
-    "confidence": 0.4,
+    "confidence": 0.44,
     "probabilities": {
-     "restructuration": 0.0,
-     "en_cours": 0.51,
-     "a_faire": 0.2,
-     "escalade_contentieux": 0.29,
+     "promesse_reglement": 0.0,
      "regularise_a_verifier": 0.0,
-     "promesse_reglement": 0.0
+     "en_cours": 0.53,
+     "restructuration": 0.01,
+     "a_faire": 0.18,
+     "escalade_contentieux": 0.28
     }
    }
   }
  },
- "LD9000010": {
+ "LD9000010|9c6033838a99": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "privee",
     "confidence": 1.0,
     "probabilities": {
-     "privee": 1.0,
      "parapublique": 0.0,
+     "particulier": 0.0,
      "publique": 0.0,
-     "particulier": 0.0
+     "privee": 1.0
     }
    },
    "intra_groupe": {
     "type": "noul",
-    "noul": 0.04
+    "noul": 0.03
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.17
+    "noul": 0.2
    },
    "motif": {
     "type": "choice",
     "choice": "tension_tresorerie",
     "confidence": 1.0,
     "probabilities": {
-     "client_injoignable": 0.0,
-     "sante_deces": 0.0,
-     "litige_juridique": 0.0,
-     "aucun_motif": 0.0,
      "perte_revenus": 0.0,
-     "retard_technique": 0.0,
-     "fraude_detournement": 0.0,
+     "client_injoignable": 0.0,
+     "litige_juridique": 0.0,
+     "sante_deces": 0.0,
+     "aucun_motif": 0.0,
      "tension_tresorerie": 1.0,
+     "fraude_detournement": 0.0,
+     "retard_technique": 0.0,
      "regularisation_annoncee": 0.0
     }
    },
    "promesse_datee": {
     "type": "noul",
-    "noul": 0.86
+    "noul": 0.87
    },
    "credibilite": {
     "type": "score",
@@ -784,8 +784,8 @@
     },
     "probabilities": {
      "0": 0.0,
-     "1": 0.02,
-     "2": 0.17,
+     "1": 0.03,
+     "2": 0.16,
      "3": 0.52,
      "4": 0.29
     }
@@ -799,20 +799,59 @@
     "choice": "promesse_reglement",
     "confidence": 0.94,
     "probabilities": {
-     "promesse_reglement": 0.95,
      "a_faire": 0.0,
+     "escalade_contentieux": 0.0,
      "en_cours": 0.0,
-     "restructuration": 0.05,
-     "regularise_a_verifier": 0.0,
-     "escalade_contentieux": 0.0
+     "restructuration": 0.04,
+     "promesse_reglement": 0.96,
+     "regularise_a_verifier": 0.0
     }
    }
   }
  },
- "LD9000011": {
+ "LD9000011|ddf14b3589e4": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.99,
+    "probabilities": {
+     "particulier": 0.0,
+     "publique": 0.0,
+     "parapublique": 0.01,
+     "privee": 0.99
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.08
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.29
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "aucun_motif",
+    "confidence": 1.0,
+    "probabilities": {
+     "fraude_detournement": 0.0,
+     "aucun_motif": 1.0,
+     "perte_revenus": 0.0,
+     "retard_technique": 0.0,
+     "client_injoignable": 0.0,
+     "regularisation_annoncee": 0.0,
+     "tension_tresorerie": 0.0,
+     "litige_juridique": 0.0,
+     "sante_deces": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.03
+   },
    "credibilite": {
     "type": "score",
     "score": 0.0,
@@ -839,61 +878,57 @@
    "statut_propose": {
     "type": "choice",
     "choice": "a_faire",
-    "confidence": 0.98,
+    "confidence": 0.97,
     "probabilities": {
-     "escalade_contentieux": 0.01,
-     "regularise_a_verifier": 0.0,
-     "a_faire": 0.99,
      "promesse_reglement": 0.0,
-     "en_cours": 0.0,
-     "restructuration": 0.0
+     "a_faire": 0.98,
+     "escalade_contentieux": 0.02,
+     "regularise_a_verifier": 0.0,
+     "restructuration": 0.0,
+     "en_cours": 0.0
     }
-   },
+   }
+  }
+ },
+ "LD9000012|724de5acd4b7": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:19:52",
+  "answers": {
    "nature_entite": {
     "type": "choice",
-    "choice": "privee",
-    "confidence": 0.98,
+    "choice": "particulier",
+    "confidence": 0.99,
     "probabilities": {
-     "privee": 0.99,
-     "publique": 0.0,
-     "particulier": 0.0,
-     "parapublique": 0.01
+     "parapublique": 0.0,
+     "particulier": 1.0,
+     "privee": 0.0,
+     "publique": 0.0
     }
    },
    "intra_groupe": {
     "type": "noul",
-    "noul": 0.07
+    "noul": 0.06
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.29
+    "noul": 0.09
    },
    "motif": {
     "type": "choice",
     "choice": "aucun_motif",
-    "confidence": 1.0,
+    "confidence": 0.78,
     "probabilities": {
-     "sante_deces": 0.0,
+     "aucun_motif": 0.8200000000000001,
+     "client_injoignable": 0.0,
+     "fraude_detournement": 0.0,
      "retard_technique": 0.0,
      "tension_tresorerie": 0.0,
      "litige_juridique": 0.0,
+     "regularisation_annoncee": 0.18,
      "perte_revenus": 0.0,
-     "regularisation_annoncee": 0.0,
-     "fraude_detournement": 0.0,
-     "aucun_motif": 1.0,
-     "client_injoignable": 0.0
+     "sante_deces": 0.0
     }
    },
-   "promesse_datee": {
-    "type": "noul",
-    "noul": 0.03
-   }
-  }
- },
- "LD9000012": {
-  "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
-  "answers": {
    "promesse_datee": {
     "type": "noul",
     "noul": 0.03
@@ -926,88 +961,34 @@
     "choice": "regularise_a_verifier",
     "confidence": 0.98,
     "probabilities": {
-     "restructuration": 0.0,
-     "promesse_reglement": 0.0,
+     "a_faire": 0.02,
      "escalade_contentieux": 0.0,
-     "a_faire": 0.01,
+     "regularise_a_verifier": 0.98,
+     "restructuration": 0.0,
      "en_cours": 0.0,
-     "regularise_a_verifier": 0.99
-    }
-   },
-   "nature_entite": {
-    "type": "choice",
-    "choice": "particulier",
-    "confidence": 0.99,
-    "probabilities": {
-     "parapublique": 0.0,
-     "publique": 0.0,
-     "particulier": 1.0,
-     "privee": 0.0
-    }
-   },
-   "intra_groupe": {
-    "type": "noul",
-    "noul": 0.07
-   },
-   "segment_douteux": {
-    "type": "noul",
-    "noul": 0.09
-   },
-   "motif": {
-    "type": "choice",
-    "choice": "aucun_motif",
-    "confidence": 0.8,
-    "probabilities": {
-     "client_injoignable": 0.0,
-     "perte_revenus": 0.0,
-     "regularisation_annoncee": 0.17,
-     "aucun_motif": 0.83,
-     "tension_tresorerie": 0.0,
-     "sante_deces": 0.0,
-     "litige_juridique": 0.0,
-     "retard_technique": 0.0,
-     "fraude_detournement": 0.0
+     "promesse_reglement": 0.0
     }
    }
   }
  },
- "LD9000013": {
+ "LD9000013|1f647e18a748": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
-   "nature_entite": {
-    "type": "choice",
-    "choice": "privee",
-    "confidence": 0.95,
-    "probabilities": {
-     "particulier": 0.0,
-     "parapublique": 0.04,
-     "publique": 0.0,
-     "privee": 0.96
-    }
-   },
-   "intra_groupe": {
-    "type": "noul",
-    "noul": 0.07
-   },
-   "segment_douteux": {
-    "type": "noul",
-    "noul": 0.86
-   },
    "motif": {
     "type": "choice",
     "choice": "fraude_detournement",
     "confidence": 1.0,
     "probabilities": {
-     "retard_technique": 0.0,
-     "sante_deces": 0.0,
-     "client_injoignable": 0.0,
-     "tension_tresorerie": 0.0,
-     "fraude_detournement": 1.0,
-     "perte_revenus": 0.0,
      "aucun_motif": 0.0,
      "litige_juridique": 0.0,
-     "regularisation_annoncee": 0.0
+     "tension_tresorerie": 0.0,
+     "retard_technique": 0.0,
+     "client_injoignable": 0.0,
+     "regularisation_annoncee": 0.0,
+     "sante_deces": 0.0,
+     "perte_revenus": 0.0,
+     "fraude_detournement": 1.0
     }
    },
    "promesse_datee": {
@@ -1042,23 +1023,81 @@
     "choice": "escalade_contentieux",
     "confidence": 0.99,
     "probabilities": {
-     "restructuration": 0.0,
-     "en_cours": 0.0,
-     "a_faire": 0.0,
+     "promesse_reglement": 0.0,
      "regularise_a_verifier": 0.0,
+     "a_faire": 0.0,
      "escalade_contentieux": 1.0,
-     "promesse_reglement": 0.0
+     "restructuration": 0.0,
+     "en_cours": 0.0
     }
+   },
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.93,
+    "probabilities": {
+     "publique": 0.0,
+     "particulier": 0.0,
+     "parapublique": 0.05,
+     "privee": 0.95
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.07
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.86
    }
   }
  },
- "LD9000014": {
+ "LD9000014|7b7679266cc0": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "parapublique",
+    "confidence": 0.87,
+    "probabilities": {
+     "parapublique": 0.9,
+     "privee": 0.0,
+     "publique": 0.1,
+     "particulier": 0.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.07
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.67
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "aucun_motif",
+    "confidence": 0.83,
+    "probabilities": {
+     "sante_deces": 0.0,
+     "fraude_detournement": 0.0,
+     "regularisation_annoncee": 0.05,
+     "tension_tresorerie": 0.07,
+     "client_injoignable": 0.0,
+     "perte_revenus": 0.0,
+     "aucun_motif": 0.85,
+     "litige_juridique": 0.0,
+     "retard_technique": 0.03
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.6
+   },
    "credibilite": {
     "type": "score",
-    "score": 1.0,
+    "score": 1.01,
     "confidence": 0.97,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
@@ -1068,8 +1107,8 @@
      "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
     },
     "probabilities": {
-     "0": 0.02,
-     "1": 0.97,
+     "0": 0.01,
+     "1": 0.98,
      "2": 0.0,
      "3": 0.01,
      "4": 0.0
@@ -1084,58 +1123,19 @@
     "choice": "en_cours",
     "confidence": 0.5,
     "probabilities": {
-     "a_faire": 0.0,
+     "en_cours": 0.59,
      "promesse_reglement": 0.41,
-     "restructuration": 0.0,
-     "regularise_a_verifier": 0.0,
      "escalade_contentieux": 0.0,
-     "en_cours": 0.59
+     "restructuration": 0.0,
+     "a_faire": 0.0,
+     "regularise_a_verifier": 0.0
     }
-   },
-   "nature_entite": {
-    "type": "choice",
-    "choice": "parapublique",
-    "confidence": 0.86,
-    "probabilities": {
-     "privee": 0.0,
-     "particulier": 0.0,
-     "publique": 0.11,
-     "parapublique": 0.89
-    }
-   },
-   "intra_groupe": {
-    "type": "noul",
-    "noul": 0.06
-   },
-   "segment_douteux": {
-    "type": "noul",
-    "noul": 0.62
-   },
-   "motif": {
-    "type": "choice",
-    "choice": "aucun_motif",
-    "confidence": 0.84,
-    "probabilities": {
-     "regularisation_annoncee": 0.06,
-     "aucun_motif": 0.87,
-     "litige_juridique": 0.0,
-     "retard_technique": 0.02,
-     "fraude_detournement": 0.0,
-     "tension_tresorerie": 0.05,
-     "perte_revenus": 0.0,
-     "client_injoignable": 0.0,
-     "sante_deces": 0.0
-    }
-   },
-   "promesse_datee": {
-    "type": "noul",
-    "noul": 0.57
    }
   }
  },
- "LD9000015": {
+ "LD9000015|1db0f61ba4ac": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
@@ -1143,8 +1143,8 @@
     "confidence": 0.99,
     "probabilities": {
      "parapublique": 0.0,
-     "publique": 0.0,
      "particulier": 0.0,
+     "publique": 0.0,
      "privee": 1.0
     }
    },
@@ -1161,15 +1161,15 @@
     "choice": "sante_deces",
     "confidence": 1.0,
     "probabilities": {
-     "client_injoignable": 0.0,
      "perte_revenus": 0.0,
-     "tension_tresorerie": 0.0,
+     "client_injoignable": 0.0,
      "litige_juridique": 0.0,
-     "sante_deces": 1.0,
+     "tension_tresorerie": 0.0,
      "aucun_motif": 0.0,
+     "sante_deces": 1.0,
      "fraude_detournement": 0.0,
-     "regularisation_annoncee": 0.0,
-     "retard_technique": 0.0
+     "retard_technique": 0.0,
+     "regularisation_annoncee": 0.0
     }
    },
    "promesse_datee": {
@@ -1178,8 +1178,8 @@
    },
    "credibilite": {
     "type": "score",
-    "score": 1.95,
-    "confidence": 0.21,
+    "score": 2.17,
+    "confidence": 0.31,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -1189,9 +1189,9 @@
     },
     "probabilities": {
      "0": 0.0,
-     "1": 0.45,
-     "2": 0.16,
-     "3": 0.39,
+     "1": 0.32,
+     "2": 0.18,
+     "3": 0.5,
      "4": 0.0
     }
    },
@@ -1204,29 +1204,29 @@
     "choice": "promesse_reglement",
     "confidence": 0.98,
     "probabilities": {
-     "escalade_contentieux": 0.0,
-     "en_cours": 0.01,
      "restructuration": 0.0,
-     "regularise_a_verifier": 0.0,
+     "a_faire": 0.0,
+     "escalade_contentieux": 0.0,
      "promesse_reglement": 0.99,
-     "a_faire": 0.0
+     "en_cours": 0.01,
+     "regularise_a_verifier": 0.0
     }
    }
   }
  },
- "LD9000016": {
+ "LD9000016|deb8a8df2155": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "particulier",
-    "confidence": 0.89,
+    "confidence": 0.88,
     "probabilities": {
-     "particulier": 0.91,
-     "privee": 0.04,
+     "parapublique": 0.01,
      "publique": 0.04,
-     "parapublique": 0.01
+     "privee": 0.04,
+     "particulier": 0.91
     }
    },
    "intra_groupe": {
@@ -1235,32 +1235,32 @@
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.13
+    "noul": 0.12
    },
    "motif": {
     "type": "choice",
     "choice": "retard_technique",
     "confidence": 0.85,
     "probabilities": {
-     "fraude_detournement": 0.0,
-     "retard_technique": 0.87,
-     "perte_revenus": 0.0,
-     "regularisation_annoncee": 0.0,
-     "client_injoignable": 0.0,
      "tension_tresorerie": 0.13,
-     "litige_juridique": 0.0,
+     "client_injoignable": 0.0,
      "sante_deces": 0.0,
-     "aucun_motif": 0.0
+     "litige_juridique": 0.0,
+     "perte_revenus": 0.0,
+     "aucun_motif": 0.0,
+     "retard_technique": 0.87,
+     "regularisation_annoncee": 0.0,
+     "fraude_detournement": 0.0
     }
    },
    "promesse_datee": {
     "type": "noul",
-    "noul": 0.94
+    "noul": 0.93
    },
    "credibilite": {
     "type": "score",
-    "score": 3.08,
-    "confidence": 0.74,
+    "score": 3.15,
+    "confidence": 0.67,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -1272,42 +1272,42 @@
      "0": 0.0,
      "1": 0.0,
      "2": 0.11,
-     "3": 0.69,
-     "4": 0.2
+     "3": 0.62,
+     "4": 0.27
     }
    },
    "incoherence": {
     "type": "noul",
-    "noul": 0.1
+    "noul": 0.11
    },
    "statut_propose": {
     "type": "choice",
     "choice": "promesse_reglement",
-    "confidence": 0.5,
+    "confidence": 0.37,
     "probabilities": {
      "en_cours": 0.15,
+     "a_faire": 0.0,
      "escalade_contentieux": 0.0,
      "restructuration": 0.0,
-     "promesse_reglement": 0.59,
-     "regularise_a_verifier": 0.26,
-     "a_faire": 0.0
+     "regularise_a_verifier": 0.36,
+     "promesse_reglement": 0.49
     }
    }
   }
  },
- "LD9000017": {
+ "LD9000017|f0de46c3c3c6": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "particulier",
-    "confidence": 0.99,
+    "confidence": 0.98,
     "probabilities": {
      "publique": 0.0,
-     "particulier": 1.0,
-     "privee": 0.0,
-     "parapublique": 0.0
+     "particulier": 0.99,
+     "parapublique": 0.0,
+     "privee": 0.01
     }
    },
    "intra_groupe": {
@@ -1321,27 +1321,27 @@
    "motif": {
     "type": "choice",
     "choice": "aucun_motif",
-    "confidence": 0.83,
+    "confidence": 0.81,
     "probabilities": {
-     "aucun_motif": 0.86,
      "retard_technique": 0.0,
-     "regularisation_annoncee": 0.0,
-     "tension_tresorerie": 0.14,
-     "sante_deces": 0.0,
      "litige_juridique": 0.0,
+     "tension_tresorerie": 0.16,
+     "aucun_motif": 0.84,
      "client_injoignable": 0.0,
-     "fraude_detournement": 0.0,
-     "perte_revenus": 0.0
+     "regularisation_annoncee": 0.0,
+     "sante_deces": 0.0,
+     "perte_revenus": 0.0,
+     "fraude_detournement": 0.0
     }
    },
    "promesse_datee": {
     "type": "noul",
-    "noul": 0.18
+    "noul": 0.2
    },
    "credibilite": {
     "type": "score",
-    "score": 0.83,
-    "confidence": 0.79,
+    "score": 0.84,
+    "confidence": 0.81,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -1350,9 +1350,9 @@
      "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
     },
     "probabilities": {
-     "0": 0.21,
-     "1": 0.75,
-     "2": 0.04,
+     "0": 0.19,
+     "1": 0.78,
+     "2": 0.03,
      "3": 0.0,
      "4": 0.0
     }
@@ -1366,53 +1366,53 @@
     "choice": "restructuration",
     "confidence": 1.0,
     "probabilities": {
-     "escalade_contentieux": 0.0,
-     "a_faire": 0.0,
-     "promesse_reglement": 0.0,
      "en_cours": 0.0,
+     "promesse_reglement": 0.0,
+     "a_faire": 0.0,
      "restructuration": 1.0,
-     "regularise_a_verifier": 0.0
+     "regularise_a_verifier": 0.0,
+     "escalade_contentieux": 0.0
     }
    }
   }
  },
- "LD9000018": {
+ "LD9000018|f80c64723bd0": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "privee",
     "confidence": 1.0,
     "probabilities": {
-     "publique": 0.0,
      "particulier": 0.0,
+     "privee": 1.0,
      "parapublique": 0.0,
-     "privee": 1.0
+     "publique": 0.0
     }
    },
    "intra_groupe": {
     "type": "noul",
-    "noul": 0.08
+    "noul": 0.09
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.12
+    "noul": 0.14
    },
    "motif": {
     "type": "choice",
     "choice": "retard_technique",
     "confidence": 1.0,
     "probabilities": {
-     "client_injoignable": 0.0,
+     "sante_deces": 0.0,
+     "perte_revenus": 0.0,
+     "litige_juridique": 0.0,
      "aucun_motif": 0.0,
      "fraude_detournement": 0.0,
-     "tension_tresorerie": 0.0,
-     "litige_juridique": 0.0,
      "retard_technique": 1.0,
      "regularisation_annoncee": 0.0,
-     "perte_revenus": 0.0,
-     "sante_deces": 0.0
+     "client_injoignable": 0.0,
+     "tension_tresorerie": 0.0
     }
    },
    "promesse_datee": {
@@ -1422,7 +1422,7 @@
    "credibilite": {
     "type": "score",
     "score": 0.98,
-    "confidence": 0.9,
+    "confidence": 0.89,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -1431,8 +1431,8 @@
      "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
     },
     "probabilities": {
-     "0": 0.07,
-     "1": 0.88,
+     "0": 0.08,
+     "1": 0.87,
      "2": 0.05,
      "3": 0.0,
      "4": 0.0
@@ -1445,31 +1445,44 @@
    "statut_propose": {
     "type": "choice",
     "choice": "en_cours",
-    "confidence": 0.94,
+    "confidence": 0.93,
     "probabilities": {
-     "regularise_a_verifier": 0.05,
+     "escalade_contentieux": 0.0,
      "a_faire": 0.0,
+     "regularise_a_verifier": 0.06,
+     "en_cours": 0.94,
      "promesse_reglement": 0.0,
-     "en_cours": 0.95,
-     "restructuration": 0.0,
-     "escalade_contentieux": 0.0
+     "restructuration": 0.0
     }
    }
   }
  },
- "LD9000019": {
+ "LD9000019|c6f439e0aa04": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
+   "statut_propose": {
+    "type": "choice",
+    "choice": "en_cours",
+    "confidence": 0.68,
+    "probabilities": {
+     "a_faire": 0.24,
+     "en_cours": 0.72,
+     "escalade_contentieux": 0.02,
+     "promesse_reglement": 0.01,
+     "restructuration": 0.0,
+     "regularise_a_verifier": 0.01
+    }
+   },
    "nature_entite": {
     "type": "choice",
     "choice": "parapublique",
-    "confidence": 0.82,
+    "confidence": 0.81,
     "probabilities": {
-     "privee": 0.07,
+     "parapublique": 0.86,
      "particulier": 0.0,
-     "publique": 0.06,
-     "parapublique": 0.87
+     "privee": 0.07,
+     "publique": 0.07
     }
    },
    "intra_groupe": {
@@ -1478,22 +1491,22 @@
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.22
+    "noul": 0.19
    },
    "motif": {
     "type": "choice",
     "choice": "tension_tresorerie",
-    "confidence": 0.34,
+    "confidence": 0.36,
     "probabilities": {
-     "regularisation_annoncee": 0.0,
-     "tension_tresorerie": 0.42,
-     "litige_juridique": 0.05,
-     "retard_technique": 0.19,
-     "fraude_detournement": 0.0,
-     "aucun_motif": 0.34,
+     "litige_juridique": 0.06,
+     "aucun_motif": 0.32,
+     "sante_deces": 0.0,
+     "tension_tresorerie": 0.44,
      "perte_revenus": 0.0,
      "client_injoignable": 0.0,
-     "sante_deces": 0.0
+     "fraude_detournement": 0.0,
+     "retard_technique": 0.18,
+     "regularisation_annoncee": 0.0
     }
    },
    "promesse_datee": {
@@ -1502,8 +1515,8 @@
    },
    "credibilite": {
     "type": "score",
-    "score": 1.11,
-    "confidence": 0.55,
+    "score": 1.08,
+    "confidence": 0.57,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -1513,8 +1526,8 @@
     },
     "probabilities": {
      "0": 0.22,
-     "1": 0.45,
-     "2": 0.33,
+     "1": 0.48,
+     "2": 0.3,
      "3": 0.0,
      "4": 0.0
     }
@@ -1522,35 +1535,22 @@
    "incoherence": {
     "type": "noul",
     "noul": 0.05
-   },
-   "statut_propose": {
-    "type": "choice",
-    "choice": "en_cours",
-    "confidence": 0.67,
-    "probabilities": {
-     "a_faire": 0.25,
-     "promesse_reglement": 0.0,
-     "restructuration": 0.0,
-     "regularise_a_verifier": 0.01,
-     "en_cours": 0.72,
-     "escalade_contentieux": 0.02
-    }
    }
   }
  },
- "LD9000020": {
+ "LD9000020|6116782cafaa": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "publique",
     "confidence": 0.99,
     "probabilities": {
+     "publique": 1.0,
      "particulier": 0.0,
-     "privee": 0.0,
      "parapublique": 0.0,
-     "publique": 1.0
+     "privee": 0.0
     }
    },
    "intra_groupe": {
@@ -1563,9 +1563,9 @@
    }
   }
  },
- "LD9000021": {
+ "LD9000021|2fe8b8f12e08": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
@@ -1588,19 +1588,19 @@
    }
   }
  },
- "LD9000022": {
+ "LD9000022|4ed59ac3b957": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "privee",
     "confidence": 1.0,
     "probabilities": {
-     "publique": 0.0,
+     "privee": 1.0,
      "particulier": 0.0,
-     "parapublique": 0.0,
-     "privee": 1.0
+     "publique": 0.0,
+     "parapublique": 0.0
     }
    },
    "intra_groupe": {
@@ -1609,23 +1609,23 @@
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.17
+    "noul": 0.16
    }
   }
  },
- "LD9000023": {
+ "LD9000023|8142aab88908": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "particulier",
     "confidence": 1.0,
     "probabilities": {
-     "particulier": 1.0,
-     "parapublique": 0.0,
      "privee": 0.0,
-     "publique": 0.0
+     "parapublique": 0.0,
+     "publique": 0.0,
+     "particulier": 1.0
     }
    },
    "intra_groupe": {
@@ -1641,25 +1641,25 @@
     "choice": "tension_tresorerie",
     "confidence": 0.99,
     "probabilities": {
-     "client_injoignable": 0.0,
      "sante_deces": 0.0,
-     "regularisation_annoncee": 0.0,
-     "tension_tresorerie": 1.0,
-     "aucun_motif": 0.0,
-     "perte_revenus": 0.0,
-     "fraude_detournement": 0.0,
      "retard_technique": 0.0,
-     "litige_juridique": 0.0
+     "aucun_motif": 0.0,
+     "tension_tresorerie": 1.0,
+     "litige_juridique": 0.0,
+     "client_injoignable": 0.0,
+     "regularisation_annoncee": 0.0,
+     "fraude_detournement": 0.0,
+     "perte_revenus": 0.0
     }
    },
    "promesse_datee": {
     "type": "noul",
-    "noul": 0.97
+    "noul": 0.98
    },
    "credibilite": {
     "type": "score",
-    "score": 2.85,
-    "confidence": 0.88,
+    "score": 2.86,
+    "confidence": 0.89,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -1670,49 +1670,34 @@
     "probabilities": {
      "0": 0.0,
      "1": 0.0,
-     "2": 0.14,
-     "3": 0.86,
+     "2": 0.13,
+     "3": 0.87,
      "4": 0.0
     }
    },
    "incoherence": {
     "type": "noul",
-    "noul": 0.05
+    "noul": 0.06
    },
    "statut_propose": {
     "type": "choice",
     "choice": "promesse_reglement",
     "confidence": 1.0,
     "probabilities": {
-     "restructuration": 0.0,
-     "regularise_a_verifier": 0.0,
-     "en_cours": 0.0,
-     "escalade_contentieux": 0.0,
      "a_faire": 0.0,
+     "escalade_contentieux": 0.0,
+     "en_cours": 0.0,
+     "regularise_a_verifier": 0.0,
+     "restructuration": 0.0,
      "promesse_reglement": 1.0
     }
    }
   }
  },
- "LD9000024": {
+ "LD9000024|2cc2f7005cd9": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:52",
   "answers": {
-   "nature_entite": {
-    "type": "choice",
-    "choice": "privee",
-    "confidence": 0.91,
-    "probabilities": {
-     "privee": 0.93,
-     "parapublique": 0.05,
-     "publique": 0.02,
-     "particulier": 0.0
-    }
-   },
-   "intra_groupe": {
-    "type": "noul",
-    "noul": 0.94
-   },
    "segment_douteux": {
     "type": "noul",
     "noul": 0.13
@@ -1722,15 +1707,15 @@
     "choice": "retard_technique",
     "confidence": 1.0,
     "probabilities": {
-     "sante_deces": 0.0,
-     "fraude_detournement": 0.0,
-     "regularisation_annoncee": 0.0,
-     "tension_tresorerie": 0.0,
-     "client_injoignable": 0.0,
      "perte_revenus": 0.0,
+     "regularisation_annoncee": 0.0,
+     "aucun_motif": 0.0,
      "retard_technique": 1.0,
-     "litige_juridique": 0.0,
-     "aucun_motif": 0.0
+     "client_injoignable": 0.0,
+     "fraude_detournement": 0.0,
+     "tension_tresorerie": 0.0,
+     "sante_deces": 0.0,
+     "litige_juridique": 0.0
     }
    },
    "promesse_datee": {
@@ -1739,8 +1724,8 @@
    },
    "credibilite": {
     "type": "score",
-    "score": 2.79,
-    "confidence": 0.83,
+    "score": 2.75,
+    "confidence": 0.79,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -1751,8 +1736,8 @@
     "probabilities": {
      "0": 0.0,
      "1": 0.01,
-     "2": 0.18,
-     "3": 0.81,
+     "2": 0.22,
+     "3": 0.77,
      "4": 0.0
     }
    },
@@ -1763,36 +1748,68 @@
    "statut_propose": {
     "type": "choice",
     "choice": "promesse_reglement",
-    "confidence": 0.66,
+    "confidence": 0.62,
     "probabilities": {
-     "en_cours": 0.27,
-     "promesse_reglement": 0.73,
      "escalade_contentieux": 0.0,
-     "restructuration": 0.0,
      "a_faire": 0.0,
-     "regularise_a_verifier": 0.0
+     "en_cours": 0.31,
+     "regularise_a_verifier": 0.0,
+     "promesse_reglement": 0.6900000000000001,
+     "restructuration": 0.0
     }
+   },
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.89,
+    "probabilities": {
+     "parapublique": 0.06,
+     "particulier": 0.0,
+     "publique": 0.02,
+     "privee": 0.92
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.93
    }
   }
  },
- "LD9000025": {
+ "LD9000025|fd07e6ee9a26": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:53",
   "answers": {
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.1
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "promesse_reglement",
+    "confidence": 0.71,
+    "probabilities": {
+     "restructuration": 0.0,
+     "promesse_reglement": 0.76,
+     "escalade_contentieux": 0.0,
+     "en_cours": 0.0,
+     "a_faire": 0.0,
+     "regularise_a_verifier": 0.24
+    }
+   },
    "nature_entite": {
     "type": "choice",
     "choice": "privee",
     "confidence": 1.0,
     "probabilities": {
-     "parapublique": 0.0,
      "publique": 0.0,
-     "privee": 1.0,
-     "particulier": 0.0
+     "parapublique": 0.0,
+     "particulier": 0.0,
+     "privee": 1.0
     }
    },
    "intra_groupe": {
     "type": "noul",
-    "noul": 0.07
+    "noul": 0.06
    },
    "segment_douteux": {
     "type": "noul",
@@ -1801,27 +1818,27 @@
    "motif": {
     "type": "choice",
     "choice": "retard_technique",
-    "confidence": 0.83,
+    "confidence": 0.82,
     "probabilities": {
-     "tension_tresorerie": 0.02,
-     "regularisation_annoncee": 0.11,
-     "sante_deces": 0.0,
      "litige_juridique": 0.0,
-     "retard_technique": 0.85,
-     "aucun_motif": 0.02,
-     "client_injoignable": 0.0,
+     "retard_technique": 0.84,
+     "aucun_motif": 0.01,
+     "sante_deces": 0.0,
      "perte_revenus": 0.0,
-     "fraude_detournement": 0.0
+     "client_injoignable": 0.0,
+     "fraude_detournement": 0.0,
+     "regularisation_annoncee": 0.13,
+     "tension_tresorerie": 0.02
     }
    },
    "promesse_datee": {
     "type": "noul",
-    "noul": 0.96
+    "noul": 0.97
    },
    "credibilite": {
     "type": "score",
-    "score": 3.91,
-    "confidence": 0.93,
+    "score": 3.93,
+    "confidence": 0.94,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -1836,63 +1853,46 @@
      "3": 0.03,
      "4": 0.96
     }
-   },
-   "incoherence": {
-    "type": "noul",
-    "noul": 0.09
-   },
-   "statut_propose": {
-    "type": "choice",
-    "choice": "promesse_reglement",
-    "confidence": 0.73,
-    "probabilities": {
-     "en_cours": 0.0,
-     "a_faire": 0.0,
-     "escalade_contentieux": 0.0,
-     "restructuration": 0.0,
-     "regularise_a_verifier": 0.22,
-     "promesse_reglement": 0.78
-    }
    }
   }
  },
- "LD9000026": {
+ "LD9000026|ef8117457407": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:53",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "particulier",
-    "confidence": 0.76,
+    "confidence": 0.74,
     "probabilities": {
-     "publique": 0.07,
+     "particulier": 0.81,
+     "privee": 0.12,
      "parapublique": 0.0,
-     "particulier": 0.82,
-     "privee": 0.11
+     "publique": 0.07
     }
    },
    "intra_groupe": {
     "type": "noul",
-    "noul": 0.05
+    "noul": 0.06
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.26
+    "noul": 0.22
    },
    "motif": {
     "type": "choice",
     "choice": "tension_tresorerie",
-    "confidence": 0.84,
+    "confidence": 0.83,
     "probabilities": {
+     "regularisation_annoncee": 0.0,
+     "perte_revenus": 0.0,
+     "fraude_detournement": 0.0,
      "litige_juridique": 0.0,
      "aucun_motif": 0.0,
+     "retard_technique": 0.15,
      "sante_deces": 0.0,
-     "retard_technique": 0.14,
-     "perte_revenus": 0.0,
      "client_injoignable": 0.0,
-     "fraude_detournement": 0.0,
-     "regularisation_annoncee": 0.0,
-     "tension_tresorerie": 0.86
+     "tension_tresorerie": 0.85
     }
    },
    "promesse_datee": {
@@ -1901,8 +1901,8 @@
    },
    "credibilite": {
     "type": "score",
-    "score": 3.63,
-    "confidence": 0.69,
+    "score": 3.61,
+    "confidence": 0.68,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -1913,9 +1913,9 @@
     "probabilities": {
      "0": 0.0,
      "1": 0.0,
-     "2": 0.09,
-     "3": 0.18,
-     "4": 0.73
+     "2": 0.08,
+     "3": 0.21,
+     "4": 0.71
     }
    },
    "incoherence": {
@@ -1925,55 +1925,55 @@
    "statut_propose": {
     "type": "choice",
     "choice": "promesse_reglement",
-    "confidence": 0.54,
+    "confidence": 0.5,
     "probabilities": {
      "escalade_contentieux": 0.01,
-     "promesse_reglement": 0.62,
      "restructuration": 0.0,
-     "en_cours": 0.29,
-     "a_faire": 0.0,
-     "regularise_a_verifier": 0.08
+     "regularise_a_verifier": 0.08,
+     "en_cours": 0.32,
+     "promesse_reglement": 0.59,
+     "a_faire": 0.0
     }
    }
   }
  },
- "LD9000027": {
+ "LD9000027|88eaf92365d4": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:53",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "particulier",
-    "confidence": 0.49,
+    "confidence": 0.56,
     "probabilities": {
      "publique": 0.0,
-     "particulier": 0.62,
-     "privee": 0.38,
-     "parapublique": 0.0
+     "particulier": 0.67,
+     "parapublique": 0.0,
+     "privee": 0.33
     }
    },
    "intra_groupe": {
     "type": "noul",
-    "noul": 0.06
+    "noul": 0.05
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.37
+    "noul": 0.46
    },
    "motif": {
     "type": "choice",
     "choice": "client_injoignable",
     "confidence": 1.0,
     "probabilities": {
+     "aucun_motif": 0.0,
      "client_injoignable": 1.0,
      "fraude_detournement": 0.0,
      "tension_tresorerie": 0.0,
-     "aucun_motif": 0.0,
-     "regularisation_annoncee": 0.0,
-     "sante_deces": 0.0,
-     "retard_technique": 0.0,
      "litige_juridique": 0.0,
-     "perte_revenus": 0.0
+     "retard_technique": 0.0,
+     "regularisation_annoncee": 0.0,
+     "perte_revenus": 0.0,
+     "sante_deces": 0.0
     }
    },
    "promesse_datee": {
@@ -1982,8 +1982,8 @@
    },
    "credibilite": {
     "type": "score",
-    "score": 0.19,
-    "confidence": 0.84,
+    "score": 0.2,
+    "confidence": 0.83,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -1992,8 +1992,8 @@
      "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
     },
     "probabilities": {
-     "0": 0.81,
-     "1": 0.19,
+     "0": 0.8,
+     "1": 0.2,
      "2": 0.0,
      "3": 0.0,
      "4": 0.0
@@ -2006,31 +2006,31 @@
    "statut_propose": {
     "type": "choice",
     "choice": "en_cours",
-    "confidence": 0.64,
+    "confidence": 0.61,
     "probabilities": {
-     "a_faire": 0.01,
      "regularise_a_verifier": 0.0,
-     "en_cours": 0.7,
+     "a_faire": 0.01,
      "promesse_reglement": 0.0,
-     "escalade_contentieux": 0.29,
-     "restructuration": 0.0
+     "en_cours": 0.68,
+     "restructuration": 0.0,
+     "escalade_contentieux": 0.31
     }
    }
   }
  },
- "LD9000028": {
+ "LD9000028|641e92cae8e0": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:19:53",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "publique",
-    "confidence": 0.89,
+    "confidence": 0.87,
     "probabilities": {
-     "parapublique": 0.08,
+     "particulier": 0.0,
+     "parapublique": 0.09,
      "privee": 0.01,
-     "publique": 0.91,
-     "particulier": 0.0
+     "publique": 0.9
     }
    },
    "intra_groupe": {
@@ -2039,22 +2039,22 @@
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.75
+    "noul": 0.76
    },
    "motif": {
     "type": "choice",
     "choice": "regularisation_annoncee",
     "confidence": 0.99,
     "probabilities": {
-     "tension_tresorerie": 0.0,
+     "litige_juridique": 0.0,
      "aucun_motif": 0.01,
-     "retard_technique": 0.0,
-     "perte_revenus": 0.0,
-     "client_injoignable": 0.0,
+     "tension_tresorerie": 0.0,
      "fraude_detournement": 0.0,
      "regularisation_annoncee": 0.99,
-     "litige_juridique": 0.0,
-     "sante_deces": 0.0
+     "retard_technique": 0.0,
+     "perte_revenus": 0.0,
+     "sante_deces": 0.0,
+     "client_injoignable": 0.0
     }
    },
    "promesse_datee": {
@@ -2063,7 +2063,493 @@
    },
    "credibilite": {
     "type": "score",
-    "score": 0.77,
+    "score": 0.73,
+    "confidence": 0.77,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.27,
+     "1": 0.73,
+     "2": 0.0,
+     "3": 0.0,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.89
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "regularise_a_verifier",
+    "confidence": 1.0,
+    "probabilities": {
+     "escalade_contentieux": 0.0,
+     "en_cours": 0.0,
+     "restructuration": 0.0,
+     "a_faire": 0.0,
+     "regularise_a_verifier": 1.0,
+     "promesse_reglement": 0.0
+    }
+   }
+  }
+ },
+ "LD9000029|4cdd09117ec9": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:19:53",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.95,
+    "probabilities": {
+     "privee": 0.97,
+     "particulier": 0.03,
+     "parapublique": 0.0,
+     "publique": 0.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.05
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.26
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "perte_revenus",
+    "confidence": 0.9,
+    "probabilities": {
+     "sante_deces": 0.0,
+     "litige_juridique": 0.0,
+     "aucun_motif": 0.0,
+     "client_injoignable": 0.0,
+     "fraude_detournement": 0.0,
+     "perte_revenus": 0.92,
+     "tension_tresorerie": 0.01,
+     "regularisation_annoncee": 0.0,
+     "retard_technique": 0.07
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.97
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 1.24,
+    "confidence": 0.75,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.03,
+     "1": 0.8,
+     "2": 0.07,
+     "3": 0.1,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.05
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "promesse_reglement",
+    "confidence": 1.0,
+    "probabilities": {
+     "promesse_reglement": 1.0,
+     "restructuration": 0.0,
+     "a_faire": 0.0,
+     "escalade_contentieux": 0.0,
+     "regularise_a_verifier": 0.0,
+     "en_cours": 0.0
+    }
+   }
+  }
+ },
+ "LD9000030|eee969f22eed": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:19:53",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "particulier",
+    "confidence": 0.74,
+    "probabilities": {
+     "parapublique": 0.0,
+     "particulier": 0.81,
+     "privee": 0.19,
+     "publique": 0.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.36
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "perte_revenus",
+    "confidence": 1.0,
+    "probabilities": {
+     "aucun_motif": 0.0,
+     "client_injoignable": 0.0,
+     "fraude_detournement": 0.0,
+     "retard_technique": 0.0,
+     "tension_tresorerie": 0.0,
+     "litige_juridique": 0.0,
+     "regularisation_annoncee": 0.0,
+     "perte_revenus": 1.0,
+     "sante_deces": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.47
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 0.93,
+    "confidence": 0.91,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.09,
+     "1": 0.9,
+     "2": 0.01,
+     "3": 0.0,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "restructuration",
+    "confidence": 1.0,
+    "probabilities": {
+     "a_faire": 0.0,
+     "escalade_contentieux": 0.0,
+     "regularise_a_verifier": 0.0,
+     "restructuration": 1.0,
+     "en_cours": 0.0,
+     "promesse_reglement": 0.0
+    }
+   }
+  }
+ },
+ "L0001140|5258f7bae82d": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:54",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.98,
+    "probabilities": {
+     "parapublique": 0.01,
+     "particulier": 0.0,
+     "privee": 0.98,
+     "publique": 0.01
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.16
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.32
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "retard_technique",
+    "confidence": 0.89,
+    "probabilities": {
+     "aucun_motif": 0.01,
+     "retard_technique": 0.9,
+     "fraude_detournement": 0.0,
+     "client_injoignable": 0.0,
+     "perte_revenus": 0.0,
+     "litige_juridique": 0.0,
+     "regularisation_annoncee": 0.08,
+     "tension_tresorerie": 0.01,
+     "sante_deces": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.96
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 3.94,
+    "confidence": 0.95,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.0,
+     "3": 0.03,
+     "4": 0.97
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.1
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "promesse_reglement",
+    "confidence": 0.82,
+    "probabilities": {
+     "a_faire": 0.0,
+     "escalade_contentieux": 0.0,
+     "regularise_a_verifier": 0.14,
+     "restructuration": 0.0,
+     "en_cours": 0.0,
+     "promesse_reglement": 0.86
+    }
+   }
+  }
+ },
+ "L0001765|7c7260b3f8c4": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:54",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.68,
+    "probabilities": {
+     "parapublique": 0.03,
+     "particulier": 0.0,
+     "publique": 0.21,
+     "privee": 0.76
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.08
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.34
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "tension_tresorerie",
+    "confidence": 0.58,
+    "probabilities": {
+     "perte_revenus": 0.0,
+     "client_injoignable": 0.0,
+     "litige_juridique": 0.0,
+     "sante_deces": 0.0,
+     "aucun_motif": 0.0,
+     "tension_tresorerie": 0.63,
+     "retard_technique": 0.37,
+     "fraude_detournement": 0.0,
+     "regularisation_annoncee": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.97
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 3.72,
+    "confidence": 0.76,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.05,
+     "3": 0.17,
+     "4": 0.78
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.05
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "promesse_reglement",
+    "confidence": 0.66,
+    "probabilities": {
+     "a_faire": 0.0,
+     "en_cours": 0.21,
+     "escalade_contentieux": 0.01,
+     "promesse_reglement": 0.72,
+     "restructuration": 0.0,
+     "regularise_a_verifier": 0.06
+    }
+   }
+  }
+ },
+ "L0002096|868ff9acc729": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:54",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 1.0,
+    "probabilities": {
+     "parapublique": 0.0,
+     "particulier": 0.0,
+     "publique": 0.0,
+     "privee": 1.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.15
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.33
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "client_injoignable",
+    "confidence": 1.0,
+    "probabilities": {
+     "client_injoignable": 1.0,
+     "sante_deces": 0.0,
+     "regularisation_annoncee": 0.0,
+     "tension_tresorerie": 0.0,
+     "aucun_motif": 0.0,
+     "perte_revenus": 0.0,
+     "fraude_detournement": 0.0,
+     "retard_technique": 0.0,
+     "litige_juridique": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.05
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 0.06,
+    "confidence": 0.95,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.94,
+     "1": 0.06,
+     "2": 0.0,
+     "3": 0.0,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "en_cours",
+    "confidence": 0.41,
+    "probabilities": {
+     "promesse_reglement": 0.0,
+     "regularise_a_verifier": 0.0,
+     "en_cours": 0.51,
+     "escalade_contentieux": 0.48,
+     "a_faire": 0.01,
+     "restructuration": 0.0
+    }
+   }
+  }
+ },
+ "L0000355|1d82ffd9631e": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:54",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.99,
+    "probabilities": {
+     "publique": 0.0,
+     "parapublique": 0.01,
+     "particulier": 0.0,
+     "privee": 0.99
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.19
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.3
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "regularisation_annoncee",
+    "confidence": 0.99,
+    "probabilities": {
+     "client_injoignable": 0.0,
+     "aucun_motif": 0.01,
+     "retard_technique": 0.0,
+     "perte_revenus": 0.0,
+     "fraude_detournement": 0.0,
+     "regularisation_annoncee": 0.99,
+     "litige_juridique": 0.0,
+     "sante_deces": 0.0,
+     "tension_tresorerie": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.03
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 0.76,
     "confidence": 0.8,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
@@ -2073,8 +2559,8 @@
      "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
     },
     "probabilities": {
-     "0": 0.23,
-     "1": 0.77,
+     "0": 0.24,
+     "1": 0.76,
      "2": 0.0,
      "3": 0.0,
      "4": 0.0
@@ -2082,60 +2568,60 @@
    },
    "incoherence": {
     "type": "noul",
-    "noul": 0.88
+    "noul": 0.89
    },
    "statut_propose": {
     "type": "choice",
     "choice": "regularise_a_verifier",
     "confidence": 1.0,
     "probabilities": {
-     "en_cours": 0.0,
+     "promesse_reglement": 0.0,
      "restructuration": 0.0,
-     "a_faire": 0.0,
-     "escalade_contentieux": 0.0,
      "regularise_a_verifier": 1.0,
-     "promesse_reglement": 0.0
+     "escalade_contentieux": 0.0,
+     "en_cours": 0.0,
+     "a_faire": 0.0
     }
    }
   }
  },
- "LD9000029": {
+ "L0001165|735427ee9f12": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:20:55",
   "answers": {
    "nature_entite": {
     "type": "choice",
     "choice": "privee",
-    "confidence": 0.98,
+    "confidence": 0.93,
     "probabilities": {
-     "privee": 0.99,
-     "parapublique": 0.0,
-     "particulier": 0.01,
-     "publique": 0.0
+     "parapublique": 0.01,
+     "publique": 0.0,
+     "privee": 0.95,
+     "particulier": 0.04
     }
    },
    "intra_groupe": {
     "type": "noul",
-    "noul": 0.06
+    "noul": 0.17
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.24
+    "noul": 0.33
    },
    "motif": {
     "type": "choice",
     "choice": "perte_revenus",
-    "confidence": 0.92,
+    "confidence": 0.97,
     "probabilities": {
-     "client_injoignable": 0.0,
-     "tension_tresorerie": 0.01,
-     "regularisation_annoncee": 0.0,
-     "retard_technique": 0.06,
-     "perte_revenus": 0.93,
-     "litige_juridique": 0.0,
-     "aucun_motif": 0.0,
      "fraude_detournement": 0.0,
-     "sante_deces": 0.0
+     "sante_deces": 0.0,
+     "tension_tresorerie": 0.0,
+     "regularisation_annoncee": 0.0,
+     "aucun_motif": 0.0,
+     "retard_technique": 0.02,
+     "perte_revenus": 0.98,
+     "litige_juridique": 0.0,
+     "client_injoignable": 0.0
     }
    },
    "promesse_datee": {
@@ -2144,8 +2630,8 @@
    },
    "credibilite": {
     "type": "score",
-    "score": 1.31,
-    "confidence": 0.67,
+    "score": 1.32,
+    "confidence": 0.69,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -2154,10 +2640,10 @@
      "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
     },
     "probabilities": {
-     "0": 0.04,
-     "1": 0.74,
-     "2": 0.08,
-     "3": 0.14,
+     "0": 0.03,
+     "1": 0.75,
+     "2": 0.1,
+     "3": 0.12,
      "4": 0.0
     }
    },
@@ -2170,63 +2656,63 @@
     "choice": "promesse_reglement",
     "confidence": 1.0,
     "probabilities": {
-     "en_cours": 0.0,
-     "promesse_reglement": 1.0,
-     "a_faire": 0.0,
      "restructuration": 0.0,
+     "a_faire": 0.0,
+     "en_cours": 0.0,
      "regularise_a_verifier": 0.0,
+     "promesse_reglement": 1.0,
      "escalade_contentieux": 0.0
     }
    }
   }
  },
- "LD9000030": {
+ "L0002465|783223b87ef2": {
   "modele": "jev-latest",
-  "horodatage": "2026-10-03T10:08:18",
+  "horodatage": "2026-10-03T10:20:54",
   "answers": {
    "nature_entite": {
     "type": "choice",
-    "choice": "particulier",
-    "confidence": 0.84,
+    "choice": "privee",
+    "confidence": 1.0,
     "probabilities": {
-     "particulier": 0.88,
      "parapublique": 0.0,
-     "privee": 0.12,
+     "particulier": 0.0,
+     "privee": 1.0,
      "publique": 0.0
     }
    },
    "intra_groupe": {
     "type": "noul",
-    "noul": 0.04
+    "noul": 0.11
    },
    "segment_douteux": {
     "type": "noul",
-    "noul": 0.42
+    "noul": 0.34
    },
    "motif": {
     "type": "choice",
     "choice": "perte_revenus",
     "confidence": 1.0,
     "probabilities": {
-     "client_injoignable": 0.0,
-     "sante_deces": 0.0,
-     "regularisation_annoncee": 0.0,
-     "retard_technique": 0.0,
-     "perte_revenus": 1.0,
-     "litige_juridique": 0.0,
      "aucun_motif": 0.0,
+     "client_injoignable": 0.0,
      "fraude_detournement": 0.0,
+     "retard_technique": 0.0,
+     "sante_deces": 0.0,
+     "litige_juridique": 0.0,
+     "regularisation_annoncee": 0.0,
+     "perte_revenus": 1.0,
      "tension_tresorerie": 0.0
     }
    },
    "promesse_datee": {
     "type": "noul",
-    "noul": 0.46
+    "noul": 0.51
    },
    "credibilite": {
     "type": "score",
-    "score": 0.92,
-    "confidence": 0.9,
+    "score": 0.82,
+    "confidence": 0.84,
     "legend": {
      "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
      "1": "Faible : promesse vague, sans source de fonds identifiée",
@@ -2235,9 +2721,90 @@
      "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
     },
     "probabilities": {
-     "0": 0.1,
-     "1": 0.88,
-     "2": 0.02,
+     "0": 0.19,
+     "1": 0.81,
+     "2": 0.0,
+     "3": 0.0,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "restructuration",
+    "confidence": 1.0,
+    "probabilities": {
+     "a_faire": 0.0,
+     "escalade_contentieux": 0.0,
+     "regularise_a_verifier": 0.0,
+     "restructuration": 1.0,
+     "en_cours": 0.0,
+     "promesse_reglement": 0.0
+    }
+   }
+  }
+ },
+ "L0000639|0184bde141fb": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:54",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.99,
+    "probabilities": {
+     "particulier": 0.0,
+     "parapublique": 0.0,
+     "publique": 0.0,
+     "privee": 1.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.16
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.29
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "aucun_motif",
+    "confidence": 0.91,
+    "probabilities": {
+     "fraude_detournement": 0.0,
+     "retard_technique": 0.01,
+     "sante_deces": 0.0,
+     "client_injoignable": 0.0,
+     "aucun_motif": 0.92,
+     "litige_juridique": 0.0,
+     "regularisation_annoncee": 0.01,
+     "tension_tresorerie": 0.06,
+     "perte_revenus": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.97
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 1.0,
+    "confidence": 0.99,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.01,
+     "1": 0.99,
+     "2": 0.0,
      "3": 0.0,
      "4": 0.0
     }
@@ -2248,15 +2815,1224 @@
    },
    "statut_propose": {
     "type": "choice",
+    "choice": "promesse_reglement",
+    "confidence": 1.0,
+    "probabilities": {
+     "promesse_reglement": 1.0,
+     "a_faire": 0.0,
+     "en_cours": 0.0,
+     "escalade_contentieux": 0.0,
+     "regularise_a_verifier": 0.0,
+     "restructuration": 0.0
+    }
+   }
+  }
+ },
+ "L0001328|c5d029086c49": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:54",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.99,
+    "probabilities": {
+     "particulier": 0.0,
+     "privee": 1.0,
+     "publique": 0.0,
+     "parapublique": 0.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.12
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.36
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "litige_juridique",
+    "confidence": 1.0,
+    "probabilities": {
+     "regularisation_annoncee": 0.0,
+     "aucun_motif": 0.0,
+     "tension_tresorerie": 0.0,
+     "fraude_detournement": 0.0,
+     "litige_juridique": 1.0,
+     "perte_revenus": 0.0,
+     "retard_technique": 0.0,
+     "sante_deces": 0.0,
+     "client_injoignable": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.03
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 0.01,
+    "confidence": 0.99,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.99,
+     "1": 0.01,
+     "2": 0.0,
+     "3": 0.0,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.05
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "escalade_contentieux",
+    "confidence": 0.99,
+    "probabilities": {
+     "restructuration": 0.0,
+     "promesse_reglement": 0.0,
+     "a_faire": 0.0,
+     "regularise_a_verifier": 0.0,
+     "en_cours": 0.01,
+     "escalade_contentieux": 0.99
+    }
+   }
+  }
+ },
+ "L0000550|a5a526bc541b": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 1.0,
+    "probabilities": {
+     "privee": 1.0,
+     "parapublique": 0.0,
+     "particulier": 0.0,
+     "publique": 0.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.12
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.31
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "sante_deces",
+    "confidence": 1.0,
+    "probabilities": {
+     "perte_revenus": 0.0,
+     "sante_deces": 1.0,
+     "litige_juridique": 0.0,
+     "aucun_motif": 0.0,
+     "client_injoignable": 0.0,
+     "retard_technique": 0.0,
+     "fraude_detournement": 0.0,
+     "tension_tresorerie": 0.0,
+     "regularisation_annoncee": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 0.19,
+    "confidence": 0.85,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.85,
+     "1": 0.13,
+     "2": 0.02,
+     "3": 0.0,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "en_cours",
+    "confidence": 0.5,
+    "probabilities": {
+     "promesse_reglement": 0.0,
+     "regularise_a_verifier": 0.0,
+     "en_cours": 0.58,
+     "restructuration": 0.01,
+     "escalade_contentieux": 0.09,
+     "a_faire": 0.32
+    }
+   }
+  }
+ },
+ "L0002461|56b7eff6d1a7": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 1.0,
+    "probabilities": {
+     "publique": 0.0,
+     "parapublique": 0.0,
+     "privee": 1.0,
+     "particulier": 0.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.13
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.29
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "tension_tresorerie",
+    "confidence": 1.0,
+    "probabilities": {
+     "client_injoignable": 0.0,
+     "fraude_detournement": 0.0,
+     "tension_tresorerie": 1.0,
+     "aucun_motif": 0.0,
+     "regularisation_annoncee": 0.0,
+     "sante_deces": 0.0,
+     "retard_technique": 0.0,
+     "litige_juridique": 0.0,
+     "perte_revenus": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.87
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 3.29,
+    "confidence": 0.41,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.14,
+     "3": 0.38,
+     "4": 0.46
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.05
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "promesse_reglement",
+    "confidence": 0.97,
+    "probabilities": {
+     "a_faire": 0.0,
+     "regularise_a_verifier": 0.0,
+     "en_cours": 0.0,
+     "promesse_reglement": 0.98,
+     "escalade_contentieux": 0.0,
+     "restructuration": 0.02
+    }
+   }
+  }
+ },
+ "L0001055|b2974fa55a14": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.99,
+    "probabilities": {
+     "privee": 0.99,
+     "parapublique": 0.01,
+     "particulier": 0.0,
+     "publique": 0.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.2
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.3
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "aucun_motif",
+    "confidence": 1.0,
+    "probabilities": {
+     "client_injoignable": 0.0,
+     "sante_deces": 0.0,
+     "litige_juridique": 0.0,
+     "aucun_motif": 1.0,
+     "perte_revenus": 0.0,
+     "retard_technique": 0.0,
+     "fraude_detournement": 0.0,
+     "tension_tresorerie": 0.0,
+     "regularisation_annoncee": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.03
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 0.01,
+    "confidence": 1.0,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.99,
+     "1": 0.01,
+     "2": 0.0,
+     "3": 0.0,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.09
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "a_faire",
+    "confidence": 0.98,
+    "probabilities": {
+     "promesse_reglement": 0.0,
+     "regularise_a_verifier": 0.01,
+     "en_cours": 0.01,
+     "escalade_contentieux": 0.0,
+     "restructuration": 0.0,
+     "a_faire": 0.98
+    }
+   }
+  }
+ },
+ "L0001886|2791ad1e1c2f": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.99,
+    "probabilities": {
+     "privee": 1.0,
+     "parapublique": 0.0,
+     "particulier": 0.0,
+     "publique": 0.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.16
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.35
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "aucun_motif",
+    "confidence": 0.92,
+    "probabilities": {
+     "client_injoignable": 0.0,
+     "perte_revenus": 0.0,
+     "sante_deces": 0.0,
+     "litige_juridique": 0.0,
+     "tension_tresorerie": 0.0,
+     "aucun_motif": 0.93,
+     "fraude_detournement": 0.0,
+     "regularisation_annoncee": 0.07,
+     "retard_technique": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.03
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 0.02,
+    "confidence": 0.98,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.99,
+     "1": 0.01,
+     "2": 0.0,
+     "3": 0.0,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.63
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "regularise_a_verifier",
+    "confidence": 0.92,
+    "probabilities": {
+     "escalade_contentieux": 0.0,
+     "en_cours": 0.0,
+     "restructuration": 0.0,
+     "regularise_a_verifier": 0.94,
+     "promesse_reglement": 0.0,
+     "a_faire": 0.06
+    }
+   }
+  }
+ },
+ "L0001753|4be2b07e632c": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.99,
+    "probabilities": {
+     "parapublique": 0.0,
+     "privee": 1.0,
+     "particulier": 0.0,
+     "publique": 0.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.2
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.31
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "fraude_detournement",
+    "confidence": 1.0,
+    "probabilities": {
+     "litige_juridique": 0.0,
+     "retard_technique": 0.0,
+     "aucun_motif": 0.0,
+     "sante_deces": 0.0,
+     "perte_revenus": 0.0,
+     "client_injoignable": 0.0,
+     "fraude_detournement": 1.0,
+     "regularisation_annoncee": 0.0,
+     "tension_tresorerie": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 0.0,
+    "confidence": 1.0,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 1.0,
+     "1": 0.0,
+     "2": 0.0,
+     "3": 0.0,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.06
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "escalade_contentieux",
+    "confidence": 0.99,
+    "probabilities": {
+     "escalade_contentieux": 0.99,
+     "promesse_reglement": 0.0,
+     "restructuration": 0.0,
+     "en_cours": 0.01,
+     "a_faire": 0.0,
+     "regularise_a_verifier": 0.0
+    }
+   }
+  }
+ },
+ "L0001974|2e8b92c3a410": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.99,
+    "probabilities": {
+     "publique": 0.0,
+     "particulier": 0.0,
+     "parapublique": 0.0,
+     "privee": 1.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.18
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.27
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "aucun_motif",
+    "confidence": 0.9,
+    "probabilities": {
+     "retard_technique": 0.0,
+     "aucun_motif": 0.92,
+     "sante_deces": 0.0,
+     "regularisation_annoncee": 0.05,
+     "litige_juridique": 0.0,
+     "perte_revenus": 0.0,
+     "tension_tresorerie": 0.03,
+     "fraude_detournement": 0.0,
+     "client_injoignable": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.56
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 1.02,
+    "confidence": 0.97,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.01,
+     "1": 0.98,
+     "2": 0.0,
+     "3": 0.01,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "en_cours",
+    "confidence": 0.61,
+    "probabilities": {
+     "restructuration": 0.0,
+     "escalade_contentieux": 0.0,
+     "promesse_reglement": 0.32,
+     "en_cours": 0.68,
+     "a_faire": 0.0,
+     "regularise_a_verifier": 0.0
+    }
+   }
+  }
+ },
+ "L0001803|4ac07441f7ba": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.96,
+    "probabilities": {
+     "privee": 0.97,
+     "parapublique": 0.01,
+     "publique": 0.0,
+     "particulier": 0.02
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.19
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.33
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "sante_deces",
+    "confidence": 1.0,
+    "probabilities": {
+     "sante_deces": 1.0,
+     "fraude_detournement": 0.0,
+     "regularisation_annoncee": 0.0,
+     "tension_tresorerie": 0.0,
+     "client_injoignable": 0.0,
+     "perte_revenus": 0.0,
+     "aucun_motif": 0.0,
+     "litige_juridique": 0.0,
+     "retard_technique": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.97
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 2.54,
+    "confidence": 0.62,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.12,
+     "2": 0.2,
+     "3": 0.68,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.05
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "promesse_reglement",
+    "confidence": 0.98,
+    "probabilities": {
+     "escalade_contentieux": 0.0,
+     "promesse_reglement": 0.98,
+     "en_cours": 0.02,
+     "restructuration": 0.0,
+     "a_faire": 0.0,
+     "regularise_a_verifier": 0.0
+    }
+   }
+  }
+ },
+ "L0000582|2fbdf59df1ee": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.25,
+    "probabilities": {
+     "particulier": 0.0,
+     "privee": 0.44,
+     "publique": 0.16,
+     "parapublique": 0.4
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.11
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.29
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "retard_technique",
+    "confidence": 0.93,
+    "probabilities": {
+     "regularisation_annoncee": 0.0,
+     "tension_tresorerie": 0.06,
+     "aucun_motif": 0.0,
+     "fraude_detournement": 0.0,
+     "litige_juridique": 0.0,
+     "perte_revenus": 0.0,
+     "retard_technique": 0.94,
+     "sante_deces": 0.0,
+     "client_injoignable": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.94
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 3.07,
+    "confidence": 0.67,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.16,
+     "3": 0.61,
+     "4": 0.23
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.09
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "promesse_reglement",
+    "confidence": 0.79,
+    "probabilities": {
+     "restructuration": 0.0,
+     "promesse_reglement": 0.83,
+     "a_faire": 0.0,
+     "regularise_a_verifier": 0.1,
+     "escalade_contentieux": 0.0,
+     "en_cours": 0.07
+    }
+   }
+  }
+ },
+ "L0000668|8d0fd977bb09": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.99,
+    "probabilities": {
+     "parapublique": 0.01,
+     "particulier": 0.0,
+     "publique": 0.0,
+     "privee": 0.99
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.14
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.31
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "aucun_motif",
+    "confidence": 0.49,
+    "probabilities": {
+     "fraude_detournement": 0.0,
+     "regularisation_annoncee": 0.0,
+     "aucun_motif": 0.56,
+     "client_injoignable": 0.0,
+     "retard_technique": 0.0,
+     "perte_revenus": 0.0,
+     "tension_tresorerie": 0.44,
+     "sante_deces": 0.0,
+     "litige_juridique": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.18
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 0.83,
+    "confidence": 0.79,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.21,
+     "1": 0.76,
+     "2": 0.03,
+     "3": 0.0,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "statut_propose": {
+    "type": "choice",
     "choice": "restructuration",
     "confidence": 1.0,
     "probabilities": {
-     "en_cours": 0.0,
-     "promesse_reglement": 0.0,
      "a_faire": 0.0,
+     "escalade_contentieux": 0.0,
+     "promesse_reglement": 0.0,
      "restructuration": 1.0,
      "regularise_a_verifier": 0.0,
-     "escalade_contentieux": 0.0
+     "en_cours": 0.0
+    }
+   }
+  }
+ },
+ "L0001245|00e6f5a529f1": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.99,
+    "probabilities": {
+     "publique": 0.0,
+     "parapublique": 0.01,
+     "privee": 0.99,
+     "particulier": 0.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.2
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.31
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "retard_technique",
+    "confidence": 1.0,
+    "probabilities": {
+     "client_injoignable": 0.0,
+     "regularisation_annoncee": 0.0,
+     "perte_revenus": 0.0,
+     "tension_tresorerie": 0.0,
+     "fraude_detournement": 0.0,
+     "sante_deces": 0.0,
+     "retard_technique": 1.0,
+     "aucun_motif": 0.0,
+     "litige_juridique": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 0.97,
+    "confidence": 0.89,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.08,
+     "1": 0.87,
+     "2": 0.05,
+     "3": 0.0,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.08
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "en_cours",
+    "confidence": 0.91,
+    "probabilities": {
+     "regularise_a_verifier": 0.07,
+     "en_cours": 0.93,
+     "escalade_contentieux": 0.0,
+     "promesse_reglement": 0.0,
+     "restructuration": 0.0,
+     "a_faire": 0.0
+    }
+   }
+  }
+ },
+ "L0002090|8f057608b35f": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 1.0,
+    "probabilities": {
+     "particulier": 0.0,
+     "publique": 0.0,
+     "privee": 1.0,
+     "parapublique": 0.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.2
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.3
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "tension_tresorerie",
+    "confidence": 0.39,
+    "probabilities": {
+     "retard_technique": 0.09,
+     "sante_deces": 0.0,
+     "tension_tresorerie": 0.46,
+     "client_injoignable": 0.0,
+     "fraude_detournement": 0.0,
+     "perte_revenus": 0.0,
+     "aucun_motif": 0.44,
+     "litige_juridique": 0.01,
+     "regularisation_annoncee": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.04
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 0.74,
+    "confidence": 0.53,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.41,
+     "1": 0.44,
+     "2": 0.15,
+     "3": 0.0,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.05
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "en_cours",
+    "confidence": 0.63,
+    "probabilities": {
+     "restructuration": 0.0,
+     "en_cours": 0.7,
+     "a_faire": 0.29,
+     "regularise_a_verifier": 0.0,
+     "escalade_contentieux": 0.01,
+     "promesse_reglement": 0.0
+    }
+   }
+  }
+ },
+ "L0000358|3e8a3465690b": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.99,
+    "probabilities": {
+     "particulier": 0.0,
+     "privee": 1.0,
+     "publique": 0.0,
+     "parapublique": 0.0
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.21
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.31
+   }
+  }
+ },
+ "L0001925|b8b83b953129": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.99,
+    "probabilities": {
+     "particulier": 0.0,
+     "publique": 0.0,
+     "parapublique": 0.01,
+     "privee": 0.99
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.2
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.31
+   }
+  }
+ },
+ "L0001119|1a2b72cdc00f": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.99,
+    "probabilities": {
+     "particulier": 0.0,
+     "publique": 0.0,
+     "privee": 0.99,
+     "parapublique": 0.01
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.2
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.3
+   }
+  }
+ },
+ "L0001849|fad64cbdd2de": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.96,
+    "probabilities": {
+     "particulier": 0.0,
+     "parapublique": 0.03,
+     "publique": 0.0,
+     "privee": 0.97
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.14
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.29
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "tension_tresorerie",
+    "confidence": 0.99,
+    "probabilities": {
+     "client_injoignable": 0.0,
+     "retard_technique": 0.0,
+     "tension_tresorerie": 1.0,
+     "perte_revenus": 0.0,
+     "fraude_detournement": 0.0,
+     "litige_juridique": 0.0,
+     "regularisation_annoncee": 0.0,
+     "sante_deces": 0.0,
+     "aucun_motif": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.97
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 2.88,
+    "confidence": 0.9,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.11,
+     "3": 0.89,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.05
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "promesse_reglement",
+    "confidence": 1.0,
+    "probabilities": {
+     "promesse_reglement": 1.0,
+     "a_faire": 0.0,
+     "escalade_contentieux": 0.0,
+     "en_cours": 0.0,
+     "regularise_a_verifier": 0.0,
+     "restructuration": 0.0
+    }
+   }
+  }
+ },
+ "L0001814|22d4b2cbb192": {
+  "modele": "jev-latest",
+  "horodatage": "2026-10-03T10:20:55",
+  "answers": {
+   "nature_entite": {
+    "type": "choice",
+    "choice": "privee",
+    "confidence": 0.99,
+    "probabilities": {
+     "privee": 0.99,
+     "particulier": 0.0,
+     "publique": 0.0,
+     "parapublique": 0.01
+    }
+   },
+   "intra_groupe": {
+    "type": "noul",
+    "noul": 0.34
+   },
+   "segment_douteux": {
+    "type": "noul",
+    "noul": 0.3
+   },
+   "motif": {
+    "type": "choice",
+    "choice": "retard_technique",
+    "confidence": 1.0,
+    "probabilities": {
+     "fraude_detournement": 0.0,
+     "retard_technique": 1.0,
+     "perte_revenus": 0.0,
+     "regularisation_annoncee": 0.0,
+     "client_injoignable": 0.0,
+     "sante_deces": 0.0,
+     "litige_juridique": 0.0,
+     "tension_tresorerie": 0.0,
+     "aucun_motif": 0.0
+    }
+   },
+   "promesse_datee": {
+    "type": "noul",
+    "noul": 0.95
+   },
+   "credibilite": {
+    "type": "score",
+    "score": 2.82,
+    "confidence": 0.85,
+    "legend": {
+     "0": "Nulle : aucune promesse, ou promesse contredite par la situation décrite",
+     "1": "Faible : promesse vague, sans source de fonds identifiée",
+     "2": "Moyenne : source de fonds identifiée mais incertaine",
+     "3": "Bonne : source de fonds identifiée et engagement daté",
+     "4": "Très bonne : preuve tangible (ordre de virement, chèque, domiciliation rétablie, mandat de l'État)"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.17,
+     "3": 0.83,
+     "4": 0.0
+    }
+   },
+   "incoherence": {
+    "type": "noul",
+    "noul": 0.05
+   },
+   "statut_propose": {
+    "type": "choice",
+    "choice": "promesse_reglement",
+    "confidence": 0.81,
+    "probabilities": {
+     "promesse_reglement": 0.85,
+     "restructuration": 0.0,
+     "en_cours": 0.15,
+     "escalade_contentieux": 0.0,
+     "a_faire": 0.0,
+     "regularise_a_verifier": 0.0
     }
    }
   }

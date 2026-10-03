@@ -19,6 +19,9 @@ Usage
   python3 impayes_typesafe.py --demo                    # copie anonymisée + commentaires fictifs
   python3 impayes_typesafe.py --demo --depuis-cache     # réapplique les seuils sans appel API
   python3 impayes_typesafe.py --fichier retour.xlsx     # fichier réel (après accord Conformité)
+  python3 impayes_typesafe.py --lot Lot_TypeSafe_Impayes.json [--anonymiser]
+                                                        # lot exporté par APEX (salle JEV) ; le classeur
+                                                        # produit se recharge dans APEX (« Retours TypeSafe »)
 
 La clé API n'est jamais écrite dans un fichier : TYPESAFE_API_KEY est lue dans l'environnement
 du poste connecté (ou fournie par le relais serveur).
@@ -228,6 +231,13 @@ Q_NOM = {
         },
     },
 }
+
+
+def cle(d):
+    """Clé du cache : un commentaire modifié déclenche une nouvelle lecture TypeSafe."""
+    import hashlib
+    h = hashlib.sha1(json.dumps([d["client"], d["segment"], d["jours"], d["commentaire"]], ensure_ascii=False).encode()).hexdigest()
+    return f"{d['ref']}|{h[:12]}"
 
 
 def evaluer(d, essais=5):
@@ -859,7 +869,7 @@ def ecrire_classeur(resultats, bruts, arrete, chemin):
     ws.set_column(5, 5, 90)
     i = 6
     for r in resultats:
-        b = bruts[r["ref"]]
+        b = bruts[cle(r)]
         for q, a in b["answers"].items():
             rep = a.get("choice", a.get("score", a.get("noul")))
             ws.write_row(i, 0, [r["ref"], q, a["type"], rep, a.get("confidence"),
@@ -876,6 +886,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--demo", action="store_true", help="copie anonymisée et commentaires fictifs")
     ap.add_argument("--fichier", type=Path, help="fichier retourné par les gestionnaires (.xlsx, .xlsb, .csv)")
+    ap.add_argument("--lot", type=Path, help="lot JSON exporté par APEX (bouton « Lot TypeSafe »)")
+    ap.add_argument("--anonymiser", action="store_true",
+                    help="masque les noms clients avant l'appel (sans accord Conformité) ; les jugements sur les noms sont alors sans objet")
     ap.add_argument("--arrete", default="2026-09-29")
     ap.add_argument("--depuis-cache", action="store_true")
     ap.add_argument("--sortie", type=Path, default=SORTIE / "Impayes_30-90j_TypeSafe_demo.xlsx")
@@ -893,27 +906,42 @@ def main():
                             d["jours"], d["commentaire"], d["statut_fichier"]])
     elif a.fichier:
         dossiers = lire_fichier(a.fichier)
+    elif a.lot:
+        lot = json.loads(a.lot.read_text(encoding="utf-8"))
+        if lot.get("arrete") and a.arrete == "2026-09-29":
+            arrete = date.fromisoformat(lot["arrete"])
+        dossiers = [{"ref": str(d["ref"]), "client": d.get("client") or "", "segment": d.get("segment") or "",
+                     "gestionnaire": d.get("gestionnaire") or "", "encours": float(d.get("encours") or 0),
+                     "impaye": float(d.get("impaye") or 0), "jours": int(d.get("jours") or 0),
+                     "commentaire": (d.get("commentaire") or "").strip(), "statut_fichier": d.get("statut_fichier") or "",
+                     "bascule_apex": d.get("bascule")} for d in lot["dossiers"]]
+        if a.anonymiser:
+            for i, d in enumerate(dossiers, 1):
+                d["client"] = f"CLIENT-{i:04d}"
+        if a.sortie == SORTIE / "Impayes_30-90j_TypeSafe_demo.xlsx":
+            a.sortie = SORTIE / f"Impayes_30-90j_TypeSafe_{arrete:%Y-%m-%d}.xlsx"
     else:
-        ap.error("--demo ou --fichier")
+        ap.error("--demo, --fichier ou --lot")
 
     for d in dossiers:
         d["classe"] = classe_impaye(d["jours"])
-        d["bascule"] = date_bascule(arrete, d["jours"])
+        # la date de bascule d'APEX fait foi quand elle est fournie (seuil 90 j ou 180 j secteur public)
+        d["bascule"] = date.fromisoformat(d["bascule_apex"]) if d.get("bascule_apex") else date_bascule(arrete, d["jours"])
 
     SORTIE.mkdir(exist_ok=True)
     cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
     if not a.depuis_cache:
-        a_faire = [d for d in dossiers if d["ref"] not in cache]
+        a_faire = [d for d in dossiers if cle(d) not in cache]
         print(f"TypeSafe : {len(a_faire)} requête(s) ({MODELE})")
         with ThreadPoolExecutor(8) as ex:
             for d, rep in zip(a_faire, ex.map(evaluer, a_faire)):
-                cache[d["ref"]] = rep
+                cache[cle(d)] = rep
         CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=1))
-    manquants = [d["ref"] for d in dossiers if d["ref"] not in cache]
+    manquants = [d["ref"] for d in dossiers if cle(d) not in cache]
     if manquants:
         raise SystemExit(f"Réponses absentes du cache : {manquants[:5]}")
 
-    resultats = [analyser(d, cache[d["ref"]], arrete) for d in dossiers]
+    resultats = [analyser(d, cache[cle(d)], arrete) for d in dossiers]
     ecrire_classeur(resultats, cache, arrete, a.sortie)
     (SORTIE / "impayes_resultats.json").write_text(json.dumps(resultats, ensure_ascii=False, indent=1, default=str))
 
