@@ -32,6 +32,14 @@ if curl -s -o /dev/null -m 5 https://huggingface.co; then
     pip install -q torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1
   python3 -c "import cv2, rembg, spandrel, soundfile" 2>/dev/null || \
     pip install -q "opencv-python-headless<4.11" "rembg[cpu]" spandrel soundfile "numpy<2" "protobuf>=6.31.1" >/dev/null 2>&1
+  # Lip-sync 2D : Rhubarb Lip Sync (MIT) ; repères du visage : MediaPipe dans un environnement séparé
+  if [ ! -x "$HOME/tools/Rhubarb-Lip-Sync-1.14.0-Linux/rhubarb" ]; then
+    mkdir -p "$HOME/tools" && curl -sL -o /tmp/rhubarb.zip \
+      https://github.com/DanielSWolf/rhubarb-lip-sync/releases/download/v1.14.0/Rhubarb-Lip-Sync-1.14.0-Linux.zip \
+      && unzip -q -o /tmp/rhubarb.zip -d "$HOME/tools" && chmod +x "$HOME/tools/Rhubarb-Lip-Sync-1.14.0-Linux/rhubarb"
+  fi
+  [ -x "$HOME/mpenv/bin/python" ] || (python3 -m venv "$HOME/mpenv" && "$HOME/mpenv/bin/pip" install -q \
+      "mediapipe==0.10.14" "numpy<2" opencv-python-headless pillow >/dev/null 2>&1)
 fi
 echo "Afrikatoon : environnement prêt (Blender, voix, ffmpeg)."
 exit 0

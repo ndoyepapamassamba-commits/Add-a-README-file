@@ -30,6 +30,21 @@
 - Services testés et écartés : Space Wan2.2-S2V (file bloquée), Space Wan2.1 officiel (n'accepte plus de
   tâches), LatentSync (180 s de quota par appel), Pollinations anonyme (qualité faible, filigrane).
 
+## Moteur 2D (3 octobre, soir) — `--mock 2d-hq`, `afrikatoon/anim2d.py`
+
+- L'utilisateur a demandé de **tout passer en 2D**. Personnages convertis localement (`afrikatoon/toon.py` :
+  Real-ESRGAN ×4 + cel-shading) dans `assets/characters_2d/` ; repères yeux/bouche par MediaPipe
+  (`scripts/face_points.py`, à lancer avec `~/mpenv/bin/python`) → `faces.json`.
+- Lip-sync : **Rhubarb Lip Sync** (MIT, `~/tools/…/rhubarb`, installé par setup_env.sh) → bouches dessinées.
+- Réalisateur automatique (`Director`) : plan large d'ouverture, plans rapprochés / épaule / à deux / gros
+  plans, coupes sur les réactions, entrée de l'enfant en courant, insert sur la marmite « NOUNOU », gel final.
+- Son (`afrikatoon/sound2d.py`) : musique balafon + djembé générée par code, ambiance village, bruitages
+  Kenney CC0 (`assets/sfx/`), ducking sous les voix, loudnorm −14 LUFS.
+- **HF_TOKEN absent de la session reprise** : sans lui, pas de conversion 2D par IA (FLUX.2-klein, bien plus
+  belle — exemple : `assets/characters_2d_ia/`), ni Wan 2.2. À rajouter dans les variables de l'environnement.
+- À faire : conversion IA des poses dès que le jeton revient ; plus de poses par personnage (gestes) ;
+  décors 2D pour les autres lieux ; inserts de gags (le chat).
+
 ## Retours de l'utilisateur sur la démo (à corriger en V2)
 
 1 animation trop statique · 2 corps peu mobile · 3 expressions sans transition · 4 lip-sync ·

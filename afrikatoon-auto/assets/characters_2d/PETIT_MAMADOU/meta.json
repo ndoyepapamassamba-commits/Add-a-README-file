@@ -1,0 +1,47 @@
+{
+  "neutral": {
+    "mouth": [
+      612,
+      636
+    ],
+    "mouth_w": 160,
+    "faces": "right",
+    "height": 0.68
+  },
+  "angry": {
+    "mouth": [
+      828,
+      696
+    ],
+    "mouth_w": 112,
+    "faces": "right",
+    "height": 0.68
+  },
+  "shock": {
+    "mouth": [
+      616,
+      656
+    ],
+    "mouth_w": 108,
+    "faces": "right",
+    "height": 0.68
+  },
+  "smug": {
+    "mouth": [
+      736,
+      572
+    ],
+    "mouth_w": 168,
+    "faces": "right",
+    "height": 0.68
+  },
+  "laugh": {
+    "mouth": [
+      908,
+      692
+    ],
+    "mouth_w": 168,
+    "faces": "right",
+    "height": 0.68
+  }
+}

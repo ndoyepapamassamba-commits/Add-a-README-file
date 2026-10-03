@@ -90,6 +90,14 @@ def cmd_run(args):
     for i, sc in enumerate(kit["scenes"]):
         clip = work / f"clip_{i:02d}.mp4"
         if args.mock:
+            if args.mock == "2d-hq":  # dessin animé 2D : toute la vidéo d'un coup (moteur anim2d)
+                from afrikatoon import anim2d, wananim
+                wananim.voice_kit(kit, work)
+                bg = config.ROOT / "assets" / f"backgrounds_2d_{kit.get('setting', 'village')}.png"
+                final = anim2d.make_video(kit, work, bg, work / "final.mp4")
+                print(f"[4/4] Vidéo 2D : {final}")
+                (work / "caption.txt").write_text(caption_of(kit), encoding="utf-8")
+                return
             if args.mock == "wan":  # vraie animation IA : un plan Wan 2.2 par réplique
                 from afrikatoon import wananim
                 wananim.render_clip(sc, i, clip, setting=kit.get("setting", "village"),
@@ -250,7 +258,7 @@ def main(argv=None):
                         help="sketch (histoire en 3 actes) ou blagues (compilation « la blague du jour »)")
         sp.set_defaults(func=func)
         if name == "run":
-            sp.add_argument("--mock", nargs="?", const="2d", choices=["2d", "3d", "brouillon", "photo", "wan"],
+            sp.add_argument("--mock", nargs="?", const="2d", choices=["2d", "3d", "brouillon", "photo", "wan", "2d-hq"],
                             help="Vidéo sans API : 2d (dessin propre, ~5 min), 3d (Blender), brouillon (test)")
             sp.add_argument("--no-upload", action="store_true", help="Ne pas publier sur TikTok")
             sp.add_argument("--no-subs", action="store_true", help="Sans sous-titres incrustés")

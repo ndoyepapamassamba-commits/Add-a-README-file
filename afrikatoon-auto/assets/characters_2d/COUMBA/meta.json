@@ -1,0 +1,42 @@
+{
+  "neutral": {
+    "mouth": [
+      660,
+      576
+    ],
+    "mouth_w": 148,
+    "faces": "right"
+  },
+  "angry": {
+    "mouth": [
+      796,
+      660
+    ],
+    "mouth_w": 116,
+    "faces": "right"
+  },
+  "shock": {
+    "mouth": [
+      636,
+      588
+    ],
+    "mouth_w": 100,
+    "faces": "right"
+  },
+  "smug": {
+    "mouth": [
+      768,
+      524
+    ],
+    "mouth_w": 132,
+    "faces": "right"
+  },
+  "laugh": {
+    "mouth": [
+      996,
+      532
+    ],
+    "mouth_w": 188,
+    "faces": "right"
+  }
+}
