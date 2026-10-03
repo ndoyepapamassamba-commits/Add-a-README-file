@@ -1,0 +1,52 @@
+{
+  "neutral": {
+    "mouth": [
+      180,
+      91
+    ],
+    "mouth_w": 41,
+    "faces": "front",
+    "height": 0.55,
+    "portrait": true
+  },
+  "pose2": {
+    "mouth": [
+      182,
+      97
+    ],
+    "mouth_w": 41,
+    "faces": "front",
+    "height": 0.55,
+    "portrait": true
+  },
+  "pose3": {
+    "mouth": [
+      155,
+      101
+    ],
+    "mouth_w": 43,
+    "faces": "front",
+    "height": 0.55,
+    "portrait": true
+  },
+  "pose4": {
+    "mouth": [
+      137,
+      85
+    ],
+    "mouth_w": 36,
+    "faces": "front",
+    "height": 0.55,
+    "portrait": true
+  },
+  "pose5": {
+    "mouth": [
+      147,
+      90
+    ],
+    "mouth_w": 40,
+    "faces": "front",
+    "height": 0.55,
+    "portrait": true
+  }
+}

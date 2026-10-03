@@ -1,0 +1,32 @@
+{
+  "neutral": {
+    "mouth": [
+      147,
+      77
+    ],
+    "mouth_w": 42,
+    "faces": "front",
+    "height": 0.55,
+    "portrait": true
+  },
+  "pose2": {
+    "mouth": [
+      204,
+      76
+    ],
+    "mouth_w": 34,
+    "faces": "front",
+    "height": 0.55,
+    "portrait": true
+  },
+  "pose3": {
+    "mouth": [
+      161,
+      68
+    ],
+    "mouth_w": 34,
+    "faces": "front",
+    "height": 0.55,
+    "portrait": true
+  }
+}

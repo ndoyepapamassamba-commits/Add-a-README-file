@@ -251,3 +251,254 @@ def contact_sheet(dest: Path) -> Path:
             x += t.width
     sheet.save(dest)
     return dest
+
+
+# --- Planche « distribution » : bandeaux de noms + plusieurs poses en buste par personnage ---------
+
+def _runs(values, gap: int = 1) -> list[tuple[int, int]]:
+    out, s, p = [], None, None
+    for v in values:
+        if s is None:
+            s = p = v
+        elif v <= p + gap:
+            p = v
+        else:
+            out.append((s, p))
+            s = p = v
+    if s is not None:
+        out.append((s, p))
+    return out
+
+
+def sheet_grid(img: Image.Image) -> list[dict]:
+    """Repère rangées (lignes blanches), panneaux (bandeaux de couleur séparés de blanc) et cases
+    (fins traits clairs verticaux). Renvoie [{row, top, panel, cells}] de haut en bas, de gauche à droite."""
+    a = np.array(img.convert("RGB")).astype(int)
+    h, w, _ = a.shape
+    white_rows = [y for y in range(h) if (a[y].min(axis=1) > 225).mean() > 0.5]
+    bounds = [(s + e) // 2 for s, e in _runs(white_rows)]
+    bounds = sorted(set([0] + bounds + [h - 1]))
+    rows = []
+    for y0, y1 in zip(bounds, bounds[1:]):
+        if y1 - y0 < 40:                              # bandeau isolé par deux lignes blanches : rattaché
+            continue
+        if rows and y0 - rows[-1][1] < 40 and y0 - rows[-1][1] > 0:
+            y0 = rows[-1][1] + 1
+        rows.append((y0, y1))
+    # une rangée dont le bandeau a été coupé par une ligne blanche commence au bandeau
+    fixed = []
+    for k, (y0, y1) in enumerate(rows):
+        prev = bounds[bounds.index(y0) - 1] if y0 in bounds and bounds.index(y0) > 0 else None
+        if prev is not None and y0 - prev < 40 and (not fixed or fixed[-1][1] < prev):
+            y0 = prev
+        fixed.append((y0, y1))
+    out = []
+    for y0, y1 in fixed:
+        top_band = a[y0 + 3:y0 + 6]
+        white = (top_band.min(axis=2) > 215).mean(axis=0) > 0.6
+        seps = [(s + e) // 2 for s, e in _runs([x for x in range(w) if white[x]])]
+        edges = sorted(set([0] + seps + [w - 1]))
+        panels = [(e0, e1) for e0, e1 in zip(edges, edges[1:]) if e1 - e0 > 40]
+        top = y0 + 22
+        for y in range(y0 + 14, min(y0 + 34, y1)):
+            if (a[y].min(axis=1) > 215).mean() > 0.5:
+                top = y
+                break
+        band = a[top + 3:y1 - 2].min(axis=2)
+        line = np.zeros(w)
+        for x in range(3, w - 3):
+            c, side = band[:, x], np.maximum(band[:, x - 3], band[:, x + 3])
+            line[x] = ((c > 185) & (c - side > 20)).mean()
+        for x0, x1 in panels:
+            cuts = []
+            for s, e in _runs([x for x in range(x0 + 30, x1 - 30) if line[x] > 0.28], gap=2):
+                c = round((s + e) / 2)
+                if not cuts or c - cuts[-1] >= 38:
+                    cuts.append(c)
+            b = [x0 + 1] + cuts + [x1 - 1]
+            out.append({"row": [y0, y1], "top": top + 2, "panel": [x0, x1], "cells": list(zip(b, b[1:]))})
+    return out
+
+
+_SR = None
+
+
+def upscale4(img: Image.Image) -> Image.Image:
+    """Agrandissement ×4 par IA (Real-ESRGAN x4plus, licence BSD-3) sur processeur."""
+    global _SR
+    import torch
+    if _SR is None:
+        import spandrel
+        model = Path.home() / ".cache" / "esrgan" / "RealESRGAN_x4plus.pth"
+        if not model.exists():
+            import urllib.request
+            model.parent.mkdir(parents=True, exist_ok=True)
+            urllib.request.urlretrieve("https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/"
+                                       "RealESRGAN_x4plus.pth", model)
+        _SR = spandrel.ModelLoader().load_from_file(str(model)).eval()
+    x = torch.from_numpy(np.array(img.convert("RGB"))).permute(2, 0, 1)[None].float() / 255
+    with torch.no_grad():
+        y = _SR(x)
+    return Image.fromarray((y[0].permute(1, 2, 0).clamp(0, 1).numpy() * 255).astype(np.uint8))
+
+
+def import_cast_sheet(path: Path, distribution: dict) -> dict[str, list[Path]]:
+    """Planche de distribution (bandeaux de noms, 3 à 5 poses en buste par personnage) → un dossier par
+    personnage : poses agrandies ×4 et détourées. `distribution` = {"rows": [[noms…]…], "cells": {…},
+    "skip": [...]} ; "cells" corrige les cases mal attribuées par la planche : {"NOM": [[panneau, case]…]}."""
+    from rembg import new_session, remove
+    src = Image.open(path).convert("RGB")
+    grid = sheet_grid(src)
+    names = [n for row in distribution["rows"] for n in row]
+    if len(names) != len(grid):
+        raise ValueError(f"{len(grid)} panneaux trouvés, {len(names)} noms fournis")
+    owners: dict[str, list[tuple[int, int]]] = {}
+    split = distribution.get("split", {})               # {"NOM": 3} : panneau à couper en N cases égales
+    for p, (name, g) in enumerate(zip(names, grid)):
+        if name in split:
+            x0, x1 = g["panel"]
+            step = (x1 - x0) / split[name]
+            g["cells"] = [(int(x0 + k * step), int(x0 + (k + 1) * step)) for k in range(split[name])]
+        for c in range(len(g["cells"])):
+            owners.setdefault(name, []).append((p, c))
+    for name, cells in distribution.get("cells", {}).items():   # réattributions explicites
+        for other in owners:
+            owners[other] = [pc for pc in owners[other] if list(pc) not in cells]
+        owners[name] = [tuple(pc) for pc in cells]
+    session = new_session("isnet-general-use")
+    done = {}
+    for name, cells in owners.items():
+        if name in distribution.get("skip", []) or not cells:
+            continue
+        folder = ASSETS / "characters" / name.replace(" ", "_")
+        folder.mkdir(parents=True, exist_ok=True)
+        meta = {}
+        done[name] = []
+        for k, (p, c) in enumerate(cells):
+            g = grid[p]
+            x0, x1 = g["cells"][c]
+            cell = src.crop((x0 + 1, g["top"], x1 - 1, g["row"][1] - 1))
+            cut = remove(upscale4(cell), session=session)
+            cut = _main_figure(cut)
+            pose = "neutral" if k == 0 else f"pose{k + 1}"
+            dest = folder / f"{pose}.png"
+            cut.save(dest)
+            mouth, mw = guess_mouth(cut)
+            meta[pose] = {"mouth": mouth, "mouth_w": mw, "faces": "front", "height": 0.55, "portrait": True}
+            done[name].append(dest)
+        (folder / "meta.json").write_text(json.dumps(meta, indent=2))
+    return done
+
+
+def _erase_label(img: Image.Image) -> Image.Image:
+    """Efface le cartouche de titre (rectangle bleu nuit, texte blanc) en bas à gauche d'une vignette."""
+    import cv2
+    a = np.array(img.convert("RGB"))
+    h, w, _ = a.shape
+    zone = a[int(h * 0.7):, :int(w * 0.75)].astype(int)
+    navy = (zone[..., 2] > zone[..., 0] + 25) & (zone.max(axis=2) < 130)
+    ys, xs = np.where(navy)
+    if len(ys) < 50:
+        return img
+    y0, y1 = int(np.percentile(ys, 2)), int(np.percentile(ys, 98))
+    x0, x1 = int(np.percentile(xs, 1)), int(np.percentile(xs, 99))
+    mask = np.zeros((h, w), np.uint8)
+    mask[int(h * 0.7) + y0 - 4:int(h * 0.7) + y1 + 5, max(x0 - 4, 0):x1 + 5] = 255
+    return Image.fromarray(cv2.inpaint(a, mask, 9, cv2.INPAINT_TELEA))
+
+
+def import_scene_sheet(path: Path, names: list[str], scale: int = 2) -> list[Path]:
+    """Planche de décors (vignettes séparées de blanc, titre en bas à gauche) → une image par décor dans
+    assets/scenes/, titre effacé et agrandie par IA (images de départ pour Wan 2.2)."""
+    src = Image.open(path).convert("RGB")
+    a = np.array(src).astype(int)
+    white = a.min(axis=2) > 225
+
+    def cuts(frac):
+        b = [(s + e) // 2 for s, e in _runs([i for i, f in enumerate(frac) if f > 0.7])]
+        b = sorted(set([0] + b + [len(frac) - 1]))
+        return [(p, q) for p, q in zip(b, b[1:]) if q - p > 60]
+    out = []
+    dest_dir = ASSETS / "scenes"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    rows = cuts(white.mean(axis=1))
+    panels = []
+    for y0, y1 in rows:
+        for x0, x1 in cuts(white[y0:y1].mean(axis=0)):
+            panels.append((x0 + 2, y0 + 2, x1 - 1, y1 - 1))
+    if len(panels) != len(names):
+        raise ValueError(f"{len(panels)} vignettes trouvées, {len(names)} noms fournis")
+    for name, box in zip(names, panels):
+        tile = _erase_label(src.crop(box))
+        if scale > 1:
+            big = upscale4(tile)
+            tile = big.resize((tile.width * scale, tile.height * scale), Image.LANCZOS)
+        dest = dest_dir / f"{name}.png"
+        tile.save(dest)
+        out.append(dest)
+    return out
+
+
+# --- Personnage repéré dans une scène de groupe (segmentation SAM guidée par un cadre) -------------
+
+_SAM = None
+
+
+def _sam():
+    global _SAM
+    if _SAM is None:
+        from transformers import SamModel, SamProcessor
+        _SAM = (SamProcessor.from_pretrained("facebook/sam-vit-base"),
+                SamModel.from_pretrained("facebook/sam-vit-base").eval())
+    return _SAM
+
+
+def extract_from_scene(scene: Path, box: tuple[int, int, int, int], name: str, pose: str = "neutral",
+                       faces: str = "front", points: list | None = None, avoid: list | None = None) -> Path:
+    """Découpe un personnage d'une scène (cadre x0, y0, x1, y1 en pixels de l'image) : agrandi ×2 par IA,
+    masque SAM (Segment Anything, Apache 2.0) guidé par le cadre et des points sur le personnage."""
+    import torch
+    src = Image.open(scene).convert("RGB")
+    m = 12
+    x0, y0, x1, y1 = box
+    crop = src.crop((max(x0 - m, 0), max(y0 - m, 0), min(x1 + m, src.width), min(y1 + m, src.height)))
+    big = upscale4(crop)
+    big = big.resize((crop.width * 2, crop.height * 2), Image.LANCZOS)
+    k = 2
+    bx = [m * k, m * k, big.width - m * k, big.height - m * k]
+    proc, model = _sam()
+    kw = {"input_boxes": [[bx]]}
+    pts = [(p, 1) for p in points or []] + [(p, 0) for p in avoid or []]   # 1 = personnage, 0 = décor
+    if pts:      # points (x, y) dans l'image d'origine
+        kw["input_points"] = [[[[(px - x0 + m) * k, (py - y0 + m) * k] for (px, py), _ in pts]]]
+        kw["input_labels"] = [[[lab for _, lab in pts]]]
+    inputs = proc(big, return_tensors="pt", **kw)
+    with torch.no_grad():
+        out = model(**inputs, multimask_output=True)
+    masks = proc.image_processor.post_process_masks(out.pred_masks, inputs["original_sizes"],
+                                                    inputs["reshaped_input_sizes"])[0][0]
+    import cv2
+    from rembg import new_session, remove        # rembg : ce qui est « personnage » (exclut les décors)
+    if not hasattr(extract_from_scene, "session"):
+        extract_from_scene.session = new_session("isnet-general-use")
+    fg = np.array(remove(big, session=extract_from_scene.session, only_mask=True))
+    cands = [masks[i].numpy().astype(bool) for i in range(masks.shape[0])]
+    biggest = max(c.sum() for c in cands)
+    # masque SAM qui déborde le moins sur le décor, parmi ceux qui couvrent bien le personnage
+    best = min((c for c in cands if c.sum() >= 0.6 * biggest), key=lambda c: (fg[c] < 40).mean())
+    near = cv2.dilate(best.astype(np.uint8), np.ones((31, 31), np.uint8)).astype(bool)
+    mask = ((best | ((fg > 128) & near)) * 255).astype(np.uint8)   # + canne, pieds, détails fins
+    mask = cv2.GaussianBlur(cv2.erode(mask, np.ones((3, 3), np.uint8)), (3, 3), 0)
+    rgba = big.convert("RGBA")
+    rgba.putalpha(Image.fromarray(mask))
+    cut = _main_figure(rgba)
+    folder = ASSETS / "characters" / name.replace(" ", "_")
+    folder.mkdir(parents=True, exist_ok=True)
+    dest = folder / f"{pose}.png"
+    cut.save(dest)
+    meta_p = folder / "meta.json"
+    meta = json.loads(meta_p.read_text()) if meta_p.exists() else {}
+    mouth, mw = guess_mouth(cut)
+    meta[pose] = {"mouth": mouth, "mouth_w": mw, "faces": faces, "source": scene.name}
+    meta_p.write_text(json.dumps(meta, indent=2))
+    return dest

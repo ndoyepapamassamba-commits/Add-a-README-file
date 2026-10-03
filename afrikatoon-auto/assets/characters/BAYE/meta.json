@@ -1,0 +1,11 @@
+{
+  "neutral": {
+    "mouth": [
+      399,
+      212
+    ],
+    "mouth_w": 92,
+    "faces": "right",
+    "source": "famille_village.png"
+  }
+}

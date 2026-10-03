@@ -14,8 +14,8 @@ CHARACTERS = {
     },
     "BAYE": {
         "role": "Baye Ndiaye, le riche radin de mauvaise foi, jure qu'il n'a rien alors qu'il a tout",
-        "visual": "BAYE: plump African man in his 50s, immaculate shiny royal-blue boubou with gold "
-                  "embroidery, prayer beads, smug innocent face",
+        "visual": "BAYE: plump African man in his 60s, short white beard, embroidered white-and-gold kufi, "
+                  "immaculate shiny royal-blue boubou with gold embroidery, wooden cane, smug innocent face",
         "voice": "théâtral, serments exagérés (« Walay ! »), trahi par les détails",
     },
     "TANTIE AWA": {
@@ -110,8 +110,8 @@ CHARACTERS = {
     },
     "MAMAN NOUNOU": {
         "role": "la commerçante du marché, reine du marchandage, imbattable en mauvaise foi",
-        "visual": "MAMAN NOUNOU: strong West African market woman, blue-and-white wax dress, fanny pack full of cash, "
-                  "basket of tomatoes on her head, hands on hips",
+        "visual": "MAMAN NOUNOU: plump West African grandmother and market woman, red-and-yellow wax dress with "
+                  "matching red headwrap, green checkered apron, black fanny pack full of cash, plastic sandals",
         "voice": "crie les prix, « Pour toi c'est cadeau… 5 000 », négociation sans fin",
     },
     "GENERAL ZONGO": {

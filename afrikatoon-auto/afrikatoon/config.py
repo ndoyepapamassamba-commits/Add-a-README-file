@@ -9,6 +9,11 @@ try:
 except ImportError:
     pass
 
+# Jeton HuggingFace collé avec un « hf_ » en trop (hf_hf_…) : refusé par HuggingFace, on le corrige
+if os.getenv("HF_TOKEN", "").startswith("hf_hf_"):
+    os.environ["HF_TOKEN"] = os.environ["HF_TOKEN"][3:]
+HF_TOKEN = os.getenv("HF_TOKEN", "")
+
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", ROOT / "output"))
 STATE_DIR = Path(os.getenv("STATE_DIR", ROOT / "state"))

@@ -1,0 +1,191 @@
+{
+  "title": "La sauce de belle-maman",
+  "concept": "Maman Nounou goûte la sauce de sa belle-fille Coumba et la démolit devant tout le monde, en vantant sa propre cuisine « qu'on chante à la radio ». Coumba reste calme. Le petit Mamadou révèle que c'est la marmite de Maman Nounou elle-même, envoyée le matin.",
+  "characters": [
+    "COUMBA",
+    "PETIT MAMADOU",
+    "MAMAN NOUNOU"
+  ],
+  "setting": "village",
+  "theme": {
+    "conflict": "La belle-mère qui inspecte la cuisine / le ménage",
+    "twist": "L'arroseur arrosé (le piège se retourne)",
+    "setting": "village"
+  },
+  "scenes": [
+    {
+      "act": 1,
+      "beat": "hook",
+      "characters": [
+        "MAMAN NOUNOU",
+        "COUMBA"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. MAMAN NOUNOU: plump African grandmother in her 60s, red-and-yellow wax dress with matching red headwrap, green checkered apron and a fanny pack, with furious finger pointing. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with arms crossed, unimpressed raised eyebrow. A large cooking pot on a charcoal stove. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. MAMAN NOUNOU voice: Loud West African woman in her 50s, French with a strong Ivorian accent, powerful bossy voice, sharp rapid-fire scolding, sarcastic, market-woman energy, comedic. COUMBA voice: Young West African woman in her late 20s, French with a Senegalese accent, calm cold and elegant, slow ironic delivery, unimpressed, sharp. Dialogue in French with West African accent — MAMAN NOUNOU: \"Coumba ! C'est ça que tu donnes à mon fils ?! Trop salé !\" COUMBA: \"Bonjour Tantie. Ça va bien et vous ?\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "MAMAN NOUNOU",
+          "text": "Coumba ! C'est ça que tu donnes à mon fils ?! Trop salé !"
+        },
+        {
+          "speaker": "COUMBA",
+          "text": "Bonjour Maman. Ça va bien et vous ?"
+        }
+      ]
+    },
+    {
+      "act": 1,
+      "beat": "escalade",
+      "characters": [
+        "MAMAN NOUNOU",
+        "COUMBA"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. MAMAN NOUNOU: plump African grandmother in her 60s, red-and-yellow wax dress with matching red headwrap, green checkered apron and a fanny pack, with piercing judgmental side-eye. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with arms crossed, unimpressed raised eyebrow. A large cooking pot on a charcoal stove. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. MAMAN NOUNOU voice: Loud West African woman in her 50s, French with a strong Ivorian accent, powerful bossy voice, sharp rapid-fire scolding, sarcastic, market-woman energy, comedic. COUMBA voice: Young West African woman in her late 20s, French with a Senegalese accent, calm cold and elegant, slow ironic delivery, unimpressed, sharp. Dialogue in French with West African accent — MAMAN NOUNOU: \"Le fils de Fatou, sa femme cuisine comme au restaurant.\" COUMBA: \"Le fils de Fatou mange au restaurant, Tantie.\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "MAMAN NOUNOU",
+          "text": "Le fils de Fatou, sa femme cuisine comme au restaurant."
+        },
+        {
+          "speaker": "COUMBA",
+          "text": "Le fils de Fatou mange au restaurant, Maman."
+        }
+      ]
+    },
+    {
+      "act": 1,
+      "beat": "escalade",
+      "characters": [
+        "MAMAN NOUNOU",
+        "COUMBA"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. MAMAN NOUNOU: plump African grandmother in her 60s, red-and-yellow wax dress with matching red headwrap, green checkered apron and a fanny pack, with furious finger pointing. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with smug innocent shrug, palms open. A large cooking pot on a charcoal stove. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. MAMAN NOUNOU voice: Loud West African woman in her 50s, French with a strong Ivorian accent, powerful bossy voice, sharp rapid-fire scolding, sarcastic, market-woman energy, comedic. COUMBA voice: Young West African woman in her late 20s, French with a Senegalese accent, calm cold and elegant, slow ironic delivery, unimpressed, sharp. Dialogue in French with West African accent — MAMAN NOUNOU: \"Même un chat refuserait cette sauce !\" COUMBA: \"Le chat en a pris deux fois ce matin.\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "MAMAN NOUNOU",
+          "text": "Même un chat refuserait cette sauce !"
+        },
+        {
+          "speaker": "COUMBA",
+          "text": "Le chat en a pris deux fois ce matin."
+        }
+      ]
+    },
+    {
+      "act": 2,
+      "beat": "escalade",
+      "characters": [
+        "MAMAN NOUNOU",
+        "COUMBA"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. MAMAN NOUNOU: plump African grandmother in her 60s, red-and-yellow wax dress with matching red headwrap, green checkered apron and a fanny pack, with laughing so hard leaning backwards. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with arms crossed, unimpressed raised eyebrow.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. MAMAN NOUNOU voice: Loud West African woman in her 50s, French with a strong Ivorian accent, powerful bossy voice, sharp rapid-fire scolding, sarcastic, market-woman energy, comedic. COUMBA voice: Young West African woman in her late 20s, French with a Senegalese accent, calm cold and elegant, slow ironic delivery, unimpressed, sharp. Dialogue in French with West African accent — MAMAN NOUNOU: \"Ma sauce à moi, on la chante à la radio !\" COUMBA: \"Quelle radio, Tantie ?\" MAMAN NOUNOU: \"Radio… quartier.\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "MAMAN NOUNOU",
+          "text": "Ma sauce à moi, on la chante à la radio !"
+        },
+        {
+          "speaker": "COUMBA",
+          "text": "Quelle radio, Maman ?"
+        },
+        {
+          "speaker": "MAMAN NOUNOU",
+          "text": "Radio… quartier."
+        }
+      ]
+    },
+    {
+      "act": 2,
+      "beat": "escalade",
+      "characters": [
+        "MAMAN NOUNOU",
+        "COUMBA"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. MAMAN NOUNOU: plump African grandmother in her 60s, red-and-yellow wax dress with matching red headwrap, green checkered apron and a fanny pack, with furious finger pointing. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with piercing judgmental side-eye. A large cooking pot on a charcoal stove. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. MAMAN NOUNOU voice: Loud West African woman in her 50s, French with a strong Ivorian accent, powerful bossy voice, sharp rapid-fire scolding, sarcastic, market-woman energy, comedic. COUMBA voice: Young West African woman in her late 20s, French with a Senegalese accent, calm cold and elegant, slow ironic delivery, unimpressed, sharp. Dialogue in French with West African accent — MAMAN NOUNOU: \"Trop de piment, pas assez d'amour. On sent la paresse !\" COUMBA: \"Vous êtes sûre que c'est ma sauce ?\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "MAMAN NOUNOU",
+          "text": "Trop de piment, pas assez d'amour. On sent la paresse !"
+        },
+        {
+          "speaker": "COUMBA",
+          "text": "Vous êtes sûre que c'est ma sauce ?"
+        }
+      ]
+    },
+    {
+      "act": 2,
+      "beat": "escalade",
+      "characters": [
+        "MAMAN NOUNOU",
+        "COUMBA"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 2 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. MAMAN NOUNOU: plump African grandmother in her 60s, red-and-yellow wax dress with matching red headwrap, green checkered apron and a fanny pack, with smug innocent shrug, palms open. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with arms crossed, unimpressed raised eyebrow.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. MAMAN NOUNOU voice: Loud West African woman in her 50s, French with a strong Ivorian accent, powerful bossy voice, sharp rapid-fire scolding, sarcastic, market-woman energy, comedic. COUMBA voice: Young West African woman in her late 20s, French with a Senegalese accent, calm cold and elegant, slow ironic delivery, unimpressed, sharp. Dialogue in French with West African accent — MAMAN NOUNOU: \"Walay, je reconnais la mauvaise cuisine à cent mètres.\" COUMBA: \"D'accord. On demande à Mamadou.\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "MAMAN NOUNOU",
+          "text": "Walay, je reconnais la mauvaise cuisine à cent mètres."
+        },
+        {
+          "speaker": "COUMBA",
+          "text": "D'accord. On demande à Mamadou."
+        }
+      ]
+    },
+    {
+      "act": 3,
+      "beat": "twist",
+      "characters": [
+        "PETIT MAMADOU",
+        "COUMBA",
+        "MAMAN NOUNOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 3 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. PETIT MAMADOU: small African boy around 8 years old, oversized yellow football jersey, big curious eyes, cheeky smile, with cheeky smile, running in. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with smug innocent shrug, palms open. MAMAN NOUNOU: plump African grandmother in her 60s, red-and-yellow wax dress with matching red headwrap, green checkered apron and a fanny pack, with sweating nervously, forced smile. A large cooking pot with a name painted on it. Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Quick zoom on the pot. PETIT MAMADOU voice: Cheeky 8-year-old West African boy, high bright voice, French with a light Senegalese accent, innocent and mischievous, speaks clearly and proudly. Dialogue in French with West African accent — PETIT MAMADOU: \"Grand-mère ! C'est ta marmite ! Ton nom est écrit dessus !\". Comedic timing, expressive faces.",
+      "dialogue": [
+        {
+          "speaker": "PETIT MAMADOU",
+          "text": "Grand-mère ! C'est ta marmite ! Ton nom est écrit dessus !"
+        }
+      ]
+    },
+    {
+      "act": 3,
+      "beat": "chute",
+      "characters": [
+        "COUMBA",
+        "PETIT MAMADOU",
+        "MAMAN NOUNOU"
+      ],
+      "image_prompt": "3D animated cartoon, Pixar/DreamWorks style. 3 African characters in sandy courtyard with ochre mud-brick walls, laundry line, plastic chairs, Senegal. COUMBA: young African woman in her late 20s, elegant pink-and-purple wax dress, braided hair, raised eyebrow, unimpressed expression, with smug innocent shrug, palms open. PETIT MAMADOU: small African boy around 8 years old, oversized yellow football jersey, big curious eyes, cheeky smile, with laughing so hard leaning backwards. MAMAN NOUNOU: plump African grandmother in her 60s, red-and-yellow wax dress with matching red headwrap, green checkered apron and a fanny pack, with jaw dropped to the floor in cartoon shock.  Vibrant saturated colors, warm African sunlight, exaggerated comedic facial expressions, comedic tension, 9:16 vertical, high detail.",
+      "animation_prompt": "Characters act out the scene with big cartoon gestures. Slow push-in on the speaker. MAMAN NOUNOU voice: Loud West African woman in her 50s, French with a strong Ivorian accent, powerful bossy voice, sharp rapid-fire scolding, sarcastic, market-woman energy, comedic. Dialogue in French with West African accent — MAMAN NOUNOU: \"Bon… C'est l'eau du robinet ici qui est trop salée.\". Comedic timing, expressive faces. freeze on MAMAN NOUNOU's shocked face looking directly at camera",
+      "dialogue": [
+        {
+          "speaker": "MAMAN NOUNOU",
+          "text": "Bon… C'est l'eau du robinet ici qui est trop salée."
+        }
+      ]
+    }
+  ],
+  "hook_text": "Elle a critiqué sa propre sauce",
+  "caption": "Elle a critiqué SA PROPRE sauce 💀 Ta belle-mère est comme Maman Nounou ? Raconte en commentaire 👇",
+  "hashtags": [
+    "#drole",
+    "#comedy",
+    "#humourafricain",
+    "#pourtoi",
+    "#bellemere",
+    "#cuisineafricaine",
+    "#famille"
+  ],
+  "score": {
+    "hook": 9,
+    "universalite": 9,
+    "reproductibilite": 8
+  }
+}

@@ -16,7 +16,7 @@ REFS_DIR = config.STATE_DIR / "voice_refs"
 
 # Exagération des émotions par personnage (0.5 = neutre, 1.0+ = très théâtral)
 EXAGGERATION = {"BAYE": 0.8, "MODOU": 0.9, "TANTIE AWA": 1.0, "PETIT MAMADOU": 0.7,
-                "COUMBA": 0.5, "TONTON DIENG": 1.0}
+                "COUMBA": 0.5, "TONTON DIENG": 1.0, "MAMAN NOUNOU": 1.0}
 
 
 def available() -> bool:

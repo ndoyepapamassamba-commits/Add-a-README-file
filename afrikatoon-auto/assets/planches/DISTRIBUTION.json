@@ -1,0 +1,18 @@
+{
+  "rows": [
+    ["TONTON DIENG", "MAITRE KONE", "DOCTEUR SYLLA", "FATOU"],
+    ["KOFFI", "GRAND-PERE NDIAYE", "MAMIE BINTOU", "ALIOU", "CHEF TRAORE"],
+    ["AMINATA", "BOUBACAR", "MAMAN NOUNOU", "GENERAL ZONGO", "TATA PRISCA"],
+    ["AGENT DOUMBIA", "MECANO ISSA", "SOEUR AWA", "TIEKORO", "PETIT MOUSSA", "PETITE AYA"],
+    ["MAMA DEDE", "IMAM KARIM", "MONSIEUR DIARRA", "MAITRE COULIBALY", "AGENT BAKARY", "TANTIE AWA SARR"],
+    ["PROFESSEUR SAMBA", "MADAME COUMBA", "DJECKY", "PETIT IBRAHIMA", "PETITE KHADIJA", "AGENT GORA"]
+  ],
+  "split": {"AGENT GORA": 3},
+  "cells": {
+    "DOCTEUR SYLLA": [[2, 0], [2, 1], [2, 2]],
+    "FATOU": [[2, 3], [2, 4], [3, 0]],
+    "ADJOUA": [[3, 1], [3, 2], [3, 3], [3, 4]]
+  },
+  "skip": ["KOFFI", "MAMAN NOUNOU"],
+  "_note": "Planche de l'utilisateur (3 octobre 2026). Sur la planche, la femme en wax vert (FATOU d'après la bible) déborde sur le panneau DOCTEUR SYLLA, et la jeune femme en rose du panneau FATOU est rangée sous ADJOUA. KOFFI et MAMAN NOUNOU ont déjà de meilleures images en pied."
+}

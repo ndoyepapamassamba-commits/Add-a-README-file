@@ -7,6 +7,10 @@
     python run.py upload output/<dossier>   # (re)publier une vidéo déjà montée
     python run.py lot kits/2026-10-03/*.json      # plusieurs vidéos 3D d'affilée (sans API)
     python run.py monter mes_clips_grok/ --kit kit.json   # assembler vos clips Grok (gratuit)
+    python run.py run --kit kits/…json --mock wan --no-upload   # vraie animation IA (Wan 2.2, gratuit)
+    python run.py generer perso "NOM" "description"           # nouveau personnage (planche 5 expressions)
+    python run.py generer decor port "port de pêche, pirogues"  # nouveau décor vertical
+    python run.py generer 2d MAMAN_NOUNOU                       # version dessin animé 2D d'un personnage
     python run.py voix creer BAYE           # 3 voix inédites proposées d'après la description
     python run.py voix garder BAYE <id>     # garder la meilleure
     python run.py voix utiliser BAYE <voice_id>   # ou une voix de la Voice Library ElevenLabs
@@ -86,6 +90,13 @@ def cmd_run(args):
     for i, sc in enumerate(kit["scenes"]):
         clip = work / f"clip_{i:02d}.mp4"
         if args.mock:
+            if args.mock == "wan":  # vraie animation IA : un plan Wan 2.2 par réplique
+                from afrikatoon import wananim
+                wananim.render_clip(sc, i, clip, setting=kit.get("setting", "village"),
+                                    is_last=i == len(kit["scenes"]) - 1, title=kit["title"],
+                                    scenes=kit["scenes"])
+                clips.append(clip)
+                continue
             if args.mock == "3d":
                 from afrikatoon import animatic3d as animatic
             elif args.mock == "photo":
@@ -191,6 +202,18 @@ def cmd_assets(args):
     print("Planche de contrôle :", assets_tool.contact_sheet(config.OUTPUT_DIR / "planche_assets.png"))
 
 
+def cmd_generer(args):
+    from afrikatoon import generate
+    if args.quoi == "perso":
+        for f in generate.character(args.nom, args.description):
+            print(" ", f)
+    elif args.quoi == "decor":
+        print(" ", generate.decor(args.nom, args.description))
+    else:
+        for f in generate.to_2d(args.nom):
+            print(" ", f)
+
+
 def cmd_voix(args):
     if args.action == "creer":
         for p in voices.design(args.cible):
@@ -227,7 +250,7 @@ def main(argv=None):
                         help="sketch (histoire en 3 actes) ou blagues (compilation « la blague du jour »)")
         sp.set_defaults(func=func)
         if name == "run":
-            sp.add_argument("--mock", nargs="?", const="2d", choices=["2d", "3d", "brouillon", "photo"],
+            sp.add_argument("--mock", nargs="?", const="2d", choices=["2d", "3d", "brouillon", "photo", "wan"],
                             help="Vidéo sans API : 2d (dessin propre, ~5 min), 3d (Blender), brouillon (test)")
             sp.add_argument("--no-upload", action="store_true", help="Ne pas publier sur TikTok")
             sp.add_argument("--no-subs", action="store_true", help="Sans sous-titres incrustés")
@@ -238,7 +261,8 @@ def main(argv=None):
     up.set_defaults(func=cmd_upload)
     lo = sub.add_parser("lot", help="Fabriquer plusieurs vidéos d'affilée (kits déjà écrits)")
     lo.add_argument("kits", nargs="+")
-    lo.add_argument("--mock", nargs="?", const="photo", default="photo", choices=["2d", "3d", "brouillon", "photo"])
+    lo.add_argument("--mock", nargs="?", const="photo", default="photo",
+                    choices=["2d", "3d", "brouillon", "photo", "wan"])
     lo.set_defaults(func=cmd_lot)
     mo = sub.add_parser("monter", help="Assembler vos clips (ex. Grok) en une vidéo > 1 min")
     mo.add_argument("dossier", help="Dossier contenant les clips, dans l'ordre alphabétique (01.mp4, 02.mp4…)")
@@ -251,6 +275,11 @@ def main(argv=None):
     asp.add_argument("--perso", help="Nom du personnage si les fichiers ne le contiennent pas")
     asp.add_argument("--regard", default="right", choices=["left", "right", "front"])
     asp.set_defaults(func=cmd_assets)
+    ge = sub.add_parser("generer", help="Créer un personnage, un décor, ou la version 2D d'un personnage")
+    ge.add_argument("quoi", choices=["perso", "decor", "2d"])
+    ge.add_argument("nom")
+    ge.add_argument("description", nargs="?", default="")
+    ge.set_defaults(func=cmd_generer)
     vx = sub.add_parser("voix", help="Voix clonées des personnages (ElevenLabs)")
     vx.add_argument("action", choices=["creer", "garder", "utiliser", "auto", "extraire", "cloner", "tester"])
     vx.add_argument("cible", help="extraire : chemin de la vidéo ; cloner/tester : nom du personnage")
