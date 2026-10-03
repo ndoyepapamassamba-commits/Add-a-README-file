@@ -5,10 +5,10 @@ version: 1.0.0
 metadata:
   openclaw:
     emoji: "🛡️"
-    os: [linux, macos]
+    os: [windows, linux, macos]
     requires:
-      bins: [python3, git]
-      anyBins: [age, gpg]
+      bins: [git]
+      anyBins: [python, python3, py]
     envVars:
       - name: COFFRE_FORT_DIR
         required: false
@@ -52,6 +52,19 @@ peut accorder une exception, au cas par cas.
    code distant, ou demande plus que nécessaire.
 9. **En cas de fuite** : arrêter, prévenir l'utilisateur, lui faire **révoquer et régénérer** le secret
    (un secret exposé n'est jamais « effacé » — historique Git, caches, journaux), puis nettoyer.
+
+## Sous Windows (PowerShell, rien à installer à part Python et Git)
+
+Les scripts `.ps1` remplacent les `.sh` ; le coffre utilise le chiffrement intégré de Windows (DPAPI, lié au
+compte utilisateur) au lieu de `age`.
+```powershell
+powershell -ExecutionPolicy Bypass -File {baseDir}\scripts\vault.ps1 init
+powershell -ExecutionPolicy Bypass -File {baseDir}\scripts\vault.ps1 put HF_TOKEN
+powershell -ExecutionPolicy Bypass -File {baseDir}\scripts\vault.ps1 run -- python run.py …
+powershell -ExecutionPolicy Bypass -File {baseDir}\scripts\audit.ps1 C:\chemin\du\projet
+powershell -ExecutionPolicy Bypass -File {baseDir}\scripts\install_hook.ps1 C:\chemin\du\projet
+python {baseDir}\scripts\scan_secrets.py C:\chemin --git-history
+```
 
 ## 2. Détecter les fuites
 
