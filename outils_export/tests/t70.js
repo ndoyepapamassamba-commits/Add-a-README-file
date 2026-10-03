@@ -1,0 +1,14 @@
+const {chromium}=require(process.env.PLAYWRIGHT||'/opt/node22/lib/node_modules/playwright'); const fs=require('fs'); const D=__dirname; const OUT=require('path').resolve(process.env.OUT||'rx5'); fs.mkdirSync(OUT,{recursive:true});
+(async()=>{ const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:1600,height:1000},acceptDownloads:true}); const p=await ctx.newPage();
+ p.on('pageerror',e=>console.log('ERR',e.message.slice(0,300))); p.on('console',m=>{ if(/JEV auto|RI|visuels|Office|scrub/.test(m.text())) console.log('LOG',m.text().slice(0,200)); });
+ await require('./tload.js')(p,fs,D,'apex36.html');
+ await p.waitForTimeout(4000);
+ console.log('JEV auto:',await p.evaluate(()=>JEV.res?('ok '+JEV.res.per+' arrêtés, key '+JEV.key):'absent'));
+ const ts=fs.readFileSync(process.argv[2]).toString('base64');
+ await p.evaluate(async b64=>{ const s=atob(b64),u=new Uint8Array(s.length); for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i); await tsImport(new File([u],'retour.xlsx')); },ts);
+ const dl=async(fn,arg)=>{ const [d]=await Promise.all([p.waitForEvent('download',{timeout:240000}),p.evaluate(fn,arg)]); const n=OUT+'/'+d.suggestedFilename(); await d.saveAs(n); console.log('DL',d.suggestedFilename(),fs.statSync(n).size); };
+ await dl(()=>riExport('full')); await dl(()=>riDoc('ppt')); await dl(()=>riDoc('doc')); await dl(()=>dcExportExcel()); await dl(()=>crmExportExcel());
+ const html=await p.evaluate(async()=>{ const m=await riModel(); return expScrubTxt(riHtml(m,false)); }); fs.writeFileSync(OUT+'/ri.html',html);
+ const q=await ctx.newPage(); await q.setContent(html,{waitUntil:'load'}); await q.pdf({path:OUT+'/ECOBANK_Credit_Risk_Intelligence.pdf',format:'A4',landscape:true,printBackground:true}); console.log('PDF ok');
+ console.log('Agent log:',await p.evaluate(()=>EXPORT_AGENT.log.slice(-6).map(e=>e.type+' '+e.name+' ['+e.steps.join(', ')+'] '+(e.warn.join('; ')||'conforme')).join('\n')));
+ await b.close(); })();

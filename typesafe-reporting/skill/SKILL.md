@@ -144,7 +144,7 @@ Niveaux : contrepartie, segment, portefeuille, scénario / stress.
   4. détail ;
   5. annotations en italique gris.
 - Callouts « composants d'interface » :
-  - ⚠ CONCENTRATION ALERT, ✓ POSITIVE MOVEMENT, ✦ JEV OUTLOOK ;
+  - ⚠ CONCENTRATION ALERT, ✓ POSITIVE MOVEMENT, ✦ RISK OUTLOOK (JEV dans le code, renommé à l'export) ;
   - bordure supérieure épaisse de couleur, cadre fin, ombre.
 - Le rouge reste rare : seuls les CRITICAL ont le badge rouge ; WATCH est en bleu pâle.
 - TypeSafe, capacités avancées en un seul appel par dossier :
@@ -153,3 +153,39 @@ Niveaux : contrepartie, segment, portefeuille, scénario / stress.
   - auto-cohérence (Choice + Noul croisés, divergence → revue analyste) ;
   - cohérence du plan (Noul).
 - Couche `pmBlue` appliquée à tout export Excel : palette Blue Premium et feuille TypeSafe.
+
+## 11. APEX 38 — noms internes masqués, ultra 3D, couche sémantique avancée, agent EXPORT
+- **Noms internes** : un export ne cite jamais TypeSafe, JEV ni jev-latest.
+  - Correspondances : TypeSafe → « Analyse sémantique » (`_SEMANTIQUE`), JEV → « RISK OUTLOOK » / « Risk Outlook », jev-latest → « moteur sémantique ».
+  - Le renommage s'applique à la sortie (`expScrub` / `expScrubTxt`). Les règles spécifiques passent d'abord (« JEV OUTLOOK », « (JEV) »).
+  - Il ne touche jamais aux `.rels`, à `[Content_Types].xml` ni aux images base64. Les parties internes portent des noms neutres (`rIdSemx`, `sheetSemx.xml`).
+- **Ultra 3D** :
+  - graphiques natifs 3D (`bar3DChart`, `view3D`, biseau `a:sp3d`, ombre `a:outerShdw`, bulles 3D) ;
+  - texte ombré (`<shadow/>`) sur les KPI et le hero ;
+  - badges en dégradé avec liseré ;
+  - visuels Blender (`blender_export_art.py` : hero, bandeau, emblème, vignette) dans le hero des exports, la navigation, Word, PDF, PowerPoint et l'interface de l'app (`app3d.css`).
+- **Couche sémantique avancée**, selon les données présentes :
+  - **stress narratif**, 8 scénarios macro :
+    - exposition jugée en Noul (≥ 0,60), c'est-à-dire une vulnérabilité, pas la cause actuelle ;
+    - encours, impayés et entrées en douteux attendues (PD × encours, stress ×2 sur les cotes, EXPERT) calculés par le code ;
+    - restitution : section RISK, insight 09, Word/PDF, diapositive, feuille Impayés ;
+  - **bénéficiaires potentiellement liés** :
+    - le code repère les paires sur des mots non génériques ;
+    - l'analyse donne un lien en Score (0 à 2) et « même famille » en Noul ;
+    - « Lien probable » seulement si les deux concordent ;
+  - **phrase de lecture du Comité** (Choice) et **importance des constats** (Score) : ordre des insights et badge « ◆ LECTURE DU COMITÉ » ;
+  - **action recommandée** (catalogue fermé du code), **famille de motif** avec repli, **stabilité** (3 tirages avec sel), **contrôle d'ordre** des options, **données sensibles**, **date par composants**.
+- **Anonymisation** : alias stables, noms masqués dans le commentaire, le plan et les constats, paires de noms retirées.
+- **Apprentissage supervisé** (`apprentissage.py`) :
+  - les analystes valident ou corrigent dans `a_valider.xlsx` ;
+  - les réponses validées deviennent des exemples joints aux consignes (2 par option, 12 au plus, noms masqués) ;
+  - seuils recalibrés dès 10 cas (90 % d'accord, plancher 0,40) ;
+  - la version de la mémoire entre dans la clé du cache.
+- **Agent EXPORT** : `.claude/agents/export.md`, avec son outillage `outils_export/` (construction reproductible, tests, jeux d'essai, validateur) et son journal `docs/EXPORT_AGENT_JOURNAL.md`.
+- **Contrôles avant livraison** :
+  - syntaxe de tous les scripts ;
+  - validateur à 0 erreur (xlsx, docx) ;
+  - rendu LibreOffice relu ;
+  - aucun nom interne ;
+  - journal de l'agent embarqué « conforme ».
+- **Sources de référence** dans ce dossier : `ri_writer.js` (rxBook), `ri_engine.js` (riModel et feuilles), `ri_docs.js` (Word, PDF, PowerPoint, agent embarqué, renommage), `pm_blue.js` (Blue Premium des salles), `jev_adv.js` (analyses avancées) et `app3d.css`. Ce sont les versions générées par la chaîne `outils_export/build`.

@@ -86,7 +86,7 @@ async function riModel(){
   eq('Tranches : somme des encours par tranche = encours total',K.eb.reduce((a,b)=>a+b,0),K.enc,2);
   eq('Watchlist : encours ≤ encours total',Math.min(watch.reduce((s,o)=>s+o.enc,0),K.enc),watch.reduce((s,o)=>s+o.enc,0),1);
   ctl.push({l:'Clients en double',ok:new Set(cl.map(o=>o.clc)).size===cl.length,a:cl.length,b:new Set(cl.map(o=>o.clc)).size});
-  ctl.push({l:'Valeurs non numériques (NaN / Infini)',ok:cl.every(o=>[o.enc,o.pdo,o.ecl,o.dj].every(isFinite)),a:0,b:0});
+  ctl.push({l:'Valeurs non numériques (non-nombres, infinis)',ok:cl.every(o=>[o.enc,o.pdo,o.ecl,o.dj].every(isFinite)),a:0,b:0});
   ctl.push({l:'Provisions de l\'historique sur base IFRS 9 (comparables)',ok:months.every(x=>x.eclOk),a:months.filter(x=>x.eclOk).length,b:months.length});
   ctl.push({l:'JEV : PD avec provenance pour chaque client de la watchlist',ok:true,a:0,b:0,jev:1});
   ctl.push({l:'Historique disponible pour les tendances',ok:months.length>=2,a:months.length,b:2});
@@ -101,8 +101,17 @@ async function riModel(){
   const top5=top.slice(0,5).reduce((s,o)=>s+o.enc,0)/(K.enc||1), top5P=P?[...P.cli].sort((a,b)=>b.enc-a.enc).slice(0,5).reduce((s,o)=>s+o.enc,0)/(KP.enc||1):null;
   const tsL=(typeof TSX!=='undefined'&&TSX.n)?Object.values(TSX.byRef):[];
   { const c=ctl.find(x=>x.jev); const nw=watch.filter(o=>o.pd12!=null).length; c.ok=!J||nw===watch.length; c.a=nw; c.b=watch.length; if(!J){ c.l='JEV : non calibré (aucune archive d\'arrêtés)'; } }
-  const ins=riInsights({K,KP,wf,flow,t10,cl,up,nPrev,watch,cured,seg,off,risky,M,P,top10,J,tsL});
-  return {date:curD,label:fmtDate(curD),prevLabel:P?P.label:null,file:cur.file,months,M,P,K,KP,cl,watch,cured,risky,drivers,wf,mx,flow,up,down,nPrev,seg,off,sec,prod,top10,t10,top5,top5P,hhi,rm,ctl,ins,lostCli,tsL,
+  const SCN={retard_paiements_etat:'Paiements de l\'État',campagne_agricole:'Campagne agricole',choc_hydrocarbures:'Hydrocarbures',hausse_taux:'Taux BCEAO',choc_sanitaire:'Crise sanitaire',perte_donneur_ordre:'Perte d\'un donneur d\'ordre',prix_importation:'Prix à l\'importation',gouvernance_fraude:'Gouvernance / fraude'};
+  const odds=(p,f)=>typeof jevOdds==='function'?jevOdds(p,f):p;
+  const scen=Object.entries(SCN).map(([k,l])=>{ const ex=cl.filter(o=>o.ts&&o.ts.scen&&(o.ts.scen[k]||0)>=0.6), base=ex.reduce((s2,o)=>s2+(o.pd12!=null?o.pd12:0)*o.enc,0), str=ex.reduce((s2,o)=>s2+(o.pd12!=null?odds(o.pd12,2):0)*o.enc,0);
+    return {k,l,n:ex.length,enc:ex.reduce((s2,o)=>s2+o.enc,0),pdo:ex.reduce((s2,o)=>s2+o.pdo,0),base,str,top:[...ex].sort((a,b)=>b.enc-a.enc).slice(0,4).map(o=>o.rel)}; }).filter(x=>x.n).sort((a,b)=>b.enc-a.enc);
+  const PF=(typeof TSX!=='undefined'&&TSX.pf)?TSX.pf:null, paires=[]; let lecture=null;
+  if(PF){ Object.keys(PF).filter(k=>/^groupe_/.test(k)).forEach(k=>{ const a=PF[k], id=k.slice(7), nm=PF['meme_nom_'+id], ab=String(a.lib||'').split(' ↔ '), ca=cl.find(o=>o.rel===ab[0]), cb=cl.find(o=>o.rel===ab[1]);
+      paires.push({a:ab[0]||'',b:ab[1]||'',score:+a.rep,conf:a.conf,pNom:nm?+nm.rep:null,enc:(ca?ca.enc:0)+(cb?cb.enc:0),pdo:(ca?ca.pdo:0)+(cb?cb.pdo:0)}); });
+    paires.sort((x,y)=>y.score-x.score); if(PF.phrase_lecture&&(PF.phrase_lecture.conf||0)>=0.55) lecture=String(PF.phrase_lecture.rep).padStart(2,'0'); }
+  const ins=riInsights({K,KP,wf,flow,t10,cl,up,nPrev,watch,cured,seg,off,risky,M,P,top10,J,tsL,scen});
+  if(PF){ ins.forEach(x=>{ const a=PF['importance_'+x.n]; if(a){ x.imp=+a.rep; x.impConf=a.conf; } x.lecture=x.n===lecture; }); ins.sort((a,b)=>(b.lecture?1:0)-(a.lecture?1:0)||(b.imp??-1)-(a.imp??-1)); }
+  return {date:curD,label:fmtDate(curD),prevLabel:P?P.label:null,file:cur.file,months,M,P,K,KP,cl,watch,cured,risky,drivers,wf,mx,flow,up,down,nPrev,seg,off,sec,prod,top10,t10,top5,top5P,hhi,rm,ctl,ins,lostCli,tsL,scen,paires,lecture,
     jev:J,ts:(typeof TSX!=='undefined')?TSX:null,perimetre:'Portefeuille Ecobank Sénégal · '+fmtN(cl.length)+' clients · '+fmtN(S.rows.length)+' lignes ACTE 7'}; }
 
 /* ---------- insights calculés (aucune phrase générique) ---------- */
@@ -119,6 +128,10 @@ function riInsights(m){ const I=[], K=m.K, KP=m.KP;
   I.push({n:'06',t:'RÉGULARISATIONS',big:fmtN(m.cured.length)+' dossiers',c:RP.ok,p:m.P?`${fmtN(m.cured.length)} clients en impayé au ${m.P.label} sont revenus à jour, soit ${riMd(-m.wf.cure)} XOF d'impayés résorbés.`:'Les régularisations seront mesurées dès qu\'un arrêté antérieur sera en mémoire.'});
   if(m.J){ const p=m.J.ptf.pd[12], sv=m.J.scen[2];
     I.push({n:'07',t:'PROSPECTIF · JEV',big:'PD 12M = '+riPct(p.v),c:RP.bright,p:`Probabilité qu'un client sain aujourd'hui devienne douteux sous 12 mois (${p.prov.source}, N = ${fmtN(p.prov.n)}, ${p.prov.periodes} mois, confiance ${p.prov.confiance}). Scénario sévère : ${riMd(sv.esp)} XOF d'entrées en douteux attendues (SIMULATED).${p.prov.avertissement?' Estimation indicative : historique insuffisant pour une calibration robuste.':''}`}); }
+  if(m.scen&&m.scen.length){ const s0=m.scen[0];
+    I.push({n:'09',t:'STRESS NARRATIF',big:fmtN(s0.n)+' dossiers · '+s0.l,c:RP.alert,p:`${fmtN(s0.n)} dossiers sont directement exposés au scénario « ${s0.l} » pour ${riMd(s0.enc)} XOF d'encours (exposition jugée par l'analyse sémantique). Sous stress ×2 (EXPERT), les entrées en douteux attendues passent de ${riMd(s0.base)} à ${riMd(s0.str)} XOF (calcul Risk Outlook).${m.scen.length>1?' Autres scénarios : '+m.scen.slice(1,4).map(x=>x.l+' ('+x.n+')').join(', ')+'.':''}`}); }
+  if(m.J&&m.J.adv){ const A=m.J.adv;
+    I.push({n:'10',t:'ANALYSES AVANCÉES',big:'Guérison 31-60 j = '+riPct(A.cure[0]),c:RP.cyan,p:`Un client sain met en moyenne ${A.ttd?A.ttd[0].toFixed(0):'—'} mois avant le défaut (MARKOV). Probabilité de guérison : ${riPct(A.cure[0])} depuis 31-60 j, ${riPct(A.cure[1])} depuis 61-90 j. PD 12M : IC 90 % ${riPct(A.boot.lo)} – ${riPct(A.boot.hi)} (SIMULATED). ${A.back?'Backtest : '+A.back.exp.toFixed(1).replace('.',',')+' entrées prévues contre '+A.back.obs+' observées.':''} Un facteur ×${A.rev.factor.toFixed(2).replace('.',',')} sur les dégradations double la PD (STRESS).`}); }
   if(m.tsL&&m.tsL.length){ const T=m.tsL, rv=T.filter(t=>t.statut==='Revue analyste').length, ac=T.filter(t=>t.revue&&t.revue.some(x=>/auto-coh/.test(x))).length, tard=T.filter(t=>t.position==='Après la bascule').length;
     I.push({n:'08',t:'TYPESAFE · RETOURS',big:fmtN(T.length)+' commentaires lus',c:RP.cyan,p:`${fmtN(rv)} dossiers en revue analyste (confiance faible ou incohérence), dont ${fmtN(ac)} par contrôle d'auto-cohérence ; ${fmtN(tard)} promesses tombent après la date de bascule. TypeSafe ne produit aucun chiffre.`}); }
   return I; }
@@ -135,34 +148,37 @@ function riHeader(sh,m,key,nav,W,title,sub){ const L=W-1; sh._sec=0;
   sh.box(0,L-5,0,L,{rich:[['INTERNAL USE ONLY  ·  ',RI_F({sz:7.5,color:'8EA6D6'})],[RI_V,RI_F({sz:7.5,color:RP.gold,b:1})]]},{fill:{c:RP.deep},al:{h:'right'}});
   const split=Math.round(W*0.64), d=m.date, long=d.getDate()+' '+RI_MOIS[d.getMonth()]+' '+d.getFullYear();
   sh.h(1,10).h(2,16).h(3,38).h(4,20).h(5,15);
-  sh.box(1,0,5,split-1,{rich:[['E C O B A N K   S É N É G A L\n',RI_F({b:1,sz:8.5,color:RP.gold})],[(title||'CREDIT RISK INTELLIGENCE')+'\n',RI_F({b:1,sz:26,color:RP.white})],[(sub||'Portfolio Monitoring & Early Warning'),RI_F({sz:10.5,color:'C7D7F5'})]]},{fill:{g:[RP.deep,RP.eb],deg:0},al:{h:'left',v:'center',wrap:1,indent:2}});
+  sh.box(1,0,5,split-1,{rich:[['E C O B A N K   S É N É G A L\n',RI_F({b:1,sz:8.5,color:RP.gold})],[(title||'CREDIT RISK INTELLIGENCE')+'\n',RI_F({b:1,sz:26,color:RP.white,sh:1})],[(sub||'Portfolio Monitoring & Early Warning'),RI_F({sz:10.5,color:'C7D7F5'})],['\n'+long+'   ·   PORTFOLIO MONITORING',RI_F({b:1,sz:9,color:RP.gold})],['\n'+m.perimetre,RI_F({sz:7.5,color:'BFD3FF'})]]},{fill:{g:[RP.deep,RP.eb],deg:0},al:{h:'left',v:'center',wrap:1,indent:2}});
   const hr={fill:{g:[RP.eb,RP.bright],deg:0}};
   sh.box(1,split,1,L,'',hr); sh.box(2,split,2,L,'REPORTING DATE',Object.assign({},hr,{font:RI_F({b:1,sz:7.5,color:RP.gold}),al:{h:'left',v:'bottom',indent:2}}));
   sh.box(3,split,3,L,long,Object.assign({},hr,{font:RI_F({b:1,sz:18,color:RP.white}),al:{h:'left',v:'center',indent:2}}));
   sh.box(4,split,4,L,'PORTFOLIO MONITORING',Object.assign({},hr,{font:RI_F({b:1,sz:8.5,color:'E0EAFF'}),al:{h:'left',v:'center',indent:2}}));
   sh.box(5,split,5,L,m.perimetre,Object.assign({},hr,{font:RI_F({sz:7.5,color:'BFD3FF'}),al:{h:'left',v:'top',indent:2}}));
+  if(sh.B.media.tile){ const px=c=>Math.round(((sh.cols[c]||8.43)*7)+5), wpx=[...Array(W-split)].reduce((a,_,i)=>a+px(split+i),0), hpx=[1,2,3,4,5].reduce((a,r)=>a+(sh.rows.get(r)||15)*96/72,0), A=wpx/hpx, I=3;
+    const crop=A>I?{t:Math.round((1-I/A)/2*100000),b:Math.round((1-I/A)/2*100000)}:{l:Math.round((1-A/I)/2*100000),r:Math.round((1-A/I)/2*100000)};
+    sh.image('tile',1,split,6,W,{crop,name:'Visuel 3D ECOBANK',alt:'Skyline de données en verre bleu et anneau or (rendu Blender)'}); }
   sh.h(6,2.5).blk(6,0,6,L,{fill:{g:[RP.gold,'F3E7BF'],deg:0}});
   // navigation applicative (icône + nom, onglet actif en surbrillance)
-  sh.h(7,23); const edges=nav.map((_,i)=>Math.round(i*W/nav.length)).concat([W]); nav.forEach((k,i)=>{ const c0=edges[i], c1=Math.max(c0,edges[i+1]-1), on=k===key, name=RI_SHEETS[k], fs=nav.length>6?7:8.5;
+  sh.h(7,23); const cw=c=>sh.cols[c]||5.4, tot=[...Array(W)].reduce((a,_,c)=>a+cw(c),0), edges=[0]; { let acc=0,c=0; for(let i=1;i<nav.length;i++){ const tg=i*tot/nav.length; while(c<W&&acc+cw(c)/2<tg){ acc+=cw(c); c++; } edges.push(Math.max(edges[edges.length-1]+1,c)); } edges.push(W); } nav.forEach((k,i)=>{ const c0=edges[i], c1=Math.max(c0,edges[i+1]-1), on=k===key, name=RI_SHEETS[k], fs=nav.length>6?7:8.5;
     sh.box(7,c0,7,c1,{rich:[[RI_ICO[k]+'  ',RI_F({sz:fs,color:on?RP.gold:'7C93C9'})],[name,RI_F({b:1,sz:fs,color:on?RP.white:RP.eb})]]},on?{fill:{g:[RP.eb,RP.bright],deg:90},al:{h:'center'},bd:{bottom:['thick',RP.gold],right:['thin',RP.white]}}
       :{fill:{c:RP.light},al:{h:'center'},bd:{bottom:['thin','C7D7F5'],right:['thin',RP.white]}}); if(!on) sh.link(7,c0,name,name); });
   // bandeau de statut (puces) : santé, JEV, TypeSafe, contrôles
   const ok=m.ctl.filter(c=>c.ok).length, crit=m.watch.filter(o=>o.lvl==='CRITICAL').length, dp=m.KP?(m.K.pdo-m.KP.pdo)/(m.KP.pdo||1):0;
   const health=crit>0&&dp>0?['VIGILANCE',RP.alert]:crit>0||dp>0.05?['SOUS SURVEILLANCE',RP.warn]:['STABLE',RP.ok];
-  const chips=[['PORTFOLIO STATUS',health[0],health[1]],['JEV · PD 12M',m.jev?riPct(m.jev.ptf.pd[12].v)+' · '+m.jev.ptf.pd[12].prov.source:'non calibré',m.jev?(m.jev.ptf.pd[12].prov.avertissement?RP.warn:RP.bright):RP.neu],
-    ['TYPESAFE',m.tsL&&m.tsL.length?fmtN(m.tsL.length)+' retours · '+fmtN(m.tsL.filter(t=>t.statut==='Revue analyste').length)+' en revue':'en attente d\'enrichissement',m.tsL&&m.tsL.length?RP.cyan:RP.neu],['CONTRÔLES',ok+' / '+m.ctl.length+' conformes',ok===m.ctl.length?RP.ok:RP.crit]];
+  const chips=[['PORTFOLIO STATUS',health[0],health[1]],['OUTLOOK · PD 12M',m.jev?riPct(m.jev.ptf.pd[12].v)+' · '+m.jev.ptf.pd[12].prov.source:'non calibré',m.jev?(m.jev.ptf.pd[12].prov.avertissement?RP.warn:RP.bright):RP.neu],
+    ['SÉMANTIQUE',m.tsL&&m.tsL.length?fmtN(m.tsL.length)+' lus · '+fmtN(m.tsL.filter(t=>t.statut==='Revue analyste').length)+' en revue':'en attente d\'enrichissement',m.tsL&&m.tsL.length?RP.cyan:RP.neu],['CONTRÔLES',ok+' / '+m.ctl.length+' conformes',ok===m.ctl.length?RP.ok:RP.crit]];
   sh.h(8,5).h(9,19); const ce=chips.map((_,i)=>Math.round(i*W/chips.length)).concat([W]);
-  chips.forEach(([l,v,c],i)=>{ const c0=ce[i], c1=ce[i+1]-1; sh.box(9,c0,9,c1,{rich:[['● ',RI_F({sz:9,color:c})],[l+'  ',RI_F({b:1,sz:7,color:RP.neu})],[v,RI_F({b:1,sz:8.5,color:RP.deep})]]},{fill:{c:RP.white},al:{h:'left',indent:1},bd:{top:['thin','DBE6F7'],bottom:['thin','DBE6F7'],left:i?['thin',RP.white]:['thin','DBE6F7'],right:['thin','DBE6F7']}}); });
+  chips.forEach(([l,v,c],i)=>{ const c0=ce[i], c1=ce[i+1]-1; sh.box(9,c0,9,c1,{rich:[['● ',RI_F({sz:9,color:c})],[l+'  ',RI_F({b:1,sz:7,color:RP.neu})],[v,RI_F({b:1,sz:8.5,color:RP.deep})]]},{fill:{g:['FFFFFF',RP.pale],deg:90},al:{h:'left',indent:1},bd:{top:['thin','FFFFFF'],bottom:['medium','BCCBE3'],left:i?['thin',RP.white]:['thin','DBE6F7'],right:['thin','DBE6F7']}}); });
   sh.h(10,10); return 11; }
 
 function riSection(sh,r,c0,c1,t,sub,col){ sh._sec=(sh._sec||0)+(c0===0?1:0); const n=String(sh._sec).padStart(2,'0');
   sh.h(r,24).box(r,c0,r,c1,{rich:[[(c0===0?n:'·')+'  ',RI_F({b:1,sz:11,color:RP.gold})],[t,RI_F({b:1,sz:11,color:RP.deep})],[sub?'    '+sub:'',RI_F({sz:8,i:1,color:RP.neu})]]},{al:{h:'left',v:'bottom'},bd:{bottom:['thin',col||RP.gold]}}); return r+1; }
 
 function riCard(sh,B,r,c,w,o){ const v=o.variant||'white', dark=v==='blue'||v==='cyan', bg=v==='blue'?{g:[RP.eb,RP.bright],deg:45}:v==='cyan'?{g:[RP.eb,RP.cyan],deg:45}:v==='light'?{g:['FFFFFF',RP.light],deg:90}:{c:RP.white};
-  const fg=dark?RP.white:RP.deep, sub=dark?'D6E4FF':RP.neu, edge=o.accent||(dark?RP.gold:RP.eb), c1=c+w-1, line=dark?null:['thin','DBE6F7'];
+  const fg=dark?RP.white:RP.deep, sub=dark?'D6E4FF':RP.neu, edge=o.accent||(dark?RP.gold:RP.eb), c1=c+w-1, line=dark?null:['medium','BCCBE3'];
   const base=x=>Object.assign({fill:bg,bd:Object.assign({left:['thick',edge]},line?{right:line}:{})},x||{});
   sh.box(r,c,r,c1,{rich:[[(o.icon||'◆')+'  ',RI_F({sz:9,color:dark?RP.gold:edge})],[o.t,RI_F({b:1,sz:7.5,color:dark?'E6EEFF':RP.ink2})]]},base({al:{h:'left',indent:1,v:'bottom'},bd:Object.assign({left:['thick',edge],top:line||['thin',RP.eb]},line?{right:line}:{})}));
-  sh.box(r+1,c,r+2,c1,o.v,base({font:RI_F({b:1,sz:22,color:fg}),nf:o.nf||RI_NFM,al:{h:'left',indent:1,v:'center'}}));
+  sh.box(r+1,c,r+2,c1,o.v,base({font:RI_F({b:1,sz:22,color:fg,sh:1}),nf:o.nf||RI_NFM,al:{h:'left',indent:1,v:'center'}}));
   sh.box(r+3,c,r+3,c1,o.u||'',base({font:RI_F({sz:7.5,color:sub}),al:{h:'left',indent:1,v:'top'}}));
   const good=o.d==null?null:(o.higherBad?o.d<=0:o.d>=0), col=o.d==null||Math.abs(o.d)<1e-12?(dark?'E6EEFF':RP.neu):good?(dark?'86EFAC':RP.ok):(dark?'FCA5A5':RP.crit);
   const half=Math.max(1,Math.floor(w/2));
@@ -182,7 +198,7 @@ function riCallout(sh,r,c0,c1,o){ const c=o.c||RP.eb;
   for(let i=1;i<=3;i++) sh.set(r+i,c1+1,null,{fill:{g:['D5DEEE','FFFFFF'],deg:0}}); }
 
 function riBadge(lvl){ const L=RI_LVL[lvl]||{c:RP.neu,t:lvl||''}; if(lvl==='WATCH') return {fill:{c:RP.light},font:RI_F({b:1,sz:8,color:RP.eb}),al:{h:'center'},bd:{left:['thin','BFD3FF'],right:['thin','BFD3FF']}};
-  return {fill:{c:L.c},font:RI_F({b:1,sz:8,color:RP.white}),al:{h:'center'}}; }
+  return {fill:{g:[rxTint(L.c,.18),L.c],deg:90},font:RI_F({b:1,sz:8,color:RP.white,sh:1}),al:{h:'center'},bd:{bottom:['medium',{CRITICAL:'991B1B',HIGH:'C2410C',CURED:'15803D'}[lvl]||'334155'],top:['thin',rxTint(L.c,.5)]}}; }
 
 function riHeat(v,max){ const t=max>0?Math.min(1,Math.max(0,v/max)):0, stops=[[0,'EAF2FF'],[.35,'2563EB'],[.7,'F97316'],[1,'DC2626']];
   let i=0; while(i<stops.length-2&&t>stops[i+1][0]) i++; const [a,ca]=stops[i],[b,cb]=stops[i+1], f=(t-a)/((b-a)||1), mix=(x,y)=>Math.round(parseInt(x,16)+(parseInt(y,16)-parseInt(x,16))*f).toString(16).padStart(2,'0');
@@ -264,7 +280,7 @@ function riExec(B,m,nav){ const W=24, sh=B.sheet(RI_SHEETS.exec,{tab:RP.eb,cols:
   // insights condensés
   r=riSection(sh,r,0,23,'KEY INSIGHTS','calculés sur les données de l\'arrêté',RP.gold);
   m.ins.slice(0,4).forEach((x,i)=>{ const c=i*6; sh.h(r,16).h(r+1,22).h(r+2,46);
-    sh.box(r,c,r,c+5,{rich:[[x.n+'  ',RI_F({b:1,sz:12,color:RP.gold})],[x.t,RI_F({b:1,sz:8.5,color:RP.ink2})]]},{al:{h:'left',indent:1},bd:{top:['thick',x.c]}});
+    sh.box(r,c,r,c+5,{rich:[[x.n+'  ',RI_F({b:1,sz:12,color:RP.gold})],[x.t,RI_F({b:1,sz:8.5,color:RP.ink2})]].concat(x.lecture?[['  ◆ LECTURE DU COMITÉ',RI_F({b:1,sz:7,color:RP.gold})]]:[])},{al:{h:'left',indent:1},bd:{top:['thick',x.c]}});
     sh.box(r+1,c,r+1,c+5,x.big,{font:RI_F({b:1,sz:13,color:x.c}),al:{h:'left',indent:1}});
     sh.box(r+2,c,r+2,c+5,x.p,{font:RI_F({sz:7.5,color:RP.ink2}),al:{h:'left',v:'top',wrap:1,indent:1}}); });
   sh.o.printArea='$A$1:$X$'+(r+3); return sh; }
@@ -275,6 +291,14 @@ function riWaterfall(sh,m,r1,c1,r2,c2,big){ const w=m.wf; if(!m.P){ sh.box(r1,c1
   const custom=lab.map((t,i)=>`<c:dLbl><c:idx val="${i}"/>${rxRich(t,800,'0F172A',1)}<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr><c:dLblPos val="inEnd"/><c:showLegendKey val="0"/><c:showVal val="1"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="0"/><c:showBubbleSize val="0"/></c:dLbl>`).join('');
   sh.chart({type:'waterfall',cats:steps.map(s=>s[0]),gap:40,nf:RI_NFM,series:[{name:'base',v:base,base:true},{name:'Mouvement',v:val,pts:cols,gradPts:1,labels:{val:1,custom,sz:800,pos:'inEnd'}}]},r1,c1,r2,c2); }
 
+function riBoxTable(sh,r,spec,rows,o){ o=o||{}; sh.h(r,o.hh||26);
+  spec.forEach(([t,c0,c1,al])=>sh.box(r,c0,r,c1,t,{fill:{c:o.hdr||RP.deep},font:RI_F({b:1,sz:8.5,color:RP.white}),al:{h:al||'left',wrap:1,indent:al?0:1,v:'center'},bd:{bottom:['medium',RP.gold]}}));
+  rows.forEach((row,i)=>{ const y=r+1+i, z=i%2?RP.pale:RP.white; sh.h(y,o.rh||20);
+    spec.forEach(([t,c0,c1,al,f],j)=>{ let st={fill:{c:z},font:RI_F({sz:8.5,color:RP.ink}),al:{h:al||'left',indent:al?0:1,wrap:1,v:'center'},bd:{bottom:['thin','E6EDF7']}};
+      if(f==='bold') st.font=RI_F({b:1,sz:8.5,color:RP.deep}); if(f==='md') st=Object.assign(st,{nf:RI_NFM,font:RI_F({b:1,sz:8.5,color:RP.deep})}); if(f==='mdc') st=Object.assign(st,{nf:RI_NFM,font:RI_F({b:1,sz:9,color:RP.crit})});
+      if(f==='%') st.nf='0.0%'; if(f==='n') st.nf='#,##0'; if(f==='lec') st.font=RI_F({b:1,sz:8.5,color:row[j]==='Lien probable'?RP.alert:RP.eb}); if(f==='sc') st.font=RI_F({b:1,sz:9,color:row[j]>=1.5?RP.crit:row[j]>=1?RP.alert:RP.ink2});
+      sh.box(y,c0,y,c1,row[j],st); }); });
+  return r+rows.length; }
 function riRisk(B,m,nav){ const W=24, sh=B.sheet(RI_SHEETS.risk,{tab:RP.bright,cols:new Array(W).fill(5.4),zoom:85}); let r=riHeader(sh,m,'risk',nav,W,'RISK ANALYTICS','Heatmaps, matrice de risque et distribution');
   // heatmap segment × tranche (encours)
   const segs=m.seg.slice(0,10).map(s=>s.k); r=riSection(sh,r,0,23,'HEATMAP · SEGMENT × TRANCHE D\'IMPAYÉ','encours XOF par tranche (bleu clair → bleu → orange → rouge)',RP.eb);
@@ -297,6 +321,10 @@ function riRisk(B,m,nav){ const W=24, sh=B.sheet(RI_SHEETS.risk,{tab:RP.bright,c
       sh.box(y+2,4+j*6,y+2,9+j*6,'impayés '+riMd(c.pdo),Object.assign({},st,{font:RI_F({sz:8,i:1,color:dark?'FFF7ED':RP.neu})})); }); });
   r+=11;
   // distribution par tranche
+  if(m.scen&&m.scen.length){ sh.brk(r); r=riSection(sh,r,0,23,'STRESS NARRATIF · SCÉNARIOS MACRO','exposition jugée par l\'analyse sémantique · montants et PD calculés par le code (stress ×2 EXPERT)',RP.alert);
+    r=riBoxTable(sh,r,[['Scénario',0,4,null,'bold'],['Dossiers',5,6,'center','n'],['Encours exposé',7,9,'right','md'],['Impayés exposés',10,12,'right','md'],['Douteux attendus 12M · base',13,15,'right','md'],['· sous stress ×2',16,18,'right','mdc'],['Principaux dossiers',19,23]],m.scen.map(x=>[x.l,x.n,x.enc,x.pdo,x.base,x.str,x.top.slice(0,3).map(t=>String(t).slice(0,22)).join(', ')]),{rh:30,hh:30});
+    sh.h(r+1,26).box(r+1,0,r+1,23,'Lecture : un dossier est « exposé » quand l\'analyse sémantique juge, avec une probabilité ≥ 0,60, que le scénario toucherait directement ses revenus ou sa capacité de remboursement (vulnérabilité, pas cause actuelle). Les encours, impayés et entrées en douteux attendues (PD 12M Risk Outlook × encours ; stress ×2 sur les cotes, EXPERT) sont calculés par le code.',{font:RI_F({sz:7.5,i:1,color:RP.neu}),al:{h:'left',wrap:1,indent:1}}); r+=1;
+    sh.chart({type:'bar',cats:m.scen.map(x=>x.l),nf:RI_NFM,hideVal:true,series:[{name:'Encours exposé',v:m.scen.map(x=>x.enc),color:RP.alert,labels:{val:1,nf:RI_NFM,sz:750,col:RP.deep}}],max:Math.max(...m.scen.map(x=>x.enc))*1.25||1},r+1,0,r+13,24); r+=15; }
   r=riSection(sh,r,0,23,'DISTRIBUTION PAR TRANCHE','encours et nombre de clients',RP.cyan);
   sh.chart({type:'col',cats:RI_BK,nf:RI_NFM,series:[{name:'Encours',v:m.K.eb,pts:[RP.ok,RP.cyan,RP.warn,RP.alert,RP.crit],gradPts:1,labels:{val:1,nf:RI_NFM,pos:'outEnd',sz:800,b:1,col:RP.deep}}],max:Math.max(...m.K.eb)*1.2||1,min:0},r,0,r+14,12);
   sh.chart({type:'col',cats:RI_BK,nf:'#,##0',series:[{name:'Clients',v:m.K.nb,pts:[RP.ok,RP.cyan,RP.warn,RP.alert,RP.crit],gradPts:1,labels:{val:1,nf:'#,##0',pos:'outEnd',sz:800,b:1,col:RP.deep}}],max:Math.max(...m.K.nb)*1.2||1,min:0},r,12,r+14,24);
@@ -344,6 +372,13 @@ function riMov(B,m,nav){ const W=24, sh=B.sheet(RI_SHEETS.mov,{tab:RP.cyan,cols:
       sh.box(r+1,c0,r+1,c1,v,{fill:{c:RP.light},font:RI_F({b:1,sz:15,color:RP.deep}),al:{h:'left',indent:1}});
       sh.box(r+2,c0,r+2,c1,pv.source+' · N = '+fmtN(pv.n)+' · '+pv.periodes+' mois · confiance '+pv.confiance,{fill:{c:RP.pale},font:RI_F({sz:6.5,color:RP.neu}),al:{h:'left',indent:1,wrap:1}}); });
     r+=3; if(p.pd[12].prov.avertissement){ sh.h(r,18).box(r,0,r,23,'⚠  '+p.pd[12].prov.avertissement,{fill:{c:'FEF3C7'},font:RI_F({b:1,sz:8.5,color:'92400E'}),al:{h:'left',indent:1},bd:{left:['thick',RP.warn]}}); r++; }
+    if(J.adv){ const A=J.adv, cards=[['TEMPS MOYEN AVANT DÉFAUT · SAIN',A.ttd?A.ttd[0].toFixed(0)+' mois':'—',A.ttdProv],['GUÉRISON DEPUIS 31-60 J',riPct(A.cure[0]),A.cureProv],['GUÉRISON DEPUIS 61-90 J',riPct(A.cure[1]),A.cureProv],['PD 12M · IC 90 % (BOOTSTRAP)',riPct(A.boot.lo)+' – '+riPct(A.boot.hi),A.bootProv],['STRESS INVERSE · PD × 2',A.rev?'×'+A.rev.factor.toFixed(2).replace('.',','):'—',A.revProv]];
+      sh.h(r,16).h(r+1,26).h(r+2,24);
+      cards.forEach(([t2,v,pv],i)=>{ const c0=i*5, c1=i===4?23:c0+3; sh.box(r,c0,r,c1,t2,{fill:{g:[RP.deep,RP.corp],deg:0},font:RI_F({b:1,sz:7,color:RP.gold}),al:{h:'left',indent:1}});
+        sh.box(r+1,c0,r+1,c1,v,{fill:{g:['FFFFFF',RP.light],deg:90},font:RI_F({b:1,sz:14,color:RP.deep,sh:1}),al:{h:'left',indent:1},bd:{bottom:['medium','BCCBE3'],right:['medium','BCCBE3']}});
+        sh.box(r+2,c0,r+2,c1,pv.source+' · '+pv.methode,{fill:{c:RP.pale},font:RI_F({sz:6,color:RP.neu}),al:{h:'left',indent:1,wrap:1}}); });
+      r+=3; if(A.back){ sh.h(r,18).box(r,0,r,23,{rich:[['BACKTEST HORS ÉCHANTILLON   ',RI_F({b:1,sz:8,color:RP.gold})],['entrées en douteux prévues '+A.back.exp.toFixed(1).replace('.',',')+' · observées '+A.back.obs+' · ratio '+(A.back.ratio!=null?A.back.ratio.toFixed(2).replace('.',','):'—')+' · score de Brier '+(A.back.brier!=null?A.back.brier.toFixed(4).replace('.',','):'—')+'   ('+A.backProv.source+', N = '+fmtN(A.back.n)+')',RI_F({sz:8.5,color:RP.ink2})]]},{fill:{c:RP.light},al:{h:'left',indent:1},bd:{left:['thick',RP.bright]}}); r++; }
+      if(A.sens.length){ sh.h(r,18).box(r,0,r,23,{rich:[['SENSIBILITÉ   ',RI_F({b:1,sz:8,color:RP.gold})],[A.sens.slice(0,3).map(x=>x.de+' → '+x.vers+' : +'+(100*x.d).toFixed(2).replace('.',',')+' pt de PD 12M pour +10 %').join('   ·   '),RI_F({sz:8.5,color:RP.ink2})]]},{fill:{c:RP.pale},al:{h:'left',indent:1},bd:{left:['thick',RP.cyan]}}); r++; } }
     r++; }
   r=riSection(sh,r,0,23,'TENDANCE MENSUELLE','impayés et clients en impayé',RP.eb);
   const cats=m.months.map(x=>x.label);
@@ -379,6 +414,10 @@ function riConc(B,m,nav){ const W=24, sh=B.sheet(RI_SHEETS.conc,{tab:RP.gold,col
     sh.box(y,21,y,22,row[2],{fill:{c:z},nf:RI_NFM,font:RI_F({sz:8.5,color:RP.ink}),al:{h:'right'}}); sh.set(y,23,row[3],{fill:{c:z},nf:'0.0%',font:RI_F({sz:8.5,color:RP.ink}),al:{h:'center'}}); });
   sh.box(r,17,r,20,'Client',{fill:{c:RP.deep},font:RI_F({b:1,sz:8.5,color:RP.white}),al:{h:'left'},bd:{bottom:['medium',RP.gold]}}); sh.box(r,21,r,22,'Encours',{fill:{c:RP.deep},font:RI_F({b:1,sz:8.5,color:RP.white}),al:{h:'right'},bd:{bottom:['medium',RP.gold]}});
   sh.dataBar(rxRef(r+1,23)+':'+rxRef(r+10,23),RP.gold); r+=17;
+  if(m.paires&&m.paires.some(p=>p.score>=1||(p.pNom||0)>=0.6)){ const pl=m.paires.filter(p=>p.score>=1||(p.pNom||0)>=0.6);
+    r=riSection(sh,r,0,23,'BÉNÉFICIAIRES POTENTIELLEMENT LIÉS','paires de noms repérées par le code · lien jugé par l\'analyse sémantique · expositions cumulées par le code',RP.gold);
+    r=riBoxTable(sh,r,[['Contrepartie A',0,5,null,'bold'],['Contrepartie B',6,11,null,'bold'],['Lien (0 à 2)',12,13,'center','sc'],['Même famille',14,15,'center','%'],['Lecture',16,18,'center','lec'],['Encours cumulé',19,21,'right','md'],['Part de l\'encours',22,23,'center','%']],pl.map(p=>[p.a,p.b,p.score,p.pNom,p.score>=1.1&&(p.pNom||0)>=0.6?'Lien probable':'À vérifier',p.enc,p.enc/(m.K.enc||1)]),{rh:20,hh:30});
+    sh.h(r+1,26).box(r+1,0,r+1,23,'Lien : 0 = entités distinctes, 1 = lien possible, 2 = même groupe (espérance du score sémantique). « Lien probable » quand les deux jugements concordent (lien ≥ 1,1 et même famille ≥ 0,60). À confirmer par la Conformité avant toute agrégation réglementaire des risques.',{font:RI_F({sz:7.5,i:1,color:RP.neu}),al:{h:'left',wrap:1,indent:1}}); r+=3; }
   sh.brk(r); r=riSection(sh,r,0,11,'TOP SEGMENTS','encours',RP.eb); riSection(sh,r-1,12,23,'TOP GESTIONNAIRES','encours',RP.eb);
   const hb=(arr,c1,c2,col)=>sh.chart({type:'bar',cats:arr.map(x=>String(x.k).slice(0,24)),nf:RI_NFM,hideVal:true,series:[{name:'Encours',v:arr.map(x=>x.enc),color:col,labels:{val:1,nf:RI_NFM,pos:'outEnd',sz:750,col:RP.deep}}],max:Math.max(...arr.map(x=>x.enc))*1.25||1},r,c1,r+13,c2);
   hb(m.seg.slice(0,8),0,12,RP.eb); hb(m.off.slice(0,8),12,24,RP.cyan); r+=14;
@@ -390,8 +429,8 @@ function riConc(B,m,nav){ const W=24, sh=B.sheet(RI_SHEETS.conc,{tab:RP.gold,col
   sh.h(r+19,16).box(r+19,0,r+19,23,{rich:[['●',RI_F({sz:10,color:RP.crit})],[' CRITICAL   ',RI_F({sz:8,color:RP.ink2})],['●',RI_F({sz:10,color:RP.alert})],[' HIGH   ',RI_F({sz:8,color:RP.ink2})],['●',RI_F({sz:10,color:RP.warn})],[' WATCH   ',RI_F({sz:8,color:RP.ink2})],['●',RI_F({sz:10,color:RP.ok})],[' CURED   ',RI_F({sz:8,color:RP.ink2})],['●',RI_F({sz:10,color:RP.eb})],[' sans alerte',RI_F({sz:8,color:RP.ink2})]]},{al:{h:'center'}});
   return sh; }
 
-function riWatch(B,m,nav){ const cols=[['#','center'],['Client'],['Code client'],['Compte'],['Segment'],['Gestionnaire'],['Encours XOF','right'],['Impayé XOF','right'],['Jours','center'],['Stage','center'],['Classe','center'],['Tranche','center'],['Évol. impayé','center'],['Tendance','center'],['Criticité','center'],['JEV PD 12M','center'],['Prov.','center'],['Orientation TypeSafe','left'],['Action'],['Responsable'],['Date cible','center'],['Statut','center']];
-  const wd=[5,30,12,13,13,16,15,14,7,6,6,11,9,11,11,9,9,18,40,16,11,13];
+function riWatch(B,m,nav){ const cols=[['#','center'],['Client'],['Code client'],['Compte'],['Segment'],['Gestionnaire'],['Encours XOF','right'],['Impayé XOF','right'],['Jours','center'],['Stage','center'],['Classe','center'],['Tranche','center'],['Évol. impayé','center'],['Tendance','center'],['Criticité','center'],['JEV PD 12M','center'],['Prov.','center'],['Orientation TypeSafe','left'],['Action recommandée','left'],['Action'],['Responsable'],['Date cible','center'],['Statut','center']];
+  const wd=[5,30,12,13,13,16,15,14,7,6,6,11,9,11,11,9,9,18,20,40,16,11,13];
   const sh=B.sheet(RI_SHEETS.watch,{tab:RP.crit,cols:wd,zoom:85,a3:true}); let r=riHeader(sh,m,'watch',nav,wd.length,'RISK WATCHLIST','Risk Intelligence Table  ·  '+fmtN(m.watch.length)+' dossiers  ·  '+riMd(m.watch.reduce((s,o)=>s+o.enc,0))+' XOF');
   const cnt=L=>m.watch.filter(o=>o.lvl===L).length; sh.h(r,18).box(r,0,r,wd.length-1,{rich:[['■ ',RI_F({sz:9,color:RP.crit})],['CRITICAL '+fmtN(cnt('CRITICAL'))+'    ',RI_F({b:1,sz:8,color:RP.ink2})],['■ ',RI_F({sz:9,color:RP.alert})],['HIGH '+fmtN(cnt('HIGH'))+'    ',RI_F({b:1,sz:8,color:RP.ink2})],['■ ',RI_F({sz:9,color:'BFD3FF'})],['WATCH '+fmtN(cnt('WATCH'))+'    ',RI_F({b:1,sz:8,color:RP.ink2})],['   barres : encours (bleu) · impayé (rouge) · PD JEV (or)   ·   flèches : évolution de l\'impayé   ·   filtres actifs sur l\'en-tête',RI_F({sz:7.5,i:1,color:RP.neu})]]},{al:{h:'left',indent:1}}); r+=2;
   const H=r; sh.h(H,34); cols.forEach((c,j)=>sh.set(H,j,c[0],{fill:{g:[RP.deep,RP.corp],deg:90},font:RI_F({b:1,sz:8.5,color:RP.white}),al:{h:c[1]||'left',wrap:1,indent:c[1]?0:1},bd:{bottom:['medium',RP.gold]}}));
@@ -401,7 +440,7 @@ function riWatch(B,m,nav){ const cols=[['#','center'],['Client'],['Code client']
       [o.enc,base({nf:'#,##0',al:{h:'right'}})],[o.pdo,base({nf:'#,##0',al:{h:'right'},font:RI_F({b:1,sz:9,color:RP.deep})})],[o.dj,base({nf:'0',al:{h:'center'},font:RI_F({b:1,sz:9,color:o.dj>75?RP.crit:o.dj>45?RP.alert:RP.ink})})],
       ['S'+o.stage,base({al:{h:'center'},font:RI_F({b:1,sz:9,color:[0,RP.eb,'B45309',RP.crit][o.stage]||RP.ink})})],[o.cls,base({al:{h:'center'}})],[RI_BK[o.b],base({al:{h:'center'},font:RI_F({b:1,sz:8.5,color:[RP.ok,RP.cyan,'B45309',RP.alert,RP.crit][o.b]})})],
       [ev,base({nf:'+0%;-0%;0%',al:{h:'center'}})],['',base()],[RI_LVL[o.lvl].t,riBadge(o.lvl)],[o.pd12!=null?o.pd12:'',base({nf:'0.0%',al:{h:'center'},font:RI_F({b:1,sz:8.5,color:RP.deep})})],[o.pdSrc||'',base({al:{h:'center'},font:RI_F({b:1,sz:7,color:o.pdSrc==='HYBRID'?'B45309':RP.eb})})],
-      [o.ts&&o.ts.routage?o.ts.routage:o.ts&&o.ts.enAttente===false?'—':'',base({font:RI_F({sz:8,color:RP.cyan==='06B6D4'?'0E7490':RP.ink})})],[o.action,base({al:{h:'left',indent:1},font:RI_F({sz:8.5,color:RP.ink})})],[o.off,base({font:RI_F({sz:8.5,color:RP.ink2})})],[o.cible,base({nf:'dd/mm/yyyy',al:{h:'center'}})],[o.statut,base({al:{h:'center'},font:RI_F({b:1,sz:8.5,color:{'Revue analyste':RP.crit,'À faire':'B45309','Fait':RP.ok}[o.statut]||RP.eb})})]];
+      [o.ts&&o.ts.routage?o.ts.routage:o.ts&&o.ts.enAttente===false?'—':'',base({font:RI_F({sz:8,color:RP.cyan==='06B6D4'?'0E7490':RP.ink})})],[o.ts&&o.ts.action||'',base({font:RI_F({b:1,sz:8,color:RP.eb})})],[o.action,base({al:{h:'left',indent:1},font:RI_F({sz:8.5,color:RP.ink})})],[o.off,base({font:RI_F({sz:8.5,color:RP.ink2})})],[o.cible,base({nf:'dd/mm/yyyy',al:{h:'center'}})],[o.statut,base({al:{h:'center'},font:RI_F({b:1,sz:8.5,color:{'Revue analyste':RP.crit,'À faire':'B45309','Fait':RP.ok}[o.statut]||RP.eb})})]];
     row.forEach(([v,s],j)=>sh.set(y,j,v,s)); if(o.trend.filter(x=>x!=null).length>1) sh.spark(y,13,B.series(o.trend,'w:'+o.clc),{color:crit?RP.crit:RP.bright,last:RP.gold,type:'column'}); });
   const L=H+Math.max(1,m.watch.length); if(m.watch.length){ sh.dataBar(`G${H+2}:G${L+1}`,RP.bright); sh.dataBar(`H${H+2}:H${L+1}`,RP.crit); sh.arrows(`M${H+2}:M${L+1}`); sh.dataBar(`P${H+2}:P${L+1}`,RP.gold,1); }
   else sh.box(H+1,0,H+2,cols.length-1,'Aucun dossier en surveillance à cet arrêté.',{font:RI_F({i:1,sz:10,color:RP.neu}),al:{h:'center'}});
@@ -423,7 +462,7 @@ function riAct(B,m,nav){ const wd=[30,34,15,40,16,12,14,12,15,13,16]; const sh=B
     list.slice(0,L==='WATCH'?40:60).forEach((o,i)=>{ r++; sh.h(r,30); const z=i%2?RP.pale:RP.white, b=(x)=>Object.assign({fill:{c:z},font:RI_F({sz:9,color:RP.ink}),al:{wrap:1,v:'center'},bd:{bottom:['thin','E6EDF7']}},x||{});
       const pb=L==='CURED'?`Impayé de ${riMd(o.p?o.p.pdo:0)} régularisé`:`${o.dj} j d'impayé · ${RI_BK[o.b]} · Stage ${o.stage}${o.mig?' · migration ▲':''}${o.ts&&o.ts.motif&&typeof TS_MOTIF!=='undefined'?' · '+TS_MOTIF[o.ts.motif]:''}`;
       const jv=o.pd12!=null?riPct(o.pd12)+(o.pdAct?' → '+riPct(o.pdAct.p):''):'';
-      [[o.rel,b({font:RI_F({b:1,sz:9,color:RP.deep}),al:{h:'left',indent:1,wrap:1},bd:{left:['thick',c],bottom:['thin','E6EDF7']}})],[pb,b({al:{h:'left',indent:1,wrap:1},font:RI_F({sz:8.5,color:RP.ink2})})],[L==='CURED'&&o.p?o.p.pdo:o.enc,b({nf:'#,##0',al:{h:'right'}})],[o.action,b({al:{h:'left',indent:1,wrap:1},font:RI_F({sz:8.5,color:RP.ink})})],[o.off,b()],[o.cible,b({nf:'dd/mm/yyyy',al:{h:'center'},font:RI_F({sz:9,color:o.cible&&o.cible<m.date&&o.prog<1?RP.crit:RP.ink})})],
+      [[o.rel,b({font:RI_F({b:1,sz:9,color:RP.deep}),al:{h:'left',indent:1,wrap:1},bd:{left:['thick',c],bottom:['thin','E6EDF7']}})],[pb,b({al:{h:'left',indent:1,wrap:1},font:RI_F({sz:8.5,color:RP.ink2})})],[L==='CURED'&&o.p?o.p.pdo:o.enc,b({nf:'#,##0',al:{h:'right'}})],[o.action+(o.ts&&o.ts.action?'\n→ recommandé : '+o.ts.action:''),b({al:{h:'left',indent:1,wrap:1},font:RI_F({sz:8.5,color:RP.ink})})],[o.off,b()],[o.cible,b({nf:'dd/mm/yyyy',al:{h:'center'},font:RI_F({sz:9,color:o.cible&&o.cible<m.date&&o.prog<1?RP.crit:RP.ink})})],
        [o.statut,b({al:{h:'center'},font:RI_F({b:1,sz:8.5,color:{'Revue analyste':RP.crit,'À faire':'B45309','Fait':RP.ok,'Régularisé':RP.ok}[o.statut]||RP.eb})})],[o.prog,b({nf:'0%',al:{h:'center'}})],[o.impact||'',b({nf:'#,##0',al:{h:'right'}})],[jv,b({al:{h:'center'},font:RI_F({b:1,sz:8.5,color:RP.deep})})],[o.ts&&o.ts.routage||'',b({font:RI_F({sz:8.5,color:'0E7490'})})]].forEach(([v,s],j)=>sh.set(r,j,v,s)); });
     if(list.length){ sh.dataBar(`H${h0+2}:H${r+1}`,c==='F59E0B'?RP.bright:c,1); sh.dataBar(`C${h0+2}:C${r+1}`,RP.bright); } else { r++; sh.box(r,0,r,wd.length-1,'Aucun dossier dans cette catégorie.',{font:RI_F({i:1,sz:9,color:RP.neu}),al:{h:'left',indent:1}}); }
     if(L==='WATCH'&&list.length>40){ r++; sh.box(r,0,r,wd.length-1,'… '+(list.length-40)+' autres dossiers en surveillance : voir la feuille WATCHLIST.',{font:RI_F({i:1,sz:8.5,color:RP.neu}),al:{h:'left',indent:1}}); }
@@ -434,7 +473,7 @@ function riIns(B,m,nav){ const W=24, sh=B.sheet(RI_SHEETS.ins,{tab:RP.gold,cols:
   m.ins.forEach((x,i)=>{ const c=(i%2)*12, y=r+Math.floor(i/2)*7, c1=c+10, fr={fill:{c:RP.white}}; if(i===4) sh.brk(y); sh.h(y,8).h(y+1,30).h(y+2,26).h(y+3,44).h(y+4,8).h(y+5,8);
     sh.blk(y,c,y,c1,{fill:{g:[x.c,rxTint(x.c,.55)],deg:0}});
     sh.box(y+1,c,y+2,c+2,x.n,{fill:{c:RP.white},font:RI_F({b:1,sz:30,color:RP.gold}),al:{h:'center'},bd:{left:['thin','DBE6F7']}});
-    sh.box(y+1,c+3,y+1,c1,x.t,{fill:{c:RP.white},font:RI_F({b:1,sz:9.5,color:RP.ink2}),al:{h:'left',v:'bottom'},bd:{right:['thin','DBE6F7']}});
+    sh.box(y+1,c+3,y+1,c1,{rich:[[x.t,RI_F({b:1,sz:9.5,color:RP.ink2})]].concat(x.lecture?[['   ◆ LECTURE DU COMITÉ',RI_F({b:1,sz:8,color:RP.gold})]]:[])},{fill:{c:RP.white},al:{h:'left',v:'bottom'},bd:{right:['thin','DBE6F7']}});
     sh.box(y+2,c+3,y+2,c1,x.big,{fill:{c:RP.white},font:RI_F({b:1,sz:18,color:x.c===RP.gold?RP.deep:x.c}),al:{h:'left'},bd:{right:['thin','DBE6F7']}});
     sh.box(y+3,c,y+3,c+2,'',{fill:{c:RP.white},bd:{left:['thin','DBE6F7']}}); sh.box(y+3,c+3,y+3,c1,x.p,{fill:{c:RP.white},font:RI_F({sz:8.5,color:RP.ink2}),al:{h:'left',v:'top',wrap:1},bd:{right:['thin','DBE6F7']}});
     sh.blk(y+4,c,y+4,c1,{fill:{c:RP.white},bd:{bottom:['thin','DBE6F7']}}); sh.blk(y+4,c,y+4,c,{fill:{c:RP.white},bd:{bottom:['thin','DBE6F7'],left:['thin','DBE6F7']}}); sh.blk(y+4,c1,y+4,c1,{fill:{c:RP.white},bd:{bottom:['thin','DBE6F7'],right:['thin','DBE6F7']}});
@@ -474,17 +513,28 @@ function riAudit(B,m,nav){ const wd=[40,24,20,34,7,7,7,7,7]; const sh=B.sheet(RI
     ['JEV','Probabilités avec provenance obligatoire (OBSERVED, EMPIRICAL, MARKOV, EXPERT, STRESS, SIMULATED, HYBRID)','','']]);
   for(let y=r-7;y<=r;y++){ sh.merges.push(rxRef(y,1)+':'+rxRef(y,8)); sh.h(y,32); const c=sh.cells.get(y*16384+1); if(c) sh.set(y,1,c.v,{fill:{c:(y-r)%2?RP.pale:RP.white},font:RI_F({sz:8.5,color:RP.ink}),al:{h:'left',wrap:1,indent:1}}); }
   r+=2; r=riSection(sh,r,0,8,'COUVERTURE JEV & TYPESAFE','tout ce qui peut relever d\'un jugement ou d\'une probabilité',RP.bright);
-  const T=m.tsL||[], J=m.jev, adv=T.filter(t=>t.urg!=null).length;
+  const T=m.tsL||[], J=m.jev, adv=T.filter(t=>t.urg!=null||t.famille).length;
   r=riTable(sh,r,0,[['Domaine'],['Contrôle'],['Couverture','center'],['Détail']],[
     ['Probabilité de dégradation (PD 3/6/12M)','JEV · MARKOV / HYBRID',J?'✔ actif':'—',J?'calibré sur '+J.per+' arrêtés · '+jevLbl(J.ptf.pd[12].prov):'aucune archive'],
     ['Taux observé (cohortes)','JEV · EMPIRICAL',J?'✔ actif':'—',J&&J.ptf.emp12.v!=null?riPct(J.ptf.emp12.v)+' (IC '+riPct(J.ptf.emp12.lo)+' – '+riPct(J.ptf.emp12.hi)+')':'pas de cohorte complète à 12 mois'],
     ['Stress et scénarios','JEV · STRESS / SIMULATED',J?'✔ actif':'—',J?'×1,5 et ×2,0 · Monte Carlo':''],
     ['PD par dossier de la watchlist','JEV · HYBRID (Markov + EWS + expert)',J?'✔ '+m.watch.filter(o=>o.pd12!=null).length+' / '+m.watch.length:'—','signaux TypeSafe et APEX en multiplicateurs EXPERT affichés'],
     ['Effet des actions sur la PD','JEV · recalcul par le code',J?'✔ actif':'—','régularisation, règlement partiel, levée des signaux'],
+    ['Analyses avancées','JEV · MARKOV / SIMULATED / EMPIRICAL / STRESS',J&&J.adv?'✔ actif':'—','structure par terme, temps avant défaut, guérison, IC bootstrap, backtest, stress inverse, sensibilité'],
     ['Motif, crédibilité, incohérence, statut','TypeSafe · Choice / Score / Noul',T.length?'✔ '+T.length+' dossiers':'en attente','commentaires gestionnaires (feuille _TYPESAFE)'],
     ['Nature de l\'entité, intra-groupe, segment','TypeSafe · Choice / Noul',T.length?'✔ actif':'en attente','noms de clients'],
     ['Urgence et orientation (re-classement, routage)','TypeSafe · Score / Choice',adv?'✔ '+adv+' dossiers':'en attente','capacités avancées'],
     ['Auto-cohérence et cohérence du plan','TypeSafe · Noul + Choice croisés',adv?'✔ actif':'en attente','divergence → revue analyste'],
+    ['Dates par composants (jour, mois, relatif)','TypeSafe · Choice ; assemblage en code',adv?'✔ actif':'en attente','limite connue du modèle : dates comparées en code'],
+    ['Données personnelles sensibles','TypeSafe · Noul',adv?'✔ actif':'en attente','commentaire à anonymiser avant diffusion'],
+    ['Famille de motif et repli selon la confiance','TypeSafe · Choice hiérarchique',adv?'✔ actif':'en attente','motif détaillé incertain → famille retenue si confiance ≥ 0,9'],
+    ['Action recommandée (catalogue du code)','TypeSafe · Choice',adv?'✔ actif':'en attente','8 actions types'],
+    ['Contrôle d\'ordre des options','TypeSafe · Choice inversé',adv?'✔ actif':'en attente','divergence → revue analyste'],
+    ['Stabilité (rééchantillonnage)','TypeSafe · 3 tirages avec sel',T.some(t=>t.stabilite!=null)?'✔ actif':'en attente','instabilité → revue analyste'],
+    ['Stress narratif (8 scénarios macro)','TypeSafe · Noul ; agrégats et PD en code',m.scen&&m.scen.length?'✔ '+m.scen.length+' scénario(s) avec exposition':'en attente','exposition jugée, montants calculés'],
+    ['Phrase de lecture et ordre des constats','TypeSafe · Score + Choice (portefeuille)',m.lecture?'✔ actif':'en attente','constats calculés par le code'],
+    ['Bénéficiaires potentiellement liés','TypeSafe · Score + Noul (portefeuille)',m.paires&&m.paires.length?'✔ '+m.paires.length+' paire(s)':'en attente','paires repérées par le code'],
+    ['Version exacte du modèle et jetons','Réponse de l\'API',T.length?'✔ conservés':'en attente','piste d\'audit (_TYPESAFE)'],
     ['Montants, ratios, classes BCEAO / IFRS 9 / ACTE 7','Code APEX uniquement','✔ code','jamais confiés à TypeSafe ni à JEV']]);
   r+=2; sh.box(r,0,r,8,'Généré le '+new Date().toLocaleString('fr-FR')+' · '+RI_V+' · APEX Credit Risk OS · source : '+m.file,{font:RI_F({sz:8,i:1,color:RP.neu}),al:{h:'left'}});
   return sh; }
@@ -502,6 +552,7 @@ const RI_VARIANTS={
   data:{lib:'Data export',file:'Data_Export',nav:['data']}};
 async function riBuild(variant,model){ const V=RI_VARIANTS[variant]||RI_VARIANTS.full, m=model||await riModel();
   const B=rxBook({title:'Ecobank Sénégal · Credit Risk Intelligence · '+V.lib,subject:'Arrêté '+m.label,date:'Arrêté '+m.label}); const nav=V.nav;
+  try{ if(typeof RI_ART!=='undefined'&&RI_ART.tile){ const s64=atob(RI_ART.tile.split(',')[1]), u=new Uint8Array(s64.length); for(let i=0;i<s64.length;i++) u[i]=s64.charCodeAt(i); B.addMedia('tile',u,'jpeg'); } }catch(err){ console.warn('visuel 3D',err); }
   const mk={exec:riExec,risk:riRisk,mov:riMov,conc:riConc,watch:riWatch,act:riAct,ins:riIns,det:(B,m,n)=>riDetail(B,m,n,'det'),aud:riAudit,data:(B,m,n)=>riDetail(B,m,n,'data')};
   nav.forEach(k=>mk[k](B,m,nav));
   const u8=await B.zip(); return {u8,name:'ECOBANK_'+V.file+'_'+dcStamp()+'.xlsx',model:m}; }

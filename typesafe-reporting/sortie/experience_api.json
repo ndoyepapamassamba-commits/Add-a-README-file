@@ -1,0 +1,1287 @@
+{
+ "res": [
+  [
+   "Le client a transmis l'ordre de virement ce matin, règlement prévu le 03/10/2026.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "retard_technique",
+     "confidence": 0.81,
+     "probabilities": {
+      "fraude_detournement": 0.0,
+      "aucun_motif": 0.01,
+      "tension_tresorerie": 0.02,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.14,
+      "retard_technique": 0.83,
+      "client_injoignable": 0.0,
+      "sante_deces": 0.0,
+      "perte_revenus": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "retard_technique",
+     "confidence": 0.82,
+     "probabilities": {
+      "fraude_detournement": 0.0,
+      "aucun_motif": 0.02,
+      "tension_tresorerie": 0.01,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.13,
+      "retard_technique": 0.84,
+      "sante_deces": 0.0,
+      "client_injoignable": 0.0,
+      "perte_revenus": 0.0
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "retard_technique",
+     "confidence": 0.63,
+     "probabilities": {
+      "fraude_detournement": 0.0,
+      "litige_juridique": 0.0,
+      "tension_tresorerie": 0.01,
+      "aucun_motif": 0.01,
+      "retard_technique": 0.68,
+      "regularisation_annoncee": 0.3,
+      "sante_deces": 0.0,
+      "client_injoignable": 0.0,
+      "perte_revenus": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Retard de paiement de l'État sur le marché de fournitures. Le mandat est visé au Trésor, encaissement attendu fin octobre.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "tension_tresorerie",
+     "confidence": 0.73,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "aucun_motif": 0.0,
+      "retard_technique": 0.24,
+      "perte_revenus": 0.0,
+      "tension_tresorerie": 0.76,
+      "fraude_detournement": 0.0,
+      "sante_deces": 0.0,
+      "regularisation_annoncee": 0.0,
+      "litige_juridique": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "tension_tresorerie",
+     "confidence": 0.91,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "aucun_motif": 0.0,
+      "retard_technique": 0.08,
+      "perte_revenus": 0.0,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.0,
+      "sante_deces": 0.0,
+      "fraude_detournement": 0.0,
+      "tension_tresorerie": 0.92
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "tension_tresorerie",
+     "confidence": 0.9,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "aucun_motif": 0.0,
+      "retard_technique": 0.08,
+      "perte_revenus": 0.0,
+      "tension_tresorerie": 0.92,
+      "regularisation_annoncee": 0.0,
+      "sante_deces": 0.0,
+      "litige_juridique": 0.0,
+      "fraude_detournement": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Client injoignable depuis trois semaines, le magasin est fermé. Visite prévue avec le recouvrement.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "client_injoignable",
+     "confidence": 1.0,
+     "probabilities": {
+      "client_injoignable": 1.0,
+      "litige_juridique": 0.0,
+      "tension_tresorerie": 0.0,
+      "perte_revenus": 0.0,
+      "fraude_detournement": 0.0,
+      "regularisation_annoncee": 0.0,
+      "aucun_motif": 0.0,
+      "retard_technique": 0.0,
+      "sante_deces": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "client_injoignable",
+     "confidence": 1.0,
+     "probabilities": {
+      "litige_juridique": 0.0,
+      "client_injoignable": 1.0,
+      "tension_tresorerie": 0.0,
+      "perte_revenus": 0.0,
+      "fraude_detournement": 0.0,
+      "regularisation_annoncee": 0.0,
+      "retard_technique": 0.0,
+      "aucun_motif": 0.0,
+      "sante_deces": 0.0
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "client_injoignable",
+     "confidence": 1.0,
+     "probabilities": {
+      "litige_juridique": 0.0,
+      "client_injoignable": 1.0,
+      "tension_tresorerie": 0.0,
+      "perte_revenus": 0.0,
+      "fraude_detournement": 0.0,
+      "regularisation_annoncee": 0.0,
+      "aucun_motif": 0.0,
+      "retard_technique": 0.0,
+      "sante_deces": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Régularisé.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "regularisation_annoncee",
+     "confidence": 0.99,
+     "probabilities": {
+      "aucun_motif": 0.01,
+      "retard_technique": 0.0,
+      "fraude_detournement": 0.0,
+      "client_injoignable": 0.0,
+      "tension_tresorerie": 0.0,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.99,
+      "perte_revenus": 0.0,
+      "sante_deces": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "regularisation_annoncee",
+     "confidence": 0.98,
+     "probabilities": {
+      "aucun_motif": 0.02,
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0,
+      "retard_technique": 0.0,
+      "tension_tresorerie": 0.0,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.98,
+      "sante_deces": 0.0,
+      "perte_revenus": 0.0
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "regularisation_annoncee",
+     "confidence": 0.97,
+     "probabilities": {
+      "aucun_motif": 0.03,
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0,
+      "retard_technique": 0.0,
+      "perte_revenus": 0.0,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.97,
+      "sante_deces": 0.0,
+      "tension_tresorerie": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Le salaire n'est plus domicilié chez nous depuis son changement d'employeur. Il promet de payer le 15.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "perte_revenus",
+     "confidence": 0.94,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0,
+      "tension_tresorerie": 0.0,
+      "aucun_motif": 0.0,
+      "regularisation_annoncee": 0.0,
+      "sante_deces": 0.0,
+      "perte_revenus": 0.95,
+      "retard_technique": 0.05,
+      "litige_juridique": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "perte_revenus",
+     "confidence": 0.97,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0,
+      "tension_tresorerie": 0.0,
+      "aucun_motif": 0.0,
+      "regularisation_annoncee": 0.0,
+      "sante_deces": 0.0,
+      "retard_technique": 0.03,
+      "litige_juridique": 0.0,
+      "perte_revenus": 0.97
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "perte_revenus",
+     "confidence": 0.96,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0,
+      "tension_tresorerie": 0.0,
+      "aucun_motif": 0.0,
+      "regularisation_annoncee": 0.0,
+      "sante_deces": 0.0,
+      "retard_technique": 0.03,
+      "perte_revenus": 0.97,
+      "litige_juridique": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Perte du contrat principal avec le client minier, baisse forte du chiffre d'affaires. Le DG demande un rééchelonnement sur 24 mois.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "perte_revenus",
+     "confidence": 1.0,
+     "probabilities": {
+      "retard_technique": 0.0,
+      "sante_deces": 0.0,
+      "tension_tresorerie": 0.0,
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0,
+      "perte_revenus": 1.0,
+      "aucun_motif": 0.0,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "perte_revenus",
+     "confidence": 1.0,
+     "probabilities": {
+      "retard_technique": 0.0,
+      "sante_deces": 0.0,
+      "client_injoignable": 0.0,
+      "tension_tresorerie": 0.0,
+      "fraude_detournement": 0.0,
+      "perte_revenus": 1.0,
+      "aucun_motif": 0.0,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.0
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "perte_revenus",
+     "confidence": 1.0,
+     "probabilities": {
+      "retard_technique": 0.0,
+      "sante_deces": 0.0,
+      "tension_tresorerie": 0.0,
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0,
+      "perte_revenus": 1.0,
+      "aucun_motif": 0.0,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Promesse de règlement d'ici 10 jours, pas d'autre information.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.9,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "tension_tresorerie": 0.06,
+      "regularisation_annoncee": 0.02,
+      "retard_technique": 0.01,
+      "perte_revenus": 0.0,
+      "litige_juridique": 0.0,
+      "aucun_motif": 0.91,
+      "fraude_detournement": 0.0,
+      "sante_deces": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.97,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "sante_deces": 0.0,
+      "regularisation_annoncee": 0.0,
+      "retard_technique": 0.0,
+      "perte_revenus": 0.0,
+      "litige_juridique": 0.0,
+      "aucun_motif": 0.98,
+      "fraude_detournement": 0.0,
+      "tension_tresorerie": 0.02
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.86,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "sante_deces": 0.0,
+      "regularisation_annoncee": 0.03,
+      "retard_technique": 0.0,
+      "perte_revenus": 0.0,
+      "litige_juridique": 0.0,
+      "aucun_motif": 0.88,
+      "fraude_detournement": 0.0,
+      "tension_tresorerie": 0.09
+     }
+    }
+   }
+  ],
+  [
+   "Le compte est bloqué par un avis à tiers détenteur des impôts. Le client conteste le redressement.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "litige_juridique",
+     "confidence": 1.0,
+     "probabilities": {
+      "retard_technique": 0.0,
+      "tension_tresorerie": 0.0,
+      "fraude_detournement": 0.0,
+      "regularisation_annoncee": 0.0,
+      "litige_juridique": 1.0,
+      "aucun_motif": 0.0,
+      "client_injoignable": 0.0,
+      "sante_deces": 0.0,
+      "perte_revenus": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "litige_juridique",
+     "confidence": 1.0,
+     "probabilities": {
+      "litige_juridique": 1.0,
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0,
+      "retard_technique": 0.0,
+      "tension_tresorerie": 0.0,
+      "aucun_motif": 0.0,
+      "regularisation_annoncee": 0.0,
+      "sante_deces": 0.0,
+      "perte_revenus": 0.0
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "litige_juridique",
+     "confidence": 1.0,
+     "probabilities": {
+      "regularisation_annoncee": 0.0,
+      "tension_tresorerie": 0.0,
+      "fraude_detournement": 0.0,
+      "client_injoignable": 0.0,
+      "litige_juridique": 1.0,
+      "aucun_motif": 0.0,
+      "retard_technique": 0.0,
+      "sante_deces": 0.0,
+      "perte_revenus": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Décès du gérant le mois dernier, la succession est en cours. Les héritiers n'ont pas encore été reçus.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "sante_deces",
+     "confidence": 1.0,
+     "probabilities": {
+      "litige_juridique": 0.0,
+      "retard_technique": 0.0,
+      "client_injoignable": 0.0,
+      "regularisation_annoncee": 0.0,
+      "perte_revenus": 0.0,
+      "tension_tresorerie": 0.0,
+      "fraude_detournement": 0.0,
+      "sante_deces": 1.0,
+      "aucun_motif": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "sante_deces",
+     "confidence": 1.0,
+     "probabilities": {
+      "litige_juridique": 0.0,
+      "retard_technique": 0.0,
+      "tension_tresorerie": 0.0,
+      "regularisation_annoncee": 0.0,
+      "aucun_motif": 0.0,
+      "perte_revenus": 0.0,
+      "fraude_detournement": 0.0,
+      "sante_deces": 1.0,
+      "client_injoignable": 0.0
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "sante_deces",
+     "confidence": 1.0,
+     "probabilities": {
+      "litige_juridique": 0.0,
+      "retard_technique": 0.0,
+      "client_injoignable": 0.0,
+      "regularisation_annoncee": 0.0,
+      "perte_revenus": 0.0,
+      "tension_tresorerie": 0.0,
+      "fraude_detournement": 0.0,
+      "sante_deces": 1.0,
+      "aucun_motif": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Tension de trésorerie liée au retard de paiement de ses clients distributeurs. Le client apporte un chèque de 40 % fin novembre et le solde en décembre.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "tension_tresorerie",
+     "confidence": 1.0,
+     "probabilities": {
+      "litige_juridique": 0.0,
+      "retard_technique": 0.0,
+      "aucun_motif": 0.0,
+      "sante_deces": 0.0,
+      "perte_revenus": 0.0,
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0,
+      "regularisation_annoncee": 0.0,
+      "tension_tresorerie": 1.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "tension_tresorerie",
+     "confidence": 1.0,
+     "probabilities": {
+      "litige_juridique": 0.0,
+      "sante_deces": 0.0,
+      "aucun_motif": 0.0,
+      "retard_technique": 0.0,
+      "perte_revenus": 0.0,
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0,
+      "regularisation_annoncee": 0.0,
+      "tension_tresorerie": 1.0
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "tension_tresorerie",
+     "confidence": 1.0,
+     "probabilities": {
+      "litige_juridique": 0.0,
+      "sante_deces": 0.0,
+      "aucun_motif": 0.0,
+      "retard_technique": 0.0,
+      "perte_revenus": 0.0,
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0,
+      "regularisation_annoncee": 0.0,
+      "tension_tresorerie": 1.0
+     }
+    }
+   }
+  ],
+  [
+   "RAS",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 1.0,
+     "probabilities": {
+      "litige_juridique": 0.0,
+      "client_injoignable": 0.0,
+      "tension_tresorerie": 0.0,
+      "perte_revenus": 0.0,
+      "fraude_detournement": 0.0,
+      "regularisation_annoncee": 0.0,
+      "retard_technique": 0.0,
+      "aucun_motif": 1.0,
+      "sante_deces": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 1.0,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "litige_juridique": 0.0,
+      "tension_tresorerie": 0.0,
+      "perte_revenus": 0.0,
+      "fraude_detournement": 0.0,
+      "regularisation_annoncee": 0.0,
+      "aucun_motif": 1.0,
+      "retard_technique": 0.0,
+      "sante_deces": 0.0
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 1.0,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "litige_juridique": 0.0,
+      "tension_tresorerie": 0.0,
+      "perte_revenus": 0.0,
+      "fraude_detournement": 0.0,
+      "regularisation_annoncee": 0.0,
+      "retard_technique": 0.0,
+      "aucun_motif": 1.0,
+      "sante_deces": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Client à jour, aucun impayé sur le compte.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.88,
+     "probabilities": {
+      "fraude_detournement": 0.0,
+      "retard_technique": 0.0,
+      "tension_tresorerie": 0.0,
+      "client_injoignable": 0.0,
+      "aucun_motif": 0.89,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.11,
+      "sante_deces": 0.0,
+      "perte_revenus": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.68,
+     "probabilities": {
+      "fraude_detournement": 0.0,
+      "retard_technique": 0.0,
+      "tension_tresorerie": 0.0,
+      "client_injoignable": 0.0,
+      "perte_revenus": 0.0,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.28,
+      "sante_deces": 0.0,
+      "aucun_motif": 0.72
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.84,
+     "probabilities": {
+      "fraude_detournement": 0.0,
+      "retard_technique": 0.0,
+      "perte_revenus": 0.0,
+      "sante_deces": 0.0,
+      "client_injoignable": 0.0,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.14,
+      "tension_tresorerie": 0.0,
+      "aucun_motif": 0.86
+     }
+    }
+   }
+  ],
+  [
+   "Les factures présentées pour l'escompte semblent fictives, le débiteur cédé ne les reconnaît pas.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "fraude_detournement",
+     "confidence": 1.0,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "retard_technique": 0.0,
+      "aucun_motif": 0.0,
+      "perte_revenus": 0.0,
+      "sante_deces": 0.0,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.0,
+      "tension_tresorerie": 0.0,
+      "fraude_detournement": 1.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "fraude_detournement",
+     "confidence": 1.0,
+     "probabilities": {
+      "fraude_detournement": 1.0,
+      "retard_technique": 0.0,
+      "perte_revenus": 0.0,
+      "client_injoignable": 0.0,
+      "sante_deces": 0.0,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.0,
+      "tension_tresorerie": 0.0,
+      "aucun_motif": 0.0
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "fraude_detournement",
+     "confidence": 1.0,
+     "probabilities": {
+      "fraude_detournement": 1.0,
+      "retard_technique": 0.0,
+      "perte_revenus": 0.0,
+      "aucun_motif": 0.0,
+      "tension_tresorerie": 0.0,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.0,
+      "sante_deces": 0.0,
+      "client_injoignable": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Relance faite par téléphone, le client dit qu'il passera à l'agence la semaine prochaine.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.89,
+     "probabilities": {
+      "aucun_motif": 0.9,
+      "fraude_detournement": 0.0,
+      "perte_revenus": 0.0,
+      "retard_technique": 0.01,
+      "client_injoignable": 0.0,
+      "regularisation_annoncee": 0.05,
+      "tension_tresorerie": 0.04,
+      "litige_juridique": 0.0,
+      "sante_deces": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.92,
+     "probabilities": {
+      "fraude_detournement": 0.0,
+      "aucun_motif": 0.93,
+      "perte_revenus": 0.0,
+      "retard_technique": 0.0,
+      "client_injoignable": 0.0,
+      "regularisation_annoncee": 0.03,
+      "tension_tresorerie": 0.04,
+      "litige_juridique": 0.0,
+      "sante_deces": 0.0
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.9,
+     "probabilities": {
+      "fraude_detournement": 0.0,
+      "aucun_motif": 0.91,
+      "perte_revenus": 0.0,
+      "retard_technique": 0.0,
+      "client_injoignable": 0.0,
+      "regularisation_annoncee": 0.03,
+      "tension_tresorerie": 0.06,
+      "litige_juridique": 0.0,
+      "sante_deces": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Hospitalisation du client, reprise du travail prévue en novembre. L'épouse s'engage à verser le 20 octobre.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "sante_deces",
+     "confidence": 1.0,
+     "probabilities": {
+      "fraude_detournement": 0.0,
+      "sante_deces": 1.0,
+      "aucun_motif": 0.0,
+      "litige_juridique": 0.0,
+      "client_injoignable": 0.0,
+      "regularisation_annoncee": 0.0,
+      "tension_tresorerie": 0.0,
+      "retard_technique": 0.0,
+      "perte_revenus": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "sante_deces",
+     "confidence": 1.0,
+     "probabilities": {
+      "fraude_detournement": 0.0,
+      "sante_deces": 1.0,
+      "aucun_motif": 0.0,
+      "litige_juridique": 0.0,
+      "client_injoignable": 0.0,
+      "regularisation_annoncee": 0.0,
+      "tension_tresorerie": 0.0,
+      "retard_technique": 0.0,
+      "perte_revenus": 0.0
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "sante_deces",
+     "confidence": 1.0,
+     "probabilities": {
+      "fraude_detournement": 0.0,
+      "sante_deces": 1.0,
+      "aucun_motif": 0.0,
+      "litige_juridique": 0.0,
+      "client_injoignable": 0.0,
+      "regularisation_annoncee": 0.0,
+      "tension_tresorerie": 0.0,
+      "retard_technique": 0.0,
+      "perte_revenus": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Domiciliation de la subvention annuelle confirmée par la tutelle, virement attendu cette semaine.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "retard_technique",
+     "confidence": 0.95,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "aucun_motif": 0.0,
+      "retard_technique": 0.96,
+      "perte_revenus": 0.0,
+      "tension_tresorerie": 0.04,
+      "regularisation_annoncee": 0.0,
+      "sante_deces": 0.0,
+      "litige_juridique": 0.0,
+      "fraude_detournement": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "retard_technique",
+     "confidence": 0.82,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "aucun_motif": 0.0,
+      "retard_technique": 0.85,
+      "perte_revenus": 0.0,
+      "tension_tresorerie": 0.15,
+      "regularisation_annoncee": 0.0,
+      "sante_deces": 0.0,
+      "fraude_detournement": 0.0,
+      "litige_juridique": 0.0
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "retard_technique",
+     "confidence": 0.95,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "aucun_motif": 0.0,
+      "retard_technique": 0.95,
+      "perte_revenus": 0.0,
+      "tension_tresorerie": 0.03,
+      "regularisation_annoncee": 0.02,
+      "sante_deces": 0.0,
+      "fraude_detournement": 0.0,
+      "litige_juridique": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Le client a demandé une restructuration avec allongement de 12 mois, dossier transmis au crédit.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.6,
+     "probabilities": {
+      "litige_juridique": 0.0,
+      "retard_technique": 0.0,
+      "tension_tresorerie": 0.35,
+      "regularisation_annoncee": 0.0,
+      "aucun_motif": 0.64,
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0,
+      "sante_deces": 0.0,
+      "perte_revenus": 0.01
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.71,
+     "probabilities": {
+      "litige_juridique": 0.0,
+      "retard_technique": 0.0,
+      "client_injoignable": 0.0,
+      "regularisation_annoncee": 0.0,
+      "aucun_motif": 0.75,
+      "perte_revenus": 0.0,
+      "fraude_detournement": 0.0,
+      "sante_deces": 0.0,
+      "tension_tresorerie": 0.25
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.73,
+     "probabilities": {
+      "litige_juridique": 0.0,
+      "retard_technique": 0.0,
+      "tension_tresorerie": 0.23,
+      "regularisation_annoncee": 0.0,
+      "perte_revenus": 0.0,
+      "aucun_motif": 0.77,
+      "fraude_detournement": 0.0,
+      "sante_deces": 0.0,
+      "client_injoignable": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Prélèvement rejeté pour un problème de RIB après la migration du compte, régularisation technique en cours.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "retard_technique",
+     "confidence": 1.0,
+     "probabilities": {
+      "tension_tresorerie": 0.0,
+      "perte_revenus": 0.0,
+      "sante_deces": 0.0,
+      "litige_juridique": 0.0,
+      "retard_technique": 1.0,
+      "aucun_motif": 0.0,
+      "client_injoignable": 0.0,
+      "regularisation_annoncee": 0.0,
+      "fraude_detournement": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "retard_technique",
+     "confidence": 1.0,
+     "probabilities": {
+      "tension_tresorerie": 0.0,
+      "retard_technique": 1.0,
+      "sante_deces": 0.0,
+      "litige_juridique": 0.0,
+      "regularisation_annoncee": 0.0,
+      "aucun_motif": 0.0,
+      "perte_revenus": 0.0,
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "retard_technique",
+     "confidence": 1.0,
+     "probabilities": {
+      "tension_tresorerie": 0.0,
+      "regularisation_annoncee": 0.0,
+      "sante_deces": 0.0,
+      "litige_juridique": 0.0,
+      "retard_technique": 1.0,
+      "aucun_motif": 0.0,
+      "perte_revenus": 0.0,
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Le client attend le paiement d'une créance sur une société du groupe. Aucune date donnée.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.56,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "perte_revenus": 0.0,
+      "tension_tresorerie": 0.35,
+      "aucun_motif": 0.62,
+      "litige_juridique": 0.01,
+      "sante_deces": 0.0,
+      "fraude_detournement": 0.0,
+      "regularisation_annoncee": 0.0,
+      "retard_technique": 0.02
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.43,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "perte_revenus": 0.0,
+      "sante_deces": 0.0,
+      "aucun_motif": 0.49,
+      "litige_juridique": 0.01,
+      "tension_tresorerie": 0.47,
+      "fraude_detournement": 0.0,
+      "regularisation_annoncee": 0.0,
+      "retard_technique": 0.03
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "aucun_motif",
+     "confidence": 0.57,
+     "probabilities": {
+      "sante_deces": 0.0,
+      "perte_revenus": 0.0,
+      "tension_tresorerie": 0.32,
+      "litige_juridique": 0.03,
+      "aucun_motif": 0.62,
+      "client_injoignable": 0.0,
+      "fraude_detournement": 0.0,
+      "regularisation_annoncee": 0.0,
+      "retard_technique": 0.03
+     }
+    }
+   }
+  ],
+  [
+   "Paiement prévu le 28/12/2026 après l'encaissement de la campagne arachidière.",
+   {
+    "fr": {
+     "type": "choice",
+     "choice": "tension_tresorerie",
+     "confidence": 0.99,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "regularisation_annoncee": 0.0,
+      "litige_juridique": 0.0,
+      "sante_deces": 0.0,
+      "tension_tresorerie": 1.0,
+      "retard_technique": 0.0,
+      "aucun_motif": 0.0,
+      "perte_revenus": 0.0,
+      "fraude_detournement": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "tension_tresorerie",
+     "confidence": 0.99,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "regularisation_annoncee": 0.0,
+      "litige_juridique": 0.0,
+      "sante_deces": 0.0,
+      "tension_tresorerie": 1.0,
+      "retard_technique": 0.0,
+      "perte_revenus": 0.0,
+      "aucun_motif": 0.0,
+      "fraude_detournement": 0.0
+     }
+    },
+    "rev": {
+     "type": "choice",
+     "choice": "tension_tresorerie",
+     "confidence": 0.99,
+     "probabilities": {
+      "client_injoignable": 0.0,
+      "regularisation_annoncee": 0.0,
+      "litige_juridique": 0.0,
+      "sante_deces": 0.0,
+      "tension_tresorerie": 0.99,
+      "retard_technique": 0.0,
+      "perte_revenus": 0.01,
+      "aucun_motif": 0.0,
+      "fraude_detournement": 0.0
+     }
+    }
+   }
+  ],
+  [
+   "Échanges avec le DAF : virement intra-groupe en attente de validation à Lomé, attendu le 08/10/2026.",
+   {
+    "rev": {
+     "type": "choice",
+     "choice": "retard_technique",
+     "confidence": 1.0,
+     "probabilities": {
+      "sante_deces": 0.0,
+      "perte_revenus": 0.0,
+      "aucun_motif": 0.0,
+      "litige_juridique": 0.0,
+      "fraude_detournement": 0.0,
+      "retard_technique": 1.0,
+      "regularisation_annoncee": 0.0,
+      "client_injoignable": 0.0,
+      "tension_tresorerie": 0.0
+     }
+    },
+    "fr": {
+     "type": "choice",
+     "choice": "retard_technique",
+     "confidence": 1.0,
+     "probabilities": {
+      "regularisation_annoncee": 0.0,
+      "perte_revenus": 0.0,
+      "aucun_motif": 0.0,
+      "fraude_detournement": 0.0,
+      "litige_juridique": 0.0,
+      "retard_technique": 1.0,
+      "sante_deces": 0.0,
+      "client_injoignable": 0.0,
+      "tension_tresorerie": 0.0
+     }
+    },
+    "en": {
+     "type": "choice",
+     "choice": "retard_technique",
+     "confidence": 1.0,
+     "probabilities": {
+      "regularisation_annoncee": 0.0,
+      "perte_revenus": 0.0,
+      "litige_juridique": 0.0,
+      "aucun_motif": 0.0,
+      "fraude_detournement": 0.0,
+      "retard_technique": 1.0,
+      "sante_deces": 0.0,
+      "client_injoignable": 0.0,
+      "tension_tresorerie": 0.0
+     }
+    }
+   }
+  ]
+ ],
+ "salt": [
+  [
+   "Le client a transmis l'ordre de virement ce matin, règlement prévu le 03/10/2026.",
+   [
+    [
+     "retard_technique",
+     0.91
+    ],
+    [
+     "retard_technique",
+     0.89
+    ],
+    [
+     "retard_technique",
+     0.87
+    ],
+    [
+     "retard_technique",
+     0.88
+    ]
+   ]
+  ],
+  [
+   "Retard de paiement de l'État sur le marché de fournitures. Le mandat est visé au Trésor, encaissement attendu fin octobre.",
+   [
+    [
+     "tension_tresorerie",
+     0.75
+    ],
+    [
+     "tension_tresorerie",
+     0.81
+    ],
+    [
+     "tension_tresorerie",
+     0.76
+    ],
+    [
+     "tension_tresorerie",
+     0.8
+    ]
+   ]
+  ],
+  [
+   "Client injoignable depuis trois semaines, le magasin est fermé. Visite prévue avec le recouvrement.",
+   [
+    [
+     "client_injoignable",
+     1.0
+    ],
+    [
+     "client_injoignable",
+     1.0
+    ],
+    [
+     "client_injoignable",
+     1.0
+    ],
+    [
+     "client_injoignable",
+     1.0
+    ]
+   ]
+  ],
+  [
+   "Régularisé.",
+   [
+    [
+     "regularisation_annoncee",
+     0.99
+    ],
+    [
+     "regularisation_annoncee",
+     0.99
+    ],
+    [
+     "regularisation_annoncee",
+     0.99
+    ],
+    [
+     "regularisation_annoncee",
+     0.99
+    ]
+   ]
+  ],
+  [
+   "Le salaire n'est plus domicilié chez nous depuis son changement d'employeur. Il promet de payer le 15.",
+   [
+    [
+     "perte_revenus",
+     0.94
+    ],
+    [
+     "perte_revenus",
+     0.93
+    ],
+    [
+     "perte_revenus",
+     0.96
+    ],
+    [
+     "perte_revenus",
+     0.95
+    ]
+   ]
+  ],
+  [
+   "Perte du contrat principal avec le client minier, baisse forte du chiffre d'affaires. Le DG demande un rééchelonnement sur 24 mois.",
+   [
+    [
+     "perte_revenus",
+     1.0
+    ],
+    [
+     "perte_revenus",
+     1.0
+    ],
+    [
+     "perte_revenus",
+     1.0
+    ],
+    [
+     "perte_revenus",
+     1.0
+    ]
+   ]
+  ],
+  [
+   "Promesse de règlement d'ici 10 jours, pas d'autre information.",
+   [
+    [
+     "aucun_motif",
+     0.92
+    ],
+    [
+     "aucun_motif",
+     0.94
+    ],
+    [
+     "aucun_motif",
+     0.93
+    ],
+    [
+     "aucun_motif",
+     0.93
+    ]
+   ]
+  ],
+  [
+   "Le compte est bloqué par un avis à tiers détenteur des impôts. Le client conteste le redressement.",
+   [
+    [
+     "litige_juridique",
+     1.0
+    ],
+    [
+     "litige_juridique",
+     1.0
+    ],
+    [
+     "litige_juridique",
+     1.0
+    ],
+    [
+     "litige_juridique",
+     1.0
+    ]
+   ]
+  ]
+ ]
+}

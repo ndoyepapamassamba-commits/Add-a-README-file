@@ -13,7 +13,7 @@
 - Chaque export (Excel, PowerPoint, Word, mail) affiche la couche TypeSafe : signaux, confiance, dossiers à revoir et méthodologie.
 - Les données clients réelles ne partent vers l'API qu'après validation de la Conformité. Sinon, les envoyer anonymisées.
 
-## Moteur Credit Risk Intelligence (exports Excel premium natifs, APEX 37) — FORMAT DE RÉFÉRENCE
+## Moteur Credit Risk Intelligence (exports Excel premium natifs, depuis APEX 37 ; version actuelle APEX 38) — FORMAT DE RÉFÉRENCE
 - Bouton **Risk Intelligence** : 7 exports issus d'une **source analytique canonique unique** (`riModel`) : Complet, Executive (Comité), Risk, Watchlist, Action plan, Audit, Data.
 - Identité **ECOBANK BLUE PREMIUM** (`#003DA5`, Deep `#001B4D`, Bright `#2563EB`, Cyan `#06B6D4`, Gold `#C8A951` ; succès / vigilance / alerte / critique `#16A34A` `#F59E0B` `#F97316` `#DC2626`). Chaque couleur a un sens : bleu = structure, cyan = mouvement, or = stratégique, vert = amélioration, orange = vigilance, rouge = criticité.
 - Classeur généré nativement par `rxBook` (Open XML écrit à la main) : graphiques natifs, sparklines, mises en forme conditionnelles, navigation, impression A4/A3. Aucune image, fichier léger. Il est marqué `APEX-RI` : `pmXlsx` le reconnaît comme déjà premium et le laisse intact. Il passe quand même par `pmFinish`.
@@ -42,3 +42,47 @@
   - PD 12M par client avec sa provenance (Watchlist, Actions, Top risks) ;
   - Forward view (Movement), callout Outlook (Executive), insight 07 ;
   - tableau de couverture JEV et TypeSafe dans AUDIT.
+
+## Noms internes, ultra 3D et agent EXPORT (APEX 38)
+- **Nos outils restent entre nous.** Aucun export (Excel, Word, PowerPoint, PDF, mail) ne cite TypeSafe, JEV ni jev-latest. Les noms affichés sont :
+  - « Analyse sémantique » (feuille `_SEMANTIQUE`) ;
+  - « RISK OUTLOOK » / « Risk Outlook » ;
+  - « moteur sémantique ».
+
+  Le renommage passe par `expScrub` / `expScrubTxt` (table `EXP_NAMES`). Il ne touche jamais aux `.rels`, à `[Content_Types].xml` ni aux images base64.
+  - La version exacte du modèle s'affiche « moteur sémantique v1.13.0 » : elle reste traçable, sans le nom interne.
+  - Dans l'app, et entre PNDOYE et Claude, les vrais noms restent.
+  - Le classeur d'enrichissement du poste connecté est un fichier technique interne : sa feuille `_TYPESAFE` est le contrat de lecture avec APEX, qui accepte aussi `_SEMANTIQUE`. Ce sont les exports d'APEX qui sont diffusés.
+- **Ultra 3D partout** :
+  - graphiques natifs 3D (barres 3D, biseaux, ombres, bulles 3D) ;
+  - cellules en relief et texte ombré dans Excel ;
+  - visuels 3D équivalents dans Word, PDF et PowerPoint ;
+  - visuels Blender (`typesafe-reporting/blender_export_art.py`) dans le hero des exports et dans l'app, avec la couche `app3d.css`.
+- **Agent EXPORT** : tout travail d'export passe par `.claude/agents/export.md`.
+  - La chaîne de construction reproductible, les tests et les jeux d'essai synthétiques sont dans `outils_export/`.
+  - Chaque passage ajoute une entrée à `docs/EXPORT_AGENT_JOURNAL.md`.
+  - Dans APEX, `EXPORT_AGENT` journalise chaque export et l'inspecte : valeurs invalides, ancienne charte, couche sémantique, noms internes, poids. Il propose aussi des améliorations.
+- **Moteur sémantique à fond, selon les données présentes** :
+  - par dossier : famille avec repli, action recommandée, contrôle d'ordre des options, stabilité (3 tirages avec sel), données sensibles, date par composants et 8 scénarios macro (stress narratif) ;
+  - par portefeuille, en un appel : importance des constats, phrase de lecture du Comité et bénéficiaires potentiellement liés (Score + Noul ; « Lien probable » seulement si les deux concordent) ;
+  - les démos utilisent toujours des situations complexes (plusieurs causes, plusieurs scénarios). Montants, agrégats et entrées en douteux attendues sont calculés par le code.
+- **Découvertes API (jev-1.13.0)** :
+  - trois types de questions : choice (255 options au plus), score (10 niveaux au plus) et noul ;
+  - consignes structurées acceptées (objets, listes d'exemples) ;
+  - français aussi fiable que l'anglais ; ordre des options sans biais mesuré ;
+  - un sel dans l'état permet de rééchantillonner ;
+  - la version exacte et les jetons sont conservés ;
+  - dates et calculs restent toujours en code ;
+  - un identifiant de choix « 01 » peut revenir numérique : normaliser.
+- **Apprentissage supervisé** : le modèle n'est pas réentraîné. Ce sont les consignes et les seuils qui apprennent (`typesafe-reporting/apprentissage.py`) :
+  - `a_valider.xlsx` → mémoire d'exemples validés par les analystes ;
+  - 2 exemples par option, 12 au plus, noms masqués ;
+  - seuils recalibrés dès 10 cas (90 % d'accord, plancher 0,40).
+- **Risk Outlook avancé**, chaque résultat avec sa provenance :
+  - structure par terme ;
+  - temps moyen avant défaut ;
+  - guérison ;
+  - IC bootstrap ;
+  - backtest + Brier ;
+  - stress inverse ;
+  - sensibilité.

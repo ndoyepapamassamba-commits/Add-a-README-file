@@ -44,11 +44,14 @@ from pathlib import Path
 
 import xlsxwriter
 
+import apprentissage as app
+import typesafe_avance as ava
+
 API_URL = "https://api.typesafe.ai/v1/systemone"
 MODELE = "jev-latest"
 ICI = Path(__file__).resolve().parent
 SORTIE = ICI / "sortie"
-CACHE = SORTIE / "impayes_reponses_brutes.json"
+CACHE = Path(os.environ.get("TYPESAFE_CACHE") or SORTIE / "impayes_reponses_brutes.json")
 DEMO_CSV = ICI / "impayes_demo_anonyme.csv"
 
 # --------------------------------------------------------------------------- #
@@ -273,7 +276,11 @@ Q_NOM = {
 def cle(d):
     """Clé du cache : un commentaire modifié déclenche une nouvelle lecture TypeSafe."""
     import hashlib
-    h = hashlib.sha1(json.dumps(["v2", d["client"], d["segment"], d["jours"], d["commentaire"], d.get("plan", "")], ensure_ascii=False).encode()).hexdigest()
+    v = app.version()  # exemples validés par les analystes : une mémoire modifiée déclenche une relecture
+    contexte = [d.get(k) or "" for k in ("secteur", "garantie", "taille", "trajectoire")]  # état transmis au modèle
+    h = hashlib.sha1(json.dumps(["v3", d["client"], d["segment"], d["jours"], d["commentaire"], d.get("plan", "")]
+                                + (contexte if any(contexte) else []) + ([v] if v else []),
+                                ensure_ascii=False).encode()).hexdigest()
     return f"{d['ref']}|{h[:12]}"
 
 
@@ -281,17 +288,24 @@ def evaluer(d, essais=5):
     questions = dict(Q_NOM)
     if d["commentaire"]:
         questions.update(Q_COMMENTAIRE)
-    corps = json.dumps({
-        "model": MODELE,
-        "state": {"dossier": {
-            "client": d["client"],
-            "segment": d["segment"],
-            "jours_impayes": d["jours"],
-            "commentaire_gestionnaire": d["commentaire"],
-            "plan_action": d.get("plan") or "aucun plan renseigné",
-        }},
-        "questions": questions,
-    }).encode()
+        questions.update(ava.questions_avancees(Q_COMMENTAIRE))
+        questions.update(ava.questions_scenarios())
+    etat = {"dossier": {
+        "client": d["client"],
+        "segment": d["segment"],
+        "secteur": d.get("secteur") or "non renseigné",
+        "garantie": d.get("garantie") or "non renseignée",
+        "taille_exposition": d.get("taille") or "non renseignée",
+        "trajectoire_impayes": d.get("trajectoire") or "non renseignée",
+        "jours_impayes": d["jours"],
+        "commentaire_gestionnaire": d["commentaire"],
+        "plan_action": d.get("plan") or "aucun plan renseigné",
+    }}
+    if d.get("_sel"):
+        etat = ava.etat_sel(etat)
+        questions = {k: questions[k] for k in ("motif", "routage") if k in questions}
+    questions = app.enrichir(questions)  # apprentissage par l'exemple (réponses validées par les analystes)
+    corps = json.dumps({"model": MODELE, "state": etat, "questions": questions}).encode()
     entetes = {"Content-Type": "application/json"}
     if os.environ.get("TYPESAFE_API_KEY"):
         entetes["Authorization"] = f"Bearer {os.environ['TYPESAFE_API_KEY']}"
@@ -299,8 +313,9 @@ def evaluer(d, essais=5):
         try:
             req = urllib.request.Request(API_URL, data=corps, headers=entetes)
             with urllib.request.urlopen(req, timeout=90) as rep:
-                return {"modele": MODELE, "horodatage": datetime.now().isoformat(timespec="seconds"),
-                        "answers": json.load(rep)["answers"]}
+                js = json.load(rep)
+                return {"modele": MODELE, "version": js.get("model"), "usage": js.get("usage"),
+                        "horodatage": datetime.now().isoformat(timespec="seconds"), "answers": js["answers"]}
         except urllib.error.HTTPError as e:
             if e.code in (429, 500, 502, 503, 529) and essai < essais - 1:
                 time.sleep(2 ** essai)
@@ -333,6 +348,9 @@ LIB_MOTIF = {
 }
 LIB_NATURE = {"publique": "Publique", "parapublique": "Parapublique", "privee": "Privée", "particulier": "Particulier"}
 LIB_CRED = ["Nulle", "Faible", "Moyenne", "Bonne", "Très bonne"]
+# libellés proposés aux analystes dans le fichier à valider (listes déroulantes)
+LIBELLES_APPRENTISSAGE = {"motif": {k: v for k, v in LIB_MOTIF.items() if k}, "routage": LIB_ROUTAGE,
+                          "statut_propose": LIB_STATUT, "action_recommandee": ava.LIB_ACTION}
 
 
 def analyser(d, brut, arrete):
@@ -373,9 +391,9 @@ def analyser(d, brut, arrete):
         else:
             out["position"] = "Avant la bascule"
 
-        if out["conf_motif"] < SEUIL_CONFIANCE:
+        if out["conf_motif"] < app.seuil("motif", SEUIL_CONFIANCE):
             revue.append(f"motif incertain ({out['conf_motif']:.2f})")
-        if out["conf_statut"] < SEUIL_CONFIANCE:
+        if out["conf_statut"] < app.seuil("statut_propose", SEUIL_CONFIANCE):
             revue.append(f"statut incertain ({out['conf_statut']:.2f})")
         if out["conf_cred"] < SEUIL_CONFIANCE:
             revue.append(f"crédibilité incertaine ({out['conf_cred']:.2f})")
@@ -401,10 +419,37 @@ def analyser(d, brut, arrete):
             durable_choice = r["motif"]["choice"] in MOTIFS_DURABLES
             if (out["p_durable"] >= SEUIL_SIGNAL) != durable_choice and abs(out["p_durable"] - 0.5) > 0.15:
                 revue.append("auto-cohérence : motif et durabilité divergent")
-            if out["conf_routage"] < SEUIL_CONFIANCE:
+            if out["conf_routage"] < app.seuil("routage", SEUIL_CONFIANCE):
                 revue.append(f"orientation incertaine ({out['conf_routage']:.2f})")
             if d.get("plan") and out["p_coherence_plan"] < 1 - SEUIL_SIGNAL:
                 qc.append("Plan d'action APEX sans rapport avec la cause décrite")
+        # capacités avancées : dates par composants, famille avec repli, action, sensibilité, contrôle d'ordre, scénarios
+        if "famille_motif" in r:
+            fam = r["famille_motif"]
+            out["famille"] = ava.LIB_FAMILLE[fam["choice"]]
+            if out["conf_motif"] < SEUIL_CONFIANCE and fam["confidence"] >= 0.9 and fam["choice"] != "indetermine":
+                out["motif"] = out["famille"] + " (famille)"
+                revue[:] = [x for x in revue if not x.startswith("motif incertain")]
+            act = r["action_recommandee"]
+            out["action"] = ava.LIB_ACTION[act["choice"]]
+            out["conf_action"] = act["confidence"]
+            out["p_sensible"] = r["donnees_sensibles"]["noul"]
+            if out["p_sensible"] >= SEUIL_SIGNAL:
+                qc.append("Donnée personnelle sensible dans le commentaire : à anonymiser avant diffusion")
+            if r["motif_inv"]["choice"] != r["motif"]["choice"]:
+                revue.append("contrôle d'ordre : le motif change quand les options sont inversées")
+            if r["routage_inv"]["choice"] != r["routage"]["choice"]:
+                revue.append("contrôle d'ordre : l'orientation change quand les options sont inversées")
+            if out["date_promise"] is None:
+                dc = ava.date_par_composants(r, arrete)
+                if dc:
+                    out["date_promise"], out["date_source"] = dc, "composants"
+                    out["ecart"] = (dc - d["bascule"]).days
+                    out["position"] = "Après la bascule" if dc > d["bascule"] else "Avant la bascule"
+                    qc[:] = [x for x in qc if not x.startswith("Promesse datée selon TypeSafe mais date illisible")]
+                    if out["position"] == "Après la bascule":
+                        qc.append(f"Date promise {out['ecart']} j après la bascule en douteux")
+            out["scenarios"] = {k: r[f"scen_{k}"]["noul"] for k in ava.SCENARIOS if f"scen_{k}" in r}
         out["statut_retenu"] = "Revue analyste" if revue else out["statut_ts"]
 
     if out["segment_douteux"]:
@@ -485,6 +530,7 @@ def demo(arrete, n=30, graine=29):
     """Copie anonymisée : noms, références et montants fictifs, commentaires fictifs."""
     rnd = random.Random(graine)
     lignes = []
+    textes = COMMENTAIRES_FICTIFS + ava.COMMENTAIRES_COMPLEXES  # 24 situations simples + 6 situations complexes
     for i, (client, seg) in enumerate(CLIENTS_FICTIFS[:n]):
         jours = rnd.randint(31, 90)
         enc = rnd.choice([3, 8, 15, 40, 120, 350, 900, 2400]) * 1_000_000 + rnd.randint(0, 999) * 1000
@@ -497,7 +543,7 @@ def demo(arrete, n=30, graine=29):
             "encours": enc,
             "impaye": imp,
             "jours": jours,
-            "commentaire": COMMENTAIRES_FICTIFS[i % len(COMMENTAIRES_FICTIFS)],
+            "commentaire": textes[i % len(textes)],
             "statut_fichier": "À faire",
         })
     return lignes
@@ -566,7 +612,7 @@ MARINE, BLEU, CLAIR, LIME, VERT = "#00415E", "#005C83", "#1A86B3", "#8CC63F", "#
 TEXTE, FOND, LIGNE, ROUGE, OCRE = "#12333F", "#EEF4F7", "#CFE0E7", "#C0392B", "#B67D1C"
 PALETTE = [BLEU, LIME, CLAIR, "#0A6F95", OCRE, ROUGE, "#6BA23A", "#7FA7B8", "#D4A13A", "#3E5C6B"]
 FEUILLES = ["Tableau de bord", "Plan d'actions", "Retours gestionnaires", "Promesses vs bascules",
-            "Contrôle qualité", "Méthodologie TypeSafe"]
+            "Contrôle qualité", "Stress narratif", "Méthodologie TypeSafe"]
 
 
 class Classeur:
@@ -683,7 +729,28 @@ def style_graphique(ch, titre, legende=True):
     ch.set_plotarea({"fill": {"color": "white"}})
 
 
-def ecrire_classeur(resultats, bruts, arrete, chemin):
+def evaluer_portefeuille(pf, essais=5):
+    """Un appel « portefeuille » : importance de chaque constat, phrase de lecture, contreparties liées."""
+    etat = {"insights": [{"id": x["id"], "titre": x["titre"], "texte": x["texte"]} for x in pf.get("insights", [])],
+            "paires": [{"id": p["id"], "a": p["a"], "b": p["b"]} for p in pf.get("paires", [])]}
+    corps = json.dumps({"model": MODELE, "state": etat, "questions": ava.questions_portefeuille(pf)}).encode()
+    entetes = {"Content-Type": "application/json"}
+    if os.environ.get("TYPESAFE_API_KEY"):
+        entetes["Authorization"] = f"Bearer {os.environ['TYPESAFE_API_KEY']}"
+    for essai in range(essais):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(API_URL, data=corps, headers=entetes), timeout=120) as rep:
+                js = json.load(rep)
+                return {"modele": MODELE, "version": js.get("model"), "usage": js.get("usage"),
+                        "horodatage": datetime.now().isoformat(timespec="seconds"), "answers": js["answers"]}
+        except (urllib.error.HTTPError, urllib.error.URLError):
+            if essai < essais - 1:
+                time.sleep(2 ** essai)
+                continue
+            raise
+
+
+def ecrire_classeur(resultats, bruts, arrete, chemin, portefeuille=None):
     C = Classeur(chemin)
     wb, f = C.wb, C.f
     n = len(resultats)
@@ -835,6 +902,9 @@ def ecrire_classeur(resultats, bruts, arrete, chemin):
         ("Statut proposé", 16, "statut_ts", "cell"), ("Confiance statut", 10, "conf_statut", "pct"),
         ("Statut retenu", 16, "statut_retenu", "cell"),
         ("Urgence (0-4)", 9, lambda r: r.get("urgence"), "int"), ("Orientation", 20, lambda r: r.get("routage") or "—", "cell"),
+        ("Famille de motif", 18, lambda r: r.get("famille") or "—", "cell"), ("Action recommandée", 22, lambda r: r.get("action") or "—", "cell"),
+        ("Stabilité", 9, lambda r: r.get("stabilite"), "pct"),
+        ("Scénarios exposés", 30, lambda r: ", ".join(k.replace("_", " ") for k, v in (r.get("scenarios") or {}).items() if v >= SEUIL_SIGNAL) or "—", "wrap"),
         ("Durabilité (proba.)", 10, lambda r: r.get("p_durable"), "pct"), ("Plan cohérent (proba.)", 10, lambda r: r.get("p_coherence_plan"), "pct"),
     ]
     C.entete(ws, "Retours gestionnaires", "RETOURS GESTIONNAIRES · LECTURE TYPESAFE DES COMMENTAIRES",
@@ -881,6 +951,20 @@ def ecrire_classeur(resultats, bruts, arrete, chemin):
     fin = C.tableau(ws, 5, cols, cq, "Controle")
     ws.conditional_format(6, 5, fin, 6, {"type": "cell", "criteria": "==", "value": '"Oui"', "format": f["ocre"]})
 
+    # ---------- Stress narratif (exposition jugée, montants agrégés en code) ----------
+    ws = wb.add_worksheet("Stress narratif")
+    sc_rows = []
+    for k, lib in ava.SCENARIOS.items():
+        exp_ = [r for r in resultats if (r.get("scenarios") or {}).get(k, 0) >= SEUIL_SIGNAL]
+        sc_rows.append({"sc": lib, "n": len(exp_), "enc": sum(r["encours"] for r in exp_), "imp": sum(r["impaye"] for r in exp_),
+                        "cl": ", ".join(r["client"] for r in exp_[:6]) + (" …" if len(exp_) > 6 else "")})
+    cols = [("Scénario", 46, "sc", "wrap"), ("Dossiers exposés", 10, "n", "int"), ("Encours exposé (XOF)", 18, "enc", "num"),
+            ("Impayé exposé (XOF)", 16, "imp", "num"), ("Principaux dossiers", 60, "cl", "wrap")]
+    C.entete(ws, "Stress narratif", "STRESS NARRATIF · EXPOSITION DES DOSSIERS AUX SCÉNARIOS MACRO",
+             "Exposition jugée par le modèle (probabilité ≥ 0,6) ; montants agrégés par le code.", len(cols))
+    fin = C.tableau(ws, 5, cols, sc_rows, "StressNarratif")
+    ws.conditional_format(6, 2, fin, 2, {"type": "data_bar", "bar_color": ROUGE, "bar_solid": True})
+
     # ---------- Méthodologie ----------
     ws = wb.add_worksheet("Méthodologie TypeSafe")
     ws.set_column(0, 0, 30)
@@ -907,6 +991,13 @@ def ecrire_classeur(resultats, bruts, arrete, chemin):
         ("Données", "Démonstration sur une copie anonymisée : noms, références et montants fictifs, commentaires fictifs. "
          "Les données réelles n'iront à l'API qu'après validation de la Conformité."),
         ("Capacités avancées", "Re-classement des dossiers par urgence (Score), routage vers le bon traitement (Choice), contrôle d'auto-cohérence : le motif (Choice) et sa durabilité (Noul) sont posés séparément ; une divergence envoie le dossier en revue analyste. Cohérence entre le plan d'action APEX et la cause décrite (Noul). Toutes les questions partent en un seul appel (éventail spéculatif)."),
+        ("Découvertes API", "Version exacte du modèle et jetons consommés conservés (piste d'audit). Trois types de questions seulement (choice, score, noul). Français aussi fiable que l'anglais sur ce domaine (21/21, confiance 0,916 / 0,914). Ordre des options inversé : 21/21 identiques, contrôle conservé sur motif et routage. Sel dans l'état : ±0,03 de variation, utilisé pour mesurer la stabilité des dossiers sensibles (3 tirages)."),
+        ("Stress narratif", "Huit scénarios macro (paiements de l'État, campagne agricole, hydrocarbures, taux BCEAO, crise sanitaire, perte d'un donneur d'ordre, prix à l'importation, gouvernance) : le modèle juge l'exposition directe de chaque dossier (Noul) ; le code agrège les encours exposés et applique le stress de Risk Outlook."),
+        ("Apprentissage supervisé", "Le modèle n'est pas réentraîné (l'API ne le permet pas) : ce sont ses consignes et nos seuils "
+         "qui apprennent. Les analystes valident ou corrigent les jugements dans a_valider.xlsx (--modele-apprentissage) ; "
+         "les réponses validées (--apprentissage) sont jointes en exemples aux questions motif, orientation, statut et action "
+         "(2 par option, 12 au plus, noms masqués), et le seuil de confiance de chaque question est recalibré dès 10 cas : "
+         "plus petit seuil (plancher 0,40) donnant 90 % d'accord avec les analystes. État : " + app.resume()),
         ("Questions posées", "Commentaire : " + " · ".join(Q_COMMENTAIRE) + ". Nom du client : " + " · ".join(Q_NOM) + "."),
     ]
     ws.write_row(5, 0, ["Élément", "Règle"], f["hdr"])
@@ -919,8 +1010,10 @@ def ecrire_classeur(resultats, bruts, arrete, chemin):
     ws = wb.add_worksheet("_TYPESAFE")
     C.entete(ws, "_TYPESAFE", "_TYPESAFE · RÉPONSES BRUTES (PISTE D'AUDIT)",
              "Lue par l'app HTML offline au rechargement. Ne pas modifier.", 6)
-    ws.write_row(5, 0, ["ref", "question", "type", "reponse", "confiance", "probabilites_json"], f["hdr"])
-    ws.write_row(4, 0, ["modele", MODELE, "arrete", arrete.isoformat(), "genere", datetime.now().isoformat(timespec="seconds")])
+    ws.write_row(5, 0, ["ref", "question", "type", "reponse", "confiance", "probabilites_json", "libelle"], f["hdr"])
+    versions = sorted({b.get("version") for b in bruts.values() if isinstance(b, dict) and b.get("version")})
+    jetons = sum((b.get("usage") or {}).get("input_tokens", 0) for b in bruts.values() if isinstance(b, dict))
+    ws.write_row(4, 0, ["modele", ", ".join(versions) or MODELE, "arrete", arrete.isoformat(), "genere", datetime.now().isoformat(timespec="seconds"), f"jetons d'entrée : {jetons}"])
     ws.set_column(0, 4, 16)
     ws.set_column(5, 5, 90)
     i = 6
@@ -930,6 +1023,18 @@ def ecrire_classeur(resultats, bruts, arrete, chemin):
             rep = a.get("choice", a.get("score", a.get("noul")))
             ws.write_row(i, 0, [r["ref"], q, a["type"], rep, a.get("confidence"),
                                 json.dumps(a.get("probabilities", {}), ensure_ascii=False)])
+            i += 1
+        if r.get("stabilite") is not None:
+            ws.write_row(i, 0, [r["ref"], "stabilite", "code", "stable" if r["stable"] else "instable", r["stabilite"], "", "3 rééchantillonnages (sel dans l'état)"])
+            i += 1
+    if portefeuille and portefeuille[1]:
+        pf, b = portefeuille
+        lib = {**{f"importance_{x['id']}": x["titre"] for x in pf.get("insights", [])},
+               **{f"groupe_{p['id']}": f"{p['a']} ↔ {p['b']}" for p in pf.get("paires", [])},
+               **{f"meme_nom_{p['id']}": f"{p['a']} ↔ {p['b']}" for p in pf.get("paires", [])}}
+        for q, a in b["answers"].items():
+            rep = a.get("choice", a.get("score", a.get("noul")))
+            ws.write_row(i, 0, ["__PORTEFEUILLE__", q, a["type"], rep, a.get("confidence"), json.dumps(a.get("probabilities", {}), ensure_ascii=False), lib.get(q, "")])
             i += 1
     ws.hide()
     wb.worksheets()[0].activate()
@@ -947,9 +1052,18 @@ def main():
                     help="masque les noms clients avant l'appel (sans accord Conformité) ; les jugements sur les noms sont alors sans objet")
     ap.add_argument("--arrete", default="2026-09-29")
     ap.add_argument("--depuis-cache", action="store_true")
+    ap.add_argument("--modele-apprentissage", action="store_true",
+                    help="écrit sortie/a_valider.xlsx : jugements proposés à valider par les analystes")
+    ap.add_argument("--apprentissage", type=Path, help="intègre un fichier a_valider.xlsx rempli par les analystes")
     ap.add_argument("--sortie", type=Path, default=SORTIE / "Impayes_30-90j_TypeSafe_demo.xlsx")
     a = ap.parse_args()
     arrete = date.fromisoformat(a.arrete)
+    if a.apprentissage:
+        ajout, maj = app.integrer(a.apprentissage, LIBELLES_APPRENTISSAGE,
+                                  lambda c, client: ava.masquer(c, {client} if client else set(), "[client]"))
+        print(f"Apprentissage : {ajout} réponse(s) ajoutée(s), {maj} mise(s) à jour → {app.MEMOIRE}")
+        print(app.resume())
+        return
 
     if a.demo:
         dossiers = demo(arrete)
@@ -970,11 +1084,18 @@ def main():
                      "gestionnaire": d.get("gestionnaire") or "", "encours": float(d.get("encours") or 0),
                      "impaye": float(d.get("impaye") or 0), "jours": int(d.get("jours") or 0),
                      "commentaire": (d.get("commentaire") or "").strip(), "statut_fichier": d.get("statut_fichier") or "",
-                     "plan": (d.get("plan") or "").strip(),
+                     "plan": (d.get("plan") or "").strip(), "secteur": d.get("secteur"), "garantie": d.get("garantie"),
+                     "taille": d.get("taille"), "trajectoire": d.get("trajectoire"),
                      "bascule_apex": d.get("bascule")} for d in lot["dossiers"]]
+        noms_reels = sorted({d["client"] for d in dossiers if d["client"]})
         if a.anonymiser:
-            for i, d in enumerate(dossiers, 1):
-                d["client"] = f"CLIENT-{i:04d}"
+            # un alias stable par client ; noms clients et gestionnaires masqués aussi dans le texte du plan
+            alias = {n: f"CLIENT-{i:04d}" for i, n in enumerate(noms_reels, 1)}
+            gest = {d["gestionnaire"] for d in dossiers if d["gestionnaire"]}
+            for d in dossiers:
+                d["plan"] = ava.masquer(ava.masquer(d["plan"], alias, alias), gest, "[gestionnaire]")
+                d["commentaire"] = ava.masquer(ava.masquer(d["commentaire"], alias, alias), gest, "[gestionnaire]")
+                d["client"] = alias.get(d["client"], d["client"])
         if a.sortie == SORTIE / "Impayes_30-90j_TypeSafe_demo.xlsx":
             a.sortie = SORTIE / f"Impayes_30-90j_TypeSafe_{arrete:%Y-%m-%d}.xlsx"
     else:
@@ -999,7 +1120,48 @@ def main():
         raise SystemExit(f"Réponses absentes du cache : {manquants[:5]}")
 
     resultats = [analyser(d, cache[cle(d)], arrete) for d in dossiers]
-    ecrire_classeur(resultats, cache, arrete, a.sortie)
+    # stabilité : 3 rééchantillonnages (sel dans l'état) pour les dossiers urgents ou en revue
+    sensibles = [d for d, r in zip(dossiers, resultats) if d["commentaire"] and ((r.get("urgence") or 0) >= 3 or r["revue"])]
+    if sensibles and not a.depuis_cache:
+        taches = [dict(d, _sel=1, _k=k) for d in sensibles for k in range(3) if f"{cle(d)}|sel{k}" not in cache]
+        with ThreadPoolExecutor(8) as ex:
+            for t, rep in zip(taches, ex.map(evaluer, taches)):
+                cache[f"{cle(t)}|sel{t['_k']}"] = rep
+        CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=1))
+    for d, r in zip(dossiers, resultats):
+        tirs = [cache.get(f"{cle(d)}|sel{k}") for k in range(3)]
+        tirs = [t for t in tirs if t]
+        if tirs:
+            base = cache[cle(d)]["answers"]
+            ch = [t["answers"]["motif"]["choice"] for t in tirs] + [t["answers"]["routage"]["choice"] for t in tirs]
+            ref = [base["motif"]["choice"]] * len(tirs) + [base["routage"]["choice"]] * len(tirs)
+            pm = [t["answers"]["motif"]["probabilities"][base["motif"]["choice"]] for t in tirs] + [base["motif"]["probabilities"][base["motif"]["choice"]]]
+            r["stabilite"] = round(1 - (max(pm) - min(pm)), 3)
+            r["stable"] = ch == ref
+            if not r["stable"]:
+                r["revue"].append("instabilité : le jugement change d'un tirage à l'autre")
+                r["statut_retenu"] = "Revue analyste"
+    # appel portefeuille : phrase de lecture du Comité et contreparties potentiellement liées
+    pf = (lot.get("portefeuille") if a.lot else None) or {}
+    if a.anonymiser and pf:
+        # sans accord Conformité : noms masqués dans les constats, jugements sur les paires de noms sans objet
+        cites = set(pf.get("noms", [])) | set(noms_reels) | {d["gestionnaire"] for d in dossiers if d["gestionnaire"]} \
+            | {p[k] for p in pf.get("paires", []) for k in ("a", "b")}
+        pf = {"insights": [dict(x, titre=ava.masquer(x["titre"], cites), texte=ava.masquer(x["texte"], cites))
+                           for x in pf.get("insights", [])], "paires": []}
+        print("Anonymisation : noms masqués dans les constats, paires de noms retirées de l'appel portefeuille")
+    portefeuille = None
+    if pf.get("insights") or pf.get("paires"):
+        kpf = "__PORTEFEUILLE__|" + __import__("hashlib").sha1(json.dumps(pf, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:12]
+        if kpf not in cache and not a.depuis_cache:
+            cache[kpf] = evaluer_portefeuille(pf)
+            CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=1))
+        portefeuille = (pf, cache.get(kpf))
+    ecrire_classeur(resultats, cache, arrete, a.sortie, portefeuille)
+    if a.modele_apprentissage:
+        n = app.ecrire_a_valider(dossiers, resultats, cache, cle, LIBELLES_APPRENTISSAGE, SORTIE / "a_valider.xlsx",
+                                 lambda c, d: c)
+        print(f"Apprentissage : {n} jugement(s) à valider → {SORTIE / 'a_valider.xlsx'}")
     (SORTIE / "impayes_resultats.json").write_text(json.dumps(resultats, ensure_ascii=False, indent=1, default=str))
 
     for r in resultats:
