@@ -6,4 +6,8 @@ numpy>=1.24
 cairosvg>=2.7
 rembg>=2.0
 opencv-python-headless>=4.8
-mediapipe==0.10.14
+# mediapipe==0.10.14  (optionnel : incompatible avec Chatterbox, protobuf)
+gradio_client>=1.0
+rembg[cpu]>=2.0
+spandrel>=0.4
+soundfile>=0.12

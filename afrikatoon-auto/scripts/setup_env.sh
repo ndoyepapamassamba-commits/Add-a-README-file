@@ -27,6 +27,11 @@ if curl -s -o /dev/null -m 5 https://huggingface.co; then
     pip install -q chatterbox-tts "numpy<2" >/dev/null 2>&1 || true
   fi
   python3 -c "import gradio_client" 2>/dev/null || pip install -q gradio_client >/dev/null 2>&1
+  # Animation Wan 2.2 (montage), découpe des planches (rembg, Real-ESRGAN via spandrel, SAM via transformers)
+  python3 -c "import torchvision" 2>/dev/null || \
+    pip install -q torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1
+  python3 -c "import cv2, rembg, spandrel, soundfile" 2>/dev/null || \
+    pip install -q "opencv-python-headless<4.11" "rembg[cpu]" spandrel soundfile "numpy<2" "protobuf>=6.31.1" >/dev/null 2>&1
 fi
 echo "Afrikatoon : environnement prêt (Blender, voix, ffmpeg)."
 exit 0
