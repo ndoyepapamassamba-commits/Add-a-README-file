@@ -1,0 +1,2628 @@
+{
+ "portefeuille": {
+  "pd12": {
+   "valeur": 0.1185222432255258,
+   "prov": {
+    "source": "MARKOV",
+    "methode": "Markov mensuel portefeuille",
+    "n": 64135,
+    "periodes": 18,
+    "calibration": "2026-09-30",
+    "horizon": 12,
+    "confiance": "faible",
+    "qualite": "Insuffisante",
+    "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+    "composantes": []
+   },
+   "ic_bas": null,
+   "ic_haut": null
+  },
+  "empirique12": {
+   "valeur": 0.1203239151483144,
+   "prov": {
+    "source": "EMPIRICAL",
+    "methode": "Cohortes Sain → Douteux à 12 mois (6 cohortes, IC Wilson 95 %)",
+    "n": 22722,
+    "periodes": 18,
+    "calibration": "2026-09-30",
+    "horizon": 12,
+    "confiance": "faible",
+    "qualite": "Insuffisante",
+    "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+    "composantes": []
+   },
+   "ic_bas": 0.11615767644794646,
+   "ic_haut": 0.12461851553255208
+  }
+ },
+ "segments": [
+  {
+   "segment": "Consumer",
+   "markov12": {
+    "valeur": 0.1361948349147899,
+    "prov": {
+     "source": "MARKOV",
+     "methode": "Markov mensuel Consumer (MLE sur 17 transitions)",
+     "n": 38478,
+     "periodes": 18,
+     "calibration": "2026-09-30",
+     "horizon": 12,
+     "confiance": "faible",
+     "qualite": "Insuffisante",
+     "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+     "composantes": []
+    },
+    "ic_bas": null,
+    "ic_haut": null
+   },
+   "empirique12": {
+    "valeur": 0.13697023023903798,
+    "prov": {
+     "source": "EMPIRICAL",
+     "methode": "Cohortes Sain → Douteux à 12 mois (6 cohortes, IC Wilson 95 %)",
+     "n": 13638,
+     "periodes": 18,
+     "calibration": "2026-09-30",
+     "horizon": 12,
+     "confiance": "faible",
+     "qualite": "Insuffisante",
+     "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+     "composantes": []
+    },
+    "ic_bas": 0.1313019573564728,
+    "ic_haut": 0.14284296454322148
+   }
+  },
+  {
+   "segment": "Commercial",
+   "markov12": {
+    "valeur": 0.11997486783603377,
+    "prov": {
+     "source": "MARKOV",
+     "methode": "Markov mensuel Commercial (MLE sur 17 transitions)",
+     "n": 16337,
+     "periodes": 18,
+     "calibration": "2026-09-30",
+     "horizon": 12,
+     "confiance": "faible",
+     "qualite": "Insuffisante",
+     "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+     "composantes": []
+    },
+    "ic_bas": null,
+    "ic_haut": null
+   },
+   "empirique12": {
+    "valeur": 0.12212692967409948,
+    "prov": {
+     "source": "EMPIRICAL",
+     "methode": "Cohortes Sain → Douteux à 12 mois (6 cohortes, IC Wilson 95 %)",
+     "n": 5830,
+     "periodes": 18,
+     "calibration": "2026-09-30",
+     "horizon": 12,
+     "confiance": "faible",
+     "qualite": "Insuffisante",
+     "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+     "composantes": []
+    },
+    "ic_bas": 0.11396973473444386,
+    "ic_haut": 0.13078178543024482
+   }
+  },
+  {
+   "segment": "Corporate",
+   "markov12": {
+    "valeur": 0.04627981914257438,
+    "prov": {
+     "source": "MARKOV",
+     "methode": "Markov mensuel Corporate (MLE sur 17 transitions)",
+     "n": 6689,
+     "periodes": 18,
+     "calibration": "2026-09-30",
+     "horizon": 12,
+     "confiance": "faible",
+     "qualite": "Insuffisante",
+     "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+     "composantes": []
+    },
+    "ic_bas": null,
+    "ic_haut": null
+   },
+   "empirique12": {
+    "valeur": 0.05182012847965739,
+    "prov": {
+     "source": "EMPIRICAL",
+     "methode": "Cohortes Sain → Douteux à 12 mois (6 cohortes, IC Wilson 95 %)",
+     "n": 2335,
+     "periodes": 18,
+     "calibration": "2026-09-30",
+     "horizon": 12,
+     "confiance": "faible",
+     "qualite": "Insuffisante",
+     "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+     "composantes": []
+    },
+    "ic_bas": 0.043542566099639815,
+    "ic_haut": 0.061569981924134015
+   }
+  },
+  {
+   "segment": "Public Sector",
+   "markov12": {
+    "valeur": 0.0305385165990613,
+    "prov": {
+     "source": "MARKOV",
+     "methode": "Markov mensuel Public Sector (MLE sur 17 transitions), lignes 61-90j rétrécies vers le portefeuille",
+     "n": 2631,
+     "periodes": 18,
+     "calibration": "2026-09-30",
+     "horizon": 12,
+     "confiance": "faible",
+     "qualite": "Insuffisante",
+     "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+     "composantes": []
+    },
+    "ic_bas": null,
+    "ic_haut": null
+   },
+   "empirique12": {
+    "valeur": 0.035908596300326445,
+    "prov": {
+     "source": "EMPIRICAL",
+     "methode": "Cohortes Sain → Douteux à 12 mois (6 cohortes, IC Wilson 95 %)",
+     "n": 919,
+     "periodes": 18,
+     "calibration": "2026-09-30",
+     "horizon": 12,
+     "confiance": "faible",
+     "qualite": "Insuffisante",
+     "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+     "composantes": []
+    },
+    "ic_bas": 0.025681369068474107,
+    "ic_haut": 0.04999965788132965
+   }
+  }
+ ],
+ "contreparties": [
+  {
+   "ref": "LD9000001",
+   "pd": {
+    "3": {
+     "valeur": 0.27568870145615215,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.3028973021444181,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.31725231065899884,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "credibilite_bonne",
+    "retard_technique"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.02484302718220105,
+     -0.2924092834767978
+    ],
+    [
+     "Règlement partiel ramenant à 31-60 jours",
+     0.1416626455221195,
+     -0.17558966513687935
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.31725231065899884,
+     0.0
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000002",
+   "pd": {
+    "3": {
+     "valeur": 0.055401224547075544,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 2631,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Public Sector (MLE sur 17 transitions)  lignes 61-90j rétrécies vers le portefeuille · N = 2 631 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.06565841316167774,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 2631,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Public Sector (MLE sur 17 transitions)  lignes 61-90j rétrécies vers le portefeuille · N = 2 631 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.0778987341502909,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 2631,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Public Sector (MLE sur 17 transitions)  lignes 61-90j rétrécies vers le portefeuille · N = 2 631 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "credibilite_bonne"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.023080095418557857,
+     -0.054818638731733045
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.0778987341502909,
+     0.0
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000003",
+   "pd": {
+    "3": {
+     "valeur": 0.13524838824733376,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 2631,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Public Sector (MLE sur 17 transitions)  lignes 61-90j rétrécies vers le portefeuille · N = 2 631 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×2.00 Client injoignable (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.15781887373692458,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 2631,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Public Sector (MLE sur 17 transitions)  lignes 61-90j rétrécies vers le portefeuille · N = 2 631 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×2.00 Client injoignable (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.18385928216357025,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 2631,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Public Sector (MLE sur 17 transitions)  lignes 61-90j rétrécies vers le portefeuille · N = 2 631 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×2.00 Client injoignable (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "injoignable"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.05926710376598671,
+     -0.12459217839758355
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.10123625353359295,
+     -0.08262302862997731
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000004",
+   "pd": {
+    "3": {
+     "valeur": 0.32366431145012686,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Commentaire incohérent (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.4083041265436996,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Commentaire incohérent (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.4642644184217922,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Commentaire incohérent (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "incoherence"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.15054870972133316,
+     -0.31371570870045906
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.3999794512425623,
+     -0.06428496717922993
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000005",
+   "pd": {
+    "3": {
+     "valeur": 0.6012739286506475,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.60 Perte durable de revenus (TypeSafe)",
+       "EXPERT ×1.30 Promesse après la bascule (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.6325532458534776,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.60 Perte durable de revenus (TypeSafe)",
+       "EXPERT ×1.30 Promesse après la bascule (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.6480085314985826,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.60 Perte durable de revenus (TypeSafe)",
+       "EXPERT ×1.30 Promesse après la bascule (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "perte_revenus",
+    "promesse_tardive"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.09167967170114477,
+     -0.5563288597974378
+    ],
+    [
+     "Règlement partiel ramenant à 31-60 jours",
+     0.3953630343961919,
+     -0.2526454971023907
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.46952009742742284,
+     -0.17848843407115977
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000006",
+   "pd": {
+    "3": {
+     "valeur": 0.26051605788069304,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.60 Perte durable de revenus (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.3062247468476116,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.60 Perte durable de revenus (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.3346588931044845,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.60 Perte durable de revenus (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "perte_revenus"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.07204711417972963,
+     -0.26261177892475485
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.23917794278567606,
+     -0.09548095031880843
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000007",
+   "pd": {
+    "3": {
+     "valeur": 0.42028783428865635,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Corporate (MLE sur 17 transitions)",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.4528450762014884,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Corporate (MLE sur 17 transitions)",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.46952009742742284,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Corporate (MLE sur 17 transitions)",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.04627981914257439,
+     -0.42324027828484845
+    ],
+    [
+     "Règlement partiel ramenant à 31-60 jours",
+     0.23917794278567606,
+     -0.2303421546417468
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000008",
+   "pd": {
+    "3": {
+     "valeur": 0.6216238958936421,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.40 Litige juridique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.6766656387647876,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.40 Litige juridique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.7103246773769448,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.40 Litige juridique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "litige"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.1808219619765595,
+     -0.5295027154003853
+    ],
+    [
+     "Règlement partiel ramenant à 31-60 jours",
+     0.4557790098928983,
+     -0.2545456674840465
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.6365657247068505,
+     -0.07375895267009436
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000009",
+   "pd": {
+    "3": {
+     "valeur": 0.5399085051870212,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Consumer (MLE sur 17 transitions)",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.5991724253913249,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Consumer (MLE sur 17 transitions)",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.6365657247068505,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Consumer (MLE sur 17 transitions)",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.13619483491478993,
+     -0.5003708897920606
+    ],
+    [
+     "Règlement partiel ramenant à 31-60 jours",
+     0.37429855731076794,
+     -0.2622671673960825
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000010",
+   "pd": {
+    "3": {
+     "valeur": 0.32366431145012686,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Promesse après la bascule (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.4083041265436996,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Promesse après la bascule (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.4642644184217922,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Promesse après la bascule (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "promesse_tardive"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.15054870972133316,
+     -0.31371570870045906
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.3999794512425623,
+     -0.06428496717922993
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000011",
+   "pd": {
+    "3": {
+     "valeur": 0.6038597308950651,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Commercial (MLE sur 17 transitions)",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.6642378660597235,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Commercial (MLE sur 17 transitions)",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.6938187099288988,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Commercial (MLE sur 17 transitions)",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.11997486783603376,
+     -0.5738438420928651
+    ],
+    [
+     "Règlement partiel ramenant à 31-60 jours",
+     0.3999794512425623,
+     -0.29383925868633654
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000012",
+   "pd": {
+    "3": {
+     "valeur": 0.6040427166744797,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Commentaire incohérent (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.6602441299931993,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Commentaire incohérent (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.6948417159733646,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Commentaire incohérent (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "incoherence"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.17010313487729636,
+     -0.5247385810960683
+    ],
+    [
+     "Règlement partiel ramenant à 31-60 jours",
+     0.43746533174078295,
+     -0.2573763842325817
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.6365657247068505,
+     -0.05827599126651417
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000013",
+   "pd": {
+    "3": {
+     "valeur": 0.7457865283789819,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×2.50 Signal de fraude (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.7889001969136468,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×2.50 Signal de fraude (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.814085716050425,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×2.50 Signal de fraude (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "fraude"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.28272795628826125,
+     -0.5313577597621637
+    ],
+    [
+     "Règlement partiel ramenant à 31-60 jours",
+     0.5992812386831502,
+     -0.21480447736727482
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.6365657247068505,
+     -0.17751999134357455
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000014",
+   "pd": {
+    "3": {
+     "valeur": 0.26906984897730424,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Commercial (MLE sur 17 transitions)",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.3467525165905371,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Commercial (MLE sur 17 transitions)",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.3999794512425623,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Commercial (MLE sur 17 transitions)",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.11997486783603376,
+     -0.28000458340652856
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000015",
+   "pd": {
+    "3": {
+     "valeur": 0.26906984897730424,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Commercial (MLE sur 17 transitions)",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.3467525165905371,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Commercial (MLE sur 17 transitions)",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.3999794512425623,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Commercial (MLE sur 17 transitions)",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.11997486783603376,
+     -0.28000458340652856
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000016",
+   "pd": {
+    "3": {
+     "valeur": 0.14158504251688367,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.19304810493757116,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.23899876710891468,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "credibilite_bonne",
+    "retard_technique"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.07644789750061205,
+     -0.16255086960830262
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.23899876710891468,
+     0.0
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000017",
+   "pd": {
+    "3": {
+     "valeur": 0.5399085051870212,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Consumer (MLE sur 17 transitions)",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.5991724253913249,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Consumer (MLE sur 17 transitions)",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.6365657247068505,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Consumer (MLE sur 17 transitions)",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.13619483491478993,
+     -0.5003708897920606
+    ],
+    [
+     "Règlement partiel ramenant à 31-60 jours",
+     0.37429855731076794,
+     -0.2622671673960825
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000018",
+   "pd": {
+    "3": {
+     "valeur": 0.13354558275392078,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.16185268087358562,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.18036646388374558,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "retard_technique"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.032851988627447724,
+     -0.14751447525629785
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.18036646388374558,
+     0.0
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000019",
+   "pd": {
+    "3": {
+     "valeur": 0.26906984897730424,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Commercial (MLE sur 17 transitions)",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.3467525165905371,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Commercial (MLE sur 17 transitions)",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.3999794512425623,
+     "prov": {
+      "source": "MARKOV",
+      "methode": "Markov mensuel Commercial (MLE sur 17 transitions)",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.11997486783603376,
+     -0.28000458340652856
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000020",
+   "pd": {
+    "3": {
+     "valeur": 0.30639546260279216,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.20 Aucun retour gestionnaire (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.3891175237843072,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.20 Aucun retour gestionnaire (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.44442330366704447,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.20 Aucun retour gestionnaire (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "sans_retour"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.14059623837967158,
+     -0.3038270652873729
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.3999794512425623,
+     -0.04444385242448218
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000021",
+   "pd": {
+    "3": {
+     "valeur": 0.2737839041299975,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.20 Aucun retour gestionnaire (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.35350997239610427,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.20 Aucun retour gestionnaire (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.41787617861490256,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.20 Aucun retour gestionnaire (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "sans_retour"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.15910008006974222,
+     -0.25877609854516037
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.37429855731076794,
+     -0.04357762130413462
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000022",
+   "pd": {
+    "3": {
+     "valeur": 0.6465469443132704,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.20 Aucun retour gestionnaire (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.7036122582773466,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.20 Aucun retour gestionnaire (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.7311283466602289,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.20 Aucun retour gestionnaire (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "sans_retour"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.14059623837967158,
+     -0.5905321082805572
+    ],
+    [
+     "Règlement partiel ramenant à 31-60 jours",
+     0.44442330366704447,
+     -0.2867050429931844
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.6938187099288988,
+     -0.03730963673133003
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000023",
+   "pd": {
+    "3": {
+     "valeur": 0.28998316912621686,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Promesse après la bascule (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.37201003208143124,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Promesse après la bascule (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.43746533174078295,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Promesse après la bascule (code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "promesse_tardive"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.17010313487729636,
+     -0.2673621968634866
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.37429855731076794,
+     -0.063166774430015
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000024",
+   "pd": {
+    "3": {
+     "valeur": 0.10361863998053283,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.12650844333178768,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.1416626455221195,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "credibilite_bonne",
+    "retard_technique"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.02484302718220105,
+     -0.11681961833991844
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.1416626455221195,
+     0.0
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000025",
+   "pd": {
+    "3": {
+     "valeur": 0.27568870145615215,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.3028973021444181,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.31725231065899884,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 6689,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Corporate (MLE sur 17 transitions) · N = 6 689 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)",
+       "EXPERT ×0.70 Incident technique (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "credibilite_bonne",
+    "retard_technique"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.02484302718220105,
+     -0.2924092834767978
+    ],
+    [
+     "Règlement partiel ramenant à 31-60 jours",
+     0.1416626455221195,
+     -0.17558966513687935
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.31725231065899884,
+     0.0
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000026",
+   "pd": {
+    "3": {
+     "valeur": 0.19069321490686134,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.25470963069046876,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.3097043950478826,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×0.75 Promesse crédible avant bascule (TypeSafe + code)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "credibilite_bonne"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.10574666353171537,
+     -0.20395773151616725
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.3097043950478826,
+     0.0
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000027",
+   "pd": {
+    "3": {
+     "valeur": 0.7530081580863301,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×2.00 Client injoignable (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.7982487114445772,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×2.00 Client injoignable (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.8192360916334702,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×2.00 Client injoignable (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "injoignable"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.2142456429720498,
+     -0.6049904486614204
+    ],
+    [
+     "Règlement partiel ramenant à 31-60 jours",
+     0.5714076030009692,
+     -0.24782848863250106
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.6938187099288988,
+     -0.1254173817045714
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000028",
+   "pd": {
+    "3": {
+     "valeur": 0.32366431145012686,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Commentaire incohérent (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.4083041265436996,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Commentaire incohérent (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.4642644184217922,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.30 Commentaire incohérent (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "incoherence"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.15054870972133316,
+     -0.31371570870045906
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.3999794512425623,
+     -0.06428496717922993
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000029",
+   "pd": {
+    "3": {
+     "valeur": 0.37067007388353707,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.60 Perte durable de revenus (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.4592552734492564,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.60 Perte durable de revenus (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.5161076493634182,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 16337,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Commercial (MLE sur 17 transitions) · N = 16 337 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.60 Perte durable de revenus (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "perte_revenus"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.17906948580210927,
+     -0.337038163561309
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.3999794512425623,
+     -0.11612819812085595
+    ]
+   ]
+  },
+  {
+   "ref": "LD9000030",
+   "pd": {
+    "3": {
+     "valeur": 0.6524844619830259,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 3,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.60 Perte durable de revenus (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "6": {
+     "valeur": 0.7051661964776326,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 6,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.60 Perte durable de revenus (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    },
+    "12": {
+     "valeur": 0.7370114303602556,
+     "prov": {
+      "source": "HYBRID",
+      "methode": "Markov + EWS + expert",
+      "n": 38478,
+      "periodes": 18,
+      "calibration": "2026-09-30",
+      "horizon": 12,
+      "confiance": "faible",
+      "qualite": "Insuffisante",
+      "avertissement": "Estimation indicative — historique insuffisant pour une calibration statistique robuste.",
+      "composantes": [
+       "MARKOV · Markov mensuel Consumer (MLE sur 17 transitions) · N = 38 478 · Historique = 18 mois · Confiance = faible",
+       "EXPERT ×1.60 Perte durable de revenus (TypeSafe)"
+      ]
+     },
+     "ic_bas": null,
+     "ic_haut": null
+    }
+   },
+   "signaux": [
+    "perte_revenus"
+   ],
+   "actions": [
+    [
+     "Régularisation complète des impayés (retour en Sain)",
+     0.20144987627771493,
+     -0.5355615540825407
+    ],
+    [
+     "Règlement partiel ramenant à 31-60 jours",
+     0.4890477674170716,
+     -0.247963662943184
+    ],
+    [
+     "Lever les signaux d'alerte (visite, preuve de fonds, mise à jour du dossier)",
+     0.6365657247068505,
+     -0.10044570565340516
+    ]
+   ]
+  }
+ ],
+ "scenarios": {
+  "Central": {
+   "moyenne": 4642722371.0435,
+   "p50": 4582786994,
+   "p95": 5688655762,
+   "p99": 6172360073,
+   "tirages": 2000
+  },
+  "Modéré (×1,5 dégradations)": {
+   "moyenne": 8438016452.3485,
+   "p50": 8412847558,
+   "p95": 9662023762,
+   "p99": 10208037533,
+   "tirages": 2000
+  },
+  "Sévère (×2,0 dégradations)": {
+   "moyenne": 12604808446.543,
+   "p50": 12556418333,
+   "p95": 13982287811,
+   "p99": 14481981196,
+   "tirages": 2000
+  }
+ }
+}

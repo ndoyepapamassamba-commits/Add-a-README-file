@@ -1,0 +1,31 @@
+Réf LD;Client;Segment;Gestionnaire;Encours;Montant impayé;Jours d'impayés;Commentaire du gestionnaire;Statut du suivi
+LD9000001;SOCIETE NATIONALE DES EAUX DU KAYOR;Corporate;GEST-05;8354000;1350648;66;Le client a transmis l'ordre de virement ce matin, règlement prévu le 03/10/2026.;À faire
+LD9000002;MINISTERE DE L'HYDRAULIQUE ET DE L'ASSAINISSEMENT;Public Sector;GEST-01;350402000;42541838;36;Retard de paiement de l'État sur le marché de fournitures. Le mandat est visé au Trésor, encaissement attendu fin octobre.;À faire
+LD9000003;COMMUNE DE TAMBA-NORD;Public Sector;GEST-06;2400667000;190751393;37;Client injoignable depuis trois semaines, le magasin est fermé. Visite prévue avec le recouvrement.;À faire
+LD9000004;AGENCE DE DEVELOPPEMENT DES PORTS FLUVIAUX;Commercial;GEST-07;2400337000;556493980;36;Régularisé.;À faire
+LD9000005;ECOBANK FOUNDATION SENEGAL;Corporate;GEST-04;40457000;9910321;84;Le salaire n'est plus domicilié chez nous depuis son changement d'employeur. Il promet de payer le 15.;À faire
+LD9000006;EBI SA PARIS;Corporate;GEST-04;900690000;184099117;58;Perte du contrat principal avec le client minier, baisse forte du chiffre d'affaires. Le DG demande un rééchelonnement sur 24 mois.;À faire
+LD9000007;DIALLO AMADOU;Corporate;GEST-04;900305000;82126306;65;Promesse de règlement d'ici 10 jours, pas d'autre information.;À faire
+LD9000008;NDIAYE FATOU;Consumer;GEST-03;900981000;182849490;83;Le compte est bloqué par un avis à tiers détenteur des impôts. Le client conteste le redressement.;À faire
+LD9000009;SOW MOUSTAPHA;Consumer;GEST-08;120774000;11575884;79;Décès du gérant le mois dernier, la succession est en cours. Les héritiers n'ont pas encore été reçus.;À faire
+LD9000010;BOULANGERIE DU PLATEAU SARL;Commercial;GEST-06;8748000;2066964;56;Tension de trésorerie liée au retard de paiement de ses clients distributeurs. Le client apporte un chèque de 40 % fin novembre et le solde en décembre.;À faire
+LD9000011;SENEGAL LOGISTIQUE ET TRANSIT SA;Commercial;GEST-06;15270000;962010;85;RAS;À faire
+LD9000012;CISSE AWA;Consumer;GEST-07;8565000;1006637;82;Client à jour, aucun impayé sur le compte.;À faire
+LD9000013;SOCIETE AFRICAINE DE CIMENT DU SINE SA;Consumer;GEST-03;900477000;82735213;71;Les factures présentées pour l'escompte semblent fictives, le débiteur cédé ne les reconnaît pas.;À faire
+LD9000014;OFFICE NATIONAL DES SEMENCES;Commercial;GEST-01;40687000;3712246;51;Relance faite par téléphone, le client dit qu'il passera à l'agence la semaine prochaine.;À faire
+LD9000015;GIE DES MARAICHERS DE NIAYES;Commercial;GEST-07;900932000;135752385;56;Hospitalisation du client, reprise du travail prévue en novembre. L'épouse s'engage à verser le 20 octobre.;À faire
+LD9000016;FALL IBRAHIMA;Consumer;GEST-01;120937000;3880512;40;Domiciliation de la subvention annuelle confirmée par la tutelle, virement attendu cette semaine.;À faire
+LD9000017;BA MARIAMA;Consumer;GEST-02;3778000;650283;77;Le client a demandé une restructuration avec allongement de 12 mois, dossier transmis au crédit.;À faire
+LD9000018;HOTEL TERANGA BLEU SA;Corporate;GEST-01;3971000;152814;31;Prélèvement rejeté pour un problème de RIB après la migration du compte, régularisation technique en cours.;À faire
+LD9000019;SOCIETE DE TRANSPORT URBAIN DE THIES;Commercial;GEST-04;15732000;2026322;40;Le client attend le paiement d'une créance sur une société du groupe. Aucune date donnée.;À faire
+LD9000020;CENTRE HOSPITALIER REGIONAL DE KOLDA;Commercial;GEST-08;3748000;271327;35;;À faire
+LD9000021;GUEYE CHEIKH;Consumer;GEST-03;15199000;833021;32;;À faire
+LD9000022;IMPRIMERIE DU FLEUVE SUARL;Commercial;GEST-04;3663000;741299;85;;À faire
+LD9000023;SECK ADAMA;Consumer;GEST-04;40649000;8984800;43;Paiement prévu le 28/12/2026 après l'encaissement de la campagne arachidière.;À faire
+LD9000024;ECOBANK TOGO;Corporate;GEST-01;40902000;8643958;52;Échanges avec le DAF : virement intra-groupe en attente de validation à Lomé, attendu le 08/10/2026.;À faire
+LD9000025;AGRO-INDUSTRIES DU SALOUM SA;Corporate;GEST-05;8812000;1630883;70;Le client a transmis l'ordre de virement ce matin, règlement prévu le 03/10/2026.;À faire
+LD9000026;FAYE OUMAR;Consumer;GEST-01;40701000;4935158;51;Retard de paiement de l'État sur le marché de fournitures. Le mandat est visé au Trésor, encaissement attendu fin octobre.;À faire
+LD9000027;KANE KHADY;Commercial;GEST-03;350421000;33202618;88;Client injoignable depuis trois semaines, le magasin est fermé. Visite prévue avec le recouvrement.;À faire
+LD9000028;CAISSE DE SECURITE SOCIALE DU PERSONNEL MUNICIPAL;Commercial;GEST-01;900689000;50039214;49;Régularisé.;À faire
+LD9000029;QUINCAILLERIE MODERNE DE PIKINE;Commercial;GEST-01;900511000;182902153;55;Le salaire n'est plus domicilié chez nous depuis son changement d'employeur. Il promet de payer le 15.;À faire
+LD9000030;MBAYE ALIOUNE;Consumer;GEST-03;350398000;21061427;73;Perte du contrat principal avec le client minier, baisse forte du chiffre d'affaires. Le DG demande un rééchelonnement sur 24 mois.;À faire
