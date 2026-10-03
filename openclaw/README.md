@@ -24,6 +24,10 @@ Dix-neuf skills au format OpenClaw / ClawHub (`SKILL.md` + métadonnées `metada
 | `skills/modeles-ia-locaux` 🧩 | IA open source sur la machine : diagnostic, choix du modèle, licences, détection de modèles piégés, Ollama sécurisé (`modeles.py`). |
 | `skills/export-securise` 📦 | Tout ce qui sort : contrôle, pseudonymisation des colonnes clients, ZIP chiffré AES-256, journal des exports (`export_guard.py`). |
 
+## Équipe d'agents
+Voir `agents/README.md` : 7 agents spécialisés (chef, risques, veille, studio, secrétaire, gardien, dev), cloisonnés,
+avec installateur (`install_agents.py`) et audit de sécurité (`audit_agents.py`).
+
 ## Serveurs MCP
 Voir `mcp/README.md` (25 serveurs gratuits avec garde-fous : bureautique, données, productivité, 3D, image, vidéo).
 

@@ -1,0 +1,115 @@
+// Équipe de 7 agents pour OpenClaw — à fusionner dans openclaw.json (clé « agents ») APRÈS :
+//   py install_agents.py --appliquer      (crée les espaces de travail et y lie les skills)
+//   py audit_agents.py ~/.openclaw/openclaw.json   (doit finir par « Aucun risque bloquant »)
+// Versions récentes : agents.entries (ci-dessous). Versions plus anciennes : agents.list = [{ id: "chef", … }, …]
+// (même contenu, la clé devient « id »). Vérifier avec : openclaw --version, puis la doc « Multi-agent ».
+// Outils MCP : « serveur__* » = tous les outils de ce serveur. Si ta version refuse le joker, « openclaw mcp list »
+// donne les noms exacts à lister. Un serveur absent de la liste « allow » d'un agent lui est invisible.
+// Modèle : absent = modèle par défaut (cloud). « ollama/… » = modèle local (données qui ne sortent pas).
+{
+  agents: {
+    defaults: {
+      subagents: {
+        allowAgents: [],            // par défaut, personne ne délègue ; seul le chef y est autorisé (plus bas)
+        requireAgentId: true,
+      },
+    },
+    entries: {
+      // 🎯 Chef d'orchestre : comprend la demande, découpe, délègue, vérifie, rend compte. Ne fait pas le travail lourd.
+      chef: {
+        default: true,
+        name: "Chef d'orchestre",
+        workspace: "~/.openclaw/workspace-chef",
+        agentDir: "~/.openclaw/agents/chef/agent",
+        sandbox: { mode: "off" },
+        subagents: { allowAgents: ["risques", "veille", "studio", "secretaire", "gardien", "dev"] },
+        tools: {
+          allow: ["read", "sessions_spawn", "sessions_list", "sessions_send", "memory_search", "memory_get",
+                  "heure__*", "reflexion__*", "graphe__*"],
+          deny: ["exec", "process", "write", "edit", "apply_patch", "browser", "web_fetch", "gateway"],
+        },
+      },
+
+      // 🏦 Analyste risques & reporting : données bancaires → MODÈLE LOCAL, aucun accès Internet.
+      risques: {
+        name: "Analyste risques",
+        workspace: "~/.openclaw/workspace-risques",
+        agentDir: "~/.openclaw/agents/risques/agent",
+        model: "ollama/qwen3:8b",
+        sandbox: { mode: "off" },
+        tools: {
+          allow: ["read", "write", "edit", "exec", "process", "memory_search", "memory_get",
+                  "sql_local__*", "excel__*", "documents__*", "word__*", "powerpoint__*", "fichiers__*", "heure__*", "reflexion__*"],
+          deny: ["browser", "web_search", "web_fetch", "message", "sessions_send", "sessions_spawn", "gateway"],
+        },
+      },
+
+      // 🔎 Veilleur : TOUT ce qui touche Internet et les services en ligne (Brave, pages, Todoist, Notion, Excalidraw,
+      //    GitHub, Hugging Face, Pollinations…). Ne lit pas tes fichiers, n'exécute rien, ne voit pas la mémoire.
+      veille: {
+        name: "Veilleur (Internet et services en ligne)",
+        workspace: "~/.openclaw/workspace-veille",
+        agentDir: "~/.openclaw/agents/veille/agent",
+        sandbox: { mode: "off" },
+        tools: {
+          allow: ["web_search", "web_fetch", "write",
+                  "web__*", "wikipedia__*", "youtube__*", "docs_code__*", "github__*", "huggingface__*",
+                  "notion__*", "todoist__*", "excalidraw__*", "pollinations__*", "heure__*", "reflexion__*"],
+          deny: ["read", "exec", "process", "edit", "apply_patch", "browser", "message", "sessions_send", "sessions_spawn", "gateway"],
+        },
+      },
+
+      // 🎬 Studio Afrikatoon : écriture des sketchs, fabrication des vidéos, médias, statistiques TikTok.
+      //    Pas d'Internet : les tendances lui arrivent du Veilleur, via le chef (règle « un seul agent touche le web »).
+      studio: {
+        name: "Studio Afrikatoon",
+        workspace: "~/.openclaw/workspace-studio",
+        agentDir: "~/.openclaw/agents/studio/agent",
+        sandbox: { mode: "off" },
+        tools: {
+          allow: ["read", "write", "edit", "exec", "process", "memory_search", "memory_get",
+                  "blender__*", "comfyui__*", "video__*"],
+          deny: ["browser", "web_search", "web_fetch", "message", "sessions_send", "sessions_spawn", "gateway"],
+        },
+      },
+
+      // 🗓️ Secrétaire : tâches, briefing, courriers (brouillons), rangement de fichiers.
+      secretaire: {
+        name: "Secrétaire",
+        workspace: "~/.openclaw/workspace-secretaire",
+        agentDir: "~/.openclaw/agents/secretaire/agent",
+        sandbox: { mode: "off" },
+        tools: {
+          allow: ["read", "write", "edit", "exec", "memory_search", "memory_get", "notes__*", "heure__*", "graphe__*"],
+          deny: ["browser", "web_fetch", "web_search", "message", "sessions_send", "sessions_spawn", "gateway"],
+        },
+      },
+
+      // 🛡️ Gardien : audits de sécurité, secrets, sauvegardes, contrôle des modèles. Lecture + scripts d'audit.
+      gardien: {
+        name: "Gardien",
+        workspace: "~/.openclaw/workspace-gardien",
+        agentDir: "~/.openclaw/agents/gardien/agent",
+        model: "ollama/qwen3:8b",
+        sandbox: { mode: "off" },
+        tools: {
+          allow: ["read", "exec", "process", "write", "git__*", "fichiers__*"],
+          deny: ["edit", "apply_patch", "browser", "web_search", "web_fetch", "message", "sessions_send", "sessions_spawn", "gateway"],
+        },
+      },
+
+      // 🧑‍💻 Développeur : scripts Python, macros VBA, formules Excel, Power Query — dans un bac à sable si Docker est là.
+      //    Documentation : demandée au Veilleur via le chef (exec + Internet dans le même agent = risque d'exfiltration).
+      dev: {
+        name: "Développeur",
+        workspace: "~/.openclaw/workspace-dev",
+        agentDir: "~/.openclaw/agents/dev/agent",
+        sandbox: { mode: "off" },   // passer à { mode: "all", scope: "agent" } si Docker Desktop est installé
+        tools: {
+          allow: ["read", "write", "edit", "apply_patch", "exec", "process", "memory_search", "git__*", "excel__*", "fichiers__*"],
+          deny: ["browser", "web_search", "web_fetch", "message", "sessions_send", "sessions_spawn", "gateway"],
+        },
+      },
+    },
+  },
+}
