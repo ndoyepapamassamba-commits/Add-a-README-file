@@ -1,0 +1,11 @@
+# Secrets et données (coffre-fort)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+**/output/
+**/state/tiktok_tokens.json
+.coffre-fort/
+__pycache__/
