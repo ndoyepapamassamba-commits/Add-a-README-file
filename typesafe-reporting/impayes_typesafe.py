@@ -202,7 +202,44 @@ Q_COMMENTAIRE = {
             "escalade_contentieux": "Situation à transmettre au recouvrement, au juridique ou au contentieux",
         },
     },
+    # --- capacités avancées : re-classement, routage, auto-cohérence, cohérence du plan ---
+    "urgence": {
+        "type": "score",
+        "instructions": "Quelle est l'urgence d'une intervention de la banque sur ce dossier, au vu de `dossier.commentaire_gestionnaire` et de `dossier.jours_impayes` ?",
+        "criteria": [
+            "Aucune : incident réglé ou purement technique",
+            "Faible : suivi normal suffisant",
+            "Modérée : relance structurée nécessaire",
+            "Élevée : intervention sous 7 jours",
+            "Critique : intervention immédiate, risque de perte",
+        ],
+    },
+    "routage": {
+        "type": "choice",
+        "instructions": "Vers quel traitement ce dossier doit-il être orienté, au vu de `dossier.commentaire_gestionnaire` ?",
+        "criteria": {
+            "gestionnaire": "Le gestionnaire peut régulariser seul (relance, ordre de virement, domiciliation)",
+            "recouvrement_amiable": "Relance structurée par le recouvrement amiable",
+            "restructuration_credit": "Étude de rééchelonnement ou de restructuration par le crédit",
+            "juridique_contentieux": "Litige, fraude, saisie ou client disparu : juridique ou contentieux",
+            "analyste_risque": "Situation ambiguë ou contradictoire : revue par un analyste risque",
+        },
+    },
+    "motif_durable": {
+        "type": "noul",
+        "instructions": "La difficulté décrite dans `dossier.commentaire_gestionnaire` est-elle durable (perte de revenus, fraude, litige, client disparu) plutôt que ponctuelle ?",
+        "criteria": {"true": "Difficulté durable ou structurelle", "false": "Difficulté ponctuelle, technique ou déjà réglée"},
+    },
+    "coherence_plan": {
+        "type": "noul",
+        "instructions": "Le plan d'action prévu `dossier.plan_action` traite-t-il la cause décrite dans `dossier.commentaire_gestionnaire` ?",
+        "criteria": {"true": "Le plan répond à la cause décrite", "false": "Le plan ne traite pas la cause, ou aucun plan"},
+    },
 }
+MOTIFS_DURABLES = {"perte_revenus", "fraude_detournement", "litige_juridique", "client_injoignable"}
+LIB_ROUTAGE = {"gestionnaire": "Gestionnaire", "recouvrement_amiable": "Recouvrement amiable",
+               "restructuration_credit": "Restructuration (crédit)", "juridique_contentieux": "Juridique / contentieux",
+               "analyste_risque": "Analyste risque"}
 
 Q_NOM = {
     "nature_entite": {
@@ -236,7 +273,7 @@ Q_NOM = {
 def cle(d):
     """Clé du cache : un commentaire modifié déclenche une nouvelle lecture TypeSafe."""
     import hashlib
-    h = hashlib.sha1(json.dumps([d["client"], d["segment"], d["jours"], d["commentaire"]], ensure_ascii=False).encode()).hexdigest()
+    h = hashlib.sha1(json.dumps(["v2", d["client"], d["segment"], d["jours"], d["commentaire"], d.get("plan", "")], ensure_ascii=False).encode()).hexdigest()
     return f"{d['ref']}|{h[:12]}"
 
 
@@ -251,6 +288,7 @@ def evaluer(d, essais=5):
             "segment": d["segment"],
             "jours_impayes": d["jours"],
             "commentaire_gestionnaire": d["commentaire"],
+            "plan_action": d.get("plan") or "aucun plan renseigné",
         }},
         "questions": questions,
     }).encode()
@@ -352,6 +390,21 @@ def analyser(d, brut, arrete):
             qc.append("Date promise déjà dépassée à l'arrêté")
         if len(d["commentaire"]) < 25:
             qc.append("Commentaire trop court pour être exploitable")
+        # re-classement, routage et contrôles d'auto-cohérence (TypeSafe pose la même question sous deux formes)
+        if "urgence" in r:
+            out["urgence"] = int(round(r["urgence"]["score"]))
+            out["conf_urgence"] = r["urgence"]["confidence"]
+            out["routage"] = LIB_ROUTAGE[r["routage"]["choice"]]
+            out["conf_routage"] = r["routage"]["confidence"]
+            out["p_durable"] = r["motif_durable"]["noul"]
+            out["p_coherence_plan"] = r["coherence_plan"]["noul"]
+            durable_choice = r["motif"]["choice"] in MOTIFS_DURABLES
+            if (out["p_durable"] >= SEUIL_SIGNAL) != durable_choice and abs(out["p_durable"] - 0.5) > 0.15:
+                revue.append("auto-cohérence : motif et durabilité divergent")
+            if out["conf_routage"] < SEUIL_CONFIANCE:
+                revue.append(f"orientation incertaine ({out['conf_routage']:.2f})")
+            if d.get("plan") and out["p_coherence_plan"] < 1 - SEUIL_SIGNAL:
+                qc.append("Plan d'action APEX sans rapport avec la cause décrite")
         out["statut_retenu"] = "Revue analyste" if revue else out["statut_ts"]
 
     if out["segment_douteux"]:
@@ -781,6 +834,8 @@ def ecrire_classeur(resultats, bruts, arrete, chemin):
         ("Incohérence (proba.)", 11, "p_incoherence", "pct"),
         ("Statut proposé", 16, "statut_ts", "cell"), ("Confiance statut", 10, "conf_statut", "pct"),
         ("Statut retenu", 16, "statut_retenu", "cell"),
+        ("Urgence (0-4)", 9, lambda r: r.get("urgence"), "int"), ("Orientation", 20, lambda r: r.get("routage") or "—", "cell"),
+        ("Durabilité (proba.)", 10, lambda r: r.get("p_durable"), "pct"), ("Plan cohérent (proba.)", 10, lambda r: r.get("p_coherence_plan"), "pct"),
     ]
     C.entete(ws, "Retours gestionnaires", "RETOURS GESTIONNAIRES · LECTURE TYPESAFE DES COMMENTAIRES",
              "Une ligne par dossier commenté. Probabilités et confiances brutes conservées dans _TYPESAFE.", len(cols))
@@ -851,6 +906,7 @@ def ecrire_classeur(resultats, bruts, arrete, chemin):
          "serveur ; l'app HTML relit _TYPESAFE et fonctionne sans elle. Aucune clé API n'est écrite dans un fichier."),
         ("Données", "Démonstration sur une copie anonymisée : noms, références et montants fictifs, commentaires fictifs. "
          "Les données réelles n'iront à l'API qu'après validation de la Conformité."),
+        ("Capacités avancées", "Re-classement des dossiers par urgence (Score), routage vers le bon traitement (Choice), contrôle d'auto-cohérence : le motif (Choice) et sa durabilité (Noul) sont posés séparément ; une divergence envoie le dossier en revue analyste. Cohérence entre le plan d'action APEX et la cause décrite (Noul). Toutes les questions partent en un seul appel (éventail spéculatif)."),
         ("Questions posées", "Commentaire : " + " · ".join(Q_COMMENTAIRE) + ". Nom du client : " + " · ".join(Q_NOM) + "."),
     ]
     ws.write_row(5, 0, ["Élément", "Règle"], f["hdr"])
@@ -914,6 +970,7 @@ def main():
                      "gestionnaire": d.get("gestionnaire") or "", "encours": float(d.get("encours") or 0),
                      "impaye": float(d.get("impaye") or 0), "jours": int(d.get("jours") or 0),
                      "commentaire": (d.get("commentaire") or "").strip(), "statut_fichier": d.get("statut_fichier") or "",
+                     "plan": (d.get("plan") or "").strip(),
                      "bascule_apex": d.get("bascule")} for d in lot["dossiers"]]
         if a.anonymiser:
             for i, d in enumerate(dossiers, 1):

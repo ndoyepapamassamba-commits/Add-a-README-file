@@ -135,3 +135,21 @@ Niveaux : contrepartie, segment, portefeuille, scénario / stress.
   - data bars, flèches et badges CRITICAL / HIGH / WATCH / CURED.
 - Une seule source (`riModel`) pour l'écran, l'Excel et le PDF. Les insights sont calculés, jamais génériques. Les contrôles sont restitués dans la feuille AUDIT.
 - Léger : moins de 200 Ko pour le classeur complet de 700 clients, données agrégées dans une feuille `_data` masquée.
+
+## 10. Visual mastering (format de référence) et TypeSafe à fond
+- Hiérarchie visuelle en 5 niveaux :
+  1. hero (dégradé Deep → Ecobank, date longue, filet or de 2,5 pt) ;
+  2. cartes KPI avec ombre portée en dégradé, statut ● et sparkline ;
+  3. visualisations sans cadre ;
+  4. détail ;
+  5. annotations en italique gris.
+- Callouts « composants d'interface » :
+  - ⚠ CONCENTRATION ALERT, ✓ POSITIVE MOVEMENT, ✦ JEV OUTLOOK ;
+  - bordure supérieure épaisse de couleur, cadre fin, ombre.
+- Le rouge reste rare : seuls les CRITICAL ont le badge rouge ; WATCH est en bleu pâle.
+- TypeSafe, capacités avancées en un seul appel par dossier :
+  - urgence (Score, re-classement) ;
+  - routage (Choice) ;
+  - auto-cohérence (Choice + Noul croisés, divergence → revue analyste) ;
+  - cohérence du plan (Noul).
+- Couche `pmBlue` appliquée à tout export Excel : palette Blue Premium et feuille TypeSafe.

@@ -3,7 +3,7 @@
 À lire en début de session, avec `CLAUDE.md`.
 
 ## Livré sur `claude/upbeat-wozniak-q8ux3c`
-- `ECOBANK_Credit_Risk_OS_APEX_36.html`. C'est APEX 34 plus les ajouts suivants :
+- `ECOBANK_Credit_Risk_OS_APEX_37.html`. C'est APEX 34 plus les ajouts suivants :
   - salle **JEV Prospectif** (bouton dans la barre) ;
   - import des **retours TypeSafe** (« ⇪ Retours TypeSafe ») et export du **lot** (« ⇩ Lot TypeSafe ») ;
   - 5 feuilles TypeSafe dans l'export Impayés 30-90 j, avec les colonnes Commentaire et Statut du suivi remplies au retour ;
@@ -18,10 +18,18 @@
 - Le fichier `.xlsb` réel n'a pas été rejoint à la session : la démo utilise une copie anonymisée de structure équivalente.
 - Exemples générés sur 9 arrêtés de test : `exemples_risk_intelligence/`.
 
-## Credit Risk Intelligence (APEX 36)
+## Credit Risk Intelligence (APEX 37)
 - Bouton « Risk Intelligence » → 7 exports Excel premium natifs (voir `CLAUDE.md`).
 - Correction APEX : les provisions de l'historique sont maintenant calculées sur base IFRS 9, comme l'arrêté courant. Avant, la provision locale BCEAO était utilisée. Les anciens instantanés sont signalés dans AUDIT et exclus des variations de provisions jusqu'à leur rechargement.
 - Pistes suivantes :
   - afficher le même modèle à l'écran (vue HTML) ;
   - porter la palette Blue Premium dans le moteur `pm*` des autres salles ;
   - champ « Agence » : absent de l'ACTE 7, remplacé par le segment.
+
+## APEX 37 — Visual mastering, TypeSafe et JEV partout
+- Mastering visuel du moteur Risk Intelligence. Voir `CLAUDE.md` et les aperçus dans `exemples_risk_intelligence/`.
+- Couche commune `pmBlue` : palette Blue Premium et feuille TypeSafe sur tous les exports Excel des salles. Vérifié sur l'export de la salle Analyse profonde.
+- Script d'enrichissement : questions urgence, routage, motif_durable (auto-cohérence) et coherence_plan. Le lot APEX transmet le plan d'action. Le cache est versionné (`v2`).
+- Reste à faire :
+  - porter la même couche sur les exports Word, PowerPoint et mail, qui gardent pour l'instant la finition `pm*` ;
+  - les images PNG intégrées par certaines salles (visuels `g3*`) gardent l'ancienne palette.
