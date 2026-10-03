@@ -15,6 +15,21 @@
 | github (officiel GitHub) | dépôts, issues, PR | requêtes GitHub | jeton à grain fin **lecture seule**, outils get/list/search |
 | docs_code (Context7) | documentation de code à jour | la question posée | aucune donnée interne dans les questions |
 
+## Deuxième vague (`openclaw.mcp.plus.json5`)
+
+| Serveur | Gain | Données qui sortent ? | Garde-fou |
+|---|---|---|---|
+| sql_local (DuckDB, MotherDuck) | requêtes SQL rapides sur gros Excel/CSV (portefeuille, impayés) | non | `--read-only`, base en mémoire |
+| graphe (officiel MCP) | mémoire structurée (personnes ↔ projets ↔ décisions) | non | fichier local ; jamais de données clients |
+| word (tiers) | rédiger/mettre en forme des .docx | non | brouillons locaux ; relire avant envoi |
+| powerpoint (tiers) | générer des présentations de comité | non | mention de confidentialité ; données issues de `qualite-donnees` |
+| huggingface (officiel) | trouver modèles/Spaces (voix, vidéo, images) | requêtes HF | jeton « Read », dans le coffre |
+| wikipedia (tiers) | contexte, définitions | la recherche | — |
+| youtube (tiers) | transcriptions pour veille et inspiration | l'adresse de la vidéo | contenu non fiable |
+| notion (officiel) | notes, suivi de projets | ce que tu y écris | pas de données de la banque dans un Notion personnel |
+
+Noms de commandes des serveurs « tiers » : à vérifier sur leur page avant installation (ils évoluent).
+
 ## Installation (Windows)
 ```powershell
 winget install OpenJS.NodeJS.LTS

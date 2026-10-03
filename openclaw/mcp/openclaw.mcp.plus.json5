@@ -1,0 +1,31 @@
+// Deuxième vague de serveurs MCP gratuits — à fusionner dans le bloc mcp.servers d'openclaw.json.
+// Les serveurs tiers (non officiels) sont marqués « tiers » : lire leur page, puis figer la version validée.
+{
+  mcp: {
+    servers: {
+      // 11. DuckDB : SQL ultra-rapide sur gros Excel/CSV/Parquet en local, en LECTURE SEULE (MotherDuck, MIT)
+      sql_local: { command: "uvx", args: ["mcp-server-motherduck", "--db-path", ":memory:", "--read-only"] },
+      // 12. Mémoire en graphe de connaissances (officiel MCP) — fichier local ; ne jamais y mettre de données clients
+      graphe: {
+        command: "npx", args: ["-y", "@modelcontextprotocol/server-memory"],
+        env: { MEMORY_FILE_PATH: "C:\\Users\\PNDOYE\\.openclaw\\graphe-memoire.json" },
+      },
+      // 13. Word : créer/modifier des .docx (tiers, GongRzhe/Office-Word-MCP-Server, MIT)
+      word: { command: "uvx", args: ["--from", "office-word-mcp-server", "word_mcp_server"] },
+      // 14. PowerPoint : créer des présentations .pptx (tiers, GongRzhe/Office-PowerPoint-MCP-Server, MIT)
+      powerpoint: { command: "uvx", args: ["--from", "office-powerpoint-mcp-server", "ppt_mcp_server"] },
+      // 15. Hugging Face (officiel, distant) : chercher modèles/Spaces/jeux de données — Afrikatoon (voix, vidéo)
+      huggingface: {
+        url: "https://huggingface.co/mcp",
+        transport: "streamable-http",
+        headers: { Authorization: "Bearer ${HF_TOKEN}" },
+      },
+      // 16. Wikipédia (tiers, wikipedia-mcp) : définitions, contexte, culture générale pour les sketchs
+      wikipedia: { command: "uvx", args: ["wikipedia-mcp", "--language", "fr"] },
+      // 17. Transcriptions YouTube (tiers) : veille vidéo, inspiration — contenu non fiable
+      youtube: { command: "npx", args: ["-y", "@kimtaeyoon83/mcp-server-youtube-transcript"] },
+      // 18. Notion (officiel, distant, connexion OAuth : « openclaw mcp login notion ») — notes et suivi de projets
+      notion: { url: "https://mcp.notion.com/mcp", transport: "streamable-http", auth: "oauth" },
+    },
+  },
+}

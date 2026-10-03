@@ -1,6 +1,6 @@
 # Projet prêt pour OpenClaw
 
-Onze skills au format OpenClaw / ClawHub (`SKILL.md` + métadonnées `metadata.openclaw`) :
+Quatorze skills au format OpenClaw / ClawHub (`SKILL.md` + métadonnées `metadata.openclaw`) :
 
 | Skill | Rôle |
 |---|---|
@@ -14,7 +14,13 @@ Onze skills au format OpenClaw / ClawHub (`SKILL.md` + métadonnées `metadata.o
 | `skills/sauvegarde-chiffree` 💾 | Sauvegardes ZIP AES-256 avec manifeste, rotation, vérification et restauration protégée (`sauvegarde.py`). |
 | `skills/tiktok-performance` 📈 | Analyse de l'export TikTok Studio : top/flop, engagement, rétention, thèmes gagnants, idées de sketchs (`tiktok_stats.py`). |
 | `skills/redaction-pro` ✉️ | E-mails, comptes rendus, notes au Comité : ton juste, confidentialité, brouillon uniquement. |
+| `skills/analyse-portefeuille` 🏦 | NPL, couverture, ancienneté, concentration (HHI), migrations entre arrêtés, en local, clients masqués (`portefeuille.py`). |
+| `skills/dossier-comite` 🗂️ | Chef d'orchestre : qualité → indicateurs → veille → tableau de bord → PowerPoint → note → export chiffré. |
+| `skills/briefing-quotidien` ☀️ | Point du matin : priorités, veille, TikTok, sauvegardes, alertes de sécurité. |
 | `skills/export-securise` 📦 | Tout ce qui sort : contrôle, pseudonymisation des colonnes clients, ZIP chiffré AES-256, journal des exports (`export_guard.py`). |
+
+## Serveurs MCP
+Voir `mcp/README.md` (18 serveurs gratuits avec garde-fous).
 
 ## Installation
 
