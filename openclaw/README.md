@@ -1,6 +1,6 @@
 # Projet prêt pour OpenClaw
 
-Six skills au format OpenClaw / ClawHub (`SKILL.md` + métadonnées `metadata.openclaw`) :
+Onze skills au format OpenClaw / ClawHub (`SKILL.md` + métadonnées `metadata.openclaw`) :
 
 | Skill | Rôle |
 |---|---|
@@ -9,6 +9,11 @@ Six skills au format OpenClaw / ClawHub (`SKILL.md` + métadonnées `metadata.op
 | `skills/reporting-securise` 📊 | Tableaux de bord HTML hors ligne et reportings (Excel, PowerPoint, Word, mail) sans fuite : contrôle et durcissement avant diffusion (`check_report.py`). |
 | `skills/recherche-brave` 🦁 | Recherche web Brave sans fuite : clé dans le coffre, requêtes vérifiées (`requete_sure.py`), résultats non fiables recoupés et cités. |
 | `skills/memoire-semantique` 🧠 | Mémoire sémantique privée : embeddings locaux, règles de mémorisation, audit et masquage (`audit_memoire.py`), oubli. |
+| `skills/qualite-donnees` 🔎 | Contrôle d'un Excel/CSV avant reporting : doublons, vides, types, dates, montants aberrants, rapprochement (`qualite.py`). |
+| `skills/veille-reglementaire` 📰 | Veille BCEAO / UEMOA / IFRS 9 / Bâle / LBC-FT avec Brave : nouveautés datées, impact, sources officielles. |
+| `skills/sauvegarde-chiffree` 💾 | Sauvegardes ZIP AES-256 avec manifeste, rotation, vérification et restauration protégée (`sauvegarde.py`). |
+| `skills/tiktok-performance` 📈 | Analyse de l'export TikTok Studio : top/flop, engagement, rétention, thèmes gagnants, idées de sketchs (`tiktok_stats.py`). |
+| `skills/redaction-pro` ✉️ | E-mails, comptes rendus, notes au Comité : ton juste, confidentialité, brouillon uniquement. |
 | `skills/export-securise` 📦 | Tout ce qui sort : contrôle, pseudonymisation des colonnes clients, ZIP chiffré AES-256, journal des exports (`export_guard.py`). |
 
 ## Installation
