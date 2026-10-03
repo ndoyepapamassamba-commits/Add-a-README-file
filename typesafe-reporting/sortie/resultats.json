@@ -1,0 +1,358 @@
+[
+  {
+    "id_dossier": "D-010",
+    "segment": "PME",
+    "encours_fcfa": 48000000,
+    "garantie_fcfa": 0,
+    "jours_impayes": 210,
+    "classe_declaree": "douteux",
+    "commentaire_gestionnaire": "Suspicion de détournement des fonds : le matériel financé n'a jamais été livré selon la visite sur site. Dossier transmis à la conformité.",
+    "classe_regle": "douteux",
+    "stage_ifrs9": 3,
+    "couverture": 0.0,
+    "motif": "fraude_detournement",
+    "confiance_motif": 1.0,
+    "perspective": 0.02,
+    "signaux": {
+      "perspective_faible": 0.99,
+      "signal_fraude": 0.98,
+      "rupture_flux": 0.09,
+      "restructuration": 0.02,
+      "garantie_fragile": 0.51,
+      "incoherence": 0.04,
+      "promesse_datee": 0.03
+    },
+    "alerte": 61,
+    "actions": [
+      "Transfert contentieux + saisine Conformité"
+    ],
+    "revue_analyste": []
+  },
+  {
+    "id_dossier": "D-003",
+    "segment": "Particulier",
+    "encours_fcfa": 8500000,
+    "garantie_fcfa": 0,
+    "jours_impayes": 95,
+    "classe_declaree": "sensible",
+    "commentaire_gestionnaire": "Client injoignable depuis deux mois, salaire plus domicilié chez nous. Employeur indique qu'il a quitté l'entreprise.",
+    "classe_regle": "douteux",
+    "stage_ifrs9": 3,
+    "couverture": 0.0,
+    "motif": "client_disparu",
+    "confiance_motif": 0.93,
+    "perspective": 0.15,
+    "signaux": {
+      "perspective_faible": 0.96,
+      "signal_fraude": 0.23,
+      "rupture_flux": 0.77,
+      "restructuration": 0.03,
+      "garantie_fragile": 0.43,
+      "incoherence": 0.04,
+      "promesse_datee": 0.03
+    },
+    "alerte": 55,
+    "actions": [
+      "Écart de classe : déclarée « sensible », règle « douteux »"
+    ],
+    "revue_analyste": []
+  },
+  {
+    "id_dossier": "D-012",
+    "segment": "PME",
+    "encours_fcfa": 155000000,
+    "garantie_fcfa": 150000000,
+    "jours_impayes": 76,
+    "classe_declaree": "sensible",
+    "commentaire_gestionnaire": "Restructuration accordée en juin (allongement de 18 mois), nouvelles échéances déjà en retard. Garantie : nantissement du stock, non revu depuis 2023.",
+    "classe_regle": "sensible",
+    "stage_ifrs9": 2,
+    "couverture": 0.97,
+    "motif": "tension_tresorerie",
+    "confiance_motif": 0.93,
+    "perspective": 1.13,
+    "signaux": {
+      "perspective_faible": 0.72,
+      "signal_fraude": 0.13,
+      "rupture_flux": 0.09,
+      "restructuration": 0.98,
+      "garantie_fragile": 0.91,
+      "incoherence": 0.05,
+      "promesse_datee": 0.05
+    },
+    "alerte": 48,
+    "actions": [
+      "Faire réévaluer la garantie"
+    ],
+    "revue_analyste": []
+  },
+  {
+    "id_dossier": "D-002",
+    "segment": "Corporate",
+    "encours_fcfa": 1250000000,
+    "garantie_fcfa": 400000000,
+    "jours_impayes": 47,
+    "classe_declaree": "sain",
+    "commentaire_gestionnaire": "Baisse forte du chiffre d'affaires depuis la perte du contrat avec son principal client minier. Le DG demande un rééchelonnement sur 24 mois.",
+    "classe_regle": "sensible",
+    "stage_ifrs9": 2,
+    "couverture": 0.32,
+    "motif": "perte_revenus",
+    "confiance_motif": 1.0,
+    "perspective": 1.99,
+    "signaux": {
+      "perspective_faible": 0.5,
+      "signal_fraude": 0.06,
+      "rupture_flux": 0.54,
+      "restructuration": 0.98,
+      "garantie_fragile": 0.12,
+      "incoherence": 0.05,
+      "promesse_datee": 0.35
+    },
+    "alerte": 38,
+    "actions": [
+      "Écart de classe : déclarée « sain », règle « sensible »"
+    ],
+    "revue_analyste": []
+  },
+  {
+    "id_dossier": "D-006",
+    "segment": "PME",
+    "encours_fcfa": 95000000,
+    "garantie_fcfa": 20000000,
+    "jours_impayes": 128,
+    "classe_declaree": "douteux",
+    "commentaire_gestionnaire": "Litige avec l'administration fiscale, comptes bloqués par avis à tiers détenteur. Avocat du client confiant mais aucune date.",
+    "classe_regle": "douteux",
+    "stage_ifrs9": 3,
+    "couverture": 0.21,
+    "motif": "litige_juridique",
+    "confiance_motif": 1.0,
+    "perspective": 1.97,
+    "signaux": {
+      "perspective_faible": 0.51,
+      "signal_fraude": 0.12,
+      "rupture_flux": 0.59,
+      "restructuration": 0.05,
+      "garantie_fragile": 0.56,
+      "incoherence": 0.04,
+      "promesse_datee": 0.05
+    },
+    "alerte": 36,
+    "actions": [
+      "Maintien en l'état"
+    ],
+    "revue_analyste": []
+  },
+  {
+    "id_dossier": "D-007",
+    "segment": "Particulier",
+    "encours_fcfa": 14000000,
+    "garantie_fcfa": 0,
+    "jours_impayes": 61,
+    "classe_declaree": "sensible",
+    "commentaire_gestionnaire": "Le client a été hospitalisé, sa famille nous a contactés. Il promet de reprendre les remboursements dès son retour au travail, sans date précise.",
+    "classe_regle": "sensible",
+    "stage_ifrs9": 2,
+    "couverture": 0.0,
+    "motif": "sante_deces",
+    "confiance_motif": 1.0,
+    "perspective": 2.0,
+    "signaux": {
+      "perspective_faible": 0.5,
+      "signal_fraude": 0.08,
+      "rupture_flux": 0.5,
+      "restructuration": 0.11,
+      "garantie_fragile": 0.25,
+      "incoherence": 0.04,
+      "promesse_datee": 0.05
+    },
+    "alerte": 31,
+    "actions": [
+      "Maintien en l'état"
+    ],
+    "revue_analyste": []
+  },
+  {
+    "id_dossier": "D-008",
+    "segment": "PME",
+    "encours_fcfa": 240000000,
+    "garantie_fcfa": 60000000,
+    "jours_impayes": 0,
+    "classe_declaree": "sain",
+    "commentaire_gestionnaire": "Échéances payées à temps mais via des apports successifs du gérant ",
+    "null": [
+      " le compte courant de l'entreprise ne reçoit plus de flux clients depuis mars."
+    ],
+    "classe_regle": "sain",
+    "stage_ifrs9": 2,
+    "couverture": 0.25,
+    "motif": "tension_tresorerie",
+    "confiance_motif": 0.47,
+    "perspective": 2.69,
+    "signaux": {
+      "perspective_faible": 0.33,
+      "signal_fraude": 0.12,
+      "rupture_flux": 0.71,
+      "restructuration": 0.05,
+      "garantie_fragile": 0.11,
+      "incoherence": 0.05,
+      "promesse_datee": 0.03
+    },
+    "alerte": 27,
+    "actions": [
+      "SICR qualitatif : passer en Stage 2 et mettre sous surveillance"
+    ],
+    "revue_analyste": [
+      "motif incertain (0.47)"
+    ]
+  },
+  {
+    "id_dossier": "D-004",
+    "segment": "PME",
+    "encours_fcfa": 62000000,
+    "garantie_fcfa": 80000000,
+    "jours_impayes": 33,
+    "classe_declaree": "sain",
+    "commentaire_gestionnaire": "Dossier régularisé, aucun impayé. RAS.",
+    "classe_regle": "sensible",
+    "stage_ifrs9": 2,
+    "couverture": 1.29,
+    "motif": "aucune_difficulte",
+    "confiance_motif": 1.0,
+    "perspective": 3.96,
+    "signaux": {
+      "perspective_faible": 0.01,
+      "signal_fraude": 0.09,
+      "rupture_flux": 0.04,
+      "restructuration": 0.07,
+      "garantie_fragile": 0.05,
+      "incoherence": 0.96,
+      "promesse_datee": 0.04
+    },
+    "alerte": 14,
+    "actions": [
+      "Écart de classe : déclarée « sain », règle « sensible »",
+      "Commentaire incohérent avec les impayés : demander une mise à jour"
+    ],
+    "revue_analyste": []
+  },
+  {
+    "id_dossier": "D-009",
+    "segment": "Corporate",
+    "encours_fcfa": 2100000000,
+    "garantie_fcfa": 900000000,
+    "jours_impayes": 18,
+    "classe_declaree": "sain",
+    "commentaire_gestionnaire": "Retard technique : changement de banque de domiciliation des recettes d'exportation, flux redirigés à partir du 15. Groupe solide.",
+    "classe_regle": "sain",
+    "stage_ifrs9": 1,
+    "couverture": 0.43,
+    "motif": "retard_technique",
+    "confiance_motif": 1.0,
+    "perspective": 3.21,
+    "signaux": {
+      "perspective_faible": 0.2,
+      "signal_fraude": 0.08,
+      "rupture_flux": 0.18,
+      "restructuration": 0.05,
+      "garantie_fragile": 0.08,
+      "incoherence": 0.05,
+      "promesse_datee": 0.37
+    },
+    "alerte": 13,
+    "actions": [
+      "Maintien en l'état"
+    ],
+    "revue_analyste": []
+  },
+  {
+    "id_dossier": "D-001",
+    "segment": "PME",
+    "encours_fcfa": 185000000,
+    "garantie_fcfa": 120000000,
+    "jours_impayes": 12,
+    "classe_declaree": "sain",
+    "commentaire_gestionnaire": "Retard ponctuel lié au paiement tardif d'une facture par la SENELEC. Le client a transmis l'ordre de virement, régularisation attendue cette semaine.",
+    "classe_regle": "sain",
+    "stage_ifrs9": 1,
+    "couverture": 0.65,
+    "motif": "retard_technique",
+    "confiance_motif": 0.84,
+    "perspective": 3.0,
+    "signaux": {
+      "perspective_faible": 0.25,
+      "signal_fraude": 0.05,
+      "rupture_flux": 0.05,
+      "restructuration": 0.04,
+      "garantie_fragile": 0.06,
+      "incoherence": 0.05,
+      "promesse_datee": 0.97
+    },
+    "alerte": 12,
+    "actions": [
+      "Suivre la promesse de régularisation à la date annoncée"
+    ],
+    "revue_analyste": []
+  },
+  {
+    "id_dossier": "D-011",
+    "segment": "Particulier",
+    "encours_fcfa": 6000000,
+    "garantie_fcfa": 0,
+    "jours_impayes": 8,
+    "classe_declaree": "sain",
+    "commentaire_gestionnaire": "Prélèvement rejeté pour provision insuffisante, client prévenu par SMS, paiement effectué hier en agence.",
+    "classe_regle": "sain",
+    "stage_ifrs9": 1,
+    "couverture": 0.0,
+    "motif": "retard_technique",
+    "confiance_motif": 0.46,
+    "perspective": 3.47,
+    "signaux": {
+      "perspective_faible": 0.13,
+      "signal_fraude": 0.05,
+      "rupture_flux": 0.12,
+      "restructuration": 0.03,
+      "garantie_fragile": 0.11,
+      "incoherence": 0.16,
+      "promesse_datee": 0.07
+    },
+    "alerte": 10,
+    "actions": [
+      "Maintien en l'état"
+    ],
+    "revue_analyste": [
+      "motif incertain (0.46)"
+    ]
+  },
+  {
+    "id_dossier": "D-005",
+    "segment": "Corporate",
+    "encours_fcfa": 730000000,
+    "garantie_fcfa": 730000000,
+    "jours_impayes": 0,
+    "classe_declaree": "sain",
+    "commentaire_gestionnaire": "Activité stable, résultats 2025 en hausse de 8 %. Hypothèque de premier rang sur l'entrepôt de Diamniadio, évaluée récemment.",
+    "classe_regle": "sain",
+    "stage_ifrs9": 1,
+    "couverture": 1.0,
+    "motif": "aucune_difficulte",
+    "confiance_motif": 1.0,
+    "perspective": 3.99,
+    "signaux": {
+      "perspective_faible": 0.0,
+      "signal_fraude": 0.04,
+      "rupture_flux": 0.03,
+      "restructuration": 0.03,
+      "garantie_fragile": 0.04,
+      "incoherence": 0.03,
+      "promesse_datee": 0.03
+    },
+    "alerte": 2,
+    "actions": [
+      "Maintien en l'état"
+    ],
+    "revue_analyste": []
+  }
+]

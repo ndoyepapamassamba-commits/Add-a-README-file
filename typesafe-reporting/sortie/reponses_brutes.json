@@ -1,0 +1,722 @@
+{
+  "D-001": {
+    "motif": {
+      "type": "choice",
+      "choice": "retard_technique",
+      "confidence": 0.84,
+      "probabilities": {
+        "perte_revenus": 0.0,
+        "aucune_difficulte": 0.0,
+        "fraude_detournement": 0.0,
+        "litige_juridique": 0.0,
+        "retard_technique": 0.86,
+        "sante_deces": 0.0,
+        "client_disparu": 0.0,
+        "tension_tresorerie": 0.14
+      }
+    },
+    "perspective": {
+      "type": "score",
+      "score": 3.0,
+      "confidence": 0.99,
+      "legend": {
+        "0": "Quasi nulles : client disparu, fraude ou activité arrêtée",
+        "1": "Faibles : difficulté durable sans solution identifiée",
+        "2": "Incertaines : difficulté réelle, issue dépendant d'un événement non daté",
+        "3": "Bonnes : difficulté temporaire avec une solution crédible ou datée",
+        "4": "Très bonnes : aucune difficulté ou incident purement technique déjà résolu"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.99,
+        "4": 0.01
+      }
+    },
+    "promesse_datee": {
+      "type": "noul",
+      "noul": 0.97
+    },
+    "restructuration": {
+      "type": "noul",
+      "noul": 0.04
+    },
+    "rupture_flux": {
+      "type": "noul",
+      "noul": 0.05
+    },
+    "signal_fraude": {
+      "type": "noul",
+      "noul": 0.05
+    },
+    "garantie_fragile": {
+      "type": "noul",
+      "noul": 0.06
+    },
+    "incoherence": {
+      "type": "noul",
+      "noul": 0.05
+    }
+  },
+  "D-002": {
+    "motif": {
+      "type": "choice",
+      "choice": "perte_revenus",
+      "confidence": 1.0,
+      "probabilities": {
+        "retard_technique": 0.0,
+        "perte_revenus": 1.0,
+        "aucune_difficulte": 0.0,
+        "litige_juridique": 0.0,
+        "sante_deces": 0.0,
+        "client_disparu": 0.0,
+        "fraude_detournement": 0.0,
+        "tension_tresorerie": 0.0
+      }
+    },
+    "perspective": {
+      "type": "score",
+      "score": 1.99,
+      "confidence": 0.77,
+      "legend": {
+        "0": "Quasi nulles : client disparu, fraude ou activité arrêtée",
+        "1": "Faibles : difficulté durable sans solution identifiée",
+        "2": "Incertaines : difficulté réelle, issue dépendant d'un événement non daté",
+        "3": "Bonnes : difficulté temporaire avec une solution crédible ou datée",
+        "4": "Très bonnes : aucune difficulté ou incident purement technique déjà résolu"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.14,
+        "2": 0.73,
+        "3": 0.13,
+        "4": 0.0
+      }
+    },
+    "promesse_datee": {
+      "type": "noul",
+      "noul": 0.35
+    },
+    "restructuration": {
+      "type": "noul",
+      "noul": 0.98
+    },
+    "rupture_flux": {
+      "type": "noul",
+      "noul": 0.54
+    },
+    "signal_fraude": {
+      "type": "noul",
+      "noul": 0.06
+    },
+    "garantie_fragile": {
+      "type": "noul",
+      "noul": 0.12
+    },
+    "incoherence": {
+      "type": "noul",
+      "noul": 0.05
+    }
+  },
+  "D-003": {
+    "motif": {
+      "type": "choice",
+      "choice": "client_disparu",
+      "confidence": 0.93,
+      "probabilities": {
+        "sante_deces": 0.0,
+        "retard_technique": 0.0,
+        "litige_juridique": 0.0,
+        "perte_revenus": 0.06,
+        "aucune_difficulte": 0.0,
+        "client_disparu": 0.94,
+        "fraude_detournement": 0.0,
+        "tension_tresorerie": 0.0
+      }
+    },
+    "perspective": {
+      "type": "score",
+      "score": 0.15,
+      "confidence": 0.87,
+      "legend": {
+        "0": "Quasi nulles : client disparu, fraude ou activité arrêtée",
+        "1": "Faibles : difficulté durable sans solution identifiée",
+        "2": "Incertaines : difficulté réelle, issue dépendant d'un événement non daté",
+        "3": "Bonnes : difficulté temporaire avec une solution crédible ou datée",
+        "4": "Très bonnes : aucune difficulté ou incident purement technique déjà résolu"
+      },
+      "probabilities": {
+        "0": 0.85,
+        "1": 0.14,
+        "2": 0.01,
+        "3": 0.0,
+        "4": 0.0
+      }
+    },
+    "promesse_datee": {
+      "type": "noul",
+      "noul": 0.03
+    },
+    "restructuration": {
+      "type": "noul",
+      "noul": 0.03
+    },
+    "rupture_flux": {
+      "type": "noul",
+      "noul": 0.77
+    },
+    "signal_fraude": {
+      "type": "noul",
+      "noul": 0.23
+    },
+    "garantie_fragile": {
+      "type": "noul",
+      "noul": 0.43
+    },
+    "incoherence": {
+      "type": "noul",
+      "noul": 0.04
+    }
+  },
+  "D-004": {
+    "motif": {
+      "type": "choice",
+      "choice": "aucune_difficulte",
+      "confidence": 1.0,
+      "probabilities": {
+        "aucune_difficulte": 1.0,
+        "retard_technique": 0.0,
+        "fraude_detournement": 0.0,
+        "client_disparu": 0.0,
+        "tension_tresorerie": 0.0,
+        "litige_juridique": 0.0,
+        "perte_revenus": 0.0,
+        "sante_deces": 0.0
+      }
+    },
+    "perspective": {
+      "type": "score",
+      "score": 3.96,
+      "confidence": 0.96,
+      "legend": {
+        "0": "Quasi nulles : client disparu, fraude ou activité arrêtée",
+        "1": "Faibles : difficulté durable sans solution identifiée",
+        "2": "Incertaines : difficulté réelle, issue dépendant d'un événement non daté",
+        "3": "Bonnes : difficulté temporaire avec une solution crédible ou datée",
+        "4": "Très bonnes : aucune difficulté ou incident purement technique déjà résolu"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.01,
+        "3": 0.02,
+        "4": 0.97
+      }
+    },
+    "promesse_datee": {
+      "type": "noul",
+      "noul": 0.04
+    },
+    "restructuration": {
+      "type": "noul",
+      "noul": 0.07
+    },
+    "rupture_flux": {
+      "type": "noul",
+      "noul": 0.04
+    },
+    "signal_fraude": {
+      "type": "noul",
+      "noul": 0.09
+    },
+    "garantie_fragile": {
+      "type": "noul",
+      "noul": 0.05
+    },
+    "incoherence": {
+      "type": "noul",
+      "noul": 0.96
+    }
+  },
+  "D-005": {
+    "motif": {
+      "type": "choice",
+      "choice": "aucune_difficulte",
+      "confidence": 1.0,
+      "probabilities": {
+        "aucune_difficulte": 1.0,
+        "client_disparu": 0.0,
+        "fraude_detournement": 0.0,
+        "retard_technique": 0.0,
+        "perte_revenus": 0.0,
+        "litige_juridique": 0.0,
+        "tension_tresorerie": 0.0,
+        "sante_deces": 0.0
+      }
+    },
+    "perspective": {
+      "type": "score",
+      "score": 3.99,
+      "confidence": 1.0,
+      "legend": {
+        "0": "Quasi nulles : client disparu, fraude ou activité arrêtée",
+        "1": "Faibles : difficulté durable sans solution identifiée",
+        "2": "Incertaines : difficulté réelle, issue dépendant d'un événement non daté",
+        "3": "Bonnes : difficulté temporaire avec une solution crédible ou datée",
+        "4": "Très bonnes : aucune difficulté ou incident purement technique déjà résolu"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 1.0
+      }
+    },
+    "promesse_datee": {
+      "type": "noul",
+      "noul": 0.03
+    },
+    "restructuration": {
+      "type": "noul",
+      "noul": 0.03
+    },
+    "rupture_flux": {
+      "type": "noul",
+      "noul": 0.03
+    },
+    "signal_fraude": {
+      "type": "noul",
+      "noul": 0.04
+    },
+    "garantie_fragile": {
+      "type": "noul",
+      "noul": 0.04
+    },
+    "incoherence": {
+      "type": "noul",
+      "noul": 0.03
+    }
+  },
+  "D-006": {
+    "motif": {
+      "type": "choice",
+      "choice": "litige_juridique",
+      "confidence": 1.0,
+      "probabilities": {
+        "tension_tresorerie": 0.0,
+        "perte_revenus": 0.0,
+        "sante_deces": 0.0,
+        "litige_juridique": 1.0,
+        "client_disparu": 0.0,
+        "fraude_detournement": 0.0,
+        "aucune_difficulte": 0.0,
+        "retard_technique": 0.0
+      }
+    },
+    "perspective": {
+      "type": "score",
+      "score": 1.97,
+      "confidence": 0.98,
+      "legend": {
+        "0": "Quasi nulles : client disparu, fraude ou activité arrêtée",
+        "1": "Faibles : difficulté durable sans solution identifiée",
+        "2": "Incertaines : difficulté réelle, issue dépendant d'un événement non daté",
+        "3": "Bonnes : difficulté temporaire avec une solution crédible ou datée",
+        "4": "Très bonnes : aucune difficulté ou incident purement technique déjà résolu"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.03,
+        "2": 0.97,
+        "3": 0.0,
+        "4": 0.0
+      }
+    },
+    "promesse_datee": {
+      "type": "noul",
+      "noul": 0.05
+    },
+    "restructuration": {
+      "type": "noul",
+      "noul": 0.05
+    },
+    "rupture_flux": {
+      "type": "noul",
+      "noul": 0.59
+    },
+    "signal_fraude": {
+      "type": "noul",
+      "noul": 0.12
+    },
+    "garantie_fragile": {
+      "type": "noul",
+      "noul": 0.56
+    },
+    "incoherence": {
+      "type": "noul",
+      "noul": 0.04
+    }
+  },
+  "D-007": {
+    "motif": {
+      "type": "choice",
+      "choice": "sante_deces",
+      "confidence": 1.0,
+      "probabilities": {
+        "fraude_detournement": 0.0,
+        "retard_technique": 0.0,
+        "perte_revenus": 0.0,
+        "client_disparu": 0.0,
+        "sante_deces": 1.0,
+        "litige_juridique": 0.0,
+        "tension_tresorerie": 0.0,
+        "aucune_difficulte": 0.0
+      }
+    },
+    "perspective": {
+      "type": "score",
+      "score": 2.0,
+      "confidence": 1.0,
+      "legend": {
+        "0": "Quasi nulles : client disparu, fraude ou activité arrêtée",
+        "1": "Faibles : difficulté durable sans solution identifiée",
+        "2": "Incertaines : difficulté réelle, issue dépendant d'un événement non daté",
+        "3": "Bonnes : difficulté temporaire avec une solution crédible ou datée",
+        "4": "Très bonnes : aucune difficulté ou incident purement technique déjà résolu"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 1.0,
+        "3": 0.0,
+        "4": 0.0
+      }
+    },
+    "promesse_datee": {
+      "type": "noul",
+      "noul": 0.05
+    },
+    "restructuration": {
+      "type": "noul",
+      "noul": 0.11
+    },
+    "rupture_flux": {
+      "type": "noul",
+      "noul": 0.5
+    },
+    "signal_fraude": {
+      "type": "noul",
+      "noul": 0.08
+    },
+    "garantie_fragile": {
+      "type": "noul",
+      "noul": 0.25
+    },
+    "incoherence": {
+      "type": "noul",
+      "noul": 0.04
+    }
+  },
+  "D-008": {
+    "motif": {
+      "type": "choice",
+      "choice": "tension_tresorerie",
+      "confidence": 0.47,
+      "probabilities": {
+        "sante_deces": 0.0,
+        "fraude_detournement": 0.0,
+        "perte_revenus": 0.0,
+        "retard_technique": 0.0,
+        "client_disparu": 0.0,
+        "tension_tresorerie": 0.54,
+        "litige_juridique": 0.0,
+        "aucune_difficulte": 0.46
+      }
+    },
+    "perspective": {
+      "type": "score",
+      "score": 2.69,
+      "confidence": 0.41,
+      "legend": {
+        "0": "Quasi nulles : client disparu, fraude ou activité arrêtée",
+        "1": "Faibles : difficulté durable sans solution identifiée",
+        "2": "Incertaines : difficulté réelle, issue dépendant d'un événement non daté",
+        "3": "Bonnes : difficulté temporaire avec une solution crédible ou datée",
+        "4": "Très bonnes : aucune difficulté ou incident purement technique déjà résolu"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.07,
+        "2": 0.36,
+        "3": 0.37,
+        "4": 0.2
+      }
+    },
+    "promesse_datee": {
+      "type": "noul",
+      "noul": 0.03
+    },
+    "restructuration": {
+      "type": "noul",
+      "noul": 0.05
+    },
+    "rupture_flux": {
+      "type": "noul",
+      "noul": 0.71
+    },
+    "signal_fraude": {
+      "type": "noul",
+      "noul": 0.12
+    },
+    "garantie_fragile": {
+      "type": "noul",
+      "noul": 0.11
+    },
+    "incoherence": {
+      "type": "noul",
+      "noul": 0.05
+    }
+  },
+  "D-009": {
+    "motif": {
+      "type": "choice",
+      "choice": "retard_technique",
+      "confidence": 1.0,
+      "probabilities": {
+        "fraude_detournement": 0.0,
+        "sante_deces": 0.0,
+        "client_disparu": 0.0,
+        "tension_tresorerie": 0.0,
+        "litige_juridique": 0.0,
+        "aucune_difficulte": 0.0,
+        "retard_technique": 1.0,
+        "perte_revenus": 0.0
+      }
+    },
+    "perspective": {
+      "type": "score",
+      "score": 3.21,
+      "confidence": 0.81,
+      "legend": {
+        "0": "Quasi nulles : client disparu, fraude ou activité arrêtée",
+        "1": "Faibles : difficulté durable sans solution identifiée",
+        "2": "Incertaines : difficulté réelle, issue dépendant d'un événement non daté",
+        "3": "Bonnes : difficulté temporaire avec une solution crédible ou datée",
+        "4": "Très bonnes : aucune difficulté ou incident purement technique déjà résolu"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.01,
+        "3": 0.77,
+        "4": 0.22
+      }
+    },
+    "promesse_datee": {
+      "type": "noul",
+      "noul": 0.37
+    },
+    "restructuration": {
+      "type": "noul",
+      "noul": 0.05
+    },
+    "rupture_flux": {
+      "type": "noul",
+      "noul": 0.18
+    },
+    "signal_fraude": {
+      "type": "noul",
+      "noul": 0.08
+    },
+    "garantie_fragile": {
+      "type": "noul",
+      "noul": 0.08
+    },
+    "incoherence": {
+      "type": "noul",
+      "noul": 0.05
+    }
+  },
+  "D-010": {
+    "motif": {
+      "type": "choice",
+      "choice": "fraude_detournement",
+      "confidence": 1.0,
+      "probabilities": {
+        "tension_tresorerie": 0.0,
+        "retard_technique": 0.0,
+        "sante_deces": 0.0,
+        "litige_juridique": 0.0,
+        "perte_revenus": 0.0,
+        "client_disparu": 0.0,
+        "aucune_difficulte": 0.0,
+        "fraude_detournement": 1.0
+      }
+    },
+    "perspective": {
+      "type": "score",
+      "score": 0.02,
+      "confidence": 0.99,
+      "legend": {
+        "0": "Quasi nulles : client disparu, fraude ou activité arrêtée",
+        "1": "Faibles : difficulté durable sans solution identifiée",
+        "2": "Incertaines : difficulté réelle, issue dépendant d'un événement non daté",
+        "3": "Bonnes : difficulté temporaire avec une solution crédible ou datée",
+        "4": "Très bonnes : aucune difficulté ou incident purement technique déjà résolu"
+      },
+      "probabilities": {
+        "0": 0.99,
+        "1": 0.01,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0
+      }
+    },
+    "promesse_datee": {
+      "type": "noul",
+      "noul": 0.03
+    },
+    "restructuration": {
+      "type": "noul",
+      "noul": 0.02
+    },
+    "rupture_flux": {
+      "type": "noul",
+      "noul": 0.09
+    },
+    "signal_fraude": {
+      "type": "noul",
+      "noul": 0.98
+    },
+    "garantie_fragile": {
+      "type": "noul",
+      "noul": 0.51
+    },
+    "incoherence": {
+      "type": "noul",
+      "noul": 0.04
+    }
+  },
+  "D-011": {
+    "motif": {
+      "type": "choice",
+      "choice": "retard_technique",
+      "confidence": 0.46,
+      "probabilities": {
+        "fraude_detournement": 0.0,
+        "litige_juridique": 0.0,
+        "perte_revenus": 0.0,
+        "client_disparu": 0.0,
+        "sante_deces": 0.0,
+        "tension_tresorerie": 0.47,
+        "retard_technique": 0.53,
+        "aucune_difficulte": 0.0
+      }
+    },
+    "perspective": {
+      "type": "score",
+      "score": 3.47,
+      "confidence": 0.6,
+      "legend": {
+        "0": "Quasi nulles : client disparu, fraude ou activité arrêtée",
+        "1": "Faibles : difficulté durable sans solution identifiée",
+        "2": "Incertaines : difficulté réelle, issue dépendant d'un événement non daté",
+        "3": "Bonnes : difficulté temporaire avec une solution crédible ou datée",
+        "4": "Très bonnes : aucune difficulté ou incident purement technique déjà résolu"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.53,
+        "4": 0.47
+      }
+    },
+    "promesse_datee": {
+      "type": "noul",
+      "noul": 0.07
+    },
+    "restructuration": {
+      "type": "noul",
+      "noul": 0.03
+    },
+    "rupture_flux": {
+      "type": "noul",
+      "noul": 0.12
+    },
+    "signal_fraude": {
+      "type": "noul",
+      "noul": 0.05
+    },
+    "garantie_fragile": {
+      "type": "noul",
+      "noul": 0.11
+    },
+    "incoherence": {
+      "type": "noul",
+      "noul": 0.16
+    }
+  },
+  "D-012": {
+    "motif": {
+      "type": "choice",
+      "choice": "tension_tresorerie",
+      "confidence": 0.93,
+      "probabilities": {
+        "perte_revenus": 0.06,
+        "sante_deces": 0.0,
+        "litige_juridique": 0.0,
+        "aucune_difficulte": 0.0,
+        "retard_technique": 0.0,
+        "fraude_detournement": 0.0,
+        "tension_tresorerie": 0.94,
+        "client_disparu": 0.0
+      }
+    },
+    "perspective": {
+      "type": "score",
+      "score": 1.13,
+      "confidence": 0.89,
+      "legend": {
+        "0": "Quasi nulles : client disparu, fraude ou activité arrêtée",
+        "1": "Faibles : difficulté durable sans solution identifiée",
+        "2": "Incertaines : difficulté réelle, issue dépendant d'un événement non daté",
+        "3": "Bonnes : difficulté temporaire avec une solution crédible ou datée",
+        "4": "Très bonnes : aucune difficulté ou incident purement technique déjà résolu"
+      },
+      "probabilities": {
+        "0": 0.0,
+        "1": 0.87,
+        "2": 0.13,
+        "3": 0.0,
+        "4": 0.0
+      }
+    },
+    "promesse_datee": {
+      "type": "noul",
+      "noul": 0.05
+    },
+    "restructuration": {
+      "type": "noul",
+      "noul": 0.98
+    },
+    "rupture_flux": {
+      "type": "noul",
+      "noul": 0.09
+    },
+    "signal_fraude": {
+      "type": "noul",
+      "noul": 0.13
+    },
+    "garantie_fragile": {
+      "type": "noul",
+      "noul": 0.91
+    },
+    "incoherence": {
+      "type": "noul",
+      "noul": 0.05
+    }
+  }
+}

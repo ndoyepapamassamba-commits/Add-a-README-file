@@ -1,0 +1,13 @@
+id_dossier;segment;encours_fcfa;garantie_fcfa;jours_impayes;classe_declaree;commentaire_gestionnaire
+D-001;PME;185000000;120000000;12;sain;Retard ponctuel lié au paiement tardif d'une facture par la SENELEC. Le client a transmis l'ordre de virement, régularisation attendue cette semaine.
+D-002;Corporate;1250000000;400000000;47;sain;Baisse forte du chiffre d'affaires depuis la perte du contrat avec son principal client minier. Le DG demande un rééchelonnement sur 24 mois.
+D-003;Particulier;8500000;0;95;sensible;Client injoignable depuis deux mois, salaire plus domicilié chez nous. Employeur indique qu'il a quitté l'entreprise.
+D-004;PME;62000000;80000000;33;sain;Dossier régularisé, aucun impayé. RAS.
+D-005;Corporate;730000000;730000000;0;sain;Activité stable, résultats 2025 en hausse de 8 %. Hypothèque de premier rang sur l'entrepôt de Diamniadio, évaluée récemment.
+D-006;PME;95000000;20000000;128;douteux;Litige avec l'administration fiscale, comptes bloqués par avis à tiers détenteur. Avocat du client confiant mais aucune date.
+D-007;Particulier;14000000;0;61;sensible;Le client a été hospitalisé, sa famille nous a contactés. Il promet de reprendre les remboursements dès son retour au travail, sans date précise.
+D-008;PME;240000000;60000000;0;sain;Échéances payées à temps mais via des apports successifs du gérant ; le compte courant de l'entreprise ne reçoit plus de flux clients depuis mars.
+D-009;Corporate;2100000000;900000000;18;sain;Retard technique : changement de banque de domiciliation des recettes d'exportation, flux redirigés à partir du 15. Groupe solide.
+D-010;PME;48000000;0;210;douteux;Suspicion de détournement des fonds : le matériel financé n'a jamais été livré selon la visite sur site. Dossier transmis à la conformité.
+D-011;Particulier;6000000;0;8;sain;Prélèvement rejeté pour provision insuffisante, client prévenu par SMS, paiement effectué hier en agence.
+D-012;PME;155000000;150000000;76;sensible;Restructuration accordée en juin (allongement de 18 mois), nouvelles échéances déjà en retard. Garantie : nantissement du stock, non revu depuis 2023.

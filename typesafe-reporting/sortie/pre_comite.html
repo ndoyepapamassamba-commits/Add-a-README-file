@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pré-Comité des Risques</title>
+<style>
+:root { --bleu:#003A70; --bleu2:#00A3E0; --fond:#F4F7FB; --texte:#1B2733; --gris:#5B6B7B; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Segoe UI,Arial,sans-serif; background:var(--fond); color:var(--texte); }
+header { background:linear-gradient(120deg,var(--bleu),#005BAA); color:#fff; padding:24px 32px; }
+header h1 { margin:0; font-size:24px; } header p { margin:4px 0 0; opacity:.85; }
+main { padding:24px 32px; max-width:1400px; margin:auto; }
+.kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; }
+.kpi { background:#fff; border-radius:10px; padding:16px; border-top:4px solid var(--bleu2); box-shadow:0 1px 3px #0001; }
+.kpi b { font-size:26px; color:var(--bleu); display:block; } .kpi span { color:var(--gris); font-size:13px; }
+section { background:#fff; border-radius:10px; padding:20px; margin-top:20px; box-shadow:0 1px 3px #0001; overflow-x:auto; }
+h2 { margin:0 0 12px; font-size:17px; color:var(--bleu); }
+.barre { display:grid; grid-template-columns:180px 1fr 90px; gap:10px; align-items:center; margin:6px 0; font-size:14px; }
+.piste { background:#E6EDF5; border-radius:4px; height:12px; } .piste div { background:var(--bleu2); height:100%; border-radius:4px; }
+.barre b { text-align:right; }
+table { border-collapse:collapse; width:100%; font-size:13.5px; }
+th { text-align:left; background:var(--bleu); color:#fff; padding:8px; position:sticky; top:0; }
+td { padding:8px; border-bottom:1px solid #E3E9F0; vertical-align:top; }
+td.num { text-align:right; white-space:nowrap; } small { color:var(--gris); }
+ul { margin:4px 0; padding-left:18px; }
+.alerte { display:inline-block; min-width:40px; text-align:center; padding:4px 8px; border-radius:6px; font-weight:700; color:#fff; }
+.haut { background:#C62828; } .moyen { background:#EF8F00; } .bas { background:#2E7D32; }
+.puce { display:inline-block; background:#E8F4FB; color:var(--bleu); border-radius:10px; padding:1px 8px; margin:1px 2px; font-size:12px; }
+.revue { color:#8A4B00; font-size:12.5px; margin-top:4px; }
+details { margin-top:4px; color:var(--gris); }
+footer { color:var(--gris); font-size:12px; padding:0 32px 24px; max-width:1400px; margin:auto; }
+</style></head><body>
+<header><h1>Pré-Comité des Risques — revue des commentaires gestionnaires</h1>
+<p>Arrêté du 03/10/2026 · 12 dossiers · jugements TypeSafe (jev-latest)</p></header>
+<main>
+<div class="kpis">
+  <div class="kpi"><b>4 894 M</b><span>Encours analysé (FCFA)</span></div>
+  <div class="kpi"><b>3</b><span>Dossiers en alerte (score ≥ 40) · 212 M</span></div>
+  <div class="kpi"><b>1</b><span>Passages en Stage 2 par signal qualitatif (SICR)</span></div>
+  <div class="kpi"><b>2</b><span>Dossiers à confirmer par un analyste</span></div>
+</div>
+<section><h2>Encours par motif de difficulté</h2><div class="barre"><span>Retard technique</span><div class="piste"><div style="width:46.8%"></div></div><b>2 291 M</b></div><div class="barre"><span>Perte de revenus</span><div class="piste"><div style="width:25.5%"></div></div><b>1 250 M</b></div><div class="barre"><span>Aucune difficulté</span><div class="piste"><div style="width:16.2%"></div></div><b>792 M</b></div><div class="barre"><span>Tension de trésorerie</span><div class="piste"><div style="width:8.1%"></div></div><b>395 M</b></div><div class="barre"><span>Litige juridique</span><div class="piste"><div style="width:1.9%"></div></div><b>95 M</b></div><div class="barre"><span>Fraude / détournement</span><div class="piste"><div style="width:1.0%"></div></div><b>48 M</b></div><div class="barre"><span>Santé / décès</span><div class="piste"><div style="width:0.3%"></div></div><b>14 M</b></div><div class="barre"><span>Client disparu</span><div class="piste"><div style="width:0.2%"></div></div><b>8 M</b></div></section>
+<section><h2>Vue 3D du portefeuille (Blender)</h2><img src="portefeuille_3d.png" alt="Colonnes par dossier : hauteur = score d’alerte, section = encours, rangées = Stage IFRS9" style="width:100%;border-radius:8px"><p><small>Hauteur = score d’alerte · section = encours · rangée = Stage IFRS9 · anneau doré = revue analyste</small></p></section>
+<section><h2>Dossiers classés par score d'alerte</h2>
+<table><thead><tr><th>Dossier</th><th>Encours</th><th>Impayés</th><th>Classe</th><th>Motif</th><th>Perspective</th><th>Alerte</th><th>Signaux et propositions</th></tr></thead>
+<tbody>
+<tr>
+  <td><b>D-010</b><br><small>PME</small></td>
+  <td class="num">48 M<br><small>couv. 0%</small></td>
+  <td class="num">210 j</td>
+  <td>douteux → <b>douteux</b><br><small>Stage 3</small></td>
+  <td>Fraude / détournement<br><small>conf. 1.00</small></td>
+  <td class="num">0.0 / 4</td>
+  <td><span class="alerte haut">61</span></td>
+  <td><span class="puce">Fraude 98%</span><ul><li>Transfert contentieux + saisine Conformité</li></ul>
+      <details><summary>Commentaire</summary>Suspicion de détournement des fonds : le matériel financé n&#x27;a jamais été livré selon la visite sur site. Dossier transmis à la conformité.</details></td>
+</tr>
+<tr>
+  <td><b>D-003</b><br><small>Particulier</small></td>
+  <td class="num">8 M<br><small>couv. 0%</small></td>
+  <td class="num">95 j</td>
+  <td>sensible → <b>douteux</b><br><small>Stage 3</small></td>
+  <td>Client disparu<br><small>conf. 0.93</small></td>
+  <td class="num">0.1 / 4</td>
+  <td><span class="alerte moyen">55</span></td>
+  <td><span class="puce">Rupture de flux 77%</span><ul><li>Écart de classe : déclarée « sensible », règle « douteux »</li></ul>
+      <details><summary>Commentaire</summary>Client injoignable depuis deux mois, salaire plus domicilié chez nous. Employeur indique qu&#x27;il a quitté l&#x27;entreprise.</details></td>
+</tr>
+<tr>
+  <td><b>D-012</b><br><small>PME</small></td>
+  <td class="num">155 M<br><small>couv. 97%</small></td>
+  <td class="num">76 j</td>
+  <td>sensible → <b>sensible</b><br><small>Stage 2</small></td>
+  <td>Tension de trésorerie<br><small>conf. 0.93</small></td>
+  <td class="num">1.1 / 4</td>
+  <td><span class="alerte moyen">48</span></td>
+  <td><span class="puce">Restructuration 98%</span><span class="puce">Garantie fragile 91%</span><ul><li>Faire réévaluer la garantie</li></ul>
+      <details><summary>Commentaire</summary>Restructuration accordée en juin (allongement de 18 mois), nouvelles échéances déjà en retard. Garantie : nantissement du stock, non revu depuis 2023.</details></td>
+</tr>
+<tr>
+  <td><b>D-002</b><br><small>Corporate</small></td>
+  <td class="num">1 250 M<br><small>couv. 32%</small></td>
+  <td class="num">47 j</td>
+  <td>sain → <b>sensible</b><br><small>Stage 2</small></td>
+  <td>Perte de revenus<br><small>conf. 1.00</small></td>
+  <td class="num">2.0 / 4</td>
+  <td><span class="alerte bas">38</span></td>
+  <td><span class="puce">Restructuration 98%</span><ul><li>Écart de classe : déclarée « sain », règle « sensible »</li></ul>
+      <details><summary>Commentaire</summary>Baisse forte du chiffre d&#x27;affaires depuis la perte du contrat avec son principal client minier. Le DG demande un rééchelonnement sur 24 mois.</details></td>
+</tr>
+<tr>
+  <td><b>D-006</b><br><small>PME</small></td>
+  <td class="num">95 M<br><small>couv. 21%</small></td>
+  <td class="num">128 j</td>
+  <td>douteux → <b>douteux</b><br><small>Stage 3</small></td>
+  <td>Litige juridique<br><small>conf. 1.00</small></td>
+  <td class="num">2.0 / 4</td>
+  <td><span class="alerte bas">36</span></td>
+  <td><ul><li>Maintien en l&#x27;état</li></ul>
+      <details><summary>Commentaire</summary>Litige avec l&#x27;administration fiscale, comptes bloqués par avis à tiers détenteur. Avocat du client confiant mais aucune date.</details></td>
+</tr>
+<tr>
+  <td><b>D-007</b><br><small>Particulier</small></td>
+  <td class="num">14 M<br><small>couv. 0%</small></td>
+  <td class="num">61 j</td>
+  <td>sensible → <b>sensible</b><br><small>Stage 2</small></td>
+  <td>Santé / décès<br><small>conf. 1.00</small></td>
+  <td class="num">2.0 / 4</td>
+  <td><span class="alerte bas">31</span></td>
+  <td><ul><li>Maintien en l&#x27;état</li></ul>
+      <details><summary>Commentaire</summary>Le client a été hospitalisé, sa famille nous a contactés. Il promet de reprendre les remboursements dès son retour au travail, sans date précise.</details></td>
+</tr>
+<tr>
+  <td><b>D-008</b><br><small>PME</small></td>
+  <td class="num">240 M<br><small>couv. 25%</small></td>
+  <td class="num">0 j</td>
+  <td>sain → <b>sain</b><br><small>Stage 2</small></td>
+  <td>Tension de trésorerie<br><small>conf. 0.47</small></td>
+  <td class="num">2.7 / 4</td>
+  <td><span class="alerte bas">27</span></td>
+  <td><span class="puce">Rupture de flux 71%</span><ul><li>SICR qualitatif : passer en Stage 2 et mettre sous surveillance</li></ul><div class="revue">⚑ Revue analyste : motif incertain (0.47)</div>
+      <details><summary>Commentaire</summary>Échéances payées à temps mais via des apports successifs du gérant </details></td>
+</tr>
+<tr>
+  <td><b>D-004</b><br><small>PME</small></td>
+  <td class="num">62 M<br><small>couv. 129%</small></td>
+  <td class="num">33 j</td>
+  <td>sain → <b>sensible</b><br><small>Stage 2</small></td>
+  <td>Aucune difficulté<br><small>conf. 1.00</small></td>
+  <td class="num">4.0 / 4</td>
+  <td><span class="alerte bas">14</span></td>
+  <td><span class="puce">Incohérence 96%</span><ul><li>Écart de classe : déclarée « sain », règle « sensible »</li><li>Commentaire incohérent avec les impayés : demander une mise à jour</li></ul>
+      <details><summary>Commentaire</summary>Dossier régularisé, aucun impayé. RAS.</details></td>
+</tr>
+<tr>
+  <td><b>D-009</b><br><small>Corporate</small></td>
+  <td class="num">2 100 M<br><small>couv. 43%</small></td>
+  <td class="num">18 j</td>
+  <td>sain → <b>sain</b><br><small>Stage 1</small></td>
+  <td>Retard technique<br><small>conf. 1.00</small></td>
+  <td class="num">3.2 / 4</td>
+  <td><span class="alerte bas">13</span></td>
+  <td><ul><li>Maintien en l&#x27;état</li></ul>
+      <details><summary>Commentaire</summary>Retard technique : changement de banque de domiciliation des recettes d&#x27;exportation, flux redirigés à partir du 15. Groupe solide.</details></td>
+</tr>
+<tr>
+  <td><b>D-001</b><br><small>PME</small></td>
+  <td class="num">185 M<br><small>couv. 65%</small></td>
+  <td class="num">12 j</td>
+  <td>sain → <b>sain</b><br><small>Stage 1</small></td>
+  <td>Retard technique<br><small>conf. 0.84</small></td>
+  <td class="num">3.0 / 4</td>
+  <td><span class="alerte bas">12</span></td>
+  <td><span class="puce">Promesse datée 97%</span><ul><li>Suivre la promesse de régularisation à la date annoncée</li></ul>
+      <details><summary>Commentaire</summary>Retard ponctuel lié au paiement tardif d&#x27;une facture par la SENELEC. Le client a transmis l&#x27;ordre de virement, régularisation attendue cette semaine.</details></td>
+</tr>
+<tr>
+  <td><b>D-011</b><br><small>Particulier</small></td>
+  <td class="num">6 M<br><small>couv. 0%</small></td>
+  <td class="num">8 j</td>
+  <td>sain → <b>sain</b><br><small>Stage 1</small></td>
+  <td>Retard technique<br><small>conf. 0.46</small></td>
+  <td class="num">3.5 / 4</td>
+  <td><span class="alerte bas">10</span></td>
+  <td><ul><li>Maintien en l&#x27;état</li></ul><div class="revue">⚑ Revue analyste : motif incertain (0.46)</div>
+      <details><summary>Commentaire</summary>Prélèvement rejeté pour provision insuffisante, client prévenu par SMS, paiement effectué hier en agence.</details></td>
+</tr>
+<tr>
+  <td><b>D-005</b><br><small>Corporate</small></td>
+  <td class="num">730 M<br><small>couv. 100%</small></td>
+  <td class="num">0 j</td>
+  <td>sain → <b>sain</b><br><small>Stage 1</small></td>
+  <td>Aucune difficulté<br><small>conf. 1.00</small></td>
+  <td class="num">4.0 / 4</td>
+  <td><span class="alerte bas">2</span></td>
+  <td><ul><li>Maintien en l&#x27;état</li></ul>
+      <details><summary>Commentaire</summary>Activité stable, résultats 2025 en hausse de 8 %. Hypothèque de premier rang sur l&#x27;entrepôt de Diamniadio, évaluée récemment.</details></td>
+</tr></tbody></table></section>
+</main>
+<footer>Classes et stages calculés par règles déterministes (seuils de démonstration). Motifs, perspectives et signaux issus de TypeSafe :
+ce sont des aides à la décision à valider par le Comité. Pondérations : {&quot;perspective_faible&quot;: 0.35, &quot;signal_fraude&quot;: 0.2, &quot;rupture_flux&quot;: 0.15, &quot;restructuration&quot;: 0.1, &quot;garantie_fragile&quot;: 0.1, &quot;incoherence&quot;: 0.1}.</footer>
+</body></html>
