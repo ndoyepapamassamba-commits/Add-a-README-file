@@ -30,6 +30,23 @@
 
 Noms de commandes des serveurs « tiers » : à vérifier sur leur page avant installation (ils évoluent).
 
+## Troisième vague : productivité, 3D, image, vidéo (`openclaw.mcp.creatif.json5`)
+
+| Serveur | Gain | Données qui sortent ? | Garde-fou |
+|---|---|---|---|
+| todoist (officiel Doist) | tâches et rappels synchronisés sur le téléphone (offre gratuite) | les titres de tâches | titres sans données clients ; `taches-pro` reste l'option 100 % locale |
+| excalidraw (officiel) | schémas de processus, organigrammes, storyboards de sketchs | le contenu du schéma | pas de schéma d'architecture interne de la banque |
+| notes (officiel MCP, Fichiers) | coffre Obsidian / notes Markdown | non | un seul dossier ; pas de mots de passe dans les notes |
+| blender (tiers, MIT) | 3D : décors, objets, rendu, assets Poly Haven CC0 | non (télémétrie coupée) | exécute du Python dans Blender → confirmation ; projet enregistré avant |
+| comfyui (officiel Comfy-Org, preview) | images FLUX/SDXL et vidéo Wan 2.2 sur ta carte graphique | non | modèles vérifiés avec `modeles-ia-locaux` ; nœuds personnalisés seulement après lecture |
+| pollinations (tiers) | images sans clé ni compte | le prompt | prompts neutres uniquement ; jamais de visage réel ou de marque |
+| video (tiers, mcp-video) | montage FFmpeg piloté par l'agent | non | travailler sur des copies ; `studio-media` pour l'anonymisation |
+
+**3D à partir d'une image, gratuit** : via le serveur `huggingface` (deuxième vague), activer sur
+hf.co/settings/mcp des Spaces comme *TRELLIS* ou *Hunyuan3D-2* (quota ZeroGPU quotidien), puis importer le `.glb`
+dans Blender. **Google Workspace (Gmail, Drive, Agenda)** : les serveurs MCP officiels de Google sont encore
+réservés au programme Developer Preview avec un projet Google Cloud ; pas recommandé pour l'instant.
+
 ## Installation (Windows)
 ```powershell
 winget install OpenJS.NodeJS.LTS

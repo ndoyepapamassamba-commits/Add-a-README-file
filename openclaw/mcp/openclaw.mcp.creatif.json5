@@ -1,0 +1,41 @@
+// Troisième vague : productivité, 3D, image, vidéo — gratuits. À fusionner dans mcp.servers d'openclaw.json
+// APRÈS lecture de mcp/README.md. Serveurs « tiers » : lire leur page, puis figer la version validée
+// (ex. "mcp-video==X.Y.Z", "@pinkpixel/mcpollinations@X.Y.Z").
+{
+  mcp: {
+    servers: {
+      // ---------- PRODUCTIVITÉ ----------
+      // 19. Todoist (officiel Doist, distant, OAuth : « openclaw mcp login todoist ») — tâches synchronisées sur le téléphone
+      todoist: { url: "https://ai.todoist.net/mcp", transport: "streamable-http", auth: "oauth" },
+      // 20. Excalidraw (officiel, distant) — schémas, processus, organigrammes, storyboards dessinés à la main
+      excalidraw: { url: "https://mcp.excalidraw.com", transport: "streamable-http" },
+      // 21. Notes Obsidian / Markdown : serveur Fichiers officiel MCP limité au SEUL dossier de notes (lecture + écriture)
+      notes: {
+        command: "npx",
+        args: ["-y", "@modelcontextprotocol/server-filesystem", "C:\\Users\\PNDOYE\\Documents\\Notes"],
+      },
+
+      // ---------- 3D ----------
+      // 22. Blender (tiers, ahujasid/blender-mcp, MIT) — modéliser, éclairer, rendre ; assets Poly Haven (CC0).
+      //     Nécessite Blender + l'add-on addon.py du dépôt (onglet BlenderMCP → Connect). Télémétrie coupée.
+      //     ⚠ peut exécuter du code Python dans Blender : confirmation avant chaque « execute code ».
+      blender: {
+        command: "uvx", args: ["blender-mcp"],
+        env: { DISABLE_TELEMETRY: "true" },
+      },
+
+      // ---------- IMAGE / VIDÉO ----------
+      // 23. ComfyUI local (officiel Comfy-Org, preview) — FLUX schnell, SDXL, Wan 2.2 sur TA carte graphique, rien ne sort.
+      //     Prérequis : py -m pip install "comfy-cli>=1.14.0" comfy-mcp ; comfy install ; comfy launch
+      comfyui: {
+        command: "comfy-mcp",
+        env: { COMFY_BIN: "C:\\Users\\PNDOYE\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\comfy.exe" },
+      },
+      // 24. Pollinations (tiers, pinkpixel-dev/MCPollinations, MIT) — images sans clé ni compte, dans le cloud.
+      //     ⚠ le texte du prompt part chez Pollinations : jamais de nom réel, de logo de marque ni de donnée interne.
+      pollinations: { command: "npx", args: ["-y", "@pinkpixel/mcpollinations"] },
+      // 25. Montage vidéo local (tiers, mcp-video, sur FFmpeg) — couper, assembler, sous-titres, audio, formats.
+      video: { command: "uvx", args: ["--from", "mcp-video", "mcp-video"] },
+    },
+  },
+}

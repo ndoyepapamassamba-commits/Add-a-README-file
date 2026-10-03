@@ -1,6 +1,6 @@
 # Projet prêt pour OpenClaw
 
-Quatorze skills au format OpenClaw / ClawHub (`SKILL.md` + métadonnées `metadata.openclaw`) :
+Dix-neuf skills au format OpenClaw / ClawHub (`SKILL.md` + métadonnées `metadata.openclaw`) :
 
 | Skill | Rôle |
 |---|---|
@@ -17,10 +17,15 @@ Quatorze skills au format OpenClaw / ClawHub (`SKILL.md` + métadonnées `metada
 | `skills/analyse-portefeuille` 🏦 | NPL, couverture, ancienneté, concentration (HHI), migrations entre arrêtés, en local, clients masqués (`portefeuille.py`). |
 | `skills/dossier-comite` 🗂️ | Chef d'orchestre : qualité → indicateurs → veille → tableau de bord → PowerPoint → note → export chiffré. |
 | `skills/briefing-quotidien` ☀️ | Point du matin : priorités, veille, TikTok, sauvegardes, alertes de sécurité. |
+| `skills/export-pro` 📤 | Excel mis en forme, CSV « Excel français » anti-injection, rapprochement source/export, nettoyage des métadonnées Office (`export_pro.py`). |
+| `skills/boite-a-outils` 🧰 | Doublons, place disque, inventaire, renommage avec aperçu et annulation, comparaison de versions, fusion, découpage, encodage (`outils.py`). |
+| `skills/studio-media` 🎞️ | Photo/vidéo locales : GPS et EXIF retirés, TikTok 9:16, WhatsApp, WebP, planche, filigrane, GIF, audio (`media.py`). |
+| `skills/taches-pro` ✅ | Tâches locales : Eisenhower, plan du jour, revue hebdo, export agenda .ics (`taches.py`). |
+| `skills/modeles-ia-locaux` 🧩 | IA open source sur la machine : diagnostic, choix du modèle, licences, détection de modèles piégés, Ollama sécurisé (`modeles.py`). |
 | `skills/export-securise` 📦 | Tout ce qui sort : contrôle, pseudonymisation des colonnes clients, ZIP chiffré AES-256, journal des exports (`export_guard.py`). |
 
 ## Serveurs MCP
-Voir `mcp/README.md` (18 serveurs gratuits avec garde-fous).
+Voir `mcp/README.md` (25 serveurs gratuits avec garde-fous : bureautique, données, productivité, 3D, image, vidéo).
 
 ## Installation
 

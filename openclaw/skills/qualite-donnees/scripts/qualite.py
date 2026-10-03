@@ -11,6 +11,7 @@ Les valeurs individuelles ne sont jamais affichées (seulement des numéros de l
 """
 import argparse
 import csv
+import io
 import datetime as dt
 import html
 import statistics
@@ -28,7 +29,8 @@ def load(path: Path, sheet: str | None):
     else:
         raw = path.read_text("utf-8-sig", errors="ignore")
         d = csv.Sniffer().sniff(raw.splitlines()[0], delimiters=",;\t")
-        rows = list(csv.reader(raw.splitlines(), d))
+        d.quotechar, d.doublequote, d.escapechar = '"', True, None     # guillemets standard (Excel)
+        rows = list(csv.reader(io.StringIO(raw), d))
     rows = [r for r in rows if any(v not in (None, "") for v in r)]
     head = [str(h).strip() if h is not None else f"col{i + 1}" for i, h in enumerate(rows[0])]
     return head, rows[1:]
