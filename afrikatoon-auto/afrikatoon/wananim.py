@@ -410,6 +410,10 @@ def render_clip(scene: dict, index: int, dest: Path, setting: str = "village", i
         last = is_last and j == len(lines) - 1
         part = line_clip(src, wav, workdir / f"line_{index:02d}_{j}.mp4", seconds, box, freeze=1.4 if last else 0)
         line["start"], line["end"] = t + LEAD, t + LEAD + d
+        try:
+            line["words"] = [(wd, t + LEAD + a, t + LEAD + b) for wd, a, b in word_times(wav, line["text"])]
+        except Exception as e:  # noqa: BLE001 — sous-titres classiques si l'horodatage échoue
+            print(f"    horodatage des mots impossible ({e})")
         t += seconds
         parts.append(part)
     concat = workdir / f"scene_{index:02d}_raw.mp4"
@@ -425,3 +429,32 @@ def render_clip(scene: dict, index: int, dest: Path, setting: str = "village", i
     if is_last:
         events.append(("boing", t))
     return _sfx(concat, events, dest)
+
+
+# --- Sous-titres mot à mot ---------------------------------------------------------------------
+
+def word_times(wav: Path, text: str) -> list[tuple[str, float, float]]:
+    """Horodatage de chaque mot du texte (en s depuis le début du fichier), d'après Whisper. Si Whisper
+    n'entend pas le même nombre de mots, les mots du texte sont répartis sur la parole selon leur longueur."""
+    global _ASR
+    heard(wav)  # charge le modèle
+    res = _ASR(str(wav), return_timestamps="word", generate_kwargs={"language": "french", "task": "transcribe"})
+    chunks = [c for c in res.get("chunks", []) if c.get("timestamp") and c["timestamp"][0] is not None]
+    words = []
+    for tok in text.replace("…", "… ").split():   # « ! », « ?! » collés au mot précédent
+        if words and not any(c.isalnum() for c in tok):
+            words[-1] += " " + tok
+        else:
+            words.append(tok)
+    if not chunks:
+        return []
+    t0, t1 = chunks[0]["timestamp"][0], chunks[-1]["timestamp"][1] or _dur(wav)
+    if len(chunks) == len(words):
+        return [(w, c["timestamp"][0], c["timestamp"][1] or t1) for w, c in zip(words, chunks)]
+    total = sum(len(w) + 1 for w in words)
+    out, t = [], t0
+    for w in words:
+        d = (t1 - t0) * (len(w) + 1) / total
+        out.append((w, t, t + d))
+        t += d
+    return out

@@ -1,0 +1,7 @@
+{"clip": "wan_00_0.mp4", "seconds": 4.3, "steps": 6, "gpu_requested": 57.7, "wall": 49.8}
+{"clip": "wan_00_1.mp4", "seconds": 3.4, "steps": 6, "gpu_requested": 43.1, "wall": 32.2}
+{"clip": "wan_01_0.mp4", "seconds": 5.0, "steps": 6, "gpu_requested": 69.6, "wall": 56.3}
+{"clip": "wan_01_1.mp4", "seconds": 3.6, "steps": 6, "gpu_requested": 46.8, "wall": 35.2}
+{"clip": "wan_02_0.mp4", "seconds": 3.0, "steps": 6, "gpu_requested": 37.7, "wall": 29.2}
+{"clip": "wan_06_0.mp4", "seconds": 2.6, "steps": 4, "gpu_requested": 25.1, "wall": 23.0}
+{"clip": "wan_07_0.mp4", "seconds": 2.0, "steps": 4, "gpu_requested": 20.1, "wall": 18.1}

@@ -45,6 +45,27 @@ def _escape(text: str) -> str:
     return text.replace("\\", "").replace("{", "(").replace("}", ")").replace("\n", " ")
 
 
+def _word_events(words, t0: float) -> list[str]:
+    groups, cur = [], []
+    for w in words:
+        cur.append(w)
+        if len(cur) == 4 or w[0][-1:] in "!?…" or (len(cur) >= 2 and w[0][-1:] in ",.") \
+                or sum(len(x[0]) for x in cur) > 16:
+            groups.append(cur)
+            cur = []
+    if cur:
+        groups.append(cur)
+    out = []
+    for n, g in enumerate(groups):
+        nxt = groups[n + 1][0][1] if n + 1 < len(groups) else None
+        for k, (_, a, b) in enumerate(g):
+            end = g[k + 1][1] if k + 1 < len(g) else (min(b + 0.25, nxt) if nxt else b + 0.25)
+            text = " ".join((r"{\c&H00E5FF&}" + _escape(x[0]) + r"{\c&HFFFFFF&}") if i == k else _escape(x[0])
+                            for i, x in enumerate(g))
+            out.append(f"Dialogue: 0,{_ts(t0 + a)},{_ts(t0 + end)},Word,{text}")
+    return out
+
+
 def build_subtitles(scenes: list[dict], durations: list[float], dest: Path, hook: str = "") -> Path:
     """Sous-titres gros et jaunes ; chaque réplique occupe une part du clip proportionnelle à sa longueur."""
     lines = [
@@ -53,7 +74,8 @@ def build_subtitles(scenes: list[dict], durations: list[float], dest: Path, hook
         "Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, "
         "BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV",
         "Style: Main,DejaVu Sans,64,&H0000FFFF,&H00000000,&H64000000,1,1,5,2,2,60,60,380",
-        "Style: Hook,DejaVu Sans,78,&H00FFFFFF,&H00000000,&H96000000,1,3,6,0,8,50,50,170", "",
+        "Style: Hook,DejaVu Sans,78,&H00FFFFFF,&H00000000,&H96000000,1,3,6,0,8,50,50,170",
+        "Style: Word,DejaVu Sans,66,&H00FFFFFF,&H00000000,&H64000000,1,1,4,1,2,90,90,250", "",
         "[Events]",
         "Format: Layer, Start, End, Style, Text",
     ]
@@ -66,6 +88,9 @@ def build_subtitles(scenes: list[dict], durations: list[float], dest: Path, hook
         usable = max(d - 0.6, 0.5)
         t = t0 + 0.3
         for line in dialogue:
+            if line.get("words"):  # façon TikTok : 2-4 mots à la fois, le mot prononcé en jaune
+                lines += _word_events(line["words"], t0)
+                continue
             span = usable * len(line["text"]) / total
             if "start" in line:  # timing exact connu (aperçu animé)
                 t, span = t0 + line["start"], line["end"] - line["start"]
