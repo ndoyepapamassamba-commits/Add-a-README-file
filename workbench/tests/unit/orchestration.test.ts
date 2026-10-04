@@ -1,5 +1,5 @@
 import { unzipSync, strFromU8 } from 'fflate';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ModelInfo } from '@shared/types';
 import {
   analyzeTask,
@@ -7,7 +7,22 @@ import {
   recordHealth,
   reliability,
   routeModel,
+  categorize,
+  metricFor,
+  rankByValue,
+  recordOutcome,
+  leaderboardBoost,
+  taskMatrix,
 } from '../../server/llm/routing';
+import {
+  effortOf,
+  intelData,
+  intelMax,
+  intelligenceInfo,
+  parseIntel,
+  setIntelData,
+  type IntelData,
+} from '../../server/llm/modelIntel';
 import { DEFAULT_AUTO_TIERS } from '../../server/services/settings';
 import { diagnose, formatDiagnosis } from '../../server/tools/diagnose';
 import { markdownToDocx } from '../../server/services/officeCore';
@@ -49,6 +64,10 @@ const MODELS = [
 describe('task analysis & multi-model routing', () => {
   it('profiles difficulty, type and team', () => {
     expect(analyzeTask({ text: 'bonjour' }).tier).toBe('cheap');
+    // High-stakes deliverables are never routed to the cheapest tier.
+    const comex = analyzeTask({ text: 'Analyse le portefeuille IFRS9 et prépare le rapport COMEX' });
+    expect(comex.tier).not.toBe('cheap');
+    expect(comex.reasons).toContain('enjeu critique');
     const data = analyzeTask({ text: 'Analyse ce fichier', attachmentNames: ['ventes.xlsx'] });
     expect(data.type).toBe('data');
     const hard = analyzeTask({
@@ -81,6 +100,191 @@ describe('task analysis & multi-model routing', () => {
     expect(
       estimateTaskCost(MODELS[0], { difficulty: 0.5, contextTokens: 10_000 }, true)!.low,
     ).toBeGreaterThan(0);
+  });
+});
+
+// Test scores injected through the same API as a live refresh (deterministic).
+const entry = (intelligence: number, coding: number | null = null, agentic: number | null = null) => ({
+  name: 'test',
+  intelligence,
+  coding,
+  agentic,
+  effort: 'high',
+  variants: { high: intelligence },
+});
+const TEST_INTEL: IntelData = {
+  source: 'test',
+  url: '',
+  fetchedAt: '2026-10-04T00:00:00Z',
+  models: {
+    'anthropic/claude-opus-5.5-20260921': { ...entry(57.6, 80, 60), name: 'Opus' },
+    'anthropic/claude-sonnet-5.5-20260928': { ...entry(56, 78, 58), name: 'Sonnet' },
+    'openai/gpt-5.6-sol-20260709': { ...entry(47, 77, 50), name: 'Sol' },
+    'openai/gpt-6-luna-20260922': { ...entry(38.1, 60, 35), name: 'Luna6' },
+    'xiaomi/mimo-v2.6-flash-20260921': { ...entry(37.9, 58, 30), name: 'MimoFlash' },
+    'xiaomi/mimo-v2.6-pro-20260921': { ...entry(46.3, 66, 40), name: 'MimoPro' },
+    'z-ai/glm-5.3-flash-20260826': { ...entry(41.8, 71.5, 50.9), name: 'GlmFlash' },
+    'inclusionai/ling-3.0-flash-20260723': { ...entry(20.1, 50.6, 19.3), name: 'Ling' },
+    'meta/muse-spark-1.3-contributor-20260901': { ...entry(46.6), name: 'Contrib' },
+  },
+  ids: {},
+};
+const mp = (
+  id: string,
+  slug: string,
+  i: number,
+  o: number,
+  caps: Partial<ModelInfo['capabilities']> = {},
+): ModelInfo => ({ ...m(id, 1, caps), slug, inputPrice: i, outputPrice: o });
+const LIVE = [
+  mp('anthropic/claude-opus-5.5', 'anthropic/claude-opus-5.5-20260921', 4, 20, { vision: true }),
+  mp('anthropic/claude-sonnet-5.5', 'anthropic/claude-sonnet-5.5-20260928', 2, 10, { vision: true }),
+  mp('openai/gpt-5.6-sol', 'openai/gpt-5.6-sol-20260709', 2, 10, { vision: true }),
+  mp('openai/gpt-6-luna', 'openai/gpt-6-luna-20260922', 0.1, 0.5, { vision: true }),
+  mp('openai/gpt-6-luna-pro', 'openai/gpt-6-luna-pro-20260922', 0.1, 0.5, { vision: true }),
+  mp('xiaomi/mimo-v2.6-flash', 'xiaomi/mimo-v2.6-flash-20260921', 0.14, 0.28, { vision: true }),
+  mp('xiaomi/mimo-v2.6-pro', 'xiaomi/mimo-v2.6-pro-20260921', 0.435, 0.87, { vision: true }),
+  mp('z-ai/glm-5.3-flash', 'z-ai/glm-5.3-flash-20260826', 0.15, 0.5),
+  mp('inclusionai/ling-3.0-flash', 'inclusionai/ling-3.0-flash-20260723', 0.02, 0.06),
+  mp('meta/muse-spark-1.3-contributor', 'meta/muse-spark-1.3-contributor-20260901', 0.1, 0.2, {
+    vision: true,
+  }),
+  mp('openai/gpt-6-luna:free', 'openai/gpt-6-luna-20260922', 0, 0),
+];
+const tierP = (tier: 'cheap' | 'balanced' | 'quality' | 'maximum', text = 'x') => ({
+  ...analyzeTask({ text }),
+  tier,
+});
+
+describe('value routing: cheapest model that is intelligent enough, provider-neutral', () => {
+  let saved: IntelData;
+  beforeAll(() => {
+    saved = intelData();
+    setIntelData(TEST_INTEL);
+  });
+  afterAll(() => {
+    setIntelData(saved);
+  });
+  it('parses the OpenRouter benchmark payload (variants, effort, id mapping)', () => {
+    const d = parseIntel(
+      {
+        data: [
+          {
+            aa_name: 'M (Non-reasoning)',
+            permaslug: 'p/m-20260101',
+            benchmark_data: {
+              model_type: 'llm',
+              evaluations: { artificial_analysis_intelligence_index: 10 },
+            },
+          },
+          {
+            aa_name: 'M (high)',
+            permaslug: 'p/m-20260101',
+            benchmark_data: {
+              model_type: 'llm',
+              evaluations: {
+                artificial_analysis_intelligence_index: 30,
+                artificial_analysis_coding_index: 50,
+              },
+            },
+          },
+          {
+            aa_name: 'M (max)',
+            permaslug: 'p/m-20260101',
+            benchmark_data: {
+              model_type: 'llm',
+              evaluations: { artificial_analysis_intelligence_index: 34 },
+            },
+          },
+          { aa_name: 'Img', permaslug: 'p/img', benchmark_data: { model_type: 'text-to-image' } },
+        ],
+      },
+      [{ id: 'p/m', canonical_slug: 'p/m-20260101' }],
+    );
+    expect(d.models['p/m-20260101']).toMatchObject({ intelligence: 30, coding: 50, effort: 'high' });
+    expect(d.models['p/m-20260101']!.variants).toEqual({ none: 10, high: 30, max: 34 });
+    expect(d.ids['p/m']).toBe('p/m-20260101');
+    expect(d.models['p/img']).toBeUndefined();
+    expect(effortOf('Claude Opus 5 (Adaptive Reasoning, Xhigh Effort)')).toBe('xhigh');
+  });
+  it('matches ids, slugs and unmeasured twins (estimated)', () => {
+    expect(intelligenceInfo('x', 'openai/gpt-6-luna-20260922')!.score).toBe(38.1);
+    expect(intelligenceInfo('openai/gpt-6-luna')!.estimated).toBe(false); // undated slug
+    const twin = intelligenceInfo('openai/gpt-6-luna-pro', 'openai/gpt-6-luna-pro-20260922')!;
+    expect(twin.estimated).toBe(true);
+    expect(twin.score).toBeLessThan(38.1);
+    expect(intelligenceInfo('nobody/unknown-model-x')).toBeNull();
+    expect(intelMax()).toBe(57.6);
+  });
+  it('never picks a dearer and less intelligent model; fallback = next of the list', () => {
+    const cheap = routeModel(LIVE, DEFAULT_AUTO_TIERS, tierP('cheap'))!;
+    expect(cheap.model).toBe('openai/gpt-6-luna');
+    expect(cheap.fallbacks[0]).toBe('xiaomi/mimo-v2.6-flash');
+    // Sonnet 5.5 and GPT-5.6 Sol cost the same: the smarter one (Sonnet) wins — on merit, not provider.
+    const q = routeModel(LIVE, DEFAULT_AUTO_TIERS, tierP('quality'))!;
+    expect(q.model).toBe('anthropic/claude-sonnet-5.5');
+    const max = routeModel(LIVE, DEFAULT_AUTO_TIERS, tierP('maximum'))!;
+    expect(max.model).toBe('anthropic/claude-sonnet-5.5');
+    expect(max.fallbacks[0]).toBe('anthropic/claude-opus-5.5');
+    for (const r of [cheap, q, max]) {
+      expect([r.model, ...r.fallbacks].some((id) => /contributor|:free|luna-pro/.test(id))).toBe(false);
+      const ranked = rankByValue(LIVE, tierP(r.tier));
+      expect(r.fallbacks).toEqual(ranked.slice(1, 3).map((x) => x.m.id));
+      for (let i = 1; i < ranked.length; i++)
+        expect(ranked[i]!.price).toBeGreaterThanOrEqual(ranked[i - 1]!.price * 0.9);
+      const first = ranked[0]!;
+      expect(ranked.some((x) => x.price < first.price * 0.9 && x.score > first.score)).toBe(false);
+    }
+  });
+  it('a Claude model loses when it is dearer and less intelligent', () => {
+    setIntelData({
+      ...TEST_INTEL,
+      models: {
+        ...TEST_INTEL.models,
+        'openai/gpt-5.6-sol-20260709': { ...entry(57.6, 80, 60), name: 'Sol+' },
+      },
+    });
+    const max = routeModel(LIVE, DEFAULT_AUTO_TIERS, tierP('maximum'))!;
+    expect(max.model).toBe('openai/gpt-5.6-sol'); // same price as Sonnet, smarter, cheaper than Opus
+    setIntelData(TEST_INTEL);
+  });
+  it('code tasks use the coding index with a floor of general intelligence', () => {
+    const code = routeModel(LIVE, DEFAULT_AUTO_TIERS, tierP('balanced', 'corrige ce bug python'))!;
+    expect(code.metric).toBe('coding');
+    expect(code.model).not.toBe('inclusionai/ling-3.0-flash'); // coding 50 but intelligence 20
+    expect(metricFor('browser')).toBe('agentic');
+  });
+  it('a failing model is skipped and the personal leaderboard nudges the ranking', () => {
+    const h = recordHealth({}, 'openai/gpt-6-luna', false);
+    const r = routeModel(LIVE, DEFAULT_AUTO_TIERS, tierP('cheap'), h)!;
+    expect(r.model).not.toBe('openai/gpt-6-luna');
+    let b = recordOutcome({}, 'xiaomi/mimo-v2.6-flash', true);
+    b = recordOutcome(b, 'xiaomi/mimo-v2.6-flash', true);
+    expect(leaderboardBoost(b, 'xiaomi/mimo-v2.6-flash')).toBeGreaterThan(1);
+    expect(leaderboardBoost(recordOutcome({}, 'a/b', false), 'a/b')).toBeLessThan(0);
+  });
+  it('vision only gets vision models; categories and the task matrix are complete', () => {
+    const v = routeModel(LIVE, DEFAULT_AUTO_TIERS, analyzeTask({ text: 'décris', hasImages: true }))!;
+    expect(LIVE.find((x) => x.id === v.model)!.capabilities.vision).toBe(true);
+    const cats = categorize(LIVE);
+    expect(cats.map((c) => c.key)).toEqual([
+      'cheap',
+      'balanced',
+      'quality',
+      'maximum',
+      'code',
+      'agentic',
+      'vision',
+      'long',
+      'value',
+    ]);
+    for (const c of cats) {
+      if (c.key !== 'long') expect(c.best).not.toBeNull(); // test models have 200 k context
+      if (c.backup) expect(c.backup.m.id).not.toBe(c.best!.m.id);
+    }
+    const tm = taskMatrix(LIVE, DEFAULT_AUTO_TIERS);
+    expect(tm.length).toBeGreaterThan(8);
+    expect(tm.every((t) => t.model)).toBe(true);
   });
 });
 

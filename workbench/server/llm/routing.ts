@@ -1,10 +1,12 @@
 // Multi-model routing (pure, shared by the server and the direct edition).
 // A task is profiled (type, difficulty, context, needs), mapped to a quality
-// tier — CHEAP / BALANCED / QUALITY / MAXIMUM — then candidate models are
-// ranked by tier patterns, capabilities, context window, price and observed
-// reliability. The ranking also yields an automatic fallback chain.
+// tier — CHEAP / BALANCED / QUALITY / MAXIMUM. Each tier has a minimum
+// independent intelligence score (modelIntel.ts); among the models that reach
+// it, the cheapest live price wins and the next ones are the fallbacks. No
+// provider is preferred. Family patterns are only a last resort.
 import type { ModelInfo } from '@shared/types';
 import type { AutoTiers } from '../services/settings';
+import { intelMax, intelligenceInfo, type IntelMetric } from './modelIntel';
 
 export type QualityTier = 'cheap' | 'balanced' | 'quality' | 'maximum';
 export type TaskType =
@@ -56,6 +58,9 @@ const RX: Record<string, RegExp> = {
   writing:
     /\b(r[ée]dige|[ée]cris|write|email|mail|lettre|note|synth[èe]se|r[ée]sum|rapport|report|pr[ée]sentation|slides?)\b/i,
   hard: /\b(architecture|from scratch|de z[ée]ro|compl[eè]te?|enti[eè]re?|tout le projet|whole|refactor|migr|optimi[sz]|performance|algorithm|complexe|complex|racine|root cause|d[ée]bogue|debug|r[ée]pare tout|fix everything|teste tout|s[ée]curit[ée]|strat[ée]gie|mod[eè]le financier|risque)/i,
+  // High-stakes deliverables (governance, regulator, money): never the cheapest tier.
+  critical:
+    /\b(comex|comit[ée]|conseil d'administration|board|bceao|commission bancaire|ifrs ?9|b[âa]le|r[ée]glementaire|r[ée]gulateur|audit externe|provisions?|npl|cr[ée]ances? (douteuses|en souffrance)|juridique|contrat|production|prod\b)/i,
   trivial:
     /\b(typo|faute|renomm|rename|traduis|translate|formate?|bonjour|salut|merci|hello|quelle heure|capitale)\b/i,
 };
@@ -97,7 +102,11 @@ export function analyzeTask(o: {
     d += 0.3;
     reasons.push('demande complexe');
   }
-  if (RX.trivial!.test(t) && len < 160) {
+  if (RX.critical!.test(t)) {
+    d += 0.3;
+    reasons.push('enjeu critique');
+  }
+  if (RX.trivial!.test(t) && len < 160 && !RX.critical!.test(t)) {
     d -= 0.2;
     reasons.push('demande simple');
   }
@@ -171,6 +180,9 @@ export interface RouteResult {
   reason: string;
   /** Estimated cost range of the task in USD (null if prices unknown). */
   estimate: { low: number; high: number } | null;
+  /** Top of the value ranking (score = intelligence index, price = blended $/M). */
+  ranking?: { id: string; score: number; price: number }[];
+  metric?: IntelMetric;
 }
 
 function familyMatch(models: ModelInfo[], patterns: string[]): ModelInfo[] {
@@ -191,8 +203,137 @@ function familyMatch(models: ModelInfo[], patterns: string[]): ModelInfo[] {
   return out;
 }
 
+// '-contributor' tiers are cheaper because prompts may be used by the provider:
+// never chosen automatically (confidential data).
 const usable = (m: ModelInfo) =>
-  !m.id.startsWith('~') && !m.id.endsWith(':free') && !/openrouter\/auto/.test(m.id);
+  !/-contributor\b/.test(m.id) &&
+  !m.id.startsWith('~') &&
+  !/:(free|batch)$/.test(m.id) &&
+  !/^openrouter\//.test(m.id);
+
+export const METRIC_LABEL: Record<IntelMetric, string> = {
+  intelligence: 'Intelligence',
+  coding: 'Coding',
+  agentic: 'Agentique',
+};
+
+/** Minimum score per tier, as a share of the best known score on the task's metric. */
+export const TIER_MIN_INTEL: Record<QualityTier, number> = {
+  cheap: 0.6,
+  balanced: 0.75,
+  quality: 0.86,
+  maximum: 0.95,
+};
+
+/** Blended USD / 1M tokens for agent work (prompts dominate: 12 in : 1 out). */
+export function blendedPrice(m: ModelInfo): number | null {
+  if (m.inputPrice === null || m.outputPrice === null) return null;
+  return (12 * m.inputPrice + m.outputPrice) / 13;
+}
+
+/** Personal leaderboard: missions won / lost per model (fed by QA verdicts). */
+export type LeaderboardMap = Record<string, { won: number; lost: number }>;
+export function recordOutcome(map: LeaderboardMap, model: string, won: boolean): LeaderboardMap {
+  const e = map[model] ?? { won: 0, lost: 0 };
+  return { ...map, [model]: won ? { ...e, won: e.won + 1 } : { ...e, lost: e.lost + 1 } };
+}
+/** ±3 points max, shrunk toward 0 while few missions were observed. */
+export function leaderboardBoost(map: LeaderboardMap, model: string): number {
+  const e = map[model];
+  if (!e) return 0;
+  const n = e.won + e.lost;
+  return ((e.won - e.lost) / (n + 2)) * 3;
+}
+
+export interface RankedModel {
+  m: ModelInfo;
+  /** Relative score 0-100 on the task's metric (+ leaderboard, − unreliability). */
+  score: number;
+  /** Raw Artificial Analysis index on that metric. */
+  raw: number;
+  metric: IntelMetric;
+  estimated: boolean;
+  /** Blended USD / 1M tokens. */
+  price: number;
+  /** Not dominated: no other candidate is both cheaper (or equal) and smarter. */
+  pareto: boolean;
+  /** Benchmark variant the score comes from (e.g. "GPT-6 Luna (Max)"). */
+  ref: string;
+}
+
+/** Which index measures the task best: coding for code, agentic for tools/browser, else intelligence. */
+export function metricFor(type: TaskType | undefined): IntelMetric {
+  return type === 'code' ? 'coding' : type === 'browser' ? 'agentic' : 'intelligence';
+}
+
+/**
+ * Provider-neutral ranking: the candidates that reach the tier's minimum on the
+ * task's metric, cheapest first; when prices are within 10 % the smarter model
+ * wins. A dearer AND less intelligent model can therefore never come first.
+ */
+export function rankByValue(
+  models: ModelInfo[],
+  p: Pick<TaskProfile, 'tier' | 'needsVision' | 'contextTokens'> & { type?: TaskType },
+  health: HealthMap = {},
+  board: LeaderboardMap = {},
+): RankedModel[] {
+  const metric = metricFor(p.type);
+  const min = TIER_MIN_INTEL[p.tier] * 100;
+  const maxM = intelMax(metric);
+  const maxI = intelMax('intelligence');
+  const pool: RankedModel[] = [];
+  for (const m of models) {
+    if (!usable(m) || !m.capabilities.tools) continue;
+    if (p.needsVision && !m.capabilities.vision) continue;
+    if (m.contextLength && m.contextLength < p.contextTokens * 1.25) continue;
+    const info = intelligenceInfo(m.id, m.slug);
+    const price = blendedPrice(m);
+    if (!info || price === null || price <= 0) continue;
+    const v = metric === 'intelligence' ? info.score : info[metric];
+    // Metric not measured for this model: fall back on its intelligence index (flagged as estimate).
+    const rel = v !== null ? (v / maxM) * 100 : (info.score / maxI) * 100;
+    // A specialised index (coding / agentic) is not enough on its own: the model
+    // must also keep a minimum of general intelligence for the tier.
+    if (metric !== 'intelligence' && (info.score / maxI) * 100 < min * 0.85) continue;
+    const r = reliability(health, m.id);
+    const score = rel + leaderboardBoost(board, m.id) - (r < 0.3 ? 60 : (0.9 - Math.min(r, 0.9)) * 15);
+    pool.push({
+      m,
+      score,
+      raw: v ?? info.score,
+      metric: v !== null ? metric : 'intelligence',
+      estimated: info.estimated || v === null,
+      ref: info.name,
+      price,
+      pareto: true,
+    });
+  }
+  const eligible = pool.filter((r) => r.score >= min);
+  for (const r of eligible)
+    r.pareto = !eligible.some(
+      (o) => o !== r && o.price <= r.price && o.score >= r.score && (o.price < r.price || o.score > r.score),
+    );
+  const cmp = (a: RankedModel, b: RankedModel) => {
+    const lo = Math.min(a.price, b.price);
+    if (Math.abs(a.price - b.price) <= lo * 0.1)
+      return (
+        b.score - a.score ||
+        Number(a.estimated) - Number(b.estimated) ||
+        a.price - b.price ||
+        a.m.id.length - b.m.id.length
+      );
+    return a.price - b.price;
+  };
+  // One entry per measured model: '-pro', dated or estimated twins of the same
+  // benchmark entry keep only the best-placed one.
+  const seen = new Set<string>();
+  return eligible.sort(cmp).filter((r) => {
+    const k = `${r.m.provider}:${r.ref}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
 
 /** Chooses a model + fallback chain for a profiled task. */
 export function routeModel(
@@ -200,6 +341,40 @@ export function routeModel(
   tiers: AutoTiers,
   p: TaskProfile,
   health: HealthMap = {},
+  board: LeaderboardMap = {},
+): RouteResult | null {
+  // 1. Value routing: cheapest model that is intelligent enough, then the next ones.
+  let tier = p.tier;
+  let ranked = rankByValue(models, p, health, board);
+  // Nothing reaches the tier (tiny catalog, vision, huge context): relax downward then upward.
+  for (const t of [...QUALITY_TIERS].reverse()) {
+    if (ranked.length) break;
+    if (t === p.tier) continue;
+    ranked = rankByValue(models, { ...p, tier: t }, health, board);
+    if (ranked.length) tier = t;
+  }
+  if (ranked.length) {
+    const best = ranked[0]!;
+    const fallbacks = ranked.slice(1, 3).map((r) => r.m.id);
+    return {
+      model: best.m.id,
+      fallbacks,
+      tier,
+      reason: `${TIER_LABEL[tier]} — le moins cher assez intelligent (${METRIC_LABEL[best.metric]} ${best.raw.toFixed(1)}${best.estimated ? ' estimé' : ''}, ${best.price.toFixed(2)} $/M) — ${p.reasons.join(', ')}`,
+      estimate: estimateTaskCost(best.m, p),
+      ranking: ranked.slice(0, 5).map((r) => ({ id: r.m.id, score: r.raw, price: r.price })),
+      metric: best.metric,
+    };
+  }
+  return routeByFamilies(models, tiers, p, health);
+}
+
+/** Legacy routing on family patterns (used only when no model has a known score). */
+function routeByFamilies(
+  models: ModelInfo[],
+  tiers: AutoTiers,
+  p: TaskProfile,
+  health: HealthMap,
 ): RouteResult | null {
   const ok = models.filter(
     (m) =>
@@ -250,6 +425,148 @@ export function routeModel(
     reason: `${TIER_LABEL[best.tier]} — ${p.reasons.join(', ')}`,
     estimate: estimateTaskCost(best.m, p),
   };
+}
+
+export interface Category {
+  key: string;
+  label: string;
+  rule: string;
+  best: RankedModel | null;
+  backup: RankedModel | null;
+}
+
+/** Model categorization with best + backup per category (same ranking as AUTO). */
+export function categorize(
+  models: ModelInfo[],
+  health: HealthMap = {},
+  board: LeaderboardMap = {},
+): Category[] {
+  const base = { needsVision: false, contextTokens: 0 };
+  const cat = (key: string, label: string, rule: string, list: RankedModel[]): Category => ({
+    key,
+    label,
+    rule,
+    best: list[0] ?? null,
+    backup: list[1] ?? null,
+  });
+  const out = QUALITY_TIERS.map((t) =>
+    cat(
+      t,
+      TIER_LABEL[t],
+      `Intelligence ≥ ${(TIER_MIN_INTEL[t] * intelMax()).toFixed(1)} — le moins cher d'abord`,
+      rankByValue(models, { ...base, tier: t }, health, board),
+    ),
+  );
+  const q = (extra: Partial<Parameters<typeof rankByValue>[1]>) =>
+    rankByValue(models, { ...base, tier: 'quality', ...extra }, health, board);
+  out.push(
+    cat(
+      'code',
+      'CODE',
+      `Coding ≥ ${(TIER_MIN_INTEL.quality * intelMax('coding')).toFixed(1)} (palier QUALITY)`,
+      q({ type: 'code' }),
+    ),
+    cat(
+      'agentic',
+      'AGENTIQUE',
+      `Agentique ≥ ${(TIER_MIN_INTEL.quality * intelMax('agentic')).toFixed(1)} (palier QUALITY)`,
+      q({ type: 'browser' }),
+    ),
+    cat(
+      'vision',
+      'VISION',
+      'images en entrée, palier BALANCED',
+      rankByValue(models, { ...base, tier: 'balanced', needsVision: true }, health, board),
+    ),
+    cat(
+      'long',
+      'LONG CONTEXTE',
+      'contexte ≥ 800 k tokens, palier BALANCED',
+      rankByValue(models, { ...base, tier: 'balanced', contextTokens: 640_000 }, health, board),
+    ),
+  );
+  const all = rankByValue(models, { ...base, tier: 'cheap' }, health, board).sort(
+    (a, b) => b.score / b.price - a.score / a.price,
+  );
+  out.push(cat('value', 'MEILLEUR RAPPORT', "points d'intelligence par $ le plus élevé (palier CHEAP)", all));
+  return out;
+}
+
+/** Representative tasks: what AUTO picks by default for each (same code path as a real request). */
+export const SAMPLE_TASKS: {
+  label: string;
+  text: string;
+  attachments?: string[];
+  images?: boolean;
+  mission?: boolean;
+}[] = [
+  { label: 'Question simple / traduction', text: 'traduis bonjour en anglais' },
+  { label: 'Rédaction (mail, note, synthèse)', text: 'Rédige un mail de synthèse pour la direction' },
+  { label: 'Code : fonction / bug', text: 'Corrige ce bug dans la fonction python' },
+  {
+    label: 'Code : application complète',
+    text: 'Construis une application complète avec architecture, tests et sécurité',
+    mission: true,
+  },
+  {
+    label: 'Données : analyse Excel',
+    text: 'Analyse ce fichier et fais un tableau de bord',
+    attachments: ['portefeuille.xlsx'],
+  },
+  {
+    label: 'Données : risque / IFRS9 (critique)',
+    text: 'Analyse le risque du portefeuille, provisions IFRS9 et ratio NPL, stratégie complète',
+    attachments: ['portefeuille.xlsb'],
+    mission: true,
+  },
+  { label: 'Recherche web / veille', text: 'Recherche les sources récentes et compare les offres' },
+  { label: 'Navigateur / automatisation', text: 'Ouvre le site, connecte-toi et remplis le formulaire' },
+  {
+    label: 'Document (PDF, Word) à extraire',
+    text: 'Extrais les clauses de ce contrat',
+    attachments: ['contrat.pdf'],
+  },
+  { label: 'Image / capture à analyser', text: 'Décris cette capture', images: true },
+  {
+    label: 'Audit / revue de sécurité',
+    text: 'Audit de sécurité complet du projet, vérifie les vulnérabilités',
+    mission: true,
+  },
+];
+
+export interface TaskRoute {
+  label: string;
+  tier: QualityTier;
+  metric: IntelMetric;
+  model: string | null;
+  fallbacks: string[];
+  estimate: { low: number; high: number } | null;
+}
+
+/** Default model priority per task (cheapest capable model + its backups). */
+export function taskMatrix(
+  models: ModelInfo[],
+  tiers: AutoTiers,
+  health: HealthMap = {},
+  board: LeaderboardMap = {},
+): TaskRoute[] {
+  return SAMPLE_TASKS.map((t) => {
+    const p = analyzeTask({
+      text: t.text,
+      attachmentNames: t.attachments,
+      hasImages: t.images,
+      mission: t.mission,
+    });
+    const r = routeModel(models, tiers, p, health, board);
+    return {
+      label: t.label,
+      tier: r?.tier ?? p.tier,
+      metric: r?.metric ?? metricFor(p.type),
+      model: r?.model ?? null,
+      fallbacks: r?.fallbacks ?? [],
+      estimate: r?.estimate ?? null,
+    };
+  });
 }
 
 /** Rough cost range: steps × (context in + answer out), from real per-token prices. */

@@ -36,6 +36,7 @@ export type FetchLike = (
 
 interface RawModel {
   id: string;
+  canonical_slug?: string;
   name?: string;
   created?: number;
   description?: string;
@@ -83,6 +84,7 @@ export function normalizeModel(m: RawModel): ModelInfo {
   const inputs = m.architecture?.input_modalities ?? [];
   return {
     id: m.id,
+    ...(m.canonical_slug ? { slug: m.canonical_slug } : {}),
     name: m.name ?? m.id,
     provider: m.id.replace(/^~/, '').split('/')[0] ?? 'unknown',
     created: m.created ?? 0,

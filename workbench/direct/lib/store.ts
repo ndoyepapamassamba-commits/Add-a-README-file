@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import type { CreditsInfo, ModelInfo } from '@shared/types';
 import { kv, saveLater } from './db';
-import { recordHealth, type HealthMap } from '../../server/llm/routing';
+import { intelData, setIntelData, type IntelData } from '../../server/llm/modelIntel';
+import { recordHealth, recordOutcome, type HealthMap, type LeaderboardMap } from '../../server/llm/routing';
 import type {
   AgentDef,
   AgentMode,
@@ -67,6 +68,8 @@ export interface State {
   usage: UsageEntry[];
   workflows: Workflow[];
   health: HealthMap;
+  /** Personal model leaderboard (missions won / lost). */
+  board: LeaderboardMap;
   draft: string;
   toasts: Toast[];
   openFile: string | null;
@@ -93,6 +96,7 @@ export interface State {
   addUsage: (u: UsageEntry) => void;
   setWorkflows: (w: Workflow[]) => void;
   recordModel: (model: string, ok: boolean) => void;
+  recordOutcome: (model: string, won: boolean) => void;
 }
 
 const persistSession = (s: Session) => saveLater(`session:${s.id}`, () => s);
@@ -120,6 +124,7 @@ export const useStore = create<State>((set, get) => ({
   usage: [],
   workflows: [],
   health: {},
+  board: {},
   draft: '',
   toasts: [],
   openFile: null,
@@ -254,15 +259,23 @@ export const useStore = create<State>((set, get) => ({
     set({ health: recordHealth(get().health, model, ok) });
     saveLater('health', () => get().health, 1000);
   },
+  recordOutcome: (model, won) => {
+    set({ board: recordOutcome(get().board, model, won) });
+    saveLater('board', () => get().board, 1000);
+  },
 }));
 
 /** Loads everything saved in this browser. */
 export async function hydrate(): Promise<void> {
-  const [usage, workflows, health] = await Promise.all([
+  const [usage, workflows, health, board, intel] = await Promise.all([
     kv.get<UsageEntry[]>('usage').catch(() => undefined),
     kv.get<Workflow[]>('workflows').catch(() => undefined),
     kv.get<HealthMap>('health').catch(() => undefined),
+    kv.get<LeaderboardMap>('board').catch(() => undefined),
+    kv.get<IntelData>('intel').catch(() => undefined),
   ]);
+  // Scores imported / refreshed earlier replace the built-in snapshot when newer.
+  if (intel && intel.fetchedAt > intelData().fetchedAt) setIntelData(intel);
   const [settings, ids, current, files, skills, agents, mcp, artifacts, spend] = await Promise.all([
     kv.get<Partial<Settings>>('settings'),
     kv.get<string[]>('sessions'),
@@ -321,5 +334,6 @@ export async function hydrate(): Promise<void> {
     usage: usage ?? [],
     workflows: workflows ?? [],
     health: health ?? {},
+    board: board ?? {},
   });
 }

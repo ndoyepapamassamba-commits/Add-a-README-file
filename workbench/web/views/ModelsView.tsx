@@ -1,39 +1,50 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Brain, Eye, RefreshCw, Sparkles, Wrench } from 'lucide-react';
 import { cx, fmtPrice, fmtTokens } from '../lib/format';
-import type { ModelInfo } from '../lib/types';
 import { useApp } from '../store/app';
 import { useSession } from '../store/session';
 import { sortModels } from '../components/chat/Pickers';
 import { Badge, Button, Dropdown, Input, Select, Toggle } from '../components/ui';
+import { BenchmarkLab } from '../components/BenchmarkLab';
+import { api } from '../lib/api';
+import { setIntelData, type IntelData } from '../../server/llm/modelIntel';
 
 type SortKey = 'recommended' | 'newest' | 'price_in' | 'price_out' | 'context';
 
-function resolveTier(models: ModelInfo[], patterns: string[], vision: boolean): ModelInfo | undefined {
-  for (const p of patterns) {
-    let re: RegExp;
-    try {
-      re = new RegExp(p);
-    } catch {
-      continue;
-    }
-    const hit = models
-      .filter(
-        (m) =>
-          re.test(m.id) &&
-          m.capabilities.tools &&
-          (!vision || m.capabilities.vision) &&
-          !m.id.endsWith(':free') &&
-          !m.id.startsWith('~'),
-      )
-      .sort((a, b) => b.created - a.created)[0];
-    if (hit) return hit;
-  }
-  return undefined;
+export function ModelsView() {
+  const [tab, setTab] = useState<'bench' | 'catalog'>('bench');
+  const models = useApp((s) => s.models);
+  const settings = useApp((s) => s.settings);
+  const save = useApp((s) => s.saveSettings);
+  const [, setSynced] = useState(0);
+  useEffect(() => {
+    // The server holds the freshest scores (refreshed without CORS limits).
+    void api<IntelData>('/api/models/intel')
+      .then((d) => setIntelData(d) && setSynced((v) => v + 1))
+      .catch(() => undefined);
+  }, []);
+  if (tab === 'catalog' || !settings) return <CatalogView onBench={() => setTab('bench')} />;
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex items-center gap-2 border-b border-line px-4 py-3">
+        <h1 className="mr-auto text-[18px] font-semibold">Modèles — priorités et coûts</h1>
+        <Badge>{models.length} via OpenRouter</Badge>
+        <Button size="sm" variant="ghost" onClick={() => setTab('catalog')}>
+          Catalogue complet
+        </Button>
+      </div>
+      <BenchmarkLab
+        models={models}
+        tiers={settings.autoTiers}
+        refreshIntel={() => api<IntelData>('/api/models/intel', { query: { refresh: '1' } })}
+        onUse={(id, role) => void save(role === 'default' ? { defaultModel: id } : { fallbackModel: id })}
+      />
+    </div>
+  );
 }
 
-export function ModelsView() {
+function CatalogView({ onBench }: { onBench: () => void }) {
   const models = useApp((s) => s.models);
   const settings = useApp((s) => s.settings);
   const save = useApp((s) => s.saveSettings);
@@ -90,37 +101,10 @@ export function ModelsView() {
             <RefreshCw size={13} /> Actualiser le catalogue
           </Button>
           {modelsError && <span className="text-[12px] text-err">{modelsError}</span>}
+          <Button size="sm" variant="ghost" onClick={onBench}>
+            Priorités & benchmark
+          </Button>
         </div>
-        {settings && (
-          <div className="mb-3 grid gap-2 text-[12.5px] md:grid-cols-5">
-            {(['fast', 'balanced', 'powerful', 'reasoning', 'vision'] as const).map((tier) => {
-              const m = resolveTier(models, settings.autoTiers[tier], tier === 'vision');
-              return (
-                <div
-                  key={tier}
-                  className="rounded-lg border border-line bg-panel px-3 py-2"
-                  title={settings.autoTiers[tier].join('\n')}
-                >
-                  <div className="text-[11px] uppercase tracking-wide text-faint">
-                    AUTO ·{' '}
-                    {
-                      (
-                        {
-                          fast: 'rapide',
-                          balanced: 'équilibré',
-                          powerful: 'puissant',
-                          reasoning: 'raisonnement',
-                          vision: 'vision',
-                        } as const
-                      )[tier]
-                    }
-                  </div>
-                  <div className="truncate font-medium">{m?.name.replace(/^[^:]+:\s*/, '') ?? '—'}</div>
-                </div>
-              );
-            })}
-          </div>
-        )}
         <div className="flex flex-wrap items-center gap-3">
           <Input
             className="h-8 max-w-xs"

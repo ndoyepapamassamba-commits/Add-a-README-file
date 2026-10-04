@@ -19,6 +19,8 @@ export type RunStatus =
 
 export interface ModelInfo {
   id: string;
+  /** OpenRouter canonical slug (dated permaslug), used to match benchmark scores. */
+  slug?: string;
   name: string;
   provider: string;
   created: number;

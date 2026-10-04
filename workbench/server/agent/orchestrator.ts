@@ -18,7 +18,15 @@ import type {
 import { LLMError, type ChatMessage, type ToolCall } from '../llm/types';
 import { BudgetExceededError } from '../llm/service';
 import { classifyWithJev, pickFromTier, selectModel } from '../llm/router';
-import { FAMILY_TIER, analyzeTask, recordHealth, routeModel, type HealthMap } from '../llm/routing';
+import {
+  FAMILY_TIER,
+  analyzeTask,
+  recordHealth,
+  recordOutcome,
+  routeModel,
+  type HealthMap,
+  type LeaderboardMap,
+} from '../llm/routing';
 import {
   FINAL_REVIEW_TASK,
   MEMORY_INSTRUCTIONS,
@@ -141,6 +149,8 @@ export class AgentOrchestrator extends EventEmitter {
   private approvalIndex = new Map<string, string>();
   /** Observed model reliability (drives AUTO routing away from failing models). */
   health: HealthMap = {};
+  /** Personal leaderboard: missions won / lost per model. */
+  board: LeaderboardMap = {};
 
   constructor(private readonly s: Services) {
     super();
@@ -493,8 +503,13 @@ export class AgentOrchestrator extends EventEmitter {
         routed = routeModel(
           models,
           tiers,
-          useJev ? { ...profile, tier: FAMILY_TIER[classified.tier] } : profile,
+          pref.tier
+            ? { ...profile, tier: FAMILY_TIER[pref.tier] }
+            : useJev
+              ? { ...profile, tier: FAMILY_TIER[classified.tier] }
+              : profile,
           this.health,
+          this.board,
         );
         if (routed) {
           sel.model = routed.model;
@@ -965,6 +980,8 @@ export class AgentOrchestrator extends EventEmitter {
           await s.memory
             .recordMission(st.projectId, input.text, report, { model, cost: st.usage.cost })
             .catch(() => undefined);
+          if (report.status !== 'PARTIAL')
+            this.board = recordOutcome(this.board, model, report.status === 'PASSED');
           if (report.status !== 'PASSED' && missionRound < 3) {
             this.emitEvent(st, { type: 'mission_report', report, round: missionRound });
             const fix: ChatMessage = {

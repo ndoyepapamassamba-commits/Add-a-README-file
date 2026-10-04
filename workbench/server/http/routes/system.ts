@@ -1,3 +1,4 @@
+import { intelData } from '../../llm/modelIntel';
 import fs from 'node:fs';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -67,10 +68,24 @@ export function systemRoutes(app: FastifyInstance, ctx: AppContext): void {
     const refresh = (req.query as { refresh?: string }).refresh === '1';
     try {
       const models = await s.catalog.list(refresh);
+      // New models get their scores without blocking the catalog answer.
+      if (refresh || s.intel.stale) void s.intel.refresh(models).catch(() => undefined);
       return { models, status: s.catalog.status };
     } catch (err) {
       throw new HttpError(502, `Impossible de récupérer les modèles OpenRouter : ${(err as Error).message}`);
     }
+  });
+
+  // Routing scores (Artificial Analysis via OpenRouter); ?refresh=1 fetches the latest.
+  app.get('/api/models/intel', async (req) => {
+    if ((req.query as { refresh?: string }).refresh === '1') {
+      try {
+        await s.intel.refresh(s.catalog.all);
+      } catch (err) {
+        throw new HttpError(502, `Actualisation des scores impossible : ${(err as Error).message}`);
+      }
+    }
+    return intelData();
   });
 
   app.get('/api/provider/status', async (req) => {

@@ -5,6 +5,8 @@ import type { AppConfig } from '../config';
 import { openDatabase, type DB } from '../db/database';
 import { Repo } from '../db/repo';
 import { ModelCatalog } from '../llm/catalog';
+import { IntelSync } from '../llm/intelSync';
+import { httpFetch } from '../llm/http';
 import { OpenRouterProvider } from '../llm/openrouter';
 import { LLMService } from '../llm/service';
 import type { LLMProvider } from '../llm/types';
@@ -38,6 +40,7 @@ export interface Services {
   index: ProjectIndex;
   provider: LLMProvider;
   catalog: ModelCatalog;
+  intel: IntelSync;
   llm: LLMService;
   skills: SkillRegistry;
   mcp: McpManager;
@@ -61,6 +64,15 @@ export function createServices(config: AppConfig, overrides: { provider?: LLMPro
       getApiKey: () => process.env.OPENROUTER_API_KEY || undefined,
     });
   const catalog = new ModelCatalog(provider, path.join(config.dataDir, 'models-cache.json'));
+  const intel = new IntelSync(
+    path.join(config.dataDir, 'intel-cache.json'),
+    async (url) => {
+      const r = await httpFetch(url, { headers: { Accept: 'application/json' } });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    },
+    !overrides.provider && /openrouter\.ai/.test(config.openrouterBaseUrl),
+  );
   const llm = new LLMService(provider, catalog, repo, settings);
   const browser = new BrowserManager({
     engine: config.browserEngine,
@@ -90,6 +102,7 @@ export function createServices(config: AppConfig, overrides: { provider?: LLMPro
     index: new ProjectIndex(workspace),
     provider,
     catalog,
+    intel,
     llm,
     mcp: new McpManager({
       dataDir: config.dataDir,

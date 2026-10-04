@@ -8,8 +8,61 @@ import { refreshCredits } from '../lib/credits';
 import { kv } from '../lib/db';
 import { useStore } from '../lib/store';
 import { download } from '../lib/vfs';
+import { BenchmarkLab } from '../../web/components/BenchmarkLab';
+import { INTEL_ENDPOINT, parseIntel, type IntelData } from '../../server/llm/modelIntel';
+import { DEFAULT_AUTO_TIERS } from '../../server/services/settings';
+
+/** Browser refresh of the scores: works only if OpenRouter allows this origin (CORS). */
+async function browserIntel(models: { id: string; slug?: string }[]): Promise<IntelData> {
+  const r = await fetch(INTEL_ENDPOINT);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const d = parseIntel(
+    await r.json(),
+    models.map((m) => ({ id: m.id, canonical_slug: m.slug })),
+  );
+  void kv.set('intel', d);
+  return d;
+}
 
 export function ModelsView() {
+  const [tab, setTab] = useState<'bench' | 'catalog'>('bench');
+  const models = useStore((s) => s.models);
+  const health = useStore((s) => s.health);
+  const board = useStore((s) => s.board);
+  if (tab === 'bench')
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="flex items-center gap-2 border-b border-line px-4 py-3">
+          <div className="mr-auto">
+            <h1 className="text-[18px] font-semibold">Modèles — priorités et coûts</h1>
+            <div className="text-[13px] text-muted">
+              {models.length} modèles OpenRouter · le moins cher capable de réussir chaque tâche, puis son
+              secours.
+            </div>
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => setTab('catalog')}>
+            Catalogue complet
+          </Button>
+        </div>
+        <BenchmarkLab
+          models={models}
+          tiers={DEFAULT_AUTO_TIERS}
+          health={health}
+          board={board}
+          refreshIntel={() => browserIntel(models)}
+          onIntelImported={(d) => void kv.set('intel', d)}
+          onUse={(id, role) =>
+            useStore
+              .getState()
+              .patchSettings(role === 'default' ? { defaultModel: id } : { fallbackModel: id })
+          }
+        />
+      </div>
+    );
+  return <CatalogView onBench={() => setTab('bench')} />;
+}
+
+function CatalogView({ onBench }: { onBench: () => void }) {
   const models = useStore((s) => s.models);
   const error = useStore((s) => s.modelsError);
   const def = useStore((s) => s.settings.defaultModel);
@@ -37,6 +90,9 @@ export function ModelsView() {
             sortie).
           </div>
         </div>
+        <Button size="sm" variant="ghost" onClick={onBench}>
+          Priorités & benchmark
+        </Button>
         <Toggle checked={onlyTools} onChange={setOnlyTools} label="Compatibles agents (outils)" />
         <Input className="w-56" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher" />
         <Button

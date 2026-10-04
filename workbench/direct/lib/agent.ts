@@ -1,7 +1,7 @@
 // The agent loop, running entirely in the browser: plan → tools → observe → verify.
 import type { EffortSetting } from '@shared/types';
 import { selectModel } from '../../server/llm/router';
-import { analyzeTask, routeModel } from '../../server/llm/routing';
+import { FAMILY_TIER, analyzeTask, routeModel } from '../../server/llm/routing';
 import {
   AI_DOCS,
   FINAL_REVIEW_TASK,
@@ -267,6 +267,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   const tiers = pref.tier
     ? { ...DEFAULT_AUTO_TIERS, balanced: DEFAULT_AUTO_TIERS[pref.tier], fast: DEFAULT_AUTO_TIERS[pref.tier] }
     : DEFAULT_AUTO_TIERS;
+  const prefTier = pref.tier ? FAMILY_TIER[pref.tier] : null;
   const hasImages = inp.attachments.some((a) => isImage(a.path));
   const profile = analyzeTask({
     text: inp.text,
@@ -286,7 +287,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   let routedFallbacks: string[] = [];
   let routed: ReturnType<typeof routeModel> = null;
   if (sel.auto) {
-    routed = routeModel(models, tiers, profile, useStore.getState().health);
+    const { health, board } = useStore.getState();
+    routed = routeModel(models, tiers, prefTier ? { ...profile, tier: prefTier } : profile, health, board);
     if (routed) {
       sel.model = routed.model;
       sel.reason = routed.reason;
@@ -600,6 +602,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       lastReport = report;
       missionRound++;
       recordMission(inp.text, report, { model, cost });
+      if (report.status !== 'PARTIAL') useStore.getState().recordOutcome(model, report.status === 'PASSED');
       if (report.status !== 'PASSED' && missionRound < 3) {
         push(sid, { kind: 'mission', id: uid(), report, round: missionRound });
         const fix: ChatMessage = {
