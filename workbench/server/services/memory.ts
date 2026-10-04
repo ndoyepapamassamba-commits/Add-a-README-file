@@ -5,7 +5,15 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { WorkspaceService } from './workspace';
 
-export const MEMORY_CATEGORIES = ['architecture', 'convention', 'important_file', 'decision', 'instruction', 'known_error', 'context'] as const;
+export const MEMORY_CATEGORIES = [
+  'architecture',
+  'convention',
+  'important_file',
+  'decision',
+  'instruction',
+  'known_error',
+  'context',
+] as const;
 export type MemoryCategory = (typeof MEMORY_CATEGORIES)[number];
 
 export interface MemoryFact {
@@ -16,7 +24,14 @@ export interface MemoryFact {
 }
 
 const FileSchema = z.object({
-  facts: z.array(z.object({ id: z.string(), category: z.enum(MEMORY_CATEGORIES), text: z.string(), createdAt: z.number() })),
+  facts: z.array(
+    z.object({
+      id: z.string(),
+      category: z.enum(MEMORY_CATEGORIES),
+      text: z.string(),
+      createdAt: z.number(),
+    }),
+  ),
 });
 
 const START = '<!-- workbench:memory:start -->';
@@ -62,9 +77,16 @@ export class MemoryService {
 
   async add(projectId: string, category: MemoryCategory, text: string): Promise<MemoryFact> {
     const facts = await this.facts(projectId);
-    const existing = facts.find((f) => f.category === category && f.text.trim().toLowerCase() === text.trim().toLowerCase());
+    const existing = facts.find(
+      (f) => f.category === category && f.text.trim().toLowerCase() === text.trim().toLowerCase(),
+    );
     if (existing) return existing;
-    const fact: MemoryFact = { id: randomUUID().slice(0, 8), category, text: text.trim().slice(0, 1000), createdAt: Date.now() };
+    const fact: MemoryFact = {
+      id: randomUUID().slice(0, 8),
+      category,
+      text: text.trim().slice(0, 1000),
+      createdAt: Date.now(),
+    };
     facts.push(fact);
     await this.save(projectId, facts.slice(-300));
     return fact;
@@ -87,7 +109,8 @@ export class MemoryService {
       return items.length ? `### ${TITLES[c]}\n${items.map((f) => `- ${f.text}`).join('\n')}` : '';
     }).filter(Boolean);
     const block = `${START}\n## Mémoire du projet (gérée par l'agent)\n\n${sections.join('\n\n') || '_vide_'}\n${END}`;
-    if (md.includes(START) && md.includes(END)) md = md.replace(new RegExp(`${START}[\\s\\S]*?${END}`), block);
+    if (md.includes(START) && md.includes(END))
+      md = md.replace(new RegExp(`${START}[\\s\\S]*?${END}`), block);
     else md = `${md.trimEnd()}\n\n${block}\n`;
     await fsp.writeFile(mdPath, md);
   }

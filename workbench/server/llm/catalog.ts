@@ -21,8 +21,12 @@ export class ModelCatalog {
     private readonly cacheFile: string,
   ) {
     try {
-      const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf8')) as { fetchedAt: number; models: ModelInfo[] };
-      if (Array.isArray(cached.models) && cached.models[0]?.efforts) this.set(cached.models, cached.fetchedAt);
+      const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf8')) as {
+        fetchedAt: number;
+        models: ModelInfo[];
+      };
+      if (Array.isArray(cached.models) && cached.models[0]?.efforts)
+        this.set(cached.models, cached.fetchedAt);
     } catch {
       /* no cache yet */
     }

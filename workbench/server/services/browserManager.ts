@@ -4,7 +4,16 @@ import crypto from 'node:crypto';
 import tls from 'node:tls';
 import { EventEmitter } from 'node:events';
 import { randomUUID } from 'node:crypto';
-import { chromium, firefox, webkit, type Browser, type BrowserContext, type Page, type CDPSession, type BrowserType } from 'playwright';
+import {
+  chromium,
+  firefox,
+  webkit,
+  type Browser,
+  type BrowserContext,
+  type Page,
+  type CDPSession,
+  type BrowserType,
+} from 'playwright';
 import { redactSecrets } from '../security/redact';
 
 export type EngineName = 'chromium' | 'firefox' | 'webkit';
@@ -68,10 +77,12 @@ export interface BrowserState {
 }
 
 const VIEWPORT = { width: 1280, height: 800 };
-const RING = (n: number) => <T>(arr: T[], item: T) => {
-  arr.push(item);
-  if (arr.length > n) arr.splice(0, arr.length - n);
-};
+const RING =
+  (n: number) =>
+  <T>(arr: T[], item: T) => {
+    arr.push(item);
+    if (arr.length > n) arr.splice(0, arr.length - n);
+  };
 const push300 = RING(300);
 const push500 = RING(500);
 
@@ -102,7 +113,12 @@ function extraCaSpkiHashes(): string[] {
     const roots = new Set(tls.rootCertificates.map((c) => c.replace(/\s/g, '')));
     return certs
       .filter((c) => !roots.has(c.replace(/\s/g, '')))
-      .map((c) => crypto.createHash('sha256').update(new crypto.X509Certificate(c).publicKey.export({ type: 'spki', format: 'der' })).digest('base64'));
+      .map((c) =>
+        crypto
+          .createHash('sha256')
+          .update(new crypto.X509Certificate(c).publicKey.export({ type: 'spki', format: 'der' }))
+          .digest('base64'),
+      );
   } catch {
     return [];
   }
@@ -131,10 +147,26 @@ const SNAPSHOT_SCRIPT = (maxChars: number) => {
   for (const el of els) {
     const rect = el.getBoundingClientRect();
     const style = getComputedStyle(el);
-    if (rect.width < 2 || rect.height < 2 || style.visibility === 'hidden' || style.display === 'none' || Number(style.opacity) === 0) continue;
+    if (
+      rect.width < 2 ||
+      rect.height < 2 ||
+      style.visibility === 'hidden' ||
+      style.display === 'none' ||
+      Number(style.opacity) === 0
+    )
+      continue;
     el.setAttribute('data-wb-ref', String(ref));
     const input = el as HTMLInputElement;
-    const text = (el.innerText || el.getAttribute('aria-label') || el.getAttribute('title') || input.value || '').trim().replace(/\s+/g, ' ').slice(0, 100);
+    const text = (
+      el.innerText ||
+      el.getAttribute('aria-label') ||
+      el.getAttribute('title') ||
+      input.value ||
+      ''
+    )
+      .trim()
+      .replace(/\s+/g, ' ')
+      .slice(0, 100);
     out.push({
       ref,
       tag: el.tagName.toLowerCase(),
@@ -144,7 +176,10 @@ const SNAPSHOT_SCRIPT = (maxChars: number) => {
       type: input.type || undefined,
       name: input.name || undefined,
       placeholder: input.placeholder || undefined,
-      value: ['input', 'textarea', 'select'].includes(el.tagName.toLowerCase()) && input.type !== 'password' ? String(input.value || '').slice(0, 100) : undefined,
+      value:
+        ['input', 'textarea', 'select'].includes(el.tagName.toLowerCase()) && input.type !== 'password'
+          ? String(input.value || '').slice(0, 100)
+          : undefined,
     });
     ref++;
     if (ref > 400) break;
@@ -152,8 +187,18 @@ const SNAPSHOT_SCRIPT = (maxChars: number) => {
   const bodyText = (doc.body?.innerText || '').replace(/\n{3,}/g, '\n\n');
   const links = Array.from(doc.querySelectorAll<HTMLAnchorElement>('a[href]'))
     .slice(0, 150)
-    .map((a) => ({ text: (a.innerText || a.title || '').trim().replace(/\s+/g, ' ').slice(0, 80), href: a.href }));
-  return { url: location.href, title: doc.title, text: bodyText.slice(0, maxChars), truncated: bodyText.length > maxChars, elements: out, links };
+    .map((a) => ({
+      text: (a.innerText || a.title || '').trim().replace(/\s+/g, ' ').slice(0, 80),
+      href: a.href,
+    }));
+  return {
+    url: location.href,
+    title: doc.title,
+    text: bodyText.slice(0, maxChars),
+    truncated: bodyText.length > maxChars,
+    elements: out,
+    links,
+  };
 };
 
 /**
@@ -166,9 +211,7 @@ export class BrowserManager extends EventEmitter {
   private sessions = new Map<string, BrowserSession>();
   private subscribers = new Map<string, number>();
 
-  constructor(
-    private readonly opts: { engine: EngineName; headless: boolean; blockedPorts: number[] },
-  ) {
+  constructor(private readonly opts: { engine: EngineName; headless: boolean; blockedPorts: number[] }) {
     super();
   }
 
@@ -193,7 +236,9 @@ export class BrowserManager extends EventEmitter {
     if (this.launching) return this.launching;
     this.launching = (async () => {
       if (!this.isAvailable()) {
-        throw new Error(`Browser engine "${this.opts.engine}" is not installed. Run: npx playwright install ${this.opts.engine}`);
+        throw new Error(
+          `Browser engine "${this.opts.engine}" is not installed. Run: npx playwright install ${this.opts.engine}`,
+        );
       }
       const proxyServer = process.env.HTTPS_PROXY || process.env.https_proxy;
       const args: string[] = [];
@@ -201,10 +246,22 @@ export class BrowserManager extends EventEmitter {
         const spki = extraCaSpkiHashes();
         if (spki.length) args.push(`--ignore-certificate-errors-spki-list=${spki.join(',')}`);
       }
+      // Local pages (live preview, dev servers) must never go through the proxy:
+      // Playwright forces loopback through it unless told otherwise.
+      if (proxyServer) process.env.PLAYWRIGHT_DISABLE_FORCED_CHROMIUM_PROXIED_LOOPBACK = '1';
+      const bypass = [
+        'localhost',
+        '127.0.0.1',
+        '[::1]',
+        ...(process.env.NO_PROXY || process.env.no_proxy || '').split(','),
+      ]
+        .map((h) => h.trim())
+        // Chromium only understands bracketed IPv6 literals.
+        .filter((h, i, all) => h && (!h.includes(':') || h.startsWith('[')) && all.indexOf(h) === i);
       const browser = await this.engineType().launch({
         headless: this.opts.headless,
         args,
-        proxy: proxyServer ? { server: proxyServer, bypass: process.env.NO_PROXY || process.env.no_proxy } : undefined,
+        proxy: proxyServer ? { server: proxyServer, bypass: bypass.join(',') } : undefined,
       });
       browser.on('disconnected', () => {
         this.browser = null;
@@ -234,7 +291,10 @@ export class BrowserManager extends EventEmitter {
       try {
         const u = new URL(url);
         if (u.protocol === 'file:') return route.abort('accessdenied');
-        if (['127.0.0.1', 'localhost', '[::1]', '0.0.0.0'].includes(u.hostname) && this.opts.blockedPorts.includes(Number(u.port))) {
+        if (
+          ['127.0.0.1', 'localhost', '[::1]', '0.0.0.0'].includes(u.hostname) &&
+          this.opts.blockedPorts.includes(Number(u.port))
+        ) {
           return route.abort('accessdenied');
         }
       } catch {
@@ -259,16 +319,35 @@ export class BrowserManager extends EventEmitter {
 
   private attachPage(s: BrowserSession, page: Page): void {
     const starts = new Map<string, number>();
-    page.on('console', (msg) => push500(s.console, { ts: Date.now(), level: msg.type(), text: redactSecrets(msg.text()).slice(0, 2000), location: msg.location().url }));
-    page.on('pageerror', (err) => push500(s.console, { ts: Date.now(), level: 'error', text: redactSecrets(err.message).slice(0, 2000) }));
+    page.on('console', (msg) =>
+      push500(s.console, {
+        ts: Date.now(),
+        level: msg.type(),
+        text: redactSecrets(msg.text()).slice(0, 2000),
+        location: msg.location().url,
+      }),
+    );
+    page.on('pageerror', (err) =>
+      push500(s.console, { ts: Date.now(), level: 'error', text: redactSecrets(err.message).slice(0, 2000) }),
+    );
     page.on('request', (req) => {
       const id = randomUUID();
       starts.set(req.url() + req.method(), Date.now());
-      push500(s.network, { id, ts: Date.now(), method: req.method(), url: redactSecrets(req.url()).slice(0, 500), resourceType: req.resourceType(), status: null, durationMs: null });
+      push500(s.network, {
+        id,
+        ts: Date.now(),
+        method: req.method(),
+        url: redactSecrets(req.url()).slice(0, 500),
+        resourceType: req.resourceType(),
+        status: null,
+        durationMs: null,
+      });
     });
     page.on('response', (res) => {
       const req = res.request();
-      const entry = [...s.network].reverse().find((n) => n.url === redactSecrets(req.url()).slice(0, 500) && n.status === null);
+      const entry = [...s.network]
+        .reverse()
+        .find((n) => n.url === redactSecrets(req.url()).slice(0, 500) && n.status === null);
       if (entry) {
         entry.status = res.status();
         const t = starts.get(req.url() + req.method());
@@ -276,7 +355,9 @@ export class BrowserManager extends EventEmitter {
       }
     });
     page.on('requestfailed', (req) => {
-      const entry = [...s.network].reverse().find((n) => n.url === redactSecrets(req.url()).slice(0, 500) && n.status === null);
+      const entry = [...s.network]
+        .reverse()
+        .find((n) => n.url === redactSecrets(req.url()).slice(0, 500) && n.status === null);
       if (entry) entry.failure = req.failure()?.errorText ?? 'failed';
     });
     page.on('framenavigated', (frame) => {
@@ -298,8 +379,23 @@ export class BrowserManager extends EventEmitter {
     });
   }
 
-  private logAction(s: BrowserSession, type: string, detail: string, ok: boolean, origin: 'agent' | 'user', error?: string): BrowserAction {
-    const a: BrowserAction = { id: randomUUID(), ts: Date.now(), type, detail: redactSecrets(detail).slice(0, 300), ok, origin, error };
+  private logAction(
+    s: BrowserSession,
+    type: string,
+    detail: string,
+    ok: boolean,
+    origin: 'agent' | 'user',
+    error?: string,
+  ): BrowserAction {
+    const a: BrowserAction = {
+      id: randomUUID(),
+      ts: Date.now(),
+      type,
+      detail: redactSecrets(detail).slice(0, 300),
+      ok,
+      origin,
+      error,
+    };
     push300(s.actions, a);
     this.emit('action', s.key, a);
     return a;
@@ -314,7 +410,14 @@ export class BrowserManager extends EventEmitter {
   }
 
   private stateOf(s: BrowserSession): BrowserState {
-    return { sessionKey: s.key, engine: this.opts.engine, url: s.page.isClosed() ? '' : s.page.url(), title: '', loading: s.loading, viewport: VIEWPORT };
+    return {
+      sessionKey: s.key,
+      engine: this.opts.engine,
+      url: s.page.isClosed() ? '' : s.page.url(),
+      title: '',
+      loading: s.loading,
+      viewport: VIEWPORT,
+    };
   }
 
   async state(key: string): Promise<BrowserState | null> {
@@ -327,7 +430,9 @@ export class BrowserManager extends EventEmitter {
 
   logs(key: string): { actions: BrowserAction[]; console: ConsoleEntry[]; network: NetworkEntry[] } {
     const s = this.sessions.get(key);
-    return s ? { actions: s.actions, console: s.console, network: s.network } : { actions: [], console: [], network: [] };
+    return s
+      ? { actions: s.actions, console: s.console, network: s.network }
+      : { actions: [], console: [], network: [] };
   }
 
   lastFrame(key: string): string | null {
@@ -360,7 +465,13 @@ export class BrowserManager extends EventEmitter {
           this.emit('frame', s.key, frame.data);
           void cdp.send('Page.screencastFrameAck', { sessionId: frame.sessionId }).catch(() => undefined);
         });
-        await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 70, maxWidth: VIEWPORT.width, maxHeight: VIEWPORT.height, everyNthFrame: 1 });
+        await cdp.send('Page.startScreencast', {
+          format: 'jpeg',
+          quality: 70,
+          maxWidth: VIEWPORT.width,
+          maxHeight: VIEWPORT.height,
+          everyNthFrame: 1,
+        });
         return;
       } catch {
         s.cdp = null;
@@ -399,18 +510,25 @@ export class BrowserManager extends EventEmitter {
   }
 
   // ── actions ───────────────────────────────────────────────────────────
-  private async act<T>(s: BrowserSession, type: string, detail: string, origin: 'agent' | 'user', fn: () => Promise<T>): Promise<T> {
+  private async act<T>(
+    s: BrowserSession,
+    type: string,
+    detail: string,
+    origin: 'agent' | 'user',
+    fn: () => Promise<T>,
+  ): Promise<T> {
     try {
       const r = await fn();
       this.logAction(s, type, detail, true, origin);
-      if (!s.screencasting && (this.subscribers.get(s.key) ?? 0) > 0) await this.captureFrame(s).catch(() => undefined);
+      if (!s.screencasting && (this.subscribers.get(s.key) ?? 0) > 0)
+        await this.captureFrame(s).catch(() => undefined);
       else if (!s.cdp) await this.captureFrame(s).catch(() => undefined);
       this.emitState(s);
       return r;
     } catch (err) {
       const msg = (err as Error).message.split('\n')[0] ?? 'error';
       this.logAction(s, type, detail, false, origin, msg);
-      throw new Error(msg);
+      throw new Error(msg, { cause: err });
     }
   }
 
@@ -426,14 +544,23 @@ export class BrowserManager extends EventEmitter {
     } catch {
       throw new Error(`Invalid URL: ${url}`);
     }
-    if (!['http:', 'https:'].includes(u.protocol) && u.href !== 'about:blank') throw new Error(`Blocked URL scheme: ${u.protocol}`);
-    if (['127.0.0.1', 'localhost', '[::1]', '0.0.0.0'].includes(u.hostname) && this.opts.blockedPorts.includes(Number(u.port))) {
+    if (!['http:', 'https:'].includes(u.protocol) && u.href !== 'about:blank')
+      throw new Error(`Blocked URL scheme: ${u.protocol}`);
+    if (
+      ['127.0.0.1', 'localhost', '[::1]', '0.0.0.0'].includes(u.hostname) &&
+      this.opts.blockedPorts.includes(Number(u.port))
+    ) {
       throw new Error('Navigation to the workbench API is blocked');
     }
     return u.href;
   }
 
-  async navigate(key: string, downloadsDir: string, url: string, origin: 'agent' | 'user' = 'agent'): Promise<BrowserState> {
+  async navigate(
+    key: string,
+    downloadsDir: string,
+    url: string,
+    origin: 'agent' | 'user' = 'agent',
+  ): Promise<BrowserState> {
     const s = await this.session(key, downloadsDir);
     const href = this.checkUrl(url);
     s.loading = true;
@@ -455,12 +582,37 @@ export class BrowserManager extends EventEmitter {
     throw new Error('Provide ref, selector, text or x/y');
   }
 
-  async click(key: string, downloadsDir: string, target: { ref?: number; selector?: string; text?: string; x?: number; y?: number; button?: 'left' | 'right' | 'middle'; double?: boolean }, origin: 'agent' | 'user' = 'agent'): Promise<BrowserState> {
+  async click(
+    key: string,
+    downloadsDir: string,
+    target: {
+      ref?: number;
+      selector?: string;
+      text?: string;
+      x?: number;
+      y?: number;
+      button?: 'left' | 'right' | 'middle';
+      double?: boolean;
+    },
+    origin: 'agent' | 'user' = 'agent',
+  ): Promise<BrowserState> {
     const s = await this.session(key, downloadsDir);
-    const label = target.ref !== undefined ? `ref ${target.ref}` : target.selector ?? target.text ?? `(${target.x}, ${target.y})`;
+    const label =
+      target.ref !== undefined
+        ? `ref ${target.ref}`
+        : (target.selector ?? target.text ?? `(${target.x}, ${target.y})`);
     await this.act(s, 'click', label, origin, async () => {
-      if (target.x !== undefined && target.y !== undefined && target.ref === undefined && !target.selector && !target.text) {
-        await s.page.mouse.click(target.x, target.y, { button: target.button ?? 'left', clickCount: target.double ? 2 : 1 });
+      if (
+        target.x !== undefined &&
+        target.y !== undefined &&
+        target.ref === undefined &&
+        !target.selector &&
+        !target.text
+      ) {
+        await s.page.mouse.click(target.x, target.y, {
+          button: target.button ?? 'left',
+          clickCount: target.double ? 2 : 1,
+        });
       } else {
         const loc = this.locator(s, target);
         if (target.double) await loc.dblclick({ timeout: 10_000 });
@@ -471,26 +623,45 @@ export class BrowserManager extends EventEmitter {
     return (await this.state(key))!;
   }
 
-  async type(key: string, downloadsDir: string, target: { ref?: number; selector?: string; text?: string }, value: string, opts: { clear?: boolean; submit?: boolean } = {}, origin: 'agent' | 'user' = 'agent'): Promise<BrowserState> {
+  async type(
+    key: string,
+    downloadsDir: string,
+    target: { ref?: number; selector?: string; text?: string },
+    value: string,
+    opts: { clear?: boolean; submit?: boolean } = {},
+    origin: 'agent' | 'user' = 'agent',
+  ): Promise<BrowserState> {
     const s = await this.session(key, downloadsDir);
-    const label = target.ref !== undefined ? `ref ${target.ref}` : target.selector ?? target.text ?? 'focused element';
-    await this.act(s, 'type', `${label} ← "${value.length > 40 ? `${value.slice(0, 40)}…` : value}"`, origin, async () => {
-      if (target.ref === undefined && !target.selector && !target.text) {
-        await s.page.keyboard.type(value, { delay: 10 });
-      } else {
-        const loc = this.locator(s, target);
-        if (opts.clear !== false) await loc.fill(value, { timeout: 10_000 });
-        else await loc.pressSequentially(value, { timeout: 10_000 });
-      }
-      if (opts.submit) {
-        await s.page.keyboard.press('Enter');
-        await this.settle(s.page);
-      }
-    });
+    const label =
+      target.ref !== undefined ? `ref ${target.ref}` : (target.selector ?? target.text ?? 'focused element');
+    await this.act(
+      s,
+      'type',
+      `${label} ← "${value.length > 40 ? `${value.slice(0, 40)}…` : value}"`,
+      origin,
+      async () => {
+        if (target.ref === undefined && !target.selector && !target.text) {
+          await s.page.keyboard.type(value, { delay: 10 });
+        } else {
+          const loc = this.locator(s, target);
+          if (opts.clear !== false) await loc.fill(value, { timeout: 10_000 });
+          else await loc.pressSequentially(value, { timeout: 10_000 });
+        }
+        if (opts.submit) {
+          await s.page.keyboard.press('Enter');
+          await this.settle(s.page);
+        }
+      },
+    );
     return (await this.state(key))!;
   }
 
-  async press(key: string, downloadsDir: string, keys: string, origin: 'agent' | 'user' = 'agent'): Promise<BrowserState> {
+  async press(
+    key: string,
+    downloadsDir: string,
+    keys: string,
+    origin: 'agent' | 'user' = 'agent',
+  ): Promise<BrowserState> {
     const s = await this.session(key, downloadsDir);
     await this.act(s, 'press', keys, origin, async () => {
       await s.page.keyboard.press(keys);
@@ -499,24 +670,54 @@ export class BrowserManager extends EventEmitter {
     return (await this.state(key))!;
   }
 
-  async scroll(key: string, downloadsDir: string, opts: { direction?: 'up' | 'down' | 'left' | 'right'; amount?: number; ref?: number; deltaX?: number; deltaY?: number; x?: number; y?: number }, origin: 'agent' | 'user' = 'agent'): Promise<BrowserState> {
+  async scroll(
+    key: string,
+    downloadsDir: string,
+    opts: {
+      direction?: 'up' | 'down' | 'left' | 'right';
+      amount?: number;
+      ref?: number;
+      deltaX?: number;
+      deltaY?: number;
+      x?: number;
+      y?: number;
+    },
+    origin: 'agent' | 'user' = 'agent',
+  ): Promise<BrowserState> {
     const s = await this.session(key, downloadsDir);
     const amount = opts.amount ?? 600;
-    await this.act(s, 'scroll', opts.ref !== undefined ? `to ref ${opts.ref}` : `${opts.direction ?? 'delta'} ${amount}`, origin, async () => {
-      if (opts.ref !== undefined) {
-        await s.page.locator(`[data-wb-ref="${opts.ref}"]`).first().scrollIntoViewIfNeeded({ timeout: 5000 });
-        return;
-      }
-      if (opts.x !== undefined && opts.y !== undefined) await s.page.mouse.move(opts.x, opts.y);
-      const dx = opts.deltaX ?? (opts.direction === 'left' ? -amount : opts.direction === 'right' ? amount : 0);
-      const dy = opts.deltaY ?? (opts.direction === 'up' ? -amount : opts.direction === 'down' || !opts.direction ? amount : 0);
-      await s.page.mouse.wheel(dx, dy);
-      await s.page.waitForTimeout(250);
-    });
+    await this.act(
+      s,
+      'scroll',
+      opts.ref !== undefined ? `to ref ${opts.ref}` : `${opts.direction ?? 'delta'} ${amount}`,
+      origin,
+      async () => {
+        if (opts.ref !== undefined) {
+          await s.page
+            .locator(`[data-wb-ref="${opts.ref}"]`)
+            .first()
+            .scrollIntoViewIfNeeded({ timeout: 5000 });
+          return;
+        }
+        if (opts.x !== undefined && opts.y !== undefined) await s.page.mouse.move(opts.x, opts.y);
+        const dx =
+          opts.deltaX ?? (opts.direction === 'left' ? -amount : opts.direction === 'right' ? amount : 0);
+        const dy =
+          opts.deltaY ??
+          (opts.direction === 'up' ? -amount : opts.direction === 'down' || !opts.direction ? amount : 0);
+        await s.page.mouse.wheel(dx, dy);
+        await s.page.waitForTimeout(250);
+      },
+    );
     return (await this.state(key))!;
   }
 
-  async history(key: string, downloadsDir: string, action: 'back' | 'forward' | 'reload', origin: 'agent' | 'user' = 'agent'): Promise<BrowserState> {
+  async history(
+    key: string,
+    downloadsDir: string,
+    action: 'back' | 'forward' | 'reload',
+    origin: 'agent' | 'user' = 'agent',
+  ): Promise<BrowserState> {
     const s = await this.session(key, downloadsDir);
     await this.act(s, action, s.page.url(), origin, async () => {
       if (action === 'back') await s.page.goBack({ timeout: 20_000 });
@@ -527,12 +728,24 @@ export class BrowserManager extends EventEmitter {
     return (await this.state(key))!;
   }
 
-  async screenshot(key: string, downloadsDir: string, opts: { fullPage?: boolean } = {}, origin: 'agent' | 'user' = 'agent'): Promise<Buffer> {
+  async screenshot(
+    key: string,
+    downloadsDir: string,
+    opts: { fullPage?: boolean } = {},
+    origin: 'agent' | 'user' = 'agent',
+  ): Promise<Buffer> {
     const s = await this.session(key, downloadsDir);
-    return this.act(s, 'screenshot', opts.fullPage ? 'full page' : 'viewport', origin, () => s.page.screenshot({ type: 'png', fullPage: Boolean(opts.fullPage) }));
+    return this.act(s, 'screenshot', opts.fullPage ? 'full page' : 'viewport', origin, () =>
+      s.page.screenshot({ type: 'png', fullPage: Boolean(opts.fullPage) }),
+    );
   }
 
-  async snapshot(key: string, downloadsDir: string, maxChars = 12_000, origin: 'agent' | 'user' = 'agent'): Promise<PageSnapshot> {
+  async snapshot(
+    key: string,
+    downloadsDir: string,
+    maxChars = 12_000,
+    origin: 'agent' | 'user' = 'agent',
+  ): Promise<PageSnapshot> {
     const s = await this.session(key, downloadsDir);
     return this.act(s, 'extract', s.page.url(), origin, async () => {
       const snap = (await s.page.evaluate(SNAPSHOT_SCRIPT, maxChars)) as PageSnapshot;
@@ -540,26 +753,42 @@ export class BrowserManager extends EventEmitter {
     });
   }
 
-  async download(key: string, downloadsDir: string, target: { url?: string; ref?: number; selector?: string; text?: string }, origin: 'agent' | 'user' = 'agent'): Promise<string> {
+  async download(
+    key: string,
+    downloadsDir: string,
+    target: { url?: string; ref?: number; selector?: string; text?: string },
+    origin: 'agent' | 'user' = 'agent',
+  ): Promise<string> {
     const s = await this.session(key, downloadsDir);
     fs.mkdirSync(downloadsDir, { recursive: true });
-    return this.act(s, 'download', target.url ?? `ref ${target.ref ?? target.selector ?? target.text}`, origin, async () => {
-      if (target.url) {
-        const href = this.checkUrl(target.url);
-        const res = await s.context.request.get(href, { timeout: 120_000 });
-        if (!res.ok()) throw new Error(`HTTP ${res.status()} downloading ${href}`);
-        const disposition = res.headers()['content-disposition'] ?? '';
-        const fromHeader = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition)?.[1];
-        const name = sanitizeFilename(decodeURIComponent(fromHeader ?? new URL(href).pathname.split('/').pop() ?? '') || 'download');
-        const target2 = uniquePath(path.join(downloadsDir, name));
-        fs.writeFileSync(target2, await res.body());
-        return target2;
-      }
-      const [download] = await Promise.all([s.page.waitForEvent('download', { timeout: 60_000 }), this.locator(s, target).click({ timeout: 10_000 })]);
-      const file = uniquePath(path.join(downloadsDir, sanitizeFilename(download.suggestedFilename())));
-      await download.saveAs(file);
-      return file;
-    });
+    return this.act(
+      s,
+      'download',
+      target.url ?? `ref ${target.ref ?? target.selector ?? target.text}`,
+      origin,
+      async () => {
+        if (target.url) {
+          const href = this.checkUrl(target.url);
+          const res = await s.context.request.get(href, { timeout: 120_000 });
+          if (!res.ok()) throw new Error(`HTTP ${res.status()} downloading ${href}`);
+          const disposition = res.headers()['content-disposition'] ?? '';
+          const fromHeader = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition)?.[1];
+          const name = sanitizeFilename(
+            decodeURIComponent(fromHeader ?? new URL(href).pathname.split('/').pop() ?? '') || 'download',
+          );
+          const target2 = uniquePath(path.join(downloadsDir, name));
+          fs.writeFileSync(target2, await res.body());
+          return target2;
+        }
+        const [download] = await Promise.all([
+          s.page.waitForEvent('download', { timeout: 60_000 }),
+          this.locator(s, target).click({ timeout: 10_000 }),
+        ]);
+        const file = uniquePath(path.join(downloadsDir, sanitizeFilename(download.suggestedFilename())));
+        await download.saveAs(file);
+        return file;
+      },
+    );
   }
 
   async close(key: string): Promise<void> {
@@ -582,10 +811,16 @@ export class BrowserManager extends EventEmitter {
     const browser = await this.launch();
     const context = await browser.newContext();
     try {
-      await context.route('**/*', (route) => (route.request().url().startsWith('data:') ? route.continue() : route.abort()));
+      await context.route('**/*', (route) =>
+        route.request().url().startsWith('data:') ? route.continue() : route.abort(),
+      );
       const page = await context.newPage();
       await page.setContent(html, { waitUntil: 'load' });
-      return await page.pdf({ format: 'A4', printBackground: true, margin: { top: '16mm', bottom: '16mm', left: '14mm', right: '14mm' } });
+      return await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '16mm', bottom: '16mm', left: '14mm', right: '14mm' },
+      });
     } finally {
       await context.close();
     }
@@ -593,7 +828,11 @@ export class BrowserManager extends EventEmitter {
 }
 
 export function sanitizeFilename(name: string): string {
-  const cleaned = name.replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '_').replace(/^\.+/, '').slice(0, 150);
+  const cleaned = name
+    // eslint-disable-next-line no-control-regex -- stripping control characters is the point
+    .replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '_')
+    .replace(/^\.+/, '')
+    .slice(0, 150);
   return cleaned || 'file';
 }
 

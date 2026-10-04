@@ -1,11 +1,25 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type ButtonHTMLAttributes, type InputHTMLAttributes } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type ButtonHTMLAttributes,
+  type InputHTMLAttributes,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { cx } from '../lib/format';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'subtle';
 
-export function Button({ variant = 'secondary', size = 'md', className, children, ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: 'sm' | 'md' }) {
+export function Button({
+  variant = 'secondary',
+  size = 'md',
+  className,
+  children,
+  ...rest
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: 'sm' | 'md' }) {
   return (
     <button
       {...rest}
@@ -25,20 +39,38 @@ export function Button({ variant = 'secondary', size = 'md', className, children
   );
 }
 
-export function IconButton({ label, className, children, active, ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { label: string; active?: boolean }) {
+export function IconButton({
+  label,
+  className,
+  children,
+  active,
+  ...rest
+}: ButtonHTMLAttributes<HTMLButtonElement> & { label: string; active?: boolean }) {
   return (
     <button
       aria-label={label}
       title={label}
       {...rest}
-      className={cx('inline-flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:bg-hover hover:text-fg disabled:opacity-40', active && 'bg-hover text-fg', className)}
+      className={cx(
+        'inline-flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:bg-hover hover:text-fg disabled:opacity-40',
+        active && 'bg-hover text-fg',
+        className,
+      )}
     >
       {children}
     </button>
   );
 }
 
-export function Badge({ children, tone = 'neutral', className }: { children: ReactNode; tone?: 'neutral' | 'accent' | 'ok' | 'warn' | 'err' | 'info'; className?: string }) {
+export function Badge({
+  children,
+  tone = 'neutral',
+  className,
+}: {
+  children: ReactNode;
+  tone?: 'neutral' | 'accent' | 'ok' | 'warn' | 'err' | 'info';
+  className?: string;
+}) {
   return (
     <span
       className={cx(
@@ -58,28 +90,70 @@ export function Badge({ children, tone = 'neutral', className }: { children: Rea
 }
 
 export function Spinner({ className }: { className?: string }) {
-  return <span className={cx('inline-block h-3.5 w-3.5 rounded-full border-2 border-line-strong border-t-accent wb-spin', className)} />;
+  return (
+    <span
+      className={cx(
+        'inline-block h-3.5 w-3.5 rounded-full border-2 border-line-strong border-t-accent wb-spin',
+        className,
+      )}
+    />
+  );
 }
 
 export function Kbd({ children }: { children: ReactNode }) {
-  return <kbd className="rounded border border-line bg-hover px-1 font-mono text-[10.5px] text-muted">{children}</kbd>;
+  return (
+    <kbd className="rounded border border-line bg-hover px-1 font-mono text-[10.5px] text-muted">
+      {children}
+    </kbd>
+  );
 }
 
 export function Input({ className, ...rest }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...rest} className={cx('h-8 w-full rounded-lg border border-line bg-input px-2.5 text-[13px] outline-none placeholder:text-faint focus:border-accent', className)} />;
+  return (
+    <input
+      {...rest}
+      className={cx(
+        'h-8 w-full rounded-lg border border-line bg-input px-2.5 text-[13px] outline-none placeholder:text-faint focus:border-accent',
+        className,
+      )}
+    />
+  );
 }
 
 export function Textarea({ className, ...rest }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...rest} className={cx('w-full rounded-lg border border-line bg-input px-2.5 py-2 text-[13px] outline-none placeholder:text-faint focus:border-accent', className)} />;
+  return (
+    <textarea
+      {...rest}
+      className={cx(
+        'w-full rounded-lg border border-line bg-input px-2.5 py-2 text-[13px] outline-none placeholder:text-faint focus:border-accent',
+        className,
+      )}
+    />
+  );
 }
 
-export function Select<T extends string>({ value, onChange, options, className, title }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[]; className?: string; title?: string }) {
+export function Select<T extends string>({
+  value,
+  onChange,
+  options,
+  className,
+  title,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string }[];
+  className?: string;
+  title?: string;
+}) {
   return (
     <select
       title={title}
       value={value}
       onChange={(e) => onChange(e.target.value as T)}
-      className={cx('h-8 rounded-lg border border-line bg-input px-2 text-[13px] outline-none focus:border-accent', className)}
+      className={cx(
+        'h-8 rounded-lg border border-line bg-input px-2 text-[13px] outline-none focus:border-accent',
+        className,
+      )}
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>
@@ -90,25 +164,59 @@ export function Select<T extends string>({ value, onChange, options, className, 
   );
 }
 
-export function Toggle({ checked, onChange, label, disabled }: { checked: boolean; onChange: (v: boolean) => void; label?: ReactNode; disabled?: boolean }) {
+export function Toggle({
+  checked,
+  onChange,
+  label,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label?: ReactNode;
+  disabled?: boolean;
+}) {
   return (
-    <label className={cx('inline-flex cursor-pointer items-center gap-2 select-none', disabled && 'opacity-50')}>
+    <label
+      className={cx('inline-flex cursor-pointer items-center gap-2 select-none', disabled && 'opacity-50')}
+    >
       <button
         type="button"
         role="switch"
         aria-checked={checked}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={cx('relative h-[18px] w-8 rounded-full transition-colors', checked ? 'bg-accent' : 'bg-line-strong')}
+        className={cx(
+          'relative h-[18px] w-8 rounded-full transition-colors',
+          checked ? 'bg-accent' : 'bg-line-strong',
+        )}
       >
-        <span className={cx('absolute top-[2px] h-[14px] w-[14px] rounded-full bg-white shadow transition-all', checked ? 'left-[16px]' : 'left-[2px]')} />
+        <span
+          className={cx(
+            'absolute top-[2px] h-[14px] w-[14px] rounded-full bg-white shadow transition-all',
+            checked ? 'left-[16px]' : 'left-[2px]',
+          )}
+        />
       </button>
       {label && <span className="text-[13px]">{label}</span>}
     </label>
   );
 }
 
-export function Modal({ open, onClose, title, children, width = 640, footer }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; width?: number; footer?: ReactNode }) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  width = 640,
+  footer,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: ReactNode;
+  children: ReactNode;
+  width?: number;
+  footer?: ReactNode;
+}) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -117,8 +225,16 @@ export function Modal({ open, onClose, title, children, width = 640, footer }: {
   }, [open, onClose]);
   if (!open) return null;
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/45 p-4 pt-[8vh]" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="wb-in flex max-h-[84vh] w-full flex-col overflow-hidden rounded-xl border border-line bg-elev shadow-pop" style={{ maxWidth: width }} role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/45 p-4 pt-[8vh]"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        className="wb-in flex max-h-[84vh] w-full flex-col overflow-hidden rounded-xl border border-line bg-elev shadow-pop"
+        style={{ maxWidth: width }}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
           <div className="font-semibold">{title}</div>
           <IconButton label="Fermer" onClick={onClose}>
@@ -133,16 +249,34 @@ export function Modal({ open, onClose, title, children, width = 640, footer }: {
   );
 }
 
-export function Tabs<T extends string>({ tabs, value, onChange, className, right }: { tabs: { id: T; label: ReactNode; badge?: ReactNode }[]; value: T; onChange: (v: T) => void; className?: string; right?: ReactNode }) {
+export function Tabs<T extends string>({
+  tabs,
+  value,
+  onChange,
+  className,
+  right,
+}: {
+  tabs: { id: T; label: ReactNode; badge?: ReactNode }[];
+  value: T;
+  onChange: (v: T) => void;
+  className?: string;
+  right?: ReactNode;
+}) {
   return (
-    <div className={cx('flex h-9 shrink-0 items-center gap-0.5 border-b border-line px-1.5', className)} role="tablist">
+    <div
+      className={cx('flex h-9 shrink-0 items-center gap-0.5 border-b border-line px-1.5', className)}
+      role="tablist"
+    >
       {tabs.map((t) => (
         <button
           key={t.id}
           role="tab"
           aria-selected={value === t.id}
           onClick={() => onChange(t.id)}
-          className={cx('flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium transition-colors', value === t.id ? 'bg-hover text-fg' : 'text-muted hover:text-fg')}
+          className={cx(
+            'flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium transition-colors',
+            value === t.id ? 'bg-hover text-fg' : 'text-muted hover:text-fg',
+          )}
         >
           {t.label}
           {t.badge}
@@ -192,8 +326,13 @@ export function Dropdown<T extends string>({
   useLayoutEffect(() => {
     if (!open || !ref.current) return;
     const r = ref.current.getBoundingClientRect();
-    const left = Math.max(8, Math.min(window.innerWidth - width - 8, align === 'right' ? r.right - width : r.left));
-    setPos(placement === 'top' ? { left, bottom: window.innerHeight - r.top + 6 } : { left, top: r.bottom + 6 });
+    const left = Math.max(
+      8,
+      Math.min(window.innerWidth - width - 8, align === 'right' ? r.right - width : r.left),
+    );
+    setPos(
+      placement === 'top' ? { left, bottom: window.innerHeight - r.top + 6 } : { left, top: r.bottom + 6 },
+    );
   }, [open, width, align, placement]);
   useEffect(() => {
     if (!open) return;
@@ -209,23 +348,49 @@ export function Dropdown<T extends string>({
       window.removeEventListener('keydown', onKey);
     };
   }, [open]);
-  const filtered = q ? items.filter((i) => `${i.value} ${typeof i.label === 'string' ? i.label : ''}`.toLowerCase().includes(q.toLowerCase())) : items;
+  const filtered = q
+    ? items.filter((i) =>
+        `${i.value} ${typeof i.label === 'string' ? i.label : ''}`.toLowerCase().includes(q.toLowerCase()),
+      )
+    : items;
   return (
     <>
-      <button ref={ref} type="button" onClick={() => setOpen((o) => !o)} className={cx('inline-flex items-center gap-1', className)} aria-haspopup="menu" aria-expanded={open}>
+      <button
+        ref={ref}
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={cx('inline-flex items-center gap-1', className)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
         {trigger}
       </button>
       {open &&
         createPortal(
-          <div data-dropdown className="wb-in fixed z-50 overflow-hidden rounded-xl border border-line bg-elev shadow-pop" style={{ ...pos, width }} role="menu">
-            {header && <div className="border-b border-line px-3 py-2 text-[11.5px] text-muted">{header}</div>}
+          <div
+            data-dropdown
+            className="wb-in fixed z-50 overflow-hidden rounded-xl border border-line bg-elev shadow-pop"
+            style={{ ...pos, width }}
+            role="menu"
+          >
+            {header && (
+              <div className="border-b border-line px-3 py-2 text-[11.5px] text-muted">{header}</div>
+            )}
             {search && (
               <div className="border-b border-line p-1.5">
-                <Input autoFocus placeholder="Rechercher…" value={q} onChange={(e) => setQ(e.target.value)} className="h-7" />
+                <Input
+                  autoFocus
+                  placeholder="Rechercher…"
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  className="h-7"
+                />
               </div>
             )}
             <div className="max-h-[360px] overflow-auto p-1">
-              {filtered.length === 0 && <div className="px-3 py-2 text-[12.5px] text-faint">Aucun résultat</div>}
+              {filtered.length === 0 && (
+                <div className="px-3 py-2 text-[12.5px] text-faint">Aucun résultat</div>
+              )}
               {filtered.slice(0, 300).map((i) => (
                 <button
                   key={i.value}
@@ -238,7 +403,9 @@ export function Dropdown<T extends string>({
                   }}
                   className="flex w-full items-start gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] hover:bg-hover disabled:opacity-40"
                 >
-                  <span className="mt-0.5 w-4 shrink-0 text-accent">{value === i.value ? <Check size={14} /> : i.icon}</span>
+                  <span className="mt-0.5 w-4 shrink-0 text-accent">
+                    {value === i.value ? <Check size={14} /> : i.icon}
+                  </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate">{i.label}</span>
                     {i.hint && <span className="block text-[11.5px] leading-snug text-faint">{i.hint}</span>}
@@ -253,7 +420,19 @@ export function Dropdown<T extends string>({
   );
 }
 
-export function Chip({ children, onClick, active, title, className }: { children: ReactNode; onClick?: () => void; active?: boolean; title?: string; className?: string }) {
+export function Chip({
+  children,
+  onClick,
+  active,
+  title,
+  className,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  active?: boolean;
+  title?: string;
+  className?: string;
+}) {
   return (
     <span
       title={title}
@@ -285,7 +464,17 @@ export function Empty({ icon, title, children }: { icon?: ReactNode; title: stri
 }
 
 /** Horizontal gauge (credits, budgets, context window). */
-export function Gauge({ value, max, tone, className }: { value: number; max: number; tone?: 'auto' | 'accent'; className?: string }) {
+export function Gauge({
+  value,
+  max,
+  tone,
+  className,
+}: {
+  value: number;
+  max: number;
+  tone?: 'auto' | 'accent';
+  className?: string;
+}) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   const color = tone === 'accent' ? 'bg-accent' : pct >= 90 ? 'bg-err' : pct >= 75 ? 'bg-warn' : 'bg-ok';
   return (
@@ -295,7 +484,15 @@ export function Gauge({ value, max, tone, className }: { value: number; max: num
   );
 }
 
-export function Section({ title, children, right }: { title: ReactNode; children: ReactNode; right?: ReactNode }) {
+export function Section({
+  title,
+  children,
+  right,
+}: {
+  title: ReactNode;
+  children: ReactNode;
+  right?: ReactNode;
+}) {
   return (
     <section className="mb-5">
       <div className="mb-2 flex items-center justify-between">
@@ -307,7 +504,15 @@ export function Section({ title, children, right }: { title: ReactNode; children
   );
 }
 
-export function Field({ label, hint, children }: { label: ReactNode; hint?: ReactNode; children: ReactNode }) {
+export function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: ReactNode;
+  hint?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <label className="mb-3 block">
       <div className="mb-1 text-[12.5px] font-medium">{label}</div>

@@ -27,7 +27,8 @@ export function CreditsGauge() {
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent) => {
-      if (!(e.target as HTMLElement).closest('[data-credits]') && !ref.current?.contains(e.target as Node)) setOpen(false);
+      if (!(e.target as HTMLElement).closest('[data-credits]') && !ref.current?.contains(e.target as Node))
+        setOpen(false);
     };
     window.addEventListener('mousedown', close);
     return () => window.removeEventListener('mousedown', close);
@@ -44,8 +45,18 @@ export function CreditsGauge() {
 
   return (
     <>
-      <button ref={ref} onClick={() => setOpen((o) => !o)} className="flex h-8 items-center gap-2 rounded-lg px-2 hover:bg-hover" title="Crédits OpenRouter et consommation">
-        <Wallet size={15} className={cx(pct !== null && pct < 0.1 ? 'text-err' : pct !== null && pct < 0.25 ? 'text-warn' : 'text-muted')} />
+      <button
+        ref={ref}
+        onClick={() => setOpen((o) => !o)}
+        className="flex h-8 items-center gap-2 rounded-lg px-2 hover:bg-hover"
+        title="Crédits OpenRouter et consommation"
+      >
+        <Wallet
+          size={15}
+          className={cx(
+            pct !== null && pct < 0.1 ? 'text-err' : pct !== null && pct < 0.25 ? 'text-warn' : 'text-muted',
+          )}
+        />
         <div className="hidden w-24 sm:block">
           <div className="flex justify-between text-[10.5px] leading-3 text-muted">
             <span>{remaining !== null ? fmtCost(remaining, 2) : '—'}</span>
@@ -57,7 +68,14 @@ export function CreditsGauge() {
       </button>
       {open &&
         createPortal(
-          <div data-credits className="wb-in fixed z-50 w-[360px] rounded-xl border border-line bg-elev p-4 shadow-pop" style={{ top: (r?.bottom ?? 40) + 6, left: Math.max(8, Math.min(window.innerWidth - 368, (r?.right ?? 360) - 360)) }}>
+          <div
+            data-credits
+            className="wb-in fixed z-50 w-[360px] rounded-xl border border-line bg-elev p-4 shadow-pop"
+            style={{
+              top: (r?.bottom ?? 40) + 6,
+              left: Math.max(8, Math.min(window.innerWidth - 368, (r?.right ?? 360) - 360)),
+            }}
+          >
             <div className="mb-3 flex items-center justify-between">
               <div className="font-semibold">Crédits OpenRouter</div>
               <IconButton label="Actualiser" onClick={() => void refresh()}>
@@ -67,28 +85,72 @@ export function CreditsGauge() {
             {c?.available || c?.keyLimit !== null ? (
               <div className="mb-4 space-y-2">
                 {c?.totalCredits !== null && c?.totalCredits !== undefined && (
-                  <Row label="Solde du compte" value={`${fmtCost(c.remaining, 2)} / ${fmtCost(c.totalCredits, 2)}`} gauge={[c.remaining ?? 0, c.totalCredits]} />
+                  <Row
+                    label="Solde du compte"
+                    value={`${fmtCost(c.remaining, 2)} / ${fmtCost(c.totalCredits, 2)}`}
+                    gauge={[c.remaining ?? 0, c.totalCredits]}
+                  />
                 )}
-                {c?.keyLimit !== null && c?.keyLimit !== undefined && <Row label="Limite de la clé" value={`${fmtCost(c.keyLimitRemaining, 2)} restants / ${fmtCost(c.keyLimit, 2)}`} gauge={[c.keyLimitRemaining ?? 0, c.keyLimit]} />}
-                {used !== null && <div className="text-[11.5px] text-faint">Consommé sur la clé : {fmtCost(used, 3)}</div>}
+                {c?.keyLimit !== null && c?.keyLimit !== undefined && (
+                  <Row
+                    label="Limite de la clé"
+                    value={`${fmtCost(c.keyLimitRemaining, 2)} restants / ${fmtCost(c.keyLimit, 2)}`}
+                    gauge={[c.keyLimitRemaining ?? 0, c.keyLimit]}
+                  />
+                )}
+                {used !== null && (
+                  <div className="text-[11.5px] text-faint">Consommé sur la clé : {fmtCost(used, 3)}</div>
+                )}
               </div>
             ) : (
-              <div className="mb-4 rounded-lg bg-hover p-2.5 text-[12.5px] text-muted">Solde indisponible : {c?.error ?? 'configurez OPENROUTER_API_KEY'}.</div>
+              <div className="mb-4 rounded-lg bg-hover p-2.5 text-[12.5px] text-muted">
+                Solde indisponible : {c?.error ?? 'configurez OPENROUTER_API_KEY'}.
+              </div>
             )}
             <div className="mb-3 grid grid-cols-3 gap-2 text-center">
-              <Stat label="Session" value={fmtCost(credits?.session?.cost ?? 0)} sub={`${fmtTokens((credits?.session?.tokensIn ?? 0) + (credits?.session?.tokensOut ?? 0))} tok`} />
-              <Stat label="Aujourd'hui" value={fmtCost(credits?.today.cost ?? 0)} sub={`${credits?.today.calls ?? 0} appels`} />
-              <Stat label="Ce mois" value={fmtCost(credits?.month.cost ?? 0)} sub={`${fmtTokens((credits?.month.promptTokens ?? 0) + (credits?.month.completionTokens ?? 0))} tok`} />
+              <Stat
+                label="Session"
+                value={fmtCost(credits?.session?.cost ?? 0)}
+                sub={`${fmtTokens((credits?.session?.tokensIn ?? 0) + (credits?.session?.tokensOut ?? 0))} tok`}
+              />
+              <Stat
+                label="Aujourd'hui"
+                value={fmtCost(credits?.today.cost ?? 0)}
+                sub={`${credits?.today.calls ?? 0} appels`}
+              />
+              <Stat
+                label="Ce mois"
+                value={fmtCost(credits?.month.cost ?? 0)}
+                sub={`${fmtTokens((credits?.month.promptTokens ?? 0) + (credits?.month.completionTokens ?? 0))} tok`}
+              />
             </div>
             {budget && (
               <div className="mb-3 space-y-2">
-                {budget.daily.limit > 0 && <Row label="Budget journalier" value={`${fmtCost(budget.daily.spent)} / ${fmtCost(budget.daily.limit, 2)}`} gauge={[budget.daily.spent, budget.daily.limit]} usage />}
-                {budget.monthly.limit > 0 && <Row label="Budget mensuel" value={`${fmtCost(budget.monthly.spent)} / ${fmtCost(budget.monthly.limit, 2)}`} gauge={[budget.monthly.spent, budget.monthly.limit]} usage />}
+                {budget.daily.limit > 0 && (
+                  <Row
+                    label="Budget journalier"
+                    value={`${fmtCost(budget.daily.spent)} / ${fmtCost(budget.daily.limit, 2)}`}
+                    gauge={[budget.daily.spent, budget.daily.limit]}
+                    usage
+                  />
+                )}
+                {budget.monthly.limit > 0 && (
+                  <Row
+                    label="Budget mensuel"
+                    value={`${fmtCost(budget.monthly.spent)} / ${fmtCost(budget.monthly.limit, 2)}`}
+                    gauge={[budget.monthly.spent, budget.monthly.limit]}
+                    usage
+                  />
+                )}
               </div>
             )}
-            <div className="mb-1 text-[11.5px] font-semibold uppercase tracking-wide text-faint">Aujourd'hui par modèle</div>
+            <div className="mb-1 text-[11.5px] font-semibold uppercase tracking-wide text-faint">
+              Aujourd'hui par modèle
+            </div>
             <div className="max-h-44 space-y-1 overflow-auto">
-              {(credits?.todayByModel ?? []).length === 0 && <div className="text-[12.5px] text-faint">Aucune consommation aujourd'hui.</div>}
+              {(credits?.todayByModel ?? []).length === 0 && (
+                <div className="text-[12.5px] text-faint">Aucune consommation aujourd'hui.</div>
+              )}
               {(credits?.todayByModel ?? []).map((m) => (
                 <div key={m.model} className="flex items-center justify-between text-[12.5px]">
                   <span className="truncate" title={m.model}>
@@ -107,7 +169,17 @@ export function CreditsGauge() {
   );
 }
 
-function Row({ label, value, gauge, usage }: { label: string; value: string; gauge: [number, number]; usage?: boolean }) {
+function Row({
+  label,
+  value,
+  gauge,
+  usage,
+}: {
+  label: string;
+  value: string;
+  gauge: [number, number];
+  usage?: boolean;
+}) {
   return (
     <div>
       <div className="mb-1 flex justify-between text-[12.5px]">

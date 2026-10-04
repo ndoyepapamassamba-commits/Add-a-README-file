@@ -6,7 +6,8 @@ import { ChartSpecSchema, buildChart } from '../services/vizEngine';
 import { defineTool, ok, ToolError, type AnyTool, type ToolContext } from './types';
 
 function abs(ctx: ToolContext, rel: string): string {
-  if (!isDataFile(rel)) throw new ToolError(`${rel} is not a supported data file (csv, tsv, xlsx, xls, xlsm, ods, json, jsonl)`);
+  if (!isDataFile(rel))
+    throw new ToolError(`${rel} is not a supported data file (csv, tsv, xlsx, xls, xlsm, ods, json, jsonl)`);
   return ctx.services.workspace.resolve(ctx.projectId, rel);
 }
 
@@ -24,9 +25,14 @@ export function profileToText(p: DatasetProfile): string {
   ];
   for (const c of p.columns) {
     let stats = '';
-    if (c.numeric) stats = `min ${fmtNum(c.numeric.min)} · max ${fmtNum(c.numeric.max)} · mean ${fmtNum(c.numeric.mean)} · median ${fmtNum(c.numeric.median)} · sum ${fmtNum(c.numeric.sum)}`;
+    if (c.numeric)
+      stats = `min ${fmtNum(c.numeric.min)} · max ${fmtNum(c.numeric.max)} · mean ${fmtNum(c.numeric.mean)} · median ${fmtNum(c.numeric.median)} · sum ${fmtNum(c.numeric.sum)}`;
     else if (c.date) stats = `${c.date.min} → ${c.date.max}`;
-    else if (c.top) stats = c.top.slice(0, 5).map((t) => `${t.value.slice(0, 30)} (${t.count})`).join(', ');
+    else if (c.top)
+      stats = c.top
+        .slice(0, 5)
+        .map((t) => `${t.value.slice(0, 30)} (${t.count})`)
+        .join(', ');
     lines.push(`| ${c.name} | ${c.type} | ${c.missing} (${c.missingPct}%) | ${c.unique} | ${stats} |`);
   }
   if (p.anomalies.length) lines.push('', 'Anomalies:', ...p.anomalies.map((a) => `- ${a}`));
@@ -37,7 +43,16 @@ function rowsToText(columns: string[], rows: Record<string, unknown>[], max = 60
   const head = `| ${columns.join(' | ')} |\n|${columns.map(() => '---').join('|')}|`;
   const body = rows
     .slice(0, max)
-    .map((r) => `| ${columns.map((c) => String(r[c] ?? '').replace(/\|/g, '\\|').slice(0, 60)).join(' | ')} |`)
+    .map(
+      (r) =>
+        `| ${columns
+          .map((c) =>
+            String(r[c] ?? '')
+              .replace(/\|/g, '\\|')
+              .slice(0, 60),
+          )
+          .join(' | ')} |`,
+    )
     .join('\n');
   return `${head}\n${body}${rows.length > max ? `\n… ${rows.length - max} more rows` : ''}`;
 }
@@ -45,7 +60,8 @@ function rowsToText(columns: string[], rows: Record<string, unknown>[], max = 60
 export const dataTools: AnyTool[] = [
   defineTool({
     name: 'data.inspect',
-    description: 'Profile a data file (CSV/TSV/XLSX/XLS/XLSM/ODS/JSON): sheets, columns, inferred types, missing values, statistics, top values, anomalies, sample rows.',
+    description:
+      'Profile a data file (CSV/TSV/XLSX/XLS/XLSM/ODS/JSON): sheets, columns, inferred types, missing values, statistics, top values, anomalies, sample rows.',
     schema: z.object({ path: z.string().min(1), sheet: z.string().optional() }),
     readOnly: true,
     assess: () => ({ risk: 'read' }),
@@ -54,9 +70,13 @@ export const dataTools: AnyTool[] = [
       const ds = await ctx.services.data.load(abs(ctx, a.path), a.sheet);
       const profile = ctx.services.data.profile(ds);
       const sample = ctx.services.data.query(ds, { limit: 8 });
-      return ok(`${profile.rowCount} rows × ${profile.columnCount} cols${profile.anomalies.length ? ` · ${profile.anomalies.length} anomalies` : ''}`, { profile: { ...profile, path: a.path } }, {
-        forModel: `${profileToText({ ...profile, path: a.path })}\n\nSample rows:\n${rowsToText(sample.columns, sample.rows)}`,
-      });
+      return ok(
+        `${profile.rowCount} rows × ${profile.columnCount} cols${profile.anomalies.length ? ` · ${profile.anomalies.length} anomalies` : ''}`,
+        { profile: { ...profile, path: a.path } },
+        {
+          forModel: `${profileToText({ ...profile, path: a.path })}\n\nSample rows:\n${rowsToText(sample.columns, sample.rows)}`,
+        },
+      );
     },
   }),
   defineTool({
@@ -70,13 +90,24 @@ export const dataTools: AnyTool[] = [
     async execute(a, ctx) {
       const ds = await ctx.services.data.load(abs(ctx, a.path), a.sheet);
       const res = ctx.services.data.query(ds, { limit: 200, ...a.query });
-      return ok(`${res.rowCount} rows`, { columns: res.columns, rows: res.rows.slice(0, 200), rowCount: res.rowCount }, { forModel: `${res.rowCount} rows\n${rowsToText(res.columns, res.rows, 100)}` });
+      return ok(
+        `${res.rowCount} rows`,
+        { columns: res.columns, rows: res.rows.slice(0, 200), rowCount: res.rowCount },
+        { forModel: `${res.rowCount} rows\n${rowsToText(res.columns, res.rows, 100)}` },
+      );
     },
   }),
   defineTool({
     name: 'data.transform',
-    description: 'Run a query (filter/group/aggregate/select/sort) and write the result to a new file (csv, xlsx or json) in the project.',
-    schema: z.object({ path: z.string().min(1), sheet: z.string().optional(), query: QuerySpecSchema, output_path: z.string().min(1), format: z.enum(['csv', 'xlsx', 'json']).default('csv') }),
+    description:
+      'Run a query (filter/group/aggregate/select/sort) and write the result to a new file (csv, xlsx or json) in the project.',
+    schema: z.object({
+      path: z.string().min(1),
+      sheet: z.string().optional(),
+      query: QuerySpecSchema,
+      output_path: z.string().min(1),
+      format: z.enum(['csv', 'xlsx', 'json']).default('csv'),
+    }),
     readOnly: false,
     assess: () => ({ risk: 'write' }),
     label: (a) => `Transform ${a.path} → ${a.output_path}`,
@@ -112,16 +143,23 @@ export const dataTools: AnyTool[] = [
       const preview = chart.kpis
         ? chart.kpis.map((k) => `${k.label}: ${k.value}`).join('\n')
         : chart.categories.length
-          ? chart.categories.slice(0, 30).map((c, i) => `${c}: ${chart.series.map((s) => `${s.name}=${s.data[i]}`).join(', ')}`).join('\n')
+          ? chart.categories
+              .slice(0, 30)
+              .map((c, i) => `${c}: ${chart.series.map((s) => `${s.name}=${s.data[i]}`).join(', ')}`)
+              .join('\n')
           : chart.points
             ? `${chart.points.length} points`
             : chart.matrix
               ? `${chart.matrix.values.length} cells`
               : `${chart.rows?.length ?? 0} rows`;
-      return ok(`${spec.type} · ${chart.rowCount} rows`, { artifactId: art.id }, {
-        attachments: [{ kind: 'chart', artifactId: art.id, name: spec.title }],
-        forModel: `Chart "${spec.title}" displayed to the user (artifact ${art.id}). Data used (${chart.rowCount} rows after filters):\n${preview}`,
-      });
+      return ok(
+        `${spec.type} · ${chart.rowCount} rows`,
+        { artifactId: art.id },
+        {
+          attachments: [{ kind: 'chart', artifactId: art.id, name: spec.title }],
+          forModel: `Chart "${spec.title}" displayed to the user (artifact ${art.id}). Data used (${chart.rowCount} rows after filters):\n${preview}`,
+        },
+      );
     },
   }),
 ];

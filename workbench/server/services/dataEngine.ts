@@ -17,7 +17,8 @@ export interface Dataset {
   rows: DataRow[];
 }
 
-export type ColumnType = 'integer' | 'number' | 'date' | 'boolean' | 'categorical' | 'text' | 'empty' | 'mixed';
+export type ColumnType =
+  'integer' | 'number' | 'date' | 'boolean' | 'categorical' | 'text' | 'empty' | 'mixed';
 
 export interface ColumnProfile {
   name: string;
@@ -26,7 +27,19 @@ export interface ColumnProfile {
   missingPct: number;
   unique: number;
   sample: Cell[];
-  numeric?: { min: number; max: number; mean: number; median: number; std: number; p25: number; p75: number; sum: number; outliers: number; negatives: number; zeros: number };
+  numeric?: {
+    min: number;
+    max: number;
+    mean: number;
+    median: number;
+    std: number;
+    p25: number;
+    p75: number;
+    sum: number;
+    outliers: number;
+    negatives: number;
+    zeros: number;
+  };
   date?: { min: string; max: string };
   top?: { value: string; count: number }[];
 }
@@ -42,7 +55,17 @@ export interface DatasetProfile {
   anomalies: string[];
 }
 
-export const DATA_EXTENSIONS = ['.csv', '.tsv', '.xlsx', '.xls', '.xlsm', '.ods', '.json', '.jsonl', '.ndjson'];
+export const DATA_EXTENSIONS = [
+  '.csv',
+  '.tsv',
+  '.xlsx',
+  '.xls',
+  '.xlsm',
+  '.ods',
+  '.json',
+  '.jsonl',
+  '.ndjson',
+];
 
 export const FilterSchema = z.object({
   column: z.string(),
@@ -64,16 +87,20 @@ export const QuerySpecSchema = z.object({
 export type QuerySpec = z.infer<typeof QuerySpecSchema>;
 
 // ── value helpers ──────────────────────────────────────────────────────
-const isMissing = (v: Cell | undefined) => v === null || v === undefined || (typeof v === 'string' && v.trim() === '');
+const isMissing = (v: Cell | undefined) =>
+  v === null || v === undefined || (typeof v === 'string' && v.trim() === '');
 
 export function toNumber(v: Cell | undefined): number | null {
   if (typeof v === 'number') return Number.isFinite(v) ? v : null;
   if (typeof v === 'boolean') return v ? 1 : 0;
   if (typeof v === 'string') {
-    const s = v.trim().replace(/\s/g, '').replace(/[€$£%]/g, '');
+    const s = v
+      .trim()
+      .replace(/\s/g, '')
+      .replace(/[€$£%]/g, '');
     if (!s) return null;
     // Accept "1,234.5", "1 234,5" and "1234,5"
-    let norm = s;
+    let norm: string;
     if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) norm = s.replace(/\./g, '').replace(',', '.');
     else if (/^-?\d+(,\d+)$/.test(s)) norm = s.replace(',', '.');
     else norm = s.replace(/,/g, '');
@@ -128,7 +155,10 @@ function quantile(sorted: number[], q: number): number {
 
 export function aggregate(values: Cell[], fn: z.infer<typeof AggFn>): number | null {
   if (fn === 'count') return values.filter((v) => !isMissing(v)).length;
-  if (fn === 'count_distinct') return new Set(values.filter((v) => !isMissing(v)).map((v) => (v instanceof Date ? v.toISOString() : String(v)))).size;
+  if (fn === 'count_distinct')
+    return new Set(
+      values.filter((v) => !isMissing(v)).map((v) => (v instanceof Date ? v.toISOString() : String(v))),
+    ).size;
   const nums = values.map(toNumber).filter((n): n is number => n !== null);
   if (!nums.length) return null;
   switch (fn) {
@@ -141,7 +171,10 @@ export function aggregate(values: Cell[], fn: z.infer<typeof AggFn>): number | n
     case 'max':
       return Math.max(...nums);
     case 'median':
-      return quantile([...nums].sort((a, b) => a - b), 0.5);
+      return quantile(
+        [...nums].sort((a, b) => a - b),
+        0.5,
+      );
   }
 }
 
@@ -153,9 +186,14 @@ export function matchFilter(row: DataRow, f: DataFilter): boolean {
     case 'not_null':
       return !isMissing(v);
     case 'contains':
-      return String(v ?? '').toLowerCase().includes(String(f.value ?? '').toLowerCase());
+      return String(v ?? '')
+        .toLowerCase()
+        .includes(String(f.value ?? '').toLowerCase());
     case 'in':
-      return Array.isArray(f.value) && f.value.map(String).includes(v instanceof Date ? v.toISOString().slice(0, 10) : String(v));
+      return (
+        Array.isArray(f.value) &&
+        f.value.map(String).includes(v instanceof Date ? v.toISOString().slice(0, 10) : String(v))
+      );
     default: {
       const a = toNumber(v);
       const b = toNumber(f.value as Cell);
@@ -165,8 +203,10 @@ export function matchFilter(row: DataRow, f: DataFilter): boolean {
       if (a !== null && b !== null) cmp = a - b;
       else if (da && db) cmp = da.getTime() - db.getTime();
       else cmp = String(v ?? '').localeCompare(String(f.value ?? ''));
-      if (f.op === 'eq') return a !== null && b !== null ? a === b : String(v ?? '') === String(f.value ?? '');
-      if (f.op === 'neq') return a !== null && b !== null ? a !== b : String(v ?? '') !== String(f.value ?? '');
+      if (f.op === 'eq')
+        return a !== null && b !== null ? a === b : String(v ?? '') === String(f.value ?? '');
+      if (f.op === 'neq')
+        return a !== null && b !== null ? a !== b : String(v ?? '') !== String(f.value ?? '');
       if (f.op === 'gt') return cmp > 0;
       if (f.op === 'gte') return cmp >= 0;
       if (f.op === 'lt') return cmp < 0;
@@ -175,7 +215,8 @@ export function matchFilter(row: DataRow, f: DataFilter): boolean {
   }
 }
 
-const display = (v: Cell): string | number | boolean | null => (v instanceof Date ? v.toISOString().slice(0, 10) : v);
+const display = (v: Cell): string | number | boolean | null =>
+  v instanceof Date ? v.toISOString().slice(0, 10) : v;
 
 // ── engine ─────────────────────────────────────────────────────────────
 export class DataEngine {
@@ -207,7 +248,7 @@ export class DataEngine {
   private async parse(absPath: string, sheet: string | null): Promise<Dataset> {
     const ext = path.extname(absPath).toLowerCase();
     if (ext === '.csv' || ext === '.tsv' || ext === '.txt') {
-      const text = (await fsp.readFile(absPath, 'utf8')).replace(/^﻿/, '');
+      const text = (await fsp.readFile(absPath, 'utf8')).replace(/^\uFEFF/, '');
       const parsed = Papa.parse<Record<string, unknown>>(text, {
         header: true,
         dynamicTyping: true,
@@ -231,11 +272,20 @@ export class DataEngine {
       const name = sheet && wb.SheetNames.includes(sheet) ? sheet : wb.SheetNames[0];
       if (!name) return { path: absPath, sheet: null, sheets: [], columns: [], rows: [] };
       const ws = wb.Sheets[name]!;
-      const matrix = XLSX.utils.sheet_to_json<Cell[]>(ws, { header: 1, defval: null, raw: true, blankrows: false });
+      const matrix = XLSX.utils.sheet_to_json<Cell[]>(ws, {
+        header: 1,
+        defval: null,
+        raw: true,
+        blankrows: false,
+      });
       // Header row = first row with at least half non-empty cells.
-      let headerIdx = matrix.findIndex((r) => r.filter((c) => !isMissing(c)).length >= Math.max(1, Math.ceil(r.length / 2)));
+      let headerIdx = matrix.findIndex(
+        (r) => r.filter((c) => !isMissing(c)).length >= Math.max(1, Math.ceil(r.length / 2)),
+      );
       if (headerIdx < 0) headerIdx = 0;
-      const header = (matrix[headerIdx] ?? []).map((h, i) => (isMissing(h) ? `col_${i + 1}` : String(display(h)).trim()));
+      const header = (matrix[headerIdx] ?? []).map((h, i) =>
+        isMissing(h) ? `col_${i + 1}` : String(display(h)).trim(),
+      );
       const seen = new Map<string, number>();
       const columns = header.map((h) => {
         const n = seen.get(h) ?? 0;
@@ -253,7 +303,11 @@ export class DataEngine {
       const text = await fsp.readFile(absPath, 'utf8');
       let data: unknown;
       if (ext === '.json') data = JSON.parse(text);
-      else data = text.split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l) as unknown);
+      else
+        data = text
+          .split('\n')
+          .filter((l) => l.trim())
+          .map((l) => JSON.parse(l) as unknown);
       const findArray = (v: unknown, depth = 0): unknown[] | null => {
         if (Array.isArray(v)) return v;
         if (v && typeof v === 'object' && depth < 3) {
@@ -268,7 +322,8 @@ export class DataEngine {
       const flatten = (obj: unknown, prefix = '', out: DataRow = {}): DataRow => {
         if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
           for (const [k, v] of Object.entries(obj)) {
-            if (v && typeof v === 'object' && !Array.isArray(v) && prefix.split('.').length < 3) flatten(v, `${prefix}${k}.`, out);
+            if (v && typeof v === 'object' && !Array.isArray(v) && prefix.split('.').length < 3)
+              flatten(v, `${prefix}${k}.`, out);
             else out[`${prefix}${k}`] = Array.isArray(v) ? JSON.stringify(v) : (v as Cell);
           }
         } else out[prefix ? prefix.slice(0, -1) : 'value'] = obj as Cell;
@@ -290,14 +345,22 @@ export class DataEngine {
       const missing = values.length - present.length;
       const uniqueSet = new Set(present.map((v) => (v instanceof Date ? v.toISOString() : String(v))));
       const sample = present.slice(0, 5).map(display) as Cell[];
-      const base = { name, missing, missingPct: values.length ? +((missing / values.length) * 100).toFixed(1) : 0, unique: uniqueSet.size, sample };
+      const base = {
+        name,
+        missing,
+        missingPct: values.length ? +((missing / values.length) * 100).toFixed(1) : 0,
+        unique: uniqueSet.size,
+        sample,
+      };
       if (!present.length) return { ...base, type: 'empty' };
 
       const nums = present.map(toNumber);
       const numCount = nums.filter((n) => n !== null).length;
       const dates = present.map((v) => (typeof v === 'number' ? null : toDate(v)));
       const dateCount = dates.filter(Boolean).length;
-      const boolCount = present.filter((v) => typeof v === 'boolean' || /^(true|false|oui|non|yes|no)$/i.test(String(v))).length;
+      const boolCount = present.filter(
+        (v) => typeof v === 'boolean' || /^(true|false|oui|non|yes|no)$/i.test(String(v)),
+      ).length;
 
       if (numCount / present.length >= 0.9) {
         const arr = nums.filter((n): n is number => n !== null).sort((a, b) => a - b);
@@ -309,29 +372,59 @@ export class DataEngine {
         const iqr = p75 - p25;
         const outliers = iqr > 0 ? arr.filter((v) => v < p25 - 1.5 * iqr || v > p75 + 1.5 * iqr).length : 0;
         const negatives = arr.filter((v) => v < 0).length;
-        if (numCount < present.length) anomalies.push(`« ${name} » : ${present.length - numCount} valeur(s) non numérique(s) dans une colonne numérique`);
+        if (numCount < present.length)
+          anomalies.push(
+            `« ${name} » : ${present.length - numCount} valeur(s) non numérique(s) dans une colonne numérique`,
+          );
         if (outliers) anomalies.push(`« ${name} » : ${outliers} valeur(s) aberrante(s) (règle IQR 1,5×)`);
-        if (negatives && negatives / arr.length < 0.05) anomalies.push(`« ${name} » : ${negatives} valeur(s) négative(s) inhabituelle(s)`);
+        if (negatives && negatives / arr.length < 0.05)
+          anomalies.push(`« ${name} » : ${negatives} valeur(s) négative(s) inhabituelle(s)`);
         return {
           ...base,
           type: arr.every((v) => Number.isInteger(v)) ? 'integer' : 'number',
-          numeric: { min: arr[0]!, max: arr[arr.length - 1]!, mean, median: quantile(arr, 0.5), std, p25, p75, sum, outliers, negatives, zeros: arr.filter((v) => v === 0).length },
+          numeric: {
+            min: arr[0]!,
+            max: arr[arr.length - 1]!,
+            mean,
+            median: quantile(arr, 0.5),
+            std,
+            p25,
+            p75,
+            sum,
+            outliers,
+            negatives,
+            zeros: arr.filter((v) => v === 0).length,
+          },
         };
       }
       if (dateCount / present.length >= 0.9) {
-        const ts = dates.filter((d): d is Date => d !== null).map((d) => d.getTime()).sort((a, b) => a - b);
-        return { ...base, type: 'date', date: { min: new Date(ts[0]!).toISOString().slice(0, 10), max: new Date(ts[ts.length - 1]!).toISOString().slice(0, 10) } };
+        const ts = dates
+          .filter((d): d is Date => d !== null)
+          .map((d) => d.getTime())
+          .sort((a, b) => a - b);
+        return {
+          ...base,
+          type: 'date',
+          date: {
+            min: new Date(ts[0]!).toISOString().slice(0, 10),
+            max: new Date(ts[ts.length - 1]!).toISOString().slice(0, 10),
+          },
+        };
       }
       const counts = new Map<string, number>();
       for (const v of present) {
         const k = String(display(v));
         counts.set(k, (counts.get(k) ?? 0) + 1);
       }
-      const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([value, count]) => ({ value, count }));
+      const top = [...counts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([value, count]) => ({ value, count }));
       if (boolCount === present.length) return { ...base, type: 'boolean', top };
       const mixed = numCount > present.length * 0.2 && numCount < present.length * 0.9;
       if (mixed) anomalies.push(`« ${name} » : types mélangés (nombres et texte)`);
-      const categorical = uniqueSet.size <= Math.max(50, present.length * 0.05) && uniqueSet.size < present.length * 0.5;
+      const categorical =
+        uniqueSet.size <= Math.max(50, present.length * 0.05) && uniqueSet.size < present.length * 0.5;
       return { ...base, type: mixed ? 'mixed' : categorical ? 'categorical' : 'text', top };
     });
     for (const c of columns) {
@@ -346,18 +439,32 @@ export class DataEngine {
       else seen.add(k);
     }
     if (duplicateRows) anomalies.unshift(`${duplicateRows} ligne(s) en double`);
-    return { path: ds.path, sheet: ds.sheet, sheets: ds.sheets, rowCount: ds.rows.length, columnCount: ds.columns.length, duplicateRows, columns, anomalies };
+    return {
+      path: ds.path,
+      sheet: ds.sheet,
+      sheets: ds.sheets,
+      rowCount: ds.rows.length,
+      columnCount: ds.columns.length,
+      duplicateRows,
+      columns,
+      anomalies,
+    };
   }
 
-  query(ds: Dataset, spec: QuerySpec): { columns: string[]; rows: Record<string, unknown>[]; rowCount: number } {
-    for (const f of spec.filters ?? []) if (!ds.columns.includes(f.column)) throw new Error(`Unknown column in filter: ${f.column}`);
-    let rows = ds.rows.filter((r) => (spec.filters ?? []).every((f) => matchFilter(r, f as DataFilter)));
+  query(
+    ds: Dataset,
+    spec: QuerySpec,
+  ): { columns: string[]; rows: Record<string, unknown>[]; rowCount: number } {
+    for (const f of spec.filters ?? [])
+      if (!ds.columns.includes(f.column)) throw new Error(`Unknown column in filter: ${f.column}`);
+    const rows = ds.rows.filter((r) => (spec.filters ?? []).every((f) => matchFilter(r, f as DataFilter)));
     let columns: string[];
     let out: Record<string, unknown>[];
 
     if (spec.groupBy?.length || spec.aggregations?.length) {
       const groups = new Map<string, { keys: Record<string, unknown>; rows: DataRow[] }>();
-      for (const g of spec.groupBy ?? []) if (!ds.columns.includes(g.column)) throw new Error(`Unknown groupBy column: ${g.column}`);
+      for (const g of spec.groupBy ?? [])
+        if (!ds.columns.includes(g.column)) throw new Error(`Unknown groupBy column: ${g.column}`);
       for (const r of rows) {
         const keys: Record<string, unknown> = {};
         for (const g of spec.groupBy ?? []) {
@@ -372,30 +479,38 @@ export class DataEngine {
         if (!grp) groups.set(k, (grp = { keys, rows: [] }));
         grp.rows.push(r);
       }
-      const aggs = spec.aggregations?.length ? spec.aggregations : [{ column: '*', fn: 'count' as const, as: 'count' }];
+      const aggs = spec.aggregations?.length
+        ? spec.aggregations
+        : [{ column: '*', fn: 'count' as const, as: 'count' }];
       out = [...groups.values()].map((g) => {
         const row: Record<string, unknown> = { ...g.keys };
         for (const a of aggs) {
           const name = a.as ?? `${a.fn}_${a.column}`;
-          const values = a.column === '*' ? g.rows.map(() => 1 as Cell) : g.rows.map((r) => r[a.column] ?? null);
+          const values =
+            a.column === '*' ? g.rows.map(() => 1 as Cell) : g.rows.map((r) => r[a.column] ?? null);
           const v = aggregate(values, a.fn);
           row[name] = v === null ? null : Math.round(v * 1e6) / 1e6;
         }
         return row;
       });
-      columns = [...(spec.groupBy ?? []).map((g) => g.column), ...aggs.map((a) => a.as ?? `${a.fn}_${a.column}`)];
+      columns = [
+        ...(spec.groupBy ?? []).map((g) => g.column),
+        ...aggs.map((a) => a.as ?? `${a.fn}_${a.column}`),
+      ];
     } else {
       columns = spec.select?.length ? spec.select.filter((c) => ds.columns.includes(c)) : ds.columns;
       out = rows.map((r) => Object.fromEntries(columns.map((c) => [c, display(r[c] ?? null)])));
     }
-    rows = [];
     for (const s of [...(spec.sort ?? [])].reverse()) {
       out.sort((a, b) => {
         const va = a[s.column];
         const vb = b[s.column];
         const na = typeof va === 'number' ? va : toNumber(va as Cell);
         const nb = typeof vb === 'number' ? vb : toNumber(vb as Cell);
-        const cmp = na !== null && nb !== null ? na - nb : String(va ?? '').localeCompare(String(vb ?? ''), 'fr', { numeric: true });
+        const cmp =
+          na !== null && nb !== null
+            ? na - nb
+            : String(va ?? '').localeCompare(String(vb ?? ''), 'fr', { numeric: true });
         return s.dir === 'desc' ? -cmp : cmp;
       });
     }
@@ -406,7 +521,10 @@ export class DataEngine {
 
   exportRows(columns: string[], rows: Record<string, unknown>[], format: 'csv' | 'xlsx' | 'json'): Buffer {
     if (format === 'json') return Buffer.from(JSON.stringify(rows, null, 2));
-    if (format === 'csv') return Buffer.from(`﻿${Papa.unparse({ fields: columns, data: rows.map((r) => columns.map((c) => r[c] ?? '')) })}`);
+    if (format === 'csv')
+      return Buffer.from(
+        `\uFEFF${Papa.unparse({ fields: columns, data: rows.map((r) => columns.map((c) => r[c] ?? '')) })}`,
+      );
     const ws = XLSX.utils.json_to_sheet(rows, { header: columns });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Data');

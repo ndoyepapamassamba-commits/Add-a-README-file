@@ -40,7 +40,12 @@ interface CodeState {
   focusSplit: boolean;
   diff: DiffTab | null;
   preview: boolean;
-  problems: { path: string; errors: number; warnings: number; items: { line: number; message: string; severity: number }[] }[];
+  problems: {
+    path: string;
+    errors: number;
+    warnings: number;
+    items: { line: number; message: string; severity: number }[];
+  }[];
   treeVersion: number;
   selection: { text: string; startLine: number; endLine: number } | null;
 
@@ -77,7 +82,16 @@ export const useCode = create<CodeState>((set, get) => ({
       try {
         const r = await api<FileResponse>(`/api/projects/${projectId}/file`, { query: { path } });
         const content = r.content ?? r.text ?? '';
-        const file: OpenFile = { path, kind: r.kind, language: r.language, content, saved: content, mtime: r.mtime, size: r.size, pages: r.pages };
+        const file: OpenFile = {
+          path,
+          kind: r.kind,
+          language: r.language,
+          content,
+          saved: content,
+          mtime: r.mtime,
+          size: r.size,
+          pages: r.pages,
+        };
         set({ files: [...get().files, file] });
       } catch (err) {
         useApp.getState().toast('error', (err as Error).message);
@@ -105,8 +119,15 @@ export const useCode = create<CodeState>((set, get) => ({
     const projectId = useApp.getState().projectId;
     if (!file || !projectId || file.kind !== 'text') return false;
     try {
-      const r = await api<{ mtime: number }>(`/api/projects/${projectId}/file`, { method: 'PUT', body: { path: file.path, content: file.content, expectedMtime: file.mtime } });
-      set({ files: get().files.map((f) => (f.path === file.path ? { ...f, saved: f.content, mtime: r.mtime } : f)) });
+      const r = await api<{ mtime: number }>(`/api/projects/${projectId}/file`, {
+        method: 'PUT',
+        body: { path: file.path, content: file.content, expectedMtime: file.mtime },
+      });
+      set({
+        files: get().files.map((f) =>
+          f.path === file.path ? { ...f, saved: f.content, mtime: r.mtime } : f,
+        ),
+      });
       useApp.getState().toast('success', `${file.path} enregistré`);
       return true;
     } catch (err) {
@@ -121,7 +142,11 @@ export const useCode = create<CodeState>((set, get) => ({
     try {
       const r = await api<FileResponse>(`/api/projects/${projectId}/file`, { query: { path } });
       const content = r.content ?? r.text ?? '';
-      set({ files: get().files.map((f) => (f.path === path ? { ...f, content, saved: content, mtime: r.mtime, size: r.size, kind: r.kind } : f)) });
+      set({
+        files: get().files.map((f) =>
+          f.path === path ? { ...f, content, saved: content, mtime: r.mtime, size: r.size, kind: r.kind } : f,
+        ),
+      });
     } catch {
       get().close(path);
     }

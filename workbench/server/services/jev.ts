@@ -7,16 +7,34 @@ import { httpFetch } from '../llm/http';
 
 const Instructions = z.union([z.string(), z.record(z.string(), z.unknown()), z.array(z.unknown())]);
 export const JevQuestionSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('noul'), instructions: Instructions, criteria: z.object({ true: Instructions.optional(), false: Instructions.optional() }).optional() }),
-  z.object({ type: z.literal('choice'), instructions: Instructions, criteria: z.record(z.string(), z.union([Instructions, z.null()])) }),
-  z.object({ type: z.literal('score'), instructions: Instructions, criteria: z.array(Instructions).min(2).max(10) }),
+  z.object({
+    type: z.literal('noul'),
+    instructions: Instructions,
+    criteria: z.object({ true: Instructions.optional(), false: Instructions.optional() }).optional(),
+  }),
+  z.object({
+    type: z.literal('choice'),
+    instructions: Instructions,
+    criteria: z.record(z.string(), z.union([Instructions, z.null()])),
+  }),
+  z.object({
+    type: z.literal('score'),
+    instructions: Instructions,
+    criteria: z.array(Instructions).min(2).max(10),
+  }),
 ]);
 export type JevQuestion = z.infer<typeof JevQuestionSchema>;
 
 export type JevAnswer =
   | { type: 'noul'; noul: number }
   | { type: 'choice'; choice: string; probabilities: Record<string, number>; confidence: number }
-  | { type: 'score'; score: number; legend: Record<string, string>; probabilities: Record<string, number>; confidence: number };
+  | {
+      type: 'score';
+      score: number;
+      legend: Record<string, string>;
+      probabilities: Record<string, number>;
+      confidence: number;
+    };
 
 export interface JevResult {
   model: string;
@@ -33,12 +51,21 @@ export class JevService {
     return Boolean(process.env.TYPESAFE_API_KEY);
   }
 
-  async evaluate(state: unknown, questions: Record<string, JevQuestion>, opts: { model?: string; signal?: AbortSignal } = {}): Promise<JevResult> {
+  async evaluate(
+    state: unknown,
+    questions: Record<string, JevQuestion>,
+    opts: { model?: string; signal?: AbortSignal } = {},
+  ): Promise<JevResult> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (process.env.TYPESAFE_API_KEY) headers.Authorization = `Bearer ${process.env.TYPESAFE_API_KEY}`;
     const body = JSON.stringify({ state, model: opts.model ?? 'jev-latest', questions });
     for (let attempt = 0; ; attempt++) {
-      const res = await httpFetch(`${this.baseUrl}/systemone`, { method: 'POST', headers, body, signal: opts.signal });
+      const res = await httpFetch(`${this.baseUrl}/systemone`, {
+        method: 'POST',
+        headers,
+        body,
+        signal: opts.signal,
+      });
       if (res.ok) return (await res.json()) as JevResult;
       const text = await res.text().catch(() => '');
       if ((res.status === 429 || res.status === 529 || res.status >= 500) && attempt < 3) {
@@ -53,7 +80,9 @@ export class JevService {
   async check(force = false): Promise<{ ok: boolean; error?: string; model?: string }> {
     if (!force && this.status && Date.now() - this.status.checkedAt < 10 * 60_000) return this.status;
     try {
-      const r = await this.evaluate('ping', { ok: { type: 'noul', instructions: 'Is this text the word "ping"?' } });
+      const r = await this.evaluate('ping', {
+        ok: { type: 'noul', instructions: 'Is this text the word "ping"?' },
+      });
       this.status = { ok: true, checkedAt: Date.now(), model: r.model };
     } catch (err) {
       this.status = { ok: false, checkedAt: Date.now(), error: (err as Error).message };

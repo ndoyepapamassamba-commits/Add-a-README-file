@@ -106,9 +106,13 @@ export class LLMService {
   checkBudget(runCost = 0): void {
     const s = this.budgetState();
     if (s.daily.limit > 0 && s.daily.spent >= s.daily.limit)
-      throw new BudgetExceededError(`Budget journalier atteint ($${s.daily.spent.toFixed(4)} / $${s.daily.limit}). Modifiez-le dans Réglages › Budget.`);
+      throw new BudgetExceededError(
+        `Budget journalier atteint ($${s.daily.spent.toFixed(4)} / $${s.daily.limit}). Modifiez-le dans Réglages › Budget.`,
+      );
     if (s.monthly.limit > 0 && s.monthly.spent >= s.monthly.limit)
-      throw new BudgetExceededError(`Budget mensuel atteint ($${s.monthly.spent.toFixed(4)} / $${s.monthly.limit}).`);
+      throw new BudgetExceededError(
+        `Budget mensuel atteint ($${s.monthly.spent.toFixed(4)} / $${s.monthly.limit}).`,
+      );
     if (s.perTask > 0 && runCost >= s.perTask)
       throw new BudgetExceededError(`Budget par tâche atteint ($${runCost.toFixed(4)} / $${s.perTask}).`);
   }
@@ -118,7 +122,10 @@ export class LLMService {
     return [...new Set([primary, s.fallbackModel, s.secondFallbackModel].filter((m) => m && m !== 'auto'))];
   }
 
-  async complete(req: ChatRequest & { fallbacks?: string[]; effort?: ReasoningEffort | 'auto' }, ctx: CompleteContext): Promise<CompleteResult> {
+  async complete(
+    req: ChatRequest & { fallbacks?: string[]; effort?: ReasoningEffort | 'auto' },
+    ctx: CompleteContext,
+  ): Promise<CompleteResult> {
     const maxRetries = this.settings.get().agent.maxRetries;
     const chain = [...new Set([req.model, ...(req.fallbacks ?? [])].filter(Boolean))];
     let lastError: unknown = null;
@@ -127,7 +134,8 @@ export class LLMService {
       const model = chain[i]!;
       if (i > 0) ctx.onFallback?.(chain[i - 1]!, model, (lastError as Error)?.message ?? 'échec');
       const info = this.catalog.get(model);
-      const effort = req.effort && req.effort !== 'auto' && info ? resolveEffort(req.effort, info.efforts) : null;
+      const effort =
+        req.effort && req.effort !== 'auto' && info ? resolveEffort(req.effort, info.efforts) : null;
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         let streamed = false;
         try {
@@ -137,7 +145,10 @@ export class LLMService {
               model,
               messages: applyPromptCaching(model, req.messages),
               reasoningEffort: effort ?? undefined,
-              maxTokens: req.maxTokens && info?.maxCompletionTokens ? Math.min(req.maxTokens, info.maxCompletionTokens) : req.maxTokens,
+              maxTokens:
+                req.maxTokens && info?.maxCompletionTokens
+                  ? Math.min(req.maxTokens, info.maxCompletionTokens)
+                  : req.maxTokens,
             },
             {
               onText: (d) => {
@@ -148,7 +159,14 @@ export class LLMService {
             },
           );
           const cost =
-            result.usage.cost ?? this.catalog.estimateCost(result.model, result.usage.promptTokens, result.usage.completionTokens) ?? this.catalog.estimateCost(model, result.usage.promptTokens, result.usage.completionTokens) ?? 0;
+            result.usage.cost ??
+            this.catalog.estimateCost(
+              result.model,
+              result.usage.promptTokens,
+              result.usage.completionTokens,
+            ) ??
+            this.catalog.estimateCost(model, result.usage.promptTokens, result.usage.completionTokens) ??
+            0;
           this.repo.addUsage({
             runId: ctx.runId,
             sessionId: ctx.sessionId,
@@ -162,7 +180,8 @@ export class LLMService {
           lastError = err;
           if (streamed) ctx.onStreamReset?.();
           const e = err instanceof LLMError ? err : new LLMError((err as Error).message, 0, true);
-          if (e.code === 'cancelled' || req.signal?.aborted) throw new LLMError('Cancelled', 499, false, 'cancelled');
+          if (e.code === 'cancelled' || req.signal?.aborted)
+            throw new LLMError('Cancelled', 499, false, 'cancelled');
           if (e.retryable && attempt < maxRetries) {
             const delay = Math.min(8000, 1000 * 2 ** attempt) + Math.floor(Math.random() * 300);
             ctx.onRetry?.(model, attempt + 1, e.message);
@@ -170,7 +189,8 @@ export class LLMService {
             continue;
           }
           // Non-retryable client errors (except "model unavailable") abort the chain.
-          const modelProblem = e.status === 404 || /model|provider|unavailable|not found|no endpoints/i.test(e.message);
+          const modelProblem =
+            e.status === 404 || /model|provider|unavailable|not found|no endpoints/i.test(e.message);
           if (!e.retryable && !modelProblem) throw e;
           break;
         }

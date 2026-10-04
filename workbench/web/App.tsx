@@ -1,6 +1,16 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
-import { Bell, Command as CommandIcon, Moon, PanelBottom, PanelLeft, PanelRight, Sun, Wifi, WifiOff } from 'lucide-react';
+import {
+  Bell,
+  Command as CommandIcon,
+  Moon,
+  PanelBottom,
+  PanelLeft,
+  PanelRight,
+  Sun,
+  Wifi,
+  WifiOff,
+} from 'lucide-react';
 import { getConnection, loadConnection } from './lib/api';
 import { cx, fmtTokens, shortModel } from './lib/format';
 import { useApp } from './store/app';
@@ -39,7 +49,11 @@ function Toasts() {
           onClick={() => dismiss(t.id)}
           className={cx(
             'wb-in pointer-events-auto cursor-pointer rounded-xl border px-3.5 py-2.5 text-[13px] shadow-pop',
-            t.kind === 'error' ? 'border-err/40 bg-elev text-err' : t.kind === 'success' ? 'border-ok/40 bg-elev' : 'border-line bg-elev',
+            t.kind === 'error'
+              ? 'border-err/40 bg-elev text-err'
+              : t.kind === 'success'
+                ? 'border-ok/40 bg-elev'
+                : 'border-line bg-elev',
           )}
         >
           {t.text}
@@ -70,7 +84,11 @@ function TopBar() {
       <span className="hidden text-[13px] font-semibold md:inline">Workbench</span>
       <span className="text-faint">/</span>
       <Dropdown
-        trigger={<span className="max-w-[180px] truncate rounded-md px-1.5 py-0.5 text-[13px] font-medium hover:bg-hover">{project?.name ?? 'Choisir un projet'}</span>}
+        trigger={
+          <span className="max-w-[180px] truncate rounded-md px-1.5 py-0.5 text-[13px] font-medium hover:bg-hover">
+            {project?.name ?? 'Choisir un projet'}
+          </span>
+        }
         items={projects.map((p) => ({ value: p.id, label: p.name, hint: p.isGit ? 'git' : undefined }))}
         value={projectId ?? undefined}
         onSelect={(id) => void selectProject(id)}
@@ -94,23 +112,39 @@ function TopBar() {
               useApp.getState().setView('chat');
             }}
           >
-            <Bell size={14} className="wb-pulse" /> {pending.length} autorisation{pending.length > 1 ? 's' : ''}
+            <Bell size={14} className="wb-pulse" /> {pending.length} autorisation
+            {pending.length > 1 ? 's' : ''}
           </button>
         )}
         <CreditsGauge />
-        <IconButton label="Panneau gauche (Ctrl+B)" active={layout.sidebar} onClick={() => setLayout({ sidebar: !layout.sidebar })}>
+        <IconButton
+          label="Panneau gauche (Ctrl+B)"
+          active={layout.sidebar}
+          onClick={() => setLayout({ sidebar: !layout.sidebar })}
+        >
           <PanelLeft size={15} />
         </IconButton>
-        <IconButton label="Panneau du bas (Ctrl+J)" active={layout.bottom} onClick={() => setLayout({ bottom: !layout.bottom })}>
+        <IconButton
+          label="Panneau du bas (Ctrl+J)"
+          active={layout.bottom}
+          onClick={() => setLayout({ bottom: !layout.bottom })}
+        >
           <PanelBottom size={15} />
         </IconButton>
-        <IconButton label="Panneau droit (Ctrl+Alt+B)" active={layout.right} onClick={() => setLayout({ right: !layout.right })}>
+        <IconButton
+          label="Panneau droit (Ctrl+Alt+B)"
+          active={layout.right}
+          onClick={() => setLayout({ right: !layout.right })}
+        >
           <PanelRight size={15} />
         </IconButton>
         <IconButton label="Thème" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
           {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
         </IconButton>
-        <button onClick={() => openPalette()} className="ml-1 hidden h-8 items-center gap-2 rounded-lg border border-line px-2.5 text-[12px] text-muted hover:bg-hover sm:flex">
+        <button
+          onClick={() => openPalette()}
+          className="ml-1 hidden h-8 items-center gap-2 rounded-lg border border-line px-2.5 text-[12px] text-muted hover:bg-hover sm:flex"
+        >
           <CommandIcon size={13} /> Commandes <kbd className="font-mono text-[11px]">Ctrl K</kbd>
         </button>
       </div>
@@ -124,19 +158,33 @@ function Rail() {
   const isMobile = useApp((s) => s.isMobile);
   const running = useSession((s) => Boolean(s.activeRunId));
   return (
-    <nav className={cx('flex shrink-0 bg-elev', isMobile ? 'h-12 w-full items-center justify-around border-t border-line' : 'w-[52px] flex-col items-center gap-0.5 border-r border-line py-2')}>
-      {VIEWS.filter((v) => !isMobile || ['chat', 'code', 'browser', 'data', 'settings'].includes(v.id)).map((v) => (
-        <button
-          key={v.id}
-          onClick={() => setView(v.id)}
-          title={`${v.label}${v.key ? ` (Alt+${v.key})` : ''}`}
-          aria-label={v.label}
-          className={cx('relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors', view === v.id ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-hover hover:text-fg')}
-        >
-          {v.icon}
-          {v.id === 'chat' && running && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-accent wb-pulse" />}
-        </button>
-      ))}
+    <nav
+      className={cx(
+        'flex shrink-0 bg-elev',
+        isMobile
+          ? 'h-12 w-full items-center justify-around border-t border-line'
+          : 'w-[52px] flex-col items-center gap-0.5 border-r border-line py-2',
+      )}
+    >
+      {VIEWS.filter((v) => !isMobile || ['chat', 'code', 'browser', 'data', 'settings'].includes(v.id)).map(
+        (v) => (
+          <button
+            key={v.id}
+            onClick={() => setView(v.id)}
+            title={`${v.label}${v.key ? ` (Alt+${v.key})` : ''}`}
+            aria-label={v.label}
+            className={cx(
+              'relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
+              view === v.id ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-hover hover:text-fg',
+            )}
+          >
+            {v.icon}
+            {v.id === 'chat' && running && (
+              <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-accent wb-pulse" />
+            )}
+          </button>
+        ),
+      )}
     </nav>
   );
 }
@@ -150,7 +198,10 @@ function StatusLine() {
   const wsStatus = useApp((s) => s.wsStatus);
   const status = useApp((s) => s.status);
   const running = useTerminal((s) => s.processes.filter((p) => p.status === 'running').length);
-  const last = [...order].reverse().map((id) => runs[id]).find((r) => r && r.contextLimit > 0);
+  const last = [...order]
+    .reverse()
+    .map((id) => runs[id])
+    .find((r) => r && r.contextLimit > 0);
   const ctxPct = last ? Math.round((last.contextTokens / last.contextLimit) * 100) : null;
   const mode = detail?.session.permissionMode ?? 'normal';
   const role = agents.find((a) => a.id === (detail?.settings.role ?? 'general'));
@@ -158,7 +209,11 @@ function StatusLine() {
   return (
     <footer className="flex h-6 shrink-0 items-center gap-3 overflow-hidden border-t border-line bg-elev px-3 text-[11px] text-muted">
       <span className="flex items-center gap-1">
-        {wsStatus === 'open' ? <Wifi size={11} className="text-ok" /> : <WifiOff size={11} className="text-err" />}
+        {wsStatus === 'open' ? (
+          <Wifi size={11} className="text-ok" />
+        ) : (
+          <WifiOff size={11} className="text-err" />
+        )}
         {wsStatus === 'open' ? 'connecté' : wsStatus}
       </span>
       <span className="text-accent">◆ {shortModel(detail?.session.model ?? 'auto')}</span>
@@ -171,7 +226,9 @@ function StatusLine() {
           ctx {fmtTokens(last!.contextTokens)} ({ctxPct} %)
         </span>
       )}
-      {(detail?.settings.skills?.length ?? 0) > 0 && <span>🧩 {detail!.settings.skills!.length} skill(s)</span>}
+      {(detail?.settings.skills?.length ?? 0) > 0 && (
+        <span>🧩 {detail!.settings.skills!.length} skill(s)</span>
+      )}
       {plugins > 0 && <span>🔌 {plugins} plugin(s)</span>}
       {status?.jev?.available && <span>Jev ✓</span>}
       {running > 0 && <span>⚙ {running} processus</span>}
@@ -189,7 +246,13 @@ function MainView() {
       return <ChatView />;
     case 'code':
       return (
-        <Suspense fallback={<div className="flex h-full items-center justify-center"><Spinner /></div>}>
+        <Suspense
+          fallback={
+            <div className="flex h-full items-center justify-center">
+              <Spinner />
+            </div>
+          }
+        >
           <CodeView />
         </Suspense>
       );
@@ -236,7 +299,10 @@ function useShortcuts() {
         app.setLayout({ right: !app.layout.right });
       } else if (mod && (e.key.toLowerCase() === 'j' || e.key === '`')) {
         e.preventDefault();
-        app.setLayout({ bottom: !app.layout.bottom, bottomTab: e.key === '`' ? 'terminal' : app.layout.bottomTab });
+        app.setLayout({
+          bottom: !app.layout.bottom,
+          bottomTab: e.key === '`' ? 'terminal' : app.layout.bottomTab,
+        });
       } else if (e.altKey && !mod) {
         const v = VIEWS.find((x) => x.key && x.key === e.key);
         if (v) {
@@ -246,7 +312,13 @@ function useShortcuts() {
       } else if (e.key === 'Escape' && !app.paletteOpen) {
         const s = useSession.getState();
         const target = e.target as HTMLElement;
-        if (s.activeRunId && target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.closest('[role=dialog]')) void s.cancel();
+        if (
+          s.activeRunId &&
+          target.tagName !== 'INPUT' &&
+          target.tagName !== 'TEXTAREA' &&
+          !target.closest('[role=dialog]')
+        )
+          void s.cancel();
       }
     };
     window.addEventListener('keydown', onKey);
@@ -294,10 +366,14 @@ export function App() {
     );
   }
 
-  const sidebar = view === 'chat' ? <SessionList /> : view === 'code' || view === 'terminal' ? <FileTree /> : null;
+  const sidebar =
+    view === 'chat' ? <SessionList /> : view === 'code' || view === 'terminal' ? <FileTree /> : null;
   const showSidebar = layout.sidebar && sidebar && !isMobile;
   // The browser view has its own agent/actions side panel.
-  const showRight = layout.right && !isMobile && !['settings', 'models', 'projects', 'plugins', 'skills', 'browser'].includes(view);
+  const showRight =
+    layout.right &&
+    !isMobile &&
+    !['settings', 'models', 'projects', 'plugins', 'skills', 'browser'].includes(view);
   const showBottom = layout.bottom && !isMobile;
 
   return (

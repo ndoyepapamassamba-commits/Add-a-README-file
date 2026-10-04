@@ -67,7 +67,14 @@ export const useTerminal = create<TerminalState>((set, get) => ({
     const parts = l.text.replace(/\r\n/g, '\n').split('\n');
     const last = next[next.length - 1];
     parts.forEach((p, i) => {
-      if (i === 0 && last && last.pid === l.pid && last.stream === l.stream && !last.text.endsWith('\n') && l.stream !== 'cmd') {
+      if (
+        i === 0 &&
+        last &&
+        last.pid === l.pid &&
+        last.stream === l.stream &&
+        !last.text.endsWith('\n') &&
+        l.stream !== 'cmd'
+      ) {
         next[next.length - 1] = { ...last, text: last.text + p };
       } else if (p !== '' || i < parts.length - 1) next.push({ ...l, id: ++lineId, text: p });
     });
@@ -103,7 +110,16 @@ export interface BrowserActionItem {
 export interface BrowserLogs {
   actions: BrowserActionItem[];
   console: { ts: number; level: string; text: string; location?: string }[];
-  network: { id: string; ts: number; method: string; url: string; resourceType: string; status: number | null; durationMs: number | null; failure?: string }[];
+  network: {
+    id: string;
+    ts: number;
+    method: string;
+    url: string;
+    resourceType: string;
+    status: number | null;
+    durationMs: number | null;
+    failure?: string;
+  }[];
 }
 export interface BrowserStateInfo {
   url: string;
@@ -167,8 +183,28 @@ export const useActivity = create<ActivityState>((set) => ({
   tasksVersion: 0,
   async load() {
     try {
-      const rows = await api<{ id: string; runId: string; tool: string; status: string; summary: string | null; startedAt: number; durationMs: number | null }[]>('/api/activity', { query: { limit: 300 } });
-      set({ rows: rows.map((r) => ({ id: r.id, ts: r.startedAt, runId: r.runId, tool: r.tool, status: r.status, summary: r.summary ?? '', durationMs: r.durationMs })) });
+      const rows = await api<
+        {
+          id: string;
+          runId: string;
+          tool: string;
+          status: string;
+          summary: string | null;
+          startedAt: number;
+          durationMs: number | null;
+        }[]
+      >('/api/activity', { query: { limit: 300 } });
+      set({
+        rows: rows.map((r) => ({
+          id: r.id,
+          ts: r.startedAt,
+          runId: r.runId,
+          tool: r.tool,
+          status: r.status,
+          summary: r.summary ?? '',
+          durationMs: r.durationMs,
+        })),
+      });
     } catch {
       /* offline */
     }
@@ -187,9 +223,19 @@ ws.on((msg) => {
       const p = (msg as unknown as { process: ProcessInfo }).process;
       const st = useTerminal.getState();
       const exists = st.processes.some((x) => x.id === p.id);
-      useTerminal.setState({ processes: exists ? st.processes.map((x) => (x.id === p.id ? p : x)) : [p, ...st.processes].slice(0, 300) });
-      if (!exists) st.addLine({ pid: p.id, stream: 'cmd', text: `${p.origin === 'agent' ? '🤖 ' : ''}$ ${p.command}` });
-      else if (p.status !== 'running') st.addLine({ pid: p.id, stream: 'info', text: `[${p.status}${p.exitCode !== null ? ` · code ${p.exitCode}` : ''} · ${p.durationMs ?? 0} ms]` });
+      useTerminal.setState({
+        processes: exists
+          ? st.processes.map((x) => (x.id === p.id ? p : x))
+          : [p, ...st.processes].slice(0, 300),
+      });
+      if (!exists)
+        st.addLine({ pid: p.id, stream: 'cmd', text: `${p.origin === 'agent' ? '🤖 ' : ''}$ ${p.command}` });
+      else if (p.status !== 'running')
+        st.addLine({
+          pid: p.id,
+          stream: 'info',
+          text: `[${p.status}${p.exitCode !== null ? ` · code ${p.exitCode}` : ''} · ${p.durationMs ?? 0} ms]`,
+        });
       break;
     }
     case 'browser_frame': {
@@ -199,7 +245,8 @@ ws.on((msg) => {
     }
     case 'browser_state': {
       const m = msg as unknown as { key: string; state: BrowserStateInfo };
-      if (useBrowser.getState().frameKey === m.key || !useBrowser.getState().frameKey) useBrowser.getState().setState(m.state);
+      if (useBrowser.getState().frameKey === m.key || !useBrowser.getState().frameKey)
+        useBrowser.getState().setState(m.state);
       break;
     }
     case 'browser_action': {
@@ -213,15 +260,36 @@ ws.on((msg) => {
       const act = useActivity.getState();
       if (e.type === 'tool_result') {
         useActivity.setState({
-          rows: [{ id: `${env.runId}-${env.seq}`, ts: env.ts, runId: env.runId, tool: e.tool, status: e.result.ok ? 'success' : 'error', summary: e.result.summary, durationMs: e.durationMs }, ...act.rows].slice(0, 500),
+          rows: [
+            {
+              id: `${env.runId}-${env.seq}`,
+              ts: env.ts,
+              runId: env.runId,
+              tool: e.tool,
+              status: e.result.ok ? 'success' : 'error',
+              summary: e.result.summary,
+              durationMs: e.durationMs,
+            },
+            ...act.rows,
+          ].slice(0, 500),
         });
       } else if (e.type === 'approval_required') {
-        useActivity.setState({ pendingApprovals: [...act.pendingApprovals, { runId: env.runId, approvalId: e.request.approvalId, summary: e.request.summary }] });
+        useActivity.setState({
+          pendingApprovals: [
+            ...act.pendingApprovals,
+            { runId: env.runId, approvalId: e.request.approvalId, summary: e.request.summary },
+          ],
+        });
       } else if (e.type === 'approval_resolved') {
-        useActivity.setState({ pendingApprovals: act.pendingApprovals.filter((a) => a.approvalId !== e.approvalId) });
+        useActivity.setState({
+          pendingApprovals: act.pendingApprovals.filter((a) => a.approvalId !== e.approvalId),
+        });
       } else if (e.type === 'run_started' || e.type === 'run_finished') {
         useActivity.setState({ tasksVersion: act.tasksVersion + 1 });
-        if (e.type === 'run_finished') useActivity.setState({ pendingApprovals: act.pendingApprovals.filter((a) => a.runId !== env.runId) });
+        if (e.type === 'run_finished')
+          useActivity.setState({
+            pendingApprovals: act.pendingApprovals.filter((a) => a.runId !== env.runId),
+          });
       } else if (e.type === 'file_changed') {
         // Reload editors showing a file the agent just changed (unless dirty).
         const code = useCode.getState();

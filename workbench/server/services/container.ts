@@ -62,7 +62,11 @@ export function createServices(config: AppConfig, overrides: { provider?: LLMPro
     });
   const catalog = new ModelCatalog(provider, path.join(config.dataDir, 'models-cache.json'));
   const llm = new LLMService(provider, catalog, repo, settings);
-  const browser = new BrowserManager({ engine: config.browserEngine, headless: config.browserHeadless, blockedPorts: [config.port] });
+  const browser = new BrowserManager({
+    engine: config.browserEngine,
+    headless: config.browserHeadless,
+    blockedPorts: [config.port],
+  });
   const python = (() => {
     try {
       return spawnSync('python3', ['--version'], { stdio: 'ignore' }).status === 0;
@@ -87,9 +91,18 @@ export function createServices(config: AppConfig, overrides: { provider?: LLMPro
     provider,
     catalog,
     llm,
-    mcp: new McpManager({ dataDir: config.dataDir, cwd: config.workspaceRoot, callbackBase: () => `http://${config.host === '0.0.0.0' ? '127.0.0.1' : config.host}:${config.port}` }),
+    mcp: new McpManager({
+      dataDir: config.dataDir,
+      cwd: config.workspaceRoot,
+      callbackBase: () => `http://${config.host === '0.0.0.0' ? '127.0.0.1' : config.host}:${config.port}`,
+    }),
     jev: new JevService(),
-    skills: new SkillRegistry({ dataDir: config.dataDir, cwd: config.cwd, extraDirs: config.skillsDirs, includeClaudeHome: config.includeClaudeSkills }),
+    skills: new SkillRegistry({
+      dataDir: config.dataDir,
+      cwd: config.cwd,
+      extraDirs: config.skillsDirs,
+      includeClaudeHome: config.includeClaudeSkills,
+    }),
     capabilities: { python, ripgrep: hasRipgrep() },
   };
 }

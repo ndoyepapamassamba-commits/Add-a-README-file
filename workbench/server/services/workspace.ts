@@ -20,7 +20,20 @@ export class BadRequestError extends Error {
   readonly statusCode = 400;
 }
 
-const DEFAULT_IGNORES = ['node_modules', '.git', 'dist', 'build', '.next', '.cache', '__pycache__', '.venv', 'venv', 'coverage', '.workbench', '.DS_Store'];
+const DEFAULT_IGNORES = [
+  'node_modules',
+  '.git',
+  'dist',
+  'build',
+  '.next',
+  '.cache',
+  '__pycache__',
+  '.venv',
+  'venv',
+  'coverage',
+  '.workbench',
+  '.DS_Store',
+];
 const MAX_TEXT_BYTES = 5 * 1024 * 1024;
 
 export interface ChangeContext {
@@ -28,7 +41,10 @@ export interface ChangeContext {
   sessionId?: string | null;
 }
 
-export function countLineDiff(before: string | null, after: string | null): { added: number; removed: number } {
+export function countLineDiff(
+  before: string | null,
+  after: string | null,
+): { added: number; removed: number } {
   let added = 0;
   let removed = 0;
   for (const part of diffLines(before ?? '', after ?? '')) {
@@ -84,7 +100,9 @@ export class WorkspaceService {
 
   listProjects(): ProjectInfo[] {
     this.syncProjects();
-    return this.repo.listProjectRows().map((p) => ({ ...p, isGit: fs.existsSync(path.join(p.path, '.git')) }));
+    return this.repo
+      .listProjectRows()
+      .map((p) => ({ ...p, isGit: fs.existsSync(path.join(p.path, '.git')) }));
   }
 
   getProject(id: string): ProjectInfo {
@@ -112,8 +130,16 @@ export class WorkspaceService {
   }
 
   async cloneProject(url: string, name?: string): Promise<ProjectInfo> {
-    if (!/^(https:\/\/|git@)[\w.@:/~-]+$/.test(url)) throw new BadRequestError('Only https:// or git@ URLs are accepted');
-    const dirName = slugify(name || url.split('/').pop()?.replace(/\.git$/, '') || 'repo');
+    if (!/^(https:\/\/|git@)[\w.@:/~-]+$/.test(url))
+      throw new BadRequestError('Only https:// or git@ URLs are accepted');
+    const dirName = slugify(
+      name ||
+        url
+          .split('/')
+          .pop()
+          ?.replace(/\.git$/, '') ||
+        'repo',
+    );
     const abs = path.join(this.root, dirName);
     if (fs.existsSync(abs)) throw new ConflictError(`A project named "${dirName}" already exists`);
     const res = await runGit(this.root, ['clone', '--depth', '50', url, dirName], 300_000);
@@ -163,8 +189,8 @@ export class WorkspaceService {
       const childRel = toRelative(root, path.join(abs, e.name));
       const isDir = e.isDirectory();
       if (!opts.showIgnored && ig.ignores(isDir ? `${childRel}/` : childRel)) continue;
-      let size = 0;
-      let mtime = 0;
+      let size: number;
+      let mtime: number;
       try {
         const st = await fsp.stat(path.join(abs, e.name));
         size = st.size;
@@ -241,7 +267,8 @@ export class WorkspaceService {
       throw new NotFoundError(`File not found: ${rel}`);
     });
     if (st.isDirectory()) throw new BadRequestError(`${rel} is a directory`);
-    if (st.size > MAX_TEXT_BYTES) throw new BadRequestError(`${rel} is too large to edit as text (${st.size} bytes)`);
+    if (st.size > MAX_TEXT_BYTES)
+      throw new BadRequestError(`${rel} is too large to edit as text (${st.size} bytes)`);
     const buf = await fsp.readFile(abs);
     if (isBinaryBuffer(buf)) throw new BadRequestError(`${rel} is a binary file`);
     return buf.toString('utf8');
@@ -259,11 +286,19 @@ export class WorkspaceService {
   // ── writing (every mutation is recorded as a revertable change) ───────
   private assertWritable(rel: string): void {
     const norm = rel.replace(/^[/\\]+/, '');
-    if (norm === '.workbench' || norm.startsWith('.workbench/')) throw new BadRequestError('.workbench/ is managed by the workbench');
+    if (norm === '.workbench' || norm.startsWith('.workbench/'))
+      throw new BadRequestError('.workbench/ is managed by the workbench');
     if (isProtectedPath(norm)) throw new BadRequestError(`Protected path: ${rel}`);
   }
 
-  private record(projectId: string, rel: string, op: ChangeRecord['op'], before: string | null, after: string | null, ctx: ChangeContext): ChangeRecord {
+  private record(
+    projectId: string,
+    rel: string,
+    op: ChangeRecord['op'],
+    before: string | null,
+    after: string | null,
+    ctx: ChangeContext,
+  ): ChangeRecord {
     const { added, removed } = op === 'move' ? { added: 0, removed: 0 } : countLineDiff(before, after);
     const change: ChangeRecord = {
       id: randomUUID(),
@@ -284,7 +319,12 @@ export class WorkspaceService {
     return change;
   }
 
-  async writeFile(projectId: string, rel: string, content: string, ctx: ChangeContext = {}): Promise<ChangeRecord> {
+  async writeFile(
+    projectId: string,
+    rel: string,
+    content: string,
+    ctx: ChangeContext = {},
+  ): Promise<ChangeRecord> {
     this.assertWritable(rel);
     const abs = this.resolve(projectId, rel);
     let before: string | null = null;
@@ -294,11 +334,20 @@ export class WorkspaceService {
       if (!(err instanceof NotFoundError)) throw err;
     }
     if (before !== null && containsRedaction(content) && !containsRedaction(before)) {
-      throw new BadRequestError('Refusing to write: content contains redaction placeholders ([REDACTED]). Use filesystem.edit for targeted changes.');
+      throw new BadRequestError(
+        'Refusing to write: content contains redaction placeholders ([REDACTED]). Use filesystem.edit for targeted changes.',
+      );
     }
     await fsp.mkdir(path.dirname(abs), { recursive: true });
     await fsp.writeFile(abs, content, 'utf8');
-    return this.record(projectId, toRelative(this.projectRoot(projectId), abs), 'write', before, content, ctx);
+    return this.record(
+      projectId,
+      toRelative(this.projectRoot(projectId), abs),
+      'write',
+      before,
+      content,
+      ctx,
+    );
   }
 
   async writeBinary(projectId: string, rel: string, data: Buffer): Promise<string> {
@@ -310,17 +359,31 @@ export class WorkspaceService {
   }
 
   /** Exact string replacements, applied atomically (all or nothing). */
-  async editFile(projectId: string, rel: string, edits: { oldText: string; newText: string; replaceAll?: boolean }[], ctx: ChangeContext = {}): Promise<ChangeRecord> {
+  async editFile(
+    projectId: string,
+    rel: string,
+    edits: { oldText: string; newText: string; replaceAll?: boolean }[],
+    ctx: ChangeContext = {},
+  ): Promise<ChangeRecord> {
     this.assertWritable(rel);
     const before = await this.readText(projectId, rel);
     let content = before;
     edits.forEach((e, i) => {
       if (!e.oldText) throw new BadRequestError(`Edit #${i + 1}: oldText is empty`);
-      if (containsRedaction(e.newText) && !containsRedaction(e.oldText)) throw new BadRequestError(`Edit #${i + 1}: newText contains a redaction placeholder`);
+      if (containsRedaction(e.newText) && !containsRedaction(e.oldText))
+        throw new BadRequestError(`Edit #${i + 1}: newText contains a redaction placeholder`);
       const count = content.split(e.oldText).length - 1;
-      if (count === 0) throw new BadRequestError(`Edit #${i + 1}: oldText not found in ${rel}. Re-read the file and copy the exact text (including whitespace).`);
-      if (count > 1 && !e.replaceAll) throw new BadRequestError(`Edit #${i + 1}: oldText matches ${count} times in ${rel}. Add surrounding context to make it unique or set replaceAll.`);
-      content = e.replaceAll ? content.split(e.oldText).join(e.newText) : content.replace(e.oldText, () => e.newText);
+      if (count === 0)
+        throw new BadRequestError(
+          `Edit #${i + 1}: oldText not found in ${rel}. Re-read the file and copy the exact text (including whitespace).`,
+        );
+      if (count > 1 && !e.replaceAll)
+        throw new BadRequestError(
+          `Edit #${i + 1}: oldText matches ${count} times in ${rel}. Add surrounding context to make it unique or set replaceAll.`,
+        );
+      content = e.replaceAll
+        ? content.split(e.oldText).join(e.newText)
+        : content.replace(e.oldText, () => e.newText);
     });
     if (content === before) throw new BadRequestError('Edits produce no change');
     await fsp.writeFile(this.resolve(projectId, rel), content, 'utf8');
@@ -353,7 +416,12 @@ export class WorkspaceService {
   }
   private trashIndex = new Map<string, string>();
 
-  async movePath(projectId: string, from: string, to: string, ctx: ChangeContext = {}): Promise<ChangeRecord> {
+  async movePath(
+    projectId: string,
+    from: string,
+    to: string,
+    ctx: ChangeContext = {},
+  ): Promise<ChangeRecord> {
     this.assertWritable(from);
     this.assertWritable(to);
     const src = this.resolve(projectId, from);
@@ -363,7 +431,14 @@ export class WorkspaceService {
     await fsp.mkdir(path.dirname(dst), { recursive: true });
     await fsp.rename(src, dst);
     const root = this.projectRoot(projectId);
-    return this.record(projectId, toRelative(root, src), 'move', toRelative(root, src), toRelative(root, dst), ctx);
+    return this.record(
+      projectId,
+      toRelative(root, src),
+      'move',
+      toRelative(root, src),
+      toRelative(root, dst),
+      ctx,
+    );
   }
 
   async mkdir(projectId: string, rel: string): Promise<void> {
@@ -412,7 +487,7 @@ export class WorkspaceService {
 
   private async findTrash(root: string, changeId: string): Promise<string | null> {
     const trashDir = path.join(root, '.workbench', 'trash');
-    let dirs: string[] = [];
+    let dirs: string[];
     try {
       dirs = await fsp.readdir(trashDir);
     } catch {
@@ -422,7 +497,9 @@ export class WorkspaceService {
       for (const f of await fsp.readdir(path.join(trashDir, d))) {
         if (!f.endsWith('.__origin')) continue;
         try {
-          const meta = JSON.parse(await fsp.readFile(path.join(trashDir, d, f), 'utf8')) as { changeId: string };
+          const meta = JSON.parse(await fsp.readFile(path.join(trashDir, d, f), 'utf8')) as {
+            changeId: string;
+          };
           if (meta.changeId === changeId) return path.join(trashDir, d, f.replace(/\.__origin$/, ''));
         } catch {
           /* ignore */
@@ -439,7 +516,11 @@ export class WorkspaceService {
   }
 }
 
-export function runGit(cwd: string, args: string[], timeoutMs = 60_000): Promise<{ code: number; stdout: string; stderr: string }> {
+export function runGit(
+  cwd: string,
+  args: string[],
+  timeoutMs = 60_000,
+): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     const child = spawn('git', args, {
       cwd,

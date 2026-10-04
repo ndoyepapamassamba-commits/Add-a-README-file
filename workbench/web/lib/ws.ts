@@ -81,7 +81,8 @@ class WsClient {
   }
 
   send(msg: WsMessage): void {
-    if (this.socket?.readyState === WebSocket.OPEN && this.status === 'open') this.socket.send(JSON.stringify(msg));
+    if (this.socket?.readyState === WebSocket.OPEN && this.status === 'open')
+      this.socket.send(JSON.stringify(msg));
   }
 
   on(l: Listener): () => void {

@@ -8,7 +8,18 @@ import { useApp } from '../store/app';
 import { useSession } from '../store/session';
 import { ModelPicker } from '../components/chat/Pickers';
 import { ChartView } from '../components/rich';
-import { Badge, Button, Field, Input, Section, Select, Spinner, Tabs, Textarea, Toggle } from '../components/ui';
+import {
+  Badge,
+  Button,
+  Field,
+  Input,
+  Section,
+  Select,
+  Spinner,
+  Tabs,
+  Textarea,
+  Toggle,
+} from '../components/ui';
 
 type Tab = 'providers' | 'budget' | 'agent' | 'auto' | 'web' | 'usage' | 'security' | 'appearance';
 
@@ -23,12 +34,34 @@ interface KeyStatus {
   error?: string;
 }
 
-function NumberField({ label, value, onSave, step = 1, hint, min = 0 }: { label: string; value: number; onSave: (v: number) => void; step?: number; hint?: string; min?: number }) {
+function NumberField({
+  label,
+  value,
+  onSave,
+  step = 1,
+  hint,
+  min = 0,
+}: {
+  label: string;
+  value: number;
+  onSave: (v: number) => void;
+  step?: number;
+  hint?: string;
+  min?: number;
+}) {
   const [v, setV] = useState(String(value));
   useEffect(() => setV(String(value)), [value]);
   return (
     <Field label={label} hint={hint}>
-      <Input type="number" step={step} min={min} value={v} onChange={(e) => setV(e.target.value)} onBlur={() => Number(v) !== value && !Number.isNaN(Number(v)) && onSave(Number(v))} className="max-w-48" />
+      <Input
+        type="number"
+        step={step}
+        min={min}
+        value={v}
+        onChange={(e) => setV(e.target.value)}
+        onBlur={() => Number(v) !== value && !Number.isNaN(Number(v)) && onSave(Number(v))}
+        className="max-w-48"
+      />
     </Field>
   );
 }
@@ -38,7 +71,8 @@ function ProvidersTab({ s, save }: { s: AppSettings; save: (p: Record<string, un
   const toast = useApp((x) => x.toast);
   const [status, setStatus] = useState<KeyStatus | null>(null);
   const [key, setKey] = useState('');
-  const load = (force = false) => void api<KeyStatus>('/api/provider/status', { query: { force: force ? 1 : undefined } }).then(setStatus);
+  const load = (force = false) =>
+    void api<KeyStatus>('/api/provider/status', { query: { force: force ? 1 : undefined } }).then(setStatus);
   useEffect(() => load(), []);
   return (
     <>
@@ -58,14 +92,19 @@ function ProvidersTab({ s, save }: { s: AppSettings; save: (p: Record<string, un
                 <XCircle size={11} /> {status.error ?? 'non connecté'}
               </Badge>
             )}
-            <Badge>{status?.configured ? 'OPENROUTER_API_KEY définie' : 'OPENROUTER_API_KEY absente (proxy ?)'}</Badge>
+            <Badge>
+              {status?.configured ? 'OPENROUTER_API_KEY définie' : 'OPENROUTER_API_KEY absente (proxy ?)'}
+            </Badge>
             <Button size="sm" variant="ghost" className="ml-auto" onClick={() => load(true)}>
               Tester
             </Button>
           </div>
           {status?.connected && (
             <div className="mb-2 text-[12.5px] text-muted">
-              {status.limit !== null && status.limit !== undefined ? `Limite ${fmtCost(status.limit, 2)} · restant ${fmtCost(status.limitRemaining ?? 0, 2)}` : 'Sans limite de clé'} · utilisé {fmtCost(status.usage ?? 0, 3)}
+              {status.limit !== null && status.limit !== undefined
+                ? `Limite ${fmtCost(status.limit, 2)} · restant ${fmtCost(status.limitRemaining ?? 0, 2)}`
+                : 'Sans limite de clé'}{' '}
+              · utilisé {fmtCost(status.usage ?? 0, 3)}
               {status.isFreeTier ? ' · offre gratuite' : ''}
             </div>
           )}
@@ -82,16 +121,26 @@ function ProvidersTab({ s, save }: { s: AppSettings; save: (p: Record<string, un
               }
             }}
           >
-            <Input type="password" autoComplete="off" placeholder="sk-or-v1-… (enregistrée uniquement dans le .env du serveur)" value={key} onChange={(e) => setKey(e.target.value)} />
+            <Input
+              type="password"
+              autoComplete="off"
+              placeholder="sk-or-v1-… (enregistrée uniquement dans le .env du serveur)"
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+            />
             <Button type="submit" variant="primary" disabled={key.length < 10}>
               Enregistrer
             </Button>
             {status?.configured && (
-              <Button type="button" variant="danger" onClick={async () => {
-                if (!confirm('Retirer la clé du fichier .env ?')) return;
-                await api('/api/settings/provider-key', { method: 'DELETE' });
-                load(true);
-              }}>
+              <Button
+                type="button"
+                variant="danger"
+                onClick={async () => {
+                  if (!confirm('Retirer la clé du fichier .env ?')) return;
+                  await api('/api/settings/provider-key', { method: 'DELETE' });
+                  load(true);
+                }}
+              >
                 Retirer
               </Button>
             )}
@@ -110,9 +159,17 @@ function ProvidersTab({ s, save }: { s: AppSettings; save: (p: Record<string, un
           ).map(([k, label]) => (
             <Field key={k} label={label}>
               <div className="flex h-8 items-center gap-2 rounded-lg border border-line bg-input px-1">
-                <ModelPicker value={s[k] || 'auto'} models={models} onChange={(id) => void save({ [k]: id === 'auto' && k !== 'defaultModel' ? '' : id })} placement="bottom" />
+                <ModelPicker
+                  value={s[k] || 'auto'}
+                  models={models}
+                  onChange={(id) => void save({ [k]: id === 'auto' && k !== 'defaultModel' ? '' : id })}
+                  placement="bottom"
+                />
                 {s[k] && k !== 'defaultModel' && (
-                  <button className="ml-auto pr-2 text-[11.5px] text-faint hover:text-err" onClick={() => void save({ [k]: '' })}>
+                  <button
+                    className="ml-auto pr-2 text-[11.5px] text-faint hover:text-err"
+                    onClick={() => void save({ [k]: '' })}
+                  >
                     retirer
                   </button>
                 )}
@@ -121,8 +178,19 @@ function ProvidersTab({ s, save }: { s: AppSettings; save: (p: Record<string, un
           ))}
         </div>
         <div className="grid gap-3 md:grid-cols-3">
-          <NumberField label="Température" value={s.temperature} step={0.1} onSave={(v) => void save({ temperature: v })} />
-          <NumberField label="Tokens de sortie max" value={s.maxTokens} step={1000} onSave={(v) => void save({ maxTokens: v })} hint="Limité par le maximum du modèle" />
+          <NumberField
+            label="Température"
+            value={s.temperature}
+            step={0.1}
+            onSave={(v) => void save({ temperature: v })}
+          />
+          <NumberField
+            label="Tokens de sortie max"
+            value={s.maxTokens}
+            step={1000}
+            onSave={(v) => void save({ maxTokens: v })}
+            hint="Limité par le maximum du modèle"
+          />
         </div>
       </Section>
     </>
@@ -130,10 +198,20 @@ function ProvidersTab({ s, save }: { s: AppSettings; save: (p: Record<string, un
 }
 
 function UsageTab() {
-  const [u, setU] = useState<{ today: { cost: number; calls: number }; month: { cost: number; calls: number; promptTokens: number; completionTokens: number }; byModel: { model: string; cost: number; promptTokens: number; completionTokens: number; calls: number }[]; byDay: { day: string; cost: number; tokens: number }[] } | null>(null);
+  const [u, setU] = useState<{
+    today: { cost: number; calls: number };
+    month: { cost: number; calls: number; promptTokens: number; completionTokens: number };
+    byModel: { model: string; cost: number; promptTokens: number; completionTokens: number; calls: number }[];
+    byDay: { day: string; cost: number; tokens: number }[];
+  } | null>(null);
   useEffect(() => void api<NonNullable<typeof u>>('/api/usage').then(setU), []);
   if (!u) return <Spinner />;
-  const chart: ChartData = { spec: { type: 'bar', title: 'Coût par jour', source: { path: '' } }, categories: u.byDay.map((d) => d.day.slice(5)), series: [{ name: 'Coût ($)', data: u.byDay.map((d) => Math.round(d.cost * 10000) / 10000) }], rowCount: u.byDay.length };
+  const chart: ChartData = {
+    spec: { type: 'bar', title: 'Coût par jour', source: { path: '' } },
+    categories: u.byDay.map((d) => d.day.slice(5)),
+    series: [{ name: 'Coût ($)', data: u.byDay.map((d) => Math.round(d.cost * 10000) / 10000) }],
+    rowCount: u.byDay.length,
+  };
   return (
     <>
       <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -151,7 +229,13 @@ function UsageTab() {
         ))}
       </div>
       <Section title="30 derniers jours">
-        <div className="rounded-xl border border-line bg-panel p-3">{u.byDay.length ? <ChartView data={chart} height={220} /> : <div className="text-[13px] text-faint">Aucune donnée.</div>}</div>
+        <div className="rounded-xl border border-line bg-panel p-3">
+          {u.byDay.length ? (
+            <ChartView data={chart} height={220} />
+          ) : (
+            <div className="text-[13px] text-faint">Aucune donnée.</div>
+          )}
+        </div>
       </Section>
       <Section title="Par modèle (mois)">
         <div className="divide-y divide-line rounded-xl border border-line">
@@ -161,7 +245,9 @@ function UsageTab() {
                 {shortModel(m.model)}
               </span>
               <span className="text-faint">{m.calls} appels</span>
-              <span className="w-24 text-right tabular-nums text-muted">{fmtTokens(m.promptTokens + m.completionTokens)}</span>
+              <span className="w-24 text-right tabular-nums text-muted">
+                {fmtTokens(m.promptTokens + m.completionTokens)}
+              </span>
               <span className="w-20 text-right tabular-nums">{fmtCost(m.cost)}</span>
             </div>
           ))}
@@ -172,7 +258,17 @@ function UsageTab() {
 }
 
 function SecurityTab() {
-  const [audit, setAudit] = useState<{ id: number; ts: number; actor: string; action: string; target: string | null; decision: string | null; details: string | null }[]>([]);
+  const [audit, setAudit] = useState<
+    {
+      id: number;
+      ts: number;
+      actor: string;
+      action: string;
+      target: string | null;
+      decision: string | null;
+      details: string | null;
+    }[]
+  >([]);
   const patch = useSession((s) => s.patchSession);
   const detail = useSession((s) => s.detail);
   useEffect(() => void api<typeof audit>('/api/audit', { query: { limit: 400 } }).then(setAudit), []);
@@ -180,14 +276,27 @@ function SecurityTab() {
     <>
       <Section title="Session courante">
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-panel p-3 text-[12.5px]">
-          <Toggle checked={Boolean(detail?.settings.autoApproveEdits)} onChange={(v) => void patch({ autoApproveEdits: v })} label="Accepter automatiquement les modifications de fichiers (mode NORMAL)" disabled={!detail} />
-          <span className="text-muted">Autorisations mémorisées : {detail?.settings.grants?.length ?? 0}</span>
-          <Button size="sm" variant="ghost" disabled={!detail?.settings.grants?.length} onClick={() => void patch({ resetGrants: true })}>
+          <Toggle
+            checked={Boolean(detail?.settings.autoApproveEdits)}
+            onChange={(v) => void patch({ autoApproveEdits: v })}
+            label="Accepter automatiquement les modifications de fichiers (mode NORMAL)"
+            disabled={!detail}
+          />
+          <span className="text-muted">
+            Autorisations mémorisées : {detail?.settings.grants?.length ?? 0}
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={!detail?.settings.grants?.length}
+            onClick={() => void patch({ resetGrants: true })}
+          >
             Réinitialiser
           </Button>
         </div>
         <div className="mt-2 text-[12px] text-faint">
-          Protégés en permanence : .env, clés SSH/AWS, *.pem, jetons, .git interne. Commandes destructrices bloquées (sudo, rm -rf /, mkfs, curl | sh…) ; git push jamais exécuté sans confirmation.
+          Protégés en permanence : .env, clés SSH/AWS, *.pem, jetons, .git interne. Commandes destructrices
+          bloquées (sudo, rm -rf /, mkfs, curl | sh…) ; git push jamais exécuté sans confirmation.
         </div>
       </Section>
       <Section title="Journal d'audit">
@@ -245,29 +354,87 @@ export function SettingsView() {
           {tab === 'budget' && (
             <Section title="Limites de dépenses (0 = illimité)">
               <div className="grid gap-3 md:grid-cols-2">
-                <NumberField label="Budget journalier ($)" value={s.budget.daily} step={0.5} onSave={(v) => void save({ budget: { ...s.budget, daily: v } })} />
-                <NumberField label="Budget mensuel ($)" value={s.budget.monthly} step={1} onSave={(v) => void save({ budget: { ...s.budget, monthly: v } })} />
-                <NumberField label="Budget par tâche ($)" value={s.budget.perTask} step={0.1} onSave={(v) => void save({ budget: { ...s.budget, perTask: v } })} hint="L'agent s'arrête proprement s'il dépasse ce montant." />
-                <NumberField label="Seuil d'alerte (0–1)" value={s.budget.warnAt} step={0.05} onSave={(v) => void save({ budget: { ...s.budget, warnAt: v } })} />
+                <NumberField
+                  label="Budget journalier ($)"
+                  value={s.budget.daily}
+                  step={0.5}
+                  onSave={(v) => void save({ budget: { ...s.budget, daily: v } })}
+                />
+                <NumberField
+                  label="Budget mensuel ($)"
+                  value={s.budget.monthly}
+                  step={1}
+                  onSave={(v) => void save({ budget: { ...s.budget, monthly: v } })}
+                />
+                <NumberField
+                  label="Budget par tâche ($)"
+                  value={s.budget.perTask}
+                  step={0.1}
+                  onSave={(v) => void save({ budget: { ...s.budget, perTask: v } })}
+                  hint="L'agent s'arrête proprement s'il dépasse ce montant."
+                />
+                <NumberField
+                  label="Seuil d'alerte (0–1)"
+                  value={s.budget.warnAt}
+                  step={0.05}
+                  onSave={(v) => void save({ budget: { ...s.budget, warnAt: v } })}
+                />
               </div>
-              <div className="text-[12px] text-faint">Les coûts affichés sont ceux renvoyés par OpenRouter pour chaque appel (ou calculés depuis ses prix publiés).</div>
+              <div className="text-[12px] text-faint">
+                Les coûts affichés sont ceux renvoyés par OpenRouter pour chaque appel (ou calculés depuis ses
+                prix publiés).
+              </div>
             </Section>
           )}
           {tab === 'agent' && (
             <Section title="Boucle d'agent">
               <div className="grid gap-3 md:grid-cols-2">
-                <NumberField label="Étapes max par tâche" value={s.agent.maxSteps} onSave={(v) => void save({ agent: { ...s.agent, maxSteps: v } })} min={1} />
-                <NumberField label="Tentatives max (erreurs réseau/modèle)" value={s.agent.maxRetries} onSave={(v) => void save({ agent: { ...s.agent, maxRetries: v } })} />
-                <NumberField label="Délai par outil (s)" value={s.agent.toolTimeoutSec} onSave={(v) => void save({ agent: { ...s.agent, toolTimeoutSec: v } })} min={5} />
-                <NumberField label="Profondeur des sous-agents" value={s.agent.maxSubagentDepth} onSave={(v) => void save({ agent: { ...s.agent, maxSubagentDepth: v } })} />
+                <NumberField
+                  label="Étapes max par tâche"
+                  value={s.agent.maxSteps}
+                  onSave={(v) => void save({ agent: { ...s.agent, maxSteps: v } })}
+                  min={1}
+                />
+                <NumberField
+                  label="Tentatives max (erreurs réseau/modèle)"
+                  value={s.agent.maxRetries}
+                  onSave={(v) => void save({ agent: { ...s.agent, maxRetries: v } })}
+                />
+                <NumberField
+                  label="Délai par outil (s)"
+                  value={s.agent.toolTimeoutSec}
+                  onSave={(v) => void save({ agent: { ...s.agent, toolTimeoutSec: v } })}
+                  min={5}
+                />
+                <NumberField
+                  label="Profondeur des sous-agents"
+                  value={s.agent.maxSubagentDepth}
+                  onSave={(v) => void save({ agent: { ...s.agent, maxSubagentDepth: v } })}
+                />
                 <Field label="Mode de permissions par défaut">
-                  <Select value={s.defaultPermissionMode} onChange={(v) => void save({ defaultPermissionMode: v })} options={[{ value: 'safe', label: 'SAFE — lecture seule' }, { value: 'normal', label: 'NORMAL — demander' }, { value: 'autonomous', label: 'AUTONOMOUS — autonome' }]} />
+                  <Select
+                    value={s.defaultPermissionMode}
+                    onChange={(v) => void save({ defaultPermissionMode: v })}
+                    options={[
+                      { value: 'safe', label: 'SAFE — lecture seule' },
+                      { value: 'normal', label: 'NORMAL — demander' },
+                      { value: 'autonomous', label: 'AUTONOMOUS — autonome' },
+                    ]}
+                  />
                 </Field>
                 <div className="pt-6">
-                  <Toggle checked={s.agent.parallelReads} onChange={(v) => void save({ agent: { ...s.agent, parallelReads: v } })} label="Lectures en parallèle (plus rapide)" />
+                  <Toggle
+                    checked={s.agent.parallelReads}
+                    onChange={(v) => void save({ agent: { ...s.agent, parallelReads: v } })}
+                    label="Lectures en parallèle (plus rapide)"
+                  />
                 </div>
                 <div className="pt-1">
-                  <Toggle checked={s.mcp.autoConnect} onChange={(v) => void save({ mcp: { ...s.mcp, autoConnect: v } })} label="Connecter automatiquement les plugins MCP" />
+                  <Toggle
+                    checked={s.mcp.autoConnect}
+                    onChange={(v) => void save({ mcp: { ...s.mcp, autoConnect: v } })}
+                    label="Connecter automatiquement les plugins MCP"
+                  />
                 </div>
               </div>
             </Section>
@@ -275,27 +442,73 @@ export function SettingsView() {
           {tab === 'auto' && (
             <Section title="Familles de modèles par palier (expressions régulières, la plus récente l'emporte)">
               <div className="mb-3 text-[12.5px] text-muted">
-                En mode AUTO, {status?.jev?.available ? 'Jev (TypeSafe) classe la demande' : 'des heuristiques classent la demande'} (rapide, équilibré, puissant, raisonnement, vision), puis le modèle le plus récent de la première famille disponible est choisi dans le catalogue OpenRouter en direct.
+                En mode AUTO,{' '}
+                {status?.jev?.available
+                  ? 'Jev (TypeSafe) classe la demande'
+                  : 'des heuristiques classent la demande'}{' '}
+                (rapide, équilibré, puissant, raisonnement, vision), puis le modèle le plus récent de la
+                première famille disponible est choisi dans le catalogue OpenRouter en direct.
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {Object.keys(tiers).map((k) => (
                   <Field key={k} label={k}>
-                    <Textarea rows={4} className="font-mono text-[12px]" value={tiers[k]} onChange={(e) => setTiers({ ...tiers, [k]: e.target.value })} />
+                    <Textarea
+                      rows={4}
+                      className="font-mono text-[12px]"
+                      value={tiers[k]}
+                      onChange={(e) => setTiers({ ...tiers, [k]: e.target.value })}
+                    />
                   </Field>
                 ))}
               </div>
-              <Button variant="primary" onClick={() => void save({ autoTiers: Object.fromEntries(Object.entries(tiers).map(([k, v]) => [k, v.split('\n').map((x) => x.trim()).filter(Boolean)])) })}>
+              <Button
+                variant="primary"
+                onClick={() =>
+                  void save({
+                    autoTiers: Object.fromEntries(
+                      Object.entries(tiers).map(([k, v]) => [
+                        k,
+                        v
+                          .split('\n')
+                          .map((x) => x.trim())
+                          .filter(Boolean),
+                      ]),
+                    ),
+                  })
+                }
+              >
                 Enregistrer les paliers
               </Button>
             </Section>
           )}
           {tab === 'web' && (
             <Section title="web.search">
-              <Field label="Fournisseur" hint="Brave nécessite BRAVE_API_KEY. Le plugin web d'OpenRouter utilise votre clé OpenRouter (facturé par résultat).">
-                <Select value={s.webSearchProvider} onChange={(v) => void save({ webSearchProvider: v })} options={[{ value: 'auto', label: 'Automatique' }, { value: 'openrouter', label: 'OpenRouter (plugin web)' }, { value: 'brave', label: 'Brave Search API' }]} />
+              <Field
+                label="Fournisseur"
+                hint="Brave nécessite BRAVE_API_KEY. Le plugin web d'OpenRouter utilise votre clé OpenRouter (facturé par résultat)."
+              >
+                <Select
+                  value={s.webSearchProvider}
+                  onChange={(v) => void save({ webSearchProvider: v })}
+                  options={[
+                    { value: 'auto', label: 'Automatique' },
+                    { value: 'openrouter', label: 'OpenRouter (plugin web)' },
+                    { value: 'brave', label: 'Brave Search API' },
+                  ]}
+                />
               </Field>
-              <Field label="Modèle utilisé pour la recherche OpenRouter" hint="Vide = modèle rapide du palier AUTO.">
-                <Input defaultValue={s.webSearchModel} onBlur={(e) => e.target.value !== s.webSearchModel && void save({ webSearchModel: e.target.value.trim() })} placeholder="ex. google/gemini-2.5-flash" />
+              <Field
+                label="Modèle utilisé pour la recherche OpenRouter"
+                hint="Vide = modèle rapide du palier AUTO."
+              >
+                <Input
+                  defaultValue={s.webSearchModel}
+                  onBlur={(e) =>
+                    e.target.value !== s.webSearchModel &&
+                    void save({ webSearchModel: e.target.value.trim() })
+                  }
+                  placeholder="ex. google/gemini-2.5-flash"
+                />
               </Field>
             </Section>
           )}
@@ -305,10 +518,16 @@ export function SettingsView() {
             <>
               <Section title="Thème">
                 <div className="flex gap-2">
-                  <Button variant={theme === 'dark' ? 'primary' : 'secondary'} onClick={() => setTheme('dark')}>
+                  <Button
+                    variant={theme === 'dark' ? 'primary' : 'secondary'}
+                    onClick={() => setTheme('dark')}
+                  >
                     <Moon size={14} /> Sombre
                   </Button>
-                  <Button variant={theme === 'light' ? 'primary' : 'secondary'} onClick={() => setTheme('light')}>
+                  <Button
+                    variant={theme === 'light' ? 'primary' : 'secondary'}
+                    onClick={() => setTheme('light')}
+                  >
                     <Sun size={14} /> Clair
                   </Button>
                 </div>
@@ -318,9 +537,13 @@ export function SettingsView() {
                   <div className="mb-1">
                     Serveur : <code className="font-mono">{getConnection()?.baseUrl}</code>
                   </div>
-                  <div className="mb-1">Projets : <code className="font-mono">{status?.workspaceRoot}</code></div>
+                  <div className="mb-1">
+                    Projets : <code className="font-mono">{status?.workspaceRoot}</code>
+                  </div>
                   <div className="mb-3 flex flex-wrap gap-1.5">
-                    <Badge tone={status?.browser.available ? 'ok' : 'err'}>navigateur {status?.browser.engine}</Badge>
+                    <Badge tone={status?.browser.available ? 'ok' : 'err'}>
+                      navigateur {status?.browser.engine}
+                    </Badge>
                     <Badge tone={status?.python ? 'ok' : 'neutral'}>python3</Badge>
                     <Badge tone={status?.ripgrep ? 'ok' : 'neutral'}>ripgrep</Badge>
                     <Badge tone={status?.jev?.available ? 'ok' : 'neutral'}>Jev</Badge>
@@ -331,7 +554,8 @@ export function SettingsView() {
                   </Button>
                 </div>
                 <div className="mt-2 flex items-center gap-1.5 text-[12px] text-faint">
-                  <Shield size={12} /> Le jeton d'accès reste dans ce navigateur ; la clé OpenRouter ne quitte jamais le serveur.
+                  <Shield size={12} /> Le jeton d'accès reste dans ce navigateur ; la clé OpenRouter ne quitte
+                  jamais le serveur.
                 </div>
               </Section>
             </>

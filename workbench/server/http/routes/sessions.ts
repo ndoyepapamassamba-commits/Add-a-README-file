@@ -28,12 +28,20 @@ export function sessionRoutes(app: FastifyInstance, ctx: AppContext): void {
 
   app.get('/api/sessions', async (req) => {
     const q = req.query as { projectId?: string };
-    return s.repo.listSessions(q.projectId).map((x) => ({ ...x, active: Boolean(orch.activeRunForSession(x.id)) }));
+    return s.repo
+      .listSessions(q.projectId)
+      .map((x) => ({ ...x, active: Boolean(orch.activeRunForSession(x.id)) }));
   });
 
   app.post('/api/sessions', async (req) => {
     const b = z
-      .object({ projectId: z.string().min(1), title: z.string().max(200).optional(), model: z.string().optional(), permissionMode: ModeEnum.optional(), role: RoleEnum.optional() })
+      .object({
+        projectId: z.string().min(1),
+        title: z.string().max(200).optional(),
+        model: z.string().optional(),
+        permissionMode: ModeEnum.optional(),
+        role: RoleEnum.optional(),
+      })
       .parse(req.body);
     s.workspace.getProject(b.projectId);
     const appSettings = s.settings.get();
@@ -59,7 +67,9 @@ export function sessionRoutes(app: FastifyInstance, ctx: AppContext): void {
       runs,
       events,
       activeRunId: orch.activeRunForSession(session.id),
-      changes: s.repo.listChanges({ sessionId: session.id }).map((c) => ({ ...c, before: undefined, after: undefined })),
+      changes: s.repo
+        .listChanges({ sessionId: session.id })
+        .map((c) => ({ ...c, before: undefined, after: undefined })),
       artifacts: s.repo.listArtifacts({ sessionId: session.id }),
     };
   });
@@ -84,20 +94,29 @@ export function sessionRoutes(app: FastifyInstance, ctx: AppContext): void {
     if (b.resetGrants) settings.grants = [];
     if (b.skills) settings.skills = b.skills;
     s.repo.setSessionSettings(session.id, settings);
-    if (b.permissionMode) s.repo.audit({ actor: 'user', action: 'session.permission_mode', target: session.id, decision: b.permissionMode });
+    if (b.permissionMode)
+      s.repo.audit({
+        actor: 'user',
+        action: 'session.permission_mode',
+        target: session.id,
+        decision: b.permissionMode,
+      });
     return { session: s.repo.getSession(session.id), settings };
   });
 
   app.delete('/api/sessions/:id', async (req) => {
     const id = sid(req);
-    if (orch.activeRunForSession(id)) throw new HttpError(409, 'Arrêtez la tâche en cours avant de supprimer la session');
+    if (orch.activeRunForSession(id))
+      throw new HttpError(409, 'Arrêtez la tâche en cours avant de supprimer la session');
     s.repo.deleteSession(id);
     return { ok: true };
   });
 
   app.post('/api/sessions/:id/compact', async (req) => orch.compactSession(mustSession(sid(req)).id));
   app.post('/api/sessions/:id/review', async (req) => {
-    const b = z.object({ model: z.string().optional(), focus: z.string().max(2000).optional() }).parse(req.body ?? {});
+    const b = z
+      .object({ model: z.string().optional(), focus: z.string().max(2000).optional() })
+      .parse(req.body ?? {});
     return orch.review(mustSession(sid(req)).id, b);
   });
 
@@ -128,7 +147,9 @@ export function sessionRoutes(app: FastifyInstance, ctx: AppContext): void {
 
   app.get('/api/runs', async (req) => {
     const q = req.query as { limit?: string };
-    return s.repo.listRuns({ limit: Math.min(Number(q.limit ?? 300), 2000) }).map((r) => ({ ...r, active: orch.isActive(r.id) }));
+    return s.repo
+      .listRuns({ limit: Math.min(Number(q.limit ?? 300), 2000) })
+      .map((r) => ({ ...r, active: orch.isActive(r.id) }));
   });
   app.get('/api/runs/:id/events', async (req) => {
     const after = Number((req.query as { after?: string }).after ?? -1);
@@ -136,19 +157,38 @@ export function sessionRoutes(app: FastifyInstance, ctx: AppContext): void {
   });
   app.post('/api/runs/:id/cancel', async (req) => ({ ok: orch.cancel(sid(req)) }));
   app.post('/api/runs/:id/plan', async (req) => {
-    const b = z.object({ decision: z.enum(['approve', 'cancel']), steps: z.array(z.string().min(1).max(300)).max(30).optional() }).parse(req.body);
-    if (!orch.resolvePlan(sid(req), b.decision, b.steps)) throw new HttpError(409, 'Aucun plan en attente pour cette tâche');
+    const b = z
+      .object({
+        decision: z.enum(['approve', 'cancel']),
+        steps: z.array(z.string().min(1).max(300)).max(30).optional(),
+      })
+      .parse(req.body);
+    if (!orch.resolvePlan(sid(req), b.decision, b.steps))
+      throw new HttpError(409, 'Aucun plan en attente pour cette tâche');
     return { ok: true };
   });
   app.post('/api/approvals/:id', async (req) => {
-    const b = z.object({ decision: z.enum(['approve', 'deny']), note: z.string().max(4000).optional(), remember: z.boolean().default(false) }).parse(req.body);
+    const b = z
+      .object({
+        decision: z.enum(['approve', 'deny']),
+        note: z.string().max(4000).optional(),
+        remember: z.boolean().default(false),
+      })
+      .parse(req.body);
     if (!orch.resolveApproval(sid(req), b)) throw new HttpError(409, 'Demande déjà traitée ou expirée');
     return { ok: true };
   });
 
   // Cost estimate for the next request, from the provider's published prices.
   app.post('/api/estimate', async (req) => {
-    const b = z.object({ sessionId: z.string(), text: z.string().default(''), model: z.string().optional(), role: RoleEnum.optional() }).parse(req.body);
+    const b = z
+      .object({
+        sessionId: z.string(),
+        text: z.string().default(''),
+        model: z.string().optional(),
+        role: RoleEnum.optional(),
+      })
+      .parse(req.body);
     const session = mustSession(b.sessionId);
     const models = await s.catalog.list().catch(() => s.catalog.all);
     const role = b.role ?? s.repo.getSessionSettings(session.id).role ?? 'general';
@@ -161,10 +201,15 @@ export function sessionRoutes(app: FastifyInstance, ctx: AppContext): void {
     });
     const info = s.catalog.get(sel.model);
     const history = s.repo.listMessages(session.id).map((m) => m.content as ChatMessage);
-    const toolTokens = Math.ceil(JSON.stringify(toolDefinitions((ROLES[role] ?? ROLES.general!).tools)).length / 3.6);
+    const toolTokens = Math.ceil(
+      JSON.stringify(toolDefinitions((ROLES[role] ?? ROLES.general!).tools)).length / 3.6,
+    );
     const promptTokens = estimateTokens(history) + toolTokens + 2500 + Math.ceil(b.text.length / 3.6);
     const outTokens = 1200;
-    const perStep = info && info.inputPrice !== null && info.outputPrice !== null ? (promptTokens * info.inputPrice + outTokens * info.outputPrice) / 1_000_000 : null;
+    const perStep =
+      info && info.inputPrice !== null && info.outputPrice !== null
+        ? (promptTokens * info.inputPrice + outTokens * info.outputPrice) / 1_000_000
+        : null;
     return {
       model: sel.model,
       auto: sel.auto,
@@ -195,7 +240,10 @@ export function sessionRoutes(app: FastifyInstance, ctx: AppContext): void {
   // ── export ────────────────────────────────────────────────────────────
   app.get('/api/sessions/:id/export', async (req, reply) => {
     const q = z
-      .object({ format: z.enum(['md', 'json', 'pdf']).default('md'), include: z.string().default('conversation,trace,changes') })
+      .object({
+        format: z.enum(['md', 'json', 'pdf']).default('md'),
+        include: z.string().default('conversation,trace,changes'),
+      })
       .parse(req.query);
     const session = mustSession(sid(req));
     const include = new Set(q.include.split(','));
@@ -206,7 +254,13 @@ export function sessionRoutes(app: FastifyInstance, ctx: AppContext): void {
     const fileBase = `session-${session.title.replace(/[^\w-]+/g, '_').slice(0, 40) || session.id.slice(0, 8)}`;
     if (q.format === 'json') {
       reply.header('Content-Disposition', `attachment; filename="${fileBase}.json"`);
-      return { session, runs, events: include.has('trace') || include.has('conversation') ? events : undefined, changes: include.has('changes') ? changes : undefined, artifacts };
+      return {
+        session,
+        runs,
+        events: include.has('trace') || include.has('conversation') ? events : undefined,
+        changes: include.has('changes') ? changes : undefined,
+        artifacts,
+      };
     }
     const md: string[] = [
       `# ${session.title}`,
@@ -221,23 +275,42 @@ export function sessionRoutes(app: FastifyInstance, ctx: AppContext): void {
       const evs = (events[r.id] ?? []).map((e) => e.event as AgentEvent);
       const started = evs.find((e) => e.type === 'run_started');
       md.push(`## ${r.role === 'reviewer' ? '🔍 ' : ''}${r.title}`, '');
-      if (include.has('conversation') && started?.type === 'run_started') md.push(`**Utilisateur :**`, '', started.userText, '');
+      if (include.has('conversation') && started?.type === 'run_started')
+        md.push(`**Utilisateur :**`, '', started.userText, '');
       for (const e of evs) {
-        if (e.type === 'assistant_message' && include.has('conversation') && !e.agentPath) md.push(`**Agent :**`, '', e.text, '');
-        if (e.type === 'tool_result' && include.has('trace')) md.push(`- \`${e.tool}\` ${e.result.ok ? '✓' : '✗'} ${e.result.summary} _(${e.durationMs} ms)_`);
-        if (e.type === 'plan_proposed' && include.has('trace')) md.push('', '**Plan proposé :**', ...e.steps.map((p, i) => `${i + 1}. ${p.title}`), '');
+        if (e.type === 'assistant_message' && include.has('conversation') && !e.agentPath)
+          md.push(`**Agent :**`, '', e.text, '');
+        if (e.type === 'tool_result' && include.has('trace'))
+          md.push(`- \`${e.tool}\` ${e.result.ok ? '✓' : '✗'} ${e.result.summary} _(${e.durationMs} ms)_`);
+        if (e.type === 'plan_proposed' && include.has('trace'))
+          md.push('', '**Plan proposé :**', ...e.steps.map((p, i) => `${i + 1}. ${p.title}`), '');
         if (e.type === 'error') md.push(`> ⚠️ ${e.message}`);
       }
-      md.push('', `_Statut : ${r.status} · ${r.model} · ${r.tokensIn + r.tokensOut} tokens · $${r.cost.toFixed(4)}_`, '');
+      md.push(
+        '',
+        `_Statut : ${r.status} · ${r.model} · ${r.tokensIn + r.tokensOut} tokens · $${r.cost.toFixed(4)}_`,
+        '',
+      );
     }
     if (include.has('changes') && changes.length) {
       md.push('## Modifications de fichiers', '');
       for (const c of changes) {
         md.push(`### ${c.op} ${c.path} (${c.status}, +${c.added} −${c.removed})`, '');
-        if (c.op !== 'move') md.push('```diff', createTwoFilesPatch(c.path, c.path, c.before ?? '', c.after ?? '', '', '', { context: 2 }).split('\n').slice(4).join('\n').slice(0, 30_000), '```', '');
+        if (c.op !== 'move')
+          md.push(
+            '```diff',
+            createTwoFilesPatch(c.path, c.path, c.before ?? '', c.after ?? '', '', '', { context: 2 })
+              .split('\n')
+              .slice(4)
+              .join('\n')
+              .slice(0, 30_000),
+            '```',
+            '',
+          );
       }
     }
-    if (artifacts.length) md.push('## Artefacts', '', ...artifacts.map((a) => `- ${a.name} (${a.type}, ${a.size} octets)`), '');
+    if (artifacts.length)
+      md.push('## Artefacts', '', ...artifacts.map((a) => `- ${a.name} (${a.type}, ${a.size} octets)`), '');
     const text = md.join('\n');
     if (q.format === 'pdf') {
       const pdf = await s.browser.htmlToPdf(markdownToHtml(text, session.title));

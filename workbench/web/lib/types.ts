@@ -1,6 +1,29 @@
-import type { ChangeRecord, CreditsInfo, EffortSetting, ModelInfo, PermissionMode, RoleId, RunEventEnvelope, RunSummary, ServerStatus, SessionSummary } from '@shared/types';
+import type {
+  ChangeRecord,
+  CreditsInfo,
+  EffortSetting,
+  ModelInfo,
+  PermissionMode,
+  RoleId,
+  RunEventEnvelope,
+  RunSummary,
+  ServerStatus,
+  SessionSummary,
+} from '@shared/types';
 
-export type View = 'projects' | 'chat' | 'code' | 'terminal' | 'browser' | 'data' | 'agents' | 'skills' | 'plugins' | 'tasks' | 'models' | 'settings';
+export type View =
+  | 'projects'
+  | 'chat'
+  | 'code'
+  | 'terminal'
+  | 'browser'
+  | 'data'
+  | 'agents'
+  | 'skills'
+  | 'plugins'
+  | 'tasks'
+  | 'models'
+  | 'settings';
 
 export interface StatusResponse extends ServerStatus {
   models: { count: number; fetchedAt: number; error: string | null };
@@ -27,7 +50,13 @@ export interface CreditsResponse {
   credits: CreditsInfo;
   today: UsageSummary;
   month: UsageSummary;
-  todayByModel: { model: string; cost: number; promptTokens: number; completionTokens: number; calls: number }[];
+  todayByModel: {
+    model: string;
+    cost: number;
+    promptTokens: number;
+    completionTokens: number;
+    calls: number;
+  }[];
   session: { cost: number; tokensIn: number; tokensOut: number } | null;
   budget: BudgetState;
 }
@@ -41,7 +70,13 @@ export interface AppSettings {
   maxTokens: number;
   defaultPermissionMode: PermissionMode;
   budget: { daily: number; monthly: number; perTask: number; warnAt: number };
-  agent: { maxSteps: number; maxRetries: number; toolTimeoutSec: number; maxSubagentDepth: number; parallelReads: boolean };
+  agent: {
+    maxSteps: number;
+    maxRetries: number;
+    toolTimeoutSec: number;
+    maxSubagentDepth: number;
+    parallelReads: boolean;
+  };
   autoTiers: Record<'fast' | 'balanced' | 'powerful' | 'reasoning' | 'vision', string[]>;
   skills: { autoActivate: boolean; maxAuto: number; disabled: string[]; showCatalog: boolean };
   jev: { enabled: boolean; routing: boolean; skills: boolean; threshold: number };
@@ -82,7 +117,18 @@ export interface McpServerInfo {
   instructions?: string;
   toolCount: number;
   tools: { name: string; description: string; readOnly: boolean; destructive: boolean }[];
-  config: { type?: string; command?: string; args?: string[]; url?: string; env?: Record<string, string>; headers?: Record<string, string>; enabled: boolean; autoApprove?: boolean | string[]; description?: string; preset?: string };
+  config: {
+    type?: string;
+    command?: string;
+    args?: string[];
+    url?: string;
+    env?: Record<string, string>;
+    headers?: Record<string, string>;
+    enabled: boolean;
+    autoApprove?: boolean | string[];
+    description?: string;
+    preset?: string;
+  };
 }
 
 export interface McpPreset {

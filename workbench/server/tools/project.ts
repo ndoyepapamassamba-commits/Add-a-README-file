@@ -7,7 +7,8 @@ import { defineTool, ok, ToolError, type AnyTool } from './types';
 export const projectTools: AnyTool[] = [
   defineTool({
     name: 'project.analyze',
-    description: 'Analyse the project: languages, frameworks, package managers, scripts, test frameworks, entry points, notable files, top-level layout, README excerpt.',
+    description:
+      'Analyse the project: languages, frameworks, package managers, scripts, test frameworks, entry points, notable files, top-level layout, README excerpt.',
     schema: z.object({ refresh: z.boolean().default(false) }),
     readOnly: true,
     assess: () => ({ risk: 'read' }),
@@ -20,7 +21,11 @@ export const projectTools: AnyTool[] = [
         `Frameworks: ${r.frameworks.join(', ') || 'none detected'}`,
         `Package managers: ${r.packageManagers.join(', ') || 'none'}`,
         `Tests: ${r.testFrameworks.join(', ') || 'none detected'}`,
-        `Scripts: ${Object.entries(r.scripts).map(([k, v]) => `${k}=${v}`).join(' | ') || 'none'}`,
+        `Scripts: ${
+          Object.entries(r.scripts)
+            .map(([k, v]) => `${k}=${v}`)
+            .join(' | ') || 'none'
+        }`,
         `Entry points: ${r.entryPoints.join(', ') || 'unknown'}`,
         `Notable files: ${r.notableFiles.join(', ') || 'none'}`,
         `Top level: ${r.topLevel.join('  ')}`,
@@ -39,19 +44,31 @@ export const projectTools: AnyTool[] = [
     async execute(_a, ctx) {
       const s = await ctx.services.git.status(ctx.services.workspace.projectRoot(ctx.projectId));
       if (!s.isRepo) return ok('not a git repository', s, { forModel: 'Not a git repository.' });
-      return ok(`${s.branch} · ${s.files.length} changed`, s, { forModel: `Branch ${s.branch} (ahead ${s.ahead}, behind ${s.behind})\n${s.files.map((f) => `${f.status.padEnd(10)} ${f.path}`).join('\n') || 'Working tree clean.'}` });
+      return ok(`${s.branch} · ${s.files.length} changed`, s, {
+        forModel: `Branch ${s.branch} (ahead ${s.ahead}, behind ${s.behind})\n${s.files.map((f) => `${f.status.padEnd(10)} ${f.path}`).join('\n') || 'Working tree clean.'}`,
+      });
     },
   }),
   defineTool({
     name: 'git.diff',
-    description: 'Unified diff of working tree changes (or staged with staged=true), optionally for one path.',
+    description:
+      'Unified diff of working tree changes (or staged with staged=true), optionally for one path.',
     schema: z.object({ path: z.string().optional(), staged: z.boolean().default(false) }),
     readOnly: true,
     assess: () => ({ risk: 'read' }),
     label: (a) => `git diff${a.path ? ` ${a.path}` : ''}`,
     async execute(a, ctx) {
-      const d = redactSecrets(await ctx.services.git.diff(ctx.services.workspace.projectRoot(ctx.projectId), { path: a.path, staged: a.staged }));
-      return ok(`${d.split('\n').length} lines`, { lines: d.split('\n').length }, { forModel: d.length > 40_000 ? `${d.slice(0, 40_000)}\n…[diff truncated]` : d || 'No changes.' });
+      const d = redactSecrets(
+        await ctx.services.git.diff(ctx.services.workspace.projectRoot(ctx.projectId), {
+          path: a.path,
+          staged: a.staged,
+        }),
+      );
+      return ok(
+        `${d.split('\n').length} lines`,
+        { lines: d.split('\n').length },
+        { forModel: d.length > 40_000 ? `${d.slice(0, 40_000)}\n…[diff truncated]` : d || 'No changes.' },
+      );
     },
   }),
   defineTool({
@@ -63,7 +80,12 @@ export const projectTools: AnyTool[] = [
     label: () => 'git log',
     async execute(a, ctx) {
       const log = await ctx.services.git.log(ctx.services.workspace.projectRoot(ctx.projectId), a.limit);
-      return ok(`${log.length} commits`, log, { forModel: log.map((c) => `${c.hash.slice(0, 8)} ${c.date.slice(0, 16)} ${c.author}: ${c.subject}`).join('\n') || 'No commits.' });
+      return ok(`${log.length} commits`, log, {
+        forModel:
+          log
+            .map((c) => `${c.hash.slice(0, 8)} ${c.date.slice(0, 16)} ${c.author}: ${c.subject}`)
+            .join('\n') || 'No commits.',
+      });
     },
   }),
   defineTool({
@@ -74,7 +96,10 @@ export const projectTools: AnyTool[] = [
     assess: () => ({ risk: 'vcs_write' }),
     label: (a) => `git commit "${a.message.split('\n')[0]!.slice(0, 60)}"`,
     async preview(a) {
-      return { kind: 'text', text: `Commit : ${a.message}\nFichiers : ${a.files?.join(', ') ?? 'toutes les modifications'}` };
+      return {
+        kind: 'text',
+        text: `Commit : ${a.message}\nFichiers : ${a.files?.join(', ') ?? 'toutes les modifications'}`,
+      };
     },
     async execute(a, ctx) {
       const root = ctx.services.workspace.projectRoot(ctx.projectId);
@@ -93,7 +118,13 @@ export const projectTools: AnyTool[] = [
     async execute(_a, ctx) {
       const facts = await ctx.services.memory.facts(ctx.projectId);
       const md = await ctx.services.memory.contextMarkdown(ctx.projectId);
-      return ok(`${facts.length} facts`, { facts }, { forModel: `${md || '(no PROJECT_CONTEXT.md)'}\n\nFacts:\n${facts.map((f) => `- [${f.id}] (${f.category}) ${f.text}`).join('\n') || '(none)'}` });
+      return ok(
+        `${facts.length} facts`,
+        { facts },
+        {
+          forModel: `${md || '(no PROJECT_CONTEXT.md)'}\n\nFacts:\n${facts.map((f) => `- [${f.id}] (${f.category}) ${f.text}`).join('\n') || '(none)'}`,
+        },
+      );
     },
   }),
   defineTool({
@@ -132,7 +163,11 @@ export const projectTools: AnyTool[] = [
       from_path: z.string().optional(),
       columns: z.array(z.string()).optional(),
       rows: z.array(z.record(z.string(), z.unknown())).optional(),
-      files: z.array(z.object({ path: z.string(), content: z.string().optional(), from_project: z.string().optional() })).optional(),
+      files: z
+        .array(
+          z.object({ path: z.string(), content: z.string().optional(), from_project: z.string().optional() }),
+        )
+        .optional(),
     }),
     readOnly: false,
     assess: () => ({ risk: 'write_internal' }),
@@ -142,19 +177,34 @@ export const projectTools: AnyTool[] = [
       let rec;
       if (a.type === 'zip') {
         if (!a.files?.length) throw new ToolError('zip needs files');
-        rec = await ctx.services.artifacts.createZip({ ...base, files: a.files.map((f) => ({ path: f.path, content: f.content, fromProject: f.from_project })) });
+        rec = await ctx.services.artifacts.createZip({
+          ...base,
+          files: a.files.map((f) => ({ path: f.path, content: f.content, fromProject: f.from_project })),
+        });
       } else if ((a.type === 'csv' || a.type === 'xlsx') && a.rows) {
         const columns = a.columns ?? [...new Set(a.rows.flatMap((r) => Object.keys(r)))];
-        rec = await ctx.services.artifacts.create({ ...base, type: a.type, content: ctx.services.data.exportRows(columns, a.rows, a.type) });
+        rec = await ctx.services.artifacts.create({
+          ...base,
+          type: a.type,
+          content: ctx.services.data.exportRows(columns, a.rows, a.type),
+        });
       } else if (a.from_path) {
-        rec = await ctx.services.artifacts.create({ ...base, type: a.type, content: await ctx.services.workspace.readRaw(ctx.projectId, a.from_path) });
+        rec = await ctx.services.artifacts.create({
+          ...base,
+          type: a.type,
+          content: await ctx.services.workspace.readRaw(ctx.projectId, a.from_path),
+        });
       } else if (a.content !== undefined) {
         rec = await ctx.services.artifacts.create({ ...base, type: a.type, content: a.content });
       } else throw new ToolError('Provide content, from_path, rows or files');
-      return ok(`${rec.name} (${rec.size} bytes)`, { artifactId: rec.id }, {
-        attachments: [{ kind: 'artifact', artifactId: rec.id, name: rec.name, type: rec.type }],
-        forModel: `Artifact created: ${rec.name} (id ${rec.id}, ${rec.size} bytes). The user can preview and download it.`,
-      });
+      return ok(
+        `${rec.name} (${rec.size} bytes)`,
+        { artifactId: rec.id },
+        {
+          attachments: [{ kind: 'artifact', artifactId: rec.id, name: rec.name, type: rec.type }],
+          forModel: `Artifact created: ${rec.name} (id ${rec.id}, ${rec.size} bytes). The user can preview and download it.`,
+        },
+      );
     },
   }),
 ];

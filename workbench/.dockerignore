@@ -1,0 +1,9 @@
+node_modules
+dist
+data
+workspace
+test-results
+playwright-report
+.env
+.env.*
+!.env.example

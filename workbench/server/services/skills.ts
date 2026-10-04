@@ -73,16 +73,18 @@ export function mapAgentTools(list: string[], known: Set<string>): string[] {
 }
 
 export function normalizeText(s: string): string {
-  return s
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[’']/g, "'");
+  return s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[’']/g, "'");
+}
+
+export function agentId(name: string): string {
+  return normalizeText(name)
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 /** Splits "---\nyaml\n---\nbody" into frontmatter + body. */
 export function parseFrontmatter(text: string): { meta: Record<string, unknown>; body: string } {
-  const m = /^﻿?---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(text);
+  const m = /^\uFEFF?---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(text);
   if (!m) return { meta: {}, body: text };
   try {
     const meta = parseYaml(m[1]!) as Record<string, unknown>;
@@ -95,12 +97,18 @@ export function parseFrontmatter(text: string): { meta: Record<string, unknown>;
 /** Trigger phrases extracted from a skill description (quoted phrases + keyword lists). */
 export function extractTriggers(description: string, name: string): string[] {
   const out = new Set<string>();
-  for (const m of description.matchAll(/["“«]\s*([^"”»]{2,60}?)\s*["”»]/g)) out.add(normalizeText(m[1]!.trim()));
-  const listRe = /(?:mentionne|mentions?|triggers?(?: on| include)?|se d[ée]clenche(?: aussi)? (?:avec|d[eè]s que)|keywords?)\s*:?\s*([^.]+)/gi;
+  for (const m of description.matchAll(/["“«]\s*([^"”»]{2,60}?)\s*["”»]/g))
+    out.add(normalizeText(m[1]!.trim()));
+  const listRe =
+    /(?:mentionne|mentions?|triggers?(?: on| include)?|se d[ée]clenche(?: aussi)? (?:avec|d[eè]s que)|keywords?)\s*:?\s*([^.]+)/gi;
   for (const m of description.matchAll(listRe)) {
     for (const part of m[1]!.split(/,|\bou\b|\bor\b/)) {
-      const p = normalizeText(part.replace(/["“”«»]/g, '').trim()).replace(/^(l'utilisateur|the user|user)\s+(mentionne|mentions?|demande|asks?(?: for)?)\s+/, '');
-      if (p.length >= 2 && p.length <= 40 && !/^(l'utilisateur|the user|toute demande|meme|any)/.test(p)) out.add(p);
+      const p = normalizeText(part.replace(/["“”«»]/g, '').trim()).replace(
+        /^(l'utilisateur|the user|user)\s+(mentionne|mentions?|demande|asks?(?: for)?)\s+/,
+        '',
+      );
+      if (p.length >= 2 && p.length <= 40 && !/^(l'utilisateur|the user|toute demande|meme|any)/.test(p))
+        out.add(p);
     }
   }
   const nameWords = name.split(/[-_]/).filter((w) => w.length >= 4);
@@ -152,7 +160,8 @@ export class SkillRegistry {
       { dir: path.join(this.opts.cwd, 'skills'), source: 'workbench' },
       ...this.opts.extraDirs.map((dir) => ({ dir, source: 'custom' as const })),
     ];
-    if (this.opts.includeClaudeHome) list.push({ dir: path.join(os.homedir(), '.claude', 'skills'), source: 'claude' });
+    if (this.opts.includeClaudeHome)
+      list.push({ dir: path.join(os.homedir(), '.claude', 'skills'), source: 'claude' });
     return list;
   }
 
@@ -174,7 +183,9 @@ export class SkillRegistry {
           found.push(d);
           return;
         }
-        for (const e of entries) if (e.isDirectory() && !e.name.startsWith('.') && e.name !== 'node_modules') await walk(path.join(d, e.name), depth + 1);
+        for (const e of entries)
+          if (e.isDirectory() && !e.name.startsWith('.') && e.name !== 'node_modules')
+            await walk(path.join(d, e.name), depth + 1);
       };
       await walk(dir, 0);
       for (const skillDir of found) {
@@ -183,13 +194,30 @@ export class SkillRegistry {
           const { meta } = parseFrontmatter(text);
           const name = String(meta.name ?? path.basename(skillDir)).trim();
           if (!name || skills.has(name)) continue;
-          const description = String(meta.description ?? '').replace(/\s+/g, ' ').trim();
-          const extra = Array.isArray(meta.triggers) ? (meta.triggers as unknown[]).map((t) => normalizeText(String(t))) : [];
+          const description = String(meta.description ?? '')
+            .replace(/\s+/g, ' ')
+            .trim();
+          const extra = Array.isArray(meta.triggers)
+            ? (meta.triggers as unknown[]).map((t) => normalizeText(String(t)))
+            : [];
           const files = (await listFiles(skillDir)).filter((f) => f !== 'SKILL.md');
-          skills.set(name, { name, description, dir: skillDir, source, files, triggers: [...new Set([...extractTriggers(description, name), ...extra])], size: text.length });
+          skills.set(name, {
+            name,
+            description,
+            dir: skillDir,
+            source,
+            files,
+            triggers: [...new Set([...extractTriggers(description, name), ...extra])],
+            size: text.length,
+          });
           // Agents bundled inside a skill (e.g. skill-creator/agents/grader.md)
           for (const f of files.filter((x) => /^agents\/[^/]+\.md$/.test(x))) {
-            const agent = await this.readAgent(path.join(skillDir, f), 'skill', `${name}/${path.basename(f, '.md')}`, false);
+            const agent = await this.readAgent(
+              path.join(skillDir, f),
+              'skill',
+              `${name}/${path.basename(f, '.md')}`,
+              false,
+            );
             if (agent && !agents.has(agent.id)) agents.set(agent.id, agent);
           }
         } catch {
@@ -202,9 +230,14 @@ export class SkillRegistry {
       { dir: this.agentsDir, source: 'imported', editable: true },
       { dir: path.join(this.opts.cwd, 'agents'), source: 'workbench', editable: false },
     ];
-    if (this.opts.includeClaudeHome) agentDirs.push({ dir: path.join(os.homedir(), '.claude', 'agents'), source: 'claude', editable: false });
+    if (this.opts.includeClaudeHome)
+      agentDirs.push({
+        dir: path.join(os.homedir(), '.claude', 'agents'),
+        source: 'claude',
+        editable: false,
+      });
     for (const { dir, source, editable } of agentDirs) {
-      let entries: string[] = [];
+      let entries: string[];
       try {
         entries = (await fsp.readdir(dir)).filter((f) => f.endsWith('.md'));
       } catch {
@@ -220,18 +253,34 @@ export class SkillRegistry {
     this.scannedAt = Date.now();
   }
 
-  private async readAgent(file: string, source: CustomAgent['source'], forcedId: string | null, editable: boolean): Promise<CustomAgent | null> {
+  private async readAgent(
+    file: string,
+    source: CustomAgent['source'],
+    forcedId: string | null,
+    editable: boolean,
+  ): Promise<CustomAgent | null> {
     try {
       const text = await fsp.readFile(file, 'utf8');
       const { meta, body } = parseFrontmatter(text);
       const name = String(meta.name ?? forcedId ?? path.basename(file, '.md')).trim();
-      const id = forcedId ?? name.toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
-      const firstPara = body.replace(/^#.*$/m, '').trim().split(/\n\s*\n/)[0] ?? '';
-      const toList = (v: unknown): string[] | null => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v.trim() ? v.split(',').map((s) => s.trim()) : null);
+      const id = forcedId ?? agentId(name);
+      const firstPara =
+        body
+          .replace(/^#.*$/m, '')
+          .trim()
+          .split(/\n\s*\n/)[0] ?? '';
+      const toList = (v: unknown): string[] | null =>
+        Array.isArray(v)
+          ? v.map(String)
+          : typeof v === 'string' && v.trim()
+            ? v.split(',').map((s) => s.trim())
+            : null;
       return {
         id,
         name: forcedId ? (/^#\s+(.+)$/m.exec(body)?.[1]?.trim() ?? name) : name,
-        description: String(meta.description ?? firstPara).replace(/\s+/g, ' ').slice(0, 400),
+        description: String(meta.description ?? firstPara)
+          .replace(/\s+/g, ' ')
+          .slice(0, 400),
         prompt: body.trim(),
         tools: toList(meta.tools),
         model: meta.model ? String(meta.model) : null,
@@ -286,8 +335,14 @@ export class SkillRegistry {
         const re = new RegExp(`(^|[^a-z0-9])${trig.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^a-z0-9])`);
         if (re.test(t)) matched.push(trig);
       }
-      if (t.includes(` ${normalizeText(s.name)} `) || t.includes(`/${normalizeText(s.name)}`)) matched.push(s.name);
-      if (matched.length) out.push({ name: s.name, score: matched.reduce((a, m) => a + Math.min(3, m.split(' ').length), 0), matched: [...new Set(matched)] });
+      if (t.includes(` ${normalizeText(s.name)} `) || t.includes(`/${normalizeText(s.name)}`))
+        matched.push(s.name);
+      if (matched.length)
+        out.push({
+          name: s.name,
+          score: matched.reduce((a, m) => a + Math.min(3, m.split(' ').length), 0),
+          matched: [...new Set(matched)],
+        });
     }
     return out.sort((a, b) => b.score - a.score);
   }
@@ -298,7 +353,8 @@ export class SkillRegistry {
     if (/\.md$/i.test(fileName)) {
       const { meta } = parseFrontmatter(data.toString('utf8'));
       const name = String(meta.name ?? path.basename(fileName, '.md')).replace(/[^\w.-]+/g, '-');
-      if (!meta.description) throw new BadRequestError('SKILL.md must have a frontmatter with name and description');
+      if (!meta.description)
+        throw new BadRequestError('SKILL.md must have a frontmatter with name and description');
       const dir = path.join(this.importDir, name);
       await fsp.mkdir(dir, { recursive: true });
       await fsp.writeFile(path.join(dir, 'SKILL.md'), data);
@@ -316,7 +372,10 @@ export class SkillRegistry {
       if (!skillRoots.length) throw new BadRequestError('Aucun SKILL.md trouvé dans l’archive');
       for (const root of skillRoots) {
         const { meta } = parseFrontmatter(Buffer.from(files[`${root}SKILL.md`]!).toString('utf8'));
-        const name = String(meta.name ?? (root.replace(/\/$/, '').split('/').pop() || 'skill')).replace(/[^\w.-]+/g, '-');
+        const name = String(meta.name ?? (root.replace(/\/$/, '').split('/').pop() || 'skill')).replace(
+          /[^\w.-]+/g,
+          '-',
+        );
         const dest = path.join(this.importDir, name);
         for (const [f, content] of Object.entries(files)) {
           if (!f.startsWith(root) || f.endsWith('/')) continue;
@@ -335,7 +394,8 @@ export class SkillRegistry {
 
   async remove(name: string): Promise<void> {
     const s = await this.get(name);
-    if (s.source !== 'imported') throw new BadRequestError('Seuls les skills importés peuvent être supprimés ici');
+    if (s.source !== 'imported')
+      throw new BadRequestError('Seuls les skills importés peuvent être supprimés ici');
     await fsp.rm(s.dir, { recursive: true, force: true });
     await this.scan(true);
   }
@@ -351,8 +411,17 @@ export class SkillRegistry {
     return this.agents.get(id);
   }
 
-  async saveAgent(a: { id?: string; name: string; description: string; prompt: string; tools?: string[] | null; model?: string | null; effort?: string | null; skills?: string[] }): Promise<CustomAgent> {
-    const id = (a.id ?? a.name).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
+  async saveAgent(a: {
+    id?: string;
+    name: string;
+    description: string;
+    prompt: string;
+    tools?: string[] | null;
+    model?: string | null;
+    effort?: string | null;
+    skills?: string[];
+  }): Promise<CustomAgent> {
+    const id = agentId(a.id ?? a.name);
     if (!id) throw new BadRequestError('Nom d’agent invalide');
     const meta: Record<string, unknown> = { name: a.name, description: a.description };
     if (a.tools?.length) meta.tools = a.tools;

@@ -8,28 +8,52 @@ export const agentTools: AnyTool[] = [
     description:
       'Create/update your task checklist (shown live to the user). Use it for any task with 3+ steps: list all steps, keep exactly one "in_progress", mark steps "done" as soon as they are finished.',
     schema: z.object({
-      steps: z.array(z.object({ title: z.string().min(1).max(200), status: z.enum(['pending', 'in_progress', 'done', 'skipped']) })).min(1).max(40),
+      steps: z
+        .array(
+          z.object({
+            title: z.string().min(1).max(200),
+            status: z.enum(['pending', 'in_progress', 'done', 'skipped']),
+          }),
+        )
+        .min(1)
+        .max(40),
     }),
     readOnly: false,
     assess: () => ({ risk: 'read' }),
     label: (a) => `Plan: ${a.steps.filter((s) => s.status === 'done').length}/${a.steps.length} done`,
     async execute(a, ctx) {
-      const steps: PlanStep[] = a.steps.map((s, i) => ({ id: String(i + 1), title: s.title, status: s.status }));
+      const steps: PlanStep[] = a.steps.map((s, i) => ({
+        id: String(i + 1),
+        title: s.title,
+        status: s.status,
+      }));
       ctx.setPlan?.(steps);
-      return ok(`${steps.filter((s) => s.status === 'done').length}/${steps.length}`, { steps }, { forModel: 'Checklist updated.' });
+      return ok(
+        `${steps.filter((s) => s.status === 'done').length}/${steps.length}`,
+        { steps },
+        { forModel: 'Checklist updated.' },
+      );
     },
   }),
   defineTool({
     name: 'plan.propose',
-    description: 'PLAN MODE ONLY: submit your execution plan for user approval after inspecting the project. Steps must be concrete and verifiable. Do not modify anything before approval.',
-    schema: z.object({ summary: z.string().min(1).max(3000), steps: z.array(z.string().min(1).max(300)).min(1).max(30) }),
+    description:
+      'PLAN MODE ONLY: submit your execution plan for user approval after inspecting the project. Steps must be concrete and verifiable. Do not modify anything before approval.',
+    schema: z.object({
+      summary: z.string().min(1).max(3000),
+      steps: z.array(z.string().min(1).max(300)).min(1).max(30),
+    }),
     readOnly: false,
     assess: () => ({ risk: 'read' }),
     label: (a) => `Propose plan (${a.steps.length} steps)`,
     async execute(a, ctx) {
       if (!ctx.proposePlan) throw new ToolError('plan.propose is only available in plan mode');
       ctx.proposePlan(a.summary, a.steps);
-      return ok(`${a.steps.length} steps proposed`, { steps: a.steps }, { forModel: 'Plan submitted; waiting for the user decision.' });
+      return ok(
+        `${a.steps.length} steps proposed`,
+        { steps: a.steps },
+        { forModel: 'Plan submitted; waiting for the user decision.' },
+      );
     },
   }),
   defineTool({
@@ -43,7 +67,13 @@ export const agentTools: AnyTool[] = [
     async execute(a, ctx) {
       if (!ctx.delegate) throw new ToolError('Delegation is not available at this depth');
       const r = await ctx.delegate(a.role, a.task);
-      return { ok: r.ok, summary: r.ok ? `${a.role} finished` : `${a.role} failed`, data: { childRunId: r.childRunId }, forModel: `Sub-agent (${a.role}) report:\n${r.summary}`, error: r.ok ? undefined : 'sub-agent failed' };
+      return {
+        ok: r.ok,
+        summary: r.ok ? `${a.role} finished` : `${a.role} failed`,
+        data: { childRunId: r.childRunId },
+        forModel: `Sub-agent (${a.role}) report:\n${r.summary}`,
+        error: r.ok ? undefined : 'sub-agent failed',
+      };
     },
   }),
 ];

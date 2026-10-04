@@ -11,7 +11,17 @@ import { terminalTools } from './terminal';
 import type { AnyTool } from './types';
 import { webTools } from './web';
 
-export const ALL_TOOLS: AnyTool[] = [...filesystemTools, ...terminalTools, ...browserTools, ...webTools, ...dataTools, ...projectTools, ...agentTools, ...skillTools, ...jevTools];
+export const ALL_TOOLS: AnyTool[] = [
+  ...filesystemTools,
+  ...terminalTools,
+  ...browserTools,
+  ...webTools,
+  ...dataTools,
+  ...projectTools,
+  ...agentTools,
+  ...skillTools,
+  ...jevTools,
+];
 
 const byName = new Map(ALL_TOOLS.map((t) => [t.name, t]));
 /** OpenAI-style function names cannot contain dots. */
@@ -30,7 +40,13 @@ export function dynamicToolNames(): string[] {
 }
 
 export function getTool(name: string): AnyTool | undefined {
-  return byName.get(name) ?? dynamic.get(name) ?? byLlmName.get(name) ?? dynamicLlm.get(name) ?? byLlmName.get(name.replace(/\./g, '__'));
+  return (
+    byName.get(name) ??
+    dynamic.get(name) ??
+    byLlmName.get(name) ??
+    dynamicLlm.get(name) ??
+    byLlmName.get(name.replace(/\./g, '__'))
+  );
 }
 
 const schemaCache = new Map<string, Record<string, unknown>>();
@@ -39,7 +55,10 @@ export function jsonSchemaFor(tool: AnyTool): Record<string, unknown> {
   if (tool.jsonSchema) return tool.jsonSchema;
   let s = schemaCache.get(tool.name);
   if (!s) {
-    s = z.toJSONSchema(tool.schema, { target: 'draft-7', io: 'input', unrepresentable: 'any' }) as Record<string, unknown>;
+    s = z.toJSONSchema(tool.schema, { target: 'draft-7', io: 'input', unrepresentable: 'any' }) as Record<
+      string,
+      unknown
+    >;
     delete s.$schema;
     schemaCache.set(tool.name, s);
   }
@@ -50,7 +69,10 @@ export function toolDefinitions(names: string[]): ToolDefinition[] {
   return names
     .map((n) => byName.get(n) ?? dynamic.get(n))
     .filter((t): t is AnyTool => Boolean(t))
-    .map((t) => ({ type: 'function', function: { name: toLlmName(t.name), description: t.description, parameters: jsonSchemaFor(t) } }));
+    .map((t) => ({
+      type: 'function',
+      function: { name: toLlmName(t.name), description: t.description, parameters: jsonSchemaFor(t) },
+    }));
 }
 
 export function toolCatalog(): { name: string; description: string; readOnly: boolean }[] {

@@ -1,4 +1,13 @@
-import type { AgentEvent, ApprovalRequest, PlanStep, RoleId, RunStatus, RunSummary, ToolResultPayload, UsageTotals } from '@shared/types';
+import type {
+  AgentEvent,
+  ApprovalRequest,
+  PlanStep,
+  RoleId,
+  RunStatus,
+  RunSummary,
+  ToolResultPayload,
+  UsageTotals,
+} from '@shared/types';
 
 export type ToolItem = {
   kind: 'tool';
@@ -16,10 +25,25 @@ export type Item =
   | { kind: 'user'; id: string; text: string; attachments: string[] }
   | { kind: 'text'; id: string; text: string; streaming: boolean; agentPath?: string }
   | ToolItem
-  | { kind: 'approval'; id: string; request: ApprovalRequest; resolved?: 'approve' | 'deny'; agentPath?: string }
+  | {
+      kind: 'approval';
+      id: string;
+      request: ApprovalRequest;
+      resolved?: 'approve' | 'deny';
+      agentPath?: string;
+    }
   | { kind: 'plan'; id: string; steps: PlanStep[]; summary: string; resolved?: 'approve' | 'cancel' }
   | { kind: 'checklist'; id: string; steps: PlanStep[] }
-  | { kind: 'subagent'; id: string; childRunId: string; role: RoleId; task: string; summary?: string; ok?: boolean; children: Item[] }
+  | {
+      kind: 'subagent';
+      id: string;
+      childRunId: string;
+      role: RoleId;
+      task: string;
+      summary?: string;
+      ok?: boolean;
+      children: Item[];
+    }
   | { kind: 'model'; id: string; model: string; reason: string; auto: boolean; effort?: string }
   | { kind: 'fallback'; id: string; from: string; to: string; reason: string }
   | { kind: 'notice'; id: string; text: string }
@@ -111,7 +135,10 @@ export function applyEvent(view: RunView, e: AgentEvent, seq: number): RunView {
 
   switch (e.type) {
     case 'run_started':
-      v.items = [{ kind: 'user', id: nid(), text: e.userText, attachments: e.attachments }, ...v.items.filter((i) => i.kind !== 'user')];
+      v.items = [
+        { kind: 'user', id: nid(), text: e.userText, attachments: e.attachments },
+        ...v.items.filter((i) => i.kind !== 'user'),
+      ];
       v.status = 'running';
       break;
     case 'status':
@@ -123,7 +150,14 @@ export function applyEvent(view: RunView, e: AgentEvent, seq: number): RunView {
       break;
     case 'model_selected':
       v.model = e.model;
-      pushItem({ kind: 'model', id: nid(), model: e.model, reason: e.reason, auto: e.auto, effort: e.effort });
+      pushItem({
+        kind: 'model',
+        id: nid(),
+        model: e.model,
+        reason: e.reason,
+        auto: e.auto,
+        effort: e.effort,
+      });
       break;
     case 'model_fallback':
       v.model = e.to;
@@ -159,12 +193,24 @@ export function applyEvent(view: RunView, e: AgentEvent, seq: number): RunView {
     case 'tool_call':
       // finalise any streaming text before the tool row
       v.items = v.items.map((i) => (i.kind === 'text' && i.streaming ? { ...i, streaming: false } : i));
-      pushItem({ kind: 'tool', id: nid(), callId: e.callId, tool: e.tool, args: e.args, status: 'running', agentPath: e.agentPath });
+      pushItem({
+        kind: 'tool',
+        id: nid(),
+        callId: e.callId,
+        tool: e.tool,
+        args: e.args,
+        status: 'running',
+        agentPath: e.agentPath,
+      });
       break;
     case 'tool_result':
       v.items = updateTool(v.items, e.callId, (t) => ({
         ...t,
-        status: e.result.ok ? 'ok' : /refus|bloqu|denied|blocked|non disponible/i.test(e.result.summary) ? 'denied' : 'error',
+        status: e.result.ok
+          ? 'ok'
+          : /refus|bloqu|denied|blocked|non disponible/i.test(e.result.summary)
+            ? 'denied'
+            : 'error',
         result: e.result,
         durationMs: e.durationMs,
       }));
@@ -187,14 +233,31 @@ export function applyEvent(view: RunView, e: AgentEvent, seq: number): RunView {
           })
           .reverse();
       v.items = mark(v.items);
-      v.items = [...v.items, { kind: 'approval', id: nid(), request: e.request, agentPath: 'agentPath' in e ? (e as { agentPath?: string }).agentPath : undefined }];
+      v.items = [
+        ...v.items,
+        {
+          kind: 'approval',
+          id: nid(),
+          request: e.request,
+          agentPath: 'agentPath' in e ? (e as { agentPath?: string }).agentPath : undefined,
+        },
+      ];
       v.status = 'waiting_approval';
       break;
     }
     case 'approval_resolved': {
       v.pendingApprovals = v.pendingApprovals.filter((id) => id !== e.approvalId);
-      v.items = v.items.map((i) => (i.kind === 'approval' && i.request.approvalId === e.approvalId ? { ...i, resolved: e.decision } : i));
-      const restore = (items: Item[]): Item[] => items.map((it) => (it.kind === 'tool' && it.status === 'waiting' ? { ...it, status: 'running' as const } : it.kind === 'subagent' ? { ...it, children: restore(it.children) } : it));
+      v.items = v.items.map((i) =>
+        i.kind === 'approval' && i.request.approvalId === e.approvalId ? { ...i, resolved: e.decision } : i,
+      );
+      const restore = (items: Item[]): Item[] =>
+        items.map((it) =>
+          it.kind === 'tool' && it.status === 'waiting'
+            ? { ...it, status: 'running' as const }
+            : it.kind === 'subagent'
+              ? { ...it, children: restore(it.children) }
+              : it,
+        );
       v.items = restore(v.items);
       if (!v.pendingApprovals.length && v.status === 'waiting_approval') v.status = 'running';
       break;
@@ -223,15 +286,24 @@ export function applyEvent(view: RunView, e: AgentEvent, seq: number): RunView {
       break;
     }
     case 'subagent_started':
-      v.items = [...v.items, { kind: 'subagent', id: nid(), childRunId: e.childRunId, role: e.role, task: e.task, children: [] }];
+      v.items = [
+        ...v.items,
+        { kind: 'subagent', id: nid(), childRunId: e.childRunId, role: e.role, task: e.task, children: [] },
+      ];
       break;
     case 'subagent_finished':
-      v.items = v.items.map((i) => (i.kind === 'subagent' && i.childRunId === e.childRunId ? { ...i, summary: e.summary, ok: e.ok } : i));
+      v.items = v.items.map((i) =>
+        i.kind === 'subagent' && i.childRunId === e.childRunId ? { ...i, summary: e.summary, ok: e.ok } : i,
+      );
       break;
     case 'file_changed':
       break;
     case 'usage':
-      v.usage = { promptTokens: v.usage.promptTokens + e.promptTokens, completionTokens: v.usage.completionTokens + e.completionTokens, cost: v.usage.cost + e.cost };
+      v.usage = {
+        promptTokens: v.usage.promptTokens + e.promptTokens,
+        completionTokens: v.usage.completionTokens + e.completionTokens,
+        cost: v.usage.cost + e.cost,
+      };
       if (!('agentPath' in e)) {
         v.contextTokens = e.contextTokens;
         v.contextLimit = e.contextLimit;
@@ -242,10 +314,17 @@ export function applyEvent(view: RunView, e: AgentEvent, seq: number): RunView {
       pushItem({ kind: 'skills', id: nid(), skills: e.skills });
       break;
     case 'compacted':
-      pushItem({ kind: 'notice', id: nid(), text: `Contexte compacté (${e.removedMessages} messages résumés)` });
+      pushItem({
+        kind: 'notice',
+        id: nid(),
+        text: `Contexte compacté (${e.removedMessages} messages résumés)`,
+      });
       break;
     case 'error':
-      v.items = [...v.items.map((i) => (i.kind === 'text' && i.streaming ? { ...i, streaming: false } : i)), { kind: 'error', id: nid(), message: e.message }];
+      v.items = [
+        ...v.items.map((i) => (i.kind === 'text' && i.streaming ? { ...i, streaming: false } : i)),
+        { kind: 'error', id: nid(), message: e.message },
+      ];
       break;
     case 'run_finished':
       v.status = e.status;
@@ -255,7 +334,13 @@ export function applyEvent(view: RunView, e: AgentEvent, seq: number): RunView {
       v.statusText = null;
       v.pendingApprovals = [];
       v.pendingPlan = false;
-      v.items = v.items.map((i) => (i.kind === 'text' && i.streaming ? { ...i, streaming: false } : i.kind === 'tool' && (i.status === 'running' || i.status === 'waiting') ? { ...i, status: 'error' as const } : i));
+      v.items = v.items.map((i) =>
+        i.kind === 'text' && i.streaming
+          ? { ...i, streaming: false }
+          : i.kind === 'tool' && (i.status === 'running' || i.status === 'waiting')
+            ? { ...i, status: 'error' as const }
+            : i,
+      );
       v.run = { ...v.run, status: e.status };
       break;
   }

@@ -11,7 +11,12 @@ function ProcessRow({ p }: { p: ProcessInfo }) {
   const setView = useApp((s) => s.setView);
   return (
     <div className="flex items-center gap-2 border-b border-line/60 px-3 py-1.5 text-[12.5px]">
-      <span className={cx('h-2 w-2 shrink-0 rounded-full', p.status === 'running' ? 'bg-ok wb-pulse' : p.exitCode === 0 ? 'bg-faint' : 'bg-err')} />
+      <span
+        className={cx(
+          'h-2 w-2 shrink-0 rounded-full',
+          p.status === 'running' ? 'bg-ok wb-pulse' : p.exitCode === 0 ? 'bg-faint' : 'bg-err',
+        )}
+      />
       {p.origin === 'agent' && <Bot size={12} className="shrink-0 text-accent" />}
       <span className="min-w-0 flex-1 truncate font-mono" title={p.command}>
         {p.command}
@@ -23,15 +28,26 @@ function ProcessRow({ p }: { p: ProcessInfo }) {
           title="Ouvrir dans le navigateur intégré"
           onClick={() => {
             setView('browser');
-            window.dispatchEvent(new CustomEvent('wb:browser-navigate', { detail: `http://127.0.0.1:${port}` }));
+            window.dispatchEvent(
+              new CustomEvent('wb:browser-navigate', { detail: `http://127.0.0.1:${port}` }),
+            );
           }}
         >
           :{port}
         </button>
       ))}
-      <span className="shrink-0 text-faint">{p.status === 'running' ? (p.background ? 'arrière-plan' : 'en cours') : `code ${p.exitCode ?? '—'} · ${fmtDuration(p.durationMs)}`}</span>
+      <span className="shrink-0 text-faint">
+        {p.status === 'running'
+          ? p.background
+            ? 'arrière-plan'
+            : 'en cours'
+          : `code ${p.exitCode ?? '—'} · ${fmtDuration(p.durationMs)}`}
+      </span>
       {p.status === 'running' && (
-        <IconButton label="Arrêter" onClick={() => void api(`/api/terminal/${p.id}/kill`, { method: 'POST' })}>
+        <IconButton
+          label="Arrêter"
+          onClick={() => void api(`/api/terminal/${p.id}/kill`, { method: 'POST' })}
+        >
           <Square size={12} />
         </IconButton>
       )}
@@ -57,7 +73,12 @@ export function TerminalPane({ compact = false }: { compact?: boolean }) {
     void load();
   }, [load]);
 
-  const virt = useVirtualizer({ count: lines.length, getScrollElement: () => scrollRef.current, estimateSize: () => 18, overscan: 30 });
+  const virt = useVirtualizer({
+    count: lines.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 18,
+    overscan: 30,
+  });
   useEffect(() => {
     if (stick.current && lines.length) virt.scrollToIndex(lines.length - 1, { align: 'end' });
   }, [lines.length, virt]);
@@ -66,9 +87,19 @@ export function TerminalPane({ compact = false }: { compact?: boolean }) {
     const command = cmd.trim();
     if (!command || !projectId) return;
     try {
-      const r = await api<{ processId?: string; needsConfirmation?: boolean; level?: string; reasons?: string[] }>(`/api/projects/${projectId}/terminal`, { body: { command, cwd, background, confirmed } });
+      const r = await api<{
+        processId?: string;
+        needsConfirmation?: boolean;
+        level?: string;
+        reasons?: string[];
+      }>(`/api/projects/${projectId}/terminal`, { body: { command, cwd, background, confirmed } });
       if (r.needsConfirmation) {
-        if (confirm(`Commande potentiellement dangereuse (${r.reasons?.join(', ')}).\n\n${command}\n\nExécuter quand même ?`)) await run(background, true);
+        if (
+          confirm(
+            `Commande potentiellement dangereuse (${r.reasons?.join(', ')}).\n\n${command}\n\nExécuter quand même ?`,
+          )
+        )
+          await run(background, true);
         return;
       }
       pushHistory(command);
@@ -82,7 +113,13 @@ export function TerminalPane({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-code">
-      {!compact && running.length > 0 && <div className="max-h-40 shrink-0 overflow-auto border-b border-line bg-elev">{running.map((p) => <ProcessRow key={p.id} p={p} />)}</div>}
+      {!compact && running.length > 0 && (
+        <div className="max-h-40 shrink-0 overflow-auto border-b border-line bg-elev">
+          {running.map((p) => (
+            <ProcessRow key={p.id} p={p} />
+          ))}
+        </div>
+      )}
       <div
         ref={scrollRef}
         className="min-h-0 flex-1 overflow-auto px-3 py-2 font-mono text-[12.5px] leading-[18px]"
@@ -91,14 +128,23 @@ export function TerminalPane({ compact = false }: { compact?: boolean }) {
           stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
         }}
       >
-        {lines.length === 0 && <div className="text-faint">Terminal prêt. Les commandes de l'agent s'affichent aussi ici en direct.</div>}
+        {lines.length === 0 && (
+          <div className="text-faint">
+            Terminal prêt. Les commandes de l'agent s'affichent aussi ici en direct.
+          </div>
+        )}
         <div style={{ height: virt.getTotalSize(), position: 'relative' }}>
           {virt.getVirtualItems().map((vi) => {
             const l = lines[vi.index]!;
             return (
               <div
                 key={l.id}
-                className={cx('absolute left-0 right-0 whitespace-pre-wrap break-all', l.stream === 'stderr' && 'text-err', l.stream === 'cmd' && 'mt-1 font-semibold text-accent', l.stream === 'info' && 'text-faint')}
+                className={cx(
+                  'absolute left-0 right-0 whitespace-pre-wrap break-all',
+                  l.stream === 'stderr' && 'text-err',
+                  l.stream === 'cmd' && 'mt-1 font-semibold text-accent',
+                  l.stream === 'info' && 'text-faint',
+                )}
                 style={{ transform: `translateY(${vi.start}px)` }}
                 ref={virt.measureElement}
                 data-index={vi.index}
@@ -119,11 +165,28 @@ export function TerminalPane({ compact = false }: { compact?: boolean }) {
           }}
         >
           <span className="text-[11.5px] text-warn">stdin →</span>
-          <input value={stdin} onChange={(e) => setStdin(e.target.value)} className="h-7 flex-1 bg-transparent font-mono text-[12.5px] outline-none" placeholder="Entrée pour le processus en cours" />
-          <Button size="sm" variant="ghost" type="button" onClick={() => void api(`/api/terminal/${foreground.id}/stdin`, { body: { data: '', end: true } })}>
+          <input
+            value={stdin}
+            onChange={(e) => setStdin(e.target.value)}
+            className="h-7 flex-1 bg-transparent font-mono text-[12.5px] outline-none"
+            placeholder="Entrée pour le processus en cours"
+          />
+          <Button
+            size="sm"
+            variant="ghost"
+            type="button"
+            onClick={() =>
+              void api(`/api/terminal/${foreground.id}/stdin`, { body: { data: '', end: true } })
+            }
+          >
             EOF
           </Button>
-          <Button size="sm" variant="danger" type="button" onClick={() => void api(`/api/terminal/${foreground.id}/kill`, { method: 'POST' })}>
+          <Button
+            size="sm"
+            variant="danger"
+            type="button"
+            onClick={() => void api(`/api/terminal/${foreground.id}/kill`, { method: 'POST' })}
+          >
             Ctrl+C
           </Button>
         </form>
@@ -135,7 +198,15 @@ export function TerminalPane({ compact = false }: { compact?: boolean }) {
           void run(false);
         }}
       >
-        {!compact && <input value={cwd} onChange={(e) => setCwd(e.target.value)} placeholder="./" title="Sous-dossier (cwd)" className="h-7 w-24 rounded-md border border-line bg-input px-2 font-mono text-[12px] outline-none" />}
+        {!compact && (
+          <input
+            value={cwd}
+            onChange={(e) => setCwd(e.target.value)}
+            placeholder="./"
+            title="Sous-dossier (cwd)"
+            className="h-7 w-24 rounded-md border border-line bg-input px-2 font-mono text-[12px] outline-none"
+          />
+        )}
         <span className="font-mono text-accent">$</span>
         <input
           value={cmd}
@@ -162,7 +233,11 @@ export function TerminalPane({ compact = false }: { compact?: boolean }) {
         <IconButton label="Exécuter" type="submit">
           <CornerDownLeft size={14} />
         </IconButton>
-        <IconButton label="Lancer en arrière-plan (serveurs, watchers)" type="button" onClick={() => void run(true)}>
+        <IconButton
+          label="Lancer en arrière-plan (serveurs, watchers)"
+          type="button"
+          onClick={() => void run(true)}
+        >
           <Play size={13} />
         </IconButton>
         <IconButton label="Effacer" type="button" onClick={clear}>

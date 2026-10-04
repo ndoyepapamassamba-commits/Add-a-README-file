@@ -14,10 +14,16 @@ export const skillTools: AnyTool[] = [
       const skill = await ctx.services.skills.get(a.name);
       const body = await ctx.services.skills.body(a.name);
       ctx.emit({ type: 'skills_activated', skills: [{ name: skill.name, reason: 'model' }] });
-      const files = skill.files.length ? `\n\nSkill files (read with skill.read): ${skill.files.slice(0, 60).join(', ')}` : '';
-      return ok(`${skill.name} chargé`, { name: skill.name, files: skill.files }, {
-        forModel: `<skill name="${skill.name}">\nMANDATORY: follow these instructions exactly for this task (workflow, questions to ask, output format, language). They override your default style; only safety rules and the permission system take precedence.\n\n${body}${files}\n</skill>`,
-      });
+      const files = skill.files.length
+        ? `\n\nSkill files (read with skill.read): ${skill.files.slice(0, 60).join(', ')}`
+        : '';
+      return ok(
+        `${skill.name} chargé`,
+        { name: skill.name, files: skill.files },
+        {
+          forModel: `<skill name="${skill.name}">\nMANDATORY: follow these instructions exactly for this task (workflow, questions to ask, output format, language). They override your default style; only safety rules and the permission system take precedence.\n\n${body}${files}\n</skill>`,
+        },
+      );
     },
   }),
   defineTool({
@@ -29,7 +35,11 @@ export const skillTools: AnyTool[] = [
     label: (a) => `Skill ${a.name}/${a.path}`,
     async execute(a, ctx) {
       const text = await ctx.services.skills.readFile(a.name, a.path);
-      return ok(`${text.length} caractères`, { path: a.path }, { forModel: text.length > 60_000 ? `${text.slice(0, 60_000)}\n…[truncated]` : text });
+      return ok(
+        `${text.length} caractères`,
+        { path: a.path },
+        { forModel: text.length > 60_000 ? `${text.slice(0, 60_000)}\n…[truncated]` : text },
+      );
     },
   }),
 ];

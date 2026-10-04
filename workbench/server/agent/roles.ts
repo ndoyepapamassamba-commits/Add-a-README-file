@@ -11,11 +11,44 @@ export interface RoleProfile {
   prompt: string;
 }
 
-const FS_READ = ['filesystem.list', 'filesystem.read', 'filesystem.read_many', 'filesystem.search', 'filesystem.glob'];
-const FS_WRITE = ['filesystem.write', 'filesystem.edit', 'filesystem.multi_edit', 'filesystem.delete', 'filesystem.move'];
+const FS_READ = [
+  'filesystem.list',
+  'filesystem.read',
+  'filesystem.read_many',
+  'filesystem.search',
+  'filesystem.glob',
+];
+const FS_WRITE = [
+  'filesystem.write',
+  'filesystem.edit',
+  'filesystem.multi_edit',
+  'filesystem.delete',
+  'filesystem.move',
+];
 const TERM = ['terminal.execute', 'terminal.output', 'terminal.kill', 'code.run'];
-const BROWSER = ['browser.open', 'browser.navigate', 'browser.click', 'browser.type', 'browser.press', 'browser.scroll', 'browser.back', 'browser.forward', 'browser.reload', 'browser.screenshot', 'browser.extract', 'browser.console', 'browser.download'];
-const BROWSER_READ = ['browser.open', 'browser.navigate', 'browser.scroll', 'browser.screenshot', 'browser.extract', 'browser.console'];
+const BROWSER = [
+  'browser.open',
+  'browser.navigate',
+  'browser.click',
+  'browser.type',
+  'browser.press',
+  'browser.scroll',
+  'browser.back',
+  'browser.forward',
+  'browser.reload',
+  'browser.screenshot',
+  'browser.extract',
+  'browser.console',
+  'browser.download',
+];
+const BROWSER_READ = [
+  'browser.open',
+  'browser.navigate',
+  'browser.scroll',
+  'browser.screenshot',
+  'browser.extract',
+  'browser.console',
+];
 const WEB = ['web.search', 'web.fetch'];
 const DATA = ['data.inspect', 'data.query', 'data.transform', 'visualization.create'];
 const GIT_READ = ['git.status', 'git.diff', 'git.log'];
@@ -27,18 +60,45 @@ export const ROLES: Record<string, RoleProfile> = {
   general: {
     id: 'general',
     label: 'Agent principal',
-    description: "Orchestrateur polyvalent : code, terminal, navigateur, données. Peut déléguer à des sous-agents spécialisés.",
+    description:
+      'Orchestrateur polyvalent : code, terminal, navigateur, données. Peut déléguer à des sous-agents spécialisés.',
     tier: 'balanced',
-    tools: [...FS_READ, ...FS_WRITE, ...TERM, ...BROWSER, ...WEB, ...DATA, ...GIT_READ, 'git.commit', ...MEMORY, ...COMMON, 'agent.delegate'],
-    prompt: 'You are the lead engineering agent. Handle the task end-to-end yourself; delegate only well-scoped, independent sub-tasks (research, review, testing) when it clearly helps.',
+    tools: [
+      ...FS_READ,
+      ...FS_WRITE,
+      ...TERM,
+      ...BROWSER,
+      ...WEB,
+      ...DATA,
+      ...GIT_READ,
+      'git.commit',
+      ...MEMORY,
+      ...COMMON,
+      'agent.delegate',
+    ],
+    prompt:
+      'You are the lead engineering agent. Handle the task end-to-end yourself; delegate only well-scoped, independent sub-tasks (research, review, testing) when it clearly helps.',
   },
   coder: {
     id: 'coder',
     label: 'Codeur',
     description: 'Écrit, corrige et refactore du code ; lance builds et tests.',
     tier: 'balanced',
-    tools: [...FS_READ, ...FS_WRITE, ...TERM, ...GIT_READ, ...MEMORY, ...COMMON, ...WEB, 'browser.open', 'browser.extract', 'browser.console', 'browser.screenshot'],
-    prompt: 'You are a senior software engineer. Make minimal, correct, idiomatic changes that match the surrounding code. Always verify with the project build/tests when they exist.',
+    tools: [
+      ...FS_READ,
+      ...FS_WRITE,
+      ...TERM,
+      ...GIT_READ,
+      ...MEMORY,
+      ...COMMON,
+      ...WEB,
+      'browser.open',
+      'browser.extract',
+      'browser.console',
+      'browser.screenshot',
+    ],
+    prompt:
+      'You are a senior software engineer. Make minimal, correct, idiomatic changes that match the surrounding code. Always verify with the project build/tests when they exist.',
   },
   researcher: {
     id: 'researcher',
@@ -46,7 +106,8 @@ export const ROLES: Record<string, RoleProfile> = {
     description: 'Recherche web, lecture de documentation, synthèse sourcée.',
     tier: 'balanced',
     tools: [...WEB, ...BROWSER_READ, ...FS_READ, 'memory.read', ...COMMON],
-    prompt: 'You are a meticulous researcher. Search, read primary sources, cross-check facts, and answer with citations (URLs). Distinguish facts from assumptions.',
+    prompt:
+      'You are a meticulous researcher. Search, read primary sources, cross-check facts, and answer with citations (URLs). Distinguish facts from assumptions.',
   },
   browser: {
     id: 'browser',
@@ -62,7 +123,17 @@ export const ROLES: Record<string, RoleProfile> = {
     label: 'Analyste de données',
     description: 'Analyse CSV/XLSX/JSON : profilage, anomalies, agrégations, graphiques, rapports.',
     tier: 'balanced',
-    tools: [...DATA, ...FS_READ, ...FS_WRITE, 'code.run', 'terminal.execute', ...COMMON, 'memory.read', 'memory.add', 'web.search'],
+    tools: [
+      ...DATA,
+      ...FS_READ,
+      ...FS_WRITE,
+      'code.run',
+      'terminal.execute',
+      ...COMMON,
+      'memory.read',
+      'memory.add',
+      'web.search',
+    ],
     prompt:
       'You are a senior data analyst. Inspect before concluding, quantify everything from the actual data (never invent numbers), flag data-quality issues, and visualise key findings with visualization.create. Present clear KPIs and actionable insights.',
   },
@@ -71,7 +142,16 @@ export const ROLES: Record<string, RoleProfile> = {
     label: 'Relecteur',
     description: 'Revue critique : bugs, régressions, sécurité, tests manquants. Ne modifie rien.',
     tier: 'reasoning',
-    tools: [...FS_READ, ...GIT_READ, 'terminal.execute', 'project.analyze', 'memory.read', 'browser.console', 'plan.update', ...SKILLS],
+    tools: [
+      ...FS_READ,
+      ...GIT_READ,
+      'terminal.execute',
+      'project.analyze',
+      'memory.read',
+      'browser.console',
+      'plan.update',
+      ...SKILLS,
+    ],
     prompt:
       'You are a demanding code reviewer. Do NOT modify files. Find real defects: correctness bugs, regressions, security issues (secrets, injection, path traversal, XSS), missing error handling and missing tests. Run the tests/build if available. Report findings ranked by severity with file:line and a concrete fix for each. If everything is fine, say so explicitly.',
   },
@@ -81,7 +161,8 @@ export const ROLES: Record<string, RoleProfile> = {
     description: 'Écrit et exécute des tests (unitaires, intégration, navigateur), rapporte les échecs.',
     tier: 'balanced',
     tools: [...FS_READ, ...FS_WRITE, ...TERM, ...BROWSER, ...GIT_READ, ...COMMON],
-    prompt: 'You are a QA engineer. Write focused tests for the behaviour in question, run them, and report exact pass/fail results with output. Fix test code, not product code, unless asked.',
+    prompt:
+      'You are a QA engineer. Write focused tests for the behaviour in question, run them, and report exact pass/fail results with output. Fix test code, not product code, unless asked.',
   },
 };
 
@@ -107,11 +188,24 @@ export function agentModelPreference(model: string | null): { id?: string; tier?
 }
 
 /** Built-in role or custom agent (markdown file) → executable profile. */
-export async function resolveRole(id: RoleId, registry: SkillRegistry, knownTools: Set<string>): Promise<ResolvedRole> {
+export async function resolveRole(
+  id: RoleId,
+  registry: SkillRegistry,
+  knownTools: Set<string>,
+): Promise<ResolvedRole> {
   const builtin = ROLES[id];
-  if (builtin) return { ...builtin, custom: false, toolPatterns: builtin.id === 'reviewer' ? [] : null, model: null, effort: null, skills: [] };
+  if (builtin)
+    return {
+      ...builtin,
+      custom: false,
+      toolPatterns: builtin.id === 'reviewer' ? [] : null,
+      model: null,
+      effort: null,
+      skills: [],
+    };
   const agent = await registry.getAgent(id);
-  if (!agent) return { ...ROLES.general!, custom: false, toolPatterns: null, model: null, effort: null, skills: [] };
+  if (!agent)
+    return { ...ROLES.general!, custom: false, toolPatterns: null, model: null, effort: null, skills: [] };
   const base = ROLES.general!.tools.filter((t) => t !== 'agent.delegate');
   const tools = agent.tools?.length ? mapAgentTools(agent.tools, knownTools) : base;
   return {

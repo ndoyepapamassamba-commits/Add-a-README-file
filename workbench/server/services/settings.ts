@@ -14,10 +14,20 @@ export type AutoTiers = z.infer<typeof AutoTiersSchema>;
 // catalog at run time: the newest available model of the first matching
 // family wins, so this list does not go stale when new versions ship.
 export const DEFAULT_AUTO_TIERS: AutoTiers = {
-  fast: ['^anthropic/claude-haiku', '^google/gemini-[0-9.]+-flash(?!-lite)', '^openai/gpt-[0-9.]+-mini', '^deepseek/deepseek-chat'],
+  fast: [
+    '^anthropic/claude-haiku',
+    '^google/gemini-[0-9.]+-flash(?!-lite)',
+    '^openai/gpt-[0-9.]+-mini',
+    '^deepseek/deepseek-chat',
+  ],
   balanced: ['^anthropic/claude-sonnet', '^openai/gpt-[0-9.]+$', '^google/gemini-[0-9.]+-pro'],
   powerful: ['^anthropic/claude-opus', '^openai/gpt-[0-9.]+$', '^google/gemini-[0-9.]+-pro'],
-  reasoning: ['^anthropic/claude-opus', '^openai/gpt-[0-9.]+$', '^deepseek/deepseek-r', '^google/gemini-[0-9.]+-pro'],
+  reasoning: [
+    '^anthropic/claude-opus',
+    '^openai/gpt-[0-9.]+$',
+    '^deepseek/deepseek-r',
+    '^google/gemini-[0-9.]+-pro',
+  ],
   vision: ['^anthropic/claude-sonnet', '^google/gemini-[0-9.]+-(pro|flash)', '^openai/gpt-[0-9.]+$'],
 };
 
@@ -63,7 +73,12 @@ export const AppSettingsSchema = z.object({
       threshold: z.number().min(0.5).max(0.99).default(0.75),
     })
     .default({ enabled: true, routing: true, skills: true, threshold: 0.75 }),
-  mcp: z.object({ autoConnect: z.boolean().default(true), connectTimeoutSec: z.number().int().min(2).max(120).default(20) }).default({ autoConnect: true, connectTimeoutSec: 20 }),
+  mcp: z
+    .object({
+      autoConnect: z.boolean().default(true),
+      connectTimeoutSec: z.number().int().min(2).max(120).default(20),
+    })
+    .default({ autoConnect: true, connectTimeoutSec: 20 }),
   webSearchProvider: z.enum(['auto', 'openrouter', 'brave']).default('auto'),
   webSearchModel: z.string().default(''),
 });
@@ -72,7 +87,14 @@ export type AppSettings = z.infer<typeof AppSettingsSchema>;
 function deepMerge(base: Record<string, unknown>, patch: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = { ...base };
   for (const [k, v] of Object.entries(patch)) {
-    if (v && typeof v === 'object' && !Array.isArray(v) && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) {
+    if (
+      v &&
+      typeof v === 'object' &&
+      !Array.isArray(v) &&
+      base[k] &&
+      typeof base[k] === 'object' &&
+      !Array.isArray(base[k])
+    ) {
       out[k] = deepMerge(base[k] as Record<string, unknown>, v as Record<string, unknown>);
     } else if (v !== undefined) out[k] = v;
   }
@@ -94,7 +116,10 @@ export class SettingsService {
 
   update(patch: unknown): AppSettings {
     if (!patch || typeof patch !== 'object') throw new Error('Invalid settings patch');
-    const merged = deepMerge(this.get() as unknown as Record<string, unknown>, patch as Record<string, unknown>);
+    const merged = deepMerge(
+      this.get() as unknown as Record<string, unknown>,
+      patch as Record<string, unknown>,
+    );
     const next = AppSettingsSchema.parse(merged);
     for (const tier of Object.values(next.autoTiers)) {
       for (const pattern of tier) new RegExp(pattern); // throws on invalid regex

@@ -4,7 +4,9 @@ import { z } from 'zod';
 
 const bool = z
   .union([z.boolean(), z.string()])
-  .transform((v) => (typeof v === 'boolean' ? v : !['0', 'false', 'no', 'off', ''].includes(v.toLowerCase())));
+  .transform((v) =>
+    typeof v === 'boolean' ? v : !['0', 'false', 'no', 'off', ''].includes(v.toLowerCase()),
+  );
 
 const EnvSchema = z.object({
   HOST: z.string().default('127.0.0.1'),
@@ -47,7 +49,10 @@ export type AppConfig = {
 };
 
 /** Loads `.env` (if present) then validates the environment. */
-export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof EnvSchema>, string>> = {}, cwd = process.cwd()): AppConfig {
+export function loadConfig(
+  overrides: Partial<Record<keyof z.infer<typeof EnvSchema>, string>> = {},
+  cwd = process.cwd(),
+): AppConfig {
   const envFile = path.join(cwd, '.env');
   if (fs.existsSync(envFile)) {
     try {
@@ -75,7 +80,11 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof EnvSch
     logLevel: env.LOG_LEVEL,
     webDist: abs(env.WEB_DIST ?? 'dist/web'),
     envFile,
-    skillsDirs: (env.SKILLS_DIRS ?? '').split(path.delimiter).map((d) => d.trim()).filter(Boolean).map(abs),
+    skillsDirs: (env.SKILLS_DIRS ?? '')
+      .split(path.delimiter)
+      .map((d) => d.trim())
+      .filter(Boolean)
+      .map(abs),
     includeClaudeSkills: env.INCLUDE_CLAUDE_SKILLS,
     cwd,
   };

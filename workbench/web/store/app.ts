@@ -2,7 +2,17 @@ import { create } from 'zustand';
 import type { ProjectInfo, RoleId } from '@shared/types';
 import { api, setConnection, storage, type Connection } from '../lib/api';
 import { ws, type WsStatus } from '../lib/ws';
-import type { AgentInfo, AppSettings, ComposerPrefs, CreditsResponse, ModelInfo, SessionListItem, SkillInfo, StatusResponse, View } from '../lib/types';
+import type {
+  AgentInfo,
+  AppSettings,
+  ComposerPrefs,
+  CreditsResponse,
+  ModelInfo,
+  SessionListItem,
+  SkillInfo,
+  StatusResponse,
+  View,
+} from '../lib/types';
 
 export interface Toast {
   id: number;
@@ -23,7 +33,11 @@ export interface ComposerDraft {
   attachments?: string[];
   role?: RoleId;
   send?: boolean;
-  ui?: { openFile?: string; selection?: { text: string; startLine: number; endLine: number }; dataset?: string };
+  ui?: {
+    openFile?: string;
+    selection?: { text: string; startLine: number; endLine: number };
+    dataset?: string;
+  };
 }
 
 interface AppState {
@@ -78,7 +92,9 @@ interface AppState {
 
 const persisted = (() => {
   try {
-    return JSON.parse(storage.get('wb.ui') ?? '{}') as Partial<Pick<AppState, 'theme' | 'view' | 'projectId' | 'sessionId' | 'layout' | 'prefs'>>;
+    return JSON.parse(storage.get('wb.ui') ?? '{}') as Partial<
+      Pick<AppState, 'theme' | 'view' | 'projectId' | 'sessionId' | 'layout' | 'prefs'>
+    >;
   } catch {
     return {};
   }
@@ -104,7 +120,14 @@ export const useApp = create<AppState>((set, get) => ({
   agents: [],
   skills: [],
   credits: null,
-  layout: { sidebar: true, right: true, bottom: false, rightTab: 'plan', bottomTab: 'terminal', ...persisted.layout },
+  layout: {
+    sidebar: true,
+    right: true,
+    bottom: false,
+    rightTab: 'plan',
+    bottomTab: 'terminal',
+    ...persisted.layout,
+  },
   prefs: { effort: 'auto', agentMode: 'chat', ...persisted.prefs },
   toasts: [],
   paletteOpen: false,
@@ -163,7 +186,8 @@ export const useApp = create<AppState>((set, get) => ({
     const projects = await api<ProjectInfo[]>('/api/projects');
     set({ projects });
     const { projectId } = get();
-    if (!projectId || !projects.some((p) => p.id === projectId)) await get().selectProject(projects[0]?.id ?? null);
+    if (!projectId || !projects.some((p) => p.id === projectId))
+      await get().selectProject(projects[0]?.id ?? null);
     else await get().loadSessions();
   },
 
@@ -204,7 +228,9 @@ export const useApp = create<AppState>((set, get) => ({
 
   async loadModels(refresh) {
     try {
-      const r = await api<{ models: ModelInfo[] }>('/api/models', { query: { refresh: refresh ? 1 : undefined } });
+      const r = await api<{ models: ModelInfo[] }>('/api/models', {
+        query: { refresh: refresh ? 1 : undefined },
+      });
       set({ models: r.models, modelsError: null });
     } catch (err) {
       set({ modelsError: (err as Error).message });
@@ -227,7 +253,11 @@ export const useApp = create<AppState>((set, get) => ({
     window.clearTimeout(creditsTimer);
     creditsTimer = window.setTimeout(async () => {
       try {
-        set({ credits: await api<CreditsResponse>('/api/credits', { query: { sessionId: get().sessionId ?? undefined } }) });
+        set({
+          credits: await api<CreditsResponse>('/api/credits', {
+            query: { sessionId: get().sessionId ?? undefined },
+          }),
+        });
       } catch {
         /* offline */
       }
@@ -271,7 +301,17 @@ ws.onStatus((wsStatus) => useApp.setState({ wsStatus }));
 
 // Persist UI preferences.
 useApp.subscribe((s) => {
-  storage.set('wb.ui', JSON.stringify({ theme: s.theme, view: s.view, projectId: s.projectId, sessionId: s.sessionId, layout: s.layout, prefs: s.prefs }));
+  storage.set(
+    'wb.ui',
+    JSON.stringify({
+      theme: s.theme,
+      view: s.view,
+      projectId: s.projectId,
+      sessionId: s.sessionId,
+      layout: s.layout,
+      prefs: s.prefs,
+    }),
+  );
 });
 
 if (typeof window !== 'undefined') {

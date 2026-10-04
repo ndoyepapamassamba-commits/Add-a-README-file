@@ -10,16 +10,27 @@ export function artifactRoutes(app: FastifyInstance, ctx: AppContext): void {
 
   app.get('/api/projects/:id/artifacts', async (req) => {
     const q = req.query as { sessionId?: string };
-    return q.sessionId ? s.repo.listArtifacts({ sessionId: q.sessionId }) : s.repo.listArtifacts({ projectId: aid(req) });
+    return q.sessionId
+      ? s.repo.listArtifacts({ sessionId: q.sessionId })
+      : s.repo.listArtifacts({ projectId: aid(req) });
   });
   app.get('/api/artifacts/:id', async (req) => s.artifacts.get(aid(req)));
   app.get('/api/artifacts/:id/raw', async (req, reply) => {
     const { record, data } = await s.artifacts.read(aid(req));
     const download = (req.query as { download?: string }).download === '1';
-    reply.header('Content-Type', record.type === 'chart' ? 'application/json; charset=utf-8' : mimeFor(record.name));
+    reply.header(
+      'Content-Type',
+      record.type === 'chart' ? 'application/json; charset=utf-8' : mimeFor(record.name),
+    );
     reply.header('X-Content-Type-Options', 'nosniff');
-    reply.header('Content-Security-Policy', "sandbox; default-src 'none'; img-src data:; style-src 'unsafe-inline'");
-    reply.header('Content-Disposition', `${download ? 'attachment' : 'inline'}; filename*=UTF-8''${encodeURIComponent(record.name)}`);
+    reply.header(
+      'Content-Security-Policy',
+      "sandbox; default-src 'none'; img-src data:; style-src 'unsafe-inline'",
+    );
+    reply.header(
+      'Content-Disposition',
+      `${download ? 'attachment' : 'inline'}; filename*=UTF-8''${encodeURIComponent(record.name)}`,
+    );
     return reply.send(data);
   });
   app.post('/api/artifacts/:id/save', async (req) => {
@@ -33,7 +44,8 @@ export function artifactRoutes(app: FastifyInstance, ctx: AppContext): void {
   });
   app.get('/api/artifacts/:id/text', async (req) => {
     const { record, data } = await s.artifacts.read(aid(req));
-    if (['png', 'jpg', 'xlsx', 'zip', 'pdf'].includes(record.type)) return { text: null, ext: path.extname(record.name) };
+    if (['png', 'jpg', 'xlsx', 'zip', 'pdf'].includes(record.type))
+      return { text: null, ext: path.extname(record.name) };
     return { text: data.toString('utf8').slice(0, 2_000_000), ext: path.extname(record.name) };
   });
 }

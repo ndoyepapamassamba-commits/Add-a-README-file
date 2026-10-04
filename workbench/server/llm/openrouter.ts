@@ -33,10 +33,14 @@ interface RawModel {
 }
 
 const EFFORTS: ReasoningEffort[] = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
-const asEffort = (v: string | undefined): ReasoningEffort | null => (v && (EFFORTS as string[]).includes(v) ? (v as ReasoningEffort) : null);
+const asEffort = (v: string | undefined): ReasoningEffort | null =>
+  v && (EFFORTS as string[]).includes(v) ? (v as ReasoningEffort) : null;
 
 /** Picks the supported effort closest to the requested one. */
-export function resolveEffort(requested: ReasoningEffort, supported: ReasoningEffort[]): ReasoningEffort | null {
+export function resolveEffort(
+  requested: ReasoningEffort,
+  supported: ReasoningEffort[],
+): ReasoningEffort | null {
   if (!supported.length) return null;
   if (supported.includes(requested)) return requested;
   const target = EFFORTS.indexOf(requested);
@@ -77,7 +81,9 @@ export function normalizeModel(m: RawModel): ModelInfo {
       vision: inputs.includes('image'),
       structuredOutputs: params.has('structured_outputs') || params.has('response_format'),
     },
-    efforts: (m.reasoning?.supported_efforts ?? []).map((e) => asEffort(e)).filter((e): e is ReasoningEffort => e !== null),
+    efforts: (m.reasoning?.supported_efforts ?? [])
+      .map((e) => asEffort(e))
+      .filter((e): e is ReasoningEffort => e !== null),
     defaultEffort: asEffort(m.reasoning?.default_effort),
     description: (m.description ?? '').slice(0, 600),
   };
@@ -120,7 +126,8 @@ export class OpenRouterProvider implements LLMProvider {
 
   async listModels(): Promise<ModelInfo[]> {
     const res = await httpFetch(`${this.opts.baseUrl}/models`, { headers: this.headers() });
-    if (!res.ok) throw new LLMError(`Model list failed (${res.status})`, res.status, isRetryableStatus(res.status));
+    if (!res.ok)
+      throw new LLMError(`Model list failed (${res.status})`, res.status, isRetryableStatus(res.status));
     const body = (await res.json()) as { data?: RawModel[] };
     return (body.data ?? []).map(normalizeModel);
   }
@@ -130,9 +137,21 @@ export class OpenRouterProvider implements LLMProvider {
     try {
       const res = await httpFetch(`${this.opts.baseUrl}/key`, { headers: this.headers() });
       if (!res.ok) {
-        return { configured, connected: false, error: res.status === 401 ? 'Clé absente ou invalide (401)' : `HTTP ${res.status}` };
+        return {
+          configured,
+          connected: false,
+          error: res.status === 401 ? 'Clé absente ou invalide (401)' : `HTTP ${res.status}`,
+        };
       }
-      const body = (await res.json()) as { data?: { label?: string; limit?: number | null; limit_remaining?: number | null; usage?: number; is_free_tier?: boolean } };
+      const body = (await res.json()) as {
+        data?: {
+          label?: string;
+          limit?: number | null;
+          limit_remaining?: number | null;
+          usage?: number;
+          is_free_tier?: boolean;
+        };
+      };
       const d = body.data ?? {};
       return {
         configured,
@@ -254,13 +273,22 @@ export class OpenRouterProvider implements LLMProvider {
                 content?: string | null;
                 reasoning?: string | null;
                 reasoning_details?: unknown[];
-                tool_calls?: { index: number; id?: string; function?: { name?: string; arguments?: string } }[];
+                tool_calls?: {
+                  index: number;
+                  id?: string;
+                  function?: { name?: string; arguments?: string };
+                }[];
                 annotations?: unknown[];
               };
               finish_reason?: string | null;
               error?: { message?: string; code?: number };
             }[];
-            usage?: { prompt_tokens?: number; completion_tokens?: number; cost?: number; prompt_tokens_details?: { cached_tokens?: number } };
+            usage?: {
+              prompt_tokens?: number;
+              completion_tokens?: number;
+              cost?: number;
+              prompt_tokens_details?: { cached_tokens?: number };
+            };
           };
           try {
             json = JSON.parse(data);
@@ -326,7 +354,8 @@ export class OpenRouterProvider implements LLMProvider {
     } catch (err) {
       if (err instanceof LLMError) throw err;
       if (req.signal?.aborted) throw new LLMError('Cancelled', 499, false, 'cancelled');
-      if (controller.signal.aborted) throw new LLMError((controller.signal.reason as Error)?.message ?? 'Aborted', 504, true);
+      if (controller.signal.aborted)
+        throw new LLMError((controller.signal.reason as Error)?.message ?? 'Aborted', 504, true);
       throw new LLMError(`Stream error: ${(err as Error).message}`, 0, true);
     } finally {
       if (idleTimer) clearTimeout(idleTimer);

@@ -53,10 +53,18 @@ function realpathOfExistingAncestor(p: string): string {
  * Resolves `relPath` inside `root`, rejecting traversal, absolute escapes and
  * symlinks that point outside the root.
  */
-export function resolveInside(root: string, relPath: string, opts: { allowProtected?: boolean } = {}): string {
+export function resolveInside(
+  root: string,
+  relPath: string,
+  opts: { allowProtected?: boolean } = {},
+): string {
   if (typeof relPath !== 'string' || relPath.includes('\0')) throw new PathError('Invalid path', 'INVALID');
   // Models sometimes send quoted or "." paths for the project root.
-  const cleaned = relPath.trim().replace(/^["'`]+|["'`]+$/g, '').replace(/^\.\/?$/, '').replace(/^[/\\]+/, '');
+  const cleaned = relPath
+    .trim()
+    .replace(/^["'`]+|["'`]+$/g, '')
+    .replace(/^\.\/?$/, '')
+    .replace(/^[/\\]+/, '');
   const rootReal = fs.realpathSync(root);
   const target = path.resolve(rootReal, cleaned || '.');
   const real = realpathOfExistingAncestor(target);

@@ -32,7 +32,14 @@ export function browserRoutes(app: FastifyInstance, ctx: AppContext): void {
     if (b.action === 'screenshot') {
       const png = await s.browser.screenshot(k, dl(b.projectId), { fullPage: b.fullPage }, 'user');
       const st = await s.browser.state(k);
-      const art = await s.artifacts.create({ projectId: b.projectId, sessionId: k, name: `capture-${new Date().toISOString().replace(/[:.]/g, '-')}`, type: 'png', content: png, meta: { url: st?.url } });
+      const art = await s.artifacts.create({
+        projectId: b.projectId,
+        sessionId: k,
+        name: `capture-${new Date().toISOString().replace(/[:.]/g, '-')}`,
+        type: 'png',
+        content: png,
+        meta: { url: st?.url },
+      });
       return { artifactId: art.id };
     }
     if (b.action === 'extract') return s.browser.snapshot(k, dl(b.projectId), 30_000, 'user');

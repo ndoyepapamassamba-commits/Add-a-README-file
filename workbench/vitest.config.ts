@@ -11,5 +11,7 @@ export default defineConfig({
     testTimeout: 60_000,
     hookTimeout: 60_000,
     pool: 'forks',
+    // node:sqlite prints an ExperimentalWarning on import; keep test output clean.
+    execArgv: ['--disable-warning=ExperimentalWarning'],
   },
 });

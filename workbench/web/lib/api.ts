@@ -73,11 +73,16 @@ type Query = Record<string, string | number | boolean | undefined | null>;
 function buildUrl(path: string, query?: Query): string {
   if (!conn) throw new ApiError(0, 'Non connecté');
   const url = new URL(conn.baseUrl.replace(/\/$/, '') + path);
-  if (query) for (const [k, v] of Object.entries(query)) if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
+  if (query)
+    for (const [k, v] of Object.entries(query))
+      if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
   return url.toString();
 }
 
-export async function api<T = unknown>(path: string, opts: { method?: string; body?: unknown; query?: Query; signal?: AbortSignal } = {}): Promise<T> {
+export async function api<T = unknown>(
+  path: string,
+  opts: { method?: string; body?: unknown; query?: Query; signal?: AbortSignal } = {},
+): Promise<T> {
   const headers: Record<string, string> = { Authorization: `Bearer ${conn?.token ?? ''}` };
   let body: BodyInit | undefined;
   if (opts.body instanceof FormData) body = opts.body;
@@ -87,10 +92,18 @@ export async function api<T = unknown>(path: string, opts: { method?: string; bo
   }
   let res: Response;
   try {
-    res = await fetch(buildUrl(path, opts.query), { method: opts.method ?? (body ? 'POST' : 'GET'), headers, body, signal: opts.signal });
+    res = await fetch(buildUrl(path, opts.query), {
+      method: opts.method ?? (body ? 'POST' : 'GET'),
+      headers,
+      body,
+      signal: opts.signal,
+    });
   } catch (err) {
     if ((err as Error).name === 'AbortError') throw err;
-    throw new ApiError(0, `Serveur injoignable (${conn?.baseUrl}). Lancez « npm start » dans le dossier workbench.`);
+    throw new ApiError(
+      0,
+      `Serveur injoignable (${conn?.baseUrl}). Lancez « npm start » dans le dossier workbench.`,
+    );
   }
   if (!res.ok) {
     let msg = res.statusText;
@@ -108,7 +121,9 @@ export async function api<T = unknown>(path: string, opts: { method?: string; bo
 }
 
 export async function apiBlob(path: string, query?: Query): Promise<Blob> {
-  const res = await fetch(buildUrl(path, query), { headers: { Authorization: `Bearer ${conn?.token ?? ''}` } });
+  const res = await fetch(buildUrl(path, query), {
+    headers: { Authorization: `Bearer ${conn?.token ?? ''}` },
+  });
   if (!res.ok) throw new ApiError(res.status, res.statusText);
   return res.blob();
 }
@@ -126,7 +141,12 @@ export function blobUrl(path: string, query?: Query): Promise<string> {
   return p;
 }
 
-export async function downloadFile(path: string, filename: string, query?: Query, init?: { method?: string; body?: unknown }): Promise<void> {
+export async function downloadFile(
+  path: string,
+  filename: string,
+  query?: Query,
+  init?: { method?: string; body?: unknown },
+): Promise<void> {
   let blob: Blob;
   if (init?.method === 'POST') {
     const res = await fetch(buildUrl(path, query), {
@@ -134,7 +154,11 @@ export async function downloadFile(path: string, filename: string, query?: Query
       headers: { Authorization: `Bearer ${conn?.token ?? ''}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(init.body ?? {}),
     });
-    if (!res.ok) throw new ApiError(res.status, (await res.json().catch(() => ({ error: res.statusText })) as { error: string }).error);
+    if (!res.ok)
+      throw new ApiError(
+        res.status,
+        ((await res.json().catch(() => ({ error: res.statusText }))) as { error: string }).error,
+      );
     blob = await res.blob();
   } else blob = await apiBlob(path, query);
   const url = URL.createObjectURL(blob);

@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUp, FileText, Image as ImageIcon, ListChecks, Loader2, Paperclip, Square, X } from 'lucide-react';
+import {
+  ArrowUp,
+  FileText,
+  Image as ImageIcon,
+  ListChecks,
+  Loader2,
+  Paperclip,
+  Square,
+  X,
+} from 'lucide-react';
 import type { EffortSetting, PermissionMode } from '@shared/types';
 import { api } from '../../lib/api';
 import { basename, cx, fmtCost, shortModel } from '../../lib/format';
@@ -49,7 +58,8 @@ const MODES: PermissionMode[] = ['safe', 'normal', 'autonomous'];
 let fileCache: { projectId: string; files: string[]; at: number } | null = null;
 
 async function projectFiles(projectId: string): Promise<string[]> {
-  if (fileCache && fileCache.projectId === projectId && Date.now() - fileCache.at < 30_000) return fileCache.files;
+  if (fileCache && fileCache.projectId === projectId && Date.now() - fileCache.at < 30_000)
+    return fileCache.files;
   const files = await api<string[]>(`/api/projects/${projectId}/all-files`);
   fileCache = { projectId, files, at: Date.now() };
   return files;
@@ -70,7 +80,10 @@ function fuzzy(query: string, items: string[], limit = 12): string[] {
     for (const ch of s) if (ch === q[j]) j++;
     if (j === q.length) scored.push([it, 100 + s.length]);
   }
-  return scored.sort((a, b) => a[1] - b[1]).slice(0, limit).map(([x]) => x);
+  return scored
+    .sort((a, b) => a[1] - b[1])
+    .slice(0, limit)
+    .map(([x]) => x);
 }
 
 export function Composer({ compact = false, autoFocus = true }: { compact?: boolean; autoFocus?: boolean }) {
@@ -82,8 +95,16 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
   const [text, setText] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [dragging, setDragging] = useState(false);
-  const [menu, setMenu] = useState<{ kind: 'slash' | 'mention'; query: string; start: number; items: string[]; index: number } | null>(null);
-  const [estimate, setEstimate] = useState<{ perStep: number | null; model: string; reason: string } | null>(null);
+  const [menu, setMenu] = useState<{
+    kind: 'slash' | 'mention';
+    query: string;
+    start: number;
+    items: string[];
+    index: number;
+  } | null>(null);
+  const [estimate, setEstimate] = useState<{ perStep: number | null; model: string; reason: string } | null>(
+    null,
+  );
   const taRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const historyIdx = useRef(-1);
@@ -101,7 +122,11 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
     if (!d) return;
     app.setDraft(null);
     if (d.text) setText(d.text);
-    if (d.attachments?.length) setAttachments((a) => [...a, ...d.attachments!.map((p) => ({ path: p, kind: 'file', size: 0, name: basename(p) }))]);
+    if (d.attachments?.length)
+      setAttachments((a) => [
+        ...a,
+        ...d.attachments!.map((p) => ({ path: p, kind: 'file', size: 0, name: basename(p) })),
+      ]);
     if (d.role) void session.patchSession({ role: d.role });
     if (d.send && d.text) void submit(d.text, d.attachments ?? [], d.ui);
     else taRef.current?.focus();
@@ -123,7 +148,9 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
       return;
     }
     const t = window.setTimeout(() => {
-      api<{ perStep: number | null; model: string; reason: string }>('/api/estimate', { body: { sessionId: detail.session.id, text, model, role } })
+      api<{ perStep: number | null; model: string; reason: string }>('/api/estimate', {
+        body: { sessionId: detail.session.id, text, model, role },
+      })
         .then(setEstimate)
         .catch(() => setEstimate(null));
     }, 600);
@@ -133,13 +160,30 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
   const upload = useCallback(
     async (files: File[]) => {
       if (!projectId || !files.length) return;
-      const temp: Attachment[] = files.map((f) => ({ path: `__uploading__/${f.name}-${Math.random()}`, kind: f.type.startsWith('image/') ? 'image' : 'file', size: f.size, uploading: true, name: f.name || 'fichier' }));
+      const temp: Attachment[] = files.map((f) => ({
+        path: `__uploading__/${f.name}-${Math.random()}`,
+        kind: f.type.startsWith('image/') ? 'image' : 'file',
+        size: f.size,
+        uploading: true,
+        name: f.name || 'fichier',
+      }));
       setAttachments((a) => [...a, ...temp]);
       const fd = new FormData();
-      for (const f of files) fd.append('file', f, f.name || `collé-${Date.now()}.${(f.type.split('/')[1] ?? 'bin').replace('jpeg', 'jpg')}`);
+      for (const f of files)
+        fd.append(
+          'file',
+          f,
+          f.name || `collé-${Date.now()}.${(f.type.split('/')[1] ?? 'bin').replace('jpeg', 'jpg')}`,
+        );
       try {
-        const saved = await api<{ path: string; size: number; kind: string }[]>(`/api/projects/${projectId}/upload`, { body: fd });
-        setAttachments((a) => [...a.filter((x) => !temp.includes(x)), ...saved.map((s) => ({ ...s, name: basename(s.path) }))]);
+        const saved = await api<{ path: string; size: number; kind: string }[]>(
+          `/api/projects/${projectId}/upload`,
+          { body: fd },
+        );
+        setAttachments((a) => [
+          ...a.filter((x) => !temp.includes(x)),
+          ...saved.map((s) => ({ ...s, name: basename(s.path) })),
+        ]);
       } catch (err) {
         setAttachments((a) => a.filter((x) => !temp.includes(x)));
         app.toast('error', (err as Error).message);
@@ -148,10 +192,16 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
     [projectId, app],
   );
 
-  const ui = (): { openFile?: string; selection?: { text: string; startLine: number; endLine: number }; dataset?: string; browserUrl?: string } => {
+  const ui = (): {
+    openFile?: string;
+    selection?: { text: string; startLine: number; endLine: number };
+    dataset?: string;
+    browserUrl?: string;
+  } => {
     const code = useCode.getState();
     const b = useBrowser.getState();
-    const openFile = app.view === 'code' ? (code.focusSplit ? code.split : code.active) ?? undefined : undefined;
+    const openFile =
+      app.view === 'code' ? ((code.focusSplit ? code.split : code.active) ?? undefined) : undefined;
     return {
       openFile,
       selection: openFile && code.selection?.text ? code.selection : undefined,
@@ -233,7 +283,11 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
     return false;
   }
 
-  async function submit(value = text, extra: string[] = attachments.filter((a) => !a.uploading).map((a) => a.path), uiCtx = ui()) {
+  async function submit(
+    value = text,
+    extra: string[] = attachments.filter((a) => !a.uploading).map((a) => a.path),
+    uiCtx = ui(),
+  ) {
     const t = value.trim();
     if (!t || running) return;
     if (attachments.some((a) => a.uploading)) {
@@ -305,7 +359,11 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
     } else {
       const next = `${text.slice(0, menu.start)}@${item} ${text.slice(menu.start + 1 + menu.query.length)}`;
       setText(next);
-      setAttachments((a) => (a.some((x) => x.path === item) ? a : [...a, { path: item, kind: 'file', size: 0, name: basename(item) }]));
+      setAttachments((a) =>
+        a.some((x) => x.path === item)
+          ? a
+          : [...a, { path: item, kind: 'file', size: 0, name: basename(item) }],
+      );
       setMenu(null);
     }
     taRef.current?.focus();
@@ -350,7 +408,9 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
       return;
     }
     if (e.key === 'ArrowUp' && !text) {
-      const users = session.order.map((id) => session.runs[id]?.items.find((i) => i.kind === 'user')).filter(Boolean) as { text: string }[];
+      const users = session.order
+        .map((id) => session.runs[id]?.items.find((i) => i.kind === 'user'))
+        .filter(Boolean) as { text: string }[];
       if (users.length) {
         historyIdx.current = Math.min(users.length - 1, historyIdx.current + 1);
         setText(users[users.length - 1 - historyIdx.current]!.text);
@@ -372,12 +432,17 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
                 e.preventDefault();
                 pickMenu(it);
               }}
-              className={cx('flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px]', i === menu.index && 'bg-hover')}
+              className={cx(
+                'flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px]',
+                i === menu.index && 'bg-hover',
+              )}
             >
               {menu.kind === 'slash' ? (
                 <>
                   <span className="font-mono text-accent">/{it}</span>
-                  {slashInfo[it]?.args && <span className="font-mono text-[11.5px] text-faint">{slashInfo[it]!.args}</span>}
+                  {slashInfo[it]?.args && (
+                    <span className="font-mono text-[11.5px] text-faint">{slashInfo[it]!.args}</span>
+                  )}
                   <span className="ml-auto text-[12px] text-muted">{slashInfo[it]?.description}</span>
                 </>
               ) : (
@@ -389,7 +454,10 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
       )}
 
       <div
-        className={cx('rounded-2xl border bg-input shadow-sm transition-colors', dragging ? 'border-accent' : 'border-line focus-within:border-line-strong')}
+        className={cx(
+          'rounded-2xl border bg-input shadow-sm transition-colors',
+          dragging ? 'border-accent' : 'border-line focus-within:border-line-strong',
+        )}
         onDragOver={(e) => {
           e.preventDefault();
           setDragging(true);
@@ -404,10 +472,23 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-1.5 px-3 pt-2.5">
             {attachments.map((a) => (
-              <span key={a.path} className="inline-flex max-w-[240px] items-center gap-1.5 rounded-lg border border-line bg-panel px-2 py-1 text-[12px]">
-                {a.uploading ? <Loader2 size={12} className="wb-spin" /> : a.kind === 'image' ? <ImageIcon size={12} className="text-info" /> : <FileText size={12} className="text-muted" />}
+              <span
+                key={a.path}
+                className="inline-flex max-w-[240px] items-center gap-1.5 rounded-lg border border-line bg-panel px-2 py-1 text-[12px]"
+              >
+                {a.uploading ? (
+                  <Loader2 size={12} className="wb-spin" />
+                ) : a.kind === 'image' ? (
+                  <ImageIcon size={12} className="text-info" />
+                ) : (
+                  <FileText size={12} className="text-muted" />
+                )}
                 <span className="truncate">{a.name}</span>
-                <button aria-label="Retirer" className="text-faint hover:text-err" onClick={() => setAttachments((x) => x.filter((y) => y.path !== a.path))}>
+                <button
+                  aria-label="Retirer"
+                  className="text-faint hover:text-err"
+                  onClick={() => setAttachments((x) => x.filter((y) => y.path !== a.path))}
+                >
                   <X size={12} />
                 </button>
               </span>
@@ -419,7 +500,11 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
           autoFocus={autoFocus}
           rows={compact ? 2 : 2}
           value={text}
-          placeholder={running ? 'L’agent travaille… (Échap pour interrompre)' : 'Demandez à l’agent…  / commandes · @ fichiers · glissez vos fichiers, photos, documents'}
+          placeholder={
+            running
+              ? 'L’agent travaille… (Échap pour interrompre)'
+              : 'Demandez à l’agent…  / commandes · @ fichiers · glissez vos fichiers, photos, documents'
+          }
           onChange={(e) => {
             setText(e.target.value);
             void updateMenu(e.target.value, e.target.selectionStart);
@@ -435,32 +520,74 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
           className="block max-h-[40vh] w-full resize-none bg-transparent px-4 pb-1 pt-3 text-[14px] leading-[1.55] outline-none placeholder:text-faint"
         />
         <div className="flex flex-wrap items-center gap-0.5 px-2 pb-2">
-          <input ref={fileRef} type="file" multiple hidden onChange={(e) => void upload([...(e.target.files ?? [])]).then(() => e.target && (e.target.value = ''))} />
-          <Chip title="Joindre des fichiers, photos, documents (ou glisser-déposer / coller)" onClick={() => fileRef.current?.click()}>
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            hidden
+            onChange={(e) =>
+              void upload([...(e.target.files ?? [])]).then(() => e.target && (e.target.value = ''))
+            }
+          />
+          <Chip
+            title="Joindre des fichiers, photos, documents (ou glisser-déposer / coller)"
+            onClick={() => fileRef.current?.click()}
+          >
             <Paperclip size={14} />
           </Chip>
-          <AgentPicker value={role} agents={app.agents} onChange={(id) => void session.patchSession({ role: id })} />
+          <AgentPicker
+            value={role}
+            agents={app.agents}
+            onChange={(id) => void session.patchSession({ role: id })}
+          />
           {!compact && (
             <SkillsPicker
               selected={pinned}
               skills={app.skills}
-              onToggle={(name) => void session.patchSession({ skills: pinned.includes(name) ? pinned.filter((s) => s !== name) : [...pinned, name] })}
+              onToggle={(name) =>
+                void session.patchSession({
+                  skills: pinned.includes(name) ? pinned.filter((s) => s !== name) : [...pinned, name],
+                })
+              }
             />
           )}
-          <Chip title="Mode Plan : l'agent propose un plan à valider avant d'agir" active={app.prefs.agentMode === 'plan'} onClick={() => app.setPrefs({ agentMode: app.prefs.agentMode === 'plan' ? 'chat' : 'plan' })}>
+          <Chip
+            title="Mode Plan : l'agent propose un plan à valider avant d'agir"
+            active={app.prefs.agentMode === 'plan'}
+            onClick={() => app.setPrefs({ agentMode: app.prefs.agentMode === 'plan' ? 'chat' : 'plan' })}
+          >
             <ListChecks size={14} /> Plan
           </Chip>
           <ModePicker value={mode} onChange={(m) => void session.patchSession({ permissionMode: m })} />
           <div className="ml-auto flex items-center gap-0.5">
             {estimate?.perStep !== null && estimate && text.trim() && (
-              <span className="hidden px-1 text-[11.5px] text-faint sm:inline" title={`Estimation (prix publiés par OpenRouter) pour ${estimate.model} — ${estimate.reason}. Une tâche agent fait souvent plusieurs étapes ; le cache de prompt réduit le coût réel.`}>
-                ≈ {fmtCost(estimate.perStep)}/étape{model === 'auto' ? ` · ${shortModel(estimate.model)}` : ''}
+              <span
+                className="hidden px-1 text-[11.5px] text-faint sm:inline"
+                title={`Estimation (prix publiés par OpenRouter) pour ${estimate.model} — ${estimate.reason}. Une tâche agent fait souvent plusieurs étapes ; le cache de prompt réduit le coût réel.`}
+              >
+                ≈ {fmtCost(estimate.perStep)}/étape
+                {model === 'auto' ? ` · ${shortModel(estimate.model)}` : ''}
               </span>
             )}
-            <ModelPicker value={model} models={app.models} onChange={(id) => void session.patchSession({ model: id })} />
-            {!compact && <EffortPicker value={app.prefs.effort} model={modelInfo} onChange={(effort) => app.setPrefs({ effort })} />}
+            <ModelPicker
+              value={model}
+              models={app.models}
+              onChange={(id) => void session.patchSession({ model: id })}
+            />
+            {!compact && (
+              <EffortPicker
+                value={app.prefs.effort}
+                model={modelInfo}
+                onChange={(effort) => app.setPrefs({ effort })}
+              />
+            )}
             {running ? (
-              <button onClick={() => void session.cancel()} className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-fg text-bg hover:opacity-85" aria-label="Interrompre (Échap)" title="Interrompre (Échap)">
+              <button
+                onClick={() => void session.cancel()}
+                className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-fg text-bg hover:opacity-85"
+                aria-label="Interrompre (Échap)"
+                title="Interrompre (Échap)"
+              >
                 <Square size={13} fill="currentColor" />
               </button>
             ) : (
@@ -480,7 +607,8 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
       {!compact && (
         <div className="mt-1.5 flex justify-between px-1 text-[11px] text-faint">
           <span>
-            <Kbd>Entrée</Kbd> envoyer · <Kbd>Maj+Entrée</Kbd> nouvelle ligne · <Kbd>Maj+Tab</Kbd> mode · <Kbd>Ctrl+K</Kbd> commandes
+            <Kbd>Entrée</Kbd> envoyer · <Kbd>Maj+Entrée</Kbd> nouvelle ligne · <Kbd>Maj+Tab</Kbd> mode ·{' '}
+            <Kbd>Ctrl+K</Kbd> commandes
           </span>
           {pinned.length > 0 && <span className="truncate">Skills épinglés : {pinned.join(', ')}</span>}
         </div>

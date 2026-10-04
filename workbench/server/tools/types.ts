@@ -1,5 +1,12 @@
 import type { z } from 'zod';
-import type { AgentEvent, ApprovalRequest, Attachment, PermissionMode, PlanStep, RoleId } from '@shared/types';
+import type {
+  AgentEvent,
+  ApprovalRequest,
+  Attachment,
+  PermissionMode,
+  PlanStep,
+  RoleId,
+} from '@shared/types';
 import type { CommandLevel } from '../security/commandPolicy';
 import type { ToolRisk } from '../security/permissions';
 import type { Services } from '../services/container';

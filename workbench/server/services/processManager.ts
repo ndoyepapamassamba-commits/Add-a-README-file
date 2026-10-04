@@ -61,7 +61,11 @@ export class ProcessManager extends EventEmitter {
     background?: boolean;
     stdin?: boolean;
   }): { id: string; done: Promise<CommandResult> } {
-    if (opts.background && [...this.procs.values()].filter((p) => p.info.background && p.info.status === 'running').length >= MAX_BACKGROUND) {
+    if (
+      opts.background &&
+      [...this.procs.values()].filter((p) => p.info.background && p.info.status === 'running').length >=
+        MAX_BACKGROUND
+    ) {
       throw new Error(`Too many background processes (max ${MAX_BACKGROUND}). Stop one first.`);
     }
     const id = randomUUID();
@@ -145,9 +149,18 @@ export class ProcessManager extends EventEmitter {
   }
 
   /** Runs a background process and returns its first output after `settleMs`. */
-  async startBackground(opts: { projectId: string; cwd: string; command: string; origin: 'agent' | 'user'; settleMs?: number }): Promise<CommandResult> {
+  async startBackground(opts: {
+    projectId: string;
+    cwd: string;
+    command: string;
+    origin: 'agent' | 'user';
+    settleMs?: number;
+  }): Promise<CommandResult> {
     const { id, done } = this.run({ ...opts, timeoutMs: 0, background: true });
-    const settled = await Promise.race([done, new Promise<null>((r) => setTimeout(() => r(null), opts.settleMs ?? 4000))]);
+    const settled = await Promise.race([
+      done,
+      new Promise<null>((r) => setTimeout(() => r(null), opts.settleMs ?? 4000)),
+    ]);
     if (settled) return settled;
     const t = this.procs.get(id)!;
     return { ...t.info, stdout: t.stdout, stderr: t.stderr, truncated: t.truncated };

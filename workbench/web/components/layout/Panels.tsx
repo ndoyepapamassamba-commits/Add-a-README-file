@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, FileDiff, Loader2, MessageSquarePlus, Pencil, Plus, Search, Trash2, Undo2 } from 'lucide-react';
+import {
+  Check,
+  FileDiff,
+  Loader2,
+  MessageSquarePlus,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Undo2,
+} from 'lucide-react';
 import type { ChangeRecord } from '@shared/types';
 import { api, downloadFile } from '../../lib/api';
 import { cx, fmtCost, fmtRelative, fmtTime, fmtTokens, shortModel } from '../../lib/format';
@@ -24,7 +34,10 @@ export function SessionList() {
   const loadSessions = useApp((s) => s.loadSessions);
   const toast = useApp((s) => s.toast);
   const [q, setQ] = useState('');
-  const list = useMemo(() => sessions.filter((s) => !q || s.title.toLowerCase().includes(q.toLowerCase())), [sessions, q]);
+  const list = useMemo(
+    () => sessions.filter((s) => !q || s.title.toLowerCase().includes(q.toLowerCase())),
+    [sessions, q],
+  );
   return (
     <div className="flex h-full flex-col">
       <div className="space-y-2 border-b border-line p-2.5">
@@ -33,7 +46,12 @@ export function SessionList() {
         </Button>
         <div className="flex items-center gap-1.5 rounded-lg border border-line bg-input px-2">
           <Search size={13} className="text-faint" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher" className="h-7 flex-1 bg-transparent text-[12.5px] outline-none" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Rechercher"
+            className="h-7 flex-1 bg-transparent text-[12.5px] outline-none"
+          />
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-1.5">
@@ -42,7 +60,10 @@ export function SessionList() {
           <div
             key={s.id}
             onClick={() => selectSession(s.id)}
-            className={cx('group mb-0.5 cursor-pointer rounded-lg px-2.5 py-2 hover:bg-hover', s.id === sessionId && 'bg-hover')}
+            className={cx(
+              'group mb-0.5 cursor-pointer rounded-lg px-2.5 py-2 hover:bg-hover',
+              s.id === sessionId && 'bg-hover',
+            )}
           >
             <div className="flex items-center gap-1.5">
               {s.active && <Loader2 size={12} className="shrink-0 wb-spin text-accent" />}
@@ -53,7 +74,10 @@ export function SessionList() {
                 onClick={(e) => {
                   e.stopPropagation();
                   const title = prompt('Nouveau titre :', s.title);
-                  if (title) void api(`/api/sessions/${s.id}`, { method: 'PATCH', body: { title } }).then(loadSessions);
+                  if (title)
+                    void api(`/api/sessions/${s.id}`, { method: 'PATCH', body: { title } }).then(
+                      loadSessions,
+                    );
                 }}
               >
                 <Pencil size={12} />
@@ -106,21 +130,43 @@ function ChangesTab() {
     }
   };
   const open = async (c: ChangeRecord) => setViewChange(await api<ChangeRecord>(`/api/changes/${c.id}`));
-  if (!changes.length) return <Empty icon={<FileDiff size={26} />} title="Aucune modification">Les fichiers modifiés par l'agent apparaissent ici : diff, accepter, annuler.</Empty>;
+  if (!changes.length)
+    return (
+      <Empty icon={<FileDiff size={26} />} title="Aucune modification">
+        Les fichiers modifiés par l'agent apparaissent ici : diff, accepter, annuler.
+      </Empty>
+    );
   return (
     <div className="p-2">
       {applied.length > 0 && (
         <div className="mb-2 flex items-center justify-between px-1">
           <span className="text-[12px] text-muted">{applied.length} à valider</span>
-          <Button size="sm" onClick={() => void api(`/api/sessions/${sessionId}/changes/accept-all`, { method: 'POST' }).then(refresh)}>
+          <Button
+            size="sm"
+            onClick={() =>
+              void api(`/api/sessions/${sessionId}/changes/accept-all`, { method: 'POST' }).then(refresh)
+            }
+          >
             <Check size={13} /> Tout accepter
           </Button>
         </div>
       )}
       {[...changes].reverse().map((c) => (
-        <div key={c.id} className="group mb-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12.5px] hover:bg-hover">
-          <Badge tone={c.status === 'reverted' ? 'neutral' : c.status === 'accepted' ? 'ok' : 'warn'}>{c.op}</Badge>
-          <button className={cx('min-w-0 flex-1 truncate text-left font-mono', c.status === 'reverted' && 'line-through text-faint')} onClick={() => void open(c)} title={c.path}>
+        <div
+          key={c.id}
+          className="group mb-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12.5px] hover:bg-hover"
+        >
+          <Badge tone={c.status === 'reverted' ? 'neutral' : c.status === 'accepted' ? 'ok' : 'warn'}>
+            {c.op}
+          </Badge>
+          <button
+            className={cx(
+              'min-w-0 flex-1 truncate text-left font-mono',
+              c.status === 'reverted' && 'line-through text-faint',
+            )}
+            onClick={() => void open(c)}
+            title={c.path}
+          >
             {c.path}
           </button>
           <span className="text-ok">+{c.added}</span>
@@ -145,20 +191,36 @@ function ChangesTab() {
         footer={
           view && (
             <>
-              <Button size="sm" onClick={() => {
-                showDiff({ title: view.path, path: view.path, before: view.before ?? '', after: view.after ?? '' });
-                setView('code');
-                setViewChange(null);
-              }}>
+              <Button
+                size="sm"
+                onClick={() => {
+                  showDiff({
+                    title: view.path,
+                    path: view.path,
+                    before: view.before ?? '',
+                    after: view.after ?? '',
+                  });
+                  setView('code');
+                  setViewChange(null);
+                }}
+              >
                 Ouvrir côte à côte
               </Button>
               {view.status === 'applied' && (
-                <Button size="sm" variant="primary" onClick={() => void act(view.id, 'accept').then(() => setViewChange(null))}>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => void act(view.id, 'accept').then(() => setViewChange(null))}
+                >
                   <Check size={13} /> Accepter
                 </Button>
               )}
               {view.status !== 'reverted' && (
-                <Button size="sm" variant="danger" onClick={() => void act(view.id, 'revert').then(() => setViewChange(null))}>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => void act(view.id, 'revert').then(() => setViewChange(null))}
+                >
                   <Undo2 size={13} /> Annuler la modification
                 </Button>
               )}
@@ -166,7 +228,14 @@ function ChangesTab() {
           )
         }
       >
-        {view && (view.op === 'move' ? <div>Déplacé de {view.before} vers {view.after}</div> : <DiffView before={view.before ?? ''} after={view.after ?? ''} maxLines={2000} />)}
+        {view &&
+          (view.op === 'move' ? (
+            <div>
+              Déplacé de {view.before} vers {view.after}
+            </div>
+          ) : (
+            <DiffView before={view.before ?? ''} after={view.after ?? ''} maxLines={2000} />
+          ))}
       </Modal>
     </div>
   );
@@ -177,21 +246,43 @@ function ArtifactsTab() {
   const showDiff = useCode((s) => s.showDiff);
   const setView = useApp((s) => s.setView);
   const [pick, setPick] = useState<string[]>([]);
-  if (!artifacts.length) return <Empty title="Aucun artefact">Rapports, exports, graphiques, captures et fichiers produits par l'agent apparaissent ici.</Empty>;
-  const textual = artifacts.filter((a) => ['html', 'css', 'js', 'json', 'csv', 'md', 'txt', 'py', 'ts', 'xml', 'yaml', 'svg'].includes(a.type));
+  if (!artifacts.length)
+    return (
+      <Empty title="Aucun artefact">
+        Rapports, exports, graphiques, captures et fichiers produits par l'agent apparaissent ici.
+      </Empty>
+    );
+  const textual = artifacts.filter((a) =>
+    ['html', 'css', 'js', 'json', 'csv', 'md', 'txt', 'py', 'ts', 'xml', 'yaml', 'svg'].includes(a.type),
+  );
   return (
     <div className="space-y-1.5 p-2">
       {textual.length >= 2 && (
         <div className="flex items-center gap-2 text-[12px]">
           <span className="text-muted">Comparer :</span>
-          <Dropdown trigger={<Badge>{pick[0] ? artifacts.find((a) => a.id === pick[0])?.name : 'A…'}</Badge>} items={textual.map((a) => ({ value: a.id, label: a.name }))} onSelect={(v) => setPick([v, pick[1] ?? ''])} />
-          <Dropdown trigger={<Badge>{pick[1] ? artifacts.find((a) => a.id === pick[1])?.name : 'B…'}</Badge>} items={textual.map((a) => ({ value: a.id, label: a.name }))} onSelect={(v) => setPick([pick[0] ?? '', v])} />
+          <Dropdown
+            trigger={<Badge>{pick[0] ? artifacts.find((a) => a.id === pick[0])?.name : 'A…'}</Badge>}
+            items={textual.map((a) => ({ value: a.id, label: a.name }))}
+            onSelect={(v) => setPick([v, pick[1] ?? ''])}
+          />
+          <Dropdown
+            trigger={<Badge>{pick[1] ? artifacts.find((a) => a.id === pick[1])?.name : 'B…'}</Badge>}
+            items={textual.map((a) => ({ value: a.id, label: a.name }))}
+            onSelect={(v) => setPick([pick[0] ?? '', v])}
+          />
           <Button
             size="sm"
             disabled={!pick[0] || !pick[1]}
             onClick={async () => {
-              const [a, b] = await Promise.all(pick.map((id) => api<{ text: string }>(`/api/artifacts/${id}/text`)));
-              showDiff({ title: 'Comparaison', path: 'compare', before: a?.text ?? '', after: b?.text ?? '' });
+              const [a, b] = await Promise.all(
+                pick.map((id) => api<{ text: string }>(`/api/artifacts/${id}/text`)),
+              );
+              showDiff({
+                title: 'Comparaison',
+                path: 'compare',
+                before: a?.text ?? '',
+                after: b?.text ?? '',
+              });
               setView('code');
             }}
           >
@@ -213,9 +304,17 @@ function ContextTab() {
   const status = useApp((s) => s.status);
   const projectId = useApp((s) => s.projectId);
   const [facts, setFacts] = useState<{ id: string; category: string; text: string }[]>([]);
-  const last = [...order].reverse().map((id) => runs[id]).find((r) => r && r.contextLimit > 0);
+  const last = [...order]
+    .reverse()
+    .map((id) => runs[id])
+    .find((r) => r && r.contextLimit > 0);
   useEffect(() => {
-    if (projectId) void api<{ facts: { id: string; category: string; text: string }[] }>(`/api/projects/${projectId}/memory`).then((r) => setFacts(r.facts)).catch(() => undefined);
+    if (projectId)
+      void api<{ facts: { id: string; category: string; text: string }[] }>(
+        `/api/projects/${projectId}/memory`,
+      )
+        .then((r) => setFacts(r.facts))
+        .catch(() => undefined);
   }, [projectId, order.length]);
   const skills = [...new Set(order.flatMap((id) => runs[id]?.skills ?? []))];
   return (
@@ -223,15 +322,21 @@ function ContextTab() {
       <div>
         <div className="mb-1 flex justify-between text-muted">
           <span>Fenêtre de contexte</span>
-          <span className="tabular-nums">{last ? `${fmtTokens(last.contextTokens)} / ${fmtTokens(last.contextLimit)}` : '—'}</span>
+          <span className="tabular-nums">
+            {last ? `${fmtTokens(last.contextTokens)} / ${fmtTokens(last.contextLimit)}` : '—'}
+          </span>
         </div>
         <Gauge value={last?.contextTokens ?? 0} max={last?.contextLimit || 1} />
-        <div className="mt-1 text-[11px] text-faint">Compactage automatique au-delà de 70 % (ou /compact).</div>
+        <div className="mt-1 text-[11px] text-faint">
+          Compactage automatique au-delà de 70 % (ou /compact).
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-lg border border-line p-2">
           <div className="text-[11px] text-faint">Tokens session</div>
-          <div className="font-semibold tabular-nums">{fmtTokens((detail?.session.tokensIn ?? 0) + (detail?.session.tokensOut ?? 0))}</div>
+          <div className="font-semibold tabular-nums">
+            {fmtTokens((detail?.session.tokensIn ?? 0) + (detail?.session.tokensOut ?? 0))}
+          </div>
         </div>
         <div className="rounded-lg border border-line p-2">
           <div className="text-[11px] text-faint">Coût session</div>
@@ -240,17 +345,29 @@ function ContextTab() {
       </div>
       <div>
         <div className="mb-1 font-semibold">Skills utilisés</div>
-        {skills.length ? <div className="flex flex-wrap gap-1">{skills.map((s) => <Badge key={s} tone="accent">{s}</Badge>)}</div> : <div className="text-faint">—</div>}
+        {skills.length ? (
+          <div className="flex flex-wrap gap-1">
+            {skills.map((s) => (
+              <Badge key={s} tone="accent">
+                {s}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <div className="text-faint">—</div>
+        )}
       </div>
       <div>
         <div className="mb-1 font-semibold">Plugins connectés</div>
         {status?.plugins?.filter((p) => p.status === 'connected').length ? (
           <div className="flex flex-wrap gap-1">
-            {status.plugins.filter((p) => p.status === 'connected').map((p) => (
-              <Badge key={p.name} tone="info">
-                {p.name} · {p.tools}
-              </Badge>
-            ))}
+            {status.plugins
+              .filter((p) => p.status === 'connected')
+              .map((p) => (
+                <Badge key={p.name} tone="info">
+                  {p.name} · {p.tools}
+                </Badge>
+              ))}
           </div>
         ) : (
           <div className="text-faint">Aucun (vue Plugins)</div>
@@ -277,11 +394,26 @@ function ActivityTab() {
   useEffect(() => void load(), [load]);
   return (
     <div className="font-mono text-[11.5px]">
-      {rows.length === 0 && <div className="p-3 font-sans text-[12.5px] text-faint">L'activité des agents (outils, durée, statut) s'affiche ici en direct.</div>}
+      {rows.length === 0 && (
+        <div className="p-3 font-sans text-[12.5px] text-faint">
+          L'activité des agents (outils, durée, statut) s'affiche ici en direct.
+        </div>
+      )}
       {rows.slice(0, 300).map((r) => (
         <div key={r.id} className="flex items-center gap-2 border-b border-line/50 px-2.5 py-1">
           <span className="w-16 shrink-0 text-faint">{fmtTime(r.ts)}</span>
-          <span className={cx('w-1.5 h-1.5 shrink-0 rounded-full', r.status === 'success' ? 'bg-ok' : r.status === 'running' ? 'bg-info' : r.status === 'denied' ? 'bg-warn' : 'bg-err')} />
+          <span
+            className={cx(
+              'w-1.5 h-1.5 shrink-0 rounded-full',
+              r.status === 'success'
+                ? 'bg-ok'
+                : r.status === 'running'
+                  ? 'bg-info'
+                  : r.status === 'denied'
+                    ? 'bg-warn'
+                    : 'bg-err',
+            )}
+          />
           <span className="w-40 shrink-0 truncate text-accent">{r.tool}</span>
           <span className="min-w-0 flex-1 truncate text-muted" title={r.summary}>
             {r.summary}
@@ -301,13 +433,33 @@ export function RightPanel() {
   const artifacts = useSession((s) => s.artifacts);
   const runs = useSession((s) => s.runs);
   const order = useSession((s) => s.order);
-  const plan = [...order].reverse().map((id) => runs[id]).find((r) => r && r.plan.length)?.plan ?? [];
+  const plan =
+    [...order]
+      .reverse()
+      .map((id) => runs[id])
+      .find((r) => r && r.plan.length)?.plan ?? [];
   const pending = changes.filter((c) => c.status === 'applied').length;
   const tabs = [
     ...(view !== 'chat' ? [{ id: 'agent' as const, label: 'Agent' }] : []),
-    { id: 'plan' as const, label: 'Plan', badge: plan.length ? <Badge>{plan.filter((p) => p.status === 'done').length}/{plan.length}</Badge> : undefined },
-    { id: 'changes' as const, label: 'Modifs', badge: pending ? <Badge tone="warn">{pending}</Badge> : undefined },
-    { id: 'artifacts' as const, label: 'Artefacts', badge: artifacts.length ? <Badge>{artifacts.length}</Badge> : undefined },
+    {
+      id: 'plan' as const,
+      label: 'Plan',
+      badge: plan.length ? (
+        <Badge>
+          {plan.filter((p) => p.status === 'done').length}/{plan.length}
+        </Badge>
+      ) : undefined,
+    },
+    {
+      id: 'changes' as const,
+      label: 'Modifs',
+      badge: pending ? <Badge tone="warn">{pending}</Badge> : undefined,
+    },
+    {
+      id: 'artifacts' as const,
+      label: 'Artefacts',
+      badge: artifacts.length ? <Badge>{artifacts.length}</Badge> : undefined,
+    },
     { id: 'context' as const, label: 'Contexte' },
     { id: 'activity' as const, label: 'Activité' },
   ];
@@ -322,7 +474,17 @@ export function RightPanel() {
             <Composer compact autoFocus={false} />
           </div>
         )}
-        {tab === 'plan' && (plan.length ? <div className="p-3"><Checklist steps={plan} compact /></div> : <Empty title="Pas de plan en cours">Pour les tâches de plusieurs étapes, l'agent tient ici sa liste de tâches. Activez « Plan » pour valider le plan avant exécution.</Empty>)}
+        {tab === 'plan' &&
+          (plan.length ? (
+            <div className="p-3">
+              <Checklist steps={plan} compact />
+            </div>
+          ) : (
+            <Empty title="Pas de plan en cours">
+              Pour les tâches de plusieurs étapes, l'agent tient ici sa liste de tâches. Activez « Plan » pour
+              valider le plan avant exécution.
+            </Empty>
+          ))}
         {tab === 'changes' && <ChangesTab />}
         {tab === 'artifacts' && <ArtifactsTab />}
         {tab === 'context' && <ContextTab />}
@@ -338,7 +500,10 @@ function ProblemsTab() {
   const open = useCode((s) => s.open);
   const setDraft = useApp((s) => s.setDraft);
   const setLayout = useApp((s) => s.setLayout);
-  if (!problems.length) return <div className="p-3 text-[12.5px] text-faint">Aucun problème détecté dans les fichiers ouverts.</div>;
+  if (!problems.length)
+    return (
+      <div className="p-3 text-[12.5px] text-faint">Aucun problème détecté dans les fichiers ouverts.</div>
+    );
   return (
     <div className="text-[12.5px]">
       {problems.flatMap((p) =>
@@ -353,7 +518,12 @@ function ProblemsTab() {
               className="text-[11.5px] text-accent hover:underline"
               onClick={() => {
                 setLayout({ right: true, rightTab: 'agent' });
-                setDraft({ text: `Corrige cette erreur dans ${p.path} ligne ${it.line} : ${it.message}`, attachments: [p.path], send: true, role: 'coder' });
+                setDraft({
+                  text: `Corrige cette erreur dans ${p.path} ligne ${it.line} : ${it.message}`,
+                  attachments: [p.path],
+                  send: true,
+                  role: 'coder',
+                });
               }}
             >
               <MessageSquarePlus size={12} className="inline" /> corriger
@@ -378,7 +548,11 @@ export function BottomPanel() {
           { id: 'terminal', label: 'Terminal' },
           { id: 'activity', label: 'Activité agent' },
           { id: 'tasks', label: 'Tâches' },
-          { id: 'problems', label: 'Problèmes', badge: problems ? <Badge tone="warn">{problems}</Badge> : undefined },
+          {
+            id: 'problems',
+            label: 'Problèmes',
+            badge: problems ? <Badge tone="warn">{problems}</Badge> : undefined,
+          },
         ]}
         right={
           <IconButton label="Fermer le panneau (Ctrl+J)" onClick={() => setLayout({ bottom: false })}>
@@ -403,7 +577,11 @@ export async function exportSession(format: string): Promise<void> {
   if (!id) return;
   const fmt = ['md', 'json', 'pdf'].includes(format) ? format : 'md';
   try {
-    await downloadFile(`/api/sessions/${id}/export`, `${title.replace(/[^\w-]+/g, '_').slice(0, 40)}.${fmt}`, { format: fmt, include: 'conversation,trace,changes' });
+    await downloadFile(
+      `/api/sessions/${id}/export`,
+      `${title.replace(/[^\w-]+/g, '_').slice(0, 40)}.${fmt}`,
+      { format: fmt, include: 'conversation,trace,changes' },
+    );
   } catch (err) {
     useApp.getState().toast('error', (err as Error).message);
   }
@@ -414,4 +592,3 @@ export function ActiveRunIndicator() {
   if (!active || !isActiveStatus(active.status)) return null;
   return <Spinner className="h-3 w-3" />;
 }
-

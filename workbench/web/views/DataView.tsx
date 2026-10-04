@@ -1,5 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, BarChart3, ChevronLeft, ChevronRight, Database, Download, FileSpreadsheet, Save, Sparkles, Table2, Upload } from 'lucide-react';
+import {
+  AlertTriangle,
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  Database,
+  Download,
+  FileSpreadsheet,
+  Save,
+  Sparkles,
+  Table2,
+  Upload,
+} from 'lucide-react';
 import type { ChartData, ChartSpec } from '@shared/types';
 import { api, downloadFile } from '../lib/api';
 import { basename, cx } from '../lib/format';
@@ -15,7 +27,15 @@ interface ColumnProfile {
   missingPct: number;
   unique: number;
   sample: unknown[];
-  numeric?: { min: number; max: number; mean: number; median: number; std: number; sum: number; outliers: number };
+  numeric?: {
+    min: number;
+    max: number;
+    mean: number;
+    median: number;
+    std: number;
+    sum: number;
+    outliers: number;
+  };
   date?: { min: string; max: string };
   top?: { value: string; count: number }[];
 }
@@ -30,7 +50,8 @@ interface Profile {
   anomalies: string[];
 }
 
-const num = (n: number) => (Math.abs(n) >= 1e6 ? n.toExponential(2) : n.toLocaleString('fr-FR', { maximumFractionDigits: 2 }));
+const num = (n: number) =>
+  Math.abs(n) >= 1e6 ? n.toExponential(2) : n.toLocaleString('fr-FR', { maximumFractionDigits: 2 });
 const CHART_TYPES: { value: ChartSpec['type']; label: string }[] = [
   { value: 'bar', label: 'Barres' },
   { value: 'line', label: 'Courbe' },
@@ -91,7 +112,10 @@ export function DataView() {
       const fd = new FormData();
       for (const f of input.files ?? []) fd.append('file', f, f.name);
       try {
-        const saved = await api<{ path: string }[]>(`/api/projects/${projectId}/upload`, { body: fd, query: { dir: 'data' } });
+        const saved = await api<{ path: string }[]>(`/api/projects/${projectId}/upload`, {
+          body: fd,
+          query: { dir: 'data' },
+        });
         await loadFiles();
         if (saved[0]) setPath(saved[0].path);
         toast('success', `${saved.length} fichier(s) importé(s)`);
@@ -106,20 +130,32 @@ export function DataView() {
     if (!path) return;
     const app = useApp.getState();
     app.setLayout({ right: true, rightTab: 'agent' });
-    app.setDraft({ text: question, attachments: [path], role: 'data_analyst', send: true, ui: { dataset: path } });
+    app.setDraft({
+      text: question,
+      attachments: [path],
+      role: 'data_analyst',
+      send: true,
+      ui: { dataset: path },
+    });
   };
 
   return (
     <div className="flex h-full min-h-0">
       <div className="flex w-[250px] shrink-0 flex-col border-r border-line bg-elev">
         <div className="flex h-9 items-center justify-between border-b border-line px-3">
-          <span className="text-[11.5px] font-semibold uppercase tracking-wide text-faint">Jeux de données</span>
+          <span className="text-[11.5px] font-semibold uppercase tracking-wide text-faint">
+            Jeux de données
+          </span>
           <Button size="sm" variant="ghost" onClick={upload}>
             <Upload size={13} /> Importer
           </Button>
         </div>
         <div className="min-h-0 flex-1 overflow-auto p-1">
-          {files.length === 0 && <div className="p-3 text-[12.5px] text-faint">Aucun fichier CSV, Excel ou JSON. Importez-en un ou demandez à l'agent d'en créer.</div>}
+          {files.length === 0 && (
+            <div className="p-3 text-[12.5px] text-faint">
+              Aucun fichier CSV, Excel ou JSON. Importez-en un ou demandez à l'agent d'en créer.
+            </div>
+          )}
           {files.map((f) => (
             <button
               key={f}
@@ -127,7 +163,10 @@ export function DataView() {
                 setPath(f);
                 setSheet(undefined);
               }}
-              className={cx('flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12.5px] hover:bg-hover', f === path && 'bg-accent-soft')}
+              className={cx(
+                'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12.5px] hover:bg-hover',
+                f === path && 'bg-accent-soft',
+              )}
               title={f}
             >
               <FileSpreadsheet size={14} className="shrink-0 text-ok" />
@@ -139,7 +178,8 @@ export function DataView() {
       <div className="flex min-w-0 flex-1 flex-col">
         {!path ? (
           <Empty icon={<Database size={36} />} title="Data Intelligence">
-            Choisissez ou importez un fichier CSV, XLSX, XLSM ou JSON : colonnes, types, statistiques, valeurs manquantes, anomalies et graphiques interactifs sont calculés automatiquement.
+            Choisissez ou importez un fichier CSV, XLSX, XLSM ou JSON : colonnes, types, statistiques, valeurs
+            manquantes, anomalies et graphiques interactifs sont calculés automatiquement.
           </Empty>
         ) : (
           <>
@@ -147,7 +187,12 @@ export function DataView() {
               <FileSpreadsheet size={15} className="text-ok" />
               <span className="truncate font-medium">{basename(path)}</span>
               {profile && profile.sheets.length > 1 && (
-                <Select value={sheet ?? profile.sheet ?? ''} onChange={(v) => setSheet(v)} options={profile.sheets.map((s) => ({ value: s, label: `Feuille : ${s}` }))} className="h-7" />
+                <Select
+                  value={sheet ?? profile.sheet ?? ''}
+                  onChange={(v) => setSheet(v)}
+                  options={profile.sheets.map((s) => ({ value: s, label: `Feuille : ${s}` }))}
+                  className="h-7"
+                />
               )}
               {profile && (
                 <span className="text-[12px] text-muted">
@@ -167,7 +212,19 @@ export function DataView() {
               right={
                 <>
                   {(['csv', 'xlsx', 'json'] as const).map((fmt) => (
-                    <Button key={fmt} size="sm" variant="ghost" onClick={() => void downloadFile(`/api/projects/${projectId}/data/export`, `${basename(path).replace(/\.\w+$/, '')}.${fmt}`, undefined, { method: 'POST', body: { path, sheet, format: fmt } })}>
+                    <Button
+                      key={fmt}
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        void downloadFile(
+                          `/api/projects/${projectId}/data/export`,
+                          `${basename(path).replace(/\.\w+$/, '')}.${fmt}`,
+                          undefined,
+                          { method: 'POST', body: { path, sheet, format: fmt } },
+                        )
+                      }
+                    >
                       <Download size={12} /> {fmt.toUpperCase()}
                     </Button>
                   ))}
@@ -181,8 +238,12 @@ export function DataView() {
                 </div>
               )}
               {!loading && profile && tab === 'profile' && <ProfilePanel profile={profile} />}
-              {!loading && profile && tab === 'grid' && <GridPanel path={path} sheet={sheet} columns={profile.columns.map((c) => c.name)} />}
-              {!loading && profile && tab === 'chart' && <ChartBuilder path={path} sheet={sheet} profile={profile} />}
+              {!loading && profile && tab === 'grid' && (
+                <GridPanel path={path} sheet={sheet} columns={profile.columns.map((c) => c.name)} />
+              )}
+              {!loading && profile && tab === 'chart' && (
+                <ChartBuilder path={path} sheet={sheet} profile={profile} />
+              )}
             </div>
           </>
         )}
@@ -203,7 +264,12 @@ function AskBox({ onAsk }: { onAsk: (q: string) => void }) {
       }}
     >
       <Sparkles size={13} className="text-accent" />
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ex. « Montre l'évolution des impayés par mois »" className="h-8 flex-1 bg-transparent text-[12.5px] outline-none" />
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Ex. « Montre l'évolution des impayés par mois »"
+        className="h-8 flex-1 bg-transparent text-[12.5px] outline-none"
+      />
     </form>
   );
 }
@@ -254,7 +320,19 @@ function ProfilePanel({ profile }: { profile: Profile }) {
               <tr key={c.name} className="border-t border-line/70">
                 <td className="px-3 py-1.5 font-medium">{c.name}</td>
                 <td className="px-3 py-1.5">
-                  <Badge tone={c.type === 'number' || c.type === 'integer' ? 'info' : c.type === 'date' ? 'accent' : c.type === 'mixed' ? 'warn' : 'neutral'}>{c.type}</Badge>
+                  <Badge
+                    tone={
+                      c.type === 'number' || c.type === 'integer'
+                        ? 'info'
+                        : c.type === 'date'
+                          ? 'accent'
+                          : c.type === 'mixed'
+                            ? 'warn'
+                            : 'neutral'
+                    }
+                  >
+                    {c.type}
+                  </Badge>
                 </td>
                 <td className={cx('px-3 py-1.5 tabular-nums', c.missingPct >= 20 && 'text-warn')}>
                   {c.missing} ({c.missingPct}%)
@@ -265,7 +343,10 @@ function ProfilePanel({ profile }: { profile: Profile }) {
                     ? `min ${num(c.numeric.min)} · max ${num(c.numeric.max)} · moy ${num(c.numeric.mean)} · méd ${num(c.numeric.median)} · σ ${num(c.numeric.std)} · Σ ${num(c.numeric.sum)}${c.numeric.outliers ? ` · ${c.numeric.outliers} aberrantes` : ''}`
                     : c.date
                       ? `${c.date.min} → ${c.date.max}`
-                      : c.top?.slice(0, 4).map((t) => `${t.value.slice(0, 24)} (${t.count})`).join(' · ')}
+                      : c.top
+                          ?.slice(0, 4)
+                          .map((t) => `${t.value.slice(0, 24)} (${t.count})`)
+                          .join(' · ')}
                 </td>
               </tr>
             ))}
@@ -282,11 +363,21 @@ function GridPanel({ path, sheet, columns }: { path: string; sheet?: string; col
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [sort, setSort] = useState<{ column: string; dir: 'asc' | 'desc' } | null>(null);
-  const [filter, setFilter] = useState<{ column: string; value: string }>({ column: columns[0] ?? '', value: '' });
+  const [filter, setFilter] = useState<{ column: string; value: string }>({
+    column: columns[0] ?? '',
+    value: '',
+  });
   const size = 100;
   useEffect(() => {
-    const query = { limit: size, offset: page * size, sort: sort ? [sort] : undefined, filters: filter.value ? [{ column: filter.column, op: 'contains', value: filter.value }] : undefined };
-    void api<{ rows: Record<string, unknown>[]; rowCount: number }>(`/api/projects/${projectId}/data/query`, { body: { path, sheet, query } }).then((r) => {
+    const query = {
+      limit: size,
+      offset: page * size,
+      sort: sort ? [sort] : undefined,
+      filters: filter.value ? [{ column: filter.column, op: 'contains', value: filter.value }] : undefined,
+    };
+    void api<{ rows: Record<string, unknown>[]; rowCount: number }>(`/api/projects/${projectId}/data/query`, {
+      body: { path, sheet, query },
+    }).then((r) => {
       setRows(r.rows);
       setTotal(r.rowCount);
     });
@@ -294,12 +385,33 @@ function GridPanel({ path, sheet, columns }: { path: string; sheet?: string; col
   return (
     <div className="flex h-full flex-col p-3">
       <div className="mb-2 flex items-center gap-2">
-        <Select value={filter.column} onChange={(column) => setFilter({ ...filter, column })} options={columns.map((c) => ({ value: c, label: c }))} className="h-7" />
-        <Input className="h-7 w-56" placeholder="Filtrer (contient)…" value={filter.value} onChange={(e) => { setFilter({ ...filter, value: e.target.value }); setPage(0); }} />
+        <Select
+          value={filter.column}
+          onChange={(column) => setFilter({ ...filter, column })}
+          options={columns.map((c) => ({ value: c, label: c }))}
+          className="h-7"
+        />
+        <Input
+          className="h-7 w-56"
+          placeholder="Filtrer (contient)…"
+          value={filter.value}
+          onChange={(e) => {
+            setFilter({ ...filter, value: e.target.value });
+            setPage(0);
+          }}
+        />
         <Select
           value={sort ? `${sort.column}|${sort.dir}` : ''}
-          onChange={(v) => setSort(v ? { column: v.split('|')[0]!, dir: v.split('|')[1] as 'asc' | 'desc' } : null)}
-          options={[{ value: '', label: 'Sans tri' }, ...columns.flatMap((c) => [{ value: `${c}|asc`, label: `${c} ↑` }, { value: `${c}|desc`, label: `${c} ↓` }])]}
+          onChange={(v) =>
+            setSort(v ? { column: v.split('|')[0]!, dir: v.split('|')[1] as 'asc' | 'desc' } : null)
+          }
+          options={[
+            { value: '', label: 'Sans tri' },
+            ...columns.flatMap((c) => [
+              { value: `${c}|asc`, label: `${c} ↑` },
+              { value: `${c}|desc`, label: `${c} ↓` },
+            ]),
+          ]}
           className="h-7"
         />
         <span className="ml-auto text-[12px] text-muted">
@@ -308,7 +420,12 @@ function GridPanel({ path, sheet, columns }: { path: string; sheet?: string; col
         <Button size="sm" variant="ghost" disabled={page === 0} onClick={() => setPage(page - 1)}>
           <ChevronLeft size={14} />
         </Button>
-        <Button size="sm" variant="ghost" disabled={(page + 1) * size >= total} onClick={() => setPage(page + 1)}>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={(page + 1) * size >= total}
+          onClick={() => setPage(page + 1)}
+        >
           <ChevronRight size={14} />
         </Button>
       </div>
@@ -338,7 +455,9 @@ function ChartBuilder({ path, sheet, profile }: { path: string; sheet?: string; 
       type,
       title: `${agg}(${y === '*' ? 'lignes' : y})${x ? ` par ${x}` : ''}`,
       source: { path, sheet },
-      x: x ? { column: x, bucket: (bucket || undefined) as NonNullable<ChartSpec['x']>['bucket'] } : undefined,
+      x: x
+        ? { column: x, bucket: (bucket || undefined) as NonNullable<ChartSpec['x']>['bucket'] }
+        : undefined,
       y: [{ column: y, agg: y === '*' ? 'count' : agg }],
       series: series || undefined,
     }),
@@ -353,7 +472,10 @@ function ChartBuilder({ path, sheet, profile }: { path: string; sheet?: string; 
         setErr(e.message);
       });
   }, [spec, projectId]);
-  const colOpts = [{ value: '', label: '—' }, ...cols.map((c) => ({ value: c.name, label: `${c.name} (${c.type})` }))];
+  const colOpts = [
+    { value: '', label: '—' },
+    ...cols.map((c) => ({ value: c.name, label: `${c.name} (${c.type})` })),
+  ];
   return (
     <div className="flex h-full flex-col gap-3 p-4">
       <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
@@ -361,10 +483,35 @@ function ChartBuilder({ path, sheet, profile }: { path: string; sheet?: string; 
         <Select value={type} onChange={setType} options={CHART_TYPES} className="h-8" />
         <span className="text-muted">X</span>
         <Select value={x} onChange={setX} options={colOpts} className="h-8 max-w-48" />
-        <Select value={bucket} onChange={setBucket} options={[{ value: '', label: 'pas de regroupement temporel' }, { value: 'day', label: 'par jour' }, { value: 'week', label: 'par semaine' }, { value: 'month', label: 'par mois' }, { value: 'quarter', label: 'par trimestre' }, { value: 'year', label: 'par année' }]} className="h-8" />
+        <Select
+          value={bucket}
+          onChange={setBucket}
+          options={[
+            { value: '', label: 'pas de regroupement temporel' },
+            { value: 'day', label: 'par jour' },
+            { value: 'week', label: 'par semaine' },
+            { value: 'month', label: 'par mois' },
+            { value: 'quarter', label: 'par trimestre' },
+            { value: 'year', label: 'par année' },
+          ]}
+          className="h-8"
+        />
         <span className="text-muted">Y</span>
-        <Select value={y} onChange={setY} options={[{ value: '*', label: 'Nombre de lignes' }, ...cols.map((c) => ({ value: c.name, label: c.name }))]} className="h-8 max-w-48" />
-        <Select value={agg} onChange={setAgg} options={AGGS.map((a) => ({ value: a, label: a }))} className="h-8" />
+        <Select
+          value={y}
+          onChange={setY}
+          options={[
+            { value: '*', label: 'Nombre de lignes' },
+            ...cols.map((c) => ({ value: c.name, label: c.name })),
+          ]}
+          className="h-8 max-w-48"
+        />
+        <Select
+          value={agg}
+          onChange={setAgg}
+          options={AGGS.map((a) => ({ value: a, label: a }))}
+          className="h-8"
+        />
         <span className="text-muted">Séries</span>
         <Select value={series} onChange={setSeries} options={colOpts} className="h-8 max-w-44" />
         <Button
@@ -385,9 +532,19 @@ function ChartBuilder({ path, sheet, profile }: { path: string; sheet?: string; 
         </Button>
       </div>
       <div className="min-h-[320px] flex-1 rounded-xl border border-line bg-panel p-3">
-        {err ? <div className="text-[13px] text-err">{err}</div> : chart ? <ChartView data={chart} height={Math.max(320, window.innerHeight - 330)} /> : <Spinner />}
+        {err ? (
+          <div className="text-[13px] text-err">{err}</div>
+        ) : chart ? (
+          <ChartView data={chart} height={Math.max(320, window.innerHeight - 330)} />
+        ) : (
+          <Spinner />
+        )}
       </div>
-      {chart && <div className="flex items-center gap-1.5 text-[11.5px] text-faint"><Table2 size={12} /> {chart.rowCount.toLocaleString('fr-FR')} lignes utilisées</div>}
+      {chart && (
+        <div className="flex items-center gap-1.5 text-[11.5px] text-faint">
+          <Table2 size={12} /> {chart.rowCount.toLocaleString('fr-FR')} lignes utilisées
+        </div>
+      )}
     </div>
   );
 }

@@ -21,30 +21,46 @@ const startOf = (unit: 'day' | 'month') => {
 export function systemRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { services: s } = ctx;
 
-  app.get('/api/status', async (): Promise<ServerStatus & { models: unknown; budget: unknown; jev: unknown; plugins: unknown }> => ({
-    version: ctx.version,
-    provider: { name: s.provider.name, keyConfigured: Boolean(process.env.OPENROUTER_API_KEY) },
-    workspaceRoot: s.workspace.root,
-    browser: { engine: s.browser.engine, available: s.browser.isAvailable() },
-    python: s.capabilities.python,
-    ripgrep: s.capabilities.ripgrep,
-    previewPort: s.config.previewPort,
-    models: s.catalog.status,
-    budget: s.llm.budgetState(),
-    jev: { keyConfigured: s.jev.keyConfigured, available: s.jev.available },
-    plugins: s.mcp.list().map((p) => ({ name: p.name, status: p.status, tools: p.toolCount })),
-  }));
+  app.get(
+    '/api/status',
+    async (): Promise<
+      ServerStatus & { models: unknown; budget: unknown; jev: unknown; plugins: unknown }
+    > => ({
+      version: ctx.version,
+      provider: { name: s.provider.name, keyConfigured: Boolean(process.env.OPENROUTER_API_KEY) },
+      workspaceRoot: s.workspace.root,
+      browser: { engine: s.browser.engine, available: s.browser.isAvailable() },
+      python: s.capabilities.python,
+      ripgrep: s.capabilities.ripgrep,
+      previewPort: s.config.previewPort,
+      models: s.catalog.status,
+      budget: s.llm.budgetState(),
+      jev: { keyConfigured: s.jev.keyConfigured, available: s.jev.available },
+      plugins: s.mcp.list().map((p) => ({ name: p.name, status: p.status, tools: p.toolCount })),
+    }),
+  );
 
   // Capability URLs for the isolated preview server.
   app.get('/api/preview-url', async (req) => {
-    const q = z.object({ projectId: z.string().optional(), artifactId: z.string().optional(), path: z.string().optional() }).parse(req.query);
+    const q = z
+      .object({
+        projectId: z.string().optional(),
+        artifactId: z.string().optional(),
+        path: z.string().optional(),
+      })
+      .parse(req.query);
     const host = (req.headers.host ?? `127.0.0.1:${s.config.port}`).replace(/:\d+$/, '');
     const base = `http://${host}:${s.config.previewPort}`;
-    if (q.artifactId) return { url: `${base}/a/${previewTokenFor(ctx.previewToken, `artifact:${q.artifactId}`)}/${q.artifactId}` };
+    if (q.artifactId)
+      return {
+        url: `${base}/a/${previewTokenFor(ctx.previewToken, `artifact:${q.artifactId}`)}/${q.artifactId}`,
+      };
     if (!q.projectId) throw new HttpError(400, 'projectId or artifactId required');
     s.workspace.getProject(q.projectId);
     const rel = (q.path ?? '').split('/').map(encodeURIComponent).join('/');
-    return { url: `${base}/p/${previewTokenFor(ctx.previewToken, `project:${q.projectId}`)}/${q.projectId}/${rel}` };
+    return {
+      url: `${base}/p/${previewTokenFor(ctx.previewToken, `project:${q.projectId}`)}/${q.projectId}/${rel}`,
+    };
   });
 
   app.get('/api/models', async (req) => {
@@ -74,7 +90,9 @@ export function systemRoutes(app: FastifyInstance, ctx: AppContext): void {
       today: s.repo.usageSince(startOf('day')),
       month: s.repo.usageSince(startOf('month')),
       todayByModel: s.repo.usageByModel(startOf('day')),
-      session: session ? { cost: session.cost, tokensIn: session.tokensIn, tokensOut: session.tokensOut } : null,
+      session: session
+        ? { cost: session.cost, tokensIn: session.tokensIn, tokensOut: session.tokensOut }
+        : null,
       budget: s.llm.budgetState(),
     };
   });
@@ -104,7 +122,8 @@ export function systemRoutes(app: FastifyInstance, ctx: AppContext): void {
     if (/\s/.test(key)) throw new HttpError(400, 'Invalid key format');
     const file = s.config.envFile;
     let env = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
-    if (/^OPENROUTER_API_KEY=.*$/m.test(env)) env = env.replace(/^OPENROUTER_API_KEY=.*$/m, `OPENROUTER_API_KEY=${key}`);
+    if (/^OPENROUTER_API_KEY=.*$/m.test(env))
+      env = env.replace(/^OPENROUTER_API_KEY=.*$/m, `OPENROUTER_API_KEY=${key}`);
     else env = `${env.trimEnd()}${env ? '\n' : ''}OPENROUTER_API_KEY=${key}\n`;
     fs.writeFileSync(file, env, { mode: 0o600 });
     process.env.OPENROUTER_API_KEY = key;
@@ -116,7 +135,10 @@ export function systemRoutes(app: FastifyInstance, ctx: AppContext): void {
 
   app.delete('/api/settings/provider-key', async () => {
     const file = s.config.envFile;
-    if (fs.existsSync(file)) fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/^OPENROUTER_API_KEY=.*\n?/m, ''), { mode: 0o600 });
+    if (fs.existsSync(file))
+      fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/^OPENROUTER_API_KEY=.*\n?/m, ''), {
+        mode: 0o600,
+      });
     delete process.env.OPENROUTER_API_KEY;
     refreshSecretValues();
     keyStatusCache = null;
@@ -125,8 +147,30 @@ export function systemRoutes(app: FastifyInstance, ctx: AppContext): void {
   });
 
   app.get('/api/agents', async () => [
-    ...ROLE_LIST.map((r) => ({ id: r.id, label: r.label, description: r.description, tier: r.tier, tools: r.tools, custom: false, source: 'builtin', editable: false, skills: [] as string[], model: null })),
-    ...(await s.skills.listAgents()).map((a) => ({ id: a.id, label: a.name, description: a.description, tier: 'balanced', tools: a.tools ?? [], custom: true, source: a.source, editable: a.editable, skills: a.skills, model: a.model })),
+    ...ROLE_LIST.map((r) => ({
+      id: r.id,
+      label: r.label,
+      description: r.description,
+      tier: r.tier,
+      tools: r.tools,
+      custom: false,
+      source: 'builtin',
+      editable: false,
+      skills: [] as string[],
+      model: null,
+    })),
+    ...(await s.skills.listAgents()).map((a) => ({
+      id: a.id,
+      label: a.name,
+      description: a.description,
+      tier: 'balanced',
+      tools: a.tools ?? [],
+      custom: true,
+      source: a.source,
+      editable: a.editable,
+      skills: a.skills,
+      model: a.model,
+    })),
   ]);
   app.get('/api/tools', async () => toolCatalog());
 
@@ -134,5 +178,7 @@ export function systemRoutes(app: FastifyInstance, ctx: AppContext): void {
     const q = req.query as { sessionId?: string; limit?: string };
     return s.repo.listToolCalls(Math.min(Number(q.limit ?? 300), 2000), q.sessionId);
   });
-  app.get('/api/audit', async (req) => s.repo.listAudit(Math.min(Number((req.query as { limit?: string }).limit ?? 300), 2000)));
+  app.get('/api/audit', async (req) =>
+    s.repo.listAudit(Math.min(Number((req.query as { limit?: string }).limit ?? 300), 2000)),
+  );
 }

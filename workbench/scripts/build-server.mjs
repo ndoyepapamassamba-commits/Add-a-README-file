@@ -12,6 +12,8 @@ await build({
   packages: 'external',
   sourcemap: true,
   alias: { '@shared': './shared' },
-  banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
+  banner: {
+    js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);",
+  },
 });
 console.log('server bundled → dist/server/index.js');

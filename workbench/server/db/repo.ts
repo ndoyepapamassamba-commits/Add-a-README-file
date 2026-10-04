@@ -65,12 +65,16 @@ export class Repo {
   // ── projects ──────────────────────────────────────────────────────────
   upsertProject(p: { id: string; name: string; path: string }): void {
     this.db
-      .prepare('INSERT INTO projects (id, name, path, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET name=excluded.name, path=excluded.path')
+      .prepare(
+        'INSERT INTO projects (id, name, path, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET name=excluded.name, path=excluded.path',
+      )
       .run(p.id, p.name, p.path, Date.now());
   }
   getProjectRow(id: string): { id: string; name: string; path: string; createdAt: number } | undefined {
     const r = this.db.prepare('SELECT * FROM projects WHERE id = ?').get(id) as Row | undefined;
-    return r ? { id: str(r.id), name: str(r.name), path: str(r.path), createdAt: num(r.created_at) } : undefined;
+    return r
+      ? { id: str(r.id), name: str(r.name), path: str(r.path), createdAt: num(r.created_at) }
+      : undefined;
   }
   listProjectRows(): Omit<ProjectInfo, 'isGit'>[] {
     return (this.db.prepare('SELECT * FROM projects ORDER BY name').all() as Row[]).map((r) => ({
@@ -85,10 +89,18 @@ export class Repo {
   }
 
   // ── sessions ──────────────────────────────────────────────────────────
-  createSession(s: { id: string; projectId: string; title: string; model: string; permissionMode: PermissionMode }): SessionSummary {
+  createSession(s: {
+    id: string;
+    projectId: string;
+    title: string;
+    model: string;
+    permissionMode: PermissionMode;
+  }): SessionSummary {
     const now = Date.now();
     this.db
-      .prepare('INSERT INTO sessions (id, project_id, title, created_at, updated_at, model, permission_mode) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .prepare(
+        'INSERT INTO sessions (id, project_id, title, created_at, updated_at, model, permission_mode) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      )
       .run(s.id, s.projectId, s.title, now, now, s.model, s.permissionMode);
     return this.getSession(s.id)!;
   }
@@ -112,21 +124,34 @@ export class Repo {
   }
   listSessions(projectId?: string, limit = 200): SessionSummary[] {
     const rows = projectId
-      ? this.db.prepare('SELECT * FROM sessions WHERE project_id = ? ORDER BY updated_at DESC LIMIT ?').all(projectId, limit)
+      ? this.db
+          .prepare('SELECT * FROM sessions WHERE project_id = ? ORDER BY updated_at DESC LIMIT ?')
+          .all(projectId, limit)
       : this.db.prepare('SELECT * FROM sessions ORDER BY updated_at DESC LIMIT ?').all(limit);
     return (rows as Row[]).map((r) => this.mapSession(r));
   }
-  updateSession(id: string, patch: Partial<{ title: string; model: string; permissionMode: PermissionMode }>): void {
+  updateSession(
+    id: string,
+    patch: Partial<{ title: string; model: string; permissionMode: PermissionMode }>,
+  ): void {
     const s = this.getSession(id);
     if (!s) return;
     this.db
       .prepare('UPDATE sessions SET title = ?, model = ?, permission_mode = ?, updated_at = ? WHERE id = ?')
-      .run(patch.title ?? s.title, patch.model ?? s.model, patch.permissionMode ?? s.permissionMode, Date.now(), id);
+      .run(
+        patch.title ?? s.title,
+        patch.model ?? s.model,
+        patch.permissionMode ?? s.permissionMode,
+        Date.now(),
+        id,
+      );
   }
   touchSession(id: string, usage?: { tokensIn: number; tokensOut: number; cost: number }): void {
     if (usage)
       this.db
-        .prepare('UPDATE sessions SET updated_at = ?, tokens_in = tokens_in + ?, tokens_out = tokens_out + ?, cost = cost + ? WHERE id = ?')
+        .prepare(
+          'UPDATE sessions SET updated_at = ?, tokens_in = tokens_in + ?, tokens_out = tokens_out + ?, cost = cost + ? WHERE id = ?',
+        )
         .run(Date.now(), usage.tokensIn, usage.tokensOut, usage.cost, id);
     else this.db.prepare('UPDATE sessions SET updated_at = ? WHERE id = ?').run(Date.now(), id);
   }
@@ -142,11 +167,14 @@ export class Repo {
     this.db.prepare('UPDATE sessions SET settings = ? WHERE id = ?').run(JSON.stringify(settings), id);
   }
   deleteSession(id: string): void {
-    const runIds = (this.db.prepare('SELECT id FROM runs WHERE session_id = ?').all(id) as Row[]).map((r) => str(r.id));
+    const runIds = (this.db.prepare('SELECT id FROM runs WHERE session_id = ?').all(id) as Row[]).map((r) =>
+      str(r.id),
+    );
     this.db.exec('BEGIN');
     try {
       for (const runId of runIds) this.db.prepare('DELETE FROM run_events WHERE run_id = ?').run(runId);
-      for (const t of ['messages', 'runs', 'tool_calls', 'changes']) this.db.prepare(`DELETE FROM ${t} WHERE session_id = ?`).run(id);
+      for (const t of ['messages', 'runs', 'tool_calls', 'changes'])
+        this.db.prepare(`DELETE FROM ${t} WHERE session_id = ?`).run(id);
       this.db.prepare('DELETE FROM sessions WHERE id = ?').run(id);
       this.db.exec('COMMIT');
     } catch (err) {
@@ -162,7 +190,9 @@ export class Repo {
       .run(sessionId, runId, role, JSON.stringify(content), Date.now());
   }
   listMessages(sessionId: string): StoredMessage[] {
-    return (this.db.prepare('SELECT * FROM messages WHERE session_id = ? ORDER BY id').all(sessionId) as Row[]).map((r) => ({
+    return (
+      this.db.prepare('SELECT * FROM messages WHERE session_id = ? ORDER BY id').all(sessionId) as Row[]
+    ).map((r) => ({
       id: num(r.id),
       runId: r.run_id == null ? null : str(r.run_id),
       role: str(r.role),
@@ -170,7 +200,10 @@ export class Repo {
       createdAt: num(r.created_at),
     }));
   }
-  replaceMessages(sessionId: string, messages: { runId: string | null; role: string; content: unknown }[]): void {
+  replaceMessages(
+    sessionId: string,
+    messages: { runId: string | null; role: string; content: unknown }[],
+  ): void {
     this.db.exec('BEGIN');
     try {
       this.db.prepare('DELETE FROM messages WHERE session_id = ?').run(sessionId);
@@ -186,12 +219,32 @@ export class Repo {
   }
 
   // ── runs ──────────────────────────────────────────────────────────────
-  createRun(r: { id: string; sessionId: string; projectId: string; parentRunId: string | null; role: RoleId; title: string; model: string; mode: AgentMode }): void {
+  createRun(r: {
+    id: string;
+    sessionId: string;
+    projectId: string;
+    parentRunId: string | null;
+    role: RoleId;
+    title: string;
+    model: string;
+    mode: AgentMode;
+  }): void {
     this.db
       .prepare(
         'INSERT INTO runs (id, session_id, project_id, parent_run_id, role, title, status, model, mode, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       )
-      .run(r.id, r.sessionId, r.projectId, r.parentRunId, r.role, r.title, 'queued', r.model, r.mode, Date.now());
+      .run(
+        r.id,
+        r.sessionId,
+        r.projectId,
+        r.parentRunId,
+        r.role,
+        r.title,
+        'queued',
+        r.model,
+        r.mode,
+        Date.now(),
+      );
   }
   private mapRun(r: Row): RunSummary {
     return {
@@ -220,11 +273,22 @@ export class Repo {
   listRuns(opts: { sessionId?: string; limit?: number } = {}): RunSummary[] {
     const limit = opts.limit ?? 200;
     const rows = opts.sessionId
-      ? this.db.prepare('SELECT * FROM runs WHERE session_id = ? ORDER BY started_at ASC LIMIT ?').all(opts.sessionId, limit)
+      ? this.db
+          .prepare('SELECT * FROM runs WHERE session_id = ? ORDER BY started_at ASC LIMIT ?')
+          .all(opts.sessionId, limit)
       : this.db.prepare('SELECT * FROM runs ORDER BY started_at DESC LIMIT ?').all(limit);
     return (rows as Row[]).map((r) => this.mapRun(r));
   }
-  updateRun(id: string, patch: Partial<{ status: RunStatus; model: string; error: string | null; finishedAt: number; title: string }>): void {
+  updateRun(
+    id: string,
+    patch: Partial<{
+      status: RunStatus;
+      model: string;
+      error: string | null;
+      finishedAt: number;
+      title: string;
+    }>,
+  ): void {
     const run = this.getRun(id);
     if (!run) return;
     this.db
@@ -239,7 +303,11 @@ export class Repo {
       );
   }
   addRunUsage(id: string, u: { tokensIn: number; tokensOut: number; cost: number }): void {
-    this.db.prepare('UPDATE runs SET tokens_in = tokens_in + ?, tokens_out = tokens_out + ?, cost = cost + ? WHERE id = ?').run(u.tokensIn, u.tokensOut, u.cost, id);
+    this.db
+      .prepare(
+        'UPDATE runs SET tokens_in = tokens_in + ?, tokens_out = tokens_out + ?, cost = cost + ? WHERE id = ?',
+      )
+      .run(u.tokensIn, u.tokensOut, u.cost, id);
   }
   incrementFilesChanged(id: string): void {
     this.db.prepare('UPDATE runs SET files_changed = files_changed + 1 WHERE id = ?').run(id);
@@ -247,17 +315,25 @@ export class Repo {
   /** Marks runs left running by a previous process as failed. */
   failOrphanRuns(): number {
     const res = this.db
-      .prepare("UPDATE runs SET status = 'failed', error = 'Server restarted during the run', finished_at = ? WHERE status IN ('queued','running','waiting_approval','waiting_plan')")
+      .prepare(
+        "UPDATE runs SET status = 'failed', error = 'Server restarted during the run', finished_at = ? WHERE status IN ('queued','running','waiting_approval','waiting_plan')",
+      )
       .run(Date.now());
     return Number(res.changes);
   }
 
   // ── run events ────────────────────────────────────────────────────────
   addRunEvent(runId: string, seq: number, ts: number, event: AgentEvent): void {
-    this.db.prepare('INSERT INTO run_events (run_id, seq, ts, type, data) VALUES (?, ?, ?, ?, ?)').run(runId, seq, ts, event.type, JSON.stringify(event));
+    this.db
+      .prepare('INSERT INTO run_events (run_id, seq, ts, type, data) VALUES (?, ?, ?, ?, ?)')
+      .run(runId, seq, ts, event.type, JSON.stringify(event));
   }
   listRunEvents(runId: string, afterSeq = -1): RunEventEnvelope[] {
-    return (this.db.prepare('SELECT * FROM run_events WHERE run_id = ? AND seq > ? ORDER BY seq').all(runId, afterSeq) as Row[]).map((r) => ({
+    return (
+      this.db
+        .prepare('SELECT * FROM run_events WHERE run_id = ? AND seq > ? ORDER BY seq')
+        .all(runId, afterSeq) as Row[]
+    ).map((r) => ({
       runId: str(r.run_id),
       seq: num(r.seq),
       ts: num(r.ts),
@@ -265,22 +341,42 @@ export class Repo {
     }));
   }
   maxRunEventSeq(runId: string): number {
-    const r = this.db.prepare('SELECT MAX(seq) AS m FROM run_events WHERE run_id = ?').get(runId) as Row | undefined;
+    const r = this.db.prepare('SELECT MAX(seq) AS m FROM run_events WHERE run_id = ?').get(runId) as
+      Row | undefined;
     return r?.m == null ? -1 : num(r.m);
   }
 
   // ── tool calls (activity / observability) ─────────────────────────────
   startToolCall(t: { id: string; runId: string; sessionId: string; tool: string; args: unknown }): void {
     this.db
-      .prepare('INSERT INTO tool_calls (id, run_id, session_id, tool, args, status, started_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(t.id, t.runId, t.sessionId, t.tool, JSON.stringify(t.args ?? {}).slice(0, 4000), 'running', Date.now());
+      .prepare(
+        'INSERT INTO tool_calls (id, run_id, session_id, tool, args, status, started_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        t.id,
+        t.runId,
+        t.sessionId,
+        t.tool,
+        JSON.stringify(t.args ?? {}).slice(0, 4000),
+        'running',
+        Date.now(),
+      );
   }
-  finishToolCall(id: string, status: 'success' | 'error' | 'denied', summary: string, durationMs: number): void {
-    this.db.prepare('UPDATE tool_calls SET status = ?, summary = ?, duration_ms = ? WHERE id = ?').run(status, summary.slice(0, 1000), durationMs, id);
+  finishToolCall(
+    id: string,
+    status: 'success' | 'error' | 'denied',
+    summary: string,
+    durationMs: number,
+  ): void {
+    this.db
+      .prepare('UPDATE tool_calls SET status = ?, summary = ?, duration_ms = ? WHERE id = ?')
+      .run(status, summary.slice(0, 1000), durationMs, id);
   }
   listToolCalls(limit = 300, sessionId?: string): ToolCallRow[] {
     const rows = sessionId
-      ? this.db.prepare('SELECT * FROM tool_calls WHERE session_id = ? ORDER BY started_at DESC LIMIT ?').all(sessionId, limit)
+      ? this.db
+          .prepare('SELECT * FROM tool_calls WHERE session_id = ? ORDER BY started_at DESC LIMIT ?')
+          .all(sessionId, limit)
       : this.db.prepare('SELECT * FROM tool_calls ORDER BY started_at DESC LIMIT ?').all(limit);
     return (rows as Row[]).map((r) => ({
       id: str(r.id),
@@ -298,8 +394,23 @@ export class Repo {
   // ── changes ───────────────────────────────────────────────────────────
   addChange(c: ChangeRecord): void {
     this.db
-      .prepare('INSERT INTO changes (id, run_id, session_id, project_id, path, op, before, after, status, created_at, added, removed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(c.id, c.runId, c.sessionId, c.projectId, c.path, c.op, c.before, c.after, c.status, c.createdAt, c.added, c.removed);
+      .prepare(
+        'INSERT INTO changes (id, run_id, session_id, project_id, path, op, before, after, status, created_at, added, removed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        c.id,
+        c.runId,
+        c.sessionId,
+        c.projectId,
+        c.path,
+        c.op,
+        c.before,
+        c.after,
+        c.status,
+        c.createdAt,
+        c.added,
+        c.removed,
+      );
   }
   private mapChange(r: Row): ChangeRecord {
     return {
@@ -323,9 +434,16 @@ export class Repo {
   }
   listChanges(opts: { sessionId?: string; projectId?: string; runId?: string }): ChangeRecord[] {
     let rows: unknown[];
-    if (opts.runId) rows = this.db.prepare('SELECT * FROM changes WHERE run_id = ? ORDER BY created_at').all(opts.runId);
-    else if (opts.sessionId) rows = this.db.prepare('SELECT * FROM changes WHERE session_id = ? ORDER BY created_at').all(opts.sessionId);
-    else rows = this.db.prepare('SELECT * FROM changes WHERE project_id = ? ORDER BY created_at DESC LIMIT 500').all(opts.projectId ?? '');
+    if (opts.runId)
+      rows = this.db.prepare('SELECT * FROM changes WHERE run_id = ? ORDER BY created_at').all(opts.runId);
+    else if (opts.sessionId)
+      rows = this.db
+        .prepare('SELECT * FROM changes WHERE session_id = ? ORDER BY created_at')
+        .all(opts.sessionId);
+    else
+      rows = this.db
+        .prepare('SELECT * FROM changes WHERE project_id = ? ORDER BY created_at DESC LIMIT 500')
+        .all(opts.projectId ?? '');
     return (rows as Row[]).map((r) => this.mapChange(r));
   }
   setChangeStatus(id: string, status: ChangeRecord['status']): void {
@@ -333,23 +451,44 @@ export class Repo {
   }
 
   // ── usage & costs ─────────────────────────────────────────────────────
-  addUsage(u: { runId: string | null; sessionId: string | null; model: string; promptTokens: number; completionTokens: number; cost: number }): void {
+  addUsage(u: {
+    runId: string | null;
+    sessionId: string | null;
+    model: string;
+    promptTokens: number;
+    completionTokens: number;
+    cost: number;
+  }): void {
     this.db
-      .prepare('INSERT INTO usage (run_id, session_id, model, prompt_tokens, completion_tokens, cost, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .prepare(
+        'INSERT INTO usage (run_id, session_id, model, prompt_tokens, completion_tokens, cost, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      )
       .run(u.runId, u.sessionId, u.model, u.promptTokens, u.completionTokens, u.cost, Date.now());
   }
   usageSince(since: number): { promptTokens: number; completionTokens: number; cost: number; calls: number } {
     const r = this.db
-      .prepare('SELECT COALESCE(SUM(prompt_tokens),0) p, COALESCE(SUM(completion_tokens),0) c, COALESCE(SUM(cost),0) cost, COUNT(*) n FROM usage WHERE created_at >= ?')
+      .prepare(
+        'SELECT COALESCE(SUM(prompt_tokens),0) p, COALESCE(SUM(completion_tokens),0) c, COALESCE(SUM(cost),0) cost, COUNT(*) n FROM usage WHERE created_at >= ?',
+      )
       .get(since) as Row;
     return { promptTokens: num(r.p), completionTokens: num(r.c), cost: num(r.cost), calls: num(r.n) };
   }
-  usageByModel(since: number): { model: string; cost: number; promptTokens: number; completionTokens: number; calls: number }[] {
+  usageByModel(
+    since: number,
+  ): { model: string; cost: number; promptTokens: number; completionTokens: number; calls: number }[] {
     return (
       this.db
-        .prepare('SELECT model, SUM(cost) cost, SUM(prompt_tokens) p, SUM(completion_tokens) c, COUNT(*) n FROM usage WHERE created_at >= ? GROUP BY model ORDER BY cost DESC')
+        .prepare(
+          'SELECT model, SUM(cost) cost, SUM(prompt_tokens) p, SUM(completion_tokens) c, COUNT(*) n FROM usage WHERE created_at >= ? GROUP BY model ORDER BY cost DESC',
+        )
         .all(since) as Row[]
-    ).map((r) => ({ model: str(r.model), cost: num(r.cost), promptTokens: num(r.p), completionTokens: num(r.c), calls: num(r.n) }));
+    ).map((r) => ({
+      model: str(r.model),
+      cost: num(r.cost),
+      promptTokens: num(r.p),
+      completionTokens: num(r.c),
+      calls: num(r.n),
+    }));
   }
   usageByDay(since: number): { day: string; cost: number; tokens: number }[] {
     return (
@@ -363,28 +502,63 @@ export class Repo {
 
   // ── audit ─────────────────────────────────────────────────────────────
   audit(e: { actor: string; action: string; target?: string; decision?: string; details?: unknown }): void {
-    const details = e.details === undefined ? null : redactForLogs(typeof e.details === 'string' ? e.details : JSON.stringify(e.details)).slice(0, 4000);
+    const details =
+      e.details === undefined
+        ? null
+        : redactForLogs(typeof e.details === 'string' ? e.details : JSON.stringify(e.details)).slice(0, 4000);
     this.db
-      .prepare('INSERT INTO audit_log (ts, actor, action, target, decision, details) VALUES (?, ?, ?, ?, ?, ?)')
-      .run(Date.now(), e.actor, e.action, e.target ? redactForLogs(e.target).slice(0, 500) : null, e.decision ?? null, details);
+      .prepare(
+        'INSERT INTO audit_log (ts, actor, action, target, decision, details) VALUES (?, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        Date.now(),
+        e.actor,
+        e.action,
+        e.target ? redactForLogs(e.target).slice(0, 500) : null,
+        e.decision ?? null,
+        details,
+      );
   }
-  listAudit(limit = 300): { id: number; ts: number; actor: string; action: string; target: string | null; decision: string | null; details: string | null }[] {
-    return (this.db.prepare('SELECT * FROM audit_log ORDER BY id DESC LIMIT ?').all(limit) as Row[]).map((r) => ({
-      id: num(r.id),
-      ts: num(r.ts),
-      actor: str(r.actor),
-      action: str(r.action),
-      target: r.target == null ? null : str(r.target),
-      decision: r.decision == null ? null : str(r.decision),
-      details: r.details == null ? null : str(r.details),
-    }));
+  listAudit(limit = 300): {
+    id: number;
+    ts: number;
+    actor: string;
+    action: string;
+    target: string | null;
+    decision: string | null;
+    details: string | null;
+  }[] {
+    return (this.db.prepare('SELECT * FROM audit_log ORDER BY id DESC LIMIT ?').all(limit) as Row[]).map(
+      (r) => ({
+        id: num(r.id),
+        ts: num(r.ts),
+        actor: str(r.actor),
+        action: str(r.action),
+        target: r.target == null ? null : str(r.target),
+        decision: r.decision == null ? null : str(r.decision),
+        details: r.details == null ? null : str(r.details),
+      }),
+    );
   }
 
   // ── artifacts ─────────────────────────────────────────────────────────
   addArtifact(a: ArtifactRecord): void {
     this.db
-      .prepare('INSERT INTO artifacts (id, project_id, session_id, run_id, name, type, path, size, created_at, meta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(a.id, a.projectId, a.sessionId, a.runId, a.name, a.type, a.path, a.size, a.createdAt, JSON.stringify(a.meta));
+      .prepare(
+        'INSERT INTO artifacts (id, project_id, session_id, run_id, name, type, path, size, created_at, meta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        a.id,
+        a.projectId,
+        a.sessionId,
+        a.runId,
+        a.name,
+        a.type,
+        a.path,
+        a.size,
+        a.createdAt,
+        JSON.stringify(a.meta),
+      );
   }
   private mapArtifact(r: Row): ArtifactRecord {
     return {
@@ -407,8 +581,12 @@ export class Repo {
   listArtifacts(opts: { projectId?: string; sessionId?: string; limit?: number }): ArtifactRecord[] {
     const limit = opts.limit ?? 200;
     const rows = opts.sessionId
-      ? this.db.prepare('SELECT * FROM artifacts WHERE session_id = ? ORDER BY created_at DESC LIMIT ?').all(opts.sessionId, limit)
-      : this.db.prepare('SELECT * FROM artifacts WHERE project_id = ? ORDER BY created_at DESC LIMIT ?').all(opts.projectId ?? '', limit);
+      ? this.db
+          .prepare('SELECT * FROM artifacts WHERE session_id = ? ORDER BY created_at DESC LIMIT ?')
+          .all(opts.sessionId, limit)
+      : this.db
+          .prepare('SELECT * FROM artifacts WHERE project_id = ? ORDER BY created_at DESC LIMIT ?')
+          .all(opts.projectId ?? '', limit);
     return (rows as Row[]).map((r) => this.mapArtifact(r));
   }
   deleteArtifact(id: string): void {
@@ -426,6 +604,10 @@ export class Repo {
     }
   }
   setSetting(key: string, value: unknown): void {
-    this.db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, JSON.stringify(value));
+    this.db
+      .prepare(
+        'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+      )
+      .run(key, JSON.stringify(value));
   }
 }

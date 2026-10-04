@@ -45,7 +45,13 @@ export function toolArgSummary(tool: string, args: unknown): string {
   const s = (v: unknown) => (typeof v === 'string' ? v : '');
   if (tool.startsWith('browser.')) {
     const action = tool.slice(8);
-    const target = s(a.url) || (a.ref !== undefined ? `[${String(a.ref)}]` : '') || s(a.selector) || s(a.text) || s(a.keys) || '';
+    const target =
+      s(a.url) ||
+      (a.ref !== undefined ? `[${String(a.ref)}]` : '') ||
+      s(a.selector) ||
+      s(a.text) ||
+      s(a.keys) ||
+      '';
     return `${action}${target ? ` ${target}` : ''}`;
   }
   switch (tool) {

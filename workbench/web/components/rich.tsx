@@ -4,9 +4,25 @@ import remarkGfm from 'remark-gfm';
 import { diffLines } from 'diff';
 import * as echarts from 'echarts/core';
 import { BarChart, HeatmapChart, LineChart, PieChart, ScatterChart } from 'echarts/charts';
-import { DataZoomComponent, GridComponent, LegendComponent, TooltipComponent, VisualMapComponent } from 'echarts/components';
+import {
+  DataZoomComponent,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+  VisualMapComponent,
+} from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
-import { Check, Copy, Download, ExternalLink, Eye, FileCode2, FolderInput, Image as ImageIcon, BarChart3 } from 'lucide-react';
+import {
+  Check,
+  Copy,
+  Download,
+  ExternalLink,
+  Eye,
+  FileCode2,
+  FolderInput,
+  Image as ImageIcon,
+  BarChart3,
+} from 'lucide-react';
 import type { ChartData } from '@shared/types';
 import { api, blobUrl, downloadFile, previewUrl } from '../lib/api';
 import { cx, fmtBytes } from '../lib/format';
@@ -14,7 +30,19 @@ import type { ArtifactRecord } from '../lib/types';
 import { useApp } from '../store/app';
 import { Button, IconButton, Modal, Spinner } from './ui';
 
-echarts.use([BarChart, LineChart, PieChart, ScatterChart, HeatmapChart, GridComponent, TooltipComponent, LegendComponent, DataZoomComponent, VisualMapComponent, CanvasRenderer]);
+echarts.use([
+  BarChart,
+  LineChart,
+  PieChart,
+  ScatterChart,
+  HeatmapChart,
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+  DataZoomComponent,
+  VisualMapComponent,
+  CanvasRenderer,
+]);
 
 // ── code blocks & markdown ─────────────────────────────────────────────
 export function CodeBlock({ code, lang }: { code: string; lang?: string }) {
@@ -106,7 +134,15 @@ export function computeDiff(before: string, after: string, context = 3): DiffLin
   return out;
 }
 
-export function DiffView({ before, after, maxLines = 400 }: { before: string; after: string; maxLines?: number }) {
+export function DiffView({
+  before,
+  after,
+  maxLines = 400,
+}: {
+  before: string;
+  after: string;
+  maxLines?: number;
+}) {
   const lines = useMemo(() => computeDiff(before, after), [before, after]);
   const shown = lines.slice(0, maxLines);
   return (
@@ -117,22 +153,51 @@ export function DiffView({ before, after, maxLines = 400 }: { before: string; af
             ⋯
           </div>
         ) : (
-          <div key={i} className={cx('flex whitespace-pre', l.type === 'add' && 'bg-ok/12', l.type === 'del' && 'bg-err/12')}>
+          <div
+            key={i}
+            className={cx(
+              'flex whitespace-pre',
+              l.type === 'add' && 'bg-ok/12',
+              l.type === 'del' && 'bg-err/12',
+            )}
+          >
             <span className="w-10 shrink-0 select-none pr-2 text-right text-faint">{l.a ?? ''}</span>
             <span className="w-10 shrink-0 select-none pr-2 text-right text-faint">{l.b ?? ''}</span>
-            <span className={cx('w-4 shrink-0 select-none', l.type === 'add' ? 'text-ok' : l.type === 'del' ? 'text-err' : 'text-faint')}>{l.type === 'add' ? '+' : l.type === 'del' ? '−' : ' '}</span>
+            <span
+              className={cx(
+                'w-4 shrink-0 select-none',
+                l.type === 'add' ? 'text-ok' : l.type === 'del' ? 'text-err' : 'text-faint',
+              )}
+            >
+              {l.type === 'add' ? '+' : l.type === 'del' ? '−' : ' '}
+            </span>
             <span className="pr-3">{l.text || ' '}</span>
           </div>
         ),
       )}
-      {lines.length > maxLines && <div className="px-3 py-1 text-[11px] text-faint">… {lines.length - maxLines} lignes de plus</div>}
+      {lines.length > maxLines && (
+        <div className="px-3 py-1 text-[11px] text-faint">… {lines.length - maxLines} lignes de plus</div>
+      )}
       {lines.length === 0 && <div className="px-3 py-1 text-faint">Aucune différence</div>}
     </div>
   );
 }
 
 // ── charts ─────────────────────────────────────────────────────────────
-const PALETTE = ['#d97757', '#6ba4e7', '#73c27a', '#e3b552', '#b48ead', '#5fb3b3', '#ee6b5f', '#9aa0a6', '#c792ea', '#f0a35e', '#4fb3d9', '#a3be8c'];
+const PALETTE = [
+  '#d97757',
+  '#6ba4e7',
+  '#73c27a',
+  '#e3b552',
+  '#b48ead',
+  '#5fb3b3',
+  '#ee6b5f',
+  '#9aa0a6',
+  '#c792ea',
+  '#f0a35e',
+  '#4fb3d9',
+  '#a3be8c',
+];
 
 function cssVar(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -141,19 +206,41 @@ function cssVar(name: string): string {
 function chartOption(data: ChartData): echarts.EChartsCoreOption {
   const fg = cssVar('--muted');
   const line = cssVar('--line');
-  const axis = { axisLine: { lineStyle: { color: line } }, axisLabel: { color: fg }, splitLine: { lineStyle: { color: line } } };
-  const base = { color: PALETTE, textStyle: { fontFamily: 'Inter Variable, system-ui', color: fg }, animationDuration: 300, grid: { left: 56, right: 18, top: 28, bottom: 40, containLabel: true } };
+  const axis = {
+    axisLine: { lineStyle: { color: line } },
+    axisLabel: { color: fg },
+    splitLine: { lineStyle: { color: line } },
+  };
+  const base = {
+    color: PALETTE,
+    textStyle: { fontFamily: 'Inter Variable, system-ui', color: fg },
+    animationDuration: 300,
+    grid: { left: 56, right: 18, top: 28, bottom: 40, containLabel: true },
+  };
   const t = data.spec.type;
   if (t === 'pie') {
     return {
       ...base,
       tooltip: { trigger: 'item', valueFormatter: (v: number) => v?.toLocaleString('fr-FR') },
       legend: { type: 'scroll', bottom: 0, textStyle: { color: fg } },
-      series: [{ type: 'pie', radius: ['38%', '68%'], itemStyle: { borderColor: cssVar('--elev'), borderWidth: 2 }, data: data.categories.map((c, i) => ({ name: String(c), value: data.series[0]?.data[i] ?? 0 })) }],
+      series: [
+        {
+          type: 'pie',
+          radius: ['38%', '68%'],
+          itemStyle: { borderColor: cssVar('--elev'), borderWidth: 2 },
+          data: data.categories.map((c, i) => ({ name: String(c), value: data.series[0]?.data[i] ?? 0 })),
+        },
+      ],
     };
   }
   if (t === 'scatter') {
-    return { ...base, tooltip: { trigger: 'item' }, xAxis: { type: 'value', name: data.spec.x?.column, ...axis }, yAxis: { type: 'value', name: data.spec.y?.[0]?.column, ...axis }, series: [{ type: 'scatter', symbolSize: 6, data: data.points ?? [] }] };
+    return {
+      ...base,
+      tooltip: { trigger: 'item' },
+      xAxis: { type: 'value', name: data.spec.x?.column, ...axis },
+      yAxis: { type: 'value', name: data.spec.y?.[0]?.column, ...axis },
+      series: [{ type: 'scatter', symbolSize: 6, data: data.points ?? [] }],
+    };
   }
   if (t === 'heatmap' && data.matrix) {
     const vals = data.matrix.values.map((v) => v[2]);
@@ -163,17 +250,40 @@ function chartOption(data: ChartData): echarts.EChartsCoreOption {
       grid: { ...base.grid, bottom: 70 },
       xAxis: { type: 'category', data: data.matrix.xLabels, ...axis },
       yAxis: { type: 'category', data: data.matrix.yLabels, ...axis },
-      visualMap: { min: Math.min(...vals, 0), max: Math.max(...vals, 1), calculable: true, orient: 'horizontal', left: 'center', bottom: 0, inRange: { color: ['#2b3a4a', '#6ba4e7', '#e3b552', '#d97757'] }, textStyle: { color: fg } },
-      series: [{ type: 'heatmap', data: data.matrix.values, label: { show: data.matrix.values.length < 150, color: '#fff', fontSize: 10 } }],
+      visualMap: {
+        min: Math.min(...vals, 0),
+        max: Math.max(...vals, 1),
+        calculable: true,
+        orient: 'horizontal',
+        left: 'center',
+        bottom: 0,
+        inRange: { color: ['#2b3a4a', '#6ba4e7', '#e3b552', '#d97757'] },
+        textStyle: { color: fg },
+      },
+      series: [
+        {
+          type: 'heatmap',
+          data: data.matrix.values,
+          label: { show: data.matrix.values.length < 150, color: '#fff', fontSize: 10 },
+        },
+      ],
     };
   }
   const many = data.categories.length > 25;
   return {
     ...base,
-    tooltip: { trigger: 'axis', valueFormatter: (v: number) => (v === null || v === undefined ? '—' : v.toLocaleString('fr-FR')) },
+    tooltip: {
+      trigger: 'axis',
+      valueFormatter: (v: number) => (v === null || v === undefined ? '—' : v.toLocaleString('fr-FR')),
+    },
     legend: data.series.length > 1 ? { type: 'scroll', top: 0, textStyle: { color: fg } } : undefined,
     dataZoom: many ? [{ type: 'inside' }, { type: 'slider', height: 16, bottom: 4 }] : undefined,
-    xAxis: { type: 'category', data: data.categories, ...axis, axisLabel: { color: fg, rotate: data.categories.length > 12 ? 35 : 0, hideOverlap: true } },
+    xAxis: {
+      type: 'category',
+      data: data.categories,
+      ...axis,
+      axisLabel: { color: fg, rotate: data.categories.length > 12 ? 35 : 0, hideOverlap: true },
+    },
     yAxis: { type: 'value', ...axis },
     series: data.series.map((s) => ({
       name: s.name,
@@ -209,7 +319,9 @@ export function ChartView({ data, height = 300 }: { data: ChartData; height?: nu
         {(data.kpis ?? []).map((k) => (
           <div key={k.label} className="rounded-lg border border-line bg-panel p-3">
             <div className="truncate text-[11.5px] text-muted">{k.label}</div>
-            <div className="mt-1 text-xl font-semibold tabular-nums">{k.value === null ? '—' : k.value.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</div>
+            <div className="mt-1 text-xl font-semibold tabular-nums">
+              {k.value === null ? '—' : k.value.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}
+            </div>
           </div>
         ))}
       </div>
@@ -219,7 +331,15 @@ export function ChartView({ data, height = 300 }: { data: ChartData; height?: nu
   return <div ref={ref} style={{ height }} className="w-full" />;
 }
 
-export function DataTable({ rows, columns, maxHeight = 360 }: { rows: Record<string, unknown>[]; columns?: string[]; maxHeight?: number }) {
+export function DataTable({
+  rows,
+  columns,
+  maxHeight = 360,
+}: {
+  rows: Record<string, unknown>[];
+  columns?: string[];
+  maxHeight?: number;
+}) {
   const cols = columns ?? (rows[0] ? Object.keys(rows[0]) : []);
   return (
     <div className="overflow-auto rounded-lg border border-line" style={{ maxHeight }}>
@@ -227,7 +347,10 @@ export function DataTable({ rows, columns, maxHeight = 360 }: { rows: Record<str
         <thead className="sticky top-0 bg-hover">
           <tr>
             {cols.map((c) => (
-              <th key={c} className="whitespace-nowrap border-b border-line px-2.5 py-1.5 text-left font-semibold">
+              <th
+                key={c}
+                className="whitespace-nowrap border-b border-line px-2.5 py-1.5 text-left font-semibold"
+              >
                 {c}
               </th>
             ))}
@@ -237,7 +360,10 @@ export function DataTable({ rows, columns, maxHeight = 360 }: { rows: Record<str
           {rows.map((r, i) => (
             <tr key={i} className="odd:bg-panel/40 hover:bg-hover/60">
               {cols.map((c) => (
-                <td key={c} className="max-w-[280px] truncate whitespace-nowrap border-b border-line/60 px-2.5 py-1 tabular-nums">
+                <td
+                  key={c}
+                  className="max-w-[280px] truncate whitespace-nowrap border-b border-line/60 px-2.5 py-1 tabular-nums"
+                >
                   {r[c] === null || r[c] === undefined ? <span className="text-faint">—</span> : String(r[c])}
                 </td>
               ))}
@@ -250,7 +376,19 @@ export function DataTable({ rows, columns, maxHeight = 360 }: { rows: Record<str
 }
 
 // ── authenticated media ────────────────────────────────────────────────
-export function AuthImage({ path, query, alt, className, onClick }: { path: string; query?: Record<string, string>; alt: string; className?: string; onClick?: () => void }) {
+export function AuthImage({
+  path,
+  query,
+  alt,
+  className,
+  onClick,
+}: {
+  path: string;
+  query?: Record<string, string>;
+  alt: string;
+  className?: string;
+  onClick?: () => void;
+}) {
   const [src, setSrc] = useState<string | null>(null);
   const [err, setErr] = useState(false);
   useEffect(() => {
@@ -268,7 +406,20 @@ export function AuthImage({ path, query, alt, className, onClick }: { path: stri
 }
 
 // ── artifacts ──────────────────────────────────────────────────────────
-const TEXT_TYPES = new Set(['html', 'css', 'js', 'json', 'csv', 'md', 'txt', 'svg', 'py', 'ts', 'xml', 'yaml']);
+const TEXT_TYPES = new Set([
+  'html',
+  'css',
+  'js',
+  'json',
+  'csv',
+  'md',
+  'txt',
+  'svg',
+  'py',
+  'ts',
+  'xml',
+  'yaml',
+]);
 
 export function ArtifactIcon({ type }: { type: string }) {
   if (type === 'png' || type === 'jpg' || type === 'svg') return <ImageIcon size={15} />;
@@ -280,7 +431,12 @@ export function ArtifactCard({ artifact, compact }: { artifact: ArtifactRecord; 
   const [open, setOpen] = useState(false);
   return (
     <>
-      <div className={cx('flex items-center gap-2.5 rounded-lg border border-line bg-panel px-3 py-2', compact ? 'text-[12.5px]' : '')}>
+      <div
+        className={cx(
+          'flex items-center gap-2.5 rounded-lg border border-line bg-panel px-3 py-2',
+          compact ? 'text-[12.5px]' : '',
+        )}
+      >
         <span className="text-accent">
           <ArtifactIcon type={artifact.type} />
         </span>
@@ -293,7 +449,16 @@ export function ArtifactCard({ artifact, compact }: { artifact: ArtifactRecord; 
         <IconButton label="Aperçu" onClick={() => setOpen(true)}>
           <Eye size={15} />
         </IconButton>
-        <IconButton label="Télécharger" onClick={() => void downloadFile(`/api/artifacts/${artifact.id}/raw`, artifact.type === 'chart' ? `${artifact.name}` : artifact.name, { download: '1' })}>
+        <IconButton
+          label="Télécharger"
+          onClick={() =>
+            void downloadFile(
+              `/api/artifacts/${artifact.id}/raw`,
+              artifact.type === 'chart' ? `${artifact.name}` : artifact.name,
+              { download: '1' },
+            )
+          }
+        >
           <Download size={15} />
         </IconButton>
       </div>
@@ -302,7 +467,15 @@ export function ArtifactCard({ artifact, compact }: { artifact: ArtifactRecord; 
   );
 }
 
-export function ArtifactPreview({ artifact, open, onClose }: { artifact: ArtifactRecord; open: boolean; onClose: () => void }) {
+export function ArtifactPreview({
+  artifact,
+  open,
+  onClose,
+}: {
+  artifact: ArtifactRecord;
+  open: boolean;
+  onClose: () => void;
+}) {
   const [text, setText] = useState<string | null>(null);
   const [chart, setChart] = useState<ChartData | null>(null);
   const [frame, setFrame] = useState<string | null>(null);
@@ -313,7 +486,8 @@ export function ArtifactPreview({ artifact, open, onClose }: { artifact: Artifac
     if (artifact.type === 'chart') void api<ChartData>(`/api/artifacts/${artifact.id}/raw`).then(setChart);
     else if (artifact.type === 'html') void previewUrl({ artifactId: artifact.id }).then(setFrame);
     else if (artifact.type === 'pdf') void blobUrl(`/api/artifacts/${artifact.id}/raw`).then(setFrame);
-    else if (TEXT_TYPES.has(artifact.type)) void api<{ text: string | null }>(`/api/artifacts/${artifact.id}/text`).then((r) => setText(r.text));
+    else if (TEXT_TYPES.has(artifact.type))
+      void api<{ text: string | null }>(`/api/artifacts/${artifact.id}/text`).then((r) => setText(r.text));
   }, [open, artifact]);
   return (
     <Modal
@@ -329,12 +503,18 @@ export function ArtifactPreview({ artifact, open, onClose }: { artifact: Artifac
         <>
           {artifact.type !== 'chart' && (
             <div className="mr-auto flex items-center gap-2">
-              <input value={savePath} onChange={(e) => setSavePath(e.target.value)} className="h-8 w-72 rounded-lg border border-line bg-input px-2 text-[12.5px]" />
+              <input
+                value={savePath}
+                onChange={(e) => setSavePath(e.target.value)}
+                className="h-8 w-72 rounded-lg border border-line bg-input px-2 text-[12.5px]"
+              />
               <Button
                 size="sm"
                 onClick={async () => {
                   try {
-                    const r = await api<{ path: string }>(`/api/artifacts/${artifact.id}/save`, { body: { path: savePath } });
+                    const r = await api<{ path: string }>(`/api/artifacts/${artifact.id}/save`, {
+                      body: { path: savePath },
+                    });
                     toast('success', `Enregistré dans ${r.path}`);
                   } catch (err) {
                     toast('error', (err as Error).message);
@@ -350,21 +530,56 @@ export function ArtifactPreview({ artifact, open, onClose }: { artifact: Artifac
               <ExternalLink size={14} /> Ouvrir
             </Button>
           )}
-          <Button size="sm" variant="primary" onClick={() => void downloadFile(`/api/artifacts/${artifact.id}/raw`, artifact.name, { download: '1' })}>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() =>
+              void downloadFile(`/api/artifacts/${artifact.id}/raw`, artifact.name, { download: '1' })
+            }
+          >
             <Download size={14} /> Télécharger
           </Button>
         </>
       }
     >
-      {(artifact.type === 'png' || artifact.type === 'jpg') && <AuthImage path={`/api/artifacts/${artifact.id}/raw`} alt={artifact.name} className="mx-auto max-h-[64vh] rounded-lg border border-line" />}
+      {(artifact.type === 'png' || artifact.type === 'jpg') && (
+        <AuthImage
+          path={`/api/artifacts/${artifact.id}/raw`}
+          alt={artifact.name}
+          className="mx-auto max-h-[64vh] rounded-lg border border-line"
+        />
+      )}
       {artifact.type === 'chart' && (chart ? <ChartView data={chart} height={420} /> : <Spinner />)}
-      {artifact.type === 'html' && (frame ? <iframe title={artifact.name} src={frame} sandbox="allow-scripts allow-forms allow-modals allow-popups" className="h-[64vh] w-full rounded-lg border border-line bg-white" /> : <Spinner />)}
-      {artifact.type === 'pdf' && (frame ? <iframe title={artifact.name} src={frame} className="h-[64vh] w-full rounded-lg border border-line" /> : <Spinner />)}
+      {artifact.type === 'html' &&
+        (frame ? (
+          <iframe
+            title={artifact.name}
+            src={frame}
+            sandbox="allow-scripts allow-forms allow-modals allow-popups"
+            className="h-[64vh] w-full rounded-lg border border-line bg-white"
+          />
+        ) : (
+          <Spinner />
+        ))}
+      {artifact.type === 'pdf' &&
+        (frame ? (
+          <iframe
+            title={artifact.name}
+            src={frame}
+            className="h-[64vh] w-full rounded-lg border border-line"
+          />
+        ) : (
+          <Spinner />
+        ))}
       {artifact.type === 'md' && text !== null && <Markdown text={text} />}
-      {TEXT_TYPES.has(artifact.type) && artifact.type !== 'md' && artifact.type !== 'html' && text !== null && <CodeBlock code={text} lang={artifact.type} />}
+      {TEXT_TYPES.has(artifact.type) &&
+        artifact.type !== 'md' &&
+        artifact.type !== 'html' &&
+        text !== null && <CodeBlock code={text} lang={artifact.type} />}
       {['xlsx', 'zip'].includes(artifact.type) && (
         <div className="text-muted">
-          Fichier {artifact.type.toUpperCase()} ({fmtBytes(artifact.size)}). Téléchargez-le, ou enregistrez-le dans le projet pour l'analyser dans la vue Données.
+          Fichier {artifact.type.toUpperCase()} ({fmtBytes(artifact.size)}). Téléchargez-le, ou enregistrez-le
+          dans le projet pour l'analyser dans la vue Données.
         </div>
       )}
     </Modal>

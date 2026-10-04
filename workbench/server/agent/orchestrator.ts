@@ -22,7 +22,14 @@ import { decide } from '../security/permissions';
 import { redactDeep, redactSecrets } from '../security/redact';
 import type { Services } from '../services/container';
 import { ConflictError, NotFoundError } from '../services/workspace';
-import { ALL_TOOLS, dynamicToolNames, getTool, setDynamicTools, toolDefinitions, toLlmName } from '../tools/registry';
+import {
+  ALL_TOOLS,
+  dynamicToolNames,
+  getTool,
+  setDynamicTools,
+  toolDefinitions,
+  toLlmName,
+} from '../tools/registry';
 import { mcpToolDef } from '../tools/mcp';
 import type { ToolContext, ToolOutput } from '../tools/types';
 import { ROLES, agentModelPreference, resolveRole } from './roles';
@@ -82,12 +89,20 @@ interface RunState {
 
 const NOT_PERSISTED = new Set<AgentEvent['type']>(['text_delta', 'thinking', 'stream_reset']);
 const MAX_TOOL_OUTPUT = 40_000;
-const FORWARDED_FROM_CHILD = new Set<AgentEvent['type']>(['tool_call', 'tool_result', 'approval_required', 'approval_resolved', 'file_changed']);
+const FORWARDED_FROM_CHILD = new Set<AgentEvent['type']>([
+  'tool_call',
+  'tool_result',
+  'approval_required',
+  'approval_resolved',
+  'file_changed',
+]);
 
 function truncateForUi(value: unknown, max = 4000): unknown {
-  if (typeof value === 'string') return value.length > max ? `${value.slice(0, max)}…[${value.length - max} more chars]` : value;
+  if (typeof value === 'string')
+    return value.length > max ? `${value.slice(0, max)}…[${value.length - max} more chars]` : value;
   if (Array.isArray(value)) return value.slice(0, 200).map((v) => truncateForUi(v, max));
-  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, truncateForUi(v, max)]));
+  if (value && typeof value === 'object')
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, truncateForUi(v, max)]));
   return value;
 }
 
@@ -133,17 +148,36 @@ export class AgentOrchestrator extends EventEmitter {
   async start(input: StartRunInput): Promise<RunSummary> {
     const session = this.s.repo.getSession(input.sessionId);
     if (!session) throw new NotFoundError('Session not found');
-    if (this.activeRunForSession(session.id)) throw new ConflictError('A task is already running in this session. Stop it or wait.');
+    if (this.activeRunForSession(session.id))
+      throw new ConflictError('A task is already running in this session. Stop it or wait.');
     this.s.workspace.getProject(session.projectId);
     if (!input.text.trim()) throw new ConflictError('Empty request');
     const settings = this.s.repo.getSessionSettings(session.id);
     const role = input.role ?? settings.role ?? 'general';
     const requested = input.model || session.model || this.s.settings.get().defaultModel;
-    if (input.model && input.model !== session.model) this.s.repo.updateSession(session.id, { model: input.model });
+    if (input.model && input.model !== session.model)
+      this.s.repo.updateSession(session.id, { model: input.model });
     const id = randomUUID();
     const title = (input.title ?? input.text).split('\n')[0]!.slice(0, 120);
-    this.s.repo.createRun({ id, sessionId: session.id, projectId: session.projectId, parentRunId: null, role, title, model: requested, mode: input.agentMode ?? 'chat' });
-    const state = this.createState({ id, sessionId: session.id, projectId: session.projectId, parentRunId: null, role, depth: 0, model: requested });
+    this.s.repo.createRun({
+      id,
+      sessionId: session.id,
+      projectId: session.projectId,
+      parentRunId: null,
+      role,
+      title,
+      model: requested,
+      mode: input.agentMode ?? 'chat',
+    });
+    const state = this.createState({
+      id,
+      sessionId: session.id,
+      projectId: session.projectId,
+      parentRunId: null,
+      role,
+      depth: 0,
+      model: requested,
+    });
     void this.execute(state, { ...input, role, model: requested }, { ephemeral: false }).catch((err) => {
       // execute() handles its own errors; this is a last-resort guard.
       console.error('run crashed', err);
@@ -194,10 +228,11 @@ export class AgentOrchestrator extends EventEmitter {
       listener(e);
     }
     replaying = false;
-    for (const e of buffer) if (e.seq > last) {
-      last = e.seq;
-      listener(e);
-    }
+    for (const e of buffer)
+      if (e.seq > last) {
+        last = e.seq;
+        listener(e);
+      }
     return () => this.off(`run:${runId}`, live);
   }
 
@@ -217,7 +252,9 @@ export class AgentOrchestrator extends EventEmitter {
         .map((c) =>
           c.op === 'move'
             ? `rename ${c.before} → ${c.after}\n`
-            : createTwoFilesPatch(`a/${c.path}`, `b/${c.path}`, c.before ?? '', c.after ?? '', '', '', { context: 3 }),
+            : createTwoFilesPatch(`a/${c.path}`, `b/${c.path}`, c.before ?? '', c.after ?? '', '', '', {
+                context: 3,
+              }),
         )
         .join('\n');
     } else if (this.s.git.isRepo(root)) diff = await this.s.git.diff(root);
@@ -226,7 +263,9 @@ export class AgentOrchestrator extends EventEmitter {
     const text = [
       'Review the work done in this session as an independent reviewer.',
       opts.focus ? `Focus: ${opts.focus}` : '',
-      files.length ? `Changed files:\n${files.join('\n')}` : 'No changes were recorded by the agent in this session; review the current working tree.',
+      files.length
+        ? `Changed files:\n${files.join('\n')}`
+        : 'No changes were recorded by the agent in this session; review the current working tree.',
       diff ? `Diff:\n\`\`\`diff\n${diff.slice(0, 60_000)}\n\`\`\`` : '',
       'Check: correctness and errors, regressions, consistency with the rest of the code, tests (run them if possible), security issues. Report findings by severity with file:line and concrete fixes. Do not modify files.',
     ]
@@ -238,22 +277,41 @@ export class AgentOrchestrator extends EventEmitter {
       const other = models.filter((m) => m.id !== session.model);
       model = pickFromTier(other, this.s.settings.get().autoTiers.reasoning, { tools: true })?.id ?? 'auto';
     }
-    return this.start({ sessionId, text, role: 'reviewer', model, agentMode: 'chat', title: 'Review my work' });
+    return this.start({
+      sessionId,
+      text,
+      role: 'reviewer',
+      model,
+      agentMode: 'chat',
+      title: 'Review my work',
+    });
   }
 
   /** Summarises older conversation turns to free context (also used by /compact). */
   async compactSession(sessionId: string): Promise<{ before: number; after: number }> {
-    if (this.activeRunForSession(sessionId)) throw new ConflictError('Cannot compact while a task is running');
+    if (this.activeRunForSession(sessionId))
+      throw new ConflictError('Cannot compact while a task is running');
     const stored = this.s.repo.listMessages(sessionId);
     const messages = stored.map((m) => m.content as ChatMessage);
     const before = estimateTokens(messages);
     const compacted = await this.summarizeOldTurns(messages, sessionId, null, 1);
-    this.s.repo.replaceMessages(sessionId, compacted.map((m) => ({ runId: null, role: m.role, content: m })));
+    this.s.repo.replaceMessages(
+      sessionId,
+      compacted.map((m) => ({ runId: null, role: m.role, content: m })),
+    );
     return { before, after: estimateTokens(compacted) };
   }
 
   // ── internals ─────────────────────────────────────────────────────────
-  private createState(p: { id: string; sessionId: string; projectId: string; parentRunId: string | null; role: RoleId; depth: number; model: string }): RunState {
+  private createState(p: {
+    id: string;
+    sessionId: string;
+    projectId: string;
+    parentRunId: string | null;
+    role: RoleId;
+    depth: number;
+    model: string;
+  }): RunState {
     const st: RunState = {
       ...p,
       abort: new AbortController(),
@@ -286,7 +344,12 @@ export class AgentOrchestrator extends EventEmitter {
     this.s.repo.updateRun(st.id, { status });
   }
 
-  private async summarizeOldTurns(messages: ChatMessage[], sessionId: string, runId: string | null, keepTurns: number): Promise<ChatMessage[]> {
+  private async summarizeOldTurns(
+    messages: ChatMessage[],
+    sessionId: string,
+    runId: string | null,
+    keepTurns: number,
+  ): Promise<ChatMessage[]> {
     const system = messages[0]?.role === 'system' ? [messages[0]] : [];
     const body = system.length ? messages.slice(1) : messages;
     const bounds = turnBoundaries(body);
@@ -295,7 +358,10 @@ export class AgentOrchestrator extends EventEmitter {
     const old = body.slice(0, cut);
     const recent = body.slice(cut);
     const models = await this.s.catalog.list().catch(() => []);
-    const model = pickFromTier(models, this.s.settings.get().autoTiers.fast)?.id ?? this.s.settings.get().fallbackModel ?? 'openai/gpt-4o-mini';
+    const model =
+      pickFromTier(models, this.s.settings.get().autoTiers.fast)?.id ??
+      this.s.settings.get().fallbackModel ??
+      'openai/gpt-4o-mini';
     const res = await this.s.llm.complete(
       {
         model,
@@ -310,10 +376,19 @@ export class AgentOrchestrator extends EventEmitter {
       },
       { runId, sessionId },
     );
-    return [...(system as ChatMessage[]), { role: 'user', content: `[Summary of the earlier conversation]\n${res.content}` }, { role: 'assistant', content: 'Understood — continuing from this summary.' }, ...recent];
+    return [
+      ...(system as ChatMessage[]),
+      { role: 'user', content: `[Summary of the earlier conversation]\n${res.content}` },
+      { role: 'assistant', content: 'Understood — continuing from this summary.' },
+      ...recent,
+    ];
   }
 
-  private async execute(st: RunState, input: StartRunInput, opts: { ephemeral: boolean }): Promise<{ status: RunStatus; summary: string }> {
+  private async execute(
+    st: RunState,
+    input: StartRunInput,
+    opts: { ephemeral: boolean },
+  ): Promise<{ status: RunStatus; summary: string }> {
     const s = this.s;
     const repo = s.repo;
     const appSettings = s.settings.get();
@@ -342,28 +417,51 @@ export class AgentOrchestrator extends EventEmitter {
     try {
       // 1. Model selection (AUTO router or explicit choice)
       const models = await s.catalog.list().catch(() => s.catalog.all);
-      const history = opts.ephemeral ? [] : repairHistory(repo.listMessages(st.sessionId).map((m) => m.content as ChatMessage));
+      const history = opts.ephemeral
+        ? []
+        : repairHistory(repo.listMessages(st.sessionId).map((m) => m.content as ChatMessage));
       const hasImages = (input.attachments ?? []).some((p) => /\.(png|jpe?g|gif|webp|bmp)$/i.test(p));
       // Plugins (MCP): connect enabled servers (bounded wait) and expose their tools.
       if (appSettings.mcp.autoConnect) {
-        await Promise.race([s.mcp.ensureConnected(), new Promise((r) => setTimeout(r, appSettings.mcp.connectTimeoutSec * 1000))]);
+        await Promise.race([
+          s.mcp.ensureConnected(),
+          new Promise((r) => setTimeout(r, appSettings.mcp.connectTimeoutSec * 1000)),
+        ]);
       }
-      setDynamicTools(s.mcp.tools().map((t) => mcpToolDef(t, (srv, tool) => s.mcp.isAutoApproved(srv, tool))));
+      setDynamicTools(
+        s.mcp.tools().map((t) => mcpToolDef(t, (srv, tool) => s.mcp.isAutoApproved(srv, tool))),
+      );
       const jevOn = appSettings.jev.enabled && (await s.jev.check()).ok;
 
       const pref = agentModelPreference(role.model);
       const requestedModel = input.model && input.model !== 'auto' ? input.model : (pref.id ?? 'auto');
-      const tiers = pref.tier ? { ...appSettings.autoTiers, balanced: appSettings.autoTiers[pref.tier], fast: appSettings.autoTiers[pref.tier] } : appSettings.autoTiers;
+      const tiers = pref.tier
+        ? {
+            ...appSettings.autoTiers,
+            balanced: appSettings.autoTiers[pref.tier],
+            fast: appSettings.autoTiers[pref.tier],
+          }
+        : appSettings.autoTiers;
       const classified =
         requestedModel === 'auto' && jevOn && appSettings.jev.routing && !pref.tier
-          ? await classifyWithJev(s.jev, { text: input.text, hasImages, role: st.role, historyLength: history.length })
+          ? await classifyWithJev(s.jev, {
+              text: input.text,
+              hasImages,
+              role: st.role,
+              historyLength: history.length,
+            })
           : null;
       const sel = selectModel({
         classified: classified && classified.confidence >= 0.35 ? classified : null,
         requested: requestedModel,
         models,
         tiers,
-        signals: { text: input.text, hasImages, role: role.custom ? 'general' : st.role, historyLength: history.length },
+        signals: {
+          text: input.text,
+          hasImages,
+          role: role.custom ? 'general' : st.role,
+          historyLength: history.length,
+        },
         fallbackDefault: appSettings.fallbackModel || 'openai/gpt-4o-mini',
       });
       if (pref.id && requestedModel === pref.id) sel.reason = `modèle défini par l'agent ${role.label}`;
@@ -371,8 +469,16 @@ export class AgentOrchestrator extends EventEmitter {
       st.model = model;
       repo.updateRun(st.id, { model });
       const info = s.catalog.get(model);
-      const effort = (input.effort && input.effort !== 'auto' ? input.effort : (role.effort as EffortSetting | null)) ?? 'auto';
-      this.emitEvent(st, { type: 'model_selected', model, reason: sel.reason, auto: sel.auto, effort: effort === 'auto' ? undefined : effort });
+      const effort =
+        (input.effort && input.effort !== 'auto' ? input.effort : (role.effort as EffortSetting | null)) ??
+        'auto';
+      this.emitEvent(st, {
+        type: 'model_selected',
+        model,
+        reason: sel.reason,
+        auto: sel.auto,
+        effort: effort === 'auto' ? undefined : effort,
+      });
       const vision = info?.capabilities.vision ?? hasImages;
       const contextLimit = info?.contextLength || 128_000;
       const contextBudget = Math.min(Math.floor(contextLimit * 0.7), 400_000);
@@ -381,47 +487,91 @@ export class AgentOrchestrator extends EventEmitter {
       const maxDepth = appSettings.agent.maxSubagentDepth;
       let fullTools = role.tools.filter((t) => t !== 'agent.delegate' || st.depth < maxDepth);
       if (session.permissionMode === 'safe') {
-        fullTools = fullTools.filter((t) => !['filesystem.write', 'filesystem.edit', 'filesystem.multi_edit', 'filesystem.delete', 'filesystem.move', 'git.commit', 'data.transform', 'memory.add', 'memory.remove', 'artifact.create', 'code.run', 'terminal.kill'].includes(t));
+        fullTools = fullTools.filter(
+          (t) =>
+            ![
+              'filesystem.write',
+              'filesystem.edit',
+              'filesystem.multi_edit',
+              'filesystem.delete',
+              'filesystem.move',
+              'git.commit',
+              'data.transform',
+              'memory.add',
+              'memory.remove',
+              'artifact.create',
+              'code.run',
+              'terminal.kill',
+            ].includes(t),
+        );
       }
       if (!jevOn) fullTools = fullTools.filter((t) => t !== 'jev.judge');
       const mcpNames = dynamicToolNames();
       if (mcpNames.length && session.permissionMode !== 'safe') {
         const patterns = role.toolPatterns;
-        const allowed = patterns === null ? mcpNames : mcpNames.filter((n) => patterns.some((p) => p === n || p === 'mcp.*' || (p.endsWith('.*') && n.startsWith(p.slice(0, -1)))));
+        const allowed =
+          patterns === null
+            ? mcpNames
+            : mcpNames.filter((n) =>
+                patterns.some(
+                  (p) => p === n || p === 'mcp.*' || (p.endsWith('.*') && n.startsWith(p.slice(0, -1))),
+                ),
+              );
         fullTools = [...fullTools, ...allowed];
       }
-      const planningTools = [...fullTools.filter((t) => getTool(t)?.readOnly || t === 'project.analyze'), 'plan.propose'];
+      const planningTools = [
+        ...fullTools.filter((t) => getTool(t)?.readOnly || t === 'project.analyze'),
+        'plan.propose',
+      ];
       let phase: 'planning' | 'executing' = agentMode === 'plan' ? 'planning' : 'executing';
 
       // 3. Skills: pinned (session) + selected (request) + agent's + auto-detected
       const skillCfg = appSettings.skills;
       const sessionSkills = opts.ephemeral ? [] : (repo.getSessionSettings(st.sessionId).skills ?? []);
-      const activation = new Map<string, { reason: 'pinned' | 'manual' | 'agent' | 'auto'; matched?: string[] }>();
+      const activation = new Map<
+        string,
+        { reason: 'pinned' | 'manual' | 'agent' | 'auto'; matched?: string[] }
+      >();
       for (const n of input.skills ?? []) activation.set(n, { reason: 'manual' });
       for (const n of sessionSkills) if (!activation.has(n)) activation.set(n, { reason: 'pinned' });
       for (const n of role.skills) if (!activation.has(n)) activation.set(n, { reason: 'agent' });
       if (skillCfg.autoActivate && skillCfg.maxAuto > 0) {
         const matches = await s.skills.match(input.text, skillCfg.disabled).catch(() => []);
-        for (const m of matches.slice(0, skillCfg.maxAuto)) if (!activation.has(m.name)) activation.set(m.name, { reason: 'auto', matched: m.matched.slice(0, 3) });
+        for (const m of matches.slice(0, skillCfg.maxAuto))
+          if (!activation.has(m.name))
+            activation.set(m.name, { reason: 'auto', matched: m.matched.slice(0, 3) });
       }
       if (skillCfg.autoActivate && skillCfg.maxAuto > 0 && jevOn && appSettings.jev.skills) {
         const autoCount = [...activation.values()].filter((a) => a.reason === 'auto').length;
-        const candidates = (await s.skills.list().catch(() => [])).filter((k) => !skillCfg.disabled.includes(k.name) && !activation.has(k.name) && k.description).slice(0, 60);
+        const candidates = (await s.skills.list().catch(() => []))
+          .filter((k) => !skillCfg.disabled.includes(k.name) && !activation.has(k.name) && k.description)
+          .slice(0, 60);
         if (candidates.length && autoCount < skillCfg.maxAuto) {
           const questions = Object.fromEntries(
             candidates.map((k, i) => [
               `s${i}`,
-              { type: 'noul' as const, instructions: { skill: { name: k.name, description: k.description.slice(0, 700) }, question: "Does the user's `request` fall within the scope of `skill`, so that following this skill's instructions is needed to answer it well?" } },
+              {
+                type: 'noul' as const,
+                instructions: {
+                  skill: { name: k.name, description: k.description.slice(0, 700) },
+                  question:
+                    "Does the user's `request` fall within the scope of `skill`, so that following this skill's instructions is needed to answer it well?",
+                },
+              },
             ]),
           );
           try {
             const r = await s.jev.evaluate({ request: input.text.slice(0, 6000) }, questions);
             const ranked = candidates
-              .map((k, i) => ({ name: k.name, p: (r.answers[`s${i}`] as { noul?: number } | undefined)?.noul ?? 0 }))
+              .map((k, i) => ({
+                name: k.name,
+                p: (r.answers[`s${i}`] as { noul?: number } | undefined)?.noul ?? 0,
+              }))
               .filter((x) => x.p >= appSettings.jev.threshold)
               .sort((a, b) => b.p - a.p)
               .slice(0, skillCfg.maxAuto - autoCount);
-            for (const x of ranked) activation.set(x.name, { reason: 'auto', matched: [`Jev ${Math.round(x.p * 100)} %`] });
+            for (const x of ranked)
+              activation.set(x.name, { reason: 'auto', matched: [`Jev ${Math.round(x.p * 100)} %`] });
           } catch {
             /* keyword detection already applied */
           }
@@ -436,9 +586,17 @@ export class AgentOrchestrator extends EventEmitter {
           activation.delete(name);
         }
       }
-      if (activation.size) this.emitEvent(st, { type: 'skills_activated', skills: [...activation.entries()].map(([name, a]) => ({ name, ...a })) });
-      const allSkills = skillCfg.showCatalog ? (await s.skills.list().catch(() => [])).filter((x) => !skillCfg.disabled.includes(x.name)) : [];
-      const customAgents = fullTools.includes('agent.delegate') ? await s.skills.listAgents().catch(() => []) : [];
+      if (activation.size)
+        this.emitEvent(st, {
+          type: 'skills_activated',
+          skills: [...activation.entries()].map(([name, a]) => ({ name, ...a })),
+        });
+      const allSkills = skillCfg.showCatalog
+        ? (await s.skills.list().catch(() => [])).filter((x) => !skillCfg.disabled.includes(x.name))
+        : [];
+      const customAgents = fullTools.includes('agent.delegate')
+        ? await s.skills.listAgents().catch(() => [])
+        : [];
 
       // 4. Messages
       const contextMd = await s.memory.contextMarkdown(st.projectId);
@@ -472,7 +630,8 @@ export class AgentOrchestrator extends EventEmitter {
         if (!opts.ephemeral) repo.addMessage(st.sessionId, st.id, m.role, m);
       };
       persist(userMsg);
-      if (!opts.ephemeral && session.title === 'Nouvelle session') repo.updateSession(session.id, { title: input.text.split('\n')[0]!.slice(0, 80) });
+      if (!opts.ephemeral && session.title === 'Nouvelle session')
+        repo.updateSession(session.id, { title: input.text.split('\n')[0]!.slice(0, 80) });
 
       const pendingImages: ToolContext['pendingImages'] = [];
       const ctx: ToolContext = {
@@ -508,7 +667,13 @@ export class AgentOrchestrator extends EventEmitter {
         // Vision: show screenshots/images produced by tools on the next step.
         if (pendingImages.length && vision) {
           const imgs = pendingImages.splice(0, 4);
-          const m: ChatMessage = { role: 'user', content: [{ type: 'text', text: imgs.map((i) => i.caption).join('; ') }, ...imgs.map((i) => ({ type: 'image_url' as const, image_url: { url: i.dataUrl } }))] };
+          const m: ChatMessage = {
+            role: 'user',
+            content: [
+              { type: 'text', text: imgs.map((i) => i.caption).join('; ') },
+              ...imgs.map((i) => ({ type: 'image_url' as const, image_url: { url: i.dataUrl } })),
+            ],
+          };
           messages.push(m);
         } else pendingImages.length = 0;
 
@@ -521,13 +686,20 @@ export class AgentOrchestrator extends EventEmitter {
             const compacted = await this.summarizeOldTurns(messages, st.sessionId, st.id, 1);
             const removed = messages.length - compacted.length;
             messages.splice(0, messages.length, ...compacted);
-            if (!opts.ephemeral) repo.replaceMessages(st.sessionId, messages.slice(1).map((m) => ({ runId: st.id, role: m.role, content: m })));
+            if (!opts.ephemeral)
+              repo.replaceMessages(
+                st.sessionId,
+                messages.slice(1).map((m) => ({ runId: st.id, role: m.role, content: m })),
+              );
             this.emitEvent(st, { type: 'compacted', removedMessages: removed });
           }
         }
 
         const toolNames = phase === 'planning' ? planningTools : fullTools;
-        const callMessages = phase === 'planning' ? [{ ...messages[0]!, content: `${system}\n\n${PLAN_MODE_INSTRUCTIONS}` }, ...messages.slice(1)] : messages;
+        const callMessages =
+          phase === 'planning'
+            ? [{ ...messages[0]!, content: `${system}\n\n${PLAN_MODE_INSTRUCTIONS}` }, ...messages.slice(1)]
+            : messages;
         this.emitEvent(st, { type: 'thinking', active: true });
         const result = await s.llm.complete(
           {
@@ -552,13 +724,21 @@ export class AgentOrchestrator extends EventEmitter {
               repo.updateRun(st.id, { model: to });
               this.emitEvent(st, { type: 'model_fallback', from, to, reason: reason.slice(0, 300) });
             },
-            onRetry: (m, attempt, reason) => this.emitEvent(st, { type: 'status', text: `Nouvelle tentative ${attempt} (${m}) : ${reason.slice(0, 160)}` }),
+            onRetry: (m, attempt, reason) =>
+              this.emitEvent(st, {
+                type: 'status',
+                text: `Nouvelle tentative ${attempt} (${m}) : ${reason.slice(0, 160)}`,
+              }),
           },
         );
         this.emitEvent(st, { type: 'thinking', active: false });
 
         // Usage & cost
-        const u = { tokensIn: result.usage.promptTokens, tokensOut: result.usage.completionTokens, cost: result.cost };
+        const u = {
+          tokensIn: result.usage.promptTokens,
+          tokensOut: result.usage.completionTokens,
+          cost: result.cost,
+        };
         st.usage.promptTokens += u.tokensIn;
         st.usage.completionTokens += u.tokensOut;
         st.usage.cost += u.cost;
@@ -574,7 +754,10 @@ export class AgentOrchestrator extends EventEmitter {
           contextLimit,
         });
 
-        const toolCalls: ToolCall[] = result.toolCalls.map((tc, i) => ({ ...tc, id: tc.id || `call_${st.id.slice(0, 6)}_${step}_${i}` }));
+        const toolCalls: ToolCall[] = result.toolCalls.map((tc, i) => ({
+          ...tc,
+          id: tc.id || `call_${st.id.slice(0, 6)}_${step}_${i}`,
+        }));
         const assistant: ChatMessage = { role: 'assistant', content: result.content || null };
         if (toolCalls.length) assistant.tool_calls = toolCalls;
         if (result.reasoningDetails?.length) assistant.reasoning_details = result.reasoningDetails;
@@ -588,7 +771,11 @@ export class AgentOrchestrator extends EventEmitter {
         if (!toolCalls.length) {
           if (result.finishReason === 'length' && continuations < 2) {
             continuations++;
-            const cont: ChatMessage = { role: 'user', content: 'Your previous answer was cut off by the output limit. Continue exactly where you stopped.' };
+            const cont: ChatMessage = {
+              role: 'user',
+              content:
+                'Your previous answer was cut off by the output limit. Continue exactly where you stopped.',
+            };
             messages.push(cont);
             persist(cont);
             continue;
@@ -596,7 +783,10 @@ export class AgentOrchestrator extends EventEmitter {
           if (phase === 'planning') {
             if (!nudgedPlan) {
               nudgedPlan = true;
-              const nudge: ChatMessage = { role: 'user', content: 'Submit your plan now by calling plan.propose (summary + steps).' };
+              const nudge: ChatMessage = {
+                role: 'user',
+                content: 'Submit your plan now by calling plan.propose (summary + steps).',
+              };
               messages.push(nudge);
               continue;
             }
@@ -605,7 +795,14 @@ export class AgentOrchestrator extends EventEmitter {
         }
 
         // Tool execution: read-only batches in parallel, others sequentially.
-        const results = await this.executeToolCalls(st, ctx, toolCalls, appSettings.agent.parallelReads, appSettings.agent.toolTimeoutSec, new Set(toolNames));
+        const results = await this.executeToolCalls(
+          st,
+          ctx,
+          toolCalls,
+          appSettings.agent.parallelReads,
+          appSettings.agent.toolTimeoutSec,
+          new Set(toolNames),
+        );
         for (const r of results) {
           messages.push(r.message);
           persist(r.message);
@@ -615,12 +812,20 @@ export class AgentOrchestrator extends EventEmitter {
         if (phase === 'planning' && st.proposed) {
           const proposal = st.proposed;
           st.proposed = null;
-          const steps = proposal.steps.map((t, i) => ({ id: String(i + 1), title: t, status: 'pending' as const }));
-          this.emitEvent(st, { type: 'plan_proposed', steps, summary: proposal.summary });
-          this.setStatus(st, 'waiting_plan');
-          const decision = await new Promise<{ decision: 'approve' | 'cancel'; steps?: string[] }>((resolve) => {
-            st.planDecision = resolve;
-          });
+          const steps = proposal.steps.map((t, i) => ({
+            id: String(i + 1),
+            title: t,
+            status: 'pending' as const,
+          }));
+          // Register the resolver before announcing the plan, so a client that
+          // answers synchronously (scripts, tests) is never lost.
+          const decision = await new Promise<{ decision: 'approve' | 'cancel'; steps?: string[] }>(
+            (resolve) => {
+              st.planDecision = resolve;
+              this.setStatus(st, 'waiting_plan');
+              this.emitEvent(st, { type: 'plan_proposed', steps, summary: proposal.summary });
+            },
+          );
           st.planDecision = null;
           this.emitEvent(st, { type: 'plan_resolved', decision: decision.decision });
           if (decision.decision === 'cancel') {
@@ -629,7 +834,11 @@ export class AgentOrchestrator extends EventEmitter {
             break;
           }
           this.setStatus(st, 'running');
-          const finalSteps = (decision.steps?.length ? decision.steps : proposal.steps).map((t, i) => ({ id: String(i + 1), title: t, status: (i === 0 ? 'in_progress' : 'pending') as PlanStep['status'] }));
+          const finalSteps = (decision.steps?.length ? decision.steps : proposal.steps).map((t, i) => ({
+            id: String(i + 1),
+            title: t,
+            status: (i === 0 ? 'in_progress' : 'pending') as PlanStep['status'],
+          }));
           st.plan = finalSteps;
           this.emitEvent(st, { type: 'plan_updated', steps: finalSteps });
           const go: ChatMessage = {
@@ -666,41 +875,103 @@ export class AgentOrchestrator extends EventEmitter {
       for (const id of st.approvals.keys()) this.approvalIndex.delete(id);
       const durationMs = Date.now() - st.startedAt;
       repo.updateRun(st.id, { status, error: errorMessage, finishedAt: Date.now() });
-      this.emitEvent(st, { type: 'run_finished', status, summary: finalText.slice(0, 4000) || undefined, usage: st.usage, durationMs });
+      this.emitEvent(st, {
+        type: 'run_finished',
+        status,
+        summary: finalText.slice(0, 4000) || undefined,
+        usage: st.usage,
+        durationMs,
+      });
       this.active.delete(st.id);
-      repo.audit({ actor: 'agent', action: 'run.finish', target: st.id, decision: status, details: { role: st.role, model: st.model, cost: st.usage.cost } });
+      repo.audit({
+        actor: 'agent',
+        action: 'run.finish',
+        target: st.id,
+        decision: status,
+        details: { role: st.role, model: st.model, cost: st.usage.cost },
+      });
     }
     return { status, summary: finalText || errorMessage || '' };
   }
 
-  private async delegate(parent: RunState, role: RoleId, task: string, effort?: EffortSetting): Promise<{ ok: boolean; summary: string; childRunId: string }> {
+  private async delegate(
+    parent: RunState,
+    role: RoleId,
+    task: string,
+    effort?: EffortSetting,
+  ): Promise<{ ok: boolean; summary: string; childRunId: string }> {
     const id = randomUUID();
     if (!ROLES[role] && !(await this.s.skills.getAgent(role))) {
-      return { ok: false, summary: `Unknown agent "${role}". Available: ${[...Object.keys(ROLES), ...(await this.s.skills.listAgents()).map((a) => a.id)].join(', ')}`, childRunId: '' };
+      return {
+        ok: false,
+        summary: `Unknown agent "${role}". Available: ${[...Object.keys(ROLES), ...(await this.s.skills.listAgents()).map((a) => a.id)].join(', ')}`,
+        childRunId: '',
+      };
     }
     const profile = await resolveRole(role, this.s.skills, KNOWN_TOOLS);
     const pref = agentModelPreference(profile.model);
-    const tierModel = pref.id ?? pickFromTier(await this.s.catalog.list().catch(() => []), this.s.settings.get().autoTiers[pref.tier ?? profile.tier], { tools: true })?.id;
+    const tierModel =
+      pref.id ??
+      pickFromTier(
+        await this.s.catalog.list().catch(() => []),
+        this.s.settings.get().autoTiers[pref.tier ?? profile.tier],
+        { tools: true },
+      )?.id;
     const model = tierModel ?? parent.model;
-    this.s.repo.createRun({ id, sessionId: parent.sessionId, projectId: parent.projectId, parentRunId: parent.id, role, title: task.split('\n')[0]!.slice(0, 120), model, mode: 'chat' });
-    const child = this.createState({ id, sessionId: parent.sessionId, projectId: parent.projectId, parentRunId: parent.id, role, depth: parent.depth + 1, model });
+    this.s.repo.createRun({
+      id,
+      sessionId: parent.sessionId,
+      projectId: parent.projectId,
+      parentRunId: parent.id,
+      role,
+      title: task.split('\n')[0]!.slice(0, 120),
+      model,
+      mode: 'chat',
+    });
+    const child = this.createState({
+      id,
+      sessionId: parent.sessionId,
+      projectId: parent.projectId,
+      parentRunId: parent.id,
+      role,
+      depth: parent.depth + 1,
+      model,
+    });
     const onParentAbort = () => child.abort.abort(new Error('Parent cancelled'));
     parent.abort.signal.addEventListener('abort', onParentAbort, { once: true });
     child.forward = (e) => {
-      if (FORWARDED_FROM_CHILD.has(e.type)) this.emitEvent(parent, { ...e, agentPath: profile.label } as AgentEvent);
+      if (FORWARDED_FROM_CHILD.has(e.type))
+        this.emitEvent(parent, { ...e, agentPath: profile.label } as AgentEvent);
       if (e.type === 'usage') {
         parent.usage.cost += e.cost;
       }
     };
     this.emitEvent(parent, { type: 'subagent_started', childRunId: id, role, task: task.slice(0, 2000) });
-    const res = await this.execute(child, { sessionId: parent.sessionId, text: task, role, model, effort, agentMode: 'chat' }, { ephemeral: true });
+    const res = await this.execute(
+      child,
+      { sessionId: parent.sessionId, text: task, role, model, effort, agentMode: 'chat' },
+      { ephemeral: true },
+    );
     parent.abort.signal.removeEventListener('abort', onParentAbort);
     const ok = res.status === 'completed';
-    this.emitEvent(parent, { type: 'subagent_finished', childRunId: id, role, summary: res.summary.slice(0, 4000), ok });
+    this.emitEvent(parent, {
+      type: 'subagent_finished',
+      childRunId: id,
+      role,
+      summary: res.summary.slice(0, 4000),
+      ok,
+    });
     return { ok, summary: res.summary || `(sub-agent ended with status ${res.status})`, childRunId: id };
   }
 
-  private async executeToolCalls(st: RunState, ctx: ToolContext, calls: ToolCall[], parallelReads: boolean, timeoutSec: number, allowed: Set<string>): Promise<{ message: ChatMessage }[]> {
+  private async executeToolCalls(
+    st: RunState,
+    ctx: ToolContext,
+    calls: ToolCall[],
+    parallelReads: boolean,
+    timeoutSec: number,
+    allowed: Set<string>,
+  ): Promise<{ message: ChatMessage }[]> {
     const out: { message: ChatMessage }[] = new Array(calls.length);
     let i = 0;
     while (i < calls.length) {
@@ -720,34 +991,79 @@ export class AgentOrchestrator extends EventEmitter {
     return out;
   }
 
-  private async runTool(st: RunState, ctx: ToolContext, call: ToolCall, timeoutSec: number, allowed: Set<string>): Promise<{ message: ChatMessage }> {
+  private async runTool(
+    st: RunState,
+    ctx: ToolContext,
+    call: ToolCall,
+    timeoutSec: number,
+    allowed: Set<string>,
+  ): Promise<{ message: ChatMessage }> {
     const started = Date.now();
-    const reply = (content: string) => ({ message: { role: 'tool' as const, tool_call_id: call.id, content: clipForModel(content) } });
+    const reply = (content: string) => ({
+      message: { role: 'tool' as const, tool_call_id: call.id, content: clipForModel(content) },
+    });
     const tool = getTool(call.function.name);
     const toolName = tool?.name ?? call.function.name.replace(/__/g, '.');
     const finish = (result: ToolResultPayload, status: 'success' | 'error' | 'denied') => {
-      this.emitEvent(st, { type: 'tool_result', callId: call.id, tool: toolName, result, durationMs: Date.now() - started });
+      this.emitEvent(st, {
+        type: 'tool_result',
+        callId: call.id,
+        tool: toolName,
+        result,
+        durationMs: Date.now() - started,
+      });
       this.s.repo.finishToolCall(call.id + st.id.slice(0, 8), status, result.summary, Date.now() - started);
     };
 
-    let rawArgs: unknown = {};
+    let rawArgs: unknown;
     try {
       rawArgs = call.function.arguments?.trim() ? JSON.parse(call.function.arguments) : {};
     } catch {
-      this.emitEvent(st, { type: 'tool_call', callId: call.id, tool: toolName, args: { raw: call.function.arguments?.slice(0, 500) } });
-      this.s.repo.startToolCall({ id: call.id + st.id.slice(0, 8), runId: st.id, sessionId: st.sessionId, tool: toolName, args: {} });
+      this.emitEvent(st, {
+        type: 'tool_call',
+        callId: call.id,
+        tool: toolName,
+        args: { raw: call.function.arguments?.slice(0, 500) },
+      });
+      this.s.repo.startToolCall({
+        id: call.id + st.id.slice(0, 8),
+        runId: st.id,
+        sessionId: st.sessionId,
+        tool: toolName,
+        args: {},
+      });
       finish({ ok: false, summary: 'Invalid JSON arguments', error: 'Invalid JSON arguments' }, 'error');
-      return reply(`Error: arguments are not valid JSON. Received: ${call.function.arguments?.slice(0, 300)}`);
+      return reply(
+        `Error: arguments are not valid JSON. Received: ${call.function.arguments?.slice(0, 300)}`,
+      );
     }
-    this.emitEvent(st, { type: 'tool_call', callId: call.id, tool: toolName, args: truncateForUi(redactDeep(rawArgs)) });
-    this.s.repo.startToolCall({ id: call.id + st.id.slice(0, 8), runId: st.id, sessionId: st.sessionId, tool: toolName, args: redactDeep(rawArgs) });
+    this.emitEvent(st, {
+      type: 'tool_call',
+      callId: call.id,
+      tool: toolName,
+      args: truncateForUi(redactDeep(rawArgs)),
+    });
+    this.s.repo.startToolCall({
+      id: call.id + st.id.slice(0, 8),
+      runId: st.id,
+      sessionId: st.sessionId,
+      tool: toolName,
+      args: redactDeep(rawArgs),
+    });
 
     if (!tool) {
       finish({ ok: false, summary: 'Unknown tool', error: `Unknown tool ${call.function.name}` }, 'error');
       return reply(`Error: unknown tool "${call.function.name}".`);
     }
     if (!allowed.has(tool.name)) {
-      finish({ ok: false, summary: 'Outil non disponible ici', error: `${tool.name} is not available in this phase/role/mode` }, 'denied');
+      finish(
+        {
+          ok: false,
+          summary: 'Outil non disponible ici',
+          error: `${tool.name} is not available in this phase/role/mode`,
+        },
+        'denied',
+      );
       const planning = allowed.has('plan.propose');
       return reply(
         planning
@@ -775,16 +1091,39 @@ export class AgentOrchestrator extends EventEmitter {
       autoApproveEdits: sessionSettings.autoApproveEdits,
       granted: sessionSettings.grants?.includes(grantKey),
     });
-    const reason = [assessment.risk, assessment.commandLevel, ...(assessment.reasons ?? [])].filter(Boolean).join(' · ');
+    const reason = [assessment.risk, assessment.commandLevel, ...(assessment.reasons ?? [])]
+      .filter(Boolean)
+      .join(' · ');
     if (decision === 'deny') {
-      this.s.repo.audit({ actor: 'agent', action: tool.name, target: tool.label(args), decision: 'deny', details: { mode: session.permissionMode, reason } });
-      finish({ ok: false, summary: `Bloqué (${session.permissionMode})`, error: `Blocked by permission mode ${session.permissionMode}: ${reason}` }, 'denied');
-      return reply(`Denied: this action is not allowed in ${session.permissionMode.toUpperCase()} mode (${reason}). Do not retry it; continue with what is allowed or explain to the user what they need to enable.`);
+      this.s.repo.audit({
+        actor: 'agent',
+        action: tool.name,
+        target: tool.label(args),
+        decision: 'deny',
+        details: { mode: session.permissionMode, reason },
+      });
+      finish(
+        {
+          ok: false,
+          summary: `Bloqué (${session.permissionMode})`,
+          error: `Blocked by permission mode ${session.permissionMode}: ${reason}`,
+        },
+        'denied',
+      );
+      return reply(
+        `Denied: this action is not allowed in ${session.permissionMode.toUpperCase()} mode (${reason}). Do not retry it; continue with what is allowed or explain to the user what they need to enable.`,
+      );
     }
     if (decision === 'ask') {
       const approvalId = randomUUID();
       const preview = await tool.preview?.(args, ctx).catch(() => undefined);
-      const request: ApprovalRequest = { approvalId, tool: tool.name, summary: tool.label(args), reason, preview: preview ? (redactDeep(preview) as ApprovalRequest['preview']) : undefined };
+      const request: ApprovalRequest = {
+        approvalId,
+        tool: tool.name,
+        summary: tool.label(args),
+        reason,
+        preview: preview ? (redactDeep(preview) as ApprovalRequest['preview']) : undefined,
+      };
       this.approvalIndex.set(approvalId, st.id);
       // Approvals of sub-agents are surfaced in the top-level run too (forwarded).
       const d = await new Promise<Decision>((resolve) => {
@@ -796,15 +1135,26 @@ export class AgentOrchestrator extends EventEmitter {
       this.approvalIndex.delete(approvalId);
       if (!st.abort.signal.aborted) this.setStatus(st, 'running');
       this.emitEvent(st, { type: 'approval_resolved', approvalId, decision: d.decision, note: d.note });
-      this.s.repo.audit({ actor: 'user', action: `approve:${tool.name}`, target: tool.label(args), decision: d.decision, details: d.note });
+      this.s.repo.audit({
+        actor: 'user',
+        action: `approve:${tool.name}`,
+        target: tool.label(args),
+        decision: d.decision,
+        details: d.note,
+      });
       if (d.decision === 'deny') {
         finish({ ok: false, summary: 'Refusé par l’utilisateur', error: d.note }, 'denied');
-        return reply(`The user denied this action.${d.note ? ` User feedback: ${d.note}` : ''} Do not retry it as-is; adjust your approach or ask the user.`);
+        return reply(
+          `The user denied this action.${d.note ? ` User feedback: ${d.note}` : ''} Do not retry it as-is; adjust your approach or ask the user.`,
+        );
       }
       if (d.remember && assessment.commandLevel !== 'dangerous') {
         const grants = new Set(sessionSettings.grants ?? []);
         grants.add(grantKey);
-        this.s.repo.setSessionSettings(st.sessionId, { ...this.s.repo.getSessionSettings(st.sessionId), grants: [...grants] });
+        this.s.repo.setSessionSettings(st.sessionId, {
+          ...this.s.repo.getSessionSettings(st.sessionId),
+          grants: [...grants],
+        });
       }
     }
 
@@ -821,7 +1171,9 @@ export class AgentOrchestrator extends EventEmitter {
       ]).finally(() => clearTimeout(timer));
     } catch (err) {
       const root = this.s.workspace.projectRoot(st.projectId);
-      const msg = redactSecrets((err as Error).message ?? String(err)).split(root).join('.');
+      const msg = redactSecrets((err as Error).message ?? String(err))
+        .split(root)
+        .join('.');
       output = { ok: false, summary: msg.slice(0, 200), error: msg };
     }
     const payload: ToolResultPayload = {
@@ -833,10 +1185,19 @@ export class AgentOrchestrator extends EventEmitter {
     };
     finish(payload, output.ok ? 'success' : 'error');
     if (!['read', 'network'].includes(assessment.risk)) {
-      this.s.repo.audit({ actor: 'agent', action: tool.name, target: tool.label(args), decision: output.ok ? 'ok' : 'error', details: reason });
+      this.s.repo.audit({
+        actor: 'agent',
+        action: tool.name,
+        target: tool.label(args),
+        decision: output.ok ? 'ok' : 'error',
+        details: reason,
+      });
     }
-    const forModel = output.forModel ?? (output.data !== undefined ? JSON.stringify(output.data) : output.summary);
-    const text = output.ok ? forModel : `Error: ${output.error ?? output.summary}${output.forModel ? `\n${output.forModel}` : ''}`;
+    const forModel =
+      output.forModel ?? (output.data !== undefined ? JSON.stringify(output.data) : output.summary);
+    const text = output.ok
+      ? forModel
+      : `Error: ${output.error ?? output.summary}${output.forModel ? `\n${output.forModel}` : ''}`;
     return reply(redactSecrets(text));
   }
 }

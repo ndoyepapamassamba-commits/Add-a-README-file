@@ -9,7 +9,13 @@ import { tokenMatches } from './auth';
 import type { AppContext } from './context';
 
 const InputSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('click'), x: z.number(), y: z.number(), button: z.enum(['left', 'right', 'middle']).optional(), double: z.boolean().optional() }),
+  z.object({
+    kind: z.literal('click'),
+    x: z.number(),
+    y: z.number(),
+    button: z.enum(['left', 'right', 'middle']).optional(),
+    double: z.boolean().optional(),
+  }),
   z.object({ kind: z.literal('wheel'), x: z.number(), y: z.number(), dx: z.number(), dy: z.number() }),
   z.object({ kind: z.literal('key'), key: z.string().min(1).max(40) }),
   z.object({ kind: z.literal('type'), text: z.string().min(1).max(5000) }),
@@ -27,7 +33,16 @@ const MessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('browser_input'), key: z.string(), projectId: z.string(), input: InputSchema }),
 ]);
 
-const ACTIVITY_TYPES = new Set(['run_started', 'run_finished', 'usage', 'approval_required', 'approval_resolved', 'plan_proposed', 'tool_result', 'file_changed']);
+const ACTIVITY_TYPES = new Set([
+  'run_started',
+  'run_finished',
+  'usage',
+  'approval_required',
+  'approval_resolved',
+  'plan_proposed',
+  'tool_result',
+  'file_changed',
+]);
 
 /** One multiplexed WebSocket per client: run events, activity, terminal output, live browser. */
 export function registerWebSocket(app: FastifyInstance, ctx: AppContext): void {
@@ -67,7 +82,9 @@ export function registerWebSocket(app: FastifyInstance, ctx: AppContext): void {
         case 'sub_run': {
           const k = `run:${msg.runId}`;
           cleanups.get(k)?.();
-          const unsub = ctx.orchestrator.subscribe(msg.runId, msg.afterSeq, (env: RunEventEnvelope) => send({ type: 'run_event', ...env }));
+          const unsub = ctx.orchestrator.subscribe(msg.runId, msg.afterSeq, (env: RunEventEnvelope) =>
+            send({ type: 'run_event', ...env }),
+          );
           cleanups.set(k, unsub);
           break;
         }
@@ -86,7 +103,8 @@ export function registerWebSocket(app: FastifyInstance, ctx: AppContext): void {
         }
         case 'sub_terminal': {
           if (cleanups.has('terminal')) break;
-          const onOut = (e: { id: string; stream: string; text: string }) => send({ type: 'terminal_output', ...e });
+          const onOut = (e: { id: string; stream: string; text: string }) =>
+            send({ type: 'terminal_output', ...e });
           const onProc = (p: ProcessInfo) => send({ type: 'terminal_process', process: p });
           s.processes.on('output', onOut);
           s.processes.on('process', onProc);
@@ -100,9 +118,12 @@ export function registerWebSocket(app: FastifyInstance, ctx: AppContext): void {
           const k = `browser:${msg.key}`;
           if (cleanups.has(k)) break;
           const key = msg.key;
-          const onFrame = (fk: string, data: string) => fk === key && send({ type: 'browser_frame', key, data }, true);
-          const onState = (fk: string, st: BrowserState) => fk === key && send({ type: 'browser_state', key, state: st });
-          const onAction = (fk: string, a: BrowserAction) => fk === key && send({ type: 'browser_action', key, action: a });
+          const onFrame = (fk: string, data: string) =>
+            fk === key && send({ type: 'browser_frame', key, data }, true);
+          const onState = (fk: string, st: BrowserState) =>
+            fk === key && send({ type: 'browser_state', key, state: st });
+          const onAction = (fk: string, a: BrowserAction) =>
+            fk === key && send({ type: 'browser_action', key, action: a });
           s.browser.on('frame', onFrame);
           s.browser.on('state', onState);
           s.browser.on('action', onAction);

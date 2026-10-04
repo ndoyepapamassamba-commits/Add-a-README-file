@@ -193,3 +193,11 @@ Ensuite, mets le lien dans ta **bio TikTok / Instagram** et dans tes vidéos. **
 
 *Boutique construite pour démarrer vite et sans coût. Quand tu veux ajouter de vraies photos,
 plus de produits, un vrai paiement en ligne automatique, ou une page par produit — dis-le-moi, on fait évoluer.*
+
+---
+
+## 🤖 OpenRouter AI Workbench (dossier `workbench/`)
+
+Ce dépôt contient aussi un **atelier d'agents IA** façon Claude Code, propulsé par OpenRouter :
+interface en **un seul fichier HTML local** + agent local (code, terminal, navigateur, données, skills, agents, plugins MCP).
+Installation et utilisation : voir [`workbench/README.md`](workbench/README.md).

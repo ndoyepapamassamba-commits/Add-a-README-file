@@ -1,5 +1,22 @@
 import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AlertTriangle, Bot, Check, ChevronRight, Circle, CircleDot, CornerDownRight, FileDiff, ListChecks, Paperclip, Puzzle, RotateCcw, ShieldAlert, Sparkles, Undo2, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  Bot,
+  Check,
+  ChevronRight,
+  Circle,
+  CircleDot,
+  CornerDownRight,
+  FileDiff,
+  ListChecks,
+  Paperclip,
+  Puzzle,
+  RotateCcw,
+  ShieldAlert,
+  Sparkles,
+  Undo2,
+  X,
+} from 'lucide-react';
 import type { ChangeRecord, ChartData, PlanStep } from '@shared/types';
 import { api } from '../../lib/api';
 import { cx, fmtCost, fmtDuration, fmtTokens, shortModel, basename } from '../../lib/format';
@@ -76,8 +93,15 @@ function ToolDetails({ item }: { item: ToolItem }) {
     const out = [data.stdout, data.stderr].filter((x) => typeof x === 'string' && x).join('\n');
     return (
       <div className="space-y-1.5">
-        <CodeBlock code={String(args.command ?? args.code ?? '')} lang={item.tool === 'code.run' ? String(args.language) : 'bash'} />
-        {out ? <pre className="max-h-80 overflow-auto rounded-lg border border-line bg-code p-2.5 font-mono text-[12px] leading-[1.5] whitespace-pre-wrap">{out}</pre> : null}
+        <CodeBlock
+          code={String(args.command ?? args.code ?? '')}
+          lang={item.tool === 'code.run' ? String(args.language) : 'bash'}
+        />
+        {out ? (
+          <pre className="max-h-80 overflow-auto rounded-lg border border-line bg-code p-2.5 font-mono text-[12px] leading-[1.5] whitespace-pre-wrap">
+            {out}
+          </pre>
+        ) : null}
       </div>
     );
   }
@@ -86,7 +110,12 @@ function ToolDetails({ item }: { item: ToolItem }) {
       <ul className="space-y-1.5">
         {(data.results as { title: string; url: string; snippet: string }[]).map((r) => (
           <li key={r.url} className="text-[12.5px]">
-            <a href={r.url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline">
+            <a
+              href={r.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-accent hover:underline"
+            >
               {r.title}
             </a>
             <div className="truncate text-faint">{r.url}</div>
@@ -96,7 +125,12 @@ function ToolDetails({ item }: { item: ToolItem }) {
     );
   }
   if (item.tool === 'data.inspect' && data.profile) {
-    const p = data.profile as { rowCount: number; columnCount: number; anomalies: string[]; columns: { name: string; type: string; missingPct: number }[] };
+    const p = data.profile as {
+      rowCount: number;
+      columnCount: number;
+      anomalies: string[];
+      columns: { name: string; type: string; missingPct: number }[];
+    };
     return (
       <div className="text-[12.5px]">
         <div className="mb-1 text-muted">
@@ -122,7 +156,11 @@ function ToolDetails({ item }: { item: ToolItem }) {
   }
   return (
     <pre className="max-h-72 overflow-auto rounded-lg border border-line bg-code p-2.5 font-mono text-[11.5px] leading-[1.5] whitespace-pre-wrap">
-      {JSON.stringify({ args: item.args, ...(item.result?.data !== undefined ? { result: item.result.data } : {}) }, null, 2)}
+      {JSON.stringify(
+        { args: item.args, ...(item.result?.data !== undefined ? { result: item.result.data } : {}) },
+        null,
+        2,
+      )}
     </pre>
   );
 }
@@ -137,28 +175,70 @@ const ToolRow = memo(function ToolRow({ item }: { item: ToolItem }) {
   if (item.tool === 'plan.update') return null; // rendered as the checklist
   return (
     <div className="wb-in group">
-      <button onClick={() => setOpen((o) => !o)} className="flex w-full items-start gap-2 rounded-md py-[3px] text-left hover:bg-hover/50">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-start gap-2 rounded-md py-[3px] text-left hover:bg-hover/50"
+      >
         <StatusDot status={item.status} />
         <span className="min-w-0 flex-1 text-[13px] leading-[1.6]">
           <span className="font-semibold">{verb}</span>
-          {arg && <span className="ml-1.5 break-all font-mono text-[12px] text-muted">{arg.length > 160 ? `${arg.slice(0, 160)}…` : arg}</span>}
-          {item.result && (
-            <span className={cx('ml-2 text-[12px]', item.status === 'error' ? 'text-err' : item.status === 'denied' ? 'text-warn' : 'text-faint')}>
-              {item.result.summary}
-              {item.durationMs !== undefined && item.durationMs > 900 ? ` · ${fmtDuration(item.durationMs)}` : ''}
+          {arg && (
+            <span className="ml-1.5 break-all font-mono text-[12px] text-muted">
+              {arg.length > 160 ? `${arg.slice(0, 160)}…` : arg}
             </span>
           )}
-          {item.status === 'waiting' && <span className="ml-2 text-[12px] text-warn">en attente d'autorisation</span>}
+          {item.result && (
+            <span
+              className={cx(
+                'ml-2 text-[12px]',
+                item.status === 'error' ? 'text-err' : item.status === 'denied' ? 'text-warn' : 'text-faint',
+              )}
+            >
+              {item.result.summary}
+              {item.durationMs !== undefined && item.durationMs > 900
+                ? ` · ${fmtDuration(item.durationMs)}`
+                : ''}
+            </span>
+          )}
+          {item.status === 'waiting' && (
+            <span className="ml-2 text-[12px] text-warn">en attente d'autorisation</span>
+          )}
         </span>
-        <ChevronRight size={14} className={cx('mt-1 shrink-0 text-faint opacity-0 transition group-hover:opacity-100', open && 'rotate-90 opacity-100')} />
+        <ChevronRight
+          size={14}
+          className={cx(
+            'mt-1 shrink-0 text-faint opacity-0 transition group-hover:opacity-100',
+            open && 'rotate-90 opacity-100',
+          )}
+        />
       </button>
-      {item.status === 'error' && item.result?.error && !open && <div className="ml-4 border-l border-err/40 pl-3 font-mono text-[11.5px] text-err/90 whitespace-pre-wrap">{item.result.error.slice(0, 600)}</div>}
-      {diffs.map((d) => (d.kind === 'diff' ? <DiffSummary key={d.changeId} changeId={d.changeId} path={d.path} added={d.added} removed={d.removed} defaultOpen={open} /> : null))}
+      {item.status === 'error' && item.result?.error && !open && (
+        <div className="ml-4 border-l border-err/40 pl-3 font-mono text-[11.5px] text-err/90 whitespace-pre-wrap">
+          {item.result.error.slice(0, 600)}
+        </div>
+      )}
+      {diffs.map((d) =>
+        d.kind === 'diff' ? (
+          <DiffSummary
+            key={d.changeId}
+            changeId={d.changeId}
+            path={d.path}
+            added={d.added}
+            removed={d.removed}
+            defaultOpen={open}
+          />
+        ) : null,
+      )}
       {inline.length > 0 && (
         <div className="ml-4 mt-1.5 space-y-2 border-l border-line pl-3">
           {inline.map((a) =>
             a.kind === 'image' ? (
-              <AuthImage key={a.artifactId} path={`/api/artifacts/${a.artifactId}/raw`} alt={a.name} className="max-h-72 cursor-zoom-in rounded-lg border border-line" />
+              <AuthImage
+                key={a.artifactId}
+                path={`/api/artifacts/${a.artifactId}/raw`}
+                alt={a.name}
+                className="max-h-72 cursor-zoom-in rounded-lg border border-line"
+              />
             ) : a.kind === 'chart' ? (
               <ArtifactById key={a.artifactId} id={a.artifactId} kind="chart" />
             ) : a.kind === 'artifact' ? (
@@ -176,7 +256,19 @@ const ToolRow = memo(function ToolRow({ item }: { item: ToolItem }) {
   );
 });
 
-function DiffSummary({ changeId, path, added, removed, defaultOpen }: { changeId: string; path: string; added: number; removed: number; defaultOpen: boolean }) {
+function DiffSummary({
+  changeId,
+  path,
+  added,
+  removed,
+  defaultOpen,
+}: {
+  changeId: string;
+  path: string;
+  added: number;
+  removed: number;
+  defaultOpen: boolean;
+}) {
   const [open, setOpen] = useState(defaultOpen || added + removed <= 30);
   const openFile = useCode((s) => s.open);
   const setView = useApp((s) => s.setView);
@@ -184,7 +276,10 @@ function DiffSummary({ changeId, path, added, removed, defaultOpen }: { changeId
     <div className="ml-4 mt-1 border-l border-line pl-3">
       <div className="flex items-center gap-2 text-[12px]">
         <CornerDownRight size={12} className="text-faint" />
-        <button className="font-mono text-muted hover:text-fg hover:underline" onClick={() => void openFile(path).then(() => setView('code'))}>
+        <button
+          className="font-mono text-muted hover:text-fg hover:underline"
+          onClick={() => void openFile(path).then(() => setView('code'))}
+        >
           {path}
         </button>
         <span className="text-ok">+{added}</span>
@@ -215,7 +310,11 @@ function ApprovalCard({ item }: { item: Extract<Item, { kind: 'approval' }> }) {
   if (resolved) {
     return (
       <div className="ml-4 flex items-center gap-2 text-[12px] text-faint">
-        {resolved === 'approve' ? <Check size={12} className="text-ok" /> : <X size={12} className="text-err" />}
+        {resolved === 'approve' ? (
+          <Check size={12} className="text-ok" />
+        ) : (
+          <X size={12} className="text-err" />
+        )}
         {resolved === 'approve' ? 'Autorisé' : 'Refusé'} : {request.summary}
       </div>
     );
@@ -235,7 +334,8 @@ function ApprovalCard({ item }: { item: Extract<Item, { kind: 'approval' }> }) {
     >
       <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold">
         <ShieldAlert size={15} className="text-warn" />
-        {item.agentPath ? `${item.agentPath} demande` : "L'agent demande"} l'autorisation : <span className="font-mono text-[12.5px] font-normal">{request.summary}</span>
+        {item.agentPath ? `${item.agentPath} demande` : "L'agent demande"} l'autorisation :{' '}
+        <span className="font-mono text-[12.5px] font-normal">{request.summary}</span>
       </div>
       {preview?.kind === 'diff' && (
         <div className="mb-2">
@@ -256,7 +356,11 @@ function ApprovalCard({ item }: { item: Extract<Item, { kind: 'approval' }> }) {
           <Button size="sm" variant="primary" onClick={() => void approve(request.approvalId, 'approve')}>
             <span className="opacity-60">1</span> Oui
           </Button>
-          <Button size="sm" onClick={() => void approve(request.approvalId, 'approve', { remember: true })} title="Ne plus demander pour ce type d'action pendant cette session (sauf actions dangereuses)">
+          <Button
+            size="sm"
+            onClick={() => void approve(request.approvalId, 'approve', { remember: true })}
+            title="Ne plus demander pour ce type d'action pendant cette session (sauf actions dangereuses)"
+          >
             <span className="opacity-60">2</span> Oui, toujours pour cette session
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setMode('deny')}>
@@ -265,9 +369,19 @@ function ApprovalCard({ item }: { item: Extract<Item, { kind: 'approval' }> }) {
         </div>
       ) : (
         <div className="space-y-2">
-          <Textarea autoFocus rows={2} placeholder="Que doit faire l'agent à la place ? (optionnel)" value={note} onChange={(e) => setNote(e.target.value)} />
+          <Textarea
+            autoFocus
+            rows={2}
+            placeholder="Que doit faire l'agent à la place ? (optionnel)"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
           <div className="flex gap-2">
-            <Button size="sm" variant="danger" onClick={() => void approve(request.approvalId, 'deny', { note: note || undefined })}>
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => void approve(request.approvalId, 'deny', { note: note || undefined })}
+            >
               Refuser
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setMode('choose')}>
@@ -285,10 +399,19 @@ function PlanCard({ item, runId }: { item: Extract<Item, { kind: 'plan' }>; runI
   const [steps, setSteps] = useState(item.steps.map((s) => s.title));
   const [editing, setEditing] = useState(false);
   return (
-    <div className={cx('wb-in my-2 rounded-xl border p-3', item.resolved ? 'border-line bg-panel/50' : 'border-accent/50 bg-accent-soft')}>
+    <div
+      className={cx(
+        'wb-in my-2 rounded-xl border p-3',
+        item.resolved ? 'border-line bg-panel/50' : 'border-accent/50 bg-accent-soft',
+      )}
+    >
       <div className="mb-1.5 flex items-center gap-2 text-[13px] font-semibold">
         <ListChecks size={15} className="text-accent" /> Plan proposé
-        {item.resolved && <Badge tone={item.resolved === 'approve' ? 'ok' : 'neutral'}>{item.resolved === 'approve' ? 'approuvé' : 'annulé'}</Badge>}
+        {item.resolved && (
+          <Badge tone={item.resolved === 'approve' ? 'ok' : 'neutral'}>
+            {item.resolved === 'approve' ? 'approuvé' : 'annulé'}
+          </Badge>
+        )}
       </div>
       {item.summary && <Markdown text={item.summary} className="mb-2 text-[13px] text-muted" />}
       {editing ? (
@@ -296,8 +419,16 @@ function PlanCard({ item, runId }: { item: Extract<Item, { kind: 'plan' }>; runI
           {steps.map((s, i) => (
             <div key={i} className="flex items-center gap-1.5">
               <span className="w-5 text-right text-[12px] text-faint">{i + 1}.</span>
-              <input value={s} onChange={(e) => setSteps(steps.map((x, j) => (j === i ? e.target.value : x)))} className="h-7 flex-1 rounded-md border border-line bg-input px-2 text-[13px]" />
-              <button className="text-faint hover:text-err" onClick={() => setSteps(steps.filter((_, j) => j !== i))} aria-label="Supprimer l'étape">
+              <input
+                value={s}
+                onChange={(e) => setSteps(steps.map((x, j) => (j === i ? e.target.value : x)))}
+                className="h-7 flex-1 rounded-md border border-line bg-input px-2 text-[13px]"
+              />
+              <button
+                className="text-faint hover:text-err"
+                onClick={() => setSteps(steps.filter((_, j) => j !== i))}
+                aria-label="Supprimer l'étape"
+              >
                 <X size={14} />
               </button>
             </div>
@@ -315,7 +446,17 @@ function PlanCard({ item, runId }: { item: Extract<Item, { kind: 'plan' }>; runI
       )}
       {!item.resolved && (
         <div className="mt-3 flex gap-2">
-          <Button size="sm" variant="primary" onClick={() => void resolvePlan(runId, 'approve', steps.filter((s) => s.trim()))}>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() =>
+              void resolvePlan(
+                runId,
+                'approve',
+                steps.filter((s) => s.trim()),
+              )
+            }
+          >
             <Check size={14} /> Approuver et exécuter
           </Button>
           <Button size="sm" onClick={() => setEditing((e) => !e)}>
@@ -348,7 +489,15 @@ export function Checklist({ steps, compact }: { steps: PlanStep[]; compact?: boo
             ) : (
               <Circle size={14} className="mt-[3px] shrink-0 text-faint" />
             )}
-            <span className={cx(s.status === 'done' && 'text-faint line-through', s.status === 'in_progress' && 'font-medium', s.status === 'skipped' && 'text-faint')}>{s.title}</span>
+            <span
+              className={cx(
+                s.status === 'done' && 'text-faint line-through',
+                s.status === 'in_progress' && 'font-medium',
+                s.status === 'skipped' && 'text-faint',
+              )}
+            >
+              {s.title}
+            </span>
           </li>
         ))}
       </ul>
@@ -360,17 +509,26 @@ function SubagentBlock({ item }: { item: Extract<Item, { kind: 'subagent' }> }) 
   const [open, setOpen] = useState(item.summary === undefined);
   return (
     <div className="my-1.5 rounded-xl border border-line bg-panel/60">
-      <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px]">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px]"
+      >
         <Bot size={15} className="text-info" />
         <span className="font-semibold">Sous-agent · {ROLE_LABEL[item.role] ?? item.role}</span>
         <span className="min-w-0 flex-1 truncate text-muted">{item.task}</span>
-        {item.summary === undefined ? <Spinner /> : <Badge tone={item.ok ? 'ok' : 'err'}>{item.ok ? 'terminé' : 'échec'}</Badge>}
+        {item.summary === undefined ? (
+          <Spinner />
+        ) : (
+          <Badge tone={item.ok ? 'ok' : 'err'}>{item.ok ? 'terminé' : 'échec'}</Badge>
+        )}
         <ChevronRight size={14} className={cx('text-faint transition', open && 'rotate-90')} />
       </button>
       {open && (
         <div className="border-t border-line px-3 py-2">
           <Items items={item.children} runId="" />
-          {item.summary && <Markdown text={item.summary} className="mt-2 border-t border-line pt-2 text-[13px]" />}
+          {item.summary && (
+            <Markdown text={item.summary} className="mt-2 border-t border-line pt-2 text-[13px]" />
+          )}
         </div>
       )}
     </div>
@@ -406,7 +564,10 @@ function Items({ items, runId }: { items: Item[]; runId: string }) {
             return <UserBubble key={it.id} text={it.text} attachments={it.attachments} />;
           case 'text':
             return (
-              <div key={it.id} className={cx('my-2 text-[14px] leading-[1.65]', it.agentPath && 'text-[13px] text-muted')}>
+              <div
+                key={it.id}
+                className={cx('my-2 text-[14px] leading-[1.65]', it.agentPath && 'text-[13px] text-muted')}
+              >
                 <Markdown text={it.text} className={it.streaming ? 'wb-caret' : undefined} />
               </div>
             );
@@ -431,7 +592,16 @@ function Items({ items, runId }: { items: Item[]; runId: string }) {
                     {s.name}
                     <span className="opacity-70">
                       {' '}
-                      · {({ auto: 'auto', manual: 'choisi', pinned: 'épinglé', agent: 'agent', model: 'chargé par le modèle' } as Record<string, string>)[s.reason] ?? s.reason}
+                      ·{' '}
+                      {(
+                        {
+                          auto: 'auto',
+                          manual: 'choisi',
+                          pinned: 'épinglé',
+                          agent: 'agent',
+                          model: 'chargé par le modèle',
+                        } as Record<string, string>
+                      )[s.reason] ?? s.reason}
                       {s.matched?.length ? ` (${s.matched.join(', ')})` : ''}
                     </span>
                   </Badge>
@@ -441,7 +611,8 @@ function Items({ items, runId }: { items: Item[]; runId: string }) {
           case 'fallback':
             return (
               <div key={it.id} className="my-1 flex items-center gap-1.5 text-[12px] text-warn">
-                <RotateCcw size={12} /> Repli de {shortModel(it.from)} vers {shortModel(it.to)} — {it.reason.slice(0, 140)}
+                <RotateCcw size={12} /> Repli de {shortModel(it.from)} vers {shortModel(it.to)} —{' '}
+                {it.reason.slice(0, 140)}
               </div>
             );
           case 'notice':
@@ -452,7 +623,10 @@ function Items({ items, runId }: { items: Item[]; runId: string }) {
             );
           case 'error':
             return (
-              <div key={it.id} className="wb-in my-2 flex items-start gap-2 rounded-lg border border-err/40 bg-err/8 px-3 py-2 text-[13px] text-err">
+              <div
+                key={it.id}
+                className="wb-in my-2 flex items-start gap-2 rounded-lg border border-err/40 bg-err/8 px-3 py-2 text-[13px] text-err"
+              >
                 <AlertTriangle size={15} className="mt-0.5 shrink-0" />
                 <span className="whitespace-pre-wrap">{it.message}</span>
               </div>
@@ -473,16 +647,17 @@ function Thinking({ view }: { view: RunView }) {
   const elapsed = Math.floor((Date.now() - view.run.startedAt) / 1000);
   const label =
     view.status === 'waiting_approval'
-      ? "En attente de votre autorisation"
+      ? 'En attente de votre autorisation'
       : view.status === 'waiting_plan'
         ? 'En attente de validation du plan'
-        : view.statusText ?? (view.thinking ? 'Réflexion' : 'Travail en cours');
+        : (view.statusText ?? (view.thinking ? 'Réflexion' : 'Travail en cours'));
   return (
     <div className="my-2 flex items-center gap-2 text-[13px]">
       <span className="w-4 text-center text-accent">{SPIN[tick % SPIN.length]}</span>
       <span className="font-medium text-accent">{label}…</span>
       <span className="text-faint">
-        ({elapsed} s · ↑ {fmtTokens(view.usage.promptTokens)} · ↓ {fmtTokens(view.usage.completionTokens)} · {fmtCost(view.usage.cost)}) · <kbd className="font-mono">Échap</kbd> pour interrompre
+        ({elapsed} s · ↑ {fmtTokens(view.usage.promptTokens)} · ↓ {fmtTokens(view.usage.completionTokens)} ·{' '}
+        {fmtCost(view.usage.cost)}) · <kbd className="font-mono">Échap</kbd> pour interrompre
       </span>
     </div>
   );
@@ -509,8 +684,13 @@ function RunFooter({ view }: { view: RunView }) {
         <button
           className="flex items-center gap-1 text-muted hover:text-fg"
           onClick={() => {
-            const user = view.items.find((i) => i.kind === 'user') as Extract<Item, { kind: 'user' }> | undefined;
-            void send({ text: failed ? 'Continue la tâche précédente là où tu t’es arrêté.' : (user?.text ?? 'Continue.') });
+            const user = view.items.find((i) => i.kind === 'user') as
+              Extract<Item, { kind: 'user' }> | undefined;
+            void send({
+              text: failed
+                ? 'Continue la tâche précédente là où tu t’es arrêté.'
+                : (user?.text ?? 'Continue.'),
+            });
           }}
         >
           <Undo2 size={11} /> {failed ? 'Continuer' : 'Relancer'}
@@ -551,7 +731,12 @@ export function Transcript({ className }: { className?: string }) {
     stick.current = true;
   }, [order.length]);
 
-  if (loading) return <div className="flex h-full items-center justify-center"><Spinner /></div>;
+  if (loading)
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Spinner />
+      </div>
+    );
   return (
     <div
       ref={scroller}
@@ -563,7 +748,11 @@ export function Transcript({ className }: { className?: string }) {
     >
       <div className="mx-auto w-full max-w-[860px] px-5 pb-6 pt-5">
         {order.map((id) => (runs[id] ? <RunBlock key={id} view={runs[id]} /> : null))}
-        {last && !isActiveStatus(last.status) && last.status === 'completed' && last.run.filesChanged > 0 && null}
+        {last &&
+          !isActiveStatus(last.status) &&
+          last.status === 'completed' &&
+          last.run.filesChanged > 0 &&
+          null}
       </div>
     </div>
   );

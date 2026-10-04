@@ -21,7 +21,10 @@ const blobCache = new Map<string, Promise<string>>();
 function workerBlob(url: string): Promise<string> {
   let p = blobCache.get(url);
   if (!p) {
-    const base = location.protocol.startsWith('http') && !getConnection()?.baseUrl ? location.origin : (getConnection()?.baseUrl ?? location.origin);
+    const base =
+      location.protocol.startsWith('http') && !getConnection()?.baseUrl
+        ? location.origin
+        : (getConnection()?.baseUrl ?? location.origin);
     const abs = new URL(`/web-assets/${url.replace(/^.*\//, '')}`, base).toString();
     p = fetch(abs)
       .then((r) => {
@@ -97,8 +100,14 @@ monaco.typescript.typescriptDefaults.setCompilerOptions({
   esModuleInterop: true,
 });
 // Without the project's node_modules types, semantic errors are noisy: keep syntax checks.
-monaco.typescript.typescriptDefaults.setDiagnosticsOptions({ noSemanticValidation: true, noSyntaxValidation: false });
-monaco.typescript.javascriptDefaults.setDiagnosticsOptions({ noSemanticValidation: true, noSyntaxValidation: false });
+monaco.typescript.typescriptDefaults.setDiagnosticsOptions({
+  noSemanticValidation: true,
+  noSyntaxValidation: false,
+});
+monaco.typescript.javascriptDefaults.setDiagnosticsOptions({
+  noSemanticValidation: true,
+  noSyntaxValidation: false,
+});
 
 loader.config({ monaco });
 

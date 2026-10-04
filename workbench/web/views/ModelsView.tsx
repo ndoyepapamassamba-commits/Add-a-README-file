@@ -18,7 +18,16 @@ function resolveTier(models: ModelInfo[], patterns: string[], vision: boolean): 
     } catch {
       continue;
     }
-    const hit = models.filter((m) => re.test(m.id) && m.capabilities.tools && (!vision || m.capabilities.vision) && !m.id.endsWith(':free') && !m.id.startsWith('~')).sort((a, b) => b.created - a.created)[0];
+    const hit = models
+      .filter(
+        (m) =>
+          re.test(m.id) &&
+          m.capabilities.tools &&
+          (!vision || m.capabilities.vision) &&
+          !m.id.endsWith(':free') &&
+          !m.id.startsWith('~'),
+      )
+      .sort((a, b) => b.created - a.created)[0];
     if (hit) return hit;
   }
   return undefined;
@@ -59,9 +68,17 @@ export function ModelsView() {
     }
     return l;
   }, [models, q, sort, tools, vision, reasoning, provider]);
-  const virt = useVirtualizer({ count: list.length, getScrollElement: () => scroller, estimateSize: () => 52, overscan: 12 });
+  const virt = useVirtualizer({
+    count: list.length,
+    getScrollElement: () => scroller,
+    estimateSize: () => 52,
+    overscan: 12,
+  });
 
-  const setRole = (key: 'defaultModel' | 'fallbackModel' | 'secondFallbackModel' | 'reviewModel', id: string) => void save({ [key]: id });
+  const setRole = (
+    key: 'defaultModel' | 'fallbackModel' | 'secondFallbackModel' | 'reviewModel',
+    id: string,
+  ) => void save({ [key]: id });
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -79,8 +96,25 @@ export function ModelsView() {
             {(['fast', 'balanced', 'powerful', 'reasoning', 'vision'] as const).map((tier) => {
               const m = resolveTier(models, settings.autoTiers[tier], tier === 'vision');
               return (
-                <div key={tier} className="rounded-lg border border-line bg-panel px-3 py-2" title={settings.autoTiers[tier].join('\n')}>
-                  <div className="text-[11px] uppercase tracking-wide text-faint">AUTO · {({ fast: 'rapide', balanced: 'équilibré', powerful: 'puissant', reasoning: 'raisonnement', vision: 'vision' } as const)[tier]}</div>
+                <div
+                  key={tier}
+                  className="rounded-lg border border-line bg-panel px-3 py-2"
+                  title={settings.autoTiers[tier].join('\n')}
+                >
+                  <div className="text-[11px] uppercase tracking-wide text-faint">
+                    AUTO ·{' '}
+                    {
+                      (
+                        {
+                          fast: 'rapide',
+                          balanced: 'équilibré',
+                          powerful: 'puissant',
+                          reasoning: 'raisonnement',
+                          vision: 'vision',
+                        } as const
+                      )[tier]
+                    }
+                  </div>
                   <div className="truncate font-medium">{m?.name.replace(/^[^:]+:\s*/, '') ?? '—'}</div>
                 </div>
               );
@@ -88,9 +122,31 @@ export function ModelsView() {
           </div>
         )}
         <div className="flex flex-wrap items-center gap-3">
-          <Input className="h-8 max-w-xs" placeholder="Rechercher (claude, gpt, gemini, deepseek, glm…)" value={q} onChange={(e) => setQ(e.target.value)} />
-          <Select value={provider} onChange={setProvider} options={[{ value: 'all', label: 'Tous les fournisseurs' }, ...providers.map((p) => ({ value: p, label: p }))]} />
-          <Select value={sort} onChange={setSort} options={[{ value: 'recommended', label: 'Recommandés' }, { value: 'newest', label: 'Plus récents' }, { value: 'price_in', label: 'Prix entrée ↑' }, { value: 'price_out', label: 'Prix sortie ↑' }, { value: 'context', label: 'Contexte ↓' }]} />
+          <Input
+            className="h-8 max-w-xs"
+            placeholder="Rechercher (claude, gpt, gemini, deepseek, glm…)"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+          <Select
+            value={provider}
+            onChange={setProvider}
+            options={[
+              { value: 'all', label: 'Tous les fournisseurs' },
+              ...providers.map((p) => ({ value: p, label: p })),
+            ]}
+          />
+          <Select
+            value={sort}
+            onChange={setSort}
+            options={[
+              { value: 'recommended', label: 'Recommandés' },
+              { value: 'newest', label: 'Plus récents' },
+              { value: 'price_in', label: 'Prix entrée ↑' },
+              { value: 'price_out', label: 'Prix sortie ↑' },
+              { value: 'context', label: 'Contexte ↓' },
+            ]}
+          />
           <Toggle checked={tools} onChange={setTools} label="Outils" />
           <Toggle checked={vision} onChange={setVision} label="Vision" />
           <Toggle checked={reasoning} onChange={setReasoning} label="Raisonnement" />
@@ -101,9 +157,19 @@ export function ModelsView() {
         <div style={{ height: virt.getTotalSize(), position: 'relative' }}>
           {virt.getVirtualItems().map((vi) => {
             const m = list[vi.index]!;
-            const tags = [settings?.defaultModel === m.id && 'défaut', settings?.fallbackModel === m.id && 'repli 1', settings?.secondFallbackModel === m.id && 'repli 2', settings?.reviewModel === m.id && 'relecture', sessionModel === m.id && 'session'].filter(Boolean) as string[];
+            const tags = [
+              settings?.defaultModel === m.id && 'défaut',
+              settings?.fallbackModel === m.id && 'repli 1',
+              settings?.secondFallbackModel === m.id && 'repli 2',
+              settings?.reviewModel === m.id && 'relecture',
+              sessionModel === m.id && 'session',
+            ].filter(Boolean) as string[];
             return (
-              <div key={m.id} className="absolute left-0 right-0 flex items-center gap-3 border-b border-line/60 px-4 hover:bg-hover/50" style={{ height: 52, transform: `translateY(${vi.start}px)` }}>
+              <div
+                key={m.id}
+                className="absolute left-0 right-0 flex items-center gap-3 border-b border-line/60 px-4 hover:bg-hover/50"
+                style={{ height: 52, transform: `translateY(${vi.start}px)` }}
+              >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="truncate font-medium">{m.name.replace(/^[^:]+:\s*/, '')}</span>
@@ -120,13 +186,23 @@ export function ModelsView() {
                   {m.capabilities.vision && <Eye size={13} aria-label="Vision" />}
                   {m.capabilities.reasoning && <Brain size={13} aria-label="Raisonnement" />}
                 </div>
-                <div className="w-20 shrink-0 text-right text-[12px] tabular-nums text-muted">{fmtTokens(m.contextLength)}</div>
+                <div className="w-20 shrink-0 text-right text-[12px] tabular-nums text-muted">
+                  {fmtTokens(m.contextLength)}
+                </div>
                 <div className="w-36 shrink-0 text-right text-[12px] tabular-nums">
                   {fmtPrice(m.inputPrice)} / {fmtPrice(m.outputPrice)}
                   <div className="text-[10.5px] text-faint">entrée / sortie par M</div>
                 </div>
                 <Dropdown
-                  trigger={<span className={cx('inline-flex h-7 items-center gap-1 rounded-md border border-line px-2 text-[12px] hover:bg-hover')}><Sparkles size={12} /> Utiliser</span>}
+                  trigger={
+                    <span
+                      className={cx(
+                        'inline-flex h-7 items-center gap-1 rounded-md border border-line px-2 text-[12px] hover:bg-hover',
+                      )}
+                    >
+                      <Sparkles size={12} /> Utiliser
+                    </span>
+                  }
                   items={[
                     { value: 'session', label: 'Pour cette session' },
                     { value: 'defaultModel', label: 'Modèle par défaut' },
@@ -134,7 +210,9 @@ export function ModelsView() {
                     { value: 'secondFallbackModel', label: 'Repli n°2' },
                     { value: 'reviewModel', label: 'Modèle de relecture (Review my work)' },
                   ]}
-                  onSelect={(v) => (v === 'session' ? void patch({ model: m.id }) : setRole(v as 'defaultModel', m.id))}
+                  onSelect={(v) =>
+                    v === 'session' ? void patch({ model: m.id }) : setRole(v as 'defaultModel', m.id)
+                  }
                   align="right"
                   width={260}
                 />

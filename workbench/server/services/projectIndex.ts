@@ -29,21 +29,81 @@ export interface GrepMatch {
 }
 
 const LANG: Record<string, string> = {
-  '.ts': 'TypeScript', '.tsx': 'TypeScript (React)', '.js': 'JavaScript', '.jsx': 'JavaScript (React)', '.mjs': 'JavaScript', '.cjs': 'JavaScript',
-  '.py': 'Python', '.html': 'HTML', '.htm': 'HTML', '.css': 'CSS', '.scss': 'SCSS', '.json': 'JSON', '.md': 'Markdown', '.yml': 'YAML',
-  '.yaml': 'YAML', '.go': 'Go', '.rs': 'Rust', '.java': 'Java', '.kt': 'Kotlin', '.rb': 'Ruby', '.php': 'PHP', '.cs': 'C#', '.c': 'C',
-  '.cpp': 'C++', '.h': 'C/C++ header', '.swift': 'Swift', '.dart': 'Dart', '.vue': 'Vue', '.svelte': 'Svelte', '.sql': 'SQL', '.sh': 'Shell',
-  '.csv': 'CSV', '.xlsx': 'Excel', '.xls': 'Excel', '.xlsm': 'Excel', '.pdf': 'PDF', '.xml': 'XML', '.toml': 'TOML',
+  '.ts': 'TypeScript',
+  '.tsx': 'TypeScript (React)',
+  '.js': 'JavaScript',
+  '.jsx': 'JavaScript (React)',
+  '.mjs': 'JavaScript',
+  '.cjs': 'JavaScript',
+  '.py': 'Python',
+  '.html': 'HTML',
+  '.htm': 'HTML',
+  '.css': 'CSS',
+  '.scss': 'SCSS',
+  '.json': 'JSON',
+  '.md': 'Markdown',
+  '.yml': 'YAML',
+  '.yaml': 'YAML',
+  '.go': 'Go',
+  '.rs': 'Rust',
+  '.java': 'Java',
+  '.kt': 'Kotlin',
+  '.rb': 'Ruby',
+  '.php': 'PHP',
+  '.cs': 'C#',
+  '.c': 'C',
+  '.cpp': 'C++',
+  '.h': 'C/C++ header',
+  '.swift': 'Swift',
+  '.dart': 'Dart',
+  '.vue': 'Vue',
+  '.svelte': 'Svelte',
+  '.sql': 'SQL',
+  '.sh': 'Shell',
+  '.csv': 'CSV',
+  '.xlsx': 'Excel',
+  '.xls': 'Excel',
+  '.xlsm': 'Excel',
+  '.pdf': 'PDF',
+  '.xml': 'XML',
+  '.toml': 'TOML',
 };
 
 const FRAMEWORK_DEPS: [string, string][] = [
-  ['next', 'Next.js'], ['react', 'React'], ['vue', 'Vue'], ['svelte', 'Svelte'], ['@angular/core', 'Angular'], ['vite', 'Vite'],
-  ['express', 'Express'], ['fastify', 'Fastify'], ['@nestjs/core', 'NestJS'], ['tailwindcss', 'Tailwind CSS'], ['electron', 'Electron'],
-  ['react-native', 'React Native'], ['expo', 'Expo'], ['prisma', 'Prisma'], ['typeorm', 'TypeORM'], ['mongoose', 'Mongoose'],
-  ['playwright', 'Playwright'], ['@playwright/test', 'Playwright Test'], ['puppeteer', 'Puppeteer'], ['three', 'Three.js'], ['d3', 'D3'],
-  ['echarts', 'ECharts'], ['chart.js', 'Chart.js'], ['recharts', 'Recharts'], ['zod', 'Zod'], ['socket.io', 'Socket.IO'],
+  ['next', 'Next.js'],
+  ['react', 'React'],
+  ['vue', 'Vue'],
+  ['svelte', 'Svelte'],
+  ['@angular/core', 'Angular'],
+  ['vite', 'Vite'],
+  ['express', 'Express'],
+  ['fastify', 'Fastify'],
+  ['@nestjs/core', 'NestJS'],
+  ['tailwindcss', 'Tailwind CSS'],
+  ['electron', 'Electron'],
+  ['react-native', 'React Native'],
+  ['expo', 'Expo'],
+  ['prisma', 'Prisma'],
+  ['typeorm', 'TypeORM'],
+  ['mongoose', 'Mongoose'],
+  ['playwright', 'Playwright'],
+  ['@playwright/test', 'Playwright Test'],
+  ['puppeteer', 'Puppeteer'],
+  ['three', 'Three.js'],
+  ['d3', 'D3'],
+  ['echarts', 'ECharts'],
+  ['chart.js', 'Chart.js'],
+  ['recharts', 'Recharts'],
+  ['zod', 'Zod'],
+  ['socket.io', 'Socket.IO'],
 ];
-const TEST_DEPS: [string, string][] = [['vitest', 'Vitest'], ['jest', 'Jest'], ['mocha', 'Mocha'], ['@playwright/test', 'Playwright Test'], ['cypress', 'Cypress']];
+const TEST_DEPS: [string, string][] = [
+  ['vitest', 'Vitest'],
+  ['jest', 'Jest'],
+  ['mocha', 'Mocha'],
+  ['@playwright/test', 'Playwright Test'],
+  ['cypress', 'Cypress'],
+];
 
 let rgAvailable: boolean | null = null;
 export function hasRipgrep(): boolean {
@@ -75,7 +135,22 @@ function runRg(cwd: string, args: string[], limitBytes = 4_000_000): Promise<str
   });
 }
 
-const RG_EXCLUDES = ['--glob', '!.git', '--glob', '!node_modules', '--glob', '!.workbench', '--glob', '!*.min.js', '--glob', '!*.map', '--glob', '!package-lock.json', '--glob', '!.env*'];
+const RG_EXCLUDES = [
+  '--glob',
+  '!.git',
+  '--glob',
+  '!node_modules',
+  '--glob',
+  '!.workbench',
+  '--glob',
+  '!*.min.js',
+  '--glob',
+  '!*.map',
+  '--glob',
+  '!package-lock.json',
+  '--glob',
+  '!.env*',
+];
 
 /** Project understanding: structure analysis, ripgrep search and relevance ranking. */
 export class ProjectIndex {
@@ -109,7 +184,12 @@ export class ProjectIndex {
     const pkgPath = path.join(root, 'package.json');
     if (fs.existsSync(pkgPath)) {
       try {
-        const pkg = JSON.parse(await fsp.readFile(pkgPath, 'utf8')) as { scripts?: Record<string, string>; dependencies?: Record<string, string>; devDependencies?: Record<string, string>; main?: string };
+        const pkg = JSON.parse(await fsp.readFile(pkgPath, 'utf8')) as {
+          scripts?: Record<string, string>;
+          dependencies?: Record<string, string>;
+          devDependencies?: Record<string, string>;
+          main?: string;
+        };
         const deps = { ...pkg.dependencies, ...pkg.devDependencies };
         for (const [dep, label] of FRAMEWORK_DEPS) if (deps[dep]) frameworks.add(label);
         for (const [dep, label] of TEST_DEPS) if (deps[dep]) tests.add(label);
@@ -118,28 +198,67 @@ export class ProjectIndex {
       } catch {
         /* invalid package.json */
       }
-      packageManagers.add(fs.existsSync(path.join(root, 'pnpm-lock.yaml')) ? 'pnpm' : fs.existsSync(path.join(root, 'yarn.lock')) ? 'yarn' : 'npm');
+      packageManagers.add(
+        fs.existsSync(path.join(root, 'pnpm-lock.yaml'))
+          ? 'pnpm'
+          : fs.existsSync(path.join(root, 'yarn.lock'))
+            ? 'yarn'
+            : 'npm',
+      );
     }
-    if (fs.existsSync(path.join(root, 'requirements.txt')) || fs.existsSync(path.join(root, 'pyproject.toml'))) {
+    if (
+      fs.existsSync(path.join(root, 'requirements.txt')) ||
+      fs.existsSync(path.join(root, 'pyproject.toml'))
+    ) {
       packageManagers.add(fs.existsSync(path.join(root, 'pyproject.toml')) ? 'pip/pyproject' : 'pip');
-      const req = [path.join(root, 'requirements.txt'), path.join(root, 'pyproject.toml')].filter((p) => fs.existsSync(p)).map((p) => fs.readFileSync(p, 'utf8')).join('\n');
-      for (const [re, label] of [[/django/i, 'Django'], [/flask/i, 'Flask'], [/fastapi/i, 'FastAPI'], [/pandas/i, 'pandas'], [/pytest/i, 'pytest']] as const) {
+      const req = [path.join(root, 'requirements.txt'), path.join(root, 'pyproject.toml')]
+        .filter((p) => fs.existsSync(p))
+        .map((p) => fs.readFileSync(p, 'utf8'))
+        .join('\n');
+      for (const [re, label] of [
+        [/django/i, 'Django'],
+        [/flask/i, 'Flask'],
+        [/fastapi/i, 'FastAPI'],
+        [/pandas/i, 'pandas'],
+        [/pytest/i, 'pytest'],
+      ] as const) {
         if (re.test(req)) (label === 'pytest' ? tests : frameworks).add(label);
       }
     }
-    for (const candidate of ['index.html', 'src/main.tsx', 'src/main.ts', 'src/index.ts', 'src/index.js', 'src/App.tsx', 'app.py', 'main.py', 'server.js', 'index.js', 'main.go', 'src/main.rs']) {
+    for (const candidate of [
+      'index.html',
+      'src/main.tsx',
+      'src/main.ts',
+      'src/index.ts',
+      'src/index.js',
+      'src/App.tsx',
+      'app.py',
+      'main.py',
+      'server.js',
+      'index.js',
+      'main.go',
+      'src/main.rs',
+    ]) {
       if (files.includes(candidate) && !entryPoints.includes(candidate)) entryPoints.push(candidate);
     }
-    const notable = files.filter((f) => /^(README|PROJECT_CONTEXT|CLAUDE|AGENTS|CONTRIBUTING)\.md$|^(package\.json|tsconfig\.json|vite\.config\.\w+|next\.config\.\w+|Dockerfile|docker-compose\.ya?ml|pyproject\.toml|requirements\.txt|Makefile|\.env\.example)$/i.test(f));
+    const notable = files.filter((f) =>
+      /^(README|PROJECT_CONTEXT|CLAUDE|AGENTS|CONTRIBUTING)\.md$|^(package\.json|tsconfig\.json|vite\.config\.\w+|next\.config\.\w+|Dockerfile|docker-compose\.ya?ml|pyproject\.toml|requirements\.txt|Makefile|\.env\.example)$/i.test(
+        f,
+      ),
+    );
     const readme = files.find((f) => /^readme\.md$/i.test(f));
     let readmeExcerpt = '';
     if (readme) readmeExcerpt = (await fsp.readFile(path.join(root, readme), 'utf8')).slice(0, 1500);
-    const topLevel = (await this.workspace.listDir(projectId, '')).map((e) => (e.type === 'dir' ? `${e.name}/` : e.name));
+    const topLevel = (await this.workspace.listDir(projectId, '')).map((e) =>
+      e.type === 'dir' ? `${e.name}/` : e.name,
+    );
     const analysis: ProjectAnalysis = {
       projectId,
       fileCount: files.length,
       totalBytes,
-      languages: [...langCount.entries()].sort((a, b) => b[1] - a[1]).map(([language, n]) => ({ language, files: n })),
+      languages: [...langCount.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([language, n]) => ({ language, files: n })),
       frameworks: [...frameworks],
       packageManagers: [...packageManagers],
       scripts,
@@ -158,7 +277,18 @@ export class ProjectIndex {
     this.cache.delete(projectId);
   }
 
-  async grep(projectId: string, pattern: string, opts: { regex?: boolean; caseSensitive?: boolean; glob?: string; path?: string; maxResults?: number; contextLines?: number } = {}): Promise<{ matches: GrepMatch[]; truncated: boolean }> {
+  async grep(
+    projectId: string,
+    pattern: string,
+    opts: {
+      regex?: boolean;
+      caseSensitive?: boolean;
+      glob?: string;
+      path?: string;
+      maxResults?: number;
+      contextLines?: number;
+    } = {},
+  ): Promise<{ matches: GrepMatch[]; truncated: boolean }> {
     const root = this.workspace.projectRoot(projectId);
     const max = Math.min(opts.maxResults ?? 100, 1000);
     const searchPath = opts.path ? this.workspace.resolve(projectId, opts.path) : '.';
@@ -172,10 +302,16 @@ export class ProjectIndex {
       const matches: GrepMatch[] = [];
       for (const line of out.split('\n')) {
         if (!line.startsWith('{"type":"match"')) continue;
-        const m = JSON.parse(line) as { data: { path: { text: string }; line_number: number; lines: { text?: string } } };
+        const m = JSON.parse(line) as {
+          data: { path: { text: string }; line_number: number; lines: { text?: string } };
+        };
         const rel = path.relative(root, path.resolve(root, m.data.path.text)).split(path.sep).join('/');
         if (isProtectedPath(rel)) continue;
-        matches.push({ path: rel, line: m.data.line_number, text: (m.data.lines.text ?? '').replace(/\n$/, '').slice(0, 400) });
+        matches.push({
+          path: rel,
+          line: m.data.line_number,
+          text: (m.data.lines.text ?? '').replace(/\n$/, '').slice(0, 400),
+        });
         if (matches.length >= max) return { matches, truncated: true };
       }
       return { matches, truncated: false };
@@ -205,15 +341,27 @@ export class ProjectIndex {
     const root = this.workspace.projectRoot(projectId);
     if (hasRipgrep()) {
       const out = await runRg(root, ['--files', ...RG_EXCLUDES, '--glob', pattern]);
-      return out.split('\n').filter(Boolean).map((p) => p.replace(/^\.\//, '')).filter((p) => !isProtectedPath(p)).sort().slice(0, limit);
+      return out
+        .split('\n')
+        .filter(Boolean)
+        .map((p) => p.replace(/^\.\//, ''))
+        .filter((p) => !isProtectedPath(p))
+        .sort()
+        .slice(0, limit);
     }
     const re = globToRegExp(pattern);
     return (await this.workspace.allFiles(projectId)).filter((f) => re.test(f)).slice(0, limit);
   }
 
   /** Ranks files likely relevant to a request (path + content keyword hits). */
-  async relevantFiles(projectId: string, query: string, limit = 8): Promise<{ path: string; score: number }[]> {
-    const terms = [...new Set((query.match(/[A-Za-z_][A-Za-z0-9_.-]{2,}/g) ?? []).map((t) => t.toLowerCase()))]
+  async relevantFiles(
+    projectId: string,
+    query: string,
+    limit = 8,
+  ): Promise<{ path: string; score: number }[]> {
+    const terms = [
+      ...new Set((query.match(/[A-Za-z_][A-Za-z0-9_.-]{2,}/g) ?? []).map((t) => t.toLowerCase())),
+    ]
       .filter((t) => !STOP.has(t))
       .slice(0, 12);
     if (!terms.length) return [];
@@ -249,7 +397,43 @@ export class ProjectIndex {
   }
 }
 
-const STOP = new Set(['the', 'and', 'for', 'with', 'this', 'that', 'les', 'des', 'une', 'pour', 'dans', 'avec', 'est', 'sur', 'pas', 'qui', 'que', 'mon', 'ma', 'mes', 'fix', 'add', 'make', 'please', 'fais', 'corrige', 'ajoute', 'cette', 'ce', 'cet', 'moi', 'tout', 'code', 'file', 'fichier']);
+const STOP = new Set([
+  'the',
+  'and',
+  'for',
+  'with',
+  'this',
+  'that',
+  'les',
+  'des',
+  'une',
+  'pour',
+  'dans',
+  'avec',
+  'est',
+  'sur',
+  'pas',
+  'qui',
+  'que',
+  'mon',
+  'ma',
+  'mes',
+  'fix',
+  'add',
+  'make',
+  'please',
+  'fais',
+  'corrige',
+  'ajoute',
+  'cette',
+  'ce',
+  'cet',
+  'moi',
+  'tout',
+  'code',
+  'file',
+  'fichier',
+]);
 
 export function globToRegExp(glob: string): RegExp {
   let re = '';
@@ -264,7 +448,11 @@ export function globToRegExp(glob: string): RegExp {
     } else if (c === '?') re += '[^/]';
     else if (c === '{') {
       const end = glob.indexOf('}', i);
-      re += `(${glob.slice(i + 1, end).split(',').map((s) => s.replace(/[.+^$()|[\]\\]/g, '\\$&')).join('|')})`;
+      re += `(${glob
+        .slice(i + 1, end)
+        .split(',')
+        .map((s) => s.replace(/[.+^$()|[\]\\]/g, '\\$&'))
+        .join('|')})`;
       i = end;
     } else re += c.replace(/[.+^$()|[\]\\]/g, '\\$&');
   }

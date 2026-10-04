@@ -5,8 +5,17 @@ export type PermissionMode = 'safe' | 'normal' | 'autonomous';
 export type AgentMode = 'chat' | 'plan';
 /** Built-in roles: general, coder, researcher, browser, data_analyst, reviewer, tester — plus custom agent ids. */
 export type RoleId = string;
-export const BUILTIN_ROLES = ['general', 'coder', 'researcher', 'browser', 'data_analyst', 'reviewer', 'tester'] as const;
-export type RunStatus = 'queued' | 'running' | 'waiting_approval' | 'waiting_plan' | 'completed' | 'failed' | 'cancelled';
+export const BUILTIN_ROLES = [
+  'general',
+  'coder',
+  'researcher',
+  'browser',
+  'data_analyst',
+  'reviewer',
+  'tester',
+] as const;
+export type RunStatus =
+  'queued' | 'running' | 'waiting_approval' | 'waiting_plan' | 'completed' | 'failed' | 'cancelled';
 
 export interface ModelInfo {
   id: string;
@@ -62,7 +71,10 @@ export interface ApprovalRequest {
   summary: string;
   reason: string;
   /** Optional rich preview: unified diff for edits, command for terminal… */
-  preview?: { kind: 'diff'; path: string; before: string; after: string } | { kind: 'command'; command: string; risk: string } | { kind: 'text'; text: string };
+  preview?:
+    | { kind: 'diff'; path: string; before: string; after: string }
+    | { kind: 'command'; command: string; risk: string }
+    | { kind: 'text'; text: string };
 }
 
 export interface ToolResultPayload {
@@ -84,24 +96,64 @@ export type Attachment =
 
 /** Events streamed for an agent run (persisted, replayable). */
 export type AgentEvent =
-  | { type: 'run_started'; runId: string; sessionId: string; role: RoleId; mode: AgentMode; parentRunId?: string; title: string; userText: string; attachments: string[]; permissionMode: PermissionMode }
+  | {
+      type: 'run_started';
+      runId: string;
+      sessionId: string;
+      role: RoleId;
+      mode: AgentMode;
+      parentRunId?: string;
+      title: string;
+      userText: string;
+      attachments: string[];
+      permissionMode: PermissionMode;
+    }
   | { type: 'status'; text: string }
   | { type: 'model_selected'; model: string; reason: string; auto: boolean; effort?: string }
   | { type: 'stream_reset' }
-  | { type: 'skills_activated'; skills: { name: string; reason: 'pinned' | 'manual' | 'agent' | 'auto' | 'model'; matched?: string[] }[] }
+  | {
+      type: 'skills_activated';
+      skills: {
+        name: string;
+        reason: 'pinned' | 'manual' | 'agent' | 'auto' | 'model';
+        matched?: string[];
+      }[];
+    }
   | { type: 'model_fallback'; from: string; to: string; reason: string }
   | { type: 'text_delta'; text: string; agentPath?: string }
   | { type: 'assistant_message'; text: string; agentPath?: string }
   | { type: 'thinking'; active: boolean }
   | { type: 'tool_call'; callId: string; tool: string; args: unknown; agentPath?: string }
-  | { type: 'tool_result'; callId: string; tool: string; result: ToolResultPayload; durationMs: number; agentPath?: string }
+  | {
+      type: 'tool_result';
+      callId: string;
+      tool: string;
+      result: ToolResultPayload;
+      durationMs: number;
+      agentPath?: string;
+    }
   | { type: 'approval_required'; request: ApprovalRequest }
   | { type: 'approval_resolved'; approvalId: string; decision: 'approve' | 'deny'; note?: string }
   | { type: 'plan_proposed'; steps: PlanStep[]; summary: string }
   | { type: 'plan_updated'; steps: PlanStep[] }
   | { type: 'plan_resolved'; decision: 'approve' | 'cancel' }
-  | { type: 'file_changed'; changeId: string; path: string; op: 'write' | 'edit' | 'delete' | 'move'; added: number; removed: number }
-  | { type: 'usage'; model: string; promptTokens: number; completionTokens: number; cost: number; contextTokens: number; contextLimit: number }
+  | {
+      type: 'file_changed';
+      changeId: string;
+      path: string;
+      op: 'write' | 'edit' | 'delete' | 'move';
+      added: number;
+      removed: number;
+    }
+  | {
+      type: 'usage';
+      model: string;
+      promptTokens: number;
+      completionTokens: number;
+      cost: number;
+      contextTokens: number;
+      contextLimit: number;
+    }
   | { type: 'subagent_started'; childRunId: string; role: RoleId; task: string }
   | { type: 'subagent_finished'; childRunId: string; role: RoleId; summary: string; ok: boolean }
   | { type: 'compacted'; removedMessages: number }

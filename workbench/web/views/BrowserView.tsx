@@ -1,5 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Bot, Camera, Globe, Loader2, MousePointerClick, RotateCw, ScanText, User, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bot,
+  Camera,
+  Globe,
+  Loader2,
+  MousePointerClick,
+  RotateCw,
+  ScanText,
+  User,
+  X,
+} from 'lucide-react';
 import { api } from '../lib/api';
 import { cx, fmtTime } from '../lib/format';
 import { ws } from '../lib/ws';
@@ -18,7 +30,19 @@ interface Snapshot {
 }
 
 const KEY_MAP: Record<string, string> = {
-  Enter: 'Enter', Backspace: 'Backspace', Tab: 'Tab', Escape: 'Escape', ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight', Delete: 'Delete', Home: 'Home', End: 'End', PageUp: 'PageUp', PageDown: 'PageDown',
+  Enter: 'Enter',
+  Backspace: 'Backspace',
+  Tab: 'Tab',
+  Escape: 'Escape',
+  ArrowUp: 'ArrowUp',
+  ArrowDown: 'ArrowDown',
+  ArrowLeft: 'ArrowLeft',
+  ArrowRight: 'ArrowRight',
+  Delete: 'Delete',
+  Home: 'Home',
+  End: 'End',
+  PageUp: 'PageUp',
+  PageDown: 'PageDown',
 };
 
 export function browserKey(sessionId: string | null, projectId: string | null): string {
@@ -58,7 +82,10 @@ export function BrowserView() {
   // console & network refresh while the panel is visible
   useEffect(() => {
     if (tab !== 'console' && tab !== 'network') return;
-    const load = () => void api<{ logs: BrowserLogs }>(`/api/browser/${key}/state`).then((r) => setLogs(r.logs)).catch(() => undefined);
+    const load = () =>
+      void api<{ logs: BrowserLogs }>(`/api/browser/${key}/state`)
+        .then((r) => setLogs(r.logs))
+        .catch(() => undefined);
     load();
     const t = window.setInterval(load, 2500);
     return () => window.clearInterval(t);
@@ -88,7 +115,9 @@ export function BrowserView() {
   const action = async (a: 'back' | 'forward' | 'reload' | 'screenshot' | 'extract') => {
     if (!projectId) return;
     try {
-      const r = await api<Snapshot & { artifactId?: string }>(`/api/browser/${key}/action`, { body: { projectId, action: a } });
+      const r = await api<Snapshot & { artifactId?: string }>(`/api/browser/${key}/action`, {
+        body: { projectId, action: a },
+      });
       if (a === 'extract') {
         setSnap(r);
         setTab('dom');
@@ -106,14 +135,19 @@ export function BrowserView() {
     const img = imgRef.current;
     if (!img || !state) return null;
     const r = img.getBoundingClientRect();
-    return { x: ((e.clientX - r.left) / r.width) * state.viewport.width, y: ((e.clientY - r.top) / r.height) * state.viewport.height };
+    return {
+      x: ((e.clientX - r.left) / r.width) * state.viewport.width,
+      y: ((e.clientY - r.top) / r.height) * state.viewport.height,
+    };
   };
-  const send = (input: Record<string, unknown>) => projectId && ws.send({ type: 'browser_input', key, projectId, input });
+  const send = (input: Record<string, unknown>) =>
+    projectId && ws.send({ type: 'browser_input', key, projectId, input });
 
   if (status && !status.browser.available) {
     return (
       <Empty icon={<Globe size={36} />} title={`Moteur ${status.browser.engine} non installé`}>
-        Installez-le sur la machine de l'agent : <code className="font-mono">npx playwright install {status.browser.engine}</code>
+        Installez-le sur la machine de l'agent :{' '}
+        <code className="font-mono">npx playwright install {status.browser.engine}</code>
       </Empty>
     );
   }
@@ -138,16 +172,33 @@ export function BrowserView() {
             <RotateCw size={14} />
           </IconButton>
           <div className="mx-1 flex h-8 flex-1 items-center gap-2 rounded-full border border-line bg-input px-3 focus-within:border-accent">
-            {busy || state?.loading ? <Loader2 size={13} className="wb-spin text-accent" /> : <Globe size={13} className="text-faint" />}
-            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Saisissez une adresse (https://…) — l'agent et vous pilotez le même navigateur" className="flex-1 bg-transparent text-[13px] outline-none" />
+            {busy || state?.loading ? (
+              <Loader2 size={13} className="wb-spin text-accent" />
+            ) : (
+              <Globe size={13} className="text-faint" />
+            )}
+            <input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Saisissez une adresse (https://…) — l'agent et vous pilotez le même navigateur"
+              className="flex-1 bg-transparent text-[13px] outline-none"
+            />
           </div>
           <IconButton label="Capture d'écran" type="button" onClick={() => void action('screenshot')}>
             <Camera size={15} />
           </IconButton>
-          <IconButton label="Analyser la page (éléments)" type="button" onClick={() => void action('extract')}>
+          <IconButton
+            label="Analyser la page (éléments)"
+            type="button"
+            onClick={() => void action('extract')}
+          >
             <ScanText size={15} />
           </IconButton>
-          <IconButton label="Fermer l'onglet" type="button" onClick={() => void api(`/api/browser/${key}/close`, { method: 'POST' }).then(() => reset(key))}>
+          <IconButton
+            label="Fermer l'onglet"
+            type="button"
+            onClick={() => void api(`/api/browser/${key}/close`, { method: 'POST' }).then(() => reset(key))}
+          >
             <X size={15} />
           </IconButton>
         </form>
@@ -196,14 +247,19 @@ export function BrowserView() {
             />
           ) : (
             <Empty icon={<Globe size={36} />} title="Navigateur prêt">
-              Saisissez une adresse ou demandez à l'agent « ouvre … ». La page s'affiche ici en direct ; cliquez, faites défiler et tapez au clavier directement dans la vue.
+              Saisissez une adresse ou demandez à l'agent « ouvre … ». La page s'affiche ici en direct ;
+              cliquez, faites défiler et tapez au clavier directement dans la vue.
             </Empty>
           )}
         </div>
         <div className="flex h-7 shrink-0 items-center gap-3 border-t border-line px-3 text-[11.5px] text-faint">
           <span className="truncate">{state?.title || '—'}</span>
           <span className="ml-auto">{state?.engine ?? status?.browser.engine}</span>
-          {state && <span>{state.viewport.width}×{state.viewport.height}</span>}
+          {state && (
+            <span>
+              {state.viewport.width}×{state.viewport.height}
+            </span>
+          )}
         </div>
       </div>
       <div className="flex w-[380px] shrink-0 flex-col border-l border-line bg-elev">
@@ -211,23 +267,46 @@ export function BrowserView() {
           value={tab}
           onChange={setTab}
           tabs={[
-            { id: 'actions', label: 'Actions', badge: actions.length ? <Badge>{actions.length}</Badge> : undefined },
+            {
+              id: 'actions',
+              label: 'Actions',
+              badge: actions.length ? <Badge>{actions.length}</Badge> : undefined,
+            },
             { id: 'chat', label: 'Agent' },
             { id: 'dom', label: 'DOM' },
-            { id: 'console', label: 'Console', badge: logs?.console.some((c) => c.level === 'error') ? <Badge tone="err">{logs.console.filter((c) => c.level === 'error').length}</Badge> : undefined },
+            {
+              id: 'console',
+              label: 'Console',
+              badge: logs?.console.some((c) => c.level === 'error') ? (
+                <Badge tone="err">{logs.console.filter((c) => c.level === 'error').length}</Badge>
+              ) : undefined,
+            },
             { id: 'network', label: 'Réseau' },
           ]}
         />
         <div className="min-h-0 flex-1 overflow-auto">
           {tab === 'actions' && (
             <div className="p-2">
-              {actions.length === 0 && <div className="p-2 text-[12.5px] text-faint">La chronologie des actions (agent et utilisateur) apparaîtra ici.</div>}
+              {actions.length === 0 && (
+                <div className="p-2 text-[12.5px] text-faint">
+                  La chronologie des actions (agent et utilisateur) apparaîtra ici.
+                </div>
+              )}
               <ol className="relative ml-2 border-l border-line">
                 {[...actions].reverse().map((a) => (
                   <li key={a.id} className="mb-1.5 ml-3">
-                    <span className={cx('absolute -left-[5px] mt-1.5 h-2.5 w-2.5 rounded-full border-2 border-elev', a.ok ? 'bg-ok' : 'bg-err')} />
+                    <span
+                      className={cx(
+                        'absolute -left-[5px] mt-1.5 h-2.5 w-2.5 rounded-full border-2 border-elev',
+                        a.ok ? 'bg-ok' : 'bg-err',
+                      )}
+                    />
                     <div className="flex items-center gap-1.5 text-[12.5px]">
-                      {a.origin === 'agent' ? <Bot size={12} className="text-accent" /> : <User size={12} className="text-info" />}
+                      {a.origin === 'agent' ? (
+                        <Bot size={12} className="text-accent" />
+                      ) : (
+                        <User size={12} className="text-info" />
+                      )}
                       <span className="font-semibold capitalize">{a.type}</span>
                       <span className="ml-auto text-[11px] text-faint">{fmtTime(a.ts)}</span>
                     </div>
@@ -242,7 +321,10 @@ export function BrowserView() {
           )}
           {tab === 'chat' && (
             <div className="flex h-full flex-col">
-              <div className="p-3 text-[12.5px] text-muted">Demandez à l'agent d'agir sur la page : « connecte-toi », « cherche X », « télécharge le rapport », « compare avec … ».</div>
+              <div className="p-3 text-[12.5px] text-muted">
+                Demandez à l'agent d'agir sur la page : « connecte-toi », « cherche X », « télécharge le
+                rapport », « compare avec … ».
+              </div>
               <div className="mt-auto">
                 <Composer compact autoFocus={false} />
               </div>
@@ -251,12 +333,18 @@ export function BrowserView() {
           {tab === 'dom' && (
             <div className="p-2">
               {!snap && (
-                <button className="m-2 flex items-center gap-1.5 text-[12.5px] text-accent hover:underline" onClick={() => void action('extract')}>
+                <button
+                  className="m-2 flex items-center gap-1.5 text-[12.5px] text-accent hover:underline"
+                  onClick={() => void action('extract')}
+                >
                   <MousePointerClick size={13} /> Analyser les éléments interactifs de la page
                 </button>
               )}
               {snap?.elements.map((el) => (
-                <div key={el.ref} className="flex items-start gap-2 border-b border-line/50 px-1 py-1 text-[12px]">
+                <div
+                  key={el.ref}
+                  className="flex items-start gap-2 border-b border-line/50 px-1 py-1 text-[12px]"
+                >
                   <span className="w-8 shrink-0 font-mono text-faint">[{el.ref}]</span>
                   <span className="shrink-0 font-mono text-info">{el.tag}</span>
                   <span className="min-w-0 truncate">{el.text || el.href || el.type}</span>
@@ -268,7 +356,14 @@ export function BrowserView() {
             <div className="font-mono text-[11.5px]">
               {(logs?.console ?? []).length === 0 && <div className="p-3 text-faint">Aucun message.</div>}
               {[...(logs?.console ?? [])].reverse().map((c, i) => (
-                <div key={i} className={cx('border-b border-line/50 px-2.5 py-1 whitespace-pre-wrap break-all', c.level === 'error' && 'bg-err/8 text-err', c.level === 'warning' && 'text-warn')}>
+                <div
+                  key={i}
+                  className={cx(
+                    'border-b border-line/50 px-2.5 py-1 whitespace-pre-wrap break-all',
+                    c.level === 'error' && 'bg-err/8 text-err',
+                    c.level === 'warning' && 'text-warn',
+                  )}
+                >
                   {c.text}
                 </div>
               ))}
@@ -279,11 +374,20 @@ export function BrowserView() {
               {[...(logs?.network ?? [])].reverse().map((n) => (
                 <div key={n.id} className="flex items-center gap-2 border-b border-line/50 px-2.5 py-1">
                   <span className="w-10 shrink-0 font-mono text-faint">{n.method}</span>
-                  <span className={cx('w-9 shrink-0 font-mono', n.failure || (n.status ?? 0) >= 400 ? 'text-err' : 'text-ok')}>{n.failure ? 'ERR' : (n.status ?? '…')}</span>
+                  <span
+                    className={cx(
+                      'w-9 shrink-0 font-mono',
+                      n.failure || (n.status ?? 0) >= 400 ? 'text-err' : 'text-ok',
+                    )}
+                  >
+                    {n.failure ? 'ERR' : (n.status ?? '…')}
+                  </span>
                   <span className="min-w-0 flex-1 truncate font-mono" title={n.url}>
                     {n.url}
                   </span>
-                  <span className="shrink-0 text-faint">{n.durationMs !== null ? `${n.durationMs}ms` : ''}</span>
+                  <span className="shrink-0 text-faint">
+                    {n.durationMs !== null ? `${n.durationMs}ms` : ''}
+                  </span>
                 </div>
               ))}
             </div>

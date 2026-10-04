@@ -11,7 +11,19 @@ await page.goto(`${base}/#token=${token}`);
 await page.waitForSelector('textarea', { timeout: 20000 });
 await page.waitForTimeout(1500);
 await page.screenshot({ path: `${out}/01-chat.png` });
-const views = [['Code', 'code'], ['Terminal', 'terminal'], ['Navigateur', 'browser'], ['Données', 'data'], ['Agents', 'agents'], ['Skills', 'skills'], ['Plugins', 'plugins'], ['Tâches', 'tasks'], ['Modèles', 'models'], ['Projets', 'projects'], ['Réglages', 'settings']];
+const views = [
+  ['Code', 'code'],
+  ['Terminal', 'terminal'],
+  ['Navigateur', 'browser'],
+  ['Données', 'data'],
+  ['Agents', 'agents'],
+  ['Skills', 'skills'],
+  ['Plugins', 'plugins'],
+  ['Tâches', 'tasks'],
+  ['Modèles', 'models'],
+  ['Projets', 'projects'],
+  ['Réglages', 'settings'],
+];
 let i = 2;
 for (const [label, id] of views) {
   await page.getByRole('button', { name: label, exact: true }).first().click();

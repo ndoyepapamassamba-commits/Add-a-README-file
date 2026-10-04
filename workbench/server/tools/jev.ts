@@ -19,10 +19,13 @@ export const jevTools: AnyTool[] = [
       const r = await ctx.services.jev.evaluate(a.state, a.questions, { model: a.model, signal: ctx.signal });
       const lines = Object.entries(r.answers).map(([id, ans]) => {
         if (ans.type === 'noul') return `${id}: noul=${ans.noul}`;
-        if (ans.type === 'choice') return `${id}: choice=${ans.choice} (confidence ${ans.confidence}) probabilities=${JSON.stringify(ans.probabilities)}`;
+        if (ans.type === 'choice')
+          return `${id}: choice=${ans.choice} (confidence ${ans.confidence}) probabilities=${JSON.stringify(ans.probabilities)}`;
         return `${id}: score=${ans.score} (confidence ${ans.confidence}) legend=${JSON.stringify(ans.legend)}`;
       });
-      return ok(`${r.model} · ${lines.length} réponse(s)`, r, { forModel: `${r.model}\n${lines.join('\n')}\n(tokens: ${r.usage.input_tokens} in / ${r.usage.output_tokens} out)` });
+      return ok(`${r.model} · ${lines.length} réponse(s)`, r, {
+        forModel: `${r.model}\n${lines.join('\n')}\n(tokens: ${r.usage.input_tokens} in / ${r.usage.output_tokens} out)`,
+      });
     },
   }),
 ];

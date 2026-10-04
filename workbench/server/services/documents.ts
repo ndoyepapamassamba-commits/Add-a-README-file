@@ -15,42 +15,44 @@ export function isImage(p: string): boolean {
 export function mimeFor(p: string): string {
   const ext = path.extname(p).toLowerCase();
   return (
-    {
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.gif': 'image/gif',
-      '.webp': 'image/webp',
-      '.bmp': 'image/bmp',
-      '.svg': 'image/svg+xml',
-      '.pdf': 'application/pdf',
-      '.html': 'text/html; charset=utf-8',
-      '.htm': 'text/html; charset=utf-8',
-      '.css': 'text/css; charset=utf-8',
-      '.js': 'text/javascript; charset=utf-8',
-      '.mjs': 'text/javascript; charset=utf-8',
-      '.json': 'application/json; charset=utf-8',
-      '.md': 'text/markdown; charset=utf-8',
-      '.txt': 'text/plain; charset=utf-8',
-      '.csv': 'text/csv; charset=utf-8',
-      '.xml': 'application/xml; charset=utf-8',
-      '.yaml': 'text/yaml; charset=utf-8',
-      '.yml': 'text/yaml; charset=utf-8',
-      '.zip': 'application/zip',
-      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      '.xls': 'application/vnd.ms-excel',
-      '.xlsm': 'application/vnd.ms-excel.sheet.macroEnabled.12',
-      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      '.woff2': 'font/woff2',
-      '.woff': 'font/woff',
-      '.ico': 'image/x-icon',
-      '.mp4': 'video/mp4',
-      '.webm': 'video/webm',
-      '.mp3': 'audio/mpeg',
-      '.wav': 'audio/wav',
-    } as Record<string, string>
-  )[ext] ?? 'application/octet-stream';
+    (
+      {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.bmp': 'image/bmp',
+        '.svg': 'image/svg+xml',
+        '.pdf': 'application/pdf',
+        '.html': 'text/html; charset=utf-8',
+        '.htm': 'text/html; charset=utf-8',
+        '.css': 'text/css; charset=utf-8',
+        '.js': 'text/javascript; charset=utf-8',
+        '.mjs': 'text/javascript; charset=utf-8',
+        '.json': 'application/json; charset=utf-8',
+        '.md': 'text/markdown; charset=utf-8',
+        '.txt': 'text/plain; charset=utf-8',
+        '.csv': 'text/csv; charset=utf-8',
+        '.xml': 'application/xml; charset=utf-8',
+        '.yaml': 'text/yaml; charset=utf-8',
+        '.yml': 'text/yaml; charset=utf-8',
+        '.zip': 'application/zip',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '.xls': 'application/vnd.ms-excel',
+        '.xlsm': 'application/vnd.ms-excel.sheet.macroEnabled.12',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        '.woff2': 'font/woff2',
+        '.woff': 'font/woff',
+        '.ico': 'image/x-icon',
+        '.mp4': 'video/mp4',
+        '.webm': 'video/webm',
+        '.mp3': 'audio/mpeg',
+        '.wav': 'audio/wav',
+      } as Record<string, string>
+    )[ext] ?? 'application/octet-stream'
+  );
 }
 
 function stripXml(xml: string): string {
@@ -81,7 +83,11 @@ export async function extractDocumentText(absPath: string): Promise<ExtractedDoc
     const pdf = await getDocumentProxy(new Uint8Array(buf));
     const { totalPages, text } = await extractText(pdf, { mergePages: false });
     const pages = Array.isArray(text) ? text : [text];
-    return { kind: 'pdf', pages: totalPages, text: pages.map((t, i) => `--- page ${i + 1} ---\n${t.trim()}`).join('\n\n') };
+    return {
+      kind: 'pdf',
+      pages: totalPages,
+      text: pages.map((t, i) => `--- page ${i + 1} ---\n${t.trim()}`).join('\n\n'),
+    };
   }
   if (ext === '.docx') {
     const mammoth = await import('mammoth');
@@ -89,9 +95,15 @@ export async function extractDocumentText(absPath: string): Promise<ExtractedDoc
     return { kind: 'docx', text: res.value.trim() };
   }
   if (ext === '.pptx') {
-    const files = unzipSync(new Uint8Array(buf), { filter: (f) => /^ppt\/slides\/slide\d+\.xml$/.test(f.name) });
+    const files = unzipSync(new Uint8Array(buf), {
+      filter: (f) => /^ppt\/slides\/slide\d+\.xml$/.test(f.name),
+    });
     const slides = Object.keys(files).sort((a, b) => Number(/\d+/.exec(a)?.[0]) - Number(/\d+/.exec(b)?.[0]));
-    return { kind: 'pptx', pages: slides.length, text: slides.map((s, i) => `--- slide ${i + 1} ---\n${stripXml(strFromU8(files[s]!))}`).join('\n\n') };
+    return {
+      kind: 'pptx',
+      pages: slides.length,
+      text: slides.map((s, i) => `--- slide ${i + 1} ---\n${stripXml(strFromU8(files[s]!))}`).join('\n\n'),
+    };
   }
   if (ext === '.odt') {
     const files = unzipSync(new Uint8Array(buf), { filter: (f) => f.name === 'content.xml' });

@@ -1,6 +1,18 @@
 import { z } from 'zod';
 import type { ChartData, ChartSpec } from '@shared/types';
-import { AggFn, BucketSchema, FilterSchema, aggregate, matchFilter, toNumber, toDate, excelSerialToDate, type Cell, type DataEngine, type Dataset } from './dataEngine';
+import {
+  AggFn,
+  BucketSchema,
+  FilterSchema,
+  aggregate,
+  matchFilter,
+  toNumber,
+  toDate,
+  excelSerialToDate,
+  type Cell,
+  type DataEngine,
+  type Dataset,
+} from './dataEngine';
 
 export const ChartSpecSchema = z.object({
   type: z.enum(['bar', 'line', 'area', 'scatter', 'pie', 'histogram', 'heatmap', 'table', 'kpi']),
@@ -38,7 +50,8 @@ const round = (n: number | null) => (n === null ? null : Math.round(n * 1000) / 
 /** Turns a declarative chart spec into ready-to-render data (server-side). */
 export function computeChart(ds: Dataset, spec: ChartSpec): ChartData {
   const check = (c: string | undefined) => {
-    if (c && !ds.columns.includes(c)) throw new Error(`Unknown column "${c}". Available: ${ds.columns.slice(0, 40).join(', ')}`);
+    if (c && !ds.columns.includes(c))
+      throw new Error(`Unknown column "${c}". Available: ${ds.columns.slice(0, 40).join(', ')}`);
   };
   check(spec.x?.column);
   check(spec.series);
@@ -48,15 +61,34 @@ export function computeChart(ds: Dataset, spec: ChartSpec): ChartData {
   const rows = ds.rows.filter((r) => (spec.filters ?? []).every((f) => matchFilter(r, f)));
   const base: ChartData = { spec, categories: [], series: [], rowCount: rows.length };
   const ys = spec.y?.length ? spec.y : [{ column: '*', agg: 'count' as const }];
-  const valuesOf = (rs: typeof rows, col: string): Cell[] => (col === '*' ? rs.map(() => 1) : rs.map((r) => r[col] ?? null));
+  const valuesOf = (rs: typeof rows, col: string): Cell[] =>
+    col === '*' ? rs.map(() => 1) : rs.map((r) => r[col] ?? null);
 
   switch (spec.type) {
     case 'kpi':
-      return { ...base, kpis: ys.map((y) => ({ label: `${y.agg}(${y.column})`, value: round(aggregate(valuesOf(rows, y.column), y.agg)) })) };
+      return {
+        ...base,
+        kpis: ys.map((y) => ({
+          label: `${y.agg}(${y.column})`,
+          value: round(aggregate(valuesOf(rows, y.column), y.agg)),
+        })),
+      };
 
     case 'table': {
       const limit = spec.limit ?? 200;
-      return { ...base, rows: rows.slice(0, limit).map((r) => Object.fromEntries(ds.columns.map((c) => [c, r[c] instanceof Date ? (r[c] as Date).toISOString().slice(0, 10) : r[c]]))) };
+      return {
+        ...base,
+        rows: rows
+          .slice(0, limit)
+          .map((r) =>
+            Object.fromEntries(
+              ds.columns.map((c) => [
+                c,
+                r[c] instanceof Date ? (r[c] as Date).toISOString().slice(0, 10) : r[c],
+              ]),
+            ),
+          ),
+      };
     }
 
     case 'scatter': {
@@ -130,10 +162,16 @@ export function computeChart(ds: Dataset, spec: ChartSpec): ChartData {
       }
       let cats = [...groups.keys()];
       const firstAgg = ys[0]!;
-      const totals = new Map(cats.map((c) => [c, aggregate(valuesOf(groups.get(c)!, firstAgg.column), firstAgg.agg) ?? 0]));
-      const sort = spec.sort ?? (spec.x.bucket || spec.type === 'line' || spec.type === 'area' ? 'x' : 'y_desc');
+      const totals = new Map(
+        cats.map((c) => [c, aggregate(valuesOf(groups.get(c)!, firstAgg.column), firstAgg.agg) ?? 0]),
+      );
+      const sort =
+        spec.sort ?? (spec.x.bucket || spec.type === 'line' || spec.type === 'area' ? 'x' : 'y_desc');
       if (sort === 'x') cats.sort((a, b) => a.localeCompare(b, 'fr', { numeric: true }));
-      else cats.sort((a, b) => (sort === 'y_desc' ? totals.get(b)! - totals.get(a)! : totals.get(a)! - totals.get(b)!));
+      else
+        cats.sort((a, b) =>
+          sort === 'y_desc' ? totals.get(b)! - totals.get(a)! : totals.get(a)! - totals.get(b)!,
+        );
       const limit = spec.limit ?? (spec.type === 'pie' ? 12 : 60);
       if (spec.type === 'pie' && cats.length > limit) {
         const kept = cats.slice(0, limit - 1);
@@ -149,13 +187,26 @@ export function computeChart(ds: Dataset, spec: ChartSpec): ChartData {
           const s = key(r[spec.series]);
           seriesCounts.set(s, (seriesCounts.get(s) ?? 0) + 1);
         }
-        const seriesNames = [...seriesCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, MAX_SERIES).map(([s]) => s);
+        const seriesNames = [...seriesCounts.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, MAX_SERIES)
+          .map(([s]) => s);
         return {
           ...base,
           categories: cats,
           series: seriesNames.map((s) => ({
             name: s,
-            data: cats.map((c) => round(aggregate(valuesOf(groups.get(c)!.filter((r) => key(r[spec.series!]) === s), firstAgg.column), firstAgg.agg))),
+            data: cats.map((c) =>
+              round(
+                aggregate(
+                  valuesOf(
+                    groups.get(c)!.filter((r) => key(r[spec.series!]) === s),
+                    firstAgg.column,
+                  ),
+                  firstAgg.agg,
+                ),
+              ),
+            ),
           })),
         };
       }

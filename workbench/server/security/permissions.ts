@@ -60,5 +60,6 @@ export function decide(input: DecisionInput): Decision {
 export const MODE_DESCRIPTIONS: Record<PermissionMode, string> = {
   safe: 'SAFE — lecture seule : aucune écriture, aucune commande modifiante.',
   normal: 'NORMAL — modifications de fichiers avec validation (diff), commandes non dangereuses autorisées.',
-  autonomous: "AUTONOMOUS — l'agent modifie et exécute librement ; seules les actions dangereuses sont confirmées.",
+  autonomous:
+    "AUTONOMOUS — l'agent modifie et exécute librement ; seules les actions dangereuses sont confirmées.",
 };

@@ -8,7 +8,15 @@ export function skillRoutes(app: FastifyInstance, ctx: AppContext): void {
 
   app.get('/api/skills', async () => {
     const disabled = new Set(s.settings.get().skills.disabled);
-    return (await s.skills.list()).map((k) => ({ name: k.name, description: k.description, source: k.source, files: k.files, triggers: k.triggers, size: k.size, disabled: disabled.has(k.name) }));
+    return (await s.skills.list()).map((k) => ({
+      name: k.name,
+      description: k.description,
+      source: k.source,
+      files: k.files,
+      triggers: k.triggers,
+      size: k.size,
+      disabled: disabled.has(k.name),
+    }));
   });
   app.post('/api/skills/rescan', async () => {
     await s.skills.scan(true);
@@ -30,7 +38,14 @@ export function skillRoutes(app: FastifyInstance, ctx: AppContext): void {
   app.get('/api/skills/:name', async (req) => {
     const name = (req.params as { name: string }).name;
     const skill = await s.skills.get(name);
-    return { name: skill.name, description: skill.description, source: skill.source, files: skill.files, triggers: skill.triggers, body: await s.skills.body(name) };
+    return {
+      name: skill.name,
+      description: skill.description,
+      source: skill.source,
+      files: skill.files,
+      triggers: skill.triggers,
+      body: await s.skills.body(name),
+    };
   });
   app.get('/api/skills/:name/file', async (req) => {
     const name = (req.params as { name: string }).name;

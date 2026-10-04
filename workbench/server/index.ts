@@ -5,7 +5,9 @@ import { buildPreviewServer } from './http/preview';
 async function main(): Promise<void> {
   const config = loadConfig();
   if (!isLoopbackHost(config.host) && !config.authToken) {
-    console.error(`Refusing to listen on ${config.host} without WORKBENCH_AUTH_TOKEN. Set a strong token in .env or use HOST=127.0.0.1.`);
+    console.error(
+      `Refusing to listen on ${config.host} without WORKBENCH_AUTH_TOKEN. Set a strong token in .env or use HOST=127.0.0.1.`,
+    );
     process.exit(1);
   }
   const { app, ctx } = await buildApp(config);
@@ -29,8 +31,14 @@ async function main(): Promise<void> {
   ];
   process.stdout.write(`${lines.join('\n')}\n`);
 
-  void ctx.services.catalog.list().catch((err: Error) => app.log.warn(`model catalog unavailable: ${err.message}`));
-  void ctx.services.jev.check().then((j) => app.log.info(`Jev (TypeSafe): ${j.ok ? `available (${j.model})` : `unavailable — ${j.error}`}`));
+  void ctx.services.catalog
+    .list()
+    .catch((err: Error) => app.log.warn(`model catalog unavailable: ${err.message}`));
+  void ctx.services.jev
+    .check()
+    .then((j) =>
+      app.log.info(`Jev (TypeSafe): ${j.ok ? `available (${j.model})` : `unavailable — ${j.error}`}`),
+    );
   if (ctx.services.settings.get().mcp.autoConnect) void ctx.services.mcp.ensureConnected();
 
   const shutdown = async (signal: string) => {

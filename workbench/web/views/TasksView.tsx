@@ -38,20 +38,46 @@ export function TasksTable({ compact = false }: { compact?: boolean }) {
   const [status, setStatus] = useState('all');
   const scrollRef = useState<HTMLDivElement | null>(null);
   useEffect(() => {
-    void api<Row[]>('/api/runs', { query: { limit: 1000 } }).then(setRows).catch(() => undefined);
+    void api<Row[]>('/api/runs', { query: { limit: 1000 } })
+      .then(setRows)
+      .catch(() => undefined);
   }, [version]);
   useEffect(() => {
     if (!rows.some((r) => r.active)) return;
-    const t = window.setInterval(() => void api<Row[]>('/api/runs', { query: { limit: 1000 } }).then(setRows), 3000);
+    const t = window.setInterval(
+      () => void api<Row[]>('/api/runs', { query: { limit: 1000 } }).then(setRows),
+      3000,
+    );
     return () => window.clearInterval(t);
   }, [rows]);
-  const filtered = useMemo(() => rows.filter((r) => (status === 'all' || r.status === status) && (!q || `${r.title} ${r.role} ${r.model}`.toLowerCase().includes(q.toLowerCase()))), [rows, q, status]);
-  const totals = useMemo(() => filtered.reduce((a, r) => ({ cost: a.cost + r.cost, tokens: a.tokens + r.tokensIn + r.tokensOut }), { cost: 0, tokens: 0 }), [filtered]);
-  const virt = useVirtualizer({ count: filtered.length, getScrollElement: () => scrollRef[0], estimateSize: () => 36, overscan: 20 });
+  const filtered = useMemo(
+    () =>
+      rows.filter(
+        (r) =>
+          (status === 'all' || r.status === status) &&
+          (!q || `${r.title} ${r.role} ${r.model}`.toLowerCase().includes(q.toLowerCase())),
+      ),
+    [rows, q, status],
+  );
+  const totals = useMemo(
+    () =>
+      filtered.reduce((a, r) => ({ cost: a.cost + r.cost, tokens: a.tokens + r.tokensIn + r.tokensOut }), {
+        cost: 0,
+        tokens: 0,
+      }),
+    [filtered],
+  );
+  const virt = useVirtualizer({
+    count: filtered.length,
+    getScrollElement: () => scrollRef[0],
+    estimateSize: () => 36,
+    overscan: 20,
+  });
 
   const open = (r: Row) => {
     const app = useApp.getState();
-    if (projects.some((p) => p.id === r.projectId) && app.projectId !== r.projectId) void app.selectProject(r.projectId).then(() => app.selectSession(r.sessionId));
+    if (projects.some((p) => p.id === r.projectId) && app.projectId !== r.projectId)
+      void app.selectProject(r.projectId).then(() => app.selectSession(r.sessionId));
     else app.selectSession(r.sessionId);
     app.setView('chat');
   };
@@ -60,8 +86,20 @@ export function TasksTable({ compact = false }: { compact?: boolean }) {
     <div className="flex h-full min-h-0 flex-col">
       {!compact && (
         <div className="flex items-center gap-2 border-b border-line p-3">
-          <Input className="h-8 max-w-xs" placeholder="Filtrer les tâches…" value={q} onChange={(e) => setQ(e.target.value)} />
-          <Select value={status} onChange={setStatus} options={[{ value: 'all', label: 'Tous les statuts' }, ...Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label }))]} />
+          <Input
+            className="h-8 max-w-xs"
+            placeholder="Filtrer les tâches…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+          <Select
+            value={status}
+            onChange={setStatus}
+            options={[
+              { value: 'all', label: 'Tous les statuts' },
+              ...Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
+            ]}
+          />
           <span className="ml-auto text-[12.5px] text-muted">
             {filtered.length} tâches · {fmtTokens(totals.tokens)} tokens · {fmtCost(totals.cost)}
           </span>
@@ -79,7 +117,11 @@ export function TasksTable({ compact = false }: { compact?: boolean }) {
         <span />
       </div>
       <div ref={(el) => scrollRef[1](el)} className="min-h-0 flex-1 overflow-auto">
-        {filtered.length === 0 && <Empty icon={<ListTodo size={28} />} title="Aucune tâche">Les tâches lancées dans le chat apparaissent ici.</Empty>}
+        {filtered.length === 0 && (
+          <Empty icon={<ListTodo size={28} />} title="Aucune tâche">
+            Les tâches lancées dans le chat apparaissent ici.
+          </Empty>
+        )}
         <div style={{ height: virt.getTotalSize(), position: 'relative' }}>
           {virt.getVirtualItems().map((vi) => {
             const r = filtered[vi.index]!;
@@ -97,14 +139,18 @@ export function TasksTable({ compact = false }: { compact?: boolean }) {
                 </span>
                 <span className="truncate">{r.role}</span>
                 <span>
-                  <Badge tone={STATUS_TONE[r.status] ?? 'neutral'}>{STATUS_LABEL[r.status] ?? r.status}</Badge>
+                  <Badge tone={STATUS_TONE[r.status] ?? 'neutral'}>
+                    {STATUS_LABEL[r.status] ?? r.status}
+                  </Badge>
                 </span>
                 <span className="truncate text-muted" title={r.model}>
                   {shortModel(r.model)}
                 </span>
                 <span className="text-right tabular-nums">{fmtTokens(r.tokensIn + r.tokensOut)}</span>
                 <span className="text-right tabular-nums">{fmtCost(r.cost)}</span>
-                <span className="text-right tabular-nums text-muted">{r.finishedAt ? fmtDuration(r.finishedAt - r.startedAt) : '…'}</span>
+                <span className="text-right tabular-nums text-muted">
+                  {r.finishedAt ? fmtDuration(r.finishedAt - r.startedAt) : '…'}
+                </span>
                 <span className="text-right tabular-nums">{r.filesChanged || ''}</span>
                 <span>
                   {r.active && (

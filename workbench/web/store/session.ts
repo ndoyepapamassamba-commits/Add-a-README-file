@@ -1,5 +1,12 @@
 import { create } from 'zustand';
-import type { AgentEvent, ChangeRecord, EffortSetting, RoleId, RunEventEnvelope, RunSummary } from '@shared/types';
+import type {
+  AgentEvent,
+  ChangeRecord,
+  EffortSetting,
+  RoleId,
+  RunEventEnvelope,
+  RunSummary,
+} from '@shared/types';
 import { api } from '../lib/api';
 import { applyEvent, emptyRunView, isActiveStatus, type RunView } from '../lib/transcript';
 import type { ArtifactRecord, SessionDetail, SessionSettings } from '../lib/types';
@@ -13,7 +20,12 @@ export interface SendInput {
   effort?: EffortSetting;
   role?: RoleId;
   agentMode?: 'chat' | 'plan';
-  ui?: { openFile?: string; selection?: { text: string; startLine: number; endLine: number }; dataset?: string; browserUrl?: string };
+  ui?: {
+    openFile?: string;
+    selection?: { text: string; startLine: number; endLine: number };
+    dataset?: string;
+    browserUrl?: string;
+  };
 }
 
 interface SessionState {
@@ -30,9 +42,21 @@ interface SessionState {
   onRunEvent: (env: RunEventEnvelope) => void;
   send: (input: SendInput) => Promise<boolean>;
   cancel: () => Promise<void>;
-  approve: (approvalId: string, decision: 'approve' | 'deny', opts?: { note?: string; remember?: boolean }) => Promise<void>;
+  approve: (
+    approvalId: string,
+    decision: 'approve' | 'deny',
+    opts?: { note?: string; remember?: boolean },
+  ) => Promise<void>;
   resolvePlan: (runId: string, decision: 'approve' | 'cancel', steps?: string[]) => Promise<void>;
-  patchSession: (patch: { title?: string; model?: string; permissionMode?: string; autoApproveEdits?: boolean; role?: RoleId; resetGrants?: boolean; skills?: string[] }) => Promise<void>;
+  patchSession: (patch: {
+    title?: string;
+    model?: string;
+    permissionMode?: string;
+    autoApproveEdits?: boolean;
+    role?: RoleId;
+    resetGrants?: boolean;
+    skills?: string[];
+  }) => Promise<void>;
   refreshSide: () => Promise<void>;
   review: (focus?: string) => Promise<void>;
   compact: () => Promise<void>;
@@ -54,7 +78,15 @@ export const useSession = create<SessionState>((set, get) => ({
     const token = ++loadToken;
     for (const id of Object.keys(get().runs)) ws.unsubscribeRun(id);
     if (!sessionId) {
-      set({ sessionId: null, detail: null, runs: {}, order: [], activeRunId: null, changes: [], artifacts: [] });
+      set({
+        sessionId: null,
+        detail: null,
+        runs: {},
+        order: [],
+        activeRunId: null,
+        changes: [],
+        artifacts: [],
+      });
       return;
     }
     set({ loading: true, sessionId });
@@ -70,7 +102,13 @@ export const useSession = create<SessionState>((set, get) => ({
       }
       const order = d.runs.filter((r) => !r.parentRunId).map((r) => r.id);
       set({
-        detail: { session: d.session, settings: d.settings, activeRunId: d.activeRunId, changes: d.changes, artifacts: d.artifacts },
+        detail: {
+          session: d.session,
+          settings: d.settings,
+          activeRunId: d.activeRunId,
+          changes: d.changes,
+          artifacts: d.artifacts,
+        },
         runs,
         order,
         activeRunId: d.activeRunId,
@@ -124,7 +162,8 @@ export const useSession = create<SessionState>((set, get) => ({
       void useApp.getState().refreshCredits();
       void useApp.getState().loadSessions();
     }
-    if (e.type === 'file_changed' || (e.type === 'tool_result' && e.result.attachments?.length)) void get().refreshSide();
+    if (e.type === 'file_changed' || (e.type === 'tool_result' && e.result.attachments?.length))
+      void get().refreshSide();
     if (e.type === 'usage') void useApp.getState().refreshCredits();
     set(patch);
   },
@@ -152,7 +191,9 @@ export const useSession = create<SessionState>((set, get) => ({
 
   async approve(approvalId, decision, opts) {
     try {
-      await api(`/api/approvals/${approvalId}`, { body: { decision, note: opts?.note, remember: opts?.remember ?? false } });
+      await api(`/api/approvals/${approvalId}`, {
+        body: { decision, note: opts?.note, remember: opts?.remember ?? false },
+      });
     } catch (err) {
       useApp.getState().toast('error', (err as Error).message);
     }
@@ -170,7 +211,10 @@ export const useSession = create<SessionState>((set, get) => ({
     const { sessionId } = get();
     if (!sessionId) return;
     try {
-      const r = await api<{ session: SessionDetail['session']; settings: SessionSettings }>(`/api/sessions/${sessionId}`, { method: 'PATCH', body: patch });
+      const r = await api<{ session: SessionDetail['session']; settings: SessionSettings }>(
+        `/api/sessions/${sessionId}`,
+        { method: 'PATCH', body: patch },
+      );
       const d = get().detail;
       if (d) set({ detail: { ...d, session: r.session, settings: r.settings } });
       void useApp.getState().loadSessions();
@@ -184,7 +228,9 @@ export const useSession = create<SessionState>((set, get) => ({
     if (!sessionId || !detail) return;
     const [changes, artifacts] = await Promise.all([
       api<ChangeRecord[]>(`/api/sessions/${sessionId}/changes`).catch(() => get().changes),
-      api<ArtifactRecord[]>(`/api/projects/${detail.session.projectId}/artifacts`, { query: { sessionId } }).catch(() => get().artifacts),
+      api<ArtifactRecord[]>(`/api/projects/${detail.session.projectId}/artifacts`, {
+        query: { sessionId },
+      }).catch(() => get().artifacts),
     ]);
     set({ changes, artifacts });
   },
@@ -194,7 +240,11 @@ export const useSession = create<SessionState>((set, get) => ({
     if (!sessionId) return;
     try {
       const run = await api<RunSummary>(`/api/sessions/${sessionId}/review`, { body: { focus } });
-      set({ runs: { ...get().runs, [run.id]: emptyRunView(run) }, order: [...get().order, run.id], activeRunId: run.id });
+      set({
+        runs: { ...get().runs, [run.id]: emptyRunView(run) },
+        order: [...get().order, run.id],
+        activeRunId: run.id,
+      });
       ws.subscribeRun(run.id, -1);
       useApp.getState().toast('info', 'Revue lancée avec un second modèle');
     } catch (err) {
@@ -206,8 +256,15 @@ export const useSession = create<SessionState>((set, get) => ({
     const { sessionId } = get();
     if (!sessionId) return;
     try {
-      const r = await api<{ before: number; after: number }>(`/api/sessions/${sessionId}/compact`, { method: 'POST' });
-      useApp.getState().toast('success', `Contexte compacté : ~${Math.round(r.before / 1000)}k → ~${Math.round(r.after / 1000)}k tokens`);
+      const r = await api<{ before: number; after: number }>(`/api/sessions/${sessionId}/compact`, {
+        method: 'POST',
+      });
+      useApp
+        .getState()
+        .toast(
+          'success',
+          `Contexte compacté : ~${Math.round(r.before / 1000)}k → ~${Math.round(r.after / 1000)}k tokens`,
+        );
     } catch (err) {
       useApp.getState().toast('error', (err as Error).message);
     }

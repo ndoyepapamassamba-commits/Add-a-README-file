@@ -23,8 +23,19 @@ const IDENTITY = ['-c', 'user.name=OpenRouter Workbench', '-c', 'user.email=work
 function describe(index: string, worktree: string): string {
   const code = index !== ' ' && index !== '?' ? index : worktree;
   return (
-    { M: 'modified', A: 'added', D: 'deleted', R: 'renamed', C: 'copied', U: 'conflict', '?': 'untracked', '!': 'ignored' } as Record<string, string>
-  )[code] ?? 'changed';
+    (
+      {
+        M: 'modified',
+        A: 'added',
+        D: 'deleted',
+        R: 'renamed',
+        C: 'copied',
+        U: 'conflict',
+        '?': 'untracked',
+        '!': 'ignored',
+      } as Record<string, string>
+    )[code] ?? 'changed'
+  );
 }
 
 /** Git operations via the git CLI (argument arrays, never a shell). Push is intentionally not exposed. */
@@ -54,7 +65,11 @@ export class GitService {
     for (const line of lines) {
       if (line.startsWith('## ')) {
         const head = line.slice(3);
-        branch = head.replace(/^No commits yet on /, '').split('...')[0]!.split(' ')[0] ?? null;
+        branch =
+          head
+            .replace(/^No commits yet on /, '')
+            .split('...')[0]!
+            .split(' ')[0] ?? null;
         ahead = Number(/ahead (\d+)/.exec(head)?.[1] ?? 0);
         behind = Number(/behind (\d+)/.exec(head)?.[1] ?? 0);
         continue;
@@ -76,7 +91,16 @@ export class GitService {
     let out = await this.git(cwd, args);
     // Include untracked files as additions when diffing everything / a new file.
     if (!opts.staged) {
-      const untracked = (await this.git(cwd, ['ls-files', '--others', '--exclude-standard', ...(opts.path ? ['--', opts.path] : [])])).split('\n').filter(Boolean);
+      const untracked = (
+        await this.git(cwd, [
+          'ls-files',
+          '--others',
+          '--exclude-standard',
+          ...(opts.path ? ['--', opts.path] : []),
+        ])
+      )
+        .split('\n')
+        .filter(Boolean);
       for (const f of untracked.slice(0, 50)) {
         const res = await runGit(cwd, ['diff', '--no-color', '--no-index', '--', '/dev/null', f]);
         out += res.stdout;
@@ -87,7 +111,12 @@ export class GitService {
 
   async log(cwd: string, limit = 50): Promise<GitCommit[]> {
     if (!this.isRepo(cwd)) return [];
-    const res = await runGit(cwd, ['log', `-n${limit}`, '--date=iso', '--pretty=format:%H%x1f%an%x1f%ad%x1f%s']);
+    const res = await runGit(cwd, [
+      'log',
+      `-n${limit}`,
+      '--date=iso',
+      '--pretty=format:%H%x1f%an%x1f%ad%x1f%s',
+    ]);
     if (res.code !== 0) return []; // no commits yet
     return res.stdout
       .split('\n')

@@ -9,7 +9,26 @@ import type { WorkspaceService } from './workspace';
 import { NotFoundError, BadRequestError } from './workspace';
 import { sanitizeFilename } from './browserManager';
 
-export const ARTIFACT_TYPES = ['html', 'css', 'js', 'json', 'csv', 'xlsx', 'pdf', 'md', 'zip', 'png', 'jpg', 'svg', 'txt', 'chart', 'py', 'ts', 'xml', 'yaml'] as const;
+export const ARTIFACT_TYPES = [
+  'html',
+  'css',
+  'js',
+  'json',
+  'csv',
+  'xlsx',
+  'pdf',
+  'md',
+  'zip',
+  'png',
+  'jpg',
+  'svg',
+  'txt',
+  'chart',
+  'py',
+  'ts',
+  'xml',
+  'yaml',
+] as const;
 export type ArtifactType = (typeof ARTIFACT_TYPES)[number];
 
 const EXT: Record<string, string> = { chart: 'json', md: 'md', jpg: 'jpg' };
@@ -28,7 +47,10 @@ export function markdownToHtml(md: string, title: string): string {
 }
 
 export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
+  );
 }
 
 /** Artifacts are files produced by agents, stored under <project>/.workbench/artifacts. */
@@ -39,7 +61,15 @@ export class ArtifactService {
     private readonly pdfRenderer: (html: string) => Promise<Buffer>,
   ) {}
 
-  async create(opts: { projectId: string; sessionId?: string | null; runId?: string | null; name: string; type: ArtifactType; content: string | Buffer; meta?: Record<string, unknown> }): Promise<ArtifactRecord> {
+  async create(opts: {
+    projectId: string;
+    sessionId?: string | null;
+    runId?: string | null;
+    name: string;
+    type: ArtifactType;
+    content: string | Buffer;
+    meta?: Record<string, unknown>;
+  }): Promise<ArtifactRecord> {
     const dir = this.workspace.internalDir(opts.projectId, 'artifacts');
     const id = randomUUID();
     const ext = EXT[opts.type] ?? opts.type;
@@ -49,7 +79,9 @@ export class ArtifactService {
     let data: Buffer;
     if (opts.type === 'pdf' && typeof opts.content === 'string') {
       // Markdown or HTML source rendered to PDF with the headless browser.
-      const html = /^\s*<(!doctype|html)/i.test(opts.content) ? opts.content : markdownToHtml(opts.content, opts.name);
+      const html = /^\s*<(!doctype|html)/i.test(opts.content)
+        ? opts.content
+        : markdownToHtml(opts.content, opts.name);
       data = await this.pdfRenderer(html);
     } else data = typeof opts.content === 'string' ? Buffer.from(opts.content, 'utf8') : opts.content;
     await fsp.writeFile(file, data);
@@ -69,7 +101,13 @@ export class ArtifactService {
     return rec;
   }
 
-  async createZip(opts: { projectId: string; sessionId?: string | null; runId?: string | null; name: string; files: { path: string; content?: string; fromProject?: string }[] }): Promise<ArtifactRecord> {
+  async createZip(opts: {
+    projectId: string;
+    sessionId?: string | null;
+    runId?: string | null;
+    name: string;
+    files: { path: string; content?: string; fromProject?: string }[];
+  }): Promise<ArtifactRecord> {
     const entries: Record<string, Uint8Array> = {};
     for (const f of opts.files) {
       const name = f.path.replace(/^[/\\]+/, '').replace(/\.\.(\/|\\)/g, '');
@@ -79,7 +117,8 @@ export class ArtifactService {
         if (st.isDirectory()) {
           for (const rel of await this.workspace.allFiles(opts.projectId)) {
             if (rel.startsWith(`${f.fromProject.replace(/\/$/, '')}/`)) {
-              entries[path.posix.join(name, rel.slice(f.fromProject.replace(/\/$/, '').length + 1))] = new Uint8Array(await fsp.readFile(this.workspace.resolve(opts.projectId, rel)));
+              entries[path.posix.join(name, rel.slice(f.fromProject.replace(/\/$/, '').length + 1))] =
+                new Uint8Array(await fsp.readFile(this.workspace.resolve(opts.projectId, rel)));
             }
           }
         } else entries[name] = new Uint8Array(await fsp.readFile(abs));

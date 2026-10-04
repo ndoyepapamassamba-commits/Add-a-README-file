@@ -13,28 +13,39 @@ export interface TaskSignals {
 }
 
 const RE = {
-  browser: /\b(navigu|ouvre|open|site|page web|website|browser|navigateur|clique|click|connecte|login|t[ée]l[ée]charge|download|scrape|capture d'?[ée]cran|screenshot)/i,
-  heavy: /\b(refactor|refactoris|architecture|construis|build (me|an?|the)|cr[ée]e[- ]moi|application compl[eè]te|migrat|r[ée][ée]cri|rewrite|from scratch|multi[- ]?fichiers?|ensemble du projet|whole (project|codebase))/i,
-  reasoning: /\b(pourquoi|why|analy[sz]e|diagnos|debug|bug|root cause|cause racine|prouve|prove|optimi[sz]|algorithm|complexit|strat[ée]gie|compare|[ée]value|reason)/i,
-  simple: /\b(typo|faute|renomm|rename|corrige (la|une) (ligne|faute)|explain this|explique (ce|cette)|traduis|translate|r[ée]sume|summari[sz]e|formate?)\b/i,
+  browser:
+    /\b(navigu|ouvre|open|site|page web|website|browser|navigateur|clique|click|connecte|login|t[ée]l[ée]charge|download|scrape|capture d'?[ée]cran|screenshot)/i,
+  heavy:
+    /\b(refactor|refactoris|architecture|construis|build (me|an?|the)|cr[ée]e[- ]moi|application compl[eè]te|migrat|r[ée][ée]cri|rewrite|from scratch|multi[- ]?fichiers?|ensemble du projet|whole (project|codebase))/i,
+  reasoning:
+    /\b(pourquoi|why|analy[sz]e|diagnos|debug|bug|root cause|cause racine|prouve|prove|optimi[sz]|algorithm|complexit|strat[ée]gie|compare|[ée]value|reason)/i,
+  simple:
+    /\b(typo|faute|renomm|rename|corrige (la|une) (ligne|faute)|explain this|explique (ce|cette)|traduis|translate|r[ée]sume|summari[sz]e|formate?)\b/i,
 };
 
 /** Heuristic task classification for AUTO mode (transparent, no extra LLM call). */
 export function classifyTask(s: TaskSignals): { tier: Tier; reason: string } {
   if (s.hasImages) return { tier: 'vision', reason: 'la requête contient des images → modèle vision' };
   if (s.role === 'reviewer') return { tier: 'reasoning', reason: 'revue de code → modèle de raisonnement' };
-  if (s.role === 'browser' || RE.browser.test(s.text)) return { tier: 'balanced', reason: 'tâche navigateur → modèle fiable en tool calling' };
-  if (RE.heavy.test(s.text)) return { tier: 'powerful', reason: 'travail de grande ampleur → modèle puissant' };
-  if (RE.reasoning.test(s.text) && s.text.length > 60) return { tier: 'reasoning', reason: 'analyse complexe → modèle de raisonnement' };
-  if (RE.simple.test(s.text) || s.text.length < 80) return { tier: 'fast', reason: 'tâche simple → modèle rapide' };
+  if (s.role === 'browser' || RE.browser.test(s.text))
+    return { tier: 'balanced', reason: 'tâche navigateur → modèle fiable en tool calling' };
+  if (RE.heavy.test(s.text))
+    return { tier: 'powerful', reason: 'travail de grande ampleur → modèle puissant' };
+  if (RE.reasoning.test(s.text) && s.text.length > 60)
+    return { tier: 'reasoning', reason: 'analyse complexe → modèle de raisonnement' };
+  if (RE.simple.test(s.text) || s.text.length < 80)
+    return { tier: 'fast', reason: 'tâche simple → modèle rapide' };
   return { tier: 'balanced', reason: 'tâche générale → modèle équilibré' };
 }
 
 export const TIER_CRITERIA: Record<Tier, string> = {
   fast: 'Simple, short or low-stakes request: a quick question, small fix, rename, translation, summary, formatting, short text.',
-  balanced: 'Typical development, writing or analysis task that needs tools (reading/editing files, running commands, browsing) but no unusual depth.',
-  powerful: 'Large or ambitious work: building a complete application, multi-file refactoring, architecture migration, long autonomous multi-step tasks.',
-  reasoning: 'Hard problem needing deep reasoning: tricky debugging/root cause analysis, complex algorithms, rigorous analysis of trade-offs, financial or risk computations, strategy.',
+  balanced:
+    'Typical development, writing or analysis task that needs tools (reading/editing files, running commands, browsing) but no unusual depth.',
+  powerful:
+    'Large or ambitious work: building a complete application, multi-file refactoring, architecture migration, long autonomous multi-step tasks.',
+  reasoning:
+    'Hard problem needing deep reasoning: tricky debugging/root cause analysis, complex algorithms, rigorous analysis of trade-offs, financial or risk computations, strategy.',
   vision: 'The task requires looking at images, screenshots, designs, photos or visual layouts.',
 };
 
@@ -46,18 +57,32 @@ export async function classifyWithJev(
   try {
     const r = await jev.evaluate(
       { request: s.text.slice(0, 6000), has_image_attachments: s.hasImages, agent_role: s.role },
-      { tier: { type: 'choice', instructions: 'Which kind of AI model best fits the `request` (speed, depth of reasoning, vision)?', criteria: TIER_CRITERIA } },
+      {
+        tier: {
+          type: 'choice',
+          instructions: 'Which kind of AI model best fits the `request` (speed, depth of reasoning, vision)?',
+          criteria: TIER_CRITERIA,
+        },
+      },
     );
     const a = r.answers.tier;
     if (!a || a.type !== 'choice' || !(a.choice in TIER_CRITERIA)) return null;
-    return { tier: a.choice as Tier, reason: `Jev → ${a.choice} (confiance ${Math.round(a.confidence * 100)} %)`, confidence: a.confidence };
+    return {
+      tier: a.choice as Tier,
+      reason: `Jev → ${a.choice} (confiance ${Math.round(a.confidence * 100)} %)`,
+      confidence: a.confidence,
+    };
   } catch {
     return null;
   }
 }
 
 /** Newest model of the first family pattern that matches the live catalog. */
-export function pickFromTier(models: ModelInfo[], patterns: string[], needs: { tools?: boolean; vision?: boolean } = {}): ModelInfo | undefined {
+export function pickFromTier(
+  models: ModelInfo[],
+  patterns: string[],
+  needs: { tools?: boolean; vision?: boolean } = {},
+): ModelInfo | undefined {
   const usable = models.filter(
     (m) =>
       !m.id.startsWith('~') &&
@@ -93,13 +118,23 @@ export function selectModel(opts: {
   /** Pre-computed classification (e.g. from Jev). */
   classified?: { tier: Tier; reason: string } | null;
 }): Selection {
-  if (opts.requested && opts.requested !== 'auto') return { model: opts.requested, reason: 'modèle choisi', auto: false };
+  if (opts.requested && opts.requested !== 'auto')
+    return { model: opts.requested, reason: 'modèle choisi', auto: false };
   const { tier, reason } = opts.classified ?? classifyTask(opts.signals);
   const order: Tier[] = [tier, 'balanced', 'fast', 'powerful'];
   for (const t of order) {
     const m = pickFromTier(opts.models, opts.tiers[t], { tools: true, vision: t === 'vision' });
-    if (m) return { model: m.id, reason: t === tier ? reason : `${reason} (repli sur le palier ${t})`, auto: true };
+    if (m)
+      return {
+        model: m.id,
+        reason: t === tier ? reason : `${reason} (repli sur le palier ${t})`,
+        auto: true,
+      };
   }
   const anyTools = opts.models.filter((m) => m.capabilities.tools).sort((a, b) => b.created - a.created)[0];
-  return { model: anyTools?.id ?? opts.fallbackDefault, reason: `${reason} (catalogue indisponible)`, auto: true };
+  return {
+    model: anyTools?.id ?? opts.fallbackDefault,
+    reason: `${reason} (catalogue indisponible)`,
+    auto: true,
+  };
 }

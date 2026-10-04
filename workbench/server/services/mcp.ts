@@ -7,7 +7,11 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import type { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
-import type { OAuthClientInformationMixed, OAuthClientMetadata, OAuthTokens } from '@modelcontextprotocol/sdk/shared/auth.js';
+import type {
+  OAuthClientInformationMixed,
+  OAuthClientMetadata,
+  OAuthTokens,
+} from '@modelcontextprotocol/sdk/shared/auth.js';
 import { z } from 'zod';
 import { httpFetch } from '../llm/http';
 import { registerSecret, scrubbedEnv } from '../security/redact';
@@ -68,16 +72,19 @@ export const MCP_PRESETS: McpPreset[] = [
     id: 'blender',
     name: 'Blender',
     category: 'Création',
-    description: 'Pilote Blender (scènes 3D, objets, matériaux, rendu, assets Poly Haven/Sketchfab, scripts Python).',
+    description:
+      'Pilote Blender (scènes 3D, objets, matériaux, rendu, assets Poly Haven/Sketchfab, scripts Python).',
     config: { command: 'uvx', args: ['blender-mcp'], enabled: true, preset: 'blender' },
-    requires: "Blender ouvert avec l'add-on « Blender MCP » activé (addon.py du projet ahujasid/blender-mcp) et uv installé.",
+    requires:
+      "Blender ouvert avec l'add-on « Blender MCP » activé (addon.py du projet ahujasid/blender-mcp) et uv installé.",
     free: true,
   },
   {
     id: 'canva',
     name: 'Canva',
     category: 'Création',
-    description: 'Crée et modifie des designs Canva, recherche dans vos designs, exporte (compte Canva, autorisation OAuth).',
+    description:
+      'Crée et modifie des designs Canva, recherche dans vos designs, exporte (compte Canva, autorisation OAuth).',
     config: { type: 'http', url: 'https://mcp.canva.com/mcp', enabled: true, preset: 'canva' },
     requires: 'Compte Canva : une page d’autorisation s’ouvre à la première connexion.',
     free: false,
@@ -86,16 +93,18 @@ export const MCP_PRESETS: McpPreset[] = [
     id: 'figma',
     name: 'Figma (Dev Mode local)',
     category: 'Création',
-    description: "Lit les maquettes Figma sélectionnées (code, variables, captures) via l'application de bureau.",
+    description:
+      "Lit les maquettes Figma sélectionnées (code, variables, captures) via l'application de bureau.",
     config: { type: 'http', url: 'http://127.0.0.1:3845/mcp', enabled: true, preset: 'figma' },
-    requires: "Application Figma de bureau, Dev Mode → « Enable desktop MCP server ».",
+    requires: 'Application Figma de bureau, Dev Mode → « Enable desktop MCP server ».',
     free: false,
   },
   {
     id: 'context7',
     name: 'Context7 (docs à jour)',
     category: 'Gratuit',
-    description: 'Documentation officielle et exemples à jour de milliers de bibliothèques (évite le code obsolète).',
+    description:
+      'Documentation officielle et exemples à jour de milliers de bibliothèques (évite le code obsolète).',
     config: { type: 'http', url: 'https://mcp.context7.com/mcp', enabled: true, preset: 'context7' },
     free: true,
   },
@@ -139,7 +148,12 @@ export const MCP_PRESETS: McpPreset[] = [
     name: 'Memory (graphe de connaissances)',
     category: 'Gratuit',
     description: 'Mémoire persistante sous forme de graphe (entités, relations, observations).',
-    config: { command: 'npx', args: ['-y', '@modelcontextprotocol/server-memory'], enabled: true, preset: 'memory' },
+    config: {
+      command: 'npx',
+      args: ['-y', '@modelcontextprotocol/server-memory'],
+      enabled: true,
+      preset: 'memory',
+    },
     free: true,
   },
   {
@@ -147,7 +161,12 @@ export const MCP_PRESETS: McpPreset[] = [
     name: 'Sequential Thinking',
     category: 'Gratuit',
     description: 'Outil de réflexion structurée étape par étape pour les problèmes complexes.',
-    config: { command: 'npx', args: ['-y', '@modelcontextprotocol/server-sequential-thinking'], enabled: true, preset: 'sequential-thinking' },
+    config: {
+      command: 'npx',
+      args: ['-y', '@modelcontextprotocol/server-sequential-thinking'],
+      enabled: true,
+      preset: 'sequential-thinking',
+    },
     free: true,
   },
   {
@@ -155,7 +174,12 @@ export const MCP_PRESETS: McpPreset[] = [
     name: 'Playwright MCP',
     category: 'Développement',
     description: 'Automatisation navigateur par arbre d’accessibilité (complète le navigateur intégré).',
-    config: { command: 'npx', args: ['-y', '@playwright/mcp@latest', '--headless'], enabled: true, preset: 'playwright' },
+    config: {
+      command: 'npx',
+      args: ['-y', '@playwright/mcp@latest', '--headless'],
+      enabled: true,
+      preset: 'playwright',
+    },
     free: true,
   },
   {
@@ -196,7 +220,11 @@ class FileOAuthProvider implements OAuthClientProvider {
   ) {}
   private read(): { client?: OAuthClientInformationMixed; tokens?: OAuthTokens; verifier?: string } {
     try {
-      return JSON.parse(fs.readFileSync(this.file, 'utf8')) as { client?: OAuthClientInformationMixed; tokens?: OAuthTokens; verifier?: string };
+      return JSON.parse(fs.readFileSync(this.file, 'utf8')) as {
+        client?: OAuthClientInformationMixed;
+        tokens?: OAuthTokens;
+        verifier?: string;
+      };
     } catch {
       return {};
     }
@@ -209,7 +237,13 @@ class FileOAuthProvider implements OAuthClientProvider {
     return this.redirect;
   }
   get clientMetadata(): OAuthClientMetadata {
-    return { client_name: 'OpenRouter AI Workbench', redirect_uris: [this.redirect], grant_types: ['authorization_code', 'refresh_token'], response_types: ['code'], token_endpoint_auth_method: 'none' };
+    return {
+      client_name: 'OpenRouter AI Workbench',
+      redirect_uris: [this.redirect],
+      grant_types: ['authorization_code', 'refresh_token'],
+      response_types: ['code'],
+      token_endpoint_auth_method: 'none',
+    };
   }
   clientInformation() {
     return this.read().client;
@@ -254,13 +288,12 @@ export class McpManager extends EventEmitter {
   private readonly file: string;
   private readonly authDir: string;
 
-  constructor(
-    private readonly opts: { dataDir: string; callbackBase: () => string; cwd: string },
-  ) {
+  constructor(private readonly opts: { dataDir: string; callbackBase: () => string; cwd: string }) {
     super();
     this.file = path.join(opts.dataDir, 'mcp.json');
     this.authDir = path.join(opts.dataDir, 'mcp-auth');
-    for (const [name, config] of Object.entries(this.readConfig())) this.live.set(name, { config, status: config.enabled ? 'disconnected' : 'disabled', tools: [] });
+    for (const [name, config] of Object.entries(this.readConfig()))
+      this.live.set(name, { config, status: config.enabled ? 'disconnected' : 'disabled', tools: [] });
   }
 
   private readConfig(): Record<string, McpServerConfig> {
@@ -271,7 +304,11 @@ export class McpManager extends EventEmitter {
         const parsed = McpServerSchema.safeParse(cfg);
         if (parsed.success) {
           out[name] = parsed.data;
-          for (const v of [...Object.values(parsed.data.env ?? {}), ...Object.values(parsed.data.headers ?? {})]) registerSecret(v);
+          for (const v of [
+            ...Object.values(parsed.data.env ?? {}),
+            ...Object.values(parsed.data.headers ?? {}),
+          ])
+            registerSecret(v);
         }
       }
       return out;
@@ -295,11 +332,18 @@ export class McpManager extends EventEmitter {
       serverName: l.serverName,
       instructions: l.instructions?.slice(0, 2000),
       toolCount: l.tools.length,
-      tools: l.tools.map((t) => ({ name: t.name, description: t.description.slice(0, 300), readOnly: t.readOnly, destructive: t.destructive })),
+      tools: l.tools.map((t) => ({
+        name: t.name,
+        description: t.description.slice(0, 300),
+        readOnly: t.readOnly,
+        destructive: t.destructive,
+      })),
       config: {
         ...l.config,
         env: l.config.env ? Object.fromEntries(Object.keys(l.config.env).map((k) => [k, '••••'])) : undefined,
-        headers: l.config.headers ? Object.fromEntries(Object.keys(l.config.headers).map((k) => [k, '••••'])) : undefined,
+        headers: l.config.headers
+          ? Object.fromEntries(Object.keys(l.config.headers).map((k) => [k, '••••']))
+          : undefined,
       },
     }));
   }
@@ -311,17 +355,22 @@ export class McpManager extends EventEmitter {
   }
 
   async upsert(name: string, config: McpServerConfig, keepSecrets = true): Promise<void> {
-    if (!/^[\w.-]{1,40}$/.test(name)) throw new BadRequestError('Nom de serveur invalide (lettres, chiffres, - _ .)');
-    if (!config.command && !config.url) throw new BadRequestError('Indiquez une commande (stdio) ou une URL (HTTP)');
+    if (!/^[\w.-]{1,40}$/.test(name))
+      throw new BadRequestError('Nom de serveur invalide (lettres, chiffres, - _ .)');
+    if (!config.command && !config.url)
+      throw new BadRequestError('Indiquez une commande (stdio) ou une URL (HTTP)');
     const prev = this.live.get(name);
     if (prev && keepSecrets) {
       // Masked values coming back from the UI keep their stored secret.
       for (const key of ['env', 'headers'] as const) {
         const next = config[key];
-        if (next) for (const [k, v] of Object.entries(next)) if (v === '••••' && prev.config[key]?.[k]) next[k] = prev.config[key]![k]!;
+        if (next)
+          for (const [k, v] of Object.entries(next))
+            if (v === '••••' && prev.config[key]?.[k]) next[k] = prev.config[key]![k]!;
       }
     }
-    for (const v of [...Object.values(config.env ?? {}), ...Object.values(config.headers ?? {})]) registerSecret(v);
+    for (const v of [...Object.values(config.env ?? {}), ...Object.values(config.headers ?? {})])
+      registerSecret(v);
     await this.disconnect(name).catch(() => undefined);
     this.live.set(name, { config, status: config.enabled ? 'disconnected' : 'disabled', tools: [] });
     await this.persist();
@@ -356,7 +405,10 @@ export class McpManager extends EventEmitter {
       l.error = undefined;
       this.emit('change');
       try {
-        const client = new Client({ name: 'openrouter-ai-workbench', version: '1.0.0' }, { capabilities: {} });
+        const client = new Client(
+          { name: 'openrouter-ai-workbench', version: '1.0.0' },
+          { capabilities: {} },
+        );
         const cfg = l.config;
         const type = cfg.type ?? (cfg.url ? 'http' : 'stdio');
         if (type === 'stdio') {
@@ -373,18 +425,37 @@ export class McpManager extends EventEmitter {
           });
           l.transport = transport;
           try {
-            await withTimeout(client.connect(transport), 120_000, 'Délai dépassé au démarrage du serveur MCP');
+            await withTimeout(
+              client.connect(transport),
+              120_000,
+              'Délai dépassé au démarrage du serveur MCP',
+            );
           } catch (err) {
-            throw new Error(`${(err as Error).message}${stderr ? `\n${stderr.trim().split('\n').slice(-6).join('\n')}` : ''}`);
+            throw new Error(
+              `${(err as Error).message}${stderr ? `\n${stderr.trim().split('\n').slice(-6).join('\n')}` : ''}`,
+              { cause: err },
+            );
           }
         } else {
           const url = new URL(cfg.url!);
-          const provider = new FileOAuthProvider(path.join(this.authDir, `${safeName(name)}.json`), `${this.opts.callbackBase()}/api/mcp/oauth/callback?server=${encodeURIComponent(name)}`, (authUrl) => {
-            l.authUrl = authUrl.toString();
-          });
-          const fetchLike = ((input: string | URL, init?: RequestInit) => httpFetch(String(input), init as Parameters<typeof httpFetch>[1])) as unknown as typeof fetch;
+          const provider = new FileOAuthProvider(
+            path.join(this.authDir, `${safeName(name)}.json`),
+            `${this.opts.callbackBase()}/api/mcp/oauth/callback?server=${encodeURIComponent(name)}`,
+            (authUrl) => {
+              l.authUrl = authUrl.toString();
+            },
+          );
+          const fetchLike = ((input: string | URL, init?: RequestInit) =>
+            httpFetch(String(input), init as Parameters<typeof httpFetch>[1])) as unknown as typeof fetch;
           const requestInit = cfg.headers ? { headers: cfg.headers } : undefined;
-          const transport = type === 'sse' ? new SSEClientTransport(url, { authProvider: provider, requestInit, fetch: fetchLike }) : new StreamableHTTPClientTransport(url, { authProvider: provider, requestInit, fetch: fetchLike });
+          const transport =
+            type === 'sse'
+              ? new SSEClientTransport(url, { authProvider: provider, requestInit, fetch: fetchLike })
+              : new StreamableHTTPClientTransport(url, {
+                  authProvider: provider,
+                  requestInit,
+                  fetch: fetchLike,
+                });
           l.transport = transport;
           try {
             await withTimeout(client.connect(transport), 60_000, 'Délai dépassé');
@@ -443,7 +514,8 @@ export class McpManager extends EventEmitter {
   async finishAuth(name: string, code: string): Promise<void> {
     const l = this.get(name);
     const t = l.transport;
-    if (!(t instanceof StreamableHTTPClientTransport) && !(t instanceof SSEClientTransport)) throw new BadRequestError('No pending authorisation');
+    if (!(t instanceof StreamableHTTPClientTransport) && !(t instanceof SSEClientTransport))
+      throw new BadRequestError('No pending authorisation');
     await t.finishAuth(code);
     l.transport = undefined;
     l.authUrl = undefined;
@@ -466,7 +538,9 @@ export class McpManager extends EventEmitter {
   /** Connects enabled servers that are not connected yet (best effort, in parallel). */
   async ensureConnected(): Promise<void> {
     await Promise.all(
-      [...this.live.entries()].filter(([, l]) => l.config.enabled && (l.status === 'disconnected')).map(([n]) => this.connect(n).catch(() => undefined)),
+      [...this.live.entries()]
+        .filter(([, l]) => l.config.enabled && l.status === 'disconnected')
+        .map(([n]) => this.connect(n).catch(() => undefined)),
     );
   }
 
@@ -475,7 +549,14 @@ export class McpManager extends EventEmitter {
   }
 
   connectedServers(): { name: string; instructions?: string; tools: number; description?: string }[] {
-    return [...this.live.entries()].filter(([, l]) => l.status === 'connected').map(([name, l]) => ({ name, instructions: l.instructions, tools: l.tools.length, description: l.config.description }));
+    return [...this.live.entries()]
+      .filter(([, l]) => l.status === 'connected')
+      .map(([name, l]) => ({
+        name,
+        instructions: l.instructions,
+        tools: l.tools.length,
+        description: l.config.description,
+      }));
   }
 
   isAutoApproved(server: string, tool: string): boolean {
@@ -486,7 +567,10 @@ export class McpManager extends EventEmitter {
   async callTool(server: string, tool: string, args: Record<string, unknown>, signal?: AbortSignal) {
     const l = this.get(server);
     if (l.status !== 'connected' || !l.client) await this.connect(server);
-    if (!l.client) throw new Error(`Serveur MCP « ${server} » non connecté (${l.status}${l.error ? ` : ${l.error}` : ''})`);
+    if (!l.client)
+      throw new Error(
+        `Serveur MCP « ${server} » non connecté (${l.status}${l.error ? ` : ${l.error}` : ''})`,
+      );
     return l.client.callTool({ name: tool, arguments: args }, undefined, { signal, timeout: 300_000 });
   }
 
@@ -497,5 +581,8 @@ export class McpManager extends EventEmitter {
 
 function withTimeout<T>(p: Promise<T>, ms: number, message: string): Promise<T> {
   let t: NodeJS.Timeout;
-  return Promise.race([p, new Promise<T>((_, reject) => (t = setTimeout(() => reject(new Error(message)), ms)))]).finally(() => clearTimeout(t));
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) => (t = setTimeout(() => reject(new Error(message)), ms))),
+  ]).finally(() => clearTimeout(t));
 }

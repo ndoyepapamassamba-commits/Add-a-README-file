@@ -45,7 +45,13 @@ await shot('i5-data-chart');
 // 4. Chat with approval (NORMAL mode)
 await nav('Chat');
 const projects = await (await fetch(`${base}/api/projects`, { headers: H })).json();
-const s = await (await fetch(`${base}/api/sessions`, { method: 'POST', headers: H, body: JSON.stringify({ projectId: projects[0].id, model, permissionMode: 'normal' }) })).json();
+const s = await (
+  await fetch(`${base}/api/sessions`, {
+    method: 'POST',
+    headers: H,
+    body: JSON.stringify({ projectId: projects[0].id, model, permissionMode: 'normal' }),
+  })
+).json();
 await page.evaluate((id) => {
   const raw = JSON.parse(localStorage.getItem('wb.ui') || '{}');
   raw.sessionId = id;
@@ -53,7 +59,12 @@ await page.evaluate((id) => {
 }, s.id);
 await page.reload();
 await page.waitForSelector('textarea', { timeout: 20000 });
-await page.locator('textarea').first().fill('Crée un fichier notes/hello.txt contenant exactement « bonjour Dakar », puis affiche son contenu avec la commande cat.');
+await page
+  .locator('textarea')
+  .first()
+  .fill(
+    'Crée un fichier notes/hello.txt contenant exactement « bonjour Dakar », puis affiche son contenu avec la commande cat.',
+  );
 await page.keyboard.press('Enter');
 const approve = page.getByRole('button', { name: /Oui$/ }).first();
 await approve.waitFor({ timeout: 120000 });

@@ -21,7 +21,10 @@ const PRECISE_PATTERNS: [RegExp, string][] = [
 // Broad key=value detection. Only used for logs and audit: applying it to
 // source code would corrupt files the agent edits.
 const LOG_PATTERNS: [RegExp, string][] = [
-  [/((?:api[_-]?key|secret|password|passwd|authorization|bearer)["']?\s*[:=]\s*["']?(?:Bearer\s+)?)([^\s"',;]{8,})/gi, '$1[REDACTED]'],
+  [
+    /((?:api[_-]?key|secret|password|passwd|authorization|bearer)["']?\s*[:=]\s*["']?(?:Bearer\s+)?)([^\s"',;]{8,})/gi,
+    '$1[REDACTED]',
+  ],
 ];
 
 const SECRET_ENV_NAME = /(KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|PRIVATE)/i;
@@ -87,7 +90,8 @@ export function scrubbedEnv(extra: Record<string, string> = {}): NodeJS.ProcessE
   const env: NodeJS.ProcessEnv = {};
   for (const [name, value] of Object.entries(process.env)) {
     if (value === undefined) continue;
-    if (SECRET_ENV_NAME.test(name) && !/^(NODE_EXTRA_CA_CERTS|SSL_CERT_FILE|REQUESTS_CA_BUNDLE)$/.test(name)) continue;
+    if (SECRET_ENV_NAME.test(name) && !/^(NODE_EXTRA_CA_CERTS|SSL_CERT_FILE|REQUESTS_CA_BUNDLE)$/.test(name))
+      continue;
     if (name.startsWith('WORKBENCH_') || name.startsWith('OPENROUTER_')) continue;
     env[name] = value;
   }
