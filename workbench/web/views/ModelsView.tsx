@@ -9,6 +9,7 @@ import { Badge, Button, Dropdown, Input, Select, Toggle } from '../components/ui
 import { BenchmarkLab } from '../components/BenchmarkLab';
 import { api } from '../lib/api';
 import { setIntelData, type IntelData } from '../../server/llm/modelIntel';
+import type { LeaderboardMap } from '../../server/llm/routing';
 
 type SortKey = 'recommended' | 'newest' | 'price_in' | 'price_out' | 'context';
 
@@ -18,6 +19,12 @@ export function ModelsView() {
   const settings = useApp((s) => s.settings);
   const save = useApp((s) => s.saveSettings);
   const [, setSynced] = useState(0);
+  const [board, setBoard] = useState<LeaderboardMap>({});
+  useEffect(() => {
+    void api<{ board: LeaderboardMap }>('/api/brain')
+      .then((b) => setBoard(b.board))
+      .catch(() => undefined);
+  }, []);
   useEffect(() => {
     // The server holds the freshest scores (refreshed without CORS limits).
     void api<IntelData>('/api/models/intel')
@@ -37,6 +44,7 @@ export function ModelsView() {
       <BenchmarkLab
         models={models}
         tiers={settings.autoTiers}
+        board={board}
         refreshIntel={() => api<IntelData>('/api/models/intel', { query: { refresh: '1' } })}
         onUse={(id, role) => void save(role === 'default' ? { defaultModel: id } : { fallbackModel: id })}
       />

@@ -6,6 +6,7 @@ import { openDatabase, type DB } from '../db/database';
 import { Repo } from '../db/repo';
 import { ModelCatalog } from '../llm/catalog';
 import { IntelSync } from '../llm/intelSync';
+import { Brain } from './brain';
 import { httpFetch } from '../llm/http';
 import { OpenRouterProvider } from '../llm/openrouter';
 import { LLMService } from '../llm/service';
@@ -41,6 +42,7 @@ export interface Services {
   provider: LLMProvider;
   catalog: ModelCatalog;
   intel: IntelSync;
+  brain: Brain;
   llm: LLMService;
   skills: SkillRegistry;
   mcp: McpManager;
@@ -103,6 +105,7 @@ export function createServices(config: AppConfig, overrides: { provider?: LLMPro
     provider,
     catalog,
     intel,
+    brain: new Brain(path.join(config.dataDir, 'brain')),
     llm,
     mcp: new McpManager({
       dataDir: config.dataDir,

@@ -58,6 +58,14 @@ export type Item =
     }
   | { kind: 'pipeline'; id: string; current: string; done: string[] }
   | {
+      kind: 'intel';
+      id: string;
+      title: string;
+      tone: 'info' | 'warn' | 'ok' | 'err';
+      lines: string[];
+      detail?: string;
+    }
+  | {
       kind: 'mission';
       id: string;
       report: MissionReportPayload;
@@ -361,6 +369,9 @@ export function applyEvent(view: RunView, e: AgentEvent, seq: number): RunView {
         id: nid(),
         text: `Contexte compacté (${e.removedMessages} messages résumés)`,
       });
+      break;
+    case 'intel':
+      pushItem({ kind: 'intel', id: nid(), title: e.title, tone: e.tone, lines: e.lines, detail: e.detail });
       break;
     case 'error':
       v.items = [

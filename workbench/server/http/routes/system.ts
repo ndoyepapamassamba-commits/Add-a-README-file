@@ -88,6 +88,32 @@ export function systemRoutes(app: FastifyInstance, ctx: AppContext): void {
     return intelData();
   });
 
+  // Intelligence Engine memory: ledger summary, manual, personal leaderboard.
+  app.get('/api/brain', async () => {
+    const b = s.brain;
+    return {
+      missions: b.ledger.entries.length,
+      passed: b.ledger.entries.filter((e) => e.verdict === 'PASSED').length,
+      recent: b.ledger.entries
+        .slice(-10)
+        .reverse()
+        .map((e) => ({
+          at: e.at,
+          goal: e.goal,
+          verdict: e.verdict,
+          model: e.model,
+          tier: e.tier,
+          cost: e.cost,
+        })),
+      manual: b.manual,
+      board: b.board,
+    };
+  });
+  app.delete('/api/brain/manual/:id', async (req) => {
+    s.brain.removeRule((req.params as { id: string }).id);
+    return { ok: true };
+  });
+
   app.get('/api/provider/status', async (req) => {
     const force = (req.query as { force?: string }).force === '1';
     if (!force && keyStatusCache && Date.now() - keyStatusCache.at < 30_000) return keyStatusCache.value;

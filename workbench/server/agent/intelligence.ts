@@ -1104,7 +1104,11 @@ export function simulateDecision(d: DecisionInput): string {
     }
   }
   const fmt = (n: number) =>
-    Math.abs(n) >= 1000 ? Math.round(n).toLocaleString('fr-FR').replace(/[\u202f\u00a0]/g, ' ') : n.toFixed(2);
+    Math.abs(n) >= 1000
+      ? Math.round(n)
+          .toLocaleString('fr-FR')
+          .replace(/[\u202f\u00a0]/g, ' ')
+      : n.toFixed(2);
   return [
     `Formule : ${d.formula} (${d.goal === 'min' ? 'minimiser' : 'maximiser'})`,
     `| Option | ${scen.map((s) => s.name).join(' | ')} | Espérance | Pire cas |`,

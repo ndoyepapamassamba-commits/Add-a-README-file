@@ -122,6 +122,8 @@ export type AgentEvent =
       estimate?: { low: number; high: number } | null;
     }
   | { type: 'mission_stage'; stage: string; note?: string }
+  /** Intelligence Engine: strategy, shadow alert, evidence check, red team, learning. */
+  | { type: 'intel'; title: string; tone: 'info' | 'warn' | 'ok' | 'err'; lines: string[]; detail?: string }
   | {
       type: 'mission_report';
       report: MissionReportPayload;

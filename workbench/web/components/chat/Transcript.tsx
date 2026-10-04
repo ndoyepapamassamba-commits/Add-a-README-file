@@ -627,6 +627,35 @@ function Items({ items, runId }: { items: Item[]; runId: string }) {
                 — {it.text} —
               </div>
             );
+          case 'intel':
+            return (
+              <div
+                key={it.id}
+                className={cx(
+                  'wb-in my-1.5 rounded-lg border px-3 py-1.5 text-[12.5px]',
+                  it.tone === 'err'
+                    ? 'border-err/40 bg-err/8 text-err'
+                    : it.tone === 'warn'
+                      ? 'border-warn/40 bg-warn/8 text-warn'
+                      : it.tone === 'ok'
+                        ? 'border-ok/30 bg-ok/5 text-ok'
+                        : 'border-info/30 bg-info/5 text-info',
+                )}
+              >
+                <div className="font-medium">◆ {it.title}</div>
+                {it.lines.map((l, i) => (
+                  <div key={i} className="text-[12px] text-muted">
+                    • {l}
+                  </div>
+                ))}
+                {it.detail && (
+                  <details className="mt-1 text-[12px] text-muted">
+                    <summary className="cursor-pointer text-faint">Détail</summary>
+                    <pre className="whitespace-pre-wrap">{it.detail}</pre>
+                  </details>
+                )}
+              </div>
+            );
           case 'error':
             return (
               <div

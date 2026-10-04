@@ -19,10 +19,29 @@ import { LLMError, type ChatMessage, type ToolCall } from '../llm/types';
 import { BudgetExceededError } from '../llm/service';
 import { classifyWithJev, pickFromTier, selectModel } from '../llm/router';
 import {
+  ADVERSARIAL_TASK,
+  ENGINE_DOCTRINE,
+  ShadowMonitor,
+  detectRules,
+  manualPrompt,
+  parseChallenge,
+  planStrategy,
+  regressionSuite,
+  shadowMessage,
+  similarMissions,
+  strategyPrompt,
+  taskDna,
+  unsupportedNumbers,
+  type LedgerEntry,
+  type ShadowAlert,
+  type TaskDna,
+} from './intelligence';
+import {
   FAMILY_TIER,
+  TIER_LABEL,
   analyzeTask,
   recordHealth,
-  recordOutcome,
+  recordTypedOutcome,
   routeModel,
   type HealthMap,
   type LeaderboardMap,
@@ -149,8 +168,15 @@ export class AgentOrchestrator extends EventEmitter {
   private approvalIndex = new Map<string, string>();
   /** Observed model reliability (drives AUTO routing away from failing models). */
   health: HealthMap = {};
-  /** Personal leaderboard: missions won / lost per model. */
-  board: LeaderboardMap = {};
+  /** Personal leaderboard: missions won / lost per model (and per task type), persisted. */
+  get board(): LeaderboardMap {
+    return this.s.brain.board;
+  }
+  set board(b: LeaderboardMap) {
+    this.s.brain.setBoard(b);
+  }
+  /** Specialists delegated to by each top-level run (learning). */
+  private teams = new Map<string, Set<string>>();
 
   constructor(private readonly s: Services) {
     super();
@@ -421,6 +447,10 @@ export class AgentOrchestrator extends EventEmitter {
     let finalText = '';
     let status: RunStatus = 'completed';
     let errorMessage: string | null = null;
+    let shadowRef: ShadowMonitor | null = null;
+    let stepsDone = 0;
+    let learning: { dna: TaskDna; tier: string; mission: boolean; report: MissionReport | null } | null =
+      null;
 
     this.emitEvent(st, {
       type: 'run_started',
@@ -496,6 +526,39 @@ export class AgentOrchestrator extends EventEmitter {
         historyTokens: estimateTokens(history),
         mission,
       });
+      // MASSAMBA Intelligence Engine: Task DNA → Strategy (learnt from the ledger).
+      const top = st.depth === 0 && !opts.ephemeral;
+      const dna = taskDna(input.text, input.attachments ?? [], profile);
+      const strategy = top ? planStrategy(dna, profile, s.brain.ledger, { mission }) : null;
+      const learnt = Boolean(strategy && /appris|critique|exploration/.test(strategy.tierReason));
+      if (strategy && !pref.tier) profile.tier = strategy.tier;
+      if (top) learning = { dna, tier: profile.tier, mission, report: null };
+      if (top) {
+        const added = s.brain.addRules(
+          detectRules(input.text).map((r) => ({ ...r, source: 'auto' as const })),
+        );
+        if (added.length)
+          this.emitEvent(st, {
+            type: 'intel',
+            title: 'Manuel personnel : règle mémorisée',
+            tone: 'ok',
+            lines: added.map((r) => r.rule),
+          });
+      }
+      if (strategy)
+        this.emitEvent(st, {
+          type: 'intel',
+          title: `Stratégie — ${TIER_LABEL[strategy.tier]} · criticité ${dna.criticality}`,
+          tone: strategy.explore ? 'warn' : 'info',
+          lines: [
+            `ADN : ${dna.type}, complexité ${Math.round(dna.complexity * 100)} %${dna.risks.length ? `, risques ${dna.risks.join(', ')}` : ''}${dna.outputs.length ? `, livrables ${dna.outputs.join(', ')}` : ''}`,
+            `Palier : ${strategy.tierReason}`,
+            `Vérifications : ${[strategy.verify.qa && 'QA', strategy.verify.evidence && 'preuves des chiffres', strategy.verify.adversarial && 'red team', strategy.verify.judge && 'juge final', 'shadow'].filter(Boolean).join(' · ')}`,
+            ...(strategy.team.length ? [`Équipe : ${strategy.team.join(' → ')}`] : []),
+            `Mémoire : ${similarMissions(s.brain.ledger, dna).length} mission(s) similaire(s), ${strategy.pitfalls.length} piège(s) connu(s)`,
+          ],
+        });
+      if (top) this.teams.set(st.id, new Set());
       let routedFallbacks: string[] = [];
       let routed: ReturnType<typeof routeModel> = null;
       if (sel.auto) {
@@ -505,7 +568,7 @@ export class AgentOrchestrator extends EventEmitter {
           tiers,
           pref.tier
             ? { ...profile, tier: FAMILY_TIER[pref.tier] }
-            : useJev
+            : useJev && !learnt
               ? { ...profile, tier: FAMILY_TIER[classified.tier] }
               : profile,
           this.health,
@@ -687,6 +750,9 @@ export class AgentOrchestrator extends EventEmitter {
       });
       const systemPrompt = [
         system,
+        ENGINE_DOCTRINE,
+        manualPrompt(s.brain.manual),
+        strategy ? strategyPrompt(dna, strategy) : '',
         MEMORY_INSTRUCTIONS,
         mission
           ? `${MISSION_PROTOCOL}\n\nTask profile: ${profile.reasons.join(', ')}.${profile.team.length ? ` Recommended specialists, in order: ${profile.team.join(' → ')}.` : ''}`
@@ -721,6 +787,35 @@ export class AgentOrchestrator extends EventEmitter {
       }
       const userMsg: ChatMessage = { role: 'user', content: userContent.content };
       const messages: ChatMessage[] = [{ role: 'system', content: systemPrompt }, ...history, userMsg];
+      const shadow =
+        top && session.permissionMode !== 'safe'
+          ? new ShadowMonitor(input.text, {
+              writeTask: profile.type !== 'chat' && profile.type !== 'research',
+              regressionPaths: new Set(regressionSuite(s.brain.ledger).flatMap((c) => c.files)),
+            })
+          : null;
+      shadowRef = shadow;
+      const evidence: string[] = [
+        input.text,
+        ...history
+          .filter((m) => m.role === 'user' || m.role === 'tool')
+          .map((m) => (typeof m.content === 'string' ? m.content : JSON.stringify(m.content))),
+      ];
+      let gates = 0;
+      let challenged = 0;
+      const intelAlerts = (alerts: ShadowAlert[]) => {
+        if (alerts.length)
+          this.emitEvent(st, {
+            type: 'intel',
+            title: 'Shadow agent',
+            tone: alerts.some((a) => a.severity === 'critical')
+              ? 'err'
+              : alerts.some((a) => a.severity === 'warn')
+                ? 'warn'
+                : 'info',
+            lines: alerts.map((a) => a.message),
+          });
+      };
       const persist = (m: ChatMessage) => {
         if (!opts.ephemeral) repo.addMessage(st.sessionId, st.id, m.role, m);
       };
@@ -766,6 +861,7 @@ export class AgentOrchestrator extends EventEmitter {
       const maxSteps = appSettings.agent.maxSteps;
       let step = 0;
       for (; step < maxSteps; step++) {
+        stepsDone = step + 1;
         if (st.abort.signal.aborted) throw new LLMError('Cancelled', 499, false, 'cancelled');
         s.llm.checkBudget(st.usage.cost);
 
@@ -903,6 +999,32 @@ export class AgentOrchestrator extends EventEmitter {
               continue;
             }
             st.proposed = { summary: result.content || 'Plan', steps: parseStepsFromText(result.content) };
+          } else if (top && !mission && gates < 2 && (shadow || strategy?.verify.evidence)) {
+            gates++;
+            shadow?.observeFinal(result.content);
+            const alerts = shadow?.take() ?? [];
+            const unsupported = strategy?.verify.evidence ? unsupportedNumbers(result.content, evidence) : [];
+            const notes: string[] = [];
+            if (alerts.length) {
+              intelAlerts(alerts);
+              notes.push(shadowMessage(alerts));
+            }
+            if (unsupported.length) {
+              this.emitEvent(st, {
+                type: 'intel',
+                title: 'Contrôle des preuves : chiffres sans source',
+                tone: 'warn',
+                lines: [`${unsupported.join(' · ')} — n’apparaissent dans aucun résultat d’outil`],
+              });
+              notes.push(
+                `[EVIDENCE CHECK] These figures in your answer appear in no tool result or user message: ${unsupported.join(', ')}. Verify them with a tool and correct them, or mark them explicitly as estimates — then give the final answer again.`,
+              );
+            }
+            if (!notes.length) break;
+            const g: ChatMessage = { role: 'user', content: notes.join('\n\n') };
+            messages.push(g);
+            persist(g);
+            continue;
           } else if (mission && !missionDone && missionNudges < 3) {
             missionNudges++;
             const nudge: ChatMessage = {
@@ -925,9 +1047,33 @@ export class AgentOrchestrator extends EventEmitter {
           appSettings.agent.toolTimeoutSec,
           new Set(toolNames),
         );
-        for (const r of results) {
+        results.forEach((r, k) => {
           messages.push(r.message);
           persist(r.message);
+          const out =
+            typeof r.message.content === 'string' ? r.message.content : JSON.stringify(r.message.content);
+          evidence.push(out.slice(0, 40_000));
+          if (shadow) {
+            const c = toolCalls[k]!;
+            let args: Record<string, unknown> = {};
+            try {
+              args = JSON.parse(c.function.arguments || '{}') as Record<string, unknown>;
+            } catch {
+              /* invalid arguments already reported */
+            }
+            shadow.observeTool(
+              c.function.name.replace(/__/g, '.'),
+              args,
+              !/^(Error|Denied|Tool error|Permission denied)/i.test(out),
+              out,
+            );
+          }
+        });
+        if (shadow) {
+          const alerts = shadow.take();
+          intelAlerts(alerts);
+          if (alerts.some((a) => a.severity !== 'info') || alerts.length >= 2)
+            messages.push({ role: 'user', content: shadowMessage(alerts) });
         }
 
         // Plan approval gate
@@ -977,11 +1123,12 @@ export class AgentOrchestrator extends EventEmitter {
           const report: MissionReport = pendingReport;
           pendingReport = null;
           missionRound++;
+          if (learning) learning.report = report;
           await s.memory
             .recordMission(st.projectId, input.text, report, { model, cost: st.usage.cost })
             .catch(() => undefined);
           if (report.status !== 'PARTIAL')
-            this.board = recordOutcome(this.board, model, report.status === 'PASSED');
+            this.board = recordTypedOutcome(this.board, model, profile.type, report.status === 'PASSED');
           if (report.status !== 'PASSED' && missionRound < 3) {
             this.emitEvent(st, { type: 'mission_report', report, round: missionRound });
             const fix: ChatMessage = {
@@ -991,6 +1138,42 @@ export class AgentOrchestrator extends EventEmitter {
             messages.push(fix);
             persist(fix);
             continue;
+          }
+          if (report.status === 'PASSED' && strategy && st.depth < maxDepth && challenged < 2) {
+            const unsupported = strategy.verify.evidence
+              ? unsupportedNumbers(`${finalText}\n${report.summary}`, evidence)
+              : [];
+            if (strategy.verify.adversarial || unsupported.length) {
+              challenged++;
+              this.emitEvent(st, { type: 'mission_stage', stage: 'review', note: 'red team' });
+              const ch = await this.delegate(
+                st,
+                'adversarial',
+                ADVERSARIAL_TASK(input.text, report, unsupported),
+                input.effort,
+              );
+              const c = parseChallenge(ch.summary);
+              this.emitEvent(st, {
+                type: 'intel',
+                title: `Red team — confiance ${c.confidence ?? '?'} %`,
+                tone: c.blocking.length ? 'err' : 'ok',
+                lines: [
+                  ...c.blocking.map((b) => `Bloquant : ${b}`),
+                  ...c.minor.slice(0, 4).map((b) => `Mineur : ${b}`),
+                  ...(unsupported.length ? [`Chiffres sans preuve : ${unsupported.join(', ')}`] : []),
+                ],
+                detail: ch.summary.slice(0, 6000),
+              });
+              if (c.blocking.length && missionRound < strategy.maxRounds) {
+                const fix: ChatMessage = {
+                  role: 'user',
+                  content: `The red team found blocking problems:\n${c.blocking.map((b) => `- ${b}`).join('\n')}\n\nFix them, re-verify with tools, then call mission.report again.`,
+                };
+                messages.push(fix);
+                persist(fix);
+                continue;
+              }
+            }
           }
           if (
             report.status === 'PASSED' &&
@@ -1065,6 +1248,44 @@ export class AgentOrchestrator extends EventEmitter {
         usage: st.usage,
         durationMs,
       });
+      // LEARNING: every top-level run feeds the mission ledger.
+      if (learning) {
+        const sh = shadowRef as ShadowMonitor | null;
+        const lr = learning as { dna: TaskDna; tier: string; mission: boolean; report: MissionReport | null };
+        const verdict: LedgerEntry['verdict'] = lr.report
+          ? lr.report.status
+          : status === 'failed'
+            ? 'ERROR'
+            : sh && !sh.didVerify && sh.didWrite
+              ? 'PARTIAL'
+              : 'PASSED';
+        if (status !== 'cancelled')
+          s.brain.record({
+            id: st.id,
+            at: st.startedAt,
+            goal: input.text.slice(0, 400),
+            dna: lr.dna,
+            tier: lr.tier as LedgerEntry['tier'],
+            model: st.model,
+            team: [...(this.teams.get(st.id) ?? [])],
+            verdict,
+            cost: st.usage.cost,
+            durationMs,
+            steps: stepsDone,
+            toolErrors: sh?.toolErrors.slice(-10) ?? [],
+            rounds: 0,
+            files: {
+              read: [...new Set(sh?.read ?? [])].slice(0, 40),
+              written: [...new Set(sh?.written ?? [])].slice(0, 40),
+            },
+            checks: lr.report?.checks ?? [],
+            lessons: [
+              ...(lr.report?.issues ?? []).slice(0, 3),
+              ...(sh?.toolErrors.slice(-2).map((t) => `${t.tool}: ${t.error.slice(0, 100)}`) ?? []),
+            ],
+          });
+        this.teams.delete(st.id);
+      }
       this.active.delete(st.id);
       repo.audit({
         actor: 'agent',
@@ -1084,6 +1305,7 @@ export class AgentOrchestrator extends EventEmitter {
     effort?: EffortSetting,
   ): Promise<{ ok: boolean; summary: string; childRunId: string }> {
     const id = randomUUID();
+    this.teams.get(parent.id)?.add(role);
     if (!ROLES[role] && !(await this.s.skills.getAgent(role))) {
       return {
         ok: false,
