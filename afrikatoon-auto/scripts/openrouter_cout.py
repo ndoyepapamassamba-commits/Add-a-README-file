@@ -72,6 +72,9 @@ def main():
     kling = float(vid["kwaivgi/kling-v3.0-pro"]["duration_seconds_with_audio"])
     s = duree * r
     formules = {
+        "PRESQUE GRATUIT — notre 2D (voix Chatterbox, lip-sync) + 4 plans de réaction Veo 3.1 Lite (run.py --mock 2d-or)": [
+            ("Images : notre bibliothèque + nos rendus 2D", 0.0), ("4 plans Veo 3.1 Lite 720p sans son × 4 s", 4 * 4 * veo_lite_muet),
+            ("Voix Chatterbox locales", 0.0), ("Musique balafon originale locale", 0.0)],
         "ÉCO — Veo 3.1 Lite 720p muet + voix Fish gratuites (bouches non synchronisées)": [
             ("Images clés Seedream 5 Flash", images_eco), ("Vidéo Veo 3.1 Lite 720p sans son", s * veo_lite_muet),
             ("Voix Fish Audio S2.1 Pro Free", 0.0), ("Musique Lyria 3 Clip", musique)],

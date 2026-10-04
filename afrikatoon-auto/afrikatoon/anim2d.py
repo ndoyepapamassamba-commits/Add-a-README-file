@@ -646,12 +646,34 @@ def _subtitles(director: "Director", dest: Path, hook: str) -> Path:
     return dest
 
 
-def make_video(kit: dict, workdir: Path, bg: Path, dest: Path, workers: int = 4) -> Path:
-    """Vidéo 2D complète : images (en parallèle), son mixé, sous-titres mot à mot."""
+def overlay_inserts(video: Path, inserts: list, dest: Path) -> Path:
+    """Remplace des passages de la vidéo 2D par des plans animés (inserts = [(début, durée, clip.mp4)]),
+    avec un fondu de 0,12 s ; le son de la vidéo 2D est conservé tel quel."""
+    if not inserts:
+        return video
+    cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", str(video)]
+    chains, last = [], "0:v"
+    for k, (t0, d, clip) in enumerate(inserts, 1):
+        cmd += ["-i", str(clip)]
+        chains.append(f"[{k}:v]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS},"
+                      f"trim=0:{d:.3f},setpts=PTS-STARTPTS+{t0:.3f}/TB,format=yuva420p,"
+                      f"fade=in:st={t0:.3f}:d=0.12:alpha=1,fade=out:st={t0 + d - 0.12:.3f}:d=0.12:alpha=1[i{k}]")
+        chains.append(f"[{last}][i{k}]overlay=eof_action=pass:enable='between(t,{t0:.3f},{t0 + d:.3f})'[o{k}]")
+        last = f"o{k}"
+    cmd += ["-filter_complex", ";".join(chains), "-map", f"[{last}]", "-c:v", "libx264", "-crf", "18",
+            "-preset", "medium", "-pix_fmt", "yuv420p", str(dest)]
+    subprocess.run(cmd, check=True)
+    return dest
+
+
+def make_video(kit: dict, workdir: Path, bg: Path, dest: Path, workers: int = 4, inserts_fn=None) -> Path:
+    """Vidéo 2D complète : images (en parallèle), son mixé, sous-titres mot à mot.
+    inserts_fn(director, workdir) -> [(début, durée, clip)] : plans animés par IA à incruster (optionnel)."""
     global _DIR
     from multiprocessing import get_context
     from . import sound2d
     _DIR = Director(kit, workdir, bg)
+    inserts = inserts_fn(_DIR, workdir) if inserts_fn else []
     n = int(_DIR.total * FPS)
     cuts = [n * k // workers for k in range(workers + 1)]
     parts = [(cuts[k], cuts[k + 1], workdir / f"part2d_{k}.mp4") for k in range(workers)]
@@ -662,6 +684,7 @@ def make_video(kit: dict, workdir: Path, bg: Path, dest: Path, workers: int = 4)
     video = workdir / "video2d.mp4"
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy",
                     str(video)], check=True)
+    video = overlay_inserts(video, inserts, workdir / "video2d_inserts.mp4")
     audio = sound2d.mix(_DIR.total, [(L["wav"], L["start"]) for L in _DIR.lines], _DIR.sfx,
                         workdir / "mix2d.wav", _DIR.music_cuts)
     ass = _subtitles(_DIR, workdir / "subs2d.ass", kit.get("hook_text", ""))
