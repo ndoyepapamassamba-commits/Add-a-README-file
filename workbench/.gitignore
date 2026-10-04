@@ -1,0 +1,21 @@
+# dependencies & builds
+node_modules/
+dist/
+build/
+coverage/
+# runtime data
+data/
+logs/
+*.log
+screenshots/
+workspace/
+.workbench-token
+test-results/
+playwright-report/
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
