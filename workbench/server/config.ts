@@ -25,12 +25,15 @@ const EnvSchema = z.object({
   WEB_DIST: z.string().optional(),
   SKILLS_DIRS: z.string().optional(),
   INCLUDE_CLAUDE_SKILLS: bool.default(true),
+  /** Public base URL of the preview server when behind port forwarding (e.g. Codespaces). */
+  PUBLIC_PREVIEW_URL: z.string().url().optional(),
 });
 
 export type AppConfig = {
   host: string;
   port: number;
   previewPort: number;
+  publicPreviewUrl: string | undefined;
   authToken: string | undefined;
   workspaceRoot: string;
   dataDir: string;
@@ -68,6 +71,7 @@ export function loadConfig(
     host: env.HOST,
     port: env.PORT,
     previewPort: env.PREVIEW_PORT,
+    publicPreviewUrl: (env.PUBLIC_PREVIEW_URL ?? codespaceUrl(env.PREVIEW_PORT))?.replace(/\/$/, ''),
     authToken: env.WORKBENCH_AUTH_TOKEN || undefined,
     workspaceRoot: abs(env.WORKSPACE_ROOT),
     dataDir: abs(env.DATA_DIR),
@@ -92,4 +96,11 @@ export function loadConfig(
 
 export function isLoopbackHost(host: string): boolean {
   return ['127.0.0.1', 'localhost', '::1'].includes(host);
+}
+
+/** Forwarded URL of a port when running in GitHub Codespaces (undefined elsewhere). */
+export function codespaceUrl(port: number): string | undefined {
+  const name = process.env.CODESPACE_NAME;
+  const domain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
+  return name && domain ? `https://${name}-${port}.${domain}` : undefined;
 }

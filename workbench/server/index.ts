@@ -1,5 +1,5 @@
 import { buildApp } from './app';
-import { isLoopbackHost, loadConfig } from './config';
+import { codespaceUrl, isLoopbackHost, loadConfig } from './config';
 import { buildPreviewServer } from './http/preview';
 
 async function main(): Promise<void> {
@@ -16,7 +16,9 @@ async function main(): Promise<void> {
   await app.listen({ host: config.host, port: config.port });
   await preview.listen({ host: config.host, port: config.previewPort });
 
-  const base = `http://${config.host === '0.0.0.0' ? '127.0.0.1' : config.host}:${config.port}`;
+  const base =
+    codespaceUrl(config.port) ??
+    `http://${config.host === '0.0.0.0' ? '127.0.0.1' : config.host}:${config.port}`;
   const keyState = process.env.OPENROUTER_API_KEY ? 'configurée' : 'NON configurée (OPENROUTER_API_KEY)';
   const lines = [
     '',

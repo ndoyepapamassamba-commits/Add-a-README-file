@@ -50,7 +50,7 @@ export function systemRoutes(app: FastifyInstance, ctx: AppContext): void {
       })
       .parse(req.query);
     const host = (req.headers.host ?? `127.0.0.1:${s.config.port}`).replace(/:\d+$/, '');
-    const base = `http://${host}:${s.config.previewPort}`;
+    const base = s.config.publicPreviewUrl ?? `http://${host}:${s.config.previewPort}`;
     if (q.artifactId)
       return {
         url: `${base}/a/${previewTokenFor(ctx.previewToken, `artifact:${q.artifactId}`)}/${q.artifactId}`,

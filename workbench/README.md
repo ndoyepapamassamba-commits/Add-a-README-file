@@ -32,6 +32,16 @@ Au démarrage, le terminal affiche :
 - l'adresse de l'interface **déjà connectée** (`http://127.0.0.1:8787/#token=…`) ;
 - le **jeton d'accès** (aussi enregistré dans `data/.workbench-token`).
 
+### Sans terminal ni installation : GitHub Codespaces
+
+Si votre ordinateur ne permet pas d'ouvrir un terminal ou d'installer Node.js, faites tourner l'agent dans le cloud de GitHub, depuis le navigateur :
+
+1. Sur github.com : **Settings › Codespaces › Secrets › New secret**, nom `OPENROUTER_API_KEY`, valeur = votre clé, et autorisez ce dépôt.
+2. Sur la page du dépôt, choisissez la branche, puis **Code › Codespaces › Create codespace**.
+3. Attendez l'installation (quelques minutes la première fois). Dans l'onglet de terminal ouvert automatiquement, cliquez sur le lien **Interface** (`https://…-8787.app.github.dev/#token=…`).
+
+Le port reste **privé** (seul votre compte GitHub y accède) et le jeton est conservé dans `workbench/data/.workbench-token`. Pensez à arrêter le codespace quand vous avez fini (quota gratuit mensuel limité).
+
 ### Utiliser le fichier HTML local
 
 Ouvrez `dist/openrouter-workbench.html` (double-clic, depuis n'importe quel dossier). Indiquez l'adresse de l'agent (`http://127.0.0.1:8787`) et collez le jeton. Le fichier ne contient **aucune clé** : il ne fait que parler à votre agent local.
@@ -47,16 +57,17 @@ npm run format     # Prettier
 
 ## Configuration (`.env`)
 
-| Variable | Rôle |
-|---|---|
-| `OPENROUTER_API_KEY` | Clé OpenRouter. **Côté serveur uniquement.** Peut aussi être saisie dans *Réglages › Fournisseurs IA* (jamais réaffichée ensuite). |
-| `HOST`, `PORT`, `PREVIEW_PORT` | Écoute (par défaut `127.0.0.1`, `8787`, `8788` pour l'aperçu isolé). |
-| `WORKBENCH_AUTH_TOKEN` | Jeton d'accès fixe (sinon généré). Obligatoire si `HOST` n'est pas une adresse locale. |
-| `WORKSPACE_ROOT`, `DATA_DIR` | Dossier des projets (`./workspace`) et des données (`./data` : SQLite, sessions, skills importés…). |
-| `BRAVE_API_KEY` | Recherche web Brave (sinon recherche via le plugin web d'OpenRouter). |
-| `BROWSER_ENGINE`, `BROWSER_HEADLESS` | Moteur Playwright (`chromium`, `firefox`, `webkit`). |
-| `TYPESAFE_API_KEY` | Active **Jev** (TypeSafe System One) pour le routage AUTO, la détection des skills et l'outil `jev.judge`. |
-| `SKILLS_DIRS`, `INCLUDE_CLAUDE_SKILLS` | Dossiers de skills supplémentaires ; lecture de `~/.claude/skills` et `~/.claude/agents` (activée par défaut). |
+| Variable                               | Rôle                                                                                                                               |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `OPENROUTER_API_KEY`                   | Clé OpenRouter. **Côté serveur uniquement.** Peut aussi être saisie dans _Réglages › Fournisseurs IA_ (jamais réaffichée ensuite). |
+| `HOST`, `PORT`, `PREVIEW_PORT`         | Écoute (par défaut `127.0.0.1`, `8787`, `8788` pour l'aperçu isolé).                                                               |
+| `PUBLIC_PREVIEW_URL`                   | Adresse publique de l'aperçu derrière une redirection de port (détectée automatiquement dans Codespaces).                          |
+| `WORKBENCH_AUTH_TOKEN`                 | Jeton d'accès fixe (sinon généré). Obligatoire si `HOST` n'est pas une adresse locale.                                             |
+| `WORKSPACE_ROOT`, `DATA_DIR`           | Dossier des projets (`./workspace`) et des données (`./data` : SQLite, sessions, skills importés…).                                |
+| `BRAVE_API_KEY`                        | Recherche web Brave (sinon recherche via le plugin web d'OpenRouter).                                                              |
+| `BROWSER_ENGINE`, `BROWSER_HEADLESS`   | Moteur Playwright (`chromium`, `firefox`, `webkit`).                                                                               |
+| `TYPESAFE_API_KEY`                     | Active **Jev** (TypeSafe System One) pour le routage AUTO, la détection des skills et l'outil `jev.judge`.                         |
+| `SKILLS_DIRS`, `INCLUDE_CLAUDE_SKILLS` | Dossiers de skills supplémentaires ; lecture de `~/.claude/skills` et `~/.claude/agents` (activée par défaut).                     |
 
 ## Fonctionnalités
 
