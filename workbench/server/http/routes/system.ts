@@ -7,6 +7,7 @@ import { refreshSecretValues } from '../../security/redact';
 import { toolCatalog } from '../../tools/registry';
 import type { AppContext } from '../context';
 import { HttpError } from '../context';
+import { previewTokenFor } from '../preview';
 
 let keyStatusCache: { at: number; value: unknown } | null = null;
 
@@ -20,7 +21,7 @@ const startOf = (unit: 'day' | 'month') => {
 export function systemRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { services: s } = ctx;
 
-  app.get('/api/status', async (): Promise<ServerStatus & { previewToken: string; models: unknown; budget: unknown }> => ({
+  app.get('/api/status', async (): Promise<ServerStatus & { models: unknown; budget: unknown; jev: unknown; plugins: unknown }> => ({
     version: ctx.version,
     provider: { name: s.provider.name, keyConfigured: Boolean(process.env.OPENROUTER_API_KEY) },
     workspaceRoot: s.workspace.root,
@@ -28,10 +29,23 @@ export function systemRoutes(app: FastifyInstance, ctx: AppContext): void {
     python: s.capabilities.python,
     ripgrep: s.capabilities.ripgrep,
     previewPort: s.config.previewPort,
-    previewToken: ctx.previewToken,
     models: s.catalog.status,
     budget: s.llm.budgetState(),
+    jev: { keyConfigured: s.jev.keyConfigured, available: s.jev.available },
+    plugins: s.mcp.list().map((p) => ({ name: p.name, status: p.status, tools: p.toolCount })),
   }));
+
+  // Capability URLs for the isolated preview server.
+  app.get('/api/preview-url', async (req) => {
+    const q = z.object({ projectId: z.string().optional(), artifactId: z.string().optional(), path: z.string().optional() }).parse(req.query);
+    const host = (req.headers.host ?? `127.0.0.1:${s.config.port}`).replace(/:\d+$/, '');
+    const base = `http://${host}:${s.config.previewPort}`;
+    if (q.artifactId) return { url: `${base}/a/${previewTokenFor(ctx.previewToken, `artifact:${q.artifactId}`)}/${q.artifactId}` };
+    if (!q.projectId) throw new HttpError(400, 'projectId or artifactId required');
+    s.workspace.getProject(q.projectId);
+    const rel = (q.path ?? '').split('/').map(encodeURIComponent).join('/');
+    return { url: `${base}/p/${previewTokenFor(ctx.previewToken, `project:${q.projectId}`)}/${q.projectId}/${rel}` };
+  });
 
   app.get('/api/models', async (req) => {
     const refresh = (req.query as { refresh?: string }).refresh === '1';
@@ -110,7 +124,10 @@ export function systemRoutes(app: FastifyInstance, ctx: AppContext): void {
     return { ok: true };
   });
 
-  app.get('/api/agents', async () => ROLE_LIST.map((r) => ({ id: r.id, label: r.label, description: r.description, tier: r.tier, tools: r.tools })));
+  app.get('/api/agents', async () => [
+    ...ROLE_LIST.map((r) => ({ id: r.id, label: r.label, description: r.description, tier: r.tier, tools: r.tools, custom: false, source: 'builtin', editable: false, skills: [] as string[], model: null })),
+    ...(await s.skills.listAgents()).map((a) => ({ id: a.id, label: a.name, description: a.description, tier: 'balanced', tools: a.tools ?? [], custom: true, source: a.source, editable: a.editable, skills: a.skills, model: a.model })),
+  ]);
   app.get('/api/tools', async () => toolCatalog());
 
   app.get('/api/activity', async (req) => {

@@ -21,6 +21,8 @@ const EnvSchema = z.object({
   BROWSER_HEADLESS: bool.default(true),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   WEB_DIST: z.string().optional(),
+  SKILLS_DIRS: z.string().optional(),
+  INCLUDE_CLAUDE_SKILLS: bool.default(true),
 });
 
 export type AppConfig = {
@@ -39,6 +41,9 @@ export type AppConfig = {
   logLevel: z.infer<typeof EnvSchema>['LOG_LEVEL'];
   webDist: string;
   envFile: string;
+  skillsDirs: string[];
+  includeClaudeSkills: boolean;
+  cwd: string;
 };
 
 /** Loads `.env` (if present) then validates the environment. */
@@ -70,6 +75,9 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof EnvSch
     logLevel: env.LOG_LEVEL,
     webDist: abs(env.WEB_DIST ?? 'dist/web'),
     envFile,
+    skillsDirs: (env.SKILLS_DIRS ?? '').split(path.delimiter).map((d) => d.trim()).filter(Boolean).map(abs),
+    includeClaudeSkills: env.INCLUDE_CLAUDE_SKILLS,
+    cwd,
   };
 }
 

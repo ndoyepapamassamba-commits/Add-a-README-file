@@ -45,6 +45,8 @@ export interface ToolDef<A = unknown> {
   name: string;
   description: string;
   schema: z.ZodType<A>;
+  /** JSON schema sent to the LLM instead of the zod conversion (MCP tools). */
+  jsonSchema?: Record<string, unknown>;
   /** Read-only tools may run in parallel within one agent step. */
   readOnly: boolean;
   assess: (args: A, ctx: ToolContext) => RiskAssessment;

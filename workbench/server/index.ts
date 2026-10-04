@@ -30,6 +30,8 @@ async function main(): Promise<void> {
   process.stdout.write(`${lines.join('\n')}\n`);
 
   void ctx.services.catalog.list().catch((err: Error) => app.log.warn(`model catalog unavailable: ${err.message}`));
+  void ctx.services.jev.check().then((j) => app.log.info(`Jev (TypeSafe): ${j.ok ? `available (${j.model})` : `unavailable — ${j.error}`}`));
+  if (ctx.services.settings.get().mcp.autoConnect) void ctx.services.mcp.ensureConnected();
 
   const shutdown = async (signal: string) => {
     app.log.info(`${signal} received, shutting down`);

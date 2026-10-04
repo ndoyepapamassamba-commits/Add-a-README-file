@@ -17,14 +17,15 @@ import type {
 } from '@shared/types';
 import { LLMError, type ChatMessage, type ToolCall } from '../llm/types';
 import { BudgetExceededError } from '../llm/service';
-import { pickFromTier, selectModel } from '../llm/router';
+import { classifyWithJev, pickFromTier, selectModel } from '../llm/router';
 import { decide } from '../security/permissions';
 import { redactDeep, redactSecrets } from '../security/redact';
 import type { Services } from '../services/container';
 import { ConflictError, NotFoundError } from '../services/workspace';
-import { getTool, toolDefinitions, toLlmName } from '../tools/registry';
+import { ALL_TOOLS, dynamicToolNames, getTool, setDynamicTools, toolDefinitions, toLlmName } from '../tools/registry';
+import { mcpToolDef } from '../tools/mcp';
 import type { ToolContext, ToolOutput } from '../tools/types';
-import { ROLES } from './roles';
+import { ROLES, agentModelPreference, resolveRole } from './roles';
 import {
   PLAN_MODE_INSTRUCTIONS,
   buildSystemPrompt,
@@ -47,7 +48,11 @@ export interface StartRunInput {
   agentMode?: AgentMode;
   ui?: UiContext;
   title?: string;
+  /** Skills explicitly selected for this request. */
+  skills?: string[];
 }
+
+const KNOWN_TOOLS = new Set(ALL_TOOLS.map((t) => t.name));
 
 interface Decision {
   decision: 'approve' | 'deny';
@@ -314,7 +319,7 @@ export class AgentOrchestrator extends EventEmitter {
     const appSettings = s.settings.get();
     const session = repo.getSession(st.sessionId)!;
     const project = s.workspace.getProject(st.projectId);
-    const role = ROLES[st.role];
+    const role = await resolveRole(st.role, s.skills, KNOWN_TOOLS);
     const agentMode: AgentMode = input.agentMode ?? 'chat';
     let finalText = '';
     let status: RunStatus = 'completed';
@@ -339,18 +344,34 @@ export class AgentOrchestrator extends EventEmitter {
       const models = await s.catalog.list().catch(() => s.catalog.all);
       const history = opts.ephemeral ? [] : repairHistory(repo.listMessages(st.sessionId).map((m) => m.content as ChatMessage));
       const hasImages = (input.attachments ?? []).some((p) => /\.(png|jpe?g|gif|webp|bmp)$/i.test(p));
+      // Plugins (MCP): connect enabled servers (bounded wait) and expose their tools.
+      if (appSettings.mcp.autoConnect) {
+        await Promise.race([s.mcp.ensureConnected(), new Promise((r) => setTimeout(r, appSettings.mcp.connectTimeoutSec * 1000))]);
+      }
+      setDynamicTools(s.mcp.tools().map((t) => mcpToolDef(t, (srv, tool) => s.mcp.isAutoApproved(srv, tool))));
+      const jevOn = appSettings.jev.enabled && (await s.jev.check()).ok;
+
+      const pref = agentModelPreference(role.model);
+      const requestedModel = input.model && input.model !== 'auto' ? input.model : (pref.id ?? 'auto');
+      const tiers = pref.tier ? { ...appSettings.autoTiers, balanced: appSettings.autoTiers[pref.tier], fast: appSettings.autoTiers[pref.tier] } : appSettings.autoTiers;
+      const classified =
+        requestedModel === 'auto' && jevOn && appSettings.jev.routing && !pref.tier
+          ? await classifyWithJev(s.jev, { text: input.text, hasImages, role: st.role, historyLength: history.length })
+          : null;
       const sel = selectModel({
-        requested: input.model ?? 'auto',
+        classified: classified && classified.confidence >= 0.35 ? classified : null,
+        requested: requestedModel,
         models,
-        tiers: appSettings.autoTiers,
-        signals: { text: input.text, hasImages, role: st.role, historyLength: history.length },
+        tiers,
+        signals: { text: input.text, hasImages, role: role.custom ? 'general' : st.role, historyLength: history.length },
         fallbackDefault: appSettings.fallbackModel || 'openai/gpt-4o-mini',
       });
+      if (pref.id && requestedModel === pref.id) sel.reason = `modèle défini par l'agent ${role.label}`;
       let model = sel.model;
       st.model = model;
       repo.updateRun(st.id, { model });
       const info = s.catalog.get(model);
-      const effort = input.effort ?? 'auto';
+      const effort = (input.effort && input.effort !== 'auto' ? input.effort : (role.effort as EffortSetting | null)) ?? 'auto';
       this.emitEvent(st, { type: 'model_selected', model, reason: sel.reason, auto: sel.auto, effort: effort === 'auto' ? undefined : effort });
       const vision = info?.capabilities.vision ?? hasImages;
       const contextLimit = info?.contextLength || 128_000;
@@ -362,10 +383,64 @@ export class AgentOrchestrator extends EventEmitter {
       if (session.permissionMode === 'safe') {
         fullTools = fullTools.filter((t) => !['filesystem.write', 'filesystem.edit', 'filesystem.multi_edit', 'filesystem.delete', 'filesystem.move', 'git.commit', 'data.transform', 'memory.add', 'memory.remove', 'artifact.create', 'code.run', 'terminal.kill'].includes(t));
       }
+      if (!jevOn) fullTools = fullTools.filter((t) => t !== 'jev.judge');
+      const mcpNames = dynamicToolNames();
+      if (mcpNames.length && session.permissionMode !== 'safe') {
+        const patterns = role.toolPatterns;
+        const allowed = patterns === null ? mcpNames : mcpNames.filter((n) => patterns.some((p) => p === n || p === 'mcp.*' || (p.endsWith('.*') && n.startsWith(p.slice(0, -1)))));
+        fullTools = [...fullTools, ...allowed];
+      }
       const planningTools = [...fullTools.filter((t) => getTool(t)?.readOnly || t === 'project.analyze'), 'plan.propose'];
       let phase: 'planning' | 'executing' = agentMode === 'plan' ? 'planning' : 'executing';
 
-      // 3. Messages
+      // 3. Skills: pinned (session) + selected (request) + agent's + auto-detected
+      const skillCfg = appSettings.skills;
+      const sessionSkills = opts.ephemeral ? [] : (repo.getSessionSettings(st.sessionId).skills ?? []);
+      const activation = new Map<string, { reason: 'pinned' | 'manual' | 'agent' | 'auto'; matched?: string[] }>();
+      for (const n of input.skills ?? []) activation.set(n, { reason: 'manual' });
+      for (const n of sessionSkills) if (!activation.has(n)) activation.set(n, { reason: 'pinned' });
+      for (const n of role.skills) if (!activation.has(n)) activation.set(n, { reason: 'agent' });
+      if (skillCfg.autoActivate && skillCfg.maxAuto > 0) {
+        const matches = await s.skills.match(input.text, skillCfg.disabled).catch(() => []);
+        for (const m of matches.slice(0, skillCfg.maxAuto)) if (!activation.has(m.name)) activation.set(m.name, { reason: 'auto', matched: m.matched.slice(0, 3) });
+      }
+      if (skillCfg.autoActivate && skillCfg.maxAuto > 0 && jevOn && appSettings.jev.skills) {
+        const autoCount = [...activation.values()].filter((a) => a.reason === 'auto').length;
+        const candidates = (await s.skills.list().catch(() => [])).filter((k) => !skillCfg.disabled.includes(k.name) && !activation.has(k.name) && k.description).slice(0, 60);
+        if (candidates.length && autoCount < skillCfg.maxAuto) {
+          const questions = Object.fromEntries(
+            candidates.map((k, i) => [
+              `s${i}`,
+              { type: 'noul' as const, instructions: { skill: { name: k.name, description: k.description.slice(0, 700) }, question: "Does the user's `request` fall within the scope of `skill`, so that following this skill's instructions is needed to answer it well?" } },
+            ]),
+          );
+          try {
+            const r = await s.jev.evaluate({ request: input.text.slice(0, 6000) }, questions);
+            const ranked = candidates
+              .map((k, i) => ({ name: k.name, p: (r.answers[`s${i}`] as { noul?: number } | undefined)?.noul ?? 0 }))
+              .filter((x) => x.p >= appSettings.jev.threshold)
+              .sort((a, b) => b.p - a.p)
+              .slice(0, skillCfg.maxAuto - autoCount);
+            for (const x of ranked) activation.set(x.name, { reason: 'auto', matched: [`Jev ${Math.round(x.p * 100)} %`] });
+          } catch {
+            /* keyword detection already applied */
+          }
+        }
+      }
+      const activeSkills: { name: string; body: string; files: string[] }[] = [];
+      for (const name of activation.keys()) {
+        try {
+          const sk = await s.skills.get(name);
+          activeSkills.push({ name: sk.name, body: await s.skills.body(name), files: sk.files });
+        } catch {
+          activation.delete(name);
+        }
+      }
+      if (activation.size) this.emitEvent(st, { type: 'skills_activated', skills: [...activation.entries()].map(([name, a]) => ({ name, ...a })) });
+      const allSkills = skillCfg.showCatalog ? (await s.skills.list().catch(() => [])).filter((x) => !skillCfg.disabled.includes(x.name)) : [];
+      const customAgents = fullTools.includes('agent.delegate') ? await s.skills.listAgents().catch(() => []) : [];
+
+      // 4. Messages
       const contextMd = await s.memory.contextMarkdown(st.projectId);
       const system = buildSystemPrompt({
         role,
@@ -375,6 +450,11 @@ export class AgentOrchestrator extends EventEmitter {
         python: s.capabilities.python,
         maxRetries: appSettings.agent.maxRetries,
         toolNames: fullTools,
+        skillsCatalog: allSkills.map((x) => ({ name: x.name, description: x.description })),
+        activeSkills,
+        customAgents: customAgents.map((a) => ({ id: a.id, description: a.description })),
+        plugins: fullTools.some((t) => t.startsWith('mcp.')) ? s.mcp.connectedServers() : [],
+        jev: fullTools.includes('jev.judge'),
       });
       const userContent = await buildUserContent({
         services: s,
@@ -595,8 +675,12 @@ export class AgentOrchestrator extends EventEmitter {
 
   private async delegate(parent: RunState, role: RoleId, task: string, effort?: EffortSetting): Promise<{ ok: boolean; summary: string; childRunId: string }> {
     const id = randomUUID();
-    const profile = ROLES[role];
-    const tierModel = pickFromTier(await this.s.catalog.list().catch(() => []), this.s.settings.get().autoTiers[profile.tier], { tools: true })?.id;
+    if (!ROLES[role] && !(await this.s.skills.getAgent(role))) {
+      return { ok: false, summary: `Unknown agent "${role}". Available: ${[...Object.keys(ROLES), ...(await this.s.skills.listAgents()).map((a) => a.id)].join(', ')}`, childRunId: '' };
+    }
+    const profile = await resolveRole(role, this.s.skills, KNOWN_TOOLS);
+    const pref = agentModelPreference(profile.model);
+    const tierModel = pref.id ?? pickFromTier(await this.s.catalog.list().catch(() => []), this.s.settings.get().autoTiers[pref.tier ?? profile.tier], { tools: true })?.id;
     const model = tierModel ?? parent.model;
     this.s.repo.createRun({ id, sessionId: parent.sessionId, projectId: parent.projectId, parentRunId: parent.id, role, title: task.split('\n')[0]!.slice(0, 120), model, mode: 'chat' });
     const child = this.createState({ id, sessionId: parent.sessionId, projectId: parent.projectId, parentRunId: parent.id, role, depth: parent.depth + 1, model });

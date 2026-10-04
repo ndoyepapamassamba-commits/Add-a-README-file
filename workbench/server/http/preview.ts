@@ -2,16 +2,23 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { createHmac } from 'node:crypto';
 import { tokenMatches } from './auth';
 import type { AppContext } from './context';
 import { mimeFor } from '../services/documents';
 import { isProtectedPath, resolveInside } from '../security/paths';
 
+/** Capability token scoped to one project (or one artifact). */
+export function previewTokenFor(secret: string, scope: string): string {
+  return createHmac('sha256', secret).update(scope).digest('base64url').slice(0, 32);
+}
+
 /**
  * Preview server on a separate port = separate browser origin: generated web
  * apps and HTML artifacts run there, isolated from the workbench API and its
- * token (which lives in the main origin's storage). URLs carry a per-process
- * preview token so other local pages cannot enumerate project files.
+ * token (which lives in the main origin's storage). URLs carry a capability
+ * token scoped to one project/artifact, so a generated page cannot read
+ * another project's files and other local pages cannot enumerate them.
  */
 export function buildPreviewServer(ctx: AppContext): FastifyInstance {
   const app = Fastify({ logger: false });
@@ -21,7 +28,7 @@ export function buildPreviewServer(ctx: AppContext): FastifyInstance {
 
   app.get('/p/:token/:projectId/*', async (req, reply) => {
     const { token, projectId } = req.params as { token: string; projectId: string };
-    if (!tokenMatches(ctx.previewToken, token)) return reply.code(403).send('Forbidden');
+    if (!tokenMatches(previewTokenFor(ctx.previewToken, `project:${projectId}`), token)) return reply.code(403).send('Forbidden');
     let rel = decodeURIComponent((req.params as { '*': string })['*'] ?? '');
     let root: string;
     try {
@@ -58,7 +65,7 @@ export function buildPreviewServer(ctx: AppContext): FastifyInstance {
 
   app.get('/a/:token/:artifactId', async (req, reply) => {
     const { token, artifactId } = req.params as { token: string; artifactId: string };
-    if (!tokenMatches(ctx.previewToken, token)) return reply.code(403).send('Forbidden');
+    if (!tokenMatches(previewTokenFor(ctx.previewToken, `artifact:${artifactId}`), token)) return reply.code(403).send('Forbidden');
     try {
       const { record, data } = await s.artifacts.read(artifactId);
       reply.header('Cache-Control', 'no-store');

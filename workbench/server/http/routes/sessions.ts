@@ -12,7 +12,7 @@ import { markdownToHtml } from '../../services/artifacts';
 import type { AppContext } from '../context';
 import { HttpError } from '../context';
 
-const RoleEnum = z.enum(['general', 'coder', 'researcher', 'browser', 'data_analyst', 'reviewer', 'tester']);
+const RoleEnum = z.string().min(1).max(120);
 const EffortEnum = z.enum(['auto', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max']);
 const ModeEnum = z.enum(['safe', 'normal', 'autonomous']);
 
@@ -74,6 +74,7 @@ export function sessionRoutes(app: FastifyInstance, ctx: AppContext): void {
         autoApproveEdits: z.boolean().optional(),
         role: RoleEnum.optional(),
         resetGrants: z.boolean().optional(),
+        skills: z.array(z.string().max(120)).max(20).optional(),
       })
       .parse(req.body);
     s.repo.updateSession(session.id, { title: b.title, model: b.model, permissionMode: b.permissionMode });
@@ -81,6 +82,7 @@ export function sessionRoutes(app: FastifyInstance, ctx: AppContext): void {
     if (b.autoApproveEdits !== undefined) settings.autoApproveEdits = b.autoApproveEdits;
     if (b.role) settings.role = b.role;
     if (b.resetGrants) settings.grants = [];
+    if (b.skills) settings.skills = b.skills;
     s.repo.setSessionSettings(session.id, settings);
     if (b.permissionMode) s.repo.audit({ actor: 'user', action: 'session.permission_mode', target: session.id, decision: b.permissionMode });
     return { session: s.repo.getSession(session.id), settings };
@@ -110,6 +112,7 @@ export function sessionRoutes(app: FastifyInstance, ctx: AppContext): void {
         effort: EffortEnum.default('auto'),
         role: RoleEnum.optional(),
         agentMode: z.enum(['chat', 'plan']).default('chat'),
+        skills: z.array(z.string().max(120)).max(10).optional(),
         ui: z
           .object({
             openFile: z.string().optional(),
@@ -158,7 +161,7 @@ export function sessionRoutes(app: FastifyInstance, ctx: AppContext): void {
     });
     const info = s.catalog.get(sel.model);
     const history = s.repo.listMessages(session.id).map((m) => m.content as ChatMessage);
-    const toolTokens = Math.ceil(JSON.stringify(toolDefinitions(ROLES[role].tools)).length / 3.6);
+    const toolTokens = Math.ceil(JSON.stringify(toolDefinitions((ROLES[role] ?? ROLES.general!).tools)).length / 3.6);
     const promptTokens = estimateTokens(history) + toolTokens + 2500 + Math.ceil(b.text.length / 3.6);
     const outTokens = 1200;
     const perStep = info && info.inputPrice !== null && info.outputPrice !== null ? (promptTokens * info.inputPrice + outTokens * info.outputPrice) / 1_000_000 : null;

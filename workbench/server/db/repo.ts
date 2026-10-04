@@ -21,6 +21,8 @@ export interface SessionSettings {
   autoApproveEdits?: boolean;
   grants?: string[];
   role?: RoleId;
+  /** Skills pinned for every request of the session. */
+  skills?: string[];
 }
 
 export interface StoredMessage {

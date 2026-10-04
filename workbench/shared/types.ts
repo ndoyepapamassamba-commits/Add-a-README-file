@@ -3,7 +3,9 @@
 export type PermissionMode = 'safe' | 'normal' | 'autonomous';
 /** chat = direct agent loop, plan = plan → approval → execution. */
 export type AgentMode = 'chat' | 'plan';
-export type RoleId = 'general' | 'coder' | 'researcher' | 'browser' | 'data_analyst' | 'reviewer' | 'tester';
+/** Built-in roles: general, coder, researcher, browser, data_analyst, reviewer, tester — plus custom agent ids. */
+export type RoleId = string;
+export const BUILTIN_ROLES = ['general', 'coder', 'researcher', 'browser', 'data_analyst', 'reviewer', 'tester'] as const;
 export type RunStatus = 'queued' | 'running' | 'waiting_approval' | 'waiting_plan' | 'completed' | 'failed' | 'cancelled';
 
 export interface ModelInfo {
@@ -86,6 +88,7 @@ export type AgentEvent =
   | { type: 'status'; text: string }
   | { type: 'model_selected'; model: string; reason: string; auto: boolean; effort?: string }
   | { type: 'stream_reset' }
+  | { type: 'skills_activated'; skills: { name: string; reason: 'pinned' | 'manual' | 'agent' | 'auto' | 'model'; matched?: string[] }[] }
   | { type: 'model_fallback'; from: string; to: string; reason: string }
   | { type: 'text_delta'; text: string; agentPath?: string }
   | { type: 'assistant_message'; text: string; agentPath?: string }

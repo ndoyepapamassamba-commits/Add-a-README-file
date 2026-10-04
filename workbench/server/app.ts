@@ -15,6 +15,8 @@ import { artifactRoutes } from './http/routes/artifacts';
 import { browserRoutes } from './http/routes/browser';
 import { projectRoutes } from './http/routes/projects';
 import { sessionRoutes } from './http/routes/sessions';
+import { skillRoutes } from './http/routes/skills';
+import { pluginRoutes } from './http/routes/plugins';
 import { systemRoutes } from './http/routes/system';
 import { registerWebSocket } from './http/ws';
 import { PathError } from './security/paths';
@@ -68,7 +70,7 @@ export async function buildApp(config: AppConfig, opts: { provider?: LLMProvider
   // the WebSocket (authenticated by its first message).
   app.addHook('onRequest', async (req, reply) => {
     const url = req.url.split('?')[0]!;
-    if (!url.startsWith('/api/') || url === '/api/health' || url === '/api/ws') return;
+    if (!url.startsWith('/api/') || url === '/api/health' || url === '/api/ws' || url === '/api/mcp/oauth/callback') return;
     if (req.method === 'OPTIONS') return;
     if (!tokenMatches(authToken, bearer(req.headers.authorization))) {
       return reply.code(401).send({ error: 'Unauthorized: missing or invalid access token' });
@@ -95,6 +97,8 @@ export async function buildApp(config: AppConfig, opts: { provider?: LLMProvider
   systemRoutes(app, ctx);
   projectRoutes(app, ctx);
   sessionRoutes(app, ctx);
+  skillRoutes(app, ctx);
+  pluginRoutes(app, ctx);
   artifactRoutes(app, ctx);
   browserRoutes(app, ctx);
   registerWebSocket(app, ctx);
@@ -112,6 +116,7 @@ export async function buildApp(config: AppConfig, opts: { provider?: LLMProvider
   app.addHook('onClose', async () => {
     services.processes.shutdown();
     await services.browser.shutdown();
+    await services.mcp.shutdown();
   });
 
   return { app, ctx };

@@ -1,5 +1,6 @@
 import type { RoleId } from '@shared/types';
 import type { Tier } from '../llm/router';
+import { mapAgentTools, type SkillRegistry } from '../services/skills';
 
 export interface RoleProfile {
   id: RoleId;
@@ -19,9 +20,10 @@ const WEB = ['web.search', 'web.fetch'];
 const DATA = ['data.inspect', 'data.query', 'data.transform', 'visualization.create'];
 const GIT_READ = ['git.status', 'git.diff', 'git.log'];
 const MEMORY = ['memory.read', 'memory.add', 'memory.remove'];
-const COMMON = ['plan.update', 'project.analyze', 'artifact.create'];
+const SKILLS = ['skill.use', 'skill.read'];
+const COMMON = ['plan.update', 'project.analyze', 'artifact.create', 'jev.judge', ...SKILLS];
 
-export const ROLES: Record<RoleId, RoleProfile> = {
+export const ROLES: Record<string, RoleProfile> = {
   general: {
     id: 'general',
     label: 'Agent principal',
@@ -69,7 +71,7 @@ export const ROLES: Record<RoleId, RoleProfile> = {
     label: 'Relecteur',
     description: 'Revue critique : bugs, régressions, sécurité, tests manquants. Ne modifie rien.',
     tier: 'reasoning',
-    tools: [...FS_READ, ...GIT_READ, 'terminal.execute', 'project.analyze', 'memory.read', 'browser.console', 'plan.update'],
+    tools: [...FS_READ, ...GIT_READ, 'terminal.execute', 'project.analyze', 'memory.read', 'browser.console', 'plan.update', ...SKILLS],
     prompt:
       'You are a demanding code reviewer. Do NOT modify files. Find real defects: correctness bugs, regressions, security issues (secrets, injection, path traversal, XSS), missing error handling and missing tests. Run the tests/build if available. Report findings ranked by severity with file:line and a concrete fix for each. If everything is fine, say so explicitly.',
   },
@@ -84,3 +86,45 @@ export const ROLES: Record<RoleId, RoleProfile> = {
 };
 
 export const ROLE_LIST = Object.values(ROLES);
+
+export interface ResolvedRole extends RoleProfile {
+  custom: boolean;
+  /** Raw tool list of a custom agent (null = unrestricted), used for plugin tools. */
+  toolPatterns: string[] | null;
+  model: string | null;
+  effort: string | null;
+  skills: string[];
+}
+
+const CLAUDE_MODEL_ALIASES: Record<string, Tier> = { haiku: 'fast', sonnet: 'balanced', opus: 'powerful' };
+
+/** Model preference of a custom agent: an OpenRouter id, or a Claude alias mapped to an AUTO tier. */
+export function agentModelPreference(model: string | null): { id?: string; tier?: Tier } {
+  if (!model || model === 'inherit' || model === 'auto') return {};
+  if (model.includes('/')) return { id: model };
+  const tier = CLAUDE_MODEL_ALIASES[model.toLowerCase()];
+  return tier ? { tier } : {};
+}
+
+/** Built-in role or custom agent (markdown file) → executable profile. */
+export async function resolveRole(id: RoleId, registry: SkillRegistry, knownTools: Set<string>): Promise<ResolvedRole> {
+  const builtin = ROLES[id];
+  if (builtin) return { ...builtin, custom: false, toolPatterns: builtin.id === 'reviewer' ? [] : null, model: null, effort: null, skills: [] };
+  const agent = await registry.getAgent(id);
+  if (!agent) return { ...ROLES.general!, custom: false, toolPatterns: null, model: null, effort: null, skills: [] };
+  const base = ROLES.general!.tools.filter((t) => t !== 'agent.delegate');
+  const tools = agent.tools?.length ? mapAgentTools(agent.tools, knownTools) : base;
+  return {
+    id: agent.id,
+    label: agent.name,
+    description: agent.description,
+    tier: agentModelPreference(agent.model).tier ?? 'balanced',
+    tools: [...new Set([...tools, 'plan.update', ...SKILLS])],
+    prompt: `You are the custom agent "${agent.name}". The instructions below define your role, method and output format. Follow them strictly for every answer.\n\n<agent_instructions>\n${agent.prompt}\n</agent_instructions>`,
+    custom: true,
+    toolPatterns: agent.tools?.length ? agent.tools : null,
+    model: agent.model,
+    effort: agent.effort,
+    skills: agent.skills,
+  };
+}

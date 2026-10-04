@@ -47,6 +47,23 @@ export const AppSettingsSchema = z.object({
     })
     .default({ maxSteps: 60, maxRetries: 3, toolTimeoutSec: 180, maxSubagentDepth: 2, parallelReads: true }),
   autoTiers: AutoTiersSchema.default(DEFAULT_AUTO_TIERS),
+  skills: z
+    .object({
+      autoActivate: z.boolean().default(true),
+      maxAuto: z.number().int().min(0).max(5).default(2),
+      disabled: z.array(z.string()).default([]),
+      showCatalog: z.boolean().default(true),
+    })
+    .default({ autoActivate: true, maxAuto: 2, disabled: [], showCatalog: true }),
+  jev: z
+    .object({
+      enabled: z.boolean().default(true),
+      routing: z.boolean().default(true),
+      skills: z.boolean().default(true),
+      threshold: z.number().min(0.5).max(0.99).default(0.75),
+    })
+    .default({ enabled: true, routing: true, skills: true, threshold: 0.75 }),
+  mcp: z.object({ autoConnect: z.boolean().default(true), connectTimeoutSec: z.number().int().min(2).max(120).default(20) }).default({ autoConnect: true, connectTimeoutSec: 20 }),
   webSearchProvider: z.enum(['auto', 'openrouter', 'brave']).default('auto'),
   webSearchModel: z.string().default(''),
 });

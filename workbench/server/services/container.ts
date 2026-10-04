@@ -16,6 +16,9 @@ import { MemoryService } from './memory';
 import { ProcessManager } from './processManager';
 import { ProjectIndex, hasRipgrep } from './projectIndex';
 import { SettingsService } from './settings';
+import { SkillRegistry } from './skills';
+import { McpManager } from './mcp';
+import { JevService } from './jev';
 import { WebSearchService } from './webSearch';
 import { WorkspaceService } from './workspace';
 
@@ -36,6 +39,9 @@ export interface Services {
   provider: LLMProvider;
   catalog: ModelCatalog;
   llm: LLMService;
+  skills: SkillRegistry;
+  mcp: McpManager;
+  jev: JevService;
   capabilities: { python: boolean; ripgrep: boolean };
 }
 
@@ -81,6 +87,9 @@ export function createServices(config: AppConfig, overrides: { provider?: LLMPro
     provider,
     catalog,
     llm,
+    mcp: new McpManager({ dataDir: config.dataDir, cwd: config.workspaceRoot, callbackBase: () => `http://${config.host === '0.0.0.0' ? '127.0.0.1' : config.host}:${config.port}` }),
+    jev: new JevService(),
+    skills: new SkillRegistry({ dataDir: config.dataDir, cwd: config.cwd, extraDirs: config.skillsDirs, includeClaudeHome: config.includeClaudeSkills }),
     capabilities: { python, ripgrep: hasRipgrep() },
   };
 }

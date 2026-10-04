@@ -10,7 +10,8 @@ export type ToolRisk =
   | 'write_internal' // writes workbench-managed files (artifacts, memory)
   | 'delete' // deletes project files
   | 'execute' // runs commands / code (refined by CommandLevel)
-  | 'vcs_write'; // git commit / checkout / branch
+  | 'vcs_write' // git commit / checkout / branch
+  | 'external'; // actions in third-party apps via plugins (MCP)
 
 export type Decision = 'allow' | 'ask' | 'deny';
 
@@ -22,6 +23,7 @@ const MATRIX: Record<Exclude<ToolRisk, 'execute'>, Record<PermissionMode, Decisi
   write_internal: { safe: 'deny', normal: 'allow', autonomous: 'allow' },
   delete: { safe: 'deny', normal: 'ask', autonomous: 'allow' },
   vcs_write: { safe: 'deny', normal: 'ask', autonomous: 'allow' },
+  external: { safe: 'ask', normal: 'ask', autonomous: 'allow' },
 };
 
 const EXECUTE: Record<CommandLevel, Record<PermissionMode, Decision>> = {

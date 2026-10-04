@@ -1,8 +1,6 @@
 import { z } from 'zod';
-import type { PlanStep, RoleId } from '@shared/types';
+import type { PlanStep } from '@shared/types';
 import { defineTool, ok, ToolError, type AnyTool } from './types';
-
-const ROLE_IDS = ['coder', 'researcher', 'browser', 'data_analyst', 'reviewer', 'tester'] as const;
 
 export const agentTools: AnyTool[] = [
   defineTool({
@@ -37,14 +35,14 @@ export const agentTools: AnyTool[] = [
   defineTool({
     name: 'agent.delegate',
     description:
-      'Delegate a self-contained sub-task to a specialised sub-agent (coder, researcher, browser, data_analyst, reviewer, tester). It works with its own tools and returns a summary. Give it complete context: it does not see this conversation. Use reviewer to double-check significant changes.',
-    schema: z.object({ role: z.enum(ROLE_IDS), task: z.string().min(10).max(8000) }),
+      'Delegate a self-contained sub-task to a specialised sub-agent: built-in roles coder, researcher, browser, data_analyst, reviewer, tester, or a custom agent id listed in the system prompt. It works with its own tools and returns a summary. Give it complete context: it does not see this conversation. Use reviewer to double-check significant changes.',
+    schema: z.object({ role: z.string().min(2).max(120), task: z.string().min(10).max(8000) }),
     readOnly: false,
     assess: () => ({ risk: 'read' }),
     label: (a) => `Delegate to ${a.role}`,
     async execute(a, ctx) {
       if (!ctx.delegate) throw new ToolError('Delegation is not available at this depth');
-      const r = await ctx.delegate(a.role as RoleId, a.task);
+      const r = await ctx.delegate(a.role, a.task);
       return { ok: r.ok, summary: r.ok ? `${a.role} finished` : `${a.role} failed`, data: { childRunId: r.childRunId }, forModel: `Sub-agent (${a.role}) report:\n${r.summary}`, error: r.ok ? undefined : 'sub-agent failed' };
     },
   }),

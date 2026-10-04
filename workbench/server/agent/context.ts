@@ -31,6 +31,11 @@ export function buildSystemPrompt(opts: {
   python: boolean;
   maxRetries: number;
   toolNames: string[];
+  skillsCatalog?: { name: string; description: string }[];
+  activeSkills?: { name: string; body: string; files: string[] }[];
+  customAgents?: { id: string; description: string }[];
+  plugins?: { name: string; instructions?: string; tools: number; description?: string }[];
+  jev?: boolean;
 }): string {
   const has = (t: string) => opts.toolNames.includes(t);
   const lines = [
@@ -67,7 +72,38 @@ export function buildSystemPrompt(opts: {
     "- Reply in the user's language. Be concise and concrete; use Markdown (code blocks, short lists).",
     '- Final answer: what was done, files changed, verification performed and its result, remaining issues or next steps.',
   );
+  if (opts.jev) {
+    lines.push('- jev.judge (TypeSafe Jev) gives fast calibrated typed judgments (yes/no probability, choice among options, score on a scale). Prefer it over free-form reasoning when you must classify, triage, verify claims against evidence or score many items consistently; keep calculations and exact rules in code.');
+  }
+  if (opts.plugins?.length) {
+    lines.push('', '# Plugins (MCP servers connected)', 'Use the matching mcp__<server>__<tool> tools whenever the user asks for something these applications do (e.g. 3D work in Blender, designs in Canva). Respect each plugin\'s instructions below.');
+    for (const p of opts.plugins) {
+      lines.push(`## ${p.name} (${p.tools} tools)${p.description ? ` — ${p.description}` : ''}`);
+      if (p.instructions) lines.push(p.instructions.slice(0, 2500));
+    }
+  }
+  if (opts.customAgents?.length) {
+    lines.push('', '# Custom agents available for agent.delegate', ...opts.customAgents.slice(0, 40).map((a) => `- ${a.id}: ${a.description.slice(0, 200)}`));
+  }
+  if (opts.skillsCatalog?.length && has('skill.use')) {
+    lines.push(
+      '',
+      '# Skills',
+      'Skills are expert playbooks written by the user. If a request matches a skill description below and that skill is not already active, call skill.use(name) FIRST, then follow it strictly.',
+      ...opts.skillsCatalog.slice(0, 80).map((k) => `- ${k.name}: ${k.description.slice(0, 260)}`),
+    );
+  }
   if (opts.contextMd.trim()) lines.push('', '# Project memory (PROJECT_CONTEXT.md)', redactSecrets(opts.contextMd.slice(0, 12_000)));
+  if (opts.activeSkills?.length) {
+    lines.push(
+      '',
+      '# ACTIVE SKILLS — MANDATORY',
+      'The skills below are active for this request. You MUST follow their instructions exactly: workflow, questions to ask, output structure, tone, language and constraints. They take precedence over your default behaviour and the general style rules above. Only safety rules and the permission system override them.',
+    );
+    for (const sk of opts.activeSkills) {
+      lines.push(`<skill name="${sk.name}">`, sk.body.slice(0, 30_000), sk.files.length ? `\nBundled files (read with skill.read): ${sk.files.slice(0, 60).join(', ')}` : '', '</skill>');
+    }
+  }
   return lines.join('\n');
 }
 
