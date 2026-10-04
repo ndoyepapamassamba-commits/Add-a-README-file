@@ -36,6 +36,58 @@ export const MCP_PRESETS: McpServerDef[] = [
     autoApprove: true,
     description: 'Questions sur n’importe quel dépôt GitHub public (gratuit).',
   },
+  // Verified from a browser page (CORS + initialize), free, no account:
+  {
+    name: 'microsoft-learn',
+    url: 'https://learn.microsoft.com/api/mcp',
+    enabled: true,
+    autoApprove: true,
+    description: 'Documentation officielle Microsoft : Excel, Power BI, Office, Azure, .NET… (gratuit).',
+  },
+  {
+    name: 'gitmcp',
+    url: 'https://gitmcp.io/docs',
+    enabled: true,
+    autoApprove: true,
+    description: 'Documentation de n’importe quel dépôt GitHub (README, llms.txt, code) (gratuit).',
+  },
+  {
+    name: 'jina',
+    url: 'https://mcp.jina.ai/v1',
+    enabled: true,
+    autoApprove: true,
+    description: 'Lecture de pages web en Markdown, recherche web, captures (gratuit, limité).',
+  },
+  {
+    name: 'excalidraw',
+    url: 'https://mcp.excalidraw.com/mcp',
+    enabled: true,
+    autoApprove: true,
+    description: 'Schémas Excalidraw « dessinés à la main » : architectures, processus (gratuit).',
+  },
+  {
+    name: 'mermaid-chart',
+    url: 'https://mcp.mermaidchart.com/mcp',
+    enabled: true,
+    autoApprove: true,
+    description: 'Diagrammes Mermaid : validation et rendu (flux, séquences, Gantt) (gratuit).',
+  },
+  {
+    name: 'svelte',
+    url: 'https://mcp.svelte.dev/mcp',
+    enabled: true,
+    autoApprove: true,
+    description: 'Documentation Svelte / SvelteKit et vérification de code (gratuit).',
+  },
+  {
+    name: 'github',
+    url: 'https://api.githubcopilot.com/mcp/',
+    enabled: true,
+    autoApprove: false,
+    needsToken:
+      'Jeton GitHub personnel (github.com → Settings → Developer settings → Personal access tokens)',
+    description: 'Dépôts, issues, pull requests, actions GitHub (jeton personnel).',
+  },
 ];
 
 const live = new Map<string, McpLive>();

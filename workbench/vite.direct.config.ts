@@ -8,6 +8,32 @@ import { loadHouseKit } from './server/services/houseKitFs';
 
 // The user's house kit (logo, 3D export kit, app shell) is read from their own
 // skill folder at build time and embedded in the HTML — never committed.
+// three.js as one minified IIFE (global THREE), embedded in the 3D previews.
+function threeIife(): Plugin {
+  const id = 'virtual:three-iife';
+  return {
+    name: 'massamba-three-iife',
+    resolveId: (s) => (s === id ? `\0${id}` : null),
+    async load(s) {
+      if (s !== `\0${id}`) return null;
+      const { build } = await import('esbuild');
+      const r = await build({
+        stdin: {
+          contents:
+            "export * from 'three'; export { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'; export { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js'; export { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';",
+          resolveDir: fileURLToPath(new URL('.', import.meta.url)),
+        },
+        bundle: true,
+        format: 'iife',
+        globalName: 'THREE',
+        minify: true,
+        write: false,
+      });
+      return `export default ${JSON.stringify(r.outputFiles[0]!.text)};`;
+    },
+  };
+}
+
 function houseKit(): Plugin {
   const id = 'virtual:house-kit';
   return {
@@ -28,7 +54,7 @@ function houseKit(): Plugin {
 // the browser — no server, no install, no terminal.
 export default defineConfig({
   root: 'direct',
-  plugins: [houseKit(), react(), tailwindcss(), viteSingleFile({ removeViteModuleLoader: true })],
+  plugins: [houseKit(), threeIife(), react(), tailwindcss(), viteSingleFile({ removeViteModuleLoader: true })],
   resolve: { alias: { '@shared': fileURLToPath(new URL('./shared', import.meta.url)) } },
   define: { 'process.env.NODE_ENV': JSON.stringify('production') },
   build: {

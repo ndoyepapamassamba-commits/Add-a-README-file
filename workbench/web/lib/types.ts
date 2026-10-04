@@ -139,6 +139,7 @@ export interface McpPreset {
   requires?: string;
   free: boolean;
   config: McpServerInfo['config'];
+  secrets?: string[];
 }
 
 export interface SessionSettings {

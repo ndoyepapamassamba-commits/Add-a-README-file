@@ -31,6 +31,7 @@ export const DEFAULT_SETTINGS: Settings = {
   budgetDaily: 5,
   theme: 'dark',
   autoSkills: true,
+  disabledPlugins: [],
 };
 
 export const uid = () =>

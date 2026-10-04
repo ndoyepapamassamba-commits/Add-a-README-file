@@ -25,6 +25,7 @@ import { isDocument, isImage } from '../../server/services/documentsCore';
 import { LLMError, type ChatMessage, type ContentPart, type ToolCall } from '../../server/llm/types';
 import { complete, friendlyError } from './llm';
 import { connectedTools, ensureConnected, mcpState } from './mcp';
+import { BUILTIN_PLUGINS, builtinToolNames, builtinTools } from './builtinPlugins';
 import { findAgent, allAgents } from './roles';
 import { matchSkills } from './skills';
 import { uid, useStore } from './store';
@@ -120,6 +121,11 @@ Not available here: a real OS shell (npm, git, pip), the local disk outside the 
         .filter((a) => a.id !== o.agent.id)
         .map((a) => `- ${a.id}: ${a.description}`)
         .join('\n')}`,
+    );
+  const ext = BUILTIN_PLUGINS.filter((p) => p.tools.some((t) => has(t.name)));
+  if (ext.length)
+    parts.push(
+      `# Built-in plugins — use them automatically when relevant (real data, cite the source)\n${ext.map((p) => `- ${p.name} (${p.tools.map((t) => t.name).join(', ')}): ${p.description} Source: ${p.source}.`).join('\n')}`,
     );
   if (o.plugins.length)
     parts.push(
@@ -247,7 +253,15 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   );
 
   // Tools allowed for this agent / mode / depth
-  let tools = [...TOOLS.filter((t) => t.name !== 'plan.propose'), ...mcpTools].filter((t) => {
+  const extTools = builtinTools(st.settings.disabledPlugins ?? []);
+  // Built-in plugins go to every agent that may look things up (all tools, or web.search).
+  const extOk =
+    !inp.agent.tools || inp.agent.tools.includes('web.search') || inp.agent.tools.includes('plugin.*');
+  let tools = [...TOOLS.filter((t) => t.name !== 'plan.propose'), ...mcpTools, ...extTools].filter((t) => {
+    if (builtinToolNames.has(t.name) && extOk && (!inp.agent.tools || !inp.agent.tools.includes(t.name))) {
+      if (inp.session.mode === 'safe' && t.risk !== 'read') return false;
+      return true;
+    }
     if (
       inp.agent.tools &&
       !inp.agent.tools.includes(t.name) &&

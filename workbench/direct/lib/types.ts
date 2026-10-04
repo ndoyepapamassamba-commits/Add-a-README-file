@@ -186,6 +186,8 @@ export interface McpServerDef {
   enabled: boolean;
   autoApprove: boolean;
   description?: string;
+  /** Preset that needs a personal token, sent as "Authorization: Bearer <token>". */
+  needsToken?: string;
 }
 
 export interface Settings {
@@ -199,6 +201,8 @@ export interface Settings {
   budgetDaily: number;
   theme: 'dark' | 'light';
   autoSkills: boolean;
+  /** Built-in plugins switched off by the user. */
+  disabledPlugins: string[];
 }
 
 export interface ArtifactDef {

@@ -389,7 +389,9 @@ test('embedded terminal: pipes, redirections, diagnosis', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('embedded browser: the agent loads a file into an app, clicks export, gets the download', async ({ page }) => {
+test('embedded browser: the agent loads a file into an app, clicks export, gets the download', async ({
+  page,
+}) => {
   await open(page);
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
@@ -419,4 +421,50 @@ document.getElementById('x').onclick = () => { const a = document.createElement(
   await page.getByRole('button', { name: 'Navigateur', exact: true }).first().click();
   await expect(page.getByText('resultat.txt')).toBeVisible();
   await expect(page.frameLocator('iframe[title="Navigateur intégré"]').getByText('3 lignes')).toBeVisible();
+});
+
+test('built-in plugins: 3D studio (preview + .glb + Blender script) and exchange rates', async ({ page }) => {
+  await page.route('https://open.er-api.com/**', (r) =>
+    r.fulfill({
+      headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        result: 'success',
+        time_last_update_utc: 'Sun, 04 Oct 2026',
+        rates: { XOF: 655.957, USD: 1.17 },
+      }),
+    }),
+  );
+  await open(page);
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  mock.push(
+    {
+      toolCalls: [
+        {
+          name: 'blender.scene',
+          args: {
+            name: 'agence',
+            title: 'Agence',
+            objects: [{ type: 'roundedbox', size: 2, position: [0, 1, 0], color: '#005C83' }],
+          },
+        },
+      ],
+    },
+    { toolCalls: [{ name: 'fx.rates', args: { base: 'EUR', symbols: ['XOF'] } }] },
+    { text: 'Scène et taux prêts.' },
+  );
+  await send(page, 'Fais une maquette 3D et donne le taux EUR/XOF');
+  await expect(page.getByText('Scène et taux prêts.')).toBeVisible({ timeout: 40_000 });
+  const tools = (mock.requests[0]!.tools as { function: { name: string } }[]).map((t) => t.function.name);
+  expect(tools).toEqual(
+    expect.arrayContaining(['blender__scene', 'fx__rates', 'weather__forecast', 'diagram__render']),
+  );
+  const msgs = JSON.stringify(mock.requests.at(-1)!.messages);
+  expect(msgs).toContain('3d/agence.html');
+  expect(msgs).toContain('glTF 3d/agence.glb');
+  expect(msgs).toContain('3d/agence_blender.py');
+  expect(msgs).toContain('XOF: 655.957');
+  // Switching a plugin off removes its tools.
+  await page.getByRole('button', { name: 'Plugins', exact: true }).first().click();
+  await expect(page.getByText('Studio 3D → Blender')).toBeVisible();
 });

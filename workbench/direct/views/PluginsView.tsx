@@ -4,6 +4,7 @@ import { Package, Plug, Plus, RefreshCw, Trash2, Upload } from 'lucide-react';
 import { Badge, Button, Field, Input, Modal, Spinner, Toggle } from '../../web/components/ui';
 import { MCP_PRESETS, connect, disconnect, mcpState, onMcpChange } from '../lib/mcp';
 import { useStore } from '../lib/store';
+import { BUILTIN_PLUGINS } from '../lib/builtinPlugins';
 import { embeddedKit, getHouseKit, kitFromZip, setHouseKit } from '../lib/apex';
 import { kv } from '../lib/db';
 import type { McpServerDef } from '../lib/types';
@@ -13,6 +14,8 @@ export function PluginsView() {
   const setMcp = useStore((s) => s.setMcp);
   const [, rerender] = useReducer((x: number) => x + 1, 0);
   const [adding, setAdding] = useState(false);
+  const [tokenFor, setTokenFor] = useState<McpServerDef | null>(null);
+  const [token, setToken] = useState('');
   useEffect(() => {
     const off = onMcpChange(rerender);
     for (const s of useStore.getState().mcp)
@@ -41,6 +44,41 @@ export function PluginsView() {
       </div>
 
       <HouseKitCard />
+      <BuiltinPluginsSection />
+      <Modal
+        open={Boolean(tokenFor)}
+        onClose={() => setTokenFor(null)}
+        title={tokenFor ? `${tokenFor.name} — jeton` : ''}
+        width={520}
+      >
+        {tokenFor && (
+          <form
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const { needsToken: _n, ...def } = tokenFor;
+              upsert({ ...def, headers: { Authorization: `Bearer ${token.trim()}` } });
+              setToken('');
+              setTokenFor(null);
+            }}
+          >
+            <div className="text-[12.5px] text-muted">{tokenFor.needsToken}</div>
+            <Input
+              type="password"
+              autoComplete="off"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              placeholder="Jeton"
+            />
+            <div className="text-[11.5px] text-faint">
+              Conservé dans ce navigateur uniquement, envoyé seulement à {new URL(tokenFor.url).host}.
+            </div>
+            <Button type="submit" variant="primary" disabled={!token.trim()}>
+              Installer
+            </Button>
+          </form>
+        )}
+      </Modal>
 
       <h2 className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-faint">
         Gratuits, prêts à l’emploi
@@ -56,7 +94,12 @@ export function PluginsView() {
                 <Badge tone="ok">gratuit</Badge>
               </div>
               <div className="mt-1 text-[12.5px] text-muted">{p.description}</div>
-              <Button size="sm" className="mt-2" disabled={installed} onClick={() => upsert(p)}>
+              <Button
+                size="sm"
+                className="mt-2"
+                disabled={installed}
+                onClick={() => (p.needsToken ? setTokenFor(p) : upsert(p))}
+              >
                 {installed ? 'Installé' : 'Installer'}
               </Button>
             </div>
@@ -237,6 +280,52 @@ function HouseKitCard() {
         }}
       />
       {msg && <div className="mt-2 text-[12.5px]">{msg}</div>}
+    </div>
+  );
+}
+
+/** Built-in plugins: no server, no account — switch them on / off. */
+function BuiltinPluginsSection() {
+  const disabled = useStore((s) => s.settings.disabledPlugins ?? []);
+  const patch = useStore((s) => s.patchSettings);
+  const cats = [...new Set(BUILTIN_PLUGINS.map((p) => p.category))];
+  return (
+    <div className="mb-6">
+      <h2 className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-faint">
+        Intégrés ({BUILTIN_PLUGINS.length - disabled.length}/{BUILTIN_PLUGINS.length} actifs) — sans serveur
+        ni compte
+      </h2>
+      {cats.map((c) => (
+        <div key={c} className="mb-3">
+          <div className="mb-1 text-[12px] text-muted">{c}</div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {BUILTIN_PLUGINS.filter((p) => p.category === c).map((p) => {
+              const on = !disabled.includes(p.id);
+              return (
+                <div key={p.id} className="rounded-xl border border-line bg-panel p-3">
+                  <div className="flex items-center gap-2">
+                    <Plug size={14} className="text-accent" />
+                    <div className="flex-1 text-[13.5px] font-medium">{p.name}</div>
+                    <Toggle
+                      checked={on}
+                      onChange={(v) =>
+                        patch({
+                          disabledPlugins: v ? disabled.filter((d) => d !== p.id) : [...disabled, p.id],
+                        })
+                      }
+                      label=""
+                    />
+                  </div>
+                  <div className="mt-1 text-[12.5px] text-muted">{p.description}</div>
+                  <div className="mt-1 font-mono text-[11px] text-faint">
+                    {p.tools.map((t) => t.name).join(' · ')} — {p.source}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -5,6 +5,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@shared': fileURLToPath(new URL('./shared', import.meta.url)),
+      'virtual:three-iife': fileURLToPath(new URL('./tests/helpers/threeStub.ts', import.meta.url)),
       'virtual:house-kit': fileURLToPath(new URL('./tests/helpers/houseKitStub.ts', import.meta.url)),
     },
   },

@@ -339,10 +339,19 @@ export function PluginsView() {
     return () => window.clearInterval(t);
   }, [servers, reload]);
 
-  const install = async (p: McpPreset) => {
+  const [ask, setAsk] = useState<{ p: McpPreset; values: Record<string, string> } | null>(null);
+  const install = async (p: McpPreset, env?: Record<string, string>) => {
+    // Presets that need an API key ask for it first (stored server-side, masked in the UI).
+    if (p.secrets?.length && !env) {
+      setAsk({ p, values: Object.fromEntries(p.secrets.map((k) => [k, ''])) });
+      return;
+    }
     setBusy(p.id);
     try {
-      const s = await api<McpServerInfo>(`/api/mcp/preset/${p.id}`, { method: 'POST', body: {} });
+      const s = await api<McpServerInfo>(`/api/mcp/preset/${p.id}`, {
+        method: 'POST',
+        body: env ? { env } : {},
+      });
       if (s.status === 'needs_auth' && s.authUrl) {
         toast('info', `${p.name} : autorisez l'accès dans l'onglet qui s'ouvre`);
         window.open(s.authUrl, '_blank', 'noopener');
@@ -394,6 +403,7 @@ export function PluginsView() {
                     <div className="mb-1 flex items-center gap-2">
                       <span className="font-semibold">{p.name}</span>
                       {p.free ? <Badge tone="ok">gratuit</Badge> : <Badge>compte requis</Badge>}
+                      {p.secrets?.length ? <Badge tone="warn">clé API</Badge> : null}
                       {installed.has(p.id) && <Badge tone="info">installé</Badge>}
                     </div>
                     <div className="mb-2 flex-1 text-[12.5px] text-muted">{p.description}</div>
@@ -436,6 +446,46 @@ export function PluginsView() {
           </a>
         </div>
       </div>
+      <Modal
+        open={Boolean(ask)}
+        onClose={() => setAsk(null)}
+        title={ask ? `${ask.p.name} — clé requise` : ''}
+        width={520}
+      >
+        {ask && (
+          <form
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const a = ask;
+              setAsk(null);
+              void install(a.p, a.values);
+            }}
+          >
+            {ask.p.requires && <div className="text-[12.5px] text-muted">{ask.p.requires}</div>}
+            {Object.keys(ask.values).map((k) => (
+              <Field key={k} label={k}>
+                <Input
+                  type="password"
+                  autoComplete="off"
+                  value={ask.values[k]}
+                  onChange={(e) => setAsk({ ...ask, values: { ...ask.values, [k]: e.target.value } })}
+                />
+              </Field>
+            ))}
+            <div className="text-[11.5px] text-faint">
+              Conservée sur cette machine (data/mcp.json), masquée dans l’interface et les journaux.
+            </div>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={Object.values(ask.values).some((v) => !v.trim())}
+            >
+              Installer
+            </Button>
+          </form>
+        )}
+      </Modal>
       <Modal
         open={custom}
         onClose={() => setCustom(false)}
