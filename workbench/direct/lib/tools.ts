@@ -25,6 +25,16 @@ import { markdownToDocx, printableHtml } from '../../server/services/officeCore'
 import { emlFromHtml, houseMailHtml } from '../../server/services/houseStyle';
 import { apexGuide, assembleApp, lintApp, referencePart } from '../../server/services/apexCore';
 import { getHouseKit, qaInFrame, syntaxError } from './apex';
+import { browser, snapshotText, type BrowserSnapshot } from './browser';
+import { agentShell } from './shell';
+import { shellRisk } from './shellCore';
+import { diagnose, formatDiagnosis } from '../../server/tools/diagnose';
+
+/** Result of a browser action for the model: new downloads, errors, then the page. */
+function browserAct(r: { snap: BrowserSnapshot; downloads: { path: string; size: number }[] }): string {
+  const errors = browser.state.console.filter((c) => c.startsWith('error')).slice(-5);
+  return `${r.downloads.length ? `Downloaded: ${r.downloads.map((d) => `${d.path} (${d.size} bytes)`).join(', ')}\n` : ''}${errors.length ? `Recent page errors: ${errors.join(' | ')}\n` : ''}${snapshotText(r.snap, 5000)}`;
+}
 import { marked } from 'marked';
 import * as echarts from 'echarts/core';
 import { chartOption } from '../../web/components/rich';
@@ -113,6 +123,8 @@ export interface DirectTool {
   description: string;
   parameters: Record<string, unknown>;
   risk: Risk;
+  /** Risk of this particular call (e.g. a terminal command), when it depends on the arguments. */
+  assess?: (a: Record<string, unknown>) => Risk;
   readOnly: boolean;
   label: (a: Record<string, unknown>) => string;
   preview?: (
@@ -877,6 +889,145 @@ export const TOOLS: DirectTool[] = [
         }),
       );
       return ok(`${r.rowCount} lignes → ${path}`, `Saved ${r.rowCount} rows to ${path}.`);
+    },
+  },
+  // ── Embedded terminal and browser ────────────────────────────────────────
+  {
+    name: 'terminal.execute',
+    description:
+      'Run a command in the embedded terminal over the workspace: ls, cd, cat, head/tail, grep -rn, find, wc, sort | uniq -c, cut, sed s///g, echo > file, cp/mv/rm, mkdir, tree, node FILE | node -e CODE, python FILE | python -c CODE (sandbox, pandas available), curl URL [-o file], data FILE (profile a spreadsheet), open FILE (embedded browser). Pipes, redirections, && || ; and globs work. No real OS: npm/git/pip are not available in this edition.',
+    parameters: obj({ command: str('Command line') }, ['command']),
+    risk: 'execute',
+    assess: (a: Record<string, unknown>) => shellRisk(S(a.command)),
+    readOnly: false,
+    label: (a) => `$ ${S(a.command).slice(0, 80)}`,
+    async preview(a) {
+      return { text: S(a.command) };
+    },
+    async run(a) {
+      const r = await agentShell.exec(S(a.command));
+      const d = diagnose(r.out, r.code);
+      const text = `${r.out || '(no output)'}\n[exit ${r.code} · cwd /${r.cwd}]${d && r.code !== 127 ? formatDiagnosis(d) : ''}`;
+      return {
+        ok: r.code === 0,
+        summary: `exit ${r.code}`,
+        forModel: clip(text, 40_000),
+        error: r.code ? `exit ${r.code}` : undefined,
+      };
+    },
+  },
+  {
+    name: 'browser.open',
+    description:
+      'Open a page in the embedded browser: a workspace HTML file (e.g. apps/x.html — fully interactive, isolated) or an http(s) URL (read-only reader mode). Returns a snapshot: interactive elements with refs + page text.',
+    parameters: obj({ target: str('Workspace path or URL') }, ['target']),
+    risk: 'read',
+    readOnly: true,
+    label: (a) => `Ouvrir ${S(a.target)}`,
+    async run(a) {
+      const snap = await browser.open(S(a.target));
+      return ok(snap.title || S(a.target), snapshotText(snap));
+    },
+  },
+  {
+    name: 'browser.snapshot',
+    description: 'Current page of the embedded browser: interactive elements (with refs) and visible text.',
+    parameters: obj({}),
+    risk: 'read',
+    readOnly: true,
+    label: () => 'Lire la page',
+    async run() {
+      const snap = await browser.snapshot();
+      return ok(snap.title, snapshotText(snap));
+    },
+  },
+  {
+    name: 'browser.click',
+    description:
+      'Click an element by ref (from the last snapshot). Downloads triggered by the click are saved to downloads/.',
+    parameters: obj({ ref: str('Element ref, e.g. e12') }, ['ref']),
+    risk: 'read',
+    readOnly: false,
+    label: (a) => `Cliquer ${S(a.ref)}`,
+    async run(a) {
+      const r = await browser.click(S(a.ref));
+      return ok(r.downloads.length ? `${r.downloads.length} téléchargement(s)` : 'clic', browserAct(r));
+    },
+  },
+  {
+    name: 'browser.type',
+    description: 'Type text into an input / textarea by ref (submit=true presses Enter / submits the form).',
+    parameters: obj({ ref: str('Element ref'), text: str('Text'), submit: { type: 'boolean' } }, [
+      'ref',
+      'text',
+    ]),
+    risk: 'read',
+    readOnly: false,
+    label: (a) => `Saisir dans ${S(a.ref)}`,
+    async run(a) {
+      return ok('saisie', browserAct(await browser.type(S(a.ref), S(a.text), Boolean(a.submit))));
+    },
+  },
+  {
+    name: 'browser.select',
+    description: 'Choose an option of a <select> by ref.',
+    parameters: obj({ ref: str('Element ref'), value: str('Option value') }, ['ref', 'value']),
+    risk: 'read',
+    readOnly: false,
+    label: (a) => `Choisir ${S(a.value)}`,
+    async run(a) {
+      return ok('sélection', browserAct(await browser.select(S(a.ref), S(a.value))));
+    },
+  },
+  {
+    name: 'browser.upload',
+    description:
+      "Put a workspace file into an <input type=file> of the page (ref) — e.g. load the user's Excel into a generated app to test it.",
+    parameters: obj({ ref: str('Ref of the file input'), path: str('Workspace file') }, ['ref', 'path']),
+    risk: 'read',
+    readOnly: false,
+    label: (a) => `Charger ${S(a.path)}`,
+    async run(a) {
+      return ok('fichier chargé', browserAct(await browser.upload(S(a.ref), S(a.path))));
+    },
+  },
+  {
+    name: 'browser.scroll',
+    description: 'Scroll the page (dy pixels, default 600).',
+    parameters: obj({ dy: { type: 'number' } }),
+    risk: 'read',
+    readOnly: false,
+    label: () => 'Défiler',
+    async run(a) {
+      return ok('défilement', browserAct(await browser.scroll(Number(a.dy) || 600)));
+    },
+  },
+  {
+    name: 'browser.back',
+    description: 'Go back to the previous page.',
+    parameters: obj({}),
+    risk: 'read',
+    readOnly: true,
+    label: () => 'Page précédente',
+    async run() {
+      const snap = await browser.back();
+      return ok(snap.title, snapshotText(snap));
+    },
+  },
+  {
+    name: 'browser.console',
+    description:
+      'Console messages and page errors of the embedded browser, plus the files downloaded so far.',
+    parameters: obj({}),
+    risk: 'read',
+    readOnly: true,
+    label: () => 'Console du navigateur',
+    async run() {
+      const st = browser.state;
+      return ok(
+        `${st.console.length} message(s)`,
+        `Console (last 80):\n${st.console.slice(-80).join('\n') || '(empty)'}\n\nDownloads:\n${st.downloads.map((d) => `${d.path} (${d.size} bytes)`).join('\n') || '(none)'}`,
+      );
     },
   },
   // ── APEX Studio: offline business apps in the house method ──────────────

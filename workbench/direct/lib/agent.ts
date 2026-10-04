@@ -94,7 +94,7 @@ function systemPrompt(o: {
 - Never reveal hidden reasoning; give conclusions, steps taken and results.`,
     `# Permissions: ${o.mode.toUpperCase()}
 ${o.mode === 'safe' ? 'Read-only: you cannot modify files.' : o.mode === 'normal' ? 'Writes, deletions, code execution and plugin actions need user approval (the UI asks). If denied, adapt — do not retry the same action.' : 'Autonomous: actions run without asking. Stay careful and stay within the request.'}
-Not available here: shell/terminal, local disk outside the workspace, desktop apps. ${has('code.run') ? 'Use code.run (sandboxed JavaScript/Python) for computations.' : ''}`,
+Not available here: a real OS shell (npm, git, pip), the local disk outside the workspace, desktop apps. ${has('code.run') ? 'Use code.run (sandboxed JavaScript/Python) for computations.' : ''}${has('terminal.execute') ? ' terminal.execute gives an embedded terminal over the workspace (ls, grep, pipes, redirections, node, python, curl, data).' : ''}${has('browser.open') ? ' browser.* drives an embedded browser: workspace apps are fully interactive (click, type, upload a workspace file, exports captured in downloads/); web pages open read-only. To TEST a generated app: browser.open it, browser.upload the real data file, click every tab and export, then inspect the downloaded files (data.inspect / filesystem.read).' : ''}`,
   ];
   if (o.tools.some((t) => /^(report|data)\.export$|^apex\./.test(t.name)))
     parts.push(
@@ -217,12 +217,18 @@ interface LoopResult {
   fallbacks: number;
 }
 
-function decide(mode: Session['mode'], t: DirectTool, granted: boolean): 'allow' | 'ask' | 'deny' {
-  if (t.risk === 'read') return 'allow';
+function decide(
+  mode: Session['mode'],
+  t: DirectTool,
+  granted: boolean,
+  args: Record<string, unknown> = {},
+): 'allow' | 'ask' | 'deny' {
+  const risk = t.assess ? t.assess(args) : t.risk;
+  if (risk === 'read') return 'allow';
   // Deletions are always confirmed, even in autonomous mode.
-  if (t.risk === 'delete') return mode === 'safe' ? 'deny' : 'ask';
+  if (risk === 'delete') return mode === 'safe' ? 'deny' : 'ask';
+  if (mode === 'safe' && (WRITE_TOOLS.has(t.name) || risk === 'write')) return 'deny';
   if (mode === 'auto') return 'allow';
-  if (mode === 'safe' && WRITE_TOOLS.has(t.name)) return 'deny';
   return granted ? 'allow' : 'ask';
 }
 
@@ -699,7 +705,7 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     );
 
   const grants = st.grants[sid] ?? [];
-  const decision = decide(inp.session.mode, tool, grants.includes(tool.name));
+  const decision = decide(inp.session.mode, tool, grants.includes(tool.name), args);
   if (decision === 'deny')
     return fail(
       'denied',

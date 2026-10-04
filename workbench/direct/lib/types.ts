@@ -5,7 +5,18 @@ export type { ChatMessage, ModelInfo };
 export type PermissionMode = 'safe' | 'normal' | 'auto';
 export type AgentMode = 'chat' | 'plan' | 'mission';
 export type View =
-  'home' | 'chat' | 'files' | 'data' | 'workflows' | 'agents' | 'skills' | 'plugins' | 'models' | 'settings';
+  | 'home'
+  | 'chat'
+  | 'files'
+  | 'data'
+  | 'terminal'
+  | 'browser'
+  | 'workflows'
+  | 'agents'
+  | 'skills'
+  | 'plugins'
+  | 'models'
+  | 'settings';
 
 export interface VFile {
   path: string;

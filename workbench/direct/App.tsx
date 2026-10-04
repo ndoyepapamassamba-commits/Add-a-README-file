@@ -18,6 +18,8 @@ import {
   LayoutDashboard,
   Pencil,
   Workflow as WorkflowIcon,
+  TerminalSquare,
+  Globe,
 } from 'lucide-react';
 import {
   Button,
@@ -42,12 +44,16 @@ import { DataView } from './views/DataView';
 import { AgentsView, SkillsView } from './views/LibraryViews';
 import { PluginsView } from './views/PluginsView';
 import { ModelsView, SettingsView } from './views/SettingsViews';
+import { TerminalView } from './views/TerminalView';
+import { BrowserView } from './views/BrowserView';
 
 const NAV: { id: View; label: string; icon: React.ReactNode }[] = [
   { id: 'home', label: 'Mission Control', icon: <LayoutDashboard size={17} /> },
   { id: 'chat', label: 'Chat', icon: <MessageSquare size={17} /> },
   { id: 'files', label: 'Fichiers', icon: <FolderOpen size={17} /> },
   { id: 'data', label: 'Données', icon: <Database size={17} /> },
+  { id: 'terminal', label: 'Terminal', icon: <TerminalSquare size={17} /> },
+  { id: 'browser', label: 'Navigateur', icon: <Globe size={17} /> },
   { id: 'workflows', label: 'Workflows', icon: <WorkflowIcon size={17} /> },
   { id: 'agents', label: 'Agents', icon: <Bot size={17} /> },
   { id: 'skills', label: 'Skills', icon: <Puzzle size={17} /> },
@@ -245,6 +251,8 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           {view === 'workflows' && <WorkflowsView />}
           {view === 'files' && <FilesView />}
           {view === 'data' && <DataView />}
+          {view === 'terminal' && <TerminalView />}
+          {view === 'browser' && <BrowserView />}
           {view === 'agents' && <AgentsView />}
           {view === 'skills' && <SkillsView />}
           {view === 'plugins' && <PluginsView />}

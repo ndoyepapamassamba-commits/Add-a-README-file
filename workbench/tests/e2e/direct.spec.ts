@@ -216,6 +216,8 @@ test('all views render without errors and data survives a reload', async ({ page
     'Mission Control',
     'Fichiers',
     'Données',
+    'Terminal',
+    'Navigateur',
     'Workflows',
     'Agents',
     'Skills',
@@ -368,4 +370,53 @@ test('APEX Studio rejects an app without KIT / with a syntax error', async ({ pa
   const msgs = JSON.stringify(mock.requests[1]!.messages);
   expect(msgs).toContain('KIT is not defined');
   expect(msgs).toContain('Erreur de syntaxe');
+});
+
+test('embedded terminal: pipes, redirections, diagnosis', async ({ page }) => {
+  const errors = await open(page);
+  await page.getByRole('button', { name: 'Terminal', exact: true }).first().click();
+  const cmd = page.getByLabel('Commande');
+  await cmd.fill('echo "agence,montant" > v.csv && echo "Dakar,10" >> v.csv && cat v.csv | grep -c ,');
+  await cmd.press('Enter');
+  await expect(page.getByText(/^2$/)).toBeVisible();
+  await cmd.fill('ls');
+  await cmd.press('Enter');
+  await expect(page.getByText('v.csv', { exact: true })).toBeVisible();
+  await cmd.fill('node -e "throw new Error(\'boom\')"');
+  await cmd.press('Enter');
+  await expect(page.getByText(/boom/).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /Corriger avec l’agent/ })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('embedded browser: the agent loads a file into an app, clicks export, gets the download', async ({ page }) => {
+  await open(page);
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  const app = `<!doctype html><html><head><title>Mini app</title></head><body>
+<input type="file" id="f"><button id="x">Exporter</button><p id="n">aucun fichier</p>
+<script>let rows=0;
+document.getElementById('f').addEventListener('change', async e => { const t = await e.target.files[0].text(); rows = t.trim().split('\\n').length; document.getElementById('n').textContent = rows + ' lignes'; });
+document.getElementById('x').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['lignes=' + rows], {type:'text/plain'})); a.download = 'resultat.txt'; document.body.appendChild(a); a.click(); };
+</script></body></html>`;
+  mock.push(
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'apps/mini.html', content: app } }] },
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'data/v.csv', content: 'a,b\n1,2\n3,4\n' } }] },
+    { toolCalls: [{ name: 'browser.open', args: { target: 'apps/mini.html' } }] },
+    { toolCalls: [{ name: 'browser.upload', args: { ref: 'e1', path: 'data/v.csv' } }] },
+    { toolCalls: [{ name: 'browser.click', args: { ref: 'e2' } }] },
+    { toolCalls: [{ name: 'terminal.execute', args: { command: 'cat downloads/resultat.txt' } }] },
+    { text: 'Test terminé.' },
+  );
+  await send(page, 'Teste l’application');
+  await expect(page.getByText('Test terminé.')).toBeVisible({ timeout: 30_000 });
+  const msgs = JSON.stringify(mock.requests.at(-1)!.messages);
+  expect(msgs).toContain('[e1] input:file');
+  expect(msgs).toContain('3 lignes');
+  expect(msgs).toContain('Downloaded: downloads/resultat.txt');
+  expect(msgs).toContain('lignes=3');
+  // The user sees the same page in the Browser view, with the captured download.
+  await page.getByRole('button', { name: 'Navigateur', exact: true }).first().click();
+  await expect(page.getByText('resultat.txt')).toBeVisible();
+  await expect(page.frameLocator('iframe[title="Navigateur intégré"]').getByText('3 lignes')).toBeVisible();
 });

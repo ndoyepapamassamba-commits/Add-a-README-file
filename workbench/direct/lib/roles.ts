@@ -13,6 +13,17 @@ const READ = [
 const WRITE = ['filesystem.write', 'filesystem.edit', 'filesystem.delete', 'artifact.create', 'memory.doc'];
 const DELIVER = ['report.export', 'data.export', 'artifact.create', 'data.chart'];
 const APEX = ['apex.guide', 'apex.reference', 'apex.build_app', 'apex.qa'];
+const BROWSE = [
+  'browser.open',
+  'browser.snapshot',
+  'browser.click',
+  'browser.type',
+  'browser.select',
+  'browser.upload',
+  'browser.scroll',
+  'browser.back',
+  'browser.console',
+];
 
 const agent = (a: Omit<AgentDef, 'builtin' | 'model' | 'skills'> & { model?: string | null }): AgentDef => ({
   model: null,
@@ -48,7 +59,16 @@ export const BUILTIN_AGENTS: AgentDef[] = [
     description: 'Écrit, modifie et teste du code dans l’espace de travail.',
     prompt:
       'You are a senior software engineer. Read the relevant files before changing them, make focused edits with filesystem.edit, keep the existing style, and run code with code.run to verify. Deliver working, complete code — never placeholders.',
-    tools: [...READ, ...WRITE, ...APEX, 'code.run', 'web.search', 'agent.delegate'],
+    tools: [
+      ...READ,
+      ...WRITE,
+      ...APEX,
+      ...BROWSE,
+      'terminal.execute',
+      'code.run',
+      'web.search',
+      'agent.delegate',
+    ],
     effort: null,
   }),
   agent({
@@ -76,8 +96,28 @@ export const BUILTIN_AGENTS: AgentDef[] = [
       'Construit des applications HTML offline « comme l’APEX » : chargement Excel, dashboard premium, exports Excel / PowerPoint / Word / PDF / mail couleur au style maison.',
     prompt:
       "You build business applications with the APEX method, for any subject. Workflow: (1) apex.guide, then apex.reference (read the whole reference app, part by part) and the domain references that apply; (2) data.inspect the user's real file to learn its columns — never invent data; (3) write the application script exactly in the reference style: const KIT, toast, tolerant header detection, normalisations, aggregates, a hero specific to the subject, KPI cards, filters applied to views and exports, a written reading, local memory of previous loads, and EVERY export of the house chain (Excel with 3D visuals, PowerPoint, Word, colour mail .eml/.html/rich copy, printable PDF); (4) apex.build_app; (5) apex.qa — fix and rebuild until PASSED; (6) deliver: what the app does, how to use it, what was verified and what the user must still test with a real file. Plain Markdown reports still use report.export / data.export (house style is automatic).",
-    tools: [...READ, ...DELIVER, ...APEX, 'filesystem.write', 'filesystem.edit', 'code.run', 'memory.doc'],
+    tools: [
+      ...READ,
+      ...DELIVER,
+      ...APEX,
+      ...BROWSE,
+      'terminal.execute',
+      'filesystem.write',
+      'filesystem.edit',
+      'code.run',
+      'memory.doc',
+    ],
     effort: 'high',
+  }),
+  agent({
+    id: 'browser',
+    name: 'Browser Agent',
+    description:
+      'Navigateur intégré : teste les applications de l’espace de travail (clics, saisies, chargement de fichiers, exports) et lit des pages web.',
+    prompt:
+      'You operate the embedded browser in explicit cycles — ACTION → OBSERVATION (read the returned snapshot, page errors, downloads) → DECISION → RESULT — and verify the result after each action. Refer to elements by their ref from the latest snapshot. Web pages are read-only (reader mode). Never enter credentials. Report exactly what you saw, with the downloaded files.',
+    tools: [...READ, ...BROWSE, 'terminal.execute', 'web.search', 'artifact.create'],
+    effort: null,
   }),
   agent({
     id: 'qa_engineer',
@@ -86,7 +126,16 @@ export const BUILTIN_AGENTS: AgentDef[] = [
       'Vérifie pour de vrai : exécution, recalculs, cohérence, régressions ; verdict PASSED / PARTIAL / FAILED.',
     prompt:
       'You are a QA engineer. Verify with real evidence: run the code (code.run), recompute key figures (data.query), re-read deliverables, compare against the requirements and look for regressions. Report each check as PASS/FAIL with the evidence, record results in .ai/TESTS.md (memory.doc), and end with a verdict: PASSED, PARTIAL or FAILED.',
-    tools: [...READ, 'apex.qa', 'code.run', 'memory.doc', 'filesystem.write', 'filesystem.edit'],
+    tools: [
+      ...READ,
+      'apex.qa',
+      ...BROWSE,
+      'terminal.execute',
+      'code.run',
+      'memory.doc',
+      'filesystem.write',
+      'filesystem.edit',
+    ],
     effort: null,
   }),
   agent({
