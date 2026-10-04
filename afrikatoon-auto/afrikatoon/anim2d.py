@@ -206,6 +206,18 @@ def render(bg: Image.Image, bg_width_units: float, actors: list[Actor], states: 
 
     for prop in props:
         prop(frame, to_px, ppu, t)
+    shadows = Image.new("RGBA", (W, H), (0, 0, 0, 0))            # ombres de contact : ancrent les personnages au sol
+    ds = ImageDraw.Draw(shadows)
+    for a in actors:
+        st = states.get(a.puppet.name, {})
+        k_depth = 1 + a.z * 0.35
+        gx, gy = to_px(a.x + st.get("dx", 0.0), -a.z * 0.02)
+        hop = st.get("hop", 0.0)
+        rw = a.puppet.height * k_depth * ppu * 0.24 * (1 - 1.6 * hop)
+        rh = rw * 0.16
+        if rw > 2:
+            ds.ellipse([gx - rw, gy - rh, gx + rw, gy + rh], fill=(40, 20, 10, int(120 * (1 - 2 * hop))))
+    frame.alpha_composite(shadows.filter(ImageFilter.GaussianBlur(max(2, ppu * 0.03))))
     for a in sorted(actors, key=lambda a: a.z):
         st = states.get(a.puppet.name, {})
         im, mouth, mw, skin, eyes, faces = a.puppet.pose(st.get("pose", a.pose), a.facing)
@@ -218,9 +230,9 @@ def render(bg: Image.Image, bg_width_units: float, actors: list[Actor], states: 
         ky = k * (1 + breath + 0.05 * pop)
         kx = k * (1 - 0.035 * pop)
         # recadrage de la partie visible avant agrandissement (rapidité)
-        fx, fy = to_px(a.x, 0)
+        fx, fy = to_px(a.x + st.get("dx", 0.0), 0)
         left_px = fx - im.width * kx / 2
-        top_px = fy - im.height * ky - a.z * 0.02 * ppu
+        top_px = fy - im.height * ky - a.z * 0.02 * ppu - st.get("hop", 0.0) * a.puppet.height * ppu
         vx0 = max(0, int((-left_px) / kx) - 4)
         vx1 = min(im.width, int((W - left_px) / kx) + 4)
         vy0 = max(0, int((-top_px) / ky) - 4)
@@ -253,10 +265,58 @@ def render(bg: Image.Image, bg_width_units: float, actors: list[Actor], states: 
         if focus and a.puppet.name != focus and a.z > 0.3:
             piece = piece.filter(ImageFilter.GaussianBlur(6))     # amorce floue (par-dessus l'épaule)
         frame.alpha_composite(piece, (int(px0), int(top_px + vy0 * ky)))
-    out = frame.convert("RGB")
+    out = grade(frame.convert("RGB"), t, cam)
     if flash > 0:
         out = Image.blend(out, Image.new("RGB", (W, H), (255, 255, 255)), min(0.8, flash))
     return out
+
+
+# --- Vie du décor et étalonnage ----------------------------------------------------------------------
+
+_LOOK = {}
+
+
+def _look():
+    """Masques précalculés : vignettage chaud et rayons de soleil obliques (venant d'en haut à gauche)."""
+    if not _LOOK:
+        ys, xs = np.mgrid[0:H, 0:W].astype(np.float32)
+        r = np.sqrt(((xs - W / 2) / (W * 0.75)) ** 2 + ((ys - H * 0.45) / (H * 0.7)) ** 2)
+        _LOOK["vig"] = np.clip(1.08 - 0.42 * r ** 2.2, 0.55, 1.0)[..., None]
+        u = (xs * 0.55 + ys * 0.84) / 60.0                      # coordonnée perpendiculaire aux rayons
+        bands = sum(np.clip(np.sin(u * f + ph), 0, 1) ** 6 for f, ph in ((0.9, 0.0), (0.37, 1.7), (0.21, 4.1)))
+        fade = np.clip(1.1 - (xs / W * 0.6 + ys / H * 0.9), 0, 1) ** 1.5
+        _LOOK["rays"] = (bands * fade).astype(np.float32)[..., None]
+        rng = np.random.default_rng(7)
+        _LOOK["dust"] = rng.uniform(0, 1, (46, 4))               # x, y, taille, phase
+    return _LOOK
+
+
+def grade(img: Image.Image, t: float, cam: "Cam") -> Image.Image:
+    lk = _look()
+    arr = np.asarray(img).astype(np.float32)
+    rays = lk["rays"] * (0.55 + 0.45 * math.sin(t * 0.7)) * 26.0
+    arr = arr + rays * np.array([1.0, 0.86, 0.6], np.float32)    # lumière dorée de fin d'après-midi
+    arr = arr * lk["vig"] * np.array([1.03, 1.0, 0.95], np.float32)
+    out = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+    # poussière qui flotte dans la lumière + oiseaux de passage (plan large et moyen seulement)
+    layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    for x, y, sz, ph in lk["dust"]:
+        px = ((x + 0.012 * t + 0.02 * math.sin(t * 0.5 + ph * 9)) % 1) * W - cam.cx * 40
+        py = ((y - 0.006 * t) % 1) * H * 0.85
+        rr = 2 + sz * 4
+        a = int(70 + 80 * (0.5 + 0.5 * math.sin(t * 1.3 + ph * 20)))
+        d.ellipse([px - rr, py - rr, px + rr, py + rr], fill=(255, 236, 190, a))
+    if cam.h > 1.8:
+        for k in range(3):                                     # vol d'oiseaux toutes les 14 s
+            u = ((t + 4) % 14) / 6.0 - k * 0.04
+            if 0 < u < 1:
+                bx, by = -60 + u * (W + 120) + k * 46, H * (0.09 + 0.02 * k) + 30 * math.sin(u * 6)
+                flap = 10 * math.sin(t * 18 + k)
+                d.line([(bx - 14, by - flap), (bx, by), (bx + 14, by - flap)], fill=(40, 30, 30, 200), width=4)
+    out = out.convert("RGBA")
+    out.alpha_composite(layer.filter(ImageFilter.GaussianBlur(1.2)))
+    return out.convert("RGB")
 
 
 # --- Accessoire : la marmite --------------------------------------------------------------------
@@ -503,13 +563,21 @@ class Director:
             changes = [ts for ts, _ in self.poses.get(name, []) if ts <= t]
             if changes and t - changes[-1] < 0.22:
                 st["pop"] = math.sin((t - changes[-1]) / 0.22 * math.pi)
+            if changes and pose == "shock" and 0 <= t - changes[-1] < 0.38:      # sursaut
+                st["hop"] = 0.07 * math.sin((t - changes[-1]) / 0.38 * math.pi)
+            if pose == "laugh":                                                  # rire secoué
+                st["hop"] = 0.018 * abs(math.sin(t * 9 + a.phase))
+                st["nod"] = -4 + 3 * math.sin(t * 9)
+            if pose == "angry" and changes and h > 1.6:                          # pas vers l'autre (plans larges)
+                k = smooth(min(1.0, (t - changes[-1]) / 0.45))
+                st["dx"] = 0.07 * k * (1 if a.facing == "right" else -1)
             if speaking and speaking["speaker"] == name:
                 lt = t - speaking["start"]
                 cue = next((c for c in speaking["cues"] if c[0] <= lt < c[1]), None)
                 st["talking"] = True
                 st["shape"] = cue[2] if cue else "X"
                 e = speaking["env"][min(len(speaking["env"]) - 1, int(lt * FPS))]
-                st["nod"] = 3.2 * e * math.sin(lt * 7.5)
+                st["nod"] = st.get("nod", 0.0) + 3.2 * e * math.sin(lt * 7.5)
                 st["bob"] = e
                 if pose == "angry" and e > 0.55:
                     st["shake"] = 0.7
