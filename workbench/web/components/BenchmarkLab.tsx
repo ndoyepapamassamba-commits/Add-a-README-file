@@ -28,10 +28,11 @@ import {
   type IntelData,
 } from '../../server/llm/modelIntel';
 import type { AutoTiers } from '../../server/services/settings';
+import { BENCH_TASKS, type BenchResult } from '../../server/agent/intelligence';
 import { cx, fmtCost, fmtPrice, fmtTokens } from '../lib/format';
 import { Badge, Button, Input, Select, Tabs, Textarea, Toggle } from './ui';
 
-type Tab = 'tasks' | 'categories' | 'ranking' | 'lab' | 'sources';
+type Tab = 'tasks' | 'categories' | 'ranking' | 'lab' | 'mine' | 'sources';
 type SortKey = 'value' | 'price' | 'intel' | 'coding' | 'agentic' | 'cost' | 'context';
 
 const BOM = String.fromCharCode(0xfeff);
@@ -54,6 +55,8 @@ export function BenchmarkLab({
   onUse,
   refreshIntel,
   onIntelImported,
+  bench = [],
+  runBench,
 }: {
   models: ModelInfo[];
   tiers: AutoTiers;
@@ -65,6 +68,10 @@ export function BenchmarkLab({
   refreshIntel?: () => Promise<IntelData>;
   /** Called after a manual import so the caller can persist it. */
   onIntelImported?: (d: IntelData) => void;
+  /** Auto-benchmark runs (personal leaderboard). */
+  bench?: BenchResult[];
+  /** Runs the auto-benchmark on a model (absent: the tab is read-only). */
+  runBench?: (model: string) => Promise<{ result: BenchResult; regression: string | null }>;
 }) {
   const [tab, setTab] = useState<Tab>('tasks');
   const [version, setVersion] = useState(0);
@@ -126,6 +133,7 @@ export function BenchmarkLab({
           { id: 'categories', label: 'Catégories (meilleur + secours)' },
           { id: 'ranking', label: 'Classement complet' },
           { id: 'lab', label: 'Routing Lab' },
+          { id: 'mine', label: 'Mon classement' },
           { id: 'sources', label: 'Sources & mise à jour' },
         ]}
         value={tab}
@@ -218,6 +226,9 @@ export function BenchmarkLab({
         )}
         {tab === 'ranking' && <Ranking models={models} health={health} board={board} version={version} />}
         {tab === 'lab' && <RoutingLab models={models} tiers={tiers} health={health} board={board} />}
+        {tab === 'mine' && (
+          <MyLeaderboard models={models} tiers={tiers} board={board} bench={bench} runBench={runBench} />
+        )}
         {tab === 'sources' && (
           <div className="space-y-3 text-[13px]">
             <div className="rounded-xl border border-line bg-panel p-3">
@@ -616,6 +627,144 @@ function Unmeasured({ models, version }: { models: ModelInfo[]; version: number 
           </span>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** Personal leaderboard (real missions + auto-benchmark) and the auto-benchmark runner. */
+function MyLeaderboard({
+  models,
+  tiers,
+  board,
+  bench,
+  runBench,
+}: {
+  models: ModelInfo[];
+  tiers: AutoTiers;
+  board: LeaderboardMap;
+  bench: BenchResult[];
+  runBench?: (model: string) => Promise<{ result: BenchResult; regression: string | null }>;
+}) {
+  const cheap = routeModel(models, tiers, { ...analyzeTask({ text: 'x' }), tier: 'cheap' })?.model ?? '';
+  const [model, setModel] = useState(cheap);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const rows = Object.entries(board)
+    .filter(([k]) => !k.includes('|'))
+    .map(([m, e]) => ({ m, ...e, n: e.won + e.lost, rate: (e.won + 1) / (e.won + e.lost + 2) }))
+    .sort((a, b) => b.rate - a.rate || b.n - a.n);
+  const types = (m: string) =>
+    Object.entries(board)
+      .filter(([k]) => k.endsWith(`|${m}`))
+      .map(([k, e]) => `${k.split('|')[0]} ${e.won}/${e.won + e.lost}`)
+      .join(' · ');
+  const info = models.find((x) => x.id === model);
+  const est =
+    info && info.inputPrice !== null && info.outputPrice !== null
+      ? (BENCH_TASKS.length * (200 * info.inputPrice + 400 * info.outputPrice)) / 1e6
+      : null;
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-line bg-panel p-3 text-[13px]">
+        <div className="mb-1 font-semibold">Auto-benchmark</div>
+        <div className="mb-2 text-muted">
+          {BENCH_TASKS.length} tâches représentatives à vérification automatique (calcul XOF, ratio NPL,
+          extraction JSON, code exécuté, raisonnement). Les résultats alimentent votre classement par type de
+          tâche et le routage AUTO.
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            className="h-8 !w-80"
+            list="bench-models"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            placeholder="id du modèle"
+          />
+          <datalist id="bench-models">
+            {models.slice(0, 300).map((m) => (
+              <option key={m.id} value={m.id} />
+            ))}
+          </datalist>
+          {runBench && (
+            <Button
+              size="sm"
+              disabled={busy || !model}
+              onClick={() => {
+                setBusy(true);
+                setMsg(null);
+                void runBench(model)
+                  .then(({ result, regression }) =>
+                    setMsg(
+                      `${result.model} : ${result.passed}/${result.total} réussies · ${fmtCost(result.cost)} · ${(result.ms / 1000).toFixed(1)} s${regression ? ` — ${regression}` : ''}`,
+                    ),
+                  )
+                  .catch((e: Error) => setMsg(`Échec : ${e.message}`))
+                  .finally(() => setBusy(false));
+              }}
+            >
+              <FlaskConical size={13} /> {busy ? 'En cours…' : 'Lancer'}
+            </Button>
+          )}
+          {est !== null && <span className="text-[12px] text-faint">coût estimé ≈ {fmtCost(est)}</span>}
+        </div>
+        {msg && <div className="mt-2 text-[12.5px]">{msg}</div>}
+      </div>
+      <div>
+        <div className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-faint">
+          Classement personnel (missions réelles + benchmark)
+        </div>
+        {rows.length ? (
+          <table className="w-full text-[12.5px]">
+            <thead className="text-left text-faint">
+              <tr>
+                <th className="py-1">Modèle</th>
+                <th>Réussites</th>
+                <th>Probabilité de succès</th>
+                <th>Par type</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.m} className="border-t border-line">
+                  <td className="py-1 font-mono text-[12px]">{r.m}</td>
+                  <td>
+                    {r.won}/{r.n}
+                  </td>
+                  <td>{Math.round(r.rate * 100)} %</td>
+                  <td className="text-[11.5px] text-muted">{types(r.m)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="text-[12.5px] text-faint">
+            Pas encore de données : lancez un benchmark ou une mission.
+          </div>
+        )}
+      </div>
+      {bench.length > 0 && (
+        <div>
+          <div className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-faint">
+            Historique des benchmarks
+          </div>
+          {bench
+            .slice(-12)
+            .reverse()
+            .map((b, i) => (
+              <div key={i} className="flex flex-wrap gap-2 border-t border-line py-1 text-[12.5px]">
+                <span className="text-faint">{new Date(b.at).toLocaleString('fr-FR')}</span>
+                <span className="font-mono">{b.model}</span>
+                <span>
+                  {b.passed}/{b.total}
+                </span>
+                <span className="text-faint">{fmtCost(b.cost)}</span>
+                <span className="text-muted">
+                  {b.details.map((d) => `${d.ok ? '✓' : '✗'} ${d.id}`).join(' ')}
+                </span>
+              </div>
+            ))}
+        </div>
+      )}
     </div>
   );
 }

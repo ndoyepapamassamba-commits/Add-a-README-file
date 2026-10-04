@@ -9,6 +9,7 @@ import { kv } from '../lib/db';
 import { useStore } from '../lib/store';
 import { download } from '../lib/vfs';
 import { BenchmarkLab } from '../../web/components/BenchmarkLab';
+import { runBenchmark } from '../lib/bench';
 import { INTEL_ENDPOINT, parseIntel, type IntelData } from '../../server/llm/modelIntel';
 import { DEFAULT_AUTO_TIERS } from '../../server/services/settings';
 
@@ -29,6 +30,7 @@ export function ModelsView() {
   const models = useStore((s) => s.models);
   const health = useStore((s) => s.health);
   const board = useStore((s) => s.board);
+  const bench = useStore((s) => s.bench);
   if (tab === 'bench')
     return (
       <div className="flex h-full min-h-0 flex-col">
@@ -50,6 +52,8 @@ export function ModelsView() {
           health={health}
           board={board}
           refreshIntel={() => browserIntel(models)}
+          bench={bench}
+          runBench={(m) => runBenchmark(m)}
           onIntelImported={(d) => void kv.set('intel', d)}
           onUse={(id, role) =>
             useStore

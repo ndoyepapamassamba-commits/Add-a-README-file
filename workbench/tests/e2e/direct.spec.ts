@@ -533,3 +533,45 @@ test('Intelligence Engine: critical mission → red team blocks, correction, jud
   await expect(page.getByText(/Carte d'incertitude|certain/).first()).toBeVisible();
   await page.getByTitle(/Mode Mission/).click();
 });
+
+test('auto-benchmark feeds the personal leaderboard; Time Machine diff and restore', async ({ page }) => {
+  await open(page);
+  // Benchmark: 4 right answers out of 5.
+  mock.push(
+    { text: 'Total : 1 900 250 000' },
+    { text: '7,0 %' },
+    { text: '{"client":"SOW Mamadou","montant":2500000,"echeance":"2026-03-15"}' },
+    { text: '```js\nfunction formatXof(n){return "faux"}\n```' },
+    { text: '7 500 000' },
+  );
+  await page.getByRole('button', { name: 'Modèles', exact: true }).first().click();
+  await page.getByRole('tab', { name: 'Mon classement' }).click();
+  await page.getByPlaceholder('id du modèle').fill('mock/smart-2');
+  await page.getByRole('button', { name: /Lancer/ }).click();
+  await expect(page.getByText(/mock\/smart-2 : 4\/5 réussies/)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole('cell', { name: 'mock/smart-2' })).toBeVisible();
+  await expect(page.getByText('✗ code-fn')).toBeVisible();
+
+  // Time Machine: a task modifies a file → diff + restore from the Files view.
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  mock.push({ toolCalls: [{ name: 'filesystem.write', args: { path: 'notes/plan.md', content: 'version 1\n' } }] }, { text: 'v1.' });
+  await send(page, 'Crée notes/plan.md');
+  await expect(page.getByText('v1.', { exact: true })).toBeVisible();
+  mock.push(
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'notes/plan.md', content: 'function nouvelle() {}\nversion 2\n' } }] },
+    { text: 'v2.' },
+  );
+  await send(page, 'Modifie notes/plan.md');
+  await expect(page.getByText('v2.', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Fichiers', exact: true }).first().click();
+  await page.getByText('actualiser').click();
+  await page.getByRole('button', { name: 'diff' }).first().click();
+  await expect(page.getByText(/fonctions ajoutées : nouvelle/)).toBeVisible();
+  page.once('dialog', (d) => void d.accept());
+  await page.getByRole('button', { name: /restaurer/ }).first().click();
+  await expect(page.getByText('1 fichier(s) restauré(s)')).toBeVisible();
+  await page.getByRole('button', { name: 'notes/plan.md' }).click();
+  await expect(page.getByText('version 1').first()).toBeVisible();
+});

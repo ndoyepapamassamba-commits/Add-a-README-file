@@ -1,5 +1,6 @@
 // MISSION CONTROL — the personal command center: start missions, see what the
 // AI is doing (missions, agents, models, costs, tools, files, tests, errors).
+import { IntelligencePanel } from './IntelligencePanels';
 import { useMemo, useRef, useState } from 'react';
 import {
   Activity,
@@ -495,6 +496,10 @@ export function HomeView() {
               ))}
             </div>
           </Panel>
+
+          <div className="max-h-[300px]">
+            <IntelligencePanel />
+          </div>
 
           <Panel title="Fichiers & tests" icon={<FileText size={13} />} className="max-h-[300px]">
             <div className="mb-2 text-[12px] text-muted">

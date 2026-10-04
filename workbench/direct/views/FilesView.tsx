@@ -7,6 +7,7 @@ import { isImage } from '../../server/services/documentsCore';
 import { useStore } from '../lib/store';
 import { dataUrl, downloadFile, downloadZip, importBrowserFile, readAsText, writeText } from '../lib/vfs';
 import { HtmlFrame } from './Artifacts';
+import { TimeMachinePanel } from './IntelligencePanels';
 
 export function FilesView() {
   const files = useStore((s) => s.files);
@@ -92,6 +93,7 @@ export function FilesView() {
             </div>
           )}
         </div>
+        <TimeMachinePanel />
       </div>
       <div className="min-w-0 flex-1">
         {file ? (
