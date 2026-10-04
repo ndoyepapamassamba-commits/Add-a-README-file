@@ -29,6 +29,24 @@ export interface MissionCheck {
   name: string;
   status: 'pass' | 'fail' | 'skip';
   details?: string;
+  /** Re-runnable check (terminal command) — kept in the living regression suite. */
+  command?: string;
+  /** Text the command output must contain. */
+  expect?: string;
+}
+
+export type Certainty = 'certain' | 'probable' | 'uncertain' | 'unknown';
+export interface EvidenceItem {
+  claim: string;
+  /** Tool result / file / URL that supports the claim. */
+  source: string;
+  level: Certainty;
+}
+export type RelatedPriority = 'indispensable' | 'recommended' | 'optional' | 'forbidden';
+export interface RelatedTask {
+  task: string;
+  priority: RelatedPriority;
+  done?: boolean;
 }
 
 export interface MissionReport {
@@ -37,6 +55,10 @@ export interface MissionReport {
   checks: MissionCheck[];
   issues: string[];
   deliverables: string[];
+  /** Uncertainty map: key claims with their evidence and confidence. */
+  evidence?: EvidenceItem[];
+  /** « Et toute autre tâche… » — related tasks found during the mission. */
+  related?: RelatedTask[];
 }
 
 export const MISSION_PROTOCOL = `# MISSION MODE (autonomous)
@@ -53,7 +75,7 @@ Rules:
 - Keep the project memory current: update .ai/TODO.md, .ai/KNOWN_ISSUES.md, .ai/DECISIONS.md, .ai/MEMORY.md when relevant.
 - DELIVERY: finish by calling mission.report with an honest verdict:
   PASSED = everything requested is done and verified; PARTIAL = some parts done/verified, others not; FAILED = not achieved.
-  List each check you actually ran (pass/fail/skip), remaining issues and deliverables (file paths).
+  List each check you actually ran (pass/fail/skip) — give a terminal command + expected text when the check can be re-run (it joins the living regression suite) —, remaining issues, deliverables (file paths), the uncertainty map (evidence: each key figure / claim with its source and certainty) and the related tasks you identified (indispensable / recommended / optional / forbidden without authorisation).
 Do not stop before mission.report. Do not ask the user questions unless you are truly blocked; make reasonable decisions and record them in .ai/DECISIONS.md.`;
 
 export const FIX_EVERYTHING = `Mission « Répare tout » : trouve et corrige tous les problèmes du projet.
@@ -136,10 +158,29 @@ export function formatReport(r: MissionReport): string {
       : '',
     r.issues.length ? `\nProblèmes restants :\n${r.issues.map((i) => `- ${i}`).join('\n')}` : '',
     r.deliverables.length ? `\nLivrables :\n${r.deliverables.map((d) => `- ${d}`).join('\n')}` : '',
+    r.evidence?.length
+      ? `\nCarte d'incertitude :\n${r.evidence.map((e) => `- ${CERTAINTY_ICON[e.level]} ${e.claim} — _${e.source}_`).join('\n')}`
+      : '',
+    r.related?.length
+      ? `\nTâches connexes :\n${r.related.map((t) => `- ${t.done ? '☑' : '☐'} [${RELATED_LABEL[t.priority]}] ${t.task}`).join('\n')}`
+      : '',
   ]
     .filter(Boolean)
     .join('\n');
 }
+
+export const CERTAINTY_ICON: Record<Certainty, string> = {
+  certain: '🟢 certain',
+  probable: '🟡 probable',
+  uncertain: '🟠 incertain',
+  unknown: '⚪ inconnu',
+};
+export const RELATED_LABEL: Record<RelatedPriority, string> = {
+  indispensable: 'Indispensable',
+  recommended: 'Recommandée',
+  optional: 'Optionnelle',
+  forbidden: 'Interdite sans autorisation',
+};
 
 export function normalizeReport(raw: Record<string, unknown>): MissionReport {
   const st = String(raw.status ?? '').toUpperCase();
@@ -154,10 +195,32 @@ export function normalizeReport(raw: Record<string, unknown>): MissionReport {
         name: String(o.name ?? 'check').slice(0, 200),
         status: s === 'pass' || s === 'fail' ? s : 'skip',
         details: o.details ? String(o.details).slice(0, 400) : undefined,
+        command: o.command ? String(o.command).slice(0, 500) : undefined,
+        expect: o.expect ? String(o.expect).slice(0, 300) : undefined,
       };
     }),
     issues: arr(raw.issues).slice(0, 40),
     deliverables: arr(raw.deliverables).slice(0, 40),
+    evidence: (Array.isArray(raw.evidence) ? raw.evidence : []).slice(0, 40).map((e) => {
+      const o = (e ?? {}) as Record<string, unknown>;
+      const l = String(o.level ?? '').toLowerCase();
+      return {
+        claim: String(o.claim ?? '').slice(0, 300),
+        source: String(o.source ?? 'non précisée').slice(0, 200),
+        level: (['certain', 'probable', 'uncertain', 'unknown'].includes(l) ? l : 'uncertain') as Certainty,
+      };
+    }),
+    related: (Array.isArray(raw.related) ? raw.related : []).slice(0, 30).map((t) => {
+      const o = (t ?? {}) as Record<string, unknown>;
+      const p = String(o.priority ?? '').toLowerCase();
+      return {
+        task: String(o.task ?? '').slice(0, 300),
+        priority: (['indispensable', 'recommended', 'optional', 'forbidden'].includes(p)
+          ? p
+          : 'optional') as RelatedPriority,
+        done: Boolean(o.done),
+      };
+    }),
   };
 }
 
@@ -176,12 +239,42 @@ export const MISSION_REPORT_SCHEMA = {
           name: { type: 'string' },
           status: { type: 'string', enum: ['pass', 'fail', 'skip'] },
           details: { type: 'string' },
+          command: { type: 'string', description: 'Optional terminal command that re-runs this check' },
+          expect: { type: 'string', description: 'Text the command output must contain' },
         },
         required: ['name', 'status'],
       },
     },
     issues: { type: 'array', items: { type: 'string' }, description: 'Remaining problems' },
     deliverables: { type: 'array', items: { type: 'string' }, description: 'Files / artifacts produced' },
+    evidence: {
+      type: 'array',
+      description:
+        'Uncertainty map: each key claim / figure with its source (tool result, file, URL) and confidence',
+      items: {
+        type: 'object',
+        properties: {
+          claim: { type: 'string' },
+          source: { type: 'string' },
+          level: { type: 'string', enum: ['certain', 'probable', 'uncertain', 'unknown'] },
+        },
+        required: ['claim', 'source', 'level'],
+      },
+    },
+    related: {
+      type: 'array',
+      description:
+        'Related tasks you identified (indispensable ones must be done; forbidden = needs explicit authorisation)',
+      items: {
+        type: 'object',
+        properties: {
+          task: { type: 'string' },
+          priority: { type: 'string', enum: ['indispensable', 'recommended', 'optional', 'forbidden'] },
+          done: { type: 'boolean' },
+        },
+        required: ['task', 'priority'],
+      },
+    },
   },
   required: ['status', 'summary', 'checks'],
 };

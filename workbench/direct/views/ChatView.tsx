@@ -17,6 +17,7 @@ import {
   X,
   Gauge as GaugeIcon,
   Rocket,
+  Brain,
 } from 'lucide-react';
 import type { EffortSetting } from '@shared/types';
 import {
@@ -265,6 +266,8 @@ const ItemView = memo(function ItemView({ item, sessionId }: { item: Item; sessi
           <CircleAlert size={15} className="mt-0.5 shrink-0" /> <span>{item.text}</span>
         </div>
       );
+    case 'intel':
+      return <IntelCard item={item} />;
     case 'usage':
       return (
         <div className="my-3 border-t border-line pt-1.5 text-[11.5px] text-faint">
@@ -283,6 +286,38 @@ const ItemView = memo(function ItemView({ item, sessionId }: { item: Item; sessi
       return sessionId ? null : null;
   }
 });
+
+/** Intelligence Engine card: strategy, shadow alert, evidence check, red team, learning. */
+function IntelCard({ item }: { item: Extract<Item, { kind: 'intel' }> }) {
+  const tone = {
+    info: 'border-info/30 bg-info/5 text-info',
+    warn: 'border-warn/40 bg-warn/10 text-warn',
+    ok: 'border-ok/30 bg-ok/5 text-ok',
+    err: 'border-err/40 bg-err/10 text-err',
+  }[item.tone];
+  return (
+    <div className={cx('my-1.5 rounded-xl border px-3 py-1.5 text-[12.5px]', tone)}>
+      <div className="flex items-center gap-1.5 font-medium">
+        <Brain size={13} /> {item.title}
+      </div>
+      {item.lines.length > 0 && (
+        <ul className="mt-0.5 space-y-0.5 text-[12px] text-muted">
+          {item.lines.map((l, i) => (
+            <li key={i}>• {l}</li>
+          ))}
+        </ul>
+      )}
+      {item.detail && (
+        <details className="mt-1">
+          <summary className="cursor-pointer text-[11.5px] text-faint">Détail</summary>
+          <div className="mt-1 text-fg">
+            <Markdown text={item.detail} />
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
 
 function ToolRow({ item }: { item: Extract<Item, { kind: 'tool' }> }) {
   const [open, setOpen] = useState(false);

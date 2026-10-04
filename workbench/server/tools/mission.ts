@@ -64,11 +64,33 @@ export const missionTools: AnyTool[] = [
             name: z.string(),
             status: z.enum(['pass', 'fail', 'skip']),
             details: z.string().optional(),
+            command: z.string().optional(),
+            expect: z.string().optional(),
           }),
         )
         .max(60),
       issues: z.array(z.string()).max(40).optional(),
       deliverables: z.array(z.string()).max(40).optional(),
+      evidence: z
+        .array(
+          z.object({
+            claim: z.string(),
+            source: z.string(),
+            level: z.enum(['certain', 'probable', 'uncertain', 'unknown']),
+          }),
+        )
+        .max(40)
+        .optional(),
+      related: z
+        .array(
+          z.object({
+            task: z.string(),
+            priority: z.enum(['indispensable', 'recommended', 'optional', 'forbidden']),
+            done: z.boolean().optional(),
+          }),
+        )
+        .max(30)
+        .optional(),
     }),
     readOnly: false,
     assess: () => ({ risk: 'read' }),

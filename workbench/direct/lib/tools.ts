@@ -27,6 +27,29 @@ import { apexGuide, assembleApp, lintApp, referencePart } from '../../server/ser
 import { getHouseKit, qaInFrame, syntaxError } from './apex';
 import { browser, snapshotText, type BrowserSnapshot } from './browser';
 import { agentShell } from './shell';
+import {
+  buildGraph,
+  buildTwin,
+  impactOf,
+  queryGraph,
+  rankInformation,
+  regressionSuite,
+  simulateDecision,
+  twinSummary,
+  type DecisionInput,
+  type InfoItem,
+  type ManualKind,
+} from '../../server/agent/intelligence';
+import { diffCheckpoint, listCheckpoints, restoreCheckpoint } from './timemachine';
+
+/** Digital twin of the current workspace (text files only). */
+function workspaceTwin() {
+  return buildTwin(
+    Object.values(files())
+      .filter((f) => !f.binary && f.data.length < 2_000_000)
+      .map((f) => ({ path: f.path, text: f.data })),
+  );
+}
 import { shellRisk } from './shellCore';
 import { diagnose, formatDiagnosis } from '../../server/tools/diagnose';
 
@@ -889,6 +912,232 @@ export const TOOLS: DirectTool[] = [
         }),
       );
       return ok(`${r.rowCount} lignes → ${path}`, `Saved ${r.rowCount} rows to ${path}.`);
+    },
+  },
+  // ── MASSAMBA Intelligence Engine tools ───────────────────────────────────
+  {
+    name: 'decision.simulate',
+    description:
+      'Decision simulator + counterfactuals: compare options with an outcome formula under scenarios (optimistic / central / stress / failure by default, or yours with variable shocks and probabilities). Returns the table, expected value, worst case, critical variables and the change that would flip the decision.',
+    parameters: obj(
+      {
+        formula: str('Outcome formula over the variables, e.g. "volume*marge - cout - perte*exposition"'),
+        goal: { type: 'string', enum: ['max', 'min'] },
+        options: {
+          type: 'array',
+          items: obj(
+            { name: { type: 'string' }, vars: { type: 'object', additionalProperties: { type: 'number' } } },
+            ['name', 'vars'],
+          ),
+        },
+        scenarios: {
+          type: 'array',
+          items: obj(
+            {
+              name: { type: 'string' },
+              shocks: {
+                type: 'object',
+                additionalProperties: { type: 'number' },
+                description: 'variable → multiplier',
+              },
+              probability: { type: 'number' },
+            },
+            ['name', 'shocks'],
+          ),
+        },
+      },
+      ['formula', 'options'],
+    ),
+    risk: 'read',
+    readOnly: true,
+    label: () => 'Simulation de décision',
+    async run(a) {
+      const out = simulateDecision(a as unknown as DecisionInput);
+      return ok('simulation', out, { output: out });
+    },
+  },
+  {
+    name: 'info.value',
+    description:
+      'Information value engine: rank the missing pieces of information by expected value (impact on the decision × current uncertainty) per unit of cost, to obtain the most valuable first.',
+    parameters: obj(
+      {
+        items: {
+          type: 'array',
+          items: obj(
+            {
+              question: { type: 'string' },
+              impact: { type: 'number' },
+              uncertainty: { type: 'number' },
+              cost: { type: 'number' },
+            },
+            ['question', 'impact', 'uncertainty', 'cost'],
+          ),
+        },
+      },
+      ['items'],
+    ),
+    risk: 'read',
+    readOnly: true,
+    label: () => 'Valeur de l’information',
+    async run(a) {
+      return ok('classement', rankInformation((a.items as InfoItem[]) ?? []));
+    },
+  },
+  {
+    name: 'knowledge.query',
+    description:
+      'Personal knowledge graph: what is known about a file, decision, model, agent or subject — which missions read / wrote it, with which model, outcome, and the recorded decisions (why).',
+    parameters: obj({ query: str('Subject, file name, decision…') }, ['query']),
+    risk: 'read',
+    readOnly: true,
+    label: (a) => `Graphe de connaissances : ${S(a.query)}`,
+    async run(a) {
+      const st = useStore.getState();
+      const g = buildGraph(st.ledger, getFile('.ai/DECISIONS.md')?.data ?? '', Object.keys(files()));
+      return ok(`${g.nodes.size} nœuds`, queryGraph(g, S(a.query)));
+    },
+  },
+  {
+    name: 'project.twin',
+    description:
+      'Digital twin of the workspace: components by kind, dependencies between files (imports, scripts, data used), most depended-on files.',
+    parameters: obj({}),
+    risk: 'read',
+    readOnly: true,
+    label: () => 'Jumeau numérique du projet',
+    async run() {
+      return ok('jumeau numérique', twinSummary(workspaceTwin()));
+    },
+  },
+  {
+    name: 'project.impact',
+    description:
+      'Before modifying a file: simulate the impact — files that depend on it (transitively), missions that produced or used it, regression checks that protect it.',
+    parameters: obj({ path: str('Workspace path') }, ['path']),
+    risk: 'read',
+    readOnly: true,
+    label: (a) => `Impact de ${S(a.path)}`,
+    async run(a) {
+      const p = normPath(S(a.path));
+      const t = workspaceTwin();
+      const imp = impactOf(t, p);
+      const st = useStore.getState();
+      const missions = st.ledger.entries
+        .filter((e) => e.files.written.includes(p) || e.files.read.includes(p))
+        .slice(-6);
+      const checks = regressionSuite(st.ledger).filter((c) => c.files.includes(p));
+      return ok(
+        `${imp.length} dépendant(s)`,
+        `Impact of changing ${p}:\nDependents (re-test): ${imp.join(', ') || 'none'}\nUses: ${(t.deps[p] ?? []).join(', ') || 'none'}\nMissions: ${missions.map((m) => `${m.verdict} — ${m.goal.slice(0, 80)}`).join(' | ') || 'none'}\nRegression checks: ${checks.map((c) => `${c.name} ($ ${c.command})`).join(' | ') || 'none'}`,
+      );
+    },
+  },
+  {
+    name: 'regression.run',
+    description:
+      'Living regression suite: re-run the checks that previous successful missions recorded (terminal commands with expected output), optionally only those protecting given files.',
+    parameters: obj({ paths: { type: 'array', items: { type: 'string' } } }),
+    risk: 'execute',
+    readOnly: false,
+    label: () => 'Suite de non-régression',
+    async run(a) {
+      const want = Array.isArray(a.paths) ? a.paths.map((x) => normPath(S(x))) : [];
+      const suite = regressionSuite(useStore.getState().ledger).filter(
+        (c) => !want.length || c.files.some((f) => want.includes(f)),
+      );
+      if (!suite.length) return ok('aucun contrôle', 'No stored regression check for these files yet.');
+      const lines: string[] = [];
+      let fails = 0;
+      for (const c of suite.slice(0, 25)) {
+        const r = await agentShell.exec(c.command);
+        const pass = r.code === 0 && (!c.expect || r.out.includes(c.expect));
+        if (!pass) fails++;
+        lines.push(
+          `${pass ? 'PASS' : 'FAIL'} — ${c.name} ($ ${c.command})${pass ? '' : ` → ${r.out.slice(0, 200)}`}`,
+        );
+      }
+      return {
+        ok: fails === 0,
+        summary: `${suite.length - fails}/${suite.length} OK`,
+        forModel: lines.join('\n'),
+      };
+    },
+  },
+  {
+    name: 'manual.add',
+    description:
+      "Add a rule to the user's Personal Operating Manual (applied to every future task): standard, preference, method, forbidden, favorite. Only for durable rules the user stated or clearly validated.",
+    parameters: obj(
+      {
+        kind: { type: 'string', enum: ['standard', 'preference', 'method', 'forbidden', 'favorite'] },
+        rule: str('The rule'),
+      },
+      ['kind', 'rule'],
+    ),
+    risk: 'read',
+    readOnly: false,
+    label: (a) => `Manuel : ${S(a.rule).slice(0, 60)}`,
+    async run(a) {
+      const st = useStore.getState();
+      if (st.manual.some((m) => m.rule === S(a.rule)))
+        return ok('déjà présent', 'Rule already in the manual.');
+      st.setManual([
+        ...st.manual,
+        {
+          id: uid(),
+          kind: S(a.kind) as ManualKind,
+          rule: S(a.rule).slice(0, 400),
+          at: Date.now(),
+          source: 'agent',
+        },
+      ]);
+      return ok('règle ajoutée', 'Rule added to the Personal Operating Manual.');
+    },
+  },
+  {
+    name: 'timemachine.list',
+    description: 'Time Machine: restorable states saved automatically before each task that modified files.',
+    parameters: obj({}),
+    risk: 'read',
+    readOnly: true,
+    label: () => 'Time Machine',
+    async run() {
+      const l = await listCheckpoints();
+      return ok(
+        `${l.length} point(s)`,
+        l
+          .map(
+            (c) =>
+              `${c.id} — ${new Date(c.at).toLocaleString('fr-FR')} — « ${c.goal.slice(0, 80)} » — ${Object.keys(c.before).length} fichier(s)`,
+          )
+          .join('\n') || 'No checkpoint yet.',
+      );
+    },
+  },
+  {
+    name: 'timemachine.diff',
+    description:
+      'Functional diff between the state before a task (checkpoint id) and now: files, functions added / removed, impacted components, tests to run.',
+    parameters: obj({ id: str('Checkpoint id') }, ['id']),
+    risk: 'read',
+    readOnly: true,
+    label: (a) => `Différences depuis ${S(a.id)}`,
+    async run(a) {
+      return ok('différences', await diffCheckpoint(S(a.id)));
+    },
+  },
+  {
+    name: 'timemachine.restore',
+    description:
+      'Restore every file touched by a task to its state before that task (files it created are removed).',
+    parameters: obj({ id: str('Checkpoint id') }, ['id']),
+    risk: 'delete',
+    readOnly: false,
+    label: (a) => `Restaurer ${S(a.id)}`,
+    async run(a) {
+      const r = await restoreCheckpoint(S(a.id));
+      return ok(`${r.length} fichier(s) restauré(s)`, `Restored: ${r.join(', ')}`);
     },
   },
   // ── Embedded terminal and browser ────────────────────────────────────────

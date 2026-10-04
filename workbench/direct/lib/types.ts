@@ -97,6 +97,15 @@ export type Item =
     }
   | { kind: 'error'; id: string; text: string }
   | {
+      /** Intelligence Engine events: strategy, shadow alerts, evidence check, red team, learning. */
+      kind: 'intel';
+      id: string;
+      title: string;
+      tone: 'info' | 'warn' | 'ok' | 'err';
+      lines: string[];
+      detail?: string;
+    }
+  | {
       kind: 'usage';
       id: string;
       cost: number;
@@ -128,6 +137,8 @@ export interface Session {
   /** Last mission verdict / run outcome (Mission Control). */
   verdict?: MissionReportPayload['status'] | 'ERROR' | null;
   lastMode?: AgentMode;
+  /** Resume summary saved when a run is interrupted (intelligent compression). */
+  resume?: string;
 }
 
 /** One LLM call (cost tracking, Mission Control). */

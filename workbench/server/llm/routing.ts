@@ -247,12 +247,28 @@ export function recordOutcome(map: LeaderboardMap, model: string, won: boolean):
   const e = map[model] ?? { won: 0, lost: 0 };
   return { ...map, [model]: won ? { ...e, won: e.won + 1 } : { ...e, lost: e.lost + 1 } };
 }
-/** ±3 points max, shrunk toward 0 while few missions were observed. */
-export function leaderboardBoost(map: LeaderboardMap, model: string): number {
-  const e = map[model];
+/** ±3 points max, shrunk toward 0 while few missions were observed (per task type when known). */
+export function leaderboardBoost(map: LeaderboardMap, model: string, type?: TaskType): number {
+  const e = (type && map[`${type}|${model}`]) || map[model];
   if (!e) return 0;
   const n = e.won + e.lost;
   return ((e.won - e.lost) / (n + 2)) * 3;
+}
+
+/** Probability of success measured on the user's own missions (Beta(1,1) prior), per task type when known. */
+export function successProb(map: LeaderboardMap, model: string, type?: TaskType): number {
+  const e = (type && map[`${type}|${model}`]) || map[model];
+  return e ? (e.won + 1) / (e.won + e.lost + 2) : 0.5;
+}
+
+/** Records a mission outcome globally and for its task type (personal leaderboard). */
+export function recordTypedOutcome(
+  map: LeaderboardMap,
+  model: string,
+  type: TaskType,
+  won: boolean,
+): LeaderboardMap {
+  return recordOutcome(recordOutcome(map, model, won), `${type}|${model}`, won);
 }
 
 export interface RankedModel {
@@ -265,6 +281,8 @@ export interface RankedModel {
   estimated: boolean;
   /** Blended USD / 1M tokens. */
   price: number;
+  /** Expected cost per success: price ÷ probability of success on your missions (Value/Cost optimizer). */
+  effPrice: number;
   /** Not dominated: no other candidate is both cheaper (or equal) and smarter. */
   pareto: boolean;
   /** Benchmark variant the score comes from (e.g. "GPT-6 Luna (Max)"). */
@@ -306,7 +324,8 @@ export function rankByValue(
     // must also keep a minimum of general intelligence for the tier.
     if (metric !== 'intelligence' && (info.score / maxI) * 100 < min * 0.85) continue;
     const r = reliability(health, m.id);
-    const score = rel + leaderboardBoost(board, m.id) - (r < 0.3 ? 60 : (0.9 - Math.min(r, 0.9)) * 15);
+    const score =
+      rel + leaderboardBoost(board, m.id, p.type) - (r < 0.3 ? 60 : (0.9 - Math.min(r, 0.9)) * 15);
     pool.push({
       m,
       score,
@@ -315,6 +334,7 @@ export function rankByValue(
       estimated: info.estimated || v === null,
       ref: info.name,
       price,
+      effPrice: price / (successProb(board, m.id, p.type) * 2),
       pareto: true,
     });
   }
@@ -323,16 +343,17 @@ export function rankByValue(
     r.pareto = !eligible.some(
       (o) => o !== r && o.price <= r.price && o.score >= r.score && (o.price < r.price || o.score > r.score),
     );
+  // Sorted by expected cost per success (= blended price while no personal history exists).
   const cmp = (a: RankedModel, b: RankedModel) => {
-    const lo = Math.min(a.price, b.price);
-    if (Math.abs(a.price - b.price) <= lo * 0.1)
+    const lo = Math.min(a.effPrice, b.effPrice);
+    if (Math.abs(a.effPrice - b.effPrice) <= lo * 0.1)
       return (
         b.score - a.score ||
         Number(a.estimated) - Number(b.estimated) ||
         a.price - b.price ||
         a.m.id.length - b.m.id.length
       );
-    return a.price - b.price;
+    return a.effPrice - b.effPrice;
   };
   // One entry per measured model: '-pro', dated or estimated twins of the same
   // benchmark entry keep only the best-placed one.

@@ -3,8 +3,17 @@ import type { CreditsInfo, ModelInfo } from '@shared/types';
 import { kv, saveLater } from './db';
 import { intelData, setIntelData, type IntelData } from '../../server/llm/modelIntel';
 import type { HouseKit } from '../../server/services/apexCore';
+import type { BenchResult, Ledger, ManualRule } from '../../server/agent/intelligence';
 import { embeddedKit, setHouseKit } from './apex';
-import { recordHealth, recordOutcome, type HealthMap, type LeaderboardMap } from '../../server/llm/routing';
+import { noteBefore } from './timemachine';
+import {
+  recordHealth,
+  recordOutcome,
+  recordTypedOutcome,
+  type HealthMap,
+  type LeaderboardMap,
+  type TaskType,
+} from '../../server/llm/routing';
 import type {
   AgentDef,
   AgentMode,
@@ -73,6 +82,12 @@ export interface State {
   health: HealthMap;
   /** Personal model leaderboard (missions won / lost). */
   board: LeaderboardMap;
+  /** Intelligence Engine memory: every mission (DNA, strategy, outcome, cost, errors). */
+  ledger: Ledger;
+  /** Personal operating manual (user rules). */
+  manual: ManualRule[];
+  /** Auto-benchmark runs. */
+  bench: BenchResult[];
   draft: string;
   toasts: Toast[];
   openFile: string | null;
@@ -99,7 +114,10 @@ export interface State {
   addUsage: (u: UsageEntry) => void;
   setWorkflows: (w: Workflow[]) => void;
   recordModel: (model: string, ok: boolean) => void;
-  recordOutcome: (model: string, won: boolean) => void;
+  recordOutcome: (model: string, won: boolean, type?: TaskType) => void;
+  setLedger: (l: Ledger) => void;
+  setManual: (m: ManualRule[]) => void;
+  setBench: (b: BenchResult[]) => void;
 }
 
 const persistSession = (s: Session) => saveLater(`session:${s.id}`, () => s);
@@ -128,6 +146,9 @@ export const useStore = create<State>((set, get) => ({
   workflows: [],
   health: {},
   board: {},
+  ledger: { entries: [] },
+  manual: [],
+  bench: [],
   draft: '',
   toasts: [],
   openFile: null,
@@ -204,6 +225,7 @@ export const useStore = create<State>((set, get) => ({
       ),
     })),
   writeFile: (f) => {
+    noteBefore(f.path, get().files[f.path]);
     const file: VFile = {
       ...f,
       size: f.size ?? (f.binary ? Math.floor((f.data.length * 3) / 4) : new Blob([f.data]).size),
@@ -214,7 +236,11 @@ export const useStore = create<State>((set, get) => ({
   },
   deleteFile: (path) => {
     const files = { ...get().files };
-    for (const p of Object.keys(files)) if (p === path || p.startsWith(`${path}/`)) delete files[p];
+    for (const p of Object.keys(files))
+      if (p === path || p.startsWith(`${path}/`)) {
+        noteBefore(p, files[p]);
+        delete files[p];
+      }
     set({ files });
     saveLater('files', () => get().files);
   },
@@ -262,14 +288,35 @@ export const useStore = create<State>((set, get) => ({
     set({ health: recordHealth(get().health, model, ok) });
     saveLater('health', () => get().health, 1000);
   },
-  recordOutcome: (model, won) => {
-    set({ board: recordOutcome(get().board, model, won) });
+  recordOutcome: (model, won, type) => {
+    set({
+      board: type
+        ? recordTypedOutcome(get().board, model, type, won)
+        : recordOutcome(get().board, model, won),
+    });
     saveLater('board', () => get().board, 1000);
+  },
+  setLedger: (ledger) => {
+    set({ ledger });
+    saveLater('ledger', () => get().ledger, 1000);
+  },
+  setManual: (manual) => {
+    set({ manual });
+    saveLater('manual', () => get().manual, 300);
+  },
+  setBench: (bench) => {
+    set({ bench });
+    saveLater('bench', () => get().bench, 300);
   },
 }));
 
 /** Loads everything saved in this browser. */
 export async function hydrate(): Promise<void> {
+  const [ledger, manual, bench] = await Promise.all([
+    kv.get<Ledger>('ledger').catch(() => undefined),
+    kv.get<ManualRule[]>('manual').catch(() => undefined),
+    kv.get<BenchResult[]>('bench').catch(() => undefined),
+  ]);
   const [usage, workflows, health, board, intel] = await Promise.all([
     kv.get<UsageEntry[]>('usage').catch(() => undefined),
     kv.get<Workflow[]>('workflows').catch(() => undefined),
@@ -341,5 +388,8 @@ export async function hydrate(): Promise<void> {
     workflows: workflows ?? [],
     health: health ?? {},
     board: board ?? {},
+    ledger: ledger ?? { entries: [] },
+    manual: manual ?? [],
+    bench: bench ?? [],
   });
 }

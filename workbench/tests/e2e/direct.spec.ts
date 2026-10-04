@@ -468,3 +468,68 @@ test('built-in plugins: 3D studio (preview + .glb + Blender script) and exchange
   await page.getByRole('button', { name: 'Plugins', exact: true }).first().click();
   await expect(page.getByText('Studio 3D → Blender')).toBeVisible();
 });
+
+test('Intelligence Engine: strategy, shadow alert, evidence check, manual, learning, time machine', async ({ page }) => {
+  await open(page);
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  mock.push(
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'data/ventes.csv', content: 'agence,montant\nDakar,1250\nThies,430\n' } }] },
+    { toolCalls: [{ name: 'data.query', args: { path: 'data/ventes.csv', aggregations: [{ column: 'montant', fn: 'sum' }] } }] },
+    // Final answer with an invented figure → evidence check.
+    { text: 'Le total des ventes est de 1680 et la marge de 98 765 432.' },
+    { text: 'Corrigé : le total des ventes est 1680 (données). La marge n’est pas calculable avec ce fichier.' },
+  );
+  await send(page, 'À partir de maintenant, les montants sont toujours en XOF. Analyse les ventes du fichier data/ventes.csv et donne le total.');
+  await expect(page.getByText(/Corrigé : le total des ventes est 1680/)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/Stratégie — /).first()).toBeVisible();
+  await expect(page.getByText('Manuel personnel : règle mémorisée')).toBeVisible();
+  await expect(page.getByText('Contrôle des preuves : chiffres sans source')).toHaveCount(1);
+  const r3 = JSON.stringify(mock.requests[3]!.messages);
+  expect(r3).toContain('[EVIDENCE CHECK]');
+  expect(r3).toContain('98 765 432');
+  expect(r3).not.toMatch(/EVIDENCE CHECK[^\]]*1680/);
+  // The rule is now part of every system prompt.
+  expect(JSON.stringify(mock.requests[3]!.messages[0])).toContain('les montants sont toujours en XOF');
+  expect(JSON.stringify(mock.requests[0]!.messages[0])).toContain('MASSAMBA STRATEGY');
+
+  // Second run: the shadow agent catches a write into the user's source data; learning memory is used.
+  mock.push(
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'uploads/source.csv', content: 'x' } }] },
+    { toolCalls: [{ name: 'timemachine.list', args: {} }] },
+    { text: 'Fait.' },
+  );
+  await send(page, 'Analyse encore les ventes du fichier data/ventes.csv');
+  await expect(page.getByText('Fait.', { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/source file uploads\/source.csv is being modified/)).toBeVisible();
+  const r5 = JSON.stringify(mock.requests[5]!.messages);
+  expect(r5).toContain('[SHADOW AGENT');
+  // Time machine: the first run's writes were checkpointed.
+  expect(JSON.stringify(mock.requests[6]!.messages)).toMatch(/cp_[a-z0-9]+ — .* — \d+ fichier/);
+  // Learning: the strategy of the second run knows the first one.
+  await expect(page.getByText(/Mémoire : [1-9]\d* mission\(s\) similaire\(s\)/).first()).toBeVisible();
+});
+
+test('Intelligence Engine: critical mission → red team blocks, correction, judge approves', async ({ page }) => {
+  await open(page);
+  await page.getByTitle(/Mode Mission/).click();
+  mock.push(
+    { toolCalls: [{ name: 'mission.report', args: { status: 'PASSED', summary: 'Note COMEX prête', checks: [{ name: 'total', status: 'pass', command: 'echo ok', expect: 'ok' }] } }] },
+    // Red team (sub-agent)
+    { text: 'CONFIDENCE: 40%\nBLOCKING: le total des provisions est faux\nMINOR: titre' },
+    // Correction then new report
+    { toolCalls: [{ name: 'mission.report', args: { status: 'PASSED', summary: 'Note COMEX corrigée', checks: [{ name: 'total', status: 'pass' }], evidence: [{ claim: 'Provisions 120', source: 'data.query', level: 'certain' }], related: [{ task: 'Prévenir le Comité', priority: 'forbidden' }] } }] },
+    { text: 'CONFIDENCE: 90%\nBLOCKING: none' },
+    // Final judge
+    { text: 'VERDICT: APPROVED\nScore 92/100' },
+  );
+  await send(page, 'Prépare la note au COMEX sur les provisions IFRS9');
+  await expect(page.getByText('Revue finale : approuvée')).toBeVisible({ timeout: 40_000 });
+  await expect(page.getByText(/Red team — confiance 40 %/)).toBeVisible();
+  await expect(page.getByText(/Bloquant : le total des provisions est faux/)).toBeVisible();
+  const fix = JSON.stringify(mock.requests[2]!.messages);
+  expect(fix).toContain('The red team found blocking problems');
+  expect(JSON.stringify(mock.requests[1]!.messages[0])).toContain('RED TEAM');
+  await expect(page.getByText(/Carte d'incertitude|certain/).first()).toBeVisible();
+  await page.getByTitle(/Mode Mission/).click();
+});

@@ -1,7 +1,30 @@
 // The agent loop, running entirely in the browser: plan → tools → observe → verify.
 import type { EffortSetting } from '@shared/types';
 import { selectModel } from '../../server/llm/router';
-import { FAMILY_TIER, analyzeTask, routeModel } from '../../server/llm/routing';
+import { FAMILY_TIER, TIER_LABEL, analyzeTask, routeModel } from '../../server/llm/routing';
+import {
+  ADVERSARIAL_TASK,
+  ENGINE_DOCTRINE,
+  ShadowMonitor,
+  buildTwin,
+  compressTrajectory,
+  detectRules,
+  manualPrompt,
+  parseChallenge,
+  planStrategy,
+  regressionSuite,
+  shadowMessage,
+  similarMissions,
+  strategyPrompt,
+  taskDna,
+  unsupportedNumbers,
+  recordEntry,
+  type LedgerEntry,
+  type ShadowAlert,
+  type Strategy,
+  type TaskDna,
+} from '../../server/agent/intelligence';
+import { beginCheckpoint, endCheckpoint } from './timemachine';
 import {
   AI_DOCS,
   FINAL_REVIEW_TASK,
@@ -178,8 +201,23 @@ async function userContent(
 const estimate = (msgs: ChatMessage[]) => Math.ceil(JSON.stringify(msgs).length / 3.6);
 
 /** Drops old tool outputs and images when the context gets too large. */
-function compact(msgs: ChatMessage[], budget: number): ChatMessage[] {
+function compact(msgs: ChatMessage[], budget: number, goal = ''): ChatMessage[] {
   if (estimate(msgs) <= budget) return msgs;
+  // Intelligent compression: the middle of a long trajectory becomes a structured
+  // summary (facts, decisions, failures, files, current state) instead of being cut.
+  if (msgs.length > 14) {
+    const firstUser = msgs.findIndex((m, i) => i > 0 && m.role === 'user');
+    let cut = Math.max(firstUser + 1, msgs.length - 8);
+    // Never split an assistant tool call from its tool results.
+    while (cut < msgs.length && msgs[cut]!.role === 'tool') cut++;
+    const middle = msgs.slice(firstUser + 1, cut);
+    if (middle.length > 4) {
+      const summary: ChatMessage = { role: 'user', content: compressTrajectory(middle as never[], goal) };
+      const out = [...msgs.slice(0, firstUser + 1), summary, ...msgs.slice(cut)];
+      if (estimate(out) <= budget) return out;
+      msgs = out;
+    }
+  }
   const keepFrom = Math.max(1, msgs.length - 8);
   return msgs.map((m, i) => {
     if (i === 0 || i >= keepFrom) return m;
@@ -221,7 +259,19 @@ interface LoopResult {
   report?: MissionReport | null;
   models: string[];
   fallbacks: number;
+  dna?: TaskDna;
+  strategy?: Strategy | null;
+  tier?: string;
+  shadow?: ShadowMonitor | null;
+  steps?: number;
+  challenged?: number;
 }
+
+/** Messages of the top-level run in progress (resume summary if it is interrupted). */
+let liveTrace: { goal: string; messages: ChatMessage[] } | null = null;
+const currentTrace = () => liveTrace;
+/** Specialists delegated to during the current top-level run (learning). */
+const runTeam = new Set<string>();
 
 function decide(
   mode: Session['mode'],
@@ -303,6 +353,32 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     historyTokens: estimate(inp.history),
     mission: inp.mission,
   });
+  // MASSAMBA Intelligence Engine: Task DNA → Strategy (learnt from the ledger).
+  const top = inp.depth === 0 && !label;
+  const dna = taskDna(
+    inp.text,
+    inp.attachments.map((a) => a.name),
+    profile,
+  );
+  const strategy = top ? planStrategy(dna, profile, st.ledger, { mission: Boolean(inp.mission) }) : null;
+  if (strategy && !prefTier) profile.tier = strategy.tier;
+  if (top) {
+    // Personal operating manual: explicit durable instructions are remembered.
+    const rules = detectRules(inp.text).filter((r) => !st.manual.some((m) => m.rule === r.rule));
+    if (rules.length) {
+      st.setManual([
+        ...st.manual,
+        ...rules.map((r) => ({ ...r, id: uid(), at: Date.now(), source: 'auto' as const })),
+      ]);
+      push(sid, {
+        kind: 'intel',
+        id: uid(),
+        title: 'Manuel personnel : règle mémorisée',
+        tone: 'ok',
+        lines: rules.map((r) => r.rule),
+      });
+    }
+  }
   const sel = selectModel({
     requested,
     models,
@@ -339,6 +415,23 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       estimate: routed?.estimate ?? null,
     });
 
+  if (strategy && top) {
+    const simN = similarMissions(st.ledger, dna).length;
+    push(sid, {
+      kind: 'intel',
+      id: uid(),
+      title: `Stratégie — ${TIER_LABEL[strategy.tier]} · criticité ${dna.criticality}`,
+      tone: strategy.explore ? 'warn' : 'info',
+      lines: [
+        `ADN : ${dna.type}, complexité ${Math.round(dna.complexity * 100)} %${dna.risks.length ? `, risques ${dna.risks.join(', ')}` : ''}${dna.outputs.length ? `, livrables ${dna.outputs.join(', ')}` : ''}`,
+        `Palier : ${strategy.tierReason}`,
+        `Vérifications : ${[strategy.verify.qa && 'QA', strategy.verify.evidence && 'preuves des chiffres', strategy.verify.adversarial && 'red team', strategy.verify.judge && 'juge final', 'shadow'].filter(Boolean).join(' · ')}`,
+        ...(strategy.team.length ? [`Équipe : ${strategy.team.join(' → ')}`] : []),
+        `Mémoire : ${simN} mission(s) similaire(s), ${strategy.pitfalls.length} piège(s) connu(s)`,
+      ],
+    });
+  }
+
   // Skills: pinned + agent's + auto-detected
   const enabled = st.skills.filter((s) => s.enabled);
   const names = new Set<string>([...(label ? [] : inp.session.pinnedSkills), ...inp.agent.skills]);
@@ -359,6 +452,9 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   });
   const fullSystem = [
     system,
+    ENGINE_DOCTRINE,
+    manualPrompt(useStore.getState().manual),
+    strategy ? strategyPrompt(dna, strategy) : '',
     MEMORY_INSTRUCTIONS,
     inp.mission
       ? `${MISSION_PROTOCOL}\n\nTask profile: ${profile.reasons.join(', ')}.${profile.team.length ? ` Recommended specialists, in order: ${profile.team.join(' → ')}.` : ''}`
@@ -374,10 +470,59 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     if (digest && content[0]?.type === 'text')
       content[0].text = `<project_memory>\n${digest}\n</project_memory>\n\n${content[0].text}`;
   }
+  if (
+    top &&
+    inp.session.resume &&
+    /\b(contin|repren|resume|poursui|termine)/i.test(inp.text) &&
+    content[0]?.type === 'text'
+  ) {
+    content[0].text = `<resume_summary>\n${inp.session.resume}\n</resume_summary>\n\n${content[0].text}`;
+    st.patchSession(sid, { resume: undefined });
+  }
   const user: ChatMessage = { role: 'user', content };
   const messages: ChatMessage[] = [{ role: 'system', content: fullSystem }, ...inp.history, user];
   const persisted: ChatMessage[] = [user];
   const contextBudget = Math.min(Math.floor((info?.contextLength || 128_000) * 0.7), 400_000);
+  if (top) liveTrace = { goal: inp.text, messages };
+  // Shadow monitor (deterministic, free) + evidence corpus of the run.
+  let shadow: ShadowMonitor | null = null;
+  if (top && inp.session.mode !== 'safe') {
+    const files = useStore.getState().files;
+    const twin = buildTwin(
+      Object.values(files)
+        .filter((f) => !f.binary && f.data.length < 500_000)
+        .map((f) => ({ path: f.path, text: f.data })),
+    );
+    const reg = new Set(regressionSuite(st.ledger).flatMap((c) => c.files));
+    shadow = new ShadowMonitor(inp.text, {
+      writeTask: profile.type !== 'chat' && profile.type !== 'research',
+      dependents: (p) => twin.dependents[p] ?? [],
+      regressionPaths: reg,
+    });
+  }
+  const evidence: string[] = [
+    inp.text,
+    ...inp.history
+      .filter((m) => m.role === 'user' || m.role === 'tool')
+      .map((m) => (typeof m.content === 'string' ? m.content : JSON.stringify(m.content))),
+  ];
+  let gates = 0;
+  let challenged = 0;
+  let stepsDone = 0;
+  const showAlerts = (alerts: ShadowAlert[]) => {
+    if (!alerts.length) return;
+    push(sid, {
+      kind: 'intel',
+      id: uid(),
+      title: 'Shadow agent',
+      tone: alerts.some((a) => a.severity === 'critical')
+        ? 'err'
+        : alerts.some((a) => a.severity === 'warn')
+          ? 'warn'
+          : 'info',
+      lines: alerts.map((a) => a.message),
+    });
+  };
 
   let model = sel.model;
   let cost = 0;
@@ -456,7 +601,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         ],
       });
     }
-    const compacted = compact(messages, contextBudget);
+    stepsDone = step + 1;
+    const compacted = compact(messages, contextBudget, inp.text);
     messages.splice(0, messages.length, ...compacted);
 
     const offered = phase === 'planning' ? planTools : tools;
@@ -574,6 +720,34 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
             .filter((l) => /^\s*(\d+[.)]|[-*])\s+/.test(l))
             .map((l) => l.replace(/^\s*(\d+[.)]|[-*])\s+/, '')),
         };
+      } else if (top && !inp.mission && gates < 2 && (shadow || strategy?.verify.evidence)) {
+        // Delivery gates: unverified claims (shadow) and figures without evidence.
+        gates++;
+        shadow?.observeFinal(r.content);
+        const alerts = shadow?.take() ?? [];
+        const unsupported = strategy?.verify.evidence ? unsupportedNumbers(r.content, evidence) : [];
+        const notes: string[] = [];
+        if (alerts.length) {
+          showAlerts(alerts);
+          notes.push(shadowMessage(alerts));
+        }
+        if (unsupported.length) {
+          push(sid, {
+            kind: 'intel',
+            id: uid(),
+            title: 'Contrôle des preuves : chiffres sans source',
+            tone: 'warn',
+            lines: [`${unsupported.join(' · ')} — n’apparaissent dans aucun résultat d’outil`],
+          });
+          notes.push(
+            `[EVIDENCE CHECK] These figures in your answer appear in no tool result or user message: ${unsupported.join(', ')}. Verify them with a tool (data.query, code.run…) and correct them, or mark them explicitly as estimates — then give the final answer again.`,
+          );
+        }
+        if (!notes.length) break;
+        const g: ChatMessage = { role: 'user', content: notes.join('\n\n') };
+        messages.push(g);
+        persisted.push(g);
+        continue;
       } else if (inp.mission && missionNudges < 3) {
         missionNudges++;
         const nudge: ChatMessage = {
@@ -593,6 +767,25 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       const m: ChatMessage = { role: 'tool', tool_call_id: call.id, content: res };
       messages.push(m);
       persisted.push(m);
+      evidence.push(res.slice(0, 40_000));
+      if (shadow) {
+        let args: Record<string, unknown> = {};
+        try {
+          args = JSON.parse(call.function.arguments || '{}') as Record<string, unknown>;
+        } catch {
+          /* invalid args already reported */
+        }
+        shadow.observeTool(call.function.name.replace(/__/g, '.'), args, !/^(Error|Denied)/.test(res), res);
+      }
+    }
+    // Shadow alerts go to the agent at once (high value only) and to the user.
+    if (shadow) {
+      const alerts = shadow.take();
+      showAlerts(alerts);
+      if (alerts.some((a) => a.severity !== 'info') || alerts.length >= 2) {
+        const note: ChatMessage = { role: 'user', content: shadowMessage(alerts) };
+        messages.push(note);
+      }
     }
 
     // Plan approval gate
@@ -628,7 +821,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       lastReport = report;
       missionRound++;
       recordMission(inp.text, report, { model, cost });
-      if (report.status !== 'PARTIAL') useStore.getState().recordOutcome(model, report.status === 'PASSED');
+      if (report.status !== 'PARTIAL')
+        useStore.getState().recordOutcome(model, report.status === 'PASSED', profile.type);
       if (report.status !== 'PASSED' && missionRound < 3) {
         push(sid, { kind: 'mission', id: uid(), report, round: missionRound });
         const fix: ChatMessage = {
@@ -638,6 +832,39 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         messages.push(fix);
         persisted.push(fix);
         continue;
+      }
+      // Evidence check + red team before the final judge.
+      if (report.status === 'PASSED' && strategy && inp.depth < MAX_DEPTH && challenged < 2) {
+        const unsupported = strategy.verify.evidence
+          ? unsupportedNumbers(`${finalText}\n${report.summary}`, evidence)
+          : [];
+        if (strategy.verify.adversarial || unsupported.length) {
+          challenged++;
+          ctx.mission!.stage('review', 'red team');
+          const ch = await delegate(inp, 'adversarial', ADVERSARIAL_TASK(inp.text, report, unsupported));
+          const c = parseChallenge(ch.summary);
+          push(sid, {
+            kind: 'intel',
+            id: uid(),
+            title: `Red team — confiance ${c.confidence ?? '?'} %`,
+            tone: c.blocking.length ? 'err' : 'ok',
+            lines: [
+              ...c.blocking.map((b) => `Bloquant : ${b}`),
+              ...c.minor.slice(0, 4).map((b) => `Mineur : ${b}`),
+              ...(unsupported.length ? [`Chiffres sans preuve : ${unsupported.join(', ')}`] : []),
+            ],
+            detail: ch.summary.slice(0, 6000),
+          });
+          if (c.blocking.length && missionRound < strategy.maxRounds) {
+            const fix: ChatMessage = {
+              role: 'user',
+              content: `The red team found blocking problems:\n${c.blocking.map((b) => `- ${b}`).join('\n')}\n\nFix them, re-verify with tools, then call mission.report again.`,
+            };
+            messages.push(fix);
+            persisted.push(fix);
+            continue;
+          }
+        }
       }
       if (report.status === 'PASSED' && reviews < 2 && inp.depth < MAX_DEPTH) {
         reviews++;
@@ -680,6 +907,12 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     report: lastReport,
     models: [...usedModels],
     fallbacks: fallbackCount,
+    dna,
+    strategy,
+    tier: routed?.tier ?? profile.tier,
+    shadow,
+    steps: stepsDone,
+    challenged,
   };
 }
 
@@ -796,6 +1029,7 @@ async function delegate(
         .join(', ')}`,
     };
   const itemId = uid();
+  if (parent.depth === 0) runTeam.add(agent.id);
   st.pushItem(parent.session.id, { kind: 'subagent', id: itemId, role: agent.name, task, status: 'running' });
   try {
     const r = await loop({
@@ -840,6 +1074,9 @@ export async function runAgent(
     st.patchSession(sessionId, { title: text.split('\n')[0]!.slice(0, 70) || 'Session' });
   const started = Date.now();
   sub.cost = sub.tokensIn = sub.tokensOut = 0;
+  runTeam.clear();
+  liveTrace = null;
+  beginCheckpoint(sessionId, text);
   let result: LoopResult | null = null;
   let errored = false;
   const mode = opts.mode ?? st.agentMode;
@@ -865,7 +1102,22 @@ export async function runAgent(
     const cancelled = ac.signal.aborted || (e instanceof LLMError && e.code === 'cancelled');
     errored = !cancelled;
     st.pushItem(sessionId, { kind: 'error', id: uid(), text: cancelled ? 'Interrompu.' : friendlyError(e) });
+    // Resume summary: an interrupted run can be continued with « continue ».
+    const trace = currentTrace();
+    if (trace && trace.messages.length > 3) {
+      const resume = compressTrajectory(trace.messages as never[], trace.goal);
+      st.patchSession(sessionId, { resume });
+      st.pushItem(sessionId, {
+        kind: 'intel',
+        id: uid(),
+        title: 'Résumé de reprise enregistré',
+        tone: 'info',
+        lines: ['Écrivez « continue » pour reprendre là où la mission s’est arrêtée.'],
+        detail: resume,
+      });
+    }
   } finally {
+    void endCheckpoint();
     const s = useStore.getState();
     const { [sessionId]: _done, ...running } = s.running;
     const { [sessionId]: _st, ...status } = s.status;
@@ -908,6 +1160,54 @@ export async function runAgent(
       verdict: result?.report?.status ?? (errored ? 'ERROR' : (cur.verdict ?? null)),
       lastMode: mode,
     }));
+    // LEARNING: every run feeds the mission ledger (strategy evolution, failure memory,
+    // knowledge graph, regression suite).
+    if (result?.dna || errored) {
+      const sh = result?.shadow;
+      const verdict: LedgerEntry['verdict'] = result?.report?.status
+        ? result.report.status
+        : errored
+          ? 'ERROR'
+          : sh && !sh.didVerify && sh.didWrite
+            ? 'PARTIAL'
+            : 'PASSED';
+      const dnaE =
+        result?.dna ??
+        taskDna(
+          text,
+          attachments.map((a) => a.name),
+          analyzeTask({ text, attachmentNames: attachments.map((a) => a.name) }),
+        );
+      const entry: LedgerEntry = {
+        id: uid(),
+        at: started,
+        goal: text.slice(0, 400),
+        dna: dnaE,
+        tier: (result?.tier as LedgerEntry['tier']) ?? 'balanced',
+        model: result?.models[0] ?? session.model,
+        team: [...runTeam],
+        verdict,
+        challenged: result?.challenged,
+        cost,
+        durationMs: Date.now() - started,
+        steps: result?.steps ?? 0,
+        toolErrors: sh?.toolErrors.slice(-10) ?? [],
+        rounds: result?.report
+          ? (s.sessions.find((x) => x.id === sessionId)?.items.filter((i) => i.kind === 'mission').length ??
+            0)
+          : 0,
+        files: {
+          read: [...new Set(sh?.read ?? [])].slice(0, 40),
+          written: [...new Set(sh?.written ?? [])].slice(0, 40),
+        },
+        checks: result?.report?.checks ?? [],
+        lessons: [
+          ...(result?.report?.issues ?? []).slice(0, 3),
+          ...(sh?.toolErrors.slice(-2).map((t) => `${t.tool}: ${t.error.slice(0, 100)}`) ?? []),
+        ],
+      };
+      useStore.getState().setLedger(recordEntry(useStore.getState().ledger, entry));
+    }
   }
 }
 
