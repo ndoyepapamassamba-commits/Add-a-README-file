@@ -10,9 +10,8 @@ import {
   toDate,
   excelSerialToDate,
   type Cell,
-  type DataEngine,
   type Dataset,
-} from './dataEngine';
+} from './dataCore';
 
 export const ChartSpecSchema = z.object({
   type: z.enum(['bar', 'line', 'area', 'scatter', 'pie', 'histogram', 'heatmap', 'table', 'kpi']),
@@ -222,7 +221,11 @@ export function computeChart(ds: Dataset, spec: ChartSpec): ChartData {
   }
 }
 
-export async function buildChart(engine: DataEngine, absPath: string, spec: ChartSpec): Promise<ChartData> {
+export async function buildChart(
+  engine: { load(p: string, sheet?: string | null): Promise<Dataset> },
+  absPath: string,
+  spec: ChartSpec,
+): Promise<ChartData> {
   const ds = await engine.load(absPath, spec.source.sheet ?? null);
   return computeChart(ds, spec);
 }

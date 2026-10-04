@@ -1,7 +1,13 @@
-// Copies the single-file client to dist/openrouter-workbench.html (the file to
-// open by double-click; it connects to the local agent on http://127.0.0.1:8787).
+// Copies the single-file clients next to each other in dist/:
+// - openrouter-workbench.html         → needs the local agent (npm start)
+// - openrouter-workbench-direct.html  → works alone (talks to OpenRouter from the browser)
 import fs from 'node:fs';
 
-fs.copyFileSync('dist/web/index.html', 'dist/openrouter-workbench.html');
-const size = (fs.statSync('dist/openrouter-workbench.html').size / 1024 / 1024).toFixed(1);
-console.log(`standalone client → dist/openrouter-workbench.html (${size} MB)`);
+for (const [src, dst] of [
+  ['dist/web/index.html', 'dist/openrouter-workbench.html'],
+  ['dist/direct/index.html', 'dist/openrouter-workbench-direct.html'],
+]) {
+  if (!fs.existsSync(src)) continue;
+  fs.copyFileSync(src, dst);
+  console.log(`standalone client → ${dst} (${(fs.statSync(dst).size / 1024 / 1024).toFixed(1)} MB)`);
+}

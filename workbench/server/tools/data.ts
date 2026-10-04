@@ -1,7 +1,6 @@
-import path from 'node:path';
 import { z } from 'zod';
 import type { ChartSpec } from '@shared/types';
-import { QuerySpecSchema, isDataFile, type DatasetProfile } from '../services/dataEngine';
+import { QuerySpecSchema, isDataFile, profileToText, rowsToText } from '../services/dataEngine';
 import { ChartSpecSchema, buildChart } from '../services/vizEngine';
 import { defineTool, ok, ToolError, type AnyTool, type ToolContext } from './types';
 
@@ -11,51 +10,7 @@ function abs(ctx: ToolContext, rel: string): string {
   return ctx.services.workspace.resolve(ctx.projectId, rel);
 }
 
-function fmtNum(n: number): string {
-  return Math.abs(n) >= 1e6 ? n.toExponential(3) : Number.isInteger(n) ? String(n) : n.toFixed(3);
-}
-
-export function profileToText(p: DatasetProfile): string {
-  const lines = [
-    `File: ${path.basename(p.path)}${p.sheet ? ` — sheet "${p.sheet}"` : ''}${p.sheets.length > 1 ? ` (sheets: ${p.sheets.join(', ')})` : ''}`,
-    `Rows: ${p.rowCount} · Columns: ${p.columnCount} · Duplicate rows: ${p.duplicateRows}`,
-    '',
-    '| column | type | missing | unique | stats / top values |',
-    '|---|---|---|---|---|',
-  ];
-  for (const c of p.columns) {
-    let stats = '';
-    if (c.numeric)
-      stats = `min ${fmtNum(c.numeric.min)} · max ${fmtNum(c.numeric.max)} · mean ${fmtNum(c.numeric.mean)} · median ${fmtNum(c.numeric.median)} · sum ${fmtNum(c.numeric.sum)}`;
-    else if (c.date) stats = `${c.date.min} → ${c.date.max}`;
-    else if (c.top)
-      stats = c.top
-        .slice(0, 5)
-        .map((t) => `${t.value.slice(0, 30)} (${t.count})`)
-        .join(', ');
-    lines.push(`| ${c.name} | ${c.type} | ${c.missing} (${c.missingPct}%) | ${c.unique} | ${stats} |`);
-  }
-  if (p.anomalies.length) lines.push('', 'Anomalies:', ...p.anomalies.map((a) => `- ${a}`));
-  return lines.join('\n');
-}
-
-function rowsToText(columns: string[], rows: Record<string, unknown>[], max = 60): string {
-  const head = `| ${columns.join(' | ')} |\n|${columns.map(() => '---').join('|')}|`;
-  const body = rows
-    .slice(0, max)
-    .map(
-      (r) =>
-        `| ${columns
-          .map((c) =>
-            String(r[c] ?? '')
-              .replace(/\|/g, '\\|')
-              .slice(0, 60),
-          )
-          .join(' | ')} |`,
-    )
-    .join('\n');
-  return `${head}\n${body}${rows.length > max ? `\n… ${rows.length - max} more rows` : ''}`;
-}
+export { profileToText };
 
 export const dataTools: AnyTool[] = [
   defineTool({

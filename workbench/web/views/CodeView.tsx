@@ -22,7 +22,7 @@ import { blobUrl, downloadFile, previewUrl } from '../lib/api';
 import { basename, cx, fmtBytes } from '../lib/format';
 import { useApp } from '../store/app';
 import { useCode, type OpenFile } from '../store/code';
-import { AuthImage } from '../components/rich';
+import { AuthImage } from '../components/artifacts';
 import { Button, Dropdown, Empty, IconButton } from '../components/ui';
 
 const ASK_ACTIONS = [

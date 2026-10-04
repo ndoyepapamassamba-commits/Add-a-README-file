@@ -2,7 +2,7 @@ import type { ReasoningEffort } from '@shared/types';
 import type { Repo } from '../db/repo';
 import type { SettingsService } from '../services/settings';
 import type { ModelCatalog } from './catalog';
-import { resolveEffort } from './openrouter';
+import { resolveEffort } from './openrouterCore';
 import { LLMError, type ChatMessage, type ChatRequest, type ChatResult, type LLMProvider } from './types';
 
 export class BudgetExceededError extends Error {

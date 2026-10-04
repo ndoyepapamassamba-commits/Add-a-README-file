@@ -22,5 +22,5 @@
       "@web/*": ["./web/*"]
     }
   },
-  "include": ["server", "shared", "web", "tests", "scripts", "*.config.ts"]
+  "include": ["server", "shared", "web", "direct", "tests", "scripts", "*.config.ts"]
 }

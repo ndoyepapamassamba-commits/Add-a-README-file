@@ -15,7 +15,8 @@ import { cx, fmtBytes, fmtRelative } from '../lib/format';
 import type { ArtifactRecord } from '../lib/types';
 import { useApp } from '../store/app';
 import { useCode } from '../store/code';
-import { ArtifactCard, CodeBlock } from '../components/rich';
+import { CodeBlock } from '../components/rich';
+import { ArtifactCard } from '../components/artifacts';
 import {
   Badge,
   Button,

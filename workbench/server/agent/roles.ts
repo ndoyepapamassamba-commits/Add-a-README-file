@@ -1,6 +1,7 @@
 import type { RoleId } from '@shared/types';
 import type { Tier } from '../llm/router';
-import { mapAgentTools, type SkillRegistry } from '../services/skills';
+import { mapAgentTools } from '../services/skillsCore';
+import type { SkillRegistry } from '../services/skills';
 
 export interface RoleProfile {
   id: RoleId;

@@ -26,7 +26,8 @@ import type { ArtifactRecord } from '../../lib/types';
 import { useApp } from '../../store/app';
 import { useCode } from '../../store/code';
 import { useSession } from '../../store/session';
-import { ArtifactCard, AuthImage, ChartView, CodeBlock, DiffView, Markdown } from '../rich';
+import { ChartView, CodeBlock, DiffView, Markdown } from '../rich';
+import { ArtifactCard, AuthImage } from '../artifacts';
 import { Badge, Button, Spinner, Textarea } from '../ui';
 import { toolArgSummary, toolVerb } from './toolMeta';
 

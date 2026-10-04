@@ -1,7 +1,7 @@
 # OpenRouter AI Workbench
 
 Un centre de commande d'ingénierie IA, dans l'esprit de Claude Code, qui utilise **OpenRouter** comme fournisseur de modèles.
-L'interface est **un seul fichier HTML local** (`dist/openrouter-workbench.html`). Elle pilote un **agent local** (serveur Node) qui garde la clé, exécute les outils et applique les permissions.
+Deux éditions, chacune en **un seul fichier HTML** : l'**accès direct**, qui fonctionne seul dans le navigateur, et l'édition **avec agent local** (serveur Node) qui garde la clé côté serveur et ajoute terminal, navigateur piloté, git et tous les plugins.
 
 ```
 ┌──────────────────────────────┐        HTTP + WebSocket          ┌──────────────────────────────────────┐
@@ -13,6 +13,27 @@ L'interface est **un seul fichier HTML local** (`dist/openrouter-workbench.html`
                                                                                  ▼
                                                                          openrouter.ai/api/v1
 ```
+
+## Deux éditions
+
+|                   | **Accès direct** (`openrouter-workbench-direct.html`)                                                                                                                                                                                                                                                                                                                  | **Avec agent local** (`openrouter-workbench.html` + `npm start`) |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Installation      | aucune : double-clic sur le fichier                                                                                                                                                                                                                                                                                                                                    | Node.js, `npm install`, `npm start`                              |
+| Clé OpenRouter    | saisie dans l'interface, gardée dans ce navigateur                                                                                                                                                                                                                                                                                                                     | `.env` côté serveur uniquement                                   |
+| Fichiers          | espace de travail dans le navigateur (import, création, export .zip)                                                                                                                                                                                                                                                                                                   | vrais dossiers de projet sur le disque                           |
+| Code              | JavaScript / Python (Pyodide) dans un bac à sable                                                                                                                                                                                                                                                                                                                      | terminal, git, aperçu en direct                                  |
+| Navigateur piloté | —                                                                                                                                                                                                                                                                                                                                                                      | Playwright (vue en direct)                                       |
+| Plugins MCP       | serveurs en ligne compatibles navigateur (Context7, DeepWiki, URL HTTP)                                                                                                                                                                                                                                                                                                | tous : Blender, Canva, Figma, stdio, OAuth…                      |
+| Commun            | chat agentique en streaming, agents (intégrés + personnalisés Claude Code), skills obligatoires, modèle AUTO + niveau d'effort, mode PLAN, approbations SAFE / NORMAL / AUTONOME, sous-agents, données CSV / Excel / JSON + graphiques, documents PDF / Word / PowerPoint, photos (vision), recherche web, artefacts, jauge de crédits et coûts réels, budgets, export |                                                                  |
+
+### Accès direct (le plus simple)
+
+1. Ouvrez `openrouter-workbench-direct.html` (double-clic). Il fonctionne depuis n'importe quel dossier, sans serveur.
+2. Collez votre clé OpenRouter (créée sur openrouter.ai/keys) et cliquez sur **Commencer**.
+
+La clé n'est jamais écrite dans le fichier : elle reste dans le stockage local du navigateur et n'est envoyée qu'à `openrouter.ai`. Décochez « Se souvenir de la clé » sur un ordinateur partagé, et fixez une limite de dépenses sur la clé côté OpenRouter. Le code exécuté par l'agent et les aperçus HTML tournent dans des iframes isolées, sans accès à la clé. Jev (TypeSafe) n'est pas disponible dans cette édition : son API n'accepte pas les appels depuis un navigateur ; le routage AUTO utilise alors l'heuristique intégrée.
+
+Pour la reconstruire : `npm run build:direct` → `dist/openrouter-workbench-direct.html`.
 
 ## Installation
 
