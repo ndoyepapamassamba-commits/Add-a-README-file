@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import type { ChartSpec } from '@shared/types';
 import { QuerySpecSchema, isDataFile, profileToText, rowsToText } from '../services/dataEngine';
+import { coerceQuery } from '../services/dataCore';
+
+/** Query spec accepting the usual variants written by models (single objects, "col" strings…). */
+const TolerantQuery = z.preprocess(coerceQuery, QuerySpecSchema);
 import { ChartSpecSchema, buildChart } from '../services/vizEngine';
 import { defineTool, ok, ToolError, type AnyTool, type ToolContext } from './types';
 
@@ -40,7 +44,7 @@ export const dataTools: AnyTool[] = [
     name: 'data.query',
     description:
       'Query a data file: filters (eq, neq, gt, gte, lt, lte, contains, in, is_null, not_null), groupBy (with date bucket day/week/month/quarter/year), aggregations (sum, avg, count, min, max, median, count_distinct; column "*" for row count), select, sort, limit.',
-    schema: z.object({ path: z.string().min(1), sheet: z.string().optional(), query: QuerySpecSchema }),
+    schema: z.object({ path: z.string().min(1), sheet: z.string().optional(), query: TolerantQuery }),
     readOnly: true,
     assess: () => ({ risk: 'read' }),
     label: (a) => `Query ${a.path}`,
@@ -61,7 +65,7 @@ export const dataTools: AnyTool[] = [
     schema: z.object({
       path: z.string().min(1),
       sheet: z.string().optional(),
-      query: QuerySpecSchema,
+      query: TolerantQuery,
       output_path: z.string().min(1),
       format: z.enum(['csv', 'xlsx', 'json']).default('csv'),
       title: z.string().optional().describe('Title of the house-style Excel band'),

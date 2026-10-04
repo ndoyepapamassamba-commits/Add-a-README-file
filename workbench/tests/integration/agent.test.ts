@@ -492,16 +492,30 @@ describe('MASSAMBA Intelligence Engine (server)', () => {
     fs.mkdirSync(file('data'), { recursive: true });
     fs.writeFileSync(file('data/ventes.csv'), 'agence,montant\nDakar,1250\nThies,430\n');
     mock.push(
-      { toolCalls: [{ name: 'data.query', args: { path: 'data/ventes.csv', query: { aggregations: [{ column: 'montant', fn: 'sum' }] } } }] },
+      {
+        toolCalls: [
+          {
+            name: 'data.query',
+            args: { path: 'data/ventes.csv', query: { aggregations: [{ column: 'montant', fn: 'sum' }] } },
+          },
+        ],
+      },
       { text: 'Total 1680, marge 98 765 432.' },
       { text: 'Total 1680 ; la marge ne peut pas être calculée.' },
     );
     const s = session('autonomous');
-    const r = await run(s.id, 'À partir de maintenant, cite toujours la source des chiffres. Donne le total des ventes de data/ventes.csv.');
+    const r = await run(
+      s.id,
+      'À partir de maintenant, cite toujours la source des chiffres. Donne le total des ventes de data/ventes.csv.',
+    );
     expect(r.status).toBe('completed');
     const intel = of(r.events, 'intel');
     expect(intel.map((e) => e.title)).toEqual(
-      expect.arrayContaining([expect.stringMatching(/^Stratégie/), 'Manuel personnel : règle mémorisée', 'Contrôle des preuves : chiffres sans source']),
+      expect.arrayContaining([
+        expect.stringMatching(/^Stratégie/),
+        'Manuel personnel : règle mémorisée',
+        'Contrôle des preuves : chiffres sans source',
+      ]),
     );
     expect(JSON.stringify(mock.requests[2]!.messages)).toContain('[EVIDENCE CHECK]');
     expect(JSON.stringify(mock.requests[2]!.messages[0])).toContain('cite toujours la source des chiffres');
@@ -512,16 +526,42 @@ describe('MASSAMBA Intelligence Engine (server)', () => {
 
   it('critical mission: red team blocks, correction round, judge approves', async () => {
     mock.push(
-      { toolCalls: [{ name: 'mission.report', args: { status: 'PASSED', summary: 'Note COMEX prête', checks: [{ name: 'total', status: 'pass' }] } }] },
+      {
+        toolCalls: [
+          {
+            name: 'mission.report',
+            args: {
+              status: 'PASSED',
+              summary: 'Note COMEX prête',
+              checks: [{ name: 'total', status: 'pass' }],
+            },
+          },
+        ],
+      },
       { text: 'CONFIDENCE: 35%\nBLOCKING: provisions fausses' },
-      { toolCalls: [{ name: 'mission.report', args: { status: 'PASSED', summary: 'Note COMEX corrigée', checks: [{ name: 'total', status: 'pass' }] } }] },
+      {
+        toolCalls: [
+          {
+            name: 'mission.report',
+            args: {
+              status: 'PASSED',
+              summary: 'Note COMEX corrigée',
+              checks: [{ name: 'total', status: 'pass' }],
+            },
+          },
+        ],
+      },
       { text: 'CONFIDENCE: 92%\nBLOCKING: none' },
       { text: 'VERDICT: APPROVED' },
     );
-    const r = await run(session('autonomous').id, 'Prépare la note au COMEX sur les provisions IFRS9', { agentMode: 'mission' });
+    const r = await run(session('autonomous').id, 'Prépare la note au COMEX sur les provisions IFRS9', {
+      agentMode: 'mission',
+    });
     expect(r.status).toBe('completed');
     const titles = of(r.events, 'intel').map((e) => e.title);
-    expect(titles).toEqual(expect.arrayContaining(['Red team — confiance 35 %', 'Red team — confiance 92 %']));
+    expect(titles).toEqual(
+      expect.arrayContaining(['Red team — confiance 35 %', 'Red team — confiance 92 %']),
+    );
     expect(JSON.stringify(mock.requests[2]!.messages)).toContain('The red team found blocking problems');
     const reports = of(r.events, 'mission_report');
     expect(reports.at(-1)!.review?.approved).toBe(true);

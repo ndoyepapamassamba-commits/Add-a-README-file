@@ -69,10 +69,17 @@ describe('embedded shell', () => {
     expect((await sh.exec('sed s/Dakar/DKR/g notes/a.md')).out).toContain('bonjour DKR');
   });
   it('runs code through the sandbox and honours && / ||', async () => {
-    expect((await sh.exec('node -e console.log(1)')).out).toBe('javascript:console.log(1)');
+    expect((await sh.exec('node -e console.log(1)')).out).toMatch(/^javascript:[\s\S]*console\.log\(1\)$/);
     expect((await sh.exec('python -c fail || echo repli')).out).toContain('repli');
     expect((await sh.exec('python -c fail && echo jamais')).out).not.toContain('jamais');
     expect((await sh.exec('npm install')).code).toBe(127);
+    expect((await sh.exec('python --version')).out).toMatch(/Python 3/);
+    expect((await sh.exec('which node python git')).code).toBe(1);
+    expect((await sh.exec('which grep')).out).toContain('intégré');
+    // node scripts get a minimal require('fs') over the workspace
+    expect(
+      (await sh.exec("node -e \"const fs=require('fs'); console.log(fs.existsSync('x'))\"")).out,
+    ).toContain('require = (m)');
     expect((await sh.exec('inconnue')).out).toContain('commande inconnue');
   });
   it('classifies risk for approvals', () => {

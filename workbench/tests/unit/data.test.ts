@@ -184,3 +184,23 @@ describe('visualisation engine', () => {
     ).toThrow(/Available/);
   });
 });
+
+describe('tolerant queries written by models', () => {
+  it('accepts single objects, strings and aliases', async () => {
+    const { coerceQuery, QuerySpecSchema } = await import('../../server/services/dataCore');
+    const q = QuerySpecSchema.parse(
+      coerceQuery({
+        groupBy: 'agence',
+        aggregations: { column: 'montant', op: 'SUM' },
+        sort: { column: 'montant', order: 'DESC' },
+      }),
+    );
+    expect(q.groupBy).toEqual([{ column: 'agence' }]);
+    expect(q.aggregations).toEqual([expect.objectContaining({ column: 'montant', fn: 'sum' })]);
+    expect(q.sort).toEqual([{ column: 'montant', dir: 'desc' }]);
+    expect(QuerySpecSchema.parse(coerceQuery({ sort: '-montant', select: 'agence' }))).toMatchObject({
+      sort: [{ column: 'montant', dir: 'desc' }],
+      select: ['agence'],
+    });
+  });
+});

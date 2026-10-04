@@ -6,6 +6,7 @@ import {
   profileToText,
   rowsToText,
   QuerySpecSchema,
+  coerceQuery,
   type Dataset,
 } from '../../server/services/dataCore';
 import { ChartSpecSchema, computeChart } from '../../server/services/vizEngine';
@@ -455,7 +456,7 @@ export const TOOLS: DirectTool[] = [
     async run(a) {
       const { path, sheet, ...spec } = a;
       const ds = loadDataset(S(path), S(sheet) || undefined);
-      const r = data.query(ds, QuerySpecSchema.parse(spec));
+      const r = data.query(ds, QuerySpecSchema.parse(coerceQuery(spec)));
       return ok(
         `${r.rowCount} ligne(s)`,
         `${r.rowCount} result rows${r.rowCount > r.rows.length ? ` (showing ${r.rows.length})` : ''}\n${rowsToText(r.columns, r.rows, 200)}`,
@@ -900,7 +901,7 @@ export const TOOLS: DirectTool[] = [
     async run(a) {
       const ds = loadDataset(S(a.path), S(a.sheet) || undefined);
       const r = a.query
-        ? data.query(ds, QuerySpecSchema.parse({ limit: 100_000, ...(a.query as object) }))
+        ? data.query(ds, QuerySpecSchema.parse(coerceQuery({ limit: 100_000, ...(a.query as object) })))
         : { columns: ds.columns, rows: ds.rows as Record<string, unknown>[], rowCount: ds.rows.length };
       const fmt = (S(a.format) || 'xlsx') as 'xlsx' | 'csv' | 'json';
       const path = uniquePath(`outputs/${S(a.name).replace(/[^\w.-]+/g, '-') || 'export'}.${fmt}`);

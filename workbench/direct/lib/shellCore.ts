@@ -480,14 +480,32 @@ export class Shell {
       }
       case 'clear':
         return ok('\u001bc');
+      case 'which':
+        return args.length
+          ? {
+              out: args
+                .map((x) => (SHELL_COMMANDS.includes(x) ? `/usr/bin/${x} (intégré)` : `${x}: introuvable`))
+                .join('\n'),
+              code: args.every((x) => SHELL_COMMANDS.includes(x)) ? 0 : 1,
+            }
+          : { out: 'which: nom de commande requis', code: 2 };
       case 'node':
       case 'js':
       case 'python':
       case 'python3': {
+        if (a[0] === '--version' || a[0] === '-V' || a[0] === '-v')
+          return ok(
+            cmd.startsWith('python')
+              ? 'Python 3.12 (Pyodide, bac à sable du navigateur)'
+              : 'v22 (JavaScript du navigateur, bac à sable — API Node limitées : fs, path, process)',
+          );
         if (!this.host.run) return { out: `${cmd}: exécution indisponible`, code: 127 };
         const lang = cmd.startsWith('python') ? 'python' : 'javascript';
-        const inline = a[0] === '-e' || a[0] === '-c';
-        const code = inline ? a.slice(1).join(' ') : this.readFile(args[0] ?? '');
+        const inline = a[0] === '-e' || a[0] === '-c' || a[0] === '-p';
+        const raw = inline ? a.slice(1).join(' ') : this.readFile(args[0] ?? '');
+        // Node-style scripts: a minimal require('fs' | 'path') and process over the workspace.
+        const code =
+          lang === 'javascript' ? NODE_PRELUDE + (a[0] === '-p' ? `console.log(${raw})` : raw) : raw;
         if (!code) return { out: `${cmd}: fichier ou -e/-c CODE requis`, code: 2 };
         const r = await this.host.run(
           lang,
@@ -538,6 +556,29 @@ export class Shell {
     }
   }
 }
+
+export const SHELL_COMMANDS =
+  'help pwd cd ls tree cat head tail wc grep find mkdir touch rm cp mv echo sort uniq cut sed tr json date history env du clear node js python python3 curl wget open data which'.split(
+    ' ',
+  );
+
+/** Minimal Node APIs for scripts run with `node` (text files of the workspace). */
+const NODE_PRELUDE = `const require = (m) => {
+  const n = String(m).replace(/^node:/, '');
+  if (n === 'fs' || n === 'fs/promises') {
+    const fs = {
+      readFileSync: (p) => readFile(String(p)),
+      writeFileSync: (p, d) => writeFile(String(p), String(d)),
+      appendFileSync: (p, d) => { let b = ''; try { b = readFile(String(p)); } catch (e) {} writeFile(String(p), b + String(d)); },
+      existsSync: (p) => { try { readFile(String(p)); return true; } catch (e) { return false; } },
+    };
+    return n === 'fs' ? { ...fs, promises: { readFile: async (p) => fs.readFileSync(p), writeFile: async (p, d) => fs.writeFileSync(p, d) } } : { readFile: async (p) => fs.readFileSync(p), writeFile: async (p, d) => fs.writeFileSync(p, d) };
+  }
+  if (n === 'path') return { join: (...a) => a.join('/').replace(/\\/+/g, '/'), basename: (p) => String(p).split('/').pop(), dirname: (p) => String(p).split('/').slice(0, -1).join('/') || '.', extname: (p) => (/\\.[^./]+$/.exec(String(p)) || [''])[0] };
+  throw new Error('module « ' + m + ' » indisponible dans le bac à sable du navigateur');
+};
+const process = { argv: [], env: {}, exit: () => {}, cwd: () => '/', platform: 'browser' };
+`;
 
 /** Risk of a command line for the permission system (agent use). */
 export function shellRisk(line: string): 'read' | 'write' | 'delete' | 'execute' | 'external' {

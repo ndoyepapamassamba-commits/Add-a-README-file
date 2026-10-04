@@ -469,18 +469,39 @@ test('built-in plugins: 3D studio (preview + .glb + Blender script) and exchange
   await expect(page.getByText('Studio 3D → Blender')).toBeVisible();
 });
 
-test('Intelligence Engine: strategy, shadow alert, evidence check, manual, learning, time machine', async ({ page }) => {
+test('Intelligence Engine: strategy, shadow alert, evidence check, manual, learning, time machine', async ({
+  page,
+}) => {
   await open(page);
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
   mock.push(
-    { toolCalls: [{ name: 'filesystem.write', args: { path: 'data/ventes.csv', content: 'agence,montant\nDakar,1250\nThies,430\n' } }] },
-    { toolCalls: [{ name: 'data.query', args: { path: 'data/ventes.csv', aggregations: [{ column: 'montant', fn: 'sum' }] } }] },
+    {
+      toolCalls: [
+        {
+          name: 'filesystem.write',
+          args: { path: 'data/ventes.csv', content: 'agence,montant\nDakar,1250\nThies,430\n' },
+        },
+      ],
+    },
+    {
+      toolCalls: [
+        {
+          name: 'data.query',
+          args: { path: 'data/ventes.csv', aggregations: [{ column: 'montant', fn: 'sum' }] },
+        },
+      ],
+    },
     // Final answer with an invented figure → evidence check.
     { text: 'Le total des ventes est de 1680 et la marge de 98 765 432.' },
-    { text: 'Corrigé : le total des ventes est 1680 (données). La marge n’est pas calculable avec ce fichier.' },
+    {
+      text: 'Corrigé : le total des ventes est 1680 (données). La marge n’est pas calculable avec ce fichier.',
+    },
   );
-  await send(page, 'À partir de maintenant, les montants sont toujours en XOF. Analyse les ventes du fichier data/ventes.csv et donne le total.');
+  await send(
+    page,
+    'À partir de maintenant, les montants sont toujours en XOF. Analyse les ventes du fichier data/ventes.csv et donne le total.',
+  );
   await expect(page.getByText(/Corrigé : le total des ventes est 1680/)).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText(/Stratégie — /).first()).toBeVisible();
   await expect(page.getByText('Manuel personnel : règle mémorisée')).toBeVisible();
@@ -510,15 +531,41 @@ test('Intelligence Engine: strategy, shadow alert, evidence check, manual, learn
   await expect(page.getByText(/Mémoire : [1-9]\d* mission\(s\) similaire\(s\)/).first()).toBeVisible();
 });
 
-test('Intelligence Engine: critical mission → red team blocks, correction, judge approves', async ({ page }) => {
+test('Intelligence Engine: critical mission → red team blocks, correction, judge approves', async ({
+  page,
+}) => {
   await open(page);
   await page.getByTitle(/Mode Mission/).click();
   mock.push(
-    { toolCalls: [{ name: 'mission.report', args: { status: 'PASSED', summary: 'Note COMEX prête', checks: [{ name: 'total', status: 'pass', command: 'echo ok', expect: 'ok' }] } }] },
+    {
+      toolCalls: [
+        {
+          name: 'mission.report',
+          args: {
+            status: 'PASSED',
+            summary: 'Note COMEX prête',
+            checks: [{ name: 'total', status: 'pass', command: 'echo ok', expect: 'ok' }],
+          },
+        },
+      ],
+    },
     // Red team (sub-agent)
     { text: 'CONFIDENCE: 40%\nBLOCKING: le total des provisions est faux\nMINOR: titre' },
     // Correction then new report
-    { toolCalls: [{ name: 'mission.report', args: { status: 'PASSED', summary: 'Note COMEX corrigée', checks: [{ name: 'total', status: 'pass' }], evidence: [{ claim: 'Provisions 120', source: 'data.query', level: 'certain' }], related: [{ task: 'Prévenir le Comité', priority: 'forbidden' }] } }] },
+    {
+      toolCalls: [
+        {
+          name: 'mission.report',
+          args: {
+            status: 'PASSED',
+            summary: 'Note COMEX corrigée',
+            checks: [{ name: 'total', status: 'pass' }],
+            evidence: [{ claim: 'Provisions 120', source: 'data.query', level: 'certain' }],
+            related: [{ task: 'Prévenir le Comité', priority: 'forbidden' }],
+          },
+        },
+      ],
+    },
     { text: 'CONFIDENCE: 90%\nBLOCKING: none' },
     // Final judge
     { text: 'VERDICT: APPROVED\nScore 92/100' },
@@ -556,11 +603,21 @@ test('auto-benchmark feeds the personal leaderboard; Time Machine diff and resto
   await page.getByRole('button', { name: 'Chat', exact: true }).click();
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
-  mock.push({ toolCalls: [{ name: 'filesystem.write', args: { path: 'notes/plan.md', content: 'version 1\n' } }] }, { text: 'v1.' });
+  mock.push(
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'notes/plan.md', content: 'version 1\n' } }] },
+    { text: 'v1.' },
+  );
   await send(page, 'Crée notes/plan.md');
   await expect(page.getByText('v1.', { exact: true })).toBeVisible();
   mock.push(
-    { toolCalls: [{ name: 'filesystem.write', args: { path: 'notes/plan.md', content: 'function nouvelle() {}\nversion 2\n' } }] },
+    {
+      toolCalls: [
+        {
+          name: 'filesystem.write',
+          args: { path: 'notes/plan.md', content: 'function nouvelle() {}\nversion 2\n' },
+        },
+      ],
+    },
     { text: 'v2.' },
   );
   await send(page, 'Modifie notes/plan.md');
@@ -570,7 +627,10 @@ test('auto-benchmark feeds the personal leaderboard; Time Machine diff and resto
   await page.getByRole('button', { name: 'diff' }).first().click();
   await expect(page.getByText(/fonctions ajoutées : nouvelle/)).toBeVisible();
   page.once('dialog', (d) => void d.accept());
-  await page.getByRole('button', { name: /restaurer/ }).first().click();
+  await page
+    .getByRole('button', { name: /restaurer/ })
+    .first()
+    .click();
   await expect(page.getByText('1 fichier(s) restauré(s)')).toBeVisible();
   await page.getByRole('button', { name: 'notes/plan.md' }).click();
   await expect(page.getByText('version 1').first()).toBeVisible();

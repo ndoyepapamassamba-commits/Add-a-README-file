@@ -86,6 +86,36 @@ export const QuerySpecSchema = z.object({
 });
 export type QuerySpec = z.infer<typeof QuerySpecSchema>;
 
+/**
+ * Tolerant reading of a query written by a model: single objects where a list
+ * is expected, "col" strings for select / groupBy / sort, "desc" sort shortcuts,
+ * "op" / "agg" for the aggregation function.
+ */
+export function coerceQuery(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object') return raw;
+  const q = { ...(raw as Record<string, unknown>) };
+  const list = (v: unknown) => (v === undefined || v === null ? v : Array.isArray(v) ? v : [v]);
+  for (const k of ['filters', 'groupBy', 'aggregations', 'select', 'sort']) q[k] = list(q[k]);
+  if (Array.isArray(q.groupBy)) q.groupBy = q.groupBy.map((g) => (typeof g === 'string' ? { column: g } : g));
+  if (Array.isArray(q.sort))
+    q.sort = q.sort.map((x) => {
+      if (typeof x === 'string')
+        return { column: x.replace(/^-/, ''), dir: x.startsWith('-') ? 'desc' : 'asc' };
+      const o = { ...(x as Record<string, unknown>) };
+      if (typeof o.dir === 'string') o.dir = /^desc/i.test(o.dir) ? 'desc' : 'asc';
+      if (o.order && !o.dir) o.dir = /^desc/i.test(String(o.order)) ? 'desc' : 'asc';
+      return o;
+    });
+  if (Array.isArray(q.aggregations))
+    q.aggregations = q.aggregations.map((x) => {
+      const o = { ...(x as Record<string, unknown>) };
+      o.fn ??= o.op ?? o.agg ?? o.function;
+      if (typeof o.fn === 'string') o.fn = o.fn.toLowerCase();
+      return o;
+    });
+  return q;
+}
+
 // ── value helpers ──────────────────────────────────────────────────────
 const isMissing = (v: Cell | undefined) =>
   v === null || v === undefined || (typeof v === 'string' && v.trim() === '');

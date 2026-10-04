@@ -16,15 +16,15 @@ Deux éditions, chacune en **un seul fichier HTML** : l'**accès direct**, qui f
 
 ## Deux éditions
 
-|                   | **Accès direct** (`massamba-workbench-direct.html`)                                                                                                                                                                                                                                                                                                                    | **Avec agent local** (`massamba-workbench.html` + `npm start`) |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Installation      | aucune : double-clic sur le fichier                                                                                                                                                                                                                                                                                                                                    | Node.js, `npm install`, `npm start`                            |
-| Clé OpenRouter    | saisie dans l'interface, gardée dans ce navigateur                                                                                                                                                                                                                                                                                                                     | `.env` côté serveur uniquement                                 |
-| Fichiers          | espace de travail dans le navigateur (import, création, export .zip)                                                                                                                                                                                                                                                                                                   | vrais dossiers de projet sur le disque                         |
-| Code              | JavaScript / Python (Pyodide) dans un bac à sable                                                                                                                                                                                                                                                                                                                      | terminal, git, aperçu en direct                                |
-| Navigateur piloté | —                                                                                                                                                                                                                                                                                                                                                                      | Playwright (vue en direct)                                     |
-| Plugins MCP       | serveurs en ligne compatibles navigateur (Context7, DeepWiki, URL HTTP)                                                                                                                                                                                                                                                                                                | tous : Blender, Canva, Figma, stdio, OAuth…                    |
-| Commun            | chat agentique en streaming, agents (intégrés + personnalisés Claude Code), skills obligatoires, modèle AUTO + niveau d'effort, mode PLAN, approbations SAFE / NORMAL / AUTONOME, sous-agents, données CSV / Excel / JSON + graphiques, documents PDF / Word / PowerPoint, photos (vision), recherche web, artefacts, jauge de crédits et coûts réels, budgets, export |                                                                |
+|                   | **Accès direct** (`massamba-workbench-direct.html`)                                                                                                                                                                                                                                                                                                                    | **Avec agent local** (`massamba-workbench.html` + `npm start`)                                  |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Installation      | aucune : double-clic sur le fichier                                                                                                                                                                                                                                                                                                                                    | Node.js, `npm install`, `npm start`                                                             |
+| Clé OpenRouter    | saisie dans l'interface, gardée dans ce navigateur                                                                                                                                                                                                                                                                                                                     | `.env` côté serveur uniquement                                                                  |
+| Fichiers          | espace de travail dans le navigateur (import, création, export .zip)                                                                                                                                                                                                                                                                                                   | vrais dossiers de projet sur le disque                                                          |
+| Code              | JavaScript / Python (Pyodide) dans un bac à sable + **terminal intégré** (tubes, redirections, node, python, curl)                                                                                                                                                                                                                                                     | terminal, git, aperçu en direct                                                                 |
+| Navigateur piloté | **navigateur intégré** : applications de l'espace de travail pilotables (clics, saisies, chargement de fichiers, exports récupérés) ; pages web en mode lecture                                                                                                                                                                                                        | Playwright (vue en direct)                                                                      |
+| Plugins MCP       | 11 plugins intégrés (Studio 3D → Blender, diagrammes, images IA, taux XOF, Banque mondiale…) + MCP en ligne compatibles navigateur (Context7, DeepWiki, Microsoft Learn, GitMCP, Jina, Excalidraw, Mermaid, GitHub…)                                                                                                                                                   | ~55 préréglages : Blender, FreeCAD, KiCad, Excel, Word, PowerPoint, Canva, Figma, stdio, OAuth… |
+| Commun            | chat agentique en streaming, agents (intégrés + personnalisés Claude Code), skills obligatoires, modèle AUTO + niveau d'effort, mode PLAN, approbations SAFE / NORMAL / AUTONOME, sous-agents, données CSV / Excel / JSON + graphiques, documents PDF / Word / PowerPoint, photos (vision), recherche web, artefacts, jauge de crédits et coûts réels, budgets, export |                                                                                                 |
 
 ### Accès direct (le plus simple)
 
@@ -48,7 +48,7 @@ Pipeline de chaque **mission** (bouton _Mission_, `/mission`, ou _Lancer la miss
 - Elle s'arrête seulement quand le résultat est validé, ou après 3 cycles de correction, ou si le budget ou le nombre d'étapes maximum est atteint.
 - **Répare tout** (`/fix`) : détecter → diagnostiquer → corriger → tester → re-tester (bugs, erreurs JS / API / terminal / réseau, UI, logique, performance, régressions).
 - **Agents** : Orchestrateur, Architect, Coder, Researcher, Data Analyst, Browser Agent (édition locale), QA Engineer, Security Reviewer, Document Analyst, Reporting Agent, Final Reviewer (+ vos agents Claude Code). L'orchestrateur reçoit l'équipe recommandée pour la tâche et délègue.
-- **Routage multi-modèles** : chaque demande est profilée (type, difficulté, contexte, images), classée **CHEAP / BALANCED / QUALITY / MAXIMUM**, puis le meilleur modèle du catalogue en direct est choisi selon ses capacités, sa fenêtre de contexte, son prix et sa fiabilité observée. Les modèles qui viennent d'échouer sont évités, et une chaîne de secours multi-fournisseurs est construite automatiquement. Le fil affiche le modèle, le niveau, les secours et l'estimation de coût, puis le coût, les tokens, la durée et les éventuels replis.
+- **Routage multi-modèles neutre** : chaque demande est profilée (type, difficulté, criticité, contexte, images) et classée **CHEAP / BALANCED / QUALITY / MAXIMUM**. Chaque palier exige un niveau minimal sur l'indice adapté à la tâche (Intelligence, Coding pour le code, Agentique pour la navigation), mesuré par Artificial Analysis et publié sur les pages modèles d'OpenRouter. Parmi les modèles qui l'atteignent, le **moins cher** gagne (prix réels OpenRouter, (entrée × 12 + sortie) / 13). À prix égal (±10 %), le plus intelligent passe devant. Les secours sont les suivants de la même liste. Aucun fournisseur n'est favorisé, et les variantes « contributor » (données partagées), `:free` et `:batch` sont exclues. Les livrables critiques (COMEX, BCEAO, IFRS9…) ne descendent jamais au palier CHEAP. Avec l'historique, le tri se fait sur le **coût par réussite** (prix ÷ probabilité de succès mesurée sur vos missions). La vue **Modèles** montre les priorités par tâche, les catégories (meilleur + secours), le classement complet (CSV / JSON), un Routing Lab, votre classement personnel et l'auto-benchmark. Les scores sont actualisés côté serveur, ou importés dans l'édition directe.
 - **Mémoire de projet `.ai/`** : `PROJECT`, `ARCHITECTURE`, `REQUIREMENTS`, `DECISIONS`, `TODO`, `KNOWN_ISSUES`, `TESTS`, `CHANGELOG`, `MEMORY`. Les documents sont créés automatiquement et résumés à l'IA au début de chaque session. L'IA les met à jour (`memory.doc`), et chaque mission ajoute son verdict au `CHANGELOG` et à `TESTS`.
 - **Terminal intelligent** (édition locale) : toute commande en échec est accompagnée d'un diagnostic (catégorie, fichier:ligne, correction suggérée) → l'IA corrige, reconstruit et re-teste. Les protections des commandes dangereuses sont inchangées.
 - **Browser Agent** (édition locale) : chaque action renvoie une OBSERVATION (nouvelles erreurs console, requêtes en échec, page) et une invite de DÉCISION.
@@ -124,6 +124,49 @@ npm run format     # Prettier
 | `BROWSER_ENGINE`, `BROWSER_HEADLESS`   | Moteur Playwright (`chromium`, `firefox`, `webkit`).                                                                               |
 | `TYPESAFE_API_KEY`                     | Active **Jev** (TypeSafe System One) pour le routage AUTO, la détection des skills et l'outil `jev.judge`.                         |
 | `SKILLS_DIRS`, `INCLUDE_CLAUDE_SKILLS` | Dossiers de skills supplémentaires ; lecture de `~/.claude/skills` et `~/.claude/agents` (activée par défaut).                     |
+
+## MASSAMBA Intelligence Engine
+
+Branché dans la boucle d'exécution réelle des deux éditions (pas des pages décoratives) :
+
+**OBJECTIF → TASK DNA → STRATÉGIE → AGENTS → EXÉCUTION → SHADOW → TEST → PREUVES → RED TEAM → CORRECTION → JUGE FINAL → LIVRAISON → APPRENTISSAGE**
+
+- **Task DNA** : type, complexité, criticité, risques (financier, réglementaire, gouvernance, destructif…), livrables, vérifications requises ; similarité avec les missions passées.
+- **Strategy Engine** : palier appris. Un palier moins cher qui réussit est préféré ; des échecs répétés font escalader ; une exploration contrôlée sert à découvrir des économies. Il fixe aussi l'équipe, les vérifications, le plan de récupération, la parallélisation, ce qui a marché et la **mémoire des échecs**.
+- **Shadow agent** (déterministe, gratuit, temps réel) : détecte les actions répétées en échec, les blocages, la modification d'une donnée source, la dérive, une affirmation « testé » sans test et les fichiers dépendants à re-tester. Les alertes sont injectées à l'agent.
+- **Contrôle des preuves** : tout chiffre de la réponse absent des résultats d'outils est signalé, et une correction est exigée. Le rapport de mission porte une **carte d'incertitude** (certain / probable / incertain / inconnu) et les **tâches connexes** (indispensable / recommandée / optionnelle / interdite sans autorisation).
+- **Red team** avant le juge final pour les missions critiques, avec un tour de correction si un problème bloquant est trouvé.
+- **Apprentissage** : chaque mission est enregistrée (ADN, palier, modèle, équipe, verdict, coût, erreurs, fichiers, contrôles). Cela alimente le **classement personnel** par type de tâche, l'optimiseur coût / succès, le **graphe de connaissances** (`knowledge.query`) et la **suite de non-régression vivante** (`regression.run`).
+- **Compression intelligente** du contexte (faits, décisions, échecs, fichiers, état) et **résumé de reprise** après interruption : il suffit d'écrire « continue ».
+- **Manuel personnel** : les règles « à partir de maintenant… », « jamais… » sont mémorisées et appliquées à toutes les tâches.
+- **Time Machine** (édition directe) : point de restauration automatique avant chaque tâche, **diff fonctionnel** (fonctions ajoutées / supprimées, composants impactés, tests à faire) et restauration.
+- **Jumeau numérique** (`project.twin`, `project.impact`), **simulateur de décision** avec contrefactuels (`decision.simulate`), **valeur de l'information** (`info.value`), **auto-benchmark**.
+- **26 agents** : Orchestrateur (directeur de mission), Architect, Coder, Researcher, Data Analyst, APEX Studio, Browser, Document Analyst, QA, Security, Reporting, Red Team, Shadow, Final Judge, Product / UX, Performance, Cost Optimizer, Knowledge Curator, Workflow Designer, Compliance, Simulation, Data Quality, Release Manager, Observability, Rédacteur, Relecteur.
+
+## APEX Studio et style maison
+
+- Tous les exports suivent le **style maison** BLUE ECOBANK :
+  - Word : bandeau marine, filets lime, tableaux marine zébrés, Segoe UI, date jj/mm/aaaa ;
+  - HTML / PDF ;
+  - Excel stylé : bandeau, en-têtes, formats XOF `# ##0` ;
+  - mail couleur Outlook (`.eml` avec images intégrées + `.html`).
+- **APEX Studio** construit des applications HTML offline selon la méthode de « Credit Risk OS APEX », pour n'importe quel sujet :
+  - outils : `apex.guide` → `apex.reference` → `apex.build_app` → `apex.qa` ;
+  - test réel dans le navigateur intégré : chargement d'un fichier, onglets, exports.
+- Le **kit maison** (logo, visuels 3D, shell, bibliothèques) n'est jamais versionné :
+  - lu depuis votre skill `ecobank-god-export-studio` (serveur) ;
+  - intégré au build (édition directe) ;
+  - ou importé en `.zip` (Plugins → Kit maison).
+
+## Studio 3D → Blender
+
+`blender.scene` (édition directe) : une description de scène donne trois sorties.
+
+- Un aperçu interactif three.js.
+- Un fichier `.glb` (Blender : Fichier → Importer → glTF 2.0).
+- Un script Python Blender (onglet Scripting → Exécuter) qui reconstruit la scène : formes, matériaux, lumières, caméra, animation.
+
+Le script a été vérifié dans Blender 5 (exécution, rendu Cycles, import du `.glb`). L'édition serveur pilote aussi Blender en direct (préréglage MCP `blender-mcp`).
 
 ## Fonctionnalités
 
