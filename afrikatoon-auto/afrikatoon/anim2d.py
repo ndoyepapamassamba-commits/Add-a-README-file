@@ -12,6 +12,7 @@ Unités de scène : le sol est à y = 0, l'axe y monte, un adulte mesure ≈ 1,7
 """
 import json
 import math
+import os
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -94,7 +95,10 @@ def draw_blink(img: Image.Image, eyes: list, skin) -> None:
 class Puppet:
     def __init__(self, name: str, height: float):
         self.name = name
-        self.dir = ASSETS / "characters_2d" / name.replace(" ", "_")
+        base = ASSETS / os.getenv("AFRIKATOON_2D_DIR", "characters_2d")      # characters_2d_ia = 2D redessinée
+        self.dir = base / name.replace(" ", "_")
+        if not (self.dir / "meta.json").exists():
+            self.dir = ASSETS / "characters_2d" / name.replace(" ", "_")
         self.meta = json.loads((self.dir / "meta.json").read_text())
         faces_p = self.dir / "faces.json"
         self.faces = json.loads(faces_p.read_text()) if faces_p.exists() else {}
@@ -612,6 +616,14 @@ class Director:
 
 
 # --- Fabrication de la vidéo ----------------------------------------------------------------------
+
+def background_for(setting: str) -> Path:
+    """Décor 2D : version redessinée (backgrounds_2d_ia_<décor>.png) si la 2D redessinée est active."""
+    ia = ASSETS / f"backgrounds_2d_ia_{setting}.png"
+    if os.getenv("AFRIKATOON_2D_DIR") == "characters_2d_ia" and ia.exists():
+        return ia
+    return ASSETS / f"backgrounds_2d_{setting}.png"
+
 
 _DIR = None
 

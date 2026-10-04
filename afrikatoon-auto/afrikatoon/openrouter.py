@@ -4,6 +4,7 @@ musique originale locale, sous-titres Whisper, montage ffmpeg.
     python -m afrikatoon.openrouter kits/…json --budget 6            # fabrique (reprend là où il s'est arrêté)
     python -m afrikatoon.openrouter kits/…json --plan                # plan + coût, aucun appel payant
     python -m afrikatoon.openrouter --credit                         # crédit restant de la clé
+    python -m afrikatoon.openrouter --convertir-2d "MAMAN NOUNOU" COUMBA "PETIT MAMADOU" --decor-2d village --budget 1
 
 La clé est lue dans OPENROUTER_API_KEY et n'est jamais affichée. Chaque appel payant est refusé s'il ferait dépasser
 --budget (en $), d'après le coût annoncé par OpenRouter (usage.cost) et l'estimation avant appel.
@@ -339,13 +340,118 @@ def inserts_for(director, work: Path, n: int = 4, budget: float = 1.0):
     return res
 
 
+# --- 2D haute qualité : redessin unique des personnages et des décors (≈ 0,02 $ l'image, une seule fois) ----------
+
+TWO_D_MODEL = "black-forest-labs/flux.2-klein-4b"        # même famille que l'essai réussi (MAMAN_NOUNOU angry)
+TWO_D_FALLBACK = "bytedance-seed/seedream-5-0-flash"
+TWO_D = ("Redraw this exact character as a high-quality 2D cartoon illustration in the style of a modern "
+         "French-African TV animated series: clean bold black outlines, flat cel-shaded colors with one soft shadow "
+         "tone, simple shapes, expressive face, mouth and eyes clearly drawn. Keep the same face, same pose, same "
+         "facial expression, same outfit and fabric patterns, same accessories and proportions, full body from head "
+         "to feet. Plain pure white background, no text, no logo, no shadow on the ground.")
+TWO_D_BG = ("Redraw this exact place as a high-quality 2D cartoon background painting for a modern French-African TV "
+            "animated series: clean outlines, flat colors with soft gradients, warm afternoon light, same layout, "
+            "same baobab, huts and path. Remove every person. No text, no logo. Vertical 9:16.")
+
+
+def _cut(img_path: Path, dest: Path, height: int):
+    """Fond blanc → détourage (rembg), recadrage, mise à l'échelle des poses actuelles, agrandissement net."""
+    from PIL import Image
+    from . import assets_tool
+    im = Image.open(img_path).convert("RGB")
+    if im.height * 2 < height:                       # sortie 1K : agrandissement IA ×4 (Real-ESRGAN), sinon Lanczos
+        im = assets_tool.upscale4(im)
+    cut = assets_tool._cutout(im)
+    cut = cut.crop(cut.getbbox())
+    k = height / cut.height
+    cut = cut.resize((max(1, int(cut.width * k)), height), Image.LANCZOS)
+    cut.save(dest)
+    return dest
+
+
+def convertir_2d(names: list[str], budget: float = 1.0, model: str = TWO_D_MODEL):
+    """Toutes les poses → assets/characters_2d_ia/<NOM>/<pose>.png (+ meta.json). La 1re pose convertie sert de
+    référence de style aux suivantes, pour un rendu homogène. Ensuite : ~/mpenv/bin/python scripts/face_points.py."""
+    from PIL import Image
+    root = config.ROOT / "assets"
+    cl = Client(budget, root / "characters_2d_ia" / "depenses.jsonl")
+    for name in names:
+        n = name.replace(" ", "_")
+        src, dst = root / "characters" / n, root / "characters_2d_ia" / n
+        dst.mkdir(parents=True, exist_ok=True)
+        meta = json.loads((src / "meta.json").read_text())
+        ref_h = Image.open(root / "characters_2d" / n / "neutral.png").height if (root / "characters_2d" / n / "neutral.png").exists() else 3000
+        style_ref = None
+        for pose in sorted(meta, key=lambda p: p != "neutral"):           # neutre d'abord : référence de style
+            out = dst / f"{pose}.png"
+            if out.exists():
+                style_ref = style_ref or out
+                continue
+            a = Image.open(src / f"{pose}.png").convert("RGBA")
+            flat = Image.new("RGB", (a.width + 80, a.height + 80), (255, 255, 255))
+            flat.paste(a, (40, 40), a)
+            (dst / "_bruts").mkdir(exist_ok=True)
+            tmp = dst / "_bruts" / f"{pose}_in.png"
+            flat.save(tmp)
+            raw = dst / "_bruts" / f"{pose}_ia.png"
+            refs = [tmp] + ([style_ref] if style_ref else [])
+            prompt = TWO_D + (" Match exactly the drawing style, line weight and colors of the second reference image."
+                              if style_ref else "")
+            print(f"■ {name} / {pose}")
+            try:
+                cl.image(prompt, refs, raw, model=model)
+            except RuntimeError as e:
+                print("   modèle principal indisponible, repli :", str(e)[:120])
+                cl.image(prompt, refs, raw, model=TWO_D_FALLBACK)
+            _cut(raw, out, ref_h)
+            tmp.unlink()
+            style_ref = style_ref or out
+        old = root / "characters_2d" / n / "meta.json"          # bouche de secours : ancienne 2D mise à l'échelle
+        old_meta = json.loads(old.read_text()) if old.exists() else {}
+        m2 = {}
+        for p, v in meta.items():
+            ov = old_meta.get(p) or {}
+            newh = Image.open(dst / f"{p}.png").height if (dst / f"{p}.png").exists() else ref_h
+            k = newh / ref_h
+            m2[p] = {"mouth": [int(x * k) for x in ov.get("mouth", [0, 0])], "mouth_w": int(ov.get("mouth_w", 40) * k),
+                     "faces": v.get("faces", "right")}
+        (dst / "meta.json").write_text(json.dumps(m2, indent=2))
+    print(f"Conversion 2D : {cl.spent:.2f} $ dépensés. Étape suivante : "
+          "~/mpenv/bin/python scripts/face_points.py assets/characters_2d_ia/*/")
+
+
+def decor_2d(setting: str = "village", budget: float = 1.0, model: str = TWO_D_MODEL):
+    from PIL import Image
+    root = config.ROOT / "assets"
+    src, dest = root / f"backgrounds_2d_{setting}.png", root / f"backgrounds_2d_ia_{setting}.png"
+    cl = Client(budget, root / "characters_2d_ia" / "depenses.jsonl")
+    raw = root / f"_bg_{setting}_raw.png"
+    cl.image(TWO_D_BG, [src], raw, model=model)
+    im = Image.open(raw).convert("RGB")
+    w, h = Image.open(src).size
+    from PIL import ImageFilter                      # décor flou de profondeur à l'écran : Lanczos suffit (Real-ESRGAN
+    im = im.resize((w, h), Image.LANCZOS).filter(ImageFilter.UnsharpMask(2, 60, 2))   # sature la mémoire ici)
+    im.save(dest)
+    raw.unlink()
+    print(f"Décor 2D : {dest}")
+    return dest
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("kit", nargs="?", type=Path)
     ap.add_argument("--budget", type=float, default=6.0)
     ap.add_argument("--plan", action="store_true")
     ap.add_argument("--credit", action="store_true")
+    ap.add_argument("--convertir-2d", nargs="*", metavar="NOM", help="redessiner ces personnages en 2D HQ")
+    ap.add_argument("--decor-2d", metavar="DECOR", help="redessiner ce décor en 2D HQ (ex. village)")
     a = ap.parse_args()
+    if a.convertir_2d is not None or a.decor_2d:
+        if a.convertir_2d:
+            convertir_2d(a.convertir_2d, a.budget)
+        if a.decor_2d:
+            decor_2d(a.decor_2d, a.budget)
+        return
     if a.credit:
         d = Client(0, Path(os.devnull)).credit()
         lim = d.get("limit")

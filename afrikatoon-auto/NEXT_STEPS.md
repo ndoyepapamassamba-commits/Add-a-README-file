@@ -1,28 +1,33 @@
 # Reprise — prochaine étape (à lire par Claude en début de session)
 
-## ▶ PRIORITÉ (4 octobre 2026) : première vidéo OpenRouter « presque gratuite » (< 1 $)
+## ▶ PRIORITÉ (4 octobre 2026) : 2D HAUTE QUALITÉ EXCLUSIVEMENT (choix de l'utilisateur)
 
-L'utilisateur a mis `OPENROUTER_API_KEY` dans les variables d'environnement ; elle n'est visible que dans une
-NOUVELLE session. Vérifier sans l'afficher : `echo ${#OPENROUTER_API_KEY}` (longueur seulement).
+Décision : **uniquement du dessin animé 2D**, pas de plans vidéo IA (`--mock 2d-or` et le pipeline « tout IA »
+existent mais ne doivent PAS être utilisés sauf demande explicite). OpenRouter sert UNE fois à redessiner les
+personnages et le décor dans un vrai style 2D net (traits noirs, aplats), comme l'essai réussi
+`assets/characters_2d_ia/MAMAN_NOUNOU_angry.png`. Ensuite chaque vidéo coûte 0 $.
 
-1. `CLAUDE_CODE_REMOTE=true bash scripts/setup_env.sh` si les voix/Rhubarb manquent.
-2. Crédit et limite de la clé : `python -m afrikatoon.openrouter --credit`.
-3. Prix du jour : `python scripts/openrouter_cout.py kits/2026-10-03/02b-la-sauce-de-belle-maman-anim.json`.
-4. Fabrication (budget dur 1 $, reprise automatique si interrompu) :
-   `OPENROUTER_BUDGET=1 python run.py run --kit kits/2026-10-03/02b-la-sauce-de-belle-maman-anim.json --mock 2d-or --no-upload`
-   = notre 2D (bibliothèque, voix Chatterbox, lip-sync Rhubarb, musique balafon) + 4 plans de réaction
-   animés par `google/veo-3.1-lite` (720p, sans son, 4 s, ~0,12 $ chacun) à partir de NOS rendus 2D
-   (`openrouter.pick_inserts` / `first_frame` / `inserts_for`, incrustés par `anim2d.overlay_inserts`).
-   Dépenses : `output/<dossier>/depenses_openrouter.jsonl`.
-5. Contrôler la planche (`ffmpeg -i final.mp4 -vf fps=1/4,scale=180:320,tile=8x2 planche.jpg`) : plans IA fidèles
-   au style, bouche fermée, pas de logo ; sinon refaire le plan (supprimer `insert_XX.mp4`, relancer).
-6. Envoyer la vidéo à l'utilisateur (< 30 Mo, réencoder en CRF 24 si besoin) avec le coût réel.
-7. Option « tout IA » (≈ 4 $) : `python -m afrikatoon.openrouter <kit> --budget 6` (Seedream + Veo avec dialogue),
-   seulement si l'utilisateur le demande.
+La clé `OPENROUTER_API_KEY` n'est visible que dans une NOUVELLE session : `echo ${#OPENROUTER_API_KEY}` (longueur seulement).
 
-Points non vérifiés faute de clé : format exact des réponses `/api/v1/videos` (le code suit la doc :
-`polling_url`, `status`, `unsigned_urls`, `usage.cost`). En cas d'erreur, lire le message et corriger
-`openrouter.Client.video`. Jamais de clé dans le chat, les journaux ou les commits.
+1. `CLAUDE_CODE_REMOTE=true bash scripts/setup_env.sh` si voix / Rhubarb / ~/mpenv manquent.
+2. `python -m afrikatoon.openrouter --credit`
+3. Redessin (≈ 16 images × ~0,02 $ ≈ 0,35 $, budget dur 1 $, reprise automatique ; ~3 min par pose à cause de
+   l'agrandissement Real-ESRGAN, lancer en arrière-plan) :
+   `python -m afrikatoon.openrouter --convertir-2d "MAMAN NOUNOU" COUMBA "PETIT MAMADOU" --decor-2d village --budget 1`
+   → `assets/characters_2d_ia/<NOM>/<pose>.png`, `assets/backgrounds_2d_ia_village.png`
+   (modèle `black-forest-labs/flux.2-klein-4b`, repli `bytedance-seed/seedream-5-0-flash` ; la pose neutre
+   convertie sert de référence de style aux autres).
+4. Repères yeux/bouche : `~/mpenv/bin/python scripts/face_points.py assets/characters_2d_ia/*/`
+5. **Contrôle visuel obligatoire** : planche des 15 poses (même visage, même tenue, style homogène, pas de logo —
+   attention au maillot de PETIT MAMADOU). Pose ratée → supprimer le .png et relancer l'étape 3 (seule elle est refaite).
+6. Rendu : `AFRIKATOON_2D_DIR=characters_2d_ia python run.py run --kit kits/2026-10-03/02b-la-sauce-de-belle-maman-anim.json --mock 2d-hq --no-upload`
+   (le moteur prend automatiquement le décor `backgrounds_2d_ia_<décor>.png`).
+7. Comparer avec `output/La_sauce_de_belle-maman_2D_v2.mp4` (planche côte à côte) et envoyer la vidéo (< 30 Mo,
+   CRF 24 si besoin) avec le coût réel (`assets/characters_2d_ia/depenses.jsonl`).
+8. Si validé : convertir les autres personnages de la bibliothèque au fil des besoins (même commande).
+
+Non vérifié faute de clé dans la session précédente : forme exacte de la réponse `POST /api/v1/images`
+(le code lit `data[0].b64_json` et `usage.cost` selon la doc). Jamais de clé dans le chat, les journaux ou les commits.
 
 ## État au 3 octobre 2026 (fin de matinée)
 

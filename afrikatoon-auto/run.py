@@ -94,7 +94,7 @@ def cmd_run(args):
             if args.mock in ("2d-hq", "2d-or"):  # dessin animé 2D (+ plans de réaction Veo via OpenRouter)
                 from afrikatoon import anim2d, wananim
                 wananim.voice_kit(kit, work)
-                bg = config.ROOT / "assets" / f"backgrounds_2d_{kit.get('setting', 'village')}.png"
+                bg = anim2d.background_for(kit.get("setting", "village"))
                 fn = None
                 if args.mock == "2d-or":
                     from afrikatoon import openrouter
