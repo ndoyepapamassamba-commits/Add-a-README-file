@@ -59,6 +59,7 @@ export const DATA_EXTENSIONS = [
   '.xlsx',
   '.xls',
   '.xlsm',
+  '.xlsb',
   '.ods',
   '.json',
   '.jsonl',
@@ -243,7 +244,7 @@ export class DataCore {
       });
       return { path: absPath, sheet: null, sheets: [], columns, rows };
     }
-    if (['.xlsx', '.xls', '.xlsm', '.ods'].includes(ext)) {
+    if (['.xlsx', '.xls', '.xlsm', '.xlsb', '.ods'].includes(ext)) {
       const wb = XLSX.read(bytes, { type: 'array', cellDates: true, dense: true });
       const name = sheet && wb.SheetNames.includes(sheet) ? sheet : wb.SheetNames[0];
       if (!name) return { path: absPath, sheet: null, sheets: [], columns: [], rows: [] };
@@ -513,7 +514,7 @@ export class DataCore {
   }
 
   sheetNamesOf(name: string, bytes: Uint8Array): string[] {
-    if (!['.xlsx', '.xls', '.xlsm', '.ods'].includes(extOf(name))) return [];
+    if (!['.xlsx', '.xls', '.xlsm', '.xlsb', '.ods'].includes(extOf(name))) return [];
     return XLSX.read(bytes, { type: 'array', bookSheets: true }).SheetNames;
   }
 }

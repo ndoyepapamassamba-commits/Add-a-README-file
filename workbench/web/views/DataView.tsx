@@ -107,7 +107,7 @@ export function DataView() {
     const input = document.createElement('input');
     input.type = 'file';
     input.multiple = true;
-    input.accept = '.csv,.tsv,.xlsx,.xls,.xlsm,.ods,.json,.jsonl';
+    input.accept = '.csv,.tsv,.xlsx,.xls,.xlsm,.xlsb,.ods,.json,.jsonl';
     input.onchange = async () => {
       const fd = new FormData();
       for (const f of input.files ?? []) fd.append('file', f, f.name);

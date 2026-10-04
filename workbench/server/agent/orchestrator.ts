@@ -18,6 +18,16 @@ import type {
 import { LLMError, type ChatMessage, type ToolCall } from '../llm/types';
 import { BudgetExceededError } from '../llm/service';
 import { classifyWithJev, pickFromTier, selectModel } from '../llm/router';
+import { FAMILY_TIER, analyzeTask, recordHealth, routeModel, type HealthMap } from '../llm/routing';
+import {
+  FINAL_REVIEW_TASK,
+  MEMORY_INSTRUCTIONS,
+  MISSION_PROTOCOL,
+  formatReport,
+  reviewApproved,
+  type MissionReport,
+} from './mission';
+import { setMissionHooks } from '../tools/mission';
 import { decide } from '../security/permissions';
 import { redactDeep, redactSecrets } from '../security/redact';
 import type { Services } from '../services/container';
@@ -129,6 +139,8 @@ function parseStepsFromText(text: string): string[] {
 export class AgentOrchestrator extends EventEmitter {
   private active = new Map<string, RunState>();
   private approvalIndex = new Map<string, string>();
+  /** Observed model reliability (drives AUTO routing away from failing models). */
+  health: HealthMap = {};
 
   constructor(private readonly s: Services) {
     super();
@@ -465,6 +477,31 @@ export class AgentOrchestrator extends EventEmitter {
         fallbackDefault: appSettings.fallbackModel || 'openai/gpt-4o-mini',
       });
       if (pref.id && requestedModel === pref.id) sel.reason = `modèle défini par l'agent ${role.label}`;
+      const mission = agentMode === 'mission';
+      const profile = analyzeTask({
+        text: input.text,
+        attachmentNames: input.attachments ?? [],
+        hasImages,
+        role: st.role,
+        historyTokens: estimateTokens(history),
+        mission,
+      });
+      let routedFallbacks: string[] = [];
+      let routed: ReturnType<typeof routeModel> = null;
+      if (sel.auto) {
+        const useJev = classified && classified.confidence >= 0.35 && classified.tier !== 'vision';
+        routed = routeModel(
+          models,
+          tiers,
+          useJev ? { ...profile, tier: FAMILY_TIER[classified.tier] } : profile,
+          this.health,
+        );
+        if (routed) {
+          sel.model = routed.model;
+          sel.reason = `${routed.reason}${useJev ? ' (Jev)' : ''}`;
+          routedFallbacks = routed.fallbacks;
+        }
+      }
       let model = sel.model;
       st.model = model;
       repo.updateRun(st.id, { model });
@@ -478,6 +515,11 @@ export class AgentOrchestrator extends EventEmitter {
         reason: sel.reason,
         auto: sel.auto,
         effort: effort === 'auto' ? undefined : effort,
+        tier: routed?.tier,
+        fallbacks: [...new Set([...s.llm.fallbackChain(sel.model).slice(1), ...routedFallbacks])].filter(
+          (m) => m !== sel.model,
+        ),
+        estimate: routed?.estimate ?? null,
       });
       const vision = info?.capabilities.vision ?? hasImages;
       const contextLimit = info?.contextLength || 128_000;
@@ -498,6 +540,8 @@ export class AgentOrchestrator extends EventEmitter {
               'git.commit',
               'data.transform',
               'memory.add',
+              'memory.doc',
+              'report.export',
               'memory.remove',
               'artifact.create',
               'code.run',
@@ -518,6 +562,18 @@ export class AgentOrchestrator extends EventEmitter {
                 ),
               );
         fullTools = [...fullTools, ...allowed];
+      }
+      if (mission) {
+        fullTools = [
+          ...new Set([
+            ...fullTools,
+            'mission.stage',
+            'mission.report',
+            'plan.update',
+            ...(session.permissionMode === 'safe' ? [] : ['memory.doc']),
+          ]),
+        ];
+        if (st.depth < maxDepth && !fullTools.includes('agent.delegate')) fullTools.push('agent.delegate');
       }
       const planningTools = [
         ...fullTools.filter((t) => getTool(t)?.readOnly || t === 'project.analyze'),
@@ -614,6 +670,15 @@ export class AgentOrchestrator extends EventEmitter {
         plugins: fullTools.some((t) => t.startsWith('mcp.')) ? s.mcp.connectedServers() : [],
         jev: fullTools.includes('jev.judge'),
       });
+      const systemPrompt = [
+        system,
+        MEMORY_INSTRUCTIONS,
+        mission
+          ? `${MISSION_PROTOCOL}\n\nTask profile: ${profile.reasons.join(', ')}.${profile.team.length ? ` Recommended specialists, in order: ${profile.team.join(' → ')}.` : ''}`
+          : '',
+      ]
+        .filter(Boolean)
+        .join('\n\n');
       const userContent = await buildUserContent({
         services: s,
         projectId: st.projectId,
@@ -624,8 +689,23 @@ export class AgentOrchestrator extends EventEmitter {
         isFirstRun: history.filter((m) => m.role === 'user').length === 0,
         agentMode,
       });
+      const firstRun = history.filter((m) => m.role === 'user').length === 0;
+      if (firstRun && !opts.ephemeral) {
+        // Project memory: create the .ai/ documents if missing and give the agent a digest.
+        if (session.permissionMode !== 'safe')
+          await s.memory.ensureAiDocs(st.projectId).catch(() => undefined);
+        const digest = await s.memory.aiDigest(st.projectId).catch(() => '');
+        if (digest) {
+          const note = `<project_memory>\n${digest}\n</project_memory>\n\n`;
+          if (typeof userContent.content === 'string') userContent.content = note + userContent.content;
+          else {
+            const first = userContent.content[0];
+            if (first?.type === 'text') first.text = note + first.text;
+          }
+        }
+      }
       const userMsg: ChatMessage = { role: 'user', content: userContent.content };
-      const messages: ChatMessage[] = [{ role: 'system', content: system }, ...history, userMsg];
+      const messages: ChatMessage[] = [{ role: 'system', content: systemPrompt }, ...history, userMsg];
       const persist = (m: ChatMessage) => {
         if (!opts.ephemeral) repo.addMessage(st.sessionId, st.id, m.role, m);
       };
@@ -656,6 +736,16 @@ export class AgentOrchestrator extends EventEmitter {
         delegate: st.depth < maxDepth ? (r, task) => this.delegate(st, r, task, input.effort) : undefined,
       };
 
+      let pendingReport: MissionReport | null = null;
+      let missionRound = 0;
+      let missionNudges = 0;
+      let reviews = 0;
+      let missionDone = false;
+      if (mission)
+        setMissionHooks(ctx, {
+          stage: (stage, note) => this.emitEvent(st, { type: 'mission_stage', stage, note }),
+          report: (r) => (pendingReport = r),
+        });
       let continuations = 0;
       let nudgedPlan = false;
       const maxSteps = appSettings.agent.maxSteps;
@@ -698,13 +788,18 @@ export class AgentOrchestrator extends EventEmitter {
         const toolNames = phase === 'planning' ? planningTools : fullTools;
         const callMessages =
           phase === 'planning'
-            ? [{ ...messages[0]!, content: `${system}\n\n${PLAN_MODE_INSTRUCTIONS}` }, ...messages.slice(1)]
+            ? [
+                { ...messages[0]!, content: `${systemPrompt}\n\n${PLAN_MODE_INSTRUCTIONS}` },
+                ...messages.slice(1),
+              ]
             : messages;
         this.emitEvent(st, { type: 'thinking', active: true });
         const result = await s.llm.complete(
           {
             model,
-            fallbacks: s.llm.fallbackChain(model).slice(1),
+            fallbacks: [...new Set([...s.llm.fallbackChain(model).slice(1), ...routedFallbacks])].filter(
+              (m) => m !== model,
+            ),
             messages: callMessages,
             tools: toolDefinitions(toolNames),
             temperature: appSettings.temperature,
@@ -719,6 +814,7 @@ export class AgentOrchestrator extends EventEmitter {
             onReasoning: () => this.emitEvent(st, { type: 'status', text: 'Réflexion…' }),
             onStreamReset: () => this.emitEvent(st, { type: 'stream_reset' }),
             onFallback: (from, to, reason) => {
+              this.health = recordHealth(this.health, from, false);
               model = to;
               st.model = to;
               repo.updateRun(st.id, { model: to });
@@ -733,6 +829,7 @@ export class AgentOrchestrator extends EventEmitter {
         );
         this.emitEvent(st, { type: 'thinking', active: false });
 
+        this.health = recordHealth(this.health, model, true);
         // Usage & cost
         const u = {
           tokensIn: result.usage.promptTokens,
@@ -791,6 +888,16 @@ export class AgentOrchestrator extends EventEmitter {
               continue;
             }
             st.proposed = { summary: result.content || 'Plan', steps: parseStepsFromText(result.content) };
+          } else if (mission && !missionDone && missionNudges < 3) {
+            missionNudges++;
+            const nudge: ChatMessage = {
+              role: 'user',
+              content:
+                'The mission is not finished: continue the pipeline (test, review, correct, validate). When everything is verified, call mission.report with an honest verdict.',
+            };
+            messages.push(nudge);
+            persist(nudge);
+            continue;
           } else break;
         }
 
@@ -848,6 +955,65 @@ export class AgentOrchestrator extends EventEmitter {
           messages.push(go);
           persist(go);
           phase = 'executing';
+        }
+
+        // Mission: verdict → correction rounds → independent final review.
+        if (mission && pendingReport) {
+          const report: MissionReport = pendingReport;
+          pendingReport = null;
+          missionRound++;
+          await s.memory
+            .recordMission(st.projectId, input.text, report, { model, cost: st.usage.cost })
+            .catch(() => undefined);
+          if (report.status !== 'PASSED' && missionRound < 3) {
+            this.emitEvent(st, { type: 'mission_report', report, round: missionRound });
+            const fix: ChatMessage = {
+              role: 'user',
+              content: `Correction round ${missionRound + 1}: the verdict is ${report.status}. Fix the failing checks and remaining issues (${report.issues.join('; ').slice(0, 1500) || 'see your report'}), re-test everything, then call mission.report again.`,
+            };
+            messages.push(fix);
+            persist(fix);
+            continue;
+          }
+          if (
+            report.status === 'PASSED' &&
+            reviews < 2 &&
+            st.depth < maxDepth &&
+            appSettings.agent.maxSubagentDepth > 0
+          ) {
+            reviews++;
+            this.emitEvent(st, {
+              type: 'mission_stage',
+              stage: 'validation',
+              note: 'revue finale indépendante',
+            });
+            const rev = await this.delegate(
+              st,
+              'final_reviewer',
+              FINAL_REVIEW_TASK(input.text, report),
+              input.effort,
+            );
+            const approved = rev.ok && reviewApproved(rev.summary);
+            this.emitEvent(st, {
+              type: 'mission_report',
+              report,
+              round: missionRound,
+              review: { approved, summary: rev.summary.slice(0, 3000) },
+            });
+            if (!approved && missionRound < 3) {
+              const fix: ChatMessage = {
+                role: 'user',
+                content: `The final reviewer requested changes:\n${rev.summary.slice(0, 4000)}\n\nFix the blocking problems, re-test, then call mission.report again.`,
+              };
+              messages.push(fix);
+              persist(fix);
+              continue;
+            }
+          } else this.emitEvent(st, { type: 'mission_report', report, round: missionRound });
+          this.emitEvent(st, { type: 'mission_stage', stage: 'delivery' });
+          finalText = `${finalText ? `${finalText}\n\n` : ''}${formatReport(report)}`;
+          missionDone = true;
+          break;
         }
       }
       if (step >= maxSteps && status === 'completed') {

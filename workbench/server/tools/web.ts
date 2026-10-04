@@ -76,7 +76,7 @@ export const webTools: AnyTool[] = [
       const res = await httpFetch(a.url, {
         signal: ctx.signal,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (OpenRouter AI Workbench)',
+          'User-Agent': 'Mozilla/5.0 (MASSAMBA Workbench)',
           Accept: 'text/html,application/json,text/plain;q=0.9,*/*;q=0.5',
         },
         redirect: 'follow',

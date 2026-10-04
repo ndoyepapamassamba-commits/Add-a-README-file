@@ -4,6 +4,16 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { WorkspaceService } from './workspace';
+import {
+  AI_DOCS,
+  aiDocPath,
+  aiDocTemplate,
+  changelogEntry,
+  memoryDigest,
+  testsEntry,
+  type AiDoc,
+  type MissionReport,
+} from '../agent/mission';
 
 export const MEMORY_CATEGORIES = [
   'architecture',
@@ -73,6 +83,53 @@ export class MemoryService {
     } catch {
       return '';
     }
+  }
+
+  // ── .ai/ project memory documents ────────────────────────────────────
+  private aiPath(projectId: string, doc: AiDoc): string {
+    return path.join(this.workspace.projectRoot(projectId), aiDocPath(doc));
+  }
+
+  /** Creates the missing .ai/*.md documents (never overwrites). */
+  async ensureAiDocs(projectId: string): Promise<string[]> {
+    const name = this.workspace.getProject(projectId).name;
+    const created: string[] = [];
+    await fsp.mkdir(path.join(this.workspace.projectRoot(projectId), '.ai'), { recursive: true });
+    for (const d of AI_DOCS) {
+      const p = this.aiPath(projectId, d);
+      if (fs.existsSync(p)) continue;
+      await fsp.writeFile(p, aiDocTemplate(d, name), { flag: 'wx' }).catch(() => undefined);
+      created.push(aiDocPath(d));
+    }
+    return created;
+  }
+
+  async aiDocs(projectId: string): Promise<Partial<Record<AiDoc, string>>> {
+    const out: Partial<Record<AiDoc, string>> = {};
+    for (const d of AI_DOCS) {
+      try {
+        out[d] = await fsp.readFile(this.aiPath(projectId, d), 'utf8');
+      } catch {
+        /* missing */
+      }
+    }
+    return out;
+  }
+
+  async aiDigest(projectId: string): Promise<string> {
+    return memoryDigest(await this.aiDocs(projectId));
+  }
+
+  /** Appends a mission result to .ai/CHANGELOG.md and .ai/TESTS.md (deterministic). */
+  async recordMission(
+    projectId: string,
+    goal: string,
+    r: MissionReport,
+    meta: { model?: string; cost?: number } = {},
+  ): Promise<void> {
+    await this.ensureAiDocs(projectId);
+    await fsp.appendFile(this.aiPath(projectId, 'CHANGELOG'), changelogEntry(goal, r, meta));
+    await fsp.appendFile(this.aiPath(projectId, 'TESTS'), testsEntry(r));
   }
 
   async add(projectId: string, category: MemoryCategory, text: string): Promise<MemoryFact> {

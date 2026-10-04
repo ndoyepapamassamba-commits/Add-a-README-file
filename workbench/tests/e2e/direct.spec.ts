@@ -1,4 +1,4 @@
-// End-to-end tests of the serverless edition (dist/openrouter-workbench-direct.html),
+// End-to-end tests of the serverless edition (dist/massamba-workbench-direct.html),
 // opened from disk; OpenRouter calls are routed to a local mock.
 import fs from 'node:fs';
 import os from 'node:os';
@@ -8,7 +8,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { startMockOpenRouter, type MockOpenRouter } from '../helpers/mockOpenRouter';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const FILE = path.join(ROOT, 'dist/openrouter-workbench-direct.html');
+const FILE = path.join(ROOT, 'dist/massamba-workbench-direct.html');
 let mock: MockOpenRouter;
 let tmp = '';
 
@@ -35,6 +35,9 @@ async function open(page: Page, errors: string[] = []) {
   await page.goto(pathToFileURL(FILE).href);
   await page.getByPlaceholder('sk-or-v1-…').fill('sk-or-v1-e2e-direct-key');
   await page.getByRole('button', { name: 'Commencer' }).click();
+  // Lands on Mission Control; most tests work in the chat.
+  await expect(page.getByText('Nouvelle mission')).toBeVisible();
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
   await expect(page.locator('textarea')).toBeVisible();
   // Explicit model so requests are predictable.
   await page.evaluate(() => undefined);
@@ -209,12 +212,118 @@ test('all views render without errors and data survives a reload', async ({ page
   mock.push({ text: 'Mémorisé.' });
   await send(page, 'Retiens ceci');
   await expect(page.getByText('Mémorisé.')).toBeVisible();
-  for (const v of ['Fichiers', 'Données', 'Agents', 'Skills', 'Plugins', 'Modèles', 'Réglages', 'Chat']) {
+  for (const v of [
+    'Mission Control',
+    'Fichiers',
+    'Données',
+    'Workflows',
+    'Agents',
+    'Skills',
+    'Plugins',
+    'Modèles',
+    'Réglages',
+    'Chat',
+  ]) {
     await page.getByRole('button', { name: v, exact: true }).click();
     await page.waitForTimeout(200);
   }
   await page.waitForTimeout(600); // debounced IndexedDB save
   await page.reload();
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
   await expect(page.getByText('Mémorisé.')).toBeVisible();
   expect(errors.filter((e) => !/ResizeObserver/.test(e))).toEqual([]);
+});
+
+test('mission mode: pipeline, correction round, final review, verdict and .ai memory', async ({ page }) => {
+  await open(page);
+  await page.getByTitle(/Mode Mission/).click();
+  mock.push(
+    {
+      toolCalls: [
+        { name: 'mission.stage', args: { stage: 'analyse' } },
+        { name: 'filesystem.write', args: { path: 'app.js', content: 'console.log(1)' } },
+      ],
+    },
+    {
+      toolCalls: [
+        {
+          name: 'mission.report',
+          args: {
+            status: 'FAILED',
+            summary: 'test KO',
+            checks: [{ name: 'exécution', status: 'fail' }],
+            issues: ['bug'],
+          },
+        },
+      ],
+    },
+    {
+      toolCalls: [
+        { name: 'mission.stage', args: { stage: 'correction' } },
+        { name: 'filesystem.write', args: { path: 'app.js', content: 'console.log(2)' } },
+      ],
+    },
+    {
+      toolCalls: [
+        {
+          name: 'mission.report',
+          args: {
+            status: 'PASSED',
+            summary: 'Application livrée et vérifiée',
+            checks: [{ name: 'exécution', status: 'pass' }],
+            deliverables: ['app.js'],
+          },
+        },
+      ],
+    },
+    { text: 'VERDICT: APPROVED' },
+  );
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  await send(page, 'Construis une petite app');
+  await expect(page.getByText('Revue finale : approuvée')).toBeVisible();
+  await expect(page.getByText('Livraison').first()).toBeVisible();
+  await expect(page.getByText('PASSED').first()).toBeVisible();
+  expect(systemOf(0)).toContain('MISSION MODE');
+  expect(JSON.stringify(mock.requests[2]!.messages)).toContain('Correction round 2');
+  // Final reviewer ran as an independent sub-agent.
+  expect(systemOf(4)).toContain('Final Reviewer');
+  // Mission Control shows the session; .ai/ memory was updated.
+  await page.getByRole('button', { name: 'Fichiers' }).click();
+  await page.getByRole('button', { name: /\.ai\/CHANGELOG\.md/ }).click();
+  await expect(page.getByText(/PASSED — Construis une petite app/)).toBeVisible();
+  await page.getByRole('button', { name: 'Mission Control' }).click();
+  await expect(page.getByText('Construis une petite app').first()).toBeVisible();
+});
+
+test('Mission Control launches a mission and workflows run in one click', async ({ page }) => {
+  await open(page);
+  await page.getByRole('button', { name: 'Mission Control' }).click();
+  mock.fallback = () => ({
+    toolCalls: [{ name: 'mission.report', args: { status: 'PARTIAL', summary: 'partiel', checks: [] } }],
+  });
+  await page.getByPlaceholder(/Construis cette application/).fill('Recherche les tendances IA');
+  await page.getByRole('button', { name: /Lancer la mission/ }).click();
+  await expect(page.getByText('PARTIAL').first()).toBeVisible({ timeout: 15_000 });
+  await page.getByRole('button', { name: 'Workflows', exact: true }).click();
+  await expect(page.getByText('Analyse de données complète')).toBeVisible();
+  await page
+    .getByRole('button', { name: /Lancer/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: /Lancer la mission/ }).click();
+  await expect(page.getByText('Workflow « Analyse de données complète »').first()).toBeVisible();
+});
+
+test('sessions can be renamed', async ({ page }) => {
+  await open(page);
+  mock.push({ text: 'ok' });
+  await send(page, 'Premier message');
+  await expect(page.getByText('ok', { exact: true })).toBeVisible();
+  // Double-click the title in the session header (the list also has a pencil on hover).
+  await page.getByTitle('Double-cliquez pour renommer').first().dblclick();
+  const input = page.getByLabel('Nouveau titre');
+  await input.fill('Mon projet Dakar');
+  await input.press('Enter');
+  await expect(page.getByText('Mon projet Dakar').first()).toBeVisible();
 });

@@ -40,7 +40,7 @@ export function buildSystemPrompt(opts: {
   const has = (t: string) => opts.toolNames.includes(t);
   const lines = [
     `${opts.role.prompt}`,
-    `You work inside "OpenRouter AI Workbench" on the project "${opts.projectName}". All tool paths are relative to the project root.`,
+    `You work inside "MASSAMBA Workbench" on the project "${opts.projectName}". All tool paths are relative to the project root.`,
     '',
     '# Environment',
     `- OS: Linux, shell: bash${opts.python ? ', python3 available' : ''}, Node.js available.`,

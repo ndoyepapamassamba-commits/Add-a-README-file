@@ -238,7 +238,7 @@ class FileOAuthProvider implements OAuthClientProvider {
   }
   get clientMetadata(): OAuthClientMetadata {
     return {
-      client_name: 'OpenRouter AI Workbench',
+      client_name: 'MASSAMBA Workbench',
       redirect_uris: [this.redirect],
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],

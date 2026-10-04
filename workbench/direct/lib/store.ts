@@ -1,16 +1,20 @@
 import { create } from 'zustand';
 import type { CreditsInfo, ModelInfo } from '@shared/types';
 import { kv, saveLater } from './db';
+import { recordHealth, type HealthMap } from '../../server/llm/routing';
 import type {
   AgentDef,
+  AgentMode,
   ArtifactDef,
   Item,
   McpServerDef,
   Session,
   Settings,
   SkillDef,
+  UsageEntry,
   VFile,
   View,
+  Workflow,
 } from './types';
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -59,7 +63,10 @@ export interface State {
   running: Record<string, AbortController>;
   status: Record<string, string>;
   grants: Record<string, string[]>;
-  agentMode: 'chat' | 'plan';
+  agentMode: AgentMode;
+  usage: UsageEntry[];
+  workflows: Workflow[];
+  health: HealthMap;
   draft: string;
   toasts: Toast[];
   openFile: string | null;
@@ -83,6 +90,9 @@ export interface State {
   setMcp: (m: McpServerDef[]) => void;
   addArtifact: (a: ArtifactDef) => void;
   addSpend: (usd: number) => void;
+  addUsage: (u: UsageEntry) => void;
+  setWorkflows: (w: Workflow[]) => void;
+  recordModel: (model: string, ok: boolean) => void;
 }
 
 const persistSession = (s: Session) => saveLater(`session:${s.id}`, () => s);
@@ -90,7 +100,7 @@ const persistIndex = (sessions: Session[]) => saveLater('sessions', () => sessio
 
 export const useStore = create<State>((set, get) => ({
   ready: false,
-  view: 'chat',
+  view: 'home',
   settings: DEFAULT_SETTINGS,
   models: [],
   modelsError: null,
@@ -107,6 +117,9 @@ export const useStore = create<State>((set, get) => ({
   status: {},
   grants: {},
   agentMode: 'chat',
+  usage: [],
+  workflows: [],
+  health: {},
   draft: '',
   toasts: [],
   openFile: null,
@@ -215,13 +228,41 @@ export const useStore = create<State>((set, get) => ({
   },
   addSpend: (usd) => {
     const d = today();
-    set({ spend: { ...get().spend, [d]: (get().spend[d] ?? 0) + usd } });
+    const before = get().spend[d] ?? 0;
+    const after = before + usd;
+    set({ spend: { ...get().spend, [d]: after } });
     saveLater('spend', () => get().spend);
+    // Budget alerts at 50 %, 80 % and 100 % of the daily budget.
+    const b = get().settings.budgetDaily;
+    if (b > 0)
+      for (const pct of [0.5, 0.8, 1])
+        if (before < b * pct && after >= b * pct)
+          get().toast(
+            pct >= 1 ? 'err' : 'info',
+            `Budget du jour : ${Math.round(pct * 100)} % atteint ($${after.toFixed(3)} / $${b}).`,
+          );
+  },
+  addUsage: (u) => {
+    set({ usage: [...get().usage.slice(-4999), u] });
+    saveLater('usage', () => get().usage, 1000);
+  },
+  setWorkflows: (workflows) => {
+    set({ workflows });
+    saveLater('workflows', () => get().workflows);
+  },
+  recordModel: (model, ok) => {
+    set({ health: recordHealth(get().health, model, ok) });
+    saveLater('health', () => get().health, 1000);
   },
 }));
 
 /** Loads everything saved in this browser. */
 export async function hydrate(): Promise<void> {
+  const [usage, workflows, health] = await Promise.all([
+    kv.get<UsageEntry[]>('usage').catch(() => undefined),
+    kv.get<Workflow[]>('workflows').catch(() => undefined),
+    kv.get<HealthMap>('health').catch(() => undefined),
+  ]);
   const [settings, ids, current, files, skills, agents, mcp, artifacts, spend] = await Promise.all([
     kv.get<Partial<Settings>>('settings'),
     kv.get<string[]>('sessions'),
@@ -277,5 +318,8 @@ export async function hydrate(): Promise<void> {
     mcp: mcp ?? [],
     artifacts: artifacts ?? [],
     spend: spend ?? {},
+    usage: usage ?? [],
+    workflows: workflows ?? [],
+    health: health ?? {},
   });
 }

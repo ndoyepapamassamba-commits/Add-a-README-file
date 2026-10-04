@@ -15,14 +15,28 @@ import {
   Sun,
   Trash2,
   Wallet,
+  LayoutDashboard,
+  Pencil,
+  Workflow as WorkflowIcon,
 } from 'lucide-react';
-import { Button, Field, Gauge, IconButton, Input, Spinner, Toggle } from '../web/components/ui';
+import {
+  Button,
+  Field,
+  Gauge,
+  IconButton,
+  Input,
+  Spinner,
+  Toggle,
+  EditableTitle,
+} from '../web/components/ui';
 import { cx, fmtCost, fmtRelative } from '../web/lib/format';
 import { getKey, loadCatalog, maskKey, provider, setKey } from './lib/llm';
 import { refreshCredits } from './lib/credits';
 import { hydrate, today, useStore } from './lib/store';
 import type { View } from './lib/types';
 import { ChatView } from './views/ChatView';
+import { HomeView } from './views/HomeView';
+import { WorkflowsView } from './views/WorkflowsView';
 import { FilesView } from './views/FilesView';
 import { DataView } from './views/DataView';
 import { AgentsView, SkillsView } from './views/LibraryViews';
@@ -30,9 +44,11 @@ import { PluginsView } from './views/PluginsView';
 import { ModelsView, SettingsView } from './views/SettingsViews';
 
 const NAV: { id: View; label: string; icon: React.ReactNode }[] = [
+  { id: 'home', label: 'Mission Control', icon: <LayoutDashboard size={17} /> },
   { id: 'chat', label: 'Chat', icon: <MessageSquare size={17} /> },
   { id: 'files', label: 'Fichiers', icon: <FolderOpen size={17} /> },
   { id: 'data', label: 'Données', icon: <Database size={17} /> },
+  { id: 'workflows', label: 'Workflows', icon: <WorkflowIcon size={17} /> },
   { id: 'agents', label: 'Agents', icon: <Bot size={17} /> },
   { id: 'skills', label: 'Skills', icon: <Puzzle size={17} /> },
   { id: 'plugins', label: 'Plugins', icon: <Plug size={17} /> },
@@ -104,7 +120,7 @@ function Onboarding({ onDone }: { onDone: () => void }) {
         <div className="mb-6 flex items-center gap-3">
           <Logo size={36} />
           <div>
-            <div className="text-[18px] font-semibold">OpenRouter AI Workbench</div>
+            <div className="text-[18px] font-semibold">MASSAMBA Workbench</div>
             <div className="text-[13px] text-muted">Accès direct — aucune installation, aucun terminal</div>
           </div>
         </div>
@@ -176,9 +192,12 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         e.preventDefault();
         useStore.getState().newSession();
       }
-      if (e.altKey && /^[1-8]$/.test(e.key)) {
-        e.preventDefault();
-        setView(NAV[Number(e.key) - 1]!.id);
+      if (e.altKey && /^[0-9]$/.test(e.key)) {
+        const n = e.key === '0' ? 9 : Number(e.key) - 1;
+        if (NAV[n]) {
+          e.preventDefault();
+          setView(NAV[n].id);
+        }
       }
     };
     addEventListener('keydown', onKey);
@@ -189,7 +208,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
     <div className="flex h-full flex-col bg-bg text-fg">
       <header className="flex h-11 shrink-0 items-center gap-2 border-b border-line bg-elev px-3">
         <Logo size={22} />
-        <span className="text-[13.5px] font-semibold">Workbench</span>
+        <span className="text-[13.5px] font-semibold">MASSAMBA Workbench</span>
         <span className="rounded-md bg-accent-soft px-1.5 py-0.5 text-[10.5px] font-medium text-accent">
           accès direct
         </span>
@@ -208,7 +227,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
             <button
               key={n.id}
               aria-label={n.label}
-              title={`${n.label} (Alt+${i + 1})`}
+              title={`${n.label} (Alt+${(i + 1) % 10})`}
               onClick={() => setView(n.id)}
               className={cx(
                 'flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-hover hover:text-fg',
@@ -221,7 +240,9 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         </nav>
         {view === 'chat' && <SessionList />}
         <main className="min-w-0 flex-1">
+          {view === 'home' && <HomeView />}
           {view === 'chat' && <ChatView />}
+          {view === 'workflows' && <WorkflowsView />}
           {view === 'files' && <FilesView />}
           {view === 'data' && <DataView />}
           {view === 'agents' && <AgentsView />}
@@ -335,6 +356,7 @@ function SessionList() {
   const currentId = useStore((s) => s.currentId);
   const running = useStore((s) => s.running);
   const [q, setQ] = useState('');
+  const [renaming, setRenaming] = useState<string | null>(null);
   const list = useMemo(
     () =>
       [...sessions]
@@ -374,7 +396,23 @@ function SessionList() {
           >
             <div className="flex items-center gap-1.5">
               {running[s.id] && <Spinner className="h-3 w-3" />}
-              <div className="min-w-0 flex-1 truncate text-[13px]">{s.title}</div>
+              <EditableTitle
+                value={s.title}
+                className="text-[13px]"
+                editing={renaming === s.id}
+                onDone={() => setRenaming(null)}
+                onSave={(title) => useStore.getState().patchSession(s.id, { title })}
+              />
+              <button
+                aria-label="Renommer la session"
+                className="hidden text-faint hover:text-fg group-hover:block"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRenaming(s.id);
+                }}
+              >
+                <Pencil size={13} />
+              </button>
               <button
                 aria-label="Supprimer la session"
                 className="hidden text-faint hover:text-err group-hover:block"

@@ -154,7 +154,7 @@ export async function buildApp(
       return reply
         .type('text/html; charset=utf-8')
         .send(
-          '<h1>OpenRouter AI Workbench</h1><p>Interface non construite : lancez <code>npm run build</code> (ou <code>npm run dev</code> pour le mode développement sur le port 5173).</p>',
+          '<h1>MASSAMBA Workbench</h1><p>Interface non construite : lancez <code>npm run build</code> (ou <code>npm run dev</code> pour le mode développement sur le port 5173).</p>',
         );
     }
     reply.header('Cache-Control', 'no-cache');

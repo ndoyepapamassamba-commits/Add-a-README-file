@@ -81,7 +81,7 @@ function TopBar() {
   return (
     <header className="flex h-11 shrink-0 items-center gap-2 border-b border-line bg-elev px-2.5">
       <Logo size={22} />
-      <span className="hidden text-[13px] font-semibold md:inline">Workbench</span>
+      <span className="hidden text-[13px] font-semibold md:inline">MASSAMBA Workbench</span>
       <span className="text-faint">/</span>
       <Dropdown
         trigger={

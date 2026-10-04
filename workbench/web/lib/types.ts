@@ -177,7 +177,7 @@ export interface SessionListItem extends SessionSummary {
 
 export interface ComposerPrefs {
   effort: EffortSetting;
-  agentMode: 'chat' | 'plan';
+  agentMode: 'chat' | 'plan' | 'mission';
 }
 
 export type { ModelInfo };

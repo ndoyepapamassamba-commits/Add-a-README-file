@@ -1,6 +1,7 @@
 import type {
   AgentEvent,
   ApprovalRequest,
+  MissionReportPayload,
   PlanStep,
   RoleId,
   RunStatus,
@@ -44,7 +45,25 @@ export type Item =
       ok?: boolean;
       children: Item[];
     }
-  | { kind: 'model'; id: string; model: string; reason: string; auto: boolean; effort?: string }
+  | {
+      kind: 'model';
+      id: string;
+      model: string;
+      reason: string;
+      auto: boolean;
+      effort?: string;
+      tier?: string;
+      fallbacks?: string[];
+      estimate?: { low: number; high: number } | null;
+    }
+  | { kind: 'pipeline'; id: string; current: string; done: string[] }
+  | {
+      kind: 'mission';
+      id: string;
+      report: MissionReportPayload;
+      round: number;
+      review?: { approved: boolean; summary: string };
+    }
   | { kind: 'fallback'; id: string; from: string; to: string; reason: string }
   | { kind: 'notice'; id: string; text: string }
   | { kind: 'skills'; id: string; skills: { name: string; reason: string; matched?: string[] }[] }
@@ -66,6 +85,7 @@ export interface RunView {
   lastSeq: number;
   pendingApprovals: string[];
   pendingPlan: boolean;
+  verdict: MissionReportPayload['status'] | null;
 }
 
 let uid = 0;
@@ -88,6 +108,7 @@ export function emptyRunView(run: RunSummary): RunView {
     lastSeq: -1,
     pendingApprovals: [],
     pendingPlan: false,
+    verdict: null,
   };
 }
 
@@ -157,7 +178,28 @@ export function applyEvent(view: RunView, e: AgentEvent, seq: number): RunView {
         reason: e.reason,
         auto: e.auto,
         effort: e.effort,
+        tier: e.tier,
+        fallbacks: e.fallbacks,
+        estimate: e.estimate,
       });
+      break;
+    case 'mission_stage': {
+      const idx = v.items.findIndex((i) => i.kind === 'pipeline');
+      if (idx >= 0) {
+        const p = v.items[idx] as Extract<Item, { kind: 'pipeline' }>;
+        const items = [...v.items];
+        items[idx] = {
+          ...p,
+          current: e.stage,
+          done: p.current && p.current !== e.stage ? [...new Set([...p.done, p.current])] : p.done,
+        };
+        v.items = items;
+      } else pushItem({ kind: 'pipeline', id: nid(), current: e.stage, done: [] });
+      break;
+    }
+    case 'mission_report':
+      v.verdict = e.report.status;
+      pushItem({ kind: 'mission', id: nid(), report: e.report, round: e.round, review: e.review });
       break;
     case 'model_fallback':
       v.model = e.to;

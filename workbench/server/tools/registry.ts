@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { ToolDefinition } from '../llm/types';
 import { agentTools } from './agent';
 import { jevTools } from './jev';
+import { missionTools } from './mission';
 import { browserTools } from './browser';
 import { dataTools } from './data';
 import { filesystemTools } from './filesystem';
@@ -12,6 +13,7 @@ import type { AnyTool } from './types';
 import { webTools } from './web';
 
 export const ALL_TOOLS: AnyTool[] = [
+  ...missionTools,
   ...filesystemTools,
   ...terminalTools,
   ...browserTools,

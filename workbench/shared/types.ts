@@ -2,7 +2,7 @@
 
 export type PermissionMode = 'safe' | 'normal' | 'autonomous';
 /** chat = direct agent loop, plan = plan → approval → execution. */
-export type AgentMode = 'chat' | 'plan';
+export type AgentMode = 'chat' | 'plan' | 'mission';
 /** Built-in roles: general, coder, researcher, browser, data_analyst, reviewer, tester — plus custom agent ids. */
 export type RoleId = string;
 export const BUILTIN_ROLES = [
@@ -109,7 +109,23 @@ export type AgentEvent =
       permissionMode: PermissionMode;
     }
   | { type: 'status'; text: string }
-  | { type: 'model_selected'; model: string; reason: string; auto: boolean; effort?: string }
+  | {
+      type: 'model_selected';
+      model: string;
+      reason: string;
+      auto: boolean;
+      effort?: string;
+      tier?: string;
+      fallbacks?: string[];
+      estimate?: { low: number; high: number } | null;
+    }
+  | { type: 'mission_stage'; stage: string; note?: string }
+  | {
+      type: 'mission_report';
+      report: MissionReportPayload;
+      round: number;
+      review?: { approved: boolean; summary: string };
+    }
   | { type: 'stream_reset' }
   | {
       type: 'skills_activated';
@@ -273,4 +289,12 @@ export interface ServerStatus {
   python: boolean;
   ripgrep: boolean;
   previewPort: number;
+}
+
+export interface MissionReportPayload {
+  status: 'PASSED' | 'PARTIAL' | 'FAILED';
+  summary: string;
+  checks: { name: string; status: 'pass' | 'fail' | 'skip'; details?: string }[];
+  issues: string[];
+  deliverables: string[];
 }

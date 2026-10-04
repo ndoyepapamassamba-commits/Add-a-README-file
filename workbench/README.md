@@ -1,11 +1,11 @@
-# OpenRouter AI Workbench
+# MASSAMBA Workbench
 
-Un centre de commande d'ingénierie IA, dans l'esprit de Claude Code, qui utilise **OpenRouter** comme fournisseur de modèles.
+Mon système d'exploitation IA personnel, dans l'esprit de Claude Code : il orchestre les modèles **OpenRouter**, les agents, les outils, les fichiers, le navigateur, le terminal et la QA pour livrer des résultats vérifiés.
 Deux éditions, chacune en **un seul fichier HTML** : l'**accès direct**, qui fonctionne seul dans le navigateur, et l'édition **avec agent local** (serveur Node) qui garde la clé côté serveur et ajoute terminal, navigateur piloté, git et tous les plugins.
 
 ```
 ┌──────────────────────────────┐        HTTP + WebSocket          ┌──────────────────────────────────────┐
-│ openrouter-workbench.html    │  ◀──── (jeton d'accès) ────▶     │ Agent local (Node, 127.0.0.1:8787)   │
+│ massamba-workbench.html    │  ◀──── (jeton d'accès) ────▶     │ Agent local (Node, 127.0.0.1:8787)   │
 │ chat · code · terminal ·     │                                  │ boucle d'agent · outils · SQLite      │
 │ navigateur · données · …     │                                  │ Playwright · MCP · Jev · git          │
 └──────────────────────────────┘                                  └──────────────┬───────────────────────┘
@@ -16,24 +16,59 @@ Deux éditions, chacune en **un seul fichier HTML** : l'**accès direct**, qui f
 
 ## Deux éditions
 
-|                   | **Accès direct** (`openrouter-workbench-direct.html`)                                                                                                                                                                                                                                                                                                                  | **Avec agent local** (`openrouter-workbench.html` + `npm start`) |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Installation      | aucune : double-clic sur le fichier                                                                                                                                                                                                                                                                                                                                    | Node.js, `npm install`, `npm start`                              |
-| Clé OpenRouter    | saisie dans l'interface, gardée dans ce navigateur                                                                                                                                                                                                                                                                                                                     | `.env` côté serveur uniquement                                   |
-| Fichiers          | espace de travail dans le navigateur (import, création, export .zip)                                                                                                                                                                                                                                                                                                   | vrais dossiers de projet sur le disque                           |
-| Code              | JavaScript / Python (Pyodide) dans un bac à sable                                                                                                                                                                                                                                                                                                                      | terminal, git, aperçu en direct                                  |
-| Navigateur piloté | —                                                                                                                                                                                                                                                                                                                                                                      | Playwright (vue en direct)                                       |
-| Plugins MCP       | serveurs en ligne compatibles navigateur (Context7, DeepWiki, URL HTTP)                                                                                                                                                                                                                                                                                                | tous : Blender, Canva, Figma, stdio, OAuth…                      |
-| Commun            | chat agentique en streaming, agents (intégrés + personnalisés Claude Code), skills obligatoires, modèle AUTO + niveau d'effort, mode PLAN, approbations SAFE / NORMAL / AUTONOME, sous-agents, données CSV / Excel / JSON + graphiques, documents PDF / Word / PowerPoint, photos (vision), recherche web, artefacts, jauge de crédits et coûts réels, budgets, export |                                                                  |
+|                   | **Accès direct** (`massamba-workbench-direct.html`)                                                                                                                                                                                                                                                                                                                    | **Avec agent local** (`massamba-workbench.html` + `npm start`) |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Installation      | aucune : double-clic sur le fichier                                                                                                                                                                                                                                                                                                                                    | Node.js, `npm install`, `npm start`                            |
+| Clé OpenRouter    | saisie dans l'interface, gardée dans ce navigateur                                                                                                                                                                                                                                                                                                                     | `.env` côté serveur uniquement                                 |
+| Fichiers          | espace de travail dans le navigateur (import, création, export .zip)                                                                                                                                                                                                                                                                                                   | vrais dossiers de projet sur le disque                         |
+| Code              | JavaScript / Python (Pyodide) dans un bac à sable                                                                                                                                                                                                                                                                                                                      | terminal, git, aperçu en direct                                |
+| Navigateur piloté | —                                                                                                                                                                                                                                                                                                                                                                      | Playwright (vue en direct)                                     |
+| Plugins MCP       | serveurs en ligne compatibles navigateur (Context7, DeepWiki, URL HTTP)                                                                                                                                                                                                                                                                                                | tous : Blender, Canva, Figma, stdio, OAuth…                    |
+| Commun            | chat agentique en streaming, agents (intégrés + personnalisés Claude Code), skills obligatoires, modèle AUTO + niveau d'effort, mode PLAN, approbations SAFE / NORMAL / AUTONOME, sous-agents, données CSV / Excel / JSON + graphiques, documents PDF / Word / PowerPoint, photos (vision), recherche web, artefacts, jauge de crédits et coûts réels, budgets, export |                                                                |
 
 ### Accès direct (le plus simple)
 
-1. Ouvrez `openrouter-workbench-direct.html` (double-clic). Il fonctionne depuis n'importe quel dossier, sans serveur.
+1. Ouvrez `massamba-workbench-direct.html` (double-clic). Il fonctionne depuis n'importe quel dossier, sans serveur.
 2. Collez votre clé OpenRouter (créée sur openrouter.ai/keys) et cliquez sur **Commencer**.
 
 La clé n'est jamais écrite dans le fichier : elle reste dans le stockage local du navigateur et n'est envoyée qu'à `openrouter.ai`. Décochez « Se souvenir de la clé » sur un ordinateur partagé, et fixez une limite de dépenses sur la clé côté OpenRouter. Le code exécuté par l'agent et les aperçus HTML tournent dans des iframes isolées, sans accès à la clé. Jev (TypeSafe) n'est pas disponible dans cette édition : son API n'accepte pas les appels depuis un navigateur ; le routage AUTO utilise alors l'heuristique intégrée.
 
-Pour la reconstruire : `npm run build:direct` → `dist/openrouter-workbench-direct.html`.
+Pour la reconstruire : `npm run build:direct` → `dist/massamba-workbench-direct.html`.
+
+## Orchestration autonome
+
+Pipeline de chaque **mission** (bouton _Mission_, `/mission`, ou _Lancer la mission_ dans Mission Control) :
+
+**DEMANDE → ANALYSE → PLAN → EXÉCUTION → TEST → REVIEW → CORRECTION → VALIDATION → LIVRAISON**
+
+- L'IA annonce chaque étape (barre de pipeline en direct) et tient une checklist.
+- Elle termine par un rapport avec verdict **PASSED / PARTIAL / FAILED** et la liste des vérifications réellement faites.
+- Si le verdict n'est pas PASSED, elle relance automatiquement un cycle de correction (jusqu'à 3).
+- Si le verdict est PASSED, un agent **Final Reviewer** indépendant contrôle le résultat. S'il demande des changements, la mission repart en correction.
+- Elle s'arrête seulement quand le résultat est validé, ou après 3 cycles de correction, ou si le budget ou le nombre d'étapes maximum est atteint.
+- **Répare tout** (`/fix`) : détecter → diagnostiquer → corriger → tester → re-tester (bugs, erreurs JS / API / terminal / réseau, UI, logique, performance, régressions).
+- **Agents** : Orchestrateur, Architect, Coder, Researcher, Data Analyst, Browser Agent (édition locale), QA Engineer, Security Reviewer, Document Analyst, Reporting Agent, Final Reviewer (+ vos agents Claude Code). L'orchestrateur reçoit l'équipe recommandée pour la tâche et délègue.
+- **Routage multi-modèles** : chaque demande est profilée (type, difficulté, contexte, images), classée **CHEAP / BALANCED / QUALITY / MAXIMUM**, puis le meilleur modèle du catalogue en direct est choisi selon ses capacités, sa fenêtre de contexte, son prix et sa fiabilité observée. Les modèles qui viennent d'échouer sont évités, et une chaîne de secours multi-fournisseurs est construite automatiquement. Le fil affiche le modèle, le niveau, les secours et l'estimation de coût, puis le coût, les tokens, la durée et les éventuels replis.
+- **Mémoire de projet `.ai/`** : `PROJECT`, `ARCHITECTURE`, `REQUIREMENTS`, `DECISIONS`, `TODO`, `KNOWN_ISSUES`, `TESTS`, `CHANGELOG`, `MEMORY`. Les documents sont créés automatiquement et résumés à l'IA au début de chaque session. L'IA les met à jour (`memory.doc`), et chaque mission ajoute son verdict au `CHANGELOG` et à `TESTS`.
+- **Terminal intelligent** (édition locale) : toute commande en échec est accompagnée d'un diagnostic (catégorie, fichier:ligne, correction suggérée) → l'IA corrige, reconstruit et re-teste. Les protections des commandes dangereuses sont inchangées.
+- **Browser Agent** (édition locale) : chaque action renvoie une OBSERVATION (nouvelles erreurs console, requêtes en échec, page) et une invite de DÉCISION.
+- **Données** : XLSX, XLSM, **XLSB**, CSV, JSON, PDF, DOCX → profil, doublons, anomalies, statistiques, graphiques (aussi en PNG), exports Excel / CSV, rapports **Word** (graphiques intégrés), HTML imprimable en PDF (PDF direct dans l'édition locale). Les fichiers sources ne sont jamais modifiés : les résultats vont dans `outputs/`.
+- **Workflows** : procédures enregistrées et exécutées en un clic en mode Mission. Modèles fournis : _Analyse de données complète_ (import → qualité → analyse → risques → graphiques → rapport → Excel → Word → PDF → QA), _Répare tout_, _Synthèse de documents_.
+- **Mission Control** (accueil de l'édition directe) :
+  - lancement d'une nouvelle mission ;
+  - missions actives, sessions récentes et tâches en échec, avec un bouton _Reprendre_ ;
+  - workflows ;
+  - utilisation par modèle : appels, tokens, coût, durée, replis ;
+  - agents et outils utilisés ;
+  - fichiers et derniers tests ;
+  - erreurs récentes ;
+  - coûts du jour et du mois, crédits.
+- **Contrôle des coûts** :
+  - estimation avant envoi ;
+  - coût réel par étape, par session et par modèle ;
+  - budgets par tâche et par jour ;
+  - alertes à 50 %, 80 % et 100 % du budget du jour.
+- **Sessions** : renommage par double-clic sur le titre ou avec le crayon.
 
 ## Installation
 
@@ -65,7 +100,7 @@ Le port reste **privé** (seul votre compte GitHub y accède) et le jeton est co
 
 ### Utiliser le fichier HTML local
 
-Ouvrez `dist/openrouter-workbench.html` (double-clic, depuis n'importe quel dossier). Indiquez l'adresse de l'agent (`http://127.0.0.1:8787`) et collez le jeton. Le fichier ne contient **aucune clé** : il ne fait que parler à votre agent local.
+Ouvrez `dist/massamba-workbench.html` (double-clic, depuis n'importe quel dossier). Indiquez l'adresse de l'agent (`http://127.0.0.1:8787`) et collez le jeton. Le fichier ne contient **aucune clé** : il ne fait que parler à votre agent local.
 
 ### Développement
 

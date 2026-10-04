@@ -130,7 +130,7 @@ export function sessionRoutes(app: FastifyInstance, ctx: AppContext): void {
         model: z.string().optional(),
         effort: EffortEnum.default('auto'),
         role: RoleEnum.optional(),
-        agentMode: z.enum(['chat', 'plan']).default('chat'),
+        agentMode: z.enum(['chat', 'plan', 'mission']).default('chat'),
         skills: z.array(z.string().max(120)).max(10).optional(),
         ui: z
           .object({

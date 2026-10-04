@@ -10,7 +10,7 @@ const live = process.env.OPENROUTER_LIVE === '1';
 const provider = new OpenRouterProvider({
   baseUrl: process.env.OPENROUTER_BASE_URL ?? 'https://openrouter.ai/api/v1',
   appUrl: 'http://localhost',
-  appName: 'OpenRouter AI Workbench (tests)',
+  appName: 'MASSAMBA Workbench (tests)',
   getApiKey: () => process.env.OPENROUTER_API_KEY || undefined,
 });
 

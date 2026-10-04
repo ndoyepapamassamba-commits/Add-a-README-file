@@ -521,3 +521,62 @@ export function Field({
     </label>
   );
 }
+
+/** Inline-editable title (double-click or `editing` prop; Enter saves, Escape cancels). */
+export function EditableTitle({
+  value,
+  onSave,
+  className,
+  editing: forced,
+  onDone,
+}: {
+  value: string;
+  onSave: (v: string) => void;
+  className?: string;
+  editing?: boolean;
+  onDone?: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const active = editing || Boolean(forced);
+  const finish = (save: boolean) => {
+    const v = draft.trim();
+    if (save && v && v !== value) onSave(v.slice(0, 200));
+    setEditing(false);
+    onDone?.();
+  };
+  if (!active)
+    return (
+      <span
+        className={cx('min-w-0 flex-1 truncate', className)}
+        title="Double-cliquez pour renommer"
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          setDraft(value);
+          setEditing(true);
+        }}
+      >
+        {value}
+      </span>
+    );
+  return (
+    <input
+      autoFocus
+      aria-label="Nouveau titre"
+      value={draft}
+      onFocus={(e) => e.currentTarget.select()}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => setDraft(e.target.value)}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') finish(true);
+        if (e.key === 'Escape') finish(false);
+      }}
+      onBlur={() => finish(true)}
+      className={cx(
+        'min-w-0 flex-1 rounded-md border border-accent bg-input px-1.5 py-0.5 text-[13px] outline-none',
+        className,
+      )}
+    />
+  );
+}

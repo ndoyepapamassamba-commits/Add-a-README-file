@@ -17,7 +17,7 @@ const EnvSchema = z.object({
   DATA_DIR: z.string().default('./data'),
   OPENROUTER_BASE_URL: z.string().url().default('https://openrouter.ai/api/v1'),
   OPENROUTER_APP_URL: z.string().default('http://localhost'),
-  OPENROUTER_APP_NAME: z.string().default('OpenRouter AI Workbench'),
+  OPENROUTER_APP_NAME: z.string().default('MASSAMBA Workbench'),
   BRAVE_API_KEY: z.string().optional(),
   BROWSER_ENGINE: z.enum(['chromium', 'firefox', 'webkit']).default('chromium'),
   BROWSER_HEADLESS: bool.default(true),

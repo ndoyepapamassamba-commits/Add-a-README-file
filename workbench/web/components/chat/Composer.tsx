@@ -8,8 +8,10 @@ import {
   Paperclip,
   Square,
   X,
+  Rocket,
 } from 'lucide-react';
 import type { EffortSetting, PermissionMode } from '@shared/types';
+import { FIX_EVERYTHING } from '../../../server/agent/mission';
 import { api } from '../../lib/api';
 import { basename, cx, fmtCost, shortModel } from '../../lib/format';
 import { isActiveStatus } from '../../lib/transcript';
@@ -42,6 +44,8 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'skill', args: '<nom>', description: 'Épingler / retirer un skill pour la session' },
   { name: 'effort', args: '<auto|low|medium|high|xhigh|max>', description: "Niveau d'effort du modèle" },
   { name: 'plan', description: 'Basculer le mode Plan (plan → validation → exécution)' },
+  { name: 'mission', description: 'Basculer le mode Mission autonome (jusqu’au résultat validé)' },
+  { name: 'fix', description: 'Mission « Répare tout » : détecter, diagnostiquer, corriger, tester' },
   { name: 'mode', args: '<safe|normal|auto>', description: 'Mode de permissions' },
   { name: 'review', args: '[focus]', description: 'Faire relire le travail par un second agent' },
   { name: 'compact', description: 'Résumer l’historique pour libérer du contexte' },
@@ -243,6 +247,26 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
       case 'plan':
         app.setPrefs({ agentMode: app.prefs.agentMode === 'plan' ? 'chat' : 'plan' });
         return true;
+      case 'mission':
+        app.setPrefs({ agentMode: app.prefs.agentMode === 'mission' ? 'chat' : 'mission' });
+        return true;
+      case 'fix': {
+        app.setPrefs({ agentMode: 'mission' });
+        let sid = session.sessionId;
+        if (!sid) sid = await app.newSession();
+        if (!sid) return true;
+        if (useSession.getState().sessionId !== sid) await useSession.getState().load(sid);
+        await useSession.getState().send({
+          text: `${FIX_EVERYTHING}${arg ? `\n\nPrécision : ${arg}` : ''}`,
+          attachments: [],
+          model: model === 'auto' ? undefined : model,
+          effort: app.prefs.effort,
+          role,
+          agentMode: 'mission',
+          ui: ui(),
+        });
+        return true;
+      }
       case 'mode': {
         const m = arg === 'auto' ? 'autonomous' : arg;
         if (MODES.includes(m as PermissionMode)) await session.patchSession({ permissionMode: m });
@@ -557,6 +581,15 @@ export function Composer({ compact = false, autoFocus = true }: { compact?: bool
             onClick={() => app.setPrefs({ agentMode: app.prefs.agentMode === 'plan' ? 'chat' : 'plan' })}
           >
             <ListChecks size={14} /> Plan
+          </Chip>
+          <Chip
+            title="Mode Mission : l'agent travaille en autonomie (analyse → plan → exécution → test → review → correction → validation → livraison) jusqu'à un résultat vérifié, avec verdict PASSED / PARTIAL / FAILED"
+            active={app.prefs.agentMode === 'mission'}
+            onClick={() =>
+              app.setPrefs({ agentMode: app.prefs.agentMode === 'mission' ? 'chat' : 'mission' })
+            }
+          >
+            <Rocket size={14} /> Mission
           </Chip>
           <ModePicker value={mode} onChange={(m) => void session.patchSession({ permissionMode: m })} />
           <div className="ml-auto flex items-center gap-0.5">

@@ -72,6 +72,9 @@ export const DIRECT_TOOLS = [
   'skill.use',
   'skill.read',
   'agent.delegate',
+  'memory.doc',
+  'report.export',
+  'data.export',
 ];
 
 /** Imports a Claude Code agent (.md with frontmatter). */

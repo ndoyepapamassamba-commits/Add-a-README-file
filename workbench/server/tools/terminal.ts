@@ -1,3 +1,4 @@
+import { diagnose, formatDiagnosis } from './diagnose';
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -94,7 +95,7 @@ export const terminalTools: AnyTool[] = [
           stdout: clip(result.stdout, 20_000),
           stderr: clip(result.stderr, 10_000),
         },
-        forModel: `${a.background ? `Background process id: ${result.id}\n` : ''}${formatCommandResult(result)}`,
+        forModel: `${a.background ? `Background process id: ${result.id}\n` : ''}${formatCommandResult(result)}${failed ? smartDiagnosis(result) : ''}`,
         error: failed ? `Command exited with code ${result.exitCode}` : undefined,
       };
     },
@@ -180,7 +181,7 @@ export const terminalTools: AnyTool[] = [
           ok: r.exitCode === 0,
           summary: `exit ${r.exitCode} · ${r.durationMs} ms`,
           data: { exitCode: r.exitCode, stdout: clip(r.stdout, 20_000), stderr: clip(r.stderr, 10_000) },
-          forModel: formatCommandResult({ ...r, command: `${a.language} snippet` }),
+          forModel: `${formatCommandResult({ ...r, command: `${a.language} snippet` })}${r.exitCode === 0 ? '' : smartDiagnosis(r)}`,
           error: r.exitCode === 0 ? undefined : `exit code ${r.exitCode}`,
         };
       } finally {
@@ -189,3 +190,8 @@ export const terminalTools: AnyTool[] = [
     },
   }),
 ];
+
+function smartDiagnosis(r: { stdout?: string; stderr?: string; exitCode: number | null }): string {
+  const d = diagnose(`${r.stdout ?? ''}\n${r.stderr ?? ''}`, r.exitCode);
+  return d ? formatDiagnosis(d) : '';
+}

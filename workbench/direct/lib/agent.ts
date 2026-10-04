@@ -1,6 +1,22 @@
 // The agent loop, running entirely in the browser: plan → tools → observe → verify.
 import type { EffortSetting } from '@shared/types';
 import { selectModel } from '../../server/llm/router';
+import { analyzeTask, routeModel } from '../../server/llm/routing';
+import {
+  AI_DOCS,
+  FINAL_REVIEW_TASK,
+  MEMORY_INSTRUCTIONS,
+  MISSION_PROTOCOL,
+  aiDocPath,
+  aiDocTemplate,
+  changelogEntry,
+  formatReport,
+  memoryDigest,
+  reviewApproved,
+  testsEntry,
+  type AiDoc,
+  type MissionReport,
+} from '../../server/agent/mission';
 import { agentModelPreference } from '../../server/agent/roles';
 import { DEFAULT_AUTO_TIERS } from '../../server/services/settings';
 import { isDataFile, profileToText, DataCore } from '../../server/services/dataCore';
@@ -12,10 +28,41 @@ import { findAgent, allAgents } from './roles';
 import { matchSkills } from './skills';
 import { uid, useStore } from './store';
 import { TOOLS, llmName, mcpTool, toolDefs, type DirectTool, type ToolCtx } from './tools';
-import type { AgentDef, Attachment, PlanStep, Session } from './types';
-import { bytesOf, dataUrl, getFile, readAsText, tree } from './vfs';
+import type { AgentDef, AgentMode, Attachment, PlanStep, Session } from './types';
+import { bytesOf, dataUrl, getFile, readAsText, tree, writeText } from './vfs';
 
 const WRITE_TOOLS = new Set(['filesystem.write', 'filesystem.edit', 'filesystem.delete']);
+/** Tools that create files: hidden in SAFE (read-only) mode. */
+const SAFE_HIDDEN = new Set([
+  ...WRITE_TOOLS,
+  'memory.doc',
+  'report.export',
+  'data.export',
+  'artifact.create',
+]);
+const MISSION_ONLY = new Set(['mission.stage', 'mission.report']);
+
+/** Creates missing .ai/ memory documents (never overwrites). */
+function ensureAiDocs(): void {
+  for (const d of AI_DOCS)
+    if (!getFile(aiDocPath(d))) writeText(aiDocPath(d), aiDocTemplate(d, 'Espace de travail'));
+}
+function aiDigest(): string {
+  const docs: Partial<Record<AiDoc, string>> = {};
+  for (const d of AI_DOCS) {
+    const f = getFile(aiDocPath(d));
+    if (f && !f.binary) docs[d] = f.data;
+  }
+  return memoryDigest(docs);
+}
+function recordMission(goal: string, r: MissionReport, meta: { model: string; cost: number }): void {
+  ensureAiDocs();
+  writeText(
+    aiDocPath('CHANGELOG'),
+    `${getFile(aiDocPath('CHANGELOG'))!.data.trimEnd()}\n${changelogEntry(goal, r, meta)}`,
+  );
+  writeText(aiDocPath('TESTS'), `${getFile(aiDocPath('TESTS'))!.data.trimEnd()}\n${testsEntry(r)}`);
+}
 const MAX_DEPTH = 1;
 
 const PLAN_MODE = `# PLAN MODE (active)
@@ -32,7 +79,7 @@ function systemPrompt(o: {
 }): string {
   const has = (n: string) => o.tools.some((t) => t.name === n);
   const parts = [
-    `You are an expert AI agent inside "OpenRouter AI Workbench", a Claude-Code-like workspace that runs in the user's browser.`,
+    `You are an expert AI agent inside "MASSAMBA Workbench", a Claude-Code-like workspace that runs in the user's browser.`,
     `Role — ${o.agent.name}: ${o.agent.prompt}`,
     `# How you work
 - Understand the goal, then act: use tools instead of guessing. For multi-step tasks keep a checklist with plan.update.
@@ -149,6 +196,7 @@ interface LoopInput {
   agentLabel?: string;
   model?: string;
   effort?: EffortSetting;
+  mission?: boolean;
 }
 
 interface LoopResult {
@@ -158,10 +206,15 @@ interface LoopResult {
   cost: number;
   tokensIn: number;
   tokensOut: number;
+  report?: MissionReport | null;
+  models: string[];
+  fallbacks: number;
 }
 
 function decide(mode: Session['mode'], t: DirectTool, granted: boolean): 'allow' | 'ask' | 'deny' {
   if (t.risk === 'read') return 'allow';
+  // Deletions are always confirmed, even in autonomous mode.
+  if (t.risk === 'delete') return mode === 'safe' ? 'deny' : 'ask';
   if (mode === 'auto') return 'allow';
   if (mode === 'safe' && WRITE_TOOLS.has(t.name)) return 'deny';
   return granted ? 'allow' : 'ask';
@@ -193,9 +246,18 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     )
       return false;
     if (t.name === 'agent.delegate' && inp.depth >= MAX_DEPTH) return false;
-    if (inp.session.mode === 'safe' && WRITE_TOOLS.has(t.name)) return false;
+    if (inp.session.mode === 'safe' && SAFE_HIDDEN.has(t.name)) return false;
+    if (MISSION_ONLY.has(t.name)) return false;
     return true;
   });
+  if (inp.mission) {
+    tools = [
+      ...tools,
+      ...TOOLS.filter((t) => MISSION_ONLY.has(t.name) || (t.name === 'plan.update' && !tools.includes(t))),
+    ];
+    const d = TOOLS.find((t) => t.name === 'agent.delegate')!;
+    if (inp.depth < MAX_DEPTH && !tools.includes(d)) tools.push(d);
+  }
   if (!st.skills.some((s) => s.enabled)) tools = tools.filter((t) => !t.name.startsWith('skill.'));
   const planTools = [...tools.filter((t) => t.readOnly), TOOLS.find((t) => t.name === 'plan.propose')!];
 
@@ -206,6 +268,14 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     ? { ...DEFAULT_AUTO_TIERS, balanced: DEFAULT_AUTO_TIERS[pref.tier], fast: DEFAULT_AUTO_TIERS[pref.tier] }
     : DEFAULT_AUTO_TIERS;
   const hasImages = inp.attachments.some((a) => isImage(a.path));
+  const profile = analyzeTask({
+    text: inp.text,
+    attachmentNames: inp.attachments.map((a) => a.name),
+    hasImages,
+    role: inp.agent.id,
+    historyTokens: estimate(inp.history),
+    mission: inp.mission,
+  });
   const sel = selectModel({
     requested,
     models,
@@ -213,10 +283,33 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     signals: { text: inp.text, hasImages, role: inp.agent.id, historyLength: inp.history.length },
     fallbackDefault: 'openai/gpt-4o-mini',
   });
+  let routedFallbacks: string[] = [];
+  let routed: ReturnType<typeof routeModel> = null;
+  if (sel.auto) {
+    routed = routeModel(models, tiers, profile, useStore.getState().health);
+    if (routed) {
+      sel.model = routed.model;
+      sel.reason = routed.reason;
+      routedFallbacks = routed.fallbacks;
+    }
+  }
+  const fallbackChain = [
+    ...new Set([st.settings.fallbackModel, ...routedFallbacks].filter((m) => m && m !== sel.model)),
+  ];
   const info = models.find((m) => m.id === sel.model);
   const vision = info?.capabilities.vision ?? hasImages;
   const effort = (inp.effort && inp.effort !== 'auto' ? inp.effort : inp.agent.effort) ?? 'auto';
-  if (!label) push(sid, { kind: 'model', id: uid(), model: sel.model, reason: sel.reason, auto: sel.auto });
+  if (!label)
+    push(sid, {
+      kind: 'model',
+      id: uid(),
+      model: sel.model,
+      reason: sel.reason,
+      auto: sel.auto,
+      tier: routed?.tier,
+      fallbacks: fallbackChain,
+      estimate: routed?.estimate ?? null,
+    });
 
   // Skills: pinned + agent's + auto-detected
   const enabled = st.skills.filter((s) => s.enabled);
@@ -236,12 +329,25 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     agents: allAgents(st.agents),
     plugins: plugins.map((p) => ({ name: p.name, instructions: mcpState(p.name).instructions })),
   });
+  const fullSystem = [
+    system,
+    MEMORY_INSTRUCTIONS,
+    inp.mission
+      ? `${MISSION_PROTOCOL}\n\nTask profile: ${profile.reasons.join(', ')}.${profile.team.length ? ` Recommended specialists, in order: ${profile.team.join(' → ')}.` : ''}`
+      : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
   const firstTurn = !inp.history.some((m) => m.role === 'user');
-  const user: ChatMessage = {
-    role: 'user',
-    content: await userContent(inp.text, inp.attachments, vision, firstTurn),
-  };
-  const messages: ChatMessage[] = [{ role: 'system', content: system }, ...inp.history, user];
+  const content = await userContent(inp.text, inp.attachments, vision, firstTurn);
+  if (firstTurn && !label) {
+    if (inp.session.mode !== 'safe') ensureAiDocs();
+    const digest = aiDigest();
+    if (digest && content[0]?.type === 'text')
+      content[0].text = `<project_memory>\n${digest}\n</project_memory>\n\n${content[0].text}`;
+  }
+  const user: ChatMessage = { role: 'user', content };
+  const messages: ChatMessage[] = [{ role: 'system', content: fullSystem }, ...inp.history, user];
   const persisted: ChatMessage[] = [user];
   const contextBudget = Math.min(Math.floor((info?.contextLength || 128_000) * 0.7), 400_000);
 
@@ -270,7 +376,32 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     },
     proposePlan: (summary, steps) => (proposed = { summary, steps }),
     delegate: inp.depth < MAX_DEPTH ? (role, task) => delegate(inp, role, task) : undefined,
+    mission: inp.mission
+      ? {
+          stage: (stage) => {
+            const cur = useStore
+              .getState()
+              .sessions.find((x) => x.id === sid)
+              ?.items.find((i) => i.kind === 'pipeline' && i.id === pipelineId);
+            if (cur && cur.kind === 'pipeline')
+              st.updateItem(sid, pipelineId, {
+                current: stage,
+                done: cur.current !== stage ? [...new Set([...cur.done, cur.current])] : cur.done,
+              });
+            else push(sid, { kind: 'pipeline', id: pipelineId, current: stage, done: [] });
+          },
+          report: (r) => (pendingReport = r),
+        }
+      : undefined,
   };
+  const pipelineId = uid();
+  let pendingReport: MissionReport | null = null;
+  let lastReport: MissionReport | null = null;
+  let missionRound = 0;
+  let missionNudges = 0;
+  let reviews = 0;
+  const usedModels = new Set<string>();
+  let fallbackCount = 0;
   const ws = useStore.getState().settings;
   let nudged = false;
   let continuations = 0;
@@ -303,10 +434,12 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     const offered = phase === 'planning' ? planTools : tools;
     const callMessages =
       phase === 'planning'
-        ? [{ ...messages[0]!, content: `${system}\n\n${PLAN_MODE}` }, ...messages.slice(1)]
+        ? [{ ...messages[0]!, content: `${fullSystem}\n\n${PLAN_MODE}` }, ...messages.slice(1)]
         : messages;
     const itemId = uid();
     let streamed = '';
+    let flushTimer: ReturnType<typeof setTimeout> | null = null;
+    const started = Date.now();
     push(sid, { kind: 'assistant', id: itemId, text: '', agent: label, streaming: true });
     useStore.setState({
       status: { ...useStore.getState().status, [sid]: label ? `${label} réfléchit…` : 'Réflexion…' },
@@ -322,11 +455,15 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       },
       {
         models,
-        fallbacks: [ws.fallbackModel].filter(Boolean),
+        fallbacks: fallbackChain.filter((m) => m !== model),
         effort,
         onText: (d) => {
           streamed += d;
-          st.updateItem(sid, itemId, { text: streamed });
+          // Batch UI updates (one render per ~50 ms instead of one per token).
+          flushTimer ??= setTimeout(() => {
+            flushTimer = null;
+            st.updateItem(sid, itemId, { text: streamed });
+          }, 50);
         },
         onReset: () => {
           streamed = '';
@@ -334,6 +471,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         },
         onStatus: (s) => useStore.setState({ status: { ...useStore.getState().status, [sid]: s } }),
         onFallback: (from, to, reason) => {
+          useStore.getState().recordModel(from, false);
+          fallbackCount++;
           model = to;
           push(sid, {
             kind: 'error',
@@ -343,10 +482,31 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         },
       },
     );
+    if (flushTimer) clearTimeout(flushTimer);
     st.updateItem(sid, itemId, { text: r.content, streaming: false });
+    useStore.getState().recordModel(r.model || model, true);
+    usedModels.add(r.model || model);
+    useStore.getState().addUsage({
+      ts: Date.now(),
+      sessionId: sid,
+      model: r.model || model,
+      agent: inp.agent.id,
+      cost: r.cost,
+      tokensIn: r.usage.promptTokens,
+      tokensOut: r.usage.completionTokens,
+      durationMs: Date.now() - started,
+      fallback: (r.model || model) !== sel.model,
+      tools: r.toolCalls.map((c) => c.function.name.replace(/__/g, '.')),
+    });
     cost += r.cost;
     tokensIn += r.usage.promptTokens;
     tokensOut += r.usage.completionTokens;
+    // Live totals (Mission Control, header) — sub-agents add to the same session.
+    useStore.getState().patchSession(sid, (cur) => ({
+      cost: cur.cost + r.cost,
+      tokensIn: cur.tokensIn + r.usage.promptTokens,
+      tokensOut: cur.tokensOut + r.usage.completionTokens,
+    }));
     useStore.getState().addSpend(r.cost);
     if (r.content.trim()) finalText = r.content;
 
@@ -386,6 +546,16 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
             .filter((l) => /^\s*(\d+[.)]|[-*])\s+/.test(l))
             .map((l) => l.replace(/^\s*(\d+[.)]|[-*])\s+/, '')),
         };
+      } else if (inp.mission && missionNudges < 3) {
+        missionNudges++;
+        const nudge: ChatMessage = {
+          role: 'user',
+          content:
+            'The mission is not finished: continue the pipeline (test, review, correct, validate). When everything is verified, call mission.report with an honest verdict.',
+        };
+        messages.push(nudge);
+        persisted.push(nudge);
+        continue;
       } else break;
     }
 
@@ -422,12 +592,66 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       persisted.push(go);
       phase = 'executing';
     }
+
+    // Mission: verdict → correction rounds → independent final review.
+    if (inp.mission && pendingReport) {
+      const report: MissionReport = pendingReport;
+      pendingReport = null;
+      lastReport = report;
+      missionRound++;
+      recordMission(inp.text, report, { model, cost });
+      if (report.status !== 'PASSED' && missionRound < 3) {
+        push(sid, { kind: 'mission', id: uid(), report, round: missionRound });
+        const fix: ChatMessage = {
+          role: 'user',
+          content: `Correction round ${missionRound + 1}: the verdict is ${report.status}. Fix the failing checks and remaining issues (${report.issues.join('; ').slice(0, 1500) || 'see your report'}), re-test everything, then call mission.report again.`,
+        };
+        messages.push(fix);
+        persisted.push(fix);
+        continue;
+      }
+      if (report.status === 'PASSED' && reviews < 2 && inp.depth < MAX_DEPTH) {
+        reviews++;
+        ctx.mission!.stage('validation');
+        const rev = await delegate(inp, 'final_reviewer', FINAL_REVIEW_TASK(inp.text, report));
+        const approved = rev.ok && reviewApproved(rev.summary);
+        push(sid, {
+          kind: 'mission',
+          id: uid(),
+          report,
+          round: missionRound,
+          review: { approved, summary: rev.summary.slice(0, 3000) },
+        });
+        if (!approved && missionRound < 3) {
+          const fix: ChatMessage = {
+            role: 'user',
+            content: `The final reviewer requested changes:\n${rev.summary.slice(0, 4000)}\n\nFix the blocking problems, re-test, then call mission.report again.`,
+          };
+          messages.push(fix);
+          persisted.push(fix);
+          continue;
+        }
+      } else push(sid, { kind: 'mission', id: uid(), report, round: missionRound });
+      ctx.mission!.stage('delivery');
+      finalText = `${finalText ? `${finalText}\n\n` : ''}${formatReport(report)}`;
+      break;
+    }
     if (step === ws.maxSteps - 1)
       throw new Error(
         `Limite de ${ws.maxSteps} étapes atteinte. Augmentez-la dans Réglages ou répondez « continue ».`,
       );
   }
-  return { ok: true, text: finalText, messages: persisted, cost, tokensIn, tokensOut };
+  return {
+    ok: true,
+    text: finalText,
+    messages: persisted,
+    cost,
+    tokensIn,
+    tokensOut,
+    report: lastReport,
+    models: [...usedModels],
+    fallbacks: fallbackCount,
+  };
 }
 
 async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp: LoopInput): Promise<string> {
@@ -481,6 +705,9 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
       return fail('error', 'erreur', `Error: ${(e as Error).message}`);
     }
     const approvalId = uid();
+    useStore.setState({
+      status: { ...useStore.getState().status, [sid]: 'En attente de votre validation…' },
+    });
     const d = await new Promise<{ decision: 'approve' | 'deny'; always?: boolean; note?: string }>(
       (resolve) => {
         st.pending.approvals.set(approvalId, resolve);
@@ -549,6 +776,7 @@ async function delegate(
       attachments: [],
       history: [],
       plan: false,
+      mission: false,
       depth: parent.depth + 1,
       agentLabel: agent.name,
       model: agent.model?.includes('/') ? agent.model : parent.model,
@@ -567,7 +795,12 @@ async function delegate(
 const sub = { cost: 0, tokensIn: 0, tokensOut: 0 };
 
 /** Starts a run in a session (UI entry point). */
-export async function runAgent(sessionId: string, text: string, attachments: Attachment[]): Promise<void> {
+export async function runAgent(
+  sessionId: string,
+  text: string,
+  attachments: Attachment[],
+  opts: { mode?: AgentMode } = {},
+): Promise<void> {
   const st = useStore.getState();
   const session = st.sessions.find((s) => s.id === sessionId);
   if (!session || st.running[sessionId]) return;
@@ -579,6 +812,8 @@ export async function runAgent(sessionId: string, text: string, attachments: Att
   const started = Date.now();
   sub.cost = sub.tokensIn = sub.tokensOut = 0;
   let result: LoopResult | null = null;
+  let errored = false;
+  const mode = opts.mode ?? st.agentMode;
   try {
     if (!st.models.length) {
       const { loadCatalog } = await import('./llm');
@@ -590,7 +825,8 @@ export async function runAgent(sessionId: string, text: string, attachments: Att
       text,
       attachments,
       history: session.history,
-      plan: st.agentMode === 'plan',
+      plan: mode === 'plan',
+      mission: mode === 'mission',
       depth: 0,
       signal: ac.signal,
       model: session.model,
@@ -598,6 +834,7 @@ export async function runAgent(sessionId: string, text: string, attachments: Att
     });
   } catch (e) {
     const cancelled = ac.signal.aborted || (e instanceof LLMError && e.code === 'cancelled');
+    errored = !cancelled;
     st.pushItem(sessionId, { kind: 'error', id: uid(), text: cancelled ? 'Interrompu.' : friendlyError(e) });
   } finally {
     const s = useStore.getState();
@@ -624,9 +861,6 @@ export async function runAgent(sessionId: string, text: string, attachments: Att
             ),
           ]
         : cur.history,
-      cost: cur.cost + cost,
-      tokensIn: cur.tokensIn + tin,
-      tokensOut: cur.tokensOut + tout,
       items: [
         ...cur.items,
         {
@@ -635,10 +869,15 @@ export async function runAgent(sessionId: string, text: string, attachments: Att
           cost,
           promptTokens: tin,
           completionTokens: tout,
-          model: '',
+          model: result?.models.join(', ') ?? '',
+          models: result?.models,
+          fallbacks: result?.fallbacks,
+          verdict: result?.report?.status,
           durationMs: Date.now() - started,
         },
       ],
+      verdict: result?.report?.status ?? (errored ? 'ERROR' : (cur.verdict ?? null)),
+      lastMode: mode,
     }));
   }
 }

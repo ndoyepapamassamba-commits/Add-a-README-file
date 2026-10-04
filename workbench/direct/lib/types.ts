@@ -1,10 +1,11 @@
-import type { ChartData, EffortSetting, ModelInfo } from '@shared/types';
+import type { ChartData, EffortSetting, MissionReportPayload, ModelInfo } from '@shared/types';
 import type { ChatMessage } from '../../server/llm/types';
 
 export type { ChatMessage, ModelInfo };
 export type PermissionMode = 'safe' | 'normal' | 'auto';
-export type AgentMode = 'chat' | 'plan';
-export type View = 'chat' | 'files' | 'data' | 'agents' | 'skills' | 'plugins' | 'models' | 'settings';
+export type AgentMode = 'chat' | 'plan' | 'mission';
+export type View =
+  'home' | 'chat' | 'files' | 'data' | 'workflows' | 'agents' | 'skills' | 'plugins' | 'models' | 'settings';
 
 export interface VFile {
   path: string;
@@ -56,7 +57,24 @@ export type Item =
     }
   | { kind: 'plan'; id: string; summary: string; steps: string[]; resolved?: 'approve' | 'cancel' }
   | { kind: 'checklist'; id: string; steps: PlanStep[] }
-  | { kind: 'model'; id: string; model: string; reason: string; auto: boolean }
+  | {
+      kind: 'model';
+      id: string;
+      model: string;
+      reason: string;
+      auto: boolean;
+      tier?: string;
+      fallbacks?: string[];
+      estimate?: { low: number; high: number } | null;
+    }
+  | { kind: 'pipeline'; id: string; current: string; done: string[] }
+  | {
+      kind: 'mission';
+      id: string;
+      report: MissionReportPayload;
+      round: number;
+      review?: { approved: boolean; summary: string };
+    }
   | { kind: 'skills'; id: string; names: string[] }
   | {
       kind: 'subagent';
@@ -75,6 +93,9 @@ export type Item =
       completionTokens: number;
       model: string;
       durationMs: number;
+      models?: string[];
+      fallbacks?: number;
+      verdict?: MissionReportPayload['status'];
     };
 
 export interface Session {
@@ -93,6 +114,35 @@ export interface Session {
   cost: number;
   tokensIn: number;
   tokensOut: number;
+  /** Last mission verdict / run outcome (Mission Control). */
+  verdict?: MissionReportPayload['status'] | 'ERROR' | null;
+  lastMode?: AgentMode;
+}
+
+/** One LLM call (cost tracking, Mission Control). */
+export interface UsageEntry {
+  ts: number;
+  sessionId: string;
+  model: string;
+  agent: string;
+  cost: number;
+  tokensIn: number;
+  tokensOut: number;
+  durationMs: number;
+  fallback?: boolean;
+  tools?: string[];
+}
+
+/** Saved procedure run in one click. */
+export interface Workflow {
+  id: string;
+  name: string;
+  description: string;
+  agent: string;
+  steps: string[];
+  createdAt: number;
+  lastRunAt?: number;
+  builtin?: boolean;
 }
 
 export interface SkillDef {

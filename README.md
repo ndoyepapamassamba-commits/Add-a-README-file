@@ -196,8 +196,8 @@ plus de produits, un vrai paiement en ligne automatique, ou une page par produit
 
 ---
 
-## 🤖 OpenRouter AI Workbench (dossier `workbench/`)
+## 🤖 MASSAMBA Workbench (dossier `workbench/`)
 
-Ce dépôt contient aussi un **atelier d'agents IA** façon Claude Code, propulsé par OpenRouter :
+Ce dépôt contient aussi **MASSAMBA Workbench**, un système d'exploitation IA personnel façon Claude Code, propulsé par OpenRouter :
 interface en **un seul fichier HTML local** + agent local (code, terminal, navigateur, données, skills, agents, plugins MCP).
 Installation et utilisation : voir [`workbench/README.md`](workbench/README.md).

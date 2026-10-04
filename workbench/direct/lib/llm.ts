@@ -32,7 +32,7 @@ const browserFetch: FetchLike = (url, init) => fetch(url, init) as ReturnType<Fe
 export const provider = new OpenRouterProvider({
   baseUrl: BASE,
   appUrl: 'https://openrouter-workbench.local',
-  appName: 'OpenRouter AI Workbench (direct)',
+  appName: 'MASSAMBA Workbench (direct)',
   getApiKey: () => getKey() || undefined,
   fetch: browserFetch,
   idleTimeoutMs: 180_000,

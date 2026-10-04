@@ -22,9 +22,9 @@ async function main(): Promise<void> {
   const keyState = process.env.OPENROUTER_API_KEY ? 'configurée' : 'NON configurée (OPENROUTER_API_KEY)';
   const lines = [
     '',
-    '  ◆ OpenRouter AI Workbench',
+    '  ◆ MASSAMBA Workbench',
     `  ─ Interface        ${base}/#token=${ctx.authToken}`,
-    `  ─ Fichier HTML     dist/openrouter-workbench.html (serveur : ${base})`,
+    `  ─ Fichier HTML     dist/massamba-workbench.html (serveur : ${base})`,
     `  ─ Jeton d'accès    ${ctx.authToken}  (aussi dans data/.workbench-token)`,
     `  ─ Projets          ${config.workspaceRoot}`,
     `  ─ Clé OpenRouter   ${keyState}`,

@@ -1,4 +1,5 @@
-import { Bot, Code2, Database, Globe, Palette, Wrench } from 'lucide-react';
+import { MISSION_TEMPLATES } from '../../server/agent/mission';
+import { Bot, Code2, Database, Globe, Palette, Wrench, Rocket } from 'lucide-react';
 import { useApp } from '../store/app';
 import { useSession } from '../store/session';
 import { Composer } from '../components/chat/Composer';
@@ -59,6 +60,28 @@ export function ChatView() {
                   L'agent lit et modifie vos fichiers, lance des commandes, pilote le navigateur, analyse vos
                   données et utilise vos skills et plugins.
                 </div>
+              </div>
+            </div>
+            <div className="mb-3 rounded-xl border border-accent/40 bg-accent-soft p-3">
+              <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold">
+                <Rocket size={14} className="text-accent" /> Missions autonomes
+                <span className="font-normal text-muted">
+                  — analyse → plan → exécution → test → review → correction → validation → livraison
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {MISSION_TEMPLATES.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => {
+                      useApp.getState().setPrefs({ agentMode: 'mission' });
+                      setDraft({ text: t.prompt });
+                    }}
+                    className="rounded-lg border border-line bg-panel px-2.5 py-1 text-[12.5px] hover:border-accent"
+                  >
+                    {t.label}
+                  </button>
+                ))}
               </div>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">

@@ -30,10 +30,33 @@ function formatSnapshot(s: PageSnapshot, includeText = true): string {
   return `URL: ${s.url}\nTitle: ${s.title}\n\n## Interactive elements (use ref)\n${els || '(none)'}${includeText ? `\n\n## Page text${s.truncated ? ' (truncated)' : ''}\n${s.text}` : ''}`;
 }
 
+const seen = new Map<string, { console: number; network: number }>();
+
+/** Errors that appeared since the previous action (console errors, failed requests). */
+function newProblems(ctx: ToolContext): string[] {
+  const k = key(ctx);
+  const logs = ctx.services.browser.logs(k);
+  const prev = seen.get(k) ?? { console: 0, network: 0 };
+  seen.set(k, { console: logs.console.length, network: logs.network.length });
+  const cons = logs.console.slice(prev.console).filter((c) => c.level === 'error' || c.level === 'pageerror');
+  const net = logs.network.slice(prev.network).filter((n) => n.failure || (n.status ?? 0) >= 400);
+  return [
+    ...cons.slice(-8).map((c) => `console ${c.level}: ${c.text.slice(0, 300)}`),
+    ...net
+      .slice(-8)
+      .map((n) => `request failed: ${n.method} ${n.url.slice(0, 200)} → ${n.failure ?? n.status}`),
+  ];
+}
+
 async function afterAction(ctx: ToolContext, includeText: boolean): Promise<string> {
   try {
     const snap = await ctx.services.browser.snapshot(key(ctx), downloads(ctx), includeText ? 6000 : 0);
-    return formatSnapshot(snap, includeText);
+    const problems = newProblems(ctx);
+    return `## OBSERVATION
+${problems.length ? `⚠️ New problems since last action:\n${problems.join('\n')}\n` : 'No new console errors or failed requests.\n'}${formatSnapshot(snap, includeText)}
+
+## DECISION
+Check that this action had the expected effect before the next one; if not, diagnose (snapshot, console) and adjust.`;
   } catch (err) {
     return `(could not snapshot page: ${(err as Error).message})`;
   }

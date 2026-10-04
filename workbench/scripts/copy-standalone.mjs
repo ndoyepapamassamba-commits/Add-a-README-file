@@ -1,11 +1,11 @@
 // Copies the single-file clients next to each other in dist/:
-// - openrouter-workbench.html         → needs the local agent (npm start)
-// - openrouter-workbench-direct.html  → works alone (talks to OpenRouter from the browser)
+// - massamba-workbench.html         → needs the local agent (npm start)
+// - massamba-workbench-direct.html  → works alone (talks to OpenRouter from the browser)
 import fs from 'node:fs';
 
 for (const [src, dst] of [
-  ['dist/web/index.html', 'dist/openrouter-workbench.html'],
-  ['dist/direct/index.html', 'dist/openrouter-workbench-direct.html'],
+  ['dist/web/index.html', 'dist/massamba-workbench.html'],
+  ['dist/direct/index.html', 'dist/massamba-workbench-direct.html'],
 ]) {
   if (!fs.existsSync(src)) continue;
   fs.copyFileSync(src, dst);

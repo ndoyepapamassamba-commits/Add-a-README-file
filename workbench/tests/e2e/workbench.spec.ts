@@ -220,7 +220,7 @@ test('every main view renders without errors', async ({ page }) => {
 });
 
 test('the standalone HTML file works when opened from disk', async ({ page }) => {
-  const file = path.join(ROOT, 'dist/openrouter-workbench.html');
+  const file = path.join(ROOT, 'dist/massamba-workbench.html');
   test.skip(!fs.existsSync(file), 'standalone file not built');
   await page.goto(pathToFileURL(file).href);
   await page.locator('input').first().fill(base);
@@ -231,4 +231,33 @@ test('the standalone HTML file works when opened from disk', async ({ page }) =>
   await page.locator('textarea').fill('test');
   await page.keyboard.press('Enter');
   await expect(page.getByText('Réponse via le fichier HTML local.')).toBeVisible();
+});
+
+test('mission mode shows the pipeline, the verdict and the final review', async ({ page }) => {
+  await openSession(page, 'autonomous');
+  await page.getByTitle(/Mode Mission/).click();
+  mock.push(
+    { toolCalls: [{ name: 'mission.stage', args: { stage: 'execution' } }] },
+    {
+      toolCalls: [
+        {
+          name: 'mission.report',
+          args: {
+            status: 'PASSED',
+            summary: 'Mission accomplie',
+            checks: [{ name: 'build', status: 'pass' }],
+          },
+        },
+      ],
+    },
+    { text: 'VERDICT: APPROVED' },
+  );
+  await page.locator('textarea').fill('Teste tout');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Revue finale : approuvée')).toBeVisible();
+  await expect(page.getByText('Exécution').first()).toBeVisible();
+  expect(fs.readFileSync(path.join(tmp, 'workspace/demo/.ai/CHANGELOG.md'), 'utf8')).toContain(
+    'PASSED — Teste tout',
+  );
+  await page.getByTitle(/Mode Mission/).click();
 });

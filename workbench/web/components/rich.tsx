@@ -189,7 +189,7 @@ function cssVar(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-function chartOption(data: ChartData): echarts.EChartsCoreOption {
+export function chartOption(data: ChartData): echarts.EChartsCoreOption {
   const fg = cssVar('--muted');
   const line = cssVar('--line');
   const axis = {

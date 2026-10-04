@@ -11,6 +11,55 @@ import {
 import { ChartSpecSchema, computeChart } from '../../server/services/vizEngine';
 import { isImage } from '../../server/services/documentsCore';
 import { pickFromTier } from '../../server/llm/router';
+import {
+  AI_DOCS,
+  MISSION_REPORT_SCHEMA,
+  MISSION_STAGES,
+  aiDocPath,
+  aiDocTemplate,
+  normalizeReport,
+  type AiDoc,
+  type MissionReport,
+} from '../../server/agent/mission';
+import { markdownToDocx, printableHtml } from '../../server/services/officeCore';
+import { marked } from 'marked';
+import * as echarts from 'echarts/core';
+import { chartOption } from '../../web/components/rich';
+
+/** Renders a chart to PNG offscreen (for Word / HTML reports). */
+function chartPng(chart: ChartData): Uint8Array | null {
+  if (chart.spec.type === 'kpi' || chart.spec.type === 'table') return null;
+  const div = document.createElement('div');
+  div.style.cssText = 'position:fixed;left:-10000px;top:0;width:960px;height:520px';
+  document.body.appendChild(div);
+  try {
+    const c = echarts.init(div, undefined, { renderer: 'canvas', width: 960, height: 520 });
+    c.setOption({ ...chartOption(chart), animation: false, backgroundColor: '#ffffff' });
+    const url = c.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: '#ffffff' });
+    c.dispose();
+    const bin = atob(url.split(',')[1]!);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  } catch {
+    return null;
+  } finally {
+    div.remove();
+  }
+}
+
+/** Workspace images referenced as ![alt](path) in Markdown. */
+function resolveImage(src: string): { data: Uint8Array; type: 'png' | 'jpeg' } | null {
+  const f = getFile(src.replace(/^\.\//, ''));
+  if (!f || !f.binary || !/^image\/(png|jpeg)/.test(f.mime)) return null;
+  return { data: bytesOf(f), type: f.mime.includes('jpeg') ? 'jpeg' : 'png' };
+}
+function inlineImages(md: string): string {
+  return md.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (m, alt: string, src: string) => {
+    const f = getFile(src.replace(/^\.\//, ''));
+    return f && f.binary && f.mime.startsWith('image/') ? `![${alt}](${dataUrl(f)})` : m;
+  });
+}
 import { DEFAULT_AUTO_TIERS } from '../../server/services/settings';
 import type { ModelInfo } from '@shared/types';
 import { complete } from './llm';
@@ -18,7 +67,19 @@ import { callTool, type McpToolInfo } from './mcp';
 import { runCode } from './sandbox';
 import { uid, useStore } from './store';
 import type { ArtifactDef, PlanStep } from './types';
-import { bytesOf, dataUrl, files, getFile, isTextPath, normPath, readAsText, tree, writeText } from './vfs';
+import {
+  bytesOf,
+  dataUrl,
+  files,
+  getFile,
+  isTextPath,
+  normPath,
+  readAsText,
+  tree,
+  uniquePath,
+  writeBytes,
+  writeText,
+} from './vfs';
 
 export type Risk = 'read' | 'write' | 'delete' | 'execute' | 'external';
 
@@ -32,6 +93,7 @@ export interface ToolCtx {
   setPlan: (steps: PlanStep[]) => void;
   proposePlan: (summary: string, steps: string[]) => void;
   delegate?: (role: string, task: string) => Promise<{ ok: boolean; summary: string }>;
+  mission?: { stage: (s: string, note?: string) => void; report: (r: MissionReport) => void };
 }
 
 export interface ToolOut {
@@ -413,6 +475,14 @@ export const TOOLS: DirectTool[] = [
         content: JSON.stringify(chart),
         chart,
       });
+      const png = chartPng(chart);
+      const slug =
+        spec.title
+          .replace(/[^\w\u00C0-\u017F-]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          .slice(0, 60) || 'graphique';
+      const pngPath = png ? uniquePath(`outputs/charts/${slug}.png`) : null;
+      if (png && pngPath) writeBytes(pngPath, png, 'image/png');
       const preview = chart.kpis
         ? chart.kpis.map((k) => `${k.label}: ${k.value}`).join('\n')
         : chart.series
@@ -425,8 +495,8 @@ export const TOOLS: DirectTool[] = [
             )
             .join('\n');
       return ok(
-        `graphique ${spec.type}`,
-        `Chart displayed to the user (artifact ${art.id}).\n${clip(preview, 4000)}`,
+        `graphique ${spec.type}${pngPath ? ` · ${pngPath}` : ''}`,
+        `Chart displayed to the user (artifact ${art.id}).${pngPath ? ` PNG saved as ${pngPath} — embed it in reports with ![${spec.title}](${pngPath}).` : ''}\n${clip(preview, 4000)}`,
         { chart, artifact: art.id },
       );
     },
@@ -647,6 +717,149 @@ export const TOOLS: DirectTool[] = [
       if (!ctx.delegate) throw new Error('Délégation indisponible à ce niveau');
       const r = await ctx.delegate(S(a.agent), S(a.task));
       return { ok: r.ok, summary: r.ok ? 'terminé' : 'échec', forModel: r.summary };
+    },
+  },
+  {
+    name: 'mission.stage',
+    description:
+      'MISSION MODE: announce the current pipeline stage (analyse, plan, execution, test, review, correction, validation, delivery).',
+    parameters: obj({ stage: { type: 'string', enum: [...MISSION_STAGES] }, note: { type: 'string' } }, [
+      'stage',
+    ]),
+    risk: 'read',
+    readOnly: true,
+    label: (a) => `Étape : ${S(a.stage)}`,
+    async run(a, ctx) {
+      ctx.mission?.stage(S(a.stage), S(a.note) || undefined);
+      return ok(S(a.stage), `Stage: ${S(a.stage)}`);
+    },
+  },
+  {
+    name: 'mission.report',
+    description:
+      'MISSION MODE: final report with an honest verdict (PASSED / PARTIAL / FAILED), the checks you actually ran, remaining issues and deliverables. Required to finish a mission.',
+    parameters: MISSION_REPORT_SCHEMA,
+    risk: 'read',
+    readOnly: false,
+    label: (a) => `Rapport de mission : ${S(a.status)}`,
+    async run(a, ctx) {
+      if (!ctx.mission) throw new Error('mission.report is only available in mission mode');
+      const r = normalizeReport(a);
+      ctx.mission.report(r);
+      return ok(r.status, `Report recorded (${r.status}).`);
+    },
+  },
+  {
+    name: 'memory.doc',
+    description: `Update a project memory document in .ai/ (${AI_DOCS.join(', ')}). mode "replace" rewrites it, "append" adds at the end. Keep it concise and factual.`,
+    parameters: obj(
+      {
+        doc: { type: 'string', enum: [...AI_DOCS] },
+        mode: { type: 'string', enum: ['replace', 'append'] },
+        content: str('Markdown content'),
+      },
+      ['doc', 'content'],
+    ),
+    risk: 'read',
+    readOnly: false,
+    label: (a) => `Mémoire .ai/${S(a.doc)}.md`,
+    async run(a) {
+      const doc = S(a.doc) as AiDoc;
+      if (!AI_DOCS.includes(doc)) throw new Error(`Document inconnu : ${doc}`);
+      const path = aiDocPath(doc);
+      const before = getFile(path)?.data ?? aiDocTemplate(doc, 'Espace de travail');
+      writeText(
+        path,
+        S(a.mode) === 'replace' ? S(a.content) : `${before.trimEnd()}\n\n${S(a.content).trim()}\n`,
+      );
+      return ok('mis à jour', `Updated ${path}.`);
+    },
+  },
+  {
+    name: 'report.export',
+    description:
+      'Export a Markdown report to deliverables in outputs/: docx (Word), html (printable — the user prints it to PDF), md. Charts saved by data.chart (outputs/charts/*.png) are embedded when referenced as ![title](outputs/charts/x.png). Give markdown content or a markdown file path. Never overwrites existing files.',
+    parameters: obj(
+      {
+        name: str('Base file name without extension, e.g. "rapport-ventes"'),
+        title: str('Document title'),
+        content: str('Markdown content (or use from_path)'),
+        from_path: str('Markdown file in the workspace'),
+        formats: { type: 'array', items: { type: 'string', enum: ['docx', 'html', 'pdf', 'md'] } },
+      },
+      ['name'],
+    ),
+    risk: 'read',
+    readOnly: false,
+    label: (a) => `Exporter ${S(a.name)}`,
+    async run(a, ctx) {
+      const md = S(a.content) || (a.from_path ? (await readAsText(S(a.from_path))).text : '');
+      if (!md) throw new Error('Provide content or from_path');
+      const base = `outputs/${
+        S(a.name)
+          .replace(/[^\w.-]+/g, '-')
+          .replace(/\.(md|docx|pdf|html)$/i, '') || 'rapport'
+      }`;
+      const title = S(a.title) || S(a.name);
+      const formats = (
+        Array.isArray(a.formats) && a.formats.length ? a.formats.map(S) : ['docx', 'html']
+      ).map((f) => (f === 'pdf' ? 'html' : f));
+      const out: string[] = [];
+      for (const f of [...new Set(formats)]) {
+        const path = uniquePath(`${base}.${f}`);
+        if (f === 'docx')
+          writeBytes(
+            path,
+            markdownToDocx(md, S(a.title) || undefined, resolveImage),
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          );
+        else if (f === 'html')
+          writeText(path, printableHtml(title, marked.parse(inlineImages(md), { async: false }) as string));
+        else writeText(path, md);
+        out.push(path);
+      }
+      const html = out.find((p) => p.endsWith('.html'));
+      if (html)
+        saveArtifact(ctx.sessionId, {
+          name: html.split('/').pop()!,
+          type: 'html',
+          content: getFile(html)!.data,
+        });
+      return ok(
+        out.join(', '),
+        `Exported: ${out.join(', ')}${html ? ' (open the HTML and use "Print → Save as PDF" for a PDF)' : ''}`,
+      );
+    },
+  },
+  {
+    name: 'data.export',
+    description:
+      'Run a data query (same spec as data.query) or take a whole data file, and save the result as a NEW file in outputs/ (xlsx, csv or json). Never modifies the source file.',
+    parameters: obj(
+      {
+        path: str('Source data file'),
+        sheet: str('Excel sheet (optional)'),
+        name: str('Output base name, e.g. "synthese-agences"'),
+        format: { type: 'string', enum: ['xlsx', 'csv', 'json'] },
+        query: {
+          type: 'object',
+          description: 'Optional data.query spec: filters, groupBy, aggregations, select, sort, limit',
+        },
+      },
+      ['path', 'name'],
+    ),
+    risk: 'read',
+    readOnly: false,
+    label: (a) => `Exporter ${S(a.name)}.${S(a.format) || 'xlsx'}`,
+    async run(a) {
+      const ds = loadDataset(S(a.path), S(a.sheet) || undefined);
+      const r = a.query
+        ? data.query(ds, QuerySpecSchema.parse({ limit: 100_000, ...(a.query as object) }))
+        : { columns: ds.columns, rows: ds.rows as Record<string, unknown>[], rowCount: ds.rows.length };
+      const fmt = (S(a.format) || 'xlsx') as 'xlsx' | 'csv' | 'json';
+      const path = uniquePath(`outputs/${S(a.name).replace(/[^\w.-]+/g, '-') || 'export'}.${fmt}`);
+      writeBytes(path, data.exportRows(r.columns, r.rows, fmt));
+      return ok(`${r.rowCount} lignes → ${path}`, `Saved ${r.rowCount} rows to ${path}.`);
     },
   },
 ];

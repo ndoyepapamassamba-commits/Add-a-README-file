@@ -370,3 +370,94 @@ describe('agent loop', () => {
     expect(ev.json().map((e: RunEventEnvelope) => e.event.type)).toContain('assistant_message');
   });
 });
+
+describe('mission mode', () => {
+  it('runs correction rounds, an independent final review, and records the result in .ai/', async () => {
+    mock.push(
+      {
+        toolCalls: [
+          { name: 'mission.stage', args: { stage: 'analyse' } },
+          { name: 'filesystem.write', args: { path: 'app/index.js', content: 'console.log(1)\n' } },
+        ],
+      },
+      {
+        toolCalls: [
+          {
+            name: 'mission.report',
+            args: {
+              status: 'FAILED',
+              summary: 'build cassé',
+              checks: [{ name: 'build', status: 'fail' }],
+              issues: ['build'],
+            },
+          },
+        ],
+      },
+      {
+        toolCalls: [
+          { name: 'filesystem.write', args: { path: 'app/index.js', content: 'console.log(2)\n' } },
+        ],
+      },
+      {
+        toolCalls: [
+          {
+            name: 'mission.report',
+            args: {
+              status: 'PASSED',
+              summary: 'Application livrée',
+              checks: [{ name: 'build', status: 'pass' }],
+              deliverables: ['app/index.js'],
+            },
+          },
+        ],
+      },
+      { text: 'VERDICT: APPROVED\nRien de bloquant.' }, // final reviewer (sub-agent)
+    );
+    const s = session('autonomous');
+    const r = await run(s.id, 'Construis une petite application', { agentMode: 'mission' });
+    expect(r.status).toBe('completed');
+    const offered = (mock.requests[0]!.tools as { function: { name: string } }[]).map((t) => t.function.name);
+    expect(offered).toEqual(expect.arrayContaining(['mission__report', 'mission__stage', 'memory__doc']));
+    expect(JSON.stringify(mock.requests[0]!.messages[0])).toContain('MISSION MODE');
+    const reports = of(r.events, 'mission_report');
+    expect(reports.map((x) => x.report.status)).toEqual(['FAILED', 'PASSED']);
+    expect(reports[1]!.review).toMatchObject({ approved: true });
+    expect(of(r.events, 'mission_stage').map((x) => x.stage)).toEqual(
+      expect.arrayContaining(['analyse', 'validation', 'delivery']),
+    );
+    expect(JSON.stringify(mock.requests[2]!.messages)).toContain('Correction round 2');
+    const changelog = fs.readFileSync(file('.ai/CHANGELOG.md'), 'utf8');
+    expect(changelog).toContain('PASSED — Construis une petite application');
+    expect(fs.readFileSync(file('.ai/TESTS.md'), 'utf8')).toContain('[x] build');
+    expect(fs.existsSync(file('.ai/PROJECT.md'))).toBe(true);
+  });
+
+  it('nudges the agent to continue when it stops without a report', async () => {
+    mock.push(
+      { text: 'Je pense avoir fini.' },
+      {
+        toolCalls: [{ name: 'mission.report', args: { status: 'PARTIAL', summary: 'partiel', checks: [] } }],
+      },
+      { text: 'suite' },
+      {
+        toolCalls: [{ name: 'mission.report', args: { status: 'PARTIAL', summary: 'partiel', checks: [] } }],
+      },
+      {
+        toolCalls: [{ name: 'mission.report', args: { status: 'PARTIAL', summary: 'partiel', checks: [] } }],
+      },
+    );
+    const r = await run(session('autonomous').id, 'Teste tout', { agentMode: 'mission' });
+    expect(JSON.stringify(mock.requests[1]!.messages)).toContain('The mission is not finished');
+    expect(of(r.events, 'mission_report').length).toBeGreaterThanOrEqual(1);
+    expect(r.status).toBe('completed');
+  });
+
+  it('injects the project memory digest at the start of a session', async () => {
+    fs.mkdirSync(file('.ai'), { recursive: true });
+    fs.writeFileSync(file('.ai/PROJECT.md'), '# Demo\n\nÉTAT-ACTUEL-XYZ : v2 en cours.');
+    mock.push({ text: 'ok' });
+    await run(session().id, 'Où en est le projet ?');
+    expect(JSON.stringify(mock.requests[0]!.messages[1])).toContain('ÉTAT-ACTUEL-XYZ');
+    expect(JSON.stringify(mock.requests[0]!.messages[0])).toContain('Project memory (.ai/)');
+  });
+});

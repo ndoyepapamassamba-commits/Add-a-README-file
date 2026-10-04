@@ -6,7 +6,9 @@ import { defineTool, ok, ToolError, type AnyTool, type ToolContext } from './typ
 
 function abs(ctx: ToolContext, rel: string): string {
   if (!isDataFile(rel))
-    throw new ToolError(`${rel} is not a supported data file (csv, tsv, xlsx, xls, xlsm, ods, json, jsonl)`);
+    throw new ToolError(
+      `${rel} is not a supported data file (csv, tsv, xlsx, xls, xlsm, xlsb, ods, json, jsonl)`,
+    );
   return ctx.services.workspace.resolve(ctx.projectId, rel);
 }
 

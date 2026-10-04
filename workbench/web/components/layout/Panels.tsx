@@ -22,12 +22,24 @@ import { Checklist, Transcript } from '../chat/Transcript';
 import { Composer } from '../chat/Composer';
 import { DiffView } from '../rich';
 import { ArtifactCard } from '../artifacts';
-import { Badge, Button, Dropdown, Empty, Gauge, IconButton, Modal, Spinner, Tabs } from '../ui';
+import {
+  Badge,
+  Button,
+  Dropdown,
+  Empty,
+  Gauge,
+  IconButton,
+  Modal,
+  Spinner,
+  Tabs,
+  EditableTitle,
+} from '../ui';
 import { TerminalPane } from '../../views/TerminalView';
 import { TasksTable } from '../../views/TasksView';
 
 // ── left: sessions ─────────────────────────────────────────────────────
 export function SessionList() {
+  const [renaming, setRenaming] = useState<string | null>(null);
   const sessions = useApp((s) => s.sessions);
   const sessionId = useApp((s) => s.sessionId);
   const selectSession = useApp((s) => s.selectSession);
@@ -68,17 +80,23 @@ export function SessionList() {
           >
             <div className="flex items-center gap-1.5">
               {s.active && <Loader2 size={12} className="shrink-0 wb-spin text-accent" />}
-              <span className="min-w-0 flex-1 truncate text-[13px]">{s.title}</span>
+              <EditableTitle
+                value={s.title}
+                className="text-[13px]"
+                editing={renaming === s.id}
+                onDone={() => setRenaming(null)}
+                onSave={(title) =>
+                  void api(`/api/sessions/${s.id}`, { method: 'PATCH', body: { title } })
+                    .then(loadSessions)
+                    .catch((err: Error) => toast('error', err.message))
+                }
+              />
               <button
                 className="hidden text-faint hover:text-fg group-hover:block"
                 aria-label="Renommer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const title = prompt('Nouveau titre :', s.title);
-                  if (title)
-                    void api(`/api/sessions/${s.id}`, { method: 'PATCH', body: { title } }).then(
-                      loadSessions,
-                    );
+                  setRenaming(s.id);
                 }}
               >
                 <Pencil size={12} />

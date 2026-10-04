@@ -28,7 +28,7 @@ export function ConnectScreen() {
         <div className="mb-6 flex items-center gap-3">
           <Logo size={36} />
           <div>
-            <div className="text-[18px] font-semibold">OpenRouter AI Workbench</div>
+            <div className="text-[18px] font-semibold">MASSAMBA Workbench</div>
             <div className="text-[13px] text-muted">
               Centre de commande d'ingénierie IA — agents, code, navigateur, données
             </div>

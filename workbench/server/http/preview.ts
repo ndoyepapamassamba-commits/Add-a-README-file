@@ -24,9 +24,7 @@ export function buildPreviewServer(ctx: AppContext): FastifyInstance {
   const app = Fastify({ logger: false });
   const s = ctx.services;
 
-  app.get('/', async (_req, reply) =>
-    reply.type('text/plain').send('OpenRouter AI Workbench — preview server'),
-  );
+  app.get('/', async (_req, reply) => reply.type('text/plain').send('MASSAMBA Workbench — preview server'));
 
   app.get('/p/:token/:projectId/*', async (req, reply) => {
     const { token, projectId } = req.params as { token: string; projectId: string };

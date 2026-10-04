@@ -52,7 +52,7 @@ export function DataView() {
             type="file"
             hidden
             multiple
-            accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods,.json,.jsonl"
+            accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.xlsb,.ods,.json,.jsonl"
             onChange={(e) => {
               const fl = e.target.files;
               if (fl)

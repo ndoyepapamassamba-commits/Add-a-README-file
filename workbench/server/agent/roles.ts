@@ -53,9 +53,9 @@ const BROWSER_READ = [
 const WEB = ['web.search', 'web.fetch'];
 const DATA = ['data.inspect', 'data.query', 'data.transform', 'visualization.create'];
 const GIT_READ = ['git.status', 'git.diff', 'git.log'];
-const MEMORY = ['memory.read', 'memory.add', 'memory.remove'];
+const MEMORY = ['memory.read', 'memory.add', 'memory.remove', 'memory.doc'];
 const SKILLS = ['skill.use', 'skill.read'];
-const COMMON = ['plan.update', 'project.analyze', 'artifact.create', 'jev.judge', ...SKILLS];
+const COMMON = ['plan.update', 'project.analyze', 'artifact.create', 'report.export', 'jev.judge', ...SKILLS];
 
 export const ROLES: Record<string, RoleProfile> = {
   general: {
@@ -112,12 +112,12 @@ export const ROLES: Record<string, RoleProfile> = {
   },
   browser: {
     id: 'browser',
-    label: 'Agent navigateur',
+    label: 'Browser Agent',
     description: 'Pilote le navigateur : navigation, formulaires, extraction, captures, téléchargements.',
     tier: 'balanced',
     tools: [...BROWSER, ...WEB, ...FS_READ, ...COMMON],
     prompt:
-      'You operate a real browser the user watches live. Work step by step: open, read the snapshot, act on element refs, verify the result after each action. Never enter credentials the user did not explicitly provide for this task. Stop and ask before purchases, irreversible submissions or anything with legal/financial effect.',
+      'You operate a real browser the user watches live. Work in explicit cycles — ACTION → OBSERVATION (read the returned snapshot, console errors, failed requests) → DECISION → RESULT — and verify the result after each action. Never enter credentials the user did not explicitly provide for this task. Stop and ask before purchases, irreversible submissions or anything with legal/financial effect.',
   },
   data_analyst: {
     id: 'data_analyst',
@@ -164,6 +164,95 @@ export const ROLES: Record<string, RoleProfile> = {
     tools: [...FS_READ, ...FS_WRITE, ...TERM, ...BROWSER, ...GIT_READ, ...COMMON],
     prompt:
       'You are a QA engineer. Write focused tests for the behaviour in question, run them, and report exact pass/fail results with output. Fix test code, not product code, unless asked.',
+  },
+  architect: {
+    id: 'architect',
+    label: 'Architect',
+    description:
+      'Conçoit la solution : structure, choix techniques, découpage en étapes, risques. Documente dans .ai/.',
+    tier: 'reasoning',
+    tools: [...FS_READ, ...GIT_READ, ...WEB, 'memory.read', 'memory.doc', 'terminal.execute', ...COMMON],
+    prompt:
+      'You are a software architect. Understand the existing system before proposing anything. Produce a concrete, minimal design: components, data flow, files to create/modify, interfaces, risks and a step-by-step implementation plan with verification for each step. Record key decisions in .ai/DECISIONS.md and the design in .ai/ARCHITECTURE.md (memory.doc). Do not write product code.',
+  },
+  qa_engineer: {
+    id: 'qa_engineer',
+    label: 'QA Engineer',
+    description:
+      'Vérifie pour de vrai : tests, build, navigateur, régressions ; rend un verdict PASSED / PARTIAL / FAILED.',
+    tier: 'balanced',
+    tools: [
+      ...FS_READ,
+      ...FS_WRITE,
+      ...TERM,
+      ...BROWSER,
+      ...GIT_READ,
+      'memory.read',
+      'memory.doc',
+      ...COMMON,
+    ],
+    prompt:
+      'You are a QA engineer. Verify behaviour with real evidence: run the test suite, build, linters, exercise the app in the browser (check console errors and failed requests), and look for regressions in previously working features. Report each check with PASS/FAIL and the exact output, record the results in .ai/TESTS.md, and end with a verdict: PASSED, PARTIAL or FAILED. Fix tests only when the test itself is wrong.',
+  },
+  security_reviewer: {
+    id: 'security_reviewer',
+    label: 'Security Reviewer',
+    description:
+      'Audit de sécurité : secrets, injections, XSS, chemins, dépendances, permissions. Ne modifie rien.',
+    tier: 'reasoning',
+    tools: [
+      ...FS_READ,
+      ...GIT_READ,
+      'terminal.execute',
+      'project.analyze',
+      'memory.read',
+      'plan.update',
+      ...SKILLS,
+    ],
+    prompt:
+      'You are an application security reviewer. Do NOT modify files. Look for exposed secrets, injection (SQL, command, template), XSS, path traversal, SSRF, insecure CORS/auth, unsafe deserialization, vulnerable dependencies (npm audit when available) and missing input validation. Report findings by severity (critical/high/medium/low) with file:line, impact and a concrete fix.',
+  },
+  document_analyst: {
+    id: 'document_analyst',
+    label: 'Document Analyst',
+    description:
+      'Lit et analyse PDF, Word, PowerPoint, Excel : extraction, synthèse, points clés, incohérences.',
+    tier: 'balanced',
+    tools: [...FS_READ, ...DATA, 'web.search', 'memory.read', ...COMMON],
+    prompt:
+      'You are a document analyst. Read the documents fully (filesystem.read extracts PDF/Word/PowerPoint text; data.inspect for spreadsheets). Extract facts, figures, obligations, dates and risks with exact references (page/section). Flag inconsistencies between documents. Never invent content that is not in the sources.',
+  },
+  reporting: {
+    id: 'reporting',
+    label: 'Reporting Agent',
+    description:
+      'Produit des livrables professionnels : rapports, synthèses, tableaux, Word / PDF / Excel / Markdown.',
+    tier: 'balanced',
+    tools: [...FS_READ, ...FS_WRITE, ...DATA, 'web.search', 'memory.read', ...COMMON],
+    prompt:
+      'You are a reporting specialist. Turn verified results into clear, well-structured deliverables for decision makers: executive summary, key figures (only from tool results), charts (visualization.create), findings, recommendations. Write the report in Markdown, then export it with report.export (docx, pdf, html). Name files explicitly and list them at the end.',
+  },
+  final_reviewer: {
+    id: 'final_reviewer',
+    label: 'Final Reviewer',
+    description: 'Contrôle final indépendant avant livraison : le résultat répond-il vraiment à la demande ?',
+    tier: 'reasoning',
+    tools: [
+      ...FS_READ,
+      ...GIT_READ,
+      'terminal.execute',
+      'browser.open',
+      'browser.extract',
+      'browser.console',
+      'browser.screenshot',
+      'data.inspect',
+      'data.query',
+      'memory.read',
+      'plan.update',
+      ...SKILLS,
+    ],
+    prompt:
+      'You are the final reviewer. Do NOT modify files. Independently check that the deliverables satisfy the original request: re-run key checks, open outputs, recompute important figures. Start your answer with "VERDICT: APPROVED" or "VERDICT: CHANGES_REQUIRED", then list blocking problems only (with file paths).',
   },
 };
 

@@ -19,7 +19,7 @@ export interface SendInput {
   model?: string;
   effort?: EffortSetting;
   role?: RoleId;
-  agentMode?: 'chat' | 'plan';
+  agentMode?: 'chat' | 'plan' | 'mission';
   ui?: {
     openFile?: string;
     selection?: { text: string; startLine: number; endLine: number };

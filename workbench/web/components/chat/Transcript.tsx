@@ -1,3 +1,4 @@
+import { ModelLine, PipelineBar, VerdictBadge, VerdictCard } from '../mission';
 import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
@@ -583,7 +584,11 @@ function Items({ items, runId }: { items: Item[]; runId: string }) {
           case 'subagent':
             return <SubagentBlock key={it.id} item={it} />;
           case 'model':
-            return null;
+            return <ModelLine key={it.id} {...it} />;
+          case 'pipeline':
+            return <PipelineBar key={it.id} current={it.current} done={it.done} />;
+          case 'mission':
+            return <VerdictCard key={it.id} report={it.report} round={it.round} review={it.review} />;
           case 'skills':
             return (
               <div key={it.id} className="my-1 flex flex-wrap items-center gap-1.5 text-[12px] text-muted">
@@ -679,6 +684,7 @@ function RunFooter({ view }: { view: RunView }) {
       <span>
         {fmtTokens(view.usage.promptTokens + view.usage.completionTokens)} tokens · {fmtCost(view.usage.cost)}
       </span>
+      {view.verdict && <VerdictBadge status={view.verdict} />}
       {view.status === 'cancelled' && <Badge>interrompu</Badge>}
       {failed && <Badge tone="err">échec</Badge>}
       {(failed || view.status === 'cancelled') && (

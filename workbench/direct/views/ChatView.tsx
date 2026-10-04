@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowUp,
   Bot,
@@ -16,6 +16,7 @@ import {
   Square,
   X,
   Gauge as GaugeIcon,
+  Rocket,
 } from 'lucide-react';
 import type { EffortSetting } from '@shared/types';
 import {
@@ -27,6 +28,7 @@ import {
   Spinner,
   Textarea,
   type MenuItem,
+  EditableTitle,
 } from '../../web/components/ui';
 import { CodeBlock, DiffView, Markdown } from '../../web/components/rich';
 import { cx, fmtCost, fmtDuration, fmtPrice, fmtTokens, shortModel } from '../../web/lib/format';
@@ -37,6 +39,10 @@ import type { Attachment, Item, PermissionMode, Session } from '../lib/types';
 import { download, importBrowserFile } from '../lib/vfs';
 import { refreshCredits } from '../lib/credits';
 import { ArtifactCard } from './Artifacts';
+import { ModelLine, PipelineBar, VerdictBadge, VerdictCard } from '../../web/components/mission';
+import { analyzeTask, estimateTaskCost, routeModel } from '../../server/llm/routing';
+import { DEFAULT_AUTO_TIERS } from '../../server/services/settings';
+import { FIX_EVERYTHING } from '../../server/agent/mission';
 
 const EFFORTS: { value: EffortSetting; label: string }[] = [
   { value: 'auto', label: 'Auto' },
@@ -60,14 +66,37 @@ export function ChatView() {
   if (!session) return null;
   return (
     <div className="flex h-full flex-col">
+      <SessionHeader session={session} />
       <Transcript session={session} />
       <Composer session={session} />
     </div>
   );
 }
 
+function SessionHeader({ session }: { session: Session }) {
+  const running = useStore((s) => Boolean(s.running[session.id]));
+  return (
+    <div className="flex h-10 shrink-0 items-center gap-2 border-b border-line px-4 text-[13px]">
+      <EditableTitle
+        value={session.title}
+        className="font-medium"
+        onSave={(title) => useStore.getState().patchSession(session.id, { title })}
+      />
+      {running && <Spinner className="h-3 w-3" />}
+      {session.verdict && session.verdict !== 'ERROR' && <VerdictBadge status={session.verdict} />}
+      {session.verdict === 'ERROR' && <span className="text-[11.5px] text-err">erreur</span>}
+      <span className="ml-auto text-[11.5px] text-faint">
+        {fmtTokens(session.tokensIn + session.tokensOut)} tokens · {fmtCost(session.cost)}
+      </span>
+    </div>
+  );
+}
+
+const WINDOW = 160;
+
 function Transcript({ session }: { session: Session }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [showAll, setShowAll] = useState(false);
   const stick = useRef(true);
   const running = useStore((s) => Boolean(s.running[session.id]));
   const status = useStore((s) => s.status[session.id]);
@@ -86,7 +115,15 @@ function Transcript({ session }: { session: Session }) {
     >
       <div className="mx-auto max-w-[860px] px-5 py-6">
         {!session.items.length && <Welcome />}
-        {session.items.map((it) => (
+        {!showAll && session.items.length > WINDOW && (
+          <button
+            className="mb-3 w-full rounded-lg border border-line py-1.5 text-[12px] text-muted hover:bg-hover"
+            onClick={() => setShowAll(true)}
+          >
+            Afficher les {session.items.length - WINDOW} éléments précédents
+          </button>
+        )}
+        {(showAll ? session.items : session.items.slice(-WINDOW)).map((it) => (
           <ItemView key={it.id} item={it} sessionId={session.id} />
         ))}
         {running && (
@@ -129,7 +166,7 @@ function Welcome() {
   );
 }
 
-function ItemView({ item, sessionId }: { item: Item; sessionId: string }) {
+const ItemView = memo(function ItemView({ item, sessionId }: { item: Item; sessionId: string }) {
   switch (item.kind) {
     case 'user':
       return (
@@ -191,11 +228,11 @@ function ItemView({ item, sessionId }: { item: Item; sessionId: string }) {
         </div>
       );
     case 'model':
-      return (
-        <div className="my-1 flex items-center gap-1.5 text-[11.5px] text-faint">
-          <Sparkles size={11} /> {shortModel(item.model)} {item.auto && <span>· AUTO : {item.reason}</span>}
-        </div>
-      );
+      return <ModelLine {...item} />;
+    case 'pipeline':
+      return <PipelineBar current={item.current} done={item.done} />;
+    case 'mission':
+      return <VerdictCard report={item.report} round={item.round} review={item.review} />;
     case 'skills':
       return (
         <div className="my-1 flex items-center gap-1.5 text-[11.5px] text-faint">
@@ -231,14 +268,21 @@ function ItemView({ item, sessionId }: { item: Item; sessionId: string }) {
     case 'usage':
       return (
         <div className="my-3 border-t border-line pt-1.5 text-[11.5px] text-faint">
+          {item.verdict && <VerdictBadge status={item.verdict} className="mr-1.5" />}
+          {item.model && (
+            <span className="font-medium text-muted">
+              {item.model.split(', ').map(shortModel).join(', ')} ·{' '}
+            </span>
+          )}
           {fmtTokens(item.promptTokens)} → {fmtTokens(item.completionTokens)} tokens · {fmtCost(item.cost)} ·{' '}
           {fmtDuration(item.durationMs)}
+          {!!item.fallbacks && <span className="text-warn"> · {item.fallbacks} repli(s) de modèle</span>}
         </div>
       );
     default:
       return sessionId ? null : null;
   }
-}
+});
 
 function ToolRow({ item }: { item: Extract<Item, { kind: 'tool' }> }) {
   const [open, setOpen] = useState(false);
@@ -426,6 +470,8 @@ function PlanCard({ item }: { item: Extract<Item, { kind: 'plan' }> }) {
 const SLASH = [
   { cmd: '/clear', desc: 'Nouvelle session' },
   { cmd: '/plan', desc: 'Basculer le mode Plan' },
+  { cmd: '/mission', desc: 'Basculer le mode Mission autonome' },
+  { cmd: '/fix', desc: 'Mission « Répare tout »' },
   { cmd: '/review', desc: 'Faire relire le travail par l’agent Relecteur' },
   { cmd: '/export', desc: 'Exporter la session (Markdown)' },
 ];
@@ -476,6 +522,21 @@ function Composer({ session }: { session: Session }) {
   const agents = allAgents(customAgents);
   const agent = agents.find((a) => a.id === session.agent) ?? agents[0]!;
   const modelInfo = models.find((m) => m.id === session.model);
+  const health = useStore((s) => s.health);
+  const estimateText = useMemo(() => {
+    if (!draft.trim() || !models.length) return '';
+    const p = analyzeTask({
+      text: draft,
+      attachmentNames: files.map((f) => f.name),
+      mission: agentMode === 'mission',
+      historyTokens: JSON.stringify(session.history).length / 3.6,
+    });
+    const est =
+      session.model === 'auto'
+        ? routeModel(models, DEFAULT_AUTO_TIERS, p, health)?.estimate
+        : estimateTaskCost(modelInfo, p, agentMode === 'mission');
+    return est ? `≈ ${fmtCost(est.low)}–${fmtCost(est.high)}` : '';
+  }, [draft, models, files, agentMode, session.model, session.history, modelInfo, health]);
 
   const modelItems: MenuItem[] = useMemo(
     () => [
@@ -525,6 +586,18 @@ function Composer({ session }: { session: Session }) {
       if (cmd === '/clear') return void (useStore.getState().newSession(), useStore.setState({ draft: '' }));
       if (cmd === '/plan')
         return void useStore.setState({ agentMode: agentMode === 'plan' ? 'chat' : 'plan', draft: '' });
+      if (cmd === '/mission')
+        return void useStore.setState({ agentMode: agentMode === 'mission' ? 'chat' : 'mission', draft: '' });
+      if (cmd === '/fix') {
+        useStore.setState({ agentMode: 'mission', draft: '' });
+        void runAgent(
+          session.id,
+          `${FIX_EVERYTHING}${text.slice(4).trim() ? `\n\nPrécision : ${text.slice(4).trim()}` : ''}`,
+          files,
+        ).then(refreshCredits);
+        setFiles([]);
+        return;
+      }
       if (cmd === '/export') return void (exportMarkdown(session), useStore.setState({ draft: '' }));
       if (cmd === '/review') {
         useStore.setState({ draft: '' });
@@ -705,6 +778,13 @@ function Composer({ session }: { session: Session }) {
           >
             <ListChecks size={13} /> Plan
           </Chip>
+          <Chip
+            title="Mode Mission : l’IA travaille en autonomie (analyse → plan → exécution → test → review → correction → validation → livraison) jusqu’à un résultat vérifié, avec verdict PASSED / PARTIAL / FAILED"
+            active={agentMode === 'mission'}
+            onClick={() => useStore.setState({ agentMode: agentMode === 'mission' ? 'chat' : 'mission' })}
+          >
+            <Rocket size={13} /> Mission
+          </Chip>
           {skills.length > 0 && (
             <Dropdown
               trigger={
@@ -737,6 +817,14 @@ function Composer({ session }: { session: Session }) {
             />
           )}
           <div className="flex-1" />
+          {estimateText && (
+            <span
+              className="hidden text-[11px] text-faint sm:inline"
+              title="Coût estimé de la tâche (prix réels OpenRouter, nombre d’étapes estimé)"
+            >
+              {estimateText}
+            </span>
+          )}
           <span className="hidden text-[11px] text-faint sm:inline">{fmtCost(session.cost)}</span>
           <Button
             size="sm"
