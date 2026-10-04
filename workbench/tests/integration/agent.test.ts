@@ -461,3 +461,28 @@ describe('mission mode', () => {
     expect(JSON.stringify(mock.requests[0]!.messages[0])).toContain('Project memory (.ai/)');
   });
 });
+
+describe('APEX Studio (server)', () => {
+  it('builds an offline house app, rejects bad code and runs the QA in Chromium', async () => {
+    const { houseKit } = await import('../../server/tools/apex');
+    if (!houseKit()) return; // house kit not installed on this machine
+    const appJs =
+      "'use strict';const KIT={org:'O',unit:'U',app:'A',footer:'F',docTitle:'T',docSubject:'S',keywords:'k'};function toast(m){}document.title='APEX srv';";
+    mock.push(
+      { toolCalls: [{ name: 'apex.build_app', args: { name: 'bad', app_js: 'function( {' } }] },
+      { toolCalls: [{ name: 'apex.build_app', args: { name: 'demo', app_js: appJs } }] },
+      { toolCalls: [{ name: 'apex.qa', args: { path: 'apps/demo.html' } }] },
+      { text: 'Livré.' },
+    );
+    const r = await run(session('autonomous').id, 'Crée un dashboard comme l’APEX');
+    expect(r.status).toBe('completed');
+    const msgs = JSON.stringify(mock.requests.at(-1)!.messages);
+    expect(msgs).toContain('KIT is not defined');
+    expect(msgs).toContain('Syntax error');
+    expect(msgs).toContain('QA PASSED');
+    expect(msgs).toContain('APEX srv');
+    const html = fs.readFileSync(file('apps/demo.html'), 'utf8');
+    expect(html).toContain('g3LogoBadge');
+    expect(html).not.toMatch(/\/\*@@[A-Z]+@@\*\//);
+  }, 60_000);
+});

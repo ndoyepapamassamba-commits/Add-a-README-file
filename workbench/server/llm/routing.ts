@@ -58,6 +58,8 @@ const RX: Record<string, RegExp> = {
   writing:
     /\b(r[ée]dige|[ée]cris|write|email|mail|lettre|note|synth[èe]se|r[ée]sum|rapport|report|pr[ée]sentation|slides?)\b/i,
   hard: /\b(architecture|from scratch|de z[ée]ro|compl[eè]te?|enti[eè]re?|tout le projet|whole|refactor|migr|optimi[sz]|performance|algorithm|complexe|complex|racine|root cause|d[ée]bogue|debug|r[ée]pare tout|fix everything|teste tout|s[ée]curit[ée]|strat[ée]gie|mod[eè]le financier|risque)/i,
+  apex: /\b(apex|dashboard|tableau de bord|cockpit|reporting|mail (quotidien|du jour)|exports? (excel|word|powerpoint|pptx|pdf))/i,
+  app: /\b(application|app|appli)\b/i,
   // High-stakes deliverables (governance, regulator, money): never the cheapest tier.
   critical:
     /\b(comex|comit[ée]|conseil d'administration|board|bceao|commission bancaire|ifrs ?9|b[âa]le|r[ée]glementaire|r[ée]gulateur|audit externe|provisions?|npl|cr[ée]ances? (douteuses|en souffrance)|juridique|contrat|production|prod\b)/i,
@@ -144,8 +146,16 @@ export function analyzeTask(o: {
     needsVision,
     contextTokens: Math.round((o.historyTokens ?? 0) + o.text.length / 3.6 + 6000),
     reasons,
-    team: o.mission || d >= 0.55 ? team[type] : team[type].slice(0, 1),
+    team: withApex(
+      o.mission || d >= 0.55 ? team[type] : team[type].slice(0, 1),
+      RX.apex!.test(t) || (RX.app!.test(t) && (type === 'data' || type === 'document')),
+    ),
   };
+}
+
+/** Business apps / dashboards / house exports go to the APEX Studio specialist first. */
+function withApex(team: string[], apex: boolean): string[] {
+  return apex ? ['apex_studio', ...team.filter((r) => r !== 'apex_studio' && r !== 'coder')] : team;
 }
 
 /** Observed reliability per model (success / failure), persisted by the caller. */

@@ -1,3 +1,4 @@
+import { printableHtml } from './officeCore';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
@@ -33,17 +34,9 @@ export type ArtifactType = (typeof ARTIFACT_TYPES)[number];
 
 const EXT: Record<string, string> = { chart: 'json', md: 'md', jpg: 'jpg' };
 
+/** Markdown → printable page in the house style (navy band, lime filets, navy table headers). */
 export function markdownToHtml(md: string, title: string): string {
-  const body = marked.parse(md, { async: false });
-  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
-<style>
-  body{font:14px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1f2328;max-width:820px;margin:32px auto;padding:0 24px}
-  h1,h2,h3{line-height:1.25;margin-top:1.6em} h1{font-size:26px;border-bottom:1px solid #ddd;padding-bottom:6px}
-  code{background:#f4f4f2;padding:1px 4px;border-radius:4px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
-  pre{background:#f6f6f4;padding:12px;border-radius:6px;overflow:auto} pre code{background:none;padding:0}
-  table{border-collapse:collapse;margin:12px 0} th,td{border:1px solid #ddd;padding:5px 9px;text-align:left} th{background:#f6f6f4}
-  blockquote{margin:0;padding:0 14px;color:#57606a;border-left:3px solid #ddd}
-</style></head><body>${body}</body></html>`;
+  return printableHtml(title, marked.parse(md, { async: false }) as string);
 }
 
 export function escapeHtml(s: string): string {

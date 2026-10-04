@@ -19,6 +19,7 @@ import {
 } from '../../server/agent/mission';
 import { agentModelPreference } from '../../server/agent/roles';
 import { DEFAULT_AUTO_TIERS } from '../../server/services/settings';
+import { HOUSE_RULES } from '../../server/services/houseStyle';
 import { isDataFile, profileToText, DataCore } from '../../server/services/dataCore';
 import { isDocument, isImage } from '../../server/services/documentsCore';
 import { LLMError, type ChatMessage, type ContentPart, type ToolCall } from '../../server/llm/types';
@@ -39,6 +40,7 @@ const SAFE_HIDDEN = new Set([
   'report.export',
   'data.export',
   'artifact.create',
+  'apex.build_app',
 ]);
 const MISSION_ONLY = new Set(['mission.stage', 'mission.report']);
 
@@ -94,6 +96,10 @@ function systemPrompt(o: {
 ${o.mode === 'safe' ? 'Read-only: you cannot modify files.' : o.mode === 'normal' ? 'Writes, deletions, code execution and plugin actions need user approval (the UI asks). If denied, adapt — do not retry the same action.' : 'Autonomous: actions run without asking. Stay careful and stay within the request.'}
 Not available here: shell/terminal, local disk outside the workspace, desktop apps. ${has('code.run') ? 'Use code.run (sandboxed JavaScript/Python) for computations.' : ''}`,
   ];
+  if (o.tools.some((t) => /^(report|data)\.export$|^apex\./.test(t.name)))
+    parts.push(
+      `# ${HOUSE_RULES}${has('apex.build_app') ? '\n- Any request for an application, dashboard, reporting tool or "like the APEX": follow the APEX method (apex.guide first), or delegate to the apex_studio agent.' : ''}`,
+    );
   if (o.active.length)
     parts.push(
       `# ACTIVE SKILLS — MANDATORY\nThe following skills apply to this request. Follow their instructions exactly (workflow, format, rules); they override your defaults.\n\n${o.active

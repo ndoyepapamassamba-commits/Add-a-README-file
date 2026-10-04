@@ -1,8 +1,11 @@
-import { useEffect, useReducer, useState } from 'react';
-import { Plug, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { useEffect, useReducer, useRef, useState } from 'react';
+import { unzipSync } from 'fflate';
+import { Package, Plug, Plus, RefreshCw, Trash2, Upload } from 'lucide-react';
 import { Badge, Button, Field, Input, Modal, Spinner, Toggle } from '../../web/components/ui';
 import { MCP_PRESETS, connect, disconnect, mcpState, onMcpChange } from '../lib/mcp';
 import { useStore } from '../lib/store';
+import { embeddedKit, getHouseKit, kitFromZip, setHouseKit } from '../lib/apex';
+import { kv } from '../lib/db';
 import type { McpServerDef } from '../lib/types';
 
 export function PluginsView() {
@@ -36,6 +39,8 @@ export function PluginsView() {
           <Plus size={14} /> Ajouter
         </Button>
       </div>
+
+      <HouseKitCard />
 
       <h2 className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-faint">
         Gratuits, prêts à l’emploi
@@ -179,5 +184,59 @@ function AddServer({ onClose, onSave }: { onClose: () => void; onSave: (d: McpSe
         <Input type="password" value={header} onChange={(e) => setHeader(e.target.value)} />
       </Field>
     </Modal>
+  );
+}
+
+/** APEX Studio house kit: embedded at build time, or imported as a .zip of the skill folder. */
+function HouseKitCard() {
+  const [, bump] = useReducer((x: number) => x + 1, 0);
+  const [msg, setMsg] = useState<string | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const kit = getHouseKit();
+  const onFile = async (f: File) => {
+    try {
+      const k = kitFromZip(unzipSync(new Uint8Array(await f.arrayBuffer())));
+      setHouseKit(k);
+      await kv.set('houseKit', k);
+      setMsg(`Kit « ${k.source} » importé : APEX Studio est opérationnel.`);
+      bump();
+    } catch (e) {
+      setMsg(`Import impossible : ${(e as Error).message}`);
+    }
+  };
+  return (
+    <div className="mb-6 rounded-xl border border-line bg-panel p-3">
+      <div className="flex items-center gap-2">
+        <Package size={14} className="text-accent" />
+        <div className="flex-1 text-[13.5px] font-medium">Kit maison — APEX Studio</div>
+        {kit ? (
+          <Badge tone="ok">{embeddedKit() ? 'intégré' : 'importé'}</Badge>
+        ) : (
+          <Badge tone="warn">absent</Badge>
+        )}
+      </div>
+      <div className="mt-1 text-[12.5px] text-muted">
+        {kit
+          ? `Charte, visuels 3D, logo et chaîne d’exports (Excel, PowerPoint, Word, mail, PDF) de « ${kit.source} » : l’agent APEX Studio construit des applications offline au style maison.`
+          : 'Importez le dossier du skill « ecobank-god-export-studio » compressé en .zip pour activer la construction d’applications APEX avec exports maison.'}
+      </div>
+      {!embeddedKit() && (
+        <Button size="sm" className="mt-2" onClick={() => input.current?.click()}>
+          <Upload size={13} /> Importer le kit (.zip)
+        </Button>
+      )}
+      <input
+        ref={input}
+        type="file"
+        accept=".zip"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void onFile(f);
+          e.target.value = '';
+        }}
+      />
+      {msg && <div className="mt-2 text-[12.5px]">{msg}</div>}
+    </div>
   );
 }

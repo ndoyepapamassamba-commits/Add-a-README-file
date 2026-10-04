@@ -1,6 +1,7 @@
 // Pure data engine (no Node APIs): parsing, profiling, querying, exports.
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
+import { houseXlsx } from './houseStyle';
 import { z } from 'zod';
 import type { DataFilter } from '@shared/types';
 
@@ -500,6 +501,7 @@ export class DataCore {
     columns: string[],
     rows: Record<string, unknown>[],
     format: 'csv' | 'xlsx' | 'json',
+    meta: { title?: string; subtitle?: string } = {},
   ): Uint8Array {
     const enc = new TextEncoder();
     if (format === 'json') return enc.encode(JSON.stringify(rows, null, 2));
@@ -507,10 +509,8 @@ export class DataCore {
       return enc.encode(
         `\uFEFF${Papa.unparse({ fields: columns, data: rows.map((r) => columns.map((c) => r[c] ?? '')) })}`,
       );
-    const ws = XLSX.utils.json_to_sheet(rows, { header: columns });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Data');
-    return new Uint8Array(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer);
+    // House style: navy title band, lime filet, navy header, zebra, XOF formats.
+    return houseXlsx(columns, rows, { title: meta.title, subtitle: meta.subtitle });
   }
 
   sheetNamesOf(name: string, bytes: Uint8Array): string[] {

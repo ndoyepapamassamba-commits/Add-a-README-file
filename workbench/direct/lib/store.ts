@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import type { CreditsInfo, ModelInfo } from '@shared/types';
 import { kv, saveLater } from './db';
 import { intelData, setIntelData, type IntelData } from '../../server/llm/modelIntel';
+import type { HouseKit } from '../../server/services/apexCore';
+import { embeddedKit, setHouseKit } from './apex';
 import { recordHealth, recordOutcome, type HealthMap, type LeaderboardMap } from '../../server/llm/routing';
 import type {
   AgentDef,
@@ -276,6 +278,9 @@ export async function hydrate(): Promise<void> {
   ]);
   // Scores imported / refreshed earlier replace the built-in snapshot when newer.
   if (intel && intel.fetchedAt > intelData().fetchedAt) setIntelData(intel);
+  // House kit imported by the user (when this build does not embed one).
+  const kitImported = await kv.get<HouseKit>('houseKit').catch(() => undefined);
+  if (kitImported && !embeddedKit()) setHouseKit(kitImported);
   const [settings, ids, current, files, skills, agents, mcp, artifacts, spend] = await Promise.all([
     kv.get<Partial<Settings>>('settings'),
     kv.get<string[]>('sessions'),

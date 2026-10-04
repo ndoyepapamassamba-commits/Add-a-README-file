@@ -32,8 +32,9 @@ export class DataEngine extends DataCore {
     columns: string[],
     rows: Record<string, unknown>[],
     format: 'csv' | 'xlsx' | 'json',
+    meta: { title?: string; subtitle?: string } = {},
   ): Buffer {
-    return Buffer.from(super.exportRows(columns, rows, format));
+    return Buffer.from(super.exportRows(columns, rows, format, meta));
   }
 
   invalidate(absPath: string): void {

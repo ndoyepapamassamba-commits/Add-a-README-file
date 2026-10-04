@@ -3,7 +3,10 @@ import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
   resolve: {
-    alias: { '@shared': fileURLToPath(new URL('./shared', import.meta.url)) },
+    alias: {
+      '@shared': fileURLToPath(new URL('./shared', import.meta.url)),
+      'virtual:house-kit': fileURLToPath(new URL('./tests/helpers/houseKitStub.ts', import.meta.url)),
+    },
   },
   test: {
     include: ['tests/unit/**/*.test.ts', 'tests/integration/**/*.test.ts', 'tests/live/**/*.test.ts'],

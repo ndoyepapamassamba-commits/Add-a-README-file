@@ -12,6 +12,7 @@ const READ = [
 ];
 const WRITE = ['filesystem.write', 'filesystem.edit', 'filesystem.delete', 'artifact.create', 'memory.doc'];
 const DELIVER = ['report.export', 'data.export', 'artifact.create', 'data.chart'];
+const APEX = ['apex.guide', 'apex.reference', 'apex.build_app', 'apex.qa'];
 
 const agent = (a: Omit<AgentDef, 'builtin' | 'model' | 'skills'> & { model?: string | null }): AgentDef => ({
   model: null,
@@ -47,7 +48,7 @@ export const BUILTIN_AGENTS: AgentDef[] = [
     description: 'Écrit, modifie et teste du code dans l’espace de travail.',
     prompt:
       'You are a senior software engineer. Read the relevant files before changing them, make focused edits with filesystem.edit, keep the existing style, and run code with code.run to verify. Deliver working, complete code — never placeholders.',
-    tools: [...READ, ...WRITE, 'code.run', 'web.search', 'agent.delegate'],
+    tools: [...READ, ...WRITE, ...APEX, 'code.run', 'web.search', 'agent.delegate'],
     effort: null,
   }),
   agent({
@@ -65,8 +66,18 @@ export const BUILTIN_AGENTS: AgentDef[] = [
     description: 'XLSX / XLSM / XLSB / CSV / JSON : qualité, doublons, anomalies, statistiques, graphiques.',
     prompt:
       'You are a senior data analyst. Always start with data.inspect (types, missing values, duplicates, anomalies), then data.query for exact figures and data.chart for visuals. Never invent numbers: every figure must come from a tool result. Never modify a source file: write results to outputs/ (data.export). Give actionable insights.',
-    tools: [...READ, ...DELIVER, 'code.run', 'filesystem.write', 'memory.doc'],
+    tools: [...READ, ...DELIVER, ...APEX, 'code.run', 'filesystem.write', 'memory.doc'],
     effort: null,
+  }),
+  agent({
+    id: 'apex_studio',
+    name: 'APEX Studio',
+    description:
+      'Construit des applications HTML offline « comme l’APEX » : chargement Excel, dashboard premium, exports Excel / PowerPoint / Word / PDF / mail couleur au style maison.',
+    prompt:
+      "You build business applications with the APEX method, for any subject. Workflow: (1) apex.guide, then apex.reference (read the whole reference app, part by part) and the domain references that apply; (2) data.inspect the user's real file to learn its columns — never invent data; (3) write the application script exactly in the reference style: const KIT, toast, tolerant header detection, normalisations, aggregates, a hero specific to the subject, KPI cards, filters applied to views and exports, a written reading, local memory of previous loads, and EVERY export of the house chain (Excel with 3D visuals, PowerPoint, Word, colour mail .eml/.html/rich copy, printable PDF); (4) apex.build_app; (5) apex.qa — fix and rebuild until PASSED; (6) deliver: what the app does, how to use it, what was verified and what the user must still test with a real file. Plain Markdown reports still use report.export / data.export (house style is automatic).",
+    tools: [...READ, ...DELIVER, ...APEX, 'filesystem.write', 'filesystem.edit', 'code.run', 'memory.doc'],
+    effort: 'high',
   }),
   agent({
     id: 'qa_engineer',
@@ -75,7 +86,7 @@ export const BUILTIN_AGENTS: AgentDef[] = [
       'Vérifie pour de vrai : exécution, recalculs, cohérence, régressions ; verdict PASSED / PARTIAL / FAILED.',
     prompt:
       'You are a QA engineer. Verify with real evidence: run the code (code.run), recompute key figures (data.query), re-read deliverables, compare against the requirements and look for regressions. Report each check as PASS/FAIL with the evidence, record results in .ai/TESTS.md (memory.doc), and end with a verdict: PASSED, PARTIAL or FAILED.',
-    tools: [...READ, 'code.run', 'memory.doc', 'filesystem.write', 'filesystem.edit'],
+    tools: [...READ, 'apex.qa', 'code.run', 'memory.doc', 'filesystem.write', 'filesystem.edit'],
     effort: null,
   }),
   agent({
@@ -102,7 +113,7 @@ export const BUILTIN_AGENTS: AgentDef[] = [
     description: 'Livrables professionnels : rapports, synthèses, Word / Excel / HTML imprimable (PDF).',
     prompt:
       'You are a reporting specialist. Turn verified results into clear deliverables for decision makers: executive summary, key figures (only from tool results), charts (data.chart), findings, recommendations. Write the report in Markdown then export it with report.export (docx, html for PDF printing, md) and tables with data.export (xlsx). List the files at the end.',
-    tools: [...READ, ...DELIVER, 'filesystem.write'],
+    tools: [...READ, ...DELIVER, ...APEX, 'filesystem.write'],
     effort: null,
   }),
   agent({

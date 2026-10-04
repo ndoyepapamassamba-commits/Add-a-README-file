@@ -22,6 +22,9 @@ import {
   type MissionReport,
 } from '../../server/agent/mission';
 import { markdownToDocx, printableHtml } from '../../server/services/officeCore';
+import { emlFromHtml, houseMailHtml } from '../../server/services/houseStyle';
+import { apexGuide, assembleApp, lintApp, referencePart } from '../../server/services/apexCore';
+import { getHouseKit, qaInFrame, syntaxError } from './apex';
 import { marked } from 'marked';
 import * as echarts from 'echarts/core';
 import { chartOption } from '../../web/components/rich';
@@ -778,14 +781,14 @@ export const TOOLS: DirectTool[] = [
   {
     name: 'report.export',
     description:
-      'Export a Markdown report to deliverables in outputs/: docx (Word), html (printable — the user prints it to PDF), md. Charts saved by data.chart (outputs/charts/*.png) are embedded when referenced as ![title](outputs/charts/x.png). Give markdown content or a markdown file path. Never overwrites existing files.',
+      'Export a Markdown report to deliverables in outputs/, always in the house style: docx (Word), html (printable — the user prints it to PDF), eml (colour mail draft for Outlook + .mail.html), md. Charts saved by data.chart (outputs/charts/*.png) are embedded when referenced as ![title](outputs/charts/x.png). Give markdown content or a markdown file path. Never overwrites existing files.',
     parameters: obj(
       {
         name: str('Base file name without extension, e.g. "rapport-ventes"'),
         title: str('Document title'),
         content: str('Markdown content (or use from_path)'),
         from_path: str('Markdown file in the workspace'),
-        formats: { type: 'array', items: { type: 'string', enum: ['docx', 'html', 'pdf', 'md'] } },
+        formats: { type: 'array', items: { type: 'string', enum: ['docx', 'html', 'pdf', 'md', 'eml'] } },
       },
       ['name'],
     ),
@@ -815,7 +818,14 @@ export const TOOLS: DirectTool[] = [
           );
         else if (f === 'html')
           writeText(path, printableHtml(title, marked.parse(inlineImages(md), { async: false }) as string));
-        else writeText(path, md);
+        else if (f === 'eml') {
+          // Colour mail in the house style: .eml draft (Outlook) + the same mail as .html.
+          const mail = houseMailHtml(title, marked.parse(inlineImages(md), { async: false }) as string);
+          writeText(path, emlFromHtml(title, mail));
+          const mh = uniquePath(`${base}.mail.html`);
+          writeText(mh, mail);
+          out.push(mh);
+        } else writeText(path, md);
         out.push(path);
       }
       const html = out.find((p) => p.endsWith('.html'));
@@ -840,6 +850,7 @@ export const TOOLS: DirectTool[] = [
         path: str('Source data file'),
         sheet: str('Excel sheet (optional)'),
         name: str('Output base name, e.g. "synthese-agences"'),
+        title: str('Title shown in the house-style band of the Excel file'),
         format: { type: 'string', enum: ['xlsx', 'csv', 'json'] },
         query: {
           type: 'object',
@@ -858,8 +869,117 @@ export const TOOLS: DirectTool[] = [
         : { columns: ds.columns, rows: ds.rows as Record<string, unknown>[], rowCount: ds.rows.length };
       const fmt = (S(a.format) || 'xlsx') as 'xlsx' | 'csv' | 'json';
       const path = uniquePath(`outputs/${S(a.name).replace(/[^\w.-]+/g, '-') || 'export'}.${fmt}`);
-      writeBytes(path, data.exportRows(r.columns, r.rows, fmt));
+      writeBytes(
+        path,
+        data.exportRows(r.columns, r.rows, fmt, {
+          title: S(a.title) || S(a.name) || 'Export',
+          subtitle: `Source : ${S(a.path)}${a.query ? ' (filtré)' : ''}`,
+        }),
+      );
       return ok(`${r.rowCount} lignes → ${path}`, `Saved ${r.rowCount} rows to ${path}.`);
+    },
+  },
+  // ── APEX Studio: offline business apps in the house method ──────────────
+  {
+    name: 'apex.guide',
+    description:
+      'APEX method + house export style + the house kit API (shell ids, 3D visuals, Excel/Word/PowerPoint/mail functions). Read it FIRST before building any business application, dashboard or reporting app.',
+    parameters: obj({}),
+    risk: 'read',
+    readOnly: true,
+    label: () => 'Guide APEX',
+    async run() {
+      const g = apexGuide(getHouseKit());
+      return ok(getHouseKit() ? 'méthode + kit maison' : 'méthode (kit maison absent)', g);
+    },
+  },
+  {
+    name: 'apex.reference',
+    description:
+      'Read the complete reference application of the house method (part 1..N), or a domain reference document (doc: e.g. "credit-risk", "classification-bceao-ifrs9").',
+    parameters: obj({
+      part: { type: 'number', description: 'Part number, from 1' },
+      doc: str('Domain document name'),
+    }),
+    risk: 'read',
+    readOnly: true,
+    label: (a) => (a.doc ? `Référence ${S(a.doc)}` : `Application de référence, partie ${S(a.part) || 1}`),
+    async run(a) {
+      const kit = getHouseKit();
+      if (!kit) throw new Error('Kit maison absent de cette version de MASSAMBA (voir apex.guide).');
+      if (a.doc) {
+        const d = kit.domain[S(a.doc)];
+        if (!d) throw new Error(`Document inconnu. Disponibles : ${Object.keys(kit.domain).join(', ')}`);
+        return ok(`référence ${S(a.doc)}`, d);
+      }
+      const r = referencePart(kit, Number(a.part) || 1);
+      return ok(
+        `partie ${Number(a.part) || 1}/${r.parts}`,
+        `[part ${Number(a.part) || 1} of ${r.parts}]\n${r.text}`,
+      );
+    },
+  },
+  {
+    name: 'apex.build_app',
+    description:
+      'Assemble a single-file OFFLINE application in the house method: house shell + vendor libraries (xlsx-js-style, Chart.js, JSZip, PptxGenJS) + logo + 3D export kit + YOUR application script. Give the script (app_js, or from_path to a .js file you wrote). Writes apps/<name>.html, checks the syntax and opens a preview. Then run apex.qa.',
+    parameters: obj(
+      {
+        name: str('File base name, e.g. "suivi-impayes"'),
+        app_js: str(
+          'The application script (replaces /*@@APP@@*/): const KIT={...}; toast(); views; exports',
+        ),
+        from_path: str('Or: path of a .js file in the workspace containing the script'),
+      },
+      ['name'],
+    ),
+    risk: 'write',
+    readOnly: false,
+    label: (a) => `Assembler l’application ${S(a.name)}.html`,
+    async run(a, ctx) {
+      const kit = getHouseKit();
+      if (!kit) throw new Error('Kit maison absent de cette version de MASSAMBA (voir apex.guide).');
+      const js = a.from_path ? (await readAsText(S(a.from_path))).text : S(a.app_js);
+      if (!js.trim()) throw new Error('app_js (ou from_path) est vide.');
+      const issues = lintApp(js);
+      const syn = syntaxError(js);
+      if (syn) issues.unshift(`Erreur de syntaxe : ${syn}`);
+      if (issues.length) throw new Error(`Application refusée :\n- ${issues.join('\n- ')}`);
+      const base =
+        S(a.name)
+          .replace(/[^\w.-]+/g, '-')
+          .replace(/\.html?$/i, '') || 'application';
+      if (!a.from_path) writeText(`apps/${base}.app.js`, js);
+      const html = assembleApp(kit, js);
+      const path = `apps/${base}.html`;
+      writeText(path, html);
+      const art = saveArtifact(ctx.sessionId, { name: `${base}.html`, type: 'html', content: html });
+      return ok(
+        `${path} (${Math.round(html.length / 1024)} Ko)`,
+        `Built ${path} (${html.length} bytes, fully offline). Script saved as apps/${base}.app.js. Now call apex.qa {path:"${path}"} and fix any error before delivering.`,
+        { artifact: art.id },
+      );
+    },
+  },
+  {
+    name: 'apex.qa',
+    description:
+      'Run a generated HTML application in an isolated frame for a few seconds and report page errors and which kit libraries are loaded. Use after apex.build_app (or on any .html app).',
+    parameters: obj({ path: str('apps/<name>.html') }, ['path']),
+    risk: 'read',
+    readOnly: true,
+    label: (a) => `Contrôle qualité de ${S(a.path)}`,
+    async run(a) {
+      const html = (await readAsText(S(a.path))).text;
+      const r = await qaInFrame(html);
+      const missing = Object.entries(r.globals)
+        .filter(([, t]) => t === 'undefined')
+        .map(([k]) => k);
+      const verdict = r.errors.length ? 'FAILED' : missing.length ? 'PARTIAL' : 'PASSED';
+      return ok(
+        `${verdict} — ${r.errors.length} erreur(s)`,
+        `QA ${verdict} for ${S(a.path)} — title "${r.title}"\nPage errors: ${r.errors.length ? r.errors.join(' | ') : 'none'}\nGlobals: ${JSON.stringify(r.globals)}${missing.length ? `\nMissing: ${missing.join(', ')}` : ''}\nNot verified automatically: loading a real file and clicking each export (ask the user to try them in the preview).`,
+      );
     },
   },
 ];

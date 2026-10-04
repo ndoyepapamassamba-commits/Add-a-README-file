@@ -68,6 +68,13 @@ describe('task analysis & multi-model routing', () => {
     const comex = analyzeTask({ text: 'Analyse le portefeuille IFRS9 et prépare le rapport COMEX' });
     expect(comex.tier).not.toBe('cheap');
     expect(comex.reasons).toContain('enjeu critique');
+    // Business apps / dashboards with house exports go to APEX Studio first.
+    expect(
+      analyzeTask({
+        text: 'Crée un dashboard comme l’APEX avec exports Excel',
+        attachmentNames: ['pipe.xlsx'],
+      }).team[0],
+    ).toBe('apex_studio');
     const data = analyzeTask({ text: 'Analyse ce fichier', attachmentNames: ['ventes.xlsx'] });
     expect(data.type).toBe('data');
     const hard = analyzeTask({

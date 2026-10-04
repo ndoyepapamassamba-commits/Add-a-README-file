@@ -52,6 +52,7 @@ const BROWSER_READ = [
 ];
 const WEB = ['web.search', 'web.fetch'];
 const DATA = ['data.inspect', 'data.query', 'data.transform', 'visualization.create'];
+const APEX = ['apex.guide', 'apex.reference', 'apex.build_app', 'apex.qa'];
 const GIT_READ = ['git.status', 'git.diff', 'git.log'];
 const MEMORY = ['memory.read', 'memory.add', 'memory.remove', 'memory.doc'];
 const SKILLS = ['skill.use', 'skill.read'];
@@ -71,6 +72,7 @@ export const ROLES: Record<string, RoleProfile> = {
       ...BROWSER,
       ...WEB,
       ...DATA,
+      ...APEX,
       ...GIT_READ,
       'git.commit',
       ...MEMORY,
@@ -110,6 +112,16 @@ export const ROLES: Record<string, RoleProfile> = {
     prompt:
       'You are a meticulous researcher. Search, read primary sources, cross-check facts, and answer with citations (URLs). Distinguish facts from assumptions.',
   },
+  apex_studio: {
+    id: 'apex_studio',
+    label: 'APEX Studio',
+    description:
+      'Applications HTML offline « comme l’APEX » : chargement Excel, dashboard premium, exports Excel / PowerPoint / Word / PDF / mail couleur au style maison.',
+    tier: 'powerful',
+    tools: [...APEX, ...DATA, ...FS_READ, ...FS_WRITE, 'code.run', 'terminal.execute', ...MEMORY, ...COMMON],
+    prompt:
+      "You build business applications with the APEX method, for any subject. Workflow: (1) apex.guide, then apex.reference (read the whole reference app, part by part) and the domain references that apply; (2) data.inspect the user's real file to learn its columns — never invent data; (3) write the application script exactly in the reference style: const KIT, toast, tolerant header detection, normalisations, aggregates, a hero specific to the subject, KPI cards, filters applied to views and exports, a written reading, local memory of previous loads, and EVERY export of the house chain (Excel with 3D visuals, PowerPoint, Word, colour mail .eml/.html/rich copy, printable PDF); (4) apex.build_app; (5) apex.qa — fix and rebuild until PASSED; (6) deliver: what the app does, how to use it, what was verified and what the user must still test with a real file. Plain reports still use report.export / data.transform (house style is automatic).",
+  },
   browser: {
     id: 'browser',
     label: 'Browser Agent',
@@ -126,6 +138,7 @@ export const ROLES: Record<string, RoleProfile> = {
     tier: 'balanced',
     tools: [
       ...DATA,
+      ...APEX,
       ...FS_READ,
       ...FS_WRITE,
       'code.run',

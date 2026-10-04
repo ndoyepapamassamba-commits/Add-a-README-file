@@ -1,3 +1,4 @@
+import { HOUSE, fmtDateFr } from './houseStyle';
 // Office deliverables without dependencies (pure): Markdown → Word (.docx),
 // Markdown → standalone printable HTML. Shared by the server and the browser.
 import { strToU8, zipSync } from 'fflate';
@@ -6,7 +7,7 @@ const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** Inline Markdown (bold, italic, code, links) → WordprocessingML runs. */
-function runs(text: string, base: { bold?: boolean; size?: number } = {}): string {
+function runs(text: string, base: { bold?: boolean; size?: number; color?: string } = {}): string {
   const out: string[] = [];
   const re = /(\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|_[^_]+_|`[^`]+`|\[[^\]]+\]\([^)]+\))/g;
   let last = 0;
@@ -16,7 +17,11 @@ function runs(text: string, base: { bold?: boolean; size?: number } = {}): strin
       o.b || base.bold ? '<w:b/>' : '',
       o.i ? '<w:i/>' : '',
       o.code ? '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/>' : '',
-      o.link ? '<w:color w:val="1F5FBF"/><w:u w:val="single"/>' : '',
+      o.link
+        ? `<w:color w:val="${HOUSE.light}"/><w:u w:val="single"/>`
+        : base.color
+          ? `<w:color w:val="${base.color}"/>`
+          : '',
       base.size ? `<w:sz w:val="${base.size}"/>` : '',
     ].join('');
     out.push(`<w:r>${props ? `<w:rPr>${props}</w:rPr>` : ''}<w:t xml:space="preserve">${esc(t)}</w:t></w:r>`);
@@ -76,13 +81,19 @@ const para = (inner: string, style?: string, extra = '') =>
 
 function table(rows: string[][]): string {
   const cols = Math.max(...rows.map((r) => r.length));
-  const cell = (t: string, header: boolean) =>
-    `<w:tc><w:tcPr><w:tcW w:w="${Math.floor(9000 / cols)}" w:type="dxa"/>${header ? '<w:shd w:val="clear" w:color="auto" w:fill="E8EEF7"/>' : ''}</w:tcPr>${para(runs(t, { bold: header, size: 18 }))}</w:tc>`;
-  const border =
-    '<w:top w:val="single" w:sz="4" w:color="BFBFBF"/><w:left w:val="single" w:sz="4" w:color="BFBFBF"/><w:bottom w:val="single" w:sz="4" w:color="BFBFBF"/><w:right w:val="single" w:sz="4" w:color="BFBFBF"/><w:insideH w:val="single" w:sz="4" w:color="BFBFBF"/><w:insideV w:val="single" w:sz="4" w:color="BFBFBF"/>';
+  // House style: navy header with white bold text and a lime filet, zebra rows.
+  const cell = (t: string, i: number) => {
+    const header = i === 0;
+    const fill = header ? HOUSE.navy : i % 2 === 0 ? HOUSE.zebra : '';
+    const numeric = !header && /^[-+]?[\d\s.,]+%?$/.test(t.trim());
+    return `<w:tc><w:tcPr><w:tcW w:w="${Math.floor(9000 / cols)}" w:type="dxa"/>${header ? `<w:tcBorders><w:bottom w:val="single" w:sz="18" w:color="${HOUSE.lime}"/></w:tcBorders>` : ''}${fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>` : ''}</w:tcPr>${para(runs(t, { bold: header, size: 18, color: header ? 'FFFFFF' : undefined }), undefined, numeric ? '<w:jc w:val="right"/>' : '')}</w:tc>`;
+  };
+  const b = (side: string) => `<w:${side} w:val="single" w:sz="4" w:color="${HOUSE.line}"/>`;
+  const border = ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(b).join('');
   return `<w:tbl><w:tblPr><w:tblW w:w="9000" w:type="dxa"/><w:tblBorders>${border}</w:tblBorders></w:tblPr>${rows
     .map(
-      (r, i) => `<w:tr>${Array.from({ length: cols }, (_, j) => cell(r[j] ?? '', i === 0)).join('')}</w:tr>`,
+      (r, i) =>
+        `<w:tr>${i === 0 ? '<w:trPr><w:tblHeader/></w:trPr>' : ''}${Array.from({ length: cols }, (_, j) => cell(r[j] ?? '', i)).join('')}</w:tr>`,
     )
     .join('')}</w:tbl>${para('')}`;
 }
@@ -95,7 +106,11 @@ export function markdownToDocx(
 ): Uint8Array {
   const body: string[] = [];
   const media: { rid: string; file: string; data: Uint8Array }[] = [];
-  if (title) body.push(para(runs(title), 'Title'));
+  if (title) {
+    // Cover band: navy title with lime filet, then the edition date (dd/mm/yyyy).
+    body.push(para(runs(title, { color: 'FFFFFF' }), 'Title'));
+    body.push(para(runs(`Édité le ${fmtDateFr()}`, { size: 18, color: HOUSE.text2 })));
+  }
   const lines = md.replace(/\r/g, '').split('\n');
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i]!;
@@ -184,9 +199,10 @@ export function markdownToDocx(
   const W =
     'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"';
   const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${W}><w:body>${body.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`;
-  const style = (id: string, name: string, size: number, extra = '') =>
-    `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="120"/>${extra}</w:pPr><w:rPr><w:b/><w:color w:val="1F3864"/><w:sz w:val="${size}"/></w:rPr></w:style>`;
-  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${W}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:lang w:val="fr-FR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>${style('Title', 'Title', 40)}${style('Heading1', 'heading 1', 32)}${style('Heading2', 'heading 2', 26)}${style('Heading3', 'heading 3', 23)}</w:styles>`;
+  const style = (id: string, name: string, size: number, color: string, extra = '') =>
+    `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="120"/>${extra}</w:pPr><w:rPr><w:b/><w:color w:val="${color}"/><w:sz w:val="${size}"/></w:rPr></w:style>`;
+  const lime = `<w:pBdr><w:bottom w:val="single" w:sz="18" w:space="4" w:color="${HOUSE.lime}"/></w:pBdr>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${W}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${HOUSE.font}" w:hAnsi="${HOUSE.font}" w:eastAsia="${HOUSE.font}" w:cs="${HOUSE.font}"/><w:color w:val="${HOUSE.text}"/><w:sz w:val="21"/><w:lang w:val="fr-FR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>${style('Title', 'Title', 40, 'FFFFFF', `<w:shd w:val="clear" w:color="auto" w:fill="${HOUSE.navy}"/><w:ind w:left="0"/>${lime}`)}${style('Heading1', 'heading 1', 30, HOUSE.navy, lime)}${style('Heading2', 'heading 2', 25, HOUSE.blue)}${style('Heading3', 'heading 3', 22, HOUSE.light)}</w:styles>`;
   return zipSync({
     '[Content_Types].xml': strToU8(
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>',
@@ -208,13 +224,22 @@ export function markdownToDocx(
   });
 }
 
-/** Wraps rendered HTML in a clean, printable page (A4, print-to-PDF friendly). */
+/** Wraps rendered HTML in a printable page in the house style (A4, print-to-PDF friendly). */
 export function printableHtml(title: string, bodyHtml: string): string {
+  const H = HOUSE;
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(title)}</title><style>
-@page{size:A4;margin:18mm}body{font:11pt/1.5 Calibri,'Segoe UI',Arial,sans-serif;color:#1d1d1d;max-width:820px;margin:24px auto;padding:0 16px}
-h1,h2,h3{color:#1F3864;line-height:1.25}h1{font-size:22pt;border-bottom:2px solid #1F3864;padding-bottom:6px}h2{font-size:15pt;margin-top:22px}
-table{border-collapse:collapse;width:100%;margin:10px 0;font-size:10pt}th,td{border:1px solid #bfbfbf;padding:5px 8px;text-align:left}th{background:#e8eef7}
-code,pre{font-family:Consolas,monospace;background:#f2f2f2}pre{padding:8px;overflow:auto}blockquote{border-left:3px solid #bfbfbf;margin-left:0;padding-left:12px;color:#555}
-@media print{body{margin:0;max-width:none}}
-</style></head><body>${bodyHtml}</body></html>`;
+@page{size:A4;margin:16mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font:10.5pt/1.5 '${H.font}',Calibri,Arial,sans-serif;color:#${H.text};background:#fff;max-width:840px;margin:0 auto;padding:0 16px 24px}
+.band{background:linear-gradient(120deg,#${H.navy},#${H.blue});color:#fff;padding:18px 22px;margin:0 -16px 18px;border-bottom:3px solid #${H.lime}}
+.band h1{margin:0;font-size:20pt;border:0;color:#fff}.band .d{opacity:.85;font-size:9pt;margin-top:4px}
+h1,h2,h3{line-height:1.25}h1{color:#${H.navy};font-size:18pt;border-bottom:3px solid #${H.lime};padding-bottom:4px}
+h2{color:#${H.navy};font-size:14pt;margin-top:22px;border-bottom:3px solid #${H.lime};padding-bottom:3px}h3{color:#${H.blue};font-size:12pt}
+a{color:#${H.light}}table{border-collapse:collapse;width:100%;margin:10px 0;font-size:9.5pt}
+th{background:#${H.navy};color:#fff;text-align:left;padding:6px 8px;border-bottom:3px solid #${H.lime}}
+td{padding:5px 8px;border-bottom:1px solid #${H.line};font-variant-numeric:tabular-nums}tr:nth-child(even) td{background:#${H.zebra}}
+code,pre{font-family:Consolas,monospace;background:#${H.bg}}pre{padding:8px;overflow:auto}
+blockquote{border-left:4px solid #${H.lime};margin-left:0;padding:6px 12px;background:#${H.bg};color:#${H.text2}}
+img{max-width:100%}.foot{margin-top:28px;border-top:1px solid #${H.line};padding-top:6px;color:#${H.text2};font-size:8pt}
+@media print{body{max-width:none}}
+</style></head><body><div class="band"><h1>${esc(title)}</h1><div class="d">Édité le ${fmtDateFr()}</div></div>${bodyHtml}<div class="foot">${esc(title)} · ${fmtDateFr()}</div></body></html>`;
 }

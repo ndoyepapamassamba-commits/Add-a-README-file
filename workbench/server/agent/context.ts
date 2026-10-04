@@ -1,3 +1,4 @@
+import { HOUSE_RULES } from '../services/houseStyle';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import type { AgentMode, PermissionMode } from '@shared/types';
@@ -88,6 +89,17 @@ export function buildSystemPrompt(opts: {
   if (has('agent.delegate'))
     lines.push(
       '- agent.delegate runs a specialised sub-agent with fresh context. Give it a complete, self-contained brief.',
+    );
+  if (has('report.export') || has('data.transform') || has('apex.guide'))
+    lines.push(
+      '',
+      `# ${HOUSE_RULES}`,
+      ...(has('apex.build_app')
+        ? [
+            '- Any request for an application, dashboard, reporting tool or "like the APEX": follow the APEX method (apex.guide first), or delegate to the apex_studio agent.',
+          ]
+        : []),
+      '',
     );
   lines.push(
     '- Destructive or irreversible actions (deleting data, git history rewrites, publishing, pushing) require an explicit user request.',

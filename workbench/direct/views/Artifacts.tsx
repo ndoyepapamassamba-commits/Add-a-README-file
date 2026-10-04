@@ -21,7 +21,7 @@ export function HtmlFrame({ html, height = 520 }: { html: string; height?: numbe
   return (
     <iframe
       title="Aperçu"
-      sandbox="allow-scripts allow-forms allow-modals allow-popups"
+      sandbox="allow-scripts allow-forms allow-modals allow-popups allow-downloads"
       srcDoc={html}
       className="w-full rounded-lg border border-line bg-white"
       style={{ height }}

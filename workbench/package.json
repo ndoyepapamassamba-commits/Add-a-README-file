@@ -2,7 +2,7 @@
   "name": "openrouter-ai-workbench",
   "version": "1.0.0",
   "private": true,
-  "description": "MASSAMBA Workbench \u2014 AI engineering command center: agent loop, tools (files, terminal, browser, data), OpenRouter LLM layer.",
+  "description": "MASSAMBA Workbench — AI engineering command center: agent loop, tools (files, terminal, browser, data), OpenRouter LLM layer.",
   "type": "module",
   "engines": {
     "node": ">=22.13"
@@ -44,6 +44,7 @@
     "undici": "^7.30.0",
     "unpdf": "^1.8.1",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "xlsx-js-style": "^1.2.0",
     "yaml": "^2.9.1",
     "zod": "^4.6.5"
   },

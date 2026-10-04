@@ -64,6 +64,7 @@ export const dataTools: AnyTool[] = [
       query: QuerySpecSchema,
       output_path: z.string().min(1),
       format: z.enum(['csv', 'xlsx', 'json']).default('csv'),
+      title: z.string().optional().describe('Title of the house-style Excel band'),
     }),
     readOnly: false,
     assess: () => ({ risk: 'write' }),
@@ -72,7 +73,15 @@ export const dataTools: AnyTool[] = [
     async execute(a, ctx) {
       const ds = await ctx.services.data.load(abs(ctx, a.path), a.sheet);
       const res = ctx.services.data.query(ds, { ...a.query, limit: a.query.limit ?? 100_000 });
-      const buf = ctx.services.data.exportRows(res.columns, res.rows, a.format);
+      const buf = ctx.services.data.exportRows(res.columns, res.rows, a.format, {
+        title:
+          a.title ??
+          a.output_path
+            .split('/')
+            .pop()!
+            .replace(/\.[^.]+$/, ''),
+        subtitle: `Source : ${a.path}`,
+      });
       const rel = await ctx.services.workspace.writeBinary(ctx.projectId, a.output_path, buf);
       return ok(`Wrote ${res.rows.length} rows → ${rel}`, { path: rel, rows: res.rows.length });
     },

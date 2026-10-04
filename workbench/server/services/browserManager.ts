@@ -805,6 +805,51 @@ export class BrowserManager extends EventEmitter {
     this.browser = null;
   }
 
+  /**
+   * Opens an HTML application offline (network blocked except data:/blob:) and
+   * collects page errors for `ms` milliseconds — QA of generated apps.
+   */
+  async qaHtml(
+    html: string,
+    ms = 2500,
+  ): Promise<{ errors: string[]; globals: Record<string, string>; title: string }> {
+    const browser = await this.launch();
+    const context = await browser.newContext({ viewport: { width: 1366, height: 860 } });
+    try {
+      await context.route('**/*', (route) =>
+        /^(data|blob):/.test(route.request().url()) ? route.continue() : route.abort(),
+      );
+      const page = await context.newPage();
+      const errors: string[] = [];
+      page.on('pageerror', (e) => errors.push(e.message));
+      await page.setContent(html, { waitUntil: 'load', timeout: 30_000 });
+      await page.waitForTimeout(ms);
+      const globals = await page.evaluate(() => {
+        const g: Record<string, string> = {};
+        for (const k of [
+          'KIT',
+          'XLSX',
+          'Chart',
+          'PptxGenJS',
+          'JSZip',
+          'docxBuild',
+          'xlsxAttach',
+          'mailShell',
+          'g3Bars',
+        ])
+          try {
+            g[k] = typeof (0, eval)(k);
+          } catch {
+            g[k] = 'undefined';
+          }
+        return g;
+      });
+      return { errors, globals, title: await page.title() };
+    } finally {
+      await context.close();
+    }
+  }
+
   /** Renders HTML to PDF (used for reports and exports). Chromium only. */
   async htmlToPdf(html: string): Promise<Buffer> {
     if (this.opts.engine !== 'chromium') throw new Error('PDF export requires the chromium engine');

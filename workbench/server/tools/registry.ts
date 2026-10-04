@@ -5,6 +5,7 @@ import { jevTools } from './jev';
 import { missionTools } from './mission';
 import { browserTools } from './browser';
 import { dataTools } from './data';
+import { apexTools } from './apex';
 import { filesystemTools } from './filesystem';
 import { projectTools } from './project';
 import { skillTools } from './skills';
@@ -19,6 +20,7 @@ export const ALL_TOOLS: AnyTool[] = [
   ...browserTools,
   ...webTools,
   ...dataTools,
+  ...apexTools,
   ...projectTools,
   ...agentTools,
   ...skillTools,

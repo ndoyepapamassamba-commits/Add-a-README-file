@@ -327,3 +327,45 @@ test('sessions can be renamed', async ({ page }) => {
   await input.press('Enter');
   await expect(page.getByText('Mon projet Dakar').first()).toBeVisible();
 });
+
+test('APEX Studio: guide → build an offline house app → QA in an isolated frame', async ({ page }) => {
+  const built = fs.readFileSync(FILE, 'utf8');
+  test.skip(!built.includes('g3LogoBadge'), 'house kit not embedded in this build');
+  await open(page);
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  const app = `'use strict';
+const KIT={org:'ORG',unit:'Unité',app:'Test',footer:'ORG · Test',docTitle:'Test',docSubject:'Test',keywords:'test'};
+function toast(m){ console.log(m); }
+document.title='APEX e2e';`;
+  mock.push(
+    { toolCalls: [{ name: 'apex.guide', args: {} }] },
+    { toolCalls: [{ name: 'apex.build_app', args: { name: 'demo', app_js: app } }] },
+    { toolCalls: [{ name: 'apex.qa', args: { path: 'apps/demo.html' } }] },
+    { text: 'Application livrée.' },
+  );
+  await send(page, 'Crée une application comme l’APEX');
+  await expect(page.getByText('Application livrée.')).toBeVisible({ timeout: 30_000 });
+  const msgs = JSON.stringify(mock.requests.at(-1)!.messages);
+  expect(msgs).toContain('APEX METHOD');
+  expect(msgs).toContain('Built apps/demo.html');
+  expect(msgs).toContain('QA PASSED');
+  expect(msgs).toContain('APEX e2e');
+});
+
+test('APEX Studio rejects an app without KIT / with a syntax error', async ({ page }) => {
+  const built = fs.readFileSync(FILE, 'utf8');
+  test.skip(!built.includes('g3LogoBadge'), 'house kit not embedded in this build');
+  await open(page);
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  mock.push(
+    { toolCalls: [{ name: 'apex.build_app', args: { name: 'bad', app_js: 'function( {' } }] },
+    { text: 'Corrigé.' },
+  );
+  await send(page, 'Crée une app');
+  await expect(page.getByText('Corrigé.')).toBeVisible();
+  const msgs = JSON.stringify(mock.requests[1]!.messages);
+  expect(msgs).toContain('KIT is not defined');
+  expect(msgs).toContain('Erreur de syntaxe');
+});

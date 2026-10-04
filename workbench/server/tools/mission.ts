@@ -1,3 +1,5 @@
+import { marked } from 'marked';
+import { emlFromHtml, houseMailHtml } from '../services/houseStyle';
 import { z } from 'zod';
 import {
   AI_DOCS,
@@ -107,14 +109,14 @@ export const missionTools: AnyTool[] = [
   defineTool({
     name: 'report.export',
     description:
-      'Export a Markdown report to deliverables in outputs/: docx (Word), pdf, html, md. Give markdown content or a markdown file path. Never overwrites existing files.',
+      'Export a Markdown report to deliverables in outputs/, always in the house style: docx (Word), pdf, html, eml (colour mail draft for Outlook + .mail.html), md. Give markdown content or a markdown file path. Never overwrites existing files.',
     schema: z.object({
       name: z.string().min(1).max(100).describe('Base file name without extension, e.g. "rapport-ventes"'),
       title: z.string().max(200).optional(),
       content: z.string().optional(),
       from_path: z.string().optional(),
       formats: z
-        .array(z.enum(['docx', 'pdf', 'html', 'md']))
+        .array(z.enum(['docx', 'pdf', 'html', 'md', 'eml']))
         .min(1)
         .default(['docx', 'pdf']),
     }),
@@ -150,7 +152,19 @@ export const missionTools: AnyTool[] = [
             sessionId: ctx.sessionId,
             runId: ctx.runId,
           });
-        else if (f === 'docx')
+        else if (f === 'eml') {
+          // Images become data: URIs, then cid: parts of the .eml (Outlook shows them in colour).
+          let withImages = marked.parse(md, { async: false }) as string;
+          for (const [src, img] of images)
+            withImages = withImages
+              .split(`src="${src}"`)
+              .join(`src="data:image/${img.type};base64,${Buffer.from(img.data).toString('base64')}"`);
+          const mail = houseMailHtml(title, withImages);
+          await ws.writeBinary(ctx.projectId, rel, Buffer.from(emlFromHtml(title, mail)));
+          const mh = await uniqueOutput(ctx, `${base}.mail.html`);
+          await ws.writeBinary(ctx.projectId, mh, Buffer.from(mail));
+          written.push(mh);
+        } else if (f === 'docx')
           await ws.writeBinary(
             ctx.projectId,
             rel,
