@@ -18,7 +18,7 @@ export default defineConfig({
       '@web': fileURLToPath(new URL('./web', import.meta.url)),
     },
   },
-  worker: { format: 'es' },
+  worker: { format: 'iife' },
   build: {
     outDir: '../dist/web',
     emptyOutDir: true,

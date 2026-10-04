@@ -1,9 +1,11 @@
 import type { ChangeRecord, CreditsInfo, EffortSetting, ModelInfo, PermissionMode, RoleId, RunEventEnvelope, RunSummary, ServerStatus, SessionSummary } from '@shared/types';
 
-export type View = 'projects' | 'chat' | 'code' | 'terminal' | 'browser' | 'data' | 'agents' | 'tasks' | 'models' | 'settings';
+export type View = 'projects' | 'chat' | 'code' | 'terminal' | 'browser' | 'data' | 'agents' | 'skills' | 'plugins' | 'tasks' | 'models' | 'settings';
 
 export interface StatusResponse extends ServerStatus {
   models: { count: number; fetchedAt: number; error: string | null };
+  jev: { keyConfigured: boolean; available: boolean };
+  plugins: { name: string; status: string; tools: number }[];
   budget: BudgetState;
 }
 
@@ -41,6 +43,9 @@ export interface AppSettings {
   budget: { daily: number; monthly: number; perTask: number; warnAt: number };
   agent: { maxSteps: number; maxRetries: number; toolTimeoutSec: number; maxSubagentDepth: number; parallelReads: boolean };
   autoTiers: Record<'fast' | 'balanced' | 'powerful' | 'reasoning' | 'vision', string[]>;
+  skills: { autoActivate: boolean; maxAuto: number; disabled: string[]; showCatalog: boolean };
+  jev: { enabled: boolean; routing: boolean; skills: boolean; threshold: number };
+  mcp: { autoConnect: boolean; connectTimeoutSec: number };
   webSearchProvider: 'auto' | 'openrouter' | 'brave';
   webSearchModel: string;
 }
@@ -51,12 +56,50 @@ export interface AgentInfo {
   description: string;
   tier: string;
   tools: string[];
+  custom: boolean;
+  source: string;
+  editable: boolean;
+  skills: string[];
+  model: string | null;
+}
+
+export interface SkillInfo {
+  name: string;
+  description: string;
+  source: string;
+  files: string[];
+  triggers: string[];
+  size: number;
+  disabled: boolean;
+}
+
+export interface McpServerInfo {
+  name: string;
+  status: 'disabled' | 'disconnected' | 'connecting' | 'connected' | 'needs_auth' | 'error';
+  error?: string;
+  authUrl?: string;
+  serverName?: string;
+  instructions?: string;
+  toolCount: number;
+  tools: { name: string; description: string; readOnly: boolean; destructive: boolean }[];
+  config: { type?: string; command?: string; args?: string[]; url?: string; env?: Record<string, string>; headers?: Record<string, string>; enabled: boolean; autoApprove?: boolean | string[]; description?: string; preset?: string };
+}
+
+export interface McpPreset {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  requires?: string;
+  free: boolean;
+  config: McpServerInfo['config'];
 }
 
 export interface SessionSettings {
   autoApproveEdits?: boolean;
   grants?: string[];
   role?: RoleId;
+  skills?: string[];
 }
 
 export interface ArtifactRecord {

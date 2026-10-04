@@ -32,7 +32,7 @@ interface SessionState {
   cancel: () => Promise<void>;
   approve: (approvalId: string, decision: 'approve' | 'deny', opts?: { note?: string; remember?: boolean }) => Promise<void>;
   resolvePlan: (runId: string, decision: 'approve' | 'cancel', steps?: string[]) => Promise<void>;
-  patchSession: (patch: { title?: string; model?: string; permissionMode?: string; autoApproveEdits?: boolean; role?: RoleId; resetGrants?: boolean }) => Promise<void>;
+  patchSession: (patch: { title?: string; model?: string; permissionMode?: string; autoApproveEdits?: boolean; role?: RoleId; resetGrants?: boolean; skills?: string[] }) => Promise<void>;
   refreshSide: () => Promise<void>;
   review: (focus?: string) => Promise<void>;
   compact: () => Promise<void>;

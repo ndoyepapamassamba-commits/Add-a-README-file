@@ -96,6 +96,7 @@
   --shadow-pop: var(--shadow);
 }
 
+@layer base {
 html,
 body,
 #root {
@@ -133,6 +134,7 @@ textarea,
 select {
   font: inherit;
   color: inherit;
+}
 }
 
 /* ── markdown ────────────────────────────────────────────────────── */

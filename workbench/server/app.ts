@@ -103,6 +103,20 @@ export async function buildApp(config: AppConfig, opts: { provider?: LLMProvider
   browserRoutes(app, ctx);
   registerWebSocket(app, ctx);
 
+  // Monaco web workers, loaded on demand by the client (public code, CORS-enabled
+  // so the HTML file also works when opened from disk).
+  app.get('/web-assets/:file', async (req, reply) => {
+    const file = (req.params as { file: string }).file;
+    if (!/^[\w.-]+\.js$/.test(file)) return reply.code(404).send('Not found');
+    const abs = path.join(config.webDist, 'assets', file);
+    const alt = path.join(config.webDist, file);
+    const target = fs.existsSync(abs) ? abs : fs.existsSync(alt) ? alt : null;
+    if (!target) return reply.code(404).send('Not found');
+    reply.header('Access-Control-Allow-Origin', '*');
+    reply.header('Cache-Control', 'public, max-age=31536000, immutable');
+    return reply.type('text/javascript; charset=utf-8').send(fs.createReadStream(target));
+  });
+
   // The single-file web client.
   app.get('/', async (_req, reply) => {
     const index = path.join(config.webDist, 'index.html');

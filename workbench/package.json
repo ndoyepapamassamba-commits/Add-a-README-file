@@ -2,7 +2,7 @@
   "name": "openrouter-ai-workbench",
   "version": "1.0.0",
   "private": true,
-  "description": "OpenRouter AI Workbench — AI engineering command center: agent loop, tools (files, terminal, browser, data), OpenRouter LLM layer.",
+  "description": "OpenRouter AI Workbench \u2014 AI engineering command center: agent loop, tools (files, terminal, browser, data), OpenRouter LLM layer.",
   "type": "module",
   "engines": {
     "node": ">=22.13"
@@ -12,7 +12,7 @@
     "dev:server": "tsx watch --clear-screen=false server/index.ts",
     "dev:web": "vite",
     "build": "npm run typecheck && npm run build:web && npm run build:server",
-    "build:web": "vite build",
+    "build:web": "vite build && node scripts/copy-standalone.mjs",
     "build:server": "node scripts/build-server.mjs",
     "start": "node --disable-warning=ExperimentalWarning dist/server/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",

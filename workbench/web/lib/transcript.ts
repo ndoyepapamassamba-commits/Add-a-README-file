@@ -23,6 +23,7 @@ export type Item =
   | { kind: 'model'; id: string; model: string; reason: string; auto: boolean; effort?: string }
   | { kind: 'fallback'; id: string; from: string; to: string; reason: string }
   | { kind: 'notice'; id: string; text: string }
+  | { kind: 'skills'; id: string; skills: { name: string; reason: string; matched?: string[] }[] }
   | { kind: 'error'; id: string; message: string };
 
 export interface RunView {
@@ -36,6 +37,7 @@ export interface RunView {
   thinking: boolean;
   plan: PlanStep[];
   model: string;
+  skills: string[];
   durationMs: number | null;
   lastSeq: number;
   pendingApprovals: string[];
@@ -57,6 +59,7 @@ export function emptyRunView(run: RunSummary): RunView {
     thinking: false,
     plan: [],
     model: run.model,
+    skills: [],
     durationMs: run.finishedAt ? run.finishedAt - run.startedAt : null,
     lastSeq: -1,
     pendingApprovals: [],
@@ -233,6 +236,10 @@ export function applyEvent(view: RunView, e: AgentEvent, seq: number): RunView {
         v.contextTokens = e.contextTokens;
         v.contextLimit = e.contextLimit;
       }
+      break;
+    case 'skills_activated':
+      v.skills = [...new Set([...v.skills, ...e.skills.map((x) => x.name)])];
+      pushItem({ kind: 'skills', id: nid(), skills: e.skills });
       break;
     case 'compacted':
       pushItem({ kind: 'notice', id: nid(), text: `Contexte compacté (${e.removedMessages} messages résumés)` });

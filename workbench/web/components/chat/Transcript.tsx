@@ -1,5 +1,5 @@
 import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AlertTriangle, Bot, Check, ChevronRight, Circle, CircleDot, CornerDownRight, FileDiff, ListChecks, Paperclip, RotateCcw, ShieldAlert, Sparkles, Undo2, X } from 'lucide-react';
+import { AlertTriangle, Bot, Check, ChevronRight, Circle, CircleDot, CornerDownRight, FileDiff, ListChecks, Paperclip, Puzzle, RotateCcw, ShieldAlert, Sparkles, Undo2, X } from 'lucide-react';
 import type { ChangeRecord, ChartData, PlanStep } from '@shared/types';
 import { api } from '../../lib/api';
 import { cx, fmtCost, fmtDuration, fmtTokens, shortModel, basename } from '../../lib/format';
@@ -422,6 +422,22 @@ function Items({ items, runId }: { items: Item[]; runId: string }) {
             return <SubagentBlock key={it.id} item={it} />;
           case 'model':
             return null;
+          case 'skills':
+            return (
+              <div key={it.id} className="my-1 flex flex-wrap items-center gap-1.5 text-[12px] text-muted">
+                <Puzzle size={12} className="text-accent" /> Skills actifs :
+                {it.skills.map((s) => (
+                  <Badge key={s.name} tone="accent">
+                    {s.name}
+                    <span className="opacity-70">
+                      {' '}
+                      · {({ auto: 'auto', manual: 'choisi', pinned: 'épinglé', agent: 'agent', model: 'chargé par le modèle' } as Record<string, string>)[s.reason] ?? s.reason}
+                      {s.matched?.length ? ` (${s.matched.join(', ')})` : ''}
+                    </span>
+                  </Badge>
+                ))}
+              </div>
+            );
           case 'fallback':
             return (
               <div key={it.id} className="my-1 flex items-center gap-1.5 text-[12px] text-warn">

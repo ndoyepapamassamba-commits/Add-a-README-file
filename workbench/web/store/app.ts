@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { ProjectInfo, RoleId } from '@shared/types';
 import { api, setConnection, storage, type Connection } from '../lib/api';
 import { ws, type WsStatus } from '../lib/ws';
-import type { AgentInfo, AppSettings, ComposerPrefs, CreditsResponse, ModelInfo, SessionListItem, StatusResponse, View } from '../lib/types';
+import type { AgentInfo, AppSettings, ComposerPrefs, CreditsResponse, ModelInfo, SessionListItem, SkillInfo, StatusResponse, View } from '../lib/types';
 
 export interface Toast {
   id: number;
@@ -41,6 +41,7 @@ interface AppState {
   modelsError: string | null;
   settings: AppSettings | null;
   agents: AgentInfo[];
+  skills: SkillInfo[];
   credits: CreditsResponse | null;
   layout: Layout;
   prefs: ComposerPrefs;
@@ -68,6 +69,8 @@ interface AppState {
   saveSettings: (patch: Partial<AppSettings> | Record<string, unknown>) => Promise<void>;
   refreshCredits: () => Promise<void>;
   refreshStatus: () => Promise<void>;
+  loadAgents: () => Promise<void>;
+  loadSkills: () => Promise<void>;
   openPalette: (mode?: 'commands' | 'files') => void;
   closePalette: () => void;
   setDraft: (d: ComposerDraft | null) => void;
@@ -99,6 +102,7 @@ export const useApp = create<AppState>((set, get) => ({
   modelsError: null,
   settings: null,
   agents: [],
+  skills: [],
   credits: null,
   layout: { sidebar: true, right: true, bottom: false, rightTab: 'plan', bottomTab: 'terminal', ...persisted.layout },
   prefs: { effort: 'auto', agentMode: 'chat', ...persisted.prefs },
@@ -117,7 +121,7 @@ export const useApp = create<AppState>((set, get) => ({
       ws.connect();
       ws.subscribeActivity();
       ws.subscribeTerminal();
-      await Promise.all([get().loadProjects(), get().loadSettings(), api<AgentInfo[]>('/api/agents').then((agents) => set({ agents }))]);
+      await Promise.all([get().loadProjects(), get().loadSettings(), get().loadAgents(), get().loadSkills()]);
       void get().loadModels();
       void get().refreshCredits();
       return true;
@@ -232,6 +236,21 @@ export const useApp = create<AppState>((set, get) => ({
   async refreshStatus() {
     try {
       set({ status: await api<StatusResponse>('/api/status') });
+    } catch {
+      /* offline */
+    }
+  },
+
+  async loadAgents() {
+    try {
+      set({ agents: await api<AgentInfo[]>('/api/agents') });
+    } catch {
+      /* offline */
+    }
+  },
+  async loadSkills() {
+    try {
+      set({ skills: await api<SkillInfo[]>('/api/skills') });
     } catch {
       /* offline */
     }

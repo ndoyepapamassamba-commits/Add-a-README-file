@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Bot, Brain, Cpu, Eye, Gauge as GaugeIcon, Puzzle, Shield, ShieldAlert, ShieldCheck, Sparkles, Wrench } from 'lucide-react';
 import type { EffortSetting, PermissionMode } from '@shared/types';
 import { fmtPrice, fmtTokens, shortModel } from '../../lib/format';
@@ -15,7 +16,7 @@ export const EFFORT_LABEL: Record<EffortSetting, string> = {
   max: 'Max',
 };
 
-export const MODE_META: Record<PermissionMode, { label: string; hint: string; icon: JSX.Element; tone: string }> = {
+export const MODE_META: Record<PermissionMode, { label: string; hint: string; icon: ReactNode; tone: string }> = {
   safe: { label: 'Lecture seule', hint: 'SAFE — aucune modification, aucune commande modifiante', icon: <ShieldCheck size={14} />, tone: 'text-info' },
   normal: { label: 'Demander', hint: 'NORMAL — demande avant de modifier les fichiers ou lancer des commandes sensibles', icon: <Shield size={14} />, tone: 'text-muted' },
   autonomous: { label: 'Autonome', hint: 'AUTONOMOUS — modifie et exécute librement, confirme seulement le dangereux', icon: <ShieldAlert size={14} />, tone: 'text-warn' },
