@@ -288,6 +288,8 @@ export function pairUp(log: JevLogEntry[]): Paired {
   const groups = new Map<string, JevLogEntry[]>();
   const observational: JevLogEntry[] = [];
   for (const e of log) {
+    // Fabric experiments (tournament, council, skill test, cognitive benchmark) have their own analysis.
+    if (e.fabric) continue;
     if (e.experiment && e.acct)
       groups.set(e.experiment.groupId, [...(groups.get(e.experiment.groupId) ?? []), e]);
     else observational.push(e);

@@ -1,4 +1,5 @@
 import type { Accounting, ExperimentMeta } from './science';
+import type { CognitiveConfig, DataClass, FabricTag } from './fabric/types';
 
 // JEV telemetry: JEV_LOG entries (one per mission), measured KPIs and the
 // WITHOUT JEV vs WITH JEV comparison. Only measured values are reported; an
@@ -89,6 +90,24 @@ export interface JevLogEntry {
   stopReason?: string;
   /** Adaptive policy applied to this run (empty = none). */
   policy?: string;
+  // ── Cognitive Fabric (additive; absent on older entries) ──
+  /** Tools actually used, in order of first use; and the tool-call / tool-error counts. */
+  toolsUsed?: string[];
+  toolCallCount?: number;
+  toolErrorCount?: number;
+  /** Last tool errors (redacted, truncated). */
+  toolErrors?: string[];
+  skillsUsed?: string[];
+  /** The cognitive configuration of the run (model + skills + capabilities + strategy…). */
+  config?: CognitiveConfig;
+  classification?: DataClass;
+  /** Redacted instruction and answer, kept only when example capture is on (or for benchmarks). */
+  instruction?: string;
+  answer?: string;
+  /** Why the run failed (redacted error message), when known. */
+  failureNote?: string;
+  /** Fabric experiment tag (tournament / council / skill test / cognitive benchmark…). */
+  fabric?: FabricTag;
 }
 
 export interface Kpi {
