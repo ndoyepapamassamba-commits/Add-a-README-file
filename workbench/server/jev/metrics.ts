@@ -1,5 +1,6 @@
 import type { Accounting, ExperimentMeta } from './science';
 import type { CognitiveConfig, DataClass, FabricTag } from './fabric/types';
+import type { ApprenticeTag } from './apprentice/types';
 
 // JEV telemetry: JEV_LOG entries (one per mission), measured KPIs and the
 // WITHOUT JEV vs WITH JEV comparison. Only measured values are reported; an
@@ -108,6 +109,8 @@ export interface JevLogEntry {
   failureNote?: string;
   /** Fabric experiment tag (tournament / council / skill test / cognitive benchmark…). */
   fabric?: FabricTag;
+  /** JEV Apprentice (free-first) record of the mission; absent when the Apprentice did not take part. */
+  apprentice?: ApprenticeTag;
 }
 
 export interface Kpi {

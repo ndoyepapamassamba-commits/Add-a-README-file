@@ -696,7 +696,7 @@ export interface ArmsReport {
 const total = (e: JevLogEntry) => e.acct?.totalCost ?? e.cost + e.jevCost;
 const toks = (e: JevLogEntry) => e.acct?.totalTokens ?? e.tokensIn + e.tokensOut;
 
-function summarize(arm: Arm, es: JevLogEntry[]): ArmSummary {
+export function summarize(arm: Arm, es: JevLogEntry[]): ArmSummary {
   const j = es.filter((e) => e.success !== null);
   const ok = j.filter((e) => e.success).length;
   const q = es.map(qualityOfEntry).filter((x): x is number => x !== null);
@@ -714,7 +714,7 @@ function summarize(arm: Arm, es: JevLogEntry[]): ArmSummary {
   };
 }
 
-function compare(from: Arm, to: Arm, pairs: { a: JevLogEntry; b: JevLogEntry }[]): ArmComparison {
+export function compare(from: Arm, to: Arm, pairs: { a: JevLogEntry; b: JevLogEntry }[]): ArmComparison {
   const succ = (e: JevLogEntry) => (e.success === null ? null : e.success ? 1 : 0);
   const both = (f: (e: JevLogEntry) => number | null) =>
     pairs.flatMap((p) => {

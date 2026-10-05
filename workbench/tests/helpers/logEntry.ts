@@ -28,6 +28,10 @@ export interface E {
   at?: number;
   contextBefore?: number;
   jev?: boolean;
+  apprentice?: JevLogEntry['apprentice'];
+  failureNote?: string;
+  experiment?: JevLogEntry['experiment'];
+  instruction?: string;
 }
 export function entry(o: E = {}): JevLogEntry {
   const calls: CallRec[] = [
@@ -97,6 +101,10 @@ export function entry(o: E = {}): JevLogEntry {
     stopReason: o.stopReason,
     bench: o.bench,
     fabric: o.fabric,
+    apprentice: o.apprentice,
+    failureNote: o.failureNote,
+    experiment: o.experiment,
+    instruction: o.instruction,
     config: {
       model: o.model ?? 'm/a',
       skills: o.skills ?? [],

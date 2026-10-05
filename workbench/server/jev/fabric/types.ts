@@ -74,7 +74,7 @@ export interface Capability extends CapabilityGovernance {
 }
 
 export interface FabricTag {
-  kind: 'tournament' | 'council' | 'skilltest' | 'cfbench' | 'freebench' | 'distill';
+  kind: 'tournament' | 'council' | 'skilltest' | 'cfbench' | 'freebench' | 'distill' | 'apprentice';
   /** cfbench: baseline / v5 / fabric. skilltest: with_skill / without_skill. */
   arm?: string;
   groupId: string;
