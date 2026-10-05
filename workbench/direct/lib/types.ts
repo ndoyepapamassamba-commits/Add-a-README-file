@@ -241,6 +241,8 @@ export interface Settings {
   engine?: Partial<EngineSettings>;
   /** JEV Cognitive Companion (mode, provider, endpoint…). The API key is stored apart. */
   jev?: Partial<JevSettings>;
+  /** JEV Cognitive Fabric (additive layer): see server/jev/fabric. */
+  fabric?: Partial<import('../../server/jev/fabric/types').FabricSettings>;
 }
 
 export interface ArtifactDef {

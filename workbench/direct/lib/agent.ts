@@ -47,6 +47,10 @@ import {
 } from '../../server/jev/live';
 import { compilePrompt, compileSkill } from '../../server/jev/prompt';
 import { acct } from './acct';
+import { redact } from '../../server/jev/provider';
+import * as fabricRt from './fabric';
+import type { DataClass, FabricTag } from '../../server/jev/fabric/types';
+import type { SkillVersion } from '../../server/jev/fabric/skills';
 import { accountingOf, hashText, type CallKind, type CallRec } from '../../server/jev/science';
 import { qualityCheck } from '../../server/jev/qa';
 import { outputSpec } from '../../server/jev/style';
@@ -329,6 +333,20 @@ interface LoopResult {
     temperature: number | null;
     maxTokens: number;
   };
+  /** Tool-call counters and last tool errors (redacted) of the run. */
+  toolCalls?: number;
+  toolErrors?: string[];
+  /** Capability ids actually offered to the model at the end of the run. */
+  offered?: string[];
+  /** Cognitive Fabric: what it decided for this run (null when it did not take part). */
+  fabricInfo?: {
+    active: boolean;
+    why: string[];
+    skills: string[];
+    explored: boolean;
+    classification: DataClass;
+    hints: number;
+  } | null;
   /** Why a live decision stopped the run, and the ECONOMIC_DRIFT events seen. */
   stopReason?: string;
   driftEvents?: string[];
@@ -360,6 +378,22 @@ let currentPacket: PreResult | null = null;
 export type JevVariant = 'off' | 'pre' | 'live' | 'full';
 let jevOverride: JevVariant | null = null;
 let lastPolicy = '';
+/** Cognitive Fabric options of the current run (set by runAgent; benchmarks and skill tests use them). */
+export interface FabricRunOpts {
+  /** cfbench arm: baseline / v5 (Fabric off) / fabric (Fabric on). */
+  arm?: 'baseline' | 'v5' | 'fabric';
+  /** Force the Fabric on / off for this run (default: the setting, or the arm). */
+  on?: boolean;
+  /** Skill versions injected for a Skill Lab run (WITH skill). */
+  skills?: SkillVersion[];
+  /** Experiment tag written to the JEV_LOG. */
+  tag?: FabricTag;
+  /** Keep the redacted instruction and answer in the log (benchmarks do). */
+  capture?: boolean;
+}
+let fabricRun: FabricRunOpts | null = null;
+const fabricActive = () =>
+  fabricRun?.on ?? (fabricRun?.arm ? fabricRun.arm === 'fabric' : fabricRt.fabricSettings().enabled);
 /** Metadata of a paired experiment run (set by the benchmark). */
 export interface ExperimentInput {
   experimentId: string;
@@ -705,6 +739,69 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       why: jevRt.explain(jp.pre),
       trace: [...jevTrace],
     });
+  // ── JEV COGNITIVE FABRIC (additive): security gate, then — only when active — skills, lessons from past
+  // failures, learned model preference with controlled exploration, and the minimal capability set. ──
+  let fabricPrep: fabricRt.FabricPrep | null = null;
+  const fabricOn = top && fabricActive();
+  if (top) {
+    const fs = fabricRt.fabricSettings();
+    try {
+      await fabricRt.ensureRegistry();
+      fabricPrep = fabricRt.prepare({
+        text: inp.text,
+        attachments: inp.attachments.map((a) => a.name),
+        taskType: profile.type,
+        difficulty: profile.difficulty,
+        critical: dna.criticality === 'critical',
+        risk: dna.criticality === 'critical' ? 0.9 : dna.criticality === 'high' ? 0.6 : 0.2,
+        availableTools: [...tools.map((t) => t.name), 'tools.request'],
+        modelCandidates:
+          fabricOn && sel.auto && decision
+            ? [decision.chosen, ...decision.fallbacks]
+                .filter((c): c is NonNullable<typeof c> => Boolean(c))
+                .map((c) => ({ model: c.id, cost: models.find((m) => m.id === c.id)?.inputPrice ?? null }))
+            : null,
+        budgetLeft: budgetLeft(),
+        estCost: decision?.chosen?.estimate
+          ? (decision.chosen.estimate.low + decision.chosen.estimate.high) / 2
+          : 0.01,
+        injectSkills: fabricRun?.skills,
+      });
+      if (fabricOn && fabricPrep.model && fabricPrep.model.model !== sel.model) {
+        sel.model = fabricPrep.model.model;
+        sel.reason = `Cognitive Fabric : ${fabricPrep.model.reason}`;
+      }
+      // SECURITY: never send data to a provider whose policy is incompatible (unknown policy is not "safe").
+      if (fs.securityEnforce) {
+        const chk = fabricRt.providerCheck(
+          models.find((m) => m.id === sel.model),
+          sel.model,
+          fabricPrep.classification,
+        );
+        if (chk.action !== 'allow' && fabricPrep.classification.level !== 'PUBLIC') {
+          push(sid, {
+            kind: 'intel',
+            id: uid(),
+            title:
+              chk.action === 'block'
+                ? 'Sécurité : envoi bloqué'
+                : 'Sécurité : politique du fournisseur non confirmée',
+            tone: chk.action === 'block' ? 'err' : 'warn',
+            lines: [
+              `Classification ${fabricPrep.classification.level} (${fabricPrep.classification.reasons.join(' ; ')})`,
+              chk.reason,
+              'Renseignez la politique du fournisseur dans JEV → Security, ou désactivez la protection dans JEV → Security.',
+            ],
+          });
+          if (chk.action === 'block') throw new Error(`Envoi bloqué : ${chk.reason}`);
+        }
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith('Envoi bloqué')) throw e;
+      // The Fabric must never block the Workbench: any other failure falls back to the V5 behaviour.
+      fabricPrep = null;
+    }
+  }
   const fallbackChain = [
     ...new Set([st.settings.fallbackModel, ...routedFallbacks].filter((m) => m && m !== sel.model)),
   ];
@@ -767,6 +864,24 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
 
   // JEV TOOL PACK: only the selected tools are exposed; tools.request / ADD TOOL extend it.
   const packTools: DirectTool[] = jp ? tools.filter((t) => jp!.pre.toolPack.names.includes(t.name)) : tools;
+  // Cognitive Fabric: the capability registry narrows the exposure to the minimum the mission needs.
+  if (jp && fabricOn && fabricPrep?.selection && fabricPrep.selection.exposed > 0) {
+    const names = new Set(fabricPrep.selection.selected.map((x) => x.cap.name));
+    const narrowed = tools.filter((t) => names.has(t.name));
+    if (narrowed.length) {
+      packTools.splice(0, packTools.length, ...narrowed);
+      traceAdd({
+        name: 'JEV_TOOLS',
+        ms: 0,
+        tokens: 0,
+        cost: 0,
+        decision: `Fabric : ${narrowed.length}/${fabricPrep.selection.examined} capacités exposées (${narrowed
+          .map((t) => t.name)
+          .slice(0, 8)
+          .join(', ')})`,
+      });
+    }
+  }
   if (jp) {
     const requestTool: DirectTool = {
       name: 'tools.request',
@@ -820,6 +935,16 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     { name: 'doctrine', text: ENGINE_DOCTRINE },
     { name: 'manual', text: manualPrompt(useStore.getState().manual), pinned: true },
     { name: 'strategy', text: strategy ? strategyPrompt(dna, strategy) : '' },
+    {
+      name: 'fabric',
+      text: fabricPrep
+        ? fabricOn
+          ? fabricRt.promptAddition(fabricPrep)
+          : fabricRun?.skills?.length
+            ? fabricRt.skillsAddition(fabricPrep)
+            : ''
+        : '',
+    },
     { name: 'skills', text: skillsPrompt(engineSkills) },
     { name: 'packet', text: jp ? packetPrompt(jp.pre) : '' },
     { name: 'memory', text: MEMORY_INSTRUCTIONS },
@@ -923,6 +1048,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   let model = sel.model;
   const initialModel = sel.model;
   let stopReason = '';
+  let toolCallTotal = 0;
+  const toolErrorNotes: string[] = [];
   let cost = 0;
   let tokensIn = 0;
   let tokensOut = 0;
@@ -1544,6 +1671,11 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     for (const [ci, call] of calls.entries()) {
       const pool = poolOf();
       const res = preRun ? preRun[ci]! : await runTool(call, pool, ctx, inp);
+      if (top) {
+        toolCallTotal++;
+        if (/^(Error|Denied)/.test(res))
+          toolErrorNotes.push(`${call.function.name.replace(/__/g, '.')}: ${redact(res).slice(0, 140)}`);
+      }
       if (jp && phase !== 'planning') {
         const used = tools.find(
           (t) => llmName(t.name) === call.function.name || t.name === call.function.name,
@@ -1760,6 +1892,23 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         }
       : undefined,
     stopReason,
+    toolCalls: toolCallTotal,
+    toolErrors: toolErrorNotes.slice(-5),
+    offered: packTools.map((t) => t.name),
+    fabricInfo: top
+      ? {
+          active: fabricOn,
+          // What the Fabric did — nothing is claimed when it was not active (it only classified the data).
+          why: fabricOn ? (fabricPrep?.why ?? []) : [],
+          skills:
+            fabricOn || fabricRun?.skills?.length
+              ? (fabricPrep?.skills.map((x) => `${x.version.name}@${x.version.version}`) ?? [])
+              : [],
+          explored: fabricOn && Boolean(fabricPrep?.model?.explored),
+          classification: fabricPrep?.classification.level ?? 'PUBLIC',
+          hints: fabricOn ? (fabricPrep?.hints.matched.length ?? 0) : 0,
+        }
+      : null,
     driftEvents: live?.driftEvents,
     report: lastReport,
     models: [...usedModels],
@@ -1978,11 +2127,13 @@ export async function runAgent(
     bench?: string;
     rep?: number;
     experiment?: ExperimentInput;
+    fabric?: FabricRunOpts;
   } = {},
 ): Promise<void> {
   const st = useStore.getState();
   const benchTag = opts.bench ?? null;
   lastPolicy = '';
+  fabricRun = opts.fabric ?? null;
   jevOverride =
     opts.jev === undefined ? null : opts.jev === true ? 'full' : opts.jev === false ? 'off' : opts.jev;
   const session = st.sessions.find((s) => s.id === sessionId);
@@ -2071,6 +2222,61 @@ export async function runAgent(
     useStore.setState({ running });
     return;
   }
+  // Cognitive Fabric — MODEL COUNCIL (opt-in): single-turn tasks only; JEV decides how many models are worth it.
+  if (
+    fabricActive() &&
+    fabricRt.fabricSettings().council &&
+    !opts.fabric?.tag &&
+    (opts.mode ?? st.agentMode) !== 'plan' &&
+    (opts.mode ?? st.agentMode) !== 'mission' &&
+    fabricRt.councilEligible(
+      text,
+      attachments.map((a) => a.name),
+    )
+  ) {
+    try {
+      const pv = fabricRt.previewCouncil(text);
+      if (pv.plan.size >= 2) {
+        const run = await fabricRt.runCouncil(text, { preview: pv, signal: ac.signal });
+        st.pushItem(sessionId, {
+          kind: 'intel',
+          id: uid(),
+          title: `Conseil de modèles : ${run.plan.size} modèle(s)`,
+          tone: 'info',
+          lines: [
+            run.plan.reason,
+            ...run.plan.decisions.map((d) => d.reason),
+            `Gagnant : ${run.winner?.model ?? 'aucun'} — ${run.why}`,
+            `Coût total du conseil : ${run.totalCost.toFixed(5)} $`,
+          ],
+        });
+        if (run.winner) {
+          st.pushItem(sessionId, { kind: 'assistant', id: uid(), text: run.winner.answer });
+          st.patchSession(sessionId, (cur) => ({
+            history: [
+              ...cur.history,
+              { role: 'user', content: text },
+              { role: 'assistant', content: run.winner!.answer },
+            ],
+          }));
+        }
+        st.pushItem(sessionId, {
+          kind: 'usage',
+          id: uid(),
+          cost: run.totalCost,
+          promptTokens: 0,
+          completionTokens: 0,
+          model: run.winner?.model ?? 'conseil',
+          durationMs: Date.now() - started,
+        });
+        const { [sessionId]: _c, ...runningAfter } = useStore.getState().running;
+        useStore.setState({ running: runningAfter });
+        return;
+      }
+    } catch {
+      // The council must never block a mission: continue with the normal single-agent path.
+    }
+  }
   sub.cost = sub.tokensIn = sub.tokensOut = 0;
   acct.reset(sessionId);
   // Starting state of the workspace (paired runs must start from the same context; `.ai/` memory excluded).
@@ -2087,6 +2293,7 @@ export async function runAgent(
   beginCheckpoint(sessionId, text);
   let result: LoopResult | null = null;
   let errored = false;
+  let failureNote = '';
   const mode = opts.mode ?? st.agentMode;
   try {
     if (!st.models.length) {
@@ -2109,6 +2316,7 @@ export async function runAgent(
   } catch (e) {
     const cancelled = ac.signal.aborted || (e instanceof LLMError && e.code === 'cancelled');
     errored = !cancelled;
+    if (errored) failureNote = redact(friendlyError(e)).slice(0, 200);
     st.pushItem(sessionId, { kind: 'error', id: uid(), text: cancelled ? 'Interrompu.' : friendlyError(e) });
     // Resume summary: an interrupted run can be continued with « continue ».
     const trace = currentTrace();
@@ -2361,7 +2569,41 @@ export async function runAgent(
         driftEvents: result?.driftEvents,
         stopReason: result?.stopReason || undefined,
         policy: lastPolicy || undefined,
+        // ── Cognitive Fabric fields (additive) ──
+        toolsUsed: result?.toolsUsed,
+        toolCallCount: result?.toolCalls,
+        toolErrorCount: result?.toolErrors?.length,
+        toolErrors: result?.toolErrors?.length ? result.toolErrors : undefined,
+        skillsUsed: result?.fabricInfo?.skills.length
+          ? result.fabricInfo.skills.map((x) => x.split('@')[0]!)
+          : undefined,
+        classification: result?.fabricInfo?.classification,
+        failureNote: failureNote || undefined,
+        instruction:
+          fabricRt.fabricSettings().captureExamples || opts.fabric?.capture
+            ? redact(text).slice(0, 4000)
+            : undefined,
+        answer:
+          (fabricRt.fabricSettings().captureExamples || opts.fabric?.capture) && result?.text
+            ? redact(result.text).slice(0, 4000)
+            : undefined,
+        fabric: opts.fabric?.tag,
+        config: {
+          model: result?.models[0] ?? session.model,
+          skills: result?.fabricInfo?.skills.map((x) => x.split('@')[0]!) ?? [],
+          capabilities: result?.offered ?? [],
+          tools: result?.toolsUsed ?? [],
+          memory: [],
+          evaluator: 'local-qa',
+          councilSize: 1,
+          strategy: pk?.agent_strategy ?? 'single-agent',
+          jev: jevVariant(),
+          fabric: Boolean(result?.fabricInfo?.active),
+          explored: Boolean(result?.fabricInfo?.explored),
+          why: result?.fabricInfo?.why.slice(0, 8) ?? [],
+        },
       });
+      fabricRt.afterRun();
     }
   }
 }

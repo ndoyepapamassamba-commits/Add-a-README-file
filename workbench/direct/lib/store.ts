@@ -9,6 +9,17 @@ import type { RegistryResource } from '../../server/engine/registry';
 import type { ExternalBenchmark } from '../../server/engine/evidence';
 import type { JevLogEntry } from '../../server/jev/metrics';
 import type { LiveCheckpoint, MissionState } from '../../server/jev/live';
+import type { FabricSkill } from '../../server/jev/fabric/skills';
+import type { Policy } from '../../server/jev/fabric/learning';
+import type { ProviderPolicy } from '../../server/jev/fabric/security';
+
+/** Persistent state of the Cognitive Fabric (skills with their versions, learned policies, provider policies). */
+export interface FabricState {
+  skills: FabricSkill[];
+  policies: Policy[];
+  providerPolicies: ProviderPolicy[];
+}
+export const EMPTY_FABRIC: FabricState = { skills: [], policies: [], providerPolicies: [] };
 
 /** Live JEV state of a session (Control Center + resume after an interruption). */
 export interface JevLiveSnapshot {
@@ -112,6 +123,8 @@ export interface State {
   jevSpend: Record<string, number>;
   /** JEV live mission state per session (persisted: PAUSE / RESUME without losing state). */
   jevLive: Record<string, JevLiveSnapshot>;
+  /** Cognitive Fabric state (persisted). */
+  fabric: FabricState;
   draft: string;
   toasts: Toast[];
   openFile: string | null;
@@ -150,6 +163,7 @@ export interface State {
   setJevLog: (l: JevLogEntry[]) => void;
   setJevSpend: (s: Record<string, number>) => void;
   setJevLive: (sessionId: string, snap: JevLiveSnapshot | null) => void;
+  setFabric: (p: Partial<FabricState>) => void;
 }
 
 const persistSession = (s: Session) => saveLater(`session:${s.id}`, () => s);
@@ -187,6 +201,7 @@ export const useStore = create<State>((set, get) => ({
   jevLog: [],
   jevSpend: {},
   jevLive: {},
+  fabric: EMPTY_FABRIC,
   draft: '',
   toasts: [],
   openFile: null,
@@ -370,6 +385,10 @@ export const useStore = create<State>((set, get) => ({
     set({ jevSpend });
     saveLater('jevSpend', () => get().jevSpend, 800);
   },
+  setFabric: (p) => {
+    set({ fabric: { ...get().fabric, ...p } });
+    saveLater('fabric', () => get().fabric, 600);
+  },
   setJevLive: (sessionId, snap) => {
     const { [sessionId]: _old, ...rest } = get().jevLive;
     const jevLive = snap ? { ...rest, [sessionId]: snap } : rest;
@@ -391,6 +410,7 @@ export async function hydrate(): Promise<void> {
     kv.get<RegistryResource[]>('registry').catch(() => undefined),
     kv.get<ExternalBenchmark[]>('externalBench').catch(() => undefined),
   ]);
+  const fabricSaved = await kv.get<FabricState>('fabric').catch(() => undefined);
   const [jevLog, jevSpend, jevLive] = await Promise.all([
     kv.get<JevLogEntry[]>('jevLog').catch(() => undefined),
     kv.get<Record<string, number>>('jevSpend').catch(() => undefined),
@@ -476,5 +496,6 @@ export async function hydrate(): Promise<void> {
     jevLog: jevLog ?? [],
     jevSpend: jevSpend ?? {},
     jevLive: jevLive ?? {},
+    fabric: { ...EMPTY_FABRIC, ...(fabricSaved ?? {}) },
   });
 }

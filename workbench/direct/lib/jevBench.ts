@@ -253,6 +253,8 @@ export async function runBench(
         onProgress(`${t.label} — ${vl}${reps > 1 ? ` (répétition ${rep}/${reps})` : ''}…`);
         await runAgent(s.id, t.text, [], {
           mode: 'chat',
+          // The V5 scientific benchmark never runs with the Cognitive Fabric (it would contaminate OFF / PRE / LIVE / FULL).
+          fabric: { on: false },
           jev: variant,
           bench: t.key,
           rep,

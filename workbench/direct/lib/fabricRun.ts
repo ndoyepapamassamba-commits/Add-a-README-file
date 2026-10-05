@@ -1,0 +1,261 @@
+// JEV COGNITIVE FABRIC — experiment runners. Every function here makes REAL calls through the real
+// agent runtime and runs ONLY when the user starts it from the UI. Results are read back from the
+// JEV_LOG (provider usage); success and the correctness dimension come from the task's ground truth.
+import { runAgent, type FabricRunOpts, type JevVariant } from './agent';
+import { useStore } from './store';
+import { writeText } from './vfs';
+import { qualityScore } from '../../server/jev/qa';
+import type { QualityVector } from '../../server/jev/qa';
+import type { CfTask } from '../../server/jev/fabric/cfbench';
+import type { FabricSkill, SkillVersion } from '../../server/jev/fabric/skills';
+import type { FabricTag } from '../../server/jev/fabric/types';
+
+export interface RunControl {
+  stop: boolean;
+}
+type Progress = (msg: string) => void;
+
+const shuffle = <T>(xs: T[]): T[] => {
+  const a = [...xs];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j]!, a[i]!];
+  }
+  return a;
+};
+
+export interface TaskRun {
+  key: string;
+  ok: boolean;
+  session: string;
+  groupId: string;
+  arm: string;
+}
+
+/** Same starting workspace for every run: remove what earlier runs created, rewrite the task's files. */
+function resetWorkspace(t: CfTask, baseline: Set<string>): void {
+  const st = useStore.getState();
+  for (const p of Object.keys(st.files)) if (!baseline.has(p) && !p.startsWith('.ai/')) st.deleteFile(p);
+  for (const p of t.outputs ?? []) if (useStore.getState().files[p]) useStore.getState().deleteFile(p);
+  for (const [p, c] of Object.entries(t.files ?? {})) writeText(p, c);
+}
+
+interface OneRun {
+  task: CfTask;
+  model: string;
+  variant: JevVariant;
+  fabric: FabricRunOpts;
+  tag: FabricTag;
+  experimentId: string;
+  groupId: string;
+  rep: number;
+  order: number;
+  taskIndex: number;
+  baseline: Set<string>;
+  label: string;
+}
+
+/** One pinned-model run of a task; patches the log with the ground truth. */
+async function runOne(o: OneRun): Promise<TaskRun> {
+  resetWorkspace(o.task, o.baseline);
+  const st = useStore.getState();
+  const s = st.newSession(false);
+  st.patchSession(s.id, { title: `[fabric ${o.label}] ${o.task.key}`, mode: 'auto', model: o.model });
+  await runAgent(s.id, o.task.text, [], {
+    mode: 'chat',
+    jev: o.variant,
+    bench: o.task.key,
+    rep: o.rep,
+    fabric: { ...o.fabric, tag: o.tag, capture: true },
+    experiment: {
+      experimentId: o.experimentId,
+      groupId: o.groupId,
+      taskId: `TASK_${String(o.taskIndex + 1).padStart(3, '0')}:${o.task.key}`,
+      category: o.task.category,
+      protocol: 'fixed-model',
+      rep: o.rep,
+      order: o.order,
+    },
+  });
+  const sess = useStore.getState().sessions.find((x) => x.id === s.id);
+  const answer = [...(sess?.items ?? [])].reverse().find((i) => i.kind === 'assistant' && i.text.trim());
+  const ok = Boolean(answer && answer.kind === 'assistant' && o.task.expect.test(answer.text));
+  const log = useStore.getState().jevLog;
+  const idx = log.map((e) => e.session).lastIndexOf(s.id);
+  if (idx >= 0) {
+    const e = log[idx]!;
+    const vec = e.qualityVector as unknown as QualityVector | undefined;
+    const withTruth = vec ? { ...vec, correctness: ok ? 1 : 0 } : null;
+    const next = [...log];
+    next[idx] = {
+      ...e,
+      success: ok,
+      bench: o.task.key,
+      qualityVector: withTruth ?? e.qualityVector,
+      qualityMeasured: withTruth ? qualityScore(withTruth) : ok ? (e.qualityMeasured ?? null) : 0,
+      qualitySource: 'local-qa+ground-truth',
+    };
+    useStore.getState().setJevLog(next);
+  }
+  return { key: o.task.key, ok, session: s.id, groupId: o.groupId, arm: o.tag.arm ?? '' };
+}
+
+const snapshot = () => new Set(Object.keys(useStore.getState().files));
+const expId = (p: string) => `${p}-${Date.now().toString(36)}`;
+
+// ───────────────────────── cognitive fabric benchmark: baseline / v5 / fabric ─────────────────────────
+
+export interface CfOptions {
+  tasks: CfTask[];
+  reps: number;
+  /** The same model for the three arms (isolates the effect of the Fabric). */
+  model: string;
+}
+const ARM_RUN: Record<'baseline' | 'v5' | 'fabric', { variant: JevVariant; fabric: FabricRunOpts }> = {
+  baseline: { variant: 'off', fabric: { arm: 'baseline', on: false } },
+  v5: { variant: 'full', fabric: { arm: 'v5', on: false } },
+  fabric: { variant: 'full', fabric: { arm: 'fabric', on: true } },
+};
+export async function runCfBench(o: CfOptions, progress: Progress, ctl: RunControl): Promise<TaskRun[]> {
+  const experimentId = expId('CF');
+  const baseline = snapshot();
+  const out: TaskRun[] = [];
+  for (let rep = 1; rep <= o.reps; rep++)
+    for (const [ti, task] of o.tasks.entries()) {
+      const groupId = `${experimentId}:${task.key}:${rep}`;
+      for (const [order, arm] of shuffle(['baseline', 'v5', 'fabric'] as const).entries()) {
+        if (ctl.stop) return out;
+        progress(`${task.key} — ${arm} (répétition ${rep}/${o.reps})…`);
+        out.push(
+          await runOne({
+            task,
+            model: o.model,
+            variant: ARM_RUN[arm].variant,
+            fabric: ARM_RUN[arm].fabric,
+            tag: {
+              kind: 'cfbench',
+              arm,
+              groupId,
+              taskKey: task.key,
+              category: task.category,
+              models: [o.model],
+            },
+            experimentId,
+            groupId,
+            rep,
+            order,
+            taskIndex: ti,
+            baseline,
+            label: `cf ${arm}`,
+          }),
+        );
+      }
+    }
+  return out;
+}
+
+// ───────────────────────── tournament / free model benchmark ─────────────────────────
+
+export interface TournamentOptions {
+  tasks: CfTask[];
+  models: string[];
+  reps: number;
+  kind: 'tournament' | 'freebench';
+}
+/** Same task, same context, same criteria for every model; JEV and the Fabric are OFF so that only the model varies. */
+export async function runTournament(
+  o: TournamentOptions,
+  progress: Progress,
+  ctl: RunControl,
+): Promise<TaskRun[]> {
+  const experimentId = expId(o.kind === 'freebench' ? 'FREE' : 'TOUR');
+  const baseline = snapshot();
+  const out: TaskRun[] = [];
+  for (let rep = 1; rep <= o.reps; rep++)
+    for (const [ti, task] of o.tasks.entries()) {
+      const groupId = `${experimentId}:${task.key}:${rep}`;
+      for (const [order, model] of shuffle(o.models).entries()) {
+        if (ctl.stop) return out;
+        progress(`${task.key} — ${model} (répétition ${rep}/${o.reps})…`);
+        out.push(
+          await runOne({
+            task,
+            model,
+            variant: 'off',
+            fabric: { on: false },
+            tag: {
+              kind: o.kind,
+              arm: model,
+              groupId,
+              taskKey: task.key,
+              category: task.category,
+              models: o.models,
+            },
+            experimentId,
+            groupId,
+            rep,
+            order,
+            taskIndex: ti,
+            baseline,
+            label: o.kind === 'freebench' ? 'free' : 'tournoi',
+          }),
+        );
+      }
+    }
+  return out;
+}
+
+// ───────────────────────── skill test lab: WITH vs WITHOUT ─────────────────────────
+
+export interface SkillTestOptions {
+  skill: FabricSkill;
+  version: SkillVersion;
+  tasks: CfTask[];
+  reps: number;
+  model: string;
+}
+/** The tested skill is injected in the WITH arm only; JEV level and model are identical in both arms. */
+export async function runSkillTest(
+  o: SkillTestOptions,
+  progress: Progress,
+  ctl: RunControl,
+): Promise<TaskRun[]> {
+  const experimentId = expId('SKILL');
+  const baseline = snapshot();
+  const out: TaskRun[] = [];
+  for (let rep = 1; rep <= o.reps; rep++)
+    for (const [ti, task] of o.tasks.entries()) {
+      const groupId = `${experimentId}:${task.key}:${rep}`;
+      for (const [order, arm] of shuffle(['with_skill', 'without_skill'] as const).entries()) {
+        if (ctl.stop) return out;
+        progress(
+          `${task.key} — ${arm === 'with_skill' ? 'AVEC' : 'SANS'} skill (répétition ${rep}/${o.reps})…`,
+        );
+        out.push(
+          await runOne({
+            task,
+            model: o.model,
+            variant: 'pre',
+            fabric: { on: false, ...(arm === 'with_skill' ? { skills: [o.version] } : {}) },
+            tag: {
+              kind: 'skilltest',
+              arm,
+              groupId,
+              taskKey: task.key,
+              category: task.category,
+              skillId: o.skill.id,
+              skillVersion: o.version.version,
+            },
+            experimentId,
+            groupId,
+            rep,
+            order,
+            taskIndex: ti,
+            baseline,
+            label: `skill ${arm === 'with_skill' ? 'avec' : 'sans'}`,
+          }),
+        );
+      }
+    }
+  return out;
+}

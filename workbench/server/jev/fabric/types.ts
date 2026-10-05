@@ -106,3 +106,30 @@ export interface CognitiveConfig {
 }
 
 export type DataClass = 'PUBLIC' | 'INTERNAL' | 'CONFIDENTIAL' | 'HIGHLY_CONFIDENTIAL';
+
+/** Settings of the Cognitive Fabric (stored apart from the V5 JEV settings; every active behaviour is opt-in). */
+export interface FabricSettings {
+  /** Apply the Fabric to normal missions: capability selection, validated skills, learned policies, failure hints. Off by default until measured. */
+  enabled: boolean;
+  /** Model council for single-turn tasks (extra calls, gated by the economic governor). */
+  council: boolean;
+  /** Block / warn before sending sensitive data to a provider whose policy is incompatible or unknown. */
+  securityEnforce: boolean;
+  /** Keep a redacted copy of instruction and answer in the JEV_LOG (needed for datasets and skill examples). Benchmarks always keep it. */
+  captureExamples: boolean;
+  /** Exploration share (0.1 = 10 %), bounded by risk, budget and importance. */
+  epsilon: number;
+  /** USD value of one quality point: a policy parameter of the economic governor, NOT a measurement. */
+  valuePerPoint: number;
+  /** Maximum capabilities exposed to the model. */
+  maxCapabilities: number;
+}
+export const DEFAULT_FABRIC: FabricSettings = {
+  enabled: false,
+  council: false,
+  securityEnforce: true,
+  captureExamples: false,
+  epsilon: 0.1,
+  valuePerPoint: 0.002,
+  maxCapabilities: 8,
+};

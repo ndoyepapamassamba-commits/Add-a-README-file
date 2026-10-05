@@ -34,6 +34,26 @@ import { VARIANT_LABEL, analyze } from '../../server/jev/science';
 import { handoffOf } from '../../server/jev/live';
 import { runAgent, stopAgent, type JevVariant } from '../lib/agent';
 import { CostsTab } from './IntelligenceView';
+import {
+  CapabilityPanel,
+  CouncilPanel,
+  ExpertisePanel,
+  MemoryPanel,
+  MissionPanel,
+  ReplayPanel,
+  SkillFactoryPanel,
+  SkillLabPanel,
+} from './JevFabric';
+import {
+  CfBenchPanel,
+  DatasetPanel,
+  DistillPanel,
+  FreeLabPanel,
+  HealthPanel,
+  PolicyPanel,
+  SecurityPanel,
+} from './JevFabric2';
+import { fabricRegression } from '../lib/fabricRegression';
 
 type Tab = 'dash' | 'trace' | 'log' | 'kpi' | 'science' | 'bench' | 'models' | 'costs' | 'api' | 'regression';
 const TABS: { id: Tab; label: string }[] = [
@@ -47,6 +67,39 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'costs', label: 'Cost Intelligence' },
   { id: 'api', label: 'JEV API' },
   { id: 'regression', label: 'Régression' },
+];
+type FTab =
+  | 'mission'
+  | 'council'
+  | 'expertise'
+  | 'capabilities'
+  | 'skills'
+  | 'lab'
+  | 'memory'
+  | 'replay'
+  | 'distill'
+  | 'dataset'
+  | 'policy'
+  | 'freelab'
+  | 'security'
+  | 'health'
+  | 'cfbench';
+const FTABS: { id: FTab; label: string }[] = [
+  { id: 'mission', label: 'Mission cognitive' },
+  { id: 'council', label: 'Model Council' },
+  { id: 'expertise', label: 'Model Expertise' },
+  { id: 'capabilities', label: 'Capability Fabric' },
+  { id: 'skills', label: 'Skill Factory' },
+  { id: 'lab', label: 'Skill Lab' },
+  { id: 'memory', label: 'Experience Memory' },
+  { id: 'replay', label: 'Failure Replay' },
+  { id: 'distill', label: 'Distillation Lab' },
+  { id: 'dataset', label: 'Training Data' },
+  { id: 'policy', label: 'Policy Engine' },
+  { id: 'freelab', label: 'Free Model Lab' },
+  { id: 'security', label: 'Security' },
+  { id: 'health', label: 'Health & Score' },
+  { id: 'cfbench', label: 'Cognitive Benchmark' },
 ];
 const th = 'py-1 pr-2 text-left font-normal text-faint';
 const td = 'py-1 pr-2 align-top';
@@ -70,6 +123,7 @@ function toolSavingsUsd(log: JevLogEntry[], price: (m: string) => number | null)
 
 export function JevView() {
   const [tab, setTab] = useState<Tab>('dash');
+  const [ftab, setFtab] = useState<FTab | null>(null);
   return (
     <div className="flex h-full flex-col">
       <div className="px-6 pt-5">
@@ -81,18 +135,47 @@ export function JevView() {
           faire, avec quel contexte, quels outils, quel modèle et quel budget. Le LLM se consacre à résoudre.
         </div>
       </div>
-      <Tabs tabs={TABS} value={tab} onChange={setTab} className="overflow-x-auto px-5" />
+      <Tabs
+        tabs={TABS}
+        value={ftab ? ('' as Tab) : tab}
+        onChange={(t) => {
+          setFtab(null);
+          setTab(t);
+        }}
+        className="overflow-x-auto px-5"
+      />
+      <div className="px-5 pt-1 text-[10.5px] uppercase tracking-wide text-faint">Cognitive Super-Fabric</div>
+      <Tabs tabs={FTABS} value={ftab ?? ('' as FTab)} onChange={setFtab} className="overflow-x-auto px-5" />
       <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
-        {tab === 'dash' && <Dashboard />}
-        {tab === 'trace' && <TraceTab />}
-        {tab === 'log' && <LogTab />}
-        {tab === 'kpi' && <KpiTab />}
-        {tab === 'science' && <ScienceTab />}
-        {tab === 'bench' && <BenchTab />}
-        {tab === 'models' && <ModelsTab />}
-        {tab === 'costs' && <CostsTab />}
-        {tab === 'api' && <ApiTab />}
-        {tab === 'regression' && <RegressionTab />}
+        {ftab === 'mission' && <MissionPanel />}
+        {ftab === 'council' && <CouncilPanel />}
+        {ftab === 'expertise' && <ExpertisePanel />}
+        {ftab === 'capabilities' && <CapabilityPanel />}
+        {ftab === 'skills' && <SkillFactoryPanel />}
+        {ftab === 'lab' && <SkillLabPanel />}
+        {ftab === 'memory' && <MemoryPanel />}
+        {ftab === 'replay' && <ReplayPanel />}
+        {ftab === 'distill' && <DistillPanel />}
+        {ftab === 'dataset' && <DatasetPanel />}
+        {ftab === 'policy' && <PolicyPanel />}
+        {ftab === 'freelab' && <FreeLabPanel />}
+        {ftab === 'security' && <SecurityPanel />}
+        {ftab === 'health' && <HealthPanel />}
+        {ftab === 'cfbench' && <CfBenchPanel />}
+        {!ftab && (
+          <>
+            {tab === 'dash' && <Dashboard />}
+            {tab === 'trace' && <TraceTab />}
+            {tab === 'log' && <LogTab />}
+            {tab === 'kpi' && <KpiTab />}
+            {tab === 'science' && <ScienceTab />}
+            {tab === 'bench' && <BenchTab />}
+            {tab === 'models' && <ModelsTab />}
+            {tab === 'costs' && <CostsTab />}
+            {tab === 'api' && <ApiTab />}
+            {tab === 'regression' && <RegressionTab />}
+          </>
+        )}
       </div>
     </div>
   );
@@ -1157,6 +1240,43 @@ function ApiTab() {
   );
 }
 
+function FabricChecks() {
+  const [c, setC] = useState(() => fabricRegression());
+  const n = (v: string) => c.filter((x) => x.verdict === v).length;
+  return (
+    <div className="mb-4 rounded-lg border border-line p-2" data-testid="fabric-regression">
+      <div className="mb-1 flex items-center gap-2 font-medium">
+        Non-régression Cognitive Fabric — PASS {n('PASS')} · WARN {n('WARN')} · FAIL {n('FAIL')}
+        <Button size="sm" variant="ghost" onClick={() => setC(fabricRegression())}>
+          Recalculer
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => download('fabric-regression.json', JSON.stringify(c, null, 2), 'application/json')}
+        >
+          <Download size={13} /> JSON
+        </Button>
+      </div>
+      <table className="w-full text-[12px]">
+        <tbody>
+          {c.map((x, i) => (
+            <tr key={i} className="border-t border-line">
+              <td className={td}>
+                <Badge tone={x.verdict === 'PASS' ? 'ok' : x.verdict === 'WARN' ? 'warn' : 'err'}>
+                  {x.verdict}
+                </Badge>
+              </td>
+              <td className={td}>{x.group}</td>
+              <td className={td}>{x.name}</td>
+              <td className={cx(td, 'text-muted')}>{x.detail}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function RegressionTab() {
   const [r, setR] = useState(() => regressionReport());
   return (
@@ -1179,6 +1299,7 @@ function RegressionTab() {
           <Download size={13} /> JSON
         </Button>
       </div>
+      <FabricChecks />
       <table className="w-full text-[12px]" data-testid="regression">
         <thead>
           <tr>

@@ -237,3 +237,7 @@ docker run -p 127.0.0.1:8787:8787 -p 127.0.0.1:8788:8788 \
 ```
 
 Derrière un reverse proxy (HTTPS), gardez `WORKBENCH_AUTH_TOKEN` long et secret.
+
+## JEV Cognitive Super-Fabric (Phase 2)
+
+Couche additive au-dessus de JEV V5 (registre de capacités, Skill Factory, Model Council, mémoire d'expérience, distillation, politiques, sécurité, benchmark cognitif). Désactivée par défaut, aucune donnée fabriquée. Voir [docs/JEV-FABRIC.md](docs/JEV-FABRIC.md).
