@@ -376,7 +376,9 @@ export function jevPre(inp: PreInput): PreResult {
     urgency: /\b(urgent|asap|imm[ée]diat|tout de suite|vite)\b/i.test(inp.text) ? 'urgent' : 'normal',
     expected_output: dna.outputs.join(', ') || (spec.format === 'text' ? 'réponse' : spec.format),
     success_criteria: [
-      ...CRITERIA[profile.type],
+      ...(profile.type === 'code' && profile.difficulty < 0.4 && !inp.mission
+        ? ['correct, minimal code; a trivial snippet needs no execution — answer directly']
+        : CRITERIA[profile.type]),
       ...(spec.mustMention.length ? [`includes ${spec.mustMention.join(', ')}`] : []),
     ],
     reasoning_level: reasoning,

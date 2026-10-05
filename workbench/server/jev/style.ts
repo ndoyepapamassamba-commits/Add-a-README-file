@@ -153,7 +153,10 @@ export interface OutputSpec {
 export function outputSpec(text: string): OutputSpec {
   const format = /\bjson\b/i.test(text)
     ? 'json'
-    : /\b(tableau|table|markdown table)\b/i.test(text) && !/tableau de bord/i.test(text)
+    : /\b(tableau|table)\b/i.test(text) &&
+        !/\b(tableau|table|array) (de |d['’]|of )(nombres|valeurs|entiers|cha[iî]nes|objets|[ée]l[ée]ments|numbers|strings|objects)|tableau de bord/i.test(
+          text,
+        )
       ? 'table'
       : /\b(code|fonction|function|script)\b/i.test(text) &&
           /\b([ée]cris|write|g[ée]n[èe]re|donne)\b/i.test(text)

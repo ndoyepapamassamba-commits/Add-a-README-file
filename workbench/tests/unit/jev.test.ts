@@ -566,3 +566,19 @@ describe('metrics: KPIs, WITHOUT vs WITH JEV, model profiles', () => {
     expect(toCsv([e(true, 1, 0, true)]).split('\n').length).toBe(2);
   });
 });
+
+describe('fixes found by the live A/B benchmark', () => {
+  it('« un tableau de nombres » is not a table format request; « reporting » alone is not an APEX app', () => {
+    expect(outputSpec('Écris une fonction somme(tab) qui additionne un tableau de nombres').format).not.toBe(
+      'table',
+    );
+    expect(outputSpec('Présente le résultat sous forme de tableau').format).toBe('table');
+    const p = compileToolPack({
+      type: 'chat',
+      text: 'plan pour clôturer un reporting mensuel',
+      available: ALL_TOOLS,
+      mode: 'balanced',
+    });
+    expect(p.families).not.toContain('apex');
+  });
+});

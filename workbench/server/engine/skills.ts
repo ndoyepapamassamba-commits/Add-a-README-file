@@ -267,7 +267,7 @@ export const SKILL_REGISTRY: EngineSkill[] = [
     name: 'apex_app',
     description: 'Application HTML offline au style maison (méthode APEX) avec exports.',
     capabilities: ['dashboard', 'exports Excel/Word/PPT/PDF/mail', 'QA navigateur'],
-    triggers: ['apex', 'dashboard', 'tableau de bord', 'cockpit', 'application', '\\bapp\\b', 'reporting'],
+    triggers: ['apex', 'dashboard', 'tableau de bord', 'cockpit', 'application', '\\bapp\\b'],
     required_tools: ['apex.guide', 'apex.build_app', 'apex.qa'],
     recommended_models: { metric: 'coding', tier: 'quality' },
     incompatible_models: ['no-tools', 'short-context'],

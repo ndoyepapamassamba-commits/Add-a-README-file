@@ -48,7 +48,7 @@ const BY_TYPE: Record<TaskType, string[]> = {
 };
 
 const KEYWORD_FAMILIES: [RegExp, string][] = [
-  [/\b(apex|dashboard|tableau de bord|cockpit|reporting|application html)\b/i, 'apex'],
+  [/\b(apex|dashboard|tableau de bord|cockpit|application html|app (html|offline))\b/i, 'apex'],
   [/\b(taux de change|xof|fcfa|devise|inflation|pib|gdp|banque mondiale)\b/i, 'finance'],
   [/\b(diagramme|sch[ée]ma|image|logo|illustration|3d|blender|sc[èe]ne)\b/i, 'visual'],
   [/\b(m[ée]t[ée]o|jours? f[ée]ri[ée]s?|adresse|g[ée]ocod|crypto|bitcoin)\b/i, 'geo'],
