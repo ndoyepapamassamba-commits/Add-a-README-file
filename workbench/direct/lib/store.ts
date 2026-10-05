@@ -8,6 +8,14 @@ import type { RoutingDecision } from '../../server/engine/decision';
 import type { RegistryResource } from '../../server/engine/registry';
 import type { ExternalBenchmark } from '../../server/engine/evidence';
 import type { JevLogEntry } from '../../server/jev/metrics';
+import type { LiveCheckpoint, MissionState } from '../../server/jev/live';
+
+/** Live JEV state of a session (Control Center + resume after an interruption). */
+export interface JevLiveSnapshot {
+  state: MissionState;
+  checkpoints: LiveCheckpoint[];
+  at: number;
+}
 import { embeddedKit, setHouseKit } from './apex';
 import { noteBefore } from './timemachine';
 import {
@@ -102,6 +110,8 @@ export interface State {
   jevLog: JevLogEntry[];
   /** USD spent on remote JEV calls per day. */
   jevSpend: Record<string, number>;
+  /** JEV live mission state per session (persisted: PAUSE / RESUME without losing state). */
+  jevLive: Record<string, JevLiveSnapshot>;
   draft: string;
   toasts: Toast[];
   openFile: string | null;
@@ -139,6 +149,7 @@ export interface State {
   addJevLog: (e: JevLogEntry) => void;
   setJevLog: (l: JevLogEntry[]) => void;
   setJevSpend: (s: Record<string, number>) => void;
+  setJevLive: (sessionId: string, snap: JevLiveSnapshot | null) => void;
 }
 
 const persistSession = (s: Session) => saveLater(`session:${s.id}`, () => s);
@@ -175,6 +186,7 @@ export const useStore = create<State>((set, get) => ({
   externalBench: [],
   jevLog: [],
   jevSpend: {},
+  jevLive: {},
   draft: '',
   toasts: [],
   openFile: null,
@@ -358,6 +370,15 @@ export const useStore = create<State>((set, get) => ({
     set({ jevSpend });
     saveLater('jevSpend', () => get().jevSpend, 800);
   },
+  setJevLive: (sessionId, snap) => {
+    const { [sessionId]: _old, ...rest } = get().jevLive;
+    const jevLive = snap ? { ...rest, [sessionId]: snap } : rest;
+    // Keep the 30 most recent sessions only.
+    const keys = Object.keys(jevLive).sort((a, b) => jevLive[b]!.at - jevLive[a]!.at);
+    for (const k of keys.slice(30)) delete jevLive[k];
+    set({ jevLive });
+    saveLater('jevLive', () => get().jevLive, 1000);
+  },
 }));
 
 /** Loads everything saved in this browser. */
@@ -370,9 +391,10 @@ export async function hydrate(): Promise<void> {
     kv.get<RegistryResource[]>('registry').catch(() => undefined),
     kv.get<ExternalBenchmark[]>('externalBench').catch(() => undefined),
   ]);
-  const [jevLog, jevSpend] = await Promise.all([
+  const [jevLog, jevSpend, jevLive] = await Promise.all([
     kv.get<JevLogEntry[]>('jevLog').catch(() => undefined),
     kv.get<Record<string, number>>('jevSpend').catch(() => undefined),
+    kv.get<Record<string, JevLiveSnapshot>>('jevLive').catch(() => undefined),
   ]);
   const [usage, workflows, health, board, intel] = await Promise.all([
     kv.get<UsageEntry[]>('usage').catch(() => undefined),
@@ -453,5 +475,6 @@ export async function hydrate(): Promise<void> {
     externalBench: externalBench ?? [],
     jevLog: jevLog ?? [],
     jevSpend: jevSpend ?? {},
+    jevLive: jevLive ?? {},
   });
 }

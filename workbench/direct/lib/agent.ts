@@ -37,7 +37,14 @@ import { selectSkills, skillsPrompt, type SkillMatch } from '../../server/engine
 import { buildLoadout } from '../../server/engine/loadout';
 import { isHumanCorrection } from '../../server/engine/telemetry';
 import * as jevRt from './jev';
-import { ExecutionMonitor } from '../../server/jev/control';
+import {
+  LiveController,
+  pruneToolOutputs,
+  wasteRate,
+  type LiveCheckpoint,
+  type MissionState,
+} from '../../server/jev/live';
+import { compilePrompt, compileSkill } from '../../server/jev/prompt';
 import { packetPrompt, type PreResult } from '../../server/jev/packet';
 import { REQUESTABLE, TOOL_FAMILIES, toolDefTokens } from '../../server/jev/tools';
 import type { Checkpoint } from '../../server/jev/metrics';
@@ -305,13 +312,33 @@ interface LoopResult {
   } | null;
   /** Without JEV (baseline run): what was sent, for the A/B comparison. */
   baselineTools?: { offered: number; tokens: number };
+  /** Measured waste of the run (with or without JEV). */
+  waste?: { wasted: number; rate: number | null; parts: Record<string, number> };
+  /** JEV live control summary (null when live control is off). */
+  live?: {
+    state: MissionState;
+    checkpoints: LiveCheckpoint[];
+    switches: number;
+    overhead: {
+      pct: number | null;
+      costUsd: number;
+      savedUsd: number;
+      roi: number | null;
+      downgrade: boolean;
+    };
+    promptWaste: number;
+    skillTokensSaved: number;
+  } | null;
 }
 
 /** Packet of the current top-level run, handed to sub-agents (JEV strategy for agents). */
 let currentPacket: PreResult | null = null;
 /** Per-run JEV switch (A/B benchmark: baseline runs without JEV). */
-let jevOverride: boolean | null = null;
-const jevEnabled = () => jevOverride ?? jevRt.jevSettings().enabled;
+/** Benchmark 2.0 variants: WITHOUT JEV / JEV PRE / JEV PRE + LIVE / JEV FULL (pre + live + post). */
+export type JevVariant = 'off' | 'pre' | 'live' | 'full';
+let jevOverride: JevVariant | null = null;
+const jevVariant = (): JevVariant => jevOverride ?? (jevRt.jevSettings().enabled ? 'full' : 'off');
+const jevEnabled = () => jevVariant() !== 'off';
 const fmtTok = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
 
 /** Average latency per model call (ms), measured on the recent usage. */
@@ -678,6 +705,16 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   const active = enabled
     .filter((s) => names.has(s.name))
     .map((s) => ({ name: s.name, body: s.body, files: Object.keys(s.files) }));
+  // JEV SKILL CONTEXT COMPILER: only the relevant sections of large skills.
+  let skillTokensSaved = 0;
+  if (jp)
+    for (const a of active) {
+      const c = compileSkill(a.body, inp.text, jevRt.jevSettings().mode === 'max' ? 4000 : 1800);
+      if (c.after < c.before) {
+        skillTokensSaved += c.before - c.after;
+        a.body = c.text;
+      }
+    }
   if (active.length && !label) push(sid, { kind: 'skills', id: uid(), names: active.map((a) => a.name) });
 
   // JEV TOOL PACK: only the selected tools are exposed; tools.request / ADD TOOL extend it.
@@ -730,20 +767,29 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     agents: allAgents(st.agents),
     plugins: plugins.map((p) => ({ name: p.name, instructions: mcpState(p.name).instructions })),
   });
-  const fullSystem = [
-    system,
-    ENGINE_DOCTRINE,
-    manualPrompt(useStore.getState().manual),
-    strategy ? strategyPrompt(dna, strategy) : '',
-    skillsPrompt(engineSkills),
-    jp ? packetPrompt(jp.pre) : '',
-    MEMORY_INSTRUCTIONS,
-    inp.mission
-      ? `${MISSION_PROTOCOL}\n\nTask profile: ${profile.reasons.join(', ')}.${profile.team.length ? ` Recommended specialists, in order: ${profile.team.join(' → ')}.` : ''}`
-      : '',
-  ]
-    .filter(Boolean)
-    .join('\n\n');
+  const promptSections = [
+    { name: 'system', text: system, pinned: true },
+    { name: 'doctrine', text: ENGINE_DOCTRINE },
+    { name: 'manual', text: manualPrompt(useStore.getState().manual), pinned: true },
+    { name: 'strategy', text: strategy ? strategyPrompt(dna, strategy) : '' },
+    { name: 'skills', text: skillsPrompt(engineSkills) },
+    { name: 'packet', text: jp ? packetPrompt(jp.pre) : '' },
+    { name: 'memory', text: MEMORY_INSTRUCTIONS },
+    {
+      name: 'mission',
+      text: inp.mission
+        ? `${MISSION_PROTOCOL}\n\nTask profile: ${profile.reasons.join(', ')}.${profile.team.length ? ` Recommended specialists, in order: ${profile.team.join(' → ')}.` : ''}`
+        : '',
+    },
+  ];
+  // JEV PROMPT COMPILER 2.0: duplicates removed, contradictions reported, waste measured.
+  const compiledPrompt = jp ? compilePrompt(promptSections) : null;
+  const fullSystem =
+    compiledPrompt?.text ??
+    promptSections
+      .map((x) => x.text)
+      .filter(Boolean)
+      .join('\n\n');
   const firstTurn = !inp.history.some((m) => m.role === 'user');
   const content = await userContent(inp.text, inp.attachments, vision, firstTurn);
   if (firstTurn && !label) {
@@ -766,6 +812,14 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   const ctxHist = jp
     ? jevRt.context(inp.text, inp.history, Math.round(jp.pre.budgets.tokens * 0.4))
     : { history: inp.history, before: estimate(inp.history), after: estimate(inp.history) };
+  if (compiledPrompt)
+    traceAdd({
+      name: 'JEV_CONTEXT',
+      ms: 0,
+      tokens: compiledPrompt.tokensAfter,
+      cost: 0,
+      decision: `prompt système ${compiledPrompt.tokensBefore} → ${compiledPrompt.tokensAfter} tokens (PROMPT WASTE ${Math.round(compiledPrompt.wasteScore * 100)} %, ${compiledPrompt.removedLines} ligne(s) dupliquée(s))${skillTokensSaved ? ` · skills −${skillTokensSaved} tokens` : ''}${compiledPrompt.contradictions.length ? ` · contradiction(s) : ${compiledPrompt.contradictions.join(' ; ')}` : ''}`,
+    });
   if (jp)
     traceAdd({
       name: 'JEV_CONTEXT',
@@ -872,7 +926,122 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   // Cascade: cheap first → QA → escalate only when needed.
   let escalations = 0;
   let lastQa: number | undefined;
-  const monitor = jp ? new ExecutionMonitor(jp.pre.budgets) : null;
+  // ── JEV LIVE CONTROL LOOP (variants PRE + LIVE and FULL) ──
+  const variant = jevVariant();
+  const priceOf = (id: string) => models.find((m) => m.id === id)?.inputPrice ?? 0;
+  const live =
+    jp && (variant === 'live' || variant === 'full')
+      ? new LiveController({
+          goal: inp.text,
+          budgets: jp.pre.budgets,
+          mode: jevRt.jevSettings().mode,
+          model,
+          strategy: jp.pre.packet.agent_strategy,
+          effort,
+          ladder: [
+            ...new Map(
+              [
+                jp.pre.decision.chosen,
+                ...jp.pre.decision.fallbacks,
+                ...jp.pre.decision.ladder,
+                ...jp.pre.decision.candidates.slice(0, 12),
+              ]
+                .filter((c): c is NonNullable<typeof c> => Boolean(c))
+                .map((c) => [c.id, { id: c.id, inputPrice: priceOf(c.id), pSuccess: c.pSuccess }]),
+            ).values(),
+          ].sort((a, b) => a.inputPrice - b.inputPrice),
+          critical: jp.pre.dna.criticality === 'critical',
+          mission: Boolean(inp.mission),
+          difficulty: jp.pre.packet.difficulty,
+          offered: packTools.map((t) => t.name),
+          toolDefTokens: Object.fromEntries(packTools.map((t) => [t.name, toolDefTokens(toolDefs([t]))])),
+          level:
+            jp.pre.packet.level >= 4 || jp.pre.dna.criticality === 'critical'
+              ? 3
+              : jp.pre.packet.level >= 2
+                ? 1
+                : 0,
+        })
+      : null;
+  const pendingNotes: string[] = [];
+  let prunedTokens = 0;
+  let removedToolTokens = 0;
+  let switches = 0;
+  // Waste accounting (all top-level runs, with or without JEV — measured token counts).
+  const toolSigs = new Map<string, number>();
+  let failedToolTokens = 0;
+  let repeatedToolTokens = 0;
+  let discardedTokens = 0;
+  let toolTokensSent = 0;
+  const offeredCount = new Map<DirectTool, number>();
+  const liveSync = () => {
+    if (!live || !top) return;
+    useStore
+      .getState()
+      .setJevLive(sid, { state: live.state(), checkpoints: live.checkpoints.slice(-30), at: Date.now() });
+  };
+  const applyLive = (cp: LiveCheckpoint | null, stepNo: number): 'stop' | null => {
+    if (!cp || !live) return null;
+    let stop: 'stop' | null = null;
+    for (const d of cp.decisions) {
+      traceAdd({
+        name:
+          d.action === 'SWITCH_MODEL'
+            ? 'JEV_MODEL_SWITCH'
+            : d.action === 'ESCALATE'
+              ? 'JEV_ESCALATION'
+              : 'JEV_CHECKPOINT',
+        ms: cp.ms,
+        tokens: 0,
+        cost: 0,
+        decision: `${cp.kind} · ${d.action}${d.tool ? ` ${d.tool}` : ''}${d.model ? ` → ${d.model}` : ''} : ${d.reason}`,
+      });
+      if (d.action === 'STOP') stop = 'stop';
+      else if (d.action === 'COMPRESS')
+        messages.splice(0, messages.length, ...compact(messages, Math.floor(contextBudget * 0.6), inp.text));
+      else if (d.action === 'REMOVE_TOOL' && d.tool) {
+        const i = packTools.findIndex((t) => t.name === d.tool);
+        if (i >= 0) {
+          removedToolTokens += toolDefTokens(toolDefs([packTools[i]!]));
+          packTools.splice(i, 1);
+        }
+      } else if (d.action === 'REPLAN')
+        pendingNotes.push(
+          `[JEV REPLAN] ${d.reason}. Re-plan briefly, then take a different approach.\n${live.handoff()}`,
+        );
+      else if (d.action === 'RETRY_TARGETED') pendingNotes.push(`[JEV] ${d.reason}.`);
+      else if (
+        (d.action === 'LOWER_REASONING' || d.action === 'RAISE_REASONING') &&
+        d.effort &&
+        info?.efforts.length
+      ) {
+        effort = d.effort;
+        live.setEffort(d.effort);
+      } else if (d.action === 'SWITCH_MODEL' && d.model && d.model !== model) {
+        const from = model;
+        model = d.model;
+        live.setModel(d.model);
+        switches++;
+        // Hand over the mission state, not the whole history.
+        const before = estimate(messages);
+        messages.splice(0, messages.length, ...compact(messages, Math.floor(contextBudget * 0.35), inp.text));
+        pendingNotes.push(live.handoff());
+        push(sid, {
+          kind: 'intel',
+          id: uid(),
+          title: 'JEV LIVE : changement de modèle',
+          tone: 'info',
+          lines: [
+            `${from} → ${d.model} (étape ${stepNo})`,
+            d.reason,
+            `historique ${before} → ${estimate(messages)} tokens + état de mission`,
+          ],
+        });
+      }
+    }
+    liveSync();
+    return stop;
+  };
   let jevQuality: number | null = null;
   let corrections = 0;
   let modelCalls = 0;
@@ -904,6 +1073,18 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     if (step.action === 'escalate' && step.model) {
       // JEV: escalate only when the marginal quality gain is worth its cost.
       const mg = jp ? jevRt.escalateWorth(qa, eng.qaThreshold, cost, decision.ladder[escalations]) : null;
+      if (live) {
+        const nx = decision.ladder[escalations];
+        const cp = live.beforePremium({
+          model: step.model,
+          quality: qa,
+          target: eng.qaThreshold,
+          nextCost: nx?.estimate ? (nx.estimate.low + nx.estimate.high) / 2 : cost * 4,
+          nextSuccess: nx?.pSuccess ?? 0.5,
+        });
+        liveSync();
+        void cp;
+      }
       if (mg && !mg.worth) {
         traceAdd({
           name: 'JEV_ESCALATION',
@@ -952,10 +1133,45 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       });
     }
     stepsDone = step + 1;
+    if (pendingNotes.length) {
+      messages.push({ role: 'user', content: pendingNotes.splice(0).join('\n\n') });
+    }
     const compacted = compact(messages, contextBudget, inp.text);
     messages.splice(0, messages.length, ...compacted);
+    // JEV LIVE CONTEXT PRUNING: old, large tool outputs → short stubs (REMOVE_CONTEXT).
+    if (live && step >= 2) {
+      const mode = jevRt.jevSettings().mode;
+      const cut = pruneToolOutputs(messages, mode === 'max' ? 8 : mode === 'eco' ? 2 : 4);
+      if (cut > 0) {
+        prunedTokens += cut;
+        live.checkpoints.push({
+          kind: 'budget_threshold',
+          step,
+          at: Date.now(),
+          ms: 0,
+          decisions: [
+            {
+              action: 'REMOVE_CONTEXT',
+              reason: `sorties d’outils anciennes élaguées (−${cut} tokens à chaque appel suivant)`,
+            },
+          ],
+        });
+        traceAdd({
+          name: 'JEV_CHECKPOINT',
+          ms: 0,
+          tokens: 0,
+          cost: 0,
+          decision: `REMOVE_CONTEXT : −${cut} tokens (sorties anciennes)`,
+        });
+      }
+    }
+    if (live) live.addSaved(prunedTokens + removedToolTokens);
 
     const offered = phase === 'planning' ? planTools : packTools;
+    if (top) {
+      toolTokensSent += toolDefTokens(toolDefs(offered));
+      for (const t of offered) offeredCount.set(t, (offeredCount.get(t) ?? 0) + 1);
+    }
     const callMessages =
       phase === 'planning'
         ? [{ ...messages[0]!, content: `${fullSystem}\n\n${PLAN_MODE}` }, ...messages.slice(1)]
@@ -1034,35 +1250,63 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     useStore.getState().addSpend(r.cost);
     if (r.content.trim()) finalText = r.content;
     modelCalls++;
-    if (monitor) {
-      const md = monitor.step({
+    if (live) {
+      const cp = live.afterCall({
         tokensIn: r.usage.promptTokens,
         tokensOut: r.usage.completionTokens,
         cost: r.cost,
+        content: r.content,
+        toolCalls: r.toolCalls.map((c) => ({
+          name: c.function.name.replace(/__/g, '.'),
+          args: c.function.arguments ?? '',
+        })),
         contextTokens: estimate(messages),
         contextLimit: contextBudget,
+        model: r.model || model,
       });
-      if (md.action !== 'CONTINUE')
+      const ov = live.overhead(priceOf(r.model || model) || 1);
+      if (ov.downgrade)
         traceAdd({
-          name: 'JEV_EXECUTION',
+          name: 'JEV_CHECKPOINT',
           ms: 0,
           tokens: 0,
           cost: 0,
-          decision: `${md.action} : ${md.reason}`,
+          decision: 'AUTO-DOWNGRADE → JEV-0 : JEV coûtait plus qu’il n’économisait',
         });
-      if (md.action === 'COMPRESS')
-        messages.splice(0, messages.length, ...compact(messages, Math.floor(contextBudget * 0.6), inp.text));
-      if (md.action === 'STOP') {
+      // JEV-3 deep control (critical / multi-agent only): remote judgment at stagnation / drift.
+      if (cp && (cp.kind === 'stagnation' || cp.kind === 'drift') && live.state().level >= 3) {
+        const j = await jevRt.liveJudge(inp.text, r.content, live.state());
+        if (j) {
+          live.addJevCost(j.costUsd, j.ms);
+          traceAdd({
+            name: 'JEV_CHECKPOINT',
+            ms: j.ms,
+            tokens: j.tokens,
+            cost: j.costUsd,
+            decision: `JEV-3 : objectif atteint ${Math.round(j.done * 100)} %, sur la bonne voie ${Math.round(j.onTrack * 100)} %`,
+          });
+          if (j.done >= 0.85 && r.content.trim().length > 80) {
+            cp.decisions = [
+              {
+                action: 'STOP',
+                reason: `JEV-3 : objectif atteint (${Math.round(j.done * 100)} %) — arrêt anticipé`,
+              },
+            ];
+          }
+        }
+      }
+      if (applyLive(cp, step + 1) === 'stop') {
         push(sid, {
           kind: 'intel',
           id: uid(),
-          title: 'JEV : arrêt (budget)',
+          title: 'JEV LIVE : arrêt',
           tone: 'warn',
-          lines: [md.reason],
+          lines: cp!.decisions.filter((d) => d.action === 'STOP').map((d) => d.reason),
         });
         if (r.content.trim()) finalText = r.content;
         break;
       }
+      liveSync();
     }
     for (const c of r.toolCalls) toolsUsed.add(c.function.name.replace(/__/g, '.'));
 
@@ -1148,10 +1392,19 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
             ms: performance.now() - tq,
             tokens: 0,
             cost: 0,
-            decision: `qualité ${q.result.score}/100${q.result.failures.length ? ` · ${q.result.failures.map((f) => f.what).join(' ; ')}` : ''} · ${q.why}`,
+            decision: `QA ${q.result.levels.join('+')} : qualité ${q.result.score}/100${q.result.failures.length ? ` · ${q.result.failures.map((f) => `${f.what} [${f.locus}]`).join(' ; ')}` : ''} · ${q.why}`,
           });
-          if (q.correct && !unsupported.length) {
+          const retryCp = live?.beforeRetry({
+            quality: q.result.score,
+            corrections,
+            maxCorrections: jp.pre.budgets.corrections,
+            blocking: q.result.failures.filter((f) => f.blocking).length,
+          });
+          if (retryCp) liveSync();
+          live?.setQuality(q.result.score);
+          if (q.correct && !unsupported.length && variant === 'full') {
             corrections++;
+            discardedTokens += r.usage.completionTokens;
             notes.push(q.correct);
             traceAdd({ name: 'JEV_CORRECTION', ms: 0, tokens: 0, cost: 0, decision: q.why });
           }
@@ -1174,11 +1427,26 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       } else break;
     }
 
-    // Tool execution
-    for (const call of calls) {
-      const pool =
-        phase === 'planning' ? planTools : [...packTools, ...tools.filter((t) => !packTools.includes(t))];
-      const res = await runTool(call, pool, ctx, inp);
+    // Tool execution. JEV PARALLELISM: independent sub-agent delegations of one turn run together.
+    const poolOf = () =>
+      phase === 'planning' ? planTools : [...packTools, ...tools.filter((t) => !packTools.includes(t))];
+    const parallel =
+      live &&
+      calls.length >= 2 &&
+      calls.length <= 4 &&
+      calls.every((c) => c.function.name.replace(/__/g, '.') === 'agent.delegate');
+    const preRun = parallel ? await Promise.all(calls.map((c) => runTool(c, poolOf(), ctx, inp))) : null;
+    if (parallel)
+      traceAdd({
+        name: 'JEV_CHECKPOINT',
+        ms: 0,
+        tokens: 0,
+        cost: 0,
+        decision: `${calls.length} délégations indépendantes exécutées en parallèle`,
+      });
+    for (const [ci, call] of calls.entries()) {
+      const pool = poolOf();
+      const res = preRun ? preRun[ci]! : await runTool(call, pool, ctx, inp);
       if (jp && phase !== 'planning') {
         const used = tools.find(
           (t) => llmName(t.name) === call.function.name || t.name === call.function.name,
@@ -1193,25 +1461,22 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
             decision: `ADD TOOL : ${used.name} (appelé hors du pack)`,
           });
         }
-        const md = monitor?.tool(
-          call.function.name.replace(/__/g, '.'),
-          call.function.arguments ?? '',
-          !/^(Error|Denied)/.test(res),
-        );
-        if (md && md.action === 'REMOVE_TOOL' && md.tool) {
-          const i = packTools.findIndex((t) => t.name === md.tool);
-          if (i >= 0) packTools.splice(i, 1);
-        }
-        if (md && md.action !== 'CONTINUE') {
-          traceAdd({
-            name: 'JEV_EXECUTION',
-            ms: 0,
-            tokens: 0,
-            cost: 0,
-            decision: `${md.action} : ${md.reason}`,
+        if (live) {
+          const cp = live.afterTool({
+            name: call.function.name.replace(/__/g, '.'),
+            args: call.function.arguments ?? '',
+            ok: !/^(Error|Denied)/.test(res),
+            output: res.slice(0, 2000),
           });
-          messages.push({ role: 'user', content: `[JEV] ${md.reason}.` });
+          applyLive(cp, step + 1);
         }
+      }
+      if (top) {
+        const sig = `${call.function.name}:${call.function.arguments ?? ''}`;
+        const tk = estimate([{ role: 'tool', content: `${call.function.arguments ?? ''}${res}` }]);
+        if (/^(Error|Denied)/.test(res)) failedToolTokens += tk;
+        else if (toolSigs.has(sig)) repeatedToolTokens += tk;
+        toolSigs.set(sig, (toolSigs.get(sig) ?? 0) + 1);
       }
       const m: ChatMessage = { role: 'tool', tool_call_id: call.id, content: res };
       messages.push(m);
@@ -1401,6 +1666,29 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         }
       : null,
     baselineTools: top ? { offered: tools.length, tokens: toolTokensBaseline } : undefined,
+    waste: top
+      ? wasteRate({
+          toolTokensSent,
+          unusedToolTokens: [...offeredCount].reduce(
+            (acc, [t, n]) => (toolsUsed.has(t.name) ? acc : acc + toolDefTokens(toolDefs([t])) * n),
+            0,
+          ),
+          failedToolTokens,
+          repeatedToolTokens,
+          discardedTokens,
+          totalTokens: tokensIn + tokensOut,
+        })
+      : undefined,
+    live: live
+      ? {
+          state: (liveSync(), live.finish(inp.signal.aborted ? 'paused' : 'done')),
+          checkpoints: live.checkpoints,
+          switches,
+          overhead: live.overhead(priceOf(model) || 1),
+          promptWaste: compiledPrompt?.wasteScore ?? 0,
+          skillTokensSaved,
+        }
+      : null,
   };
 }
 
@@ -1555,24 +1843,28 @@ export async function runAgent(
   sessionId: string,
   text: string,
   attachments: Attachment[],
-  opts: { mode?: AgentMode; jev?: boolean; bench?: string } = {},
+  opts: { mode?: AgentMode; jev?: boolean | JevVariant; bench?: string; rep?: number } = {},
 ): Promise<void> {
   const st = useStore.getState();
   const benchTag = opts.bench ?? null;
-  jevOverride = opts.jev ?? null;
+  jevOverride =
+    opts.jev === undefined ? null : opts.jev === true ? 'full' : opts.jev === false ? 'off' : opts.jev;
   const session = st.sessions.find((s) => s.id === sessionId);
   if (!session || st.running[sessionId]) return;
   const ac = new AbortController();
   useStore.setState({ running: { ...st.running, [sessionId]: ac } });
   st.pushItem(sessionId, { kind: 'user', id: uid(), text, attachments, ts: Date.now() });
+  // JEV USER FEEDBACK LOOP: « parfait » / « c'est mauvais » judge the previous answer.
+  const fb = jevRt.feedbackOf(text);
+  if (fb) jevRt.feedback(sessionId, fb);
   // Telemetry: a correction of the previous answer counts against that mission's model.
-  if (isHumanCorrection(text)) {
+  if (fb === 'bad' || isHumanCorrection(text)) {
     const prev = [...st.ledger.entries].reverse().find((e) => e.session === sessionId);
     if (prev && !prev.humanCorrection) {
       st.setLedger({
         entries: st.ledger.entries.map((e) => (e.id === prev.id ? { ...e, humanCorrection: true } : e)),
       });
-      st.recordOutcome(prev.model, false, prev.dna.type);
+      if (!fb) st.recordOutcome(prev.model, false, prev.dna.type);
     }
   }
   if (session.title === 'Nouvelle session')
@@ -1834,6 +2126,9 @@ export async function runAgent(
         s.updateItem(sessionId, j.itemId, {
           trace,
           done: true,
+          live: result?.live
+            ? { state: result.live.state, checkpoints: result.live.checkpoints.slice(-40), at: Date.now() }
+            : undefined,
           summary: `${fmtTok(tin + tout)} tokens · $${(cost + j.jevCost).toFixed(4)} · qualité ${j.quality ?? '—'}`,
         });
       }
@@ -1871,6 +2166,19 @@ export async function runAgent(
         contextAfter: j?.contextAfter ?? 0,
         checkpoints: trace,
         bench: benchTag ?? undefined,
+        variant: jevVariant(),
+        rep: opts.rep,
+        wasted: result?.waste?.wasted,
+        wasteRate: result?.waste?.rate ?? null,
+        liveDecisions:
+          result?.live?.checkpoints.reduce(
+            (n, c) => n + c.decisions.filter((d) => d.action !== 'CONTINUE').length,
+            0,
+          ) ?? 0,
+        modelSwitches: result?.live?.switches ?? 0,
+        liveSavedTokens: result?.live?.state.savedTokens ?? 0,
+        overheadPct: result?.live?.overhead.pct ?? null,
+        promptWaste: result?.live?.promptWaste ?? 0,
       });
     }
   }

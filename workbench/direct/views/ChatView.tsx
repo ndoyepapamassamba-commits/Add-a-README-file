@@ -280,6 +280,8 @@ const ItemView = memo(function ItemView({ item, sessionId }: { item: Item; sessi
           trace={item.trace}
           done={item.done}
           summary={item.summary}
+          sessionId={sessionId}
+          live={item.live}
         />
       );
     case 'usage':

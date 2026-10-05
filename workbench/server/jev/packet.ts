@@ -80,12 +80,18 @@ export interface ExecutionPacket {
   token_budget: number;
   cost_budget: number | null;
   max_steps: number;
+  /** Same as max_steps (spec name). */
+  step_budget: number;
+  time_budget_ms: number;
   max_retries: number;
   qa_required: boolean;
+  qa_threshold: number;
   escalation_policy: string;
   stop_conditions: string[];
   output_contract: string;
   agent_strategy: AgentStrategy;
+  /** Execution strategy: single pass, tool loop, mission pipeline, live-controlled. */
+  strategy: string;
   level: number;
   decided_by: 'JEV-0' | 'JEV-1' | 'JEV-2' | 'direct';
   confidence: number;
@@ -401,8 +407,11 @@ export function jevPre(inp: PreInput): PreResult {
     token_budget: budgets.tokens,
     cost_budget: budgets.costUsd,
     max_steps: budgets.steps,
+    step_budget: budgets.steps,
+    time_budget_ms: budgets.timeMs,
     max_retries: budgets.retries,
     qa_required: true,
+    qa_threshold: inp.engine.qaThreshold,
     escalation_policy: `cascade L${levelOf(decision.tier)} → ${decision.ladder.map((l) => `L${levelOf(l.tier)}`).join(' → ') || 'aucun palier supérieur'} si QA < ${inp.engine.qaThreshold} %, gain marginal vérifié`,
     stop_conditions: [
       `QA ≥ ${inp.engine.qaThreshold} %`,
@@ -413,6 +422,7 @@ export function jevPre(inp: PreInput): PreResult {
     ],
     output_contract: contractText(spec) || 'free form',
     agent_strategy: agentStrategy(profile, inp.mission, needsTools),
+    strategy: `${agentStrategy(profile, inp.mission, needsTools)} · JEV LIVE (checkpoints adaptatifs, budget dynamique B0→B3)`,
     level: levelOf(decision.tier, { multiAgent: inp.mission && strategy.team.length >= 3 }),
     decided_by: decidedBy,
     confidence: Math.round(confidence * 100) / 100,

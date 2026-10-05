@@ -15,11 +15,15 @@ export interface JevApiConfig {
   /** Max USD per day spent on JEV calls. */
   budgetDaily: number;
 }
+/** Direct TypeSafe endpoint (server side only: browsers are blocked by CORS). */
+export const JEV_DIRECT_URL = 'https://api.typesafe.ai/v1/systemone';
+/** Relay deployed on Supabase (relay/jev-relay): forwards the user's key, stores none. */
+export const JEV_RELAY_URL = 'https://ooatpoyjbncrlkzttrkn.supabase.co/functions/v1/jev-relay';
 export const DEFAULT_JEV_API: JevApiConfig = {
   provider: 'hybrid',
-  endpoint: 'https://api.typesafe.ai/v1/systemone',
+  endpoint: JEV_RELAY_URL,
   model: 'jev-latest',
-  timeoutMs: 1500,
+  timeoutMs: 2500,
   budgetDaily: 0.05,
 };
 /** Jev 1.13 price (docs.typesafe.ai/models): $0.042 per million input tokens, output free. */
@@ -153,8 +157,14 @@ export async function callJev1(
       }),
       signal: ac.signal,
     });
-    if (!res.ok)
-      throw new Error(`JEV API ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`);
+    if (!res.ok) {
+      const body = redact((await res.text().catch(() => '')).slice(0, 200));
+      throw new Error(
+        res.status === 401 || res.status === 403
+          ? `JEV API ${res.status} : clé JEV absente ou refusée par TypeSafe`
+          : `JEV API ${res.status}: ${body}`,
+      );
+    }
     const r = (await res.json()) as {
       model: string;
       answers: Record<string, { choice?: string; confidence?: number; score?: number; noul?: number }>;
@@ -193,4 +203,73 @@ export function redact(text: string): string {
       /(authorization|api[_-]?key|token|password|secret)(["']?\s*[:=]\s*["']?)[^\s"',}]+/gi,
       '$1$2***',
     );
+}
+
+/** Human message for a JEV call failure (never pretends the API works). */
+export function jevErrorText(e: unknown, timeoutMs: number): string {
+  const err = e as Error;
+  if (err?.name === 'AbortError') return `délai de ${timeoutMs} ms dépassé`;
+  if (/Failed to fetch|NetworkError|Load failed/i.test(err?.message ?? ''))
+    return 'appel bloqué par le navigateur (CORS) ou réseau — utilisez le relais (bouton « Relais Supabase »)';
+  return redact(err?.message ?? String(e));
+}
+
+/** JEV-3 live questions (critical / multi-agent runs only): is the goal met, is the run on track? */
+export const JEV3_QUESTIONS = {
+  done: {
+    type: 'noul',
+    instructions:
+      'Does `latest_answer` already fully satisfy `goal` (nothing important left to do), given the facts in `mission`?',
+  },
+  on_track: {
+    type: 'noul',
+    instructions: 'Are the recent actions in `mission` making real progress toward `goal`?',
+  },
+} as const;
+
+/** One JEV-3 call (typed judgments on the mission state). Throws on failure (the caller keeps JEV-0). */
+export async function callJev3(
+  cfg: JevApiConfig,
+  key: string | null,
+  state: { goal: string; latest_answer: string; mission: Record<string, unknown> },
+  fetchFn: FetchLike,
+): Promise<{ done: number; onTrack: number; tokens: number; costUsd: number; ms: number }> {
+  const ac = new AbortController();
+  const t0 = Date.now();
+  const timer = setTimeout(() => ac.abort(), cfg.timeoutMs);
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (key) headers.Authorization = `Bearer ${key}`;
+    const res = await fetchFn(cfg.endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        state: {
+          goal: state.goal.slice(0, 3000),
+          latest_answer: state.latest_answer.slice(0, 4000),
+          mission: state.mission,
+        },
+        model: cfg.model,
+        questions: JEV3_QUESTIONS,
+      }),
+      signal: ac.signal,
+    });
+    if (!res.ok) throw new Error(`JEV API ${res.status}`);
+    const r = (await res.json()) as {
+      answers: Record<string, { noul?: number }>;
+      usage?: { input_tokens: number };
+    };
+    if (typeof r.answers?.done?.noul !== 'number') throw new Error('JEV API : réponse mal formée');
+    const tokens =
+      r.usage?.input_tokens ?? Math.ceil((state.goal.length + state.latest_answer.length + 800) / 3.8);
+    return {
+      done: r.answers.done.noul,
+      onTrack: r.answers.on_track?.noul ?? 0.5,
+      tokens,
+      costUsd: (tokens * JEV_PRICE_PER_MTOK) / 1e6,
+      ms: Date.now() - t0,
+    };
+  } finally {
+    clearTimeout(timer);
+  }
 }

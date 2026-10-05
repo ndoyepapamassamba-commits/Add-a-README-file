@@ -993,7 +993,7 @@ test('JEV Control Center: tabs, mode, API key masked and never in the DOM, JEV-1
     'Trace live',
     'JEV_LOG',
     'Sans / avec JEV',
-    'Benchmark A/B',
+    'Benchmark 2.0',
     'Profils modèles',
     'Cost Intelligence',
     'Régression',
@@ -1029,7 +1029,7 @@ test('JEV Control Center: tabs, mode, API key masked and never in the DOM, JEV-1
   await expect(t).toContainText(/indisponible/);
   // A/B benchmark on two categories: the same mission without then with JEV.
   await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
-  await page.getByRole('tab', { name: 'Benchmark A/B' }).click();
+  await page.getByRole('tab', { name: 'Benchmark 2.0' }).click();
   for (const label of [
     'CODING',
     'DATA ANALYSIS',
@@ -1041,13 +1041,56 @@ test('JEV Control Center: tabs, mode, API key masked and never in the DOM, JEV-1
     'MULTI-STEP AGENT',
     'EXCEL',
     'DEBUGGING',
+    'MULTI-AGENT',
+    'COMPLEX CODING',
+    'HIGH-RISK REASONING',
   ])
     await page.getByLabel(label, { exact: true }).uncheck();
+  // Benchmark 2.0: keep the WITHOUT JEV and JEV FULL variants for this test.
+  await page.getByLabel('Variante JEV PRE', { exact: true }).uncheck();
+  await page.getByLabel('Variante JEV PRE + LIVE', { exact: true }).uncheck();
   mock.fallback = () => ({ text: 'Le résultat est 10.' });
-  await page.getByRole('button', { name: /Lancer A\/B \(2\)/ }).click();
+  await page.getByRole('button', { name: /Lancer \(4\)/ }).click();
   await expect(page.getByText(/Dernier lancement : \d\/4 réussites/)).toBeVisible({ timeout: 60_000 });
   await page.getByRole('tab', { name: 'Sans / avec JEV' }).click();
   await expect(page.getByText(/2 paire\(s\) mesurée\(s\)/)).toBeVisible();
   await expect(page.getByTestId('kpi-real')).toContainText('Tokens / mission');
+  await page.getByRole('tab', { name: 'Benchmark 2.0' }).click();
+  await expect(page.getByTestId('bench2-table')).toContainText('JEV FULL');
+  await expect(page.getByTestId('bench2-delta')).toContainText('AVOIDABLE WASTE REDUCTION');
   expect(errors.filter((e) => !/jev-relay|ERR_FAILED|Failed to load resource/.test(e))).toEqual([]);
+});
+
+test('JEV LIVE: stagnation → REPLAN sent to the model, live Control Center, user feedback learnt', async ({
+  page,
+}) => {
+  mock.models = SCORED;
+  await open(page);
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  // The model repeats the same read 4 times (no new information) then answers.
+  const read = { toolCalls: [{ name: 'filesystem.list', args: { path: '.' } }] };
+  mock.push(read, read, read, read, { text: 'Analyse terminée : rien à signaler.' });
+  await send(page, 'Analyse le dossier du projet et résume son contenu');
+  await expect(page.getByText('Analyse terminée : rien à signaler.')).toBeVisible();
+  const all = JSON.stringify(mock.requests.map((r) => r.messages));
+  expect(all).toContain('[JEV REPLAN]');
+  expect(all).toContain('<jev_mission_state>');
+  // Tool results stay right after their tool call (the REPLAN note comes after them).
+  for (const r of mock.requests) {
+    const ms = r.messages as { role: string; tool_calls?: unknown[] }[];
+    ms.forEach((m, i) => {
+      if (m.role === 'assistant' && m.tool_calls?.length) expect(ms[i + 1]?.role).toBe('tool');
+    });
+  }
+  const card = page.getByTestId('jev-trace').last();
+  await card.getByRole('button').first().click();
+  await expect(card).toContainText('JEV CHECKPOINT');
+  await expect(card.getByTestId('jev-live')).toContainText('REPLAN');
+  // 👍 feedback → JEV_LOG marked.
+  await card.getByRole('button', { name: 'Bonne réponse' }).click();
+  await expect(card).toContainText('noté : réussite');
+  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await expect(page.getByTestId('jev-live-panel')).toContainText('JEV LIVE');
+  await expect(page.getByTestId('jev-live-panel')).toContainText('REPLAN');
 });

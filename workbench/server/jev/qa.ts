@@ -15,14 +15,30 @@ export interface QualityVector {
   code_quality: number;
   factuality: number;
   efficiency: number;
+  consistency: number;
 }
+/** ERROR LOCALIZATION: where a failure comes from (so the fix targets the right layer). */
+export type ErrorLocus =
+  | 'intent'
+  | 'context'
+  | 'model'
+  | 'tool'
+  | 'skill'
+  | 'reasoning'
+  | 'instruction'
+  | 'data'
+  | 'format'
+  | 'code'
+  | 'memory'
+  | 'routing';
 export interface QaFailure {
   dimension: keyof QualityVector;
   what: string;
   /** Precise instruction for a targeted correction. */
   fix: string;
   blocking: boolean;
-  kind: 'format' | 'missing' | 'code' | 'factual' | 'safety' | 'language' | 'length';
+  kind: 'format' | 'missing' | 'code' | 'factual' | 'safety' | 'language' | 'length' | 'consistency' | 'tool';
+  locus?: ErrorLocus;
 }
 export interface QaResult {
   vector: QualityVector;
@@ -30,10 +46,15 @@ export interface QaResult {
   failures: QaFailure[];
   /** QA performed without any model call. */
   local: true;
+  /** QA levels actually run: L0 rules (format, syntax, safety), L1 evidence & consistency. L2 (execution) / L3 (cross-model) are run by the runtime when worth it. */
+  levels: ('L0' | 'L1' | 'L2' | 'L3')[];
+  /** FAILURE VECTOR: failures per locus. */
+  failureVector: Partial<Record<ErrorLocus, number>>;
 }
 
 const W: Record<keyof QualityVector, number> = {
-  correctness: 0.22,
+  consistency: 0.04,
+  correctness: 0.18,
   completeness: 0.14,
   instruction_following: 0.16,
   style: 0.06,
@@ -189,6 +210,34 @@ export function qualityCheck(o: {
       blocking: true,
       kind: 'safety',
     });
+  // Consistency (L1): the same label given two different figures in one answer.
+  const seen = new Map<string, string>();
+  const clash: string[] = [];
+  for (const m of a.matchAll(
+    /(?:^|\n|\|)\s*\**([A-Za-zÀ-ÿ][\wÀ-ÿ' ]{2,30}?)\**\s*[:=|]\s*\**(-?\d[\d\s.,]*\d|\d)\s*(%|€|\$|FCFA|XOF)?/g,
+  )) {
+    const k = m[1]!.trim().toLowerCase();
+    const val = m[2]!.replace(/\s/g, '') + (m[3] ?? '');
+    if (seen.has(k) && seen.get(k) !== val && !clash.includes(k)) clash.push(k);
+    else seen.set(k, val);
+  }
+  if (clash.length)
+    f.push({
+      dimension: 'consistency',
+      what: `valeurs contradictoires pour : ${clash.slice(0, 4).join(', ')}`,
+      fix: `Each of these labels has two different values in your answer: ${clash.join(', ')}. Keep the correct one (from the tool results) and remove the other.`,
+      blocking: false,
+      kind: 'consistency',
+    });
+  if (o.toolCalls && o.toolErrors / o.toolCalls >= 0.5)
+    f.push({
+      dimension: 'tool_accuracy',
+      what: `${o.toolErrors}/${o.toolCalls} appels d’outils en erreur`,
+      fix: 'Several tool calls failed: check that your answer does not rely on a failed call.',
+      blocking: false,
+      kind: 'tool',
+    });
+  for (const x of f) x.locus ??= LOCUS[x.kind];
   const pen = (d: keyof QualityVector) =>
     f.filter((x) => x.dimension === d).reduce((s, x) => s + (x.blocking ? 0.5 : 0.25), 0);
   const v: QualityVector = {
@@ -204,12 +253,27 @@ export function qualityCheck(o: {
     code_quality: Math.max(0, 1 - pen('code_quality')),
     factuality: Math.max(0, 1 - pen('factuality')),
     efficiency: o.tokenBudget ? Math.max(0, Math.min(1, 1.2 - o.tokens / o.tokenBudget)) : 1,
+    consistency: Math.max(0, 1 - pen('consistency')),
   };
   const score = Math.round(
     (Object.keys(W) as (keyof QualityVector)[]).reduce((s, k) => s + W[k] * v[k], 0) * 100,
   );
-  return { vector: v, score, failures: f, local: true };
+  const failureVector: Partial<Record<ErrorLocus, number>> = {};
+  for (const x of f) failureVector[x.locus!] = (failureVector[x.locus!] ?? 0) + 1;
+  return { vector: v, score, failures: f, local: true, levels: ['L0', 'L1'], failureVector };
 }
+
+const LOCUS: Record<QaFailure['kind'], ErrorLocus> = {
+  format: 'format',
+  missing: 'instruction',
+  code: 'code',
+  factual: 'data',
+  safety: 'instruction',
+  language: 'instruction',
+  length: 'instruction',
+  consistency: 'reasoning',
+  tool: 'tool',
+};
 
 /** Targeted correction prompt: only what failed, nothing else. */
 export function correctionPrompt(failures: QaFailure[]): string {

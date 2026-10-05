@@ -15,7 +15,11 @@ import {
 } from '../../server/jev/packet';
 import {
   DEFAULT_JEV_API,
+  jevErrorText,
+  JEV_DIRECT_URL,
+  JEV_RELAY_URL,
   callJev1,
+  callJev3,
   jev1Cost,
   maskSecret,
   redact,
@@ -38,7 +42,11 @@ export interface JevSettings extends JevApiConfig {
 }
 export const DEFAULT_JEV: JevSettings = { ...DEFAULT_JEV_API, enabled: true, mode: 'balanced', jev2: true };
 
-export const jevSettings = (): JevSettings => ({ ...DEFAULT_JEV, ...useStore.getState().settings.jev });
+export const jevSettings = (): JevSettings => {
+  const s = { ...DEFAULT_JEV, ...useStore.getState().settings.jev };
+  // A browser can never reach TypeSafe directly (CORS): an old saved direct URL means the relay.
+  return s.endpoint === JEV_DIRECT_URL ? { ...s, endpoint: JEV_RELAY_URL } : s;
+};
 
 // ── JEV API key: kept in this browser only, never in the HTML, the DOM or a log ──
 const KEY = 'wbd.jev-key';
@@ -104,6 +112,16 @@ async function jev1(
 ): Promise<Jev1Answer | null> {
   const s = jevSettings();
   if (s.provider === 'local') return null;
+  if (!getJevKey()) {
+    trace.push({
+      name: 'JEV_PRE',
+      ms: 0,
+      tokens: 0,
+      cost: 0,
+      decision: 'JEV-1 non appelé : aucune clé JEV enregistrée → JEV-0 seul',
+    });
+    return null;
+  }
   const conf = classificationConfidence(text, attachments);
   const cost = jev1Cost(text);
   const gate = roiGate({
@@ -148,13 +166,7 @@ async function jev1(
   } catch (e) {
     status.apiOk = false;
     status.fallbacks++;
-    const msg =
-      (e as Error).name === 'AbortError'
-        ? `délai ${s.timeoutMs} ms dépassé`
-        : /Failed to fetch|NetworkError|Load failed/i.test((e as Error).message)
-          ? 'API injoignable depuis le navigateur (CORS / réseau) : indiquez un relais'
-          : (e as Error).message;
-    status.lastError = redact(msg);
+    status.lastError = jevErrorText(e, s.timeoutMs);
     trace.push({
       name: 'JEV_PRE',
       ms: performance.now() - t0,
@@ -246,8 +258,22 @@ export async function pre(input: PreCall): Promise<{ pre: PreResult; trace: Chec
       if (pick && pick !== result.profile.type)
         result = jevPre({ ...input, mode: s.mode, cache, jev1: { ...j1, type: pick, typeConfidence: 1 } });
       if (pick) result.packet.decided_by = 'JEV-2';
-    }
-  }
+    } else
+      trace.push({
+        name: 'JEV_ROUTE',
+        ms: 0,
+        tokens: 0,
+        cost: 0,
+        decision: `JEV-2 non utilisé : ${j1.type === first.profile.type ? 'JEV-0 et JEV-1 sont d’accord' : 'désaccord sans confiance suffisante des deux côtés'}`,
+      });
+  } else
+    trace.push({
+      name: 'JEV_ROUTE',
+      ms: 0,
+      tokens: 0,
+      cost: 0,
+      decision: `JEV-2 non utilisé : ${!j1 ? 'pas de jugement JEV-1 à arbitrer' : !s.jev2 ? 'désactivé' : 'réservé aux modes PERFORMANCE / MAX et aux tâches critiques'}`,
+    });
   trace.unshift({
     name: 'JEV_PRE',
     ms: performance.now() - t0,
@@ -278,6 +304,47 @@ export async function pre(input: PreCall): Promise<{ pre: PreResult; trace: Chec
   });
   const jevCost = trace.reduce((a, c) => a + c.cost, 0);
   return { pre: result, trace, jevCost };
+}
+
+/**
+ * JEV-3 deep control: remote typed judgment on the live mission state.
+ * Only for critical / multi-agent runs (the caller checks the level), only with
+ * a key and a non-local provider, within the daily JEV budget. Never blocks.
+ */
+export async function liveJudge(
+  goal: string,
+  answer: string,
+  state: import('../../server/jev/live').MissionState,
+): Promise<{ done: number; onTrack: number; tokens: number; costUsd: number; ms: number } | null> {
+  const s = jevSettings();
+  if (s.provider === 'local' || !getJevKey()) return null;
+  if ((useStore.getState().jevSpend[today()] ?? 0) >= s.budgetDaily) return null;
+  try {
+    status.calls++;
+    const r = await callJev3(
+      s,
+      getJevKey(),
+      {
+        goal,
+        latest_answer: answer,
+        mission: {
+          step: state.step,
+          progress: state.progress,
+          facts: state.facts,
+          failures: state.failures.slice(-4),
+        },
+      },
+      (url, init) => fetch(url, init) as never,
+    );
+    status.apiOk = true;
+    addJevSpend(r.costUsd);
+    return r;
+  } catch (e) {
+    status.apiOk = false;
+    status.fallbacks++;
+    status.lastError = jevErrorText(e, s.timeoutMs);
+    return null;
+  }
 }
 
 /** jev.context: compiles the conversation history (relevant turns only) under a token budget. */
@@ -342,6 +409,82 @@ export function escalateWorth(
   if (!next) return { worth: false, reason: 'aucun palier supérieur' };
   const nextCost = next.estimate ? (next.estimate.low + next.estimate.high) / 2 : currentCost * 4;
   return marginalGain({ qa: qaScore, target, currentCost, nextCost, nextSuccess: next.pSuccess });
+}
+
+const FEEDBACK_GOOD =
+  /^\s*(parfait|excellent|super|top|g[ée]nial|merci,? c['’]est (bon|parfait)|perfect|great|👍)\b/i;
+const FEEDBACK_BAD =
+  /^\s*(c['’]est (mauvais|faux|nul)|mauvais|faux|ce n['’]est pas (bon|[çc]a)|wrong|bad|👎)\b/i;
+/** « parfait » / « c'est mauvais » at the start of a message = feedback on the previous answer. */
+export const feedbackOf = (text: string): 'good' | 'bad' | null =>
+  FEEDBACK_GOOD.test(text) ? 'good' : FEEDBACK_BAD.test(text) ? 'bad' : null;
+
+/**
+ * USER FEEDBACK LOOP: marks the last run of the session (JEV_LOG) and updates the
+ * model leaderboard used by routing (success pattern / failure memory).
+ */
+export function feedback(sessionId: string, verdict: 'good' | 'bad'): boolean {
+  const st = useStore.getState();
+  const log = st.jevLog;
+  const i = log.map((e) => e.session).lastIndexOf(sessionId);
+  if (i < 0) return false;
+  const e = log[i]!;
+  if (e.feedback === verdict) return true;
+  st.setJevLog(log.map((x, j) => (j === i ? { ...x, feedback: verdict, success: verdict === 'good' } : x)));
+  if (e.model && e.model !== 'JEV-0') st.recordOutcome(e.model, verdict === 'good', e.task as TaskType);
+  return true;
+}
+
+/** SUCCESS PATTERN LIBRARY + FAILURE MEMORY, learnt from real runs (JEV_LOG). */
+export interface LearnedPattern {
+  task: string;
+  best: {
+    model: string;
+    runs: number;
+    successRate: number;
+    costPerSuccess: number;
+    avgTokens: number;
+  } | null;
+  avoid: { model: string; failures: number }[];
+}
+export function patterns(log = useStore.getState().jevLog): LearnedPattern[] {
+  const by = new Map<string, JevLogEntry[]>();
+  for (const e of log) if (e.model && e.model !== 'JEV-0') by.set(e.task, [...(by.get(e.task) ?? []), e]);
+  return [...by].map(([task, es]) => {
+    const per = new Map<string, JevLogEntry[]>();
+    for (const e of es) per.set(e.model, [...(per.get(e.model) ?? []), e]);
+    const stats = [...per].map(([model, xs]) => {
+      const ok = xs.filter((x) => x.success === true);
+      const cost = xs.reduce((a, x) => a + x.cost + x.jevCost, 0);
+      return {
+        model,
+        runs: xs.length,
+        successRate: xs.filter((x) => x.success !== null).length
+          ? ok.length / xs.filter((x) => x.success !== null).length
+          : 0,
+        costPerSuccess: ok.length ? cost / ok.length : Infinity,
+        avgTokens: Math.round(xs.reduce((a, x) => a + x.tokensIn + x.tokensOut, 0) / xs.length),
+        failures: xs.filter((x) => x.success === false).length,
+      };
+    });
+    const best =
+      stats
+        .filter((x) => x.successRate >= 0.8 && x.runs >= 2)
+        .sort((a, b) => a.costPerSuccess - b.costPerSuccess)[0] ?? null;
+    return {
+      task,
+      best: best && {
+        model: best.model,
+        runs: best.runs,
+        successRate: best.successRate,
+        costPerSuccess: best.costPerSuccess,
+        avgTokens: best.avgTokens,
+      },
+      avoid: stats
+        .filter((x) => x.failures >= 2 && x.successRate < 0.5)
+        .map((x) => ({ model: x.model, failures: x.failures })),
+    };
+  });
 }
 
 /** jev.learn: one JEV_LOG entry per run (redacted), feeds the model profiles. */

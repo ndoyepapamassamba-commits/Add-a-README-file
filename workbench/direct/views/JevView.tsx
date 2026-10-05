@@ -2,7 +2,7 @@
 // tools / skills, cost estimated vs actual, tokens saved, quality, escalation,
 // cache, JEV ROI; live trace; JEV_LOG (JSON / CSV); WITHOUT vs WITH JEV KPIs;
 // A/B benchmark; model profiles; Cost Intelligence; JEV API settings; regression report.
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Cpu, Download, FlaskConical, KeyRound, Play, ShieldCheck, Square, Trash2 } from 'lucide-react';
 import { Badge, Button, Input, Select, Tabs, Toggle } from '../../web/components/ui';
 import { cx, fmtCost, fmtDuration, fmtTokens } from '../../web/lib/format';
@@ -16,16 +16,28 @@ import {
   jevKeyMasked,
   jevSettings,
   metrics,
+  patterns,
   setJevKey,
   type JevSettings,
 } from '../lib/jev';
-import { BENCH, runBench } from '../lib/jevBench';
+import { BENCH, runBench, VARIANTS, type BenchRun } from '../lib/jevBench';
+
 import { regressionReport } from '../lib/inventory';
 import { MODE_HELP, MODE_LABEL } from '../../server/jev/control';
-import { compare, toCsv, type JevLogEntry } from '../../server/jev/metrics';
-import { callJev1, jev1Cost } from '../../server/jev/provider';
+import {
+  compare,
+  savingsVs,
+  toCsv,
+  variantOf,
+  variantStats,
+  type JevLogEntry,
+} from '../../server/jev/metrics';
+import { callJev1, jev1Cost, jevErrorText, JEV_DIRECT_URL, JEV_RELAY_URL } from '../../server/jev/provider';
+import relaySource from '../../relay/jev-relay/index.ts?raw';
 import type { JevMode } from '../../server/jev/tools';
-import { TraceTimeline } from './JevTrace';
+import { LiveTree, TraceTimeline } from './JevTrace';
+import { handoffOf } from '../../server/jev/live';
+import { runAgent, stopAgent, type JevVariant } from '../lib/agent';
 import { CostsTab } from './IntelligenceView';
 
 type Tab = 'dash' | 'trace' | 'log' | 'kpi' | 'bench' | 'models' | 'costs' | 'api' | 'regression';
@@ -34,7 +46,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'trace', label: 'Trace live' },
   { id: 'log', label: 'JEV_LOG' },
   { id: 'kpi', label: 'Sans / avec JEV' },
-  { id: 'bench', label: 'Benchmark A/B' },
+  { id: 'bench', label: 'Benchmark 2.0' },
   { id: 'models', label: 'Profils modèles' },
   { id: 'costs', label: 'Cost Intelligence' },
   { id: 'api', label: 'JEV API' },
@@ -244,12 +256,129 @@ function Dashboard() {
           v={m.with.decisionMsAvg === null ? '—' : `${Math.round(m.with.decisionMsAvg)} ms`}
         />
       </div>
+      <LivePanel />
+      <PatternsPanel />
       {lastLog && (
         <div className="mt-3 text-[11.5px] text-faint">
           Dernière mission : {fmtTokens(lastLog.tokensIn + lastLog.tokensOut)} tokens, {fmtCost(lastLog.cost)}
           , {fmtDuration(lastLog.latencyMs)}, {lastLog.toolsOffered}/{lastLog.toolsBaseline} outils exposés.
         </div>
       )}
+    </div>
+  );
+}
+
+/** JEV LIVE CONTROL CENTER: state of the running (or last) mission, updated at each checkpoint. */
+function LivePanel() {
+  const live = useStore((s) => s.jevLive);
+  const running = useStore((s) => s.running);
+  const sessions = useStore((s) => s.sessions);
+  const setView = useStore((s) => s.setView);
+  const entries = Object.entries(live).sort((a, b) => b[1].at - a[1].at);
+  const active = entries.find(([sid]) => running[sid]) ?? entries[0];
+  if (!active)
+    return (
+      <div className="mt-4 rounded-xl border border-line p-3 text-[12.5px] text-muted">
+        JEV LIVE : aucune mission contrôlée en direct pour l’instant (le contrôle live s’active à chaque
+        mission avec JEV).
+      </div>
+    );
+  const [sid, snap] = active;
+  const s = snap.state;
+  const isRunning = Boolean(running[sid]);
+  const interrupted = !isRunning && s.status === 'running';
+  const title = sessions.find((x) => x.id === sid)?.title ?? sid;
+  const resume = () => {
+    const st = useStore.getState();
+    st.selectSession(sid);
+    setView('chat');
+    void runAgent(
+      sid,
+      `Reprends la mission interrompue à partir de cet état (ne refais pas ce qui est fait) :\n${handoffOf(s)}`,
+      [],
+    );
+  };
+  return (
+    <div className="mt-4 rounded-xl border border-info/30 bg-info/5 p-3" data-testid="jev-live-panel">
+      <div className="mb-2 flex flex-wrap items-center gap-2 text-[12.5px]">
+        <span className="font-medium">JEV LIVE — Control Center</span>
+        <span className="truncate text-muted">{title}</span>
+        <span className="ml-auto text-faint">mis à jour {new Date(snap.at).toLocaleTimeString('fr-FR')}</span>
+        {interrupted && (
+          <Button size="sm" onClick={resume} title="Relance la mission avec l’état de mission enregistré">
+            <Play size={13} /> Reprendre
+          </Button>
+        )}
+        {isRunning && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => stopAgent(sid)}
+            title="Pause : l’état de mission est conservé"
+          >
+            <Square size={13} /> Pause
+          </Button>
+        )}
+      </div>
+      <div className="mb-2 grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-8">
+        <Tile k="Statut" v={isRunning ? 'EN COURS' : interrupted ? 'INTERROMPU' : s.status.toUpperCase()} />
+        <Tile k="Modèle courant" v={s.model.split('/').pop() ?? '—'} />
+        <Tile k="Stratégie" v={s.strategy} />
+        <Tile k="Qualité" v={s.quality === null ? '—' : String(s.quality)} />
+        <Tile
+          k="Tokens"
+          v={fmtTokens(s.tokens)}
+          hint={`budget B${s.budgetStage} : ${fmtTokens(s.budgetTokens)}`}
+        />
+        <Tile
+          k="Coût"
+          v={fmtCost(s.cost)}
+          hint={s.costBudget === null ? 'budget libre' : `budget $${s.costBudget}`}
+        />
+        <Tile k="Latence" v={fmtDuration(s.elapsedMs)} />
+        <Tile k="Budget restant" v={fmtTokens(s.budgetLeftTokens)} />
+        <Tile k="Outils exposés" v={String(s.toolsOffered.length)} hint={`${s.toolsUsed.length} utilisés`} />
+        <Tile k="Overhead JEV" v={`${Math.round(s.overheadMs)} ms`} hint="temps de décision mesuré" />
+        <Tile
+          k="Tokens évités (live)"
+          v={fmtTokens(s.savedTokens)}
+          hint="contexte élagué + outils retirés, par appel suivant"
+        />
+        <Tile k="Décision live" v={s.lastDecision} />
+      </div>
+      <LiveTree snap={snap} running={isRunning} />
+    </div>
+  );
+}
+
+/** SUCCESS PATTERN LIBRARY + FAILURE MEMORY (learnt from real runs and user feedback). */
+function PatternsPanel() {
+  useStore((s) => s.jevLog);
+  const ps = patterns().filter((p) => p.best || p.avoid.length);
+  if (!ps.length) return null;
+  return (
+    <div className="mt-3 rounded-xl border border-line p-3 text-[12px]">
+      <div className="mb-1 font-medium">Apprentissage : motifs de réussite / mémoire des échecs</div>
+      <ul className="space-y-0.5">
+        {ps.map((p) => (
+          <li key={p.task}>
+            <span className="font-medium">{p.task}</span> :{' '}
+            {p.best
+              ? `meilleur ${p.best.model} (${Math.round(p.best.successRate * 100)} % sur ${p.best.runs}, ${fmtCost(p.best.costPerSuccess)} / succès, ~${fmtTokens(p.best.avgTokens)} tokens)`
+              : 'pas encore de modèle fiable'}
+            {p.avoid.length ? (
+              <span className="text-warn">
+                {' '}
+                · à éviter : {p.avoid.map((a) => `${a.model} (${a.failures} échecs)`).join(', ')}
+              </span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+      <div className="mt-1 text-faint">
+        Le routage les applique via le classement par type de tâche (👍 / 👎 et « parfait » / « c’est mauvais
+        » comptent).
+      </div>
     </div>
   );
 }
@@ -426,7 +555,7 @@ function KpiTab() {
         </div>
         {!paired.length ? (
           <div className="text-[12.5px] text-muted">
-            Aucune paire mesurée : lancez le Benchmark A/B. Aucun chiffre n’est affiché sans mesure.
+            Aucune paire mesurée : lancez le Benchmark 2.0. Aucun chiffre n’est affiché sans mesure.
           </div>
         ) : (
           <table className="w-full max-w-[720px] text-[12px]" data-testid="kpi-real">
@@ -471,23 +600,26 @@ function KpiTab() {
 
 function BenchTab() {
   const [sel, setSel] = useState<string[]>(BENCH.map((b) => b.key));
+  const [variants, setVariants] = useState<JevVariant[]>(['off', 'pre', 'live', 'full']);
+  const [reps, setReps] = useState(1);
   const [busy, setBusy] = useState<string | null>(null);
-  const [res, setRes] = useState<{ key: string; jev: boolean; ok: boolean }[]>([]);
+  const [res, setRes] = useState<BenchRun[]>([]);
   const stop = useRef({ stop: false });
   const log = useStore((s) => s.jevLog);
   const setView = useStore((s) => s.setView);
   const toast = useStore((s) => s.toast);
+  const runs = sel.length * variants.length * reps;
   const run = async () => {
     if (
       !confirm(
-        `Lancer ${sel.length} tâche(s) × 2 (sans / avec JEV) avec de vrais appels OpenRouter ? Coût typique : quelques centimes avec des modèles économiques.`,
+        `Lancer ${sel.length} tâche(s) × ${variants.length} variante(s) × ${reps} répétition(s) = ${runs} exécution(s) avec de vrais appels OpenRouter ? Coût typique : quelques centimes par exécution avec des modèles économiques.`,
       )
     )
       return;
     stop.current.stop = false;
     setRes([]);
     try {
-      const r = await runBench(sel, (m) => setBusy(m), stop.current);
+      const r = await runBench(sel, (m) => setBusy(m), stop.current, { variants, reps });
       setRes(r);
       toast('ok', `Benchmark terminé : ${r.length} exécution(s).`);
     } catch (e) {
@@ -496,22 +628,62 @@ function BenchTab() {
     setBusy(null);
     setView('jev');
   };
-  const latest = (k: string, jev: boolean) => [...log].reverse().find((e) => e.bench === k && e.jev === jev);
+  const bench = log.filter((e) => e.bench);
+  const stats = VARIANTS.map((v) => variantStats(bench, v.id));
+  const base = stats[0]!;
+  const latest = (k: string, v: JevVariant) =>
+    [...log].reverse().find((e) => e.bench === k && variantOf(e) === v);
+  const n = (x: number | null, f: (v: number) => string) => (x === null ? '—' : f(x));
+  const d = (x: number | null) => (x === null ? '—' : `${x > 0 ? '+' : ''}${Math.round(x * 100)} %`);
+  const distCell = (
+    x: { mean: number | null; median: number | null; p95: number | null },
+    f: (v: number) => string,
+  ) => (x.mean === null ? '—' : `${f(x.mean)} · méd ${f(x.median!)} · p95 ${f(x.p95!)}`);
   return (
     <div>
       <div className="mb-2 text-[12.5px] text-muted">
-        Chaque tâche est exécutée deux fois par le vrai moteur d’agents : sans JEV (pipeline standard), puis
-        avec JEV. Tokens, coût et latence viennent d’OpenRouter ; la réussite d’un contrôle déterministe de la
-        réponse.
+        BENCHMARK 2.0 — chaque tâche est exécutée par le vrai moteur d’agents dans chaque variante : SANS JEV,
+        JEV PRE (paquet d’exécution seul), JEV PRE + LIVE (contrôle en cours d’exécution), JEV FULL (+ QA et
+        correction ciblée). Tokens, coût et latence viennent d’OpenRouter ; la réussite d’un contrôle
+        déterministe de la réponse. Aucune valeur n’est extrapolée.
       </div>
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-3 text-[12px]">
+        {VARIANTS.map((v) => (
+          <label key={v.id} className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={variants.includes(v.id)}
+              onChange={(e) =>
+                setVariants(
+                  e.target.checked
+                    ? VARIANTS.map((x) => x.id).filter((x) => x === v.id || variants.includes(x))
+                    : variants.filter((x) => x !== v.id),
+                )
+              }
+              aria-label={`Variante ${v.label}`}
+            />
+            {v.label}
+          </label>
+        ))}
+        <label className="flex items-center gap-1">
+          Répétitions
+          <Input
+            type="number"
+            min={1}
+            max={10}
+            value={reps}
+            onChange={(e) => setReps(Math.max(1, Math.min(10, Number(e.target.value) || 1)))}
+            className="w-16"
+            aria-label="Répétitions"
+          />
+        </label>
         <Button
           size="sm"
           variant="primary"
-          disabled={Boolean(busy) || !sel.length}
+          disabled={Boolean(busy) || !sel.length || !variants.length}
           onClick={() => void run()}
         >
-          <Play size={13} /> Lancer A/B ({sel.length})
+          <Play size={13} /> Lancer ({runs})
         </Button>
         {busy && (
           <Button size="sm" variant="ghost" onClick={() => (stop.current.stop = true)}>
@@ -520,59 +692,152 @@ function BenchTab() {
         )}
         {busy && <span className="text-[12px] text-info">{busy}</span>}
       </div>
+      <div className="mb-4 overflow-x-auto">
+        <table className="w-full text-[12px]" data-testid="bench2-table">
+          <thead>
+            <tr>
+              {[
+                'Variante',
+                'Exéc.',
+                'Tokens (moy · méd · p95)',
+                'Coût',
+                'Latence',
+                'Qualité',
+                'Succès',
+                'Coût / succès',
+                'Gaspillage (tok)',
+                'Qualité / $',
+                'Qualité / 1k tok',
+                'Succès / $',
+                'Succès / 1k tok',
+                'Overhead JEV',
+                'Décisions live',
+              ].map((h) => (
+                <th key={h} className={th}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {stats.map((x, i) => (
+              <tr key={x.variant} className="border-t border-line">
+                <td className={cx(td, 'font-medium')}>{VARIANTS[i]!.label}</td>
+                <td className={td}>{x.runs}</td>
+                <td className={td}>{distCell(x.tokens, fmtTokens)}</td>
+                <td className={td}>{distCell(x.cost, fmtCost)}</td>
+                <td className={td}>{distCell(x.latency, fmtDuration)}</td>
+                <td className={td}>{n(x.quality.mean, (v) => v.toFixed(0))}</td>
+                <td className={td}>{pct(x.successRate)}</td>
+                <td className={td}>{n(x.costPerSuccess, fmtCost)}</td>
+                <td className={td}>{n(x.waste.mean, (v) => fmtTokens(Math.round(v)))}</td>
+                <td className={td}>{n(x.qualityPerUsd, (v) => v.toFixed(0))}</td>
+                <td className={td}>{n(x.qualityPer1kTokens, (v) => v.toFixed(1))}</td>
+                <td className={td}>{n(x.successPerUsd, (v) => v.toFixed(0))}</td>
+                <td className={td}>{n(x.successPer1kTokens, (v) => v.toFixed(3))}</td>
+                <td className={td}>{pct(x.overheadPct)}</td>
+                <td className={td}>
+                  {x.liveDecisions}
+                  {x.modelSwitches ? ` (${x.modelSwitches} switch)` : ''}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <table className="mt-2 w-full max-w-[880px] text-[12px]" data-testid="bench2-delta">
+          <thead>
+            <tr>
+              {[
+                'Δ vs SANS JEV',
+                'MEASURED SAVINGS tokens',
+                'MEASURED SAVINGS coût',
+                'AVOIDABLE WASTE REDUCTION (cible > 90 %)',
+                'Latence',
+                'Qualité',
+                'Succès (pts)',
+                'JEV ROI',
+              ].map((h) => (
+                <th key={h} className={th}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {stats.slice(1).map((x, i) => {
+              const sv = base.runs && x.runs ? savingsVs(base, x) : null;
+              return (
+                <tr key={x.variant} className="border-t border-line">
+                  <td className={cx(td, 'font-medium')}>{VARIANTS[i + 1]!.label}</td>
+                  <td className={td}>{sv ? pct(sv.tokenSavings) : '—'}</td>
+                  <td className={td}>{sv ? pct(sv.costSavings) : '—'}</td>
+                  <td
+                    className={cx(
+                      td,
+                      sv?.wasteReduction != null && (sv.wasteReduction >= 0.9 ? 'text-ok' : 'text-warn'),
+                    )}
+                  >
+                    {sv ? pct(sv.wasteReduction) : '—'}
+                  </td>
+                  <td className={td}>{sv ? d(sv.latencyDelta) : '—'}</td>
+                  <td className={td}>{sv ? d(sv.qualityDelta) : '—'}</td>
+                  <td className={td}>
+                    {sv?.successDelta != null
+                      ? `${sv.successDelta >= 0 ? '+' : ''}${Math.round(sv.successDelta * 100)}`
+                      : '—'}
+                  </td>
+                  <td className={td}>{sv?.jevRoi != null ? `${sv.jevRoi.toFixed(0)}×` : '—'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div className="mt-1 text-[11.5px] text-faint">
+          TARGET &gt; 90 % de réduction du gaspillage évitable : affiché en vert seulement si la mesure
+          l’atteint. Gaspillage = définitions d’outils jamais utilisés + appels d’outils en échec + appels
+          répétés + réponses jetées (tokens mesurés par exécution). « — » = pas encore mesuré.
+        </div>
+      </div>
       <table className="w-full text-[12px]" data-testid="bench-table">
         <thead>
           <tr>
-            {[
-              '',
-              'Catégorie',
-              'Tokens sans',
-              'Tokens avec',
-              'Coût sans',
-              'Coût avec',
-              'Latence sans',
-              'Latence avec',
-              'Qualité avec',
-              'Succès sans',
-              'Succès avec',
-            ].map((h) => (
-              <th key={h} className={th}>
-                {h}
+            <th className={th} />
+            <th className={th}>Catégorie</th>
+            {VARIANTS.map((v) => (
+              <th key={v.id} className={th}>
+                {v.label} (tokens · coût · succès)
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {BENCH.map((b) => {
-            const x = latest(b.key, false);
-            const y = latest(b.key, true);
-            return (
-              <tr key={b.key} className="border-t border-line">
-                <td className={td}>
-                  <input
-                    type="checkbox"
-                    checked={sel.includes(b.key)}
-                    onChange={(e) =>
-                      setSel(e.target.checked ? [...sel, b.key] : sel.filter((k) => k !== b.key))
-                    }
-                    aria-label={b.label}
-                  />
-                </td>
-                <td className={cx(td, 'font-medium')} title={b.text}>
-                  {b.label}
-                </td>
-                <td className={td}>{x ? fmtTokens(x.tokensIn + x.tokensOut) : '—'}</td>
-                <td className={td}>{y ? fmtTokens(y.tokensIn + y.tokensOut) : '—'}</td>
-                <td className={td}>{x ? fmtCost(x.cost) : '—'}</td>
-                <td className={td}>{y ? fmtCost(y.cost + y.jevCost) : '—'}</td>
-                <td className={td}>{x ? fmtDuration(x.latencyMs) : '—'}</td>
-                <td className={td}>{y ? fmtDuration(y.latencyMs) : '—'}</td>
-                <td className={td}>{y?.quality ?? '—'}</td>
-                <td className={td}>{x ? (x.success ? '✓' : '✗') : '—'}</td>
-                <td className={td}>{y ? (y.success ? '✓' : '✗') : '—'}</td>
-              </tr>
-            );
-          })}
+          {BENCH.map((b) => (
+            <tr key={b.key} className="border-t border-line">
+              <td className={td}>
+                <input
+                  type="checkbox"
+                  checked={sel.includes(b.key)}
+                  onChange={(e) =>
+                    setSel(e.target.checked ? [...sel, b.key] : sel.filter((k) => k !== b.key))
+                  }
+                  aria-label={b.label}
+                />
+              </td>
+              <td className={cx(td, 'font-medium')} title={b.text}>
+                {b.label}
+              </td>
+              {VARIANTS.map((v) => {
+                const x = latest(b.key, v.id);
+                return (
+                  <td key={v.id} className={td}>
+                    {x
+                      ? `${fmtTokens(x.tokensIn + x.tokensOut)} · ${fmtCost(x.cost + x.jevCost)} · ${x.success ? '✓' : '✗'}`
+                      : '—'}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
         </tbody>
       </table>
       {res.length > 0 && (
@@ -647,10 +912,24 @@ function ApiTab() {
   const [, bump] = useState(0);
   const masked = jevKeyMasked();
   const runTest = async () => {
+    const c = jevSettings();
+    if (c.endpoint === JEV_DIRECT_URL) {
+      setTest(
+        'Échec : api.typesafe.ai refuse les appels directs du navigateur (CORS). Cliquez « Relais Supabase ». JEV-0 local continue de fonctionner.',
+      );
+      return;
+    }
+    if (!getJevKey()) {
+      setTest(
+        'Échec : aucune clé JEV enregistrée (le relais ne stocke aucune clé). JEV-0 local continue de fonctionner.',
+      );
+      return;
+    }
     setTest('Test en cours…');
     try {
+      // Larger timeout for the test only: the relay may cold-start.
       const r = await callJev1(
-        jevSettings(),
+        { ...c, timeoutMs: Math.max(c.timeoutMs, 10_000) },
         getJevKey() || null,
         {
           request: 'Analyse ce fichier Excel et calcule les totaux par agence',
@@ -662,17 +941,12 @@ function ApiTab() {
         `OK : ${r.model} en ${r.ms} ms — type ${r.type} (${Math.round(r.typeConfidence * 100)} %), ${r.inputTokens} tokens, $${r.costUsd.toFixed(6)}.`,
       );
     } catch (e) {
-      const msg = (e as Error).message;
       setTest(
-        `Échec : ${/Failed to fetch|NetworkError/i.test(msg) ? 'appel bloqué par le navigateur (CORS) ou réseau — renseignez un relais (édition serveur, fonction Supabase…)' : (e as Error).name === 'AbortError' ? `délai de ${cfg.timeoutMs} ms dépassé` : msg}. JEV-0 local continue de fonctionner.`,
+        `Échec : ${jevErrorText(e, Math.max(c.timeoutMs, 10_000))}. JEV-0 local continue de fonctionner.`,
       );
     }
   };
-  const relay = useMemo(
-    () =>
-      `// Relais JEV (Deno / Supabase Edge Function) : la clé reste côté serveur (secret TYPESAFE_API_KEY).\n// Déploiement : supabase functions deploy jev-relay ; secrets : supabase secrets set TYPESAFE_API_KEY=…\nconst ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? 'null').split(',');\nDeno.serve(async (req) => {\n  const origin = req.headers.get('origin') ?? 'null';\n  const cors = { 'Access-Control-Allow-Origin': ORIGINS.includes(origin) ? origin : ORIGINS[0], 'Access-Control-Allow-Headers': 'content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };\n  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });\n  if (req.method !== 'POST') return new Response('POST only', { status: 405, headers: cors });\n  const body = await req.text();\n  if (body.length > 200_000) return new Response('too large', { status: 413, headers: cors });\n  const r = await fetch('https://api.typesafe.ai/v1/systemone', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: \`Bearer \${Deno.env.get('TYPESAFE_API_KEY')}\` }, body });\n  return new Response(await r.text(), { status: r.status, headers: { ...cors, 'Content-Type': 'application/json' } });\n});\n`,
-    [],
-  );
+  const relay = relaySource;
   return (
     <div className="grid max-w-[980px] gap-4 md:grid-cols-2">
       <div className="space-y-2 text-[12.5px]">
@@ -697,6 +971,18 @@ function ApiTab() {
             onChange={(e) => set({ endpoint: e.target.value })}
             aria-label="JEV endpoint"
           />
+          <div className="mt-1 flex gap-1.5">
+            <Button
+              size="sm"
+              variant={cfg.endpoint === JEV_RELAY_URL ? 'ghost' : undefined}
+              onClick={() => set({ endpoint: JEV_RELAY_URL })}
+              title="Fonction Supabase jev-relay (projet mntech-sync) : transmet votre clé à TypeSafe, n’en stocke aucune"
+            >
+              Relais Supabase
+            </Button>
+            {cfg.endpoint === JEV_RELAY_URL && <Badge tone="ok">relais actif</Badge>}
+            {cfg.endpoint === JEV_DIRECT_URL && <Badge tone="warn">direct : bloqué par CORS</Badge>}
+          </div>
         </label>
         <div className="grid grid-cols-3 gap-2">
           <label>
@@ -787,15 +1073,15 @@ function ApiTab() {
           <div className={cx('text-[12px]', test.startsWith('OK') ? 'text-ok' : 'text-warn')}>{test}</div>
         )}
         <div className="text-[11.5px] text-faint">
-          Le navigateur ne peut pas appeler api.typesafe.ai directement (CORS). Dans l’édition directe,
-          utilisez un relais qui garde la clé côté serveur (modèle ci-contre) ; sans relais, JEV-0 local prend
-          tout en charge. Cache des décisions JEV :{' '}
-          {Object.values(cache.stats).reduce((s, x) => s + x.hits, 0)} succès.
+          Le navigateur ne peut pas appeler api.typesafe.ai directement (CORS). Le relais Supabase jev-relay
+          (code ci-contre, déployé) transmet votre clé à TypeSafe sans la stocker ni la journaliser ; vous
+          pouvez aussi déployer le vôtre. Sans relais ou sans clé, JEV-0 local prend tout en charge. Cache des
+          décisions JEV : {Object.values(cache.stats).reduce((s, x) => s + x.hits, 0)} succès.
         </div>
       </div>
       <div>
         <div className="mb-1 flex items-center justify-between text-[12.5px] font-medium">
-          Relais (clé côté serveur)
+          Relais déployé (Supabase Edge Function)
           <Button size="sm" variant="ghost" onClick={() => download('jev-relay.ts', relay, 'text/plain')}>
             <Download size={13} /> jev-relay.ts
           </Button>

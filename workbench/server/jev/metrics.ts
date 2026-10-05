@@ -8,6 +8,8 @@ export interface Checkpoint {
     | 'JEV_CONTEXT'
     | 'JEV_TOOLS'
     | 'JEV_EXECUTION'
+    | 'JEV_CHECKPOINT'
+    | 'JEV_MODEL_SWITCH'
     | 'JEV_QA'
     | 'JEV_CORRECTION'
     | 'JEV_ESCALATION'
@@ -56,6 +58,21 @@ export interface JevLogEntry {
   checkpoints: Checkpoint[];
   /** Benchmark category when the run is part of an A/B benchmark. */
   bench?: string;
+  /** Benchmark 2.0 variant: off (WITHOUT JEV) / pre / live (PRE + LIVE) / full. */
+  variant?: 'off' | 'pre' | 'live' | 'full';
+  /** Benchmark repetition index. */
+  rep?: number;
+  /** Measured waste (tokens paid for that brought nothing) and its share of the run. */
+  wasted?: number;
+  wasteRate?: number | null;
+  /** Live control: decisions taken, model switches, tokens avoided, JEV overhead. */
+  liveDecisions?: number;
+  modelSwitches?: number;
+  liveSavedTokens?: number;
+  overheadPct?: number | null;
+  promptWaste?: number;
+  /** User feedback (👍 / 👎 or « parfait » / « c'est mauvais »). */
+  feedback?: 'good' | 'bad';
 }
 
 export interface Kpi {
@@ -173,6 +190,16 @@ export function toCsv(entries: JevLogEntry[]): string {
     'contextBefore',
     'contextAfter',
     'bench',
+    'variant',
+    'rep',
+    'wasted',
+    'wasteRate',
+    'liveDecisions',
+    'modelSwitches',
+    'liveSavedTokens',
+    'overheadPct',
+    'promptWaste',
+    'feedback',
   ];
   const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   return [
@@ -219,4 +246,114 @@ export function modelProfiles(entries: JevLogEntry[]): ModelProfile[] {
       weaknesses: [...perTask].filter(([, v]) => v.n >= 2 && v.ok / v.n < 0.5).map(([k]) => k),
     };
   });
+}
+
+// ── Benchmark 2.0: variants, repetitions, distributions ──
+export type Variant = 'off' | 'pre' | 'live' | 'full';
+export const variantOf = (e: JevLogEntry): Variant => e.variant ?? (e.jev ? 'full' : 'off');
+
+export interface Dist {
+  n: number;
+  mean: number | null;
+  median: number | null;
+  p95: number | null;
+}
+export function dist(xs: number[]): Dist {
+  const v = xs.filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
+  if (!v.length) return { n: 0, mean: null, median: null, p95: null };
+  const q = (p: number) => {
+    const i = (v.length - 1) * p;
+    const lo = Math.floor(i);
+    const hi = Math.ceil(i);
+    return v[lo]! + (v[hi]! - v[lo]!) * (i - lo);
+  };
+  return { n: v.length, mean: v.reduce((a, b) => a + b, 0) / v.length, median: q(0.5), p95: q(0.95) };
+}
+
+export interface VariantStats {
+  variant: Variant;
+  runs: number;
+  tokens: Dist;
+  cost: Dist;
+  latency: Dist;
+  quality: Dist;
+  waste: Dist;
+  successRate: number | null;
+  costPerSuccess: number | null;
+  /** Quality points per dollar / per 1k tokens; successes per dollar / per 1k tokens. */
+  qualityPerUsd: number | null;
+  qualityPer1kTokens: number | null;
+  successPerUsd: number | null;
+  successPer1kTokens: number | null;
+  jevCost: number;
+  /** JEV cost / LLM cost (measured). */
+  overheadPct: number | null;
+  liveDecisions: number;
+  modelSwitches: number;
+}
+
+export function variantStats(entries: JevLogEntry[], variant: Variant): VariantStats {
+  const es = entries.filter((e) => variantOf(e) === variant);
+  const tok = es.map((e) => e.tokensIn + e.tokensOut);
+  const cost = es.map((e) => e.cost + e.jevCost);
+  const judged = es.filter((e) => e.success !== null);
+  const ok = judged.filter((e) => e.success).length;
+  const totalCost = cost.reduce((a, b) => a + b, 0);
+  const totalTok = tok.reduce((a, b) => a + b, 0);
+  const q = es.filter((e) => e.quality !== null).map((e) => e.quality!);
+  const qSum = q.reduce((a, b) => a + b, 0);
+  const llm = es.reduce((a, e) => a + e.cost, 0);
+  const jevCost = es.reduce((a, e) => a + e.jevCost, 0);
+  return {
+    variant,
+    runs: es.length,
+    tokens: dist(tok),
+    cost: dist(cost),
+    latency: dist(es.map((e) => e.latencyMs)),
+    quality: dist(q),
+    waste: dist(es.filter((e) => e.wasted !== undefined).map((e) => e.wasted!)),
+    successRate: judged.length ? ok / judged.length : null,
+    costPerSuccess: ok ? totalCost / ok : null,
+    qualityPerUsd: totalCost > 0 && q.length ? qSum / totalCost : null,
+    qualityPer1kTokens: totalTok > 0 && q.length ? qSum / (totalTok / 1000) : null,
+    successPerUsd: totalCost > 0 && judged.length ? ok / totalCost : null,
+    successPer1kTokens: totalTok > 0 && judged.length ? ok / (totalTok / 1000) : null,
+    jevCost,
+    overheadPct: llm > 0 ? jevCost / llm : null,
+    liveDecisions: es.reduce((a, e) => a + (e.liveDecisions ?? 0), 0),
+    modelSwitches: es.reduce((a, e) => a + (e.modelSwitches ?? 0), 0),
+  };
+}
+
+/** Δ of a value vs the WITHOUT JEV baseline (negative = reduction). */
+export const delta = (base: number | null | undefined, x: number | null | undefined): number | null =>
+  base === null || base === undefined || x === null || x === undefined || base === 0
+    ? null
+    : (x - base) / Math.abs(base);
+
+/**
+ * Savings report of a variant vs the baseline on the same benchmark (means):
+ * MEASURED SAVINGS (tokens, cost) and AVOIDABLE WASTE REDUCTION.
+ */
+export function savingsVs(base: VariantStats, v: VariantStats) {
+  const tokenSavings = delta(base.tokens.mean, v.tokens.mean);
+  const costSavings = delta(base.cost.mean, v.cost.mean);
+  const wasteReduction =
+    base.waste.mean !== null && v.waste.mean !== null && base.waste.mean > 0
+      ? 1 - v.waste.mean / base.waste.mean
+      : null;
+  return {
+    tokenSavings: tokenSavings === null ? null : -tokenSavings,
+    costSavings: costSavings === null ? null : -costSavings,
+    wasteReduction,
+    latencyDelta: delta(base.latency.mean, v.latency.mean),
+    qualityDelta: delta(base.quality.mean, v.quality.mean),
+    successDelta:
+      base.successRate !== null && v.successRate !== null ? v.successRate - base.successRate : null,
+    // Gross LLM savings per JEV dollar (JEV cost excluded from the variant cost).
+    jevRoi:
+      v.jevCost > 0 && base.cost.mean !== null && v.cost.mean !== null && v.runs
+        ? ((base.cost.mean - (v.cost.mean - v.jevCost / v.runs)) * v.runs) / v.jevCost
+        : null,
+  };
 }

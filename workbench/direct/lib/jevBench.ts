@@ -1,8 +1,9 @@
-// JEV internal benchmark: the SAME mission run WITHOUT JEV (baseline) and WITH
-// JEV, through the real agent runtime and the real OpenRouter calls. Tokens,
+// JEV internal benchmark 2.0: the SAME mission run in 4 variants — WITHOUT JEV,
+// JEV PRE, JEV PRE + LIVE, JEV FULL — N times each, through the real agent
+// runtime and the real OpenRouter calls. Tokens,
 // cost and latency come from OpenRouter usage; success from a deterministic
 // check of the final answer. Nothing is simulated or extrapolated.
-import { runAgent } from './agent';
+import { runAgent, type JevVariant } from './agent';
 import { useStore } from './store';
 import { writeText } from './vfs';
 
@@ -101,6 +102,24 @@ export const BENCH: BenchTask[] = [
     expect: /filter[\s\S]*map|map[\s\S]*filter/,
   },
   {
+    key: 'multiagent',
+    label: 'MULTI-AGENT',
+    text: 'Délègue à deux spécialistes en parallèle : l’un calcule 17 × 23, l’autre donne la racine carrée de 144. Puis donne les deux résultats.',
+    expect: /391[\s\S]*12|12[\s\S]*391/,
+  },
+  {
+    key: 'complexcode',
+    label: 'COMPLEX CODING',
+    text: 'Écris dans bench/fib.js une fonction fib(n) itérative, exécute-la pour n = 30 avec code.run et donne le résultat.',
+    expect: /832[\s  ]?040/,
+  },
+  {
+    key: 'highrisk',
+    label: 'HIGH-RISK REASONING',
+    text: 'Crédit de 10 000 000 XOF, provision IFRS 9 de 35 %, puis reprise de 20 % de la provision. Quel est le montant de la provision après reprise ? Donne le chiffre exact.',
+    expect: /2[\s  .]?800[\s  .]?000/,
+  },
+  {
     key: 'planning',
     label: 'PLANNING',
     text: 'Donne un plan en 3 étapes numérotées pour clôturer un reporting mensuel.',
@@ -110,40 +129,58 @@ export const BENCH: BenchTask[] = [
 
 export interface BenchRun {
   key: string;
-  jev: boolean;
+  variant: JevVariant;
+  rep: number;
   ok: boolean;
   session: string;
 }
 
-/** Runs the selected tasks without then with JEV (same model routing, same budget). */
+export const VARIANTS: { id: JevVariant; label: string }[] = [
+  { id: 'off', label: 'SANS JEV' },
+  { id: 'pre', label: 'JEV PRE' },
+  { id: 'live', label: 'JEV PRE + LIVE' },
+  { id: 'full', label: 'JEV FULL' },
+];
+
+/** Runs the selected tasks in each variant, `reps` times (same routing inputs, same budget). */
 export async function runBench(
   keys: string[],
   onProgress: (msg: string) => void,
   signal?: { stop: boolean },
+  opts: { variants?: JevVariant[]; reps?: number } = {},
 ): Promise<BenchRun[]> {
+  const variants = opts.variants ?? ['off', 'full'];
+  const reps = Math.max(1, Math.min(10, opts.reps ?? 1));
   const out: BenchRun[] = [];
-  for (const t of BENCH.filter((b) => keys.includes(b.key))) {
-    for (const jev of [false, true]) {
-      if (signal?.stop) return out;
-      t.setup?.();
-      const st = useStore.getState();
-      const s = st.newSession(false);
-      st.patchSession(s.id, { title: `[bench ${jev ? 'JEV' : 'sans JEV'}] ${t.label}`, mode: 'auto' });
-      onProgress(`${t.label} — ${jev ? 'avec JEV' : 'sans JEV'}…`);
-      await runAgent(s.id, t.text, [], { mode: 'chat', jev, bench: t.key });
-      const sess = useStore.getState().sessions.find((x) => x.id === s.id);
-      const answer = [...(sess?.items ?? [])].reverse().find((i) => i.kind === 'assistant' && i.text.trim());
-      const ok = Boolean(answer && answer.kind === 'assistant' && t.expect.test(answer.text));
-      // The success of a benchmark run is measured by the check, not by the model.
-      const log = useStore.getState().jevLog;
-      const idx = log.map((e) => e.session).lastIndexOf(s.id);
-      if (idx >= 0) {
-        const next = [...log];
-        next[idx] = { ...next[idx]!, success: ok, bench: t.key };
-        useStore.getState().setJevLog(next);
+  for (let rep = 1; rep <= reps; rep++)
+    for (const t of BENCH.filter((b) => keys.includes(b.key))) {
+      for (const variant of variants) {
+        if (signal?.stop) return out;
+        t.setup?.();
+        const st = useStore.getState();
+        const s = st.newSession(false);
+        const vl = VARIANTS.find((v) => v.id === variant)!.label;
+        st.patchSession(s.id, {
+          title: `[bench ${vl}${reps > 1 ? ` #${rep}` : ''}] ${t.label}`,
+          mode: 'auto',
+        });
+        onProgress(`${t.label} — ${vl}${reps > 1 ? ` (répétition ${rep}/${reps})` : ''}…`);
+        await runAgent(s.id, t.text, [], { mode: 'chat', jev: variant, bench: t.key, rep });
+        const sess = useStore.getState().sessions.find((x) => x.id === s.id);
+        const answer = [...(sess?.items ?? [])]
+          .reverse()
+          .find((i) => i.kind === 'assistant' && i.text.trim());
+        const ok = Boolean(answer && answer.kind === 'assistant' && t.expect.test(answer.text));
+        // The success of a benchmark run is measured by the check, not by the model.
+        const log = useStore.getState().jevLog;
+        const idx = log.map((e) => e.session).lastIndexOf(s.id);
+        if (idx >= 0) {
+          const next = [...log];
+          next[idx] = { ...next[idx]!, success: ok, bench: t.key, variant, rep };
+          useStore.getState().setJevLog(next);
+        }
+        out.push({ key: t.key, variant, rep, ok, session: s.id });
       }
-      out.push({ key: t.key, jev, ok, session: s.id });
     }
-  }
   return out;
 }

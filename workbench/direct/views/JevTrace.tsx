@@ -2,10 +2,88 @@
 // EXECUTION → QA → CORRECTION → POST → LEARNING, with duration, tokens, cost
 // and the decision of each checkpoint; plus "Why JEV chose this".
 import { useState } from 'react';
-import { ChevronRight, Cpu } from 'lucide-react';
+import { ChevronRight, Cpu, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { Badge } from '../../web/components/ui';
 import { cx } from '../../web/lib/format';
 import type { Checkpoint } from '../../server/jev/metrics';
+import type { JevLiveSnapshot } from '../lib/store';
+import { useStore } from '../lib/store';
+import { feedback as jevFeedback } from '../lib/jev';
+
+const pct = (x: number | null | undefined) =>
+  x === null || x === undefined ? '—' : `${Math.round(x * 100)} %`;
+
+/** LIVE COGNITIVE TRACE: mission state + the live decisions taken so far (measured). */
+export function LiveTree({ snap, running }: { snap: JevLiveSnapshot; running: boolean }) {
+  const s = snap.state;
+  const status = running
+    ? 'en cours'
+    : s.status === 'running'
+      ? 'interrompue'
+      : s.status === 'done'
+        ? 'terminée'
+        : s.status;
+  const bar = (v: number, tone: string) => (
+    <span className="inline-block h-1.5 w-16 overflow-hidden rounded bg-hover align-middle">
+      <span
+        className={cx('block h-full', tone)}
+        style={{ width: `${Math.round(Math.min(1, Math.max(0, v)) * 100)}%` }}
+      />
+    </span>
+  );
+  return (
+    <div className="text-[11.5px]" data-testid="jev-live">
+      <div className="mb-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <Badge tone={running ? 'info' : s.status === 'done' ? 'ok' : 'warn'}>JEV LIVE · {status}</Badge>
+        <span>étape {s.step}</span>
+        <span>modèle {s.model.split('/').pop()}</span>
+        <span>
+          progrès {bar(s.progress, 'bg-accent')} {pct(s.progress)}
+        </span>
+        <span>
+          budget B{s.budgetStage}{' '}
+          {bar(s.budgetTokens ? 1 - s.budgetLeftTokens / s.budgetTokens : 0, 'bg-warn')} {s.tokens}/
+          {s.budgetTokens} tok
+        </span>
+        <span>qualité {s.quality ?? '—'}</span>
+        <span>dérive {pct(s.drift)}</span>
+        <span>effort {s.effort}</span>
+        <span>JEV-{s.level}</span>
+        <span>économisé ≈ {s.savedTokens} tok</span>
+      </div>
+      <ul className="space-y-0.5 border-l border-line pl-3">
+        <li>
+          <span className="font-medium">MISSION</span>{' '}
+          <span className="text-muted">{s.goal.slice(0, 140)}</span>
+        </li>
+        {snap.checkpoints.map((c, i) => (
+          <li key={i}>
+            <span className="text-faint">
+              étape {c.step} · {c.kind}
+            </span>{' '}
+            {c.decisions.map((d, j) => (
+              <span key={j} className="mr-2">
+                <span
+                  className={cx(
+                    'font-medium',
+                    d.action === 'STOP' ? 'text-warn' : d.action === 'CONTINUE' ? 'text-muted' : 'text-info',
+                  )}
+                >
+                  {d.action}
+                </span>
+                {d.tool ? ` ${d.tool}` : ''}
+                {d.model ? ` → ${d.model}` : ''} <span className="text-muted">— {d.reason}</span>
+              </span>
+            ))}
+          </li>
+        ))}
+        {!snap.checkpoints.length && (
+          <li className="text-faint">aucune décision : CONTINUE à chaque checkpoint</li>
+        )}
+      </ul>
+    </div>
+  );
+}
 
 const LABEL: Record<Checkpoint['name'], string> = {
   JEV_PRE: 'JEV PRE',
@@ -13,6 +91,8 @@ const LABEL: Record<Checkpoint['name'], string> = {
   JEV_CONTEXT: 'CONTEXTE',
   JEV_TOOLS: 'OUTILS / SKILLS',
   JEV_EXECUTION: 'EXÉCUTION LLM',
+  JEV_CHECKPOINT: 'JEV CHECKPOINT',
+  JEV_MODEL_SWITCH: 'MODEL SWITCH',
   JEV_QA: 'QA',
   JEV_CORRECTION: 'CORRECTION',
   JEV_ESCALATION: 'ESCALADE',
@@ -45,14 +125,21 @@ export function JevTraceCard({
   trace,
   done,
   summary,
+  sessionId,
+  live,
 }: {
   packet: Record<string, unknown>;
   why: string[];
   trace: Checkpoint[];
   done?: boolean;
   summary?: string;
+  sessionId?: string;
+  live?: JevLiveSnapshot;
 }) {
   const [open, setOpen] = useState(false);
+  const [voted, setVoted] = useState<'good' | 'bad' | null>(null);
+  const snap = useStore((st) => (sessionId ? st.jevLive[sessionId] : undefined));
+  const running = useStore((st) => Boolean(sessionId && st.running[sessionId]));
   const p = packet as {
     task_type?: string;
     agent_strategy?: string;
@@ -82,6 +169,33 @@ export function JevTraceCard({
         </span>
         <span className="ml-auto text-[11.5px] font-normal text-faint">{done ? summary : 'en cours…'}</span>
       </button>
+      {(done ? live && open : snap) && (
+        <div className="mt-1.5">
+          <LiveTree snap={(done ? live : snap)!} running={running && !done} />
+        </div>
+      )}
+      {done && sessionId && (
+        <div className="mt-1 flex items-center gap-1.5 text-[11.5px] text-faint">
+          Retour sur cette réponse (apprentissage JEV) :
+          {(['good', 'bad'] as const).map((v) => (
+            <button
+              key={v}
+              className={cx(
+                'rounded p-0.5 hover:bg-hover',
+                voted === v && (v === 'good' ? 'text-ok' : 'text-err'),
+              )}
+              title={v === 'good' ? 'Parfait' : 'C’est mauvais'}
+              aria-label={v === 'good' ? 'Bonne réponse' : 'Mauvaise réponse'}
+              onClick={() => {
+                if (jevFeedback(sessionId, v)) setVoted(v);
+              }}
+            >
+              {v === 'good' ? <ThumbsUp size={13} /> : <ThumbsDown size={13} />}
+            </button>
+          ))}
+          {voted && <span>{voted === 'good' ? 'noté : réussite' : 'noté : échec (routage ajusté)'}</span>}
+        </div>
+      )}
       {open && (
         <div className="mt-2 grid gap-3 md:grid-cols-2">
           <div>

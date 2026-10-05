@@ -116,6 +116,8 @@ export type Item =
       trace: Checkpoint[];
       done?: boolean;
       summary?: string;
+      /** Final live control snapshot of the run. */
+      live?: import('./store').JevLiveSnapshot;
     }
   | {
       /** Intelligence Engine events: strategy, shadow alerts, evidence check, red team, learning. */
