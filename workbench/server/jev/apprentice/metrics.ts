@@ -125,7 +125,10 @@ const COMPARISONS: [ApprenticeArm, ApprenticeArm][] = [
   ['free_jev', 'free_skill'],
   ['free_skill', 'free_skill_exp'],
   ['free', 'free_skill_exp'],
+  ['free_skill_exp', 'validated'],
+  ['validated', 'paid'],
   ['free_skill_exp', 'paid'],
+  ['free', 'validated'],
   ['free', 'paid'],
 ];
 
@@ -152,8 +155,10 @@ export function analyzeApprentice(log: JevLogEntry[]): ApprenticeReport {
     }
     return out;
   };
-  const complete = [...groups.values()].filter((g) => APPRENTICE_ARMS.every((a) => g[a]));
-  const arms = APPRENTICE_ARMS.map((arm) => {
+  // The arms actually run (the VALIDATED arm exists only when a champion existed for the family).
+  const present = APPRENTICE_ARMS.filter((a) => es.some((e) => e.apprentice!.arm === a));
+  const complete = [...groups.values()].filter((g) => present.every((a) => g[a]));
+  const arms = present.map((arm) => {
     const xs = complete.map((g) => g[arm]!);
     return {
       ...summarize(arm as unknown as Arm, xs),
@@ -166,37 +171,39 @@ export function analyzeApprentice(log: JevLogEntry[]): ApprenticeReport {
         : null,
     };
   });
-  const comparisons = COMPARISONS.map(([f, t]) => {
-    const p = pairsOf(f, t);
-    const c = compare(f as unknown as Arm, t as unknown as Arm, p);
-    const sa = summarize(
-      f as unknown as Arm,
-      p.map((x) => x.a),
-    );
-    const sb = summarize(
-      t as unknown as Arm,
-      p.map((x) => x.b),
-    );
-    const rel = (x: number | null, y: number | null) =>
-      x !== null && y !== null && x > 0 ? (x - y) / x : null;
-    const esc = (a: JevLogEntry[]) =>
-      a.length
-        ? a.filter((e) => e.escalations > 0 || (e.apprentice?.path.length ?? 1) > 1).length / a.length
-        : null;
-    const ea = esc(p.map((x) => x.a));
-    const eb = esc(p.map((x) => x.b));
-    return {
-      ...c,
-      fromName: ARM_NAME[f],
-      toName: ARM_NAME[t],
-      qualityGain: c.dQuality.n ? c.dQuality.meanDelta : null,
-      successGain: c.dSuccess.n ? c.dSuccess.meanDelta : null,
-      costReduction: rel(sa.cost, sb.cost),
-      tokenReduction: rel(sa.tokens, sb.tokens),
-      latencyReduction: rel(sa.latencyMs, sb.latencyMs),
-      escalationReduction: ea !== null && eb !== null ? ea - eb : null,
-    } as ApprenticeComparison;
-  });
+  const comparisons = COMPARISONS.filter(([f, t]) => present.includes(f) && present.includes(t)).map(
+    ([f, t]) => {
+      const p = pairsOf(f, t);
+      const c = compare(f as unknown as Arm, t as unknown as Arm, p);
+      const sa = summarize(
+        f as unknown as Arm,
+        p.map((x) => x.a),
+      );
+      const sb = summarize(
+        t as unknown as Arm,
+        p.map((x) => x.b),
+      );
+      const rel = (x: number | null, y: number | null) =>
+        x !== null && y !== null && x > 0 ? (x - y) / x : null;
+      const esc = (a: JevLogEntry[]) =>
+        a.length
+          ? a.filter((e) => e.escalations > 0 || (e.apprentice?.path.length ?? 1) > 1).length / a.length
+          : null;
+      const ea = esc(p.map((x) => x.a));
+      const eb = esc(p.map((x) => x.b));
+      return {
+        ...c,
+        fromName: ARM_NAME[f],
+        toName: ARM_NAME[t],
+        qualityGain: c.dQuality.n ? c.dQuality.meanDelta : null,
+        successGain: c.dSuccess.n ? c.dSuccess.meanDelta : null,
+        costReduction: rel(sa.cost, sb.cost),
+        tokenReduction: rel(sa.tokens, sb.tokens),
+        latencyReduction: rel(sa.latencyMs, sb.latencyMs),
+        escalationReduction: ea !== null && eb !== null ? ea - eb : null,
+      } as ApprenticeComparison;
+    },
+  );
   const times = es.map((e) => e.at);
   return {
     arms,

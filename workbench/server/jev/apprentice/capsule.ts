@@ -6,6 +6,7 @@ import { findSimilar, safeText, type CorrectiveStrategy, strategiesFor } from '.
 import { selectSkills, skillPrompt, type FabricSkill } from '../fabric/skills';
 import { scrubSecrets } from '../fabric/security';
 import type { TaskDNA } from './types';
+import { CapsuleCache, cacheKey, hashOf } from './cache';
 
 /** ≈ 4 characters per token (labelled ESTIMATED wherever shown). */
 export const tokensOf = (s: string) => Math.ceil(s.length / 4);
@@ -28,8 +29,15 @@ export interface Capsule {
   /** 0–1 share of the uncompressed capsule removed (null when there was nothing to compress). */
   contextReduction: number | null;
   toolsExposed: number;
-  /** Compilation time (ms, measured). */
+  /** Total adaptation time (ms, measured) = retrieval + compilation. */
   adaptationMs: number;
+  retrievalMs: number;
+  compilationMs: number;
+  /** Tokens of the uncompressed capsule / of what was actually injected. */
+  contextBefore: number;
+  contextAfter: number;
+  /** CACHE HIT / MISS of this capsule (undefined when no cache is used). */
+  cacheHit?: boolean;
 }
 
 export interface CapsuleInput {
@@ -43,6 +51,8 @@ export interface CapsuleInput {
   use: { skills: boolean; experience: boolean };
   budgetTokens: number;
   now?: () => number;
+  /** Candidate skills allowed for this run (under test, e.g. learned from a Teacher after a failure). */
+  allowCandidate?: Set<string>;
 }
 
 const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
@@ -54,6 +64,13 @@ const sec = (key: string, priority: number, text: string): CapsuleSection => {
 export function compileCapsule(i: CapsuleInput): Capsule {
   const clock = i.now ?? (() => performance.now());
   const t0 = clock();
+  let retrieval = 0;
+  const timed = <T>(f: () => T): T => {
+    const a = clock();
+    const r = f();
+    retrieval += clock() - a;
+    return r;
+  };
   const d = i.dna;
   const sections: CapsuleSection[] = [];
   sections.push(
@@ -78,7 +95,7 @@ export function compileCapsule(i: CapsuleInput): Capsule {
     ),
   );
 
-  const hints = strategiesFor(i.strategies, { taskType: d.task_type, text: i.text });
+  const hints = timed(() => strategiesFor(i.strategies, { taskType: d.task_type, text: i.text }));
   const rules = [
     ...hints.promptHints,
     ...(hints.requireVerification ? ['Vérifie ton résultat avant de conclure.'] : []),
@@ -87,14 +104,22 @@ export function compileCapsule(i: CapsuleInput): Capsule {
     sections.push(sec('correction_rules', 4, `Règles de correction apprises : ${rules.join(' ; ')}`));
 
   const picked = i.use.skills
-    ? selectSkills(i.skills, { taskType: d.task_type, text: i.text }, { max: 2 })
+    ? timed(() =>
+        selectSkills(
+          i.skills,
+          { taskType: d.task_type, text: i.text },
+          { max: 2, allowCandidate: i.allowCandidate },
+        ),
+      )
     : [];
   if (picked.length)
     sections.push(sec('validated_skills', 5, picked.map((p) => skillPrompt(p.version)).join('\n')));
 
   let experiences = 0;
   if (i.use.experience) {
-    const seen = findSimilar(i.log, i.text, { taskType: d.task_type, k: 6, minSimilarity: 0.25 });
+    const seen = timed(() =>
+      findSimilar(i.log, i.text, { taskType: d.task_type, k: 6, minSimilarity: 0.25 }),
+    );
     const fails = seen.matches.filter((m) => m.exp.classes.includes('failure')).slice(0, 2);
     if (fails.length)
       sections.push(
@@ -151,7 +176,65 @@ export function compileCapsule(i: CapsuleInput): Capsule {
     contextReduction: dropped.length ? Math.max(0, 1 - total / full) : null,
     toolsExposed: i.tools.length,
     adaptationMs: Math.round((clock() - t0) * 10) / 10,
+    retrievalMs: Math.round(retrieval * 10) / 10,
+    compilationMs: Math.round((clock() - t0 - retrieval) * 10) / 10,
+    contextBefore: full + 12,
+    contextAfter: tokensOf(text),
   };
+}
+
+/** Compile through the cache: the key is family × model × profileVersion × skillHash × contextHash × toolHash. */
+export function compileCached(
+  i: CapsuleInput,
+  c: { cache: CapsuleCache<Capsule>; model: string; profileVersion: string; cacheable?: boolean },
+): Capsule {
+  const clock = i.now ?? (() => performance.now());
+  const t0 = clock();
+  const d = i.dna;
+  const picked = i.use.skills
+    ? selectSkills(
+        i.skills,
+        { taskType: d.task_type, text: i.text },
+        { max: 2, allowCandidate: i.allowCandidate },
+      )
+    : [];
+  const skillHash = hashOf(picked.map((p) => `${p.version.name}@${p.version.version}`).join(','));
+  // The retrieved experiences depend on the wording and on how many runs exist: re-retrieve every 5 new runs.
+  const kw = [
+    ...new Set(
+      i.text
+        .toLowerCase()
+        .replace(/[^a-zà-ÿ0-9 ]+/g, ' ')
+        .split(/\s+/)
+        .filter((w) => w.length > 3),
+    ),
+  ]
+    .sort()
+    .slice(0, 12)
+    .join(',');
+  const contextHash = hashOf(
+    `${kw}|${d.task_family}|${d.risk}|${Math.round(d.difficulty * 10)}|${i.use.skills}${i.use.experience}|${Math.floor(i.log.length / 5)}`,
+  );
+  const toolHash = hashOf(i.tools.join(','));
+  const key = cacheKey({
+    family: d.task_family,
+    model: c.model,
+    profileVersion: c.profileVersion,
+    skillHash,
+    contextHash,
+    toolHash,
+  });
+  // A critical task that needs fresh data never reuses a cached capsule.
+  const allowed = c.cacheable !== false && !d.freshness_requirement;
+  const hit = allowed ? c.cache.get(key) : null;
+  if (hit) {
+    const lookup = Math.round((clock() - t0) * 10) / 10;
+    return { ...hit, cacheHit: true, retrievalMs: lookup, compilationMs: 0, adaptationMs: lookup };
+  }
+  const cap = compileCapsule(i);
+  const out = { ...cap, cacheHit: false, adaptationMs: Math.round((clock() - t0) * 10) / 10 };
+  if (allowed) c.cache.set(key, out);
+  return out;
 }
 
 /** Compression must never cost quality: compare runs with the compressed vs the full capsule. */

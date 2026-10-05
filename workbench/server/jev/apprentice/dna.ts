@@ -82,6 +82,10 @@ export function taskDnaOf(i: DnaInput, s: ApprenticeSettings = DEFAULT_APPRENTIC
     context_size: i.contextTokens ?? Math.ceil(t.length / 4),
     reasoning_requirement: reasoning,
     structured_output_requirement: structured,
+    freshness_requirement:
+      /\b(aujourd.?hui|actuel(le)?s?|derni[èe]res?|actualit[ée]s?|en temps r[ée]el|cours (du|de la)|taux du jour|breaking|latest|today|current price)\b/i.test(
+        t,
+      ),
     latency_requirement: i.taskType === 'chat' && i.difficulty < 0.3 ? 'low' : 'normal',
     cost_constraint: i.mode === 'eco' ? 'zero' : 'low',
     quality_threshold: gateOf(i.criticality, i.difficulty, s),

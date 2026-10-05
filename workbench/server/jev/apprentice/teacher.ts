@@ -4,7 +4,7 @@
 import type { JevLogEntry } from '../metrics';
 import { economicGovernor, type GovMode, type GovernorDecision } from '../fabric/learning';
 import { qualityOfEntry } from '../fabric/memory';
-import type { FabricSkill } from '../fabric/skills';
+import { mineCandidates, type FabricSkill, type MineReport } from '../fabric/skills';
 import { isFreeId, familyOf, freeOutcome } from './registry';
 
 export interface TeacherCandidate {
@@ -231,4 +231,27 @@ export function skillStage(s: FabricSkill): SkillStage {
   return b && b.n >= 5 && (b.deltaSuccess ?? -1) >= 0 && (b.deltaQuality ?? -1) >= 0
     ? 'PRODUCTION'
     : 'VALIDATED';
+}
+
+/**
+ * FAILURE → PREMIUM SUCCESS → PATTERN → CORRECTION PATTERN → SKILL CANDIDATE. One observed pair is enough to create a
+ * CANDIDATE (never a validated skill): it is then injected under test for the apprentice, benchmarked, and only promoted
+ * by the usual rules.
+ */
+export function skillFromFailure(
+  log: JevLogEntry[],
+  existing: FabricSkill[],
+  entry: JevLogEntry,
+  now?: number,
+): MineReport {
+  const teacher = entry.apprentice?.teacher ?? entry.model;
+  const fam = familyOf(entry);
+  const runs = log.filter((e) => e.model === teacher && e.success && familyOf(e) === fam);
+  return mineCandidates({
+    log: runs.length ? runs : [entry],
+    existing,
+    teacher,
+    now,
+    rules: { minRepeats: 1, minMissions: 1 },
+  });
 }

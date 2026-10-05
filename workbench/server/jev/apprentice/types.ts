@@ -5,7 +5,7 @@ import type { DataClass } from '../fabric/types';
 export type Risk = 'low' | 'normal' | 'high' | 'critical';
 export type Confidence = 'LOW' | 'MEDIUM' | 'HIGH';
 /** FREE: seen only without adaptation · ADAPTED: runs with adaptation · SPECIALIST: proven on a task family · VALIDATED: profile version benchmarked. */
-export type JevStatus = 'FREE' | 'ADAPTED' | 'SPECIALIST' | 'VALIDATED';
+export type JevStatus = 'FREE' | 'ADAPTED' | 'SPECIALIST' | 'VALIDATED' | 'DEGRADED';
 
 export interface TaskDNA {
   task_type: string;
@@ -21,6 +21,8 @@ export interface TaskDNA {
   context_size: number;
   reasoning_requirement: boolean;
   structured_output_requirement: boolean;
+  /** The answer depends on fresh external facts (news, live prices…): a model without web tools cannot guarantee it. */
+  freshness_requirement: boolean;
   latency_requirement: 'low' | 'normal' | 'relaxed';
   cost_constraint: 'zero' | 'low' | 'normal';
   /** 0–1: the quality gate this task must clear. */
@@ -76,15 +78,46 @@ export interface ApprenticeTag {
   /** Demo / benchmark arm. */
   arm?: ApprenticeArm;
   why: string[];
+  // ── Supremacy engine ──
+  /** Routing level (0 local · 1 validated apprentice · 2 free specialist · 3 free + micro-adaptation · 4 correction · 5 premium specialist · 6 council · 7 frontier). */
+  level?: number;
+  /** Served by the VALIDATED champion of the family. */
+  champion?: boolean;
+  /** Failure learning: what failed, how it was corrected, who succeeded. */
+  failure?: FailureLearning;
+  cache?: {
+    hit: boolean;
+    retrievalMs: number;
+    compilationMs: number;
+    contextBefore: number;
+    contextAfter: number;
+  };
+  supremacy?: number | null;
+}
+export interface FailureLearning {
+  signature: string;
+  correction: string;
+  retryModel: string | null;
+  fallbackModel: string | null;
+  teacher: string | null;
+  outcome: 'recovered' | 'escalated' | 'unresolved';
 }
 
-export type ApprenticeArm = 'free' | 'free_jev' | 'free_skill' | 'free_skill_exp' | 'paid';
-export const APPRENTICE_ARMS: ApprenticeArm[] = ['free', 'free_jev', 'free_skill', 'free_skill_exp', 'paid'];
+export type ApprenticeArm = 'free' | 'free_jev' | 'free_skill' | 'free_skill_exp' | 'validated' | 'paid';
+export const APPRENTICE_ARMS: ApprenticeArm[] = [
+  'free',
+  'free_jev',
+  'free_skill',
+  'free_skill_exp',
+  'validated',
+  'paid',
+];
 export const ARM_NAME: Record<ApprenticeArm, string> = {
   free: 'A · Free model baseline',
   free_jev: 'B · Free + JEV',
-  free_skill: 'C · Free + JEV Skill',
-  free_skill_exp: 'D · Free + JEV Skill + Experience',
+  free_skill: 'B2 · Free + JEV Skill (ablation)',
+  free_skill_exp: 'C · Free specialist (JEV + Skill + Experience)',
+  validated: 'D · Validated Apprentice (champion)',
   paid: 'E · Best paid model (reference)',
 };
 
@@ -103,11 +136,67 @@ export interface ApprenticeSettings {
   maxFreeAttempts: number;
   /** Highest tolerated failure risk (1 − predicted success) to try a free model, by task risk. */
   maxFailureRisk: Record<Risk, number>;
+  /** Validation thresholds and supremacy weights (configurable). */
+  validation: ValidationRules;
+  supremacy: SupremacyWeights;
+  /** Horizon (days) used to project the reuse value of a Teacher call — a PROJECTION, labelled as such. */
+  horizonDays: number;
   /** Teacher activation: allow proactive teacher sessions (learning), always gated by the governor. */
   teacher: boolean;
   /** $ value of one quality point (policy parameter, not a measurement). */
   valuePerPoint: number;
 }
+/** Conditions to become VALIDATED (all must hold; insufficient data ⇒ INSUFFICIENT SAMPLE, never validated). */
+export interface ValidationRules {
+  minMissions: number;
+  minFormulations: number;
+  minSuccess: number;
+  minQuality: number;
+  maxCriticalErrors: number;
+  minRecentSuccess: number;
+  minConfidence: Confidence;
+  /** Stricter bars for HIGH / CRITICAL families. */
+  high: { success: number; quality: number };
+  critical: { success: number; quality: number };
+  /** Half-life of an observation, in days (recency weighting). */
+  halfLifeDays: number;
+}
+export const DEFAULT_VALIDATION: ValidationRules = {
+  minMissions: 10,
+  minFormulations: 3,
+  minSuccess: 0.9,
+  minQuality: 90,
+  maxCriticalErrors: 0,
+  minRecentSuccess: 0.85,
+  minConfidence: 'MEDIUM',
+  high: { success: 0.95, quality: 93 },
+  critical: { success: 0.98, quality: 97 },
+  halfLifeDays: 30,
+};
+/** ApprenticeSupremacyScore weights (normalised at use). */
+export interface SupremacyWeights {
+  task: number;
+  quality: number;
+  success: number;
+  confidence: number;
+  reliability: number;
+  tool: number;
+  structured: number;
+  latency: number;
+  economic: number;
+}
+export const DEFAULT_SUPREMACY: SupremacyWeights = {
+  task: 0.25,
+  quality: 0.2,
+  success: 0.15,
+  confidence: 0.1,
+  reliability: 0.1,
+  tool: 0.05,
+  structured: 0.05,
+  latency: 0.05,
+  economic: 0.05,
+};
+
 export interface ApprenticeWeights {
   success: number;
   quality: number;
@@ -132,6 +221,9 @@ export const DEFAULT_APPRENTICE: ApprenticeSettings = {
   enabled: false,
   gates: { low: 0.85, normal: 0.9, high: 0.93, critical: 0.97 },
   weights: DEFAULT_WEIGHTS,
+  validation: DEFAULT_VALIDATION,
+  supremacy: DEFAULT_SUPREMACY,
+  horizonDays: 30,
   capsuleBudget: 700,
   criticalConfidence: 0.85,
   maxFailureRisk: { low: 0.6, normal: 0.55, high: 0.4, critical: 0.15 },

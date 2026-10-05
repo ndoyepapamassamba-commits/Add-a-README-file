@@ -155,12 +155,15 @@ export function scoreFree(i: RouteInput, m: FreeModel): ScoredFree | null {
 
 // ───────────────────────── attempts, gate, fallback ─────────────────────────
 
-export type AttemptKind = 'free_jev' | 'free_correction' | 'free_other' | 'v5';
+export type AttemptKind =
+  'free_jev' | 'free_correction' | 'free_other' | 'v5' | 'champion' | 'secondary' | 'free_adapt';
 export interface Attempt {
   n: number;
   kind: AttemptKind;
   model: string | null;
   label: string;
+  /** Routing level of the attempt (1 validated apprentice … 5 premium specialist). */
+  level?: number;
 }
 export interface FreePlan {
   use: boolean;
@@ -173,7 +176,8 @@ export interface FreePlan {
   threshold: number;
   attempts: Attempt[];
   /** Why the free route was not used, when `use` is false. */
-  bypass?: 'disabled' | 'no-candidate' | 'critical' | 'risk' | 'security';
+  bypass?:
+    'disabled' | 'no-candidate' | 'critical' | 'risk' | 'security' | 'freshness' | 'capability' | 'degraded';
   why: string[];
 }
 

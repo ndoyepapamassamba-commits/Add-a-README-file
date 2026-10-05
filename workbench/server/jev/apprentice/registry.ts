@@ -183,13 +183,8 @@ export function freeHealth(es: JevLogEntry[]): FreeHealth {
   return { score: Math.round((mean(have.map((p) => p.value)) ?? 0) * 100), parts };
 }
 
-export function statusOf(
-  es: JevLogEntry[],
-  families: FamilyStat[],
-  validated: Set<string>,
-  model: string,
-): JevStatus {
-  if ([...validated].some((v) => v.startsWith(`${model}|`))) return 'VALIDATED';
+/** FREE → ADAPTED → SPECIALIST from observed runs. VALIDATED / DEGRADED come only from supremacy.validateRecord (never from a version flag). */
+export function statusOf(es: JevLogEntry[], families: FamilyStat[]): JevStatus {
   const spec = families.some((f) => f.adaptedN >= 5 && (f.adaptedSuccess ?? 0) >= 0.8);
   if (spec) return 'SPECIALIST';
   return es.some((e) => e.apprentice?.adapted) ? 'ADAPTED' : 'FREE';
@@ -231,7 +226,7 @@ export function buildApprenticeRegistry(
       model,
       provider: meta?.provider ?? model.split('/')[0] ?? '?',
       free: true as const,
-      jevStatus: statusOf(es, fam, o.validated ?? new Set(), model),
+      jevStatus: statusOf(es, fam),
       n: es.length,
       successRate,
       quality: mean(q),

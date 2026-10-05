@@ -170,7 +170,7 @@ export function mineCandidates(i: MineInput): MineReport {
     const kw = new Map<string, number>();
     for (const e of wins) for (const w of keywords(safeText(e))) kw.set(w, (kw.get(w) ?? 0) + 1);
     const triggers = [...kw]
-      .filter(([, n]) => n >= Math.max(2, Math.ceil(wins.length * 0.6)))
+      .filter(([, n]) => n >= Math.max(Math.min(2, R.minRepeats), Math.ceil(wins.length * 0.6)))
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8)
       .map(([w]) => w);
