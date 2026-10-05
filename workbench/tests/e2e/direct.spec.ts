@@ -66,7 +66,11 @@ test('onboarding, streaming chat, real cost and credits gauge', async ({ page })
   await expect(page.getByText('$9.50').first()).toBeVisible(); // key limit remaining from /key
   const req = mock.requests[0]!;
   expect(req.body).toMatchObject({ stream: true, usage: { include: true } });
-  expect((req.tools ?? []).length).toBeGreaterThan(10);
+  // JEV tool pack: a greeting gets the core tools + the tools.request meta tool, not ~50 tools.
+  const sent = (req.tools ?? []).map((t) => (t as { function: { name: string } }).function.name);
+  expect(sent.length).toBeGreaterThanOrEqual(3);
+  expect(sent.length).toBeLessThan(15);
+  expect(sent).toContain('tools__request');
   expect(errors).toEqual([]);
 });
 
@@ -456,9 +460,9 @@ test('built-in plugins: 3D studio (preview + .glb + Blender script) and exchange
   await send(page, 'Fais une maquette 3D et donne le taux EUR/XOF');
   await expect(page.getByText('Scène et taux prêts.')).toBeVisible({ timeout: 40_000 });
   const tools = (mock.requests[0]!.tools as { function: { name: string } }[]).map((t) => t.function.name);
-  expect(tools).toEqual(
-    expect.arrayContaining(['blender__scene', 'fx__rates', 'weather__forecast', 'diagram__render']),
-  );
+  // JEV tool pack: the 3D and exchange-rate tools are selected, unrelated plugins are not sent.
+  expect(tools).toEqual(expect.arrayContaining(['blender__scene', 'fx__rates']));
+  expect(tools).not.toContain('weather__forecast');
   const msgs = JSON.stringify(mock.requests.at(-1)!.messages);
   expect(msgs).toContain('3d/agence.html');
   expect(msgs).toContain('glTF 3d/agence.glb');
@@ -901,4 +905,149 @@ test('INTELLIGENCE: GitHub discovery → security review → approve → install
   await expect(page.getByText(/GitHub indisponible/)).toBeVisible();
   await expect(page.getByText('haris-musa/excel-mcp-server').first()).toBeVisible();
   expect(errors.filter((e) => !/api\.github\.com|ERR_FAILED|Failed to load resource/.test(e))).toEqual([]);
+});
+
+test('JEV: packet + live trace, tool pack sent to the model, ADD TOOL, targeted QA correction, JEV_LOG', async ({
+  page,
+}) => {
+  mock.models = SCORED;
+  await open(page);
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  // 1. JSON requested, first answer invalid → JEV QA asks for a targeted fix (only what failed).
+  mock.push({ text: 'Voici : {agences: [Dakar' }, { text: '{"agences": ["Dakar", "Thies"]}' });
+  await send(page, 'Réponds en JSON : la liste des agences Dakar et Thies');
+  await expect(page.getByText('{"agences": ["Dakar", "Thies"]}')).toBeVisible();
+  expect(mock.requests.length).toBe(2);
+  expect(JSON.stringify(mock.requests[1]!.messages)).toContain('JEV QA found precise problems');
+  expect(systemOf(0)).toContain('<jev_packet');
+  // Only the tool pack is sent (far fewer than the ~50 tools of the agent), with the meta tool.
+  const names = (mock.requests[0]!.tools ?? []).map(
+    (t) => (t as { function: { name: string } }).function.name,
+  );
+  expect(names.length).toBeLessThan(30);
+  expect(names).toContain('tools__request');
+  const card = page.getByTestId('jev-trace').first();
+  await expect(card).toContainText('JEV-0');
+  await card.getByRole('button').first().click();
+  await expect(card).toContainText('Pourquoi JEV a choisi cela');
+  await expect(card).toContainText('QA');
+  await expect(card).toContainText('CORRECTION');
+  // 2. A tool outside the pack is added when the model calls it (JEV « ADD TOOL »).
+  mock.reset();
+  mock.models = SCORED;
+  mock.push(
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'notes/a.txt', content: 'bonjour' } }] },
+    { text: 'Fait.' },
+  );
+  await send(page, 'Salut, note « bonjour » dans notes/a.txt');
+  await expect(page.getByText('Fait.')).toBeVisible();
+  const second = (mock.requests[1]!.tools ?? []).map(
+    (t) => (t as { function: { name: string } }).function.name,
+  );
+  expect(second).toContain('filesystem__write');
+  // 3. Every run is in the JEV_LOG, with measured tokens and the tool-definition savings.
+  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await page.getByRole('tab', { name: 'JEV_LOG' }).click();
+  await expect(page.getByTestId('jev-log').locator('tbody tr')).toHaveCount(2);
+});
+
+test('JEV L0: deterministic answer without any model call (0 $)', async ({ page }) => {
+  await open(page);
+  await send(page, 'combien font 12*7 ?');
+  await expect(page.getByText(/= \*?\*?84|= 84/).first()).toBeVisible();
+  await expect(page.getByText(/sans appel de modèle/)).toBeVisible();
+  expect(mock.requests.length).toBe(0);
+});
+
+test('JEV Control Center: tabs, mode, API key masked and never in the DOM, JEV-1 via relay then fallback to JEV-0, regression report, A/B benchmark', async ({
+  page,
+}) => {
+  mock.models = SCORED;
+  const errors = await open(page);
+  page.on('dialog', (d) => void d.accept());
+  let jevDown = false;
+  let jevCalls = 0;
+  await page.route('https://jev-relay.example/**', async (route) => {
+    if (jevDown) return route.abort();
+    jevCalls++;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' },
+      body: JSON.stringify({
+        model: 'jev-1.13.0',
+        answers: {
+          type: { type: 'choice', choice: 'data', confidence: 0.96 },
+          difficulty: { type: 'score', score: 1 },
+          risk: { type: 'noul', noul: 0.2 },
+          needs_tools: { type: 'noul', noul: 0.9 },
+          ambiguity: { type: 'noul', noul: 0.1 },
+        },
+        usage: { input_tokens: 512 },
+      }),
+    });
+  });
+  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  for (const t of [
+    'Trace live',
+    'JEV_LOG',
+    'Sans / avec JEV',
+    'Benchmark A/B',
+    'Profils modèles',
+    'Cost Intelligence',
+    'Régression',
+    'JEV API',
+  ])
+    await page.getByRole('tab', { name: t }).click();
+  // API settings: relay endpoint, provider API, key stored but never shown.
+  await page.getByLabel('JEV endpoint').fill('https://jev-relay.example/v1/systemone');
+  await page.getByTitle('Fournisseur JEV').selectOption('api');
+  await page.getByLabel('Clé API JEV').fill('ts_SECRETKEY_1234567890');
+  await page.getByRole('button', { name: 'Enregistrer' }).click();
+  await expect(page.getByText(/Enregistrée : ts_S…890/)).toBeVisible();
+  expect(await page.content()).not.toContain('SECRETKEY');
+  await page.getByRole('button', { name: /Tester la connexion/ }).click();
+  await expect(page.getByText(/OK : jev-1.13.0/)).toBeVisible();
+  // Regression report: nothing from before JEV disappeared.
+  await page.getByRole('tab', { name: 'Régression' }).click();
+  await expect(page.getByText(/Aucune régression/)).toBeVisible();
+  // A mission: JEV-1 is consulted through the relay.
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  mock.push({ text: 'Total : 1 650.' });
+  await send(page, 'Peux-tu regarder les chiffres ?');
+  await expect(page.getByText('Total : 1 650.')).toBeVisible();
+  expect(jevCalls).toBeGreaterThanOrEqual(2);
+  await expect(page.getByTestId('jev-trace').first()).toContainText('JEV-1');
+  // Relay down: JEV-0 takes over, the Workbench keeps working.
+  jevDown = true;
+  mock.push({ text: 'Encore ok.' });
+  await send(page, 'Et maintenant ?');
+  await expect(page.getByText('Encore ok.')).toBeVisible();
+  const t = page.getByTestId('jev-trace').last();
+  await t.getByRole('button').first().click();
+  await expect(t).toContainText(/indisponible/);
+  // A/B benchmark on two categories: the same mission without then with JEV.
+  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await page.getByRole('tab', { name: 'Benchmark A/B' }).click();
+  for (const label of [
+    'CODING',
+    'DATA ANALYSIS',
+    'RESEARCH',
+    'DOCUMENT ANALYSIS',
+    'WRITING',
+    'REASONING',
+    'BROWSER',
+    'MULTI-STEP AGENT',
+    'EXCEL',
+    'DEBUGGING',
+  ])
+    await page.getByLabel(label, { exact: true }).uncheck();
+  mock.fallback = () => ({ text: 'Le résultat est 10.' });
+  await page.getByRole('button', { name: /Lancer A\/B \(2\)/ }).click();
+  await expect(page.getByText(/Dernier lancement : \d\/4 réussites/)).toBeVisible({ timeout: 60_000 });
+  await page.getByRole('tab', { name: 'Sans / avec JEV' }).click();
+  await expect(page.getByText(/2 paire\(s\) mesurée\(s\)/)).toBeVisible();
+  await expect(page.getByTestId('kpi-real')).toContainText('Tokens / mission');
+  expect(errors.filter((e) => !/jev-relay|ERR_FAILED|Failed to load resource/.test(e))).toEqual([]);
 });

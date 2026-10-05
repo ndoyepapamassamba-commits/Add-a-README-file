@@ -20,6 +20,7 @@ import {
   Brain,
 } from 'lucide-react';
 import { RoutingCard } from './RoutingCard';
+import { JevTraceCard } from './JevTrace';
 import type { EffortSetting } from '@shared/types';
 import {
   Button,
@@ -271,6 +272,16 @@ const ItemView = memo(function ItemView({ item, sessionId }: { item: Item; sessi
       return <IntelCard item={item} />;
     case 'routing':
       return <RoutingCard d={item.decision} />;
+    case 'jev':
+      return (
+        <JevTraceCard
+          packet={item.packet}
+          why={item.why}
+          trace={item.trace}
+          done={item.done}
+          summary={item.summary}
+        />
+      );
     case 'usage':
       return (
         <div className="my-3 border-t border-line pt-1.5 text-[11.5px] text-faint">

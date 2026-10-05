@@ -21,6 +21,7 @@ import {
   TerminalSquare,
   Globe,
   BrainCircuit,
+  Cpu,
 } from 'lucide-react';
 import {
   Button,
@@ -48,22 +49,29 @@ import { ModelsView, SettingsView } from './views/SettingsViews';
 import { TerminalView } from './views/TerminalView';
 import { BrowserView } from './views/BrowserView';
 import { IntelligenceView } from './views/IntelligenceView';
+import { JevView } from './views/JevView';
+import { NAV_ITEMS } from './lib/nav';
 
-const NAV: { id: View; label: string; icon: React.ReactNode }[] = [
-  { id: 'home', label: 'Mission Control', icon: <LayoutDashboard size={17} /> },
-  { id: 'chat', label: 'Chat', icon: <MessageSquare size={17} /> },
-  { id: 'files', label: 'Fichiers', icon: <FolderOpen size={17} /> },
-  { id: 'data', label: 'Données', icon: <Database size={17} /> },
-  { id: 'terminal', label: 'Terminal', icon: <TerminalSquare size={17} /> },
-  { id: 'browser', label: 'Navigateur', icon: <Globe size={17} /> },
-  { id: 'workflows', label: 'Workflows', icon: <WorkflowIcon size={17} /> },
-  { id: 'agents', label: 'Agents', icon: <Bot size={17} /> },
-  { id: 'skills', label: 'Skills', icon: <Puzzle size={17} /> },
-  { id: 'plugins', label: 'Plugins', icon: <Plug size={17} /> },
-  { id: 'models', label: 'Modèles', icon: <Sparkles size={17} /> },
-  { id: 'intelligence', label: 'Intelligence', icon: <BrainCircuit size={17} /> },
-  { id: 'settings', label: 'Réglages', icon: <SettingsIcon size={17} /> },
-];
+const ICONS: Record<View, React.ReactNode> = {
+  home: <LayoutDashboard size={17} />,
+  chat: <MessageSquare size={17} />,
+  files: <FolderOpen size={17} />,
+  data: <Database size={17} />,
+  terminal: <TerminalSquare size={17} />,
+  browser: <Globe size={17} />,
+  workflows: <WorkflowIcon size={17} />,
+  agents: <Bot size={17} />,
+  skills: <Puzzle size={17} />,
+  plugins: <Plug size={17} />,
+  models: <Sparkles size={17} />,
+  intelligence: <BrainCircuit size={17} />,
+  jev: <Cpu size={17} />,
+  settings: <SettingsIcon size={17} />,
+};
+const NAV: { id: View; label: string; icon: React.ReactNode }[] = NAV_ITEMS.map((n) => ({
+  ...n,
+  icon: ICONS[n.id],
+}));
 
 export function Logo({ size = 28 }: { size?: number }) {
   return (
@@ -261,6 +269,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           {view === 'plugins' && <PluginsView />}
           {view === 'models' && <ModelsView />}
           {view === 'intelligence' && <IntelligenceView />}
+          {view === 'jev' && <JevView />}
           {view === 'settings' && <SettingsView onLogout={onLogout} />}
         </main>
       </div>

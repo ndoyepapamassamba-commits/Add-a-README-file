@@ -7,6 +7,7 @@ import type { BenchResult, Ledger, ManualRule } from '../../server/agent/intelli
 import type { RoutingDecision } from '../../server/engine/decision';
 import type { RegistryResource } from '../../server/engine/registry';
 import type { ExternalBenchmark } from '../../server/engine/evidence';
+import type { JevLogEntry } from '../../server/jev/metrics';
 import { embeddedKit, setHouseKit } from './apex';
 import { noteBefore } from './timemachine';
 import {
@@ -97,6 +98,10 @@ export interface State {
   registry: RegistryResource[];
   /** Imported public benchmarks (fused with the other evidence). */
   externalBench: ExternalBenchmark[];
+  /** JEV_LOG: one entry per run (redacted). */
+  jevLog: JevLogEntry[];
+  /** USD spent on remote JEV calls per day. */
+  jevSpend: Record<string, number>;
   draft: string;
   toasts: Toast[];
   openFile: string | null;
@@ -107,7 +112,8 @@ export interface State {
   patchSettings: (p: Partial<Settings>) => void;
   toast: (tone: Toast['tone'], text: string) => void;
   current: () => Session | null;
-  newSession: () => Session;
+  /** focus = false: create it in the background (benchmark) without switching view. */
+  newSession: (focus?: boolean) => Session;
   selectSession: (id: string) => void;
   patchSession: (id: string, p: Partial<Session> | ((s: Session) => Partial<Session>)) => void;
   deleteSession: (id: string) => void;
@@ -130,6 +136,9 @@ export interface State {
   logRouting: (d: RoutingDecision) => void;
   setRegistry: (r: RegistryResource[]) => void;
   setExternalBench: (b: ExternalBenchmark[]) => void;
+  addJevLog: (e: JevLogEntry) => void;
+  setJevLog: (l: JevLogEntry[]) => void;
+  setJevSpend: (s: Record<string, number>) => void;
 }
 
 const persistSession = (s: Session) => saveLater(`session:${s.id}`, () => s);
@@ -164,6 +173,8 @@ export const useStore = create<State>((set, get) => ({
   routingLog: [],
   registry: [],
   externalBench: [],
+  jevLog: [],
+  jevSpend: {},
   draft: '',
   toasts: [],
   openFile: null,
@@ -186,7 +197,7 @@ export const useStore = create<State>((set, get) => ({
     );
   },
   current: () => get().sessions.find((s) => s.id === get().currentId) ?? null,
-  newSession: () => {
+  newSession: (focus = true) => {
     const st = get().settings;
     const s: Session = {
       id: uid(),
@@ -205,7 +216,7 @@ export const useStore = create<State>((set, get) => ({
       tokensOut: 0,
     };
     const sessions = [s, ...get().sessions];
-    set({ sessions, currentId: s.id, view: 'chat' });
+    set(focus ? { sessions, currentId: s.id, view: 'chat' } : { sessions });
     persistSession(s);
     persistIndex(sessions);
     saveLater('current', () => s.id);
@@ -335,6 +346,18 @@ export const useStore = create<State>((set, get) => ({
     set({ externalBench });
     saveLater('externalBench', () => get().externalBench, 300);
   },
+  addJevLog: (e) => {
+    set({ jevLog: [...get().jevLog, e].slice(-1000) });
+    saveLater('jevLog', () => get().jevLog, 800);
+  },
+  setJevLog: (jevLog) => {
+    set({ jevLog });
+    saveLater('jevLog', () => get().jevLog, 300);
+  },
+  setJevSpend: (jevSpend) => {
+    set({ jevSpend });
+    saveLater('jevSpend', () => get().jevSpend, 800);
+  },
 }));
 
 /** Loads everything saved in this browser. */
@@ -346,6 +369,10 @@ export async function hydrate(): Promise<void> {
     kv.get<RoutingDecision[]>('routingLog').catch(() => undefined),
     kv.get<RegistryResource[]>('registry').catch(() => undefined),
     kv.get<ExternalBenchmark[]>('externalBench').catch(() => undefined),
+  ]);
+  const [jevLog, jevSpend] = await Promise.all([
+    kv.get<JevLogEntry[]>('jevLog').catch(() => undefined),
+    kv.get<Record<string, number>>('jevSpend').catch(() => undefined),
   ]);
   const [usage, workflows, health, board, intel] = await Promise.all([
     kv.get<UsageEntry[]>('usage').catch(() => undefined),
@@ -424,5 +451,7 @@ export async function hydrate(): Promise<void> {
     routingLog: routingLog ?? [],
     registry: registry ?? [],
     externalBench: externalBench ?? [],
+    jevLog: jevLog ?? [],
+    jevSpend: jevSpend ?? {},
   });
 }

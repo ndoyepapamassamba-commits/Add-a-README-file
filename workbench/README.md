@@ -149,6 +149,17 @@ Branché dans la boucle d'exécution réelle des deux éditions (pas des pages d
 - **Python hors-ligne** (édition directe) : `npm run build:python-pack` produit `dist/massamba-python-pack.zip`, qui contient Pyodide, numpy, pandas, openpyxl, xlrd et pypdf, avec les empreintes SHA-256 vérifiées. Importez-le une fois (Plugins › Python hors-ligne) : `python` fonctionne même si le CDN est bloqué. `node` et `code.run` lisent aussi les fichiers binaires (PDF, Excel, Word) : `readFileSync`, `Buffer`, et `await readText(chemin)` pour le texte d'un PDF ou d'un Word. `doctor` diagnostique ce qui est disponible.
 - **26 agents** : Orchestrateur (directeur de mission), Architect, Coder, Researcher, Data Analyst, APEX Studio, Browser, Document Analyst, QA, Security, Reporting, Red Team, Shadow, Final Judge, Product / UX, Performance, Cost Optimizer, Knowledge Curator, Workflow Designer, Compliance, Simulation, Data Quality, Release Manager, Observability, Rédacteur, Relecteur.
 
+## JEV Cognitive Companion (édition directe)
+
+JEV est la couche de décision placée autour du LLM. Vue **JEV** : Control Center, trace en direct, JEV_LOG (JSON / CSV), comparaison sans / avec JEV, benchmark A/B, profils de modèles, Cost Intelligence, réglages de l'API JEV, rapport de régression.
+
+- **AVANT** : JEV-0 (déterministe, quelques millisecondes) produit l'**Execution Packet**. Il contient l'intention, la Task DNA, la stratégie d'agents, le modèle et son secours, et les **seuls outils utiles** (TOOL PACK + `tools.request`). Il contient aussi les fichiers et la mémoire pertinents, un contrat de style et de format, les budgets (tokens, coût, temps, étapes, retries) et les conditions d'arrêt.
+- **JEV-1** (TypeSafe Jev) n'est appelé que si le **ROI gate** l'autorise. **JEV-2** (arbitrage par un petit LLM) ne sert qu'en cas de conflit. Les requêtes purement déterministes (calculs, date) sont traitées en L0, **sans aucun LLM**.
+- **PENDANT** : le moniteur d'exécution peut demander CONTINUE, STOP (budget), COMPRESS, ADD / REMOVE TOOL ou SWITCH STRATEGY (boucles, échecs répétés).
+- **APRÈS** : un vecteur qualité déterministe vérifie le format, la langue, les éléments demandés, les chiffres sans preuve, la syntaxe du code ou du JSON et les secrets. La **correction est ciblée** : seulement ce qui a échoué, une fois, et seulement si c'est rentable. L'escalade est bornée par le **gain marginal** : jamais de relance premium au-delà de 95 %.
+- **Modes** : ECO, BALANCED (défaut), PERFORMANCE, MAX.
+- **Clé JEV** : elle reste dans ce navigateur, masquée, jamais dans le DOM, un prompt ou un log. Le navigateur ne peut pas appeler TypeSafe directement (CORS) : il faut un relais, dont un modèle est fourni dans l'onglet JEV API. En cas d'échec ou de délai dépassé, **repli automatique sur JEV-0**.
+
 ## APEX Studio et style maison
 
 - Tous les exports suivent le **style maison** BLUE ECOBANK :

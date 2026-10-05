@@ -1,6 +1,8 @@
 import type { ChartData, EffortSetting, MissionReportPayload, ModelInfo } from '@shared/types';
 import type { ChatMessage } from '../../server/llm/types';
 import type { EngineSettings, RoutingDecision } from '../../server/engine/decision';
+import type { JevSettings } from './jev';
+import type { Checkpoint } from '../../server/jev/metrics';
 
 export type { ChatMessage, ModelInfo };
 export type PermissionMode = 'safe' | 'normal' | 'auto';
@@ -18,6 +20,7 @@ export type View =
   | 'plugins'
   | 'models'
   | 'intelligence'
+  | 'jev'
   | 'settings';
 
 export interface VFile {
@@ -103,6 +106,16 @@ export type Item =
       kind: 'routing';
       id: string;
       decision: RoutingDecision;
+    }
+  | {
+      /** JEV live execution trace (checkpoints with duration, tokens, cost, decision). */
+      kind: 'jev';
+      id: string;
+      packet: Record<string, unknown>;
+      why: string[];
+      trace: Checkpoint[];
+      done?: boolean;
+      summary?: string;
     }
   | {
       /** Intelligence Engine events: strategy, shadow alerts, evidence check, red team, learning. */
@@ -224,6 +237,8 @@ export interface Settings {
   disabledPlugins: string[];
   /** Intelligence Engine: routing weights, QA threshold, escalations, price cap. */
   engine?: Partial<EngineSettings>;
+  /** JEV Cognitive Companion (mode, provider, endpoint…). The API key is stored apart. */
+  jev?: Partial<JevSettings>;
 }
 
 export interface ArtifactDef {

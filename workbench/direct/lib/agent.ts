@@ -36,6 +36,11 @@ import {
 import { selectSkills, skillsPrompt, type SkillMatch } from '../../server/engine/skills';
 import { buildLoadout } from '../../server/engine/loadout';
 import { isHumanCorrection } from '../../server/engine/telemetry';
+import * as jevRt from './jev';
+import { ExecutionMonitor } from '../../server/jev/control';
+import { packetPrompt, type PreResult } from '../../server/jev/packet';
+import { REQUESTABLE, TOOL_FAMILIES, toolDefTokens } from '../../server/jev/tools';
+import type { Checkpoint } from '../../server/jev/metrics';
 import type { UsageEntry } from './types';
 import {
   AI_DOCS,
@@ -284,7 +289,30 @@ interface LoopResult {
   calls?: number;
   skills?: string[];
   mcp?: string[];
+  jev?: {
+    pre: PreResult;
+    trace: Checkpoint[];
+    jevCost: number;
+    itemId: string;
+    toolTokens: number;
+    toolTokensBaseline: number;
+    toolsOffered: number;
+    contextBefore: number;
+    contextAfter: number;
+    quality: number | null;
+    corrections: number;
+    decisionMs: number;
+  } | null;
+  /** Without JEV (baseline run): what was sent, for the A/B comparison. */
+  baselineTools?: { offered: number; tokens: number };
 }
+
+/** Packet of the current top-level run, handed to sub-agents (JEV strategy for agents). */
+let currentPacket: PreResult | null = null;
+/** Per-run JEV switch (A/B benchmark: baseline runs without JEV). */
+let jevOverride: boolean | null = null;
+const jevEnabled = () => jevOverride ?? jevRt.jevSettings().enabled;
+const fmtTok = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
 
 /** Average latency per model call (ms), measured on the recent usage. */
 function latencyMap(usage: UsageEntry[]): Record<string, number> {
@@ -403,13 +431,83 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   });
   // MASSAMBA Intelligence Engine: Task DNA → Strategy (learnt from the ledger).
   const top = inp.depth === 0 && !label;
-  const dna = taskDna(
+  let dna = taskDna(
     inp.text,
     inp.attachments.map((a) => a.name),
     profile,
   );
-  const strategy = top ? planStrategy(dna, profile, st.ledger, { mission: Boolean(inp.mission) }) : null;
+  let strategy = top ? planStrategy(dna, profile, st.ledger, { mission: Boolean(inp.mission) }) : null;
   if (strategy && !prefTier) profile.tier = strategy.tier;
+  // ── JEV Cognitive Companion (control plane): JEV_PRE → Execution Packet ──
+  const jevOn = top && jevEnabled();
+  let jp: Awaited<ReturnType<typeof jevRt.pre>> | null = null;
+  const tJev = performance.now();
+  if (jevOn) {
+    const s0 = useStore.getState();
+    const wsFiles = Object.values(s0.files)
+      .filter((f) => !f.binary && f.data.length < 300_000 && !f.path.startsWith('.ai/'))
+      .slice(-200)
+      .map((f) => ({ path: f.path, text: f.data }));
+    const userTexts = [
+      ...inp.history
+        .filter((m) => m.role === 'user' && typeof m.content === 'string')
+        .map((m) => m.content as string),
+      inp.text,
+    ].slice(-12);
+    try {
+      jp = await jevRt.pre({
+        taskId: uid(),
+        text: inp.text,
+        attachments: inp.attachments.map((a) => a.name),
+        hasImages,
+        mission: Boolean(inp.mission),
+        role: inp.agent.id,
+        agentLabel: inp.agent.name,
+        models,
+        tiers,
+        health: s0.health,
+        board: s0.board,
+        bench: s0.bench,
+        external: s0.externalBench,
+        latency: latencyMap(s0.usage),
+        engine: {
+          ...DEFAULT_ENGINE,
+          ...s0.settings.engine,
+          weights: { ...DEFAULT_WEIGHTS, ...s0.settings.engine?.weights },
+        },
+        budgetLeft: budgetLeft(),
+        perTaskUsd: s0.settings.budgetPerTask,
+        maxSteps: s0.settings.maxSteps,
+        historyTokens: estimate(inp.history),
+        availableTools: [...tools.map((t) => t.name), 'tools.request'],
+        mcpConnected: plugins.map((p) => p.name),
+        mcpToolNames: mcpTools.map((t) => t.name),
+        files: wsFiles,
+        userTexts,
+        manualRules: s0.manual.map((m) => m.rule),
+        ledger: s0.ledger,
+        preferredTier: prefTier,
+        previousUserText: userTexts.at(-2),
+      });
+    } catch (e) {
+      // JEV must never block the Workbench: the existing pipeline continues.
+      push(sid, {
+        kind: 'intel',
+        id: uid(),
+        title: 'JEV indisponible → pipeline standard',
+        tone: 'warn',
+        lines: [String((e as Error).message ?? e)],
+      });
+      jp = null;
+    }
+    if (jp) {
+      Object.assign(profile, jp.pre.profile);
+      dna = jp.pre.dna;
+      strategy = jp.pre.strategy;
+      currentPacket = jp.pre;
+    }
+  }
+  const jevDecisionMs = performance.now() - tJev;
   if (top) {
     // Personal operating manual: explicit durable instructions are remembered.
     const rules = detectRules(inp.text).filter((r) => !st.manual.some((m) => m.rule === r.rule));
@@ -455,41 +553,47 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   let engineSkills: SkillMatch[] = [];
   if (top) {
     const s2 = useStore.getState();
-    decision = decideRoute({
-      models,
-      tiers,
-      profile: prefTier ? { ...profile, tier: prefTier } : profile,
-      dna,
-      text: inp.text,
-      health: s2.health,
-      board: s2.board,
-      bench: s2.bench,
-      external: s2.externalBench,
-      latency: latencyMap(s2.usage),
-      settings: eng,
-      budgetLeft: budgetLeft(),
-      mission: inp.mission,
-    });
+    decision = jp
+      ? jp.pre.decision
+      : decideRoute({
+          models,
+          tiers,
+          profile: prefTier ? { ...profile, tier: prefTier } : profile,
+          dna,
+          text: inp.text,
+          health: s2.health,
+          board: s2.board,
+          bench: s2.bench,
+          external: s2.externalBench,
+          latency: latencyMap(s2.usage),
+          settings: eng,
+          budgetLeft: budgetLeft(),
+          mission: inp.mission,
+        });
     if (sel.auto && decision.mode === 'evidence' && decision.chosen) {
       sel.model = decision.chosen.id;
       sel.reason = decision.why.model;
       routedFallbacks = decision.fallbacks.map((f) => f.id);
     }
-    const selection = selectSkills(
-      inp.text,
-      inp.attachments.map((a) => a.name),
-      { model: models.find((m) => m.id === sel.model), tools: tools.map((t) => t.name) },
-    );
+    const selection = jp
+      ? jp.pre.selection
+      : selectSkills(
+          inp.text,
+          inp.attachments.map((a) => a.name),
+          { model: models.find((m) => m.id === sel.model), tools: tools.map((t) => t.name) },
+        );
     engineSkills = selection.selected;
-    const lo = buildLoadout({
-      agentId: inp.agent.id,
-      agentLabel: inp.agent.name,
-      team: strategy?.team ?? profile.team,
-      type: profile.type,
-      selection,
-      mcpConnected: plugins.map((p) => p.name),
-      tools: tools.map((t) => t.name),
-    });
+    const lo = jp
+      ? jp.pre.loadout
+      : buildLoadout({
+          agentId: inp.agent.id,
+          agentLabel: inp.agent.name,
+          team: strategy?.team ?? profile.team,
+          type: profile.type,
+          selection,
+          mcpConnected: plugins.map((p) => p.name),
+          tools: tools.map((t) => t.name),
+        });
     decision = {
       ...decision,
       agent: lo.agent,
@@ -510,12 +614,34 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     st.logRouting(slimDecision(decision));
     push(sid, { kind: 'routing', id: uid(), decision: slimDecision(decision) });
   }
+  // JEV live execution trace (updated at each checkpoint).
+  const jevItemId = uid();
+  const jevTrace: Checkpoint[] = jp ? [...jp.trace] : [];
+  const traceAdd = (c: Checkpoint) => {
+    if (!jp) return;
+    jevTrace.push(c);
+    st.updateItem(sid, jevItemId, { trace: [...jevTrace] });
+  };
+  if (jp)
+    push(sid, {
+      kind: 'jev',
+      id: jevItemId,
+      packet: jp.pre.packet as unknown as Record<string, unknown>,
+      why: jevRt.explain(jp.pre),
+      trace: [...jevTrace],
+    });
   const fallbackChain = [
     ...new Set([st.settings.fallbackModel, ...routedFallbacks].filter((m) => m && m !== sel.model)),
   ];
   const info = models.find((m) => m.id === sel.model);
   const vision = info?.capabilities.vision ?? hasImages;
-  const effort = (inp.effort && inp.effort !== 'auto' ? inp.effort : inp.agent.effort) ?? 'auto';
+  let effort = (inp.effort && inp.effort !== 'auto' ? inp.effort : inp.agent.effort) ?? 'auto';
+  // JEV reasoning level: ECO thinks less, MAX thinks more (only when left on auto).
+  if (jp && effort === 'auto' && info?.efforts.length) {
+    const m = jevRt.jevSettings().mode;
+    if (m === 'eco') effort = 'low';
+    else if (m === 'max') effort = 'high';
+  }
   if (!label)
     push(sid, {
       kind: 'model',
@@ -554,10 +680,51 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     .map((s) => ({ name: s.name, body: s.body, files: Object.keys(s.files) }));
   if (active.length && !label) push(sid, { kind: 'skills', id: uid(), names: active.map((a) => a.name) });
 
+  // JEV TOOL PACK: only the selected tools are exposed; tools.request / ADD TOOL extend it.
+  const packTools: DirectTool[] = jp ? tools.filter((t) => jp!.pre.toolPack.names.includes(t.name)) : tools;
+  if (jp) {
+    const requestTool: DirectTool = {
+      name: 'tools.request',
+      description: `Ask JEV for another family of tools when the selected ones are not enough. Families: ${REQUESTABLE.join(', ')}.`,
+      parameters: {
+        type: 'object',
+        properties: {
+          family: { type: 'string', enum: REQUESTABLE },
+          reason: { type: 'string', description: 'Why it is needed' },
+        },
+        required: ['family'],
+      },
+      risk: 'read',
+      readOnly: true,
+      label: (a) => `JEV : outils « ${String(a.family)} »`,
+      async run(a) {
+        const fam = TOOL_FAMILIES[String(a.family)] ?? [];
+        const added = tools.filter((t) => fam.includes(t.name) && !packTools.includes(t));
+        packTools.push(...added);
+        traceAdd({
+          name: 'JEV_EXECUTION',
+          ms: 0,
+          tokens: 0,
+          cost: 0,
+          decision: `ADD TOOL : ${added.map((t) => t.name).join(', ') || 'aucun nouvel outil'} (${String(a.family)})`,
+        });
+        return {
+          ok: true,
+          summary: `${added.length} outil(s) ajouté(s)`,
+          forModel: added.length
+            ? `Added tools: ${added.map((t) => llmName(t.name)).join(', ')}. They are available from your next step.`
+            : `No new tool in family ${String(a.family)} for this agent / mode (already available or not allowed).`,
+        };
+      },
+    };
+    packTools.push(requestTool);
+  }
+  const toolTokens = toolDefTokens(toolDefs(packTools));
+  const toolTokensBaseline = toolDefTokens(toolDefs(tools));
   const system = systemPrompt({
     agent: inp.agent,
     mode: inp.session.mode,
-    tools,
+    tools: packTools,
     skills: enabled,
     active,
     agents: allAgents(st.agents),
@@ -569,6 +736,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     manualPrompt(useStore.getState().manual),
     strategy ? strategyPrompt(dna, strategy) : '',
     skillsPrompt(engineSkills),
+    jp ? packetPrompt(jp.pre) : '',
     MEMORY_INSTRUCTIONS,
     inp.mission
       ? `${MISSION_PROTOCOL}\n\nTask profile: ${profile.reasons.join(', ')}.${profile.team.length ? ` Recommended specialists, in order: ${profile.team.join(' → ')}.` : ''}`
@@ -594,7 +762,19 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     st.patchSession(sid, { resume: undefined });
   }
   const user: ChatMessage = { role: 'user', content };
-  const messages: ChatMessage[] = [{ role: 'system', content: fullSystem }, ...inp.history, user];
+  // JEV CONTEXT COMPILER: long histories keep only the relevant exchanges.
+  const ctxHist = jp
+    ? jevRt.context(inp.text, inp.history, Math.round(jp.pre.budgets.tokens * 0.4))
+    : { history: inp.history, before: estimate(inp.history), after: estimate(inp.history) };
+  if (jp)
+    traceAdd({
+      name: 'JEV_CONTEXT',
+      ms: 0,
+      tokens: ctxHist.after,
+      cost: 0,
+      decision: `historique ${ctxHist.before} → ${ctxHist.after} tokens · définitions d’outils ${toolTokensBaseline} → ${toolTokens} tokens par appel`,
+    });
+  const messages: ChatMessage[] = [{ role: 'system', content: fullSystem }, ...ctxHist.history, user];
   const persisted: ChatMessage[] = [user];
   const contextBudget = Math.min(Math.floor((info?.contextLength || 128_000) * 0.7), 400_000);
   if (top) liveTrace = { goal: inp.text, messages };
@@ -692,6 +872,9 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   // Cascade: cheap first → QA → escalate only when needed.
   let escalations = 0;
   let lastQa: number | undefined;
+  const monitor = jp ? new ExecutionMonitor(jp.pre.budgets) : null;
+  let jevQuality: number | null = null;
+  let corrections = 0;
   let modelCalls = 0;
   const toolsUsed = new Set<string>();
   const escalate = (qa: number, why: string): void => {
@@ -719,8 +902,27 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       lines: [step.reason, ...(step.model ? [`${model} → ${step.model}`] : [])],
     });
     if (step.action === 'escalate' && step.model) {
+      // JEV: escalate only when the marginal quality gain is worth its cost.
+      const mg = jp ? jevRt.escalateWorth(qa, eng.qaThreshold, cost, decision.ladder[escalations]) : null;
+      if (mg && !mg.worth) {
+        traceAdd({
+          name: 'JEV_ESCALATION',
+          ms: 0,
+          tokens: 0,
+          cost: 0,
+          decision: `pas d’escalade : ${mg.reason}`,
+        });
+        return;
+      }
       escalations++;
       model = step.model;
+      traceAdd({
+        name: 'JEV_ESCALATION',
+        ms: 0,
+        tokens: 0,
+        cost: 0,
+        decision: `${why} → ${step.model}${mg ? ` (${mg.reason})` : ''}`,
+      });
     }
   };
   const ws = useStore.getState().settings;
@@ -753,7 +955,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     const compacted = compact(messages, contextBudget, inp.text);
     messages.splice(0, messages.length, ...compacted);
 
-    const offered = phase === 'planning' ? planTools : tools;
+    const offered = phase === 'planning' ? planTools : packTools;
     const callMessages =
       phase === 'planning'
         ? [{ ...messages[0]!, content: `${fullSystem}\n\n${PLAN_MODE}` }, ...messages.slice(1)]
@@ -832,6 +1034,36 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     useStore.getState().addSpend(r.cost);
     if (r.content.trim()) finalText = r.content;
     modelCalls++;
+    if (monitor) {
+      const md = monitor.step({
+        tokensIn: r.usage.promptTokens,
+        tokensOut: r.usage.completionTokens,
+        cost: r.cost,
+        contextTokens: estimate(messages),
+        contextLimit: contextBudget,
+      });
+      if (md.action !== 'CONTINUE')
+        traceAdd({
+          name: 'JEV_EXECUTION',
+          ms: 0,
+          tokens: 0,
+          cost: 0,
+          decision: `${md.action} : ${md.reason}`,
+        });
+      if (md.action === 'COMPRESS')
+        messages.splice(0, messages.length, ...compact(messages, Math.floor(contextBudget * 0.6), inp.text));
+      if (md.action === 'STOP') {
+        push(sid, {
+          kind: 'intel',
+          id: uid(),
+          title: 'JEV : arrêt (budget)',
+          tone: 'warn',
+          lines: [md.reason],
+        });
+        if (r.content.trim()) finalText = r.content;
+        break;
+      }
+    }
     for (const c of r.toolCalls) toolsUsed.add(c.function.name.replace(/__/g, '.'));
 
     const calls: ToolCall[] = r.toolCalls.map((c, i) => ({ ...c, id: c.id || `call_${step}_${i}` }));
@@ -870,7 +1102,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
             .filter((l) => /^\s*(\d+[.)]|[-*])\s+/.test(l))
             .map((l) => l.replace(/^\s*(\d+[.)]|[-*])\s+/, '')),
         };
-      } else if (top && !inp.mission && gates < 2 && (shadow || strategy?.verify.evidence)) {
+      } else if (top && !inp.mission && gates < 2 && (shadow || strategy?.verify.evidence || jp)) {
         // Delivery gates: unverified claims (shadow) and figures without evidence.
         gates++;
         shadow?.observeFinal(r.content);
@@ -893,6 +1125,37 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
             `[EVIDENCE CHECK] These figures in your answer appear in no tool result or user message: ${unsupported.join(', ')}. Verify them with a tool (data.query, code.run…) and correct them, or mark them explicitly as estimates — then give the final answer again.`,
           );
         }
+        // JEV OUTPUT QA → targeted correction only when it pays.
+        if (jp) {
+          const tq = performance.now();
+          const q = jevRt.qa({
+            answer: r.content,
+            spec: jp.pre.spec,
+            evidence,
+            usedTools: toolsUsed.size > 0,
+            toolErrors: shadow?.toolErrors.length ?? 0,
+            toolCalls: toolsUsed.size,
+            tokens: tokensIn + tokensOut,
+            tokenBudget: jp.pre.budgets.tokens,
+            mode: jevRt.jevSettings().mode,
+            corrections,
+            budgetLeft: budgetLeft(cost),
+            estCost: r.cost,
+          });
+          jevQuality = q.result.score;
+          traceAdd({
+            name: 'JEV_QA',
+            ms: performance.now() - tq,
+            tokens: 0,
+            cost: 0,
+            decision: `qualité ${q.result.score}/100${q.result.failures.length ? ` · ${q.result.failures.map((f) => f.what).join(' ; ')}` : ''} · ${q.why}`,
+          });
+          if (q.correct && !unsupported.length) {
+            corrections++;
+            notes.push(q.correct);
+            traceAdd({ name: 'JEV_CORRECTION', ms: 0, tokens: 0, cost: 0, decision: q.why });
+          }
+        }
         if (!notes.length) break;
         const g: ChatMessage = { role: 'user', content: notes.join('\n\n') };
         messages.push(g);
@@ -913,7 +1176,43 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
 
     // Tool execution
     for (const call of calls) {
-      const res = await runTool(call, offered, ctx, inp);
+      const pool =
+        phase === 'planning' ? planTools : [...packTools, ...tools.filter((t) => !packTools.includes(t))];
+      const res = await runTool(call, pool, ctx, inp);
+      if (jp && phase !== 'planning') {
+        const used = tools.find(
+          (t) => llmName(t.name) === call.function.name || t.name === call.function.name,
+        );
+        if (used && !packTools.includes(used)) {
+          packTools.push(used);
+          traceAdd({
+            name: 'JEV_EXECUTION',
+            ms: 0,
+            tokens: 0,
+            cost: 0,
+            decision: `ADD TOOL : ${used.name} (appelé hors du pack)`,
+          });
+        }
+        const md = monitor?.tool(
+          call.function.name.replace(/__/g, '.'),
+          call.function.arguments ?? '',
+          !/^(Error|Denied)/.test(res),
+        );
+        if (md && md.action === 'REMOVE_TOOL' && md.tool) {
+          const i = packTools.findIndex((t) => t.name === md.tool);
+          if (i >= 0) packTools.splice(i, 1);
+        }
+        if (md && md.action !== 'CONTINUE') {
+          traceAdd({
+            name: 'JEV_EXECUTION',
+            ms: 0,
+            tokens: 0,
+            cost: 0,
+            decision: `${md.action} : ${md.reason}`,
+          });
+          messages.push({ role: 'user', content: `[JEV] ${md.reason}.` });
+        }
+      }
       const m: ChatMessage = { role: 'tool', tool_call_id: call.id, content: res };
       messages.push(m);
       persisted.push(m);
@@ -1085,6 +1384,23 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     calls: modelCalls,
     skills: engineSkills.map((m) => m.skill.name),
     mcp: decision?.mcp ?? [],
+    jev: jp
+      ? {
+          pre: jp.pre,
+          trace: jevTrace,
+          jevCost: jp.jevCost,
+          itemId: jevItemId,
+          toolTokens: toolDefTokens(toolDefs(packTools)),
+          toolTokensBaseline,
+          toolsOffered: packTools.length,
+          contextBefore: ctxHist.before + toolTokensBaseline,
+          contextAfter: ctxHist.after + toolTokens,
+          quality: lastQa ?? jevQuality,
+          corrections,
+          decisionMs: jevDecisionMs,
+        }
+      : null,
+    baselineTools: top ? { offered: tools.length, tokens: toolTokensBaseline } : undefined,
   };
 }
 
@@ -1203,11 +1519,16 @@ async function delegate(
   const itemId = uid();
   if (parent.depth === 0) runTeam.add(agent.id);
   st.pushItem(parent.session.id, { kind: 'subagent', id: itemId, role: agent.name, task, status: 'running' });
+  // JEV strategy for the agent: budget, success criteria and the relevant context of the mission.
+  const pk = currentPacket?.packet;
+  const jevTask = pk
+    ? `${task}\n\n<jev_subpacket agent="${agent.id}">\nbudget: ≤ ${Math.max(4, Math.round(pk.max_steps / 2))} steps; stop when done.\nsuccess: ${pk.success_criteria.join('; ')}\n${pk.context_required.length ? `relevant files: ${pk.context_required.slice(0, 8).join(', ')}\n` : ''}${currentPacket!.contract ? `${currentPacket!.contract}\n` : ''}</jev_subpacket>`
+    : task;
   try {
     const r = await loop({
       ...parent,
       agent,
-      text: task,
+      text: jevTask,
       attachments: [],
       history: [],
       plan: false,
@@ -1234,9 +1555,11 @@ export async function runAgent(
   sessionId: string,
   text: string,
   attachments: Attachment[],
-  opts: { mode?: AgentMode } = {},
+  opts: { mode?: AgentMode; jev?: boolean; bench?: string } = {},
 ): Promise<void> {
   const st = useStore.getState();
+  const benchTag = opts.bench ?? null;
+  jevOverride = opts.jev ?? null;
   const session = st.sessions.find((s) => s.id === sessionId);
   if (!session || st.running[sessionId]) return;
   const ac = new AbortController();
@@ -1255,9 +1578,75 @@ export async function runAgent(
   if (session.title === 'Nouvelle session')
     st.patchSession(sessionId, { title: text.split('\n')[0]!.slice(0, 70) || 'Session' });
   const started = Date.now();
+  // JEV L0: requests answered without any model (pure arithmetic, date / time).
+  const direct =
+    jevEnabled() && !attachments.length && (opts.mode ?? st.agentMode) !== 'plan'
+      ? jevRt.directAnswer(text)
+      : null;
+  if (direct) {
+    const t0 = performance.now();
+    st.pushItem(sessionId, { kind: 'assistant', id: uid(), text: direct });
+    st.pushItem(sessionId, {
+      kind: 'usage',
+      id: uid(),
+      cost: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      model: 'JEV-0',
+      durationMs: Date.now() - started,
+    });
+    st.patchSession(sessionId, (cur) => ({
+      history: [...cur.history, { role: 'user', content: text }, { role: 'assistant', content: direct }],
+    }));
+    jevRt.learn({
+      id: uid(),
+      at: started,
+      session: sessionId,
+      mission: text.slice(0, 200),
+      task: 'chat',
+      mode: jevRt.jevSettings().mode,
+      jev: true,
+      level: 0,
+      decisionBy: 'direct',
+      model: 'JEV-0',
+      reason: 'réponse déterministe sans LLM',
+      tokensIn: 0,
+      tokensOut: 0,
+      cost: 0,
+      jevCost: 0,
+      latencyMs: Date.now() - started,
+      decisionMs: performance.now() - t0,
+      calls: 0,
+      quality: 100,
+      success: true,
+      retries: 0,
+      escalations: 0,
+      corrections: 0,
+      cacheHits: 0,
+      toolsOffered: 0,
+      toolsBaseline: 0,
+      toolTokens: 0,
+      toolTokensBaseline: 0,
+      contextBefore: 0,
+      contextAfter: 0,
+      checkpoints: [
+        {
+          name: 'JEV_PRE',
+          ms: performance.now() - t0,
+          tokens: 0,
+          cost: 0,
+          decision: 'L0 : réponse calculée, aucun appel LLM',
+        },
+      ],
+    });
+    const { [sessionId]: _r, ...running } = useStore.getState().running;
+    useStore.setState({ running });
+    return;
+  }
   sub.cost = sub.tokensIn = sub.tokensOut = 0;
   runTeam.clear();
   liveTrace = null;
+  currentPacket = null;
   beginCheckpoint(sessionId, text);
   let result: LoopResult | null = null;
   let errored = false;
@@ -1408,6 +1797,81 @@ export async function runAgent(
         ],
       };
       useStore.getState().setLedger(recordEntry(useStore.getState().ledger, entry));
+    }
+    // JEV_POST + JEV_LEARNING: measured telemetry of the run (JEV on, or baseline when off).
+    if (result || errored) {
+      const j = result?.jev ?? null;
+      const success = result?.report?.status
+        ? result.report.status === 'PASSED'
+        : errored
+          ? false
+          : j?.quality != null
+            ? j.quality >= 75
+            : null;
+      const trace: Checkpoint[] = j ? [...j.trace] : [];
+      if (j) {
+        trace.push({
+          name: 'JEV_EXECUTION',
+          ms: Date.now() - started,
+          tokens: tin + tout,
+          cost,
+          decision: `${result?.calls ?? 0} appel(s) LLM · ${result?.models.join(', ') || '—'}`,
+        });
+        trace.push({
+          name: 'JEV_POST',
+          ms: 0,
+          tokens: 0,
+          cost: 0,
+          decision: `qualité ${j.quality ?? '—'} · ${success === null ? 'non jugé' : success ? 'réussi' : 'échec'}`,
+        });
+        trace.push({
+          name: 'JEV_LEARNING',
+          ms: 0,
+          tokens: 0,
+          cost: 0,
+          decision: 'profils modèles, ledger et JEV_LOG mis à jour',
+        });
+        s.updateItem(sessionId, j.itemId, {
+          trace,
+          done: true,
+          summary: `${fmtTok(tin + tout)} tokens · $${(cost + j.jevCost).toFixed(4)} · qualité ${j.quality ?? '—'}`,
+        });
+      }
+      const pk = j?.pre.packet;
+      jevRt.learn({
+        id: uid(),
+        at: started,
+        session: sessionId,
+        mission: text.slice(0, 200),
+        task: pk?.task_type ?? result?.dna?.type ?? 'chat',
+        mode: jevRt.jevSettings().mode,
+        jev: Boolean(j),
+        level: pk?.level ?? 0,
+        decisionBy: pk?.decided_by ?? 'JEV-0',
+        model: result?.models[0] ?? session.model,
+        reason: j?.pre.decision.why.model ?? '',
+        tokensIn: tin,
+        tokensOut: tout,
+        cost,
+        jevCost: j?.jevCost ?? 0,
+        latencyMs: Date.now() - started,
+        decisionMs: j?.decisionMs ?? 0,
+        calls: result?.calls ?? 0,
+        quality: j?.quality ?? result?.qa ?? null,
+        success,
+        retries: result?.fallbacks ?? 0,
+        escalations: result?.escalations ?? 0,
+        corrections: j?.corrections ?? 0,
+        cacheHits: j?.pre.cacheHits ?? 0,
+        toolsOffered: j?.toolsOffered ?? result?.baselineTools?.offered ?? 0,
+        toolsBaseline: result?.baselineTools?.offered ?? 0,
+        toolTokens: j?.toolTokens ?? result?.baselineTools?.tokens ?? 0,
+        toolTokensBaseline: result?.baselineTools?.tokens ?? 0,
+        contextBefore: j?.contextBefore ?? 0,
+        contextAfter: j?.contextAfter ?? 0,
+        checkpoints: trace,
+        bench: benchTag ?? undefined,
+      });
     }
   }
 }

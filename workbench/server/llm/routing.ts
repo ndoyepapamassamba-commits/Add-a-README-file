@@ -67,6 +67,39 @@ const RX: Record<string, RegExp> = {
     /\b(typo|faute|renomm|rename|traduis|translate|formate?|bonjour|salut|merci|hello|quelle heure|capitale)\b/i,
 };
 
+/** Keyword evidence per task type, best first (also gives JEV-0 its confidence). */
+export function typeScores(
+  text: string,
+  attachmentNames: string[] = [],
+  role?: string,
+): [TaskType, number][] {
+  const t = `${text} ${attachmentNames.join(' ')}`;
+  const scores: [TaskType, number][] = [
+    ['code', RX.code!.test(t) ? 2 : 0],
+    ['data', RX.data!.test(t) ? 2.2 : 0],
+    ['research', RX.research!.test(t) ? 1.6 : 0],
+    ['browser', RX.browser!.test(t) || role === 'browser' ? 2.4 : 0],
+    ['document', RX.document!.test(t) ? 1.8 : 0],
+    ['review', RX.review!.test(t) || role === 'reviewer' || role === 'final_reviewer' ? 1.5 : 0],
+    ['writing', RX.writing!.test(t) ? 1.2 : 0],
+  ];
+  if (attachmentNames.some((n) => /\.(xlsx|xlsm|xlsb|xls|csv|tsv|json|ods)$/i.test(n)))
+    scores.find((s) => s[0] === 'data')![1] += 2;
+  if (attachmentNames.some((n) => /\.(pdf|docx|pptx|odt|rtf)$/i.test(n)))
+    scores.find((s) => s[0] === 'document')![1] += 2;
+  return scores.sort((a, b) => b[1] - a[1]);
+}
+
+/** JEV-0 confidence in its own task classification (0–1): clear keyword margin → high. */
+export function classificationConfidence(text: string, attachmentNames: string[] = []): number {
+  const s = typeScores(text, attachmentNames);
+  const top = s[0]![1];
+  const second = s[1]![1];
+  if (top === 0) return text.length < 80 ? 0.75 : 0.35;
+  const margin = (top - second) / top;
+  return Math.max(0.3, Math.min(0.95, 0.45 + margin * 0.5 + (attachmentNames.length ? 0.1 : 0)));
+}
+
 /** Profiles a request for routing and team selection (transparent heuristics). */
 export function analyzeTask(o: {
   text: string;
@@ -78,20 +111,7 @@ export function analyzeTask(o: {
 }): TaskProfile {
   const t = `${o.text} ${(o.attachmentNames ?? []).join(' ')}`;
   const reasons: string[] = [];
-  const scores: [TaskType, number][] = [
-    ['code', RX.code!.test(t) ? 2 : 0],
-    ['data', RX.data!.test(t) ? 2.2 : 0],
-    ['research', RX.research!.test(t) ? 1.6 : 0],
-    ['browser', RX.browser!.test(t) || o.role === 'browser' ? 2.4 : 0],
-    ['document', RX.document!.test(t) ? 1.8 : 0],
-    ['review', RX.review!.test(t) || o.role === 'reviewer' || o.role === 'final_reviewer' ? 1.5 : 0],
-    ['writing', RX.writing!.test(t) ? 1.2 : 0],
-  ];
-  if ((o.attachmentNames ?? []).some((n) => /\.(xlsx|xlsm|xlsb|xls|csv|tsv|json|ods)$/i.test(n)))
-    scores.find((s) => s[0] === 'data')![1] += 2;
-  if ((o.attachmentNames ?? []).some((n) => /\.(pdf|docx|pptx|odt|rtf)$/i.test(n)))
-    scores.find((s) => s[0] === 'document')![1] += 2;
-  scores.sort((a, b) => b[1] - a[1]);
+  const scores = typeScores(o.text, o.attachmentNames, o.role);
   let type: TaskType = scores[0]![1] > 0 ? scores[0]![0] : 'chat';
   const needsVision = Boolean(o.hasImages);
   if (needsVision && type === 'chat') type = 'vision';

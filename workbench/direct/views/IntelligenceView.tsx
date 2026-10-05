@@ -1150,7 +1150,7 @@ function FreeTab() {
 }
 
 // ── Cost optimizer ─────────────────────────────────────────────────────────
-function CostsTab() {
+export function CostsTab() {
   const { ledger, models, health, board } = useStore();
   const [by, setBy] = useState<'model' | 'agent' | 'type' | 'tier'>('model');
   const rows = metrics(ledger.entries, by);
