@@ -101,7 +101,7 @@ import { DEFAULT_AUTO_TIERS } from '../../server/services/settings';
 import type { ModelInfo } from '@shared/types';
 import { complete } from './llm';
 import { callTool, type McpToolInfo } from './mcp';
-import { runCode } from './sandbox';
+import { runInWorkspace } from './run';
 import { uid, useStore } from './store';
 import type { ArtifactDef, PlanStep } from './types';
 import {
@@ -543,7 +543,7 @@ export const TOOLS: DirectTool[] = [
   {
     name: 'code.run',
     description:
-      'Run JavaScript or Python in an isolated sandbox (no access to the page). JS: async code, use console.log; readFile(path) reads a workspace text file; writeFile(path, text) saves a file. Python (Pyodide, numpy/pandas available): workspace text files are mounted at their path; files written in outputs/ are saved back.',
+      'Run JavaScript or Python in an isolated sandbox (no access to the page). Every workspace file is available, binaries included. JS: async code, use console.log; readFile(path) → string for text files, Uint8Array for binaries (PDF, xlsx, docx, images); readBytes(path) → Uint8Array; await readText(path) → extracted text of a PDF / Word / PowerPoint; writeFile(path, string | Uint8Array) saves a file. Python (Pyodide; numpy, pandas, openpyxl, xlrd, pypdf): workspace files are mounted at their path (pd.read_excel works); await read_text(path) gives the text of a PDF / Word file; files written in outputs/ are saved back. If Python is unavailable (blocked network, no offline pack), use JavaScript: it reads the same files.',
     parameters: obj(
       {
         language: { type: 'string', enum: ['javascript', 'python'] },
@@ -551,7 +551,7 @@ export const TOOLS: DirectTool[] = [
         files: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Workspace text files to make available',
+          description: 'Workspace files to make available (default: all)',
         },
       },
       ['language', 'code'],
@@ -563,28 +563,14 @@ export const TOOLS: DirectTool[] = [
       return { text: S(a.code) };
     },
     async run(a, ctx) {
-      const wanted = Array.isArray(a.files) ? a.files.map(S) : Object.keys(files());
-      const input: Record<string, string> = {};
-      for (const p of wanted) {
-        const f = getFile(p);
-        if (f && !f.binary && f.data.length < 5_000_000) input[f.path] = f.data;
-      }
-      const r = await runCode(
+      const wanted = Array.isArray(a.files) && a.files.length ? a.files.map(S) : undefined;
+      const r = await runInWorkspace(
         S(a.language) === 'python' ? 'python' : 'javascript',
         S(a.code),
-        input,
-        120_000,
+        wanted,
         ctx.signal,
       );
-      const saved: string[] = [];
-      for (const [p, t] of Object.entries(r.files ?? {})) {
-        try {
-          writeText(p, t);
-          saved.push(normPath(p));
-        } catch {
-          /* invalid path */
-        }
-      }
+      const saved = r.saved;
       const text = [
         r.logs.join('\n'),
         r.result !== undefined ? `→ ${r.result}` : '',
@@ -1145,7 +1131,7 @@ export const TOOLS: DirectTool[] = [
   {
     name: 'terminal.execute',
     description:
-      'Run a command in the embedded terminal over the workspace: ls, cd, cat, head/tail, grep -rn, find, wc, sort | uniq -c, cut, sed s///g, echo > file, cp/mv/rm, mkdir, tree, node FILE | node -e CODE, python FILE | python -c CODE (sandbox, pandas available), curl URL [-o file], data FILE (profile a spreadsheet), open FILE (embedded browser). Pipes, redirections, && || ; and globs work. No real OS: npm/git/pip are not available in this edition.',
+      'Run a command in the embedded terminal over the workspace: ls, cd, cat, head/tail, grep -rn, find, wc, sort | uniq -c, cut, sed s///g, echo > file, cp/mv/rm, mkdir, tree, node FILE | node -e CODE (fs reads text AND binary files, Buffer, await readText(path) = text of a PDF/Word), python FILE | python -c CODE (sandbox: pandas, openpyxl, pypdf; offline when the Python pack is imported), doctor (what is available: node, Python, network), curl URL [-o file], data FILE (profile a spreadsheet), open FILE (embedded browser). Pipes, redirections, && || ; and globs work. No real OS: npm/git/pip are not available in this edition.',
     parameters: obj({ command: str('Command line') }, ['command']),
     risk: 'execute',
     assess: (a: Record<string, unknown>) => shellRisk(S(a.command)),

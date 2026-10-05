@@ -20,6 +20,7 @@ import {
   Workflow as WorkflowIcon,
   TerminalSquare,
   Globe,
+  BrainCircuit,
 } from 'lucide-react';
 import {
   Button,
@@ -46,6 +47,7 @@ import { PluginsView } from './views/PluginsView';
 import { ModelsView, SettingsView } from './views/SettingsViews';
 import { TerminalView } from './views/TerminalView';
 import { BrowserView } from './views/BrowserView';
+import { IntelligenceView } from './views/IntelligenceView';
 
 const NAV: { id: View; label: string; icon: React.ReactNode }[] = [
   { id: 'home', label: 'Mission Control', icon: <LayoutDashboard size={17} /> },
@@ -59,6 +61,7 @@ const NAV: { id: View; label: string; icon: React.ReactNode }[] = [
   { id: 'skills', label: 'Skills', icon: <Puzzle size={17} /> },
   { id: 'plugins', label: 'Plugins', icon: <Plug size={17} /> },
   { id: 'models', label: 'Modèles', icon: <Sparkles size={17} /> },
+  { id: 'intelligence', label: 'Intelligence', icon: <BrainCircuit size={17} /> },
   { id: 'settings', label: 'Réglages', icon: <SettingsIcon size={17} /> },
 ];
 
@@ -257,6 +260,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           {view === 'skills' && <SkillsView />}
           {view === 'plugins' && <PluginsView />}
           {view === 'models' && <ModelsView />}
+          {view === 'intelligence' && <IntelligenceView />}
           {view === 'settings' && <SettingsView onLogout={onLogout} />}
         </main>
       </div>

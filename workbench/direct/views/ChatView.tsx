@@ -19,6 +19,7 @@ import {
   Rocket,
   Brain,
 } from 'lucide-react';
+import { RoutingCard } from './RoutingCard';
 import type { EffortSetting } from '@shared/types';
 import {
   Button,
@@ -268,6 +269,8 @@ const ItemView = memo(function ItemView({ item, sessionId }: { item: Item; sessi
       );
     case 'intel':
       return <IntelCard item={item} />;
+    case 'routing':
+      return <RoutingCard d={item.decision} />;
     case 'usage':
       return (
         <div className="my-3 border-t border-line pt-1.5 text-[11.5px] text-faint">

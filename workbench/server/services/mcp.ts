@@ -316,7 +316,8 @@ export const MCP_PRESETS: McpPreset[] = [
     id: 'word',
     name: 'Word (fichiers .docx)',
     category: 'Documents & bureautique',
-    description: 'Crée et édite des documents Word : styles, tableaux, images, commentaires, conversion PDF.',
+    description:
+      'Crée et édite des documents Word : styles, tableaux, images, commentaires, conversion PDF. ⚠ Dépôt archivé (relevé GitHub du 05/10/2026, score MASSAMBA 35/100) : préférez report.export (Word maison) ou MarkItDown pour lire.',
     config: uvx('word', 'office-word-mcp-server'),
     requires: 'uv (uvx).',
     free: true,
@@ -325,7 +326,8 @@ export const MCP_PRESETS: McpPreset[] = [
     id: 'powerpoint',
     name: 'PowerPoint (fichiers .pptx)',
     category: 'Documents & bureautique',
-    description: 'Crée des présentations : diapositives, mises en page, tableaux, graphiques, images.',
+    description:
+      'Crée des présentations : diapositives, mises en page, tableaux, graphiques, images. ⚠ Dépôt archivé (relevé GitHub du 05/10/2026, score MASSAMBA 35/100) : préférez les exports PowerPoint d’APEX Studio.',
     config: uvx('powerpoint', 'office-powerpoint-mcp-server'),
     requires: 'uv (uvx).',
     free: true,

@@ -150,6 +150,22 @@ export interface LedgerEntry {
   files: { read: string[]; written: string[] };
   checks: MissionCheck[];
   lessons: string[];
+  // ── Mission telemetry (Intelligence Engine) ──
+  session?: string;
+  agent?: string;
+  skills?: string[];
+  mcp?: string[];
+  tools?: string[];
+  tokensIn?: number;
+  tokensOut?: number;
+  /** Model calls of the mission (all agents). */
+  calls?: number;
+  retries?: number;
+  qa?: number;
+  escalations?: number;
+  /** The user corrected the result in the next message. */
+  humanCorrection?: boolean;
+  decision?: { chosen: string | null; tier: string; confidence: number; mode: string };
 }
 export interface Ledger {
   entries: LedgerEntry[];

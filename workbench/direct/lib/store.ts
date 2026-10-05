@@ -4,6 +4,9 @@ import { kv, saveLater } from './db';
 import { intelData, setIntelData, type IntelData } from '../../server/llm/modelIntel';
 import type { HouseKit } from '../../server/services/apexCore';
 import type { BenchResult, Ledger, ManualRule } from '../../server/agent/intelligence';
+import type { RoutingDecision } from '../../server/engine/decision';
+import type { RegistryResource } from '../../server/engine/registry';
+import type { ExternalBenchmark } from '../../server/engine/evidence';
 import { embeddedKit, setHouseKit } from './apex';
 import { noteBefore } from './timemachine';
 import {
@@ -88,6 +91,12 @@ export interface State {
   manual: ManualRule[];
   /** Auto-benchmark runs. */
   bench: BenchResult[];
+  /** Intelligence Engine: last routing decisions (explained). */
+  routingLog: RoutingDecision[];
+  /** GitHub Intelligence Registry (discovered / reviewed / approved / installed resources). */
+  registry: RegistryResource[];
+  /** Imported public benchmarks (fused with the other evidence). */
+  externalBench: ExternalBenchmark[];
   draft: string;
   toasts: Toast[];
   openFile: string | null;
@@ -118,6 +127,9 @@ export interface State {
   setLedger: (l: Ledger) => void;
   setManual: (m: ManualRule[]) => void;
   setBench: (b: BenchResult[]) => void;
+  logRouting: (d: RoutingDecision) => void;
+  setRegistry: (r: RegistryResource[]) => void;
+  setExternalBench: (b: ExternalBenchmark[]) => void;
 }
 
 const persistSession = (s: Session) => saveLater(`session:${s.id}`, () => s);
@@ -149,6 +161,9 @@ export const useStore = create<State>((set, get) => ({
   ledger: { entries: [] },
   manual: [],
   bench: [],
+  routingLog: [],
+  registry: [],
+  externalBench: [],
   draft: '',
   toasts: [],
   openFile: null,
@@ -308,14 +323,29 @@ export const useStore = create<State>((set, get) => ({
     set({ bench });
     saveLater('bench', () => get().bench, 300);
   },
+  logRouting: (d) => {
+    set({ routingLog: [...get().routingLog, d].slice(-150) });
+    saveLater('routingLog', () => get().routingLog, 1000);
+  },
+  setRegistry: (registry) => {
+    set({ registry });
+    saveLater('registry', () => get().registry, 300);
+  },
+  setExternalBench: (externalBench) => {
+    set({ externalBench });
+    saveLater('externalBench', () => get().externalBench, 300);
+  },
 }));
 
 /** Loads everything saved in this browser. */
 export async function hydrate(): Promise<void> {
-  const [ledger, manual, bench] = await Promise.all([
+  const [ledger, manual, bench, routingLog, registry, externalBench] = await Promise.all([
     kv.get<Ledger>('ledger').catch(() => undefined),
     kv.get<ManualRule[]>('manual').catch(() => undefined),
     kv.get<BenchResult[]>('bench').catch(() => undefined),
+    kv.get<RoutingDecision[]>('routingLog').catch(() => undefined),
+    kv.get<RegistryResource[]>('registry').catch(() => undefined),
+    kv.get<ExternalBenchmark[]>('externalBench').catch(() => undefined),
   ]);
   const [usage, workflows, health, board, intel] = await Promise.all([
     kv.get<UsageEntry[]>('usage').catch(() => undefined),
@@ -391,5 +421,8 @@ export async function hydrate(): Promise<void> {
     ledger: ledger ?? { entries: [] },
     manual: manual ?? [],
     bench: bench ?? [],
+    routingLog: routingLog ?? [],
+    registry: registry ?? [],
+    externalBench: externalBench ?? [],
   });
 }

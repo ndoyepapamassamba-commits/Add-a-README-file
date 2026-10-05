@@ -17,6 +17,7 @@
     "dev:direct": "vite -c vite.direct.config.ts",
     "build:server": "node scripts/build-server.mjs",
     "sync:intel": "tsx scripts/sync-intel.ts",
+    "build:python-pack": "tsx scripts/build-python-pack.ts",
     "start": "node --disable-warning=ExperimentalWarning dist/server/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",

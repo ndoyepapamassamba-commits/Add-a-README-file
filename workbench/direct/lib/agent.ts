@@ -26,6 +26,18 @@ import {
 } from '../../server/agent/intelligence';
 import { beginCheckpoint, endCheckpoint } from './timemachine';
 import {
+  DEFAULT_ENGINE,
+  DEFAULT_WEIGHTS,
+  cascadeNext,
+  decideRoute,
+  qaScore,
+  type RoutingDecision,
+} from '../../server/engine/decision';
+import { selectSkills, skillsPrompt, type SkillMatch } from '../../server/engine/skills';
+import { buildLoadout } from '../../server/engine/loadout';
+import { isHumanCorrection } from '../../server/engine/telemetry';
+import type { UsageEntry } from './types';
+import {
   AI_DOCS,
   FINAL_REVIEW_TASK,
   MEMORY_INSTRUCTIONS,
@@ -265,6 +277,42 @@ interface LoopResult {
   shadow?: ShadowMonitor | null;
   steps?: number;
   challenged?: number;
+  qa?: number;
+  escalations?: number;
+  decision?: RoutingDecision | null;
+  toolsUsed?: string[];
+  calls?: number;
+  skills?: string[];
+  mcp?: string[];
+}
+
+/** Average latency per model call (ms), measured on the recent usage. */
+function latencyMap(usage: UsageEntry[]): Record<string, number> {
+  const acc: Record<string, { s: number; n: number }> = {};
+  for (const u of usage.slice(-300)) {
+    const a = (acc[u.model] ??= { s: 0, n: 0 });
+    a.s += u.durationMs;
+    a.n++;
+  }
+  return Object.fromEntries(Object.entries(acc).map(([k, v]) => [k, v.s / v.n]));
+}
+
+/** Decision kept in the log / transcript (top candidates only). */
+const slimDecision = (d: RoutingDecision): RoutingDecision => ({
+  ...d,
+  candidates: d.candidates.slice(0, 8),
+});
+
+/** USD still available for this run (per-task and daily budgets), null = unlimited. */
+function budgetLeft(spentThisTask = 0): number | null {
+  const st = useStore.getState();
+  const ws = st.settings;
+  const today = new Date().toISOString().slice(0, 10);
+  const lefts = [
+    ws.budgetPerTask > 0 ? ws.budgetPerTask - spentThisTask : null,
+    ws.budgetDaily > 0 ? ws.budgetDaily - (st.spend[today] ?? 0) : null,
+  ].filter((x): x is number => x !== null);
+  return lefts.length ? Math.max(0, Math.min(...lefts)) : null;
 }
 
 /** Messages of the top-level run in progress (resume summary if it is interrupted). */
@@ -397,6 +445,71 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       routedFallbacks = routed.fallbacks;
     }
   }
+  // MASSAMBA Intelligence Engine: evidence-based decision (model + agent + skills + MCP + tools), explained.
+  const eng = {
+    ...DEFAULT_ENGINE,
+    ...st.settings.engine,
+    weights: { ...DEFAULT_WEIGHTS, ...st.settings.engine?.weights },
+  };
+  let decision: RoutingDecision | null = null;
+  let engineSkills: SkillMatch[] = [];
+  if (top) {
+    const s2 = useStore.getState();
+    decision = decideRoute({
+      models,
+      tiers,
+      profile: prefTier ? { ...profile, tier: prefTier } : profile,
+      dna,
+      text: inp.text,
+      health: s2.health,
+      board: s2.board,
+      bench: s2.bench,
+      external: s2.externalBench,
+      latency: latencyMap(s2.usage),
+      settings: eng,
+      budgetLeft: budgetLeft(),
+      mission: inp.mission,
+    });
+    if (sel.auto && decision.mode === 'evidence' && decision.chosen) {
+      sel.model = decision.chosen.id;
+      sel.reason = decision.why.model;
+      routedFallbacks = decision.fallbacks.map((f) => f.id);
+    }
+    const selection = selectSkills(
+      inp.text,
+      inp.attachments.map((a) => a.name),
+      { model: models.find((m) => m.id === sel.model), tools: tools.map((t) => t.name) },
+    );
+    engineSkills = selection.selected;
+    const lo = buildLoadout({
+      agentId: inp.agent.id,
+      agentLabel: inp.agent.name,
+      team: strategy?.team ?? profile.team,
+      type: profile.type,
+      selection,
+      mcpConnected: plugins.map((p) => p.name),
+      tools: tools.map((t) => t.name),
+    });
+    decision = {
+      ...decision,
+      agent: lo.agent,
+      skills: lo.skills,
+      mcp: lo.mcp,
+      tools: lo.tools.slice(0, 60),
+      why: {
+        ...decision.why,
+        model: sel.auto
+          ? decision.why.model
+          : `Modèle imposé par vous ou par l’agent (${sel.model}). Recommandation du moteur : ${decision.chosen?.name ?? '—'}.`,
+        agent: lo.agentWhy,
+        skills: `${lo.skillsWhy}${lo.incompatibleSkills.length ? ` — refusés : ${lo.incompatibleSkills.map((i) => `${i.name} (${i.reason})`).join(', ')}` : ''}`,
+        mcp: lo.mcpWhy,
+        tools: `${lo.tools.length} outils autorisés pour cet agent et ce mode ; contrôle qualité : ${lo.qa}`,
+      },
+    };
+    st.logRouting(slimDecision(decision));
+    push(sid, { kind: 'routing', id: uid(), decision: slimDecision(decision) });
+  }
   const fallbackChain = [
     ...new Set([st.settings.fallbackModel, ...routedFallbacks].filter((m) => m && m !== sel.model)),
   ];
@@ -455,6 +568,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     ENGINE_DOCTRINE,
     manualPrompt(useStore.getState().manual),
     strategy ? strategyPrompt(dna, strategy) : '',
+    skillsPrompt(engineSkills),
     MEMORY_INSTRUCTIONS,
     inp.mission
       ? `${MISSION_PROTOCOL}\n\nTask profile: ${profile.reasons.join(', ')}.${profile.team.length ? ` Recommended specialists, in order: ${profile.team.join(' → ')}.` : ''}`
@@ -575,6 +689,40 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   let reviews = 0;
   const usedModels = new Set<string>();
   let fallbackCount = 0;
+  // Cascade: cheap first → QA → escalate only when needed.
+  let escalations = 0;
+  let lastQa: number | undefined;
+  let modelCalls = 0;
+  const toolsUsed = new Set<string>();
+  const escalate = (qa: number, why: string): void => {
+    if (!decision) return;
+    lastQa = qa;
+    const step = cascadeNext({
+      qa,
+      threshold: eng.qaThreshold,
+      escalations,
+      maxEscalations: eng.maxEscalations,
+      rounds: missionRound,
+      maxRounds: 3,
+      current: model,
+      ladder: decision.ladder.slice(escalations),
+      budgetLeft: budgetLeft(cost),
+    });
+    push(sid, {
+      kind: 'intel',
+      id: uid(),
+      title:
+        step.action === 'escalate'
+          ? `Cascade — escalade (${why})`
+          : `Cascade — ${step.action === 'retry' ? 'correction sans escalade' : step.action === 'stop' ? 'arrêt' : 'accepté'}`,
+      tone: step.action === 'escalate' ? 'warn' : step.action === 'stop' ? 'err' : 'info',
+      lines: [step.reason, ...(step.model ? [`${model} → ${step.model}`] : [])],
+    });
+    if (step.action === 'escalate' && step.model) {
+      escalations++;
+      model = step.model;
+    }
+  };
   const ws = useStore.getState().settings;
   let nudged = false;
   let continuations = 0;
@@ -683,6 +831,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     }));
     useStore.getState().addSpend(r.cost);
     if (r.content.trim()) finalText = r.content;
+    modelCalls++;
+    for (const c of r.toolCalls) toolsUsed.add(c.function.name.replace(/__/g, '.'));
 
     const calls: ToolCall[] = r.toolCalls.map((c, i) => ({ ...c, id: c.id || `call_${step}_${i}` }));
     const assistant: ChatMessage = { role: 'assistant', content: r.content || null };
@@ -824,6 +974,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       if (report.status !== 'PARTIAL')
         useStore.getState().recordOutcome(model, report.status === 'PASSED', profile.type);
       if (report.status !== 'PASSED' && missionRound < 3) {
+        escalate(qaScore({ status: report.status, checks: report.checks }), `verdict ${report.status}`);
         push(sid, { kind: 'mission', id: uid(), report, round: missionRound });
         const fix: ChatMessage = {
           role: 'user',
@@ -856,6 +1007,15 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
             detail: ch.summary.slice(0, 6000),
           });
           if (c.blocking.length && missionRound < strategy.maxRounds) {
+            escalate(
+              qaScore({
+                status: report.status,
+                checks: report.checks,
+                blocking: c.blocking.length,
+                unsupportedNumbers: unsupported.length,
+              }),
+              'red team bloquante',
+            );
             const fix: ChatMessage = {
               role: 'user',
               content: `The red team found blocking problems:\n${c.blocking.map((b) => `- ${b}`).join('\n')}\n\nFix them, re-verify with tools, then call mission.report again.`,
@@ -879,6 +1039,10 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
           review: { approved, summary: rev.summary.slice(0, 3000) },
         });
         if (!approved && missionRound < 3) {
+          escalate(
+            qaScore({ status: report.status, checks: report.checks, reviewerRejected: true }),
+            'refus du relecteur',
+          );
           const fix: ChatMessage = {
             role: 'user',
             content: `The final reviewer requested changes:\n${rev.summary.slice(0, 4000)}\n\nFix the blocking problems, re-test, then call mission.report again.`,
@@ -889,6 +1053,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         }
       } else push(sid, { kind: 'mission', id: uid(), report, round: missionRound });
       ctx.mission!.stage('delivery');
+      lastQa = qaScore({ status: report.status, checks: report.checks });
       finalText = `${finalText ? `${finalText}\n\n` : ''}${formatReport(report)}`;
       break;
     }
@@ -913,6 +1078,13 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     shadow,
     steps: stepsDone,
     challenged,
+    qa: lastQa,
+    escalations,
+    decision,
+    toolsUsed: [...toolsUsed],
+    calls: modelCalls,
+    skills: engineSkills.map((m) => m.skill.name),
+    mcp: decision?.mcp ?? [],
   };
 }
 
@@ -1070,6 +1242,16 @@ export async function runAgent(
   const ac = new AbortController();
   useStore.setState({ running: { ...st.running, [sessionId]: ac } });
   st.pushItem(sessionId, { kind: 'user', id: uid(), text, attachments, ts: Date.now() });
+  // Telemetry: a correction of the previous answer counts against that mission's model.
+  if (isHumanCorrection(text)) {
+    const prev = [...st.ledger.entries].reverse().find((e) => e.session === sessionId);
+    if (prev && !prev.humanCorrection) {
+      st.setLedger({
+        entries: st.ledger.entries.map((e) => (e.id === prev.id ? { ...e, humanCorrection: true } : e)),
+      });
+      st.recordOutcome(prev.model, false, prev.dna.type);
+    }
+  }
   if (session.title === 'Nouvelle session')
     st.patchSession(sessionId, { title: text.split('\n')[0]!.slice(0, 70) || 'Session' });
   const started = Date.now();
@@ -1201,6 +1383,25 @@ export async function runAgent(
           written: [...new Set(sh?.written ?? [])].slice(0, 40),
         },
         checks: result?.report?.checks ?? [],
+        session: sessionId,
+        agent: session.agent,
+        skills: result?.skills ?? [],
+        mcp: result?.mcp ?? [],
+        tools: result?.toolsUsed ?? [],
+        tokensIn: tin,
+        tokensOut: tout,
+        calls: result?.calls,
+        retries: result?.fallbacks ?? 0,
+        qa: result?.qa,
+        escalations: result?.escalations ?? 0,
+        decision: result?.decision
+          ? {
+              chosen: result.decision.chosen?.id ?? null,
+              tier: result.decision.tier,
+              confidence: result.decision.confidence,
+              mode: result.decision.mode,
+            }
+          : undefined,
         lessons: [
           ...(result?.report?.issues ?? []).slice(0, 3),
           ...(sh?.toolErrors.slice(-2).map((t) => `${t.tool}: ${t.error.slice(0, 100)}`) ?? []),

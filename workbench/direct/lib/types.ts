@@ -1,5 +1,6 @@
 import type { ChartData, EffortSetting, MissionReportPayload, ModelInfo } from '@shared/types';
 import type { ChatMessage } from '../../server/llm/types';
+import type { EngineSettings, RoutingDecision } from '../../server/engine/decision';
 
 export type { ChatMessage, ModelInfo };
 export type PermissionMode = 'safe' | 'normal' | 'auto';
@@ -16,6 +17,7 @@ export type View =
   | 'skills'
   | 'plugins'
   | 'models'
+  | 'intelligence'
   | 'settings';
 
 export interface VFile {
@@ -96,6 +98,12 @@ export type Item =
       summary?: string;
     }
   | { kind: 'error'; id: string; text: string }
+  | {
+      /** Explained routing decision (model, agent, skills, MCP, tools, scores, fallback, escalation). */
+      kind: 'routing';
+      id: string;
+      decision: RoutingDecision;
+    }
   | {
       /** Intelligence Engine events: strategy, shadow alerts, evidence check, red team, learning. */
       kind: 'intel';
@@ -214,6 +222,8 @@ export interface Settings {
   autoSkills: boolean;
   /** Built-in plugins switched off by the user. */
   disabledPlugins: string[];
+  /** Intelligence Engine: routing weights, QA threshold, escalations, price cap. */
+  engine?: Partial<EngineSettings>;
 }
 
 export interface ArtifactDef {

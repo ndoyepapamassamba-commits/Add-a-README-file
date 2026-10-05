@@ -2,7 +2,9 @@
 // sandbox (node / python), the network (CORS) and the embedded browser.
 import { DataCore, isDataFile, profileToText } from '../../server/services/dataCore';
 import { browser } from './browser';
-import { runCode } from './sandbox';
+import { runInWorkspace } from './run';
+import { getPythonPack } from './pythonPack';
+import { PYODIDE_MIRRORS } from './sandbox';
 import { Shell, type ShellHost } from './shellCore';
 import { useStore } from './store';
 import { bytesOf, files, getFile, writeBytes, writeText } from './vfs';
@@ -28,22 +30,12 @@ export const host: ShellHost = {
     },
   },
   async run(lang, code, paths) {
-    const input: Record<string, string> = {};
-    for (const p of paths) {
-      const f = getFile(p);
-      if (f && !f.binary && f.data.length < 5_000_000) input[f.path] = f.data;
-    }
-    const r = await runCode(lang, code, input, 120_000);
-    const saved: string[] = [];
-    for (const [p, t] of Object.entries(r.files ?? {})) {
-      writeText(p, t);
-      saved.push(p);
-    }
+    const r = await runInWorkspace(lang, code, paths);
     const out = [
       r.logs.join('\n'),
       r.result !== undefined && r.result !== 'undefined' ? r.result : '',
       r.error ? `Error: ${r.error}` : '',
-      saved.length ? `(fichiers enregistrés : ${saved.join(', ')})` : '',
+      r.saved.length ? `(fichiers enregistrés : ${r.saved.join(', ')})` : '',
     ]
       .filter(Boolean)
       .join('\n');
@@ -63,6 +55,27 @@ export const host: ShellHost = {
   open(path) {
     void browser.open(path);
     useStore.getState().setView('browser');
+  },
+  async doctor() {
+    const pack = await getPythonPack();
+    const probe = async (url: string) => {
+      try {
+        await fetch(url, { mode: 'no-cors', cache: 'no-store', signal: AbortSignal.timeout(6000) });
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    const cdn = await Promise.all(PYODIDE_MIRRORS.map((u) => probe(`${u}pyodide.js`)));
+    const net = await probe('https://openrouter.ai/api/v1/models');
+    const nBin = Object.values(files()).filter((f) => f.binary).length;
+    return [
+      `node    : OK — JavaScript du navigateur (bac à sable), fs texte + binaire, Buffer, readText() pour PDF / Word (${Object.keys(files()).length} fichiers, dont ${nBin} binaires)`,
+      `python  : ${pack ? `OK hors-ligne — pack ${pack.manifest.version} (${pack.manifest.wheels.map((w) => w.split('-')[0]).join(', ')})` : cdn.some(Boolean) ? 'OK en ligne — Pyodide via CDN (premier lancement ≈ 15 s)' : 'INDISPONIBLE — CDN bloqué et aucun pack hors-ligne : Plugins → Python hors-ligne, ou utilisez node'}`,
+      ...PYODIDE_MIRRORS.map((u, i) => `  CDN ${new URL(u).host} : ${cdn[i] ? 'joignable' : 'bloqué'}`),
+      `réseau  : OpenRouter ${net ? 'joignable' : 'injoignable'}`,
+      'système : pas de vrai OS dans cette édition (npm, git, pip, bash → édition serveur)',
+    ].join('\n');
   },
   async profile(path) {
     const f = getFile(path);

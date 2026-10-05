@@ -17,6 +17,8 @@ export interface MockOpenRouter {
   push: (...turns: ScriptedTurn[]) => void;
   /** Drops queued turns and recorded requests. */
   reset: () => void;
+  /** Catalog served by /models (default MOCK_MODELS). */
+  models?: unknown[];
   /** Called when the queue is empty (default: plain "ok" answer). */
   fallback: (body: Record<string, unknown>) => ScriptedTurn;
   close: () => Promise<void>;
@@ -58,6 +60,7 @@ export async function startMockOpenRouter(): Promise<MockOpenRouter> {
       queue.length = 0;
       requests.length = 0;
       mock.fallback = () => ({ text: 'ok' });
+      mock.models = undefined;
     },
     fallback: () => ({ text: 'ok' }),
     close: () => new Promise((r) => server.close(() => r())),
@@ -66,7 +69,7 @@ export async function startMockOpenRouter(): Promise<MockOpenRouter> {
     const url = req.url ?? '';
     if (req.method === 'GET' && url.endsWith('/models')) {
       res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ data: MOCK_MODELS }));
+      res.end(JSON.stringify({ data: mock.models ?? MOCK_MODELS }));
       return;
     }
     if (req.method === 'GET' && url.endsWith('/key')) {

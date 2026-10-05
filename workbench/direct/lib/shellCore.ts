@@ -21,6 +21,8 @@ export interface ShellHost {
   fetchText?: (url: string) => Promise<string>;
   open?: (path: string) => void;
   profile?: (path: string) => Promise<string>;
+  /** Environment check (node, Python, network) — `doctor` command. */
+  doctor?: () => Promise<string>;
   now?: () => Date;
 }
 export interface ShellResult {
@@ -94,7 +96,7 @@ const globRe = (g: string) =>
       .replace(/\?/g, '[^/]')}$`,
   );
 
-const HELP = `Commandes : ls [-la] · cd · pwd · tree · cat · head/tail [-n N] · wc [-l] · grep [-inrvc] · find [-name] · mkdir · touch · rm [-r] · mv · cp · echo · sort [-rnu] · uniq [-c] · cut -d -f · sed s/a/b/g · tr · jq-lite (json KEY) · date · history · clear · node FICHIER | node -e CODE · python FICHIER | python -c CODE · curl URL · open FICHIER · data FICHIER · du · env · help
+const HELP = `Commandes : ls [-la] · cd · pwd · tree · cat · head/tail [-n N] · wc [-l] · grep [-inrvc] · find [-name] · mkdir · touch · rm [-r] · mv · cp · echo · sort [-rnu] · uniq [-c] · cut -d -f · sed s/a/b/g · tr · jq-lite (json KEY) · date · history · clear · node FICHIER | node -e CODE · python FICHIER | python -c CODE · curl URL · open FICHIER · data FICHIER · du · env · doctor (diagnostic node / Python / réseau) · help
 Opérateurs : | > >> && || ; — jokers * ? ** — chemins relatifs à l'espace de travail.
 Pas de vrai système d'exploitation ici : npm, git, pip et les programmes installés ne sont pas disponibles dans l'édition sans serveur.`;
 
@@ -480,6 +482,8 @@ export class Shell {
       }
       case 'clear':
         return ok('\u001bc');
+      case 'doctor':
+        return this.host.doctor ? ok(await this.host.doctor()) : ok('doctor: indisponible');
       case 'which':
         return args.length
           ? {
@@ -497,7 +501,7 @@ export class Shell {
           return ok(
             cmd.startsWith('python')
               ? 'Python 3.12 (Pyodide, bac à sable du navigateur)'
-              : 'v22 (JavaScript du navigateur, bac à sable — API Node limitées : fs, path, process)',
+              : 'v22 (JavaScript du navigateur, bac à sable — API Node : fs (texte et binaire), path, Buffer, process ; readText(chemin) pour le texte d’un PDF / Word)',
           );
         if (!this.host.run) return { out: `${cmd}: exécution indisponible`, code: 127 };
         const lang = cmd.startsWith('python') ? 'python' : 'javascript';
@@ -507,11 +511,7 @@ export class Shell {
         const code =
           lang === 'javascript' ? NODE_PRELUDE + (a[0] === '-p' ? `console.log(${raw})` : raw) : raw;
         if (!code) return { out: `${cmd}: fichier ou -e/-c CODE requis`, code: 2 };
-        const r = await this.host.run(
-          lang,
-          code,
-          fs.list().filter((f) => !fs.isBinary(f)),
-        );
+        const r = await this.host.run(lang, code, fs.list());
         return { out: r.out, code: r.ok ? 0 : 1 };
       }
       case 'curl':
@@ -558,26 +558,40 @@ export class Shell {
 }
 
 export const SHELL_COMMANDS =
-  'help pwd cd ls tree cat head tail wc grep find mkdir touch rm cp mv echo sort uniq cut sed tr json date history env du clear node js python python3 curl wget open data which'.split(
+  'help pwd cd ls tree cat head tail wc grep find mkdir touch rm cp mv echo sort uniq cut sed tr json date history env du clear node js python python3 curl wget open data which doctor'.split(
     ' ',
   );
 
-/** Minimal Node APIs for scripts run with `node` (text files of the workspace). */
-const NODE_PRELUDE = `const require = (m) => {
+/** Minimal Node APIs for scripts run with `node`: fs (text and binary files), path, Buffer, process. */
+const NODE_PRELUDE = `class Buffer extends Uint8Array {
+  static from(v, enc) {
+    if (typeof v === 'string') return enc === 'base64' ? Buffer.from(Uint8Array.from(atob(v), (c) => c.charCodeAt(0))) : new Buffer(new TextEncoder().encode(v));
+    const b = new Buffer(v.length ?? v.byteLength); b.set(v instanceof ArrayBuffer ? new Uint8Array(v) : v); return b;
+  }
+  static isBuffer(b) { return b instanceof Uint8Array; }
+  static concat(l) { const n = l.reduce((s, b) => s + b.length, 0); const o = new Buffer(n); let i = 0; for (const b of l) { o.set(b, i); i += b.length; } return o; }
+  toString(enc) { if (enc === 'base64') { let s = ''; for (let i = 0; i < this.length; i += 0x8000) s += String.fromCharCode(...this.subarray(i, i + 0x8000)); return btoa(s); } if (enc === 'hex') return [...this].map((x) => x.toString(16).padStart(2, '0')).join(''); return new TextDecoder(enc === 'latin1' ? 'latin1' : 'utf-8').decode(this); }
+}
+const __read = (p, enc) => { const v = readFile(String(p).replace(/^\\/+/, '')); if (typeof v === 'string') return enc || typeof enc === 'object' ? v : Buffer.from(v); return enc && enc !== 'binary' && enc.encoding !== null ? Buffer.from(v).toString(typeof enc === 'string' ? enc : enc.encoding) : Buffer.from(v); };
+const require = (m) => {
   const n = String(m).replace(/^node:/, '');
   if (n === 'fs' || n === 'fs/promises') {
     const fs = {
-      readFileSync: (p) => readFile(String(p)),
-      writeFileSync: (p, d) => writeFile(String(p), String(d)),
-      appendFileSync: (p, d) => { let b = ''; try { b = readFile(String(p)); } catch (e) {} writeFile(String(p), b + String(d)); },
-      existsSync: (p) => { try { readFile(String(p)); return true; } catch (e) { return false; } },
+      readFileSync: (p, enc) => __read(p, enc),
+      writeFileSync: (p, d) => writeFile(String(p), d instanceof Uint8Array ? d : String(d)),
+      appendFileSync: (p, d) => { let b = ''; try { b = __read(p, 'utf8'); } catch (e) {} writeFile(String(p), b + String(d)); },
+      existsSync: (p) => files.includes(String(p).replace(/^\\/+/, '')),
+      readdirSync: (d) => { const pre = String(d || '.').replace(/^\\.\\/?|^\\/+/, '').replace(/\\/?$/, '/'); return [...new Set(files.filter((f) => pre === '/' || f.startsWith(pre)).map((f) => f.slice(pre === '/' ? 0 : pre.length).split('/')[0]))]; },
+      statSync: (p) => { const v = readFile(String(p).replace(/^\\/+/, '')); return { size: typeof v === 'string' ? v.length : v.byteLength, isFile: () => true, isDirectory: () => false }; },
     };
-    return n === 'fs' ? { ...fs, promises: { readFile: async (p) => fs.readFileSync(p), writeFile: async (p, d) => fs.writeFileSync(p, d) } } : { readFile: async (p) => fs.readFileSync(p), writeFile: async (p, d) => fs.writeFileSync(p, d) };
+    const promises = { readFile: async (p, enc) => fs.readFileSync(p, enc), writeFile: async (p, d) => fs.writeFileSync(p, d), readdir: async (d) => fs.readdirSync(d) };
+    return n === 'fs' ? { ...fs, promises } : promises;
   }
-  if (n === 'path') return { join: (...a) => a.join('/').replace(/\\/+/g, '/'), basename: (p) => String(p).split('/').pop(), dirname: (p) => String(p).split('/').slice(0, -1).join('/') || '.', extname: (p) => (/\\.[^./]+$/.exec(String(p)) || [''])[0] };
-  throw new Error('module « ' + m + ' » indisponible dans le bac à sable du navigateur');
+  if (n === 'path') return { join: (...a) => a.join('/').replace(/\\/+/g, '/'), resolve: (...a) => a.join('/').replace(/\\/+/g, '/'), basename: (p, ext) => { const b = String(p).split('/').pop(); return ext && b.endsWith(ext) ? b.slice(0, -ext.length) : b; }, dirname: (p) => String(p).split('/').slice(0, -1).join('/') || '.', extname: (p) => (/\\.[^./]+$/.exec(String(p)) || [''])[0], sep: '/' };
+  if (n === 'buffer') return { Buffer };
+  throw new Error('module « ' + m + ' » indisponible dans le bac à sable du navigateur (pas de npm). Utilisez readText(path) pour le texte d’un PDF / Word, readBytes(path) pour les octets.');
 };
-const process = { argv: [], env: {}, exit: () => {}, cwd: () => '/', platform: 'browser' };
+const process = { argv: [], env: {}, exit: () => {}, cwd: () => '/', platform: 'browser', version: 'v22-sandbox' };
 `;
 
 /** Risk of a command line for the permission system (agent use). */

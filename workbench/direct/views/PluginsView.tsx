@@ -6,6 +6,13 @@ import { MCP_PRESETS, connect, disconnect, mcpState, onMcpChange } from '../lib/
 import { useStore } from '../lib/store';
 import { BUILTIN_PLUGINS } from '../lib/builtinPlugins';
 import { embeddedKit, getHouseKit, kitFromZip, setHouseKit } from '../lib/apex';
+import {
+  getPythonPack,
+  importPythonPack,
+  removePythonPack,
+  type PythonPackManifest,
+} from '../lib/pythonPack';
+import { resetSandbox } from '../lib/sandbox';
 import { kv } from '../lib/db';
 import type { McpServerDef } from '../lib/types';
 
@@ -44,6 +51,7 @@ export function PluginsView() {
       </div>
 
       <HouseKitCard />
+      <PythonPackCard />
       <BuiltinPluginsSection />
       <Modal
         open={Boolean(tokenFor)}
@@ -268,6 +276,80 @@ function HouseKitCard() {
           <Upload size={13} /> Importer le kit (.zip)
         </Button>
       )}
+      <input
+        ref={input}
+        type="file"
+        accept=".zip"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void onFile(f);
+          e.target.value = '';
+        }}
+      />
+      {msg && <div className="mt-2 text-[12.5px]">{msg}</div>}
+    </div>
+  );
+}
+
+/** Offline Python pack: Pyodide + numpy / pandas / openpyxl / pypdf kept in this browser. */
+function PythonPackCard() {
+  const [info, setInfo] = useState<PythonPackManifest | null | undefined>(undefined);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    void getPythonPack().then((p) => setInfo(p?.manifest ?? null));
+  }, []);
+  const onFile = async (f: File) => {
+    setBusy(true);
+    try {
+      const m = await importPythonPack(await f.arrayBuffer());
+      resetSandbox();
+      setInfo(m);
+      setMsg(`Pack Python ${m.version} importé et vérifié (SHA-256) : python fonctionne sans réseau.`);
+    } catch (e) {
+      setMsg(`Import impossible : ${(e as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="mb-6 rounded-xl border border-line bg-panel p-3" data-testid="python-pack">
+      <div className="flex items-center gap-2">
+        <Package size={14} className="text-accent" />
+        <div className="flex-1 text-[13.5px] font-medium">Python hors-ligne</div>
+        {info === undefined ? null : info ? (
+          <Badge tone="ok">installé · {info.version}</Badge>
+        ) : (
+          <Badge tone="warn">CDN (réseau requis)</Badge>
+        )}
+      </div>
+      <div className="mt-1 text-[12.5px] text-muted">
+        {info
+          ? `Pyodide ${info.version} avec ${info.wheels.map((w) => w.split('-')[0]).join(', ')} — chargé depuis ce navigateur, sans Internet.`
+          : 'Sans pack, Python se charge depuis cdn.jsdelivr.net (souvent bloqué sur les réseaux d’entreprise). Importez massamba-python-pack.zip (npm run build:python-pack) pour l’utiliser hors-ligne. JavaScript / node fonctionne toujours, y compris sur les PDF et Excel.'}
+      </div>
+      <div className="mt-2 flex gap-2">
+        <Button size="sm" disabled={busy} onClick={() => input.current?.click()}>
+          {busy ? <Spinner /> : <Upload size={13} />} Importer le pack (.zip)
+        </Button>
+        {info && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() =>
+              void removePythonPack().then(() => {
+                resetSandbox();
+                setInfo(null);
+                setMsg('Pack retiré.');
+              })
+            }
+          >
+            Retirer
+          </Button>
+        )}
+      </div>
       <input
         ref={input}
         type="file"

@@ -54,7 +54,13 @@ function houseKit(): Plugin {
 // the browser — no server, no install, no terminal.
 export default defineConfig({
   root: 'direct',
-  plugins: [houseKit(), threeIife(), react(), tailwindcss(), viteSingleFile({ removeViteModuleLoader: true })],
+  plugins: [
+    houseKit(),
+    threeIife(),
+    react(),
+    tailwindcss(),
+    viteSingleFile({ removeViteModuleLoader: true }),
+  ],
   resolve: { alias: { '@shared': fileURLToPath(new URL('./shared', import.meta.url)) } },
   define: { 'process.env.NODE_ENV': JSON.stringify('production') },
   build: {

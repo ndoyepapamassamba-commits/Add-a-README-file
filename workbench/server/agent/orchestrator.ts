@@ -55,6 +55,9 @@ import {
   type MissionReport,
 } from './mission';
 import { setMissionHooks } from '../tools/mission';
+import { cascadeNext, decideRoute, qaScore, type RoutingDecision } from '../engine/decision';
+import { selectSkills, skillsPrompt } from '../engine/skills';
+import { buildLoadout } from '../engine/loadout';
 import { decide } from '../security/permissions';
 import { redactDeep, redactSecrets } from '../security/redact';
 import type { Services } from '../services/container';
@@ -748,11 +751,82 @@ export class AgentOrchestrator extends EventEmitter {
         plugins: fullTools.some((t) => t.startsWith('mcp.')) ? s.mcp.connectedServers() : [],
         jev: fullTools.includes('jev.judge'),
       });
+      // MASSAMBA Intelligence Engine: explained decision (model, agent, skills, MCP, tools) + cascade ladder.
+      let decision: RoutingDecision | null = null;
+      let engineSkillsPrompt = '';
+      if (top) {
+        decision = decideRoute({
+          models,
+          tiers,
+          profile: pref.tier ? { ...profile, tier: FAMILY_TIER[pref.tier] } : profile,
+          dna,
+          text: input.text,
+          health: this.health,
+          board: this.board,
+          mission,
+        });
+        const selection = selectSkills(input.text, input.attachments ?? [], {
+          model: s.catalog.get(model) ?? null,
+          tools: fullTools,
+        });
+        engineSkillsPrompt = skillsPrompt(selection.selected);
+        const lo = buildLoadout({
+          agentId: st.role,
+          team: strategy?.team ?? profile.team,
+          type: profile.type,
+          selection,
+          mcpConnected: s.mcp.connectedServers().map((x) => x.name),
+          tools: fullTools,
+        });
+        this.emitEvent(st, {
+          type: 'intel',
+          title: `Décision de routage — ${model}${decision.chosen && decision.chosen.id !== model ? ` (moteur : ${decision.chosen.id})` : ''}`,
+          tone: decision.budget.ok ? 'info' : 'warn',
+          lines: [
+            `Pourquoi ce modèle : ${sel.auto && routed ? sel.reason : `imposé (${model})`}`,
+            `Moteur de preuves : ${decision.why.model}`,
+            `Pourquoi pas le premium : ${decision.why.notPremium}`,
+            `Secours : ${decision.why.fallback}`,
+            `Escalade si : ${decision.why.escalation.join(' · ')}`,
+            `Agent : ${lo.agentWhy}`,
+            `Skills : ${lo.skillsWhy}${lo.incompatibleSkills.length ? ` — refusés : ${lo.incompatibleSkills.map((i) => `${i.name} (${i.reason})`).join(', ')}` : ''}`,
+            `MCP : ${lo.mcpWhy}`,
+            `Budget : ${decision.budget.note} · confiance ${Math.round(decision.confidence * 100)} %`,
+          ],
+        });
+      }
+      let escalations = 0;
+      const escalate = (qa: number, why: string) => {
+        if (!decision) return;
+        const step = cascadeNext({
+          qa,
+          threshold: 75,
+          escalations,
+          maxEscalations: 2,
+          rounds: missionRound,
+          maxRounds: 3,
+          current: model,
+          ladder: decision.ladder.slice(escalations),
+          budgetLeft: null,
+        });
+        this.emitEvent(st, {
+          type: 'intel',
+          title: step.action === 'escalate' ? `Cascade — escalade (${why})` : `Cascade — ${step.action}`,
+          tone: step.action === 'escalate' ? 'warn' : 'info',
+          lines: [step.reason, ...(step.model ? [`${model} → ${step.model}`] : [])],
+        });
+        if (step.action === 'escalate' && step.model) {
+          escalations++;
+          model = step.model;
+          st.model = model;
+        }
+      };
       const systemPrompt = [
         system,
         ENGINE_DOCTRINE,
         manualPrompt(s.brain.manual),
         strategy ? strategyPrompt(dna, strategy) : '',
+        engineSkillsPrompt,
         MEMORY_INSTRUCTIONS,
         mission
           ? `${MISSION_PROTOCOL}\n\nTask profile: ${profile.reasons.join(', ')}.${profile.team.length ? ` Recommended specialists, in order: ${profile.team.join(' → ')}.` : ''}`
@@ -1131,6 +1205,7 @@ export class AgentOrchestrator extends EventEmitter {
             this.board = recordTypedOutcome(this.board, model, profile.type, report.status === 'PASSED');
           if (report.status !== 'PASSED' && missionRound < 3) {
             this.emitEvent(st, { type: 'mission_report', report, round: missionRound });
+            escalate(qaScore({ status: report.status, checks: report.checks }), `verdict ${report.status}`);
             const fix: ChatMessage = {
               role: 'user',
               content: `Correction round ${missionRound + 1}: the verdict is ${report.status}. Fix the failing checks and remaining issues (${report.issues.join('; ').slice(0, 1500) || 'see your report'}), re-test everything, then call mission.report again.`,
@@ -1165,6 +1240,10 @@ export class AgentOrchestrator extends EventEmitter {
                 detail: ch.summary.slice(0, 6000),
               });
               if (c.blocking.length && missionRound < strategy.maxRounds) {
+                escalate(
+                  qaScore({ status: report.status, checks: report.checks, blocking: c.blocking.length }),
+                  'red team bloquante',
+                );
                 const fix: ChatMessage = {
                   role: 'user',
                   content: `The red team found blocking problems:\n${c.blocking.map((b) => `- ${b}`).join('\n')}\n\nFix them, re-verify with tools, then call mission.report again.`,
@@ -1201,6 +1280,10 @@ export class AgentOrchestrator extends EventEmitter {
               review: { approved, summary: rev.summary.slice(0, 3000) },
             });
             if (!approved && missionRound < 3) {
+              escalate(
+                qaScore({ status: report.status, checks: report.checks, reviewerRejected: true }),
+                'refus du relecteur',
+              );
               const fix: ChatMessage = {
                 role: 'user',
                 content: `The final reviewer requested changes:\n${rev.summary.slice(0, 4000)}\n\nFix the blocking problems, re-test, then call mission.report again.`,
