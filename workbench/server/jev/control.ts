@@ -62,7 +62,7 @@ export function budgetsFor(o: {
   maxSteps: number;
 }): Budgets {
   const base = { eco: 30_000, balanced: 80_000, performance: 150_000, max: 400_000 }[o.mode];
-  const tokens = Math.round(base * (1 + o.difficulty) * (o.mission ? 3 : 1));
+  const tokens = Math.round(base * (1 + o.difficulty) * (o.mission ? 6 : 1));
   const costUsd = o.perTaskUsd > 0 ? o.perTaskUsd * (o.mode === 'eco' ? 0.25 : 1) : null;
   const steps = Math.max(4, Math.round(o.maxSteps * (o.mode === 'eco' ? 0.5 : o.mode === 'max' ? 1.25 : 1)));
   return {

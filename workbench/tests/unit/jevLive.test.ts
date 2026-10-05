@@ -58,13 +58,25 @@ describe('JEV LIVE CONTROL LOOP', () => {
     expect(lc.state().budgetStage).toBe(1);
     expect(cp?.decisions.some((d) => /B0 atteint/.test(d.reason))).toBe(true);
     // No progress at all then crossing B1 (10k) → extension refused or final.
-    const lc2 = new LiveController(init());
+    const lc2 = new LiveController(init({ hardStops: true }));
     lc2.afterCall(call({ tokensIn: 5200, toolCalls: [{ name: 'data.query', args: '{"q":"a"}' }] }));
     lc2.afterCall(call({ tokensIn: 100, toolCalls: [{ name: 'data.query', args: '{"q":"a"}' }] }));
     const stop = lc2.afterCall(
       call({ tokensIn: 5000, toolCalls: [{ name: 'data.query', args: '{"q":"a"}' }] }),
     );
     expect(stop?.decisions.some((d) => d.action === 'STOP')).toBe(true);
+  });
+
+  it('by default the token budget never stops a run: compress and continue', () => {
+    const lc = new LiveController(init());
+    lc.afterCall(call({ tokensIn: 5200, toolCalls: [{ name: 'data.query', args: '{"q":"a"}' }] }));
+    lc.afterCall(call({ tokensIn: 100, toolCalls: [{ name: 'data.query', args: '{"q":"a"}' }] }));
+    const cp = lc.afterCall(call({ tokensIn: 5000, toolCalls: [{ name: 'data.query', args: '{"q":"b"}' }] }));
+    expect(cp?.decisions.some((d) => d.action === 'STOP')).toBe(false);
+    for (let i = 0; i < 10; i++) {
+      const c = lc.afterCall(call({ tokensIn: 30_000, toolCalls: [{ name: 'data.query', args: `{"q":${i}}` }] }));
+      expect(c?.decisions.some((d) => d.action === 'STOP') ?? false).toBe(false);
+    }
   });
 
   it('hard STOP on the cost budget', () => {

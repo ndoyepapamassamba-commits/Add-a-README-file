@@ -135,6 +135,8 @@ export interface LiveInit {
   /** Tokens of one tool definition (avg), to value REMOVE_TOOL. */
   toolDefTokens: Record<string, number>;
   level: number;
+  /** Stop the run when the token / time budget is exhausted (default: no — compress and continue; the cost budget always stops). */
+  hardStops?: boolean;
   now?: () => number;
 }
 
@@ -156,6 +158,7 @@ export class LiveController {
   private jevCostUsd = 0;
   private switched = 0;
   private consecFail = 0;
+  private overNoted = false;
 
   constructor(private readonly o: LiveInit) {
     this.now = o.now ?? Date.now;
@@ -269,7 +272,15 @@ export class LiveController {
       ds.push({ action: 'STOP', reason: `budget coût atteint ($${s.cost.toFixed(4)} / $${s.costBudget})` });
       return this.mark('budget_threshold', t, ds);
     }
-    if (this.now() - this.t0 > this.o.budgets.timeMs) {
+    if (this.now() - this.t0 > this.o.budgets.timeMs && !this.o.hardStops) {
+      if (!this.overNoted) {
+        this.overNoted = true;
+        ds.push({
+          action: 'CONTINUE',
+          reason: `budget temps indicatif dépassé (${Math.round(this.o.budgets.timeMs / 60000)} min) : poursuite (arrêt automatique désactivé)`,
+        });
+      }
+    } else if (this.now() - this.t0 > this.o.budgets.timeMs) {
       ds.push({
         action: 'STOP',
         reason: `budget temps atteint (${Math.round(this.o.budgets.timeMs / 60000)} min)`,
@@ -297,6 +308,15 @@ export class LiveController {
         });
         if (o.contextTokens > o.contextLimit * 0.5)
           ds.push({ action: 'COMPRESS', reason: 'extension de budget : contexte compressé d’abord' });
+      } else if (!this.o.hardStops) {
+        // No automatic stop: compress and continue (stagnation still stops a real loop).
+        s.budgetTokens = s.tokens + Math.round(this.o.budgets.tokens * 0.5);
+        s.budgetLeftTokens = s.budgetTokens - s.tokens;
+        this.stageProgress = s.progress;
+        ds.push({
+          action: 'COMPRESS',
+          reason: `budget B${s.budgetStage} atteint (${s.tokens} tokens) : contexte compressé, poursuite (arrêt automatique désactivé)`,
+        });
       } else {
         ds.push({
           action: 'STOP',

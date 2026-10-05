@@ -955,6 +955,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
           difficulty: jp.pre.packet.difficulty,
           offered: packTools.map((t) => t.name),
           toolDefTokens: Object.fromEntries(packTools.map((t) => [t.name, toolDefTokens(toolDefs([t]))])),
+          hardStops: jevRt.jevSettings().budgetStop,
           level:
             jp.pre.packet.level >= 4 || jp.pre.dna.criticality === 'critical'
               ? 3

@@ -39,8 +39,16 @@ export interface JevSettings extends JevApiConfig {
   mode: JevMode;
   /** Allow JEV-2 (cheap LLM arbitration on conflicts). */
   jev2: boolean;
+  /** Stop a run automatically when its token / time budget is exhausted (off by default; the cost budget of Settings always applies). */
+  budgetStop: boolean;
 }
-export const DEFAULT_JEV: JevSettings = { ...DEFAULT_JEV_API, enabled: true, mode: 'balanced', jev2: true };
+export const DEFAULT_JEV: JevSettings = {
+  ...DEFAULT_JEV_API,
+  enabled: true,
+  mode: 'balanced',
+  jev2: true,
+  budgetStop: false,
+};
 
 export const jevSettings = (): JevSettings => {
   const s = { ...DEFAULT_JEV, ...useStore.getState().settings.jev };

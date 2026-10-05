@@ -158,6 +158,13 @@ function Dashboard() {
             />
           </div>
           <div className="mb-3 text-[12px] text-faint">{MODE_HELP[cfg.mode]}</div>
+          <div className="mb-3">
+            <Toggle
+              checked={cfg.budgetStop}
+              onChange={(v) => set({ budgetStop: v })}
+              label="Arrêt automatique quand le budget tokens / temps est épuisé (sinon : compression et poursuite ; le budget coût des Réglages s’applique toujours)"
+            />
+          </div>
           <div className="mb-1 text-[12px] font-medium">Décision courante</div>
           {last ? (
             <div className="grid grid-cols-[150px_1fr] gap-x-2 gap-y-0.5 text-[12px]">
