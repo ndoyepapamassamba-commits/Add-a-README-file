@@ -1,3 +1,5 @@
+import type { Accounting, ExperimentMeta } from './science';
+
 // JEV telemetry: JEV_LOG entries (one per mission), measured KPIs and the
 // WITHOUT JEV vs WITH JEV comparison. Only measured values are reported; an
 // estimate is always labelled as such.
@@ -73,6 +75,20 @@ export interface JevLogEntry {
   promptWaste?: number;
   /** User feedback (👍 / 👎 or « parfait » / « c'est mauvais »). */
   feedback?: 'good' | 'bad';
+  /** Scientific validation: separate ledgers of the run (LLM / JEV / correction / tools) and per-call records. */
+  acct?: Accounting;
+  /** Paired-experiment metadata (group id, controlled variables). Absent = observational run. */
+  experiment?: ExperimentMeta;
+  /** Quality measured by the same deterministic scorer in EVERY variant (null = not measured). */
+  qualityMeasured?: number | null;
+  qualityVector?: Record<string, number>;
+  /** How the quality was obtained. */
+  qualitySource?: 'local-qa' | 'local-qa+ground-truth';
+  /** ECONOMIC_DRIFT events detected during the run, and why the run stopped. */
+  driftEvents?: string[];
+  stopReason?: string;
+  /** Adaptive policy applied to this run (empty = none). */
+  policy?: string;
 }
 
 export interface Kpi {

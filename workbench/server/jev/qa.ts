@@ -78,6 +78,11 @@ function codeBlocks(t: string): { lang: string; code: string }[] {
   return [...t.matchAll(/```(\w*)\n([\s\S]*?)```/g)].map((m) => ({ lang: m[1]!.toLowerCase(), code: m[2]! }));
 }
 
+/** Weighted score (0–100) of a quality vector — one formula for every variant. */
+export function qualityScore(v: QualityVector): number {
+  return Math.round((Object.keys(W) as (keyof QualityVector)[]).reduce((s, k) => s + W[k] * v[k], 0) * 100);
+}
+
 export function qualityCheck(o: {
   answer: string;
   spec: OutputSpec;
@@ -255,9 +260,7 @@ export function qualityCheck(o: {
     efficiency: o.tokenBudget ? Math.max(0, Math.min(1, 1.2 - o.tokens / o.tokenBudget)) : 1,
     consistency: Math.max(0, 1 - pen('consistency')),
   };
-  const score = Math.round(
-    (Object.keys(W) as (keyof QualityVector)[]).reduce((s, k) => s + W[k] * v[k], 0) * 100,
-  );
+  const score = qualityScore(v);
   const failureVector: Partial<Record<ErrorLocus, number>> = {};
   for (const x of f) failureVector[x.locus!] = (failureVector[x.locus!] ?? 0) + 1;
   return { vector: v, score, failures: f, local: true, levels: ['L0', 'L1'], failureVector };

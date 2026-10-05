@@ -1044,20 +1044,92 @@ test('JEV Control Center: tabs, mode, API key masked and never in the DOM, JEV-1
     'MULTI-AGENT',
     'COMPLEX CODING',
     'HIGH-RISK REASONING',
+    'CHAT SIMPLE',
+    'LONG CONTEXT',
+    'TOOL-HEAVY',
   ])
     await page.getByLabel(label, { exact: true }).uncheck();
   // Benchmark 2.0: keep the WITHOUT JEV and JEV FULL variants for this test.
-  await page.getByLabel('Variante JEV PRE', { exact: true }).uncheck();
-  await page.getByLabel('Variante JEV PRE + LIVE', { exact: true }).uncheck();
+  await page.getByLabel('Variante PRE', { exact: true }).uncheck();
+  await page.getByLabel('Variante LIVE', { exact: true }).uncheck();
   mock.fallback = () => ({ text: 'Le résultat est 10.' });
   await page.getByRole('button', { name: /Lancer \(4\)/ }).click();
   await expect(page.getByText(/Dernier lancement : \d\/4 réussites/)).toBeVisible({ timeout: 60_000 });
+  // The model is imposed in every variant of the paired experiment (same model OFF vs FULL).
+  const benchModels = new Set(mock.requests.slice(-4).map((r) => r.model));
+  expect(benchModels.size).toBe(1);
+  // « Sans / avec JEV » no longer compares different missions: only paired data, small samples say so.
   await page.getByRole('tab', { name: 'Sans / avec JEV' }).click();
-  await expect(page.getByText(/2 paire\(s\) mesurée\(s\)/)).toBeVisible();
-  await expect(page.getByTestId('kpi-real')).toContainText('Tokens / mission');
+  await expect(page.getByText(/Observational Data/)).toBeVisible();
+  await expect(page.getByTestId('kpi-real')).toContainText('ÉCHANTILLON INSUFFISANT');
+  await expect(page.getByText('Variation', { exact: true })).toHaveCount(0);
+  // JEV SCIENTIFIC VALIDATION
+  await page.getByRole('tab', { name: 'Validation scientifique' }).click();
+  await expect(page.getByTestId('sample')).toContainText('Paires valides');
+  await expect(page.getByTestId('verdict')).toContainText('Données insuffisantes');
+  await expect(page.getByTestId('sci-main')).toContainText('METRIC | OFF | PRE | LIVE | FULL');
+  await expect(page.getByTestId('sci-delta')).toContainText('ÉCHANTILLON INSUFFISANT');
+  await expect(page.getByTestId('sci-ces')).toContainText('CES = 100');
+  await expect(page.getByTestId('sci-diag')).toContainText('LLM_COST');
+  await expect(page.getByTestId('sci-diag')).toContainText('JEV est-il responsable de ce coût ?');
+  await expect(page.getByTestId('sci-report')).toContainText('Verdict : E');
+  // The old quick view stays available and warns that it is indicative.
   await page.getByRole('tab', { name: 'Benchmark 2.0' }).click();
-  await expect(page.getByTestId('bench2-table')).toContainText('JEV FULL');
-  await expect(page.getByTestId('bench2-delta')).toContainText('AVOIDABLE WASTE REDUCTION');
+  await expect(page.getByTestId('bench2-table')).toContainText('FULL');
+  await expect(page.getByTestId('bench2-delta')).toContainText('indicatif');
+  // Integration of the separate ledgers: export the JEV_LOG and reconcile it, run by run.
+  await page.getByRole('tab', { name: 'JEV_LOG' }).click();
+  const [dl] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: /JSON/ }).click(),
+  ]);
+  const rows = JSON.parse(fs.readFileSync((await dl.path())!, 'utf8')) as {
+    cost: number;
+    jevCost: number;
+    variant?: string;
+    acct?: {
+      llmCost: number;
+      correctionCost: number;
+      toolCost: number;
+      jevCost: number;
+      totalCost: number;
+      calls: { kind: string }[];
+    };
+    experiment?: {
+      groupId: string;
+      model: string;
+      variant: string;
+      promptHash: string;
+      contextHash: string;
+      order: number;
+    };
+    qualityMeasured?: number | null;
+    qualitySource?: string;
+  }[];
+  const exp = rows.filter((r) => r.experiment);
+  expect(exp.length).toBe(4);
+  for (const r of exp) {
+    expect(r.acct!.llmCost + r.acct!.correctionCost).toBeCloseTo(r.cost, 8);
+    expect(r.acct!.jevCost).toBeCloseTo(r.jevCost, 8);
+    expect(r.acct!.totalCost).toBeCloseTo(
+      r.acct!.llmCost + r.acct!.correctionCost + r.acct!.toolCost + r.acct!.jevCost,
+      8,
+    );
+    expect(r.acct!.calls.length).toBeGreaterThan(0);
+    // Quality is measured by the same scorer, with the benchmark's ground truth for correctness, in OFF as in FULL.
+    expect(typeof r.qualityMeasured).toBe('number');
+    expect(r.qualitySource).toBe('local-qa+ground-truth');
+  }
+  const byGroup = new Map<string, typeof exp>();
+  for (const r of exp) byGroup.set(r.experiment!.groupId, [...(byGroup.get(r.experiment!.groupId) ?? []), r]);
+  expect(byGroup.size).toBe(2);
+  for (const g of byGroup.values()) {
+    expect(g.map((r) => r.experiment!.variant).sort()).toEqual(['full', 'off']);
+    expect(new Set(g.map((r) => r.experiment!.model)).size).toBe(1);
+    expect(new Set(g.map((r) => r.experiment!.promptHash)).size).toBe(1);
+    expect(new Set(g.map((r) => r.experiment!.contextHash)).size).toBe(1);
+  }
+  expect(JSON.stringify(rows)).not.toContain('SECRETKEY');
   expect(errors.filter((e) => !/jev-relay|ERR_FAILED|Failed to load resource/.test(e))).toEqual([]);
 });
 
@@ -1094,3 +1166,76 @@ test('JEV LIVE: stagnation → REPLAN sent to the model, live Control Center, us
   await expect(page.getByTestId('jev-live-panel')).toContainText('JEV LIVE');
   await expect(page.getByTestId('jev-live-panel')).toContainText('REPLAN');
 });
+
+test('JEV SCIENTIFIC VALIDATION: paired experiment with enough repetitions → conclusions, adaptive policy, no key in the export', async ({
+  page,
+}) => {
+  mock.models = SCORED;
+  await open(page);
+  page.on('dialog', (d) => void d.accept());
+  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await page.getByRole('tab', { name: 'Validation scientifique' }).click();
+  // Nothing runs on its own.
+  await expect(page.getByTestId('verdict')).toContainText('Données insuffisantes');
+  await expect(page.getByTestId('sci-main')).toContainText('Aucune expérience appariée');
+  for (const l of BENCH_LABELS.filter((x) => x !== 'CHAT SIMPLE'))
+    await page.getByLabel(l, { exact: true }).uncheck();
+  await page.getByTitle('Répétitions par condition').selectOption('5');
+  mock.fallback = () => ({ text: 'Bonjour à vous.' });
+  await page.getByRole('button', { name: /Lancer \(20 exécutions\)/ }).click();
+  await expect(page.getByText(/Dernier lancement : \d+\/20 réussites/)).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByTestId('sample')).toContainText('15');
+  await expect(page.getByTestId('verdict')).not.toContainText('Données insuffisantes');
+  await expect(page.getByTestId('sci-delta')).not.toContainText('ÉCHANTILLON INSUFFISANT');
+  await expect(page.getByTestId('sci-delta')).toContainText('IC95');
+  await expect(page.getByTestId('sci-econ')).toContainText('JEV_ROI');
+  await expect(page.getByTestId('sci-cat')).toContainText('chat simple');
+  await expect(page.getByTestId('sci-charts')).toContainText('Décomposition du coût');
+  // Adaptive policy: opt-in, applied only where the sample is sufficient, recorded in the log.
+  await page.getByRole('switch', { name: /Politique adaptative/ }).click();
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  mock.push({ text: 'Salut !' });
+  await send(page, 'Dis bonjour en une phrase.');
+  await expect(page.getByText('Salut !')).toBeVisible();
+  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await page.getByRole('tab', { name: 'JEV_LOG' }).click();
+  const [dl] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: /JSON/ }).click(),
+  ]);
+  const rows = JSON.parse(fs.readFileSync((await dl.path())!, 'utf8')) as {
+    policy?: string;
+    experiment?: unknown;
+  }[];
+  expect(rows.at(-1)!.policy).toMatch(/chat simple → (OFF|PRE|LIVE|FULL)/);
+  // Export of the measurements: JSON, no secret.
+  await page.getByRole('tab', { name: 'Validation scientifique' }).click();
+  const [ex] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: /Exporter les mesures/ }).click(),
+  ]);
+  const text = fs.readFileSync((await ex.path())!, 'utf8');
+  expect(text).toContain('"thresholds"');
+  expect(text).not.toMatch(/sk-or-v1-|ts_[A-Za-z0-9]{10}/);
+});
+
+const BENCH_LABELS = [
+  'CODING',
+  'DATA ANALYSIS',
+  'RESEARCH',
+  'DOCUMENT ANALYSIS',
+  'WRITING',
+  'REASONING',
+  'BROWSER',
+  'MULTI-STEP AGENT',
+  'EXCEL',
+  'DEBUGGING',
+  'REFACTORING',
+  'MULTI-AGENT',
+  'COMPLEX CODING',
+  'HIGH-RISK REASONING',
+  'CHAT SIMPLE',
+  'LONG CONTEXT',
+  'TOOL-HEAVY',
+  'PLANNING',
+];

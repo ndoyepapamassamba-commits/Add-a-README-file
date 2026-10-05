@@ -39,12 +39,17 @@ import { isHumanCorrection } from '../../server/engine/telemetry';
 import * as jevRt from './jev';
 import {
   LiveController,
+  eviGate,
   pruneToolOutputs,
   wasteRate,
   type LiveCheckpoint,
   type MissionState,
 } from '../../server/jev/live';
 import { compilePrompt, compileSkill } from '../../server/jev/prompt';
+import { acct } from './acct';
+import { accountingOf, hashText, type CallKind, type CallRec } from '../../server/jev/science';
+import { qualityCheck } from '../../server/jev/qa';
+import { outputSpec } from '../../server/jev/style';
 import { packetPrompt, type PreResult } from '../../server/jev/packet';
 import { REQUESTABLE, TOOL_FAMILIES, toolDefTokens } from '../../server/jev/tools';
 import type { Checkpoint } from '../../server/jev/metrics';
@@ -309,7 +314,24 @@ interface LoopResult {
     quality: number | null;
     corrections: number;
     decisionMs: number;
+    /** JEV's own paid calls of the pre-execution phase (JEV-1 / JEV-2). */
+    calls: CallRec[];
   } | null;
+  /** Quality measured AFTER the run by the same deterministic scorer in every variant (no influence on the run). */
+  measure?: { score: number; vector: Record<string, number>; failures: number } | null;
+  /** Controlled variables of the run (paired experiments). */
+  exp?: {
+    initialModel: string;
+    toolsAvailable: number;
+    difficulty: number;
+    risk: string;
+    taskType: string;
+    temperature: number | null;
+    maxTokens: number;
+  };
+  /** Why a live decision stopped the run, and the ECONOMIC_DRIFT events seen. */
+  stopReason?: string;
+  driftEvents?: string[];
   /** Without JEV (baseline run): what was sent, for the A/B comparison. */
   baselineTools?: { offered: number; tokens: number };
   /** Measured waste of the run (with or without JEV). */
@@ -337,6 +359,17 @@ let currentPacket: PreResult | null = null;
 /** Benchmark 2.0 variants: WITHOUT JEV / JEV PRE / JEV PRE + LIVE / JEV FULL (pre + live + post). */
 export type JevVariant = 'off' | 'pre' | 'live' | 'full';
 let jevOverride: JevVariant | null = null;
+let lastPolicy = '';
+/** Metadata of a paired experiment run (set by the benchmark). */
+export interface ExperimentInput {
+  experimentId: string;
+  groupId: string;
+  taskId: string;
+  category: string;
+  protocol: 'fixed-model' | 'free-routing';
+  rep: number;
+  order: number;
+}
 const jevVariant = (): JevVariant => jevOverride ?? (jevRt.jevSettings().enabled ? 'full' : 'off');
 const jevEnabled = () => jevVariant() !== 'off';
 const fmtTok = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
@@ -466,6 +499,21 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   let strategy = top ? planStrategy(dna, profile, st.ledger, { mission: Boolean(inp.mission) }) : null;
   if (strategy && !prefTier) profile.tier = strategy.tier;
   // ── JEV Cognitive Companion (control plane): JEV_PRE → Execution Packet ──
+  // Adaptive policy (opt-in): the JEV level comes from the measured results of this category, if any.
+  if (top && jevOverride === null && jevRt.jevSettings().adaptivePolicy) {
+    const pv = jevRt.policyVariant({
+      type: profile.type,
+      text: inp.text,
+      attachments: inp.attachments.map((a) => a.name),
+      difficulty: profile.difficulty,
+      mission: Boolean(inp.mission),
+      contextChars: estimate(inp.history) * 3,
+    });
+    if (pv) {
+      jevOverride = pv.variant;
+      lastPolicy = pv.why;
+    }
+  }
   const jevOn = top && jevEnabled();
   let jp: Awaited<ReturnType<typeof jevRt.pre>> | null = null;
   const tJev = performance.now();
@@ -873,6 +921,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   };
 
   let model = sel.model;
+  const initialModel = sel.model;
+  let stopReason = '';
   let cost = 0;
   let tokensIn = 0;
   let tokensOut = 0;
@@ -965,6 +1015,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         })
       : null;
   const pendingNotes: string[] = [];
+  // Kind of the NEXT model call, for the separate ledgers (main / gate re-ask / continuation / JEV correction).
+  let nextKind: CallKind | null = null;
   let prunedTokens = 0;
   let removedToolTokens = 0;
   let switches = 0;
@@ -997,8 +1049,10 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         cost: 0,
         decision: `${cp.kind} · ${d.action}${d.tool ? ` ${d.tool}` : ''}${d.model ? ` → ${d.model}` : ''} : ${d.reason}`,
       });
-      if (d.action === 'STOP') stop = 'stop';
-      else if (d.action === 'COMPRESS')
+      if (d.action === 'STOP') {
+        stop = 'stop';
+        stopReason = d.reason;
+      } else if (d.action === 'COMPRESS')
         messages.splice(0, messages.length, ...compact(messages, Math.floor(contextBudget * 0.6), inp.text));
       else if (d.action === 'REMOVE_TOOL' && d.tool) {
         const i = packTools.findIndex((t) => t.name === d.tool);
@@ -1185,6 +1239,12 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     useStore.setState({
       status: { ...useStore.getState().status, [sid]: label ? `${label} réfléchit…` : 'Réflexion…' },
     });
+    const split = {
+      system: estimate(callMessages.slice(0, 1)),
+      tools: toolDefTokens(toolDefs(offered)),
+      history: estimate(callMessages.slice(1).filter((m) => m.role !== 'tool')),
+      toolResults: estimate(callMessages.filter((m) => m.role === 'tool')),
+    };
     const r = await complete(
       {
         model,
@@ -1224,6 +1284,18 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       },
     );
     if (flushTimer) clearTimeout(flushTimer);
+    acct.add(sid, {
+      kind: nextKind ?? (inp.depth > 0 ? 'delegate' : 'main'),
+      step: step + 1,
+      model: r.model || model,
+      tokensIn: r.usage.promptTokens,
+      tokensOut: r.usage.completionTokens,
+      cost: r.cost,
+      costSource: r.costSource,
+      ms: Date.now() - started,
+      split,
+    });
+    nextKind = null;
     st.updateItem(sid, itemId, { text: r.content, streaming: false });
     useStore.getState().recordModel(r.model || model, true);
     usedModels.add(r.model || model);
@@ -1265,20 +1337,38 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         contextLimit: contextBudget,
         model: r.model || model,
       });
-      const ov = live.overhead(priceOf(r.model || model) || 1);
+      const ov = live.overhead(priceOf(r.model || model) || 1, jevRt.jevSettings().minRoi);
       if (ov.downgrade)
         traceAdd({
           name: 'JEV_CHECKPOINT',
           ms: 0,
           tokens: 0,
           cost: 0,
-          decision: 'AUTO-DOWNGRADE → JEV-0 : JEV coûtait plus qu’il n’économisait',
+          decision: `AUTO-DOWNGRADE → JEV-${live.state().level} : JEV coûtait plus qu’il n’économisait (seuil ROI ${jevRt.jevSettings().minRoi})`,
         });
       // JEV-3 deep control (critical / multi-agent only): remote judgment at stagnation / drift.
       if (cp && (cp.kind === 'stagnation' || cp.kind === 'drift') && live.state().level >= 3) {
-        const j = await jevRt.liveJudge(inp.text, r.content, live.state());
+        // EVI gate: the call is made only when its expected benefit exceeds its cost (projected, logged).
+        const avgCall = cost / Math.max(1, modelCalls);
+        const evi = eviGate({
+          pUseful: cp.kind === 'stagnation' ? 0.3 : 0.2,
+          avoidableCostUsd: avgCall * Math.max(2, jp!.pre.budgets.steps - step),
+          callCostUsd: jevRt.liveJudgeCost(inp.text, r.content),
+        });
+        traceAdd({ name: 'JEV_CHECKPOINT', ms: 0, tokens: 0, cost: 0, decision: `JEV-3 · ${evi.reason}` });
+        const j = evi.call ? await jevRt.liveJudge(inp.text, r.content, live.state()) : null;
         if (j) {
           live.addJevCost(j.costUsd, j.ms);
+          acct.add(sid, {
+            kind: 'jev3',
+            step: step + 1,
+            model: 'jev-latest',
+            tokensIn: j.tokens,
+            tokensOut: 0,
+            cost: j.costUsd,
+            costSource: j.tokensReported ? 'calculated' : 'estimated',
+            ms: j.ms,
+          });
           traceAdd({
             name: 'JEV_CHECKPOINT',
             ms: j.ms,
@@ -1329,6 +1419,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         };
         messages.push(c);
         persisted.push(c);
+        nextKind = 'continuation';
         continue;
       }
       if (phase === 'planning') {
@@ -1338,6 +1429,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
             role: 'user',
             content: 'Submit your plan now by calling plan.propose (summary + steps).',
           });
+          nextKind = 'gate';
           continue;
         }
         proposed = {
@@ -1371,6 +1463,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
           );
         }
         // JEV OUTPUT QA → targeted correction only when it pays.
+        let corrAdded = false;
         if (jp) {
           const tq = performance.now();
           const q = jevRt.qa({
@@ -1405,6 +1498,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
           live?.setQuality(q.result.score);
           if (q.correct && !unsupported.length && variant === 'full') {
             corrections++;
+            corrAdded = true;
             discardedTokens += r.usage.completionTokens;
             notes.push(q.correct);
             traceAdd({ name: 'JEV_CORRECTION', ms: 0, tokens: 0, cost: 0, decision: q.why });
@@ -1414,6 +1508,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         const g: ChatMessage = { role: 'user', content: notes.join('\n\n') };
         messages.push(g);
         persisted.push(g);
+        nextKind = corrAdded ? 'correction' : 'gate';
         continue;
       } else if (inp.mission && missionNudges < 3) {
         missionNudges++;
@@ -1424,6 +1519,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         };
         messages.push(nudge);
         persisted.push(nudge);
+        nextKind = 'gate';
         continue;
       } else break;
     }
@@ -1627,6 +1723,21 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         `Limite de ${ws.maxSteps} étapes atteinte. Augmentez-la dans Réglages ou répondez « continue ».`,
       );
   }
+  // QUALITY MEASURED AFTER THE FACT, identically in every variant (same scorer, same fixed token reference);
+  // it never influences the run. Empty answer = not measured (null), never 0.
+  const measureQa =
+    top && finalText.trim()
+      ? qualityCheck({
+          answer: finalText,
+          spec: outputSpec(inp.text),
+          evidence,
+          usedTools: toolsUsed.size > 0,
+          toolErrors: shadow?.toolErrors.length ?? 0,
+          toolCalls: toolsUsed.size,
+          tokens: tokensIn + tokensOut,
+          tokenBudget: 60_000,
+        })
+      : null;
   return {
     ok: true,
     text: finalText,
@@ -1634,6 +1745,22 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     cost,
     tokensIn,
     tokensOut,
+    measure: measureQa
+      ? { score: measureQa.score, vector: { ...measureQa.vector }, failures: measureQa.failures.length }
+      : null,
+    exp: top
+      ? {
+          initialModel,
+          toolsAvailable: tools.length,
+          difficulty: Math.round(profile.difficulty * 100) / 100,
+          risk: dna.risks.join(', ') || dna.criticality,
+          taskType: profile.type,
+          temperature: ws.temperature ?? null,
+          maxTokens: 16_000,
+        }
+      : undefined,
+    stopReason,
+    driftEvents: live?.driftEvents,
     report: lastReport,
     models: [...usedModels],
     fallbacks: fallbackCount,
@@ -1664,6 +1791,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
           quality: lastQa ?? jevQuality,
           corrections,
           decisionMs: jevDecisionMs,
+          calls: jp.calls,
         }
       : null,
     baselineTools: top ? { offered: tools.length, tokens: toolTokensBaseline } : undefined,
@@ -1844,10 +1972,17 @@ export async function runAgent(
   sessionId: string,
   text: string,
   attachments: Attachment[],
-  opts: { mode?: AgentMode; jev?: boolean | JevVariant; bench?: string; rep?: number } = {},
+  opts: {
+    mode?: AgentMode;
+    jev?: boolean | JevVariant;
+    bench?: string;
+    rep?: number;
+    experiment?: ExperimentInput;
+  } = {},
 ): Promise<void> {
   const st = useStore.getState();
   const benchTag = opts.bench ?? null;
+  lastPolicy = '';
   jevOverride =
     opts.jev === undefined ? null : opts.jev === true ? 'full' : opts.jev === false ? 'off' : opts.jev;
   const session = st.sessions.find((s) => s.id === sessionId);
@@ -1937,6 +2072,15 @@ export async function runAgent(
     return;
   }
   sub.cost = sub.tokensIn = sub.tokensOut = 0;
+  acct.reset(sessionId);
+  // Starting state of the workspace (paired runs must start from the same context; `.ai/` memory excluded).
+  const ctxHash0 = hashText(
+    Object.values(useStore.getState().files)
+      .filter((f) => !f.path.startsWith('.ai/') && !f.path.startsWith('downloads/'))
+      .map((f) => `${f.path}:${f.data.length}`)
+      .sort()
+      .join('|'),
+  );
   runTeam.clear();
   liveTrace = null;
   currentPacket = null;
@@ -2134,6 +2278,34 @@ export async function runAgent(
         });
       }
       const pk = j?.pre.packet;
+      // Separate ledgers: every paid call of the run (model, correction, tools, JEV), whatever the outcome.
+      const A = accountingOf([...acct.list(sessionId), ...(j?.calls ?? [])]);
+      acct.clear(sessionId);
+      const verdictQ = result?.measure ?? null;
+      const modelCalls = A.calls.filter((c) => !['tool', 'jev1', 'jev2', 'jev3'].includes(c.kind));
+      const modelIn = modelCalls.reduce((a, c) => a + c.tokensIn, 0);
+      const modelOut = modelCalls.reduce((a, c) => a + c.tokensOut, 0);
+      const exp = result?.exp;
+      const experiment =
+        opts.experiment && exp
+          ? {
+              ...opts.experiment,
+              variant: jevVariant(),
+              timestamp: started,
+              model: exp.initialModel,
+              modelVersion: useStore.getState().models.find((m) => m.id === exp.initialModel)?.slug ?? null,
+              modelsUsed: result?.models ?? [],
+              promptHash: hashText(text),
+              taskType: exp.taskType,
+              difficulty: exp.difficulty,
+              risk: exp.risk,
+              toolsAvailable: exp.toolsAvailable,
+              contextHash: ctxHash0,
+              temperature: exp.temperature,
+              maxTokens: exp.maxTokens,
+              jevMode: jevVariant() === 'off' ? 'off' : jevRt.jevSettings().mode,
+            }
+          : undefined;
       jevRt.learn({
         id: uid(),
         at: started,
@@ -2146,10 +2318,11 @@ export async function runAgent(
         decisionBy: pk?.decided_by ?? 'JEV-0',
         model: result?.models[0] ?? session.model,
         reason: j?.pre.decision.why.model ?? '',
-        tokensIn: tin,
-        tokensOut: tout,
-        cost,
-        jevCost: j?.jevCost ?? 0,
+        // An aborted / failed run has no result: its paid calls are still in the ledger.
+        tokensIn: result ? tin : modelIn,
+        tokensOut: result ? tout : modelOut,
+        cost: result ? cost : A.llmCost + A.correctionCost,
+        jevCost: A.jevCost,
         latencyMs: Date.now() - started,
         decisionMs: j?.decisionMs ?? 0,
         calls: result?.calls ?? 0,
@@ -2180,6 +2353,14 @@ export async function runAgent(
         liveSavedTokens: result?.live?.state.savedTokens ?? 0,
         overheadPct: result?.live?.overhead.pct ?? null,
         promptWaste: result?.live?.promptWaste ?? 0,
+        acct: A,
+        experiment,
+        qualityMeasured: verdictQ ? verdictQ.score : null,
+        qualityVector: verdictQ?.vector,
+        qualitySource: verdictQ ? 'local-qa' : undefined,
+        driftEvents: result?.driftEvents,
+        stopReason: result?.stopReason || undefined,
+        policy: lastPolicy || undefined,
       });
     }
   }

@@ -210,6 +210,7 @@ describe('JEV-0 Execution Packet', () => {
           ambiguity: 0.1,
           model: 'jev',
           inputTokens: 400,
+          tokensReported: true,
           costUsd: 0.00002,
           ms: 200,
         },

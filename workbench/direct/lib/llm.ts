@@ -92,7 +92,7 @@ const sleep = (ms: number, signal?: AbortSignal) =>
 export async function complete(
   req: ChatRequest,
   o: CompleteOptions,
-): Promise<ChatResult & { cost: number; model: string }> {
+): Promise<ChatResult & { cost: number; model: string; costSource: 'measured' | 'calculated' }> {
   if (!getKey())
     throw new LLMError('Clé OpenRouter manquante : ouvrez Réglages et collez votre clé.', 401, false);
   const chain = [...new Set([req.model, ...o.fallbacks].filter((m) => m && m !== 'auto'))];
@@ -126,7 +126,12 @@ export async function complete(
           },
         );
         const cost = r.usage.cost ?? estimateCost(info, r.usage.promptTokens, r.usage.completionTokens);
-        return { ...r, cost, model: r.model || model };
+        return {
+          ...r,
+          cost,
+          costSource: r.usage.cost != null ? 'measured' : 'calculated',
+          model: r.model || model,
+        };
       } catch (err) {
         last = err;
         if (streamed) o.onReset?.();

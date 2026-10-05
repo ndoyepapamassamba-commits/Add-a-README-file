@@ -1,4 +1,5 @@
 // Agent tools available in the standalone (serverless) workbench.
+import { acct } from './acct';
 import type { ChartData, ChartSpec } from '@shared/types';
 import {
   DataCore,
@@ -600,6 +601,7 @@ export const TOOLS: DirectTool[] = [
     label: (a) => `Recherche web « ${S(a.query)} »`,
     async run(a, ctx) {
       const model = pickFromTier(ctx.models, DEFAULT_AUTO_TIERS.fast, {})?.id ?? 'openai/gpt-4o-mini';
+      const t0 = Date.now();
       const r = await complete(
         {
           model,
@@ -616,6 +618,17 @@ export const TOOLS: DirectTool[] = [
         { models: ctx.models, fallbacks: [], effort: 'auto', maxRetries: 1 },
       );
       useStore.getState().addSpend(r.cost);
+      // Scientific accounting: an LLM call made INSIDE a tool is the tool's cost, not the mission model's.
+      acct.add(ctx.sessionId, {
+        kind: 'tool',
+        step: 0,
+        model: r.model,
+        tokensIn: r.usage.promptTokens,
+        tokensOut: r.usage.completionTokens,
+        cost: r.cost,
+        costSource: r.costSource,
+        ms: Date.now() - t0,
+      });
       const sources = (
         (r.annotations ?? []) as { type?: string; url_citation?: { url: string; title?: string } }[]
       )

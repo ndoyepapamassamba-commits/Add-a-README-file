@@ -74,7 +74,9 @@ describe('JEV LIVE CONTROL LOOP', () => {
     const cp = lc.afterCall(call({ tokensIn: 5000, toolCalls: [{ name: 'data.query', args: '{"q":"b"}' }] }));
     expect(cp?.decisions.some((d) => d.action === 'STOP')).toBe(false);
     for (let i = 0; i < 10; i++) {
-      const c = lc.afterCall(call({ tokensIn: 30_000, toolCalls: [{ name: 'data.query', args: `{"q":${i}}` }] }));
+      const c = lc.afterCall(
+        call({ tokensIn: 30_000, toolCalls: [{ name: 'data.query', args: `{"q":${i}}` }] }),
+      );
       expect(c?.decisions.some((d) => d.action === 'STOP') ?? false).toBe(false);
     }
   });
@@ -192,6 +194,14 @@ describe('JEV LIVE CONTROL LOOP', () => {
     lc.addJevCost(0.001, 300);
     const ov = lc.overhead(0.1);
     expect(ov.downgrade).toBe(true);
+    // Step-wise: JEV-3 → JEV-2 now, then one more level every 2 steps while JEV does not pay for itself.
+    expect(lc.state().level).toBe(2);
+    expect(lc.overhead(0.1).downgrade).toBe(false);
+    for (let i = 3; i < 5; i++) lc.afterCall(call({ toolCalls: [{ name: 'data.query', args: `x${i}` }] }));
+    expect(lc.overhead(0.1).downgrade).toBe(true);
+    expect(lc.state().level).toBe(1);
+    for (let i = 5; i < 7; i++) lc.afterCall(call({ toolCalls: [{ name: 'data.query', args: `x${i}` }] }));
+    lc.overhead(0.1);
     expect(lc.state().level).toBe(0);
     // Pays for itself → kept.
     const ok = new LiveController(init({ level: 3 }));
@@ -205,6 +215,29 @@ describe('JEV LIVE CONTROL LOOP', () => {
     const lc = new LiveController(init({ difficulty: 0.2 }));
     const cp = lc.afterCall(call({ tokensOut: 5000, content: 'x '.repeat(50) }));
     expect(cp?.decisions.find((d) => d.action === 'LOWER_REASONING')?.effort).toBe('low');
+  });
+
+  it('ECONOMIC_DRIFT: more input per call without progress is detected, recorded and acted on', () => {
+    const lc = new LiveController(init({ budgets: { ...budgets, tokens: 5_000_000 } }));
+    const same = [{ name: 'filesystem.read', args: '{"path":"a"}' }];
+    let hit: ReturnType<LiveController['afterCall']> = null;
+    for (const t of [4000, 5000, 6500, 8500, 11_000])
+      hit = lc.afterCall(call({ tokensIn: t, toolCalls: same, contextTokens: 60_000 })) ?? hit;
+    expect(lc.driftEvents.length).toBeGreaterThan(0);
+    expect(lc.driftEvents[0]).toContain('entrée ×');
+    const all = lc.checkpoints.flatMap((c) => c.decisions);
+    expect(
+      all.some(
+        (d) =>
+          d.reason.includes('ECONOMIC_DRIFT') && ['COMPRESS', 'LOWER_REASONING', 'REPLAN'].includes(d.action),
+      ),
+    ).toBe(true);
+    expect(hit).not.toBeNull();
+    // Healthy growth with real progress is not a drift.
+    const ok = new LiveController(init({ budgets: { ...budgets, tokens: 5_000_000 } }));
+    for (const [i, t] of [4000, 5000, 6500, 8500, 11_000].entries())
+      ok.afterCall(call({ tokensIn: t, toolCalls: [{ name: 'data.query', args: `{"q":${i}}` }] }));
+    expect(ok.driftEvents).toEqual([]);
   });
 
   it('live context pruning replaces old large tool outputs, never mutates the originals', () => {

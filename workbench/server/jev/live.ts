@@ -159,6 +159,11 @@ export class LiveController {
   private switched = 0;
   private consecFail = 0;
   private overNoted = false;
+  private lastDowngrade = -99;
+  private hist: { tokensIn: number; progress: number }[] = [];
+  private lastDrift = -99;
+  /** ECONOMIC_DRIFT events detected during the run (recorded in the JEV_LOG). */
+  readonly driftEvents: string[] = [];
 
   constructor(private readonly o: LiveInit) {
     this.now = o.now ?? Date.now;
@@ -374,6 +379,47 @@ export class LiveController {
       });
       s.drift = 0.5;
     }
+    // ECONOMIC_DRIFT: more tokens per call (or more cost) without progress. `progress` is the run's own
+    // information-gain indicator (new tool signatures / new answer content), NOT a quality measure.
+    this.hist = [...this.hist.slice(-3), { tokensIn: o.tokensIn, progress: s.progress }];
+    if (s.step >= 4 && s.step - this.lastDrift >= 3 && this.hist.length >= 4) {
+      const h = this.hist;
+      const growing =
+        h[1]!.tokensIn > h[0]!.tokensIn && h[2]!.tokensIn > h[1]!.tokensIn && h[3]!.tokensIn > h[2]!.tokensIn;
+      const growth = h[3]!.tokensIn / Math.max(1, h[0]!.tokensIn);
+      const gain = h[3]!.progress - h[0]!.progress;
+      const costDrift =
+        s.costBudget !== null && s.cost >= 0.6 * s.costBudget && s.progress < 0.4 && s.stagnation >= 1;
+      if ((growing && growth >= 1.3 && gain < 0.05) || costDrift) {
+        this.lastDrift = s.step;
+        const why = costDrift
+          ? `coût $${s.cost.toFixed(4)} ≥ 60 % du budget $${s.costBudget} pour un progrès de ${Math.round(s.progress * 100)} %`
+          : `entrée ×${growth.toFixed(1)} sur 3 appels pour un progrès de +${Math.round(gain * 100)} pts`;
+        this.driftEvents.push(`étape ${s.step} : ${why}`);
+        kind = 'drift';
+        if (o.contextTokens > o.contextLimit * 0.4)
+          ds.push({ action: 'COMPRESS', reason: `ECONOMIC_DRIFT (${why}) : contexte compressé` });
+        else if (s.effort !== 'low' && this.o.mode !== 'max' && !this.o.critical) {
+          s.effort = 'low';
+          ds.push({
+            action: 'LOWER_REASONING',
+            effort: 'low',
+            reason: `ECONOMIC_DRIFT (${why}) : raisonnement abaissé`,
+          });
+        } else ds.push({ action: 'REPLAN', reason: `ECONOMIC_DRIFT (${why}) : changer d’approche` });
+        if (costDrift && !this.o.critical) {
+          const down = this.nextDown();
+          if (down && this.switched < 2) {
+            this.switched++;
+            ds.push({
+              action: 'SWITCH_MODEL',
+              model: down.id,
+              reason: `ECONOMIC_DRIFT : modèle moins cher ${down.id}`,
+            });
+          }
+        }
+      }
+    }
     // Dynamic model switch DOWN: mechanical, clean tool steps on a premium model.
     if (
       !this.o.critical &&
@@ -544,7 +590,10 @@ export class LiveController {
    * JEV overhead: decision time and remote JEV cost vs what live control saved.
    * When JEV costs more than it saves (after a few steps), downgrade to JEV-0.
    */
-  overhead(pricePerMTok: number): {
+  overhead(
+    pricePerMTok: number,
+    minRoi = 1,
+  ): {
     pct: number | null;
     costUsd: number;
     savedUsd: number;
@@ -554,10 +603,18 @@ export class LiveController {
     const savedUsd = (this.s.savedTokens * pricePerMTok) / 1e6;
     const pct = this.s.cost > 0 ? this.jevCostUsd / this.s.cost : null;
     const roi = this.jevCostUsd > 0 ? savedUsd / this.jevCostUsd : null;
+    // Step-wise AUTO-DOWNGRADE JEV-3 → JEV-2 → JEV-1 → JEV-0: one level at most every 2 steps, only when
+    // what JEV saved (measured on this run) is below its own cost × minRoi (configurable).
     const downgrade =
-      this.s.level > 0 && this.s.step >= 3 && this.jevCostUsd > 0 && savedUsd < this.jevCostUsd;
+      this.s.level > 0 &&
+      this.s.step >= 3 &&
+      this.s.step - this.lastDowngrade >= 2 &&
+      this.jevCostUsd > 0 &&
+      savedUsd < this.jevCostUsd * minRoi;
     if (downgrade) {
-      this.s.level = 0;
+      const from = this.s.level;
+      this.s.level = from - 1;
+      this.lastDowngrade = this.s.step;
       this.checkpoints.push({
         kind: 'budget_threshold',
         step: this.s.step,
@@ -566,7 +623,7 @@ export class LiveController {
         decisions: [
           {
             action: 'LOWER_REASONING',
-            reason: `JEV coûte $${this.jevCostUsd.toFixed(6)} pour $${savedUsd.toFixed(6)} économisés : AUTO-DOWNGRADE → JEV-0`,
+            reason: `JEV coûte $${this.jevCostUsd.toFixed(6)} pour $${savedUsd.toFixed(6)} économisés (seuil ROI ${minRoi}) : AUTO-DOWNGRADE JEV-${from} → JEV-${from - 1}`,
           },
         ],
       });
@@ -759,4 +816,23 @@ export function efficiencyScore(o: {
   const qpd = o.cost > 0 && o.baseCost > 0 ? o.quality / o.cost / (o.baseQuality / o.baseCost) : qpt;
   const ratio = Math.sqrt(qpt * qpd);
   return Math.round(Math.max(0, Math.min(100, 50 * ratio)));
+}
+
+/**
+ * EXPECTED VALUE OF INFORMATION gate: a paid JEV call is made only when its expected benefit
+ * (probability that it changes the decision × the cost the decision can avoid) exceeds its cost.
+ * The inputs are projections (labelled as such in the trace), the decision is logged.
+ */
+export function eviGate(o: { pUseful: number; avoidableCostUsd: number; callCostUsd: number }): {
+  call: boolean;
+  expectedBenefit: number;
+  reason: string;
+} {
+  const benefit = Math.max(0, o.pUseful) * Math.max(0, o.avoidableCostUsd);
+  const call = benefit > o.callCostUsd;
+  return {
+    call,
+    expectedBenefit: benefit,
+    reason: `EVI (projetée) $${benefit.toFixed(6)} ${call ? '>' : '≤'} coût JEV $${o.callCostUsd.toFixed(6)} → ${call ? 'USE' : 'SKIP'}`,
+  };
 }

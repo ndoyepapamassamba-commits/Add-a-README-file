@@ -38,6 +38,8 @@ export interface Jev1Answer {
   ambiguity: number;
   model: string;
   inputTokens: number;
+  /** The API reported the token usage (else the count is an estimate). */
+  tokensReported: boolean;
   costUsd: number;
   ms: number;
 }
@@ -116,12 +118,12 @@ export function roiGate(o: {
     return {
       call: false,
       expectedValue,
-      reason: `valeur attendue $${expectedValue.toFixed(6)} ≤ coût $${o.callCost.toFixed(6)} : JEV-0 seul`,
+      reason: `EVI (projetée) $${expectedValue.toFixed(6)} ≤ coût JEV $${o.callCost.toFixed(6)} → SKIP : JEV-0 seul`,
     };
   return {
     call: true,
     expectedValue,
-    reason: `valeur attendue $${expectedValue.toFixed(6)} > coût $${o.callCost.toFixed(6)}`,
+    reason: `EVI (projetée) $${expectedValue.toFixed(6)} > coût JEV $${o.callCost.toFixed(6)} → USE`,
   };
 }
 
@@ -182,6 +184,7 @@ export async function callJev1(
       ambiguity: a.ambiguity?.noul ?? 0,
       model: r.model,
       inputTokens: tokens,
+      tokensReported: r.usage?.input_tokens !== undefined,
       costUsd: (tokens * JEV_PRICE_PER_MTOK) / 1e6,
       ms: Date.now() - t0,
     };
@@ -233,7 +236,14 @@ export async function callJev3(
   key: string | null,
   state: { goal: string; latest_answer: string; mission: Record<string, unknown> },
   fetchFn: FetchLike,
-): Promise<{ done: number; onTrack: number; tokens: number; costUsd: number; ms: number }> {
+): Promise<{
+  done: number;
+  onTrack: number;
+  tokens: number;
+  tokensReported: boolean;
+  costUsd: number;
+  ms: number;
+}> {
   const ac = new AbortController();
   const t0 = Date.now();
   const timer = setTimeout(() => ac.abort(), cfg.timeoutMs);
@@ -266,6 +276,7 @@ export async function callJev3(
       done: r.answers.done.noul,
       onTrack: r.answers.on_track?.noul ?? 0.5,
       tokens,
+      tokensReported: r.usage?.input_tokens !== undefined,
       costUsd: (tokens * JEV_PRICE_PER_MTOK) / 1e6,
       ms: Date.now() - t0,
     };

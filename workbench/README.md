@@ -163,6 +163,8 @@ JEV est la couche de décision placée autour du LLM. Vue **JEV** : Control Cent
 - **Mesures** : WASTE RATE (définitions d'outils jamais utilisés, appels d'outils en échec ou répétés, réponses jetées), MEASURED SAVINGS, AVOIDABLE WASTE REDUCTION (cible > 90 %, affichée comme atteinte seulement si mesurée), qualité / $, qualité / 1k tokens, succès / $, overhead et ROI de JEV. **Benchmark 2.0** : SANS JEV / JEV PRE / JEV PRE + LIVE / JEV FULL, N répétitions, moyenne, médiane, p95, Δ.
 - **Clé JEV** : elle reste dans ce navigateur, masquée, jamais dans le DOM, un prompt ou un log. Le navigateur ne peut pas appeler TypeSafe directement (CORS) : l'application passe par le relais Supabase `jev-relay` (code dans `relay/jev-relay/index.ts`, déployé), qui transmet la clé de l'utilisateur à TypeSafe sans la stocker ni la journaliser. Sans clé, JEV-1 n'est pas appelé. En cas d'échec ou de délai dépassé, **repli automatique sur JEV-0**.
 
+- **Validation scientifique** (onglet JEV → Validation scientifique, `docs/JEV-VALIDATION.md`) : expérience appariée OFF / PRE / LIVE / FULL (même tâche, même modèle imposé, même espace de travail, ordre mélangé, 1 / 3 / 5 / 10 répétitions), comptabilité séparée (LLM, JEV, correction, outils, QA), coût par mission réussie, ROI et valeur nette de JEV, intervalles de confiance sur les différences appariées, qualité mesurée identiquement partout (« NON MESURÉ » sinon), analyse par catégorie de tâche, diagnostic d'une mission lourde (pourquoi ces tokens, ce coût ?), verdict A–E, rapport technique. Rien ne s'exécute sans votre clic ; aucune économie n'est affichée sans paires valides (n ≥ 5).
+
 ## APEX Studio et style maison
 
 - Tous les exports suivent le **style maison** BLUE ECOBANK :

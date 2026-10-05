@@ -17,6 +17,7 @@ import {
   DEFAULT_JEV_API,
   jevErrorText,
   JEV_DIRECT_URL,
+  JEV_PRICE_PER_MTOK,
   JEV_RELAY_URL,
   callJev1,
   callJev3,
@@ -27,8 +28,15 @@ import {
   type Jev1Answer,
   type JevApiConfig,
 } from '../../server/jev/provider';
+import { analyze, categoryOf, policyFor, type CallRec, type Science } from '../../server/jev/science';
 import { correctionPrompt, qualityCheck, shouldCorrect, type QaResult } from '../../server/jev/qa';
-import { kpi, modelProfiles, type Checkpoint, type JevLogEntry } from '../../server/jev/metrics';
+import {
+  kpi,
+  modelProfiles,
+  type Checkpoint,
+  type JevLogEntry,
+  type Variant,
+} from '../../server/jev/metrics';
 import type { JevMode } from '../../server/jev/tools';
 import type { TaskType } from '../../server/llm/routing';
 import { classificationConfidence } from '../../server/llm/routing';
@@ -41,6 +49,10 @@ export interface JevSettings extends JevApiConfig {
   jev2: boolean;
   /** Stop a run automatically when its token / time budget is exhausted (off by default; the cost budget of Settings always applies). */
   budgetStop: boolean;
+  /** JEV must save at least `minRoi` × its own cost, else it is downgraded one level (JEV-3 → 2 → 1 → 0). */
+  minRoi: number;
+  /** Apply the data-driven JEV level per task category (only where the benchmark gave a sufficient sample). */
+  adaptivePolicy: boolean;
 }
 export const DEFAULT_JEV: JevSettings = {
   ...DEFAULT_JEV_API,
@@ -48,6 +60,8 @@ export const DEFAULT_JEV: JevSettings = {
   mode: 'balanced',
   jev2: true,
   budgetStop: false,
+  minRoi: 1,
+  adaptivePolicy: false,
 };
 
 export const jevSettings = (): JevSettings => {
@@ -117,6 +131,7 @@ async function jev1(
   missionCost: number,
   mode: JevMode,
   trace: Checkpoint[],
+  calls: CallRec[],
 ): Promise<Jev1Answer | null> {
   const s = jevSettings();
   if (s.provider === 'local') return null;
@@ -163,6 +178,17 @@ async function jev1(
     status.lastError = null;
     status.lastCallMs = r.ms;
     addJevSpend(r.costUsd);
+    // TypeSafe bills input tokens at a published price and does not return a cost: calculated, not measured.
+    calls.push({
+      kind: 'jev1',
+      step: 0,
+      model: r.model,
+      tokensIn: r.inputTokens,
+      tokensOut: 0,
+      cost: r.costUsd,
+      costSource: r.tokensReported ? 'calculated' : 'estimated',
+      ms: r.ms,
+    });
     trace.push({
       name: 'JEV_PRE',
       ms: performance.now() - t0,
@@ -193,6 +219,7 @@ async function jev2(
   b: TaskType,
   models: PreInput['models'],
   trace: Checkpoint[],
+  calls: CallRec[],
 ): Promise<TaskType | null> {
   const cheap = models
     .filter(
@@ -222,6 +249,16 @@ async function jev2(
     );
     useStore.getState().addSpend(r.cost);
     addJevSpend(r.cost);
+    calls.push({
+      kind: 'jev2',
+      step: 0,
+      model: r.model,
+      tokensIn: r.usage.promptTokens,
+      tokensOut: r.usage.completionTokens,
+      cost: r.cost,
+      costSource: r.costSource,
+      ms: performance.now() - t0,
+    });
     const w = r.content.trim().toLowerCase();
     const pick = w.includes(b) ? b : w.includes(a) ? a : null;
     trace.push({
@@ -237,14 +274,41 @@ async function jev2(
   }
 }
 
+let policyMemo: { log: JevLogEntry[]; sci: Science } | null = null;
+/**
+ * Adaptive JEV level for a request (setting « Politique adaptative »): only where the paired
+ * benchmark gave a sufficient sample for this category; else null (default behaviour unchanged).
+ */
+export function policyVariant(o: {
+  type: string;
+  text: string;
+  attachments: string[];
+  difficulty: number;
+  mission: boolean;
+  contextChars?: number;
+}): { variant: Variant; why: string } | null {
+  const s = jevSettings();
+  if (!s.enabled || !s.adaptivePolicy) return null;
+  const log = useStore.getState().jevLog;
+  if (!policyMemo || policyMemo.log !== log) policyMemo = { log, sci: analyze(log) };
+  return policyFor(policyMemo.sci, categoryOf(o));
+}
+
+/** Estimated cost of one JEV-3 judgment (input tokens × published price) — used by the EVI gate. */
+export const liveJudgeCost = (goal: string, answer: string): number =>
+  (((Math.min(3000, goal.length) + Math.min(4000, answer.length) + 800) / 3.8) * JEV_PRICE_PER_MTOK) / 1e6;
+
 export interface PreCall extends Omit<PreInput, 'jev1' | 'cache' | 'mode'> {
   previousUserText?: string;
 }
 
 /** jev.pre: JEV-0 (+ JEV-1 / JEV-2 when worth it) → Execution Packet. */
-export async function pre(input: PreCall): Promise<{ pre: PreResult; trace: Checkpoint[]; jevCost: number }> {
+export async function pre(
+  input: PreCall,
+): Promise<{ pre: PreResult; trace: Checkpoint[]; jevCost: number; calls: CallRec[] }> {
   const s = jevSettings();
   const trace: Checkpoint[] = [];
+  const calls: CallRec[] = [];
   cache.setVersion(
     `${input.models.length}|${s.mode}|${useStore.getState().settings.engine ? JSON.stringify(useStore.getState().settings.engine) : ''}`,
   );
@@ -253,7 +317,15 @@ export async function pre(input: PreCall): Promise<{ pre: PreResult; trace: Chec
   const first = jevPre({ ...input, mode: s.mode, cache, jev1: null });
   const est = first.decision.chosen?.estimate;
   const missionCost = est ? (est.low + est.high) / 2 : 0.01;
-  const j1 = await jev1(input.text, input.attachments, input.previousUserText, missionCost, s.mode, trace);
+  const j1 = await jev1(
+    input.text,
+    input.attachments,
+    input.previousUserText,
+    missionCost,
+    s.mode,
+    trace,
+    calls,
+  );
   let result = j1 ? jevPre({ ...input, mode: s.mode, cache, jev1: j1 }) : first;
   if (
     j1 &&
@@ -262,7 +334,7 @@ export async function pre(input: PreCall): Promise<{ pre: PreResult; trace: Chec
   ) {
     const conf0 = classificationConfidence(input.text, input.attachments);
     if (j1.typeConfidence >= 0.7 && conf0 >= 0.7 && j1.type !== first.profile.type) {
-      const pick = await jev2(input.text, first.profile.type, j1.type, input.models, trace);
+      const pick = await jev2(input.text, first.profile.type, j1.type, input.models, trace, calls);
       if (pick && pick !== result.profile.type)
         result = jevPre({ ...input, mode: s.mode, cache, jev1: { ...j1, type: pick, typeConfidence: 1 } });
       if (pick) result.packet.decided_by = 'JEV-2';
@@ -311,7 +383,7 @@ export async function pre(input: PreCall): Promise<{ pre: PreResult; trace: Chec
     decision: `${result.toolPack.names.length}/${result.toolPack.baseline} outils · skills ${result.packet.skills_required.join(', ') || '—'}`,
   });
   const jevCost = trace.reduce((a, c) => a + c.cost, 0);
-  return { pre: result, trace, jevCost };
+  return { pre: result, trace, jevCost, calls };
 }
 
 /**
@@ -323,7 +395,14 @@ export async function liveJudge(
   goal: string,
   answer: string,
   state: import('../../server/jev/live').MissionState,
-): Promise<{ done: number; onTrack: number; tokens: number; costUsd: number; ms: number } | null> {
+): Promise<{
+  done: number;
+  onTrack: number;
+  tokens: number;
+  tokensReported: boolean;
+  costUsd: number;
+  ms: number;
+} | null> {
   const s = jevSettings();
   if (s.provider === 'local' || !getJevKey()) return null;
   if ((useStore.getState().jevSpend[today()] ?? 0) >= s.budgetDaily) return null;

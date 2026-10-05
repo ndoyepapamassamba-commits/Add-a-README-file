@@ -2,7 +2,7 @@
 // tools / skills, cost estimated vs actual, tokens saved, quality, escalation,
 // cache, JEV ROI; live trace; JEV_LOG (JSON / CSV); WITHOUT vs WITH JEV KPIs;
 // A/B benchmark; model profiles; Cost Intelligence; JEV API settings; regression report.
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Cpu, Download, FlaskConical, KeyRound, Play, ShieldCheck, Square, Trash2 } from 'lucide-react';
 import { Badge, Button, Input, Select, Tabs, Toggle } from '../../web/components/ui';
 import { cx, fmtCost, fmtDuration, fmtTokens } from '../../web/lib/format';
@@ -24,28 +24,24 @@ import { BENCH, runBench, VARIANTS, type BenchRun } from '../lib/jevBench';
 
 import { regressionReport } from '../lib/inventory';
 import { MODE_HELP, MODE_LABEL } from '../../server/jev/control';
-import {
-  compare,
-  savingsVs,
-  toCsv,
-  variantOf,
-  variantStats,
-  type JevLogEntry,
-} from '../../server/jev/metrics';
+import { savingsVs, toCsv, variantOf, variantStats, type JevLogEntry } from '../../server/jev/metrics';
 import { callJev1, jev1Cost, jevErrorText, JEV_DIRECT_URL, JEV_RELAY_URL } from '../../server/jev/provider';
 import relaySource from '../../relay/jev-relay/index.ts?raw';
 import type { JevMode } from '../../server/jev/tools';
 import { LiveTree, TraceTimeline } from './JevTrace';
+import { ScienceTab } from './JevScience';
+import { VARIANT_LABEL, analyze } from '../../server/jev/science';
 import { handoffOf } from '../../server/jev/live';
 import { runAgent, stopAgent, type JevVariant } from '../lib/agent';
 import { CostsTab } from './IntelligenceView';
 
-type Tab = 'dash' | 'trace' | 'log' | 'kpi' | 'bench' | 'models' | 'costs' | 'api' | 'regression';
+type Tab = 'dash' | 'trace' | 'log' | 'kpi' | 'science' | 'bench' | 'models' | 'costs' | 'api' | 'regression';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'dash', label: 'Control Center' },
   { id: 'trace', label: 'Trace live' },
   { id: 'log', label: 'JEV_LOG' },
   { id: 'kpi', label: 'Sans / avec JEV' },
+  { id: 'science', label: 'Validation scientifique' },
   { id: 'bench', label: 'Benchmark 2.0' },
   { id: 'models', label: 'Profils modèles' },
   { id: 'costs', label: 'Cost Intelligence' },
@@ -91,6 +87,7 @@ export function JevView() {
         {tab === 'trace' && <TraceTab />}
         {tab === 'log' && <LogTab />}
         {tab === 'kpi' && <KpiTab />}
+        {tab === 'science' && <ScienceTab />}
         {tab === 'bench' && <BenchTab />}
         {tab === 'models' && <ModelsTab />}
         {tab === 'costs' && <CostsTab />}
@@ -518,88 +515,133 @@ function LogTab() {
 
 function KpiTab() {
   const log = useStore((s) => s.jevLog);
-  const benchKeys = [...new Set(log.filter((e) => e.bench).map((e) => e.bench!))];
-  // Real savings: only benchmark missions measured both ways.
-  const paired = benchKeys.filter(
-    (k) => log.some((e) => e.bench === k && e.jev) && log.some((e) => e.bench === k && !e.jev),
-  );
-  const lastOf = (k: string, jev: boolean) => [...log].reverse().find((e) => e.bench === k && e.jev === jev)!;
-  const a = paired.map((k) => lastOf(k, false));
-  const b = paired.map((k) => lastOf(k, true));
-  const rows = compare(a, b);
-  const all = compare(
-    log.filter((e) => !e.jev),
-    log.filter((e) => e.jev),
-  );
-  const show = (r: (typeof rows)[number]) => {
-    const fmt = (v: number | null) =>
-      v === null
-        ? '—'
-        : r.metric.includes('$')
-          ? fmtCost(v)
-          : r.metric.includes('Taux')
-            ? pct(v)
-            : r.metric.includes('ms')
-              ? `${Math.round(v)}`
-              : Math.round(v).toLocaleString('fr-FR');
-    const good = r.change === null ? null : r.better === 'lower' ? r.change < 0 : r.change > 0;
-    return (
-      <tr key={r.metric} className="border-t border-line">
-        <td className={td}>{r.metric}</td>
-        <td className={td}>{fmt(r.without)}</td>
-        <td className={td}>{fmt(r.with)}</td>
-        <td className={cx(td, good === null ? '' : good ? 'text-ok' : 'text-err')}>
-          {r.change === null ? '—' : `${r.change > 0 ? '+' : ''}${Math.round(r.change * 100)} %`}
-        </td>
-      </tr>
-    );
+  const setTab = useStore((s) => s.setView);
+  const sci = useMemo(() => analyze(log), [log]);
+  const obs = sci.observational;
+  const stat = (jev: boolean) => {
+    const es = obs.filter((e) => e.jev === jev);
+    const avg = (f: (e: JevLogEntry) => number) =>
+      es.length ? es.reduce((a, e) => a + f(e), 0) / es.length : null;
+    return {
+      n: es.length,
+      tokens: avg((e) => e.tokensIn + e.tokensOut),
+      cost: avg((e) => e.acct?.totalCost ?? e.cost + e.jevCost),
+      latency: avg((e) => e.latencyMs),
+      success: es.filter((e) => e.success !== null).length
+        ? es.filter((e) => e.success).length / es.filter((e) => e.success !== null).length
+        : null,
+    };
   };
+  const rows = [
+    ['Sans JEV', stat(false)],
+    ['Avec JEV', stat(true)],
+  ] as const;
   return (
     <div className="space-y-5">
       <div>
         <div className="mb-1 text-[13px] font-medium">
-          REAL SAVINGS — même mission sans JEV vs avec JEV ({paired.length} paire(s) mesurée(s))
+          Économies réelles — uniquement missions appariées ({sci.validPairs} paire(s) valide(s))
         </div>
-        {!paired.length ? (
-          <div className="text-[12.5px] text-muted">
-            Aucune paire mesurée : lancez le Benchmark 2.0. Aucun chiffre n’est affiché sans mesure.
+        {!sci.validPairs ? (
+          <div className="text-[12.5px] text-muted" data-testid="kpi-real">
+            ÉCHANTILLON INSUFFISANT : aucune paire mesurée. Aucun chiffre d’économie n’est affiché sans
+            expérience appariée (même tâche, même répétition, OFF / PRE / LIVE / FULL).
           </div>
         ) : (
-          <table className="w-full max-w-[720px] text-[12px]" data-testid="kpi-real">
+          <table className="w-full max-w-[860px] text-[12px]" data-testid="kpi-real">
             <thead>
               <tr>
-                {['Indicateur', 'Sans JEV', 'Avec JEV', 'Variation'].map((h) => (
+                {[
+                  'Variante vs OFF',
+                  'Paires (n)',
+                  'Δ tokens / mission',
+                  'Δ coût / mission',
+                  'Δ coût / mission réussie',
+                  'Statut',
+                ].map((h) => (
                   <th key={h} className={th}>
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>{rows.map(show)}</tbody>
+            <tbody>
+              {(['pre', 'live', 'full'] as const).map((v) => {
+                const d = sci.deltas[v];
+                if (!d) return null;
+                const ok = d.label === 'MEASURED';
+                return (
+                  <tr key={v} className="border-t border-line">
+                    <td className={td}>{VARIANT_LABEL[v]}</td>
+                    <td className={td}>{d.pairs}</td>
+                    <td className={td}>
+                      {ok && d.dTokens.meanDelta !== null
+                        ? `${d.dTokens.meanDelta > 0 ? '+' : ''}${Math.round(d.dTokens.meanDelta)}`
+                        : '—'}
+                    </td>
+                    <td className={td}>
+                      {ok && d.dCost.meanDelta !== null
+                        ? `${d.dCost.meanDelta > 0 ? '+' : ''}${d.dCost.meanDelta.toFixed(5)} $`
+                        : '—'}
+                    </td>
+                    <td className={td}>
+                      {ok && d.costPerSuccessChange !== null
+                        ? `${d.costPerSuccessChange > 0 ? '+' : ''}${Math.round(d.costPerSuccessChange * 100)} %`
+                        : '—'}
+                    </td>
+                    <td className={td}>{ok ? 'MEASURED' : `ÉCHANTILLON INSUFFISANT (n < ${5})`}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
           </table>
         )}
+        <div className="mt-1 text-[11.5px] text-faint">
+          Détail complet, intervalles de confiance, ROI et décomposition des coûts :{' '}
+          <button className="underline" onClick={() => setTab('jev')}>
+            onglet « Validation scientifique »
+          </button>
+          .
+        </div>
       </div>
-      <div>
-        <div className="mb-1 text-[13px] font-medium">
-          Toutes les missions enregistrées (missions différentes : indicatif)
+      <div className="rounded-lg border border-dashed border-line p-2">
+        <div className="mb-1 text-[13px] font-medium">Observational Data — missions NON appariées</div>
+        <div className="mb-1 text-[12px] text-muted">
+          Ces missions sont différentes (petites exécutions de référence d’un côté, missions réelles de
+          l’autre) : on ne peut en déduire ni économie ni surcoût. Aucune variation n’est calculée.
         </div>
         <table className="w-full max-w-[720px] text-[12px]">
           <thead>
             <tr>
-              {['Indicateur', 'Sans JEV', 'Avec JEV', 'Variation'].map((h) => (
+              {[
+                'Population',
+                'Missions',
+                'Tokens moy.',
+                'Coût moy. (JEV inclus)',
+                'Latence moy. (ms)',
+                'Réussite',
+              ].map((h) => (
                 <th key={h} className={th}>
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>{all.map(show)}</tbody>
+          <tbody>
+            {rows.map(([l, x]) => (
+              <tr key={l} className="border-t border-line">
+                <td className={td}>{l}</td>
+                <td className={td}>{x.n}</td>
+                <td className={td}>
+                  {x.tokens === null ? '—' : Math.round(x.tokens).toLocaleString('fr-FR')}
+                </td>
+                <td className={td}>{x.cost === null ? '—' : fmtCost(x.cost)}</td>
+                <td className={td}>{x.latency === null ? '—' : Math.round(x.latency)}</td>
+                <td className={td}>{pct(x.success)}</td>
+              </tr>
+            ))}
+          </tbody>
         </table>
-      </div>
-      <div className="text-[11.5px] text-faint">
-        PROJECTED SAVINGS : les tokens d’outils évités sont calculés sur les définitions réellement envoyées ;
-        le reste (retries, escalades, contexte) n’est compté que lorsqu’il est mesuré. L’objectif de &gt; 90 %
-        de réduction du gaspillage évitable n’est affiché comme atteint que si les mesures le montrent.
       </div>
     </div>
   );
@@ -626,7 +668,18 @@ function BenchTab() {
     stop.current.stop = false;
     setRes([]);
     try {
-      const r = await runBench(sel, (m) => setBusy(m), stop.current, { variants, reps });
+      // Vue rapide : même protocole que la validation scientifique (modèle imposé, groupes appariés).
+      const m = useStore
+        .getState()
+        .models.filter((x) => x.capabilities.tools && (x.inputPrice ?? 0) > 0 && !/:(free|batch)$/.test(x.id))
+        .sort((a, b) => (a.inputPrice ?? 0) - (b.inputPrice ?? 0))[0];
+      if (!m) throw new Error('Aucun modèle avec outils dans le catalogue : ouvrez Réglages.');
+      const r = await runBench(sel, (msg) => setBusy(msg), stop.current, {
+        variants,
+        reps,
+        protocol: 'fixed-model',
+        model: m.id,
+      });
       setRes(r);
       toast('ok', `Benchmark terminé : ${r.length} exécution(s).`);
     } catch (e) {
@@ -648,6 +701,11 @@ function BenchTab() {
   ) => (x.mean === null ? '—' : `${f(x.mean)} · méd ${f(x.median!)} · p95 ${f(x.p95!)}`);
   return (
     <div>
+      <div className="mb-2 rounded-lg border border-warn/40 bg-warn/10 p-2 text-[12px]">
+        Vue rapide, indicative. Les lignes agrègent toutes les exécutions de benchmark : pour conclure
+        (paires, intervalles de confiance, ROI, coût de JEV séparé, qualité), utilisez l’onglet « Validation
+        scientifique ».
+      </div>
       <div className="mb-2 text-[12.5px] text-muted">
         BENCHMARK 2.0 — chaque tâche est exécutée par le vrai moteur d’agents dans chaque variante : SANS JEV,
         JEV PRE (paquet d’exécution seul), JEV PRE + LIVE (contrôle en cours d’exécution), JEV FULL (+ QA et
@@ -756,9 +814,9 @@ function BenchTab() {
             <tr>
               {[
                 'Δ vs SANS JEV',
-                'MEASURED SAVINGS tokens',
-                'MEASURED SAVINGS coût',
-                'AVOIDABLE WASTE REDUCTION (cible > 90 %)',
+                'Variation tokens (indicatif)',
+                'Variation coût (indicatif)',
+                'Réduction du gaspillage mesuré (indicatif)',
                 'Latence',
                 'Qualité',
                 'Succès (pts)',
