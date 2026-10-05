@@ -48,9 +48,6 @@ async function send(page: Page, text: string) {
   await page.keyboard.press('Enter');
 }
 
-const systemOf = (i: number) =>
-  JSON.stringify((mock.requests[i]!.messages[0] as { content: unknown }).content);
-
 const model = (id: string, prompt: string, completion: string) => ({
   id,
   name: id,
