@@ -107,7 +107,7 @@ describe('data engine', () => {
     const ds = await engine.load(path.join(dir, 'p.csv'));
     const q = engine.query(ds, { limit: 5 });
     expect(engine.exportRows(q.columns, q.rows, 'csv').toString('utf8')).toContain('agence');
-    // House style: title band (row 1), scope + date (row 2), navy header (row 3), data from row 4.
+    // Locked house design: title band (row 1), scope + date (row 2), KPI cards (rows 3-4), blue header (row 6), data from row 7.
     const wb = XLSX.read(engine.exportRows(q.columns, q.rows, 'xlsx', { title: 'Synthèse agences' }), {
       cellStyles: true,
     });
@@ -115,8 +115,9 @@ describe('data engine', () => {
     const ws = wb.Sheets['Données']!;
     expect(ws.A1!.v).toBe('Synthèse agences');
     expect(String(ws.A2!.v)).toMatch(/Édité le \d{2}\/\d{2}\/\d{4}/);
-    expect(ws.A3!.v).toBe(q.columns[0]);
-    expect(XLSX.utils.sheet_to_json(ws, { range: 2 })).toHaveLength(5);
+    expect(ws.A3!.v).toBe('LIGNES AFFICHÉES');
+    expect(ws.A6!.v).toBe(q.columns[0]);
+    expect(XLSX.utils.sheet_to_json(ws, { range: 5 })).toHaveLength(5);
     expect(JSON.parse(engine.exportRows(q.columns, q.rows, 'json').toString())).toHaveLength(5);
   });
 });

@@ -13,6 +13,9 @@ import { DIMENSIONS } from '../../server/jev/fabric/learning';
 import { LEARNING_LEVELS } from '../../server/jev/fabric/distill';
 import { BENCH } from './jevBench';
 import type { JevLogEntry } from '../../server/jev/metrics';
+import { DESIGN, designCheck } from '../../server/services/houseDesign';
+import { houseXlsx } from '../../server/services/houseStyle';
+import { housePptx } from '../../server/services/housePptx';
 
 export type Verdict = 'PASS' | 'FAIL' | 'WARN';
 export interface Check {
@@ -37,6 +40,24 @@ export function fabricRegression(): Check[] {
     fabric: { kind: 'cfbench', arm: 'fabric', groupId: 'g', taskKey: 't', category: 'simple', models: ['m'] },
   } as unknown as JevLogEntry;
   return [
+    guard('DESIGN', 'Charte d’export verrouillée : signature conforme et valeurs figées', () => {
+      const c = designCheck();
+      return [
+        c.intact && c.frozen ? 'PASS' : 'FAIL',
+        c.intact
+          ? `signature ${c.actual}`
+          : `signature ${c.actual} ≠ ${c.expected} : la charte a été modifiée`,
+      ];
+    }),
+    guard('DESIGN', 'Export Excel : bandeau marine, KPI, en-tête bleu, sans quadrillage', () => {
+      const x = houseXlsx(['A', 'B'], [{ A: 'x', B: 1 }], { title: 'T' });
+      const ok = x.length > 500 && DESIGN.color.navy === '001B4D';
+      return [ok ? 'PASS' : 'FAIL', 'classeur généré avec la charte de référence'];
+    }),
+    guard('DESIGN', 'Export PowerPoint disponible dans la charte', () => [
+      housePptx('# T\n\n## S\n\n- a').length > 1000 ? 'PASS' : 'FAIL',
+      'pptx généré',
+    ]),
     guard('V5', 'Inventaire d’avant JEV intact (outils, agents, vues, réglages…)', () => [
       inv.ok ? 'PASS' : 'FAIL',
       inv.ok

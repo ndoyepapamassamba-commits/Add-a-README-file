@@ -81,10 +81,10 @@ const para = (inner: string, style?: string, extra = '') =>
 
 function table(rows: string[][]): string {
   const cols = Math.max(...rows.map((r) => r.length));
-  // House style: navy header with white bold text and a lime filet, zebra rows.
+  // House style (locked): blue header with white bold text and a gold filet, panel-tinted banding.
   const cell = (t: string, i: number) => {
     const header = i === 0;
-    const fill = header ? HOUSE.navy : i % 2 === 0 ? HOUSE.zebra : '';
+    const fill = header ? HOUSE.blue : i % 2 === 0 ? HOUSE.zebra : '';
     const numeric = !header && /^[-+]?[\d\s.,]+%?$/.test(t.trim());
     return `<w:tc><w:tcPr><w:tcW w:w="${Math.floor(9000 / cols)}" w:type="dxa"/>${header ? `<w:tcBorders><w:bottom w:val="single" w:sz="18" w:color="${HOUSE.lime}"/></w:tcBorders>` : ''}${fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>` : ''}</w:tcPr>${para(runs(t, { bold: header, size: 18, color: header ? 'FFFFFF' : undefined }), undefined, numeric ? '<w:jc w:val="right"/>' : '')}</w:tc>`;
   };
@@ -235,7 +235,7 @@ body{font:10.5pt/1.5 '${H.font}',Calibri,Arial,sans-serif;color:#${H.text};backg
 h1,h2,h3{line-height:1.25}h1{color:#${H.navy};font-size:18pt;border-bottom:3px solid #${H.lime};padding-bottom:4px}
 h2{color:#${H.navy};font-size:14pt;margin-top:22px;border-bottom:3px solid #${H.lime};padding-bottom:3px}h3{color:#${H.blue};font-size:12pt}
 a{color:#${H.light}}table{border-collapse:collapse;width:100%;margin:10px 0;font-size:9.5pt}
-th{background:#${H.navy};color:#fff;text-align:left;padding:6px 8px;border-bottom:3px solid #${H.lime}}
+th{background:#${H.blue};color:#fff;text-align:left;padding:6px 8px;border-bottom:3px solid #${H.lime}}
 td{padding:5px 8px;border-bottom:1px solid #${H.line};font-variant-numeric:tabular-nums}tr:nth-child(even) td{background:#${H.zebra}}
 code,pre{font-family:Consolas,monospace;background:#${H.bg}}pre{padding:8px;overflow:auto}
 blockquote{border-left:4px solid #${H.lime};margin-left:0;padding:6px 12px;background:#${H.bg};color:#${H.text2}}

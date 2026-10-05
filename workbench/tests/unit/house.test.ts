@@ -30,7 +30,7 @@ describe('house style', () => {
     const files = unzipSync(markdownToDocx('# Titre\n\n| A | B |\n|---|---|\n| 1 | 2 |\n', 'Rapport'));
     const doc = strFromU8(files['word/document.xml']!);
     const styles = strFromU8(files['word/styles.xml']!);
-    expect(doc).toContain(`w:fill="${HOUSE.navy}"`); // table header
+    expect(doc).toContain(`w:fill="${HOUSE.blue}"`); // table header
     expect(doc).toContain(HOUSE.lime);
     expect(styles).toContain('Segoe UI');
     expect(doc).toMatch(/Édité le \d{2}\/\d{2}\/\d{4}/);

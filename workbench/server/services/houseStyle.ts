@@ -1,25 +1,35 @@
-// House style "BLUE ECOBANK" (pure, shared by the server and the direct
-// edition): one visual identity for every deliverable — Excel, Word, printable
-// HTML / PDF and mail. Colours and rules only; the proprietary kit (logo, 3D
-// visuals, app shell) is injected at build time from the user's own skill.
+// House style "GOD 3D · BLUE ECOBANK" (pure, shared by the server and the direct edition): one LOCKED visual identity
+// for every deliverable — Excel, Word, PowerPoint, printable HTML / PDF and mail. All values come from houseDesign.ts
+// (relevés sur le classeur de référence « Impayés 30-90j plan d'actions »); nothing here is configurable.
 import XLSXS from 'xlsx-js-style';
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { DESIGN, DESIGN_RULES } from './houseDesign';
 
-export const HOUSE = {
-  navy: '00415E',
-  blue: '005C83',
-  light: '1A86B3',
-  lime: '8CC63F',
-  lime2: 'A6D867',
-  green: '6BA23A',
-  text: '12333F',
-  text2: '3E5C6B',
-  bg: 'EEF4F7',
-  zebra: 'F6FAFC',
-  line: 'CFE0E7',
-  risk: 'C0392B',
-  warn: 'B67D1C',
-  font: 'Segoe UI',
-};
+const C = DESIGN.color;
+/** Legacy token names kept for the Word / HTML / mail builders. `lime` is now the GOLD accent filet. */
+export const HOUSE = Object.freeze({
+  navy: C.navy,
+  blue: C.blue,
+  light: '2563EB',
+  lime: C.gold,
+  lime2: 'E9DDB0',
+  green: C.green,
+  text: C.text,
+  text2: C.text2,
+  bg: C.ice,
+  zebra: C.panel,
+  line: C.line,
+  risk: C.risk,
+  warn: C.warn,
+  font: DESIGN.font.ui,
+  mono: DESIGN.font.mono,
+  gold: C.gold,
+  cyan: C.cyan,
+  ice: C.ice,
+  panel: C.panel,
+  input: C.input,
+  subtle: C.subtle,
+});
 
 /** 2359078494 → "2 359 078 494" (ordinary spaces, as in the house reports). */
 export function fmtXof(n: number, digits = 0): string {
@@ -32,112 +42,249 @@ export function fmtDateFr(d: Date = new Date()): string {
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-/** The rules every agent applies to any deliverable (injected in system prompts). */
-export const HOUSE_RULES = `HOUSE EXPORT STYLE (mandatory for every deliverable — Excel, Word, PowerPoint, PDF/HTML, mail):
-- Palette: navy #00415E (bands, table headers, titles), Ecobank blue #005C83 (primary), light blue #1A86B3 (links/actions), lime #8CC63F / #A6D867 (filets, accents, success), text #12333F / #3E5C6B, light backgrounds #EEF4F7 / #F6FAFC, risk #C0392B, vigilance #B67D1C.
-- A 3 px lime filet under every navy band; table headers navy with white bold text; zebra rows #F6FAFC; total row light green.
-- Never a dark or black background in exports. Font Segoe UI; numbers tabular (Consolas in exports).
-- Amounts in XOF, integers with a space as thousands separator (2 359 078 494); dates dd/mm/yyyy.
-- Every synthesis comes with a written reading (numbered findings in sentences) reused in the mail, Word and PowerPoint; the filtered scope is recalled in each export.
-- report.export and data.export apply this style automatically; for an application with its own exports use the APEX Studio tools (apex.guide → apex.build_app → apex.qa).`;
+/** The rules every agent applies to any deliverable (injected in system prompts). The design is locked. */
+export const HOUSE_RULES = DESIGN_RULES;
 
 type Cell = { v: unknown; t?: string; s?: Record<string, unknown>; z?: string };
 
 const border = (rgb: string, style = 'thin') => ({ style, color: { rgb } });
+const box = (rgb: string = C.line) => ({
+  top: border(rgb),
+  bottom: border(rgb),
+  left: border(rgb),
+  right: border(rgb),
+});
+const solid = (rgb: string) => ({ patternType: 'solid', fgColor: { rgb } });
+const col = (i: number) => XLSXS.utils.encode_col(i);
+
+/** Sheet view the writer cannot express: no gridlines, zoom 90 %, frozen header, tab colour (patched into the XML). */
+export function lockSheetView(
+  bytes: Uint8Array,
+  o: { tab: string; freezeRows: number; zoom?: number; gridlines?: boolean },
+): Uint8Array {
+  const z = unzipSync(bytes);
+  const name = Object.keys(z).find((k) => /^xl\/worksheets\/sheet1\.xml$/.test(k));
+  if (!name) return bytes;
+  let xml = strFromU8(z[name]!);
+  const zoom = o.zoom ?? DESIGN.xlsx.zoom;
+  const view = `<sheetViews><sheetView${o.gridlines ? '' : ' showGridLines="0"'} zoomScale="${zoom}" zoomScaleNormal="${zoom}" workbookViewId="0">${
+    o.freezeRows > 0
+      ? `<pane ySplit="${o.freezeRows}" topLeftCell="A${o.freezeRows + 1}" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A${o.freezeRows + 1}" sqref="A${o.freezeRows + 1}"/>`
+      : ''
+  }</sheetView></sheetViews>`;
+  xml = /<sheetViews>[\s\S]*?<\/sheetViews>/.test(xml)
+    ? xml.replace(/<sheetViews>[\s\S]*?<\/sheetViews>/, view)
+    : xml.replace(/(<dimension [^>]*\/>)/, `$1${view}`);
+  const tab = `<tabColor rgb="FF${o.tab}"/>`;
+  if (/<sheetPr[ >/]/.test(xml)) {
+    xml = /<sheetPr[^>]*\/>/.test(xml)
+      ? xml.replace(/<sheetPr([^>]*)\/>/, `<sheetPr$1>${tab}</sheetPr>`)
+      : xml.replace(/(<sheetPr[^>]*>)/, `$1${tab}`);
+  } else xml = xml.replace(/(<dimension )/, `<sheetPr>${tab}</sheetPr>$1`);
+  return zipSync({ ...z, [name]: strToU8(xml) });
+}
 
 /**
- * Styled workbook: navy title band + lime filet, scope/date line, navy header,
- * zebra rows, XOF number formats, auto widths, autofilter.
+ * Workbook in the locked reference design: navy title band, blue subtitle band, four KPI cards (live SUBTOTAL
+ * formulas), blue table header, Consolas right-aligned numbers, thin #DBE6F7 borders, status colours, no gridlines,
+ * zoom 90 %, frozen header, autofilter, cyan data tab.
  */
 export function houseXlsx(
   columns: string[],
   rows: Record<string, unknown>[],
   opts: { title?: string; subtitle?: string; sheet?: string } = {},
 ): Uint8Array {
+  const X = DESIGN.xlsx;
+  const H = X.rowHeight;
   const title = opts.title || 'Export';
   const sub = `${opts.subtitle ? `${opts.subtitle} · ` : ''}Édité le ${fmtDateFr()}`;
   const n = Math.max(1, columns.length);
   const font = (extra: Record<string, unknown> = {}) => ({
-    name: HOUSE.font,
-    sz: 10,
-    color: { rgb: HOUSE.text },
+    name: DESIGN.font.ui,
+    sz: X.bodySize,
+    color: { rgb: C.text },
     ...extra,
   });
-  const aoa: Cell[][] = [];
-  aoa.push(
-    columns.map((_, i) => ({
-      v: i === 0 ? title : '',
-      t: 's',
-      s: {
-        font: font({ sz: 15, bold: true, color: { rgb: 'FFFFFF' } }),
-        fill: { patternType: 'solid', fgColor: { rgb: HOUSE.navy } },
-        alignment: { vertical: 'center' },
-        border: { bottom: border(HOUSE.lime, 'thick') },
+  const HEADER_ROW = 5; // 0-based: title, subtitle, KPI labels, KPI values, spacer, header
+  const first = HEADER_ROW + 1;
+  const last = HEADER_ROW + rows.length;
+  const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+  const numCol = columns.findIndex((c) => {
+    const vs = rows.slice(0, 200).map((r) => r[c]);
+    return vs.length > 0 && vs.filter(isNum).length / vs.length >= 0.6;
+  });
+  const nums = numCol >= 0 ? rows.map((r) => r[columns[numCol]!]).filter(isNum) : [];
+  const sum = nums.reduce((a, b) => a + b, 0);
+  const rng = (c: number) => `${col(c)}${first + 1}:${col(c)}${last + 1}`;
+  type Card = { label: string; f: string; v: number; z: string };
+  const cards: Card[] = [
+    {
+      label: 'LIGNES AFFICHÉES',
+      f: `SUBTOTAL(103,${rng(0)})`,
+      v: rows.filter((r) => r[columns[0]!] !== '' && r[columns[0]!] != null).length,
+      z: X.numberFormat.integer,
+    },
+  ];
+  if (numCol >= 0 && n >= 3) {
+    const name = columns[numCol]!.toUpperCase().slice(0, 22);
+    cards.push(
+      { label: `Σ ${name}`, f: `SUBTOTAL(109,${rng(numCol)})`, v: sum, z: X.numberFormat.bigMoney },
+      {
+        label: 'MONTANT MOYEN',
+        f: `IFERROR(SUBTOTAL(101,${rng(numCol)}),0)`,
+        v: nums.length ? sum / nums.length : 0,
+        z: X.numberFormat.integer,
       },
-    })),
+      {
+        label: 'VALEUR MAX',
+        f: `SUBTOTAL(104,${rng(numCol)})`,
+        v: nums.length ? Math.max(...nums) : 0,
+        z: X.numberFormat.integer,
+      },
+    );
+  }
+  const used = Math.min(cards.length, n);
+  const aoa: Cell[][] = [];
+  const band = (text: string, s: Record<string, unknown>): Cell[] =>
+    columns.map((_, i) => ({ v: i === 0 ? text : '', t: 's', s }));
+  aoa.push(
+    band(title, {
+      font: font({ sz: X.titleSize, bold: true, color: { rgb: C.white } }),
+      fill: solid(C.navy),
+      alignment: { horizontal: 'left', vertical: 'center', indent: 1 },
+      border: { bottom: border(C.gold, 'medium') },
+    }),
   );
   aoa.push(
-    columns.map((_, i) => ({
-      v: i === 0 ? sub : '',
-      t: 's',
-      s: { font: font({ sz: 9, italic: true, color: { rgb: HOUSE.text2 } }) },
-    })),
+    band(sub, {
+      font: font({ sz: X.subtitleSize, color: { rgb: C.subtle } }),
+      fill: solid(C.blue),
+      alignment: { horizontal: 'left', vertical: 'center', indent: 1 },
+    }),
   );
+  aoa.push(
+    columns.map((_, i) =>
+      i < used
+        ? {
+            v: cards[i]!.label,
+            t: 's',
+            s: {
+              font: font({ sz: X.kpiLabelSize, bold: true, color: { rgb: C.text2 } }),
+              fill: solid(C.panel),
+              alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+              border: box(),
+            },
+          }
+        : { v: '', t: 's', s: { fill: solid(C.ice) } },
+    ),
+  );
+  aoa.push(
+    columns.map((_, i) =>
+      i < used
+        ? {
+            v: cards[i]!.v,
+            f: cards[i]!.f,
+            t: 'n',
+            z: cards[i]!.z,
+            s: {
+              font: font({ name: DESIGN.font.mono, sz: X.kpiValueSize, bold: true, color: { rgb: C.navy } }),
+              fill: solid(C.white),
+              alignment: { horizontal: 'center', vertical: 'center' },
+              border: box(),
+            },
+          }
+        : { v: '', t: 's', s: { fill: solid(C.ice) } },
+    ),
+  );
+  aoa.push(columns.map(() => ({ v: '', t: 's', s: { fill: solid(C.ice) } })));
   aoa.push(
     columns.map((c) => ({
       v: c,
       t: 's',
       s: {
-        font: font({ bold: true, color: { rgb: 'FFFFFF' } }),
-        fill: { patternType: 'solid', fgColor: { rgb: HOUSE.navy } },
-        alignment: { vertical: 'center', wrapText: true },
-        border: { bottom: border(HOUSE.lime, 'medium') },
+        font: font({ sz: X.headerSize, bold: true, color: { rgb: C.white } }),
+        fill: solid(C.blue),
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: box(),
       },
     })),
   );
-  rows.forEach((r, ri) => {
+  const status = DESIGN.status as Record<string, { fill: string; text: string }>;
+  for (const r of rows)
     aoa.push(
       columns.map((c) => {
         const v = r[c];
-        const zebra = ri % 2 === 1 ? { fill: { patternType: 'solid', fgColor: { rgb: HOUSE.zebra } } } : {};
-        const base = { ...zebra, border: { bottom: border(HOUSE.line) } };
-        if (typeof v === 'number' && Number.isFinite(v))
+        const base = { border: box() };
+        if (isNum(v))
           return {
             v,
             t: 'n',
-            z: Number.isInteger(v) ? '# ##0' : '# ##0.00',
-            s: { ...base, font: font({ name: 'Consolas' }), alignment: { horizontal: 'right' } },
+            z: Number.isInteger(v) ? X.numberFormat.integer : X.numberFormat.decimal,
+            s: {
+              ...base,
+              font: font({ name: DESIGN.font.mono }),
+              alignment: { horizontal: 'right', vertical: 'center' },
+            },
           };
-        if (v instanceof Date) return { v, t: 'd', z: 'dd/mm/yyyy', s: { ...base, font: font() } };
-        if (typeof v === 'boolean') return { v: v ? 'Oui' : 'Non', t: 's', s: { ...base, font: font() } };
-        return { v: v === null || v === undefined ? '' : String(v), t: 's', s: { ...base, font: font() } };
+        if (v instanceof Date)
+          return {
+            v,
+            t: 'd',
+            z: X.numberFormat.date,
+            s: { ...base, font: font(), alignment: { horizontal: 'center', vertical: 'center' } },
+          };
+        const text =
+          typeof v === 'boolean' ? (v ? 'Oui' : 'Non') : v === null || v === undefined ? '' : String(v);
+        const st = Object.prototype.hasOwnProperty.call(status, text) ? status[text] : undefined;
+        if (st)
+          return {
+            v: text,
+            t: 's',
+            s: {
+              ...base,
+              font: font({ bold: true, color: { rgb: st.text } }),
+              fill: solid(st.fill),
+              alignment: { horizontal: 'center', vertical: 'center' },
+            },
+          };
+        return {
+          v: text,
+          t: 's',
+          s: { ...base, font: font(), alignment: { horizontal: 'left', vertical: 'center' } },
+        };
       }),
     );
-  });
   const ws = XLSXS.utils.aoa_to_sheet(aoa, { cellDates: true });
   ws['!merges'] = [
     { s: { r: 0, c: 0 }, e: { r: 0, c: n - 1 } },
     { s: { r: 1, c: 0 }, e: { r: 1, c: n - 1 } },
   ];
-  ws['!rows'] = [{ hpt: 28 }, { hpt: 16 }, { hpt: 22 }];
-  ws['!cols'] = columns.map((c) => {
+  ws['!rows'] = [
+    { hpt: H.title },
+    { hpt: H.subtitle },
+    { hpt: H.kpiLabel },
+    { hpt: H.kpiValue },
+    { hpt: H.spacer },
+    { hpt: H.header },
+  ];
+  ws['!cols'] = columns.map((c, i) => {
     let w = c.length;
     for (const r of rows.slice(0, 500)) {
       const v = r[c];
-      const len =
-        typeof v === 'number' ? fmtXof(v, Number.isInteger(v) ? 0 : 2).length : String(v ?? '').length;
+      const len = isNum(v) ? fmtXof(v as number, Number.isInteger(v) ? 0 : 2).length : String(v ?? '').length;
       if (len > w) w = len;
     }
-    return { wch: Math.min(60, Math.max(8, w + 2)) };
+    return { wch: Math.min(60, Math.max(i < used ? 16 : 8, w + 2)) };
   });
   if (rows.length)
     ws['!autofilter'] = {
-      ref: XLSXS.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: rows.length + 2, c: n - 1 } }),
+      ref: XLSXS.utils.encode_range({ s: { r: HEADER_ROW, c: 0 }, e: { r: last, c: n - 1 } }),
     };
   const wb = XLSXS.utils.book_new();
   XLSXS.utils.book_append_sheet(wb, ws, (opts.sheet || 'Données').slice(0, 31).replace(/[\\/?*[\]:]/g, ' '));
   wb.Props = { Title: title, Subject: opts.subtitle ?? '', Author: 'MASSAMBA Workbench' };
-  return new Uint8Array(XLSXS.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer);
+  const raw = new Uint8Array(XLSXS.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer);
+  return lockSheetView(raw, { tab: X.tabColor.data, freezeRows: HEADER_ROW + 1 });
 }
 
 /**
@@ -166,7 +313,7 @@ export function houseMailHtml(title: string, bodyHtml: string): string {
     )
     .replace(
       /<th[^>]*>/g,
-      `<th align="left" style="background:#${H.navy};color:#fff;padding:7px 9px;border-bottom:3px solid #${H.lime};font:bold 12px '${H.font}',Arial">`,
+      `<th align="left" style="background:#${H.blue};color:#fff;padding:7px 9px;border-bottom:3px solid #${H.lime};font:bold 12px '${H.font}',Arial">`,
     )
     .replace(/<tr>/g, () => `<tr style="background:#${zebra++ % 2 ? H.zebra : 'ffffff'}">`)
     .replace(/<td[^>]*>/g, `<td style="${td}">`)
@@ -178,7 +325,7 @@ export function houseMailHtml(title: string, bodyHtml: string): string {
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${title.replace(/</g, '&lt;')}</title></head><body style="margin:0;background:#${H.bg}">
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#${H.bg}"><tr><td align="center" style="padding:18px 8px">
 <table width="680" cellpadding="0" cellspacing="0" border="0" style="width:680px;background:#ffffff;border:1px solid #${H.line}">
-<tr><td style="background:#${H.navy};padding:18px 22px;border-bottom:3px solid #${H.lime}"><div style="font:bold 20px '${H.font}',Arial;color:#ffffff">${title.replace(/</g, '&lt;')}</div><div style="font:12px '${H.font}',Arial;color:#cfe0e7;margin-top:4px">${fmtDateFr()}</div></td></tr>
+<tr><td style="background:#${H.navy};padding:18px 22px;border-bottom:3px solid #${H.lime}"><div style="font:bold 20px '${H.font}',Arial;color:#ffffff">${title.replace(/</g, '&lt;')}</div><div style="font:12px '${H.font}',Arial;color:#${H.subtle};margin-top:4px">${fmtDateFr()}</div></td></tr>
 <tr><td style="padding:16px 22px">${body}</td></tr>
 <tr><td style="background:#${H.bg};padding:10px 22px;font:11px '${H.font}',Arial;color:#${H.text2};border-top:1px solid #${H.line}">${title.replace(/</g, '&lt;')} · ${fmtDateFr()}</td></tr>
 </table></td></tr></table></body></html>`;

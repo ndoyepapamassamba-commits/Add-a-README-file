@@ -12,6 +12,7 @@ import {
 } from '../agent/mission';
 import { markdownToHtml } from '../services/artifacts';
 import { markdownToDocx, type DocxImage } from '../services/officeCore';
+import { housePptx } from '../services/housePptx';
 import { defineTool, ok, ToolError, type AnyTool, type ToolContext } from './types';
 
 /** Callbacks installed by the orchestrator when a run is in mission mode. */
@@ -131,14 +132,14 @@ export const missionTools: AnyTool[] = [
   defineTool({
     name: 'report.export',
     description:
-      'Export a Markdown report to deliverables in outputs/, always in the house style: docx (Word), pdf, html, eml (colour mail draft for Outlook + .mail.html), md. Give markdown content or a markdown file path. Never overwrites existing files.',
+      'Export a Markdown report to deliverables in outputs/, always in the house style: docx (Word), pptx (PowerPoint), pdf, html, eml (colour mail draft for Outlook + .mail.html), md. Give markdown content or a markdown file path. Never overwrites existing files.',
     schema: z.object({
       name: z.string().min(1).max(100).describe('Base file name without extension, e.g. "rapport-ventes"'),
       title: z.string().max(200).optional(),
       content: z.string().optional(),
       from_path: z.string().optional(),
       formats: z
-        .array(z.enum(['docx', 'pdf', 'html', 'md', 'eml']))
+        .array(z.enum(['docx', 'pptx', 'pdf', 'html', 'md', 'eml']))
         .min(1)
         .default(['docx', 'pdf']),
     }),
@@ -149,7 +150,7 @@ export const missionTools: AnyTool[] = [
       const md =
         a.content ?? (a.from_path ? await ctx.services.workspace.readText(ctx.projectId, a.from_path) : null);
       if (!md) throw new ToolError('Provide content or from_path');
-      const base = `outputs/${a.name.replace(/[^\w.-]+/g, '-').replace(/\.(md|docx|pdf|html)$/i, '')}`;
+      const base = `outputs/${a.name.replace(/[^\w.-]+/g, '-').replace(/\.(md|docx|pptx|pdf|html)$/i, '')}`;
       const title = a.title ?? a.name;
       const ws = ctx.services.workspace;
       const written: string[] = [];
@@ -186,7 +187,9 @@ export const missionTools: AnyTool[] = [
           const mh = await uniqueOutput(ctx, `${base}.mail.html`);
           await ws.writeBinary(ctx.projectId, mh, Buffer.from(mail));
           written.push(mh);
-        } else if (f === 'docx')
+        } else if (f === 'pptx')
+          await ws.writeBinary(ctx.projectId, rel, Buffer.from(housePptx(md, a.title)));
+        else if (f === 'docx')
           await ws.writeBinary(
             ctx.projectId,
             rel,

@@ -24,6 +24,7 @@ import {
   type MissionReport,
 } from '../../server/agent/mission';
 import { markdownToDocx, printableHtml } from '../../server/services/officeCore';
+import { housePptx } from '../../server/services/housePptx';
 import { emlFromHtml, houseMailHtml } from '../../server/services/houseStyle';
 import { apexGuide, assembleApp, lintApp, referencePart } from '../../server/services/apexCore';
 import { getHouseKit, qaInFrame, syntaxError } from './apex';
@@ -816,14 +817,17 @@ export const TOOLS: DirectTool[] = [
   {
     name: 'report.export',
     description:
-      'Export a Markdown report to deliverables in outputs/, always in the house style: docx (Word), html (printable — the user prints it to PDF), eml (colour mail draft for Outlook + .mail.html), md. Charts saved by data.chart (outputs/charts/*.png) are embedded when referenced as ![title](outputs/charts/x.png). Give markdown content or a markdown file path. Never overwrites existing files.',
+      'Export a Markdown report to deliverables in outputs/, always in the house style: docx (Word), pptx (PowerPoint), html (printable — the user prints it to PDF), eml (colour mail draft for Outlook + .mail.html), md. Charts saved by data.chart (outputs/charts/*.png) are embedded when referenced as ![title](outputs/charts/x.png). Give markdown content or a markdown file path. Never overwrites existing files.',
     parameters: obj(
       {
         name: str('Base file name without extension, e.g. "rapport-ventes"'),
         title: str('Document title'),
         content: str('Markdown content (or use from_path)'),
         from_path: str('Markdown file in the workspace'),
-        formats: { type: 'array', items: { type: 'string', enum: ['docx', 'html', 'pdf', 'md', 'eml'] } },
+        formats: {
+          type: 'array',
+          items: { type: 'string', enum: ['docx', 'pptx', 'html', 'pdf', 'md', 'eml'] },
+        },
       },
       ['name'],
     ),
@@ -836,7 +840,7 @@ export const TOOLS: DirectTool[] = [
       const base = `outputs/${
         S(a.name)
           .replace(/[^\w.-]+/g, '-')
-          .replace(/\.(md|docx|pdf|html)$/i, '') || 'rapport'
+          .replace(/\.(md|docx|pptx|pdf|html)$/i, '') || 'rapport'
       }`;
       const title = S(a.title) || S(a.name);
       const formats = (
@@ -850,6 +854,12 @@ export const TOOLS: DirectTool[] = [
             path,
             markdownToDocx(md, S(a.title) || undefined, resolveImage),
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          );
+        else if (f === 'pptx')
+          writeBytes(
+            path,
+            housePptx(md, S(a.title) || undefined),
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
           );
         else if (f === 'html')
           writeText(path, printableHtml(title, marked.parse(inlineImages(md), { async: false }) as string));
