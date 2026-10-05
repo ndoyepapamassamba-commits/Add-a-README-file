@@ -157,6 +157,45 @@ export function downloadFile(f: VFile): void {
   download(f.path.split('/').pop()!, bytesOf(f), f.mime);
 }
 
+const WEB_REF = /^(https?:|mailto:|tel:|#|data:|blob:)/i;
+/** True for a link that points at a local file (Windows path, file://, sandbox:, relative…), not the web. */
+export const isLocalRef = (ref: string): boolean => Boolean(ref) && !WEB_REF.test(ref.trim());
+
+/** Resolve a link / path written by the model to a file of the workspace (exact path, then unique-ish basename). */
+export function findFileByRef(ref: string): VFile | undefined {
+  let r = ref.trim();
+  try {
+    r = decodeURIComponent(r);
+  } catch {
+    /* keep raw */
+  }
+  r = r
+    .replace(/^(file:\/*|sandbox:\/*|computer:\/*)/i, '')
+    .replace(/^[A-Za-z]:[\\/]/, '')
+    .replace(/\\/g, '/');
+  const all = Object.values(files());
+  try {
+    const exact = files()[normPath(r)];
+    if (exact) return exact;
+  } catch {
+    /* not a clean path */
+  }
+  const base = r.split('/').pop()!.toLowerCase();
+  if (!base) return undefined;
+  const hits = all.filter((f) => f.path.split('/').pop()!.toLowerCase() === base);
+  return hits.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
+}
+
+const DELIVERABLE_EXT = /\.(xlsx?|docx?|pptx?|pdf|csv|zip|html?|json|md|txt|png|jpe?g|svg|eml|msg)$/i;
+/** Workspace files an assistant message talks about (by name or path), to offer them as downloads. */
+export function deliverablesIn(text: string): VFile[] {
+  const low = text.toLowerCase();
+  return Object.values(files())
+    .filter((f) => !f.path.startsWith('.ai/') && DELIVERABLE_EXT.test(f.path))
+    .filter((f) => low.includes(f.path.split('/').pop()!.toLowerCase()))
+    .slice(0, 12);
+}
+
 export function downloadZip(prefix = ''): void {
   const entries: Record<string, Uint8Array> = {};
   for (const f of Object.values(files()))

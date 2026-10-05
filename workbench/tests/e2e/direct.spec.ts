@@ -1239,3 +1239,24 @@ const BENCH_LABELS = [
   'TOOL-HEAVY',
   'PLANNING',
 ];
+
+test('deliverables: a broken local link becomes a real download button, and files are offered in the chat', async ({
+  page,
+}) => {
+  await open(page);
+  const csv = path.join(tmp, 'Synthese_Segment.csv');
+  fs.writeFileSync(csv, 'segment,stage\nA,1\n');
+  await page.locator('input[type=file]').first().setInputFiles(csv);
+  await expect(page.getByText('Synthese_Segment.csv').first()).toBeVisible();
+  mock.push({
+    text: 'Fichiers téléchargeables :\n\n- [Synthèse par Segment](C:/Users/PNDOYE/Downloads/outputs/Synthese_Segment.csv)\n- [Introuvable](C:/nowhere/absent.xlsx)',
+  });
+  await send(page, 'donne-moi la synthèse');
+  const btn = page.getByRole('button', { name: /Synthèse par Segment/ });
+  await expect(btn).toBeVisible();
+  const [dl] = await Promise.all([page.waitForEvent('download'), btn.click()]);
+  expect(dl.suggestedFilename()).toBe('Synthese_Segment.csv');
+  // The unresolved link is plain text, not a dead link.
+  await expect(page.locator('a[href*="nowhere"]')).toHaveCount(0);
+  await expect(page.getByTestId('deliverables')).toContainText('Synthese_Segment.csv');
+});

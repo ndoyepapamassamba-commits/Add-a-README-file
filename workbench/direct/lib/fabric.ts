@@ -131,28 +131,24 @@ function wire(): void {
         supportedTaskTypes: [] as string[],
         risk: 'none' as const,
       })),
-      ...useStore
-        .getState()
-        .skills.map((s) => ({
-          id: `skill:user:${s.name}`,
-          name: s.name,
-          type: 'skill' as const,
-          description: s.description,
-          tags: s.triggers,
-          supportedTaskTypes: [] as string[],
-          risk: 'none' as const,
-        })),
-      ...useStore
-        .getState()
-        .fabric.skills.map((s) => ({
-          id: `skill:fabric:${s.id}`,
-          name: s.name,
-          type: 'skill' as const,
-          description: `skill ${s.status} v${s.currentVersion}`,
-          tags: s.versions.at(-1)?.triggerConditions ?? [],
-          supportedTaskTypes: s.versions.at(-1)?.taskTypes ?? [],
-          risk: 'none' as const,
-        })),
+      ...useStore.getState().skills.map((s) => ({
+        id: `skill:user:${s.name}`,
+        name: s.name,
+        type: 'skill' as const,
+        description: s.description,
+        tags: s.triggers,
+        supportedTaskTypes: [] as string[],
+        risk: 'none' as const,
+      })),
+      ...useStore.getState().fabric.skills.map((s) => ({
+        id: `skill:fabric:${s.id}`,
+        name: s.name,
+        type: 'skill' as const,
+        description: `skill ${s.status} v${s.currentVersion}`,
+        tags: s.versions.at(-1)?.triggerConditions ?? [],
+        supportedTaskTypes: s.versions.at(-1)?.taskTypes ?? [],
+        risk: 'none' as const,
+      })),
     ]),
   );
   registry.register(

@@ -39,7 +39,14 @@ import { resolveApproval, resolvePlan, runAgent, stopAgent } from '../lib/agent'
 import { allAgents } from '../lib/roles';
 import { useStore } from '../lib/store';
 import type { Attachment, Item, PermissionMode, Session } from '../lib/types';
-import { download, importBrowserFile } from '../lib/vfs';
+import {
+  deliverablesIn,
+  download,
+  downloadFile,
+  findFileByRef,
+  importBrowserFile,
+  isLocalRef,
+} from '../lib/vfs';
 import { refreshCredits } from '../lib/credits';
 import { ArtifactCard } from './Artifacts';
 import { ModelLine, PipelineBar, VerdictBadge, VerdictCard } from '../../web/components/mission';
@@ -195,7 +202,8 @@ const ItemView = memo(function ItemView({ item, sessionId }: { item: Item; sessi
       return (
         <div className="my-3">
           {item.agent && <div className="mb-1 text-[11.5px] font-medium text-accent">{item.agent}</div>}
-          <Markdown text={item.text + (item.streaming ? ' ▍' : '')} />
+          <Markdown text={item.text + (item.streaming ? ' ▍' : '')} fileLink={resolveFileLink} />
+          {!item.streaming && <Deliverables text={item.text} />}
         </div>
       );
     case 'tool':
@@ -526,6 +534,39 @@ const SLASH = [
   { cmd: '/review', desc: 'Faire relire le travail par l’agent Relecteur' },
   { cmd: '/export', desc: 'Exporter la session (Markdown)' },
 ];
+
+/** A link the model wrote to a local file becomes a real download of the workspace file. */
+function resolveFileLink(href: string) {
+  if (!isLocalRef(href)) return null;
+  const f = findFileByRef(href);
+  return f ? { name: f.path.split('/').pop()!, save: () => downloadFile(f) } : null;
+}
+
+/** Files the answer talks about, offered as download buttons right in the chat. */
+function Deliverables({ text }: { text: string }) {
+  const fs = useStore((s) => s.files);
+  const list = useMemo(() => deliverablesIn(text), [text, fs]);
+  if (!list.length) return null;
+  return (
+    <div className="mt-2 flex flex-wrap gap-2" data-testid="deliverables">
+      {list.map((f) => (
+        <button
+          key={f.path}
+          type="button"
+          onClick={() => downloadFile(f)}
+          className="flex items-center gap-1.5 rounded-lg border border-line bg-panel px-2.5 py-1.5 text-[12.5px] hover:bg-hover"
+          title={f.path}
+        >
+          <Download size={13} className="text-accent" />
+          <span className="font-medium">{f.path.split('/').pop()}</span>
+          <span className="text-faint">
+            {Math.max(1, Math.round((f.binary ? (f.data.length * 3) / 4 : f.data.length) / 1024))} Ko
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function exportMarkdown(s: Session): void {
   const lines = [

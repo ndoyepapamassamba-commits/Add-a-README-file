@@ -55,11 +55,25 @@ export function CodeBlock({ code, lang }: { code: string; lang?: string }) {
   );
 }
 
-export const Markdown = memo(function Markdown({ text, className }: { text: string; className?: string }) {
+export interface FileLink {
+  name: string;
+  save: () => void;
+}
+/** `fileLink` turns a non-web link (a local path, file://, sandbox:…) into a real download, or null. */
+export const Markdown = memo(function Markdown({
+  text,
+  className,
+  fileLink,
+}: {
+  text: string;
+  className?: string;
+  fileLink?: (href: string) => FileLink | null | undefined;
+}) {
   return (
     <div className={cx('md', className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        urlTransform={(u) => (/^\s*(javascript|vbscript):/i.test(u) ? '' : u)}
         components={{
           pre({ children }) {
             const child = Array.isArray(children) ? children[0] : children;
@@ -68,6 +82,21 @@ export const Markdown = memo(function Markdown({ text, className }: { text: stri
             return <CodeBlock code={String(props.children ?? '').replace(/\n$/, '')} lang={lang} />;
           },
           a({ href, children }) {
+            if (fileLink && href && !/^(https?:|mailto:|tel:|#)/i.test(href)) {
+              const f = fileLink(href);
+              if (f)
+                return (
+                  <button
+                    type="button"
+                    onClick={f.save}
+                    title={`Télécharger ${f.name}`}
+                    className="inline-flex items-center gap-1 rounded-md border border-line bg-panel px-1.5 py-0.5 font-medium text-accent hover:bg-hover"
+                  >
+                    ⬇ {children}
+                  </button>
+                );
+              return <span title="Fichier introuvable dans l’espace de travail">{children}</span>;
+            }
             return (
               <a href={href} target="_blank" rel="noopener noreferrer">
                 {children}
