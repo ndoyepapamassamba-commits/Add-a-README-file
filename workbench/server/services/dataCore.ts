@@ -531,7 +531,7 @@ export class DataCore {
     columns: string[],
     rows: Record<string, unknown>[],
     format: 'csv' | 'xlsx' | 'json',
-    meta: { title?: string; subtitle?: string } = {},
+    meta: { title?: string; subtitle?: string; chart?: 'bar' | 'line' | 'pie' | 'none' } = {},
   ): Uint8Array {
     const enc = new TextEncoder();
     if (format === 'json') return enc.encode(JSON.stringify(rows, null, 2));
@@ -540,7 +540,7 @@ export class DataCore {
         `\uFEFF${Papa.unparse({ fields: columns, data: rows.map((r) => columns.map((c) => r[c] ?? '')) })}`,
       );
     // House style: navy title band, lime filet, navy header, zebra, XOF formats.
-    return houseXlsx(columns, rows, { title: meta.title, subtitle: meta.subtitle });
+    return houseXlsx(columns, rows, { title: meta.title, subtitle: meta.subtitle, chart: meta.chart });
   }
 
   sheetNamesOf(name: string, bytes: Uint8Array): string[] {

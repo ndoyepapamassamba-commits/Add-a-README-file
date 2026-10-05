@@ -151,4 +151,5 @@ export const DESIGN_RULES = `HOUSE EXPORT DESIGN — LOCKED (mandatory for every
 - Statuses keep the reference colors (Stage 1 gold, Stage 2 amber, Stage 3 orange; I cyan, IA sky, II gold, III amber, IV orange, V red). Never a black or dark background.
 - Word / PowerPoint / PDF / mail: navy band with a ${DESIGN.filet.mm} mm gold filet, blue headings, blue table headers with white bold text, ice quote blocks, same fonts.
 - Amounts in XOF, integers with a space as thousands separator (2 359 078 494); dates dd/mm/yyyy. Every synthesis comes with a written reading (numbered findings) reused in the mail, Word and PowerPoint; the filtered scope is recalled in each export.
+- Charts are NATIVE Excel charts in the house palette (data.export chart option: bar / line / pie; series colours #003DA5, #06B6D4, #C8A951…), never images and never matplotlib.
 - report.export and data.export apply this design automatically and accept no color or font parameter. For files you generate yourself (code.run), reuse exactly these values.`;

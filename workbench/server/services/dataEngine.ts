@@ -32,7 +32,7 @@ export class DataEngine extends DataCore {
     columns: string[],
     rows: Record<string, unknown>[],
     format: 'csv' | 'xlsx' | 'json',
-    meta: { title?: string; subtitle?: string } = {},
+    meta: { title?: string; subtitle?: string; chart?: 'bar' | 'line' | 'pie' | 'none' } = {},
   ): Buffer {
     return Buffer.from(super.exportRows(columns, rows, format, meta));
   }

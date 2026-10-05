@@ -69,6 +69,10 @@ export const dataTools: AnyTool[] = [
       output_path: z.string().min(1),
       format: z.enum(['csv', 'xlsx', 'json']).default('csv'),
       title: z.string().optional().describe('Title of the house-style Excel band'),
+      chart: z
+        .enum(['none', 'bar', 'line', 'pie'])
+        .default('none')
+        .describe('Optional NATIVE Excel chart in the locked house palette (xlsx only)'),
     }),
     readOnly: false,
     assess: () => ({ risk: 'write' }),
@@ -85,6 +89,7 @@ export const dataTools: AnyTool[] = [
             .pop()!
             .replace(/\.[^.]+$/, ''),
         subtitle: `Source : ${a.path}`,
+        chart: a.chart,
       });
       const rel = await ctx.services.workspace.writeBinary(ctx.projectId, a.output_path, buf);
       return ok(`Wrote ${res.rows.length} rows → ${rel}`, { path: rel, rows: res.rows.length });

@@ -896,6 +896,12 @@ export const TOOLS: DirectTool[] = [
         sheet: str('Excel sheet (optional)'),
         name: str('Output base name, e.g. "synthese-agences"'),
         title: str('Title shown in the house-style band of the Excel file'),
+        chart: {
+          type: 'string',
+          enum: ['none', 'bar', 'line', 'pie'],
+          description:
+            'Optional NATIVE Excel chart (no image, no matplotlib) in the locked house palette: first text column = categories, numeric columns = series (pie: first numeric column, max 30 rows plotted)',
+        },
         format: { type: 'string', enum: ['xlsx', 'csv', 'json'] },
         query: {
           type: 'object',
@@ -919,6 +925,8 @@ export const TOOLS: DirectTool[] = [
         data.exportRows(r.columns, r.rows, fmt, {
           title: S(a.title) || S(a.name) || 'Export',
           subtitle: `Source : ${S(a.path)}${a.query ? ' (filtré)' : ''}`,
+          chart: (['bar', 'line', 'pie'].includes(S(a.chart)) ? S(a.chart) : 'none') as
+            'bar' | 'line' | 'pie' | 'none',
         }),
       );
       return ok(`${r.rowCount} lignes → ${path}`, `Saved ${r.rowCount} rows to ${path}.`);

@@ -195,3 +195,37 @@ describe('design lock — Word, PowerPoint, PDF/HTML and mail', () => {
     expect(slidesFromMarkdown(md).slides.length).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe('design lock — native Excel charts (no matplotlib, no image)', () => {
+  const data = Array.from({ length: 6 }, (_, i) => ({
+    Agence: `A${i}`,
+    Encours: 1_000_000 * (i + 1),
+    Impayés: 1000 * (i + 1),
+  }));
+  it('bar / line / pie are native chart parts in the house palette and fonts', () => {
+    for (const kind of ['bar', 'line', 'pie'] as const) {
+      const f = unzipSync(houseXlsx(Object.keys(data[0]!), data, { title: 'T', chart: kind }));
+      expect(Object.keys(f)).toEqual(
+        expect.arrayContaining(['xl/charts/chart1.xml', 'xl/drawings/drawing1.xml']),
+      );
+      expect(Object.keys(f).some((k) => k.startsWith('xl/media/'))).toBe(false);
+      const c = strFromU8(f['xl/charts/chart1.xml']!);
+      expect(c).toContain(
+        kind === 'bar' ? '<c:barChart>' : kind === 'line' ? '<c:lineChart>' : '<c:pieChart>',
+      );
+      expect(c).toContain('003DA5'); // first series = Ecobank blue
+      expect(c).toContain('Segoe UI');
+      expect(c).toContain(DESIGN.color.line);
+      expect(c).not.toMatch(/00415E|8CC63F|1A86B3/i);
+      expect(strFromU8(f['xl/worksheets/sheet1.xml']!)).toContain('<drawing r:id="rId1"/>');
+      expect(strFromU8(f['[Content_Types].xml']!)).toContain('drawingml.chart+xml');
+    }
+  });
+  it('no chart unless requested', () => {
+    expect(
+      Object.keys(unzipSync(houseXlsx(Object.keys(data[0]!), data, { title: 'T' }))).some((k) =>
+        k.includes('chart'),
+      ),
+    ).toBe(false);
+  });
+});
