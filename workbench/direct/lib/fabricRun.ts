@@ -9,7 +9,7 @@ import type { QualityVector } from '../../server/jev/qa';
 import type { CfTask } from '../../server/jev/fabric/cfbench';
 import type { FabricSkill, SkillVersion } from '../../server/jev/fabric/skills';
 import type { FabricTag } from '../../server/jev/fabric/types';
-import type { ApprenticeRunOpts } from './apprentice';
+import { championFor, type ApprenticeRunOpts } from './apprentice';
 import type { ApprenticeArm } from '../../server/jev/apprentice/types';
 
 export interface RunControl {
@@ -286,6 +286,7 @@ const DEMO_ARMS: { arm: ApprenticeArm; variant: JevVariant }[] = [
   { arm: 'free_jev', variant: 'full' },
   { arm: 'free_skill', variant: 'full' },
   { arm: 'free_skill_exp', variant: 'full' },
+  { arm: 'validated', variant: 'full' },
   { arm: 'paid', variant: 'off' },
 ];
 /** Same task, same workspace, shuffled order: free model alone, +JEV capsule, +skills, +experience, premium reference. */
@@ -300,9 +301,15 @@ export async function runApprenticeDemo(
   for (let rep = 1; rep <= o.reps; rep++)
     for (const [ti, task] of o.tasks.entries()) {
       const groupId = `${experimentId}:${task.key}:${rep}`;
-      for (const [order, a] of shuffle(DEMO_ARMS).entries()) {
+      // The VALIDATED arm exists only when a validated champion exists for the task's family (never invented).
+      const champ = championFor(task.text);
+      const arms = [
+        ...DEMO_ARMS.filter((x) => x.arm !== 'validated'),
+        ...(champ ? [{ arm: 'validated' as ApprenticeArm, variant: 'full' as JevVariant }] : []),
+      ];
+      for (const [order, a] of shuffle(arms).entries()) {
         if (ctl.stop) return out;
-        const model = a.arm === 'paid' ? o.paidModel : o.freeModel;
+        const model = a.arm === 'paid' ? o.paidModel : a.arm === 'validated' ? champ!.model : o.freeModel;
         progress(`${task.key} — ${a.arm} · ${model} (répétition ${rep}/${o.reps})…`);
         out.push(
           await runOne({

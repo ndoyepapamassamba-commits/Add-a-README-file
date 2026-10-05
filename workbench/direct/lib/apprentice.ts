@@ -6,6 +6,8 @@ import { useStore } from './store';
 import {
   DEFAULT_APPRENTICE,
   DEFAULT_WEIGHTS,
+  DEFAULT_SUPREMACY,
+  DEFAULT_VALIDATION,
   type ApprenticeArm,
   type ApprenticeSettings,
   type ApprenticeTag,
@@ -20,14 +22,23 @@ import {
 } from '../../server/jev/apprentice/registry';
 import {
   FallbackController,
-  ladderFor,
   qualityGate,
-  routeFreeFirst,
   type Attempt,
   type FreePlan,
   type GateVerdict,
 } from '../../server/jev/apprentice/router';
-import { compileCapsule, type Capsule } from '../../server/jev/apprentice/capsule';
+import { routeApprentice, type SupremacyPlan } from '../../server/jev/apprentice/ladder';
+import { champions as championsOf, type Champion } from '../../server/jev/apprentice/supremacy';
+import { CapsuleCache } from '../../server/jev/apprentice/cache';
+import { compileCached, type Capsule } from '../../server/jev/apprentice/capsule';
+import {
+  correctionFor,
+  correctionMessage,
+  failureSignatureOf,
+  learningOf,
+  type FailureSignature,
+} from '../../server/jev/apprentice/failure';
+import { futureReuseValue, teacherROI, type TeacherROI } from '../../server/jev/apprentice/payback';
 import {
   activeVersion,
   applyDecision,
@@ -42,11 +53,15 @@ import {
   teacherGate,
   teacherValue,
   selectTeacher,
+  skillFromFailure,
   type TeacherGate,
 } from '../../server/jev/apprentice/teacher';
 import { failureLibrary } from '../../server/jev/fabric/memory';
 import { classifyData } from '../../server/jev/fabric/security';
+import { analyzeTask } from '../../server/llm/routing';
+import { getValidatedApprentice } from '../../server/jev/apprentice/supremacy';
 import { freePool } from '../../server/jev/fabric/council';
+import type { QaFailure } from '../../server/jev/qa';
 import { distillSkills } from '../../server/jev/fabric/distill';
 import type { DataClass } from '../../server/jev/fabric/types';
 import type { JevLogEntry } from '../../server/jev/metrics';
@@ -61,6 +76,13 @@ export const apprenticeSettings = (): ApprenticeSettings => {
     gates: { ...DEFAULT_APPRENTICE.gates, ...s.gates },
     weights: { ...DEFAULT_WEIGHTS, ...s.weights },
     maxFailureRisk: { ...DEFAULT_APPRENTICE.maxFailureRisk, ...s.maxFailureRisk },
+    validation: {
+      ...DEFAULT_VALIDATION,
+      ...s.validation,
+      high: { ...DEFAULT_VALIDATION.high, ...s.validation?.high },
+      critical: { ...DEFAULT_VALIDATION.critical, ...s.validation?.critical },
+    },
+    supremacy: { ...DEFAULT_SUPREMACY, ...s.supremacy },
   };
 };
 
@@ -70,6 +92,7 @@ const ARM_USE: Record<ApprenticeArm, { capsule: boolean; skills: boolean; experi
   free_jev: { capsule: true, skills: false, experience: false },
   free_skill: { capsule: true, skills: true, experience: false },
   free_skill_exp: { capsule: true, skills: true, experience: true },
+  validated: { capsule: true, skills: true, experience: true },
   paid: { capsule: false, skills: false, experience: false },
 };
 
@@ -79,7 +102,7 @@ export interface ApprenticeRunOpts {
 }
 
 export interface ApprenticePrep {
-  plan: FreePlan;
+  plan: SupremacyPlan | FreePlan;
   dna: TaskDNA;
   capsule: Capsule | null;
   classification: DataClass;
@@ -95,8 +118,13 @@ export interface ApprenticePrep {
   /** Models tried so far (apprentice first). */
   path: string[];
   gateScores: number[];
-  teacher?: { id: string; gate: TeacherGate };
+  teacher?: { id: string; gate: TeacherGate; roi: TeacherROI | null };
+  /** Failures met during the run (signature + named correction), for failure learning. */
+  failures: { signature: FailureSignature; model: string }[];
 }
+
+/** Shared capsule cache: family × model × profileVersion × skillHash × contextHash × toolHash. */
+export const capsuleCache = new CapsuleCache<Capsule>();
 
 export interface PrepareInput {
   text: string;
@@ -140,23 +168,25 @@ export function prepareApprentice(i: PrepareInput): ApprenticePrep | null {
   const log = st.jevLog;
   const pool = freePool(st.models);
   const versions = st.fabric.profileVersions;
-  const validated = new Set(versions.filter((v) => v.status === 'production').map(profileKey));
-  const profiles = buildApprenticeRegistry(log, pool, { validated });
+  const rolledBack = new Set(versions.filter((v) => v.status === 'rolled_back').map(profileKey));
   const policyOf = (provider: string) => st.fabric.providerPolicies.find((p) => p.provider === provider);
-  const plan: FreePlan = forced
-    ? {
-        use: true,
-        reason: `bras de benchmark ${arm} : modèle imposé, sans repli automatique`,
-        chosen: null,
-        second: null,
-        candidates: [],
-        confidence: 'MEDIUM',
-        predictedSuccess: null,
-        threshold: dna.quality_threshold,
-        attempts: [{ n: 1, kind: 'free_jev', model: null, label: 'modèle imposé' }],
-        why: [],
-      }
-    : routeFreeFirst({
+  const profiles = buildApprenticeRegistry(log, pool);
+  const forcedPlan: FreePlan = {
+    use: true,
+    reason: `bras de benchmark ${arm} : modèle imposé, sans repli automatique`,
+    chosen: null,
+    second: null,
+    candidates: [],
+    confidence: 'MEDIUM',
+    predictedSuccess: null,
+    threshold: dna.quality_threshold,
+    attempts: [{ n: 1, kind: 'free_jev', model: null, label: 'modèle imposé' }],
+    why: [],
+  };
+  // LEVEL 0 is JEV-0 (handled before this function). L1 validated apprentice → L2 specialist → L3 adaptation → V5.
+  const plan: SupremacyPlan | FreePlan = forced
+    ? forcedPlan
+    : routeApprentice({
         dna,
         settings: s,
         profiles,
@@ -166,20 +196,26 @@ export function prepareApprentice(i: PrepareInput): ApprenticePrep | null {
         hasImages: i.hasImages,
         avoid: i.avoid,
         text: i.text,
+        log,
+        rolledBack,
       });
+  const base = {
+    plan,
+    dna,
+    classification,
+    forced,
+    v5Model: i.v5Model,
+    gateScores: [] as number[],
+    failures: [] as ApprenticePrep['failures'],
+  };
   if (!forced && !plan.use)
     return {
-      plan,
-      dna,
+      ...base,
       capsule: null,
-      classification,
-      forced,
       controller: null,
       ladder: [],
-      why: [plan.reason],
-      v5Model: i.v5Model,
+      why: (plan as SupremacyPlan).explain ?? [plan.reason],
       path: [],
-      gateScores: [],
     };
   const use = forced ? ARM_USE[arm!] : { capsule: true, skills: true, experience: true };
   // Versioning: a profile rolled back to its previous version only injects that version's skills.
@@ -195,17 +231,37 @@ export function prepareApprentice(i: PrepareInput): ApprenticePrep | null {
     const names = new Set(ver.skills.map((x) => x.split('@')[0]));
     allowedSkills = allowedSkills.filter((x) => names.has(x.name));
   }
+  // Skills learned from a Teacher after an apprentice failure are injected UNDER TEST (still candidates).
+  const underTest = new Set(
+    allowedSkills
+      .filter(
+        (x) =>
+          x.activeVersion === null &&
+          x.status === 'candidate' &&
+          x.versions.some((v) => v.provenance.teacher && v.taskTypes.includes(dna.task_type)),
+      )
+      .map((x) => x.id),
+  );
   const capsule = use.capsule
-    ? compileCapsule({
-        log: log.filter((e) => e.fabric?.kind !== 'apprentice'),
-        skills: allowedSkills,
-        strategies: failureLibrary(log).strategies,
-        dna,
-        text: i.text,
-        tools: i.tools,
-        use: { skills: use.skills, experience: use.experience },
-        budgetTokens: s.capsuleBudget,
-      })
+    ? compileCached(
+        {
+          log: log.filter((e) => e.fabric?.kind !== 'apprentice'),
+          skills: allowedSkills,
+          strategies: failureLibrary(log).strategies,
+          dna,
+          text: i.text,
+          tools: i.tools,
+          use: { skills: use.skills, experience: use.experience },
+          budgetTokens: s.capsuleBudget,
+          allowCandidate: underTest,
+        },
+        {
+          cache: capsuleCache,
+          model: model || 'pinned',
+          profileVersion: latest?.id ?? 'v0',
+          cacheable: !forced,
+        },
+      )
     : null;
   let profileVersion: string | undefined;
   if (!forced && model && capsule) {
@@ -222,19 +278,16 @@ export function prepareApprentice(i: PrepareInput): ApprenticePrep | null {
   }
   const controller = forced ? null : new FallbackController(plan);
   return {
-    plan,
-    dna,
+    ...base,
     capsule,
-    classification,
     arm,
-    forced,
     profileVersion,
     controller,
-    ladder: forced ? [] : ladderFor(plan, i.v5Ladder),
-    why: plan.why,
-    v5Model: i.v5Model,
+    ladder: forced
+      ? []
+      : (plan.attempts.map((a) => a.model).filter((m): m is string => Boolean(m)) as string[]),
+    why: (plan as SupremacyPlan).explain ?? plan.why,
     path: model ? [model] : [],
-    gateScores: [],
   };
 }
 
@@ -262,11 +315,14 @@ export function applyGate(p: ApprenticePrep, score100: number | null, blocking =
   const prev = p.controller.current;
   const final = prev?.kind === 'v5';
   const next = p.controller.next(verdict, score);
+  // The ladder never repeats an attempt: same model = targeted correction, another model = switch, v5 = hand-over.
   const switched =
-    next.kind === 'free_other' && next.model && next.model !== prev?.model
-      ? next.model
-      : next.kind === 'v5' && verdict === 'CORRECT'
+    next.kind === 'v5'
+      ? verdict === 'CORRECT'
         ? p.v5Model
+        : null
+      : next.model && next.model !== prev?.model && verdict === 'CORRECT'
+        ? next.model
         : null;
   if (switched && !final) p.path.push(switched);
   return {
@@ -301,8 +357,46 @@ export function decideTeacher(p: ApprenticePrep, estCost: number): TeacherGate |
     risk: p.dna.risk === 'critical' ? 0.9 : p.dna.risk === 'high' ? 0.6 : 0.2,
     allowed: teacherAllowance(tv).allowed,
   });
-  p.teacher = { id: choice.id, gate };
-  return gate;
+  // TEACHER AS AN INVESTMENT: immediate gain + future reuse value (from MEASURED family frequency × measured premium cost).
+  const fut = futureReuseValue(log, fam, s.horizonDays);
+  const roi = teacherROI({
+    family: fam,
+    immediateGain: gate.decision.expectedBenefit,
+    teacherCost: estCost,
+    futureReuseValue: fut.value,
+  });
+  const execute = gate.execute || (roi.teach && fut.value !== null && teacherAllowance(tv).allowed);
+  const merged: TeacherGate = {
+    ...gate,
+    execute,
+    reason: execute
+      ? `EXECUTE TEACHER : ${gate.decision.use ? gate.decision.reason : roi.reason}`
+      : `SKIP TEACHER : ${gate.decision.reason} — ${roi.reason}`,
+  };
+  p.teacher = { id: choice.id, gate: merged, roi };
+  return merged;
+}
+
+/** Failure signature + named correction for a failed gate (also remembered for failure learning). */
+export function recordFailure(
+  p: ApprenticePrep,
+  failures: QaFailure[],
+  score: number,
+  model: string,
+): { signature: FailureSignature; message: string; correction: string } {
+  const signature = failureSignatureOf(failures);
+  p.failures.push({ signature, model });
+  const c = correctionFor(signature);
+  return {
+    signature,
+    correction: c.name,
+    message: correctionMessage(
+      signature,
+      failures.map((f) => ({ what: f.what, fix: f.fix })),
+      score,
+      p.dna.quality_threshold,
+    ),
+  };
 }
 
 export interface RunFacts {
@@ -340,10 +434,30 @@ export function buildTag(p: ApprenticePrep, f: RunFacts): ApprenticeTag {
     teacher,
     teacherCost: teacher ? f.teacherCost : undefined,
     fallbackFrom: f.models.length > 1 ? f.models[0] : undefined,
+    level: (p.plan as SupremacyPlan).level,
+    champion: (p.plan as SupremacyPlan).route === 'validated' && f.models.length <= 1,
+    supremacy: (p.plan as SupremacyPlan).champion?.score ?? null,
+    cache: p.capsule
+      ? {
+          hit: Boolean(p.capsule.cacheHit),
+          retrievalMs: p.capsule.retrievalMs,
+          compilationMs: p.capsule.compilationMs,
+          contextBefore: p.capsule.contextBefore,
+          contextAfter: p.capsule.contextAfter,
+        }
+      : undefined,
+    failure: p.failures[0]
+      ? learningOf({
+          signature: p.failures[0].signature,
+          path: f.models.length ? f.models : p.path,
+          success: f.success,
+          teacher: teacher ?? null,
+        })
+      : undefined,
     rateLimited: Boolean(f.failureNote && /429|rate.?limit|quota|too many/i.test(f.failureNote)),
     classification: p.classification,
     arm: p.arm,
-    why: p.why.slice(0, 4),
+    why: p.why.slice(0, 6),
   };
 }
 
@@ -354,7 +468,11 @@ export function afterApprenticeRun(entry?: JevLogEntry): void {
   if (entry?.apprentice?.teacher && entry.success) {
     const r = distillSkills(st.jevLog, st.fabric.skills, entry.apprentice.teacher);
     if (r.candidates.length) addDistilled(r.candidates);
+    // FAILURE → PREMIUM SUCCESS → PATTERN → SKILL CANDIDATE: one observed pair already creates a candidate (tested before use).
+    const f = skillFromFailure(st.jevLog, useStore.getState().fabric.skills, entry);
+    if (f.candidates.length) addDistilled(f.candidates);
   }
+  updateRoutingMemory();
   if (++since < 5) return;
   since = 0;
   refreshProfileVersions();
@@ -384,3 +502,74 @@ export function refreshProfileVersions(): { promoted: number; rolledBack: number
 
 export type { ApprenticeProfile };
 export { familyOf };
+
+/** MODEL ROUTING MEMORY: per task family, the current champion, its fallback and the premium reference (persistent). */
+export function updateRoutingMemory(): void {
+  const st = useStore.getState();
+  const s = apprenticeSettings();
+  const ch = championsOf(st.jevLog, freePool(st.models), {
+    settings: s,
+    versions: st.fabric.profileVersions,
+  });
+  const mem: Record<string, RoutingMemoryEntry> = { ...(st.fabric.routingMemory ?? {}) };
+  for (const c of ch)
+    mem[c.family] = {
+      champion: c.model,
+      status: c.status,
+      fallback: c.fallback,
+      premium: c.premium?.model ?? null,
+      quality: c.quality,
+      success: c.success,
+      n: c.n,
+      updatedAt: Date.now(),
+    };
+  if (
+    JSON.stringify(Object.keys(mem).map((k) => [k, mem[k]!.champion, mem[k]!.status, mem[k]!.n])) !==
+    JSON.stringify(
+      Object.keys(st.fabric.routingMemory ?? {}).map((k) => [
+        k,
+        st.fabric.routingMemory![k]!.champion,
+        st.fabric.routingMemory![k]!.status,
+        st.fabric.routingMemory![k]!.n,
+      ]),
+    )
+  )
+    st.setFabric({ routingMemory: mem });
+}
+export interface RoutingMemoryEntry {
+  champion: string;
+  status: string;
+  fallback: string | null;
+  premium: string | null;
+  quality: number | null;
+  success: number | null;
+  n: number;
+  updatedAt: number;
+}
+export type { Champion };
+
+/** The VALIDATED champion (if any) for the family of this task text — used by the benchmark's VALIDATED arm. */
+export function championFor(text: string): { model: string; family: string } | null {
+  const st = useStore.getState();
+  const s = apprenticeSettings();
+  const prof = analyzeTask({ text });
+  const dna = taskDnaOf(
+    {
+      text,
+      taskType: prof.type,
+      difficulty: prof.difficulty,
+      criticality: 'normal',
+      tools: prof.type === 'chat' ? [] : ['tools'],
+    },
+    s,
+  );
+  const rb = new Set(st.fabric.profileVersions.filter((v) => v.status === 'rolled_back').map(profileKey));
+  const r = getValidatedApprentice({
+    dna,
+    settings: s,
+    log: st.jevLog,
+    pool: freePool(st.models),
+    rolledBack: rb,
+  });
+  return r.champion ? { model: r.champion.model, family: dna.task_family } : null;
+}

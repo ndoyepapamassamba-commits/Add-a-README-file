@@ -21,6 +21,23 @@ import {
 } from '../../server/jev/apprentice/types';
 import { buildApprenticeRegistry, expertiseRows, SAMPLE_MIN } from '../../server/jev/apprentice/registry';
 import {
+  STATUS_RANK,
+  apprenticeMatrix,
+  champions as championsOf,
+  sampleLabelOf,
+} from '../../server/jev/apprentice/supremacy';
+import { LEVELS } from '../../server/jev/apprentice/ladder';
+import { SIMULATED_LABEL, runSupremacyDemo } from '../../server/jev/apprentice/demo';
+import { failureStats } from '../../server/jev/apprentice/failure';
+import {
+  apprenticePayback,
+  learningGraph,
+  learningPayback,
+  teacherROI,
+} from '../../server/jev/apprentice/payback';
+import { capsuleCache, championFor } from '../lib/apprentice';
+import { DEFAULT_SUPREMACY, DEFAULT_VALIDATION, type JevStatus } from '../../server/jev/apprentice/types';
+import {
   analyzeApprentice,
   perDollar,
   referenceStatement,
@@ -32,19 +49,27 @@ import {
   teacherAllowance,
   teacherValue,
 } from '../../server/jev/apprentice/teacher';
-import { profileKey } from '../../server/jev/apprentice/versions';
 import { Empty, NM, Section, Table, fmt } from './fabricUi';
 
-type Sub = 'center' | 'registry' | 'teacher' | 'bench' | 'trace' | 'cost';
+type Sub = 'center' | 'champions' | 'registry' | 'teacher' | 'payback' | 'bench' | 'trace' | 'demo' | 'cost';
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'center', label: 'Apprentice Center' },
+  { id: 'champions', label: 'Apprentice Champions' },
   { id: 'registry', label: 'Registre & modèles gratuits' },
   { id: 'teacher', label: 'Teacher & Skills' },
+  { id: 'payback', label: 'Payback & Learning Graph' },
   { id: 'bench', label: 'Apprentice Benchmark' },
-  { id: 'trace', label: 'Trace' },
+  { id: 'trace', label: 'Trace & Ladder' },
+  { id: 'demo', label: 'Démonstration (simulée)' },
   { id: 'cost', label: 'Coût réel & Intelligence/$' },
 ];
-const STATUS_TONE = { FREE: 'neutral', ADAPTED: 'info', SPECIALIST: 'ok', VALIDATED: 'ok' } as const;
+const STATUS_TONE = {
+  FREE: 'neutral',
+  ADAPTED: 'info',
+  SPECIALIST: 'ok',
+  VALIDATED: 'ok',
+  DEGRADED: 'err',
+} as const;
 const pct = (x: number | null | undefined) => fmt.pct(x);
 const cheapModels = (models: ReturnType<typeof useStore.getState>['models']) =>
   models
@@ -69,6 +94,9 @@ export function ApprenticePanel() {
       </div>
       <Tabs tabs={SUBS} value={sub} onChange={setSub} className="overflow-x-auto" />
       {sub === 'center' && <CenterTab />}
+      {sub === 'champions' && <ChampionsTab />}
+      {sub === 'payback' && <PaybackTab />}
+      {sub === 'demo' && <DemoTab />}
       {sub === 'registry' && <RegistryTab />}
       {sub === 'teacher' && <TeacherTab />}
       {sub === 'bench' && <BenchTab />}
@@ -113,6 +141,24 @@ function CenterTab() {
           ['TEACHER', a.teacher ? `${a.teacher} (${fmt.usd(a.teacherCost)})` : 'non requis'],
           ['COST (total)', tc ? fmt.usd(tc.total) : NM],
           ['STATUS', a.accepted ? '✓ ACCEPTED' : 'ESCALATED / non accepté'],
+          [
+            'LEVEL',
+            a.level === undefined
+              ? 'N/A'
+              : `${a.level} — ${LEVELS.find((l) => l.level === a.level)?.name ?? ''}${a.champion ? ' · CHAMPION' : ''}`,
+          ],
+          ['SUPREMACY SCORE', a.supremacy == null ? 'N/A' : a.supremacy.toFixed(3)],
+          [
+            'CAPSULE CACHE',
+            a.cache
+              ? `${a.cache.hit ? 'CACHE HIT' : 'CACHE MISS'} · retrieval ${a.cache.retrievalMs} ms · compilation ${a.cache.compilationMs} ms · ${a.cache.contextBefore} → ${a.cache.contextAfter} tokens`
+              : 'N/A',
+          ],
+          [
+            'FAILURE',
+            a.failure ? `${a.failure.signature} → ${a.failure.correction} (${a.failure.outcome})` : 'aucun',
+          ],
+          ['WHY THIS MODEL?', a.why.join(' · ') || 'N/A'],
         ]
       : [];
   const num = (k: Risk) => (
@@ -171,6 +217,198 @@ function CenterTab() {
         ) : (
           <Empty>Aucune mission traitée par l’Apprentice : rien n’est affiché sans mission réelle.</Empty>
         )}
+      </Section>
+      <Section
+        title="Conditions pour devenir VALIDATED (configurables)"
+        hint="Données insuffisantes ⇒ INSUFFICIENT SAMPLE : le modèle ne peut PAS devenir VALIDATED. Réussite et qualité sont pondérées par la récence (demi-vie ci-dessous). HIGH / CRITICAL exigent plus."
+      >
+        <div className="mb-2 flex flex-wrap items-center gap-3 text-[12px]" data-testid="validation-rules">
+          {(
+            [
+              ['minMissions', 'Missions min.', 1, 1000, 1],
+              ['minFormulations', 'Formulations min.', 1, 20, 1],
+              ['maxCriticalErrors', 'Erreurs critiques max.', 0, 10, 1],
+              ['halfLifeDays', 'Demi-vie récence (jours)', 1, 365, 1],
+            ] as const
+          ).map(([k, label, mn, mx, st]) => (
+            <label key={k} className="flex items-center gap-1">
+              {label}
+              <Input
+                type="number"
+                min={mn}
+                max={mx}
+                step={st}
+                value={cur.validation[k]}
+                onChange={(e) =>
+                  set({
+                    validation: {
+                      ...cur.validation,
+                      [k]: Math.max(mn, Math.min(mx, Number(e.target.value) || mn)),
+                    },
+                  })
+                }
+                className="w-20"
+                aria-label={label}
+              />
+            </label>
+          ))}
+          {(
+            [
+              ['minSuccess', 'Réussite min.'],
+              ['minRecentSuccess', 'Réussite récente min.'],
+            ] as const
+          ).map(([k, label]) => (
+            <label key={k} className="flex items-center gap-1">
+              {label}
+              <Input
+                type="number"
+                step="0.01"
+                min={0.5}
+                max={1}
+                value={cur.validation[k]}
+                onChange={(e) =>
+                  set({
+                    validation: {
+                      ...cur.validation,
+                      [k]: Math.max(0.5, Math.min(1, Number(e.target.value) || 0.9)),
+                    },
+                  })
+                }
+                className="w-20"
+                aria-label={label}
+              />
+            </label>
+          ))}
+          <label className="flex items-center gap-1">
+            Qualité min.
+            <Input
+              type="number"
+              min={50}
+              max={100}
+              value={cur.validation.minQuality}
+              onChange={(e) =>
+                set({
+                  validation: {
+                    ...cur.validation,
+                    minQuality: Math.max(50, Math.min(100, Number(e.target.value) || 90)),
+                  },
+                })
+              }
+              className="w-20"
+              aria-label="Qualité min. validation"
+            />
+          </label>
+          <label className="flex items-center gap-1">
+            Confiance min.
+            <Select
+              value={cur.validation.minConfidence}
+              onChange={(v) =>
+                set({ validation: { ...cur.validation, minConfidence: v as 'LOW' | 'MEDIUM' | 'HIGH' } })
+              }
+              options={['LOW', 'MEDIUM', 'HIGH'].map((x) => ({ value: x, label: x }))}
+              title="Confiance min."
+            />
+          </label>
+        </div>
+        <div className="mb-2 flex flex-wrap items-center gap-3 text-[12px]">
+          HIGH : réussite ≥{' '}
+          <Input
+            type="number"
+            step="0.01"
+            value={cur.validation.high.success}
+            onChange={(e) =>
+              set({
+                validation: {
+                  ...cur.validation,
+                  high: { ...cur.validation.high, success: Number(e.target.value) || 0.95 },
+                },
+              })
+            }
+            className="w-20"
+            aria-label="HIGH réussite"
+          />{' '}
+          qualité ≥{' '}
+          <Input
+            type="number"
+            value={cur.validation.high.quality}
+            onChange={(e) =>
+              set({
+                validation: {
+                  ...cur.validation,
+                  high: { ...cur.validation.high, quality: Number(e.target.value) || 93 },
+                },
+              })
+            }
+            className="w-16"
+            aria-label="HIGH qualité"
+          />
+          CRITICAL : réussite ≥{' '}
+          <Input
+            type="number"
+            step="0.01"
+            value={cur.validation.critical.success}
+            onChange={(e) =>
+              set({
+                validation: {
+                  ...cur.validation,
+                  critical: { ...cur.validation.critical, success: Number(e.target.value) || 0.98 },
+                },
+              })
+            }
+            className="w-20"
+            aria-label="CRITICAL réussite"
+          />{' '}
+          qualité ≥{' '}
+          <Input
+            type="number"
+            value={cur.validation.critical.quality}
+            onChange={(e) =>
+              set({
+                validation: {
+                  ...cur.validation,
+                  critical: { ...cur.validation.critical, quality: Number(e.target.value) || 97 },
+                },
+              })
+            }
+            className="w-16"
+            aria-label="CRITICAL qualité"
+          />
+        </div>
+        <div className="mb-1 text-[12px] font-medium">
+          ApprenticeSupremacyScore — poids (normalisés ; qualité, réussite, fiabilité et confiance ×1,5 pour
+          HIGH / CRITICAL)
+        </div>
+        <div className="flex flex-wrap items-center gap-3 text-[12px]" data-testid="supremacy-weights">
+          {(Object.keys(DEFAULT_SUPREMACY) as (keyof typeof DEFAULT_SUPREMACY)[]).map((k) => (
+            <label key={k} className="flex items-center gap-1">
+              {k}
+              <Input
+                type="number"
+                step="0.01"
+                min={0}
+                max={1}
+                value={cur.supremacy[k]}
+                onChange={(e) =>
+                  set({
+                    supremacy: {
+                      ...cur.supremacy,
+                      [k]: Math.max(0, Math.min(1, Number(e.target.value) || 0)),
+                    },
+                  })
+                }
+                className="w-16"
+                aria-label={`Poids supremacy ${k}`}
+              />
+            </label>
+          ))}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => set({ validation: DEFAULT_VALIDATION, supremacy: DEFAULT_SUPREMACY })}
+          >
+            Valeurs par défaut
+          </Button>
+        </div>
       </Section>
       <Section
         title="Réglages"
@@ -280,11 +518,17 @@ function RegistryTab() {
   const [busy, setBusy] = useState(false);
   const [pick, setPick] = useState('');
   const pool = useMemo(() => freePool(models), [models]);
-  const validated = useMemo(
-    () => new Set(fab.profileVersions.filter((v) => v.status === 'production').map(profileKey)),
-    [fab.profileVersions],
-  );
-  const profiles = useMemo(() => buildApprenticeRegistry(log, pool, { validated }), [log, pool, validated]);
+  const profiles = useMemo(() => buildApprenticeRegistry(log, pool), [log, pool]);
+  // VALIDATED / DEGRADED come only from the validation criteria (never from a flag): best status across the model's domains.
+  const rules = apprenticeSettings().validation;
+  const matrix = useMemo(() => apprenticeMatrix(log, pool, rules), [log, pool, rules]);
+  const statusOf = (model: string): JevStatus => {
+    const cells = Object.values(matrix.cells[model] ?? {});
+    const best = cells.map((c) => c.status).sort((a, b) => STATUS_RANK[b] - STATUS_RANK[a])[0];
+    if (cells.some((c) => c.status === 'VALIDATED')) return 'VALIDATED';
+    if (cells.some((c) => c.status === 'DEGRADED')) return 'DEGRADED';
+    return best ?? profiles.find((p) => p.model === model)?.jevStatus ?? 'FREE';
+  };
   const sel = profiles.find((p) => p.model === pick) ?? profiles.find((p) => p.n > 0) ?? profiles[0];
   const policyOf = (provider: string) => fab.providerPolicies.find((p) => p.provider === provider);
   const refresh = async () => {
@@ -339,14 +583,16 @@ function RegistryTab() {
                 {p.model}
               </button>,
               'FREE',
-              <Badge key="j" tone={STATUS_TONE[p.jevStatus]}>
-                {p.jevStatus === 'ADAPTED'
+              <Badge key="j" tone={STATUS_TONE[statusOf(p.model)]}>
+                {statusOf(p.model) === 'ADAPTED'
                   ? 'JEV-ADAPTED'
-                  : p.jevStatus === 'SPECIALIST'
+                  : statusOf(p.model) === 'SPECIALIST'
                     ? 'JEV SPECIALIST'
-                    : p.jevStatus === 'VALIDATED'
-                      ? 'JEV-VALIDATED'
-                      : 'FREE'}
+                    : statusOf(p.model) === 'VALIDATED'
+                      ? 'APPRENTICE SUPREMACY · VALIDATED'
+                      : statusOf(p.model) === 'DEGRADED'
+                        ? 'DEGRADED'
+                        : 'FREE'}
               </Badge>,
               p.n,
               pct(p.successRate),
@@ -902,6 +1148,23 @@ function TraceTab() {
   return (
     <div className="space-y-3" data-testid="apprentice-trace">
       <Section
+        title="Échelle de routage (LEVEL 0 → 7)"
+        hint="Le niveau supérieur n’est utilisé que si le niveau inférieur échoue à la porte qualité ou n’est pas autorisé. L5–L7 = routage V5 existant (spécialiste payant → Model Council si activé dans Policy Engine → frontier)."
+      >
+        <ol className="text-[12.5px]" data-testid="ladder-levels">
+          {LEVELS.map((l) => (
+            <li key={l.level}>
+              LEVEL {l.level} — {l.name}
+            </li>
+          ))}
+        </ol>
+        <div className="mt-1 text-[11.5px] text-faint">
+          Règle finale : validatedApprentice.exists ∧ confidence ≥ requis ∧ quality ≥ seuil ∧ health = healthy
+          ∧ security = allowed ∧ capabilities = sufficient ∧ riskGate = PASS ⇒ APPRENTI VALIDATED ; sinon
+          routage V5 actuel.
+        </div>
+      </Section>
+      <Section
         title="Boucle cœur"
         hint="FREE-FIRST → OBSERVE → CLASSIFY → SELECT APPRENTICE → RETRIEVE SKILLS → MICRO-ADAPT → EXECUTE → VALIDATE → CORRECT → RETRY → ESCALATE IF NECESSARY → TEACH → DISTILL → UPDATE SKILL → BENCHMARK → LEARN → ROUTE BETTER NEXT TIME"
       >
@@ -1004,6 +1267,437 @@ function CostTab() {
         <div className="mt-1 text-[11.5px] text-faint">
           Échantillon minimal pour conclure : {SAMPLE_MIN} missions par groupe.
         </div>
+      </Section>
+    </div>
+  );
+}
+
+// ───────────────────────── champions, matrix, routing memory ─────────────────────────
+
+function ChampionsTab() {
+  const log = useStore((x) => x.jevLog);
+  const models = useStore((x) => x.models);
+  const fab = useStore((x) => x.fabric);
+  const pool = useMemo(() => freePool(models), [models]);
+  const s = apprenticeSettings();
+  const ch = useMemo(
+    () => championsOf(log, pool, { settings: s, versions: fab.profileVersions }),
+    [log, pool, s, fab.profileVersions],
+  );
+  const matrix = useMemo(() => apprenticeMatrix(log, pool, s.validation), [log, pool, s.validation]);
+  const mem = fab.routingMemory ?? {};
+  const fails = useMemo(() => failureStats(log), [log]);
+  const cs = capsuleCache.stats();
+  return (
+    <div className="space-y-3" data-testid="apprentice-champions">
+      <Section
+        title="APPRENTICE CHAMPIONS"
+        hint="« CURRENT CHAMPION FOR THIS TASK FAMILY » — jamais « best free model » sans famille, effectif, qualité, réussite, confiance et date. Seul le statut VALIDATED donne APPRENTICE SUPREMACY (priorité n°1 pour la famille)."
+      >
+        {ch.length ? (
+          <Table
+            testId="champions-table"
+            head={[
+              'Task family',
+              'Champion',
+              'Status',
+              'Quality',
+              'Success',
+              'n',
+              'Sample',
+              'Confidence',
+              'Latency',
+              'Total cost / mission',
+              'Fallback',
+              'Premium reference',
+              'Premium delta',
+              'Last validation',
+            ]}
+            rows={ch.map((c) => [
+              c.family,
+              c.version ? `${c.model} (${c.version})` : c.model,
+              <Badge key="s" tone={STATUS_TONE[c.status]}>
+                {c.supremacy ? 'VALIDATED · SUPREMACY' : c.status}
+              </Badge>,
+              c.quality === null ? NM : `${c.quality.toFixed(1)} %`,
+              pct(c.success),
+              c.n,
+              c.sample,
+              c.confidence,
+              fmt.ms(c.latencyMs),
+              `$0 modèle · ${fmt.usd(c.totalCost, 6)} total`,
+              c.fallback ?? '—',
+              c.premium
+                ? `${c.premium.model} (${c.premium.quality === null ? NM : `${c.premium.quality.toFixed(1)} %`}, n=${c.premium.n}, ${c.premium.sample})`
+                : 'N/A (aucune mission premium mesurée)',
+              c.premiumDelta === null
+                ? NM
+                : `${c.premiumDelta >= 0 ? '+' : ''}${c.premiumDelta.toFixed(1)} points`,
+              c.lastValidation ? new Date(c.lastValidation).toLocaleDateString('fr-FR') : 'N/A',
+            ])}
+          />
+        ) : (
+          <Empty>
+            Aucun champion : il faut des missions adaptées réelles. Rien n’est affiché sans données.
+          </Empty>
+        )}
+        {ch.some((c) => c.premiumDelta !== null) && (
+          <div className="mt-1 text-[11.5px] text-faint">
+            Les écarts sont des mesures sur cette famille, pas une équivalence : « meets task quality
+            threshold » s’affiche seulement si la porte qualité est atteinte.
+          </div>
+        )}
+      </Section>
+      <Section
+        title="APPRENTICE EXPERTISE MATRIX"
+        hint="Chaque cellule : qualité · réussite · n · confiance · statut (FREE / ADAPTED / SPECIALIST / VALIDATED / DEGRADED)."
+      >
+        {matrix.models.length ? (
+          <Table
+            testId="apprentice-matrix"
+            head={['Modèle gratuit', ...matrix.domains]}
+            rows={matrix.models.map((m) => [
+              m,
+              ...matrix.domains.map((d) => {
+                const c = matrix.cells[m]?.[d];
+                return c ? (
+                  <span key={d}>
+                    {c.quality === null ? NM : c.quality.toFixed(0)} · {pct(c.success)} · n={c.n} ·{' '}
+                    {c.confidence} <Badge tone={STATUS_TONE[c.status]}>{c.status}</Badge>
+                  </span>
+                ) : (
+                  '—'
+                );
+              }),
+            ])}
+          />
+        ) : (
+          <Empty>Matrice vide : aucune mission adaptée.</Empty>
+        )}
+      </Section>
+      <Section
+        title="MODEL ROUTING MEMORY (persistante)"
+        hint="Pour cette famille de tâches, ce modèle est historiquement le meilleur — enregistré après chaque mission."
+      >
+        {Object.keys(mem).length ? (
+          <Table
+            head={[
+              'Famille',
+              'Champion',
+              'Statut',
+              'Fallback',
+              'Référence premium',
+              'Qualité',
+              'Réussite',
+              'n',
+              'Mis à jour',
+            ]}
+            rows={Object.entries(mem).map(([f, m]) => [
+              f,
+              m.champion,
+              m.status,
+              m.fallback ?? '—',
+              m.premium ?? 'N/A',
+              m.quality === null ? NM : m.quality.toFixed(1),
+              pct(m.success),
+              m.n,
+              new Date(m.updatedAt).toLocaleString('fr-FR'),
+            ])}
+          />
+        ) : (
+          <Empty>Mémoire de routage vide.</Empty>
+        )}
+      </Section>
+      <Section
+        title="Bibliothèque d’échecs de l’Apprentice (FAILURE LEARNING)"
+        hint="Chaque échec a une signature, une correction nommée, le modèle qui a repris et l’issue."
+      >
+        {fails.length ? (
+          <Table
+            testId="apprentice-failures"
+            head={[
+              'Signature',
+              'Famille',
+              'Modèle',
+              'Occurrences',
+              'Corrigé (même modèle)',
+              'Escaladé',
+              'Non résolu',
+              'Corrections',
+            ]}
+            rows={fails.map((f) => [
+              f.signature,
+              f.family,
+              f.model,
+              f.count,
+              f.recovered,
+              f.escalated,
+              f.unresolved,
+              f.corrections.join(', '),
+            ])}
+          />
+        ) : (
+          <Empty>Aucun échec enregistré.</Empty>
+        )}
+      </Section>
+      <Section
+        title="Cache de capsules"
+        hint="family × model × profileVersion × skillHash × contextHash × toolHash. CACHE HIT / MISS comptés réellement."
+      >
+        <div className="text-[12.5px]" data-testid="apprentice-cache">
+          Entrées {cs.entries} · CACHE HIT {cs.hits} · CACHE MISS {cs.misses} · taux{' '}
+          {cs.hitRate === null ? NM : pct(cs.hitRate)}
+        </div>
+        <Button size="sm" variant="ghost" className="mt-1" onClick={() => capsuleCache.clear()}>
+          Vider le cache
+        </Button>
+      </Section>
+    </div>
+  );
+}
+
+// ───────────────────────── payback & learning graph ─────────────────────────
+
+function PaybackTab() {
+  const log = useStore((x) => x.jevLog);
+  const skills = useStore((x) => x.fabric.skills);
+  const models = useStore((x) => x.models);
+  const fab = useStore((x) => x.fabric);
+  const s = apprenticeSettings();
+  const pool = useMemo(() => freePool(models), [models]);
+  const ch = useMemo(
+    () => championsOf(log, pool, { settings: s, versions: fab.profileVersions }),
+    [log, pool, s, fab.profileVersions],
+  );
+  const lp = useMemo(() => learningPayback(log), [log]);
+  const g = useMemo(
+    () => learningGraph(log, skills as never, ch.filter((c) => c.supremacy).length),
+    [log, skills, ch],
+  );
+  const rows = ch.map((c) => ({ c, p: apprenticePayback(log, c.family, c.model) }));
+  const withTeacher = log.filter((e) => e.apprentice?.teacher);
+  return (
+    <div className="space-y-3" data-testid="apprentice-payback">
+      <Section
+        title="APPRENTICE LEARNING GRAPH"
+        hint="TEACHER → EXPERIENCE → SKILL → APPRENTICE → VALIDATION → CHAMPION → PREMIUM CALLS AVOIDED. Compteurs réels du JEV_LOG."
+      >
+        <div className="mb-2 flex flex-wrap items-center gap-1 text-[12px]">
+          {[
+            'TEACHER',
+            'EXPERIENCE',
+            'SKILL',
+            'APPRENTICE',
+            'VALIDATION',
+            'CHAMPION',
+            'PREMIUM CALLS AVOIDED',
+          ].map((x, i, a) => (
+            <span key={x} className="flex items-center gap-1">
+              <Badge>{x}</Badge>
+              {i < a.length - 1 && '→'}
+            </span>
+          ))}
+        </div>
+        <Table
+          testId="learning-graph"
+          head={[
+            'Teacher calls',
+            'Missions learned',
+            'Skills learned (from a Teacher)',
+            'Champions',
+            'Premium calls avoided',
+            'Estimated cost avoided',
+            'Quality maintained (free, accepted)',
+          ]}
+          rows={[
+            [
+              g.teacherCalls,
+              g.missionsLearned,
+              g.skillsLearned,
+              g.champions,
+              g.premiumCallsAvoided,
+              g.estimatedCostAvoided === null ? 'N/A' : fmt.usd(g.estimatedCostAvoided, 4),
+              g.qualityMaintained === null
+                ? NM
+                : `${g.qualityMaintained.toFixed(1)} (n=${g.qualityN}, ${sampleLabelOf(g.qualityN)})`,
+            ],
+          ]}
+        />
+      </Section>
+      <Section
+        title="LEARNING PAYBACK (Teacher)"
+        hint="Teacher cost vs premium calls avoided afterwards. Le coût évité est ESTIMÉ à partir du coût MESURÉ de la référence premium sur la même famille ; sans référence ou sans investissement : N/A."
+      >
+        <Table
+          testId="learning-payback"
+          head={[
+            'Teacher investment',
+            'JEV cost',
+            'Benchmark cost',
+            'Premium calls avoided',
+            'Estimated avoided cost',
+            'Net economic benefit',
+            'Learning ROI',
+          ]}
+          rows={[
+            [
+              fmt.usd(lp.total.teacherInvestment, 4),
+              fmt.usd(lp.total.jevCost, 6),
+              fmt.usd(lp.total.benchmarkCost, 4),
+              lp.total.premiumCallsAvoided,
+              lp.total.avoidedCost === null ? 'N/A' : fmt.usd(lp.total.avoidedCost, 4),
+              lp.total.netBenefit === null ? 'N/A' : fmt.usd(lp.total.netBenefit, 4),
+              lp.total.roi === null ? 'N/A' : `${lp.total.roi.toFixed(1)}x`,
+            ],
+          ]}
+        />
+        <div className="mt-1 text-[11.5px] text-faint">{lp.total.note}</div>
+      </Section>
+      <Section title="APPRENTICE PAYBACK (par champion)">
+        {rows.length ? (
+          <Table
+            head={[
+              'Famille',
+              'Apprenti',
+              'Teacher investment',
+              'JEV cost',
+              'Benchmark cost',
+              'Premium calls avoided',
+              'Estimated avoided cost',
+              'Net benefit',
+              'Note',
+            ]}
+            rows={rows.map(({ c, p }) => [
+              c.family,
+              c.model,
+              fmt.usd(p.teacherInvestment, 4),
+              fmt.usd(p.jevCost, 6),
+              fmt.usd(p.benchmarkCost, 4),
+              p.premiumCallsAvoided,
+              p.avoidedCost === null ? 'N/A' : fmt.usd(p.avoidedCost, 4),
+              p.netBenefit === null ? 'N/A' : fmt.usd(p.netBenefit, 4),
+              p.note,
+            ])}
+          />
+        ) : (
+          <Empty>Aucun champion : payback N/A.</Empty>
+        )}
+      </Section>
+      <Section
+        title="Teacher ROI (décisions enregistrées)"
+        hint="TEACH si (valeur de réutilisation future + gain immédiat) > coût du Teacher. La valeur future est une PROJECTION fondée sur la fréquence mesurée de la famille ; N/A sans données."
+      >
+        {withTeacher.length ? (
+          <Table
+            head={['Date', 'Famille', 'Teacher', 'Coût', 'Issue']}
+            rows={withTeacher
+              .slice(-10)
+              .reverse()
+              .map((e) => [
+                new Date(e.at).toLocaleString('fr-FR'),
+                e.apprentice!.family,
+                e.apprentice!.teacher,
+                fmt.usd(e.apprentice!.teacherCost, 5),
+                e.success ? 'réussi' : 'échec',
+              ])}
+          />
+        ) : (
+          <Empty>Aucun appel de Teacher : ROI N/A.</Empty>
+        )}
+        <TeacherSim />
+      </Section>
+    </div>
+  );
+}
+
+/** Interactive Teacher ROI calculator: your own inputs, labelled as a calculation (not a measurement). */
+function TeacherSim() {
+  const [cost, setCost] = useState(0.08);
+  const [gain, setGain] = useState(0.002);
+  const [fut, setFut] = useState<number | null>(null);
+  const r = teacherROI({ family: 'calcul', immediateGain: gain, teacherCost: cost, futureReuseValue: fut });
+  return (
+    <div className="mt-2 rounded-lg border border-line p-2 text-[12px]" data-testid="teacher-roi-calc">
+      <div className="mb-1 font-medium">Calculateur (vos hypothèses — pas une mesure)</div>
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-1">
+          Coût Teacher ($)
+          <Input
+            type="number"
+            step="0.01"
+            value={cost}
+            onChange={(e) => setCost(Number(e.target.value) || 0)}
+            className="w-20"
+            aria-label="Coût Teacher"
+          />
+        </label>
+        <label className="flex items-center gap-1">
+          Gain immédiat ($)
+          <Input
+            type="number"
+            step="0.001"
+            value={gain}
+            onChange={(e) => setGain(Number(e.target.value) || 0)}
+            className="w-20"
+            aria-label="Gain immédiat"
+          />
+        </label>
+        <label className="flex items-center gap-1">
+          Valeur future ($, vide = N/A)
+          <Input
+            type="number"
+            step="0.01"
+            value={fut ?? ''}
+            onChange={(e) => setFut(e.target.value === '' ? null : Number(e.target.value))}
+            className="w-24"
+            aria-label="Valeur future"
+          />
+        </label>
+      </div>
+      <div className="mt-1">
+        {r.reason}
+        {r.roi !== null ? ` — Learning ROI ${r.roi.toFixed(1)}x` : ''}
+      </div>
+    </div>
+  );
+}
+
+// ───────────────────────── demonstration (simulated) ─────────────────────────
+
+function DemoTab() {
+  const [steps, setSteps] = useState<ReturnType<typeof runSupremacyDemo> | null>(null);
+  const champ = championFor('Calcule la provision ECL IFRS9 du portefeuille');
+  return (
+    <div className="space-y-3" data-testid="apprentice-demo">
+      <Section
+        title="Démonstration reproductible : IFRS9_ANALYSIS"
+        hint={`${SIMULATED_LABEL} — les missions de cette démonstration sont des enregistrements SYNTHÉTIQUES passés dans les vrais moteurs (validation, champion, échelle de repli, apprentissage des échecs, ROI, payback). Elles ne sont jamais écrites dans le JEV_LOG réel ni présentées comme la mesure d’un vrai modèle. Pour une preuve réelle : onglet Apprentice Benchmark.`}
+      >
+        <Button size="sm" variant="primary" onClick={() => setSteps(runSupremacyDemo())}>
+          <Play size={13} /> Lancer la démonstration (0 appel, 0 $)
+        </Button>
+        <span className="ml-2 text-[12px] text-faint">
+          Champion réel actuel pour cette famille : {champ ? `${champ.model} (${champ.family})` : 'aucun'}
+        </span>
+        {steps && (
+          <ol className="mt-2 space-y-2 text-[12.5px]" data-testid="demo-steps">
+            {steps.map((st) => (
+              <li key={st.n} className="rounded-lg border border-line p-2">
+                <div className="mb-0.5 flex flex-wrap items-center gap-2 font-medium">
+                  {st.title}
+                  <Badge tone={STATUS_TONE[st.status as JevStatus] ?? 'neutral'}>{st.status}</Badge>
+                  {st.champion && <Badge tone="ok">champion : {st.champion}</Badge>}
+                  <Badge tone="neutral">{SIMULATED_LABEL}</Badge>
+                </div>
+                {st.lines.slice(1).map((l, i) => (
+                  <div key={i} className="text-muted">
+                    {l}
+                  </div>
+                ))}
+              </li>
+            ))}
+          </ol>
+        )}
       </Section>
     </div>
   );

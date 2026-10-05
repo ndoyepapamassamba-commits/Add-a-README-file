@@ -20,6 +20,28 @@ import { DEFAULT_APPRENTICE } from '../../server/jev/apprentice/types';
 import { routeFreeFirst } from '../../server/jev/apprentice/router';
 import { buildApprenticeRegistry } from '../../server/jev/apprentice/registry';
 import { LEARNING_LEVELS as LEVELS } from '../../server/jev/fabric/distill';
+import { routeApprentice, LEVELS as LADDER } from '../../server/jev/apprentice/ladder';
+import { DEFAULT_VALIDATION } from '../../server/jev/apprentice/types';
+import { designCheck as _dc } from '../../server/services/houseDesign';
+import * as V5 from '../../server/jev/science';
+import * as JEVPRE from '../../server/jev/packet';
+import * as FAB_REG from '../../server/jev/fabric/registry';
+import * as FAB_COUNCIL from '../../server/jev/fabric/council';
+import * as FAB_SEC from '../../server/jev/fabric/security';
+import * as FAB_MEM from '../../server/jev/fabric/memory';
+import * as FAB_SKILLS from '../../server/jev/fabric/skills';
+import * as FAB_BENCH from '../../server/jev/fabric/cfbench';
+import * as FAB_DISTILL from '../../server/jev/fabric/distill';
+import * as APP_SUP from '../../server/jev/apprentice/supremacy';
+import * as APP_METRICS from '../../server/jev/apprentice/metrics';
+import * as APP_TEACHER from '../../server/jev/apprentice/teacher';
+import * as APP_PAYBACK from '../../server/jev/apprentice/payback';
+import * as APP_FAIL from '../../server/jev/apprentice/failure';
+import * as APP_ROUTER from '../../server/jev/apprentice/router';
+import * as JEVLOG from '../../server/jev/metrics';
+import * as HOUSE from '../../server/services/houseStyle';
+import * as DOCX from '../../server/services/officeCore';
+import * as ENGINE_DECISION from '../../server/engine/decision';
 
 export type Verdict = 'PASS' | 'FAIL' | 'WARN';
 export interface Check {
@@ -38,12 +60,106 @@ const guard = (group: string, name: string, f: () => [Verdict, string]): Check =
   }
 };
 
+/** Existing modules that must never disappear (V5 → Fabric → Apprentice → Supremacy → exports). */
+const REQUIRED: [string, string, unknown][] = [
+  ['V5', 'science.analyze', V5.analyze],
+  ['V5', 'science.pairUp', V5.pairUp],
+  ['JEV', 'packet.jevPre', JEVPRE.jevPre],
+  ['JEV_LOG', 'metrics.toCsv', JEVLOG.toCsv],
+  ['Routing', 'engine.decideRoute', ENGINE_DECISION.decideRoute],
+  ['Routing', 'engine.cascadeNext', ENGINE_DECISION.cascadeNext],
+  ['Fabric', 'registry.selectCapabilities', FAB_REG.selectCapabilities],
+  ['Free Model Lab', 'council.freePool', FAB_COUNCIL.freePool],
+  ['Free Model Lab', 'council.tournament', FAB_COUNCIL.tournament],
+  ['Council', 'council.planCouncil', FAB_COUNCIL.planCouncil],
+  ['Security', 'security.checkProvider', FAB_SEC.checkProvider],
+  ['Security', 'security.classifyData', FAB_SEC.classifyData],
+  ['Memory', 'memory.findSimilar', FAB_MEM.findSimilar],
+  ['Memory', 'memory.failureLibrary', FAB_MEM.failureLibrary],
+  ['Skills', 'skills.mineCandidates', FAB_SKILLS.mineCandidates],
+  ['Skills', 'skills.promotionDecision', FAB_SKILLS.promotionDecision],
+  ['Benchmark', 'cfbench.cfBenchTasks', FAB_BENCH.cfBenchTasks],
+  ['Benchmark', 'cfbench.analyzeArms', FAB_BENCH.analyzeArms],
+  ['Benchmark', 'apprentice.analyzeApprentice', APP_METRICS.analyzeApprentice],
+  ['Distillation', 'distill.buildDataset', FAB_DISTILL.buildDataset],
+  ['Apprentice', 'router.routeFreeFirst', APP_ROUTER.routeFreeFirst],
+  ['Apprentice', 'ladder.routeApprentice', routeApprentice],
+  ['Apprentice', 'supremacy.getValidatedApprentice', APP_SUP.getValidatedApprentice],
+  ['Fallback', 'router.FallbackController', APP_ROUTER.FallbackController],
+  ['Teacher', 'teacher.teacherGate', APP_TEACHER.teacherGate],
+  ['Teacher', 'payback.teacherROI', APP_PAYBACK.teacherROI],
+  ['Apprentice', 'failure.failureSignatureOf', APP_FAIL.failureSignatureOf],
+  ['Exports', 'houseXlsx', HOUSE.houseXlsx],
+  ['Exports', 'markdownToDocx', DOCX.markdownToDocx],
+  ['Exports', 'housePptx', housePptx],
+];
+
 export function fabricRegression(): Check[] {
   const inv = regressionReport();
   const fake = {
     fabric: { kind: 'cfbench', arm: 'fabric', groupId: 'g', taskKey: 't', category: 'simple', models: ['m'] },
   } as unknown as JevLogEntry;
+  const missing = REQUIRED.filter(([, , fn]) => typeof fn !== 'function');
   return [
+    guard(
+      'INVENTAIRE',
+      `Modules existants conservés (${REQUIRED.length} fonctions : V5, JEV, Fabric, Free Model Lab, Council, Security, Memory, Skills, Benchmark, Apprentice, Teacher, Exports, JEV_LOG, Fallback, Routing)`,
+      () => [
+        missing.length === 0 ? 'PASS' : 'FAIL',
+        missing.length
+          ? `disparu : ${missing.map(([g, n]) => `${g}/${n}`).join(', ')}`
+          : 'aucun module disparu',
+      ],
+    ),
+    guard('SUPREMACY', 'Échelle de routage L0–L7 complète', () => [
+      LADDER.length === 8 ? 'PASS' : 'FAIL',
+      `${LADDER.length} niveaux`,
+    ]),
+    guard(
+      'SUPREMACY',
+      'Seuils de validation par défaut (10 missions, 3 formulations, 90 %, qualité 90, 0 erreur critique, récent 85 %)',
+      () => [
+        DEFAULT_VALIDATION.minMissions === 10 &&
+        DEFAULT_VALIDATION.minFormulations === 3 &&
+        DEFAULT_VALIDATION.minSuccess === 0.9 &&
+        DEFAULT_VALIDATION.minQuality === 90 &&
+        DEFAULT_VALIDATION.maxCriticalErrors === 0 &&
+        DEFAULT_VALIDATION.minRecentSuccess === 0.85
+          ? 'PASS'
+          : 'FAIL',
+        'valeurs par défaut conformes',
+      ],
+    ),
+    guard('SUPREMACY', 'Sans données : aucun champion, aucune validation, route V5 si désactivé', () => {
+      const p = routeApprentice({
+        dna: {
+          task_type: 'data',
+          task_family: 'data:x',
+          difficulty: 0.2,
+          risk: 'low',
+          ambiguity: 0,
+          language: 'fr',
+          domain: 'x',
+          expected_output: 't',
+          success_criteria: [],
+          tool_requirements: [],
+          context_size: 10,
+          reasoning_requirement: false,
+          structured_output_requirement: false,
+          freshness_requirement: false,
+          latency_requirement: 'low',
+          cost_constraint: 'low',
+          quality_threshold: 0.85,
+        },
+        profiles: [],
+        pool: [],
+        log: [],
+      });
+      return [
+        !p.use && p.route === 'v5' && p.champion === null ? 'PASS' : 'FAIL',
+        'disabled → V5 ; aucun champion inventé',
+      ];
+    }),
     guard('DESIGN', 'Charte d’export verrouillée : signature conforme et valeurs figées', () => {
       const c = designCheck();
       return [
@@ -78,6 +194,7 @@ export function fabricRegression(): Check[] {
           context_size: 50,
           reasoning_requirement: false,
           structured_output_requirement: false,
+          freshness_requirement: false,
           latency_requirement: 'low',
           cost_constraint: 'low',
           quality_threshold: 0.85,

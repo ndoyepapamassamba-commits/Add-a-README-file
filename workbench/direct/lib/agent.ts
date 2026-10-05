@@ -837,20 +837,27 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     }
     if (apprentice && !apprentice.forced) {
       const cap = apprentice.capsule;
+      const sp = apprentice.plan as import('../../server/jev/apprentice/ladder').SupremacyPlan;
+      const title = !apprentice.plan.use
+        ? 'JEV Apprentice — route gratuite non utilisée'
+        : sp.route === 'validated'
+          ? 'JEV Apprentice — FREE APPRENTICE SELECTED (VALIDATED)'
+          : sp.route === 'specialist'
+            ? 'JEV Apprentice — FREE SPECIALIST SELECTED'
+            : 'JEV Apprentice — FREE-FIRST actif';
       push(sid, {
         kind: 'intel',
         id: uid(),
-        title: apprentice.plan.use
-          ? 'JEV Apprentice — FREE-FIRST actif'
-          : 'JEV Apprentice — route gratuite non utilisée',
+        title,
         tone: apprentice.plan.use ? 'ok' : 'info',
         lines: apprentice.plan.use
           ? [
-              `Apprenti : ${apprentice.plan.chosen?.id} · tâche ${apprentice.dna.task_family} · seuil qualité ${Math.round(apprentice.dna.quality_threshold * 100)} %`,
-              `Réussite prévue ${Math.round((apprentice.plan.predictedSuccess ?? 0) * 100)} % (${apprentice.plan.chosen?.predictedBasis}) · confiance ${apprentice.plan.confidence}`,
+              `WHY THIS MODEL ? ${apprentice.plan.chosen?.id} — niveau ${sp.level ?? 3} · tâche ${apprentice.dna.task_family} · seuil qualité ${Math.round(apprentice.dna.quality_threshold * 100)} %`,
+              ...(sp.explain ?? []).slice(0, 8),
+              `Réussite prévue ${Math.round((apprentice.plan.predictedSuccess ?? 0) * 100)} % · confiance ${apprentice.plan.confidence}`,
               ...(cap
                 ? [
-                    `ADAPTATION (inference-time, aucun poids modifié) : ${cap.adaptationMs} ms · ${cap.tokensAdded} tokens ajoutés (estimés) · ${cap.skills.length} skill(s) · ${cap.experiences} expérience(s) · ${cap.toolsExposed} outil(s) exposé(s)${cap.contextReduction === null ? '' : ` · contexte −${Math.round(cap.contextReduction * 100)} %`}`,
+                    `ADAPTATION (inference-time, aucun poids modifié) : ${cap.adaptationMs} ms (récupération ${cap.retrievalMs} + compilation ${cap.compilationMs}) · ${cap.cacheHit ? 'CACHE HIT' : 'CACHE MISS'} · ${cap.tokensAdded} tokens ajoutés (estimés) · ${cap.skills.length} skill(s) · ${cap.experiences} expérience(s) · ${cap.toolsExposed} outil(s) exposé(s)${cap.contextReduction === null ? '' : ` · contexte −${Math.round(cap.contextReduction * 100)} %`}`,
                   ]
                 : []),
               `Repli automatique : ${apprentice.plan.attempts.map((a) => a.label).join(' → ')}`,
@@ -1701,11 +1708,20 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
               corrections++;
               corrAdded = true;
               discardedTokens += r.usage.completionTokens;
-              const fails = q.result.failures.map((f) => `- ${f.what} [${f.locus}]`).join('\n');
-              notes.push(
-                q.correct ??
-                  `[QUALITY GATE] Your answer scored ${q.result.score}/100, below the ${Math.round(apprentice.dna.quality_threshold * 100)} required. Fix precisely:\n${fails || '- completeness and instruction following'}\nThen give the final answer again.`,
-              );
+              // Failure learning: a signature and a NAMED targeted correction (never a blind retry).
+              const fl = apprenticeRt.recordFailure(apprentice, q.result.failures, q.result.score, model);
+              notes.push(q.correct ? `${q.correct}\n[${fl.signature} · ${fl.correction}]` : fl.message);
+              push(sid, {
+                kind: 'intel',
+                id: uid(),
+                title: `APPRENTICE FAILED — ${fl.signature}`,
+                tone: 'warn',
+                lines: [
+                  `Failure : ${fl.signature}`,
+                  `Correction : ${fl.correction}`,
+                  `Retry : ${g.next.kind === 'free_correction' ? model : (g.switchTo ?? model)} (${g.next.label})`,
+                ],
+              });
               if (g.switchTo) {
                 const from = model;
                 model = g.switchTo;

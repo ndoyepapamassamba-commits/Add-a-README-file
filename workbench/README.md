@@ -245,3 +245,5 @@ Couche additive au-dessus de JEV V5 (registre de capacités, Skill Factory, Mode
 ## JEV Apprentice (free-first) et charte d'export verrouillée
 
 [docs/JEV-APPRENTICE.md](docs/JEV-APPRENTICE.md) : modèle gratuit en premier, porte qualité stricte, repli automatique vers V5, adaptation à l'inférence (aucun poids modifié). [docs/CHARTE-EXPORT.md](docs/CHARTE-EXPORT.md) : design d'export verrouillé (Excel, Word, PowerPoint, PDF, mail).
+
+[docs/JEV-APPRENTICE-SUPREMACY.md](docs/JEV-APPRENTICE-SUPREMACY.md) : apprenti VALIDATED en priorité n°1, champions par famille, validation statistique, dégradation, Teacher ROI, payback, repli intelligent.

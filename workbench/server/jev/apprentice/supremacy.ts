@@ -394,7 +394,6 @@ const matchOf = (dna: TaskDNA, fam: string): { m: ApprenticeCandidate['match']; 
   if (fam === dna.task_family) return { m: 'family', v: 1 };
   const [t, d] = fam.split(':');
   if (d && d === dna.domain && d !== t) return { m: 'domain', v: 0.6 };
-  if (t === dna.task_type && false) return { m: 'type', v: 0.3 };
   return null;
 };
 

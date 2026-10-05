@@ -21,6 +21,8 @@ export interface FabricState {
   providerPolicies: ProviderPolicy[];
   /** JEV Apprentice adaptation profile versions (model × task family). */
   profileVersions: ProfileVersion[];
+  /** Model routing memory: per task family, champion / fallback / premium reference (persistent). */
+  routingMemory?: Record<string, import('./apprentice').RoutingMemoryEntry>;
 }
 export const EMPTY_FABRIC: FabricState = {
   skills: [],
