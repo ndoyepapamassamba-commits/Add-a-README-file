@@ -54,6 +54,7 @@ import {
   SecurityPanel,
 } from './JevFabric2';
 import { fabricRegression } from '../lib/fabricRegression';
+import { ApprenticePanel } from './JevApprentice';
 
 type Tab = 'dash' | 'trace' | 'log' | 'kpi' | 'science' | 'bench' | 'models' | 'costs' | 'api' | 'regression';
 const TABS: { id: Tab; label: string }[] = [
@@ -69,6 +70,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'regression', label: 'Régression' },
 ];
 type FTab =
+  | 'apprentice'
   | 'mission'
   | 'council'
   | 'expertise'
@@ -85,6 +87,7 @@ type FTab =
   | 'health'
   | 'cfbench';
 const FTABS: { id: FTab; label: string }[] = [
+  { id: 'apprentice', label: 'JEV APPRENTICE' },
   { id: 'mission', label: 'Mission cognitive' },
   { id: 'council', label: 'Model Council' },
   { id: 'expertise', label: 'Model Expertise' },
@@ -147,6 +150,7 @@ export function JevView() {
       <div className="px-5 pt-1 text-[10.5px] uppercase tracking-wide text-faint">Cognitive Super-Fabric</div>
       <Tabs tabs={FTABS} value={ftab ?? ('' as FTab)} onChange={setFtab} className="overflow-x-auto px-5" />
       <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
+        {ftab === 'apprentice' && <ApprenticePanel />}
         {ftab === 'mission' && <MissionPanel />}
         {ftab === 'council' && <CouncilPanel />}
         {ftab === 'expertise' && <ExpertisePanel />}

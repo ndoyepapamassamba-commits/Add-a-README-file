@@ -12,14 +12,22 @@ import type { LiveCheckpoint, MissionState } from '../../server/jev/live';
 import type { FabricSkill } from '../../server/jev/fabric/skills';
 import type { Policy } from '../../server/jev/fabric/learning';
 import type { ProviderPolicy } from '../../server/jev/fabric/security';
+import type { ProfileVersion } from '../../server/jev/apprentice/versions';
 
 /** Persistent state of the Cognitive Fabric (skills with their versions, learned policies, provider policies). */
 export interface FabricState {
   skills: FabricSkill[];
   policies: Policy[];
   providerPolicies: ProviderPolicy[];
+  /** JEV Apprentice adaptation profile versions (model × task family). */
+  profileVersions: ProfileVersion[];
 }
-export const EMPTY_FABRIC: FabricState = { skills: [], policies: [], providerPolicies: [] };
+export const EMPTY_FABRIC: FabricState = {
+  skills: [],
+  policies: [],
+  providerPolicies: [],
+  profileVersions: [],
+};
 
 /** Live JEV state of a session (Control Center + resume after an interruption). */
 export interface JevLiveSnapshot {

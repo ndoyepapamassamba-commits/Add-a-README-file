@@ -9,6 +9,8 @@ import type { QualityVector } from '../../server/jev/qa';
 import type { CfTask } from '../../server/jev/fabric/cfbench';
 import type { FabricSkill, SkillVersion } from '../../server/jev/fabric/skills';
 import type { FabricTag } from '../../server/jev/fabric/types';
+import type { ApprenticeRunOpts } from './apprentice';
+import type { ApprenticeArm } from '../../server/jev/apprentice/types';
 
 export interface RunControl {
   stop: boolean;
@@ -40,7 +42,9 @@ function resetWorkspace(t: CfTask, baseline: Set<string>): void {
   for (const [p, c] of Object.entries(t.files ?? {})) writeText(p, c);
 }
 
-interface OneRun {
+export interface OneRun {
+  /** JEV Apprentice benchmark arm (ablation of the free-first adaptation). */
+  apprentice?: ApprenticeRunOpts;
   task: CfTask;
   model: string;
   variant: JevVariant;
@@ -56,7 +60,7 @@ interface OneRun {
 }
 
 /** One pinned-model run of a task; patches the log with the ground truth. */
-async function runOne(o: OneRun): Promise<TaskRun> {
+export async function runOne(o: OneRun): Promise<TaskRun> {
   resetWorkspace(o.task, o.baseline);
   const st = useStore.getState();
   const s = st.newSession(false);
@@ -67,6 +71,7 @@ async function runOne(o: OneRun): Promise<TaskRun> {
     bench: o.task.key,
     rep: o.rep,
     fabric: { ...o.fabric, tag: o.tag, capture: true },
+    apprentice: o.apprentice,
     experiment: {
       experimentId: o.experimentId,
       groupId: o.groupId,
@@ -86,22 +91,30 @@ async function runOne(o: OneRun): Promise<TaskRun> {
     const e = log[idx]!;
     const vec = e.qualityVector as unknown as QualityVector | undefined;
     const withTruth = vec ? { ...vec, correctness: ok ? 1 : 0 } : null;
+    const q = withTruth ? qualityScore(withTruth) : ok ? (e.qualityMeasured ?? null) : 0;
     const next = [...log];
     next[idx] = {
       ...e,
       success: ok,
       bench: o.task.key,
       qualityVector: withTruth ?? e.qualityVector,
-      qualityMeasured: withTruth ? qualityScore(withTruth) : ok ? (e.qualityMeasured ?? null) : 0,
+      qualityMeasured: q,
       qualitySource: 'local-qa+ground-truth',
+      apprentice: e.apprentice
+        ? {
+            ...e.apprentice,
+            gateScore: q === null ? null : q / 100,
+            accepted: ok && q !== null && q / 100 >= e.apprentice.threshold,
+          }
+        : undefined,
     };
     useStore.getState().setJevLog(next);
   }
   return { key: o.task.key, ok, session: s.id, groupId: o.groupId, arm: o.tag.arm ?? '' };
 }
 
-const snapshot = () => new Set(Object.keys(useStore.getState().files));
-const expId = (p: string) => `${p}-${Date.now().toString(36)}`;
+export const snapshot = () => new Set(Object.keys(useStore.getState().files));
+export const expId = (p: string) => `${p}-${Date.now().toString(36)}`;
 
 // ───────────────────────── cognitive fabric benchmark: baseline / v5 / fabric ─────────────────────────
 
@@ -253,6 +266,66 @@ export async function runSkillTest(
             taskIndex: ti,
             baseline,
             label: `skill ${arm === 'with_skill' ? 'avec' : 'sans'}`,
+          }),
+        );
+      }
+    }
+  return out;
+}
+
+// ───────────────────────── JEV apprentice demo: free / free+JEV / +skill / +experience / premium ─────────────────────────
+
+export interface ApprenticeDemoOptions {
+  tasks: CfTask[];
+  reps: number;
+  freeModel: string;
+  paidModel: string;
+}
+const DEMO_ARMS: { arm: ApprenticeArm; variant: JevVariant }[] = [
+  { arm: 'free', variant: 'off' },
+  { arm: 'free_jev', variant: 'full' },
+  { arm: 'free_skill', variant: 'full' },
+  { arm: 'free_skill_exp', variant: 'full' },
+  { arm: 'paid', variant: 'off' },
+];
+/** Same task, same workspace, shuffled order: free model alone, +JEV capsule, +skills, +experience, premium reference. */
+export async function runApprenticeDemo(
+  o: ApprenticeDemoOptions,
+  progress: Progress,
+  ctl: RunControl,
+): Promise<TaskRun[]> {
+  const experimentId = expId('APPR');
+  const baseline = snapshot();
+  const out: TaskRun[] = [];
+  for (let rep = 1; rep <= o.reps; rep++)
+    for (const [ti, task] of o.tasks.entries()) {
+      const groupId = `${experimentId}:${task.key}:${rep}`;
+      for (const [order, a] of shuffle(DEMO_ARMS).entries()) {
+        if (ctl.stop) return out;
+        const model = a.arm === 'paid' ? o.paidModel : o.freeModel;
+        progress(`${task.key} — ${a.arm} · ${model} (répétition ${rep}/${o.reps})…`);
+        out.push(
+          await runOne({
+            task,
+            model,
+            variant: a.variant,
+            fabric: { on: false },
+            apprentice: { arm: a.arm },
+            tag: {
+              kind: 'apprentice',
+              arm: a.arm,
+              groupId,
+              taskKey: task.key,
+              category: task.category,
+              models: [o.freeModel, o.paidModel],
+            },
+            experimentId,
+            groupId,
+            rep,
+            order,
+            taskIndex: ti,
+            baseline,
+            label: `apprenti ${a.arm}`,
           }),
         );
       }

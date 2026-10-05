@@ -5,7 +5,7 @@ import type { JevLogEntry } from '../metrics';
 import { economicGovernor, type GovMode, type GovernorDecision } from '../fabric/learning';
 import { qualityOfEntry } from '../fabric/memory';
 import type { FabricSkill } from '../fabric/skills';
-import { isFreeId, familyOf } from './registry';
+import { isFreeId, familyOf, freeOutcome } from './registry';
 
 export interface TeacherCandidate {
   id: string;
@@ -152,14 +152,12 @@ export function teacherValue(log: JevLogEntry[]): TeacherValue[] {
     const deltas: number[] = [];
     for (const fam of new Set(es.map((e) => e.apprentice!.family))) {
       const t0 = Math.min(...es.filter((e) => e.apprentice!.family === fam).map((e) => e.at));
-      const app = log.filter(
-        (e) =>
-          e.apprentice?.active &&
-          !e.apprentice.teacher &&
-          isFreeId(e.model) &&
-          familyOf(e) === fam &&
-          e.success !== null,
-      );
+      const app = log
+        .filter(
+          (e) => e.apprentice?.active && !e.apprentice.teacher && isFreeId(e.model) && familyOf(e) === fam,
+        )
+        .map(freeOutcome)
+        .filter((e) => e.success !== null);
       const before = app.filter((e) => e.at < t0);
       const after = app.filter((e) => e.at > t0);
       if (before.length >= 2 && after.length >= 2) {

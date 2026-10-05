@@ -22,6 +22,16 @@ const RL = /429|rate.?limit|quota|too many|surcharg/i;
 
 export const isFreeId = (id: string) => /:free$/.test(id);
 export const SAMPLE_MIN = 5;
+
+/**
+ * What the FREE model itself achieved. When the mission was handed to another model (quality gate failed, rate limit…),
+ * the final success belongs to that other model: the free model counts as a failure and its quality is not credited.
+ */
+export function freeOutcome(e: JevLogEntry): JevLogEntry {
+  const a = e.apprentice;
+  if (!a || !a.active || a.path.length < 2 || a.arm) return e;
+  return { ...e, success: false, quality: null, qualityMeasured: null };
+}
 export const confidenceLevel = (n: number, successRate: number | null): Confidence =>
   n < 3 || successRate === null ? 'LOW' : n < 8 || successRate < 0.8 ? 'MEDIUM' : 'HIGH';
 
@@ -199,13 +209,15 @@ export function buildApprenticeRegistry(
   o: RegistryOptions = {},
 ): ApprenticeProfile[] {
   const ids = new Set([...pool.map((p) => p.id), ...(o.extraFree ?? [])]);
-  const runs = log.filter(
-    (e) =>
-      e.model &&
-      e.model !== 'JEV-0' &&
-      (ids.has(e.model) || isFreeId(e.model)) &&
-      e.apprentice?.arm !== 'paid',
-  );
+  const runs = log
+    .filter(
+      (e) =>
+        e.model &&
+        e.model !== 'JEV-0' &&
+        (ids.has(e.model) || isFreeId(e.model)) &&
+        e.apprentice?.arm !== 'paid',
+    )
+    .map(freeOutcome);
   const matrix = MASSAMBA_MODEL_EXPERTISE_MATRIX(runs);
   const all = new Set([...ids, ...runs.map((e) => e.model)]);
   return [...all].map((model) => {

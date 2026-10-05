@@ -4,7 +4,11 @@ import type { FreeModel } from '../../server/jev/fabric/council';
 import type { ApprenticeTag } from '../../server/jev/apprentice/types';
 import { DEFAULT_APPRENTICE, type ApprenticeSettings } from '../../server/jev/apprentice/types';
 import { freeEligibility, taskDnaOf } from '../../server/jev/apprentice/dna';
-import { buildApprenticeRegistry, detectDegradation } from '../../server/jev/apprentice/registry';
+import {
+  buildApprenticeRegistry,
+  detectDegradation,
+  freeOutcome,
+} from '../../server/jev/apprentice/registry';
 import {
   FallbackController,
   apprenticeAnswerScore,
@@ -683,5 +687,40 @@ describe('Apprentice — cost, benchmark, honesty', () => {
       }),
     ).flat();
     expect(referenceStatement(analyzeApprentice(log))).toMatch(/INSUFFICIENT SAMPLE/);
+  });
+});
+
+describe('Apprentice — honest attribution', () => {
+  it('a mission handed to another model counts as a FAILURE of the free model (its quality is not credited)', () => {
+    const e = entry({
+      model: 'g/gemma:free',
+      ok: true,
+      quality: 95,
+      apprentice: tag({ path: ['g/gemma:free', 'big/premium'], accepted: false }),
+    });
+    const adj = freeOutcome(e);
+    expect(adj.success).toBe(false);
+    expect(adj.qualityMeasured).toBeNull();
+    const reg = buildApprenticeRegistry(
+      many(6, () =>
+        entry({
+          model: 'g/gemma:free',
+          ok: true,
+          quality: 95,
+          apprentice: tag({ path: ['g/gemma:free', 'big/premium'], accepted: false }),
+        }),
+      ),
+      pool,
+    );
+    expect(reg.find((p) => p.model === 'g/gemma:free')!.successRate).toBe(0);
+    expect(reg.find((p) => p.model === 'g/gemma:free')!.quality).toBeNull();
+  });
+  it('benchmark arms are never rewritten', () => {
+    const e = entry({
+      model: 'g/gemma:free',
+      ok: true,
+      apprentice: tag({ arm: 'free_jev', path: ['g/gemma:free', 'x'] }),
+    });
+    expect(freeOutcome(e)).toBe(e);
   });
 });

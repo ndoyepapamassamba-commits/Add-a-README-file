@@ -241,3 +241,7 @@ Derrière un reverse proxy (HTTPS), gardez `WORKBENCH_AUTH_TOKEN` long et secret
 ## JEV Cognitive Super-Fabric (Phase 2)
 
 Couche additive au-dessus de JEV V5 (registre de capacités, Skill Factory, Model Council, mémoire d'expérience, distillation, politiques, sécurité, benchmark cognitif). Désactivée par défaut, aucune donnée fabriquée. Voir [docs/JEV-FABRIC.md](docs/JEV-FABRIC.md).
+
+## JEV Apprentice (free-first) et charte d'export verrouillée
+
+[docs/JEV-APPRENTICE.md](docs/JEV-APPRENTICE.md) : modèle gratuit en premier, porte qualité stricte, repli automatique vers V5, adaptation à l'inférence (aucun poids modifié). [docs/CHARTE-EXPORT.md](docs/CHARTE-EXPORT.md) : design d'export verrouillé (Excel, Word, PowerPoint, PDF, mail).

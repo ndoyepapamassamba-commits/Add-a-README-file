@@ -49,6 +49,7 @@ import { compilePrompt, compileSkill } from '../../server/jev/prompt';
 import { acct } from './acct';
 import { redact } from '../../server/jev/provider';
 import * as fabricRt from './fabric';
+import * as apprenticeRt from './apprentice';
 import type { DataClass, FabricTag } from '../../server/jev/fabric/types';
 import type { SkillVersion } from '../../server/jev/fabric/skills';
 import { accountingOf, hashText, type CallKind, type CallRec } from '../../server/jev/science';
@@ -338,6 +339,8 @@ interface LoopResult {
   toolErrors?: string[];
   /** Capability ids actually offered to the model at the end of the run. */
   offered?: string[];
+  /** JEV Apprentice: free-first record of the run (undefined when it did not take part). */
+  apprenticeInfo?: { prep: apprenticeRt.ApprenticePrep; models: string[] };
   /** Cognitive Fabric: what it decided for this run (null when it did not take part). */
   fabricInfo?: {
     active: boolean;
@@ -392,6 +395,8 @@ export interface FabricRunOpts {
   capture?: boolean;
 }
 let fabricRun: FabricRunOpts | null = null;
+/** JEV Apprentice benchmark arm of the current run (set by runAgent). */
+let apprenticeRun: apprenticeRt.ApprenticeRunOpts | null = null;
 const fabricActive = () =>
   fabricRun?.on ?? (fabricRun?.arm ? fabricRun.arm === 'fabric' : fabricRt.fabricSettings().enabled);
 /** Metadata of a paired experiment run (set by the benchmark). */
@@ -802,6 +807,58 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       fabricPrep = null;
     }
   }
+  // ── JEV APPRENTICE (free-first): Task DNA → eligibility → free model → micro-adaptation. Off → V5 untouched. ──
+  let apprentice: apprenticeRt.ApprenticePrep | null = null;
+  if (top && !inp.mission && !inp.plan && (jp || apprenticeRun?.arm)) {
+    try {
+      apprentice = apprenticeRt.prepareApprentice({
+        text: inp.text,
+        attachments: inp.attachments.map((a) => a.name),
+        taskType: profile.type,
+        difficulty: profile.difficulty,
+        criticality: dna.criticality,
+        tools: tools.map((t) => t.name),
+        hasImages,
+        avoid: fabricPrep?.hints.avoidModels ?? [],
+        v5Model: sel.model,
+        v5Ladder: [sel.model, ...routedFallbacks],
+        userPinned: !sel.auto && !apprenticeRun?.arm,
+        run: apprenticeRun ?? undefined,
+      });
+    } catch {
+      // The Apprentice must never block the Workbench: any failure falls back to the V5 routing.
+      apprentice = null;
+    }
+    if (apprentice?.plan.use && !apprentice.forced && apprentice.plan.chosen) {
+      const c = apprentice.plan.chosen;
+      sel.model = c.id;
+      sel.reason = `JEV Apprentice (free-first) : ${apprentice.plan.reason}`;
+      routedFallbacks = apprentice.ladder;
+    }
+    if (apprentice && !apprentice.forced) {
+      const cap = apprentice.capsule;
+      push(sid, {
+        kind: 'intel',
+        id: uid(),
+        title: apprentice.plan.use
+          ? 'JEV Apprentice — FREE-FIRST actif'
+          : 'JEV Apprentice — route gratuite non utilisée',
+        tone: apprentice.plan.use ? 'ok' : 'info',
+        lines: apprentice.plan.use
+          ? [
+              `Apprenti : ${apprentice.plan.chosen?.id} · tâche ${apprentice.dna.task_family} · seuil qualité ${Math.round(apprentice.dna.quality_threshold * 100)} %`,
+              `Réussite prévue ${Math.round((apprentice.plan.predictedSuccess ?? 0) * 100)} % (${apprentice.plan.chosen?.predictedBasis}) · confiance ${apprentice.plan.confidence}`,
+              ...(cap
+                ? [
+                    `ADAPTATION (inference-time, aucun poids modifié) : ${cap.adaptationMs} ms · ${cap.tokensAdded} tokens ajoutés (estimés) · ${cap.skills.length} skill(s) · ${cap.experiences} expérience(s) · ${cap.toolsExposed} outil(s) exposé(s)${cap.contextReduction === null ? '' : ` · contexte −${Math.round(cap.contextReduction * 100)} %`}`,
+                  ]
+                : []),
+              `Repli automatique : ${apprentice.plan.attempts.map((a) => a.label).join(' → ')}`,
+            ]
+          : [apprentice.plan.reason],
+      });
+    }
+  }
   const fallbackChain = [
     ...new Set([st.settings.fallbackModel, ...routedFallbacks].filter((m) => m && m !== sel.model)),
   ];
@@ -945,6 +1002,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
             : ''
         : '',
     },
+    { name: 'apprentice', text: apprenticeRt.capsuleText(apprentice) },
     { name: 'skills', text: skillsPrompt(engineSkills) },
     { name: 'packet', text: jp ? packetPrompt(jp.pre) : '' },
     { name: 'memory', text: MEMORY_INSTRUCTIONS },
@@ -1289,6 +1347,11 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     }
   };
   const ws = useStore.getState().settings;
+  // JEV Apprentice: one gate pass per fallback attempt (FREE → correction → other FREE → V5); otherwise V5's two passes.
+  const gateLimit =
+    apprentice && !apprentice.forced && apprentice.plan.use
+      ? Math.max(2, apprentice.plan.attempts.length)
+      : 2;
   let nudged = false;
   let continuations = 0;
 
@@ -1566,7 +1629,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
             .filter((l) => /^\s*(\d+[.)]|[-*])\s+/.test(l))
             .map((l) => l.replace(/^\s*(\d+[.)]|[-*])\s+/, '')),
         };
-      } else if (top && !inp.mission && gates < 2 && (shadow || strategy?.verify.evidence || jp)) {
+      } else if (top && !inp.mission && gates < gateLimit && (shadow || strategy?.verify.evidence || jp)) {
         // Delivery gates: unverified claims (shadow) and figures without evidence.
         gates++;
         shadow?.observeFinal(r.content);
@@ -1623,7 +1686,64 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
           });
           if (retryCp) liveSync();
           live?.setQuality(q.result.score);
-          if (q.correct && !unsupported.length && variant === 'full') {
+          // JEV APPRENTICE QUALITY GATE: ACCEPT, or targeted correction → other free model → V5 (automatic).
+          let gated = false;
+          if (apprentice && !apprentice.forced && apprentice.plan.use) {
+            const g = apprenticeRt.applyGate(
+              apprentice,
+              q.result.score,
+              q.result.failures.filter((f) => f.blocking).length,
+            );
+            traceAdd({ name: 'JEV_QA', ms: 0, tokens: 0, cost: 0, decision: g.message });
+            if (g.verdict === 'ACCEPT' || g.final) gated = true;
+            else if (g.verdict === 'CORRECT' && !unsupported.length) {
+              gated = true;
+              corrections++;
+              corrAdded = true;
+              discardedTokens += r.usage.completionTokens;
+              const fails = q.result.failures.map((f) => `- ${f.what} [${f.locus}]`).join('\n');
+              notes.push(
+                q.correct ??
+                  `[QUALITY GATE] Your answer scored ${q.result.score}/100, below the ${Math.round(apprentice.dna.quality_threshold * 100)} required. Fix precisely:\n${fails || '- completeness and instruction following'}\nThen give the final answer again.`,
+              );
+              if (g.switchTo) {
+                const from = model;
+                model = g.switchTo;
+                if (g.next.kind === 'v5') {
+                  const tg = apprenticeRt.decideTeacher(
+                    apprentice,
+                    decision?.chosen?.estimate
+                      ? (decision.chosen.estimate.low + decision.chosen.estimate.high) / 2
+                      : 0.01,
+                  );
+                  if (tg)
+                    traceAdd({ name: 'JEV_ESCALATION', ms: 0, tokens: 0, cost: 0, decision: tg.reason });
+                }
+                traceAdd({
+                  name: 'JEV_MODEL_SWITCH',
+                  ms: 0,
+                  tokens: 0,
+                  cost: 0,
+                  decision: `${from} → ${model} (${g.next.label})`,
+                });
+              }
+              push(sid, {
+                kind: 'intel',
+                id: uid(),
+                title: `JEV Apprentice — ${g.next.label}`,
+                tone: 'warn',
+                lines: [g.message],
+              });
+              traceAdd({
+                name: 'JEV_CORRECTION',
+                ms: 0,
+                tokens: 0,
+                cost: 0,
+                decision: `${g.next.label} (${model})`,
+              });
+            }
+          }
+          if (!gated && q.correct && !unsupported.length && variant === 'full') {
             corrections++;
             corrAdded = true;
             discardedTokens += r.usage.completionTokens;
@@ -1891,6 +2011,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
           maxTokens: 16_000,
         }
       : undefined,
+    apprenticeInfo: apprentice ? { prep: apprentice, models: [...usedModels] } : undefined,
     stopReason,
     toolCalls: toolCallTotal,
     toolErrors: toolErrorNotes.slice(-5),
@@ -2128,12 +2249,14 @@ export async function runAgent(
     rep?: number;
     experiment?: ExperimentInput;
     fabric?: FabricRunOpts;
+    apprentice?: apprenticeRt.ApprenticeRunOpts;
   } = {},
 ): Promise<void> {
   const st = useStore.getState();
   const benchTag = opts.bench ?? null;
   lastPolicy = '';
   fabricRun = opts.fabric ?? null;
+  apprenticeRun = opts.apprentice ?? null;
   jevOverride =
     opts.jev === undefined ? null : opts.jev === true ? 'full' : opts.jev === false ? 'off' : opts.jev;
   const session = st.sessions.find((s) => s.id === sessionId);
@@ -2588,6 +2711,23 @@ export async function runAgent(
             ? redact(result.text).slice(0, 4000)
             : undefined,
         fabric: opts.fabric?.tag,
+        apprentice: result?.apprenticeInfo
+          ? apprenticeRt.buildTag(result.apprenticeInfo.prep, {
+              models: result.apprenticeInfo.models,
+              quality: verdictQ ? verdictQ.score : (j?.quality ?? null),
+              success,
+              corrections: j?.corrections ?? 0,
+              teacherCost: A.calls
+                .filter(
+                  (c) =>
+                    c.model !== (result?.apprenticeInfo?.models[0] ?? '') &&
+                    !/:free$/.test(c.model) &&
+                    c.model !== 'jev',
+                )
+                .reduce((a, c) => a + c.cost, 0),
+              failureNote: failureNote || undefined,
+            })
+          : undefined,
         config: {
           model: result?.models[0] ?? session.model,
           skills: result?.fabricInfo?.skills.map((x) => x.split('@')[0]!) ?? [],
@@ -2604,6 +2744,7 @@ export async function runAgent(
         },
       });
       fabricRt.afterRun();
+      apprenticeRt.afterApprenticeRun(useStore.getState().jevLog.at(-1));
     }
   }
 }

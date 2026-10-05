@@ -243,6 +243,8 @@ export interface Settings {
   jev?: Partial<JevSettings>;
   /** JEV Cognitive Fabric (additive layer): see server/jev/fabric. */
   fabric?: Partial<import('../../server/jev/fabric/types').FabricSettings>;
+  /** JEV Apprentice (free-first). Off by default: the V5 router decides exactly as before. */
+  apprentice?: Partial<import('../../server/jev/apprentice/types').ApprenticeSettings>;
 }
 
 export interface ArtifactDef {

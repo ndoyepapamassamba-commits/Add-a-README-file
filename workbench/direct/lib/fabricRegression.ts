@@ -16,6 +16,10 @@ import type { JevLogEntry } from '../../server/jev/metrics';
 import { DESIGN, designCheck } from '../../server/services/houseDesign';
 import { houseXlsx } from '../../server/services/houseStyle';
 import { housePptx } from '../../server/services/housePptx';
+import { DEFAULT_APPRENTICE } from '../../server/jev/apprentice/types';
+import { routeFreeFirst } from '../../server/jev/apprentice/router';
+import { buildApprenticeRegistry } from '../../server/jev/apprentice/registry';
+import { LEARNING_LEVELS as LEVELS } from '../../server/jev/fabric/distill';
 
 export type Verdict = 'PASS' | 'FAIL' | 'WARN';
 export interface Check {
@@ -57,6 +61,71 @@ export function fabricRegression(): Check[] {
     guard('DESIGN', 'Export PowerPoint disponible dans la charte', () => [
       housePptx('# T\n\n## S\n\n- a').length > 1000 ? 'PASS' : 'FAIL',
       'pptx généré',
+    ]),
+    guard('APPRENTICE', 'JEV Apprentice désactivé par défaut : routage V5 inchangé', () => {
+      const plan = routeFreeFirst({
+        dna: {
+          task_type: 'chat',
+          task_family: 'chat:chat',
+          difficulty: 0.2,
+          risk: 'low',
+          ambiguity: 0,
+          language: 'fr',
+          domain: 'chat',
+          expected_output: 'texte',
+          success_criteria: [],
+          tool_requirements: [],
+          context_size: 50,
+          reasoning_requirement: false,
+          structured_output_requirement: false,
+          latency_requirement: 'low',
+          cost_constraint: 'low',
+          quality_threshold: 0.85,
+        },
+        profiles: [],
+        pool: [
+          {
+            id: 'x/y:free',
+            name: 'y',
+            provider: 'x',
+            contextLength: 100000,
+            tools: true,
+            vision: false,
+            structuredOutputs: true,
+            reasoning: false,
+          },
+        ],
+      });
+      return [
+        !DEFAULT_APPRENTICE.enabled && !plan.use && plan.bypass === 'disabled' ? 'PASS' : 'FAIL',
+        'enabled=false → aucune route gratuite',
+      ];
+    }),
+    guard('APPRENTICE', 'Registre Apprentice : aucune métrique inventée sans données', () => {
+      const r = buildApprenticeRegistry(
+        [],
+        [
+          {
+            id: 'x/y:free',
+            name: 'y',
+            provider: 'x',
+            contextLength: 1,
+            tools: true,
+            vision: false,
+            structuredOutputs: true,
+            reasoning: false,
+          },
+        ],
+      );
+      const p = r[0];
+      return [
+        p && p.successRate === null && p.quality === null && p.health.score === null ? 'PASS' : 'FAIL',
+        'N/A / INSUFFICIENT SAMPLE',
+      ];
+    }),
+    guard('APPRENTICE', 'Pas de faux entraînement : niveaux 6–7 toujours UNAVAILABLE', () => [
+      LEVELS.filter((l) => l.level >= 6).every((l) => l.status === 'UNAVAILABLE') ? 'PASS' : 'FAIL',
+      'adaptation à l’inférence uniquement',
     ]),
     guard('V5', 'Inventaire d’avant JEV intact (outils, agents, vues, réglages…)', () => [
       inv.ok ? 'PASS' : 'FAIL',
