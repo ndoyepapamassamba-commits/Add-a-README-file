@@ -23,6 +23,7 @@ import {
 } from '../../server/jev/apprentice/registry';
 import {
   FallbackController,
+  withAllFree,
   qualityGate,
   type Attempt,
   type FreePlan,
@@ -236,6 +237,11 @@ export function prepareApprentice(i: PrepareInput): ApprenticePrep | null {
         rolledBack,
         lab: st.fabric.lab,
       });
+  if (!forced && plan.use && s.tryAllFree) {
+    const all = withAllFree(plan, toolIncapableModels());
+    plan.attempts = all.attempts;
+    plan.why = all.why;
+  }
   const base = {
     plan,
     dna,

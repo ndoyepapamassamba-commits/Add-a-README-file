@@ -483,6 +483,11 @@ function CenterTab() {
               aria-label="Tentatives gratuites"
             />
           </label>
+          <Toggle
+            checked={cur.tryAllFree}
+            onChange={(v) => set({ tryAllFree: v })}
+            label="Tester tous les modèles gratuits éligibles avant V5"
+          />
           <label className="flex items-center gap-1">
             Valeur d’un point ($)
             <Input

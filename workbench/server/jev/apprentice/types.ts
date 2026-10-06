@@ -150,6 +150,8 @@ export interface ApprenticeSettings {
   criticalConfidence: number;
   /** Provider for free models are never trusted with data above this class unless the user declared a policy. */
   maxFreeAttempts: number;
+  /** After the capped attempts, try every other eligible free model before falling back to V5. */
+  tryAllFree: boolean;
   /** Highest tolerated failure risk (1 − predicted success) to try a free model, by task risk. */
   maxFailureRisk: Record<Risk, number>;
   /** Validation thresholds and supremacy weights (configurable). */
@@ -287,6 +289,7 @@ export const DEFAULT_APPRENTICE: ApprenticeSettings = {
   criticalConfidence: 0.85,
   maxFailureRisk: { low: 0.6, normal: 0.55, high: 0.4, critical: 0.15 },
   maxFreeAttempts: 3,
+  tryAllFree: true,
   teacher: true,
   valuePerPoint: 0.002,
 };

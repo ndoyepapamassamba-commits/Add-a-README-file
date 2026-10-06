@@ -380,3 +380,26 @@ export function failureRecordOf(e: JevLogEntry): FailureRecord | null {
     final_success: e.success,
   };
 }
+
+/**
+ * TRY EVERY ELIGIBLE FREE MODEL BEFORE V5: after the capped attempts (champion → correction → secondary → adaptation),
+ * each remaining eligible free model gets one attempt, best score first. V5 stays the last resort.
+ * Eligibility (security, capabilities, health) was already applied to `plan.candidates`; nothing is bypassed.
+ */
+export function withAllFree(plan: FreePlan, blocked: string[] = []): FreePlan {
+  if (!plan.use) return plan;
+  const have = new Set(plan.attempts.map((a) => a.model).filter((m): m is string => Boolean(m)));
+  const extra = [...plan.candidates]
+    .filter((c) => !have.has(c.id) && !blocked.includes(c.id))
+    .sort((a, b) => b.score - a.score)
+    .map((c) => ({ kind: 'free_other' as const, model: c.id, label: `autre modèle gratuit ${c.id}` }));
+  if (!extra.length) return plan;
+  const v5 = plan.attempts.filter((a) => a.kind === 'v5');
+  const free = plan.attempts.filter((a) => a.kind !== 'v5');
+  const attempts = [...free, ...extra, ...v5].map((a, i) => ({ ...a, n: i + 1 }));
+  return {
+    ...plan,
+    attempts,
+    why: [...plan.why, `${extra.length} autre(s) modèle(s) gratuit(s) éligible(s) testé(s) avant V5`],
+  };
+}

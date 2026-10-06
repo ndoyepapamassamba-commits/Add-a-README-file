@@ -247,3 +247,18 @@ test('Free model without a tool endpoint (404) → the mission continues on the 
   expect(mock.requests[0]!.model).toBe(FREE);
   expect(mock.requests[1]!.model).not.toBe(FREE);
 });
+
+test('Every eligible free model is tried BEFORE V5', async ({ page }) => {
+  mock.models = [...CATALOG, model('acme/free-two:free', '0', '0'), model('acme/free-three:free', '0', '0')];
+  await open(page);
+  await seedLog(page, seed());
+  await enableAfterReload(page);
+  const err = { error: { status: 404, message: 'No endpoints found that support tool use.' } };
+  mock.push(err, err, { text: 'Réponse du troisième modèle gratuit.' });
+  await send(page, 'Calcule la provision IFRS9 du portefeuille retail par stage');
+  await expect(page.getByText('Réponse du troisième modèle gratuit.')).toBeVisible();
+  const used = mock.requests.map((r) => r.model);
+  expect(used.length).toBe(3);
+  expect(used.every((m) => /:free$/.test(m))).toBe(true);
+  expect(new Set(used).size).toBe(3);
+});
