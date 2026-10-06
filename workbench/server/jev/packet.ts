@@ -5,6 +5,7 @@
 // "what should I do, with what, how far" by itself (reasoning compression).
 import type { ModelInfo } from '@shared/types';
 import type { AutoTiers } from '../services/settings';
+import { localSkill } from './local';
 import {
   analyzeTask,
   classificationConfidence,
@@ -182,7 +183,8 @@ export function directAnswer(text: string, now = new Date()): string | null {
     return `Nous sommes le **${now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}**.\n\n_Répondu par JEV-0 sans appel de modèle (0 $)._`;
   if (/^(quelle heure|il est quelle heure|what time is it)/i.test(t))
     return `Il est **${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}** (heure de cet ordinateur).\n\n_Répondu par JEV-0 sans appel de modèle (0 $)._`;
-  return null;
+  // Local skills: percentages, units, dates, loans, text stats, bases, JSON (exact, 0 $).
+  return localSkill(text, now)?.answer ?? null;
 }
 
 function agentStrategy(p: TaskProfile, mission: boolean, needsTools: boolean): AgentStrategy {
