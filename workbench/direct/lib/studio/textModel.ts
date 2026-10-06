@@ -2,6 +2,7 @@
 // the validated free champion when there is one, otherwise the standard router's choice. No new router.
 import { useStore } from '../store';
 import { complete, loadCatalog } from '../llm';
+import { selectModel } from '../../../server/llm/router';
 import { analyzeTask, routeModel } from '../../../server/llm/routing';
 import { DEFAULT_AUTO_TIERS } from '../../../server/services/settings';
 import { championFor, apprenticeSettings } from '../apprentice';
@@ -40,10 +41,18 @@ export async function pickTextModel(
   const routed = routeModel(models, DEFAULT_AUTO_TIERS, profile, st.health, st.board);
   if (routed)
     return { model: routed.model, fallbacks: routed.fallbacks, why: `routage standard : ${routed.reason}` };
+  // Same selection as the agent: the configured default (or, when it is « auto », the tier choice of the standard router).
+  const sel = selectModel({
+    requested: st.settings.defaultModel,
+    models,
+    tiers: DEFAULT_AUTO_TIERS,
+    signals: { text, hasImages: vision, role: 'writer', historyLength: 0 },
+    fallbackDefault: 'openai/gpt-4o-mini',
+  });
   return {
-    model: st.settings.defaultModel,
-    fallbacks: [st.settings.fallbackModel],
-    why: 'modèle par défaut des Réglages',
+    model: sel.model,
+    fallbacks: [st.settings.fallbackModel].filter((m) => m && m !== sel.model),
+    why: `sélection standard : ${sel.reason}`,
   };
 }
 

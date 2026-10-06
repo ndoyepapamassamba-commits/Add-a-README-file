@@ -408,6 +408,8 @@ async function judgeVisual(bp: Blueprint): Promise<JudgeScores> {
       /* no vision judge available: the score stays empty */
     }
   }
+  // A judge that produced no score is not a judge: its identity is not reported.
+  if (!visual.length && !cons.length) judge = null;
   const m = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
   return {
     visual: m(visual),

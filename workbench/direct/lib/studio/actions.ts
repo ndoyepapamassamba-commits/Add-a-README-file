@@ -46,6 +46,13 @@ export async function loadRegistry(force = false): Promise<Registry> {
   S.setBusy('Découverte des capacités…');
   try {
     const reg = await discover(S.registry);
+    if (!reg.sources.some((x) => x.ok))
+      throw new StudioError(
+        'SERVER_ERROR',
+        `découverte impossible : ${reg.sources.map((x) => `${x.endpoint}: ${x.error ?? 'échec'}`).join(' ; ')}`,
+        0,
+        true,
+      );
     useStudio.getState().setRegistry(reg);
     useStore.getState().setFabric({ media: fabricEntry(reg) });
     return reg;
