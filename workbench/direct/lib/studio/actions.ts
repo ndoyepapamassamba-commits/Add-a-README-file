@@ -597,7 +597,13 @@ export async function redrawCharacter(
       pose,
       { maxChars: 2000 },
     );
-    const c2: Compiled = { ...compiled, text: `${REDRAW_INSTRUCTION} ${compiled.text}` };
+    // With a source image: redraw THAT character. Without one: design the character from the written sheet only.
+    const c2: Compiled = {
+      ...compiled,
+      text: source
+        ? `${REDRAW_INSTRUCTION} ${compiled.text}`
+        : `Create a new character design from this description, plain white background, no logo, no text. ${compiled.text}`,
+    };
     const r = await generateOne({
       projectId,
       characterId: ch.name,
