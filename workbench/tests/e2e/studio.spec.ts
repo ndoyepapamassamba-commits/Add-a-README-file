@@ -159,7 +159,22 @@ async function open(page: Page, errors: string[] = [], opts: { debug?: boolean }
   return errors;
 }
 const openStudio = async (page: Page) => {
-  await page.getByTitle(/AI Visual Studio/).click();
+  const nav = page.getByTitle(/AI Visual Studio/);
+  if (
+    !(await nav.waitFor({ timeout: 15_000 }).then(
+      () => true,
+      () => false,
+    ))
+  ) {
+    const diag = await page.evaluate(() => ({
+      ls: Object.keys(localStorage),
+      ss: Object.keys(sessionStorage),
+      url: location.href,
+      body: document.body.innerText.slice(0, 120),
+    }));
+    throw new Error(`studio nav not found: ${JSON.stringify(diag)}`);
+  }
+  await nav.click();
   await expect(page.getByTestId('studio')).toBeVisible();
 };
 const space = (page: Page, id: string) => page.getByTestId(`space-${id}`).click();
@@ -585,7 +600,10 @@ test('Video Factory: disabled by default; submit → poll → completed with rea
               },
             ]);
             const w = os.put(jobs, 'vs.jobs');
-            w.onsuccess = () => resolve(`stored ${jobs.length}`);
+            w.onsuccess = () => {
+              db.close();
+              resolve(`stored ${jobs.length}`);
+            };
             w.onerror = () => resolve(`put error ${String(w.error)}`);
           };
         };
@@ -593,6 +611,8 @@ test('Video Factory: disabled by default; submit → poll → completed with rea
   );
   expect(stored).toBe('stored 2');
   net.polls = 5; // the provider already reports completion
+  // file:// localStorage is flaky across reloads in headless Chromium: keep the key in sessionStorage too (same tab)
+  await page.evaluate((k) => sessionStorage.setItem('wbd.openrouter-key', k), KEY);
   await page.reload();
   await openStudio(page);
   await space(page, 'video');
