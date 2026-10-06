@@ -1444,6 +1444,33 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       history: estimate(callMessages.slice(1).filter((m) => m.role !== 'tool')),
       toolResults: estimate(callMessages.filter((m) => m.role === 'tool')),
     };
+    const setLive = (p: Partial<import('./store').CallLive>) => {
+      const cur = useStore.getState().callLive[sid];
+      const run = useStore.getState().running[sid];
+      const same = cur && cur.run === run;
+      const done = acct.list(sid);
+      useStore.setState({
+        callLive: {
+          ...useStore.getState().callLive,
+          [sid]: {
+            model,
+            callStart: same ? cur.callStart : Date.now(),
+            runStart: same ? cur.runStart : Date.now(),
+            liveOut: 0,
+            baseTokens: done.reduce((a, c) => a + c.tokensIn + c.tokensOut, 0),
+            baseCost: done.reduce((a, c) => a + c.cost, 0),
+            run,
+            ...p,
+          },
+        },
+      });
+    };
+    const prevLive = useStore.getState().callLive[sid];
+    setLive({
+      callStart: Date.now(),
+      runStart:
+        prevLive && prevLive.run === useStore.getState().running[sid] ? prevLive.runStart : Date.now(),
+    });
     const r = await complete(
       {
         model,
@@ -1463,6 +1490,10 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
           flushTimer ??= setTimeout(() => {
             flushTimer = null;
             st.updateItem(sid, itemId, { text: streamed });
+            setLive({
+              liveOut: Math.round(streamed.length / 4),
+              callStart: useStore.getState().callLive[sid]?.callStart ?? Date.now(),
+            });
           }, 50);
         },
         onReset: () => {
@@ -1475,6 +1506,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
           apprenticeRt.noteProviderFailure(from, reason);
           fallbackCount++;
           model = to;
+          setLive({ callStart: Date.now() });
           push(sid, {
             kind: 'error',
             id: uid(),

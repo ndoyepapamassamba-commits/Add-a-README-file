@@ -14,6 +14,18 @@ import type { Policy } from '../../server/jev/fabric/learning';
 import type { ProviderPolicy } from '../../server/jev/fabric/security';
 import type { ProfileVersion } from '../../server/jev/apprentice/versions';
 
+export interface CallLive {
+  model: string;
+  callStart: number;
+  runStart: number;
+  /** Output tokens of the call in progress (estimated from the streamed text until the provider reports usage). */
+  liveOut: number;
+  /** Tokens (in + out) and cost already reported by finished calls of this run. */
+  baseTokens: number;
+  baseCost: number;
+  run: unknown;
+}
+
 /** Persistent state of the Cognitive Fabric (skills with their versions, learned policies, provider policies). */
 export interface FabricState {
   skills: FabricSkill[];
@@ -112,6 +124,8 @@ export interface State {
   spend: Record<string, number>;
   running: Record<string, AbortController>;
   status: Record<string, string>;
+  /** Live view of the model call in progress (model, timing, tokens) — display only. */
+  callLive: Record<string, CallLive>;
   grants: Record<string, string[]>;
   agentMode: AgentMode;
   usage: UsageEntry[];
@@ -200,6 +214,7 @@ export const useStore = create<State>((set, get) => ({
   spend: {},
   running: {},
   status: {},
+  callLive: {},
   grants: {},
   agentMode: 'chat',
   usage: [],

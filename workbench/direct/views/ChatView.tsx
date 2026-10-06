@@ -139,6 +139,7 @@ function Transcript({ session }: { session: Session }) {
         {running && (
           <div className="flex items-center gap-2 py-2 text-[12.5px] text-muted">
             <Spinner /> {status ?? 'L’agent travaille…'}
+            <LiveCall sid={session.id} />
           </div>
         )}
       </div>
@@ -952,3 +953,24 @@ function Composer({ session }: { session: Session }) {
 }
 
 export { Empty };
+
+const fmtTok = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
+/** Next to « Réflexion… » : the model running now, time on this call / on the run, and tokens (≈ while streaming). */
+function LiveCall({ sid }: { sid: string }) {
+  const live = useStore((s) => s.callLive[sid]);
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const t = window.setInterval(() => tick((x) => x + 1), 500);
+    return () => window.clearInterval(t);
+  }, []);
+  if (!live) return null;
+  const sec = (t: number) => Math.max(0, Math.floor((Date.now() - t) / 1000));
+  const out = live.liveOut;
+  return (
+    <span className="text-faint" data-testid="live-call">
+      · <span className="text-fg">{live.model}</span> · {sec(live.callStart)} s (mission {sec(live.runStart)}{' '}
+      s) · {out > 0 ? `≈ ${fmtTok(out)} tokens reçus` : 'en attente de la 1ʳᵉ réponse'}
+      {live.baseTokens > 0 && ` · ${fmtTok(live.baseTokens)} tokens déjà facturés`}
+    </span>
+  );
+}
