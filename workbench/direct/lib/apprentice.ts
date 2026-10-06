@@ -8,6 +8,7 @@ import {
   DEFAULT_WEIGHTS,
   DEFAULT_SUPREMACY,
   DEFAULT_VALIDATION,
+  DEFAULT_LAB,
   type ApprenticeArm,
   type ApprenticeSettings,
   type ApprenticeTag,
@@ -56,6 +57,12 @@ import {
   skillFromFailure,
   type TeacherGate,
 } from '../../server/jev/apprentice/teacher';
+import { EMPTY_LAB, isReal, lookupChampion, runLab, type LabState } from '../../server/jev/apprentice/lab';
+import { discoverChallengers } from '../../server/jev/apprentice/discovery';
+import { calculateTeacherROI } from '../../server/jev/apprentice/teacherLearning';
+import { detectFailurePatterns, skillFromPattern } from '../../server/jev/apprentice/failurePatterns';
+import { strataOfDna, type Strata } from '../../server/jev/apprentice/strata';
+import { DecisionCache } from '../../server/jev/apprentice/decisionCache';
 import { failureLibrary } from '../../server/jev/fabric/memory';
 import { classifyData } from '../../server/jev/fabric/security';
 import { analyzeTask } from '../../server/llm/routing';
@@ -83,6 +90,11 @@ export const apprenticeSettings = (): ApprenticeSettings => {
       critical: { ...DEFAULT_VALIDATION.critical, ...s.validation?.critical },
     },
     supremacy: { ...DEFAULT_SUPREMACY, ...s.supremacy },
+    lab: {
+      ...DEFAULT_LAB,
+      ...s.lab,
+      minN: { ...DEFAULT_LAB.minN, ...s.lab?.minN },
+    },
   };
 };
 
@@ -93,6 +105,7 @@ const ARM_USE: Record<ApprenticeArm, { capsule: boolean; skills: boolean; experi
   free_skill: { capsule: true, skills: true, experience: false },
   free_skill_exp: { capsule: true, skills: true, experience: true },
   validated: { capsule: true, skills: true, experience: true },
+  challenger: { capsule: true, skills: true, experience: true },
   paid: { capsule: false, skills: false, experience: false },
 };
 
@@ -121,7 +134,23 @@ export interface ApprenticePrep {
   teacher?: { id: string; gate: TeacherGate; roi: TeacherROI | null };
   /** Failures met during the run (signature + named correction), for failure learning. */
   failures: { signature: FailureSignature; model: string }[];
+  /** Strata of the mission (risk, contract, difficulty, tools, context, language) for matched comparisons. */
+  strata?: Strata;
+  /** Wall time of the routing decision (ms, measured). */
+  decisionMs?: number;
 }
+
+/** Decision caches (task DNA, champion lookup, routing decision). Keys carry every input that changes the answer. */
+export const decisionCache = new DecisionCache();
+/** Revision of the lab state: changes whenever a champion / history changes, so cached lookups can never go stale. */
+export const labRevision = (l: LabState | undefined): string =>
+  l
+    ? `${l.championHistory.length}.${l.promotionHistory.length}.${l.rollbackHistory.length}.${Object.values(
+        l.families,
+      )
+        .map((f) => `${f.champion?.model ?? '-'}${f.champion?.degraded ? '!' : ''}`)
+        .join(',')}`
+    : '0';
 
 /** Shared capsule cache: family × model × profileVersion × skillHash × contextHash × toolHash. */
 export const capsuleCache = new CapsuleCache<Capsule>();
@@ -146,24 +175,31 @@ export interface PrepareInput {
 
 /** Task DNA → eligibility → free-first routing → micro-adaptation (capsule). Returns null when it takes no part. */
 export function prepareApprentice(i: PrepareInput): ApprenticePrep | null {
+  const t0 = performance.now();
   const st = useStore.getState();
   const s = apprenticeSettings();
   const arm = i.run?.arm;
   const forced = Boolean(arm);
   if (!forced && (!s.enabled || i.userPinned)) return null;
   const needsTools = !['chat', 'writing'].includes(i.taskType);
-  const dna = taskDnaOf(
-    {
-      text: i.text,
-      taskType: i.taskType,
-      difficulty: i.difficulty,
-      criticality: i.criticality,
-      attachments: i.attachments,
-      tools: needsTools ? ['tools'] : [],
-      mode: jevSettings().mode,
-    },
-    s,
+  const dna = decisionCache.get(
+    'taskDNA',
+    `${i.text}|${i.taskType}|${i.difficulty}|${i.criticality}|${i.attachments.join(',')}|${needsTools}|${jevSettings().mode}|${JSON.stringify(s.gates)}`,
+    () =>
+      taskDnaOf(
+        {
+          text: i.text,
+          taskType: i.taskType,
+          difficulty: i.difficulty,
+          criticality: i.criticality,
+          attachments: i.attachments,
+          tools: needsTools ? ['tools'] : [],
+          mode: jevSettings().mode,
+        },
+        s,
+      ),
   );
+  const strata = strataOfDna(dna, i.tools, i.text);
   const classification = classifyData(i.text, i.attachments).level;
   const log = st.jevLog;
   const pool = freePool(st.models);
@@ -198,10 +234,12 @@ export function prepareApprentice(i: PrepareInput): ApprenticePrep | null {
         text: i.text,
         log,
         rolledBack,
+        lab: st.fabric.lab,
       });
   const base = {
     plan,
     dna,
+    strata,
     classification,
     forced,
     v5Model: i.v5Model,
@@ -216,6 +254,7 @@ export function prepareApprentice(i: PrepareInput): ApprenticePrep | null {
       ladder: [],
       why: (plan as SupremacyPlan).explain ?? [plan.reason],
       path: [],
+      decisionMs: performance.now() - t0,
     };
   const use = forced ? ARM_USE[arm!] : { capsule: true, skills: true, experience: true };
   // Versioning: a profile rolled back to its previous version only injects that version's skills.
@@ -288,6 +327,7 @@ export function prepareApprentice(i: PrepareInput): ApprenticePrep | null {
       : (plan.attempts.map((a) => a.model).filter((m): m is string => Boolean(m)) as string[]),
     why: (plan as SupremacyPlan).explain ?? plan.why,
     path: model ? [model] : [],
+    decisionMs: performance.now() - t0,
   };
 }
 
@@ -365,13 +405,27 @@ export function decideTeacher(p: ApprenticePrep, estCost: number): TeacherGate |
     teacherCost: estCost,
     futureReuseValue: fut.value,
   });
-  const execute = gate.execute || (roi.teach && fut.value !== null && teacherAllowance(tv).allowed);
+  // Champion Science: the Teacher is an INVESTMENT — it is called only when the measured learning value beats its cost.
+  const tl = calculateTeacherROI({
+    log: st.jevLog.filter(isReal),
+    family: fam,
+    teacherCost: estCost,
+    immediateGain: gate.decision.expectedBenefit,
+    signature: p.failures.at(-1)?.signature,
+    risk: p.dna.risk,
+    horizonDays: s.horizonDays,
+    apprenticeSuccess: p.plan.predictedSuccess,
+    apprenticeN: f?.n ?? 0,
+    valuePerPoint: s.valuePerPoint,
+  });
+  const allowed = teacherAllowance(tv).allowed;
+  const execute = (gate.execute || (roi.teach && fut.value !== null && allowed)) && tl.decision === 'INVEST';
   const merged: TeacherGate = {
     ...gate,
     execute,
     reason: execute
-      ? `EXECUTE TEACHER : ${gate.decision.use ? gate.decision.reason : roi.reason}`
-      : `SKIP TEACHER : ${gate.decision.reason} — ${roi.reason}`,
+      ? `EXECUTE TEACHER : ${gate.decision.use ? gate.decision.reason : roi.reason} — ROI ${tl.roi === null ? 'N/A' : `${tl.roi.toFixed(1)}x`} (${tl.learningValue})`
+      : `SKIP TEACHER : ${tl.decision === 'DO_NOT_INVEST' ? `DO NOT INVEST — ${tl.reason}` : gate.decision.reason} — ${roi.reason}`,
   };
   p.teacher = { id: choice.id, gate: merged, roi };
   return merged;
@@ -457,8 +511,102 @@ export function buildTag(p: ApprenticePrep, f: RunFacts): ApprenticeTag {
     rateLimited: Boolean(f.failureNote && /429|rate.?limit|quota|too many/i.test(f.failureNote)),
     classification: p.classification,
     arm: p.arm,
+    risk: p.strata?.risk ?? p.dna.risk,
+    contract: p.strata?.contract,
+    difficulty: p.dna.difficulty,
+    toolProfile: p.strata?.toolProfile,
+    contextBucket: p.strata?.context,
+    lang: p.strata?.lang,
+    decisionMs: p.decisionMs,
+    experiment: p.arm
+      ? {
+          role: p.arm === 'challenger' ? 'challenger' : p.arm === 'paid' ? 'premium' : 'champion',
+          champion: ((p.plan as SupremacyPlan).champion?.model ?? p.path[0] ?? '') as string,
+          challenger: p.arm === 'challenger' ? (p.path[0] ?? null) : null,
+        }
+      : undefined,
     why: p.why.slice(0, 6),
   };
+}
+
+/** Models the lab must not consider (security / capability rejection in the discovery pipeline). */
+const excludedModels = (): Set<string> =>
+  new Set(
+    Object.values(useStore.getState().fabric.discovered ?? {})
+      .filter((d) => d.stage === 'REJECTED_CAPABILITY' || d.stage === 'REJECTED_HEALTH')
+      .map((d) => d.id),
+  );
+
+/**
+ * CONTINUOUS APPRENTICE LEARNING: one deterministic pass of the Champion Science lab over the REAL log. A single mission
+ * never promotes anything: the lab needs the sample gates of the family. The real STATISTICAL_EVALUATION /
+ * CHAMPION_DECISION / MEMORY_UPDATE checkpoints (measured ms) are appended to the mission's trace.
+ */
+export function runLabNow(entry?: JevLogEntry): ReturnType<typeof runLab> | null {
+  const s = apprenticeSettings();
+  if (!s.enabled || !s.lab.continuous) return null;
+  const st = useStore.getState();
+  const pool = freePool(st.models);
+  const excluded = excludedModels();
+  const disc = discoverChallengers({
+    pool,
+    known: st.fabric.discovered ?? {},
+    log: st.jevLog.filter(isReal),
+    policyOf: (provider) => st.fabric.providerPolicies.find((p) => p.provider === provider),
+    champions: new Set(
+      Object.values(st.fabric.lab?.families ?? {})
+        .map((f) => f.champion?.model)
+        .filter((m): m is string => Boolean(m)),
+    ),
+    validated: new Set(
+      championsOf(st.jevLog, pool, { settings: s, versions: st.fabric.profileVersions }).map((c) => c.model),
+    ),
+  });
+  const prev = st.fabric.lab ?? EMPTY_LAB;
+  const r = runLab(prev, { log: st.jevLog, pool, settings: s, excluded, source: 'REAL' });
+  const patch: Partial<typeof st.fabric> = {};
+  if (r.events.length || prev !== r.state) patch.lab = r.state;
+  if (
+    JSON.stringify(Object.values(disc.known).map((d) => [d.id, d.stage])) !==
+    JSON.stringify(Object.values(st.fabric.discovered ?? {}).map((d) => [d.id, d.stage]))
+  )
+    patch.discovered = disc.known;
+  if (patch.lab || patch.discovered) st.setFabric(patch);
+  if (entry && r.steps.length) {
+    const log = useStore.getState().jevLog;
+    const i = log.findIndex((e) => e.id === entry.id);
+    if (i >= 0) {
+      const next = [...log];
+      next[i] = {
+        ...log[i]!,
+        checkpoints: [
+          ...log[i]!.checkpoints,
+          ...r.steps.map((x) => ({ name: x.name, ms: x.ms, tokens: 0, cost: 0, decision: x.decision })),
+        ],
+      };
+      useStore.getState().setJevLog(next);
+    }
+  }
+  patternsToSkills();
+  return r;
+}
+
+/** FAILURE → PATTERN (≥ 3 identical) → SKILL CANDIDATE (tested WITH/WITHOUT before any promotion; never auto-validated). */
+export function patternsToSkills(): number {
+  const st = useStore.getState();
+  const real = st.jevLog.filter(isReal);
+  const fresh = detectFailurePatterns(real, st.fabric.skills).filter((p) => p.status === 'detected');
+  const cands = fresh.map((p) => skillFromPattern(p, real));
+  if (cands.length) addDistilled(cands);
+  return cands.length;
+}
+
+/** Champion Science lookup for a mission, cached with a key that includes the lab revision. */
+export function labChampionFor(family: string, risk: Risk, contract?: string | null) {
+  const lab = useStore.getState().fabric.lab;
+  return decisionCache.get('championLookup', `${family}|${risk}|${contract ?? ''}|${labRevision(lab)}`, () =>
+    lookupChampion(lab, family, risk, contract),
+  );
 }
 
 let since = 0;
@@ -473,6 +621,7 @@ export function afterApprenticeRun(entry?: JevLogEntry): void {
     if (f.candidates.length) addDistilled(f.candidates);
   }
   updateRoutingMemory();
+  runLabNow(entry);
   if (++since < 5) return;
   since = 0;
   refreshProfileVersions();

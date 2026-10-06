@@ -98,6 +98,9 @@ const LABEL: Record<Checkpoint['name'], string> = {
   JEV_ESCALATION: 'ESCALADE',
   JEV_POST: 'FINAL',
   JEV_LEARNING: 'APPRENTISSAGE',
+  STATISTICAL_EVALUATION: 'ÉVALUATION STATISTIQUE',
+  CHAMPION_DECISION: 'DÉCISION CHAMPION',
+  MEMORY_UPDATE: 'MÉMOIRE',
 };
 
 export function TraceTimeline({ trace }: { trace: Checkpoint[] }) {

@@ -18,7 +18,10 @@ export interface Checkpoint {
     | 'JEV_CORRECTION'
     | 'JEV_ESCALATION'
     | 'JEV_POST'
-    | 'JEV_LEARNING';
+    | 'JEV_LEARNING'
+    | 'STATISTICAL_EVALUATION'
+    | 'CHAMPION_DECISION'
+    | 'MEMORY_UPDATE';
   ms: number;
   tokens: number;
   cost: number;

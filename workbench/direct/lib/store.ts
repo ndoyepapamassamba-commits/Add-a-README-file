@@ -23,6 +23,10 @@ export interface FabricState {
   profileVersions: ProfileVersion[];
   /** Model routing memory: per task family, champion / fallback / premium reference (persistent). */
   routingMemory?: Record<string, import('./apprentice').RoutingMemoryEntry>;
+  /** Champion Science: champions / challengers / histories per family × risk (persistent, REAL missions only). */
+  lab?: import('../../server/jev/apprentice/lab').LabState;
+  /** Challenger discovery pipeline: stage of every free model of the catalogue. */
+  discovered?: Record<string, import('../../server/jev/apprentice/discovery').DiscoveredModel>;
 }
 export const EMPTY_FABRIC: FabricState = {
   skills: [],

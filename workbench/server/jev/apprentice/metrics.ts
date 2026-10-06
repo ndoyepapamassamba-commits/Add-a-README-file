@@ -126,6 +126,8 @@ const COMPARISONS: [ApprenticeArm, ApprenticeArm][] = [
   ['free_skill', 'free_skill_exp'],
   ['free', 'free_skill_exp'],
   ['free_skill_exp', 'validated'],
+  ['validated', 'challenger'],
+  ['challenger', 'paid'],
   ['validated', 'paid'],
   ['free_skill_exp', 'paid'],
   ['free', 'validated'],

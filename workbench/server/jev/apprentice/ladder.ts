@@ -24,6 +24,7 @@ import {
   type PremiumRef,
 } from './supremacy';
 import { DEFAULT_APPRENTICE } from './types';
+import { lookupChampion, type LabState } from './lab';
 
 export const LEVELS = [
   { level: 0, name: 'JEV-0 / local déterministe' },
@@ -52,6 +53,8 @@ export interface SupremacyPlan extends FreePlan {
 export interface SupremacyRouteInput extends RouteInput {
   log: JevLogEntry[];
   rolledBack?: Set<string>;
+  /** Champion Science state: the lab champion of (family, risk[, contract]) takes priority when it passes every gate. */
+  lab?: LabState;
   now?: number;
 }
 
@@ -254,7 +257,29 @@ export function routeApprentice(i: SupremacyRouteInput): SupremacyPlan {
     };
   };
   // ── L1: VALIDATED free apprentice (final routing rule) ──
-  if (ga.champion) return mk(ga.champion, 'validated', 1);
+  // Champion priority: the lab champion of (family, risk[, contract]) wins when it is validated, healthy, secure,
+  // capable and passes the risk gate (finalRule); otherwise the Supremacy ranking decides as before.
+  const lc = i.lab ? lookupChampion(i.lab, i.dna.task_family, i.dna.risk, i.dna.output_contract) : null;
+  const labPick =
+    lc && !lc.champion.degraded
+      ? ga.ranked.find(
+          (c) => c.model === lc.champion.model && c.status === 'VALIDATED' && finalRule(i, c).use,
+        )
+      : undefined;
+  if (labPick || ga.champion) {
+    const plan = mk(labPick ?? ga.champion!, 'validated', 1);
+    return lc
+      ? {
+          ...plan,
+          explain: [
+            ...plan.explain,
+            labPick
+              ? `CHAMPION SCIENCE : champion ${lc.scope} ${lc.champion.model} (depuis ${new Date(lc.champion.since).toISOString().slice(0, 10)}) — priorité sur le classement.`
+              : `CHAMPION SCIENCE : le champion du lab ${lc.champion.model}${lc.champion.degraded ? ' est DÉGRADÉ' : ' ne passe pas toutes les portes'} — classement Supremacy conservé.`,
+          ],
+        }
+      : plan;
+  }
   // A hard override (critical threshold not guaranteed, capability, security) sends the task to V5 — no free level either.
   if (ga.hard.length)
     return bypass(

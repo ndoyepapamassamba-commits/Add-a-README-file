@@ -11,6 +11,15 @@ import type { FabricSkill, SkillVersion } from '../../server/jev/fabric/skills';
 import type { FabricTag } from '../../server/jev/fabric/types';
 import { championFor, type ApprenticeRunOpts } from './apprentice';
 import type { ApprenticeArm } from '../../server/jev/apprentice/types';
+import {
+  runChampionChallengerExperiment,
+  type ExperimentResult,
+} from '../../server/jev/apprentice/experiment';
+import { strataOfDna } from '../../server/jev/apprentice/strata';
+import { taskDnaOf } from '../../server/jev/apprentice/dna';
+import { classifyData } from '../../server/jev/fabric/security';
+import { analyzeTask } from '../../server/llm/routing';
+import { apprenticeSettings } from './apprentice';
 
 export interface RunControl {
   stop: boolean;
@@ -338,4 +347,105 @@ export async function runApprenticeDemo(
       }
     }
   return out;
+}
+
+// ───────────────────────── Champion ↔ Challenger controlled experiment ─────────────────────────
+
+export interface ChampionExperimentOptions {
+  tasks: CfTask[];
+  champion: string;
+  challenger: string;
+}
+/**
+ * runChampionChallengerExperiment on REAL calls: the same tasks, the same workspace, champion arm vs challenger arm, paired
+ * by group. Tasks whose Task DNA strata differ are NON-COMPARABLE and nothing is run. A challenger that may not receive the
+ * data (security) is never called. The result never promotes by itself: the lab decides, with sample gates.
+ */
+export async function runChampionExperiment(
+  o: ChampionExperimentOptions,
+  progress: Progress,
+  ctl: RunControl,
+): Promise<ExperimentResult> {
+  const st = useStore.getState();
+  const s = apprenticeSettings();
+  const experimentId = expId('CHAMP');
+  const baseline = snapshot();
+  const dnaOf = (text: string) => {
+    const p = analyzeTask({ text });
+    return taskDnaOf(
+      {
+        text,
+        taskType: p.type,
+        difficulty: p.difficulty,
+        criticality: 'normal',
+        tools: p.type === 'chat' ? [] : ['tools'],
+      },
+      s,
+    );
+  };
+  const strataOfTask = (t: CfTask) => strataOfDna(dnaOf(t.text), [], t.text);
+  const risk = strataOfTask(o.tasks[0] ?? ({ text: '' } as CfTask)).risk;
+  const sensitive = o.tasks.some((t) => classifyData(t.text, []).level !== 'PUBLIC');
+  const scope = st.fabric.discovered?.[o.challenger]?.securityScope ?? 'PUBLIC_ONLY';
+  const securityOk = !sensitive || scope !== 'PUBLIC_ONLY';
+  const byId = new Map(o.tasks.map((t, i) => [`${i}`, t]));
+  return runChampionChallengerExperiment({
+    champion: o.champion,
+    challenger: o.challenger,
+    risk,
+    securityOk,
+    settings: s,
+    groupPrefix: experimentId,
+    tasks: o.tasks.map((t, i) => ({ id: `${i}`, text: t.text, category: t.category, key: t.key })),
+    strataOfTask: (t) => strataOfTask(byId.get(t.id)!),
+    runArm: async (model, task, arm, groupId) => {
+      if (ctl.stop) return null;
+      const cf = byId.get(task.id)!;
+      progress(`${cf.key} — ${arm} · ${model}…`);
+      const r = await runOne({
+        task: cf,
+        model,
+        variant: 'full',
+        fabric: { on: false },
+        apprentice: { arm },
+        tag: {
+          kind: 'apprentice',
+          arm,
+          groupId,
+          taskKey: cf.key,
+          category: cf.category,
+          models: [o.champion, o.challenger],
+        },
+        experimentId,
+        groupId,
+        rep: 1,
+        order: arm === 'validated' ? 0 : 1,
+        taskIndex: Number(task.id),
+        baseline,
+        label: `champion/challenger ${arm}`,
+      });
+      const log = useStore.getState().jevLog;
+      const e = log.find((x) => x.session === r.session);
+      if (e?.apprentice) {
+        const next = log.map((x) =>
+          x.id === e.id
+            ? {
+                ...x,
+                apprentice: {
+                  ...x.apprentice!,
+                  experiment: {
+                    role: arm === 'challenger' ? ('challenger' as const) : ('champion' as const),
+                    champion: o.champion,
+                    challenger: o.challenger,
+                  },
+                },
+              }
+            : x,
+        );
+        useStore.getState().setJevLog(next);
+        return next.find((x) => x.id === e.id) ?? null;
+      }
+      return e ?? null;
+    },
+  });
 }
