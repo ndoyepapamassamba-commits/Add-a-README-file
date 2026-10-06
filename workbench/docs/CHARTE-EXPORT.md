@@ -24,3 +24,7 @@ alignés à droite `#,##0`, couleurs de statuts (Stage 1/2/3, I…V, segments).
 recalculée et comparée à `DESIGN_LOCK` (tests unitaires `houseDesignLock`, onglet JEV → Régression). Aucun outil
 d'export n'accepte de couleur ou de police. Pour changer la charte il faut modifier ce fichier **et** sa signature
 (décision explicite, visible dans le diff).
+
+## Graphiques natifs Excel
+Les graphiques des classeurs sont des graphiques **natifs Excel** (séries liées aux cellules, palette de la charte),
+pas des images : matplotlib n'est pas disponible dans le bac à sable hors-ligne et un graphique natif reste éditable.

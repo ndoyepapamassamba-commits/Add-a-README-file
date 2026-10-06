@@ -50,6 +50,7 @@ import {
   teacherValue,
 } from '../../server/jev/apprentice/teacher';
 import { Empty, NM, Section, Table, fmt } from './fabricUi';
+import { Scenario } from './JevChampion';
 
 type Sub = 'center' | 'champions' | 'registry' | 'teacher' | 'payback' | 'bench' | 'trace' | 'demo' | 'cost';
 const SUBS: { id: Sub; label: string }[] = [
@@ -1120,6 +1121,7 @@ function BenchTab() {
           pas.
         </Empty>
       )}
+      <Scenario focus="benchmark" />
     </div>
   );
 }
@@ -1193,6 +1195,7 @@ function TraceTab() {
           <Empty>Aucune mission tracée.</Empty>
         )}
       </Section>
+      <Scenario focus="trace" />
     </div>
   );
 }
@@ -1452,6 +1455,7 @@ function ChampionsTab() {
           Vider le cache
         </Button>
       </Section>
+      <Scenario focus="memory" />
     </div>
   );
 }

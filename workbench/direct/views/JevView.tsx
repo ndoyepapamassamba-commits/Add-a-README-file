@@ -55,6 +55,7 @@ import {
 } from './JevFabric2';
 import { fabricRegression } from '../lib/fabricRegression';
 import { ApprenticePanel } from './JevApprentice';
+import { ChampionSciencePanel } from './JevChampion';
 
 type Tab = 'dash' | 'trace' | 'log' | 'kpi' | 'science' | 'bench' | 'models' | 'costs' | 'api' | 'regression';
 const TABS: { id: Tab; label: string }[] = [
@@ -71,6 +72,7 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 type FTab =
   | 'apprentice'
+  | 'champion'
   | 'mission'
   | 'council'
   | 'expertise'
@@ -88,6 +90,7 @@ type FTab =
   | 'cfbench';
 const FTABS: { id: FTab; label: string }[] = [
   { id: 'apprentice', label: 'JEV APPRENTICE' },
+  { id: 'champion', label: 'CHAMPION SCIENCE LAB' },
   { id: 'mission', label: 'Mission cognitive' },
   { id: 'council', label: 'Model Council' },
   { id: 'expertise', label: 'Model Expertise' },
@@ -151,6 +154,7 @@ export function JevView() {
       <Tabs tabs={FTABS} value={ftab ?? ('' as FTab)} onChange={setFtab} className="overflow-x-auto px-5" />
       <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
         {ftab === 'apprentice' && <ApprenticePanel />}
+        {ftab === 'champion' && <ChampionSciencePanel />}
         {ftab === 'mission' && <MissionPanel />}
         {ftab === 'council' && <CouncilPanel />}
         {ftab === 'expertise' && <ExpertisePanel />}

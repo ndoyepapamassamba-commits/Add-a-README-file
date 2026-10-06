@@ -50,6 +50,7 @@ import {
   type ProviderPolicy,
 } from '../../server/jev/fabric/security';
 import { DEFAULT_FABRIC } from '../../server/jev/fabric/types';
+import { LabThresholds, Scenario } from './JevChampion';
 import { Empty, NM, Section, StatusBadge, Table, fmt } from './fabricUi';
 
 const useSettings = () => {
@@ -559,6 +560,7 @@ export function PolicyPanel() {
           Tout invalider
         </Button>
       </Section>
+      <LabThresholds />
     </div>
   );
 }
@@ -1155,6 +1157,7 @@ export function CfBenchPanel() {
           produisent pas.
         </Empty>
       )}
+      <Scenario focus="benchmark" />
     </div>
   );
 }

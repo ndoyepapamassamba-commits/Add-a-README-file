@@ -38,6 +38,15 @@ import * as APP_TEACHER from '../../server/jev/apprentice/teacher';
 import * as APP_PAYBACK from '../../server/jev/apprentice/payback';
 import * as APP_FAIL from '../../server/jev/apprentice/failure';
 import * as APP_ROUTER from '../../server/jev/apprentice/router';
+import * as LAB from '../../server/jev/apprentice/lab';
+import * as LAB_STATS from '../../server/jev/apprentice/stats';
+import * as LAB_DISC from '../../server/jev/apprentice/discovery';
+import * as LAB_TEACH from '../../server/jev/apprentice/teacherLearning';
+import * as LAB_PAT from '../../server/jev/apprentice/failurePatterns';
+import * as LAB_EXP from '../../server/jev/apprentice/experiment';
+import * as LAB_VIEW from '../../server/jev/apprentice/labView';
+import { useStore } from './store';
+import { runLabScenario, A as SCENARIO_A } from '../../server/jev/apprentice/labScenario';
 import * as JEVLOG from '../../server/jev/metrics';
 import * as HOUSE from '../../server/services/houseStyle';
 import * as DOCX from '../../server/services/officeCore';
@@ -89,6 +98,16 @@ const REQUIRED: [string, string, unknown][] = [
   ['Teacher', 'teacher.teacherGate', APP_TEACHER.teacherGate],
   ['Teacher', 'payback.teacherROI', APP_PAYBACK.teacherROI],
   ['Apprentice', 'failure.failureSignatureOf', APP_FAIL.failureSignatureOf],
+  ['Champion Science', 'lab.runLab', LAB.runLab],
+  ['Champion Science', 'lab.evaluateNonInferiority', LAB.evaluateNonInferiority],
+  ['Champion Science', 'lab.shouldPromoteChallenger', LAB.shouldPromoteChallenger],
+  ['Champion Science', 'lab.detectChampionDegradation', LAB.detectChampionDegradation],
+  ['Champion Science', 'stats.armStats', LAB_STATS.armStats],
+  ['Champion Science', 'discovery.discoverChallengers', LAB_DISC.discoverChallengers],
+  ['Champion Science', 'teacherLearning.calculateTeacherROI', LAB_TEACH.calculateTeacherROI],
+  ['Champion Science', 'failurePatterns.detectFailurePatterns', LAB_PAT.detectFailurePatterns],
+  ['Champion Science', 'experiment.runChampionChallengerExperiment', LAB_EXP.runChampionChallengerExperiment],
+  ['Champion Science', 'labView.labKpis', LAB_VIEW.labKpis],
   ['Exports', 'houseXlsx', HOUSE.houseXlsx],
   ['Exports', 'markdownToDocx', DOCX.markdownToDocx],
   ['Exports', 'housePptx', housePptx],
@@ -240,6 +259,33 @@ export function fabricRegression(): Check[] {
       return [
         p && p.successRate === null && p.quality === null && p.health.score === null ? 'PASS' : 'FAIL',
         'N/A / INSUFFICIENT SAMPLE',
+      ];
+    }),
+    guard('CHAMPION', 'Aucune donnée synthétique dans les métriques réelles', () => {
+      const real = useStore.getState().jevLog;
+      const bad = real.filter((e) => !LAB.isReal(e));
+      const sim = runLabScenario().log;
+      const leak = LAB.runLab(LAB.EMPTY_LAB, { log: sim, pool: [], now: Date.now() });
+      const none = Object.values(leak.state.families).every((f) => !f.champion);
+      return [
+        bad.length === 0 && none && sim.every((e) => !LAB.isReal(e)) ? 'PASS' : 'FAIL',
+        bad.length
+          ? `${bad.length} entrée(s) simulée(s) dans le JEV_LOG réel`
+          : 'JEV_LOG réel sans entrée simulée ; le scénario simulé est ignoré par le lab de production',
+      ];
+    }),
+    guard('CHAMPION', 'Sans données : aucun champion, aucune promotion (état vide)', () => {
+      const r = LAB.runLab(LAB.EMPTY_LAB, { log: [], pool: [], now: 1 });
+      return [
+        Object.keys(r.state.families).length === 0 && r.events.length === 0 ? 'PASS' : 'FAIL',
+        'aucun champion inventé',
+      ];
+    }),
+    guard('CHAMPION', 'Scénario IFRS9 en 18 étapes reproductible (A→B→rollback→A)', () => {
+      const r = runLabScenario();
+      return [
+        r.steps.length === 18 && r.steps.at(-1)!.champion === SCENARIO_A ? 'PASS' : 'FAIL',
+        `${r.steps.length} étapes · ${r.state.championHistory.map((e) => e.kind).join(' → ')}`,
       ];
     }),
     guard('APPRENTICE', 'Pas de faux entraînement : niveaux 6–7 toujours UNAVAILABLE', () => [
