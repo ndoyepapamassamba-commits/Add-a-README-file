@@ -1,5 +1,12 @@
 # Reprise — prochaine étape (à lire par Claude en début de session)
 
+## ⚠ Session du 6 octobre 2026 — bloqué
+- `HF_TOKEN` et `OPENROUTER_API_KEY` absents de l'environnement (OpenRouter fonctionne via le proxy de la session :
+  crédit ≈ 19,4 $ restants ; HuggingFace → 401). Wan 2.2 / voix Chatterbox non relancés : fournir `HF_TOKEN` dans
+  les variables de l'environnement puis relancer.
+- Nouvelle demande : atelier de production IA → prompt maître dans `ATELIER_PROMPT.md`.
+- La vidéo jointe par l'utilisateur n'était pas accessible dans la session.
+
 ## ▶ PRIORITÉ (4 octobre 2026) : 2D HAUTE QUALITÉ EXCLUSIVEMENT (choix de l'utilisateur)
 
 Décision : **uniquement du dessin animé 2D**, pas de plans vidéo IA (`--mock 2d-or` et le pipeline « tout IA »
