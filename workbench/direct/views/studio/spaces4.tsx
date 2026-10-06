@@ -5,7 +5,7 @@ import { Badge, Button, Input, Select, Textarea, Toggle } from '../../../web/com
 import { useStudio, DEFAULT_STUDIO } from '../../lib/studio/store';
 import { blobs, quota, type Quota } from '../../lib/studio/blobs';
 import { loadRegistry } from '../../lib/studio/actions';
-import { cancelVideo } from '../../lib/studio/actions2';
+import { cancelVideo, testModel } from '../../lib/studio/actions2';
 import {
   compose,
   GENOME_DIMENSIONS,
@@ -641,6 +641,7 @@ export function ModelLab() {
   const r = useRunner();
   const [kind, setKind] = useState('image');
   const [q, setQ] = useState('');
+  const [testMsg, setTestMsg] = useState('');
   const reg = S.registry;
   const age = reg ? Math.round((Date.now() - reg.at) / 60000) : null;
   const models = useMemo(
@@ -734,6 +735,11 @@ export function ModelLab() {
           </div>
         )}
         <ErrorBox error={r.error} />
+        {testMsg && (
+          <div className="mt-1 text-[12px]" data-testid="model-test-msg">
+            {testMsg}
+          </div>
+        )}
         <div className="mt-2 flex flex-wrap gap-2">
           <Select
             value={kind}
@@ -762,6 +768,7 @@ export function ModelLab() {
                   <th>Paramètres</th>
                   <th>Prix (brut)</th>
                   <th>Latence</th>
+                  <th>Test</th>
                 </tr>
               </thead>
               <tbody>
@@ -792,6 +799,21 @@ export function ModelLab() {
                       )}
                     </td>
                     <td>{m.latencyMs === null ? 'non mesurée' : `${m.latencyMs} ms`}</td>
+                    <td>
+                      {(m.kind === 'image' || m.kind === 'speech') && bp && (
+                        <Button
+                          size="sm"
+                          disabled={Boolean(r.busy)}
+                          onClick={() =>
+                            void r
+                              .run('Test…', () => testModel(bp.project.id, m.id))
+                              .then((x) => x && setTestMsg(x))
+                          }
+                        >
+                          Tester (1 appel)
+                        </Button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -24,12 +24,13 @@ export interface TextRun {
 export async function pickTextModel(
   text: string,
   vision = false,
+  teacher = false,
 ): Promise<{ model: string; fallbacks: string[]; why: string }> {
   const st = useStore.getState();
   let models = st.models;
   if (!models.length) models = await loadCatalog().catch(() => []);
   const profile = analyzeTask({ text, hasImages: vision });
-  if (!vision && apprenticeSettings().enabled) {
+  if (!vision && !teacher && apprenticeSettings().enabled) {
     const c = championFor(text);
     if (c)
       return {
@@ -38,7 +39,13 @@ export async function pickTextModel(
         why: `champion Apprentice VALIDATED (${c.family})`,
       };
   }
-  const routed = routeModel(models, DEFAULT_AUTO_TIERS, profile, st.health, st.board);
+  const routed = routeModel(
+    models,
+    DEFAULT_AUTO_TIERS,
+    teacher ? { ...profile, tier: 'quality', difficulty: Math.max(profile.difficulty, 0.6) } : profile,
+    st.health,
+    st.board,
+  );
   if (routed)
     return { model: routed.model, fallbacks: routed.fallbacks, why: `routage standard : ${routed.reason}` };
   // Same selection as the agent: the configured default (or, when it is « auto », the tier choice of the standard router).
@@ -63,6 +70,8 @@ export async function runText(o: {
   messages: ChatMessage[];
   /** The messages carry images: the model must accept vision. */
   vision?: boolean;
+  /** Teacher call: a stronger model analyses a failure; the spend is a LEARNING INVESTMENT. */
+  teacher?: boolean;
   maxTokens?: number;
   temperature?: number;
 }): Promise<TextRun> {
@@ -73,7 +82,7 @@ export async function runText(o: {
   })) as ChatMessage[];
   const joined = safe.map((m) => (typeof m.content === 'string' ? m.content : '')).join('\n');
   trace.stage('PRODUCTION_CLASSIFICATION', `texte : ${o.purpose}`);
-  const pick = await pickTextModel(joined.slice(0, 1500), o.vision);
+  const pick = await pickTextModel(joined.slice(0, 1500), o.vision, o.teacher);
   trace.stage('MODEL_SELECTION', pick.why);
   const models = useStore.getState().models;
   const t0 = performance.now();
@@ -106,6 +115,7 @@ export async function runText(o: {
           amount: cost,
           certain: r.costSource === 'measured',
           note: o.purpose,
+          learning: o.teacher || undefined,
         },
       ],
     }));
@@ -125,7 +135,7 @@ export async function runText(o: {
         fallback: r.model !== pick.model,
         retry: 0,
         correction: false,
-        teacher: false,
+        teacher: Boolean(o.teacher),
         JEV_cost: 0,
         total_cost: cost,
       },
@@ -161,7 +171,7 @@ export async function runText(o: {
         fallback: false,
         retry: 0,
         correction: false,
-        teacher: false,
+        teacher: Boolean(o.teacher),
         JEV_cost: 0,
         total_cost: null,
       },

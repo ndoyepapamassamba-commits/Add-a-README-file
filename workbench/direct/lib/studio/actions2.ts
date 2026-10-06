@@ -30,7 +30,7 @@ import { setStage, addDecision, serialize } from '../../../server/jev/studio/blu
 import { buildKitZip, type KitAsset } from '../../../server/jev/studio/kit';
 import { makeZip, type ZipEntry } from '../../../server/jev/studio/zip';
 import { scanSecrets } from '../../../server/jev/studio/secrets';
-import { compileScene } from '../../../server/jev/studio/genome';
+import { compileScene, compose } from '../../../server/jev/studio/genome';
 import { analytics } from '../../../server/jev/studio/memory';
 import type {
   AssetKind,
@@ -1013,4 +1013,119 @@ export async function runAutopilot(
     if ((e as Error).message?.includes('Autopilot arrêté')) step('IDEA', 'arrêté');
     else throw e;
   }
+}
+
+// ───────── Teacher (media) and single-call model tests ─────────
+/**
+ * TEACHER: a stronger text model analyses a failure (QA issue, failed generation) and proposes a corrected strategy.
+ * Its spend is a LEARNING INVESTMENT (recorded in the project costs, jevSpend and the JEV_LOG). The advice is stored as a
+ * decision and a prompt note; it never changes anything by itself.
+ */
+export async function teacherAdvice(
+  projectId: string,
+  problem: { code?: string; message: string; sceneId?: string },
+): Promise<{ advice: string; model: string; cost: number }> {
+  const bp = bpOf(projectId);
+  const sc = bp.scenes.find((s) => s.scene_id === problem.sceneId);
+  const recent = S()
+    .memory.filter((m) => m.projectId === projectId && !m.success)
+    .slice(-5)
+    .map((m) => `${m.kind}/${m.task} ${m.model} ${m.errorClass ?? ''}`)
+    .join(' ; ');
+  const r = await runText({
+    projectId,
+    purpose: 'Teacher : analyse d’échec',
+    teacher: true,
+    maxTokens: 900,
+    temperature: 0.2,
+    messages: [
+      {
+        role: 'system',
+        content:
+          'Tu es un mentor de production audiovisuelle 2D. Analyse brièvement la cause probable et propose une stratégie corrigée concrète (prompt, paramètres, modèle moins cher à retenter). Réponds en 6 lignes maximum.',
+      },
+      {
+        role: 'user',
+        content: `Problème : ${problem.code ?? ''} ${problem.message}\nScène : ${sc ? `${sc.scene_id} ${sc.action}` : '—'}\nStyle : ${bp.styleDNA.renderStyle}\nÉchecs récents : ${recent || 'aucun'}`,
+      },
+    ],
+  });
+  patch(projectId, (b) =>
+    addDecision(
+      {
+        ...b,
+        prompts: [
+          ...b.prompts,
+          {
+            id: uid('prompt'),
+            version: 'teacher',
+            kind: 'teacher',
+            text: r.text.slice(0, 1200),
+            model: r.model,
+            at: Date.now(),
+          },
+        ],
+      },
+      'QA',
+      `TEACHER (${r.model}) — LEARNING INVESTMENT ${r.cost.toFixed(4)} $ : ${r.text.slice(0, 200)}`,
+    ),
+  );
+  return { advice: r.text, model: r.model, cost: r.cost };
+}
+/** One real call of a given model on a fixed test (adds one measured record to the production memory). */
+export async function testModel(projectId: string, modelId: string): Promise<string> {
+  const reg = await loadRegistry();
+  const m = reg.models.find((x) => x.id === modelId);
+  if (!m) throw new StudioError('UNSUPPORTED_CAPABILITY', 'modèle absent du registre');
+  if (m.kind === 'image') {
+    const { generateOne } = await import('./actions');
+    const bp = bpOf(projectId);
+    const out = await generateOne({
+      projectId,
+      compiled: compose('image', {
+        STYLE: bp.styleDNA.renderStyle,
+        SUBJECT: 'a cheerful grandmother in a red headscarf laughing, white background',
+        NEGATIVE: bp.styleDNA.negative,
+      }),
+      references: [],
+      task: 'MODEL-TEST',
+      mission: `test ${modelId}`,
+      aspect: '1:1',
+      forceModel: modelId,
+      tags: ['test'],
+    });
+    return `${out.model} : ${out.cost === null ? 'coût non mesuré' : `${out.cost.toFixed(4)} $`}`;
+  }
+  if (m.kind === 'speech') {
+    const { speak } = await import('./net');
+    const { estimateSpeech } = await import('../../../server/jev/studio/cost');
+    const text = 'Bonjour, ceci est un test de voix.';
+    const out = await executeMedia<{ blob: Blob }>({
+      projectId,
+      kind: 'speech',
+      task: 'MODEL-TEST',
+      style: 'default',
+      contract: 'mp3',
+      promptVersion: 'speech-test',
+      mission: `test ${modelId}`,
+      maxModels: 1,
+      candidates: [{ model: m, estimate: estimateSpeech(m, text.length) }],
+      call: async (mm) => ({
+        result: { blob: (await speak({ model: mm.id, input: text, voice: mm.voices[0] })).blob },
+        cost: null,
+      }),
+      store: async (res) => ({
+        blob: res.blob,
+        kind: 'voice',
+        mime: res.blob.type || 'audio/mpeg',
+        name: `test-${modelId}`,
+        tags: ['test'],
+      }),
+    });
+    return `${out.model} : audio généré`;
+  }
+  throw new StudioError(
+    'UNSUPPORTED_CAPABILITY',
+    'test à un appel disponible pour les modèles image et voix uniquement',
+  );
 }

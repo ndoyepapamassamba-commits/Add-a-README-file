@@ -15,6 +15,7 @@ import {
   importFinal,
   runQA,
   repairIssue,
+  teacherAdvice,
   srtOf,
 } from '../../lib/studio/actions2';
 import { recoverJobs } from '../../../server/jev/studio/jobs';
@@ -141,6 +142,21 @@ function Delivery() {
                     ) : (
                       <span className="text-faint">revue humaine</span>
                     )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={Boolean(r.busy)}
+                      data-testid="teacher-ask"
+                      onClick={async () => {
+                        const x = await r.run('Teacher…', () => teacherAdvice(id, p.issue));
+                        if (x)
+                          setMsg(
+                            `TEACHER (${x.model}, ${x.cost.toFixed(4)} $ — LEARNING INVESTMENT) : ${x.advice.slice(0, 300)}`,
+                          );
+                      }}
+                    >
+                      Demander au Teacher
+                    </Button>
                   </li>
                 ))
               )}
