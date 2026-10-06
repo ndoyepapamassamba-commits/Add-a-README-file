@@ -29,7 +29,21 @@ import {
 } from '../../../server/jev/studio/types';
 import { stats as jobStats } from '../../../server/jev/studio/jobs';
 import { hasKey } from '../../lib/studio/net';
-import { BusyBar, Card, ErrorBox, Label, NoData, Thumb, useActive, useRunner, usd } from './common';
+import {
+  BusyBar,
+  Card,
+  ErrorBox,
+  Label,
+  NoData,
+  Thumb,
+  useActive,
+  useRunner,
+  usd,
+  VideoBox,
+  gotoSpace,
+  type VideoMeta,
+} from './common';
+import { videoOutput } from '../../../server/jev/studio/video';
 
 const TONE: Record<StageStatus, 'neutral' | 'ok' | 'warn' | 'err' | 'info'> = {
   QUEUED: 'neutral',
@@ -197,6 +211,7 @@ export function ControlRoom() {
               </ol>
             )}
           </Card>
+          <VideoOutput projectId={bp.project.id} />
           <Card title="Historique des décisions JEV">
             {bp.decisions.length ? (
               <ul className="space-y-0.5 text-[12px]">
@@ -742,3 +757,50 @@ export function StyleView() {
   );
 }
 export { loadRegistry };
+
+/** VIDEO OUTPUT: shown only when the project really has a COMPLETED video (latest first). */
+function VideoOutput({ projectId }: { projectId: string }) {
+  const jobs = useStudio((x) => x.jobs);
+  const out = useMemo(() => videoOutput(jobs, projectId), [jobs, projectId]);
+  const [meta, setMeta] = useState<VideoMeta | null>(null);
+  if (!out.latest) return null;
+  return (
+    <Card title="VIDEO OUTPUT" testId="studio-video-output">
+      <div className="flex flex-wrap gap-3">
+        <div className="w-44 shrink-0">
+          <VideoBox
+            assetId={out.latest.assetId}
+            onMeta={setMeta}
+            className="w-full rounded-lg bg-black"
+            testId="video-output-player"
+          />
+        </div>
+        <div className="grid flex-1 grid-cols-2 gap-x-4 gap-y-1 text-[12.5px] md:grid-cols-4">
+          <div>
+            <Label>Vidéos</Label>
+            {out.count}
+          </div>
+          <div>
+            <Label>Dernière vidéo</Label>
+            {out.latest.sceneId ?? '—'} ·{' '}
+            {new Date(out.latest.endedAt ?? out.latest.createdAt).toLocaleString()}
+          </div>
+          <div>
+            <Label>Durée</Label>
+            {meta ? `${meta.duration.toFixed(1)} s` : '…'}
+          </div>
+          <div>
+            <Label>Coût total vidéo</Label>
+            {usd(out.totalCost)}
+            {out.costKnown ? '' : ' (dont non mesuré)'}
+          </div>
+          <div className="col-span-full">
+            <Button size="sm" onClick={() => gotoSpace('video')} data-testid="open-video-factory">
+              OPEN VIDEO FACTORY
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}

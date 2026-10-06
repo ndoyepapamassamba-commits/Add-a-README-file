@@ -176,6 +176,8 @@ export interface Scene {
   subtitle_prompt: string;
   /** Storyboard card state. */
   imageAssetId?: string;
+  /** Generated video attached to the card; the image stays the reference. */
+  videoAssetId?: string;
   status: 'DRAFT' | 'READY' | 'GENERATED' | 'APPROVED' | 'FAILED';
   quality?: number | null;
   model?: string;

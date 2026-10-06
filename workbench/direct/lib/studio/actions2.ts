@@ -20,6 +20,7 @@ import { estimateVideo } from '../../../server/jev/studio/cost';
 import { modelsWith, validateVideoRequest } from '../../../server/jev/studio/capabilities';
 import { StudioError, classifyError } from '../../../server/jev/studio/errors';
 import { completeJob, failJob, cancelJob } from '../../../server/jev/studio/jobs';
+import { TALK_LABEL, talkRoutes, videoFileName, type TalkRoute } from '../../../server/jev/studio/video';
 import { DEFAULT_MUSIC, proposeSfx, type MusicSpec, type SfxLabel } from '../../../server/jev/studio/sound';
 import { timeSubtitles, toSrt } from '../../../server/jev/studio/subtitles';
 import { autoTimeline } from '../../../server/jev/studio/timeline';
@@ -691,6 +692,28 @@ export async function resumeVideoJobs(): Promise<number> {
           name: `video-${j.sceneId ?? ''}`,
         });
         S().setJobs((all) => completeJob(all, j.id, { cost: st.cost, assetId: id }));
+        if (S().projects[j.projectId])
+          patch(j.projectId, (b) => ({
+            ...b,
+            assets: [...b.assets, id],
+            models: [...new Set([...b.models, j.model])],
+            generationJobs: b.generationJobs.includes(j.id) ? b.generationJobs : [...b.generationJobs, j.id],
+            costs:
+              st.cost === null || b.costs.some((c) => c.jobId === j.id)
+                ? b.costs
+                : [
+                    ...b.costs,
+                    {
+                      at: Date.now(),
+                      jobId: j.id,
+                      kind: 'video',
+                      model: j.model,
+                      amount: st.cost,
+                      certain: true,
+                      note: 'coût réel (usage.cost), job repris après réouverture',
+                    },
+                  ],
+          }));
       } else if (st.status === 'failed')
         S().setJobs((all) => failJob(all, j.id, { error: st.error ?? 'échec', errorClass: 'CONTENT_ERROR' }));
     } catch {
@@ -699,32 +722,159 @@ export async function resumeVideoJobs(): Promise<number> {
   }
   return running.length;
 }
-/** « Fais parler ce personnage » : image → first frame → native-audio video when a capability exists, else the local 2D engine. */
-export async function makeCharacterTalk(
-  projectId: string,
-  sceneId: string,
-): Promise<{ route: 'video' | 'local-2d'; reason: string; assetId?: string }> {
+/**
+ * « Fais parler ce personnage » — four distinct routes, chosen from what is really available:
+ * B image→vidéo + audio natif · C image→vidéo + TTS externe · D moteur 2D local + Rhubarb
+ * (A, image→vidéo muette, exists but is never picked for « parler »).
+ */
+export interface TalkResult {
+  route: TalkRoute;
+  label: string;
+  reason: string;
+  /** True only when a paid AI video was really generated. */
+  aiVideo: boolean;
+  available: Record<TalkRoute, boolean>;
+  assetId?: string;
+  audioAssetIds?: string[];
+}
+export async function makeCharacterTalk(projectId: string, sceneId: string): Promise<TalkResult> {
   const reg = await loadRegistry();
-  const can = modelsWith(reg, 'video', 'IMAGE_TO_VIDEO', 'AUDIO');
-  if (!videoEnabled() || !can.length)
+  const bp = bpOf(projectId);
+  const sc = bp.scenes.find((s) => s.scene_id === sceneId);
+  const i2v = modelsWith(reg, 'video', 'VIDEO_GENERATION', 'IMAGE_TO_VIDEO');
+  const native = modelsWith(reg, 'video', 'VIDEO_GENERATION', 'IMAGE_TO_VIDEO', 'AUDIO');
+  const tts = modelsWith(reg, 'speech', 'SPEECH');
+  const plan = talkRoutes({
+    videoEnabled: videoEnabled(),
+    hasSceneImage: Boolean(sc?.imageAssetId),
+    i2v: i2v.length,
+    i2vNative: native.length,
+    tts: tts.length,
+    dialogueLines: sc?.dialogue.length ?? 0,
+  });
+  const base = { label: TALK_LABEL[plan.selected], available: plan.available };
+  if (plan.selected === 'D')
     return {
-      route: 'local-2d',
-      reason: !videoEnabled()
-        ? 'Video Factory désactivée : secours gratuit = moteur 2D local (lip-sync Rhubarb). Utilisez « Exporter le kit afrikatoon-auto ».'
-        : 'Capability unavailable in current environment : aucun modèle image→vidéo avec audio natif. Secours : moteur 2D local (lip-sync Rhubarb).',
+      ...base,
+      route: 'D',
+      aiVideo: false,
+      reason: `${plan.why}. Aucune vidéo IA générée : utilisez « Exporter le kit afrikatoon-auto » (moteur 2D local, lip-sync Rhubarb).`,
     };
+  const dur = (plan.selected === 'B' ? native : i2v)[0]!.video!.durations[0] ?? 5;
+  if (plan.selected === 'B') {
+    const id = await generateSceneVideo(projectId, sceneId, {
+      mode: 'image',
+      duration: dur,
+      audio: true,
+      forceModel: native[0]!.id,
+    });
+    return {
+      ...base,
+      route: 'B',
+      aiVideo: true,
+      assetId: id,
+      reason: `${plan.why} ; la synchro labiale n’est PAS mesurée automatiquement : contrôle humain requis`,
+    };
+  }
+  // Route C: silent video, then the voice lines separately (each call goes through the cost governor)
   const id = await generateSceneVideo(projectId, sceneId, {
     mode: 'image',
-    duration: can[0]!.video!.durations[0] ?? 5,
-    audio: true,
-    forceModel: can[0]!.id,
+    duration: dur,
+    audio: false,
+    forceModel: i2v[0]!.id,
   });
+  const audioAssetIds: string[] = [];
+  for (let k = 0; k < Math.min(sc!.dialogue.length, 4); k++)
+    audioAssetIds.push((await generateLine(projectId, sceneId, k)).assetId);
   return {
-    route: 'video',
-    reason:
-      'vidéo à audio natif générée ; la synchro labiale n’est PAS mesurée automatiquement : contrôle humain requis',
+    ...base,
+    route: 'C',
+    aiVideo: true,
     assetId: id,
+    audioAssetIds,
+    reason: `${plan.why}. La voix est un fichier audio séparé : à caler dans AI Editor (non synchronisée automatiquement).`,
   };
+}
+
+// ───────── video restitution ─────────
+/** Downloads the stored Blob of a video asset with the extension of its REAL mime. */
+export async function exportVideo(assetId: string): Promise<ExportResult> {
+  const meta = S().assets[assetId];
+  const blob = await blobs.get(assetId);
+  if (!blob) return { ok: false, name: '', bytes: 0, error: 'Blob absent d’IndexedDB : export impossible' };
+  const bp = meta?.projectId ? S().projects[meta.projectId] : undefined;
+  const mime = blob.type || meta?.mime || 'video/mp4';
+  const name = videoFileName({
+    project: bp?.title || 'production',
+    scene: meta?.sceneId,
+    model: meta?.model ?? 'model',
+    mime,
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  return { ok: true, name, bytes: blob.size };
+}
+/** scene.videoAssetId = assetId; scene.imageAssetId is left untouched (the image remains the reference). */
+export function sendVideoToStoryboard(projectId: string, sceneId: string, assetId: string): boolean {
+  const sc = bpOf(projectId).scenes.find((s) => s.scene_id === sceneId);
+  if (!sc) return false;
+  patch(
+    projectId,
+    (b) => ({
+      ...b,
+      scenes: b.scenes.map((s) => (s.scene_id === sceneId ? { ...s, videoAssetId: assetId } : s)),
+    }),
+    `vidéo ${assetId} envoyée au storyboard (${sceneId})`,
+  );
+  return true;
+}
+export interface VideoDiag {
+  jobId: string;
+  status: string;
+  pollingUrl: string | null;
+  model: string;
+  assetId: string | null;
+  assetMeta: boolean;
+  blobExists: boolean;
+  mime: string | null;
+  bytes: number | null;
+  idb: { ok: boolean; message: string };
+}
+/** Real facts only: reads the job, the asset metadata and the Blob straight from IndexedDB. */
+export async function videoDiagnostics(jobId: string): Promise<VideoDiag | null> {
+  const j = S().jobs.find((x) => x.id === jobId);
+  if (!j) return null;
+  const d: VideoDiag = {
+    jobId: j.id,
+    status: j.status,
+    pollingUrl: j.pollingUrl ?? null,
+    model: j.model,
+    assetId: j.assetId ?? null,
+    assetMeta: Boolean(j.assetId && S().assets[j.assetId]),
+    blobExists: false,
+    mime: null,
+    bytes: null,
+    idb: { ok: true, message: 'IndexedDB accessible' },
+  };
+  if (j.assetId) {
+    try {
+      const b = await blobs.get(j.assetId);
+      if (b) {
+        d.blobExists = true;
+        d.mime = b.type || null;
+        d.bytes = b.size;
+      }
+    } catch (e) {
+      d.idb = { ok: false, message: `IndexedDB : ${(e as Error).message}` };
+    }
+  }
+  return d;
 }
 
 // ───────── exports ─────────

@@ -23,6 +23,16 @@ import {
   pickModel,
   type Candidate,
 } from '../../server/jev/studio/cost';
+import type { Job } from '../../server/jev/studio/types';
+import {
+  videoExt,
+  videoFileName,
+  videoOutput,
+  videoState,
+  EXPIRY_MS,
+  ratioOf,
+  talkRoutes,
+} from '../../server/jev/studio/video';
 import { classifyError, withRetry, StudioError } from '../../server/jev/studio/errors';
 import {
   newJob,
@@ -879,5 +889,67 @@ describe('AI Editor timeline and sound', () => {
     expect(String.fromCharCode(...w.slice(0, 4))).toBe('RIFF');
     expect(new DataView(w.buffer).getUint32(24, true)).toBe(22050);
     expect(w.length).toBe(44 + 8);
+  });
+});
+
+describe('video restitution helpers (PATCH VIDEO OUTPUT)', () => {
+  it('extension follows the REAL mime, never assumes mp4', () => {
+    expect(videoExt('video/webm')).toBe('webm');
+    expect(videoExt('video/mp4; codecs="avc1"')).toBe('mp4');
+    expect(videoExt('application/octet-stream')).toBe('bin');
+  });
+  it('file name = PROJECT_SCENE_MODEL_TIMESTAMP.ext', () => {
+    const n = videoFileName(
+      { project: 'Le secret du gendre', scene: 'S01', model: 'x-ai/grok-imagine-video', mime: 'video/webm' },
+      Date.UTC(2026, 9, 6, 12, 30, 5),
+    );
+    expect(n).toBe('Le-secret-du-gendre_S01_grok-imagine-video_20261006T123005.webm');
+  });
+  const job = (o: Partial<Job>): Job => ({
+    id: 'j',
+    projectId: 'p',
+    kind: 'video',
+    task: 'I2V',
+    model: 'm',
+    status: 'COMPLETED',
+    createdAt: 1,
+    estimate: null,
+    estimateCertain: false,
+    cost: 0.2,
+    retries: 0,
+    paid: true,
+    ...o,
+  });
+  it('only COMPLETED jobs with an asset count; latest first; real total cost', () => {
+    const jobs = [
+      job({ id: 'a', assetId: 'x', endedAt: 10 }),
+      job({ id: 'b', assetId: 'y', endedAt: 20, cost: 0.3 }),
+      job({ id: 'c', status: 'RUNNING' }),
+      job({ id: 'd' }), // completed but no asset: not shown as a video
+      job({ id: 'e', assetId: 'z', projectId: 'other' }),
+    ];
+    const o = videoOutput(jobs, 'p');
+    expect(o.count).toBe(2);
+    expect(o.latest?.id).toBe('b');
+    expect(o.totalCost).toBeCloseTo(0.5);
+  });
+  it('a job RUNNING for more than 24 h is shown EXPIRED', () => {
+    expect(videoState(job({ status: 'RUNNING', createdAt: 0 }), EXPIRY_MS + 1)).toBe('EXPIRED');
+    expect(videoState(job({ status: 'RUNNING', createdAt: 0 }), 1000)).toBe('RUNNING');
+  });
+  it('ratio comes from real pixels', () => {
+    expect(ratioOf(720, 1280)).toBe('9:16');
+    expect(ratioOf(0, 0)).toBe('—');
+  });
+  const inp = { videoEnabled: true, hasSceneImage: true, i2v: 1, i2vNative: 0, tts: 1, dialogueLines: 2 };
+  it('talk routes: native audio > external TTS > local 2D; A never chosen; honest reasons', () => {
+    expect(talkRoutes({ ...inp, i2vNative: 1 }).selected).toBe('B');
+    expect(talkRoutes(inp).selected).toBe('C');
+    expect(talkRoutes({ ...inp, tts: 0 }).selected).toBe('D');
+    expect(talkRoutes({ ...inp, tts: 0 }).available.A).toBe(true);
+    expect(talkRoutes({ ...inp, videoEnabled: false }).selected).toBe('D');
+    expect(talkRoutes({ ...inp, hasSceneImage: false }).available.C).toBe(false);
+    // a model without native audio stays usable for image → video
+    expect(talkRoutes({ ...inp, i2vNative: 0 }).available.A).toBe(true);
   });
 });

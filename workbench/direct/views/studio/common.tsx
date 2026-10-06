@@ -1,5 +1,5 @@
 // Shared bits of the AI Visual Studio screens.
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Badge, Button, Modal, Spinner } from '../../../web/components/ui';
 import { useStore } from '../../lib/store';
 import { useStudio } from '../../lib/studio/store';
@@ -173,3 +173,110 @@ export const Card = ({
 export const Label = ({ children }: { children: ReactNode }) => (
   <div className="mb-0.5 text-[11.5px] font-medium uppercase tracking-wide text-faint">{children}</div>
 );
+
+/** Re-renders every `ms` (live elapsed time). */
+export function useNow(ms = 1000): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), ms);
+    return () => clearInterval(t);
+  }, [ms]);
+  return now;
+}
+export interface VideoMeta {
+  duration: number;
+  width: number;
+  height: number;
+}
+export type PlaybackState = 'loading' | 'loaded' | 'error' | 'no-blob';
+/** The player: its src is an object URL of the Blob actually stored in IndexedDB (same store as Asset Library). */
+export function VideoBox({
+  assetId,
+  vref,
+  onMeta,
+  onState,
+  className = 'w-full max-h-[420px] rounded-lg bg-black',
+  testId,
+}: {
+  assetId?: string | null;
+  vref?: RefObject<HTMLVideoElement | null>;
+  onMeta?: (m: VideoMeta) => void;
+  onState?: (s: PlaybackState) => void;
+  className?: string;
+  testId?: string;
+}) {
+  const url = useBlobUrl(assetId);
+  const [tried, setTried] = useState(false);
+  useEffect(() => {
+    setTried(false);
+    const t = setTimeout(() => setTried(true), 1500);
+    return () => clearTimeout(t);
+  }, [assetId]);
+  useEffect(() => {
+    if (url) onState?.('loading');
+    else if (tried) onState?.('no-blob');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, tried]);
+  if (!url)
+    return (
+      <div className={`${className} flex min-h-[80px] items-center justify-center text-[12px] text-faint`}>
+        {tried ? 'Blob vidéo introuvable dans IndexedDB' : 'Chargement du Blob…'}
+      </div>
+    );
+  return (
+    <video
+      ref={vref}
+      src={url}
+      controls
+      playsInline
+      preload="metadata"
+      className={className}
+      data-testid={testId}
+      onLoadedMetadata={(e) => {
+        const v = e.currentTarget;
+        onMeta?.({ duration: v.duration, width: v.videoWidth, height: v.videoHeight });
+        onState?.('loaded');
+      }}
+      onError={() => onState?.('error')}
+    />
+  );
+}
+/** Opens another studio space (listened to by StudioView). */
+export const gotoSpace = (space: string) =>
+  window.dispatchEvent(new CustomEvent('studio:goto', { detail: space }));
+
+/** Small muted preview of a stored video; click opens the full player. */
+export function VideoReady({ assetId, label = 'VIDEO READY' }: { assetId: string; label?: string }) {
+  const [open, setOpen] = useState(false);
+  const url = useBlobUrl(assetId);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-1 flex items-center gap-2 rounded-lg border border-ok/40 p-1 text-left text-[11.5px] hover:bg-hover"
+        data-testid="video-ready"
+      >
+        {url ? (
+          <video
+            src={url}
+            muted
+            playsInline
+            preload="metadata"
+            className="h-14 w-10 rounded bg-black object-cover"
+          />
+        ) : (
+          <span className="flex h-14 w-10 items-center justify-center rounded bg-black/30 text-faint">…</span>
+        )}
+        <span>
+          <b className="text-ok">▶ {label}</b>
+          <br />
+          <span className="text-faint">cliquer pour lire</span>
+        </span>
+      </button>
+      <Modal open={open} onClose={() => setOpen(false)} title="Vidéo de la scène" width={560}>
+        {open && <VideoBox assetId={assetId} testId="video-ready-player" />}
+      </Modal>
+    </>
+  );
+}

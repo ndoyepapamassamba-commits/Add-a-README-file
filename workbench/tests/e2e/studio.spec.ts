@@ -121,8 +121,8 @@ async function intercept(page: Page): Promise<Net> {
     if (p === '/videos/vid-1/content')
       return route.fulfill({
         status: 200,
-        headers: { ...CORS, 'content-type': 'video/mp4' },
-        body: Buffer.from('fake-mp4'),
+        headers: { ...CORS, 'content-type': 'video/webm' }, // a real, playable clip with its REAL mime
+        body: fs.readFileSync(path.join(ROOT, 'tests/fixtures/studio/clip.webm')),
       });
     return route.fulfill({ status: 404, headers: CORS, body: '{}' });
   });
@@ -618,6 +618,117 @@ test('Video Factory: disabled by default; submit → poll → completed with rea
   await space(page, 'video');
   await expect(page.getByTestId('video-jobs')).not.toContainText('RUNNING', { timeout: 20_000 });
   expect(net.videoSubmits).toBe(1); // never resubmitted
+});
+
+test('Video Factory restitution: COMPLETED → player visible at once, export with the real mime, fullscreen, storyboard, Control Room, Asset Library, diagnostics, still playable after reload (PATCH VIDEO OUTPUT)', async ({
+  page,
+}) => {
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  await open(page, [], { debug: true });
+  const net = await intercept(page);
+  await openStudio(page);
+  await createProductionWithStory(page);
+  // reference image for S01 (image → video)
+  await space(page, 'images');
+  await page.getByTestId('studio-images').getByRole('combobox').first().selectOption('S01');
+  await page.getByTestId('image-generate').click();
+  await expect(page.getByTestId('image-results').locator('li')).toHaveCount(1, { timeout: 20_000 });
+  await space(page, 'video');
+  await page.getByTestId('video-budget').fill('1');
+  await page.getByRole('switch', { name: /Activer la Video Factory/ }).click();
+  await expect(page.getByTestId('studio-video')).toContainText('ACTIVE');
+  await page.evaluate(() =>
+    (
+      window as unknown as { massambaStudioDebug: { setVideoPollInterval: (n: number) => void } }
+    ).massambaStudioDebug.setVideoPollInterval(50),
+  );
+  await page.getByTestId('studio-video').getByRole('combobox').first().selectOption('S01');
+  await expect(page.getByTestId('studio-video').getByRole('combobox').nth(1)).toHaveValue('image');
+  await page.getByTestId('video-generate').click();
+  // the player appears in Video Factory itself, without visiting Asset Library
+  const card = page.getByTestId('video-card');
+  await expect(card).toBeVisible({ timeout: 30_000 });
+  await expect(card).toContainText('VIDEO GENERATED');
+  await expect(card).toContainText('S01');
+  await expect(card).toContainText('0.2000 $');
+  const player = page.getByTestId('video-player');
+  await expect
+    .poll(() => player.evaluate((v: HTMLVideoElement) => v.readyState), { timeout: 10_000 })
+    .toBeGreaterThanOrEqual(1);
+  const info = await player.evaluate((v: HTMLVideoElement) => ({
+    d: v.duration,
+    w: v.videoWidth,
+    src: v.src.startsWith('blob:'),
+    controls: v.controls,
+  }));
+  expect(info.src).toBe(true); // object URL of the Blob stored in IndexedDB
+  expect(info.controls).toBe(true);
+  expect(info.d).toBeGreaterThan(1);
+  await expect(card).toContainText('180×320');
+  await expect(card).toContainText('9:16');
+  expect(net.videoSubmits).toBe(1);
+  // play + fullscreen (never throws, falls back with a message)
+  await page.getByTestId('video-play').click();
+  await page.getByTestId('video-fullscreen').click();
+  await page.evaluate(() => document.fullscreenElement && document.exitFullscreen());
+  // export: name PROJECT_SCENE_MODEL_TIMESTAMP.<real mime ext>
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.getByTestId('video-export').click()]);
+  expect(dl.suggestedFilename()).toMatch(/^.+_S01_.+_\d{8}T\d{6}\.webm$/);
+  const vp = path.join(tmp, 'out.webm');
+  await dl.saveAs(vp);
+  expect(fs.readFileSync(vp).subarray(0, 4).toString('hex')).toBe('1a45dfa3'); // EBML = real webm
+  // diagnostics: real facts
+  await expect(page.getByTestId('video-diagnostics')).toContainText('Blob stocké');
+  await expect(page.getByTestId('video-diagnostics')).toContainText('video/webm');
+  await expect(page.getByTestId('video-diagnostics')).toContainText('élément <video> chargé');
+  // storyboard: video attached, image kept
+  await page.getByTestId('video-storyboard').click();
+  await expect(page.getByTestId('video-storyboard')).toContainText('DANS LE STORYBOARD');
+  await expect
+    .poll(async () => {
+      const p = (await kvGet(page, 'vs.projects')) as Record<
+        string,
+        { scenes: { scene_id: string; imageAssetId?: string; videoAssetId?: string }[] }
+      >;
+      const sc = p ? Object.values(p)[0]?.scenes.find((x) => x.scene_id === 'S01') : undefined;
+      return Boolean(sc?.imageAssetId) && Boolean(sc?.videoAssetId);
+    })
+    .toBe(true);
+  await space(page, 'scenes');
+  await expect(page.getByTestId('card-S01').getByTestId('video-ready')).toContainText('VIDEO READY');
+  // Control Room
+  await space(page, 'control');
+  await expect(page.getByTestId('studio-video-output')).toContainText('VIDEO OUTPUT');
+  await page.getByTestId('open-video-factory').click();
+  await expect(page.getByTestId('studio-video')).toBeVisible();
+  // Asset Library still lists it
+  await space(page, 'assets');
+  await expect(page.getByTestId('asset-list')).toContainText(/GENERATED.ASSET[\s\S]*video-S01/);
+  // reload: still playable, nothing resubmitted
+  await page.evaluate((k) => sessionStorage.setItem('wbd.openrouter-key', k), KEY);
+  await page.reload();
+  await openStudio(page);
+  await space(page, 'video');
+  await expect(page.getByTestId('video-card')).toBeVisible({ timeout: 20_000 });
+  await expect
+    .poll(() => page.getByTestId('video-player').evaluate((v: HTMLVideoElement) => v.readyState), {
+      timeout: 10_000,
+    })
+    .toBeGreaterThanOrEqual(1);
+  expect(net.videoSubmits).toBe(1);
+});
+
+test('Video Factory disabled: no video call is ever made, no player is shown', async ({ page }) => {
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  await open(page);
+  const net = await intercept(page);
+  await openStudio(page);
+  await createProductionWithStory(page);
+  await space(page, 'video');
+  await expect(page.getByTestId('studio-video')).toContainText('DÉSACTIVÉE');
+  await expect(page.getByTestId('video-generate')).toHaveCount(0);
+  await expect(page.getByTestId('video-card')).toHaveCount(0);
+  expect(net.videoSubmits).toBe(0);
 });
 
 test('Kit afrikatoon-auto: a valid ZIP with the run.py schema; no secret anywhere (TESTS 16, 18)', async ({

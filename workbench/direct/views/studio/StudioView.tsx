@@ -305,6 +305,14 @@ export function StudioView() {
   const bp = useActive();
   const [space, setSpace] = useState<Space>('control');
   const enabled = S.settings.enabled;
+  useEffect(() => {
+    const on = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (SPACES.some((x) => x.id === id)) setSpace(id as Space);
+    };
+    window.addEventListener('studio:goto', on);
+    return () => window.removeEventListener('studio:goto', on);
+  }, []);
   // Hydration (IndexedDB read) happens only once the studio is opened AND enabled.
   useEffect(() => {
     if (!enabled) return;

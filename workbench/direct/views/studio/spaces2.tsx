@@ -1,8 +1,9 @@
 // Spaces 6–10: Scene Director, Image Factory, Video Factory, Dialogue, Voice.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { Badge, Button, Input, Select, Textarea, Toggle } from '../../../web/components/ui';
 import { useStudio } from '../../lib/studio/store';
+import { useStore } from '../../lib/store';
 import {
   generateOne,
   generateSceneImage,
@@ -19,7 +20,20 @@ import {
   videoEnabled,
   videoSpent,
   resumeVideoJobs,
+  exportVideo,
+  sendVideoToStoryboard,
+  videoDiagnostics,
+  type TalkResult,
+  type VideoDiag,
 } from '../../lib/studio/actions2';
+import {
+  TALK_LABEL,
+  completedVideos,
+  elapsed,
+  ratioOf,
+  videoState,
+  type VideoState,
+} from '../../../server/jev/studio/video';
 import { compose } from '../../../server/jev/studio/genome';
 import { modelsWith } from '../../../server/jev/studio/capabilities';
 import { canAutoRetry } from '../../../server/jev/studio/jobs';
@@ -34,9 +48,15 @@ import {
   Thumb,
   useActive,
   useBlobUrl,
+  useNow,
   useRunner,
   usd,
+  VideoBox,
+  VideoReady,
+  type PlaybackState,
+  type VideoMeta,
 } from './common';
+import type { Job } from '../../../server/jev/studio/types';
 import { hasKey } from '../../lib/studio/net';
 
 // ───────── 6. Scene Director ─────────
@@ -107,9 +127,12 @@ export function SceneDirector() {
                 className={`flex gap-2 rounded-xl border p-2 text-[12px] ${sel === s.scene_id ? 'border-accent' : 'border-line'}`}
                 data-testid={`card-${s.scene_id}`}
               >
-                <button onClick={() => setSel(s.scene_id)} className="shrink-0">
-                  <Thumb id={s.imageAssetId} className="h-28 w-20" />
-                </button>
+                <div className="shrink-0">
+                  <button onClick={() => setSel(s.scene_id)}>
+                    <Thumb id={s.imageAssetId} className="h-28 w-20" />
+                  </button>
+                  {s.videoAssetId && <VideoReady assetId={s.videoAssetId} />}
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
                     <b>
@@ -578,7 +601,9 @@ export function VideoFactory() {
   const [mode, setMode] = useState<'text' | 'image'>('image');
   const [dur, setDur] = useState('5');
   const [audio, setAudio] = useState(false);
-  const [talk, setTalk] = useState<string>('');
+  const [talk, setTalk] = useState<TalkResult | null>(null);
+  const [playback, setPlayback] = useState<Record<string, PlaybackState>>({});
+  const [diagJob, setDiagJob] = useState('');
   useEffect(() => {
     void loadRegistry().catch(() => undefined);
   }, []);
@@ -590,6 +615,7 @@ export function VideoFactory() {
     .slice()
     .reverse();
   const on = videoEnabled();
+  const done = completedVideos(S.jobs, bp?.project.id);
   return (
     <div className="space-y-3" data-testid="studio-video">
       <Card
@@ -724,7 +750,7 @@ export function VideoFactory() {
                 const x = await r.run('Chaîne « Fais parler ce personnage »…', () =>
                   makeCharacterTalk(bp.project.id, scene),
                 );
-                if (x) setTalk(`${x.route} — ${x.reason}`);
+                if (x) setTalk(x);
               }}
               data-testid="video-talk"
             >
@@ -733,76 +759,351 @@ export function VideoFactory() {
             <Button onClick={() => void resumeVideoJobs()}>Reprendre les jobs en cours</Button>
           </div>
           {talk && (
-            <div className="mt-2 text-[12.5px]" data-testid="video-talk-result">
-              {talk}
+            <div
+              className="mt-2 rounded-lg border border-line p-2 text-[12.5px]"
+              data-testid="video-talk-result"
+            >
+              <Label>ROUTE SELECTED</Label>
+              <div>
+                <b>
+                  {talk.route} — {talk.label}
+                </b>{' '}
+                <Badge tone={talk.aiVideo ? 'ok' : 'warn'}>
+                  {talk.aiVideo ? 'vidéo IA générée' : 'aucune vidéo IA générée'}
+                </Badge>
+              </div>
+              <div className="mt-1 text-muted">{talk.reason}</div>
+              <div className="mt-1 text-[11.5px] text-faint">
+                {(['A', 'B', 'C', 'D'] as const).map((k) => (
+                  <span key={k} className="mr-3">
+                    {talk.available[k] ? '✓' : '✗'} {k} {TALK_LABEL[k]}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
           <BusyBar busy={r.busy} />
         </Card>
       )}
+      {done.length > 0 && (
+        <div className="space-y-3" data-testid="video-generated">
+          {done.map((j) => (
+            <VideoCard
+              key={j.id}
+              job={j}
+              onPlayback={(st) => setPlayback((p) => (p[j.id] === st ? p : { ...p, [j.id]: st }))}
+              onRegenerate={() =>
+                bp &&
+                j.sceneId &&
+                void r.run('Régénération vidéo…', () =>
+                  generateSceneVideo(bp.project.id, j.sceneId!, {
+                    mode: j.task === 'I2V' ? 'image' : 'text',
+                    duration: Number(dur),
+                    audio,
+                  }),
+                )
+              }
+            />
+          ))}
+        </div>
+      )}
       <Card title={`Jobs vidéo (${jobs.length})`}>
         {jobs.length === 0 ? (
           <NoData />
         ) : (
-          <ul className="space-y-1 text-[12px]" data-testid="video-jobs">
+          <ul className="space-y-1.5 text-[12px]" data-testid="video-jobs">
             {jobs.map((j) => (
-              <li key={j.id} className="flex flex-wrap items-center gap-2 rounded border border-line p-1.5">
-                <Badge
-                  tone={
-                    j.status === 'COMPLETED'
-                      ? 'ok'
-                      : j.status === 'FAILED'
-                        ? 'err'
-                        : j.status === 'RUNNING'
-                          ? 'info'
-                          : 'neutral'
-                  }
-                >
-                  {j.status}
-                </Badge>
-                <span>{j.model}</span>
-                <span className="text-faint">{j.sceneId ?? ''}</span>
-                <span className="text-faint">
-                  estimé {j.estimate === null ? 'incertain' : usd(j.estimate)} · réel {usd(j.cost)}
-                </span>
-                {j.error && (
-                  <span className="text-err" title={j.error}>
-                    {j.errorClass}
-                  </span>
-                )}
-                {j.status === 'RUNNING' && (
-                  <Button size="sm" onClick={() => cancelVideo(j.id)}>
-                    CANCEL
-                  </Button>
-                )}
-                {j.status === 'FAILED' && (
-                  <Button
-                    size="sm"
-                    disabled={j.paid}
-                    title={
-                      j.paid
-                        ? 'Job déjà payé : jamais relancé automatiquement'
-                        : canAutoRetry(j)
-                          ? ''
-                          : 'Relance manuelle'
-                    }
-                    onClick={() =>
-                      bp &&
-                      j.sceneId &&
-                      void r.run('Nouvelle tentative…', () =>
-                        generateSceneVideo(bp.project.id, j.sceneId!, { mode, duration: Number(dur), audio }),
-                      )
-                    }
-                  >
-                    RETRY
-                  </Button>
-                )}
-              </li>
+              <JobRow
+                key={j.id}
+                job={j}
+                onCancel={() => cancelVideo(j.id)}
+                onRetry={() =>
+                  bp &&
+                  j.sceneId &&
+                  void r.run('Nouvelle tentative…', () =>
+                    generateSceneVideo(bp.project.id, j.sceneId!, {
+                      mode: j.task === 'I2V' ? 'image' : 'text',
+                      duration: Number(dur),
+                      audio,
+                    }),
+                  )
+                }
+              />
             ))}
           </ul>
         )}
       </Card>
+      <VideoDiagnostics
+        jobs={jobs}
+        jobId={diagJob || jobs[0]?.id || ''}
+        onPick={setDiagJob}
+        playback={playback}
+      />
     </div>
+  );
+}
+
+const STATE_TONE: Record<VideoState, 'ok' | 'err' | 'info' | 'neutral' | 'warn'> = {
+  QUEUED: 'neutral',
+  RUNNING: 'info',
+  COMPLETED: 'ok',
+  FAILED: 'err',
+  CANCELLED: 'neutral',
+  EXPIRED: 'warn',
+};
+/** One row per job: clear rendering of QUEUED / RUNNING / COMPLETED / FAILED / CANCELLED / EXPIRED. */
+function JobRow({ job: j, onCancel, onRetry }: { job: Job; onCancel: () => void; onRetry: () => void }) {
+  const now = useNow(1000);
+  const st = videoState(j, now);
+  const cost = `estimé ${j.estimate === null ? 'incertain' : usd(j.estimate)} · réel ${usd(j.cost)}`;
+  return (
+    <li className="rounded border border-line p-1.5" data-testid={`video-job-${j.status}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge tone={STATE_TONE[st]}>{st}</Badge>
+        {st === 'COMPLETED' && <b className="text-ok">✓ VIDEO READY</b>}
+        {st === 'RUNNING' && <b>🎬 GENERATING VIDEO</b>}
+        <span>{j.model}</span>
+        <span className="text-faint">{j.sceneId ?? ''}</span>
+        <span className="text-faint">{cost}</span>
+        {j.status === 'RUNNING' && (
+          <Button size="sm" onClick={onCancel}>
+            CANCEL
+          </Button>
+        )}
+        {j.status === 'FAILED' && (
+          <Button
+            size="sm"
+            disabled={j.paid}
+            title={
+              j.paid
+                ? 'Job déjà payé : jamais relancé automatiquement'
+                : canAutoRetry(j)
+                  ? ''
+                  : 'Relance manuelle'
+            }
+            onClick={onRetry}
+          >
+            RETRY
+          </Button>
+        )}
+      </div>
+      {(st === 'RUNNING' || st === 'EXPIRED' || st === 'QUEUED') && (
+        <div className="mt-1 grid gap-x-4 text-[11.5px] text-muted md:grid-cols-2">
+          <span>Job ID : {j.remoteId ?? j.id}</span>
+          <span>Temps écoulé : {elapsed(j.startedAt ?? j.createdAt, now)}</span>
+          <span>
+            Polling :{' '}
+            {j.pollingUrl
+              ? 'actif (le job est suivi, jamais soumis deux fois)'
+              : 'pas encore soumis au fournisseur'}
+          </span>
+          {st === 'EXPIRED' && (
+            <span className="text-warn">En cours depuis plus de 24 h : probablement expiré</span>
+          )}
+        </div>
+      )}
+      {j.status === 'FAILED' && (
+        <div className="mt-1 text-[11.5px]">
+          <span className="text-err">
+            {j.errorClass ?? 'UNKNOWN'} — {j.error ?? 'échec'}
+          </span>{' '}
+          <span className="text-faint">
+            · {j.model} · {j.sceneId ?? '—'}
+            {j.paid ? ' · job payé : pas de relance automatique' : ''}
+          </span>
+        </div>
+      )}
+    </li>
+  );
+}
+/** « VIDEO GENERATED » card: the player reads the Blob stored in IndexedDB (same store as Asset Library). */
+function VideoCard({
+  job: j,
+  onPlayback,
+  onRegenerate,
+}: {
+  job: Job;
+  onPlayback: (s: PlaybackState) => void;
+  onRegenerate: () => void;
+}) {
+  const S = useStudio();
+  const toast = useStore((x) => x.toast);
+  const vref = useRef<HTMLVideoElement>(null);
+  const [meta, setMeta] = useState<VideoMeta | null>(null);
+  const [note, setNote] = useState('');
+  const asset = j.assetId ? S.assets[j.assetId] : undefined;
+  const project = S.projects[j.projectId];
+  const sent = Boolean(
+    j.sceneId && project?.scenes.find((s) => s.scene_id === j.sceneId)?.videoAssetId === j.assetId,
+  );
+  const fullscreen = async () => {
+    const el = vref.current as (HTMLVideoElement & { webkitRequestFullscreen?: () => Promise<void> }) | null;
+    const f = el?.requestFullscreen ?? el?.webkitRequestFullscreen;
+    if (!el || !f) {
+      setNote('Plein écran indisponible sur ce navigateur : utilisez les contrôles du lecteur.');
+      return;
+    }
+    try {
+      await f.call(el);
+      setNote('');
+    } catch (e) {
+      setNote(`Plein écran refusé : ${(e as Error).message}`);
+    }
+  };
+  return (
+    <section className="rounded-xl border border-ok/40 bg-elev p-3" data-testid="video-card">
+      <div className="mb-2 flex items-center justify-between">
+        <b className="text-ok">✓ VIDEO GENERATED</b>
+        <Badge tone="ok">COMPLETED</Badge>
+      </div>
+      <VideoBox assetId={j.assetId} vref={vref} onMeta={setMeta} onState={onPlayback} testId="video-player" />
+      <div className="mt-2 grid gap-x-4 gap-y-0.5 text-[12px] md:grid-cols-3">
+        <span>
+          <b>{j.sceneId ?? '—'}</b>
+        </span>
+        <span>{j.model}</span>
+        <span>
+          {meta ? `${meta.duration.toFixed(1)} s` : '…'} · {meta ? `${meta.width}×${meta.height}` : '…'} ·{' '}
+          {meta ? ratioOf(meta.width, meta.height) : '…'}
+        </span>
+        <span>Coût réel : {usd(j.cost)}</span>
+        <span>{new Date(j.endedAt ?? j.createdAt).toLocaleString()}</span>
+        <span className="truncate text-faint" title={j.remoteId ?? j.id}>
+          Job ID : {j.remoteId ?? j.id}
+        </span>
+        {asset && (
+          <span className="text-faint">
+            {asset.mime} · {(asset.bytes / 1e6).toFixed(2)} Mo
+          </span>
+        )}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          onClick={() => void vref.current?.play().catch((e: Error) => setNote(e.message))}
+          data-testid="video-play"
+        >
+          ▶ PLAY
+        </Button>
+        <Button size="sm" onClick={() => void fullscreen()} data-testid="video-fullscreen">
+          ⛶ FULLSCREEN
+        </Button>
+        <Button
+          size="sm"
+          onClick={async () => {
+            const x = await exportVideo(j.assetId!);
+            if (x.ok) toast('ok', `Vidéo exportée : ${x.name}`);
+            else toast('err', x.error ?? 'export impossible');
+          }}
+          data-testid="video-export"
+        >
+          ⬇ EXPORT VIDEO
+        </Button>
+        <Button
+          size="sm"
+          disabled={!j.sceneId || sent}
+          onClick={() => {
+            if (j.sceneId && sendVideoToStoryboard(j.projectId, j.sceneId, j.assetId!))
+              toast('ok', `Vidéo associée à ${j.sceneId} (l’image de référence est conservée)`);
+          }}
+          data-testid="video-storyboard"
+        >
+          {sent ? '✓ DANS LE STORYBOARD' : '📌 SEND TO STORYBOARD'}
+        </Button>
+        <Button
+          size="sm"
+          disabled={!j.sceneId}
+          onClick={onRegenerate}
+          title="Crée un NOUVEAU job payant (soumis au plafond de budget)"
+        >
+          🔄 REGENERATE
+        </Button>
+      </div>
+      {note && <div className="mt-1 text-[11.5px] text-warn">{note}</div>}
+    </section>
+  );
+}
+/** Real facts only: every line below is read from the job, the asset metadata, IndexedDB or the <video> element. */
+function VideoDiagnostics({
+  jobs,
+  jobId,
+  onPick,
+  playback,
+}: {
+  jobs: Job[];
+  jobId: string;
+  onPick: (id: string) => void;
+  playback: Record<string, PlaybackState>;
+}) {
+  const [d, setD] = useState<VideoDiag | null>(null);
+  const job = jobs.find((x) => x.id === jobId);
+  useEffect(() => {
+    let alive = true;
+    setD(null);
+    if (jobId)
+      void videoDiagnostics(jobId).then((x) => {
+        if (alive) setD(x);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [jobId, job?.status, job?.assetId]);
+  const line = (ok: boolean | null, text: string) => (
+    <li className={ok === null ? 'text-faint' : ok ? 'text-ok' : 'text-err'}>
+      {ok === null ? '·' : ok ? '✓' : '✗'} {text}
+    </li>
+  );
+  const pb = jobId ? playback[jobId] : undefined;
+  return (
+    <Card title="VIDEO DIAGNOSTICS" testId="video-diagnostics">
+      {!job ? (
+        <NoData />
+      ) : (
+        <>
+          <div className="mb-2 max-w-sm">
+            <Select
+              value={jobId}
+              onChange={onPick}
+              options={jobs.map((x) => ({
+                value: x.id,
+                label: `${x.sceneId ?? '—'} · ${x.status} · ${x.id.slice(-6)}`,
+              }))}
+            />
+          </div>
+          {d && (
+            <ul className="space-y-0.5 text-[12px]">
+              {line(null, `Job ID : ${d.jobId}${job.remoteId ? ` (distant ${job.remoteId})` : ''}`)}
+              {line(
+                job.status === 'COMPLETED' ? true : job.status === 'FAILED' ? false : null,
+                `Status : ${d.status}`,
+              )}
+              {line(null, `Polling URL : ${d.pollingUrl ?? 'aucune (jamais soumis)'}`)}
+              {line(null, `Model : ${d.model}`)}
+              {line(Boolean(d.assetId), `Asset ID : ${d.assetId ?? 'aucun'}`)}
+              {job.status === 'COMPLETED' &&
+                line(d.assetMeta, d.assetMeta ? 'Asset créé (métadonnées)' : 'Métadonnées d’asset absentes')}
+              {d.assetId &&
+                line(
+                  d.blobExists,
+                  d.blobExists
+                    ? `Blob stocké · MIME ${d.mime || 'inconnu'} · ${((d.bytes ?? 0) / 1e6).toFixed(2)} Mo`
+                    : 'Blob missing from IndexedDB : le fichier vidéo n’est plus dans le navigateur (données du site effacées ?). Relancer exige un NOUVEAU job payant ; un job payé n’est jamais relancé automatiquement.',
+                )}
+              {line(d.idb.ok, d.idb.message)}
+              {d.blobExists &&
+                line(
+                  pb === 'loaded' ? true : pb === 'error' ? false : null,
+                  pb === 'loaded'
+                    ? 'Playback URL créée, élément <video> chargé'
+                    : pb === 'error'
+                      ? 'Élément <video> en erreur : codec ou fichier invalide'
+                      : 'Lecture : en attente de la carte vidéo',
+                )}
+            </ul>
+          )}
+        </>
+      )}
+    </Card>
   );
 }
 
