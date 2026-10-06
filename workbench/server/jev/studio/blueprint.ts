@@ -1,7 +1,7 @@
 // Production Blueprint: versioned JSON of a whole production (resumable after the browser is closed).
-import type { Blueprint, CostMode, Stage, StageStatus, StyleDNA } from './types';
+import type { Blueprint, CostMode, ProductionOptions, Stage, StageStatus, StyleDNA } from './types';
 import { STAGES } from './types';
-import { STYLE_2D_HQ } from './style';
+import { STYLE_PRESETS, type Dimension } from './style';
 import { scanValue } from './secrets';
 
 export const BLUEPRINT_VERSION = 1;
@@ -14,6 +14,13 @@ export function newBlueprint(o: {
   mode?: CostMode;
   cap?: number;
   style?: StyleDNA;
+  dimension?: Dimension;
+  options?: Partial<ProductionOptions> & {
+    duration?: number;
+    aspect?: string;
+    language?: string;
+    platform?: string;
+  };
 }): Blueprint {
   const now = o.now ?? Date.now();
   const stages: Record<string, StageStatus> = {};
@@ -22,13 +29,24 @@ export function newBlueprint(o: {
     version: BLUEPRINT_VERSION,
     project: { id: o.id, createdAt: now, updatedAt: now, idea: o.idea, status: 'DRAFT' },
     title: '',
-    language: 'fr',
-    duration: 62,
-    platform: 'TikTok',
-    aspect: '9:16',
+    language: o.options?.language ?? 'fr',
+    duration: o.options?.duration ?? 62,
+    platform: o.options?.platform ?? 'TikTok',
+    aspect: o.options?.aspect ?? '9:16',
+    options: o.options
+      ? {
+          audience: o.options.audience ?? '',
+          realism: o.options.realism ?? 20,
+          dialogue: o.options.dialogue ?? true,
+          music: o.options.music ?? true,
+          sfx: o.options.sfx ?? true,
+          subtitles: o.options.subtitles ?? true,
+          preset: o.options.preset ?? 'TikTok',
+        }
+      : undefined,
     mode: o.mode ?? 'ECO',
     cap: o.cap ?? DEFAULT_CAP_USD,
-    styleDNA: o.style ?? STYLE_2D_HQ,
+    styleDNA: o.style ?? STYLE_PRESETS[o.dimension ?? '2D'],
     story: null,
     characters: [],
     worlds: [],
@@ -40,7 +58,7 @@ export function newBlueprint(o: {
     generationJobs: [],
     audio: { sfx: [] },
     subtitles: { style: 'COMEDY', lines: [] },
-    timeline: { clips: [], aspect: '9:16' },
+    timeline: { clips: [], aspect: o.options?.aspect ?? '9:16' },
     stages,
     qa: null,
     costs: [],

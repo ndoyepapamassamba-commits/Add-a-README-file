@@ -151,3 +151,28 @@ export function activeAt(lines: SubLine[], t: number): { line: SubLine; wordInde
   const wordIndex = line.words.findIndex((w) => t >= w.start && t <= w.end);
   return { line, wordIndex: wordIndex < 0 ? line.words.length - 1 : wordIndex };
 }
+
+/**
+ * SOCIAL EMOTION ENGINE — decides IF, WHICH and WHEN: at most one emoji per scene and one per `minGap` seconds, only where the
+ * emotion / action maps to an emoji; never decorative. Same input → same plan.
+ */
+export function planEmojis(
+  lines: SubLine[],
+  minGap = 3,
+): { sceneId: string; start: number; duration: number; emoji: string }[] {
+  const out: { sceneId: string; start: number; duration: number; emoji: string }[] = [];
+  const seen = new Set<string>();
+  let last = -Infinity;
+  for (const l of lines) {
+    if (!l.emoji || seen.has(l.sceneId) || l.start - last < minGap) continue;
+    seen.add(l.sceneId);
+    last = l.start;
+    out.push({
+      sceneId: l.sceneId,
+      start: l.start + 0.15,
+      duration: Math.min(1.4, Math.max(0.8, l.end - l.start)),
+      emoji: l.emoji,
+    });
+  }
+  return out;
+}

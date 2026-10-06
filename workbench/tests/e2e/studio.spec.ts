@@ -159,7 +159,7 @@ async function open(page: Page, errors: string[] = [], opts: { debug?: boolean }
   return errors;
 }
 const openStudio = async (page: Page) => {
-  const nav = page.getByTitle(/AI Visual Studio/);
+  const nav = page.getByTitle(/AI Film Studio/);
   if (
     !(await nav.waitFor({ timeout: 15_000 }).then(
       () => true,
@@ -728,6 +728,53 @@ test('Video Factory disabled: no video call is ever made, no player is shown', a
   await expect(page.getByTestId('studio-video')).toContainText('DÉSACTIVÉE');
   await expect(page.getByTestId('video-generate')).toHaveCount(0);
   await expect(page.getByTestId('video-card')).toHaveCount(0);
+  expect(net.videoSubmits).toBe(0);
+});
+
+test('AI Film Studio: 3D option follows the same path as 2D; wizard, clickable pipeline, diagnose, smoke test, versions, kit gated (3D)', async ({
+  page,
+}) => {
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  await open(page);
+  const net = await intercept(page);
+  await openStudio(page);
+  await space(page, 'control');
+  await expect(page.getByTestId('studio-wizard')).toContainText('START NEW PRODUCTION');
+  await page.getByTestId('dim-3D').click();
+  await page.getByTestId('studio-idea').fill('Une belle-mère arrive chez son gendre avec trois valises');
+  await page.getByTestId('studio-create').click();
+  await expect(page.getByTestId('studio-project-card')).toContainText('3D');
+  mock.push({ text: JSON.stringify(STORY) });
+  await space(page, 'story');
+  await page.getByTestId('story-generate').click();
+  await expect(page.getByTestId('story-card')).toBeVisible({ timeout: 30_000 });
+  // 3D image: same pipeline, the 3D Style DNA is injected (never the 2D vocabulary)
+  await space(page, 'images');
+  await page.getByTestId('studio-images').getByRole('combobox').first().selectOption('S01');
+  await page.getByTestId('image-generate').click();
+  await expect(page.getByTestId('image-results').locator('li')).toHaveCount(1, { timeout: 20_000 });
+  const prompt = String(net.imageCalls[0]!.body.prompt);
+  expect(prompt).toContain('3D');
+  expect(prompt).toContain('flat 2D'); // the 3D negative
+  expect(prompt).not.toMatch(/high quality 2D illustration/);
+  // control room: clickable pipeline, diagnose, smoke test, versions, plan
+  await space(page, 'control');
+  await page.getByTestId('stage-IMAGES').click();
+  await expect(page.getByTestId('studio-images')).toBeVisible();
+  await space(page, 'control');
+  await expect(page.getByTestId('export-kit')).toBeDisabled(); // the local engine renders 2D only
+  await page.getByTestId('diagnose-run').click();
+  await expect(page.getByTestId('diagnose-result')).toContainText('API KEY', { timeout: 20_000 });
+  await expect(page.getByTestId('diagnose-result')).toContainText('VIDEO MODEL');
+  await expect(page.getByTestId('diagnose-result')).toContainText('ASSET STORAGE');
+  await expect(page.getByTestId('diagnose-result')).toContainText('VIDEO FACTORY');
+  await page.getByTestId('smoke-run').click();
+  const smoke = page.getByTestId('smoke-result');
+  await expect(smoke).toContainText('quality gate');
+  await expect(smoke).not.toContainText('✗');
+  await page.getByTestId('version-save').click();
+  await expect(page.getByTestId('version-list')).toContainText('RESTORE VERSION');
+  await expect(page.getByTestId('budget-governor')).toContainText('NORMAL');
   expect(net.videoSubmits).toBe(0);
 });
 

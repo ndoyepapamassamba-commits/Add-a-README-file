@@ -2,9 +2,17 @@
 // (cut, trim, split, reorder, transitions, levels, fades, text, emoji, speed, zoom, crop). The auto-edit builds the first
 // cut from the storyboard.
 import type { Blueprint, Timeline, TimelineClip } from './types';
-import { timeSubtitles } from './subtitles';
+import { planEmojis, timeSubtitles } from './subtitles';
 
-export const TRACKS: TimelineClip['track'][] = ['video', 'dialogue', 'voice', 'music', 'sfx', 'subtitles'];
+export const TRACKS: TimelineClip['track'][] = [
+  'video',
+  'dialogue',
+  'voice',
+  'music',
+  'sfx',
+  'subtitles',
+  'emoji',
+];
 let n = 0;
 const cid = () => `clip-${(n++).toString(36)}-${Math.random().toString(36).slice(2, 5)}`;
 
@@ -64,6 +72,15 @@ export function autoTimeline(bp: Blueprint): Timeline {
       sceneId: l.sceneId,
     });
   }
+  for (const e of planEmojis(lines))
+    clips.push({
+      id: cid(),
+      track: 'emoji',
+      start: e.start,
+      duration: e.duration,
+      text: e.emoji,
+      sceneId: e.sceneId,
+    });
   for (const e of bp.audio.sfx)
     if (e.assetId && starts[e.sceneId] !== undefined)
       clips.push({
@@ -166,4 +183,34 @@ export function overlaps(tl: Timeline): { track: string; a: string; b: string }[
         out.push({ track, a: cs[i - 1]!.id, b: cs[i]!.id });
   }
   return out;
+}
+
+/**
+ * MUSIC DUCKING: gain breakpoints (time, gain) of the music under the voice clips — down to `ducked` with a short attack,
+ * back up with a longer release; adjacent voices keep the music low.
+ */
+export function duckingPoints(
+  voices: { start: number; end: number }[],
+  o: { base?: number; ducked?: number; attack?: number; release?: number } = {},
+): { t: number; v: number }[] {
+  const base = o.base ?? 0.22;
+  const ducked = o.ducked ?? 0.08;
+  const attack = o.attack ?? 0.15;
+  const release = o.release ?? 0.4;
+  const merged: { start: number; end: number }[] = [];
+  for (const v of [...voices].sort((a, b) => a.start - b.start)) {
+    const last = merged.at(-1);
+    if (last && v.start - last.end < attack + release) last.end = Math.max(last.end, v.end);
+    else merged.push({ ...v });
+  }
+  const pts: { t: number; v: number }[] = [{ t: 0, v: base }];
+  for (const m of merged) {
+    pts.push(
+      { t: Math.max(0, m.start - attack), v: base },
+      { t: m.start, v: ducked },
+      { t: m.end, v: ducked },
+      { t: m.end + release, v: base },
+    );
+  }
+  return pts;
 }

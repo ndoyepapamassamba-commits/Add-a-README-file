@@ -51,6 +51,10 @@ import * as ST_JOBS from '../../server/jev/studio/jobs';
 import * as ST_GENOME from '../../server/jev/studio/genome';
 import * as ST_KIT from '../../server/jev/studio/kit';
 import * as ST_QA from '../../server/jev/studio/qa';
+import * as ST_FILM from '../../server/jev/studio/film';
+import * as ST_VIDEO from '../../server/jev/studio/video';
+import * as ST_SMOKE from '../../server/jev/studio/smoke';
+import * as JEV_LOCAL from '../../server/jev/local';
 import { useStore } from './store';
 import { runLabScenario, A as SCENARIO_A } from '../../server/jev/apprentice/labScenario';
 import * as JEVLOG from '../../server/jev/metrics';
@@ -120,6 +124,13 @@ const REQUIRED: [string, string, unknown][] = [
   ['AI Visual Studio', 'genome.compose', ST_GENOME.compose],
   ['AI Visual Studio', 'kit.buildKitZip', ST_KIT.buildKitZip],
   ['AI Visual Studio', 'qa.buildQAReport', ST_QA.buildQAReport],
+  ['AI Film Studio', 'film.videoGate', ST_FILM.videoGate],
+  ['AI Film Studio', 'film.budgetTier', ST_FILM.budgetTier],
+  ['AI Film Studio', 'film.assetGraph', ST_FILM.assetGraph],
+  ['AI Film Studio', 'film.snapshotVersion', ST_FILM.snapshotVersion],
+  ['AI Film Studio', 'video.talkRoutes', ST_VIDEO.talkRoutes],
+  ['AI Film Studio', 'smoke.filmSmokeTest', ST_SMOKE.filmSmokeTest],
+  ['JEV-0', 'local.localSkill', JEV_LOCAL.localSkill],
   ['Exports', 'houseXlsx', HOUSE.houseXlsx],
   ['Exports', 'markdownToDocx', DOCX.markdownToDocx],
   ['Exports', 'housePptx', housePptx],

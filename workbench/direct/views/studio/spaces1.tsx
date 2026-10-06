@@ -5,6 +5,7 @@ import { Badge, Button, Input, Select, Textarea } from '../../../web/components/
 import { useStudio } from '../../lib/studio/store';
 import {
   generateStory,
+  regenerateScene,
   importCharacterLibrary,
   readDropped,
   filesFromInput,
@@ -44,6 +45,9 @@ import {
   type VideoMeta,
 } from './common';
 import { videoOutput } from '../../../server/jev/studio/video';
+import { STAGE_SPACE } from '../../../server/jev/studio/film';
+import { STYLE_PRESETS, dimensionOf } from '../../../server/jev/studio/style';
+import { FilmTools, ProductionWizard } from './film';
 
 const TONE: Record<StageStatus, 'neutral' | 'ok' | 'warn' | 'err' | 'info'> = {
   QUEUED: 'neutral',
@@ -60,7 +64,6 @@ const autoCtl: AutoCtl = { stop: false, pause: false };
 export function ControlRoom() {
   const bp = useActive();
   const S = useStudio();
-  const [idea, setIdea] = useState('');
   const [log, setLog] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -79,11 +82,6 @@ export function ControlRoom() {
         }
       : null;
   }, [S.jobs, bp?.project.id]);
-  const create = () => {
-    if (!idea.trim()) return;
-    S.createProject(idea.trim());
-    setIdea('');
-  };
   const autopilot = async () => {
     if (!bp) return;
     autoCtl.stop = false;
@@ -96,24 +94,7 @@ export function ControlRoom() {
   };
   return (
     <div className="space-y-3" data-testid="studio-control-room">
-      <Card title="Nouvelle production">
-        <Textarea
-          data-testid="studio-idea"
-          rows={3}
-          value={idea}
-          onChange={(e) => setIdea(e.target.value)}
-          placeholder="Ex. : Crée une vidéo humoristique sénégalaise de 60 s où une belle-mère découvre que son gendre lui a caché quelque chose"
-        />
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Button variant="primary" onClick={create} disabled={!idea.trim()} data-testid="studio-create">
-            Créer la production
-          </Button>
-          <span className="text-[12px] text-faint">
-            2D uniquement · mode {S.settings.mode} · plafond {S.settings.cap.toFixed(2)} $ par production ·
-            Video Factory {S.settings.videoEnabled ? 'ACTIVE' : 'désactivée'}
-          </span>
-        </div>
-      </Card>
+      <ProductionWizard />
       {!bp ? (
         <NoData>Aucune production. Décrivez une idée ci-dessus : JEV en fait un plan de production.</NoData>
       ) : (
@@ -126,6 +107,7 @@ export function ControlRoom() {
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[12.5px] md:grid-cols-4">
               {(
                 [
+                  ['Dimension', dimensionOf(bp.styleDNA)],
                   ['Format', bp.aspect],
                   ['Langue', bp.language],
                   ['Durée', `${bp.duration} s`],
@@ -156,7 +138,16 @@ export function ControlRoom() {
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5" data-testid="studio-stages">
               {STAGES.map((st) => (
-                <span key={st} data-testid={`stage-${st}`} title={`${st} : ${bp.stages[st]}`}>
+                <span
+                  key={st}
+                  data-testid={`stage-${st}`}
+                  title={`${st} : ${bp.stages[st]} — cliquer pour ouvrir`}
+                  className="cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => gotoSpace(STAGE_SPACE[st] ?? 'control')}
+                  onKeyDown={(e) => e.key === 'Enter' && gotoSpace(STAGE_SPACE[st] ?? 'control')}
+                >
                   <Badge tone={TONE[bp.stages[st] as StageStatus] ?? 'neutral'}>
                     {st} · {bp.stages[st]}
                   </Badge>
@@ -212,6 +203,7 @@ export function ControlRoom() {
             )}
           </Card>
           <VideoOutput projectId={bp.project.id} />
+          <FilmTools />
           <Card title="Historique des décisions JEV">
             {bp.decisions.length ? (
               <ul className="space-y-0.5 text-[12px]">
@@ -333,7 +325,7 @@ export function StoryView() {
             onClick={() => void r.run('Écriture de l’histoire…', () => generateStory(bp.project.id))}
             data-testid="story-generate"
           >
-            {bp.story ? 'Réécrire l’histoire' : 'Écrire l’histoire et les scènes'}
+            {bp.story ? 'REGENERATE STORY' : 'Écrire l’histoire et les scènes'}
           </Button>
           <span className="text-[12px] text-faint">
             Texte : routage et Apprentice existants (modèles gratuits validés d’abord).
@@ -372,13 +364,57 @@ export function StoryView() {
         <Card title={`Scènes (${bp.scenes.length})`}>
           <ol className="space-y-2 text-[12.5px]" data-testid="story-scenes">
             {bp.scenes.map((s) => (
-              <li key={s.scene_id} className="rounded-lg border border-line p-2">
-                <div className="font-medium">
-                  {s.scene_id} · {s.beat} · {s.duration}s · {s.location} · {s.time}
+              <li
+                key={s.scene_id}
+                className="rounded-lg border border-line p-2"
+                data-testid={`story-scene-${s.scene_id}`}
+              >
+                <div className="flex flex-wrap items-center gap-2 font-medium">
+                  <span>
+                    {s.scene_id} · {s.beat} · {s.duration}s · {s.location} · {s.time}
+                  </span>
+                  <Button
+                    size="sm"
+                    disabled={Boolean(r.busy)}
+                    onClick={() =>
+                      void r.run(`Scène ${s.scene_id}…`, () => regenerateScene(bp.project.id, s.scene_id))
+                    }
+                    data-testid={`scene-regen-${s.scene_id}`}
+                  >
+                    REGENERATE SCENE
+                  </Button>
                 </div>
-                <div className="text-muted">{s.action}</div>
+                <div className="mt-1 grid gap-1 md:grid-cols-2">
+                  {(
+                    [
+                      ['action', 'Action'],
+                      ['emotion', 'Émotion'],
+                      ['camera', 'Caméra'],
+                      ['lighting', 'Lumière'],
+                      ['sound', 'Son'],
+                      ['music', 'Musique'],
+                      ['transition', 'Transition'],
+                      ['location', 'Lieu'],
+                    ] as [keyof typeof s, string][]
+                  ).map(([k, label]) => (
+                    <div key={k}>
+                      <div className="text-[10.5px] uppercase text-faint">{label}</div>
+                      <Input
+                        value={String(s[k] ?? '')}
+                        onChange={(e) =>
+                          S.patchProject(bp.project.id, (b) => ({
+                            ...b,
+                            scenes: b.scenes.map((x) =>
+                              x.scene_id === s.scene_id ? { ...x, [k]: e.target.value } : x,
+                            ),
+                          }))
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
                 {s.dialogue.map((d, i) => (
-                  <div key={i}>
+                  <div key={i} className="mt-1">
                     <b>{d.speaker}</b> : {d.text}{' '}
                     {d.translation && <span className="text-faint">({d.translation})</span>}
                   </div>
@@ -711,13 +747,37 @@ export function StyleView() {
         title={s.name}
         right={
           <Badge tone={s.locked ? 'ok' : 'warn'}>
-            {s.locked ? 'VERROUILLÉ — 2D uniquement' : 'variante modifiable'}
+            {s.locked ? `VERROUILLÉ — ${dimensionOf(s)}` : 'variante modifiable'}
           </Badge>
         }
       >
         <div className="mb-2 text-[12.5px] text-muted">
-          Le Style DNA est injecté dans toute génération. Le style par défaut (2D HQ franco-africain) est
-          verrouillé : il ne change que sur demande explicite.
+          Le Style DNA est injecté dans toute génération. Les styles par défaut (2D HQ franco-africain, 3D
+          Afrikatoon) sont verrouillés : ils ne changent que sur demande explicite.
+        </div>
+        <div className="mb-3 flex flex-wrap items-center gap-2" data-testid="style-dimension">
+          <Label>Dimension de la production</Label>
+          {(['2D', '3D'] as const).map((d) => (
+            <Button
+              key={d}
+              size="sm"
+              variant={dimensionOf(s) === d ? 'primary' : undefined}
+              disabled={dimensionOf(s) === d}
+              onClick={() =>
+                S.patchProject(
+                  bp.project.id,
+                  (b) => ({ ...b, styleDNA: STYLE_PRESETS[d] }),
+                  `dimension → ${d} (les images déjà générées restent dans leur style)`,
+                )
+              }
+              data-testid={`style-set-${d}`}
+            >
+              {d}
+            </Button>
+          ))}
+          <span className="text-[11.5px] text-faint">
+            Le cheminement est identique ; seules les générations suivantes changent de style.
+          </span>
         </div>
         <div className="grid gap-2 md:grid-cols-2">
           {dims.map(([k, label]) => (

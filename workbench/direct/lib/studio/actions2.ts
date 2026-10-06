@@ -20,6 +20,8 @@ import { estimateVideo } from '../../../server/jev/studio/cost';
 import { modelsWith, validateVideoRequest } from '../../../server/jev/studio/capabilities';
 import { StudioError, classifyError } from '../../../server/jev/studio/errors';
 import { completeJob, failJob, cancelJob } from '../../../server/jev/studio/jobs';
+import { runVideoGate } from './film';
+import { dimensionOf, styleTag } from '../../../server/jev/studio/style';
 import { TALK_LABEL, talkRoutes, videoFileName, type TalkRoute } from '../../../server/jev/studio/video';
 import { DEFAULT_MUSIC, proposeSfx, type MusicSpec, type SfxLabel } from '../../../server/jev/studio/sound';
 import { timeSubtitles, toSrt } from '../../../server/jev/studio/subtitles';
@@ -264,12 +266,11 @@ export async function completeCharacterSheets(projectId: string): Promise<number
     messages: [
       {
         role: 'system',
-        content:
-          'Tu es directeur artistique 2D. Réponds UNIQUEMENT par un JSON valide. Aucune marque réelle, aucune personne réelle.',
+        content: `Tu es directeur artistique ${dimensionOf(bp.styleDNA)}. Réponds UNIQUEMENT par un JSON valide. Aucune marque réelle, aucune personne réelle.`,
       },
       {
         role: 'user',
-        content: `Histoire : ${bp.story?.logline ?? bp.project.idea}\nCompète les fiches des personnages (descriptions visuelles précises, style dessin animé 2D). JSON : {"characters":[{"name","role","age","gender","skin","face","hair","body","clothing","shoes","accessories","personality","voice","accent","gestures","speakingStyle"}]}\nPersonnages : ${todo.map((c) => `${c.name} ${c.role}`).join(' ; ')}`,
+        content: `Histoire : ${bp.story?.logline ?? bp.project.idea}\nCompète les fiches des personnages (descriptions visuelles précises, style ${dimensionOf(bp.styleDNA) === '3D' ? 'animation 3D stylisée' : 'dessin animé 2D'}). JSON : {"characters":[{"name","role","age","gender","skin","face","hair","body","clothing","shoes","accessories","personality","voice","accent","gestures","speakingStyle"}]}\nPersonnages : ${todo.map((c) => `${c.name} ${c.role}`).join(' ; ')}`,
       },
     ],
     maxTokens: 3000,
@@ -320,8 +321,7 @@ export async function completeWorldSheets(projectId: string): Promise<number> {
     messages: [
       {
         role: 'system',
-        content:
-          'Tu es chef décorateur 2D (Dakar). Réponds UNIQUEMENT par un JSON valide. Aucune marque réelle.',
+        content: `Tu es chef décorateur ${dimensionOf(bp.styleDNA)} (Dakar). Réponds UNIQUEMENT par un JSON valide. Aucune marque réelle.`,
       },
       {
         role: 'user',
@@ -394,7 +394,7 @@ async function judgeVisual(bp: Blueprint): Promise<JudgeScores> {
             content: [
               {
                 type: 'text',
-                text: `Juge cette image de dessin animé 2D (style : ${bp.styleDNA.renderStyle}).\nPersonnages attendus :\n${chars || '(non précisés)'}\nRéponds UNIQUEMENT par JSON : {"visual":0-100,"consistency":0-100,"issues":["..."]}. Sois sévère.`,
+                text: `Juge cette image d’animation ${dimensionOf(bp.styleDNA)} (style : ${bp.styleDNA.renderStyle}).\nPersonnages attendus :\n${chars || '(non précisés)'}\nRéponds UNIQUEMENT par JSON : {"visual":0-100,"consistency":0-100,"issues":["..."]}. Sois sévère.`,
               },
               { type: 'image_url', image_url: { url: await blobToDataUrl(b) } },
             ],
@@ -620,10 +620,11 @@ export async function generateSceneVideo(projectId: string, sceneId: string, o: 
     sceneId,
     kind: 'video',
     task: o.mode === 'image' ? 'I2V' : 'T2V',
-    style: '2D-HQ',
+    style: styleTag(bp.styleDNA),
     contract: bp.aspect,
     promptVersion: 'video-v1',
     mission: `vidéo ${sceneId}`,
+    parentIds: frames.length && sc.imageAssetId ? [sc.imageAssetId] : undefined,
     maxModels: 1,
     candidates: cands.map((c) => ({ model: c.model, estimate: c.estimate })),
     call: async (m, job) => {
@@ -662,6 +663,8 @@ export async function generateSceneVideo(projectId: string, sceneId: string, o: 
     }),
   });
   patch(projectId, (b) => setStage(b, 'VIDEO', 'COMPLETED'));
+  // Technical quality gate on the real Blob (never blocks the result; the verdict is stored on the asset).
+  void runVideoGate(out.assetId!, { expectedDuration: o.duration, aspect: bp.aspect }).catch(() => undefined);
   return out.assetId!;
 }
 /** On reopening: running video jobs are polled again, NEVER resubmitted. */
@@ -692,6 +695,7 @@ export async function resumeVideoJobs(): Promise<number> {
           name: `video-${j.sceneId ?? ''}`,
         });
         S().setJobs((all) => completeJob(all, j.id, { cost: st.cost, assetId: id }));
+        void runVideoGate(id, { aspect: S().projects[j.projectId]?.aspect }).catch(() => undefined);
         if (S().projects[j.projectId])
           patch(j.projectId, (b) => ({
             ...b,
@@ -751,8 +755,11 @@ export async function makeCharacterTalk(projectId: string, sceneId: string): Pro
     i2vNative: native.length,
     tts: tts.length,
     dialogueLines: sc?.dialogue.length ?? 0,
+    dimension: dimensionOf(bp.styleDNA),
   });
   const base = { label: TALK_LABEL[plan.selected], available: plan.available };
+  if (plan.selected === 'N')
+    return { ...base, route: 'N', aiVideo: false, reason: `NOT AVAILABLE — ${plan.why}.` };
   if (plan.selected === 'D')
     return {
       ...base,
@@ -1114,7 +1121,7 @@ export async function runAutopilot(
     await completeCharacterSheets(projectId).catch(() => 0);
     for (const c of bpOf(projectId).characters.filter((c) => !c.referenceAssetId)) {
       await gate(ctl);
-      step('CHARACTERS', `redessin 2D de ${c.name}`);
+      step('CHARACTERS', `redessin ${dimensionOf(bpOf(projectId).styleDNA)} de ${c.name}`);
       await redrawCharacter(projectId, c.id, ['neutral']).catch((e) => {
         mark('CHARACTERS', 'WARNING');
         step('CHARACTERS', `${c.name} : ${(e as Error).message}`);
@@ -1192,7 +1199,7 @@ export async function teacherAdvice(
       {
         role: 'system',
         content:
-          'Tu es un mentor de production audiovisuelle 2D. Analyse brièvement la cause probable et propose une stratégie corrigée concrète (prompt, paramètres, modèle moins cher à retenter). Réponds en 6 lignes maximum.',
+          'Tu es un mentor de production audiovisuelle (2D ou 3D). Analyse brièvement la cause probable et propose une stratégie corrigée concrète (prompt, paramètres, modèle moins cher à retenter). Réponds en 6 lignes maximum.',
       },
       {
         role: 'user',

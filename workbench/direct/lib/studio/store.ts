@@ -53,7 +53,7 @@ interface StudioState {
   setSettings: (p: Partial<StudioSettings>) => void;
   upsertProject: (bp: Blueprint, note?: string) => void;
   patchProject: (id: string, f: (bp: Blueprint) => Blueprint, note?: string) => void;
-  createProject: (idea: string) => Blueprint;
+  createProject: (idea: string, o?: WizardOpts) => Blueprint;
   deleteProject: (id: string) => void;
   addAsset: (a: AssetMeta) => void;
   removeAsset: (id: string) => void;
@@ -63,6 +63,21 @@ interface StudioState {
   setBusy: (b: string | null) => void;
 }
 
+/** Wizard options accepted at creation. */
+export interface WizardOpts {
+  dimension?: '2D' | '3D';
+  duration?: number;
+  aspect?: string;
+  language?: string;
+  platform?: string;
+  audience?: string;
+  realism?: number;
+  dialogue?: boolean;
+  music?: boolean;
+  sfx?: boolean;
+  subtitles?: boolean;
+  preset?: string;
+}
 const uid = () => `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
 export const useStudio = create<StudioState>((set, get) => {
@@ -119,9 +134,16 @@ export const useStudio = create<StudioState>((set, get) => {
       const cur = get().projects[id];
       if (cur) get().upsertProject(f(cur), note);
     },
-    createProject: (idea) => {
+    createProject: (idea, o) => {
       const s = get().settings;
-      const bp = newBlueprint({ id: uid(), idea, mode: s.mode, cap: s.cap });
+      const bp = newBlueprint({
+        id: uid(),
+        idea,
+        mode: s.mode,
+        cap: s.cap,
+        dimension: o?.dimension,
+        options: o,
+      });
       set({
         projects: { ...get().projects, [bp.project.id]: bp },
         settings: { ...s, activeProjectId: bp.project.id },

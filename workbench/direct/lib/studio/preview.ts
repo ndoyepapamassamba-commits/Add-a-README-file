@@ -3,6 +3,7 @@
 // not the final film. When the browser lacks a capability the caller shows « Capability unavailable in current environment ».
 import { blobs } from './blobs';
 import type { Blueprint, Scene } from '../../../server/jev/studio/types';
+import { duckingPoints } from '../../../server/jev/studio/timeline';
 import {
   ASPECTS,
   SUBTITLE_STYLES,
@@ -165,7 +166,7 @@ export async function renderPreview(
       return null;
     }
   };
-  const schedule = (buf: AudioBuffer, at: number, gain: number, loopTo?: number) => {
+  const schedule = (buf: AudioBuffer, at: number, gain: number, loopTo?: number): GainNode => {
     const s = ac.createBufferSource();
     const g = ac.createGain();
     s.buffer = buf;
@@ -177,6 +178,7 @@ export async function renderPreview(
     s.connect(g).connect(dest);
     s.start(ac.currentTime + at);
     if (loopTo) s.stop(ac.currentTime + loopTo);
+    return g;
   };
   const music = await decode(bp.audio.music?.assetId);
   const voiceBufs: { buf: AudioBuffer; at: number }[] = [];
@@ -200,7 +202,13 @@ export async function renderPreview(
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
   const stopped = new Promise<void>((r) => (rec.onstop = () => r()));
   await ac.resume();
-  if (music) schedule(music, 0, 0.22, total);
+  if (music) {
+    // Music ducking under the voices (short attack, longer release).
+    const g = schedule(music, 0, 0.22, total);
+    const pts = duckingPoints(voiceBufs.map((v) => ({ start: v.at, end: v.at + v.buf.duration })));
+    g.gain.setValueAtTime(pts[0]!.v, ac.currentTime);
+    for (const p of pts.slice(1)) g.gain.linearRampToValueAtTime(p.v, ac.currentTime + p.t);
+  }
   for (const v of voiceBufs) schedule(v.buf, v.at, 1);
   for (const s of sfx) schedule(s.buf, s.at, 0.6);
   rec.start(500);

@@ -2,7 +2,7 @@
 // constraints of the chosen model; every compiled prompt is versioned and the Style DNA / consistency profiles are
 // injected in all generations.
 import type { CharacterSheet, Scene, StyleDNA, WorldSheet } from './types';
-import { styleLine } from './style';
+import { qualityLine, redrawInstruction, styleLine } from './style';
 import { redactSecrets } from './secrets';
 
 export const GENOME_DIMENSIONS = [
@@ -249,7 +249,7 @@ export function sceneDims(sc: Scene, ctx: SceneContext): Dims {
     LIGHTING: sc.lighting || world?.lighting || '',
     COLOR: world?.palette ?? '',
     COMPOSITION: ctx.next ? `framed so the next scene (${ctx.next.location}) can cut in naturally` : '',
-    QUALITY: 'high quality 2D illustration, clean readable composition',
+    QUALITY: qualityLine(ctx.style, 'illustration'),
     NEGATIVE: ctx.style.negative,
     DIALOGUE: sc.dialogue.map((d) => `${d.speaker}: "${d.text}"`).join(' / '),
     SFX: sc.sound,
@@ -288,7 +288,7 @@ export function compileCharacter(
       COMPOSITION: pose.includes('profil')
         ? 'profile view, full body'
         : 'full body, centered, plain white background',
-      QUALITY: 'high quality 2D character sheet, consistent proportions',
+      QUALITY: qualityLine(style, 'character sheet'),
       NEGATIVE: style.negative,
     },
     c,
@@ -297,6 +297,7 @@ export function compileCharacter(
 }
 
 /** The consistency instruction of a redraw: keep identity, pose, outfit, patterns, proportions; plain white background; no logo. */
+export { redrawInstruction };
 export const REDRAW_INSTRUCTION =
   'Redraw this exact character in the target 2D style. Keep the same face, pose, outfit, fabric patterns and proportions. Plain white background. No logo, no text.';
 
@@ -338,6 +339,12 @@ export const MOTIFS: Record<string, { label: string; dims: Dims }> = {
   anim_2d: {
     label: 'Animation 2D',
     dims: { MOTION: 'limited 2D cut-out animation, quick squash and stretch on reactions' },
+  },
+  anim_3d: {
+    label: 'Animation 3D',
+    dims: {
+      MOTION: 'expressive 3D character animation, snappy comedic timing, squash and stretch on reactions',
+    },
   },
 };
 export const withMotifs = (dims: Dims, ids: string[]): Dims =>

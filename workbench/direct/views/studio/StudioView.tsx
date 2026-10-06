@@ -2,6 +2,8 @@
 // It is the pre-production and control room: it does NOT replace the local `afrikatoon-auto` engine, it feeds it (kit export).
 // Disabled → nothing is read from or written to IndexedDB and no request is made.
 import { useEffect, useState } from 'react';
+import { budgetTier } from '../../../server/jev/studio/film';
+import { dimensionOf } from '../../../server/jev/studio/style';
 import { Badge, Button, Gauge, Toggle } from '../../../web/components/ui';
 import { useStudio } from '../../lib/studio/store';
 import {
@@ -174,6 +176,12 @@ function Delivery() {
         <div className="flex flex-wrap gap-2">
           <Button
             variant="primary"
+            disabled={dimensionOf(bp.styleDNA) === '3D'}
+            title={
+              dimensionOf(bp.styleDNA) === '3D'
+                ? 'NOT AVAILABLE : le moteur local afrikatoon-auto rend uniquement la 2D'
+                : undefined
+            }
             onClick={async () => {
               const x = await r.run('Kit…', () => exportKit(id));
               if (x)
@@ -181,7 +189,7 @@ function Delivery() {
             }}
             data-testid="export-kit"
           >
-            Exporter le kit afrikatoon-auto
+            Exporter le kit afrikatoon-auto{dimensionOf(bp.styleDNA) === '3D' ? ' (2D seulement)' : ''}
           </Button>
           <Button
             onClick={async () => {
@@ -327,7 +335,7 @@ export function StudioView() {
   if (!enabled)
     return (
       <div className="mx-auto max-w-xl p-8 text-center" data-testid="studio-disabled">
-        <div className="mb-2 text-[16px] font-semibold">🎬 AI Visual Studio — désactivé</div>
+        <div className="mb-2 text-[16px] font-semibold">🎬 MASSAMBA AI FILM STUDIO — désactivé</div>
         <p className="mb-4 text-[13px] text-muted">
           Studio désactivé : aucun appel réseau, aucune lecture ni écriture dans IndexedDB, aucun ajout au
           JEV_LOG. Le Workbench se comporte comme avant.
@@ -339,8 +347,17 @@ export function StudioView() {
     <div className="flex h-full min-h-0 flex-col" data-testid="studio">
       <ConfirmHost />
       <header className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-2">
-        <div className="font-semibold">🎬 AI VISUAL STUDIO</div>
-        <Badge tone="accent">2D · AI FILM · ANIMATION · SOCIAL</Badge>
+        <div className="leading-tight">
+          <div className="font-semibold">🎬 MASSAMBA AI FILM STUDIO</div>
+          <div className="text-[10.5px] text-faint">AI-native audiovisual production system</div>
+        </div>
+        <Badge tone="accent">2D / 3D · AI FILM · ANIMATION · SOCIAL</Badge>
+        {bp && <Badge tone="info">{dimensionOf(bp.styleDNA)}</Badge>}
+        {bp && budgetTier(spent(bp), bp.cap).tier !== 'normal' && (
+          <Badge tone={budgetTier(spent(bp), bp.cap).tier === 'hard-stop' ? 'err' : 'warn'}>
+            BUDGET {budgetTier(spent(bp), bp.cap).label}
+          </Badge>
+        )}
         <Badge tone="neutral">mode {bp?.mode ?? S.settings.mode}</Badge>
         {bp && (
           <div

@@ -11,6 +11,14 @@ export interface StoryBrief {
   characters: { name: string; role: string }[];
   /** Compressed memory of what worked (from Production Memory) — optional. */
   hints?: string[];
+  /** Wizard options (all optional). */
+  aspect?: string;
+  dimension?: '2D' | '3D';
+  audience?: string;
+  realism?: number;
+  dialogue?: boolean;
+  music?: boolean;
+  sfx?: boolean;
 }
 export const wordCount = (t: string) => t.trim().split(/\s+/).filter(Boolean).length;
 
@@ -32,6 +40,16 @@ export function storyMessages(b: StoryBrief): { role: 'system' | 'user' | 'assis
         `IDÉE : ${redactSecrets(b.idea)}`,
         `Durée visée : ${b.durationSec} s (plus de 60 s pour TikTok Creator Rewards). Langue : ${b.language}. Plateforme : ${b.platform}.`,
         `Personnages :\n${chars}`,
+        ...(b.aspect || b.dimension || b.audience || b.realism !== undefined
+          ? [
+              `Format : ${b.aspect ?? '9:16'}${b.dimension ? ` · animation ${b.dimension}` : ''}${b.audience ? ` · public : ${redactSecrets(b.audience)}` : ''}${b.realism !== undefined ? ` · réalisme ${b.realism}/100 (0 = très stylisé)` : ''}.`,
+            ]
+          : []),
+        ...(b.dialogue === false
+          ? ['Aucun dialogue : action muette, mime, narration écrite à l’écran.']
+          : []),
+        ...(b.sfx === false ? ['Pas de bruitages écrits.'] : []),
+        ...(b.music === false ? ['Pas de musique écrite.'] : []),
         ...(b.hints?.length
           ? [`Mémoire de production (ce qui a marché) :\n${b.hints.map((h) => `- ${h}`).join('\n')}`]
           : []),
@@ -107,6 +125,64 @@ export interface StoryIssue {
 const WOLOF =
   /\b(waaw|déedéet|deedeet|jërëjëf|jerejef|nanga def|mangi fi|ndank|baax|bëgg|begg|xam|lëgg|yaw|man|dama|ñu|nit|jigéen|góor|toubab|teranga|sama|yow|naka|ba beneen)\b/i;
 
+function normScene(x: unknown, i: number, issues: StoryIssue[], idOverride?: string): Scene {
+  const sc = rec(x);
+  const id = idOverride ?? `S${String(i + 1).padStart(2, '0')}`;
+  const dialogue: DialogueLine[] = arr(sc.dialogue).map((l) => {
+    const ln = rec(l);
+    const t = s(ln.text);
+    if (wordCount(t) > 12)
+      issues.push({
+        code: 'LONG_LINE',
+        severity: 'warn',
+        sceneId: id,
+        message: `réplique de ${wordCount(t)} mots (> 12) : « ${t.slice(0, 50)}… »`,
+      });
+    const lang = s(ln.language, WOLOF.test(t) ? 'wo' : 'fr');
+    if ((lang === 'wo' || WOLOF.test(t)) && !s(ln.translation))
+      issues.push({
+        code: 'NO_TRANSLATION',
+        severity: 'warn',
+        sceneId: id,
+        message: 'réplique en wolof sans traduction pour les sous-titres',
+      });
+    return {
+      speaker: s(ln.speaker, 'NARRATEUR').toUpperCase(),
+      text: t,
+      translation: s(ln.translation) || undefined,
+      language: lang,
+      emotion: s(ln.emotion, 'neutral'),
+      intensity: Math.max(0, Math.min(1, n(ln.intensity, 0.6))),
+      pace: Math.max(0.5, Math.min(1.8, n(ln.pace, 1))),
+      pauseAfterMs: Math.max(0, n(ln.pauseAfterMs, 250)),
+    };
+  });
+  return {
+    scene_id: id,
+    act: s(sc.act, '1'),
+    beat: s(sc.beat, i === 0 ? 'hook' : 'escalade').toLowerCase(),
+    duration: Math.max(2, Math.min(30, n(sc.duration, 6))),
+    location: s(sc.location, 'maison'),
+    time: s(sc.time, 'jour'),
+    characters: arr(sc.characters)
+      .map((c) => s(c).toUpperCase())
+      .filter(Boolean),
+    action: s(sc.action),
+    dialogue,
+    emotion: s(sc.emotion, 'neutral'),
+    camera: s(sc.camera, 'plan moyen'),
+    lighting: s(sc.lighting),
+    sound: s(sc.sound),
+    music: s(sc.music),
+    transition: s(sc.transition, 'cut'),
+    visual_prompt: s(sc.visual_prompt),
+    video_prompt: s(sc.video_prompt),
+    voice_prompt: s(sc.voice_prompt),
+    subtitle_prompt: s(sc.subtitle_prompt),
+    status: 'DRAFT' as const,
+  };
+}
+
 /** Parses and normalises the model's answer. Never throws: failures become issues. */
 export function parseStory(
   text: string,
@@ -119,63 +195,7 @@ export function parseStory(
     };
   const d = rec(raw);
   const issues: StoryIssue[] = [];
-  const scenes: Scene[] = arr(d.scenes).map((x, i) => {
-    const sc = rec(x);
-    const id = `S${String(i + 1).padStart(2, '0')}`;
-    const dialogue: DialogueLine[] = arr(sc.dialogue).map((l) => {
-      const ln = rec(l);
-      const t = s(ln.text);
-      if (wordCount(t) > 12)
-        issues.push({
-          code: 'LONG_LINE',
-          severity: 'warn',
-          sceneId: id,
-          message: `réplique de ${wordCount(t)} mots (> 12) : « ${t.slice(0, 50)}… »`,
-        });
-      const lang = s(ln.language, WOLOF.test(t) ? 'wo' : 'fr');
-      if ((lang === 'wo' || WOLOF.test(t)) && !s(ln.translation))
-        issues.push({
-          code: 'NO_TRANSLATION',
-          severity: 'warn',
-          sceneId: id,
-          message: 'réplique en wolof sans traduction pour les sous-titres',
-        });
-      return {
-        speaker: s(ln.speaker, 'NARRATEUR').toUpperCase(),
-        text: t,
-        translation: s(ln.translation) || undefined,
-        language: lang,
-        emotion: s(ln.emotion, 'neutral'),
-        intensity: Math.max(0, Math.min(1, n(ln.intensity, 0.6))),
-        pace: Math.max(0.5, Math.min(1.8, n(ln.pace, 1))),
-        pauseAfterMs: Math.max(0, n(ln.pauseAfterMs, 250)),
-      };
-    });
-    return {
-      scene_id: id,
-      act: s(sc.act, '1'),
-      beat: s(sc.beat, i === 0 ? 'hook' : 'escalade').toLowerCase(),
-      duration: Math.max(2, Math.min(30, n(sc.duration, 6))),
-      location: s(sc.location, 'maison'),
-      time: s(sc.time, 'jour'),
-      characters: arr(sc.characters)
-        .map((c) => s(c).toUpperCase())
-        .filter(Boolean),
-      action: s(sc.action),
-      dialogue,
-      emotion: s(sc.emotion, 'neutral'),
-      camera: s(sc.camera, 'plan moyen'),
-      lighting: s(sc.lighting),
-      sound: s(sc.sound),
-      music: s(sc.music),
-      transition: s(sc.transition, 'cut'),
-      visual_prompt: s(sc.visual_prompt),
-      video_prompt: s(sc.video_prompt),
-      voice_prompt: s(sc.voice_prompt),
-      subtitle_prompt: s(sc.subtitle_prompt),
-      status: 'DRAFT' as const,
-    };
-  });
+  const scenes: Scene[] = arr(d.scenes).map((x, i) => normScene(x, i, issues));
   if (!scenes.length)
     issues.push({ code: 'NO_SCENES', severity: 'error', message: 'aucune scène dans la réponse' });
   const total = scenes.reduce((a, c) => a + c.duration, 0);
@@ -214,6 +234,72 @@ export function parseStory(
       theme: s(d.theme),
     },
     scenes,
+    issues,
+  };
+}
+
+// ───────── one scene (Story Lab « REGENERATE SCENE ») ─────────
+export function sceneMessages(o: {
+  idea: string;
+  logline: string;
+  language: string;
+  scenes: Scene[];
+  index: number;
+  instruction?: string;
+  dialogue?: boolean;
+}): { role: 'system' | 'user'; content: string }[] {
+  const around = o.scenes
+    .map(
+      (sc, i) =>
+        `${i === o.index ? '>>' : '  '} ${sc.scene_id} (${sc.beat}, ${sc.duration}s) ${sc.location} : ${sc.action}`,
+    )
+    .join('\n');
+  const cur = o.scenes[o.index]!;
+  return [
+    {
+      role: 'system',
+      content:
+        'Tu es scénariste de sketchs humoristiques. Tu réécris UNE SEULE scène en gardant la cohérence avec les autres. Aucune marque réelle, aucune personne réelle. Réponds UNIQUEMENT par un objet JSON valide.',
+    },
+    {
+      role: 'user',
+      content: [
+        `IDÉE : ${redactSecrets(o.idea)}`,
+        `Logline : ${redactSecrets(o.logline)}`,
+        `Langue : ${o.language}. Scènes (>> = à réécrire) :\n${around}`,
+        `Scène actuelle :\n${JSON.stringify({ beat: cur.beat, duration: cur.duration, location: cur.location, characters: cur.characters, action: cur.action, dialogue: cur.dialogue.map((d) => ({ speaker: d.speaker, text: d.text })) })}`,
+        o.instruction
+          ? `Consigne : ${redactSecrets(o.instruction)}`
+          : 'Consigne : propose une version différente et plus drôle, même rôle narratif.',
+        ...(o.dialogue === false
+          ? ['Aucun dialogue pour cette production.']
+          : ['Répliques de 12 mots maximum.']),
+        'JSON : {"act","beat","duration","location","time","characters":[noms en MAJUSCULES],"action","emotion","camera","lighting","sound","music","transition","dialogue":[{"speaker","text","emotion","translation"?,"language"}],"visual_prompt","video_prompt","voice_prompt","subtitle_prompt"}',
+      ].join('\n\n'),
+    },
+  ];
+}
+/** Parses ONE regenerated scene; ids and generated assets of the original are kept by the caller. */
+export function parseScene(
+  text: string,
+  base: Scene,
+): { scene: Scene; issues: StoryIssue[] } | { issues: StoryIssue[] } {
+  const raw = extractJson(text);
+  if (!raw)
+    return {
+      issues: [{ code: 'NO_JSON', severity: 'error', message: 'la réponse ne contient pas de JSON valide' }],
+    };
+  const o = rec(raw);
+  const issues: StoryIssue[] = [];
+  const sc = normScene(o.scene ?? o, 0, issues, base.scene_id);
+  if (!sc.action) return { issues: [{ code: 'NO_SCENES', severity: 'error', message: 'scène sans action' }] };
+  return {
+    scene: {
+      ...sc,
+      imageAssetId: base.imageAssetId,
+      videoAssetId: base.videoAssetId,
+      status: base.imageAssetId ? base.status : 'DRAFT',
+    },
     issues,
   };
 }

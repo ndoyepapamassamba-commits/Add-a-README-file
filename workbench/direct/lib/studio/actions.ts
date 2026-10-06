@@ -20,10 +20,17 @@ import { StudioError } from '../../../server/jev/studio/errors';
 import {
   compileCharacter,
   compileScene,
-  REDRAW_INSTRUCTION,
+  redrawInstruction,
   type Compiled,
 } from '../../../server/jev/studio/genome';
-import { parseStory, storyMessages, type ParsedStory } from '../../../server/jev/studio/story';
+import { dimensionOf, styleTag } from '../../../server/jev/studio/style';
+import {
+  parseScene,
+  parseStory,
+  sceneMessages,
+  storyMessages,
+  type ParsedStory,
+} from '../../../server/jev/studio/story';
 import { setStage, addDecision } from '../../../server/jev/studio/blueprint';
 import { contextPack } from '../../../server/jev/studio/qa';
 import { hints } from '../../../server/jev/studio/memory';
@@ -141,6 +148,13 @@ export async function generateStory(projectId: string): Promise<StoryResult> {
     platform: bp.platform,
     characters: bp.characters.map((c) => ({ name: c.name, role: c.role })),
     hints: hints(useStudio.getState().memory),
+    aspect: bp.aspect,
+    dimension: dimensionOf(bp.styleDNA),
+    audience: bp.options?.audience,
+    realism: bp.options?.realism,
+    dialogue: bp.options?.dialogue,
+    music: bp.options?.music,
+    sfx: bp.options?.sfx,
   };
   let messages = storyMessages(brief);
   let parsed: ParsedStory | null = null;
@@ -214,6 +228,42 @@ export async function generateStory(projectId: string): Promise<StoryResult> {
     'histoire générée',
   );
   return { parsed, issues: parsed.issues.map((i) => i.message), model };
+}
+/** Story Lab « REGENERATE SCENE »: rewrites ONE scene; the other scenes, the story and the generated assets are untouched. */
+export async function regenerateScene(
+  projectId: string,
+  sceneId: string,
+  instruction?: string,
+): Promise<{ ok: boolean; issues: string[]; model?: string }> {
+  const bp = bpOf(projectId);
+  const index = bp.scenes.findIndex((x) => x.scene_id === sceneId);
+  if (index < 0) return { ok: false, issues: ['scène introuvable'] };
+  const r = await runText({
+    projectId,
+    purpose: `scène ${sceneId} (régénération)`,
+    messages: sceneMessages({
+      idea: bp.project.idea,
+      logline: bp.story?.logline ?? '',
+      language: bp.language,
+      scenes: bp.scenes,
+      index,
+      instruction,
+      dialogue: bp.options?.dialogue,
+    }),
+    maxTokens: 2500,
+    temperature: 0.9,
+  });
+  const p = parseScene(r.text, bp.scenes[index]!);
+  if (!('scene' in p)) return { ok: false, issues: p.issues.map((i) => i.message), model: r.model };
+  patch(
+    projectId,
+    (b) => ({
+      ...addDecision(b, 'STORY', `scène ${sceneId} régénérée par ${r.model}`),
+      scenes: b.scenes.map((x) => (x.scene_id === sceneId ? p.scene : x)),
+    }),
+    `scène ${sceneId} régénérée`,
+  );
+  return { ok: true, issues: p.issues.map((i) => i.message), model: r.model };
 }
 export const emptyCharacter = (name: string): CharacterSheet => ({
   id: uid('char'),
@@ -460,7 +510,7 @@ export async function generateOne(j: ImageJob): Promise<MediaOutcome<{ b64: stri
     characterId: j.characterId,
     kind: 'image',
     task: j.task,
-    style: bp.styleDNA.id === 'style-2d-hq-franco-africain' ? '2D-HQ' : bp.styleDNA.name,
+    style: styleTag(bp.styleDNA),
     contract: j.aspect,
     promptVersion: j.compiled.version,
     mission: j.mission,
@@ -468,6 +518,7 @@ export async function generateOne(j: ImageJob): Promise<MediaOutcome<{ b64: stri
     trace,
     regenerated: j.regenerated,
     confirmed: j.confirmed,
+    parentIds: j.references,
     call: async (m) => {
       const c = byModel.get(m.id)!;
       const r = await generateImage({
@@ -601,16 +652,16 @@ export async function redrawCharacter(
     const c2: Compiled = {
       ...compiled,
       text: source
-        ? `${REDRAW_INSTRUCTION} ${compiled.text}`
-        : `Create a new character design from this description, plain white background, no logo, no text. ${compiled.text}`,
+        ? `${redrawInstruction(bp.styleDNA)} ${compiled.text}`
+        : `Create a new ${dimensionOf(bp.styleDNA)} character design from this description, plain white background, no logo, no text. ${compiled.text}`,
     };
     const r = await generateOne({
       projectId,
       characterId: ch.name,
       compiled: c2,
       references: refs,
-      task: '2D-REDRAW',
-      mission: `redessin 2D ${ch.name} / ${pose}`,
+      task: `${dimensionOf(bp.styleDNA)}-REDRAW`,
+      mission: `redessin ${dimensionOf(bp.styleDNA)} ${ch.name} / ${pose}`,
       aspect: '3:4',
       forceModel: o.forceModel,
       kind: 'character',

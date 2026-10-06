@@ -453,6 +453,7 @@ const COL: Record<string, string> = {
   music: 'bg-warn/40',
   sfx: 'bg-err/30',
   subtitles: 'bg-hover',
+  emoji: 'bg-warn/30',
 };
 export function EditorView() {
   const bp = useActive();

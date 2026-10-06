@@ -5,6 +5,7 @@ import { blobs } from './blobs';
 import { Trace, logStudio } from './jevlog';
 import type { Candidate, Estimate } from '../../../server/jev/studio/cost';
 import { checkBudget, pickModel } from '../../../server/jev/studio/cost';
+import { budgetTier, effectiveMode } from '../../../server/jev/studio/film';
 import type { MediaModel } from '../../../server/jev/studio/capabilities';
 import { StudioError, classifyError, withRetry } from '../../../server/jev/studio/errors';
 import {
@@ -101,6 +102,8 @@ export interface MediaRequest<R> extends Attempt<R> {
   /** Pre-selection trace notes (classification, discovery, prompt compilation) already measured by the caller. */
   trace?: Trace;
   confirmed?: boolean;
+  /** Asset graph: ids of the assets this result is generated from. */
+  parentIds?: string[];
 }
 export interface MediaOutcome<R> {
   result: R;
@@ -136,7 +139,11 @@ export async function executeMedia<R>(req: MediaRequest<R>): Promise<MediaOutcom
       c.model.id,
     ),
   }));
-  const pick = pickModel(cands, bp.mode);
+  // Budget governor tiers: the nearer the cap, the cheaper the mode actually applied.
+  const mode = effectiveMode(bp.mode, bpSpent(bp), bp.cap);
+  const pick = pickModel(cands, mode);
+  if (mode !== bp.mode)
+    pick.explain.push(`PALIER BUDGET : ${bp.mode} → ${mode} (${budgetTier(bpSpent(bp), bp.cap).label})`);
   trace.stage('MODEL_SELECTION', pick.explain.join(' · '));
   const order = pick.order.slice(0, req.maxModels ?? 3);
   let lastErr: StudioError | null = null;
@@ -203,6 +210,7 @@ export async function executeMedia<R>(req: MediaRequest<R>): Promise<MediaOutcom
             cost: value.cost,
             source: 'openrouter',
             tags: st.tags ?? [],
+            parentIds: req.parentIds?.length ? req.parentIds : undefined,
             mime: st.mime,
             bytes: st.blob.size,
             name: st.name,

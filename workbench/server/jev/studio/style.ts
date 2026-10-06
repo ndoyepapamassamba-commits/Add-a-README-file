@@ -3,10 +3,12 @@
 import type { StyleDNA } from './types';
 
 export const DEFAULT_STYLE_ID = 'style-2d-hq-franco-africain';
+export const STYLE_3D_ID = 'style-3d-afrikatoon-stylise';
 
 export const STYLE_2D_HQ: StyleDNA = Object.freeze({
   id: DEFAULT_STYLE_ID,
   name: '2D HQ franco-africain (série TV moderne)',
+  dimension: '2D',
   locked: true,
   color:
     'flat saturated colors, warm West-African palette (ochre, terracotta, wax-print pinks and purples), clean color blocking',
@@ -28,6 +30,47 @@ export const STYLE_2D_HQ: StyleDNA = Object.freeze({
   negative:
     '3D render, CGI, Pixar, photorealistic, photograph, realistic skin, volumetric lighting, depth of field blur, brand logos, real trademarks, text, watermark, signature, deformed hands, extra fingers',
 }) as StyleDNA;
+
+/** 3D option: same pipeline, stylised 3D animation (Afrikatoon). Locked like the 2D default; chosen per production. */
+export const STYLE_3D_AFRIKATOON: StyleDNA = Object.freeze({
+  id: STYLE_3D_ID,
+  name: '3D Afrikatoon (animation 3D stylisée, Afrique de l’Ouest)',
+  dimension: '3D',
+  locked: true,
+  color:
+    'vivid saturated colors, warm West-African palette (ochre, terracotta, wax-print pinks and purples), rich but readable',
+  lighting: 'soft cinematic key light with warm bounce light, gentle rim light, readable shadows',
+  material: 'stylised materials: soft skin shading, fabric with wax-print textures, slightly glossy eyes',
+  camera: 'dynamic animated-feature camera, medium shots and close-ups on expressions, gentle parallax',
+  lens: 'cinematic 35mm-equivalent perspective with mild depth of field',
+  depth: 'layered 3D sets with atmospheric depth, characters clearly separated from the background',
+  contrast: 'medium-high contrast, readable silhouettes',
+  texture: 'clean stylised textures, no photographic noise',
+  characterDesign:
+    'stylised 3D animated-feature characters: expressive oversized eyes, strong comedic facial expressions, consistent proportions, clear readable hands',
+  environmentDesign:
+    'stylised West-African environments (Dakar streets, courtyards, markets) built as 3D sets',
+  animationStyle: 'expressive 3D character animation, snappy comedic timing, squash and stretch on reactions',
+  renderStyle: 'high quality stylised 3D animation render, soft global illumination, clean stylised shading',
+  postProcessing: 'subtle color grading only',
+  negative:
+    'flat 2D, hand-drawn sketch, photorealistic live action, photograph, uncanny realistic skin, brand logos, real trademarks, text, watermark, signature, deformed hands, extra fingers',
+}) as StyleDNA;
+
+export type Dimension = '2D' | '3D';
+export const STYLE_PRESETS: Record<Dimension, StyleDNA> = { '2D': STYLE_2D_HQ, '3D': STYLE_3D_AFRIKATOON };
+export const dimensionOf = (s: Pick<StyleDNA, 'dimension'>): Dimension =>
+  s.dimension === '3D' ? '3D' : '2D';
+/** Task-style tag used by the champion memory (2D and 3D keep separate histories). */
+export const styleTag = (s: StyleDNA): string =>
+  s.id === DEFAULT_STYLE_ID ? '2D-HQ' : s.id === STYLE_3D_ID ? '3D-STYLISED' : s.name;
+/** Quality sentence of the prompts, per dimension. */
+export const qualityLine = (s: StyleDNA, what: 'illustration' | 'character sheet'): string =>
+  dimensionOf(s) === '3D'
+    ? `high quality stylised 3D ${what === 'illustration' ? 'render' : 'character turnaround'}, clean readable composition`
+    : `high quality 2D ${what}, ${what === 'illustration' ? 'clean readable composition' : 'consistent proportions'}`;
+export const redrawInstruction = (s: StyleDNA): string =>
+  `Redraw this exact character in the target ${dimensionOf(s)} style. Keep the same face, pose, outfit, fabric patterns and proportions. Plain white background. No logo, no text.`;
 
 export const STYLE_DIMENSIONS: (keyof StyleDNA)[] = [
   'color',

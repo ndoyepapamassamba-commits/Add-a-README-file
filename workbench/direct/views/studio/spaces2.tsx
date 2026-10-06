@@ -53,10 +53,12 @@ import {
   usd,
   VideoBox,
   VideoReady,
+  gotoSpace,
   type PlaybackState,
   type VideoMeta,
 } from './common';
 import type { Job } from '../../../server/jev/studio/types';
+import { CostIntelligence, GatePanel } from './film';
 import { hasKey } from '../../lib/studio/net';
 
 // ───────── 6. Scene Director ─────────
@@ -471,7 +473,7 @@ export function ImageFactory() {
                   </label>
                   <Thumb id={a.id} className="h-40 w-full" />
                   <div className="mt-1 truncate" title={a.model}>
-                    {a.model ?? a.source}
+                    {a.tags.includes('REJECTED') && <Badge tone="err">REJECTED</Badge>} {a.model ?? a.source}
                   </div>
                   <div className="text-faint">
                     coût {a.cost === null ? 'non mesuré' : usd(a.cost)} · latence{' '}
@@ -522,6 +524,39 @@ export function ImageFactory() {
                       }}
                     >
                       REGENERATE
+                    </Button>
+                    <Button
+                      size="sm"
+                      title="Marque l’image comme rejetée (elle reste dans la bibliothèque, mais plus dans le storyboard)"
+                      onClick={() => {
+                        S.addAsset({ ...a, tags: [...new Set([...a.tags, 'REJECTED'])] });
+                        S.patchProject(id, (b) => ({
+                          ...b,
+                          scenes: b.scenes.map((s) =>
+                            s.imageAssetId === a.id ? { ...s, imageAssetId: undefined, status: 'DRAFT' } : s,
+                          ),
+                        }));
+                      }}
+                      data-testid="image-reject"
+                    >
+                      REJECT
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={!scene}
+                      title="Utilise cette image comme première image de la vidéo de la scène choisie"
+                      onClick={() => {
+                        if (!scene) return;
+                        S.patchProject(id, (b) => ({
+                          ...b,
+                          scenes: b.scenes.map((s) =>
+                            s.scene_id === scene ? { ...s, imageAssetId: a.id, status: 'APPROVED' } : s,
+                          ),
+                        }));
+                        gotoSpace('video');
+                      }}
+                    >
+                      SEND TO VIDEO
                     </Button>
                     <Button
                       size="sm"
@@ -623,9 +658,9 @@ export function VideoFactory() {
         right={<Badge tone={on ? 'ok' : 'neutral'}>{on ? 'ACTIVE' : 'DÉSACTIVÉE (par défaut)'}</Badge>}
       >
         <div className="text-[12.5px] text-muted">
-          Le studio est 2D : la vidéo générée est facultative et désactivée par défaut. Elle ne s’active que
-          sur votre décision, avec un budget que vous saisissez. Un job déjà payé n’est jamais relancé
-          automatiquement.
+          Le studio produit en 2D ou en 3D : la vidéo générée est facultative et désactivée par défaut. Elle
+          ne s’active que sur votre décision, avec un budget que vous saisissez. Un job déjà payé n’est jamais
+          relancé automatiquement.
         </div>
         <div className="mt-2 flex flex-wrap items-end gap-2">
           <div>
@@ -785,6 +820,7 @@ export function VideoFactory() {
           <BusyBar busy={r.busy} />
         </Card>
       )}
+      <CostIntelligence />
       {done.length > 0 && (
         <div className="space-y-3" data-testid="video-generated">
           {done.map((j) => (
@@ -1019,6 +1055,7 @@ function VideoCard({
           🔄 REGENERATE
         </Button>
       </div>
+      <GatePanel asset={asset} projectId={j.projectId} sceneId={j.sceneId} />
       {note && <div className="mt-1 text-[11.5px] text-warn">{note}</div>}
     </section>
   );

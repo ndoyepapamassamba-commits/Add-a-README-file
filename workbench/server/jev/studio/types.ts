@@ -54,6 +54,8 @@ export type StageStatus =
 export interface StyleDNA {
   id: string;
   name: string;
+  /** 2D (default) or 3D: same pipeline, different Style DNA. */
+  dimension?: '2D' | '3D';
   /** The default 2D style is locked: it only changes on explicit request. */
   locked: boolean;
   color: string;
@@ -235,6 +237,14 @@ export interface AssetMeta {
   name: string;
   /** Mention required for anything that came from the Internet. */
   rightsNote?: string;
+  /** Asset graph: the assets this one was generated from (character reference → scene image → video…). */
+  parentIds?: string[];
+  /** Video quality gate result (videos only). */
+  gate?: {
+    status: 'GENERATED' | 'VALIDATED' | 'NEEDS_REVIEW' | 'REJECTED';
+    at: number;
+    checks: { id: string; ok: boolean | null; detail: string }[];
+  };
 }
 
 export type JobStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
@@ -303,8 +313,34 @@ export interface QAReport {
   issues: { code: string; severity: 'info' | 'warn' | 'error'; sceneId?: string; message: string }[];
 }
 
+export interface ProductionOptions {
+  /** Target audience, free text. */
+  audience: string;
+  /** stylised ↔ realistic, 0-100. */
+  realism: number;
+  dialogue: boolean;
+  music: boolean;
+  sfx: boolean;
+  subtitles: boolean;
+  preset: string;
+}
+export interface BlueprintVersion {
+  id: string;
+  at: number;
+  label: string;
+  cost: number;
+  quality: number | null;
+  scenes: number;
+  assets: number;
+  models: string[];
+  /** The blueprint at that time (without its own version list). */
+  snapshot: Omit<Blueprint, 'versions'>;
+}
 export interface Blueprint {
   version: number;
+  /** Wizard options chosen at creation (absent on productions created before the wizard). */
+  options?: ProductionOptions;
+  versions?: BlueprintVersion[];
   project: { id: string; createdAt: number; updatedAt: number; idea: string; status: string };
   title: string;
   language: string;
@@ -342,7 +378,7 @@ export interface Blueprint {
 
 export interface TimelineClip {
   id: string;
-  track: 'video' | 'dialogue' | 'voice' | 'music' | 'sfx' | 'subtitles';
+  track: 'video' | 'dialogue' | 'voice' | 'music' | 'sfx' | 'subtitles' | 'emoji';
   start: number;
   duration: number;
   assetId?: string;

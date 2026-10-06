@@ -21,6 +21,7 @@ import { analytics, championTable, hints, promptPatterns } from '../../../server
 import { stats as jobStats } from '../../../server/jev/studio/jobs';
 import { spent } from '../../../server/jev/studio/blueprint';
 import type { AssetKind, AssetStatus, CostMode } from '../../../server/jev/studio/types';
+import { AssetGraphPanel } from './film';
 import { Card, ErrorBox, Label, NoData, Thumb, useActive, useBlobUrl, useRunner, usd } from './common';
 
 // ───────── 16. Prompt Genome ─────────
@@ -262,6 +263,7 @@ export function AssetLibrary() {
     });
   return (
     <div className="space-y-3" data-testid="studio-assets">
+      <AssetGraphPanel />
       <Card title="Visual Source Lab — références">
         <div className="text-[12.5px] text-muted">
           Toute référence venue d’Internet porte la mention{' '}

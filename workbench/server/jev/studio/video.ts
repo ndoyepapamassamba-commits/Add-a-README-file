@@ -67,7 +67,7 @@ export function ratioOf(w: number, h: number): string {
   return `${w / d}:${h / d}`;
 }
 
-export type TalkRoute = 'A' | 'B' | 'C' | 'D';
+export type TalkRoute = 'A' | 'B' | 'C' | 'D' | 'N';
 export interface TalkInputs {
   videoEnabled: boolean;
   hasSceneImage: boolean;
@@ -78,12 +78,15 @@ export interface TalkInputs {
   /** Speech (TTS) models discovered. */
   tts: number;
   dialogueLines: number;
+  /** The local engine (Rhubarb lip-sync) only renders 2D productions. */
+  dimension?: '2D' | '3D';
 }
 export const TALK_LABEL: Record<TalkRoute, string> = {
   A: 'Image → vidéo (sans voix)',
   B: 'Image → vidéo + audio natif',
   C: 'Image → vidéo + TTS externe',
   D: 'Moteur 2D local + lip-sync Rhubarb',
+  N: 'NOT AVAILABLE',
 };
 /** Which routes exist right now, and which one JEV picks (B > C > D; A is silent so it is never chosen for « Fais parler »). */
 export function talkRoutes(i: TalkInputs): {
@@ -96,9 +99,10 @@ export function talkRoutes(i: TalkInputs): {
     A: base && i.i2v > 0,
     B: base && i.i2vNative > 0,
     C: base && i.i2v > 0 && i.tts > 0 && i.dialogueLines > 0,
-    D: true,
+    D: (i.dimension ?? '2D') === '2D',
+    N: true,
   };
-  const selected: TalkRoute = available.B ? 'B' : available.C ? 'C' : 'D';
+  const selected: TalkRoute = available.B ? 'B' : available.C ? 'C' : available.D ? 'D' : 'N';
   const why = !i.videoEnabled
     ? 'Video Factory désactivée : aucun appel vidéo payant'
     : !i.hasSceneImage
@@ -107,8 +111,10 @@ export function talkRoutes(i: TalkInputs): {
         ? 'un modèle image→vidéo à audio natif est disponible'
         : selected === 'C'
           ? 'aucun audio natif, mais image→vidéo + synthèse vocale sont disponibles : vidéo, puis voix, assemblées séparément'
-          : i.i2v === 0
-            ? 'aucun modèle image→vidéo découvert'
-            : 'image→vidéo disponible mais aucune synthèse vocale ni réplique : la vidéo serait muette (route A, non choisie)';
+          : selected === 'N'
+            ? 'production 3D : le moteur local (Rhubarb) ne rend que la 2D et aucune route vidéo IA n’est disponible'
+            : i.i2v === 0
+              ? 'aucun modèle image→vidéo découvert'
+              : 'image→vidéo disponible mais aucune synthèse vocale ni réplique : la vidéo serait muette (route A, non choisie)';
   return { available, selected, why };
 }
