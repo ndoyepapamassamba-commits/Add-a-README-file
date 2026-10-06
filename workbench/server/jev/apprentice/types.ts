@@ -21,6 +21,8 @@ export interface TaskDNA {
   context_size: number;
   reasoning_requirement: boolean;
   structured_output_requirement: boolean;
+  /** Output contract of the task (structured_json / table / code / list / number / narrative). */
+  output_contract: string;
   /** The answer depends on fresh external facts (news, live prices…): a model without web tools cannot guarantee it. */
   freshness_requirement: boolean;
   latency_requirement: 'low' | 'normal' | 'relaxed';
@@ -93,6 +95,17 @@ export interface ApprenticeTag {
     contextAfter: number;
   };
   supremacy?: number | null;
+  // ── Champion Science (strata of the mission, for matched comparisons) ──
+  risk?: Risk;
+  contract?: string;
+  difficulty?: number;
+  toolProfile?: string;
+  contextBucket?: string;
+  lang?: string;
+  /** Wall time of the whole routing decision (ms, measured). */
+  decisionMs?: number;
+  /** Controlled-experiment role of this run. */
+  experiment?: { role: 'champion' | 'challenger' | 'premium'; champion: string; challenger: string | null };
 }
 export interface FailureLearning {
   signature: string;
@@ -103,13 +116,15 @@ export interface FailureLearning {
   outcome: 'recovered' | 'escalated' | 'unresolved';
 }
 
-export type ApprenticeArm = 'free' | 'free_jev' | 'free_skill' | 'free_skill_exp' | 'validated' | 'paid';
+export type ApprenticeArm =
+  'free' | 'free_jev' | 'free_skill' | 'free_skill_exp' | 'validated' | 'challenger' | 'paid';
 export const APPRENTICE_ARMS: ApprenticeArm[] = [
   'free',
   'free_jev',
   'free_skill',
   'free_skill_exp',
   'validated',
+  'challenger',
   'paid',
 ];
 export const ARM_NAME: Record<ApprenticeArm, string> = {
@@ -118,7 +133,8 @@ export const ARM_NAME: Record<ApprenticeArm, string> = {
   free_skill: 'B2 · Free + JEV Skill (ablation)',
   free_skill_exp: 'C · Free specialist (JEV + Skill + Experience)',
   validated: 'D · Validated Apprentice (champion)',
-  paid: 'E · Best paid model (reference)',
+  challenger: 'E · Challenger',
+  paid: 'F · Premium reference (measured)',
 };
 
 export interface ApprenticeSettings {
@@ -138,6 +154,7 @@ export interface ApprenticeSettings {
   maxFailureRisk: Record<Risk, number>;
   /** Validation thresholds and supremacy weights (configurable). */
   validation: ValidationRules;
+  lab: LabSettings;
   supremacy: SupremacyWeights;
   /** Horizon (days) used to project the reuse value of a Teacher call — a PROJECTION, labelled as such. */
   horizonDays: number;
@@ -173,6 +190,47 @@ export const DEFAULT_VALIDATION: ValidationRules = {
   critical: { success: 0.98, quality: 97 },
   halfLifeDays: 30,
 };
+/** Champion / Challenger lab thresholds (editable in Policy Engine). */
+export interface LabSettings {
+  /** Non-inferiority margin on quality, in points (0–100). */
+  margin: number;
+  /** Non-inferiority margin on success rate (0–1). */
+  successMargin: number;
+  /** Confidence level of the intervals. */
+  confidence: number;
+  /** Minimum n per arm to conclude, by risk (HIGH / CRITICAL need more). */
+  minN: Record<Risk, number>;
+  /** Rolling window (missions) for degradation detection. */
+  window: number;
+  /** Quality drop (points) of the rolling window below the historical lower bound that means DEGRADED. */
+  degradeDrop: number;
+  /** New missions required between two champion changes (a single mission never promotes). */
+  cooldown: number;
+  /** Share (0–1) of LOW / NORMAL missions routed to a challenger as a controlled shadow test. 0 = off. */
+  exploration: number;
+  /** Update the lab after every real mission (needs Apprentice enabled). */
+  continuous: boolean;
+  /** A challenger may cost at most this ratio of the champion's total mission cost, and be this much slower. */
+  costTolerance: number;
+  latencyTolerance: number;
+  /** Only the most recent controlled pairs count (a challenger that improved is judged on its recent behaviour). */
+  pairWindow: number;
+}
+export const DEFAULT_LAB: LabSettings = {
+  margin: 2,
+  successMargin: 0.05,
+  confidence: 0.95,
+  minN: { low: 10, normal: 20, high: 30, critical: 50 },
+  window: 10,
+  degradeDrop: 8,
+  cooldown: 5,
+  exploration: 0,
+  continuous: true,
+  costTolerance: 2,
+  latencyTolerance: 2,
+  pairWindow: 40,
+};
+
 /** ApprenticeSupremacyScore weights (normalised at use). */
 export interface SupremacyWeights {
   task: number;
@@ -222,6 +280,7 @@ export const DEFAULT_APPRENTICE: ApprenticeSettings = {
   gates: { low: 0.85, normal: 0.9, high: 0.93, critical: 0.97 },
   weights: DEFAULT_WEIGHTS,
   validation: DEFAULT_VALIDATION,
+  lab: DEFAULT_LAB,
   supremacy: DEFAULT_SUPREMACY,
   horizonDays: 30,
   capsuleBudget: 700,

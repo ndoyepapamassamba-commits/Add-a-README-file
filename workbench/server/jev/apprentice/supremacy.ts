@@ -3,6 +3,7 @@
 // a validation is never invented and a single success is never a validation.
 import type { JevLogEntry } from '../metrics';
 import { qualityOfEntry } from '../fabric/memory';
+import { meanCI, wilson } from './intervals';
 import { checkProvider, unknownPolicy, type ProviderCheck, type ProviderPolicy } from '../fabric/security';
 import type { DataClass } from '../fabric/types';
 import type { FreeModel } from '../fabric/council';
@@ -360,6 +361,15 @@ export interface PremiumRef {
   cost: number | null;
   latencyMs: number | null;
   sample: SampleLabel;
+  /** Last time this reference was measured (ms epoch). */
+  lastMeasured: number | null;
+  /** Success rate Wilson interval and quality mean interval (95 %), when computable. */
+  successCI: { lo: number; hi: number } | null;
+  qualityCI: { lo: number; hi: number } | null;
+  /** Label of the sample size (INSUFFICIENT / INDICATIVE / ROBUST / HIGH CONFIDENCE). */
+  confidence: SampleLabel;
+  /** Always "REFERENCE PREMIUM MESURÉE": a measured reference, not ground truth. */
+  kind: 'REFERENCE PREMIUM MESURÉE';
 }
 
 export interface SupremacyInput {
@@ -397,6 +407,15 @@ const matchOf = (dna: TaskDNA, fam: string): { m: ApprenticeCandidate['match']; 
   return null;
 };
 
+function ci(
+  es: JevLogEntry[],
+  q: number[],
+): { successCI: { lo: number; hi: number } | null; qualityCI: { lo: number; hi: number } | null } {
+  const w = wilson(es.filter((e) => e.success).length, es.length);
+  const m = meanCI(q);
+  return { successCI: w ? { lo: w.lo, hi: w.hi } : null, qualityCI: m ? { lo: m.lo, hi: m.hi } : null };
+}
+
 /** Premium reference of a family: the paid model with the best measured quality on it (n ≥ 1, sample labelled). */
 export function premiumReference(log: JevLogEntry[], family: string): PremiumRef | null {
   const by = new Map<string, JevLogEntry[]>();
@@ -420,6 +439,10 @@ export function premiumReference(log: JevLogEntry[], family: string): PremiumRef
       cost: mean(es.map((e) => e.acct?.totalCost ?? e.cost + e.jevCost)),
       latencyMs: mean(es.map((e) => e.latencyMs)),
       sample: sampleLabelOf(es.length),
+      lastMeasured: Math.max(...es.map((e) => e.at)),
+      ...ci(es, q),
+      confidence: sampleLabelOf(es.length),
+      kind: 'REFERENCE PREMIUM MESURÉE' as const,
     };
   });
   return rows.sort((a, b) => (b.quality ?? 0) - (a.quality ?? 0) || b.n - a.n)[0] ?? null;
