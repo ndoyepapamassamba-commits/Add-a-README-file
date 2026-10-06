@@ -1,0 +1,221 @@
+{
+ "data": [
+  {
+   "id": "fish-audio/s2.1-pro-free:free",
+   "canonical_slug": "fish-audio/s2.1-pro-free-20260729",
+   "hugging_face_id": null,
+   "name": "Fish Audio: S2.1 Pro Free (free)",
+   "created": 1785353733,
+   "description": "S2.1 Pro Free is the no-cost variant of Fish Audio S2.1 Pro, intended for testing, prototyping, and low-volume applications. It provides the same synthesis capa",
+   "context_length": 0,
+   "architecture": {
+    "modality": "text->speech",
+    "input_modalities": [
+     "text"
+    ],
+    "output_modalities": [
+     "speech"
+    ],
+    "tokenizer": "Other",
+    "instruct_type": null
+   },
+   "pricing": {
+    "prompt": "0",
+    "completion": "0"
+   },
+   "top_provider": {
+    "context_length": 0,
+    "max_completion_tokens": 0,
+    "is_moderated": false
+   },
+   "per_request_limits": null,
+   "supported_parameters": [],
+   "default_parameters": {},
+   "supported_voices": null,
+   "knowledge_cutoff": null,
+   "expiration_date": null,
+   "links": {
+    "details": "/api/v1/models/fish-audio/s2.1-pro-free-20260729/endpoints"
+   }
+  },
+  {
+   "id": "hexgrad/kokoro-82m",
+   "canonical_slug": "hexgrad/kokoro-82m",
+   "hugging_face_id": null,
+   "name": "hexgrad: Kokoro 82M",
+   "created": 1776983167,
+   "description": "Kokoro 82M is a lightweight, open-weight text-to-speech model from hexgrad. It converts text to speech across 8 languages (American and British English, Spanish",
+   "context_length": 4096,
+   "architecture": {
+    "modality": "text->speech",
+    "input_modalities": [
+     "text"
+    ],
+    "output_modalities": [
+     "speech"
+    ],
+    "tokenizer": "Other",
+    "instruct_type": null
+   },
+   "pricing": {
+    "prompt": "0.00000062",
+    "completion": "0"
+   },
+   "top_provider": {
+    "context_length": 4096,
+    "max_completion_tokens": 3686,
+    "is_moderated": false
+   },
+   "per_request_limits": null,
+   "supported_parameters": [],
+   "default_parameters": {},
+   "supported_voices": [
+    "af_alloy",
+    "af_aoede",
+    "af_bella",
+    "af_heart",
+    "af_jessica",
+    "af_kore",
+    "af_nicole",
+    "af_nova"
+   ],
+   "knowledge_cutoff": null,
+   "expiration_date": null,
+   "links": {
+    "details": "/api/v1/models/hexgrad/kokoro-82m/endpoints"
+   }
+  },
+  {
+   "id": "microsoft/mai-voice-2.1-flash",
+   "canonical_slug": "microsoft/mai-voice-2.1-flash-20261001",
+   "hugging_face_id": null,
+   "name": "Microsoft AI: MAI-Voice-2.1-Flash",
+   "created": 1790870485,
+   "description": "MAI-Voice-2.1-Flash is a low-latency text-to-speech model from Microsoft AI, optimized for real-time responsiveness. It produces natural, expressive speech acro",
+   "context_length": 0,
+   "architecture": {
+    "modality": "text->speech",
+    "input_modalities": [
+     "text"
+    ],
+    "output_modalities": [
+     "speech"
+    ],
+    "tokenizer": "Other",
+    "instruct_type": null
+   },
+   "pricing": {
+    "prompt": "0.000015",
+    "completion": "0"
+   },
+   "top_provider": {
+    "context_length": 0,
+    "max_completion_tokens": 0,
+    "is_moderated": false
+   },
+   "per_request_limits": null,
+   "supported_parameters": [],
+   "default_parameters": {},
+   "supported_voices": [
+    "cs-CZ-Grant:MAI-Voice-2.1-Flash",
+    "cs-CZ-Harper:MAI-Voice-2.1-Flash",
+    "da-DK-Grant:MAI-Voice-2.1-Flash",
+    "da-DK-Harper:MAI-Voice-2.1-Flash",
+    "de-DE-Grant:MAI-Voice-2.1-Flash",
+    "de-DE-Harper:MAI-Voice-2.1-Flash",
+    "de-DE-Klaus:MAI-Voice-2.1-Flash",
+    "de-DE-Mia:MAI-Voice-2.1-Flash"
+   ],
+   "knowledge_cutoff": null,
+   "expiration_date": null,
+   "links": {
+    "details": "/api/v1/models/microsoft/mai-voice-2.1-flash-20261001/endpoints"
+   }
+  },
+  {
+   "id": "microsoft/mai-voice-2.1",
+   "canonical_slug": "microsoft/mai-voice-2.1-20261001",
+   "hugging_face_id": null,
+   "name": "Microsoft AI: MAI-Voice-2.1",
+   "created": 1790870467,
+   "description": "MAI-Voice-2.1 is Microsoft AI's highest-fidelity, most expressive text-to-speech model. It produces natural, studio-grade speech across 23 languages, with detai",
+   "context_length": 0,
+   "architecture": {
+    "modality": "text->speech",
+    "input_modalities": [
+     "text"
+    ],
+    "output_modalities": [
+     "speech"
+    ],
+    "tokenizer": "Other",
+    "instruct_type": null
+   },
+   "pricing": {
+    "prompt": "0.000022",
+    "completion": "0"
+   },
+   "top_provider": {
+    "context_length": 0,
+    "max_completion_tokens": 0,
+    "is_moderated": false
+   },
+   "per_request_limits": null,
+   "supported_parameters": [],
+   "default_parameters": {},
+   "supported_voices": [
+    "cs-CZ-Grant:MAI-Voice-2.1",
+    "cs-CZ-Harper:MAI-Voice-2.1",
+    "da-DK-Grant:MAI-Voice-2.1",
+    "da-DK-Harper:MAI-Voice-2.1",
+    "de-DE-Grant:MAI-Voice-2.1",
+    "de-DE-Harper:MAI-Voice-2.1",
+    "de-DE-Klaus:MAI-Voice-2.1",
+    "de-DE-Mia:MAI-Voice-2.1"
+   ],
+   "knowledge_cutoff": null,
+   "expiration_date": null,
+   "links": {
+    "details": "/api/v1/models/microsoft/mai-voice-2.1-20261001/endpoints"
+   }
+  },
+  {
+   "id": "bytedance-seed/seed-audio-1-0",
+   "canonical_slug": "bytedance-seed/seed-audio-1-0-20260630",
+   "hugging_face_id": null,
+   "name": "ByteDance Seed: Seed Audio 1.0",
+   "created": 1790372476,
+   "description": "Seed Audio 1.0 is ByteDance Seed's non-streaming audio generation model. It produces speech and other audio from a natural-language text prompt that can describ",
+   "context_length": 0,
+   "architecture": {
+    "modality": "text->speech",
+    "input_modalities": [
+     "text"
+    ],
+    "output_modalities": [
+     "speech"
+    ],
+    "tokenizer": "Other",
+    "instruct_type": null
+   },
+   "pricing": {
+    "prompt": "0",
+    "completion": "0.0025"
+   },
+   "top_provider": {
+    "context_length": 0,
+    "max_completion_tokens": 0,
+    "is_moderated": false
+   },
+   "per_request_limits": null,
+   "supported_parameters": [],
+   "default_parameters": {},
+   "supported_voices": null,
+   "knowledge_cutoff": null,
+   "expiration_date": null,
+   "links": {
+    "details": "/api/v1/models/bytedance-seed/seed-audio-1-0-20260630/endpoints"
+   }
+  }
+ ]
+}
