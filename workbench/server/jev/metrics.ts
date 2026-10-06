@@ -21,7 +21,17 @@ export interface Checkpoint {
     | 'JEV_LEARNING'
     | 'STATISTICAL_EVALUATION'
     | 'CHAMPION_DECISION'
-    | 'MEMORY_UPDATE';
+    | 'MEMORY_UPDATE'
+    | 'PRODUCTION_CLASSIFICATION'
+    | 'CAPABILITY_DISCOVERY'
+    | 'MODEL_SELECTION'
+    | 'PROMPT_COMPILATION'
+    | 'ASSET_RETRIEVAL'
+    | 'GENERATION'
+    | 'QA'
+    | 'CORRECTION'
+    | 'FALLBACK'
+    | 'FINALIZATION';
   ms: number;
   tokens: number;
   cost: number;
@@ -114,6 +124,8 @@ export interface JevLogEntry {
   fabric?: FabricTag;
   /** JEV Apprentice (free-first) record of the mission; absent when the Apprentice did not take part. */
   apprentice?: ApprenticeTag;
+  /** AI Visual Studio production record (media job); absent on every other entry. */
+  studio?: import('./studio/types').StudioTag;
 }
 
 export interface Kpi {

@@ -39,6 +39,8 @@ export interface FabricState {
   lab?: import('../../server/jev/apprentice/lab').LabState;
   /** Challenger discovery pipeline: stage of every free model of the catalogue. */
   discovered?: Record<string, import('../../server/jev/apprentice/discovery').DiscoveredModel>;
+  /** AI Visual Studio: media capability summary (add-only entry of the Capability Fabric). */
+  media?: ReturnType<typeof import('../../server/jev/studio/capabilities').fabricEntry>;
 }
 export const EMPTY_FABRIC: FabricState = {
   skills: [],

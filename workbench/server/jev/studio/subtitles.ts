@@ -9,6 +9,9 @@ export interface Word {
   end: number;
 }
 export interface SubLine {
+  sceneId: string;
+  /** Index of the line in the scene's dialogue (links a subtitle to its voice file). */
+  index: number;
   start: number;
   end: number;
   speaker: string;
@@ -63,6 +66,8 @@ export function timeSubtitles(
         return word;
       });
       out.push({
+        sceneId: sc.scene_id,
+        index: i,
         start: t,
         end: t + dur,
         speaker: l.speaker,

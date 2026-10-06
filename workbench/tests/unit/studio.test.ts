@@ -39,7 +39,7 @@ import { scanSecrets, redactSecrets } from '../../server/jev/studio/secrets';
 import { makeZip, crc32 } from '../../server/jev/studio/zip';
 import { compose, compileScene, hash, sceneDims, REDRAW_INSTRUCTION } from '../../server/jev/studio/genome';
 import { STYLE_2D_HQ } from '../../server/jev/studio/style';
-import { extractJson, parseStory, storyMessages } from '../../server/jev/studio/story';
+import { extractJson, parseStory, storyMessages, type ParsedStory } from '../../server/jev/studio/story';
 import { newBlueprint, serialize, loadBlueprint, progress } from '../../server/jev/studio/blueprint';
 import { buildKit, validateKit, buildKitZip } from '../../server/jev/studio/kit';
 import { timeSubtitles, emojiFor, toSrt, activeAt } from '../../server/jev/studio/subtitles';
@@ -502,10 +502,7 @@ describe('story', () => {
   it('extracts JSON from noisy output, normalises, and flags long lines / missing translation / short duration', () => {
     expect(extractJson('blabla ```json\n{"a":{"b":"}"}}\n``` fin')).toEqual({ a: { b: '}' } });
     expect(extractJson('pas de json')).toBeNull();
-    const p = parseStory(`Voici : ${answer}`, { durationSec: 62, language: 'fr' }) as Exclude<
-      ReturnType<typeof parseStory>,
-      { issues: unknown }
-    >;
+    const p = parseStory(`Voici : ${answer}`, { durationSec: 62, language: 'fr' }) as ParsedStory;
     expect(p.scenes).toHaveLength(2);
     expect(p.scenes[0]!.dialogue[0]!.speaker).toBe('MAMAN NOUNOU');
     const codes = p.issues.map((i) => i.code);
@@ -797,5 +794,90 @@ describe('social', () => {
     const bad = parseSocial(JSON.stringify({ hooks: ['a'], caption: 'Voilà', hashtags: ['a'] }), 'TikTok');
     expect(bad.issues.length).toBe(3);
     expect(parseSocial('rien', 'TikTok').pack).toBeNull();
+  });
+});
+
+import {
+  autoTimeline,
+  splitClip,
+  trimClip,
+  reorderScenes,
+  totalDuration,
+  overlaps,
+  setClip,
+  moveClip,
+  removeClip,
+} from '../../server/jev/studio/timeline';
+import {
+  proposeSfx,
+  melody,
+  intensityAt,
+  encodeWav,
+  DEFAULT_MUSIC,
+  PENTATONIC,
+} from '../../server/jev/studio/sound';
+
+describe('AI Editor timeline and sound', () => {
+  const mk = () => {
+    const b = newBlueprint({ id: 'p', idea: 'i', now: 1 });
+    b.characters = chars;
+    b.scenes = [
+      scene(1, { imageAssetId: 'img1' }),
+      scene(2, { imageAssetId: 'img2', characters: ['COUMBA'], dialogue: [] }),
+    ];
+    b.audio.voices = { 'S01:0': { assetId: 'v1', seconds: 3, model: 'm' } };
+    b.audio.sfx = [{ sceneId: 'S02', label: 'door', assetId: 'sfx1' }];
+    b.audio.music = { assetId: 'mus' };
+    return b;
+  };
+  it('auto-edit builds the first cut on every track from the storyboard', () => {
+    const tl = autoTimeline(mk());
+    const tracks = new Set(tl.clips.map((c) => c.track));
+    for (const t of ['video', 'dialogue', 'voice', 'music', 'sfx', 'subtitles'])
+      expect(tracks.has(t as never)).toBe(true);
+    const vids = tl.clips.filter((c) => c.track === 'video');
+    expect(vids[1]!.start).toBeCloseTo(vids[0]!.start + vids[0]!.duration);
+    expect(tl.clips.find((c) => c.track === 'voice')!.duration).toBe(3);
+    expect(totalDuration(tl)).toBeGreaterThanOrEqual(16);
+  });
+  it('split / trim / move / levels / remove / reorder', () => {
+    let tl = autoTimeline(mk());
+    const v = tl.clips.find((c) => c.track === 'video')!;
+    tl = splitClip(tl, v.id, v.start + 3);
+    expect(tl.clips.filter((c) => c.track === 'video')).toHaveLength(3);
+    expect(splitClip(tl, v.id, v.start + 100)).toBe(tl);
+    const t2 = trimClip(tl, v.id, { head: 0.5, tail: 0.5 });
+    expect(t2.clips.find((c) => c.id === v.id)!.duration).toBeCloseTo(2);
+    expect(setClip(tl, v.id, { gain: 9, speed: 0.01 }).clips.find((c) => c.id === v.id)).toMatchObject({
+      gain: 2,
+      speed: 0.25,
+    });
+    expect(moveClip(tl, v.id, -4).clips.find((c) => c.id === v.id)!.start).toBe(0);
+    expect(removeClip(tl, v.id).clips.find((c) => c.id === v.id)).toBeUndefined();
+    const two = autoTimeline(mk());
+    const re = reorderScenes(two, ['S02', 'S01']);
+    const s2 = re.clips.find((c) => c.track === 'video' && c.sceneId === 'S02')!;
+    expect(s2.start).toBe(0);
+    expect(re.clips.find((c) => c.track === 'voice')!.start).toBeGreaterThanOrEqual(s2.duration);
+    expect(overlaps(two)).toEqual([]);
+  });
+  it('SFX are proposed from the action, deterministically', () => {
+    expect(proposeSfx('Elle claque la porte et court')).toEqual(expect.arrayContaining(['door', 'whoosh']));
+    expect(proposeSfx('elle regarde le mur')).toEqual([]);
+    expect(proposeSfx('Elle claque la porte')).toEqual(proposeSfx('Elle claque la porte'));
+  });
+  it('music: deterministic melody inside the scale, sections shape the intensity, WAV is well formed', () => {
+    expect(melody(32)).toEqual(melody(32));
+    expect(melody(64).every((i) => i >= 0 && i < PENTATONIC.length)).toBe(true);
+    expect(intensityAt(DEFAULT_MUSIC, 0)).toBeLessThan(
+      intensityAt(DEFAULT_MUSIC, DEFAULT_MUSIC.seconds * 0.6),
+    );
+    expect(intensityAt(DEFAULT_MUSIC, DEFAULT_MUSIC.seconds - 0.1)).toBeLessThan(
+      intensityAt(DEFAULT_MUSIC, DEFAULT_MUSIC.seconds * 0.6),
+    );
+    const w = encodeWav(new Float32Array([0, 0.5, -0.5, 1]), 22050);
+    expect(String.fromCharCode(...w.slice(0, 4))).toBe('RIFF');
+    expect(new DataView(w.buffer).getUint32(24, true)).toBe(22050);
+    expect(w.length).toBe(44 + 8);
   });
 });

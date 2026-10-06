@@ -323,10 +323,14 @@ export interface Blueprint {
   generationJobs: string[];
   audio: {
     music?: { assetId?: string; spec?: unknown };
+    /** Generated voice of a dialogue line, key `sceneId:index`, with its MEASURED duration. */
+    voices?: Record<string, { assetId: string; seconds: number; model: string }>;
     sfx: { sceneId: string; label: string; assetId?: string }[];
   };
   subtitles: { style: string; lines: { start: number; end: number; text: string; emoji?: string }[] };
   timeline: Timeline;
+  /** Social packs generated per platform. */
+  social?: Record<string, import('./social').SocialPack>;
   stages: Record<string, StageStatus>;
   qa: QAReport | null;
   costs: CostEntry[];
@@ -352,4 +356,26 @@ export interface TimelineClip {
 export interface Timeline {
   clips: TimelineClip[];
   aspect: string;
+}
+
+/** JEV_LOG tag of one studio job (the fields required by the spec). */
+export interface StudioTag {
+  project_id: string;
+  scene_id?: string;
+  job_id: string;
+  media_type: MediaKind | 'text';
+  task_family: string;
+  model: string;
+  champion_or_challenger: 'champion' | 'challenger' | 'none';
+  prompt_version: string;
+  quality: number | null;
+  success: boolean;
+  latency: number;
+  cost: number | null;
+  fallback: boolean;
+  retry: number;
+  correction: boolean;
+  teacher: boolean;
+  JEV_cost: number;
+  total_cost: number | null;
 }

@@ -14,7 +14,7 @@ export interface StoryBrief {
 }
 export const wordCount = (t: string) => t.trim().split(/\s+/).filter(Boolean).length;
 
-export function storyMessages(b: StoryBrief): { role: 'system' | 'user'; content: string }[] {
+export function storyMessages(b: StoryBrief): { role: 'system' | 'user' | 'assistant'; content: string }[] {
   const chars = b.characters.length
     ? b.characters.map((c) => `- ${c.name.toUpperCase()} : ${c.role}`).join('\n')
     : '(aucun personnage imposé : crée-les)';
