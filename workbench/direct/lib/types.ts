@@ -21,6 +21,7 @@ export type View =
   | 'models'
   | 'intelligence'
   | 'jev'
+  | 'studio'
   | 'settings';
 
 export interface VFile {

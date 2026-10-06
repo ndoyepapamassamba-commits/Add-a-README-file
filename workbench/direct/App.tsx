@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  Clapperboard,
   Bot,
   Database,
   FolderOpen,
@@ -51,6 +52,7 @@ import { BrowserView } from './views/BrowserView';
 import { IntelligenceView } from './views/IntelligenceView';
 import { JevView } from './views/JevView';
 import { NAV_ITEMS } from './lib/nav';
+import { StudioView } from './views/studio/StudioView';
 
 const ICONS: Record<View, React.ReactNode> = {
   home: <LayoutDashboard size={17} />,
@@ -66,6 +68,7 @@ const ICONS: Record<View, React.ReactNode> = {
   models: <Sparkles size={17} />,
   intelligence: <BrainCircuit size={17} />,
   jev: <Cpu size={17} />,
+  studio: <Clapperboard size={17} />,
   settings: <SettingsIcon size={17} />,
 };
 const NAV: { id: View; label: string; icon: React.ReactNode }[] = NAV_ITEMS.map((n) => ({
@@ -209,6 +212,12 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         e.preventDefault();
         useStore.getState().newSession();
       }
+      // The 15th view has no digit shortcut (Alt+5 is taken): Alt+Shift+S opens the AI Visual Studio.
+      if (e.altKey && e.shiftKey && e.code === 'KeyS') {
+        e.preventDefault();
+        setView('studio');
+        return;
+      }
       if (e.altKey && /^[0-9]$/.test(e.key)) {
         const n = e.key === '0' ? 9 : Number(e.key) - 1;
         if (NAV[n]) {
@@ -244,7 +253,13 @@ function Shell({ onLogout }: { onLogout: () => void }) {
             <button
               key={n.id}
               aria-label={n.label}
-              title={`${n.label} (Alt+${(i + 1) % 10})`}
+              title={
+                n.id === 'studio'
+                  ? `${n.label} (Alt+Maj+S)`
+                  : i < 10
+                    ? `${n.label} (Alt+${(i + 1) % 10})`
+                    : n.label
+              }
               onClick={() => setView(n.id)}
               className={cx(
                 'flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-hover hover:text-fg',
@@ -270,6 +285,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           {view === 'models' && <ModelsView />}
           {view === 'intelligence' && <IntelligenceView />}
           {view === 'jev' && <JevView />}
+          {view === 'studio' && <StudioView />}
           {view === 'settings' && <SettingsView onLogout={onLogout} />}
         </main>
       </div>

@@ -94,21 +94,6 @@ const tag = (family: string, model: string): ApprenticeTag => ({
   confidence: 'HIGH',
   why: [],
 });
-/** A real-shaped JEV_LOG with a validated apprentice (12 missions, 5 formulations, 100 % success, quality 96). */
-const seed = () =>
-  many(12, (i) =>
-    entry({
-      model: FREE,
-      ok: true,
-      quality: 96,
-      cost: 0,
-      at: Date.now() - (14 - i) * 3_600_000,
-      instruction: TEXTS[i % 5],
-      mission: TEXTS[i % 5],
-      apprentice: tag('data:ifrs9', FREE),
-    }),
-  );
-
 async function seedLog(page: Page, log: unknown[]) {
   await page.evaluate(
     (l) =>

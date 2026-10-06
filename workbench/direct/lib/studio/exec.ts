@@ -34,6 +34,8 @@ export const setConfirmHandler = (f: (msg: string) => Promise<boolean>) => {
   confirmFn = f;
 };
 
+export const askConfirm = (msg: string) => confirmFn(msg);
+
 export class BudgetBlocked extends Error {
   constructor(msg: string) {
     super(msg);
