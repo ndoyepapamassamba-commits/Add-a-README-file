@@ -225,3 +225,25 @@ test('Supremacy: payback and learning graph show N/A without data (no fabricated
   await page.getByRole('tab', { name: /Trace & Ladder/ }).click();
   await expect(page.getByTestId('ladder-levels')).toContainText('LEVEL 7 — FRONTIER MODEL');
 });
+
+test('Free model without a tool endpoint (404) → the mission continues on the V5 model instead of stopping', async ({
+  page,
+}) => {
+  mock.models = CATALOG;
+  await open(page);
+  await seedLog(page, seed());
+  await enableAfterReload(page);
+  mock.push(
+    {
+      error: {
+        status: 404,
+        message: 'No endpoints found that support tool use. Try disabling "agent__delegate".',
+      },
+    },
+    { text: 'Réponse de secours par le routage V5.' },
+  );
+  await send(page, 'Calcule la provision IFRS9 du portefeuille retail par stage');
+  await expect(page.getByText('Réponse de secours par le routage V5.')).toBeVisible();
+  expect(mock.requests[0]!.model).toBe(FREE);
+  expect(mock.requests[1]!.model).not.toBe(FREE);
+});

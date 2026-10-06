@@ -809,6 +809,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   }
   // ── JEV APPRENTICE (free-first): Task DNA → eligibility → free model → micro-adaptation. Off → V5 untouched. ──
   let apprentice: apprenticeRt.ApprenticePrep | null = null;
+  const v5Chain = [sel.model, ...routedFallbacks];
   if (top && !inp.mission && !inp.plan && (jp || apprenticeRun?.arm)) {
     try {
       apprentice = apprenticeRt.prepareApprentice({
@@ -819,7 +820,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         criticality: dna.criticality,
         tools: tools.map((t) => t.name),
         hasImages,
-        avoid: fabricPrep?.hints.avoidModels ?? [],
+        avoid: [...(fabricPrep?.hints.avoidModels ?? []), ...apprenticeRt.toolIncapableModels()],
         v5Model: sel.model,
         v5Ladder: [sel.model, ...routedFallbacks],
         userPinned: !sel.auto && !apprenticeRun?.arm,
@@ -833,7 +834,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       const c = apprentice.plan.chosen;
       sel.model = c.id;
       sel.reason = `JEV Apprentice (free-first) : ${apprentice.plan.reason}`;
-      routedFallbacks = apprentice.ladder;
+      // The free route never ends the mission: when every free attempt fails (provider error, no tool endpoint…), V5 takes over.
+      routedFallbacks = [...new Set([...apprentice.ladder, ...v5Chain])];
     }
     if (apprentice && !apprentice.forced) {
       const cap = apprentice.capsule;
@@ -1470,6 +1472,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         onStatus: (s) => useStore.setState({ status: { ...useStore.getState().status, [sid]: s } }),
         onFallback: (from, to, reason) => {
           useStore.getState().recordModel(from, false);
+          apprenticeRt.noteProviderFailure(from, reason);
           fallbackCount++;
           model = to;
           push(sid, {

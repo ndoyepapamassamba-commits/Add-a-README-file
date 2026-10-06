@@ -609,6 +609,13 @@ export function labChampionFor(family: string, risk: Risk, contract?: string | n
   );
 }
 
+/** Models whose provider answered « no endpoint supports tool use » : never offered again as a free apprentice (this session). */
+const noTools = new Set<string>();
+export const toolIncapableModels = (): string[] => [...noTools];
+export function noteProviderFailure(model: string, reason: string): void {
+  if (/support tool|tool use|tool_choice|tools? (are )?not supported/i.test(reason)) noTools.add(model);
+}
+
 let since = 0;
 /** After a mission: benchmark profile versions (promote / ROLLBACK), distil teacher successes into skills. */
 export function afterApprenticeRun(entry?: JevLogEntry): void {
