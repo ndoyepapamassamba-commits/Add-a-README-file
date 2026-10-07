@@ -198,11 +198,11 @@ describe('fast lane, ceilings, budget = ceiling', () => {
     expect(c).toMatchObject({ lane: 'critical', verification: 'adversarial' });
     expect(c.contextCeiling).toBe(50_000);
   });
-  it('a small request with one file is « simple »: light verification, one gate that never re-asks for figures', () => {
+  it('a small request with one file is « simple »: light verification, one gate; a re-ask only for invented figures', () => {
     const p = laneOf({ ...base, text: 'Résume ce fichier', attachments: 1, difficulty: 0.3, reclass: rc('Résume ce fichier') });
     expect(p.lane).toBe('simple');
     expect(p.gates).toBe(1);
-    expect(p.evidenceReask).toBe(false);
+    expect(p.evidenceReask).toBe(true);
   });
   it('§93 pressure thresholds', () => {
     expect(contextPressure(10_000).level).toBe('ok');

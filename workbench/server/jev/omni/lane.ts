@@ -60,7 +60,7 @@ export function laneOf(o: {
     case 'trivial':
       return { lane, maxSteps: 3, gates: 0, tools: 'none', minimalPrompt: true, contextCeiling: 6_000, outputCeiling: 1_500, verification: 'none', evidenceReask: false, reasons };
     case 'simple':
-      return { lane, maxSteps: 8, gates: 1, tools: 'pack', minimalPrompt: true, contextCeiling: 12_000, outputCeiling: 4_000, verification: 'light', evidenceReask: false, reasons };
+      return { lane, maxSteps: 8, gates: 1, tools: 'pack', minimalPrompt: true, contextCeiling: 12_000, outputCeiling: 4_000, verification: 'light', evidenceReask: true, reasons };
     case 'standard':
       return { lane, maxSteps: null, gates: 1, tools: 'pack', minimalPrompt: false, contextCeiling: 30_000, outputCeiling: 8_000, verification: 'standard', evidenceReask: true, reasons };
     case 'complex':

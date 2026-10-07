@@ -921,7 +921,8 @@ test('JEV: packet + live trace, tool pack sent to the model, ADD TOOL, targeted 
   await expect(page.getByText('{"agences": ["Dakar", "Thies"]}')).toBeVisible();
   expect(mock.requests.length).toBe(2);
   expect(JSON.stringify(mock.requests[1]!.messages)).toContain('JEV QA found precise problems');
-  expect(systemOf(0)).toContain('<jev_packet');
+  // OMNIPOTENT fast lane (simple request): the execution packet is not re-sent as prompt text (tokens saved); JEV QA still ran.
+  expect(systemOf(0)).not.toContain('<jev_packet');
   // Only the tool pack is sent (far fewer than the ~50 tools of the agent), with the meta tool.
   const names = (mock.requests[0]!.tools ?? []).map(
     (t) => (t as { function: { name: string } }).function.name,

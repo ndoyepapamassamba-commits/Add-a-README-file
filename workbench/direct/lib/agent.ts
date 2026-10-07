@@ -395,6 +395,8 @@ let currentPacket: PreResult | null = null;
 /** Benchmark 2.0 variants: WITHOUT JEV / JEV PRE / JEV PRE + LIVE / JEV FULL (pre + live + post). */
 export type JevVariant = 'off' | 'pre' | 'live' | 'full';
 let jevOverride: JevVariant | null = null;
+/** A benchmark / lab / A-B arm is running: the OMNIPOTENT fast lane stays out so both arms are compared faithfully. */
+let experimentRun = false;
 let lastPolicy = '';
 /** Cognitive Fabric options of the current run (set by runAgent; benchmarks and skill tests use them). */
 export interface FabricRunOpts {
@@ -550,7 +552,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   // ── OMNIPOTENT V4.1 governor, step 1: reclassify the JOB, build the mission capsule and run the HISTORY FIREWALL.
   // The model only ever sees the turns of the current mission (or an explicit recall); the raw history stays stored.
   const omni =
-    top && !inp.plan
+    top && !inp.plan && !experimentRun
       ? omniRt.beginOmni({
           text: inp.text,
           attachments: inp.attachments.map((a) => ({ name: a.name, image: isImage(a.path) })),
@@ -2425,6 +2427,7 @@ export async function runAgent(
   const st = useStore.getState();
   const benchTag = opts.bench ?? null;
   lastPolicy = '';
+  experimentRun = Boolean(opts.bench || opts.fabric || opts.apprentice || opts.cognitive || opts.experiment || opts.jev !== undefined);
   fabricRun = opts.fabric ?? null;
   apprenticeRun = opts.apprentice ?? null;
   cognitiveRunOpts = opts.cognitive ?? null;
