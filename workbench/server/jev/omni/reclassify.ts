@@ -93,7 +93,8 @@ export function reclassify(i: ReclassInput): Reclass {
   const delivery = has(RX.delivery, 'livraison par mail');
   const inspect = RX.inspect.test(t);
   const writing = RX.writing.test(t);
-  const textOnly = RX.textNoun.test(t) && !codeArt && !visual && !dataArt;
+  // « en une phrase » is a length constraint on an answer, not a text-editing job.
+  const textOnly = RX.textNoun.test(t.replace(/\ben (?:une|un|deux|trois|quatre|\d+) (?:phrases?|lignes?|mots?|paragraphes?)\b/gi, ' ')) && !codeArt && !visual && !dataArt;
   const artifactInvolved = artifactNoun || fileAtt || imgAtt || RX.attached.test(t);
   const secondary: string[] = [];
 

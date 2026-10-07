@@ -286,3 +286,9 @@ describe('trace honesty (§99)', () => {
     expect(lines).toMatch(/9\/84 exposés/);
   });
 });
+
+describe('reclassify: length constraints are not editing jobs', () => {
+  it('« Dis bonjour en une phrase » stays chat', () => {
+    expect(reclassify({ text: 'Dis bonjour en une phrase.', initial: 'chat', attachments: [], hasImages: false }).trueTask).not.toBe('writing');
+  });
+});

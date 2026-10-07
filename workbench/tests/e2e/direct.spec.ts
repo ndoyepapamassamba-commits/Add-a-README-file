@@ -517,7 +517,7 @@ test('Intelligence Engine: strategy, shadow alert, evidence check, manual, learn
   expect(r3).not.toMatch(/EVIDENCE CHECK[^\]]*1680/);
   // The rule is now part of every system prompt.
   expect(JSON.stringify(mock.requests[3]!.messages[0])).toContain('les montants sont toujours en XOF');
-  expect(JSON.stringify(mock.requests[0]!.messages[0])).toContain('MASSAMBA STRATEGY');
+  expect(JSON.stringify(mock.requests[0]!.messages[0])).not.toContain('MASSAMBA STRATEGY'); // fast lane: strategy boilerplate left out (tokens saved)
 
   // Second run: the shadow agent catches a write into the user's source data; learning memory is used.
   mock.push(
