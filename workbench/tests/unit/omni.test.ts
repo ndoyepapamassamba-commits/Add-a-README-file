@@ -235,7 +235,9 @@ describe('tool firewall (golden 05) — AVAILABLE ≠ EXPOSED', () => {
   it('a simple file question exposes read tools, not the whole registry', () => {
     const t = 'Que contient le fichier notes.txt ?';
     const lane = laneOf({ attachments: 1, difficulty: 0.25, critical: false, mission: false, needsTools: true, historyTokens: 0, text: t, reclass: rc(t) });
-    const f = toolFirewall({ names: all, lane, reclass: rc(t), text: t, attachments: 1 });
+    // The simple lane keeps the JEV pack (already mission-selected); the minimal derivation applies to a raw registry.
+    expect(lane.tools).toBe('pack');
+    const f = toolFirewall({ names: all, lane: { ...lane, tools: 'minimal' }, reclass: rc(t), text: t, attachments: 1 });
     expect(f.allowed).toContain('filesystem.read');
     expect(f.allowed.length).toBeLessThan(10);
   });

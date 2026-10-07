@@ -37,6 +37,8 @@ export function laneOf(o: {
 }): LanePolicy {
   const reasons: string[] = [];
   const len = o.text.trim().length;
+  // Cues that the request acts on files, plugins or the web: never a « trivial » (tool-less) question.
+  const toolCue = /(fichier|dossier|\blis\b|\bouvre\b|cr[ée]e|g[ée]n[èe]re|fais (?:un|une|moi)|maquette|\b3d\b|taux|m[ée]t[ée]o|cherche|recherche|navigue|https?:|excel|xlsx|word|pdf|export|calcule|tableau|analyse|corrige|r[ée]pare|install|d[ée]ploie|\.\w{2,5}\b)/i.test(o.text);
   let lane: Lane;
   if (o.critical) {
     lane = 'critical';
@@ -47,7 +49,7 @@ export function laneOf(o: {
   } else if (o.reclass.mutationRequired || o.attachments > 0 || o.difficulty >= 0.3 || len > 600) {
     lane = o.difficulty < 0.4 && !o.reclass.mutationRequired && o.attachments <= 1 && len <= 600 ? 'simple' : 'standard';
     reasons.push(lane === 'simple' ? 'demande courte avec peu de matière' : 'travail ordinaire sur un artefact');
-  } else if (len <= 240 && !o.needsTools && o.difficulty < 0.3) {
+  } else if (len <= 240 && !o.needsTools && !toolCue && o.difficulty < 0.3) {
     lane = 'trivial';
     reasons.push('question courte, sans fichier ni outil nécessaire');
   } else {
@@ -58,7 +60,7 @@ export function laneOf(o: {
     case 'trivial':
       return { lane, maxSteps: 3, gates: 0, tools: 'none', minimalPrompt: true, contextCeiling: 6_000, outputCeiling: 1_500, verification: 'none', evidenceReask: false, reasons };
     case 'simple':
-      return { lane, maxSteps: 8, gates: 1, tools: 'minimal', minimalPrompt: true, contextCeiling: 12_000, outputCeiling: 4_000, verification: 'light', evidenceReask: false, reasons };
+      return { lane, maxSteps: 8, gates: 1, tools: 'pack', minimalPrompt: true, contextCeiling: 12_000, outputCeiling: 4_000, verification: 'light', evidenceReask: false, reasons };
     case 'standard':
       return { lane, maxSteps: null, gates: 1, tools: 'pack', minimalPrompt: false, contextCeiling: 30_000, outputCeiling: 8_000, verification: 'standard', evidenceReask: true, reasons };
     case 'complex':

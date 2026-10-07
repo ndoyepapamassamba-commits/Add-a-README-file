@@ -68,7 +68,8 @@ test('onboarding, streaming chat, real cost and credits gauge', async ({ page })
   expect(req.body).toMatchObject({ stream: true, usage: { include: true } });
   // JEV tool pack: a greeting gets the core tools + the tools.request meta tool, not ~50 tools.
   const sent = (req.tools ?? []).map((t) => (t as { function: { name: string } }).function.name);
-  expect(sent.length).toBeGreaterThanOrEqual(3);
+  // OMNIPOTENT fast lane: a greeting exposes no tool but the tools.request meta tool (tools stay available on demand).
+  expect(sent.length).toBeGreaterThanOrEqual(1);
   expect(sent.length).toBeLessThan(15);
   expect(sent).toContain('tools__request');
   expect(errors).toEqual([]);
