@@ -96,7 +96,7 @@ export function HomeView() {
   const workflows = useStore((s) => s.workflows);
   const customAgents = useStore((s) => s.agents);
   const [goal, setGoal] = useState('');
-  const [agent, setAgent] = useState('general');
+  const [agent, setAgent] = useState('omnipotent');
   const [perm, setPerm] = useState<'auto' | 'normal'>('auto');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const input = useRef<HTMLInputElement>(null);

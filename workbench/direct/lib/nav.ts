@@ -15,6 +15,7 @@ export const NAV_ITEMS: { id: View; label: string }[] = [
   { id: 'models', label: 'Modèles' },
   { id: 'intelligence', label: 'Intelligence' },
   { id: 'jev', label: 'JEV' },
+  { id: 'cognitive', label: 'JEV Cognitive OS' },
   { id: 'studio', label: 'AI Film Studio' },
   { id: 'settings', label: 'Réglages' },
 ];

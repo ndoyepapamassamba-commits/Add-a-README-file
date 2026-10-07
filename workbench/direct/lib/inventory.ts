@@ -3,7 +3,7 @@
 import baseline from './inventoryBaseline.json';
 import { TOOLS } from './tools';
 import { BUILTIN_PLUGINS } from './builtinPlugins';
-import { BUILTIN_AGENTS } from './roles';
+import { BUILTIN_AGENTS, LEGACY_ROLES } from './roles';
 import { MCP_PRESETS } from './mcp';
 import { NAV_ITEMS } from './nav';
 import { DEFAULT_SETTINGS, useStore } from './store';
@@ -18,7 +18,8 @@ export function inventory(): Inventory {
   return {
     tools: TOOLS.map((t) => t.name).sort(),
     pluginTools: BUILTIN_PLUGINS.flatMap((p) => p.tools.map((t) => t.name)).sort(),
-    agents: BUILTIN_AGENTS.map((a) => a.id).sort(),
+    // Omnipotent is the only agent; the former agents stay as internal roles — nothing may disappear from the inventory.
+    agents: [...BUILTIN_AGENTS, ...LEGACY_ROLES].map((a) => a.id).sort(),
     views: NAV_ITEMS.map((n) => n.id).sort(),
     mcpPresets: MCP_PRESETS.map((m) => m.name).sort(),
     engineSkills: SKILL_REGISTRY.map((s) => s.name).sort(),

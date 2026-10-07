@@ -126,6 +126,10 @@ export interface JevLogEntry {
   apprentice?: ApprenticeTag;
   /** AI Visual Studio production record (media job); absent on every other entry. */
   studio?: import('./studio/types').StudioTag;
+  /** JEV Cognitive OS record of the mission (additive); absent when the layer was off. */
+  cognitive?: import('./cognitive/types').CognitiveTag;
+  /** OMNIPOTENT V4.1 record (firewalls, lane, HARD/POLICY); absent when the governor was off. */
+  omni?: import('./omni/trace').OmniTag;
 }
 
 export interface Kpi {

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  Brain,
   Clapperboard,
   Bot,
   Database,
@@ -51,6 +52,7 @@ import { TerminalView } from './views/TerminalView';
 import { BrowserView } from './views/BrowserView';
 import { IntelligenceView } from './views/IntelligenceView';
 import { JevView } from './views/JevView';
+import { CognitiveOS } from './views/CognitiveOS';
 import { NAV_ITEMS } from './lib/nav';
 import { StudioView } from './views/studio/StudioView';
 
@@ -68,6 +70,7 @@ const ICONS: Record<View, React.ReactNode> = {
   models: <Sparkles size={17} />,
   intelligence: <BrainCircuit size={17} />,
   jev: <Cpu size={17} />,
+  cognitive: <Brain size={17} />,
   studio: <Clapperboard size={17} />,
   settings: <SettingsIcon size={17} />,
 };
@@ -285,6 +288,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           {view === 'models' && <ModelsView />}
           {view === 'intelligence' && <IntelligenceView />}
           {view === 'jev' && <JevView />}
+          {view === 'cognitive' && <CognitiveOS />}
           {view === 'studio' && <StudioView />}
           {view === 'settings' && <SettingsView onLogout={onLogout} />}
         </main>

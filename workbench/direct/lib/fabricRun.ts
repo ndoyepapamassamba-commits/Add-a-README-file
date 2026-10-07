@@ -54,6 +54,8 @@ function resetWorkspace(t: CfTask, baseline: Set<string>): void {
 export interface OneRun {
   /** JEV Apprentice benchmark arm (ablation of the free-first adaptation). */
   apprentice?: ApprenticeRunOpts;
+  /** JEV Cognitive OS override of this run (super benchmark arms). */
+  cognitive?: import('./cognitive').CognitiveRunOpts;
   task: CfTask;
   model: string;
   variant: JevVariant;
@@ -81,6 +83,7 @@ export async function runOne(o: OneRun): Promise<TaskRun> {
     rep: o.rep,
     fabric: { ...o.fabric, tag: o.tag, capture: true },
     apprentice: o.apprentice,
+    cognitive: o.cognitive,
     experiment: {
       experimentId: o.experimentId,
       groupId: o.groupId,

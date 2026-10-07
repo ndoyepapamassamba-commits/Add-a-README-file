@@ -22,6 +22,7 @@ export type View =
   | 'intelligence'
   | 'jev'
   | 'studio'
+  | 'cognitive'
   | 'settings';
 
 export interface VFile {
@@ -163,6 +164,8 @@ export interface Session {
   lastMode?: AgentMode;
   /** Resume summary saved when a run is interrupted (intelligent compression). */
   resume?: string;
+  /** Where each user request (mission) starts in `history`: exact boundaries for the OMNIPOTENT history firewall. */
+  turns?: { start: number; text: string; at: number }[];
 }
 
 /** One LLM call (cost tracking, Mission Control). */
@@ -246,6 +249,8 @@ export interface Settings {
   fabric?: Partial<import('../../server/jev/fabric/types').FabricSettings>;
   /** JEV Apprentice (free-first). Off by default: the V5 router decides exactly as before. */
   apprentice?: Partial<import('../../server/jev/apprentice/types').ApprenticeSettings>;
+  /** OMNIPOTENT V4.1 governor (history / memory / tool firewall, fast lane, drift guard). Absent = defaults (ON). */
+  omni?: Partial<import('../../server/jev/omni/trace').OmniSettings>;
 }
 
 export interface ArtifactDef {

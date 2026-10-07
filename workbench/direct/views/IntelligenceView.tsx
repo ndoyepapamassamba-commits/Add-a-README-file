@@ -162,7 +162,7 @@ function RouterTab() {
       tools: TOOLS.map((t) => t.name),
     });
     const lo = buildLoadout({
-      agentId: 'general',
+      agentId: 'omnipotent',
       agentLabel: 'Orchestrateur',
       team: p.team,
       type: p.type,

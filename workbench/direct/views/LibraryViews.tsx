@@ -2,7 +2,9 @@ import { useRef, useState } from 'react';
 import { Bot, Plus, Puzzle, Trash2, Upload } from 'lucide-react';
 import { Badge, Button, Empty, Field, Input, Modal, Textarea, Toggle } from '../../web/components/ui';
 import { Markdown } from '../../web/components/rich';
-import { BUILTIN_AGENTS } from '../lib/roles';
+import { BUILTIN_AGENTS, LEGACY_ROLES } from '../lib/roles';
+import { OMNIPOTENT_CORE_TOKENS, OMNIPOTENT_DOC, OMNIPOTENT_VERSION } from '../lib/omnipotent';
+import { download } from '../lib/vfs';
 import { DIRECT_TOOLS, agentId, importAgentFile, importSkillFile } from '../lib/skills';
 import { extractTriggers } from '../../server/services/skillsCore';
 import { useStore } from '../lib/store';
@@ -199,8 +201,8 @@ export function AgentsView() {
         <div className="mr-auto">
           <h1 className="text-[18px] font-semibold">Agents</h1>
           <div className="text-[13px] text-muted">
-            Choisissez l’agent dans la barre de saisie. Un agent personnalisé suit strictement ses
-            instructions, ses outils autorisés et ses skills.
+            Omnipotent est l’agent maître unique ; les anciens agents sont conservés comme rôles internes de
+            délégation. Un agent personnalisé suit strictement ses instructions, ses outils autorisés et ses skills.
           </div>
         </div>
         <input
@@ -280,6 +282,34 @@ export function AgentsView() {
             </div>
           </div>
         ))}
+      </div>
+      <div className="mt-5 rounded-xl border border-line p-3" data-testid="omnipotent-doctrine">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="mr-auto text-[13.5px] font-medium">Doctrine Omnipotent {OMNIPOTENT_VERSION}</div>
+          <Badge tone="ok">noyau envoyé au modèle ≈ {OMNIPOTENT_CORE_TOKENS} tokens</Badge>
+          <Button
+            size="sm"
+            onClick={() => download('OMNIPOTENT_COGNITIVE_KERNEL_V4_1.md', OMNIPOTENT_DOC, 'text/markdown')}
+            data-testid="doctrine-download"
+          >
+            Télécharger la doctrine complète (.md)
+          </Button>
+        </div>
+        <div className="mt-1 text-[12.5px] text-muted">
+          La doctrine complète ({Math.round(OMNIPOTENT_DOC.length / 1024)} Ko) est la constitution d’Omnipotent : elle n’est
+          jamais envoyée à chaque appel. Le modèle reçoit le noyau compact, plus un verrou de mission lorsque c’est
+          nécessaire (§4 micro-noyau, §7 économie du prompt).
+        </div>
+        <details className="mt-2 text-[12.5px]">
+          <summary className="cursor-pointer text-muted">Rôles internes de délégation ({LEGACY_ROLES.length})</summary>
+          <ul className="mt-1 grid gap-1 sm:grid-cols-2" data-testid="legacy-roles">
+            {LEGACY_ROLES.map((r) => (
+              <li key={r.id} className="rounded-lg border border-line px-2 py-1">
+                <b>{r.id}</b> — <span className="text-muted">{r.description}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
       </div>
       {edit && (
         <AgentEditor

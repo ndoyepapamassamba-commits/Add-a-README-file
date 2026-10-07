@@ -1,4 +1,5 @@
 import type { AgentDef } from './types';
+import { OMNIPOTENT_AGENT } from './omnipotent';
 
 // Every agent also receives the MASSAMBA doctrine (evidence, uncertainty,
 // cost, impact, « and any other task… ») and, at top level, the Strategy
@@ -45,8 +46,11 @@ const agent = (a: Omit<AgentDef, 'builtin' | 'model' | 'skills'> & { model?: str
   ...a,
 });
 
-/** Built-in agents. Custom agents are added by the user. */
-export const BUILTIN_AGENTS: AgentDef[] = [
+/**
+ * The former built-in agents. They are no longer separate agents: Omnipotent is the only built-in agent and these are its
+ * internal ROLES (agent.delegate role + subgoal + minimal context). Nothing is deleted: every role stays addressable.
+ */
+export const LEGACY_ROLES: AgentDef[] = [
   agent({
     id: 'general',
     name: 'Orchestrateur',
@@ -287,10 +291,29 @@ Also: flag data quality issues that could bias the conclusion, reconcile totals 
   }),
 ];
 
+/** The only built-in agent: the Omnipotent Cognitive Kernel. */
+export const BUILTIN_AGENTS: AgentDef[] = [OMNIPOTENT_AGENT];
+
+/** Agents the user can pick: Omnipotent + the custom agents. */
 export function allAgents(custom: AgentDef[]): AgentDef[] {
   return [...BUILTIN_AGENTS, ...custom];
 }
+/** Everything addressable by agent.delegate: Omnipotent, its internal roles and the custom agents. */
+export function allRoles(custom: AgentDef[]): AgentDef[] {
+  return [...BUILTIN_AGENTS, ...LEGACY_ROLES, ...custom];
+}
+export const findRole = (id: string, custom: AgentDef[]): AgentDef | undefined => allRoles(custom).find((a) => a.id === id);
+export const isLegacyRole = (id: string) => LEGACY_ROLES.some((r) => r.id === id);
 
+/**
+ * The agent of a session. Unknown or former built-in ids (saved sessions, workflows) resolve to Omnipotent; a former role id adds
+ * its focus as one short line, so a saved workflow step keeps its intent without carrying the whole former prompt.
+ */
 export function findAgent(id: string, custom: AgentDef[]): AgentDef {
-  return allAgents(custom).find((a) => a.id === id) ?? BUILTIN_AGENTS[0]!;
+  const c = custom.find((a) => a.id === id);
+  if (c) return c;
+  const legacy = LEGACY_ROLES.find((a) => a.id === id);
+  if (legacy && legacy.id !== 'general')
+    return { ...OMNIPOTENT_AGENT, prompt: `${OMNIPOTENT_AGENT.prompt}\n\nFOCUS (${legacy.name}): ${legacy.description}`, tools: legacy.tools };
+  return OMNIPOTENT_AGENT;
 }

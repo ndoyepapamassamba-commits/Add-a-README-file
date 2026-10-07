@@ -1,0 +1,84 @@
+// OMNIPOTENT V4.1 + JEV COGNITIVE OS — end-to-end from file://, OpenRouter replaced by the local mock.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { expect, test, type Page } from '@playwright/test';
+import { startMockOpenRouter, type MockOpenRouter } from '../helpers/mockOpenRouter';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const FILE = path.join(ROOT, 'dist/massamba-workbench-direct.html');
+let mock: MockOpenRouter;
+test.beforeAll(async () => {
+  if (!fs.existsSync(FILE)) throw new Error('Run `npm run build:direct` before the e2e tests');
+  mock = await startMockOpenRouter();
+});
+test.afterAll(async () => mock?.close());
+test.beforeEach(() => mock.reset());
+test.afterEach(async ({ page }) => page.unrouteAll({ behavior: 'ignoreErrors' }));
+
+async function open(page: Page) {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.route('https://openrouter.ai/api/v1/**', async (route) => {
+    const url = route.request().url().replace('https://openrouter.ai/api/v1', mock.url);
+    const res = await route.fetch({ url });
+    await route.fulfill({ response: res, headers: { ...res.headers(), 'access-control-allow-origin': '*' } });
+  });
+  await page.goto(pathToFileURL(FILE).href);
+  await page.getByPlaceholder('sk-or-v1-…').fill('sk-or-v1-e2e-direct-key');
+  await page.getByRole('button', { name: 'Commencer' }).click();
+  await expect(page.getByText('Nouvelle mission')).toBeVisible();
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await expect(page.locator('textarea')).toBeVisible();
+  return errors;
+}
+const send = async (page: Page, text: string) => {
+  await page.locator('textarea').fill(text);
+  await page.keyboard.press('Enter');
+};
+
+test('JEV Cognitive OS: 17 sub-tabs, regression report without FAIL, no fabricated figure on an empty log', async ({ page }) => {
+  const errors = await open(page);
+  await page.getByRole('button', { name: 'JEV Cognitive OS', exact: true }).first().click();
+  await expect(page.getByTestId('cognitive-os')).toBeVisible();
+  await expect(page.getByRole('tab')).toHaveCount(17);
+  await page.getByRole('tab', { name: 'Régression', exact: true }).click();
+  await expect(page.getByTestId('cog-regression-table')).toBeVisible();
+  await expect(page.getByTestId('cog-regression-table')).not.toContainText('FAIL');
+  await page.getByRole('tab', { name: 'Empreintes', exact: true }).click();
+  await expect(page.getByTestId('cog-fingerprints')).toContainText('NON MESURÉ');
+  await page.getByRole('tab', { name: 'Super-benchmark', exact: true }).click();
+  await expect(page.getByTestId('cog-superbench')).toContainText('200 tâches');
+  expect(errors).toEqual([]);
+});
+
+test('OMNIPOTENT: a trivial request stays in the fast lane (one call, small output ceiling, trace shown)', async ({ page }) => {
+  const errors = await open(page);
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  mock.push({ text: 'Dakar est la capitale du Sénégal.' });
+  await send(page, 'Quelle est la capitale du Sénégal ?');
+  await expect(page.getByText('Dakar est la capitale du Sénégal.')).toBeVisible();
+  expect(mock.requests.length).toBe(1);
+  const max = Number(mock.requests[0]!.body.max_tokens ?? 0);
+  expect(max).toBeGreaterThan(0);
+  expect(max).toBeLessThanOrEqual(4000);
+  await expect(page.getByText(/OMNIPOTENT — voie/)).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('OMNIPOTENT: an unrelated earlier mission is not sent to the model on a new topic (raw history kept)', async ({ page }) => {
+  await open(page);
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  mock.push({ text: '| Mois | Total |\n|---|---|\n| Janvier | 1 200 |\n\nTableau des impayés Dupont prêt.' });
+  await send(page, 'Fais un tableau Excel des factures impayées du client Dupont avec les totaux par mois');
+  await expect(page.getByText('Tableau des impayés Dupont prêt.')).toBeVisible();
+  await expect(page.getByTitle('Interrompre')).toHaveCount(0);
+  mock.push({ text: 'La photosynthèse transforme la lumière en énergie chimique.' });
+  await send(page, 'Explique la photosynthèse en deux phrases');
+  await expect(page.getByText('La photosynthèse transforme')).toBeVisible();
+  const req = mock.requests.find((r) => JSON.stringify(r.messages).includes('photosynth'));
+  expect(req).toBeTruthy();
+  expect(JSON.stringify(req!.messages)).not.toContain('Dupont');
+});

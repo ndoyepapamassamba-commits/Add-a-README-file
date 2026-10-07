@@ -50,6 +50,8 @@ import { acct } from './acct';
 import { redact } from '../../server/jev/provider';
 import * as fabricRt from './fabric';
 import * as apprenticeRt from './apprentice';
+import * as cognitiveRt from './cognitive';
+import * as omniRt from './omni';
 import type { DataClass, FabricTag } from '../../server/jev/fabric/types';
 import type { SkillVersion } from '../../server/jev/fabric/skills';
 import { accountingOf, hashText, type CallKind, type CallRec } from '../../server/jev/science';
@@ -83,7 +85,7 @@ import { LLMError, type ChatMessage, type ContentPart, type ToolCall } from '../
 import { complete, friendlyError } from './llm';
 import { connectedTools, ensureConnected, mcpState } from './mcp';
 import { BUILTIN_PLUGINS, builtinToolNames, builtinTools } from './builtinPlugins';
-import { findAgent, allAgents } from './roles';
+import { findAgent, allAgents, allRoles, findRole } from './roles';
 import { matchSkills } from './skills';
 import { uid, useStore } from './store';
 import { TOOLS, llmName, mcpTool, toolDefs, type DirectTool, type ToolCtx } from './tools';
@@ -136,8 +138,17 @@ function systemPrompt(o: {
   active: { name: string; body: string; files: string[] }[];
   agents: AgentDef[];
   plugins: { name: string; instructions?: string }[];
+  /** OMNIPOTENT fast lane: only identity, role, a 3-line method and permissions (no catalogues). */
+  compact?: boolean;
 }): string {
   const has = (n: string) => o.tools.some((t) => t.name === n);
+  if (o.compact)
+    return [
+      `You are an expert AI agent inside "MASSAMBA Workbench".`,
+      `Role — ${o.agent.name}: ${o.agent.prompt}`,
+      `# How you work\n- Answer directly and concisely in the user's language (French by default), in Markdown.\n- Use a tool only if the answer truly needs it; never invent numbers, sources or file contents.\n- Permissions: ${o.mode.toUpperCase()}.`,
+      ...(o.active.length ? [`# ACTIVE SKILLS — MANDATORY\n${o.active.map((s) => `<skill name="${s.name}">\n${s.body}\n</skill>`).join('\n\n')}`] : []),
+    ].join('\n\n');
   const parts = [
     `You are an expert AI agent inside "MASSAMBA Workbench", a Claude-Code-like workspace that runs in the user's browser.`,
     `Role — ${o.agent.name}: ${o.agent.prompt}`,
@@ -341,6 +352,10 @@ interface LoopResult {
   offered?: string[];
   /** JEV Apprentice: free-first record of the run (undefined when it did not take part). */
   apprenticeInfo?: { prep: apprenticeRt.ApprenticePrep; models: string[] };
+  /** JEV Cognitive OS plan of the run (absent when the layer is off). */
+  cognitiveInfo?: cognitiveRt.CognitivePrep;
+  /** OMNIPOTENT V4.1 record of the run (HARD / POLICY enforcement, firewalls, lane). */
+  omniTag?: import('../../server/jev/omni/trace').OmniTag;
   /** Cognitive Fabric: what it decided for this run (null when it did not take part). */
   fabricInfo?: {
     active: boolean;
@@ -397,6 +412,8 @@ export interface FabricRunOpts {
 let fabricRun: FabricRunOpts | null = null;
 /** JEV Apprentice benchmark arm of the current run (set by runAgent). */
 let apprenticeRun: apprenticeRt.ApprenticeRunOpts | null = null;
+/** JEV Cognitive OS per-run override (benchmark arms) of the current run. */
+let cognitiveRunOpts: cognitiveRt.CognitiveRunOpts | null = null;
 const fabricActive = () =>
   fabricRun?.on ?? (fabricRun?.arm ? fabricRun.arm === 'fabric' : fabricRt.fabricSettings().enabled);
 /** Metadata of a paired experiment run (set by the benchmark). */
@@ -530,6 +547,21 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   });
   // MASSAMBA Intelligence Engine: Task DNA → Strategy (learnt from the ledger).
   const top = inp.depth === 0 && !label;
+  // ── OMNIPOTENT V4.1 governor, step 1: reclassify the JOB, build the mission capsule and run the HISTORY FIREWALL.
+  // The model only ever sees the turns of the current mission (or an explicit recall); the raw history stays stored.
+  const omni =
+    top && !inp.plan
+      ? omniRt.beginOmni({
+          text: inp.text,
+          attachments: inp.attachments.map((a) => ({ name: a.name, image: isImage(a.path) })),
+          hasImages,
+          history: inp.history,
+          turns: inp.session.turns,
+          initialType: profile.reclass?.initial ?? profile.type,
+          initialDna: `${profile.reclass?.initial ?? profile.type}`,
+        })
+      : null;
+  if (omni) inp = { ...inp, history: omni.fw.history };
   let dna = taskDna(
     inp.text,
     inp.attachments.map((a) => a.name),
@@ -622,6 +654,26 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     }
   }
   const jevDecisionMs = performance.now() - tJev;
+  // ── OMNIPOTENT step 2: proportional effort (fast lane) once the difficulty is known. A budget is a CEILING, never a target.
+  if (omni)
+    omniRt.laneOmni(omni, {
+      text: inp.text,
+      attachments: inp.attachments.length,
+      difficulty: profile.difficulty,
+      critical: dna.criticality === 'critical',
+      mission: Boolean(inp.mission),
+      needsTools: profile.type !== 'chat' && profile.type !== 'writing',
+      historyTokens: estimate(inp.history),
+    });
+  const lane = omni?.settings.fastLane ? omni.lane : undefined;
+  if (omni && omni.settings.traceInChat)
+    push(sid, {
+      kind: 'intel',
+      id: uid(),
+      title: `OMNIPOTENT — voie ${lane?.lane ?? '—'} · mission ${omni.capsule.mission_id}`,
+      tone: 'info',
+      lines: omniRt.traceLines(omniRt.omniTag(omni)),
+    });
   if (top) {
     // Personal operating manual: explicit durable instructions are remembered.
     const rules = detectRules(inp.text).filter((r) => !st.manual.some((m) => m.rule === r.rule));
@@ -929,7 +981,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   if (active.length && !label) push(sid, { kind: 'skills', id: uid(), names: active.map((a) => a.name) });
 
   // JEV TOOL PACK: only the selected tools are exposed; tools.request / ADD TOOL extend it.
-  const packTools: DirectTool[] = jp ? tools.filter((t) => jp!.pre.toolPack.names.includes(t.name)) : tools;
+  const packTools: DirectTool[] = jp ? tools.filter((t) => jp!.pre.toolPack.names.includes(t.name)) : [...tools];
   // Cognitive Fabric: the capability registry narrows the exposure to the minimum the mission needs.
   if (jp && fabricOn && fabricPrep?.selection && fabricPrep.selection.exposed > 0) {
     const names = new Set(fabricPrep.selection.selected.map((x) => x.cap.name));
@@ -948,7 +1000,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       });
     }
   }
-  if (jp) {
+  if (jp || omni) {
     const requestTool: DirectTool = {
       name: 'tools.request',
       description: `Ask JEV for another family of tools when the selected ones are not enough. Families: ${REQUESTABLE.join(', ')}.`,
@@ -984,6 +1036,15 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       },
     };
     packTools.push(requestTool);
+    // OMNIPOTENT TOOL FIREWALL (hard): AVAILABLE ≠ EXPOSED. What the model is not shown costs nothing on every call; it can still
+    // ask for a family with tools.request, and a call to an allowed tool outside the pack still runs (the pack grows, never blocks).
+    if (omni && omni.settings.toolFirewall && omni.lane && !inp.mission) {
+      const keep = new Set(omniRt.filterTools(omni, packTools.map((t) => t.name), inp.text, inp.attachments.length));
+      const before = packTools.length;
+      packTools.splice(0, packTools.length, ...packTools.filter((t) => keep.has(t.name) || t.name === 'tools.request'));
+      if (packTools.length < before)
+        traceAdd({ name: 'JEV_TOOLS', ms: 0, tokens: 0, cost: 0, decision: `OMNIPOTENT pare-feu d'outils : ${packTools.length}/${before} exposés (voie ${omni.lane.lane})` });
+    }
   }
   const toolTokens = toolDefTokens(toolDefs(packTools));
   const toolTokensBaseline = toolDefTokens(toolDefs(tools));
@@ -993,14 +1054,32 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     tools: packTools,
     skills: enabled,
     active,
-    agents: allAgents(st.agents),
-    plugins: plugins.map((p) => ({ name: p.name, instructions: mcpState(p.name).instructions })),
+    agents: allRoles(st.agents),
+    plugins: lane?.minimalPrompt ? [] : plugins.map((p) => ({ name: p.name, instructions: mcpState(p.name).instructions })),
+    compact: Boolean(lane?.minimalPrompt),
   });
+  // ── JEV COGNITIVE OS (off by default): diagnosis → protocol → conditioning; only ACTIVE engines touch the prompt. ──
+  const cognitive =
+    top && !inp.plan
+      ? cognitiveRt.prepareCognitive({
+          text: inp.text,
+          attachments: inp.attachments.map((a) => a.name),
+          hasImages,
+          mission: Boolean(inp.mission),
+          history: inp.history,
+          historyTokens: estimate(inp.history),
+          hasTools: tools.length > 0,
+          model: sel.model,
+          run: cognitiveRunOpts,
+          freeProven: Boolean(apprentice?.plan.use),
+        })
+      : null;
   const promptSections = [
     { name: 'system', text: system, pinned: true },
-    { name: 'doctrine', text: ENGINE_DOCTRINE },
+    { name: 'omni', text: omni?.lock ?? '', pinned: true },
+    { name: 'doctrine', text: lane?.minimalPrompt ? '' : ENGINE_DOCTRINE },
     { name: 'manual', text: manualPrompt(useStore.getState().manual), pinned: true },
-    { name: 'strategy', text: strategy ? strategyPrompt(dna, strategy) : '' },
+    { name: 'strategy', text: strategy && !lane?.minimalPrompt ? strategyPrompt(dna, strategy) : '' },
     {
       name: 'fabric',
       text: fabricPrep
@@ -1012,9 +1091,10 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         : '',
     },
     { name: 'apprentice', text: apprenticeRt.capsuleText(apprentice) },
+    { name: 'cognitive', text: cognitiveRt.cognitivePromptText(cognitive) },
     { name: 'skills', text: skillsPrompt(engineSkills) },
-    { name: 'packet', text: jp ? packetPrompt(jp.pre) : '' },
-    { name: 'memory', text: MEMORY_INSTRUCTIONS },
+    { name: 'packet', text: jp && !lane?.minimalPrompt ? packetPrompt(jp.pre) : '' },
+    { name: 'memory', text: lane?.minimalPrompt ? '' : MEMORY_INSTRUCTIONS },
     {
       name: 'mission',
       text: inp.mission
@@ -1031,10 +1111,11 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       .filter(Boolean)
       .join('\n\n');
   const firstTurn = !inp.history.some((m) => m.role === 'user');
-  const content = await userContent(inp.text, inp.attachments, vision, firstTurn);
-  if (firstTurn && !label) {
+  const content = await userContent(inp.text, inp.attachments, vision, firstTurn && !lane?.minimalPrompt);
+  if (firstTurn && !label && !lane?.minimalPrompt) {
     if (inp.session.mode !== 'safe') ensureAiDocs();
-    const digest = aiDigest();
+    // OMNIPOTENT MEMORY GOVERNOR (hard): only the paragraphs of the project memory that fit the current mission are shown.
+    const digest = omni ? omniRt.filterMemory(omni, aiDigest()) : aiDigest();
     if (digest && content[0]?.type === 'text')
       content[0].text = `<project_memory>\n${digest}\n</project_memory>\n\n${content[0].text}`;
   }
@@ -1070,7 +1151,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     });
   const messages: ChatMessage[] = [{ role: 'system', content: fullSystem }, ...ctxHist.history, user];
   const persisted: ChatMessage[] = [user];
-  const contextBudget = Math.min(Math.floor((info?.contextLength || 128_000) * 0.7), 400_000);
+  // A context budget is a CEILING: 70 % of the window is the old limit, the lane lowers it (6K trivial … 50K critical).
+  const contextBudget = omniRt.omniContextCeiling(omni, Math.min(Math.floor((info?.contextLength || 128_000) * 0.7), 400_000));
   if (top) liveTrace = { goal: inp.text, messages };
   // Shadow monitor (deterministic, free) + evidence corpus of the run.
   let shadow: ShadowMonitor | null = null;
@@ -1356,15 +1438,39 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     }
   };
   const ws = useStore.getState().settings;
+  const maxSteps = lane?.maxSteps ? Math.min(ws.maxSteps, lane.maxSteps) : ws.maxSteps;
   // JEV Apprentice: one gate pass per fallback attempt (FREE → correction → other FREE → V5); otherwise V5's two passes.
-  const gateLimit =
-    apprentice && !apprentice.forced && apprentice.plan.use
-      ? Math.max(2, apprentice.plan.attempts.length)
-      : 2;
+  // OMNIPOTENT lane: a simple request gets at most the passes it needs (a free model keeps ONE quality gate), never a ritual.
+  const apprenticeGates = apprentice && !apprentice.forced && apprentice.plan.use ? Math.max(2, apprentice.plan.attempts.length) : 2;
+  const gateLimit = lane && lane.gates !== null ? (apprentice && !apprentice.forced && apprentice.plan.use ? Math.max(lane.gates, 1) : lane.gates) : apprenticeGates;
+  const reaskOk = (sev?: string) => !lane || lane.verification === 'standard' || lane.verification === 'strong' || lane.verification === 'adversarial' || sev === 'critical';
   let nudged = false;
   let continuations = 0;
+  // OMNIPOTENT OUTPUT DRIFT GUARD (hard, after the model): a fluent answer that is about another mission, or merely describes a
+  // repair it did not make, is NOT delivered. One clean retry packet (capsule + failure signature, never the transcript), max 2.
+  const WRITE_TOOLS_USED = ['filesystem.write', 'filesystem.edit', 'artifact.create', 'data.export', 'report.export', 'apex.build_app'];
+  const tryDrift = (answer: string): boolean => {
+    if (!omni || !top || inp.mission || phase === 'planning' || !answer.trim()) return false;
+    const used = [...toolsUsed];
+    const d = omniRt.checkDrift(omni, {
+      answer,
+      toolsWrote: used.some((n) => WRITE_TOOLS_USED.includes(n)),
+      toolsVerified: used.some((n) => /^(code\.run|terminal\.execute|browser\.|regression\.run)/.test(n)),
+      toolCalls: used.length,
+    });
+    if (!d.retry) return false;
+    push(sid, { kind: 'intel', id: uid(), title: `OMNIPOTENT — DRIFT GUARD : réponse rejetée (${omni.driftRetries}/2)`, tone: 'warn', lines: d.report.reasons });
+    traceAdd({ name: 'JEV_CORRECTION', ms: 0, tokens: 0, cost: 0, decision: `drift guard : ${d.report.reasons.join(' ; ')}` });
+    const note: ChatMessage = { role: 'user', content: d.retry };
+    messages.push(note);
+    persisted.push(note);
+    nextKind = 'correction';
+    return true;
+  };
 
-  for (let step = 0; step < ws.maxSteps; step++) {
+  let stepsUsed = 0;
+  for (let step = 0; step < maxSteps; step++) {
+    stepsUsed = step + 1;
     if (inp.signal.aborted) throw new LLMError('Cancelled', 499, false, 'cancelled');
     const spentToday = useStore.getState().spend[new Date().toISOString().slice(0, 10)] ?? 0;
     if (ws.budgetDaily > 0 && spentToday >= ws.budgetDaily)
@@ -1477,7 +1583,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         messages: callMessages,
         tools: toolDefs(offered),
         temperature: ws.temperature ?? undefined,
-        maxTokens: 16_000,
+        // A ceiling, never a target: the lane caps how much one call may write (trivial 1.5K … critical 16K).
+        maxTokens: omni?.settings.ceilings && lane ? Math.min(16_000, lane.outputCeiling) : 16_000,
         signal: inp.signal,
       },
       {
@@ -1676,11 +1783,14 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         gates++;
         shadow?.observeFinal(r.content);
         const alerts = shadow?.take() ?? [];
-        const unsupported = strategy?.verify.evidence ? unsupportedNumbers(r.content, evidence) : [];
+        const unsupported = strategy?.verify.evidence && (lane?.evidenceReask ?? true) ? unsupportedNumbers(r.content, evidence) : [];
+        if (lane && !lane.evidenceReask) omni!.avoidedReasks++;
         const notes: string[] = [];
         if (alerts.length) {
           showAlerts(alerts);
-          notes.push(shadowMessage(alerts));
+          // Fast lane: an informational alert is shown, only a CRITICAL one costs a re-ask.
+          if (reaskOk(alerts.some((a) => a.severity === 'critical') ? 'critical' : undefined)) notes.push(shadowMessage(alerts));
+          else omni!.avoidedReasks++;
         }
         if (unsupported.length) {
           push(sid, {
@@ -1794,7 +1904,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
               });
             }
           }
-          if (!gated && q.correct && !unsupported.length && variant === 'full') {
+          if (!gated && q.correct && !unsupported.length && variant === 'full' && reaskOk(q.result.failures.some((f) => f.blocking) ? 'critical' : undefined)) {
             corrections++;
             corrAdded = true;
             discardedTokens += r.usage.completionTokens;
@@ -1802,7 +1912,10 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
             traceAdd({ name: 'JEV_CORRECTION', ms: 0, tokens: 0, cost: 0, decision: q.why });
           }
         }
-        if (!notes.length) break;
+        if (!notes.length) {
+          if (tryDrift(r.content)) continue;
+          break;
+        }
         const g: ChatMessage = { role: 'user', content: notes.join('\n\n') };
         messages.push(g);
         persisted.push(g);
@@ -1819,7 +1932,10 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         persisted.push(nudge);
         nextKind = 'gate';
         continue;
-      } else break;
+      } else {
+        if (tryDrift(r.content)) continue;
+        break;
+      }
     }
 
     // Tool execution. JEV PARALLELISM: independent sub-agent delegations of one turn run together.
@@ -2021,9 +2137,9 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       finalText = `${finalText ? `${finalText}\n\n` : ''}${formatReport(report)}`;
       break;
     }
-    if (step === ws.maxSteps - 1)
+    if (step === maxSteps - 1)
       throw new Error(
-        `Limite de ${ws.maxSteps} étapes atteinte. Augmentez-la dans Réglages ou répondez « continue ».`,
+        `Limite de ${maxSteps} étapes atteinte. Augmentez-la dans Réglages ou répondez « continue ».`,
       );
   }
   // QUALITY MEASURED AFTER THE FACT, identically in every variant (same scorer, same fixed token reference);
@@ -2063,6 +2179,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         }
       : undefined,
     apprenticeInfo: apprentice ? { prep: apprentice, models: [...usedModels] } : undefined,
+    cognitiveInfo: cognitive ?? undefined,
+    omniTag: omni ? omniRt.omniTag(omni, { steps: { used: stepsUsed, cap: lane?.maxSteps ?? null } }) : undefined,
     stopReason,
     toolCalls: toolCallTotal,
     toolErrors: toolErrorNotes.slice(-5),
@@ -2246,11 +2364,11 @@ async function delegate(
   task: string,
 ): Promise<{ ok: boolean; summary: string }> {
   const st = useStore.getState();
-  const agent = allAgents(st.agents).find((a) => a.id === role);
+  const agent = findRole(role, st.agents);
   if (!agent)
     return {
       ok: false,
-      summary: `Unknown agent "${role}". Available: ${allAgents(st.agents)
+      summary: `Unknown agent "${role}". Available: ${allRoles(st.agents)
         .map((a) => a.id)
         .join(', ')}`,
     };
@@ -2301,6 +2419,7 @@ export async function runAgent(
     experiment?: ExperimentInput;
     fabric?: FabricRunOpts;
     apprentice?: apprenticeRt.ApprenticeRunOpts;
+    cognitive?: cognitiveRt.CognitiveRunOpts;
   } = {},
 ): Promise<void> {
   const st = useStore.getState();
@@ -2308,6 +2427,7 @@ export async function runAgent(
   lastPolicy = '';
   fabricRun = opts.fabric ?? null;
   apprenticeRun = opts.apprentice ?? null;
+  cognitiveRunOpts = opts.cognitive ?? null;
   jevOverride =
     opts.jev === undefined ? null : opts.jev === true ? 'full' : opts.jev === false ? 'off' : opts.jev;
   const session = st.sessions.find((s) => s.id === sessionId);
@@ -2465,6 +2585,8 @@ export async function runAgent(
   liveTrace = null;
   currentPacket = null;
   beginCheckpoint(sessionId, text);
+  // Mission boundary: the history firewall reads these marks (the raw history is never deleted).
+  st.patchSession(sessionId, (cur) => ({ turns: [...(cur.turns ?? []), { start: cur.history.length, text: text.slice(0, 400), at: Date.now() }].slice(-200) }));
   let result: LoopResult | null = null;
   let errored = false;
   let failureNote = '';
@@ -2762,6 +2884,8 @@ export async function runAgent(
             ? redact(result.text).slice(0, 4000)
             : undefined,
         fabric: opts.fabric?.tag,
+        cognitive: result?.cognitiveInfo ? cognitiveRt.cognitiveTag(result.cognitiveInfo) : undefined,
+        omni: result?.omniTag,
         apprentice: result?.apprenticeInfo
           ? apprenticeRt.buildTag(result.apprenticeInfo.prep, {
               models: result.apprenticeInfo.models,

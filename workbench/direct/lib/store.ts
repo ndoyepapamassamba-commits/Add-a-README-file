@@ -39,6 +39,12 @@ export interface FabricState {
   lab?: import('../../server/jev/apprentice/lab').LabState;
   /** Challenger discovery pipeline: stage of every free model of the catalogue. */
   discovered?: Record<string, import('../../server/jev/apprentice/discovery').DiscoveredModel>;
+  /** JEV Cognitive OS: settings, policy history, micro-experts (all additive, absent = defaults). */
+  cognitive?: {
+    settings?: Partial<import('../../server/jev/cognitive/types').CognitiveSettings>;
+    policies?: import('../../server/jev/cognitive/policy').PolicyRecord[];
+    microExperts?: import('../../server/jev/cognitive/strategies').MicroExpert[];
+  };
   /** AI Visual Studio: media capability summary (add-only entry of the Capability Fabric). */
   media?: ReturnType<typeof import('../../server/jev/studio/capabilities').fabricEntry>;
 }
@@ -264,7 +270,7 @@ export const useStore = create<State>((set, get) => ({
       updatedAt: Date.now(),
       model: st.defaultModel,
       effort: st.effort,
-      agent: 'general',
+      agent: 'omnipotent',
       mode: 'normal',
       pinnedSkills: [],
       history: [],

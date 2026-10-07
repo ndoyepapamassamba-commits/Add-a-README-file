@@ -4,6 +4,7 @@
 // independent intelligence score (modelIntel.ts); among the models that reach
 // it, the cheapest live price wins and the next ones are the fallbacks. No
 // provider is preferred. Family patterns are only a last resort.
+import { reclassify } from '../jev/omni/reclassify';
 import type { ModelInfo } from '@shared/types';
 import type { AutoTiers } from '../services/settings';
 import { intelMax, intelligenceInfo, type IntelMetric } from './modelIntel';
@@ -45,6 +46,8 @@ export interface TaskProfile {
   reasons: string[];
   /** Specialists the orchestrator should involve, in order. */
   team: string[];
+  /** OMNIPOTENT V4.1: the request re-read as a JOB (objective / operation / artifact), when it differs from the first guess. */
+  reclass?: import('../jev/omni/reclassify').Reclass;
 }
 
 const RX: Record<string, RegExp> = {
@@ -139,6 +142,18 @@ export function analyzeTask(o: {
   if (type === 'review') d += 0.15;
   if ((o.attachmentNames ?? []).length > 2) d += 0.1;
   if ((o.historyTokens ?? 0) > 60_000) d += 0.05;
+  // OMNIPOTENT V4.1: the first classification is a hypothesis — classify the JOB, not the input modality.
+  const rc = reclassify({
+    text: o.text,
+    attachments: (o.attachmentNames ?? []).map((name) => ({ name, image: /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name) })),
+    initial: type,
+    hasImages: o.hasImages,
+  });
+  if (rc.mutationRequired || rc.reclassified) {
+    if (rc.routeType && (rc.reclassified || type === 'chat' || type === 'writing' || type === 'vision')) type = rc.routeType;
+    d = Math.max(d, rc.difficultyFloor);
+    reasons.push(`reclassifiée : ${rc.trueTask}`);
+  }
   d = Math.max(0, Math.min(1, d));
 
   const tier: QualityTier = d >= 0.8 ? 'maximum' : d >= 0.55 ? 'quality' : d >= 0.3 ? 'balanced' : 'cheap';
@@ -160,6 +175,7 @@ export function analyzeTask(o: {
     chat: [],
   };
   return {
+    reclass: rc.mutationRequired || rc.reclassified ? rc : undefined,
     type,
     difficulty: d,
     tier,

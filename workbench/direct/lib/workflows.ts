@@ -28,7 +28,7 @@ export const BUILTIN_WORKFLOWS: Workflow[] = [
     id: 'wf-fix-all',
     name: 'Répare tout',
     description: 'Détecter → diagnostiquer → corriger → tester → re-tester',
-    agent: 'general',
+    agent: 'omnipotent',
     builtin: true,
     createdAt: 0,
     steps: [
@@ -74,5 +74,5 @@ export function runWorkflow(wf: Workflow, attachments: Attachment[] = [], extra 
 }
 
 export function newWorkflow(): Workflow {
-  return { id: uid(), name: '', description: '', agent: 'general', steps: [], createdAt: Date.now() };
+  return { id: uid(), name: '', description: '', agent: 'omnipotent', steps: [], createdAt: Date.now() };
 }
