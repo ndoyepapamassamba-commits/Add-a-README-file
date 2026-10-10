@@ -120,10 +120,24 @@ export function lessonFrom(i: { alteration: string; originalRequest: string; tag
   };
 }
 
+/**
+ * EXPERIENCE FIREWALL: what comes from OUTSIDE the chat (lessons, vault, similar missions) is a METHOD, never data.
+ * Figures are masked (amounts, rates, counts, dates…) so another chat's numbers can never be reused as facts.
+ */
+export function methodOnly(text: string): string {
+  return text
+    .replace(/\b\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}\b/g, '#date')
+    .replace(/[-+]?\d[\d\s\u00a0\u202f.,]*\d\s*%|[-+]?\d+(?:[.,]\d+)?\s*%/g, '#%')
+    // (not inside an identifier such as a model name « gpt-5.3 » or « IFRS 9 »)
+    .replace(/(?<![\w-])[-+]?\d{1,3}(?:[\s\u00a0\u202f.,]\d{3})+(?:[.,]\d+)?|(?<![\w-])[-+]?\d+[.,]\d+|\b\d{3,}\b/g, '#');
+}
+export const EXPERIENCE_RULE =
+  'EXPERIENCE from other chats = methods and quality bar only, to go faster. It is NEVER a source of facts, figures, names or files: every fact of the answer comes from THIS chat (its messages, attachments, files, tool results).';
+
 export function memoryBlock(chat: Recall[], lessons: Recall[]): string {
   const parts: string[] = [];
-  if (chat.length) parts.push(`<CHAT_MEMORY>\nRelevant facts from THIS chat:\n${chat.map((r) => `- ${r.fact.text}`).join('\n')}\n</CHAT_MEMORY>`);
-  if (lessons.length) parts.push(`<LESSONS>\nLearnt from the user's past corrections (apply when relevant, the request wins):\n${lessons.map((r) => `- ${r.fact.text}`).join('\n')}\n</LESSONS>`);
+  if (chat.length) parts.push(`<CHAT_MEMORY>\nRelevant facts from THIS chat (the source of truth):\n${chat.map((r) => `- ${r.fact.text}`).join('\n')}\n</CHAT_MEMORY>`);
+  if (lessons.length) parts.push(`<LESSONS>\nLearnt from the user's past corrections (apply when relevant, the request wins). ${EXPERIENCE_RULE}\n${lessons.map((r) => `- ${methodOnly(r.fact.text)}`).join('\n')}\n</LESSONS>`);
   return parts.join('\n');
 }
 

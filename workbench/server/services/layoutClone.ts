@@ -17,6 +17,10 @@ export interface DesignLayout {
   shadow: boolean;
   palette: { bg: string; surface: string; primary: string; accent: string; text: string; muted: string; series: string[] };
   font: string;
+  /** Real website reproduced: its exact font stack, its web-font stylesheet and its colour tokens. */
+  fontStack?: string;
+  fontHref?: string;
+  cssVars?: Record<string, string>;
 }
 
 export const LAYOUT_PROMPT = `You are a senior UI designer. Read this dashboard / report / app design and describe its LAYOUT so it can be rebuilt pixel-faithfully with other data. Ignore logos, photos and the text content. Answer ONLY JSON:
@@ -67,7 +71,11 @@ export function parseLayout(text: string): DesignLayout | null {
   };
 }
 /** The Office exporters reuse the layout's look (palette + font). */
-export const layoutTheme = (l: DesignLayout): CustomTheme => ({ primary: l.palette.primary, accent: l.palette.accent, dark: l.dark ? l.palette.surface : l.palette.text, font: l.font });
+const OFFICE_FONTS = /^(segoe ui|calibri|aptos|arial|georgia|cambria|garamond|verdana|tahoma|trebuchet ms|consolas|times new roman|century gothic|franklin gothic)$/i;
+/** A website's own font (e.g. « sohne-var ») is not installed for Word / Excel: use the closest Office font. */
+const officeFont = (l: DesignLayout) =>
+  !l.fontStack || OFFICE_FONTS.test(l.font) ? l.font : /serif|garamond|georgia|times|playfair|merriweather|lora|baskerville/i.test(l.font) && !/sans/i.test(l.font) ? 'Georgia' : 'Segoe UI';
+export const layoutTheme = (l: DesignLayout): CustomTheme => ({ primary: l.palette.primary, accent: l.palette.accent, dark: l.dark ? l.palette.surface : l.palette.text, font: officeFont(l) });
 /** Excel can hold one native chart: the first chart type of the layout that Excel supports. */
 export function excelChart(l: DesignLayout): 'bar' | 'line' | 'pie' | 'none' {
   const c = l.charts.find((x) => x.type);
@@ -193,9 +201,10 @@ export function renderLayoutHtml(l: DesignLayout, d: DashData, source?: string):
       : '';
   const header = l.header === 'band' ? `<header class="band"><h1>${esc(d.title)}</h1>${d.subtitle ? `<p>${esc(d.subtitle)}</p>` : ''}</header>` : l.header === 'hero' ? `<header class="hero"><h1>${esc(d.title)}</h1>${d.subtitle ? `<p>${esc(d.subtitle)}</p>` : ''}</header>` : `<header class="mini"><h1>${esc(d.title)}</h1>${d.subtitle ? `<p>${esc(d.subtitle)}</p>` : ''}</header>`;
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(d.title)}</title>
+${l.fontHref && /^https:\/\/fonts\.googleapis\.com\//.test(l.fontHref) ? `<link rel="stylesheet" href="${esc(l.fontHref)}">` : ''}
 <style data-premium-theme="layout">
 :root{--bg:${p.bg};--surface:${p.surface};--primary:${p.primary};--accent:${p.accent};--text:${p.text};--muted:${p.muted};--r:${l.radius}px;--shadow:${shadow}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14.5px/1.55 "${esc(l.font)}",Inter,"Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14.5px/1.55 ${l.fontStack ? l.fontStack.replace(/[<>{};]/g, '') : `"${esc(l.font)}",Inter,"Segoe UI",system-ui,sans-serif`};-webkit-font-smoothing:antialiased}
 .shell{display:flex;min-height:100vh}.side{width:220px;flex-shrink:0;background:${l.dark ? p.surface : p.primary};color:#fff;padding:22px 14px}.brand{font-weight:800;font-size:17px;margin-bottom:22px}.nav{padding:9px 12px;border-radius:calc(var(--r) * .7);opacity:.75;margin-bottom:4px}.nav.on{background:rgba(255,255,255,.14);opacity:1;font-weight:600}
 main{flex:1;min-width:0;padding:22px 26px}
 header.band{background:var(--primary);color:#fff;border-radius:var(--r);padding:22px 26px;margin-bottom:18px;box-shadow:var(--shadow)}header.band p{opacity:.85;margin:4px 0 0}

@@ -8,6 +8,7 @@
 // operating manual, living regression suite and auto-benchmark scoring.
 import { QUALITY_TIERS, type QualityTier, type TaskProfile, type TaskType } from '../llm/routing';
 import type { MissionCheck, MissionReport, Verdict } from './mission';
+import { methodOnly } from '../jev/memory/semantic';
 
 // ════════════════════════════════════════════════════════════════════════
 // 1. TASK DNA
@@ -350,10 +351,10 @@ export function strategyPrompt(dna: TaskDna, s: Strategy): string {
     `Required verification: ${dna.verification.join(', ') || 'self-check'}.${s.verify.adversarial ? ' An adversarial red-team will try to refute your result before delivery.' : ''}${s.verify.evidence ? ' Every figure you state must come from a tool result (an evidence check flags unsupported numbers).' : ''}`,
     s.team.length ? `Team: ${s.team.join(' → ')} (delegate only when the specialisation adds quality).` : '',
     s.reuse.length
-      ? `What worked before on similar missions:\n${s.reuse.map((r) => `- ${r}`).join('\n')}`
+      ? `What worked before on similar missions (methods only — never their figures):\n${s.reuse.map((r) => `- ${methodOnly(r)}`).join('\n')}`
       : '',
     s.pitfalls.length
-      ? `FAILURE MEMORY — avoid repeating:\n${s.pitfalls.map((r) => `- ${r}`).join('\n')}`
+      ? `FAILURE MEMORY — avoid repeating:\n${s.pitfalls.map((r) => `- ${methodOnly(r)}`).join('\n')}`
       : '',
     `Recovery plan:\n${s.recovery.map((r) => `- ${r}`).join('\n')}`,
     `Parallelise: ${s.parallel.join('; ')}. Keep sequential: ${s.sequential.join('; ')}.`,

@@ -5,7 +5,7 @@
 // exported (chats + their own files) and re-imported.
 import { useStore } from './store';
 import { CHAT_PREFIX, chatPath, deliverablesIn, download, ownerOf } from './vfs';
-import { recall, type MemFact } from '../../server/jev/memory/semantic';
+import { EXPERIENCE_RULE, methodOnly, recall, type MemFact } from '../../server/jev/memory/semantic';
 import type { Session, VaultEntry } from './types';
 
 const uid = () => `v${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
@@ -47,7 +47,7 @@ export function vaultRecall(text: string): VaultEntry | null {
   return hit ? (v.find((x) => x.id === hit.fact.id) ?? null) : null;
 }
 export function vaultBlock(e: VaultEntry): string {
-  return `<EXPERIENCE id="${e.id}">\nA past deliverable the user validated for a similar request (« ${e.title} »). Reuse its approach and quality bar; call vault.open with this id to copy its files (${e.files.map((f) => f.path).join(', ') || 'none'}) into this chat if useful.\nExcerpt: ${e.text.replace(/\s+/g, ' ').slice(0, 500)}\n</EXPERIENCE>`;
+  return `<EXPERIENCE id="${e.id}">\nA past deliverable the user validated for a similar request (« ${methodOnly(e.title)} »). Reuse its approach and quality bar. ${EXPERIENCE_RULE} Its files (${e.files.map((f) => f.path).join(', ') || 'none'}) enter this chat only if the user asks (vault.open).\nMethod excerpt: ${methodOnly(e.text.replace(/\s+/g, ' ').slice(0, 500))}\n</EXPERIENCE>`;
 }
 
 // ── Archive ─────────────────────────────────────────────────────────────────────────────────────────────────────────

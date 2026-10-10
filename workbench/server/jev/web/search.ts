@@ -46,11 +46,11 @@ export function tavilyImagesRequest(key: string, query: string): SearchRequest {
     init: {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ query: query.slice(0, 300), max_results: 6, search_depth: 'basic', include_images: true, include_image_descriptions: true, include_answer: false }),
+      body: JSON.stringify({ query: query.slice(0, 300), max_results: 10, search_depth: 'basic', include_images: true, include_image_descriptions: true, include_answer: false }),
     },
   };
 }
-export function parseTavilyImages(json: unknown, max = 12): { url: string; description: string }[] {
+export function parseTavilyImages(json: unknown, max = 20): { url: string; description: string }[] {
   const imgs = (json as { images?: (string | { url?: string; description?: string })[] })?.images ?? [];
   return imgs
     .map((x) => (typeof x === 'string' ? { url: x, description: '' } : { url: x.url ?? '', description: x.description ?? '' }))
@@ -63,3 +63,40 @@ export const DESIGN_QUERY: Record<'excel' | 'document' | 'slides' | 'web', strin
   slides: 'premium presentation slide design template modern',
   web: 'premium web app dashboard UI design',
 };
+/** Style families offered as filters in the Internet gallery (same for every category). */
+export const DESIGN_STYLES = ['Tous', 'Sombre', 'Minimal', 'Luxe', 'Corporate', 'Coloré', 'Finance', 'Afrique', 'Glass', 'Bento', 'Éditorial', 'Pastel'] as const;
+export type DesignStyle = (typeof DESIGN_STYLES)[number];
+const STYLE_WORDS: Record<Exclude<DesignStyle, 'Tous'>, string> = {
+  Sombre: 'dark mode',
+  Minimal: 'minimalist clean white',
+  Luxe: 'luxury elegant gold black',
+  Corporate: 'corporate professional blue',
+  Coloré: 'colorful vibrant gradient',
+  Finance: 'finance banking fintech',
+  Afrique: 'african pattern warm colors',
+  Glass: 'glassmorphism',
+  Bento: 'bento grid',
+  Éditorial: 'editorial magazine typography',
+  Pastel: 'pastel soft colors',
+};
+const SUBJECTS: Record<'excel' | 'document' | 'slides' | 'web', string[]> = {
+  excel: ['excel dashboard design', 'spreadsheet KPI dashboard template', 'financial report excel template', 'excel data visualization dashboard', 'power bi dashboard design', 'kpi scorecard dashboard design', 'sales dashboard excel template', 'risk dashboard design banking'],
+  document: ['annual report design layout', 'corporate report template design', 'business proposal document design', 'executive summary report layout', 'white paper design template', 'financial report document design', 'brochure report layout indesign', 'one page report design'],
+  slides: ['presentation slide design template', 'pitch deck design', 'keynote slide design inspiration', 'business presentation template', 'investor deck slide design', 'data presentation slide design', 'board meeting presentation design', 'consulting slide design'],
+  web: ['web app dashboard UI design', 'saas landing page design', 'admin dashboard ui kit', 'analytics dashboard dribbble', 'mobile app ui design', 'fintech app ui design', 'website hero section design', 'dashboard ui behance'],
+};
+/** The queries of one page of the Internet gallery: 4 subjects × the chosen style (+ free text), all different per page. */
+export function designQueries(kind: 'excel' | 'document' | 'slides' | 'web', page: number, style: DesignStyle = 'Tous', extra = ''): string[] {
+  const subjects = SUBJECTS[kind];
+  const words = style === 'Tous' ? '' : STYLE_WORDS[style];
+  const out: string[] = [];
+  for (let i = 0; i < 4; i++) {
+    const n = page * 4 + i;
+    const subject = subjects[n % subjects.length]!;
+    // Past the subject list, vary the style words so a new page never repeats a query.
+    const cycle = Math.floor(n / subjects.length);
+    const twist = cycle ? ['premium', 'modern 2025', 'award winning', 'inspiration', 'template'][cycle % 5] : 'premium';
+    out.push([subject, words, twist, extra].filter(Boolean).join(' ').trim());
+  }
+  return out;
+}

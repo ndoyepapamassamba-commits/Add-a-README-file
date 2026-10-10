@@ -520,6 +520,7 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
   const models = st.models;
 
   // Plugins
+  stage(sid, 'Préparation : connexion des plugins…');
   await ensureConnected(st.mcp);
   const plugins = st.mcp.filter((d) => d.enabled && mcpState(d.name).status === 'connected');
   const mcpTools = connectedTools(st.mcp).map((t) =>
@@ -635,6 +636,7 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       inp.text,
     ].slice(-12);
     try {
+      stage(sid, 'Préparation : stratégie JEV…');
       jp = await jevRt.pre({
         taskId: uid(),
         text: inp.text,
@@ -837,6 +839,7 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
   if (top) {
     const fs = fabricRt.fabricSettings();
     try {
+      stage(sid, "Préparation : registre des capacités…");
       await fabricRt.ensureRegistry();
       fabricPrep = fabricRt.prepare({
         text: inp.text,
@@ -1148,7 +1151,7 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       text: (() => {
         const c = designFor(sid);
         return c?.layout && !experimentRun
-          ? `<DESIGN_LAYOUT source="${c.source ?? ''}">\nThe user picked this Internet design to REPRODUCE: rebuild this exact layout with the real data — for HTML (sites, apps, dashboards) the whole layout (navigation, header, KPI count and style, charts in this order and span, table style, grid columns, radius, shadow, light/dark, palette, font); for Excel / Word / PowerPoint its structure (same KPI count and order at the top, same chart types, same table style, palette and font). Never copy the source's logos, photos or text.\n${JSON.stringify(c.layout)}\n</DESIGN_LAYOUT>`
+          ? `<DESIGN_LAYOUT source="${c.source ?? ''}">\nThe user picked this ${c.layout.cssVars ? 'REAL WEBSITE (its colours, fonts, radius and CSS tokens were read from its own code — use them exactly: font-family stack, cssVars)' : 'Internet design'} to REPRODUCE: rebuild this exact layout with the real data — for HTML (sites, apps, dashboards) the whole layout (navigation, header, KPI count and style, charts in this order and span, table style, grid columns, radius, shadow, light/dark, palette, font); for Excel / Word / PowerPoint its structure (same KPI count and order at the top, same chart types, same table style, palette and font). Never copy the source's logos, photos or text.\n${JSON.stringify(c.layout)}\n</DESIGN_LAYOUT>`
           : '';
       })(),
     },
@@ -1199,6 +1202,7 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
           return b.block;
         }
       : undefined;
+  if (inp.attachments.length) stage(sid, `Préparation : lecture de ${inp.attachments.length} pièce(s) jointe(s)…`);
   const content = await userContent(inp.text, inp.attachments, vision, firstTurn && !lane?.minimalPrompt, bridge);
   if (firstTurn && !label && !lane?.minimalPrompt) {
     if (inp.session.mode !== 'safe') ensureAiDocs();
@@ -1654,6 +1658,8 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       history: estimate(callMessages.slice(1).filter((m) => m.role !== 'tool')),
       toolResults: estimate(callMessages.filter((m) => m.role === 'tool')),
     };
+    // Which model is working, and on how much context: a slow first answer is explained, not silent.
+    stage(sid, `${label ? `${label} réfléchit` : 'Réflexion'} — ${model.split('/').pop()} · contexte ≈ ${Math.max(1, Math.round((split.system + split.tools + split.history + split.toolResults) / 1000))}k tokens…`);
     const setLive = (p: Partial<import('./store').CallLive>) => {
       const cur = useStore.getState().callLive[sid];
       const run = useStore.getState().running[sid];
@@ -2525,6 +2531,14 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     if (dkind === 'web' && tool.name === 'artifact.create' && typeof args.content === 'string') {
       const t = themeOf(args, useStore.getState().settings.exportTheme);
       args.content = applyWebTheme(args.content as string, t);
+      // A real website reproduced: its web font and its own colour tokens are available to the page.
+      const sl = choice?.layout;
+      if (sl?.cssVars && !/data-site-tokens/.test(args.content as string)) {
+        const vars = Object.entries(sl.cssVars).map(([k, v]) => `${k}:${v}`).join(';');
+        const font = sl.fontHref && /^https:\/\/fonts\.googleapis\.com\//.test(sl.fontHref) ? `<link rel="stylesheet" href="${sl.fontHref}">` : '';
+        const block = `${font}<style data-site-tokens>:root{${vars}}body{font-family:${(sl.fontStack ?? sl.font).replace(/[<>{};]/g, '')}}</style>`;
+        args.content = /<head[^>]*>/i.test(args.content as string) ? (args.content as string).replace(/<head[^>]*>/i, (m) => `${m}\n${block}`) : `${block}\n${args.content as string}`;
+      }
     }
   }
   // CHAT SCOPE is re-asserted before every tool, under the scope lock: while this tool awaits (Python, exports…),
@@ -2563,6 +2577,10 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
   }
 }
 
+/** Visible progress of the preparation (the user must never stare at a silent run). */
+function stage(sid: string, text: string): void {
+  useStore.setState({ status: { ...useStore.getState().status, [sid]: text } });
+}
 /** Design of this chat: remembered for the chat, else chosen for the current request. */
 const runDesign = new Map<string, DesignChoice>();
 const runFormats = new Map<string, string[]>();
@@ -2589,11 +2607,30 @@ async function askDesign(
   useStore.setState({ status: { ...useStore.getState().status, [sid]: 'Choisissez le design du livrable…' } });
   const d = await new Promise<{ choice: DesignChoice; formats?: string[]; remember: boolean }>((resolve) => {
     st.pending.designs.set(designId, resolve);
-    signal.addEventListener('abort', () => resolve({ choice: { theme: 'house' }, remember: false }), { once: true });
+    signal.addEventListener('abort', () => resolve({ choice: { theme: 'house' }, remember: false, aborted: true } as never), { once: true });
     st.pushItem(sid, { kind: 'design', id: designId, tool: toolName, deliverable: kind, formats, chosenFormats });
   });
   st.pending.designs.delete(designId);
-  const lbl = d.choice.theme === 'custom' ? 'Design personnalisé' : (THEMES[d.choice.theme]?.label ?? d.choice.theme);
+  // Stopped before choosing: say so (it is not a choice of the house design).
+  if ((d as { aborted?: boolean }).aborted) {
+    st.updateItem(sid, designId, { resolved: 'aucun — mission arrêtée avant le choix' });
+    return d;
+  }
+  const host = (() => {
+    try {
+      return d.choice.source ? new URL(d.choice.source).hostname : '';
+    } catch {
+      return '';
+    }
+  })();
+  const lbl =
+    d.choice.theme === 'custom'
+      ? d.choice.layout?.cssVars
+        ? `Site reproduit — ${host} (couleurs, polices et structure)`
+        : d.choice.layout
+          ? 'Design Internet — mise en page reproduite'
+          : 'Design Internet — couleurs et police'
+      : (THEMES[d.choice.theme]?.label ?? d.choice.theme);
   st.updateItem(sid, designId, { resolved: lbl, chosenFormats: d.formats });
   runDesign.set(sid, d.choice);
   if (d.remember) st.patchSession(sid, { design: d.choice });

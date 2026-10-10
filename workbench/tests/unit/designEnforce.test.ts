@@ -88,3 +88,48 @@ describe('two chats running at the same time never swap files', () => {
     setChatScope(null);
   });
 });
+
+describe('Internet gallery: many more designs per category', () => {
+  it('each page runs 4 different searches; pages and styles never repeat a query', async () => {
+    const { designQueries, DESIGN_STYLES } = await import('../../server/jev/web/search');
+    expect(DESIGN_STYLES.length).toBeGreaterThanOrEqual(10);
+    for (const kind of ['excel', 'document', 'slides', 'web'] as const) {
+      const all = [0, 1, 2, 3].flatMap((p) => designQueries(kind, p, 'Sombre'));
+      expect(all).toHaveLength(16);
+      expect(new Set(all).size).toBe(16);
+      expect(all.every((q) => q.includes('dark mode'))).toBe(true);
+    }
+    expect(designQueries('excel', 0, 'Tous', 'banque')[0]).toContain('banque');
+  });
+  it('the 4 searches are merged and de-duplicated; one failing search does not empty the gallery', async () => {
+    const { searchDesigns } = await import('../../direct/lib/designWeb');
+    useStore.setState({ settings: { ...useStore.getState().settings, tavilyKey: 'tvly-x' } });
+    let n = 0;
+    globalThis.fetch = (async () => {
+      n++;
+      if (n === 2) return new Response('err', { status: 500 });
+      return new Response(JSON.stringify({ images: [{ url: `https://img/${n}a.png` }, { url: 'https://img/shared.png?x=1' }, { url: `https://img/${n}b.png` }] }), { status: 200 });
+    }) as typeof fetch;
+    const seen = new Set<string>();
+    const r = await searchDesigns('excel', { seen });
+    expect(n).toBe(4);
+    expect(r.map((x) => x.url)).toHaveLength(7); // 3 ok searches × 2 own + 1 shared
+    const more = await searchDesigns('excel', { page: 1, seen });
+    expect(more.some((x) => x.url.startsWith('https://img/shared'))).toBe(false);
+  });
+});
+
+describe('memory: the chat is the source of truth, the rest is experience', () => {
+  it('experience from other chats never carries their figures', async () => {
+    const { methodOnly, memoryBlock } = await import('../../server/jev/memory/semantic');
+    expect(methodOnly('Total douteux : 4 529 967 553 · couverture 42,70 % au 30/09/2026')).toBe('Total douteux : # · couverture #% au #date');
+    expect(methodOnly('IFRS 9 stage 2 avec gpt-5.3 et 3 graphiques')).toBe('IFRS 9 stage 2 avec gpt-5.3 et 3 graphiques');
+    const block = memoryBlock(
+      [{ fact: { id: 'c', text: 'Provisions du chat : 1 934 427 072', kind: 'fact', at: 0 }, score: 1 }],
+      [{ fact: { id: 'l', text: 'Le total 2 500 000 doit être en Md', kind: 'lesson', at: 0 }, score: 1 }],
+    );
+    expect(block).toContain('1 934 427 072'); // this chat: kept as is
+    expect(block).not.toContain('2 500 000'); // another chat's lesson: masked
+    expect(block).toContain('NEVER a source of facts');
+  });
+});

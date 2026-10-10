@@ -319,3 +319,66 @@ test('Internet design → REAL copy: its layout is read, previewed, then rebuilt
   expect(html).toContain('Poppins');
   expect(Object.keys(all).some((k) => k.endsWith('ventes.xlsx'))).toBe(true);
 });
+
+test('REAL website reproduced: its code gives the exact colours / fonts, its screenshot the structure; Excel + dashboard use them with the chat data', async ({ page }) => {
+  await open(page);
+  await page.removeLocatorHandler(page.getByTestId('design-go'));
+  const SITE_HTML = '<html><head><link rel="stylesheet" href="/assets/app.css"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700&display=swap" rel="stylesheet"></head><body><aside class="sidebar">menu</aside><main>x</main></body></html>';
+  const SITE_CSS = ':root{--color-primary:#0E7C66;--color-accent:#F2994A;--bg:#F7F9F8;--text:#13231F}body{background:var(--bg);color:var(--text);font-family:Manrope,sans-serif}.btn-primary{background:var(--color-primary);border-radius:14px;box-shadow:0 2px 8px #0002}.card{background:#FFFFFF;border:1px solid #E3E8E6;border-radius:14px;box-shadow:0 1px 2px #0001}.p{box-shadow:0 8px 24px #0002}a{color:var(--color-accent)}';
+  const seen: string[] = [];
+  await page.route('https://r.jina.ai/**', async (route) => {
+    const url = route.request().url();
+    const fmt = route.request().headers()['x-return-format'];
+    seen.push(`${fmt} ${url}`);
+    const cors = { 'access-control-allow-origin': '*' };
+    if (fmt === 'screenshot') return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ data: { screenshotUrl: 'https://example.com/shot.png' } }) });
+    if (url.endsWith('/assets/app.css')) return route.fulfill({ status: 200, headers: cors, contentType: 'text/plain', body: SITE_CSS });
+    return route.fulfill({ status: 200, headers: cors, contentType: 'text/plain', body: SITE_HTML });
+  });
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  const LAYOUT = { dark: false, navigation: 'sidebar', header: 'minimal', kpis: { count: 2, style: 'accent-left' }, charts: [{ type: 'bar', span: 2 }], table: { style: 'lined', position: 'bottom' }, columns: 3, radius: 6, shadow: false, palette: { bg: '#000000', surface: '#111111', primary: '#FF0000', accent: '#00FF00', text: '#FFFFFF', muted: '#999999', series: ['#FF0000'] }, font: 'Comic Sans' };
+  mock.push(
+    { text: JSON.stringify(LAYOUT) }, // vision reads the SCREENSHOT (structure); its colour guesses are overridden by the code
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'data/ventes.csv', content: 'agence,montant\nDakar,1250\nThies,430\n' } }] },
+    { toolCalls: [{ name: 'data.export', args: { path: 'data/ventes.csv', name: 'ventes', title: 'Ventes', format: 'xlsx' } }] },
+    { text: 'Livré au style du site.' },
+  );
+  await send(page, 'Fais un classeur Excel des ventes par agence');
+  await expect(page.getByTestId('design-card')).toBeVisible({ timeout: 20_000 });
+  await page.getByTestId('design-site-url').fill('banque-exemple.sn');
+  await page.getByTestId('design-site-go').click();
+  await expect(page.getByTestId('design-site-done')).toContainText('banque-exemple.sn', { timeout: 20_000 });
+  await expect(page.getByTestId('design-site-done')).toContainText('Manrope');
+  await expect(page.getByTestId('design-selected')).toContainText('Site reproduit');
+  await expect(page.getByTestId('design-layout-preview')).toBeVisible();
+  expect(seen.some((s) => s.startsWith('html https://r.jina.ai/https://banque-exemple.sn'))).toBe(true);
+  expect(seen.some((s) => s.includes('/assets/app.css'))).toBe(true);
+  await page.getByTestId('design-go').click();
+  await expect(page.getByTestId('design-card-done')).toContainText('Site reproduit — banque-exemple.sn');
+  await expect(page.getByText('Livré au style du site.')).toBeVisible({ timeout: 20_000 });
+  const files = () =>
+    page.evaluate(
+      () =>
+        new Promise<Record<string, { data: string }>>((resolve) => {
+          const req = indexedDB.open('openrouter-workbench-direct', 1);
+          req.onsuccess = () => {
+            const g = req.result.transaction('kv', 'readonly').objectStore('kv').get('files');
+            g.onsuccess = () => resolve((g.result ?? {}) as Record<string, { data: string }>);
+          };
+        }),
+    );
+  await expect.poll(async () => Object.keys(await files()).some((k) => k.endsWith('ventes-tableau-de-bord.html')), { timeout: 10_000 }).toBe(true);
+  const all = await files();
+  const html = all[Object.keys(all).find((k) => k.endsWith('ventes-tableau-de-bord.html'))!]!.data;
+  expect(html).toContain('--primary:#0E7C66'); // exact colour from the site's CSS, not the vision guess
+  expect(html).not.toContain('#FF0000');
+  expect(html).toContain('family=Manrope'); // the site's web font
+  expect(html).toContain('<aside class="side">'); // structure from the screenshot
+  expect(html).toContain('accent-left');
+  expect(html).toContain('1 680'); // real total of the chat data
+  const { unzipSync, strFromU8 } = await import('fflate');
+  const xlsx = all[Object.keys(all).find((k) => k.endsWith('ventes.xlsx'))!]!.data;
+  const xml = Object.entries(unzipSync(new Uint8Array(Buffer.from(xlsx, 'base64')))).filter(([k]) => /styles|sheet1/.test(k)).map(([, v]) => strFromU8(v)).join('');
+  expect(xml).toContain('0E7C66');
+});
