@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { Button, Spinner } from '../../web/components/ui';
 import { resolveDesign } from '../lib/agent';
 import { PREMIUM_DESIGNS, thumbnailDataUrl, type DeliverableKind } from '../../server/services/premiumDesigns';
-import { searchDesigns, paletteFromImage } from '../lib/designWeb';
+import { searchDesigns, layoutFromImage } from '../lib/designWeb';
+import { dashboardData, layoutTheme, renderLayoutHtml, type DesignLayout } from '../../server/services/layoutClone';
 import type { ThemeId, CustomTheme } from '../../server/services/houseDesign';
 
 const KIND_LABEL: Record<DeliverableKind, string> = { excel: 'classeur Excel', document: 'document', slides: 'présentation', web: 'site / application' };
@@ -17,6 +18,7 @@ export function DesignCard({ item }: { item: { id: string; deliverable: Delivera
   const [web, setWeb] = useState<{ url: string; description: string }[] | null>(null);
   const [webSel, setWebSel] = useState<string | null>(null);
   const [custom, setCustom] = useState<CustomTheme | null>(null);
+  const [layout, setLayout] = useState<DesignLayout | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState('');
   if (item.resolved)
@@ -40,12 +42,13 @@ export function DesignCard({ item }: { item: { id: string; deliverable: Delivera
     }
   };
   const pickWeb = async (url: string) => {
-    setBusy('lecture du style de l’image…');
+    setBusy('lecture de la mise en page de l’image…');
     setErr('');
     setWebSel(url);
     try {
-      const r = await paletteFromImage(url);
-      setCustom(r.theme);
+      const r = await layoutFromImage(url);
+      setLayout(r.layout);
+      setCustom(layoutTheme(r.layout));
       setSel('custom');
     } catch (e) {
       setErr((e as Error).message);
@@ -56,7 +59,7 @@ export function DesignCard({ item }: { item: { id: string; deliverable: Delivera
   };
   const go = () =>
     resolveDesign(item.id, {
-      choice: sel === 'custom' && custom ? { theme: 'custom', colors: custom, source: webSel ?? undefined } : { theme: sel === 'custom' ? 'house' : sel },
+      choice: sel === 'custom' && custom ? { theme: 'custom', colors: custom, source: webSel ?? undefined, layout: layout ?? undefined } : { theme: sel === 'custom' ? 'house' : sel },
       formats: formats.length ? formats : undefined,
       remember,
     });
@@ -94,6 +97,19 @@ export function DesignCard({ item }: { item: { id: string; deliverable: Delivera
               ))}
               {!web.length && <div className="text-[12px] text-muted">Aucune image trouvée.</div>}
             </div>
+            {layout && (
+              <div className="mt-2" data-testid="design-layout-preview">
+                <div className="mb-1 text-[12px] text-muted">Aperçu de la reproduction (mise en page du design, avec des données d’exemple — vos vraies données seront utilisées) :</div>
+                <div className="h-56 overflow-hidden rounded-lg border border-line">
+                  <iframe
+                    title="aperçu de la reproduction"
+                    sandbox=""
+                    className="h-[560px] w-[250%] origin-top-left scale-[0.4]"
+                    srcDoc={renderLayoutHtml(layout, dashboardData('Aperçu', ['catégorie', 'montant', 'volume'], [{ catégorie: 'Nord', montant: 1250, volume: 40 }, { catégorie: 'Sud', montant: 820, volume: 31 }, { catégorie: 'Est', montant: 640, volume: 22 }, { catégorie: 'Ouest', montant: 410, volume: 15 }], layout.kpis.count || 4))}
+                  />
+                </div>
+              </div>
+            )}
             {custom && (
               <div className="mt-1 flex items-center gap-2 text-[12px]" data-testid="design-custom">
                 Style repris :

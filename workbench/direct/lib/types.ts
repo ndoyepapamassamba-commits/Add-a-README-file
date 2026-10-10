@@ -321,4 +321,6 @@ export interface DesignChoice {
   colors?: import('../../server/services/houseDesign').CustomTheme;
   /** Where a custom design came from (image found on the Internet). */
   source?: string;
+  /** Full layout read from that image: the deliverable reproduces it with the real data. */
+  layout?: import('../../server/services/layoutClone').DesignLayout;
 }

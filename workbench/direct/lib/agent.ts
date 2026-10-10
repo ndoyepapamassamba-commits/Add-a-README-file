@@ -59,6 +59,7 @@ import { ALTERATION } from '../../server/jev/omni/mission';
 import { pilotAnchor } from '../../server/jev/omni/pilot';
 import { THEMES, setActiveTheme, themeOf } from '../../server/services/houseDesign';
 import { applyWebTheme, kindForTool } from '../../server/services/premiumDesigns';
+import { excelChart } from '../../server/services/layoutClone';
 import { extractFacts, lessonFrom, memoryBlock, mergeFacts, recall as recallMemory } from '../../server/jev/memory/semantic';
 import type { DataClass, FabricTag } from '../../server/jev/fabric/types';
 import type { SkillVersion } from '../../server/jev/fabric/skills';
@@ -1121,6 +1122,12 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     { name: 'delivery', text: omni?.delivery ?? '', pinned: true },
     { name: 'chat_index', text: omni?.chatIndex ?? '' },
     { name: 'chat_memory', text: semMemory },
+    {
+      name: 'design_layout',
+      text: inp.session.design?.layout
+        ? `<DESIGN_LAYOUT source="${inp.session.design.source ?? ''}">\nThe user picked this design to REPRODUCE for every site, app, dashboard and HTML deliverable of this chat: rebuild this exact layout (navigation, header, KPI count and style, charts in this order and span, table style, grid columns, radius, shadow, light/dark, palette, font) with the real data. Never copy the source's logos, photos or text.\n${JSON.stringify(inp.session.design.layout)}\n</DESIGN_LAYOUT>`
+        : '',
+    },
     { name: 'doctrine', text: lane?.minimalPrompt ? '' : ENGINE_DOCTRINE },
     { name: 'manual', text: manualPrompt(useStore.getState().manual), pinned: true },
     { name: 'strategy', text: strategy && !lane?.minimalPrompt ? strategyPrompt(dna, strategy) : '' },
@@ -2484,6 +2491,12 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     if (choice && !asked) {
       args.theme = choice.theme;
       if (choice.colors) args.colors = choice.colors;
+      // A design copied from the Internet: Excel takes its chart type, and a dashboard reproducing its layout is built.
+      if (choice.layout && tool.name === 'data.export') {
+        args.layout = choice.layout;
+        args.layoutSource = choice.source;
+        if (!args.chart || args.chart === 'none') args.chart = excelChart(choice.layout);
+      }
     }
     // Sites and apps: the chosen design becomes a premium stylesheet injected in the page.
     if (dkind === 'web' && tool.name === 'artifact.create' && typeof args.content === 'string') {

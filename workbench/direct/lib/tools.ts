@@ -55,6 +55,7 @@ function workspaceTwin() {
 }
 import { shellRisk } from './shellCore';
 import { THEME_PARAMS } from '../../server/services/houseDesign';
+import { dashboardData, renderLayoutHtml, type DesignLayout } from '../../server/services/layoutClone';
 import { BRAVE_DIRECT, braveText, braveUrl, parseBrave } from '../../server/jev/web/brave';
 import { PROVIDER_LABEL, parseSerper, parseTavily, serperRequest, tavilyRequest } from '../../server/jev/web/search';
 import { diagnose, formatDiagnosis } from '../../server/tools/diagnose';
@@ -1007,6 +1008,13 @@ export const TOOLS: DirectTool[] = [
             'bar' | 'line' | 'pie' | 'none',
         }),
       );
+      // A design copied from the Internet: its layout is rebuilt with these exact figures as an HTML dashboard.
+      if (a.layout && typeof a.layout === 'object') {
+        const l = a.layout as DesignLayout;
+        const dash = uniquePath(`outputs/${S(a.name).replace(/[^\w.-]+/g, '-') || 'export'}-tableau-de-bord.html`);
+        writeText(dash, renderLayoutHtml(l, { ...dashboardData(S(a.title) || S(a.name) || 'Tableau de bord', r.columns, r.rows, l.kpis.count || 4), subtitle: `Source : ${S(a.path)}` }, S(a.layoutSource) || undefined));
+        return ok(`${r.rowCount} lignes → ${path} + ${dash}`, `Saved ${r.rowCount} rows to ${path} and the dashboard reproducing the chosen design to ${dash}.`);
+      }
       return ok(`${r.rowCount} lignes → ${path}`, `Saved ${r.rowCount} rows to ${path}.`);
     },
   },
