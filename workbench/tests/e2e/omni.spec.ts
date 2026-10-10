@@ -36,6 +36,28 @@ async function open(page: Page) {
   await expect(page.locator('textarea')).toBeVisible();
   return errors;
 }
+const CODE_XLSX = `
+// Minimal stored zip (CRC32) so the sandbox writes a real .xlsx-shaped file with the house palette, like openpyxl would.
+const crcT = [...Array(256)].map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+const crc = (b) => { let c = 0xffffffff; for (const x of b) c = crcT[(c ^ x) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+const enc = new TextEncoder();
+const files = [['xl/styles.xml', '<styleSheet><fonts><font><name val="Segoe UI"/></font></fonts><fills><fill><patternFill><fgColor rgb="FF00415E"/></patternFill></fill><fill><patternFill><fgColor rgb="FF8CC63F"/></patternFill></fill></fills></styleSheet>']];
+const parts = []; const central = []; let off = 0;
+for (const [name, text] of files) {
+  const n = enc.encode(name), d = enc.encode(text), c = crc(d);
+  const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint32(14, c, true); h.setUint32(18, d.length, true); h.setUint32(22, d.length, true); h.setUint16(26, n.length, true);
+  parts.push(new Uint8Array(h.buffer), n, d);
+  const e = new DataView(new ArrayBuffer(46)); e.setUint32(0, 0x02014b50, true); e.setUint16(4, 20, true); e.setUint16(6, 20, true); e.setUint32(16, c, true); e.setUint32(20, d.length, true); e.setUint32(24, d.length, true); e.setUint16(28, n.length, true); e.setUint32(42, off, true);
+  central.push(new Uint8Array(e.buffer), n);
+  off += 30 + n.length + d.length;
+}
+const cs = central.reduce((a, b) => a + b.length, 0);
+const end = new DataView(new ArrayBuffer(22)); end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, cs, true); end.setUint32(16, off, true);
+const all = [...parts, ...central, new Uint8Array(end.buffer)];
+const out = new Uint8Array(all.reduce((a, b) => a + b.length, 0)); let p = 0; for (const b of all) { out.set(b, p); p += b.length; }
+writeFile('outputs/provisions-analyse.xlsx', out);
+console.log('ok');
+`;
 const send = async (page: Page, text: string) => {
   await page.locator('textarea').fill(text);
   await page.keyboard.press('Enter');
@@ -202,6 +224,50 @@ test('premium design gallery: before an Excel deliverable the user picks a desig
   expect(xml).not.toContain('001B4D');
 });
 
+test('design FIRST: a request for an Excel file opens the gallery before any model call; the model\'s own code output takes the chosen design', async ({ page }) => {
+  await open(page);
+  await page.removeLocatorHandler(page.getByTestId('design-go'));
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  mock.push(
+    { toolCalls: [{ name: 'code.run', args: { language: 'javascript', code: CODE_XLSX } }] },
+    { text: 'Classeur analysé prêt : outputs/provisions-analyse.xlsx' },
+  );
+  await send(page, 'Analyse ce portefeuille et retourne-moi un fichier excel analysé');
+  await expect(page.getByTestId('design-card')).toBeVisible({ timeout: 20_000 });
+  // Nothing has been asked to the model yet: the design comes first.
+  expect(mock.requests.length).toBe(0);
+  await page.getByTestId('design-onyx').click();
+  await page.getByTestId('design-go').click();
+  await expect(page.getByTestId('design-card-done')).toContainText('Onyx');
+  await expect(page.getByText('Classeur analysé prêt')).toBeVisible({ timeout: 20_000 });
+  // The palette was given to the model, and the file its code wrote was re-skinned (no house colour, onyx + Georgia).
+  expect(JSON.stringify(mock.requests[0]!.messages)).toContain('DESIGN_CHOICE');
+  expect(await page.getByTestId('design-card-done').count()).toBe(1); // one gallery, not a second one for code.run
+  const readXml = () => page.evaluate(
+    () =>
+      new Promise<string>((resolve) => {
+        const req = indexedDB.open('openrouter-workbench-direct', 1);
+        req.onsuccess = () => {
+          const g = req.result.transaction('kv', 'readonly').objectStore('kv').get('files');
+          g.onsuccess = () => {
+            const files = (g.result ?? {}) as Record<string, { data: string }>;
+            const key = Object.keys(files).find((k) => k.endsWith('provisions-analyse.xlsx'));
+            resolve(key ? files[key]!.data : '');
+          };
+        };
+      }),
+  ).then(async (b64) => {
+    const { unzipSync, strFromU8 } = await import('fflate');
+    return b64 ? strFromU8(unzipSync(new Uint8Array(Buffer.from(b64, 'base64')))['xl/styles.xml']!) : '';
+  });
+  await expect.poll(readXml, { timeout: 10_000 }).toContain('FF0B0B0F');
+  const xml = await readXml();
+  expect(xml).not.toContain('00415E');
+  expect(xml).not.toContain('8CC63F');
+  expect(xml).toContain('Georgia');
+});
+
 test('Internet design → REAL copy: its layout is read, previewed, then rebuilt with the processed data (Excel + dashboard)', async ({ page }) => {
   await open(page);
   await page.removeLocatorHandler(page.getByTestId('design-go'));
@@ -216,9 +282,9 @@ test('Internet design → REAL copy: its layout is read, previewed, then rebuilt
   await page.getByText('AUTONOME').click();
   const LAYOUT = { dark: true, navigation: 'sidebar', header: 'minimal', kpis: { count: 3, style: 'tile' }, charts: [{ type: 'donut', span: 1 }, { type: 'area', span: 2 }], table: { style: 'lined', position: 'bottom' }, columns: 3, radius: 18, shadow: true, palette: { bg: '#0B1020', surface: '#141B2D', primary: '#7C3AED', accent: '#22D3EE', text: '#E5E7EB', muted: '#94A3B8', series: ['#7C3AED', '#22D3EE', '#F59E0B'] }, font: 'Poppins' };
   mock.push(
+    { text: JSON.stringify(LAYOUT) }, // the vision model reading the design image (the gallery opens before any work)
     { toolCalls: [{ name: 'filesystem.write', args: { path: 'data/ventes.csv', content: 'agence,montant\nDakar,1250\nThies,430\nDakar,300\n' } }] },
     { toolCalls: [{ name: 'data.export', args: { path: 'data/ventes.csv', name: 'ventes', title: 'Ventes par agence', format: 'xlsx' } }] },
-    { text: JSON.stringify(LAYOUT) }, // the vision model reading the design image
     { text: 'Classeur et tableau de bord prêts.' },
   );
   await send(page, 'Fais un classeur Excel des ventes par agence');

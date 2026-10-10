@@ -87,6 +87,35 @@ export function setChatScope(sid: string | null, allow: Iterable<string> = []): 
   scope = sid ? { sid, allow: new Set(allow) } : null;
 }
 export const chatScope = (): string | null => scope?.sid ?? null;
+// ── SCOPE LOCK: the scope is one global, and the browser has no async context. Two chats running at the same time
+// used to swap it while a tool was awaiting (Python, exports) — the outputs and attachments of one chat landed in the
+// other. Now a chat holds the lock while its tools run (and while its context is built): another chat waits for it.
+// Same-chat parallel / nested calls are re-entrant.
+let holder: string | null = null;
+let depth = 0;
+let waiters: Array<() => void> = [];
+const free = (sid: string) => !holder || holder === sid;
+/** Wait until no OTHER chat holds the scope lock. */
+export async function scopeGate(sid: string): Promise<void> {
+  while (!free(sid)) await new Promise<void>((r) => waiters.push(r));
+}
+/** Hold the scope lock for this chat; returns an idempotent release. */
+export async function acquireScope(sid: string): Promise<() => void> {
+  await scopeGate(sid);
+  holder = sid;
+  depth++;
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    if (--depth > 0) return;
+    holder = null;
+    const w = waiters;
+    waiters = [];
+    for (const f of w) f();
+  };
+}
+export const scopeHolder = (): string | null => holder;
 export const chatKey = (sid: string, p: string) => `${CHAT_PREFIX}${sid}/${p}`;
 /** Session that owns a stored key (null for the shared workspace). */
 export const ownerOf = (key: string): string | null =>
@@ -184,9 +213,20 @@ export function uniquePath(path: string): string {
   for (let i = 2; ; i++) if (!files()[`${base}-${i}${ext}`]) return `${base}-${i}${ext}`;
 }
 
-export async function importBrowserFile(file: File, dir = 'uploads'): Promise<VFile> {
-  const path = uniquePath(`${dir}/${file.name}`);
-  return writeBytes(path, new Uint8Array(await file.arrayBuffer()), file.type);
+/**
+ * Import a browser file. `sid` names the chat that receives it (a chat attachment goes into THAT chat, whatever chat
+ * is running at the moment); `null` = the shared workspace (Files view); omitted = the current scope.
+ */
+export async function importBrowserFile(file: File, dir = 'uploads', sid?: string | null): Promise<VFile> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  // Synchronous from here: the scope is switched and restored without any await in between.
+  const prev = scope;
+  if (sid !== undefined) scope = sid ? { sid, allow: new Set() } : null;
+  try {
+    return writeBytes(uniquePath(`${dir}/${file.name}`), bytes, file.type);
+  } finally {
+    scope = prev;
+  }
 }
 
 /** Readable text of any workspace file (documents are extracted). */

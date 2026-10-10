@@ -25,7 +25,7 @@ export function FilesView() {
   const file = selected ? files[selected] : undefined;
 
   const upload = async (fl: FileList) => {
-    for (const f of Array.from(fl)) await importBrowserFile(f);
+    for (const f of Array.from(fl)) await importBrowserFile(f, 'uploads', null);
     useStore.getState().toast('ok', `${fl.length} fichier(s) ajouté(s) dans uploads/`);
   };
 

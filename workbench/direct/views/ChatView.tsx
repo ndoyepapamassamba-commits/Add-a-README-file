@@ -687,7 +687,7 @@ function Composer({ session }: { session: Session }) {
           useStore.getState().toast('err', `${f.name} dépasse 50 Mo`);
           continue;
         }
-        const v = await importBrowserFile(f);
+        const v = await importBrowserFile(f, 'uploads', session.id);
         added.push({ path: v.path, name: f.name || v.path, mime: v.mime, size: v.size });
       }
       setFiles((x) => [...x, ...added]);

@@ -57,8 +57,9 @@ import { vaultBlock, vaultRecall } from './vault';
 import { seedHits } from '../../server/jev/memory/seed';
 import { ALTERATION } from '../../server/jev/omni/mission';
 import { pilotAnchor } from '../../server/jev/omni/pilot';
-import { THEMES, setActiveTheme, themeOf } from '../../server/services/houseDesign';
-import { applyWebTheme, kindForTool } from '../../server/services/premiumDesigns';
+import { THEMES, buildTheme, setActiveTheme, themeOf } from '../../server/services/houseDesign';
+import { applyWebTheme, deliverableFromCode, deliverableFromText, kindForTool, type DeliverableKind } from '../../server/services/premiumDesigns';
+import { isOffice, recolorOffice } from '../../server/services/officeRecolor';
 import { excelChart } from '../../server/services/layoutClone';
 import { extractFacts, lessonFrom, memoryBlock, mergeFacts, recall as recallMemory } from '../../server/jev/memory/semantic';
 import type { DataClass, FabricTag } from '../../server/jev/fabric/types';
@@ -99,7 +100,7 @@ import { matchSkills } from './skills';
 import { uid, useStore } from './store';
 import { TOOLS, llmName, mcpTool, toolDefs, type DirectTool, type ToolCtx } from './tools';
 import type { AgentDef, AgentMode, Attachment, PlanStep, Session } from './types';
-import { bytesOf, dataUrl, files, files as filesView, getFile, readAsText, sessionAllow, setChatScope, tree, writeText } from './vfs';
+import { acquireScope, writeBytes, bytesOf, chatScope, dataUrl, files, files as filesView, filesFor, getFile, readAsText, scopeGate, sessionAllow, setChatScope, tree, writeText } from './vfs';
 
 const WRITE_TOOLS = new Set(['filesystem.write', 'filesystem.edit', 'filesystem.delete']);
 /** Tools that create files: hidden in SAFE (read-only) mode. */
@@ -501,6 +502,17 @@ function decide(
 }
 
 async function loop(inp: LoopInput): Promise<LoopResult> {
+  // The prologue (attachments, workspace index, memory) reads files across awaits: it holds the scope lock.
+  const release = await acquireScope(inp.session.id);
+  setChatScope(inp.session.id, sessionAllow(inp.session.id));
+  try {
+    return await loopBody(inp, release);
+  } finally {
+    release();
+  }
+}
+
+async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<LoopResult> {
   const st = useStore.getState();
   const sid = inp.session.id;
   const push = st.pushItem;
@@ -1128,6 +1140,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
         ? `<DESIGN_LAYOUT source="${inp.session.design.source ?? ''}">\nThe user picked this design to REPRODUCE for every site, app, dashboard and HTML deliverable of this chat: rebuild this exact layout (navigation, header, KPI count and style, charts in this order and span, table style, grid columns, radius, shadow, light/dark, palette, font) with the real data. Never copy the source's logos, photos or text.\n${JSON.stringify(inp.session.design.layout)}\n</DESIGN_LAYOUT>`
         : '',
     },
+    { name: 'design_choice', text: (() => { const c = designFor(sid); return c && !experimentRun ? designPrompt(c, runFormats.get(sid)) : ''; })(), pinned: true },
     { name: 'doctrine', text: lane?.minimalPrompt ? '' : ENGINE_DOCTRINE },
     { name: 'manual', text: manualPrompt(useStore.getState().manual), pinned: true },
     { name: 'strategy', text: strategy && !lane?.minimalPrompt ? strategyPrompt(dna, strategy) : '' },
@@ -1534,9 +1547,12 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     return true;
   };
 
+  releasePrologue();
   let stepsUsed = 0;
   for (let step = 0; step < maxSteps; step++) {
     stepsUsed = step + 1;
+    // The step body up to the model call is synchronous: wait for another chat's running tool, then take the scope.
+    await scopeGate(sid);
     setChatScope(sid, sessionAllow(sid));
     if (inp.signal.aborted) throw new LLMError('Cancelled', 499, false, 'cancelled');
     // ── JEV PILOT (anti-drift on long runs): every 6 tool steps the model gets a 1-paragraph anchor — the objective,
@@ -2137,6 +2153,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       pendingReport = null;
       lastReport = report;
       missionRound++;
+      await scopeGate(sid);
+      setChatScope(sid, sessionAllow(sid));
       recordMission(inp.text, report, { model, cost });
       if (report.status !== 'PARTIAL')
         useStore.getState().recordOutcome(model, report.status === 'PASSED', profile.type);
@@ -2459,9 +2477,11 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
   }
   // ── PREMIUM DESIGN GALLERY (hard): before ANY deliverable the user picks the design (and the format) on thumbnails.
   // A theme the model passes because the user asked for it in the chat is respected; « pour tout ce chat » is remembered.
-  const dkind = kindForTool(tool.name, args);
+  // Python / JS code that writes an Office file is a deliverable too (the model often builds the Excel itself).
+  const dkind = kindForTool(tool.name, args) ?? (tool.name === 'code.run' ? deliverableFromCode(String(args.code ?? '')) : null);
+  let designNote = '';
   if (dkind && !experimentRun && useStore.getState().settings.designPicker !== false) {
-    let choice = useStore.getState().sessions.find((x) => x.id === sid)?.design;
+    let choice = designFor(sid);
     const asked = typeof args.theme === 'string' && args.theme !== 'house' ? (args.theme as string) : null;
     if (!choice && !asked && !inp.signal.aborted) {
       const formats = tool.name === 'report.export' ? ['docx', 'pptx', 'pdf', 'html', 'eml', 'md'] : tool.name === 'data.export' ? ['xlsx', 'csv', 'json'] : [];
@@ -2471,22 +2491,13 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
           : tool.name === 'data.export'
             ? [String(args.format || 'xlsx')]
             : [];
-      const designId = uid();
-      useStore.setState({ status: { ...useStore.getState().status, [sid]: 'Choisissez le design du livrable…' } });
-      const d = await new Promise<{ choice: DesignChoice; formats?: string[]; remember: boolean }>((resolve) => {
-        st.pending.designs.set(designId, resolve);
-        inp.signal.addEventListener('abort', () => resolve({ choice: { theme: 'house' }, remember: false }), { once: true });
-        st.pushItem(sid, { kind: 'design', id: designId, tool: tool.name, deliverable: dkind, formats, chosenFormats });
-      });
-      st.pending.designs.delete(designId);
-      const lbl2 = d.choice.theme === 'custom' ? 'Design personnalisé' : (THEMES[d.choice.theme]?.label ?? d.choice.theme);
-      st.updateItem(sid, designId, { resolved: lbl2, chosenFormats: d.formats });
+      const d = await askDesign(sid, inp.signal, tool.name, dkind, formats, chosenFormats);
       choice = d.choice;
-      if (d.remember) st.patchSession(sid, { design: d.choice });
       if (d.formats?.length) {
         if (tool.name === 'report.export') args.formats = d.formats;
         if (tool.name === 'data.export') args.format = d.formats[0];
       }
+      if (tool.name === 'code.run') designNote = `\n\n${designPrompt(choice)}`;
     }
     if (choice && !asked) {
       args.theme = choice.theme;
@@ -2504,15 +2515,26 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
       args.content = applyWebTheme(args.content as string, t);
     }
   }
-  // CHAT SCOPE is re-asserted before every tool: two chats running at the same time can never write into each other.
+  // CHAT SCOPE is re-asserted before every tool, under the scope lock: while this tool awaits (Python, exports…),
+  // another chat cannot switch the scope — two chats running at the same time can never write into each other.
+  // agent.delegate runs a whole sub-loop (LLM calls): its own steps and tools take the lock, not the delegation.
+  const releaseScope = sid && tool.name !== 'agent.delegate' ? await acquireScope(sid) : null;
   if (sid) setChatScope(sid, sessionAllow(sid));
   // EXPORT THEMES: the house charter is the default, not a cage — a theme or custom colours given by the model apply.
   const themed = /^(report|data)\.export$|^apex\.build_app$/.test(tool.name);
   const prevTheme = themed ? setActiveTheme(themeOf(args, useStore.getState().settings.exportTheme)) : null;
   try {
+    const t0 = Date.now();
     const out = await tool.run(args, ctx).finally(() => {
       if (prevTheme) setActiveTheme(prevTheme);
     });
+    // Office files written by the model's own code take the chosen design (colours + font), still under the lock.
+    if (out.ok && tool.name === 'code.run') {
+      const n = enforceDesign(sid, t0);
+      if (n) out.forModel += `\n[design] ${n} fichier(s) Office mis au design choisi par l'utilisateur.`;
+    }
+    releaseScope?.();
+    out.forModel += designNote;
     st.updateItem(sid, itemId, {
       status: out.ok ? 'ok' : 'error',
       summary: out.summary,
@@ -2522,10 +2544,72 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     });
     return out.ok ? out.forModel : `Error: ${out.forModel}`;
   } catch (e) {
+    releaseScope?.();
     if (inp.signal.aborted) throw new LLMError('Cancelled', 499, false, 'cancelled');
     const msg = (e as Error).message ?? String(e);
     return fail('error', msg.slice(0, 160), `Error: ${msg}`);
   }
+}
+
+/** Design of this chat: remembered for the chat, else chosen for the current request. */
+const runDesign = new Map<string, DesignChoice>();
+const runFormats = new Map<string, string[]>();
+function designFor(sid: string): DesignChoice | undefined {
+  return useStore.getState().sessions.find((x) => x.id === sid)?.design ?? runDesign.get(sid);
+}
+const FORMATS_OF: Record<DeliverableKind, string[]> = {
+  excel: ['xlsx', 'csv'],
+  document: ['docx', 'pdf', 'html', 'eml', 'md'],
+  slides: ['pptx', 'pdf'],
+  web: [],
+};
+/** Show the gallery and wait for the user's choice (kept for the request; for the chat when asked). */
+async function askDesign(
+  sid: string,
+  signal: AbortSignal,
+  toolName: string,
+  kind: DeliverableKind,
+  formats: string[],
+  chosenFormats: string[],
+): Promise<{ choice: DesignChoice; formats?: string[] }> {
+  const st = useStore.getState();
+  const designId = uid();
+  useStore.setState({ status: { ...useStore.getState().status, [sid]: 'Choisissez le design du livrable…' } });
+  const d = await new Promise<{ choice: DesignChoice; formats?: string[]; remember: boolean }>((resolve) => {
+    st.pending.designs.set(designId, resolve);
+    signal.addEventListener('abort', () => resolve({ choice: { theme: 'house' }, remember: false }), { once: true });
+    st.pushItem(sid, { kind: 'design', id: designId, tool: toolName, deliverable: kind, formats, chosenFormats });
+  });
+  st.pending.designs.delete(designId);
+  const lbl = d.choice.theme === 'custom' ? 'Design personnalisé' : (THEMES[d.choice.theme]?.label ?? d.choice.theme);
+  st.updateItem(sid, designId, { resolved: lbl, chosenFormats: d.formats });
+  runDesign.set(sid, d.choice);
+  if (d.remember) st.patchSession(sid, { design: d.choice });
+  return d;
+}
+/** Palette and font of the chosen design, for code the model writes itself (openpyxl, python-docx, pptx, HTML). */
+function designPrompt(c: DesignChoice, formats?: string[]): string {
+  const t = buildTheme(c.theme === 'custom' ? (c.colors ?? null) : (c.theme as never));
+  const k = t.color;
+  return `<DESIGN_CHOICE name="${t.name}"${formats?.length ? ` formats="${formats.join(',')}"` : ''}>
+The user CHOSE this design for the deliverable. Use it everywhere (native exporters receive it automatically; in your own Python/JS code use exactly these values, never the house navy/blue/lime palette from memory):
+title/header band ${k.navy} · primary ${k.blue} · accent / thin rule ${k.gold} · secondary ${k.cyan} · soft fill ${k.ice} · zebra/panel ${k.panel} · borders ${k.line} · text ${k.text} · chart series ${t.chartSeries.slice(0, 5).join(', ')} · font "${t.font.ui}" (figures may use "${t.font.mono}").${formats?.length ? `\nOutput format(s) chosen: ${formats.join(', ')}.` : ''}
+</DESIGN_CHOICE>`;
+}
+/** Re-skin the Office files this chat's code just wrote with the chosen design. Returns how many changed. */
+function enforceDesign(sid: string, since: number): number {
+  const c = designFor(sid);
+  if (!c || c.theme === 'house') return 0;
+  const design = buildTheme(c.theme === 'custom' ? (c.colors ?? null) : (c.theme as never));
+  let n = 0;
+  for (const f of Object.values(files())) {
+    if (!f.binary || f.updatedAt < since || !isOffice(f.path)) continue;
+    const r = recolorOffice(bytesOf(f), design);
+    if (!r) continue;
+    writeBytes(f.path, r.bytes, f.mime);
+    n++;
+  }
+  return n;
 }
 
 async function delegate(
@@ -2745,7 +2829,16 @@ export async function runAgent(
   }
   sub.cost = sub.tokensIn = sub.tokensOut = 0;
   acct.reset(sessionId);
+  // PREMIUM DESIGN FIRST: a request that asks for a deliverable (Excel, Word, PPT, PDF, mail, site, app) opens the
+  // gallery BEFORE any work — whatever tool the model uses afterwards (native exporter or its own Python code).
+  const wanted = deliverableFromText(text);
+  if (wanted) runDesign.delete(sessionId);
+  if (wanted && !experimentRun && st.settings.designPicker !== false && !designFor(sessionId) && !ac.signal.aborted) {
+    const d = await askDesign(sessionId, ac.signal, 'request', wanted, FORMATS_OF[wanted], FORMATS_OF[wanted].slice(0, 1));
+    if (d.formats?.length) runFormats.set(sessionId, d.formats);
+  }
   // CHAT-SCOPED MEMORY: from here on, every file read / write / list of the agent is confined to this chat.
+  await scopeGate(sessionId);
   setChatScope(sessionId, sessionAllow(sessionId));
   // Starting state of the workspace (paired runs must start from the same context; `.ai/` memory excluded).
   const ctxHash0 = hashText(
@@ -2805,12 +2898,13 @@ export async function runAgent(
   } finally {
     void endCheckpoint();
     // LAST DELIVERY of this chat: what this run created or changed (chat-relative paths), before the scope is released.
-    const delivered = Object.values(files())
+    const delivered = Object.values(filesFor(sessionId, sessionAllow(sessionId)))
       .filter((f) => f.updatedAt >= started && !f.path.startsWith('.ai/') && !f.path.startsWith('downloads/'))
       .sort((a, b) => b.updatedAt - a.updatedAt)
       .map((f) => f.path)
       .slice(0, 12);
-    setChatScope(null);
+    // Release the scope only if it is still ours (another chat may be running now).
+    if (chatScope() === sessionId) setChatScope(null);
     const s = useStore.getState();
     const { [sessionId]: _done, ...running } = s.running;
     const { [sessionId]: _st, ...status } = s.status;

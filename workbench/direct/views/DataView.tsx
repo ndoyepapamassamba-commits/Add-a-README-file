@@ -56,7 +56,7 @@ export function DataView() {
             onChange={(e) => {
               const fl = e.target.files;
               if (fl)
-                void Promise.all(Array.from(fl).map((f) => importBrowserFile(f, 'data'))).then((v) =>
+                void Promise.all(Array.from(fl).map((f) => importBrowserFile(f, 'data', null))).then((v) =>
                   setPath(v[0]!.path),
                 );
               e.target.value = '';

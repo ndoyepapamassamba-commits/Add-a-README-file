@@ -237,7 +237,7 @@ export function HomeView() {
                 e.target.value = '';
                 const added: Attachment[] = [];
                 for (const f of list) {
-                  const v = await importBrowserFile(f);
+                  const v = await importBrowserFile(f, 'uploads', null);
                   added.push({ path: v.path, name: f.name, mime: v.mime, size: v.size });
                 }
                 setAttachments((x) => [...x, ...added]);

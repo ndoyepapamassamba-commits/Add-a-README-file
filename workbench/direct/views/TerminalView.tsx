@@ -4,7 +4,7 @@ import { diagnose } from '../../server/tools/diagnose';
 import { Button } from '../../web/components/ui';
 import { userShell } from '../lib/shell';
 import { useStore } from '../lib/store';
-import { files } from '../lib/vfs';
+import { acquireScope, chatScope, files, filesFor, sessionAllow, setChatScope } from '../lib/vfs';
 
 interface Line {
   kind: 'cmd' | 'out' | 'err' | 'diag';
@@ -33,7 +33,15 @@ export function TerminalView() {
     setBusy(true);
     const cwd = userShell.cwd;
     setLines((l) => [...l, { kind: 'cmd', text: cmd, cwd }]);
-    const r = await userShell.exec(cmd);
+    // The terminal works in the chat on screen (its attachments and outputs), under the scope lock.
+    const sid = useStore.getState().currentId;
+    const release = sid ? await acquireScope(sid) : null;
+    const prev = chatScope();
+    if (sid) setChatScope(sid, sessionAllow(sid));
+    const r = await userShell.exec(cmd).finally(() => {
+      if (sid) setChatScope(prev, prev ? sessionAllow(prev) : []);
+      release?.();
+    });
     setBusy(false);
     if (r.out.includes('\u001bc')) {
       setLines([]);
@@ -54,7 +62,8 @@ export function TerminalView() {
     const parts = input.split(' ');
     const last = parts.pop() ?? '';
     const base = userShell.cwd ? `${userShell.cwd}/` : '';
-    const all = Object.keys(files());
+    const sid = useStore.getState().currentId;
+    const all = Object.keys(sid ? filesFor(sid, sessionAllow(sid)) : files());
     const cands = [
       ...new Set(
         all

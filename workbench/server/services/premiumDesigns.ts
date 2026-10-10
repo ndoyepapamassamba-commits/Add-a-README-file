@@ -119,6 +119,32 @@ export const kindForTool = (tool: string, args: Record<string, unknown>): Delive
   return null;
 };
 
+/**
+ * The REQUEST asks for a deliverable (the gallery opens BEFORE the work starts, whatever tool the model uses later).
+ * A file merely attached (« le fichier Excel joint ») is not a deliverable; « retourne-moi un fichier excel » is.
+ */
+export function deliverableFromText(text: string): DeliverableKind | null {
+  const t = text.toLowerCase().replace(/\b(joint|jointe|attaché|attachée|ci-joint|en pièce jointe)\b/g, ' ');
+  const produce =
+    /\b(retourn|renvoi|renvoie|produi|génèr|gener|génér|crée|créer|créé|cree|creer|livre[rz]?\b|livrable|export|prépar|prepar|rédig|redig|construi|fabriqu|sors|sortir|donne[- ]moi|fais[- ]moi|fais un|fais une|faire un|faire une|élabor|elabor|mets? en forme|transforme|convertis|envoie)/.test(t) ||
+    /\b(en|au format|version)\s+(excel|xlsx|word|docx|pdf|pptx|powerpoint)\b/.test(t) ||
+    /\b(excel|xlsx|word|pdf|pptx)\s+(analys|final|propre|premium|mis en forme|consolid|de synthèse|de restitution)/.test(t);
+  if (!produce) return null;
+  if (/\b(excel|xlsx|classeur|tableur|feuille de calcul)\b/.test(t)) return 'excel';
+  if (/\b(pptx|powerpoint|présentation|presentation|diaporama|slides?|deck)\b/.test(t)) return 'slides';
+  if (/\b(site|application|appli|app|page web|landing|dashboard html|tableau de bord html|interface)\b/.test(t)) return 'web';
+  if (/\b(word|docx|pdf|rapport|note|mémo|memo|courrier|lettre|mail|e-mail|email|courriel|compte[- ]rendu|synthèse écrite)\b/.test(t)) return 'document';
+  return null;
+}
+/** Code that writes an Office file (Python openpyxl / pandas / python-docx / pptx, JS writeFile). */
+export function deliverableFromCode(code: string): DeliverableKind | null {
+  if (!/(\.save\(|to_excel\(|writeFile\(|ExcelWriter|Workbook\(|xlsxwriter)/.test(code)) return null;
+  if (/\.xlsx?\b|openpyxl|xlsxwriter|to_excel/.test(code)) return 'excel';
+  if (/\.pptx\b|from pptx|Presentation\(/.test(code)) return 'slides';
+  if (/\.docx\b|from docx|Document\(/.test(code)) return 'document';
+  return null;
+}
+
 /** Palette extraction from a design image (vision model answer → custom theme). */
 export const PALETTE_PROMPT =
   'Extract the visual design system of this image for reuse in documents and apps. Answer ONLY JSON: {"primary":"#RRGGBB" (main brand / header colour),"accent":"#RRGGBB" (highlight colour),"dark":"#RRGGBB" (darkest title colour),"font":"closest common font family name (e.g. Inter, Georgia, Segoe UI, Montserrat)"}.';
