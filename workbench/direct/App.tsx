@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Brain,
   Clapperboard,
@@ -53,6 +53,7 @@ import { BrowserView } from './views/BrowserView';
 import { IntelligenceView } from './views/IntelligenceView';
 import { JevView } from './views/JevView';
 import { CognitiveOS } from './views/CognitiveOS';
+import { exportArchive, importArchive, setArchived } from './lib/vault';
 import { NAV_ITEMS } from './lib/nav';
 import { StudioView } from './views/studio/StudioView';
 
@@ -398,13 +399,20 @@ function SessionList() {
   const running = useStore((s) => s.running);
   const [q, setQ] = useState('');
   const [renaming, setRenaming] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const [sel, setSel] = useState<Set<string> | null>(null);
+  const importRef = useRef<HTMLInputElement>(null);
   const list = useMemo(
     () =>
       [...sessions]
         .sort((a, b) => b.updatedAt - a.updatedAt)
+        .filter((s) => Boolean(s.archived) === showArchived)
         .filter((s) => !q || s.title.toLowerCase().includes(q.toLowerCase())),
-    [sessions, q],
+    [sessions, q, showArchived],
   );
+  const nArchived = sessions.filter((s) => s.archived).length;
+  const picked = sel ? [...sel] : [];
+  const toggle = (id: string) => setSel((p) => { const n = new Set(p ?? []); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-elev/60">
       <div className="space-y-2 p-2">
@@ -415,6 +423,23 @@ function SessionList() {
         >
           <Plus size={14} /> Nouvelle session
         </Button>
+        <div className="flex flex-wrap items-center gap-1 text-[11.5px]" data-testid="archive-bar">
+          <button className={cx('rounded px-1.5 py-0.5', !showArchived ? 'bg-hover text-fg' : 'text-muted')} onClick={() => { setShowArchived(false); setSel(null); }}>Chats</button>
+          <button className={cx('rounded px-1.5 py-0.5', showArchived ? 'bg-hover text-fg' : 'text-muted')} onClick={() => { setShowArchived(true); setSel(null); }}>Archives ({nArchived})</button>
+          <button className="ml-auto rounded px-1.5 py-0.5 text-muted hover:text-fg" onClick={() => setSel(sel ? null : new Set())}>{sel ? 'Annuler' : 'Sélection'}</button>
+        </div>
+        {sel && (
+          <div className="flex flex-wrap gap-1 text-[11.5px]">
+            <button className="rounded border border-line px-1.5 py-0.5 hover:bg-hover" onClick={() => setSel(new Set(list.map((s) => s.id)))}>Tout</button>
+            <button disabled={!picked.length} className="rounded border border-line px-1.5 py-0.5 hover:bg-hover disabled:opacity-40" onClick={() => { setArchived(picked, !showArchived); setSel(null); }}>{showArchived ? 'Désarchiver' : 'Archiver'} ({picked.length})</button>
+            <button disabled={!picked.length} className="rounded border border-line px-1.5 py-0.5 hover:bg-hover disabled:opacity-40" onClick={() => exportArchive(picked)}>Exporter</button>
+          </div>
+        )}
+        <div className="flex gap-1 text-[11.5px]">
+          <button className="rounded border border-line px-1.5 py-0.5 text-muted hover:bg-hover hover:text-fg" title="Archiver tous les chats (rien n’est supprimé)" onClick={() => { const ids = sessions.filter((s) => !s.archived && !running[s.id]).map((s) => s.id); if (ids.length && confirm(`Archiver ${ids.length} chat(s) ?`)) setArchived(ids, true); }}>Tout archiver</button>
+          <button className="rounded border border-line px-1.5 py-0.5 text-muted hover:bg-hover hover:text-fg" onClick={() => importRef.current?.click()}>Importer une archive</button>
+          <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const n = importArchive(await f.text()); alert(`${n} chat(s) restauré(s) dans les archives.`); } catch (err) { alert((err as Error).message); } e.target.value = ''; }} />
+        </div>
         <div className="flex items-center gap-1.5 rounded-lg border border-line bg-input px-2">
           <Search size={13} className="text-faint" />
           <input
@@ -429,13 +454,14 @@ function SessionList() {
         {list.map((s) => (
           <div
             key={s.id}
-            onClick={() => useStore.getState().selectSession(s.id)}
+            onClick={() => (sel ? toggle(s.id) : useStore.getState().selectSession(s.id))}
             className={cx(
               'group mb-0.5 cursor-pointer rounded-lg px-2.5 py-2',
               s.id === currentId ? 'bg-hover' : 'hover:bg-hover/60',
             )}
           >
             <div className="flex items-center gap-1.5">
+              {sel && <input type="checkbox" readOnly checked={sel.has(s.id)} className="h-3 w-3" aria-label={`Sélectionner ${s.title}`} />}
               {running[s.id] && <Spinner className="h-3 w-3" />}
               <EditableTitle
                 value={s.title}
@@ -471,7 +497,7 @@ function SessionList() {
             </div>
           </div>
         ))}
-        {!list.length && <div className="p-3 text-center text-[12px] text-faint">Aucune session</div>}
+        {!list.length && <div className="p-3 text-center text-[12px] text-faint">{showArchived ? 'Aucun chat archivé' : 'Aucune session'}</div>}
       </div>
       <div className="border-t border-line p-2 text-[11px] text-faint">Clé : {maskKey(getKey())}</div>
     </aside>

@@ -34,3 +34,12 @@ describe('Brave search', () => {
     expect(braveUrl('https://x.supabase.co/functions/v1/brave-relay/', 'taux BCEAO', 50)).toBe('https://x.supabase.co/functions/v1/brave-relay?q=taux+BCEAO&count=10&extra_snippets=true');
   });
 });
+
+import { seedHits, SEED_EXPERIENCE } from '../../server/jev/memory/seed';
+describe('embedded experience', () => {
+  it('only matching lessons are recalled', () => {
+    expect(SEED_EXPERIENCE.length).toBeGreaterThan(15);
+    expect(seedHits('corrige ce bug dans mon code python')[0]!.fact.text).toMatch(/Bug|Code|Python/);
+    expect(seedHits('bonjour')).toHaveLength(0);
+  });
+});

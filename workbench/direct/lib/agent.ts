@@ -53,6 +53,8 @@ import * as apprenticeRt from './apprentice';
 import * as cognitiveRt from './cognitive';
 import * as omniRt from './omni';
 import { describeImage, visionBridgeEnabled } from './visionBridge';
+import { vaultBlock, vaultRecall } from './vault';
+import { seedHits } from '../../server/jev/memory/seed';
 import { ALTERATION } from '../../server/jev/omni/mission';
 import { pilotAnchor } from '../../server/jev/omni/pilot';
 import { extractFacts, lessonFrom, memoryBlock, mergeFacts, recall as recallMemory } from '../../server/jev/memory/semantic';
@@ -1106,7 +1108,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   if (top && !experimentRun) {
     const chatHits = recallMemory(inp.session.memory ?? [], inp.text, { k: 3 });
     const lessonHits = recallMemory(useStore.getState().lessons, inp.text, { k: 3, tag: profile.type, min: 0.3 });
-    semMemory = memoryBlock(chatHits, lessonHits);
+    const exp = vaultRecall(inp.text);
+    semMemory = [memoryBlock(chatHits, [...lessonHits, ...seedHits(inp.text)].slice(0, 3)), exp ? vaultBlock(exp) : ''].filter(Boolean).join('\n');
     if (semMemory)
       traceAdd({ name: 'JEV_CONTEXT', ms: 0, tokens: Math.ceil(semMemory.length / 3.8), cost: 0, decision: `mémoire sémantique : ${chatHits.length} fait(s) du chat, ${lessonHits.length} leçon(s)` });
   }

@@ -148,6 +148,8 @@ export interface State {
   /** Lessons learnt from the user's alterations (cross-chat, by task family; visible and deletable). */
   lessons: import('../../server/jev/memory/semantic').MemFact[];
   setLessons: (l: import('../../server/jev/memory/semantic').MemFact[]) => void;
+  vault: import('./types').VaultEntry[];
+  setVault: (v: import('./types').VaultEntry[]) => void;
   /** Auto-benchmark runs. */
   bench: BenchResult[];
   /** Intelligence Engine: last routing decisions (explained). */
@@ -179,6 +181,8 @@ export interface State {
   selectSession: (id: string) => void;
   patchSession: (id: string, p: Partial<Session> | ((s: Session) => Partial<Session>)) => void;
   deleteSession: (id: string) => void;
+  /** Adds imported sessions (archive restore) and persists them. */
+  addSessions: (list: Session[]) => void;
   pushItem: (sessionId: string, item: Item) => void;
   updateItem: (sessionId: string, id: string, p: Partial<Item> | ((i: Item) => Partial<Item>)) => void;
   writeFile: (f: Omit<VFile, 'updatedAt' | 'size'> & { size?: number }) => void;
@@ -235,6 +239,7 @@ export const useStore = create<State>((set, get) => ({
   ledger: { entries: [] },
   manual: [],
   lessons: [],
+  vault: [],
   bench: [],
   routingLog: [],
   registry: [],
@@ -303,6 +308,14 @@ export const useStore = create<State>((set, get) => ({
     });
     set({ sessions });
     if (changed) persistSession(changed);
+  },
+  addSessions: (list) => {
+    const have = new Set(get().sessions.map((s) => s.id));
+    const fresh = list.filter((s) => !have.has(s.id));
+    const sessions = [...fresh, ...get().sessions];
+    set({ sessions });
+    persistIndex(sessions);
+    for (const s of fresh) persistSession(s);
   },
   deleteSession: (id) => {
     get().running[id]?.abort();
@@ -394,6 +407,10 @@ export const useStore = create<State>((set, get) => ({
     set({ ledger });
     saveLater('ledger', () => get().ledger, 1000);
   },
+  setVault: (vault) => {
+    set({ vault });
+    saveLater('vault', () => get().vault, 300);
+  },
   setLessons: (lessons) => {
     set({ lessons });
     saveLater('lessons', () => get().lessons, 300);
@@ -447,10 +464,11 @@ export const useStore = create<State>((set, get) => ({
 
 /** Loads everything saved in this browser. */
 export async function hydrate(): Promise<void> {
-  const [ledger, manual, lessons, bench, routingLog, registry, externalBench] = await Promise.all([
+  const [ledger, manual, lessons, vault, bench, routingLog, registry, externalBench] = await Promise.all([
     kv.get<Ledger>('ledger').catch(() => undefined),
     kv.get<ManualRule[]>('manual').catch(() => undefined),
     kv.get<import('../../server/jev/memory/semantic').MemFact[]>('lessons').catch(() => undefined),
+    kv.get<import('./types').VaultEntry[]>('vault').catch(() => undefined),
     kv.get<BenchResult[]>('bench').catch(() => undefined),
     kv.get<RoutingDecision[]>('routingLog').catch(() => undefined),
     kv.get<RegistryResource[]>('registry').catch(() => undefined),
@@ -536,6 +554,7 @@ export async function hydrate(): Promise<void> {
     ledger: ledger ?? { entries: [] },
     manual: manual ?? [],
     lessons: lessons ?? [],
+    vault: vault ?? [],
     bench: bench ?? [],
     routingLog: routingLog ?? [],
     registry: registry ?? [],

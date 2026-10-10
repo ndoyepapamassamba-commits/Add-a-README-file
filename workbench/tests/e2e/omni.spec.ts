@@ -37,11 +37,11 @@ const send = async (page: Page, text: string) => {
   await page.keyboard.press('Enter');
 };
 
-test('JEV Cognitive OS: 17 sub-tabs, regression report without FAIL, no fabricated figure on an empty log', async ({ page }) => {
+test('JEV Cognitive OS: 18 sub-tabs, regression report without FAIL, no fabricated figure on an empty log', async ({ page }) => {
   const errors = await open(page);
   await page.getByRole('button', { name: 'JEV Cognitive OS', exact: true }).first().click();
   await expect(page.getByTestId('cognitive-os')).toBeVisible();
-  await expect(page.getByRole('tab')).toHaveCount(17);
+  await expect(page.getByRole('tab')).toHaveCount(18);
   await page.getByRole('tab', { name: 'Régression', exact: true }).click();
   await expect(page.getByTestId('cog-regression-table')).toBeVisible();
   await expect(page.getByTestId('cog-regression-table')).not.toContainText('FAIL');

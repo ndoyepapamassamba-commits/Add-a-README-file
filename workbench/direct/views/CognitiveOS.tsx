@@ -27,10 +27,12 @@ import { cognitiveCache } from '../lib/cognitive';
 import { TTL } from '../../server/jev/cognitive/cache';
 import type { EngineId, EngineMode } from '../../server/jev/cognitive/types';
 import { Empty, NM, Section, Table, fmt, StatusBadge } from './fabricUi';
+import { download } from '../lib/vfs';
+import { SEED_EXPERIENCE } from '../../server/jev/memory/seed';
 
 type Sub =
   | 'overview' | 'diagnosis' | 'protocols' | 'tokens' | 'capsule' | 'conditioning' | 'jcb' | 'stop' | 'disagreement'
-  | 'fingerprints' | 'leverage' | 'audit' | 'strategies' | 'policy' | 'cache' | 'regression' | 'superbench';
+  | 'fingerprints' | 'leverage' | 'audit' | 'strategies' | 'policy' | 'cache' | 'regression' | 'superbench' | 'vault';
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'overview', label: 'Vue d’ensemble' },
   { id: 'diagnosis', label: 'Diagnostic' },
@@ -49,6 +51,7 @@ const SUBS: { id: Sub; label: string }[] = [
   { id: 'cache', label: 'Cache' },
   { id: 'regression', label: 'Régression' },
   { id: 'superbench', label: 'Super-benchmark' },
+  { id: 'vault', label: 'Coffre & leçons' },
 ];
 const ENGINES: { id: EngineId; label: string }[] = [
   { id: 'diagnosis', label: 'Diagnostic cognitif' },
@@ -321,6 +324,7 @@ export function CognitiveOS() {
         })()}
 
         {sub === 'superbench' && <SuperBench />}
+        {sub === 'vault' && <VaultPanel />}
       </div>
     </div>
   );
@@ -366,6 +370,57 @@ function SuperBench() {
       </Section>
       <Section title="Non déterministe / non couvert">
         {NOT_DETERMINISTIC.map((n) => <div key={n.id} className="text-[12px] text-muted">{n.id} — {n.reason}</div>)}
+      </Section>
+    </>
+  );
+}
+
+function VaultPanel() {
+  const vault = useStore((s) => s.vault);
+  const lessons = useStore((s) => s.lessons);
+  const st = useStore.getState();
+  return (
+    <>
+      <Section
+        title={`Coffre d’expérience (${vault.length})`}
+        hint="Réponses et fichiers que vous avez gardés (☆ sous une réponse). La plus proche d’une nouvelle demande est proposée au modèle comme référence ; vault.open copie ses fichiers dans le chat."
+        testId="vault-list"
+      >
+        {vault.length ? (
+          <Table
+            head={['Date', 'Demande', 'Fichiers', '']}
+            rows={[...vault].reverse().map((v) => [
+              new Date(v.at).toLocaleDateString('fr-FR'),
+              v.title,
+              v.files.map((f) => f.path.split('/').pop()).join(', ') || '—',
+              <div key={v.id} className="flex gap-2">
+                <button className="text-accent" onClick={() => download(`coffre-${v.id}.json`, JSON.stringify(v, null, 1), 'application/json')}>Exporter</button>
+                <button className="text-err" onClick={() => st.setVault(useStore.getState().vault.filter((x) => x.id !== v.id))}>Retirer</button>
+              </div>,
+            ])}
+          />
+        ) : (
+          <Empty>Coffre vide — cliquez « ☆ Garder dans le coffre d’expérience » sous une réponse réussie.</Empty>
+        )}
+      </Section>
+      <Section
+        title={`Leçons apprises de vos corrections (${lessons.length})`}
+        hint="Après une livraison, ce que vous avez dû corriger devient une leçon, réappliquée d’emblée sur le même type de demande (3 au plus, seulement si pertinentes)."
+        testId="lessons-list"
+      >
+        {lessons.length ? (
+          <Table
+            head={['Type', 'Leçon', '']}
+            rows={[...lessons].reverse().map((l) => [
+              l.tag ?? '—',
+              l.text,
+              <button key={l.id} className="text-err" onClick={() => st.setLessons(useStore.getState().lessons.filter((x) => x.id !== l.id))}>Oublier</button>,
+            ])}
+          />
+        ) : (
+          <Empty>Aucune leçon pour l’instant.</Empty>
+        )}
+        <div className="mt-2 text-[12px] text-muted">Expérience embarquée : {SEED_EXPERIENCE.length} leçons d’ingénierie, rappelées seulement quand elles correspondent à la demande.</div>
       </Section>
     </>
   );

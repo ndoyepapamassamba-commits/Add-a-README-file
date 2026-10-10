@@ -172,6 +172,8 @@ export interface Session {
   pinnedModel?: string;
   /** JEV semantic memory of THIS chat (decisions, preferences, deliveries). */
   memory?: import('../../server/jev/memory/semantic').MemFact[];
+  /** Archived chats leave the list (restorable; nothing is deleted). */
+  archived?: boolean;
 }
 
 /** One LLM call (cost tracking, Mission Control). */
@@ -279,4 +281,17 @@ export interface ArtifactDef {
   chart?: ChartData;
   createdAt: number;
   sessionId: string;
+}
+
+/** EXPERIENCE VAULT: answers, files and code the user judged well written / well executed, reused as experience. */
+export interface VaultEntry {
+  id: string;
+  at: number;
+  title: string;
+  /** Request that produced it (retrieval key). */
+  request: string;
+  text: string;
+  files: { path: string; data: string; binary: boolean; mime: string }[];
+  tags: string[];
+  source: string;
 }

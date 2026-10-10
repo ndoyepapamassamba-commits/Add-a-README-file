@@ -666,6 +666,32 @@ export const TOOLS: DirectTool[] = [
     },
   },
   {
+    name: 'vault.open',
+    description:
+      'Open an entry of the user\'s EXPERIENCE VAULT (past deliverables they validated): returns its text and copies its files into this chat under vault/. Use the id given in <EXPERIENCE>.',
+    parameters: obj({ id: str('Vault entry id') }, ['id']),
+    risk: 'read',
+    readOnly: false,
+    label: (a) => `Coffre d’expérience ${S(a.id)}`,
+    async run(a) {
+      const e = useStore.getState().vault.find((v) => v.id === S(a.id));
+      if (!e) throw new Error(`Entrée de coffre introuvable : ${S(a.id)}`);
+      const copied: string[] = [];
+      for (const f of e.files) {
+        const p = uniquePath(`vault/${f.path.split('/').pop()}`);
+        if (f.binary) {
+          const bin = atob(f.data);
+          const b = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+          writeBytes(p, b, f.mime);
+        } else writeText(p, f.data);
+        copied.push(p);
+      }
+      const text = `Vault entry « ${e.title} » (${new Date(e.at).toISOString().slice(0, 10)})\nRequest: ${e.request.slice(0, 600)}\nFiles copied: ${copied.join(', ') || 'none'}\n\n${e.text.slice(0, 12_000)}`;
+      return ok(`${copied.length} fichier(s) copié(s)`, text);
+    },
+  },
+  {
     name: 'artifact.create',
     description:
       'Create a deliverable shown to the user with preview and download: html (page / mini-app / slides), markdown (report), svg, json, csv or text. Also saved in the workspace under artifacts/.',

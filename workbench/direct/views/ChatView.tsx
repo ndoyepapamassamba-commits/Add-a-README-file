@@ -47,6 +47,7 @@ import {
   importBrowserFile,
   isLocalRef,
 } from '../lib/vfs';
+import { saveToVault } from '../lib/vault';
 import { refreshCredits } from '../lib/credits';
 import { ArtifactCard } from './Artifacts';
 import { ModelLine, PipelineBar, VerdictBadge, VerdictCard } from '../../web/components/mission';
@@ -205,6 +206,7 @@ const ItemView = memo(function ItemView({ item, sessionId }: { item: Item; sessi
           {item.agent && <div className="mb-1 text-[11.5px] font-medium text-accent">{item.agent}</div>}
           <Markdown text={item.text + (item.streaming ? ' ▍' : '')} fileLink={(h) => resolveFileLink(h, sessionId)} />
           {!item.streaming && <Deliverables text={item.text} />}
+          {!item.streaming && item.text.trim().length > 40 && <VaultButton sessionId={sessionId} itemId={item.id} />}
         </div>
       );
     case 'tool':
@@ -541,6 +543,27 @@ function resolveFileLink(href: string, sid?: string | null) {
   if (!isLocalRef(href)) return null;
   const f = findFileByRef(href, sid ?? null);
   return f ? { name: f.path.split('/').pop()!, save: () => downloadFile(f) } : null;
+}
+
+/** Keeps a well-written / well-executed answer (and its files) in the experience vault. */
+function VaultButton({ sessionId, itemId }: { sessionId: string; itemId: string }) {
+  const saved = useStore((s) => s.vault.some((v) => v.source === itemId));
+  const [done, setDone] = useState(false);
+  return (
+    <button
+      type="button"
+      data-testid="vault-save"
+      disabled={done || saved}
+      onClick={() => {
+        const e = saveToVault(sessionId, itemId);
+        if (e) setDone(true);
+      }}
+      className="mt-1 text-[11.5px] text-faint hover:text-accent disabled:text-ok"
+      title="Garder cette réponse et ses fichiers comme expérience réutilisable"
+    >
+      {done || saved ? '★ Dans le coffre d’expérience' : '☆ Garder dans le coffre d’expérience'}
+    </button>
+  );
 }
 
 /** Files the answer talks about, offered as download buttons right in the chat. */
