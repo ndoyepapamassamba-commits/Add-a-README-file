@@ -143,7 +143,7 @@ const model = (id: string, prompt: string, completion: string) => ({
   top_provider: { context_length: 128_000, max_completion_tokens: 8192 },
   supported_parameters: ['tools', 'tool_choice', 'structured_outputs'],
 });
-async function open(page: Page, errors: string[] = [], opts: { debug?: boolean } = {}) {
+async function open(page: Page, errors: string[] = [], opts: { debug?: boolean; autopilot?: boolean } = {}) {
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   await page.route('https://openrouter.ai/api/v1/**', async (route) => {
@@ -152,6 +152,8 @@ async function open(page: Page, errors: string[] = [], opts: { debug?: boolean }
     await route.fulfill({ response: res, headers: { ...res.headers(), 'access-control-allow-origin': '*' } });
   });
   if (opts.debug) await page.addInitScript(() => localStorage.setItem('vs.debug', '1'));
+  // These tests drive the multi-space studio (« mode expert »); the Film Autopilot single view has its own test.
+  if (!opts.autopilot) await page.addInitScript(() => localStorage.setItem('vs.expert', '1'));
   await page.goto(pathToFileURL(FILE).href);
   await page.getByPlaceholder('sk-or-v1-…').fill(KEY);
   await page.getByRole('button', { name: 'Commencer' }).click();
@@ -885,4 +887,39 @@ test('Character library import (folder) and Prompt Genome compile (TEST 14)', as
   await page.getByTestId('studio-genome').getByRole('textbox').first().fill('une belle-mère furieuse');
   await expect(page.getByTestId('genome-text')).toHaveValue(/une belle-mère furieuse/);
   await expect(page.getByTestId('genome-output')).toContainText('pg-image-');
+});
+
+test('Film Autopilot: one idea → story, scenes, images, animation, final film in ONE view; model plan; per-scene actions', async ({ page }) => {
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  const errors = await open(page, [], { autopilot: true });
+  const net = await intercept(page);
+  await page.getByTitle(/AI Film Studio/).click();
+  await expect(page.getByTestId('film-autopilot')).toBeVisible();
+  const SHORT = { ...STORY, scenes: STORY.scenes.map((s) => ({ ...s, duration: 3 })) };
+  mock.push({ text: JSON.stringify(SHORT) });
+  mock.fallback = () => ({ text: '{}' });
+  await page.getByTestId('film-idea-input').fill('Un jeune garçon africain rêve de devenir inventeur et construit une machine pour sauver son village.');
+  await page.getByRole('button', { name: 'Afrikatoon 2D' }).click();
+  await page.getByTestId('film-create').click();
+  // One view: the pipeline, the model plan and the scenes appear in place.
+  await expect(page.getByTestId('film-pipeline')).toBeVisible();
+  await expect(page.getByTestId('film-plan')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId('plan-images')).toBeVisible();
+  await expect(page.getByTestId('pipe-STORY')).toHaveAttribute('data-state', /done|warning/, { timeout: 30_000 });
+  await expect(page.getByTestId('film-scenes').locator('[data-testid^=scene-S]')).toHaveCount(2, { timeout: 30_000 });
+  await expect(page.getByTestId('pipe-IMAGES')).toHaveAttribute('data-state', /done|warning/, { timeout: 60_000 });
+  expect(net.imageCalls.length).toBeGreaterThanOrEqual(2);
+  // Animation: no paid video unless the owner set a video budget → free 2.5D animation, no video call.
+  expect(net.videoSubmits).toBe(0);
+  await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 120_000 });
+  const size = await page.evaluate(async () => (await (await fetch((document.querySelector('[data-testid=film-final] video') as HTMLVideoElement).src)).blob()).size);
+  expect(size).toBeGreaterThan(1000);
+  // Per-scene actions: accept, regenerate (one more image call).
+  const first = page.getByTestId('scene-S01');
+  await first.getByTestId('scene-accept').click();
+  await expect(first).toContainText('validée');
+  const before = net.imageCalls.length;
+  await first.getByTestId('scene-regen').click();
+  await expect.poll(() => net.imageCalls.length, { timeout: 20_000 }).toBeGreaterThan(before);
+  expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
 });

@@ -28,6 +28,7 @@ import { ControlRoom, StoryView, CharacterView, WorldView, StyleView } from './s
 import { SceneDirector, ImageFactory, VideoFactory, DialogueView, VoiceView } from './spaces2';
 import { SoundView, MusicView, SubtitlesView, EditorView, SocialView } from './spaces3';
 import { GenomeView, AssetLibrary, MemoryView, AnalyticsView, ModelLab } from './spaces4';
+import { FilmAutopilot } from './FilmAutopilot';
 
 type Space =
   | 'control'
@@ -312,6 +313,21 @@ export function StudioView() {
   const S = useStudio();
   const bp = useActive();
   const [space, setSpace] = useState<Space>('control');
+  const [expert, setExpert] = useState(() => {
+    try {
+      return localStorage.getItem('vs.expert') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const setExpertMode = (v: boolean) => {
+    setExpert(v);
+    try {
+      localStorage.setItem('vs.expert', v ? '1' : '0');
+    } catch {
+      /* storage unavailable */
+    }
+  };
   const enabled = S.settings.enabled;
   useEffect(() => {
     const on = (e: Event) => {
@@ -343,6 +359,8 @@ export function StudioView() {
         <Toggle checked={false} onChange={(v) => S.setSettings({ enabled: v })} label="Activer le studio" />
       </div>
     );
+  // The SINGLE VIEW (Film Autopilot) is the studio; the former multi-space studio stays available as « mode expert ».
+  if (!expert) return <FilmAutopilot onExpert={() => setExpertMode(true)} />;
   return (
     <div className="flex h-full min-h-0 flex-col" data-testid="studio">
       <ConfirmHost />
@@ -374,7 +392,10 @@ export function StudioView() {
           </div>
         )}
         {S.busy && <span className="text-[12px] text-faint">{S.busy}</span>}
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-3">
+          <Button size="sm" variant="primary" onClick={() => setExpertMode(false)} data-testid="back-to-autopilot">
+            ← Film Autopilot
+          </Button>
           <Toggle checked={enabled} onChange={(v) => S.setSettings({ enabled: v })} label="Studio activé" />
         </div>
       </header>

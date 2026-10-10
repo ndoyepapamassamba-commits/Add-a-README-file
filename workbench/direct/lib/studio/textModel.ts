@@ -21,12 +21,19 @@ export interface TextRun {
   tokensOut: number;
   explain: string;
 }
+/** Film Autopilot: the writing model chosen (or accepted) by the user for the production; null = automatic routing. */
+let textOverride: string | null = null;
+export const setStudioTextModel = (id: string | null) => {
+  textOverride = id;
+};
 export async function pickTextModel(
   text: string,
   vision = false,
   teacher = false,
 ): Promise<{ model: string; fallbacks: string[]; why: string }> {
   const st = useStore.getState();
+  if (textOverride && !vision && !teacher)
+    return { model: textOverride, fallbacks: [st.settings.fallbackModel].filter(Boolean), why: 'modèle d’écriture choisi pour ce film' };
   let models = st.models;
   if (!models.length) models = await loadCatalog().catch(() => []);
   const profile = analyzeTask({ text, hasImages: vision });
