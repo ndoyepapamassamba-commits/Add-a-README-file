@@ -13,6 +13,9 @@ import { decodeLogo, isLogoFile, logoPalette, renderLogo, type DecodedLogo } fro
 import { useStore } from '../lib/store';
 import { filesFor, importBrowserFile, sessionAllow, writeChatBytes } from '../lib/vfs';
 import type { DesignChoice } from '../lib/types';
+import { cloneDesign, KIND_LABEL as PANEL_LABEL, measureFidelity, previewData, type ClonedDesign } from '../lib/designClone';
+import { renderCloneSvg } from '../../server/services/dashRender';
+import { PANEL_KINDS, type PanelKind } from '../../server/services/dashClone';
 
 const KIND_LABEL: Record<DeliverableKind, string> = { excel: 'classeur Excel', document: 'document', slides: 'présentation', web: 'site / application' };
 const FORMAT_LABEL: Record<string, string> = { docx: 'Word', pptx: 'PowerPoint', pdf: 'PDF', html: 'HTML', eml: 'Mail Outlook', md: 'Markdown', xlsx: 'Excel', csv: 'CSV', json: 'JSON' };
@@ -70,6 +73,23 @@ function DesignCardOpen({ item }: { item: CardItem }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logoPath]);
   const [readBy, setReadBy] = useState('');
+  // Photo-faithful clone of a dashboard image.
+  const [clone, setClone] = useState<ClonedDesign | null>(null);
+  const [fidelity, setFidelity] = useState<number | null>(null);
+  const preview = useMemo(() => previewData(sid), [sid]);
+  const cloneSvg = useMemo(() => (clone ? renderCloneSvg(clone.spec, preview.data, clone.width) : ''), [clone, preview]);
+  useEffect(() => {
+    if (!clone) return setFidelity(null);
+    let live = true;
+    measureFidelity(clone, preview.data)
+      .then((f) => live && setFidelity(f))
+      .catch(() => live && setFidelity(null));
+    return () => {
+      live = false;
+    };
+  }, [clone, preview]);
+  const setKind = (i: number, kind: PanelKind) =>
+    setClone((c) => (c ? { ...c, spec: { ...c.spec, panels: c.spec.panels.map((p, j) => (j === i ? { ...p, kind, legend: kind === 'pie' || kind === 'donut' ? 'right' : p.legend } : p)) } } : c));
   const [siteUrl, setSiteUrl] = useState('');
   const [site, setSite] = useState<{ url: string; font: string; radius: number; vars: number; structure: boolean } | null>(null);
   /** A REAL website: its code gives the exact colours / fonts / radius, its screenshot gives the structure. */
@@ -118,6 +138,22 @@ function DesignCardOpen({ item }: { item: CardItem }) {
     setCustom(null);
     setSite(null);
     setReadBy('');
+    setClone(null);
+    // 1. Dashboards: photo-faithful clone measured on the pixels.
+    try {
+      const c = await cloneDesign(url, (st) => setBusy(st));
+      if (c.spec.panels.length >= 2) {
+        setClone(c);
+        const t = c.spec.palette;
+        setCustom({ primary: t.primary, accent: t.accent, dark: t.dark, font: /^(segoe ui|calibri|arial|georgia|aptos|verdana|tahoma|garamond|cambria)$/i.test(c.spec.font) ? c.spec.font : 'Segoe UI' });
+        setSel('custom');
+        setReadBy(`${c.spec.panels.length} panneaux mesurés sur l’image${c.labelledBy ? `, identifiés par ${c.labelledBy.split('/').pop()}` : ' (types déduits des pixels)'}`);
+        setBusy(null);
+        return;
+      }
+    } catch {
+      // Not a dashboard (a slide, a document…): the layout description path below.
+    }
     try {
       const r = await layoutFromImage(url);
       setLayout(r.layout);
@@ -148,7 +184,7 @@ function DesignCardOpen({ item }: { item: CardItem }) {
       setBusy(null);
     }
   };
-  const selLabel = sel === 'custom' ? (site ? `Site reproduit — ${new URL(site.url).hostname}` : layout ? 'Design Internet (mise en page + couleurs)' : 'Design Internet (couleurs)') : (PREMIUM_DESIGNS.find((d) => d.id === sel)?.label ?? sel);
+  const selLabel = sel === 'custom' ? (clone ? `Reproduction fidèle (${clone.spec.panels.length} panneaux)` : site ? `Site reproduit — ${new URL(site.url).hostname}` : layout ? 'Design Internet (mise en page + couleurs)' : 'Design Internet (couleurs)') : (PREMIUM_DESIGNS.find((d) => d.id === sel)?.label ?? sel);
   // Live previews of every logo variant for the palette being chosen.
   const palette = logoPalette(sel === 'custom' && custom ? 'custom' : (sel as ThemeId), custom, sel === 'custom' ? layout : null);
   const palKey = JSON.stringify(palette);
@@ -162,16 +198,28 @@ function DesignCardOpen({ item }: { item: CardItem }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [decoded, palKey]);
   const go = async () => {
-    const choice: DesignChoice = sel === 'custom' && custom ? { theme: 'custom', colors: custom, source: webSel ?? undefined, layout: layout ?? undefined } : { theme: sel as ThemeId };
+    const choice: DesignChoice =
+      sel === 'custom' && custom ? { theme: 'custom', colors: custom, source: webSel ?? undefined, layout: clone ? undefined : (layout ?? undefined), clone: clone?.spec } : { theme: sel as ThemeId };
     if (decoded && logoPath && sid) {
       setBusy('préparation du logo…');
-      const r = await renderLogo(decoded, palette, variant);
-      const path = `assets/logo-${variant}.png`;
-      writeChatBytes(sid, path, r.png, 'image/png');
-      choice.logo = { path, variant, width: r.width, height: r.height, source: logoPath };
-      setBusy(null);
+      try {
+        const r = await renderLogo(decoded, palette, variant);
+        const path = `assets/logo-${variant}.png`;
+        writeChatBytes(sid, path, r.png, 'image/png');
+        choice.logo = { path, variant, width: r.width, height: r.height, source: logoPath };
+      } catch (e) {
+        // The logo must never block the deliverable: say it and go on without it.
+        setErr(`Logo non préparé (${(e as Error).message.slice(0, 120)}) : le livrable sera produit sans logo.`);
+      } finally {
+        setBusy(null);
+      }
     }
-    resolveDesign(item.id, { choice, formats: formats.length ? formats : undefined, remember });
+    try {
+      const r = resolveDesign(item.id, { choice, formats: formats.length ? formats : undefined, remember });
+      if (r === 'none') setErr('Cette demande n’est plus en cours : le design est enregistré pour ce chat, relancez votre demande.');
+    } catch (e) {
+      setErr(`Impossible de lancer la génération : ${(e as Error).message.slice(0, 160)}`);
+    }
   };
   return (
     <div className="my-3 rounded-2xl border border-accent/50 bg-panel p-3" data-testid="design-card">
@@ -243,7 +291,41 @@ function DesignCardOpen({ item }: { item: CardItem }) {
             <button type="button" className="mt-1 text-[12px] text-accent disabled:opacity-50" disabled={Boolean(busy)} onClick={() => void loadWeb({ more: true })} data-testid="design-web-more">
               ➕ Plus de designs
             </button>
-            {layout && (
+            {clone && (
+              <div className="mt-2" data-testid="design-clone">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                  <figure className="m-0">
+                    <figcaption className="mb-1 text-[11px] text-muted">Image choisie</figcaption>
+                    <img src={clone.source} alt="design choisi" className="w-full rounded-lg border border-line" />
+                  </figure>
+                  <figure className="m-0">
+                    <figcaption className="mb-1 text-[11px] text-muted">Reproduction avec {preview.from ? `vos données (${preview.from.split('/').pop()})` : 'des données d’exemple (joignez votre fichier pour voir vos chiffres)'}</figcaption>
+                    <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(cloneSvg)}`} alt="reproduction" className="w-full rounded-lg border border-line" data-testid="design-clone-svg" />
+                  </figure>
+                </div>
+                {fidelity !== null && fidelity < 65 && (
+                  <div className="mt-1 rounded-lg border border-warn/50 bg-warn/10 px-2 py-1 text-[12px]" data-testid="design-clone-warning">
+                    Reproduction approximative ({fidelity} %) : cette image n’est pas un tableau de bord net (photo, maquette, image trop petite ou très chargée). Corrigez les types de panneaux ci-dessous ou choisissez une autre image avant de générer.
+                  </div>
+                )}
+                <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11.5px]" data-testid="design-clone-panels">
+                  <span className="text-muted">Fidélité visuelle mesurée : <b data-testid="design-fidelity">{fidelity === null ? '…' : `${fidelity} %`}</b> · Panneaux (corrigez si besoin) :</span>
+                  {clone.spec.panels.map((p, i) => (
+                    <label key={i} className="flex items-center gap-1 rounded-full border border-line px-1.5 py-0.5">
+                      <b>{i + 1}</b>
+                      <select value={p.kind} onChange={(e) => setKind(i, e.target.value as PanelKind)} className="bg-transparent" data-testid={`design-panel-${i + 1}`}>
+                        {PANEL_KINDS.map((k) => (
+                          <option key={k} value={k}>
+                            {PANEL_LABEL[k]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+            {layout && !clone && (
               <div className="mt-2" data-testid="design-layout-preview">
                 <div className="mb-1 text-[12px] text-muted">Aperçu de la reproduction (mise en page du design, avec des données d’exemple — vos vraies données seront utilisées) :</div>
                 <div className="h-56 overflow-hidden rounded-lg border border-line">

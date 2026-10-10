@@ -71,7 +71,7 @@ export interface Family {
 }
 
 /** Colour families of the logo (k-means on a sample of the opaque pixels, close families merged). */
-export function analyzeLogo(px: Uint8ClampedArray | Uint8Array, w: number, h: number, k = 5): Family[] {
+export function analyzeLogo(px: Uint8ClampedArray | Uint8Array, w: number, h: number, k = 5, blendShare = 0.04): Family[] {
   const sample: RGB[] = [];
   const total = w * h;
   const step = Math.max(1, Math.floor(total / 24_000));
@@ -151,7 +151,7 @@ export function analyzeLogo(px: Uint8ClampedArray | Uint8Array, w: number, h: nu
     return d2(p, mix(a, b, t)) < 22 ** 2;
   };
   const major = kept.filter((f) => {
-    if (f.count / sum >= 0.04 || kept.length <= 2) return true;
+    if (f.count / sum >= blendShare || kept.length <= 2) return true;
     const others = kept.filter((g) => g !== f && g.count > f.count);
     return !others.some((a, i) => others.slice(i + 1).some((b) => onSegment(f.color, a.color, b.color)));
   });

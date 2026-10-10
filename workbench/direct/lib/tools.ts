@@ -182,6 +182,10 @@ const clip = (s: string, n = 60_000) =>
   s.length > n ? `${s.slice(0, n)}\n…[${s.length - n} caractères tronqués]` : s;
 
 const data = new DataCore();
+import type { DashSpec } from '../../server/services/dashClone';
+import { cloneData, renderCloneHtml, renderCloneSvg } from '../../server/services/dashRender';
+import { addImageSheet } from '../../server/services/officeLogo';
+import { rasterise } from './designClone';
 function loadDataset(path: string, sheet?: string): Dataset {
   const f = getFile(path);
   if (!f) throw new Error(`Fichier introuvable : ${path}`);
@@ -1008,6 +1012,31 @@ export const TOOLS: DirectTool[] = [
             'bar' | 'line' | 'pie' | 'none',
         }),
       );
+      // A dashboard image CLONED photo-faithfully: the reproduction with these exact figures, as an HTML page and as a
+      // first « Tableau de bord » sheet (picture) in the workbook.
+      if (a.clone && typeof a.clone === 'object') {
+        const spec = a.clone as DashSpec;
+        const cd = cloneData(S(a.title) || S(a.name) || 'Tableau de bord', r.columns, r.rows);
+        const dash = uniquePath(`outputs/${S(a.name).replace(/[^\w.-]+/g, '-') || 'export'}-tableau-de-bord.html`);
+        writeText(dash, renderCloneHtml(spec, cd, S(a.layoutSource) || undefined));
+        let sheet = '';
+        if (fmt === 'xlsx' && typeof document !== 'undefined') {
+          try {
+            const W = 1400;
+            const H = Math.round(W / spec.aspect);
+            const img = await rasterise(renderCloneSvg(spec, cd, W), W, H);
+            const f = getFile(path);
+            const withSheet = f ? addImageSheet(bytesOf(f), { png: img.png, width: W, height: H }) : null;
+            if (withSheet) {
+              writeBytes(path, withSheet, f!.mime);
+              sheet = ' (feuille « Tableau de bord » en tête du classeur)';
+            }
+          } catch {
+            /* the HTML reproduction is still there */
+          }
+        }
+        return ok(`${r.rowCount} lignes → ${path}${sheet} + ${dash}`, `Saved ${r.rowCount} rows to ${path}${sheet} and the photo-faithful reproduction of the chosen dashboard to ${dash}.`);
+      }
       // A design copied from the Internet: its layout is rebuilt with these exact figures as an HTML dashboard.
       if (a.layout && typeof a.layout === 'object') {
         const l = a.layout as DesignLayout;

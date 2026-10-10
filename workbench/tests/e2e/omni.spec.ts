@@ -497,3 +497,65 @@ test('vision model refusing (« only available on agentic harnesses ») → the 
   // The refusing model is remembered and skipped next time.
   expect(await page.evaluate(() => localStorage.getItem('massamba.vision.blocked'))).toContain('mock/eyes:free');
 });
+
+test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, frame, exact colours), labelled, shown next to its reproduction with the chat data; Excel opens on the reproduction', async ({ page }) => {
+  await open(page);
+  await page.removeLocatorHandler(page.getByTestId('design-go'));
+  const IMG = fs.readFileSync(path.join(ROOT, 'tests/fixtures/dashboard-sweetshop.png'));
+  await page.route('https://api.tavily.com/search', (route) =>
+    route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' }, body: JSON.stringify({ results: [], images: [{ url: 'https://example.com/sweetshop.png', description: 'sweetshop dashboard' }] }) }),
+  );
+  await page.route('https://example.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: IMG }));
+  await page.route('https://wsrv.nl/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body: IMG }));
+  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await page.getByTestId('tavily-key').fill('tvly-test-key');
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  // The chat's data, attached: the preview shows THESE figures.
+  const csv = ['date,produit,region,ventes', ...Array.from({ length: 60 }, (_, i) => `2023-0${(i % 9) + 1}-15,${['Cupcake', 'Brownie', 'Macaron', 'Cookie', 'Donut'][i % 5]},${['Dakar', 'Thiès', 'Kaolack'][i % 3]},${100 + ((i * 37) % 900)}`)].join('\n');
+  await page.locator('input[type=file]').first().setInputFiles({ name: 'ventes.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  const SOM = { panels: ['bar', 'line', 'bar', 'pie', 'hbar', 'hbar', 'donut'].map((kind, i) => ({ id: i + 1, kind, tiles: 1, title_align: 'center', value_labels: true, legend: kind === 'pie' || kind === 'donut' ? 'right' : 'none' })), font: 'Segoe UI', title_align: 'center' };
+  mock.push(
+    { text: JSON.stringify(SOM) }, // the vision model LABELS the numbered panels (geometry and colours come from the pixels)
+    { toolCalls: [{ name: 'data.export', args: { path: 'uploads/ventes.csv', name: 'sweetshop', title: 'SWEETSHOP — ANALYSE 2023', format: 'xlsx' } }] },
+    { text: 'Reproduction livrée.' },
+  );
+  await send(page, 'Fais un classeur Excel analysé des ventes');
+  await expect(page.getByTestId('design-card')).toBeVisible({ timeout: 20_000 });
+  await page.getByTestId('design-web').click();
+  await page.getByTestId('design-web-gallery').locator('button').first().click();
+  await expect(page.getByTestId('design-clone')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId('design-clone-panels').locator('select')).toHaveCount(7);
+  await expect(page.getByTestId('design-fidelity')).toContainText('%', { timeout: 20_000 });
+  await expect(page.getByTestId('design-clone')).toContainText('ventes.csv');
+  // The vision call received the image with NUMBERED boxes (set-of-marks), not a request to describe everything.
+  const somCall = mock.requests.find((r) => JSON.stringify(r.messages).includes('numbered RED boxes'));
+  expect(somCall).toBeTruthy();
+  await page.getByTestId('design-clone').screenshot({ path: test.info().outputPath('clone-card.png') });
+  fs.copyFileSync(test.info().outputPath('clone-card.png'), '/tmp/claude-0/clone/e2e-card.png');
+  await page.getByTestId('design-go').click();
+  await expect(page.getByTestId('design-card-done')).toContainText('Reproduction fidèle');
+  await expect(page.getByText('Reproduction livrée.')).toBeVisible({ timeout: 30_000 });
+  const files = () =>
+    page.evaluate(
+      () =>
+        new Promise<Record<string, { data: string }>>((resolve) => {
+          const req = indexedDB.open('openrouter-workbench-direct', 1);
+          req.onsuccess = () => {
+            const g = req.result.transaction('kv', 'readonly').objectStore('kv').get('files');
+            g.onsuccess = () => resolve((g.result ?? {}) as Record<string, { data: string }>);
+          };
+        }),
+    );
+  await expect.poll(async () => Object.keys(await files()).some((k) => k.endsWith('sweetshop-tableau-de-bord.html')), { timeout: 15_000 }).toBe(true);
+  const all = await files();
+  const html = all[Object.keys(all).find((k) => k.endsWith('sweetshop-tableau-de-bord.html'))!]!.data;
+  expect(html).toContain('data-dash-clone');
+  expect(html).toContain('SWEETSHOP — ANALYSE 2023');
+  const { unzipSync, strFromU8 } = await import('fflate');
+  const z = unzipSync(new Uint8Array(Buffer.from(all[Object.keys(all).find((k) => k.endsWith('outputs/sweetshop.xlsx'))!]!.data, 'base64')));
+  expect(z['xl/media/massamba-dashboard.png']).toBeTruthy();
+  expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/<sheets><sheet name="Tableau de bord"/);
+  fs.writeFileSync('/tmp/claude-0/clone/e2e-dashboard.png', Buffer.from(z['xl/media/massamba-dashboard.png']!));
+});

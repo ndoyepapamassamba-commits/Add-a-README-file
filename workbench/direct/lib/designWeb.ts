@@ -48,7 +48,7 @@ export async function searchDesigns(
  * forbids hot-linking cannot make the read fail; the original URL is used when the proxy cannot get it.
  */
 const PROXY = (url: string, w = 1280) => `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${w}&we&output=jpg&q=85`;
-async function imageBlob(url: string, w?: number): Promise<Blob | null> {
+export async function imageBlob(url: string, w?: number): Promise<Blob | null> {
   if (url.startsWith('data:')) return (await fetch(url)).blob();
   try {
     const res = await fetch(PROXY(url, w));
@@ -67,7 +67,7 @@ async function imageForVision(url: string): Promise<string> {
   return `data:${b.type || 'image/jpeg'};base64,${btoa(bin)}`;
 }
 /** Ask a vision model about an image — candidates tried in turn, refusing models remembered and skipped. */
-async function askVision(prompt: string, url: string, maxTokens: number): Promise<{ content: string; model: string; cost: number }> {
+export async function askVision(prompt: string, url: string, maxTokens: number): Promise<{ content: string; model: string; cost: number }> {
   const st = useStore.getState();
   const image = await imageForVision(url);
   return withVisionModel(async (model) => {

@@ -323,6 +323,8 @@ export interface DesignChoice {
   source?: string;
   /** Full layout read from that image: the deliverable reproduces it with the real data. */
   layout?: import('../../server/services/layoutClone').DesignLayout;
+  /** Photo-faithful clone of a dashboard image (measured geometry, colours, panel kinds) rendered with the real data. */
+  clone?: import('../../server/services/dashClone').DashSpec;
   /** The user's logo, recoloured to the palette (PNG in this chat), placed automatically in every deliverable. */
   logo?: { path: string; variant: import('../../server/services/logoHarmony').LogoVariant; width: number; height: number; source: string };
 }

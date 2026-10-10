@@ -183,3 +183,109 @@ export function addLogoToHtml(html: string, dataUrl: string): string {
   if (body) return html.slice(0, body.index + body[0].length) + block + html.slice(body.index + body[0].length);
   return block + html;
 }
+
+/**
+ * A FIRST sheet « Tableau de bord » holding a picture (the dashboard reproduction with the real data). Sheet-scoped
+ * defined names (filters, print areas) are shifted so they keep pointing at their own sheet.
+ */
+export function addImageSheet(bytes: Uint8Array, img: LogoImage, name = 'Tableau de bord', widthPx = 1200): Uint8Array | null {
+  let z: Zip;
+  try {
+    z = unzipSync(bytes);
+  } catch {
+    return null;
+  }
+  let wb = read(z, 'xl/workbook.xml');
+  if (!wb || wb.includes(`name="${name}"`)) return null;
+  const media = 'massamba-dashboard.png';
+  z[`xl/media/${media}`] = img.png;
+  ensurePngType(z);
+  const sheet = 'xl/worksheets/sheet-dashboard.xml';
+  const drawing = 'xl/drawings/drawing-dashboard.xml';
+  const cx = Math.round(widthPx * 9525);
+  const cy = Math.round(((widthPx * img.height) / Math.max(1, img.width)) * 9525);
+  write(z, sheet, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${NS_R}"><sheetPr><tabColor rgb="FF1F4E79"/></sheetPr><sheetViews><sheetView workbookViewId="0" showGridLines="0" zoomScale="90"/></sheetViews><sheetFormatPr defaultRowHeight="15"/><sheetData/><pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="1"/><drawing r:id="rIdDashDrawing"/></worksheet>`);
+  write(z, relsOf(sheet), `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdDashDrawing" Type="${NS_R}/drawing" Target="../drawings/drawing-dashboard.xml"/></Relationships>`);
+  write(z, drawing, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><xdr:oneCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>95250</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>95250</xdr:rowOff></xdr:from><xdr:ext cx="${cx}" cy="${cy}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="9101" name="Tableau de bord"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip xmlns:r="${NS_R}" r:embed="rIdDashImg"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`);
+  addRel(z, relsOf(drawing), REL_IMAGE, `../media/${media}`, 'rIdDashImg');
+  addOverride(z, `/${sheet}`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml');
+  addOverride(z, `/${drawing}`, 'application/vnd.openxmlformats-officedocument.drawing+xml');
+  const rid = addRel(z, 'xl/_rels/workbook.xml.rels', `${NS_R}/worksheet`, 'worksheets/sheet-dashboard.xml', 'rIdDashSheet');
+  const ids = [...wb.matchAll(/sheetId="(\d+)"/g)].map((m) => +m[1]!);
+  const sheetId = (ids.length ? Math.max(...ids) : 0) + 1;
+  if (!/xmlns:r=/.test(wb.slice(0, 1000))) wb = wb.replace(/<workbook\b/, `<workbook xmlns:r="${NS_R}"`);
+  wb = wb.replace(/<sheets>/, `<sheets><sheet name="${name}" sheetId="${sheetId}" r:id="${rid}"/>`);
+  // The new sheet is first: sheet-scoped names move by one.
+  wb = wb.replace(/localSheetId="(\d+)"/g, (_m, n: string) => `localSheetId="${+n + 1}"`);
+  wb = wb.replace(/activeTab="\d+"/, 'activeTab="0"');
+  write(z, 'xl/workbook.xml', wb);
+  return zipSync(z, { level: 6 });
+}
+
+/** Word: the picture as the FIRST page (full width), followed by a page break. */
+export function addImagePageDocx(bytes: Uint8Array, img: LogoImage): Uint8Array | null {
+  let z: Zip;
+  try {
+    z = unzipSync(bytes);
+  } catch {
+    return null;
+  }
+  const doc = 'word/document.xml';
+  let xml = read(z, doc);
+  if (!xml || xml.includes('massamba-dashboard.png')) return null;
+  z['word/media/massamba-dashboard.png'] = img.png;
+  ensurePngType(z);
+  const rid = addRel(z, relsOf(doc), REL_IMAGE, 'media/massamba-dashboard.png', 'rIdDashImg');
+  // 17 cm wide max (A4 portrait text width), height in proportion, capped to the page.
+  let cx = Math.round(17 * 360000);
+  let cy = Math.round((cx * img.height) / Math.max(1, img.width));
+  const maxCy = Math.round(24 * 360000);
+  if (cy > maxCy) {
+    cx = Math.round((cx * maxCy) / cy);
+    cy = maxCy;
+  }
+  const para = `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="9201" name="Tableau de bord"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="9201" name="massamba-dashboard.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p><w:p><w:r><w:br w:type="page"/></w:r></w:p>`;
+  if (!/xmlns:wp=/.test(xml.slice(0, 3000))) xml = xml.replace(/<w:document\b/, '<w:document xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"');
+  if (!/xmlns:r=/.test(xml.slice(0, 3000))) xml = xml.replace(/<w:document\b/, `<w:document xmlns:r="${NS_R}"`);
+  write(z, doc, xml.replace(/<w:body>/, `<w:body>${para}`));
+  return zipSync(z, { level: 6 });
+}
+
+/** PowerPoint: a NEW first slide holding the picture (fitted to the slide, centred). */
+export function addImageSlidePptx(bytes: Uint8Array, img: LogoImage): Uint8Array | null {
+  let z: Zip;
+  try {
+    z = unzipSync(bytes);
+  } catch {
+    return null;
+  }
+  const pres = read(z, 'ppt/presentation.xml');
+  if (!pres || z['ppt/slides/slide-dashboard.xml']) return null;
+  const sz = /<p:sldSz\b[^>]*cx="(\d+)"[^>]*cy="(\d+)"/.exec(pres);
+  const [W, H] = sz ? [+sz[1]!, +sz[2]!] : [12192000, 6858000];
+  // Slide layout: the one used by the first existing slide.
+  const firstRels = read(z, 'ppt/slides/_rels/slide1.xml.rels');
+  const layout = /Target="(\.\.\/slideLayouts\/[^"]+)"/.exec(firstRels)?.[1] ?? '../slideLayouts/slideLayout1.xml';
+  const k = Math.min((W * 0.94) / img.width, (H * 0.92) / img.height);
+  const cx = Math.round(img.width * k);
+  const cy = Math.round(img.height * k);
+  const slide = 'ppt/slides/slide-dashboard.xml';
+  write(z, slide, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="${NS_R}" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/><p:pic><p:nvPicPr><p:cNvPr id="9301" name="Tableau de bord"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rIdDashImg"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${Math.round((W - cx) / 2)}" y="${Math.round((H - cy) / 2)}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`);
+  write(z, relsOf(slide), `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdLayout" Type="${NS_R}/slideLayout" Target="${layout}"/><Relationship Id="rIdDashImg" Type="${REL_IMAGE}" Target="../media/massamba-dashboard.png"/></Relationships>`);
+  z['ppt/media/massamba-dashboard.png'] = img.png;
+  ensurePngType(z);
+  addOverride(z, `/${slide}`, 'application/vnd.openxmlformats-officedocument.presentationml.slide+xml');
+  const rid = addRel(z, 'ppt/_rels/presentation.xml.rels', `${NS_R}/slide`, 'slides/slide-dashboard.xml', 'rIdDashSlide');
+  const ids = [...pres.matchAll(/<p:sldId\b[^>]*id="(\d+)"/g)].map((m) => +m[1]!);
+  const id = Math.max(255, ...ids) + 1;
+  write(z, 'ppt/presentation.xml', pres.replace(/<p:sldIdLst>/, `<p:sldIdLst><p:sldId id="${id}" r:id="${rid}"/>`));
+  return zipSync(z, { level: 6 });
+}
+
+/** HTML (report, printable PDF, mail): the reproduction at the top of the page. */
+export function addImageToHtml(html: string, dataUrl: string): string {
+  if (/data-dash-reproduction/.test(html)) return html;
+  const block = `<div data-dash-reproduction style="margin:0 0 18px"><img src="${dataUrl}" alt="tableau de bord" style="width:100%;max-width:1100px;height:auto;display:block;margin:0 auto"></div>`;
+  const body = /<body\b[^>]*>/i.exec(html);
+  return body ? html.slice(0, body.index + body[0].length) + block + html.slice(body.index + body[0].length) : block + html;
+}

@@ -60,7 +60,9 @@ import { pilotAnchor } from '../../server/jev/omni/pilot';
 import { THEMES, buildTheme, setActiveTheme, themeOf } from '../../server/services/houseDesign';
 import { applyWebTheme, deliverableFromCode, deliverableFromText, kindForTool, type DeliverableKind } from '../../server/services/premiumDesigns';
 import { isOffice, recolorOffice } from '../../server/services/officeRecolor';
-import { addLogoToHtml, addLogoToOffice } from '../../server/services/officeLogo';
+import { addImagePageDocx, addImageSheet, addImageSlidePptx, addImageToHtml, addLogoToHtml, addLogoToOffice } from '../../server/services/officeLogo';
+import { renderCloneSvg } from '../../server/services/dashRender';
+import { previewData, rasterise } from './designClone';
 import { LOGO_VARIANTS } from '../../server/services/logoHarmony';
 import { excelChart } from '../../server/services/layoutClone';
 import { extractFacts, lessonFrom, memoryBlock, mergeFacts, recall as recallMemory } from '../../server/jev/memory/semantic';
@@ -1152,6 +1154,11 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       // The design chosen for THIS request counts too (not only one remembered « pour tout ce chat »).
       text: (() => {
         const c = designFor(sid);
+        if (c?.clone && !experimentRun) {
+          const pc = (v: number) => Math.round(v * 100);
+          const panels = c.clone.panels.map((p, i) => `${i + 1}. ${p.kind} at x ${pc(p.box.x)}% y ${pc(p.box.y)}% · ${pc(p.box.w)}×${pc(p.box.h)}% · fill ${p.fill}${p.border ? ` · border ${p.border} ${p.borderWidth}px` : ''} · colours ${p.colors.slice(0, 4).join(' ')}${p.sequential ? ' (dark→light ramp: biggest value darkest)' : ''}`).join('\n');
+          return `<DESIGN_CLONE source="${c.source ?? ''}">\nThe user chose this dashboard image and wants a PHOTO-FAITHFUL reproduction with the real data. For Excel / dashboards call data.export (with a query if needed): the app renders the exact reproduction itself (« Tableau de bord » sheet first in the workbook + HTML page), in the measured geometry and colours. For sites / apps, rebuild this exact grid (positions in % of the page, aspect ${c.clone.aspect.toFixed(2)}), page ${c.clone.page}${c.clone.frame ? `, frame ${c.clone.frame.color}` : ''}, title colour ${c.clone.title?.color ?? c.clone.palette.dark}, font ${c.clone.font}:\n${panels}\nNever copy the source's logos, photos or text.\n</DESIGN_CLONE>`;
+        }
         return c?.layout && !experimentRun
           ? `<DESIGN_LAYOUT source="${c.source ?? ''}">\nThe user picked this ${c.layout.cssVars ? 'REAL WEBSITE (its colours, fonts, radius and CSS tokens were read from its own code — use them exactly: font-family stack, cssVars)' : 'Internet design'} to REPRODUCE: rebuild this exact layout with the real data — for HTML (sites, apps, dashboards) the whole layout (navigation, header, KPI count and style, charts in this order and span, table style, grid columns, radius, shadow, light/dark, palette, font); for Excel / Word / PowerPoint its structure (same KPI count and order at the top, same chart types, same table style, palette and font). Never copy the source's logos, photos or text.\n${JSON.stringify(c.layout)}\n</DESIGN_LAYOUT>`
           : '';
@@ -2523,6 +2530,13 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
       args.theme = choice.theme;
       if (choice.colors) args.colors = choice.colors;
       // A design copied from the Internet: Excel takes its chart type, and a dashboard reproducing its layout is built.
+      if (choice.clone && tool.name === 'data.export') {
+        args.clone = choice.clone;
+        args.layoutSource = choice.source;
+        // Excel keeps one native chart: the first chart kind of the dashboard.
+        const k = choice.clone.panels.find((p) => ['bar', 'hbar', 'line', 'area', 'pie', 'donut'].includes(p.kind))?.kind;
+        if (k && (!args.chart || args.chart === 'none')) args.chart = k === 'line' || k === 'area' ? 'line' : k === 'pie' || k === 'donut' ? 'pie' : 'bar';
+      }
       if (choice.layout && tool.name === 'data.export') {
         args.layout = choice.layout;
         args.layoutSource = choice.source;
@@ -2562,6 +2576,12 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     if (out.ok && tool.name === 'code.run') {
       const n = enforceDesign(sid, t0);
       if (n) out.forModel += `\n[design] ${n} fichier(s) Office mis au design choisi par l'utilisateur.`;
+    }
+    // A cloned dashboard design goes into EVERY format: Word (first page), PowerPoint (first slide), PDF / HTML / mail
+    // (top of the page), Excel written by the model's own code (first sheet) — rendered with the chat's data.
+    if (out.ok && /^(code\.run|report\.export)$/.test(tool.name)) {
+      const n = await applyClone(sid, t0);
+      if (n) out.forModel += `\n[design] reproduction du tableau de bord choisi placée dans ${n} fichier(s).`;
     }
     // The user's logo (recoloured to the palette) goes into every deliverable this tool just produced.
     if (out.ok && /^(code\.run|data\.export|report\.export)$/.test(tool.name)) {
@@ -2634,7 +2654,9 @@ async function askDesign(
   })();
   const lbl =
     d.choice.theme === 'custom'
-      ? d.choice.layout?.cssVars
+      ? d.choice.clone
+        ? `Reproduction fidèle du design choisi (${d.choice.clone.panels.length} panneaux)`
+        : d.choice.layout?.cssVars
         ? `Site reproduit — ${host} (couleurs, polices et structure)`
         : d.choice.layout
           ? 'Design Internet — mise en page reproduite'
@@ -2655,6 +2677,38 @@ function designPrompt(c: DesignChoice, formats?: string[]): string {
 The user CHOSE this design for the deliverable.${c.theme === 'house' ? '' : ' It REPLACES the house style: ignore any « style maison », Ecobank navy/blue/lime palette or Segoe UI rule found in memories, lessons, skills or agent descriptions, and never announce the house style in your answer.'} Use it everywhere (native exporters receive it automatically; in your own Python/JS code use exactly these values):
 ${c.logo ? `Logo: ${c.logo.path} — the user's logo, already recoloured to this palette. The app places it AUTOMATICALLY in every Excel / Word / PowerPoint / HTML file you produce (title band, page header, each slide): do NOT insert it yourself and leave room top-right.\n` : ''}title/header band ${k.navy} · primary ${k.blue} · accent / thin rule ${k.gold} · secondary ${k.cyan} · soft fill ${k.ice} · zebra/panel ${k.panel} · borders ${k.line} · text ${k.text} · chart series ${t.chartSeries.slice(0, 5).join(', ')} · font "${t.font.ui}" (figures may use "${t.font.mono}").${formats?.length ? `\nOutput format(s) chosen: ${formats.join(', ')}.` : ''}
 </DESIGN_CHOICE>`;
+}
+/** Put the reproduction of the cloned dashboard in the deliverables written since `since` (chat data only). */
+async function applyClone(sid: string, since: number): Promise<number> {
+  const c = designFor(sid);
+  if (!c?.clone) return 0;
+  const pd = previewData(sid, 'Tableau de bord');
+  // Never invented figures: without a data file in the chat, no reproduction is drawn.
+  if (!pd.from) return 0;
+  const targets = Object.values(files()).filter((f) => f.updatedAt >= since && !f.path.startsWith('assets/') && !f.path.startsWith('uploads/') && (/\.(docx|pptx|xlsx)$/i.test(f.path) || (/\.html?$/i.test(f.path) && !f.data.includes('data-dash-clone'))));
+  if (!targets.length) return 0;
+  const W = 1400;
+  const H = Math.round(W / c.clone.aspect);
+  const img = await rasterise(renderCloneSvg(c.clone, pd.data, W), W, H);
+  const pic = { png: img.png, width: W, height: H };
+  let n = 0;
+  for (const f of targets) {
+    if (f.binary) {
+      const b = bytesOf(f);
+      const out = /\.docx$/i.test(f.path) ? addImagePageDocx(b, pic) : /\.pptx$/i.test(f.path) ? addImageSlidePptx(b, pic) : addImageSheet(b, pic);
+      if (out) {
+        writeBytes(f.path, out, f.mime);
+        n++;
+      }
+    } else {
+      const html = addImageToHtml(f.data, img.dataUrl);
+      if (html !== f.data) {
+        writeText(f.path, html);
+        n++;
+      }
+    }
+  }
+  return n;
 }
 /** Place the chosen logo in the Office / HTML deliverables written since `since` (idempotent). */
 function applyLogo(sid: string, since: number): number {
@@ -3324,8 +3378,30 @@ export function resolveApproval(
   useStore.getState().pending.approvals.get(id)?.({ decision, ...opts });
 }
 
-export function resolveDesign(id: string, d: { choice: DesignChoice; formats?: string[]; remember: boolean }): void {
-  useStore.getState().pending.designs.get(id)?.(d);
+/**
+ * The user validated a design card. Normally a running mission waits for it. A card left behind by a mission that was
+ * stopped (or by a page reload) has nobody waiting: the choice is then kept for the chat and the request is relaunched
+ * with it — a click on « Générer » never does nothing.
+ */
+export function resolveDesign(id: string, d: { choice: DesignChoice; formats?: string[]; remember: boolean }): 'resumed' | 'relaunched' | 'none' {
+  const st = useStore.getState();
+  const waiting = st.pending.designs.get(id);
+  if (waiting) {
+    waiting(d);
+    return 'resumed';
+  }
+  const sess = st.sessions.find((x) => x.items.some((i) => i.id === id));
+  if (!sess) return 'none';
+  const idx = sess.items.findIndex((i) => i.id === id);
+  const ask = [...sess.items.slice(0, idx)].reverse().find((i) => i.kind === 'user') as Extract<import('./types').Item, { kind: 'user' }> | undefined;
+  const lbl = d.choice.clone ? 'Reproduction fidèle du design choisi' : d.choice.theme === 'custom' ? 'Design Internet' : (THEMES[d.choice.theme]?.label ?? d.choice.theme);
+  st.updateItem(sess.id, id, { resolved: `${lbl} — relancé`, chosenFormats: d.formats });
+  // The design is kept for the chat (the relaunched request must not ask again), then the request runs again.
+  st.patchSession(sess.id, { design: d.choice });
+  if (!ask || st.running[sess.id]) return 'none';
+  const text = d.formats?.length ? `${ask.text}\n\n(Format choisi : ${d.formats.join(', ')}.)` : ask.text;
+  void runAgent(sess.id, text, ask.attachments ?? []);
+  return 'relaunched';
 }
 
 export function resolvePlan(id: string, decision: 'approve' | 'cancel', steps?: string[]): void {
