@@ -11,7 +11,7 @@
  */
 import { unzipSync, zipSync } from 'fflate';
 import type { DashSpec } from './dashClone';
-import { colorsFor, fmt, mixH, panelPlan, readableOn, type CloneData, type DataView } from './dashRender';
+import { colorsFor, fmt, mixH, panelPlan, readableOn, slotTexts, type CloneData, type DataView } from './dashRender';
 import { ooxml, type LogoImage } from './officeLogo';
 
 const { read, write, ensurePngType, addOverride, addRel, relsOf, ensureRootNs, NS_R, REL_IMAGE } = ooxml;
@@ -43,7 +43,7 @@ interface Para {
   color: string;
   bold?: boolean;
 }
-function shape(r: Rect, o: { fill?: string | null; line?: string | null; lineW?: number; radius?: number; paras?: Para[]; align?: 'l' | 'ctr'; anchorV?: 't' | 'ctr'; font: string; name?: string }): string {
+function shape(r: Rect, o: { fill?: string | null; line?: string | null; lineW?: number; radius?: number; paras?: Para[]; align?: 'l' | 'ctr' | 'r'; anchorV?: 't' | 'ctr'; font: string; name?: string; tight?: boolean }): string {
   const id = ++shapeId;
   const adj = o.radius ? Math.min(50000, Math.round((o.radius / Math.max(1, Math.min(r.w, r.h))) * 100000)) : 0;
   const geom = adj ? `<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val ${adj}"/></a:avLst></a:prstGeom>` : '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>';
@@ -54,7 +54,7 @@ function shape(r: Rect, o: { fill?: string | null; line?: string | null; lineW?:
     .join('');
   return anchor(
     r,
-    `<xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="${id}" name="${xesc(o.name ?? `Forme ${id}`)}"/><xdr:cNvSpPr/></xdr:nvSpPr><xdr:spPr>${xfrm(r)}${geom}${fill}${line}</xdr:spPr><xdr:txBody><a:bodyPr vertOverflow="clip" horzOverflow="clip" wrap="square" lIns="45720" tIns="22860" rIns="45720" bIns="22860" anchor="${o.anchorV ?? 'ctr'}" rtlCol="0"/><a:lstStyle/>${paras}</xdr:txBody></xdr:sp>`,
+    `<xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="${id}" name="${xesc(o.name ?? `Forme ${id}`)}"/><xdr:cNvSpPr/></xdr:nvSpPr><xdr:spPr>${xfrm(r)}${geom}${fill}${line}</xdr:spPr><xdr:txBody><a:bodyPr vertOverflow="overflow" horzOverflow="${o.tight ? 'overflow' : 'clip'}" wrap="${o.tight ? 'none' : 'square'}" lIns="${o.tight ? 0 : 45720}" tIns="${o.tight ? 0 : 22860}" rIns="${o.tight ? 0 : 45720}" bIns="${o.tight ? 0 : 22860}" anchor="${o.anchorV ?? 'ctr'}" rtlCol="0"/><a:lstStyle/>${paras}</xdr:txBody></xdr:sp>`,
   );
 }
 /** The crop of the reproduction picture that covers `box` (fractions of the image). */
@@ -75,7 +75,7 @@ const chartFrame = (r: Rect, rid: string, name: string) => {
 };
 
 type ChartKind = 'bar' | 'hbar' | 'line' | 'area' | 'pie' | 'donut';
-function chartXml(o: { kind: ChartKind; title: string; c0: number; cats: string[]; vals: number[]; valueName: string; colors: string[]; byPoint: boolean; text: string; muted: string; font: string; size: number; labels: boolean; legend: 'none' | 'right' | 'bottom' }): string {
+function chartXml(o: { kind: ChartKind; title: string | null; c0: number; cats: string[]; vals: number[]; valueName: string; colors: string[]; byPoint: boolean; text: string; muted: string; font: string; size: number; labels: boolean; legend: 'none' | 'right' | 'bottom' }): string {
   const q = `'${DATA.replace(/'/g, "''")}'`;
   const n = o.cats.length;
   const ref = (c: number) => `${q}!$${col(c)}$2:$${col(c)}$${n + 1}`;
@@ -112,7 +112,7 @@ function chartXml(o: { kind: ChartKind; title: string; c0: number; cats: string[
             ? `<c:areaChart><c:grouping val="standard"/><c:varyColors val="0"/>${ser}<c:axId val="711"/><c:axId val="712"/></c:areaChart>${axes}`
             : `<c:barChart><c:barDir val="${o.kind === 'hbar' ? 'bar' : 'col'}"/><c:grouping val="clustered"/><c:varyColors val="0"/>${ser}<c:gapWidth val="55"/><c:axId val="711"/><c:axId val="712"/></c:barChart>${axes}`;
   const legend = pie && o.legend !== 'none' ? `<c:legend><c:legendPos val="${o.legend === 'bottom' ? 'b' : 'r'}"/><c:overlay val="0"/>${txt(o.text, Math.round(sz * 0.9))}</c:legend>` : '';
-  const title = `<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="${Math.round(sz * 1.1)}" b="1"><a:solidFill><a:srgbClr val="${hex(o.text)}"/></a:solidFill><a:latin typeface="${xesc(o.font)}"/></a:defRPr></a:pPr><a:r><a:rPr lang="fr-FR" sz="${Math.round(sz * 1.1)}" b="1"><a:solidFill><a:srgbClr val="${hex(o.text)}"/></a:solidFill><a:latin typeface="${xesc(o.font)}"/></a:rPr><a:t>${xesc(o.title)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title><c:autoTitleDeleted val="0"/>`;
+  const title = o.title === null ? '<c:autoTitleDeleted val="1"/>' : `<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="${Math.round(sz * 1.1)}" b="1"><a:solidFill><a:srgbClr val="${hex(o.text)}"/></a:solidFill><a:latin typeface="${xesc(o.font)}"/></a:defRPr></a:pPr><a:r><a:rPr lang="fr-FR" sz="${Math.round(sz * 1.1)}" b="1"><a:solidFill><a:srgbClr val="${hex(o.text)}"/></a:solidFill><a:latin typeface="${xesc(o.font)}"/></a:rPr><a:t>${xesc(o.title)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title><c:autoTitleDeleted val="0"/>`;
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="${NS_R}"><c:roundedCorners val="0"/><c:chart>${title}<c:plotArea><c:layout/>${plot}<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr></c:plotArea>${legend}<c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr></c:chartSpace>`;
 }
 
@@ -177,9 +177,39 @@ export function addNativeClone(bytes: Uint8Array, spec: DashSpec, d: CloneData, 
     ensurePngType(z);
     picRid = addRel(z, relsOf(drawing), REL_IMAGE, '../media/massamba-dashboard.png', 'rIdDashImg');
   }
-  // Background, frame, page, title band.
-  parts.push(shape({ x: 0, y: 0, w: W, h: H }, { fill: spec.outer, font, name: 'Fond' }));
+  // ON THE IMAGE'S OWN DESIGN: its clean background (content removed) as the sheet's backdrop; only the texts and the
+  // data (native charts) are added on it, at the measured places.
+  const bgm = /^data:image\/(png|jpeg);base64,(.+)$/.exec(spec.background ?? '');
+  const onBg = !!bgm;
+  const txt = (r: Rect, text: string, size: number, color: string, o: { bold?: boolean; align?: 'l' | 'ctr' | 'r'; name?: string } = {}) => {
+    shapes++;
+    return shape(r, { font, tight: true, align: o.align ?? 'l', anchorV: 'ctr', paras: [{ text, size: Math.max(6, size), color, bold: o.bold }], name: o.name });
+  };
+  if (bgm) {
+    const bin = typeof atob === 'function' ? atob(bgm[2]!) : Buffer.from(bgm[2]!, 'base64').toString('binary');
+    const bytesBg = new Uint8Array(bin.length);
+    for (let k = 0; k < bin.length; k++) bytesBg[k] = bin.charCodeAt(k);
+    const ext = bgm[1] === 'png' ? 'png' : 'jpeg';
+    z[`xl/media/massamba-design.${ext}`] = bytesBg;
+    let ct = read(z, '[Content_Types].xml');
+    if (!new RegExp(`Extension="${ext}"`, 'i').test(ct)) ct = ct.replace('</Types>', `<Default Extension="${ext}" ContentType="image/${ext}"/></Types>`);
+    write(z, '[Content_Types].xml', ct);
+    const rid = addRel(z, relsOf(drawing), REL_IMAGE, `../media/massamba-design.${ext}`, 'rIdDashDesign');
+    parts.push(crop({ x: 0, y: 0, w: W, h: H }, { x: 0, y: 0, w: 1, h: 1 }, rid).replace('name="Reproduction', 'name="Design'));
+    if (spec.title) {
+      const t = P(spec.title.box);
+      parts.push(txt({ x: t.x, y: t.y, w: Math.max(t.w, W - t.x - 8), h: t.h }, d.title, t.h * 0.92, spec.title.color, { bold: true, name: 'Titre' }));
+    }
+    if (spec.subtitle && d.subtitle) {
+      const t = P(spec.subtitle.box);
+      parts.push(txt({ x: t.x, y: t.y, w: Math.max(t.w, W * 0.4), h: t.h }, d.subtitle, t.h * 0.92, spec.subtitle.color, { name: 'Sous-titre' }));
+    }
+  }
   const pb = P(spec.pageBox);
+  if (onBg) {
+    /* frame, page, title band and cards are in the design picture */
+  } else {
+  parts.push(shape({ x: 0, y: 0, w: W, h: H }, { fill: spec.outer, font, name: 'Fond' }));
   if (spec.frame) {
     const fw = spec.frame.width * W;
     parts.push(shape({ x: Math.max(0, pb.x - fw), y: Math.max(0, pb.y - fw), w: Math.min(W, pb.w + fw * 2), h: Math.min(H, pb.h + fw * 2) }, { fill: spec.frame.color, radius: spec.frame.radius * W, font, name: 'Cadre' }));
@@ -191,6 +221,7 @@ export function addNativeClone(bytes: Uint8Array, spec: DashSpec, d: CloneData, 
     parts.push(shape(t, { fill: spec.title.fill, font, align: spec.title.align === 'center' ? 'ctr' : 'l', paras: [{ text: d.title, size: Math.max(10, t.h * 0.62), color: spec.title.color, bold: true }], name: 'Titre' }));
     shapes++;
   }
+  }
   // Panels.
   const blocks: { c0: number; head: [string, string]; cats: string[]; vals: number[] }[] = [];
   const charts: { xml: string; rid: string }[] = [];
@@ -200,12 +231,32 @@ export function addNativeClone(bytes: Uint8Array, spec: DashSpec, d: CloneData, 
     const { kind, view, kpis } = plan[i]!;
     const tiles = kind === 'kpi' ? Math.max(1, p.tiles) : 1;
     const multiTiles = kind === 'kpi' && tiles > 1 && p.tileFills?.length;
-    if (!multiTiles) {
+    if (onBg) {
+      // Menus / slicers: their buttons are in the picture — their labels become the user's.
+      if ((kind === 'filter' || kind === 'title') && p.slots?.length) {
+        for (const t of slotTexts(p, d, P, r)) parts.push(txt({ x: t.x, y: t.y, w: Math.max(t.w, t.size * t.text.length * 0.6), h: t.h }, t.text, t.size, t.color, { bold: t.bold }));
+        return;
+      }
+      const tb = p.titleBox ? P(p.titleBox) : null;
+      // KPI on its measured figure and title.
+      if (kind === 'kpi' && kpis && p.valueBox && tiles === 1) {
+        const k = kpis[0]!;
+        const vb = P(p.valueBox);
+        const centred = Math.abs(vb.x + vb.w / 2 - (r.x + r.w / 2)) < r.w * 0.12;
+        parts.push(txt(centred ? { x: r.x, y: vb.y, w: r.w, h: vb.h } : { x: r.x, y: vb.y, w: vb.x + vb.w - r.x, h: vb.h }, k.value, vb.h * 0.92, p.valueColor ?? p.text, { bold: true, align: centred ? 'ctr' : 'r', name: `Indicateur ${i + 1}` }));
+        if (tb) parts.push(txt(p.titleAlign === 'center' ? { x: r.x, y: tb.y, w: r.w, h: tb.h } : { x: tb.x, y: tb.y, w: r.x + r.w - tb.x, h: tb.h }, trunc(k.label, 40), tb.h * 0.92, p.titleColor ?? p.text, { align: p.titleAlign === 'center' ? 'ctr' : 'l' }));
+        return;
+      }
+      if (tb && view && ['bar', 'hbar', 'line', 'area', 'pie', 'donut'].includes(kind))
+        parts.push(txt(p.titleAlign === 'center' ? { x: r.x, y: tb.y, w: r.w, h: tb.h } : { x: tb.x, y: tb.y, w: r.x + r.w - tb.x, h: tb.h }, trunc((view as DataView).title, Math.round((r.w - (tb.x - r.x)) / (tb.h * 0.5))), tb.h * 0.92, p.titleColor ?? p.text, { bold: true, align: p.titleAlign === 'center' ? 'ctr' : 'l', name: `Titre ${i + 1}` }));
+    } else if (!multiTiles) {
       parts.push(shape(r, { fill: p.fill, line: p.border, lineW: Math.max(0.5, p.borderWidth * s), radius: p.radius * s, font, name: `Carte ${i + 1}` }));
       shapes++;
     }
     const pad = Math.max(4, fs * 0.6);
-    const inner: Rect = { x: r.x + pad, y: r.y + pad, w: r.w - pad * 2, h: r.h - pad * 2 };
+    const tbx = onBg && p.titleBox ? P(p.titleBox) : null;
+    const top = tbx ? Math.max(r.y + pad, tbx.y + tbx.h + pad * 0.5) : r.y + pad;
+    const inner: Rect = { x: r.x + pad, y: top, w: r.w - pad * 2, h: r.y + r.h - pad - top };
     if (inner.w < 8 || inner.h < 8) return;
     if (kind === 'kpi' && kpis) {
       const gap = tiles > 1 ? inner.w * 0.02 : 0;
@@ -218,7 +269,7 @@ export function addNativeClone(bytes: Uint8Array, spec: DashSpec, d: CloneData, 
         parts.push(
           shape(
             { x: inner.x + j * (tw + gap), y: inner.y, w: tw, h: inner.h },
-            { fill: tiles > 1 ? fill : null, radius: tiles > 1 ? Math.max(3, p.radius * s * 0.6) : 0, font, paras: [{ text: trunc(k.label, 30), size: Math.min(fs, inner.h * 0.16), color: labelC }, { text: k.value, size: Math.max(9, vs), color: valueC, bold: true }], name: `Indicateur ${i + 1}.${j + 1}` },
+            { fill: tiles > 1 && !onBg ? fill : null, radius: tiles > 1 ? Math.max(3, p.radius * s * 0.6) : 0, font, paras: [{ text: trunc(k.label, 30), size: Math.min(fs, inner.h * 0.16), color: labelC }, { text: k.value, size: Math.max(9, vs), color: valueC, bold: true }], name: `Indicateur ${i + 1}.${j + 1}` },
           ),
         );
         shapes++;
@@ -248,7 +299,7 @@ export function addNativeClone(bytes: Uint8Array, spec: DashSpec, d: CloneData, 
       const rid = `rIdDashChart${charts.length + 1}`;
       charts.push({
         rid,
-        xml: chartXml({ kind: kind as ChartKind, title: trunc(v.title, Math.round(r.w / (fs * 0.55))), c0, cats, vals, valueName: v.valueName, colors, byPoint: p.sequential && kind !== 'line' && kind !== 'area', text: p.text, muted: mixH(p.text, p.fill, 0.4), font, size: fs, labels: p.valueLabels || kind === 'hbar', legend: p.legend }),
+        xml: chartXml({ kind: kind as ChartKind, title: onBg && tbx ? null : trunc(v.title, Math.round(r.w / (fs * 0.55))), c0, cats, vals, valueName: v.valueName, colors, byPoint: p.sequential && kind !== 'line' && kind !== 'area', text: p.text, muted: mixH(p.text, p.fill, 0.4), font, size: fs, labels: p.valueLabels || kind === 'hbar', legend: p.legend }),
       });
       parts.push(chartFrame(inner, rid, `Graphique ${i + 1}`));
       return;

@@ -196,6 +196,7 @@ import type { DashSpec } from '../../server/services/dashClone';
 import { cloneData, renderCloneHtml, renderCloneSvg } from '../../server/services/dashRender';
 import { addImageSheet } from '../../server/services/officeLogo';
 import { addNativeClone } from '../../server/services/cloneXlsx';
+import { restyleWorkbook } from '../../server/services/officeRestyle';
 import { rasterise } from './designClone';
 function loadDataset(path: string, sheet?: string): Dataset {
   const f = getFile(path);
@@ -1054,7 +1055,10 @@ export const TOOLS: DirectTool[] = [
             // The image's layout as a NATIVE first sheet (editable charts, cards, tiles), then the photo-faithful picture.
             const withPic = f ? addImageSheet(bytesOf(f), pic, 'Tableau de bord (image)') : null;
             const nat = withPic ? addNativeClone(withPic, spec, cd, pic) : null;
-            const out = nat?.bytes ?? (f ? addImageSheet(bytesOf(f), pic) : null);
+            let out = nat?.bytes ?? (f ? addImageSheet(bytesOf(f), pic) : null);
+            // The data sheet of the reproduction in Maison 2.0 with the image's colours (the house sheets already are).
+            const rs = out && nat ? restyleWorkbook(out, { dark: spec.palette.dark, primary: spec.palette.primary, accent: spec.palette.accent, font: spec.font }, new Set(['Tableau de bord', 'Tableau de bord (image)', 'Données', 'Agrégats', 'Synthèse 3D'])) : null;
+            if (rs) out = rs.bytes;
             if (out) {
               writeBytes(path, out, f!.mime);
               sheet = nat

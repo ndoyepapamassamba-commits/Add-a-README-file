@@ -17,7 +17,28 @@ const RELIABLE = /gemini[^/]*flash|qwen[^/]*vl|gpt-4o-mini|gpt-4\.1-mini|gpt-[5-
  * « reliable »: known-reliable cheap paid models first, then free, then other paid (a one-shot read the user waits for).
  * Models that refused before (blocked) are skipped; batch-only models never.
  */
-export function visionCandidates(models: ModelInfo[], preferred?: string | null, blocked: ReadonlySet<string> = new Set(), mode: 'cheap' | 'reliable' = 'cheap', max = 5): string[] {
+/**
+ * Best at LOCATING things on an image (layout reading for the design reproduction), strongest first: Gemini (trained to
+ * output boxes), Claude Sonnet / Haiku / Opus, GPT-6 / GPT-5, large Qwen-VL. Paid is fine: one read costs a cent or so.
+ */
+const DESIGN_TIERS = [
+  /google\/gemini-[3-9][^/]*(pro|flash)(?![^/]*lite)/i,
+  /google\/gemini-2\.5[^/]*(pro|flash)(?![^/]*lite)/i,
+  /anthropic\/claude[^/]*(sonnet|haiku|opus)[^/]*-[4-9]/i,
+  /openai\/gpt-[5-9](?![^/]*nano)/i,
+  /qwen[^/]*vl[^/]*(max|plus|72b|235b)|qwen3[^/]*vl/i,
+];
+export function designVisionCandidates(models: ModelInfo[], blocked: ReadonlySet<string> = new Set(), max = 5): string[] {
+  const vis = models.filter((m) => m.capabilities.vision && !blocked.has(m.id) && !/:batch\b|:free\b/.test(m.id) && ((m.inputPrice ?? 0) > 0 || (m.outputPrice ?? 0) > 0));
+  const out: string[] = [];
+  for (const re of DESIGN_TIERS) out.push(...vis.filter((m) => re.test(m.id)).sort((a, b) => price(a) - price(b)).map((m) => m.id));
+  return [...new Set(out)].slice(0, max);
+}
+export function visionCandidates(models: ModelInfo[], preferred?: string | null, blocked: ReadonlySet<string> = new Set(), mode: 'cheap' | 'reliable' | 'design' = 'cheap', max = 5): string[] {
+  if (mode === 'design') {
+    const best = designVisionCandidates(models, blocked, max);
+    return [...new Set([...(preferred ? [preferred] : []), ...best, ...visionCandidates(models, null, blocked, 'reliable', max)])].slice(0, max + 2);
+  }
   const vis = models.filter((m) => m.capabilities.vision && m.inputPrice !== null && m.outputPrice !== null && !blocked.has(m.id) && !/:batch\b/.test(m.id));
   const pref = preferred ? vis.find((m) => m.id === preferred) : undefined;
   const free = vis.filter((m) => m.inputPrice === 0 && m.outputPrice === 0).sort((a, b) => b.contextLength - a.contextLength);

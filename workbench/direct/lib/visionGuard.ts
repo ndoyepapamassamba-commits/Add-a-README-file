@@ -24,13 +24,21 @@ export function blockVision(id: string): void {
   }
 }
 /** Run `fn` with the first vision model that works. Throws the last error when every candidate failed. */
-export async function withVisionModel<T>(fn: (model: string) => Promise<T>, mode: 'cheap' | 'reliable' = 'reliable', signal?: AbortSignal): Promise<T> {
+export async function withVisionModel<T>(fn: (model: string) => Promise<T>, mode: 'cheap' | 'reliable' | 'design' = 'reliable', signal?: AbortSignal): Promise<T> {
   const st = useStore.getState();
   // The model the USER chose comes first: the vision model of the settings, then the chat's own model when it sees
   // images (a text-only model such as a Qwen Flash gets its eyes from the next candidates — JEV vision bridge).
   const sess = st.sessions.find((x) => x.id === st.currentId);
   const chatModel = [sess?.pinnedModel, sess?.model].find((m) => m && m !== 'auto' && st.models.some((x) => x.id === m && x.capabilities.vision));
-  const list = [...new Set([...(st.settings.visionModel ? [st.settings.visionModel] : []), ...(chatModel ? [chatModel] : []), ...visionCandidates(st.models, null, blockedVision(), mode)])].filter((m) => !blockedVision().has(m)).slice(0, 6);
+  // Reading a DESIGN (boxes, kinds, colours): the strongest box-locating models of the catalogue come right after the
+  // user's own vision model — before the chat model, which may see but locate poorly.
+  const list = (
+    mode === 'design'
+      ? [...new Set([...(st.settings.visionModel ? [st.settings.visionModel] : []), ...visionCandidates(st.models, null, blockedVision(), 'design'), ...(chatModel ? [chatModel] : [])])]
+      : [...new Set([...(st.settings.visionModel ? [st.settings.visionModel] : []), ...(chatModel ? [chatModel] : []), ...visionCandidates(st.models, null, blockedVision(), mode)])]
+  )
+    .filter((m) => !blockedVision().has(m))
+    .slice(0, 6);
   if (!list.length) throw new Error('Aucun modèle vision disponible dans le catalogue.');
   let last: unknown = null;
   for (const model of list) {

@@ -62,6 +62,7 @@ import { applyWebTheme, deliverableFromCode, deliverableFromText, kindForTool, t
 import { isOffice, recolorOffice } from '../../server/services/officeRecolor';
 import { addImagePageDocx, addImageSheet, addImageSlidePptx, addImageToHtml, addLogoToHtml, addLogoToOffice } from '../../server/services/officeLogo';
 import { addNativeClone } from '../../server/services/cloneXlsx';
+import { restyleWorkbook } from '../../server/services/officeRestyle';
 import { renderCloneSvg } from '../../server/services/dashRender';
 import { previewData, rasterise } from './designClone';
 import { LOGO_VARIANTS } from '../../server/services/logoHarmony';
@@ -2709,6 +2710,12 @@ async function applyClone(sid: string, since: number): Promise<{ n: number; note
         const withPic = addImageSheet(b, pic, 'Tableau de bord (image)');
         const nat = withPic ? addNativeClone(withPic, c.clone, pd.data, pic) : null;
         out = nat?.bytes ?? addImageSheet(b, pic);
+        // Every other sheet (the model's own, the data sheet) in Maison 2.0 with the image's colours and font.
+        const rs = out ? restyleWorkbook(out, { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, font: c.clone.font }, new Set(['Tableau de bord', 'Tableau de bord (image)'])) : null;
+        if (rs) {
+          out = rs.bytes;
+          notes.push(`feuilles ${rs.sheets.map((x) => `« ${x} »`).join(', ')} mises au format Maison 2.0 aux couleurs de l'image`);
+        }
         if (nat) notes.push(`${f.path} : 1re feuille « Tableau de bord » = l'image choisie reconstruite en Excel natif (${nat.charts} graphiques Excel modifiables, ${nat.shapes} cartes/tuiles${nat.crops ? `, ${nat.crops} zone(s) reprise(s) de l'image` : ''}), 2e feuille « Tableau de bord (image) » = la reproduction photo, données dans « Données du tableau de bord »`);
       } else out = /\.docx$/i.test(f.path) ? addImagePageDocx(b, pic) : addImageSlidePptx(b, pic);
       if (out) {

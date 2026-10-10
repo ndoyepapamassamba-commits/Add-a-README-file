@@ -45,6 +45,14 @@ export interface Panel extends PanelStyle {
   titleAlign: 'left' | 'center';
   valueLabels: boolean;
   legend: 'none' | 'right' | 'bottom';
+  /** Where the image's own panel title was (fractions of the image), its colour and height — the new title goes there. */
+  titleBox?: Box;
+  titleColor?: string;
+  /** KPI: where the big figure was, and its colour. */
+  valueBox?: Box;
+  valueColor?: string;
+  /** Navigation / slicer panels: every text slot of the image (menu items, buttons) — filled with the user's labels. */
+  slots?: { box: Box; color: string }[];
 }
 export interface DashSpec {
   version: 1;
@@ -61,6 +69,71 @@ export interface DashSpec {
   /** Main colours of the whole design (for Office exports): primary, accent, dark text. */
   palette: { primary: string; accent: string; dark: string; series: string[] };
   source?: string;
+  /**
+   * The image's design with its content removed (data URL, same size as the analysed image): backgrounds, gradients,
+   * cards, bands, frames, shadows. When present the reproduction is drawn ON it (only texts and data are new).
+   */
+  background?: string;
+  /** The first free text line of the image below its title (subtitle, brand strip): the source / date goes there. */
+  subtitle?: { box: Box; color: string } | null;
+}
+
+/**
+ * Places the image's text lines on the spec: the main title (biggest line above the panels), each panel's title (first
+ * line in its top band) and each KPI's big figure (tallest line in the tile) — boxes and colours as measured.
+ */
+export function attachTexts(spec: DashSpec, texts: { box: { x0: number; y0: number; x1: number; y1: number }; color: string; size: number }[], w: number, h: number): DashSpec {
+  const fr = (b: { x0: number; y0: number; x1: number; y1: number }): Box => ({ x: b.x0 / w, y: b.y0 / h, w: (b.x1 - b.x0) / w, h: (b.y1 - b.y0) / h });
+  const inside = (t: { box: { x0: number; y0: number; x1: number; y1: number } }, p: Box) => t.box.x0 >= p.x * w - 2 && t.box.x1 <= (p.x + p.w) * w + 2 && t.box.y0 >= p.y * h - 2 && t.box.y1 <= (p.y + p.h) * h + 2;
+  const panels = spec.panels.map((p) => {
+    // Lines of the panel — not the anti-aliased slivers of its rounded corners (they touch its edges).
+    const m = Math.max(3, Math.min(p.box.w * w, p.box.h * h) * 0.02);
+    const own = texts.filter((t) => inside(t, p.box) && t.box.x0 > p.box.x * w + m && t.box.y0 > p.box.y * h + m && t.box.x1 < (p.box.x + p.box.w) * w - m && t.box.y1 < (p.box.y + p.box.h) * h - m);
+    if (!own.length) return p;
+    // The title: on the first text row of the panel (lines whose top is within half a line of the highest one), the
+    // leftmost line — not the legend that shares the row.
+    const upper = own.filter((t) => t.box.y0 < (p.box.y + p.box.h * 0.3) * h);
+    const y0 = Math.min(...upper.map((t) => t.box.y0));
+    const row = upper.filter((t) => t.box.y0 <= y0 + Math.max(4, Math.min(...upper.map((u) => u.size)) * 0.6));
+    const top = row.sort((a, b) => a.box.x0 - b.box.x0)[0];
+    const out: Panel = { ...p };
+    if (p.kind === 'filter' || p.kind === 'title') out.slots = own.map((t) => ({ box: fr(t.box), color: t.color }));
+    if (top) {
+      out.titleBox = fr(top.box);
+      out.titleColor = top.color;
+      out.titleAlign = Math.abs((top.box.x0 + top.box.x1) / 2 / w - (p.box.x + p.box.w / 2)) < p.box.w * 0.12 ? 'center' : 'left';
+    }
+    if (p.kind === 'kpi') {
+      const big = [...own].sort((a, b) => b.size - a.size)[0];
+      if (big) {
+        out.valueBox = fr(big.box);
+        out.valueColor = big.color;
+        // One line only: it is the figure, the label goes small above it.
+        if (big === top) {
+          delete out.titleBox;
+          delete out.titleColor;
+        }
+      }
+    }
+    return out;
+  });
+  // Main title: a big line (≥ 1.3 × the median text) outside every panel (with a margin), in the top fifth. None in the
+  // image (title inside a sidebar logo…): none drawn.
+  const sizes = texts.map((t) => t.size).sort((a, b) => a - b);
+  const median = sizes[Math.floor(sizes.length / 2)] ?? 0;
+  const near = (t: (typeof texts)[number], p: Box) => t.box.x1 > (p.x - 0.01) * w && t.box.x0 < (p.x + p.w + 0.01) * w && t.box.y1 > (p.y - 0.01) * h && t.box.y0 < (p.y + p.h + 0.01) * h;
+  const free = texts
+    .filter((t) => t.box.y0 < h * 0.2 && t.size >= median * 1.3 && t.box.x1 - t.box.x0 >= w * 0.12 && !spec.panels.some((p) => near(t, p.box)))
+    .sort((a, b) => b.size * (b.box.x1 - b.box.x0) - a.size * (a.box.x1 - a.box.x0));
+  // No free big line: the biggest line inside the title zone the pixels found (a title right above the panels).
+  const zone = spec.title?.box;
+  const inZone = zone ? texts.filter((t) => t.box.x0 >= (zone.x - 0.01) * w && t.box.x1 <= (zone.x + zone.w + 0.01) * w && t.box.y0 >= (zone.y - 0.02) * h && t.box.y1 <= (zone.y + zone.h + 0.02) * h).sort((a, b) => b.size * (b.box.x1 - b.box.x0) - a.size * (a.box.x1 - a.box.x0)) : [];
+  const main = free[0] ?? inZone[0];
+  const title = main ? { box: fr(main.box), color: main.color, align: (Math.abs((main.box.x0 + main.box.x1) / 2 - w / 2) < w * 0.08 ? 'center' : 'left') as 'left' | 'center', fill: null } : spec.background ? null : spec.title;
+  const sub = texts
+    .filter((t) => t !== main && t.box.y0 < h * 0.3 && (!main || t.box.y0 >= main.box.y1 - 2) && !spec.panels.some((p) => near(t, p.box)))
+    .sort((a, b) => a.box.x0 - b.box.x0 || a.box.y0 - b.box.y0)[0];
+  return { ...spec, panels, title, subtitle: sub ? { box: fr(sub.box), color: sub.color } : null };
 }
 
 // ── colour helpers ───────────────────────────────────────────────────────────────────────────────────────────────────
@@ -121,6 +194,153 @@ export interface Detection {
   panels: PxBox[];
   /** How well the panel edges are explained by the image (0–1): low = ask the vision model for the boxes. */
   score: number;
+  /** Header strip at the top of a framed container (brand / subtitle band). */
+  band?: PxBox | null;
+}
+
+/**
+ * NESTED CONTAINER (dark dashboards): the page colour forms one big region framed by a thin line inside a different
+ * (often gradient) background; a header strip may run along its top; the title sits ABOVE it, on the background.
+ * Returns the container box (strip included), the strip, the frame line colour, or null.
+ */
+function findContainer(px: ArrayLike<number>, w: number, h: number, page: RGB): { box: PxBox; strip: PxBox | null; line: RGB | null } | null {
+  const s = Math.max(2, Math.round(Math.min(w, h) / 160));
+  const gw = Math.ceil(w / s);
+  const gh = Math.ceil(h / s);
+  const isPage = new Uint8Array(gw * gh);
+  for (let gy = 0; gy < gh; gy++) for (let gx = 0; gx < gw; gx++) if (d2(at(px, w, Math.min(w - 1, gx * s), Math.min(h - 1, gy * s)), page) < 11 ** 2) isPage[gy * gw + gx] = 1;
+  // Largest 4-connected component of page cells.
+  const seen = new Uint8Array(gw * gh);
+  let best: PxBox | null = null;
+  let bestN = 0;
+  const stack: number[] = [];
+  for (let i = 0; i < gw * gh; i++) {
+    if (!isPage[i] || seen[i]) continue;
+    let n = 0;
+    let x0 = gw;
+    let y0 = gh;
+    let x1 = 0;
+    let y1 = 0;
+    stack.push(i);
+    seen[i] = 1;
+    while (stack.length) {
+      const k = stack.pop()!;
+      const x = k % gw;
+      const y = (k - x) / gw;
+      n++;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+      for (const nb of [x > 0 ? k - 1 : -1, x < gw - 1 ? k + 1 : -1, y > 0 ? k - gw : -1, y < gh - 1 ? k + gw : -1])
+        if (nb >= 0 && isPage[nb] && !seen[nb]) {
+          seen[nb] = 1;
+          stack.push(nb);
+        }
+    }
+    if (n > bestN) {
+      bestN = n;
+      best = { x0: x0 * s, y0: y0 * s, x1: Math.min(w, (x1 + 1) * s), y1: Math.min(h, (y1 + 1) * s) };
+    }
+  }
+  if (!best) return null;
+  const bw = best.x1 - best.x0;
+  const bh = best.y1 - best.y0;
+  // A container is inset (by a margin above it at least) and big; the whole image being the page is not one.
+  // It spans most of the image (a single panel's interior does not) and leaves a title zone above it.
+  if (bw < w * 0.7 || bh < h * 0.55 || best.y0 < h * 0.06) return null;
+  // Above it: not the page colour (the background the title sits on).
+  let notPage = 0;
+  let total = 0;
+  for (let y = 0; y < best.y0 * 0.6; y += s)
+    for (let x = best.x0; x < best.x1; x += s * 2) {
+      total++;
+      if (d2(at(px, w, x, y), page) > 22 ** 2) notPage++;
+    }
+  if (!total || notPage / total < 0.7) return null;
+  // The frame line: the brightest thin horizontal line just above the component (and its strip below it).
+  const L = (x: number, y: number) => lum(at(px, w, x, Math.max(0, Math.min(h - 1, y))));
+  const xs: number[] = [];
+  for (let x = best.x0 + Math.round(bw * 0.05); x < best.x1 - bw * 0.05; x += Math.max(1, Math.round(bw / 60))) xs.push(x);
+  let lineY = -1;
+  let lineScore = 0;
+  for (let y = best.y0 - 1; y > Math.max(2, best.y0 - h * 0.15); y--) {
+    const sc = xs.reduce((a, x) => a + (L(x, y) - (L(x, y - 3) + L(x, y + 3)) / 2), 0) / xs.length;
+    if (sc > lineScore) {
+      lineScore = sc;
+      lineY = y;
+    }
+  }
+  const hasLine = lineScore > 0.04;
+  const top = hasLine ? lineY : best.y0;
+  // The header strip under the frame line: rows whose typical colour is not the page's (a horizontal gradient strip
+  // fades into the page colour on one side: the median distance is what counts).
+  let stripEnd = hasLine ? lineY + 2 : best.y0;
+  if (hasLine) {
+    const xs2 = xs.filter((_, k) => k % 2 === 0);
+    for (let y = lineY + 2; y < Math.min(h - 1, lineY + h * 0.12); y++) {
+      const ds = xs2.map((x) => Math.sqrt(d2(at(px, w, x, y), page))).sort((a, b) => a - b);
+      if ((ds[Math.floor(ds.length / 2)] ?? 0) <= 9) break;
+      stripEnd = y + 1;
+    }
+  }
+  const strip = hasLine && stripEnd - lineY > h * 0.025 ? { x0: best.x0, y0: lineY + 2, x1: best.x1, y1: stripEnd } : null;
+  // Left frame line, if any, just left of the component.
+  let x0 = best.x0;
+  for (let x = best.x0 - 1; x > Math.max(1, best.x0 - w * 0.04); x--) {
+    const ys = [0.3, 0.5, 0.7].map((f) => Math.round(best!.y0 + bh * f));
+    const sc = ys.reduce((a, y) => a + (L(x, y) - (L(x - 3, y) + L(x + 3, y)) / 2), 0) / ys.length;
+    if (sc > 0.04) {
+      x0 = x;
+      break;
+    }
+  }
+  const line = hasLine ? modeColor(px, w, xs.map((x) => [x, lineY] as [number, number])) : null;
+  return { box: { x0, y0: top, x1: best.x1, y1: best.y1 }, strip, line };
+}
+/** The title on the background above a container: the biggest cluster of bright (or dark) text, not an annotation. */
+function titleOutside(px: ArrayLike<number>, w: number, h: number, below: number, bg: RGB): PxBox | null {
+  if (below < h * 0.04) return null;
+  const bgL = lum(bg);
+  const ink = (c: RGB) => Math.abs(lum(c) - bgL) > 0.32;
+  const colInk = new Float64Array(w);
+  let rows: number[] = [];
+  for (let y = 1; y < below - 1; y++) {
+    let n = 0;
+    for (let x = 0; x < w; x++)
+      if (ink(at(px, w, x, y))) {
+        colInk[x]!++;
+        n++;
+      }
+    if (n > 2) rows.push(y);
+  }
+  if (!rows.length) return null;
+  // Column segments separated by gaps wider than 3 % of the width: keep the one with the most ink.
+  const gap = Math.round(w * 0.03);
+  let segs: { a: number; b: number; ink: number }[] = [];
+  let cur: { a: number; b: number; ink: number } | null = null;
+  let empty = 0;
+  for (let x = 0; x < w; x++) {
+    if (colInk[x]! > 0) {
+      if (!cur) cur = { a: x, b: x, ink: 0 };
+      cur.b = x;
+      cur.ink += colInk[x]!;
+      empty = 0;
+    } else if (cur && ++empty > gap) {
+      segs.push(cur);
+      cur = null;
+    }
+  }
+  if (cur) segs.push(cur);
+  segs = segs.sort((p, q) => q.ink - p.ink);
+  const seg = segs[0];
+  if (!seg || seg.b - seg.a < w * 0.08) return null;
+  rows = rows.filter((y) => {
+    for (let x = seg.a; x <= seg.b; x++) if (ink(at(px, w, x, y))) return true;
+    return false;
+  });
+  if (!rows.length) return null;
+  return { x0: seg.a, y0: rows[0]!, x1: seg.b + 1, y1: rows[rows.length - 1]! + 1 };
 }
 
 /** Recursive XY-cut: split a box at background gutters (largest first) until panels remain. */
@@ -440,12 +660,23 @@ export function detectLayout(px: ArrayLike<number>, w: number, h: number): Detec
     while (diag < Math.min(w, h) / 4 && d2(at(px, w, corner[0]! + corner[2]! * diag, corner[1]! + corner[3]! * diag), outer) < 30 ** 2) diag++;
     frame = { color: frameRgb, width: Math.max(...sides), radius: Math.max(0, Math.round(diag * 2.4)) };
   }
-  const pageBox = { x0: l, y0: t, x1: r, y1: bm };
+  let pageBox = { x0: l, y0: t, x1: r, y1: bm };
+  // A framed container inside a different background wins over the edge bands.
+  const cont = findContainer(px, w, h, page);
+  let band: PxBox | null = null;
+  let outsideTitle: PxBox | null = null;
+  if (cont) {
+    pageBox = cont.box;
+    band = cont.strip;
+    frame = { color: cont.line ?? outer, width: Math.max(1, Math.round(Math.min(w, h) / 400)), radius: Math.round(Math.min(w, h) * 0.012) };
+    frameRgb = null;
+    outsideTitle = titleOutside(px, w, h, cont.box.y0, modeColor(px, w, grid(0, 0, w, Math.max(1, cont.box.y0), Math.max(1, Math.round(w / 200)))));
+  }
   // Non-background mask inside the page (the frame colour and the outside colour count as background: a rounded
   // frame's corners must not glue panels together).
   const isBg = (c: RGB) => !far(c) || (frameRgb !== null && d2(c, frameRgb) < 34 ** 2) || (frameRgb !== null && d2(c, outer) < 24 ** 2);
   const mask = new Uint8Array(w * h);
-  for (let y = pageBox.y0; y < pageBox.y1; y++) for (let x = pageBox.x0; x < pageBox.x1; x++) if (!isBg(at(px, w, x, y))) mask[y * w + x] = 1;
+  for (let y = band ? band.y1 : pageBox.y0; y < pageBox.y1; y++) for (let x = pageBox.x0; x < pageBox.x1; x++) if (!isBg(at(px, w, x, y))) mask[y * w + x] = 1;
   // Several segmentations compete; the one whose box edges are best explained by the image wins:
   //  A — bordered panels (often glued to each other): thin border lines close the panels;
   //  B — cards separated by background gutters: recursive XY-cut on the non-background mask;
@@ -502,7 +733,7 @@ export function detectLayout(px: ArrayLike<number>, w: number, h: number): Detec
   xyCut(mask, w, h, pageBox, 0, leaves);
   candidates.push({ name: 'gutters', ...fromLeaves(leaves) });
   const soft = new Uint8Array(w * h);
-  for (let y = pageBox.y0; y < pageBox.y1; y++) for (let x = pageBox.x0; x < pageBox.x1; x++) {
+  for (let y = band ? band.y1 : pageBox.y0; y < pageBox.y1; y++) for (let x = pageBox.x0; x < pageBox.x1; x++) {
     const c = at(px, w, x, y);
     if (d2(c, page) > 11 ** 2 && !isWall(c)) soft[y * w + x] = 1;
   }
@@ -547,7 +778,7 @@ export function detectLayout(px: ArrayLike<number>, w: number, h: number): Detec
     if (!best || score > best.score) best = { ...c, panels: kept, score };
   }
   const chosen = best ?? { title: null, panels: [], score: 0 };
-  return { page, outer, frame, pageBox, title: chosen.title, panels: readingOrder(chosen.panels, ph), score: chosen.score };
+  return { page, outer, frame, pageBox, title: outsideTitle ?? chosen.title, panels: readingOrder(chosen.panels, ph), score: chosen.score, band };
 }
 
 // ── 2. style per panel ───────────────────────────────────────────────────────────────────────────────────────────────
@@ -829,12 +1060,14 @@ export function parseSom(text: string): SomAnswer | null {
 
 // ── 3c. when the pixels are ambiguous (photos, mock-ups, blurry thumbnails): the vision model gives the BOXES ─────────
 export const BOXES_PROMPT = `This image shows a dashboard / report (it may be a photo, a mock-up or a screenshot). A light grid is drawn every 10 % to help you.
-List EVERY visual panel (KPI card, chart, table, map, text block) and the main title, with its bounding box in thousandths of the image (0–1000, x to the right, y down). Answer ONLY JSON:
-{"title":[x0,y0,x1,y1] or null,"panels":[{"box":[x0,y0,x1,y1],"kind":"kpi|bar|hbar|line|area|pie|donut|gauge|table|text|map|image|filter","tiles":1}],"font":"closest font family","title_align":"left|center"}
+List EVERY visual panel — each card / tile / chart box separately: KPI cards, charts, tables, text blocks, photos, AND navigation sidebars, menus, slicers / filter button groups — plus the main title. Give each bounding box as [x0,y0,x1,y1] in thousandths of the image width / height (0–1000; x0,x1 horizontal from the LEFT edge, y0,y1 vertical from the TOP edge), tight on the card's visible edges. Answer ONLY JSON:
+{"title":[x0,y0,x1,y1] or null,"panels":[{"box":[x0,y0,x1,y1],"kind":"kpi|bar|hbar|line|area|pie|donut|gauge|table|text|map|image|filter","tiles":1,"colors":["#RRGGBB"]}],"font":"closest font family","title_align":"left|center"}
+kind: bar = vertical columns, hbar = horizontal bars (also funnels and pictogram bars), line, area, pie, donut (also rings / progress circles), gauge = half circle, kpi = big figure card, table, text, map, image = photo or illustration, filter = navigation menu / sidebar / slicer buttons / calendar buttons.
+tiles = number of separate KPI cards inside the box. colors = the main colours of the chart's MARKS (bars, slices, lines), most used first (not the card background).
 Boxes must not overlap; follow the reading order (rows top to bottom, left to right).`;
 export interface VisionBoxes {
   title: Box | null;
-  panels: { box: Box; kind?: PanelKind; tiles: number }[];
+  panels: { box: Box; kind?: PanelKind; tiles: number; colors?: string[] }[];
   font?: string;
   titleAlign?: 'left' | 'center';
 }
@@ -842,7 +1075,7 @@ export function parseBoxes(text: string): VisionBoxes | null {
   const m = /\{[\s\S]*\}/.exec(text);
   if (!m) return null;
   try {
-    const j = JSON.parse(m[0]) as { title?: unknown; panels?: { box?: unknown; kind?: unknown; tiles?: unknown }[]; font?: unknown; title_align?: unknown };
+    const j = JSON.parse(m[0]) as { title?: unknown; panels?: { box?: unknown; kind?: unknown; tiles?: unknown; colors?: unknown }[]; font?: unknown; title_align?: unknown };
     const toBox = (v: unknown): Box | null => {
       if (!Array.isArray(v) || v.length !== 4 || !v.every((n) => typeof n === 'number' && Number.isFinite(n))) return null;
       const [x0, y0, x1, y1] = (v as number[]).map((n) => Math.max(0, Math.min(1000, n)) / 1000);
@@ -852,7 +1085,8 @@ export function parseBoxes(text: string): VisionBoxes | null {
       .map((p) => {
         const box = toBox(p.box);
         const kind = String(p.kind ?? '').toLowerCase().replace(/[^a-z]/g, '') as PanelKind;
-        return box ? { box, kind: PANEL_KINDS.includes(kind) ? kind : undefined, tiles: Math.max(1, Math.min(8, Math.round(Number(p.tiles) || 1))) } : null;
+        const colors = Array.isArray(p.colors) ? p.colors.filter((c): c is string => typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c.trim())).map((c) => c.trim().toUpperCase()).slice(0, 6) : [];
+        return box ? { box, kind: PANEL_KINDS.includes(kind) ? kind : undefined, tiles: Math.max(1, Math.min(8, Math.round(Number(p.tiles) || 1))), ...(colors.length ? { colors } : {}) } : null;
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
     if (!panels.length) return null;

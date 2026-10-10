@@ -67,7 +67,7 @@ async function imageForVision(url: string): Promise<string> {
   return `data:${b.type || 'image/jpeg'};base64,${btoa(bin)}`;
 }
 /** Ask a vision model about an image — candidates tried in turn, refusing models remembered and skipped. */
-export async function askVision(prompt: string, url: string, maxTokens: number): Promise<{ content: string; model: string; cost: number }> {
+export async function askVision(prompt: string, url: string, maxTokens: number, mode: 'reliable' | 'design' = 'reliable'): Promise<{ content: string; model: string; cost: number }> {
   const st = useStore.getState();
   const image = await imageForVision(url);
   return withVisionModel(async (model) => {
@@ -77,7 +77,7 @@ export async function askVision(prompt: string, url: string, maxTokens: number):
     );
     if (!r.content?.trim()) throw new Error(`${model} : réponse vide`);
     return { content: r.content, model: r.model, cost: r.cost };
-  }, 'reliable');
+  }, mode);
 }
 
 export async function paletteFromImage(url: string): Promise<{ theme: CustomTheme; model: string; cost: number }> {

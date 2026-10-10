@@ -1,7 +1,8 @@
 // DASHBOARD CLONE in the browser: load the chosen image, measure it (dashClone), let a vision model LABEL the numbered
 // panels (set-of-marks), render the reproduction with the chat's own data (dashRender), rasterise it and measure how
 // close it is to the image. The vision model only labels; geometry and colours come from the pixels.
-import { BOXES_PROMPT, buildSpec, detectLayout, fidelityScore, parseBoxes, parseSom, SOM_PROMPT, withVisionBoxes, type DashSpec, type PanelKind } from '../../server/services/dashClone';
+import { attachTexts, BOXES_PROMPT, buildSpec, detectLayout, fidelityScore, parseBoxes, parseSom, SOM_PROMPT, withVisionBoxes, type DashSpec, type PanelKind, type SomAnswer } from '../../server/services/dashClone';
+import { cleanTemplate } from '../../server/services/cleanTemplate';
 import { cloneData, renderCloneSvg, type CloneData } from '../../server/services/dashRender';
 import { DataCore, isDataFile } from '../../server/services/dataCore';
 import { pickTable, type SheetTable } from '../../server/services/tablePick';
@@ -97,6 +98,13 @@ function gridded(dataUrl: string, w: number, h: number): Promise<string> {
 }
 
 /** Measure the image and label its panels. */
+/** The clean background (RGBA) as a compact JPEG data URL. */
+function bgDataUrl(bg: Uint8ClampedArray, w: number, h: number): string {
+  const c = canvas(w, h);
+  c.getContext('2d')!.putImageData(new ImageData(new Uint8ClampedArray(bg), w, h), 0, 0);
+  return c.toDataURL('image/jpeg', 0.92);
+}
+
 export async function cloneDesign(url: string, onStep: (s: string) => void = () => {}): Promise<ClonedDesign> {
   onStep('mesure de l’image (cadre, panneaux, couleurs)…');
   const { px, w, h, dataUrl } = await loadPixels(url);
@@ -112,37 +120,61 @@ export async function cloneDesign(url: string, onStep: (s: string) => void = () 
     }
     if (ink / Math.max(1, n) < 0.03) throw new Error('Cette image ne contient pas de tableau de bord à reproduire.');
   }
-  let som = null;
+  let som: SomAnswer | null = null;
   let labelledBy: string | null = null;
-  // Ambiguous pixels (photo, mock-up, blurry image, no visible borders): the vision model draws the boxes, the pixels
-  // refine their edges and give the colours.
-  if (det.score < 0.55 || det.panels.length < 2) {
-    try {
-      onStep('délimitation des panneaux par le modèle vision…');
-      const r = await askVision(BOXES_PROMPT, await gridded(dataUrl, w, h), 1500);
-      const vb = parseBoxes(r.content);
-      if (vb && vb.panels.length >= 2) {
-        const v = withVisionBoxes(px, w, h, det, vb);
-        det = v.det;
-        som = v.som;
-        labelledBy = r.model;
-      }
-    } catch {
-      /* keep the pixel segmentation */
+  let visionColors: (string[] | undefined)[] = [];
+  // 1. The strongest box-locating vision model of the catalogue cuts the panels out on EVERY image (kinds, colours);
+  //    the pixels then refine each edge. Without any vision model, the pixel segmentation alone.
+  try {
+    onStep('lecture de la mise en page par le meilleur modèle vision du catalogue…');
+    const r = await askVision(BOXES_PROMPT, await gridded(dataUrl, w, h), 2000, 'design');
+    const vb = parseBoxes(r.content);
+    if (vb && vb.panels.length >= 2) {
+      const v = withVisionBoxes(px, w, h, det, vb);
+      det = v.det;
+      som = v.som;
+      labelledBy = r.model;
+      visionColors = vb.panels.map((p) => p.colors);
     }
+  } catch {
+    /* keep the pixel segmentation */
   }
   if (!det.panels.length) throw new Error('Aucun panneau n’a pu être isolé dans cette image : choisissez un tableau de bord plus net.');
   if (!som) {
     try {
       onStep(`identification des ${det.panels.length} panneaux par le modèle vision…`);
-      const r = await askVision(SOM_PROMPT(det.panels.length), await annotate(dataUrl, w, h, det.panels), 700);
+      const r = await askVision(SOM_PROMPT(det.panels.length), await annotate(dataUrl, w, h, det.panels), 700, 'design');
       som = parseSom(r.content);
       labelledBy = som ? r.model : null;
     } catch {
       // No vision model answered: the pixel classifier labels the panels.
     }
   }
-  return { spec: buildSpec(px, w, h, det, som, url.startsWith('data:') ? undefined : url), source: dataUrl, width: w, height: h, px, labelledBy };
+  const source = url.startsWith('data:') ? undefined : url;
+  // 2. The image's DESIGN without its content: backgrounds, gradients, cards, bands, frames, shadows — texts, chart
+  //    marks, logos and photos removed. Menus / slicers keep their buttons; photos become their smooth tones.
+  onStep('extraction du design (fonds, cartes, dégradés, ombres) sans le contenu…');
+  const kinds0 = buildSpec(px, w, h, det, som, source).panels.map((p) => p.kind);
+  const erasable = det.panels.map((b, i) => ({ b, i })).filter(({ i }) => kinds0[i] !== 'filter' && kinds0[i] !== 'title');
+  const photos = new Set(erasable.map((e, k) => (kinds0[e.i] === 'image' ? k : -1)).filter((k) => k >= 0));
+  // The title zone is cleaned like a panel (a big bold title is no design surface); it is not a panel of the spec.
+  const titleZone = det.title ? [{ x0: det.title.x0 - 4, y0: det.title.y0 - 4, x1: det.title.x1 + 4, y1: det.title.y1 + 4 }] : [];
+  const tpl = cleanTemplate(px, w, h, [...erasable.map((e) => e.b), ...titleZone], photos);
+  erasable.forEach((e, k) => (det.panels[e.i] = tpl.snapped[k]!));
+  const som2: SomAnswer = { ...(som ?? {}), kinds: Object.fromEntries(kinds0.map((k, i) => [i + 1, { ...(som?.kinds[i + 1] ?? {}), kind: k }])) };
+  let spec = buildSpec(px, w, h, det, som2, source);
+  // The model's mark colours (what the eye sees), when it gave them.
+  spec.panels.forEach((p, i) => {
+    const c = visionColors[i];
+    if (c?.length) {
+      p.colors = c;
+      p.ramp = c;
+      p.sequential = false;
+    }
+  });
+  spec.background = bgDataUrl(tpl.bg, w, h);
+  spec = attachTexts(spec, tpl.texts, w, h);
+  return { spec, source: dataUrl, width: w, height: h, px, labelledBy };
 }
 
 /** Rasterise an SVG to RGBA pixels and PNG bytes at a given size. */

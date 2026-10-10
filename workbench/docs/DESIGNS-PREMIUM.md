@@ -39,6 +39,27 @@ Une demande qui réclame un fichier (Excel, Word, PowerPoint, PDF, mail, site, a
   - Mail `.eml` : non traité (la version `.mail.html` contient le logo) ;
   - Python : le modèle ne doit pas insérer le logo lui-même ; l'app l'ajoute.
 
+## Image choisie → reproduction sur le design même de l'image
+1. **Découpe par le meilleur modèle vision du catalogue** (`designVisionCandidates`, quel que soit le prix — environ 1 centime par lecture). Ordre :
+   1. le modèle vision choisi dans les réglages ;
+   2. Gemini 3 / 2.5 (Pro, Flash) ;
+   3. Claude Sonnet / Haiku / Opus ;
+   4. GPT‑6 / GPT‑5 ;
+   5. grands Qwen‑VL ;
+   6. le modèle du chat s'il voit les images.
+
+   Le modèle renvoie le cadre de **chaque** carte, menu, segment ou photo, son type et les couleurs de ses séries. Les pixels affinent ensuite chaque bord. Sans modèle vision : segmentation par les pixels (conteneur imbriqué, bandeau, titre au-dessus).
+2. **Design sans contenu** (`server/services/cleanTemplate.ts`) — l'image est découpée en surfaces de couleur continue (un dégradé reste une seule surface).
+   - **Conservé** : fonds, dégradés, cartes et leurs bandeaux, barres latérales, boutons, cadres, ombres, bords des cartes.
+   - **Effacé** : textes, marques des graphiques, logos, icônes, photos (devenues leurs tons lissés).
+   - Dans chaque panneau, le fond est un modèle lissé (plat, linéaire ou courbe) ; les bandes pleine largeur (en-têtes, lignes zébrées) et les tuiles internes sont gardées.
+   - Chaque panneau est **aligné sur les bords exacts de sa carte**.
+3. **Vos données dessinées dessus**, aux endroits mesurés (`attachTexts`) :
+   - le titre à la place, à la taille et dans la couleur du titre de l'image, et le sous-titre (source, date) sur le bandeau ;
+   - chaque titre de panneau sur la ligne de titre de l'image, les KPI sur les chiffres de l'image ;
+   - les menus et segments remplis avec vos axes, vos catégories et vos mois.
+4. **Excel** : feuille « Tableau de bord » = le design de l'image en fond, avec par-dessus les **graphiques Excel natifs** (transparents, modifiables) et les textes en formes Excel aux mêmes endroits.
+
 ## Image choisie → livrable au design de l'image
 - **Excel** — même quand le modèle écrit le classeur lui-même (Python / openpyxl) :
   1. **feuille 1 « Tableau de bord »** : l'image reconstruite en **Excel natif** (`server/services/cloneXlsx.ts`) :
@@ -52,6 +73,12 @@ Une demande qui réclame un fichier (Excel, Word, PowerPoint, PDF, mail, site, a
   - Les lignes **TOTAL / Sous-total / « TOTAL / MOYENNE »** sont exclues, mais pas un client nommé « TOTAL SENEGAL SA ».
   - Seules les colonnes de montants sont sommées : un numéro client, un stade ou un mois d'ancienneté ne le sont jamais.
 - **Fichiers openpyxl** : le préfixe `r:` est déclaré à la racine du classeur (openpyxl ne le déclare que sur chaque feuille) et les chemins absolus `/xl/…` sont résolus. Avant ce correctif, l'insertion rendait le classeur invalide et Excel la supprimait à l'ouverture.
+- **Autres feuilles au format Maison 2.0 aux couleurs de l'image** (`server/services/officeRestyle.ts`) — feuilles du modèle et feuille de données :
+  - bandeau de titre dans la couleur foncée de l'image ;
+  - en-tête dans sa couleur principale, en blanc et gras ;
+  - lignes zébrées teintées, filets fins, police du design ;
+  - sans quadrillage, onglet coloré.
+  - Formats de nombres, formules, fusions et graphiques sont conservés ; aucune ligne n'est insérée, donc aucune référence ne se décale.
 - Le modèle est informé de ce qui a été appliqué : feuilles, nombre de graphiques, source des chiffres.
 
 ## Style maison 2.0 — « GOD 3D »

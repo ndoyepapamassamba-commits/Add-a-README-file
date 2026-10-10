@@ -17,6 +17,8 @@ export interface DataView {
 }
 export interface CloneData {
   title: string;
+  /** Source and date (shown where the image had a subtitle / brand strip). */
+  subtitle?: string;
   kpis: { label: string; value: string }[];
   views: DataView[];
   table: { columns: string[]; rows: (string | number)[][] };
@@ -104,7 +106,7 @@ export function cloneData(title: string, columns: string[], allRows: Record<stri
     .sort((a, b) => (NAME.test(b) ? 2 : 0) - (CODEY.test(b) ? 1 : 0) - ((NAME.test(a) ? 2 : 0) - (CODEY.test(a) ? 1 : 0)));
   const tcols = labelCols.length || numCols.length ? [...labelCols.slice(0, 2), ...numCols.slice(0, 3)] : columns.slice(0, 5);
   const ranked = numCols[0] ? [...rows].sort((a, b) => (isNum(b[numCols[0]!]) ? (b[numCols[0]!] as number) : 0) - (isNum(a[numCols[0]!]) ? (a[numCols[0]!] as number) : 0)) : rows;
-  return { title, kpis, views, table: { columns: tcols, rows: ranked.slice(0, 60).map((r) => tcols.map((c) => (isNum(r[c]) ? (r[c] as number) : String(r[c] ?? '')))) } };
+  return { title, subtitle: `${rows.length.toLocaleString('fr-FR').replace(/[\u202f\u00a0]/g, ' ')} lignes · édité le ${new Date().toLocaleDateString('fr-FR')}`, kpis, views, table: { columns: tcols, rows: ranked.slice(0, 60).map((r) => tcols.map((c) => (isNum(r[c]) ? (r[c] as number) : String(r[c] ?? '')))) } };
 }
 
 // ── colour helpers ───────────────────────────────────────────────────────────────────────────────────────────────────
@@ -254,7 +256,7 @@ function contrastH(a: string, b: string): number {
 }
 /** The first readable colour on a fill (the design's own colours first). */
 export const readableOn = (fill: string, prefs: string[]) => prefs.find((c) => c && contrastH(c, fill) >= 3.2) ?? (lumH(fill) < 0.5 ? '#FFFFFF' : '#111827');
-function kpiTiles(r: R, kpis: CloneData['kpis'], p: Panel, fs: number): string {
+function kpiTiles(r: R, kpis: CloneData['kpis'], p: Panel, fs: number, onBg = false): string {
   const n = Math.max(1, p.tiles);
   const gap = n > 1 ? r.w * 0.02 : 0;
   const tw = (r.w - gap * (n - 1)) / n;
@@ -267,7 +269,7 @@ function kpiTiles(r: R, kpis: CloneData['kpis'], p: Panel, fs: number): string {
       const labelC = readableOn(fill, [mixH(p.text, fill, 0.3), p.text]);
       const x = r.x + i * (tw + gap);
       const vs = Math.min(r.h * 0.42, tw / Math.max(4, k.value.length * 0.62));
-      return `${n > 1 ? `<rect x="${x}" y="${r.y}" width="${tw}" height="${r.h}" rx="${Math.max(4, p.radius * 0.6)}" fill="${fill}"/>` : ''}<text x="${x + tw / 2}" y="${r.y + r.h * 0.34}" text-anchor="middle" font-size="${Math.min(fs, r.h * 0.18)}" fill="${labelC}">${esc(trunc(k.label, 26))}</text><text x="${x + tw / 2}" y="${r.y + r.h * 0.34 + vs * 1.15}" text-anchor="middle" font-size="${vs}" font-weight="700" fill="${valueC}">${esc(k.value)}</text>`;
+      return `${n > 1 && !onBg ? `<rect x="${x}" y="${r.y}" width="${tw}" height="${r.h}" rx="${Math.max(4, p.radius * 0.6)}" fill="${fill}"/>` : ''}<text x="${x + tw / 2}" y="${r.y + r.h * 0.34}" text-anchor="middle" font-size="${Math.min(fs, r.h * 0.18)}" fill="${labelC}">${esc(trunc(k.label, 26))}</text><text x="${x + tw / 2}" y="${r.y + r.h * 0.34 + vs * 1.15}" text-anchor="middle" font-size="${vs}" font-weight="700" fill="${valueC}">${esc(k.value)}</text>`;
     })
     .join('');
 }
@@ -293,6 +295,37 @@ function tableBlock(r: R, t: CloneData['table'], p: Panel, fs: number): string {
 }
 
 /** The full reproduction. `W` = width in px of the SVG coordinate system. */
+/**
+ * Menus, slicers, button grids: the image's text slots filled with the user's own labels — the dashboard title over the
+ * first stacked lines (a logo block), a column of items gets the analysis axes, a grid of buttons gets months /
+ * categories. Shared by the picture and the native Excel sheet.
+ */
+export function slotTexts(p: Panel, d: CloneData, P: (b: { x: number; y: number; w: number; h: number }) => { x: number; y: number; w: number; h: number }, r: { x: number; y: number; w: number; h: number }): { x: number; y: number; w: number; h: number; text: string; size: number; color: string; bold: boolean }[] {
+  if (!p.slots?.length) return [];
+  const axes = [...new Set(d.views.map((x) => (x.ordered ? 'Évolution mensuelle' : x.title.split(' par ')[1] ?? x.title)))];
+  const cats = [...new Set(d.views.filter((x) => !x.ordered).flatMap((x) => x.categories))];
+  const months = d.views.find((x) => x.ordered)?.categories ?? [];
+  const slots = p.slots.map((sl) => ({ ...sl, r: P(sl.box) })).sort((a, b) => a.r.y - b.r.y || a.r.x - b.r.x);
+  const rowOf = (k: number) => slots.filter((o) => Math.abs(o.r.y - slots[k]!.r.y) < Math.max(4, slots[k]!.r.h * 0.6));
+  let ai = 0;
+  let ci = 0;
+  let mi = 0;
+  let head = 1;
+  while (head < Math.min(3, slots.length) && Math.abs(slots[head]!.r.x - slots[0]!.r.x) < 6 && slots[head]!.r.y - (slots[head - 1]!.r.y + slots[head - 1]!.r.h) < slots[0]!.r.h * 0.9 && rowOf(head).length < 3) head++;
+  const words = d.title.split(/\s+/);
+  const per = Math.ceil(words.length / head);
+  const heights = slots.map((o) => o.r.h).sort((a, b) => a - b);
+  const typical = heights[Math.floor(heights.length / 2)] ?? 10;
+  return slots.map((sl, k) => {
+    const inGrid = rowOf(k).length >= 3;
+    const label = k < head ? words.slice(k * per, (k + 1) * per).join(' ') : inGrid ? (months.length > mi ? months[mi++]! : cats[ci++ % Math.max(1, cats.length)] ?? '') : axes[ai++ % Math.max(1, axes.length)] ?? '';
+    // A highlighted button measures taller than its text: never bigger than the typical slot.
+    const size = Math.max(7, Math.min(sl.r.h, typical * 1.25) * 0.92);
+    const maxCh = Math.max(3, Math.round((inGrid ? sl.r.w * 1.6 : r.x + r.w - sl.r.x - 4) / (size * 0.55)));
+    return { ...sl.r, text: trunc(String(label), maxCh), size, color: sl.color, bold: k < head };
+  });
+}
+
 /**
  * What each panel shows — the same assignment for the picture and for the native Excel version: chart panels take the
  * data views in turn (trends for line / area), KPI panels the KPIs in turn.
@@ -326,9 +359,14 @@ export function renderCloneSvg(spec: DashSpec, d: CloneData, W = 1200): string {
   const font = spec.font.replace(/[<>"]/g, '');
   const fallback = spec.palette.series.length ? spec.palette.series : [spec.palette.primary, spec.palette.accent];
   let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="'${font}', 'Segoe UI', Calibri, Arial, sans-serif" data-dash-clone="1">`;
-  s += `<rect width="${W}" height="${H}" fill="${spec.outer}"/>`;
+  // ON THE IMAGE'S OWN DESIGN: its clean background (content removed) — only the texts and the data are drawn.
+  const onBg = !!spec.background;
+  if (onBg) s += `<image href="${esc(spec.background!)}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="none"/>`;
+  else s += `<rect width="${W}" height="${H}" fill="${spec.outer}"/>`;
   const pb = P(spec.pageBox);
-  if (spec.frame) {
+  if (onBg) {
+    /* frame, page and cards are in the background */
+  } else if (spec.frame) {
     const fw = spec.frame.width * W;
     const fr = spec.frame.radius * W;
     // A side where the page touches the image edge has no frame (cropped image): extend the frame beyond the canvas.
@@ -345,29 +383,56 @@ export function renderCloneSvg(spec: DashSpec, d: CloneData, W = 1200): string {
   } else s += `<rect x="${pb.x}" y="${pb.y}" width="${pb.w}" height="${pb.h}" fill="${spec.page}"/>`;
   if (spec.title) {
     const t = P(spec.title.box);
-    if (spec.title.fill) s += `<rect x="${t.x}" y="${t.y}" width="${t.w}" height="${t.h}" fill="${spec.title.fill}"/>`;
-    const fs = Math.max(10, t.h * 0.78);
+    if (spec.title.fill && !onBg) s += `<rect x="${t.x}" y="${t.y}" width="${t.w}" height="${t.h}" fill="${spec.title.fill}"/>`;
+    const fs = Math.max(10, t.h * (onBg ? 0.95 : 0.78));
     const x = spec.title.align === 'center' ? t.x + t.w / 2 : t.x;
     s += `<text x="${x}" y="${t.y + t.h * 0.82}" text-anchor="${spec.title.align === 'center' ? 'middle' : 'start'}" font-size="${fs}" font-weight="800" fill="${spec.title.color}">${esc(d.title)}</text>`;
+  }
+  if (onBg && spec.subtitle && d.subtitle) {
+    const sb = P(spec.subtitle.box);
+    const sfs = Math.max(8, sb.h * 0.92);
+    s += `<text x="${sb.x}" y="${sb.y + sb.h * 0.8}" font-size="${sfs}" fill="${spec.subtitle.color}">${esc(trunc(d.subtitle, Math.round((W - sb.x) / (sfs * 0.55))))}</text>`;
   }
   const plan = panelPlan(spec, d);
   for (const [pi, p] of spec.panels.entries()) {
     const r = P(p.box);
     const fs = Math.max(8, Math.min(15, Math.min(r.h * 0.075, r.w * 0.045)));
-    if (!(p.kind === 'kpi' && p.tileFills?.length)) s += `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="${p.radius}" fill="${p.fill}"${p.border ? ` stroke="${p.border}" stroke-width="${Math.max(1, p.borderWidth)}"` : ''}/>`;
+    if (!onBg && !(p.kind === 'kpi' && p.tileFills?.length)) s += `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="${p.radius}" fill="${p.fill}"${p.border ? ` stroke="${p.border}" stroke-width="${Math.max(1, p.borderWidth)}"` : ''}/>`;
     const pad = Math.max(6, fs * 0.6);
-    const titleH = p.kind === 'kpi' || p.kind === 'title' || p.kind === 'image' || p.kind === 'filter' ? 0 : fs * 1.9;
+    // The image's title line, measured: the new title takes its place, size and colour; the chart starts below it.
+    const tb = p.titleBox ? P(p.titleBox) : null;
+    const titleH = p.kind === 'kpi' || p.kind === 'title' || p.kind === 'image' || p.kind === 'filter' ? 0 : tb ? Math.max(0, tb.y + tb.h - r.y - pad) + fs * 0.5 : fs * 1.9;
     const inner = { x: r.x + pad, y: r.y + pad + titleH, w: r.w - pad * 2, h: r.h - pad * 2 - titleH };
     const { kind, view: v } = plan[pi]!;
+    // Menus, slicers, button grids: the image's text slots filled with the user's own labels — the dashboard title
+    // first, a column of items gets the analysis axes, a grid of buttons gets categories / months.
+    if (onBg && p.slots?.length && (kind === 'filter' || kind === 'title')) {
+      for (const t of slotTexts(p, d, P, r)) s += `<text x="${t.x}" y="${t.y + t.h / 2 + t.size * 0.36}" font-size="${t.size}" font-weight="${t.bold ? 800 : 600}" fill="${t.color}">${esc(t.text)}</text>`;
+      continue;
+    }
     if (titleH && (v || kind === 'table' || kind === 'text')) {
       const label = v ? v.title : kind === 'table' ? 'Détail' : 'Points clés';
-      s += `<text x="${p.titleAlign === 'center' ? r.x + r.w / 2 : r.x + pad}" y="${r.y + pad + fs * 1.05}" text-anchor="${p.titleAlign === 'center' ? 'middle' : 'start'}" font-size="${fs * 1.08}" font-weight="700" fill="${p.text}">${esc(trunc(label, Math.round(r.w / (fs * 0.6))))}</text>`;
+      if (tb) {
+        const tfs = Math.max(8, tb.h * 0.92);
+        const tx = p.titleAlign === 'center' ? r.x + r.w / 2 : tb.x;
+        s += `<text x="${tx}" y="${tb.y + tb.h * 0.8}" text-anchor="${p.titleAlign === 'center' ? 'middle' : 'start'}" font-size="${tfs}" font-weight="700" fill="${p.titleColor ?? p.text}">${esc(trunc(label, Math.round((r.x + r.w - tx) / (tfs * 0.55))))}</text>`;
+      } else s += `<text x="${p.titleAlign === 'center' ? r.x + r.w / 2 : r.x + pad}" y="${r.y + pad + fs * 1.05}" text-anchor="${p.titleAlign === 'center' ? 'middle' : 'start'}" font-size="${fs * 1.08}" font-weight="700" fill="${p.text}">${esc(trunc(label, Math.round(r.w / (fs * 0.6))))}</text>`;
     }
     if (inner.w < 10 || inner.h < 10) continue;
     if (v && (kind === 'bar' || kind === 'hbar')) s += barChart(inner, v, p, kind === 'hbar', fs, fallback);
     else if (v && (kind === 'line' || kind === 'area')) s += lineChart(inner, v, p, kind === 'area', fs, fallback);
     else if (v && (kind === 'pie' || kind === 'donut')) s += pieChart(inner, v, p, kind === 'donut', fs, fallback);
-    else if (kind === 'kpi') s += kpiTiles({ x: r.x + pad, y: r.y + pad, w: r.w - pad * 2, h: r.h - pad * 2 }, plan[pi]!.kpis!, p, fs); else if (kind === 'table') s += tableBlock(inner, d.table, p, fs);
+    else if (kind === 'kpi' && onBg && p.valueBox && Math.max(1, p.tiles) === 1) {
+      // The KPI exactly where the image had its figure (same size, colour), its label where the image had its title.
+      const k = plan[pi]!.kpis![0]!;
+      const vb = P(p.valueBox);
+      const vfs = Math.max(10, vb.h * 0.95);
+      const vx = vb.x + vb.w; // figures are right-aligned on their measured box…
+      const centred = Math.abs(vb.x + vb.w / 2 - (r.x + r.w / 2)) < r.w * 0.12;
+      s += `<text x="${centred ? r.x + r.w / 2 : vx}" y="${vb.y + vb.h * 0.82}" text-anchor="${centred ? 'middle' : 'end'}" font-size="${vfs}" font-weight="700" fill="${p.valueColor ?? p.text}">${esc(k.value)}</text>`;
+      if (tb) s += `<text x="${p.titleAlign === 'center' ? r.x + r.w / 2 : tb.x}" y="${tb.y + tb.h * 0.8}" text-anchor="${p.titleAlign === 'center' ? 'middle' : 'start'}" font-size="${Math.max(8, tb.h * 0.92)}" fill="${p.titleColor ?? p.text}">${esc(trunc(k.label, Math.round(r.w / (tb.h * 0.5))))}</text>`;
+    } else if (kind === 'kpi') s += kpiTiles({ x: r.x + pad, y: r.y + pad, w: r.w - pad * 2, h: r.h - pad * 2 }, plan[pi]!.kpis!, p, fs, onBg);
+    else if (kind === 'table') s += tableBlock(inner, d.table, p, fs);
     else if (kind === 'text') {
       const v0 = d.views.find((v) => !v.ordered) ?? d.views[0];
       const lines = v0 ? [`${v0.categories[0]} : ${fmt(v0.values[0]!)} (${v0.valueName})`, `${v0.categories.length} ${v0.title.split(' par ')[1] ?? 'catégories'}`, ...d.kpis.slice(0, 2).map((k) => `${k.label} : ${k.value}`)] : d.kpis.map((k) => `${k.label} : ${k.value}`);
