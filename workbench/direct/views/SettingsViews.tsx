@@ -300,15 +300,21 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
         </div>
       </Section>
 
-      <Section title="Internet (Brave Search) et vision">
+      <Section title="Internet (recherche web) et vision">
         <div className="grid gap-x-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-2">
-          <Field label="Clé Brave Search" hint="Offre gratuite Brave (api.search.brave.com). Les résultats vont directement au modèle : aucun appel LLM de synthèse.">
+          <Field label="Clé Tavily (recommandé, gratuit)" hint="tavily.com → inscription → API key (tvly-…). Crédits gratuits chaque mois, sans carte ; fonctionne directement, sans relais.">
+            <Input type="password" value={s.tavilyKey ?? ''} onChange={(e) => patch({ tavilyKey: e.target.value.trim() })} placeholder="tvly-…" data-testid="tavily-key" />
+          </Field>
+          <Field label="Clé Serper (option : résultats Google)" hint="serper.dev → inscription → API key. Requêtes gratuites à l’inscription ; fonctionne directement, sans relais.">
+            <Input type="password" value={s.serperKey ?? ''} onChange={(e) => patch({ serperKey: e.target.value.trim() })} placeholder="clé Serper" />
+          </Field>
+          <Field label="Clé Brave Search (option, relais requis)" hint="Brave n’a plus d’offre gratuite (crédits mensuels, carte demandée) et bloque les appels directs du navigateur.">
             <Input type="password" value={s.braveKey ?? ''} onChange={(e) => patch({ braveKey: e.target.value.trim() })} placeholder="BSA…" data-testid="brave-key" />
           </Field>
           <Field label="Relais Brave (URL)" hint="Brave bloque les appels directs d’un navigateur : déployez relay/brave-relay (Supabase) et collez son URL.">
             <Input value={s.braveRelay ?? ''} onChange={(e) => patch({ braveRelay: e.target.value.trim() })} placeholder="https://xxxx.supabase.co/functions/v1/brave-relay" />
           </Field>
-          <Field label="Si Brave échoue, utiliser la recherche OpenRouter (payante)">
+          <Field label="Si la recherche gratuite échoue, utiliser la recherche OpenRouter (payante)">
             <Toggle checked={s.braveFallback !== false} onChange={(v) => patch({ braveFallback: v })} />
           </Field>
           <Field label="Pont vision JEV" hint="Un modèle sans vision reçoit la description exacte et l’OCR de l’image, lue une seule fois par un petit modèle vision (cache).">

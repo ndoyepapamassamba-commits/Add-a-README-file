@@ -43,3 +43,18 @@ describe('embedded experience', () => {
     expect(seedHits('bonjour')).toHaveLength(0);
   });
 });
+
+import { parseSerper, parseTavily, serperRequest, tavilyRequest } from '../../server/jev/web/search';
+describe('free web search (Tavily / Serper)', () => {
+  it('builds browser-callable requests and parses results', () => {
+    const t = tavilyRequest('tvly-x', 'taux BCEAO', 50);
+    expect(t.url).toBe('https://api.tavily.com/search');
+    expect(JSON.parse(t.init.body)).toMatchObject({ query: 'taux BCEAO', max_results: 10, include_answer: false });
+    expect(t.init.headers.Authorization).toBe('Bearer tvly-x');
+    expect(serperRequest('k', 'q', 3).init.headers['X-API-KEY']).toBe('k');
+    expect(parseTavily({ results: [{ title: 'BCEAO', url: 'https://bceao.int', content: 'Taux   directeur', published_date: '2026-10-01' }] })).toEqual([
+      { title: 'BCEAO', url: 'https://bceao.int', snippet: 'Taux directeur', age: '2026-10-01' },
+    ]);
+    expect(parseSerper({ organic: [{ title: 'A', link: 'https://a.sn', snippet: 's' }] })[0]!.url).toBe('https://a.sn');
+  });
+});

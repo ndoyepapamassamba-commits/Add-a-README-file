@@ -117,3 +117,28 @@ test('chat memory stays in the chat: a second chat never sees the first chat\'s 
   await page.getByRole('tab', { name: 'Coffre & leçons', exact: true }).click();
   await expect(page.getByTestId('vault-list')).toContainText('rapport A');
 });
+
+test('free web search: Tavily is called directly from the browser (no relay) and its raw results reach the model', async ({ page }) => {
+  await open(page);
+  let tavilyBody = '';
+  await page.route('https://api.tavily.com/search', async (route) => {
+    tavilyBody = route.request().postData() ?? '';
+    await route.fulfill({
+      status: 200,
+      headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+      body: JSON.stringify({ results: [{ title: 'Taux directeur BCEAO', url: 'https://www.bceao.int/fr/taux', content: 'Le taux directeur est fixé à 3,25 %.', published_date: '2026-09-15' }] }),
+    });
+  });
+  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await page.getByTestId('tavily-key').fill('tvly-test-key');
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  mock.push({ toolCalls: [{ name: 'web.search', args: { query: 'taux directeur BCEAO' } }] }, { text: 'Le taux directeur BCEAO est de 3,25 % (source : bceao.int).' });
+  await send(page, 'Quel est le taux directeur actuel de la BCEAO ? cherche sur internet');
+  await expect(page.getByText(/3,25 % \(source/)).toBeVisible({ timeout: 20_000 });
+  expect(JSON.parse(tavilyBody)).toMatchObject({ query: 'taux directeur BCEAO' });
+  const sent = JSON.stringify(mock.requests.at(-1)!.messages);
+  expect(sent).toContain('https://www.bceao.int/fr/taux');
+  expect(sent).toContain('Tavily');
+});

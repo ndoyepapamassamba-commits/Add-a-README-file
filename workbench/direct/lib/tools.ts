@@ -56,6 +56,7 @@ function workspaceTwin() {
 import { shellRisk } from './shellCore';
 import { THEME_PARAMS } from '../../server/services/houseDesign';
 import { BRAVE_DIRECT, braveText, braveUrl, parseBrave } from '../../server/jev/web/brave';
+import { PROVIDER_LABEL, parseSerper, parseTavily, serperRequest, tavilyRequest } from '../../server/jev/web/search';
 import { diagnose, formatDiagnosis } from '../../server/tools/diagnose';
 
 /** Result of a browser action for the model: new downloads, errors, then the page. */
@@ -603,8 +604,30 @@ export const TOOLS: DirectTool[] = [
     readOnly: true,
     label: (a) => `Recherche web « ${S(a.query)} »`,
     async run(a, ctx) {
-      // BRAVE SEARCH first: raw results, no LLM synthesis call (free tier; the cheapest web access).
+      // FREE SEARCH first (Tavily, then Serper: callable straight from the browser), then Brave (needs a relay):
+      // raw results, no LLM synthesis call. The paid OpenRouter search is only the last resort.
       const ws = useStore.getState().settings;
+      const n0 = Math.min(10, Number(a.max_results) || 6);
+      const errs: string[] = [];
+      for (const [p, key] of [['tavily', ws.tavilyKey], ['serper', ws.serperKey]] as const) {
+        if (!key) continue;
+        try {
+          const rq = p === 'tavily' ? tavilyRequest(key, S(a.query), n0) : serperRequest(key, S(a.query), n0);
+          const res = await fetch(rq.url, { ...rq.init, signal: ctx.signal });
+          if (!res.ok) {
+            errs.push(`${PROVIDER_LABEL[p]} HTTP ${res.status}`);
+            continue;
+          }
+          const j = await res.json();
+          const hits = p === 'tavily' ? parseTavily(j, n0) : parseSerper(j, n0);
+          const text = braveText(S(a.query), hits).replace('(Brave Search)', `(${PROVIDER_LABEL[p]})`);
+          return ok(`${PROVIDER_LABEL[p]} · ${hits.length} résultat(s) · 0 $ LLM`, text, { output: text });
+        } catch (e) {
+          errs.push(`${PROVIDER_LABEL[p]} : ${(e as Error).message}`);
+        }
+      }
+      if (errs.length && !ws.braveKey && ws.braveFallback === false)
+        throw new Error(`Recherche web indisponible (${errs.join(' ; ')}). Vérifiez la clé dans Réglages.`);
       if (ws.braveKey) {
         const n = Math.min(10, Number(a.max_results) || 6);
         const bases = [ws.braveRelay, BRAVE_DIRECT].filter((x): x is string => Boolean(x));

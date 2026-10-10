@@ -243,6 +243,10 @@ export interface Settings {
   visionBridge?: boolean;
   /** Vision model used by the bridge (empty = cheapest / free). */
   visionModel?: string;
+  /** Tavily API key (free monthly credits; callable from the browser, no relay). */
+  tavilyKey?: string;
+  /** Serper API key (Google results; free queries on signup; callable from the browser). */
+  serperKey?: string;
   /** Brave Search API key (stored locally, sent only to Brave / your relay). */
   braveKey?: string;
   /** URL of your brave-relay (Supabase Edge Function) — needed because Brave blocks browser calls (CORS). */
