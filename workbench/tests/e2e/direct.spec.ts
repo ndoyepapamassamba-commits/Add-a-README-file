@@ -52,6 +52,15 @@ async function send(page: Page, text: string) {
 const systemOf = (i: number) =>
   JSON.stringify((mock.requests[i]!.messages[0] as { content: unknown }).content);
 
+
+/** Model lock OFF: lets the run switch models (escalation / free-first fallback), as the user can choose in Settings. */
+async function unlockModel(page: Page) {
+  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await page.locator('[data-testid=pin-model] [role=switch]').click();
+  await expect(page.locator('[data-testid=pin-model] [role=switch]')).toHaveAttribute('aria-checked', 'false');
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+}
+
 test('onboarding, streaming chat, real cost and credits gauge', async ({ page }) => {
   const errors = await open(page);
   // The key is validated against /key and never put in the page URL.
@@ -750,6 +759,7 @@ test('Intelligence Engine: explained routing card, cascade escalation after a fa
 }) => {
   mock.models = SCORED;
   await open(page);
+  await unlockModel(page);
   await page.getByTitle(/Mode Mission/).click();
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();

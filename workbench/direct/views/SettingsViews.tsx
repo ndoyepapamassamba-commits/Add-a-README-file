@@ -270,7 +270,9 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
             />
           </Field>
           <Field label="Garder le même modèle pendant toute la discussion" hint="Aucun changement automatique de modèle en cours de chat (routage, escalade, repli). « Auto » choisit une seule fois, au premier message.">
-            <Toggle checked={s.pinModel !== false} onChange={(v) => patch({ pinModel: v })} />
+            <span data-testid="pin-model">
+              <Toggle checked={s.pinModel !== false} onChange={(v) => patch({ pinModel: v })} />
+            </span>
           </Field>
           <Field label="Niveau de réflexion par défaut">
             <Select<EffortSetting>

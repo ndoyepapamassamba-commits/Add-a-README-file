@@ -79,6 +79,15 @@ async function enable(page: Page) {
   await page.getByText('AUTONOME').click();
 }
 
+
+/** Model lock OFF: lets the run switch models (escalation / free-first fallback), as the user can choose in Settings. */
+async function unlockModel(page: Page) {
+  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await page.locator('[data-testid=pin-model] [role=switch]').click();
+  await expect(page.locator('[data-testid=pin-model] [role=switch]')).toHaveAttribute('aria-checked', 'false');
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+}
+
 test('Apprentice: OFF by default (V5 routing untouched), tab shows N/A without data', async ({ page }) => {
   mock.models = CATALOG;
   await open(page);
@@ -120,6 +129,7 @@ test('Apprentice: free fails the quality gate → automatic fallback to the V5 m
 }) => {
   mock.models = CATALOG;
   await open(page);
+  await unlockModel(page);
   await enable(page);
   // Unknown free model = LOW confidence: one free attempt, then V5.
   mock.push({ text: 'Voici : {agences: [Dakar' }, { text: '{"agences": ["Dakar", "Thies"]}' });

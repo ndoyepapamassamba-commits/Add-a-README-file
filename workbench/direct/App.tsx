@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Brain,
   Clapperboard,
@@ -401,7 +401,6 @@ function SessionList() {
   const [renaming, setRenaming] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [sel, setSel] = useState<Set<string> | null>(null);
-  const importRef = useRef<HTMLInputElement>(null);
   const list = useMemo(
     () =>
       [...sessions]
@@ -437,8 +436,28 @@ function SessionList() {
         )}
         <div className="flex gap-1 text-[11.5px]">
           <button className="rounded border border-line px-1.5 py-0.5 text-muted hover:bg-hover hover:text-fg" title="Archiver tous les chats (rien n’est supprimé)" onClick={() => { const ids = sessions.filter((s) => !s.archived && !running[s.id]).map((s) => s.id); if (ids.length && confirm(`Archiver ${ids.length} chat(s) ?`)) setArchived(ids, true); }}>Tout archiver</button>
-          <button className="rounded border border-line px-1.5 py-0.5 text-muted hover:bg-hover hover:text-fg" onClick={() => importRef.current?.click()}>Importer une archive</button>
-          <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { const n = importArchive(await f.text()); alert(`${n} chat(s) restauré(s) dans les archives.`); } catch (err) { alert((err as Error).message); } e.target.value = ''; }} />
+          <button
+            className="rounded border border-line px-1.5 py-0.5 text-muted hover:bg-hover hover:text-fg"
+            onClick={() => {
+              // The file picker is created on demand (no permanent <input type=file> in the page).
+              const inp = document.createElement('input');
+              inp.type = 'file';
+              inp.accept = '.json,application/json';
+              inp.onchange = async () => {
+                const f = inp.files?.[0];
+                if (!f) return;
+                try {
+                  const n = importArchive(await f.text());
+                  alert(`${n} chat(s) restauré(s) dans les archives.`);
+                } catch (err) {
+                  alert((err as Error).message);
+                }
+              };
+              inp.click();
+            }}
+          >
+            Importer une archive
+          </button>
         </div>
         <div className="flex items-center gap-1.5 rounded-lg border border-line bg-input px-2">
           <Search size={13} className="text-faint" />

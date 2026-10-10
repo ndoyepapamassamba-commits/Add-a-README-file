@@ -80,5 +80,40 @@ test('OMNIPOTENT: an unrelated earlier mission is not sent to the model on a new
   await expect(page.getByText('La photosynthèse transforme')).toBeVisible();
   const req = mock.requests.find((r) => JSON.stringify(r.messages).includes('photosynth'));
   expect(req).toBeTruthy();
-  expect(JSON.stringify(req!.messages)).not.toContain('Dupont');
+  // The old exchange itself is not sent; only a one-line index of this chat's earlier requests (memory stays in the chat).
+  const sent = JSON.stringify(req!.messages);
+  expect(sent).not.toContain('Tableau des impayés Dupont prêt');
+  expect(sent).toContain('CHAT_INDEX');
+});
+
+test('chat memory stays in the chat: a second chat never sees the first chat\'s files; vault and archive work', async ({ page }) => {
+  await open(page);
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  // Chat A writes a deliverable.
+  mock.push(
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'outputs/secret-chat-a.md', content: '# Rapport A\nConfidentiel A' } }] },
+    { text: 'Rapport A écrit dans outputs/secret-chat-a.md, prêt à être relu et partagé.' },
+  );
+  await send(page, 'Écris le rapport A dans un fichier markdown');
+  await expect(page.getByText(/Rapport A écrit/)).toBeVisible();
+  // Keep it in the experience vault.
+  await page.getByTestId('vault-save').last().click();
+  await expect(page.getByTestId('vault-save').last()).toContainText('Dans le coffre');
+  // Chat B lists the workspace: chat A's file must not exist for it.
+  await page.getByRole('button', { name: /Nouvelle session/ }).click();
+  mock.push({ toolCalls: [{ name: 'filesystem.list', args: {} }] }, { text: 'Espace vide.' });
+  await send(page, 'Liste les fichiers de mon espace de travail');
+  await expect(page.getByText('Espace vide.')).toBeVisible();
+  const all = JSON.stringify(mock.requests.slice(-2).map((r) => r.messages));
+  expect(all).not.toContain('secret-chat-a');
+  expect(all).not.toContain('Confidentiel A');
+  // Archive every chat, then find them under « Archives ».
+  page.on('dialog', (d) => void d.accept());
+  await page.getByRole('button', { name: 'Tout archiver' }).click();
+  await expect(page.getByText(/Archives \(2\)/)).toBeVisible();
+  // The vault entry is listed in JEV Cognitive OS.
+  await page.getByRole('button', { name: 'JEV Cognitive OS', exact: true }).first().click();
+  await page.getByRole('tab', { name: 'Coffre & leçons', exact: true }).click();
+  await expect(page.getByTestId('vault-list')).toContainText('rapport A');
 });
