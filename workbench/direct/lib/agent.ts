@@ -1529,6 +1529,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   let stepsUsed = 0;
   for (let step = 0; step < maxSteps; step++) {
     stepsUsed = step + 1;
+    setChatScope(sid, sessionAllow(sid));
     if (inp.signal.aborted) throw new LLMError('Cancelled', 499, false, 'cancelled');
     // ── JEV PILOT (anti-drift on long runs): every 6 tool steps the model gets a 1-paragraph anchor — the objective,
     // what is already done, what remains — so it never wanders off after minutes of work. ~120 tokens, no extra call.
@@ -2446,6 +2447,8 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     if (d.always)
       useStore.setState({ grants: { ...useStore.getState().grants, [sid]: [...grants, tool.name] } });
   }
+  // CHAT SCOPE is re-asserted before every tool: two chats running at the same time can never write into each other.
+  if (sid) setChatScope(sid, sessionAllow(sid));
   // EXPORT THEMES: the house charter is the default, not a cage — a theme or custom colours given by the model apply.
   const themed = /^(report|data)\.export$/.test(tool.name);
   const prevTheme = themed ? setActiveTheme(themeOf(args, useStore.getState().settings.exportTheme)) : null;

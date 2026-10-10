@@ -47,3 +47,11 @@ describe('voice casting', () => {
     expect(naturalSpeed(undefined)).toBe(1);
   });
 });
+describe('3D', () => {
+  it('3D shots get an orbit (roll + sweep) on top of the move', () => {
+    const a = cameraAt('push', 0.9, { t: 1, dim3d: true });
+    const b = cameraAt('push', 0.9, { t: 1 });
+    expect(a.rot).not.toBe(b.rot);
+    expect(a.zoom).toBeGreaterThan(b.zoom);
+  });
+});

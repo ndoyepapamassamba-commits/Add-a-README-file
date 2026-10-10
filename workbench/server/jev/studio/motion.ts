@@ -32,7 +32,7 @@ export const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * 
  * Camera at progress f (0…1) of the shot. `punch` (0…1) = how much a character is speaking now (smoothed), `side` = which
  * third of the frame to punch towards (−1 left, 0 centre, 1 right), `energy` (0…1) = voice loudness now, `t` = seconds.
  */
-export function cameraAt(move: Move, f: number, o: { punch?: number; side?: number; energy?: number; t?: number } = {}): Cam {
+export function cameraAt(move: Move, f: number, o: { punch?: number; side?: number; energy?: number; t?: number; dim3d?: boolean } = {}): Cam {
   const e = ease(Math.min(1, Math.max(0, f)));
   const t = o.t ?? 0;
   let zoom = 1.08;
@@ -61,6 +61,12 @@ export function cameraAt(move: Move, f: number, o: { punch?: number; side?: numb
   const en = Math.min(1, Math.max(0, o.energy ?? 0));
   zoom += 0.012 * en + 0.004 * Math.sin(t * 1.7);
   dy += -0.006 * en * Math.abs(Math.sin(t * 9));
+  // 3D look: a slow orbit (tiny roll + lateral sweep) gives depth to rendered 3D frames.
+  if (o.dim3d) {
+    rot += 0.012 * (e - 0.5) * (move === 'panL' ? -1 : 1);
+    dx += 0.015 * Math.sin(e * Math.PI) * (move === 'panL' ? -1 : 1);
+    zoom += 0.02;
+  }
   return { zoom, dx, dy, rot };
 }
 /** Opacity of the incoming shot during a cross-fade of `d` seconds at the start of a scene. */

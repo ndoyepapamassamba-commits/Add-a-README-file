@@ -116,7 +116,14 @@ export function filesFor(sid: string | null, allow?: Set<string>): Record<string
   return out;
 }
 export const files = (): Record<string, VFile> => filesFor(scope?.sid ?? null, scope?.allow);
-export const getFile = (p: string): VFile | undefined => files()[normPath(p)];
+export const getFile = (p: string): VFile | undefined => {
+  const n = normPath(p);
+  const f = files()[n];
+  if (f || scope) return f;
+  // Outside a run (UI: embedded browser, downloads), a chat-relative path resolves in the chat on screen.
+  const st = useStore.getState();
+  return st.currentId ? st.files[chatKey(st.currentId, n)] : undefined;
+};
 /** Storage key of a path written by the current chat. */
 const storeKey = (p: string) => (scope ? chatKey(scope.sid, p) : p);
 /** Delete a file or folder as the current chat sees it (own copy first; a shared file only if visible to the chat). */

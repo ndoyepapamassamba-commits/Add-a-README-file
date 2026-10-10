@@ -5,6 +5,7 @@
 import { blobs } from './blobs';
 import type { Blueprint, Scene } from '../../../server/jev/studio/types';
 import { duckingPoints } from '../../../server/jev/studio/timeline';
+import { dimensionOf } from '../../../server/jev/studio/style';
 import { cameraAt, fadeIn, moveFor, rmsEnvelope, speakerSide, type Cam, type Move } from '../../../server/jev/studio/motion';
 import {
   ASPECTS,
@@ -187,6 +188,7 @@ export async function renderPreview(
   const bitmaps = await Promise.all(bp.scenes.map((s) => bitmapOf(s.imageAssetId)));
   const videos = await Promise.all(bp.scenes.map((s) => videoOf(s.videoAssetId)));
   // One camera move per scene, chosen from its content, never the same twice in a row.
+  const dim3d = dimensionOf(bp.styleDNA) === '3D';
   const moves: Move[] = [];
   bp.scenes.forEach((s, i) => moves.push(moveFor(s, i, moves[i - 1])));
 
@@ -281,7 +283,7 @@ export async function renderPreview(
     const drawShot = (k: number, fr: number, alpha: number) => {
       const vid = videos[k];
       const img = bitmaps[k];
-      const cam = cameraAt(moves[k]!, fr, { punch: k === si ? punchS : 0, side: va.side, energy: k === si ? va.energy : 0, t: now });
+      const cam = cameraAt(moves[k]!, fr, { punch: k === si ? punchS : 0, side: va.side, energy: k === si ? va.energy : 0, t: now, dim3d });
       if (vid) {
         if (vid.paused) void vid.play().catch(() => undefined);
         // A real video clip already moves: only a gentle camera on top of it.
