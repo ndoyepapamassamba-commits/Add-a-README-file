@@ -154,6 +154,10 @@ async function open(page: Page, errors: string[] = [], opts: { debug?: boolean; 
   if (opts.debug) await page.addInitScript(() => localStorage.setItem('vs.debug', '1'));
   // These tests drive the multi-space studio (« mode expert »); the Film Autopilot single view has its own test.
   if (!opts.autopilot) await page.addInitScript(() => localStorage.setItem('vs.expert', '1'));
+  // The premium design gallery appears before every deliverable: these tests keep the default design.
+  await page.addLocatorHandler(page.getByTestId('design-go'), async () => {
+    await page.getByTestId('design-go').click();
+  });
   await page.goto(pathToFileURL(FILE).href);
   await page.getByPlaceholder('sk-or-v1-…').fill(KEY);
   await page.getByRole('button', { name: 'Commencer' }).click();

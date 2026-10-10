@@ -24,6 +24,10 @@ async function open(page: Page) {
     const res = await route.fetch({ url });
     await route.fulfill({ response: res, headers: { ...res.headers(), 'access-control-allow-origin': '*' } });
   });
+  // The premium design gallery appears before every deliverable: these tests keep the default design.
+  await page.addLocatorHandler(page.getByTestId('design-go'), async () => {
+    await page.getByTestId('design-go').click();
+  });
   await page.goto(pathToFileURL(FILE).href);
   await page.getByPlaceholder('sk-or-v1-…').fill('sk-or-v1-e2e-direct-key');
   await page.getByRole('button', { name: 'Commencer' }).click();
@@ -141,4 +145,59 @@ test('free web search: Tavily is called directly from the browser (no relay) and
   const sent = JSON.stringify(mock.requests.at(-1)!.messages);
   expect(sent).toContain('https://www.bceao.int/fr/taux');
   expect(sent).toContain('Tavily');
+});
+
+test('premium design gallery: before an Excel deliverable the user picks a design on thumbnails (+ Internet designs); the file uses it', async ({ page }) => {
+  await open(page);
+  await page.removeLocatorHandler(page.getByTestId('design-go'));
+  await page.route('https://api.tavily.com/search', (route) =>
+    route.fulfill({
+      status: 200,
+      headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+      body: JSON.stringify({ results: [], images: [{ url: 'https://example.com/design-1.png', description: 'dashboard' }, { url: 'https://example.com/design-2.png', description: 'kpi' }] }),
+    }),
+  );
+  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await page.getByTestId('tavily-key').fill('tvly-test-key');
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  mock.push(
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'data/ventes.csv', content: 'agence,montant\nDakar,1250\nThies,430\n' } }] },
+    { toolCalls: [{ name: 'data.export', args: { path: 'data/ventes.csv', name: 'synthese-ventes', title: 'Ventes', format: 'xlsx' } }] },
+    { text: 'Classeur prêt : outputs/synthese-ventes.xlsx' },
+  );
+  await send(page, 'Fais un classeur Excel des ventes par agence');
+  const card = page.getByTestId('design-card');
+  await expect(card).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId('design-gallery').locator('img')).toHaveCount(14);
+  // Designs found on the Internet, shown as thumbnails before validation
+  await page.getByTestId('design-web').click();
+  await expect(page.getByTestId('design-web-gallery').locator('img')).toHaveCount(2);
+  await page.getByTestId('design-onyx').click();
+  await page.getByTestId('design-go').click();
+  await expect(page.getByTestId('design-card-done')).toContainText('Onyx');
+  await expect(page.getByText('Classeur prêt')).toBeVisible({ timeout: 20_000 });
+  // The exported workbook really uses the chosen design (onyx title band colour)
+  const readXlsx = () => page.evaluate(
+    () =>
+      new Promise<string>((resolve) => {
+        const req = indexedDB.open('openrouter-workbench-direct', 1);
+        req.onsuccess = () => {
+          const g = req.result.transaction('kv', 'readonly').objectStore('kv').get('files');
+          g.onsuccess = () => {
+            const files = (g.result ?? {}) as Record<string, { data: string }>;
+            const key = Object.keys(files).find((k) => k.endsWith('synthese-ventes.xlsx'));
+            resolve(key ? files[key]!.data : '');
+          };
+        };
+      }),
+  );
+  await expect.poll(async () => (await readXlsx()).length, { timeout: 10_000 }).toBeGreaterThan(100);
+  const styles = await readXlsx();
+  const { unzipSync, strFromU8 } = await import('fflate');
+  const zip = unzipSync(new Uint8Array(Buffer.from(styles, 'base64')));
+  const xml = Object.entries(zip).filter(([k]) => /styles|sheet1/.test(k)).map(([, v]) => strFromU8(v)).join('');
+  expect(xml).toContain('0B0B0F');
+  expect(xml).not.toContain('001B4D');
 });

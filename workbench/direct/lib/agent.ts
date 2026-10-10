@@ -57,7 +57,8 @@ import { vaultBlock, vaultRecall } from './vault';
 import { seedHits } from '../../server/jev/memory/seed';
 import { ALTERATION } from '../../server/jev/omni/mission';
 import { pilotAnchor } from '../../server/jev/omni/pilot';
-import { setActiveTheme, themeOf } from '../../server/services/houseDesign';
+import { THEMES, setActiveTheme, themeOf } from '../../server/services/houseDesign';
+import { applyWebTheme, kindForTool } from '../../server/services/premiumDesigns';
 import { extractFacts, lessonFrom, memoryBlock, mergeFacts, recall as recallMemory } from '../../server/jev/memory/semantic';
 import type { DataClass, FabricTag } from '../../server/jev/fabric/types';
 import type { SkillVersion } from '../../server/jev/fabric/skills';
@@ -67,7 +68,7 @@ import { outputSpec } from '../../server/jev/style';
 import { packetPrompt, type PreResult } from '../../server/jev/packet';
 import { REQUESTABLE, TOOL_FAMILIES, toolDefTokens } from '../../server/jev/tools';
 import type { Checkpoint } from '../../server/jev/metrics';
-import type { UsageEntry, VFile } from './types';
+import type { DesignChoice, UsageEntry, VFile } from './types';
 import {
   AI_DOCS,
   FINAL_REVIEW_TASK,
@@ -2449,10 +2450,51 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     if (d.always)
       useStore.setState({ grants: { ...useStore.getState().grants, [sid]: [...grants, tool.name] } });
   }
+  // ── PREMIUM DESIGN GALLERY (hard): before ANY deliverable the user picks the design (and the format) on thumbnails.
+  // A theme the model passes because the user asked for it in the chat is respected; « pour tout ce chat » is remembered.
+  const dkind = kindForTool(tool.name, args);
+  if (dkind && !experimentRun && useStore.getState().settings.designPicker !== false) {
+    let choice = useStore.getState().sessions.find((x) => x.id === sid)?.design;
+    const asked = typeof args.theme === 'string' && args.theme !== 'house' ? (args.theme as string) : null;
+    if (!choice && !asked && !inp.signal.aborted) {
+      const formats = tool.name === 'report.export' ? ['docx', 'pptx', 'pdf', 'html', 'eml', 'md'] : tool.name === 'data.export' ? ['xlsx', 'csv', 'json'] : [];
+      const chosenFormats =
+        tool.name === 'report.export'
+          ? ((args.formats as string[] | undefined)?.length ? (args.formats as string[]) : ['docx'])
+          : tool.name === 'data.export'
+            ? [String(args.format || 'xlsx')]
+            : [];
+      const designId = uid();
+      useStore.setState({ status: { ...useStore.getState().status, [sid]: 'Choisissez le design du livrable…' } });
+      const d = await new Promise<{ choice: DesignChoice; formats?: string[]; remember: boolean }>((resolve) => {
+        st.pending.designs.set(designId, resolve);
+        inp.signal.addEventListener('abort', () => resolve({ choice: { theme: 'house' }, remember: false }), { once: true });
+        st.pushItem(sid, { kind: 'design', id: designId, tool: tool.name, deliverable: dkind, formats, chosenFormats });
+      });
+      st.pending.designs.delete(designId);
+      const lbl2 = d.choice.theme === 'custom' ? 'Design personnalisé' : (THEMES[d.choice.theme]?.label ?? d.choice.theme);
+      st.updateItem(sid, designId, { resolved: lbl2, chosenFormats: d.formats });
+      choice = d.choice;
+      if (d.remember) st.patchSession(sid, { design: d.choice });
+      if (d.formats?.length) {
+        if (tool.name === 'report.export') args.formats = d.formats;
+        if (tool.name === 'data.export') args.format = d.formats[0];
+      }
+    }
+    if (choice && !asked) {
+      args.theme = choice.theme;
+      if (choice.colors) args.colors = choice.colors;
+    }
+    // Sites and apps: the chosen design becomes a premium stylesheet injected in the page.
+    if (dkind === 'web' && tool.name === 'artifact.create' && typeof args.content === 'string') {
+      const t = themeOf(args, useStore.getState().settings.exportTheme);
+      args.content = applyWebTheme(args.content as string, t);
+    }
+  }
   // CHAT SCOPE is re-asserted before every tool: two chats running at the same time can never write into each other.
   if (sid) setChatScope(sid, sessionAllow(sid));
   // EXPORT THEMES: the house charter is the default, not a cage — a theme or custom colours given by the model apply.
-  const themed = /^(report|data)\.export$/.test(tool.name);
+  const themed = /^(report|data)\.export$|^apex\.build_app$/.test(tool.name);
   const prevTheme = themed ? setActiveTheme(themeOf(args, useStore.getState().settings.exportTheme)) : null;
   try {
     const out = await tool.run(args, ctx).finally(() => {
@@ -3087,6 +3129,10 @@ export function resolveApproval(
   opts: { always?: boolean; note?: string } = {},
 ): void {
   useStore.getState().pending.approvals.get(id)?.({ decision, ...opts });
+}
+
+export function resolveDesign(id: string, d: { choice: DesignChoice; formats?: string[]; remember: boolean }): void {
+  useStore.getState().pending.designs.get(id)?.(d);
 }
 
 export function resolvePlan(id: string, decision: 'approve' | 'cancel', steps?: string[]): void {

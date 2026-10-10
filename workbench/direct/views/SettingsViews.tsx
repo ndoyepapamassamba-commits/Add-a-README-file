@@ -332,6 +332,9 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
 
       <Section title="Thème des exports (Word, Excel, PowerPoint, PDF, mail)">
         <div className="grid gap-x-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-2">
+          <Field label="Me faire choisir le design avant chaque livrable" hint="Galerie de designs premium en miniatures (et designs trouvés sur Internet) avant chaque Excel, Word, PowerPoint, PDF, mail, site ou application.">
+            <Toggle checked={s.designPicker !== false} onChange={(v) => patch({ designPicker: v })} />
+          </Field>
           <Field label="Thème par défaut" hint="Utilisé pour tous les exports. Vous pouvez aussi demander un autre style dans le chat (« fais-le en vert », « style minimal »…).">
             <Select
               value={s.exportTheme ?? 'house'}

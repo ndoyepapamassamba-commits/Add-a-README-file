@@ -73,6 +73,16 @@ export type Item =
       resolved?: 'approve' | 'deny';
       agent?: string;
     }
+  | {
+      kind: 'design';
+      id: string;
+      tool: string;
+      deliverable: import('../../server/services/premiumDesigns').DeliverableKind;
+      /** Formats the user can pick for this deliverable (empty = fixed). */
+      formats: string[];
+      chosenFormats?: string[];
+      resolved?: string;
+    }
   | { kind: 'plan'; id: string; summary: string; steps: string[]; resolved?: 'approve' | 'cancel' }
   | { kind: 'checklist'; id: string; steps: PlanStep[] }
   | {
@@ -172,6 +182,8 @@ export interface Session {
   pinnedModel?: string;
   /** JEV semantic memory of THIS chat (decisions, preferences, deliveries). */
   memory?: import('../../server/jev/memory/semantic').MemFact[];
+  /** Design chosen for every deliverable of this chat (« utiliser pour tout ce chat »). */
+  design?: DesignChoice;
   /** Archived chats leave the list (restorable; nothing is deleted). */
   archived?: boolean;
 }
@@ -253,6 +265,8 @@ export interface Settings {
   braveRelay?: string;
   /** If Brave fails, fall back to OpenRouter web search (paid per result). */
   braveFallback?: boolean;
+  /** Ask the user to pick a design (gallery with thumbnails) before every deliverable (default true). */
+  designPicker?: boolean;
   /** Default export theme (house = GOD 3D · BLUE ECOBANK). */
   exportTheme?: string;
   rememberKey: boolean;
@@ -300,4 +314,11 @@ export interface VaultEntry {
   files: { path: string; data: string; binary: boolean; mime: string }[];
   tags: string[];
   source: string;
+}
+
+export interface DesignChoice {
+  theme: import('../../server/services/houseDesign').ThemeId | 'custom';
+  colors?: import('../../server/services/houseDesign').CustomTheme;
+  /** Where a custom design came from (image found on the Internet). */
+  source?: string;
 }

@@ -38,3 +38,28 @@ export function parseSerper(json: unknown, max = 8): BraveHit[] {
   return r.filter((x) => x.link && x.title).slice(0, max).map((x) => ({ title: clip(x.title, 200), url: x.link!, snippet: clip(x.snippet), age: x.date }));
 }
 export const PROVIDER_LABEL: Record<SearchProvider | 'brave', string> = { tavily: 'Tavily', serper: 'Serper (Google)', brave: 'Brave' };
+
+/** Tavily image search (design inspiration): image URLs returned with the results. */
+export function tavilyImagesRequest(key: string, query: string): SearchRequest {
+  return {
+    url: 'https://api.tavily.com/search',
+    init: {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ query: query.slice(0, 300), max_results: 6, search_depth: 'basic', include_images: true, include_image_descriptions: true, include_answer: false }),
+    },
+  };
+}
+export function parseTavilyImages(json: unknown, max = 12): { url: string; description: string }[] {
+  const imgs = (json as { images?: (string | { url?: string; description?: string })[] })?.images ?? [];
+  return imgs
+    .map((x) => (typeof x === 'string' ? { url: x, description: '' } : { url: x.url ?? '', description: x.description ?? '' }))
+    .filter((x) => /^https:\/\//.test(x.url))
+    .slice(0, max);
+}
+export const DESIGN_QUERY: Record<'excel' | 'document' | 'slides' | 'web', string> = {
+  excel: 'premium excel dashboard design template KPI cards',
+  document: 'premium corporate report design layout template',
+  slides: 'premium presentation slide design template modern',
+  web: 'premium web app dashboard UI design',
+};

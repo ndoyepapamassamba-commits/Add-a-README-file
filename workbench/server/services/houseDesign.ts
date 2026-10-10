@@ -158,7 +158,21 @@ export const DESIGN_RULES = `HOUSE EXPORT DESIGN — THE DEFAULT (used for every
 // The house charter above stays the DEFAULT and stays locked (its signature protects it). Any export can now use another
 // professional theme, or a custom one built from the user's request (primary / accent colour, font). Exporters read the
 // ACTIVE design through activeDesign(); withTheme() / setActiveTheme() switch it for one export.
-export type ThemeId = 'house' | 'corporate' | 'modern' | 'minimal' | 'executive' | 'warm' | 'nature';
+export type ThemeId =
+  | 'house'
+  | 'corporate'
+  | 'modern'
+  | 'minimal'
+  | 'executive'
+  | 'warm'
+  | 'nature'
+  | 'onyx'
+  | 'sapphire'
+  | 'emerald'
+  | 'ivory'
+  | 'terracotta'
+  | 'graphite'
+  | 'swiss';
 export interface CustomTheme {
   primary?: string;
   accent?: string;
@@ -184,6 +198,13 @@ export const THEMES: Record<ThemeId, { label: string; color: Partial<Col>; font?
   executive: { label: 'Exécutif bordeaux & or', color: P('3B0A16', '7F1D1D', 'C8A951', 'B45309', 'FBF5EF', 'EADBC8', 'FDF8F3'), font: 'Georgia' },
   warm: { label: 'Chaleureux orange', color: P('431407', 'C2410C', 'FACC15', 'FB923C', 'FFF7ED', 'FED7AA', 'FFFBF5'), font: 'Segoe UI' },
   nature: { label: 'Nature vert', color: P('052E16', '15803D', 'CA8A04', '0D9488', 'F0FDF4', 'BBF7D0', 'F7FEF9'), font: 'Segoe UI' },
+  onyx: { label: 'Onyx & Or — luxe', color: P('0B0B0F', '1C1C24', 'D4AF37', 'B08D57', 'F7F5F0', 'E7E2D6', 'FBFAF7'), font: 'Georgia' },
+  sapphire: { label: 'Saphir royal', color: P('0A1F44', '1E3A8A', 'C0C7D1', '3B82F6', 'EEF3FB', 'D6E0F0', 'F6F9FE'), font: 'Calibri' },
+  emerald: { label: 'Émeraude finance', color: P('022C22', '047857', 'B8975A', '10B981', 'ECFDF5', 'C6F0DD', 'F5FDF9'), font: 'Segoe UI' },
+  ivory: { label: 'Ivoire éditorial', color: P('1F1A17', '3F3A36', 'A67C52', '8C6A4F', 'FAF6EF', 'EAE1D3', 'FDFBF7'), font: 'Garamond' },
+  terracotta: { label: 'Terracotta Afrique', color: P('2B1406', 'B4532A', 'E0A526', '1E5AA8', 'FDF4EC', 'F2D9C4', 'FEF9F4'), font: 'Segoe UI' },
+  graphite: { label: 'Graphite tech', color: P('111827', '374151', '22D3EE', '06B6D4', 'F3F4F6', 'E5E7EB', 'F9FAFB'), font: 'Consolas' },
+  swiss: { label: 'Suisse — rouge & noir', color: P('0A0A0A', 'D7192D', '0A0A0A', 'D7192D', 'F5F5F5', 'E0E0E0', 'FAFAFA'), font: 'Arial' },
 };
 const HEX = /^#?[0-9a-f]{6}$/i;
 const clean = (h?: string) => (h && HEX.test(h) ? h.replace('#', '').toUpperCase() : undefined);
@@ -255,7 +276,7 @@ export function themeOf(a: Record<string, unknown>, fallback?: string): ThemeId 
 export const THEME_PARAMS = {
   theme: {
     type: 'string',
-    enum: ['house', 'corporate', 'modern', 'minimal', 'executive', 'warm', 'nature', 'custom'],
+    enum: ['house', 'corporate', 'modern', 'minimal', 'executive', 'warm', 'nature', 'onyx', 'sapphire', 'emerald', 'ivory', 'terracotta', 'graphite', 'swiss', 'custom'],
     description:
       'Visual theme. Default "house" (GOD 3D · BLUE ECOBANK). Use another one ONLY when the user asks for a different look; "custom" with colors.',
   },

@@ -48,6 +48,7 @@ import {
   isLocalRef,
 } from '../lib/vfs';
 import { saveToVault } from '../lib/vault';
+import { DesignCard } from './DesignPicker';
 import { refreshCredits } from '../lib/credits';
 import { ArtifactCard } from './Artifacts';
 import { ModelLine, PipelineBar, VerdictBadge, VerdictCard } from '../../web/components/mission';
@@ -213,6 +214,8 @@ const ItemView = memo(function ItemView({ item, sessionId }: { item: Item; sessi
       return <ToolRow item={item} />;
     case 'approval':
       return <ApprovalCard item={item} />;
+    case 'design':
+      return <DesignCard item={item} />;
     case 'plan':
       return <PlanCard item={item} />;
     case 'checklist':

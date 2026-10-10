@@ -32,6 +32,10 @@ async function open(page: Page, errors: string[] = []) {
     const res = await route.fetch({ url });
     await route.fulfill({ response: res, headers: { ...res.headers(), 'access-control-allow-origin': '*' } });
   });
+  // The premium design gallery appears before every deliverable: these tests keep the default design.
+  await page.addLocatorHandler(page.getByTestId('design-go'), async () => {
+    await page.getByTestId('design-go').click();
+  });
   await page.goto(pathToFileURL(FILE).href);
   await page.getByPlaceholder('sk-or-v1-…').fill('sk-or-v1-e2e-direct-key');
   await page.getByRole('button', { name: 'Commencer' }).click();
