@@ -57,6 +57,7 @@ import { vaultBlock, vaultRecall } from './vault';
 import { seedHits } from '../../server/jev/memory/seed';
 import { ALTERATION } from '../../server/jev/omni/mission';
 import { pilotAnchor } from '../../server/jev/omni/pilot';
+import { setActiveTheme, themeOf } from '../../server/services/houseDesign';
 import { extractFacts, lessonFrom, memoryBlock, mergeFacts, recall as recallMemory } from '../../server/jev/memory/semantic';
 import type { DataClass, FabricTag } from '../../server/jev/fabric/types';
 import type { SkillVersion } from '../../server/jev/fabric/skills';
@@ -2445,8 +2446,13 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     if (d.always)
       useStore.setState({ grants: { ...useStore.getState().grants, [sid]: [...grants, tool.name] } });
   }
+  // EXPORT THEMES: the house charter is the default, not a cage — a theme or custom colours given by the model apply.
+  const themed = /^(report|data)\.export$/.test(tool.name);
+  const prevTheme = themed ? setActiveTheme(themeOf(args, useStore.getState().settings.exportTheme)) : null;
   try {
-    const out = await tool.run(args, ctx);
+    const out = await tool.run(args, ctx).finally(() => {
+      if (prevTheme) setActiveTheme(prevTheme);
+    });
     st.updateItem(sid, itemId, {
       status: out.ok ? 'ok' : 'error',
       summary: out.summary,

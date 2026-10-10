@@ -249,6 +249,8 @@ export interface Settings {
   braveRelay?: string;
   /** If Brave fails, fall back to OpenRouter web search (paid per result). */
   braveFallback?: boolean;
+  /** Default export theme (house = GOD 3D · BLUE ECOBANK). */
+  exportTheme?: string;
   rememberKey: boolean;
   defaultModel: string;
   fallbackModel: string;

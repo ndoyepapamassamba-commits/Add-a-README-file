@@ -76,11 +76,11 @@ describe('design lock — GOD 3D · BLUE ECOBANK', () => {
     fonts.font.ui = 'Calibri';
     expect(designSignature(fonts)).not.toBe(DESIGN_LOCK);
   });
-  it('agents are told the design is locked and no export tool accepts colours or fonts', () => {
+  it('agents are told the house design is the DEFAULT and that another theme is used only on request', () => {
     expect(HOUSE_RULES).toBe(DESIGN_RULES);
-    expect(HOUSE_RULES).toContain('LOCKED');
+    expect(HOUSE_RULES).toContain('THE DEFAULT');
     expect(HOUSE_RULES).toContain('#001B4D');
-    expect(HOUSE_RULES).toContain('accept no color or font parameter');
+    expect(HOUSE_RULES).toContain("another theme only on the user's request");
   });
 });
 
@@ -227,5 +227,27 @@ describe('design lock — native Excel charts (no matplotlib, no image)', () => 
         k.includes('chart'),
       ),
     ).toBe(false);
+  });
+});
+
+import { buildTheme, setActiveTheme, themeOf, withTheme, activeDesign, THEMES } from '../../server/services/houseDesign';
+describe('export themes (not frozen any more, house charter intact)', () => {
+  it('house stays the default and the lock still matches', () => {
+    expect(buildTheme(undefined)).toBe(DESIGN);
+    expect(themeOf({})).toBe('house');
+    expect(designSignature()).toBe(DESIGN_LOCK);
+  });
+  it('a named theme and a custom theme change the active colours only for the export', () => {
+    expect(withTheme('minimal', () => activeDesign().color.navy)).toBe(THEMES.minimal.color.navy);
+    expect(activeDesign()).toBe(DESIGN);
+    const prev = setActiveTheme(themeOf({ colors: { primary: '#7c3aed', accent: '#f59e0b', font: 'Inter' } }));
+    expect(activeDesign().color.blue).toBe('7C3AED');
+    expect(activeDesign().font.ui).toBe('Inter');
+    expect((HOUSE as { blue: string }).blue).toBe('7C3AED');
+    setActiveTheme(prev);
+    expect((HOUSE as { blue: string }).blue).toBe(DESIGN.color.blue);
+  });
+  it('invalid colours are ignored, never injected', () => {
+    expect(buildTheme({ primary: 'red;}<script>' }).color.blue).toBe(DESIGN.color.blue);
   });
 });

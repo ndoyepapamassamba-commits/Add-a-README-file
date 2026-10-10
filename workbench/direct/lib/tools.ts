@@ -54,6 +54,7 @@ function workspaceTwin() {
   );
 }
 import { shellRisk } from './shellCore';
+import { THEME_PARAMS } from '../../server/services/houseDesign';
 import { BRAVE_DIRECT, braveText, braveUrl, parseBrave } from '../../server/jev/web/brave';
 import { diagnose, formatDiagnosis } from '../../server/tools/diagnose';
 
@@ -869,7 +870,7 @@ export const TOOLS: DirectTool[] = [
   {
     name: 'report.export',
     description:
-      'Export a Markdown report to deliverables in outputs/, always in the house style: docx (Word), pptx (PowerPoint), html (printable — the user prints it to PDF), eml (colour mail draft for Outlook + .mail.html), md. Charts saved by data.chart (outputs/charts/*.png) are embedded when referenced as ![title](outputs/charts/x.png). Give markdown content or a markdown file path. Never overwrites existing files.',
+      'Export a Markdown report to deliverables in outputs/, in the house style by default (or the theme the user asks for): docx (Word), pptx (PowerPoint), html (printable — the user prints it to PDF), eml (colour mail draft for Outlook + .mail.html), md. Charts saved by data.chart (outputs/charts/*.png) are embedded when referenced as ![title](outputs/charts/x.png). Give markdown content or a markdown file path. Never overwrites existing files.',
     parameters: obj(
       {
         name: str('Base file name without extension, e.g. "rapport-ventes"'),
@@ -880,6 +881,7 @@ export const TOOLS: DirectTool[] = [
           type: 'array',
           items: { type: 'string', enum: ['docx', 'pptx', 'html', 'pdf', 'md', 'eml'] },
         },
+        ...THEME_PARAMS,
       },
       ['name'],
     ),
@@ -952,13 +954,14 @@ export const TOOLS: DirectTool[] = [
           type: 'string',
           enum: ['none', 'bar', 'line', 'pie'],
           description:
-            'Optional NATIVE Excel chart (no image, no matplotlib) in the locked house palette: first text column = categories, numeric columns = series (pie: first numeric column, max 30 rows plotted)',
+            'Optional NATIVE Excel chart (no image, no matplotlib) in the theme palette: first text column = categories, numeric columns = series (pie: first numeric column, max 30 rows plotted)',
         },
         format: { type: 'string', enum: ['xlsx', 'csv', 'json'] },
         query: {
           type: 'object',
           description: 'Optional data.query spec: filters, groupBy, aggregations, select, sort, limit',
         },
+        ...THEME_PARAMS,
       },
       ['path', 'name'],
     ),

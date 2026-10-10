@@ -3,11 +3,11 @@
 // (relevés sur le classeur de référence « Impayés 30-90j plan d'actions »); nothing here is configurable.
 import XLSXS from 'xlsx-js-style';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
-import { DESIGN, DESIGN_RULES } from './houseDesign';
+import { DESIGN_RULES, activeDesign, liveColorProxy, type Design } from './houseDesign';
 
-const C = DESIGN.color;
+const C = liveColorProxy((c) => c) as Design['color'];
 /** Legacy token names kept for the Word / HTML / mail builders. `lime` is now the GOLD accent filet. */
-export const HOUSE = Object.freeze({
+export const HOUSE = liveColorProxy((C, D) => ({
   navy: C.navy,
   blue: C.blue,
   light: '2563EB',
@@ -21,15 +21,15 @@ export const HOUSE = Object.freeze({
   line: C.line,
   risk: C.risk,
   warn: C.warn,
-  font: DESIGN.font.ui,
-  mono: DESIGN.font.mono,
+  font: D.font.ui,
+  mono: D.font.mono,
   gold: C.gold,
   cyan: C.cyan,
   ice: C.ice,
   panel: C.panel,
   input: C.input,
   subtle: C.subtle,
-});
+}));
 
 /** 2359078494 → "2 359 078 494" (ordinary spaces, as in the house reports). */
 export function fmtXof(n: number, digits = 0): string {
@@ -66,7 +66,7 @@ export function lockSheetView(
   const name = Object.keys(z).find((k) => /^xl\/worksheets\/sheet1\.xml$/.test(k));
   if (!name) return bytes;
   let xml = strFromU8(z[name]!);
-  const zoom = o.zoom ?? DESIGN.xlsx.zoom;
+  const zoom = o.zoom ?? activeDesign().xlsx.zoom;
   const view = `<sheetViews><sheetView${o.gridlines ? '' : ' showGridLines="0"'} zoomScale="${zoom}" zoomScaleNormal="${zoom}" workbookViewId="0">${
     o.freezeRows > 0
       ? `<pane ySplit="${o.freezeRows}" topLeftCell="A${o.freezeRows + 1}" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A${o.freezeRows + 1}" sqref="A${o.freezeRows + 1}"/>`
@@ -101,7 +101,7 @@ interface ChartSpec {
 const xesc = (t: string) =>
   t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-/** Native Excel chart in the locked palette (series colours from DESIGN.chartSeries, Segoe UI, ice grid). */
+/** Native Excel chart in the locked palette (series colours from activeDesign().chartSeries, Segoe UI, ice grid). */
 export function addNativeChart(bytes: Uint8Array, c: ChartSpec): Uint8Array {
   const z = unzipSync(bytes);
   const sheetKey = 'xl/worksheets/sheet1.xml';
@@ -110,11 +110,11 @@ export function addNativeChart(bytes: Uint8Array, c: ChartSpec): Uint8Array {
   const rngOf = (col: number) =>
     `${q}!$${XLSXS.utils.encode_col(col)}$${c.first}:$${XLSXS.utils.encode_col(col)}$${c.last}`;
   const txt = (sz: number, color: string, bold = false) =>
-    `<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="${sz}" b="${bold ? 1 : 0}"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill><a:latin typeface="${DESIGN.font.ui}"/></a:defRPr></a:pPr><a:endParaRPr lang="fr-FR"/></a:p></c:txPr>`;
+    `<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="${sz}" b="${bold ? 1 : 0}"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill><a:latin typeface="${activeDesign().font.ui}"/></a:defRPr></a:pPr><a:endParaRPr lang="fr-FR"/></a:p></c:txPr>`;
   const catXml = `<c:cat><c:strRef><c:f>${xesc(rngOf(c.cat.col))}</c:f><c:strCache><c:ptCount val="${c.cat.values.length}"/>${c.cat.values.map((v, i) => `<c:pt idx="${i}"><c:v>${xesc(v)}</c:v></c:pt>`).join('')}</c:strCache></c:strRef></c:cat>`;
   const ser = c.series
     .map((s, i) => {
-      const color = DESIGN.chartSeries[i % DESIGN.chartSeries.length]!;
+      const color = activeDesign().chartSeries[i % activeDesign().chartSeries.length]!;
       const sp =
         c.kind === 'line'
           ? `<c:spPr><a:ln w="28575" cap="rnd"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill></a:ln></c:spPr><c:marker><c:symbol val="circle"/><c:size val="6"/><c:spPr><a:solidFill><a:srgbClr val="${color}"/></a:solidFill></c:spPr></c:marker>`
@@ -124,21 +124,21 @@ export function addNativeChart(bytes: Uint8Array, c: ChartSpec): Uint8Array {
           ? c.cat.values
               .map(
                 (_, k) =>
-                  `<c:dPt><c:idx val="${k}"/><c:bubble3D val="0"/><c:spPr><a:solidFill><a:srgbClr val="${DESIGN.chartSeries[k % DESIGN.chartSeries.length]}"/></a:solidFill><a:ln w="9525"><a:solidFill><a:srgbClr val="${DESIGN.color.white}"/></a:solidFill></a:ln></c:spPr></c:dPt>`,
+                  `<c:dPt><c:idx val="${k}"/><c:bubble3D val="0"/><c:spPr><a:solidFill><a:srgbClr val="${activeDesign().chartSeries[k % activeDesign().chartSeries.length]}"/></a:solidFill><a:ln w="9525"><a:solidFill><a:srgbClr val="${activeDesign().color.white}"/></a:solidFill></a:ln></c:spPr></c:dPt>`,
               )
               .join('')
           : '';
-      return `<c:ser><c:idx val="${i}"/><c:order val="${i}"/><c:tx><c:strRef><c:f>${xesc(`${q}!$${XLSXS.utils.encode_col(s.col)}$${c.first - 1}`)}</c:f><c:strCache><c:ptCount val="1"/><c:pt idx="0"><c:v>${xesc(s.name)}</c:v></c:pt></c:strCache></c:strRef></c:tx>${c.kind === 'pie' ? '' : sp}${dpts}${c.kind === 'pie' ? '<c:dLbls><c:numFmt formatCode="#,##0" sourceLinked="0"/><c:spPr><a:noFill/></c:spPr>' + txt(900, DESIGN.color.text) + '<c:showLegendKey val="0"/><c:showVal val="0"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="1"/><c:showBubbleSize val="0"/></c:dLbls>' : ''}${catXml}<c:val><c:numRef><c:f>${xesc(rngOf(s.col))}</c:f><c:numCache><c:formatCode>#,##0</c:formatCode><c:ptCount val="${s.values.length}"/>${s.values.map((v, k) => `<c:pt idx="${k}"><c:v>${v}</c:v></c:pt>`).join('')}</c:numCache></c:numRef></c:val>${c.kind === 'line' ? '<c:smooth val="0"/>' : ''}</c:ser>`;
+      return `<c:ser><c:idx val="${i}"/><c:order val="${i}"/><c:tx><c:strRef><c:f>${xesc(`${q}!$${XLSXS.utils.encode_col(s.col)}$${c.first - 1}`)}</c:f><c:strCache><c:ptCount val="1"/><c:pt idx="0"><c:v>${xesc(s.name)}</c:v></c:pt></c:strCache></c:strRef></c:tx>${c.kind === 'pie' ? '' : sp}${dpts}${c.kind === 'pie' ? '<c:dLbls><c:numFmt formatCode="#,##0" sourceLinked="0"/><c:spPr><a:noFill/></c:spPr>' + txt(900, activeDesign().color.text) + '<c:showLegendKey val="0"/><c:showVal val="0"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="1"/><c:showBubbleSize val="0"/></c:dLbls>' : ''}${catXml}<c:val><c:numRef><c:f>${xesc(rngOf(s.col))}</c:f><c:numCache><c:formatCode>#,##0</c:formatCode><c:ptCount val="${s.values.length}"/>${s.values.map((v, k) => `<c:pt idx="${k}"><c:v>${v}</c:v></c:pt>`).join('')}</c:numCache></c:numRef></c:val>${c.kind === 'line' ? '<c:smooth val="0"/>' : ''}</c:ser>`;
     })
     .join('');
-  const axes = `<c:catAx><c:axId val="111"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="b"/><c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln w="9525"><a:solidFill><a:srgbClr val="${DESIGN.color.line}"/></a:solidFill></a:ln></c:spPr>${txt(900, DESIGN.color.text2)}<c:crossAx val="222"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx><c:valAx><c:axId val="222"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="l"/><c:majorGridlines><c:spPr><a:ln w="9525"><a:solidFill><a:srgbClr val="${DESIGN.color.line}"/></a:solidFill></a:ln></c:spPr></c:majorGridlines><c:numFmt formatCode="${xesc(DESIGN.xlsx.numberFormat.integer)}" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln><a:noFill/></a:ln></c:spPr>${txt(900, DESIGN.color.text2)}<c:crossAx val="111"/><c:crosses val="autoZero"/><c:crossBetween val="between"/></c:valAx>`;
+  const axes = `<c:catAx><c:axId val="111"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="b"/><c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln w="9525"><a:solidFill><a:srgbClr val="${activeDesign().color.line}"/></a:solidFill></a:ln></c:spPr>${txt(900, activeDesign().color.text2)}<c:crossAx val="222"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx><c:valAx><c:axId val="222"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="l"/><c:majorGridlines><c:spPr><a:ln w="9525"><a:solidFill><a:srgbClr val="${activeDesign().color.line}"/></a:solidFill></a:ln></c:spPr></c:majorGridlines><c:numFmt formatCode="${xesc(activeDesign().xlsx.numberFormat.integer)}" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln><a:noFill/></a:ln></c:spPr>${txt(900, activeDesign().color.text2)}<c:crossAx val="111"/><c:crosses val="autoZero"/><c:crossBetween val="between"/></c:valAx>`;
   const plot =
     c.kind === 'pie'
       ? `<c:pieChart><c:varyColors val="1"/>${ser}<c:firstSliceAng val="0"/></c:pieChart>`
       : c.kind === 'line'
         ? `<c:lineChart><c:grouping val="standard"/><c:varyColors val="0"/>${ser}<c:marker val="1"/><c:axId val="111"/><c:axId val="222"/></c:lineChart>${axes}`
         : `<c:barChart><c:barDir val="col"/><c:grouping val="clustered"/><c:varyColors val="0"/>${ser}<c:gapWidth val="60"/><c:axId val="111"/><c:axId val="222"/></c:barChart>${axes}`;
-  const chart = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:roundedCorners val="0"/><c:chart><c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="1200" b="1"><a:solidFill><a:srgbClr val="${DESIGN.color.navy}"/></a:solidFill><a:latin typeface="${DESIGN.font.ui}"/></a:defRPr></a:pPr><a:r><a:rPr lang="fr-FR" sz="1200" b="1"><a:solidFill><a:srgbClr val="${DESIGN.color.navy}"/></a:solidFill><a:latin typeface="${DESIGN.font.ui}"/></a:rPr><a:t>${xesc(c.title)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title><c:autoTitleDeleted val="0"/><c:plotArea><c:layout/>${plot}<c:spPr><a:noFill/></c:spPr></c:plotArea><c:legend><c:legendPos val="b"/><c:overlay val="0"/>${txt(900, DESIGN.color.text2)}</c:legend><c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart><c:spPr><a:solidFill><a:srgbClr val="${DESIGN.color.white}"/></a:solidFill><a:ln w="9525"><a:solidFill><a:srgbClr val="${DESIGN.color.line}"/></a:solidFill></a:ln></c:spPr></c:chartSpace>`;
+  const chart = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:roundedCorners val="0"/><c:chart><c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="1200" b="1"><a:solidFill><a:srgbClr val="${activeDesign().color.navy}"/></a:solidFill><a:latin typeface="${activeDesign().font.ui}"/></a:defRPr></a:pPr><a:r><a:rPr lang="fr-FR" sz="1200" b="1"><a:solidFill><a:srgbClr val="${activeDesign().color.navy}"/></a:solidFill><a:latin typeface="${activeDesign().font.ui}"/></a:rPr><a:t>${xesc(c.title)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title><c:autoTitleDeleted val="0"/><c:plotArea><c:layout/>${plot}<c:spPr><a:noFill/></c:spPr></c:plotArea><c:legend><c:legendPos val="b"/><c:overlay val="0"/>${txt(900, activeDesign().color.text2)}</c:legend><c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart><c:spPr><a:solidFill><a:srgbClr val="${activeDesign().color.white}"/></a:solidFill><a:ln w="9525"><a:solidFill><a:srgbClr val="${activeDesign().color.line}"/></a:solidFill></a:ln></c:spPr></c:chartSpace>`;
   const drawing = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><xdr:twoCellAnchor><xdr:from><xdr:col>${c.anchorCol}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${c.anchorRow}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>${c.anchorCol + 9}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${c.anchorRow + 20}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to><xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Graphique 1"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rId1"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>`;
   const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
   const rels = (target: string, type: string, id = 'rId1') =>
@@ -171,13 +171,13 @@ export function houseXlsx(
   rows: Record<string, unknown>[],
   opts: { title?: string; subtitle?: string; sheet?: string; chart?: ChartKind } = {},
 ): Uint8Array {
-  const X = DESIGN.xlsx;
+  const X = activeDesign().xlsx;
   const H = X.rowHeight;
   const title = opts.title || 'Export';
   const sub = `${opts.subtitle ? `${opts.subtitle} · ` : ''}Édité le ${fmtDateFr()}`;
   const n = Math.max(1, columns.length);
   const font = (extra: Record<string, unknown> = {}) => ({
-    name: DESIGN.font.ui,
+    name: activeDesign().font.ui,
     sz: X.bodySize,
     color: { rgb: C.text },
     ...extra,
@@ -264,7 +264,7 @@ export function houseXlsx(
             t: 'n',
             z: cards[i]!.z,
             s: {
-              font: font({ name: DESIGN.font.mono, sz: X.kpiValueSize, bold: true, color: { rgb: C.navy } }),
+              font: font({ name: activeDesign().font.mono, sz: X.kpiValueSize, bold: true, color: { rgb: C.navy } }),
               fill: solid(C.white),
               alignment: { horizontal: 'center', vertical: 'center' },
               border: box(),
@@ -286,7 +286,7 @@ export function houseXlsx(
       },
     })),
   );
-  const status = DESIGN.status as Record<string, { fill: string; text: string }>;
+  const status = activeDesign().status as Record<string, { fill: string; text: string }>;
   for (const r of rows)
     aoa.push(
       columns.map((c) => {
@@ -299,7 +299,7 @@ export function houseXlsx(
             z: Number.isInteger(v) ? X.numberFormat.integer : X.numberFormat.decimal,
             s: {
               ...base,
-              font: font({ name: DESIGN.font.mono }),
+              font: font({ name: activeDesign().font.mono }),
               alignment: { horizontal: 'right', vertical: 'center' },
             },
           };
