@@ -382,3 +382,72 @@ test('REAL website reproduced: its code gives the exact colours / fonts, its scr
   const xml = Object.entries(unzipSync(new Uint8Array(Buffer.from(xlsx, 'base64')))).filter(([k]) => /styles|sheet1/.test(k)).map(([, v]) => strFromU8(v)).join('');
   expect(xml).toContain('0E7C66');
 });
+
+test('LOGO: the attached logo is offered in the gallery, recoloured harmoniously to the chosen design, and placed in the Excel', async ({ page }) => {
+  await open(page);
+  await page.removeLocatorHandler(page.getByTestId('design-go'));
+  // A banner logo drawn in the page: blue background, white text, lime filet.
+  const b64 = await page.evaluate(() => {
+    const c = document.createElement('canvas');
+    c.width = 240;
+    c.height = 120;
+    const g = c.getContext('2d')!;
+    g.fillStyle = '#005C83';
+    g.fillRect(0, 0, 240, 120);
+    g.fillStyle = '#FFFFFF';
+    g.font = 'italic bold 48px sans-serif';
+    g.fillText('Banque', 20, 62);
+    g.fillStyle = '#8CC63F';
+    g.fillRect(20, 80, 200, 4);
+    return c.toDataURL('image/png').split(',')[1]!;
+  });
+  await page.locator('input[type=file]').first().setInputFiles({ name: 'logo-banque.png', mimeType: 'image/png', buffer: Buffer.from(b64, 'base64') });
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  mock.push(
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'data/ventes.csv', content: 'agence,montant\nDakar,1250\nThies,430\n' } }] },
+    { toolCalls: [{ name: 'data.export', args: { path: 'data/ventes.csv', name: 'ventes', title: 'Ventes', format: 'xlsx', chart: 'bar' } }] },
+    { text: 'Classeur prêt avec le logo.' },
+  );
+  await send(page, 'Fais un classeur Excel des ventes par agence');
+  await expect(page.getByTestId('design-card')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId('design-logo-file')).toContainText('logo-banque.png'); // pre-selected (its name says logo)
+  await page.getByTestId('design-onyx').click();
+  await expect(page.getByTestId('design-logo-harmonized').locator('img')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByTestId('design-logo-variants').locator('img')).toHaveCount(5);
+  await page.getByTestId('design-go').click();
+  await expect(page.getByTestId('design-card-done')).toContainText('logo harmonisé');
+  await expect(page.getByText('Classeur prêt avec le logo.')).toBeVisible({ timeout: 20_000 });
+  expect(JSON.stringify(mock.requests.filter((r) => r.tools?.length)[0]!.messages)).toContain('assets/logo-harmonized.png');
+  const files = () =>
+    page.evaluate(
+      () =>
+        new Promise<Record<string, { data: string }>>((resolve) => {
+          const req = indexedDB.open('openrouter-workbench-direct', 1);
+          req.onsuccess = () => {
+            const g = req.result.transaction('kv', 'readonly').objectStore('kv').get('files');
+            g.onsuccess = () => resolve((g.result ?? {}) as Record<string, { data: string }>);
+          };
+        }),
+    );
+  await expect.poll(async () => Object.keys(await files()).some((k) => k.endsWith('outputs/ventes.xlsx')), { timeout: 10_000 }).toBe(true);
+  const all = await files();
+  const { unzipSync } = await import('fflate');
+  const z = unzipSync(new Uint8Array(Buffer.from(all[Object.keys(all).find((k) => k.endsWith('outputs/ventes.xlsx'))!]!.data, 'base64')));
+  const media = z['xl/media/massamba-logo.png'];
+  expect(media).toBeTruthy();
+  expect(Object.keys(z).some((k) => k.startsWith('xl/charts/'))).toBe(true); // the chart is kept
+  // The logo in the workbook IS recoloured: its background is now the Onyx primary, not the original blue.
+  const corner = await page.evaluate(async (b: string) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b}`;
+    await img.decode();
+    const c = document.createElement('canvas');
+    c.width = img.width;
+    c.height = img.height;
+    const g = c.getContext('2d')!;
+    g.drawImage(img, 0, 0);
+    return [...g.getImageData(3, 3, 1, 1).data];
+  }, Buffer.from(media!).toString('base64'));
+  expect(corner.slice(0, 3)).toEqual([0x1c, 0x1c, 0x24]);
+});

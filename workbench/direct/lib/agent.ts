@@ -60,6 +60,8 @@ import { pilotAnchor } from '../../server/jev/omni/pilot';
 import { THEMES, buildTheme, setActiveTheme, themeOf } from '../../server/services/houseDesign';
 import { applyWebTheme, deliverableFromCode, deliverableFromText, kindForTool, type DeliverableKind } from '../../server/services/premiumDesigns';
 import { isOffice, recolorOffice } from '../../server/services/officeRecolor';
+import { addLogoToHtml, addLogoToOffice } from '../../server/services/officeLogo';
+import { LOGO_VARIANTS } from '../../server/services/logoHarmony';
 import { excelChart } from '../../server/services/layoutClone';
 import { extractFacts, lessonFrom, memoryBlock, mergeFacts, recall as recallMemory } from '../../server/jev/memory/semantic';
 import type { DataClass, FabricTag } from '../../server/jev/fabric/types';
@@ -2531,6 +2533,8 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     if (dkind === 'web' && tool.name === 'artifact.create' && typeof args.content === 'string') {
       const t = themeOf(args, useStore.getState().settings.exportTheme);
       args.content = applyWebTheme(args.content as string, t);
+      const lg = choice?.logo ? files()[choice.logo.path] : undefined;
+      if (lg) args.content = addLogoToHtml(args.content as string, `data:image/png;base64,${lg.data}`);
       // A real website reproduced: its web font and its own colour tokens are available to the page.
       const sl = choice?.layout;
       if (sl?.cssVars && !/data-site-tokens/.test(args.content as string)) {
@@ -2558,6 +2562,11 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     if (out.ok && tool.name === 'code.run') {
       const n = enforceDesign(sid, t0);
       if (n) out.forModel += `\n[design] ${n} fichier(s) Office mis au design choisi par l'utilisateur.`;
+    }
+    // The user's logo (recoloured to the palette) goes into every deliverable this tool just produced.
+    if (out.ok && /^(code\.run|data\.export|report\.export)$/.test(tool.name)) {
+      const n = applyLogo(sid, t0);
+      if (n) out.forModel += `\n[logo] logo de l'utilisateur placé dans ${n} fichier(s).`;
     }
     releaseScope?.();
     out.forModel += designNote;
@@ -2631,7 +2640,8 @@ async function askDesign(
           ? 'Design Internet — mise en page reproduite'
           : 'Design Internet — couleurs et police'
       : (THEMES[d.choice.theme]?.label ?? d.choice.theme);
-  st.updateItem(sid, designId, { resolved: lbl, chosenFormats: d.formats });
+  const logoLbl = d.choice.logo ? ` · logo ${(LOGO_VARIANTS.find((v) => v.id === d.choice.logo!.variant)?.label ?? '').toLowerCase()}` : '';
+  st.updateItem(sid, designId, { resolved: `${lbl}${logoLbl}`, chosenFormats: d.formats });
   runDesign.set(sid, d.choice);
   if (d.remember) st.patchSession(sid, { design: d.choice });
   return d;
@@ -2642,9 +2652,35 @@ function designPrompt(c: DesignChoice, formats?: string[]): string {
   const t = buildTheme(c.theme === 'custom' ? (c.colors ?? null) : (c.theme as never));
   const k = t.color;
   return `<DESIGN_CHOICE name="${t.name}"${formats?.length ? ` formats="${formats.join(',')}"` : ''}>
-The user CHOSE this design for the deliverable. It REPLACES the house style: ignore any « style maison », Ecobank navy/blue/lime palette or Segoe UI rule found in memories, lessons, skills or agent descriptions, and never announce the house style in your answer. Use it everywhere (native exporters receive it automatically; in your own Python/JS code use exactly these values):
-title/header band ${k.navy} · primary ${k.blue} · accent / thin rule ${k.gold} · secondary ${k.cyan} · soft fill ${k.ice} · zebra/panel ${k.panel} · borders ${k.line} · text ${k.text} · chart series ${t.chartSeries.slice(0, 5).join(', ')} · font "${t.font.ui}" (figures may use "${t.font.mono}").${formats?.length ? `\nOutput format(s) chosen: ${formats.join(', ')}.` : ''}
+The user CHOSE this design for the deliverable.${c.theme === 'house' ? '' : ' It REPLACES the house style: ignore any « style maison », Ecobank navy/blue/lime palette or Segoe UI rule found in memories, lessons, skills or agent descriptions, and never announce the house style in your answer.'} Use it everywhere (native exporters receive it automatically; in your own Python/JS code use exactly these values):
+${c.logo ? `Logo: ${c.logo.path} — the user's logo, already recoloured to this palette. The app places it AUTOMATICALLY in every Excel / Word / PowerPoint / HTML file you produce (title band, page header, each slide): do NOT insert it yourself and leave room top-right.\n` : ''}title/header band ${k.navy} · primary ${k.blue} · accent / thin rule ${k.gold} · secondary ${k.cyan} · soft fill ${k.ice} · zebra/panel ${k.panel} · borders ${k.line} · text ${k.text} · chart series ${t.chartSeries.slice(0, 5).join(', ')} · font "${t.font.ui}" (figures may use "${t.font.mono}").${formats?.length ? `\nOutput format(s) chosen: ${formats.join(', ')}.` : ''}
 </DESIGN_CHOICE>`;
+}
+/** Place the chosen logo in the Office / HTML deliverables written since `since` (idempotent). */
+function applyLogo(sid: string, since: number): number {
+  const c = designFor(sid);
+  const lf = c?.logo ? files()[c.logo.path] : undefined;
+  if (!c?.logo || !lf || !lf.binary) return 0;
+  const logo = { png: bytesOf(lf), width: c.logo.width, height: c.logo.height };
+  const url = `data:image/png;base64,${lf.data}`;
+  let n = 0;
+  for (const f of Object.values(files())) {
+    if (f.updatedAt < since || f.path.startsWith('assets/') || f.path.startsWith('uploads/')) continue;
+    if (f.binary && isOffice(f.path)) {
+      const out = addLogoToOffice(f.path, bytesOf(f), logo);
+      if (out) {
+        writeBytes(f.path, out, f.mime);
+        n++;
+      }
+    } else if (!f.binary && /\.html?$/i.test(f.path)) {
+      const html = addLogoToHtml(f.data, url);
+      if (html !== f.data) {
+        writeText(f.path, html);
+        n++;
+      }
+    }
+  }
+  return n;
 }
 /** Re-skin the Office files this chat's code just wrote with the chosen design. Returns how many changed. */
 function enforceDesign(sid: string, since: number): number {

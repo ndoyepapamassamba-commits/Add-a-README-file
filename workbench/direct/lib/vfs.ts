@@ -245,6 +245,21 @@ export async function importBrowserFile(file: File, dir = 'uploads', sid?: strin
   }
 }
 
+/** Write bytes into a given chat (synchronous scope switch, whatever chat is running). */
+export function writeChatBytes(sid: string, path: string, bytes: Uint8Array, mime?: string): VFile {
+  const prev = scope;
+  scope = { sid, allow: new Set() };
+  try {
+    return writeBytes(path, bytes, mime);
+  } finally {
+    scope = prev;
+  }
+}
+/** A chat's file (its own copy first, then the shared file if attached). */
+export function chatFile(sid: string, path: string): VFile | undefined {
+  return filesFor(sid, sessionAllow(sid))[normPath(path)];
+}
+
 /** Readable text of any workspace file (documents are extracted). */
 export async function readAsText(path: string): Promise<{ text: string; kind: string }> {
   const f = getFile(path);

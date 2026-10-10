@@ -1,6 +1,6 @@
 // The design gallery shown in the chat BEFORE any deliverable: premium designs as thumbnails (drawn from the same tokens
 // the exporters use), the output format(s), « use for this whole chat », and designs found on the Internet.
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Spinner } from '../../web/components/ui';
 import { resolveDesign } from '../lib/agent';
 import { PREMIUM_DESIGNS, thumbnailDataUrl, type DeliverableKind } from '../../server/services/premiumDesigns';
@@ -8,11 +8,28 @@ import { searchDesigns, layoutFromImage, paletteFromImage, siteDesign } from '..
 import { DESIGN_STYLES, type DesignStyle } from '../../server/jev/web/search';
 import { dashboardData, layoutTheme, renderLayoutHtml, type DesignLayout } from '../../server/services/layoutClone';
 import type { ThemeId, CustomTheme } from '../../server/services/houseDesign';
+import { LOGO_VARIANTS, type LogoVariant } from '../../server/services/logoHarmony';
+import { decodeLogo, isLogoFile, logoPalette, renderLogo, type DecodedLogo } from '../lib/logo';
+import { useStore } from '../lib/store';
+import { filesFor, importBrowserFile, sessionAllow, writeChatBytes } from '../lib/vfs';
+import type { DesignChoice } from '../lib/types';
 
 const KIND_LABEL: Record<DeliverableKind, string> = { excel: 'classeur Excel', document: 'document', slides: 'présentation', web: 'site / application' };
 const FORMAT_LABEL: Record<string, string> = { docx: 'Word', pptx: 'PowerPoint', pdf: 'PDF', html: 'HTML', eml: 'Mail Outlook', md: 'Markdown', xlsx: 'Excel', csv: 'CSV', json: 'JSON' };
 
-export function DesignCard({ item }: { item: { id: string; deliverable: DeliverableKind; formats: string[]; chosenFormats?: string[]; resolved?: string } }) {
+type CardItem = { id: string; deliverable: DeliverableKind; formats: string[]; chosenFormats?: string[]; resolved?: string };
+export function DesignCard({ item }: { item: CardItem }) {
+  if (item.resolved)
+    return (
+      <div className="my-2 rounded-xl border border-line bg-panel px-3 py-2 text-[12.5px]" data-testid="design-card-done">
+        🎨 Design : <b>{item.resolved}</b>
+        {item.chosenFormats?.length ? ` · ${item.chosenFormats.map((f) => FORMAT_LABEL[f] ?? f).join(', ')}` : ''}
+      </div>
+    );
+  return <DesignCardOpen item={item} />;
+}
+
+function DesignCardOpen({ item }: { item: CardItem }) {
   const [sel, setSel] = useState<ThemeId | 'custom'>('house');
   const [formats, setFormats] = useState<string[]>(item.chosenFormats ?? []);
   const [remember, setRemember] = useState(true);
@@ -26,6 +43,32 @@ export function DesignCard({ item }: { item: { id: string; deliverable: Delivera
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(0);
   const seen = useRef(new Set<string>());
+  // ── LOGO: none, an image of this chat, or an imported one — recoloured harmoniously to the chosen palette ──
+  const sid = useStore((x) => x.currentId);
+  const storeFiles = useStore((x) => x.files);
+  const logos = useMemo(
+    () => (sid ? Object.values(filesFor(sid, sessionAllow(sid))).filter((f) => isLogoFile(f.path) && !f.path.startsWith('assets/logo-')).sort((a, b) => b.updatedAt - a.updatedAt) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sid, storeFiles],
+  );
+  const [logoPath, setLogoPath] = useState<string | null>(() => logos.find((f) => /logo/i.test(f.path))?.path ?? null);
+  const [variant, setVariant] = useState<LogoVariant>('harmonized');
+  const [decoded, setDecoded] = useState<DecodedLogo | null>(null);
+  const [previews, setPreviews] = useState<Partial<Record<LogoVariant, string>>>({});
+  const logoInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    setDecoded(null);
+    const f = logoPath ? logos.find((x) => x.path === logoPath) : undefined;
+    if (!f) return;
+    let live = true;
+    decodeLogo(f)
+      .then((d) => live && setDecoded(d))
+      .catch(() => live && setErr('Ce logo ne peut pas être lu (format non pris en charge).'));
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logoPath]);
   const [siteUrl, setSiteUrl] = useState('');
   const [site, setSite] = useState<{ url: string; font: string; radius: number; vars: number; structure: boolean } | null>(null);
   /** A REAL website: its code gives the exact colours / fonts / radius, its screenshot gives the structure. */
@@ -46,13 +89,6 @@ export function DesignCard({ item }: { item: { id: string; deliverable: Delivera
       setBusy(null);
     }
   };
-  if (item.resolved)
-    return (
-      <div className="my-2 rounded-xl border border-line bg-panel px-3 py-2 text-[12.5px]" data-testid="design-card-done">
-        🎨 Design : <b>{item.resolved}</b>
-        {item.chosenFormats?.length ? ` · ${item.chosenFormats.map((f) => FORMAT_LABEL[f] ?? f).join(', ')}` : ''}
-      </div>
-    );
   const kind = item.deliverable;
   const toggleFormat = (f: string) => setFormats((p) => (p.includes(f) ? p.filter((x) => x !== f) : item.formats.length && (f === 'xlsx' || f === 'csv' || f === 'json') ? [f] : [...p, f]));
   /** First page (new style / search) or the next page appended (« Plus de designs »). */
@@ -103,12 +139,30 @@ export function DesignCard({ item }: { item: { id: string; deliverable: Delivera
     }
   };
   const selLabel = sel === 'custom' ? (site ? `Site reproduit — ${new URL(site.url).hostname}` : layout ? 'Design Internet (mise en page + couleurs)' : 'Design Internet (couleurs)') : (PREMIUM_DESIGNS.find((d) => d.id === sel)?.label ?? sel);
-  const go = () =>
-    resolveDesign(item.id, {
-      choice: sel === 'custom' && custom ? { theme: 'custom', colors: custom, source: webSel ?? undefined, layout: layout ?? undefined } : { theme: sel as ThemeId },
-      formats: formats.length ? formats : undefined,
-      remember,
-    });
+  // Live previews of every logo variant for the palette being chosen.
+  const palette = logoPalette(sel === 'custom' && custom ? 'custom' : (sel as ThemeId), custom, sel === 'custom' ? layout : null);
+  const palKey = JSON.stringify(palette);
+  useEffect(() => {
+    if (!decoded) return setPreviews({});
+    let live = true;
+    void Promise.all(LOGO_VARIANTS.map(async (v) => [v.id, (await renderLogo(decoded, palette, v.id)).dataUrl] as const)).then((r) => live && setPreviews(Object.fromEntries(r)));
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [decoded, palKey]);
+  const go = async () => {
+    const choice: DesignChoice = sel === 'custom' && custom ? { theme: 'custom', colors: custom, source: webSel ?? undefined, layout: layout ?? undefined } : { theme: sel as ThemeId };
+    if (decoded && logoPath && sid) {
+      setBusy('préparation du logo…');
+      const r = await renderLogo(decoded, palette, variant);
+      const path = `assets/logo-${variant}.png`;
+      writeChatBytes(sid, path, r.png, 'image/png');
+      choice.logo = { path, variant, width: r.width, height: r.height, source: logoPath };
+      setBusy(null);
+    }
+    resolveDesign(item.id, { choice, formats: formats.length ? formats : undefined, remember });
+  };
   return (
     <div className="my-3 rounded-2xl border border-accent/50 bg-panel p-3" data-testid="design-card">
       <div className="mb-2 text-[13.5px] font-semibold">🎨 Choisissez le design de votre {KIND_LABEL[kind]}</div>
@@ -243,6 +297,54 @@ export function DesignCard({ item }: { item: { id: string; deliverable: Delivera
           </div>
         </div>
       )}
+      <div className="mt-2 rounded-xl border border-line p-2 text-[12px]" data-testid="design-logo">
+        <div className="mb-1 flex flex-wrap items-center gap-1.5">
+          <span className="font-semibold">Logo :</span>
+          <button type="button" onClick={() => setLogoPath(null)} className={`rounded-full border px-2.5 py-0.5 ${!logoPath ? 'border-accent bg-accent-soft text-accent' : 'border-line'}`} data-testid="design-logo-none">
+            Sans logo
+          </button>
+          {logos.slice(0, 8).map((f) => (
+            <button key={f.path} type="button" onClick={() => setLogoPath(f.path)} title={f.path} className={`flex items-center gap-1 rounded-full border px-2 py-0.5 ${logoPath === f.path ? 'border-accent bg-accent-soft text-accent' : 'border-line'}`} data-testid="design-logo-file">
+              {f.path.split('/').pop()}
+            </button>
+          ))}
+          <button type="button" onClick={() => logoInput.current?.click()} className="rounded-full border border-dashed border-line px-2.5 py-0.5" data-testid="design-logo-import">
+            ＋ Importer un logo
+          </button>
+          <input
+            ref={logoInput}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            hidden
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              e.target.value = '';
+              if (!f || !sid) return;
+              const v = await importBrowserFile(f, 'uploads', sid);
+              setLogoPath(v.path);
+            }}
+          />
+        </div>
+        {logoPath && (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5" data-testid="design-logo-variants">
+            {LOGO_VARIANTS.map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => setVariant(v.id)}
+                data-testid={`design-logo-${v.id}`}
+                className={`rounded-lg border p-1 text-left ${variant === v.id ? 'border-accent ring-2 ring-accent/40' : 'border-line'}`}
+              >
+                <div className={`flex h-14 items-center justify-center rounded ${v.id === 'white' ? 'bg-[#334155]' : 'bg-white'}`}>
+                  {previews[v.id] ? <img src={previews[v.id]} alt={v.label} className="max-h-12 max-w-full object-contain" /> : <Spinner className="h-3 w-3" />}
+                </div>
+                <div className="mt-0.5 truncate text-[11px]">{v.label}</div>
+              </button>
+            ))}
+          </div>
+        )}
+        {logoPath && <div className="mt-1 text-[11px] text-muted">Le logo prend les couleurs du design choisi (fond → couleur principale, couleurs de marque → accent, blanc conservé si lisible) et sera placé automatiquement dans Excel, Word, PowerPoint et les pages HTML.</div>}
+      </div>
       {item.formats.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px]" data-testid="design-formats">
           <span className="text-muted">Format :</span>
@@ -254,7 +356,7 @@ export function DesignCard({ item }: { item: { id: string; deliverable: Delivera
         </div>
       )}
       <div className="mt-2 flex flex-wrap items-center gap-3">
-        <Button variant="primary" onClick={go} disabled={Boolean(busy) || (sel === 'custom' && !custom) || (item.formats.length > 0 && !formats.length)} data-testid="design-go">
+        <Button variant="primary" onClick={() => void go()} disabled={Boolean(busy) || (sel === 'custom' && !custom) || (item.formats.length > 0 && !formats.length)} data-testid="design-go">
           Générer avec ce design
         </Button>
         <span className="text-[12px]" data-testid="design-selected">
