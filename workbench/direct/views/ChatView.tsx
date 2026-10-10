@@ -832,7 +832,7 @@ function Composer({ session }: { session: Session }) {
             }
             items={modelItems}
             value={session.model}
-            onSelect={(v) => patch({ model: v })}
+            onSelect={(v) => patch({ model: v, pinnedModel: undefined })}
             placement="top"
             width={420}
             search

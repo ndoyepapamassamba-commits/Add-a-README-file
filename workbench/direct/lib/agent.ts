@@ -398,6 +398,8 @@ export type JevVariant = 'off' | 'pre' | 'live' | 'full';
 let jevOverride: JevVariant | null = null;
 /** A benchmark / lab / A-B arm is running: the OMNIPOTENT fast lane stays out so both arms are compared faithfully. */
 let experimentRun = false;
+/** Model this chat is locked to during the current run (null = switching allowed: experiments, sub-agents, lock off). */
+let modelLock: string | null = null;
 let lastPolicy = '';
 /** Cognitive Fabric options of the current run (set by runAgent; benchmarks and skill tests use them). */
 export interface FabricRunOpts {
@@ -925,9 +927,19 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       });
     }
   }
-  const fallbackChain = [
-    ...new Set([st.settings.fallbackModel, ...routedFallbacks].filter((m) => m && m !== sel.model)),
-  ];
+  // ── MODEL LOCK: a chat never changes model on its own. An explicit choice is kept; « auto » picks ONCE (first request
+  // of the chat) and that model stays for the whole conversation. No silent fallback, escalation or downgrade mid-chat.
+  const lockOn = top && !experimentRun && st.settings.pinModel !== false;
+  const pinned = inp.session.pinnedModel && models.some((m) => m.id === inp.session.pinnedModel) ? inp.session.pinnedModel : null;
+  const myLock = lockOn ? (inp.session.model && inp.session.model !== 'auto' ? inp.session.model : (pinned ?? sel.model)) : null;
+  if (top) modelLock = myLock;
+  if (myLock && sel.model !== myLock) {
+    sel.model = myLock;
+    sel.reason = `modèle verrouillé pour ce chat (${myLock})`;
+  }
+  const fallbackChain = myLock
+    ? []
+    : [...new Set([st.settings.fallbackModel, ...routedFallbacks].filter((m) => m && m !== sel.model))];
   const info = models.find((m) => m.id === sel.model);
   const vision = info?.capabilities.vision ?? hasImages;
   let effort = (inp.effort && inp.effort !== 'auto' ? inp.effort : inp.agent.effort) ?? 'auto';
@@ -1355,7 +1367,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       ) {
         effort = d.effort;
         live.setEffort(d.effort);
-      } else if (d.action === 'SWITCH_MODEL' && d.model && d.model !== model) {
+      } else if (d.action === 'SWITCH_MODEL' && d.model && d.model !== model && !modelLock) {
         const from = model;
         model = d.model;
         live.setModel(d.model);
@@ -1408,7 +1420,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       tone: step.action === 'escalate' ? 'warn' : step.action === 'stop' ? 'err' : 'info',
       lines: [step.reason, ...(step.model ? [`${model} → ${step.model}`] : [])],
     });
-    if (step.action === 'escalate' && step.model) {
+    if (step.action === 'escalate' && step.model && !modelLock) {
       // JEV: escalate only when the marginal quality gain is worth its cost.
       const mg = jp ? jevRt.escalateWorth(qa, eng.qaThreshold, cost, decision.ladder[escalations]) : null;
       if (live) {
@@ -1874,7 +1886,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
                   `Retry : ${g.next.kind === 'free_correction' ? model : (g.switchTo ?? model)} (${g.next.label})`,
                 ],
               });
-              if (g.switchTo) {
+              if (g.switchTo && !modelLock) {
                 const from = model;
                 model = g.switchTo;
                 if (g.next.kind === 'v5') {
@@ -2432,6 +2444,7 @@ export async function runAgent(
   const st = useStore.getState();
   const benchTag = opts.bench ?? null;
   lastPolicy = '';
+  modelLock = null;
   experimentRun = Boolean(opts.bench || opts.fabric || opts.apprentice || opts.cognitive || opts.experiment || opts.jev !== undefined);
   fabricRun = opts.fabric ?? null;
   apprenticeRun = opts.apprentice ?? null;
@@ -2688,6 +2701,8 @@ export async function runAgent(
       ],
       verdict: result?.report?.status ?? (errored ? 'ERROR' : (cur.verdict ?? null)),
       lastMode: mode,
+      // « auto »: the model picked by the first request stays the model of this chat.
+      pinnedModel: cur.pinnedModel ?? (cur.model === 'auto' && result?.models[0] && !errored ? result.models[0] : undefined),
       lastDelivery:
         delivered.length && !errored
           ? {

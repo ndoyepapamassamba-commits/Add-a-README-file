@@ -262,12 +262,15 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
               options={modelOptions}
             />
           </Field>
-          <Field label="Modèle de secours" hint="Utilisé automatiquement si le modèle principal échoue">
+          <Field label="Modèle de secours" hint="Utilisé seulement si « Garder le même modèle » est désactivé">
             <Select
               value={s.fallbackModel}
               onChange={(v) => patch({ fallbackModel: v })}
               options={[{ value: '', label: '— aucun —' }, ...modelOptions.slice(1)]}
             />
+          </Field>
+          <Field label="Garder le même modèle pendant toute la discussion" hint="Aucun changement automatique de modèle en cours de chat (routage, escalade, repli). « Auto » choisit une seule fois, au premier message.">
+            <Toggle checked={s.pinModel !== false} onChange={(v) => patch({ pinModel: v })} />
           </Field>
           <Field label="Niveau de réflexion par défaut">
             <Select<EffortSetting>

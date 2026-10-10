@@ -168,6 +168,8 @@ export interface Session {
   turns?: { start: number; text: string; at: number }[];
   /** Files the last run of this chat delivered (chat-relative paths): the default target of « modifie / change … ». */
   lastDelivery?: { start: number; paths: string[]; request: string; at: number };
+  /** Model chosen once for this chat when the session is on « auto » (model lock). */
+  pinnedModel?: string;
 }
 
 /** One LLM call (cost tracking, Mission Control). */
@@ -231,6 +233,8 @@ export interface McpServerDef {
 }
 
 export interface Settings {
+  /** A chat keeps the same model for the whole conversation (default true). */
+  pinModel?: boolean;
   rememberKey: boolean;
   defaultModel: string;
   fallbackModel: string;
