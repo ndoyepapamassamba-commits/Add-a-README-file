@@ -294,6 +294,10 @@ test('Internet design → REAL copy: its layout is read, previewed, then rebuilt
   await expect(page.getByTestId('design-layout-preview')).toBeVisible({ timeout: 20_000 });
   await page.getByTestId('design-go').click();
   await expect(page.getByText('Classeur et tableau de bord prêts.')).toBeVisible({ timeout: 20_000 });
+  // The layout reaches the model even when the design is not remembered for the whole chat; the house style does not.
+  const agentCalls = mock.requests.filter((r) => r.tools?.length);
+  expect(JSON.stringify(agentCalls[0]!.messages)).toContain('DESIGN_LAYOUT');
+  expect(JSON.stringify(agentCalls[0]!.messages)).toContain('REPLACES the house style');
   const files = () =>
     page.evaluate(
       () =>

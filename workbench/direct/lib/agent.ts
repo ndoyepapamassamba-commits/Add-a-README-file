@@ -1128,6 +1128,14 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
     if (semMemory)
       traceAdd({ name: 'JEV_CONTEXT', ms: 0, tokens: Math.ceil(semMemory.length / 3.8), cost: 0, decision: `mémoire sémantique : ${chatHits.length} fait(s) du chat, ${lessonHits.length} leçon(s)` });
   }
+  // A design other than the house one was chosen: memories / lessons that prescribe the house palette are dropped,
+  // otherwise the model follows its memory (« style maison navy #00415E… ») instead of the user's choice.
+  const chosen = designFor(sid);
+  if (semMemory && chosen && chosen.theme !== 'house')
+    semMemory = semMemory
+      .split('\n')
+      .filter((l) => !HOUSE_STYLE_LINE.test(l))
+      .join('\n');
   const promptSections = [
     { name: 'system', text: system, pinned: true },
     { name: 'omni', text: omni?.lock ?? '', pinned: true },
@@ -1136,9 +1144,13 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
     { name: 'chat_memory', text: semMemory },
     {
       name: 'design_layout',
-      text: inp.session.design?.layout
-        ? `<DESIGN_LAYOUT source="${inp.session.design.source ?? ''}">\nThe user picked this design to REPRODUCE for every site, app, dashboard and HTML deliverable of this chat: rebuild this exact layout (navigation, header, KPI count and style, charts in this order and span, table style, grid columns, radius, shadow, light/dark, palette, font) with the real data. Never copy the source's logos, photos or text.\n${JSON.stringify(inp.session.design.layout)}\n</DESIGN_LAYOUT>`
-        : '',
+      // The design chosen for THIS request counts too (not only one remembered « pour tout ce chat »).
+      text: (() => {
+        const c = designFor(sid);
+        return c?.layout && !experimentRun
+          ? `<DESIGN_LAYOUT source="${c.source ?? ''}">\nThe user picked this Internet design to REPRODUCE: rebuild this exact layout with the real data — for HTML (sites, apps, dashboards) the whole layout (navigation, header, KPI count and style, charts in this order and span, table style, grid columns, radius, shadow, light/dark, palette, font); for Excel / Word / PowerPoint its structure (same KPI count and order at the top, same chart types, same table style, palette and font). Never copy the source's logos, photos or text.\n${JSON.stringify(c.layout)}\n</DESIGN_LAYOUT>`
+          : '';
+      })(),
     },
     { name: 'design_choice', text: (() => { const c = designFor(sid); return c && !experimentRun ? designPrompt(c, runFormats.get(sid)) : ''; })(), pinned: true },
     { name: 'doctrine', text: lane?.minimalPrompt ? '' : ENGINE_DOCTRINE },
@@ -2587,12 +2599,13 @@ async function askDesign(
   if (d.remember) st.patchSession(sid, { design: d.choice });
   return d;
 }
+const HOUSE_STYLE_LINE = /style maison|house (style|design|palette|charter)|charte maison|GOD 3D|BLUE ECOBANK|00415E|005C83|8CC63F|001B4D|003DA5|C8A951/i;
 /** Palette and font of the chosen design, for code the model writes itself (openpyxl, python-docx, pptx, HTML). */
 function designPrompt(c: DesignChoice, formats?: string[]): string {
   const t = buildTheme(c.theme === 'custom' ? (c.colors ?? null) : (c.theme as never));
   const k = t.color;
   return `<DESIGN_CHOICE name="${t.name}"${formats?.length ? ` formats="${formats.join(',')}"` : ''}>
-The user CHOSE this design for the deliverable. Use it everywhere (native exporters receive it automatically; in your own Python/JS code use exactly these values, never the house navy/blue/lime palette from memory):
+The user CHOSE this design for the deliverable. It REPLACES the house style: ignore any « style maison », Ecobank navy/blue/lime palette or Segoe UI rule found in memories, lessons, skills or agent descriptions, and never announce the house style in your answer. Use it everywhere (native exporters receive it automatically; in your own Python/JS code use exactly these values):
 title/header band ${k.navy} · primary ${k.blue} · accent / thin rule ${k.gold} · secondary ${k.cyan} · soft fill ${k.ice} · zebra/panel ${k.panel} · borders ${k.line} · text ${k.text} · chart series ${t.chartSeries.slice(0, 5).join(', ')} · font "${t.font.ui}" (figures may use "${t.font.mono}").${formats?.length ? `\nOutput format(s) chosen: ${formats.join(', ')}.` : ''}
 </DESIGN_CHOICE>`;
 }
