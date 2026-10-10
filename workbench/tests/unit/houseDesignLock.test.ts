@@ -85,7 +85,8 @@ describe('design lock — GOD 3D · BLUE ECOBANK', () => {
 });
 
 describe('design lock — Excel export reproduces the reference layout', () => {
-  const x = houseXlsx(Object.keys(rows[0]!), rows, { title: 'IMPAYÉS', subtitle: 'Arrêté 04/10/2026' });
+  // Plain table layout (charts switched off): exactly the reference rows.
+  const x = houseXlsx(Object.keys(rows[0]!), rows, { title: 'IMPAYÉS', subtitle: 'Arrêté 04/10/2026', chart: 'none' });
   it('sheet view: no gridlines, zoom 90, frozen header, cyan tab, autofilter on the header', () => {
     const s = sheet(x);
     expect(s).toContain('showGridLines="0"');
@@ -196,13 +197,48 @@ describe('design lock — Word, PowerPoint, PDF/HTML and mail', () => {
   });
 });
 
+describe('Maison 2.0 — KPIs and native 3D charts BEFORE the table header', () => {
+  const x = houseXlsx(Object.keys(rows[0]!), rows, { title: 'IMPAYÉS', subtitle: 'Arrêté 04/10/2026' });
+  const f = unzipSync(x);
+  it('title, KPI cards, a 16-row chart zone, then the header (row 23) with its autofilter; nothing frozen', () => {
+    const s = sheet(x);
+    for (const [r, h] of [[1, 40], [2, 18], [3, 24], [4, 50], [5, 8], [6, 15], [21, 15], [22, 8], [23, 24]] as const)
+      expect(s, `row ${r}`).toMatch(new RegExp(`<row r="${r}"[^>]*ht="${h}"`));
+    expect(s).toMatch(/<autoFilter ref="A23:D31"/);
+    expect(s).not.toContain('state="frozen"');
+    expect(s).toContain('SUBTOTAL(109,C24:C31)'); // Σ of the MONEY column (Montant XOF), not Jours
+  });
+  it('three native 3D charts (3D columns, 3D pie, top bars) in the house palette, absolutely placed above the header', () => {
+    const charts = Object.keys(f).filter((k) => /^xl\/charts\/chart\d+\.xml$/.test(k)).sort();
+    expect(charts.length).toBeGreaterThanOrEqual(2);
+    const c1 = strFromU8(f['xl/charts/chart1.xml']!);
+    const c2 = strFromU8(f['xl/charts/chart2.xml']!);
+    expect(c1).toContain('<c:bar3DChart>');
+    expect(c1).toContain('<c:view3D>');
+    expect(c1).toContain('<a:gradFill'); // lit faces
+    expect(c1).toContain('003DA5');
+    expect(c1).toContain('Consolas'); // value labels like the reference
+    expect(c2).toContain('<c:pie3DChart>');
+    const drawing = strFromU8(f['xl/drawings/drawing1.xml']!);
+    expect(drawing.match(/<xdr:absoluteAnchor>/g)!.length).toBe(charts.length);
+    expect(Object.keys(f).some((k) => k.startsWith('xl/media/'))).toBe(false); // native charts, no images
+  });
+  it('the charts read an « Agrégats » sheet of live SUMIF formulas over the table', () => {
+    const wb = strFromU8(f['xl/workbook.xml']!);
+    expect(wb).toContain('name="Agrégats"');
+    const agg = strFromU8(f['xl/worksheets/sheet2.xml']!).replace(/&apos;/g, "'");
+    expect(agg).toMatch(/SUMIF\('Données'!\$[A-D]\$24:\$[A-D]\$31,A2,'Données'!\$C\$24:\$C\$31\)/);
+    expect(strFromU8(f['xl/charts/chart1.xml']!)).toContain("'Agrégats'!$B$2");
+  });
+});
+
 describe('design lock — native Excel charts (no matplotlib, no image)', () => {
   const data = Array.from({ length: 6 }, (_, i) => ({
     Agence: `A${i}`,
     Encours: 1_000_000 * (i + 1),
     Impayés: 1000 * (i + 1),
   }));
-  it('bar / line / pie are native chart parts in the house palette and fonts', () => {
+  it('bar / line / pie asked → that kind first, as a native chart part in the house palette and fonts', () => {
     for (const kind of ['bar', 'line', 'pie'] as const) {
       const f = unzipSync(houseXlsx(Object.keys(data[0]!), data, { title: 'T', chart: kind }));
       expect(Object.keys(f)).toEqual(
@@ -211,7 +247,7 @@ describe('design lock — native Excel charts (no matplotlib, no image)', () => 
       expect(Object.keys(f).some((k) => k.startsWith('xl/media/'))).toBe(false);
       const c = strFromU8(f['xl/charts/chart1.xml']!);
       expect(c).toContain(
-        kind === 'bar' ? '<c:barChart>' : kind === 'line' ? '<c:lineChart>' : '<c:pieChart>',
+        kind === 'bar' ? '<c:bar3DChart>' : kind === 'line' ? '<c:lineChart>' : '<c:pie3DChart>',
       );
       expect(c).toContain('003DA5'); // first series = Ecobank blue
       expect(c).toContain('Segoe UI');
@@ -221,12 +257,13 @@ describe('design lock — native Excel charts (no matplotlib, no image)', () => 
       expect(strFromU8(f['[Content_Types].xml']!)).toContain('drawingml.chart+xml');
     }
   });
-  it('no chart unless requested', () => {
-    expect(
-      Object.keys(unzipSync(houseXlsx(Object.keys(data[0]!), data, { title: 'T' }))).some((k) =>
-        k.includes('chart'),
-      ),
-    ).toBe(false);
+  it('charts are automatic; « none » gives the plain table', () => {
+    expect(Object.keys(unzipSync(houseXlsx(Object.keys(data[0]!), data, { title: 'T' }))).some((k) => k.includes('chart'))).toBe(true);
+    expect(Object.keys(unzipSync(houseXlsx(Object.keys(data[0]!), data, { title: 'T', chart: 'none' }))).some((k) => k.includes('chart'))).toBe(false);
+  });
+  it('no chart when there is nothing to group (numbers only)', () => {
+    const nums = [{ a: 1, b: 2 }, { a: 3, b: 4 }];
+    expect(Object.keys(unzipSync(houseXlsx(['a', 'b'], nums, { title: 'T' }))).some((k) => k.includes('chart'))).toBe(false);
   });
 });
 

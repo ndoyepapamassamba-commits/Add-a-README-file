@@ -7,7 +7,7 @@ import { PREMIUM_DESIGNS, thumbnailDataUrl, type DeliverableKind } from '../../s
 import { searchDesigns, layoutFromImage, localPalette, paletteFromImage, siteDesign } from '../lib/designWeb';
 import { DESIGN_STYLES, type DesignStyle } from '../../server/jev/web/search';
 import { dashboardData, layoutTheme, renderLayoutHtml, type DesignLayout } from '../../server/services/layoutClone';
-import type { ThemeId, CustomTheme } from '../../server/services/houseDesign';
+import { buildTheme, HOUSE_PALETTES, isHouseTheme, type ThemeId, type CustomTheme } from '../../server/services/houseDesign';
 import { LOGO_VARIANTS, type LogoVariant } from '../../server/services/logoHarmony';
 import { decodeLogo, isLogoFile, logoPalette, renderLogo, type DecodedLogo } from '../lib/logo';
 import { useStore } from '../lib/store';
@@ -34,6 +34,7 @@ export function DesignCard({ item }: { item: CardItem }) {
 
 function DesignCardOpen({ item }: { item: CardItem }) {
   const [sel, setSel] = useState<ThemeId | 'custom'>('house');
+  const [housePal, setHousePal] = useState<ThemeId>('house');
   const [formats, setFormats] = useState<string[]>(item.chosenFormats ?? []);
   const [remember, setRemember] = useState(true);
   const [web, setWeb] = useState<{ url: string; description: string }[] | null>(null);
@@ -184,7 +185,7 @@ function DesignCardOpen({ item }: { item: CardItem }) {
       setBusy(null);
     }
   };
-  const selLabel = sel === 'custom' ? (clone ? `Reproduction fidèle (${clone.spec.panels.length} panneaux)` : site ? `Site reproduit — ${new URL(site.url).hostname}` : layout ? 'Design Internet (mise en page + couleurs)' : 'Design Internet (couleurs)') : (PREMIUM_DESIGNS.find((d) => d.id === sel)?.label ?? sel);
+  const selLabel = sel === 'custom' ? (clone ? `Reproduction fidèle (${clone.spec.panels.length} panneaux)` : site ? `Site reproduit — ${new URL(site.url).hostname}` : layout ? 'Design Internet (mise en page + couleurs)' : 'Design Internet (couleurs)') : (isHouseTheme(sel) ? `Maison 2.0 — ${HOUSE_PALETTES.find((p) => p.id === sel)?.label ?? ''}` : (PREMIUM_DESIGNS.find((d) => d.id === sel)?.label ?? sel));
   // Live previews of every logo variant for the palette being chosen.
   const palette = logoPalette(sel === 'custom' && custom ? 'custom' : (sel as ThemeId), custom, sel === 'custom' ? layout : null);
   const palKey = JSON.stringify(palette);
@@ -225,20 +226,51 @@ function DesignCardOpen({ item }: { item: CardItem }) {
     <div className="my-3 rounded-2xl border border-accent/50 bg-panel p-3" data-testid="design-card">
       <div className="mb-2 text-[13.5px] font-semibold">🎨 Choisissez le design de votre {KIND_LABEL[kind]}</div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" data-testid="design-gallery">
-        {PREMIUM_DESIGNS.map((d) => (
-          <button
-            key={d.id}
-            type="button"
-            onClick={() => setSel(d.id)}
-            data-testid={`design-${d.id}`}
-            className={`rounded-xl border p-1.5 text-left transition ${sel === d.id ? 'border-accent ring-2 ring-accent/40' : 'border-line hover:border-line-strong'}`}
-          >
-            <img src={thumbnailDataUrl(d.id, kind)} alt={d.label} className="w-full rounded-lg" />
-            <div className="mt-1 truncate text-[12px] font-semibold">{d.label}</div>
-            <div className="truncate text-[11px] text-muted">{d.bestFor}</div>
-          </button>
-        ))}
+        {PREMIUM_DESIGNS.map((d) => {
+          // Maison 2.0: one card, its palette chosen below (the thumbnail follows the palette).
+          const id = d.id === 'house' ? housePal : d.id;
+          const on = d.id === 'house' ? isHouseTheme(sel) : sel === d.id;
+          return (
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => setSel(id)}
+              data-testid={`design-${d.id}`}
+              className={`rounded-xl border p-1.5 text-left transition ${on ? 'border-accent ring-2 ring-accent/40' : 'border-line hover:border-line-strong'}`}
+            >
+              <img src={thumbnailDataUrl(id, kind)} alt={d.label} className="w-full rounded-lg" />
+              <div className="mt-1 truncate text-[12px] font-semibold">{d.id === 'house' ? 'Maison 2.0' : d.label}</div>
+              <div className="truncate text-[11px] text-muted">{d.id === 'house' ? `${HOUSE_PALETTES.length} palettes · logo adaptatif` : d.bestFor}</div>
+            </button>
+          );
+        })}
       </div>
+      {isHouseTheme(sel) && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px]" data-testid="house-palettes">
+          <span className="font-semibold">Palette Maison :</span>
+          {HOUSE_PALETTES.map((p) => {
+            const c = buildTheme(p.id).color;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => {
+                  setHousePal(p.id);
+                  setSel(p.id);
+                }}
+                title={p.label}
+                data-testid={`house-palette-${p.id}`}
+                className={`flex items-center gap-1 rounded-full border px-2 py-0.5 ${sel === p.id ? 'border-accent bg-accent-soft text-accent' : 'border-line'}`}
+              >
+                {[c.navy, c.blue, c.gold].map((h, i) => (
+                  <span key={i} className="inline-block h-3 w-3 rounded-full border border-black/10" style={{ background: `#${h}` }} />
+                ))}
+                <span>{p.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
       <div className="mt-2">
         {!web ? (
           <button type="button" className="text-[12px] text-accent" onClick={() => void loadWeb()} data-testid="design-web">

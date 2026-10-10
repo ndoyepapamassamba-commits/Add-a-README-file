@@ -107,17 +107,21 @@ describe('data engine', () => {
     const ds = await engine.load(path.join(dir, 'p.csv'));
     const q = engine.query(ds, { limit: 5 });
     expect(engine.exportRows(q.columns, q.rows, 'csv').toString('utf8')).toContain('agence');
-    // Locked house design: title band (row 1), scope + date (row 2), KPI cards (rows 3-4), blue header (row 6), data from row 7.
+    // Maison 2.0: title band (row 1), scope + date (row 2), KPI cards (rows 3-4), chart zone (rows 6-21), blue header
+    // (row 23), data from row 24; the charts read the « Agrégats » sheet. « none » keeps the plain layout (header row 6).
     const wb = XLSX.read(engine.exportRows(q.columns, q.rows, 'xlsx', { title: 'Synthèse agences' }), {
       cellStyles: true,
     });
-    expect(wb.SheetNames).toEqual(['Données']);
+    expect(wb.SheetNames).toEqual(['Données', 'Agrégats']);
     const ws = wb.Sheets['Données']!;
     expect(ws.A1!.v).toBe('Synthèse agences');
     expect(String(ws.A2!.v)).toMatch(/Édité le \d{2}\/\d{2}\/\d{4}/);
     expect(ws.A3!.v).toBe('LIGNES AFFICHÉES');
-    expect(ws.A6!.v).toBe(q.columns[0]);
-    expect(XLSX.utils.sheet_to_json(ws, { range: 5 })).toHaveLength(5);
+    expect(ws.A23!.v).toBe(q.columns[0]);
+    expect(XLSX.utils.sheet_to_json(ws, { range: 22 })).toHaveLength(5);
+    const plain = XLSX.read(engine.exportRows(q.columns, q.rows, 'xlsx', { title: 'T', chart: 'none' }));
+    expect(plain.SheetNames).toEqual(['Données']);
+    expect(plain.Sheets['Données']!.A6!.v).toBe(q.columns[0]);
     expect(JSON.parse(engine.exportRows(q.columns, q.rows, 'json').toString())).toHaveLength(5);
   });
 });

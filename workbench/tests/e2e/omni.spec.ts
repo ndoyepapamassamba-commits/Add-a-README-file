@@ -226,6 +226,13 @@ test('premium design gallery: before an Excel deliverable the user picks a desig
   const xml = Object.entries(zip).filter(([k]) => /styles|sheet1/.test(k)).map(([, v]) => strFromU8(v)).join('');
   expect(xml).toContain('0B0B0F');
   expect(xml).not.toContain('001B4D');
+  // MAISON 2.0 / GOD 3D: a « Synthèse 3D » board (picture) as the first sheet + native Excel 3D charts on the data sheet.
+  const wbXml = strFromU8(zip['xl/workbook.xml']!);
+  expect(wbXml.indexOf('name="Synthèse 3D"')).toBeGreaterThan(-1);
+  expect(wbXml.indexOf('name="Synthèse 3D"')).toBeLessThan(wbXml.indexOf('name="Données"'));
+  expect(wbXml).toContain('name="Agrégats"');
+  expect(zip['xl/media/massamba-dashboard.png']!.length).toBeGreaterThan(20_000);
+  expect(strFromU8(zip['xl/charts/chart1.xml']!)).toContain('<c:bar3DChart>');
 });
 
 test('design FIRST: a request for an Excel file opens the gallery before any model call; the model\'s own code output takes the chosen design', async ({ page }) => {
@@ -558,4 +565,28 @@ test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, fram
   expect(z['xl/media/massamba-dashboard.png']).toBeTruthy();
   expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/<sheets><sheet name="Tableau de bord"/);
   fs.writeFileSync('/tmp/claude-0/clone/e2e-dashboard.png', Buffer.from(z['xl/media/massamba-dashboard.png']!));
+});
+
+test('a design card left behind (mission stopped, page reloaded): « Générer » relaunches the request with the design — never a dead button', async ({ page }) => {
+  await open(page);
+  await page.removeLocatorHandler(page.getByTestId('design-go'));
+  await send(page, 'Fais un classeur Excel des ventes par agence');
+  await expect(page.getByTestId('design-card')).toBeVisible({ timeout: 20_000 });
+  await page.waitForTimeout(700); // debounced save
+  await page.reload();
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await expect(page.getByTestId('design-card')).toBeVisible({ timeout: 10_000 });
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  mock.push(
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'data/v.csv', content: 'agence,montant\nDakar,1250\n' } }] },
+    { toolCalls: [{ name: 'data.export', args: { path: 'data/v.csv', name: 'v', title: 'V', format: 'xlsx' } }] },
+    { text: 'Relancé et livré.' },
+  );
+  await page.getByTestId('design-onyx').click();
+  await page.getByTestId('design-go').click();
+  await expect(page.getByTestId('design-card-done').first()).toContainText('relancé', { timeout: 10_000 });
+  await expect(page.getByText('Relancé et livré.')).toBeVisible({ timeout: 30_000 });
+  // The relaunched request did not ask again (the design is kept for the chat).
+  await expect(page.getByTestId('design-card')).toHaveCount(0);
 });

@@ -172,7 +172,16 @@ export type ThemeId =
   | 'ivory'
   | 'terracotta'
   | 'graphite'
-  | 'swiss';
+  | 'swiss'
+  // Maison 2.0 — the house structure (bands, filet, KPI cards, zebra, Segoe UI / Consolas) in harmonised palettes.
+  | 'house-lime'
+  | 'house-ocean'
+  | 'house-emerald'
+  | 'house-bordeaux'
+  | 'house-slate'
+  | 'house-sahel'
+  | 'house-royal'
+  | 'house-night';
 export interface CustomTheme {
   primary?: string;
   accent?: string;
@@ -190,8 +199,8 @@ const P = (navy: string, blue: string, gold: string, cyan: string, ice: string, 
   panel,
   sky: cyan,
 });
-export const THEMES: Record<ThemeId, { label: string; color: Partial<Col>; font?: string }> = {
-  house: { label: 'Maison — GOD 3D · BLUE ECOBANK', color: {} },
+export const THEMES: Record<ThemeId, { label: string; color: Partial<Col>; font?: string; series?: string[] }> = {
+  house: { label: 'Maison — Bleu Ecobank (GOD 3D)', color: {} },
   corporate: { label: 'Corporate gris-bleu', color: P('1F2937', '334155', '0EA5E9', '64748B', 'F1F5F9', 'E2E8F0'), font: 'Calibri' },
   modern: { label: 'Moderne violet', color: P('1E1B4B', '4F46E5', 'F59E0B', '06B6D4', 'EEF2FF', 'E0E7FF', 'F5F7FF'), font: 'Segoe UI' },
   minimal: { label: 'Minimal noir & blanc', color: P('111111', '333333', '999999', '666666', 'F5F5F5', 'E5E5E5', 'FAFAFA'), font: 'Arial' },
@@ -205,6 +214,14 @@ export const THEMES: Record<ThemeId, { label: string; color: Partial<Col>; font?
   terracotta: { label: 'Terracotta Afrique', color: P('2B1406', 'B4532A', 'E0A526', '1E5AA8', 'FDF4EC', 'F2D9C4', 'FEF9F4'), font: 'Segoe UI' },
   graphite: { label: 'Graphite tech', color: P('111827', '374151', '22D3EE', '06B6D4', 'F3F4F6', 'E5E7EB', 'F9FAFB'), font: 'Consolas' },
   swiss: { label: 'Suisse — rouge & noir', color: P('0A0A0A', 'D7192D', '0A0A0A', 'D7192D', 'F5F5F5', 'E0E0E0', 'FAFAFA'), font: 'Arial' },
+  'house-lime': { label: 'Maison — Lime Ecobank', color: P('00415E', '005C83', '8CC63F', '4FB3D9', 'EAF4F8', 'D5E6EE', 'F4F9FB'), font: 'Segoe UI', series: ['005C83', '8CC63F', '00415E', '4FB3D9', 'A7D46F', '7FA9BF', '2E8B57', 'C5E3A4'] },
+  'house-ocean': { label: 'Maison — Océan', color: P('0B2545', '13315C', '1B998B', '8DA9C4', 'EEF4F8', 'D7E3EC', 'F5F8FB'), font: 'Segoe UI', series: ['13315C', '1B998B', '8DA9C4', '0B2545', '4FB0A6', '5C7FA3', 'A8D5CF', '2E5A88'] },
+  'house-emerald': { label: 'Maison — Émeraude & or', color: P('022C22', '046C4E', 'C9A227', '10B981', 'ECF8F3', 'CDEBDD', 'F5FBF8'), font: 'Segoe UI', series: ['046C4E', 'C9A227', '10B981', '022C22', '6FCF97', 'E3C76A', '2F855A', 'A7E3C4'] },
+  'house-bordeaux': { label: 'Maison — Bordeaux & or', color: P('3B0A16', '7F1D1D', 'C8A951', 'B45309', 'FAF3EE', 'EAD8CC', 'FCF8F5'), font: 'Segoe UI', series: ['7F1D1D', 'C8A951', 'B45309', '3B0A16', 'D97757', 'E8D49A', '9F4A4A', 'F2C6A0'] },
+  'house-slate': { label: 'Maison — Ardoise & corail', color: P('1E293B', '334155', 'F97362', '64748B', 'F1F5F9', 'E2E8F0', 'F8FAFC'), font: 'Segoe UI', series: ['334155', 'F97362', '64748B', '1E293B', 'FDBA9F', '94A3B8', 'EA580C', 'CBD5E1'] },
+  'house-sahel': { label: 'Maison — Sahel', color: P('3E2723', 'B4532A', 'E0A526', '1E5AA8', 'FBF3EA', 'EEDCC8', 'FDF8F2'), font: 'Segoe UI', series: ['B4532A', 'E0A526', '1E5AA8', '3E2723', 'E58E5B', 'F2CF6E', '5B8BD0', 'D9B48F'] },
+  'house-royal': { label: 'Maison — Royal violet', color: P('1E1B4B', '4338CA', 'F59E0B', '06B6D4', 'EEF2FF', 'DDE3FB', 'F7F8FF'), font: 'Segoe UI', series: ['4338CA', 'F59E0B', '06B6D4', '1E1B4B', '818CF8', 'FCD34D', '67E8F9', 'A5B4FC'] },
+  'house-night': { label: 'Maison — Nuit & cyan', color: P('0B1220', '1E3A8A', '38BDF8', '22D3EE', 'E6EEF8', 'CFDBEA', 'F3F7FC'), font: 'Segoe UI', series: ['1E3A8A', '38BDF8', '22D3EE', '0B1220', '60A5FA', 'A5F3FC', '2563EB', '93C5FD'] },
 };
 const HEX = /^#?[0-9a-f]{6}$/i;
 const clean = (h?: string) => (h && HEX.test(h) ? h.replace('#', '').toUpperCase() : undefined);
@@ -223,7 +240,8 @@ export function buildTheme(t: ThemeId | CustomTheme | undefined | null): Design 
       name: th.label,
       color: { ...DESIGN.color, ...th.color },
       font: { ...DESIGN.font, ui: th.font ?? DESIGN.font.ui },
-      chartSeries: [th.color.blue ?? DESIGN.color.blue, th.color.cyan ?? DESIGN.color.cyan, th.color.gold ?? DESIGN.color.gold, ...DESIGN.chartSeries.slice(3)],
+      // A palette with its own harmonised series uses it entirely (no orange from the house tail in an emerald design).
+      chartSeries: th.series ?? [th.color.blue ?? DESIGN.color.blue, th.color.cyan ?? DESIGN.color.cyan, th.color.gold ?? DESIGN.color.gold, ...DESIGN.chartSeries.slice(3)],
       filet: { ...DESIGN.filet, color: th.color.gold ?? DESIGN.filet.color },
     } as Design;
   }
@@ -286,3 +304,9 @@ export const THEME_PARAMS = {
     properties: { primary: { type: 'string' }, accent: { type: 'string' }, dark: { type: 'string' }, font: { type: 'string' } },
   },
 } as const;
+
+/** Maison 2.0: the house structure in harmonised palettes (the logo follows the palette automatically). */
+export const HOUSE_PALETTES: { id: ThemeId; label: string }[] = (Object.keys(THEMES) as ThemeId[])
+  .filter((id) => id === 'house' || id.startsWith('house-'))
+  .map((id) => ({ id, label: THEMES[id].label.replace(/^Maison — /, '') }));
+export const isHouseTheme = (id: string) => id === 'house' || id.startsWith('house-');

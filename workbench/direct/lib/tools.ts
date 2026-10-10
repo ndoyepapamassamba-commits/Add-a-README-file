@@ -54,7 +54,8 @@ function workspaceTwin() {
   );
 }
 import { shellRisk } from './shellCore';
-import { THEME_PARAMS } from '../../server/services/houseDesign';
+import { THEME_PARAMS, activeDesign } from '../../server/services/houseDesign';
+import { chart3dSvg, paletteOf, synthesisSvg } from '../../server/services/chart3d';
 import { dashboardData, renderLayoutHtml, type DesignLayout } from '../../server/services/layoutClone';
 import { BRAVE_DIRECT, braveText, braveUrl, parseBrave } from '../../server/jev/web/brave';
 import { PROVIDER_LABEL, parseSerper, parseTavily, serperRequest, tavilyRequest } from '../../server/jev/web/search';
@@ -91,6 +92,15 @@ function chartPng(chart: ChartData): Uint8Array | null {
   }
 }
 
+/** Natural size of an image (data URL) — for the logo in the 3D board. */
+function imageSize(href: string): Promise<{ href: string; width: number; height: number } | undefined> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ href, width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => resolve(undefined);
+    img.src = href;
+  });
+}
 /** Workspace images referenced as ![alt](path) in Markdown. */
 function resolveImage(src: string): { data: Uint8Array; type: 'png' | 'jpeg' } | null {
   const f = getFile(src.replace(/^\.\//, ''));
@@ -509,6 +519,7 @@ export const TOOLS: DirectTool[] = [
         bins: { type: 'integer' },
         limit: { type: 'integer' },
         sort: { type: 'string', enum: ['x', 'y_desc', 'y_asc'] },
+        style: { type: 'string', enum: ['3d', 'flat'], description: 'PNG saved for reports: 3d (default, house 3D cards for bar / line / area / pie with one series) or flat' },
       },
       ['type', 'title', 'source'],
     ),
@@ -524,7 +535,17 @@ export const TOOLS: DirectTool[] = [
         content: JSON.stringify(chart),
         chart,
       });
-      const png = chartPng(chart);
+      let png: Uint8Array | null = null;
+      const s0 = chart.series?.[0];
+      const svg3d = a.style !== 'flat' && chart.series?.length === 1 && s0 ? chart3dSvg(spec.type, spec.title, chart.categories.map(String), s0.data.map((v) => Number(v) || 0), paletteOf(activeDesign())) : null;
+      if (svg3d) {
+        try {
+          png = (await rasterise(svg3d, 1520, Number(/viewBox="0 0 \d+ (\d+)/.exec(svg3d)?.[1] ?? 760))).png;
+        } catch {
+          png = null;
+        }
+      }
+      png ??= chartPng(chart);
       const slug =
         spec.title
           .replace(/[^\w\u00C0-\u017F-]+/g, '-')
@@ -982,8 +1003,9 @@ export const TOOLS: DirectTool[] = [
           type: 'string',
           enum: ['none', 'bar', 'line', 'pie'],
           description:
-            'Optional NATIVE Excel chart (no image, no matplotlib) in the theme palette: first text column = categories, numeric columns = series (pie: first numeric column, max 30 rows plotted)',
+            'House style 2.0 is AUTOMATIC: KPI cards + three NATIVE Excel 3D charts above the table header (3D columns, 3D pie, trend or top-10 3D bars, fed by live SUMIF formulas on an « Agrégats » sheet) and a first « Synthèse 3D » sheet (3D board + reading card). Omit it; give bar / line / pie to put that kind first; none = plain table only.',
         },
+        visuals: { type: 'boolean', description: 'false = no « Synthèse 3D » board sheet (native charts stay)' },
         format: { type: 'string', enum: ['xlsx', 'csv', 'json'] },
         query: {
           type: 'object',
@@ -1008,8 +1030,9 @@ export const TOOLS: DirectTool[] = [
         data.exportRows(r.columns, r.rows, fmt, {
           title: S(a.title) || S(a.name) || 'Export',
           subtitle: `Source : ${S(a.path)}${a.query ? ' (filtré)' : ''}`,
-          chart: (['bar', 'line', 'pie'].includes(S(a.chart)) ? S(a.chart) : 'none') as
-            'bar' | 'line' | 'pie' | 'none',
+          // Maison 2.0: KPIs + native 3D charts above the header unless « none » is asked; a kind given goes first.
+          chart: (['bar', 'line', 'pie', 'none'].includes(S(a.chart)) ? S(a.chart) : undefined) as
+            'bar' | 'line' | 'pie' | 'none' | undefined,
         }),
       );
       // A dashboard image CLONED photo-faithfully: the reproduction with these exact figures, as an HTML page and as a
@@ -1044,7 +1067,31 @@ export const TOOLS: DirectTool[] = [
         writeText(dash, renderLayoutHtml(l, { ...dashboardData(S(a.title) || S(a.name) || 'Tableau de bord', r.columns, r.rows, l.kpis.count || 4), subtitle: `Source : ${S(a.path)}` }, S(a.layoutSource) || undefined));
         return ok(`${r.rowCount} lignes → ${path} + ${dash}`, `Saved ${r.rowCount} rows to ${path} and the dashboard reproducing the chosen design to ${dash}.`);
       }
-      return ok(`${r.rowCount} lignes → ${path}`, `Saved ${r.rowCount} rows to ${path}.`);
+      // « SYNTHÈSE 3D » board (3D columns, donut, top-10 bars, trend, Pareto, counts + reading card) as the first sheet,
+      // in the active palette, with the chosen logo. Computed from these rows only.
+      let board = '';
+      if (fmt === 'xlsx' && a.chart !== 'none' && a.visuals !== false && typeof document !== 'undefined') {
+        try {
+          const lg = typeof a.logoPath === 'string' ? getFile(a.logoPath) : undefined;
+          const logo = lg && lg.binary && lg.mime.startsWith('image/') ? await imageSize(dataUrl(lg)) : undefined;
+          const syn = synthesisSvg(
+            { title: S(a.title) || S(a.name) || 'Synthèse', subtitle: `Source : ${S(a.path)}${a.query ? ' (filtré)' : ''} · ${r.rowCount} lignes · édité le ${new Date().toLocaleDateString('fr-FR')}`, columns: r.columns, rows: r.rows, logo },
+            paletteOf(activeDesign()),
+          );
+          const f = getFile(path);
+          if (syn && f) {
+            const img = await rasterise(syn.svg, syn.width, syn.height);
+            const withSheet = addImageSheet(bytesOf(f), { png: img.png, width: syn.width, height: syn.height }, 'Synthèse 3D', 1200);
+            if (withSheet) {
+              writeBytes(path, withSheet, f.mime);
+              board = ` + feuille « Synthèse 3D » en tête (${syn.charts} graphiques 3D, KPI, lecture)`;
+            }
+          }
+        } catch {
+          /* the workbook (with its native 3D charts) is still there */
+        }
+      }
+      return ok(`${r.rowCount} lignes → ${path}${board}`, `Saved ${r.rowCount} rows to ${path}${board ? `${board}; the data sheet also carries KPI cards and native Excel 3D charts above the table header` : ''}.`);
     },
   },
   // ── MASSAMBA Intelligence Engine tools ───────────────────────────────────
