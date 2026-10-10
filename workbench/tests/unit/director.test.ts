@@ -39,3 +39,18 @@ describe('film model orchestrator', () => {
     expect(totalUsd([w], {})).toBeGreaterThan(0);
   });
 });
+describe('writing model', () => {
+  it('never offers batch / non-chat models and recommends the user default; otherwise the cheapest good writer', () => {
+    const ms = [
+      { id: 'openai/gpt-5.6-luna-pro:batch', name: 'Luna Pro (batch)', inputPrice: 1, outputPrice: 4 },
+      { id: 'openai/gpt-5.6', name: 'GPT 5.6', inputPrice: 2, outputPrice: 10 },
+      { id: 'qwen/qwen3.6-flash', name: 'Qwen Flash', inputPrice: 0.05, outputPrice: 0.2 },
+      { id: 'openai/text-embedding-3', name: 'emb', inputPrice: 0.01, outputPrice: 0 },
+    ];
+    const p = planWriting(ms, 5, 'qwen/qwen3.6-flash');
+    expect(p.recommended).toBe('qwen/qwen3.6-flash');
+    expect(p.options.map((o) => o.id)).not.toContain('openai/gpt-5.6-luna-pro:batch');
+    expect(p.options.map((o) => o.id)).not.toContain('openai/text-embedding-3');
+    expect(planWriting(ms, 5, null).recommended).toBe('qwen/qwen3.6-flash');
+  });
+});

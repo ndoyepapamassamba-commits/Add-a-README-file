@@ -40,17 +40,19 @@ export const provider = new OpenRouterProvider({
 
 // ── live model catalog (public endpoint, cached 1 h) ─────────────────────
 const CATALOG_KEY = 'wbd.catalog';
+const BATCH = /(:batch\b|\(batch\))/i;
 export async function loadCatalog(force = false): Promise<ModelInfo[]> {
   try {
     const cached = JSON.parse(localStorage.getItem(CATALOG_KEY) ?? 'null') as {
       at: number;
       models: ModelInfo[];
     } | null;
-    if (!force && cached && Date.now() - cached.at < 3_600_000 && cached.models.length) return cached.models;
+    if (!force && cached && Date.now() - cached.at < 3_600_000 && cached.models.length) return cached.models.filter((m) => !BATCH.test(m.id));
   } catch {
     /* ignore */
   }
-  const models = await provider.listModels();
+  // Batch-only variants cannot answer through chat/completions: they are never offered anywhere in the app.
+  const models = (await provider.listModels()).filter((m) => !BATCH.test(m.id));
   try {
     localStorage.setItem(CATALOG_KEY, JSON.stringify({ at: Date.now(), models }));
   } catch {

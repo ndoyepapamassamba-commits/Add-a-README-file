@@ -159,18 +159,26 @@ export interface TextModelLite {
   inputPrice: number | null;
   outputPrice: number | null;
 }
-/** Writing (story + scenes + dialogues): ~6k tokens out, ~3k in for a short film. */
-export function planWriting(models: TextModelLite[], cap?: number): StagePlan {
-  const opts = models
-    .filter((m) => m.inputPrice !== null && m.outputPrice !== null)
-    .map((m) => {
-      const stageUsd = Math.round(((3000 * m.inputPrice! + 7000 * m.outputPrice!) / 1e6) * 10000) / 10000;
-      const o = { id: m.id, name: m.name, stageUsd, costLabel: costLabel(stageUsd), quality: priorQuality('text', m.id, m.name), qualitySource: 'a priori' as const, speed: 'Rapide' as const, afrikatoon: /claude|gpt-5|gemini/i.test(m.id) ? 9 : 8, score: 0, why: 'écrit l’histoire, découpe les scènes, écrit les dialogues (FR / wolof)' };
-      return { ...o, score: scoreOf(o) };
-    })
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 12);
-  return finish('writing', 'Écriture', opts, cap);
+/** Models that cannot write a story through chat/completions (batch adapters, embeddings, media, audio…). */
+export const NOT_CHAT = /(:batch|\bbatch\b|embed|moderation|tts|whisper|transcri|-image|image-|audio|realtime|search-preview|rerank)/i;
+/**
+ * Writing (story + scenes + dialogues): ~3k tokens in, ~7k out for a short film. The recommendation is the user's DEFAULT
+ * model when one is set (never a « better » expensive one behind their back); otherwise the cheapest good writer.
+ */
+export function planWriting(models: TextModelLite[], cap?: number, preferred?: string | null): StagePlan {
+  const usable = models.filter((m) => m.inputPrice !== null && m.outputPrice !== null && !NOT_CHAT.test(m.id));
+  const opts = usable.map((m) => {
+    const stageUsd = Math.round(((3000 * m.inputPrice! + 7000 * m.outputPrice!) / 1e6) * 10000) / 10000;
+    const o = { id: m.id, name: m.name, stageUsd, costLabel: costLabel(stageUsd), quality: priorQuality('text', m.id, m.name), qualitySource: 'a priori' as const, speed: 'Rapide' as const, afrikatoon: /claude|gpt-5|gemini|qwen/i.test(m.id) ? 9 : 8, score: 0, why: m.id === preferred ? 'votre modèle par défaut' : 'écrit l’histoire, découpe les scènes, écrit les dialogues (FR / wolof)' };
+    return { ...o, score: scoreOf(o) };
+  });
+  const pref = preferred ? opts.find((o) => o.id === preferred) : undefined;
+  // Default (or the cheapest good writer) first, then cheaper / comparable alternatives.
+  const good = opts.filter((o) => o.quality >= 8.5).sort((a, b) => (a.stageUsd ?? 9) - (b.stageUsd ?? 9));
+  const rec = pref ?? good[0] ?? [...opts].sort((a, b) => (a.stageUsd ?? 9) - (b.stageUsd ?? 9))[0];
+  const rest = [...good, ...opts.filter((o) => o.quality < 8.5).sort((a, b) => (a.stageUsd ?? 9) - (b.stageUsd ?? 9))].filter((o) => o !== rec);
+  const list = (rec ? [rec, ...rest] : rest).slice(0, 15);
+  return { stage: 'writing', label: 'Écriture', options: list, recommended: rec && (cap === undefined || rec.stageUsd === null || rec.stageUsd <= cap) ? rec.id : (list[0]?.id ?? null) };
 }
 
 export const PIPELINE = ['IDEA', 'STORY', 'SCENES', 'IMAGES', 'ANIMATION', 'MONTAGE'] as const;
