@@ -52,7 +52,9 @@ import * as fabricRt from './fabric';
 import * as apprenticeRt from './apprentice';
 import * as cognitiveRt from './cognitive';
 import * as omniRt from './omni';
+import { describeImage, visionBridgeEnabled } from './visionBridge';
 import { ALTERATION } from '../../server/jev/omni/mission';
+import { pilotAnchor } from '../../server/jev/omni/pilot';
 import type { DataClass, FabricTag } from '../../server/jev/fabric/types';
 import type { SkillVersion } from '../../server/jev/fabric/skills';
 import { accountingOf, hashText, type CallKind, type CallRec } from '../../server/jev/science';
@@ -61,7 +63,7 @@ import { outputSpec } from '../../server/jev/style';
 import { packetPrompt, type PreResult } from '../../server/jev/packet';
 import { REQUESTABLE, TOOL_FAMILIES, toolDefTokens } from '../../server/jev/tools';
 import type { Checkpoint } from '../../server/jev/metrics';
-import type { UsageEntry } from './types';
+import type { UsageEntry, VFile } from './types';
 import {
   AI_DOCS,
   FINAL_REVIEW_TASK,
@@ -210,6 +212,7 @@ async function userContent(
   attachments: Attachment[],
   vision: boolean,
   firstTurn: boolean,
+  bridge?: (f: VFile) => Promise<string | null>,
 ): Promise<ContentPart[]> {
   const parts: ContentPart[] = [];
   const notes: string[] = [];
@@ -221,6 +224,12 @@ async function userContent(
         if (vision && f.mime !== 'image/svg+xml') {
           parts.push({ type: 'image_url', image_url: { url: dataUrl(f) } });
           notes.push(`Image attached: ${f.path}`);
+        } else if (f.mime === 'image/svg+xml' && !f.binary) {
+          notes.push(`SVG image attached: ${f.path}\n<file path="${f.path}">\n${f.data.slice(0, 20_000)}\n</file>`);
+        } else if (bridge) {
+          // JEV VISION BRIDGE: the chat model stays the same; a small vision model reads the image for it.
+          const b = await bridge(f).catch(() => null);
+          notes.push(b ?? `Image ${f.path} attached (this model cannot see images and no vision model is available).`);
         } else notes.push(`Image ${f.path} attached (this model cannot see images).`);
       } else if (isDataFile(f.path)) {
         const ds = data.parseBytes(f.path, bytesOf(f), null);
@@ -1130,7 +1139,19 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       .filter(Boolean)
       .join('\n\n');
   const firstTurn = !inp.history.some((m) => m.role === 'user');
-  const content = await userContent(inp.text, inp.attachments, vision, firstTurn && !lane?.minimalPrompt);
+  let bridgeSpent = 0;
+  const bridge =
+    !vision && visionBridgeEnabled()
+      ? async (f: VFile) => {
+          const b = await describeImage(f, inp.text, inp.signal);
+          if (!b) return null;
+          bridgeSpent += b.cost;
+          traceAdd({ name: 'JEV_CONTEXT', ms: 0, tokens: 0, cost: b.cost, decision: `${f.path} lu par ${b.model}${b.cached ? ' (cache, 0 $)' : ''} pour ${sel.model}` });
+          push(sid, { kind: 'intel', id: uid(), title: `JEV VISION BRIDGE — ${f.path.split('/').pop()} lue par ${b.model}`, tone: 'info', lines: [`Le modèle du chat (${sel.model}) ne voit pas les images : il reçoit la description exacte et l’OCR.`, b.cached ? 'Description en cache : 0 $.' : `Coût : ${b.cost.toFixed(5)} $`] });
+          return b.block;
+        }
+      : undefined;
+  const content = await userContent(inp.text, inp.attachments, vision, firstTurn && !lane?.minimalPrompt, bridge);
   if (firstTurn && !label && !lane?.minimalPrompt) {
     if (inp.session.mode !== 'safe') ensureAiDocs();
     // OMNIPOTENT MEMORY GOVERNOR (hard): only the paragraphs of the project memory that fit the current mission are shown.
@@ -1218,7 +1239,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   let stopReason = '';
   let toolCallTotal = 0;
   const toolErrorNotes: string[] = [];
-  let cost = 0;
+  let cost = bridgeSpent; // the vision bridge is part of the run's real cost
   let tokensIn = 0;
   let tokensOut = 0;
   let finalText = '';
@@ -1457,7 +1478,10 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     }
   };
   const ws = useStore.getState().settings;
-  const maxSteps = lane?.maxSteps ? Math.min(ws.maxSteps, lane.maxSteps) : ws.maxSteps;
+  // The lane cap is a soft budget: JEV PILOT extends it (up to the user's limit) while the work keeps progressing.
+  let maxSteps = lane?.maxSteps ? Math.min(ws.maxSteps, lane.maxSteps) : ws.maxSteps;
+  let emptyNudged = false;
+  let lastAnchor = 0;
   // JEV Apprentice: one gate pass per fallback attempt (FREE → correction → other FREE → V5); otherwise V5's two passes.
   // OMNIPOTENT lane: a simple request gets at most the passes it needs (a free model keeps ONE quality gate), never a ritual.
   const apprenticeGates = apprentice && !apprentice.forced && apprentice.plan.use ? Math.max(2, apprentice.plan.attempts.length) : 2;
@@ -1491,6 +1515,15 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   for (let step = 0; step < maxSteps; step++) {
     stepsUsed = step + 1;
     if (inp.signal.aborted) throw new LLMError('Cancelled', 499, false, 'cancelled');
+    // ── JEV PILOT (anti-drift on long runs): every 6 tool steps the model gets a 1-paragraph anchor — the objective,
+    // what is already done, what remains — so it never wanders off after minutes of work. ~120 tokens, no extra call.
+    if (top && step - lastAnchor >= 6 && toolsUsed.size && messages.at(-1)?.role === 'tool') {
+      lastAnchor = step;
+      const anchor: ChatMessage = { role: 'user', content: pilotAnchor(inp.text, [...toolsUsed], step, maxSteps) };
+      messages.push(anchor);
+      persisted.push(anchor);
+      traceAdd({ name: 'JEV_CHECKPOINT', ms: 0, tokens: 0, cost: 0, decision: `JEV PILOT : ré-ancrage sur l'objectif (étape ${step})` });
+    }
     const spentToday = useStore.getState().spend[new Date().toISOString().slice(0, 10)] ?? 0;
     if (ws.budgetDaily > 0 && spentToday >= ws.budgetDaily)
       throw new Error(
@@ -1769,6 +1802,15 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       useStore.getState().patchSession(sid, (s) => ({ items: s.items.filter((i) => i.id !== itemId) }));
 
     if (!calls.length) {
+      // An empty reply used to end the turn silently (« the model stops »): JEV asks once for the actual answer.
+      if (!r.content.trim() && !emptyNudged && phase !== 'planning') {
+        emptyNudged = true;
+        const c: ChatMessage = { role: 'user', content: 'Your last reply was empty. Give the final answer to the request now (or call the tool you need).' };
+        messages.push(c);
+        persisted.push(c);
+        nextKind = 'continuation';
+        continue;
+      }
       if (r.finishReason === 'length' && continuations < 2) {
         continuations++;
         const c: ChatMessage = {
@@ -2156,10 +2198,39 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
       finalText = `${finalText ? `${finalText}\n\n` : ''}${formatReport(report)}`;
       break;
     }
-    if (step === maxSteps - 1)
-      throw new Error(
-        `Limite de ${maxSteps} étapes atteinte. Augmentez-la dans Réglages ou répondez « continue ».`,
-      );
+    if (step === maxSteps - 1) {
+      // JEV PILOT: a lane cap reached while tools still succeed is extended (never above the user's limit).
+      const progressing = toolErrorNotes.length < Math.max(2, toolCallTotal / 3);
+      if (maxSteps < ws.maxSteps && progressing) {
+        const from = maxSteps;
+        maxSteps = Math.min(ws.maxSteps, maxSteps * 2);
+        traceAdd({ name: 'JEV_CHECKPOINT', ms: 0, tokens: 0, cost: 0, decision: `JEV PILOT : le travail progresse, budget d'étapes ${from} → ${maxSteps}` });
+        continue;
+      }
+      // Hard limit: instead of failing with nothing, deliver what is done (one call, no tools).
+      const wrap: ChatMessage = {
+        role: 'user',
+        content: `Step limit reached. Do not call any tool. Write the answer now: what is done (files, results), what is not done yet, and the exact next step. The user can reply « continue ».`,
+      };
+      messages.push(wrap);
+      try {
+        const w = await complete(
+          { model, messages: compact(messages, contextBudget, inp.text), temperature: ws.temperature ?? undefined, maxTokens: 2_000, signal: inp.signal },
+          { models, fallbacks: [], effort: 'auto', maxRetries: 1 },
+        );
+        cost += w.cost;
+        tokensIn += w.usage.promptTokens;
+        tokensOut += w.usage.completionTokens;
+        finalText = `${w.content.trim()}\n\n_(Limite de ${maxSteps} étapes atteinte — répondez « continue » pour poursuivre.)_`;
+        push(sid, { kind: 'assistant', id: uid(), text: finalText });
+        const a: ChatMessage = { role: 'assistant', content: finalText };
+        persisted.push(wrap, a);
+        stopReason = 'step_limit';
+        break;
+      } catch {
+        throw new Error(`Limite de ${maxSteps} étapes atteinte. Augmentez-la dans Réglages ou répondez « continue ».`);
+      }
+    }
   }
   // QUALITY MEASURED AFTER THE FACT, identically in every variant (same scorer, same fixed token reference);
   // it never influences the run. Empty answer = not measured (null), never 0.

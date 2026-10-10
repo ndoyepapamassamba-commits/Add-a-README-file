@@ -235,6 +235,10 @@ export interface McpServerDef {
 export interface Settings {
   /** A chat keeps the same model for the whole conversation (default true). */
   pinModel?: boolean;
+  /** JEV vision bridge: a text-only model gets an exact description + OCR of images (default true). */
+  visionBridge?: boolean;
+  /** Vision model used by the bridge (empty = cheapest / free). */
+  visionModel?: string;
   rememberKey: boolean;
   defaultModel: string;
   fallbackModel: string;
