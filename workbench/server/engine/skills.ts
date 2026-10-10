@@ -361,6 +361,41 @@ export const SKILL_REGISTRY: EngineSkill[] = [
     agents: ['reporting'],
     playbook: 'Lead with the purpose, keep one idea per paragraph, and adapt the tone to the recipient.',
   },
+  // ── Engineering skills used by top engineering teams (methods, not brands) — each activates only on its triggers ──
+  ...[
+    ['systematic_debugging', 'Débogage systématique : reproduire, isoler, corriger la cause racine, prouver.', ['bug', 'erreur', 'error', 'exception', 'crash', 'plante', 'ne marche pas', 'fonctionne pas', 'r[ée]gression', 'stack ?trace'], ['code.run'], 'coding', 'Reproduce the failure first and keep the exact error. Form ONE hypothesis at a time and test it with the smallest experiment (log, minimal input, bisect recent changes). Fix the root cause, not the symptom. Prove the fix with the same reproduction, then check nothing else broke. Report: cause, fix, proof.', 'Pratique du débogage scientifique (Agans, « Debugging: 9 rules »)'],
+    ['code_review', 'Relecture de code façon grandes équipes : correction, lisibilité, sécurité, tests.', ['relis', 'review', 'revue de code', 'audit (du|de mon) code', 'qualit[ée] du code', 'pull request', '\\bpr\\b'], ['filesystem.read'], 'coding', 'Review in this order: correctness (edge cases, null/empty, off-by-one, concurrency), security (inputs, secrets, injection), tests (what proves it), readability (names, size of functions), then style. Each finding: file:line, the problem, a concrete fix, severity (blocking / should / nit). No vague praise.', 'Google Engineering Practices — code review'],
+    ['test_driven', 'Développement piloté par les tests : un test qui échoue, le code minimal, puis refactor.', ['test', 'tdd', 'unitaire', 'couverture', 'coverage', 'jest', 'vitest', 'pytest'], ['code.run'], 'coding', 'Write the failing test first (one behaviour), run it and see it fail for the right reason, write the minimal code to pass, run again, then refactor with the tests green. Test behaviour, not implementation; include the edge cases (empty, max, invalid).', 'Kent Beck — TDD'],
+    ['refactoring', 'Refactoring sûr : comportement identique prouvé.', ['refactor', 'restructur', 'nettoie le code', 'simplifie le code', 'dette technique', 'clean code'], ['filesystem.edit', 'code.run'], 'coding', 'Never change behaviour while refactoring: run the tests (or write characterization tests) before, make small named steps (extract function, rename, remove duplication), run after each step. Separate refactor and feature changes.', 'Martin Fowler — Refactoring'],
+    ['sql_engineering', 'SQL fiable et performant.', ['\\bsql\\b', 'requ[êe]te', 'jointure', 'join', 'base de donn[ée]es', 'postgres', 'oracle', 'mysql', 'index'], ['code.run'], 'coding', 'State the grain of each table, join only on verified unique keys, count rows before/after each join to catch duplication, filter early, avoid SELECT *, use parameters (never string-concatenated inputs). For performance: read the plan, index the filter/join columns.', 'Pratiques SQL des équipes data'],
+    ['api_design', 'Conception d\'API propre et stable.', ['\\bapi\\b', 'endpoint', 'rest', 'graphql', 'webhook', 'route'], ['filesystem.write'], 'coding', 'Resources as nouns, consistent naming, explicit versioning, pagination for lists, idempotent PUT/DELETE, clear error format (code, message, details), validation at the boundary, auth on every route, documented examples.', 'Google API Design Guide'],
+    ['performance', 'Optimisation guidée par la mesure.', ['lent', 'performance', 'optimis', 'rapide', 'latence', 'm[ée]moire', 'charge', 'scal'], ['code.run'], 'coding', 'Measure first (timings, profile, data size); optimise the measured hotspot only; prefer algorithmic wins (O(n²) → O(n log n), batching, caching, pagination) over micro-tweaks; measure again and report before/after.', 'Pratiques SRE / Knuth (« premature optimization »)'],
+    ['frontend_ui', 'Interfaces web accessibles, responsives et soignées.', ['interface', '\\bui\\b', 'ux', 'page web', 'site', 'formulaire', 'responsive', 'mobile', 'css', 'tailwind', 'react'], ['filesystem.write', 'browser.open'], 'coding', 'Mobile-first layout, semantic HTML, labels on inputs, visible focus, contrast AA, loading/empty/error states, no layout shift. Open the page in the browser to check it, at phone and desktop widths.', 'WCAG 2.2 + pratiques front-end'],
+    ['architecture', 'Décisions d\'architecture explicites et réversibles.', ['architecture', 'conception', 'design system', 'microservice', 'monolithe', 'choix technique', 'stack'], [], 'intelligence', 'Write the decision as an ADR: context, options (2-3), decision, consequences, how to reverse it. Prefer the simplest design that meets today\'s needs; name the risks and the observability you need.', 'ADR (Michael Nygard)'],
+    ['incident_postmortem', 'Analyse d\'incident sans reproche.', ['incident', 'panne', 'postmortem', 'post-mortem', 'outage', 'probl[èe]me en production'], [], 'intelligence', 'Timeline with timestamps, impact (who, how long), root cause (5 whys), what went well, actions with owners and dates. Blameless: systems, not people.', 'Google SRE — postmortem culture'],
+    ['deliverable_design', 'Mise en page professionnelle des livrables (Word, PDF, Excel, mail).', ['rapport', 'document', 'livrable', 'mise en page', 'design', 'joli', 'professionnel', 'beau'], ['report.export'], 'intelligence', 'One message per page/section; title states the conclusion; key figures first (KPI cards), then detail; consistent type scale (title / heading / body), generous white space, aligned numbers right, units in headers, max 2 accent colours. Use the house theme unless the user asks for another (theme / colors).', 'Principes de design éditorial'],
+    ['presentation_design', 'Présentations qui convainquent.', ['pr[ée]sentation', 'pptx', 'powerpoint', 'slides?', 'diapo', 'pitch', 'comex', 'comit[ée]'], ['report.export'], 'intelligence', 'Storyline first (situation → complication → resolution); one idea per slide with an action title; ≤ 6 lines; one chart per slide with the takeaway written; appendix for detail; finish with decisions asked.', 'Minto — Pyramid Principle'],
+    ['executive_writing', 'Écrit de direction : la conclusion d\'abord.', ['note', 'synth[èe]se', 'mail', 'courriel', 'e-?mail', 'direction', 'dg', 'r[ée]sum[ée] ex[ée]cutif'], [], 'intelligence', 'Answer first (the decision or the key number), then 3 supporting points, then the ask with a date. Short sentences, active voice, numbers with units, no jargon.', 'Minto — Pyramid Principle'],
+    ['data_storytelling', 'Graphiques qui disent quelque chose.', ['graphique', 'chart', 'visualis', 'dashboard', 'tableau de bord', 'courbe', 'histogramme'], ['data.chart'], 'intelligence', 'Pick the chart from the question (trend → line, comparison → bar sorted, part of whole → stacked bar, rarely pie); title = the insight; label directly instead of legends; start bars at zero; remove gridline clutter; highlight the one series that matters.', 'Edward Tufte / Cole Nussbaumer Knaflic'],
+  ].map(
+    ([name, description, triggers, tools, metric, playbook, source]) =>
+      ({
+        name,
+        description,
+        capabilities: [String(name).replace(/_/g, ' ')],
+        triggers,
+        required_tools: tools,
+        recommended_models: { metric, tier: 'balanced' },
+        incompatible_models: [],
+        cost_profile: 'faible',
+        security_profile: 'lecture seule',
+        agents: ['omnipotent'],
+        playbook,
+        source: `${source} — playbook MASSAMBA`,
+        version: '1.0',
+        license: 'MIT',
+      }) as EngineSkill,
+  ),
 ];
 
 export interface SkillMatch {

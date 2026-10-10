@@ -80,6 +80,22 @@ export const MCP_PRESETS: McpServerDef[] = [
     description: 'Documentation Svelte / SvelteKit et vérification de code (gratuit).',
   },
   {
+    name: 'figma',
+    url: 'https://mcp.figma.com/mcp',
+    enabled: false,
+    autoApprove: false,
+    needsToken: 'Connexion Figma (OAuth). Le serveur distant Figma peut refuser les appels directs du navigateur : activez-le et testez.',
+    description: 'Design Figma : lire des maquettes, composants et variables pour des exports et pages au design soigné (compte Figma).',
+  },
+  {
+    name: 'canva',
+    url: 'https://mcp.canva.com/mcp',
+    enabled: false,
+    autoApprove: false,
+    needsToken: 'Connexion Canva (OAuth). Le serveur distant Canva peut refuser les appels directs du navigateur : activez-le et testez.',
+    description: 'Designs Canva : présentations, visuels et documents à partir de modèles de marque (compte Canva).',
+  },
+  {
     name: 'github',
     url: 'https://api.githubcopilot.com/mcp/',
     enabled: true,
