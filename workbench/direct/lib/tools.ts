@@ -54,6 +54,7 @@ function workspaceTwin() {
   );
 }
 import { shellRisk } from './shellCore';
+import { BRAVE_DIRECT, braveText, braveUrl, parseBrave } from '../../server/jev/web/brave';
 import { diagnose, formatDiagnosis } from '../../server/tools/diagnose';
 
 /** Result of a browser action for the model: new downloads, errors, then the page. */
@@ -601,6 +602,31 @@ export const TOOLS: DirectTool[] = [
     readOnly: true,
     label: (a) => `Recherche web « ${S(a.query)} »`,
     async run(a, ctx) {
+      // BRAVE SEARCH first: raw results, no LLM synthesis call (free tier; the cheapest web access).
+      const ws = useStore.getState().settings;
+      if (ws.braveKey) {
+        const n = Math.min(10, Number(a.max_results) || 6);
+        const bases = [ws.braveRelay, BRAVE_DIRECT].filter((x): x is string => Boolean(x));
+        let lastErr = '';
+        for (const base of bases) {
+          try {
+            const res = await fetch(braveUrl(base, S(a.query), n), {
+              headers: { Accept: 'application/json', 'X-Subscription-Token': ws.braveKey },
+              signal: ctx.signal,
+            });
+            if (!res.ok) {
+              lastErr = `HTTP ${res.status}`;
+              continue;
+            }
+            const hits = parseBrave(await res.json(), n);
+            const text = braveText(S(a.query), hits);
+            return ok(`Brave · ${hits.length} résultat(s) · 0 $ LLM`, text, { output: text });
+          } catch (e) {
+            lastErr = (e as Error).message;
+          }
+        }
+        if (ws.braveFallback === false) throw new Error(`Brave Search indisponible (${lastErr}). Vérifiez la clé / le relais dans Réglages.`);
+      }
       const model = pickFromTier(ctx.models, DEFAULT_AUTO_TIERS.fast, {})?.id ?? 'openai/gpt-4o-mini';
       const t0 = Date.now();
       const r = await complete(

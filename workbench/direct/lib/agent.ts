@@ -55,6 +55,7 @@ import * as omniRt from './omni';
 import { describeImage, visionBridgeEnabled } from './visionBridge';
 import { ALTERATION } from '../../server/jev/omni/mission';
 import { pilotAnchor } from '../../server/jev/omni/pilot';
+import { extractFacts, lessonFrom, memoryBlock, mergeFacts, recall as recallMemory } from '../../server/jev/memory/semantic';
 import type { DataClass, FabricTag } from '../../server/jev/fabric/types';
 import type { SkillVersion } from '../../server/jev/fabric/skills';
 import { accountingOf, hashText, type CallKind, type CallRec } from '../../server/jev/science';
@@ -1100,11 +1101,21 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
           freeProven: Boolean(apprentice?.plan.use),
         })
       : null;
+  // ── JEV SEMANTIC MEMORY: the few facts of THIS chat and the lessons from past corrections that match the request.
+  let semMemory = '';
+  if (top && !experimentRun) {
+    const chatHits = recallMemory(inp.session.memory ?? [], inp.text, { k: 3 });
+    const lessonHits = recallMemory(useStore.getState().lessons, inp.text, { k: 3, tag: profile.type, min: 0.3 });
+    semMemory = memoryBlock(chatHits, lessonHits);
+    if (semMemory)
+      traceAdd({ name: 'JEV_CONTEXT', ms: 0, tokens: Math.ceil(semMemory.length / 3.8), cost: 0, decision: `mémoire sémantique : ${chatHits.length} fait(s) du chat, ${lessonHits.length} leçon(s)` });
+  }
   const promptSections = [
     { name: 'system', text: system, pinned: true },
     { name: 'omni', text: omni?.lock ?? '', pinned: true },
     { name: 'delivery', text: omni?.delivery ?? '', pinned: true },
     { name: 'chat_index', text: omni?.chatIndex ?? '' },
+    { name: 'chat_memory', text: semMemory },
     { name: 'doctrine', text: lane?.minimalPrompt ? '' : ENGINE_DOCTRINE },
     { name: 'manual', text: manualPrompt(useStore.getState().manual), pinned: true },
     { name: 'strategy', text: strategy && !lane?.minimalPrompt ? strategyPrompt(dna, strategy) : '' },
@@ -2772,6 +2783,8 @@ export async function runAgent(
       ],
       verdict: result?.report?.status ?? (errored ? 'ERROR' : (cur.verdict ?? null)),
       lastMode: mode,
+      // JEV SEMANTIC MEMORY of this chat: decisions / preferences said, and what was delivered.
+      memory: errored ? cur.memory : mergeFacts(cur.memory ?? [], extractFacts({ request: text, delivered }), 200),
       // « auto »: the model picked by the first request stays the model of this chat.
       pinnedModel: cur.pinnedModel ?? (cur.model === 'auto' && result?.models[0] && !errored ? result.models[0] : undefined),
       lastDelivery:
@@ -2785,6 +2798,16 @@ export async function runAgent(
             }
           : cur.lastDelivery,
     }));
+    // LEARNING FROM ALTERATIONS: what the user had to ask after a delivery becomes a lesson for that task family.
+    const prevDelivery = session.lastDelivery;
+    if (!errored && prevDelivery && ALTERATION.test(text) && !opts.bench && !opts.fabric) {
+      const lesson = lessonFrom({ alteration: text, originalRequest: prevDelivery.request, tag: analyzeTask({ text: prevDelivery.request }).type });
+      if (lesson) {
+        const s2 = useStore.getState();
+        s2.setLessons(mergeFacts(s2.lessons, [lesson], 300));
+        s2.pushItem(sessionId, { kind: 'intel', id: uid(), title: 'JEV — leçon apprise de cette correction', tone: 'ok', lines: [lesson.text, 'Visible et supprimable dans JEV Cognitive OS → Vue d’ensemble.'] });
+      }
+    }
     // LEARNING: every run feeds the mission ledger (strategy evolution, failure memory,
     // knowledge graph, regression suite).
     if (result?.dna || errored) {

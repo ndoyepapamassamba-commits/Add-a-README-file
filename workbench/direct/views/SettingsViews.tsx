@@ -297,6 +297,30 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
         </div>
       </Section>
 
+      <Section title="Internet (Brave Search) et vision">
+        <div className="grid gap-x-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-2">
+          <Field label="Clé Brave Search" hint="Offre gratuite Brave (api.search.brave.com). Les résultats vont directement au modèle : aucun appel LLM de synthèse.">
+            <Input type="password" value={s.braveKey ?? ''} onChange={(e) => patch({ braveKey: e.target.value.trim() })} placeholder="BSA…" data-testid="brave-key" />
+          </Field>
+          <Field label="Relais Brave (URL)" hint="Brave bloque les appels directs d’un navigateur : déployez relay/brave-relay (Supabase) et collez son URL.">
+            <Input value={s.braveRelay ?? ''} onChange={(e) => patch({ braveRelay: e.target.value.trim() })} placeholder="https://xxxx.supabase.co/functions/v1/brave-relay" />
+          </Field>
+          <Field label="Si Brave échoue, utiliser la recherche OpenRouter (payante)">
+            <Toggle checked={s.braveFallback !== false} onChange={(v) => patch({ braveFallback: v })} />
+          </Field>
+          <Field label="Pont vision JEV" hint="Un modèle sans vision reçoit la description exacte et l’OCR de l’image, lue une seule fois par un petit modèle vision (cache).">
+            <Toggle checked={s.visionBridge !== false} onChange={(v) => patch({ visionBridge: v })} />
+          </Field>
+          <Field label="Modèle vision du pont" hint="Vide = gratuit d’abord, puis le moins cher">
+            <Select
+              value={s.visionModel ?? ''}
+              onChange={(v) => patch({ visionModel: v })}
+              options={[{ value: '', label: 'Automatique (le moins cher)' }, ...models.filter((m) => m.capabilities.vision).map((m) => ({ value: m.id, label: shortModel(m.id) }))]}
+            />
+          </Field>
+        </div>
+      </Section>
+
       <Section title="Budget">
         <div className="grid gap-x-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-2">
           <Field label="Par tâche ($, 0 = illimité)">

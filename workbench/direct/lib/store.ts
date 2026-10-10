@@ -145,6 +145,9 @@ export interface State {
   ledger: Ledger;
   /** Personal operating manual (user rules). */
   manual: ManualRule[];
+  /** Lessons learnt from the user's alterations (cross-chat, by task family; visible and deletable). */
+  lessons: import('../../server/jev/memory/semantic').MemFact[];
+  setLessons: (l: import('../../server/jev/memory/semantic').MemFact[]) => void;
   /** Auto-benchmark runs. */
   bench: BenchResult[];
   /** Intelligence Engine: last routing decisions (explained). */
@@ -231,6 +234,7 @@ export const useStore = create<State>((set, get) => ({
   board: {},
   ledger: { entries: [] },
   manual: [],
+  lessons: [],
   bench: [],
   routingLog: [],
   registry: [],
@@ -390,6 +394,10 @@ export const useStore = create<State>((set, get) => ({
     set({ ledger });
     saveLater('ledger', () => get().ledger, 1000);
   },
+  setLessons: (lessons) => {
+    set({ lessons });
+    saveLater('lessons', () => get().lessons, 300);
+  },
   setManual: (manual) => {
     set({ manual });
     saveLater('manual', () => get().manual, 300);
@@ -439,9 +447,10 @@ export const useStore = create<State>((set, get) => ({
 
 /** Loads everything saved in this browser. */
 export async function hydrate(): Promise<void> {
-  const [ledger, manual, bench, routingLog, registry, externalBench] = await Promise.all([
+  const [ledger, manual, lessons, bench, routingLog, registry, externalBench] = await Promise.all([
     kv.get<Ledger>('ledger').catch(() => undefined),
     kv.get<ManualRule[]>('manual').catch(() => undefined),
+    kv.get<import('../../server/jev/memory/semantic').MemFact[]>('lessons').catch(() => undefined),
     kv.get<BenchResult[]>('bench').catch(() => undefined),
     kv.get<RoutingDecision[]>('routingLog').catch(() => undefined),
     kv.get<RegistryResource[]>('registry').catch(() => undefined),
@@ -526,6 +535,7 @@ export async function hydrate(): Promise<void> {
     board: board ?? {},
     ledger: ledger ?? { entries: [] },
     manual: manual ?? [],
+    lessons: lessons ?? [],
     bench: bench ?? [],
     routingLog: routingLog ?? [],
     registry: registry ?? [],

@@ -170,6 +170,8 @@ export interface Session {
   lastDelivery?: { start: number; paths: string[]; request: string; at: number };
   /** Model chosen once for this chat when the session is on « auto » (model lock). */
   pinnedModel?: string;
+  /** JEV semantic memory of THIS chat (decisions, preferences, deliveries). */
+  memory?: import('../../server/jev/memory/semantic').MemFact[];
 }
 
 /** One LLM call (cost tracking, Mission Control). */
@@ -239,6 +241,12 @@ export interface Settings {
   visionBridge?: boolean;
   /** Vision model used by the bridge (empty = cheapest / free). */
   visionModel?: string;
+  /** Brave Search API key (stored locally, sent only to Brave / your relay). */
+  braveKey?: string;
+  /** URL of your brave-relay (Supabase Edge Function) — needed because Brave blocks browser calls (CORS). */
+  braveRelay?: string;
+  /** If Brave fails, fall back to OpenRouter web search (paid per result). */
+  braveFallback?: boolean;
   rememberKey: boolean;
   defaultModel: string;
   fallbackModel: string;
