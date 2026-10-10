@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
-import { startMockOpenRouter, type MockOpenRouter } from '../helpers/mockOpenRouter';
+import { MOCK_MODELS, startMockOpenRouter, type MockOpenRouter } from '../helpers/mockOpenRouter';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FILE = path.join(ROOT, 'dist/massamba-workbench-direct.html');
@@ -24,6 +24,10 @@ async function open(page: Page) {
     const res = await route.fetch({ url });
     await route.fulfill({ response: res, headers: { ...res.headers(), 'access-control-allow-origin': '*' } });
   });
+  // Image proxy used to hand design images to the vision model: a 1×1 PNG, CORS open.
+  await page.route('https://wsrv.nl/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') }),
+  );
   // The premium design gallery appears before every deliverable: these tests keep the default design.
   await page.addLocatorHandler(page.getByTestId('design-go'), async () => {
     await page.getByTestId('design-go').click();
@@ -450,4 +454,46 @@ test('LOGO: the attached logo is offered in the gallery, recoloured harmoniously
     return [...g.getImageData(3, 3, 1, 1).data];
   }, Buffer.from(media!).toString('base64'));
   expect(corner.slice(0, 3)).toEqual([0x1c, 0x1c, 0x24]);
+});
+
+test('vision model refusing (« only available on agentic harnesses ») → the next one describes the design; never back to Maison; the chat model is unchanged', async ({ page }) => {
+  mock.models = [
+    ...MOCK_MODELS,
+    { id: 'mock/eyes:free', name: 'Mock: Eyes free', created: 1_750_000_000, context_length: 64_000, architecture: { input_modalities: ['text', 'image'] }, pricing: { prompt: '0', completion: '0' }, top_provider: { context_length: 64_000, max_completion_tokens: 4096 }, supported_parameters: ['temperature'] },
+  ];
+  await open(page);
+  await page.removeLocatorHandler(page.getByTestId('design-go'));
+  await page.route('https://api.tavily.com/search', (route) =>
+    route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' }, body: JSON.stringify({ results: [], images: [{ url: 'https://example.com/kpi.png', description: 'kpi dashboard' }] }) }),
+  );
+  await page.route('https://example.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') }));
+  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await page.getByTestId('tavily-key').fill('tvly-test-key');
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  const LAYOUT = { dark: false, navigation: 'top', header: 'band', kpis: { count: 3, style: 'card' }, charts: [{ type: 'line', span: 2 }], table: { style: 'zebra', position: 'bottom' }, columns: 3, radius: 10, shadow: true, palette: { bg: '#FFF7ED', surface: '#FFFFFF', primary: '#C2410C', accent: '#FACC15', text: '#1C1917', muted: '#78716C', series: ['#C2410C', '#FACC15'] }, font: 'Montserrat' };
+  mock.push(
+    { error: { status: 403, message: 'thinkingmachines/inkling-small:free is only available on agentic harnesses.' } },
+    { text: JSON.stringify(LAYOUT) },
+    { text: 'Prêt.' },
+  );
+  await send(page, 'Fais un classeur Excel des ventes');
+  await expect(page.getByTestId('design-card')).toBeVisible({ timeout: 20_000 });
+  await page.getByTestId('design-web').click();
+  await page.getByTestId('design-web-gallery').locator('button').first().click();
+  await expect(page.getByTestId('design-read-by')).toContainText('smart-2', { timeout: 20_000 });
+  await expect(page.getByTestId('design-selected')).toContainText('Design Internet');
+  const visionCalls = mock.requests.filter((r) => JSON.stringify(r.messages).includes('image_url'));
+  expect(visionCalls.map((r) => r.model)).toEqual(['mock/eyes:free', 'mock/smart-2']);
+  // The image went to the model as data (proxied), not as a link the provider might not fetch.
+  expect(JSON.stringify(visionCalls[1]!.messages)).toContain('data:image/png;base64');
+  await page.getByTestId('design-go').click();
+  await expect(page.getByTestId('design-card-done')).toContainText('Design Internet');
+  await expect(page.getByText('Prêt.')).toBeVisible({ timeout: 20_000 });
+  // The vision model only DESCRIBED the image: the chat continues with its own model.
+  const chatCall = mock.requests.filter((r) => !JSON.stringify(r.messages).includes('image_url')).pop()!;
+  expect(chatCall.model).not.toBe('mock/eyes:free');
+  // The refusing model is remembered and skipped next time.
+  expect(await page.evaluate(() => localStorage.getItem('massamba.vision.blocked'))).toContain('mock/eyes:free');
 });

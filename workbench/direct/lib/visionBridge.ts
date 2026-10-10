@@ -3,7 +3,8 @@ import { complete } from './llm';
 import { dataUrl } from './vfs';
 import { useStore } from './store';
 import type { VFile } from './types';
-import { bridgeBlock, bridgeKey, pickVisionModel, visionPrompt } from '../../server/jev/vision/bridge';
+import { bridgeBlock, bridgeKey, visionCandidates, visionPrompt } from '../../server/jev/vision/bridge';
+import { blockedVision, withVisionModel } from './visionGuard';
 
 const cache = new Map<string, { text: string; model: string }>();
 export interface BridgeResult {
@@ -19,25 +20,30 @@ export async function describeImage(f: VFile, question: string, signal?: AbortSi
   const key = bridgeKey(f.data, question);
   const hit = cache.get(key);
   if (hit) return { block: bridgeBlock(f.path, hit.model, hit.text), model: hit.model, cost: 0, cached: true };
-  const pick = pickVisionModel(st.models, st.settings.visionModel);
-  if (!pick) return null;
-  const r = await complete(
-    {
-      model: pick.model,
-      messages: [
+  if (!visionCandidates(st.models, st.settings.visionModel, blockedVision()).length) return null;
+  // Cost first (free models), but a model that refuses is skipped and remembered: the chat never loses its eyes.
+  const r = await withVisionModel(
+    (model) =>
+      complete(
         {
-          role: 'user',
-          content: [
-            { type: 'text', text: visionPrompt(question) },
-            { type: 'image_url', image_url: { url: dataUrl(f) } },
+          model,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: visionPrompt(question) },
+                { type: 'image_url', image_url: { url: dataUrl(f) } },
+              ],
+            },
           ],
+          maxTokens: 1500,
+          temperature: 0,
+          signal,
         },
-      ],
-      maxTokens: 1500,
-      temperature: 0,
-      signal,
-    },
-    { models: st.models, fallbacks: pick.fallbacks, effort: 'auto', maxRetries: 1 },
+        { models: st.models, fallbacks: [], effort: 'auto', maxRetries: 1 },
+      ),
+    'cheap',
+    signal,
   );
   const text = r.content ?? '';
   if (!text.trim()) return null;

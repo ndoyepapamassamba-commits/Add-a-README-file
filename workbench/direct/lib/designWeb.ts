@@ -4,7 +4,8 @@ import { useStore } from './store';
 import { complete } from './llm';
 import { designQueries, parseTavilyImages, tavilyImagesRequest, type DesignStyle } from '../../server/jev/web/search';
 import { PALETTE_PROMPT, parsePalette, type DeliverableKind } from '../../server/services/premiumDesigns';
-import { pickVisionModel } from '../../server/jev/vision/bridge';
+import { withVisionModel } from './visionGuard';
+import { paletteFromPixels } from '../../server/services/imagePalette';
 import type { CustomTheme } from '../../server/services/houseDesign';
 import { LAYOUT_PROMPT, parseLayout, type DesignLayout } from '../../server/services/layoutClone';
 import { extractSiteTokens, siteLayout, stylesheetUrls, type SiteTokens } from '../../server/services/siteStyle';
@@ -42,19 +43,45 @@ export async function searchDesigns(
   return out;
 }
 
-export async function paletteFromImage(url: string): Promise<{ theme: CustomTheme; model: string; cost: number }> {
+/**
+ * The image as data for the vision model: fetched through a CORS image proxy (wsrv.nl) and re-encoded, so a site that
+ * forbids hot-linking cannot make the read fail; the original URL is used when the proxy cannot get it.
+ */
+const PROXY = (url: string, w = 1280) => `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${w}&we&output=jpg&q=85`;
+async function imageBlob(url: string, w?: number): Promise<Blob | null> {
+  if (url.startsWith('data:')) return (await fetch(url)).blob();
+  try {
+    const res = await fetch(PROXY(url, w));
+    if (!res.ok || !/^image\//.test(res.headers.get('content-type') ?? '')) return null;
+    return await res.blob();
+  } catch {
+    return null;
+  }
+}
+async function imageForVision(url: string): Promise<string> {
+  const b = await imageBlob(url);
+  if (!b) return url;
+  const bytes = new Uint8Array(await b.arrayBuffer());
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return `data:${b.type || 'image/jpeg'};base64,${btoa(bin)}`;
+}
+/** Ask a vision model about an image — candidates tried in turn, refusing models remembered and skipped. */
+async function askVision(prompt: string, url: string, maxTokens: number): Promise<{ content: string; model: string; cost: number }> {
   const st = useStore.getState();
-  const pick = pickVisionModel(st.models, st.settings.visionModel);
-  if (!pick) throw new Error('Aucun modèle vision disponible pour lire ce design.');
-  const r = await complete(
-    {
-      model: pick.model,
-      messages: [{ role: 'user', content: [{ type: 'text', text: PALETTE_PROMPT }, { type: 'image_url', image_url: { url } }] }],
-      maxTokens: 200,
-      temperature: 0,
-    },
-    { models: st.models, fallbacks: pick.fallbacks, effort: 'auto', maxRetries: 1 },
-  );
+  const image = await imageForVision(url);
+  return withVisionModel(async (model) => {
+    const r = await complete(
+      { model, messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: image } }] }], maxTokens, temperature: 0 },
+      { models: st.models, fallbacks: [], effort: 'auto', maxRetries: 0 },
+    );
+    if (!r.content?.trim()) throw new Error(`${model} : réponse vide`);
+    return { content: r.content, model: r.model, cost: r.cost };
+  }, 'reliable');
+}
+
+export async function paletteFromImage(url: string): Promise<{ theme: CustomTheme; model: string; cost: number }> {
+  const r = await askVision(PALETTE_PROMPT, url, 200);
   const theme = parsePalette(r.content);
   if (!theme) throw new Error('Le style de cette image n’a pas pu être lu ; choisissez-en une autre.');
   return { theme, model: r.model, cost: r.cost };
@@ -62,21 +89,28 @@ export async function paletteFromImage(url: string): Promise<{ theme: CustomThem
 
 /** The full LAYOUT of a design image (structure + palette + font), read once by a small vision model. */
 export async function layoutFromImage(url: string): Promise<{ layout: DesignLayout; model: string; cost: number }> {
-  const st = useStore.getState();
-  const pick = pickVisionModel(st.models, st.settings.visionModel);
-  if (!pick) throw new Error('Aucun modèle vision disponible pour lire ce design.');
-  const r = await complete(
-    {
-      model: pick.model,
-      messages: [{ role: 'user', content: [{ type: 'text', text: LAYOUT_PROMPT }, { type: 'image_url', image_url: { url } }] }],
-      maxTokens: 700,
-      temperature: 0,
-    },
-    { models: st.models, fallbacks: pick.fallbacks, effort: 'auto', maxRetries: 1 },
-  );
+  const r = await askVision(LAYOUT_PROMPT, url, 700);
   const layout = parseLayout(r.content);
   if (!layout) throw new Error('La mise en page de cette image n’a pas pu être lue ; choisissez-en une autre.');
   return { layout, model: r.model, cost: r.cost };
+}
+
+/** Last resort without any model: the image's colours computed from its pixels in the browser (free). */
+export async function localPalette(url: string): Promise<CustomTheme> {
+  const b = await imageBlob(url, 320);
+  if (!b) throw new Error('Image inaccessible.');
+  const bmp = await createImageBitmap(b);
+  const k = Math.min(1, 320 / bmp.width);
+  const w = Math.max(1, Math.round(bmp.width * k));
+  const h = Math.max(1, Math.round(bmp.height * k));
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const g = c.getContext('2d', { willReadFrequently: true })!;
+  g.drawImage(bmp, 0, 0, w, h);
+  const t = paletteFromPixels(g.getImageData(0, 0, w, h).data, w, h);
+  if (!t) throw new Error('Aucune couleur exploitable dans cette image.');
+  return t;
 }
 
 // ── A REAL WEBSITE, reproduced from its own code ─────────────────────────────────────────────────────────────────────

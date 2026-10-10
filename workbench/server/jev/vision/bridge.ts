@@ -10,20 +10,39 @@ export interface VisionPick {
 }
 const price = (m: ModelInfo) => (m.inputPrice ?? Infinity) + (m.outputPrice ?? Infinity) / 4;
 /** Cheapest reliable vision models first (free ones are tried first, a cheap paid one stays as safety net). */
-export function pickVisionModel(models: ModelInfo[], preferred?: string | null): VisionPick | null {
-  const vis = models.filter((m) => m.capabilities.vision && m.inputPrice !== null && m.outputPrice !== null);
-  if (!vis.length) return null;
+/** Vision models known to answer plain API calls reliably (a free model may be restricted to some apps). */
+const RELIABLE = /gemini[^/]*flash|qwen[^/]*vl|gpt-4o-mini|gpt-4\.1-mini|gpt-[5-9][^/]*mini|llama[^/]*vision|pixtral|claude[^/]*haiku|gemma-3|mistral-small/i;
+/**
+ * Ordered vision candidates. « cheap »: free first, then the cheapest paid (the chat bridge, cost first).
+ * « reliable »: known-reliable cheap paid models first, then free, then other paid (a one-shot read the user waits for).
+ * Models that refused before (blocked) are skipped; batch-only models never.
+ */
+export function visionCandidates(models: ModelInfo[], preferred?: string | null, blocked: ReadonlySet<string> = new Set(), mode: 'cheap' | 'reliable' = 'cheap', max = 5): string[] {
+  const vis = models.filter((m) => m.capabilities.vision && m.inputPrice !== null && m.outputPrice !== null && !blocked.has(m.id) && !/:batch\b/.test(m.id));
   const pref = preferred ? vis.find((m) => m.id === preferred) : undefined;
   const free = vis.filter((m) => m.inputPrice === 0 && m.outputPrice === 0).sort((a, b) => b.contextLength - a.contextLength);
   const paid = vis.filter((m) => (m.inputPrice ?? 0) > 0 || (m.outputPrice ?? 0) > 0).sort((a, b) => price(a) - price(b));
-  const order = [...(pref ? [pref] : []), ...free.slice(0, 2), ...paid.slice(0, 2)].map((m) => m.id);
-  const uniq = [...new Set(order)];
+  const reliable = paid.filter((m) => RELIABLE.test(m.id));
+  const order =
+    mode === 'reliable'
+      ? [...(pref ? [pref] : []), ...reliable.slice(0, 3), ...free.slice(0, 2), ...paid.slice(0, 2)]
+      : [...(pref ? [pref] : []), ...free.slice(0, 2), ...reliable.slice(0, 2), ...paid.slice(0, 2)];
+  return [...new Set(order.map((m) => m.id))].slice(0, max);
+}
+
+export function pickVisionModel(models: ModelInfo[], preferred?: string | null, blocked: ReadonlySet<string> = new Set()): VisionPick | null {
+  const uniq = visionCandidates(models, preferred, blocked, 'cheap');
+  if (!uniq.length) return null;
+  const hasFree = models.some((m) => m.id === uniq[0] && m.inputPrice === 0 && m.outputPrice === 0);
   return {
     model: uniq[0]!,
     fallbacks: uniq.slice(1, 4),
-    why: pref ? 'modèle vision choisi dans les réglages' : free.length ? 'modèle vision gratuit (repli : le moins cher payant)' : 'modèle vision le moins cher',
+    why: preferred && uniq[0] === preferred ? 'modèle vision choisi dans les réglages' : hasFree ? 'modèle vision gratuit (repli : le moins cher payant)' : 'modèle vision le moins cher',
   };
 }
+/** An error that means « this model will never take this call » (not a transient failure). */
+export const permanentVisionError = (status: number | undefined, message: string) =>
+  (status !== undefined && [400, 401, 402, 403, 404, 405, 422].includes(status)) || /only available|not (?:support|available)|no endpoints|agentic|image input|does not support|unsupported/i.test(message);
 
 export function visionPrompt(question: string): string {
   return [

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Spinner } from '../../web/components/ui';
 import { resolveDesign } from '../lib/agent';
 import { PREMIUM_DESIGNS, thumbnailDataUrl, type DeliverableKind } from '../../server/services/premiumDesigns';
-import { searchDesigns, layoutFromImage, paletteFromImage, siteDesign } from '../lib/designWeb';
+import { searchDesigns, layoutFromImage, localPalette, paletteFromImage, siteDesign } from '../lib/designWeb';
 import { DESIGN_STYLES, type DesignStyle } from '../../server/jev/web/search';
 import { dashboardData, layoutTheme, renderLayoutHtml, type DesignLayout } from '../../server/services/layoutClone';
 import type { ThemeId, CustomTheme } from '../../server/services/houseDesign';
@@ -69,6 +69,7 @@ function DesignCardOpen({ item }: { item: CardItem }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logoPath]);
+  const [readBy, setReadBy] = useState('');
   const [siteUrl, setSiteUrl] = useState('');
   const [site, setSite] = useState<{ url: string; font: string; radius: number; vars: number; structure: boolean } | null>(null);
   /** A REAL website: its code gives the exact colours / fonts / radius, its screenshot gives the structure. */
@@ -116,23 +117,32 @@ function DesignCardOpen({ item }: { item: CardItem }) {
     setLayout(null);
     setCustom(null);
     setSite(null);
+    setReadBy('');
     try {
       const r = await layoutFromImage(url);
       setLayout(r.layout);
       setCustom(layoutTheme(r.layout));
       setSel('custom');
+      setReadBy(`image décrite par ${r.model.split('/').pop()} (mise en page + couleurs)`);
     } catch (e) {
-      // The full layout could not be read: keep at least the image's palette and font (never fall back silently).
+      // Never a silent fallback: palette by a vision model, else colours computed from the pixels (no model).
       try {
         setBusy('lecture des couleurs de l’image…');
         const p = await paletteFromImage(url);
         setCustom(p.theme);
         setSel('custom');
-        setErr('Mise en page non lisible sur cette image : ses couleurs et sa police seront utilisées.');
+        setReadBy(`couleurs décrites par ${p.model.split('/').pop()} (mise en page non lisible sur cette image)`);
       } catch {
-        setErr(`${(e as Error).message} Choisissez une autre image ou un design de la galerie.`);
-        setWebSel(null);
-        setSel('house');
+        try {
+          setBusy('extraction locale des couleurs…');
+          const t = await localPalette(url);
+          setCustom(t);
+          setSel('custom');
+          setReadBy('couleurs extraites de l’image dans le navigateur (aucun modèle vision n’a répondu)');
+        } catch {
+          setErr(`${(e as Error).message.slice(0, 160)} — choisissez une autre image ou un design de la galerie.`);
+          setWebSel(null);
+        }
       }
     } finally {
       setBusy(null);
@@ -253,6 +263,7 @@ function DesignCardOpen({ item }: { item: CardItem }) {
                   <span key={c} className="inline-block h-4 w-6 rounded border border-line" style={{ background: c!.startsWith('#') ? c : `#${c}` }} />
                 ))}
                 {custom.font && <span className="text-muted">{custom.font}</span>}
+                {readBy && <span className="text-muted" data-testid="design-read-by">· {readBy}</span>}
               </div>
             )}
           </div>
