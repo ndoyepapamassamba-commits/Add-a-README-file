@@ -162,6 +162,12 @@ async function open(page: Page, errors: string[] = [], opts: { debug?: boolean; 
 }
 const openStudio = async (page: Page) => {
   const nav = page.getByTitle(/AI Film Studio/);
+  // After a reload the onboarding can come back (key kept for the session only): enter the key again.
+  const login = page.getByPlaceholder('sk-or-v1-…');
+  if (await login.isVisible().catch(() => false)) {
+    await login.fill(KEY);
+    await page.getByRole('button', { name: 'Commencer' }).click();
+  }
   if (
     !(await nav.waitFor({ timeout: 15_000 }).then(
       () => true,
