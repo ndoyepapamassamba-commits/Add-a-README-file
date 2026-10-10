@@ -52,6 +52,7 @@ import * as fabricRt from './fabric';
 import * as apprenticeRt from './apprentice';
 import * as cognitiveRt from './cognitive';
 import * as omniRt from './omni';
+import { ALTERATION } from '../../server/jev/omni/mission';
 import type { DataClass, FabricTag } from '../../server/jev/fabric/types';
 import type { SkillVersion } from '../../server/jev/fabric/skills';
 import { accountingOf, hashText, type CallKind, type CallRec } from '../../server/jev/science';
@@ -90,7 +91,7 @@ import { matchSkills } from './skills';
 import { uid, useStore } from './store';
 import { TOOLS, llmName, mcpTool, toolDefs, type DirectTool, type ToolCtx } from './tools';
 import type { AgentDef, AgentMode, Attachment, PlanStep, Session } from './types';
-import { bytesOf, dataUrl, getFile, readAsText, tree, writeText } from './vfs';
+import { bytesOf, dataUrl, files, files as filesView, getFile, readAsText, sessionAllow, setChatScope, tree, writeText } from './vfs';
 
 const WRITE_TOOLS = new Set(['filesystem.write', 'filesystem.edit', 'filesystem.delete']);
 /** Tools that create files: hidden in SAFE (read-only) mode. */
@@ -561,6 +562,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
           turns: inp.session.turns,
           initialType: profile.reclass?.initial ?? profile.type,
           initialDna: `${profile.reclass?.initial ?? profile.type}`,
+          lastDelivery: inp.session.lastDelivery,
         })
       : null;
   if (omni) inp = { ...inp, history: omni.fw.history };
@@ -592,7 +594,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   const tJev = performance.now();
   if (jevOn) {
     const s0 = useStore.getState();
-    const wsFiles = Object.values(s0.files)
+    // Chat-scoped: JEV only ever selects context among THIS chat's files (never another chat's documents).
+    const wsFiles = Object.values(files())
       .filter((f) => !f.binary && f.data.length < 300_000 && !f.path.startsWith('.ai/'))
       .slice(-200)
       .map((f) => ({ path: f.path, text: f.data }));
@@ -1079,6 +1082,8 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   const promptSections = [
     { name: 'system', text: system, pinned: true },
     { name: 'omni', text: omni?.lock ?? '', pinned: true },
+    { name: 'delivery', text: omni?.delivery ?? '', pinned: true },
+    { name: 'chat_index', text: omni?.chatIndex ?? '' },
     { name: 'doctrine', text: lane?.minimalPrompt ? '' : ENGINE_DOCTRINE },
     { name: 'manual', text: manualPrompt(useStore.getState().manual), pinned: true },
     { name: 'strategy', text: strategy && !lane?.minimalPrompt ? strategyPrompt(dna, strategy) : '' },
@@ -1159,7 +1164,7 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
   // Shadow monitor (deterministic, free) + evidence corpus of the run.
   let shadow: ShadowMonitor | null = null;
   if (top && inp.session.mode !== 'safe') {
-    const files = useStore.getState().files;
+    const files = filesView();
     const twin = buildTwin(
       Object.values(files)
         .filter((f) => !f.binary && f.data.length < 500_000)
@@ -2576,9 +2581,11 @@ export async function runAgent(
   }
   sub.cost = sub.tokensIn = sub.tokensOut = 0;
   acct.reset(sessionId);
+  // CHAT-SCOPED MEMORY: from here on, every file read / write / list of the agent is confined to this chat.
+  setChatScope(sessionId, sessionAllow(sessionId));
   // Starting state of the workspace (paired runs must start from the same context; `.ai/` memory excluded).
   const ctxHash0 = hashText(
-    Object.values(useStore.getState().files)
+    Object.values(files())
       .filter((f) => !f.path.startsWith('.ai/') && !f.path.startsWith('downloads/'))
       .map((f) => `${f.path}:${f.data.length}`)
       .sort()
@@ -2633,6 +2640,13 @@ export async function runAgent(
     }
   } finally {
     void endCheckpoint();
+    // LAST DELIVERY of this chat: what this run created or changed (chat-relative paths), before the scope is released.
+    const delivered = Object.values(files())
+      .filter((f) => f.updatedAt >= started && !f.path.startsWith('.ai/') && !f.path.startsWith('downloads/'))
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .map((f) => f.path)
+      .slice(0, 12);
+    setChatScope(null);
     const s = useStore.getState();
     const { [sessionId]: _done, ...running } = s.running;
     const { [sessionId]: _st, ...status } = s.status;
@@ -2674,6 +2688,16 @@ export async function runAgent(
       ],
       verdict: result?.report?.status ?? (errored ? 'ERROR' : (cur.verdict ?? null)),
       lastMode: mode,
+      lastDelivery:
+        delivered.length && !errored
+          ? {
+              start: cur.history.length,
+              // An alteration keeps pointing at the files it modifies plus the rest of the same delivery.
+              paths: [...new Set([...delivered, ...(ALTERATION.test(text) ? (cur.lastDelivery?.paths ?? []) : [])])].slice(0, 12),
+              request: ALTERATION.test(text) && cur.lastDelivery ? cur.lastDelivery.request : text.slice(0, 300),
+              at: Date.now(),
+            }
+          : cur.lastDelivery,
     }));
     // LEARNING: every run feeds the mission ledger (strategy evolution, failure memory,
     // knowledge graph, regression suite).

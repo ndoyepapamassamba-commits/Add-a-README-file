@@ -5,7 +5,7 @@
 import { useStore } from './store';
 import type { ChatMessage } from '../../server/llm/types';
 import { reclassify, type Reclass } from '../../server/jev/omni/reclassify';
-import { buildCapsule, firewallHistory, missionLock, type HistoryFirewall, type MissionCapsule } from '../../server/jev/omni/mission';
+import { ALTERATION, buildCapsule, firewallHistory, missionLock, type HistoryFirewall, type MissionCapsule } from '../../server/jev/omni/mission';
 import { laneOf, type LanePolicy } from '../../server/jev/omni/lane';
 import { filterDigest } from '../../server/jev/omni/memory';
 import { toolFirewall, type ToolFirewallResult } from '../../server/jev/omni/toolfw';
@@ -33,6 +33,10 @@ export interface OmniPrep {
   lastDrift?: DriftReport;
   avoidedReasks: number;
   initialDna: string;
+  /** Pinned note: the request alters the last delivery of this chat. */
+  delivery: string;
+  /** One line per hidden earlier request of this chat (memory stays in the chat, at ~0 cost). */
+  chatIndex: string;
 }
 
 /** Phase 1 (before JEV pre): reclassify, capsule, history firewall. */
@@ -44,12 +48,18 @@ export function beginOmni(i: {
   turns?: { start: number; text: string }[];
   initialType: string;
   initialDna: string;
+  /** Files delivered by the last run of THIS chat, and where that mission starts in the history. */
+  lastDelivery?: { start: number; paths: string[]; request: string; at: number };
 }): OmniPrep | null {
   const s = omniSettings();
   if (!s.enabled) return null;
   try {
     const reclass = reclassify({ text: i.text, initial: i.initialType, attachments: i.attachments, hasImages: i.hasImages });
-    const fw0 = firewallHistory(i.history, i.turns, i.text);
+    // « Change le titre » after a delivery = an alteration of THAT version (unless the user names another target).
+    const ld = i.lastDelivery;
+    const namesOther = ld ? /\.\w{2,5}\b/.test(i.text) && !ld.paths.some((p) => i.text.toLowerCase().includes(p.split('/').pop()!.toLowerCase())) : false;
+    const alteration = Boolean(ld && ld.paths.length && ALTERATION.test(i.text) && !namesOther);
+    const fw0 = firewallHistory(i.history, i.turns, i.text, alteration ? { pinStart: ld!.start } : {});
     // Firewall switched off: the model sees the raw history again (the V18 behaviour), the analysis stays for the trace.
     const fw = s.historyFirewall ? fw0 : { ...fw0, history: i.history };
     const capsule = buildCapsule({ text: i.text, reclass, attachments: i.attachments.map((a) => a.name), blockedTopics: fw.blockedTopics });
@@ -58,6 +68,15 @@ export function beginOmni(i: {
     // Words of the blocked turns that are NOT in the current objective are the contamination to watch for.
     return {
       settings: s,
+      delivery: alteration
+        ? `<LAST_DELIVERY>\nCette demande MODIFIE la dernière version livrée dans ce chat (demande d'origine : « ${ld!.request.slice(0, 160)} »).\nFichiers livrés : ${ld!.paths.join(', ')}.\nLis ces fichiers, applique UNIQUEMENT le changement demandé, garde tout le reste identique, et réécris-les au même chemin. Ne repars pas de zéro.\n</LAST_DELIVERY>`
+        : '',
+      chatIndex: (() => {
+        const hidden = fw.groups.filter((g) => g.cls === 'FOREIGN_MISSION' || g.cls === 'STALE_CONTEXT');
+        return hidden.length
+          ? `<CHAT_INDEX>\nEarlier requests of THIS chat (hidden to save tokens; the user can ask to come back to one): ${hidden.slice(-8).map((g, n) => `${n + 1}) ${g.topic}`).join(' · ')}\n</CHAT_INDEX>`
+          : '';
+      })(),
       reclass,
       capsule,
       fw,

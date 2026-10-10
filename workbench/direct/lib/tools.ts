@@ -114,6 +114,7 @@ import {
   isTextPath,
   normPath,
   readAsText,
+  removeFile,
   tree,
   uniquePath,
   writeBytes,
@@ -375,9 +376,8 @@ export const TOOLS: DirectTool[] = [
     },
     async run(a) {
       const p = normPath(S(a.path));
-      const n = Object.keys(files()).filter((k) => k === p || k.startsWith(`${p}/`)).length;
+      const n = removeFile(p);
       if (!n) throw new Error(`Introuvable : ${p}`);
-      useStore.getState().deleteFile(p);
       return ok(`${n} fichier(s) supprimé(s)`, `Deleted ${p} (${n} file(s)).`);
     },
   },

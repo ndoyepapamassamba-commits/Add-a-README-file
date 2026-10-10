@@ -166,6 +166,8 @@ export interface Session {
   resume?: string;
   /** Where each user request (mission) starts in `history`: exact boundaries for the OMNIPOTENT history firewall. */
   turns?: { start: number; text: string; at: number }[];
+  /** Files the last run of this chat delivered (chat-relative paths): the default target of « modifie / change … ». */
+  lastDelivery?: { start: number; paths: string[]; request: string; at: number };
 }
 
 /** One LLM call (cost tracking, Mission Control). */

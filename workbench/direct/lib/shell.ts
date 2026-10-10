@@ -7,7 +7,7 @@ import { getPythonPack } from './pythonPack';
 import { PYODIDE_MIRRORS } from './sandbox';
 import { Shell, type ShellHost } from './shellCore';
 import { useStore } from './store';
-import { bytesOf, files, getFile, writeBytes, writeText } from './vfs';
+import { bytesOf, files, getFile, removeFile, writeBytes, writeText } from './vfs';
 
 const data = new DataCore();
 
@@ -21,7 +21,7 @@ export const host: ShellHost = {
     isBinary: (p) => Boolean(getFile(p)?.binary),
     size: (p) => getFile(p)?.size ?? getFile(p)?.data.length ?? 0,
     write: (p, t) => void writeText(p, t),
-    remove: (p) => useStore.getState().deleteFile(p),
+    remove: (p) => void removeFile(p),
     copy: (a, b) => {
       const f = getFile(a);
       if (!f) throw new Error(`${a}: introuvable`);

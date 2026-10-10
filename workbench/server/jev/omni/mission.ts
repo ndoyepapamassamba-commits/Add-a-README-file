@@ -139,6 +139,9 @@ export interface HistoryFirewall<T extends HMsg> {
 const SYNTHETIC = /^(\[(?:EVIDENCE CHECK|SHADOW AGENT|JEV|GATE|QA|CORRECTION|PLAN)\b|Your previous answer was cut off|The mission is not finished|Submit your plan now|<resume_summary>|\[RESUME\b)/i;
 const ANAPHORA = /^(ok|oui|non|d['’]accord|vas-?y|continue|poursuis|reprends|termine|fais[- ]le|fais[- ]la|et (?:ensuite|puis|alors|apr[èe]s)|merci|parfait|corrige[- ](?:[çc]a|cela|le|la|les)|refais|encore|pareil|idem|plus court|plus long|d[ée]veloppe|pourquoi|comment|donc|alors|et si|essaie|r[ée]essaie)\b/i;
 const POINTER = /\b([çc]a|cela|ceci|celui|celle|ceux|le m[êe]me|la m[êe]me|ci-dessus|pr[ée]c[ée]dent\w*|au-dessus|tout [àa] l['’]heure)\b/i;
+/** A change request (« mets le titre en rouge », « ajoute une colonne ») — after a delivery it targets THAT delivery. */
+export const ALTERATION =
+  /\b(modifi\w*|change\w*|ajoute\w*|rajoute\w*|enl[èe]ve\w*|supprime\w*|retire\w*|remplace\w*|mets|met|mettre|d[ée]place\w*|agrandi\w*|r[ée]dui\w*|corrige\w*|am[ée]liore\w*|renomme\w*|traduis\w*|colore\w*|couleurs?|polices?|taille|titres?|logo|plus (?:grand|petit|gros|court|long|clair|fonc[ée])|moins|en (?:rouge|bleu|vert|gras|italique)|aligne\w*|centre\w*|ajuste\w*|r[ée]organise\w*|mise en (?:page|forme)|styles?|version|refais|recommence|fixe|r[ée]pare\w*)\b/i;
 const RECALL = /\b(reprends?|retrouve\w*|rappelle\w*|comme (?:tout [àa] l['’]heure|avant|la derni[èe]re fois|hier|pr[ée]c[ée]demment)|(?:le|la|les|ce|cette) \w+ pr[ée]c[ée]dent\w*|la d[ée]cision prise|ce qu['’]on a (?:fait|dit|d[ée]cid[ée])|mission (?:pr[ée]c[ée]dente|d['’]avant)|de tout [àa] l['’]heure)\b/i;
 
 /** Where each mission (turn group) starts in the history. Marks are exact; without them a prudent heuristic is used. */
@@ -158,7 +161,7 @@ export function firewallHistory<T extends HMsg>(
   history: T[],
   turns: TurnMark[] | undefined,
   current: string,
-  o: { maxGroups?: number } = {},
+  o: { maxGroups?: number; pinStart?: number } = {},
 ): HistoryFirewall<T> {
   const starts = groupStarts(history, turns);
   const head = starts.length ? history.slice(0, starts[0]!) : history;
@@ -232,6 +235,15 @@ export function firewallHistory<T extends HMsg>(
     if (best >= 0) {
       keep.add(best);
       groups[best] = { ...groups[best]!, cls: 'EXPLICIT_RECALL', why: 'rappel explicite par l’utilisateur' };
+    }
+  }
+  // The last DELIVERY of this chat is pinned when the request alters it: « change le titre » means the version just delivered.
+  if (o.pinStart !== undefined && !switched) {
+    let k = info.findIndex((g) => g.start === o.pinStart);
+    if (k < 0) k = info.map((g) => g.start <= o.pinStart!).lastIndexOf(true);
+    if (k >= 0) {
+      keep.add(k);
+      groups[k] = { ...groups[k]!, cls: 'CURRENT_MISSION', why: 'modification de la dernière version livrée' };
     }
   }
   const maxG = o.maxGroups ?? 8;

@@ -203,7 +203,7 @@ const ItemView = memo(function ItemView({ item, sessionId }: { item: Item; sessi
       return (
         <div className="my-3">
           {item.agent && <div className="mb-1 text-[11.5px] font-medium text-accent">{item.agent}</div>}
-          <Markdown text={item.text + (item.streaming ? ' ▍' : '')} fileLink={resolveFileLink} />
+          <Markdown text={item.text + (item.streaming ? ' ▍' : '')} fileLink={(h) => resolveFileLink(h, sessionId)} />
           {!item.streaming && <Deliverables text={item.text} />}
         </div>
       );
@@ -537,16 +537,17 @@ const SLASH = [
 ];
 
 /** A link the model wrote to a local file becomes a real download of the workspace file. */
-function resolveFileLink(href: string) {
+function resolveFileLink(href: string, sid?: string | null) {
   if (!isLocalRef(href)) return null;
-  const f = findFileByRef(href);
+  const f = findFileByRef(href, sid ?? null);
   return f ? { name: f.path.split('/').pop()!, save: () => downloadFile(f) } : null;
 }
 
 /** Files the answer talks about, offered as download buttons right in the chat. */
 function Deliverables({ text }: { text: string }) {
   const fs = useStore((s) => s.files);
-  const list = useMemo(() => deliverablesIn(text), [text, fs]);
+  const sid = useStore((s) => s.currentId);
+  const list = useMemo(() => deliverablesIn(text, sid), [text, fs, sid]);
   if (!list.length) return null;
   return (
     <div className="mt-2 flex flex-wrap gap-2" data-testid="deliverables">
