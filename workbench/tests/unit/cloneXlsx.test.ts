@@ -1,6 +1,8 @@
 import { strFromU8, unzipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
-import { addNativeClone } from '../../server/services/cloneXlsx';
+import { readFileSync } from 'node:fs';
+import { addNativeClone, removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
+import { addImageSheet } from '../../server/services/officeLogo';
 import { cloneData } from '../../server/services/dashRender';
 import { houseXlsx } from '../../server/services/houseStyle';
 import { isTotalRow, pickTable, withoutTotals } from '../../server/services/tablePick';
@@ -66,5 +68,33 @@ describe('NATIVE reproduction of the chosen image in Excel', () => {
   });
   it('idempotent: a workbook that already has the reproduction is left alone', () => {
     expect(addNativeClone(r.bytes, SPEC, d)).toBeNull();
+  });
+});
+
+describe('the model re-saved the workbook with openpyxl (shapes and pictures lost): the reproduction comes back intact', () => {
+  // Built by the app, then opened and saved by openpyxl with a sheet « Scénarios » added — as the model does.
+  const resaved = new Uint8Array(readFileSync(new URL('../fixtures/resaved-by-openpyxl.xlsx', import.meta.url)));
+  const names = (b: Uint8Array) => [...strFromU8(unzipSync(b)['xl/workbook.xml']!).matchAll(/<sheet\b[^>]*name="([^"]*)"/g)].map((m) => m[1]);
+  it('the degraded copy has lost the dashboard drawing (what the user saw: « vide, 1×1 + graphiques flottants »)', () => {
+    expect(unzipSync(resaved)['xl/drawings/drawing-dash.xml']).toBeUndefined();
+  });
+  const stripped = removeSheets(resaved, REPRO_SHEETS)!;
+  it('the app’s three sheets are removed with their drawings, charts and pictures; the model’s sheets stay', () => {
+    expect(names(stripped)).toEqual(['Données', 'Scénarios']);
+    const z = unzipSync(stripped);
+    const parts = Object.keys(z);
+    expect(parts.filter((p) => /^xl\/(drawings|charts|media)\//.test(p))).toEqual([]);
+    const ct = strFromU8(z['[Content_Types].xml']!);
+    for (const m of ct.matchAll(/PartName="\/([^"]+)"/g)) expect(parts).toContain(m[1]);
+    const rels = strFromU8(z['xl/_rels/workbook.xml.rels']!);
+    expect(rels).not.toMatch(/sheet[0-9]+\.xml"[^>]*\/>[\s\S]*sheet[0-9]+\.xml"[^>]*\/>[\s\S]*sheet[0-9]+\.xml"[^>]*\/>[\s\S]*sheet[0-9]+\.xml"/); // 2 sheets left
+  });
+  it('applied again: dashboard first and intact, the model’s « Scénarios » kept, data sheet last', () => {
+    const rows = Array.from({ length: 12 }, (_, i) => ({ Client: `C${i % 3}`, Montant: 10 * (i + 1) }));
+    const pic = { png: new Uint8Array([137, 80, 78, 71]), width: 1400, height: 788 };
+    const again = addNativeClone(addImageSheet(stripped, pic, 'Tableau de bord (image)')!, SPEC, cloneData('T', ['Client', 'Montant'], rows), pic)!;
+    expect(names(again.bytes)).toEqual(['Tableau de bord', 'Tableau de bord (image)', 'Données', 'Scénarios', 'Données du tableau de bord']);
+    expect(unzipSync(again.bytes)['xl/drawings/drawing-dash.xml']).toBeTruthy();
+    expect(removeSheets(houseXlsx(['a'], [{ a: 1 }], { title: 'x', chart: 'none' }), REPRO_SHEETS)).toBeNull(); // nothing of ours: untouched
   });
 });

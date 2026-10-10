@@ -41,6 +41,8 @@ import { useStore } from '../lib/store';
 import type { Attachment, Item, PermissionMode, Session } from '../lib/types';
 import {
   deliverablesIn,
+  deliveryName,
+  isSource,
   download,
   downloadFile,
   findFileByRef,
@@ -545,7 +547,7 @@ const SLASH = [
 function resolveFileLink(href: string, sid?: string | null) {
   if (!isLocalRef(href)) return null;
   const f = findFileByRef(href, sid ?? null);
-  return f ? { name: f.path.split('/').pop()!, save: () => downloadFile(f) } : null;
+  return f ? { name: deliveryName(f, sid ?? null), save: () => downloadFile(f, sid ?? null) } : null;
 }
 
 /** Keeps a well-written / well-executed answer (and its files) in the experience vault. */
@@ -569,29 +571,40 @@ function VaultButton({ sessionId, itemId }: { sessionId: string; itemId: string 
   );
 }
 
-/** Files the answer talks about, offered as download buttons right in the chat. */
+/**
+ * Files the answer talks about, offered as download buttons right in the chat: the DELIVERABLES first (tagged, under
+ * the name they download as), then the user's own source files, muted and labelled as such — never confused.
+ */
 function Deliverables({ text }: { text: string }) {
   const fs = useStore((s) => s.files);
   const sid = useStore((s) => s.currentId);
-  const list = useMemo(() => deliverablesIn(text, sid), [text, fs, sid]);
+  const list = useMemo(() => {
+    const all = deliverablesIn(text, sid);
+    return [...all.filter((f) => !isSource(f)), ...all.filter(isSource)];
+  }, [text, fs, sid]);
   if (!list.length) return null;
   return (
     <div className="mt-2 flex flex-wrap gap-2" data-testid="deliverables">
-      {list.map((f) => (
-        <button
-          key={f.path}
-          type="button"
-          onClick={() => downloadFile(f)}
-          className="flex items-center gap-1.5 rounded-lg border border-line bg-panel px-2.5 py-1.5 text-[12.5px] hover:bg-hover"
-          title={f.path}
-        >
-          <Download size={13} className="text-accent" />
-          <span className="font-medium">{f.path.split('/').pop()}</span>
-          <span className="text-faint">
-            {Math.max(1, Math.round((f.binary ? (f.data.length * 3) / 4 : f.data.length) / 1024))} Ko
-          </span>
-        </button>
-      ))}
+      {list.map((f) => {
+        const src = isSource(f);
+        return (
+          <button
+            key={f.path}
+            type="button"
+            onClick={() => downloadFile(f, sid)}
+            data-testid={src ? 'deliverable-source' : 'deliverable-output'}
+            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12.5px] hover:bg-hover ${src ? 'border-dashed border-line bg-transparent opacity-70' : 'border-accent/50 bg-panel'}`}
+            title={src ? `${f.path} — votre fichier d'origine (pas le livrable)` : f.path}
+          >
+            <Download size={13} className={src ? 'text-faint' : 'text-accent'} />
+            <span className={`rounded px-1 text-[10.5px] font-semibold uppercase ${src ? 'bg-hover text-faint' : 'bg-accent/15 text-accent'}`}>{src ? 'Source (votre fichier)' : 'Livrable'}</span>
+            <span className="font-medium">{deliveryName(f, sid)}</span>
+            <span className="text-faint">
+              {Math.max(1, Math.round((f.binary ? (f.data.length * 3) / 4 : f.data.length) / 1024))} Ko
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

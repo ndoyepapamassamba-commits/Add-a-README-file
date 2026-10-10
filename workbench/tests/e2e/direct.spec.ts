@@ -1276,3 +1276,27 @@ test('deliverables: a broken local link becomes a real download button, and file
   await expect(page.locator('a[href*="nowhere"]')).toHaveCount(0);
   await expect(page.getByTestId('deliverables')).toContainText('Synthese_Segment.csv');
 });
+
+test('deliverables: a deliverable with the SAME name as the source is tagged « Livrable » and downloads as « - livrable »; the source is labelled', async ({
+  page,
+}) => {
+  await open(page);
+  const csv = path.join(tmp, 'provisions.csv');
+  fs.writeFileSync(csv, 'client,montant\nA,1\n');
+  await page.locator('input[type=file]').first().setInputFiles(csv);
+  await expect(page.getByText('provisions.csv').first()).toBeVisible();
+  mock.push(
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'outputs/Provisions.csv', content: 'client,montant,part\nA,1,100%\n' } }] },
+    { text: 'Livré : outputs/Provisions.csv (à partir de provisions.csv).' },
+  );
+  await send(page, 'analyse');
+  const yes = page.getByRole('button', { name: /^1 Oui$/ });
+  await expect(yes).toBeVisible();
+  await yes.click();
+  const out = page.getByTestId('deliverable-output');
+  await expect(out).toContainText('Livrable');
+  await expect(out).toContainText('Provisions - livrable.csv');
+  await expect(page.getByTestId('deliverable-source')).toContainText('Source (votre fichier)');
+  const [dl] = await Promise.all([page.waitForEvent('download'), out.click()]);
+  expect(dl.suggestedFilename()).toBe('Provisions - livrable.csv');
+});

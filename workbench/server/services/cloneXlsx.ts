@@ -9,7 +9,7 @@
  * Same panel ↔ data assignment as the picture (panelPlan). Pure (zip in → zip out); works on any workbook, including
  * one the model wrote itself in Python. Nothing invented: every figure comes from the chat's data.
  */
-import { unzipSync, zipSync } from 'fflate';
+import { strFromU8, unzipSync, zipSync } from 'fflate';
 import type { DashSpec } from './dashClone';
 import { colorsFor, fmt, mixH, panelPlan, readableOn, slotTexts, type CloneData, type DataView } from './dashRender';
 import { ooxml, type LogoImage } from './officeLogo';
@@ -355,3 +355,85 @@ export function addNativeClone(bytes: Uint8Array, spec: DashSpec, d: CloneData, 
   write(z, sheet, read(z, sheet).replace('<sheetView workbookViewId="0"', '<sheetView tabSelected="1" workbookViewId="0"'));
   return { bytes: zipSync(z, { level: 6 }), charts: charts.length, shapes, crops };
 }
+
+/**
+ * Removes whole sheets by name — their part, relationships, drawing and its charts, content types, sheet-scoped names —
+ * so the reproduction can be applied again after the model re-saved the workbook (openpyxl drops shapes and pictures).
+ */
+export function removeSheets(bytes: Uint8Array, names: string[]): Uint8Array | null {
+  let z: Record<string, Uint8Array>;
+  try {
+    z = unzipSync(bytes);
+  } catch {
+    return null;
+  }
+  let wb = read(z, 'xl/workbook.xml');
+  if (!wb) return null;
+  const want = new Set(names.map((n) => xesc(n)));
+  const sheets = [...wb.matchAll(/<sheet\b[^>]*\/>/g)].map((m) => ({ tag: m[0], name: /name="([^"]*)"/.exec(m[0])?.[1] ?? '', rid: /r:id="([^"]*)"/.exec(m[0])?.[1] ?? '' }));
+  const gone = sheets.map((s, i) => ({ ...s, i })).filter((s) => want.has(s.name));
+  if (!gone.length) return null;
+  let wrels = read(z, 'xl/_rels/workbook.xml.rels');
+  let ct = read(z, '[Content_Types].xml');
+  const dropPart = (part: string) => {
+    if (!z[part]) return;
+    delete z[part];
+    ct = ct.replace(new RegExp(`<Override[^>]*PartName="/${part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*/>`), '');
+    const rp = relsOf(part);
+    const rels = read(z, rp);
+    delete z[rp];
+    return rels;
+  };
+  const resolve = (from: string, target: string) => {
+    if (target.startsWith('/')) return target.slice(1);
+    const parts = from.split('/').slice(0, -1);
+    for (const seg of target.split('/')) {
+      if (seg === '..') parts.pop();
+      else if (seg !== '.') parts.push(seg);
+    }
+    return parts.join('/');
+  };
+  const media = new Set<string>();
+  for (const g of gone) {
+    const rel = new RegExp(`<Relationship\\b[^>]*Id="${g.rid}"[^>]*/>`).exec(wrels)?.[0] ?? '';
+    const target = /Target="([^"]+)"/.exec(rel)?.[1];
+    wrels = wrels.replace(rel, '');
+    wb = wb.replace(g.tag, '');
+    if (!target) continue;
+    const sheetPart = resolve('xl/workbook.xml', target);
+    const sheetRels = dropPart(sheetPart) ?? '';
+    for (const m of sheetRels.matchAll(/Target="([^"]+)"/g)) {
+      const p = resolve(sheetPart, m[1]!);
+      if (!/drawings\//.test(p)) continue;
+      const drels = dropPart(p) ?? '';
+      for (const c of drels.matchAll(/Target="([^"]+)"/g)) {
+        const cp = resolve(p, c[1]!);
+        if (/charts\//.test(cp)) dropPart(cp);
+        else if (/media\//.test(cp)) media.add(cp);
+      }
+    }
+  }
+  // Pictures only the removed drawings used go too (openpyxl re-saves them as image1.png, image2.png…).
+  const used = new Set<string>();
+  for (const [p, d] of Object.entries(z)) {
+    if (!p.endsWith('.rels')) continue;
+    const from = p.replace(/_rels\/([^/]+)\.rels$/, '$1');
+    for (const m of strFromU8(d).matchAll(/Target="([^"]+)"/g)) used.add(resolve(from, m[1]!));
+  }
+  for (const m of media) if (!used.has(m)) delete z[m];
+  // Sheet-scoped names follow the remaining sheets' new positions; those of removed sheets go.
+  const keptIdx = sheets.map((_, i) => i).filter((i) => !gone.some((g) => g.i === i));
+  wb = wb.replace(/<definedName\b([^>]*)>([\s\S]*?)<\/definedName>/g, (m, attrs: string) => {
+    const k = /localSheetId="(\d+)"/.exec(attrs);
+    if (!k) return m;
+    const ni = keptIdx.indexOf(+k[1]!);
+    return ni < 0 ? '' : m.replace(/localSheetId="\d+"/, `localSheetId="${ni}"`);
+  });
+  wb = wb.replace(/activeTab="\d+"/, 'activeTab="0"').replace(/firstSheet="\d+"/, 'firstSheet="0"');
+  write(z, 'xl/workbook.xml', wb);
+  write(z, 'xl/_rels/workbook.xml.rels', wrels);
+  write(z, '[Content_Types].xml', ct);
+  return zipSync(z, { level: 6 });
+}
+/** The sheets the reproduction adds (removed and re-applied after each re-save of the workbook). */
+export const REPRO_SHEETS = [DASH, 'Tableau de bord (image)', DATA];

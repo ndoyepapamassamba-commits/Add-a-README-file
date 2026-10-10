@@ -80,6 +80,11 @@ Une demande qui réclame un fichier (Excel, Word, PowerPoint, PDF, mail, site, a
   - sans quadrillage, onglet coloré.
   - Formats de nombres, formules, fusions et graphiques sont conservés ; aucune ligne n'est insérée, donc aucune référence ne se décale.
 - Le modèle est informé de ce qui a été appliqué : feuilles, nombre de graphiques, source des chiffres.
+- **Le modèle ré-enregistre le classeur (openpyxl)** : openpyxl perd les formes et les images, donc le tableau de bord paraît « vide (1×1 + graphiques flottants) ».
+  - Après chaque `code.run`, les trois feuilles de l'application sont retirées avec leurs dessins, graphiques et images (`removeSheets`), puis réappliquées intactes. Les feuilles du modèle restent à leur place.
+  - Une feuille « Tableau de bord » de l'utilisateur n'est jamais retirée : elle ne l'est que si la feuille « Données du tableau de bord » de l'application l'accompagne.
+  - Le modèle sait dès le choix de l'image que ces feuilles appartiennent à l'application. Il ne les lit pas, ne les vérifie pas, ne les répare pas. Il écrit ses feuilles en un seul `code.run` et ne rouvre pas le livrable pour le vérifier. Ces passes de « réparation » consommaient l'essentiel des jetons.
+- **Livrable ≠ source** : dans le chat, le livrable porte l'étiquette « Livrable » et passe en premier. Le fichier joint par l'utilisateur est grisé, étiqueté « Source (votre fichier) ». Si le livrable porte le même nom que la source, il se télécharge sous « <nom> - livrable.<ext> ». Le chemin dans l'espace de travail ne change pas, donc le code du modèle continue de fonctionner.
 
 ## Style maison 2.0 — « GOD 3D »
 - **9 palettes** : Bleu Ecobank (référence), Lime Ecobank, Océan, Émeraude & or, Bordeaux & or, Ardoise & corail, Sahel, Royal violet, Nuit & cyan. Chaque palette a sa propre série de couleurs ; le logo choisi s'y harmonise.

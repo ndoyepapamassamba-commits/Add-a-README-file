@@ -289,8 +289,8 @@ export function download(name: string, data: Uint8Array | string, mime = 'applic
   setTimeout(() => URL.revokeObjectURL(a.href), 30_000);
 }
 
-export function downloadFile(f: VFile): void {
-  download(f.path.split('/').pop()!, bytesOf(f), f.mime);
+export function downloadFile(f: VFile, sid?: string | null): void {
+  download(deliveryName(f, sid), bytesOf(f), f.mime);
 }
 
 const WEB_REF = /^(https?:|mailto:|tel:|#|data:|blob:)/i;
@@ -332,6 +332,25 @@ export function deliverablesIn(text: string, sid?: string | null): VFile[] {
     .filter((f) => !f.path.startsWith('.ai/') && DELIVERABLE_EXT.test(f.path))
     .filter((f) => low.includes(f.path.split('/').pop()!.toLowerCase()))
     .slice(0, 12);
+}
+
+const sameName = (a: string) => a.toLowerCase().replace(/\.[^.]+$/, '').replace(/[\s_\-—–.]+/g, '');
+/** True for a file the user uploaded (their source), never a deliverable. */
+export const isSource = (f: VFile): boolean => f.path.startsWith('uploads/');
+/**
+ * Name a deliverable downloads under: its own, unless it is the same name as one of the user's source files (case and
+ * separators aside) — then « <name> - livrable.<ext> » (ASCII hyphen: Chromium drops a download name holding an em dash), so the two can never be confused once downloaded. The file
+ * keeps its path in the workspace (the model's code goes on using it).
+ */
+export function deliveryName(f: VFile, sid?: string | null): string {
+  const base = f.path.split('/').pop()!;
+  if (isSource(f)) return base;
+  // The chat's own view (its uploads/), not whatever chat scope happens to be active.
+  const view = sid === undefined ? files() : filesFor(sid, sid ? sessionAllow(sid) : undefined);
+  const clash = Object.values(view).some((u) => isSource(u) && sameName(u.path.split('/').pop()!) === sameName(base));
+  if (!clash) return base;
+  const ext = /\.[^.]+$/.exec(base)?.[0] ?? '';
+  return `${base.slice(0, base.length - ext.length)} - livrable${ext}`;
 }
 
 export function downloadZip(prefix = ''): void {

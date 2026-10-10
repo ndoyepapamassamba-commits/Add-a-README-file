@@ -61,7 +61,8 @@ import { THEMES, buildTheme, setActiveTheme, themeOf } from '../../server/servic
 import { applyWebTheme, deliverableFromCode, deliverableFromText, kindForTool, type DeliverableKind } from '../../server/services/premiumDesigns';
 import { isOffice, recolorOffice } from '../../server/services/officeRecolor';
 import { addImagePageDocx, addImageSheet, addImageSlidePptx, addImageToHtml, addLogoToHtml, addLogoToOffice } from '../../server/services/officeLogo';
-import { addNativeClone } from '../../server/services/cloneXlsx';
+import { addNativeClone, removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
+import { strFromU8, unzipSync } from 'fflate';
 import { restyleWorkbook } from '../../server/services/officeRestyle';
 import { renderCloneSvg } from '../../server/services/dashRender';
 import { previewData, rasterise } from './designClone';
@@ -1159,7 +1160,7 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
         if (c?.clone && !experimentRun) {
           const pc = (v: number) => Math.round(v * 100);
           const panels = c.clone.panels.map((p, i) => `${i + 1}. ${p.kind} at x ${pc(p.box.x)}% y ${pc(p.box.y)}% · ${pc(p.box.w)}×${pc(p.box.h)}% · fill ${p.fill}${p.border ? ` · border ${p.border} ${p.borderWidth}px` : ''} · colours ${p.colors.slice(0, 4).join(' ')}${p.sequential ? ' (dark→light ramp: biggest value darkest)' : ''}`).join('\n');
-          return `<DESIGN_CLONE source="${c.source ?? ''}">\nThe user chose this dashboard image and wants a PHOTO-FAITHFUL reproduction with the real data. For Excel / dashboards call data.export (with a query if needed): the app renders the exact reproduction itself (« Tableau de bord » sheet first in the workbook + HTML page), in the measured geometry and colours. For sites / apps, rebuild this exact grid (positions in % of the page, aspect ${c.clone.aspect.toFixed(2)}), page ${c.clone.page}${c.clone.frame ? `, frame ${c.clone.frame.color}` : ''}, title colour ${c.clone.title?.color ?? c.clone.palette.dark}, font ${c.clone.font}:\n${panels}\nNever copy the source's logos, photos or text.\n</DESIGN_CLONE>`;
+          return `<DESIGN_CLONE source="${c.source ?? ''}">\nThe user chose this dashboard image and wants a PHOTO-FAITHFUL reproduction with the real data. For Excel / dashboards call data.export (with a query if needed): the app renders the exact reproduction itself (« Tableau de bord » sheet first in the workbook + HTML page), in the measured geometry and colours. For sites / apps, rebuild this exact grid (positions in % of the page, aspect ${c.clone.aspect.toFixed(2)}), page ${c.clone.page}${c.clone.frame ? `, frame ${c.clone.frame.color}` : ''}, title colour ${c.clone.title?.color ?? c.clone.palette.dark}, font ${c.clone.font}:\n${panels}\nNever copy the source's logos, photos or text.\nTOKEN RULES (the reproduction is the app's job, not yours): after EVERY file you write, the app adds it to each xlsx / docx / pptx / html of the turn, and re-adds it intact when you re-save the file. So (1) never build, imitate, read, verify or repair the « Tableau de bord », « Tableau de bord (image) » and « Données du tableau de bord » sheets — openpyxl cannot see their shapes and pictures, they LOOK empty to it, that is normal; (2) write your own analysis sheets in ONE code.run that builds the whole workbook and saves it once; (3) never reopen a delivered file to check it.\n</DESIGN_CLONE>`;
         }
         return c?.layout && !experimentRun
           ? `<DESIGN_LAYOUT source="${c.source ?? ''}">\nThe user picked this ${c.layout.cssVars ? 'REAL WEBSITE (its colours, fonts, radius and CSS tokens were read from its own code — use them exactly: font-family stack, cssVars)' : 'Internet design'} to REPRODUCE: rebuild this exact layout with the real data — for HTML (sites, apps, dashboards) the whole layout (navigation, header, KPI count and style, charts in this order and span, table style, grid columns, radius, shadow, light/dark, palette, font); for Excel / Word / PowerPoint its structure (same KPI count and order at the top, same chart types, same table style, palette and font). Never copy the source's logos, photos or text.\n${JSON.stringify(c.layout)}\n</DESIGN_LAYOUT>`
@@ -2587,7 +2588,7 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
       // Never turns a successful tool into an error: a failure is reported to the model.
       const r = await applyClone(sid, t0).catch((e: unknown) => ({ n: -1, note: String((e as Error)?.message ?? e).slice(0, 200) }));
       if (r.n > 0) {
-        out.forModel += `\n[design] DESIGN CHOISI APPLIQUÉ — le classeur s'ouvre sur l'image choisie reconstruite avec les données du chat : ${r.note}. Dites-le à l'utilisateur.`;
+        out.forModel += `\n[design] DESIGN CHOISI APPLIQUÉ — le classeur s'ouvre sur l'image choisie reconstruite avec les données du chat : ${r.note}. Dites-le à l'utilisateur. Ces feuilles (« Tableau de bord », « Tableau de bord (image) », « Données du tableau de bord ») appartiennent à l'application et sont RÉAPPLIQUÉES INTACTES après chaque enregistrement du classeur : ne les lisez pas, ne les modifiez pas, ne les reconstruisez pas, ne les diagnostiquez pas (openpyxl n'en voit qu'une partie).`;
         out.summary = `${out.summary ? `${out.summary} · ` : ''}design de l'image appliqué (${r.n} fichier(s))`;
       } else if (r.n < 0) out.forModel += `\n[design] la reproduction de l'image choisie a échoué (${r.note}) — utilisez data.export avec le tableau détaillé pour la produire.`;
     }
@@ -2703,9 +2704,15 @@ async function applyClone(sid: string, since: number): Promise<{ n: number; note
   const notes: string[] = [];
   for (const f of targets) {
     if (f.binary) {
-      const b = bytesOf(f);
+      let b = bytesOf(f);
       let out: Uint8Array | null = null;
       if (/\.xlsx$/i.test(f.path)) {
+        // Re-saved by the model (openpyxl drops shapes and pictures)? Our sheets are removed and applied again, intact.
+        // « Tableau de bord » is removed only with OUR data sheet beside it (a user's own sheet of that name is never touched).
+        const wbx = strFromU8(unzipSync(b, { filter: (e) => e.name === 'xl/workbook.xml' })['xl/workbook.xml'] ?? new Uint8Array());
+        const ours = REPRO_SHEETS.filter((x) => (x === REPRO_SHEETS[0] ? wbx.includes(`name="${REPRO_SHEETS[2]}"`) : wbx.includes(`name="${x}"`)));
+        const b0 = ours.length ? removeSheets(b, ours) : null;
+        if (b0) b = b0;
         // Excel: the image's layout as a NATIVE first sheet (editable charts, cards, tiles) + the photo-faithful picture.
         const withPic = addImageSheet(b, pic, 'Tableau de bord (image)');
         const nat = withPic ? addNativeClone(withPic, c.clone, pd.data, pic) : null;
