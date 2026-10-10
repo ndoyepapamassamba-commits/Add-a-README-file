@@ -950,9 +950,9 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
     sel.model = myLock;
     sel.reason = `modèle verrouillé pour ce chat (${myLock})`;
   }
-  const fallbackChain = myLock
-    ? []
-    : [...new Set([st.settings.fallbackModel, ...routedFallbacks].filter((m) => m && m !== sel.model))];
+  // The fallback chain is used ONLY when the model fails for real (unavailable, no endpoint, provider error): stopping
+  // the mission would be worse. Quality-based switches (escalation, apprentice gate, live switch) stay locked.
+  const fallbackChain = [...new Set([st.settings.fallbackModel, ...routedFallbacks].filter((m) => m && m !== sel.model))];
   const info = models.find((m) => m.id === sel.model);
   const vision = info?.capabilities.vision ?? hasImages;
   let effort = (inp.effort && inp.effort !== 'auto' ? inp.effort : inp.agent.effort) ?? 'auto';
@@ -1681,11 +1681,13 @@ async function loop(inp: LoopInput): Promise<LoopResult> {
           apprenticeRt.noteProviderFailure(from, reason);
           fallbackCount++;
           model = to;
+          // The chat now stays on the model that works (no back-and-forth).
+          if (modelLock && top) modelLock = to;
           setLive({ callStart: Date.now() });
           push(sid, {
             kind: 'error',
             id: uid(),
-            text: `${from} indisponible (${reason.slice(0, 120)}) → bascule sur ${to}`,
+            text: `${from} indisponible (${reason.slice(0, 120)}) → bascule sur ${to} (panne du modèle, pas un choix de qualité ; le chat reste sur ${to})`,
           });
         },
       },
@@ -2798,7 +2800,10 @@ export async function runAgent(
       // JEV SEMANTIC MEMORY of this chat: decisions / preferences said, and what was delivered.
       memory: errored ? cur.memory : mergeFacts(cur.memory ?? [], extractFacts({ request: text, delivered }), 200),
       // « auto »: the model picked by the first request stays the model of this chat.
-      pinnedModel: cur.pinnedModel ?? (cur.model === 'auto' && result?.models[0] && !errored ? result.models[0] : undefined),
+      pinnedModel:
+        cur.model === 'auto' && result?.models.length && !errored
+          ? (result.fallbacks ? result.models.at(-1) : (cur.pinnedModel ?? result.models[0]))
+          : cur.pinnedModel,
       lastDelivery:
         delivered.length && !errored
           ? {

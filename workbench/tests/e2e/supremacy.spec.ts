@@ -136,6 +136,15 @@ async function enableAfterReload(page: Page) {
   await page.getByText('AUTONOME').click();
 }
 
+
+/** Model lock OFF: lets the run switch models after a failed quality gate, as the user can choose in Settings. */
+async function unlockModel(page: Page) {
+  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await page.locator('[data-testid=pin-model] [role=switch]').click();
+  await expect(page.locator('[data-testid=pin-model] [role=switch]')).toHaveAttribute('aria-checked', 'false');
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+}
+
 test('Supremacy: a VALIDATED champion is selected BEFORE any premium model, shown in Champions, and the premium is never called', async ({
   page,
 }) => {
@@ -179,6 +188,7 @@ test('Supremacy: champion fails the gate → NAMED correction on the champion �
   await open(page);
   await seedLog(page, seed());
   await enableAfterReload(page);
+  await unlockModel(page);
   mock.push(
     { text: 'Voici : {agences: [Dakar' },
     { text: 'Voici : {encore: [Dakar' },
