@@ -4,6 +4,7 @@
 import { BOXES_PROMPT, buildSpec, detectLayout, fidelityScore, parseBoxes, parseSom, SOM_PROMPT, withVisionBoxes, type DashSpec, type PanelKind } from '../../server/services/dashClone';
 import { cloneData, renderCloneSvg, type CloneData } from '../../server/services/dashRender';
 import { DataCore, isDataFile } from '../../server/services/dataCore';
+import { pickTable, type SheetTable } from '../../server/services/tablePick';
 import { askVision, imageBlob } from './designWeb';
 import { useStore } from './store';
 import { bytesOf, filesFor, sessionAllow } from './vfs';
@@ -170,18 +171,34 @@ export async function measureFidelity(c: ClonedDesign, data: CloneData): Promise
 }
 
 /** The data of the chat for the preview: its latest data file (attachment), else a neutral sample. */
-export function previewData(sid: string | null, title = 'Aperçu avec vos données'): { data: CloneData; from: string | null } {
+/** The DETAIL table of a data file: for a workbook, the sheet that is a real table (not a summary), TOTAL rows out. */
+export function chatTable(path: string, bytes: Uint8Array): SheetTable | null {
+  const dc = new DataCore();
+  let names: string[] = [];
+  try {
+    names = /\.xlsx?$|\.xlsm$|\.ods$/i.test(path) ? dc.sheetNamesOf(path, bytes) : [];
+  } catch {
+    names = [];
+  }
+  const tables: SheetTable[] = [];
+  for (const sheet of names.length ? names.slice(0, 20) : [null]) {
+    try {
+      const ds = dc.parseBytes(path, bytes, sheet);
+      tables.push({ sheet: sheet ?? '', columns: ds.columns, rows: ds.rows as Record<string, unknown>[] });
+    } catch {
+      /* next sheet */
+    }
+  }
+  return pickTable(tables);
+}
+export function previewData(sid: string | null, title = 'Aperçu avec vos données'): { data: CloneData; from: string | null; table?: SheetTable } {
   if (sid) {
     const files = Object.values(filesFor(sid, sessionAllow(sid)))
       .filter((f) => isDataFile(f.path) && !f.path.startsWith('outputs/'))
       .sort((a, b) => b.updatedAt - a.updatedAt);
     for (const f of files.slice(0, 3)) {
-      try {
-        const ds = new DataCore().parseBytes(f.path, bytesOf(f), null);
-        if (ds.rows.length) return { data: cloneData(title, ds.columns, ds.rows as Record<string, unknown>[]), from: f.path };
-      } catch {
-        /* next file */
-      }
+      const t = chatTable(f.path, bytesOf(f));
+      if (t?.rows.length) return { data: cloneData(title, t.columns, t.rows), from: t.sheet ? `${f.path} · feuille ${t.sheet}` : f.path, table: t };
     }
   }
   const cats = ['Nord', 'Sud', 'Est', 'Ouest', 'Centre'];

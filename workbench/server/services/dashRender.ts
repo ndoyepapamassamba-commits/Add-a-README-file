@@ -5,6 +5,7 @@
  * a date column exists, KPI tiles). Nothing is invented: every figure comes from the rows.
  */
 import type { DashSpec, Panel } from './dashClone';
+import { rankMeasures, withoutTotals } from './tablePick';
 
 export interface DataView {
   title: string;
@@ -38,11 +39,15 @@ const asDate = (v: unknown): Date | null => {
 };
 
 /** Every view of the data a dashboard can show — exact figures from the rows. */
-export function cloneData(title: string, columns: string[], rows: Record<string, unknown>[]): CloneData {
+export function cloneData(title: string, columns: string[], allRows: Record<string, unknown>[]): CloneData {
+  const rows = withoutTotals(allRows);
   const sample = rows.slice(0, 300);
   const dateCols = columns.filter((c) => sample.filter((r) => asDate(r[c])).length >= sample.length * 0.6 && !/^(id|n°|num)/i.test(c));
-  const numCols = columns.filter((c) => !dateCols.includes(c) && sample.filter((r) => isNum(r[c])).length >= sample.length * 0.6);
-  const textCols = columns.filter((c) => !numCols.includes(c) && !dateCols.includes(c)).filter((c) => {
+  // Real measures only (amounts first): a customer number or a stage is never summed.
+  const numericCols = columns.filter((c) => !dateCols.includes(c) && sample.filter((r) => isNum(r[c])).length >= sample.length * 0.6);
+  const numCols = rankMeasures(numericCols, rows);
+  // Categories are labels: a numeric column (months of age, a stage, a customer number) is never a category.
+  const textCols = columns.filter((c) => !numericCols.includes(c) && !dateCols.includes(c)).filter((c) => {
     const distinct = new Set(sample.map((r) => String(r[c] ?? ''))).size;
     return distinct >= 2 && distinct <= Math.max(40, sample.length * 0.5);
   });
@@ -50,7 +55,7 @@ export function cloneData(title: string, columns: string[], rows: Record<string,
   for (const c of numCols.slice(0, 4)) {
     const v = rows.map((r) => r[c]).filter(isNum);
     const sum = v.reduce((a, b) => a + b, 0);
-    kpis.push({ label: `Total ${c}`, value: fmt(sum) });
+    kpis.push({ label: /^total\b/i.test(c) ? c : `Total ${c}`, value: fmt(sum) });
     kpis.push({ label: `Moyenne ${c}`, value: fmt(sum / Math.max(1, v.length)) });
     kpis.push({ label: `Max ${c}`, value: fmt(Math.max(...v)) });
   }
@@ -91,7 +96,15 @@ export function cloneData(title: string, columns: string[], rows: Record<string,
     const n = numCols[0]!;
     views.push({ title: n, categories: rows.slice(0, 12).map((_, i) => `#${i + 1}`), values: rows.slice(0, 12).map((r) => (isNum(r[n]) ? (r[n] as number) : 0)), valueName: n, ordered: true });
   }
-  return { title, kpis, views, table: { columns, rows: rows.slice(0, 60).map((r) => columns.map((c) => (isNum(r[c]) ? (r[c] as number) : String(r[c] ?? '')))) } };
+  // Detail table: who (a name, not a code) and the amounts, biggest first.
+  const NAME = /client|nom|name|soci[ée]t[ée]|raison|libell|relation|d[ée]biteur|agence|produit|tiers|partenaire/i;
+  const CODEY = /code|^id\b|n°|r[ée]f|num[ée]ro|matricule|contrat|compte/i;
+  const labelCols = columns
+    .filter((c) => !numericCols.includes(c) && !dateCols.includes(c) && sample.some((r) => typeof r[c] === 'string' && /\p{L}{2,}/u.test(r[c] as string)))
+    .sort((a, b) => (NAME.test(b) ? 2 : 0) - (CODEY.test(b) ? 1 : 0) - ((NAME.test(a) ? 2 : 0) - (CODEY.test(a) ? 1 : 0)));
+  const tcols = labelCols.length || numCols.length ? [...labelCols.slice(0, 2), ...numCols.slice(0, 3)] : columns.slice(0, 5);
+  const ranked = numCols[0] ? [...rows].sort((a, b) => (isNum(b[numCols[0]!]) ? (b[numCols[0]!] as number) : 0) - (isNum(a[numCols[0]!]) ? (a[numCols[0]!] as number) : 0)) : rows;
+  return { title, kpis, views, table: { columns: tcols, rows: ranked.slice(0, 60).map((r) => tcols.map((c) => (isNum(r[c]) ? (r[c] as number) : String(r[c] ?? '')))) } };
 }
 
 // ── colour helpers ───────────────────────────────────────────────────────────────────────────────────────────────────
@@ -100,13 +113,13 @@ const lumH = (h: string) => {
   const [r, g, b] = rgb(h);
   return (0.2126 * r! + 0.7152 * g! + 0.0722 * b!) / 255;
 };
-const mixH = (a: string, b: string, t: number) => {
+export const mixH = (a: string, b: string, t: number) => {
   const A = rgb(a);
   const B = rgb(b);
   return `#${A.map((x, i) => Math.round(x + (B[i]! - x) * t).toString(16).padStart(2, '0')).join('')}`;
 };
 /** n colours following the panel's own palette: a dark→light ramp for sequential designs, else its colours in turn. */
-function colorsFor(p: Panel, n: number, fallback: string[]): string[] {
+export function colorsFor(p: Panel, n: number, fallback: string[]): string[] {
   const base = p.colors.length ? p.colors : fallback;
   if (p.sequential && p.ramp.length >= 2) {
     const ramp = p.ramp;
@@ -171,8 +184,9 @@ function barChart(r: R, v: DataView, p: Panel, horizontal: boolean, fs: number, 
 function lineChart(r: R, v: DataView, p: Panel, area: boolean, fs: number, fallback: string[]): string {
   const n = Math.min(12, v.categories.length);
   if (n < 2) return barChart(r, v, p, false, fs, fallback);
-  const cats = v.categories.slice(0, n);
-  const vals = v.values.slice(0, n);
+  // The latest months (a trend reads up to now).
+  const cats = v.categories.slice(-n);
+  const vals = v.values.slice(-n);
   const max = Math.max(...vals);
   const min = Math.min(0, ...vals);
   const bottom = fs * 2;
@@ -186,10 +200,13 @@ function lineChart(r: R, v: DataView, p: Panel, area: boolean, fs: number, fallb
   let out = '';
   if (area) out += `<polygon points="${X(0)},${r.y + top + ph} ${pts} ${X(n - 1)},${r.y + top + ph}" fill="${p.colors[1] ?? color}" fill-opacity=".35"/>`;
   out += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${Math.max(1.5, fs * 0.2)}" ${p.valueLabels ? '' : ''}stroke-linejoin="round"/>`;
+  // Crowded panel: every k-th label only (the last one always), so labels never overlap.
+  const every = Math.max(1, Math.ceil((fs * 4.2) / Math.max(1, (r.w - fs * 2) / Math.max(1, n - 1))));
   vals.forEach((val, i) => {
+    const show = (n - 1 - i) % every === 0;
     out += `<circle cx="${X(i)}" cy="${Y(val)}" r="${Math.max(2, fs * 0.28)}" fill="${color}"/>`;
-    out += `<text x="${X(i)}" y="${Y(val) - fs * 0.6}" text-anchor="middle" font-size="${fs * 0.85}" fill="${muted}">${esc(fmt(val))}</text>`;
-    out += `<text x="${X(i)}" y="${r.y + r.h - bottom * 0.3}" text-anchor="middle" font-size="${fs * 0.85}" fill="${p.text}">${esc(trunc(cats[i]!, 8))}</text>`;
+    if (show) out += `<text x="${X(i)}" y="${Y(val) - fs * 0.6}" text-anchor="middle" font-size="${fs * 0.85}" fill="${muted}">${esc(fmt(val))}</text>`;
+    if (show) out += `<text x="${X(i)}" y="${r.y + r.h - bottom * 0.3}" text-anchor="middle" font-size="${fs * 0.85}" fill="${p.text}">${esc(trunc(cats[i]!, 8))}</text>`;
   });
   return out;
 }
@@ -236,7 +253,7 @@ function contrastH(a: string, b: string): number {
   return (x! + 0.05) / (y! + 0.05);
 }
 /** The first readable colour on a fill (the design's own colours first). */
-const readableOn = (fill: string, prefs: string[]) => prefs.find((c) => c && contrastH(c, fill) >= 3.2) ?? (lumH(fill) < 0.5 ? '#FFFFFF' : '#111827');
+export const readableOn = (fill: string, prefs: string[]) => prefs.find((c) => c && contrastH(c, fill) >= 3.2) ?? (lumH(fill) < 0.5 ? '#FFFFFF' : '#111827');
 function kpiTiles(r: R, kpis: CloneData['kpis'], p: Panel, fs: number): string {
   const n = Math.max(1, p.tiles);
   const gap = n > 1 ? r.w * 0.02 : 0;
@@ -262,19 +279,47 @@ function tableBlock(r: R, t: CloneData['table'], p: Panel, fs: number): string {
   const head = p.colors[0] ?? p.border ?? p.text;
   const zebra = mixH(p.ramp[p.ramp.length - 1] ?? p.fill, p.fill, 0.6);
   let out = `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${rowH}" fill="${head}"/>`;
-  cols.forEach((c, j) => (out += `<text x="${r.x + j * cw + 6}" y="${r.y + rowH * 0.68}" font-size="${fs}" font-weight="700" fill="${lumH(head) < 0.5 ? '#fff' : p.text}">${esc(trunc(c, 14))}</text>`));
+  const fit = Math.max(4, Math.floor((cw - 10) / (fs * 0.58)));
+  cols.forEach((c, j) => (out += `<text x="${r.x + j * cw + 6}" y="${r.y + rowH * 0.68}" font-size="${fs}" font-weight="700" fill="${lumH(head) < 0.5 ? '#fff' : p.text}">${esc(trunc(c, fit))}</text>`));
   for (let i = 0; i < n; i++) {
     const y = r.y + rowH * (i + 1);
     if (i % 2) out += `<rect x="${r.x}" y="${y}" width="${r.w}" height="${rowH}" fill="${zebra}"/>`;
     cols.forEach((_, j) => {
       const val = t.rows[i]![t.columns.indexOf(cols[j]!)];
-      out += `<text x="${r.x + j * cw + 6}" y="${y + rowH * 0.68}" font-size="${fs * 0.95}" fill="${p.text}">${esc(trunc(typeof val === 'number' ? fmt(val) : String(val ?? ''), 14))}</text>`;
+      out += `<text x="${r.x + j * cw + 6}" y="${y + rowH * 0.68}" font-size="${fs * 0.95}" fill="${p.text}">${esc(trunc(typeof val === 'number' ? fmt(val) : String(val ?? ''), fit))}</text>`;
     });
   }
   return out;
 }
 
 /** The full reproduction. `W` = width in px of the SVG coordinate system. */
+/**
+ * What each panel shows — the same assignment for the picture and for the native Excel version: chart panels take the
+ * data views in turn (trends for line / area), KPI panels the KPIs in turn.
+ */
+export type PlanKind = 'kpi' | 'bar' | 'hbar' | 'line' | 'area' | 'pie' | 'donut' | 'table' | 'text' | 'title' | 'image' | 'filter';
+export function panelPlan(spec: DashSpec, d: CloneData): { kind: PlanKind; view?: DataView; kpis?: CloneData['kpis'] }[] {
+  let viewIdx = 0;
+  let kpiIdx = 0;
+  const trend = d.views.filter((v) => v.ordered);
+  const cats = d.views.filter((v) => !v.ordered);
+  return spec.panels.map((p) => {
+    const kind = (p.kind === 'map' ? 'hbar' : p.kind === 'gauge' ? 'donut' : p.kind) as PlanKind;
+    if (['bar', 'hbar', 'line', 'area', 'pie', 'donut'].includes(kind)) {
+      const pool = (kind === 'line' || kind === 'area') && trend.length ? trend : cats.length ? cats : d.views;
+      const view = pool[viewIdx % Math.max(1, pool.length)];
+      viewIdx++;
+      return { kind, view };
+    }
+    if (kind === 'kpi') {
+      const ks = d.kpis.slice(kpiIdx, kpiIdx + Math.max(1, p.tiles));
+      kpiIdx += ks.length;
+      return { kind, kpis: ks.length ? ks : d.kpis.slice(0, 1) };
+    }
+    return { kind };
+  });
+}
+
 export function renderCloneSvg(spec: DashSpec, d: CloneData, W = 1200): string {
   const H = Math.round(W / spec.aspect);
   const P = (b: { x: number; y: number; w: number; h: number }) => ({ x: b.x * W, y: b.y * H, w: b.w * W, h: b.h * H });
@@ -305,25 +350,15 @@ export function renderCloneSvg(spec: DashSpec, d: CloneData, W = 1200): string {
     const x = spec.title.align === 'center' ? t.x + t.w / 2 : t.x;
     s += `<text x="${x}" y="${t.y + t.h * 0.82}" text-anchor="${spec.title.align === 'center' ? 'middle' : 'start'}" font-size="${fs}" font-weight="800" fill="${spec.title.color}">${esc(d.title)}</text>`;
   }
-  let viewIdx = 0;
-  let kpiIdx = 0;
-  const trend = d.views.filter((v) => v.ordered);
-  const cats = d.views.filter((v) => !v.ordered);
-  const nextView = (kind: string) => {
-    const pool = (kind === 'line' || kind === 'area') && trend.length ? trend : cats.length ? cats : d.views;
-    const v = pool[viewIdx % Math.max(1, pool.length)];
-    viewIdx++;
-    return v;
-  };
-  for (const p of spec.panels) {
+  const plan = panelPlan(spec, d);
+  for (const [pi, p] of spec.panels.entries()) {
     const r = P(p.box);
     const fs = Math.max(8, Math.min(15, Math.min(r.h * 0.075, r.w * 0.045)));
     if (!(p.kind === 'kpi' && p.tileFills?.length)) s += `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="${p.radius}" fill="${p.fill}"${p.border ? ` stroke="${p.border}" stroke-width="${Math.max(1, p.borderWidth)}"` : ''}/>`;
     const pad = Math.max(6, fs * 0.6);
     const titleH = p.kind === 'kpi' || p.kind === 'title' || p.kind === 'image' || p.kind === 'filter' ? 0 : fs * 1.9;
     const inner = { x: r.x + pad, y: r.y + pad + titleH, w: r.w - pad * 2, h: r.h - pad * 2 - titleH };
-    const kind = p.kind === 'map' ? 'hbar' : p.kind === 'gauge' ? 'donut' : p.kind;
-    const v = ['bar', 'hbar', 'line', 'area', 'pie', 'donut'].includes(kind) ? nextView(kind) : undefined;
+    const { kind, view: v } = plan[pi]!;
     if (titleH && (v || kind === 'table' || kind === 'text')) {
       const label = v ? v.title : kind === 'table' ? 'Détail' : 'Points clés';
       s += `<text x="${p.titleAlign === 'center' ? r.x + r.w / 2 : r.x + pad}" y="${r.y + pad + fs * 1.05}" text-anchor="${p.titleAlign === 'center' ? 'middle' : 'start'}" font-size="${fs * 1.08}" font-weight="700" fill="${p.text}">${esc(trunc(label, Math.round(r.w / (fs * 0.6))))}</text>`;
@@ -332,13 +367,9 @@ export function renderCloneSvg(spec: DashSpec, d: CloneData, W = 1200): string {
     if (v && (kind === 'bar' || kind === 'hbar')) s += barChart(inner, v, p, kind === 'hbar', fs, fallback);
     else if (v && (kind === 'line' || kind === 'area')) s += lineChart(inner, v, p, kind === 'area', fs, fallback);
     else if (v && (kind === 'pie' || kind === 'donut')) s += pieChart(inner, v, p, kind === 'donut', fs, fallback);
-    else if (kind === 'kpi') {
-      const ks = d.kpis.slice(kpiIdx, kpiIdx + Math.max(1, p.tiles));
-      kpiIdx += ks.length;
-      s += kpiTiles({ x: r.x + pad, y: r.y + pad, w: r.w - pad * 2, h: r.h - pad * 2 }, ks.length ? ks : d.kpis.slice(0, 1), p, fs);
-    } else if (kind === 'table') s += tableBlock(inner, d.table, p, fs);
+    else if (kind === 'kpi') s += kpiTiles({ x: r.x + pad, y: r.y + pad, w: r.w - pad * 2, h: r.h - pad * 2 }, plan[pi]!.kpis!, p, fs); else if (kind === 'table') s += tableBlock(inner, d.table, p, fs);
     else if (kind === 'text') {
-      const v0 = d.views[0];
+      const v0 = d.views.find((v) => !v.ordered) ?? d.views[0];
       const lines = v0 ? [`${v0.categories[0]} : ${fmt(v0.values[0]!)} (${v0.valueName})`, `${v0.categories.length} ${v0.title.split(' par ')[1] ?? 'catégories'}`, ...d.kpis.slice(0, 2).map((k) => `${k.label} : ${k.value}`)] : d.kpis.map((k) => `${k.label} : ${k.value}`);
       lines.slice(0, Math.floor(inner.h / (fs * 1.6))).forEach((l, i) => (s += `<text x="${inner.x}" y="${inner.y + fs * 1.2 + i * fs * 1.6}" font-size="${fs}" fill="${p.text}">• ${esc(trunc(l, Math.round(inner.w / (fs * 0.55))))}</text>`));
     }

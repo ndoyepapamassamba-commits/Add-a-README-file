@@ -39,6 +39,21 @@ Une demande qui réclame un fichier (Excel, Word, PowerPoint, PDF, mail, site, a
   - Mail `.eml` : non traité (la version `.mail.html` contient le logo) ;
   - Python : le modèle ne doit pas insérer le logo lui-même ; l'app l'ajoute.
 
+## Image choisie → livrable au design de l'image
+- **Excel** — même quand le modèle écrit le classeur lui-même (Python / openpyxl) :
+  1. **feuille 1 « Tableau de bord »** : l'image reconstruite en **Excel natif** (`server/services/cloneXlsx.ts`) :
+     - fond, cadre, page, bandeau de titre, cartes et tuiles KPI = formes Excel aux positions et couleurs mesurées ;
+     - graphiques = **vrais graphiques Excel modifiables** (colonnes, barres, courbe, aire, secteurs, anneau) aux couleurs du panneau ;
+     - tableaux, textes, images = la zone correspondante de la reproduction photo ;
+  2. **feuille 2 « Tableau de bord (image) »** : la reproduction photo-fidèle ;
+  3. les feuilles du modèle, puis « Données du tableau de bord » (les chiffres des graphiques).
+- **Données** (`server/services/tablePick.ts`) :
+  - Le **tableau détaillé** du classeur joint est utilisé, jamais une feuille de synthèse (Dashboard, Synthèse, blocs côte à côte).
+  - Les lignes **TOTAL / Sous-total / « TOTAL / MOYENNE »** sont exclues, mais pas un client nommé « TOTAL SENEGAL SA ».
+  - Seules les colonnes de montants sont sommées : un numéro client, un stade ou un mois d'ancienneté ne le sont jamais.
+- **Fichiers openpyxl** : le préfixe `r:` est déclaré à la racine du classeur (openpyxl ne le déclare que sur chaque feuille) et les chemins absolus `/xl/…` sont résolus. Avant ce correctif, l'insertion rendait le classeur invalide et Excel la supprimait à l'ouverture.
+- Le modèle est informé de ce qui a été appliqué : feuilles, nombre de graphiques, source des chiffres.
+
 ## Style maison 2.0 — « GOD 3D »
 - **9 palettes** : Bleu Ecobank (référence), Lime Ecobank, Océan, Émeraude & or, Bordeaux & or, Ardoise & corail, Sahel, Royal violet, Nuit & cyan. Chaque palette a sa propre série de couleurs ; le logo choisi s'y harmonise.
 - **Excel** (`data.export`) :

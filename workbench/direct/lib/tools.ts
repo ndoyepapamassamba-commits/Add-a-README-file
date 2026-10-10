@@ -195,6 +195,7 @@ const data = new DataCore();
 import type { DashSpec } from '../../server/services/dashClone';
 import { cloneData, renderCloneHtml, renderCloneSvg } from '../../server/services/dashRender';
 import { addImageSheet } from '../../server/services/officeLogo';
+import { addNativeClone } from '../../server/services/cloneXlsx';
 import { rasterise } from './designClone';
 function loadDataset(path: string, sheet?: string): Dataset {
   const f = getFile(path);
@@ -1049,10 +1050,16 @@ export const TOOLS: DirectTool[] = [
             const H = Math.round(W / spec.aspect);
             const img = await rasterise(renderCloneSvg(spec, cd, W), W, H);
             const f = getFile(path);
-            const withSheet = f ? addImageSheet(bytesOf(f), { png: img.png, width: W, height: H }) : null;
-            if (withSheet) {
-              writeBytes(path, withSheet, f!.mime);
-              sheet = ' (feuille « Tableau de bord » en tête du classeur)';
+            const pic = { png: img.png, width: W, height: H };
+            // The image's layout as a NATIVE first sheet (editable charts, cards, tiles), then the photo-faithful picture.
+            const withPic = f ? addImageSheet(bytesOf(f), pic, 'Tableau de bord (image)') : null;
+            const nat = withPic ? addNativeClone(withPic, spec, cd, pic) : null;
+            const out = nat?.bytes ?? (f ? addImageSheet(bytesOf(f), pic) : null);
+            if (out) {
+              writeBytes(path, out, f!.mime);
+              sheet = nat
+                ? ` (1re feuille « Tableau de bord » : l'image reconstruite en Excel natif, ${nat.charts} graphiques modifiables ; 2e feuille : la reproduction photo)`
+                : ' (feuille « Tableau de bord » en tête du classeur)';
             }
           } catch {
             /* the HTML reproduction is still there */

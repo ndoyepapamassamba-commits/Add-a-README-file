@@ -49,7 +49,19 @@ const relsOf = (part: string) => {
   const i = part.lastIndexOf('/');
   return `${part.slice(0, i)}/_rels/${part.slice(i + 1)}.rels`;
 };
+/**
+ * Declares a namespace prefix on the ROOT element when the root itself lacks it. A declaration on a child element
+ * (openpyxl writes xmlns:r on each <sheet>) does not cover a new element inserted next to it.
+ */
+export function ensureRootNs(xml: string, prefix: string, uri: string): string {
+  const m = /<([A-Za-z_][\w:.-]*)([^>]*)>/.exec(xml);
+  if (!m || new RegExp(`\\sxmlns:${prefix}=`).test(m[2]!)) return xml;
+  return `${xml.slice(0, m.index)}<${m[1]} xmlns:${prefix}="${uri}"${m[2]}>${xml.slice(m.index + m[0].length)}`;
+}
+/** Zip-part helpers shared with the native dashboard builder (cloneXlsx). */
+export const ooxml = { read, write, ensurePngType, addOverride, addRel, relsOf, ensureRootNs, NS_R, REL_IMAGE };
 const resolveTarget = (from: string, target: string) => {
+  if (target.startsWith('/')) return target.slice(1); // absolute part name (openpyxl writes « /xl/drawings/… »)
   const parts = from.split('/').slice(0, -1);
   for (const seg of target.split('/')) {
     if (seg === '..') parts.pop();
@@ -86,14 +98,16 @@ function xlsxLogo(z: Zip, logo: LogoImage): boolean {
     write(z, drawing, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"></xdr:wsDr>`);
     addOverride(z, `/${drawing}`, 'application/vnd.openxmlformats-officedocument.drawing+xml');
     const rid = addRel(z, sheetRels, `${NS_R}/drawing`, '../drawings/drawing-logo.xml', 'rIdLogoDrawing');
-    if (!/xmlns:r=/.test(xml.slice(0, 600))) xml = xml.replace(/<worksheet\b/, `<worksheet xmlns:r="${NS_R}"`);
+    xml = ensureRootNs(xml, 'r', NS_R);
     const tag = `<drawing r:id="${rid}"/>`;
     const before = /<(legacyDrawing|legacyDrawingHF|picture|oleObjects|controls|webPublishItems|tableParts|extLst)\b/.exec(xml);
     xml = before ? xml.slice(0, before.index) + tag + xml.slice(before.index) : xml.replace('</worksheet>', `${tag}</worksheet>`);
     write(z, sheet, xml);
   }
   const imgRid = addRel(z, relsOf(drawing), REL_IMAGE, `../media/${MEDIA}`, 'rIdLogoImg');
-  write(z, drawing, read(z, drawing).replace(/<\/xdr:wsDr>\s*$/, `${anchor.replace('RID', imgRid)}</xdr:wsDr>`));
+  let dx = ensureRootNs(ensureRootNs(read(z, drawing), 'xdr', 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing'), 'a', 'http://schemas.openxmlformats.org/drawingml/2006/main');
+  dx = dx.replace(/<\/((?:xdr:)?wsDr)>\s*$/, (_m, tag: string) => `${anchor.replace('RID', imgRid)}</${tag}>`);
+  write(z, drawing, dx);
   return true;
 }
 
@@ -116,8 +130,7 @@ function docxLogo(z: Zip, logo: LogoImage): boolean {
     header = resolveTarget(doc, (t?.[1] ?? t?.[2])!);
     const imgRid = addRel(z, relsOf(header), REL_IMAGE, `media/${MEDIA}`, 'rIdLogoImg');
     let h = read(z, header);
-    if (!/xmlns:wp=/.test(h)) h = h.replace(/<w:hdr\b/, '<w:hdr xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"');
-    if (!/xmlns:r=/.test(h)) h = h.replace(/<w:hdr\b/, `<w:hdr xmlns:r="${NS_R}"`);
+    h = ensureRootNs(ensureRootNs(h, 'wp', 'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing'), 'r', NS_R);
     write(z, header, h.replace(/(<w:hdr\b[^>]*>)/, `$1${para.replace('RID', imgRid)}`));
     return true;
   }
@@ -127,7 +140,7 @@ function docxLogo(z: Zip, logo: LogoImage): boolean {
   addOverride(z, `/${header}`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml');
   const hRid = addRel(z, docRels, `${NS_R}/header`, 'header-logo.xml', 'rIdLogoHeader');
   const ref = `<w:headerReference w:type="default" r:id="${hRid}"/>`;
-  if (!/xmlns:r=/.test(xml.slice(0, 2000))) xml = xml.replace(/<w:document\b/, `<w:document xmlns:r="${NS_R}"`);
+  xml = ensureRootNs(xml, 'r', NS_R);
   if (lastSect) {
     const s = lastSect[0];
     const withRef = s.endsWith('/>') ? s.replace(/\/>$/, `>${ref}</w:sectPr>`) : s.replace(/(<w:sectPr\b[^>]*>)/, `$1${ref}`);
@@ -152,7 +165,7 @@ function pptxLogo(z: Zip, logo: LogoImage): boolean {
   for (const s of slides) {
     const rid = addRel(z, relsOf(s), REL_IMAGE, `../media/${MEDIA}`, 'rIdLogoImg');
     let xml = read(z, s);
-    if (!/xmlns:r=/.test(xml.slice(0, 1000))) xml = xml.replace(/<p:sld\b/, `<p:sld xmlns:r="${NS_R}"`);
+    xml = ensureRootNs(xml, 'r', NS_R);
     const pic = `<p:pic><p:nvPicPr><p:cNvPr id="9001" name="Logo"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
     write(z, s, xml.replace(/<\/p:spTree>/, `${pic}</p:spTree>`));
   }
@@ -213,7 +226,7 @@ export function addImageSheet(bytes: Uint8Array, img: LogoImage, name = 'Tableau
   const rid = addRel(z, 'xl/_rels/workbook.xml.rels', `${NS_R}/worksheet`, 'worksheets/sheet-dashboard.xml', 'rIdDashSheet');
   const ids = [...wb.matchAll(/sheetId="(\d+)"/g)].map((m) => +m[1]!);
   const sheetId = (ids.length ? Math.max(...ids) : 0) + 1;
-  if (!/xmlns:r=/.test(wb.slice(0, 1000))) wb = wb.replace(/<workbook\b/, `<workbook xmlns:r="${NS_R}"`);
+  wb = ensureRootNs(wb, 'r', NS_R);
   wb = wb.replace(/<sheets>/, `<sheets><sheet name="${name}" sheetId="${sheetId}" r:id="${rid}"/>`);
   // The new sheet is first: sheet-scoped names move by one.
   wb = wb.replace(/localSheetId="(\d+)"/g, (_m, n: string) => `localSheetId="${+n + 1}"`);
@@ -245,8 +258,7 @@ export function addImagePageDocx(bytes: Uint8Array, img: LogoImage): Uint8Array 
     cy = maxCy;
   }
   const para = `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="9201" name="Tableau de bord"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="9201" name="massamba-dashboard.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p><w:p><w:r><w:br w:type="page"/></w:r></w:p>`;
-  if (!/xmlns:wp=/.test(xml.slice(0, 3000))) xml = xml.replace(/<w:document\b/, '<w:document xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"');
-  if (!/xmlns:r=/.test(xml.slice(0, 3000))) xml = xml.replace(/<w:document\b/, `<w:document xmlns:r="${NS_R}"`);
+  xml = ensureRootNs(ensureRootNs(xml, 'wp', 'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing'), 'r', NS_R);
   write(z, doc, xml.replace(/<w:body>/, `<w:body>${para}`));
   return zipSync(z, { level: 6 });
 }

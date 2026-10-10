@@ -9,6 +9,8 @@
  * Colours come from the active house palette (Maison 2.0), so every palette gets its 3D look. Pure: the browser
  * rasterises the SVG to PNG for Excel / Word / PowerPoint.
  */
+import { rankMeasures, withoutTotals } from './tablePick';
+
 export interface Palette3d {
   navy: string;
   blue: string;
@@ -400,18 +402,15 @@ const asDate = (v: unknown): Date | null => {
   }
   return null;
 };
-const MONEY = /montant|solde|encours|total|chiffre|\bca\b|valeur|prix|xof|fcfa|eur|usd|amount|revenue|sales|ventes?|co[uû]t|budget|limite|impay|cr[ée]ance|marge|profit/i;
-const NOT_MEASURE = /^(id|n°|no\b|num|code|stade|ann[ée]e|year|mois|month|rang|rank|t[ée]l|phone)/i;
 
 /** What the board shows, read from the rows: the measure (money first), groupings, a top-10, a monthly trend, KPIs. */
-export function analyse3d(columns: string[], rows: Record<string, unknown>[]): { measure: string | null; total: number; kpis: { label: string; value: string }[]; groups: View3d[]; counts: View3d | null; top: View3d | null; trend: View3d | null } {
+export function analyse3d(columns: string[], allRows: Record<string, unknown>[]): { measure: string | null; total: number; kpis: { label: string; value: string }[]; groups: View3d[]; counts: View3d | null; top: View3d | null; trend: View3d | null } {
+  const rows = withoutTotals(allRows);
   const sample = rows.slice(0, 400);
   const share = (c: string, f: (v: unknown) => boolean) => sample.length > 0 && sample.filter((r) => f(r[c])).length >= sample.length * 0.6;
   const dateCols = columns.filter((c) => share(c, (v) => asDate(v) !== null));
   const numCols = columns.filter((c) => !dateCols.includes(c) && share(c, isNum));
-  const sums = new Map(numCols.map((c) => [c, rows.reduce((a, r) => a + (isNum(r[c]) ? Math.abs(r[c] as number) : 0), 0)]));
-  const measures = numCols.filter((c) => !NOT_MEASURE.test(c.trim()));
-  const measure = [...measures].sort((a, b) => (MONEY.test(b) ? 1 : 0) - (MONEY.test(a) ? 1 : 0) || sums.get(b)! - sums.get(a)!)[0] ?? null;
+  const measure = rankMeasures(numCols, rows)[0] ?? null;
   const valOf = (r: Record<string, unknown>) => (measure ? (isNum(r[measure]) ? (r[measure] as number) : 0) : 1);
   const valueName = measure ?? 'Nombre';
   const textCols = columns.filter((c) => !numCols.includes(c) && !dateCols.includes(c) && sample.some((r) => typeof r[c] === 'string' && r[c] !== ''));

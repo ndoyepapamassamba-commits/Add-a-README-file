@@ -61,6 +61,7 @@ import { THEMES, buildTheme, setActiveTheme, themeOf } from '../../server/servic
 import { applyWebTheme, deliverableFromCode, deliverableFromText, kindForTool, type DeliverableKind } from '../../server/services/premiumDesigns';
 import { isOffice, recolorOffice } from '../../server/services/officeRecolor';
 import { addImagePageDocx, addImageSheet, addImageSlidePptx, addImageToHtml, addLogoToHtml, addLogoToOffice } from '../../server/services/officeLogo';
+import { addNativeClone } from '../../server/services/cloneXlsx';
 import { renderCloneSvg } from '../../server/services/dashRender';
 import { previewData, rasterise } from './designClone';
 import { LOGO_VARIANTS } from '../../server/services/logoHarmony';
@@ -2582,8 +2583,12 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     // A cloned dashboard design goes into EVERY format: Word (first page), PowerPoint (first slide), PDF / HTML / mail
     // (top of the page), Excel written by the model's own code (first sheet) — rendered with the chat's data.
     if (out.ok && /^(code\.run|report\.export)$/.test(tool.name)) {
-      const n = await applyClone(sid, t0);
-      if (n) out.forModel += `\n[design] reproduction du tableau de bord choisi placée dans ${n} fichier(s).`;
+      // Never turns a successful tool into an error: a failure is reported to the model.
+      const r = await applyClone(sid, t0).catch((e: unknown) => ({ n: -1, note: String((e as Error)?.message ?? e).slice(0, 200) }));
+      if (r.n > 0) {
+        out.forModel += `\n[design] DESIGN CHOISI APPLIQUÉ — le classeur s'ouvre sur l'image choisie reconstruite avec les données du chat : ${r.note}. Dites-le à l'utilisateur.`;
+        out.summary = `${out.summary ? `${out.summary} · ` : ''}design de l'image appliqué (${r.n} fichier(s))`;
+      } else if (r.n < 0) out.forModel += `\n[design] la reproduction de l'image choisie a échoué (${r.note}) — utilisez data.export avec le tableau détaillé pour la produire.`;
     }
     // The user's logo (recoloured to the palette) goes into every deliverable this tool just produced.
     if (out.ok && /^(code\.run|data\.export|report\.export)$/.test(tool.name)) {
@@ -2681,23 +2686,31 @@ ${c.logo ? `Logo: ${c.logo.path} — the user's logo, already recoloured to this
 </DESIGN_CHOICE>`;
 }
 /** Put the reproduction of the cloned dashboard in the deliverables written since `since` (chat data only). */
-async function applyClone(sid: string, since: number): Promise<number> {
+async function applyClone(sid: string, since: number): Promise<{ n: number; note: string }> {
   const c = designFor(sid);
-  if (!c?.clone) return 0;
+  if (!c?.clone) return { n: 0, note: '' };
   const pd = previewData(sid, 'Tableau de bord');
   // Never invented figures: without a data file in the chat, no reproduction is drawn.
-  if (!pd.from) return 0;
+  if (!pd.from) return { n: 0, note: '' };
   const targets = Object.values(files()).filter((f) => f.updatedAt >= since && !f.path.startsWith('assets/') && !f.path.startsWith('uploads/') && (/\.(docx|pptx|xlsx)$/i.test(f.path) || (/\.html?$/i.test(f.path) && !f.data.includes('data-dash-clone'))));
-  if (!targets.length) return 0;
+  if (!targets.length) return { n: 0, note: '' };
   const W = 1400;
   const H = Math.round(W / c.clone.aspect);
   const img = await rasterise(renderCloneSvg(c.clone, pd.data, W), W, H);
   const pic = { png: img.png, width: W, height: H };
   let n = 0;
+  const notes: string[] = [];
   for (const f of targets) {
     if (f.binary) {
       const b = bytesOf(f);
-      const out = /\.docx$/i.test(f.path) ? addImagePageDocx(b, pic) : /\.pptx$/i.test(f.path) ? addImageSlidePptx(b, pic) : addImageSheet(b, pic);
+      let out: Uint8Array | null = null;
+      if (/\.xlsx$/i.test(f.path)) {
+        // Excel: the image's layout as a NATIVE first sheet (editable charts, cards, tiles) + the photo-faithful picture.
+        const withPic = addImageSheet(b, pic, 'Tableau de bord (image)');
+        const nat = withPic ? addNativeClone(withPic, c.clone, pd.data, pic) : null;
+        out = nat?.bytes ?? addImageSheet(b, pic);
+        if (nat) notes.push(`${f.path} : 1re feuille « Tableau de bord » = l'image choisie reconstruite en Excel natif (${nat.charts} graphiques Excel modifiables, ${nat.shapes} cartes/tuiles${nat.crops ? `, ${nat.crops} zone(s) reprise(s) de l'image` : ''}), 2e feuille « Tableau de bord (image) » = la reproduction photo, données dans « Données du tableau de bord »`);
+      } else out = /\.docx$/i.test(f.path) ? addImagePageDocx(b, pic) : addImageSlidePptx(b, pic);
       if (out) {
         writeBytes(f.path, out, f.mime);
         n++;
@@ -2710,7 +2723,7 @@ async function applyClone(sid: string, since: number): Promise<number> {
       }
     }
   }
-  return n;
+  return { n, note: `${notes.join(' ; ')}${notes.length ? ' ; ' : ''}chiffres tirés de ${pd.from}` };
 }
 /** Place the chosen logo in the Office / HTML deliverables written since `since` (idempotent). */
 function applyLogo(sid: string, since: number): number {
