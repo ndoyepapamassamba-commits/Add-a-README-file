@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { KeyRound, LogOut, RefreshCw, Upload, Download } from 'lucide-react';
 import type { EffortSetting } from '@shared/types';
 import { Badge, Button, Field, Input, Section, Select, Toggle } from '../../web/components/ui';
+import { THEMES } from '../../server/services/houseDesign';
 import { fmtCost, fmtPrice, shortModel } from '../../web/lib/format';
 import { clearKey, getKey, loadCatalog, maskKey, provider, setKey } from '../lib/llm';
 import { refreshCredits } from '../lib/credits';
@@ -318,6 +319,18 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
               value={s.visionModel ?? ''}
               onChange={(v) => patch({ visionModel: v })}
               options={[{ value: '', label: 'Automatique (le moins cher)' }, ...models.filter((m) => m.capabilities.vision).map((m) => ({ value: m.id, label: shortModel(m.id) }))]}
+            />
+          </Field>
+        </div>
+      </Section>
+
+      <Section title="Thème des exports (Word, Excel, PowerPoint, PDF, mail)">
+        <div className="grid gap-x-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-2">
+          <Field label="Thème par défaut" hint="Utilisé pour tous les exports. Vous pouvez aussi demander un autre style dans le chat (« fais-le en vert », « style minimal »…).">
+            <Select
+              value={s.exportTheme ?? 'house'}
+              onChange={(v) => patch({ exportTheme: v })}
+              options={Object.entries(THEMES).map(([id, t]) => ({ value: id, label: t.label }))}
             />
           </Field>
         </div>
