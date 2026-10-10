@@ -98,3 +98,26 @@ describe('the model re-saved the workbook with openpyxl (shapes and pictures los
     expect(removeSheets(houseXlsx(['a'], [{ a: 1 }], { title: 'x', chart: 'none' }), REPRO_SHEETS)).toBeNull(); // nothing of ours: untouched
   });
 });
+
+describe('Excel opens the reproduction without « nous avons trouvé un problème dans le contenu »', () => {
+  // Excel rejects the WHOLE drawing when a data label carries a position its chart type does not support.
+  const ALLOWED: Record<string, string[]> = { barChart: ['outEnd', 'inEnd', 'inBase', 'ctr'], lineChart: ['t', 'b', 'l', 'r', 'ctr'], areaChart: [], doughnutChart: [], pieChart: ['bestFit', 'ctr', 'inEnd', 'outEnd'] };
+  const kinds = ['bar', 'hbar', 'line', 'area', 'pie', 'donut'] as const;
+  const spec = { ...SPEC, panels: kinds.map((k, i) => ({ ...SPEC.panels[1]!, kind: k, sequential: true, valueLabels: true, box: { x: (i % 3) * 0.33, y: 0.1 + Math.floor(i / 3) * 0.45, w: 0.3, h: 0.4 } })) };
+  const rows = Array.from({ length: 30 }, (_, i) => ({ Client: `C${i % 6}`, Date: new Date(Date.UTC(2025, i % 12, 3)), Montant: 1_000_000 * (i + 1) }));
+  const r = addNativeClone(houseXlsx(['Client', 'Date', 'Montant'], rows, { title: 'X', chart: 'none' }), spec, cloneData('T', ['Client', 'Date', 'Montant'], rows))!;
+  const z = unzipSync(r.bytes);
+  const charts = Object.keys(z).filter((p) => p.startsWith('xl/charts/')).map((p) => strFromU8(z[p]!));
+  it('every chart kind is produced', () => {
+    expect(charts.length).toBe(6);
+  });
+  it('label positions only where the chart type accepts them (none on area, doughnut)', () => {
+    for (const c of charts) {
+      const type = /<c:(\w+Chart)>/.exec(c)![1]!;
+      for (const m of c.matchAll(/<c:dLblPos val="(\w+)"\/>/g)) expect(ALLOWED[type], `${type} ${m[1]}`).toContain(m[1]);
+    }
+  });
+  it('an area or a line is one shape: no per-point colours', () => {
+    for (const c of charts.filter((x) => /<c:(area|line)Chart>/.test(x))) expect(c).not.toContain('<c:dPt>');
+  });
+});

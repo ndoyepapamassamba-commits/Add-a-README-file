@@ -1,4 +1,4 @@
-import { strFromU8, unzipSync } from 'fflate';
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import { designVisionCandidates, visionCandidates } from '../../server/jev/vision/bridge';
 import { cleanTemplate } from '../../server/services/cleanTemplate';
@@ -102,6 +102,19 @@ describe('Excel on the image’s design', () => {
     const sh = strFromU8(z['xl/worksheets/sheet1.xml']!);
     expect(sh).toContain('<tabColor rgb="FF138A80"/>');
     expect(sh).toContain('showGridLines="0"');
+  });
+  it('styles a strict Excel reads without repair: ARGB colours, font children in schema order', () => {
+    const base = houseXlsx(['Client', 'Segment', 'Montant'], rows, { title: 'Analyse', chart: 'none' });
+    expect(strFromU8(unzipSync(base)['xl/styles.xml']!)).not.toMatch(/\brgb="[0-9A-Fa-f]{6}"/);
+    // openpyxl writes <name> first; the restyle puts every font back in order.
+    const z0 = unzipSync(base);
+    z0['xl/styles.xml'] = strToU8(strFromU8(z0['xl/styles.xml']!).replace(/<fonts([^>]*)>/, '<fonts$1><font><name val="Calibri"/><b val="1"/><color rgb="FF000000"/><sz val="11"/></font>').replace(/<fonts count="(\d+)"/, (_m, n: string) => `<fonts count="${+n + 1}"`));
+    const st = strFromU8(unzipSync(restyleWorkbook(zipSync(z0), { dark: '#0B2E35', primary: '#138A80', accent: '#2CC4B4', font: 'Poppins' })!.bytes)['xl/styles.xml']!);
+    const ORDER = ['b', 'i', 'strike', 'condense', 'extend', 'outline', 'shadow', 'u', 'vertAlign', 'sz', 'color', 'name', 'family', 'charset', 'scheme'];
+    for (const f of st.matchAll(/<font>([\s\S]*?)<\/font>/g)) {
+      const tags = [...f[1]!.matchAll(/<(\w+)\b/g)].map((m) => ORDER.indexOf(m[1]!));
+      expect(tags).toEqual([...tags].sort((a, b) => a - b));
+    }
   });
 });
 

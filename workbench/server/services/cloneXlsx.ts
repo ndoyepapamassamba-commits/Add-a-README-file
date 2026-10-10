@@ -18,6 +18,12 @@ const { read, write, ensurePngType, addOverride, addRel, relsOf, ensureRootNs, N
 const EMU = 12700;
 const DASH = 'Tableau de bord';
 const DATA = 'Données du tableau de bord';
+/**
+ * Data-label position each chart type ACCEPTS. Excel declares the whole file corrupt (« nous avons trouvé un problème
+ * dans le contenu ») and drops the drawing for a position its type does not support: none at all for area, doughnut
+ * and pie here (pie would take bestFit, the default anyway).
+ */
+const LABEL_POS: Record<string, string | undefined> = { bar: 'outEnd', hbar: 'outEnd', line: 't' };
 const xesc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const hex = (c: string) => c.replace('#', '').slice(0, 6).toUpperCase();
 const col = (i: number) => {
@@ -85,7 +91,8 @@ function chartXml(o: { kind: ChartKind; title: string | null; c0: number; cats: 
   const txt = (color: string, s = sz, bold = false) => `<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="${s}" b="${bold ? 1 : 0}"><a:solidFill><a:srgbClr val="${hex(color)}"/></a:solidFill><a:latin typeface="${xesc(o.font)}"/></a:defRPr></a:pPr><a:endParaRPr lang="fr-FR"/></a:p></c:txPr>`;
   const solid = (c: string) => `<a:solidFill><a:srgbClr val="${hex(c)}"/></a:solidFill>`;
   const pie = o.kind === 'pie' || o.kind === 'donut';
-  const dpts = o.byPoint || pie ? o.colors.slice(0, n).map((c, k) => `<c:dPt><c:idx val="${k}"/>${pie ? '' : '<c:invertIfNegative val="0"/>'}<c:bubble3D val="0"/><c:spPr>${solid(c)}${pie ? `<a:ln w="12700">${solid('#FFFFFF')}</a:ln>` : ''}</c:spPr></c:dPt>`).join('') : '';
+  // Per-point colours: bars and pie slices only (an area or a line is one shape).
+  const dpts = (o.byPoint && (o.kind === 'bar' || o.kind === 'hbar')) || pie ? o.colors.slice(0, n).map((c, k) => `<c:dPt><c:idx val="${k}"/>${pie ? '' : '<c:invertIfNegative val="0"/>'}<c:bubble3D val="0"/><c:spPr>${solid(c)}${pie ? `<a:ln w="12700">${solid('#FFFFFF')}</a:ln>` : ''}</c:spPr></c:dPt>`).join('') : '';
   const main = o.colors[0] ?? '#4472C4';
   const sp =
     o.kind === 'line'
@@ -96,7 +103,7 @@ function chartXml(o: { kind: ChartKind; title: string | null; c0: number; cats: 
           ? ''
           : `<c:spPr>${solid(main)}</c:spPr><c:invertIfNegative val="0"/>`;
   const dLbls = o.labels || pie
-    ? `<c:dLbls><c:numFmt formatCode="${xesc(pie ? '0%' : short)}" sourceLinked="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${txt(pie ? '#FFFFFF' : o.muted, Math.round(sz * 0.9))}${pie ? '' : `<c:dLblPos val="${o.kind === 'line' || o.kind === 'area' ? 't' : 'outEnd'}"/>`}<c:showLegendKey val="0"/><c:showVal val="${pie ? 0 : 1}"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="${pie ? 1 : 0}"/><c:showBubbleSize val="0"/></c:dLbls>`
+    ? `<c:dLbls><c:numFmt formatCode="${xesc(pie ? '0%' : short)}" sourceLinked="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${txt(pie ? '#FFFFFF' : o.muted, Math.round(sz * 0.9))}${LABEL_POS[o.kind] ? `<c:dLblPos val="${LABEL_POS[o.kind]}"/>` : ''}<c:showLegendKey val="0"/><c:showVal val="${pie ? 0 : 1}"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="${pie ? 1 : 0}"/><c:showBubbleSize val="0"/></c:dLbls>`
     : '';
   const ser = `<c:ser><c:idx val="0"/><c:order val="0"/><c:tx><c:strRef><c:f>${xesc(`${q}!$${col(o.c0 + 1)}$1`)}</c:f><c:strCache><c:ptCount val="1"/><c:pt idx="0"><c:v>${xesc(o.valueName)}</c:v></c:pt></c:strCache></c:strRef></c:tx>${sp}${dpts}${dLbls}<c:cat><c:strRef><c:f>${xesc(ref(o.c0))}</c:f><c:strCache><c:ptCount val="${n}"/>${o.cats.map((c, i) => `<c:pt idx="${i}"><c:v>${xesc(c)}</c:v></c:pt>`).join('')}</c:strCache></c:strRef></c:cat><c:val><c:numRef><c:f>${xesc(ref(o.c0 + 1))}</c:f><c:numCache><c:formatCode>General</c:formatCode><c:ptCount val="${n}"/>${o.vals.map((v, i) => `<c:pt idx="${i}"><c:v>${v}</c:v></c:pt>`).join('')}</c:numCache></c:numRef></c:val>${o.kind === 'line' ? '<c:smooth val="0"/>' : ''}</c:ser>`;
   const hidden = '<c:spPr><a:ln><a:noFill/></a:ln></c:spPr>';

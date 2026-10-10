@@ -82,6 +82,8 @@ export function lockSheetView(
       ? xml.replace(/<sheetPr([^>]*)\/>/, `<sheetPr$1>${tab}</sheetPr>`)
       : xml.replace(/(<sheetPr[^>]*>)/, `$1${tab}`);
   } else xml = xml.replace(/(<dimension )/, `<sheetPr>${tab}</sheetPr>$1`);
+  // The writer emits 6-digit colours; the schema (and a strict Excel) wants ARGB: opaque « FF » prefix.
+  if (z['xl/styles.xml']) z['xl/styles.xml'] = strToU8(strFromU8(z['xl/styles.xml']).replace(/\brgb="([0-9A-Fa-f]{6})"/g, 'rgb="FF$1"'));
   return zipSync({ ...z, [name]: strToU8(xml) });
 }
 

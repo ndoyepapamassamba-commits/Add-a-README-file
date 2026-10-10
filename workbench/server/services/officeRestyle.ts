@@ -28,6 +28,7 @@ const lum = (c: string) => {
 const esc = (s: string) => s.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c]!);
 
 type Role = 'title' | 'header' | 'even' | 'odd';
+const FONT_ORDER = ['b', 'i', 'strike', 'condense', 'extend', 'outline', 'shadow', 'u', 'vertAlign', 'sz', 'color', 'name', 'family', 'charset', 'scheme'];
 
 export function restyleWorkbook(bytes: Uint8Array, theme: RestyleTheme, skip: ReadonlySet<string> = new Set()): { bytes: Uint8Array; sheets: string[] } | null {
   let z: Record<string, Uint8Array>;
@@ -165,6 +166,12 @@ export function restyleWorkbook(bytes: Uint8Array, theme: RestyleTheme, skip: Re
   }
   if (!done.length) return null;
   st = st.replace(/<cellXfs\b([^>]*)>([\s\S]*?)<\/cellXfs>/, (_m, attrs: string, body: string) => `<cellXfs${attrs.replace(/count="\d+"/, `count="${xfs.length + added.length}"`)}>${body}${added.join('')}</cellXfs>`);
+  // Font children in schema order (openpyxl writes <name> first): a strict reader accepts the file without repair.
+  st = st.replace(/<font>((?:<\w+\b[^>]*\/>)+)<\/font>/g, (_m, kids: string) => {
+    const list = [...kids.matchAll(/<(\w+)\b[^>]*\/>/g)].map((k) => ({ tag: k[1]!, xml: k[0] }));
+    list.sort((a, b) => FONT_ORDER.indexOf(a.tag) - FONT_ORDER.indexOf(b.tag));
+    return `<font>${list.map((k) => k.xml).join('')}</font>`;
+  });
   z['xl/styles.xml'] = strToU8(st);
   return { bytes: zipSync(z, { level: 6 }), sheets: done };
 }

@@ -84,6 +84,12 @@ Une demande qui réclame un fichier (Excel, Word, PowerPoint, PDF, mail, site, a
   - Après chaque `code.run`, les trois feuilles de l'application sont retirées avec leurs dessins, graphiques et images (`removeSheets`), puis réappliquées intactes. Les feuilles du modèle restent à leur place.
   - Une feuille « Tableau de bord » de l'utilisateur n'est jamais retirée : elle ne l'est que si la feuille « Données du tableau de bord » de l'application l'accompagne.
   - Le modèle sait dès le choix de l'image que ces feuilles appartiennent à l'application. Il ne les lit pas, ne les vérifie pas, ne les répare pas. Il écrit ses feuilles en un seul `code.run` et ne rouvre pas le livrable pour le vérifier. Ces passes de « réparation » consommaient l'essentiel des jetons.
+- **Ouverture sans réparation dans Excel**. Excel signalait « Nous avons trouvé un problème dans le contenu » et supprimait le dessin du tableau de bord. Cause : une position d'étiquette (`dLblPos="t"`) sur un graphique en aires, type qui n'en accepte aucune.
+  - Positions autorisées selon le type : barres `outEnd`, courbe `t`, aucune pour les aires, les anneaux et les secteurs.
+  - Pas de couleur par point sur une aire ou une courbe.
+  - Couleurs du style maison en ARGB (8 chiffres).
+  - Polices remises dans l'ordre du schéma par le restyle (openpyxl écrit `<name>` en premier).
+  - Contrôle effectué avec le validateur Open XML SDK de Microsoft et des règles propres à Excel (positions d'étiquettes, index de styles, ordre des cellules, références de graphiques, cibles de relations). Résultat : 0 erreur sur le classeur reproduit puis ré-enregistré.
 - **Livrable ≠ source** : dans le chat, le livrable porte l'étiquette « Livrable » et passe en premier. Le fichier joint par l'utilisateur est grisé, étiqueté « Source (votre fichier) ». Si le livrable porte le même nom que la source, il se télécharge sous « <nom> - livrable.<ext> ». Le chemin dans l'espace de travail ne change pas, donc le code du modèle continue de fonctionner.
 
 ## Style maison 2.0 — « GOD 3D »
