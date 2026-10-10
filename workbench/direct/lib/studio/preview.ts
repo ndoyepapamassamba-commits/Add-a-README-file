@@ -1,9 +1,11 @@
 // Animatic / preview render in the browser: canvas + WebAudio + MediaRecorder (WebM, or MP4 when supported).
-// It is a CONTROL render (storyboard images with a slow zoom, the real voices, music, SFX and word-highlighted subtitles),
+// It renders a moving 2.5D animatic (camera moves, punch-in on the speaker, voice-driven bounce, cross-fades; real scene
+// videos when generated) with the real voices, music, SFX and word-highlighted subtitles),
 // not the final film. When the browser lacks a capability the caller shows « Capability unavailable in current environment ».
 import { blobs } from './blobs';
 import type { Blueprint, Scene } from '../../../server/jev/studio/types';
 import { duckingPoints } from '../../../server/jev/studio/timeline';
+import { cameraAt, fadeIn, moveFor, rmsEnvelope, speakerSide, type Cam, type Move } from '../../../server/jev/studio/motion';
 import {
   ASPECTS,
   SUBTITLE_STYLES,
@@ -55,11 +57,41 @@ async function bitmapOf(id?: string): Promise<ImageBitmap | null> {
   const b = await blobs.get(id);
   return b ? createImageBitmap(b) : null;
 }
-function cover(ctx: CanvasRenderingContext2D, img: ImageBitmap, W: number, H: number, zoom: number) {
-  const s = Math.max(W / img.width, H / img.height) * zoom;
-  const w = img.width * s;
-  const h = img.height * s;
-  ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+function cover(ctx: CanvasRenderingContext2D, img: CanvasImageSource & { width: number; height: number }, W: number, H: number, cam: Cam | number, alpha = 1) {
+  const c: Cam = typeof cam === 'number' ? { zoom: cam, dx: 0, dy: 0, rot: 0 } : cam;
+  const iw = (img as HTMLVideoElement).videoWidth || img.width;
+  const ih = (img as HTMLVideoElement).videoHeight || img.height;
+  if (!iw || !ih) return;
+  const s = Math.max(W / iw, H / ih) * c.zoom;
+  const w = iw * s;
+  const h = ih * s;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(W / 2 + c.dx * W, H / 2 + c.dy * H);
+  ctx.rotate(c.rot);
+  ctx.drawImage(img, -w / 2, -h / 2, w, h);
+  ctx.restore();
+}
+/** A generated scene video (Video Factory), played muted in sync with the timeline. */
+async function videoOf(id?: string): Promise<HTMLVideoElement | null> {
+  if (!id) return null;
+  const b = await blobs.get(id);
+  if (!b) return null;
+  const v = document.createElement('video');
+  v.muted = true;
+  v.playsInline = true;
+  v.loop = true;
+  v.src = URL.createObjectURL(b);
+  try {
+    await new Promise<void>((ok, ko) => {
+      v.onloadeddata = () => ok();
+      v.onerror = () => ko(new Error('video'));
+      setTimeout(() => ok(), 4000);
+    });
+    return v.readyState >= 2 ? v : null;
+  } catch {
+    return null;
+  }
 }
 function wrap(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
   const words = text.split(/\s+/);
@@ -153,6 +185,10 @@ export async function renderPreview(
   }
   const total = t;
   const bitmaps = await Promise.all(bp.scenes.map((s) => bitmapOf(s.imageAssetId)));
+  const videos = await Promise.all(bp.scenes.map((s) => videoOf(s.videoAssetId)));
+  // One camera move per scene, chosen from its content, never the same twice in a row.
+  const moves: Move[] = [];
+  bp.scenes.forEach((s, i) => moves.push(moveFor(s, i, moves[i - 1])));
 
   // Audio graph → MediaStream
   const ac = new AudioContext();
@@ -181,13 +217,29 @@ export async function renderPreview(
     return g;
   };
   const music = await decode(bp.audio.music?.assetId);
-  const voiceBufs: { buf: AudioBuffer; at: number }[] = [];
+  const voiceBufs: { buf: AudioBuffer; at: number; env: number[]; side: number }[] = [];
   for (const [k, v] of Object.entries(bp.audio.voices ?? {})) {
     const [sid, i] = k.split(':');
     const line = lines.find((l) => l.sceneId === sid && l.index === Number(i));
     const buf = await decode(v.assetId);
-    if (buf && line) voiceBufs.push({ buf, at: line.start });
+    const sc = bp.scenes.find((x) => x.scene_id === sid);
+    const speaker = sc?.dialogue[Number(i)]?.speaker ?? '';
+    if (buf && line)
+      voiceBufs.push({ buf, at: line.start, env: rmsEnvelope(buf.getChannelData(0), buf.sampleRate), side: speakerSide(sc?.characters ?? [], speaker) });
   }
+  /** Who speaks at time t (punch-in towards them) and how loud (talking bounce). */
+  const voiceAt = (now: number) => {
+    for (const v of voiceBufs) {
+      const rel = now - v.at;
+      if (rel >= -0.15 && rel <= v.buf.duration + 0.25) {
+        const k = Math.max(0, Math.floor(rel / 0.04));
+        const punch = Math.min(1, Math.min(rel + 0.15, v.buf.duration + 0.25 - rel) / 0.3);
+        return { punch, side: v.side, energy: v.env[Math.min(v.env.length - 1, k)] ?? 0 };
+      }
+    }
+    return { punch: 0, side: 0, energy: 0 };
+  };
+  let punchS = 0;
   const sfx: { buf: AudioBuffer; at: number }[] = [];
   for (const e of bp.audio.sfx) {
     const buf = await decode(e.assetId);
@@ -204,13 +256,13 @@ export async function renderPreview(
   await ac.resume();
   if (music) {
     // Music ducking under the voices (short attack, longer release).
-    const g = schedule(music, 0, 0.22, total);
+    const g = schedule(music, 0, 0.16, total);
     const pts = duckingPoints(voiceBufs.map((v) => ({ start: v.at, end: v.at + v.buf.duration })));
     g.gain.setValueAtTime(pts[0]!.v, ac.currentTime);
     for (const p of pts.slice(1)) g.gain.linearRampToValueAtTime(p.v, ac.currentTime + p.t);
   }
   for (const v of voiceBufs) schedule(v.buf, v.at, 1);
-  for (const s of sfx) schedule(s.buf, s.at, 0.6);
+  for (const s of sfx) schedule(s.buf, s.at, 0.35);
   rec.start(500);
   const t0 = performance.now();
   const style = o.style ?? (bp.subtitles.style as SubtitleStyle);
@@ -224,9 +276,24 @@ export async function renderPreview(
     const f = Math.min(1, (now - sceneStart[si]!) / Math.max(0.1, dur));
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
-    const bm = bitmaps[si];
-    if (bm) cover(ctx, bm, W, H, 1 + 0.06 * f);
-    else placeholder(ctx, sc, W, H);
+    const va = voiceAt(now);
+    punchS += (va.punch - punchS) * 0.18;
+    const drawShot = (k: number, fr: number, alpha: number) => {
+      const vid = videos[k];
+      const img = bitmaps[k];
+      const cam = cameraAt(moves[k]!, fr, { punch: k === si ? punchS : 0, side: va.side, energy: k === si ? va.energy : 0, t: now });
+      if (vid) {
+        if (vid.paused) void vid.play().catch(() => undefined);
+        // A real video clip already moves: only a gentle camera on top of it.
+        cover(ctx, vid, W, H, { zoom: 1 + (cam.zoom - 1) * 0.3, dx: cam.dx * 0.3, dy: cam.dy * 0.3, rot: 0 }, alpha);
+      } else if (img) cover(ctx, img, W, H, cam, alpha);
+      else if (alpha >= 1) placeholder(ctx, bp.scenes[k]!, W, H);
+    };
+    const since = now - sceneStart[si]!;
+    const a0 = fadeIn(since);
+    if (a0 < 1 && si > 0) drawShot(si - 1, 1, 1);
+    drawShot(si, f, si > 0 ? a0 : 1);
+    for (const [k, v] of videos.entries()) if (v && k !== si && k !== si - 1 && !v.paused) v.pause();
     const a = activeAt(lines, now);
     if (a) drawSub(ctx, a.line, a.wordIndex, W, H, style);
     o.onProgress?.(now / total, now);
@@ -237,5 +304,11 @@ export async function renderPreview(
   stream.getTracks().forEach((tr) => tr.stop());
   await ac.close();
   bitmaps.forEach((b) => b?.close());
+  videos.forEach((v) => {
+    if (v) {
+      v.pause();
+      URL.revokeObjectURL(v.src);
+    }
+  });
   return { blob: new Blob(chunks, { type: sup.mime! }), mime: sup.mime!, seconds: total };
 }

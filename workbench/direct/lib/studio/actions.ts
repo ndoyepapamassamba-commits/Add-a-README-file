@@ -1,5 +1,6 @@
 // Studio actions (runtime): registry, story, character library + 2D redraw, scene images, voices. Every paid call goes
 // through executeMedia (selection, budget gate, retries, fallback, storage, memory, JEV_LOG).
+import { castVoices, naturalSpeed } from '../../../server/jev/studio/motion';
 import { useStudio } from './store';
 import { useStore } from '../store';
 import { blobs, blobToDataUrl, base64ToBlob } from './blobs';
@@ -724,7 +725,13 @@ export async function generateLine(
   trace.stage('PRODUCTION_CLASSIFICATION', `voix ${line.speaker} · ${line.language}`);
   const cands = models
     .map((m) => {
-      const voice = wantVoice && m.voices.includes(wantVoice) ? wantVoice : m.voices[0];
+      // VOICE CASTING: without a chosen voice, each character gets its own gender / age coherent voice (never the
+      // same default voice for everybody).
+      const cast = castVoices(
+        bp.characters.map((c) => ({ id: c.id, name: c.name, gender: c.gender, age: c.age, voice: c.voice })),
+        m.voices,
+      );
+      const voice = wantVoice && m.voices.includes(wantVoice) ? wantVoice : (cast[line.speaker.toUpperCase()] ?? m.voices[0]);
       return { m, voice, v: validateSpeechRequest(m, { voice }) };
     })
     .filter((c) => c.v.ok)
@@ -747,7 +754,7 @@ export async function generateLine(
         model: m.id,
         input: line.text,
         voice: byId.get(m.id)!.voice,
-        speed: line.pace,
+        speed: naturalSpeed(line.pace),
       });
       return { result: { blob: r.blob }, cost: null };
     },

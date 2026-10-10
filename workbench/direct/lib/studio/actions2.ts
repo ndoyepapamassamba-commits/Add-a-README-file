@@ -1150,11 +1150,21 @@ export async function runAutopilot(
         );
       }
     mark('VOICE', 'COMPLETED');
+    // REAL ANIMATION when the owner enabled the Video Factory (with a budget): each scene image becomes a video clip
+    // (image → video). Otherwise the editor animates the stills (camera moves, punch-in, voice-driven bounce, fades).
+    if (videoEnabled()) {
+      for (const sc of bpOf(projectId).scenes.filter((s) => s.imageAssetId && !s.videoAssetId)) {
+        await gate(ctl);
+        step('IMAGES', `animation vidéo ${sc.scene_id}`);
+        await generateSceneVideo(projectId, sc.scene_id, { mode: 'image', duration: Math.min(10, Math.max(4, Math.round(sc.duration))) }).catch((e) =>
+          step('IMAGES', `${sc.scene_id} : vidéo non générée (${(e as Error).message}) — animation 2.5D à la place`),
+        );
+      }
+    } else step('IMAGES', 'animation 2.5D des plans (Video Factory désactivée : aucun coût vidéo)');
     await gate(ctl);
-    step('SOUND', 'bruitages et musique locale');
-    for (const sc of bpOf(projectId).scenes)
-      for (const l of sfxProposals(bpOf(projectId), sc.scene_id).slice(0, 1))
-        await addSfx(projectId, sc.scene_id, l);
+    // Procedural sound effects are NOT added automatically any more (they sounded artificial): only the music bed,
+    // ducked under the voices. Real SFX stay available from the Sound space.
+    step('SOUND', 'musique (sous les voix)');
     if (!bpOf(projectId).audio.music?.assetId) await addLocalMusic(projectId);
     mark('SOUND', 'COMPLETED');
     step('SUBTITLES', 'sous-titres');
