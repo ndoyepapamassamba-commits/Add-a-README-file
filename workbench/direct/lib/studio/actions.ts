@@ -10,6 +10,7 @@ import { blobs, blobToDataUrl, base64ToBlob } from './blobs';
 import { discover, generateImage, loadImagePrices, speak } from './net';
 import { executeMedia, type MediaOutcome } from './exec';
 import { runText } from './textModel';
+import { humorPrompt, parseHumor, type HumorVerdict } from '../../../server/jev/studio/qualityRef';
 import { Trace } from './jevlog';
 import {
   fabricEntry,
@@ -142,11 +143,12 @@ export interface StoryResult {
   issues: string[];
   model?: string;
 }
-export async function generateStory(projectId: string): Promise<StoryResult> {
+/** `notes`: what the humour judge asks to fix (rewrite pass). */
+export async function generateStory(projectId: string, notes?: string): Promise<StoryResult> {
   const bp = bpOf(projectId);
   patch(projectId, (b) => setStage(b, 'STORY', 'RUNNING'));
   const brief = {
-    idea: bp.project.idea,
+    idea: notes ? `${bp.project.idea}\n\nRÉÉCRIS POUR FAIRE PLUS RIRE (juge d’humour) : ${notes}` : bp.project.idea,
     durationSec: bp.duration,
     language: bp.language,
     platform: bp.platform,
@@ -935,3 +937,24 @@ export async function generateLine(
   return { assetId: out.assetId!, seconds };
 }
 export type { Scene };
+
+/** The scene script as the humour judge reads it (actions + lines with gestures). */
+export function scriptText(bp: Blueprint): string {
+  return bp.scenes
+    .map((s, i) => [`SCÈNE ${i + 1} (${s.beat}) — ${s.action}`, ...s.dialogue.map((d) => `${d.speaker}${d.gesture ? ` [${d.gesture}]` : ''} : ${d.text}`)].join('\n'))
+    .join('\n\n');
+}
+/** DEGRÉ D'HUMOUR: the judge scores the script on the reference grid (null when no model answered — nothing invented). */
+export async function judgeHumor(projectId: string): Promise<HumorVerdict | null> {
+  const bp = bpOf(projectId);
+  if (!bp.scenes.length) return null;
+  try {
+    const r = await runText({ projectId, purpose: 'juge humour (grille de référence)', maxTokens: 600, temperature: 0, messages: [{ role: 'user', content: humorPrompt(scriptText(bp)) }] });
+    const v = parseHumor(r.text);
+    if (!v) return null;
+    patch(projectId, (b) => ({ ...b, qc: { ...(b.qc ?? { at: Date.now() }), humor: { ...v, model: r.model, at: Date.now() }, at: Date.now() } }));
+    return v;
+  } catch {
+    return null;
+  }
+}

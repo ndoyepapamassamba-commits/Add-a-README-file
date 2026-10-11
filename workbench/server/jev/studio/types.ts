@@ -363,6 +363,8 @@ export interface Blueprint {
   worlds: WorldSheet[];
   voices: VoiceProfile[];
   scenes: Scene[];
+  /** Last reference-calibrated quality control (humour degree measured by the judge, visual fidelity, virality). */
+  qc?: { humor?: { degree: number; label: string; scores: Record<string, number>; best: string; fix: string; model: string; at: number }; visual?: number; virality?: number; at: number };
   assets: string[];
   prompts: { id: string; version: string; kind: string; text: string; model?: string; at: number }[];
   models: string[];

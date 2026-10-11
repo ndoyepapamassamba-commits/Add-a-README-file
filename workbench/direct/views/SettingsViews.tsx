@@ -308,6 +308,9 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
           <Field label="Jeton Hugging Face (option gratuite, selon quota)" hint="huggingface.co → Settings → Access Tokens (lecture). Utilise le Space gratuit « Wan 2.2 14B Fast » dans la limite du quota GPU gratuit de votre compte.">
             <Input type="password" value={s.hfToken ?? ''} onChange={(e) => patch({ hfToken: e.target.value.trim() })} placeholder="hf_…" data-testid="hf-token" />
           </Field>
+          <Field label="Clé fal.ai (acteur 3D → personnage, ≈ 0,04–0,08 $ / s)" hint="fal.ai → Dashboard → Keys. L’acteur virtuel 3D joue la scène (squelette complet), puis Wan2.2-Animate transfère ses mouvements au personnage de l’image (corps entier, rendu génératif). La clé reste dans ce navigateur.">
+            <Input type="password" value={s.falKey ?? ''} onChange={(e) => patch({ falKey: e.target.value.trim() })} placeholder="clé fal" data-testid="fal-key" />
+          </Field>
         </div>
       </Section>
 

@@ -1,6 +1,6 @@
 // AI Film Studio UI pieces: production wizard (2D/3D), film tools (diagnose, versions, plan, smoke), asset graph, cost
 // intelligence, video quality gate. Every figure shown comes from real records; nothing is simulated.
-import { useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
 import { Badge, Button, Input, Select, Textarea, Toggle } from '../../../web/components/ui';
 import { useStudio } from '../../lib/studio/store';
 import { useStore } from '../../lib/store';
@@ -191,6 +191,11 @@ export function ProductionWizard() {
 // ───────── DIAGNOSE / versions / plan / smoke ─────────
 const TONE = { ok: 'ok', fail: 'err', warn: 'warn', na: 'neutral' } as const;
 const ICON = { ok: '✓', fail: '✗', warn: '!', na: '·' } as const;
+import { QcRefPanel } from './qcRef';
+import { IdeaLibraryPanel } from './ideaLibrary';
+
+const Actor3DPanel = lazy(() => import('./actor3d'));
+
 export function FilmTools() {
   const bp = useActive();
   const S = useStudio();
@@ -206,6 +211,11 @@ export function FilmTools() {
   const tier = budgetTier(spent(bp), bp.cap);
   return (
     <div className="space-y-3" data-testid="film-tools">
+      <IdeaLibraryPanel />
+      <QcRefPanel />
+      <Suspense fallback={<NoData>Chargement de l’acteur 3D…</NoData>}>
+        <Actor3DPanel />
+      </Suspense>
       <Card
         title="DIAGNOSE PRODUCTION"
         right={

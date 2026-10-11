@@ -5,7 +5,7 @@
 import { useStudio } from './store';
 import { useStore } from '../store';
 import { blobs } from './blobs';
-import { loadRegistry, generateStory, generateSceneImage, generateLine, redrawCharacter, imageCandidates, rigScene, generatePlate } from './actions';
+import { loadRegistry, generateStory, generateSceneImage, generateLine, redrawCharacter, imageCandidates, rigScene, generatePlate, judgeHumor } from './actions';
 import { completeCharacterSheets, completeWorldSheets, addLocalMusic, compileSubtitles, buildEdit, generateSceneVideo, videoEnabled, runQA } from './actions2';
 import { setStudioTextModel } from './textModel';
 import { hfSpaceVideo, isCheapVideo, pollinationsModel, pollinationsVideo, POLLINATIONS_MODELS } from './cheapVideo';
@@ -39,6 +39,20 @@ export function filmShape(bp: Blueprint): FilmShape {
 }
 
 /** The model plan of the production: one recommendation per stage, alternatives ranked, all estimates labelled. */
+/** Runs `fn` over the items with at most `n` at a time (production speed: images, rigs, plates, voices in parallel). */
+export async function pool<T>(items: T[], n: number, fn: (x: T) => Promise<unknown>): Promise<void> {
+  let i = 0;
+  const worker = async () => {
+    while (i < items.length) {
+      const x = items[i++]!;
+      await fn(x);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, worker));
+}
+/** Parallel jobs per stage (the providers' rate limits stay comfortable at this level). */
+export const PARALLEL = { images: 3, rigs: 3, voices: 4 };
+
 export async function buildPlans(projectId: string): Promise<StagePlan[]> {
   const bp = bpOf(projectId);
   const reg = await loadRegistry();
@@ -107,6 +121,19 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
         c.onStage('STORY', 'failed', r.issues.slice(0, 2).join(' · ') || 'histoire non générée');
         return null;
       }
+      // DEGRÉ D'HUMOUR (grille calée sur les vidéos de référence) : sous 65 %, une réécriture avec la correction du juge.
+      if (bpOf(projectId).mode !== 'ECO') {
+        c.onStage('STORY', 'running', 'juge d’humour');
+        const h = await judgeHumor(projectId);
+        if (h && h.degree < 65 && h.fix) {
+          c.onStage('STORY', 'running', `humour ${h.degree} % (${h.label}) → réécriture : ${h.fix.slice(0, 80)}`);
+          const again = await generateStory(projectId, h.fix);
+          if (again.parsed) {
+            const h2 = await judgeHumor(projectId);
+            if (h2) c.onStage('STORY', 'running', `humour après réécriture : ${h2.degree} % (${h2.label})`);
+          }
+        } else if (h) c.onStage('STORY', 'running', `humour ${h.degree} % (${h.label})`);
+      }
       c.onStage('STORY', 'running', 'personnages et décors');
       await completeCharacterSheets(projectId).catch(() => 0);
       await completeWorldSheets(projectId).catch(() => 0);
@@ -122,18 +149,29 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
     if (start <= 2) {
       const warn: string[] = [];
       c.onStage('IMAGES', 'running', 'références des personnages');
-      for (const ch of bpOf(projectId).characters.filter((x) => !x.referenceAssetId).slice(0, 6)) {
+      await pool(bpOf(projectId).characters.filter((x) => !x.referenceAssetId).slice(0, 6), PARALLEL.images, async (ch) => {
         check(c);
         await redrawCharacter(projectId, ch.id, ['neutral']).catch((e) => warn.push(`${ch.name} : ${(e as Error).message.slice(0, 80)}`));
-      }
-      for (const sc of bpOf(projectId).scenes) {
+      });
+      const todo = bpOf(projectId).scenes.filter((sc) => !(sc.imageAssetId && (sc.status === 'APPROVED' || sc.status === 'GENERATED')));
+      let done = 0;
+      await pool(todo, PARALLEL.images, async (sc) => {
         check(c);
-        if (sc.imageAssetId && (sc.status === 'APPROVED' || sc.status === 'GENERATED')) continue;
-        c.onStage('IMAGES', 'running', `image ${sc.scene_id}`);
-        await generateSceneImage(projectId, sc.scene_id, { forceModel: c.chosen.images }).catch((e) =>
-          warn.push(`${sc.scene_id} : ${(e as Error).message.slice(0, 80)}`),
-        );
+        await generateSceneImage(projectId, sc.scene_id, { forceModel: c.chosen.images }).catch((e) => warn.push(`${sc.scene_id} : ${(e as Error).message.slice(0, 80)}`));
+        c.onStage('IMAGES', 'running', `images ${++done}/${todo.length}`);
+      });
+      // NO SCENE WITHOUT AN IMAGE: a failed scene is retried with the chosen model, then with any available model.
+      for (const force of [c.chosen.images, undefined]) {
+        const missing = bpOf(projectId).scenes.filter((sc) => !sc.imageAssetId);
+        if (!missing.length) break;
+        c.onStage('IMAGES', 'running', `rattrapage de ${missing.length} image(s) manquante(s)${force ? '' : ' (autre modèle)'}`);
+        await pool(missing, PARALLEL.images, async (sc) => {
+          check(c);
+          await generateSceneImage(projectId, sc.scene_id, { ...(force ? { forceModel: force } : {}), regenerate: true }).catch((e) => warn.push(`${sc.scene_id} (rattrapage) : ${(e as Error).message.slice(0, 80)}`));
+        });
       }
+      const still = bpOf(projectId).scenes.filter((sc) => !sc.imageAssetId).map((sc) => sc.scene_id);
+      if (still.length) warn.push(`image toujours manquante : ${still.join(', ')} (aucun modèle n’a répondu)`);
       await gate('IMAGES', warn);
     }
     // ── ANIMATION: image → video with the chosen model, or the free 2.5D animation at montage time
@@ -170,17 +208,7 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
       else c.onStage('ANIMATION', 'running', 'animation 2.5D (caméra, parallaxe, voix) au montage');
       // MARIONNETTE AFRIKATOON for every scene still without a clip: the characters are rigged (one vision read per
       // image) and move, blink and talk at montage time — free, no quota.
-      let rigged = 0;
-      for (const sc of bpOf(projectId).scenes.filter((s) => s.imageAssetId && !s.videoAssetId && !s.rig)) {
-        check(c);
-        c.onStage('ANIMATION', 'running', `marionnette ${sc.scene_id} : squelette des personnages`);
-        rigged += (await rigScene(projectId, sc.scene_id)) > 0 ? 1 : 0;
-        // The clean plate (same shot without the characters): exact cut-out and true background when they move.
-        if (!bpOf(projectId).scenes.find((x) => x.scene_id === sc.scene_id)?.plateAssetId) {
-          c.onStage('ANIMATION', 'running', `marionnette ${sc.scene_id} : plaque de décor (sans personnages)`);
-          await generatePlate(projectId, sc.scene_id);
-        }
-      }
+      const rigged = await rigAll(projectId, c);
       if (rigged) c.onStage('ANIMATION', 'running', `${rigged} scène(s) animée(s) par la Marionnette Afrikatoon`);
       await gate('ANIMATION', warn);
     }
@@ -196,6 +224,8 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
         c.onStage('QA', 'running', `reprise ${sc.scene_id} (qualité ${sc.quality}/100)`);
         await generateSceneImage(projectId, sc.scene_id, { forceModel: c.chosen.images, regenerate: true }).catch((e) => warn.push(`${sc.scene_id} : ${(e as Error).message.slice(0, 80)}`));
       }
+      // A redrawn image lost its skeleton and plate: rig it again (otherwise the scene would not be animated).
+      if (weak.length) await rigAll(projectId, c);
       const rep = await runQA(projectId).catch(() => null);
       if (rep) {
         const errs = rep.issues.filter((i) => i.severity === 'error');
@@ -208,12 +238,11 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
     check(c);
     const warn: string[] = [];
     c.onStage('MONTAGE', 'running', 'voix des personnages');
-    for (const sc of bpOf(projectId).scenes)
-      for (const [i] of sc.dialogue.entries()) {
-        check(c);
-        if (bpOf(projectId).audio.voices?.[`${sc.scene_id}:${i}`]) continue;
-        await generateLine(projectId, sc.scene_id, i, { forceModel: c.chosen.voice }).catch((e) => warn.push(`voix ${sc.scene_id} : ${(e as Error).message.slice(0, 60)}`));
-      }
+    const lines = bpOf(projectId).scenes.flatMap((sc) => sc.dialogue.map((_, i) => ({ sc: sc.scene_id, i }))).filter((l) => !bpOf(projectId).audio.voices?.[`${l.sc}:${l.i}`]);
+    await pool(lines, PARALLEL.voices, async (l) => {
+      check(c);
+      await generateLine(projectId, l.sc, l.i, { forceModel: c.chosen.voice }).catch((e) => warn.push(`voix ${l.sc} : ${(e as Error).message.slice(0, 60)}`));
+    });
     c.onStage('MONTAGE', 'running', 'musique, sous-titres, montage');
     if (!bpOf(projectId).audio.music?.assetId) await addLocalMusic(projectId).catch(() => undefined);
     compileSubtitles(projectId);
@@ -244,4 +273,20 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
   } finally {
     setStudioTextModel(null);
   }
+}
+
+/** Rigs every still scene without a clip (skeleton read by a vision model) and generates its clean plate — in parallel. */
+async function rigAll(projectId: string, c: FilmCtl): Promise<number> {
+  let rigged = 0;
+  const todo = bpOf(projectId).scenes.filter((s) => s.imageAssetId && !s.videoAssetId && (!s.rig || !s.plateAssetId));
+  await pool(todo, PARALLEL.rigs, async (sc) => {
+    check(c);
+    if (!sc.rig) {
+      c.onStage('ANIMATION', 'running', `marionnette ${sc.scene_id} : squelette des personnages`);
+      rigged += (await rigScene(projectId, sc.scene_id)) > 0 ? 1 : 0;
+    }
+    // The clean plate (same shot without the characters): exact cut-out and true background when they move.
+    if (!bpOf(projectId).scenes.find((x) => x.scene_id === sc.scene_id)?.plateAssetId) await generatePlate(projectId, sc.scene_id);
+  });
+  return rigged;
 }

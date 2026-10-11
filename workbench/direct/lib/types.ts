@@ -261,6 +261,8 @@ export interface Settings {
   designSkillsSeeded?: boolean;
   /** Pollinations key (sk_…): cheap image → video (Wan 2.2 Fast ≈ 0,01 $ / s). Stays in this browser. */
   pollinationsKey?: string;
+  /** fal.ai key (kept in this browser): skeletal performance → character (Wan2.2-Animate, motion transfer). */
+  falKey?: string;
   /** Hugging Face token (optional): free Wan 2.2 Space within the account's ZeroGPU quota. */
   hfToken?: string;
   /** Tavily API key (free monthly credits; callable from the browser, no relay). */
