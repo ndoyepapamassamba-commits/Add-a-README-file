@@ -65,6 +65,7 @@ import { addNativeClone, removeSheets, REPRO_SHEETS } from '../../server/service
 import { strFromU8, unzipSync } from 'fflate';
 import { restyleWorkbook } from '../../server/services/officeRestyle';
 import { maisonBand } from '../../server/services/maisonBand';
+import { knowledgeBlock, related as relatedKnowledge } from '../../server/jev/knowledge/learned';
 import { renderCloneSvg } from '../../server/services/dashRender';
 import { previewData, rasterise } from './designClone';
 import { LOGO_VARIANTS } from '../../server/services/logoHarmony';
@@ -183,6 +184,10 @@ function systemPrompt(o: {
 ${o.mode === 'safe' ? 'Read-only: you cannot modify files.' : o.mode === 'normal' ? 'Writes, deletions, code execution and plugin actions need user approval (the UI asks). If denied, adapt — do not retry the same action.' : 'Autonomous: actions run without asking. Stay careful and stay within the request.'}
 Not available here: a real OS shell (npm, git, pip), the local disk outside the workspace, desktop apps. ${has('code.run') ? 'Use code.run (sandboxed JavaScript/Python) for computations.' : ''}${has('terminal.execute') ? ' terminal.execute gives an embedded terminal over the workspace (ls, grep, pipes, redirections, node, python, curl, data).' : ''}${has('browser.open') ? ' browser.* drives an embedded browser: workspace apps are fully interactive (click, type, upload a workspace file, exports captured in downloads/); web pages open read-only. To TEST a generated app: browser.open it, browser.upload the real data file, click every tab and export, then inspect the downloaded files (data.inspect / filesystem.read).' : ''}`,
   ];
+  if (has('knowledge.save'))
+    parts.push(
+      `# LEARNING — SAVE THE USER'S SEARCH TOKENS\n- Check <LEARNED_KNOWLEDGE> first: what it covers is never searched again (web.search also answers from it by itself).\n- After reading a regulation, a procedure, a standard or official documentation, or after solving a non-obvious code problem, call knowledge.save ONCE with the distilled rule (figures, thresholds, steps, the exact fix) and its sources: it becomes a permanent skill of the app.`,
+    );
   if (o.tools.some((t) => /^(report|data)\.export$|^apex\./.test(t.name)))
     parts.push(
       `# ${HOUSE_RULES}${has('apex.build_app') ? '\n- Any request for an application, dashboard, reporting tool or "like the APEX": follow the APEX method (apex.guide first), or delegate to the apex_studio agent.' : ''}`,
@@ -1135,7 +1140,9 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
     const chatHits = recallMemory(inp.session.memory ?? [], inp.text, { k: 3 });
     const lessonHits = recallMemory(useStore.getState().lessons, inp.text, { k: 3, tag: profile.type, min: 0.3 });
     const exp = vaultRecall(inp.text);
-    semMemory = [memoryBlock(chatHits, [...lessonHits, ...seedHits(inp.text)].slice(0, 3)), exp ? vaultBlock(exp) : ''].filter(Boolean).join('\n');
+    // LEARNED KNOWLEDGE (past web searches, filed rules): reused instead of searching again.
+    const known = relatedKnowledge(useStore.getState().knowledge, inp.text, 4);
+    semMemory = [memoryBlock(chatHits, [...lessonHits, ...seedHits(inp.text)].slice(0, 3)), exp ? vaultBlock(exp) : '', knowledgeBlock(known)].filter(Boolean).join('\n');
     if (semMemory)
       traceAdd({ name: 'JEV_CONTEXT', ms: 0, tokens: Math.ceil(semMemory.length / 3.8), cost: 0, decision: `mémoire sémantique : ${chatHits.length} fait(s) du chat, ${lessonHits.length} leçon(s)` });
   }

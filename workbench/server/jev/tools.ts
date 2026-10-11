@@ -12,7 +12,7 @@ export const TOOL_FAMILIES: Record<string, string[]> = {
   write: ['filesystem.write', 'filesystem.edit', 'filesystem.delete'],
   data: ['data.inspect', 'data.query', 'data.chart', 'data.export'],
   code: ['code.run', 'terminal.execute', 'project.impact', 'project.twin', 'regression.run'],
-  web: ['web.search', 'wikipedia.search', 'papers.search'],
+  web: ['web.search', 'knowledge.save', 'wikipedia.search', 'papers.search'],
   browser: [
     'browser.open',
     'browser.snapshot',

@@ -58,6 +58,8 @@ import { THEME_PARAMS, activeDesign } from '../../server/services/houseDesign';
 import { chart3dSvg, paletteOf, synthesisSvg } from '../../server/services/chart3d';
 import { dashboardData, renderLayoutHtml, type DesignLayout } from '../../server/services/layoutClone';
 import { BRAVE_DIRECT, braveText, braveUrl, parseBrave } from '../../server/jev/web/brave';
+import { errorSignature, guidance, jsSyntaxError } from '../../server/jev/code/errorHints';
+import { knowledgeBlock, recall as recallKnowledge, related as relatedKnowledge, remember as rememberKnowledge, sourcesOf, touch as touchKnowledge, type KnowledgeDomain } from '../../server/jev/knowledge/learned';
 import { PROVIDER_LABEL, parseSerper, parseTavily, serperRequest, tavilyRequest } from '../../server/jev/web/search';
 import { diagnose, formatDiagnosis } from '../../server/tools/diagnose';
 
@@ -134,6 +136,21 @@ import {
   writeBytes,
   writeText,
 } from './vfs';
+
+/** Consecutive identical execution errors per chat (blind retries are called out). */
+const lastErr = new Map<string, { sig: string; n: number }>();
+function noteError(sid: string | undefined, error: string | null): number {
+  const k = sid ?? '_';
+  if (!error) {
+    lastErr.delete(k);
+    return 0;
+  }
+  const sig = errorSignature(error);
+  const prev = lastErr.get(k);
+  const n = prev && prev.sig === sig ? prev.n + 1 : 1;
+  lastErr.set(k, { sig, n });
+  return n;
+}
 
 export type Risk = 'read' | 'write' | 'delete' | 'execute' | 'external';
 
@@ -597,6 +614,13 @@ export const TOOLS: DirectTool[] = [
     },
     async run(a, ctx) {
       const wanted = Array.isArray(a.files) && a.files.length ? a.files.map(S) : undefined;
+      const lang = S(a.language) === 'python' ? 'python' : 'javascript';
+      // JavaScript syntax checked BEFORE running: nothing half-written, and the exact fix comes back at once.
+      const syn = lang === 'javascript' ? jsSyntaxError(S(a.code)) : null;
+      if (syn) {
+        const msg = `Error: SyntaxError: ${syn} (vérifié avant exécution : rien n'a été lancé)${guidance('javascript', `SyntaxError: ${syn}`, noteError(ctx.sessionId, `SyntaxError: ${syn}`))}`;
+        return { ok: false, summary: 'erreur de syntaxe (avant exécution)', forModel: msg, output: msg };
+      }
       const r = await runInWorkspace(
         S(a.language) === 'python' ? 'python' : 'javascript',
         S(a.code),
@@ -612,10 +636,12 @@ export const TOOLS: DirectTool[] = [
       ]
         .filter(Boolean)
         .join('\n');
+      // Errors come back with their exact fix; the same error twice in a row = change approach.
+      const fix = r.ok ? (noteError(ctx.sessionId, null), '') : guidance(lang, r.error ?? text, noteError(ctx.sessionId, r.error ?? text));
       return {
         ok: r.ok,
-        summary: r.ok ? `terminé${saved.length ? ` · ${saved.length} fichier(s)` : ''}` : 'erreur',
-        forModel: clip(text || '(no output)', 30_000),
+        summary: r.ok ? `terminé${saved.length ? ` · ${saved.length} fichier(s)` : ''}` : `erreur${fix ? ' · correctif indiqué' : ''}`,
+        forModel: clip(text || '(no output)', 30_000) + fix,
         output: clip(text, 20_000),
       };
     },
@@ -625,13 +651,23 @@ export const TOOLS: DirectTool[] = [
     description:
       'Search the web (current information, documentation, news). Returns a synthesis with source links.',
     parameters: obj(
-      { query: str('Search query'), max_results: { type: 'integer', description: '1-10 (default 5)' } },
+      { query: str('Search query'), max_results: { type: 'integer', description: '1-10 (default 5)' }, fresh: { type: 'boolean', description: 'true = ignore what the app already learned and search again (only for news / current figures)' } },
       ['query'],
     ),
     risk: 'read',
     readOnly: true,
     label: (a) => `Recherche web « ${S(a.query)} »`,
     async run(a, ctx) {
+      // LEARNED FIRST: a question already searched (or a rule the app learned) costs no search at all.
+      const kb = useStore.getState().knowledge;
+      const hit = a.fresh === true ? null : recallKnowledge(kb, S(a.query));
+      if (hit) {
+        useStore.getState().setKnowledge(touchKnowledge(kb, hit.entry.id));
+        const e = hit.entry;
+        const text = `${e.text}${e.sources.length && !e.text.includes(e.sources[0]!.url) ? `\n\nSources :\n${e.sources.map((x) => `- ${x.title ? `[${x.title}](${x.url})` : x.url}`).join('\n')}` : ''}\n\n(Compétence apprise le ${new Date(e.createdAt).toLocaleDateString('fr-FR')} pour « ${e.query} » — aucune recherche refaite ; fresh: true pour forcer une nouvelle recherche.)`;
+        return ok(`compétence apprise · 0 recherche · ${e.domain}`, text, { output: text });
+      }
+      const learn = (text: string) => useStore.getState().setKnowledge(rememberKnowledge(useStore.getState().knowledge, { query: S(a.query), text, sources: sourcesOf(text), origin: 'search' }));
       // FREE SEARCH first (Tavily, then Serper: callable straight from the browser), then Brave (needs a relay):
       // raw results, no LLM synthesis call. The paid OpenRouter search is only the last resort.
       const ws = useStore.getState().settings;
@@ -649,6 +685,7 @@ export const TOOLS: DirectTool[] = [
           const j = await res.json();
           const hits = p === 'tavily' ? parseTavily(j, n0) : parseSerper(j, n0);
           const text = braveText(S(a.query), hits).replace('(Brave Search)', `(${PROVIDER_LABEL[p]})`);
+          learn(text);
           return ok(`${PROVIDER_LABEL[p]} · ${hits.length} résultat(s) · 0 $ LLM`, text, { output: text });
         } catch (e) {
           errs.push(`${PROVIDER_LABEL[p]} : ${(e as Error).message}`);
@@ -672,6 +709,7 @@ export const TOOLS: DirectTool[] = [
             }
             const hits = parseBrave(await res.json(), n);
             const text = braveText(S(a.query), hits);
+            learn(text);
             return ok(`Brave · ${hits.length} résultat(s) · 0 $ LLM`, text, { output: text });
           } catch (e) {
             lastErr = (e as Error).message;
@@ -714,6 +752,7 @@ export const TOOLS: DirectTool[] = [
         .filter((x) => x.type === 'url_citation' && x.url_citation)
         .map((x) => `- [${x.url_citation!.title ?? x.url_citation!.url}](${x.url_citation!.url})`);
       const text = `${r.content}${sources.length ? `\n\nSources:\n${[...new Set(sources)].join('\n')}` : ''}`;
+      learn(text);
       return ok(`${sources.length} source(s) · $${r.cost.toFixed(4)}`, text, { output: text });
     },
   },
@@ -1354,6 +1393,29 @@ export const TOOLS: DirectTool[] = [
         forModel: clip(text, 40_000),
         error: r.code ? `exit ${r.code}` : undefined,
       };
+    },
+  },
+  {
+    name: 'knowledge.save',
+    description:
+      'File what you just LEARNED (a regulation grid, a procedure, a code fix recipe, a method) as a permanent skill of the app, so it is never searched or worked out again. Write the distilled rule itself (figures, steps, thresholds), not a summary of your work. Cite the sources.',
+    parameters: obj(
+      {
+        title: str('Short title of the skill, e.g. « BCEAO — grille de dépréciation des créances en souffrance »'),
+        text: str('The rule / procedure / recipe itself, self-contained (max ~1500 words)'),
+        sources: { type: 'array', items: { type: 'string' }, description: 'Source URLs or document names' },
+        domain: { type: 'string', enum: ['Réglementation bancaire', 'Finance & comptabilité', 'Code & outils', 'Procédure', 'Création & studio', 'Général'], description: 'Domain (guessed from the title when omitted)' },
+      },
+      ['title', 'text'],
+    ),
+    risk: 'read',
+    readOnly: true,
+    label: (a) => `Compétence apprise « ${S(a.title)} »`,
+    async run(a) {
+      const srcs = (Array.isArray(a.sources) ? a.sources : []).map((x) => String(x)).filter(Boolean).map((u) => ({ url: u }));
+      const domain = typeof a.domain === 'string' ? (a.domain as KnowledgeDomain) : undefined;
+      useStore.getState().setKnowledge(rememberKnowledge(useStore.getState().knowledge, { query: S(a.title), text: S(a.text), sources: srcs, origin: 'learned', domain }));
+      return ok('compétence enregistrée', `Skill filed: « ${S(a.title)} ». It will be recalled automatically in every chat; no new search is needed for it.`);
     },
   },
   {

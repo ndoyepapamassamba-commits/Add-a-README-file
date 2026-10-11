@@ -149,6 +149,9 @@ export interface State {
   /** Lessons learnt from the user's alterations (cross-chat, by task family; visible and deletable). */
   lessons: import('../../server/jev/memory/semantic').MemFact[];
   setLessons: (l: import('../../server/jev/memory/semantic').MemFact[]) => void;
+  /** What the app learned from web searches and documents (reused instead of searching again). */
+  knowledge: import('../../server/jev/knowledge/learned').KnowledgeEntry[];
+  setKnowledge: (k: import('../../server/jev/knowledge/learned').KnowledgeEntry[]) => void;
   vault: import('./types').VaultEntry[];
   setVault: (v: import('./types').VaultEntry[]) => void;
   /** Auto-benchmark runs. */
@@ -240,6 +243,7 @@ export const useStore = create<State>((set, get) => ({
   ledger: { entries: [] },
   manual: [],
   lessons: [],
+  knowledge: [],
   vault: [],
   bench: [],
   routingLog: [],
@@ -416,6 +420,10 @@ export const useStore = create<State>((set, get) => ({
     set({ lessons });
     saveLater('lessons', () => get().lessons, 300);
   },
+  setKnowledge: (knowledge) => {
+    set({ knowledge });
+    saveLater('knowledge', () => get().knowledge, 300);
+  },
   setManual: (manual) => {
     set({ manual });
     saveLater('manual', () => get().manual, 300);
@@ -465,6 +473,7 @@ export const useStore = create<State>((set, get) => ({
 
 /** Loads everything saved in this browser. */
 export async function hydrate(): Promise<void> {
+  const knowledge = await kv.get<import('../../server/jev/knowledge/learned').KnowledgeEntry[]>('knowledge').catch(() => undefined);
   const [ledger, manual, lessons, vault, bench, routingLog, registry, externalBench] = await Promise.all([
     kv.get<Ledger>('ledger').catch(() => undefined),
     kv.get<ManualRule[]>('manual').catch(() => undefined),
@@ -555,6 +564,7 @@ export async function hydrate(): Promise<void> {
     ledger: ledger ?? { entries: [] },
     manual: manual ?? [],
     lessons: lessons ?? [],
+    knowledge: knowledge ?? [],
     vault: vault ?? [],
     bench: bench ?? [],
     routingLog: routingLog ?? [],

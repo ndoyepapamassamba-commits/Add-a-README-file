@@ -67,6 +67,7 @@ export const DIRECT_TOOLS = [
   'data.chart',
   'code.run',
   'web.search',
+  'knowledge.save',
   'artifact.create',
   'plan.update',
   'skill.use',

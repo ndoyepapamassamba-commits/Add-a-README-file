@@ -378,6 +378,7 @@ function SuperBench() {
 function VaultPanel() {
   const vault = useStore((s) => s.vault);
   const lessons = useStore((s) => s.lessons);
+  const knowledge = useStore((s) => s.knowledge);
   const st = useStore.getState();
   return (
     <>
@@ -421,6 +422,26 @@ function VaultPanel() {
           <Empty>Aucune leçon pour l’instant.</Empty>
         )}
         <div className="mt-2 text-[12px] text-muted">Expérience embarquée : {SEED_EXPERIENCE.length} leçons d’ingénierie, rappelées seulement quand elles correspondent à la demande.</div>
+      </Section>
+      <Section
+        title={`Compétences apprises — recherches et documents (${knowledge.length})`}
+        hint="Chaque recherche Internet et chaque règle tirée d’un document (réglementation bancaire, procédure, correctif de code) est gardée : une question déjà traitée ne relance plus de recherche (0 jeton Tavily). L’actualité expire après 1 jour, la réglementation et les procédures après 1 an."
+        testId="knowledge-list"
+      >
+        {knowledge.length ? (
+          <Table
+            head={['Domaine', 'Question / règle', 'Origine', 'Réutilisée', '']}
+            rows={knowledge.map((k) => [
+              k.domain,
+              <span key={`q${k.id}`} title={k.text.slice(0, 600)}>{k.query}</span>,
+              `${k.origin === 'learned' ? 'apprise' : 'recherche'} · ${new Date(k.createdAt).toLocaleDateString('fr-FR')}`,
+              `${k.hits} fois`,
+              <button key={k.id} className="text-err" onClick={() => st.setKnowledge(useStore.getState().knowledge.filter((x) => x.id !== k.id))}>Oublier</button>,
+            ])}
+          />
+        ) : (
+          <Empty>Rien encore — la prochaine recherche Internet sera gardée ici.</Empty>
+        )}
       </Section>
     </>
   );
