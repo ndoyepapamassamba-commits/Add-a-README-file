@@ -50,6 +50,26 @@ export interface PreviewOptions {
   onProgress?: (p: number, t: number) => void;
   signal?: AbortSignal;
   /** Per-scene duration override (e.g. the sum of measured voice durations). */
+  /** Cinema finish (warm grade + soft vignette), on by default. */
+  cinema?: boolean;
+}
+/** The cinema finish, prepared once: a soft vignette and a warm highlight grade (no frame is re-encoded twice). */
+function cinemaGrade(W: number, H: number, ctx: CanvasRenderingContext2D): { vignette: CanvasGradient; warm: CanvasGradient } {
+  const vignette = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.hypot(W, H) * 0.62);
+  vignette.addColorStop(0, 'rgba(0,0,0,0)');
+  vignette.addColorStop(1, 'rgba(0,0,0,0.38)');
+  const warm = ctx.createLinearGradient(0, 0, 0, H);
+  warm.addColorStop(0, 'rgba(255,190,120,0.06)');
+  warm.addColorStop(1, 'rgba(40,20,80,0.08)');
+  return { vignette, warm };
+}
+function cinemaFinish(ctx: CanvasRenderingContext2D, W: number, H: number, g: { vignette: CanvasGradient; warm: CanvasGradient }) {
+  ctx.save();
+  ctx.fillStyle = g.warm;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = g.vignette;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
 }
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -298,6 +318,7 @@ export async function renderPreview(
   rec.start(500);
   const t0 = performance.now();
   const style = o.style ?? (bp.subtitles.style as SubtitleStyle);
+  const grade = cinemaGrade(W, H, ctx);
   while (true) {
     const now = (performance.now() - t0) / 1000;
     if (now >= total || o.signal?.aborted) break;
@@ -331,6 +352,7 @@ export async function renderPreview(
     if (a0 < 1 && si > 0) drawShot(si - 1, 1, 1);
     drawShot(si, f, si > 0 ? a0 : 1);
     for (const [k, v] of videos.entries()) if (v && k !== si && k !== si - 1 && !v.paused) v.pause();
+    if (o.cinema !== false) cinemaFinish(ctx, W, H, grade);
     const a = activeAt(lines, now);
     if (a) drawSub(ctx, a.line, a.wordIndex, W, H, style);
     o.onProgress?.(now / total, now);

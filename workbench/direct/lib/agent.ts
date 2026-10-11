@@ -65,6 +65,7 @@ import { removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
 import { strFromU8, unzipSync } from 'fflate';
 import { restyleWorkbook } from '../../server/services/officeRestyle';
 import { designQA } from '../../server/services/designQA';
+import { propose } from '../../server/jev/memory/updateGate';
 import { modelById } from '../../server/services/designModels';
 import { maisonBand } from '../../server/services/maisonBand';
 import { addLiveDashboard } from '../../server/services/liveDash';
@@ -3232,9 +3233,12 @@ export async function runAgent(
     if (!errored && prevDelivery && ALTERATION.test(text) && !opts.bench && !opts.fabric) {
       const lesson = lessonFrom({ alteration: text, originalRequest: prevDelivery.request, tag: analyzeTask({ text: prevDelivery.request }).type });
       if (lesson) {
+        // CONTROLLED SELF-LEARNING: the lesson is a PROPOSAL (security, stability, compatibility, design protection
+        // checked) — it changes nothing until the user validates it.
         const s2 = useStore.getState();
-        s2.setLessons(mergeFacts(s2.lessons, [lesson], 300));
-        s2.pushItem(sessionId, { kind: 'intel', id: uid(), title: 'JEV — leçon apprise de cette correction', tone: 'ok', lines: [lesson.text, 'Visible et supprimable dans JEV Cognitive OS → Vue d’ensemble.'] });
+        const p = propose(lesson, text, s2.lessons);
+        if (!s2.updates.some((u) => u.fact.text === lesson.text) && !s2.lessons.some((l) => l.text === lesson.text)) s2.setUpdates([...s2.updates, p].slice(-50));
+        s2.pushItem(sessionId, { kind: 'intel', id: uid(), title: 'JEV — mise à jour proposée (en attente de votre validation)', tone: p.status === 'blocked' ? 'warn' : 'info', lines: [lesson.text, ...p.checks.map((c) => `${c.ok ? '✓' : '✗'} ${c.label} : ${c.note}`), 'Validez ou refusez dans JEV Cognitive OS → Vue d’ensemble → Mises à jour proposées. Rien n’est appliqué sans vous.'] });
       }
     }
     // LEARNING: every run feeds the mission ledger (strategy evolution, failure memory,

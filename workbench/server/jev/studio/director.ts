@@ -181,7 +181,7 @@ export function planWriting(models: TextModelLite[], cap?: number, preferred?: s
   return { stage: 'writing', label: 'Écriture', options: list, recommended: rec && (cap === undefined || rec.stageUsd === null || rec.stageUsd <= cap) ? rec.id : (list[0]?.id ?? null) };
 }
 
-export const PIPELINE = ['IDEA', 'STORY', 'SCENES', 'IMAGES', 'ANIMATION', 'MONTAGE'] as const;
+export const PIPELINE = ['IDEA', 'STORY', 'SCENES', 'IMAGES', 'ANIMATION', 'QA', 'MONTAGE'] as const;
 export type PipeStage = (typeof PIPELINE)[number];
 export const PIPE_LABEL: Record<PipeStage, string> = {
   IDEA: 'IDÉE',
@@ -189,7 +189,8 @@ export const PIPE_LABEL: Record<PipeStage, string> = {
   SCENES: 'SCÈNES',
   IMAGES: 'IMAGES',
   ANIMATION: 'ANIMATION',
-  MONTAGE: 'MONTAGE FINAL',
+  QA: 'CONTRÔLE QUALITÉ',
+  MONTAGE: 'MONTAGE CINÉMA',
 };
 export const totalUsd = (plans: StagePlan[], chosen: Partial<Record<DirStage, string>>) =>
   plans.reduce((a, p) => {

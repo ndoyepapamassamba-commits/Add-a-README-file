@@ -222,6 +222,8 @@ export interface SkillDef {
   files: Record<string, string>;
   triggers: string[];
   enabled: boolean;
+  /** Marketplace category (built-in skills). */
+  category?: string;
 }
 
 export interface AgentDef {

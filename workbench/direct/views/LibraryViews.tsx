@@ -7,6 +7,7 @@ import { OMNIPOTENT_CORE_TOKENS, OMNIPOTENT_DOC, OMNIPOTENT_VERSION } from '../l
 import { download } from '../lib/vfs';
 import { DIRECT_TOOLS, agentId, importAgentFile, importSkillFile } from '../lib/skills';
 import { extractTriggers } from '../../server/services/skillsCore';
+import { MARKET_SKILLS, SKILL_CATEGORIES, type SkillCategory } from '../../server/services/skillMarket';
 import { useStore } from '../lib/store';
 import type { AgentDef, SkillDef } from '../lib/types';
 
@@ -72,6 +73,7 @@ export function SkillsView() {
           label="Détection automatique : activer les skills dont les mots-clés apparaissent dans la demande"
         />
       </div>
+      <Marketplace installed={new Set(skills.map((s) => s.name))} onInstall={(s) => add([s])} />
       {!skills.length ? (
         <Empty icon={<Puzzle size={28} />} title="Aucun skill">
           Importez vos skills Claude (dossier zippé contenant SKILL.md, fichier .skill ou SKILL.md seul) ou
@@ -123,6 +125,37 @@ export function SkillsView() {
         {open && <Markdown text={open.body} />}
       </Modal>
       <SkillEditor open={creating} onClose={() => setCreating(false)} onSave={(s) => add([s])} />
+    </div>
+  );
+}
+
+/** Built-in skills by category, installed in one click (never installed or updated without the user). */
+function Marketplace({ installed, onInstall }: { installed: Set<string>; onInstall: (s: SkillDef) => void }) {
+  const [cat, setCat] = useState<SkillCategory>('Design');
+  return (
+    <div className="mb-5 rounded-xl border border-line bg-panel p-3" data-testid="skill-market">
+      <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[12.5px]">
+        <span className="mr-1 font-semibold">🛒 Marketplace</span>
+        {SKILL_CATEGORIES.map((c) => (
+          <button key={c} type="button" onClick={() => setCat(c)} data-testid={`market-cat-${c}`} className={`rounded-full border px-2.5 py-0.5 ${cat === c ? 'border-accent bg-accent-soft text-accent' : 'border-line'}`}>
+            {c} <span className="text-faint">{MARKET_SKILLS.filter((s) => s.category === c).length}</span>
+          </button>
+        ))}
+      </div>
+      <div className="grid gap-2 sm:grid-cols-3">
+        {MARKET_SKILLS.filter((s) => s.category === cat).map((m) => {
+          const has = installed.has(m.name);
+          return (
+            <div key={m.name} className="rounded-lg border border-line p-2" data-testid={`market-${m.name}`}>
+              <div className="truncate text-[12.5px] font-semibold">{m.name}</div>
+              <div className="mt-0.5 line-clamp-3 text-[11.5px] text-muted">{m.description}</div>
+              <Button size="sm" className="mt-1.5" disabled={has} onClick={() => onInstall({ name: m.name, description: m.description, body: m.body, files: {}, triggers: extractTriggers(m.description, m.name), enabled: true, category: m.category })}>
+                {has ? 'Installé' : 'Installer'}
+              </Button>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

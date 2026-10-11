@@ -29,6 +29,7 @@ import type { EngineId, EngineMode } from '../../server/jev/cognitive/types';
 import { Empty, NM, Section, Table, fmt, StatusBadge } from './fabricUi';
 import { download } from '../lib/vfs';
 import { SEED_EXPERIENCE } from '../../server/jev/memory/seed';
+import { mergeFacts } from '../../server/jev/memory/semantic';
 
 type Sub =
   | 'overview' | 'diagnosis' | 'protocols' | 'tokens' | 'capsule' | 'conditioning' | 'jcb' | 'stop' | 'disagreement'
@@ -378,6 +379,7 @@ function SuperBench() {
 function VaultPanel() {
   const vault = useStore((s) => s.vault);
   const lessons = useStore((s) => s.lessons);
+  const updates = useStore((s) => s.updates);
   const knowledge = useStore((s) => s.knowledge);
   const st = useStore.getState();
   return (
@@ -402,6 +404,50 @@ function VaultPanel() {
           />
         ) : (
           <Empty>Coffre vide — cliquez « ☆ Garder dans le coffre d’expérience » sous une réponse réussie.</Empty>
+        )}
+      </Section>
+      <Section
+        title={`Mises à jour proposées (${updates.length})`}
+        hint="Ce que l’application apprend seule est une PROPOSITION : analysée (sécurité, stabilité, compatibilité, protection du design) puis appliquée seulement si vous la validez."
+        testId="updates-list"
+      >
+        {updates.length ? (
+          <Table
+            head={['Mise à jour', 'Contrôles', '']}
+            rows={[...updates].reverse().map((u) => [
+              <div key="t">
+                <div>{u.fact.text}</div>
+                <div className="text-[11px] text-faint">type « {u.fact.tag ?? '—'} » · après : {u.origin}</div>
+              </div>,
+              <div key="c" className="text-[11.5px]">
+                {u.checks.map((c) => (
+                  <div key={c.id} className={c.ok ? 'text-ok' : 'text-err'}>
+                    {c.ok ? '✓' : '✗'} {c.label} — {c.note}
+                  </div>
+                ))}
+              </div>,
+              <div key="a" className="flex flex-col gap-1">
+                {u.status !== 'blocked' && (
+                  <button
+                    className="text-accent"
+                    data-testid="update-accept"
+                    onClick={() => {
+                      const s2 = useStore.getState();
+                      s2.setLessons(mergeFacts(s2.lessons, [u.fact], 300));
+                      s2.setUpdates(s2.updates.filter((x) => x.id !== u.id));
+                    }}
+                  >
+                    Valider
+                  </button>
+                )}
+                <button className="text-err" data-testid="update-reject" onClick={() => st.setUpdates(useStore.getState().updates.filter((x) => x.id !== u.id))}>
+                  Refuser
+                </button>
+              </div>,
+            ])}
+          />
+        ) : (
+          <Empty>Aucune mise à jour en attente — rien n’est appliqué sans votre validation.</Empty>
         )}
       </Section>
       <Section

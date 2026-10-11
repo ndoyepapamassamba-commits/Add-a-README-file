@@ -6,7 +6,7 @@ import { useStudio } from './store';
 import { useStore } from '../store';
 import { blobs } from './blobs';
 import { loadRegistry, generateStory, generateSceneImage, generateLine, redrawCharacter, imageCandidates } from './actions';
-import { completeCharacterSheets, completeWorldSheets, addLocalMusic, compileSubtitles, buildEdit, generateSceneVideo, videoEnabled } from './actions2';
+import { completeCharacterSheets, completeWorldSheets, addLocalMusic, compileSubtitles, buildEdit, generateSceneVideo, videoEnabled, runQA } from './actions2';
 import { setStudioTextModel } from './textModel';
 import { renderPreview } from './preview';
 import { modelsWith } from '../../../server/jev/studio/capabilities';
@@ -84,7 +84,7 @@ export interface FilmResult {
 
 /** Runs the whole film. Every stage reports live; scene-level failures are kept as warnings. */
 export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = 'STORY'): Promise<FilmResult | null> {
-  const order: PipeStage[] = ['STORY', 'SCENES', 'IMAGES', 'ANIMATION', 'MONTAGE'];
+  const order: PipeStage[] = ['STORY', 'SCENES', 'IMAGES', 'ANIMATION', 'QA', 'MONTAGE'];
   const start = order.indexOf(from);
   const gate = async (s: PipeStage, warn: string[]) => {
     c.onStage(s, warn.length ? 'warning' : 'done', warn.slice(0, 3).join(' · ') || undefined);
@@ -151,7 +151,27 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
       else c.onStage('ANIMATION', 'running', 'animation 2.5D (caméra, parallaxe, voix) au montage');
       await gate('ANIMATION', warn);
     }
-    // ── MONTAGE FINAL: voices, music, subtitles, edit, render
+    // ── CONTRÔLE QUALITÉ: rules + vision judge; the scenes the art director scored low are redrawn once (only
+    // still images, never a paid video again), then the report is shown for validation.
+    if (start <= 4) {
+      check(c);
+      const warn: string[] = [];
+      c.onStage('QA', 'running', 'juge visuel et règles de continuité');
+      const weak = bpOf(projectId).scenes.filter((s) => typeof s.quality === 'number' && s.quality < 60 && !s.videoAssetId);
+      for (const sc of weak.slice(0, 4)) {
+        check(c);
+        c.onStage('QA', 'running', `reprise ${sc.scene_id} (qualité ${sc.quality}/100)`);
+        await generateSceneImage(projectId, sc.scene_id, { forceModel: c.chosen.images, regenerate: true }).catch((e) => warn.push(`${sc.scene_id} : ${(e as Error).message.slice(0, 80)}`));
+      }
+      const rep = await runQA(projectId).catch(() => null);
+      if (rep) {
+        const errs = rep.issues.filter((i) => i.severity === 'error');
+        if (errs.length) warn.push(...errs.slice(0, 3).map((i) => i.message));
+        c.onStage('QA', 'running', rep.total === null ? 'score non mesuré (aucun juge)' : `score ${rep.total}/100`);
+      }
+      await gate('QA', warn);
+    }
+    // ── MONTAGE CINÉMA: voices, music, subtitles, edit, render with the cinema finish
     check(c);
     const warn: string[] = [];
     c.onStage('MONTAGE', 'running', 'voix des personnages');

@@ -149,6 +149,9 @@ export interface State {
   /** Lessons learnt from the user's alterations (cross-chat, by task family; visible and deletable). */
   lessons: import('../../server/jev/memory/semantic').MemFact[];
   setLessons: (l: import('../../server/jev/memory/semantic').MemFact[]) => void;
+  /** Self-learning proposals waiting for the user's validation (never applied automatically). */
+  updates: import('../../server/jev/memory/updateGate').UpdateProposal[];
+  setUpdates: (u: import('../../server/jev/memory/updateGate').UpdateProposal[]) => void;
   /** What the app learned from web searches and documents (reused instead of searching again). */
   knowledge: import('../../server/jev/knowledge/learned').KnowledgeEntry[];
   setKnowledge: (k: import('../../server/jev/knowledge/learned').KnowledgeEntry[]) => void;
@@ -243,6 +246,7 @@ export const useStore = create<State>((set, get) => ({
   ledger: { entries: [] },
   manual: [],
   lessons: [],
+  updates: [],
   knowledge: [],
   vault: [],
   bench: [],
@@ -420,6 +424,10 @@ export const useStore = create<State>((set, get) => ({
     set({ lessons });
     saveLater('lessons', () => get().lessons, 300);
   },
+  setUpdates: (updates) => {
+    set({ updates });
+    saveLater('updates', () => get().updates, 300);
+  },
   setKnowledge: (knowledge) => {
     set({ knowledge });
     saveLater('knowledge', () => get().knowledge, 300);
@@ -474,6 +482,7 @@ export const useStore = create<State>((set, get) => ({
 /** Loads everything saved in this browser. */
 export async function hydrate(): Promise<void> {
   const knowledge = await kv.get<import('../../server/jev/knowledge/learned').KnowledgeEntry[]>('knowledge').catch(() => undefined);
+  const updates = await kv.get<import('../../server/jev/memory/updateGate').UpdateProposal[]>('updates').catch(() => undefined);
   const [ledger, manual, lessons, vault, bench, routingLog, registry, externalBench] = await Promise.all([
     kv.get<Ledger>('ledger').catch(() => undefined),
     kv.get<ManualRule[]>('manual').catch(() => undefined),
@@ -565,6 +574,7 @@ export async function hydrate(): Promise<void> {
     manual: manual ?? [],
     lessons: lessons ?? [],
     knowledge: knowledge ?? [],
+    updates: updates ?? [],
     vault: vault ?? [],
     bench: bench ?? [],
     routingLog: routingLog ?? [],
