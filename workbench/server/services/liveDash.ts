@@ -180,7 +180,7 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
 
   // ── 1. raw rows on the calculation sheet (columns from RAW0) ────────────────────────────────────────────────────
   const calc = new SheetCells();
-  const head = S.get({ fill: spec.palette.primary, color: readableOn(spec.palette.primary, ['#FFFFFF', '#0F172A']), bold: true, font });
+  const head = S.get({ fill: spec.palette.primary, color: readableOn(spec.palette.primary, ['#FFFFFF', '#0F172A'], 4.5), bold: true, font });
   const rows = src.rows.slice(0, 5000);
   const n = rows.length;
   const used = new Set<string>();
@@ -434,7 +434,7 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
         c += w;
         return s;
       });
-      const hd = S.get({ fill: p.colors[0] ?? spec.palette.primary, color: readableOn(p.colors[0] ?? spec.palette.primary, ['#FFFFFF', '#0F172A']), bold: true, size: 8, font, align: 'center' });
+      const hd = S.get({ fill: p.colors[0] ?? spec.palette.primary, color: readableOn(p.colors[0] ?? spec.palette.primary, ['#FFFFFF', '#0F172A'], 4.5), bold: true, size: 8, font, align: 'center' });
       const zebra = [S.get({ fill: p.fill, color: p.text, size: 8, font }), S.get({ fill: mixH(p.fill, p.colors[0] ?? spec.palette.primary, 0.08), color: p.text, size: 8, font })];
       const zebraN = [S.get({ fill: p.fill, color: p.text, size: 8, font, amount: true, align: 'right' }), S.get({ fill: mixH(p.fill, p.colors[0] ?? spec.palette.primary, 0.08), color: p.text, size: 8, font, amount: true, align: 'right' })];
       const rowsAvail = Math.floor((inner.r1 - inner.r0 + 1) / 2) - 1;

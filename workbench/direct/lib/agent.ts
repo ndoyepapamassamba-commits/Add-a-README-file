@@ -64,6 +64,7 @@ import { addImagePageDocx, addImageSheet, addImageSlidePptx, addImageToHtml, add
 import { addNativeClone, removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
 import { strFromU8, unzipSync } from 'fflate';
 import { restyleWorkbook } from '../../server/services/officeRestyle';
+import { designQA } from '../../server/services/designQA';
 import { maisonBand } from '../../server/services/maisonBand';
 import { addLiveDashboard } from '../../server/services/liveDash';
 import { skinDocx, skinHtml, skinPptx, type Skin } from '../../server/services/officeSkin';
@@ -2815,6 +2816,21 @@ function finishWorkbooks(sid: string, since: number): string[] {
     if (!r) continue;
     writeBytes(f.path, r.bytes, f.mime);
     lines.push(`${f.path} : indicateurs et graphiques placés au-dessus de l'en-tête sur ${r.banded.map((x) => `« ${x} »`).join(', ')} (${r.moved} graphique(s) déplacé(s), ${r.created} créé(s)).`);
+  }
+  // CONTRÔLE DESIGN AVANT LIVRAISON — last: contrast, columns, page framing, overflowing text, on every deliverable.
+  for (const f of Object.values(files())) {
+    if (f.updatedAt < since || f.path.startsWith('uploads/') || f.path.startsWith('assets/') || !/\.(xlsx|docx|pptx|html?)$/i.test(f.path)) continue;
+    try {
+      const r = designQA(f.path, f.binary ? bytesOf(f) : f.data);
+      if (!r) continue;
+      if (r.fixes.length) {
+        if (typeof r.data === 'string') writeText(f.path, r.data);
+        else writeBytes(f.path, r.data, f.mime);
+      }
+      lines.push(`${f.path} — contrôle design : ${[...r.fixes, ...r.warnings.map((w) => `⚠ ${w}`)].join(' ; ')}.`);
+    } catch {
+      /* a file the checker cannot read is delivered as is */
+    }
   }
   return lines;
 }
