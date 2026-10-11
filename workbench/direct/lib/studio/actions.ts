@@ -1,5 +1,6 @@
 // Studio actions (runtime): registry, story, character library + 2D redraw, scene images, voices. Every paid call goes
 // through executeMedia (selection, budget gate, retries, fallback, storage, memory, JEV_LOG).
+import { detectPanels, SINGLE_SHOT_RETRY } from '../../../server/jev/studio/panels';
 import { castVoices, naturalSpeed } from '../../../server/jev/studio/motion';
 import { useStudio } from './store';
 import { useStore } from '../store';
@@ -467,6 +468,24 @@ export const filesFromInput = (list: FileList): LibFile[] =>
   }));
 
 // ───────── image generation ─────────
+/** True when the picture is a comic page (panels) rather than one shot. */
+async function isMultiPanel(assetId: string): Promise<boolean> {
+  try {
+    const b = await blobs.get(assetId);
+    if (!b || typeof createImageBitmap !== 'function' || typeof OffscreenCanvas === 'undefined') return false;
+    const bmp = await createImageBitmap(b);
+    const w = 270;
+    const h = Math.max(1, Math.round((bmp.height / Math.max(1, bmp.width)) * w));
+    const cv = new OffscreenCanvas(w, h);
+    const g = cv.getContext('2d');
+    if (!g) return false;
+    g.drawImage(bmp, 0, 0, w, h);
+    bmp.close();
+    return detectPanels(g.getImageData(0, 0, w, h).data, w, h).multiPanel;
+  } catch {
+    return false;
+  }
+}
 const dataUrl = async (assetId: string) => {
   const b = await blobs.get(assetId);
   if (!b) throw new StudioError('UNKNOWN', `asset ${assetId} introuvable`);
@@ -580,19 +599,26 @@ export async function generateSceneImage(
   const ids: string[] = [];
   const n = Math.max(1, Math.min(16, o.variants ?? 1));
   for (let i = 0; i < n; i++) {
-    const out = await generateOne({
+    const job = {
       projectId,
       sceneId,
       compiled,
       references: refs,
-      task: 'SCENE-IMAGE',
+      task: 'SCENE-IMAGE' as const,
       mission: `image ${sceneId}`,
       aspect: bp.aspect,
       forceModel: o.forceModel,
       tags: [sceneId, `v${i + 1}`],
       regenerated: o.regenerate,
       trace: i === 0 ? trace : new Trace(),
-    });
+    };
+    let out = await generateOne(job);
+    // A comic page (2-6 panels) instead of ONE shot makes the scene incoherent: drawn again once, strictly.
+    if (out.assetId && (await isMultiPanel(out.assetId))) {
+      trace.stage('QA', `image ${sceneId} : planche de BD détectée au lieu d'un plan unique — régénérée`);
+      const again = await generateOne({ ...job, compiled: { ...compiled, text: `${compiled.text}\n${SINGLE_SHOT_RETRY}` }, regenerated: true, trace: new Trace() });
+      if (again.assetId && !(await isMultiPanel(again.assetId))) out = again;
+    }
     if (out.assetId) ids.push(out.assetId);
   }
   if (ids.length)

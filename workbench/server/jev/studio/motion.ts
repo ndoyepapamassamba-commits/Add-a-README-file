@@ -123,3 +123,30 @@ export const naturalSpeed = (pace: unknown) => {
   const n = typeof pace === 'number' && Number.isFinite(pace) ? pace : 1;
   return Math.min(1.15, Math.max(0.85, n));
 };
+
+/**
+ * TALKING / LIVING 2.5D (no video model): the speaker's zone of the picture (head + upper body, on their side of
+ * the frame) is re-drawn with a jaw-like vertical stretch following the voice envelope and a small head nod; the
+ * rest breathes. Fractions of the frame; pivot = bottom of the zone (the body stays planted).
+ */
+export interface TalkWarp {
+  zone: { x: number; y: number; w: number; h: number };
+  scaleY: number;
+  scaleX: number;
+  rot: number;
+  dy: number;
+}
+export function talkWarp(side: number, energy: number, t: number): TalkWarp {
+  const e = Math.max(0, Math.min(1, energy));
+  const x = side < 0 ? 0.02 : side > 0 ? 0.43 : 0.2;
+  const syll = Math.abs(Math.sin(t * 13.5)) * 0.6 + Math.abs(Math.sin(t * 7.1)) * 0.4; // syllable-like pulses
+  return {
+    zone: { x, y: 0.1, w: 0.55, h: 0.5 },
+    scaleY: 1 + 0.045 * e * syll,
+    scaleX: 1 - 0.012 * e * syll,
+    rot: 0.022 * e * Math.sin(t * 5.3),
+    dy: -0.006 * e * syll,
+  };
+}
+/** Idle life of the whole shot: slow breathing (vertical scale anchored at the bottom). */
+export const breathing = (t: number) => 1 + 0.006 * Math.sin(t * 2.1);

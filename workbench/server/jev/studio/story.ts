@@ -2,6 +2,7 @@
 // Model output is DATA: it is parsed, validated and normalised, never executed or trusted.
 import type { DialogueLine, Scene, Story } from './types';
 import { redactSecrets } from './secrets';
+import { humorBrief } from './humor';
 
 export interface StoryBrief {
   idea: string;
@@ -53,6 +54,7 @@ export function storyMessages(b: StoryBrief): { role: 'system' | 'user' | 'assis
         ...(b.hints?.length
           ? [`Mémoire de production (ce qui a marché) :\n${b.hints.map((h) => `- ${h}`).join('\n')}`]
           : []),
+        humorBrief(b.idea.length),
         'Contraintes : accroche dans la 1re seconde, escalade, twist, chute de moins de 10 mots. Répliques de 12 mots maximum, écrites pour être dites à voix haute. ' +
           'Noms de personnages en MAJUSCULES. Une scène par plan.',
         'JSON attendu : {"title","logline","concept","synopsis","hook","twist","punchline","conflict","climax","resolution","setting","theme","characters":[noms],' +

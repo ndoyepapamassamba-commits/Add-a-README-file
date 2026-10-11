@@ -6,7 +6,7 @@ import { blobs } from './blobs';
 import type { Blueprint, Scene } from '../../../server/jev/studio/types';
 import { duckingPoints } from '../../../server/jev/studio/timeline';
 import { dimensionOf } from '../../../server/jev/studio/style';
-import { cameraAt, fadeIn, moveFor, rmsEnvelope, speakerSide, type Cam, type Move } from '../../../server/jev/studio/motion';
+import { breathing, cameraAt, fadeIn, moveFor, rmsEnvelope, speakerSide, talkWarp, type Cam, type Move, type TalkWarp } from '../../../server/jev/studio/motion';
 import {
   ASPECTS,
   SUBTITLE_STYLES,
@@ -72,6 +72,36 @@ function cover(ctx: CanvasRenderingContext2D, img: CanvasImageSource & { width: 
   ctx.rotate(c.rot);
   ctx.drawImage(img, -w / 2, -h / 2, w, h);
   ctx.restore();
+}
+/** The speaker's zone re-drawn stretched / nodding, blended in with a soft oval mask (no visible seams). */
+let talkBuf: OffscreenCanvas | null = null;
+function talkLayer(ctx: CanvasRenderingContext2D, W: number, H: number, w: TalkWarp): void {
+  if (typeof OffscreenCanvas === 'undefined') return;
+  const zx = Math.round(w.zone.x * W);
+  const zy = Math.round(w.zone.y * H);
+  const zw = Math.round(w.zone.w * W);
+  const zh = Math.round(w.zone.h * H);
+  if (zw < 8 || zh < 8) return;
+  if (!talkBuf || talkBuf.width !== zw || talkBuf.height !== zh) talkBuf = new OffscreenCanvas(zw, zh);
+  const g = talkBuf.getContext('2d');
+  if (!g) return;
+  g.globalCompositeOperation = 'source-over';
+  g.clearRect(0, 0, zw, zh);
+  // Copy the zone from the frame just drawn, transformed around its bottom centre.
+  g.save();
+  g.translate(zw / 2, zh);
+  g.rotate(w.rot);
+  g.scale(w.scaleX, w.scaleY);
+  g.drawImage(ctx.canvas, zx, zy, zw, zh, -zw / 2, -zh + w.dy * H, zw, zh);
+  g.restore();
+  // Soft oval mask: the change fades out towards the zone's edges.
+  g.globalCompositeOperation = 'destination-in';
+  const grad = g.createRadialGradient(zw / 2, zh * 0.55, Math.min(zw, zh) * 0.18, zw / 2, zh * 0.55, Math.max(zw, zh) * 0.55);
+  grad.addColorStop(0, 'rgba(0,0,0,1)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, zw, zh);
+  ctx.drawImage(talkBuf, zx, zy);
 }
 /** A generated scene video (Video Factory), played muted in sync with the timeline. */
 async function videoOf(id?: string): Promise<HTMLVideoElement | null> {
@@ -288,7 +318,12 @@ export async function renderPreview(
         if (vid.paused) void vid.play().catch(() => undefined);
         // A real video clip already moves: only a gentle camera on top of it.
         cover(ctx, vid, W, H, { zoom: 1 + (cam.zoom - 1) * 0.3, dx: cam.dx * 0.3, dy: cam.dy * 0.3, rot: 0 }, alpha);
-      } else if (img) cover(ctx, img, W, H, cam, alpha);
+      } else if (img) {
+        // 2.5D life without a video model: the whole shot breathes, the speaker talks and nods.
+        const b = breathing(now + k);
+        cover(ctx, img, W, H, { ...cam, zoom: cam.zoom * b, dy: cam.dy - (b - 1) * 0.5 }, alpha);
+        if (k === si && va.energy > 0.04 && alpha >= 1) talkLayer(ctx, W, H, talkWarp(va.side, va.energy, now));
+      }
       else if (alpha >= 1) placeholder(ctx, bp.scenes[k]!, W, H);
     };
     const since = now - sceneStart[si]!;

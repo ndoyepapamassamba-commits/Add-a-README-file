@@ -1,6 +1,7 @@
 // Prompt Genome — a COMPOSITION ENGINE (not a list of prompts). A prompt is built from dimensions, a template and the
 // constraints of the chosen model; every compiled prompt is versioned and the Style DNA / consistency profiles are
 // injected in all generations.
+import { comicDirection } from './humor';
 import type { CharacterSheet, Scene, StyleDNA, WorldSheet } from './types';
 import { qualityLine, redrawInstruction, styleLine } from './style';
 import { redactSecrets } from './secrets';
@@ -231,31 +232,40 @@ export interface SceneContext {
   aspect?: string;
 }
 /** Dimensions of a scene, with the Style DNA, consistency profiles and the world sheet injected. */
+/** The first moment of an action written as a sequence of beats. */
+export function singleMoment(action: string): string {
+  const a = (action ?? '').trim();
+  const first = a.split(/\s*(?:,?\s+(?:puis|ensuite|après quoi|et enfin|then|and then|afterwards)\s+|→|->|;|\n)\s*/i)[0] ?? a;
+  return first.length >= 12 ? first : a;
+}
 export function sceneDims(sc: Scene, ctx: SceneContext): Dims {
   const chars = ctx.characters.filter((c) =>
     sc.characters.some((n) => n.toUpperCase() === c.name.toUpperCase()),
   );
   const world = ctx.worlds.find((w) => w.name.toLowerCase() === sc.location.toLowerCase());
+  // ONE moment per image: a beat written as a sequence (« X, puis Y, puis Z ») becomes its first moment — the rest is
+  // motion for the video, never extra panels in the picture.
+  const moment = singleMoment(sc.action);
   return {
     STYLE: styleLine(ctx.style),
-    SUBJECT: sc.action,
+    SUBJECT: moment,
     CHARACTER: chars.map(charLine).join(' | '),
     LOCATION: world
-      ? `${world.name} — ${world.architecture}; ${world.palette}; ${world.objects}`
-      : sc.location,
-    ACTION: sc.action,
-    EMOTION: sc.emotion,
+      ? `${world.name} — ${world.architecture}; ${world.palette}; ${world.objects}. The whole shot takes place here: every prop belongs to this place`
+      : `${sc.location}. The whole shot takes place here: every prop belongs to this place`,
+    ACTION: moment,
+    EMOTION: `${sc.emotion}${sc.emotion ? '; ' : ''}exaggerated readable cartoon expressions`,
     CAMERA: sc.camera,
     LIGHTING: sc.lighting || world?.lighting || '',
     COLOR: world?.palette ?? '',
-    COMPOSITION: ctx.next ? `framed so the next scene (${ctx.next.location}) can cut in naturally` : '',
+    COMPOSITION: `ONE single full-frame shot of one moment, one camera, full bleed (no panels, no borders, no split screen, no speech bubbles); each character appears once${ctx.next ? `; framed so the next scene (${ctx.next.location}) can cut in naturally` : ''}`,
     QUALITY: qualityLine(ctx.style, 'illustration'),
     NEGATIVE: ctx.style.negative,
     DIALOGUE: sc.dialogue.map((d) => `${d.speaker}: "${d.text}"`).join(' / '),
     SFX: sc.sound,
     AMBIENCE: world ? `${world.weather}, ${world.time}` : sc.time,
     MUSIC: sc.music,
-    MOTION: sc.action,
+    MOTION: `${sc.action}; ${comicDirection((sc as { beat?: string }).beat, sc.emotion, ctx.characters.length + (sc.scene_id?.length ?? 0))}; characters move and talk: lips synced to their lines, head and hand gestures, body language`,
     CINEMATOGRAPHY: `${sc.camera}, ${sc.transition}`,
     DURATION: `${sc.duration}s`,
     PLATFORM: ctx.platform ?? '',

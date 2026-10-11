@@ -2,6 +2,10 @@
 // It is injected in EVERY generation and only changes on explicit request.
 import type { StyleDNA } from './types';
 
+/** An image generator asked for a story beat tends to draw a comic page: one shot only, never panels. */
+export const SINGLE_SHOT_NEGATIVE =
+  'comic page, comic panels, multiple panels, panel borders, split screen, grid of images, collage, storyboard sheet, inset picture, picture-in-picture, before and after, speech bubbles, captions, duplicated characters, the same character twice';
+
 export const DEFAULT_STYLE_ID = 'style-2d-hq-franco-africain';
 export const STYLE_3D_ID = 'style-3d-afrikatoon-stylise';
 
@@ -28,7 +32,7 @@ export const STYLE_2D_HQ: StyleDNA = Object.freeze({
   renderStyle: '2D digital cartoon illustration, crisp black linework, flat color fills, one shadow tone',
   postProcessing: 'none (no bloom, no grain, no blur)',
   negative:
-    '3D render, CGI, Pixar, photorealistic, photograph, realistic skin, volumetric lighting, depth of field blur, brand logos, real trademarks, text, watermark, signature, deformed hands, extra fingers',
+    `3D render, CGI, Pixar, photorealistic, photograph, realistic skin, volumetric lighting, depth of field blur, brand logos, real trademarks, text, watermark, signature, deformed hands, extra fingers, ${SINGLE_SHOT_NEGATIVE}`,
 }) as StyleDNA;
 
 /** 3D option: same pipeline, stylised 3D animation (Afrikatoon). Locked like the 2D default; chosen per production. */
@@ -54,7 +58,7 @@ export const STYLE_3D_AFRIKATOON: StyleDNA = Object.freeze({
   renderStyle: 'high quality stylised 3D animation render, soft global illumination, clean stylised shading',
   postProcessing: 'subtle color grading only',
   negative:
-    'flat 2D, hand-drawn sketch, photorealistic live action, photograph, uncanny realistic skin, brand logos, real trademarks, text, watermark, signature, deformed hands, extra fingers',
+    `flat 2D, hand-drawn sketch, photorealistic live action, photograph, uncanny realistic skin, brand logos, real trademarks, text, watermark, signature, deformed hands, extra fingers, ${SINGLE_SHOT_NEGATIVE}`,
 }) as StyleDNA;
 
 export type Dimension = '2D' | '3D';

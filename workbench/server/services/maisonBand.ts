@@ -285,6 +285,9 @@ function bandStyles(z: Zip, d: Design): { label: number[]; value: number[]; spac
   const spacer = base + xfs.length;
   xfs.push(xf(0, 0, 0, 0, ''));
   st = st.replace(/<cellXfs\b([^>]*)>([\s\S]*?)<\/cellXfs>/, (_m, a: string, b: string) => `<cellXfs${a.replace(/count="\d+"/, `count="${base + xfs.length}"`)}>${b}${xfs.join('')}</cellXfs>`);
+  // Font children in schema order (openpyxl writes <name> first): a strict reader opens the file without repair.
+  const ORDER = ['b', 'i', 'strike', 'condense', 'extend', 'outline', 'shadow', 'u', 'vertAlign', 'sz', 'color', 'name', 'family', 'charset', 'scheme'];
+  st = st.replace(/<font>((?:<\w+\b[^>]*\/>)+)<\/font>/g, (_m, kids: string) => `<font>${[...kids.matchAll(/<(\w+)\b[^>]*\/>/g)].sort((a, b) => ORDER.indexOf(a[1]!) - ORDER.indexOf(b[1]!)).map((k) => k[0]).join('')}</font>`);
   wr(z, 'xl/styles.xml', st);
   return { label, value, spacer };
 }
