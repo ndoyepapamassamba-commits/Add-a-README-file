@@ -129,5 +129,10 @@ export function planCircuit(scenes: Pick<Scene, 'scene_id' | 'beat' | 'duration'
   return { shots, usd, seconds: shots.reduce((a, x) => a + x.seconds, 0), skipped };
 }
 /** What the video may still spend: the cap minus what was REALLY spent, minus the stages still to come. */
-export const circuitBudget = (capUsd: number, spentUsd: number, laterUsd: number): number =>
-  Math.max(0, Math.round((capUsd * CIRCUIT.videoShare - spentUsd - laterUsd) * 10000) / 10000);
+export const circuitBudget = (capUsd: number, spentUsd: number, laterUsd: number, share: number = CIRCUIT.videoShare): number =>
+  Math.max(0, Math.round((capUsd * share - spentUsd - laterUsd) * 10000) / 10000);
+/** A short sketch (≤ 20 s) under the circuit: every shot gets its clip — the character sheets are not drawn (each clip
+ *  starts from its scene picture, so the sheets would only eat the motion budget). */
+export const circuitShort = (seconds: number): boolean => seconds <= 20;
+/** Margin kept, once the voices are done, for the quality judge's text calls after the video. */
+export const CIRCUIT_TAIL_USD = 0.006;

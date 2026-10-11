@@ -264,7 +264,7 @@ export function sceneDims(sc: Scene, ctx: SceneContext): Dims {
     CAMERA: sc.camera,
     LIGHTING: sc.lighting || world?.lighting || '',
     COLOR: world?.palette ?? '',
-    COMPOSITION: `ONE single full-frame shot of one moment, one camera, full bleed (no panels, no borders, no split screen, no speech bubbles); each character appears once; ${ANIMATION_READY}${ctx.next ? `; framed so the next scene (${ctx.next.location}) can cut in naturally` : ''}`,
+    COMPOSITION: `ONE single full-frame shot of one moment, one camera, full bleed (no panels, no borders, no split screen, no speech bubbles); a clean picture with NO written words anywhere (no caption, no subtitle, no title, no label, no sign text); each character appears once; ${ANIMATION_READY}${ctx.next ? `; framed so the next scene (${ctx.next.location}) can cut in naturally` : ''}`,
     QUALITY: qualityLine(ctx.style, 'illustration'),
     NEGATIVE: ctx.style.negative,
     DIALOGUE: sc.dialogue.map((d) => `${d.speaker}: "${d.text}"`).join(' / '),

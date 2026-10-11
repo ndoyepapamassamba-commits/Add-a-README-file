@@ -98,7 +98,7 @@ function IdeaForm({ onCreate }: { onCreate: (idea: string, dim: Dimension, secon
           </button>
         ))}
         <span className="ml-3 text-muted">Durée</span>
-        <Select value={String(sec)} onChange={(v) => setSec(Number(v))} options={[30, 60, 90, 180, 300].map((s) => ({ value: String(s), label: s < 60 ? `${s} s` : `${s / 60} min` }))} />
+        <Select value={String(sec)} onChange={(v) => setSec(Number(v))} options={[10, 30, 60, 90, 180, 300].map((s) => ({ value: String(s), label: s === 10 ? '10 s · entièrement animé' : s < 60 ? `${s} s` : `${s / 60} min` }))} />
         <span className="ml-3 text-muted">Format</span>
         <Select value={aspect} onChange={setAspect} options={[{ value: '9:16', label: 'Vertical 9:16' }, { value: '16:9', label: 'Paysage 16:9' }, { value: '1:1', label: 'Carré 1:1' }]} />
         <label className="ml-auto flex items-center gap-2" title="Vrai mouvement génératif (modèle image → vidéo au prix annoncé, via votre clé OpenRouter) sur l’accroche et la chute ; plafond DUR 0,30 $ par minute de film, tout compris ; le reste est animé gratuitement par la Marionnette.">

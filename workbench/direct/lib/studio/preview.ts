@@ -137,7 +137,8 @@ export function framed(ctx: CanvasRenderingContext2D, img: CanvasImageSource & {
 }
 /** The « stupeur » insert: our own vector shocked face popping in on black (overshoot, then a small tremble). */
 export function shockFrame(ctx: CanvasRenderingContext2D, W: number, H: number, age: number, kind: ReactionKind = 'choc') {
-  ctx.fillStyle = '#000';
+  // Over the punchline's last picture, darkened (the scene stays readable behind the reaction) — never a black screen.
+  ctx.fillStyle = `rgba(0,0,0,${Math.min(0.55, age * 2.2)})`;
   ctx.fillRect(0, 0, W, H);
   const pop = age < 0.25 ? Math.sin((age / 0.25) * Math.PI * 0.5) * 1.15 : 1 + 0.15 * Math.exp(-(age - 0.25) * 8) * Math.cos((age - 0.25) * 18);
   const r = Math.min(W, H) * 0.3 * pop;
@@ -423,12 +424,19 @@ export async function renderPreview(
   let t = 0;
   for (const sc of bp.scenes) {
     sceneStart.push(t);
-    const last = lines.filter((l) => l.start >= t && l.start < t + sc.duration + 10).at(-1);
-    t += Math.max(sc.duration, last ? last.end - t + 0.4 : 0);
+    const last = lines.filter((l) => l.sceneId === sc.scene_id).at(-1);
+    // The VOICES set the pace (the story's duration is only an estimate): a scene lasts its lines + a short beat; a
+    // scene without a line stays 3 s at most — never 10 s of a frozen picture.
+    t += last ? Math.max(1.6, last.end - t + 0.5) : Math.min(sc.duration || 3, 3);
   }
   // « Stupeur » inserts after the punchlines (or between sketches): the timeline, the voices and the SFX shift after them.
   const viral = o.viral ?? bp.aspect === '9:16';
   const shock = viral ? shockAfter(bp.scenes, o.compilation ?? false) : bp.scenes.map(() => false);
+  // One story = ONE reaction insert, after its punchline (the last one the beats name); never two in a row.
+  if (!o.compilation) {
+    const lastShock = shock.lastIndexOf(true);
+    shock.forEach((_, i) => (shock[i] = i === lastShock));
+  }
   // « court »: the reaction closes the sketch (after the last scene), the clip then loops on TikTok.
   if (viral && o.short && bp.scenes.length) shock[bp.scenes.length - 1] = true;
   const reactions = bp.scenes.map((s) => reactionFor(s.emotion, s.beat));
@@ -564,17 +572,27 @@ export async function renderPreview(
   const t0 = performance.now();
   const style = o.style ?? (bp.subtitles.style as SubtitleStyle);
   const grade = cinemaGrade(W, H, ctx);
+  let shockStill: HTMLCanvasElement | null = null;
   while (true) {
     const now = (performance.now() - t0) / 1000;
     if (now >= total || o.signal?.aborted) break;
     let si = 0;
     for (let i = 0; i < sceneStart.length; i++) if (now >= sceneStart[i]!) si = i;
     if (shock[si] && now >= sceneEnd[si]!) {
+      // The punchline's last picture, frozen once, redrawn under the reaction every frame (no darkening build-up).
+      if (!shockStill) {
+        shockStill = document.createElement('canvas');
+        shockStill.width = W;
+        shockStill.height = H;
+        shockStill.getContext('2d')!.drawImage(canvas, 0, 0);
+      }
+      ctx.drawImage(shockStill, 0, 0);
       shockFrame(ctx, W, H, now - sceneEnd[si]!, reactions[si]);
       o.onProgress?.(now / total, now);
       await wait(33);
       continue;
     }
+    shockStill = null;
     const dur = sceneEnd[si]! - sceneStart[si]!;
     const f = Math.min(1, (now - sceneStart[si]!) / Math.max(0.1, dur));
     ctx.fillStyle = '#000';

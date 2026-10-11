@@ -57,3 +57,26 @@ describe('CIRCUIT GROK 0,30 $ (prix réels du catalogue OpenRouter)', () => {
     expect(planCircuit([scene('S01', 'hook', 5)], r, circuitBudget(0.3, 0.2, 0.03)).shots).toEqual([]);
   });
 });
+
+describe('CIRCUIT GROK — format court entièrement animé (prix réels)', () => {
+  it('a 9 s sketch of 3 shots: 3 scene pictures + voices, then EVERY shot gets its clip within 0,30 $', async () => {
+    const { circuitShort, CIRCUIT_TAIL_USD } = await import('../../server/jev/studio/circuit');
+    expect(circuitShort(10)).toBe(true);
+    expect(circuitShort(60)).toBe(false);
+    const r = pickCircuitModel(CATALOG, '9:16', prior)!;
+    // spent before the video: 3 pictures (Seedream 5 Flash 0,018 $) + writing + voices ≈ 0,058 $
+    const spent = 3 * 0.018 + 0.004;
+    const p = planCircuit([scene('S01', 'hook', 3), scene('S02', 'escalade', 3), scene('S03', 'chute', 3)], r, circuitBudget(0.3, spent, CIRCUIT_TAIL_USD, 1));
+    expect(p.shots.length).toBe(3);
+    expect(p.seconds).toBe(9);
+    expect(spent + p.usd + CIRCUIT_TAIL_USD).toBeLessThanOrEqual(0.3);
+  });
+  it('a minute with 7 shots and character sheets: honest — the motion budget covers the hook only', () => {
+    const r = pickCircuitModel(CATALOG, '9:16', prior)!;
+    const spent = 10 * 0.018 + 0.004;
+    const scenes = ['hook', 'escalade', 'escalade', 'escalade', 'twist', 'escalade', 'chute'].map((b, i) => scene(`S0${i + 1}`, b, 4));
+    const p = planCircuit(scenes, r, circuitBudget(0.3, spent, 0.006, 1));
+    expect(p.shots.map((x) => x.sceneId)).toEqual(['S01']);
+    expect(p.seconds).toBe(4);
+  });
+});

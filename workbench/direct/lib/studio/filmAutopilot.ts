@@ -25,7 +25,7 @@ import {
   type StagePlan,
 } from '../../../server/jev/studio/director';
 import type { Blueprint } from '../../../server/jev/studio/types';
-import { CIRCUIT, CIRCUIT_PREFIX, circuitBudget, circuitModelId, circuitRate, isCircuit, pickCircuitModel, planCircuit } from '../../../server/jev/studio/circuit';
+import { CIRCUIT, CIRCUIT_PREFIX, CIRCUIT_TAIL_USD, circuitShort, circuitBudget, circuitModelId, circuitRate, isCircuit, pickCircuitModel, planCircuit } from '../../../server/jev/studio/circuit';
 import { priorQuality } from '../../../server/jev/studio/director';
 import type { Registry } from '../../../server/jev/studio/capabilities';
 import { spent } from '../../../server/jev/studio/blueprint';
@@ -62,16 +62,6 @@ export function circuitOf(reg: Registry, bp: Blueprint) {
   if (!S().settings.circuit) return null;
   return pickCircuitModel(modelsWith(reg, 'video'), bp.aspect, (m) => priorQuality('video', m.id, m.name));
 }
-/** What the stages AFTER the animation will still cost (voices of the lines not voiced yet) + a fixed margin. */
-async function laterUsd(projectId: string, reg: Registry, voice?: string): Promise<number> {
-  const bp = bpOf(projectId);
-  const chars = bp.scenes.reduce((a, sc) => a + sc.dialogue.reduce((b, l, i) => b + (bp.audio.voices?.[`${sc.scene_id}:${i}`] ? 0 : l.text.length), 0), 0);
-  const tts = modelsWith(reg, 'speech', 'SPEECH');
-  const m = tts.find((x) => x.id === voice) ?? tts[0];
-  const v = m && chars ? estimateSpeech(m, chars).usd : 0;
-  return (v ?? 0) + CIRCUIT.reserveUsd;
-}
-
 export async function buildPlans(projectId: string): Promise<StagePlan[]> {
   const bp = bpOf(projectId);
   const reg = await loadRegistry();
@@ -129,6 +119,7 @@ export interface FilmResult {
 }
 
 /** Runs the whole film. Every stage reports live; scene-level failures are kept as warnings. */
+const isLocalAnim = (a?: string) => a === LOCAL_ANIMATION;
 export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = 'STORY'): Promise<FilmResult | null> {
   const order: PipeStage[] = ['STORY', 'SCENES', 'IMAGES', 'ANIMATION', 'QA', 'MONTAGE'];
   const start = order.indexOf(from);
@@ -179,8 +170,10 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
     // ── IMAGES: character references first (continuity), then each scene with the chosen model
     if (start <= 2) {
       const warn: string[] = [];
-      c.onStage('IMAGES', 'running', 'références des personnages');
-      await pool(bpOf(projectId).characters.filter((x) => !x.referenceAssetId).slice(0, 6), PARALLEL.images, async (ch) => {
+      // Circuit Grok, short sketch: no character sheets — the budget goes to real motion on every shot.
+      const shortGrok = S().settings.circuit && circuitShort(bpOf(projectId).duration) && !isLocalAnim(c.chosen.animation);
+      c.onStage('IMAGES', 'running', shortGrok ? 'Circuit Grok court : budget réservé au mouvement' : 'références des personnages');
+      await pool(shortGrok ? [] : bpOf(projectId).characters.filter((x) => !x.referenceAssetId).slice(0, 6), PARALLEL.images, async (ch) => {
         check(c);
         await redrawCharacter(projectId, ch.id, ['neutral']).catch((e) => warn.push(`${ch.name} : ${(e as Error).message.slice(0, 80)}`));
       });
@@ -218,15 +211,27 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
         const r = m ? circuitRate(m, bpOf(projectId).aspect) : null;
         if (!r || !reg) warn.push('Circuit Grok : modèle vidéo indisponible → Marionnette Afrikatoon');
         else {
-          const later = await laterUsd(projectId, reg, c.chosen.voice);
+          // The VOICES first (cheap, needed anyway): the clips then take the whole rest of the cap, and each clip lasts
+          // what its lines last (not the story's estimate).
+          c.onStage('ANIMATION', 'running', 'Circuit Grok : voix d’abord (durée exacte de chaque plan)');
+          const lines0 = bpOf(projectId).scenes.flatMap((sc) => sc.dialogue.map((_, i) => ({ sc: sc.scene_id, i }))).filter((l) => !bpOf(projectId).audio.voices?.[`${l.sc}:${l.i}`]);
+          await pool(lines0, PARALLEL.voices, async (l) => {
+            check(c);
+            await generateLine(projectId, l.sc, l.i, { forceModel: c.chosen.voice }).catch((e) => warn.push(`voix ${l.sc} : ${(e as Error).message.slice(0, 60)}`));
+          });
+          const later = CIRCUIT_TAIL_USD;
           const b0 = bpOf(projectId);
-          const plan = planCircuit(b0.scenes, r, circuitBudget(b0.cap, spent(b0), later));
+          const voiced = b0.scenes.map((sc) => {
+            const secs = sc.dialogue.reduce((a, _, i) => a + (b0.audio.voices?.[`${sc.scene_id}:${i}`]?.seconds ?? 0), 0);
+            return { ...sc, duration: secs ? Math.max(2, Math.ceil(secs + 0.5)) : Math.min(sc.duration, 3) };
+          });
+          const plan = planCircuit(voiced, r, circuitBudget(b0.cap, spent(b0), later, 1));
           c.onStage('ANIMATION', 'running', `Circuit Grok : ${plan.shots.length} plan(s), ${plan.seconds} s, ≤ ${plan.usd.toFixed(2)} $ (plafond ${b0.cap.toFixed(2)} $)`);
-          if (!plan.shots.length) warn.push(`Circuit Grok : budget ${b0.cap.toFixed(2)} $ déjà utilisé par l’écriture et les images (${spent(b0).toFixed(3)} $) → Marionnette`);
+          if (!plan.shots.length) warn.push(`Circuit Grok : il reste ${(b0.cap - spent(b0)).toFixed(3)} $ après l’écriture, les images et les voix — pas assez pour un plan animé (${r.usdPerS} $/s) → Marionnette. Choisissez « 10 s · entièrement animé » ou un budget plus élevé.`);
           for (const shot of plan.shots) {
             check(c);
             const b = bpOf(projectId);
-            if (shot.usd > circuitBudget(b.cap, spent(b), later) + 1e-9) {
+            if (shot.usd > circuitBudget(b.cap, spent(b), later, 1) + 1e-9) {
               warn.push(`${shot.sceneId} : plafond ${b.cap.toFixed(2)} $ atteint (dépense réelle ${spent(b).toFixed(3)} $) → Marionnette`);
               continue;
             }

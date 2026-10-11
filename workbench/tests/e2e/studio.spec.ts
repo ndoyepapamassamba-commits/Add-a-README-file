@@ -119,7 +119,8 @@ async function intercept(page: Page): Promise<Net> {
           : {
               status: 'completed',
               unsigned_urls: ['https://openrouter.ai/api/v1/videos/vid-1/content?index=0'],
-              usage: { cost: net.videoCost },
+              // videoCost < 0: billed exactly as announced for the last clip (Grok Imagine Lite 480p: 0,02 $/s + 0,01 $)
+              usage: { cost: net.videoCost < 0 ? Number(net.videoBodies.at(-1)?.duration ?? 0) * 0.02 + 0.01 : net.videoCost },
             },
       );
     }
@@ -948,7 +949,7 @@ test('Film Autopilot: a provider error on a scene image is caught up — no scen
   const net = await intercept(page);
   // The image provider fails 8 times in a row (5xx « Erreur du fournisseur »): retries + the catch-up pass must recover.
   net.imageScript = [500, 500, 500, 500, 500, 500, 500, 500];
-  net.videoCost = 0.07; // billed as announced (3 s × 0,02 $ + 0,01 $)
+  net.videoCost = -1; // billed as announced
   await page.getByTitle(/AI Film Studio/).click();
   const SHORT = { ...STORY, scenes: STORY.scenes.map((s) => ({ ...s, duration: 3 })) };
   mock.push({ text: JSON.stringify(SHORT) });
@@ -969,8 +970,8 @@ test('Circuit Grok: open → launch → real generative clips with the OpenRoute
   mock.models = [model('acme/free-text:free', '0', '0')];
   const errors = await open(page, [], { autopilot: true });
   const net = await intercept(page);
-  // The provider bills what it announced: 3 s × 0,02 $ + 0,01 $ first-frame image.
-  net.videoCost = 0.07;
+  // The provider bills what it announced: seconds × 0,02 $ + 0,01 $ first-frame image.
+  net.videoCost = -1;
   await page.getByTitle(/AI Film Studio/).click();
   const SHORT = { ...STORY, scenes: STORY.scenes.map((s) => ({ ...s, duration: 3 })) };
   mock.push({ text: JSON.stringify(SHORT) });
@@ -988,7 +989,9 @@ test('Circuit Grok: open → launch → real generative clips with the OpenRoute
   for (const b of net.videoBodies) {
     expect(b.model).toBe('x-ai/grok-imagine-video-1.5-lite');
     expect(b.resolution).toBe('480p');
-    expect(b.duration).toBe(3);
+    // each clip lasts what its lines last (voices made first), not the story's estimate
+    expect(Number(b.duration)).toBeGreaterThanOrEqual(2);
+    expect(Number(b.duration)).toBeLessThanOrEqual(15);
     expect(Array.isArray(b.frame_images)).toBe(true);
   }
   // HARD cap: the whole film (writing + images + video + voices) never exceeds 0,30 $.
@@ -996,5 +999,30 @@ test('Circuit Grok: open → launch → real generative clips with the OpenRoute
   const spentUsd = Number(/dépensé\s*([\d.,]+)/.exec(txt)![1]!.replace(',', '.'));
   expect(spentUsd).toBeGreaterThan(0);
   expect(spentUsd).toBeLessThanOrEqual(0.3);
+  expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
+});
+
+test('Circuit Grok « 10 s · entièrement animé »: no character sheet, voices first, EVERY shot a real clip, ≤ 0,30 $', async ({ page }) => {
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  const errors = await open(page, [], { autopilot: true });
+  const net = await intercept(page);
+  net.videoCost = -1; // billed as announced
+  await page.getByTitle(/AI Film Studio/).click();
+  const SHORT = { ...STORY, scenes: STORY.scenes.map((s) => ({ ...s, duration: 3 })) };
+  mock.push({ text: JSON.stringify(SHORT) });
+  mock.fallback = () => ({ text: '{}' });
+  await page.getByTestId('film-idea-input').fill('Le faux riche propose de conduire ses amis… en taxi payant.');
+  await page.getByRole('button', { name: 'Afrikatoon 2D' }).click();
+  await page.getByTestId('film-idea').locator('select').first().selectOption('10');
+  await page.getByTestId('film-create').click();
+  await expect(page.getByTestId('film-spent')).toContainText('/ 0.30 $');
+  await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 180_000 });
+  // one picture per scene, no character sheet: the money goes to motion
+  expect(net.imageCalls.length).toBe(SHORT.scenes.length);
+  // every scene became a generative clip (the voices were made first)
+  expect(net.videoSubmits).toBe(SHORT.scenes.length);
+  expect(net.speechCalls).toBeGreaterThan(0);
+  const txt = (await page.getByTestId('film-spent').textContent()) ?? '';
+  expect(Number(/dépensé\s*([\d.,]+)/.exec(txt)![1]!.replace(',', '.'))).toBeLessThanOrEqual(0.3);
   expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
 });
