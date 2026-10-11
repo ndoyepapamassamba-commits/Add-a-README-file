@@ -1,6 +1,7 @@
 // FILM AUTOPILOT — the single view: one idea, one « Créer » button, the whole pipeline live
 // (IDÉE → HISTOIRE → SCÈNES → IMAGES → ANIMATION → MONTAGE FINAL), a model plan the user can override, and per scene only:
 // Accepter · Modifier · Régénérer · Modèle · Valider. The Afrikatoon art direction is locked for every call.
+import { circuitCap } from '../../../server/jev/studio/circuit';
 import { useEffect, useMemo, useState } from 'react';
 import { create } from 'zustand';
 import { Badge, Button, Select, Spinner, Toggle } from '../../../web/components/ui';
@@ -74,6 +75,7 @@ function IdeaForm({ onCreate }: { onCreate: (idea: string, dim: Dimension, secon
   const [dim, setDim] = useState<Dimension>('3D');
   const [sec, setSec] = useState(60);
   const [aspect, setAspect] = useState('9:16');
+  const circuit = useStudio((s) => s.settings.circuit);
   return (
     <div className="mx-auto max-w-3xl space-y-3 p-6" data-testid="film-idea">
       <div className="text-center">
@@ -99,7 +101,13 @@ function IdeaForm({ onCreate }: { onCreate: (idea: string, dim: Dimension, secon
         <Select value={String(sec)} onChange={(v) => setSec(Number(v))} options={[30, 60, 90, 180, 300].map((s) => ({ value: String(s), label: s < 60 ? `${s} s` : `${s / 60} min` }))} />
         <span className="ml-3 text-muted">Format</span>
         <Select value={aspect} onChange={setAspect} options={[{ value: '9:16', label: 'Vertical 9:16' }, { value: '16:9', label: 'Paysage 16:9' }, { value: '1:1', label: 'Carré 1:1' }]} />
-        <label className="ml-auto flex items-center gap-2">
+        <label className="ml-auto flex items-center gap-2" title="Vrai mouvement génératif (modèle image → vidéo au prix annoncé, via votre clé OpenRouter) sur l’accroche et la chute ; plafond DUR 0,30 $ par minute de film, tout compris ; le reste est animé gratuitement par la Marionnette.">
+          <span data-testid="film-circuit" data-on={circuit ? '1' : '0'}>
+            <Toggle checked={circuit} onChange={(v) => useStudio.getState().setSettings({ circuit: v })} />
+          </span>
+          Circuit Grok (≤ {circuitCap(sec).toFixed(2)} $)
+        </label>
+        <label className="flex items-center gap-2">
           <Toggle checked={useFilm((s) => s.confirmEach)} onChange={(v) => useFilm.setState({ confirmEach: v })} />
           Valider chaque étape
         </label>

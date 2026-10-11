@@ -317,6 +317,60 @@
     "duration_seconds_1080p": "0.28"
    },
    "allowed_passthrough_parameters": []
+  },
+  {
+   "id": "x-ai/grok-imagine-video-1.5-lite",
+   "canonical_slug": "x-ai/grok-imagine-video-1.5-lite-20261001",
+   "hugging_face_id": null,
+   "name": "SpaceXAI: Grok Imagine Video 1.5 Lite",
+   "created": 1791309778,
+   "description": "Grok Imagine Video 1.5 Lite is a faster, lower-cost video generation model from SpaceXAI, distilled from [Grok Imagine Video 1.5](/x-ai/grok-imagine-video-1.5). It supports text-to-video and image-to-video, trading some quality for speed...",
+   "supported_resolutions": [
+    "480p",
+    "720p",
+    "1080p"
+   ],
+   "supported_aspect_ratios": [
+    "16:9",
+    "9:16",
+    "1:1",
+    "4:3",
+    "3:4",
+    "3:2",
+    "2:3"
+   ],
+   "supported_sizes": null,
+   "supported_durations": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "supported_frame_images": [
+    "first_frame"
+   ],
+   "upscale_factor": null,
+   "creativity": null,
+   "generate_audio": null,
+   "seed": null,
+   "pricing_skus": {
+    "cents_per_image_input": "1",
+    "cents_per_video_output_second_480p": "2",
+    "cents_per_video_output_second_720p": "3",
+    "cents_per_video_output_second_1080p": "14"
+   },
+   "allowed_passthrough_parameters": []
   }
  ]
 }

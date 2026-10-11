@@ -1,5 +1,6 @@
 // AI Film Studio runtime: measures a real video Blob, runs the quality gate, versions, production diagnostics.
 // Everything reported here is read from the provider answers, IndexedDB or the browser — nothing is invented.
+import { circuitCap } from '../../../server/jev/studio/circuit';
 import { useStudio } from './store';
 import { blobs, blobToDataUrl, quota } from './blobs';
 import { hasKey, pollVideo } from './net';
@@ -192,6 +193,12 @@ export interface WizardInput extends Partial<ProductionOptions> {
 }
 export function createProductionFromWizard(w: WizardInput) {
   const bp = S().createProject(w.idea, { ...w });
+  // Circuit Grok: the film's HARD cap is 0,30 $ per started minute (writing, images, voices and video included).
+  if (S().settings.circuit) {
+    const cap = Math.min(bp.cap, circuitCap(w.duration));
+    if (cap !== bp.cap) S().patchProject(bp.project.id, (b) => ({ ...b, cap }), `Circuit Grok : plafond ${cap.toFixed(2)} $`);
+    return S().projects[bp.project.id] ?? bp;
+  }
   return bp;
 }
 export { STYLE_PRESETS };

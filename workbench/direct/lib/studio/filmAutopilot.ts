@@ -14,6 +14,7 @@ import { modelsWith } from '../../../server/jev/studio/capabilities';
 import { estimateSpeech, estimateVideo } from '../../../server/jev/studio/cost';
 import {
   LOCAL_ANIMATION,
+  costLabel,
   planAnimation,
   planImages,
   planVoices,
@@ -24,6 +25,9 @@ import {
   type StagePlan,
 } from '../../../server/jev/studio/director';
 import type { Blueprint } from '../../../server/jev/studio/types';
+import { CIRCUIT, CIRCUIT_PREFIX, circuitBudget, circuitModelId, circuitRate, isCircuit, pickCircuitModel, planCircuit } from '../../../server/jev/studio/circuit';
+import { priorQuality } from '../../../server/jev/studio/director';
+import type { Registry } from '../../../server/jev/studio/capabilities';
 import { spent } from '../../../server/jev/studio/blueprint';
 
 const S = () => useStudio.getState();
@@ -53,6 +57,21 @@ export async function pool<T>(items: T[], n: number, fn: (x: T) => Promise<unkno
 /** Parallel jobs per stage (the providers' rate limits stay comfortable at this level). */
 export const PARALLEL = { images: 3, rigs: 3, voices: 4 };
 
+/** Circuit Grok model of this production (null when the circuit is off or no certain-price image → video model exists). */
+export function circuitOf(reg: Registry, bp: Blueprint) {
+  if (!S().settings.circuit) return null;
+  return pickCircuitModel(modelsWith(reg, 'video'), bp.aspect, (m) => priorQuality('video', m.id, m.name));
+}
+/** What the stages AFTER the animation will still cost (voices of the lines not voiced yet) + a fixed margin. */
+async function laterUsd(projectId: string, reg: Registry, voice?: string): Promise<number> {
+  const bp = bpOf(projectId);
+  const chars = bp.scenes.reduce((a, sc) => a + sc.dialogue.reduce((b, l, i) => b + (bp.audio.voices?.[`${sc.scene_id}:${i}`] ? 0 : l.text.length), 0), 0);
+  const tts = modelsWith(reg, 'speech', 'SPEECH');
+  const m = tts.find((x) => x.id === voice) ?? tts[0];
+  const v = m && chars ? estimateSpeech(m, chars).usd : 0;
+  return (v ?? 0) + CIRCUIT.reserveUsd;
+}
+
 export async function buildPlans(projectId: string): Promise<StagePlan[]> {
   const bp = bpOf(projectId);
   const reg = await loadRegistry();
@@ -66,12 +85,24 @@ export async function buildPlans(projectId: string): Promise<StagePlan[]> {
     .models.filter((m) => !m.capabilities.vision || m.capabilities.tools)
     .map((m) => ({ id: m.id, name: m.name, inputPrice: m.inputPrice, outputPrice: m.outputPrice }));
   const videoCap = videoEnabled() ? S().settings.videoBudget : remaining;
-  return [
+  const plans = [
     planWriting(text, remaining, useStore.getState().settings.defaultModel !== 'auto' ? useStore.getState().settings.defaultModel : null),
     planImages(imgs.map((c) => c.model), (m) => est.get(m.id) ?? { usd: null, certain: false, formula: '' }, shape, mem, remaining),
     planAnimation(modelsWith(reg, 'video'), (m, sec) => estimateVideo(m, { duration: sec, mode: 'image' }), shape, mem, videoCap, { pollinations: Boolean(useStore.getState().settings.pollinationsKey), hf: Boolean(useStore.getState().settings.hfToken), pollinationsModels: POLLINATIONS_MODELS }),
     planVoices(modelsWith(reg, 'speech', 'SPEECH'), (m, chars) => estimateSpeech(m, chars), shape, mem, remaining),
   ];
+  // CIRCUIT GROK: recommended animation when a certain-price image → video model exists — the video spends what the
+  // other stages leave under the film's cap (0,30 $ / min), the remaining scenes stay with the free Marionnette.
+  const r = circuitOf(reg, bp);
+  const anim = plans[2]!;
+  if (r) {
+    const others = [plans[0]!, plans[1]!, plans[3]!].reduce((a, p) => a + (p.options.find((o) => o.id === p.recommended)?.stageUsd ?? 0), 0);
+    const left = circuitBudget(bp.cap, spent(bp) + others, CIRCUIT.reserveUsd);
+    const o = { id: `${CIRCUIT_PREFIX}${r.id}`, name: `Circuit Grok ${bp.cap.toFixed(2)} $ — ${r.name.replace(/^[^:]+:\s*/, '')} ${CIRCUIT.resolution} (plans clés) + Marionnette`, stageUsd: Math.round(left * 1000) / 1000, costLabel: costLabel(left), quality: priorQuality('video', r.id, r.name), qualitySource: 'a priori' as const, speed: 'Moyen' as const, afrikatoon: 9.3, score: 0, why: `vrai mouvement génératif (${r.usdPerS} $/s + ${r.usdPerClip} $ par plan, prix annoncé) sur l’accroche et la chute, plafond DUR ${bp.cap.toFixed(2)} $ pour tout le film, avec votre clé OpenRouter` };
+    anim.options = [{ ...o, score: 10 }, ...anim.options];
+    anim.recommended = o.id;
+  }
+  return plans;
 }
 
 export type StageState = 'idle' | 'running' | 'done' | 'warning' | 'waiting' | 'failed';
@@ -177,8 +208,43 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
     // ── ANIMATION: image → video with the chosen model, or the free 2.5D animation at montage time
     if (start <= 3) {
       const warn: string[] = [];
-      const anim = c.chosen.animation ?? LOCAL_ANIMATION;
-      if (isCheapVideo(anim)) {
+      const reg = await loadRegistry().catch(() => null);
+      const auto = !c.chosen.animation && reg ? circuitOf(reg, bpOf(projectId)) : null;
+      const anim = c.chosen.animation ?? (auto ? `${CIRCUIT_PREFIX}${auto.id}` : LOCAL_ANIMATION);
+      if (isCircuit(anim)) {
+        // CIRCUIT GROK: real generative motion on the shots that carry the joke, HARD cap — the budget is recomputed
+        // from the REAL spend before every clip; whatever does not fit stays with the free Marionnette.
+        const m = reg ? modelsWith(reg, 'video').find((x) => x.id === circuitModelId(anim)) : undefined;
+        const r = m ? circuitRate(m, bpOf(projectId).aspect) : null;
+        if (!r || !reg) warn.push('Circuit Grok : modèle vidéo indisponible → Marionnette Afrikatoon');
+        else {
+          const later = await laterUsd(projectId, reg, c.chosen.voice);
+          const b0 = bpOf(projectId);
+          const plan = planCircuit(b0.scenes, r, circuitBudget(b0.cap, spent(b0), later));
+          c.onStage('ANIMATION', 'running', `Circuit Grok : ${plan.shots.length} plan(s), ${plan.seconds} s, ≤ ${plan.usd.toFixed(2)} $ (plafond ${b0.cap.toFixed(2)} $)`);
+          if (!plan.shots.length) warn.push(`Circuit Grok : budget ${b0.cap.toFixed(2)} $ déjà utilisé par l’écriture et les images (${spent(b0).toFixed(3)} $) → Marionnette`);
+          for (const shot of plan.shots) {
+            check(c);
+            const b = bpOf(projectId);
+            if (shot.usd > circuitBudget(b.cap, spent(b), later) + 1e-9) {
+              warn.push(`${shot.sceneId} : plafond ${b.cap.toFixed(2)} $ atteint (dépense réelle ${spent(b).toFixed(3)} $) → Marionnette`);
+              continue;
+            }
+            c.onStage('ANIMATION', 'running', `Circuit Grok ${shot.sceneId} : ${shot.seconds} s (${shot.usd.toFixed(2)} $)`);
+            const before = spent(b);
+            await generateSceneVideo(projectId, shot.sceneId, { mode: 'image', duration: shot.seconds, resolution: CIRCUIT.resolution, forceModel: r.id, circuit: true }).catch((e) =>
+              warn.push(`${shot.sceneId} : ${(e as Error).message.slice(0, 80)} → Marionnette`),
+            );
+            // Billed above the announced price → the circuit stops at once (the cap must stay reliable).
+            const billed = spent(bpOf(projectId)) - before;
+            if (billed > shot.usd * 1.1 + 0.001) {
+              warn.push(`Circuit Grok arrêté : ${shot.sceneId} facturé ${billed.toFixed(3)} $ au lieu de ${shot.usd.toFixed(3)} $ annoncés → Marionnette pour la suite`);
+              break;
+            }
+          }
+          if (plan.skipped.length) c.onStage('ANIMATION', 'running', `${plan.skipped.length} autre(s) scène(s) : Marionnette Afrikatoon (gratuit)`);
+        }
+      } else if (isCheapVideo(anim)) {
         // Cheap engines (Pollinations ≈ 0,01 $/s, free HF Space): the scene image becomes a real moving clip.
         for (const sc of bpOf(projectId).scenes.filter((s) => s.imageAssetId && !s.videoAssetId)) {
           check(c);

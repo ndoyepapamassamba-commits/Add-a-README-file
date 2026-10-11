@@ -17,6 +17,7 @@ import {
   emptyWorld,
 } from './actions';
 import { estimateVideo } from '../../../server/jev/studio/cost';
+import { circuitRate, clipUsd } from '../../../server/jev/studio/circuit';
 import { modelsWith, validateVideoRequest } from '../../../server/jev/studio/capabilities';
 import { StudioError, classifyError } from '../../../server/jev/studio/errors';
 import { completeJob, failJob, cancelJob } from '../../../server/jev/studio/jobs';
@@ -535,6 +536,8 @@ export interface VideoOpts {
   resolution?: string;
   audio?: boolean;
   forceModel?: string;
+  /** Circuit Grok: runs without the Video Factory switch, at the circuit's certain price, under the HARD cap. */
+  circuit?: boolean;
 }
 const controllers = new Map<string, AbortController>();
 export function cancelVideo(jobIdStr: string): void {
@@ -569,7 +572,7 @@ async function pollUntilDone(
 }
 /** Submits a scene video. Only when the owner activated the Video Factory and typed a budget. */
 export async function generateSceneVideo(projectId: string, sceneId: string, o: VideoOpts): Promise<string> {
-  if (!videoEnabled())
+  if (!videoEnabled() && !o.circuit)
     throw new StudioError(
       'UNSUPPORTED_CAPABILITY',
       'Video Factory désactivée : activez-la dans Model Lab avec un budget saisi par vous.',
@@ -597,10 +600,14 @@ export async function generateSceneVideo(projectId: string, sceneId: string, o: 
         frames: [...frames],
         generate_audio: o.audio,
       });
+      const cr = o.circuit ? circuitRate(m, bp.aspect, res) : null;
+      if (o.circuit && !cr) return null;
       return v.ok
         ? {
             model: m,
-            estimate: estimateVideo(m, {
+            estimate: cr
+              ? { usd: clipUsd(cr, o.duration), certain: true, formula: `${o.duration} s × ${cr.usdPerS} $/s (${cr.sku})${cr.usdPerClip ? ` + ${cr.usdPerClip} $ image de départ` : ''}` }
+              : estimateVideo(m, {
               duration: o.duration,
               resolution: res,
               audio: o.audio,
@@ -626,6 +633,7 @@ export async function generateSceneVideo(projectId: string, sceneId: string, o: 
     mission: `vidéo ${sceneId}`,
     parentIds: frames.length && sc.imageAssetId ? [sc.imageAssetId] : undefined,
     maxModels: 1,
+    hardCap: o.circuit,
     candidates: cands.map((c) => ({ model: c.model, estimate: c.estimate })),
     call: async (m, job) => {
       const c = by.get(m.id)!;

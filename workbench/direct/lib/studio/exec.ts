@@ -102,6 +102,8 @@ export interface MediaRequest<R> extends Attempt<R> {
   /** Pre-selection trace notes (classification, discovery, prompt compilation) already measured by the caller. */
   trace?: Trace;
   confirmed?: boolean;
+  /** HARD cap (Circuit Grok): a call that would exceed the production cap is refused, never offered for confirmation. */
+  hardCap?: boolean;
   /** Asset graph: ids of the assets this result is generated from. */
   parentIds?: string[];
 }
@@ -155,6 +157,7 @@ export async function executeMedia<R>(req: MediaRequest<R>): Promise<MediaOutcom
       cand.estimate,
       req.confirmed,
     );
+    if (!decision.allowed && req.hardCap) throw new BudgetBlocked(decision.reason);
     if (!decision.allowed) {
       const ok = await confirmFn(`${decision.reason}\n\nModèle : ${model.id}\nAutoriser cet appel ?`);
       if (!ok) throw new BudgetBlocked(decision.reason);

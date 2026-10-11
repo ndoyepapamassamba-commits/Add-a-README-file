@@ -25,6 +25,8 @@ export interface StudioSettings {
   /** Video Factory: OFF by default; activation needs an explicit budget typed by the owner. */
   videoEnabled: boolean;
   videoBudget: number;
+  /** Circuit Grok (ON by default): real generative motion on the key shots with the OpenRouter key, HARD cap 0,30 $ / min. */
+  circuit: boolean;
   activeProjectId: string | null;
   /** Music generation probe result: unknown until the owner authorises a test call. */
   musicProbe: 'unknown' | 'works' | 'unavailable';
@@ -35,6 +37,7 @@ export const DEFAULT_STUDIO: StudioSettings = {
   cap: DEFAULT_CAP_USD,
   videoEnabled: false,
   videoBudget: 0,
+  circuit: true,
   activeProjectId: null,
   musicProbe: 'unknown',
 };

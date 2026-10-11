@@ -66,6 +66,8 @@ interface Net {
   /** Scripted behaviour of POST /images: queue of status codes (200 = success). */
   imageScript: (number | { status: number; message: string })[];
   imageCost: number;
+  videoCost: number;
+  videoBodies: Record<string, unknown>[];
 }
 async function intercept(page: Page): Promise<Net> {
   const net: Net = {
@@ -76,6 +78,8 @@ async function intercept(page: Page): Promise<Net> {
     discovery: [],
     imageScript: [],
     imageCost: 0.018,
+    videoCost: 0.2,
+    videoBodies: [],
   };
   const epById = FX('image-endpoints.json') as Record<string, unknown>;
   await page.route(/openrouter\.ai\/api\/v1\/(images|videos|audio)/, async (route) => {
@@ -103,6 +107,7 @@ async function intercept(page: Page): Promise<Net> {
     }
     if (p === '/videos' && method === 'POST') {
       net.videoSubmits++;
+      net.videoBodies.push(JSON.parse(route.request().postData() ?? '{}') as Record<string, unknown>);
       return json(route, { id: 'vid-1', polling_url: 'https://openrouter.ai/api/v1/videos/vid-1' });
     }
     if (p === '/videos/vid-1' && method === 'GET') {
@@ -114,7 +119,7 @@ async function intercept(page: Page): Promise<Net> {
           : {
               status: 'completed',
               unsigned_urls: ['https://openrouter.ai/api/v1/videos/vid-1/content?index=0'],
-              usage: { cost: 0.2 },
+              usage: { cost: net.videoCost },
             },
       );
     }
@@ -910,6 +915,9 @@ test('Film Autopilot: one idea → story, scenes, images, animation, final film 
   mock.fallback = () => ({ text: '{}' });
   await page.getByTestId('film-idea-input').fill('Un jeune garçon africain rêve de devenir inventeur et construit une machine pour sauver son village.');
   await page.getByRole('button', { name: 'Afrikatoon 2D' }).click();
+  // Circuit Grok switched off by the owner: the film stays free of any paid video.
+  await page.getByTestId('film-circuit').getByRole('switch').click();
+  await expect(page.getByTestId('film-circuit')).toHaveAttribute('data-on', '0');
   await page.getByTestId('film-create').click();
   // One view: the pipeline, the model plan and the scenes appear in place.
   await expect(page.getByTestId('film-pipeline')).toBeVisible();
@@ -919,7 +927,7 @@ test('Film Autopilot: one idea → story, scenes, images, animation, final film 
   await expect(page.getByTestId('film-scenes').locator('[data-testid^=scene-S]')).toHaveCount(2, { timeout: 30_000 });
   await expect(page.getByTestId('pipe-IMAGES')).toHaveAttribute('data-state', /done|warning/, { timeout: 60_000 });
   expect(net.imageCalls.length).toBeGreaterThanOrEqual(2);
-  // Animation: no paid video unless the owner set a video budget → free 2.5D animation, no video call.
+  // Animation: circuit off and no video budget → free 2.5D animation, no video call.
   expect(net.videoSubmits).toBe(0);
   await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 120_000 });
   const size = await page.evaluate(async () => (await (await fetch((document.querySelector('[data-testid=film-final] video') as HTMLVideoElement).src)).blob()).size);
@@ -940,6 +948,7 @@ test('Film Autopilot: a provider error on a scene image is caught up — no scen
   const net = await intercept(page);
   // The image provider fails 8 times in a row (5xx « Erreur du fournisseur »): retries + the catch-up pass must recover.
   net.imageScript = [500, 500, 500, 500, 500, 500, 500, 500];
+  net.videoCost = 0.07; // billed as announced (3 s × 0,02 $ + 0,01 $)
   await page.getByTitle(/AI Film Studio/).click();
   const SHORT = { ...STORY, scenes: STORY.scenes.map((s) => ({ ...s, duration: 3 })) };
   mock.push({ text: JSON.stringify(SHORT) });
@@ -954,4 +963,38 @@ test('Film Autopilot: a provider error on a scene image is caught up — no scen
   for (const c of await cards.all()) await expect(c).not.toContainText('à générer');
   expect(net.imageScript.length).toBe(0);
   expect(errors.filter((e) => !/favicon|ERR_|net::|500/i.test(e))).toEqual([]);
+});
+
+test('Circuit Grok: open → launch → real generative clips with the OpenRouter key only, HARD cap 0,30 $ for the whole film', async ({ page }) => {
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  const errors = await open(page, [], { autopilot: true });
+  const net = await intercept(page);
+  // The provider bills what it announced: 3 s × 0,02 $ + 0,01 $ first-frame image.
+  net.videoCost = 0.07;
+  await page.getByTitle(/AI Film Studio/).click();
+  const SHORT = { ...STORY, scenes: STORY.scenes.map((s) => ({ ...s, duration: 3 })) };
+  mock.push({ text: JSON.stringify(SHORT) });
+  mock.fallback = () => ({ text: '{}' });
+  await page.getByTestId('film-idea-input').fill('Le mari paresseux et la servante trop bien habillée.');
+  await page.getByRole('button', { name: 'Afrikatoon 2D' }).click();
+  // ON by default: nothing to configure, no other key.
+  await expect(page.getByTestId('film-circuit')).toHaveAttribute('data-on', '1');
+  await page.getByTestId('film-create').click();
+  await expect(page.getByTestId('film-spent')).toContainText('/ 0.30 $');
+  await expect(page.getByTestId('plan-animation')).toContainText('Circuit Grok', { timeout: 20_000 });
+  await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 180_000 });
+  // Real motion on the key shots, with the cheapest certain-price model, at 480p, first frame = the scene image.
+  expect(net.videoSubmits).toBeGreaterThanOrEqual(1);
+  for (const b of net.videoBodies) {
+    expect(b.model).toBe('x-ai/grok-imagine-video-1.5-lite');
+    expect(b.resolution).toBe('480p');
+    expect(b.duration).toBe(3);
+    expect(Array.isArray(b.frame_images)).toBe(true);
+  }
+  // HARD cap: the whole film (writing + images + video + voices) never exceeds 0,30 $.
+  const txt = (await page.getByTestId('film-spent').textContent()) ?? '';
+  const spentUsd = Number(/dépensé\s*([\d.,]+)/.exec(txt)![1]!.replace(',', '.'));
+  expect(spentUsd).toBeGreaterThan(0);
+  expect(spentUsd).toBeLessThanOrEqual(0.3);
+  expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
 });
