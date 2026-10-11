@@ -569,6 +569,50 @@ test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, fram
   expect(strFromU8(z['xl/drawings/drawing-live-dash.xml']!)).toContain('<xdr:sp ');
 });
 
+test('MODÈLES ULTRA DESIGN: 20 models per format in the gallery; an Excel model gives a LIVE dashboard in its design, checked before delivery', async ({ page }) => {
+  await open(page);
+  await page.removeLocatorHandler(page.getByTestId('design-go'));
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  mock.push(
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'data/ventes.csv', content: 'agence,segment,montant\nDakar,CORPORATE,1250\nThies,RETAIL,430\nKaolack,CORPORATE,980\nZiguinchor,RETAIL,610\n' } }] },
+    { toolCalls: [{ name: 'data.export', args: { path: 'data/ventes.csv', name: 'ventes-modele', title: 'Ventes', format: 'xlsx' } }] },
+    { text: 'Classeur modèle livré.' },
+  );
+  await send(page, 'Fais un classeur Excel des ventes par agence');
+  await expect(page.getByTestId('design-card')).toBeVisible({ timeout: 20_000 });
+  const grid = page.getByTestId('design-models-grid');
+  await expect(grid.locator('img')).toHaveCount(20);
+  for (const f of ['word', 'slides', 'pdf', 'mail']) {
+    await page.getByTestId(`models-tab-${f}`).click();
+    await expect(grid.locator('img')).toHaveCount(20);
+  }
+  await page.getByTestId('models-tab-excel').click();
+  await page.getByTestId('model-excel-midnight-neon').click();
+  await page.getByTestId('design-go').click();
+  await expect(page.getByTestId('design-card-done')).toContainText('Midnight Neon');
+  await expect(page.getByText('Classeur modèle livré.')).toBeVisible({ timeout: 30_000 });
+  const files = () =>
+    page.evaluate(
+      () =>
+        new Promise<Record<string, { data: string }>>((resolve) => {
+          const req = indexedDB.open('openrouter-workbench-direct', 1);
+          req.onsuccess = () => {
+            const g = req.result.transaction('kv', 'readonly').objectStore('kv').get('files');
+            g.onsuccess = () => resolve((g.result ?? {}) as Record<string, { data: string }>);
+          };
+        }),
+    );
+  await expect.poll(async () => Object.keys(await files()).some((k) => k.endsWith('outputs/ventes-modele.xlsx')), { timeout: 15_000 }).toBe(true);
+  const all = await files();
+  const { unzipSync, strFromU8 } = await import('fflate');
+  const z = unzipSync(new Uint8Array(Buffer.from(all[Object.keys(all).find((k) => k.endsWith('outputs/ventes-modele.xlsx'))!]!.data, 'base64')));
+  expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/<sheets><sheet name="Tableau de bord"/);
+  // The model's own colours (Midnight Neon violet) on the live dashboard; no fixed picture.
+  expect(strFromU8(z['xl/drawings/drawing-live-dash.xml']!)).toContain('7C3AED');
+  expect(Object.keys(z).some((k) => k.startsWith('xl/media/massamba-dashboard'))).toBe(false);
+});
+
 test('a design card left behind (mission stopped, page reloaded): « Générer » relaunches the request with the design — never a dead button', async ({ page }) => {
   await open(page);
   await page.removeLocatorHandler(page.getByTestId('design-go'));

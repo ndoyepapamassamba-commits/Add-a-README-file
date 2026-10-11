@@ -16,6 +16,9 @@ import type { DesignChoice } from '../lib/types';
 import { cloneDesign, KIND_LABEL as PANEL_LABEL, measureFidelity, previewData, type ClonedDesign } from '../lib/designClone';
 import { renderCloneSvg } from '../../server/services/dashRender';
 import { PANEL_KINDS, type PanelKind } from '../../server/services/dashClone';
+import { MODEL_FORMATS, modelById, modelSpec, modelsFor, modelThumbnail, type ModelFormat } from '../../server/services/designModels';
+
+const FORMAT_OF: Record<DeliverableKind, ModelFormat> = { excel: 'excel', document: 'word', slides: 'slides', web: 'pdf' };
 
 const KIND_LABEL: Record<DeliverableKind, string> = { excel: 'classeur Excel', document: 'document', slides: 'présentation', web: 'site / application' };
 const FORMAT_LABEL: Record<string, string> = { docx: 'Word', pptx: 'PowerPoint', pdf: 'PDF', html: 'HTML', eml: 'Mail Outlook', md: 'Markdown', xlsx: 'Excel', csv: 'CSV', json: 'JSON' };
@@ -91,6 +94,28 @@ function DesignCardOpen({ item }: { item: CardItem }) {
   }, [clone, preview]);
   const setKind = (i: number, kind: PanelKind) =>
     setClone((c) => (c ? { ...c, spec: { ...c.spec, panels: c.spec.panels.map((p, j) => (j === i ? { ...p, kind, legend: kind === 'pie' || kind === 'donut' ? 'right' : p.legend } : p)) } } : c));
+  // ── MODÈLES ULTRA DESIGN: 20 per format, Excel drawn by the real dashboard renderer on the preview data.
+  const [modelSel, setModelSel] = useState<string | null>(null);
+  const [fmtTab, setFmtTab] = useState<ModelFormat>(FORMAT_OF[item.deliverable]);
+  const modelThumbs = useMemo(
+    () =>
+      modelsFor(fmtTab).map((m) => ({
+        m,
+        src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(m.format === 'excel' ? renderCloneSvg(modelSpec(m.palette, m.layout), preview.data, 480) : modelThumbnail(m))}`,
+      })),
+    [fmtTab, preview],
+  );
+  const pickModel = (id: string) => {
+    const m = modelById(id);
+    if (!m) return;
+    setModelSel(id);
+    setClone(null);
+    setLayout(null);
+    setSite(null);
+    setWebSel(null);
+    setCustom({ primary: m.palette.primary, accent: m.palette.accent, dark: m.palette.night ? m.palette.surface : m.palette.dark, font: /^(segoe ui|calibri|arial|georgia|garamond|consolas)$/i.test(m.palette.font) ? m.palette.font : 'Segoe UI' });
+    setSel('custom');
+  };
   const [siteUrl, setSiteUrl] = useState('');
   const [site, setSite] = useState<{ url: string; font: string; radius: number; vars: number; structure: boolean } | null>(null);
   /** A REAL website: its code gives the exact colours / fonts / radius, its screenshot gives the structure. */
@@ -132,6 +157,7 @@ function DesignCardOpen({ item }: { item: CardItem }) {
     }
   };
   const pickWeb = async (url: string) => {
+    setModelSel(null);
     setBusy('lecture de la mise en page de l’image…');
     setErr('');
     setWebSel(url);
@@ -185,7 +211,8 @@ function DesignCardOpen({ item }: { item: CardItem }) {
       setBusy(null);
     }
   };
-  const selLabel = sel === 'custom' ? (clone ? `Reproduction fidèle (${clone.spec.panels.length} panneaux)` : site ? `Site reproduit — ${new URL(site.url).hostname}` : layout ? 'Design Internet (mise en page + couleurs)' : 'Design Internet (couleurs)') : (isHouseTheme(sel) ? `Maison 2.0 — ${HOUSE_PALETTES.find((p) => p.id === sel)?.label ?? ''}` : (PREMIUM_DESIGNS.find((d) => d.id === sel)?.label ?? sel));
+  const chosenModel = sel === 'custom' && modelSel ? modelById(modelSel) : undefined;
+  const selLabel = chosenModel ? `Modèle ${MODEL_FORMATS.find((f) => f.id === chosenModel.format)?.label} — ${chosenModel.name} (${chosenModel.tagline})` : sel === 'custom' ? (clone ? `Reproduction fidèle (${clone.spec.panels.length} panneaux)` : site ? `Site reproduit — ${new URL(site.url).hostname}` : layout ? 'Design Internet (mise en page + couleurs)' : 'Design Internet (couleurs)') : (isHouseTheme(sel) ? `Maison 2.0 — ${HOUSE_PALETTES.find((p) => p.id === sel)?.label ?? ''}` : (PREMIUM_DESIGNS.find((d) => d.id === sel)?.label ?? sel));
   // Live previews of every logo variant for the palette being chosen.
   const palette = logoPalette(sel === 'custom' && custom ? 'custom' : (sel as ThemeId), custom, sel === 'custom' ? layout : null);
   const palKey = JSON.stringify(palette);
@@ -199,8 +226,12 @@ function DesignCardOpen({ item }: { item: CardItem }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [decoded, palKey]);
   const go = async () => {
-    const choice: DesignChoice =
-      sel === 'custom' && custom ? { theme: 'custom', colors: custom, source: webSel ?? undefined, layout: clone ? undefined : (layout ?? undefined), clone: clone?.spec } : { theme: sel as ThemeId };
+    const choice: DesignChoice = chosenModel && custom
+      ? // A catalogue model: the Excel ones go through the image reproduction (live dashboard + every sheet).
+        { theme: 'custom', colors: custom, model: chosenModel.id, source: `catalogue:${chosenModel.id}`, clone: chosenModel.format === 'excel' ? modelSpec(chosenModel.palette, chosenModel.layout) : undefined }
+      : sel === 'custom' && custom
+        ? { theme: 'custom', colors: custom, source: webSel ?? undefined, layout: clone ? undefined : (layout ?? undefined), clone: clone?.spec }
+        : { theme: sel as ThemeId };
     if (decoded && logoPath && sid) {
       setBusy('préparation du logo…');
       try {
@@ -225,6 +256,27 @@ function DesignCardOpen({ item }: { item: CardItem }) {
   return (
     <div className="my-3 rounded-2xl border border-accent/50 bg-panel p-3" data-testid="design-card">
       <div className="mb-2 text-[13.5px] font-semibold">🎨 Choisissez le design de votre {KIND_LABEL[kind]}</div>
+      <div className="mb-3" data-testid="design-models">
+        <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[12px]">
+          <span className="font-semibold">✨ Modèles ultra design :</span>
+          {MODEL_FORMATS.map((f) => (
+            <button key={f.id} type="button" onClick={() => setFmtTab(f.id)} data-testid={`models-tab-${f.id}`} className={`rounded-full border px-2.5 py-0.5 ${fmtTab === f.id ? 'border-accent bg-accent-soft text-accent' : 'border-line'}`}>
+              {f.label}
+            </button>
+          ))}
+          <span className="text-muted">20 modèles · appliqués à chaque {fmtTab === 'excel' ? 'feuille' : fmtTab === 'slides' ? 'diapositive' : 'page'}</span>
+        </div>
+        <div className="grid max-h-[380px] grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3 lg:grid-cols-5" data-testid="design-models-grid">
+          {modelThumbs.map(({ m, src }) => (
+            <button key={m.id} type="button" onClick={() => pickModel(m.id)} data-testid={`model-${m.id}`} className={`rounded-xl border p-1.5 text-left transition ${modelSel === m.id && sel === 'custom' ? 'border-accent ring-2 ring-accent/40' : 'border-line hover:border-line-strong'}`}>
+              <img src={src} alt={m.name} loading="lazy" className="w-full rounded-lg" />
+              <div className="mt-1 truncate text-[12px] font-semibold">{m.name}</div>
+              <div className="truncate text-[11px] text-muted">{m.tagline}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mb-1 text-[12px] font-semibold">Palettes maison</div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" data-testid="design-gallery">
         {PREMIUM_DESIGNS.map((d) => {
           // Maison 2.0: one card, its palette chosen below (the thumbnail follows the palette).
@@ -234,7 +286,10 @@ function DesignCardOpen({ item }: { item: CardItem }) {
             <button
               key={d.id}
               type="button"
-              onClick={() => setSel(id)}
+              onClick={() => {
+                setModelSel(null);
+                setSel(id);
+              }}
               data-testid={`design-${d.id}`}
               className={`rounded-xl border p-1.5 text-left transition ${on ? 'border-accent ring-2 ring-accent/40' : 'border-line hover:border-line-strong'}`}
             >

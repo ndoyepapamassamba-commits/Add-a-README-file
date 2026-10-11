@@ -65,6 +65,7 @@ import { addNativeClone, removeSheets, REPRO_SHEETS } from '../../server/service
 import { strFromU8, unzipSync } from 'fflate';
 import { restyleWorkbook } from '../../server/services/officeRestyle';
 import { designQA } from '../../server/services/designQA';
+import { modelById } from '../../server/services/designModels';
 import { maisonBand } from '../../server/services/maisonBand';
 import { addLiveDashboard } from '../../server/services/liveDash';
 import { skinDocx, skinHtml, skinPptx, type Skin } from '../../server/services/officeSkin';
@@ -2672,8 +2673,10 @@ async function askDesign(
       return '';
     }
   })();
-  const lbl =
-    d.choice.theme === 'custom'
+  const catalogue = modelById(d.choice.model);
+  const lbl = catalogue
+    ? `Modèle ${catalogue.format === 'slides' ? 'PowerPoint' : catalogue.format === 'excel' ? 'Excel' : catalogue.format === 'word' ? 'Word' : catalogue.format === 'pdf' ? 'PDF' : 'Mail'} « ${catalogue.name} » — ${catalogue.tagline}`
+    : d.choice.theme === 'custom'
       ? d.choice.clone
         ? `Reproduction fidèle du design choisi (${d.choice.clone.panels.length} panneaux)`
         : d.choice.layout?.cssVars
@@ -2788,11 +2791,16 @@ function finishWorkbooks(sid: string, since: number): string[] {
   const skip = new Set(['Tableau de bord', 'Tableau de bord (image)', 'Données du tableau de bord', 'Synthèse 3D', 'Agrégats']);
   const lines: string[] = [];
   // THE IMAGE'S DESIGN ON EVERY PAGE of the other exports (Word, PowerPoint, HTML and the PDF printed from it).
-  const skin: Skin | null = c?.clone
-    ? { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, page: c.clone.page, font: c.clone.font }
-    : c && c.theme === 'custom' && c.colors?.primary
-      ? { dark: c.colors.dark ?? c.colors.primary, primary: c.colors.primary, accent: c.colors.accent ?? c.colors.primary, font: c.colors.font ?? 'Segoe UI' }
-      : null;
+  // A catalogue model: its palette and its page layout (Word / HTML / PowerPoint) on every page.
+  const model = modelById(c?.model);
+  const mp = model?.palette;
+  const skin: Skin | null = mp
+    ? { dark: mp.dark, primary: mp.primary, accent: mp.accent, page: model!.format === 'slides' || !mp.night ? mp.page : '#FFFFFF', font: mp.font, layout: model!.layout }
+    : c?.clone
+      ? { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, page: c.clone.page, font: c.clone.font }
+      : c && c.theme === 'custom' && c.colors?.primary
+        ? { dark: c.colors.dark ?? c.colors.primary, primary: c.colors.primary, accent: c.colors.accent ?? c.colors.primary, font: c.colors.font ?? 'Segoe UI' }
+        : null;
   const skinDesign = skin ? buildTheme({ primary: skin.primary, accent: skin.accent, dark: skin.dark, font: skin.font }) : null;
   if (skin && skinDesign)
     for (const f of Object.values(files())) {
@@ -3503,7 +3511,7 @@ export function resolveDesign(id: string, d: { choice: DesignChoice; formats?: s
   if (!sess) return 'none';
   const idx = sess.items.findIndex((i) => i.id === id);
   const ask = [...sess.items.slice(0, idx)].reverse().find((i) => i.kind === 'user') as Extract<import('./types').Item, { kind: 'user' }> | undefined;
-  const lbl = d.choice.clone ? 'Reproduction fidèle du design choisi' : d.choice.theme === 'custom' ? 'Design Internet' : (THEMES[d.choice.theme]?.label ?? d.choice.theme);
+  const lbl = modelById(d.choice.model) ? `Modèle « ${modelById(d.choice.model)!.name} »` : d.choice.clone ? 'Reproduction fidèle du design choisi' : d.choice.theme === 'custom' ? 'Design Internet' : (THEMES[d.choice.theme]?.label ?? d.choice.theme);
   st.updateItem(sess.id, id, { resolved: `${lbl} — relancé`, chosenFormats: d.formats });
   // The design is kept for the chat (the relaunched request must not ask again), then the request runs again.
   st.patchSession(sess.id, { design: d.choice });

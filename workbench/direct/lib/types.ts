@@ -325,6 +325,8 @@ export interface DesignChoice {
   layout?: import('../../server/services/layoutClone').DesignLayout;
   /** Photo-faithful clone of a dashboard image (measured geometry, colours, panel kinds) rendered with the real data. */
   clone?: import('../../server/services/dashClone').DashSpec;
+  /** Built-in « ultra design » model of the catalogue (its palette + page layout on every page / sheet). */
+  model?: string;
   /** The user's logo, recoloured to the palette (PNG in this chat), placed automatically in every deliverable. */
   logo?: { path: string; variant: import('../../server/services/logoHarmony').LogoVariant; width: number; height: number; source: string };
 }
