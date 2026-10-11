@@ -412,9 +412,17 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
       `<xdr:sp macro="" textlink="${so.link ? xesc(so.link.ref) : ''}"><xdr:nvSpPr><xdr:cNvPr id="${id}" name="${xesc(so.name)}">${hl}</xdr:cNvPr><xdr:cNvSpPr/></xdr:nvSpPr><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${wPx * EMU_PX}" cy="${hPx * EMU_PX}"/></a:xfrm>${geom}${fill}${line}${effect}</xdr:spPr><xdr:txBody><a:bodyPr vertOverflow="overflow" horzOverflow="overflow" wrap="square" lIns="45720" tIns="22860" rIns="45720" bIns="22860" anchor="${so.anchorV ?? 'ctr'}" rtlCol="0"/><a:lstStyle/>${paras}</xdr:txBody></xdr:sp>`,
     );
   };
+  // LOGO: a free place reserved at the right end of the title band (left of the drop-downs), never over a card; the
+  // logo pass fits the logo into it (« Emplacement logo »). The title stops before it.
+  const band = spec.title ? titleBox : { c0: gb(spec.pageBox).c0 + 1, r0: gb(spec.pageBox).r0, c1: gb(spec.pageBox).c1 - 1, r1: gb(spec.pageBox).r0 + 2 };
+  const lh = Math.max(2, Math.min(5, band.r1 - band.r0 + 1));
+  const lc1 = Math.min(band.c1, titleRight);
+  const logoBox: GBox = { c0: Math.max(band.c0 + 6, lc1 - Math.round(lh * 2.4)), r0: band.r0, c1: lc1, r1: band.r0 + lh - 1 };
+  const logoFree = logoBox.c1 - logoBox.c0 >= 3 && !boxes.some((b) => b.c0 <= logoBox.c1 && b.c1 >= logoBox.c0 && b.r0 <= logoBox.r1 && b.r1 >= logoBox.r0 && !(b.c0 <= band.c0 && b.c1 >= band.c1));
+  if (logoFree) parts.push(shapeXml(logoBox, { name: 'Emplacement logo', fill: null }));
   // Title (and subtitle) — text shapes on the measured place.
   if (spec.title) {
-    const tb = { ...titleBox, c1: Math.max(titleBox.c0, titleRight) };
+    const tb = { ...titleBox, c1: Math.max(titleBox.c0, logoFree ? logoBox.c0 - 1 : titleRight) };
     parts.push(shapeXml(tb, { name: 'Titre', align: spec.title.align === 'center' ? 'ctr' : 'l', paras: [{ text: d.title, size: Math.max(11, (tb.r1 - tb.r0 + 1) * PX * 0.42), color: spec.title.color, bold: true }] }));
   }
   if (spec.subtitle && d.subtitle) parts.push(shapeXml(gb(spec.subtitle.box), { name: 'Sous-titre', align: 'l', paras: [{ text: d.subtitle, size: 8, color: spec.subtitle.color }] }));

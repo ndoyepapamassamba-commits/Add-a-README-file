@@ -13,10 +13,10 @@ import { decodeLogo, isLogoFile, logoPalette, renderLogo, type DecodedLogo } fro
 import { useStore } from '../lib/store';
 import { filesFor, importBrowserFile, sessionAllow, writeChatBytes } from '../lib/vfs';
 import type { DesignChoice } from '../lib/types';
-import { cloneDesign, KIND_LABEL as PANEL_LABEL, measureFidelity, previewData, type ClonedDesign } from '../lib/designClone';
+import { cloneDesign, FIDELITY_TARGET, KIND_LABEL as PANEL_LABEL, measureFidelity, previewData, refineClone, type ClonedDesign, type RefineResult } from '../lib/designClone';
 import { renderCloneSvg } from '../../server/services/dashRender';
 import { PANEL_KINDS, type PanelKind } from '../../server/services/dashClone';
-import { MODEL_FORMATS, modelById, modelSpec, modelsFor, modelThumbnail, type ModelFormat } from '../../server/services/designModels';
+import { generatedModels, MODEL_FORMATS, modelById, modelSpec, modelsFor, modelThumbnail, type ModelFormat } from '../../server/services/designModels';
 
 const FORMAT_OF: Record<DeliverableKind, ModelFormat> = { excel: 'excel', document: 'word', slides: 'slides', web: 'pdf' };
 
@@ -80,6 +80,9 @@ function DesignCardOpen({ item }: { item: CardItem }) {
   // Photo-faithful clone of a dashboard image.
   const [clone, setClone] = useState<ClonedDesign | null>(null);
   const [fidelity, setFidelity] = useState<number | null>(null);
+  // Reproduction controller: corrections made on the pixels, checklist, and the explicit OK below the target.
+  const [refine, setRefine] = useState<RefineResult | null>(null);
+  const [acceptLow, setAcceptLow] = useState(false);
   const preview = useMemo(() => previewData(sid), [sid]);
   const cloneSvg = useMemo(() => (clone ? renderCloneSvg(clone.spec, preview.data, clone.width) : ''), [clone, preview]);
   useEffect(() => {
@@ -97,13 +100,15 @@ function DesignCardOpen({ item }: { item: CardItem }) {
   // ── MODÈLES ULTRA DESIGN: 20 per format, Excel drawn by the real dashboard renderer on the preview data.
   const [modelSel, setModelSel] = useState<string | null>(null);
   const [fmtTab, setFmtTab] = useState<ModelFormat>(FORMAT_OF[item.deliverable]);
+  /** Pages of generated models shown under the catalogue (« Générer 20 modèles de plus », without end). */
+  const [genPages, setGenPages] = useState(0);
   const modelThumbs = useMemo(
     () =>
-      modelsFor(fmtTab).map((m) => ({
+      [...modelsFor(fmtTab), ...Array.from({ length: genPages }, (_, p) => generatedModels(fmtTab, p)).flat()].map((m) => ({
         m,
         src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(m.format === 'excel' ? renderCloneSvg(modelSpec(m.palette, m.layout), preview.data, 480) : modelThumbnail(m))}`,
       })),
-    [fmtTab, preview],
+    [fmtTab, preview, genPages],
   );
   const pickModel = (id: string) => {
     const m = modelById(id);
@@ -171,6 +176,16 @@ function DesignCardOpen({ item }: { item: CardItem }) {
       const c = await cloneDesign(url, (st) => setBusy(st));
       if (c.spec.panels.length >= 2) {
         setClone(c);
+        setRefine(null);
+        setAcceptLow(false);
+        // UPSTREAM CONTROL: the reproduction is corrected on the pixels before anything is generated.
+        try {
+          const r = await refineClone(c, preview.data, (st) => setBusy(st));
+          setRefine(r);
+          setClone({ ...c, spec: r.spec });
+        } catch {
+          /* the measured reproduction stays as is */
+        }
         const t = c.spec.palette;
         setCustom({ primary: t.primary, accent: t.accent, dark: t.dark, font: /^(segoe ui|calibri|arial|georgia|aptos|verdana|tahoma|garamond|cambria)$/i.test(c.spec.font) ? c.spec.font : 'Segoe UI' });
         setSel('custom');
@@ -260,11 +275,11 @@ function DesignCardOpen({ item }: { item: CardItem }) {
         <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[12px]">
           <span className="font-semibold">✨ Modèles ultra design :</span>
           {MODEL_FORMATS.map((f) => (
-            <button key={f.id} type="button" onClick={() => setFmtTab(f.id)} data-testid={`models-tab-${f.id}`} className={`rounded-full border px-2.5 py-0.5 ${fmtTab === f.id ? 'border-accent bg-accent-soft text-accent' : 'border-line'}`}>
+            <button key={f.id} type="button" onClick={() => (setFmtTab(f.id), setGenPages(0))} data-testid={`models-tab-${f.id}`} className={`rounded-full border px-2.5 py-0.5 ${fmtTab === f.id ? 'border-accent bg-accent-soft text-accent' : 'border-line'}`}>
               {f.label}
             </button>
           ))}
-          <span className="text-muted">20 modèles · appliqués à chaque {fmtTab === 'excel' ? 'feuille' : fmtTab === 'slides' ? 'diapositive' : 'page'}</span>
+          <span className="text-muted">{modelThumbs.length} modèles · appliqués à chaque {fmtTab === 'excel' ? 'feuille' : fmtTab === 'slides' ? 'diapositive' : 'page'}</span>
         </div>
         <div className="grid max-h-[380px] grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3 lg:grid-cols-5" data-testid="design-models-grid">
           {modelThumbs.map(({ m, src }) => (
@@ -275,6 +290,9 @@ function DesignCardOpen({ item }: { item: CardItem }) {
             </button>
           ))}
         </div>
+        <button type="button" className="mt-1 text-[12px] text-accent" onClick={() => setGenPages((n) => n + 1)} data-testid="models-more">
+          ✨ Générer 20 modèles de plus (palettes harmonieuses, sans fin)
+        </button>
       </div>
       <div className="mb-1 text-[12px] font-semibold">Palettes maison</div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" data-testid="design-gallery">
@@ -395,8 +413,29 @@ function DesignCardOpen({ item }: { item: CardItem }) {
                     Reproduction approximative ({fidelity} %) : cette image n’est pas un tableau de bord net (photo, maquette, image trop petite ou très chargée). Corrigez les types de panneaux ci-dessous ou choisissez une autre image avant de générer.
                   </div>
                 )}
+                {refine && (
+                  <div className="mt-1 rounded-lg border border-line px-2 py-1 text-[11.5px]" data-testid="design-checklist">
+                    <div className="font-semibold">
+                      Fidélité du design : <span data-testid="design-fidelity-design">{refine.fidelity}</span> % (objectif {FIDELITY_TARGET} %) · ressemblance avec vos données {refine.before} → {refine.resemblance} %{refine.changes.length ? ` · ${refine.changes.length} correction(s) sur les pixels` : ''}
+                    </div>
+                    <div className="grid gap-x-3 sm:grid-cols-2">
+                      {refine.checklist.map((c) => (
+                        <div key={c.id} className={c.ok ? 'text-ok' : 'text-warn'}>
+                          {c.ok ? '✓' : '!'} <b>{c.label}</b> — {c.note}
+                        </div>
+                      ))}
+                    </div>
+                    {refine.changes.length > 0 && <div className="text-muted">{refine.changes.slice(0, 6).join(' · ')}</div>}
+                  </div>
+                )}
+                {refine && refine.fidelity < FIDELITY_TARGET && (
+                  <label className="mt-1 flex items-center gap-1.5 text-[11.5px] text-warn" data-testid="design-accept-low">
+                    <input type="checkbox" checked={acceptLow} onChange={(e) => setAcceptLow(e.target.checked)} />
+                    Fidélité du design {refine.fidelity} % sous l’objectif de {FIDELITY_TARGET} % : corrigez les panneaux ci-dessous ou cochez pour générer quand même.
+                  </label>
+                )}
                 <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11.5px]" data-testid="design-clone-panels">
-                  <span className="text-muted">Fidélité visuelle mesurée : <b data-testid="design-fidelity">{fidelity === null ? '…' : `${fidelity} %`}</b> · Panneaux (corrigez si besoin) :</span>
+                  <span className="text-muted">Ressemblance visuelle (vos données) : <b data-testid="design-fidelity">{fidelity === null ? '…' : `${fidelity} %`}</b> · Panneaux (corrigez si besoin) :</span>
                   {clone.spec.panels.map((p, i) => (
                     <label key={i} className="flex items-center gap-1 rounded-full border border-line px-1.5 py-0.5">
                       <b>{i + 1}</b>
@@ -536,7 +575,7 @@ function DesignCardOpen({ item }: { item: CardItem }) {
         </div>
       )}
       <div className="mt-2 flex flex-wrap items-center gap-3">
-        <Button variant="primary" onClick={() => void go()} disabled={Boolean(busy) || (sel === 'custom' && !custom) || (item.formats.length > 0 && !formats.length)} data-testid="design-go">
+        <Button variant="primary" onClick={() => void go()} disabled={Boolean(busy) || (sel === 'custom' && !custom) || (item.formats.length > 0 && !formats.length) || (sel === 'custom' && Boolean(clone) && !modelSel && refine !== null && refine.fidelity < FIDELITY_TARGET && !acceptLow)} data-testid="design-go">
           Générer avec ce design
         </Button>
         <span className="text-[12px]" data-testid="design-selected">

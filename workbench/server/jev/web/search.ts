@@ -85,18 +85,24 @@ const SUBJECTS: Record<'excel' | 'document' | 'slides' | 'web', string[]> = {
   slides: ['presentation slide design template', 'pitch deck design', 'keynote slide design inspiration', 'business presentation template', 'investor deck slide design', 'data presentation slide design', 'board meeting presentation design', 'consulting slide design'],
   web: ['web app dashboard UI design', 'saas landing page design', 'admin dashboard ui kit', 'analytics dashboard dribbble', 'mobile app ui design', 'fintech app ui design', 'website hero section design', 'dashboard ui behance'],
 };
-/** The queries of one page of the Internet gallery: 4 subjects × the chosen style (+ free text), all different per page. */
+const SOURCES = ['', 'dribbble', 'behance', 'pinterest', 'figma community', 'awwwards', 'envato', 'freepik', 'uplabs', 'muzli'];
+const SECTORS = ['', 'banking', 'microfinance', 'insurance', 'telecom', 'energy', 'healthcare', 'retail', 'logistics', 'agriculture', 'education', 'government', 'real estate', 'hr', 'marketing', 'ecommerce', 'crypto', 'manufacturing'];
+const COLORS = ['', 'navy and gold', 'emerald green', 'purple neon', 'teal and coral', 'black and white', 'blue gradient', 'orange accent', 'pastel', 'dark blue', 'red and black', 'earth tones', 'cyan glow', 'warm beige'];
+const TWISTS = ['premium', 'modern', 'award winning', 'inspiration', 'template', 'ui kit', 'concept', 'redesign', 'clean', 'creative', '2026', 'professional'];
+/**
+ * The queries of one page of the Internet gallery: 4 different queries per page, drawn from subject × source × sector ×
+ * colour × twist (+ the chosen style and free text). Mixed-radix with coprime strides: millions of combinations, so
+ * « Plus de designs » keeps finding new images page after page.
+ */
 export function designQueries(kind: 'excel' | 'document' | 'slides' | 'web', page: number, style: DesignStyle = 'Tous', extra = ''): string[] {
   const subjects = SUBJECTS[kind];
   const words = style === 'Tous' ? '' : STYLE_WORDS[style];
   const out: string[] = [];
   for (let i = 0; i < 4; i++) {
     const n = page * 4 + i;
-    const subject = subjects[n % subjects.length]!;
-    // Past the subject list, vary the style words so a new page never repeats a query.
-    const cycle = Math.floor(n / subjects.length);
-    const twist = cycle ? ['premium', 'modern 2025', 'award winning', 'inspiration', 'template'][cycle % 5] : 'premium';
-    out.push([subject, words, twist, extra].filter(Boolean).join(' ').trim());
+    const pick = <T,>(a: T[], stride: number) => a[(n * stride + Math.floor(n / a.length)) % a.length]!;
+    const q = [pick(subjects, 1), words, n < subjects.length ? 'premium' : pick(TWISTS, 5), n < subjects.length ? '' : pick(SECTORS, 7), n < subjects.length ? '' : pick(COLORS, 11), n < subjects.length ? '' : pick(SOURCES, 3), extra];
+    out.push(q.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim());
   }
   return out;
 }

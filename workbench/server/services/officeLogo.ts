@@ -105,7 +105,7 @@ function xlsxLogoOn(z: Zip, sheet: string, logo: LogoImage, k: number): boolean 
   const { cx, cy } = size(logo, 30);
   const dim = /<dimension ref="[A-Z]+\d+:([A-Z]+)\d+"/.exec(xml);
   const col = Math.max(3, (dim ? colIndex(dim[1]!) : 6) - 1);
-  const anchor = `<xdr:oneCellAnchor><xdr:from><xdr:col>${col}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>50800</xdr:rowOff></xdr:from><xdr:ext cx="${cx}" cy="${cy}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${9001 + k}" name="Logo"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip xmlns:r="${NS_R}" r:embed="RID"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>`;
+  let anchor = `<xdr:oneCellAnchor><xdr:from><xdr:col>${col}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>50800</xdr:rowOff></xdr:from><xdr:ext cx="${cx}" cy="${cy}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${9001 + k}" name="Logo"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip xmlns:r="${NS_R}" r:embed="RID"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>`;
   const sheetRels = relsOf(sheet);
   const drawingId = /<drawing\b[^>]*\br:id="([^"]+)"/.exec(xml)?.[1];
   let drawing: string;
@@ -129,6 +129,22 @@ function xlsxLogoOn(z: Zip, sheet: string, logo: LogoImage, k: number): boolean 
   }
   const imgRid = addRel(z, relsOf(drawing), REL_IMAGE, `../media/${MEDIA}`, 'rIdLogoImg');
   let dx = ensureRootNs(ensureRootNs(read(z, drawing), 'xdr', 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing'), 'a', 'http://schemas.openxmlformats.org/drawingml/2006/main');
+  // A dashboard that reserved a free place for the logo (« Emplacement logo »): the logo goes there, fitted to it.
+  const slot = /<xdr:twoCellAnchor\b[^>]*>\s*<xdr:from><xdr:col>(\d+)<\/xdr:col><xdr:colOff>\d+<\/xdr:colOff><xdr:row>(\d+)<\/xdr:row><xdr:rowOff>\d+<\/xdr:rowOff><\/xdr:from><xdr:to><xdr:col>(\d+)<\/xdr:col><xdr:colOff>\d+<\/xdr:colOff><xdr:row>(\d+)<\/xdr:row>(?:(?!<\/xdr:twoCellAnchor>)[\s\S])*?name="Emplacement logo"/.exec(dx);
+  if (slot) {
+    const [c0, r0, c1, r1] = [+slot[1]!, +slot[2]!, +slot[3]!, +slot[4]!];
+    const boxW = (c1 - c0) * 15 * 9525;
+    const boxH = (r1 - r0) * 11.25 * EMU_PT;
+    const k2 = Math.min(boxW / Math.max(1, logo.width), boxH / Math.max(1, logo.height)) * 0.86;
+    const cx2 = Math.round(logo.width * k2);
+    const cy2 = Math.round(logo.height * k2);
+    const offX = Math.round(Math.max(0, boxW - cx2) / 2);
+    const offY = Math.round(Math.max(0, boxH - cy2) / 2);
+    anchor = anchor
+      .replace(/<xdr:from>[\s\S]*?<\/xdr:from>/, `<xdr:from><xdr:col>${c0}</xdr:col><xdr:colOff>${offX}</xdr:colOff><xdr:row>${r0}</xdr:row><xdr:rowOff>${offY}</xdr:rowOff></xdr:from>`)
+      .replace(/<xdr:ext cx="\d+" cy="\d+"\/>/, `<xdr:ext cx="${cx2}" cy="${cy2}"/>`)
+      .replace(/<a:ext cx="\d+" cy="\d+"\/>/, `<a:ext cx="${cx2}" cy="${cy2}"/>`);
+  }
   // Unique picture id within this drawing.
   const ids = new Set([...dx.matchAll(/cNvPr id="(\d+)"/g)].map((m) => +m[1]!));
   let id = 9001 + k;

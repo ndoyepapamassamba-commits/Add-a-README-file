@@ -1,7 +1,7 @@
 // DASHBOARD CLONE in the browser: load the chosen image, measure it (dashClone), let a vision model LABEL the numbered
 // panels (set-of-marks), render the reproduction with the chat's own data (dashRender), rasterise it and measure how
 // close it is to the image. The vision model only labels; geometry and colours come from the pixels.
-import { attachTexts, BOXES_PROMPT, buildSpec, detectLayout, fidelityScore, parseBoxes, parseSom, SOM_PROMPT, withVisionBoxes, type DashSpec, type PanelKind, type SomAnswer } from '../../server/services/dashClone';
+import { attachTexts, BOXES_PROMPT, buildSpec, detectLayout, fidelityScore, backdropFidelity, panelCandidates, parseBoxes, parseSom, regionFidelity, SOM_PROMPT, withVisionBoxes, type DashSpec, type PanelKind, type SomAnswer } from '../../server/services/dashClone';
 import { cleanTemplate } from '../../server/services/cleanTemplate';
 import { cloneData, renderCloneSvg, type CloneData } from '../../server/services/dashRender';
 import { DataCore, isDataFile } from '../../server/services/dataCore';
@@ -238,3 +238,120 @@ export function previewData(sid: string | null, title = 'Aperçu avec vos donné
   return { data: cloneData(title, ['mois', 'region', 'montant', 'volume'], rows), from: null };
 }
 export const KIND_LABEL: Record<PanelKind, string> = { kpi: 'Indicateurs', bar: 'Colonnes', hbar: 'Barres horizontales', line: 'Courbe', area: 'Aire', pie: 'Camembert', donut: 'Anneau', gauge: 'Jauge', table: 'Tableau', text: 'Texte', title: 'Titre', map: 'Carte', image: 'Image', filter: 'Filtre' };
+
+
+// ── CONTRÔLEUR DE REPRODUCTION (en amont) ────────────────────────────────────────────────────────────────────────
+/** Target the reproduction must reach before generation (below it, the user must explicitly accept). */
+export const FIDELITY_TARGET = 95;
+export interface CheckItem {
+  id: 'layout' | 'colors' | 'charts' | 'legibility' | 'data' | 'logo';
+  label: string;
+  ok: boolean;
+  note: string;
+}
+export interface RefineResult {
+  spec: DashSpec;
+  /** DESIGN fidelity (what must match whatever the data): backdrop, palette, verified chart forms. */
+  fidelity: number;
+  before: number;
+  /** Plain pixel resemblance, data included (informative: the user's figures differ from the image's). */
+  resemblance: number;
+  changes: string[];
+  checklist: CheckItem[];
+}
+/** Source pixels at a small working width (the search renders many candidates). */
+async function smallPixels(dataUrl: string, w: number, h: number): Promise<Uint8ClampedArray> {
+  const img = new Image();
+  await new Promise<void>((res, rej) => {
+    img.onload = () => res();
+    img.onerror = () => rej(new Error('image illisible'));
+    img.src = dataUrl;
+  });
+  const c = canvas(w, h);
+  const g = c.getContext('2d', { willReadFrequently: true })!;
+  g.drawImage(img, 0, 0, w, h);
+  return g.getImageData(0, 0, w, h).data;
+}
+const lumHex = (h: string) => {
+  const v = [1, 3, 5].map((i) => parseInt(h.replace('#', '').padStart(7, '#').slice(i, i + 2), 16) / 255).map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * v[0]! + 0.7152 * v[1]! + 0.0722 * v[2]!;
+};
+const contrast = (a: string, b: string) => {
+  const [x, y] = [lumHex(a), lumHex(b)].sort((m, n) => n - m);
+  return (x! + 0.05) / (y! + 0.05);
+};
+/**
+ * Brings the reproduction as close as possible to the image BEFORE anything is generated: each panel far from its
+ * pixels is re-read in its other plausible forms (chart type, legend, value labels, number of tiles) and the form the
+ * pixels prefer is kept — no model call, nothing invented. Rounds stop at the target or when nothing improves.
+ */
+export async function refineClone(c: ClonedDesign, data: CloneData, onStep: (s: string) => void = () => {}, target = FIDELITY_TARGET): Promise<RefineResult> {
+  const W = 480;
+  const H = Math.max(120, Math.round(W / c.spec.aspect));
+  const src = await smallPixels(c.source, W, H);
+  const render = async (sp: DashSpec) => (await rasterise(renderCloneSvg(sp, data, W), W, H)).px;
+  let spec: DashSpec = JSON.parse(JSON.stringify(c.spec)) as DashSpec;
+  let cur = await render(spec);
+  const before = fidelityScore(src, cur, W, H, spec.page);
+  let fid = before;
+  const changes: string[] = [];
+  const verified = new Set<number>();
+  for (let round = 0; round < 2 && fid < target; round++) {
+    const worst = spec.panels
+      .map((p, i) => ({ i, f: regionFidelity(src, cur, W, H, p.box) }))
+      .filter((x) => x.f < 92 && panelCandidates(spec.panels[x.i]!).length)
+      .sort((a, b) => a.f - b.f)
+      .slice(0, 6);
+    if (!worst.length) break;
+    let improved = false;
+    for (const { i, f } of worst) {
+      onStep(`contrôle de reproduction : panneau ${i + 1} (${f} %)…`);
+      let best = { f, patch: null as Partial<DashSpec['panels'][number]> | null, px: cur };
+      for (const cand of panelCandidates(spec.panels[i]!)) {
+        const trial: DashSpec = { ...spec, panels: spec.panels.map((p, k) => (k === i ? { ...p, ...cand } : p)) };
+        const px = await render(trial);
+        const f2 = regionFidelity(src, px, W, H, spec.panels[i]!.box);
+        if (f2 > best.f + 1) best = { f: f2, patch: cand, px };
+      }
+      verified.add(i);
+      if (best.patch) {
+        const was = spec.panels[i]!;
+        spec = { ...spec, panels: spec.panels.map((p, k) => (k === i ? { ...p, ...best.patch } : p)) };
+        cur = best.px;
+        improved = true;
+        changes.push(`panneau ${i + 1} : ${best.patch.kind ? `${KIND_LABEL[was.kind]} → ${KIND_LABEL[best.patch.kind]}` : best.patch.tiles ? `${best.patch.tiles} tuile(s)` : best.patch.legend ? `légende ${best.patch.legend}` : 'étiquettes de valeurs'} (${f} → ${best.f} %)`);
+      }
+    }
+    fid = fidelityScore(src, cur, W, H, spec.page);
+    if (!improved) break;
+  }
+  const regions = spec.panels.map((p) => regionFidelity(src, cur, W, H, p.box));
+  const resemblance = fid;
+  // Texts are the user's (titles, figures, menu items): excluded like the data areas.
+  const textBoxes = [
+    ...spec.panels.flatMap((p) => [p.titleBox, p.valueBox, ...(p.slots ?? []).map((x) => x.box)]),
+    spec.title?.box,
+    spec.subtitle?.box,
+  ]
+    .filter((b): b is NonNullable<typeof b> => Boolean(b))
+    .map((b) => ({ x: b.x - 0.01 - b.w * 0.18, y: b.y - 0.01 - b.h * 0.36, w: b.w * 1.36 + 0.02, h: b.h * 1.72 + 0.02 }));
+  const backdrop = backdropFidelity(src, cur, W, H, [...spec.panels.map((p) => p.box), ...textBoxes]);
+  const chartPanels = spec.panels.filter((p) => ['bar', 'hbar', 'line', 'area', 'pie', 'donut', 'gauge', 'map'].includes(p.kind));
+  const paletteOk = chartPanels.length ? chartPanels.filter((p) => p.colors.length > 0).length / chartPanels.length : 1;
+  const formsOk = chartPanels.length ? Math.min(1, (verified.size + (c.labelledBy ? chartPanels.length : 0)) / chartPanels.length) : 1;
+  const design = Math.round(0.6 * backdrop + 20 * paletteOk + 20 * formsOk);
+  const meanRegion = regions.length ? Math.round(regions.reduce((a, b) => a + b, 0) / regions.length) : 0;
+  const charts = spec.panels.filter((p) => ['bar', 'hbar', 'line', 'area', 'pie', 'donut', 'gauge', 'map'].includes(p.kind)).length;
+  const readable = spec.panels.filter((p) => contrast(p.text, p.fill) >= 4.5).length;
+  const withData = spec.panels.filter((p) => p.kind !== 'image' && p.kind !== 'title').length;
+  const logoFree = Boolean(spec.title) || spec.pageBox.y > 0.03;
+  const checklist: CheckItem[] = [
+    { id: 'layout', label: 'Agencement', ok: meanRegion >= 90, note: `${spec.panels.length} panneaux aux positions mesurées · correspondance moyenne par panneau ${meanRegion} %` },
+    { id: 'colors', label: 'Couleurs et fonds', ok: backdrop >= 90 && paletteOk === 1, note: `fonds, cadres, bandeaux et cartes ${backdrop} % · palette des graphiques ${Math.round(paletteOk * 100)} % mesurée sur l’image` },
+    { id: 'charts', label: 'Design des graphiques', ok: verified.size >= Math.min(charts, 6) || charts === 0, note: `${charts} graphique(s) ; ${verified.size} forme(s) vérifiée(s) sur les pixels${changes.length ? `, ${changes.length} correction(s)` : ''}` },
+    { id: 'legibility', label: 'Lisibilité', ok: readable === spec.panels.length, note: `${readable}/${spec.panels.length} panneaux avec un texte lisible sur leur fond (≥ 4,5:1) — les autres sont corrigés à l’export` },
+    { id: 'data', label: 'Données logées', ok: withData > 0, note: `${withData} panneau(x) recevant vos données (indicateurs, graphiques, tableau, filtres) — aucun chiffre inventé` },
+    { id: 'logo', label: 'Emplacement du logo', ok: logoFree, note: logoFree ? 'réservé à droite du bandeau de titre, sans chevauchement' : 'aucune zone libre en tête : logo en haut à droite de la page' },
+  ];
+  return { spec, fidelity: design, before: fidelityScore(src, await render(c.spec), W, H, c.spec.page), resemblance, changes, checklist };
+}

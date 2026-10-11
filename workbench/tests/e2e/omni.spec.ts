@@ -542,6 +542,9 @@ test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, fram
   expect(somCall).toBeTruthy();
   await page.getByTestId('design-clone').screenshot({ path: test.info().outputPath('clone-card.png') });
   fs.copyFileSync(test.info().outputPath('clone-card.png'), '/tmp/claude-0/clone/e2e-card.png');
+  // Below the 95 % design target the user must accept explicitly (the controller never lets it pass silently).
+  await expect(page.getByTestId('design-checklist')).toBeVisible({ timeout: 30_000 });
+  if (await page.getByTestId('design-accept-low').isVisible()) await page.getByTestId('design-accept-low').locator('input').check();
   await page.getByTestId('design-go').click();
   await expect(page.getByTestId('design-card-done')).toContainText('Reproduction fidèle');
   await expect(page.getByText('Reproduction livrée.')).toBeVisible({ timeout: 30_000 });
@@ -669,6 +672,9 @@ test('IMAGE DESIGN + Excel written by the model in code: the workbook OPENS on t
   await expect(page.getByTestId('design-clone')).toBeVisible({ timeout: 30_000 });
   // The preview already uses the DETAIL sheet of the attached workbook.
   await expect(page.getByTestId('design-clone')).toContainText('Provisions', { timeout: 20_000 });
+  // Below the 95 % design target the user must accept explicitly (the controller never lets it pass silently).
+  await expect(page.getByTestId('design-checklist')).toBeVisible({ timeout: 30_000 });
+  if (await page.getByTestId('design-accept-low').isVisible()) await page.getByTestId('design-accept-low').locator('input').check();
   await page.getByTestId('design-go').click();
   await expect(page.getByText('Classeur livré.')).toBeVisible({ timeout: 40_000 });
   const files = () =>

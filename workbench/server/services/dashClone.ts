@@ -1269,3 +1269,86 @@ export function fidelityScore(a: ArrayLike<number>, b: ArrayLike<number>, w: num
     }
   return n ? Math.max(0, Math.round((1 - (sum / n) * 2.2) * 100)) : 100;
 }
+
+
+/**
+ * Fidelity (0–100) of ONE region (a panel box, fractions of the image) between the source and the reproduction —
+ * same measure as fidelityScore, restricted to the box (blocks of ~12 px).
+ */
+export function regionFidelity(a: ArrayLike<number>, b: ArrayLike<number>, w: number, h: number, box: Box): number {
+  const x0 = Math.max(0, Math.floor(box.x * w));
+  const y0 = Math.max(0, Math.floor(box.y * h));
+  const x1 = Math.min(w, Math.ceil((box.x + box.w) * w));
+  const y1 = Math.min(h, Math.ceil((box.y + box.h) * h));
+  const step = 12;
+  let sum = 0;
+  let n = 0;
+  for (let by = y0; by < y1; by += step)
+    for (let bx = x0; bx < x1; bx += step) {
+      const ma = [0, 0, 0];
+      const mb = [0, 0, 0];
+      let k = 0;
+      for (let y = by; y < Math.min(y1, by + step); y++)
+        for (let x = bx; x < Math.min(x1, bx + step); x++) {
+          const o = (y * w + x) * 4;
+          for (let i = 0; i < 3; i++) {
+            ma[i]! += a[o + i]!;
+            mb[i]! += b[o + i]!;
+          }
+          k++;
+        }
+      if (!k) continue;
+      sum += Math.sqrt(d2(ma.map((v) => v / k) as RGB, mb.map((v) => v / k) as RGB)) / 441.7;
+      n++;
+    }
+  return n ? Math.max(0, Math.round((1 - (sum / n) * 2.2) * 100)) : 100;
+}
+
+/** The other plausible readings of a panel, tried by the reproduction controller (pixels decide, no model call). */
+export function panelCandidates(p: Panel): Partial<Panel>[] {
+  const charts: PanelKind[] = ['bar', 'hbar', 'line', 'area', 'donut', 'pie'];
+  if (charts.includes(p.kind) || p.kind === 'gauge' || p.kind === 'map') {
+    const out: Partial<Panel>[] = charts.filter((k) => k !== p.kind).map((kind) => ({ kind, legend: kind === 'pie' || kind === 'donut' ? 'right' : 'none' }));
+    out.push({ valueLabels: !p.valueLabels });
+    if (p.kind === 'pie' || p.kind === 'donut') out.push({ legend: p.legend === 'right' ? 'bottom' : p.legend === 'bottom' ? 'none' : 'right' });
+    return out;
+  }
+  if (p.kind === 'kpi') return [1, 2, 3, 4, 5, 6].filter((t) => t !== p.tiles).map((tiles) => ({ tiles }));
+  if (p.kind === 'text') return [{ kind: 'kpi', tiles: 1 }, { kind: 'table' }];
+  return [];
+}
+
+
+/**
+ * DESIGN fidelity (0–100): what must match whatever the data are — page, frame, title band, cards, gaps and panel
+ * edges (blocks outside the panels' data areas, i.e. each panel shrunk by 14 %). Chart marks, figures and texts are
+ * excluded: they show the user's data, not the image's, so they can never match pixel for pixel.
+ */
+export function backdropFidelity(a: ArrayLike<number>, b: ArrayLike<number>, w: number, h: number, panels: Box[]): number {
+  // Panels: their data area (shrunk 14 %). Small boxes (texts, passed already enlarged): excluded whole.
+  const inner = panels.map((p) => (p.w * p.h < 0.02 ? { x0: p.x * w, x1: (p.x + p.w) * w, y0: p.y * h, y1: (p.y + p.h) * h } : { x0: (p.x + p.w * 0.14) * w, x1: (p.x + p.w * 0.86) * w, y0: (p.y + p.h * 0.14) * h, y1: (p.y + p.h * 0.86) * h }));
+  const step = 10;
+  let sum = 0;
+  let n = 0;
+  for (let by = 0; by < h; by += step)
+    for (let bx = 0; bx < w; bx += step) {
+      const cx = bx + step / 2;
+      const cy = by + step / 2;
+      if (inner.some((r) => cx > r.x0 && cx < r.x1 && cy > r.y0 && cy < r.y1)) continue;
+      const ma = [0, 0, 0];
+      const mb = [0, 0, 0];
+      let k = 0;
+      for (let y = by; y < Math.min(h, by + step); y++)
+        for (let x = bx; x < Math.min(w, bx + step); x++) {
+          const o = (y * w + x) * 4;
+          for (let i = 0; i < 3; i++) {
+            ma[i]! += a[o + i]!;
+            mb[i]! += b[o + i]!;
+          }
+          k++;
+        }
+      sum += Math.sqrt(d2(ma.map((v) => v / k) as RGB, mb.map((v) => v / k) as RGB)) / 441.7;
+      n++;
+    }
+  return n ? Math.max(0, Math.round((1 - (sum / n) * 2.2) * 100)) : 100;
+}

@@ -246,7 +246,68 @@ export const DESIGN_MODELS: DesignModel[] = MODEL_FORMATS.flatMap(({ id: format 
   }),
 );
 export const modelsFor = (f: ModelFormat) => DESIGN_MODELS.filter((m) => m.format === f);
-export const modelById = (id: string | undefined) => DESIGN_MODELS.find((m) => m.id === id);
+export const modelById = (id: string | undefined): DesignModel | undefined => DESIGN_MODELS.find((m) => m.id === id) ?? generatedById(id);
+
+// ── « GÉNÉRER 20 MODÈLES DE PLUS » — without end: palettes spread by the golden angle over the colour wheel, a colour
+// harmony each, every 4th one in dark mode, the layouts in turn. Deterministic (an id always gives the same model).
+const hslHex = (h: number, s: number, l: number): string => {
+  const a = (s / 100) * Math.min(l / 100, 1 - l / 100);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    return Math.round(255 * (l / 100 - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+};
+const lumOf = (hex: string) =>
+  [1, 3, 5]
+    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+    .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i]!, 0);
+const vsWhite = (hex: string) => 1.05 / (lumOf(hex) + 0.05);
+const HUE_NAMES: [number, string][] = [[0, 'Rubis'], [20, 'Corail'], [35, 'Mandarine'], [48, 'Ambre'], [60, 'Safran'], [85, 'Citron'], [120, 'Jade'], [150, 'Émeraude'], [175, 'Lagon'], [195, 'Turquoise'], [210, 'Azur'], [228, 'Cobalt'], [250, 'Indigo'], [275, 'Améthyste'], [300, 'Orchidée'], [325, 'Framboise']];
+const hueName = (h: number) => HUE_NAMES.reduce((b, x) => (Math.abs(((x[0] - h + 540) % 360) - 180) < Math.abs(((b[0] - h + 540) % 360) - 180) ? x : b))[1];
+const FONTS = ['Segoe UI', 'Inter', 'Montserrat', 'Poppins', 'Georgia', 'Garamond'];
+const HARM: [string, number, number][] = [['analogue', 30, -30], ['complémentaire', 180, 160], ['triadique', 120, 240], ['tétradique', 90, 180], ['split', 150, 210]];
+function generatedPalette(n: number): ModelPalette {
+  const h = Math.round((n * 137.508) % 360);
+  const [hn, o1, o2] = HARM[n % HARM.length]!;
+  const night = n % 4 === 3;
+  let l = 38;
+  while (l > 18 && vsWhite(hslHex(h, 65, l)) < 4.6) l--;
+  const primary = hslHex(h, 65, l);
+  const accent = hslHex((h + o1 + 360) % 360, 80, night ? 60 : 50);
+  const second = hslHex((h + o2 + 360) % 360, 70, night ? 62 : 46);
+  const dark = hslHex(h, 55, 13);
+  return {
+    id: `gen-${n}`,
+    name: `${hueName(h)} ${hn}${night ? ' nuit' : ''}`,
+    dark,
+    primary: night ? hslHex(h, 75, 60) : primary,
+    accent,
+    page: night ? hslHex(h, 45, 9) : hslHex(h, 35, 97),
+    surface: night ? hslHex(h, 40, 15) : '#FFFFFF',
+    text: night ? hslHex(h, 25, 92) : hslHex(h, 40, 12),
+    series: [night ? hslHex(h, 75, 60) : primary, accent, second, hslHex(h, 55, 70), hslHex((h + o1 + 360) % 360, 60, 75)],
+    font: FONTS[n % FONTS.length]!,
+    night,
+  };
+}
+/** Page `page` (0, 1, 2…) of the generated models of a format: 20 new ones per page, never ending. */
+export function generatedModels(format: ModelFormat, page: number): DesignModel[] {
+  return Array.from({ length: 20 }, (_, i) => generatedById(`${format}-gen-${page * 20 + i}`)!);
+}
+function generatedById(id: string | undefined): DesignModel | undefined {
+  const m = id ? /^(excel|word|slides|pdf|mail)-gen-(\d+)$/.exec(id) : null;
+  if (!m) return undefined;
+  const format = m[1] as ModelFormat;
+  const n = +m[2]!;
+  const raw = generatedPalette(n);
+  const p = format === 'word' || format === 'pdf' || format === 'mail' ? printPalette(raw) : raw;
+  const list: { id: string; name: string }[] = format === 'excel' ? LAYOUTS : format === 'slides' ? SLIDE_LAYOUTS : format === 'mail' ? MAIL_LAYOUTS : DOC_LAYOUTS;
+  let lay = list[(n * 3 + 1) % list.length]!;
+  if (format === 'slides') lay = raw.night ? SLIDE_LAYOUTS[2]! : lay.id === 'night' ? SLIDE_LAYOUTS[0]! : lay;
+  return { id: id!, format, name: raw.name, tagline: `${lay.name} · ${raw.font}`, palette: p, layout: lay.id };
+}
 
 // ── thumbnails (Word / PowerPoint / PDF / Mail; Excel uses the dashboard renderer) ──────────────────────────────────
 const esc = (s: string) => s.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c]!);
