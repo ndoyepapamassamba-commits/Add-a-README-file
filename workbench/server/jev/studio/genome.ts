@@ -243,7 +243,7 @@ export function singleMoment(action: string): string {
  * a background that contrasts with skin and clothes — the cut-out and the motion are then clean.
  */
 export const ANIMATION_READY =
-  'animation-ready staging: every character fully visible head to feet, standing apart (not touching, not overlapping), arms clearly separated from the torso, face in three-quarter view, mouth visible; the background right behind each character contrasts with their skin, hair and clothes (no dark doorway behind dark skin), no foreground object crossing a character';
+  'animation-ready: characters whole head to feet, apart, arms away from the torso, three-quarter faces, mouths visible; background behind each one contrasts with skin and clothes';
 export function sceneDims(sc: Scene, ctx: SceneContext): Dims {
   const chars = ctx.characters.filter((c) =>
     sc.characters.some((n) => n.toUpperCase() === c.name.toUpperCase()),

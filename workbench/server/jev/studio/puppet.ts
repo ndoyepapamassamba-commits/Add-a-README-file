@@ -389,3 +389,65 @@ export function jawOffset(y: number, my: number, mh: number, open: number, rest:
 export function deformPoint(c: PuppetCharacter, p: Pose, s: { x: number; y: number }): { x: number; y: number } {
   return bodyMove(c, p, s);
 }
+
+/**
+ * SECONDARY MOTION — every continuous part of the pose follows its target through a damped spring (the follow-through
+ * of animation studios): nothing jumps from one frame to the next, arms overshoot a little and settle, the mouth is fast,
+ * the body slow. ω = stiffness (rad/s), ζ = damping (1 = no overshoot).
+ */
+export const SPRINGS: Partial<Record<keyof Pose, { w: number; z: number }>> = {
+  mouth: { w: 38, z: 0.9 },
+  headRot: { w: 16, z: 0.7 },
+  headNod: { w: 18, z: 0.7 },
+  lean: { w: 9, z: 0.8 },
+  sway: { w: 8, z: 0.9 },
+  squash: { w: 16, z: 0.55 },
+  jump: { w: 20, z: 0.6 },
+  smile: { w: 10, z: 1 },
+  browIn: { w: 14, z: 0.85 },
+  browOut: { w: 14, z: 0.85 },
+  squint: { w: 12, z: 1 },
+};
+export const ARM_SPRING = { w: 13, z: 0.62 };
+export interface SpringState {
+  t: number;
+  x: Record<string, number>;
+  v: Record<string, number>;
+  arms: number[];
+  armsV: number[];
+}
+const springStep = (x: number, v: number, target: number, w: number, z: number, dt: number): [number, number] => {
+  const a = w * w * (target - x) - 2 * z * w * v;
+  const nv = v + a * dt;
+  return [x + nv * dt, nv];
+};
+/** Advances the springs to time t and returns the smoothed pose (blink and tremble stay as computed). */
+export function springPose(state: SpringState | undefined, target: Pose, t: number): { pose: Pose; state: SpringState } {
+  if (!state || t < state.t || t - state.t > 0.5) {
+    const x: Record<string, number> = {};
+    for (const k of Object.keys(SPRINGS)) x[k] = target[k as keyof Pose] as number;
+    return { pose: target, state: { t, x, v: {}, arms: [...target.arms], armsV: target.arms.map(() => 0) } };
+  }
+  const total = t - state.t;
+  const steps = Math.max(1, Math.ceil(total / 0.008));
+  const dt = total / steps;
+  for (let s = 0; s < steps; s++) {
+    for (const [k, sp] of Object.entries(SPRINGS)) {
+      const [nx, nv] = springStep(state.x[k] ?? (target[k as keyof Pose] as number), state.v[k] ?? 0, target[k as keyof Pose] as number, sp!.w, sp!.z, dt);
+      state.x[k] = nx;
+      state.v[k] = nv;
+    }
+    target.arms.forEach((a, i) => {
+      const [nx, nv] = springStep(state.arms[i] ?? a, state.armsV[i] ?? 0, a, ARM_SPRING.w, ARM_SPRING.z, dt);
+      state.arms[i] = nx;
+      state.armsV[i] = nv;
+    });
+  }
+  state.t = t;
+  const pose: Pose = { ...target, arms: target.arms.map((_, i) => state.arms[i]!) };
+  for (const k of Object.keys(SPRINGS)) (pose as unknown as Record<string, number>)[k] = state.x[k]!;
+  pose.mouth = Math.max(0, Math.min(1, pose.mouth));
+  pose.squint = Math.max(0, Math.min(1, pose.squint));
+  pose.wave = pose.arms[0] ?? 0;
+  return { pose, state };
+}

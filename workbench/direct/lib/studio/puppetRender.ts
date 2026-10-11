@@ -1,6 +1,6 @@
 // MARIONNETTE AFRIKATOON — browser renderer: the scene image is drawn, then each rigged character is redrawn through
 // its deformed mesh (affine-mapped triangles), then its eyes blink and its mouth opens with the voice.
-import { deformPoint, jawOffset, poseAt, warpGrid, type Pose, type PuppetCharacter, type PuppetRig } from '../../../server/jev/studio/puppet';
+import { deformPoint, jawOffset, poseAt, springPose, warpGrid, type SpringState, type Pose, type PuppetCharacter, type PuppetRig } from '../../../server/jev/studio/puppet';
 import { characterLayer, inpaint, plateHole } from '../../../server/jev/studio/layers';
 
 type Surface = OffscreenCanvas | HTMLCanvasElement;
@@ -55,10 +55,10 @@ export class PuppetStage {
   private lips = new Map<PuppetCharacter, string>();
   /** Characters whose painted mouth is already open: lip-sync by moving the real jaw, no drawn mouth. */
   private jawMode = new Set<PuppetCharacter>();
-  /** Emotion state per character, eased towards the target (expressions change smoothly, not in one frame). */
   /** Per-frame buffer of one character (layered mode): its face is drawn « source-atop », never outside its silhouette. */
   private buf: Surface | null = null;
-  private eased = new Map<PuppetCharacter, { t: number; lean: number; smile: number; browIn: number; browOut: number; squint: number }>();
+  /** Spring state per character (secondary motion: every part eases, overshoots a little and settles). */
+  private springs = new Map<PuppetCharacter, SpringState>();
   constructor(
     private img: CanvasImageSource & { width: number; height: number },
     private rig: PuppetRig,
@@ -279,18 +279,10 @@ export class PuppetStage {
         ...(mine && f.beat !== undefined ? { beat: f.beat } : {}),
         ...(mine && f.gesture ? { gesture: f.gesture, age: f.lineAge ?? 1 } : {}),
       });
-      // Emotional change eased over ≈ 0.3 s (posture and face glide to the new emotion).
-      const st = this.eased.get(c);
-      const pose = { ...raw };
-      if (!st || f.t < st.t || f.t - st.t > 1) this.eased.set(c, { t: f.t, lean: raw.lean, smile: raw.smile, browIn: raw.browIn, browOut: raw.browOut, squint: raw.squint });
-      else {
-        const k = 1 - Math.exp(-(f.t - st.t) / 0.28);
-        for (const key of ['lean', 'smile', 'browIn', 'browOut', 'squint'] as const) {
-          st[key] += (raw[key] - st[key]) * k;
-          pose[key] = st[key];
-        }
-        st.t = f.t;
-      }
+      // Secondary motion: the whole pose goes through damped springs (no jump between frames, natural follow-through).
+      const sp = springPose(this.springs.get(c), raw, f.t);
+      this.springs.set(c, sp.state);
+      const pose = sp.pose;
       if (this.layers.has(c)) {
         // Character rendered alone in its buffer, face features clipped to its own pixels, then composited.
         if (!this.buf || this.buf.width !== W || this.buf.height !== H) this.buf = surface(W, H);

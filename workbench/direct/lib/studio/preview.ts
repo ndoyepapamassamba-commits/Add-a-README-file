@@ -4,7 +4,7 @@
 // not the final film. When the browser lacks a capability the caller shows « Capability unavailable in current environment ».
 import { PuppetStage } from './puppetRender';
 import { gestureOf } from '../../../server/jev/studio/puppet';
-import { visemeAt } from '../../../server/jev/studio/emotionLayer';
+import { wordViseme } from '../../../server/jev/studio/emotionLayer';
 import { VIRAL_FORMAT, VIRAL_PRESETS, captionChunk, fitBand, parallelChunk, reactionFor, shockAfter, type ReactionKind } from '../../../server/jev/studio/viralFormat';
 import { blobs } from './blobs';
 import type { Blueprint, Scene } from '../../../server/jev/studio/types';
@@ -517,6 +517,11 @@ export async function renderPreview(
     return { punch: 0, side: 0, energy: 0 };
   };
   let punchS = 0;
+  let punchA = 0;
+  // The camera side glides towards the speaker (held between lines): no jump when the speaker changes.
+  let sideHeld = 0;
+  let sideS = 0;
+  let slowEnergy = 0;
   const sfx: { buf: AudioBuffer; at: number }[] = [];
   for (const e of bp.audio.sfx) {
     const buf = await decode(e.assetId);
@@ -579,11 +584,19 @@ export async function renderPreview(
     const dl = act ? bp.scenes[sceneIdx.get(act.line.sceneId) ?? si]?.dialogue[act.line.index] : undefined;
     const gesture = dl ? (gestureOf(dl.gesture) ?? gestureOf(dl.text)) : null;
     let band: Rect = { x: 0, y: 0, w: W, h: H };
-    punchS += (va.punch - punchS) * 0.18;
+    // Lip-sync on the word being said (subtitle timing) and voice accents (attack of the voice envelope).
+    const vz = act ? wordViseme(act.line.words, now) : { key: 'rest' as const, open: 0 };
+    slowEnergy += (va.energy - slowEnergy) * 0.08;
+    const beat = Math.max(0, Math.min(1, (va.energy - slowEnergy) * 5));
+    // Double smoothing = ease-in / ease-out of the punch-in (the camera starts gently, never with a jolt).
+    punchA += (va.punch - punchA) * 0.12;
+    punchS += (punchA - punchS) * 0.12;
+    if (va.punch > 0) sideHeld = va.side;
+    sideS += (sideHeld - sideS) * 0.08;
     const drawShot = (k: number, fr: number, alpha: number) => {
       const vid = videos[k];
       const img = bitmaps[k];
-      const cam = cameraAt(moves[k]!, fr, { punch: k === si ? punchS : 0, side: va.side, energy: k === si ? va.energy : 0, t: now, dim3d });
+      const cam = cameraAt(moves[k]!, fr, { punch: k === si ? punchS : 0, side: sideS, energy: k === si ? va.energy : 0, t: now, dim3d });
       if (vid) {
         if (vid.paused) void vid.play().catch(() => undefined);
         // A real video clip already moves: only a gentle camera on top of it.
@@ -595,13 +608,16 @@ export async function renderPreview(
           t: now + k * 3.7,
           side: va.side,
           energy: k === si ? va.energy : 0,
-          speaking: k === si && va.energy > 0.03,
+          // The speaker keeps speaking for the whole line (not only while the voice is loud): no pose flicker.
+          speaking: k === si && !!act,
           action: bp.scenes[k]!.action,
           emphasis: k === bp.scenes.length - 1 ? Math.max(0, 1 - Math.abs(fr - 0.85) * 8) : 0,
           gesture: k === si ? gesture : null,
           lineAge: act ? now - act.line.start : undefined,
           emotion: (k === si ? dl?.emotion : undefined) || bp.scenes[k]!.emotion,
-          viseme: k === si && act && dl ? visemeAt(dl.text, (now - act.line.start) / Math.max(0.1, act.line.end - act.line.start)) : undefined,
+          viseme: k === si && act ? vz.open : undefined,
+          visemeKey: k === si && act ? vz.key : undefined,
+          beat: k === si ? beat : 0,
         });
         band = framed(ctx, frame as unknown as ImageBitmap, W, H, cam, alpha, viral);
       } else if (img) {

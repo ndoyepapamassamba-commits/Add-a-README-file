@@ -57,10 +57,9 @@ export function cameraAt(move: Move, f: number, o: { punch?: number; side?: numb
   const punch = Math.min(1, Math.max(0, o.punch ?? 0));
   zoom += 0.1 * punch;
   dx += -0.05 * punch * (o.side ?? 0);
-  // Breathing / talking bounce: the frame lives with the voice.
-  const en = Math.min(1, Math.max(0, o.energy ?? 0));
-  zoom += 0.012 * en + 0.004 * Math.sin(t * 1.7);
-  dy += -0.006 * en * Math.abs(Math.sin(t * 9));
+  // Slow breathing of the frame only: the voice moves the characters, never the camera (a camera that follows the voice
+  // level frame by frame trembles).
+  zoom += 0.004 * Math.sin(t * 1.7);
   // 3D look: a slow orbit (tiny roll + lateral sweep) gives depth to rendered 3D frames.
   if (o.dim3d) {
     rot += 0.012 * (e - 0.5) * (move === 'panL' ? -1 : 1);
