@@ -281,7 +281,10 @@ export function qaXlsx(bytes: Uint8Array): QAResult | null {
   for (const p of Object.keys(z).filter((k) => /^xl\/drawings\/[^/]+\.xml$/.test(k))) {
     const d = rd(z, p);
     const out = fixShapeText(d, 'xdr', null);
-    if (out.n) (wr(z, p, out.xml), (shapes += out.n));
+    if (out.n) {
+      wr(z, p, out.xml);
+      shapes += out.n;
+    }
   }
   if (newXfs.length) {
     st = st.replace(fontsB[0], fontsB[0].replace(/<\/fonts>$/, `${newFonts.join('')}</fonts>`).replace(/<fonts\b([^>]*?)count="\d+"/, `<fonts$1count="${fonts.length + newFonts.length}"`));
@@ -449,8 +452,14 @@ export function qaPptx(bytes: Uint8Array): QAResult | null {
       let [ox, oy, cx, cy] = [+xs, +ys, +cxs, +cys];
       const tol = 0.01;
       if (ox >= -W * tol && oy >= -H * tol && ox + cx <= W * (1 + tol) && oy + cy <= H * (1 + tol)) return m;
-      if (cx > W) (cy = Math.round(cy * (W * 0.96 / cx))), (cx = Math.round(W * 0.96));
-      if (cy > H) (cx = Math.round(cx * (H * 0.96 / cy))), (cy = Math.round(H * 0.96));
+      if (cx > W) {
+        cy = Math.round(cy * ((W * 0.96) / cx));
+        cx = Math.round(W * 0.96);
+      }
+      if (cy > H) {
+        cx = Math.round(cx * ((H * 0.96) / cy));
+        cy = Math.round(H * 0.96);
+      }
       ox = Math.min(Math.max(0, ox), W - cx);
       oy = Math.min(Math.max(0, oy), H - cy);
       moved++;
