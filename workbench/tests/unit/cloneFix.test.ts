@@ -61,3 +61,28 @@ describe('CONTRÔLEUR DE REPRODUCTION — espaces, couleurs, graphiques', () => 
     expect(scoreTone(null, 95)).toBe('none');
   });
 });
+
+describe('LIGNES DE STRUCTURE (bordures, séparateurs) restaurées dans le fond', () => {
+  it('copies back thin long card borders, never thick bars nor short marks', async () => {
+    const { restoreLines } = await import('../../server/services/cloneFix');
+    const src = img([252, 253, 254]);
+    rect(src, 10, 20, 230, 23, [54, 89, 122]); // card border: 3 px, navy, long
+    rect(src, 120, 30, 123, 150, [54, 89, 122]); // separator: vertical
+    rect(src, 20, 100, 200, 112, [54, 89, 122]); // a bar of an hbar chart: 12 px thick → content
+    rect(src, 20, 60, 30, 62, [54, 89, 122]); // a short mark → content
+    const bg = img([252, 253, 254]);
+    const n = restoreLines(src, bg, W, H, '#FCFDFE');
+    const at = (x: number, y: number) => Array.from(bg.slice((y * W + x) * 4, (y * W + x) * 4 + 3));
+    expect(at(100, 21)).toEqual([54, 89, 122]);
+    expect(at(121, 80)).toEqual([54, 89, 122]);
+    expect(at(100, 106)).toEqual([252, 253, 254]);
+    expect(at(25, 61)).toEqual([252, 253, 254]);
+    expect(n).toBeGreaterThan(220 * 3);
+    // A thin bar INSIDE a panel's data area is a chart mark: not restored.
+    const src2 = img([252, 253, 254]);
+    rect(src2, 40, 80, 200, 83, [54, 89, 122]);
+    const bg2 = img([252, 253, 254]);
+    restoreLines(src2, bg2, W, H, '#FCFDFE', { panels: [{ x: 0.1, y: 0.3, w: 0.8, h: 0.5 }] });
+    expect(Array.from(bg2.slice((81 * W + 100) * 4, (81 * W + 100) * 4 + 3))).toEqual([252, 253, 254]);
+  });
+});

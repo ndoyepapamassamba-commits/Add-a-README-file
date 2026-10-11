@@ -151,3 +151,86 @@ export function rankByScore<T extends { url: string }>(items: T[], scores: Recor
     })
     .map((x) => x.it);
 }
+
+/**
+ * STRUCTURE LINES (morphological line extraction, as in table-structure recognition): thin, long, straight strokes of
+ * one colour that contrasts with the page — card borders, separators, frames. The content cleaning erases them with
+ * the panels; they are DESIGN, so they are copied back from the image into the clean background.
+ * A stroke qualifies when its run is ≥ `minLen` of the image side and it is thin (≤ `maxThick` px across).
+ */
+export function restoreLines(src: ArrayLike<number>, bg: Uint8ClampedArray, w: number, h: number, page: string, o: { minLen?: number; maxThick?: number; contrast?: number; panels?: Box[] } = {}): number {
+  // Inside a panel's DATA area (the box shrunk by 8 % per side) a thin long stroke is a chart mark (a thin bar, an
+  // axis), not design: only the edges of the cards and the gaps between them are restored.
+  const inner = (o.panels ?? []).map((b) => ({ x0: (b.x + b.w * 0.08) * w, x1: (b.x + b.w * 0.92) * w, y0: (b.y + b.h * 0.08) * h, y1: (b.y + b.h * 0.92) * h }));
+  const inData = (i: number) => {
+    const x = i % w;
+    const y = (i - x) / w;
+    return inner.some((r) => x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1);
+  };
+  const minLen = o.minLen ?? 0.08;
+  const maxThick = o.maxThick ?? 5;
+  const pg = [0, 2, 4].map((i) => parseInt(page.replace('#', '').slice(i, i + 2), 16) || 0) as RGB;
+  const contrast = (o.contrast ?? 70) ** 2;
+  const c = (i: number): RGB => [src[i * 4]!, src[i * 4 + 1]!, src[i * 4 + 2]!];
+  const ink = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) ink[i] = d2(c(i), pg) > contrast ? 1 : 0;
+  const same = (a: number, b: number) => d2(c(a), c(b)) < 40 ** 2;
+  const keep = new Uint8Array(w * h);
+  // thickness of the ink across a pixel (vertical extent for a horizontal stroke, and vice versa)
+  const across = (x: number, y: number, dx: number, dy: number) => {
+    let n = 1;
+    const i0 = y * w + x;
+    for (let k = 1; k <= maxThick + 1; k++) {
+      const xx = x + dx * k;
+      const yy = y + dy * k;
+      if (xx < 0 || yy < 0 || xx >= w || yy >= h || !ink[yy * w + xx] || !same(i0, yy * w + xx)) break;
+      n++;
+    }
+    for (let k = 1; k <= maxThick + 1; k++) {
+      const xx = x - dx * k;
+      const yy = y - dy * k;
+      if (xx < 0 || yy < 0 || xx >= w || yy >= h || !ink[yy * w + xx] || !same(i0, yy * w + xx)) break;
+      n++;
+    }
+    return n;
+  };
+  // horizontal strokes
+  for (let y = 0; y < h; y++) {
+    let x = 0;
+    while (x < w) {
+      const i = y * w + x;
+      if (!ink[i] || across(x, y, 0, 1) > maxThick) {
+        x++;
+        continue;
+      }
+      let e = x + 1;
+      while (e < w && ink[y * w + e] && same(i, y * w + e) && across(e, y, 0, 1) <= maxThick) e++;
+      if (e - x >= minLen * w) for (let k = x; k < e; k++) keep[y * w + k] = 1;
+      x = e;
+    }
+  }
+  // vertical strokes
+  for (let x = 0; x < w; x++) {
+    let y = 0;
+    while (y < h) {
+      const i = y * w + x;
+      if (!ink[i] || across(x, y, 1, 0) > maxThick) {
+        y++;
+        continue;
+      }
+      let e = y + 1;
+      while (e < h && ink[e * w + x] && same(i, e * w + x) && across(x, e, 1, 0) <= maxThick) e++;
+      if (e - y >= minLen * h) for (let k = y; k < e; k++) keep[k * w + x] = 1;
+      y = e;
+    }
+  }
+  let n = 0;
+  for (let i = 0; i < w * h; i++)
+    if (keep[i] && !inData(i)) {
+      bg[i * 4] = src[i * 4]!;
+      bg[i * 4 + 1] = src[i * 4 + 1]!;
+      bg[i * 4 + 2] = src[i * 4 + 2]!;
+      n++;
+    }
+  return n;
+}

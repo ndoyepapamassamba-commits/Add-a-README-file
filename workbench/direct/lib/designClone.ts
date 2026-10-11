@@ -7,7 +7,7 @@ import { cloneData, renderCloneSvg, type CloneData } from '../../server/services
 import { DataCore, isDataFile } from '../../server/services/dataCore';
 import { pickTable, type SheetTable } from '../../server/services/tablePick';
 import { askVision, imageBlob } from './designWeb';
-import { colorPatches, emptyZones, panelFor, ZONE_KINDS } from '../../server/services/cloneFix';
+import { colorPatches, emptyZones, panelFor, restoreLines, ZONE_KINDS } from '../../server/services/cloneFix';
 import { bytesOf, filesFor, sessionAllow } from './vfs';
 
 export interface ClonedDesign {
@@ -174,6 +174,8 @@ export async function cloneDesign(url: string, onStep: (s: string) => void = () 
       p.sequential = false;
     }
   });
+  // The card borders and separators the cleaning erased with the content are design: copied back from the image.
+  restoreLines(px, tpl.bg, w, h, spec.page, { panels: spec.panels.map((p) => p.box) });
   spec.background = bgDataUrl(tpl.bg, w, h);
   spec = attachTexts(spec, tpl.texts, w, h);
   return { spec, source: dataUrl, width: w, height: h, px, labelledBy };
@@ -342,7 +344,9 @@ export async function refineClone(c: ClonedDesign, data: CloneData, onStep: (s: 
     for (const { i, f } of worst) {
       onStep(`contrôle de reproduction : panneau ${i + 1} (${f} %)…`);
       let best = { f, patch: null as Partial<DashSpec['panels'][number]> | null, px: cur };
-      for (const cand of panelCandidates(spec.panels[i]!)) {
+      // A chart TYPE named by the vision model is never overridden by raw pixels: the reproduction shows the user's
+      // data, not the image's, so a line can look « closer » to bars it is not. Only legend / labels / tiles are tried.
+      for (const cand of panelCandidates(spec.panels[i]!).filter((x) => !(c.labelledBy && x.kind && x.kind !== spec.panels[i]!.kind))) {
         const trial: DashSpec = { ...spec, panels: spec.panels.map((p, k) => (k === i ? { ...p, ...cand } : p)) };
         const px = await render(trial);
         const f2 = regionFidelity(src, px, W, H, spec.panels[i]!.box);
@@ -361,6 +365,13 @@ export async function refineClone(c: ClonedDesign, data: CloneData, onStep: (s: 
     if (!improved) break;
   }
   const regions = spec.panels.map((p) => regionFidelity(src, cur, W, H, p.box));
+  // Diagnostic (opt-in, never in normal use): the source and the reproduction as compared, for a visual diff.
+  try {
+    if (localStorage.getItem('clone.debug') === '1')
+      (globalThis as unknown as { __cloneDebug?: unknown }).__cloneDebug = { w: W, h: H, src: Array.from(src), cur: Array.from(cur), spec };
+  } catch {
+    /* no storage */
+  }
   const resemblance = fid;
   // Texts are the user's (titles, figures, menu items): excluded like the data areas.
   const textBoxes = [

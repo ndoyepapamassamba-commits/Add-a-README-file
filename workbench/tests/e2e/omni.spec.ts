@@ -506,6 +506,7 @@ test('vision model refusing (« only available on agentic harnesses ») → the 
 });
 
 test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, frame, exact colours), labelled, shown next to its reproduction with the chat data; Excel opens on the reproduction', async ({ page }) => {
+  if (process.env.CLONE_DEBUG) await page.addInitScript(() => localStorage.setItem('clone.debug', '1'));
   await open(page);
   await page.removeLocatorHandler(page.getByTestId('design-go'));
   const IMG = fs.readFileSync(path.join(ROOT, 'tests/fixtures/dashboard-sweetshop.png'));
@@ -549,7 +550,8 @@ test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, fram
   fs.copyFileSync(test.info().outputPath('clone-card.png'), '/tmp/claude-0/clone/e2e-card.png');
   // Below the 95 % design target the user must accept explicitly (the controller never lets it pass silently).
   await expect(page.getByTestId('design-checklist')).toBeVisible({ timeout: 30_000 });
-  console.log(`[clone] pré-score ${pre} % · contrôle : ${await page.getByTestId('design-checklist').locator('div').first().textContent()}`);
+  if (process.env.CLONE_DEBUG) fs.writeFileSync('/tmp/claude-0/clone/debug.json', JSON.stringify(await page.evaluate(() => (globalThis as unknown as { __cloneDebug?: unknown }).__cloneDebug)));
+  console.log(`[clone] pré-score ${pre} % · contrôle : ${await page.getByTestId('design-checklist').innerText()}`);
   if (await page.getByTestId('design-accept-low').isVisible()) await page.getByTestId('design-accept-low').locator('input').check();
   await page.getByTestId('design-go').click();
   await expect(page.getByTestId('design-card-done')).toContainText('Reproduction fidèle');
