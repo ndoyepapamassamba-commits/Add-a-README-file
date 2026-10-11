@@ -1,4 +1,4 @@
-import { strFromU8, unzipSync } from 'fflate';
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import { cloneData } from '../../server/services/dashRender';
 import { houseXlsx } from '../../server/services/houseStyle';
@@ -69,5 +69,25 @@ describe('dashboard framing: cards of one row aligned, no partial overlap', () =
     expect(b[1]!.r0).toBe(b[0]!.r0);
     expect(b[1]!.r1).toBe(b[0]!.r1);
     expect(b[1]!.c1).toBeLessThan(b[2]!.c0);
+  });
+});
+
+describe('NEVER a picture instead of the live dashboard', () => {
+  it('a sheet the model already called « Tableau de bord » is kept; ours goes first as « Tableau de bord vivant »', () => {
+    const base = houseXlsx(cols, rows, { title: 'Tableau de bord', chart: 'none' });
+    const z0 = unzipSync(base);
+    const wb0 = strFromU8(z0['xl/workbook.xml']!).replace(/<sheet name="[^"]*"/, '<sheet name="Tableau de bord"');
+    const named = zipSync({ ...z0, 'xl/workbook.xml': strToU8(wb0) });
+    const r2 = addLiveDashboard(named, SPEC, cloneData('Ventes', cols, rows))!;
+    const wb = strFromU8(unzipSync(r2.bytes)['xl/workbook.xml']!);
+    expect(wb).toMatch(/<sheets><sheet name="Tableau de bord vivant"/);
+    expect(wb).toContain('name="Tableau de bord"');
+    expect(Object.keys(unzipSync(r2.bytes)).some((k) => k.startsWith('xl/media/'))).toBe(false);
+  });
+  it('no text category: a number with few values (rate, stage) becomes the drop-down filter', () => {
+    const rr = Array.from({ length: 30 }, (_, i) => ({ Client: `C${i}`, Taux: [0.25, 0.5, 1][i % 3]!, Encours: 1000 * (i + 1) }));
+    const c2 = ['Client', 'Taux', 'Encours'];
+    const r3 = addLiveDashboard(houseXlsx(c2, rr, { title: 'X', chart: 'none' }), SPEC, cloneData('Provisions', c2, rr))!;
+    expect(r3.filters).toEqual(['Taux']);
   });
 });

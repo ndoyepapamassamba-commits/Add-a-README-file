@@ -1,6 +1,7 @@
 // Studio actions (runtime): registry, story, character library + 2D redraw, scene images, voices. Every paid call goes
 // through executeMedia (selection, budget gate, retries, fallback, storage, memory, JEV_LOG).
 import { detectPanels, SINGLE_SHOT_RETRY } from '../../../server/jev/studio/panels';
+import { artQuality, artVerdict, enhanceInstruction, judgePrompt, parseJudgement, regenerateHint, type ArtJudgement } from '../../../server/jev/studio/artJudge';
 import { castVoices, naturalSpeed } from '../../../server/jev/studio/motion';
 import { useStudio } from './store';
 import { useStore } from '../store';
@@ -562,6 +563,66 @@ export async function generateOne(j: ImageJob): Promise<MediaOutcome<{ b64: stri
   });
 }
 
+/** The art director's judgement of one image (null: no vision model answered — nothing is invented). */
+async function judgeArt(projectId: string, sc: Scene, assetId: string): Promise<ArtJudgement | null> {
+  const bp = bpOf(projectId);
+  try {
+    const chars = bp.characters
+      .filter((c) => sc.characters.map((x) => x.toUpperCase()).includes(c.name))
+      .map((c) => `${c.name}: ${c.consistency}`)
+      .join(' | ');
+    const r = await runText({
+      projectId,
+      purpose: 'directeur artistique (juge image)',
+      vision: true,
+      maxTokens: 500,
+      temperature: 0,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: judgePrompt({ style: `${dimensionOf(bp.styleDNA)} — ${bp.styleDNA.renderStyle}`, characters: chars, action: sc.action ?? '' }) },
+            { type: 'image_url', image_url: { url: await dataUrl(assetId) } },
+          ],
+        },
+      ],
+    });
+    return parseJudgement(r.text);
+  } catch {
+    return null;
+  }
+}
+/**
+ * One art-direction round: judge; « enhance » sends the image itself as the first reference with an edit instruction
+ * (same shot, defects fixed); « regenerate » draws again with the judge's notes. The better judged image is kept.
+ */
+async function artPass(projectId: string, sc: Scene, job: ImageJob, out: MediaOutcome<{ b64: string }>, trace: Trace): Promise<{ out: MediaOutcome<{ b64: string }>; judgement: ArtJudgement | null }> {
+  const first = await judgeArt(projectId, sc, out.assetId!);
+  if (!first) {
+    trace.stage('QA', `directeur artistique : aucun modèle vision n'a répondu — image gardée, qualité non mesurée`);
+    return { out, judgement: null };
+  }
+  const verdict = artVerdict(first);
+  trace.stage('QA', `directeur artistique : ${first.overall}/10 → ${verdict === 'accept' ? 'acceptée' : verdict === 'enhance' ? 'passe d’amélioration (image → image)' : 'redessinée avec les notes'}`);
+  if (verdict === 'accept') return { out, judgement: first };
+  const second =
+    verdict === 'enhance'
+      ? await generateOne({ ...job, references: [out.assetId!, ...job.references].slice(0, 4), compiled: { ...job.compiled, text: `${enhanceInstruction(first)}
+
+${job.compiled.text}` }, regenerated: true, tags: [...(job.tags ?? []), 'enhanced'], trace: new Trace() })
+      : await generateOne({ ...job, compiled: { ...job.compiled, text: `${job.compiled.text}
+${regenerateHint(first)}` }, regenerated: true, trace: new Trace() });
+  if (!second.assetId) return { out, judgement: first };
+  const again = await judgeArt(projectId, sc, second.assetId);
+  // Kept only if the judge finds it better (never a blind replacement).
+  if (again && again.overall > first.overall) {
+    trace.stage('QA', `directeur artistique : ${first.overall} → ${again.overall}/10, nouvelle image gardée`);
+    return { out: second, judgement: again };
+  }
+  trace.stage('QA', `directeur artistique : la reprise n'est pas meilleure (${again?.overall ?? 'non jugée'}), première image gardée`);
+  return { out, judgement: first };
+}
+
 /** Image of a scene: Style DNA + consistency profiles + world injected; references = redrawn character references. */
 export async function generateSceneImage(
   projectId: string,
@@ -597,6 +658,7 @@ export async function generateSceneImage(
     .filter((x): x is string => Boolean(x))
     .slice(0, 4);
   const ids: string[] = [];
+  const arts = new Map<string, ArtJudgement>();
   const n = Math.max(1, Math.min(16, o.variants ?? 1));
   for (let i = 0; i < n; i++) {
     const job = {
@@ -619,6 +681,12 @@ export async function generateSceneImage(
       const again = await generateOne({ ...job, compiled: { ...compiled, text: `${compiled.text}\n${SINGLE_SHOT_RETRY}` }, regenerated: true, trace: new Trace() });
       if (again.assetId && !(await isMultiPanel(again.assetId))) out = again;
     }
+    // ART DIRECTOR: judge → accept / enhance (image-to-image on this image) / redraw with the notes. Not in ECO.
+    if (out.assetId && bp.mode !== 'ECO') {
+      const best = await artPass(projectId, sc, job, out, i === 0 ? trace : new Trace());
+      out = best.out;
+      if (best.judgement && i === 0) arts.set(sceneId, best.judgement);
+    }
     if (out.assetId) ids.push(out.assetId);
   }
   if (ids.length)
@@ -631,6 +699,8 @@ export async function generateSceneImage(
               imageAssetId: ids[0],
               status: 'GENERATED',
               model: useStudio.getState().assets[ids[0]!]?.model,
+              // Measured by the art director only (null when no vision judge answered).
+              quality: arts.has(sceneId) ? artQuality(arts.get(sceneId)!) : (s.quality ?? null),
             }
           : s,
       ),

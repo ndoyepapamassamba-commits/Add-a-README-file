@@ -24,7 +24,6 @@ const wr = (z: Zip, p: string, s: string) => {
 const DASH = 'Tableau de bord';
 const DATA = 'Données du tableau de bord';
 const Q = `'${DATA}'`;
-const QD = `'${DASH}'`;
 const ALL = '(Tous)';
 const xesc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const hex = (c: string) => c.replace('#', '').slice(0, 6).toUpperCase();
@@ -162,7 +161,11 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
     return null;
   }
   let wb = rd(z, 'xl/workbook.xml');
-  if (!wb || wb.includes(`name="${DASH}"`) || !/<sheets>/.test(wb) || !d.source || !d.source.rows.length) return null;
+  if (!wb || !/<sheets>/.test(wb) || !d.source || !d.source.rows.length) return null;
+  // A sheet the model's own code called « Tableau de bord » is kept: ours goes first as « Tableau de bord vivant ».
+  const DASH_NAME = wb.includes(`name="${DASH}"`) ? `${DASH} vivant` : DASH;
+  if (wb.includes(`name="${DASH_NAME}"`) || wb.includes(`name="${xesc(DATA)}"`)) return null;
+  const QD = `'${DASH_NAME}'`;
   const src = d.source;
   const font = (o.font ?? spec.font).replace(/[<>"]/g, '') || 'Segoe UI';
   const S = new Styles(z);
@@ -190,30 +193,40 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   }
   for (const k of d.kpis) if (k.src?.col) used.add(k.src.col);
   for (const c of d.table.columns) used.add(c);
+  const ym = (v: unknown) => {
+    const x = asDate(v);
+    return x ? `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}` : '';
+  };
   // Filters: text columns with a handful of values (2–25), the most useful first.
   const distinct = (c: string) => [...new Set(rows.map((r) => r[c]).filter((v) => v !== null && v !== undefined && String(v).trim() !== '').map((v) => String(v)))];
   // Categories people filter on (segment, band, agency…), never identifiers or names; fewest values first.
   const IDLIKE = /customer|client|compte|account|contrat|contract|r[ée]f|\bid\b|code|matricule|num[ée]ro|nom\b|name|libell|raison sociale/i;
-  const filters = src.textCols
+  type Filter = { c: string; vals: (string | number)[]; kind: 'text' | 'num' | 'month' };
+  const textF: Filter[] = src.textCols
     .filter((c) => !IDLIKE.test(c))
-    .map((c) => ({ c, vals: distinct(c) }))
+    .map((c) => ({ c, vals: distinct(c), kind: 'text' as const }))
     .filter((x) => x.vals.length >= 2 && x.vals.length <= 25)
-    .sort((a, b) => a.vals.length - b.vals.length)
-    .slice(0, 2);
-  for (const f of filters) used.add(f.c);
+    .sort((a, b) => a.vals.length - b.vals.length);
+  // No category in text? A number with a handful of values is one (rate, band, stage), and so is the month.
+  const numF: Filter[] = src.numCols
+    .filter((c) => !IDLIKE.test(c))
+    .map((c) => ({ c, vals: [...new Set(rows.map((r) => r[c]).filter(isNum))].sort((a, b) => a - b), kind: 'num' as const }))
+    .filter((x) => x.vals.length >= 2 && x.vals.length <= 12);
+  const months = src.dateCol ? [...new Set(rows.map((r) => ym(r[src.dateCol!])).filter(Boolean))].sort() : [];
+  const monthF: Filter[] = months.length >= 2 && months.length <= 36 ? [{ c: 'Mois', vals: months, kind: 'month' }] : [];
+  const filters = [...textF, ...numF, ...monthF].slice(0, 2);
+  for (const f of filters) if (f.kind !== 'month') used.add(f.c);
   const RAW0 = 40;
   const rawCols = [...used].filter((c) => src.columns.includes(c));
   const rawIdx = new Map<string, number>();
   rawCols.forEach((c, i) => rawIdx.set(c, RAW0 + i));
   const monthCol = src.dateCol ? RAW0 + rawCols.length : -1;
   const helperCol = RAW0 + rawCols.length + (monthCol >= 0 ? 1 : 0);
+  /** The raw column a filter compares (the month helper column for the month filter). */
+  const fcol = (f: Filter) => (f.kind === 'month' ? monthCol : rawIdx.get(f.c)!);
   rawCols.forEach((c) => calc.set(1, rawIdx.get(c)!, { v: c, s: head }));
   if (monthCol >= 0) calc.set(1, monthCol, { v: 'Mois', s: head });
   calc.set(1, helperCol, { v: 'Classement (calcul)', s: head });
-  const ym = (v: unknown) => {
-    const x = asDate(v);
-    return x ? `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}` : '';
-  };
   rows.forEach((r, i) => {
     for (const c of rawCols) {
       const v = r[c];
@@ -251,9 +264,10 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   filters.forEach((f, i) => {
     const col = LIST0 + i;
     calc.set(1, col, { v: f.c, s: head });
-    [ALL, ...f.vals.sort((a, b) => a.localeCompare(b, 'fr'))].forEach((v, k) => calc.set(k + 2, col, { v }));
+    const vals = f.kind === 'text' ? [...f.vals].sort((a, b) => String(a).localeCompare(String(b), 'fr')) : f.vals;
+    [ALL, ...vals].forEach((v, k) => calc.set(k + 2, col, { v }));
   });
-  const mask = filters.length ? filters.map((f, i) => `(((${sel[i]}="${ALL}")+(${rng(rawIdx.get(f.c)!)}=${sel[i]}))>0)`).join('*') : '';
+  const mask = filters.length ? filters.map((f, i) => `(((${sel[i]}="${ALL}")+(${rng(fcol(f))}=${sel[i]}))>0)`).join('*') : '';
   const sumIf = (cond: string, measure: string | null) => (measure && rawIdx.has(measure) ? `SUMPRODUCT(${[cond, mask, rng(rawIdx.get(measure)!)].filter(Boolean).join('*')})` : `SUMPRODUCT(${[cond, mask].filter(Boolean).join('*') || '1'}*1)`);
 
   // ── 3. KPI cells ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -340,7 +354,7 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
     rows.forEach((r, i) => {
       const row = i + 2;
       const m = isNum(r[tMeasure]) ? (r[tMeasure] as number) : 0;
-      const cond = filters.map((f, k) => `OR(${sel[k]}="${ALL}",${colL(rawIdx.get(f.c)!)}${row}=${sel[k]})`).join(',');
+      const cond = filters.map((f, k) => `OR(${sel[k]}="${ALL}",${colL(fcol(f))}${row}=${sel[k]})`).join(',');
       calc.set(row, helperCol, { f: `IF(${cond ? `AND(${cond})` : 'TRUE'},N(${colL(mc)}${row}),-1E+300)+ROW()/1E+9`, v: m + row / 1e9 });
     });
     const helper = rng(helperCol);
@@ -407,7 +421,7 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
 
   const charts: { xml: string; rid: string }[] = [];
   const links: { rid: string; target: string }[] = [];
-  const otherSheets = [...wb.matchAll(/<sheet\b[^>]*name="([^"]*)"/g)].map((m) => m[1]!.replace(/&amp;/g, '&')).filter((x) => x !== DASH && x !== DATA);
+  const otherSheets = [...wb.matchAll(/<sheet\b[^>]*name="([^"]*)"/g)].map((m) => m[1]!.replace(/&amp;/g, '&')).filter((x) => x !== DASH_NAME && x !== DATA);
   let tables = 0;
   let navUsed = 0;
   spec.panels.forEach((p: Panel, i) => {
@@ -576,7 +590,7 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   const ids = [...wb.matchAll(/sheetId="(\d+)"/g)].map((m) => +m[1]!);
   const sheetId = (ids.length ? Math.max(...ids) : 0) + 1;
   wb = ensureRootNs(wb, 'r', NS_R);
-  wb = wb.replace(/<sheets>/, `<sheets><sheet name="${DASH}" sheetId="${sheetId}" r:id="${rid}"/>`).replace('</sheets>', `<sheet name="${xesc(DATA)}" sheetId="${sheetId + 1}" r:id="${ridData}"/></sheets>`);
+  wb = wb.replace(/<sheets>/, `<sheets><sheet name="${DASH_NAME}" sheetId="${sheetId}" r:id="${rid}"/>`).replace('</sheets>', `<sheet name="${xesc(DATA)}" sheetId="${sheetId + 1}" r:id="${ridData}"/></sheets>`);
   wb = wb.replace(/localSheetId="(\d+)"/g, (_m, k: string) => `localSheetId="${+k + 1}"`);
   wb = wb.replace(/activeTab="\d+"/, 'activeTab="0"').replace(/firstSheet="\d+"/, 'firstSheet="0"');
   // Formulas recomputed when the file opens (filters, SUMPRODUCT, LARGE).

@@ -213,7 +213,6 @@ import type { DashSpec } from '../../server/services/dashClone';
 import { cloneData, renderCloneHtml, renderCloneSvg } from '../../server/services/dashRender';
 import { addImageSheet } from '../../server/services/officeLogo';
 import { addLiveDashboard } from '../../server/services/liveDash';
-import { addNativeClone } from '../../server/services/cloneXlsx';
 import { restyleWorkbook } from '../../server/services/officeRestyle';
 import { rasterise } from './designClone';
 function loadDataset(path: string, sheet?: string): Dataset {
@@ -1094,12 +1093,13 @@ export const TOOLS: DirectTool[] = [
             const pic = { png: img.png, width: W, height: H };
             // LIVE dashboard first (no fixed picture): the image's design as shapes, figures as formulas, filters,
             // native charts on formula ranges. The older native + picture build only when the rows are missing.
+            // Never a pasted picture instead: without a live dashboard the workbook stays as exported.
             const live = f ? addLiveDashboard(bytesOf(f), spec, cd) : null;
-            const withPic = f && !live ? addImageSheet(bytesOf(f), pic, 'Tableau de bord (image)') : null;
-            const nat = withPic ? addNativeClone(withPic, spec, cd, pic) : null;
-            let out = live?.bytes ?? nat?.bytes ?? (f ? addImageSheet(bytesOf(f), pic) : null);
+            void pic;
+            const nat = null as { charts: number } | null;
+            let out = live?.bytes ?? null;
             // The data sheet of the reproduction in Maison 2.0 with the image's colours (the house sheets already are).
-            const rs = out && (nat || live) ? restyleWorkbook(out, { dark: spec.palette.dark, primary: spec.palette.primary, accent: spec.palette.accent, font: spec.font }, new Set(['Tableau de bord', 'Tableau de bord (image)', 'Données', 'Agrégats', 'Synthèse 3D'])) : null;
+            const rs = out && (nat || live) ? restyleWorkbook(out, { dark: spec.palette.dark, primary: spec.palette.primary, accent: spec.palette.accent, font: spec.font }, new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)', 'Données', 'Agrégats', 'Synthèse 3D'])) : null;
             if (rs) out = rs.bytes;
             if (out) {
               writeBytes(path, out, f!.mime);

@@ -455,4 +455,4 @@ export function removeSheets(bytes: Uint8Array, names: string[]): Uint8Array | n
   return zipSync(z, { level: 6 });
 }
 /** The sheets the reproduction adds (removed and re-applied after each re-save of the workbook). */
-export const REPRO_SHEETS = [DASH, 'Tableau de bord (image)', DATA];
+export const REPRO_SHEETS = [DASH, 'Tableau de bord (image)', DATA, `${DASH} vivant`];

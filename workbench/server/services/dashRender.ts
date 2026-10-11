@@ -345,13 +345,17 @@ export function panelPlan(spec: DashSpec, d: CloneData): { kind: PlanKind; view?
   let viewIdx = 0;
   let kpiIdx = 0;
   const trend = d.views.filter((v) => v.ordered);
+  const shown = new Set<DataView>();
   const cats = d.views.filter((v) => !v.ordered);
   return spec.panels.map((p) => {
     const kind = (p.kind === 'map' ? 'hbar' : p.kind === 'gauge' ? 'donut' : p.kind) as PlanKind;
     if (['bar', 'hbar', 'line', 'area', 'pie', 'donut'].includes(kind)) {
       const pool = (kind === 'line' || kind === 'area') && trend.length ? trend : cats.length ? cats : d.views;
-      const view = pool[viewIdx % Math.max(1, pool.length)];
+      // Never the same view twice while another one is still unused (two identical charts read as a bug).
+      const fresh = [...pool, ...d.views].find((v) => !shown.has(v));
+      const view = fresh ?? pool[viewIdx % Math.max(1, pool.length)];
       viewIdx++;
+      if (view) shown.add(view);
       return { kind, view };
     }
     if (kind === 'kpi') {

@@ -60,8 +60,8 @@ import { pilotAnchor } from '../../server/jev/omni/pilot';
 import { THEMES, buildTheme, setActiveTheme, themeOf } from '../../server/services/houseDesign';
 import { applyWebTheme, deliverableFromCode, deliverableFromText, kindForTool, type DeliverableKind } from '../../server/services/premiumDesigns';
 import { isOffice, recolorOffice } from '../../server/services/officeRecolor';
-import { addImagePageDocx, addImageSheet, addImageSlidePptx, addImageToHtml, addLogoToHtml, addLogoToOffice } from '../../server/services/officeLogo';
-import { addNativeClone, removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
+import { addImagePageDocx, addImageSlidePptx, addImageToHtml, addLogoToHtml, addLogoToOffice } from '../../server/services/officeLogo';
+import { removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
 import { strFromU8, unzipSync } from 'fflate';
 import { restyleWorkbook } from '../../server/services/officeRestyle';
 import { designQA } from '../../server/services/designQA';
@@ -70,8 +70,8 @@ import { maisonBand } from '../../server/services/maisonBand';
 import { addLiveDashboard } from '../../server/services/liveDash';
 import { skinDocx, skinHtml, skinPptx, type Skin } from '../../server/services/officeSkin';
 import { knowledgeBlock, related as relatedKnowledge } from '../../server/jev/knowledge/learned';
-import { renderCloneSvg } from '../../server/services/dashRender';
-import { previewData, rasterise } from './designClone';
+import { cloneData, renderCloneSvg } from '../../server/services/dashRender';
+import { chatTable, previewData, rasterise } from './designClone';
 import { LOGO_VARIANTS } from '../../server/services/logoHarmony';
 import { excelChart } from '../../server/services/layoutClone';
 import { extractFacts, lessonFrom, memoryBlock, mergeFacts, recall as recallMemory } from '../../server/jev/memory/semantic';
@@ -2706,9 +2706,8 @@ async function applyClone(sid: string, since: number): Promise<{ n: number; note
   const c = designFor(sid);
   if (!c?.clone) return { n: 0, note: '' };
   const pd = previewData(sid, 'Tableau de bord');
-  // Never invented figures: without a data file in the chat, no reproduction is drawn.
-  if (!pd.from) return { n: 0, note: '' };
-  const targets = Object.values(files()).filter((f) => f.updatedAt >= since && !f.path.startsWith('assets/') && !f.path.startsWith('uploads/') && (/\.(docx|pptx|xlsx)$/i.test(f.path) || (/\.html?$/i.test(f.path) && !f.data.includes('data-dash-clone'))));
+  // Never invented figures: the chat's data file, else (workbooks) the detail table of the workbook itself.
+  const targets = Object.values(files()).filter((f) => f.updatedAt >= since && !f.path.startsWith('assets/') && !f.path.startsWith('uploads/') && (/\.xlsx$/i.test(f.path) || (pd.from && (/\.(docx|pptx)$/i.test(f.path) || (/\.html?$/i.test(f.path) && !f.data.includes('data-dash-clone'))))));
   if (!targets.length) return { n: 0, note: '' };
   const W = 1400;
   const H = Math.round(W / c.clone.aspect);
@@ -2724,23 +2723,30 @@ async function applyClone(sid: string, since: number): Promise<{ n: number; note
         // Re-saved by the model (openpyxl drops shapes and pictures)? Our sheets are removed and applied again, intact.
         // « Tableau de bord » is removed only with OUR data sheet beside it (a user's own sheet of that name is never touched).
         const wbx = strFromU8(unzipSync(b, { filter: (e) => e.name === 'xl/workbook.xml' })['xl/workbook.xml'] ?? new Uint8Array());
-        const ours = REPRO_SHEETS.filter((x) => (x === REPRO_SHEETS[0] ? wbx.includes(`name="${REPRO_SHEETS[2]}"`) : wbx.includes(`name="${x}"`)));
+        const ours = REPRO_SHEETS.filter((x) => wbx.includes(`name="${x}"`) && (x === REPRO_SHEETS[0] || x === REPRO_SHEETS[3] ? wbx.includes(`name="${REPRO_SHEETS[2]}"`) : true));
         const b0 = ours.length ? removeSheets(b, ours) : null;
         if (b0) b = b0;
-        // Excel: a LIVE first sheet on the image's design (shapes, formulas, filters, native charts — no fixed
-        // picture); the older native + picture build only when the chat's rows are missing.
-        const live = addLiveDashboard(b, c.clone, pd.data);
-        const withPic = live ? null : addImageSheet(b, pic, 'Tableau de bord (image)');
-        const nat = withPic ? addNativeClone(withPic, c.clone, pd.data, pic) : null;
-        out = live?.bytes ?? nat?.bytes ?? addImageSheet(b, pic);
+        // Excel: ALWAYS a LIVE first sheet on the image's design (shapes, formulas, filters, native charts). Rows: the
+        // chat's data file, else the detail table of this very workbook (code-written files). NEVER a pasted picture.
+        let live = pd.from ? addLiveDashboard(b, c.clone, pd.data) : null;
+        let from = pd.from;
+        if (!live) {
+          const t = chatTable(f.path, b);
+          if (t?.rows.length) {
+            live = addLiveDashboard(b, c.clone, cloneData('Tableau de bord', t.columns, t.rows));
+            from = t.sheet ? `${f.path} · feuille ${t.sheet}` : f.path;
+          }
+        }
+        out = live?.bytes ?? (ours.length ? b : null);
+        if (!live) notes.push(`${f.path} : tableau de bord vivant non construit (aucune table de données lisible dans le classeur) — aucune image collée à la place`);
+        else if (from && from !== pd.from) notes.push(`chiffres du tableau de bord tirés de ${from}`);
         if (live) notes.push(`${f.path} : 1re feuille « Tableau de bord » VIVANTE au design de l'image (${live.kpis} indicateurs en formules, ${live.charts} graphiques Excel, filtres ${live.filters.map((x) => `« ${x} »`).join(', ') || '—'}, ${live.links} bouton(s) de navigation) — aucune image fixe`);
         // Every other sheet (the model's own, the data sheet) in Maison 2.0 with the image's colours and font.
-        const rs = out ? restyleWorkbook(out, { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, font: c.clone.font }, new Set(['Tableau de bord', 'Tableau de bord (image)'])) : null;
+        const rs = out ? restyleWorkbook(out, { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, font: c.clone.font }, new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)'])) : null;
         if (rs) {
           out = rs.bytes;
           notes.push(`feuilles ${rs.sheets.map((x) => `« ${x} »`).join(', ')} mises au format Maison 2.0 aux couleurs de l'image`);
         }
-        if (nat) notes.push(`${f.path} : 1re feuille « Tableau de bord » = l'image choisie reconstruite en Excel natif (${nat.charts} graphiques Excel modifiables, ${nat.shapes} cartes/tuiles${nat.crops ? `, ${nat.crops} zone(s) reprise(s) de l'image` : ''}), 2e feuille « Tableau de bord (image) » = la reproduction photo, données dans « Données du tableau de bord »`);
       } else out = /\.docx$/i.test(f.path) ? addImagePageDocx(b, pic) : addImageSlidePptx(b, pic);
       if (out) {
         writeBytes(f.path, out, f.mime);
@@ -2788,7 +2794,7 @@ function finishWorkbooks(sid: string, since: number): string[] {
   const design = c?.clone
     ? buildTheme({ primary: c.clone.palette.primary, accent: c.clone.palette.accent, dark: c.clone.palette.dark, font: c.clone.font })
     : buildTheme(c ? (c.theme === 'custom' ? (c.colors ?? null) : (c.theme as never)) : null);
-  const skip = new Set(['Tableau de bord', 'Tableau de bord (image)', 'Données du tableau de bord', 'Synthèse 3D', 'Agrégats']);
+  const skip = new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)', 'Données du tableau de bord', 'Synthèse 3D', 'Agrégats']);
   const lines: string[] = [];
   // THE IMAGE'S DESIGN ON EVERY PAGE of the other exports (Word, PowerPoint, HTML and the PDF printed from it).
   // A catalogue model: its palette and its page layout (Word / HTML / PowerPoint) on every page.
