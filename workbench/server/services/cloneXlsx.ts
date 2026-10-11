@@ -81,14 +81,14 @@ const chartFrame = (r: Rect, rid: string, name: string) => {
 };
 
 export type CloneChartKind = 'bar' | 'hbar' | 'line' | 'area' | 'pie' | 'donut';
-export function chartXml(o: { kind: CloneChartKind; title: string | null; c0: number; cats: string[]; vals: number[]; valueName: string; colors: string[]; byPoint: boolean; text: string; muted: string; font: string; size: number; labels: boolean; legend: 'none' | 'right' | 'bottom' }): string {
+export function chartXml(o: { kind: CloneChartKind; title: string | null; c0: number; cats: string[]; vals: number[]; valueName: string; colors: string[]; byPoint: boolean; text: string; muted: string; font: string; size: number; labels: boolean; legend: 'none' | 'right' | 'bottom'; catCol?: number }): string {
   const q = `'${DATA.replace(/'/g, "''")}'`;
   const n = o.cats.length;
   const ref = (c: number) => `${q}!$${col(c)}$2:$${col(c)}$${n + 1}`;
   const max = Math.max(0, ...o.vals.map(Math.abs));
   const short = max >= 1e9 ? '#,##0.0,,," Md"' : max >= 1e6 ? '#,##0.0,," M"' : max >= 1e4 ? '#,##0' : '#,##0.##';
   const sz = Math.round(o.size * 100);
-  const txt = (color: string, s = sz, bold = false) => `<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="${s}" b="${bold ? 1 : 0}"><a:solidFill><a:srgbClr val="${hex(color)}"/></a:solidFill><a:latin typeface="${xesc(o.font)}"/></a:defRPr></a:pPr><a:endParaRPr lang="fr-FR"/></a:p></c:txPr>`;
+  const txt = (color: string, s = sz, bold = false, body = '<a:bodyPr/>') => `<c:txPr>${body}<a:lstStyle/><a:p><a:pPr><a:defRPr sz="${s}" b="${bold ? 1 : 0}"><a:solidFill><a:srgbClr val="${hex(color)}"/></a:solidFill><a:latin typeface="${xesc(o.font)}"/></a:defRPr></a:pPr><a:endParaRPr lang="fr-FR"/></a:p></c:txPr>`;
   const solid = (c: string) => `<a:solidFill><a:srgbClr val="${hex(c)}"/></a:solidFill>`;
   const pie = o.kind === 'pie' || o.kind === 'donut';
   // Per-point colours: bars and pie slices only (an area or a line is one shape).
@@ -102,12 +102,24 @@ export function chartXml(o: { kind: CloneChartKind; title: string | null; c0: nu
         : pie
           ? ''
           : `<c:spPr>${solid(main)}</c:spPr><c:invertIfNegative val="0"/>`;
-  const dLbls = o.labels || pie
-    ? `<c:dLbls><c:numFmt formatCode="${xesc(pie ? '0%' : short)}" sourceLinked="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${txt(pie ? '#FFFFFF' : o.muted, Math.round(sz * 0.9))}${LABEL_POS[o.kind] ? `<c:dLblPos val="${LABEL_POS[o.kind]}"/>` : ''}<c:showLegendKey val="0"/><c:showVal val="${pie ? 0 : 1}"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="${pie ? 1 : 0}"/><c:showBubbleSize val="0"/></c:dLbls>`
+  // Slices: each label in a colour readable on ITS slice; no label under 5 % (they overlap and get cut).
+  const total = o.vals.reduce((a, v) => a + Math.max(0, v), 0) || 1;
+  const sliceLbls = pie
+    ? o.colors
+        .slice(0, n)
+        .map((c, k) =>
+          (o.vals[k] ?? 0) / total < 0.05
+            ? `<c:dLbl><c:idx val="${k}"/><c:delete val="1"/></c:dLbl>`
+            : `<c:dLbl><c:idx val="${k}"/><c:numFmt formatCode="0%" sourceLinked="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${txt(readableOn(c, ['#FFFFFF', '#111827'], 4.5), Math.round(sz * 0.9), true)}<c:showLegendKey val="0"/><c:showVal val="0"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="1"/><c:showBubbleSize val="0"/></c:dLbl>`,
+        )
+        .join('')
     : '';
-  const ser = `<c:ser><c:idx val="0"/><c:order val="0"/><c:tx><c:strRef><c:f>${xesc(`${q}!$${col(o.c0 + 1)}$1`)}</c:f><c:strCache><c:ptCount val="1"/><c:pt idx="0"><c:v>${xesc(o.valueName)}</c:v></c:pt></c:strCache></c:strRef></c:tx>${sp}${dpts}${dLbls}<c:cat><c:strRef><c:f>${xesc(ref(o.c0))}</c:f><c:strCache><c:ptCount val="${n}"/>${o.cats.map((c, i) => `<c:pt idx="${i}"><c:v>${xesc(c)}</c:v></c:pt>`).join('')}</c:strCache></c:strRef></c:cat><c:val><c:numRef><c:f>${xesc(ref(o.c0 + 1))}</c:f><c:numCache><c:formatCode>General</c:formatCode><c:ptCount val="${n}"/>${o.vals.map((v, i) => `<c:pt idx="${i}"><c:v>${v}</c:v></c:pt>`).join('')}</c:numCache></c:numRef></c:val>${o.kind === 'line' ? '<c:smooth val="0"/>' : ''}</c:ser>`;
+  const dLbls = o.labels || pie
+    ? `<c:dLbls>${sliceLbls}<c:numFmt formatCode="${xesc(pie ? '0%' : short)}" sourceLinked="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${txt(pie ? '#FFFFFF' : o.muted, Math.round(sz * 0.9))}${LABEL_POS[o.kind] ? `<c:dLblPos val="${LABEL_POS[o.kind]}"/>` : ''}<c:showLegendKey val="0"/><c:showVal val="${pie ? 0 : 1}"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="${pie ? 1 : 0}"/><c:showBubbleSize val="0"/></c:dLbls>`
+    : '';
+  const ser = `<c:ser><c:idx val="0"/><c:order val="0"/><c:tx><c:strRef><c:f>${xesc(`${q}!$${col(o.c0 + 1)}$1`)}</c:f><c:strCache><c:ptCount val="1"/><c:pt idx="0"><c:v>${xesc(o.valueName)}</c:v></c:pt></c:strCache></c:strRef></c:tx>${sp}${dpts}${dLbls}<c:cat><c:strRef><c:f>${xesc(ref(o.catCol ?? o.c0))}</c:f><c:strCache><c:ptCount val="${n}"/>${o.cats.map((c, i) => `<c:pt idx="${i}"><c:v>${xesc(c)}</c:v></c:pt>`).join('')}</c:strCache></c:strRef></c:cat><c:val><c:numRef><c:f>${xesc(ref(o.c0 + 1))}</c:f><c:numCache><c:formatCode>General</c:formatCode><c:ptCount val="${n}"/>${o.vals.map((v, i) => `<c:pt idx="${i}"><c:v>${v}</c:v></c:pt>`).join('')}</c:numCache></c:numRef></c:val>${o.kind === 'line' ? '<c:smooth val="0"/>' : ''}</c:ser>`;
   const hidden = '<c:spPr><a:ln><a:noFill/></a:ln></c:spPr>';
-  const axes = `<c:catAx><c:axId val="711"/><c:scaling><c:orientation val="${o.kind === 'hbar' ? 'maxMin' : 'minMax'}"/></c:scaling><c:delete val="0"/><c:axPos val="${o.kind === 'hbar' ? 'l' : 'b'}"/><c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln w="9525">${solid(mixH(o.muted, '#FFFFFF', 0.5))}</a:ln></c:spPr>${txt(o.text, Math.round(sz * 0.9))}<c:crossAx val="712"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx><c:valAx><c:axId val="712"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="${o.labels ? 1 : 0}"/><c:axPos val="${o.kind === 'hbar' ? 'b' : 'l'}"/><c:numFmt formatCode="${xesc(short)}" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/>${hidden}${txt(o.muted, Math.round(sz * 0.85))}<c:crossAx val="711"/><c:crosses val="${o.kind === 'hbar' ? 'max' : 'autoZero'}"/><c:crossBetween val="between"/></c:valAx>`;
+  const axes = `<c:catAx><c:axId val="711"/><c:scaling><c:orientation val="${o.kind === 'hbar' ? 'maxMin' : 'minMax'}"/></c:scaling><c:delete val="0"/><c:axPos val="${o.kind === 'hbar' ? 'l' : 'b'}"/><c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln w="9525">${solid(mixH(o.muted, '#FFFFFF', 0.5))}</a:ln></c:spPr>${txt(o.text, Math.round(sz * 0.9), false, o.kind === 'line' || o.kind === 'area' ? '<a:bodyPr/>' : '<a:bodyPr rot="0" vert="horz"/>')}<c:crossAx val="712"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/>${o.kind === 'line' || o.kind === 'area' ? '' : '<c:tickLblSkip val="1"/>'}<c:noMultiLvlLbl val="0"/></c:catAx><c:valAx><c:axId val="712"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="${o.labels ? 1 : 0}"/><c:axPos val="${o.kind === 'hbar' ? 'b' : 'l'}"/><c:numFmt formatCode="${xesc(short)}" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/>${hidden}${txt(o.muted, Math.round(sz * 0.85))}<c:crossAx val="711"/><c:crosses val="${o.kind === 'hbar' ? 'max' : 'autoZero'}"/><c:crossBetween val="between"/></c:valAx>`;
   const plot =
     o.kind === 'pie'
       ? `<c:pieChart><c:varyColors val="1"/>${ser}<c:firstSliceAng val="0"/></c:pieChart>`

@@ -254,7 +254,7 @@ function pieChart(r: R, v: DataView, p: Panel, donut: boolean, fs: number, fallb
   return out;
 }
 /** WCAG-like contrast ratio of two hex colours. */
-function contrastH(a: string, b: string): number {
+export function contrastH(a: string, b: string): number {
   const L = (h: string) =>
     rgb(h)
       .map((v) => v! / 255)
@@ -264,7 +264,8 @@ function contrastH(a: string, b: string): number {
   return (x! + 0.05) / (y! + 0.05);
 }
 /** The first readable colour on a fill (the design's own colours first). */
-export const readableOn = (fill: string, prefs: string[]) => prefs.find((c) => c && contrastH(c, fill) >= 3.2) ?? (lumH(fill) < 0.5 ? '#FFFFFF' : '#111827');
+export const readableOn = (fill: string, prefs: string[], min = 3.2) =>
+  prefs.find((c) => c && contrastH(c, fill) >= min) ?? (contrastH('#FFFFFF', fill) >= contrastH('#111827', fill) ? '#FFFFFF' : '#111827');
 function kpiTiles(r: R, kpis: CloneData['kpis'], p: Panel, fs: number, onBg = false): string {
   const n = Math.max(1, p.tiles);
   const gap = n > 1 ? r.w * 0.02 : 0;

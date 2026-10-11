@@ -2,7 +2,7 @@ import { strFromU8, unzipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import { cloneData } from '../../server/services/dashRender';
 import { houseXlsx } from '../../server/services/houseStyle';
-import { addLiveDashboard } from '../../server/services/liveDash';
+import { addLiveDashboard, shortLabel, snapBoxes } from '../../server/services/liveDash';
 import { SPEC } from '../fixtures/dashSpec';
 
 const rows = Array.from({ length: 48 }, (_, i) => ({ Client: ['ALPHA SA', 'BETA SARL', 'GAMMA', 'DELTA'][i % 4]!, Segment: ['CORPORATE', 'CONSUMER', 'COMMERCIAL'][i % 3]!, Date: new Date(Date.UTC(2025, i % 12, 5)), Montant: 1_000_000 * (i + 1) }));
@@ -39,5 +39,35 @@ describe('LIVE dashboard on the image design: formulas, filters, real cells — 
   it('the cached figures are the chat’s own (no invented number)', () => {
     const total = rows.reduce((a, x) => a + x.Montant, 0);
     expect(data).toContain(`<v>${total}</v>`);
+  });
+  it('Excel-safe max: never N(+range) (Excel keeps only the first row: the max came out below the average)', () => {
+    expect(data).not.toContain('N(+');
+    expect(data).toMatch(/SUMPRODUCT\(MAX\(/);
+  });
+  it('measure columns hold numbers only (a text « - » would turn every SUMPRODUCT into #VALUE!)', () => {
+    const withText = rows.map((x, i) => ({ ...x, Montant: i === 3 ? ('-' as unknown as number) : x.Montant }));
+    const r2 = addLiveDashboard(houseXlsx(cols, withText, { title: 'X', chart: 'none' }), SPEC, cloneData('Ventes', cols, withText))!;
+    const d2 = strFromU8(unzipSync(r2.bytes)['xl/worksheets/sheet-live-data.xml']!);
+    expect(d2).not.toMatch(/<is><t>-<\/t><\/is>/);
+  });
+  it('filter labels keep the panel fill; chart categories use short labels, horizontal', () => {
+    expect(shortLabel('KAPPA DISTRIBUTION SENEGAL')).toBe('KAPPA DISTRIBUT…');
+    expect(shortLabel('LAMBDA HOLDING')).toBe('LAMBDA HOLDING');
+    expect(shortLabel('ABCDEFGHIJKLMNOPQRSTUV').length).toBe(16);
+    const chart = strFromU8(z['xl/charts/chart-live-1.xml']!);
+    expect(chart).toMatch(/<c:catAx>.*<a:bodyPr rot="0" vert="horz"\/>|<c:lineChart>|<c:areaChart>|<c:pieChart>|<c:doughnutChart>/s);
+  });
+});
+
+describe('dashboard framing: cards of one row aligned, no partial overlap', () => {
+  it('snaps near edges together and clips overlaps with a gutter', () => {
+    const b = snapBoxes([
+      { c0: 2, r0: 4, c1: 20, r1: 12 },
+      { c0: 22, r0: 5, c1: 40, r1: 13 },
+      { c0: 39, r0: 4, c1: 60, r1: 12 },
+    ]);
+    expect(b[1]!.r0).toBe(b[0]!.r0);
+    expect(b[1]!.r1).toBe(b[0]!.r1);
+    expect(b[1]!.c1).toBeLessThan(b[2]!.c0);
   });
 });

@@ -143,7 +143,7 @@ export interface LiveResult {
   kpis: number;
   tables: number;
 }
-interface GBox {
+export interface GBox {
   c0: number;
   r0: number;
   c1: number;
@@ -174,6 +174,8 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
     return { c0, r0, c1: Math.max(c0, Math.min(G - 1, Math.round((b.x + b.w) * G) - 1)), r1: Math.max(r0, Math.min(R - 1, Math.round((b.y + b.h) * R) - 1)) };
   };
   const plan = panelPlan(spec, d);
+  // Cards of one row share their top / bottom, cards of one column their sides; partial overlaps are clipped.
+  const boxes = snapBoxes(spec.panels.map((p) => gb(p.box)));
   const fallback = spec.palette.series.length ? spec.palette.series : [spec.palette.primary, spec.palette.accent];
 
   // ── 1. raw rows on the calculation sheet (columns from RAW0) ────────────────────────────────────────────────────
@@ -215,7 +217,8 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   rows.forEach((r, i) => {
     for (const c of rawCols) {
       const v = r[c];
-      calc.set(i + 2, rawIdx.get(c)!, isNum(v) ? { v } : v === null || v === undefined || v === '' ? {} : { v: v instanceof Date ? v.toISOString().slice(0, 10) : String(v) });
+      // A measure column holds numbers only: a text (« - », « n/a ») would turn every SUMPRODUCT / MAX into #VALUE!.
+      calc.set(i + 2, rawIdx.get(c)!, isNum(v) ? { v } : v === null || v === undefined || v === '' || src.numCols.includes(c) ? {} : { v: v instanceof Date ? v.toISOString().slice(0, 10) : String(v) });
     }
     if (monthCol >= 0) calc.set(i + 2, monthCol, { v: ym(r[src.dateCol!]) });
   });
@@ -227,7 +230,7 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   const titleBox = spec.title ? gb(spec.title.box) : { c0: 2, r0: 1, c1: G - 3, r1: 3 };
   const fBoxes: GBox[] = [];
   if (filterPanel >= 0) {
-    const b = gb(spec.panels[filterPanel]!.box);
+    const b = boxes[filterPanel]!;
     const tall = b.r1 - b.r0 > b.c1 - b.c0;
     filters.forEach((_, i) => {
       if (tall) fBoxes.push({ c0: b.c0 + 1, r0: b.r0 + 1 + i * 4, c1: b.c1 - 1, r1: b.r0 + 3 + i * 4 });
@@ -273,7 +276,9 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
       f = mask ? `IFERROR(SUMPRODUCT(${mask}*${c})/SUMPRODUCT(${mask}*ISNUMBER(${c})),0)` : `IFERROR(AVERAGE(${c}),0)`;
       v = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
     } else if (c && k.src?.fn === 'max') {
-      f = mask ? `SUMPRODUCT(MAX((${mask})*N(+${c})))` : `MAX(${c})`;
+      // Not N(+range): Excel's N() keeps the FIRST value only (the max came out below the average). Rows outside
+      // the filter get -1E+300 so negative amounts stay right; no row selected → 0.
+      f = mask ? `IF(SUMPRODUCT((${mask})*1)=0,0,SUMPRODUCT(MAX((${mask})*${c}-(1-(${mask}))*1E+300)))` : `MAX(${c})`;
       v = vals.length ? Math.max(...vals) : 0;
     } else return;
     calc.set(1, KPI0, { v: 'Indicateur', s: head });
@@ -306,9 +311,12 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
     }
     calc.set(1, c0, { v: v.src?.month ? 'Mois' : (v.src?.by ?? 'Catégorie'), s: head });
     calc.set(1, c0 + 1, { v: v.valueName, s: head });
+    if (!v.src?.month) calc.set(1, c0 + 2, { v: 'Libellé affiché', s: head });
     cats.forEach((cat, i) => {
       const r = i + 2;
       calc.set(r, c0, { v: cat });
+      // The chart shows a short label (axes and legends cut long names: « LAMBDA… », « CONSULTI NG »).
+      if (!v.src?.month) calc.set(r, c0 + 2, { v: shortLabel(cat) });
       let f: string;
       if (other && i === cats.length - 1) f = `${sumIf('1', v.src?.measure ?? null)}-SUM(${colL(c0 + 1)}2:${colL(c0 + 1)}${r - 1})`;
       else if (v.src?.month && monthCol >= 0) {
@@ -403,8 +411,9 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   let tables = 0;
   let navUsed = 0;
   spec.panels.forEach((p: Panel, i) => {
-    const b = gb(p.box);
-    const { kind, view, kpis } = plan[i]!;
+    const b = boxes[i]!;
+    const { view, kpis } = plan[i]!;
+    let kind = plan[i]!.kind;
     const wPx = (b.c1 - b.c0 + 1) * PX;
     const hPx = (b.r1 - b.r0 + 1) * PX;
     const fs = Math.max(7, Math.min(12, Math.min(hPx * 0.075, wPx * 0.045)));
@@ -470,8 +479,9 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
         const tb: GBox = { c0: Math.round(b.c0 + j * w), c1: Math.round(b.c0 + (j + 1) * w) - 1, r0: b.r0, r1: b.r1 };
         const fill = p.tileFills?.[j] ?? p.fill;
         if (tiles > 1 && p.tileFills?.length) parts.push(shapeXml(tb, { name: `Tuile ${i + 1}.${j + 1}`, fill, radius: Math.max(3, p.radius * 0.6), shadow: true }));
-        const labelC = readableOn(fill, [mixH(p.text, fill, 0.3), p.text]);
-        const valueC = readableOn(fill, [p.colors[0] ?? '', p.text]);
+        // WCAG AA (4.5:1): the image's own colours when they read well on the tile, else white / near-black.
+        const labelC = readableOn(fill, [mixH(p.text, fill, 0.3), p.text], 4.5);
+        const valueC = readableOn(fill, [p.colors[0] ?? '', p.text], 4.5);
         const hh = tb.r1 - tb.r0 + 1;
         const lab: GBox = { ...tb, r1: tb.r0 + Math.max(0, Math.round(hh * 0.38) - 1) };
         const val: GBox = { ...tb, r0: lab.r1 + 1 };
@@ -484,12 +494,17 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
     }
     if (view && ['bar', 'hbar', 'line', 'area', 'pie', 'donut'].includes(kind)) {
       card();
+      // Long names on few pixels: horizontal bars read better than tilted, cut labels.
+      const longest = Math.max(0, ...(view as DataView).categories.slice(0, 7).map((c) => shortLabel(c).length));
+      // A ring squeezed in a small card (legend + labels piled on a few pixels) becomes horizontal bars.
+      if ((kind === 'pie' || kind === 'donut') && Math.min(wPx, hPx) < 200) kind = 'hbar';
+      if (kind === 'bar' && !(view as DataView).src?.month && wPx / Math.min(7, Math.max(1, (view as DataView).categories.length)) < longest * 6.5) kind = 'hbar';
       const blk = blockFor(view as DataView, kind);
       const shades = colorsFor(p, blk.cats.length, fallback);
       const order = [...blk.vals.keys()].sort((a, c) => blk.vals[c]! - blk.vals[a]!);
       const colors = kind === 'pie' || kind === 'donut' ? shades : p.sequential ? blk.vals.map((_, k) => shades[order.indexOf(k)]!) : [shades[0]!, p.colors[1] ?? shades[0]!];
       const rid = `rIdLiveChart${charts.length + 1}`;
-      charts.push({ rid, xml: chartXml({ kind: kind as CloneChartKind, title: (view as DataView).title.slice(0, 70), c0: blk.c0, cats: blk.cats, vals: blk.vals, valueName: (view as DataView).valueName, colors, byPoint: p.sequential && (kind === 'bar' || kind === 'hbar'), text: p.text, muted: mixH(p.text, p.fill, 0.4), font, size: fs, labels: p.valueLabels || kind === 'hbar', legend: p.legend }) });
+      charts.push({ rid, xml: chartXml({ kind: kind as CloneChartKind, title: (view as DataView).title.slice(0, 70), c0: blk.c0, cats: blk.cats, vals: blk.vals, valueName: (view as DataView).valueName, colors, byPoint: p.sequential && (kind === 'bar' || kind === 'hbar'), text: p.text, muted: mixH(p.text, p.fill, 0.4), font, size: fs, labels: (p.valueLabels && !((kind === 'line' || kind === 'area') && wPx / Math.max(1, blk.cats.length) < 70)) || kind === 'hbar', legend: p.legend === 'right' && wPx < hPx * 1.5 ? 'bottom' : p.legend, catCol: (view as DataView).src?.month ? blk.c0 : blk.c0 + 2 }) });
       const inner = { c0: b.c0, c1: b.c1, r0: b.r0, r1: b.r1 };
       parts.push(anchorG(inner, `<xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="${++sid}" name="Graphique ${i + 1}"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="${NS_R}" r:id="${rid}"/></a:graphicData></a:graphic></xdr:graphicFrame>`, 0.6));
       return;
@@ -503,9 +518,11 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   });
   // Filter drop-downs: a label row, then the value cell (data validation list).
   const dv: string[] = [];
+  const fPanel = filterPanel >= 0 ? spec.panels[filterPanel]!.fill : (spec.title?.fill ?? spec.page);
   filters.forEach((f, i) => {
     const b = fBoxes[i]!;
-    const lab = S.get({ color: spec.palette.dark, bold: true, size: 8, font, fill: null });
+    // The label keeps the panel's fill (a style without fill would paint a white cell on a dark panel).
+    const lab = S.get({ color: readableOn(fPanel, [spec.palette.dark, spec.title?.color ?? ''], 4.5), bold: true, size: 8, font, fill: fPanel });
     const pill = S.get({ fill: '#FFFFFF', color: spec.palette.dark, bold: true, size: 9, font, border: spec.palette.primary, align: 'center' });
     values.set(`${b.r0},${b.c0}`, { v: f.c, s: lab });
     merges.push(`${colL(b.c0)}${b.r0 + 1}:${colL(b.c1)}${b.r0 + 1}`);
@@ -578,3 +595,62 @@ const uuid = (n: number) => {
   const h = (n * 2654435761 >>> 0).toString(16).padStart(8, '0').toUpperCase();
   return `${h}-0000-4000-8000-${h}${h.slice(0, 4)}`;
 };
+
+/**
+ * Layout clean-up on the dashboard grid (the image's measured boxes are a few pixels off): edges within `tol` cells
+ * snap together — cards of one row share their top and bottom, cards of one column their sides — and a card that
+ * partially overlaps another is clipped to leave a one-cell gutter. Containers (a box holding others) are kept.
+ */
+export function snapBoxes(input: GBox[], tol = 2): GBox[] {
+  const b = input.map((x) => ({ ...x }));
+  const contains = (o: GBox, i: GBox) => o.c0 <= i.c0 && o.r0 <= i.r0 && o.c1 >= i.c1 && o.r1 >= i.r1;
+  const container = b.map((x, i) => b.some((y, j) => j !== i && contains(x, y)));
+  for (const key of ['r0', 'r1', 'c0', 'c1'] as const) {
+    const idx = b.map((_, i) => i).filter((i) => !container[i]);
+    const vals = [...new Set(idx.map((i) => b[i]![key]))].sort((m, n) => m - n);
+    const clusters: number[][] = [];
+    for (const v of vals) {
+      const last = clusters[clusters.length - 1];
+      if (last && v - last[0]! <= tol) last.push(v);
+      else clusters.push([v]);
+    }
+    const count = (v: number) => idx.filter((i) => b[i]![key] === v).length;
+    const to = new Map<number, number>();
+    for (const cl of clusters) {
+      // The most common edge wins; on a tie the one that keeps the cards inside (top-left for starts, bottom-right for ends).
+      const win = [...cl].sort((m, n) => count(n) - count(m) || (key.endsWith('0') ? m - n : n - m))[0]!;
+      cl.forEach((v) => to.set(v, win));
+    }
+    for (const i of idx) {
+      const prev = b[i]![key];
+      b[i]![key] = to.get(prev)!;
+      if (b[i]!.r1 < b[i]!.r0 || b[i]!.c1 < b[i]!.c0) b[i]![key] = prev;
+    }
+  }
+  for (let i = 0; i < b.length; i++)
+    for (let j = i + 1; j < b.length; j++) {
+      const x = b[i]!;
+      const y = b[j]!;
+      if (contains(x, y) || contains(y, x)) continue;
+      const ow = Math.min(x.c1, y.c1) - Math.max(x.c0, y.c0) + 1;
+      const oh = Math.min(x.r1, y.r1) - Math.max(x.r0, y.r0) + 1;
+      if (ow <= 0 || oh <= 0) continue;
+      if (ow <= oh) {
+        const [l, r] = x.c0 <= y.c0 ? [x, y] : [y, x];
+        if (r.c0 - 2 >= l.c0) l.c1 = r.c0 - 2;
+      } else {
+        const [t, u] = x.r0 <= y.r0 ? [x, y] : [y, x];
+        if (u.r0 - 2 >= t.r0) t.r1 = u.r0 - 2;
+      }
+    }
+  return b;
+}
+
+/** A label a chart can show whole (axes and legends): 16 characters at most, cut on a word when possible. */
+export function shortLabel(s: string, max = 16): string {
+  const t = String(s).replace(/\s+/g, ' ').trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - 1);
+  const sp = cut.lastIndexOf(' ');
+  return `${(sp >= max * 0.55 ? cut.slice(0, sp) : cut).trimEnd()}…`;
+}
