@@ -257,6 +257,10 @@ export interface Settings {
   visionBridge?: boolean;
   /** Vision model used by the bridge (empty = cheapest / free). */
   visionModel?: string;
+  /** Pollinations key (sk_…): cheap image → video (Wan 2.2 Fast ≈ 0,01 $ / s). Stays in this browser. */
+  pollinationsKey?: string;
+  /** Hugging Face token (optional): free Wan 2.2 Space within the account's ZeroGPU quota. */
+  hfToken?: string;
   /** Tavily API key (free monthly credits; callable from the browser, no relay). */
   tavilyKey?: string;
   /** Serper API key (Google results; free queries on signup; callable from the browser). */

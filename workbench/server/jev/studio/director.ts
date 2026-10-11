@@ -115,7 +115,7 @@ export function planImages(models: MediaModel[], est: (m: MediaModel) => Estimat
 }
 
 export const LOCAL_ANIMATION = 'local:2.5d';
-export function planAnimation(models: MediaModel[], est: (m: MediaModel, seconds: number) => Estimate, shape: FilmShape, mem: ProdRecord[] = [], cap?: number): StagePlan {
+export function planAnimation(models: MediaModel[], est: (m: MediaModel, seconds: number) => Estimate, shape: FilmShape, mem: ProdRecord[] = [], cap?: number, cheap: { pollinations?: boolean; hf?: boolean } = {}): StagePlan {
   const per = Math.max(4, Math.min(10, Math.round(shape.seconds / Math.max(1, shape.scenes))));
   const opts: DirOption[] = models
     .filter((m) => m.caps.includes('IMAGE_TO_VIDEO') || m.caps.includes('VIDEO_GENERATION'))
@@ -138,6 +138,12 @@ export function planAnimation(models: MediaModel[], est: (m: MediaModel, seconds
       };
       return { ...o, score: scoreOf(o) };
     });
+  // Cheap image → video engines checked for this app (browser calls): Pollinations Wan 2.2 Fast, HF free Space.
+  const cheapUsd = Math.round(0.01 * per * shape.scenes * 1000) / 1000;
+  const polli = { id: 'pollinations:alibaba/wan-2.2-fast', name: 'Wan 2.2 Fast via Pollinations (image → vidéo, ≈ 0,01 $/s)', stageUsd: cheapUsd, costLabel: costLabel(cheapUsd), quality: 7.2, qualitySource: 'a priori' as const, speed: 'Moyen' as const, afrikatoon: 9.2, score: 0, why: 'vraie animation de l’image de la scène pour quelques centimes (clé Pollinations dans Réglages)' };
+  if (cheap.pollinations) opts.push({ ...polli, score: scoreOf(polli) });
+  const hf = { id: 'hf:wan-2.2-14b-fast', name: 'Wan 2.2 14B Fast — Space Hugging Face (gratuit, selon quota)', stageUsd: 0, costLabel: 'Gratuit' as const, quality: 7.4, qualitySource: 'a priori' as const, speed: 'Lent' as const, afrikatoon: 9.2, score: 0, why: 'gratuit dans la limite du quota GPU de votre compte Hugging Face (jeton dans Réglages) ; refusé quand le quota est épuisé' };
+  if (cheap.hf) opts.push({ ...hf, score: scoreOf(hf) });
   const local = { id: LOCAL_ANIMATION, name: 'Animation 2.5D intégrée (caméra, parallaxe, lip-bounce)', stageUsd: 0, costLabel: 'Gratuit' as const, quality: 5.5, qualitySource: 'a priori' as const, speed: 'Rapide' as const, afrikatoon: 9, score: 0, why: 'anime les images validées dans le navigateur : 0 $, style exact', local: true };
   opts.push({ ...local, score: scoreOf(local) });
   return finish('animation', 'Animation', opts, cap);

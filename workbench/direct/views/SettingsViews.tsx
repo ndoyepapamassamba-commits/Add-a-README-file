@@ -300,6 +300,17 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
         </div>
       </Section>
 
+      <Section title="Animation vidéo économique (Studio)">
+        <div className="grid gap-x-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-2">
+          <Field label="Clé Pollinations (recommandé : ≈ 0,05 $ le plan de 5 s)" hint="enter.pollinations.ai → compte → clé sk_… et un petit solde (les pollens de « quêtes » gratuites ne paient pas la vidéo). Moteur : Wan 2.2 Fast, image → vidéo. La clé reste dans ce navigateur.">
+            <Input type="password" value={s.pollinationsKey ?? ''} onChange={(e) => patch({ pollinationsKey: e.target.value.trim() })} placeholder="sk_…" data-testid="pollinations-key" />
+          </Field>
+          <Field label="Jeton Hugging Face (option gratuite, selon quota)" hint="huggingface.co → Settings → Access Tokens (lecture). Utilise le Space gratuit « Wan 2.2 14B Fast » dans la limite du quota GPU gratuit de votre compte.">
+            <Input type="password" value={s.hfToken ?? ''} onChange={(e) => patch({ hfToken: e.target.value.trim() })} placeholder="hf_…" data-testid="hf-token" />
+          </Field>
+        </div>
+      </Section>
+
       <Section title="Internet (recherche web) et vision">
         <div className="grid gap-x-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-2">
           <Field label="Clé Tavily (recommandé, gratuit)" hint="tavily.com → inscription → API key (tvly-…). Crédits gratuits chaque mois, sans carte ; fonctionne directement, sans relais.">

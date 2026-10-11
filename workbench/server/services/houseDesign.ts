@@ -181,7 +181,9 @@ export type ThemeId =
   | 'house-slate'
   | 'house-sahel'
   | 'house-royal'
-  | 'house-night';
+  | 'house-night'
+  // Generated Maison palettes (harmonies of a base hue): house-g-<hue>-<harmony>.
+  | `house-g-${string}`;
 export interface CustomTheme {
   primary?: string;
   accent?: string;
@@ -199,7 +201,59 @@ const P = (navy: string, blue: string, gold: string, cyan: string, ice: string, 
   panel,
   sky: cyan,
 });
+// ── MAISON — PALETTES GÉNÉRÉES : 14 hues × 3 colour harmonies (analogous, complementary, triadic). The house
+// structure stays; navy (L 15 %) and primary (L 36 %) always carry white text (AA), the accent is the harmony's.
+const hsl = (h: number, s: number, l: number): string => {
+  const a = (s / 100) * Math.min(l / 100, 1 - l / 100);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const c = l / 100 - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(255 * c).toString(16).padStart(2, '0');
+  };
+  return `${f(0)}${f(8)}${f(4)}`.toUpperCase();
+};
+const whiteContrast = (hex: string) => {
+  const L = [0, 2, 4]
+    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+    .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i]!, 0);
+  return 1.05 / (L + 0.05);
+};
+const HUES: [number, string][] = [
+  [350, 'Rubis'], [8, 'Corail'], [24, 'Mandarine'], [38, 'Ambre'], [48, 'Safran'], [88, 'Citron vert'], [140, 'Jade'],
+  [158, 'Émeraude'], [176, 'Lagon'], [192, 'Turquoise'], [205, 'Azur'], [222, 'Cobalt'], [252, 'Indigo'], [282, 'Améthyste'],
+];
+const HARMONIES: [string, string, number[]][] = [
+  ['a', 'analogue', [30, -30]],
+  ['c', 'complémentaire', [180, 150]],
+  ['t', 'triadique', [120, 240]],
+];
+export const GENERATED_HOUSE: Record<string, { label: string; color: Partial<Col>; font?: string; series?: string[] }> = Object.fromEntries(
+  HUES.flatMap(([h, name]) =>
+    HARMONIES.map(([k, hname, offs]) => {
+      const acc = (h + offs[0]! + 360) % 360;
+      const acc2 = (h + offs[1]! + 360) % 360;
+      const navy = hsl(h, 55, 15);
+      // The primary carries white text: darkened until WCAG AA (4.5:1) — yellows and greens need a deeper shade.
+      let l = 36;
+      while (l > 18 && whiteContrast(hsl(h, 62, l)) < 4.6) l -= 1;
+      const blue = hsl(h, 62, l);
+      const gold = hsl(acc, 78, 52);
+      const cyan = hsl(acc2, 70, 46);
+      return [
+        `house-g-${h}-${k}`,
+        {
+          label: `Maison — ${name} ${hname}`,
+          color: P(navy, blue, gold, cyan, hsl(h, 40, 96), hsl(h, 30, 87), hsl(h, 35, 98)),
+          font: 'Segoe UI',
+          series: [blue, gold, cyan, navy, hsl(h, 55, 58), hsl(acc, 70, 70), hsl(acc2, 60, 66), hsl(h, 45, 78)],
+        },
+      ];
+    }),
+  ),
+);
 export const THEMES: Record<ThemeId, { label: string; color: Partial<Col>; font?: string; series?: string[] }> = {
+  ...(GENERATED_HOUSE as Record<`house-g-${string}`, { label: string; color: Partial<Col>; font?: string; series?: string[] }>),
   house: { label: 'Maison — Bleu Ecobank (GOD 3D)', color: {} },
   corporate: { label: 'Corporate gris-bleu', color: P('1F2937', '334155', '0EA5E9', '64748B', 'F1F5F9', 'E2E8F0'), font: 'Calibri' },
   modern: { label: 'Moderne violet', color: P('1E1B4B', '4F46E5', 'F59E0B', '06B6D4', 'EEF2FF', 'E0E7FF', 'F5F7FF'), font: 'Segoe UI' },
@@ -308,5 +362,7 @@ export const THEME_PARAMS = {
 /** Maison 2.0: the house structure in harmonised palettes (the logo follows the palette automatically). */
 export const HOUSE_PALETTES: { id: ThemeId; label: string }[] = (Object.keys(THEMES) as ThemeId[])
   .filter((id) => id === 'house' || id.startsWith('house-'))
-  .map((id) => ({ id, label: THEMES[id].label.replace(/^Maison — /, '') }));
+  // The curated palettes first, then the generated harmonies.
+  .sort((a, b) => Number(a.startsWith('house-g-')) - Number(b.startsWith('house-g-')))
+  .map((id) => ({ id, label: THEMES[id]!.label.replace(/^Maison — /, '') }));
 export const isHouseTheme = (id: string) => id === 'house' || id.startsWith('house-');

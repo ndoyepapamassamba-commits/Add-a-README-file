@@ -8,6 +8,7 @@ import { blobs } from './blobs';
 import { loadRegistry, generateStory, generateSceneImage, generateLine, redrawCharacter, imageCandidates } from './actions';
 import { completeCharacterSheets, completeWorldSheets, addLocalMusic, compileSubtitles, buildEdit, generateSceneVideo, videoEnabled, runQA } from './actions2';
 import { setStudioTextModel } from './textModel';
+import { hfSpaceVideo, isCheapVideo, pollinationsVideo, POLLINATIONS_VIDEO } from './cheapVideo';
 import { renderPreview } from './preview';
 import { modelsWith } from '../../../server/jev/studio/capabilities';
 import { estimateSpeech, estimateVideo } from '../../../server/jev/studio/cost';
@@ -54,7 +55,7 @@ export async function buildPlans(projectId: string): Promise<StagePlan[]> {
   return [
     planWriting(text, remaining, useStore.getState().settings.defaultModel !== 'auto' ? useStore.getState().settings.defaultModel : null),
     planImages(imgs.map((c) => c.model), (m) => est.get(m.id) ?? { usd: null, certain: false, formula: '' }, shape, mem, remaining),
-    planAnimation(modelsWith(reg, 'video'), (m, sec) => estimateVideo(m, { duration: sec, mode: 'image' }), shape, mem, videoCap),
+    planAnimation(modelsWith(reg, 'video'), (m, sec) => estimateVideo(m, { duration: sec, mode: 'image' }), shape, mem, videoCap, { pollinations: Boolean(useStore.getState().settings.pollinationsKey), hf: Boolean(useStore.getState().settings.hfToken) }),
     planVoices(modelsWith(reg, 'speech', 'SPEECH'), (m, chars) => estimateSpeech(m, chars), shape, mem, remaining),
   ];
 }
@@ -139,7 +140,25 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
     if (start <= 3) {
       const warn: string[] = [];
       const anim = c.chosen.animation ?? LOCAL_ANIMATION;
-      if (anim !== LOCAL_ANIMATION && videoEnabled()) {
+      if (isCheapVideo(anim)) {
+        // Cheap engines (Pollinations ≈ 0,01 $/s, free HF Space): the scene image becomes a real moving clip.
+        for (const sc of bpOf(projectId).scenes.filter((s) => s.imageAssetId && !s.videoAssetId)) {
+          check(c);
+          c.onStage('ANIMATION', 'running', `animation ${sc.scene_id} (${anim === POLLINATIONS_VIDEO ? 'Wan 2.2 Fast' : 'Space HF gratuit'})`);
+          try {
+            const img = (await blobs.get(sc.imageAssetId!))!;
+            const prompt = (sc.video_prompt || sc.action).slice(0, 900);
+            const secs = Math.min(10, Math.max(3, Math.round(sc.duration)));
+            const r = anim === POLLINATIONS_VIDEO ? await pollinationsVideo(img, prompt, secs, bpOf(projectId).aspect) : await hfSpaceVideo(img, prompt, secs);
+            const id = `asset-vid-${Date.now().toString(36)}-${sc.scene_id}`;
+            await blobs.put(id, r.blob);
+            S().addAsset({ id, kind: 'video', status: 'GENERATED_ASSET', projectId, sceneId: sc.scene_id, model: anim, createdAt: Date.now(), cost: r.usd, source: anim === POLLINATIONS_VIDEO ? 'Pollinations · Wan 2.2 Fast' : 'Hugging Face Space · Wan 2.2', tags: ['video', sc.scene_id], mime: r.blob.type || 'video/mp4', bytes: r.blob.size, name: `video-${sc.scene_id}` });
+            S().patchProject(projectId, (b) => ({ ...b, assets: [...b.assets, id], scenes: b.scenes.map((s) => (s.scene_id === sc.scene_id ? { ...s, videoAssetId: id } : s)) }), `vidéo ${sc.scene_id} (${anim})`);
+          } catch (e) {
+            warn.push(`${sc.scene_id} : ${(e as Error).message.slice(0, 120)} → animation 2.5D`);
+          }
+        }
+      } else if (anim !== LOCAL_ANIMATION && videoEnabled()) {
         for (const sc of bpOf(projectId).scenes.filter((s) => s.imageAssetId && !s.videoAssetId)) {
           check(c);
           c.onStage('ANIMATION', 'running', `animation ${sc.scene_id}`);
