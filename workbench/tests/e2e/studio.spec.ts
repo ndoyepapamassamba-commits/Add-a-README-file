@@ -933,3 +933,25 @@ test('Film Autopilot: one idea → story, scenes, images, animation, final film 
   await expect.poll(() => net.imageCalls.length, { timeout: 20_000 }).toBeGreaterThan(before);
   expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
 });
+
+test('Film Autopilot: a provider error on a scene image is caught up — no scene left without its image', async ({ page }) => {
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  const errors = await open(page, [], { autopilot: true });
+  const net = await intercept(page);
+  // The image provider fails 8 times in a row (5xx « Erreur du fournisseur »): retries + the catch-up pass must recover.
+  net.imageScript = [500, 500, 500, 500, 500, 500, 500, 500];
+  await page.getByTitle(/AI Film Studio/).click();
+  const SHORT = { ...STORY, scenes: STORY.scenes.map((s) => ({ ...s, duration: 3 })) };
+  mock.push({ text: JSON.stringify(SHORT) });
+  mock.fallback = () => ({ text: '{}' });
+  await page.getByTestId('film-idea-input').fill('Le mari paresseux et la servante trop bien habillée.');
+  await page.getByRole('button', { name: 'Afrikatoon 2D' }).click();
+  await page.getByTestId('film-create').click();
+  await expect(page.getByTestId('pipe-IMAGES')).toHaveAttribute('data-state', /done|warning/, { timeout: 90_000 });
+  await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 120_000 });
+  const cards = page.getByTestId('film-scenes').locator('[data-testid^=scene-S]');
+  await expect(cards).toHaveCount(2);
+  for (const c of await cards.all()) await expect(c).not.toContainText('à générer');
+  expect(net.imageScript.length).toBe(0);
+  expect(errors.filter((e) => !/favicon|ERR_|net::|500/i.test(e))).toEqual([]);
+});
