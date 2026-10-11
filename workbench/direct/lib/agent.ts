@@ -65,6 +65,7 @@ import { removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
 import { strFromU8, unzipSync } from 'fflate';
 import { restyleWorkbook } from '../../server/services/officeRestyle';
 import { designQA } from '../../server/services/designQA';
+import { DESIGN_ARCHITECT, needsArchitect } from '../../server/services/designArchitect';
 import { propose } from '../../server/jev/memory/updateGate';
 import { modelById } from '../../server/services/designModels';
 import { maisonBand } from '../../server/services/maisonBand';
@@ -1181,6 +1182,8 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       })(),
     },
     { name: 'design_choice', text: (() => { const c = designFor(sid); return c && !experimentRun ? designPrompt(c, runFormats.get(sid)) : ''; })(), pinned: true },
+    // ARCHITECTE DESIGNER: imposed on every model for any deliverable (the app then checks it before delivery).
+    { name: 'design_architect', text: !experimentRun && needsArchitect(inp.text, Boolean(designFor(sid))) ? DESIGN_ARCHITECT : '', pinned: true },
     { name: 'doctrine', text: lane?.minimalPrompt ? '' : ENGINE_DOCTRINE },
     { name: 'manual', text: manualPrompt(useStore.getState().manual), pinned: true },
     { name: 'strategy', text: strategy && !lane?.minimalPrompt ? strategyPrompt(dna, strategy) : '' },

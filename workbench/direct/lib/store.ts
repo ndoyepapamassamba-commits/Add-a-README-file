@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { CreditsInfo, ModelInfo } from '@shared/types';
 import { kv, saveLater } from './db';
+import { MARKET_SKILLS } from '../../server/services/skillMarket';
+import { extractTriggers } from '../../server/services/skillsCore';
 import { intelData, setIntelData, type IntelData } from '../../server/llm/modelIntel';
 import type { HouseKit } from '../../server/services/apexCore';
 import type { BenchResult, Ledger, ManualRule } from '../../server/agent/intelligence';
@@ -585,4 +587,11 @@ export async function hydrate(): Promise<void> {
     jevLive: jevLive ?? {},
     fabric: { ...EMPTY_FABRIC, ...(fabricSaved ?? {}) },
   });
+  // DESIGN ARCHITECT SKILLS installed once (the user then keeps, turns off or deletes them like any skill).
+  if (!merged.designSkillsSeeded) {
+    const have = new Set((skills ?? []).map((x) => x.name));
+    const add = MARKET_SKILLS.filter((m) => m.category === 'Design' && !have.has(m.name)).map((m) => ({ name: m.name, description: m.description, body: m.body, files: {}, triggers: extractTriggers(m.description, m.name), enabled: true, category: m.category }));
+    useStore.getState().setSkills([...(skills ?? []), ...add].sort((a, b) => a.name.localeCompare(b.name)));
+    useStore.getState().patchSettings({ designSkillsSeeded: true });
+  }
 }

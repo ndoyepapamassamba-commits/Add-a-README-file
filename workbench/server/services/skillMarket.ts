@@ -36,6 +36,42 @@ Annonce dans ta réponse les corrections faites (la carte « Design appliqué »
 1. Une couleur sombre (bandeaux, titres), une primaire (en-têtes de tableaux), un accent (filets, chiffres clés), un fond clair.
 2. Une seule police de texte, une police à chasse fixe pour les chiffres.
 3. La même charte sur toutes les pages, feuilles et diapositives ; le logo de l'utilisateur seulement, jamais celui d'une autre marque.`),
+  S('architecte-excel', 'Design', 'Architecture premium d’un classeur Excel. Se déclenche avec "excel", "classeur", "xlsx", "feuille", "tableau croisé".', `
+# Architecte Excel
+1. data.export d'abord : tableau de bord VIVANT en 1re feuille (formules, filtres, graphiques natifs), puis une feuille par sujet.
+2. Chaque feuille : bandeau titre (couleur sombre), sous-titre (périmètre, date), 3–4 cartes KPI, graphiques AU-DESSUS de l'en-tête du tableau, tableau zébré, en-tête figé, filtres.
+3. Formats : # ##0 / Md / M, % à 1 décimale, dates jj/mm/aaaa ; largeurs ajustées ; pas de quadrillage ; impression paysage ajustée à la largeur.
+4. Jamais d'image de graphique, jamais N(+plage), jamais de valeur collée là où une formule existe.`),
+  S('architecte-word', 'Design', 'Architecture premium d’un rapport Word / PDF. Se déclenche avec "word", "docx", "rapport", "note", "pdf", "compte-rendu".', `
+# Architecte Word / PDF
+1. report.export : bandeau de couverture, titres numérotés, filet d'accent, police unique, chiffres en police à chasse fixe.
+2. Plan : conclusion → constats numérotés → graphiques (légende sous chaque figure) → tableaux → annexes.
+3. Tableaux : en-tête couleur primaire, texte blanc gras, zébrage, largeur = zone de texte ; images ≤ largeur de page.
+4. Pagination, sommaire si > 4 sections, table des figures si > 3 graphiques.`),
+  S('architecte-powerpoint', 'Design', 'Architecture premium d’une présentation. Se déclenche avec "powerpoint", "pptx", "présentation", "slides", "deck", "comité".', `
+# Architecte PowerPoint
+1. 16:9 ; titre d'action (la conclusion) sur chaque diapositive ; ≤ 5 puces de ≤ 12 mots.
+2. Une idée et un graphique par diapositive ; chiffre clé en couleur d'accent, grand.
+3. Rien hors de la diapositive, texte qui tient dans sa zone, contraste ≥ 4,5:1.
+4. Couverture, sommaire, synthèse, détails, décisions attendues en clôture.`),
+  S('architecte-mail', 'Design', 'Mail de reporting premium compatible Outlook. Se déclenche avec "mail", "e-mail", "courriel", "outlook", "envoyer le rapport".', `
+# Architecte mail
+1. report.export format eml : tableaux de 680 px, styles en ligne (Outlook ignore le CSS de tête), images intégrées (cid).
+2. En-tête couleur sombre, 3 cartes KPI, 1 graphique, 3 constats numérotés, appel à l'action, signature.
+3. Objet = la conclusion en ≤ 9 mots.`),
+  S('dataviz-premium', 'Design', 'Choisit et soigne le bon graphique. Se déclenche avec "graphique", "chart", "visualisation", "courbe", "camembert", "histogramme".', `
+# Dataviz premium
+- Comparaison → barres (horizontales si libellés longs), évolution → courbe, part → anneau ≤ 6 parts, distribution → histogramme.
+- Trier les valeurs ; étiquettes de valeurs au lieu d'un quadrillage ; une couleur forte pour la valeur à retenir, les autres atténuées.
+- Libellés ≤ 16 caractères ; pas de 3D (sauf la Synthèse 3D maison) ; titre = le message.`),
+  S('typographie-documents', 'Design', 'Hiérarchie typographique des documents. Se déclenche avec "police", "typographie", "mise en page", "titres", "lisibilité".', `
+# Typographie
+- 1 police texte + 1 police chiffres ; tailles 24 / 16 / 11 / 9 pt ; interligne 1,15–1,3 ; marges ≥ 2 cm.
+- Pas de soulignement, pas de paragraphes en capitales, pas plus de 3 tailles par page ; alignement à gauche (pas de justification forcée sur colonnes étroites).`),
+  S('accessibilite-documents', 'Design', 'Documents lisibles par tous. Se déclenche avec "accessible", "accessibilité", "contraste", "daltonien", "lisible".', `
+# Accessibilité
+- Contraste texte ≥ 4,5:1 (3:1 titres gras) ; jamais la couleur seule pour porter un sens (ajouter une icône ou un libellé).
+- Palettes sûres pour daltoniens (bleu / orange plutôt que rouge / vert) ; textes alternatifs des images ; ordre de lecture logique.`),
   // ── Image
   S('retouche-portrait-cartoon', 'Amélioration d’image', 'Améliore visages, yeux et mains d’une image générée. Se déclenche avec "yeux", "visage", "mains", "améliore l\'image", "retouche".', `
 # Retouche portrait (cartoon / 3D)
