@@ -2,7 +2,9 @@ import { strFromU8, unzipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { addNativeClone, removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
-import { addImageSheet } from '../../server/services/officeLogo';
+import { addImageSheet, addLogoToOffice } from '../../server/services/officeLogo';
+import { maisonBand } from '../../server/services/maisonBand';
+import { DESIGN } from '../../server/services/houseDesign';
 import { cloneData } from '../../server/services/dashRender';
 import { houseXlsx } from '../../server/services/houseStyle';
 import { isTotalRow, pickTable, withoutTotals } from '../../server/services/tablePick';
@@ -119,5 +121,42 @@ describe('Excel opens the reproduction without « nous avons trouvé un problèm
   });
   it('an area or a line is one shape: no per-point colours', () => {
     for (const c of charts.filter((x) => /<c:(area|line)Chart>/.test(x))) expect(c).not.toContain('<c:dPt>');
+  });
+});
+
+describe('MAISON 2.0 on the model’s own sheets: KPI cards and charts ABOVE the header, everything still pointing right', () => {
+  const src = new Uint8Array(readFileSync(new URL('../fixtures/model-sheets.xlsx', import.meta.url)));
+  const r = maisonBand(src, DESIGN)!;
+  const z = unzipSync(r.bytes);
+  const sheet = strFromU8(z['xl/worksheets/sheet1.xml']!);
+  it('the data sheet gets the band; a list of checks does not (summing it would mean nothing)', () => {
+    expect(r.banded).toEqual(['Ancienneté']);
+    expect(r.moved).toBe(1);
+  });
+  it('cards are live SUBTOTAL formulas on the shifted table, TOTAL row and rates left out', () => {
+    expect(sheet).toContain('SUBTOTAL(9,C27:C29)');
+    expect(sheet).toContain('SUBTOTAL(9,D27:D29)');
+    expect(sheet).not.toContain('SUBTOTAL(9,E27');
+    expect(sheet).toContain('<f>C27-D27</f>');
+    expect(sheet).not.toContain('<pane');
+  });
+  it('references from other sheets and the chart follow the rows', () => {
+    expect(strFromU8(z['xl/worksheets/sheet2.xml']!)).toContain("SUM('Ancienneté'!C27:C29)");
+    const chart = Object.keys(z).filter((p) => p.startsWith('xl/charts/')).map((p) => strFromU8(z[p]!)).join('');
+    expect(chart).toContain("'Ancienneté'!$C$27:$C$29");
+    const drawing = Object.keys(z).filter((p) => /drawings\/[^/]+\.xml$/.test(p)).map((p) => strFromU8(z[p]!)).join('');
+    const fromRow = +/<(?:xdr:)?from><(?:xdr:)?col>\d+<\/(?:xdr:)?col><(?:xdr:)?colOff>\d+<\/(?:xdr:)?colOff><(?:xdr:)?row>(\d+)</.exec(drawing)![1]!;
+    expect(fromRow).toBeLessThan(25); // the chart now sits ABOVE the header (row 26)
+  });
+  it('applied twice: nothing more (the sheet already has its band)', () => {
+    expect(maisonBand(r.bytes, DESIGN)).toBeNull();
+  });
+  it('the logo goes on EVERY sheet, once', () => {
+    const logo = { png: new Uint8Array([137, 80, 78, 71, 1, 2, 3]), width: 100, height: 50 };
+    const once = addLogoToOffice('x.xlsx', r.bytes, logo)!;
+    const zz = unzipSync(once);
+    const drawings = Object.keys(zz).filter((p) => /drawings\/[^/]+\.xml$/.test(p)).map((p) => strFromU8(zz[p]!));
+    expect(drawings.filter((d) => d.includes('name="Logo"')).length).toBe(2);
+    expect(addLogoToOffice('x.xlsx', once, logo)).toBeNull();
   });
 });

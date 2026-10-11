@@ -99,7 +99,7 @@ describe('dashboard clone — rendering with the real data', () => {
   it('views come from the rows: grouped sums and a monthly trend; nothing invented', () => {
     expect(d.views.find((v) => v.title === 'montant par agence')!.values).toEqual([1550, 430]);
     expect(d.views.find((v) => v.ordered)!.categories).toHaveLength(3);
-    expect(d.kpis[0]).toEqual({ label: 'Lignes', value: '3' });
+    expect(d.kpis[0]).toMatchObject({ label: 'Lignes', value: '3', src: { fn: 'count' } });
   });
   it('the SVG keeps the aspect ratio, the frame, the exact colours and the real figures', () => {
     const svg = renderCloneSvg(spec, d, 1200);

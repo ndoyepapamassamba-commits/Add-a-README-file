@@ -90,7 +90,7 @@ export function lockSheetView(
 export type ChartKind = 'bar' | 'line' | 'pie' | 'none';
 /** Native kinds: flat (bar / line / pie) and Excel's own 3D charts (columns, horizontal bars, pie) — editable in Excel. */
 export type NativeKind = Exclude<ChartKind, 'none'> | 'bar3d' | 'hbar3d' | 'pie3d';
-interface ChartSpec {
+export interface ChartSpec {
   kind: NativeKind;
   title: string;
   sheet: string;
@@ -146,7 +146,7 @@ function chartAnchor(c: ChartSpec, i: number): string {
     return `<xdr:absoluteAnchor><xdr:pos x="${Math.round(c.abs.x * EMU_PT)}" y="${Math.round(c.abs.y * EMU_PT)}"/><xdr:ext cx="${Math.round(c.abs.w * EMU_PT)}" cy="${Math.round(c.abs.h * EMU_PT)}"/>${frame}</xdr:absoluteAnchor>`;
   return `<xdr:twoCellAnchor><xdr:from><xdr:col>${c.anchorCol}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${c.anchorRow}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>${c.anchorCol + 9}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${c.anchorRow + 20}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>${frame}</xdr:twoCellAnchor>`;
 }
-function chartXml(c: ChartSpec): string {
+export function chartXml(c: ChartSpec): string {
   const q = `'${c.sheet.replace(/'/g, "''")}'`;
   const is3d = c.kind === 'bar3d' || c.kind === 'hbar3d' || c.kind === 'pie3d';
   const pieLike = c.kind === 'pie' || c.kind === 'pie3d';

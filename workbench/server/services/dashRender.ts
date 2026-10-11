@@ -14,14 +14,18 @@ export interface DataView {
   valueName: string;
   /** Natural order (dates): keep it, do not sort by value. */
   ordered: boolean;
+  /** Where the figures come from (live Excel formulas): grouped by a text column or by month of a date column. */
+  src?: { by?: string; month?: string; measure: string | null; keys?: string[] };
 }
 export interface CloneData {
   title: string;
   /** Source and date (shown where the image had a subtitle / brand strip). */
   subtitle?: string;
-  kpis: { label: string; value: string }[];
+  kpis: { label: string; value: string; src?: { fn: 'count' | 'sum' | 'avg' | 'max'; col?: string } }[];
   views: DataView[];
   table: { columns: string[]; rows: (string | number)[][] };
+  /** The rows behind every figure (TOTAL rows removed), for a workbook that recomputes them. */
+  source?: { columns: string[]; rows: Record<string, unknown>[]; numCols: string[]; textCols: string[]; dateCol?: string };
 }
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
@@ -29,7 +33,7 @@ export const fmt = (n: number) =>
   Math.abs(n) >= 1e9 ? `${(n / 1e9).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} Md` : Math.abs(n) >= 1e6 ? `${(n / 1e6).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} M` : Math.abs(n) >= 1000 ? Math.round(n).toLocaleString('fr-FR').replace(/[  ]/g, ' ') : (Math.round(n * 100) / 100).toLocaleString('fr-FR');
 const esc = (s: unknown) => String(s).replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c]!);
 const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
-const asDate = (v: unknown): Date | null => {
+export const asDate = (v: unknown): Date | null => {
   if (v instanceof Date) return v;
   if (typeof v === 'number' && v > 20000 && v < 80000) return new Date(Math.round((v - 25569) * 86400000)); // Excel serial
   if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(v)) {
@@ -53,13 +57,13 @@ export function cloneData(title: string, columns: string[], allRows: Record<stri
     const distinct = new Set(sample.map((r) => String(r[c] ?? ''))).size;
     return distinct >= 2 && distinct <= Math.max(40, sample.length * 0.5);
   });
-  const kpis: CloneData['kpis'] = [{ label: 'Lignes', value: fmt(rows.length) }];
+  const kpis: CloneData['kpis'] = [{ label: 'Lignes', value: fmt(rows.length), src: { fn: 'count' } }];
   for (const c of numCols.slice(0, 4)) {
     const v = rows.map((r) => r[c]).filter(isNum);
     const sum = v.reduce((a, b) => a + b, 0);
-    kpis.push({ label: /^total\b/i.test(c) ? c : `Total ${c}`, value: fmt(sum) });
-    kpis.push({ label: `Moyenne ${c}`, value: fmt(sum / Math.max(1, v.length)) });
-    kpis.push({ label: `Max ${c}`, value: fmt(Math.max(...v)) });
+    kpis.push({ label: /^total\b/i.test(c) ? c : `Total ${c}`, value: fmt(sum), src: { fn: 'sum', col: c } });
+    kpis.push({ label: `Moyenne ${c}`, value: fmt(sum / Math.max(1, v.length)), src: { fn: 'avg', col: c } });
+    kpis.push({ label: `Max ${c}`, value: fmt(Math.max(...v)), src: { fn: 'max', col: c } });
   }
   const views: DataView[] = [];
   const group = (key: (r: Record<string, unknown>) => string | null, num: string | null) => {
@@ -80,18 +84,18 @@ export function cloneData(title: string, columns: string[], allRows: Record<stri
       }, n);
       const keys = [...m.keys()].sort();
       if (keys.length >= 2)
-        views.push({ title: `${n} par mois`, categories: keys.map((k) => `${MONTHS[+k.slice(5) - 1]} ${k.slice(2, 4)}`), values: keys.map((k) => m.get(k)!), valueName: n, ordered: true });
+        views.push({ title: `${n} par mois`, categories: keys.map((k) => `${MONTHS[+k.slice(5) - 1]} ${k.slice(2, 4)}`), values: keys.map((k) => m.get(k)!), valueName: n, ordered: true, src: { month: d, measure: n, keys } });
     }
   for (const t of textCols.slice(0, 3)) {
     for (const n of numCols.slice(0, 2)) {
       const m = group((r) => String(r[t] ?? '—'), n);
       const top = [...m].sort((a, b) => b[1] - a[1]);
-      views.push({ title: `${n} par ${t}`, categories: top.map(([k]) => k), values: top.map(([, v]) => v), valueName: n, ordered: false });
+      views.push({ title: `${n} par ${t}`, categories: top.map(([k]) => k), values: top.map(([, v]) => v), valueName: n, ordered: false, src: { by: t, measure: n } });
     }
     if (!numCols.length) {
       const m = group((r) => String(r[t] ?? '—'), null);
       const top = [...m].sort((a, b) => b[1] - a[1]);
-      views.push({ title: `Nombre par ${t}`, categories: top.map(([k]) => k), values: top.map(([, v]) => v), valueName: 'Nombre', ordered: false });
+      views.push({ title: `Nombre par ${t}`, categories: top.map(([k]) => k), values: top.map(([, v]) => v), valueName: 'Nombre', ordered: false, src: { by: t, measure: null } });
     }
   }
   if (!views.length && numCols.length) {
@@ -106,7 +110,7 @@ export function cloneData(title: string, columns: string[], allRows: Record<stri
     .sort((a, b) => (NAME.test(b) ? 2 : 0) - (CODEY.test(b) ? 1 : 0) - ((NAME.test(a) ? 2 : 0) - (CODEY.test(a) ? 1 : 0)));
   const tcols = labelCols.length || numCols.length ? [...labelCols.slice(0, 2), ...numCols.slice(0, 3)] : columns.slice(0, 5);
   const ranked = numCols[0] ? [...rows].sort((a, b) => (isNum(b[numCols[0]!]) ? (b[numCols[0]!] as number) : 0) - (isNum(a[numCols[0]!]) ? (a[numCols[0]!] as number) : 0)) : rows;
-  return { title, subtitle: `${rows.length.toLocaleString('fr-FR').replace(/[\u202f\u00a0]/g, ' ')} lignes · édité le ${new Date().toLocaleDateString('fr-FR')}`, kpis, views, table: { columns: tcols, rows: ranked.slice(0, 60).map((r) => tcols.map((c) => (isNum(r[c]) ? (r[c] as number) : String(r[c] ?? '')))) } };
+  return { source: { columns, rows, numCols, textCols, dateCol: dateCols[0] }, title, subtitle: `${rows.length.toLocaleString('fr-FR').replace(/[\u202f\u00a0]/g, ' ')} lignes · édité le ${new Date().toLocaleDateString('fr-FR')}`, kpis, views, table: { columns: tcols, rows: ranked.slice(0, 60).map((r) => tcols.map((c) => (isNum(r[c]) ? (r[c] as number) : String(r[c] ?? '')))) } };
 }
 
 // ── colour helpers ───────────────────────────────────────────────────────────────────────────────────────────────────

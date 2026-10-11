@@ -64,6 +64,7 @@ import { addImagePageDocx, addImageSheet, addImageSlidePptx, addImageToHtml, add
 import { addNativeClone, removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
 import { strFromU8, unzipSync } from 'fflate';
 import { restyleWorkbook } from '../../server/services/officeRestyle';
+import { maisonBand } from '../../server/services/maisonBand';
 import { renderCloneSvg } from '../../server/services/dashRender';
 import { previewData, rasterise } from './designClone';
 import { LOGO_VARIANTS } from '../../server/services/logoHarmony';
@@ -2765,6 +2766,23 @@ function applyLogo(sid: string, since: number): number {
   }
   return n;
 }
+/** Maison 2.0 band on the workbooks written during the turn; returns one line per file changed. */
+function finishWorkbooks(sid: string, since: number): string[] {
+  const c = designFor(sid);
+  const design = c?.clone
+    ? buildTheme({ primary: c.clone.palette.primary, accent: c.clone.palette.accent, dark: c.clone.palette.dark, font: c.clone.font })
+    : buildTheme(c ? (c.theme === 'custom' ? (c.colors ?? null) : (c.theme as never)) : null);
+  const skip = new Set(['Tableau de bord', 'Tableau de bord (image)', 'Données du tableau de bord', 'Synthèse 3D', 'Agrégats']);
+  const lines: string[] = [];
+  for (const f of Object.values(files())) {
+    if (!f.binary || f.updatedAt < since || !/\.xlsx$/i.test(f.path) || f.path.startsWith('uploads/') || f.path.startsWith('assets/')) continue;
+    const r = maisonBand(bytesOf(f), design, skip);
+    if (!r) continue;
+    writeBytes(f.path, r.bytes, f.mime);
+    lines.push(`${f.path} : indicateurs et graphiques placés au-dessus de l'en-tête sur ${r.banded.map((x) => `« ${x} »`).join(', ')} (${r.moved} graphique(s) déplacé(s), ${r.created} créé(s)).`);
+  }
+  return lines;
+}
 /** Re-skin the Office files this chat's code just wrote with the chosen design. Returns how many changed. */
 function enforceDesign(sid: string, since: number): number {
   const c = designFor(sid);
@@ -3066,6 +3084,17 @@ export async function runAgent(
     }
   } finally {
     void endCheckpoint();
+    // MAISON 2.0 at the END of the turn (after the model's last write, so it never re-works it): KPI cards + charts
+    // above each table of every Excel deliverable, in the chosen design's colours.
+    if (chatScope() === sessionId) {
+      try {
+        const n = finishWorkbooks(sessionId, started);
+        if (n.length)
+          useStore.getState().pushItem(sessionId, { kind: 'intel', id: uid(), title: 'Style maison 2.0 appliqué', tone: 'info', lines: n });
+      } catch {
+        /* never blocks the end of the turn */
+      }
+    }
     // LAST DELIVERY of this chat: what this run created or changed (chat-relative paths), before the scope is released.
     const delivered = Object.values(filesFor(sessionId, sessionAllow(sessionId)))
       .filter((f) => f.updatedAt >= started && !f.path.startsWith('.ai/') && !f.path.startsWith('downloads/'))

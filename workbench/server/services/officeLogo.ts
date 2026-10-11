@@ -76,37 +76,64 @@ const size = (logo: LogoImage, heightPt: number) => {
 };
 
 // ── Excel ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/** Same bytes as the logo (openpyxl renames pictures to imageN.png when it re-saves). */
+const sameBytes = (a: Uint8Array | undefined, b: Uint8Array) => !!a && a.length === b.length && a.every((v, i) => v === b[i]);
+/**
+ * The logo on EVERY sheet, top-right of its title band (two columns before the last used one). A sheet whose drawing
+ * already shows the logo (same picture) is skipped, so applying again after the model re-saved the file adds nothing.
+ */
 function xlsxLogo(z: Zip, logo: LogoImage): boolean {
-  const sheet = 'xl/worksheets/sheet1.xml';
-  let xml = read(z, sheet);
-  if (!xml) return false;
+  const wb = read(z, 'xl/workbook.xml');
+  const wrels = read(z, 'xl/_rels/workbook.xml.rels');
+  const parts = [...wb.matchAll(/<sheet\b[^>]*r:id="([^"]+)"[^>]*\/?>/g)]
+    .map((m) => new RegExp(`<Relationship\\b[^>]*Id="${m[1]}"[^>]*/>`).exec(wrels)?.[0])
+    .map((rel) => (rel ? /Target="([^"]+)"/.exec(rel)?.[1] : undefined))
+    .filter((t): t is string => !!t)
+    .map((t) => resolveTarget('xl/workbook.xml', t));
+  if (!parts.length) return false;
   z[`xl/media/${MEDIA}`] = logo.png;
   ensurePngType(z);
+  let added = 0;
+  parts.forEach((sheet, k) => {
+    if (xlsxLogoOn(z, sheet, logo, k)) added++;
+  });
+  return added > 0;
+}
+function xlsxLogoOn(z: Zip, sheet: string, logo: LogoImage, k: number): boolean {
+  let xml = read(z, sheet);
+  if (!xml || !/<worksheet\b/.test(xml)) return false;
   const { cx, cy } = size(logo, 30);
-  // Right part of the title band: two columns before the last used one.
   const dim = /<dimension ref="[A-Z]+\d+:([A-Z]+)\d+"/.exec(xml);
   const col = Math.max(3, (dim ? colIndex(dim[1]!) : 6) - 1);
-  const anchor = `<xdr:oneCellAnchor><xdr:from><xdr:col>${col}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>50800</xdr:rowOff></xdr:from><xdr:ext cx="${cx}" cy="${cy}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="9001" name="Logo"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip xmlns:r="${NS_R}" r:embed="RID"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>`;
+  const anchor = `<xdr:oneCellAnchor><xdr:from><xdr:col>${col}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>50800</xdr:rowOff></xdr:from><xdr:ext cx="${cx}" cy="${cy}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${9001 + k}" name="Logo"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip xmlns:r="${NS_R}" r:embed="RID"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>`;
   const sheetRels = relsOf(sheet);
-  const drawingId = /<drawing r:id="([^"]+)"/.exec(xml)?.[1];
+  const drawingId = /<drawing\b[^>]*\br:id="([^"]+)"/.exec(xml)?.[1];
   let drawing: string;
   if (drawingId) {
     const target = new RegExp(`Id="${drawingId}"[^>]*Target="([^"]+)"|Target="([^"]+)"[^>]*Id="${drawingId}"`).exec(read(z, sheetRels));
     drawing = resolveTarget(sheet, (target?.[1] ?? target?.[2])!);
+    // Already there (ours, or the same picture re-saved by openpyxl)?
+    const pics = [...read(z, relsOf(drawing)).matchAll(/Target="([^"]+)"/g)].map((m) => resolveTarget(drawing, m[1]!));
+    if (pics.some((p) => p.endsWith(`/media/${MEDIA}`) || sameBytes(z[p], logo.png))) return false;
   } else {
-    drawing = 'xl/drawings/drawing-logo.xml';
+    const name = `drawing-logo${k ? `-${k + 1}` : ''}.xml`;
+    drawing = `xl/drawings/${name}`;
     write(z, drawing, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"></xdr:wsDr>`);
     addOverride(z, `/${drawing}`, 'application/vnd.openxmlformats-officedocument.drawing+xml');
-    const rid = addRel(z, sheetRels, `${NS_R}/drawing`, '../drawings/drawing-logo.xml', 'rIdLogoDrawing');
+    const rid = addRel(z, sheetRels, `${NS_R}/drawing`, `../drawings/${name}`, 'rIdLogoDrawing');
     xml = ensureRootNs(xml, 'r', NS_R);
     const tag = `<drawing r:id="${rid}"/>`;
-    const before = /<(legacyDrawing|legacyDrawingHF|picture|oleObjects|controls|webPublishItems|tableParts|extLst)\b/.exec(xml);
+    const before = /<(legacyDrawing|legacyDrawingHF|drawingHF|picture|oleObjects|controls|webPublishItems|tableParts|extLst)\b/.exec(xml);
     xml = before ? xml.slice(0, before.index) + tag + xml.slice(before.index) : xml.replace('</worksheet>', `${tag}</worksheet>`);
     write(z, sheet, xml);
   }
   const imgRid = addRel(z, relsOf(drawing), REL_IMAGE, `../media/${MEDIA}`, 'rIdLogoImg');
   let dx = ensureRootNs(ensureRootNs(read(z, drawing), 'xdr', 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing'), 'a', 'http://schemas.openxmlformats.org/drawingml/2006/main');
-  dx = dx.replace(/<\/((?:xdr:)?wsDr)>\s*$/, (_m, tag: string) => `${anchor.replace('RID', imgRid)}</${tag}>`);
+  // Unique picture id within this drawing.
+  const ids = new Set([...dx.matchAll(/cNvPr id="(\d+)"/g)].map((m) => +m[1]!));
+  let id = 9001 + k;
+  while (ids.has(id)) id++;
+  dx = dx.replace(/<\/((?:xdr:)?wsDr)>\s*$/, (_m, tag: string) => `${anchor.replace('RID', imgRid).replace(/cNvPr id="\d+"/, `cNvPr id="${id}"`)}</${tag}>`);
   write(z, drawing, dx);
   return true;
 }
@@ -180,7 +207,8 @@ export function addLogoToOffice(path: string, bytes: Uint8Array, logo: LogoImage
   } catch {
     return null;
   }
-  if (Object.keys(z).some((k) => k.endsWith(`/media/${MEDIA}`))) return null;
+  // Excel: per sheet (a sheet added since the last pass gets it too); Word / PowerPoint: once.
+  if (!/\.xlsx$|\.xlsm$/i.test(path) && Object.keys(z).some((k) => k.endsWith(`/media/${MEDIA}`))) return null;
   const ok = /\.xlsx$|\.xlsm$/i.test(path) ? xlsxLogo(z, logo) : /\.docx$/i.test(path) ? docxLogo(z, logo) : /\.pptx$/i.test(path) ? pptxLogo(z, logo) : false;
   return ok ? zipSync(z, { level: 6 }) : null;
 }
