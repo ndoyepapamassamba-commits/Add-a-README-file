@@ -8,7 +8,7 @@
  * Pure: prompts, parsing, poses and vertex positions. The browser draws the triangles (preview.ts).
  */
 import { gestureEnvelope } from './viralFormat';
-import { EMOTION_BODY, emotionOf } from './emotionLayer';
+import { EMOTION_BODY, EMOTION_FACE, emotionOf } from './emotionLayer';
 export interface RBox {
   x: number;
   y: number;
@@ -105,6 +105,14 @@ export interface Pose {
   blink: number;
   /** 0..1 mouth opening (the jaw drops by it). */
   mouth: number;
+  /** Preston Blair mouth shape drawn by the renderer (AI, E, O, U, MBP, FV, L, WQ, etc, rest). */
+  mouthShape: string;
+  /** Mouth corners: +1 smile … −1 frown (from the emotion). */
+  smile: number;
+  /** Brows (inner / outer raise in eye radii, + up) and squint (0..1): the facial expression of the emotion. */
+  browIn: number;
+  browOut: number;
+  squint: number;
 }
 /** The gestures the engine plays — keywords of the action / the line's [gesture] → gesture id. */
 export const GESTURES: { id: string; re: RegExp }[] = [
@@ -146,6 +154,10 @@ export function poseAt(
     /** The emotion of the line / scene (body layer) and the Preston Blair jaw opening of what is said (0..1). */
     emotion?: string;
     viseme?: number;
+    /** The mouth shape of the sound being said (Preston Blair key). */
+    visemeKey?: string;
+    /** Accent of the voice (0..1, a short pulse on each stressed syllable): beat gestures follow it. */
+    beat?: number;
   },
 ): Pose {
   const seed = hash(c.name) % 1000;
@@ -156,11 +168,13 @@ export function poseAt(
   const k = ((t + ph) % period) / 0.14;
   const blink = k < 1 ? Math.sin(k * Math.PI) : 0;
   const talk = o.speaking ? Math.min(1, o.energy * 2.4) : 0;
+  const beat = o.speaking ? Math.max(0, Math.min(1, o.beat ?? 0)) : 0;
   const emph = o.emphasis ?? 0;
   const g = o.gesture ?? gestureOf(o.action);
   const p: Pose = {
-    headRot: 0.02 * Math.sin(t * 1.3 + ph) + (o.speaking ? 0.045 * Math.sin(t * 5.2 + ph) * talk : 0),
-    headNod: o.speaking ? 0.05 * Math.abs(Math.sin(t * 6.5 + ph)) * talk : 0.01 * Math.sin(t * 1.1 + ph),
+    // BEAT GESTURES: while talking the head and the hand mark the stressed syllables of the voice (not a metronome).
+    headRot: 0.02 * Math.sin(t * 1.3 + ph) + (o.speaking ? 0.015 * Math.sin(t * 2 + ph) * talk + 0.035 * beat * face : 0),
+    headNod: o.speaking ? 0.012 * talk + 0.055 * beat : 0.01 * Math.sin(t * 1.1 + ph),
     sway: 0.01 * Math.sin(t * 0.9 + ph),
     // Talkers lean in (the « dispute » posture of the reference), listeners settle back a little.
     lean: o.speaking ? face * (0.018 + 0.012 * talk) : -face * 0.005,
@@ -168,10 +182,15 @@ export function poseAt(
     jump: 0,
     shake: 0,
     // Speakers gesticulate with the arm towards the listener; listeners keep a slow idle.
-    arms: c.arms.map((_, i) => (o.speaking ? (i === 0 ? 0.16 + 0.14 * Math.sin(t * 3.4 + ph) * (0.4 + talk) : 0.06 * Math.sin(t * 2.1 + ph)) : 0.03 * Math.sin(t * 1.2 + ph + i))),
+    arms: c.arms.map((_, i) => (o.speaking ? (i === 0 ? 0.1 + 0.04 * Math.sin(t * 1.7 + ph) + 0.26 * beat : 0.04 * Math.sin(t * 1.4 + ph) + 0.08 * beat) : 0.03 * Math.sin(t * 1.2 + ph + i))),
     wave: 0,
     blink,
     mouth: o.speaking ? Math.max(0, Math.min(1, talk * (0.6 + 0.4 * Math.sin(t * 17 + ph)))) : 0,
+    mouthShape: o.speaking ? 'etc' : 'rest',
+    smile: 0,
+    browIn: 0,
+    browOut: 0,
+    squint: 0,
   };
   // Emotion layer (Wallbott / Ekman): an offset on the whole body; the speaker shows it fully, the listener half.
   const em = EMOTION_BODY[emotionOf(o.emotion)]!;
@@ -185,7 +204,15 @@ export function poseAt(
   p.squash += em.squash * ek;
   p.jump += em.bounce * ek * Math.abs(Math.sin(tt * 6 + ph));
   // Lip-sync: the jaw follows the visemes of the words when known, the voice level gives the strength.
-  if (o.speaking && o.viseme !== undefined) p.mouth = Math.max(0, Math.min(1, (0.35 + 0.65 * talk) * o.viseme));
+  // Lip-sync: the shape of the sound said now (Preston Blair), opened by the voice level and closed in the silences.
+  if (o.speaking && o.viseme !== undefined) p.mouth = Math.max(0, Math.min(1, o.viseme * Math.min(1, 0.25 + talk * 1.4)));
+  if (o.speaking && o.visemeKey) p.mouthShape = o.visemeKey;
+  // Facial expression of the emotion (brows, squint, mouth corners); the brows also rise on the voice accents.
+  const fx = EMOTION_FACE[emotionOf(o.emotion)]!;
+  p.smile = fx.smile;
+  p.browIn = fx.browIn * (0.6 + 0.4 * ek) + 0.5 * beat;
+  p.browOut = fx.browOut * (0.6 + 0.4 * ek) + 0.3 * beat;
+  p.squint = fx.squint;
   const base: Pose = { ...p, arms: [...p.arms] };
   const A = (i: number, v: number) => {
     if (i < p.arms.length) p.arms[i] = v;
@@ -195,7 +222,8 @@ export function poseAt(
       A(0, 0.55 + 0.32 * Math.sin(t * 8 + ph));
       break;
     case 'point':
-      A(0, 0.32 + 0.07 * Math.sin(t * 9 + ph));
+      // Pointing: the arm stays up and jabs on each accent of the voice.
+      A(0, 0.3 + 0.16 * beat);
       p.lean += face * 0.02;
       break;
     case 'shrug': {
@@ -221,15 +249,15 @@ export function poseAt(
       p.arms = p.arms.map(() => 0.6);
       break;
     case 'yes':
-      p.headNod += 0.07 * Math.sin(t * 9);
+      p.headNod += 0.06 * Math.sin(t * 7) * (0.5 + beat);
       break;
     case 'no':
-      p.headRot += 0.08 * Math.sin(t * 10);
+      p.headRot += 0.07 * Math.sin(t * 8) * (0.5 + beat);
       break;
     case 'angry':
       p.lean += face * 0.03;
       p.shake = 0.004 * Math.sin(t * 46);
-      A(0, 0.25 + 0.2 * Math.abs(Math.sin(t * 7)));
+      A(0, 0.22 + 0.3 * beat);
       break;
     case 'dance':
       p.sway = 0.07 * Math.sin(t * 5);
@@ -283,7 +311,7 @@ const rot = (p: { x: number; y: number }, q: { x: number; y: number }, a: number
 };
 const smooth = (e: number) => (e <= 0 ? 0 : e >= 1 ? 1 : e * e * (3 - 2 * e));
 /** Where a point of the character goes with the pose (body + head + jaw bones), without the arms. */
-function bodyMove(c: PuppetCharacter, p: Pose, s: { x: number; y: number }, withJaw: boolean): { x: number; y: number } {
+function bodyMove(c: PuppetCharacter, p: Pose, s: { x: number; y: number }): { x: number; y: number } {
   const neck = { x: c.head.x + c.head.w / 2, y: c.head.y + c.head.h };
   const feet = { x: c.body.x + c.body.w / 2, y: c.body.y + c.body.h };
   // Body: sway + lean around the feet (more at the top), squash towards the feet, jump and shake.
@@ -295,16 +323,8 @@ function bodyMove(c: PuppetCharacter, p: Pose, s: { x: number; y: number }, with
   const hw = smooth((neck.y + c.head.h * 0.15 - s.y) / (c.head.h * 0.3)) * smooth(1 - Math.abs(s.x - neck.x) / (c.head.w * 0.9));
   if (hw > 0) {
     const pivot = { x: neck.x + (d.x - s.x), y: neck.y + (d.y - s.y) };
-    // Jaw: below the mouth's centre, inside the lower face, the skin drops with the opening.
-    let jy = 0;
-    if (withJaw && c.mouth && p.mouth > 0) {
-      const mc = { x: c.mouth.x + c.mouth.w / 2, y: c.mouth.y + c.mouth.h / 2 };
-      const below = smooth((s.y - mc.y) / (c.mouth.h * 0.6)) * smooth((c.head.y + c.head.h * 1.05 - s.y) / (c.head.h * 0.25));
-      const side = smooth(1 - Math.abs(s.x - mc.x) / Math.max(c.mouth.w * 1.6, c.head.w * 0.32));
-      jy = p.mouth * c.mouth.h * 0.9 * below * side;
-    }
     const hd = rot(d, pivot, p.headRot * hw);
-    d = { x: hd.x, y: hd.y + (p.headNod * c.head.h + jy) * hw };
+    d = { x: hd.x, y: hd.y + p.headNod * c.head.h * hw };
   }
   return d;
 }
@@ -330,7 +350,7 @@ export function warpGrid(
       const s = { x: b.x + (b.w * i) / cols, y: b.y + (b.h * j) / rows };
       src.push(s);
       const edge = smooth(Math.min(i, cols - i, j, rows - j) / 2);
-      let d = bodyMove(c, p, s, true);
+      let d = bodyMove(c, p, s);
       // Arms: points near the shoulder → hand segment turn around the (moved) shoulder; positive angle = hand up.
       c.arms.forEach((a, k) => {
         const ang = p.arms[k] ?? 0;
@@ -343,7 +363,7 @@ export function warpGrid(
         const aw = smooth(1 - dist / (L * 0.32)) * smooth(tt * 3);
         if (aw <= 0) return;
         const up = a.hand.x >= a.shoulder.x ? -1 : 1;
-        const sh = bodyMove(c, p, a.shoulder, false);
+        const sh = bodyMove(c, p, a.shoulder);
         d = rot(d, sh, up * ang * aw);
       });
       const k = edge * (weight ? weight(s) : 1);
@@ -351,7 +371,21 @@ export function warpGrid(
     }
   return { src, dst, cols, rows };
 }
+/**
+ * JAW (fine local warp of the mouth / chin area, in pixels): vertical offset of a point at height y for a mouth centred
+ * at my with height mh. rest = 1 when the picture shows the mouth already open: the lower lip and chin then rise until
+ * the mouth closes (open = 0) and come back to the painted opening on the vowels (open = 1); otherwise the chin drops.
+ */
+export function jawOffset(y: number, my: number, mh: number, open: number, rest: 0 | 1): number {
+  const upper = my - mh * (rest ? 0.3 : 0);
+  const chin = my + mh * 1.9;
+  if (y <= upper || y >= chin) return 0;
+  const lowerLip = my + mh * 0.5;
+  // 0 at the upper lip, 1 from the lower lip, back to 0 at the bottom of the chin (the neck does not move).
+  const w = y < lowerLip ? smooth((y - upper) / Math.max(1e-6, lowerLip - upper)) : smooth((chin - y) / Math.max(1e-6, chin - lowerLip));
+  return rest ? -(1 - open) * mh * 0.95 * w : open * mh * 0.55 * w;
+}
 /** Where a point of the character (eye, mouth) goes with the pose (no edge falloff, no arm). */
 export function deformPoint(c: PuppetCharacter, p: Pose, s: { x: number; y: number }): { x: number; y: number } {
-  return bodyMove(c, p, s, false);
+  return bodyMove(c, p, s);
 }

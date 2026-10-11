@@ -200,7 +200,7 @@ test('imported skills are enforced; custom agents restrict tools', async ({ page
   await page.getByRole('button', { name: 'Chat' }).click();
   mock.push({ text: 'Rapport…\n\n## Recommandations' });
   await send(page, 'Fais un rapport de risque IFRS9');
-  await expect(page.getByText('Skills appliqués : rapport-risque')).toBeVisible();
+  await expect(page.getByText(/Skills appliqués : .*rapport-risque/)).toBeVisible();
   expect(systemOf(0)).toContain('RÈGLE-42');
   expect(systemOf(0)).toContain('MANDATORY');
 

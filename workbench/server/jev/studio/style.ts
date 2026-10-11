@@ -25,9 +25,10 @@ export const STYLE_2D_HQ: StyleDNA = Object.freeze({
   contrast: 'medium-high contrast, bold readable silhouettes',
   texture: 'smooth, no photographic texture, no film grain',
   characterDesign:
-    'modern French-African TV cartoon: clean uniform black outlines, expressive oversized eyes and eyebrows, exaggerated comedic facial expressions, simple readable hands',
+    // Traits measured on the most viewed 2D sketches of the niche (bold comic-strip look); generic, never a copy.
+    'modern French-African comic-strip cartoon: thick clean black outlines, caricatured faces with huge eyes and very wide mobile mouths, exaggerated comedic expressions and big gestures, lanky or round silhouettes, bright everyday Abidjan outfits (wax-print dresses, colourful suits, tank tops, sandals), simple readable hands',
   environmentDesign:
-    'stylised Abidjan environments: colourful houses, maquis, Adjamé market, shared courtyards, flat painted backgrounds',
+    'stylised Abidjan environments: colourful painted shacks and houses with tin roofs, sunny sky, maquis, Adjamé market, shared courtyards, flat painted backgrounds',
   animationStyle: '2D cut-out puppet animation, limited animation, expressive poses',
   renderStyle: '2D digital cartoon illustration, crisp black linework, flat color fills, one shadow tone',
   postProcessing: 'none (no bloom, no grain, no blur)',
@@ -51,9 +52,10 @@ export const STYLE_3D_AFRIKATOON: StyleDNA = Object.freeze({
   contrast: 'medium-high contrast, readable silhouettes',
   texture: 'clean stylised textures, no photographic noise',
   characterDesign:
-    'stylised 3D animated-feature characters: expressive oversized eyes, strong comedic facial expressions, consistent proportions, clear readable hands',
+    // Traits measured on the reference clips of the viral Ivorian 3D sketch format; generic, never a copy of a character.
+    'caricatured 3D animated-feature comedy characters: big heads, very expressive faces with large eyes and wide mobile mouths, exaggerated body shapes (curvy women with wide hips, lanky thin men with long limbs, round-bellied uncles), skin tones from deep to medium brown with soft subsurface shading, everyday Abidjan outfits (wax-print dresses, boubous, tank tops, jeans, headwraps, caps, sandals), a prop in hand (bottle, plate, phone, bag), consistent proportions, clear readable hands',
   environmentDesign:
-    'stylised West-African environments (Abidjan streets, maquis, courtyards, markets) built as 3D sets',
+    'stylised West-African environments built as 3D sets: Abidjan shared courtyards, cement-block houses with fabric curtains in the doorway, living rooms with sofas, maquis terraces, streets and markets; simple readable sets',
   animationStyle: 'expressive 3D character animation, snappy comedic timing, squash and stretch on reactions',
   renderStyle: 'high quality stylised 3D animation render, soft global illumination, clean stylised shading',
   postProcessing: 'subtle color grading only',

@@ -47,6 +47,28 @@ const KEYS: [RegExp, keyof typeof EMOTION_BODY][] = [
   [/mépris|mepris|dédain|dedain|moqu|sarcas|contempt|smug/i, 'mépris'],
   [/dégo[uû]t|degout|beurk|écœur|ecoeur|disgust/i, 'dégoût'],
 ];
+/**
+ * FACE (Ekman's facial action units, simplified for a cartoon): inner / outer brow raise (+ up, − down, in eye radii),
+ * squint (0..1 eyelid closing) and mouth corners (+ smile, − frown).
+ */
+export interface EmotionFace {
+  browIn: number;
+  browOut: number;
+  squint: number;
+  smile: number;
+}
+export const EMOTION_FACE: Record<string, EmotionFace> = {
+  colère: { browIn: -1.1, browOut: 0.3, squint: 0.3, smile: -0.6 },
+  joie: { browIn: 0.3, browOut: 0.3, squint: 0.35, smile: 0.85 },
+  tristesse: { browIn: 1, browOut: -0.5, squint: 0.15, smile: -0.8 },
+  peur: { browIn: 1, browOut: 0.6, squint: 0, smile: -0.4 },
+  surprise: { browIn: 1.3, browOut: 1.3, squint: 0, smile: 0 },
+  honte: { browIn: 0.6, browOut: -0.3, squint: 0.3, smile: -0.3 },
+  fierté: { browIn: 0, browOut: 0.2, squint: 0.15, smile: 0.4 },
+  mépris: { browIn: -0.3, browOut: 0.5, squint: 0.3, smile: 0.25 },
+  dégoût: { browIn: -0.8, browOut: -0.2, squint: 0.4, smile: -0.5 },
+  neutre: { browIn: 0, browOut: 0, squint: 0, smile: 0.1 },
+};
 export const emotionOf = (text: string | undefined): keyof typeof EMOTION_BODY => KEYS.find(([re]) => re.test(text ?? ''))?.[1] ?? 'neutre';
 
 /** Preston Blair visemes: how open the jaw is for each mouth shape (0 closed … 1 wide open). */
@@ -75,4 +97,27 @@ export function visemeAt(text: string, progress: number): number {
   const b = VISEMES[visemeOf(letters[Math.min(letters.length - 1, i + 1)]!)]!;
   const t = f - i;
   return a + (b - a) * t * t * (3 - 2 * t);
+}
+
+/**
+ * Word-aligned lip-sync: the current word (subtitle timing = voice timing) gives the letters, the position inside the
+ * word picks the mouth shape; between words the mouth rests (closed). Returns the Preston Blair shape and its opening.
+ */
+export function wordViseme(words: { text: string; start: number; end: number }[], now: number): { key: keyof typeof VISEMES; open: number } {
+  const w = words.find((x) => now >= x.start && now < x.end);
+  if (!w) return { key: 'rest', open: 0 };
+  const letters = [...w.text].filter((c) => /\p{L}/u.test(c));
+  if (!letters.length) return { key: 'rest', open: 0 };
+  // Each letter gets its slice of the word; consonants are short, vowels hold (a cartoon reads the vowels).
+  const weight = (c: string) => ('aeiouyàâéèêëîïôûù'.includes(c.toLowerCase()) ? 2 : 1);
+  const total = letters.reduce((a, c) => a + weight(c), 0);
+  let pos = ((now - w.start) / Math.max(0.01, w.end - w.start)) * total;
+  for (const c of letters) {
+    pos -= weight(c);
+    if (pos <= 0) {
+      const key = visemeOf(c);
+      return { key, open: VISEMES[key]! };
+    }
+  }
+  return { key: 'rest', open: 0 };
 }

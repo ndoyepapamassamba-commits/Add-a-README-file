@@ -303,7 +303,7 @@ export function compileCharacter(
       ACTION: `${pose} pose`,
       COMPOSITION: pose.includes('profil')
         ? 'profile view, full body'
-        : 'full body, centered, plain white background',
+        : 'full body, centered, plain white background, three-quarter view, mouth closed in a neutral expression, arms relaxed slightly away from the body (ready to animate)',
       QUALITY: qualityLine(style, 'character sheet'),
       NEGATIVE: style.negative,
     },

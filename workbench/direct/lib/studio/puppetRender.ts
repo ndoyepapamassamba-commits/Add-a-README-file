@@ -1,6 +1,6 @@
 // MARIONNETTE AFRIKATOON — browser renderer: the scene image is drawn, then each rigged character is redrawn through
 // its deformed mesh (affine-mapped triangles), then its eyes blink and its mouth opens with the voice.
-import { deformPoint, poseAt, warpGrid, type Pose, type PuppetCharacter, type PuppetRig } from '../../../server/jev/studio/puppet';
+import { deformPoint, jawOffset, poseAt, warpGrid, type Pose, type PuppetCharacter, type PuppetRig } from '../../../server/jev/studio/puppet';
 import { characterLayer, inpaint, plateHole } from '../../../server/jev/studio/layers';
 
 type Surface = OffscreenCanvas | HTMLCanvasElement;
@@ -20,6 +20,9 @@ export interface PuppetFrameInput {
   /** Emotion of the line / scene (body layer) and jaw opening from the visemes of the words. */
   emotion?: string;
   viseme?: number;
+  /** Preston Blair mouth shape of the sound said now, and the voice accent (beat gestures). */
+  visemeKey?: string;
+  beat?: number;
 }
 const rgb = (d: Uint8ClampedArray, w: number, h: number, x: number, y: number) => {
   const i = (Math.max(0, Math.min(h - 1, Math.round(y))) * w + Math.max(0, Math.min(w - 1, Math.round(x)))) * 4;
@@ -38,9 +41,8 @@ export class PuppetStage {
   readonly canvas: OffscreenCanvas | HTMLCanvasElement;
   private g: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D;
   private src: Uint8ClampedArray;
-  /** Per character: colour matte (vertex weights) and whether the picture already shows an open mouth. */
+  /** Per character: colour matte (vertex weights) for the single-image fallback. */
   private matte = new Map<PuppetCharacter, (s: { x: number; y: number }) => number>();
-  private mouthOpen = new Map<PuppetCharacter, boolean>();
   /** 2.5D layers: the clean background plate and one cut-out layer per character (null → single-image fallback). */
   private plate: Surface | null = null;
   private layers = new Map<PuppetCharacter, Surface>();
@@ -48,6 +50,15 @@ export class PuppetStage {
   private armsOk = new Map<PuppetCharacter, boolean[]>();
   /** The plate is the generated empty set (exact) rather than an inpainted guess: full amplitude is safe. */
   private exactPlate = false;
+  /** The still with the characters' mouths replaced by skin (the renderer draws the talking mouths). */
+  private base!: Surface;
+  private lips = new Map<PuppetCharacter, string>();
+  /** Characters whose painted mouth is already open: lip-sync by moving the real jaw, no drawn mouth. */
+  private jawMode = new Set<PuppetCharacter>();
+  /** Emotion state per character, eased towards the target (expressions change smoothly, not in one frame). */
+  /** Per-frame buffer of one character (layered mode): its face is drawn « source-atop », never outside its silhouette. */
+  private buf: Surface | null = null;
+  private eased = new Map<PuppetCharacter, { t: number; lean: number; smile: number; browIn: number; browOut: number; squint: number }>();
   constructor(
     private img: CanvasImageSource & { width: number; height: number },
     private rig: PuppetRig,
@@ -61,9 +72,9 @@ export class PuppetStage {
     this.g = this.canvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
     this.g.drawImage(img, 0, 0, w, h);
     this.src = this.g.getImageData(0, 0, w, h).data;
+    this.eraseMouths(w, h);
     for (const c of rig.characters) {
       this.matte.set(c, this.buildMatte(c, w, h));
-      this.mouthOpen.set(c, this.darkFraction(c, w, h) > 0.3);
     }
     let plateSrc: Uint8ClampedArray | undefined;
     if (plateImg) {
@@ -126,6 +137,53 @@ export class PuppetStage {
   get layered() {
     return this.plate !== null;
   }
+  /**
+   * MOUTH REPLACEMENT (the classic 2D lip-sync technique): the mouth painted in the picture (often wide open in comedy
+   * stills) is replaced by skin rebuilt from around it; the renderer then draws, every frame, the mouth shape of the sound
+   * being said. The lip colour is taken from the skin.
+   */
+  private eraseMouths(w: number, h: number) {
+    const hole = new Float32Array(w * h);
+    let any = false;
+    for (const c of this.rig.characters) {
+      if (!c.mouth) continue;
+      if (this.darkFraction(c, w, h) > 0.25) {
+        this.jawMode.add(c);
+        continue;
+      }
+      any = true;
+      const cx = (c.mouth.x + c.mouth.w / 2) * w;
+      const cy = (c.mouth.y + c.mouth.h / 2) * h;
+      const rx = Math.max(3, c.mouth.w * w * 0.62);
+      const ry = Math.max(3, c.mouth.h * h * 0.85);
+      for (let y = Math.max(0, Math.floor(cy - ry)); y <= Math.min(h - 1, cy + ry); y++)
+        for (let x = Math.max(0, Math.floor(cx - rx)); x <= Math.min(w - 1, cx + rx); x++) if (((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1) hole[y * w + x] = 1;
+    }
+    if (any) {
+      const out = inpaint(this.src, w, h, hole);
+      this.src = out;
+      for (const c of this.rig.characters) {
+        if (!c.mouth || this.jawMode.has(c)) continue;
+        const [r, g2, b] = this.patch((c.mouth.x + c.mouth.w / 2) * w, (c.mouth.y + c.mouth.h / 2) * h, w, h, 2);
+        this.lips.set(c, `rgb(${Math.round(r * 0.62)},${Math.round(g2 * 0.4)},${Math.round(b * 0.42)})`);
+      }
+    }
+    this.base = surface(w, h);
+    (this.base.getContext('2d') as OffscreenCanvasRenderingContext2D).putImageData(new ImageData(new Uint8ClampedArray(this.src), w, h), 0, 0);
+  }
+  /** Share of dark pixels in the mouth box: the picture already shows an open mouth. */
+  private darkFraction(c: PuppetCharacter, w: number, h: number) {
+    if (!c.mouth) return 0;
+    let dark = 0;
+    let n = 0;
+    for (let y = c.mouth.y; y < c.mouth.y + c.mouth.h; y += c.mouth.h / 8)
+      for (let x = c.mouth.x; x < c.mouth.x + c.mouth.w; x += c.mouth.w / 8) {
+        const [r, g2, b] = this.patch(x * w, y * h, w, h, 0);
+        if (0.3 * r + 0.59 * g2 + 0.11 * b < 60) dark++;
+        n++;
+      }
+    return n ? dark / n : 0;
+  }
   /** Mean colour of a small square around (x, y) in pixels. */
   private patch(x: number, y: number, w: number, h: number, r = 2): [number, number, number] {
     let R = 0, G = 0, B = 0, n = 0;
@@ -187,18 +245,7 @@ export class PuppetStage {
       return m;
     };
   }
-  /** Share of dark pixels in the mouth box: the picture already shows an open mouth (then only the jaw moves). */
-  private darkFraction(c: PuppetCharacter, w: number, h: number) {
-    if (!c.mouth) return 0;
-    let dark = 0, n = 0;
-    for (let y = c.mouth.y; y < c.mouth.y + c.mouth.h; y += c.mouth.h / 8)
-      for (let x = c.mouth.x; x < c.mouth.x + c.mouth.w; x += c.mouth.w / 8) {
-        const [r, g2, b] = this.patch(x * w, y * h, w, h, 0);
-        if (0.3 * r + 0.59 * g2 + 0.11 * b < 70) dark++;
-        n++;
-      }
-    return n ? dark / n : 0;
-  }
+
   get width() {
     return this.canvas.width;
   }
@@ -211,7 +258,7 @@ export class PuppetStage {
     const W = this.canvas.width;
     const H = this.canvas.height;
     g.setTransform(1, 0, 0, 1, 0, 0);
-    g.drawImage(this.plate ?? this.img, 0, 0, W, H);
+    g.drawImage(this.plate ?? this.base, 0, 0, W, H);
     const talker = f.speaking ? speakerOf(this.rig.characters, f.side) : undefined;
     // Back to front: the character whose feet are higher in the frame is further away.
     for (const c of [...this.rig.characters].sort((a, b) => a.box.y + a.box.h - (b.box.y + b.box.h))) {
@@ -220,7 +267,7 @@ export class PuppetStage {
       const other = this.rig.characters.filter((o) => o !== c).sort((a, b) => Math.abs(a.box.x + a.box.w / 2 - cx) - Math.abs(b.box.x + b.box.w / 2 - cx))[0];
       const facing = other ? (other.box.x + other.box.w / 2 >= cx ? 1 : -1) : cx < 0.5 ? 1 : -1;
       const mine = c === talker;
-      const pose = poseAt(c, f.t, {
+      const raw = poseAt(c, f.t, {
         speaking: mine,
         energy: f.energy,
         emphasis: mine ? f.emphasis : 0,
@@ -228,16 +275,43 @@ export class PuppetStage {
         facing,
         emotion: f.emotion,
         ...(mine && f.viseme !== undefined ? { viseme: f.viseme } : {}),
+        ...(mine && f.visemeKey ? { visemeKey: f.visemeKey } : {}),
+        ...(mine && f.beat !== undefined ? { beat: f.beat } : {}),
         ...(mine && f.gesture ? { gesture: f.gesture, age: f.lineAge ?? 1 } : {}),
       });
-      this.drawMesh(c, pose, W, H);
-      this.drawFace(c, pose, W, H);
+      // Emotional change eased over ≈ 0.3 s (posture and face glide to the new emotion).
+      const st = this.eased.get(c);
+      const pose = { ...raw };
+      if (!st || f.t < st.t || f.t - st.t > 1) this.eased.set(c, { t: f.t, lean: raw.lean, smile: raw.smile, browIn: raw.browIn, browOut: raw.browOut, squint: raw.squint });
+      else {
+        const k = 1 - Math.exp(-(f.t - st.t) / 0.28);
+        for (const key of ['lean', 'smile', 'browIn', 'browOut', 'squint'] as const) {
+          st[key] += (raw[key] - st[key]) * k;
+          pose[key] = st[key];
+        }
+        st.t = f.t;
+      }
+      if (this.layers.has(c)) {
+        // Character rendered alone in its buffer, face features clipped to its own pixels, then composited.
+        if (!this.buf || this.buf.width !== W || this.buf.height !== H) this.buf = surface(W, H);
+        const bg = this.buf.getContext('2d') as OffscreenCanvasRenderingContext2D;
+        bg.setTransform(1, 0, 0, 1, 0, 0);
+        bg.globalCompositeOperation = 'source-over';
+        bg.clearRect(0, 0, W, H);
+        this.drawMesh(c, pose, W, H, bg);
+        bg.globalCompositeOperation = 'source-atop';
+        this.drawFace(c, pose, W, H, bg, this.buf);
+        bg.globalCompositeOperation = 'source-over';
+        g.drawImage(this.buf, 0, 0);
+      } else {
+        this.drawMesh(c, pose, W, H);
+        this.drawFace(c, pose, W, H);
+      }
     }
     g.setTransform(1, 0, 0, 1, 0, 0);
     return this.canvas;
   }
-  private drawMesh(c: PuppetCharacter, p: Pose, W: number, H: number) {
-    const { g } = this;
+  private drawMesh(c: PuppetCharacter, p: Pose, W: number, H: number, g: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D = this.g) {
     const layer = this.layers.get(c);
     const ok = this.armsOk.get(c);
     if (layer && ok) p = { ...p, arms: p.arms.map((v, i) => (ok[i] === false ? 0 : v)) };
@@ -257,46 +331,173 @@ export class PuppetStage {
           const d = tri.map(([a, b]) => at(m.dst, a, b)).map((q) => ({ x: q.x * W, y: q.y * H }));
           // Skip triangles that do not move (most of the background around the character).
           if (!layer && s.every((q, k) => Math.abs(q.x - d[k]!.x) < 0.15 && Math.abs(q.y - d[k]!.y) < 0.15)) continue;
-          drawTriangle(g, layer ?? this.img, W, H, s, d);
+          drawTriangle(g, layer ?? this.base, W, H, s, d);
         }
       }
   }
-  private drawFace(c: PuppetCharacter, p: Pose, W: number, H: number) {
-    const { g, src } = this;
+  private drawFace(c: PuppetCharacter, p: Pose, W: number, H: number, g: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D = this.g, from: Surface = this.canvas) {
+    const { src } = this;
     g.setTransform(1, 0, 0, 1, 0, 0);
-    if (p.blink > 0.05)
-      for (const e of c.eyes) {
-        const q = deformPoint(c, p, e);
-        const r = e.r * W;
-        // Eyelid in the skin colour just above the eye, closing from the top.
+    const headCx = c.head.x + c.head.w / 2;
+    for (const e of c.eyes) {
+      const q = deformPoint(c, p, e);
+      const r = e.r * W;
+      // BROWS: a fine local warp above the eye moves the painted brow (inner end towards the nose, outer end).
+      this.browWarp(q.x * W, q.y * H, r, e.x < headCx ? 1 : -1, p.browIn, p.browOut, g, from);
+      // Eyelids: blink, or squint from the emotion.
+      const lid = Math.max(p.blink, p.squint * 0.5);
+      if (lid > 0.05) {
         g.fillStyle = rgb(src, W, H, e.x * W, (e.y - e.r * 2.4) * H);
         g.beginPath();
-        g.ellipse(q.x * W, q.y * H - r * (1 - p.blink) * 0.6, r * 1.35, r * 1.35 * p.blink, 0, 0, Math.PI * 2);
+        g.ellipse(q.x * W, q.y * H - r * (1 - lid) * 0.6, r * 1.35, r * 1.35 * lid, 0, 0, Math.PI * 2);
         g.fill();
         g.strokeStyle = 'rgba(25,15,10,0.85)';
         g.lineWidth = Math.max(1, r * 0.22);
         g.beginPath();
-        g.ellipse(q.x * W, q.y * H + r * 0.35 * p.blink, r * 1.2, r * 0.25, 0, 0, Math.PI);
+        g.ellipse(q.x * W, q.y * H + r * 0.35 * lid, r * 1.2, r * 0.25, 0, 0, Math.PI);
         g.stroke();
       }
-    // A mouth already open in the picture is animated by the jaw alone; a closed one gets a soft dark opening
-    // (feathered edge, no outline) that the jaw then stretches.
-    if (c.mouth && p.mouth > 0.05 && !this.mouthOpen.get(c)) {
+    }
+    // JAW: fine local warp of the mouth / chin (the real pixels move: lower lip, chin).
+    if (c.mouth) {
       const mc = deformPoint(c, p, { x: c.mouth.x + c.mouth.w / 2, y: c.mouth.y + c.mouth.h / 2 });
-      const rx = c.mouth.w * W * 0.3;
-      const ry = Math.max(1, c.mouth.h * H * 0.42 * p.mouth);
-      const x = mc.x * W;
-      const y = mc.y * H + ry * 0.3;
-      const grad = g.createRadialGradient(x, y, 0, x, y, Math.max(rx, ry));
-      grad.addColorStop(0, 'rgba(45,10,12,0.95)');
-      grad.addColorStop(0.7, 'rgba(60,16,18,0.85)');
-      grad.addColorStop(1, 'rgba(60,16,18,0)');
-      g.fillStyle = grad;
-      g.beginPath();
-      g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
-      g.fill();
+      this.jawWarp(mc.x * W, mc.y * H, c.mouth.w * W, c.mouth.h * H, p.mouth, this.jawMode.has(c) ? 1 : 0, g, from);
+    }
+    if (c.mouth && !this.jawMode.has(c)) {
+      const mc = deformPoint(c, p, { x: c.mouth.x + c.mouth.w / 2, y: c.mouth.y + c.mouth.h / 2 });
+      drawMouth(g, mc.x * W, mc.y * H + c.mouth.h * H * 0.2 * p.mouth, c.mouth.w * W, c.mouth.h * H, p.mouthShape, p.mouth, p.smile, this.lips.get(c) ?? 'rgb(120,45,45)');
     }
   }
+  /** Local jaw warp: a 10×12 mesh over mouth + chin, vertices moved by jawOffset (sides fade to 0). */
+  private jawWarp(mx: number, my: number, mw: number, mh: number, open: number, rest: 0 | 1, g: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D, from: Surface) {
+    if (mh < 3 || (!rest && open < 0.02)) return;
+    const x0 = mx - mw * 1.3;
+    const y0 = my - mh * 0.8;
+    const bw = mw * 2.6;
+    const bh = mh * 3;
+    const cols = 10;
+    const rows = 12;
+    const tmp = surface(Math.ceil(bw), Math.ceil(bh));
+    const tg = tmp.getContext('2d') as OffscreenCanvasRenderingContext2D;
+    tg.drawImage(from, x0, y0, bw, bh, 0, 0, bw, bh);
+    const pt = (i: number, j: number, moved: boolean) => {
+      const x = (i / cols) * bw;
+      const y = (j / rows) * bh;
+      if (!moved || i === 0 || i === cols || j === 0 || j === rows) return { x, y };
+      const side = Math.sin((i / cols) * Math.PI) ** 0.8;
+      return { x, y: y + jawOffset(y + y0, my, mh, open, rest) * side };
+    };
+    for (let j = 0; j < rows; j++)
+      for (let i = 0; i < cols; i++)
+        for (const tri of [
+          [[i, j], [i + 1, j], [i, j + 1]],
+          [[i + 1, j], [i + 1, j + 1], [i, j + 1]],
+        ] as [number, number][][]) {
+          const sP = tri.map(([a, b]) => pt(a, b, false));
+          const dP = tri.map(([a, b]) => pt(a, b, true)).map((q) => ({ x: q.x + x0, y: q.y + y0 }));
+          drawTriangleFrom(g, tmp, sP, dP);
+        }
+  }
+  /** Local brow warp: a 6×4 mesh over the brow area, vertices lifted / lowered (inner / outer), fading to the edges. */
+  private browWarp(ex: number, ey: number, r: number, inward: number, browIn: number, browOut: number, g: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D, from: Surface) {
+    if (Math.abs(browIn) < 0.05 && Math.abs(browOut) < 0.05) return;
+    const x0 = ex - r * 2.6;
+    const y0 = ey - r * 4.4;
+    const bw = r * 5.2;
+    const bh = r * 4;
+    const cols = 6;
+    const rows = 4;
+    if (bw < 6 || bh < 6) return;
+    const tmp = surface(Math.ceil(bw), Math.ceil(bh));
+    const tg = tmp.getContext('2d') as OffscreenCanvasRenderingContext2D;
+    tg.drawImage(from, x0, y0, bw, bh, 0, 0, bw, bh);
+    const pt = (i: number, j: number, moved: boolean) => {
+      const u = i / cols;
+      const v = j / rows;
+      if (!moved || i === 0 || i === cols || j === 0 || j === rows) return { x: u * bw, y: v * bh };
+      // u from the inner end (towards the nose) to the outer end.
+      const ui = inward > 0 ? 1 - u : u;
+      const raise = browIn * (1 - ui) + browOut * ui;
+      const fall = Math.sin(v * Math.PI) ** 1.5;
+      return { x: u * bw, y: v * bh - raise * r * 0.55 * fall };
+    };
+    for (let j = 0; j < rows; j++)
+      for (let i = 0; i < cols; i++)
+        for (const tri of [
+          [[i, j], [i + 1, j], [i, j + 1]],
+          [[i + 1, j], [i + 1, j + 1], [i, j + 1]],
+        ] as [number, number][][]) {
+          const sP = tri.map(([a, b]) => pt(a, b, false));
+          const dP = tri.map(([a, b]) => pt(a, b, true)).map((q) => ({ x: q.x + x0, y: q.y + y0 }));
+          drawTriangleFrom(g, tmp, sP, dP);
+        }
+  }
+}
+
+/** Preston Blair mouth shapes: [width factor, opening factor] (AI, E, O, U, WQ, MBP, FV, L, etc, rest). */
+const SHAPES: Record<string, [number, number]> = { AI: [1, 1], E: [1.1, 0.55], O: [0.62, 0.9], U: [0.45, 0.5], WQ: [0.5, 0.45], MBP: [0.88, 0], FV: [0.9, 0.18], L: [0.85, 0.6], etc: [0.9, 0.45], rest: [0.85, 0] };
+/** Draws one cartoon mouth: lips, dark opening, upper teeth, tongue; closed = a lip line; corners follow the emotion. */
+function drawMouth(g: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D, cx: number, cy: number, mw: number, mh: number, shape: string, open: number, smile: number, lip: string) {
+  const [wf, of] = SHAPES[shape] ?? SHAPES.etc!;
+  const w = Math.max(4, mw * 0.95 * wf);
+  const hOpen = Math.max(0, mh * 1.5 * Math.min(1, open) * (of > 0 ? Math.max(of, 0.3) : 0));
+  const corner = -smile * mh * 0.35;
+  const lx = cx - w / 2;
+  const rx = cx + w / 2;
+  g.save();
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+  if (hOpen < mh * 0.12) {
+    // Closed: a lip line curved by the emotion (smile up, frown down), pressed lips for M/B/P.
+    g.strokeStyle = lip;
+    g.lineWidth = Math.max(2, mh * (shape === 'MBP' ? 0.32 : 0.24));
+    g.beginPath();
+    g.moveTo(lx, cy + corner);
+    g.quadraticCurveTo(cx, cy - corner * 0.6 + mh * 0.05, rx, cy + corner);
+    g.stroke();
+    g.strokeStyle = 'rgba(30,8,10,0.85)';
+    g.lineWidth = Math.max(1, mh * 0.07);
+    g.beginPath();
+    g.moveTo(lx + w * 0.06, cy + corner * 0.9);
+    g.quadraticCurveTo(cx, cy - corner * 0.5 + mh * 0.05, rx - w * 0.06, cy + corner * 0.9);
+    g.stroke();
+    g.restore();
+    return;
+  }
+  const top = cy - hOpen * 0.42;
+  const bottom = cy + hOpen * 0.58;
+  const path = () => {
+    g.beginPath();
+    g.moveTo(lx, cy + corner);
+    g.bezierCurveTo(lx + w * 0.15, top - hOpen * 0.05, rx - w * 0.15, top - hOpen * 0.05, rx, cy + corner);
+    g.bezierCurveTo(rx - w * 0.12, bottom + hOpen * 0.12, lx + w * 0.12, bottom + hOpen * 0.12, lx, cy + corner);
+    g.closePath();
+  };
+  // Lips (outline thickness), then the dark inside.
+  path();
+  g.strokeStyle = lip;
+  g.lineWidth = Math.max(2, mh * 0.26);
+  g.stroke();
+  g.fillStyle = '#2a090b';
+  g.fill();
+  g.save();
+  path();
+  g.clip();
+  // Upper teeth (not for the rounded O / U / WQ), tongue at the bottom.
+  if (!['O', 'U', 'WQ'].includes(shape) && hOpen > mh * 0.25) {
+    g.fillStyle = '#f4efe6';
+    g.fillRect(lx, top - hOpen * 0.1, w, hOpen * (shape === 'FV' ? 0.75 : 0.3));
+  }
+  g.fillStyle = '#c9545e';
+  g.beginPath();
+  g.ellipse(cx, bottom + hOpen * (shape === 'L' ? -0.25 : 0.05), w * 0.32, hOpen * 0.32, 0, 0, Math.PI * 2);
+  g.fill();
+  g.restore();
+  g.restore();
+}
+/** Like drawTriangle, but from an arbitrary source surface in its own pixel coordinates. */
+function drawTriangleFrom(g: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D, img: CanvasImageSource & { width: number; height: number }, s: { x: number; y: number }[], d: { x: number; y: number }[]) {
+  drawTriangle(g, img, img.width, img.height, s, d);
 }
 
 /** Draws the source triangle s of the image onto the destination triangle d (affine map, clipped, slight overlap). */
