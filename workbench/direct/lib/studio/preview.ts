@@ -2,6 +2,7 @@
 // It renders a moving 2.5D animatic (camera moves, punch-in on the speaker, voice-driven bounce, cross-fades; real scene
 // videos when generated) with the real voices, music, SFX and word-highlighted subtitles),
 // not the final film. When the browser lacks a capability the caller shows « Capability unavailable in current environment ».
+import { PuppetStage } from './puppetRender';
 import { blobs } from './blobs';
 import type { Blueprint, Scene } from '../../../server/jev/studio/types';
 import { duckingPoints } from '../../../server/jev/studio/timeline';
@@ -237,6 +238,8 @@ export async function renderPreview(
   const total = t;
   const bitmaps = await Promise.all(bp.scenes.map((s) => bitmapOf(s.imageAssetId)));
   const videos = await Promise.all(bp.scenes.map((s) => videoOf(s.videoAssetId)));
+  // Rigged scenes (no video clip) are animated by the puppet engine.
+  const stages = bitmaps.map((b, k) => (b && !videos[k] && bp.scenes[k]!.rig?.characters.length ? new PuppetStage(b, bp.scenes[k]!.rig!) : null));
   // One camera move per scene, chosen from its content, never the same twice in a row.
   const dim3d = dimensionOf(bp.styleDNA) === '3D';
   const moves: Move[] = [];
@@ -339,6 +342,11 @@ export async function renderPreview(
         if (vid.paused) void vid.play().catch(() => undefined);
         // A real video clip already moves: only a gentle camera on top of it.
         cover(ctx, vid, W, H, { zoom: 1 + (cam.zoom - 1) * 0.3, dx: cam.dx * 0.3, dy: cam.dy * 0.3, rot: 0 }, alpha);
+      } else if (img && stages[k]) {
+        // MARIONNETTE AFRIKATOON: the characters themselves move (head, body, arms), blink and talk with the voice.
+        const st = stages[k]!;
+        const frame = st.frame({ t: now + k * 3.7, side: va.side, energy: k === si ? va.energy : 0, speaking: k === si && va.energy > 0.03, action: bp.scenes[k]!.action, emphasis: k === bp.scenes.length - 1 ? Math.max(0, 1 - Math.abs(fr - 0.85) * 8) : 0 });
+        cover(ctx, frame as unknown as ImageBitmap, W, H, cam, alpha);
       } else if (img) {
         // 2.5D life without a video model: the whole shot breathes, the speaker talks and nods.
         const b = breathing(now + k);

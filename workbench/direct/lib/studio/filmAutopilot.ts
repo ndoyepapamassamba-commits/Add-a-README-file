@@ -5,7 +5,7 @@
 import { useStudio } from './store';
 import { useStore } from '../store';
 import { blobs } from './blobs';
-import { loadRegistry, generateStory, generateSceneImage, generateLine, redrawCharacter, imageCandidates } from './actions';
+import { loadRegistry, generateStory, generateSceneImage, generateLine, redrawCharacter, imageCandidates, rigScene } from './actions';
 import { completeCharacterSheets, completeWorldSheets, addLocalMusic, compileSubtitles, buildEdit, generateSceneVideo, videoEnabled, runQA } from './actions2';
 import { setStudioTextModel } from './textModel';
 import { hfSpaceVideo, isCheapVideo, pollinationsVideo, POLLINATIONS_VIDEO } from './cheapVideo';
@@ -168,6 +168,15 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
         }
       } else if (anim !== LOCAL_ANIMATION) warn.push('animation vidéo non autorisée (budget vidéo à 0) → animation 2.5D gratuite');
       else c.onStage('ANIMATION', 'running', 'animation 2.5D (caméra, parallaxe, voix) au montage');
+      // MARIONNETTE AFRIKATOON for every scene still without a clip: the characters are rigged (one vision read per
+      // image) and move, blink and talk at montage time — free, no quota.
+      let rigged = 0;
+      for (const sc of bpOf(projectId).scenes.filter((s) => s.imageAssetId && !s.videoAssetId && !s.rig)) {
+        check(c);
+        c.onStage('ANIMATION', 'running', `marionnette ${sc.scene_id} : squelette des personnages`);
+        rigged += (await rigScene(projectId, sc.scene_id)) > 0 ? 1 : 0;
+      }
+      if (rigged) c.onStage('ANIMATION', 'running', `${rigged} scène(s) animée(s) par la Marionnette Afrikatoon`);
       await gate('ANIMATION', warn);
     }
     // ── CONTRÔLE QUALITÉ: rules + vision judge; the scenes the art director scored low are redrawn once (only

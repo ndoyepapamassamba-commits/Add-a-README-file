@@ -1,6 +1,7 @@
 // Studio actions (runtime): registry, story, character library + 2D redraw, scene images, voices. Every paid call goes
 // through executeMedia (selection, budget gate, retries, fallback, storage, memory, JEV_LOG).
 import { detectPanels, SINGLE_SHOT_RETRY } from '../../../server/jev/studio/panels';
+import { parseRig, RIG_PROMPT } from '../../../server/jev/studio/puppet';
 import { artQuality, artVerdict, enhanceInstruction, judgePrompt, parseJudgement, regenerateHint, type ArtJudgement } from '../../../server/jev/studio/artJudge';
 import { castVoices, naturalSpeed } from '../../../server/jev/studio/motion';
 import { useStudio } from './store';
@@ -563,6 +564,30 @@ export async function generateOne(j: ImageJob): Promise<MediaOutcome<{ b64: stri
   });
 }
 
+/**
+ * MARIONNETTE AFRIKATOON: a vision model rigs the scene image once (heads, eyes, mouths, bodies, arms) so the free
+ * engine can move the characters themselves. Returns the number of characters rigged (0: nothing to rig / no model).
+ */
+export async function rigScene(projectId: string, sceneId: string): Promise<number> {
+  const sc = bpOf(projectId).scenes.find((s) => s.scene_id === sceneId);
+  if (!sc?.imageAssetId) return 0;
+  try {
+    const r = await runText({
+      projectId,
+      purpose: 'squelette d’animation (marionnette)',
+      vision: true,
+      maxTokens: 900,
+      temperature: 0,
+      messages: [{ role: 'user', content: [{ type: 'text', text: RIG_PROMPT }, { type: 'image_url', image_url: { url: await dataUrl(sc.imageAssetId) } }] }],
+    });
+    const rig = parseRig(r.text, r.model);
+    if (!rig) return 0;
+    patch(projectId, (b) => ({ ...b, scenes: b.scenes.map((s) => (s.scene_id === sceneId ? { ...s, rig } : s)) }));
+    return rig.characters.length;
+  } catch {
+    return 0;
+  }
+}
 /** The art director's judgement of one image (null: no vision model answered — nothing is invented). */
 async function judgeArt(projectId: string, sc: Scene, assetId: string): Promise<ArtJudgement | null> {
   const bp = bpOf(projectId);

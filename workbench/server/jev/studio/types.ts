@@ -183,6 +183,8 @@ export interface Scene {
   status: 'DRAFT' | 'READY' | 'GENERATED' | 'APPROVED' | 'FAILED';
   quality?: number | null;
   model?: string;
+  /** Puppet rig of the scene image (Marionnette Afrikatoon engine), read once by a vision model. */
+  rig?: import('./puppet').PuppetRig;
 }
 
 export interface Story {
