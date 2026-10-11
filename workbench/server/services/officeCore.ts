@@ -90,7 +90,9 @@ function table(rows: string[][]): string {
   };
   const b = (side: string) => `<w:${side} w:val="single" w:sz="4" w:color="${HOUSE.line}"/>`;
   const border = ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(b).join('');
-  return `<w:tbl><w:tblPr><w:tblW w:w="9000" w:type="dxa"/><w:tblBorders>${border}</w:tblBorders></w:tblPr>${rows
+  // tblGrid is required by the schema (Word repairs a table without it).
+  const grid = `<w:tblGrid>${Array.from({ length: cols }, () => `<w:gridCol w:w="${Math.floor(9000 / cols)}"/>`).join('')}</w:tblGrid>`;
+  return `<w:tbl><w:tblPr><w:tblW w:w="9000" w:type="dxa"/><w:tblBorders>${border}</w:tblBorders></w:tblPr>${grid}${rows
     .map(
       (r, i) =>
         `<w:tr>${i === 0 ? '<w:trPr><w:tblHeader/></w:trPr>' : ''}${Array.from({ length: cols }, (_, j) => cell(r[j] ?? '', i)).join('')}</w:tr>`,
@@ -219,8 +221,8 @@ export function markdownToDocx(
         .join('')}</Relationships>`,
     ),
     ...Object.fromEntries(media.map((m) => [`word/media/${m.file}`, m.data])),
-    'word/document.xml': strToU8(doc),
-    'word/styles.xml': strToU8(styles),
+    'word/document.xml': strToU8(orderPPr(doc)),
+    'word/styles.xml': strToU8(orderPPr(styles)),
   });
 }
 
@@ -242,4 +244,18 @@ blockquote{border-left:4px solid #${H.lime};margin-left:0;padding:6px 12px;backg
 img{max-width:100%}.foot{margin-top:28px;border-top:1px solid #${H.line};padding-top:6px;color:#${H.text2};font-size:8pt}
 @media print{body{max-width:none}}
 </style></head><body><div class="band"><h1>${esc(title)}</h1><div class="d">Édité le ${fmtDateFr()}</div></div>${bodyHtml}<div class="foot">${esc(title)} · ${fmtDateFr()}</div></body></html>`;
+}
+
+/** Paragraph properties in the order the schema imposes (Word is strict about it). */
+const PPR_ORDER = ['pStyle', 'keepNext', 'keepLines', 'pageBreakBefore', 'framePr', 'widowControl', 'numPr', 'suppressLineNumbers', 'pBdr', 'shd', 'tabs', 'suppressAutoHyphens', 'kinsoku', 'wordWrap', 'overflowPunct', 'topLinePunct', 'autoSpaceDE', 'autoSpaceDN', 'bidi', 'adjustRightInd', 'snapToGrid', 'spacing', 'ind', 'contextualSpacing', 'mirrorIndents', 'suppressOverlap', 'jc', 'textDirection', 'textAlignment', 'textboxTightWrap', 'outlineLvl', 'divId', 'cnfStyle', 'rPr', 'sectPr', 'pPrChange'];
+export function orderPPr(xml: string): string {
+  return xml.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/g, (m, body: string) => {
+    const kids = [...body.matchAll(/<w:(\w+)\b[^>]*?(?:\/>|>[\s\S]*?<\/w:\1>)/g)];
+    if (kids.map((k) => k[0]).join('') !== body) return m; // unusual content: left as it is
+    const rank = (t: string) => {
+      const i = PPR_ORDER.indexOf(t);
+      return i < 0 ? 999 : i;
+    };
+    return `<w:pPr>${[...kids].sort((a, b) => rank(a[1]!) - rank(b[1]!)).map((k) => k[0]).join('')}</w:pPr>`;
+  });
 }

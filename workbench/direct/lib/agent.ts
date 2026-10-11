@@ -66,6 +66,7 @@ import { strFromU8, unzipSync } from 'fflate';
 import { restyleWorkbook } from '../../server/services/officeRestyle';
 import { maisonBand } from '../../server/services/maisonBand';
 import { addLiveDashboard } from '../../server/services/liveDash';
+import { skinDocx, skinHtml, skinPptx, type Skin } from '../../server/services/officeSkin';
 import { knowledgeBlock, related as relatedKnowledge } from '../../server/jev/knowledge/learned';
 import { renderCloneSvg } from '../../server/services/dashRender';
 import { previewData, rasterise } from './designClone';
@@ -2785,6 +2786,29 @@ function finishWorkbooks(sid: string, since: number): string[] {
     : buildTheme(c ? (c.theme === 'custom' ? (c.colors ?? null) : (c.theme as never)) : null);
   const skip = new Set(['Tableau de bord', 'Tableau de bord (image)', 'Données du tableau de bord', 'Synthèse 3D', 'Agrégats']);
   const lines: string[] = [];
+  // THE IMAGE'S DESIGN ON EVERY PAGE of the other exports (Word, PowerPoint, HTML and the PDF printed from it).
+  const skin: Skin | null = c?.clone
+    ? { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, page: c.clone.page, font: c.clone.font }
+    : c && c.theme === 'custom' && c.colors?.primary
+      ? { dark: c.colors.dark ?? c.colors.primary, primary: c.colors.primary, accent: c.colors.accent ?? c.colors.primary, font: c.colors.font ?? 'Segoe UI' }
+      : null;
+  const skinDesign = skin ? buildTheme({ primary: skin.primary, accent: skin.accent, dark: skin.dark, font: skin.font }) : null;
+  if (skin && skinDesign)
+    for (const f of Object.values(files())) {
+      if (f.updatedAt < since || f.path.startsWith('uploads/') || f.path.startsWith('assets/')) continue;
+      // House colours written by the exporters (navy / blue / gold) become the image's first.
+      const base = f.binary && /\.(docx|pptx)$/i.test(f.path) ? (recolorOffice(bytesOf(f), skinDesign)?.bytes ?? bytesOf(f)) : null;
+      if (f.binary && /\.docx$/i.test(f.path)) {
+        const out = skinDocx(base!, skin);
+        if (out) (writeBytes(f.path, out, f.mime), lines.push(`${f.path} : chaque page au design de l'image (bandeau d'en-tête, titres, tableaux, police).`));
+      } else if (f.binary && /\.pptx$/i.test(f.path)) {
+        const out = skinPptx(base!, skin);
+        if (out) (writeBytes(f.path, out, f.mime), lines.push(`${f.path} : chaque diapositive au design de l'image (fond, bandeaux, titres, police).`));
+      } else if (!f.binary && /\.html?$/i.test(f.path)) {
+        const out = skinHtml(f.data, skin);
+        if (out !== f.data) (writeText(f.path, out), lines.push(`${f.path} : page (et PDF imprimé) au design de l'image.`));
+      }
+    }
   for (const f of Object.values(files())) {
     if (!f.binary || f.updatedAt < since || !/\.xlsx$/i.test(f.path) || f.path.startsWith('uploads/') || f.path.startsWith('assets/')) continue;
     const r = maisonBand(bytesOf(f), design, skip);
@@ -3101,7 +3125,7 @@ export async function runAgent(
       try {
         const n = finishWorkbooks(sessionId, started);
         if (n.length)
-          useStore.getState().pushItem(sessionId, { kind: 'intel', id: uid(), title: 'Style maison 2.0 appliqué', tone: 'info', lines: n });
+          useStore.getState().pushItem(sessionId, { kind: 'intel', id: uid(), title: 'Design appliqué à tous les livrables', tone: 'info', lines: n });
       } catch {
         /* never blocks the end of the turn */
       }
