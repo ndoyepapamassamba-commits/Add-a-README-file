@@ -32,15 +32,24 @@ export const kv = {
   clear: () => tx('readwrite', (s) => s.clear()).then(() => undefined),
 };
 
-/** Debounced writer: coalesces frequent saves of the same key. */
+/**
+ * Debounced writer: coalesces frequent saves of the same key — with a MAXIMUM wait, so a key changed continuously
+ * (a session updated every few hundred ms) is still written at least once a second (a reload never loses it).
+ */
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
+const firstAt = new Map<string, number>();
+const MAX_WAIT = 1000;
 export function saveLater(key: string, value: () => unknown, ms = 300): void {
   clearTimeout(timers.get(key));
+  const now = Date.now();
+  if (!firstAt.has(key)) firstAt.set(key, now);
+  const wait = Math.max(0, Math.min(ms, firstAt.get(key)! + Math.max(ms, MAX_WAIT) - now));
   timers.set(
     key,
     setTimeout(() => {
       timers.delete(key);
+      firstAt.delete(key);
       void kv.set(key, value()).catch((e) => console.error('save failed', key, e));
-    }, ms),
+    }, wait),
   );
 }
