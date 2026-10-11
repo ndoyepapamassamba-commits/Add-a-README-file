@@ -65,6 +65,7 @@ import { addNativeClone, removeSheets, REPRO_SHEETS } from '../../server/service
 import { strFromU8, unzipSync } from 'fflate';
 import { restyleWorkbook } from '../../server/services/officeRestyle';
 import { maisonBand } from '../../server/services/maisonBand';
+import { addLiveDashboard } from '../../server/services/liveDash';
 import { knowledgeBlock, related as relatedKnowledge } from '../../server/jev/knowledge/learned';
 import { renderCloneSvg } from '../../server/services/dashRender';
 import { previewData, rasterise } from './designClone';
@@ -2721,10 +2722,13 @@ async function applyClone(sid: string, since: number): Promise<{ n: number; note
         const ours = REPRO_SHEETS.filter((x) => (x === REPRO_SHEETS[0] ? wbx.includes(`name="${REPRO_SHEETS[2]}"`) : wbx.includes(`name="${x}"`)));
         const b0 = ours.length ? removeSheets(b, ours) : null;
         if (b0) b = b0;
-        // Excel: the image's layout as a NATIVE first sheet (editable charts, cards, tiles) + the photo-faithful picture.
-        const withPic = addImageSheet(b, pic, 'Tableau de bord (image)');
+        // Excel: a LIVE first sheet on the image's design (shapes, formulas, filters, native charts — no fixed
+        // picture); the older native + picture build only when the chat's rows are missing.
+        const live = addLiveDashboard(b, c.clone, pd.data);
+        const withPic = live ? null : addImageSheet(b, pic, 'Tableau de bord (image)');
         const nat = withPic ? addNativeClone(withPic, c.clone, pd.data, pic) : null;
-        out = nat?.bytes ?? addImageSheet(b, pic);
+        out = live?.bytes ?? nat?.bytes ?? addImageSheet(b, pic);
+        if (live) notes.push(`${f.path} : 1re feuille « Tableau de bord » VIVANTE au design de l'image (${live.kpis} indicateurs en formules, ${live.charts} graphiques Excel, filtres ${live.filters.map((x) => `« ${x} »`).join(', ') || '—'}, ${live.links} bouton(s) de navigation) — aucune image fixe`);
         // Every other sheet (the model's own, the data sheet) in Maison 2.0 with the image's colours and font.
         const rs = out ? restyleWorkbook(out, { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, font: c.clone.font }, new Set(['Tableau de bord', 'Tableau de bord (image)'])) : null;
         if (rs) {

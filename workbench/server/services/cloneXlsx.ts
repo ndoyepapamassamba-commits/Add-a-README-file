@@ -80,8 +80,8 @@ const chartFrame = (r: Rect, rid: string, name: string) => {
   );
 };
 
-type ChartKind = 'bar' | 'hbar' | 'line' | 'area' | 'pie' | 'donut';
-function chartXml(o: { kind: ChartKind; title: string | null; c0: number; cats: string[]; vals: number[]; valueName: string; colors: string[]; byPoint: boolean; text: string; muted: string; font: string; size: number; labels: boolean; legend: 'none' | 'right' | 'bottom' }): string {
+export type CloneChartKind = 'bar' | 'hbar' | 'line' | 'area' | 'pie' | 'donut';
+export function chartXml(o: { kind: CloneChartKind; title: string | null; c0: number; cats: string[]; vals: number[]; valueName: string; colors: string[]; byPoint: boolean; text: string; muted: string; font: string; size: number; labels: boolean; legend: 'none' | 'right' | 'bottom' }): string {
   const q = `'${DATA.replace(/'/g, "''")}'`;
   const n = o.cats.length;
   const ref = (c: number) => `${q}!$${col(c)}$2:$${col(c)}$${n + 1}`;
@@ -306,7 +306,7 @@ export function addNativeClone(bytes: Uint8Array, spec: DashSpec, d: CloneData, 
       const rid = `rIdDashChart${charts.length + 1}`;
       charts.push({
         rid,
-        xml: chartXml({ kind: kind as ChartKind, title: onBg && tbx ? null : trunc(v.title, Math.round(r.w / (fs * 0.55))), c0, cats, vals, valueName: v.valueName, colors, byPoint: p.sequential && kind !== 'line' && kind !== 'area', text: p.text, muted: mixH(p.text, p.fill, 0.4), font, size: fs, labels: p.valueLabels || kind === 'hbar', legend: p.legend }),
+        xml: chartXml({ kind: kind as CloneChartKind, title: onBg && tbx ? null : trunc(v.title, Math.round(r.w / (fs * 0.55))), c0, cats, vals, valueName: v.valueName, colors, byPoint: p.sequential && kind !== 'line' && kind !== 'area', text: p.text, muted: mixH(p.text, p.fill, 0.4), font, size: fs, labels: p.valueLabels || kind === 'hbar', legend: p.legend }),
       });
       parts.push(chartFrame(inner, rid, `Graphique ${i + 1}`));
       return;

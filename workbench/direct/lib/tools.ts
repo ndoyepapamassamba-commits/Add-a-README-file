@@ -212,6 +212,7 @@ const data = new DataCore();
 import type { DashSpec } from '../../server/services/dashClone';
 import { cloneData, renderCloneHtml, renderCloneSvg } from '../../server/services/dashRender';
 import { addImageSheet } from '../../server/services/officeLogo';
+import { addLiveDashboard } from '../../server/services/liveDash';
 import { addNativeClone } from '../../server/services/cloneXlsx';
 import { restyleWorkbook } from '../../server/services/officeRestyle';
 import { rasterise } from './designClone';
@@ -1091,16 +1092,20 @@ export const TOOLS: DirectTool[] = [
             const img = await rasterise(renderCloneSvg(spec, cd, W), W, H);
             const f = getFile(path);
             const pic = { png: img.png, width: W, height: H };
-            // The image's layout as a NATIVE first sheet (editable charts, cards, tiles), then the photo-faithful picture.
-            const withPic = f ? addImageSheet(bytesOf(f), pic, 'Tableau de bord (image)') : null;
+            // LIVE dashboard first (no fixed picture): the image's design as shapes, figures as formulas, filters,
+            // native charts on formula ranges. The older native + picture build only when the rows are missing.
+            const live = f ? addLiveDashboard(bytesOf(f), spec, cd) : null;
+            const withPic = f && !live ? addImageSheet(bytesOf(f), pic, 'Tableau de bord (image)') : null;
             const nat = withPic ? addNativeClone(withPic, spec, cd, pic) : null;
-            let out = nat?.bytes ?? (f ? addImageSheet(bytesOf(f), pic) : null);
+            let out = live?.bytes ?? nat?.bytes ?? (f ? addImageSheet(bytesOf(f), pic) : null);
             // The data sheet of the reproduction in Maison 2.0 with the image's colours (the house sheets already are).
-            const rs = out && nat ? restyleWorkbook(out, { dark: spec.palette.dark, primary: spec.palette.primary, accent: spec.palette.accent, font: spec.font }, new Set(['Tableau de bord', 'Tableau de bord (image)', 'Données', 'Agrégats', 'Synthèse 3D'])) : null;
+            const rs = out && (nat || live) ? restyleWorkbook(out, { dark: spec.palette.dark, primary: spec.palette.primary, accent: spec.palette.accent, font: spec.font }, new Set(['Tableau de bord', 'Tableau de bord (image)', 'Données', 'Agrégats', 'Synthèse 3D'])) : null;
             if (rs) out = rs.bytes;
             if (out) {
               writeBytes(path, out, f!.mime);
-              sheet = nat
+              sheet = live
+                ? ` (1re feuille « Tableau de bord » VIVANTE au design de l'image : ${live.kpis} indicateurs en formules, ${live.charts} graphiques Excel, filtres ${live.filters.map((x) => `« ${x} »`).join(', ') || '—'}, données dans « Données du tableau de bord »)`
+                : nat
                 ? ` (1re feuille « Tableau de bord » : l'image reconstruite en Excel natif, ${nat.charts} graphiques modifiables ; 2e feuille : la reproduction photo)`
                 : ' (feuille « Tableau de bord » en tête du classeur)';
             }

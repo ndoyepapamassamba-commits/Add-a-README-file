@@ -53,10 +53,15 @@ export function cloneData(title: string, columns: string[], allRows: Record<stri
   const numericCols = columns.filter((c) => !dateCols.includes(c) && sample.filter((r) => isNum(r[c])).length >= sample.length * 0.6);
   const numCols = rankMeasures(numericCols, rows);
   // Categories are labels: a numeric column (months of age, a stage, a customer number) is never a category.
-  const textCols = columns.filter((c) => !numericCols.includes(c) && !dateCols.includes(c)).filter((c) => {
-    const distinct = new Set(sample.map((r) => String(r[c] ?? ''))).size;
-    return distinct >= 2 && distinct <= Math.max(40, sample.length * 0.5);
-  });
+  // Categories people read (segment, band, agency…) before identifiers and names.
+  const IDLIKE = /customer|compte|account|contrat|contract|r[ée]f|\bid\b|code|matricule|num[ée]ro/i;
+  const textCols = columns
+    .filter((c) => !numericCols.includes(c) && !dateCols.includes(c))
+    .filter((c) => {
+      const distinct = new Set(sample.map((r) => String(r[c] ?? ''))).size;
+      return distinct >= 2 && distinct <= Math.max(40, sample.length * 0.5);
+    })
+    .sort((a, b) => (IDLIKE.test(a) ? 1 : 0) - (IDLIKE.test(b) ? 1 : 0));
   const kpis: CloneData['kpis'] = [{ label: 'Lignes', value: fmt(rows.length), src: { fn: 'count' } }];
   for (const c of numCols.slice(0, 4)) {
     const v = rows.map((r) => r[c]).filter(isNum);

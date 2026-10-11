@@ -563,9 +563,10 @@ test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, fram
   expect(html).toContain('SWEETSHOP — ANALYSE 2023');
   const { unzipSync, strFromU8 } = await import('fflate');
   const z = unzipSync(new Uint8Array(Buffer.from(all[Object.keys(all).find((k) => k.endsWith('outputs/sweetshop.xlsx'))!]!.data, 'base64')));
-  expect(z['xl/media/massamba-dashboard.png']).toBeTruthy();
+  // A LIVE dashboard, no fixed picture: shapes on the image's design, native charts, figures as formulas.
+  expect(z['xl/media/massamba-dashboard.png']).toBeUndefined();
   expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/<sheets><sheet name="Tableau de bord"/);
-  fs.writeFileSync('/tmp/claude-0/clone/e2e-dashboard.png', Buffer.from(z['xl/media/massamba-dashboard.png']!));
+  expect(strFromU8(z['xl/drawings/drawing-live-dash.xml']!)).toContain('<xdr:sp ');
 });
 
 test('a design card left behind (mission stopped, page reloaded): « Générer » relaunches the request with the design — never a dead button', async ({ page }) => {
@@ -648,15 +649,18 @@ test('IMAGE DESIGN + Excel written by the model in code: the workbook OPENS on t
   const wbXml = strFromU8(z['xl/workbook.xml']!);
   expect(wbXml).toContain('name="Synthese"'); // the model's own sheets are kept, after the reproduction
   // The reproduction is a NATIVE dashboard: the image's cards as shapes and its charts as editable Excel charts.
-  const dr = strFromU8(z['xl/drawings/drawing-dash.xml']!);
+  const dr = strFromU8(z['xl/drawings/drawing-live-dash.xml']!);
   expect(dr).toContain('<xdr:sp ');
-  expect(wbXml).toMatch(/<sheets><sheet name="Tableau de bord"[^>]*\/><sheet name="Tableau de bord \(image\)"/);
+  expect(wbXml).not.toContain('Tableau de bord (image)'); // no fixed picture any more
+  // Drop-down filters drive every figure (this design has no KPI tile: only charts).
+  expect(strFromU8(z['xl/worksheets/sheet-live-dash.xml']!)).toContain('<dataValidation type="list"');
   // Valid XML: the r: prefix of the inserted sheets is declared on the root (openpyxl declares it per <sheet> only).
   expect(wbXml).toMatch(/^(<\?xml[^>]*>\s*)?<workbook[^>]*xmlns:r=/);
   expect((dr.match(/<c:chart /g) ?? []).length).toBeGreaterThanOrEqual(5);
   // Its figures come from the « Provisions » detail table — never from the summary sheet nor from a TOTAL row.
-  const data = strFromU8(z['xl/worksheets/sheet-dash-data.xml']!);
+  const data = strFromU8(z['xl/worksheets/sheet-live-data.xml']!);
   expect(data).toContain('ALPHA SA');
+  expect(data).toContain('SUMPRODUCT(');
   expect(data).not.toMatch(/>TOTAL<|Sous-total/);
   // The model is told what was done.
   expect(JSON.stringify(mock.requests.at(-1)!.messages)).toContain('Tableau de bord');
