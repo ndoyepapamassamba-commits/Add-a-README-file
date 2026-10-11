@@ -13,7 +13,8 @@ import { decodeLogo, isLogoFile, logoPalette, renderLogo, type DecodedLogo } fro
 import { useStore } from '../lib/store';
 import { filesFor, importBrowserFile, sessionAllow, writeChatBytes } from '../lib/vfs';
 import type { DesignChoice } from '../lib/types';
-import { cloneDesign, FIDELITY_TARGET, KIND_LABEL as PANEL_LABEL, measureFidelity, previewData, refineClone, type ClonedDesign, type RefineResult } from '../lib/designClone';
+import { rankByScore, scoreTone } from '../../server/services/cloneFix';
+import { cloneDesign, prescoreDesign, FIDELITY_TARGET, KIND_LABEL as PANEL_LABEL, measureFidelity, previewData, refineClone, type ClonedDesign, type RefineResult } from '../lib/designClone';
 import { renderCloneSvg } from '../../server/services/dashRender';
 import { PANEL_KINDS, type PanelKind } from '../../server/services/dashClone';
 import { generatedModels, MODEL_FORMATS, modelById, modelSpec, modelsFor, modelThumbnail, type ModelFormat } from '../../server/services/designModels';
@@ -84,6 +85,30 @@ function DesignCardOpen({ item }: { item: CardItem }) {
   const [refine, setRefine] = useState<RefineResult | null>(null);
   const [acceptLow, setAcceptLow] = useState(false);
   const preview = useMemo(() => previewData(sid), [sid]);
+  // PRE-SCORE of every gallery image (pixels only, no model call): the images the controller brings to ≥ 95 % first.
+  const [scores, setScores] = useState<Record<string, number | null>>({});
+  const [only95, setOnly95] = useState(false);
+  useEffect(() => {
+    if (!web?.length) return;
+    let stop = false;
+    const todo = web.map((w) => w.url).filter((u) => !(u in scores)).slice(0, 18);
+    void (async () => {
+      for (const u of todo) {
+        if (stop) return;
+        const s = await prescoreDesign(u, preview.data);
+        if (!stop) setScores((x) => ({ ...x, [u]: s }));
+      }
+    })();
+    return () => {
+      stop = true;
+    };
+  }, [web]);
+  const ranked = useMemo(() => {
+    const r = rankByScore(web ?? [], scores);
+    return only95 ? r.filter((w) => (scores[w.url] ?? 0) >= FIDELITY_TARGET) : r;
+  }, [web, scores, only95]);
+  const n95 = (web ?? []).filter((w) => (scores[w.url] ?? 0) >= FIDELITY_TARGET).length;
+  const scored = (web ?? []).filter((w) => w.url in scores).length;
   const cloneSvg = useMemo(() => (clone ? renderCloneSvg(clone.spec, preview.data, clone.width) : ''), [clone, preview]);
   useEffect(() => {
     if (!clone) return setFidelity(null);
@@ -385,12 +410,31 @@ function DesignCardOpen({ item }: { item: CardItem }) {
             <div className="mb-1 text-[12px] text-muted">
               {web.length} design(s) trouvé(s) sur Internet — cliquez sur une image pour la reproduire (mise en page, couleurs et police lues par un modèle vision) :
             </div>
+            <div className="mb-1 flex flex-wrap items-center gap-2 text-[11.5px]" data-testid="design-prescore">
+              <span>
+                Contrôleur : {scored}/{Math.min(web.length, 18)} image(s) pré-notée(s) sur les pixels, corrections appliquées (espaces vides, couleurs, graphiques) —{' '}
+                <b className={n95 ? 'text-ok' : 'text-muted'}>{n95} à ≥ {FIDELITY_TARGET} %</b>, proposée(s) en premier
+              </span>
+              <label className="flex items-center gap-1">
+                <input type="checkbox" checked={only95} onChange={(e) => setOnly95(e.target.checked)} data-testid="design-only95" />
+                seulement ≥ {FIDELITY_TARGET} %
+              </label>
+            </div>
             <div className="grid max-h-[420px] grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4 lg:grid-cols-6" data-testid="design-web-gallery">
-              {web.map((w) => (
-                <button key={w.url} type="button" onClick={() => void pickWeb(w.url)} className={`overflow-hidden rounded-lg border ${webSel === w.url ? 'border-accent ring-2 ring-accent/40' : 'border-line'}`} title={w.description}>
-                  <img src={w.url} alt={w.description || 'design'} loading="lazy" referrerPolicy="no-referrer" className="h-20 w-full object-cover" onError={(e) => ((e.currentTarget.parentElement as HTMLElement).style.display = 'none')} />
-                </button>
-              ))}
+              {ranked.map((w) => {
+                const sc = scores[w.url];
+                const tone = scoreTone(sc, FIDELITY_TARGET);
+                return (
+                  <button key={w.url} type="button" onClick={() => void pickWeb(w.url)} className={`relative overflow-hidden rounded-lg border ${webSel === w.url ? 'border-accent ring-2 ring-accent/40' : 'border-line'}`} title={w.description} data-score={sc ?? ''}>
+                    <img src={w.url} alt={w.description || 'design'} loading="lazy" referrerPolicy="no-referrer" className="h-20 w-full object-cover" onError={(e) => ((e.currentTarget.parentElement as HTMLElement).style.display = 'none')} />
+                    {tone !== 'none' && (
+                      <span className={`absolute right-1 top-1 rounded px-1 text-[10px] font-semibold text-white ${tone === 'ok' ? 'bg-ok' : 'bg-warn'}`} title="pré-score du contrôleur (pixels, corrections appliquées)">
+                        {sc} %
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
               {!web.length && <div className="text-[12px] text-muted">Aucune image trouvée.</div>}
             </div>
             <button type="button" className="mt-1 text-[12px] text-accent disabled:opacity-50" disabled={Boolean(busy)} onClick={() => void loadWeb({ more: true })} data-testid="design-web-more">

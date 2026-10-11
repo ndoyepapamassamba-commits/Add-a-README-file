@@ -7,7 +7,7 @@ import { cloneData, renderCloneSvg, type CloneData } from '../../server/services
 import { DataCore, isDataFile } from '../../server/services/dataCore';
 import { pickTable, type SheetTable } from '../../server/services/tablePick';
 import { askVision, imageBlob } from './designWeb';
-import { useStore } from './store';
+import { colorPatches, emptyZones, panelFor, ZONE_KINDS } from '../../server/services/cloneFix';
 import { bytesOf, filesFor, sessionAllow } from './vfs';
 
 export interface ClonedDesign {
@@ -105,7 +105,8 @@ function bgDataUrl(bg: Uint8ClampedArray, w: number, h: number): string {
   return c.toDataURL('image/jpeg', 0.92);
 }
 
-export async function cloneDesign(url: string, onStep: (s: string) => void = () => {}): Promise<ClonedDesign> {
+export async function cloneDesign(url: string, onStep: (s: string) => void = () => {}, o: { vision?: boolean } = {}): Promise<ClonedDesign> {
+  const vision = o.vision !== false;
   onStep('mesure de l’image (cadre, panneaux, couleurs)…');
   const { px, w, h, dataUrl } = await loadPixels(url);
   let det = detectLayout(px, w, h);
@@ -125,8 +126,9 @@ export async function cloneDesign(url: string, onStep: (s: string) => void = () 
   let visionColors: (string[] | undefined)[] = [];
   // 1. The strongest box-locating vision model of the catalogue cuts the panels out on EVERY image (kinds, colours);
   //    the pixels then refine each edge. Without any vision model, the pixel segmentation alone.
-  try {
-    onStep('lecture de la mise en page par le meilleur modèle vision du catalogue…');
+  if (vision)
+    try {
+      onStep('lecture de la mise en page par le meilleur modèle vision du catalogue…');
     const r = await askVision(BOXES_PROMPT, await gridded(dataUrl, w, h), 2000, 'design');
     const vb = parseBoxes(r.content);
     if (vb && vb.panels.length >= 2) {
@@ -140,7 +142,7 @@ export async function cloneDesign(url: string, onStep: (s: string) => void = () 
     /* keep the pixel segmentation */
   }
   if (!det.panels.length) throw new Error('Aucun panneau n’a pu être isolé dans cette image : choisissez un tableau de bord plus net.');
-  if (!som) {
+  if (!som && vision) {
     try {
       onStep(`identification des ${det.panels.length} panneaux par le modèle vision…`);
       const r = await askVision(SOM_PROMPT(det.panels.length), await annotate(dataUrl, w, h, det.panels), 700, 'design');
@@ -206,7 +208,7 @@ export async function measureFidelity(c: ClonedDesign, data: CloneData): Promise
 /** The DETAIL table of a data file: for a workbook, the sheet that is a real table (not a summary), TOTAL rows out. */
 export function chatTable(path: string, bytes: Uint8Array): SheetTable | null {
   const dc = new DataCore();
-  let names: string[] = [];
+  let names: string[];
   try {
     names = /\.xlsx?$|\.xlsm$|\.ods$/i.test(path) ? dc.sheetNamesOf(path, bytes) : [];
   } catch {
@@ -293,10 +295,43 @@ export async function refineClone(c: ClonedDesign, data: CloneData, onStep: (s: 
   let spec: DashSpec = JSON.parse(JSON.stringify(c.spec)) as DashSpec;
   let cur = await render(spec);
   const before = fidelityScore(src, cur, W, H, spec.page);
-  let fid = before;
   const changes: string[] = [];
   const verified = new Set<number>();
-  for (let round = 0; round < 2 && fid < target; round++) {
+  // 1. COULEURS NON REMPLIES: a chart drawn without its series colours gets the colours measured in its box.
+  for (const cp of colorPatches(src, W, H, spec)) {
+    const box = spec.panels[cp.i]!.box;
+    const f = regionFidelity(src, cur, W, H, box);
+    const trial: DashSpec = { ...spec, panels: spec.panels.map((p, k) => (k === cp.i ? { ...p, ...cp.patch } : p)) };
+    const px = await render(trial);
+    const f2 = regionFidelity(src, px, W, H, box);
+    if (f2 >= f) {
+      spec = trial;
+      cur = px;
+      changes.push(`${cp.note} (${f} → ${f2} %)`);
+    }
+  }
+  // 2. ESPACES NON REMPLIS: content in the image, flat area in the reproduction, outside every panel → a new panel in
+  //    the shape the pixels prefer (kept only when the zone really gets closer to the image).
+  for (const zone of emptyZones(src, cur, W, H, spec).slice(0, 4)) {
+    const f = regionFidelity(src, cur, W, H, zone);
+    onStep(`contrôle de reproduction : espace vide ${Math.round(zone.x * 100)},${Math.round(zone.y * 100)} (${f} %)…`);
+    let best = { f, panel: null as DashSpec['panels'][number] | null, px: cur };
+    for (const kind of ZONE_KINDS) {
+      const panel = panelFor(src, W, H, zone, kind);
+      const px = await render({ ...spec, panels: [...spec.panels, panel] });
+      const f2 = regionFidelity(src, px, W, H, zone);
+      if (f2 > best.f + 2) best = { f: f2, panel, px };
+    }
+    if (best.panel) {
+      spec = { ...spec, panels: [...spec.panels, best.panel] };
+      cur = best.px;
+      verified.add(spec.panels.length - 1);
+      changes.push(`espace vide comblé : ${KIND_LABEL[best.panel.kind]} (${f} → ${best.f} %)`);
+    }
+  }
+  let fid = fidelityScore(src, cur, W, H, spec.page);
+  // 3. GRAPHIQUES: each panel far from its pixels is re-read in its other plausible forms.
+  for (let round = 0; round < 3 && fid < target; round++) {
     const worst = spec.panels
       .map((p, i) => ({ i, f: regionFidelity(src, cur, W, H, p.box) }))
       .filter((x) => x.f < 92 && panelCandidates(spec.panels[x.i]!).length)
@@ -353,5 +388,19 @@ export async function refineClone(c: ClonedDesign, data: CloneData, onStep: (s: 
     { id: 'data', label: 'Données logées', ok: withData > 0, note: `${withData} panneau(x) recevant vos données (indicateurs, graphiques, tableau, filtres) — aucun chiffre inventé` },
     { id: 'logo', label: 'Emplacement du logo', ok: logoFree, note: logoFree ? 'réservé à droite du bandeau de titre, sans chevauchement' : 'aucune zone libre en tête : logo en haut à droite de la page' },
   ];
-  return { spec, fidelity: design, before: fidelityScore(src, await render(c.spec), W, H, c.spec.page), resemblance, changes, checklist };
+  return { spec, fidelity: design, before, resemblance, changes, checklist };
+}
+
+/**
+ * PRE-SCORE of a gallery image (no model call, pixels only): measured, corrected by the controller, design fidelity.
+ * The score after the vision model labels the panels can differ — it is shown as « pré-score ».
+ */
+export async function prescoreDesign(url: string, data: CloneData): Promise<number | null> {
+  try {
+    const c = await cloneDesign(url, () => {}, { vision: false });
+    if (c.spec.panels.length < 2) return null;
+    return (await refineClone(c, data)).fidelity;
+  } catch {
+    return null;
+  }
 }

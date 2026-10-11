@@ -532,6 +532,11 @@ test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, fram
   await send(page, 'Fais un classeur Excel analysé des ventes');
   await expect(page.getByTestId('design-card')).toBeVisible({ timeout: 20_000 });
   await page.getByTestId('design-web').click();
+  // The controller pre-scores the gallery on the pixels (no model call) and shows the score on the thumbnail.
+  await expect(page.getByTestId('design-prescore')).toBeVisible();
+  await expect(page.getByTestId('design-web-gallery').locator('button').first()).toHaveAttribute('data-score', /^\d+$/, { timeout: 60_000 });
+  const pre = Number(await page.getByTestId('design-web-gallery').locator('button').first().getAttribute('data-score'));
+  expect(pre).toBeGreaterThan(0);
   await page.getByTestId('design-web-gallery').locator('button').first().click();
   await expect(page.getByTestId('design-clone')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId('design-clone-panels').locator('select')).toHaveCount(7);
@@ -544,6 +549,7 @@ test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, fram
   fs.copyFileSync(test.info().outputPath('clone-card.png'), '/tmp/claude-0/clone/e2e-card.png');
   // Below the 95 % design target the user must accept explicitly (the controller never lets it pass silently).
   await expect(page.getByTestId('design-checklist')).toBeVisible({ timeout: 30_000 });
+  console.log(`[clone] pré-score ${pre} % · contrôle : ${await page.getByTestId('design-checklist').locator('div').first().textContent()}`);
   if (await page.getByTestId('design-accept-low').isVisible()) await page.getByTestId('design-accept-low').locator('input').check();
   await page.getByTestId('design-go').click();
   await expect(page.getByTestId('design-card-done')).toContainText('Reproduction fidèle');
