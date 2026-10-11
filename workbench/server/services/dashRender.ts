@@ -6,6 +6,7 @@
  */
 import type { DashSpec, Panel } from './dashClone';
 import { rankMeasures, withoutTotals } from './tablePick';
+import { chartDims, filterDims, human, isRate, profileColumns, viewTitle } from './dashInsight';
 
 export interface DataView {
   title: string;
@@ -14,6 +15,8 @@ export interface DataView {
   valueName: string;
   /** Natural order (dates): keep it, do not sort by value. */
   ordered: boolean;
+  /** The measured highlight (« top 3 = 64 % du total », « +12 % sur la période »), shown next to the title. */
+  insight?: string;
   /** Where the figures come from (live Excel formulas): grouped by a text column or by month of a date column. */
   src?: { by?: string; month?: string; measure: string | null; keys?: string[] };
 }
@@ -24,6 +27,8 @@ export interface CloneData {
   kpis: { label: string; value: string; src?: { fn: 'count' | 'sum' | 'avg' | 'max'; col?: string } }[];
   views: DataView[];
   table: { columns: string[]; rows: (string | number)[][] };
+  /** SEGMENTS (slicers): the axes worth cutting the data by, chosen by the analysis — period first. */
+  filters?: { col: string; label: string; values: string[] }[];
   /** The rows behind every figure (TOTAL rows removed), for a workbook that recomputes them. */
   source?: { columns: string[]; rows: Record<string, unknown>[]; numCols: string[]; textCols: string[]; dateCol?: string };
 }
@@ -36,6 +41,7 @@ const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'aoû
 export const asDate = (v: unknown): Date | null => {
   if (v instanceof Date) return v;
   if (typeof v === 'number' && v > 20000 && v < 80000) return new Date(Math.round((v - 25569) * 86400000)); // Excel serial
+  if (typeof v === 'string' && /^\d{4}-\d{2}$/.test(v)) return new Date(+v.slice(0, 4), +v.slice(5) - 1, 1);
   if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(v)) {
     const m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(v);
     const d = m ? new Date(+m[3]! < 100 ? 2000 + +m[3]! : +m[3]!, +m[2]! - 1, +m[1]!) : new Date(v);
@@ -44,79 +50,196 @@ export const asDate = (v: unknown): Date | null => {
   return null;
 };
 
-/** Every view of the data a dashboard can show — exact figures from the rows. */
-export function cloneData(title: string, columns: string[], allRows: Record<string, unknown>[]): CloneData {
-  const rows = withoutTotals(allRows);
+/** Nice round thresholds (1-2-5 × 10^k) for the amount bands. */
+const nice = (x: number) => {
+  const k = 10 ** Math.floor(Math.log10(Math.max(1, x)));
+  const m = x / k;
+  return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * k;
+};
+const sameValues = (rows: Record<string, unknown>[], a: string, b: string) => {
+  const s = rows.slice(0, 500);
+  return s.filter((r) => String(r[a] ?? '') === String(r[b] ?? '')).length >= s.length * 0.98;
+};
+/** Two text columns that cut the rows the same way (« Relationship » / « GRelationship »): one is enough. */
+const samePartition = (rows: Record<string, unknown>[], a: string, b: string) => {
+  // Both ways (a one-to-one mapping): a client → its rate is a function, but the rate does not name the client.
+  const oneWay = (x: string, y: string) => {
+    const m = new Map<string, string>();
+    let clash = 0;
+    const part = rows.slice(0, 2000);
+    for (const r of part) {
+      const k = String(r[x] ?? '');
+      const v = String(r[y] ?? '');
+      const was = m.get(k);
+      if (was === undefined) m.set(k, v);
+      else if (was !== v) clash++;
+    }
+    return clash <= part.length * 0.02;
+  };
+  return oneWay(a, b) && oneWay(b, a);
+};
+
+/**
+ * Every view of the data a dashboard can show — exact figures from the rows, CHOSEN BY AN ANALYSIS (dashInsight): the
+ * columns that explain the amounts, never codes / currencies / flags; duplicate columns merged; a Top-N ranking for
+ * the names (clients, counterparties); segments = period + amount bands + the best readable axes; clear titles.
+ */
+export function cloneData(title: string, columns0: string[], allRows: Record<string, unknown>[]): CloneData {
+  const rows0 = withoutTotals(allRows);
+  const sample0 = rows0.slice(0, 300);
+  const dateCols = columns0.filter((c) => sample0.filter((r) => asDate(r[c])).length >= sample0.length * 0.6 && !/^(id|n°|num)/i.test(c));
+  // Real measures only (amounts first): a customer number or a stage is never summed; a copy of a measure is dropped.
+  const numericCols = columns0.filter((c) => !dateCols.includes(c) && sample0.filter((r) => isNum(r[c])).length >= sample0.length * 0.6);
+  const numCols = rankMeasures(numericCols, rows0).filter((c, i, all) => !all.slice(0, i).some((o) => sameValues(rows0, o, c)));
+  const m1 = numCols[0] ?? null;
+  // DERIVED SEGMENTS (computed, never invented): the year of the date, the amount band of the main measure.
+  const derived: string[] = [];
+  let rows = rows0;
+  const YEAR = 'Année';
+  const BAND = m1 ? 'Tranche de montant' : '';
+  const years = dateCols[0] ? new Set(rows0.map((r) => asDate(r[dateCols[0]!])?.getFullYear()).filter(Boolean)) : new Set();
+  const bandOf = (() => {
+    if (!m1) return null;
+    const v = rows0.map((r) => r[m1]).filter(isNum).map(Math.abs).filter((x) => x > 0).sort((a, b) => a - b);
+    if (v.length < 20) return null;
+    const cuts = [...new Set([0.5, 0.8, 0.95].map((q) => nice(v[Math.floor(q * (v.length - 1))]!)))].sort((a, b) => a - b);
+    if (cuts.length < 2) return null;
+    const labels = [`< ${fmt(cuts[0]!)}`, ...cuts.slice(1).map((c, i) => `${fmt(cuts[i]!)} – ${fmt(c)}`), `≥ ${fmt(cuts[cuts.length - 1]!)}`];
+    return { labels, of: (x: unknown) => (isNum(x) ? labels[cuts.filter((c) => Math.abs(x) >= c).length]! : null) };
+  })();
+  // The last 5 years one by one, the older ones together (a segment of 16 years is unreadable).
+  const lastYears = [...years].map(Number).sort((a, b) => a - b).slice(-5);
+  const oldest = lastYears[0] ?? 0;
+  const yearOf = (v: unknown) => {
+    const y = asDate(v)?.getFullYear();
+    return y === undefined ? '' : years.size > 5 && y < oldest ? `≤ ${oldest - 1}` : String(y);
+  };
+  if ((years.size >= 2 && !columns0.includes(YEAR)) || bandOf) {
+    rows = rows0.map((r) => {
+      const o = { ...r };
+      if (years.size >= 2 && !columns0.includes(YEAR)) o[YEAR] = yearOf(r[dateCols[0]!]);
+      if (bandOf) o[BAND] = bandOf.of(r[m1!]) ?? '';
+      return o;
+    });
+    if (years.size >= 2 && !columns0.includes(YEAR)) derived.push(YEAR);
+    if (bandOf) derived.push(BAND);
+  }
+  const columns = [...columns0, ...derived];
   const sample = rows.slice(0, 300);
-  const dateCols = columns.filter((c) => sample.filter((r) => asDate(r[c])).length >= sample.length * 0.6 && !/^(id|n°|num)/i.test(c));
-  // Real measures only (amounts first): a customer number or a stage is never summed.
-  const numericCols = columns.filter((c) => !dateCols.includes(c) && sample.filter((r) => isNum(r[c])).length >= sample.length * 0.6);
-  const numCols = rankMeasures(numericCols, rows);
   // Categories are labels: a numeric column (months of age, a stage, a customer number) is never a category.
-  // Categories people read (segment, band, agency…) before identifiers and names.
   const IDLIKE = /customer|compte|account|contrat|contract|r[ée]f|\bid\b|code|matricule|num[ée]ro/i;
-  const textCols = columns
-    .filter((c) => !numericCols.includes(c) && !dateCols.includes(c))
-    .filter((c) => {
-      const distinct = new Set(sample.map((r) => String(r[c] ?? ''))).size;
-      return distinct >= 2 && distinct <= Math.max(40, sample.length * 0.5);
-    })
-    .sort((a, b) => (IDLIKE.test(a) ? 1 : 0) - (IDLIKE.test(b) ? 1 : 0));
-  const kpis: CloneData['kpis'] = [{ label: 'Lignes', value: fmt(rows.length), src: { fn: 'count' } }];
-  for (const c of numCols.slice(0, 4)) {
+  // A number with a handful of values that is not an amount (a provisioning rate 25 / 50 / 100 %, a stage) is an axis.
+  const catNums = numericCols.filter((c) => (isRate(c) || !numCols.includes(c)) && !IDLIKE.test(c) && (() => {
+    const k = new Set(rows.map((r) => r[c]).filter(isNum)).size;
+    return k >= 2 && k <= 8;
+  })());
+  const textAll = columns.filter((c) => (!numericCols.includes(c) || catNums.includes(c)) && !dateCols.includes(c) && new Set(sample.map((r) => String(r[c] ?? ''))).size >= 2);
+  // One column per way of cutting the rows (the copies of a relationship column go).
+  // When two columns are copies, the one people read stays (« ALPHA SA » rather than « C1000 »).
+  const wordy = (c: string) => (IDLIKE.test(c) ? 0 : 1) + sample.filter((r) => /\p{L}{3,}/u.test(String(r[c] ?? ''))).length / Math.max(1, sample.length);
+  const byReadable = [...textAll].sort((a, b) => wordy(b) - wordy(a));
+  const textCols0 = textAll.filter((c) => !byReadable.slice(0, byReadable.indexOf(c)).some((o) => samePartition(rows, o, c)));
+  const profile = profileColumns(rows, textCols0, m1);
+  const dims = chartDims(profile).filter((c) => !derived.includes(c) || c === YEAR);
+  // Names (clients, counterparties): too many for a chart axis, perfect for a Top-N ranking.
+  const names = profile.filter((x) => x.distinct > 40 && x.readable >= 0.5 && !IDLIKE.test(x.col) && !x.reasons.some((r) => /codes|devise|drapeau/.test(r))).map((x) => x.col);
+  const textCols = [...dims, ...names, ...textCols0.filter((c) => !dims.includes(c) && !names.includes(c))];
+
+  const kpis: CloneData['kpis'] = [];
+  for (const c of numCols.slice(0, 3)) {
     const v = rows.map((r) => r[c]).filter(isNum);
+    if (!v.length) continue;
     const sum = v.reduce((a, b) => a + b, 0);
-    kpis.push({ label: /^total\b/i.test(c) ? c : `Total ${c}`, value: fmt(sum), src: { fn: 'sum', col: c } });
-    kpis.push({ label: `Moyenne ${c}`, value: fmt(sum / Math.max(1, v.length)), src: { fn: 'avg', col: c } });
-    kpis.push({ label: `Max ${c}`, value: fmt(Math.max(...v)), src: { fn: 'max', col: c } });
+    const h = human(c, 30);
+    if (isRate(c)) kpis.push({ label: `Moyenne — ${lcFirst(h)}`, value: fmt(sum / v.length), src: { fn: 'avg', col: c } });
+    else kpis.push({ label: /^total\b/i.test(h) ? h : `Total ${lcFirst(h)}`, value: fmt(sum), src: { fn: 'sum', col: c } });
+  }
+  kpis.push({ label: names[0] ? `Lignes (${lcFirst(human(names[0], 18))})` : 'Nombre de lignes', value: fmt(rows.length), src: { fn: 'count' } });
+  if (m1 && !isRate(m1)) {
+    const v = rows.map((r) => r[m1]).filter(isNum);
+    kpis.push({ label: `Moyenne — ${lcFirst(human(m1, 24))}`, value: fmt(v.reduce((a, b) => a + b, 0) / Math.max(1, v.length)), src: { fn: 'avg', col: m1 } });
+    kpis.push({ label: `Plus grand — ${lcFirst(human(m1, 22))}`, value: fmt(Math.max(...v)), src: { fn: 'max', col: m1 } });
   }
   const views: DataView[] = [];
   const group = (key: (r: Record<string, unknown>) => string | null, num: string | null) => {
     const m = new Map<string, number>();
     for (const r of rows) {
       const k = key(r);
-      if (k === null) continue;
+      if (k === null || k === '') continue;
       m.set(k, (m.get(k) ?? 0) + (num ? (isNum(r[num]) ? (r[num] as number) : 0) : 1));
     }
     return m;
   };
+  const measures = numCols.filter((c) => !isRate(c)).slice(0, 2);
   // Trends by month first (they feed line / area panels).
   for (const d of dateCols.slice(0, 1))
-    for (const n of numCols.slice(0, 2)) {
+    for (const n of measures) {
       const m = group((r) => {
         const x = asDate(r[d]);
         return x ? `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}` : null;
       }, n);
-      const keys = [...m.keys()].sort();
-      if (keys.length >= 2)
-        views.push({ title: `${n} par mois`, categories: keys.map((k) => `${MONTHS[+k.slice(5) - 1]} ${k.slice(2, 4)}`), values: keys.map((k) => m.get(k)!), valueName: n, ordered: true, src: { month: d, measure: n, keys } });
+      // The recent window (24 months): a 15-year history drawn month by month is unreadable and its « change » absurd.
+      const keys = [...m.keys()].sort().slice(-24);
+      if (keys.length >= 2) {
+        const values = keys.map((k) => m.get(k)!);
+        const t = viewTitle({ measure: n, month: true, categories: keys, values });
+        views.push({ title: t.title, insight: t.insight, categories: keys.map((k) => `${MONTHS[+k.slice(5) - 1]} ${k.slice(2, 4)}`), values, valueName: human(n, 24), ordered: true, src: { month: d, measure: n, keys } });
+      }
     }
-  for (const t of textCols.slice(0, 3)) {
-    for (const n of numCols.slice(0, 2)) {
-      const m = group((r) => String(r[t] ?? '—'), n);
-      const top = [...m].sort((a, b) => b[1] - a[1]);
-      views.push({ title: `${n} par ${t}`, categories: top.map(([k]) => k), values: top.map(([, v]) => v), valueName: n, ordered: false, src: { by: t, measure: n } });
+  const byView = (t: string, n: string | null) => {
+    const m = group((r) => String(r[t] ?? '—'), n);
+    // Years and amount bands keep their natural order (the last 8 years); everything else is ranked by value.
+    const natural = t === YEAR || t === BAND;
+    const yearKey = (k: string) => (k.startsWith('≤') ? -1 : Number(k));
+    const top = natural ? [...m].sort((a, b) => (t === BAND && bandOf ? bandOf.labels.indexOf(a[0]) - bandOf.labels.indexOf(b[0]) : yearKey(a[0]) - yearKey(b[0]))) : [...m].sort((a, b) => b[1] - a[1]);
+    const categories = top.map(([k]) => k);
+    const values = top.map(([, v]) => v);
+    const tt = t === BAND ? { title: 'Nombre de lignes par tranche de montant', insight: '' } : viewTitle({ measure: n, by: t, categories, values });
+    if (t === YEAR) {
+      const a = values[values.length - 2] ?? 0;
+      const b = values[values.length - 1] ?? 0;
+      tt.title = `${n ? human(n, 22) : 'Nombre'} par année`;
+      tt.insight = a ? `${categories[categories.length - 1]} : ${b >= a ? '+' : ''}${Math.round(((b - a) / Math.abs(a)) * 100)} % vs ${categories[categories.length - 2]}` : '';
     }
-    if (!numCols.length) {
-      const m = group((r) => String(r[t] ?? '—'), null);
-      const top = [...m].sort((a, b) => b[1] - a[1]);
-      views.push({ title: `Nombre par ${t}`, categories: top.map(([k]) => k), values: top.map(([, v]) => v), valueName: 'Nombre', ordered: false, src: { by: t, measure: null } });
+    if (t === BAND) {
+      const tot = values.reduce((a, b) => a + b, 0);
+      const big = values[values.length - 1] ?? 0;
+      tt.insight = tot ? `${Math.round((big / tot) * 100)} % des lignes ${categories[categories.length - 1]}` : '';
+    }
+    views.push({ title: tt.title, insight: tt.insight, categories, values, valueName: n ? human(n, 24) : 'Nombre', ordered: false, src: { by: t, measure: n } });
+  };
+  // The ranking of the names (Top 10 counterparties…) — the most read chart of a risk / sales dashboard.
+  if (names[0]) {
+    const before = views.length;
+    byView(names[0], m1);
+    const v = views[before];
+    if (v) {
+      const total = v.values.reduce((a, b) => a + b, 0);
+      const top10 = v.values.slice(0, 10).reduce((a, b) => a + b, 0);
+      v.title = `Classement — ${lcFirst(human(names[0], 20))}`;
+      v.insight = total ? `top 10 = ${Math.round((top10 / total) * 100)} % du total` : '';
     }
   }
+  for (const t of dims.slice(0, 3)) for (const n of measures.length ? measures : [null]) byView(t, n);
+  if (bandOf && m1) byView(BAND, null);
   if (!views.length && numCols.length) {
     const n = numCols[0]!;
-    views.push({ title: n, categories: rows.slice(0, 12).map((_, i) => `#${i + 1}`), values: rows.slice(0, 12).map((r) => (isNum(r[n]) ? (r[n] as number) : 0)), valueName: n, ordered: true });
+    views.push({ title: human(n), categories: rows.slice(0, 12).map((_, i) => `#${i + 1}`), values: rows.slice(0, 12).map((r) => (isNum(r[n]) ? (r[n] as number) : 0)), valueName: human(n, 24), ordered: true });
   }
+  // SEGMENTS: the period, then the axes worth cutting by (readable, explanatory), then the amount bands.
+  const segCols = [...(derived.includes(YEAR) ? [YEAR] : []), ...filterDims(profile.filter((x) => x.col !== YEAR && x.col !== BAND), 2), ...(bandOf ? [BAND] : [])].slice(0, 3);
+  const filters = segCols.map((c) => ({ col: c, label: c === YEAR || c === BAND ? c : human(c, 24), values: c === BAND && bandOf ? bandOf.labels : [...new Set(rows.map((r) => String(r[c] ?? '')).filter(Boolean))].sort((a, b) => (a.startsWith('≤') ? -1 : b.startsWith('≤') ? 1 : a.localeCompare(b, 'fr', { numeric: true }))) }));
   // Detail table: who (a name, not a code) and the amounts, biggest first.
   const NAME = /client|nom|name|soci[ée]t[ée]|raison|libell|relation|d[ée]biteur|agence|produit|tiers|partenaire/i;
   const CODEY = /code|^id\b|n°|r[ée]f|num[ée]ro|matricule|contrat|compte/i;
-  const labelCols = columns
-    .filter((c) => !numericCols.includes(c) && !dateCols.includes(c) && sample.some((r) => typeof r[c] === 'string' && /\p{L}{2,}/u.test(r[c] as string)))
+  const noisy = new Set(profile.filter((x) => x.reasons.some((r) => /codes|devise|drapeau/.test(r))).map((x) => x.col));
+  const labelCols = [...names, ...columns.filter((c) => !names.includes(c) && !noisy.has(c) && !derived.includes(c) && !numericCols.includes(c) && !dateCols.includes(c) && textCols0.includes(c) && sample.some((r) => typeof r[c] === 'string' && /\p{L}{2,}/u.test(r[c] as string)))]
     .sort((a, b) => (NAME.test(b) ? 2 : 0) - (CODEY.test(b) ? 1 : 0) - ((NAME.test(a) ? 2 : 0) - (CODEY.test(a) ? 1 : 0)));
   const tcols = labelCols.length || numCols.length ? [...labelCols.slice(0, 2), ...numCols.slice(0, 3)] : columns.slice(0, 5);
-  const ranked = numCols[0] ? [...rows].sort((a, b) => (isNum(b[numCols[0]!]) ? (b[numCols[0]!] as number) : 0) - (isNum(a[numCols[0]!]) ? (a[numCols[0]!] as number) : 0)) : rows;
-  return { source: { columns, rows, numCols, textCols, dateCol: dateCols[0] }, title, subtitle: `${rows.length.toLocaleString('fr-FR').replace(/[\u202f\u00a0]/g, ' ')} lignes · édité le ${new Date().toLocaleDateString('fr-FR')}`, kpis, views, table: { columns: tcols, rows: ranked.slice(0, 60).map((r) => tcols.map((c) => (isNum(r[c]) ? (r[c] as number) : String(r[c] ?? '')))) } };
+  const ranked = m1 ? [...rows].sort((a, b) => (isNum(b[m1]) ? (b[m1] as number) : 0) - (isNum(a[m1]) ? (a[m1] as number) : 0)) : rows;
+  return { source: { columns, rows, numCols, textCols, dateCol: dateCols[0] }, title, subtitle: `${rows.length.toLocaleString('fr-FR').replace(/[  ]/g, ' ')} lignes · édité le ${new Date().toLocaleDateString('fr-FR')}`, kpis, views, filters, table: { columns: tcols, rows: ranked.slice(0, 60).map((r) => tcols.map((c) => (isNum(r[c]) ? (r[c] as number) : String(r[c] ?? '')))) } };
 }
+const lcFirst = (s: string) => (/^[A-ZÀ-Ý]{2,}/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1));
 
 // ── colour helpers ───────────────────────────────────────────────────────────────────────────────────────────────────
 const rgb = (h: string) => [0, 2, 4].map((i) => parseInt(h.replace('#', '').slice(i, i + 2), 16));
@@ -292,7 +415,7 @@ function tableBlock(r: R, t: CloneData['table'], p: Panel, fs: number): string {
   const zebra = mixH(p.ramp[p.ramp.length - 1] ?? p.fill, p.fill, 0.6);
   let out = `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${rowH}" fill="${head}"/>`;
   const fit = Math.max(4, Math.floor((cw - 10) / (fs * 0.58)));
-  cols.forEach((c, j) => (out += `<text x="${r.x + j * cw + 6}" y="${r.y + rowH * 0.68}" font-size="${fs}" font-weight="700" fill="${lumH(head) < 0.5 ? '#fff' : p.text}">${esc(trunc(c, fit))}</text>`));
+  cols.forEach((c, j) => (out += `<text x="${r.x + j * cw + 6}" y="${r.y + rowH * 0.68}" font-size="${fs}" font-weight="700" fill="${lumH(head) < 0.5 ? '#fff' : p.text}">${esc(trunc(human(c), fit))}</text>`));
   for (let i = 0; i < n; i++) {
     const y = r.y + rowH * (i + 1);
     if (i % 2) out += `<rect x="${r.x}" y="${y}" width="${r.w}" height="${rowH}" fill="${zebra}"/>`;
@@ -302,6 +425,40 @@ function tableBlock(r: R, t: CloneData['table'], p: Panel, fs: number): string {
     });
   }
   return out;
+}
+
+/**
+ * SEGMENT (slicer, as in Excel / Power BI): the axis name, then its values as a list with check boxes — « Tout » ticked
+ * (the dashboard shows every row). Never a row of buttons.
+ */
+export function slicerBlock(r: R, f: NonNullable<CloneData['filters']>[number], p: Panel, fs: number, accent: string): string {
+  const head = fs * 1.15;
+  const rowH = fs * 1.75;
+  let out = `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="${Math.min(8, fs * 0.6)}" fill="${p.fill}" stroke="${mixH(p.text, p.fill, 0.18)}" stroke-width="1"/>`;
+  out += `<text x="${r.x + fs * 0.7}" y="${r.y + head * 1.25}" font-size="${head}" font-weight="700" fill="${p.text}">${esc(trunc(f.label, Math.round(r.w / (head * 0.58)) - 3))}</text>`;
+  // funnel icon (the slicer's « clear filter » corner)
+  const ix = r.x + r.w - fs * 1.6;
+  const iy = r.y + head * 0.45;
+  out += `<path d="M${ix} ${iy} h${fs} l${-fs * 0.38} ${fs * 0.5} v${fs * 0.45} l${-fs * 0.24} ${fs * 0.15} v${-fs * 0.6} z" fill="none" stroke="${mixH(p.text, p.fill, 0.5)}" stroke-width="1"/>`;
+  const items = ['Tout', ...f.values];
+  const n = Math.max(1, Math.min(items.length, Math.floor((r.h - head * 1.9) / rowH)));
+  const box = fs * 0.85;
+  items.slice(0, n).forEach((it, i) => {
+    const y = r.y + head * 1.9 + i * rowH;
+    const on = i === 0;
+    out += `<rect x="${r.x + fs * 0.7}" y="${y + (rowH - box) / 2 - fs * 0.2}" width="${box}" height="${box}" rx="2" fill="${on ? accent : p.fill}" stroke="${on ? accent : mixH(p.text, p.fill, 0.45)}" stroke-width="1"/>`;
+    if (on) out += `<path d="M${r.x + fs * 0.88} ${y + rowH / 2 - fs * 0.2} l${box * 0.28} ${box * 0.28} l${box * 0.45} ${-box * 0.5}" fill="none" stroke="#fff" stroke-width="${Math.max(1, fs * 0.12)}"/>`;
+    out += `<text x="${r.x + fs * 0.7 + box + fs * 0.5}" y="${y + rowH / 2 + fs * 0.15}" font-size="${fs}" font-weight="${on ? 700 : 400}" fill="${p.text}">${esc(trunc(it, Math.round((r.w - box - fs * 2) / (fs * 0.56))))}</text>`;
+  });
+  if (items.length > n) out += `<text x="${r.x + r.w - fs * 0.7}" y="${r.y + r.h - fs * 0.5}" text-anchor="end" font-size="${fs * 0.85}" fill="${mixH(p.text, p.fill, 0.55)}">+${items.length - n} ▾</text>`;
+  return out;
+}
+/** Where each segment of a filter panel goes: stacked in a tall panel, side by side in a wide one. */
+export function slicerBoxes(r: R, n: number, gap: number): R[] {
+  const tall = r.h > r.w;
+  return Array.from({ length: n }, (_, i) =>
+    tall ? { x: r.x, y: r.y + (i * (r.h + gap)) / n, w: r.w, h: r.h / n - gap } : { x: r.x + (i * (r.w + gap)) / n, y: r.y, w: r.w / n - gap, h: r.h },
+  );
 }
 
 /** The full reproduction. `W` = width in px of the SVG coordinate system. */
@@ -347,13 +504,27 @@ export function panelPlan(spec: DashSpec, d: CloneData): { kind: PlanKind; view?
   const trend = d.views.filter((v) => v.ordered);
   const shown = new Set<DataView>();
   const cats = d.views.filter((v) => !v.ordered);
+  // How well a view suits a chart form: a ring for a few parts of a whole, horizontal bars for a ranking, columns or a
+  // line for time — never a ring of years nor a ranking of 2 600 names in a pie.
+  const suit = (kind: PlanKind, v: DataView): number => {
+    const n = v.categories.length;
+    const time = v.ordered || v.src?.by === 'Année';
+    const ranking = !v.ordered && n > 8;
+    if (kind === 'line' || kind === 'area') return v.ordered ? 10 : time ? 6 : 0;
+    if (kind === 'pie' || kind === 'donut') return time || ranking ? 0 : n <= 6 ? 9 : 2;
+    if (kind === 'hbar') return ranking ? 10 : time ? 2 : 6;
+    return time ? 8 : ranking ? 4 : 7; // bar
+  };
+  void cats;
+  void trend;
   return spec.panels.map((p) => {
     const kind = (p.kind === 'map' ? 'hbar' : p.kind === 'gauge' ? 'donut' : p.kind) as PlanKind;
     if (['bar', 'hbar', 'line', 'area', 'pie', 'donut'].includes(kind)) {
-      const pool = (kind === 'line' || kind === 'area') && trend.length ? trend : cats.length ? cats : d.views;
-      // Never the same view twice while another one is still unused (two identical charts read as a bug).
-      const fresh = [...pool, ...d.views].find((v) => !shown.has(v));
-      const view = fresh ?? pool[viewIdx % Math.max(1, pool.length)];
+      // Never the same view twice while another one is still unused (two identical charts read as a bug); the best
+      // suited unused view first.
+      const ranked = [...d.views].sort((a, b) => suit(kind, b) - suit(kind, a));
+      const fresh = ranked.find((v) => !shown.has(v) && suit(kind, v) > 0);
+      const view = fresh ?? ranked[viewIdx % Math.max(1, ranked.length)];
       viewIdx++;
       if (view) shown.add(view);
       return { kind, view };
@@ -420,12 +591,22 @@ export function renderCloneSvg(spec: DashSpec, d: CloneData, W = 1200): string {
     const { kind, view: v } = plan[pi]!;
     // Menus, slicers, button grids: the image's text slots filled with the user's own labels — the dashboard title
     // first, a column of items gets the analysis axes, a grid of buttons gets categories / months.
+    // FILTERS → SEGMENTS (slicers) on the axes the analysis chose; the image's buttons are not copied.
+    if (kind === 'filter' && d.filters?.length) {
+      const fi = plan.slice(0, pi).filter((x) => x.kind === 'filter').length;
+      const per = Math.max(1, Math.ceil(d.filters.length / Math.max(1, plan.filter((x) => x.kind === 'filter').length)));
+      const mine = d.filters.slice(fi * per, fi * per + per);
+      const accent = p.colors[0] ?? spec.palette.primary;
+      const area = { x: r.x + pad * 0.5, y: r.y + pad * 0.5, w: r.w - pad, h: r.h - pad };
+      slicerBoxes(area, mine.length, pad * 0.6).forEach((b, k) => (s += slicerBlock(b, mine[k]!, p, Math.max(7, Math.min(12, fs)), accent)));
+      continue;
+    }
     if (onBg && p.slots?.length && (kind === 'filter' || kind === 'title')) {
       for (const t of slotTexts(p, d, P, r)) s += `<text x="${t.x}" y="${t.y + t.h / 2 + t.size * 0.36}" font-size="${t.size}" font-weight="${t.bold ? 800 : 600}" fill="${t.color}">${esc(t.text)}</text>`;
       continue;
     }
     if (titleH && (v || kind === 'table' || kind === 'text')) {
-      const label = v ? v.title : kind === 'table' ? 'Détail' : 'Points clés';
+      const label = v ? (v.insight ? `${v.title} · ${v.insight}` : v.title) : kind === 'table' ? 'Détail' : 'Points clés';
       if (tb) {
         const tfs = Math.max(8, tb.h * 0.92);
         const tx = p.titleAlign === 'center' ? r.x + r.w / 2 : tb.x;

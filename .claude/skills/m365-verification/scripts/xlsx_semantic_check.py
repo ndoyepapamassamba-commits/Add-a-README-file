@@ -86,7 +86,8 @@ for path in sys.argv[1:]:
                 if p not in names: errs.append(f'{name}: rel target missing {p}')
                 if 'drawings/' in p and p in names:
                     d = z.read(p).decode()
-                    cids = re.findall(r'<xdr:cNvPr id="(\d+)"', d)
+                    # mc:Fallback repeats the id of its mc:Choice (Excel writes it so for slicers): one object, not a duplicate.
+                    cids = re.findall(r'<xdr:cNvPr id="(\d+)"', re.sub(r'<mc:Fallback>.*?</mc:Fallback>', '', d, flags=re.S))
                     if len(cids) != len(set(cids)): errs.append(f'{p}: duplicate cNvPr ids')
                     drp = posixpath.join(posixpath.dirname(p), '_rels', posixpath.basename(p) + '.rels')
                     drel = z.read(drp).decode() if drp in names else ''

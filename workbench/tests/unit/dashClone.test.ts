@@ -97,9 +97,12 @@ describe('dashboard clone — rendering with the real data', () => {
   ];
   const d = cloneData('Ventes 2023', ['date', 'agence', 'montant'], rows);
   it('views come from the rows: grouped sums and a monthly trend; nothing invented', () => {
-    expect(d.views.find((v) => v.title === 'montant par agence')!.values).toEqual([1550, 430]);
-    expect(d.views.find((v) => v.ordered)!.categories).toHaveLength(3);
-    expect(d.kpis[0]).toMatchObject({ label: 'Lignes', value: '3', src: { fn: 'count' } });
+    const v = d.views.find((x) => x.src?.by === 'agence')!;
+    expect(v.values).toEqual([1550, 430]);
+    expect(v.title).toBe('Montant par agence');
+    expect(d.views.find((x) => x.ordered)!.categories).toHaveLength(3);
+    expect(d.kpis[0]).toMatchObject({ label: 'Total montant', value: '1 980', src: { fn: 'sum', col: 'montant' } });
+    expect(d.kpis.find((k) => k.src?.fn === 'count')).toMatchObject({ value: '3' });
   });
   it('the SVG keeps the aspect ratio, the frame, the exact colours and the real figures', () => {
     const svg = renderCloneSvg(spec, d, 1200);

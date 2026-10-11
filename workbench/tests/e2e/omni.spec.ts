@@ -710,16 +710,20 @@ test('IMAGE DESIGN + Excel written by the model in code: the workbook OPENS on t
   const dr = strFromU8(z['xl/drawings/drawing-live-dash.xml']!);
   expect(dr).toContain('<xdr:sp ');
   expect(wbXml).not.toContain('Tableau de bord (image)'); // no fixed picture any more
-  // Drop-down filters drive every figure (this design has no KPI tile: only charts).
-  expect(strFromU8(z['xl/worksheets/sheet-live-dash.xml']!)).toContain('<dataValidation type="list"');
+  // SEGMENTS (native slicers on the rows' table) drive every figure — never drop-down buttons.
+  const dashXml = strFromU8(z['xl/worksheets/sheet-live-dash.xml']!);
+  expect(dashXml).not.toContain('<dataValidation');
+  console.log(`[segments] ${(strFromU8(z['xl/slicers/slicer-live.xml'] ?? new Uint8Array()).match(/caption="[^"]*"/g) ?? []).join(' ')}`);
+  expect(strFromU8(z['xl/worksheets/sheet-live-table.xml']!)).toContain('SUBTOTAL(103,');
   // Valid XML: the r: prefix of the inserted sheets is declared on the root (openpyxl declares it per <sheet> only).
   expect(wbXml).toMatch(/^(<\?xml[^>]*>\s*)?<workbook[^>]*xmlns:r=/);
   expect((dr.match(/<c:chart /g) ?? []).length).toBeGreaterThanOrEqual(5);
   // Its figures come from the « Provisions » detail table — never from the summary sheet nor from a TOTAL row.
   const data = strFromU8(z['xl/worksheets/sheet-live-data.xml']!);
-  expect(data).toContain('ALPHA SA');
+  const rowsSheet = strFromU8(z['xl/worksheets/sheet-live-table.xml']!);
+  expect(rowsSheet).toContain('ALPHA SA');
   expect(data).toContain('SUMPRODUCT(');
-  expect(data).not.toMatch(/>TOTAL<|Sous-total/);
+  expect(rowsSheet + data).not.toMatch(/>TOTAL<|Sous-total/);
   // The model is told what was done.
   expect(JSON.stringify(mock.requests.at(-1)!.messages)).toContain('Tableau de bord');
 });

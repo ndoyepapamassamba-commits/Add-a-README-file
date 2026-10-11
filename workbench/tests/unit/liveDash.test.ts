@@ -18,14 +18,35 @@ describe('LIVE dashboard on the image design: formulas, filters, real cells — 
     expect(Object.keys(z).some((p) => p.startsWith('xl/media/'))).toBe(false);
     const wb = strFromU8(z['xl/workbook.xml']!);
     expect(wb).toMatch(/<sheets><sheet name="Tableau de bord"/);
-    expect(wb).toMatch(/<sheet name="Données du tableau de bord"[^>]*\/><\/sheets>/);
+    expect(wb).toMatch(/<sheet name="Données du tableau de bord"[^>]*\/><sheet name="Données filtrables"[^>]*\/><\/sheets>/);
     expect(wb).toContain('fullCalcOnLoad="1"');
   });
-  it('a filter drop-down on a category (never an identifier), every figure following it', () => {
+  it('SEGMENTS: native Excel slicers on a category (never a client name), every figure following the visible rows', () => {
     expect(r.filters[0]).toBe('Segment');
-    expect(dash).toContain('<dataValidation type="list"');
-    expect(data).toContain('(Tous)');
-    expect(data).toMatch(/SUMPRODUCT\(/);
+    expect(dash).not.toContain('<dataValidation');
+    // the rows are an Excel table; « Visible » = SUBTOTAL(103) of a never-empty cell
+    const table = strFromU8(z['xl/tables/table-live.xml']!);
+    expect(table).toMatch(/<table [^>]*name="DonneesTableauDeBord"[^>]*><autoFilter ref="A1:[A-Z]+49"\/>/);
+    expect(table).toContain('<tableColumn id="1" name="N°"/>');
+    const tsheet = strFromU8(z['xl/worksheets/sheet-live-table.xml']!);
+    expect(tsheet).toContain('<f>SUBTOTAL(103,A2)</f>');
+    expect(tsheet).toContain('<tablePart r:id="rIdLiveTable"/>');
+    // slicer parts: cache (x15 table slicer) + slicer on the dashboard + drawing frame + defined name + workbook list
+    const cache = strFromU8(z['xl/slicerCaches/slicerCache-live-1.xml']!);
+    expect(cache).toMatch(/sourceName="Segment"/);
+    expect(cache).toMatch(/<x15:tableSlicerCache tableId="\d+" column="\d+"\/>/);
+    expect(strFromU8(z['xl/slicers/slicer-live.xml']!)).toMatch(/<slicer name="Segment" cache="Slicer_Segment_1" caption="Segment"/);
+    expect(dash).toContain('<x14:slicer r:id="rIdLiveSlicers"/>');
+    expect(drawing).toContain('<sle:slicer xmlns:sle="http://schemas.microsoft.com/office/drawing/2010/slicer" name="Segment"/>');
+    const wb = strFromU8(z['xl/workbook.xml']!);
+    expect(wb).toContain('<definedName name="Slicer_Segment_1">#N/A</definedName>');
+    expect(wb).toMatch(/<x15:slicerCaches xmlns:x14="[^"]+"><x14:slicerCache r:id="[^"]+"\/>/);
+    expect(wb.indexOf('<calcPr')).toBeLessThan(wb.indexOf('<extLst>'));
+    const ct = strFromU8(z['[Content_Types].xml']!);
+    for (const t of ['application/vnd.ms-excel.slicer+xml', 'application/vnd.ms-excel.slicerCache+xml', 'spreadsheetml.table+xml']) expect(ct).toContain(t);
+    // figures follow the slicers: SUBTOTAL for the KPIs, the « Visible » column inside every grouped sum
+    expect(data).toMatch(/SUBTOTAL\(109,/);
+    expect(data).toMatch(/SUMPRODUCT\(.*'Données filtrables'!/);
   });
   it('KPI tiles display their formula cell live; charts are native; the table is real cells', () => {
     expect(r.kpis).toBeGreaterThan(0);
@@ -42,12 +63,12 @@ describe('LIVE dashboard on the image design: formulas, filters, real cells — 
   });
   it('Excel-safe max: never N(+range) (Excel keeps only the first row: the max came out below the average)', () => {
     expect(data).not.toContain('N(+');
-    expect(data).toMatch(/SUMPRODUCT\(MAX\(/);
+    expect(data).toMatch(/SUBTOTAL\(104,/);
   });
   it('measure columns hold numbers only (a text « - » would turn every SUMPRODUCT into #VALUE!)', () => {
     const withText = rows.map((x, i) => ({ ...x, Montant: i === 3 ? ('-' as unknown as number) : x.Montant }));
     const r2 = addLiveDashboard(houseXlsx(cols, withText, { title: 'X', chart: 'none' }), SPEC, cloneData('Ventes', cols, withText))!;
-    const d2 = strFromU8(unzipSync(r2.bytes)['xl/worksheets/sheet-live-data.xml']!);
+    const d2 = strFromU8(unzipSync(r2.bytes)['xl/worksheets/sheet-live-table.xml']!);
     expect(d2).not.toMatch(/<is><t>-<\/t><\/is>/);
   });
   it('filter labels keep the panel fill; chart categories use short labels, horizontal', () => {
@@ -84,7 +105,7 @@ describe('NEVER a picture instead of the live dashboard', () => {
     expect(wb).toContain('name="Tableau de bord"');
     expect(Object.keys(unzipSync(r2.bytes)).some((k) => k.startsWith('xl/media/'))).toBe(false);
   });
-  it('no text category: a number with few values (rate, stage) becomes the drop-down filter', () => {
+  it('no text category: a number with few values (rate, stage) becomes the segment — a client name never does', () => {
     const rr = Array.from({ length: 30 }, (_, i) => ({ Client: `C${i}`, Taux: [0.25, 0.5, 1][i % 3]!, Encours: 1000 * (i + 1) }));
     const c2 = ['Client', 'Taux', 'Encours'];
     const r3 = addLiveDashboard(houseXlsx(c2, rr, { title: 'X', chart: 'none' }), SPEC, cloneData('Provisions', c2, rr))!;

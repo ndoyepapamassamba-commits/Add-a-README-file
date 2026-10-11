@@ -12,6 +12,7 @@
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { chartXml, type CloneChartKind } from './cloneXlsx';
 import type { DashSpec, Panel } from './dashClone';
+import { human } from './dashInsight';
 import { asDate, colorsFor, mixH, panelPlan, readableOn, type CloneData, type DataView } from './dashRender';
 import { ooxml } from './officeLogo';
 
@@ -25,6 +26,11 @@ const DASH = 'Tableau de bord';
 const DATA = 'Données du tableau de bord';
 const Q = `'${DATA}'`;
 const ALL = '(Tous)';
+/** The rows as an Excel TABLE (the slicers filter it), on their own sheet. */
+const TBL = 'Données filtrables';
+const TQ = `'${TBL}'`;
+const NS_X14 = 'http://schemas.microsoft.com/office/spreadsheetml/2009/9/main';
+const NS_X15 = 'http://schemas.microsoft.com/office/spreadsheetml/2010/11/main';
 const xesc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const hex = (c: string) => c.replace('#', '').slice(0, 6).toUpperCase();
 export const colL = (i: number) => {
@@ -214,28 +220,44 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
     .filter((x) => x.vals.length >= 2 && x.vals.length <= 12);
   const months = src.dateCol ? [...new Set(rows.map((r) => ym(r[src.dateCol!])).filter(Boolean))].sort() : [];
   const monthF: Filter[] = months.length >= 2 && months.length <= 36 ? [{ c: 'Mois', vals: months, kind: 'month' }] : [];
-  const filters = [...textF, ...numF, ...monthF].slice(0, 2);
+  // The SEGMENTS chosen by the analysis (dashInsight) — never codes / currencies / flags; else the old heuristic.
+  const filters: (Filter & { label?: string })[] = d.filters
+    ? d.filters.filter((f) => src.columns.includes(f.col)).map((f) => ({ c: f.col, vals: f.values, kind: 'text' as const, label: f.label }))
+    : [...textF, ...numF, ...monthF].slice(0, 2);
   for (const f of filters) if (f.kind !== 'month') used.add(f.c);
-  const RAW0 = 40;
+  // The table: N° (never empty — the visibility test reads it), the raw columns, Mois, Visible, Classement.
+  const tbl = new SheetCells();
+  const RAW0 = 1;
   const rawCols = [...used].filter((c) => src.columns.includes(c));
   const rawIdx = new Map<string, number>();
   rawCols.forEach((c, i) => rawIdx.set(c, RAW0 + i));
   const monthCol = src.dateCol ? RAW0 + rawCols.length : -1;
-  const helperCol = RAW0 + rawCols.length + (monthCol >= 0 ? 1 : 0);
+  const visCol = RAW0 + rawCols.length + (monthCol >= 0 ? 1 : 0);
+  const helperCol = visCol + 1;
   /** The raw column a filter compares (the month helper column for the month filter). */
   const fcol = (f: Filter) => (f.kind === 'month' ? monthCol : rawIdx.get(f.c)!);
-  rawCols.forEach((c) => calc.set(1, rawIdx.get(c)!, { v: c, s: head }));
-  if (monthCol >= 0) calc.set(1, monthCol, { v: 'Mois', s: head });
-  calc.set(1, helperCol, { v: 'Classement (calcul)', s: head });
+  const tHead = ['N°', ...rawCols, ...(monthCol >= 0 ? ['Mois'] : []), 'Visible', 'Classement'];
+  // Table column names must be unique (Excel): a clash gets a suffix.
+  const seenH = new Set<string>();
+  const tNames = tHead.map((h) => {
+    let x = h.replace(/[\r\n]+/g, ' ').trim() || 'Colonne';
+    while (seenH.has(x.toLowerCase())) x += ' (2)';
+    seenH.add(x.toLowerCase());
+    return x;
+  });
+  tNames.forEach((h, c) => tbl.set(1, c, { v: h }));
   rows.forEach((r, i) => {
+    tbl.set(i + 2, 0, { v: i + 1 });
+    // 1 when the row passes every slicer (rows hidden by the table's filter count 0).
+    tbl.set(i + 2, visCol, { f: `SUBTOTAL(103,A${i + 2})`, v: 1 });
     for (const c of rawCols) {
       const v = r[c];
       // A measure column holds numbers only: a text (« - », « n/a ») would turn every SUMPRODUCT / MAX into #VALUE!.
-      calc.set(i + 2, rawIdx.get(c)!, isNum(v) ? { v } : v === null || v === undefined || v === '' || src.numCols.includes(c) ? {} : { v: v instanceof Date ? v.toISOString().slice(0, 10) : String(v) });
+      tbl.set(i + 2, rawIdx.get(c)!, isNum(v) ? { v } : v === null || v === undefined || v === '' || src.numCols.includes(c) ? {} : { v: v instanceof Date ? v.toISOString().slice(0, 10) : String(v) });
     }
-    if (monthCol >= 0) calc.set(i + 2, monthCol, { v: ym(r[src.dateCol!]) });
+    if (monthCol >= 0) tbl.set(i + 2, monthCol, { v: ym(r[src.dateCol!]) });
   });
-  const rng = (c: number) => `${Q}!$${colL(c)}$2:$${colL(c)}$${n + 1}`;
+  const rng = (c: number) => `${TQ}!$${colL(c)}$2:$${colL(c)}$${n + 1}`;
 
   // ── 2. filter lists + the dashboard cells that hold the choice ─────────────────────────────────────────────────
   // Where the drop-downs go: the image's first filter / slicer panel, else the right of the title row.
@@ -243,13 +265,17 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   const titleBox = spec.title ? gb(spec.title.box) : { c0: 2, r0: 1, c1: G - 3, r1: 3 };
   const fBoxes: GBox[] = [];
   if (filterPanel >= 0) {
+    // SLICERS share the image's filter panel: stacked in a tall panel, side by side in a wide one.
     const b = boxes[filterPanel]!;
     const tall = b.r1 - b.r0 > b.c1 - b.c0;
+    const k = Math.max(1, filters.length);
     filters.forEach((_, i) => {
-      if (tall) fBoxes.push({ c0: b.c0 + 1, r0: b.r0 + 1 + i * 4, c1: b.c1 - 1, r1: b.r0 + 3 + i * 4 });
-      else {
-        const w = Math.floor((b.c1 - b.c0 + 1) / Math.max(1, filters.length));
-        fBoxes.push({ c0: b.c0 + i * w + 1, r0: b.r0 + 1, c1: b.c0 + (i + 1) * w - 1, r1: Math.min(b.r1 - 1, b.r0 + 3) });
+      if (tall) {
+        const h = Math.floor((b.r1 - b.r0 + 1) / k);
+        fBoxes.push({ c0: b.c0, r0: b.r0 + i * h, c1: b.c1, r1: b.r0 + (i + 1) * h - 1 });
+      } else {
+        const w = Math.floor((b.c1 - b.c0 + 1) / k);
+        fBoxes.push({ c0: b.c0 + i * w, r0: b.r0, c1: b.c0 + (i + 1) * w - 1, r1: b.r1 });
       }
     });
   } else {
@@ -260,14 +286,11 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   const titleRight = filterPanel < 0 && filters.length ? Math.min(titleBox.c1, (fBoxes[0]?.c0 ?? G) - 2) : titleBox.c1;
   const selCell = fBoxes.map((b) => ({ c: b.c0, r: b.r1 + 1 })); // the value cell is the box's last row
   const sel = selCell.map((x) => `${QD}!$${colL(x.c)}$${x.r}`);
-  const LIST0 = 34;
-  filters.forEach((f, i) => {
-    const col = LIST0 + i;
-    calc.set(1, col, { v: f.c, s: head });
-    const vals = f.kind === 'text' ? [...f.vals].sort((a, b) => String(a).localeCompare(String(b), 'fr')) : f.vals;
-    [ALL, ...vals].forEach((v, k) => calc.set(k + 2, col, { v }));
-  });
-  const mask = filters.length ? filters.map((f, i) => `(((${sel[i]}="${ALL}")+(${rng(fcol(f))}=${sel[i]}))>0)`).join('*') : '';
+  void sel;
+  void fcol;
+  void ALL;
+  // Every figure counts the VISIBLE rows of the table only: the slicers filter it, SUBTOTAL(103) sees it.
+  const mask = rng(visCol);
   const sumIf = (cond: string, measure: string | null) => (measure && rawIdx.has(measure) ? `SUMPRODUCT(${[cond, mask, rng(rawIdx.get(measure)!)].filter(Boolean).join('*')})` : `SUMPRODUCT(${[cond, mask].filter(Boolean).join('*') || '1'}*1)`);
 
   // ── 3. KPI cells ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -280,19 +303,18 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
     const vals = k.src?.col ? rows.map((x) => x[k.src!.col!]).filter(isNum) : [];
     let f = '';
     let v = 0;
+    // SUBTOTAL ignores the rows the slicers hide: the KPIs follow the selection, no helper needed.
     if (k.src?.fn === 'count') {
-      f = mask ? `SUMPRODUCT(${mask}*1)` : `ROWS(${rng(rawIdx.get(rawCols[0]!) ?? RAW0)})`;
+      f = `SUM(${mask})`;
       v = n;
     } else if (c && k.src?.fn === 'sum') {
-      f = mask ? `SUMPRODUCT(${mask}*${c})` : `SUM(${c})`;
+      f = `SUBTOTAL(109,${c})`;
       v = vals.reduce((a, b) => a + b, 0);
     } else if (c && k.src?.fn === 'avg') {
-      f = mask ? `IFERROR(SUMPRODUCT(${mask}*${c})/SUMPRODUCT(${mask}*ISNUMBER(${c})),0)` : `IFERROR(AVERAGE(${c}),0)`;
+      f = `IFERROR(SUBTOTAL(101,${c}),0)`;
       v = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
     } else if (c && k.src?.fn === 'max') {
-      // Not N(+range): Excel's N() keeps the FIRST value only (the max came out below the average). Rows outside
-      // the filter get -1E+300 so negative amounts stay right; no row selected → 0.
-      f = mask ? `IF(SUMPRODUCT((${mask})*1)=0,0,SUMPRODUCT(MAX((${mask})*${c}-(1-(${mask}))*1E+300)))` : `MAX(${c})`;
+      f = `IFERROR(SUBTOTAL(104,${c}),0)`;
       v = vals.length ? Math.max(...vals) : 0;
     } else return;
     calc.set(1, KPI0, { v: 'Indicateur', s: head });
@@ -354,8 +376,7 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
     rows.forEach((r, i) => {
       const row = i + 2;
       const m = isNum(r[tMeasure]) ? (r[tMeasure] as number) : 0;
-      const cond = filters.map((f, k) => `OR(${sel[k]}="${ALL}",${colL(fcol(f))}${row}=${sel[k]})`).join(',');
-      calc.set(row, helperCol, { f: `IF(${cond ? `AND(${cond})` : 'TRUE'},N(${colL(mc)}${row}),-1E+300)+ROW()/1E+9`, v: m + row / 1e9 });
+      tbl.set(row, helperCol, { f: `IF(${colL(visCol)}${row}=1,N(${colL(mc)}${row}),-1E+300)+ROW()/1E+9`, v: m + row / 1e9 });
     });
     const helper = rng(helperCol);
     d.table.columns.forEach((c, j) => {
@@ -462,7 +483,7 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
       const rowsAvail = Math.floor((inner.r1 - inner.r0 + 1) / 2) - 1;
       spans.forEach((sp, j) => {
         for (let cc = sp.c0; cc <= sp.c1; cc++) grid.set(`${inner.r0},${cc}`, hd), grid.set(`${inner.r0 + 1},${cc}`, hd);
-        values.set(`${inner.r0},${sp.c0}`, { v: cols[j]!, s: hd });
+        values.set(`${inner.r0},${sp.c0}`, { v: human(cols[j]!, 16), s: hd });
         merges.push(`${colL(sp.c0)}${inner.r0 + 1}:${colL(sp.c1)}${inner.r0 + 2}`);
         for (let k = 0; k < Math.min(topRows, rowsAvail); k++) {
           const r0 = inner.r0 + 2 + k * 2;
@@ -538,23 +559,21 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
     }
     if (kind !== 'title') card();
   });
-  // Filter drop-downs: a label row, then the value cell (data validation list).
+  // SEGMENTS: native Excel slicers on the table (click a value → the table is filtered → every figure follows).
   const dv: string[] = [];
-  const fPanel = filterPanel >= 0 ? spec.panels[filterPanel]!.fill : (spec.title?.fill ?? spec.page);
-  filters.forEach((f, i) => {
-    const b = fBoxes[i]!;
-    // The label keeps the panel's fill (a style without fill would paint a white cell on a dark panel).
-    const lab = S.get({ color: readableOn(fPanel, [spec.palette.dark, spec.title?.color ?? ''], 4.5), bold: true, size: 8, font, fill: fPanel });
-    const pill = S.get({ fill: '#FFFFFF', color: spec.palette.dark, bold: true, size: 9, font, border: spec.palette.primary, align: 'center' });
-    values.set(`${b.r0},${b.c0}`, { v: f.c, s: lab });
-    merges.push(`${colL(b.c0)}${b.r0 + 1}:${colL(b.c1)}${b.r0 + 1}`);
-    const vr = selCell[i]!.r - 1; // 0-based row of the value cell
-    for (let cc = b.c0; cc <= b.c1; cc++) grid.set(`${vr},${cc}`, pill);
-    values.set(`${vr},${b.c0}`, { v: ALL, s: pill });
-    merges.push(`${colL(b.c0)}${vr + 1}:${colL(b.c1)}${vr + 1}`);
-    const list = `${Q}!$${colL(LIST0 + i)}$2:$${colL(LIST0 + i)}$${f.vals.length + 2}`;
-    dv.push(`<dataValidation type="list" allowBlank="1" showInputMessage="1" promptTitle="${xesc(f.c.slice(0, 32))}" prompt="Choisissez une valeur : tout le tableau de bord se met à jour" sqref="${colL(b.c0)}${vr + 1}:${colL(b.c1)}${vr + 1}"><formula1>${xesc(list)}</formula1></dataValidation>`);
-  });
+  const slicers = filters.map((f, i) => {
+    const base = (f.label ?? f.c).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || `Segment${i + 1}`;
+    const box = fBoxes[i]!;
+    const wide = box.c1 - box.c0 + 1 > (box.r1 - box.r0 + 1) * 2.2;
+    // A band of 3 rows or less holds one row of buttons: no caption there (the values speak for themselves).
+    return { name: (f.label ?? f.c).slice(0, 60), cache: `Slicer_${base}_${i + 1}`, column: rawIdx.has(f.c) ? rawIdx.get(f.c)! + 1 : 0, box, columns: wide ? Math.max(1, Math.min(6, f.vals.length)) : 1, caption: box.r1 - box.r0 + 1 > 3 };
+  }).filter((x) => x.column > 0);
+  for (const sl of slicers) {
+    const id = ++sid;
+    const graphic = `<xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="${id}" name="${xesc(sl.name)}"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/drawing/2010/slicer"><sle:slicer xmlns:sle="http://schemas.microsoft.com/office/drawing/2010/slicer" name="${xesc(sl.name)}"/></a:graphicData></a:graphic></xdr:graphicFrame>`;
+    const fallback = `<xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="${id}" name="${xesc(sl.name)}"/><xdr:cNvSpPr txBox="1"/></xdr:nvSpPr><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1828800" cy="1828800"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:ln w="1"><a:solidFill><a:srgbClr val="000000"/></a:solidFill></a:ln></xdr:spPr><xdr:txBody><a:bodyPr vertOverflow="clip" horzOverflow="clip"/><a:lstStyle/><a:p><a:r><a:rPr lang="fr-FR" sz="1100"/><a:t>Segment « ${xesc(sl.name)} » : disponible dans Excel 2013 et versions ultérieures.</a:t></a:r></a:p></xdr:txBody></xdr:sp>`;
+    parts.push(`<xdr:twoCellAnchor editAs="oneCell"><xdr:from><xdr:col>${sl.box.c0}</xdr:col><xdr:colOff>${Math.round(0.4 * PX * EMU_PX)}</xdr:colOff><xdr:row>${sl.box.r0}</xdr:row><xdr:rowOff>${Math.round(0.4 * PX * EMU_PX)}</xdr:rowOff></xdr:from><xdr:to><xdr:col>${sl.box.c1 + 1}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${sl.box.r1 + 1}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to><mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"><mc:Choice xmlns:sle15="http://schemas.microsoft.com/office/drawing/2012/slicer" Requires="sle15">${graphic}</mc:Choice><mc:Fallback>${fallback}</mc:Fallback></mc:AlternateContent><xdr:clientData/></xdr:twoCellAnchor>`);
+  }
 
   // ── 7. write the sheets ──────────────────────────────────────────────────────────────────────────────────────────
   const dashRows: string[] = [];
@@ -576,8 +595,8 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   const drawing = 'xl/drawings/drawing-live-dash.xml';
   const mergeXml = merges.length ? `<mergeCells count="${merges.length}">${merges.map((m) => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>` : '';
   const dvXml = dv.length ? `<dataValidations count="${dv.length}">${dv.join('')}</dataValidations>` : '';
-  wr(z, dashPart, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${NS_R}"><sheetPr><tabColor rgb="FF${hex(spec.palette.primary)}"/><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${colL(G - 1)}${R}"/><sheetViews><sheetView showGridLines="0" showRowColHeaders="0" tabSelected="1" zoomScale="100" workbookViewId="0"><selection activeCell="${fBoxes[0] ? `${colL(fBoxes[0].c0)}${selCell[0]!.r}` : 'A1'}" sqref="${fBoxes[0] ? `${colL(fBoxes[0].c0)}${selCell[0]!.r}` : 'A1'}"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="${ROW_PT}" customHeight="1"/><cols><col min="1" max="${G}" width="${COL_W}" customWidth="1"/></cols><sheetData>${dashRows.join('')}</sheetData>${mergeXml}${dvXml}<pageMargins left="0.2" right="0.2" top="0.2" bottom="0.2" header="0.1" footer="0.1"/><pageSetup orientation="${spec.aspect >= 1 ? 'landscape' : 'portrait'}" fitToWidth="1" fitToHeight="1"/><drawing r:id="rIdLiveDrawing"/></worksheet>`);
-  wr(z, relsOf(dashPart), `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdLiveDrawing" Type="${NS_R}/drawing" Target="../drawings/drawing-live-dash.xml"/></Relationships>`);
+  wr(z, dashPart, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${NS_R}"><sheetPr><tabColor rgb="FF${hex(spec.palette.primary)}"/><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${colL(G - 1)}${R}"/><sheetViews><sheetView showGridLines="0" showRowColHeaders="0" tabSelected="1" zoomScale="100" workbookViewId="0"><selection activeCell="${fBoxes[0] ? `${colL(fBoxes[0].c0)}${selCell[0]!.r}` : 'A1'}" sqref="${fBoxes[0] ? `${colL(fBoxes[0].c0)}${selCell[0]!.r}` : 'A1'}"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="${ROW_PT}" customHeight="1"/><cols><col min="1" max="${G}" width="${COL_W}" customWidth="1"/></cols><sheetData>${dashRows.join('')}</sheetData>${mergeXml}${dvXml}<pageMargins left="0.2" right="0.2" top="0.2" bottom="0.2" header="0.1" footer="0.1"/><pageSetup orientation="${spec.aspect >= 1 ? 'landscape' : 'portrait'}" fitToWidth="1" fitToHeight="1"/><drawing r:id="rIdLiveDrawing"/>${slicers.length ? `<extLst><ext uri="{3A4CF648-6AED-40f4-86FF-DC5316D8AED3}" xmlns:x15="${NS_X15}"><x14:slicerList xmlns:x14="${NS_X14}"><x14:slicer r:id="rIdLiveSlicers"/></x14:slicerList></ext></extLst>` : ''}</worksheet>`);
+  wr(z, relsOf(dashPart), `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdLiveDrawing" Type="${NS_R}/drawing" Target="../drawings/drawing-live-dash.xml"/>${slicers.length ? '<Relationship Id="rIdLiveSlicers" Type="http://schemas.microsoft.com/office/2007/relationships/slicer" Target="../slicers/slicer-live.xml"/>' : ''}</Relationships>`);
   addOverride(z, `/${dashPart}`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml');
   const chartRels = charts.map((c, k) => {
     const part = `xl/charts/chart-live-${k + 1}.xml`;
@@ -590,19 +609,49 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   wr(z, drawing, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">${parts.join('')}</xdr:wsDr>`);
   addOverride(z, `/${drawing}`, 'application/vnd.openxmlformats-officedocument.drawing+xml');
   const dataPart = 'xl/worksheets/sheet-live-data.xml';
-  const dataCols = `<cols><col min="1" max="${RAW0}" width="16" customWidth="1"/><col min="${RAW0 + 1}" max="${helperCol + 1}" width="18" customWidth="1"/></cols>`;
+  const dataCols = `<cols><col min="1" max="40" width="16" customWidth="1"/></cols>`;
   wr(z, dataPart, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${NS_R}"><sheetPr><tabColor rgb="FF94A3B8"/></sheetPr><sheetViews><sheetView workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="15"/>${dataCols}<sheetData>${calc.xml()}</sheetData><pageMargins left="0.5" right="0.5" top="0.5" bottom="0.5" header="0.3" footer="0.3"/></worksheet>`);
   addOverride(z, `/${dataPart}`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml');
+  // The TABLE sheet: the rows as an Excel table (its filter is what the slicers drive).
+  const tblPart = 'xl/worksheets/sheet-live-table.xml';
+  const tableIds = Object.keys(z).filter((k) => /^xl\/tables\/[^/]+\.xml$/.test(k)).map((k) => +(/\bid="(\d+)"/.exec(rd(z, k))?.[1] ?? 0));
+  const tableId = Math.max(0, ...tableIds) + 1;
+  const tableRef = `A1:${colL(tNames.length - 1)}${n + 1}`;
+  wr(z, tblPart, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${NS_R}"><sheetPr><tabColor rgb="FF94A3B8"/></sheetPr><dimension ref="${tableRef}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols><col min="1" max="1" width="7" customWidth="1"/><col min="2" max="${tNames.length}" width="20" customWidth="1"/></cols><sheetData>${tbl.xml()}</sheetData><pageMargins left="0.5" right="0.5" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><tableParts count="1"><tablePart r:id="rIdLiveTable"/></tableParts></worksheet>`);
+  wr(z, relsOf(tblPart), `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdLiveTable" Type="${NS_R}/table" Target="../tables/table-live.xml"/></Relationships>`);
+  addOverride(z, `/${tblPart}`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml');
+  wr(z, 'xl/tables/table-live.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="${tableId}" name="DonneesTableauDeBord" displayName="DonneesTableauDeBord" ref="${tableRef}" totalsRowShown="0"><autoFilter ref="${tableRef}"/><tableColumns count="${tNames.length}">${tNames.map((h, k) => `<tableColumn id="${k + 1}" name="${xesc(h)}"/>`).join('')}</tableColumns><tableStyleInfo name="TableStyleLight1" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/></table>`);
+  addOverride(z, '/xl/tables/table-live.xml', 'application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml');
+  const ridTbl = addRel(z, 'xl/_rels/workbook.xml.rels', `${NS_R}/worksheet`, 'worksheets/sheet-live-table.xml', 'rIdLiveTableSheet');
+  // SLICERS: one slicers part on the dashboard, one cache per segment (table slicer caches, Excel 2013+).
+  const cacheRids: string[] = [];
+  if (slicers.length) {
+    wr(z, 'xl/slicers/slicer-live.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<slicers xmlns="${NS_X14}" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="x" xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${slicers.map((sl) => `<slicer name="${xesc(sl.name)}" cache="${sl.cache}" caption="${xesc(sl.name)}"${sl.columns > 1 ? ` columnCount="${sl.columns}"` : ''}${sl.caption ? '' : ' showCaption="0"'} style="SlicerStyleLight1" rowHeight="225425"/>`).join('')}</slicers>`);
+    addOverride(z, '/xl/slicers/slicer-live.xml', 'application/vnd.ms-excel.slicer+xml');
+    slicers.forEach((sl, k) => {
+      const part = `xl/slicerCaches/slicerCache-live-${k + 1}.xml`;
+      wr(z, part, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<slicerCacheDefinition xmlns="${NS_X14}" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="x" xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main" name="${sl.cache}" sourceName="${xesc(tNames[sl.column - 1]!)}"><extLst><x:ext uri="{2F2917AC-EB37-4324-AD4E-5DD8C200BD13}" xmlns:x15="${NS_X15}"><x15:tableSlicerCache tableId="${tableId}" column="${sl.column}"/></x:ext></extLst></slicerCacheDefinition>`);
+      addOverride(z, `/${part}`, 'application/vnd.ms-excel.slicerCache+xml');
+      cacheRids.push(addRel(z, 'xl/_rels/workbook.xml.rels', 'http://schemas.microsoft.com/office/2007/relationships/slicerCache', `slicerCaches/slicerCache-live-${k + 1}.xml`, `rIdLiveSlicerCache${k + 1}`));
+    });
+  }
   const rid = addRel(z, 'xl/_rels/workbook.xml.rels', `${NS_R}/worksheet`, 'worksheets/sheet-live-dash.xml', 'rIdLiveSheet');
   const ridData = addRel(z, 'xl/_rels/workbook.xml.rels', `${NS_R}/worksheet`, 'worksheets/sheet-live-data.xml', 'rIdLiveData');
   const ids = [...wb.matchAll(/sheetId="(\d+)"/g)].map((m) => +m[1]!);
   const sheetId = (ids.length ? Math.max(...ids) : 0) + 1;
   wb = ensureRootNs(wb, 'r', NS_R);
-  wb = wb.replace(/<sheets>/, `<sheets><sheet name="${DASH_NAME}" sheetId="${sheetId}" r:id="${rid}"/>`).replace('</sheets>', `<sheet name="${xesc(DATA)}" sheetId="${sheetId + 1}" r:id="${ridData}"/></sheets>`);
+  wb = wb.replace(/<sheets>/, `<sheets><sheet name="${DASH_NAME}" sheetId="${sheetId}" r:id="${rid}"/>`).replace('</sheets>', `<sheet name="${xesc(DATA)}" sheetId="${sheetId + 1}" r:id="${ridData}"/><sheet name="${xesc(TBL)}" sheetId="${sheetId + 2}" r:id="${ridTbl}"/></sheets>`);
+  if (slicers.length) {
+    // Each slicer cache is a defined name (#N/A, as Excel writes it) and is listed in the workbook's x15 extension.
+    const names = slicers.map((sl) => `<definedName name="${sl.cache}">#N/A</definedName>`).join('');
+    wb = /<definedNames>/.test(wb) ? wb.replace('</definedNames>', `${names}</definedNames>`) : wb.replace('</sheets>', `</sheets><definedNames>${names}</definedNames>`);
+    const ext = `<ext uri="{46BE6895-7355-4a93-B00E-2C351335B9C9}" xmlns:x15="${NS_X15}"><x15:slicerCaches xmlns:x14="${NS_X14}">${cacheRids.map((r) => `<x14:slicerCache r:id="${r}"/>`).join('')}</x15:slicerCaches></ext>`;
+    wb = /<extLst>/.test(wb) ? wb.replace('</extLst>', `${ext}</extLst>`) : wb.replace('</workbook>', `<extLst>${ext}</extLst></workbook>`);
+  }
   wb = wb.replace(/localSheetId="(\d+)"/g, (_m, k: string) => `localSheetId="${+k + 1}"`);
   wb = wb.replace(/activeTab="\d+"/, 'activeTab="0"').replace(/firstSheet="\d+"/, 'firstSheet="0"');
   // Formulas recomputed when the file opens (filters, SUMPRODUCT, LARGE).
-  wb = /<calcPr\b/.test(wb) ? wb.replace(/<calcPr\b([^>]*?)\/>/, (_m, a: string) => `<calcPr${a.replace(/\sfullCalcOnLoad="\w+"/, '')} fullCalcOnLoad="1"/>`) : wb.replace('</workbook>', '<calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>');
+  wb = /<calcPr\b/.test(wb) ? wb.replace(/<calcPr\b([^>]*?)\/>/, (_m, a: string) => `<calcPr${a.replace(/\sfullCalcOnLoad="\w+"/, '')} fullCalcOnLoad="1"/>`) : wb.replace(/<extLst>|<\/workbook>/, (m) => `<calcPr calcId="191029" fullCalcOnLoad="1"/>${m}`);
   wr(z, 'xl/workbook.xml', wb);
   for (const k of Object.keys(z))
     if (/^xl\/worksheets\/[^/]+\.xml$/.test(k) && k !== dashPart) {
