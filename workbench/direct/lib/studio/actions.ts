@@ -564,6 +564,36 @@ export async function generateOne(j: ImageJob): Promise<MediaOutcome<{ b64: stri
   });
 }
 
+/** The plate prompt: the same picture, characters removed, everything else identical. */
+export const PLATE_INSTRUCTION =
+  'EDIT THE REFERENCE IMAGE: remove every character (people, animals) and what they hold; keep EXACTLY the same background, camera, framing, perspective, lighting, colours and style; rebuild the background where the characters were. Output the empty set only.';
+/**
+ * CLEAN PLATE: the scene's picture without its characters (image → image edit). With it the animation engine cuts the
+ * characters out by difference (exact, whatever their colours) and reveals the true background when they move.
+ */
+export async function generatePlate(projectId: string, sceneId: string): Promise<string | null> {
+  const bp = bpOf(projectId);
+  const sc = bp.scenes.find((s) => s.scene_id === sceneId);
+  if (!sc?.imageAssetId || bp.mode === 'ECO') return null;
+  try {
+    const out = await generateOne({
+      projectId,
+      sceneId,
+      compiled: { ...compileScene(sc, { style: bp.styleDNA, characters: [], worlds: bp.worlds, previous: null, next: null, platform: bp.platform, aspect: bp.aspect }, 'image', { maxChars: 1200 }), version: 'plate-1', text: `${PLATE_INSTRUCTION}\nSet: ${sc.location}. Avoid: people, characters, animals, hands, faces.` },
+      references: [sc.imageAssetId],
+      task: 'SCENE-IMAGE',
+      mission: `plaque ${sceneId}`,
+      aspect: bp.aspect,
+      tags: [sceneId, 'plate'],
+      trace: new Trace(),
+    });
+    if (!out.assetId) return null;
+    patch(projectId, (b) => ({ ...b, scenes: b.scenes.map((s) => (s.scene_id === sceneId && s.imageAssetId === sc.imageAssetId ? { ...s, plateAssetId: out.assetId } : s)) }));
+    return out.assetId;
+  } catch {
+    return null;
+  }
+}
 /**
  * MARIONNETTE AFRIKATOON: a vision model rigs the scene image once (heads, eyes, mouths, bodies, arms) so the free
  * engine can move the characters themselves. Returns the number of characters rigged (0: nothing to rig / no model).
@@ -722,6 +752,9 @@ export async function generateSceneImage(
           ? {
               ...s,
               imageAssetId: ids[0],
+              // A new picture: its old plate and rig no longer match.
+              plateAssetId: undefined,
+              rig: undefined,
               status: 'GENERATED',
               model: useStudio.getState().assets[ids[0]!]?.model,
               // Measured by the art director only (null when no vision judge answered).

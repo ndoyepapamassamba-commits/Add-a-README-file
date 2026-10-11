@@ -106,7 +106,7 @@ export function ProductionWizard() {
         rows={3}
         value={idea}
         onChange={(e) => setIdea(e.target.value)}
-        placeholder="Décris ton idée… Ex. : Une vidéo humoristique sénégalaise de 60 s où une belle-mère arrive chez son gendre"
+        placeholder="Décris ton idée… Ex. : Une vidéo humoristique ivoirienne de 60 s où une belle-mère débarque chez son gendre à Yopougon"
       />
       <div className="mt-2 flex flex-wrap gap-1.5" data-testid="wizard-presets">
         {PRESETS.map((x) => (
@@ -145,10 +145,9 @@ export function ProductionWizard() {
               value={language}
               onChange={setLanguage}
               options={[
-                { value: 'fr', label: 'français' },
-                { value: 'wo', label: 'wolof' },
+                { value: 'fr', label: 'français ivoirien' },
+                { value: 'fr-std', label: 'français standard' },
                 { value: 'en', label: 'anglais' },
-                { value: 'fr+wo', label: 'français + wolof' },
               ]}
             />
           </div>
@@ -167,7 +166,7 @@ export function ProductionWizard() {
             <Input
               value={audience}
               onChange={(e) => setAudience(e.target.value)}
-              placeholder="ex. : 18-35 ans, Dakar, humour de situation"
+              placeholder="ex. : 18-35 ans, Abidjan, humour de situation"
             />
           </div>
           <Toggle checked={dialogue} onChange={setDialogue} label="Dialogue" />

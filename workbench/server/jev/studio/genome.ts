@@ -238,6 +238,12 @@ export function singleMoment(action: string): string {
   const first = a.split(/\s*(?:,?\s+(?:puis|ensuite|après quoi|et enfin|then|and then|afterwards)\s+|→|->|;|\n)\s*/i)[0] ?? a;
   return first.length >= 12 ? first : a;
 }
+/**
+ * ANIMATION-READY staging (the app animates its own pictures): characters whole and apart, limbs clear of the body,
+ * a background that contrasts with skin and clothes — the cut-out and the motion are then clean.
+ */
+export const ANIMATION_READY =
+  'animation-ready staging: every character fully visible head to feet, standing apart (not touching, not overlapping), arms clearly separated from the torso, face in three-quarter view, mouth visible; the background right behind each character contrasts with their skin, hair and clothes (no dark doorway behind dark skin), no foreground object crossing a character';
 export function sceneDims(sc: Scene, ctx: SceneContext): Dims {
   const chars = ctx.characters.filter((c) =>
     sc.characters.some((n) => n.toUpperCase() === c.name.toUpperCase()),
@@ -258,7 +264,7 @@ export function sceneDims(sc: Scene, ctx: SceneContext): Dims {
     CAMERA: sc.camera,
     LIGHTING: sc.lighting || world?.lighting || '',
     COLOR: world?.palette ?? '',
-    COMPOSITION: `ONE single full-frame shot of one moment, one camera, full bleed (no panels, no borders, no split screen, no speech bubbles); each character appears once${ctx.next ? `; framed so the next scene (${ctx.next.location}) can cut in naturally` : ''}`,
+    COMPOSITION: `ONE single full-frame shot of one moment, one camera, full bleed (no panels, no borders, no split screen, no speech bubbles); each character appears once; ${ANIMATION_READY}${ctx.next ? `; framed so the next scene (${ctx.next.location}) can cut in naturally` : ''}`,
     QUALITY: qualityLine(ctx.style, 'illustration'),
     NEGATIVE: ctx.style.negative,
     DIALOGUE: sc.dialogue.map((d) => `${d.speaker}: "${d.text}"`).join(' / '),
@@ -328,14 +334,14 @@ export const MOTIFS: Record<string, { label: string; dims: Dims }> = {
   belle_famille: {
     label: 'Belle-famille',
     dims: {
-      LOCATION: 'family living room in Dakar, sofa, tv, wax-print cushions',
+      LOCATION: 'family living room in Abidjan, sofa, tv, wax-print cushions',
       EMOTION: 'tense polite smiles',
     },
   },
   marche: {
     label: 'Marché',
     dims: {
-      LOCATION: 'busy Dakar market, colourful stalls, fabrics, fruit crates',
+      LOCATION: 'busy Adjamé market in Abidjan, colourful stalls, fabrics, fruit crates',
       AMBIENCE: 'crowd chatter, merchants calling',
     },
   },

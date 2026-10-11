@@ -1261,8 +1261,7 @@ export function DialogueView() {
                       value={d.language}
                       onChange={(v) => upd(s.scene_id, i, { language: v })}
                       options={[
-                        { value: 'fr', label: 'français' },
-                        { value: 'wo', label: 'wolof' },
+                        { value: 'fr', label: 'français ivoirien' },
                         { value: 'en', label: 'anglais' },
                       ]}
                     />
@@ -1313,7 +1312,7 @@ export function VoiceView() {
       id: `vp-${cid}`,
       characterId: cid,
       language: 'fr',
-      accent: 'sénégalais',
+      accent: 'ivoirien',
       gender: '',
       age: '',
       pitch: 'normal',

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deformPoint, parseRig, poseAt, warpGrid } from '../../server/jev/studio/puppet';
+import { deformPoint, gestureOf, parseRig, poseAt, warpGrid } from '../../server/jev/studio/puppet';
 
 const RIG = parseRig('{"characters":[{"name":"AWA","box":{"x":0.26,"y":0.17,"w":0.56,"h":0.72},"head":{"x":0.34,"y":0.19,"w":0.33,"h":0.29},"body":{"x":0.29,"y":0.47,"w":0.42,"h":0.41},"eyes":[{"x":0.44,"y":0.32,"r":0.035}],"mouth":{"x":0.45,"y":0.39,"w":0.1,"h":0.05},"arms":[{"shoulder":{"x":0.62,"y":0.5},"hand":{"x":0.79,"y":0.36}}]}]}', 'vision-x')!;
 const awa = RIG.characters[0]!;
@@ -17,8 +17,26 @@ describe('MARIONNETTE AFRIKATOON — moteur d’animation maison', () => {
     expect(blinks).toBeLessThan(20);
     expect(poseAt(awa, 1, { speaking: false, energy: 0.8 }).mouth).toBe(0);
     expect(poseAt(awa, 1.03, { speaking: true, energy: 0.5 }).mouth).toBeGreaterThan(0);
-    expect(poseAt(awa, 0.3, { speaking: false, energy: 0, action: 'Awa salue la foule' }).wave).not.toBe(0);
-    expect(poseAt(awa, 0.3, { speaking: false, energy: 0, action: 'Awa boit son thé' }).wave).toBe(0);
+    expect(poseAt(awa, 0.3, { speaking: false, energy: 0, action: 'Awa salue la foule' }).wave).toBeGreaterThan(0.2);
+    expect(Math.abs(poseAt(awa, 0.3, { speaking: false, energy: 0, action: 'Awa boit son thé' }).wave)).toBeLessThan(0.05);
+  });
+  it('plays a gesture per line: the [gesture] or the action keywords pick it, talkers lean towards the listener', () => {
+    expect(gestureOf('[montre du doigt] Toi là !')).toBe('point');
+    expect(gestureOf('Il éclate de rire')).toBe('laugh');
+    expect(gestureOf('Elle hausse les épaules')).toBe('shrug');
+    expect(gestureOf('Il boit son thé')).toBeNull();
+    const talk = poseAt(awa, 1, { speaking: true, energy: 0.6, facing: 1 });
+    expect(talk.lean).toBeGreaterThan(0);
+    expect(poseAt(awa, 1, { speaking: true, energy: 0.6, facing: -1 }).lean).toBeLessThan(0);
+    expect(poseAt(awa, 1, { speaking: false, energy: 0, gesture: 'head-hands' }).arms.every((a) => a > 0.9)).toBe(true);
+    const j = [0.1, 0.2, 0.3].map((t) => poseAt(awa, t, { speaking: false, energy: 0, gesture: 'jump' }).jump);
+    expect(Math.max(...j)).toBeGreaterThan(0.02);
+    // The jaw drops with the voice: a point under the mouth moves down when the mouth opens.
+    const under = { x: awa.mouth!.x + awa.mouth!.w / 2, y: awa.mouth!.y + awa.mouth!.h * 1.6 };
+    const g0 = warpGrid(awa, { ...poseAt(awa, 0, { speaking: false, energy: 0 }), mouth: 0, headRot: 0, headNod: 0, lean: 0, sway: 0 });
+    const g1 = warpGrid(awa, { ...poseAt(awa, 0, { speaking: false, energy: 0 }), mouth: 1, headRot: 0, headNod: 0, lean: 0, sway: 0 });
+    const near = (g: typeof g0) => { let bi = 0; g.src.forEach((s, i) => { if (Math.hypot(s.x - under.x, s.y - under.y) < Math.hypot(g.src[bi]!.x - under.x, g.src[bi]!.y - under.y)) bi = i; }); return g.dst[bi]!.y; };
+    expect(near(g1)).toBeGreaterThan(near(g0));
   });
   it('the mesh moves the character but its border stays put (attached to the background)', () => {
     const pose = poseAt(awa, 0.4, { speaking: true, energy: 0.6, action: 'salue' });

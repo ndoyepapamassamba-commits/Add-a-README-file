@@ -27,7 +27,7 @@ export const STYLE_2D_HQ: StyleDNA = Object.freeze({
   characterDesign:
     'modern French-African TV cartoon: clean uniform black outlines, expressive oversized eyes and eyebrows, exaggerated comedic facial expressions, simple readable hands',
   environmentDesign:
-    'stylised Dakar environments: colourful houses, markets, courtyards, flat painted backgrounds',
+    'stylised Abidjan environments: colourful houses, maquis, Adjamé market, shared courtyards, flat painted backgrounds',
   animationStyle: '2D cut-out puppet animation, limited animation, expressive poses',
   renderStyle: '2D digital cartoon illustration, crisp black linework, flat color fills, one shadow tone',
   postProcessing: 'none (no bloom, no grain, no blur)',
@@ -53,7 +53,7 @@ export const STYLE_3D_AFRIKATOON: StyleDNA = Object.freeze({
   characterDesign:
     'stylised 3D animated-feature characters: expressive oversized eyes, strong comedic facial expressions, consistent proportions, clear readable hands',
   environmentDesign:
-    'stylised West-African environments (Dakar streets, courtyards, markets) built as 3D sets',
+    'stylised West-African environments (Abidjan streets, maquis, courtyards, markets) built as 3D sets',
   animationStyle: 'expressive 3D character animation, snappy comedic timing, squash and stretch on reactions',
   renderStyle: 'high quality stylised 3D animation render, soft global illumination, clean stylised shading',
   postProcessing: 'subtle color grading only',

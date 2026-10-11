@@ -23,7 +23,7 @@ export function socialMessages(bp: Blueprint, platform: string) {
     {
       role: 'system' as const,
       content:
-        'Tu es social media manager de sketchs humoristiques sénégalais. Réponds UNIQUEMENT par un JSON valide. Aucune marque réelle, aucune moquerie de groupe.',
+        'Tu es social media manager de sketchs humoristiques ivoiriens. Réponds UNIQUEMENT par un JSON valide. Aucune marque réelle, aucune moquerie de groupe.',
     },
     {
       role: 'user' as const,

@@ -31,8 +31,8 @@ export function storyMessages(b: StoryBrief): { role: 'system' | 'user' | 'assis
     {
       role: 'system',
       content:
-        'Tu es scénariste de sketchs humoristiques sénégalais pour TikTok (vertical 9:16). Français avec touches de wolof (traduction fournie). ' +
-        "L'humour vise les situations (belle-famille, quartier, marché, bureau), jamais un groupe, une ethnie, une religion ou un handicap. Aucune marque réelle, aucune personne réelle. " +
+        'Tu es scénariste de sketchs humoristiques ivoiriens pour TikTok (vertical 9:16), façon comédie d’Abidjan. Tout est en FRANÇAIS IVOIRIEN (expressions populaires d’Abidjan, nouchi léger compréhensible par tous) — jamais de wolof ni d’autre langue. ' +
+        "L'humour vise les situations (belle-famille, quartier, maquis, marché, gbaka, bureau), jamais un groupe, une ethnie, une religion ou un handicap. Aucune marque réelle, aucune personne réelle. " +
         'Réponds UNIQUEMENT par un objet JSON valide, sans texte autour.',
     },
     {
@@ -59,7 +59,7 @@ export function storyMessages(b: StoryBrief): { role: 'system' | 'user' | 'assis
           'Noms de personnages en MAJUSCULES. Une scène par plan.',
         'JSON attendu : {"title","logline","concept","synopsis","hook","twist","punchline","conflict","climax","resolution","setting","theme","characters":[noms],' +
           '"scenes":[{"act","beat":"hook|escalade|twist|chute","duration":secondes,"location","time","characters":[noms],"action","emotion","camera","lighting","sound","music","transition",' +
-          '"dialogue":[{"speaker","text","emotion","translation"?,"language":"fr|wo|en"}],"visual_prompt","video_prompt","voice_prompt","subtitle_prompt"}]}',
+          '"dialogue":[{"speaker","text","emotion","translation"?,"english","language":"fr"}],"visual_prompt","video_prompt","voice_prompt","subtitle_prompt"}]}',
       ].join('\n\n'),
     },
   ];
@@ -124,6 +124,7 @@ export interface StoryIssue {
   message: string;
   sceneId?: string;
 }
+/** Wolof words: forbidden in the dialogues (everything is in Ivorian French). */
 const WOLOF =
   /\b(waaw|déedéet|deedeet|jërëjëf|jerejef|nanga def|mangi fi|ndank|baax|bëgg|begg|xam|lëgg|yaw|man|dama|ñu|nit|jigéen|góor|toubab|teranga|sama|yow|naka|ba beneen)\b/i;
 
@@ -132,7 +133,11 @@ function normScene(x: unknown, i: number, issues: StoryIssue[], idOverride?: str
   const id = idOverride ?? `S${String(i + 1).padStart(2, '0')}`;
   const dialogue: DialogueLine[] = arr(sc.dialogue).map((l) => {
     const ln = rec(l);
-    const t = s(ln.text);
+    // « [hausse les épaules] C'est pas mon palabre. » → gesture for the animation, clean text for voice / subtitles.
+    const raw = s(ln.text);
+    const gm = /^\s*[[(]([^\])]{2,40})[\])]\s*/.exec(raw);
+    const t = gm ? raw.slice(gm[0].length) : raw;
+    const gesture = s(ln.gesture) || (gm ? gm[1]!.trim().toLowerCase() : '');
     if (wordCount(t) > 12)
       issues.push({
         code: 'LONG_LINE',
@@ -140,23 +145,26 @@ function normScene(x: unknown, i: number, issues: StoryIssue[], idOverride?: str
         sceneId: id,
         message: `réplique de ${wordCount(t)} mots (> 12) : « ${t.slice(0, 50)}… »`,
       });
-    const lang = s(ln.language, WOLOF.test(t) ? 'wo' : 'fr');
-    if ((lang === 'wo' || WOLOF.test(t)) && !s(ln.translation))
+    // Everything is in Ivorian French: a line in wolof (or another language) is flagged to be rewritten.
+    const lang = 'fr';
+    if (WOLOF.test(t) || /^(wo|fr\+wo)$/.test(s(ln.language)))
       issues.push({
         code: 'NO_TRANSLATION',
         severity: 'warn',
         sceneId: id,
-        message: 'réplique en wolof sans traduction pour les sous-titres',
+        message: `réplique hors français ivoirien (wolof détecté) : « ${t.slice(0, 40)} » — à réécrire en français d’Abidjan`,
       });
     return {
       speaker: s(ln.speaker, 'NARRATEUR').toUpperCase(),
       text: t,
       translation: s(ln.translation) || undefined,
+      ...(s(ln.english) ? { english: s(ln.english) } : {}),
       language: lang,
       emotion: s(ln.emotion, 'neutral'),
       intensity: Math.max(0, Math.min(1, n(ln.intensity, 0.6))),
       pace: Math.max(0.5, Math.min(1.8, n(ln.pace, 1))),
       pauseAfterMs: Math.max(0, n(ln.pauseAfterMs, 250)),
+      ...(gesture ? { gesture } : {}),
     };
   });
   return {
@@ -276,7 +284,7 @@ export function sceneMessages(o: {
         ...(o.dialogue === false
           ? ['Aucun dialogue pour cette production.']
           : ['Répliques de 12 mots maximum.']),
-        'JSON : {"act","beat","duration","location","time","characters":[noms en MAJUSCULES],"action","emotion","camera","lighting","sound","music","transition","dialogue":[{"speaker","text","emotion","translation"?,"language"}],"visual_prompt","video_prompt","voice_prompt","subtitle_prompt"}',
+        'JSON : {"act","beat","duration","location","time","characters":[noms en MAJUSCULES],"action","emotion","camera","lighting","sound","music","transition","dialogue":[{"speaker","text","emotion","translation"?,"english","language"}],"visual_prompt","video_prompt","voice_prompt","subtitle_prompt"}',
       ].join('\n\n'),
     },
   ];

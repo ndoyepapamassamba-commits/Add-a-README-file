@@ -29,7 +29,7 @@ const scene = (id: string, chars: string[]): Scene => ({
   act: '1',
   beat: 'hook',
   duration: 6,
-  location: 'cour de maison à Dakar',
+  location: 'cour commune à Yopougon',
   time: 'jour',
   characters: chars,
   action: 'la belle-mère arrive avec trois valises',

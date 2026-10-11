@@ -321,7 +321,7 @@ export async function completeWorldSheets(projectId: string): Promise<number> {
     messages: [
       {
         role: 'system',
-        content: `Tu es chef décorateur ${dimensionOf(bp.styleDNA)} (Dakar). Réponds UNIQUEMENT par un JSON valide. Aucune marque réelle.`,
+        content: `Tu es chef décorateur ${dimensionOf(bp.styleDNA)} (Abidjan). Réponds UNIQUEMENT par un JSON valide. Aucune marque réelle.`,
       },
       {
         role: 'user',

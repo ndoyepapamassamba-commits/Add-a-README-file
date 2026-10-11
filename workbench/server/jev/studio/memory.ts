@@ -10,7 +10,7 @@ export interface ProdRecord {
   projectId: string;
   sceneId?: string;
   kind: MemKind;
-  /** Free-form task family: 2D-REDRAW, CHARACTER-CONSISTENCY, FRENCH, WOLOF, I2V-TALKING… */
+  /** Free-form task family: 2D-REDRAW, CHARACTER-CONSISTENCY, FRENCH, I2V-TALKING… */
   task: string;
   style: string;
   /** Output contract / aspect: 9:16, mp3… */

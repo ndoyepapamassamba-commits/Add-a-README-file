@@ -7,6 +7,8 @@
  *    drawing itself moves (the background stays still around it).
  * Pure: prompts, parsing, poses and vertex positions. The browser draws the triangles (preview.ts).
  */
+import { gestureEnvelope } from './viralFormat';
+import { EMOTION_BODY, emotionOf } from './emotionLayer';
 export interface RBox {
   x: number;
   y: number;
@@ -88,42 +90,188 @@ export interface Pose {
   /** Head rotation (radians) around the neck, head nod offset (fraction of head height). */
   headRot: number;
   headNod: number;
-  /** Body sway (radians around the feet) and vertical squash (1 = rest). */
+  /** Body sway (radians around the feet), lean towards / away from the other character, vertical squash (1 = rest). */
   sway: number;
+  lean: number;
   squash: number;
-  /** Arm wave angle (radians around the shoulder), 0 when not waving. */
+  /** Whole-body jump (fraction of the character height, up) and shake (fraction of its width). */
+  jump: number;
+  shake: number;
+  /** Angle of each arm around its shoulder (radians, positive = hand goes UP). */
+  arms: number[];
+  /** Kept for compatibility: the first arm's angle. */
   wave: number;
   /** 0 = open, 1 = closed. */
   blink: number;
-  /** 0..1 mouth opening. */
+  /** 0..1 mouth opening (the jaw drops by it). */
   mouth: number;
 }
-const WAVE_MAX = 0.28;
-const WAVE = /\b(salue|saluer|coucou|wave|waves|waving|bye|au revoir|hello|bonjour|lève la main|raises? (his|her) hand|points?|montre)\b/i;
+/** The gestures the engine plays — keywords of the action / the line's [gesture] → gesture id. */
+export const GESTURES: { id: string; re: RegExp }[] = [
+  { id: 'wave', re: /\b(salue|saluer|coucou|bonjour|au revoir|bye|wave|hello|lève la main)\b/i },
+  { id: 'point', re: /\b(montre( du doigt)?|pointe|désigne|accuse|toi là|regarde[- ]?ça|points?)\b/i },
+  { id: 'shrug', re: /\b(hausse les épaules|haussement|je sais pas|pas mon palabre|bof|shrug)\b/i },
+  { id: 'head-hands', re: /\b(mains sur la tête|catastrophe|ehhh dieu|desperate|désespéré)\b/i },
+  { id: 'laugh', re: /\b(rit|rire|éclate de rire|se moque|mdr|hahaha|laugh)/i },
+  { id: 'jump', re: /\b(saute|sautille|bondit|saute de joie|jump)/i },
+  { id: 'yes', re: /\b(hoche la tête|acquiesce|d'accord|oui oui|nod)\b/i },
+  { id: 'no', re: /\b(secoue la tête|refuse|non non|dêh|jamais)\b/i },
+  { id: 'angry', re: /\b(se fâche|fâché|colère|énervé|crie|hurle|furieux|angry|shouts?)\b/i },
+  { id: 'dance', re: /\b(danse|coupé[- ]décalé|zouglou|dance)/i },
+  { id: 'clap', re: /\b(applaudit|bravo|tape des mains|clap)/i },
+  { id: 'think', re: /\b(réfléchit|pense|hum+|se gratte|think)/i },
+  { id: 'startle', re: /\b(sursaute|choqué|surpris|stupeur|quoi ?!|startled|shocked)\b/i },
+  { id: 'cry', re: /\b(pleure|sanglote|cry|cries)\b/i },
+  { id: 'run', re: /\b(court|fuit|s'enfuit|cours|runs?)\b/i },
+];
+export const gestureOf = (text: string | undefined): string | null => (text ? (GESTURES.find((g) => g.re.test(text))?.id ?? null) : null);
 /** Deterministic pseudo-random per character (blinks never in sync). */
 const hash = (s: string) => [...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
 /**
  * Pose of one character at time t. `speaking` = this character is the one talking now; `energy` its voice level
- * (0..1, from the audio envelope); `emphasis` a short accent (punchline) — squash & stretch.
+ * (0..1, from the audio envelope); `emphasis` a short accent (punchline); `gesture` the gesture of the line / action;
+ * `facing` +1 when the other character is to the right (leans and points go towards it).
  */
-export function poseAt(c: PuppetCharacter, t: number, o: { speaking: boolean; energy: number; emphasis?: number; action?: string }): Pose {
+export function poseAt(
+  c: PuppetCharacter,
+  t: number,
+  o: {
+    speaking: boolean;
+    energy: number;
+    emphasis?: number;
+    action?: string;
+    gesture?: string | null;
+    facing?: number;
+    age?: number;
+    /** The emotion of the line / scene (body layer) and the Preston Blair jaw opening of what is said (0..1). */
+    emotion?: string;
+    viseme?: number;
+  },
+): Pose {
   const seed = hash(c.name) % 1000;
   const ph = seed / 159;
+  const face = o.facing ?? 1;
   // Blinks: every 2.6–4.6 s, 140 ms closed (smooth in / out).
   const period = 2.6 + (seed % 20) / 10;
   const k = ((t + ph) % period) / 0.14;
   const blink = k < 1 ? Math.sin(k * Math.PI) : 0;
   const talk = o.speaking ? Math.min(1, o.energy * 2.4) : 0;
   const emph = o.emphasis ?? 0;
-  return {
-    headRot: 0.035 * Math.sin(t * 1.3 + ph) + (o.speaking ? 0.05 * Math.sin(t * 5.2 + ph) * talk : 0),
-    headNod: o.speaking ? 0.04 * Math.abs(Math.sin(t * 6.5 + ph)) * talk : 0.01 * Math.sin(t * 1.1 + ph),
-    sway: 0.012 * Math.sin(t * 0.9 + ph) + (o.speaking ? 0.01 * Math.sin(t * 3.1) : 0),
-    squash: 1 + 0.012 * Math.sin(t * 2.2 + ph) - 0.06 * emph,
-    wave: c.arms.length && WAVE.test(o.action ?? '') ? WAVE_MAX * Math.sin(t * 7 + ph) : 0,
+  const g = o.gesture ?? gestureOf(o.action);
+  const p: Pose = {
+    headRot: 0.02 * Math.sin(t * 1.3 + ph) + (o.speaking ? 0.045 * Math.sin(t * 5.2 + ph) * talk : 0),
+    headNod: o.speaking ? 0.05 * Math.abs(Math.sin(t * 6.5 + ph)) * talk : 0.01 * Math.sin(t * 1.1 + ph),
+    sway: 0.01 * Math.sin(t * 0.9 + ph),
+    // Talkers lean in (the « dispute » posture of the reference), listeners settle back a little.
+    lean: o.speaking ? face * (0.018 + 0.012 * talk) : -face * 0.005,
+    squash: 1 + 0.012 * Math.sin(t * 2.2 + ph) - 0.07 * emph,
+    jump: 0,
+    shake: 0,
+    // Speakers gesticulate with the arm towards the listener; listeners keep a slow idle.
+    arms: c.arms.map((_, i) => (o.speaking ? (i === 0 ? 0.16 + 0.14 * Math.sin(t * 3.4 + ph) * (0.4 + talk) : 0.06 * Math.sin(t * 2.1 + ph)) : 0.03 * Math.sin(t * 1.2 + ph + i))),
+    wave: 0,
     blink,
-    mouth: o.speaking ? Math.max(0, Math.min(1, talk * (0.65 + 0.35 * Math.sin(t * 18 + ph)))) : 0,
+    mouth: o.speaking ? Math.max(0, Math.min(1, talk * (0.6 + 0.4 * Math.sin(t * 17 + ph)))) : 0,
   };
+  // Emotion layer (Wallbott / Ekman): an offset on the whole body; the speaker shows it fully, the listener half.
+  const em = EMOTION_BODY[emotionOf(o.emotion)]!;
+  const ek = o.speaking ? 1 : 0.5;
+  const tt = t * em.tempo;
+  p.lean += face * em.lean * ek;
+  p.headRot += face * em.headTilt * ek;
+  p.headNod += em.headDrop * ek;
+  p.arms = p.arms.map((v) => v + em.arms * ek);
+  p.shake += em.tremble * ek * Math.sin(tt * 40 + ph);
+  p.squash += em.squash * ek;
+  p.jump += em.bounce * ek * Math.abs(Math.sin(tt * 6 + ph));
+  // Lip-sync: the jaw follows the visemes of the words when known, the voice level gives the strength.
+  if (o.speaking && o.viseme !== undefined) p.mouth = Math.max(0, Math.min(1, (0.35 + 0.65 * talk) * o.viseme));
+  const base: Pose = { ...p, arms: [...p.arms] };
+  const A = (i: number, v: number) => {
+    if (i < p.arms.length) p.arms[i] = v;
+  };
+  switch (g) {
+    case 'wave':
+      A(0, 0.55 + 0.32 * Math.sin(t * 8 + ph));
+      break;
+    case 'point':
+      A(0, 0.32 + 0.07 * Math.sin(t * 9 + ph));
+      p.lean += face * 0.02;
+      break;
+    case 'shrug': {
+      const s = Math.max(0, Math.sin(t * 2.6 + ph));
+      p.arms = p.arms.map(() => 0.18 * s);
+      p.headRot += 0.07 * s * face;
+      p.jump = 0.008 * s;
+      break;
+    }
+    case 'head-hands':
+      p.arms = p.arms.map(() => 0.95);
+      p.headRot += 0.05 * Math.sin(t * 4);
+      break;
+    case 'laugh':
+      p.shake = 0.006 * Math.sin(t * 38);
+      p.lean = -face * 0.03;
+      p.mouth = Math.max(p.mouth, 0.55 + 0.25 * Math.abs(Math.sin(t * 14)));
+      p.headNod += 0.03 * Math.abs(Math.sin(t * 12));
+      break;
+    case 'jump':
+      p.jump = 0.06 * Math.abs(Math.sin(t * 5.5));
+      p.squash = 1 + 0.06 * Math.cos(t * 11);
+      p.arms = p.arms.map(() => 0.6);
+      break;
+    case 'yes':
+      p.headNod += 0.07 * Math.sin(t * 9);
+      break;
+    case 'no':
+      p.headRot += 0.08 * Math.sin(t * 10);
+      break;
+    case 'angry':
+      p.lean += face * 0.03;
+      p.shake = 0.004 * Math.sin(t * 46);
+      A(0, 0.25 + 0.2 * Math.abs(Math.sin(t * 7)));
+      break;
+    case 'dance':
+      p.sway = 0.07 * Math.sin(t * 5);
+      p.jump = 0.02 * Math.abs(Math.sin(t * 5));
+      p.arms = p.arms.map((_, i) => 0.3 + 0.25 * Math.sin(t * 5 + i * Math.PI));
+      break;
+    case 'clap':
+      p.arms = p.arms.map((_, i) => 0.25 + 0.15 * Math.sin(t * 16 + i * Math.PI));
+      break;
+    case 'think':
+      A(0, 0.75);
+      p.headRot += 0.09 * face;
+      break;
+    case 'startle': {
+      const k2 = Math.max(0, 1 - ((t + ph) % 3) / 0.5);
+      p.jump = 0.04 * k2;
+      p.squash = 1 + 0.08 * k2;
+      p.lean = -face * 0.03;
+      break;
+    }
+    case 'cry':
+      p.headNod += 0.06;
+      p.shake = 0.003 * Math.sin(t * 30);
+      break;
+    case 'run':
+      p.jump = 0.025 * Math.abs(Math.sin(t * 11));
+      p.lean = face * 0.05;
+      p.arms = p.arms.map((_, i) => 0.35 * Math.sin(t * 11 + i * Math.PI));
+      break;
+  }
+  // Animation principles: the gesture starts with an anticipation, overshoots and settles (age = time since it began).
+  if (g && o.age !== undefined) {
+    const k = gestureEnvelope(o.age);
+    const mix = (a: number, b: number) => a + (b - a) * k;
+    p.arms = p.arms.map((v, i) => mix(base.arms[i] ?? 0, v));
+    p.lean = mix(base.lean, p.lean);
+    p.jump = Math.max(0, mix(base.jump, p.jump));
+    p.headRot = mix(base.headRot, p.headRot);
+    p.headNod = mix(base.headNod, p.headNod);
+  }
+  p.wave = p.arms[0] ?? 0;
+  return p;
 }
 
 /** A rotation of point p around pivot q by angle a. */
@@ -134,54 +282,76 @@ const rot = (p: { x: number; y: number }, q: { x: number; y: number }, a: number
   return { x: q.x + dx * cs - dy * s, y: q.y + dx * s + dy * cs };
 };
 const smooth = (e: number) => (e <= 0 ? 0 : e >= 1 ? 1 : e * e * (3 - 2 * e));
-/**
- * The deformed grid of one character (cols × rows vertices over its box, image fractions): head vertices turn around
- * the neck and nod, body vertices sway around the feet and squash, arm vertices wave around the shoulder; every
- * displacement fades to 0 at the edge of the box so the drawing stays attached to its background.
- */
-export function warpGrid(c: PuppetCharacter, p: Pose, cols = 10, rows = 14): { src: { x: number; y: number }[]; dst: { x: number; y: number }[]; cols: number; rows: number } {
-  const b = { x: c.box.x - c.box.w * 0.06, y: c.box.y - c.box.h * 0.04, w: c.box.w * 1.12, h: c.box.h * 1.06 };
+/** Where a point of the character goes with the pose (body + head + jaw bones), without the arms. */
+function bodyMove(c: PuppetCharacter, p: Pose, s: { x: number; y: number }, withJaw: boolean): { x: number; y: number } {
   const neck = { x: c.head.x + c.head.w / 2, y: c.head.y + c.head.h };
   const feet = { x: c.body.x + c.body.w / 2, y: c.body.y + c.body.h };
+  // Body: sway + lean around the feet (more at the top), squash towards the feet, jump and shake.
+  const hFrac = smooth((feet.y - s.y) / Math.max(1e-6, feet.y - c.box.y));
+  let d = rot(s, feet, p.sway + p.lean * hFrac);
+  d = { x: feet.x + (d.x - feet.x) * (2 - p.squash), y: feet.y + (d.y - feet.y) * p.squash };
+  d = { x: d.x + p.shake * c.box.w, y: d.y - p.jump * c.box.h };
+  // Head: weight 1 above the neck, fading over a short band below it.
+  const hw = smooth((neck.y + c.head.h * 0.15 - s.y) / (c.head.h * 0.3)) * smooth(1 - Math.abs(s.x - neck.x) / (c.head.w * 0.9));
+  if (hw > 0) {
+    const pivot = { x: neck.x + (d.x - s.x), y: neck.y + (d.y - s.y) };
+    // Jaw: below the mouth's centre, inside the lower face, the skin drops with the opening.
+    let jy = 0;
+    if (withJaw && c.mouth && p.mouth > 0) {
+      const mc = { x: c.mouth.x + c.mouth.w / 2, y: c.mouth.y + c.mouth.h / 2 };
+      const below = smooth((s.y - mc.y) / (c.mouth.h * 0.6)) * smooth((c.head.y + c.head.h * 1.05 - s.y) / (c.head.h * 0.25));
+      const side = smooth(1 - Math.abs(s.x - mc.x) / Math.max(c.mouth.w * 1.6, c.head.w * 0.32));
+      jy = p.mouth * c.mouth.h * 0.9 * below * side;
+    }
+    const hd = rot(d, pivot, p.headRot * hw);
+    d = { x: hd.x, y: hd.y + (p.headNod * c.head.h + jy) * hw };
+  }
+  return d;
+}
+/**
+ * The deformed grid of one character (cols × rows vertices over its box, image fractions): body leans / sways /
+ * jumps around the feet, the head turns and nods around the neck, the jaw drops with the voice, each arm turns
+ * around its shoulder; every displacement fades to 0 at the edge of the warp box (wider than the character) so the
+ * drawing stays attached to its background.
+ */
+export function warpGrid(
+  c: PuppetCharacter,
+  p: Pose,
+  cols = 12,
+  rows = 18,
+  /** 0..1 « is this point on the character? » (colour matte): the background stays straight, only the character moves. */
+  weight?: (s: { x: number; y: number }) => number,
+): { src: { x: number; y: number }[]; dst: { x: number; y: number }[]; cols: number; rows: number } {
+  const b = { x: c.box.x - c.box.w * 0.14, y: c.box.y - c.box.h * 0.1, w: c.box.w * 1.28, h: c.box.h * 1.14 };
   const src: { x: number; y: number }[] = [];
   const dst: { x: number; y: number }[] = [];
   for (let j = 0; j <= rows; j++)
     for (let i = 0; i <= cols; i++) {
       const s = { x: b.x + (b.w * i) / cols, y: b.y + (b.h * j) / rows };
       src.push(s);
-      // Edge falloff: 0 on the border of the warp box, 1 inside.
       const edge = smooth(Math.min(i, cols - i, j, rows - j) / 2);
-      // Body: sway around the feet + squash towards the feet.
-      let d = rot(s, feet, p.sway);
-      d = { x: feet.x + (d.x - feet.x) * (2 - p.squash), y: feet.y + (d.y - feet.y) * p.squash };
-      // Head: weight 1 above the neck, fading over a short band below it.
-      const hw = smooth((neck.y + c.head.h * 0.15 - s.y) / (c.head.h * 0.3)) * smooth(1 - Math.abs(s.x - neck.x) / (c.head.w * 0.9));
-      if (hw > 0) {
-        const hd = rot(d, { x: neck.x, y: neck.y }, p.headRot * hw);
-        d = { x: hd.x, y: hd.y + p.headNod * c.head.h * hw };
-      }
-      // Arms: points near the shoulder → hand segment turn around the shoulder.
-      for (const a of c.arms) {
-        if (!p.wave) break;
+      let d = bodyMove(c, p, s, true);
+      // Arms: points near the shoulder → hand segment turn around the (moved) shoulder; positive angle = hand up.
+      c.arms.forEach((a, k) => {
+        const ang = p.arms[k] ?? 0;
+        if (!ang) return;
         const L = Math.hypot(a.hand.x - a.shoulder.x, a.hand.y - a.shoulder.y) || 1e-6;
-        const t = ((s.x - a.shoulder.x) * (a.hand.x - a.shoulder.x) + (s.y - a.shoulder.y) * (a.hand.y - a.shoulder.y)) / (L * L);
-        const px = a.shoulder.x + (a.hand.x - a.shoulder.x) * Math.max(0, Math.min(1, t));
-        const py = a.shoulder.y + (a.hand.y - a.shoulder.y) * Math.max(0, Math.min(1, t));
+        const tt = ((s.x - a.shoulder.x) * (a.hand.x - a.shoulder.x) + (s.y - a.shoulder.y) * (a.hand.y - a.shoulder.y)) / (L * L);
+        const px = a.shoulder.x + (a.hand.x - a.shoulder.x) * Math.max(0, Math.min(1, tt));
+        const py = a.shoulder.y + (a.hand.y - a.shoulder.y) * Math.max(0, Math.min(1, tt));
         const dist = Math.hypot(s.x - px, s.y - py);
-        const aw = smooth(1 - dist / (L * 0.35)) * smooth(t * 3);
-        if (aw > 0) d = rot(d, a.shoulder, p.wave * aw);
-      }
-      dst.push({ x: s.x + (d.x - s.x) * edge, y: s.y + (d.y - s.y) * edge });
+        const aw = smooth(1 - dist / (L * 0.32)) * smooth(tt * 3);
+        if (aw <= 0) return;
+        const up = a.hand.x >= a.shoulder.x ? -1 : 1;
+        const sh = bodyMove(c, p, a.shoulder, false);
+        d = rot(d, sh, up * ang * aw);
+      });
+      const k = edge * (weight ? weight(s) : 1);
+      dst.push({ x: s.x + (d.x - s.x) * k, y: s.y + (d.y - s.y) * k });
     }
   return { src, dst, cols, rows };
 }
-
-/** Where a point of the character (eye, mouth) goes with the pose (same bones as the grid, no edge falloff). */
+/** Where a point of the character (eye, mouth) goes with the pose (no edge falloff, no arm). */
 export function deformPoint(c: PuppetCharacter, p: Pose, s: { x: number; y: number }): { x: number; y: number } {
-  const neck = { x: c.head.x + c.head.w / 2, y: c.head.y + c.head.h };
-  const feet = { x: c.body.x + c.body.w / 2, y: c.body.y + c.body.h };
-  let d = rot(s, feet, p.sway);
-  d = { x: feet.x + (d.x - feet.x) * (2 - p.squash), y: feet.y + (d.y - feet.y) * p.squash };
-  const hd = rot(d, neck, p.headRot);
-  return { x: hd.x, y: hd.y + p.headNod * c.head.h };
+  return bodyMove(c, p, s, false);
 }

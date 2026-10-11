@@ -194,7 +194,7 @@ test('imported skills are enforced; custom agents restrict tools', async ({ page
     skill,
     '---\nname: rapport-risque\ndescription: Rapports de risque. Se déclenche avec "rapport de risque", "IFRS9".\n---\nRÈGLE-42 : terminer par une section Recommandations.\n',
   );
-  await page.getByRole('button', { name: 'Skills' }).click();
+  await page.getByLabel('Skills', { exact: true }).click();
   await page.locator('input[type=file]').setInputFiles(skill);
   await expect(page.getByText('rapport-risque').first()).toBeVisible();
   await page.getByRole('button', { name: 'Chat' }).click();

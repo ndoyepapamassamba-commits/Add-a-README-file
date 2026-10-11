@@ -3,6 +3,9 @@
 // videos when generated) with the real voices, music, SFX and word-highlighted subtitles),
 // not the final film. When the browser lacks a capability the caller shows « Capability unavailable in current environment ».
 import { PuppetStage } from './puppetRender';
+import { gestureOf } from '../../../server/jev/studio/puppet';
+import { visemeAt } from '../../../server/jev/studio/emotionLayer';
+import { VIRAL_FORMAT, VIRAL_PRESETS, captionChunk, fitBand, parallelChunk, reactionFor, shockAfter, type ReactionKind } from '../../../server/jev/studio/viralFormat';
 import { blobs } from './blobs';
 import type { Blueprint, Scene } from '../../../server/jev/studio/types';
 import { duckingPoints } from '../../../server/jev/studio/timeline';
@@ -53,7 +56,19 @@ export interface PreviewOptions {
   /** Per-scene duration override (e.g. the sum of measured voice durations). */
   /** Cinema finish (warm grade + soft vignette), on by default. */
   cinema?: boolean;
+  /**
+   * « À mourir de rire » viral format (on by default in 9:16): sharp shot in a band with a blurred fill, bilingual
+   * karaoke captions (English above, French below, keyword highlighted) and a « stupeur » insert after each punchline.
+   */
+  viral?: boolean;
+  /** One sketch per scene: the « stupeur » insert plays between every scene. */
+  compilation?: boolean;
+  /** « court » preset: one sketch + the reaction at the end (≈ 8 s, made to loop). */
+  short?: boolean;
+  /** Caption keyword as a coloured word (default) or in a coloured box. */
+  captionStyle?: 'word' | 'box';
 }
+type Rect = { x: number; y: number; w: number; h: number };
 /** The cinema finish, prepared once: a soft vignette and a warm highlight grade (no frame is re-encoded twice). */
 function cinemaGrade(W: number, H: number, ctx: CanvasRenderingContext2D): { vignette: CanvasGradient; warm: CanvasGradient } {
   const vignette = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.hypot(W, H) * 0.62);
@@ -79,27 +94,203 @@ async function bitmapOf(id?: string): Promise<ImageBitmap | null> {
   const b = await blobs.get(id);
   return b ? createImageBitmap(b) : null;
 }
-function cover(ctx: CanvasRenderingContext2D, img: CanvasImageSource & { width: number; height: number }, W: number, H: number, cam: Cam | number, alpha = 1) {
+const sizeOf = (img: CanvasImageSource & { width: number; height: number }) => [(img as HTMLVideoElement).videoWidth || img.width, (img as HTMLVideoElement).videoHeight || img.height] as const;
+function coverIn(ctx: CanvasRenderingContext2D, img: CanvasImageSource & { width: number; height: number }, r: Rect, cam: Cam | number, alpha = 1, clip = false) {
   const c: Cam = typeof cam === 'number' ? { zoom: cam, dx: 0, dy: 0, rot: 0 } : cam;
-  const iw = (img as HTMLVideoElement).videoWidth || img.width;
-  const ih = (img as HTMLVideoElement).videoHeight || img.height;
+  const [iw, ih] = sizeOf(img);
   if (!iw || !ih) return;
-  const s = Math.max(W / iw, H / ih) * c.zoom;
+  const s = Math.max(r.w / iw, r.h / ih) * c.zoom;
   const w = iw * s;
   const h = ih * s;
   ctx.save();
+  if (clip) {
+    ctx.beginPath();
+    ctx.rect(r.x, r.y, r.w, r.h);
+    ctx.clip();
+  }
   ctx.globalAlpha = alpha;
-  ctx.translate(W / 2 + c.dx * W, H / 2 + c.dy * H);
+  ctx.translate(r.x + r.w / 2 + c.dx * r.w, r.y + r.h / 2 + c.dy * r.h);
   ctx.rotate(c.rot);
   ctx.drawImage(img, -w / 2, -h / 2, w, h);
   ctx.restore();
 }
+function cover(ctx: CanvasRenderingContext2D, img: CanvasImageSource & { width: number; height: number }, W: number, H: number, cam: Cam | number, alpha = 1) {
+  coverIn(ctx, img, { x: 0, y: 0, w: W, h: H }, cam, alpha);
+}
+/**
+ * Vertical framing of the viral format: a landscape / square shot stays whole and sharp in a band across the middle, the
+ * same shot enlarged and blurred fills the top and the bottom (no black bars, nothing cropped). Returns the band.
+ */
+export function framed(ctx: CanvasRenderingContext2D, img: CanvasImageSource & { width: number; height: number }, W: number, H: number, cam: Cam, alpha: number, viral: boolean): Rect {
+  const [iw, ih] = sizeOf(img);
+  const b = viral ? fitBand(iw, ih, W, H) : { x: 0, y: 0, w: W, h: H, fill: false };
+  if (!b.fill) {
+    cover(ctx, img, W, H, cam, alpha);
+    return { x: 0, y: 0, w: W, h: H };
+  }
+  ctx.save();
+  ctx.filter = `blur(${Math.max(6, Math.round(W * 0.035))}px) brightness(0.82) saturate(1.1)`;
+  cover(ctx, img, W, H, { zoom: 1.12 + (cam.zoom - 1) * 0.5, dx: cam.dx * 0.5, dy: cam.dy * 0.5, rot: 0 }, alpha);
+  ctx.restore();
+  coverIn(ctx, img, b, cam, alpha, true);
+  return b;
+}
+/** The « stupeur » insert: our own vector shocked face popping in on black (overshoot, then a small tremble). */
+export function shockFrame(ctx: CanvasRenderingContext2D, W: number, H: number, age: number, kind: ReactionKind = 'choc') {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+  const pop = age < 0.25 ? Math.sin((age / 0.25) * Math.PI * 0.5) * 1.15 : 1 + 0.15 * Math.exp(-(age - 0.25) * 8) * Math.cos((age - 0.25) * 18);
+  const r = Math.min(W, H) * 0.3 * pop;
+  const cx = W / 2 + Math.sin(age * 60) * W * 0.004;
+  const cy = H / 2;
+  const g = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.4, r * 0.1, cx, cy, r);
+  g.addColorStop(0, '#ffe680');
+  g.addColorStop(0.7, '#f7b928');
+  g.addColorStop(1, '#d9861a');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  const eye = (ex: number, ey: number, closed: boolean, sx: number) => {
+    if (closed) {
+      ctx.strokeStyle = '#3b2208';
+      ctx.lineWidth = r * 0.07;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(ex, ey + r * 0.05, r * 0.15, Math.PI * 1.1, Math.PI * 1.9);
+      ctx.stroke();
+      return;
+    }
+    const big = kind === 'choc' ? 1 : 0.7;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.ellipse(ex, ey, r * 0.24 * big, r * 0.28 * big, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#5b3410';
+    ctx.beginPath();
+    ctx.arc(ex + sx * r * 0.02, ey + r * 0.03, r * 0.1 * big, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.arc(ex + sx * r * 0.02, ey + r * 0.03, r * 0.05 * big, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  const ey = cy - r * 0.22;
+  if (kind === 'cool') {
+    // Sunglasses: two dark lenses and a bridge, tilted a little.
+    ctx.save();
+    ctx.translate(cx, ey);
+    ctx.rotate(-0.08);
+    ctx.fillStyle = '#111';
+    for (const sx of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(sx * r * 0.36, 0, r * 0.3, r * 0.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillRect(-r * 0.12, -r * 0.05, r * 0.24, r * 0.06);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.45, -r * 0.06, r * 0.08, r * 0.04, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  } else
+    for (const sx of [-1, 1]) {
+      const ex = cx + sx * r * 0.36;
+      eye(ex, ey, kind === 'rire' || (kind === 'clin' && sx > 0), sx);
+      if (kind === 'choc') {
+        ctx.strokeStyle = '#5b3410';
+        ctx.lineWidth = r * 0.07;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(ex, ey - r * 0.25, r * 0.22, Math.PI * 1.15, Math.PI * 1.85);
+        ctx.stroke();
+      }
+    }
+  if (kind === 'choc') {
+    ctx.fillStyle = '#5a0f12';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + r * 0.38, r * 0.26, r * 0.32 * Math.min(1, 0.6 + age * 2), 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#e0656b';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + r * 0.56, r * 0.18, r * 0.1, 0, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (kind === 'rire') {
+    // Wide open laughing mouth + tears of joy bouncing.
+    ctx.fillStyle = '#5a0f12';
+    ctx.beginPath();
+    ctx.moveTo(cx - r * 0.5, cy + r * 0.12);
+    ctx.quadraticCurveTo(cx, cy + r * 0.95, cx + r * 0.5, cy + r * 0.12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(cx - r * 0.4, cy + r * 0.12, r * 0.8, r * 0.1);
+    ctx.fillStyle = '#5ec8ff';
+    for (const sx of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(cx + sx * r * 0.62, ey + r * 0.2 + Math.abs(Math.sin(age * 9)) * r * 0.1, r * 0.08, r * 0.13, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else {
+    // Smirk (wink / cool): a lopsided smile, tongue out for the wink.
+    ctx.strokeStyle = '#5a0f12';
+    ctx.lineWidth = r * 0.08;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx - r * 0.35, cy + r * 0.4);
+    ctx.quadraticCurveTo(cx + r * 0.05, cy + r * 0.62, cx + r * 0.42, cy + r * 0.28);
+    ctx.stroke();
+    if (kind === 'clin') {
+      ctx.fillStyle = '#e0656b';
+      ctx.beginPath();
+      ctx.ellipse(cx + r * 0.1, cy + r * 0.6, r * 0.11, r * 0.13, 0.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+/** Bilingual karaoke captions: 1–3 words, heavy font, black outline; keyword in cyan (English) / yellow (French). */
+export function drawChunk(ctx: CanvasRenderingContext2D, chunk: { words: string[]; key: number }, cx: number, cy: number, size: number, key: string, maxW: number, box?: string) {
+  let px = size;
+  ctx.font = VIRAL_FORMAT.font.replace('{px}', String(px));
+  const text = chunk.words.join(' ').toUpperCase();
+  while (ctx.measureText(text).width > maxW && px > 10) {
+    px -= 2;
+    ctx.font = VIRAL_FORMAT.font.replace('{px}', String(px));
+  }
+  const parts = chunk.words.map((w) => w.toUpperCase());
+  const widths = parts.map((p, i) => ctx.measureText(p + (i < parts.length - 1 ? ' ' : '')).width);
+  let x = cx - widths.reduce((a, b) => a + b, 0) / 2;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  parts.forEach((p, i) => {
+    const wordW = ctx.measureText(p).width;
+    if (box && i === chunk.key) {
+      // Keyword in a coloured box (dark text), the variant of the most viewed account.
+      const pad = px * 0.14;
+      ctx.fillStyle = box;
+      ctx.beginPath();
+      ctx.roundRect(x - pad, cy - px * 0.62, wordW + pad * 2, px * 1.2, px * 0.12);
+      ctx.fill();
+      ctx.fillStyle = '#111';
+      ctx.fillText(p, x, cy);
+      x += widths[i]!;
+      return;
+    }
+    ctx.lineWidth = px * 0.22;
+    ctx.strokeStyle = '#000';
+    ctx.strokeText(p, x, cy);
+    ctx.fillStyle = i === chunk.key ? key : '#fff';
+    ctx.fillText(p, x, cy);
+    x += widths[i]!;
+  });
+}
 /** The speaker's zone re-drawn stretched / nodding, blended in with a soft oval mask (no visible seams). */
 let talkBuf: OffscreenCanvas | null = null;
-function talkLayer(ctx: CanvasRenderingContext2D, W: number, H: number, w: TalkWarp): void {
+function talkLayer(ctx: CanvasRenderingContext2D, W: number, H: number, w: TalkWarp, ox = 0, oy = 0): void {
   if (typeof OffscreenCanvas === 'undefined') return;
-  const zx = Math.round(w.zone.x * W);
-  const zy = Math.round(w.zone.y * H);
+  const zx = Math.round(ox + w.zone.x * W);
+  const zy = Math.round(oy + w.zone.y * H);
   const zw = Math.round(w.zone.w * W);
   const zh = Math.round(w.zone.h * H);
   if (zw < 8 || zh < 8) return;
@@ -235,11 +426,42 @@ export async function renderPreview(
     const last = lines.filter((l) => l.start >= t && l.start < t + sc.duration + 10).at(-1);
     t += Math.max(sc.duration, last ? last.end - t + 0.4 : 0);
   }
-  const total = t;
+  // « Stupeur » inserts after the punchlines (or between sketches): the timeline, the voices and the SFX shift after them.
+  const viral = o.viral ?? bp.aspect === '9:16';
+  const shock = viral ? shockAfter(bp.scenes, o.compilation ?? false) : bp.scenes.map(() => false);
+  // « court »: the reaction closes the sketch (after the last scene), the clip then loops on TikTok.
+  if (viral && o.short && bp.scenes.length) shock[bp.scenes.length - 1] = true;
+  const reactions = bp.scenes.map((s) => reactionFor(s.emotion, s.beat));
+  const sceneEnd: number[] = bp.scenes.map((_, i) => sceneStart[i + 1] ?? t);
+  const off: number[] = [];
+  let acc = 0;
+  bp.scenes.forEach((_, i) => {
+    off.push(acc);
+    if (shock[i]) acc += o.short && i === bp.scenes.length - 1 ? VIRAL_PRESETS.court.reactionSeconds : VIRAL_FORMAT.shockSeconds;
+  });
+  const shockAt: number[] = [];
+  bp.scenes.forEach((_, i) => {
+    sceneStart[i] = sceneStart[i]! + off[i]!;
+    sceneEnd[i] = sceneEnd[i]! + off[i]!;
+    if (shock[i]) shockAt.push(sceneEnd[i]!);
+  });
+  const sceneIdx = new Map(bp.scenes.map((s, i) => [s.scene_id, i]));
+  for (const l of lines) {
+    const d = off[sceneIdx.get(l.sceneId) ?? 0] ?? 0;
+    if (!d) continue;
+    l.start += d;
+    l.end += d;
+    for (const w of l.words) {
+      w.start += d;
+      w.end += d;
+    }
+  }
+  const total = t + acc;
   const bitmaps = await Promise.all(bp.scenes.map((s) => bitmapOf(s.imageAssetId)));
   const videos = await Promise.all(bp.scenes.map((s) => videoOf(s.videoAssetId)));
   // Rigged scenes (no video clip) are animated by the puppet engine.
-  const stages = bitmaps.map((b, k) => (b && !videos[k] && bp.scenes[k]!.rig?.characters.length ? new PuppetStage(b, bp.scenes[k]!.rig!) : null));
+  const plates = await Promise.all(bp.scenes.map((s, k) => (bitmaps[k] && !videos[k] && s.rig?.characters.length ? bitmapOf(s.plateAssetId) : null)));
+  const stages = bitmaps.map((b, k) => (b && !videos[k] && bp.scenes[k]!.rig?.characters.length ? new PuppetStage(b, bp.scenes[k]!.rig!, plates[k]) : null));
   // One camera move per scene, chosen from its content, never the same twice in a row.
   const dim3d = dimensionOf(bp.styleDNA) === '3D';
   const moves: Move[] = [];
@@ -318,6 +540,21 @@ export async function renderPreview(
   }
   for (const v of voiceBufs) schedule(v.buf, v.at, 1);
   for (const s of sfx) schedule(s.buf, s.at, 0.35);
+  // The « stupeur » hit, synthesised (a falling « boing » + a soft thump), no sound file needed.
+  for (const at of shockAt) {
+    const t1 = ac.currentTime + at;
+    const osc = ac.createOscillator();
+    const g = ac.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(880, t1);
+    osc.frequency.exponentialRampToValueAtTime(140, t1 + 0.45);
+    g.gain.setValueAtTime(0.0001, t1);
+    g.gain.exponentialRampToValueAtTime(0.35, t1 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t1 + 0.6);
+    osc.connect(g).connect(dest);
+    osc.start(t1);
+    osc.stop(t1 + 0.65);
+  }
   rec.start(500);
   const t0 = performance.now();
   const style = o.style ?? (bp.subtitles.style as SubtitleStyle);
@@ -327,12 +564,21 @@ export async function renderPreview(
     if (now >= total || o.signal?.aborted) break;
     let si = 0;
     for (let i = 0; i < sceneStart.length; i++) if (now >= sceneStart[i]!) si = i;
-    const sc = bp.scenes[si]!;
-    const dur = (sceneStart[si + 1] ?? total) - sceneStart[si]!;
+    if (shock[si] && now >= sceneEnd[si]!) {
+      shockFrame(ctx, W, H, now - sceneEnd[si]!, reactions[si]);
+      o.onProgress?.(now / total, now);
+      await wait(33);
+      continue;
+    }
+    const dur = sceneEnd[si]! - sceneStart[si]!;
     const f = Math.min(1, (now - sceneStart[si]!) / Math.max(0.1, dur));
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
     const va = voiceAt(now);
+    const act = activeAt(lines, now);
+    const dl = act ? bp.scenes[sceneIdx.get(act.line.sceneId) ?? si]?.dialogue[act.line.index] : undefined;
+    const gesture = dl ? (gestureOf(dl.gesture) ?? gestureOf(dl.text)) : null;
+    let band: Rect = { x: 0, y: 0, w: W, h: H };
     punchS += (va.punch - punchS) * 0.18;
     const drawShot = (k: number, fr: number, alpha: number) => {
       const vid = videos[k];
@@ -341,17 +587,28 @@ export async function renderPreview(
       if (vid) {
         if (vid.paused) void vid.play().catch(() => undefined);
         // A real video clip already moves: only a gentle camera on top of it.
-        cover(ctx, vid, W, H, { zoom: 1 + (cam.zoom - 1) * 0.3, dx: cam.dx * 0.3, dy: cam.dy * 0.3, rot: 0 }, alpha);
+        band = framed(ctx, vid as unknown as HTMLVideoElement & { width: number; height: number }, W, H, { zoom: 1 + (cam.zoom - 1) * 0.3, dx: cam.dx * 0.3, dy: cam.dy * 0.3, rot: 0 }, alpha, viral);
       } else if (img && stages[k]) {
         // MARIONNETTE AFRIKATOON: the characters themselves move (head, body, arms), blink and talk with the voice.
         const st = stages[k]!;
-        const frame = st.frame({ t: now + k * 3.7, side: va.side, energy: k === si ? va.energy : 0, speaking: k === si && va.energy > 0.03, action: bp.scenes[k]!.action, emphasis: k === bp.scenes.length - 1 ? Math.max(0, 1 - Math.abs(fr - 0.85) * 8) : 0 });
-        cover(ctx, frame as unknown as ImageBitmap, W, H, cam, alpha);
+        const frame = st.frame({
+          t: now + k * 3.7,
+          side: va.side,
+          energy: k === si ? va.energy : 0,
+          speaking: k === si && va.energy > 0.03,
+          action: bp.scenes[k]!.action,
+          emphasis: k === bp.scenes.length - 1 ? Math.max(0, 1 - Math.abs(fr - 0.85) * 8) : 0,
+          gesture: k === si ? gesture : null,
+          lineAge: act ? now - act.line.start : undefined,
+          emotion: (k === si ? dl?.emotion : undefined) || bp.scenes[k]!.emotion,
+          viseme: k === si && act && dl ? visemeAt(dl.text, (now - act.line.start) / Math.max(0.1, act.line.end - act.line.start)) : undefined,
+        });
+        band = framed(ctx, frame as unknown as ImageBitmap, W, H, cam, alpha, viral);
       } else if (img) {
         // 2.5D life without a video model: the whole shot breathes, the speaker talks and nods.
         const b = breathing(now + k);
-        cover(ctx, img, W, H, { ...cam, zoom: cam.zoom * b, dy: cam.dy - (b - 1) * 0.5 }, alpha);
-        if (k === si && va.energy > 0.04 && alpha >= 1) talkLayer(ctx, W, H, talkWarp(va.side, va.energy, now));
+        band = framed(ctx, img, W, H, { ...cam, zoom: cam.zoom * b, dy: cam.dy - (b - 1) * 0.5 }, alpha, viral);
+        if (k === si && va.energy > 0.04 && alpha >= 1) talkLayer(ctx, band.w, band.h, talkWarp(va.side, va.energy, now), band.x, band.y);
       }
       else if (alpha >= 1) placeholder(ctx, bp.scenes[k]!, W, H);
     };
@@ -361,8 +618,21 @@ export async function renderPreview(
     drawShot(si, f, si > 0 ? a0 : 1);
     for (const [k, v] of videos.entries()) if (v && k !== si && k !== si - 1 && !v.paused) v.pause();
     if (o.cinema !== false) cinemaFinish(ctx, W, H, grade);
-    const a = activeAt(lines, now);
-    if (a) drawSub(ctx, a.line, a.wordIndex, W, H, style);
+    const a = act;
+    if (a && viral) {
+      // French below the band (keyword yellow), English above it (keyword cyan), 1–3 words at a time.
+      const fr = captionChunk(a.line.words.map((w) => w.text), a.wordIndex);
+      const size = Math.round(W * 0.085);
+      const below = band.y + band.h < H * 0.9 ? band.y + band.h + Math.min(H - band.y - band.h, H * 0.16) * 0.45 : H * 0.8;
+      if (fr) drawChunk(ctx, fr, W / 2, below, size, VIRAL_FORMAT.bottomColor, W * 0.9, o.captionStyle === 'box' ? VIRAL_FORMAT.boxColors[0] : undefined);
+      const en = dl?.english?.trim();
+      if (en) {
+        const prog = (now - a.line.start) / Math.max(0.1, a.line.end - a.line.start);
+        const ch = parallelChunk(en.split(/\s+/), prog);
+        const above = band.y > H * 0.1 ? band.y - Math.min(band.y, H * 0.16) * 0.45 : H * 0.2;
+        if (ch) drawChunk(ctx, ch, W / 2, above, size, VIRAL_FORMAT.topColor, W * 0.9, o.captionStyle === 'box' ? VIRAL_FORMAT.boxColors[1] : undefined);
+      }
+    } else if (a) drawSub(ctx, a.line, a.wordIndex, W, H, style);
     o.onProgress?.(now / total, now);
     await wait(33);
   }
@@ -371,6 +641,7 @@ export async function renderPreview(
   stream.getTracks().forEach((tr) => tr.stop());
   await ac.close();
   bitmaps.forEach((b) => b?.close());
+  plates.forEach((b) => b?.close());
   videos.forEach((v) => {
     if (v) {
       v.pause();

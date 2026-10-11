@@ -285,7 +285,7 @@ export function StoryView() {
               value={bp.language}
               onChange={(v) => set({ language: v })}
               options={[
-                { value: 'fr', label: 'Français (+ wolof)' },
+                { value: 'fr', label: 'Français ivoirien' },
                 { value: 'en', label: 'English' },
               ]}
             />
@@ -668,7 +668,7 @@ export function WorldView() {
         <div className="flex flex-wrap items-center gap-2">
           <Input
             className="max-w-xs"
-            placeholder="Dakar, marché, salon, cour, bureau, plage…"
+            placeholder="Abidjan, maquis, marché d’Adjamé, cour commune, bureau, plage…"
             value={name}
             onChange={(e) => setName(e.target.value)}
             data-testid="world-name"

@@ -146,13 +146,17 @@ export interface VoiceProfile {
 export interface DialogueLine {
   speaker: string;
   text: string;
-  /** Translation for subtitles when the line is in wolof. */
+  /** Translation for subtitles when the line uses popular Ivorian expressions (nouchi). */
   translation?: string;
   language: string;
   emotion: string;
   intensity: number;
   pace: number;
   pauseAfterMs: number;
+  /** The line in English for the bilingual captions of the viral format (above the picture). */
+  english?: string;
+  /** The gesture the character plays on this line (« salue », « hausse les épaules »…), for the animation engine. */
+  gesture?: string;
 }
 
 export interface Scene {
@@ -178,6 +182,8 @@ export interface Scene {
   subtitle_prompt: string;
   /** Storyboard card state. */
   imageAssetId?: string;
+  /** The same shot WITHOUT the characters (clean background plate) — the animation engine cuts them out exactly. */
+  plateAssetId?: string;
   /** Generated video attached to the card; the image stays the reference. */
   videoAssetId?: string;
   status: 'DRAFT' | 'READY' | 'GENERATED' | 'APPROVED' | 'FAILED';

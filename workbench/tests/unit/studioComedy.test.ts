@@ -38,10 +38,13 @@ describe('the image generator draws ONE shot, never a comic page', () => {
 });
 
 describe('prompteur rigolo Afrikatoon and talking characters', () => {
-  it('the screenwriter gets comic devices, wolof interjections and one-moment actions', () => {
+  it('the screenwriter gets comic devices, Ivorian French (never wolof), a gesture per line and one-moment actions', () => {
     const b = humorBrief(3);
     expect(b).toMatch(/PROMPTEUR RIGOLO/);
-    expect(b).toMatch(/Waaw/);
+    expect(b).toMatch(/français ivoirien/);
+    expect(b).toMatch(/JAMAIS de wolof/);
+    expect(b).toMatch(/GESTES/);
+    expect(b).not.toMatch(/Waaw|Dafa|Nangadef/);
     expect(b).toMatch(/UN SEUL moment visuel/);
     expect(comicDirection('chute', 'stupeur', 1)).toMatch(/punchline/);
   });

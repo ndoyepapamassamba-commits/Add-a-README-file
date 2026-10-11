@@ -93,7 +93,7 @@ Le directeur artistique du Studio rejuge l'image : la retouche n'est gardée que
 # Vidéo Afrikatoon premium
 Ordre : histoire → scènes → images (directeur artistique) → animation image → vidéo → contrôle qualité (reprise des scènes faibles) → voix, musique, sous-titres → montage cinéma.
 - Un plan = 3 à 6 s, un mouvement de caméra clair, une réaction exagérée lisible en 1 s.
-- Voix : une voix par personnage, interjections wolof traduites en sous-titres.
+- Voix : une voix par personnage, expressions ivoiriennes (français d’Abidjan, nouchi léger) compréhensibles par tous.
 - Interpolation, stabilisation : seulement si un modèle du catalogue les fait ; sinon les annoncer « non disponibles ».`),
   S('mouvements-camera', 'Vidéo', 'Choisit les mouvements de caméra d’une scène. Se déclenche avec "caméra", "plan", "travelling", "zoom", "cadrage vidéo".', `
 # Mouvements de caméra

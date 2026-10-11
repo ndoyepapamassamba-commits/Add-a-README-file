@@ -8,14 +8,26 @@ import { useStore } from '../store';
 
 export const POLLINATIONS_VIDEO = 'pollinations:alibaba/wan-2.2-fast';
 export const HF_VIDEO = 'hf:wan-2.2-14b-fast';
-/** Price per second of video (pollen ≈ USD), from the provider's model list. */
+/**
+ * Image → video models reachable through Pollinations (start frame = the scene image), price per second (pollen ≈ USD)
+ * from the provider's model list. Grok Imagine is the engine behind the reference « 041701 » clip.
+ */
+export const POLLINATIONS_MODELS: { id: string; model: string; name: string; usdPerS: number; quality: number }[] = [
+  { id: 'pollinations:x-ai/grok-imagine-video-1.5-lite', model: 'x-ai/grok-imagine-video-1.5-lite', name: 'Grok Imagine Video 1.5 Lite (qualité Grok, ≈ 0,03 $/s)', usdPerS: 0.03, quality: 8.6 },
+  { id: 'pollinations:x-ai/grok-imagine-video', model: 'x-ai/grok-imagine-video', name: 'Grok Imagine Video (≈ 0,07 $/s)', usdPerS: 0.07, quality: 8.9 },
+  { id: 'pollinations:bytedance/seedance-2.0-fast', model: 'bytedance/seedance-2.0-fast', name: 'Seedance 2.0 Fast (≈ 0,07 $/s)', usdPerS: 0.07, quality: 8.7 },
+  { id: POLLINATIONS_VIDEO, model: 'alibaba/wan-2.2-fast', name: 'Wan 2.2 Fast (≈ 0,01 $/s)', usdPerS: 0.01, quality: 7.2 },
+];
+/** Price per second of the cheapest engine. */
 export const POLLINATIONS_USD_PER_S = 0.01;
+export const pollinationsModel = (id: string | undefined | null) => POLLINATIONS_MODELS.find((m) => m.id === id);
 const HF_BASE = 'https://zerogpu-aoti-wan2-2-fp8da-aoti-faster.hf.space';
 
-export const isCheapVideo = (id: string | undefined | null) => id === POLLINATIONS_VIDEO || id === HF_VIDEO;
+export const isCheapVideo = (id: string | undefined | null) => Boolean(pollinationsModel(id)) || id === HF_VIDEO;
 
 /** Pollinations: upload the frame to its media store, then ask the video for that start frame. */
-export async function pollinationsVideo(img: Blob, prompt: string, seconds: number, aspect: string, signal?: AbortSignal): Promise<{ blob: Blob; usd: number }> {
+export async function pollinationsVideo(img: Blob, prompt: string, seconds: number, aspect: string, signal?: AbortSignal, engine: string = POLLINATIONS_VIDEO): Promise<{ blob: Blob; usd: number }> {
+  const pm = pollinationsModel(engine) ?? POLLINATIONS_MODELS.at(-1)!;
   const key = useStore.getState().settings.pollinationsKey?.trim();
   if (!key) throw new Error('Clé Pollinations absente : Réglages → Animation vidéo économique (compte sur enter.pollinations.ai, quelques pollens suffisent).');
   const auth = { Authorization: `Bearer ${key}` };
@@ -27,12 +39,12 @@ export async function pollinationsVideo(img: Blob, prompt: string, seconds: numb
   const url = upj.url ?? (upj.id ? `https://media.pollinations.ai/${upj.id}` : '');
   if (!url) throw new Error('Pollinations : URL de l’image non renvoyée');
   const dur = Math.max(2, Math.min(10, Math.round(seconds)));
-  const q = new URLSearchParams({ model: 'alibaba/wan-2.2-fast', image: url, duration: String(dur), aspectRatio: aspect });
+  const q = new URLSearchParams({ model: pm.model, image: url, duration: String(dur), aspectRatio: aspect });
   const r = await fetch(`https://gen.pollinations.ai/video/${encodeURIComponent(prompt.slice(0, 900))}?${q}`, { headers: auth, signal });
   if (!r.ok) throw new Error(`Pollinations (vidéo) : HTTP ${r.status} ${(await r.text().catch(() => '')).slice(0, 160)}`);
   const blob = await r.blob();
   if (!/video|octet/.test(blob.type) && blob.size < 10_000) throw new Error('Pollinations : la réponse n’est pas une vidéo');
-  return { blob, usd: Math.round(dur * POLLINATIONS_USD_PER_S * 1000) / 1000 };
+  return { blob, usd: Math.round(dur * pm.usdPerS * 1000) / 1000 };
 }
 
 /** Hugging Face Space (Gradio API): upload, queue the job, read the event stream, download the MP4. */

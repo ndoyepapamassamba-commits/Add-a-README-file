@@ -52,7 +52,7 @@ export const DEFAULT_MUSIC: MusicSpec = {
   instruments: ['balafon', 'djembe'],
   seconds: 64,
   energy: 0.7,
-  culture: 'Afrique de l’Ouest (Sénégal)',
+  culture: 'Afrique de l’Ouest (Côte d’Ivoire)',
   sections: { intro: 0.12, build: 0.4, climax: 0.35, outro: 0.13 },
 };
 /** Pentatonic balafon scale (C D E G A) as frequencies over two octaves. */
