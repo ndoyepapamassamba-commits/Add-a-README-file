@@ -139,6 +139,7 @@ export class ActorStage {
   readonly scene = new THREE.Scene();
   readonly camera: THREE.PerspectiveCamera;
   private actors: { name: string; actor: Actor; puppet: ActorPuppet3D; last: Frame | null }[] = [];
+  private aim: THREE.Vector3 | null = null;
   readonly W: number;
   readonly H: number;
   constructor(scripts: Record<string, Script>, o: ActorStageOptions = {}) {
@@ -174,6 +175,18 @@ export class ActorStage {
     for (const a of this.actors) {
       a.last = a.actor.frame(t, dt);
       a.puppet.apply(a.last);
+    }
+    // Camera operator: frames the group of actors (centre of their pelvises), follows them smoothly.
+    const ps = this.actors.map((a) => a.last?.world.pos[0]).filter((p): p is [number, number, number] => !!p);
+    if (ps.length) {
+      const cx = ps.reduce((a, p) => a + p[0], 0) / ps.length;
+      const cz = ps.reduce((a, p) => a + p[2], 0) / ps.length;
+      const spread = Math.max(0, ...ps.map((p) => Math.abs(p[0] - cx))) * 2;
+      const want = new THREE.Vector3(cx, 1.0, cz);
+      this.aim = this.aim ? this.aim.lerp(want, 0.08) : want.clone();
+      const dist = 4.6 + spread * 1.2;
+      this.camera.position.set(this.aim.x + dist * 0.25, 1.4, this.aim.z + dist);
+      this.camera.lookAt(this.aim);
     }
     this.renderer.render(this.scene, this.camera);
     return this.renderer.domElement;
