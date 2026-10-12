@@ -1081,6 +1081,32 @@ test('Circuit Grok — analyse poussée: a deformed take is judged, redone ONCE 
   expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
 });
 
+test('Budget du film: typed before creation, it becomes the HARD cap of the film (and is remembered)', async ({ page }) => {
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  const errors = await open(page, [], { autopilot: true });
+  const net = await intercept(page);
+  net.videoCost = -1;
+  await page.getByTitle(/AI Film Studio/).click();
+  const SHORT = { ...STORY, scenes: STORY.scenes.map((s) => ({ ...s, duration: 3 })) };
+  mock.push({ text: JSON.stringify(SHORT) });
+  mock.fallback = () => ({ text: '{}' });
+  await expect(page.getByTestId('film-budget')).toHaveAttribute('placeholder', 'auto 0.30');
+  await page.getByTestId('film-budget').fill('1.2');
+  await expect(page.getByTestId('film-idea')).toContainText('≈ 0.96 $ pour la vidéo');
+  await expect(page.getByTestId('film-idea')).toContainText('Circuit Grok (≤ 1.20 $)');
+  await page.getByTestId('film-idea-input').fill('Le chef invisible : Koffi croit qu’une caméra le surveille.');
+  await page.getByRole('button', { name: 'Afrikatoon 2D' }).click();
+  await page.getByTestId('film-create').click();
+  await expect(page.getByTestId('film-spent')).toContainText('/ 1.20 $');
+  await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 180_000 });
+  const txt = (await page.getByTestId('film-spent').textContent()) ?? '';
+  expect(Number(/dépensé\s*([\d.,]+)/.exec(txt)![1]!.replace(',', '.'))).toBeLessThanOrEqual(1.2);
+  // Remembered for the next film.
+  await page.getByRole('button', { name: 'Nouvelle idée' }).click();
+  await expect(page.getByTestId('film-budget')).toHaveValue('1.2');
+  expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
+});
+
 test('🔬 Analyser une vidéo: any file is cut into shots and measured (motion, frozen passages, sound)', async ({ page }) => {
   const errors = await open(page, [], { autopilot: true });
   await page.getByTitle(/AI Film Studio/).click();

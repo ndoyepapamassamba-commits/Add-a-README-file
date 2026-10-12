@@ -74,12 +74,18 @@ const TONE: Record<StageState, 'neutral' | 'info' | 'ok' | 'warn' | 'err' | 'acc
 };
 const ICON: Record<StageState, string> = { idle: '○', running: '◐', done: '✓', warning: '!', waiting: '⏸', failed: '✕' };
 
-function IdeaForm({ onCreate }: { onCreate: (idea: string, dim: Dimension, seconds: number, aspect: string) => void }) {
+function IdeaForm({ onCreate }: { onCreate: (idea: string, dim: Dimension, seconds: number, aspect: string, budget?: number) => void }) {
   const [idea, setIdea] = useState('');
   const [dim, setDim] = useState<Dimension>('3D');
   const [sec, setSec] = useState(60);
   const [aspect, setAspect] = useState('9:16');
   const circuit = useStudio((s) => s.settings.circuit);
+  const saved = useStudio((s) => s.settings.filmBudget);
+  const defaultCap = useStudio((s) => s.settings.cap);
+  const [budget, setBudget] = useState(saved ? String(saved) : '');
+  const auto = circuit ? circuitCap(sec) : defaultCap;
+  const typed = Number(budget.replace(',', '.'));
+  const cap = budget.trim() && Number.isFinite(typed) && typed > 0 ? Math.round(typed * 100) / 100 : null;
   return (
     <div className="mx-auto max-w-3xl space-y-3 p-6" data-testid="film-idea">
       <div className="text-center">
@@ -110,7 +116,21 @@ function IdeaForm({ onCreate }: { onCreate: (idea: string, dim: Dimension, secon
           <span data-testid="film-circuit" data-on={circuit ? '1' : '0'}>
             <Toggle checked={circuit} onChange={(v) => useStudio.getState().setSettings({ circuit: v })} />
           </span>
-          Circuit Grok (≤ {circuitCap(sec).toFixed(2)} $)
+          Circuit Grok (≤ {(cap ?? circuitCap(sec)).toFixed(2)} $)
+        </label>
+        <label className="flex items-center gap-2" title="Plafond DUR du film, tout compris (écriture, images, voix, vidéo). Vide = automatique. Avec le Circuit Grok, environ 80 % vont aux clips animés.">
+          Budget du film ($)
+          <input
+            type="number"
+            min={0.1}
+            step={0.1}
+            value={budget}
+            placeholder={`auto ${auto.toFixed(2)}`}
+            onChange={(e) => setBudget(e.target.value)}
+            className="w-24 rounded border border-line bg-input px-1"
+            data-testid="film-budget"
+          />
+          {circuit && <span className="text-faint">≈ {((cap ?? auto) * 0.8).toFixed(2)} $ pour la vidéo</span>}
         </label>
         <label className="flex items-center gap-2" title="Ajoute la traduction anglaise sous les sous-titres français.">
           <Toggle checked={Boolean(useStudio((s) => s.settings.bilingualCaptions))} onChange={(v) => useStudio.getState().setSettings({ bilingualCaptions: v })} />
@@ -122,7 +142,10 @@ function IdeaForm({ onCreate }: { onCreate: (idea: string, dim: Dimension, secon
         </label>
       </div>
       <div className="text-center">
-        <Button variant="primary" className="px-8 py-2 text-[15px]" disabled={idea.trim().length < 8} onClick={() => onCreate(idea.trim(), dim, sec, aspect)} data-testid="film-create">
+        <Button variant="primary" className="px-8 py-2 text-[15px]" disabled={idea.trim().length < 8} onClick={() => {
+            useStudio.getState().setSettings({ filmBudget: cap });
+            onCreate(idea.trim(), dim, sec, aspect, cap ?? undefined);
+          }} data-testid="film-create">
           🎬 Créer
         </Button>
       </div>
@@ -383,8 +406,8 @@ export function FilmAutopilot({ onExpert }: { onExpert: () => void }) {
     if (bp && !plans.length) void buildPlans(bp.project.id).then((p) => useFilm.setState({ plans: p })).catch(() => undefined);
   }, [bp?.project.id]);
   const imageModels = useMemo(() => plans.find((p) => p.stage === 'images')?.options.map((o) => ({ id: o.id, name: o.name })) ?? [], [plans]);
-  const create = async (idea: string, dim: Dimension, seconds: number, aspect: string) => {
-    const p = createProductionFromWizard({ idea, dimension: dim, duration: seconds, aspect, language: 'fr', platform: aspect === '9:16' ? 'tiktok' : 'youtube' });
+  const create = async (idea: string, dim: Dimension, seconds: number, aspect: string, budget?: number) => {
+    const p = createProductionFromWizard({ idea, dimension: dim, duration: seconds, aspect, language: 'fr', platform: aspect === '9:16' ? 'tiktok' : 'youtube', cap: budget });
     useStudio.getState().setSettings({ activeProjectId: p.project.id });
     setFresh(false);
     useFilm.setState({ plans: [], chosen: {}, stages: {}, result: null });

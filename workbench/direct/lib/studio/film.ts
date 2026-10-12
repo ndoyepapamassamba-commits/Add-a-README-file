@@ -190,9 +190,18 @@ export interface WizardInput extends Partial<ProductionOptions> {
   aspect: string;
   language: string;
   platform: string;
+  /** « Budget du film » typed by the owner before creation: the film's HARD cap, everything included. */
+  cap?: number;
 }
 export function createProductionFromWizard(w: WizardInput) {
-  const bp = S().createProject(w.idea, { ...w });
+  const { cap: wanted, ...opts } = w;
+  const bp = S().createProject(w.idea, { ...opts });
+  // A budget typed by the owner wins (it is still a HARD cap, everything included).
+  if (wanted !== undefined && Number.isFinite(wanted) && wanted > 0) {
+    const cap = Math.round(wanted * 100) / 100;
+    S().patchProject(bp.project.id, (b) => ({ ...b, cap }), `budget du film : ${cap.toFixed(2)} $`);
+    return S().projects[bp.project.id] ?? bp;
+  }
   // Circuit Grok: the film's HARD cap is 0,30 $ per started minute (writing, images, voices and video included).
   if (S().settings.circuit) {
     const cap = Math.min(bp.cap, circuitCap(w.duration));

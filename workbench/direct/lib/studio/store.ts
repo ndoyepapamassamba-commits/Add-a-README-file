@@ -29,6 +29,8 @@ export interface StudioSettings {
   circuit: boolean;
   /** Captions FR + EN (OFF by default: v44 showed the English line over the faces). */
   bilingualCaptions?: boolean;
+  /** Last « Budget du film » typed in the creation form (null = automatic). */
+  filmBudget?: number | null;
   activeProjectId: string | null;
   /** Music generation probe result: unknown until the owner authorises a test call. */
   musicProbe: 'unknown' | 'works' | 'unavailable';
