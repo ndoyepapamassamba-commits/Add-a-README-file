@@ -18,6 +18,7 @@ import {
 } from './actions';
 import { estimateVideo } from '../../../server/jev/studio/cost';
 import { circuitRate, clipUsd } from '../../../server/jev/studio/circuit';
+import { lockedVideoPrompt } from '../../../server/jev/studio/continuity';
 import { modelsWith, validateVideoRequest } from '../../../server/jev/studio/capabilities';
 import { StudioError, classifyError } from '../../../server/jev/studio/errors';
 import { completeJob, failJob, cancelJob } from '../../../server/jev/studio/jobs';
@@ -619,7 +620,8 @@ export async function generateSceneVideo(projectId: string, sceneId: string, o: 
         : null;
     })
     .filter((x): x is NonNullable<typeof x> => Boolean(x));
-  const prompt = (sc.video_prompt || sc.action).slice(0, 1500);
+  // Image → video: the first frame's identity is locked and deformation is named (measured on the v44 Grok clips).
+  const prompt = (frames.length ? lockedVideoPrompt(sc, bp.characters) : sc.video_prompt || sc.action).slice(0, 1500);
   const first = frames.length ? await blobToDataUrl((await blobs.get(sc.imageAssetId!))!) : null;
   const by = new Map(cands.map((c) => [c.model.id, c]));
   const out = await executeMedia<{ blob: Blob }>({

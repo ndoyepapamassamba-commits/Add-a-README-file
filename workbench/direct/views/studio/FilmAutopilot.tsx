@@ -2,6 +2,7 @@
 // (IDÉE → HISTOIRE → SCÈNES → IMAGES → ANIMATION → MONTAGE FINAL), a model plan the user can override, and per scene only:
 // Accepter · Modifier · Régénérer · Modèle · Valider. The Afrikatoon art direction is locked for every call.
 import { circuitCap } from '../../../server/jev/studio/circuit';
+import { IdeaPrompter } from './ideaPrompter';
 import { useEffect, useMemo, useState } from 'react';
 import { create } from 'zustand';
 import { Badge, Button, Select, Spinner, Toggle } from '../../../web/components/ui';
@@ -90,6 +91,7 @@ function IdeaForm({ onCreate }: { onCreate: (idea: string, dim: Dimension, secon
         placeholder="Un jeune garçon africain rêve de devenir inventeur et construit une machine capable de sauver son village."
         className="w-full rounded-xl border border-line bg-input p-3 text-[14px]"
       />
+      <IdeaPrompter onPick={setIdea} />
       <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
         <span className="text-muted">Style</span>
         {(['3D', '2D'] as Dimension[]).map((d) => (
@@ -106,6 +108,10 @@ function IdeaForm({ onCreate }: { onCreate: (idea: string, dim: Dimension, secon
             <Toggle checked={circuit} onChange={(v) => useStudio.getState().setSettings({ circuit: v })} />
           </span>
           Circuit Grok (≤ {circuitCap(sec).toFixed(2)} $)
+        </label>
+        <label className="flex items-center gap-2" title="Ajoute la traduction anglaise sous les sous-titres français.">
+          <Toggle checked={Boolean(useStudio((s) => s.settings.bilingualCaptions))} onChange={(v) => useStudio.getState().setSettings({ bilingualCaptions: v })} />
+          Sous-titres FR + EN
         </label>
         <label className="flex items-center gap-2">
           <Toggle checked={useFilm((s) => s.confirmEach)} onChange={(v) => useFilm.setState({ confirmEach: v })} />

@@ -27,6 +27,8 @@ export interface StudioSettings {
   videoBudget: number;
   /** Circuit Grok (ON by default): real generative motion on the key shots with the OpenRouter key, HARD cap 0,30 $ / min. */
   circuit: boolean;
+  /** Captions FR + EN (OFF by default: v44 showed the English line over the faces). */
+  bilingualCaptions?: boolean;
   activeProjectId: string | null;
   /** Music generation probe result: unknown until the owner authorises a test call. */
   musicProbe: 'unknown' | 'works' | 'unavailable';

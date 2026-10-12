@@ -149,9 +149,11 @@ const model = (id: string, prompt: string, completion: string) => ({
   top_provider: { context_length: 128_000, max_completion_tokens: 8192 },
   supported_parameters: ['tools', 'tool_choice', 'structured_outputs'],
 });
-async function open(page: Page, errors: string[] = [], opts: { debug?: boolean; autopilot?: boolean } = {}) {
+async function open(page: Page, errors: string[] = [], opts: { debug?: boolean; autopilot?: boolean; news?: boolean } = {}) {
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  // The idea prompter reads the news on its own: offline in these tests unless one drives it (deterministic LLM queue).
+  if (!opts.news) for (const u of ['https://api.gdeltproject.org/**', 'https://fr.wikipedia.org/**']) await page.route(u, (r) => r.abort());
   await page.route('https://openrouter.ai/api/v1/**', async (route) => {
     const url = route.request().url().replace('https://openrouter.ai/api/v1', mock.url);
     const res = await route.fetch({ url });
@@ -943,6 +945,35 @@ test('Film Autopilot: one idea → story, scenes, images, animation, final film 
   expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
 });
 
+test('Prompteur d’idées: the day\'s news (GDELT, no key) becomes Afrikatoon ideas on its own; a click fills the idea', async ({ page }) => {
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  let gdelt = '';
+  await page.route('https://api.gdeltproject.org/**', (r) => {
+    gdelt = r.request().url();
+    return r.fulfill({
+      status: 200,
+      headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
+      body: JSON.stringify({ articles: [{ title: 'Le prix du garba grimpe encore dans les maquis d’Abidjan', domain: 'abidjan.net', seendate: '20261011T080000Z' }, { title: 'Un accident fait trois morts sur l’autoroute du Nord', domain: 'x.ci', seendate: '20261011T090000Z' }] }),
+    });
+  });
+  await page.route('https://fr.wikipedia.org/**', (r) => r.abort());
+  mock.push({ text: JSON.stringify({ ideas: [{ family: 'Marché & maquis', title: 'Le garba de luxe', setup: 'Le vendeur de garba annonce son nouveau prix « premium ».', escalation: 'Le client négocie avec sa carte de fidélité du maquis.', punchline: '[croise les bras] « Même le thon a pris l’avion ! »' }] }) });
+  const errors = await open(page, [], { autopilot: true, news: true });
+  await page.getByTitle(/AI Film Studio/).click();
+  await expect(page.getByTestId('idea-prompter')).toBeVisible();
+  await expect(page.getByTestId('prompter-status')).toContainText('GDELT', { timeout: 20_000 });
+  expect(decodeURIComponent(gdelt)).toContain('sourcecountry:IV sourcelang:french');
+  // The tragedy never reaches the writer; the laughable headline does.
+  const asked = JSON.stringify(mock.requests.at(-1)!.messages);
+  expect(asked).toContain('prix du garba');
+  expect(asked).not.toContain('trois morts');
+  await page.getByText('Le garba de luxe').click();
+  await expect(page.getByTestId('film-idea-input')).toHaveValue(/^Le garba de luxe — .*Chute : \[croise les bras\]/);
+  // Library ideas of the day are always there (offline too).
+  expect(await page.locator('[data-testid^="prompter-idea-"]').count()).toBeGreaterThanOrEqual(5);
+  expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
+});
+
 test('Film Autopilot: a provider error on a scene image is caught up — no scene left without its image', async ({ page }) => {
   mock.models = [model('acme/free-text:free', '0', '0')];
   const errors = await open(page, [], { autopilot: true });
@@ -986,6 +1017,8 @@ test('Circuit Grok: open → launch → real generative clips with the OpenRoute
   await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 180_000 });
   // Real motion on the key shots, with the cheapest certain-price model, at 480p, first frame = the scene image.
   expect(net.videoSubmits).toBeGreaterThanOrEqual(1);
+  // Every clip carries the identity lock and names the deformations to avoid (v44: stretched / torn arms).
+  for (const b of net.videoBodies) expect(String(b.prompt)).toMatch(/Keep the first frame exactly.*Avoid: morphing/);
   for (const b of net.videoBodies) {
     expect(b.model).toBe('x-ai/grok-imagine-video-1.5-lite');
     expect(b.resolution).toBe('480p');

@@ -58,10 +58,12 @@ export interface PreviewOptions {
   /** Cinema finish (warm grade + soft vignette), on by default. */
   cinema?: boolean;
   /**
-   * « À mourir de rire » viral format (on by default in 9:16): sharp shot in a band with a blurred fill, bilingual
-   * karaoke captions (English above, French below, keyword highlighted) and a « stupeur » insert after each punchline.
+   * « À mourir de rire » viral format (on by default in 9:16): sharp shot in a band with a blurred fill, French
+   * karaoke captions under the picture (keyword highlighted; English added only with `bilingual`) and a « stupeur » insert after each punchline.
    */
   viral?: boolean;
+  /** English line under the French one (off by default). */
+  bilingual?: boolean;
   /** One sketch per scene: the « stupeur » insert plays between every scene. */
   compilation?: boolean;
   /** « court » preset: one sketch + the reaction at the end (≈ 8 s, made to loop). */
@@ -672,13 +674,15 @@ export async function renderPreview(
       // French below the band (keyword yellow), English above it (keyword cyan), 1–3 words at a time.
       const fr = captionChunk(a.line.words.map((w) => w.text), a.wordIndex);
       const size = Math.round(W * 0.085);
-      const below = band.y + band.h < H * 0.9 ? band.y + band.h + Math.min(H - band.y - band.h, H * 0.16) * 0.45 : H * 0.8;
+      // Full-frame clip (Grok 9:16): captions in the lower band, under the faces — never across the heads.
+      const full = band.y < H * 0.1;
+      const below = !full && band.y + band.h < H * 0.9 ? band.y + band.h + Math.min(H - band.y - band.h, H * 0.16) * 0.45 : H * 0.84;
       if (fr) drawChunk(ctx, fr, W / 2, below, size, VIRAL_FORMAT.bottomColor, W * 0.9, o.captionStyle === 'box' ? VIRAL_FORMAT.boxColors[0] : undefined);
-      const en = dl?.english?.trim();
+      const en = o.bilingual ? dl?.english?.trim() : '';
       if (en) {
         const prog = (now - a.line.start) / Math.max(0.1, a.line.end - a.line.start);
         const ch = parallelChunk(en.split(/\s+/), prog);
-        const above = band.y > H * 0.1 ? band.y - Math.min(band.y, H * 0.16) * 0.45 : H * 0.2;
+        const above = full ? Math.min(H * 0.93, below + size * 1.25) : band.y - Math.min(band.y, H * 0.16) * 0.45;
         if (ch) drawChunk(ctx, ch, W / 2, above, size, VIRAL_FORMAT.topColor, W * 0.9, o.captionStyle === 'box' ? VIRAL_FORMAT.boxColors[1] : undefined);
       }
     } else if (a) drawSub(ctx, a.line, a.wordIndex, W, H, style);

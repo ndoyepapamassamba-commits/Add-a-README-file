@@ -65,6 +65,10 @@ export const IDEA_LIBRARY: Idea[] = [
 export function ideaBrief(i: Idea): string {
   return `${i.title} — ${i.setup} Escalade : ${i.escalation} Chute : ${i.punchline} (Format ${i.format === 'court' ? 'court : 1 sketch de 6 à 8 s' : 'compilation de sketchs de 6 s, environ 65 s'}, deux personnages qui se disputent, gestes exagérés, français ivoirien.)`;
 }
+/** The idea as typed in the Autopilot field (no format: the duration chosen there decides). */
+export function ideaText(i: Idea): string {
+  return `${i.title} — ${i.setup}${i.escalation ? ` ${i.escalation}` : ''} Chute : ${i.punchline}`;
+}
 /** Searches that bring the day's news of Côte d'Ivoire / Africa (the writer keeps only what can be laughed about). */
 export const NEWS_QUERIES = ['actualité Abidjan aujourd’hui', 'Côte d’Ivoire actualité insolite', 'prix au marché Abidjan', 'football Côte d’Ivoire Éléphants actualité', 'tendances TikTok Côte d’Ivoire'];
 /** Prompt: today's headlines → sketch ideas in the library format (humour on everyday life, never on victims). */

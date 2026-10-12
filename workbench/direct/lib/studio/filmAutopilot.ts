@@ -3,6 +3,7 @@
 // DNA locked for every call. It never waits unless the user asked to validate each stage; a failed scene never stops the
 // film (it is reported and can be regenerated from the single view).
 import { useStudio } from './store';
+import { lockShortSetting, lockedVideoPrompt } from '../../../server/jev/studio/continuity';
 import { useStore } from '../store';
 import { blobs } from './blobs';
 import { loadRegistry, generateStory, generateSceneImage, generateLine, redrawCharacter, imageCandidates, rigScene, rigSceneLocal, generatePlate, judgeHumor } from './actions';
@@ -156,6 +157,12 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
           }
         } else if (h) c.onStage('STORY', 'running', `humour ${h.degree} % (${h.label})`);
       }
+      // A short sketch keeps ONE set (v44: one scene drawn outdoors in an office sketch).
+      const lock = lockShortSetting(bpOf(projectId).scenes, bpOf(projectId).duration);
+      if (lock.changed.length) {
+        S().patchProject(projectId, (b) => ({ ...b, scenes: lockShortSetting(b.scenes, b.duration).scenes }), `décor unique : ${lock.location}`);
+        c.onStage('STORY', 'running', `décor unique « ${lock.location} » imposé à ${lock.changed.join(', ')}`);
+      }
       c.onStage('STORY', 'running', 'personnages et décors');
       await completeCharacterSheets(projectId).catch(() => 0);
       await completeWorldSheets(projectId).catch(() => 0);
@@ -256,7 +263,7 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
           c.onStage('ANIMATION', 'running', `animation ${sc.scene_id} (${pollinationsModel(anim)?.name.split(' (')[0] ?? 'Space HF gratuit'})`);
           try {
             const img = (await blobs.get(sc.imageAssetId!))!;
-            const prompt = (sc.video_prompt || sc.action).slice(0, 900);
+            const prompt = lockedVideoPrompt(sc, bpOf(projectId).characters).slice(0, 900);
             const secs = Math.min(10, Math.max(3, Math.round(sc.duration)));
             const r = pollinationsModel(anim) ? await pollinationsVideo(img, prompt, secs, bpOf(projectId).aspect, undefined, anim) : await hfSpaceVideo(img, prompt, secs);
             const id = `asset-vid-${Date.now().toString(36)}-${sc.scene_id}`;
@@ -319,7 +326,7 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
     compileSubtitles(projectId);
     buildEdit(projectId);
     c.onStage('MONTAGE', 'running', 'rendu du film');
-    const r = await renderPreview(bpOf(projectId), { width: 540 });
+    const r = await renderPreview(bpOf(projectId), { width: 540, bilingual: Boolean(S().settings.bilingualCaptions) });
     const assetId = `asset-film-${Date.now().toString(36)}`;
     await blobs.put(assetId, r.blob);
     S().addAsset({

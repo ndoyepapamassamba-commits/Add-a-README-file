@@ -219,9 +219,13 @@ export function compose(
 
 // ───────── scene-level compilation with injected context ─────────
 
-const charLine = (c: CharacterSheet) =>
-  c.consistency ||
-  `${c.name}: ${[c.age, c.skin, c.hair, c.clothing, c.accessories].filter(Boolean).join(', ')}`;
+/** Afrikatoon cast by default: a character whose sheet says nothing of skin / origin is drawn Ivorian (never a generic pale figure). */
+export const AFRIKATOON_CAST = 'Black West-African (Ivorian), dark brown skin';
+const SAYS_SKIN = /skin|peau|african|africain|ivoir|black|noir|white|blanc|asian|asiat|métis|arab/i;
+export const charLine = (c: CharacterSheet) => {
+  const base = c.consistency || `${c.name}: ${[c.age, c.ethnicity, c.skin, c.hair, c.clothing, c.accessories].filter(Boolean).join(', ')}`;
+  return SAYS_SKIN.test(base) ? base : `${base}, ${AFRIKATOON_CAST}`;
+};
 export interface SceneContext {
   style: StyleDNA;
   characters: CharacterSheet[];

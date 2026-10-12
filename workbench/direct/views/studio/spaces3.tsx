@@ -479,7 +479,7 @@ export function EditorView() {
     abort.current = new AbortController();
     setOut(null);
     const x = await r.run('Rendu de l’animatic (temps réel)…', () =>
-      renderPreview(bp, { onProgress: (p) => setProg(p), signal: abort.current!.signal }),
+      renderPreview(bp, { onProgress: (p) => setProg(p), signal: abort.current!.signal, bilingual: Boolean(useStudio.getState().settings.bilingualCaptions) }),
     );
     if (x) setOut({ url: URL.createObjectURL(x.blob), mime: x.mime, seconds: x.seconds });
   };
