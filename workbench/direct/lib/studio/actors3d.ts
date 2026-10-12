@@ -635,7 +635,7 @@ export class Theater3D {
       if (a.sheet) {
         // The drawn actor: its mark on the ground, the pose of the moment, facing its partner. In the two-shot its ink
         // lines are softened a touch (the same lens as the set — v51 measured the actors far sharper than the décor).
-        a.sheet.setDefocus(/^(close|react)/.test(rig.shot) ? 0 : 0.5);
+        a.sheet.setDefocus(/^(close|react)/.test(rig.shot) ? 0 : 0.6);
         a.sheet.root.position.set(p0[0], 0, p0[2]);
         const pose = poseFor({ speaking, gesture: speaking ? live.gesture : null, emotion: speaking ? live.emotion : undefined, text: speaking ? live.text : undefined, react });
         // Each drawn pose has its own direction (read on its face): mirrored when it would turn its back to the partner.

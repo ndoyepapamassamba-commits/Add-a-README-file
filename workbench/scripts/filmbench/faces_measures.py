@@ -61,8 +61,12 @@ def upper_crop(im, x):
     c=np.asarray(im.transform((64,48),Image.AFFINE,A,resample=Image.BILINEAR),dtype=np.float32)
     c=c-c.mean(); n=np.linalg.norm(c)
     return c/n if n>1e-6 else None
+JUMP=0.35
 def identity_drift(d, faces):
-    # how far each tracked face drifts from its own first picture (1 - correlation of the aligned upper face)
+    # how far each tracked face drifts from its own reference picture (1 - correlation of the aligned upper face):
+    # the SLOW deformation of a face (a warp eating the drawing, a model morphing). A JUMP between two consecutive
+    # pictures (> JUMP: a new drawing of the character — the laugh, the shock — or a cut) opens a new segment with its
+    # own reference and is not drift: jumps are counted by popsPerMin.
     fs=sorted(x for x in os.listdir(d) if x.endswith('.jpg'))
     cache={}
     def img(i):
@@ -74,10 +78,16 @@ def identity_drift(d, faces):
         if np.hypot(t[0][1]['pts'][1][0]-t[0][1]['pts'][0][0], t[0][1]['pts'][1][1]-t[0][1]['pts'][0][1])<14: continue
         ref=upper_crop(img(t[0][0]), t[0][1])
         if ref is None: continue
+        prev=ref
         v=[]
         for i,x in t[1:]:
             c=upper_crop(img(i), x)
-            if c is not None: v.append(1-float((ref*c).sum()))
+            if c is None: continue
+            if 1-float((prev*c).sum())>JUMP:
+                ref=c
+            else:
+                v.append(1-float((ref*c).sum()))
+            prev=c
         if v: out.append(float(np.median(v)))
     return (float(np.median(out)) if out else None), len(out)
 def stability(faces, W=540):

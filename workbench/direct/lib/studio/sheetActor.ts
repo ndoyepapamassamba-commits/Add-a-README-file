@@ -79,7 +79,7 @@ const MAP = `
     vec3 nn = normalize(vN);
     float nl = max(0.0, dot(nn, uLightDir));
     float away = pow(1.0 - max(0.0, nn.z), 2.5);
-    float k = uRelief * (uFace > 0.5 && p.y < uChin.y + 0.02 ? 0.45 : 1.0);
+    float k = uRelief * (uFace > 0.5 && p.y < uChin.y + 0.02 ? 0.3 : 1.0);
     sampledDiffuseColor.rgb *= mix(1.0, 0.8 + 0.3 * nl, k);
     sampledDiffuseColor.rgb = mix(sampledDiffuseColor.rgb, uWrap, away * uWrapK * 1.5 * k);
   }
@@ -470,7 +470,7 @@ export class SheetActor {
     // but within the drawing — the identity stays.)
     const question = /\?\s*$/.test(s.text ?? '') ? 0.25 : 0;
     const browT =
-      want === 'choc' ? 0.7 : want === 'accuse' && talk ? -0.28 - 0.3 * s.beat : talk ? Math.min(0.75, s.beat * 0.6 + question) : s.listening ? 0.08 * Math.max(0, Math.sin(s.t * 0.7 + (s.phase ?? 0))) : 0;
+      want === 'choc' ? 0.6 : want === 'accuse' && talk ? -0.24 - 0.22 * s.beat : talk ? Math.min(0.6, s.beat * 0.45 + question) : s.listening ? 0.08 * Math.max(0, Math.sin(s.t * 0.7 + (s.phase ?? 0))) : 0;
     this.browNow += (browT - this.browNow) * 0.25;
     this.u.uBrow.value = this.browNow;
     // Mouth: the word's viseme; the laugh bounces the jaw (ha-ha-ha); the shock drops it.

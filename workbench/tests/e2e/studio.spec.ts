@@ -1691,6 +1691,15 @@ test('Corps 3D gonflé: a planche becomes a 3D body (inflated from its own drawi
   expect(Math.max(...shots.slice(1).map((s, i) => diff(shots[i]!.px, s.px)))).toBeGreaterThan(1.5);
   // It is a different rendering from the flat cut-out (volume, lighting), still the drawing (its colours).
   expect(diff(flat.px, shots[0]!.px)).toBeGreaterThan(3);
+  // The 3D body plays IN a set of the library with a partner (the animation test): nothing else changes.
+  await page.getByTestId('duo-toggle').click();
+  await expect(page.getByTestId('duo-canvas').locator('canvas')).toBeVisible({ timeout: 60_000 });
+  await page.waitForTimeout(12_000);
+  for (let i = 0; i < 4; i++) {
+    if (process.env.ACTORS3D_DUMP) await page.getByTestId('duo-canvas').screenshot({ path: path.join(process.env.ACTORS3D_DUMP, `body3d-duo-${i}.png`) });
+    await page.waitForTimeout(700);
+  }
+  await page.getByTestId('duo-toggle').click();
   // Back to the cut-out: the toggle is per actor and reversible.
   await page.getByTestId('actor-body3d').uncheck();
   await expect.poll(saved, { timeout: 15_000 }).toBe(false);

@@ -284,7 +284,7 @@ export function livingSet(a: SetAssets, outputHeight: number): LivingSet {
       uHaze: { value: haze },
       // Acutance of the lens: a light unsharp mask on the set (v9 measured the upscaled set 9× softer than the crisp line
       // art of the actors — same lens, same sharpness), two texels wide.
-      uSharp: { value: 0.55 },
+      uSharp: { value: 0.8 },
       uTexel: { value: new THREE.Vector2(2 / Math.max(1, (a.sharp.image as { width: number }).width), 2 / Math.max(1, (a.sharp.image as { height: number }).height)) },
     },
     vertexShader: `
