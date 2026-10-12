@@ -27,10 +27,17 @@ async function open(page: Page) {
     const f = window.fetch.bind(window);
     window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
       const u = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-      return f(u.startsWith('https://openrouter.ai/api/v1') ? u.replace('https://openrouter.ai/api/v1', base) : input, init);
+      return f(
+        u.startsWith('https://openrouter.ai/api/v1')
+          ? u.replace('https://openrouter.ai/api/v1', base)
+          : input,
+        init,
+      );
     };
   }, mock.url);
-  await page.addLocatorHandler(page.getByTestId('design-go'), async () => page.getByTestId('design-go').click());
+  await page.addLocatorHandler(page.getByTestId('design-go'), async () =>
+    page.getByTestId('design-go').click(),
+  );
   await page.goto(pathToFileURL(FILE).href);
   await page.getByPlaceholder('sk-or-v1-…').fill('sk-or-v1-e2e-perf-key');
   await page.getByRole('button', { name: 'Commencer' }).click();
@@ -40,7 +47,10 @@ async function open(page: Page) {
     const w = window as unknown as { __long: number[]; __frames: number };
     w.__long = [];
     w.__frames = 0;
-    new PerformanceObserver((l) => l.getEntries().forEach((e) => w.__long.push(e.duration))).observe({ type: 'longtask', buffered: false });
+    new PerformanceObserver((l) => l.getEntries().forEach((e) => w.__long.push(e.duration))).observe({
+      type: 'longtask',
+      buffered: false,
+    });
     const tick = () => {
       w.__frames++;
       requestAnimationFrame(tick);
@@ -61,7 +71,12 @@ async function measure(page: Page, ms: number) {
   await page.waitForTimeout(ms);
   return page.evaluate((ms) => {
     const w = window as unknown as { __long: number[]; __frames: number };
-    return { fps: Math.round((w.__frames / ms) * 1000), longTasks: w.__long.length, blockedMs: Math.round(w.__long.reduce((a, b) => a + b, 0)), worstMs: Math.round(Math.max(0, ...w.__long)) };
+    return {
+      fps: Math.round((w.__frames / ms) * 1000),
+      longTasks: w.__long.length,
+      blockedMs: Math.round(w.__long.reduce((a, b) => a + b, 0)),
+      worstMs: Math.round(Math.max(0, ...w.__long)),
+    };
   }, ms);
 }
 
@@ -75,7 +90,11 @@ test('two chats streaming at once: the app stays fluid', async ({ page }) => {
   await page.getByRole('button', { name: 'Nouvelle session' }).click();
   await page.waitForTimeout(500);
   await send(page, 'Écris un long texte B');
-  await expect.poll(() => mock.requests.filter((r) => JSON.stringify(r.messages).includes('texte B')).length, { timeout: 15_000 }).toBeGreaterThan(0);
+  await expect
+    .poll(() => mock.requests.filter((r) => JSON.stringify(r.messages).includes('texte B')).length, {
+      timeout: 15_000,
+    })
+    .toBeGreaterThan(0);
   await page.waitForTimeout(1500);
   const two = await measure(page, 5000);
   const running = await page.evaluate(() => document.body.innerText.match(/Paragraphe \d+/g)?.length ?? 0);
@@ -85,10 +104,16 @@ test('two chats streaming at once: the app stays fluid', async ({ page }) => {
   await page.close();
 });
 
-test('saving one small file does not rewrite every file of every chat (no freeze with big attachments)', async ({ page }) => {
+test('saving one small file does not rewrite every file of every chat (no freeze with big attachments)', async ({
+  page,
+}) => {
   test.setTimeout(120_000);
   await open(page);
-  const big = (n: number) => ({ name: `gros-${n}.csv`, mimeType: 'text/csv', buffer: Buffer.from(`a,b,c\n${'1234567,abcdefg,9876543\n'.repeat(130_000)}`) });
+  const big = (n: number) => ({
+    name: `gros-${n}.csv`,
+    mimeType: 'text/csv',
+    buffer: Buffer.from(`a,b,c\n${'1234567,abcdefg,9876543\n'.repeat(130_000)}`),
+  });
   for (let i = 0; i < 6; i++) {
     await page.locator('input[type=file]').first().setInputFiles(big(i));
     await page.waitForTimeout(600);
@@ -96,7 +121,10 @@ test('saving one small file does not rewrite every file of every chat (no freeze
   await page.waitForTimeout(2500); // the big saves are done
   const before = await measure(page, 10); // reset counters
   void before;
-  await page.locator('input[type=file]').first().setInputFiles({ name: 'petit.csv', mimeType: 'text/csv', buffer: Buffer.from('a,b\n1,2\n') });
+  await page
+    .locator('input[type=file]')
+    .first()
+    .setInputFiles({ name: 'petit.csv', mimeType: 'text/csv', buffer: Buffer.from('a,b\n1,2\n') });
   const after = await measure(page, 2500);
   console.log(`[perf] small save with 18 MB of files around: ${JSON.stringify(after)}`);
   expect(after.worstMs).toBeLessThan(200);
@@ -105,12 +133,37 @@ test('saving one small file does not rewrite every file of every chat (no freeze
 test('an Excel export of 5 000 rows runs in the background: the page is not frozen', async ({ page }) => {
   test.setTimeout(120_000);
   await open(page);
-  const csv = ['date,client,region,montant,provision', ...Array.from({ length: 5000 }, (_, i) => `2025-0${(i % 9) + 1}-15,CLIENT ${i % 700},${['Dakar', 'Thiès', 'Kaolack', 'Ziguinchor'][i % 4]},${100000 + ((i * 7919) % 900000)},${(i * 31) % 50000}`)].join('\n');
-  await page.locator('input[type=file]').first().setInputFiles({ name: 'portefeuille.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
+  const csv = [
+    'date,client,region,montant,provision',
+    ...Array.from(
+      { length: 5000 },
+      (_, i) =>
+        `2025-0${(i % 9) + 1}-15,CLIENT ${i % 700},${['Dakar', 'Thiès', 'Kaolack', 'Ziguinchor'][i % 4]},${100000 + ((i * 7919) % 900000)},${(i * 31) % 50000}`,
+    ),
+  ].join('\n');
+  await page
+    .locator('input[type=file]')
+    .first()
+    .setInputFiles({ name: 'portefeuille.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
   await page.waitForTimeout(1500);
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
-  mock.push({ toolCalls: [{ name: 'data.export', args: { path: 'uploads/portefeuille.csv', name: 'portefeuille', title: 'Portefeuille', format: 'xlsx' } }] }, { text: 'Classeur livré.' });
+  mock.push(
+    {
+      toolCalls: [
+        {
+          name: 'data.export',
+          args: {
+            path: 'uploads/portefeuille.csv',
+            name: 'portefeuille',
+            title: 'Portefeuille',
+            format: 'xlsx',
+          },
+        },
+      ],
+    },
+    { text: 'Classeur livré.' },
+  );
   await page.evaluate(() => {
     const w = window as unknown as { __long: number[] };
     w.__long = [];
@@ -124,7 +177,17 @@ test('an Excel export of 5 000 rows runs in the background: the page is not froz
   await send(page, 'Exporte le portefeuille en Excel');
   await expect(page.getByText('Classeur livré.')).toBeVisible({ timeout: 60_000 });
   if (cdp) {
-    const { profile } = (await cdp.send('Profiler.stop')) as { profile: { nodes: { id: number; callFrame: { functionName: string; lineNumber: number; columnNumber: number }; children?: number[] }[]; samples: number[]; timeDeltas: number[] } };
+    const { profile } = (await cdp.send('Profiler.stop')) as {
+      profile: {
+        nodes: {
+          id: number;
+          callFrame: { functionName: string; lineNumber: number; columnNumber: number };
+          children?: number[];
+        }[];
+        samples: number[];
+        timeDeltas: number[];
+      };
+    };
     const self = new Map<number, number>();
     profile.samples.forEach((id, i) => self.set(id, (self.get(id) ?? 0) + (profile.timeDeltas[i] ?? 0)));
     const byFn = new Map<string, number>();
@@ -132,16 +195,27 @@ test('an Excel export of 5 000 rows runs in the background: the page is not froz
       const k = `${n.callFrame.functionName || '(anon)'}@${n.callFrame.lineNumber}:${n.callFrame.columnNumber}`;
       byFn.set(k, (byFn.get(k) ?? 0) + (self.get(n.id) ?? 0));
     }
-    const top = [...byFn].filter(([k]) => !/^\(idle|program|garbage/.test(k)).sort((a, b) => b[1] - a[1]).slice(0, 25);
+    const top = [...byFn]
+      .filter(([k]) => !/^\(idle|program|garbage/.test(k))
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 25);
     for (const [k, us] of top) console.log(`[prof] ${Math.round(us / 1000)} ms ${k}`);
   }
-  const worst = await page.evaluate(() => Math.round(Math.max(0, ...(window as unknown as { __long: number[] }).__long)));
-  const total = await page.evaluate(() => Math.round((window as unknown as { __long: number[] }).__long.reduce((a, b) => a + b, 0)));
-  console.log(`[perf] export 5 000 lignes : tâche bloquante la plus longue ${worst} ms, total bloqué ${total} ms`);
+  const worst = await page.evaluate(() =>
+    Math.round(Math.max(0, ...(window as unknown as { __long: number[] }).__long)),
+  );
+  const total = await page.evaluate(() =>
+    Math.round((window as unknown as { __long: number[] }).__long.reduce((a, b) => a + b, 0)),
+  );
+  console.log(
+    `[perf] export 5 000 lignes : tâche bloquante la plus longue ${worst} ms, total bloqué ${total} ms`,
+  );
   expect(worst).toBeLessThan(400);
 });
 
-test('STOP works while the model is still thinking (no token yet) and while it writes; the chat is usable at once', async ({ page }) => {
+test('STOP works while the model is still thinking (no token yet) and while it writes; the chat is usable at once', async ({
+  page,
+}) => {
   test.setTimeout(120_000);
   await open(page);
   // 1. thinking: 20 s of silence before the first word
@@ -170,7 +244,9 @@ test('STOP works while the model is still thinking (no token yet) and while it w
   await expect(page.getByText('Nouvelle réponse OK.')).toBeVisible({ timeout: 10_000 });
 });
 
-test('writing while the model thinks: the follow-up is shown at once and answered — never ignored', async ({ page }) => {
+test('writing while the model thinks: the follow-up is shown at once and answered — never ignored', async ({
+  page,
+}) => {
   test.setTimeout(120_000);
   await open(page);
   mock.push({ text: 'Première réponse.', firstDelayMs: 4000 }, { text: 'Réponse à la précision.' });
@@ -182,5 +258,32 @@ test('writing while the model thinks: the follow-up is shown at once and answere
   await expect(page.getByText('Première réponse.')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText('Réponse à la précision.')).toBeVisible({ timeout: 15_000 });
   // the model received the follow-up
-  expect(mock.requests.some((r) => JSON.stringify(r.messages).includes('Précision : en francs CFA'))).toBe(true);
+  expect(mock.requests.some((r) => JSON.stringify(r.messages).includes('Précision : en francs CFA'))).toBe(
+    true,
+  );
+});
+
+test('code.run of the model (here 2 s of pure computation) runs in its own thread: the page is not frozen', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await open(page);
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  const busy =
+    'const t = Date.now(); let n = 0; while (Date.now() - t < 2000) n++; console.log("tours", n > 0);';
+  mock.push(
+    { toolCalls: [{ name: 'code.run', args: { language: 'javascript', code: busy } }] },
+    { text: 'Calcul terminé.' },
+  );
+  await page.evaluate(() => {
+    (window as unknown as { __long: number[] }).__long = [];
+  });
+  await send(page, 'Lance le calcul');
+  await expect(page.getByText('Calcul terminé.')).toBeVisible({ timeout: 60_000 });
+  const worst = await page.evaluate(() =>
+    Math.round(Math.max(0, ...(window as unknown as { __long: number[] }).__long)),
+  );
+  console.log(`[perf] code.run 2 s : tâche bloquante la plus longue ${worst} ms`);
+  expect(worst).toBeLessThan(600);
 });

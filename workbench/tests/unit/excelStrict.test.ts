@@ -113,4 +113,36 @@ describe('RÈGLES STRICTES D’EXCEL (ce que le validateur Open XML ne voit pas)
     expect(wb).toContain('name="Tableau de bord vivant"');
     expect(excelStrict(unzipSync(r.bytes)).warnings).toEqual([]);
   });
+  it('a workbook written by openpyxl (empty <definedNames />) gets ONE block of names with the slicers', () => {
+    const z0 = unzipSync(houseXlsx(COLS, ROWS, { title: 'X', chart: 'none' }));
+    z0['xl/workbook.xml'] = strToU8(
+      strFromU8(z0['xl/workbook.xml']!)
+        .replace(/<definedNames>[\s\S]*?<\/definedNames>/, '')
+        .replace('</sheets>', '</sheets><definedNames />'),
+    );
+    const r = addLiveDashboard(
+      zipSync(z0),
+      modelSpec(modelsFor('excel')[0]!.palette, modelsFor('excel')[0]!.layout),
+      cloneData('Tableau de bord', COLS, ROWS),
+    )!;
+    const wb = strFromU8(unzipSync(r.bytes)['xl/workbook.xml']!);
+    expect(wb.match(/<definedNames\b/g)).toHaveLength(1);
+    expect(wb).toContain('Slicer_');
+  });
+  it('repairs a workbook that already has two blocks of names', () => {
+    const z = unzipSync(houseXlsx(['A'], [{ A: 1 }], { title: 'T', chart: 'none' }));
+    z['xl/workbook.xml'] = strToU8(
+      strFromU8(z['xl/workbook.xml']!)
+        .replace(/<definedNames>[\s\S]*?<\/definedNames>/, '')
+        .replace(
+          '</sheets>',
+          '</sheets><definedNames><definedName name="Slicer_A">#N/A</definedName></definedNames><definedNames />',
+        ),
+    );
+    const r = excelStrict(z);
+    expect(r.fixes.join(' ')).toMatch(/noms définis/);
+    const wb = strFromU8(z['xl/workbook.xml']!);
+    expect(wb.match(/<definedNames\b/g)).toHaveLength(1);
+    expect(wb).toContain('Slicer_A');
+  });
 });

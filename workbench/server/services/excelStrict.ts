@@ -94,6 +94,23 @@ export function excelStrict(z: Zip): { fixes: string[]; warnings: string[] } {
     if (out !== d) wr(z, p, out);
   }
   if (anchors) fixes.push(`${anchors} objet(s) dessiné(s) à l'ancrage inversé remis d'aplomb`);
+  // Workbook: one <definedNames> block at most (an empty « <definedNames /> » left by openpyxl next to a filled one
+  // makes Excel repair the file) — the blocks are merged into the first.
+  let wbx = rd(z, 'xl/workbook.xml');
+  const blocks = [...wbx.matchAll(/<definedNames\s*\/>|<definedNames>([\s\S]*?)<\/definedNames>/g)];
+  if (blocks.length > 1 || (blocks.length === 1 && !blocks[0]![1]?.trim())) {
+    const inner = blocks.map((b) => b[1] ?? '').join('');
+    let first = true;
+    wbx = wbx.replace(/<definedNames\s*\/>|<definedNames>[\s\S]*?<\/definedNames>/g, () => {
+      if (!first) return '';
+      first = false;
+      return inner.trim() ? `<definedNames>${inner}</definedNames>` : '';
+    });
+    wr(z, 'xl/workbook.xml', wbx);
+    fixes.push(
+      'noms définis du classeur regroupés en un seul bloc (un double bloc fait réparer le fichier par Excel)',
+    );
+  }
   // Reported only.
   const wb = rd(z, 'xl/workbook.xml');
   const names = [...wb.matchAll(/<sheet\b[^>]*\bname="([^"]*)"/g)].map((m) =>

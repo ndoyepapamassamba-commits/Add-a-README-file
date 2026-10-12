@@ -655,6 +655,8 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   if (slicers.length) {
     // Each slicer cache is a defined name (#N/A, as Excel writes it) and is listed in the workbook's x15 extension.
     const names = slicers.map((sl) => `<definedName name="${sl.cache}">#N/A</definedName>`).join('');
+    // openpyxl writes an empty « <definedNames /> »: it is filled, never doubled (two blocks = Excel repair dialog).
+    wb = wb.replace(/<definedNames\s*\/>/, '<definedNames></definedNames>');
     wb = /<definedNames>/.test(wb) ? wb.replace('</definedNames>', `${names}</definedNames>`) : wb.replace('</sheets>', `</sheets><definedNames>${names}</definedNames>`);
     const ext = `<ext uri="{46BE6895-7355-4a93-B00E-2C351335B9C9}" xmlns:x15="${NS_X15}"><x15:slicerCaches xmlns:x14="${NS_X14}">${cacheRids.map((r) => `<x14:slicerCache r:id="${r}"/>`).join('')}</x15:slicerCaches></ext>`;
     wb = /<extLst>/.test(wb) ? wb.replace('</extLst>', `${ext}</extLst>`) : wb.replace('</workbook>', `<extLst>${ext}</extLst></workbook>`);

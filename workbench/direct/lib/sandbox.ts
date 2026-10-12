@@ -12,7 +12,9 @@ export const PYODIDE_MIRRORS = [
 ];
 
 const RUNNER = `<!doctype html><meta charset="utf-8"><script>
-const send = (m) => parent.postMessage(m, '*');
+// The runner works in a WORKER (its own thread): Python / JavaScript of the model never freeze the app. When a
+// worker cannot start, the same code runs here, in the iframe.
+function core(send, loadScript) {
 const PACK_BASE = 'https://pyodide.massamba.invalid/';
 const MIRRORS = ${JSON.stringify(PYODIDE_MIRRORS)};
 let py = null;
@@ -31,7 +33,6 @@ globalThis.fetch = (u, o) => {
   }
   return realFetch(u, o);
 };
-const loadScript = (src) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error(src)); document.head.appendChild(s); });
 async function startPython(log) {
   if (pack) {
     log('[Python hors-ligne : pack ' + pack.manifest.version + ']');
@@ -99,6 +100,19 @@ addEventListener('message', async (ev) => {
   }
 });
 send({ ready: true });
+}
+const domLoad = (src) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error(src)); document.head.appendChild(s); });
+let w = null;
+try {
+  const src = '(' + core.toString() + ')((m) => postMessage(m), (u) => { importScripts(u); return Promise.resolve(); });';
+  w = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+} catch (e) { w = null; }
+if (w) {
+  let alive = false;
+  w.onmessage = (e) => { alive = true; parent.postMessage(e.data, '*'); };
+  w.onerror = (e) => { if (!alive) { w = null; core((m) => parent.postMessage(m, '*'), domLoad); } };
+  addEventListener('message', (ev) => { if (ev.source === parent && w) w.postMessage(ev.data); });
+} else core((m) => parent.postMessage(m, '*'), domLoad);
 <\/script>`; // eslint-disable-line no-useless-escape -- keeps the inlined bundle's <script> tag intact
 
 let frame: HTMLIFrameElement | null = null;
