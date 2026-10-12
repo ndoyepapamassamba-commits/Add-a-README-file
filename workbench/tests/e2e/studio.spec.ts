@@ -1,6 +1,7 @@
 // AI Visual Studio — end-to-end in Chromium, from file://. OpenRouter media endpoints are intercepted with REAL payloads
 // captured on 2026-10-06 (tests/fixtures/studio); the text LLM is the usual local mock.
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -105,6 +106,15 @@ async function intercept(page: Page): Promise<Net> {
     }
     if (p === '/audio/speech' && method === 'POST') {
       net.speechCalls++;
+      // Local demo only (never in CI): ACTORS3D_TTS = a folder of Piper French voices → a real spoken line.
+      const tts = process.env.ACTORS3D_TTS;
+      if (tts) {
+        const body = JSON.parse(route.request().postData() ?? '{}') as { input?: string; voice?: string };
+        const female = /(^|[_-])(f|ff|af|bf)[_-]|female|femme|woman|siwis|nova|shimmer|coral|jessica|aoede|kore|leda|zephyr/i.test(String(body.voice ?? ''));
+        const out = path.join(tts, `line-${net.speechCalls}.wav`);
+        execFileSync('python3', ['-m', 'piper', '-m', path.join(tts, female ? 'fr_FR-siwis-medium.onnx' : 'fr_FR-tom-medium.onnx'), '-f', out], { input: String(body.input ?? '') });
+        return route.fulfill({ status: 200, headers: { ...CORS, 'content-type': 'audio/wav' }, body: fs.readFileSync(out) });
+      }
       return route.fulfill({ status: 200, headers: { ...CORS, 'content-type': 'audio/wav' }, body: wav() });
     }
     if (p === '/videos' && method === 'POST') {
@@ -130,7 +140,8 @@ async function intercept(page: Page): Promise<Net> {
       return route.fulfill({
         status: 200,
         headers: { ...CORS, 'content-type': 'video/webm' }, // a real, playable clip with its REAL mime
-        body: fs.readFileSync(path.join(ROOT, 'tests/fixtures/studio/clip.webm')),
+        // Mirror environment (local only): a REAL clip of the owner's Grok films stands for Grok's answer.
+        body: fs.readFileSync(process.env.MIRROR_GROK_CLIP ?? path.join(ROOT, 'tests/fixtures/studio/clip.webm')),
       });
     return route.fulfill({ status: 404, headers: CORS, body: '{}' });
   });
@@ -1175,3 +1186,459 @@ test('Circuit Grok « 10 s · entièrement animé »: no character sheet, voices
   expect(Number(/dépensé\s*([\d.,]+)/.exec(txt)![1]!.replace(',', '.'))).toBeLessThanOrEqual(0.3);
   expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
 });
+
+test('Acteurs 3D: the @comedyvideos_100 troupe in the library, option ON → every scene played by the 3D actors (WebGL, lip-sync, chute), the film moves; the same actors come back', async ({ page }) => {
+  test.setTimeout(1_500_000);
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  const errors = await open(page, [], { autopilot: true });
+  const net = await intercept(page);
+  await page.getByTitle(/AI Film Studio/).click();
+  // The recurring actors of the account (character bible + the duo of the reference clip) join the library first.
+  await page.getByTestId('actor-casting').locator('summary').click();
+  await page.getByTestId('actors3d-troupe').click();
+  await expect(page.getByTestId('actors3d-note')).toContainText(/univers @comedyvideos_100 : (3\d|4\d) acteur\(s\) ajouté\(s\)/);
+  // The owner's own drawn character: a green-screen sheet (5 poses) cut out in the browser, then played in the film.
+  const planche = await page.evaluate(() => {
+    const c = document.createElement('canvas');
+    c.width = 1000;
+    c.height = 420;
+    const g = c.getContext('2d')!;
+    g.fillStyle = '#1ee614';
+    g.fillRect(0, 0, 1000, 420);
+    for (let k = 0; k < 5; k++) {
+      const x = 100 + k * 200;
+      g.fillStyle = '#e0559a';
+      g.beginPath();
+      g.ellipse(x, 250, 55, 140, 0, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = '#6b3a1e';
+      g.beginPath();
+      g.arc(x, 85, 42, 0, Math.PI * 2);
+      g.fill();
+      g.fillRect(x - 70, 160, 22, 90);
+      g.fillRect(x + 48 + k * 4, 140 - k * 10, 22, 80);
+      g.fillStyle = '#120c08';
+      g.beginPath();
+      g.arc(x, 62, 40, Math.PI, 0);
+      g.fill();
+      g.fillStyle = '#ffffff';
+      g.fillRect(x - 18, 80, 10, 8);
+      g.fillRect(x + 8, 80, 10, 8);
+    }
+    return c.toDataURL('image/png').split(',')[1]!;
+  });
+  await page.getByTestId('sheet-name').fill('LA VOISINE');
+  await page.getByTestId('sheet-file').setInputFiles({ name: 'voisine-planche.png', mimeType: 'image/png', buffer: Buffer.from(planche, 'base64') });
+  await expect(page.getByTestId('actors3d-note')).toContainText('planche de LA VOISINE : 5 pose(s) découpée(s)', { timeout: 60_000 });
+  await expect(page.getByTestId('actor-poses').locator('img')).toHaveCount(5);
+  // The owner's empty set (their décor image) of the courtyard: the background of the scenes there.
+  const decor = await page.evaluate(() => {
+    const c = document.createElement('canvas');
+    c.width = 900;
+    c.height = 600;
+    const g = c.getContext('2d')!;
+    const sky = g.createLinearGradient(0, 0, 0, 600);
+    sky.addColorStop(0, '#8ecdf2');
+    sky.addColorStop(0.55, '#c9a06a');
+    g.fillStyle = sky;
+    g.fillRect(0, 0, 900, 600);
+    g.fillStyle = '#9a9a96';
+    g.fillRect(0, 150, 900, 240);
+    g.fillStyle = '#f2c12e';
+    g.fillRect(180, 200, 120, 190);
+    g.fillStyle = '#6b4226';
+    g.fillRect(600, 210, 140, 90);
+    return c.toDataURL('image/png').split(',')[1]!;
+  });
+  await page.getByTestId('decors').locator('select').selectOption('Cour');
+  await page.getByTestId('decor-file').setInputFiles({ name: 'cour.png', mimeType: 'image/png', buffer: Buffer.from(decor, 'base64') });
+  await expect(page.getByTestId('decor-list')).toContainText('Cour');
+  await page.getByTestId('actor-casting').locator('summary').click();
+  // A real dialogue: the dispute of the reference clip (four alternating lines, gestures, punchline), then the village.
+  const lines = [
+    { speaker: 'LA VOISINE', text: 'Tu as encore bu toute la journée ?', emotion: 'colère', gesture: 'point', language: 'fr' },
+    { speaker: 'LE TONTON', text: 'Moi ? C’est de l’eau minérale !', emotion: 'surprise', gesture: 'shrug', language: 'fr' },
+    { speaker: 'LA VOISINE', text: 'De l’eau minérale verte ?', emotion: 'colère', language: 'fr' },
+    { speaker: 'LE TONTON', text: 'C’est l’eau du village, ma chérie !', emotion: 'joie', gesture: 'laugh', language: 'fr' },
+  ];
+  const SHORT = {
+    ...STORY,
+    characters: ['LA VOISINE', 'LE TONTON', 'TANTIE AWA', 'PETIT MAMADOU'],
+    scenes: [
+      { ...STORY.scenes[0]!, duration: 3, location: 'cour de la maison', characters: ['LA VOISINE', 'LE TONTON'], action: 'LE TONTON titube avec sa bouteille devant LA VOISINE', dialogue: lines },
+      {
+        ...STORY.scenes[1]!,
+        duration: 3,
+        location: 'village',
+        characters: ['TANTIE AWA', 'PETIT MAMADOU'],
+        action: 'TANTIE AWA gronde PETIT MAMADOU qui tient un téléphone',
+        dialogue: [
+          { speaker: 'TANTIE AWA', text: 'Qui a pris mon crédit ?', emotion: 'colère', gesture: 'point', language: 'fr' },
+          { speaker: 'PETIT MAMADOU', text: 'C’est le tonton, il appelle sa chérie !', emotion: 'joie', gesture: 'laugh', language: 'fr' },
+        ],
+      },
+    ],
+  };
+  mock.push({ text: JSON.stringify(SHORT) });
+  mock.fallback = () => ({ text: '{}' });
+  await page.getByTestId('film-idea-input').fill('Une belle-mère découvre le secret de son gendre au salon.');
+  await page.getByRole('button', { name: 'Afrikatoon 2D' }).click();
+  await page.getByTestId('film-circuit').getByRole('switch').click();
+  await page.getByTestId('film-actors3d').getByRole('switch').click();
+  await expect(page.getByTestId('film-actors3d')).toHaveAttribute('data-on', '1');
+  await page.getByTestId('film-create').click();
+  await expect(page.getByTestId('pipe-ANIMATION')).toHaveAttribute('data-state', /done|warning/, { timeout: 90_000 });
+  // Exact frame-by-frame render (30 pictures/s): minutes with software WebGL.
+  await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 900_000 });
+  // Free: no video model was called.
+  expect(net.videoSubmits).toBe(0);
+  // The library learned the cast (rigged once, reused), the film keeps its cast snapshot.
+  const lib = (await kvGet(page, 'vs.actors')) as Record<string, { name: string; films: number; source: string }>;
+  expect(Object.keys(lib)).toEqual(expect.arrayContaining(['LA VOISINE', 'LE TONTON', 'TANTIE AWA', 'PETIT MAMADOU', 'MODOU', 'COUMBA']));
+  // The troupe actors were REUSED (not rebuilt from the story's sheets) and counted once for this film.
+  expect(lib['LE TONTON']!.source).toBe('troupe');
+  expect(lib['LE TONTON']!.films).toBe(1);
+  expect(lib['MODOU']!.films).toBe(0);
+  // The sheet is the REFERENCE of the character for the image (and so Grok) models: no redrawn character sheet.
+  const projects = (await kvGet(page, 'vs.projects')) as Record<string, { characters: { name: string; referenceAssetId?: string }[] }>;
+  const voisine = Object.values(projects).flatMap((p) => p.characters).find((c) => c.name === 'LA VOISINE');
+  expect(voisine?.referenceAssetId).toMatch(/^sheet-LA VOISINE-/);
+  // The film itself: frames drawn by the 3D actors (not a black / placeholder picture) that MOVE between instants.
+  const probe = await page.evaluate(async () => {
+    const v = document.querySelector('[data-testid=film-final] video') as HTMLVideoElement;
+    const src = v.src;
+    const el = document.createElement('video');
+    el.muted = true;
+    el.src = src;
+    await new Promise((r) => (el.onloadeddata = r));
+    const dur = Number.isFinite(el.duration) && el.duration > 0 ? el.duration : 4;
+    const c = document.createElement('canvas');
+    c.width = 108;
+    c.height = 192;
+    const g = c.getContext('2d', { willReadFrequently: true })!;
+    const shots: { url: string; px: number[]; colors: number }[] = [];
+    for (const f of [0.08, 0.2, 0.32, 0.44, 0.56, 0.68, 0.8, 0.92]) {
+      await new Promise<void>((ok) => {
+        el.onseeked = () => ok();
+        el.currentTime = f * dur;
+        setTimeout(ok, 2000);
+      });
+      g.drawImage(el, 0, 0, c.width, c.height);
+      const d = g.getImageData(0, 0, c.width, c.height).data;
+      const px: number[] = [];
+      const set = new Set<number>();
+      for (let i = 0; i < d.length; i += 4) {
+        px.push(d[i]! + d[i + 1]! + d[i + 2]!);
+        set.add(((d[i]! >> 5) << 6) | ((d[i + 1]! >> 5) << 3) | (d[i + 2]! >> 5));
+      }
+      const big = document.createElement('canvas');
+      big.width = 270;
+      big.height = 480;
+      big.getContext('2d')!.drawImage(el, 0, 0, 270, 480);
+      shots.push({ url: big.toDataURL('image/png'), px, colors: set.size });
+    }
+    const diff = (a: number[], b: number[]) => a.reduce((s, x, i) => s + Math.abs(x - b[i]!), 0) / a.length;
+    return { shots: shots.map((s) => ({ url: s.url, colors: s.colors })), moves: shots.slice(1).map((s, i) => diff(shots[i]!.px, s.px)) };
+  });
+  if (process.env.ACTORS3D_DUMP) probe.shots.forEach((s, i) => fs.writeFileSync(path.join(process.env.ACTORS3D_DUMP!, `film3d-${i}.png`), Buffer.from(s.url.split(',')[1]!, 'base64')));
+  if (process.env.ACTORS3D_DUMP) {
+    const b64 = await page.evaluate(async () => {
+      const b = await (await fetch((document.querySelector('[data-testid=film-final] video') as HTMLVideoElement).src)).blob();
+      const u8 = new Uint8Array(await b.arrayBuffer());
+      let s = '';
+      for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000));
+      return btoa(s);
+    });
+    fs.writeFileSync(path.join(process.env.ACTORS3D_DUMP, 'film3d.webm'), Buffer.from(b64, 'base64'));
+  }
+  // A rich picture (set + actors, many colours), not a flat placeholder.
+  for (const s of probe.shots) expect(s.colors).toBeGreaterThan(12);
+  // The actors move between the sampled instants.
+  expect(Math.max(...probe.moves)).toBeGreaterThan(2);
+  // Casting panel: the actors are listed with a live WebGL preview and can be edited by hand.
+  await page.getByTestId('actor-casting').locator('summary').click();
+  await expect(page.getByTestId('actors3d-list')).toContainText('LA VOISINE');
+  await expect(page.getByTestId('actor-preview').locator('canvas')).toBeVisible({ timeout: 20_000 });
+  if (process.env.ACTORS3D_DUMP)
+    for (const n of ['LA VOISINE', 'LE TONTON', 'MODOU', 'BAYE NDIAYE', 'TANTIE AWA', 'PETIT MAMADOU', 'COUMBA', 'TONTON DIENG']) {
+      await page.getByTestId('actors3d-list').getByText(n, { exact: true }).click();
+      await page.waitForTimeout(1700);
+      await page.getByTestId('actor-preview').screenshot({ path: path.join(process.env.ACTORS3D_DUMP, `troupe-${n.replace(/ /g, '_')}.png`) });
+    }
+  // Optional (local check with a real model, never committed): a .vrm imported for one actor drives the same acting.
+  if (process.env.ACTORS3D_VRM) {
+    await page.getByTestId('actors3d-list').getByText('COUMBA', { exact: true }).click();
+    await page.getByTestId('actor-vrm-file').setInputFiles(process.env.ACTORS3D_VRM);
+    await expect(page.getByTestId('actors3d-note')).toContainText('associé à COUMBA');
+    await page.waitForTimeout(5000);
+    if (process.env.ACTORS3D_DUMP)
+      for (let i = 0; i < 6; i++) {
+        await page.getByTestId('actor-preview').screenshot({ path: path.join(process.env.ACTORS3D_DUMP, `casting-vrm-${i}.png`) });
+        await page.waitForTimeout(600);
+      }
+  }
+  // The same actors come back: casting the film again reuses them (nothing new added).
+  await page.getByTestId('actors3d-cast').click();
+  await expect(page.getByTestId('actors3d-note')).toContainText('réutilisés : LA VOISINE, LE TONTON, TANTIE AWA, PETIT MAMADOU');
+  expect(errors.filter((e) => !/favicon|ERR_|net::|GPU stall|WebGL/i.test(e))).toEqual([]);
+});
+
+test('Troupe intégrée: the owner’s planches, galleries and sets install themselves; the drawn actors TALK with their own lips (measured face) and blink — animation test', async ({ page }) => {
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  const errors = await open(page, [], { autopilot: true });
+  const net = await intercept(page);
+  await page.getByTitle(/AI Film Studio/).click();
+  await page.getByTestId('actor-casting').locator('summary').click();
+  // Only in a build made with the owner's private troupe folder (never in the public repository).
+  test.skip((await page.getByTestId('troupe-install').count()) === 0, 'no embedded troupe in this build');
+  await page.getByTestId('troupe-install').click();
+  await expect(page.getByTestId('actors3d-note')).toContainText(/troupe installée : \d+ acteur\(s\)/, { timeout: 170_000 });
+  const note = (await page.getByTestId('actors3d-note').textContent()) ?? '';
+  const [, rigged, poses] = /visage mesuré \(bouche, yeux\) sur (\d+)\/(\d+)/.exec(note) ?? [];
+  // Every pose of every planche and every gallery figure has its face measured (lips, chin, eyes).
+  expect(Number(rigged)).toBe(Number(poses));
+  const lib = (await kvGet(page, 'vs.actors')) as Record<string, { sheet?: { poses: { kind: string; face?: { l: number[]; r: number[]; seam: number[]; eyes: unknown[] } }[] } }>;
+  for (const n of ['MAMAN NOUNOU', 'BAYE NDIAYE', 'COUMBA', 'MODOU', 'PETIT MAMADOU', 'TANTIE AWA', 'KOFFI']) {
+    expect(lib[n]?.sheet?.poses.length).toBe(5);
+    expect(lib[n]!.sheet!.poses.every((p) => p.face && p.face.r[0]! > p.face.l[0]!)).toBe(true);
+  }
+  // KOFFI wears sunglasses: no eye to close → he never blinks (nothing is invented).
+  expect(lib['KOFFI']!.sheet!.poses.every((p) => p.face!.eyes.length === 0)).toBe(true);
+  expect(lib['DJECKY']?.sheet?.poses.length).toBe(1);
+  expect(lib['TONTON DIENG']?.sheet?.poses[0]?.face).toBeTruthy();
+  const decors = (await kvGet(page, 'vs.decors')) as Record<string, { name: string }>;
+  expect(Object.values(decors).map((d) => d.name)).toEqual(expect.arrayContaining(['Salon', 'Marché', 'Maquis', 'Village']));
+  await page.getByTestId('actor-casting').locator('summary').click();
+  // The animation test: a dispute in the living room (the chute at the end), then the market.
+  const SHORT = {
+    ...STORY,
+    characters: ['MAMAN NOUNOU', 'BAYE NDIAYE', 'COUMBA', 'MODOU'],
+    scenes: [
+      {
+        ...STORY.scenes[0]!,
+        duration: 4,
+        location: 'salon de la maison',
+        characters: ['MAMAN NOUNOU', 'BAYE NDIAYE'],
+        action: 'MAMAN NOUNOU découvre que BAYE NDIAYE a caché l’argent du marché',
+        dialogue: [
+          { speaker: 'MAMAN NOUNOU', text: 'Baye ! Où est passé l’argent du marché ?', emotion: 'colère', gesture: 'point', language: 'fr' },
+          { speaker: 'BAYE NDIAYE', text: 'Quel argent ? Moi je dormais, ma chérie !', emotion: 'surprise', gesture: 'shrug', language: 'fr' },
+          { speaker: 'MAMAN NOUNOU', text: 'Tu dormais avec tes chaussures neuves ?', emotion: 'colère', language: 'fr' },
+          { speaker: 'BAYE NDIAYE', text: 'Ce sont les chaussures du rêve !', emotion: 'joie', gesture: 'laugh', language: 'fr' },
+        ],
+      },
+      {
+        ...STORY.scenes[1]!,
+        duration: 3,
+        location: 'au marché',
+        characters: ['COUMBA', 'MODOU'],
+        action: 'COUMBA surprend MODOU en train de négocier une fausse montre',
+        dialogue: [
+          { speaker: 'COUMBA', text: 'Modou, c’est une vraie montre en or ?', emotion: 'doute', language: 'fr' },
+          { speaker: 'MODOU', text: 'Elle est en or… le soir seulement !', emotion: 'joie', gesture: 'laugh', language: 'fr' },
+        ],
+      },
+    ],
+  };
+  mock.push({ text: JSON.stringify(SHORT) });
+  mock.fallback = () => ({ text: '{}' });
+  await page.getByTestId('film-idea-input').fill('Maman Nounou découvre où est passé l’argent du marché.');
+  await page.getByRole('button', { name: 'Afrikatoon 2D' }).click();
+  await page.getByTestId('film-circuit').getByRole('switch').click();
+  await page.getByTestId('film-actors3d').getByRole('switch').click();
+  await page.getByTestId('film-create').click();
+  await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 240_000 });
+  expect(net.videoSubmits).toBe(0);
+  if (process.env.ACTORS3D_DUMP) {
+    const b64 = await page.evaluate(async () => {
+      const b = await (await fetch((document.querySelector('[data-testid=film-final] video') as HTMLVideoElement).src)).blob();
+      const u8 = new Uint8Array(await b.arrayBuffer());
+      let s = '';
+      for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000));
+      return btoa(s);
+    });
+    fs.writeFileSync(path.join(process.env.ACTORS3D_DUMP, 'troupe-film.webm'), Buffer.from(b64, 'base64'));
+  }
+  expect(errors.filter((e) => !/favicon|ERR_|net::|GPU stall|WebGL/i.test(e))).toEqual([]);
+});
+
+// Local demo (never in CI): a 4-sketch film played by the owner's embedded troupe, real French voices (Piper), HD.
+test('Troupe intégrée: démo 4 sketches en HD (ACTORS3D_DEMO)', async ({ page }) => {
+  test.skip(!process.env.ACTORS3D_DEMO, 'local demo only');
+  test.setTimeout(2_400_000);
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  await open(page, [], { autopilot: true });
+  const net = await intercept(page);
+  await page.getByTitle(/AI Film Studio/).click();
+  await page.getByTestId('actor-casting').locator('summary').click();
+  test.skip((await page.getByTestId('troupe-install').count()) === 0, 'no embedded troupe in this build');
+  await page.getByTestId('troupe-install').click();
+  await expect(page.getByTestId('actors3d-note')).toContainText(/troupe installée/, { timeout: 170_000 });
+  await page.getByTestId('actor-casting').locator('summary').click();
+  const L = (speaker: string, text: string, emotion: string, gesture?: string) => ({ speaker, text, emotion, ...(gesture ? { gesture } : {}), language: 'fr' });
+  const sc = (i: number, location: string, characters: string[], action: string, dialogue: ReturnType<typeof L>[]) => ({ ...STORY.scenes[i % 2]!, duration: 12, location, characters, action, dialogue });
+  const DEMO = {
+    ...STORY,
+    title: 'Les chaussures du rêve',
+    characters: ['MAMAN NOUNOU', 'BAYE NDIAYE', 'PETIT MAMADOU', 'COUMBA', 'MODOU', 'KOFFI', 'TANTIE AWA'],
+    scenes: [
+      sc(0, 'salon de la maison', ['MAMAN NOUNOU', 'BAYE NDIAYE'], 'MAMAN NOUNOU découvre que BAYE NDIAYE a dépensé l’argent du marché', [
+        L('MAMAN NOUNOU', 'Baye ! Où est passé l’argent du marché ?', 'colère', 'point'),
+        L('BAYE NDIAYE', 'Quel argent ? Moi je dormais, ma chérie !', 'surprise', 'shrug'),
+        L('MAMAN NOUNOU', 'Tu dormais avec tes chaussures neuves aux pieds ?', 'colère'),
+        L('BAYE NDIAYE', 'Ce sont les chaussures du rêve !', 'joie', 'laugh'),
+      ]),
+      sc(1, 'salon de la maison', ['PETIT MAMADOU', 'MAMAN NOUNOU'], 'PETIT MAMADOU balance son grand-père', [
+        L('PETIT MAMADOU', 'Maman, Papi a aussi rêvé d’un nouveau téléphone !', 'joie'),
+        L('MAMAN NOUNOU', 'Quoi ? Un téléphone ?', 'surprise', 'head-hands'),
+        L('PETIT MAMADOU', 'Il est caché sous son oreiller.', 'fierté', 'point'),
+        L('MAMAN NOUNOU', 'Baye Ndiaye ! Viens ici tout de suite !', 'colère', 'point'),
+      ]),
+      sc(0, 'au marché', ['COUMBA', 'MODOU'], 'COUMBA surprend MODOU qui vend une fausse montre en or', [
+        L('COUMBA', 'Modou, c’est une vraie montre en or ?', 'doute'),
+        L('MODOU', 'Cent pour cent or, ma sœur !', 'fierté', 'shrug'),
+        L('COUMBA', 'Alors pourquoi ton poignet devient vert ?', 'surprise', 'point'),
+        L('MODOU', 'C’est de l’or écologique !', 'joie', 'laugh'),
+      ]),
+      sc(1, 'au marché', ['KOFFI', 'TANTIE AWA'], 'KOFFI veut acheter à crédit chez TANTIE AWA', [
+        L('KOFFI', 'Tantie, mets-moi dix kilos de tomates, je paie demain.', 'fierté'),
+        L('TANTIE AWA', 'Demain ? Hier aussi tu disais demain !', 'colère', 'point'),
+        L('KOFFI', 'Mais hier, c’était le demain d’avant-hier !', 'joie', 'laugh'),
+      ]),
+    ],
+  };
+  mock.push({ text: JSON.stringify(DEMO) });
+  mock.fallback = () => ({ text: '{}' });
+  await page.getByTestId('film-idea-input').fill('Les chaussures du rêve : quatre sketches de la famille.');
+  await page.getByRole('button', { name: 'Afrikatoon 2D' }).click();
+  await page.getByTestId('film-circuit').getByRole('switch').click();
+  await page.getByTestId('film-actors3d').getByRole('switch').click();
+  await page.getByTestId('film-render-width').selectOption(process.env.ACTORS3D_DEMO === '720' ? '720' : '1080');
+  await page.getByTestId('film-create').click();
+  await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 2_300_000 });
+  expect(net.videoSubmits).toBe(0);
+  const { b64, mp4 } = await page.evaluate(async () => {
+    const b = await (await fetch((document.querySelector('[data-testid=film-final] video') as HTMLVideoElement).src)).blob();
+    const u8 = new Uint8Array(await b.arrayBuffer());
+    let s = '';
+    for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000));
+    return { b64: btoa(s), mp4: b.type.includes('mp4') };
+  });
+  const file = path.join(process.env.ACTORS3D_DUMP ?? os.tmpdir(), `troupe-demo.${mp4 ? 'mp4' : 'webm'}`);
+  fs.writeFileSync(file, Buffer.from(b64, 'base64'));
+  // FLUIDITY, measured on the file itself (v50 was filmed live at 4.9 pictures/s, its picture 0.37 s ahead of the
+  // sound): every second carries ≥ 29 distinct pictures and the picture lasts as long as the sound.
+  const probe = (args: string[]) => execFileSync('ffprobe', ['-v', 'error', ...args, file]).toString().trim();
+  const pts = probe(['-select_streams', 'v', '-show_entries', 'packet=pts_time', '-of', 'csv=p=0']).split('\n').map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+  const span = pts.at(-1)! - pts[0]!;
+  expect(pts.length / span).toBeGreaterThanOrEqual(29);
+  const gaps = pts.slice(1).map((t, i) => t - pts[i]!);
+  expect(Math.max(...gaps)).toBeLessThan(0.07);
+  // End of each track = its last packet (WebM has no per-track duration).
+  const endOf = (sel: string) => {
+    const last = probe(['-select_streams', sel, '-show_entries', 'packet=pts_time,duration_time', '-of', 'csv=p=0']).split('\n').filter(Boolean).at(-1)!.split(',').map(Number);
+    return last[0]! + (last[1] || 0);
+  };
+  expect(Math.abs(endOf('v') - endOf('a'))).toBeLessThan(0.15);
+});
+
+/**
+ * ENVIRONNEMENT MIROIR (local, never in CI): the owner's real conditions before any delivery — the HTML opened as is,
+ * the embedded troupe installing itself, the DEFAULT settings (Circuit Grok ON), real French voices (Piper),
+ * OpenRouter answering like the real one (a real clip of the owner's Grok films for the video model); the whole
+ * Autopilot from a one-line idea to the film, then the film MEASURED (motion, frozen time, flicker, shots).
+ */
+async function mirrorFilm(page: Page, o: { circuit: boolean; label: string; grokKey?: boolean }) {
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  const errors = await open(page, [], { autopilot: true });
+  const net = await intercept(page);
+  net.videoCost = -1;
+  await page.getByTitle(/AI Film Studio/).click();
+  await page.getByTestId('actor-casting').locator('summary').click();
+  test.skip((await page.getByTestId('troupe-install').count()) === 0, 'no embedded troupe in this build');
+  await page.getByTestId('troupe-install').click();
+  await expect(page.getByTestId('actors3d-note')).toContainText(/troupe installée/, { timeout: 170_000 });
+  await page.getByTestId('actor-casting').locator('summary').click();
+  const L = (speaker: string, text: string, emotion: string, gesture?: string) => ({ speaker, text, emotion, ...(gesture ? { gesture } : {}), language: 'fr' });
+  const SC = (i: number, beat: string, location: string, characters: string[], action: string, dialogue: ReturnType<typeof L>[]) => ({ ...STORY.scenes[i % 2]!, beat, duration: 10, location, characters, action, dialogue });
+  const FILM = {
+    ...STORY,
+    title: 'L’argent du marché',
+    characters: ['MAMAN NOUNOU', 'BAYE NDIAYE', 'PETIT MAMADOU'],
+    scenes: [
+      SC(0, 'hook', 'salon de la maison', ['MAMAN NOUNOU', 'BAYE NDIAYE'], 'MAMAN NOUNOU cherche l’argent du marché', [
+        L('MAMAN NOUNOU', 'Baye ! Où est passé l’argent du marché ?', 'colère', 'point'),
+        L('BAYE NDIAYE', 'Quel argent ? Moi je dormais, ma chérie !', 'surprise', 'shrug'),
+        L('MAMAN NOUNOU', 'Tu dormais avec tes chaussures neuves aux pieds ?', 'colère'),
+      ]),
+      SC(1, 'chute', 'salon de la maison', ['PETIT MAMADOU', 'MAMAN NOUNOU'], 'PETIT MAMADOU balance son grand-père', [
+        L('PETIT MAMADOU', 'Maman, Papi a aussi acheté un téléphone !', 'joie'),
+        L('MAMAN NOUNOU', 'Baye Ndiaye ! Viens ici tout de suite !', 'colère', 'point'),
+      ]),
+    ],
+  };
+  mock.push({ text: JSON.stringify(FILM) });
+  mock.fallback = () => ({ text: '{}' });
+  await page.getByTestId('film-idea-input').fill('Maman Nounou cherche l’argent du marché.');
+  await page.getByRole('button', { name: 'Afrikatoon 2D' }).click();
+  // The owner's defaults: Circuit Grok ON. The free run turns it off and plays everything with the troupe.
+  await expect(page.getByTestId('film-circuit')).toHaveAttribute('data-on', '1');
+  if (!o.circuit) {
+    await page.getByTestId('film-circuit').getByRole('switch').click();
+    await page.getByTestId('film-actors3d').getByRole('switch').click();
+  }
+  if (o.grokKey) await page.getByTestId('film-grok-key').getByRole('switch').click();
+  await page.getByTestId('film-render-width').selectOption('1080');
+  await page.getByTestId('film-create').click();
+  await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 840_000 });
+  const b64 = await page.evaluate(async () => {
+    const b = await (await fetch((document.querySelector('[data-testid=film-final] video') as HTMLVideoElement).src)).blob();
+    const u8 = new Uint8Array(await b.arrayBuffer());
+    let s = '';
+    for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000));
+    return btoa(s);
+  });
+  const out = path.join(process.env.MIRROR_OUT ?? os.tmpdir(), `mirror-${o.label}.webm`);
+  fs.writeFileSync(out, Buffer.from(b64, 'base64'));
+  // The film measured like the owner's TikTok references.
+  const { measureFrames } = await import('../../server/jev/studio/clipInspect');
+  const W = 96;
+  const H = 170;
+  const raw = execFileSync('ffmpeg', ['-v', 'error', '-i', out, '-vf', `fps=12,scale=${W}:${H}`, '-f', 'rawvideo', '-pix_fmt', 'gray', '-'], { maxBuffer: 1 << 30 });
+  const n = Math.floor(raw.length / (W * H));
+  const frames = Array.from({ length: n }, (_, i) => Float32Array.from(raw.subarray(i * W * H, (i + 1) * W * H), (v) => v / 255));
+  const m = measureFrames({ w: W, h: H, fps: 12, frames });
+  const frozenS = m.frozen.reduce((a, f) => a + f.end - f.start, 0);
+  fs.writeFileSync(out.replace(/\.webm$/, '.json'), JSON.stringify({ ...m, frozenS, imageCalls: net.imageCalls.length, videoSubmits: net.videoSubmits, speechCalls: net.speechCalls }, null, 1));
+  expect(m.seconds).toBeGreaterThan(8);
+  expect(m.motion).toBeGreaterThan(0.006);
+  expect(frozenS).toBeLessThan(4);
+  expect(m.flicker).toBeLessThan(0.02);
+  expect(errors.filter((e) => !/favicon|ERR_|net::|GPU stall|WebGL/i.test(e))).toEqual([]);
+  return { net, m };
+}
+
+test('Miroir — réglages par défaut (Circuit Grok ON) + votre troupe : le MOTEUR fait tout le film, 0 image payante, 0 clip Grok', async ({ page }) => {
+  test.skip(!process.env.MIRROR, 'local mirror environment only');
+  test.setTimeout(900_000);
+  const { net } = await mirrorFilm(page, { circuit: true, label: 'defaut' });
+  expect(net.imageCalls.length).toBe(0);
+  expect(net.videoSubmits).toBe(0);
+});
+
+test('Miroir — option « Grok sur la chute » (payant, sur demande) : images de départ par le moteur, Grok sur la chute seulement', async ({ page }) => {
+  test.skip(!process.env.MIRROR, 'local mirror environment only');
+  test.setTimeout(900_000);
+  const { net } = await mirrorFilm(page, { circuit: true, label: 'grok-chute', grokKey: true });
+  expect(net.imageCalls.length).toBe(0);
+  expect(net.videoSubmits).toBe(1);
+});
+
+test('Miroir — tout gratuit (troupe, voix réelles, HD)', async ({ page }) => {
+  test.skip(!process.env.MIRROR, 'local mirror environment only');
+  test.setTimeout(900_000);
+  const { net } = await mirrorFilm(page, { circuit: false, label: 'gratuit' });
+  expect(net.videoSubmits).toBe(0);
+  expect(net.imageCalls.length).toBe(0);
+});
+

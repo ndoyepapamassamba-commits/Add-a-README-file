@@ -21,6 +21,7 @@ const MODELS = {
   pose: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task',
   touch:
     'https://storage.googleapis.com/mediapipe-models/interactive_segmenter/magic_touch/float32/latest/magic_touch.tflite',
+  face: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task',
 };
 type Img = OffscreenCanvas | HTMLCanvasElement | ImageBitmap | HTMLImageElement;
 interface MpMask {
@@ -85,6 +86,36 @@ export function visionKit(): Promise<Kit | null> {
     }
   })();
   return loading;
+}
+/** The face landmarker (478 points: lips, chin, eyes, irises) — loaded once, only when a character sheet is read. */
+export interface FaceKit {
+  detect(i: Img): { faceLandmarks: { x: number; y: number }[][] };
+}
+let faceLoading: Promise<FaceKit | null> | null = null;
+export function faceKit(): Promise<FaceKit | null> {
+  faceLoading ??= (async () => {
+    try {
+      const mp = (await import(/* @vite-ignore */ `${MP}/vision_bundle.mjs`)) as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const files = await mp.FilesetResolver.forVisionTasks(`${MP}/wasm`);
+      const make = (delegate: 'GPU' | 'CPU'): Promise<FaceKit> =>
+        mp.FaceLandmarker.createFromOptions(files, {
+          baseOptions: { modelAssetPath: MODELS.face, delegate },
+          runningMode: 'IMAGE',
+          numFaces: 1,
+          minFaceDetectionConfidence: 0.1,
+          minFacePresenceConfidence: 0.1,
+        });
+      try {
+        return await make('GPU');
+      } catch {
+        return await make('CPU');
+      }
+    } catch {
+      faceLoading = null;
+      return null;
+    }
+  })();
+  return faceLoading;
 }
 const canvasOf = (w: number, h: number): OffscreenCanvas | HTMLCanvasElement =>
   typeof OffscreenCanvas !== 'undefined'

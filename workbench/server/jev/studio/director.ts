@@ -119,6 +119,8 @@ export function planImages(models: MediaModel[], est: (m: MediaModel) => Estimat
 }
 
 export const LOCAL_ANIMATION = 'local:2.5d';
+/** Reusable 3D actors (procedural Afrikatoon or imported .vrm), played in the browser at montage time: 0 $. */
+export const ACTORS_3D = 'local:actors3d';
 export function planAnimation(models: MediaModel[], est: (m: MediaModel, seconds: number) => Estimate, shape: FilmShape, mem: ProdRecord[] = [], cap?: number, cheap: { pollinations?: boolean; hf?: boolean; pollinationsModels?: { id: string; name: string; usdPerS: number; quality: number }[] } = {}): StagePlan {
   const per = Math.max(4, Math.min(10, Math.round(shape.seconds / Math.max(1, shape.scenes))));
   const opts: DirOption[] = models
@@ -155,6 +157,9 @@ export function planAnimation(models: MediaModel[], est: (m: MediaModel, seconds
   if (cheap.hf) opts.push({ ...hf, score: scoreOf(hf) });
   const local = { id: LOCAL_ANIMATION, name: 'Animation 2.5D intégrée (caméra, parallaxe, lip-bounce)', stageUsd: 0, costLabel: 'Gratuit' as const, quality: 5.5, qualitySource: 'a priori' as const, speed: 'Rapide' as const, afrikatoon: 9, score: 0, why: 'anime les images validées dans le navigateur : 0 $, style exact', local: true };
   opts.push({ ...local, score: scoreOf(local) });
+  // Quality « a priori » like every option that was never measured on this account (the montage analysis measures it).
+  const a3d = { id: ACTORS_3D, name: 'Acteurs 3D Afrikatoon (réutilisables, lip-sync, gratuit)', stageUsd: 0, costLabel: 'Gratuit' as const, quality: 5.5, qualitySource: 'a priori' as const, speed: 'Rapide' as const, afrikatoon: 8, score: 0, why: 'les mêmes acteurs 3D d’un film à l’autre (créés depuis les fiches, ou vos modèles .vrm), corps entier, bouche synchronisée sur les mots : 0 $', local: true };
+  opts.push({ ...a3d, score: scoreOf(a3d) });
   return finish('animation', 'Animation', opts, cap);
 }
 

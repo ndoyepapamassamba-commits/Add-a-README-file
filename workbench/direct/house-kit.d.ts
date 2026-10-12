@@ -10,3 +10,7 @@ declare module 'virtual:cannon-iife' {
   const code: string;
   export default code;
 }
+declare module 'virtual:troupe-kit' {
+  const kit: import('./lib/studio/troupeKit').TroupeKit | null;
+  export default kit;
+}

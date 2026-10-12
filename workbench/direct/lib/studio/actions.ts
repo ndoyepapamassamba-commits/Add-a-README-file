@@ -1,5 +1,6 @@
 // Studio actions (runtime): registry, story, character library + 2D redraw, scene images, voices. Every paid call goes
 // through executeMedia (selection, budget gate, retries, fallback, storage, memory, JEV_LOG).
+import { castBrief, decorPrompt, universeCharacter, universeSetOf } from '../../../server/jev/studio/actor/universe';
 import { detectPanels, SINGLE_SHOT_RETRY } from '../../../server/jev/studio/panels';
 import { parseRig, RIG_PROMPT } from '../../../server/jev/studio/puppet';
 import { artQuality, artVerdict, enhanceInstruction, judgePrompt, parseJudgement, regenerateHint, type ArtJudgement } from '../../../server/jev/studio/artJudge';
@@ -154,6 +155,7 @@ export async function generateStory(projectId: string, notes?: string): Promise<
     language: bp.language,
     platform: bp.platform,
     characters: bp.characters.map((c) => ({ name: c.name, role: c.role })),
+    recurring: castBrief(),
     hints: hints(useStudio.getState().memory),
     aspect: bp.aspect,
     dimension: dimensionOf(bp.styleDNA),
@@ -204,9 +206,15 @@ export async function generateStory(projectId: string, notes?: string): Promise<
     return { parsed: null, issues, model };
   }
   const known = new Set(bp.characters.map((c) => c.name.toUpperCase()));
+  // A recurring character of the channel keeps ITS description (verbatim): same face and outfit in every film.
   const stubs: CharacterSheet[] = parsed.story.characters
     .filter((n) => !known.has(n))
-    .map((name) => emptyCharacter(name));
+    .map((name) => {
+      const u = universeCharacter(name);
+      return u
+        ? { ...emptyCharacter(name), role: u.role, gender: u.gender ?? '', age: u.age ?? '', body: u.body ?? '', hair: u.hair ?? '', clothing: u.visual, accessories: u.accessories ?? '', face: u.face ?? '', consistency: `${name}: ${u.visual}` }
+        : emptyCharacter(name);
+    });
   patch(
     projectId,
     (b) => {
@@ -220,7 +228,11 @@ export async function generateStory(projectId: string, notes?: string): Promise<
           ...b.worlds,
           ...[...new Set(parsed!.scenes.map((s) => s.location))]
             .filter((l) => !b.worlds.some((w) => w.name.toLowerCase() === l.toLowerCase()))
-            .map(emptyWorld),
+            .map((l) => {
+              // A set of the channel keeps its description (the same décor from one film to the next).
+              const u = universeSetOf(l);
+              return u ? { ...emptyWorld(l), architecture: u.visual, background: u.visual } : emptyWorld(l);
+            }),
         ],
         duration: Math.round(parsed!.scenes.reduce((a, s) => a + s.duration, 0)),
       };
@@ -604,6 +616,46 @@ export async function generatePlate(projectId: string, sceneId: string): Promise
   } catch {
     return null;
   }
+}
+/** Scale of a generated vertical set (eye-level camera, back of the place ~3 m away, floor in the lower fifth). */
+export const VERTICAL_DECOR_FIT = { mH: 3.0, floor: 0.86, cx: 0.5 } as const;
+/**
+ * DÉCOR ADAPTÉ (paid, under the HARD cap of the film): an empty VERTICAL set for a place, made once with the chosen
+ * image model (the owner's set picture of that place as the reference) and kept in the set library « <place> (vertical) »
+ * for every film after. A picture too small to be a set (under 512 px) is not kept.
+ */
+export async function generateDecor(projectId: string, location: string, o: { forceModel?: string } = {}): Promise<string | null> {
+  const bp = bpOf(projectId);
+  if (bp.mode === 'ECO') return null;
+  const lib = useStudio.getState().decors;
+  const probe = decorPrompt(location, false);
+  const have = lib[`${probe.name.toLowerCase()} (vertical)`];
+  if (have) return have.assetId;
+  const ref = lib[probe.name.toLowerCase()]?.assetId;
+  const { name, text } = decorPrompt(location, Boolean(ref));
+  const sc = bp.scenes.find((x) => x.location === location) ?? bp.scenes[0];
+  if (!sc) return null;
+  const base = compileScene(sc, { style: bp.styleDNA, characters: [], worlds: bp.worlds, previous: null, next: null, platform: bp.platform, aspect: '9:16' }, 'image', { maxChars: 1200 });
+  const out = await generateOne({
+    projectId,
+    compiled: { ...base, version: 'decor-1', text },
+    references: ref ? [ref] : [],
+    task: 'SCENE-IMAGE',
+    mission: `décor adapté ${name} (9:16)`,
+    aspect: '9:16',
+    tags: ['decor', name],
+    ...(o.forceModel ? { forceModel: o.forceModel } : {}),
+    trace: new Trace(),
+  });
+  if (!out.assetId) return null;
+  const blob = await blobs.get(out.assetId);
+  if (!blob) return null;
+  const bmp = await createImageBitmap(blob).catch(() => null);
+  const ok = !!bmp && bmp.height >= 512 && bmp.height > bmp.width;
+  bmp?.close();
+  if (!ok) return null;
+  useStudio.getState().upsertDecor(`${name} (vertical)`, out.assetId, { ...VERTICAL_DECOR_FIT });
+  return out.assetId;
 }
 /**
  * CORPS ENTIER, 0 $: the scene picture is read IN THE BROWSER (no key, no paid call): characters, full skeletons
@@ -1013,4 +1065,20 @@ export async function judgeHumor(projectId: string): Promise<HumorVerdict | null
   } catch {
     return null;
   }
+}
+
+/**
+ * The owner's OWN picture for a scene (their characters, their set): it replaces the generated image and is validated;
+ * the old clip, skeleton and plate are dropped so the animation (Circuit Grok, Marionnette) starts from it.
+ */
+export async function useOwnSceneImage(projectId: string, sceneId: string, file: Blob): Promise<string> {
+  const id = `asset-own-${Date.now().toString(36)}-${sceneId}`;
+  await blobs.put(id, file);
+  useStudio.getState().addAsset({ id, kind: 'image', status: 'FINAL_ASSET', projectId, sceneId, model: 'import', createdAt: Date.now(), cost: 0, source: 'Votre image', tags: ['image', sceneId, 'import'], mime: file.type || 'image/png', bytes: file.size, name: `image-${sceneId}` });
+  patch(projectId, (b) => ({
+    ...b,
+    assets: [...b.assets, id],
+    scenes: b.scenes.map((s) => (s.scene_id === sceneId ? { ...s, imageAssetId: id, status: 'APPROVED' as const, videoAssetId: undefined, rig: undefined, plateAssetId: undefined, maskAssetId: undefined, clipReport: undefined } : s)),
+  }));
+  return id;
 }

@@ -1,5 +1,6 @@
 // AI VISUAL STUDIO — shared types. Pure data: no DOM, no network. Everything the studio stores is plain JSON.
 import type { ClipReport } from './clipInspect';
+import type { ActorLibrary } from './actor/cast3d';
 
 export type MediaKind = 'image' | 'video' | 'speech' | 'music';
 export type MediaCap =
@@ -386,6 +387,8 @@ export interface Blueprint {
   timeline: Timeline;
   /** Social packs generated per platform. */
   social?: Record<string, import('./social').SocialPack>;
+  /** ACTEURS 3D: the cast of this film (a snapshot of the library actors), played in the montage for every scene without a clip. */
+  actors3d?: { cast: ActorLibrary; at: number };
   stages: Record<string, StageStatus>;
   qa: QAReport | null;
   costs: CostEntry[];

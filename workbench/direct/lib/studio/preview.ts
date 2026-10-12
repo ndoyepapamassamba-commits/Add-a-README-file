@@ -6,6 +6,11 @@ import { PuppetStage } from './puppetRender';
 import { masksFromImage } from './bodyDetect';
 import { gestureOf } from '../../../server/jev/studio/puppet';
 import { wordViseme } from '../../../server/jev/studio/emotionLayer';
+import { mouthShape } from '../../../server/jev/studio/actor/cast3d';
+import { audioVisemes, mouthAt, type MouthFrame } from '../../../server/jev/studio/actor/audioVisemes';
+import { ClipFrames, exactSupported, openExactEncoder, yieldToPage } from './exactRender';
+import type { Theater3D } from './actors3d';
+import { decorFor, extrasPool } from './actorsCast';
 import { VIRAL_FORMAT, VIRAL_PRESETS, captionChunk, fitBand, parallelChunk, reactionFor, shockAfter, type ReactionKind } from '../../../server/jev/studio/viralFormat';
 import { blobs } from './blobs';
 import type { Blueprint, Scene } from '../../../server/jev/studio/types';
@@ -16,12 +21,18 @@ import {
   ASPECTS,
   SUBTITLE_STYLES,
   activeAt,
+  captionWords,
   timeSubtitles,
   type SubLine,
   type SubtitleStyle,
 } from '../../../server/jev/studio/subtitles';
 
+/** Can this browser make the film (frame-by-frame encoder, or at least the live recorder)? */
 export function previewSupport(): { ok: boolean; mime: string | null; reason?: string } {
+  const live = recorderSupport();
+  return live.ok || !exactSupported() ? live : { ok: true, mime: 'video/mp4' };
+}
+function recorderSupport(): { ok: boolean; mime: string | null; reason?: string } {
   if (
     typeof MediaRecorder === 'undefined' ||
     typeof HTMLCanvasElement === 'undefined' ||
@@ -72,24 +83,53 @@ export interface PreviewOptions {
   short?: boolean;
   /** Caption keyword as a coloured word (default) or in a coloured box. */
   captionStyle?: 'word' | 'box';
+  /** ACTEURS 3D: scenes without a clip are played by the film's 3D cast (bp.actors3d); false turns it off. */
+  actors3d?: boolean;
+  /** Notes of the render the owner should know (a .vrm that could not be read, WebGL missing…). */
+  onNote?: (msg: string) => void;
+  /** Exact render (every picture at its instant, encoded frame by frame) when the browser can; false = live recorder. */
+  exact?: boolean;
 }
 type Rect = { x: number; y: number; w: number; h: number };
 /** The cinema finish, prepared once: a soft vignette and a warm highlight grade (no frame is re-encoded twice). */
-function cinemaGrade(W: number, H: number, ctx: CanvasRenderingContext2D): { vignette: CanvasGradient; warm: CanvasGradient } {
+function cinemaGrade(W: number, H: number, ctx: CanvasRenderingContext2D): { vignette: CanvasGradient; warm: CanvasGradient; grain: CanvasPattern | null } {
   const vignette = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.hypot(W, H) * 0.62);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
   vignette.addColorStop(1, 'rgba(0,0,0,0.38)');
   const warm = ctx.createLinearGradient(0, 0, 0, H);
   warm.addColorStop(0, 'rgba(255,190,120,0.06)');
   warm.addColorStop(1, 'rgba(40,20,80,0.08)');
-  return { vignette, warm };
+  // FILM GRAIN: one fine grain over the whole picture (actors and set alike) — the layers read as ONE photograph.
+  const n = Object.assign(document.createElement('canvas'), { width: 256, height: 256 });
+  const ng = n.getContext('2d')!;
+  const id = ng.createImageData(256, 256);
+  let seed = 7;
+  for (let i = 0; i < id.data.length; i += 4) {
+    seed = (seed * 16807) % 2147483647;
+    const v = 128 + ((seed / 2147483647 - 0.5) * 2) * 90;
+    id.data[i] = id.data[i + 1] = id.data[i + 2] = v;
+    id.data[i + 3] = 255;
+  }
+  ng.putImageData(id, 0, 0);
+  return { vignette, warm, grain: ctx.createPattern(n, 'repeat') };
 }
-function cinemaFinish(ctx: CanvasRenderingContext2D, W: number, H: number, g: { vignette: CanvasGradient; warm: CanvasGradient }) {
+function cinemaFinish(ctx: CanvasRenderingContext2D, W: number, H: number, g: { vignette: CanvasGradient; warm: CanvasGradient; grain: CanvasPattern | null }, t = 0) {
   ctx.save();
   ctx.fillStyle = g.warm;
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = g.vignette;
   ctx.fillRect(0, 0, W, H);
+  if (g.grain) {
+    // A new grain every picture (its offset moves with the film clock), scaled to the output (finer in HD).
+    const k = Math.floor(t * 30);
+    const ox = (k * 97) % 256;
+    const oy = (k * 57) % 256;
+    ctx.globalCompositeOperation = 'overlay';
+    ctx.globalAlpha = 0.07;
+    ctx.translate(-ox, -oy);
+    ctx.fillStyle = g.grain;
+    ctx.fillRect(0, 0, W + 256, H + 256);
+  }
   ctx.restore();
 }
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -141,12 +181,13 @@ export function framed(ctx: CanvasRenderingContext2D, img: CanvasImageSource & {
   return b;
 }
 /** The « stupeur » insert: our own vector shocked face popping in on black (overshoot, then a small tremble). */
-export function shockFrame(ctx: CanvasRenderingContext2D, W: number, H: number, age: number, kind: ReactionKind = 'choc') {
-  // Over the punchline's last picture, darkened (the scene stays readable behind the reaction) — never a black screen.
-  ctx.fillStyle = `rgba(0,0,0,${Math.min(0.55, age * 2.2)})`;
+export function shockFrame(ctx: CanvasRenderingContext2D, W: number, H: number, age: number, kind: ReactionKind = 'choc', live = false) {
+  // Over the punchline's picture, darkened (the scene stays readable behind the reaction) — never a black screen. Over a
+  // LIVING scene (the actors keep reacting under it) the shade is lighter and the emoji smaller: the faces stay readable.
+  ctx.fillStyle = `rgba(0,0,0,${Math.min(live ? 0.3 : 0.55, age * 2.2)})`;
   ctx.fillRect(0, 0, W, H);
   const pop = age < 0.25 ? Math.sin((age / 0.25) * Math.PI * 0.5) * 1.15 : 1 + 0.15 * Math.exp(-(age - 0.25) * 8) * Math.cos((age - 0.25) * 18);
-  const r = Math.min(W, H) * 0.3 * pop;
+  const r = Math.min(W, H) * (live ? 0.22 : 0.3) * pop;
   const cx = W / 2 + Math.sin(age * 60) * W * 0.004;
   const cy = H / 2;
   const g = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.4, r * 0.1, cx, cy, r);
@@ -413,9 +454,9 @@ function placeholder(ctx: CanvasRenderingContext2D, sc: Scene, W: number, H: num
 export async function renderPreview(
   bp: Blueprint,
   o: PreviewOptions = {},
-): Promise<{ blob: Blob; mime: string; seconds: number; hiddenPauses?: number }> {
-  const sup = previewSupport();
-  if (!sup.ok) throw new Error(sup.reason);
+): Promise<{ blob: Blob; mime: string; seconds: number; hiddenPauses?: number; fps?: number }> {
+  const sup = recorderSupport();
+  if (!sup.ok && !exactSupported()) throw new Error(sup.reason);
   const [aw, ah] = ASPECTS[bp.aspect] ?? ASPECTS['9:16']!;
   const W = o.width ?? 360;
   const H = Math.round((W * ah) / aw);
@@ -497,15 +538,42 @@ export async function renderPreview(
       return out;
     }),
   );
-  const stages = bitmaps.map((b, k) => (b && !videos[k] && bp.scenes[k]!.rig?.characters.length ? new PuppetStage(b, bp.scenes[k]!.rig!, plates[k], masks[k]) : null));
+  // ACTEURS 3D: one WebGL theatre for the film; every scene without a clip is played by the film's 3D cast.
+  let theater: Theater3D | null = null;
+  const cast3d = o.actors3d === false ? null : bp.actors3d?.cast;
+  if (cast3d && bp.scenes.some((_, k) => !videos[k])) {
+    try {
+      const { Theater3D } = await import('./actors3d');
+      const [aw3, ah3] = ASPECTS[bp.aspect] ?? ASPECTS['9:16']!;
+      theater = new Theater3D(W, Math.round((W * ah3) / aw3));
+      const failed = new Set<string>();
+      for (const [k, sc] of bp.scenes.entries()) {
+        if (videos[k]) continue;
+        const mine = lines.filter((l) => l.sceneId === sc.scene_id);
+        const cue = mine.map((l) => ({ speaker: l.speaker, start: l.start - sceneStart[k]!, end: l.end - sceneStart[k]!, text: l.text, gesture: sc.dialogue[l.index]?.gesture, emotion: sc.dialogue[l.index]?.emotion }));
+        const names = sc.characters.length ? sc.characters : [...new Set(mine.map((l) => l.speaker))];
+        const bd = decorFor(sc.location);
+        const backdrop = bd ? await blobs.get(bd.assetId) : null;
+        const backdropDepth = bd?.depthAssetId ? ((await blobs.get(bd.depthAssetId)) ?? null) : null;
+        const backdropPeople = bd?.peopleAssetId ? ((await blobs.get(bd.peopleAssetId)) ?? null) : null;
+        const r = await theater.addScene(k, { names, lines: cue, seconds: Math.max(1, sceneEnd[k]! - sceneStart[k]!), action: sc.action, location: sc.location, cast: cast3d, backdrop, ...(bd ? { backdropId: bd.assetId, backdropDepth, backdropPeople } : {}), extras: extrasPool(), ...(bd?.fit ? { backdropFit: bd.fit } : {}) }, (id) => blobs.get(id));
+        r.vrmFailed.forEach((n) => failed.add(n));
+      }
+      if (failed.size) o.onNote?.(`modèle .vrm illisible pour ${[...failed].join(', ')} → acteur procédural`);
+    } catch (e) {
+      theater?.dispose();
+      theater = null;
+      o.onNote?.(`Acteurs 3D indisponibles (${(e as Error).message.slice(0, 80)}) → Marionnette / 2.5D`);
+    }
+  }
+  const stages = bitmaps.map((b, k) => (b && !videos[k] && !theater?.has(k) && bp.scenes[k]!.rig?.characters.length ? new PuppetStage(b, bp.scenes[k]!.rig!, plates[k], masks[k]) : null));
   // One camera move per scene, chosen from its content, never the same twice in a row.
   const dim3d = dimensionOf(bp.styleDNA) === '3D';
   const moves: Move[] = [];
   bp.scenes.forEach((s, i) => moves.push(moveFor(s, i, moves[i - 1])));
 
-  // Audio graph → MediaStream
+  // Sounds decoded once; mixed live (recorder) or offline (exact render) on the film clock.
   const ac = new AudioContext();
-  const dest = ac.createMediaStreamDestination();
   const decode = async (id?: string) => {
     const b = id ? await blobs.get(id) : undefined;
     if (!b) return null;
@@ -515,22 +583,8 @@ export async function renderPreview(
       return null;
     }
   };
-  const schedule = (buf: AudioBuffer, at: number, gain: number, loopTo?: number): GainNode => {
-    const s = ac.createBufferSource();
-    const g = ac.createGain();
-    s.buffer = buf;
-    g.gain.value = gain;
-    if (loopTo) {
-      s.loop = true;
-      s.loopEnd = buf.duration;
-    }
-    s.connect(g).connect(dest);
-    s.start(ac.currentTime + at);
-    if (loopTo) s.stop(ac.currentTime + loopTo);
-    return g;
-  };
   const music = await decode(bp.audio.music?.assetId);
-  const voiceBufs: { buf: AudioBuffer; at: number; env: number[]; side: number }[] = [];
+  const voiceBufs: { buf: AudioBuffer; at: number; env: number[]; side: number; mouth: MouthFrame[] }[] = [];
   for (const [k, v] of Object.entries(bp.audio.voices ?? {})) {
     const [sid, i] = k.split(':');
     const line = lines.find((l) => l.sceneId === sid && l.index === Number(i));
@@ -538,7 +592,14 @@ export async function renderPreview(
     const sc = bp.scenes.find((x) => x.scene_id === sid);
     const speaker = sc?.dialogue[Number(i)]?.speaker ?? '';
     if (buf && line)
-      voiceBufs.push({ buf, at: line.start, env: rmsEnvelope(buf.getChannelData(0), buf.sampleRate), side: speakerSide(sc?.characters ?? [], speaker) });
+      voiceBufs.push({
+        buf,
+        at: line.start,
+        env: rmsEnvelope(buf.getChannelData(0), buf.sampleRate),
+        side: speakerSide(sc?.characters ?? [], speaker),
+        // LIP-SYNC ON THE REAL VOICE: jaw from the loudness and the first formant, lips from the second (i / ou).
+        mouth: audioVisemes(buf.getChannelData(0), buf.sampleRate),
+      });
   }
   /** Who speaks at time t (punch-in towards them) and how loud (talking bounce). */
   const voiceAt = (now: number) => {
@@ -547,10 +608,10 @@ export async function renderPreview(
       if (rel >= -0.15 && rel <= v.buf.duration + 0.25) {
         const k = Math.max(0, Math.floor(rel / 0.04));
         const punch = Math.min(1, Math.min(rel + 0.15, v.buf.duration + 0.25 - rel) / 0.3);
-        return { punch, side: v.side, energy: v.env[Math.min(v.env.length - 1, k)] ?? 0 };
+        return { punch, side: v.side, energy: v.env[Math.min(v.env.length - 1, k)] ?? 0, mouth: mouthAt(v.mouth, rel) };
       }
     }
-    return { punch: 0, side: 0, energy: 0 };
+    return { punch: 0, side: 0, energy: 0, mouth: null as MouthFrame | null };
   };
   let punchS = 0;
   let punchA = 0;
@@ -565,74 +626,93 @@ export async function renderPreview(
     if (buf && si >= 0) sfx.push({ buf, at: sceneStart[si]! + 0.2 });
   }
 
-  const stream = canvas.captureStream(30);
-  dest.stream.getAudioTracks().forEach((tr) => stream.addTrack(tr));
-  const rec = new MediaRecorder(stream, { mimeType: sup.mime!, videoBitsPerSecond: 1_500_000 });
-  const chunks: Blob[] = [];
-  rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-  const stopped = new Promise<void>((r) => (rec.onstop = () => r()));
-  await ac.resume();
-  if (music) {
-    // Music ducking under the voices (short attack, longer release).
-    const g = schedule(music, 0, 0.16, total);
-    const pts = duckingPoints(voiceBufs.map((v) => ({ start: v.at, end: v.at + v.buf.duration })));
-    g.gain.setValueAtTime(pts[0]!.v, ac.currentTime);
-    for (const p of pts.slice(1)) g.gain.linearRampToValueAtTime(p.v, ac.currentTime + p.t);
-  }
-  for (const v of voiceBufs) schedule(v.buf, v.at, 1);
-  for (const s of sfx) schedule(s.buf, s.at, 0.35);
-  // The « stupeur » hit, synthesised (a falling « boing » + a soft thump), no sound file needed.
-  for (const at of shockAt) {
-    const t1 = ac.currentTime + at;
-    const osc = ac.createOscillator();
-    const g = ac.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(880, t1);
-    osc.frequency.exponentialRampToValueAtTime(140, t1 + 0.45);
-    g.gain.setValueAtTime(0.0001, t1);
-    g.gain.exponentialRampToValueAtTime(0.35, t1 + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t1 + 0.6);
-    osc.connect(g).connect(dest);
-    osc.start(t1);
-    osc.stop(t1 + 0.65);
-  }
-  rec.start(500);
-  // THE FILM CLOCK IS THE AUDIO CLOCK. v44: a hidden tab throttled the loop to 1 frame/s for 11 s (scenes 3–4 « without
-  // animation »). Now, while the tab is hidden, recording, audio and clips PAUSE together and resume when it is back.
-  const a0 = ac.currentTime;
-  const clock = () => ac.currentTime - a0;
-  let hiddenPauses = 0;
-  const holdWhileHidden = async () => {
-    if (typeof document === 'undefined' || !document.hidden) return;
-    hiddenPauses++;
-    o.onPause?.(true);
-    if (rec.state === 'recording') rec.pause();
-    await ac.suspend();
-    videos.forEach((v) => v && !v.paused && v.pause());
-    await new Promise<void>((ok) => {
-      const on = () => {
-        if (!document.hidden) {
-          document.removeEventListener('visibilitychange', on);
-          ok();
-        }
-      };
-      document.addEventListener('visibilitychange', on);
-      o.signal?.addEventListener('abort', () => ok());
-    });
-    await ac.resume();
-    if (rec.state === 'paused') rec.resume();
-    o.onPause?.(false);
+  /** Every sound of the film (music ducked under the voices, voices, effects, the « stupeur » hit) from `t0` of `c`. */
+  const mix = (c: BaseAudioContext, out: AudioNode, t0: number) => {
+    const schedule = (buf: AudioBuffer, at: number, gain: number, loopTo?: number): GainNode => {
+      const s = c.createBufferSource();
+      const g = c.createGain();
+      s.buffer = buf;
+      g.gain.value = gain;
+      if (loopTo) {
+        s.loop = true;
+        s.loopEnd = buf.duration;
+      }
+      s.connect(g).connect(out);
+      s.start(t0 + at);
+      if (loopTo) s.stop(t0 + loopTo);
+      return g;
+    };
+    if (music) {
+      // Music ducking under the voices (short attack, longer release).
+      const g = schedule(music, 0, 0.16, total);
+      const pts = duckingPoints(voiceBufs.map((v) => ({ start: v.at, end: v.at + v.buf.duration })));
+      g.gain.setValueAtTime(pts[0]!.v, t0);
+      for (const p of pts.slice(1)) g.gain.linearRampToValueAtTime(p.v, t0 + p.t);
+    }
+    for (const v of voiceBufs) schedule(v.buf, v.at, 1);
+    for (const x of sfx) schedule(x.buf, x.at, 0.35);
+    // The « stupeur » hit, synthesised (a falling « boing » + a soft thump), no sound file needed.
+    for (const at of shockAt) {
+      const t1 = t0 + at;
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(880, t1);
+      osc.frequency.exponentialRampToValueAtTime(140, t1 + 0.45);
+      g.gain.setValueAtTime(0.0001, t1);
+      g.gain.exponentialRampToValueAtTime(0.35, t1 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t1 + 0.6);
+      osc.connect(g).connect(out);
+      osc.start(t1);
+      osc.stop(t1 + 0.65);
+    }
+  };
+  // RENDU EXACT: every picture at its instant n/30 s, encoded with its timestamp (none dropped, sound in sync); the
+  // generated clips are decoded picture by picture. The live recorder only when the browser cannot encode.
+  const exact = o.exact === false ? null : await openExactEncoder(canvas).catch(() => null);
+  if (!exact && !sup.ok) throw new Error(sup.reason);
+  const clips = exact
+    ? await Promise.all(
+        bp.scenes.map(async (s, k) => {
+          if (!videos[k] || !s.videoAssetId) return null;
+          const b = await blobs.get(s.videoAssetId);
+          return b ? ClipFrames.open(b) : null;
+        }),
+      )
+    : [];
+  const clipTime = (k: number, now: number) => {
+    const vid = videos[k]!;
+    const end = Number.isFinite(vid.duration) ? vid.duration - 0.05 : Infinity;
+    return Math.min(Math.max(0, now - sceneStart[k]!) * clipRate[k]!, end);
+  };
+  /** The picture of a clip at `now` in the exact render (decoded; or the video element sought and waited for). */
+  const clipPicture = async (k: number, now: number): Promise<(CanvasImageSource & { width: number; height: number }) | null> => {
+    const t = clipTime(k, now);
+    const cf = clips[k];
+    if (cf) return cf.at(t);
+    const vid = videos[k]!;
+    if (!vid.paused) vid.pause();
+    if (Math.abs(vid.currentTime - t) > 0.004) {
+      const seeked = new Promise<void>((ok) => {
+        vid.addEventListener('seeked', () => ok(), { once: true });
+        setTimeout(ok, 1500);
+      });
+      vid.currentTime = t;
+      await seeked;
+    }
+    return vid as unknown as HTMLVideoElement & { width: number; height: number };
   };
   const style = o.style ?? (bp.subtitles.style as SubtitleStyle);
   const grade = cinemaGrade(W, H, ctx);
   let shockStill: HTMLCanvasElement | null = null;
-  while (true) {
-    await holdWhileHidden();
-    const now = clock();
-    if (now >= total || o.signal?.aborted) break;
+  /** Draws the picture of the film at `now` seconds. */
+  const drawFrame = async (now: number) => {
     let si = 0;
     for (let i = 0; i < sceneStart.length; i++) if (now >= sceneStart[i]!) si = i;
-    if (shock[si] && now >= sceneEnd[si]!) {
+    // The reaction insert: over the scene still LIVING when the theatre plays it (the speaker laughs, the other stays
+    // shocked), else over the punchline's last picture frozen.
+    const reacting = shock[si] && now >= sceneEnd[si]!;
+    if (reacting && !theater?.has(si)) {
       // The punchline's last picture, frozen once, redrawn under the reaction every frame (no darkening build-up).
       if (!shockStill) {
         shockStill = document.createElement('canvas');
@@ -642,9 +722,7 @@ export async function renderPreview(
       }
       ctx.drawImage(shockStill, 0, 0);
       shockFrame(ctx, W, H, now - sceneEnd[si]!, reactions[si]);
-      o.onProgress?.(now / total, now);
-      await wait(33);
-      continue;
+      return;
     }
     shockStill = null;
     const dur = sceneEnd[si]! - sceneStart[si]!;
@@ -665,6 +743,10 @@ export async function renderPreview(
     punchS += (punchA - punchS) * 0.12;
     if (va.punch > 0) sideHeld = va.side;
     sideS += (sideHeld - sideS) * 0.08;
+    const since = now - sceneStart[si]!;
+    const a0 = fadeIn(since);
+    const pics = new Map<number, (CanvasImageSource & { width: number; height: number }) | null>();
+    if (exact) for (const k of a0 < 1 && si > 0 ? [si - 1, si] : [si]) if (videos[k]) pics.set(k, await clipPicture(k, now));
     const drawShot = (k: number, fr: number, alpha: number) => {
       const vid = videos[k];
       const img = bitmaps[k];
@@ -675,19 +757,37 @@ export async function renderPreview(
         const rate = clipRate[k]!;
         const target = Math.max(0, now - sceneStart[k]!) * rate;
         const end = Number.isFinite(vid.duration) ? vid.duration - 0.05 : Infinity;
-        const vsrc = vid as unknown as HTMLVideoElement & { width: number; height: number };
+        const vsrc = pics.get(k) ?? (vid as unknown as HTMLVideoElement & { width: number; height: number });
         if (target < end) {
-          if (vid.playbackRate !== rate) vid.playbackRate = rate;
-          if (Math.abs(vid.currentTime - target) > 0.3) vid.currentTime = target;
-          if (vid.paused) void vid.play().catch(() => undefined);
+          if (!exact) {
+            if (vid.playbackRate !== rate) vid.playbackRate = rate;
+            if (Math.abs(vid.currentTime - target) > 0.3) vid.currentTime = target;
+            if (vid.paused) void vid.play().catch(() => undefined);
+          }
           band = framed(ctx, vsrc, W, H, { zoom: 1 + (cam.zoom - 1) * 0.3, dx: cam.dx * 0.3, dy: cam.dy * 0.3, rot: 0 }, alpha, viral);
         } else {
-          if (!vid.paused) vid.pause();
-          if (vid.currentTime < end - 0.2) vid.currentTime = Math.max(0, end);
+          if (!exact) {
+            if (!vid.paused) vid.pause();
+            if (vid.currentTime < end - 0.2) vid.currentTime = Math.max(0, end);
+          }
           const b = breathing(now + k);
           band = framed(ctx, vsrc, W, H, { ...cam, zoom: cam.zoom * b, dy: cam.dy - (b - 1) * 0.5 }, alpha, viral);
           if (k === si && va.energy > 0.04 && alpha >= 1) talkLayer(ctx, band.w, band.h, talkWarp(va.side, va.energy, now), band.x, band.y);
         }
+      } else if (theater?.has(k)) {
+        // ACTEURS 3D: the scene played by the cast (skeletal acting, voice-driven beats, lip-sync on the word).
+        const c3 = theater.render(k, Math.max(0, now - sceneStart[k]!), {
+          speaker: k === si && act ? act.line.speaker : null,
+          text: k === si && act ? act.line.text : undefined,
+          energy: k === si ? va.energy : 0,
+          beat: k === si ? beat : 0,
+          // The mouth follows the SOUND of the voice (audio visemes); the word timing only without a decoded voice.
+          mouth: k === si && act && va.mouth ? { ...va.mouth } : mouthShape(k === si && act ? vz.key : 'rest', va.energy),
+          gesture: k === si ? (gesture ?? dl?.gesture ?? null) : null,
+          emotion: (k === si ? dl?.emotion : undefined) || bp.scenes[k]!.emotion,
+          lineAge: act ? now - act.line.start : undefined,
+        });
+        band = framed(ctx, c3, W, H, { zoom: 1, dx: 0, dy: 0, rot: 0 }, alpha, viral);
       } else if (img && stages[k]) {
         // MARIONNETTE AFRIKATOON: the characters themselves move (head, body, arms), blink and talk with the voice.
         const st = stages[k]!;
@@ -716,12 +816,10 @@ export async function renderPreview(
       }
       else if (alpha >= 1) placeholder(ctx, bp.scenes[k]!, W, H);
     };
-    const since = now - sceneStart[si]!;
-    const a0 = fadeIn(since);
     if (a0 < 1 && si > 0) drawShot(si - 1, 1, 1);
     drawShot(si, f, si > 0 ? a0 : 1);
-    for (const [k, v] of videos.entries()) if (v && k !== si && k !== si - 1 && !v.paused) v.pause();
-    if (o.cinema !== false) cinemaFinish(ctx, W, H, grade);
+    if (!exact) for (const [k, v] of videos.entries()) if (v && k !== si && k !== si - 1 && !v.paused) v.pause();
+    if (o.cinema !== false) cinemaFinish(ctx, W, H, grade, now);
     const a = act;
     if (a && viral) {
       // French below the band (keyword yellow), English above it (keyword cyan), 1–3 words at a time.
@@ -734,25 +832,89 @@ export async function renderPreview(
       const en = o.bilingual ? dl?.english?.trim() : '';
       if (en) {
         const prog = (now - a.line.start) / Math.max(0.1, a.line.end - a.line.start);
-        const ch = parallelChunk(en.split(/\s+/), prog);
+        const ch = parallelChunk(captionWords(en), prog);
         const above = full ? Math.min(H * 0.93, below + size * 1.25) : band.y - Math.min(band.y, H * 0.16) * 0.45;
         if (ch) drawChunk(ctx, ch, W / 2, above, size, VIRAL_FORMAT.topColor, W * 0.9, o.captionStyle === 'box' ? VIRAL_FORMAT.boxColors[1] : undefined);
       }
     } else if (a) drawSub(ctx, a.line, a.wordIndex, W, H, style);
-    o.onProgress?.(now / total, now);
-    await wait(33);
+    if (reacting) shockFrame(ctx, W, H, now - sceneEnd[si]!, reactions[si], true);
+  };
+  let hiddenPauses = 0;
+  let film: { blob: Blob; mime: string };
+  if (exact) {
+    // The sound first (mixed offline on the film clock), then every picture at its exact instant.
+    const SR = 48000;
+    const off = new OfflineAudioContext({ numberOfChannels: 2, length: Math.max(1, Math.ceil(total * SR)), sampleRate: SR });
+    mix(off, off.destination, 0);
+    await exact.audio(await off.startRendering());
+    for (let k = 0; ; k++) {
+      const now = k / exact.fps;
+      if (now >= total || o.signal?.aborted) break;
+      await drawFrame(now);
+      await exact.frame(now);
+      o.onProgress?.(now / total, now);
+      if (k % 3 === 0) await yieldToPage();
+    }
+    film = { blob: await exact.finish(), mime: exact.mime };
+  } else {
+    const dest = ac.createMediaStreamDestination();
+    const stream = canvas.captureStream(30);
+    dest.stream.getAudioTracks().forEach((tr) => stream.addTrack(tr));
+    const rec = new MediaRecorder(stream, { mimeType: sup.mime!, videoBitsPerSecond: 1_500_000 });
+    const chunks: Blob[] = [];
+    rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    const stopped = new Promise<void>((r) => (rec.onstop = () => r()));
+    await ac.resume();
+    mix(ac, dest, ac.currentTime);
+    rec.start(500);
+    // THE FILM CLOCK IS THE AUDIO CLOCK. v44: a hidden tab throttled the loop to 1 frame/s for 11 s (scenes 3–4 « without
+    // animation »). Now, while the tab is hidden, recording, audio and clips PAUSE together and resume when it is back.
+    const a0 = ac.currentTime;
+    const clock = () => ac.currentTime - a0;
+    const holdWhileHidden = async () => {
+      if (typeof document === 'undefined' || !document.hidden) return;
+      hiddenPauses++;
+      o.onPause?.(true);
+      if (rec.state === 'recording') rec.pause();
+      await ac.suspend();
+      videos.forEach((v) => v && !v.paused && v.pause());
+      await new Promise<void>((ok) => {
+        const on = () => {
+          if (!document.hidden) {
+            document.removeEventListener('visibilitychange', on);
+            ok();
+          }
+        };
+        document.addEventListener('visibilitychange', on);
+        o.signal?.addEventListener('abort', () => ok());
+      });
+      await ac.resume();
+      if (rec.state === 'paused') rec.resume();
+      o.onPause?.(false);
+    };
+    while (true) {
+      await holdWhileHidden();
+      const now = clock();
+      if (now >= total || o.signal?.aborted) break;
+      await drawFrame(now);
+      o.onProgress?.(now / total, now);
+      await wait(33);
+    }
+    rec.stop();
+    await stopped;
+    stream.getTracks().forEach((tr) => tr.stop());
+    film = { blob: new Blob(chunks, { type: sup.mime! }), mime: sup.mime! };
   }
-  rec.stop();
-  await stopped;
-  stream.getTracks().forEach((tr) => tr.stop());
   await ac.close();
+  theater?.dispose();
   bitmaps.forEach((b) => b?.close());
   plates.forEach((b) => b?.close());
+  clips.forEach((c) => c?.dispose());
   videos.forEach((v) => {
     if (v) {
       v.pause();
       URL.revokeObjectURL(v.src);
     }
   });
-  return { blob: new Blob(chunks, { type: sup.mime! }), mime: sup.mime!, seconds: total, hiddenPauses };
+  return { ...film, seconds: total, hiddenPauses, ...(exact ? { fps: exact.fps } : {}) };
 }

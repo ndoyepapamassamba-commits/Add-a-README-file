@@ -10,6 +10,8 @@ export interface StoryBrief {
   language: string;
   platform: string;
   characters: { name: string; role: string }[];
+  /** The recurring cast of the channel (« NAME : comic role » lines): the writer reuses these exact names. */
+  recurring?: string;
   /** Compressed memory of what worked (from Production Memory) — optional. */
   hints?: string[];
   /** Wizard options (all optional). */
@@ -41,6 +43,9 @@ export function storyMessages(b: StoryBrief): { role: 'system' | 'user' | 'assis
         `IDÉE : ${redactSecrets(b.idea)}`,
         `Durée visée : ${b.durationSec} s (plus de 60 s pour TikTok Creator Rewards). Langue : ${b.language}. Plateforme : ${b.platform}.`,
         `Personnages :\n${chars}`,
+        ...(b.recurring
+          ? [`DISTRIBUTION RÉCURRENTE de la chaîne (mêmes acteurs, mêmes visages d’un film à l’autre) : quand l’idée n’impose pas ses personnages, choisis 2 à 4 de ceux-ci et garde leur nom EXACT ; n’en invente un nouveau que si aucun rôle ne convient.\n${b.recurring}`]
+          : []),
         ...(b.aspect || b.dimension || b.audience || b.realism !== undefined
           ? [
               `Format : ${b.aspect ?? '9:16'}${b.dimension ? ` · animation ${b.dimension}` : ''}${b.audience ? ` · public : ${redactSecrets(b.audience)}` : ''}${b.realism !== undefined ? ` · réalisme ${b.realism}/100 (0 = très stylisé)` : ''}.`,

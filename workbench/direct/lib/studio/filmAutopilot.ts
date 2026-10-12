@@ -8,15 +8,17 @@ import { betterTake } from '../../../server/jev/studio/clipInspect';
 import { lockShortSetting, lockedVideoPrompt } from '../../../server/jev/studio/continuity';
 import { useStore } from '../store';
 import { blobs } from './blobs';
-import { loadRegistry, generateStory, generateSceneImage, generateLine, redrawCharacter, imageCandidates, rigScene, rigSceneLocal, generatePlate, judgeHumor } from './actions';
+import { loadRegistry, generateDecor, generateStory, generateSceneImage, generateLine, redrawCharacter, imageCandidates, rigScene, rigSceneLocal, generatePlate, judgeHumor } from './actions';
 import { completeCharacterSheets, completeWorldSheets, addLocalMusic, compileSubtitles, buildEdit, generateSceneVideo, videoEnabled, runQA } from './actions2';
 import { setStudioTextModel } from './textModel';
 import { hfSpaceVideo, isCheapVideo, pollinationsModel, pollinationsVideo, POLLINATIONS_MODELS } from './cheapVideo';
 import { renderPreview } from './preview';
+import { applySheets, castActors, renderSceneStills, troupeReady, webglOk } from './actorsCast';
 import { modelsWith } from '../../../server/jev/studio/capabilities';
 import { estimateSpeech, estimateVideo } from '../../../server/jev/studio/cost';
 import {
   LOCAL_ANIMATION,
+  ACTORS_3D,
   costLabel,
   planAnimation,
   planImages,
@@ -122,7 +124,7 @@ export interface FilmResult {
 }
 
 /** Runs the whole film. Every stage reports live; scene-level failures are kept as warnings. */
-const isLocalAnim = (a?: string) => a === LOCAL_ANIMATION;
+const isLocalAnim = (a?: string) => a === LOCAL_ANIMATION || a === ACTORS_3D;
 export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = 'STORY'): Promise<FilmResult | null> {
   const order: PipeStage[] = ['STORY', 'SCENES', 'IMAGES', 'ANIMATION', 'QA', 'MONTAGE'];
   const start = order.indexOf(from);
@@ -190,8 +192,26 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
       const warn: string[] = [];
       // Circuit Grok, short sketch: no character sheets — the budget goes to real motion on every shot.
       const shortGrok = S().settings.circuit && circuitShort(bpOf(projectId).duration) && !isLocalAnim(c.chosen.animation);
+      // The owner's character sheets (library) are the references of their characters: never redrawn, always the same.
+      const fromSheets = applySheets(projectId);
+      if (fromSheets.length) c.onStage('IMAGES', 'running', `planches de personnages utilisées comme références : ${fromSheets.join(', ')}`);
+      // CIRCUIT GROK ALLÉGÉ: when every character of the film has its drawn actor, the first picture of each scene is
+      // drawn by the engine (the owner's troupe in the owner's set, 0 $) — no paid scene image, no redrawn sheet; Grok
+      // then animates exactly these characters.
+      // VOTRE TROUPE, 0 $: when every character of the film has its drawn actor, the engine draws the first picture of
+      // each scene itself (the owner's troupe in the owner's set) — no paid scene image, no redrawn character.
+      if (troupeReady(projectId) && webglOk()) {
+        c.onStage('IMAGES', 'running', 'votre troupe dessine les images des scènes (0 $)');
+        castActors(projectId);
+        const drawn = await renderSceneStills(projectId, { width: 720 }).catch((e) => {
+          warn.push(`images de départ du moteur : ${(e as Error).message.slice(0, 80)}`);
+          return 0;
+        });
+        c.onStage('IMAGES', 'running', `${drawn} image(s) de départ rendue(s) par le moteur avec votre troupe (0 $)`);
+      }
       c.onStage('IMAGES', 'running', shortGrok ? 'Circuit Grok court : budget réservé au mouvement' : 'références des personnages');
-      await pool(shortGrok ? [] : bpOf(projectId).characters.filter((x) => !x.referenceAssetId).slice(0, 6), PARALLEL.images, async (ch) => {
+      const engineStills = bpOf(projectId).scenes.length > 0 && bpOf(projectId).scenes.every((sc) => sc.imageAssetId && sc.status === 'APPROVED');
+      await pool(shortGrok || engineStills ? [] : bpOf(projectId).characters.filter((x) => !x.referenceAssetId).slice(0, 6), PARALLEL.images, async (ch) => {
         check(c);
         await redrawCharacter(projectId, ch.id, ['neutral']).catch((e) => warn.push(`${ch.name} : ${(e as Error).message.slice(0, 80)}`));
       });
@@ -214,6 +234,19 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
       }
       const still = bpOf(projectId).scenes.filter((sc) => !sc.imageAssetId).map((sc) => sc.scene_id);
       if (still.length) warn.push(`image toujours manquante : ${still.join(', ')} (aucun modèle n’a répondu)`);
+      // ACTEURS 3D: each place of the film gets its ADAPTED set (vertical, empty, at the actors' scale), made once.
+      if (S().settings.adaptedDecors && (c.chosen.animation === ACTORS_3D || S().settings.actors3d || troupeReady(projectId))) {
+        const places = [...new Set(bpOf(projectId).scenes.map((sc) => sc.location))];
+        for (const place of places) {
+          check(c);
+          c.onStage('IMAGES', 'running', `décor adapté : ${place}`);
+          const id = await generateDecor(projectId, place, { forceModel: c.chosen.images }).catch((e) => {
+            warn.push(`décor adapté « ${place} » : ${(e as Error).message.slice(0, 80)}`);
+            return null;
+          });
+          if (!id) warn.push(`décor adapté « ${place} » non créé → votre image du lieu (complétée en miroir) ou le décor 3D`);
+        }
+      }
       await gate('IMAGES', warn);
     }
     // ── ANIMATION: image → video with the chosen model, or the free 2.5D animation at montage time
@@ -221,7 +254,11 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
       const warn: string[] = [];
       const reg = await loadRegistry().catch(() => null);
       const auto = !c.chosen.animation && reg ? circuitOf(reg, bpOf(projectId)) : null;
-      const anim = c.chosen.animation ?? (auto ? `${CIRCUIT_PREFIX}${auto.id}` : LOCAL_ANIMATION);
+      const planned = c.chosen.animation ?? (auto ? `${CIRCUIT_PREFIX}${auto.id}` : S().settings.actors3d ? ACTORS_3D : LOCAL_ANIMATION);
+      // The owner's troupe plays the WHOLE film for free (the engine end to end); Grok only on explicit request.
+      const troupeFree = troupeReady(projectId) && webglOk() && !S().settings.grokKeyShots;
+      const anim = troupeFree ? ACTORS_3D : planned;
+      if (troupeFree && planned !== ACTORS_3D) c.onStage('ANIMATION', 'running', 'votre troupe joue tout le film (moteur, 0 $) — Grok non utilisé');
       if (isCircuit(anim)) {
         // CIRCUIT GROK: real generative motion on the shots that carry the joke, HARD cap — the budget is recomputed
         // from the REAL spend before every clip; whatever does not fit stays with the free Marionnette.
@@ -243,7 +280,14 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
             const secs = sc.dialogue.reduce((a, _, i) => a + (b0.audio.voices?.[`${sc.scene_id}:${i}`]?.seconds ?? 0), 0);
             return { ...sc, duration: secs ? Math.max(2, Math.ceil(secs + 0.5)) : Math.min(sc.duration, 3) };
           });
-          const plan = planCircuit(voiced, r, circuitBudget(b0.cap, spent(b0), later, 1));
+          // With the troupe, Grok only takes the KEY shots (the punchline, the twist): the drawn actors play the rest,
+          // with their real lip-sync, at 0 $.
+          const troupe = troupeReady(projectId) && webglOk();
+          const keyBeats = voiced.filter((sc) => sc.beat === 'chute' || sc.beat === 'twist');
+          const keyScenes = troupe ? (keyBeats.length ? keyBeats : voiced.slice(-1)) : voiced;
+          if (troupe) castActors(projectId);
+          const plan = planCircuit(keyScenes, r, circuitBudget(b0.cap, spent(b0), later, 1));
+          if (troupe) c.onStage('ANIMATION', 'running', `Circuit Grok allégé : Grok sur ${keyScenes.length} plan(s) clé(s) (${keyScenes.map((x) => x.scene_id).join(', ')}), votre troupe joue les ${voiced.length - keyScenes.length} autre(s) (lip-sync réel, 0 $)`);
           c.onStage('ANIMATION', 'running', `Circuit Grok : ${plan.shots.length} plan(s), ${plan.seconds} s, ≤ ${plan.usd.toFixed(2)} $ (plafond ${b0.cap.toFixed(2)} $)`);
           if (!plan.shots.length) warn.push(`Circuit Grok : il reste ${(b0.cap - spent(b0)).toFixed(3)} $ après l’écriture, les images et les voix — pas assez pour un plan animé (${r.usdPerS} $/s) → Marionnette. Choisissez « 10 s · entièrement animé » ou un budget plus élevé.`);
           // Real price / announced price, learned on the clips already billed (v48: S01 billed 0.168 $ for 0.150 $
@@ -305,7 +349,7 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
               c.onStage('ANIMATION', 'running', `${shot.sceneId} : 1re prise gardée (${rep.score}/100 contre ${rep2?.score ?? '—'})`);
             } else c.onStage('ANIMATION', 'running', `${shot.sceneId} : reprise gardée ${rep2.score}/100 (au lieu de ${rep.score})`);
           }
-          if (plan.skipped.length) c.onStage('ANIMATION', 'running', `${plan.skipped.length} autre(s) scène(s) : Marionnette Afrikatoon (gratuit)`);
+          if (plan.skipped.length) c.onStage('ANIMATION', 'running', `${plan.skipped.length} autre(s) scène(s) : ${troupe ? 'votre troupe' : 'Marionnette Afrikatoon'} (gratuit)`);
         }
       } else if (isCheapVideo(anim)) {
         // Cheap engines (Pollinations ≈ 0,01 $/s, free HF Space): the scene image becomes a real moving clip.
@@ -325,7 +369,7 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
             warn.push(`${sc.scene_id} : ${(e as Error).message.slice(0, 120)} → animation 2.5D`);
           }
         }
-      } else if (anim !== LOCAL_ANIMATION && videoEnabled()) {
+      } else if (anim !== LOCAL_ANIMATION && anim !== ACTORS_3D && videoEnabled()) {
         for (const sc of bpOf(projectId).scenes.filter((s) => s.imageAssetId && !s.videoAssetId)) {
           check(c);
           c.onStage('ANIMATION', 'running', `animation ${sc.scene_id}`);
@@ -333,12 +377,24 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
             warn.push(`${sc.scene_id} : ${(e as Error).message.slice(0, 80)} → animation 2.5D`),
           );
         }
-      } else if (anim !== LOCAL_ANIMATION) warn.push('animation vidéo non autorisée (budget vidéo à 0) → animation 2.5D gratuite');
-      else c.onStage('ANIMATION', 'running', 'animation 2.5D (caméra, parallaxe, voix) au montage');
-      // MARIONNETTE AFRIKATOON for every scene still without a clip: the characters are rigged (one vision read per
-      // image) and move, blink and talk at montage time — free, no quota.
-      const rigged = await rigAll(projectId, c);
-      if (rigged) c.onStage('ANIMATION', 'running', `${rigged} scène(s) animée(s) par la Marionnette Afrikatoon`);
+      } else if (anim !== LOCAL_ANIMATION && anim !== ACTORS_3D) warn.push('animation vidéo non autorisée (budget vidéo à 0) → animation 2.5D gratuite');
+      else if (anim === LOCAL_ANIMATION) c.onStage('ANIMATION', 'running', 'animation 2.5D (caméra, parallaxe, voix) au montage');
+      // ACTEURS 3D (option): every scene still without a clip is played by the reusable 3D actors at montage time —
+      // casting from the library, 0 $, no rig needed. Without WebGL the Marionnette takes over.
+      const want3d = anim === ACTORS_3D || Boolean(S().settings.actors3d);
+      const use3d = want3d && webglOk();
+      if (want3d && !use3d) warn.push('Acteurs 3D : WebGL indisponible dans ce navigateur → Marionnette Afrikatoon');
+      if (use3d) {
+        const r = castActors(projectId);
+        const n = bpOf(projectId).scenes.filter((s) => !s.videoAssetId).length;
+        c.onStage('ANIMATION', 'running', `Acteurs 3D : ${Object.keys(r.cast).length} acteur(s)${r.reused.length ? ` dont ${r.reused.length} réutilisé(s) (${r.reused.slice(0, 3).join(', ')})` : ''}${r.added.length ? `, ${r.added.length} nouveau(x) dans la bibliothèque` : ''} — ${n} scène(s) jouée(s) en 3D au montage`);
+      } else {
+        if (bpOf(projectId).actors3d) S().patchProject(projectId, (b) => ({ ...b, actors3d: undefined }), 'acteurs 3D retirés');
+        // MARIONNETTE AFRIKATOON for every scene still without a clip: the characters are rigged (one vision read per
+        // image) and move, blink and talk at montage time — free, no quota.
+        const rigged = await rigAll(projectId, c);
+        if (rigged) c.onStage('ANIMATION', 'running', `${rigged} scène(s) animée(s) par la Marionnette Afrikatoon`);
+      }
       await gate('ANIMATION', warn);
     }
     // ── CONTRÔLE QUALITÉ: rules + vision judge; the scenes the art director scored low are redrawn once (only
@@ -354,7 +410,7 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
         await generateSceneImage(projectId, sc.scene_id, { forceModel: c.chosen.images, regenerate: true }).catch((e) => warn.push(`${sc.scene_id} : ${(e as Error).message.slice(0, 80)}`));
       }
       // A redrawn image lost its skeleton and plate: rig it again (otherwise the scene would not be animated).
-      if (weak.length) await rigAll(projectId, c);
+      if (weak.length && !bpOf(projectId).actors3d) await rigAll(projectId, c);
       const rep = await runQA(projectId).catch(() => null);
       if (rep) {
         const errs = rep.issues.filter((i) => i.severity === 'error');
@@ -386,8 +442,9 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
     buildEdit(projectId);
     c.onStage('MONTAGE', 'running', 'rendu du film');
     const r = await renderPreview(bpOf(projectId), {
-      width: 540,
+      width: S().settings.renderWidth ?? 720,
       bilingual: Boolean(S().settings.bilingualCaptions),
+      onNote: (m) => warn.push(m),
       // The film is recorded in real time: a hidden tab pauses it (never 1 frame/s), the owner is told why.
       onPause: (p) => c.onStage('MONTAGE', 'running', p ? '⏸ rendu en pause : l’onglet est caché — revenez sur cet onglet pour continuer' : 'rendu du film (repris)'),
     });

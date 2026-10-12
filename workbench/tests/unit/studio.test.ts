@@ -52,7 +52,7 @@ import { STYLE_2D_HQ } from '../../server/jev/studio/style';
 import { explainNoJson, extractJson, parseStory, storyMessages, type ParsedStory } from '../../server/jev/studio/story';
 import { newBlueprint, serialize, loadBlueprint, progress } from '../../server/jev/studio/blueprint';
 import { buildKit, validateKit, buildKitZip } from '../../server/jev/studio/kit';
-import { timeSubtitles, emojiFor, toSrt, activeAt } from '../../server/jev/studio/subtitles';
+import { timeSubtitles, emojiFor, toSrt, activeAt, captionWords } from '../../server/jev/studio/subtitles';
 import {
   buildQAReport,
   continuityCheck,
@@ -655,6 +655,11 @@ describe('subtitles', () => {
   it('measured voice durations override the estimate', () => {
     const l = timeSubtitles([scene(1)], { voiceSeconds: { S01: [5] } });
     expect(l[0]!.end - l[0]!.start).toBeCloseTo(5);
+  });
+  it('French punctuation stays glued to its word (never a lone « ! » caption)', () => {
+    expect(captionWords('Cent pour cent or, ma sœur !')).toEqual(['Cent', 'pour', 'cent', 'or,', 'ma', 'sœur\u00a0!']);
+    expect(captionWords('Quoi ? Un téléphone ?')).toEqual(['Quoi\u00a0?', 'Un', 'téléphone\u00a0?']);
+    expect(captionWords('Il dit « demain » !')).toEqual(['Il', 'dit', '«\u00a0demain\u00a0»\u00a0!']);
   });
 });
 

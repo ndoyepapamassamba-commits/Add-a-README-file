@@ -6,14 +6,15 @@ import { inspectSceneClip } from '../../lib/studio/clipAnalyzer';
 import type { ClipReport } from '../../../server/jev/studio/clipInspect';
 import { VideoAnalyzer } from './videoAnalyzer';
 import { IdeaPrompter } from './ideaPrompter';
+import { ActorCasting } from './actorCasting';
 import { useEffect, useMemo, useState } from 'react';
 import { create } from 'zustand';
 import { Badge, Button, Select, Spinner, Toggle } from '../../../web/components/ui';
 import { useStudio } from '../../lib/studio/store';
 import { createProductionFromWizard } from '../../lib/studio/film';
-import { generateSceneImage, regenerateScene } from '../../lib/studio/actions';
+import { generateSceneImage, regenerateScene, useOwnSceneImage } from '../../lib/studio/actions';
 import { buildPlans, runFilm, type FilmResult, type StageState } from '../../lib/studio/filmAutopilot';
-import { LOCAL_ANIMATION, PIPELINE, PIPE_LABEL, totalUsd, type DirStage, type PipeStage, type StagePlan } from '../../../server/jev/studio/director';
+import { ACTORS_3D, LOCAL_ANIMATION, PIPELINE, PIPE_LABEL, totalUsd, type DirStage, type PipeStage, type StagePlan } from '../../../server/jev/studio/director';
 import { STYLE_PRESETS, dimensionOf, type Dimension } from '../../../server/jev/studio/style';
 import { spent } from '../../../server/jev/studio/blueprint';
 import { ConfirmHost, Thumb, useActive, useBlobUrl, usd } from './common';
@@ -132,6 +133,37 @@ function IdeaForm({ onCreate }: { onCreate: (idea: string, dim: Dimension, secon
           />
           {circuit && <span className="text-faint">≈ {((cap ?? auto) * 0.8).toFixed(2)} $ pour la vidéo</span>}
         </label>
+        <label className="flex items-center gap-2" title="Les scènes sans clip vidéo sont jouées par les acteurs 3D réutilisables (créés depuis les fiches, ou vos modèles .vrm), avec lip-sync : 0 $. Les mêmes acteurs reviennent d’un film à l’autre.">
+          <span data-testid="film-actors3d" data-on={useStudio((s) => s.settings.actors3d) ? '1' : '0'}>
+            <Toggle checked={Boolean(useStudio((s) => s.settings.actors3d))} onChange={(v) => useStudio.getState().setSettings({ actors3d: v })} />
+          </span>
+          Acteurs 3D
+        </label>
+        <label className="flex items-center gap-2" title="Avec votre troupe (vos planches), le moteur joue TOUT le film gratuitement. Activez ceci seulement si vous voulez que Grok anime aussi la chute (payant).">
+          <span data-testid="film-grok-key" data-on={useStudio((s) => s.settings.grokKeyShots) ? '1' : '0'}>
+            <Toggle checked={Boolean(useStudio((s) => s.settings.grokKeyShots))} onChange={(v) => useStudio.getState().setSettings({ grokKeyShots: v })} />
+          </span>
+          Grok sur la chute (payant)
+        </label>
+        <label className="flex items-center gap-2" title="Décors verticaux vides créés par le modèle d'image (payant, une fois par lieu). Sinon : vos images de décor, complétées en miroir (0 $).">
+          <span data-testid="film-adapted-decors" data-on={useStudio((s) => s.settings.adaptedDecors) ? '1' : '0'}>
+            <Toggle checked={Boolean(useStudio((s) => s.settings.adaptedDecors))} onChange={(v) => useStudio.getState().setSettings({ adaptedDecors: v })} />
+          </span>
+          Décors adaptés (payant)
+        </label>
+        <label className="flex items-center gap-2" title="Taille du film rendu (9:16). 1080 × 1920 = la HD de TikTok (rendu plus lent sur un petit ordinateur).">
+          Rendu
+          <select
+            className="rounded border border-line bg-input px-1"
+            data-testid="film-render-width"
+            value={useStudio((s) => s.settings.renderWidth ?? 720)}
+            onChange={(e) => useStudio.getState().setSettings({ renderWidth: Number(e.target.value) as 540 | 720 | 1080 })}
+          >
+            <option value={540}>540 × 960</option>
+            <option value={720}>720 × 1280</option>
+            <option value={1080}>1080 × 1920 (HD TikTok)</option>
+          </select>
+        </label>
         <label className="flex items-center gap-2" title="Ajoute la traduction anglaise sous les sous-titres français.">
           <Toggle checked={Boolean(useStudio((s) => s.settings.bilingualCaptions))} onChange={(v) => useStudio.getState().setSettings({ bilingualCaptions: v })} />
           Sous-titres FR + EN
@@ -194,7 +226,7 @@ function ModelPlan({ capUsd, onCap }: { capUsd: number; onCap: (n: number) => vo
   if (!plans.length) return <div className="text-[12px] text-muted">Analyse des modèles disponibles…</div>;
   const total = totalUsd(plans, chosen);
   const anim = chosen.animation ?? plans.find((p) => p.stage === 'animation')?.recommended;
-  const paidVideo = anim && anim !== LOCAL_ANIMATION;
+  const paidVideo = anim && anim !== LOCAL_ANIMATION && anim !== ACTORS_3D;
   return (
     <div className="rounded-xl border border-line p-3" data-testid="film-plan">
       <div className="mb-2 flex flex-wrap items-center gap-2 text-[13px] font-semibold">
@@ -378,6 +410,19 @@ function SceneCard({ projectId, sc, imageModels }: { projectId: string; sc: Scen
         <Button size="sm" disabled={Boolean(busy)} onClick={() => void regen()} data-testid="scene-regen">
           🔄 Régénérer
         </Button>
+        <label className="cursor-pointer rounded-lg border border-line px-2 py-0.5 text-[12px]" title="Votre propre image de cette scène (vos personnages, votre décor) : elle remplace l’image générée ; l’animation (Circuit Grok, Marionnette) part d’elle.">
+          🖼️ Votre image
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            data-testid="scene-own-image"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void act('import…', () => useOwnSceneImage(projectId, sc.scene_id, f));
+            }}
+          />
+        </label>
         <Select value={model} onChange={setModel} options={[{ value: '', label: 'Modèle : plan' }, ...imageModels.map((m) => ({ value: m.id, label: m.name.slice(0, 32) }))]} />
         <Button size="sm" variant="primary" disabled={Boolean(busy)} onClick={() => patchScene({ status: 'APPROVED' })} data-testid="scene-validate">
           Valider
@@ -489,6 +534,7 @@ export function FilmAutopilot({ onExpert }: { onExpert: () => void }) {
             )}
           </>
         )}
+        <ActorCasting projectId={bp?.project.id} />
         <VideoAnalyzer projectId={bp?.project.id} />
       </main>
     </div>

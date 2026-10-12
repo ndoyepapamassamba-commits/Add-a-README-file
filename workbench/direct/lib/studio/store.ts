@@ -5,6 +5,7 @@ import { kv, saveLater } from '../db';
 import type { Registry } from '../../../server/jev/studio/capabilities';
 import type { AssetMeta, Blueprint, CostMode, Job } from '../../../server/jev/studio/types';
 import type { ProdRecord } from '../../../server/jev/studio/memory';
+import type { ActorLibrary, ActorLook3D } from '../../../server/jev/studio/actor/cast3d';
 import { loadBlueprint, newBlueprint, touch, DEFAULT_CAP_USD } from '../../../server/jev/studio/blueprint';
 
 export const VS_KEYS = [
@@ -14,6 +15,8 @@ export const VS_KEYS = [
   'vs.jobs',
   'vs.memory',
   'vs.registry',
+  'vs.actors',
+  'vs.decors',
 ] as const;
 
 export interface StudioSettings {
@@ -29,6 +32,16 @@ export interface StudioSettings {
   circuit: boolean;
   /** Captions FR + EN (OFF by default: v44 showed the English line over the faces). */
   bilingualCaptions?: boolean;
+  /** ACTEURS 3D (OFF by default): scenes without a clip are played by the reusable 3D actors instead of the Marionnette. */
+  actors3d?: boolean;
+  /** With the owner's troupe the film is played by the engine for free; Grok animates the punchline ONLY when this is on (paid). */
+  grokKeyShots?: boolean;
+  /** Paid adapted sets (vertical, empty) made by the image model; off = the owner's set pictures completed in mirror (0 $). */
+  adaptedDecors?: boolean;
+  /** Width of the rendered film (9:16: 540 → 540×960, 720 → 720×1280, 1080 → 1080×1920 TikTok HD). Default 720. */
+  renderWidth?: 540 | 720 | 1080;
+  /** Version of the owner's embedded troupe (sheets, galleries, sets) already installed in the library. */
+  troupeKit?: string;
   /** Last « Budget du film » typed in the creation form (null = automatic). */
   filmBudget?: number | null;
   activeProjectId: string | null;
@@ -54,6 +67,10 @@ interface StudioState {
   jobs: Job[];
   memory: ProdRecord[];
   registry: Registry | null;
+  /** The reusable 3D actors (rigged once, reused in every film), key = speakerKey(name). */
+  actors: ActorLibrary;
+  /** The owner's EMPTY SETS (their own décor images), by set name: the background of the scenes played by the actors. */
+  decors: Record<string, { name: string; assetId: string; at: number; fit?: DecorFit } & DecorLayers>;
   /** Transient (never persisted): discovery in progress, last error. */
   busy: string | null;
   hydrate: () => Promise<void>;
@@ -67,6 +84,10 @@ interface StudioState {
   setJobs: (f: (jobs: Job[]) => Job[]) => void;
   addMemory: (r: ProdRecord) => void;
   setRegistry: (r: Registry) => void;
+  upsertActors: (looks: ActorLook3D[]) => void;
+  removeActor: (key: string) => void;
+  upsertDecor: (name: string, assetId: string, fit?: DecorFit, layers?: DecorLayers) => void;
+  removeDecor: (name: string) => void;
   setBusy: (b: string | null) => void;
 }
 
@@ -87,6 +108,22 @@ export interface WizardOpts {
 }
 const uid = () => `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
+/**
+ * How the owner's set picture stands behind the actors at the RIGHT SCALE: the real height (m) its picture covers at
+ * the depth of the set, where its floor is (fraction of the height, from the top; > 1 = under the picture), the part
+ * (fraction of the width) that goes behind the actors (the part without people), an extra depth blur.
+ */
+/** Measured layers of a set picture: its depth map (relief) and the soft mask of the people painted in it (they sway). */
+export interface DecorLayers {
+  depthAssetId?: string;
+  peopleAssetId?: string;
+}
+export interface DecorFit {
+  mH: number;
+  floor: number;
+  cx: number;
+  blur?: number;
+}
 export const useStudio = create<StudioState>((set, get) => {
   /** Writes only once the studio is enabled AND hydrated (so a disabled studio never writes). */
   const persist = (key: (typeof VS_KEYS)[number], value: () => unknown) => {
@@ -101,16 +138,20 @@ export const useStudio = create<StudioState>((set, get) => {
     jobs: [],
     memory: [],
     registry: null,
+    actors: {},
+    decors: {},
     busy: null,
     hydrate: async () => {
       if (get().hydrated) return;
-      const [s, p, a, j, m, r] = await Promise.all([
+      const [s, p, a, j, m, r, act, dec] = await Promise.all([
         kv.get<StudioSettings>('vs.settings').catch(() => undefined),
         kv.get<Record<string, Blueprint>>('vs.projects').catch(() => undefined),
         kv.get<Record<string, AssetMeta>>('vs.assets.meta').catch(() => undefined),
         kv.get<Job[]>('vs.jobs').catch(() => undefined),
         kv.get<ProdRecord[]>('vs.memory').catch(() => undefined),
         kv.get<Registry>('vs.registry').catch(() => undefined),
+        kv.get<ActorLibrary>('vs.actors').catch(() => undefined),
+        kv.get<StudioState['decors']>('vs.decors').catch(() => undefined),
       ]);
       const projects: Record<string, Blueprint> = {};
       for (const [id, raw] of Object.entries(p ?? {})) {
@@ -125,6 +166,8 @@ export const useStudio = create<StudioState>((set, get) => {
         jobs: j ?? [],
         memory: m ?? [],
         registry: r ?? null,
+        actors: act ?? {},
+        decors: dec ?? {},
       });
     },
     setSettings: (p) => {
@@ -186,6 +229,27 @@ export const useStudio = create<StudioState>((set, get) => {
     setRegistry: (r) => {
       set({ registry: r });
       persist('vs.registry', () => get().registry);
+    },
+    upsertActors: (looks) => {
+      if (!looks.length) return;
+      const actors = { ...get().actors };
+      for (const l of looks) actors[l.key] = { ...actors[l.key], ...l };
+      set({ actors });
+      persist('vs.actors', () => get().actors);
+    },
+    upsertDecor: (name, assetId, fit, layers) => {
+      set({ decors: { ...get().decors, [name.toLowerCase()]: { name, assetId, at: Date.now(), ...(fit ? { fit } : {}), ...(layers ?? {}) } } });
+      persist('vs.decors', () => get().decors);
+    },
+    removeDecor: (name) => {
+      const { [name.toLowerCase()]: _gone, ...decors } = get().decors;
+      set({ decors });
+      persist('vs.decors', () => get().decors);
+    },
+    removeActor: (key) => {
+      const { [key]: _gone, ...actors } = get().actors;
+      set({ actors });
+      persist('vs.actors', () => get().actors);
     },
     setBusy: (b) => set({ busy: b }),
   };

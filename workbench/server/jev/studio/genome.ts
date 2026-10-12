@@ -183,6 +183,7 @@ export function compose(
   const missing: GenomeDimension[] = [];
   const warnings: string[] = [];
   const parts: string[] = [];
+  let negative = -1;
   for (const [d, label] of TEMPLATES[template]) {
     const v = (dims[d] ?? '').toString().trim();
     if (!v) {
@@ -191,15 +192,19 @@ export function compose(
     }
     if (d === 'NEGATIVE' && c.negativeInline === false) continue;
     used.push(d);
+    if (d === 'NEGATIVE') negative = parts.length;
     parts.push(label ? `${label}: ${v}` : v);
   }
   let text = redactSecrets(parts.join('. ').replace(/\.\s*\./g, '.'));
   let truncated = false;
   if (c.maxChars && text.length > c.maxChars) {
-    // Drop the least important trailing dimensions first, keeping style + subject.
-    const keep = parts.slice();
-    while (keep.length > 2 && keep.join('. ').length > c.maxChars) keep.pop();
-    text = redactSecrets(keep.join('. '));
+    // Drop the least important trailing dimensions first, keeping style + subject — and ALWAYS the « Avoid » list
+    // (deformations, extra limbs, text): long verbatim character / set descriptions must not push it out.
+    const neg = negative >= 0 ? parts[negative]! : null;
+    const keep = parts.filter((_, i) => i !== negative);
+    const size = () => keep.join('. ').length + (neg ? neg.length + 2 : 0);
+    while (keep.length > 2 && size() > c.maxChars) keep.pop();
+    text = redactSecrets([...keep, ...(neg ? [neg] : [])].join('. '));
     if (text.length > c.maxChars) text = `${text.slice(0, c.maxChars - 1)}…`;
     truncated = true;
     warnings.push(`prompt tronqué à ${c.maxChars} caractères (dimensions finales retirées)`);

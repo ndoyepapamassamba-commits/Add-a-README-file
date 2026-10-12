@@ -41,6 +41,29 @@ export function emojiFor(emotion: string, action = ''): string | undefined {
   return EMOJI.find(([re]) => re.test(t))?.[1];
 }
 
+/**
+ * The words of a caption: French typography puts a space before « ! ? ; : » and inside « … » — those marks stay glued
+ * to their word (no-break space) so a caption never shows a lone « ! ».
+ */
+export function captionWords(text: string): string[] {
+  const out: string[] = [];
+  let open = '';
+  for (const w of text.trim().split(/\s+/).filter(Boolean)) {
+    if (/^[«“([¿¡]+$/u.test(w)) {
+      open += `${w}\u00a0`;
+      continue;
+    }
+    if (!/[\p{L}\p{N}]/u.test(w) && out.length && !open) {
+      out[out.length - 1] += `\u00a0${w}`;
+      continue;
+    }
+    out.push(open + w);
+    open = '';
+  }
+  if (open) out.push(open.trim());
+  return out;
+}
+
 export const dialogueSeconds = (l: DialogueLine) =>
   Math.max(0.6, l.text.trim().split(/\s+/).filter(Boolean).length / (WORDS_PER_SECOND * (l.pace || 1)));
 
@@ -56,7 +79,7 @@ export function timeSubtitles(
     sc.dialogue.forEach((l, i) => {
       const dur = o.voiceSeconds?.[sc.scene_id]?.[i] ?? dialogueSeconds(l);
       const text = o.useTranslation && l.translation ? l.translation : l.text;
-      const ws = text.trim().split(/\s+/).filter(Boolean);
+      const ws = captionWords(text);
       const total = ws.reduce((a, w) => a + Math.max(1, w.replace(/[^\p{L}\p{N}]/gu, '').length), 0) || 1;
       let c = t;
       const words: Word[] = ws.map((w) => {
