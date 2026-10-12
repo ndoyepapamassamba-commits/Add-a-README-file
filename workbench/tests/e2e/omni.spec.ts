@@ -441,9 +441,16 @@ test('LOGO: the attached logo is offered in the gallery, recoloured harmoniously
           };
         }),
     );
-  await expect.poll(async () => Object.keys(await files()).some((k) => k.endsWith('outputs/ventes.xlsx')), { timeout: 10_000 }).toBe(true);
-  const all = await files();
   const { unzipSync } = await import('fflate');
+  // The workbook is finished in the background thread: wait for its final version (logo placed), not the first write.
+  await expect
+    .poll(async () => {
+      const a = await files();
+      const k = Object.keys(a).find((x) => x.endsWith('outputs/ventes.xlsx'));
+      return k ? Boolean(unzipSync(new Uint8Array(Buffer.from(a[k]!.data, 'base64')))['xl/media/massamba-logo.png']) : false;
+    }, { timeout: 15_000 })
+    .toBe(true);
+  const all = await files();
   const z = unzipSync(new Uint8Array(Buffer.from(all[Object.keys(all).find((k) => k.endsWith('outputs/ventes.xlsx'))!]!.data, 'base64')));
   const media = z['xl/media/massamba-logo.png'];
   expect(media).toBeTruthy();

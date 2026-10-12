@@ -9,6 +9,8 @@ export interface ScriptedTurn {
   error?: { status: number; message: string };
   usage?: { prompt_tokens: number; completion_tokens: number; cost: number };
   finish?: string;
+  /** Pause between streamed text chunks (a real model writes for seconds — used by the performance tests). */
+  chunkDelayMs?: number;
 }
 
 export interface MockOpenRouter {
@@ -67,6 +69,15 @@ export async function startMockOpenRouter(): Promise<MockOpenRouter> {
   };
   const server = http.createServer((req, res) => {
     const url = req.url ?? '';
+    // CORS (a page may call the mock directly to receive a real stream).
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    if (req.method === 'OPTIONS') {
+      res.statusCode = 204;
+      res.end();
+      return;
+    }
     if (req.method === 'GET' && url.endsWith('/models')) {
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify({ data: mock.models ?? MOCK_MODELS }));
@@ -113,10 +124,13 @@ export async function startMockOpenRouter(): Promise<MockOpenRouter> {
         res.setHeader('Content-Type', 'text/event-stream');
         const send = (obj: unknown) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
         res.write(': OPENROUTER PROCESSING\n\n');
+        void (async () => {
         if (turn.text) {
           // Stream the text in small chunks to exercise delta handling.
-          for (const chunk of turn.text.match(/.{1,12}/gs) ?? [])
+          for (const chunk of turn.text.match(/.{1,12}/gs) ?? []) {
             send({ model: body.model, choices: [{ index: 0, delta: { content: chunk } }] });
+            if (turn.chunkDelayMs) await new Promise((r) => setTimeout(r, turn.chunkDelayMs));
+          }
         }
         (turn.toolCalls ?? []).forEach((tc, i) => {
           const args = JSON.stringify(tc.args);
@@ -172,6 +186,7 @@ export async function startMockOpenRouter(): Promise<MockOpenRouter> {
         });
         res.write('data: [DONE]\n\n');
         res.end();
+        })();
       });
       return;
     }

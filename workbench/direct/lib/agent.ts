@@ -63,13 +63,10 @@ import { isOffice, recolorOffice } from '../../server/services/officeRecolor';
 import { addImagePageDocx, addImageSlidePptx, addImageToHtml, addLogoToHtml, addLogoToOffice } from '../../server/services/officeLogo';
 import { removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
 import { strFromU8, unzipSync } from 'fflate';
-import { restyleWorkbook } from '../../server/services/officeRestyle';
-import { designQA } from '../../server/services/designQA';
 import { DESIGN_ARCHITECT, needsArchitect } from '../../server/services/designArchitect';
 import { propose } from '../../server/jev/memory/updateGate';
 import { modelById } from '../../server/services/designModels';
-import { maisonBand } from '../../server/services/maisonBand';
-import { addLiveDashboard } from '../../server/services/liveDash';
+import { heavy } from './heavy';
 import { skinDocx, skinHtml, skinPptx, type Skin } from '../../server/services/officeSkin';
 import { knowledgeBlock, related as relatedKnowledge } from '../../server/jev/knowledge/learned';
 import { cloneData, renderCloneSvg } from '../../server/services/dashRender';
@@ -2732,12 +2729,12 @@ async function applyClone(sid: string, since: number): Promise<{ n: number; note
         if (b0) b = b0;
         // Excel: ALWAYS a LIVE first sheet on the image's design (shapes, formulas, filters, native charts). Rows: the
         // chat's data file, else the detail table of this very workbook (code-written files). NEVER a pasted picture.
-        let live = pd.from ? addLiveDashboard(b, c.clone, pd.data) : null;
+        let live = pd.from ? await heavy('addLiveDashboard', b, c.clone, pd.data) : null;
         let from = pd.from;
         if (!live) {
           const t = chatTable(f.path, b);
           if (t?.rows.length) {
-            live = addLiveDashboard(b, c.clone, cloneData('Tableau de bord', t.columns, t.rows));
+            live = await heavy('addLiveDashboard', b, c.clone, cloneData('Tableau de bord', t.columns, t.rows));
             from = t.sheet ? `${f.path} · feuille ${t.sheet}` : f.path;
           }
         }
@@ -2746,7 +2743,7 @@ async function applyClone(sid: string, since: number): Promise<{ n: number; note
         else if (from && from !== pd.from) notes.push(`chiffres du tableau de bord tirés de ${from}`);
         if (live) notes.push(`${f.path} : 1re feuille « Tableau de bord » VIVANTE au design de l'image (${live.kpis} indicateurs en formules, ${live.charts} graphiques Excel, filtres ${live.filters.map((x) => `« ${x} »`).join(', ') || '—'}, ${live.links} bouton(s) de navigation) — aucune image fixe`);
         // Every other sheet (the model's own, the data sheet) in Maison 2.0 with the image's colours and font.
-        const rs = out ? restyleWorkbook(out, { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, font: c.clone.font }, new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)'])) : null;
+        const rs = out ? await heavy('restyleWorkbook', out, { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, font: c.clone.font }, new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)'])) : null;
         if (rs) {
           out = rs.bytes;
           notes.push(`feuilles ${rs.sheets.map((x) => `« ${x} »`).join(', ')} mises au format Maison 2.0 aux couleurs de l'image`);
@@ -2793,7 +2790,7 @@ function applyLogo(sid: string, since: number): number {
   return n;
 }
 /** Maison 2.0 band on the workbooks written during the turn; returns one line per file changed. */
-function finishWorkbooks(sid: string, since: number): string[] {
+async function finishWorkbooks(sid: string, since: number): Promise<string[]> {
   const c = designFor(sid);
   const design = c?.clone
     ? buildTheme({ primary: c.clone.palette.primary, accent: c.clone.palette.accent, dark: c.clone.palette.dark, font: c.clone.font })
@@ -2830,7 +2827,7 @@ function finishWorkbooks(sid: string, since: number): string[] {
     }
   for (const f of Object.values(files())) {
     if (!f.binary || f.updatedAt < since || !/\.xlsx$/i.test(f.path) || f.path.startsWith('uploads/') || f.path.startsWith('assets/')) continue;
-    const r = maisonBand(bytesOf(f), design, skip);
+    const r = await heavy('maisonBand', bytesOf(f), design, skip);
     if (!r) continue;
     writeBytes(f.path, r.bytes, f.mime);
     lines.push(`${f.path} : indicateurs et graphiques placés au-dessus de l'en-tête sur ${r.banded.map((x) => `« ${x} »`).join(', ')} (${r.moved} graphique(s) déplacé(s), ${r.created} créé(s)).`);
@@ -2839,7 +2836,7 @@ function finishWorkbooks(sid: string, since: number): string[] {
   for (const f of Object.values(files())) {
     if (f.updatedAt < since || f.path.startsWith('uploads/') || f.path.startsWith('assets/') || !/\.(xlsx|docx|pptx|html?)$/i.test(f.path)) continue;
     try {
-      const r = designQA(f.path, f.binary ? bytesOf(f) : f.data);
+      const r = await heavy('designQA', f.path, f.binary ? bytesOf(f) : f.data);
       if (!r) continue;
       if (r.fixes.length) {
         if (typeof r.data === 'string') writeText(f.path, r.data);
@@ -3157,7 +3154,7 @@ export async function runAgent(
     // above each table of every Excel deliverable, in the chosen design's colours.
     if (chatScope() === sessionId) {
       try {
-        const n = finishWorkbooks(sessionId, started);
+        const n = await finishWorkbooks(sessionId, started);
         if (n.length)
           useStore.getState().pushItem(sessionId, { kind: 'intel', id: uid(), title: 'Design appliqué à tous les livrables', tone: 'info', lines: n });
       } catch {

@@ -182,18 +182,32 @@ export async function cloneDesign(url: string, onStep: (s: string) => void = () 
 }
 
 /** Rasterise an SVG to RGBA pixels and PNG bytes at a given size. */
-export function rasterise(svg: string, w: number, h: number): Promise<{ px: Uint8ClampedArray; png: Uint8Array; dataUrl: string }> {
+export function rasterise(svg: string, w: number, h: number, o: { png?: boolean } = {}): Promise<{ px: Uint8ClampedArray; png: Uint8Array; dataUrl: string }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => {
+    img.onload = async () => {
       const c = canvas(w, h);
-      const g = c.getContext('2d', { willReadFrequently: true })!;
-      g.drawImage(img, 0, 0, w, h);
-      const url = c.toDataURL('image/png');
-      const bin = atob(url.split(',')[1]!);
-      const png = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) png[i] = bin.charCodeAt(i);
-      resolve({ px: g.getImageData(0, 0, w, h).data, png, dataUrl: url });
+      const g = c.getContext('2d', { willReadFrequently: o.png === false })!;
+      // Decoded off the page thread when the browser can (createImageBitmap), drawn once.
+      const src: CanvasImageSource = typeof createImageBitmap === 'function' ? await createImageBitmap(img).catch(() => img) : img;
+      g.drawImage(src, 0, 0, w, h);
+      // Pixels only (the fidelity controller renders many candidates): no PNG encoding at all.
+      if (o.png === false) return resolve({ px: g.getImageData(0, 0, w, h).data, png: new Uint8Array(0), dataUrl: '' });
+      // A PNG is wanted: no 4 MB pixel copy nobody reads.
+      const px = new Uint8ClampedArray(0);
+      // PNG encoded ASYNCHRONOUSLY (toBlob: off the page thread), never toDataURL + atob (a 300 ms freeze).
+      try {
+        const blob = await new Promise<Blob>((ok, ko) => c.toBlob((b) => (b ? ok(b) : ko(new Error('encodage PNG impossible'))), 'image/png'));
+        const png = new Uint8Array(await blob.arrayBuffer());
+        const dataUrl = await new Promise<string>((ok) => {
+          const fr = new FileReader();
+          fr.onload = () => ok(String(fr.result));
+          fr.readAsDataURL(blob);
+        });
+        resolve({ px, png, dataUrl });
+      } catch (e) {
+        reject(e as Error);
+      }
     };
     img.onerror = () => reject(new Error('rendu de la reproduction impossible'));
     img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
@@ -202,7 +216,7 @@ export function rasterise(svg: string, w: number, h: number): Promise<{ px: Uint
 /** Visual similarity (0–100) between the source image and the reproduction. */
 export async function measureFidelity(c: ClonedDesign, data: CloneData): Promise<number> {
   const svg = renderCloneSvg(c.spec, data, c.width);
-  const r = await rasterise(svg, c.width, c.height);
+  const r = await rasterise(svg, c.width, c.height, { png: false });
   return fidelityScore(c.px, r.px, c.width, c.height, c.spec.page);
 }
 
@@ -293,7 +307,7 @@ export async function refineClone(c: ClonedDesign, data: CloneData, onStep: (s: 
   const W = 480;
   const H = Math.max(120, Math.round(W / c.spec.aspect));
   const src = await smallPixels(c.source, W, H);
-  const render = async (sp: DashSpec) => (await rasterise(renderCloneSvg(sp, data, W), W, H)).px;
+  const render = async (sp: DashSpec) => (await rasterise(renderCloneSvg(sp, data, W), W, H, { png: false })).px;
   let spec: DashSpec = JSON.parse(JSON.stringify(c.spec)) as DashSpec;
   let cur = await render(spec);
   const before = fidelityScore(src, cur, W, H, spec.page);

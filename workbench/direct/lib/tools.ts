@@ -210,10 +210,8 @@ const clip = (s: string, n = 60_000) =>
 
 const data = new DataCore();
 import type { DashSpec } from '../../server/services/dashClone';
-import { cloneData, renderCloneHtml, renderCloneSvg } from '../../server/services/dashRender';
-import { addImageSheet } from '../../server/services/officeLogo';
-import { addLiveDashboard } from '../../server/services/liveDash';
-import { restyleWorkbook } from '../../server/services/officeRestyle';
+import { cloneData, renderCloneHtml } from '../../server/services/dashRender';
+import { heavy } from './heavy';
 import { rasterise } from './designClone';
 function loadDataset(path: string, sheet?: string): Dataset {
   const f = getFile(path);
@@ -1066,16 +1064,14 @@ export const TOOLS: DirectTool[] = [
         : { columns: ds.columns, rows: ds.rows as Record<string, unknown>[], rowCount: ds.rows.length };
       const fmt = (S(a.format) || 'xlsx') as 'xlsx' | 'csv' | 'json';
       const path = uniquePath(`outputs/${S(a.name).replace(/[^\w.-]+/g, '-') || 'export'}.${fmt}`);
-      writeBytes(
-        path,
-        data.exportRows(r.columns, r.rows, fmt, {
-          title: S(a.title) || S(a.name) || 'Export',
-          subtitle: `Source : ${S(a.path)}${a.query ? ' (filtré)' : ''}`,
-          // Maison 2.0: KPIs + native 3D charts above the header unless « none » is asked; a kind given goes first.
-          chart: (['bar', 'line', 'pie', 'none'].includes(S(a.chart)) ? S(a.chart) : undefined) as
-            'bar' | 'line' | 'pie' | 'none' | undefined,
-        }),
-      );
+      const meta = {
+        title: S(a.title) || S(a.name) || 'Export',
+        subtitle: `Source : ${S(a.path)}${a.query ? ' (filtré)' : ''}`,
+        // Maison 2.0: KPIs + native 3D charts above the header unless « none » is asked; a kind given goes first.
+        chart: (['bar', 'line', 'pie', 'none'].includes(S(a.chart)) ? S(a.chart) : undefined) as 'bar' | 'line' | 'pie' | 'none' | undefined,
+      };
+      // The workbook is built in the BACKGROUND thread (the page stays fluid, other chats keep streaming).
+      writeBytes(path, fmt === 'xlsx' ? await heavy('houseXlsx', r.columns, r.rows, meta) : data.exportRows(r.columns, r.rows, fmt, meta));
       // A dashboard image CLONED photo-faithfully: the reproduction with these exact figures, as an HTML page and as a
       // first « Tableau de bord » sheet (picture) in the workbook.
       if (a.clone && typeof a.clone === 'object') {
@@ -1086,20 +1082,15 @@ export const TOOLS: DirectTool[] = [
         let sheet = '';
         if (fmt === 'xlsx' && typeof document !== 'undefined') {
           try {
-            const W = 1400;
-            const H = Math.round(W / spec.aspect);
-            const img = await rasterise(renderCloneSvg(spec, cd, W), W, H);
             const f = getFile(path);
-            const pic = { png: img.png, width: W, height: H };
             // LIVE dashboard first (no fixed picture): the image's design as shapes, figures as formulas, filters,
             // native charts on formula ranges. The older native + picture build only when the rows are missing.
             // Never a pasted picture instead: without a live dashboard the workbook stays as exported.
-            const live = f ? addLiveDashboard(bytesOf(f), spec, cd) : null;
-            void pic;
+            const live = f ? await heavy('addLiveDashboard', bytesOf(f), spec, cd) : null;
             const nat = null as { charts: number } | null;
             let out = live?.bytes ?? null;
             // The data sheet of the reproduction in Maison 2.0 with the image's colours (the house sheets already are).
-            const rs = out && (nat || live) ? restyleWorkbook(out, { dark: spec.palette.dark, primary: spec.palette.primary, accent: spec.palette.accent, font: spec.font }, new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)', 'Données', 'Agrégats', 'Synthèse 3D'])) : null;
+            const rs = out && (nat || live) ? await heavy('restyleWorkbook', out, { dark: spec.palette.dark, primary: spec.palette.primary, accent: spec.palette.accent, font: spec.font }, new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)', 'Données', 'Agrégats', 'Synthèse 3D'])) : null;
             if (rs) out = rs.bytes;
             if (out) {
               writeBytes(path, out, f!.mime);
@@ -1136,7 +1127,7 @@ export const TOOLS: DirectTool[] = [
           const f = getFile(path);
           if (syn && f) {
             const img = await rasterise(syn.svg, syn.width, syn.height);
-            const withSheet = addImageSheet(bytesOf(f), { png: img.png, width: syn.width, height: syn.height }, 'Synthèse 3D', 1200);
+            const withSheet = await heavy('addImageSheet', bytesOf(f), { png: img.png, width: syn.width, height: syn.height }, 'Synthèse 3D', 1200);
             if (withSheet) {
               writeBytes(path, withSheet, f.mime);
               board = ` + feuille « Synthèse 3D » en tête (${syn.charts} graphiques 3D, KPI, lecture)`;
