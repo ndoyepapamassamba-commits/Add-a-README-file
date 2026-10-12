@@ -35,7 +35,7 @@ import {
 } from '../../web/components/ui';
 import { CodeBlock, DiffView, Markdown } from '../../web/components/rich';
 import { cx, fmtCost, fmtDuration, fmtPrice, fmtTokens, shortModel } from '../../web/lib/format';
-import { resolveApproval, resolvePlan, runAgent, stopAgent } from '../lib/agent';
+import { queueMessage, resolveApproval, resolvePlan, runAgent, stopAgent } from '../lib/agent';
 import { allAgents } from '../lib/roles';
 import { useStore } from '../lib/store';
 import type { Attachment, Item, PermissionMode, Session } from '../lib/types';
@@ -713,7 +713,14 @@ function Composer({ session }: { session: Session }) {
 
   const send = () => {
     const text = draft.trim();
-    if (!text || running) return;
+    if (!text) return;
+    // While the chat thinks / works: the message is queued and shown, then given to the model (never ignored).
+    if (running && !text.startsWith('/')) {
+      queueMessage(session.id, text);
+      useStore.setState({ draft: '' });
+      return;
+    }
+    if (running) return;
     if (text.startsWith('/')) {
       const cmd = text.split(/\s/)[0];
       if (cmd === '/clear') return void (useStore.getState().newSession(), useStore.setState({ draft: '' }));
@@ -968,14 +975,21 @@ function Composer({ session }: { session: Session }) {
             <Download size={13} />
           </Button>
           {running ? (
-            <Button
-              size="sm"
-              variant="danger"
-              onClick={() => stopAgent(session.id)}
-              title="Interrompre (Échap)"
-            >
-              <Square size={12} /> Stop
-            </Button>
+            <>
+              {draft.trim() && (
+                <Button size="sm" variant="primary" onClick={send} aria-label="Envoyer pendant le travail" title="Envoyer maintenant : pris en compte à la prochaine étape du modèle" data-testid="send-while-running">
+                  <ArrowUp size={14} />
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={() => stopAgent(session.id)}
+                title="Interrompre (Échap)"
+              >
+                <Square size={12} /> Stop
+              </Button>
+            </>
           ) : (
             <Button size="sm" variant="primary" onClick={send} disabled={!draft.trim()} aria-label="Envoyer">
               <ArrowUp size={14} />

@@ -1593,9 +1593,15 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
   for (let step = 0; step < maxSteps; step++) {
     stepsUsed = step + 1;
     // The step body up to the model call is synchronous: wait for another chat's running tool, then take the scope.
-    await scopeGate(sid);
-    setChatScope(sid, sessionAllow(sid));
+    await scopeGate(sid, undefined, inp.signal);
     if (inp.signal.aborted) throw new LLMError('Cancelled', 499, false, 'cancelled');
+    setChatScope(sid, sessionAllow(sid));
+    // MESSAGES SENT WHILE IT WORKS: the user's follow-ups join the conversation at this step (never ignored).
+    for (const q of takeQueued(sid)) {
+      const um: ChatMessage = { role: 'user', content: q };
+      messages.push(um);
+      persisted.push(um);
+    }
     // ── JEV PILOT (anti-drift on long runs): every 6 tool steps the model gets a 1-paragraph anchor — the objective,
     // what is already done, what remains — so it never wanders off after minutes of work. ~120 tokens, no extra call.
     if (top && step - lastAnchor >= 6 && toolsUsed.size && messages.at(-1)?.role === 'tool') {
@@ -2919,6 +2925,8 @@ export async function runAgent(
   text: string,
   attachments: Attachment[],
   opts: {
+    /** The user message is already displayed (a follow-up typed while the chat worked). */
+    shown?: boolean;
     mode?: AgentMode;
     jev?: boolean | JevVariant;
     bench?: string;
@@ -2943,7 +2951,8 @@ export async function runAgent(
   if (!session || st.running[sessionId]) return;
   const ac = new AbortController();
   useStore.setState({ running: { ...st.running, [sessionId]: ac } });
-  st.pushItem(sessionId, { kind: 'user', id: uid(), text, attachments, ts: Date.now() });
+  // A queued follow-up is already on screen (queueMessage).
+  if (!opts.shown) st.pushItem(sessionId, { kind: 'user', id: uid(), text, attachments, ts: Date.now() });
   // JEV USER FEEDBACK LOOP: « parfait » / « c'est mauvais » judge the previous answer.
   const fb = jevRt.feedbackOf(text);
   if (fb) jevRt.feedback(sessionId, fb);
@@ -3021,8 +3030,10 @@ export async function runAgent(
         },
       ],
     });
-    const { [sessionId]: _r, ...running } = useStore.getState().running;
-    useStore.setState({ running });
+    if (useStore.getState().running[sessionId] === ac) {
+      const { [sessionId]: _r, ...running } = useStore.getState().running;
+      useStore.setState({ running });
+    }
     return;
   }
   // Cognitive Fabric — MODEL COUNCIL (opt-in): single-turn tasks only; JEV decides how many models are worth it.
@@ -3170,9 +3181,12 @@ export async function runAgent(
     // Release the scope only if it is still ours (another chat may be running now).
     if (chatScope() === sessionId) setChatScope(null);
     const s = useStore.getState();
-    const { [sessionId]: _done, ...running } = s.running;
-    const { [sessionId]: _st, ...status } = s.status;
-    useStore.setState({ running, status });
+    // Only OUR run is cleared (after a Stop the user may already have started a new one in this chat).
+    if (s.running[sessionId] === ac || !s.running[sessionId]) {
+      const { [sessionId]: _done, ...running } = s.running;
+      const { [sessionId]: _st, ...status } = s.status;
+      useStore.setState({ running, status });
+    }
     const cost = (result?.cost ?? 0) + sub.cost;
     const tin = (result?.tokensIn ?? 0) + sub.tokensIn;
     const tout = (result?.tokensOut ?? 0) + sub.tokensOut;
@@ -3490,11 +3504,37 @@ export async function runAgent(
       fabricRt.afterRun();
       apprenticeRt.afterApprenticeRun(useStore.getState().jevLog.at(-1));
     }
+    // Follow-ups typed while it worked and not taken by a step (a one-call answer): answered right away, in order.
+    const rest = takeQueued(sessionId);
+    if (rest.length && !ac.signal.aborted) setTimeout(() => void runAgent(sessionId, rest.join('\n\n'), [], { shown: true }), 0);
   }
 }
 
 export function stopAgent(sessionId: string): void {
-  useStore.getState().running[sessionId]?.abort(new Error('Arrêté par l’utilisateur'));
+  const st = useStore.getState();
+  st.running[sessionId]?.abort(new Error('Arrêté par l’utilisateur'));
+  // The chat is usable AT ONCE: a sub-step still finishing in the background (a judge, a tool) no longer holds it.
+  const { [sessionId]: _r, ...running } = st.running;
+  const { [sessionId]: _s, ...status } = st.status;
+  useStore.setState({ running, status });
+  queued.delete(sessionId);
+}
+
+// ── messages typed while the chat works (queued, never lost) ─────────────────────────────────────────────────────
+const queued = new Map<string, string[]>();
+/** Takes the queued follow-ups of a chat (they are sent to the model now). */
+function takeQueued(sid: string): string[] {
+  const q = queued.get(sid) ?? [];
+  queued.delete(sid);
+  return q;
+}
+/** The user writes while the chat is thinking / working: shown at once, given to the model at its next step, or
+ *  answered right after the current answer when no step remains. */
+export function queueMessage(sessionId: string, text: string): void {
+  const t = text.trim();
+  if (!t) return;
+  queued.set(sessionId, [...(queued.get(sessionId) ?? []), t]);
+  useStore.getState().pushItem(sessionId, { kind: 'user', id: uid(), text: t, attachments: [], ts: Date.now() });
 }
 
 export function resolveApproval(

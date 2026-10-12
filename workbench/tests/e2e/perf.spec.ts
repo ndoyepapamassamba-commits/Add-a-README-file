@@ -140,3 +140,47 @@ test('an Excel export of 5 000 rows runs in the background: the page is not froz
   console.log(`[perf] export 5 000 lignes : tâche bloquante la plus longue ${worst} ms, total bloqué ${total} ms`);
   expect(worst).toBeLessThan(400);
 });
+
+test('STOP works while the model is still thinking (no token yet) and while it writes; the chat is usable at once', async ({ page }) => {
+  test.setTimeout(120_000);
+  await open(page);
+  // 1. thinking: 20 s of silence before the first word
+  mock.push({ text: 'Réponse tardive.', firstDelayMs: 20_000 });
+  await send(page, 'Question longue à réfléchir');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
+  await page.waitForTimeout(1500);
+  const t0 = Date.now();
+  await page.getByRole('button', { name: 'Stop' }).click();
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden({ timeout: 3000 });
+  console.log(`[stop] pendant la réflexion : arrêt en ${Date.now() - t0} ms`);
+  // 2. writing: a long answer streamed slowly
+  mock.push({ text: LONG, chunkDelayMs: 30 });
+  await send(page, 'Encore une');
+  await page.waitForTimeout(2000);
+  const t1 = Date.now();
+  await page.getByRole('button', { name: 'Stop' }).click();
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden({ timeout: 3000 });
+  console.log(`[stop] pendant l’écriture : arrêt en ${Date.now() - t1} ms`);
+  const len = await page.evaluate(() => document.body.innerText.length);
+  await page.waitForTimeout(1500);
+  expect(await page.evaluate(() => document.body.innerText.length)).toBe(len); // nothing more arrives
+  // 3. the chat answers a new question right away
+  mock.push({ text: 'Nouvelle réponse OK.' });
+  await send(page, 'Et maintenant ?');
+  await expect(page.getByText('Nouvelle réponse OK.')).toBeVisible({ timeout: 10_000 });
+});
+
+test('writing while the model thinks: the follow-up is shown at once and answered — never ignored', async ({ page }) => {
+  test.setTimeout(120_000);
+  await open(page);
+  mock.push({ text: 'Première réponse.', firstDelayMs: 4000 }, { text: 'Réponse à la précision.' });
+  await send(page, 'Analyse ce dossier');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
+  await page.waitForTimeout(800);
+  await send(page, 'Précision : en francs CFA');
+  await expect(page.getByText('Précision : en francs CFA')).toBeVisible({ timeout: 2000 });
+  await expect(page.getByText('Première réponse.')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText('Réponse à la précision.')).toBeVisible({ timeout: 15_000 });
+  // the model received the follow-up
+  expect(mock.requests.some((r) => JSON.stringify(r.messages).includes('Précision : en francs CFA'))).toBe(true);
+});

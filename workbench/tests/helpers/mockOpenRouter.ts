@@ -11,6 +11,8 @@ export interface ScriptedTurn {
   finish?: string;
   /** Pause between streamed text chunks (a real model writes for seconds — used by the performance tests). */
   chunkDelayMs?: number;
+  /** Silence before the first chunk (a reasoning model thinking). */
+  firstDelayMs?: number;
 }
 
 export interface MockOpenRouter {
@@ -125,6 +127,8 @@ export async function startMockOpenRouter(): Promise<MockOpenRouter> {
         const send = (obj: unknown) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
         res.write(': OPENROUTER PROCESSING\n\n');
         void (async () => {
+        if (turn.firstDelayMs) await new Promise((r) => setTimeout(r, turn.firstDelayMs));
+        if (res.destroyed || res.writableEnded) return;
         if (turn.text) {
           // Stream the text in small chunks to exercise delta handling.
           for (const chunk of turn.text.match(/.{1,12}/gs) ?? []) {

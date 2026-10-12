@@ -96,9 +96,11 @@ let depth = 0;
 let waiters: Array<() => void> = [];
 const free = (sid: string) => !holder || holder === sid;
 /** Wait until no OTHER chat holds the scope lock. */
-export async function scopeGate(sid: string, maxWaitMs = 20_000): Promise<void> {
+export async function scopeGate(sid: string, maxWaitMs = 20_000, signal?: AbortSignal): Promise<void> {
   const until = Date.now() + maxWaitMs;
   while (!free(sid)) {
+    // STOP never waits for another chat's tool.
+    if (signal?.aborted) return;
     const left = until - Date.now();
     // Safety valve: a tool of another chat that never returns must never freeze this chat.
     if (left <= 0) {
@@ -108,10 +110,12 @@ export async function scopeGate(sid: string, maxWaitMs = 20_000): Promise<void> 
     }
     await new Promise<void>((r) => {
       const t = setTimeout(r, left);
-      waiters.push(() => {
+      const wake = () => {
         clearTimeout(t);
         r();
-      });
+      };
+      waiters.push(wake);
+      signal?.addEventListener('abort', wake, { once: true });
     });
   }
 }
