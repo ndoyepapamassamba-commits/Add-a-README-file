@@ -146,3 +146,28 @@ describe('RÈGLES STRICTES D’EXCEL (ce que le validateur Open XML ne voit pas)
     expect(wb).toContain('Slicer_A');
   });
 });
+
+describe('segments orphelins (feuille du tableau de bord retirée, slicers restés) : Excel réparait le fichier', () => {
+  it('the strict pass removes the orphan slicers with their caches, names and workbook list', async () => {
+    const { addLiveDashboard } = await import('../../server/services/liveDash');
+    const { removeSheets } = await import('../../server/services/cloneXlsx');
+    const { cloneData } = await import('../../server/services/dashRender');
+    const { houseXlsx } = await import('../../server/services/houseStyle');
+    const { SPEC } = await import('../fixtures/dashSpec');
+    const rows = Array.from({ length: 40 }, (_, i) => ({ Client: `C${i % 5}`, Segment: ['A', 'B', 'C'][i % 3]!, Montant: 1000 * (i + 1) }));
+    const cols = ['Client', 'Segment', 'Montant'];
+    const live = addLiveDashboard(houseXlsx(cols, rows, { title: 'X', chart: 'none' }), SPEC, cloneData('V', cols, rows))!;
+    const half = removeSheets(live.bytes, ['Tableau de bord', 'Données du tableau de bord'])!;
+    const z = unzipSync(half);
+    expect(z['xl/slicers/slicer-live.xml']).toBeTruthy();
+    const { fixes } = excelStrict(z);
+    expect(fixes.some((f) => /orphelin/.test(f))).toBe(true);
+    expect(Object.keys(z).some((k) => /^xl\/slicers\//.test(k) || /^xl\/slicerCaches\//.test(k))).toBe(false);
+    const wb = strFromU8(z['xl/workbook.xml']!);
+    expect(wb).not.toMatch(/Slicer_|x14:slicerCache|46BE6895/);
+    expect(strFromU8(z['[Content_Types].xml']!)).not.toMatch(/slicer/);
+    expect(strFromU8(z['xl/_rels/workbook.xml.rels']!)).not.toMatch(/slicerCache/);
+    // the table sheet left by v50 stays a valid sheet (its table part is still related to it)
+    expect(wb).toContain('Données filtrables');
+  });
+});

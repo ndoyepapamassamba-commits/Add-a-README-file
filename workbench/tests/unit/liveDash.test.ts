@@ -115,3 +115,37 @@ describe('NEVER a picture instead of the live dashboard', () => {
     expect(r3.filters).toEqual(['Taux']);
   });
 });
+
+describe('RE-APPLIED after the model re-saved the workbook (v50: orphan slicers made Excel repair the file)', () => {
+  const first = addLiveDashboard(houseXlsx(cols, rows, { title: 'X', chart: 'none' }), SPEC, cloneData('Ventes', cols, rows))!;
+  it('removeLiveDashboard clears every live part, name and list — the workbook is back to its own sheets', async () => {
+    const { removeLiveDashboard } = await import('../../server/services/liveDash');
+    const back = removeLiveDashboard(first.bytes)!;
+    const z = unzipSync(back);
+    expect(Object.keys(z).some((k) => /-live/.test(k))).toBe(false);
+    const wb = strFromU8(z['xl/workbook.xml']!);
+    expect(wb).not.toMatch(/Tableau de bord|Données filtrables|Slicer_|x15:slicerCaches/);
+    expect(strFromU8(z['[Content_Types].xml']!)).not.toMatch(/-live|slicer/);
+    expect(strFromU8(z['xl/_rels/workbook.xml.rels']!)).not.toMatch(/-live/);
+    expect(removeLiveDashboard(back)).toBeNull();
+  });
+  it('a half-removed dashboard (two sheets gone, table sheet and slicers left — what v50 did) is rebuilt whole', async () => {
+    const { removeSheets } = await import('../../server/services/cloneXlsx');
+    const half = removeSheets(first.bytes, ['Tableau de bord', 'Données du tableau de bord'])!;
+    const zh = unzipSync(half);
+    expect(strFromU8(zh['xl/workbook.xml']!)).toContain('Données filtrables');
+    expect(zh['xl/slicers/slicer-live.xml']).toBeTruthy();
+    const again = addLiveDashboard(half, SPEC, cloneData('Ventes', cols, rows));
+    expect(again).not.toBeNull();
+    const z = unzipSync(again!.bytes);
+    const wb = strFromU8(z['xl/workbook.xml']!);
+    expect(wb.match(/name="Données filtrables"/g)?.length).toBe(1);
+    expect(wb.match(/name="Tableau de bord"/g)?.length).toBe(1);
+    expect(wb.match(/<definedName name="Slicer_Segment_1">/g)?.length).toBe(1);
+    expect(wb.match(/<x15:slicerCaches/g)?.length).toBe(1);
+    expect(Object.keys(z).filter((k) => /^xl\/slicers\//.test(k))).toEqual(['xl/slicers/slicer-live.xml']);
+    expect(Object.keys(z).filter((k) => /^xl\/tables\//.test(k))).toEqual(['xl/tables/table-live.xml']);
+    // the slicers part is listed by the dashboard sheet (never orphan)
+    expect(strFromU8(z['xl/worksheets/sheet-live-dash.xml']!)).toContain('<x14:slicer r:id="rIdLiveSlicers"/>');
+  });
+});

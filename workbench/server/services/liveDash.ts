@@ -163,6 +163,64 @@ export interface GBox {
  * Adds the live dashboard FIRST and its calculation sheet LAST. Null when the file is not a workbook, already has
  * the dashboard, or the chat's rows are not available.
  */
+/**
+ * Removes EVERYTHING a previous live dashboard left in the workbook — its three sheets, drawing, charts, table,
+ * slicers and their caches, relationships, content types, defined names and the workbook's slicer-cache list — so the
+ * dashboard can be built again on a re-saved workbook. v50 removed only two sheets: the table sheet and the slicers
+ * stayed, the rebuild refused to start (« sheet already there ») and Excel repaired the orphan slicers on opening.
+ * Every live part is named « -live » (never a user's part). Returns true when something was removed.
+ */
+export function removeLiveParts(z: Zip): boolean {
+  const live = Object.keys(z).filter((k) => /-live[-.]/.test(k) || /-live\.xml\.rels$/.test(k));
+  let wb = rd(z, 'xl/workbook.xml');
+  if (!live.length || !wb) return false;
+  let wrels = rd(z, 'xl/_rels/workbook.xml.rels');
+  let ct = rd(z, '[Content_Types].xml');
+  // Sheets pointing at a live part: their <sheet> entries and workbook relationships go.
+  const liveRels = [...wrels.matchAll(/<Relationship\b[^>]*\/>/g)].map((m) => m[0]).filter((r) => /Target="[^"]*-live[-.]/.test(r));
+  const rids = new Set(liveRels.map((r) => /\bId="([^"]+)"/.exec(r)?.[1] ?? ''));
+  const sheets = [...wb.matchAll(/<sheet\b[^>]*\/>/g)].map((m) => m[0]);
+  const keptIdx: number[] = [];
+  sheets.forEach((tag, i) => {
+    const rid = /r:id="([^"]*)"/.exec(tag)?.[1] ?? '';
+    if (rids.has(rid)) wb = wb.replace(tag, '');
+    else keptIdx.push(i);
+  });
+  for (const r of liveRels) wrels = wrels.replace(r, '');
+  for (const k of live) {
+    delete z[k];
+    ct = ct.replace(new RegExp(`<Override[^>]*PartName="/${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*/>`), '');
+  }
+  // The slicer caches' defined names (#N/A) and the workbook's x15 slicer-cache list.
+  wb = wb.replace(/<definedName name="Slicer_[^"]*"[^>]*>#N\/A<\/definedName>/g, '');
+  wb = wb.replace(/<definedNames>\s*<\/definedNames>/, '');
+  wb = wb.replace(/<ext uri="\{46BE6895-7355-4a93-B00E-2C351335B9C9\}"[^>]*>[\s\S]*?<\/ext>/, '');
+  wb = wb.replace(/<extLst>\s*<\/extLst>/, '');
+  // Sheet-scoped names follow the remaining sheets' positions.
+  wb = wb.replace(/<definedName\b([^>]*)>([\s\S]*?)<\/definedName>/g, (m, attrs: string) => {
+    const k = /localSheetId="(\d+)"/.exec(attrs);
+    if (!k) return m;
+    const ni = keptIdx.indexOf(+k[1]!);
+    return ni < 0 ? '' : m.replace(/localSheetId="\d+"/, `localSheetId="${ni}"`);
+  });
+  wb = wb.replace(/activeTab="\d+"/, 'activeTab="0"').replace(/firstSheet="\d+"/, 'firstSheet="0"');
+  wr(z, 'xl/workbook.xml', wb);
+  wr(z, 'xl/_rels/workbook.xml.rels', wrels);
+  wr(z, '[Content_Types].xml', ct);
+  return true;
+}
+
+/** The same, on a workbook's bytes (null when nothing was there). */
+export function removeLiveDashboard(bytes: Uint8Array): Uint8Array | null {
+  let z: Zip;
+  try {
+    z = unzipSync(bytes);
+  } catch {
+    return null;
+  }
+  return removeLiveParts(z) ? zipSync(z, { level: 6 }) : null;
+}
+
 export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData, o: { font?: string } = {}): LiveResult | null {
   let z: Zip;
   try {
@@ -170,6 +228,8 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   } catch {
     return null;
   }
+  // Idempotent: a previous live dashboard (whole or half-removed) is cleared first, never left beside the new one.
+  removeLiveParts(z);
   let wb = rd(z, 'xl/workbook.xml');
   if (!wb || !/<sheets>/.test(wb) || !d.source || !d.source.rows.length) return null;
   // A sheet the model's own code called « Tableau de bord » is kept: ours goes first as « Tableau de bord vivant ».

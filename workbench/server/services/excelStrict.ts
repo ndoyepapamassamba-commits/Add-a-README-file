@@ -143,6 +143,48 @@ export function excelStrict(z: Zip): { fixes: string[]; warnings: string[] } {
     if (m && (!tableCols.has(m[1]!) || +m[2]! < 1 || +m[2]! > tableCols.get(m[1]!)!))
       warnings.push(`segment ${p.split('/').pop()} : colonne hors du tableau`);
   }
+  // ORPHAN SLICERS: a slicers part no worksheet lists (its dashboard sheet was removed) makes Excel repair the file
+  // (« Removed Part: /xl/slicers/… ») — the part, its caches, their relationships, content types, defined names and
+  // the workbook's slicer-cache list go together.
+  const slicerParts = Object.keys(z).filter((k) => /^xl\/slicers\/[^/]+\.xml$/.test(k));
+  const listed = new Set<string>();
+  for (const p of Object.keys(z).filter((k) => /^xl\/worksheets\/[^/]+\.xml$/.test(k))) {
+    const x = rd(z, p);
+    if (!/<x14:slicer\b/.test(x)) continue;
+    const rels = rd(z, p.replace(/worksheets\/([^/]+)$/, 'worksheets/_rels/$1.rels'));
+    for (const m of rels.matchAll(/<Relationship\b[^>]*Type="[^"]*\/slicer"[^>]*Target="([^"]+)"/g)) listed.add(m[1]!.replace(/^\.\.\//, 'xl/').replace(/^\//, ''));
+  }
+  const orphans = slicerParts.filter((p) => !listed.has(p));
+  if (orphans.length) {
+    const esc = (k: string) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    let ct = rd(z, '[Content_Types].xml');
+    let wrels = rd(z, 'xl/_rels/workbook.xml.rels');
+    let wbx2 = rd(z, 'xl/workbook.xml');
+    const caches = new Set<string>();
+    for (const p of orphans) {
+      for (const m of rd(z, p).matchAll(/\bcache="([^"]+)"/g)) caches.add(m[1]!);
+      delete z[p];
+      ct = ct.replace(new RegExp(`<Override[^>]*PartName="/${esc(p)}"[^>]*/>`), '');
+    }
+    for (const p of Object.keys(z).filter((k) => /^xl\/slicerCaches\/[^/]+\.xml$/.test(k))) {
+      const name = /\bname="([^"]+)"/.exec(rd(z, p))?.[1] ?? '';
+      if (!caches.has(name)) continue;
+      delete z[p];
+      ct = ct.replace(new RegExp(`<Override[^>]*PartName="/${esc(p)}"[^>]*/>`), '');
+      const rel = new RegExp(`<Relationship\\b[^>]*Target="[^"]*${esc(p.replace(/^xl\//, ''))}"[^>]*/>`).exec(wrels)?.[0];
+      if (rel) {
+        const id = /\bId="([^"]+)"/.exec(rel)?.[1];
+        wrels = wrels.replace(rel, '');
+        if (id) wbx2 = wbx2.replace(new RegExp(`<x14:slicerCache r:id="${esc(id)}"/>`), '');
+      }
+      wbx2 = wbx2.replace(new RegExp(`<definedName name="${esc(name)}"[^>]*>#N/A</definedName>`), '');
+    }
+    wbx2 = wbx2.replace(/<x15:slicerCaches[^>]*>\s*<\/x15:slicerCaches>/, '').replace(/<ext uri="\{46BE6895-7355-4a93-B00E-2C351335B9C9\}"[^>]*>\s*<\/ext>/, '').replace(/<extLst>\s*<\/extLst>/, '').replace(/<definedNames>\s*<\/definedNames>/, '');
+    wr(z, '[Content_Types].xml', ct);
+    wr(z, 'xl/_rels/workbook.xml.rels', wrels);
+    wr(z, 'xl/workbook.xml', wbx2);
+    fixes.push(`${orphans.length} segment(s) orphelin(s) retiré(s) avec leurs caches (aucune feuille ne les portait — Excel réparait le fichier)`);
+  }
   return { fixes, warnings };
 }
 
