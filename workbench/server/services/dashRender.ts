@@ -20,6 +20,20 @@ export interface DataView {
   /** Where the figures come from (live Excel formulas): grouped by a text column or by month of a date column. */
   src?: { by?: string; month?: string; measure: string | null; keys?: string[] };
 }
+/**
+ * Is a LIVE dashboard worth building on these rows? (v48: a 5-colour palette got a sales-like dashboard as first
+ * sheet.) At least 12 rows, one additive measure, and one axis that groups rows (2 to 40 values, not one per row).
+ */
+export function dashFit(d: CloneData): { ok: boolean; why: string } {
+  const src = d.source;
+  const n = src?.rows.length ?? d.table.rows.length;
+  if (n < 12) return { ok: false, why: `${n} ligne(s) de données seulement — un tableau de bord n'apporterait rien` };
+  const measures = src ? src.numCols : [];
+  if (src && !measures.length && n < 30) return { ok: false, why: 'aucune grandeur additionnable (montant, effectif) dans les données' };
+  const grouping = d.views.some((v) => !v.src?.month && v.categories.length >= 2 && v.categories.length <= 40 && v.categories.length < n * 0.8);
+  if (!grouping && !d.views.some((v) => v.src?.month)) return { ok: false, why: 'aucun axe qui regroupe les lignes (chaque valeur est unique)' };
+  return { ok: true, why: '' };
+}
 export interface CloneData {
   title: string;
   /** Source and date (shown where the image had a subtitle / brand strip). */

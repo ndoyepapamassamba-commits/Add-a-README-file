@@ -58,6 +58,11 @@ export function pickTable(tables: SheetTable[]): SheetTable | null {
 export const MONEY = /montant|solde|encours|total|chiffre|\bca\b|valeur|prix|xof|fcfa|eur|usd|amount|revenue|sales|ventes?|co[uû]t|budget|limite|impay|cr[ée]ance|marge|profit|provision|dotation|douteux|d[ée]pr[ée]ciation|exposition|perte|ecl|capital|int[ée]r[eê]t|garantie|besoin|compl[ée]ment/i;
 /** Never a measure: codes, ranks, periods, stages. */
 const NOT_MEASURE = /^(id|n°|no\b|num|code|stade|stage|ann[ée]e|year|mois|month|rang|rank|t[ée]l|phone|classe|segment)/i;
+/**
+ * Quantities that are NOT additive (v48: « Teinte h par RGB » summed hue angles): an angle, a light / colour level,
+ * a contrast, a position, an age, a rank, a coordinate — never summed into a total.
+ */
+export const NOT_ADDITIVE = /teinte|\bhue\b|luminan|luminosit|saturation|contraste|contrast|angle|degr[ée]|latitude|longitude|\blat\b|\blon\b|\b[âa]ge\b|\brang\b|classement|position|temp[ée]rature|\bnote\b|score|indice|index\b|niveau|level|ratio/i;
 /** Identifier names: summed only if the name ALSO says it is an amount (« Montant client » is, « RELATED CUSTOMER » is not). */
 const ID_NAME = /customer|client|compte|account|contrat|contract|r[ée]f[ée]rence|\bref\b|matricule|num[ée]ro|identifiant|\bid\b|code|siren|siret|ninea|gestionnaire|officer/i;
 const isNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
@@ -66,6 +71,6 @@ export function rankMeasures(numCols: string[], rows: Record<string, unknown>[])
   const sum = (c: string) => rows.reduce((a, r) => a + (isNumber(r[c]) ? Math.abs(r[c] as number) : 0), 0);
   const sums = new Map(numCols.map((c) => [c, sum(c)]));
   return numCols
-    .filter((c) => !NOT_MEASURE.test(c.trim()) && !(ID_NAME.test(c) && !MONEY.test(c)))
+    .filter((c) => !NOT_MEASURE.test(c.trim()) && !NOT_ADDITIVE.test(c) && !(ID_NAME.test(c) && !MONEY.test(c)))
     .sort((a, b) => (MONEY.test(b) ? 1 : 0) - (MONEY.test(a) ? 1 : 0) || sums.get(b)! - sums.get(a)!);
 }

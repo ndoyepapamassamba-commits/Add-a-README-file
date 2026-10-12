@@ -224,7 +224,7 @@ const clip = (s: string, n = 60_000) =>
 
 const data = new DataCore();
 import type { DashSpec } from '../../server/services/dashClone';
-import { cloneData, renderCloneHtml } from '../../server/services/dashRender';
+import { cloneData, dashFit, renderCloneHtml } from '../../server/services/dashRender';
 import { heavy } from './heavy';
 import { rasterise } from './designClone';
 // Parsed datasets are KEPT (v48: a 4,4 Mo workbook was re-read for each of ~150 queries). Key = file + version + sheet.
@@ -1268,7 +1268,8 @@ export const TOOLS: DirectTool[] = [
             // LIVE dashboard first (no fixed picture): the image's design as shapes, figures as formulas, filters,
             // native charts on formula ranges. The older native + picture build only when the rows are missing.
             // Never a pasted picture instead: without a live dashboard the workbook stays as exported.
-            const live = f ? await heavy('addLiveDashboard', bytesOf(f), spec, cd) : null;
+            // Only when the rows deserve a dashboard (dashFit — never for a handful of rows or no additive measure).
+            const live = f && dashFit(cd).ok ? await heavy('addLiveDashboard', bytesOf(f), spec, cd) : null;
             const nat = null as { charts: number } | null;
             let out = live?.bytes ?? null;
             // The data sheet of the reproduction in Maison 2.0 with the image's colours (the house sheets already are).

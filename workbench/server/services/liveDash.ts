@@ -48,6 +48,9 @@ const COL_W = 2.1;
 const ROW_PT = 11.25;
 const PX = 15;
 const EMU_PX = 9525;
+/** Zoom that fits the whole grid in a laptop window (≈ 1 250 px): 80 columns of 2,1 ≈ 1 580 px at 100 % (v48: the
+ *  dashboard ran off the screen). */
+export const FIT_ZOOM = Math.max(50, Math.min(100, Math.floor((1250 / (G * (COL_W * 7 + 5))) * 100)));
 
 // ── styles (memoised cell formats appended to styles.xml) ───────────────────────────────────────────────────────────
 class Styles {
@@ -574,8 +577,10 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
     const base = (f.label ?? f.c).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || `Segment${i + 1}`;
     const box = fBoxes[i]!;
     const wide = box.c1 - box.c0 + 1 > (box.r1 - box.r0 + 1) * 2.2;
-    // A band of 3 rows or less holds one row of buttons: no caption there (the values speak for themselves).
-    return { name: (f.label ?? f.c).slice(0, 60), cache: `Slicer_${base}_${i + 1}`, column: rawIdx.has(f.c) ? rawIdx.get(f.c)! + 1 : 0, box, columns: wide ? Math.max(1, Math.min(6, f.vals.length)) : 1, caption: box.r1 - box.r0 + 1 > 3 };
+    // ALWAYS a caption: it carries Excel's « Effacer le filtre » button (v48: no caption → impossible to un-filter).
+    // A band too short for caption + one row of buttons is made 5 rows high.
+    const tall = box.r1 - box.r0 + 1 >= 5 ? box : { ...box, r1: box.r0 + 4 };
+    return { name: (f.label ?? f.c).slice(0, 60), cache: `Slicer_${base}_${i + 1}`, column: rawIdx.has(f.c) ? rawIdx.get(f.c)! + 1 : 0, box: tall, columns: wide ? Math.max(1, Math.min(6, f.vals.length)) : 1, caption: true };
   }).filter((x) => x.column >= 1 && x.column <= tNames.length);
   for (const sl of slicers) {
     const id = ++sid;
@@ -606,7 +611,7 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   const safeMerges = validMerges(merges);
   const mergeXml = safeMerges.length ? `<mergeCells count="${safeMerges.length}">${safeMerges.map((m) => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>` : '';
   const dvXml = dv.length ? `<dataValidations count="${dv.length}">${dv.join('')}</dataValidations>` : '';
-  wr(z, dashPart, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${NS_R}"><sheetPr><tabColor rgb="FF${hex(spec.palette.primary)}"/><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${colL(G - 1)}${R}"/><sheetViews><sheetView showGridLines="0" showRowColHeaders="0" tabSelected="1" zoomScale="100" workbookViewId="0"><selection activeCell="${fBoxes[0] ? `${colL(fBoxes[0].c0)}${selCell[0]!.r}` : 'A1'}" sqref="${fBoxes[0] ? `${colL(fBoxes[0].c0)}${selCell[0]!.r}` : 'A1'}"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="${ROW_PT}" customHeight="1"/><cols><col min="1" max="${G}" width="${COL_W}" customWidth="1"/></cols><sheetData>${dashRows.join('')}</sheetData>${mergeXml}${dvXml}<pageMargins left="0.2" right="0.2" top="0.2" bottom="0.2" header="0.1" footer="0.1"/><pageSetup orientation="${spec.aspect >= 1 ? 'landscape' : 'portrait'}" fitToWidth="1" fitToHeight="1"/><drawing r:id="rIdLiveDrawing"/>${slicers.length ? `<extLst><ext uri="{3A4CF648-6AED-40f4-86FF-DC5316D8AED3}" xmlns:x15="${NS_X15}"><x14:slicerList xmlns:x14="${NS_X14}"><x14:slicer r:id="rIdLiveSlicers"/></x14:slicerList></ext></extLst>` : ''}</worksheet>`);
+  wr(z, dashPart, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${NS_R}"><sheetPr><tabColor rgb="FF${hex(spec.palette.primary)}"/><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${colL(G - 1)}${R}"/><sheetViews><sheetView showGridLines="0" showRowColHeaders="0" tabSelected="1" zoomScale="${FIT_ZOOM}" zoomScaleNormal="${FIT_ZOOM}" workbookViewId="0"><selection activeCell="${fBoxes[0] ? `${colL(fBoxes[0].c0)}${selCell[0]!.r}` : 'A1'}" sqref="${fBoxes[0] ? `${colL(fBoxes[0].c0)}${selCell[0]!.r}` : 'A1'}"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="${ROW_PT}" customHeight="1"/><cols><col min="1" max="${G}" width="${COL_W}" customWidth="1"/></cols><sheetData>${dashRows.join('')}</sheetData>${mergeXml}${dvXml}<pageMargins left="0.2" right="0.2" top="0.2" bottom="0.2" header="0.1" footer="0.1"/><pageSetup orientation="${spec.aspect >= 1 ? 'landscape' : 'portrait'}" fitToWidth="1" fitToHeight="1"/><drawing r:id="rIdLiveDrawing"/>${slicers.length ? `<extLst><ext uri="{3A4CF648-6AED-40f4-86FF-DC5316D8AED3}" xmlns:x15="${NS_X15}"><x14:slicerList xmlns:x14="${NS_X14}"><x14:slicer r:id="rIdLiveSlicers"/></x14:slicerList></ext></extLst>` : ''}</worksheet>`);
   wr(z, relsOf(dashPart), `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdLiveDrawing" Type="${NS_R}/drawing" Target="../drawings/drawing-live-dash.xml"/>${slicers.length ? '<Relationship Id="rIdLiveSlicers" Type="http://schemas.microsoft.com/office/2007/relationships/slicer" Target="../slicers/slicer-live.xml"/>' : ''}</Relationships>`);
   addOverride(z, `/${dashPart}`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml');
   const chartRels = charts.map((c, k) => {
@@ -637,7 +642,7 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   // SLICERS: one slicers part on the dashboard, one cache per segment (table slicer caches, Excel 2013+).
   const cacheRids: string[] = [];
   if (slicers.length) {
-    wr(z, 'xl/slicers/slicer-live.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<slicers xmlns="${NS_X14}" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="x" xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${slicers.map((sl) => `<slicer name="${xesc(sl.name)}" cache="${sl.cache}" caption="${xesc(sl.name)}"${sl.columns > 1 ? ` columnCount="${sl.columns}"` : ''}${sl.caption ? '' : ' showCaption="0"'} style="SlicerStyleLight1" rowHeight="225425"/>`).join('')}</slicers>`);
+    wr(z, 'xl/slicers/slicer-live.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<slicers xmlns="${NS_X14}" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="x" xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${slicers.map((sl) => `<slicer name="${xesc(sl.name)}" cache="${sl.cache}" caption="${xesc(`Filtrer : ${sl.name}`)}"${sl.columns > 1 ? ` columnCount="${sl.columns}"` : ''}${sl.caption ? '' : ' showCaption="0"'} style="SlicerStyleLight1" rowHeight="225425"/>`).join('')}</slicers>`);
     addOverride(z, '/xl/slicers/slicer-live.xml', 'application/vnd.ms-excel.slicer+xml');
     slicers.forEach((sl, k) => {
       const part = `xl/slicerCaches/slicerCache-live-${k + 1}.xml`;

@@ -35,7 +35,10 @@ describe('LIVE dashboard on the image design: formulas, filters, real cells — 
     const cache = strFromU8(z['xl/slicerCaches/slicerCache-live-1.xml']!);
     expect(cache).toMatch(/sourceName="Segment"/);
     expect(cache).toMatch(/<x15:tableSlicerCache tableId="\d+" column="\d+"\/>/);
-    expect(strFromU8(z['xl/slicers/slicer-live.xml']!)).toMatch(/<slicer name="Segment" cache="Slicer_Segment_1" caption="Segment"/);
+    // The caption is ALWAYS shown: it carries Excel's « Effacer le filtre » button (v48: impossible to un-filter).
+    const sl = strFromU8(z['xl/slicers/slicer-live.xml']!);
+    expect(sl).toMatch(/<slicer name="Segment" cache="Slicer_Segment_1" caption="Filtrer : Segment"/);
+    expect(sl).not.toContain('showCaption="0"');
     expect(dash).toContain('<x14:slicer r:id="rIdLiveSlicers"/>');
     expect(drawing).toContain('<sle:slicer xmlns:sle="http://schemas.microsoft.com/office/drawing/2010/slicer" name="Segment"/>');
     const wb = strFromU8(z['xl/workbook.xml']!);

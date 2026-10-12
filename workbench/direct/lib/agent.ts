@@ -69,7 +69,7 @@ import { modelById } from '../../server/services/designModels';
 import { heavy } from './heavy';
 import { skinDocx, skinHtml, skinPptx, type Skin } from '../../server/services/officeSkin';
 import { knowledgeBlock, related as relatedKnowledge } from '../../server/jev/knowledge/learned';
-import { cloneData, renderCloneSvg } from '../../server/services/dashRender';
+import { cloneData, dashFit, renderCloneSvg, type CloneData } from '../../server/services/dashRender';
 import { chatTable, previewData, rasterise } from './designClone';
 import { LOGO_VARIANTS } from '../../server/services/logoHarmony';
 import { excelChart } from '../../server/services/layoutClone';
@@ -269,6 +269,24 @@ async function userContent(
       notes.push(`Attachment ${f.path} could not be read: ${(e as Error).message}`);
     }
   }
+  // A LOGO / colour chart attached to an analysis request dresses the deliverable — it is not what is analysed
+  // (v48: « analyse du fichier attaché » produced a pixel study of LOGO ET COULEURS ECOBANK.webp instead of
+  // Provisions.xlsx). The data files of the chat are named so the model analyses the right one.
+  const brand = attachments.filter((a) => isImage(a.path) && BRAND_IMAGE.test(a.path.split('/').pop() ?? ''));
+  if (brand.length && ANALYSIS_ASK.test(text)) {
+    const dataFiles = Object.values(files())
+      .filter((f) => isDataFile(f.path) && !f.path.startsWith('outputs/'))
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, 6)
+      .map((f) => `${f.path} (${Math.round(f.size / 1024)} Ko)`);
+    notes.push(
+      `BRANDING, NOT THE SUBJECT: ${brand.map((b) => b.path).join(', ')} is the owner's logo / colour chart — use it ONLY to dress the deliverable (logo, palette). ${
+        dataFiles.length
+          ? `The file to ANALYSE is the data file of this chat: ${dataFiles.join(', ')} (most recent first).`
+          : 'No data file is in this chat: ask the owner to attach the data to analyse — do not analyse the logo.'
+      }`,
+    );
+  }
   const ctx = firstTurn
     ? `<workspace>\n${tree().split('\n').slice(0, 200).join('\n')}\n</workspace>\n\n`
     : '';
@@ -276,6 +294,8 @@ async function userContent(
   return parts;
 }
 
+const BRAND_IMAGE = /logo|charte|couleurs?|colou?rs?|brand|marque|identit[ée]|palette|branding/i;
+const ANALYSIS_ASK = /analy|excel|xlsx|classeur|tableau|rapport|report|dashboard|synth[èe]se|provision|portefeuille|donn[ée]es/i;
 const estimate = (msgs: ChatMessage[]) => Math.ceil(JSON.stringify(msgs).length / 3.6);
 
 /**
@@ -2769,17 +2789,27 @@ async function applyClone(sid: string, since: number): Promise<{ n: number; note
         if (b0) b = b0;
         // Excel: ALWAYS a LIVE first sheet on the image's design (shapes, formulas, filters, native charts). Rows: the
         // chat's data file, else the detail table of this very workbook (code-written files). NEVER a pasted picture.
-        let live = pd.from ? await heavy('addLiveDashboard', b, c.clone, pd.data) : null;
+        // ONLY when the rows deserve one (dashFit): a palette of 5 colours, a 3-line summary never get a sales-like
+        // dashboard pushed in front of the real analysis (v48).
+        let unfit = '';
+        const fitOr = (d: CloneData) => {
+          const ft = dashFit(d);
+          if (!ft.ok) unfit ||= ft.why;
+          return ft.ok;
+        };
+        let live = pd.from && fitOr(pd.data) ? await heavy('addLiveDashboard', b, c.clone, pd.data) : null;
         let from = pd.from;
         if (!live) {
           const t = chatTable(f.path, b);
-          if (t?.rows.length) {
-            live = await heavy('addLiveDashboard', b, c.clone, cloneData('Tableau de bord', t.columns, t.rows));
+          const cd = t?.rows.length ? cloneData('Tableau de bord', t.columns, t.rows) : null;
+          if (t && cd && fitOr(cd)) {
+            live = await heavy('addLiveDashboard', b, c.clone, cd);
             from = t.sheet ? `${f.path} · feuille ${t.sheet}` : f.path;
           }
         }
         out = live?.bytes ?? (ours.length ? b : null);
-        if (!live) notes.push(`${f.path} : tableau de bord vivant non construit (aucune table de données lisible dans le classeur) — aucune image collée à la place`);
+        if (!live && unfit) notes.push(`${f.path} : pas de tableau de bord vivant ajouté — ${unfit} ; les feuilles d'analyse restent en tête`);
+        else if (!live) notes.push(`${f.path} : tableau de bord vivant non construit (aucune table de données lisible dans le classeur) — aucune image collée à la place`);
         else if (from && from !== pd.from) notes.push(`chiffres du tableau de bord tirés de ${from}`);
         if (live) notes.push(`${f.path} : 1re feuille « Tableau de bord » VIVANTE au design de l'image (${live.kpis} indicateurs en formules, ${live.charts} graphiques Excel, filtres ${live.filters.map((x) => `« ${x} »`).join(', ') || '—'}, ${live.links} bouton(s) de navigation) — aucune image fixe`);
         // Every other sheet (the model's own, the data sheet) in Maison 2.0 with the image's colours and font.
