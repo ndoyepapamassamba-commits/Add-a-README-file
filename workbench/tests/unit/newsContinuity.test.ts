@@ -71,3 +71,38 @@ describe('continuité (défauts mesurés sur « Le chef invisible » v44)', () =
     expect(charLine({ ...base, skin: 'dark brown skin' })).not.toContain('Ivorian');
   });
 });
+
+import { ageLock } from '../../server/jev/studio/genome';
+import { speakingOrder } from '../../server/jev/studio/continuity';
+import { characterGender, speakerKey } from '../../server/jev/studio/motion';
+import { parseClipJudgement } from '../../server/jev/studio/clipInspect';
+
+describe('v49 — cohérence « La dot négociée »', () => {
+  it('a suitor, a patron, a parent are ADULTS; a child stays a child', () => {
+    expect(ageLock('32 ans', 'prétendant')).toContain('ADULT');
+    expect(ageLock('', 'le prétendant')).toContain('never a child');
+    expect(ageLock('8 ans', 'petit frère')).toContain('CHILD');
+    expect(ageLock('15 ans')).toContain('TEENAGER');
+    expect(ageLock('62 ans', 'grand-père')).toContain('OLDER ADULT');
+  });
+  it('the same speaker whatever the spelling; gender from the name when the sheet is silent', () => {
+    expect(speakerKey('Frère (off)')).toBe('FRERE');
+    expect(speakerKey('FRÈRE')).toBe(speakerKey('frere'));
+    expect(characterGender({ name: 'KOUASSI' })).toBe('m');
+    expect(characterGender({ name: 'FRÈRE' })).toBe('m');
+    expect(characterGender({ name: 'AYA' })).toBe('f');
+    expect(characterGender({ name: 'TOGO', gender: 'homme' })).toBe('m');
+    expect(characterGender({ name: 'KOUASSI', role: 'le prétendant' })).toBe('m');
+  });
+  it('the video prompt says who talks, in order, and who listens with the mouth closed', () => {
+    const o = speakingOrder({ characters: ['TOGO', 'KOUASSI'], dialogue: [{ speaker: 'TOGO', text: 'a' }, { speaker: 'KOUASSI', text: 'b' }] as never });
+    expect(o).toMatch(/^First TOGO talks .* while KOUASSI listens with the mouth closed.*then KOUASSI talks .* while TOGO listens/);
+    expect(o).toContain('Only one person talks at a time');
+    expect(speakingOrder({ characters: ['TOGO'], dialogue: [] })).toContain('mouths stay closed');
+  });
+  it('the clip judge accepts « cohérence », nested scores and « 7/10 »', () => {
+    const j = parseClipJudgement('{"scores":{"Rire":"7/10","mouvement":6,"expressions":"8","bouche":5,"anatomie":9,"cohérence":"7,5"},"defects":[],"fix":""}');
+    expect(j!.scores.coherence).toBe(7.5);
+    expect(j!.scores.rire).toBe(7);
+  });
+});

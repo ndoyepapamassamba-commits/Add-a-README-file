@@ -57,6 +57,8 @@ export function storyMessages(b: StoryBrief): { role: 'system' | 'user' | 'assis
         humorBrief(b.idea.length),
         'Contraintes : accroche dans la 1re seconde, escalade, twist, chute de moins de 10 mots. Répliques de 12 mots maximum, écrites pour être dites à voix haute. ' +
           'Noms de personnages en MAJUSCULES. Une scène par plan.',
+        'ENCHAÎNEMENT : chaque scène découle directement de la précédente (même lieu et même moment sauf raison montrée à l’image ; la situation ou l’objet de la scène d’avant continue) ; aucune scène ne contredit la précédente ; un nouveau personnage est introduit par l’action ; la chute répond à l’accroche. ' +
+          'Chaque personnage garde son nom, son rôle, son âge et sa relation aux autres du début à la fin. Toute réplique est dite par un personnage PRÉSENT dans la scène (listé dans "characters").',
         'JSON attendu : {"title","logline","concept","synopsis","hook","twist","punchline","conflict","climax","resolution","setting","theme","characters":[noms],' +
           '"scenes":[{"act","beat":"hook|escalade|twist|chute","duration":secondes,"location","time","characters":[noms],"action","emotion","camera","lighting","sound","music","transition",' +
           '"dialogue":[{"speaker","text","emotion","translation"?,"english","language":"fr"}],"visual_prompt","video_prompt","voice_prompt","subtitle_prompt"}]}',
@@ -65,12 +67,28 @@ export function storyMessages(b: StoryBrief): { role: 'system' | 'user' | 'assis
   ];
 }
 
-/** Extracts the first balanced JSON object of a model answer (tolerates fences and prose around it). */
+/**
+ * Extracts the first JSON object of a model answer (tolerates fences and prose around it). Repairs what models get
+ * wrong: trailing commas, and an answer CUT by the length limit (a reasoning model that spent its budget thinking) —
+ * the object is closed after its last complete element, so the finished scenes are kept.
+ */
 export function extractJson(text: string): unknown | null {
   const t = text.replace(/```(?:json)?/gi, '');
   const start = t.indexOf('{');
   if (start < 0) return null;
-  let depth = 0;
+  const tryParse = (x: string): unknown | null => {
+    for (const v of [x, x.replace(/,(\s*[}\]])/g, '$1')]) {
+      try {
+        return JSON.parse(v);
+      } catch {
+        /* next */
+      }
+    }
+    return null;
+  };
+  // Walk once: balanced end, or the « safe cut points » (just after a complete } or ] inside the object).
+  const stack: string[] = [];
+  const cuts: { at: number; closers: string }[] = [];
   let inStr = false;
   let esc = false;
   for (let i = start; i < t.length; i++) {
@@ -82,16 +100,29 @@ export function extractJson(text: string): unknown | null {
       continue;
     }
     if (ch === '"') inStr = true;
-    else if (ch === '{') depth++;
-    else if (ch === '}' && --depth === 0) {
-      try {
-        return JSON.parse(t.slice(start, i + 1));
-      } catch {
-        return null;
-      }
+    else if (ch === '{' || ch === '[') stack.push(ch === '{' ? '}' : ']');
+    else if (ch === '}' || ch === ']') {
+      stack.pop();
+      if (!stack.length) return tryParse(t.slice(start, i + 1));
+      cuts.push({ at: i + 1, closers: [...stack].reverse().join('') });
     }
   }
+  // Truncated: close after the last complete element that parses (most recent first).
+  for (let k = cuts.length - 1; k >= 0 && k >= cuts.length - 400; k--) {
+    const c = cuts[k]!;
+    const v = tryParse(t.slice(start, c.at).replace(/,\s*$/, '') + c.closers);
+    if (v) return v;
+  }
   return null;
+}
+
+/** Why an answer is unusable, in words the owner can act on. */
+export function explainNoJson(text: string, finishReason?: string): string {
+  const t = (text ?? '').trim();
+  if (!t) return 'réponse vide (le modèle a probablement dépensé toute la longueur autorisée à « réfléchir »)';
+  if (finishReason === 'length') return `réponse coupée par la limite de longueur (${t.length} caractères reçus, JSON inachevé)`;
+  if (!t.includes('{')) return `le modèle a répondu en texte au lieu de JSON : « ${t.slice(0, 90)}… »`;
+  return 'la réponse ne contient pas de JSON valide';
 }
 
 type Dict = Record<string, unknown>;
@@ -205,7 +236,13 @@ export function parseStory(
     };
   const d = rec(raw);
   const issues: StoryIssue[] = [];
-  const scenes: Scene[] = arr(d.scenes).map((x, i) => normScene(x, i, issues));
+  // A speaker absent from the scene's cast would talk off-screen (or not be drawn): added to the scene's characters.
+  const scenes: Scene[] = arr(d.scenes)
+    .map((x, i) => normScene(x, i, issues))
+    .map((sc) => {
+      const missing = [...new Set(sc.dialogue.map((l) => l.speaker))].filter((sp) => sp && !sc.characters.some((c) => c.toUpperCase() === sp.toUpperCase()));
+      return missing.length ? { ...sc, characters: [...sc.characters, ...missing] } : sc;
+    });
   if (!scenes.length)
     issues.push({ code: 'NO_SCENES', severity: 'error', message: 'aucune scène dans la réponse' });
   const total = scenes.reduce((a, c) => a + c.duration, 0);

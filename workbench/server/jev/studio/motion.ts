@@ -132,13 +132,30 @@ export function voiceLang(id: string): string | null {
   return k ? ({ a: 'en', b: 'en', e: 'es', f: 'fr', h: 'hi', i: 'it', j: 'ja', p: 'pt', z: 'zh' } as Record<string, string>)[k[1]!] ?? null : null;
 }
 const FEM = /\b(f|femme|fille|female|woman|girl|m[èe]re|maman|tante|grand-m[èe]re|dame|madame|s[œo]eur|[ée]pouse|belle-m[èe]re|servante|vendeuse|marchande)\b/i;
-const MASC = /\b(m|h|homme|gar[çc]on|male|man|boy|p[èe]re|papa|oncle|grand-p[èe]re|monsieur|fr[èe]re|mari|patron|chef|vieux|employ[ée]?)\b/i;
-/** Gender of a CHARACTER: the sheet's gender field first; the voice description only when the field is empty. */
-export function characterGender(c: { gender?: string; voice?: string; role?: string }): 'f' | 'm' | null {
-  for (const t of [c.gender ?? '', `${c.voice ?? ''} ${c.role ?? ''}`]) {
+const MASC = /\b(m|h|homme|gar[çc]on|male|man|boy|p[èe]re|papa|oncle|tonton|grand-p[èe]re|monsieur|fr[èe]re|mari|patron|chef|vieux|employ[ée]?|pr[ée]tendant|gendre)\b/i;
+/** The same speaker whatever the spelling: « Frère », « FRERE », « FRÈRE (off) » → « FRERE ». */
+export const speakerKey = (s: string) =>
+  (s ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\(.*?\)/g, '')
+    .replace(/[^A-Za-z0-9 ]+/g, ' ')
+    .trim()
+    .toUpperCase();
+// West-African first names (Akan day names, Ivorian / Senegalese usage) — used ONLY when the sheet says nothing.
+const F_FIRST = new Set('AYA ADJOUA AKISSI AFFOUE AMENAN AHOU AKOUA AMA ADJO ABENA AKOSUA EFUA YAA AWA FATOU FATOUMATA MARIAM MARIAME AMINATA AISSATOU AICHA KADIATOU BINTOU ASSITA SALIMATA NAFI NDEYE COUMBA KHADY ROKHAYA SOKHNA DIARRA CLARISSE GRACE JOSIANE MARIE NADEGE ESTELLE ROSINE BELLE-MERE MAMAN TANTI TANTIE TATA MAMIE GRAND-MERE'.split(' '));
+const M_FIRST = new Set('KOFFI KOUASSI KOUAME KOUADIO KONAN YAO KOFI KWAME KWAKU KWASI KOJO KWABENA YAW EBO TOGO DRAMANE ADAMA MOUSSA MAMADOU IBRAHIMA OUMAR SEYDOU SOULEYMANE BAKARY LASSINA SEKOU MODOU ABDOULAYE CHEIKH ALIOU PAPE BABACAR OUSMANE DIDIER SERGE PATRICK EMMANUEL JEAN PAUL FRERE PAPA TONTON VIEUX PATRON CHEF GENDRE PRETENDANT MARI BOSS'.split(' '));
+/** Gender of a CHARACTER: the sheet's gender field first; the voice description / role only when the field is empty;
+ *  last, the name itself (« FRÈRE », « MAMAN », « KOUASSI », « AYA »). */
+export function characterGender(c: { name?: string; gender?: string; voice?: string; role?: string }): 'f' | 'm' | null {
+  for (const t of [c.gender ?? '', c.role ?? '', c.voice ?? '']) {
     const f = FEM.test(t);
     const m = MASC.test(t);
     if (f !== m) return f ? 'f' : 'm';
+  }
+  for (const w of speakerKey(c.name ?? '').split(' ')) {
+    if (F_FIRST.has(w)) return 'f';
+    if (M_FIRST.has(w)) return 'm';
   }
   return null;
 }
@@ -147,10 +164,12 @@ export function castVoices(
   chars: { id: string; name: string; gender?: string; age?: string; voice?: string; role?: string }[],
   available: string[],
   lang = 'fr',
+  /** Voices already locked for this film: never given to another character. */
+  taken: string[] = [],
 ): Record<string, string> {
   const out: Record<string, string> = {};
   if (!available.length) return out;
-  const used = new Set<string>();
+  const used = new Set<string>(taken);
   // Same-language voices first (a French sketch is spoken by French voices when the model has some).
   const rank = (v: string) => (voiceLang(v) === lang ? 0 : voiceLang(v) === null ? 1 : 2);
   const pool = [...available].sort((a, b) => rank(a) - rank(b));
@@ -169,7 +188,9 @@ export function castVoices(
   for (const c of chars) {
     const g = characterGender(c);
     const child = isChild(`${c.age ?? ''} ${c.voice ?? ''}`);
-    out[c.name.toUpperCase()] = pick(g, child ? (g === 'f' ? ['shimmer', 'nova', 'coral'] : ['fable', 'echo', 'alloy']) : g === 'f' ? FEMALE : MALE);
+    const v = pick(g, child ? (g === 'f' ? ['shimmer', 'nova', 'coral'] : ['fable', 'echo', 'alloy']) : g === 'f' ? FEMALE : MALE);
+    out[c.name.toUpperCase()] = v;
+    out[speakerKey(c.name)] = v;
   }
   return out;
 }

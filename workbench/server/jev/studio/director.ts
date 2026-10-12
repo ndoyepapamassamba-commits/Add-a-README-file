@@ -31,9 +31,13 @@ export interface StagePlan {
 }
 
 const PRIORS: Record<'text' | 'image' | 'video' | 'speech', [RegExp, number][]> = {
+  // Catalogue of Oct. 2026 (v48: GPT-6, Claude 5.x, Gemini 3.x were unknown → all rated 7.2 → the cheapest FREE mini
+  // model was recommended to write the film). Small tiers first, so « mini / nano / lite / :free » never rank high.
   text: [
-    [/claude.*(opus|sonnet)|gpt-5(?!.*mini)|gemini-(2\.5|3)[^ ]*pro|o3\b/i, 9.5],
-    [/gpt-5.*mini|gpt-4\.1|gemini.*flash|deepseek|qwen3|kimi|glm-4|mistral-large|grok-4/i, 8.6],
+    [/:free\b|\b(nano|mini|lite|tiny|small|ministral|3b|8b|9b|14b)\b|-(nano|mini|lite)\b|gpt-oss|apodex/i, 7.4],
+    [/claude-(opus|sonnet|fable)|gpt-6(?!-luna)|gpt-5\.[4-9](?!-(luna|nano|mini))|gpt-5\.5|gemini-[3-9][^ ]*pro|grok-4\.[5-9]|qwen3\.[7-9]-max|kimi-k3|o3\b/i, 9.5],
+    [/claude-haiku-[5-9]|gpt-6-luna|gemini-3\.[5-9]-flash|glm-5|deepseek-v4-pro|mistral-large-4|grok-4|claude.*(opus|sonnet)|gpt-5(?!.*mini)|gemini-(2\.5|3)[^ ]*pro/i, 9.0],
+    [/gpt-5.*mini|gpt-4\.1|gemini.*flash|deepseek|qwen3|kimi|glm-4|mistral-large|claude-haiku/i, 8.6],
     [/llama|mistral|gemma|phi/i, 7.6],
   ],
   image: [
@@ -180,13 +184,18 @@ export function planWriting(models: TextModelLite[], cap?: number, preferred?: s
   const usable = models.filter((m) => m.inputPrice !== null && m.outputPrice !== null && !NOT_CHAT.test(m.id));
   const opts = usable.map((m) => {
     const stageUsd = Math.round(((3000 * m.inputPrice! + 7000 * m.outputPrice!) / 1e6) * 10000) / 10000;
-    const o = { id: m.id, name: m.name, stageUsd, costLabel: costLabel(stageUsd), quality: priorQuality('text', m.id, m.name), qualitySource: 'a priori' as const, speed: 'Rapide' as const, afrikatoon: /claude|gpt-5|gemini|qwen/i.test(m.id) ? 9 : 8, score: 0, why: m.id === preferred ? 'votre modèle par défaut' : 'écrit l’histoire, découpe les scènes, écrit les dialogues (FR / wolof)' };
+    const o = { id: m.id, name: m.name, stageUsd, costLabel: costLabel(stageUsd), quality: priorQuality('text', m.id, m.name), qualitySource: 'a priori' as const, speed: 'Rapide' as const, afrikatoon: /claude|gpt-[56]|gemini|qwen/i.test(m.id) && !/:free|nano|mini|lite/i.test(m.id) ? 9 : 8, score: 0, why: m.id === preferred ? 'votre modèle par défaut' : 'écrit l’histoire, découpe les scènes, écrit les dialogues (FR / wolof)' };
     return { ...o, score: scoreOf(o) };
   });
-  const pref = preferred ? opts.find((o) => o.id === preferred) : undefined;
-  // Default (or the cheapest good writer) first, then cheaper / comparable alternatives.
-  const good = opts.filter((o) => o.quality >= 8.5).sort((a, b) => (a.stageUsd ?? 9) - (b.stageUsd ?? 9));
-  const rec = pref ?? good[0] ?? [...opts].sort((a, b) => (a.stageUsd ?? 9) - (b.stageUsd ?? 9))[0];
+  // The chat's default model writes the film only when it is a GOOD writer (v48: a free « mini » was imposed).
+  const pref = preferred ? opts.find((o) => o.id === preferred && o.quality >= 8.5) : undefined;
+  // Writing costs cents while the video costs dollars: the BEST writer whose stage stays negligible (≤ 5 % of the
+  // film budget, at least 0,02 $) — quality first, then Afrikatoon fidelity, then price.
+  const room = Math.max(0.02, (cap ?? 1) * 0.05);
+  const good = opts
+    .filter((o) => o.quality >= 8.5)
+    .sort((a, b) => Number((b.stageUsd ?? 9) <= room) - Number((a.stageUsd ?? 9) <= room) || b.quality - a.quality || b.afrikatoon - a.afrikatoon || (a.stageUsd ?? 9) - (b.stageUsd ?? 9));
+  const rec = pref ?? good[0] ?? [...opts].sort((a, b) => b.quality - a.quality || (a.stageUsd ?? 9) - (b.stageUsd ?? 9))[0];
   const rest = [...good, ...opts.filter((o) => o.quality < 8.5).sort((a, b) => (a.stageUsd ?? 9) - (b.stageUsd ?? 9))].filter((o) => o !== rec);
   const list = (rec ? [rec, ...rest] : rest).slice(0, 15);
   return { stage: 'writing', label: 'Écriture', options: list, recommended: rec && (cap === undefined || rec.stageUsd === null || rec.stageUsd <= cap) ? rec.id : (list[0]?.id ?? null) };

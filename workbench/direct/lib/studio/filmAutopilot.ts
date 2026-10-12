@@ -146,18 +146,27 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
         c.onStage('STORY', 'failed', r.issues.slice(0, 2).join(' · ') || 'histoire non générée');
         return null;
       }
-      // DEGRÉ D'HUMOUR (grille calée sur les vidéos de référence) : sous 65 %, une réécriture avec la correction du juge.
+      // DEGRÉ D'HUMOUR (grille calée sur les vidéos de référence) : sous 75 % (« très drôle »), jusqu'à DEUX réécritures
+      // avec la correction du juge — et la version la plus drôle est gardée (une réécriture moins drôle est annulée).
       if (bpOf(projectId).mode !== 'ECO') {
         c.onStage('STORY', 'running', 'juge d’humour');
-        const h = await judgeHumor(projectId);
-        if (h && h.degree < 65 && h.fix) {
-          c.onStage('STORY', 'running', `humour ${h.degree} % (${h.label}) → réécriture : ${h.fix.slice(0, 80)}`);
-          const again = await generateStory(projectId, h.fix);
-          if (again.parsed) {
-            const h2 = await judgeHumor(projectId);
-            if (h2) c.onStage('STORY', 'running', `humour après réécriture : ${h2.degree} % (${h2.label})`);
+        let h = await judgeHumor(projectId);
+        for (let round = 0; round < 2 && h && h.degree < 75 && h.fix; round++) {
+          c.onStage('STORY', 'running', `humour ${h.degree} % (${h.label}) → réécriture ${round + 1} : ${h.fix.slice(0, 80)}`);
+          const snap = bpOf(projectId);
+          const keep = { title: snap.title, story: snap.story, scenes: snap.scenes, characters: snap.characters };
+          const again = await generateStory(projectId, `${h.fix}${h.best ? ` — GARDE ce qui marche : ${h.best}` : ''}`);
+          if (!again.parsed) break;
+          const h2 = await judgeHumor(projectId);
+          if (!h2 || h2.degree < h.degree) {
+            S().patchProject(projectId, (b) => ({ ...b, ...keep }), 'réécriture moins drôle : version précédente gardée');
+            c.onStage('STORY', 'running', `réécriture moins drôle (${h2?.degree ?? '—'} %) → version à ${h.degree} % gardée`);
+            break;
           }
-        } else if (h) c.onStage('STORY', 'running', `humour ${h.degree} % (${h.label})`);
+          h = h2;
+          c.onStage('STORY', 'running', `humour après réécriture : ${h.degree} % (${h.label})`);
+        }
+        if (h && h.degree >= 75) c.onStage('STORY', 'running', `humour ${h.degree} % (${h.label})`);
       }
       // A short sketch keeps ONE set (v44: one scene drawn outdoors in an office sketch).
       const lock = lockShortSetting(bpOf(projectId).scenes, bpOf(projectId).duration);
@@ -237,11 +246,16 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
           const plan = planCircuit(voiced, r, circuitBudget(b0.cap, spent(b0), later, 1));
           c.onStage('ANIMATION', 'running', `Circuit Grok : ${plan.shots.length} plan(s), ${plan.seconds} s, ≤ ${plan.usd.toFixed(2)} $ (plafond ${b0.cap.toFixed(2)} $)`);
           if (!plan.shots.length) warn.push(`Circuit Grok : il reste ${(b0.cap - spent(b0)).toFixed(3)} $ après l’écriture, les images et les voix — pas assez pour un plan animé (${r.usdPerS} $/s) → Marionnette. Choisissez « 10 s · entièrement animé » ou un budget plus élevé.`);
+          // Real price / announced price, learned on the clips already billed (v48: S01 billed 0.168 $ for 0.150 $
+          // announced stopped the WHOLE circuit with 0.9 $ of budget left). The next clips are priced at the real rate
+          // and go on as long as the HARD cap holds.
+          let priceRatio = 1;
           for (const shot of plan.shots) {
             check(c);
             const b = bpOf(projectId);
-            if (shot.usd > circuitBudget(b.cap, spent(b), later, 1) + 1e-9) {
-              warn.push(`${shot.sceneId} : plafond ${b.cap.toFixed(2)} $ atteint (dépense réelle ${spent(b).toFixed(3)} $) → Marionnette`);
+            const expected = Math.round(shot.usd * priceRatio * 10000) / 10000;
+            if (expected > circuitBudget(b.cap, spent(b), later, 1) + 1e-9) {
+              warn.push(`${shot.sceneId} : plafond ${b.cap.toFixed(2)} $ atteint (dépense réelle ${spent(b).toFixed(3)} $, clip ≈ ${expected.toFixed(3)} $ au prix réel) → Marionnette`);
               continue;
             }
             c.onStage('ANIMATION', 'running', `Circuit Grok ${shot.sceneId} : ${shot.seconds} s (${shot.usd.toFixed(2)} $)`);
@@ -249,11 +263,16 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
             await generateSceneVideo(projectId, shot.sceneId, { mode: 'image', duration: shot.seconds, resolution: CIRCUIT.resolution, forceModel: r.id, circuit: true }).catch((e) =>
               warn.push(`${shot.sceneId} : ${(e as Error).message.slice(0, 80)} → Marionnette`),
             );
-            // Billed above the announced price → the circuit stops at once (the cap must stay reliable).
+            // Billed above the announced price → the rate is RECALIBRATED (the cap is checked with it before each
+            // clip); only an absurd bill (more than twice the announced price) stops the circuit.
             const billed = spent(bpOf(projectId)) - before;
-            if (billed > shot.usd * 1.1 + 0.001) {
-              warn.push(`Circuit Grok arrêté : ${shot.sceneId} facturé ${billed.toFixed(3)} $ au lieu de ${shot.usd.toFixed(3)} $ annoncés → Marionnette pour la suite`);
+            if (billed > shot.usd * 2 + 0.001) {
+              warn.push(`Circuit Grok arrêté : ${shot.sceneId} facturé ${billed.toFixed(3)} $ au lieu de ${shot.usd.toFixed(3)} $ annoncés (plus du double) → Marionnette pour la suite`);
               break;
+            }
+            if (billed > shot.usd * 1.02 + 0.0005) {
+              priceRatio = Math.max(priceRatio, billed / shot.usd);
+              c.onStage('ANIMATION', 'running', `${shot.sceneId} facturé ${billed.toFixed(3)} $ (annoncé ${shot.usd.toFixed(3)} $) : prix réel ×${priceRatio.toFixed(2)} appliqué aux clips suivants`);
             }
             // DEEP ANALYSIS of the clip (motion, frozen spans, flicker + vision judge: laugh, acting, mouth, anatomy).
             // A bad take is redone ONCE with the written correction — only if the later shots keep their budget.
@@ -269,9 +288,9 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
             c.onStage('ANIMATION', 'running', `${shot.sceneId} : ${rep.score ?? '—'}/100${rep.reasons.length ? ` — ${rep.reasons.slice(0, 2).join(' ; ')}` : ' ✓'}`);
             if (rep.verdict !== 'retry') continue;
             const idx = plan.shots.indexOf(shot);
-            const stillPlanned = plan.shots.slice(idx + 1).reduce((a, x) => a + x.usd, 0);
+            const stillPlanned = plan.shots.slice(idx + 1).reduce((a, x) => a + x.usd * priceRatio, 0);
             const b2 = bpOf(projectId);
-            if (circuitBudget(b2.cap, spent(b2), later, 1) - stillPlanned < shot.usd - 1e-9) {
+            if (circuitBudget(b2.cap, spent(b2), later, 1) - stillPlanned < shot.usd * priceRatio - 1e-9) {
               warn.push(`${shot.sceneId} : ${rep.reasons[0]} — reprise impossible sans priver les scènes suivantes (plafond ${b2.cap.toFixed(2)} $)`);
               continue;
             }
@@ -353,6 +372,14 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
       check(c);
       await generateLine(projectId, l.sc, l.i, { forceModel: c.chosen.voice }).catch((e) => warn.push(`voix ${l.sc} : ${(e as Error).message.slice(0, 60)}`));
     });
+    // NO SILENT LINE (v48: characters talking without sound): a line still without voice is retried once, then named.
+    const silent = () => bpOf(projectId).scenes.flatMap((sc) => sc.dialogue.map((d, i) => ({ sc: sc.scene_id, i, who: d.speaker }))).filter((l) => !bpOf(projectId).audio.voices?.[`${l.sc}:${l.i}`]);
+    if (silent().length) {
+      c.onStage('MONTAGE', 'running', `${silent().length} réplique(s) sans voix → nouvel essai`);
+      for (const l of silent()) await generateLine(projectId, l.sc, l.i, { forceModel: c.chosen.voice }).catch(() => undefined);
+      const still = silent();
+      if (still.length) warn.push(`réplique(s) MUETTE(S) — aucune voix n’a pu être générée : ${still.map((l) => `${l.sc} ${l.who}`).join(', ')}`);
+    }
     c.onStage('MONTAGE', 'running', 'musique, sous-titres, montage');
     if (!bpOf(projectId).audio.music?.assetId) await addLocalMusic(projectId).catch(() => undefined);
     compileSubtitles(projectId);

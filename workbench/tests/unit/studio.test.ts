@@ -49,7 +49,7 @@ import { scanSecrets, redactSecrets } from '../../server/jev/studio/secrets';
 import { makeZip, crc32 } from '../../server/jev/studio/zip';
 import { compose, compileScene, hash, sceneDims, REDRAW_INSTRUCTION } from '../../server/jev/studio/genome';
 import { STYLE_2D_HQ } from '../../server/jev/studio/style';
-import { extractJson, parseStory, storyMessages, type ParsedStory } from '../../server/jev/studio/story';
+import { explainNoJson, extractJson, parseStory, storyMessages, type ParsedStory } from '../../server/jev/studio/story';
 import { newBlueprint, serialize, loadBlueprint, progress } from '../../server/jev/studio/blueprint';
 import { buildKit, validateKit, buildKitZip } from '../../server/jev/studio/kit';
 import { timeSubtitles, emojiFor, toSrt, activeAt } from '../../server/jev/studio/subtitles';
@@ -520,6 +520,23 @@ describe('story', () => {
     expect(codes).toContain('NO_TRANSLATION');
     expect(codes).toContain('DURATION_SHORT');
     expect(p.story.characters).toEqual(expect.arrayContaining(['MAMAN NOUNOU', 'COUMBA']));
+  });
+  it('v48: an answer CUT by the length limit keeps its finished scenes; trailing commas are repaired', () => {
+    // A reasoning model ran out of length in the middle of the 3rd scene.
+    const full = JSON.stringify(JSON.parse(answer));
+    const cutAt = full.lastIndexOf('{"beat":"chute"');
+    const cut = `${full.slice(0, cutAt)}{"beat":"chute","duration":25,"location":"cou`;
+    const p = parseStory(cut, { durationSec: 62, language: 'fr' }) as ParsedStory;
+    expect('story' in p).toBe(true);
+    expect(p.scenes).toHaveLength(1);
+    expect(p.scenes[0]!.dialogue[0]!.speaker).toBe('MAMAN NOUNOU');
+    expect(extractJson('{"a":[1,2,],"b":{"c":3,},}')).toEqual({ a: [1, 2], b: { c: 3 } });
+    expect(extractJson('{"title":"x","scenes":[{"a":1},{"a":2},{"a":')).toEqual({ title: 'x', scenes: [{ a: 1 }, { a: 2 }] });
+  });
+  it('v48: the failure says WHY (empty / cut / prose) instead of « pas de JSON valide » twice', () => {
+    expect(explainNoJson('', 'length')).toContain('réponse vide');
+    expect(explainNoJson('{"title":"Le chef', 'length')).toContain('coupée par la limite de longueur');
+    expect(explainNoJson('Voici une belle histoire sans JSON')).toContain('en texte au lieu de JSON');
   });
   it('never throws on garbage, and the prompt carries the safety rules', () => {
     expect('issues' in parseStory('???', { durationSec: 60, language: 'fr' })).toBe(true);

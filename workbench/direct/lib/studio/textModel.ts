@@ -20,6 +20,8 @@ export interface TextRun {
   tokensIn: number;
   tokensOut: number;
   explain: string;
+  /** « stop », « length » (cut by the length limit)… as reported by the provider. */
+  finishReason?: string;
 }
 /** Film Autopilot: the writing model chosen (or accepted) by the user for the production; null = automatic routing. */
 let textOverride: string | null = null;
@@ -81,6 +83,10 @@ export async function runText(o: {
   teacher?: boolean;
   maxTokens?: number;
   temperature?: number;
+  /** The answer must be ONE JSON object: JSON mode when the model supports it. */
+  json?: boolean;
+  /** Reasoning effort: « low » for structured writing (a reasoning model must not spend the length limit thinking). */
+  effort?: 'low' | 'medium' | 'high' | 'auto';
 }): Promise<TextRun> {
   const trace = new Trace();
   const safe = o.messages.map((m) => ({
@@ -100,8 +106,9 @@ export async function runText(o: {
         messages: safe,
         maxTokens: o.maxTokens ?? 4000,
         temperature: o.temperature ?? 0.8,
+        ...(o.json && models.find((m) => m.id === pick.model)?.capabilities.structuredOutputs ? { responseFormat: { type: 'json_object' } } : {}),
       },
-      { models, fallbacks: pick.fallbacks.filter(Boolean), effort: 'auto' },
+      { models, fallbacks: pick.fallbacks.filter(Boolean), effort: o.effort ?? 'auto' },
     );
     const latency = performance.now() - t0;
     trace.stage('GENERATION', `${r.model} · ${Math.round(latency)} ms`, {
@@ -159,6 +166,7 @@ export async function runText(o: {
       tokensIn: r.usage.promptTokens,
       tokensOut: r.usage.completionTokens,
       explain: pick.why,
+      finishReason: (r as { finishReason?: string }).finishReason,
     };
   } catch (e) {
     const c = classifyError({ message: (e as Error).message, status: (e as { status?: number }).status });

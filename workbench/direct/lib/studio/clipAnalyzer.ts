@@ -89,8 +89,14 @@ export async function audioEnvelope(blob: Blob, hopS = 0.05): Promise<number[] |
   }
 }
 /** The vision judge on the key frames of one clip (null when no vision model answered — never a made-up score). */
+/** Why the last judge call gave nothing (shown on the scene instead of a bare « non mesuré »). */
+export let lastJudgeNote = '';
 export async function judgeClip(projectId: string, sc: Pick<Scene, 'action' | 'location' | 'characters' | 'dialogue'> | null, keyframes: string[]): Promise<ClipJudgement | null> {
-  if (!keyframes.length) return null;
+  lastJudgeNote = '';
+  if (!keyframes.length) {
+    lastJudgeNote = 'aucune image clé lisible';
+    return null;
+  }
   const bp = useStudio.getState().projects[projectId];
   const chars = sc && bp ? bp.characters.filter((c) => sc.characters.map((x) => x.toUpperCase()).includes(c.name.toUpperCase())).map((c) => `${c.name}: ${c.consistency || c.clothing}`).join(' | ') : '';
   try {
@@ -98,8 +104,10 @@ export async function judgeClip(projectId: string, sc: Pick<Scene, 'action' | 'l
       projectId,
       purpose: 'analyse vidéo (juge clip)',
       vision: true,
-      maxTokens: 600,
+      maxTokens: 900,
       temperature: 0,
+      json: true,
+      effort: 'low',
       messages: [
         {
           role: 'user',
@@ -110,8 +118,11 @@ export async function judgeClip(projectId: string, sc: Pick<Scene, 'action' | 'l
         },
       ],
     });
-    return parseClipJudgement(r.text);
-  } catch {
+    const j = parseClipJudgement(r.text);
+    if (!j) lastJudgeNote = `réponse illisible de ${r.model} : « ${r.text.trim().slice(0, 60)}… »`;
+    return j;
+  } catch (e) {
+    lastJudgeNote = `aucun modèle vision n’a répondu (${(e as Error).message.slice(0, 80)})`;
     return null;
   }
 }
@@ -124,7 +135,7 @@ export async function inspectSceneClip(projectId: string, sceneId: string, o: { 
   if (!blob) return null;
   const s = await sampleVideo(blob, { maxS: 20 });
   const judge = o.judge === false ? null : await judgeClip(projectId, sc, s.keyframes);
-  const report = clipVerdict(measureFrames(s.series), judge, { expectedS: o.expectedS });
+  const report = { ...clipVerdict(measureFrames(s.series), judge, { expectedS: o.expectedS }), ...(judge || o.judge === false ? {} : { judgeNote: lastJudgeNote || 'non mesuré' }) };
   useStudio.getState().patchProject(projectId, (b) => ({ ...b, scenes: b.scenes.map((x) => (x.scene_id === sceneId ? { ...x, clipReport: report } : x)) }), `analyse du clip ${sceneId}`);
   return report;
 }

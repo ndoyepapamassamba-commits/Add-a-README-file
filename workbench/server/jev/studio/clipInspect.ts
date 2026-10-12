@@ -174,10 +174,15 @@ export function parseClipJudgement(text: string): ClipJudgement | null {
   const m = /\{[\s\S]*\}/.exec(text ?? '');
   if (!m) return null;
   try {
-    const j = JSON.parse(m[0]) as Record<string, unknown>;
+    const raw = JSON.parse(m[0]) as Record<string, unknown>;
+    // Tolerant: « cohérence » / « Anatomie », nested {"scores":{…}}, « 7/10 », « 7.5 ».
+    const flat: Record<string, unknown> = { ...raw, ...(typeof raw.scores === 'object' && raw.scores ? (raw.scores as Record<string, unknown>) : {}) };
+    const norm = (k: string) => k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const j: Record<string, unknown> = Object.fromEntries(Object.entries(flat).map(([k, v]) => [norm(k), v]));
+    const num = (v: unknown) => (typeof v === 'number' ? v : Number(/(-?\d+(?:[.,]\d+)?)/.exec(String(v ?? ''))?.[1]?.replace(',', '.') ?? NaN));
     const scores = {} as Record<ClipCriterion, number>;
     for (const c of CLIP_CRITERIA) {
-      const v = Number(j[c.id]);
+      const v = num(j[c.id]);
       if (!Number.isFinite(v)) return null;
       scores[c.id] = Math.max(0, Math.min(10, v));
     }
@@ -197,6 +202,8 @@ export interface ClipReport {
   reasons: string[];
   /** Added to the video prompt for the one retry. */
   fix: string;
+  /** Why the vision judge gave no score (no vision model, unreadable answer…). */
+  judgeNote?: string;
 }
 export function clipVerdict(m: ClipMeasures, j: ClipJudgement | null, o: { expectedS?: number } = {}): ClipReport {
   const reasons: string[] = [];

@@ -277,7 +277,7 @@ function ClipReportLine({ r }: { r: ClipReport }) {
         <Badge tone={r.verdict === 'ok' ? 'ok' : 'warn'}>clip {r.score ?? '—'}/100</Badge>
         <span className="text-faint">mouvement {r.measures.motion.toFixed(3)} · {Math.round(r.measures.coverage * 100)} % de l’image</span>
         {j && <span className="text-faint">rire {j.rire} · jeu {j.mouvement} · bouche {j.bouche} · anatomie {j.anatomie} · cohérence {j.coherence}</span>}
-        {!j && <span className="text-faint">juge visuel : non mesuré</span>}
+        {!j && <span className="text-faint">juge visuel : {r.judgeNote ?? 'non mesuré'}</span>}
       </div>
       {r.reasons.length > 0 && <div className="text-warn">{r.reasons.slice(0, 3).join(' · ')}</div>}
     </div>

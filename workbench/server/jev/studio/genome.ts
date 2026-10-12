@@ -222,9 +222,22 @@ export function compose(
 /** Afrikatoon cast by default: a character whose sheet says nothing of skin / origin is drawn Ivorian (never a generic pale figure). */
 export const AFRIKATOON_CAST = 'Black West-African (Ivorian), dark brown skin';
 const SAYS_SKIN = /skin|peau|african|africain|ivoir|black|noir|white|blanc|asian|asiat|métis|arab/i;
+/**
+ * AGE LOCK (v48: the suitor KOUASSI and TOGO were drawn as children — the stylised 3D look shrinks adults): an adult
+ * is written as an adult with adult proportions, a child as a child.
+ */
+export function ageLock(age: string | undefined, role = ''): string {
+  const t = `${age ?? ''} ${role}`.toLowerCase();
+  const n = Number(/(\d{1,3})\s*(ans|years|yo|an)?/.exec(age ?? '')?.[1] ?? NaN);
+  if ((Number.isFinite(n) && n < 13) || /\b(enfant|child|kid|fillette|b[ée]b[ée]|petit gar[çc]on|petite fille)\b/.test(t)) return 'a CHILD (child proportions)';
+  if ((Number.isFinite(n) && n < 18) || /\b(ado|adolescent|teen)/.test(t)) return 'a TEENAGER (teen proportions)';
+  if ((Number.isFinite(n) && n >= 55) || /\b(vieux|vieille|grand-p[èe]re|grand-m[èe]re|old|elderly|aîné)\b/.test(t)) return 'an OLDER ADULT (grey hair, adult proportions, never a child)';
+  return 'an ADULT (adult height and proportions, adult face, never a child)';
+}
 export const charLine = (c: CharacterSheet) => {
   const base = c.consistency || `${c.name}: ${[c.age, c.ethnicity, c.skin, c.hair, c.clothing, c.accessories].filter(Boolean).join(', ')}`;
-  return SAYS_SKIN.test(base) ? base : `${base}, ${AFRIKATOON_CAST}`;
+  const withCast = SAYS_SKIN.test(base) ? base : `${base}, ${AFRIKATOON_CAST}`;
+  return `${withCast}; ${ageLock(c.age, c.role)}; same face, outfit and colours in every scene`;
 };
 export interface SceneContext {
   style: StyleDNA;

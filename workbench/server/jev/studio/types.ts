@@ -378,6 +378,8 @@ export interface Blueprint {
     music?: { assetId?: string; spec?: unknown };
     /** Generated voice of a dialogue line, key `sceneId:index`, with its MEASURED duration. */
     voices?: Record<string, { assetId: string; seconds: number; model: string }>;
+    /** ONE voice per character for the whole film (v48: a character's voice changed between lines), key = speakerKey. */
+    castLock?: Record<string, { model: string; voice: string }>;
     sfx: { sceneId: string; label: string; assetId?: string }[];
   };
   subtitles: { style: string; lines: { start: number; end: number; text: string; emoji?: string }[] };

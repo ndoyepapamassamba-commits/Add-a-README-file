@@ -3,7 +3,7 @@
 import { detectPanels, SINGLE_SHOT_RETRY } from '../../../server/jev/studio/panels';
 import { parseRig, RIG_PROMPT } from '../../../server/jev/studio/puppet';
 import { artQuality, artVerdict, enhanceInstruction, judgePrompt, parseJudgement, regenerateHint, type ArtJudgement } from '../../../server/jev/studio/artJudge';
-import { castVoices, naturalSpeed } from '../../../server/jev/studio/motion';
+import { castVoices, naturalSpeed, speakerKey } from '../../../server/jev/studio/motion';
 import { useStudio } from './store';
 import { useStore } from '../store';
 import { blobs, blobToDataUrl, base64ToBlob } from './blobs';
@@ -32,6 +32,7 @@ import { dimensionOf, styleTag } from '../../../server/jev/studio/style';
 import {
   parseScene,
   parseStory,
+  explainNoJson,
   sceneMessages,
   storyMessages,
   type ParsedStory,
@@ -166,26 +167,34 @@ export async function generateStory(projectId: string, notes?: string): Promise<
   let parsed: ParsedStory | null = null;
   let model: string | undefined;
   const issues: string[] = [];
-  for (let attempt = 0; attempt < 2 && !parsed; attempt++) {
+  // Reasoning models (v48: « GPT-6 Luna Pro ») could spend the length limit thinking and return a cut JSON, twice:
+  // low effort + JSON mode + room to write, the cut answer repaired, and a third, COMPACT attempt.
+  const base = messages;
+  for (let attempt = 0; attempt < 3 && !parsed; attempt++) {
     const r = await runText({
       projectId,
       purpose: attempt ? 'story (correction JSON)' : 'story',
       messages,
-      maxTokens: 6000,
-      temperature: 0.9,
+      maxTokens: 12000,
+      temperature: attempt ? 0.6 : 0.9,
+      json: true,
+      effort: 'low',
     });
     model = r.model;
     const p = parseStory(r.text, { durationSec: bp.duration, language: bp.language });
     if ('story' in p && p.scenes.length) parsed = p;
     else {
-      issues.push(...p.issues.map((i) => i.message));
+      const why = p.issues.some((i) => i.code === 'NO_JSON') ? explainNoJson(r.text, r.finishReason) : p.issues.map((i) => i.message).join(' ; ');
+      issues.push(`essai ${attempt + 1} (${r.model}) : ${why}`);
+      const cut = r.finishReason === 'length' || !r.text.trim();
       messages = [
-        ...messages,
-        { role: 'assistant', content: r.text.slice(0, 2000) },
+        ...base,
+        ...(r.text.trim() && !cut ? [{ role: 'assistant' as const, content: r.text.slice(0, 2000) }] : []),
         {
           role: 'user',
-          content:
-            'Ta réponse n’est pas un JSON valide contenant des scènes. Renvoie UNIQUEMENT le JSON demandé.',
+          content: cut
+            ? 'Ta réponse précédente a été coupée (trop longue). Renvoie UNIQUEMENT le JSON demandé, COMPACT : textes courts (une phrase par champ), pas de champ vide inutile, pas de commentaire.'
+            : 'Ta réponse n’est pas un JSON valide contenant des scènes. Renvoie UNIQUEMENT le JSON demandé, sans texte autour.',
         },
       ];
     }
@@ -911,9 +920,12 @@ export async function generateLine(
   const line = sc?.dialogue[index];
   if (!sc || !line) throw new StudioError('UNKNOWN', 'réplique introuvable');
   const reg = await loadRegistry();
-  const prof = bp.voices.find((v) => v.characterId.toUpperCase() === line.speaker.toUpperCase());
-  const wantModel = o.forceModel ?? prof?.model;
-  const wantVoice = o.voice ?? prof?.voice;
+  const key = speakerKey(line.speaker);
+  const prof = bp.voices.find((v) => speakerKey(v.characterId) === key);
+  // ONE voice per character for the whole film: the first line spoken fixes model + voice (v48: voices changed).
+  const lock = bp.audio.castLock?.[key];
+  const wantModel = o.forceModel ?? prof?.model ?? lock?.model;
+  const wantVoice = o.voice ?? prof?.voice ?? (lock && (!wantModel || lock.model === wantModel) ? lock.voice : undefined);
   const models = modelsWith(reg, 'speech', 'SPEECH').filter((m) => !wantModel || m.id === wantModel);
   const trace = new Trace();
   trace.stage('PRODUCTION_CLASSIFICATION', `voix ${line.speaker} · ${line.language}`);
@@ -921,12 +933,15 @@ export async function generateLine(
     .map((m) => {
       // VOICE CASTING: without a chosen voice, each character gets its own gender / age coherent voice (never the
       // same default voice for everybody).
-      const cast = castVoices(
-        bp.characters.map((c) => ({ id: c.id, name: c.name, gender: c.gender, age: c.age, voice: c.voice, role: c.role })),
-        m.voices,
-        line.language || 'fr',
-      );
-      const voice = wantVoice && m.voices.includes(wantVoice) ? wantVoice : (cast[line.speaker.toUpperCase()] ?? m.voices[0]);
+      // Every speaker of the film is cast (also those without a sheet, e.g. « FRÈRE »), in a stable order, and the
+      // voices already locked to someone else are never reused.
+      const sheets = bp.characters.map((c) => ({ id: c.id, name: c.name, gender: c.gender, age: c.age, voice: c.voice, role: c.role }));
+      const extra = [...new Set(bp.scenes.flatMap((x) => x.dialogue.map((d) => speakerKey(d.speaker))))]
+        .filter((k) => k && !sheets.some((c) => speakerKey(c.name) === k))
+        .map((k) => ({ id: k, name: k }));
+      // Deterministic over the WHOLE cast (parallel lines of one speaker get the same voice); the lock then keeps it.
+      const cast = castVoices([...sheets, ...extra], m.voices, line.language || 'fr');
+      const voice = wantVoice && m.voices.includes(wantVoice) ? wantVoice : (cast[key] ?? cast[line.speaker.toUpperCase()] ?? m.voices[0]);
       return { m, voice, v: validateSpeechRequest(m, { voice }) };
     })
     .filter((c) => c.v.ok)
@@ -971,6 +986,8 @@ export async function generateLine(
         ...(b.audio.voices ?? {}),
         [lineKey(sceneId, index)]: { assetId: out.assetId!, seconds, model: out.model },
       },
+      // The first voice that really spoke for this character is kept for all its other lines.
+      castLock: b.audio.castLock?.[key] || !byId.get(out.model)?.voice ? b.audio.castLock : { ...(b.audio.castLock ?? {}), [key]: { model: out.model, voice: byId.get(out.model)!.voice! } },
     },
   }));
   return { assetId: out.assetId!, seconds };

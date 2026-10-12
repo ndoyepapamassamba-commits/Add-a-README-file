@@ -67,6 +67,8 @@ interface Net {
   imageScript: (number | { status: number; message: string })[];
   imageCost: number;
   videoCost: number;
+  /** Real price / announced price when videoCost < 0 (v48: Grok billed 0,168 $ for 0,150 $ announced). */
+  videoMarkup?: number;
   videoBodies: Record<string, unknown>[];
 }
 async function intercept(page: Page): Promise<Net> {
@@ -120,7 +122,7 @@ async function intercept(page: Page): Promise<Net> {
               status: 'completed',
               unsigned_urls: ['https://openrouter.ai/api/v1/videos/vid-1/content?index=0'],
               // videoCost < 0: billed exactly as announced for the last clip (Grok Imagine Lite 480p: 0,02 $/s + 0,01 $)
-              usage: { cost: net.videoCost < 0 ? Number(net.videoBodies.at(-1)?.duration ?? 0) * 0.02 + 0.01 : net.videoCost },
+              usage: { cost: net.videoCost < 0 ? (Number(net.videoBodies.at(-1)?.duration ?? 0) * 0.02 + 0.01) * (net.videoMarkup ?? 1) : net.videoCost },
             },
       );
     }
@@ -1081,11 +1083,36 @@ test('Circuit Grok — analyse poussée: a deformed take is judged, redone ONCE 
   expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
 });
 
+test('Histoire: a story CUT by the length limit (reasoning model) is repaired — finished scenes kept, low effort + JSON mode requested', async ({ page }) => {
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  const errors = await open(page, [], { autopilot: true });
+  await intercept(page);
+  await page.getByTitle(/AI Film Studio/).click();
+  const SHORT = { ...STORY, scenes: STORY.scenes.map((s) => ({ ...s, duration: 3 })) };
+  const full = JSON.stringify(SHORT);
+  // v48: the writer ran out of length in the middle of the LAST scene, twice in a row.
+  const lastScene = full.lastIndexOf('{', full.lastIndexOf('"beat":"chute"'));
+  const cut = full.slice(0, lastScene) + '{"beat":"chute","duration":3,"location":"cou';
+  mock.push({ text: cut, finish: 'length' });
+  mock.fallback = () => ({ text: '{}' });
+  await page.getByTestId('film-idea-input').fill('Le chef invisible : Koffi croit qu’une caméra le surveille.');
+  await page.getByRole('button', { name: 'Afrikatoon 2D' }).click();
+  await page.getByTestId('film-create').click();
+  await expect(page.getByTestId('pipe-STORY')).toHaveAttribute('data-state', /done|warning/, { timeout: 60_000 });
+  await expect(page.getByTestId('film-scenes').locator('[data-testid^="scene-S"]')).toHaveCount(SHORT.scenes.length - 1, { timeout: 60_000 });
+  // The story call asked for JSON mode (the model supports it) and enough room to write.
+  const storyReq = mock.requests.find((r) => JSON.stringify(r.messages).includes('JSON attendu'))!;
+  expect(storyReq.body.response_format).toEqual({ type: 'json_object' });
+  expect(Number(storyReq.body.max_tokens)).toBeGreaterThanOrEqual(8000);
+  expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
+});
+
 test('Budget du film: typed before creation, it becomes the HARD cap of the film (and is remembered)', async ({ page }) => {
   mock.models = [model('acme/free-text:free', '0', '0')];
   const errors = await open(page, [], { autopilot: true });
   const net = await intercept(page);
   net.videoCost = -1;
+  net.videoMarkup = 1.12; // the provider bills 12 % above the announced price
   await page.getByTitle(/AI Film Studio/).click();
   const SHORT = { ...STORY, scenes: STORY.scenes.map((s) => ({ ...s, duration: 3 })) };
   mock.push({ text: JSON.stringify(SHORT) });
@@ -1101,6 +1128,9 @@ test('Budget du film: typed before creation, it becomes the HARD cap of the film
   await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 180_000 });
   const txt = (await page.getByTestId('film-spent').textContent()) ?? '';
   expect(Number(/dépensé\s*([\d.,]+)/.exec(txt)![1]!.replace(',', '.'))).toBeLessThanOrEqual(1.2);
+  // Billed 12 % above the announced price: the rate is recalibrated, the circuit does NOT stop after the 1st clip.
+  expect(net.videoSubmits).toBeGreaterThanOrEqual(SHORT.scenes.length);
+  await expect(page.getByTestId('film-autopilot')).not.toContainText('Circuit Grok arrêté');
   // Remembered for the next film.
   await page.getByRole('button', { name: 'Nouvelle idée' }).click();
   await expect(page.getByTestId('film-budget')).toHaveValue('1.2');

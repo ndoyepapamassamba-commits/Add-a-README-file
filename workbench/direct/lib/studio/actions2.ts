@@ -272,7 +272,7 @@ export async function completeCharacterSheets(projectId: string): Promise<number
       },
       {
         role: 'user',
-        content: `Histoire : ${bp.story?.logline ?? bp.project.idea}\nCompète les fiches des personnages (descriptions visuelles précises, style ${dimensionOf(bp.styleDNA) === '3D' ? 'animation 3D stylisée' : 'dessin animé 2D'}). JSON : {"characters":[{"name","role","age","gender","skin","face","hair","body","clothing","shoes","accessories","personality","voice","accent","gestures","speakingStyle"}]}\nPersonnages : ${todo.map((c) => `${c.name} ${c.role}`).join(' ; ')}`,
+        content: `Histoire : ${bp.story?.logline ?? bp.project.idea}\nComplète les fiches des personnages (descriptions visuelles précises, style ${dimensionOf(bp.styleDNA) === '3D' ? 'animation 3D stylisée' : 'dessin animé 2D'}). Règles : âge en années (« 32 ans ») cohérent avec le rôle (un prétendant, un patron, un parent sont des ADULTES) ; « gender » = « homme » ou « femme » ; CHAQUE personnage a une tenue de couleur et de motif DIFFÉRENTS des autres et une silhouette reconnaissable (taille, corpulence, coiffure, accessoire signature) — on doit les distinguer au premier coup d’œil. JSON : {"characters":[{"name","role","age","gender","skin","face","hair","body","clothing","shoes","accessories","personality","voice","accent","gestures","speakingStyle"}]}\nPersonnages : ${todo.map((c) => `${c.name} ${c.role}`).join(' ; ')}`,
       },
     ],
     maxTokens: 3000,

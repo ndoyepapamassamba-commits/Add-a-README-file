@@ -40,7 +40,7 @@ describe('film model orchestrator', () => {
   });
 });
 describe('writing model', () => {
-  it('never offers batch / non-chat models and recommends the user default; otherwise the cheapest good writer', () => {
+  it('never offers batch / non-chat models and recommends a GOOD user default; otherwise the best writer whose cost stays negligible', () => {
     const ms = [
       { id: 'openai/gpt-5.6-luna-pro:batch', name: 'Luna Pro (batch)', inputPrice: 1, outputPrice: 4 },
       { id: 'openai/gpt-5.6', name: 'GPT 5.6', inputPrice: 2, outputPrice: 10 },
@@ -51,6 +51,24 @@ describe('writing model', () => {
     expect(p.recommended).toBe('qwen/qwen3.6-flash');
     expect(p.options.map((o) => o.id)).not.toContain('openai/gpt-5.6-luna-pro:batch');
     expect(p.options.map((o) => o.id)).not.toContain('openai/text-embedding-3');
-    expect(planWriting(ms, 5, null).recommended).toBe('qwen/qwen3.6-flash');
+    // 5 $ film: GPT 5.6 costs ≈ 0,08 $ to write (< 5 % of the budget) → the better writer.
+    expect(planWriting(ms, 5, null).recommended).toBe('openai/gpt-5.6');
+    // 1 $ film: 0,08 $ is no longer negligible → the good cheap writer.
+    expect(planWriting(ms, 1, null).recommended).toBe('qwen/qwen3.6-flash');
+  });
+  it('v48: a free « mini » chat default is NOT imposed on the film, and Oct. 2026 models are known', () => {
+    const ms = [
+      { id: 'apodex/apodex-1.1-mini:free', name: 'Apodex 1.1 Mini (free)', inputPrice: 0, outputPrice: 0 },
+      { id: 'anthropic/claude-haiku-5.5', name: 'Claude Haiku 5.5', inputPrice: 0.1, outputPrice: 0.5 },
+      { id: 'openai/gpt-6-luna-pro', name: 'GPT-6 Luna Pro', inputPrice: 0.1, outputPrice: 0.5 },
+      { id: 'anthropic/claude-sonnet-5.5', name: 'Claude Sonnet 5.5', inputPrice: 2, outputPrice: 10 },
+    ];
+    const p = planWriting(ms, 1.2, 'apodex/apodex-1.1-mini:free');
+    expect(p.recommended).not.toBe('apodex/apodex-1.1-mini:free');
+    expect(['anthropic/claude-haiku-5.5', 'openai/gpt-6-luna-pro']).toContain(p.recommended);
+    const q = (id: string) => p.options.find((o) => o.id === id)!.quality;
+    expect(q('apodex/apodex-1.1-mini:free')).toBeLessThan(8);
+    expect(q('anthropic/claude-sonnet-5.5')).toBeGreaterThanOrEqual(9.5);
+    expect(q('anthropic/claude-haiku-5.5')).toBeGreaterThanOrEqual(9);
   });
 });
