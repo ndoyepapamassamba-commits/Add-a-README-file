@@ -3,12 +3,18 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import type { Plugin } from 'vite';
 import { loadHouseKit } from './server/services/houseKitFs';
 
 // The user's house kit (logo, 3D export kit, app shell) is read from their own
 // skill folder at build time and embedded in the HTML — never committed.
 // three.js as one minified IIFE (global THREE), embedded in the 3D previews.
+const threeVersion = (
+  JSON.parse(
+    readFileSync(fileURLToPath(new URL('./node_modules/three/package.json', import.meta.url)), 'utf8'),
+  ) as { version: string }
+).version;
 function threeIife(): Plugin {
   const id = 'virtual:three-iife';
   return {
@@ -20,12 +26,44 @@ function threeIife(): Plugin {
       const r = await build({
         stdin: {
           contents:
-            "export * from 'three'; export { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'; export { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js'; export { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';",
+            "export * from 'three'; export { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'; export { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js'; export { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'; export { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'; export { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';",
           resolveDir: fileURLToPath(new URL('.', import.meta.url)),
         },
         bundle: true,
         format: 'iife',
         globalName: 'THREE',
+        minify: true,
+        write: false,
+        // DRACOLoader locates its decoders from import.meta.url at load time: in an IIFE that is empty and would abort
+        // the whole bundle — the decoders of the SAME three.js version on jsDelivr are used instead.
+        define: {
+          'import.meta.url': JSON.stringify(
+            `https://cdn.jsdelivr.net/npm/three@${threeVersion}/examples/jsm/loaders/DRACOLoader.js`,
+          ),
+        },
+      });
+      return `export default ${JSON.stringify(r.outputFiles[0]!.text)};`;
+    },
+  };
+}
+
+// cannon-es (MIT) as one minified IIFE (global CANNON): the physics of the 3D Studio sandbox.
+function cannonIife(): Plugin {
+  const id = 'virtual:cannon-iife';
+  return {
+    name: 'massamba-cannon-iife',
+    resolveId: (s) => (s === id ? `\0${id}` : null),
+    async load(s) {
+      if (s !== `\0${id}`) return null;
+      const { build } = await import('esbuild');
+      const r = await build({
+        stdin: {
+          contents: "export * from 'cannon-es';",
+          resolveDir: fileURLToPath(new URL('.', import.meta.url)),
+        },
+        bundle: true,
+        format: 'iife',
+        globalName: 'CANNON',
         minify: true,
         write: false,
       });
@@ -57,6 +95,7 @@ export default defineConfig({
   plugins: [
     houseKit(),
     threeIife(),
+    cannonIife(),
     react(),
     tailwindcss(),
     viteSingleFile({ removeViteModuleLoader: true }),

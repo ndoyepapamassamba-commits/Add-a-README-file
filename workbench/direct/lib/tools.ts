@@ -59,8 +59,20 @@ import { chart3dSvg, paletteOf, synthesisSvg } from '../../server/services/chart
 import { dashboardData, renderLayoutHtml, type DesignLayout } from '../../server/services/layoutClone';
 import { BRAVE_DIRECT, braveText, braveUrl, parseBrave } from '../../server/jev/web/brave';
 import { errorSignature, guidance, jsSyntaxError } from '../../server/jev/code/errorHints';
-import { knowledgeBlock, recall as recallKnowledge, related as relatedKnowledge, remember as rememberKnowledge, sourcesOf, touch as touchKnowledge, type KnowledgeDomain } from '../../server/jev/knowledge/learned';
-import { PROVIDER_LABEL, parseSerper, parseTavily, serperRequest, tavilyRequest } from '../../server/jev/web/search';
+import {
+  recall as recallKnowledge,
+  remember as rememberKnowledge,
+  sourcesOf,
+  touch as touchKnowledge,
+  type KnowledgeDomain,
+} from '../../server/jev/knowledge/learned';
+import {
+  PROVIDER_LABEL,
+  parseSerper,
+  parseTavily,
+  serperRequest,
+  tavilyRequest,
+} from '../../server/jev/web/search';
 import { diagnose, formatDiagnosis } from '../../server/tools/diagnose';
 
 /** Result of a browser action for the model: new downloads, errors, then the page. */
@@ -536,7 +548,12 @@ export const TOOLS: DirectTool[] = [
         bins: { type: 'integer' },
         limit: { type: 'integer' },
         sort: { type: 'string', enum: ['x', 'y_desc', 'y_asc'] },
-        style: { type: 'string', enum: ['3d', 'flat'], description: 'PNG saved for reports: 3d (default, house 3D cards for bar / line / area / pie with one series) or flat' },
+        style: {
+          type: 'string',
+          enum: ['3d', 'flat'],
+          description:
+            'PNG saved for reports: 3d (default, house 3D cards for bar / line / area / pie with one series) or flat',
+        },
       },
       ['type', 'title', 'source'],
     ),
@@ -554,7 +571,16 @@ export const TOOLS: DirectTool[] = [
       });
       let png: Uint8Array | null = null;
       const s0 = chart.series?.[0];
-      const svg3d = a.style !== 'flat' && chart.series?.length === 1 && s0 ? chart3dSvg(spec.type, spec.title, chart.categories.map(String), s0.data.map((v) => Number(v) || 0), paletteOf(activeDesign())) : null;
+      const svg3d =
+        a.style !== 'flat' && chart.series?.length === 1 && s0
+          ? chart3dSvg(
+              spec.type,
+              spec.title,
+              chart.categories.map(String),
+              s0.data.map((v) => Number(v) || 0),
+              paletteOf(activeDesign()),
+            )
+          : null;
       if (svg3d) {
         try {
           png = (await rasterise(svg3d, 1520, Number(/viewBox="0 0 \d+ (\d+)/.exec(svg3d)?.[1] ?? 760))).png;
@@ -635,13 +661,64 @@ export const TOOLS: DirectTool[] = [
         .filter(Boolean)
         .join('\n');
       // Errors come back with their exact fix; the same error twice in a row = change approach.
-      const fix = r.ok ? (noteError(ctx.sessionId, null), '') : guidance(lang, r.error ?? text, noteError(ctx.sessionId, r.error ?? text));
+      const fix = r.ok
+        ? (noteError(ctx.sessionId, null), '')
+        : guidance(lang, r.error ?? text, noteError(ctx.sessionId, r.error ?? text));
       return {
         ok: r.ok,
-        summary: r.ok ? `terminé${saved.length ? ` · ${saved.length} fichier(s)` : ''}` : `erreur${fix ? ' · correctif indiqué' : ''}`,
+        summary: r.ok
+          ? `terminé${saved.length ? ` · ${saved.length} fichier(s)` : ''}`
+          : `erreur${fix ? ' · correctif indiqué' : ''}`,
         forModel: clip(text || '(no output)', 30_000) + fix,
         output: clip(text, 20_000),
       };
+    },
+  },
+  {
+    name: 'three.run',
+    description:
+      'Run three.js code in the isolated 3D sandbox (Studio 3D Pro) and get the REAL result: JS exceptions with their line, console.error, WebGL GLSL compiler logs, physics errors, plus stats (meshes, triangles, draw calls, bodies). No import: THREE (r186 + OrbitControls, GLTFExporter, GLTFLoader, DRACOLoader), CANNON (cannon-es), scene (lit), camera, renderer, controls are given; animate with onFrame((dt, t) => …); physics.ground(y), physics.add(mesh, {mass, kinematic, restitution}), physics.path(body, points, speed); helpers.shaderPreview(vertex, fragment, shape). On error the answer includes the faulty lines and the matching documentation: fix and call again. save_glb: path of a .glb to write when the scene runs (draco: true compresses it).',
+    parameters: obj(
+      {
+        code: str('JavaScript body (async allowed)'),
+        save_glb: str('Optional workspace path of the .glb to save, e.g. outputs/scene.glb'),
+        draco: { type: 'boolean', description: 'Draco-compress the saved .glb (KHR_draco_mesh_compression)' },
+      },
+      ['code'],
+    ),
+    risk: 'execute',
+    readOnly: false,
+    label: (a) => `Exécuter du three.js${a.save_glb ? ` → ${S(a.save_glb)}` : ''}`,
+    async preview(a) {
+      return { text: S(a.code) };
+    },
+    async run(a) {
+      const { backgroundLab } = await import('./lab3d/runner');
+      const { feedbackFor } = await import('../../server/jev/lab3d/selfCorrect');
+      const lab = backgroundLab();
+      const r = await lab.run(S(a.code));
+      const st = `${r.stats.meshes} mesh · ${r.stats.triangles} triangles · ${r.stats.drawCalls} draw calls · ${r.stats.bodies} corps physiques · ${r.ms} ms`;
+      if (!r.ok || r.stats.meshes === 0) {
+        const fb = feedbackFor(S(a.code), r);
+        return {
+          ok: false,
+          summary: `${r.errors.length} erreur(s) au rendu`,
+          forModel: clip(fb, 20_000),
+          output: clip(fb, 8000),
+        };
+      }
+      let saved = '';
+      if (S(a.save_glb)) {
+        const g = await lab.exportGlb(a.draco === true);
+        if ('error' in g) saved = `\nExport GLB impossible : ${g.error}`;
+        else {
+          const path = uniquePath(S(a.save_glb).endsWith('.glb') ? S(a.save_glb) : `${S(a.save_glb)}.glb`);
+          writeBytes(path, g.bytes, 'model/gltf-binary');
+          saved = `\nGLB enregistré : ${path} (${(g.bytes.byteLength / 1024).toFixed(1)} Ko${a.draco ? (g.draco ? `, Draco : ${(g.before / 1024).toFixed(1)} Ko avant` : ', Draco indisponible : non compressé') : ''})`;
+        }
+      }
+      const text = `Rendu sans erreur : ${st}${r.warnings.length ? `\nAvertissements : ${r.warnings.slice(0, 3).join(' | ')}` : ''}${saved}`;
+      return { ok: true, summary: 'scène 3D valide', forModel: text, output: text };
     },
   },
   {
@@ -649,7 +726,15 @@ export const TOOLS: DirectTool[] = [
     description:
       'Search the web (current information, documentation, news). Returns a synthesis with source links.',
     parameters: obj(
-      { query: str('Search query'), max_results: { type: 'integer', description: '1-10 (default 5)' }, fresh: { type: 'boolean', description: 'true = ignore what the app already learned and search again (only for news / current figures)' } },
+      {
+        query: str('Search query'),
+        max_results: { type: 'integer', description: '1-10 (default 5)' },
+        fresh: {
+          type: 'boolean',
+          description:
+            'true = ignore what the app already learned and search again (only for news / current figures)',
+        },
+      },
       ['query'],
     ),
     risk: 'read',
@@ -665,13 +750,26 @@ export const TOOLS: DirectTool[] = [
         const text = `${e.text}${e.sources.length && !e.text.includes(e.sources[0]!.url) ? `\n\nSources :\n${e.sources.map((x) => `- ${x.title ? `[${x.title}](${x.url})` : x.url}`).join('\n')}` : ''}\n\n(Compétence apprise le ${new Date(e.createdAt).toLocaleDateString('fr-FR')} pour « ${e.query} » — aucune recherche refaite ; fresh: true pour forcer une nouvelle recherche.)`;
         return ok(`compétence apprise · 0 recherche · ${e.domain}`, text, { output: text });
       }
-      const learn = (text: string) => useStore.getState().setKnowledge(rememberKnowledge(useStore.getState().knowledge, { query: S(a.query), text, sources: sourcesOf(text), origin: 'search' }));
+      const learn = (text: string) =>
+        useStore
+          .getState()
+          .setKnowledge(
+            rememberKnowledge(useStore.getState().knowledge, {
+              query: S(a.query),
+              text,
+              sources: sourcesOf(text),
+              origin: 'search',
+            }),
+          );
       // FREE SEARCH first (Tavily, then Serper: callable straight from the browser), then Brave (needs a relay):
       // raw results, no LLM synthesis call. The paid OpenRouter search is only the last resort.
       const ws = useStore.getState().settings;
       const n0 = Math.min(10, Number(a.max_results) || 6);
       const errs: string[] = [];
-      for (const [p, key] of [['tavily', ws.tavilyKey], ['serper', ws.serperKey]] as const) {
+      for (const [p, key] of [
+        ['tavily', ws.tavilyKey],
+        ['serper', ws.serperKey],
+      ] as const) {
         if (!key) continue;
         try {
           const rq = p === 'tavily' ? tavilyRequest(key, S(a.query), n0) : serperRequest(key, S(a.query), n0);
@@ -713,7 +811,10 @@ export const TOOLS: DirectTool[] = [
             lastErr = (e as Error).message;
           }
         }
-        if (ws.braveFallback === false) throw new Error(`Brave Search indisponible (${lastErr}). Vérifiez la clé / le relais dans Réglages.`);
+        if (ws.braveFallback === false)
+          throw new Error(
+            `Brave Search indisponible (${lastErr}). Vérifiez la clé / le relais dans Réglages.`,
+          );
       }
       const model = pickFromTier(ctx.models, DEFAULT_AUTO_TIERS.fast, {})?.id ?? 'openai/gpt-4o-mini';
       const t0 = Date.now();
@@ -757,7 +858,7 @@ export const TOOLS: DirectTool[] = [
   {
     name: 'vault.open',
     description:
-      'Open an entry of the user\'s EXPERIENCE VAULT (past deliverables they validated): returns its text and copies its files into this chat under vault/. Use the id given in <EXPERIENCE>.',
+      "Open an entry of the user's EXPERIENCE VAULT (past deliverables they validated): returns its text and copies its files into this chat under vault/. Use the id given in <EXPERIENCE>.",
     parameters: obj({ id: str('Vault entry id') }, ['id']),
     risk: 'read',
     readOnly: false,
@@ -1044,7 +1145,10 @@ export const TOOLS: DirectTool[] = [
           description:
             'House style 2.0 is AUTOMATIC: KPI cards + three NATIVE Excel 3D charts above the table header (3D columns, 3D pie, trend or top-10 3D bars, fed by live SUMIF formulas on an « Agrégats » sheet) and a first « Synthèse 3D » sheet (3D board + reading card). Omit it; give bar / line / pie to put that kind first; none = plain table only.',
         },
-        visuals: { type: 'boolean', description: 'false = no « Synthèse 3D » board sheet (native charts stay)' },
+        visuals: {
+          type: 'boolean',
+          description: 'false = no « Synthèse 3D » board sheet (native charts stay)',
+        },
         format: { type: 'string', enum: ['xlsx', 'csv', 'json'] },
         query: {
           type: 'object',
@@ -1068,16 +1172,24 @@ export const TOOLS: DirectTool[] = [
         title: S(a.title) || S(a.name) || 'Export',
         subtitle: `Source : ${S(a.path)}${a.query ? ' (filtré)' : ''}`,
         // Maison 2.0: KPIs + native 3D charts above the header unless « none » is asked; a kind given goes first.
-        chart: (['bar', 'line', 'pie', 'none'].includes(S(a.chart)) ? S(a.chart) : undefined) as 'bar' | 'line' | 'pie' | 'none' | undefined,
+        chart: (['bar', 'line', 'pie', 'none'].includes(S(a.chart)) ? S(a.chart) : undefined) as
+          'bar' | 'line' | 'pie' | 'none' | undefined,
       };
       // The workbook is built in the BACKGROUND thread (the page stays fluid, other chats keep streaming).
-      writeBytes(path, fmt === 'xlsx' ? await heavy('houseXlsx', r.columns, r.rows, meta) : data.exportRows(r.columns, r.rows, fmt, meta));
+      writeBytes(
+        path,
+        fmt === 'xlsx'
+          ? await heavy('houseXlsx', r.columns, r.rows, meta)
+          : data.exportRows(r.columns, r.rows, fmt, meta),
+      );
       // A dashboard image CLONED photo-faithfully: the reproduction with these exact figures, as an HTML page and as a
       // first « Tableau de bord » sheet (picture) in the workbook.
       if (a.clone && typeof a.clone === 'object') {
         const spec = a.clone as DashSpec;
         const cd = cloneData(S(a.title) || S(a.name) || 'Tableau de bord', r.columns, r.rows);
-        const dash = uniquePath(`outputs/${S(a.name).replace(/[^\w.-]+/g, '-') || 'export'}-tableau-de-bord.html`);
+        const dash = uniquePath(
+          `outputs/${S(a.name).replace(/[^\w.-]+/g, '-') || 'export'}-tableau-de-bord.html`,
+        );
         writeText(dash, renderCloneHtml(spec, cd, S(a.layoutSource) || undefined));
         let sheet = '';
         if (fmt === 'xlsx' && typeof document !== 'undefined') {
@@ -1090,28 +1202,71 @@ export const TOOLS: DirectTool[] = [
             const nat = null as { charts: number } | null;
             let out = live?.bytes ?? null;
             // The data sheet of the reproduction in Maison 2.0 with the image's colours (the house sheets already are).
-            const rs = out && (nat || live) ? await heavy('restyleWorkbook', out, { dark: spec.palette.dark, primary: spec.palette.primary, accent: spec.palette.accent, font: spec.font }, new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)', 'Données', 'Agrégats', 'Synthèse 3D'])) : null;
+            const rs =
+              out && (nat || live)
+                ? await heavy(
+                    'restyleWorkbook',
+                    out,
+                    {
+                      dark: spec.palette.dark,
+                      primary: spec.palette.primary,
+                      accent: spec.palette.accent,
+                      font: spec.font,
+                    },
+                    new Set([
+                      'Tableau de bord',
+                      'Tableau de bord vivant',
+                      'Tableau de bord (image)',
+                      'Données',
+                      'Agrégats',
+                      'Synthèse 3D',
+                    ]),
+                  )
+                : null;
             if (rs) out = rs.bytes;
             if (out) {
               writeBytes(path, out, f!.mime);
               sheet = live
                 ? ` (1re feuille « Tableau de bord » VIVANTE au design de l'image : ${live.kpis} indicateurs en formules, ${live.charts} graphiques Excel, filtres ${live.filters.map((x) => `« ${x} »`).join(', ') || '—'}, données dans « Données du tableau de bord »)`
                 : nat
-                ? ` (1re feuille « Tableau de bord » : l'image reconstruite en Excel natif, ${nat.charts} graphiques modifiables ; 2e feuille : la reproduction photo)`
-                : ' (feuille « Tableau de bord » en tête du classeur)';
+                  ? ` (1re feuille « Tableau de bord » : l'image reconstruite en Excel natif, ${nat.charts} graphiques modifiables ; 2e feuille : la reproduction photo)`
+                  : ' (feuille « Tableau de bord » en tête du classeur)';
             }
           } catch {
             /* the HTML reproduction is still there */
           }
         }
-        return ok(`${r.rowCount} lignes → ${path}${sheet} + ${dash}`, `Saved ${r.rowCount} rows to ${path}${sheet} and the photo-faithful reproduction of the chosen dashboard to ${dash}.`);
+        return ok(
+          `${r.rowCount} lignes → ${path}${sheet} + ${dash}`,
+          `Saved ${r.rowCount} rows to ${path}${sheet} and the photo-faithful reproduction of the chosen dashboard to ${dash}.`,
+        );
       }
       // A design copied from the Internet: its layout is rebuilt with these exact figures as an HTML dashboard.
       if (a.layout && typeof a.layout === 'object') {
         const l = a.layout as DesignLayout;
-        const dash = uniquePath(`outputs/${S(a.name).replace(/[^\w.-]+/g, '-') || 'export'}-tableau-de-bord.html`);
-        writeText(dash, renderLayoutHtml(l, { ...dashboardData(S(a.title) || S(a.name) || 'Tableau de bord', r.columns, r.rows, l.kpis.count || 4), subtitle: `Source : ${S(a.path)}` }, S(a.layoutSource) || undefined));
-        return ok(`${r.rowCount} lignes → ${path} + ${dash}`, `Saved ${r.rowCount} rows to ${path} and the dashboard reproducing the chosen design to ${dash}.`);
+        const dash = uniquePath(
+          `outputs/${S(a.name).replace(/[^\w.-]+/g, '-') || 'export'}-tableau-de-bord.html`,
+        );
+        writeText(
+          dash,
+          renderLayoutHtml(
+            l,
+            {
+              ...dashboardData(
+                S(a.title) || S(a.name) || 'Tableau de bord',
+                r.columns,
+                r.rows,
+                l.kpis.count || 4,
+              ),
+              subtitle: `Source : ${S(a.path)}`,
+            },
+            S(a.layoutSource) || undefined,
+          ),
+        );
+        return ok(
+          `${r.rowCount} lignes → ${path} + ${dash}`,
+          `Saved ${r.rowCount} rows to ${path} and the dashboard reproducing the chosen design to ${dash}.`,
+        );
       }
       // « SYNTHÈSE 3D » board (3D columns, donut, top-10 bars, trend, Pareto, counts + reading card) as the first sheet,
       // in the active palette, with the chosen logo. Computed from these rows only.
@@ -1119,15 +1274,28 @@ export const TOOLS: DirectTool[] = [
       if (fmt === 'xlsx' && a.chart !== 'none' && a.visuals !== false && typeof document !== 'undefined') {
         try {
           const lg = typeof a.logoPath === 'string' ? getFile(a.logoPath) : undefined;
-          const logo = lg && lg.binary && lg.mime.startsWith('image/') ? await imageSize(dataUrl(lg)) : undefined;
+          const logo =
+            lg && lg.binary && lg.mime.startsWith('image/') ? await imageSize(dataUrl(lg)) : undefined;
           const syn = synthesisSvg(
-            { title: S(a.title) || S(a.name) || 'Synthèse', subtitle: `Source : ${S(a.path)}${a.query ? ' (filtré)' : ''} · ${r.rowCount} lignes · édité le ${new Date().toLocaleDateString('fr-FR')}`, columns: r.columns, rows: r.rows, logo },
+            {
+              title: S(a.title) || S(a.name) || 'Synthèse',
+              subtitle: `Source : ${S(a.path)}${a.query ? ' (filtré)' : ''} · ${r.rowCount} lignes · édité le ${new Date().toLocaleDateString('fr-FR')}`,
+              columns: r.columns,
+              rows: r.rows,
+              logo,
+            },
             paletteOf(activeDesign()),
           );
           const f = getFile(path);
           if (syn && f) {
             const img = await rasterise(syn.svg, syn.width, syn.height);
-            const withSheet = await heavy('addImageSheet', bytesOf(f), { png: img.png, width: syn.width, height: syn.height }, 'Synthèse 3D', 1200);
+            const withSheet = await heavy(
+              'addImageSheet',
+              bytesOf(f),
+              { png: img.png, width: syn.width, height: syn.height },
+              'Synthèse 3D',
+              1200,
+            );
             if (withSheet) {
               writeBytes(path, withSheet, f.mime);
               board = ` + feuille « Synthèse 3D » en tête (${syn.charts} graphiques 3D, KPI, lecture)`;
@@ -1137,7 +1305,10 @@ export const TOOLS: DirectTool[] = [
           /* the workbook (with its native 3D charts) is still there */
         }
       }
-      return ok(`${r.rowCount} lignes → ${path}${board}`, `Saved ${r.rowCount} rows to ${path}${board ? `${board}; the data sheet also carries KPI cards and native Excel 3D charts above the table header` : ''}.`);
+      return ok(
+        `${r.rowCount} lignes → ${path}${board}`,
+        `Saved ${r.rowCount} rows to ${path}${board ? `${board}; the data sheet also carries KPI cards and native Excel 3D charts above the table header` : ''}.`,
+      );
     },
   },
   // ── MASSAMBA Intelligence Engine tools ───────────────────────────────────
@@ -1397,10 +1568,23 @@ export const TOOLS: DirectTool[] = [
       'File what you just LEARNED (a regulation grid, a procedure, a code fix recipe, a method) as a permanent skill of the app, so it is never searched or worked out again. Write the distilled rule itself (figures, steps, thresholds), not a summary of your work. Cite the sources.',
     parameters: obj(
       {
-        title: str('Short title of the skill, e.g. « BCEAO — grille de dépréciation des créances en souffrance »'),
+        title: str(
+          'Short title of the skill, e.g. « BCEAO — grille de dépréciation des créances en souffrance »',
+        ),
         text: str('The rule / procedure / recipe itself, self-contained (max ~1500 words)'),
         sources: { type: 'array', items: { type: 'string' }, description: 'Source URLs or document names' },
-        domain: { type: 'string', enum: ['Réglementation bancaire', 'Finance & comptabilité', 'Code & outils', 'Procédure', 'Création & studio', 'Général'], description: 'Domain (guessed from the title when omitted)' },
+        domain: {
+          type: 'string',
+          enum: [
+            'Réglementation bancaire',
+            'Finance & comptabilité',
+            'Code & outils',
+            'Procédure',
+            'Création & studio',
+            'Général',
+          ],
+          description: 'Domain (guessed from the title when omitted)',
+        },
       },
       ['title', 'text'],
     ),
@@ -1408,10 +1592,26 @@ export const TOOLS: DirectTool[] = [
     readOnly: true,
     label: (a) => `Compétence apprise « ${S(a.title)} »`,
     async run(a) {
-      const srcs = (Array.isArray(a.sources) ? a.sources : []).map((x) => String(x)).filter(Boolean).map((u) => ({ url: u }));
+      const srcs = (Array.isArray(a.sources) ? a.sources : [])
+        .map((x) => String(x))
+        .filter(Boolean)
+        .map((u) => ({ url: u }));
       const domain = typeof a.domain === 'string' ? (a.domain as KnowledgeDomain) : undefined;
-      useStore.getState().setKnowledge(rememberKnowledge(useStore.getState().knowledge, { query: S(a.title), text: S(a.text), sources: srcs, origin: 'learned', domain }));
-      return ok('compétence enregistrée', `Skill filed: « ${S(a.title)} ». It will be recalled automatically in every chat; no new search is needed for it.`);
+      useStore
+        .getState()
+        .setKnowledge(
+          rememberKnowledge(useStore.getState().knowledge, {
+            query: S(a.title),
+            text: S(a.text),
+            sources: srcs,
+            origin: 'learned',
+            domain,
+          }),
+        );
+      return ok(
+        'compétence enregistrée',
+        `Skill filed: « ${S(a.title)} ». It will be recalled automatically in every chat; no new search is needed for it.`,
+      );
     },
   },
   {

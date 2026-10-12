@@ -3,6 +3,7 @@ import type { CreditsInfo, ModelInfo, ReasoningEffort } from '@shared/types';
 import { OpenRouterProvider, resolveEffort, type FetchLike } from '../../server/llm/openrouterCore';
 import { applyPromptCaching } from '../../server/llm/service';
 import { LLMError, type ChatRequest, type ChatResult } from '../../server/llm/types';
+import { directChat, directModelInfos, isDirect, recordOpenRouter } from './providers';
 
 const BASE = 'https://openrouter.ai/api/v1';
 const KEY_NAME = 'wbd.openrouter-key';
@@ -47,7 +48,8 @@ export async function loadCatalog(force = false): Promise<ModelInfo[]> {
       at: number;
       models: ModelInfo[];
     } | null;
-    if (!force && cached && Date.now() - cached.at < 3_600_000 && cached.models.length) return cached.models.filter((m) => !BATCH.test(m.id));
+    if (!force && cached && Date.now() - cached.at < 3_600_000 && cached.models.length)
+      return [...cached.models.filter((m) => !BATCH.test(m.id)), ...directModelInfos()];
   } catch {
     /* ignore */
   }
@@ -58,7 +60,8 @@ export async function loadCatalog(force = false): Promise<ModelInfo[]> {
   } catch {
     /* quota: keep in memory only */
   }
-  return models;
+  // The models of the direct providers (Anthropic, OpenAI, Gemini, Mistral, Groq, DeepSeek, Ollama, LM Studio).
+  return [...models, ...directModelInfos()];
 }
 
 export function credits(): Promise<CreditsInfo> {
@@ -79,6 +82,8 @@ export interface CompleteOptions {
   onReset?: () => void;
   onStatus?: (s: string) => void;
   onFallback?: (from: string, to: string, reason: string) => void;
+  /** What the call serves (telemetry: chat, 3D generation, auto-correction…). */
+  purpose?: string;
 }
 
 const sleep = (ms: number, signal?: AbortSignal) =>
@@ -95,9 +100,9 @@ export async function complete(
   req: ChatRequest,
   o: CompleteOptions,
 ): Promise<ChatResult & { cost: number; model: string; costSource: 'measured' | 'calculated' }> {
-  if (!getKey())
-    throw new LLMError('Clé OpenRouter manquante : ouvrez Réglages et collez votre clé.', 401, false);
   const chain = [...new Set([req.model, ...o.fallbacks].filter((m) => m && m !== 'auto'))];
+  if (!getKey() && !chain.every(isDirect))
+    throw new LLMError('Clé OpenRouter manquante : ouvrez Réglages et collez votre clé.', 401, false);
   const maxRetries = o.maxRetries ?? 2;
   let last: unknown = null;
   for (let i = 0; i < chain.length; i++) {
@@ -105,8 +110,28 @@ export async function complete(
     if (i > 0) o.onFallback?.(chain[i - 1]!, model, (last as Error)?.message ?? 'échec');
     const info = o.models.find((m) => m.id === model);
     const effort = o.effort !== 'auto' && info ? resolveEffort(o.effort, info.efforts) : null;
+    // DIRECT PROVIDER (« anthropic:… », « ollama:… »): the universal router, keys from the encrypted vault.
+    if (isDirect(model)) {
+      try {
+        const r = await directChat(
+          { ...req, model },
+          { onText: (d) => o.onText?.(d), onReasoning: () => o.onStatus?.('Réflexion…') },
+          o.purpose ?? 'chat',
+        );
+        // Cost from the public price when the model is listed there (0 + « inconnu » in the telemetry otherwise).
+        return { ...r, cost: r.cost, costSource: 'calculated', model };
+      } catch (err) {
+        last = err;
+        if ((err as LLMError).code === 'cancelled' || req.signal?.aborted)
+          throw new LLMError('Cancelled', 499, false, 'cancelled');
+        o.onReset?.();
+        continue;
+      }
+    }
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       let streamed = false;
+      const t0 = performance.now();
+      let first: number | null = null;
       try {
         const r = await provider.chat(
           {
@@ -122,12 +147,31 @@ export async function complete(
           {
             onText: (d) => {
               streamed = true;
+              first ??= performance.now();
               o.onText?.(d);
             },
             onReasoning: () => o.onStatus?.('Réflexion…'),
+            onToolCallStart: () => {
+              first ??= performance.now();
+            },
           },
         );
         const cost = r.usage.cost ?? estimateCost(info, r.usage.promptTokens, r.usage.completionTokens);
+        const t1 = performance.now();
+        const gen = first !== null ? (t1 - first) / 1000 : 0;
+        recordOpenRouter({
+          model: r.model || model,
+          purpose: o.purpose ?? 'chat',
+          ok: true,
+          tokensIn: r.usage.promptTokens,
+          tokensOut: r.usage.completionTokens,
+          costUsd: r.usage.cost ?? (info?.inputPrice != null ? cost : null),
+          costSource: r.usage.cost != null ? 'measured' : info?.inputPrice != null ? 'calculated' : 'unknown',
+          ttftMs: first !== null ? Math.round(first - t0) : null,
+          tokensPerS:
+            first !== null && gen > 0.05 ? Math.round((r.usage.completionTokens / gen) * 10) / 10 : null,
+          totalMs: Math.round(t1 - t0),
+        });
         return {
           ...r,
           cost,

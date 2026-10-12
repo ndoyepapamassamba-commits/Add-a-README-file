@@ -6,3 +6,7 @@ declare module 'virtual:three-iife' {
   const code: string;
   export default code;
 }
+declare module 'virtual:cannon-iife' {
+  const code: string;
+  export default code;
+}

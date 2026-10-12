@@ -22,6 +22,8 @@ export type View =
   | 'intelligence'
   | 'jev'
   | 'studio'
+  | 'lab3d'
+  | 'providers'
   | 'cognitive'
   | 'settings';
 

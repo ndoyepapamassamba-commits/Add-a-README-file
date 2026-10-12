@@ -24,6 +24,7 @@ import {
   Globe,
   BrainCircuit,
   Cpu,
+  Box,
 } from 'lucide-react';
 import {
   Button,
@@ -55,6 +56,8 @@ import { JevView } from './views/JevView';
 import { CognitiveOS } from './views/CognitiveOS';
 import { exportArchive, importArchive, setArchived } from './lib/vault';
 import { NAV_ITEMS } from './lib/nav';
+import { Lab3DView } from './views/Lab3DView';
+import { ProvidersView } from './views/ProvidersView';
 import { StudioView } from './views/studio/StudioView';
 
 const ICONS: Record<View, React.ReactNode> = {
@@ -73,6 +76,8 @@ const ICONS: Record<View, React.ReactNode> = {
   jev: <Cpu size={17} />,
   cognitive: <Brain size={17} />,
   studio: <Clapperboard size={17} />,
+  lab3d: <Box size={17} />,
+  providers: <KeyRound size={17} />,
   settings: <SettingsIcon size={17} />,
 };
 const NAV: { id: View; label: string; icon: React.ReactNode }[] = NAV_ITEMS.map((n) => ({
@@ -291,6 +296,8 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           {view === 'jev' && <JevView />}
           {view === 'cognitive' && <CognitiveOS />}
           {view === 'studio' && <StudioView />}
+          {view === 'lab3d' && <Lab3DView />}
+          {view === 'providers' && <ProvidersView />}
           {view === 'settings' && <SettingsView onLogout={onLogout} />}
         </main>
       </div>
@@ -411,7 +418,13 @@ function SessionList() {
   );
   const nArchived = sessions.filter((s) => s.archived).length;
   const picked = sel ? [...sel] : [];
-  const toggle = (id: string) => setSel((p) => { const n = new Set(p ?? []); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const toggle = (id: string) =>
+    setSel((p) => {
+      const n = new Set(p ?? []);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-elev/60">
       <div className="space-y-2 p-2">
@@ -423,19 +436,69 @@ function SessionList() {
           <Plus size={14} /> Nouvelle session
         </Button>
         <div className="flex flex-wrap items-center gap-1 text-[11.5px]" data-testid="archive-bar">
-          <button className={cx('rounded px-1.5 py-0.5', !showArchived ? 'bg-hover text-fg' : 'text-muted')} onClick={() => { setShowArchived(false); setSel(null); }}>Chats</button>
-          <button className={cx('rounded px-1.5 py-0.5', showArchived ? 'bg-hover text-fg' : 'text-muted')} onClick={() => { setShowArchived(true); setSel(null); }}>Archives ({nArchived})</button>
-          <button className="ml-auto rounded px-1.5 py-0.5 text-muted hover:text-fg" onClick={() => setSel(sel ? null : new Set())}>{sel ? 'Annuler' : 'Sélection'}</button>
+          <button
+            className={cx('rounded px-1.5 py-0.5', !showArchived ? 'bg-hover text-fg' : 'text-muted')}
+            onClick={() => {
+              setShowArchived(false);
+              setSel(null);
+            }}
+          >
+            Chats
+          </button>
+          <button
+            className={cx('rounded px-1.5 py-0.5', showArchived ? 'bg-hover text-fg' : 'text-muted')}
+            onClick={() => {
+              setShowArchived(true);
+              setSel(null);
+            }}
+          >
+            Archives ({nArchived})
+          </button>
+          <button
+            className="ml-auto rounded px-1.5 py-0.5 text-muted hover:text-fg"
+            onClick={() => setSel(sel ? null : new Set())}
+          >
+            {sel ? 'Annuler' : 'Sélection'}
+          </button>
         </div>
         {sel && (
           <div className="flex flex-wrap gap-1 text-[11.5px]">
-            <button className="rounded border border-line px-1.5 py-0.5 hover:bg-hover" onClick={() => setSel(new Set(list.map((s) => s.id)))}>Tout</button>
-            <button disabled={!picked.length} className="rounded border border-line px-1.5 py-0.5 hover:bg-hover disabled:opacity-40" onClick={() => { setArchived(picked, !showArchived); setSel(null); }}>{showArchived ? 'Désarchiver' : 'Archiver'} ({picked.length})</button>
-            <button disabled={!picked.length} className="rounded border border-line px-1.5 py-0.5 hover:bg-hover disabled:opacity-40" onClick={() => exportArchive(picked)}>Exporter</button>
+            <button
+              className="rounded border border-line px-1.5 py-0.5 hover:bg-hover"
+              onClick={() => setSel(new Set(list.map((s) => s.id)))}
+            >
+              Tout
+            </button>
+            <button
+              disabled={!picked.length}
+              className="rounded border border-line px-1.5 py-0.5 hover:bg-hover disabled:opacity-40"
+              onClick={() => {
+                setArchived(picked, !showArchived);
+                setSel(null);
+              }}
+            >
+              {showArchived ? 'Désarchiver' : 'Archiver'} ({picked.length})
+            </button>
+            <button
+              disabled={!picked.length}
+              className="rounded border border-line px-1.5 py-0.5 hover:bg-hover disabled:opacity-40"
+              onClick={() => exportArchive(picked)}
+            >
+              Exporter
+            </button>
           </div>
         )}
         <div className="flex gap-1 text-[11.5px]">
-          <button className="rounded border border-line px-1.5 py-0.5 text-muted hover:bg-hover hover:text-fg" title="Archiver tous les chats (rien n’est supprimé)" onClick={() => { const ids = sessions.filter((s) => !s.archived && !running[s.id]).map((s) => s.id); if (ids.length && confirm(`Archiver ${ids.length} chat(s) ?`)) setArchived(ids, true); }}>Tout archiver</button>
+          <button
+            className="rounded border border-line px-1.5 py-0.5 text-muted hover:bg-hover hover:text-fg"
+            title="Archiver tous les chats (rien n’est supprimé)"
+            onClick={() => {
+              const ids = sessions.filter((s) => !s.archived && !running[s.id]).map((s) => s.id);
+              if (ids.length && confirm(`Archiver ${ids.length} chat(s) ?`)) setArchived(ids, true);
+            }}
+          >
+            Tout archiver
+          </button>
           <button
             className="rounded border border-line px-1.5 py-0.5 text-muted hover:bg-hover hover:text-fg"
             onClick={() => {
@@ -480,7 +543,15 @@ function SessionList() {
             )}
           >
             <div className="flex items-center gap-1.5">
-              {sel && <input type="checkbox" readOnly checked={sel.has(s.id)} className="h-3 w-3" aria-label={`Sélectionner ${s.title}`} />}
+              {sel && (
+                <input
+                  type="checkbox"
+                  readOnly
+                  checked={sel.has(s.id)}
+                  className="h-3 w-3"
+                  aria-label={`Sélectionner ${s.title}`}
+                />
+              )}
               {running[s.id] && <Spinner className="h-3 w-3" />}
               <EditableTitle
                 value={s.title}
@@ -516,7 +587,11 @@ function SessionList() {
             </div>
           </div>
         ))}
-        {!list.length && <div className="p-3 text-center text-[12px] text-faint">{showArchived ? 'Aucun chat archivé' : 'Aucune session'}</div>}
+        {!list.length && (
+          <div className="p-3 text-center text-[12px] text-faint">
+            {showArchived ? 'Aucun chat archivé' : 'Aucune session'}
+          </div>
+        )}
       </div>
       <div className="border-t border-line p-2 text-[11px] text-faint">Clé : {maskKey(getKey())}</div>
     </aside>
