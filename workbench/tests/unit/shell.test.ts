@@ -90,3 +90,16 @@ describe('embedded shell', () => {
     expect(shellRisk('curl https://x.y')).toBe('external');
   });
 });
+
+describe('v48 — « /workspace » is the workspace root (as in code.run)', () => {
+  const fs = memFs({ 'uploads/Provisions.xlsx': 'bin', 'workspace/build.py': 'print(1)' });
+  const sh = new Shell({ fs, run: async (lang, code) => ({ out: `${lang}:${code}`, ok: true }) });
+  it('cd /workspace && ls uploads works; /workspace/x is the same file as x', async () => {
+    const r = await sh.exec('cd /workspace && ls uploads');
+    expect(r.code).toBe(0);
+    expect(r.out).toContain('Provisions.xlsx');
+    const p = await sh.exec('python /workspace/workspace/build.py');
+    expect(p.code).toBe(0);
+    expect(p.out).toContain('print(1)');
+  });
+});

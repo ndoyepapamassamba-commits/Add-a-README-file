@@ -67,6 +67,46 @@ export const DATA_EXTENSIONS = [
   '.ndjson',
 ];
 
+/** Name comparison that forgives case, accents, spaces, « _ » / « - » and a final dot (« Stage IFRS9 » = « stage_ifrs9 »). */
+export const normName = (s: string) =>
+  String(s ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[\s_\-./()]+/g, ' ')
+    .trim();
+/** The real column a model meant, or null. */
+export function resolveColumn(columns: string[], name: string): string | null {
+  if (columns.includes(name)) return name;
+  const n = normName(name);
+  return columns.find((c) => normName(c) === n) ?? null;
+}
+/** Every column a query mentions (filters, groupBy, aggregations, select, sort). */
+export function queryColumns(q: Record<string, unknown>): string[] {
+  const out: string[] = [];
+  const col = (x: unknown) => (x && typeof x === 'object' ? (x as { column?: unknown }).column : x);
+  for (const k of ['filters', 'groupBy', 'aggregations', 'select', 'sort']) for (const x of (Array.isArray(q[k]) ? q[k] : []) as unknown[]) {
+    const c = col(x);
+    if (typeof c === 'string' && c !== '*') out.push(c);
+  }
+  return [...new Set(out)];
+}
+/** Rewrites a query with the real column names (case / accents / spaces forgiven); returns the names not found. */
+export function resolveQueryColumns(q: Record<string, unknown>, columns: string[]): { query: Record<string, unknown>; missing: string[] } {
+  const missing: string[] = [];
+  const fix = (c: unknown) => {
+    if (typeof c !== 'string' || c === '*') return c;
+    const r = resolveColumn(columns, c);
+    if (!r) missing.push(c);
+    return r ?? c;
+  };
+  const out: Record<string, unknown> = { ...q };
+  for (const k of ['filters', 'groupBy', 'aggregations', 'sort'])
+    if (Array.isArray(q[k])) out[k] = (q[k] as Record<string, unknown>[]).map((x) => (x && typeof x === 'object' ? { ...x, column: fix(x.column) } : x));
+  if (Array.isArray(q.select)) out.select = (q.select as unknown[]).map(fix);
+  return { query: out, missing: [...new Set(missing)] };
+}
+
 export const FilterSchema = z.object({
   column: z.string(),
   op: z.enum(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'contains', 'in', 'is_null', 'not_null']),
@@ -106,13 +146,23 @@ export function coerceQuery(raw: unknown): unknown {
       if (o.order && !o.dir) o.dir = /^desc/i.test(String(o.order)) ? 'desc' : 'asc';
       return o;
     });
+  const firstCol = (o: Record<string, unknown>) => {
+    o.column ??= o.col ?? o.field ?? o.name;
+    if (Array.isArray(o.column)) o.column = o.column[0];
+    return o;
+  };
   if (Array.isArray(q.aggregations))
     q.aggregations = q.aggregations.map((x) => {
-      const o = { ...(x as Record<string, unknown>) };
+      const o = firstCol(typeof x === 'string' ? { fn: x } : { ...(x as Record<string, unknown>) });
       o.fn ??= o.op ?? o.agg ?? o.function;
-      if (typeof o.fn === 'string') o.fn = o.fn.toLowerCase();
+      if (typeof o.fn === 'string') o.fn = o.fn.toLowerCase().replace(/^average$|^mean$/, 'avg').replace(/^distinct_count$|^nunique$/, 'count_distinct');
+      // « count » without a column = count of rows (v48: dozens of « expected string » errors in a row).
+      if ((o.column === undefined || o.column === null || o.column === '') && o.fn === 'count') o.column = '*';
       return o;
     });
+  for (const k of ['filters', 'groupBy', 'sort'])
+    if (Array.isArray(q[k])) q[k] = (q[k] as unknown[]).map((x) => (x && typeof x === 'object' ? firstCol({ ...(x as Record<string, unknown>) }) : x));
+  if (Array.isArray(q.filters)) q.filters = (q.filters as Record<string, unknown>[]).map((f) => (f && typeof f === 'object' && f.op === 'ne' ? { ...f, op: 'neq' } : f));
   return q;
 }
 
@@ -277,7 +327,11 @@ export class DataCore {
     }
     if (['.xlsx', '.xls', '.xlsm', '.xlsb', '.ods'].includes(ext)) {
       const wb = XLSX.read(bytes, { type: 'array', cellDates: true, dense: true });
-      const name = sheet && wb.SheetNames.includes(sheet) ? sheet : wb.SheetNames[0];
+      // Tolerant sheet name (« Portefeuille », « PORTEFEUILLE ») — an unknown sheet is an ERROR listing the real ones,
+      // never a silent fallback to the first sheet (v48: every PORTEFEUILLE column became « unknown »).
+      const wanted = sheet?.trim();
+      const name = wanted ? (wb.SheetNames.find((s) => s === wanted) ?? wb.SheetNames.find((s) => normName(s) === normName(wanted))) : wb.SheetNames[0];
+      if (wanted && !name) throw new Error(`Feuille « ${wanted} » introuvable. Feuilles du fichier : ${wb.SheetNames.map((s) => `« ${s} »`).join(', ')}`);
       if (!name) return { path: absPath, sheet: null, sheets: [], columns: [], rows: [] };
       const ws = wb.Sheets[name]!;
       const matrix = XLSX.utils.sheet_to_json<Cell[]>(ws, {

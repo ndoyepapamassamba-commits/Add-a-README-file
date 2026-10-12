@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { repairWordPerLine } from '../lib/textRepair';
 import {
   ArrowUp,
   Bot,
@@ -207,7 +208,7 @@ const ItemView = memo(function ItemView({ item, sessionId }: { item: Item; sessi
       return (
         <div className="my-3">
           {item.agent && <div className="mb-1 text-[11.5px] font-medium text-accent">{item.agent}</div>}
-          <Markdown text={item.text + (item.streaming ? ' ▍' : '')} fileLink={(h) => resolveFileLink(h, sessionId)} />
+          <Markdown text={repairWordPerLine(item.text) + (item.streaming ? ' ▍' : '')} fileLink={(h) => resolveFileLink(h, sessionId)} />
           {!item.streaming && <Deliverables text={item.text} />}
           {!item.streaming && item.text.trim().length > 40 && <VaultButton sessionId={sessionId} itemId={item.id} />}
         </div>

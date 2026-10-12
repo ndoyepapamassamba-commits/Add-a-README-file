@@ -77,6 +77,9 @@ export function tokenize(line: string): Tok[] {
 }
 
 export function resolvePath(cwd: string, p: string): string {
+  // « /workspace » is where code.run mounts the files in Python: in the shell it is the workspace root itself
+  // (v48: every « cd /workspace && python … » failed, the model concluded the terminal could not see uploads/).
+  if (p === '/workspace' || p.startsWith('/workspace/')) p = p.slice('/workspace'.length) || '/';
   const parts = (p.startsWith('/') || p.startsWith('~') ? p.replace(/^~/, '') : `${cwd}/${p}`).split('/');
   const out: string[] = [];
   for (const s of parts) {

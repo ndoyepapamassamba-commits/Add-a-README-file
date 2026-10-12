@@ -8,6 +8,8 @@ import {
   rowsToText,
   QuerySpecSchema,
   coerceQuery,
+  resolveColumn,
+  resolveQueryColumns,
   type Dataset,
 } from '../../server/services/dataCore';
 import { ChartSpecSchema, computeChart } from '../../server/services/vizEngine';
@@ -225,12 +227,60 @@ import type { DashSpec } from '../../server/services/dashClone';
 import { cloneData, renderCloneHtml } from '../../server/services/dashRender';
 import { heavy } from './heavy';
 import { rasterise } from './designClone';
+// Parsed datasets are KEPT (v48: a 4,4 Mo workbook was re-read for each of ~150 queries). Key = file + version + sheet.
+const dsCache = new Map<string, Dataset>();
+let lastDataPath = '';
+/** Sandbox logs without the Python package-loading messages (kept: everything the code printed). */
+export function cleanSandboxLogs(logs: string[]): string {
+  return logs
+    .join('\n')
+    .split('\n')
+    .filter((l) => !/^(\[stderr\] )?(\S+ already loaded from \S+|No new packages to load|Loading \S+(, \S+)*$|Loaded \S+(, \S+)*$|Didn't find package \S+)/.test(l.trim()))
+    .join('\n')
+    .trim();
+}
 function loadDataset(path: string, sheet?: string): Dataset {
-  const f = getFile(path);
-  if (!f) throw new Error(`Fichier introuvable : ${path}`);
+  // A forgotten path re-uses the last data file of the session (v48: « Chemin vide » ×10).
+  const p = path.trim() || lastDataPath;
+  if (!p) throw new Error('Chemin du fichier de données manquant (paramètre « path », ex. « uploads/Provisions.xlsx »).');
+  const f = getFile(p);
+  if (!f) throw new Error(`Fichier introuvable : ${p}`);
   if (!isDataFile(f.path))
     throw new Error(`${f.path} n'est pas un fichier de données (csv, tsv, xlsx, xls, json, jsonl)`);
-  return data.parseBytes(f.path, bytesOf(f), sheet ?? null);
+  lastDataPath = f.path;
+  const key = `${f.path}|${f.size}|${f.updatedAt}|${sheet ?? ''}`;
+  const hit = dsCache.get(key);
+  if (hit) return hit;
+  const ds = data.parseBytes(f.path, bytesOf(f), sheet ?? null);
+  if (dsCache.size >= 8) dsCache.delete(dsCache.keys().next().value!);
+  dsCache.set(key, ds);
+  return ds;
+}
+/**
+ * The dataset a query really targets: column names forgiven (case, accents, spaces); when no sheet was given and the
+ * columns live in ANOTHER sheet of the workbook, that sheet is used (and said). Unknown columns → an error listing the
+ * real ones, per sheet — the model can fix its query in one step instead of looping.
+ */
+function datasetForQuery(path: string, sheet: string | undefined, spec: Record<string, unknown>): { ds: Dataset; query: Record<string, unknown>; note: string } {
+  const ds = loadDataset(path, sheet);
+  const r = resolveQueryColumns(spec, ds.columns);
+  if (!r.missing.length) return { ds, query: r.query, note: '' };
+  if (!sheet)
+    for (const other of ds.sheets.filter((x) => x !== ds.sheet)) {
+      const o = loadDataset(path, other);
+      const r2 = resolveQueryColumns(spec, o.columns);
+      if (!r2.missing.length) return { ds: o, query: r2.query, note: `(feuille « ${other} » utilisée : les colonnes demandées s'y trouvent)\n` };
+    }
+  const where = ds.sheets.length > 1 ? ` de la feuille « ${ds.sheet} »` : '';
+  const elsewhere = ds.sheets
+    .filter((x) => x !== ds.sheet)
+    .map((x) => {
+      const cols = loadDataset(path, x).columns;
+      const hits = r.missing.filter((m) => resolveColumn(cols, m));
+      return hits.length ? ` La feuille « ${x} » contient : ${hits.join(', ')} → ajoutez "sheet": "${x}".` : '';
+    })
+    .join('');
+  throw new Error(`Colonne(s) introuvable(s)${where} : ${r.missing.join(', ')}.${elsewhere} Colonnes disponibles : ${ds.columns.slice(0, 60).join(' | ')}${ds.columns.length > 60 ? ' …' : ''}`);
 }
 
 function saveArtifact(
@@ -439,9 +489,19 @@ export const TOOLS: DirectTool[] = [
     async run(a) {
       const ds = loadDataset(S(a.path), S(a.sheet) || undefined);
       const p = data.profile(ds);
+      // Every sheet of the workbook, so that the model targets the right one from the start.
+      const sheets =
+        ds.sheets.length > 1
+          ? `Workbook sheets (use "sheet" in data.query): ${ds.sheets
+              .map((x) => {
+                const o = x === ds.sheet ? ds : loadDataset(ds.path, x);
+                return `« ${x} » (${o.rows.length} rows × ${o.columns.length} cols${x === ds.sheet ? ', shown below' : ''})`;
+              })
+              .join(', ')}\n\n`
+          : '';
       return ok(
-        `${p.rowCount} lignes · ${p.columnCount} colonnes`,
-        `${profileToText(p)}\n\nSample rows:\n${rowsToText(ds.columns, ds.rows.slice(0, 15))}`,
+        `${p.rowCount} lignes · ${p.columnCount} colonnes${ds.sheets.length > 1 ? ` · feuille « ${ds.sheet} » (${ds.sheets.length} feuilles)` : ''}`,
+        `${sheets}${profileToText(p)}\n\nSample rows:\n${rowsToText(ds.columns, ds.rows.slice(0, 15))}`,
       );
     },
   },
@@ -504,11 +564,17 @@ export const TOOLS: DirectTool[] = [
     label: (a) => `Requête sur ${S(a.path)}`,
     async run(a) {
       const { path, sheet, ...spec } = a;
-      const ds = loadDataset(S(path), S(sheet) || undefined);
-      const r = data.query(ds, QuerySpecSchema.parse(coerceQuery(spec)));
+      const { ds, query, note } = datasetForQuery(S(path), S(sheet) || undefined, coerceQuery(spec) as Record<string, unknown>);
+      const parsed = QuerySpecSchema.safeParse(query);
+      if (!parsed.success)
+        throw new Error(
+          `Requête invalide : ${parsed.error.issues.map((i) => `${i.path.join('.')} — ${i.message}`).join(' ; ')}. Exemple valide : {"path":"${ds.path}","sheet":"${ds.sheet ?? ''}","groupBy":[{"column":"${ds.columns[0] ?? 'Colonne'}"}],"aggregations":[{"column":"*","fn":"count"},{"column":"${ds.columns[1] ?? 'Montant'}","fn":"sum"}]}`,
+        );
+      const r = data.query(ds, parsed.data);
       return ok(
-        `${r.rowCount} ligne(s)`,
-        `${r.rowCount} result rows${r.rowCount > r.rows.length ? ` (showing ${r.rows.length})` : ''}\n${rowsToText(r.columns, r.rows, 200)}`,
+        `${r.rowCount} ligne(s)${note ? ` · feuille « ${ds.sheet} »` : ''}`,
+        // At most 60 rows go back to the model (tokens): aggregate, or page with limit / offset for more.
+        `${note}${r.rowCount} result rows${r.rowCount > 60 ? ` (showing 60 — aggregate with groupBy/aggregations, or page with "limit"/"offset")` : ''}\n${rowsToText(r.columns, r.rows, 60)}`,
       );
     },
   },
@@ -652,10 +718,14 @@ export const TOOLS: DirectTool[] = [
         ctx.signal,
       );
       const saved = r.saved;
+      // Pyodide's package-loading chatter is NOT output (v48: « openpyxl already loaded… No new packages to load »
+      // filled the top of every failure, the real traceback came last and the model kept guessing).
+      const logs = cleanSandboxLogs(r.logs);
       const text = [
-        r.logs.join('\n'),
-        r.result !== undefined ? `→ ${r.result}` : '',
+        // A failure starts with its error, then the logs.
         r.error ? `Error: ${r.error}` : '',
+        logs,
+        r.result !== undefined ? `→ ${r.result}` : '',
         saved.length ? `Saved files: ${saved.join(', ')}` : '',
       ]
         .filter(Boolean)

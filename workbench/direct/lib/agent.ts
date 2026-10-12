@@ -278,8 +278,22 @@ async function userContent(
 
 const estimate = (msgs: ChatMessage[]) => Math.ceil(JSON.stringify(msgs).length / 3.6);
 
+/**
+ * TOKEN SOBRIETY at every step, not only at the ceiling (v48: each of ~200 steps re-sent ~37 k tokens): a tool output
+ * older than the last 8 messages keeps its first 900 characters (figures and errors come first) — the full result can
+ * be asked again (data queries are cached).
+ */
+export function trimOldToolOutputs(msgs: ChatMessage[], keepLast = 8, max = 1500): ChatMessage[] {
+  const keepFrom = Math.max(1, msgs.length - keepLast);
+  return msgs.map((m, i) =>
+    i < keepFrom && m.role === 'tool' && typeof m.content === 'string' && m.content.length > max
+      ? { ...m, content: `${m.content.slice(0, 900)}\n…[ancienne sortie raccourcie — relancez l'outil si le détail est nécessaire]` }
+      : m,
+  );
+}
 /** Drops old tool outputs and images when the context gets too large. */
 function compact(msgs: ChatMessage[], budget: number, goal = ''): ChatMessage[] {
+  msgs = trimOldToolOutputs(msgs);
   if (estimate(msgs) <= budget) return msgs;
   // Intelligent compression: the middle of a long trajectory becomes a structured
   // summary (facts, decisions, failures, files, current state) instead of being cut.
@@ -1590,6 +1604,13 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
 
   releasePrologue();
   let stepsUsed = 0;
+  // STALL BREAKER (v48: 200 steps, 7,4 M tokens, 131 min with a weak free model looping on failing tools while the
+  // shadow agent only advised). Tool errors piling up, a long run of reads without producing anything, or a mission
+  // past 25 minutes → the agent stops and delivers what is done, with the reason; it never switches model by itself.
+  const recentErr: boolean[] = [];
+  let readRun = 0;
+  const missionStart = Date.now();
+  let stallReason = '';
   for (let step = 0; step < maxSteps; step++) {
     stepsUsed = step + 1;
     // The step body up to the model call is synchronous: wait for another chat's running tool, then take the scope.
@@ -2112,8 +2133,17 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       const res = preRun ? preRun[ci]! : await runTool(call, pool, ctx, inp);
       if (top) {
         toolCallTotal++;
-        if (/^(Error|Denied)/.test(res))
-          toolErrorNotes.push(`${call.function.name.replace(/__/g, '.')}: ${redact(res).slice(0, 140)}`);
+        const failed = /^(Error|Denied)/.test(res);
+        if (failed) toolErrorNotes.push(`${call.function.name.replace(/__/g, '.')}: ${redact(res).slice(0, 140)}`);
+        recentErr.push(failed);
+        if (recentErr.length > 20) recentErr.shift();
+        const t = tools.find((x) => llmName(x.name) === call.function.name || x.name === call.function.name);
+        readRun = t?.readOnly ? readRun + 1 : 0;
+        const errs = recentErr.filter(Boolean).length;
+        if (!stallReason && recentErr.length >= 12 && errs >= 12)
+          stallReason = `${errs} erreurs d’outils sur les ${recentErr.length} derniers appels`;
+        else if (!stallReason && readRun >= 30) stallReason = `${readRun} lectures d’affilée sans rien produire`;
+        else if (!stallReason && Date.now() - missionStart > 25 * 60_000) stallReason = `mission en cours depuis plus de 25 minutes`;
       }
       if (jp && phase !== 'planning') {
         const used = tools.find(
@@ -2291,10 +2321,10 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       finalText = `${finalText ? `${finalText}\n\n` : ''}${formatReport(report)}`;
       break;
     }
-    if (step === maxSteps - 1) {
+    if (step === maxSteps - 1 || stallReason) {
       // JEV PILOT: a lane cap reached while tools still succeed is extended (never above the user's limit).
       const progressing = toolErrorNotes.length < Math.max(2, toolCallTotal / 3);
-      if (maxSteps < ws.maxSteps && progressing) {
+      if (!stallReason && maxSteps < ws.maxSteps && progressing) {
         const from = maxSteps;
         maxSteps = Math.min(ws.maxSteps, maxSteps * 2);
         traceAdd({ name: 'JEV_CHECKPOINT', ms: 0, tokens: 0, cost: 0, decision: `JEV PILOT : le travail progresse, budget d'étapes ${from} → ${maxSteps}` });
@@ -2303,7 +2333,9 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       // Hard limit: instead of failing with nothing, deliver what is done (one call, no tools).
       const wrap: ChatMessage = {
         role: 'user',
-        content: `Step limit reached. Do not call any tool. Write the answer now: what is done (files, results), what is not done yet, and the exact next step. The user can reply « continue ».`,
+        content: stallReason
+          ? `The work is STALLED (${stallReason}). Do not call any tool. Write the answer now, in French: what is done and verified (files, figures), what is not done, why it stalled (the exact recurring error), and the exact next step. The user can reply « continue ».`
+          : `Step limit reached. Do not call any tool. Write the answer now: what is done (files, results), what is not done yet, and the exact next step. The user can reply « continue ».`,
       };
       messages.push(wrap);
       try {
@@ -2314,7 +2346,9 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
         cost += w.cost;
         tokensIn += w.usage.promptTokens;
         tokensOut += w.usage.completionTokens;
-        finalText = `${w.content.trim()}\n\n_(Limite de ${maxSteps} étapes atteinte — répondez « continue » pour poursuivre.)_`;
+        finalText = stallReason
+          ? `${w.content.trim()}\n\n_(Travail arrêté pour ne pas tourner en rond : ${stallReason}, ${Math.round((Date.now() - missionStart) / 60000)} min, modèle ${model}. Répondez « continue » pour reprendre — un modèle plus solide, choisi dans le sélecteur de modèle, évite en général ce blocage.)_`
+          : `${w.content.trim()}\n\n_(Limite de ${maxSteps} étapes atteinte — répondez « continue » pour poursuivre.)_`;
         push(sid, { kind: 'assistant', id: uid(), text: finalText });
         const a: ChatMessage = { role: 'assistant', content: finalText };
         persisted.push(wrap, a);
@@ -2904,7 +2938,9 @@ async function delegate(
       mission: false,
       depth: parent.depth + 1,
       agentLabel: agent.name,
-      model: agent.model?.includes('/') ? agent.model : parent.model,
+      // The model the owner chose runs EVERY agent of the mission (only its tokens are spent); a specialist's own
+      // model is used only when the chat is in automatic routing.
+      model: st.settings.defaultModel && st.settings.defaultModel !== 'auto' ? parent.model : agent.model?.includes('/') ? agent.model : parent.model,
     });
     st.updateItem(parent.session.id, itemId, { status: 'done', summary: r.text.slice(0, 4000) });
     sub.cost += r.cost;
