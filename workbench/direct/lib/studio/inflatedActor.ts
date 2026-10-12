@@ -19,6 +19,8 @@ import { FaceRig } from './faceWarp';
 
 /** Rows of the lattice over the figure (the relief's resolution). */
 const ROWS = 110;
+/** Half-thickness over half-width of a long part (a torso 0.7× as deep as wide; limbs and heads rounder). */
+const DEPTH = 0.7;
 
 /**
  * Builds the 3D actor of a drawn pose (its cut-out blob and measured skeleton). Returns null when the drawing has no
@@ -56,11 +58,11 @@ export async function inflatedActor(pose: SheetPose, blob: Blob, heightM = 1.72)
   const parts = splitParts(mesh2d, layers);
   const s = heightM / pose.h; // metres per px
   // The body first (its relief gives the arms their forward offset where they cover it).
-  const bodyRelief = inflateMesh(parts.body, 0.8);
+  const bodyRelief = inflateMesh(parts.body, DEPTH);
   const bodyZAt = new Map<string, number>();
   parts.body.orig.forEach((_, k) => bodyZAt.set(`${parts.body.rest[k * 2]},${parts.body.rest[k * 2 + 1]}`, bodyRelief.z[k]!));
   const pieces: { pm: PartMesh; geo: THREE.BufferGeometry; frontCount: number; mirror: Int32Array }[] = [];
-  const build = (pm: PartMesh, relief = inflateMesh(pm, 0.8), lift = false) => {
+  const build = (pm: PartMesh, relief = inflateMesh(pm, DEPTH), lift = false) => {
     const solid = inflatedSolid(pm, relief, pose.w, pose.h);
     const total = solid.pos.length / 3;
     const pos = new Float32Array(total * 3);
@@ -138,20 +140,49 @@ export async function inflatedActor(pose: SheetPose, blob: Blob, heightM = 1.72)
       (vis.array as Float32Array).fill(1);
       vis.needsUpdate = true;
     }
-    // Hidden body (under an arm): its skin is the visible body's of the same row (mirrored), never the arm's pixels.
     const puv = geo.getAttribute('projUv') as THREE.BufferAttribute | undefined;
-    if (puv && i === 0) {
-      const at = new Map<number, number>();
-      p.pm.orig.forEach((o, k) => at.set(o, k));
+    if (puv) {
       const arr = puv.array as Float32Array;
       const total = arr.length / 2;
+      const count = p.pm.rest.length / 2;
+      // EDGE PADDING: the rim of the lattice and the thickness of the volume fall on transparent pixels of the
+      // drawing — they take the nearest drawn pixel instead (the edge of the paper is the colour of its edge).
+      const drawn = new Uint8Array(count);
+      const insideIdx: number[] = [];
+      for (let k = 0; k < count; k++) {
+        drawn[k] = inside(p.pm.rest[k * 2]!, p.pm.rest[k * 2 + 1]!) ? 1 : 0;
+        if (drawn[k]) insideIdx.push(k);
+      }
+      const nearestDrawn = (k: number) => {
+        let best = k;
+        let bd = Infinity;
+        const x = p.pm.rest[k * 2]!;
+        const y = p.pm.rest[k * 2 + 1]!;
+        for (const j of insideIdx) {
+          const d = (p.pm.rest[j * 2]! - x) ** 2 + (p.pm.rest[j * 2 + 1]! - y) ** 2;
+          if (d < bd) {
+            bd = d;
+            best = j;
+          }
+        }
+        return best;
+      };
+      // Hidden body (under an arm): its skin is the visible body's of the same row (mirrored), never the arm's pixels.
+      const at = new Map<number, number>();
+      p.pm.orig.forEach((o, k) => at.set(o, k));
+      const source = new Int32Array(count);
+      for (let k = 0; k < count; k++) {
+        let src = k;
+        if (i === 0 && p.pm.hidden[k]) src = at.get(p.pm.from[k]!) ?? k;
+        if (!drawn[src]) src = nearestDrawn(src);
+        source[k] = src;
+      }
+      const ref = Float32Array.from(arr.subarray(0, p.frontCount * 2));
       for (let v = 0; v < total; v++) {
         const k = v < p.frontCount ? v : p.mirror[v - p.frontCount]!;
-        if (!p.pm.hidden[k]) continue;
-        const src = at.get(p.pm.from[k]!);
-        if (src === undefined) continue;
-        arr[v * 2] = arr[src * 2]!;
-        arr[v * 2 + 1] = arr[src * 2 + 1]!;
+        const src = source[k]!;
+        arr[v * 2] = ref[src * 2]!;
+        arr[v * 2 + 1] = ref[src * 2 + 1]!;
       }
       puv.needsUpdate = true;
     }
