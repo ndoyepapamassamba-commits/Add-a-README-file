@@ -9,6 +9,7 @@
  *    editorial, dark…), applied to EVERY page / slide by the exporters' end-of-turn pass.
  * Thumbnails are drawn from the same tokens (Excel: the real renderer on sample data), so what you pick is what you get.
  */
+import { generateLayout } from './layoutGen';
 import type { DashSpec, Panel } from './dashClone';
 
 export type ModelFormat = 'excel' | 'word' | 'slides' | 'pdf' | 'mail';
@@ -179,10 +180,14 @@ const LAYOUTS: Layout[] = [
     }),
   },
 ];
+/** A generated Excel structure as a catalogue entry (id « gen:N », its own name). */
+const genEntry = (seed: number, p: ModelPalette) => ({ id: `gen:${seed}`, name: generateLayout(seed, p).name });
 /** The dashboard design of an Excel model (the same structure the image reproduction produces). */
 export function modelSpec(p: ModelPalette, layout: string): DashSpec {
+  // « gen:N » — a generated structure (layoutGen): every model has its own, not a recoloured template.
+  const g = /^gen:(\d+)$/.exec(layout);
   const l = LAYOUTS.find((x) => x.id === layout) ?? LAYOUTS[0]!;
-  const b = l.build(p);
+  const b = g ? (({ chrome: _c, kpi: _k, name: _n, signature: _s, ...rest }) => rest)(generateLayout(+g[1]!, p)) : l.build(p);
   return {
     version: 1,
     aspect: 16 / 9,
@@ -238,9 +243,9 @@ export interface DesignModel {
 /** 20 models per format: each palette once, the layouts in turn (no two neighbours look alike). */
 export const DESIGN_MODELS: DesignModel[] = MODEL_FORMATS.flatMap(({ id: format }) =>
   MODEL_PALETTES.map((p, i) => {
-    const list: { id: string; name: string }[] = format === 'excel' ? LAYOUTS : format === 'slides' ? SLIDE_LAYOUTS : format === 'mail' ? MAIL_LAYOUTS : DOC_LAYOUTS;
-    // Dark palettes get the dark slide layout; the others turn through the layouts.
-    const l = format === 'slides' && p.night ? SLIDE_LAYOUTS[2]! : list[(i + MODEL_FORMATS.findIndex((f) => f.id === format)) % list.length]!;
+    const list: { id: string; name: string }[] = format === 'excel' ? [genEntry(i, p)] : format === 'slides' ? SLIDE_LAYOUTS : format === 'mail' ? MAIL_LAYOUTS : DOC_LAYOUTS;
+    // Dark palettes get the dark slide layout; the others turn through the layouts. Excel: a generated structure each.
+    const l = format === 'excel' ? list[0]! : format === 'slides' && p.night ? SLIDE_LAYOUTS[2]! : list[(i + MODEL_FORMATS.findIndex((f) => f.id === format)) % list.length]!;
     const lay = format === 'slides' && !p.night && l.id === 'night' ? SLIDE_LAYOUTS[0]! : l;
     return { id: `${format}-${p.id}`, format, name: p.name, tagline: `${lay.name} · ${p.font}`, palette: format === 'word' || format === 'pdf' || format === 'mail' ? printPalette(p) : p, layout: lay.id };
   }),
@@ -303,8 +308,8 @@ function generatedById(id: string | undefined): DesignModel | undefined {
   const n = +m[2]!;
   const raw = generatedPalette(n);
   const p = format === 'word' || format === 'pdf' || format === 'mail' ? printPalette(raw) : raw;
-  const list: { id: string; name: string }[] = format === 'excel' ? LAYOUTS : format === 'slides' ? SLIDE_LAYOUTS : format === 'mail' ? MAIL_LAYOUTS : DOC_LAYOUTS;
-  let lay = list[(n * 3 + 1) % list.length]!;
+  const list: { id: string; name: string }[] = format === 'excel' ? [genEntry(n + 20, raw)] : format === 'slides' ? SLIDE_LAYOUTS : format === 'mail' ? MAIL_LAYOUTS : DOC_LAYOUTS;
+  let lay = format === 'excel' ? list[0]! : list[(n * 3 + 1) % list.length]!;
   if (format === 'slides') lay = raw.night ? SLIDE_LAYOUTS[2]! : lay.id === 'night' ? SLIDE_LAYOUTS[0]! : lay;
   return { id: id!, format, name: raw.name, tagline: `${lay.name} · ${raw.font}`, palette: p, layout: lay.id };
 }
