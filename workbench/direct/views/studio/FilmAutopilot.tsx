@@ -2,6 +2,9 @@
 // (IDÉE → HISTOIRE → SCÈNES → IMAGES → ANIMATION → MONTAGE FINAL), a model plan the user can override, and per scene only:
 // Accepter · Modifier · Régénérer · Modèle · Valider. The Afrikatoon art direction is locked for every call.
 import { circuitCap } from '../../../server/jev/studio/circuit';
+import { inspectSceneClip } from '../../lib/studio/clipAnalyzer';
+import type { ClipReport } from '../../../server/jev/studio/clipInspect';
+import { VideoAnalyzer } from './videoAnalyzer';
 import { IdeaPrompter } from './ideaPrompter';
 import { useEffect, useMemo, useState } from 'react';
 import { create } from 'zustand';
@@ -243,6 +246,21 @@ function ModelPlan({ capUsd, onCap }: { capUsd: number; onCap: (n: number) => vo
   );
 }
 
+function ClipReportLine({ r }: { r: ClipReport }) {
+  const j = r.judge?.scores;
+  return (
+    <div className="mt-1 rounded-md border border-line p-1 text-[11px]" data-testid="clip-report">
+      <div className="flex flex-wrap gap-1">
+        <Badge tone={r.verdict === 'ok' ? 'ok' : 'warn'}>clip {r.score ?? '—'}/100</Badge>
+        <span className="text-faint">mouvement {r.measures.motion.toFixed(3)} · {Math.round(r.measures.coverage * 100)} % de l’image</span>
+        {j && <span className="text-faint">rire {j.rire} · jeu {j.mouvement} · bouche {j.bouche} · anatomie {j.anatomie} · cohérence {j.coherence}</span>}
+        {!j && <span className="text-faint">juge visuel : non mesuré</span>}
+      </div>
+      {r.reasons.length > 0 && <div className="text-warn">{r.reasons.slice(0, 3).join(' · ')}</div>}
+    </div>
+  );
+}
+
 function SceneCard({ projectId, sc, imageModels }: { projectId: string; sc: Scene; imageModels: { id: string; name: string }[] }) {
   const [edit, setEdit] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -289,11 +307,17 @@ function SceneCard({ projectId, sc, imageModels }: { projectId: string; sc: Scen
                   <b>{l.speaker}</b> : {l.text}
                 </div>
               ))}
+              {sc.clipReport && <ClipReportLine r={sc.clipReport} />}
             </>
           )}
         </div>
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-1">
+        {sc.videoAssetId && (
+          <Button size="sm" disabled={Boolean(busy)} onClick={() => act('analyse…', () => inspectSceneClip(projectId, sc.scene_id))} data-testid="scene-analyze">
+            🔬 Analyser
+          </Button>
+        )}
         <Button size="sm" disabled={Boolean(busy)} onClick={() => patchScene({ status: 'APPROVED' })} data-testid="scene-accept">
           ✅ Accepter
         </Button>
@@ -442,6 +466,7 @@ export function FilmAutopilot({ onExpert }: { onExpert: () => void }) {
             )}
           </>
         )}
+        <VideoAnalyzer projectId={bp?.project.id} />
       </main>
     </div>
   );

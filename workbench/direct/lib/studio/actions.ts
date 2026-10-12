@@ -922,8 +922,9 @@ export async function generateLine(
       // VOICE CASTING: without a chosen voice, each character gets its own gender / age coherent voice (never the
       // same default voice for everybody).
       const cast = castVoices(
-        bp.characters.map((c) => ({ id: c.id, name: c.name, gender: c.gender, age: c.age, voice: c.voice })),
+        bp.characters.map((c) => ({ id: c.id, name: c.name, gender: c.gender, age: c.age, voice: c.voice, role: c.role })),
         m.voices,
+        line.language || 'fr',
       );
       const voice = wantVoice && m.voices.includes(wantVoice) ? wantVoice : (cast[line.speaker.toUpperCase()] ?? m.voices[0]);
       return { m, voice, v: validateSpeechRequest(m, { voice }) };

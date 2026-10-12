@@ -3,6 +3,8 @@
 // DNA locked for every call. It never waits unless the user asked to validate each stage; a failed scene never stops the
 // film (it is reported and can be regenerated from the single view).
 import { useStudio } from './store';
+import { analyzeFilm, inspectSceneClip } from './clipAnalyzer';
+import { betterTake } from '../../../server/jev/studio/clipInspect';
 import { lockShortSetting, lockedVideoPrompt } from '../../../server/jev/studio/continuity';
 import { useStore } from '../store';
 import { blobs } from './blobs';
@@ -253,6 +255,36 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
               warn.push(`Circuit Grok arrêté : ${shot.sceneId} facturé ${billed.toFixed(3)} $ au lieu de ${shot.usd.toFixed(3)} $ annoncés → Marionnette pour la suite`);
               break;
             }
+            // DEEP ANALYSIS of the clip (motion, frozen spans, flicker + vision judge: laugh, acting, mouth, anatomy).
+            // A bad take is redone ONCE with the written correction — only if the later shots keep their budget.
+            const expectedS = voiced.find((x) => x.scene_id === shot.sceneId)?.duration;
+            const first = bpOf(projectId).scenes.find((x) => x.scene_id === shot.sceneId)?.videoAssetId;
+            if (!first) continue;
+            c.onStage('ANIMATION', 'running', `analyse du clip ${shot.sceneId} (mouvement, bouche, anatomie, rire)…`);
+            const rep = await inspectSceneClip(projectId, shot.sceneId, { expectedS }).catch((e) => {
+              warn.push(`${shot.sceneId} : analyse du clip impossible (${(e as Error).message.slice(0, 80)})`);
+              return null;
+            });
+            if (!rep) continue;
+            c.onStage('ANIMATION', 'running', `${shot.sceneId} : ${rep.score ?? '—'}/100${rep.reasons.length ? ` — ${rep.reasons.slice(0, 2).join(' ; ')}` : ' ✓'}`);
+            if (rep.verdict !== 'retry') continue;
+            const idx = plan.shots.indexOf(shot);
+            const stillPlanned = plan.shots.slice(idx + 1).reduce((a, x) => a + x.usd, 0);
+            const b2 = bpOf(projectId);
+            if (circuitBudget(b2.cap, spent(b2), later, 1) - stillPlanned < shot.usd - 1e-9) {
+              warn.push(`${shot.sceneId} : ${rep.reasons[0]} — reprise impossible sans priver les scènes suivantes (plafond ${b2.cap.toFixed(2)} $)`);
+              continue;
+            }
+            c.onStage('ANIMATION', 'running', `reprise ${shot.sceneId} avec la correction : ${rep.fix.slice(0, 90)}`);
+            const ok2 = await generateSceneVideo(projectId, shot.sceneId, { mode: 'image', duration: shot.seconds, resolution: CIRCUIT.resolution, forceModel: r.id, circuit: true, promptExtra: rep.fix })
+              .then(() => true)
+              .catch((e) => (warn.push(`${shot.sceneId} reprise : ${(e as Error).message.slice(0, 80)}`), false));
+            const rep2 = ok2 ? await inspectSceneClip(projectId, shot.sceneId, { expectedS }).catch(() => null) : null;
+            if (!rep2 || betterTake(rep, rep2) === 'a') {
+              // The first take stays (never a blind replacement).
+              S().patchProject(projectId, (b) => ({ ...b, scenes: b.scenes.map((x) => (x.scene_id === shot.sceneId ? { ...x, videoAssetId: first, clipReport: rep } : x)) }), `clip ${shot.sceneId} : 1re prise gardée`);
+              c.onStage('ANIMATION', 'running', `${shot.sceneId} : 1re prise gardée (${rep.score}/100 contre ${rep2?.score ?? '—'})`);
+            } else c.onStage('ANIMATION', 'running', `${shot.sceneId} : reprise gardée ${rep2.score}/100 (au lieu de ${rep.score})`);
           }
           if (plan.skipped.length) c.onStage('ANIMATION', 'running', `${plan.skipped.length} autre(s) scène(s) : Marionnette Afrikatoon (gratuit)`);
         }
@@ -326,7 +358,22 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
     compileSubtitles(projectId);
     buildEdit(projectId);
     c.onStage('MONTAGE', 'running', 'rendu du film');
-    const r = await renderPreview(bpOf(projectId), { width: 540, bilingual: Boolean(S().settings.bilingualCaptions) });
+    const r = await renderPreview(bpOf(projectId), {
+      width: 540,
+      bilingual: Boolean(S().settings.bilingualCaptions),
+      // The film is recorded in real time: a hidden tab pauses it (never 1 frame/s), the owner is told why.
+      onPause: (p) => c.onStage('MONTAGE', 'running', p ? '⏸ rendu en pause : l’onglet est caché — revenez sur cet onglet pour continuer' : 'rendu du film (repris)'),
+    });
+    if (r.hiddenPauses) warn.push(`rendu mis en pause ${r.hiddenPauses} fois (onglet caché) — aucune image perdue`);
+    // Final check of the FILE itself (what the owner will post): frozen passages and silent gaps, measured.
+    c.onStage('MONTAGE', 'running', 'contrôle du film final (images figées, silences)');
+    const fa = await analyzeFilm(r.blob, { fps: 6 }).catch(() => null);
+    if (fa) {
+      const frozenS = fa.frozen.reduce((a, f) => a + f.end - f.start, 0);
+      if (frozenS >= 0.8) warn.push(`film final : ${frozenS.toFixed(1)} s d’image figée (${fa.frozen.map((f) => `${f.start.toFixed(1)}–${f.end.toFixed(1)} s`).slice(0, 4).join(', ')})`);
+      if (fa.silences?.length) warn.push(`film final : silence de ${fa.silences.map((g) => `${(g.end - g.start).toFixed(1)} s à ${g.start.toFixed(1)} s`).slice(0, 3).join(', ')}`);
+      c.onStage('MONTAGE', 'running', `film final mesuré : ${fa.score ?? '—'}/100 (mouvement), ${frozenS.toFixed(1)} s figées`);
+    }
     const assetId = `asset-film-${Date.now().toString(36)}`;
     await blobs.put(assetId, r.blob);
     S().addAsset({

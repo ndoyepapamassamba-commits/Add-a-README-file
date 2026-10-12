@@ -539,6 +539,8 @@ export interface VideoOpts {
   forceModel?: string;
   /** Circuit Grok: runs without the Video Factory switch, at the circuit's certain price, under the HARD cap. */
   circuit?: boolean;
+  /** Correction written by the clip analyser for a retake (« lively acting… », « correct anatomy… »). */
+  promptExtra?: string;
 }
 const controllers = new Map<string, AbortController>();
 export function cancelVideo(jobIdStr: string): void {
@@ -621,7 +623,8 @@ export async function generateSceneVideo(projectId: string, sceneId: string, o: 
     })
     .filter((x): x is NonNullable<typeof x> => Boolean(x));
   // Image → video: the first frame's identity is locked and deformation is named (measured on the v44 Grok clips).
-  const prompt = (frames.length ? lockedVideoPrompt(sc, bp.characters) : sc.video_prompt || sc.action).slice(0, 1500);
+  const base = frames.length ? lockedVideoPrompt(sc, bp.characters) : sc.video_prompt || sc.action;
+  const prompt = (o.promptExtra ? `${o.promptExtra.slice(0, 400)}. ${base}` : base).slice(0, 1500);
   const first = frames.length ? await blobToDataUrl((await blobs.get(sc.imageAssetId!))!) : null;
   const by = new Map(cands.map((c) => [c.model.id, c]));
   const out = await executeMedia<{ blob: Blob }>({
@@ -672,6 +675,9 @@ export async function generateSceneVideo(projectId: string, sceneId: string, o: 
       prompt,
     }),
   });
+  // The clip BECOMES the scene's motion. v44 bug: the paid clips were stored but never attached to their scene, so the
+  // montage never played them (the free Marionnette animated the stills instead).
+  if (out.assetId) patch(projectId, (b) => ({ ...b, scenes: b.scenes.map((s) => (s.scene_id === sceneId ? { ...s, videoAssetId: out.assetId } : s)) }));
   patch(projectId, (b) => setStage(b, 'VIDEO', 'COMPLETED'));
   // Technical quality gate on the real Blob (never blocks the result; the verdict is stored on the asset).
   void runVideoGate(out.assetId!, { expectedDuration: o.duration, aspect: bp.aspect }).catch(() => undefined);

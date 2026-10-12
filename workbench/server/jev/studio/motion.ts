@@ -93,27 +93,83 @@ export function speakerSide(characters: string[], speaker: string): number {
 }
 
 // ── VOICE CASTING: distinct, gender-coherent voices instead of the same default voice for everybody ──────────────────
+// v45 bug: only the OpenAI voice names were known — with ElevenLabs the 2nd man got the next free voice, « sarah ».
+// Every voice of the live speech catalogue (OpenRouter, Oct. 2026) is now classified by its NAME.
 const FEMALE = ['nova', 'shimmer', 'coral', 'sage', 'aria', 'alloy'];
 const MALE = ['onyx', 'echo', 'ash', 'ballad', 'verse', 'fable'];
-const isFemale = (g: string) => /\b(f|femme|fille|female|woman|girl|m[èe]re|maman|tante|grand-m[èe]re|dame|madame|elle)\b/i.test(g);
+const F_NAMES = new Set(
+  ('nova shimmer coral sage aria alloy sarah alice bella jessica laura lily matilda zephyr kore leda aoede callirrhoe autonoe despina erinome laomedeia achernar gacrux pulcherrima vindemiatrix sadachbia sulafat ' +
+    'harper soleil mia emily isla priya kavya iris olivia marta valeria rosa haena lilla reka eve ara tara leah jess marie jane agathe thalia amalthea andromeda asteria athena aurora callista cora cordelia delia electra harmonia helena hera juno luna ' +
+    'alexis bree brittany brooke elise gemma haley hannah heather kelsey maeve meena meghan paige sharon sienna siwis dora heart nicole sky emma isabella sara awa aya adjoua akissi aminata fatou mariam clarisse')
+    .split(' '),
+);
+const M_NAMES = new Set(
+  ('onyx echo ash ballad verse fable george adam bill brian callum charlie chris daniel eric harry liam roger will puck charon fenrir orus enceladus iapetus umbriel algieba algenib rasalgethi alnilam schedar achird zubenelgenubi sadaltager ' +
+    'grant marc klaus ethan jasper dhruv arjun alejo luca junho sander bence levente rex sal leo dan zac paul oliver hector apollo arcas aries atlas draco hermes hyperion janus jupiter orion orpheus perseus zeus ' +
+    'bruce cliff cole colin conor donovan drew jack marcelo marcus miles naveen rufus sean tanner wade wes michael lewis alex santa nicola omega psi kumo')
+    .split(' '),
+);
+/** 'f' | 'm' | null from a provider voice id (kokoro « af_bella », MiniMax « English_Upbeat_Woman », MAI « fr-FR-Marc:… »). */
+export function voiceGender(id: string): 'f' | 'm' | null {
+  const v = id.toLowerCase();
+  const k = /^([a-z])([fm])_/.exec(v);
+  if (k && v.length > 3) return k[2] as 'f' | 'm';
+  if (/(woman|lady|girl|queen|female)/.test(v)) return 'f';
+  if (/(man\b|_man|man$|men\b|bloke|boy|gentleman|guy|male)/.test(v.replace(/woman/g, ''))) return 'm';
+  const toks = v.split(/[^a-z]+/).filter(Boolean);
+  for (const t of toks) {
+    if (F_NAMES.has(t)) return 'f';
+    if (M_NAMES.has(t)) return 'm';
+  }
+  return null;
+}
+/** The language a voice id announces (« fr-FR-Marc », « fr_marie_happy », « aura-2-hector-fr », kokoro « ff_siwis »). */
+export function voiceLang(id: string): string | null {
+  const v = id.toLowerCase();
+  const m = /^([a-z]{2})[-_][a-z]{2}[-_]/.exec(v) ?? /^([a-z]{2})_[a-z]+_/.exec(v) ?? /-([a-z]{2})$/.exec(v);
+  if (m) return m[1]!;
+  const k = /^([a-z])[fm]_/.exec(v);
+  return k ? ({ a: 'en', b: 'en', e: 'es', f: 'fr', h: 'hi', i: 'it', j: 'ja', p: 'pt', z: 'zh' } as Record<string, string>)[k[1]!] ?? null : null;
+}
+const FEM = /\b(f|femme|fille|female|woman|girl|m[èe]re|maman|tante|grand-m[èe]re|dame|madame|s[œo]eur|[ée]pouse|belle-m[èe]re|servante|vendeuse|marchande)\b/i;
+const MASC = /\b(m|h|homme|gar[çc]on|male|man|boy|p[èe]re|papa|oncle|grand-p[èe]re|monsieur|fr[èe]re|mari|patron|chef|vieux|employ[ée]?)\b/i;
+/** Gender of a CHARACTER: the sheet's gender field first; the voice description only when the field is empty. */
+export function characterGender(c: { gender?: string; voice?: string; role?: string }): 'f' | 'm' | null {
+  for (const t of [c.gender ?? '', `${c.voice ?? ''} ${c.role ?? ''}`]) {
+    const f = FEM.test(t);
+    const m = MASC.test(t);
+    if (f !== m) return f ? 'f' : 'm';
+  }
+  return null;
+}
 const isChild = (a: string) => /\b(enfant|child|kid|gar[çc]on|fillette|b[ée]b[ée]|\d{1}\s?ans|1[0-2]\s?ans)\b/i.test(a);
 export function castVoices(
-  chars: { id: string; name: string; gender?: string; age?: string; voice?: string }[],
+  chars: { id: string; name: string; gender?: string; age?: string; voice?: string; role?: string }[],
   available: string[],
+  lang = 'fr',
 ): Record<string, string> {
   const out: Record<string, string> = {};
   if (!available.length) return out;
   const used = new Set<string>();
-  const pick = (pref: string[]) => {
-    const p = pref.find((v) => available.includes(v) && !used.has(v)) ?? available.find((v) => !used.has(v)) ?? available[0]!;
+  // Same-language voices first (a French sketch is spoken by French voices when the model has some).
+  const rank = (v: string) => (voiceLang(v) === lang ? 0 : voiceLang(v) === null ? 1 : 2);
+  const pool = [...available].sort((a, b) => rank(a) - rank(b));
+  const pick = (want: 'f' | 'm' | null, pref: string[]) => {
+    const ok = (v: string) => !used.has(v) && (!want || voiceGender(v) === want);
+    const p =
+      pref.find((v) => pool.includes(v) && ok(v)) ??
+      pool.find(ok) ??
+      // All the voices of that gender are taken: re-use one of the RIGHT gender rather than the wrong one.
+      (want ? pool.find((v) => voiceGender(v) === want) : undefined) ??
+      pool.find((v) => !used.has(v)) ??
+      pool[0]!;
     used.add(p);
     return p;
   };
   for (const c of chars) {
-    const g = `${c.gender ?? ''} ${c.voice ?? ''}`;
-    const fem = isFemale(g);
+    const g = characterGender(c);
     const child = isChild(`${c.age ?? ''} ${c.voice ?? ''}`);
-    out[c.name.toUpperCase()] = pick(child ? (fem ? ['shimmer', 'nova', 'coral'] : ['fable', 'echo', 'alloy']) : fem ? FEMALE : MALE);
+    out[c.name.toUpperCase()] = pick(g, child ? (g === 'f' ? ['shimmer', 'nova', 'coral'] : ['fable', 'echo', 'alloy']) : g === 'f' ? FEMALE : MALE);
   }
   return out;
 }

@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { cameraAt, castVoices, fadeIn, moveFor, naturalSpeed, rmsEnvelope, speakerSide } from '../../server/jev/studio/motion';
+import {
+  cameraAt,
+  castVoices,
+  characterGender,
+  voiceGender,
+  voiceLang,
+  fadeIn,
+  moveFor,
+  naturalSpeed,
+  rmsEnvelope,
+  speakerSide,
+} from '../../server/jev/studio/motion';
 
 describe('2.5D motion engine', () => {
   it('every shot moves: the camera at the end differs from the start', () => {
@@ -45,6 +56,77 @@ describe('voice casting', () => {
     expect(['onyx', 'echo']).toContain(v.MODOU);
     expect(naturalSpeed(1.6)).toBe(1.15);
     expect(naturalSpeed(undefined)).toBe(1);
+  });
+});
+describe("voice casting on the real catalogue (v45: a woman's voice for a man)", () => {
+  const ELEVEN = [
+    'george',
+    'sarah',
+    'adam',
+    'alice',
+    'bella',
+    'bill',
+    'brian',
+    'callum',
+    'charlie',
+    'chris',
+    'daniel',
+    'eric',
+    'harry',
+    'jessica',
+    'laura',
+    'liam',
+    'lily',
+    'matilda',
+    'river',
+    'roger',
+    'will',
+  ];
+  it('ElevenLabs: KOFFI, ADJO and the PATRON (men) all get male voices; a woman gets a female one', () => {
+    const v = castVoices(
+      [
+        { id: '1', name: 'KOFFI', gender: 'homme' },
+        { id: '2', name: 'ADJO', gender: 'Homme' },
+        { id: '3', name: 'PATRON', gender: '', role: 'le patron, chef de bureau' },
+        { id: '4', name: 'AYA', gender: 'femme' },
+      ],
+      ELEVEN,
+    );
+    for (const n of ['KOFFI', 'ADJO', 'PATRON']) expect(voiceGender(v[n]!)).toBe('m');
+    expect(voiceGender(v.AYA!)).toBe('f');
+    expect(new Set(Object.values(v)).size).toBe(4);
+  });
+  it('a voice description saying « elle » no longer turns a man into a woman (gender field first)', () => {
+    expect(characterGender({ gender: 'homme', voice: 'voix grave, elle monte quand il panique' })).toBe('m');
+    expect(characterGender({ gender: '', voice: 'voix de vieille dame' })).toBe('f');
+  });
+  it('French voices first; every provider family is classified', () => {
+    const mai = [
+      'en-US-Grant:MAI-Voice-2.1',
+      'fr-FR-Harper:MAI-Voice-2.1',
+      'fr-FR-Marc:MAI-Voice-2.1',
+      'fr-FR-Soleil:MAI-Voice-2.1',
+    ];
+    const v = castVoices(
+      [
+        { id: '1', name: 'KOFFI', gender: 'homme' },
+        { id: '2', name: 'AWA', gender: 'femme' },
+      ],
+      mai,
+      'fr',
+    );
+    expect(v.KOFFI).toBe('fr-FR-Marc:MAI-Voice-2.1');
+    expect(['fr-FR-Harper:MAI-Voice-2.1', 'fr-FR-Soleil:MAI-Voice-2.1']).toContain(v.AWA);
+    expect(voiceGender('ff_siwis')).toBe('f');
+    expect(voiceGender('am_onyx')).toBe('m');
+    expect(voiceGender('English_Upbeat_Woman')).toBe('f');
+    expect(voiceGender('English_ManWithDeepVoice')).toBe('m');
+    expect(voiceGender('Charon')).toBe('m');
+    expect(voiceGender('Kore')).toBe('f');
+    expect(voiceGender('fr_marie_happy')).toBe('f');
+    expect(voiceGender('aura-2-hector-fr')).toBe('m');
+    expect(voiceLang('aura-2-hector-fr')).toBe('fr');
+    expect(voiceLang('ff_siwis')).toBe('fr');
   });
 });
 describe('3D', () => {

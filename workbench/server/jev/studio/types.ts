@@ -1,4 +1,5 @@
 // AI VISUAL STUDIO — shared types. Pure data: no DOM, no network. Everything the studio stores is plain JSON.
+import type { ClipReport } from './clipInspect';
 
 export type MediaKind = 'image' | 'video' | 'speech' | 'music';
 export type MediaCap =
@@ -186,6 +187,8 @@ export interface Scene {
   plateAssetId?: string;
   /** Generated video attached to the card; the image stays the reference. */
   videoAssetId?: string;
+  /** Deep analysis of the scene's clip (motion, frozen spans, flicker + vision judge: laugh, acting, mouth, anatomy). */
+  clipReport?: ClipReport;
   status: 'DRAFT' | 'READY' | 'GENERATED' | 'APPROVED' | 'FAILED';
   quality?: number | null;
   model?: string;

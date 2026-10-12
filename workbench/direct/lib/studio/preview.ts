@@ -64,6 +64,8 @@ export interface PreviewOptions {
   viral?: boolean;
   /** English line under the French one (off by default). */
   bilingual?: boolean;
+  /** Called when the render pauses (tab hidden) and resumes. */
+  onPause?: (paused: boolean) => void;
   /** One sketch per scene: the « stupeur » insert plays between every scene. */
   compilation?: boolean;
   /** « court » preset: one sketch + the reaction at the end (≈ 8 s, made to loop). */
@@ -319,7 +321,10 @@ function talkLayer(ctx: CanvasRenderingContext2D, W: number, H: number, w: TalkW
   g.fillRect(0, 0, zw, zh);
   ctx.drawImage(talkBuf, zx, zy);
 }
-/** A generated scene video (Video Factory), played muted in sync with the timeline. */
+/**
+ * A generated scene video, muted, DRIVEN by the film clock (not looped: v44 showed a clip shorter than its lines
+ * freezing / jumping back to its first frame).
+ */
 async function videoOf(id?: string): Promise<HTMLVideoElement | null> {
   if (!id) return null;
   const b = await blobs.get(id);
@@ -327,7 +332,8 @@ async function videoOf(id?: string): Promise<HTMLVideoElement | null> {
   const v = document.createElement('video');
   v.muted = true;
   v.playsInline = true;
-  v.loop = true;
+  v.loop = false;
+  v.preload = 'auto';
   v.src = URL.createObjectURL(b);
   try {
     await new Promise<void>((ok, ko) => {
@@ -407,7 +413,7 @@ function placeholder(ctx: CanvasRenderingContext2D, sc: Scene, W: number, H: num
 export async function renderPreview(
   bp: Blueprint,
   o: PreviewOptions = {},
-): Promise<{ blob: Blob; mime: string; seconds: number }> {
+): Promise<{ blob: Blob; mime: string; seconds: number; hiddenPauses?: number }> {
   const sup = previewSupport();
   if (!sup.ok) throw new Error(sup.reason);
   const [aw, ah] = ASPECTS[bp.aspect] ?? ASPECTS['9:16']!;
@@ -470,6 +476,12 @@ export async function renderPreview(
   const total = t + acc;
   const bitmaps = await Promise.all(bp.scenes.map((s) => bitmapOf(s.imageAssetId)));
   const videos = await Promise.all(bp.scenes.map((s) => videoOf(s.videoAssetId)));
+  // Speed of each clip: a clip at least 75 % as long as its scene is stretched to fill it; shorter ones play at 1×.
+  const clipRate = videos.map((v, k) => {
+    const d = v && Number.isFinite(v.duration) ? v.duration : 0;
+    const want = (bp.scenes[k]?.duration ?? 0) || d;
+    return d && want > d ? (d / want >= 0.75 ? Math.round((d / want) * 100) / 100 : 1) : 1;
+  });
   // Rigged scenes (no video clip) are animated by the puppet engine.
   const plates = await Promise.all(bp.scenes.map((s, k) => (bitmaps[k] && !videos[k] && s.rig?.characters.length ? bitmapOf(s.plateAssetId) : null)));
   // CORPS ENTIER: the exact cut-outs read in the browser (one grey slice per character), at the stage's size.
@@ -585,12 +597,38 @@ export async function renderPreview(
     osc.stop(t1 + 0.65);
   }
   rec.start(500);
-  const t0 = performance.now();
+  // THE FILM CLOCK IS THE AUDIO CLOCK. v44: a hidden tab throttled the loop to 1 frame/s for 11 s (scenes 3–4 « without
+  // animation »). Now, while the tab is hidden, recording, audio and clips PAUSE together and resume when it is back.
+  const a0 = ac.currentTime;
+  const clock = () => ac.currentTime - a0;
+  let hiddenPauses = 0;
+  const holdWhileHidden = async () => {
+    if (typeof document === 'undefined' || !document.hidden) return;
+    hiddenPauses++;
+    o.onPause?.(true);
+    if (rec.state === 'recording') rec.pause();
+    await ac.suspend();
+    videos.forEach((v) => v && !v.paused && v.pause());
+    await new Promise<void>((ok) => {
+      const on = () => {
+        if (!document.hidden) {
+          document.removeEventListener('visibilitychange', on);
+          ok();
+        }
+      };
+      document.addEventListener('visibilitychange', on);
+      o.signal?.addEventListener('abort', () => ok());
+    });
+    await ac.resume();
+    if (rec.state === 'paused') rec.resume();
+    o.onPause?.(false);
+  };
   const style = o.style ?? (bp.subtitles.style as SubtitleStyle);
   const grade = cinemaGrade(W, H, ctx);
   let shockStill: HTMLCanvasElement | null = null;
   while (true) {
-    const now = (performance.now() - t0) / 1000;
+    await holdWhileHidden();
+    const now = clock();
     if (now >= total || o.signal?.aborted) break;
     let si = 0;
     for (let i = 0; i < sceneStart.length; i++) if (now >= sceneStart[i]!) si = i;
@@ -632,9 +670,24 @@ export async function renderPreview(
       const img = bitmaps[k];
       const cam = cameraAt(moves[k]!, fr, { punch: k === si ? punchS : 0, side: sideS, energy: k === si ? va.energy : 0, t: now, dim3d });
       if (vid) {
-        if (vid.paused) void vid.play().catch(() => undefined);
-        // A real video clip already moves: only a gentle camera on top of it.
-        band = framed(ctx, vid as unknown as HTMLVideoElement & { width: number; height: number }, W, H, { zoom: 1 + (cam.zoom - 1) * 0.3, dx: cam.dx * 0.3, dy: cam.dy * 0.3, rot: 0 }, alpha, viral);
+        // The clip follows the film clock: slowed down a little when slightly short, then — past its end — its last
+        // picture keeps living (breathing + the speaker talking) instead of freezing or jumping back to the start.
+        const rate = clipRate[k]!;
+        const target = Math.max(0, now - sceneStart[k]!) * rate;
+        const end = Number.isFinite(vid.duration) ? vid.duration - 0.05 : Infinity;
+        const vsrc = vid as unknown as HTMLVideoElement & { width: number; height: number };
+        if (target < end) {
+          if (vid.playbackRate !== rate) vid.playbackRate = rate;
+          if (Math.abs(vid.currentTime - target) > 0.3) vid.currentTime = target;
+          if (vid.paused) void vid.play().catch(() => undefined);
+          band = framed(ctx, vsrc, W, H, { zoom: 1 + (cam.zoom - 1) * 0.3, dx: cam.dx * 0.3, dy: cam.dy * 0.3, rot: 0 }, alpha, viral);
+        } else {
+          if (!vid.paused) vid.pause();
+          if (vid.currentTime < end - 0.2) vid.currentTime = Math.max(0, end);
+          const b = breathing(now + k);
+          band = framed(ctx, vsrc, W, H, { ...cam, zoom: cam.zoom * b, dy: cam.dy - (b - 1) * 0.5 }, alpha, viral);
+          if (k === si && va.energy > 0.04 && alpha >= 1) talkLayer(ctx, band.w, band.h, talkWarp(va.side, va.energy, now), band.x, band.y);
+        }
       } else if (img && stages[k]) {
         // MARIONNETTE AFRIKATOON: the characters themselves move (head, body, arms), blink and talk with the voice.
         const st = stages[k]!;
@@ -701,5 +754,5 @@ export async function renderPreview(
       URL.revokeObjectURL(v.src);
     }
   });
-  return { blob: new Blob(chunks, { type: sup.mime! }), mime: sup.mime!, seconds: total };
+  return { blob: new Blob(chunks, { type: sup.mime! }), mime: sup.mime!, seconds: total, hiddenPauses };
 }

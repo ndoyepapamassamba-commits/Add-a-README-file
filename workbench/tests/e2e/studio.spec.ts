@@ -701,8 +701,7 @@ test('Video Factory restitution: COMPLETED → player visible at once, export wi
   await expect(page.getByTestId('video-diagnostics')).toContainText('Blob stocké');
   await expect(page.getByTestId('video-diagnostics')).toContainText('video/webm');
   await expect(page.getByTestId('video-diagnostics')).toContainText('élément <video> chargé');
-  // storyboard: video attached, image kept
-  await page.getByTestId('video-storyboard').click();
+  // storyboard: the finished clip is attached to its scene AT ONCE (no click needed), the image is kept
   await expect(page.getByTestId('video-storyboard')).toContainText('DANS LE STORYBOARD');
   await expect
     .poll(async () => {
@@ -1017,6 +1016,8 @@ test('Circuit Grok: open → launch → real generative clips with the OpenRoute
   await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 180_000 });
   // Real motion on the key shots, with the cheapest certain-price model, at 480p, first frame = the scene image.
   expect(net.videoSubmits).toBeGreaterThanOrEqual(1);
+  // The paid clips ARE in the film: attached to their scenes (v44 bug: stored but never played).
+  expect(await page.getByTestId('film-scenes').locator('video').count()).toBeGreaterThanOrEqual(1);
   // Every clip carries the identity lock and names the deformations to avoid (v44: stretched / torn arms).
   for (const b of net.videoBodies) expect(String(b.prompt)).toMatch(/Keep the first frame exactly.*Avoid: morphing/);
   for (const b of net.videoBodies) {
@@ -1032,6 +1033,62 @@ test('Circuit Grok: open → launch → real generative clips with the OpenRoute
   const spentUsd = Number(/dépensé\s*([\d.,]+)/.exec(txt)![1]!.replace(',', '.'));
   expect(spentUsd).toBeGreaterThan(0);
   expect(spentUsd).toBeLessThanOrEqual(0.3);
+  expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
+});
+
+test('Circuit Grok — analyse poussée: a deformed take is judged, redone ONCE with the written fix under the HARD cap; a hidden tab pauses the render', async ({ page }) => {
+  mock.models = [model('acme/free-text:free', '0', '0'), { ...model('acme/vision-judge', '0.0000001', '0.0000004'), architecture: { input_modalities: ['text', 'image'] } }];
+  const errors = await open(page, [], { autopilot: true });
+  const net = await intercept(page);
+  net.videoCost = -1;
+  await page.getByTitle(/AI Film Studio/).click();
+  const SHORT = { ...STORY, scenes: STORY.scenes.map((s) => ({ ...s, duration: 3 })) };
+  mock.push({ text: JSON.stringify(SHORT) });
+  // The vision judge: the FIRST clip it sees has a stretched arm and silent mouths; every later clip is fine.
+  let judged = 0;
+  mock.fallback = (body) => {
+    if (!JSON.stringify(body).includes('directeur de l’animation')) return { text: '{}' };
+    judged++;
+    return judged === 1
+      ? { text: '{"rire":5,"mouvement":6,"expressions":6,"bouche":2,"anatomie":2,"coherence":8,"defects":["bras étiré jusqu’à l’épaule du voisin"],"fix":"the arm keeps its normal length"}' }
+      : { text: '{"rire":8,"mouvement":8,"expressions":8,"bouche":8,"anatomie":9,"coherence":9,"defects":[],"fix":""}' };
+  };
+  await page.getByTestId('film-idea-input').fill('Le chef invisible : Koffi croit qu’une caméra le surveille.');
+  await page.getByRole('button', { name: 'Afrikatoon 2D' }).click();
+  await page.getByTestId('film-create').click();
+  // The render is real-time: hide the tab while it records → it pauses (never 1 frame/s), then resumes.
+  await expect(page.getByTestId('pipe-MONTAGE')).toContainText('rendu du film', { timeout: 180_000 });
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(page.getByTestId('pipe-MONTAGE')).toContainText('rendu en pause', { timeout: 15_000 });
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 180_000 });
+  expect(judged).toBeGreaterThanOrEqual(2);
+  // The retake carried the judge's correction + the analyser's own one, ahead of the identity lock.
+  const retake = net.videoBodies.find((b) => String(b.prompt).includes('the arm keeps its normal length'));
+  expect(retake).toBeTruthy();
+  expect(String(retake!.prompt)).toContain('correct anatomy');
+  expect(String(retake!.prompt)).toContain('Keep the first frame exactly');
+  // Every shot shows its analysis; the cap still holds.
+  await expect(page.getByTestId('clip-report').first()).toContainText('anatomie');
+  const txt = (await page.getByTestId('film-spent').textContent()) ?? '';
+  expect(Number(/dépensé\s*([\d.,]+)/.exec(txt)![1]!.replace(',', '.'))).toBeLessThanOrEqual(0.3);
+  expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
+});
+
+test('🔬 Analyser une vidéo: any file is cut into shots and measured (motion, frozen passages, sound)', async ({ page }) => {
+  const errors = await open(page, [], { autopilot: true });
+  await page.getByTitle(/AI Film Studio/).click();
+  await page.getByTestId('video-analyzer').locator('summary').click();
+  await page.getByTestId('analyzer-file').setInputFiles(path.join(ROOT, 'tests/fixtures/studio/clip.webm'));
+  await expect(page.getByTestId('analyzer-result')).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId('analyzer-result')).toContainText('plan(s)');
+  await expect(page.getByTestId('analyzer-frozen')).toContainText('image figée');
   expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
 });
 
@@ -1052,8 +1109,11 @@ test('Circuit Grok « 10 s · entièrement animé »: no character sheet, voices
   await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 180_000 });
   // one picture per scene, no character sheet: the money goes to motion
   expect(net.imageCalls.length).toBe(SHORT.scenes.length);
-  // every scene became a generative clip (the voices were made first)
-  expect(net.videoSubmits).toBe(SHORT.scenes.length);
+  // every scene became a generative clip (the voices were made first) — and the film plays them
+  // (the test clip barely moves: the analyser may order ONE retake per shot, never more, always under the cap)
+  expect(net.videoSubmits).toBeGreaterThanOrEqual(SHORT.scenes.length);
+  expect(net.videoSubmits).toBeLessThanOrEqual(2 * SHORT.scenes.length);
+  expect(await page.getByTestId('film-scenes').locator('video').count()).toBe(SHORT.scenes.length);
   expect(net.speechCalls).toBeGreaterThan(0);
   const txt = (await page.getByTestId('film-spent').textContent()) ?? '';
   expect(Number(/dépensé\s*([\d.,]+)/.exec(txt)![1]!.replace(',', '.'))).toBeLessThanOrEqual(0.3);
