@@ -9,6 +9,7 @@
  *  - formulas Excel evaluates differently from LibreOffice (N(+range) inside SUMPRODUCT) are reported.
  * Pure: bytes in → bytes out + the list of fixes (French, for the chat). Null when there is nothing to fix.
  */
+import { excelStrict } from './excelStrict';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { contrastH } from './dashRender';
 
@@ -293,6 +294,10 @@ export function qaXlsx(bytes: Uint8Array): QAResult | null {
     wr(z, 'xl/styles.xml', st);
   }
   const fixes: string[] = [];
+  // Excel's own opening rules (the schema validator does not check them): invalid merges, anchors, style indexes.
+  const strict = excelStrict(z);
+  fixes.push(...strict.fixes);
+  warnings.push(...strict.warnings);
   if (contrast) fixes.push(`${plural(contrast, 'cellule')} au texte illisible sur son fond (contraste corrigé)`);
   if (shapes) fixes.push(`${plural(shapes, 'texte')} de carte / tuile rendu${shapes > 1 ? 's' : ''} lisible${shapes > 1 ? 's' : ''}`);
   if (widened) fixes.push(`${plural(widened, 'colonne')} élargie${widened > 1 ? 's' : ''} (##### ou texte coupé)`);

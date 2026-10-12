@@ -9,6 +9,7 @@
  *  - NAVIGATION: menu items of the image become buttons that open the other sheets (hyperlinks).
  * Pure (zip in → zip out). Nothing invented: the cached values are the chat's own figures for « (Tous) ».
  */
+import { validMerges } from './excelStrict';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { chartXml, type CloneChartKind } from './cloneXlsx';
 import type { DashSpec, Panel } from './dashClone';
@@ -169,8 +170,11 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   let wb = rd(z, 'xl/workbook.xml');
   if (!wb || !/<sheets>/.test(wb) || !d.source || !d.source.rows.length) return null;
   // A sheet the model's own code called « Tableau de bord » is kept: ours goes first as « Tableau de bord vivant ».
-  const DASH_NAME = wb.includes(`name="${DASH}"`) ? `${DASH} vivant` : DASH;
-  if (wb.includes(`name="${DASH_NAME}"`) || wb.includes(`name="${xesc(DATA)}"`)) return null;
+  // Excel compares sheet names WITHOUT case: « TABLEAU DE BORD » already there is the same name.
+  const taken = new Set([...wb.matchAll(/<sheet\b[^>]*\bname="([^"]*)"/g)].map((m) => m[1]!.toLocaleLowerCase('fr')));
+  const has = (n: string) => taken.has(xesc(n).toLocaleLowerCase('fr'));
+  const DASH_NAME = has(DASH) ? `${DASH} vivant` : DASH;
+  if (has(DASH_NAME) || has(DATA) || has(TBL)) return null;
   const QD = `'${DASH_NAME}'`;
   const src = d.source;
   const font = (o.font ?? spec.font).replace(/[<>"]/g, '') || 'Segoe UI';
@@ -465,9 +469,14 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
       // Real cells: header + Top N, the panel's colours; a rounded outline only (cells stay clickable).
       tables++;
       paint(b, S.get({ fill: p.fill, font }));
-      const cols = d.table.columns.slice(0, 5);
       const inner = { c0: b.c0 + 1, c1: b.c1 - 1, r0: b.r0 + 1, r1: b.r1 - 1 };
       const width = inner.c1 - inner.c0 + 1;
+      // A narrow panel shows fewer columns (never a column narrower than one cell: its merge would be reversed).
+      const cols = d.table.columns.slice(0, Math.max(0, Math.min(5, width, Math.floor(width / 2) || 1)));
+      if (!cols.length || inner.r1 - inner.r0 < 1) {
+        parts.push(shapeXml(b, { name: `Cadre ${i + 1}`, fill: p.fill, line: p.border ?? mixH(p.fill, p.text, 0.2), lineW: Math.max(0.75, p.borderWidth), radius: p.radius }));
+        return;
+      }
       const share = cols.map((c, j) => (j === 0 ? 2.2 : 1));
       const total = share.reduce((a, x) => a + x, 0);
       let c = inner.c0;
@@ -567,7 +576,7 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
     const wide = box.c1 - box.c0 + 1 > (box.r1 - box.r0 + 1) * 2.2;
     // A band of 3 rows or less holds one row of buttons: no caption there (the values speak for themselves).
     return { name: (f.label ?? f.c).slice(0, 60), cache: `Slicer_${base}_${i + 1}`, column: rawIdx.has(f.c) ? rawIdx.get(f.c)! + 1 : 0, box, columns: wide ? Math.max(1, Math.min(6, f.vals.length)) : 1, caption: box.r1 - box.r0 + 1 > 3 };
-  }).filter((x) => x.column > 0);
+  }).filter((x) => x.column >= 1 && x.column <= tNames.length);
   for (const sl of slicers) {
     const id = ++sid;
     const graphic = `<xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="${id}" name="${xesc(sl.name)}"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/drawing/2010/slicer"><sle:slicer xmlns:sle="http://schemas.microsoft.com/office/drawing/2010/slicer" name="${xesc(sl.name)}"/></a:graphicData></a:graphic></xdr:graphicFrame>`;
@@ -593,7 +602,9 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
   S.save();
   const dashPart = 'xl/worksheets/sheet-live-dash.xml';
   const drawing = 'xl/drawings/drawing-live-dash.xml';
-  const mergeXml = merges.length ? `<mergeCells count="${merges.length}">${merges.map((m) => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>` : '';
+  // Excel refuses (« problème dans le contenu ») reversed, single-cell or overlapping merges: only valid ones are written.
+  const safeMerges = validMerges(merges);
+  const mergeXml = safeMerges.length ? `<mergeCells count="${safeMerges.length}">${safeMerges.map((m) => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>` : '';
   const dvXml = dv.length ? `<dataValidations count="${dv.length}">${dv.join('')}</dataValidations>` : '';
   wr(z, dashPart, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${NS_R}"><sheetPr><tabColor rgb="FF${hex(spec.palette.primary)}"/><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${colL(G - 1)}${R}"/><sheetViews><sheetView showGridLines="0" showRowColHeaders="0" tabSelected="1" zoomScale="100" workbookViewId="0"><selection activeCell="${fBoxes[0] ? `${colL(fBoxes[0].c0)}${selCell[0]!.r}` : 'A1'}" sqref="${fBoxes[0] ? `${colL(fBoxes[0].c0)}${selCell[0]!.r}` : 'A1'}"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="${ROW_PT}" customHeight="1"/><cols><col min="1" max="${G}" width="${COL_W}" customWidth="1"/></cols><sheetData>${dashRows.join('')}</sheetData>${mergeXml}${dvXml}<pageMargins left="0.2" right="0.2" top="0.2" bottom="0.2" header="0.1" footer="0.1"/><pageSetup orientation="${spec.aspect >= 1 ? 'landscape' : 'portrait'}" fitToWidth="1" fitToHeight="1"/><drawing r:id="rIdLiveDrawing"/>${slicers.length ? `<extLst><ext uri="{3A4CF648-6AED-40f4-86FF-DC5316D8AED3}" xmlns:x15="${NS_X15}"><x14:slicerList xmlns:x14="${NS_X14}"><x14:slicer r:id="rIdLiveSlicers"/></x14:slicerList></ext></extLst>` : ''}</worksheet>`);
   wr(z, relsOf(dashPart), `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdLiveDrawing" Type="${NS_R}/drawing" Target="../drawings/drawing-live-dash.xml"/>${slicers.length ? '<Relationship Id="rIdLiveSlicers" Type="http://schemas.microsoft.com/office/2007/relationships/slicer" Target="../slicers/slicer-live.xml"/>' : ''}</Relationships>`);
