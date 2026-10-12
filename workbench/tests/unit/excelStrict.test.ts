@@ -171,3 +171,32 @@ describe('segments orphelins (feuille du tableau de bord retirée, slicers rest�
     expect(wb).toContain('Données filtrables');
   });
 });
+
+describe('texte écrit comme formule (« = Total Douteux (100 %) ») : Excel réparait le fichier', () => {
+  it('turns the unreadable formula back into a text cell and leaves real formulas alone', () => {
+    const z = unzipSync(houseXlsx(['A', 'B'], [{ A: 'x', B: 1 }, { A: 'y', B: 2 }], { title: 'T', chart: 'none' }));
+    const sheet = Object.keys(z).find((k) => /^xl\/worksheets\/[^/]+\.xml$/.test(k))!;
+    let x = strFromU8(z[sheet]!);
+    x = x.replace(
+      /<\/sheetData>/,
+      '<row r="40"><c r="A40" s="0"><f> Total Douteux (100 %)</f><v /></c><c r="B40" s="0"><f>SUBTOTAL(9,B2:B3)</f><v>3</v></c><c r="C40" t="str"><f>SOMME(B2;B3)</f><v>3</v></c><c r="D40"><f>UNIQUE(A2:A3)</f><v></v></c><c r="E40" s="0"><f>B40/\'Feuille 1\'!B:B</f><v>133.4</v></c><c r="F40" s="0"><f>E40/B40</f><v>0.5</v></c></row></sheetData>',
+    );
+    z[sheet] = strToU8(x);
+    const { fixes } = excelStrict(z);
+    const out = strFromU8(z[sheet]!);
+    expect(fixes.some((f) => /texte\(s\) écrit\(s\) comme formule/.test(f))).toBe(true);
+    expect(fixes.some((f) => /traduite\(s\)/.test(f))).toBe(true);
+    // A share of a column written as a division by the whole column: divided by the column's total, recalculated on load.
+    expect(fixes.some((f) => /division\(s\) par une colonne entière/.test(f))).toBe(true);
+    expect(out).toContain('<c r="E40" s="0"><f>B40/SUM(\'Feuille 1\'!B:B)</f></c>');
+    expect(out).toContain('<c r="F40" s="0"><f>E40/B40</f><v>0.5</v></c>');
+    expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/<calcPr\b[^>]*fullCalcOnLoad="1"/);
+    expect(out).toContain('<c r="A40" s="0" t="inlineStr"><is><t xml:space="preserve">= Total Douteux (100 %)</t></is></c>');
+    expect(out).not.toContain('<f> Total Douteux');
+    expect(out).toContain('<c r="B40" s="0"><f>SUBTOTAL(9,B2:B3)</f><v>3</v></c>');
+    expect(out).toContain('<f>SUM(B2,B3)</f>');
+    expect(out).toContain('<f>_xlfn.UNIQUE(A2:A3)</f></c>');
+    // idempotent
+    expect(excelStrict(z).fixes).toEqual([]);
+  });
+});

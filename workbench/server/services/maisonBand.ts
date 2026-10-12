@@ -85,12 +85,12 @@ export function shiftFormula(f: string, sheet: string, own: boolean, from: numbe
   return out;
 }
 
-interface SheetInfo {
+export interface SheetInfo {
   name: string;
   part: string;
   index: number;
 }
-function sheetsOf(z: Zip): SheetInfo[] {
+export function sheetsOf(z: Zip): SheetInfo[] {
   const wb = rd(z, 'xl/workbook.xml');
   const rels = rd(z, 'xl/_rels/workbook.xml.rels');
   const out: SheetInfo[] = [];
@@ -104,7 +104,7 @@ function sheetsOf(z: Zip): SheetInfo[] {
   return out;
 }
 /** Drawing part of a sheet (if any). */
-function drawingOf(z: Zip, part: string): string | null {
+export function drawingOf(z: Zip, part: string): string | null {
   const x = rd(z, part);
   const rid = /<drawing\b[^>]*\br:id="([^"]+)"/.exec(x)?.[1];
   if (!rid) return null;
@@ -162,17 +162,17 @@ export function insertRows(z: Zip, sh: SheetInfo, from: number, n: number): void
 }
 
 // ── reading a sheet ──────────────────────────────────────────────────────────────────────────────────────────────────
-interface Cell {
+export interface Cell {
   col: number;
   row: number;
   v: string | number | null;
   formula: boolean;
 }
-function sharedStrings(z: Zip): string[] {
+export function sharedStrings(z: Zip): string[] {
   const x = rd(z, 'xl/sharedStrings.xml');
   return [...x.matchAll(/<si>([\s\S]*?)<\/si>/g)].map((m) => unesc([...m[1]!.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map((t) => t[1]).join('')));
 }
-function readRows(x: string, sst: string[]): Map<number, Cell[]> {
+export function readRows(x: string, sst: string[]): Map<number, Cell[]> {
   const rows = new Map<number, Cell[]>();
   for (const rm of x.matchAll(/<row\b[^>]*?\br="(\d+)"[^>]*?(?:\/>|>([\s\S]*?)<\/row>)/g)) {
     const r = +rm[1]!;
@@ -196,7 +196,7 @@ function readRows(x: string, sst: string[]): Map<number, Cell[]> {
   }
   return rows;
 }
-interface Table {
+export interface Table {
   header: number;
   first: number;
   last: number;
@@ -206,7 +206,7 @@ interface Table {
   lastCol: number;
 }
 /** First table of the sheet: a header of texts followed by rows holding numbers; the TOTAL row is left out. */
-function findTable(rows: Map<number, Cell[]>): Table | null {
+export function findTable(rows: Map<number, Cell[]>): Table | null {
   const keys = [...rows.keys()].sort((a, b) => a - b);
   for (let k = 0; k < Math.min(keys.length - 2, 40); k++) {
     const head = rows.get(keys[k]!)!.filter((c) => c.v !== null);
@@ -255,11 +255,10 @@ function bandStyles(z: Zip, d: Design): { label: number[]; value: number[]; spac
   const border = (top: string) => `<border><left style="thin">${line}</left><right style="thin">${line}</right><top style="medium"><color rgb="FF${top}"/></top><bottom style="thin">${line}</bottom><diagonal/></border>`;
   const box = `<border><left style="thin">${line}</left><right style="thin">${line}</right><top/><bottom style="thin">${line}</bottom><diagonal/></border>`;
   // numFmt for amounts in Md / M.
-  let fmtId = 0;
   const fm = /<numFmts\b[^>]*>([\s\S]*?)<\/numFmts>/.exec(st);
   const code = '[&gt;=1000000000]#,##0.0,,,&quot; Md&quot;;[&gt;=1000000]#,##0.0,,&quot; M&quot;;#,##0';
   const ids = [...(fm?.[1] ?? '').matchAll(/numFmtId="(\d+)"/g)].map((m) => +m[1]!);
-  fmtId = Math.max(175, ...ids) + 1;
+  const fmtId = Math.max(175, ...ids) + 1;
   const item = `<numFmt numFmtId="${fmtId}" formatCode="${code}"/>`;
   if (fm) st = st.replace(/<numFmts\b([^>]*)>([\s\S]*?)<\/numFmts>/, (_m, a: string, b: string) => `<numFmts${a.replace(/count="\d+"/, `count="${ids.length + 1}"`)}>${b}${item}</numFmts>`);
   else st = st.replace(/<styleSheet\b([^>]*)>/, `<styleSheet$1><numFmts count="1">${item}</numFmts>`);

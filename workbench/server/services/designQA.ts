@@ -164,6 +164,7 @@ export function qaXlsx(bytes: Uint8Array): QAResult | null {
   const sheets = [...rd(z, 'xl/workbook.xml').matchAll(/<sheet\b[^>]*name="([^"]*)"[^>]*r:id="([^"]+)"/g)].map((m) => ({ name: m[1]!, path: `xl/${(new RegExp(`Id="${m[2]}"[^>]*Target="([^"]+)"`).exec(wbRels) ?? new RegExp(`Target="([^"]+)"[^>]*Id="${m[2]}"`).exec(wbRels))?.[1]?.replace(/^\/?xl\//, '') ?? ''}` }));
   let contrast = 0;
   let widened = 0;
+  let pctSums = 0;
   let fitted = 0;
   const warnings: string[] = [];
   for (const sh of sheets) {
@@ -201,6 +202,7 @@ export function qaXlsx(bytes: Uint8Array): QAResult | null {
       }
       const filled = new Set<string>();
       const cells: { r: number; c: number; len: number; num: boolean; s: number }[] = [];
+      const blanked: [string, string][] = [];
       let scanned = 0;
       for (const m of x.matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
         if (++scanned > 60000) break;
@@ -214,6 +216,16 @@ export function qaXlsx(bytes: Uint8Array): QAResult | null {
         const t = attr(m[1]!, 't');
         const s = +(attr(m[1]!, 's') ?? 0);
         const v = /<v>([^<]*)<\/v>/.exec(body)?.[1] ?? '';
+        // A footer that SUMS a column of percentages (« 13 338 % ») says nothing: the cell is left empty, styled.
+        if ((!t || t === 'n') && /<f>\s*(?:SUBTOTAL\(\s*(?:9|109)\s*[,;]|SUM\()/i.test(body)) {
+          const xf = xfs[s];
+          const fmt = xf ? (numFmts.get(xf.numFmtId) ?? BUILTIN_FMT[xf.numFmtId] ?? 'General') : 'General';
+          if (/%/.test(fmt)) {
+            blanked.push([m[0], `<c r="${ref}"${s ? ` s="${s}"` : ''}/>`]);
+            filled.delete(`${r},${c}`);
+            continue;
+          }
+        }
         if (t === 's') cells.push({ r, c, len: sst[+v] ?? 0, num: false, s });
         else if (t === 'inlineStr') cells.push({ r, c, len: [...body.matchAll(/<t\b[^>]*>([^<]*)<\/t>/g)].map((k) => k[1]).join('').length, num: false, s });
         else if (t === 'str') cells.push({ r, c, len: v.length, num: false, s });
@@ -225,6 +237,8 @@ export function qaXlsx(bytes: Uint8Array): QAResult | null {
           if (len !== null) cells.push({ r, c, len, num: true, s });
         }
       }
+      for (const [from, to] of blanked) x = x.replace(from, to);
+      pctSums += blanked.length;
       const need = new Map<number, number>();
       for (const k of cells) {
         const xf = xfs[k.s];
@@ -301,6 +315,7 @@ export function qaXlsx(bytes: Uint8Array): QAResult | null {
   if (contrast) fixes.push(`${plural(contrast, 'cellule')} au texte illisible sur son fond (contraste corrigé)`);
   if (shapes) fixes.push(`${plural(shapes, 'texte')} de carte / tuile rendu${shapes > 1 ? 's' : ''} lisible${shapes > 1 ? 's' : ''}`);
   if (widened) fixes.push(`${plural(widened, 'colonne')} élargie${widened > 1 ? 's' : ''} (##### ou texte coupé)`);
+  if (pctSums) fixes.push(`${plural(pctSums, 'total')} de pourcentages retiré${pctSums > 1 ? 's' : ''} (une somme de pourcentages n'a pas de sens : « 13 338 % »)`);
   if (fitted) fixes.push(`${plural(fitted, 'feuille')} ajustée${fitted > 1 ? 's' : ''} à la largeur de la page à l'impression`);
   if (!fixes.length && !warnings.length) return null;
   return { bytes: fixes.length ? zipSync(z, { level: 6 }) : bytes, fixes, warnings };

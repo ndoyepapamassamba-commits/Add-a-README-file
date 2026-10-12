@@ -368,8 +368,8 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
     const r = i + 2;
     const c = k.src?.col && rawIdx.has(k.src.col) ? rng(rawIdx.get(k.src.col)!) : null;
     const vals = k.src?.col ? rows.map((x) => x[k.src!.col!]).filter(isNum) : [];
-    let f = '';
-    let v = 0;
+    let f: string;
+    let v: number;
     // SUBTOTAL ignores the rows the slicers hide: the KPIs follow the selection, no helper needed.
     if (k.src?.fn === 'count') {
       f = `SUM(${mask})`;
@@ -554,7 +554,10 @@ export function addLiveDashboard(bytes: Uint8Array, spec: DashSpec, d: CloneData
       const zebraN = [S.get({ fill: p.fill, color: p.text, size: 8, font, amount: true, align: 'right' }), S.get({ fill: mixH(p.fill, p.colors[0] ?? spec.palette.primary, 0.08), color: p.text, size: 8, font, amount: true, align: 'right' })];
       const rowsAvail = Math.floor((inner.r1 - inner.r0 + 1) / 2) - 1;
       spans.forEach((sp, j) => {
-        for (let cc = sp.c0; cc <= sp.c1; cc++) grid.set(`${inner.r0},${cc}`, hd), grid.set(`${inner.r0 + 1},${cc}`, hd);
+        for (let cc = sp.c0; cc <= sp.c1; cc++) {
+          grid.set(`${inner.r0},${cc}`, hd);
+          grid.set(`${inner.r0 + 1},${cc}`, hd);
+        }
         values.set(`${inner.r0},${sp.c0}`, { v: human(cols[j]!, 16), s: hd });
         merges.push(`${colL(sp.c0)}${inner.r0 + 1}:${colL(sp.c1)}${inner.r0 + 2}`);
         for (let k = 0; k < Math.min(topRows, rowsAvail); k++) {

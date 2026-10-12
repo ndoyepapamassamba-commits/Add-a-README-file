@@ -37,6 +37,17 @@ beforeAll(async () => {
     path.join(root, 'data', 'agents', 'analyste.md'),
     '---\nname: Analyste\ndescription: Analyse de portefeuilles\ntools: Read, Grep, Bash, mcp.*\nmodel: opus\nskills: [credit-risk]\n---\nTu es analyste.',
   );
+  // Project skills: `.claude/skills` of the workbench and of the repository above it.
+  const proj = path.join(root, 'cwd', '.claude', 'skills', 'apex-credit-risk');
+  fs.mkdirSync(path.join(proj, 'references'), { recursive: true });
+  fs.writeFileSync(
+    path.join(proj, 'SKILL.md'),
+    '---\nname: apex-credit-risk\ndescription: Engagements et risque de crédit.\ntriggers:\n  - douteux\n  - ACTE 7\n---\n# APEX\n',
+  );
+  fs.writeFileSync(path.join(proj, 'references', '04.md'), 'Douteux.');
+  const above = path.join(root, '.claude', 'skills', 'm365-verification');
+  fs.mkdirSync(above, { recursive: true });
+  fs.writeFileSync(path.join(above, 'SKILL.md'), '---\nname: m365-verification\ndescription: Vérifie les livrables Office.\n---\nBody');
   registry = new SkillRegistry({
     dataDir: path.join(root, 'data'),
     cwd: path.join(root, 'cwd'),
@@ -48,6 +59,16 @@ beforeAll(async () => {
 afterAll(() => fs.rmSync(root, { recursive: true, force: true }));
 
 describe('skills', () => {
+  it('finds the project skills of .claude/skills (workbench and repository) with their triggers', async () => {
+    const all = await registry.list();
+    const apex = all.find((s) => s.name === 'apex-credit-risk')!;
+    expect(apex).toBeDefined();
+    expect(apex.source).toBe('workbench');
+    expect(apex.files).toContain('references/04.md');
+    expect(apex.triggers).toEqual(expect.arrayContaining(['douteux', 'acte 7']));
+    expect(all.some((s) => s.name === 'm365-verification')).toBe(true);
+  });
+
   it('parses frontmatter', () => {
     const { meta, body } = parseFrontmatter('---\nname: x\ndescription: >\n  long\n  text\n---\nBody');
     expect(meta).toEqual({ name: 'x', description: 'long text\n' });
@@ -65,7 +86,7 @@ describe('skills', () => {
   });
   it('lists skills with bundled files and reads them safely', async () => {
     const list = await registry.list();
-    expect(list.map((s) => s.name)).toEqual(['credit-risk', 'email-drafter']);
+    expect(list.map((s) => s.name)).toEqual(['apex-credit-risk', 'credit-risk', 'email-drafter', 'm365-verification']);
     expect(await registry.body('email-drafter')).toContain('Toujours proposer un objet');
     expect(await registry.readFile('email-drafter', 'references/ton.md')).toBe('Ton cordial.');
     await expect(registry.readFile('email-drafter', '../../../etc/passwd')).rejects.toThrow();

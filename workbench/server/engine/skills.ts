@@ -117,6 +117,52 @@ export const SKILL_REGISTRY: EngineSkill[] = [
   },
   {
     ...NATIVE,
+    name: 'apex_credit_risk',
+    description:
+      'Engagements et risque de crédit (savoir-faire APEX Credit Risk OS) : arrêté ACTE 7, NPL, ECL IFRS 9, classes BCEAO, impayés 30-90 j et protocoles, douteux et provisionnement (Instr. 026 art. 16), déclassements, conformité, capital et stress, Risk Outlook, CCB, FODEP, codification, exports premium.',
+    capabilities: [
+      'lecture ACTE 7 / PCB / CRM',
+      'indicateurs de portefeuille',
+      'impayés 30-90 j',
+      'douteux et provisions',
+      'conformité IFRS 7/9, BCEAO, UMOA',
+      'capital IRB et stress',
+      'probabilités avec provenance',
+      'exports Excel / Word / PPT / mail premium',
+    ],
+    triggers: [
+      'engagements?',
+      'acte ?7',
+      'douteu',
+      'watch-? ?list',
+      'comit[ée] (de |des )?(cr[ée]dit|engagements)',
+      'd[ée]class',
+      'recouvrement',
+      'instruction ?026',
+      'close monitoring',
+      'roll ?rate',
+      'fodep',
+      'portefeuille (de )?cr[ée]dit',
+      'ifrs ?9',
+      'bceao',
+      '\\bnpl\\b',
+      'impay[ée]',
+      'provision',
+      'stage ?[123]',
+      'risque de cr[ée]dit',
+    ],
+    required_tools: ['data.inspect', 'data.query'],
+    recommended_models: { metric: 'intelligence', tier: 'quality' },
+    incompatible_models: ['no-tools'],
+    cost_profile: 'moyen',
+    security_profile: 'écrit dans l’espace de travail',
+    agents: ['data_analyst', 'compliance', 'reporting'],
+    companions: ['risk_analysis', 'excel_analysis', 'document_reporting'],
+    playbook:
+      'Load the apex-credit-risk skill (SKILL.md + the reference sheets its routing table names for this request). Read the file with sheet 01 (ACTE 7 master sheet, symmetric exclusions, per-line derivatives), compute with data.query only, cross-check key totals (clients sum = aggregate, arrears bridge = 0), present the three readings (IFRS 9 / BCEAO / PCB) whenever doubtful loans or provisions are involved, put a provenance tag on every modelled figure, answer in French, and never invent a figure, a date or a rate. Exports follow sheet 05 in the user’s theme and are verified before delivery.',
+  },
+  {
+    ...NATIVE,
     name: 'document_reporting',
     description: 'Livrables au style maison : rapport Word, PDF, Excel, mail Outlook (.eml).',
     capabilities: ['docx', 'pdf', 'xlsx stylé', 'eml'],
@@ -451,12 +497,13 @@ export function selectSkills(
         why: `déclencheurs : ${hits.slice(0, 3).join(', ') || 'pièce jointe'}`,
       });
   }
-  // Companions of a selected skill come along.
+  // Companions of a selected skill come along, ranked just under a one-trigger skill (above a stray single hit
+  // when their parent matched strongly).
   for (const m of [...scored])
     for (const c of m.skill.companions ?? [])
       if (!scored.some((x) => x.skill.name === c)) {
         const s = SKILL_REGISTRY.find((x) => x.name === c);
-        if (s) scored.push({ skill: s, score: 0.5, why: `accompagne ${m.skill.name}` });
+        if (s) scored.push({ skill: s, score: 0.5 + Math.min(2, m.score) * 0.5, why: `accompagne ${m.skill.name}` });
       }
   scored.sort((a, b) => b.score - a.score);
   const selected: SkillMatch[] = [];
@@ -464,7 +511,7 @@ export function selectSkills(
   for (const m of scored) {
     const why = incompatibility(m.skill, ctx);
     if (why) incompatible.push({ skill: m.skill, reason: why });
-    else if (selected.length < (ctx.max ?? 5)) selected.push(m);
+    else if (selected.length < (ctx.max ?? 6)) selected.push(m);
   }
   return { selected, incompatible };
 }

@@ -38,6 +38,15 @@ describe('CONTRÔLE DESIGN AVANT LIVRAISON — Excel', () => {
     expect(out).toMatch(/<sheetPr><pageSetUpPr fitToPage="1"\/><\/sheetPr><cols>/);
     expect(out).toMatch(/<pageMargins[^>]*\/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"\/><\/worksheet>/);
   });
+  it('a footer that sums a column of percentages is emptied (the style stays), a sum of amounts is kept', () => {
+    const stylesPct = STYLES.replace('<cellXfs count="3">', '<cellXfs count="4">').replace('</cellXfs>', '<xf numFmtId="9" fontId="0" fillId="0" borderId="0" applyNumberFormat="1"/></cellXfs>');
+    const sh = `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="2"><c r="A2" s="2"><v>100</v></c><c r="B2" s="3"><v>0.4</v></c></row><row r="3"><c r="A3" s="2"><v>150</v></c><c r="B3" s="3"><v>0.6</v></c></row><row r="4"><c r="A4" s="2"><f>SUBTOTAL(109,A2:A3)</f><v>250</v></c><c r="B4" s="3"><f>SUBTOTAL(109,B2:B3)</f><v>1</v></c></row></sheetData></worksheet>`;
+    const q = qaXlsx(xlsx(sh, stylesPct))!;
+    const o = strFromU8(unzipSync(q.bytes)['xl/worksheets/sheet1.xml']!);
+    expect(o).toContain('<c r="B4" s="3"/>');
+    expect(o).toContain('<c r="A4" s="2"><f>SUBTOTAL(109,A2:A3)</f><v>250</v></c>');
+    expect(q.fixes.join(' ')).toMatch(/pourcentages/);
+  });
   it('a clean workbook is left alone; N(+range) is reported', () => {
     const ok = `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1"><f>SUMPRODUCT(MAX((A2:A9>0)*N(+B2:B9)))</f><v>1</v></c></row></sheetData></worksheet>`;
     const q = qaXlsx(xlsx(ok, STYLES))!;

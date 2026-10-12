@@ -108,7 +108,8 @@ for path in sys.argv[1:]:
                                 for pos in re.findall(r'<c:dLblPos val="(\w+)"/>', body):
                                     if pos not in ok: errs.append(f'{p2}: {ty} dLblPos {pos} not allowed')
                             for f in re.findall(r'<c:f>([^<]*)</c:f>', c):
-                                sn = re.match(r"^'?(.*?)'?!", f.replace('&apos;', "'"))
+                                # XML text: « & » in a sheet name is written &amp; (same for ' < > ")
+                                sn = re.match(r"^'?(.*?)'?!", f.replace('&apos;', "'").replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"').replace('&amp;', '&'))
                                 if sn and sn.group(1).replace("''", "'") not in sheetnames: errs.append(f'{p2}: ref to unknown sheet {f}')
     ct = z.read('[Content_Types].xml').decode()
     for p in names:

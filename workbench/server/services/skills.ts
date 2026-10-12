@@ -62,6 +62,9 @@ export class SkillRegistry {
     const list: { dir: string; source: SkillSource }[] = [
       { dir: this.importDir, source: 'imported' },
       { dir: path.join(this.opts.cwd, 'skills'), source: 'workbench' },
+      // Project skills (Claude-compatible `.claude/skills` of the workbench and of the repository that contains it).
+      { dir: path.join(this.opts.cwd, '.claude', 'skills'), source: 'workbench' },
+      { dir: path.join(this.opts.cwd, '..', '.claude', 'skills'), source: 'workbench' },
       ...this.opts.extraDirs.map((dir) => ({ dir, source: 'custom' as const })),
     ];
     if (this.opts.includeClaudeHome)

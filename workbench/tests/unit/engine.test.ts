@@ -271,6 +271,14 @@ describe('skills, MCP and agent loadouts', () => {
     );
     expect(skillsPrompt(s.selected)).toMatch(/engine_skills/);
   });
+  it('a credit-commitments request activates the APEX credit risk skill with its companions', () => {
+    const s = selectSkills('Prépare le classeur des douteux et des provisions BCEAO du portefeuille d’engagements', ['acte7_septembre.xlsx']);
+    const names = s.selected.map((x) => x.skill.name);
+    expect(names).toEqual(expect.arrayContaining(['apex_credit_risk', 'risk_analysis', 'excel_analysis', 'document_reporting']));
+    expect(skillsPrompt(s.selected)).toMatch(/apex-credit-risk/);
+    const t = selectSkills('Rédige un poème sur la pluie', []);
+    expect(t.selected.map((x) => x.skill.name)).not.toContain('apex_credit_risk');
+  });
   it('E — incompatible skill (vision needed, model without vision) is refused with its reason', () => {
     const s = selectSkills('Lis cette capture', ['ecran.png'], { model: LIVE[3] });
     expect(s.incompatible.find((i) => i.skill.name === 'ocr_vision')!.reason).toMatch(/images/);

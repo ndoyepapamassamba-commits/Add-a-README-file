@@ -7,8 +7,12 @@
 //  - table columns with duplicate / empty names; slicer caches pointing outside their table.
 // Merges, anchors and style indexes are FIXED in place; the rest is reported (renaming would break references).
 import { strFromU8, strToU8 } from 'fflate';
+import { checkFormula } from './formulaCheck';
 
 type Zip = Record<string, Uint8Array>;
+const unesc = (s: string) =>
+  s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const rd = (z: Zip, p: string) => (z[p] ? strFromU8(z[p]!) : '');
 const wr = (z: Zip, p: string, s: string) => {
   z[p] = strToU8(s);
@@ -185,6 +189,60 @@ export function excelStrict(z: Zip): { fixes: string[]; warnings: string[] } {
     wr(z, 'xl/workbook.xml', wbx2);
     fixes.push(`${orphans.length} segment(s) orphelin(s) retiré(s) avec leurs caches (aucune feuille ne les portait — Excel réparait le fichier)`);
   }
+  // FORMULAS Excel cannot parse make it repair the file (« Enregistrements réparés : formule »). The usual culprit is a
+  // TEXT written as a formula — a label starting with « = » (« = Total Douteux (100 %) ») that openpyxl stores as
+  // <f> Total Douteux (100 %)</f>: it becomes a text cell again, « = » included. French names / « ; » are translated
+  // and the « _xlfn. » prefix added where Excel requires it (#NAME? otherwise). An empty <v/> next to a formula goes.
+  const known = new Set<string>();
+  for (const m of rd(z, 'xl/workbook.xml').matchAll(/<definedName\b[^>]*\bname="([^"]+)"/g)) known.add(unesc(m[1]!));
+  for (const p of Object.keys(z).filter((k) => /^xl\/tables\/[^/]+\.xml$/.test(k)))
+    for (const m of rd(z, p).matchAll(/\b(?:displayName|name)="([^"]+)"/g)) known.add(unesc(m[1]!));
+  let texts = 0;
+  let translated = 0;
+  let divisions = 0;
+  // « =C30/'Données'!D:D » (a share of the column's total written by a script): Excel reads the whole column through an
+  // implicit intersection and shows a wrong number. The intent is the division by the column's total.
+  const DIV_COL = /\/\s*((?:'(?:[^']|'')+'|[A-Za-z0-9_.]+)!)?(\$?[A-Z]{1,3}\$?:\$?[A-Z]{1,3})(?![A-Za-z0-9_(])/g;
+  for (const p of Object.keys(z).filter((k) => /^xl\/worksheets\/[^/]+\.xml$/.test(k))) {
+    const x = rd(z, p);
+    if (!x.includes('<f')) continue;
+    const out = x.replace(
+      /<c\b([^>]*)>(<f\b[^>]*>)([^<]*)<\/f>(<v\s*\/>|<v>[^<]*<\/v>)?/g,
+      (m, attrs: string, fOpen: string, body: string, vTag: string | undefined) => {
+        if (/\bt="shared"/.test(fOpen) && !body) return m;
+        const original = unesc(body);
+        let text = original.replace(DIV_COL, (_d, sheet: string | undefined, range: string) => {
+          divisions++;
+          return `/SUM(${sheet ?? ''}${range})`;
+        });
+        const v = checkFormula(text, known);
+        if (v.ok) {
+          if (v.fixed) {
+            translated++;
+            text = v.fixed;
+          }
+          // Unchanged: only an empty cached value goes. Rewritten: the cached value goes too (recalculated on load).
+          if (text === original) return vTag && !/<v>[^<]+<\/v>/.test(vTag) ? m.replace(vTag, '') : m;
+          return `<c${attrs}>${fOpen}${esc(text)}</f>`;
+        }
+        texts++;
+        const a = attrs.replace(/\s+t="[^"]*"/, '');
+        return `<c${a} t="inlineStr"><is><t xml:space="preserve">${esc('=' + original)}</t></is>`;
+      },
+    );
+    if (out !== x) wr(z, p, out);
+  }
+  if (translated || divisions) {
+    // Rewritten formulas have no cached value any more: Excel computes them when it opens the file.
+    let wbx = rd(z, 'xl/workbook.xml');
+    if (/<calcPr\b/.test(wbx)) wbx = /fullCalcOnLoad=/.test(wbx) ? wbx.replace(/fullCalcOnLoad="[^"]*"/, 'fullCalcOnLoad="1"') : wbx.replace(/<calcPr\b/, '<calcPr fullCalcOnLoad="1"');
+    else if (/<\/definedNames>/.test(wbx)) wbx = wbx.replace('</definedNames>', '</definedNames><calcPr fullCalcOnLoad="1"/>');
+    else wbx = wbx.replace('</sheets>', '</sheets><calcPr fullCalcOnLoad="1"/>');
+    wr(z, 'xl/workbook.xml', wbx);
+  }
+  if (texts) fixes.push(`${texts} texte(s) écrit(s) comme formule (« = … ») remis en texte — Excel ne pouvait pas les lire et réparait le fichier`);
+  if (translated) fixes.push(`${translated} formule(s) traduite(s) au format de fichier (noms anglais, virgules, préfixe _xlfn.)`);
+  if (divisions) fixes.push(`${divisions} division(s) par une colonne entière (« /D:D ») remplacée(s) par la division par le total de la colonne (SUM) — Excel affichait une valeur fausse`);
   return { fixes, warnings };
 }
 
