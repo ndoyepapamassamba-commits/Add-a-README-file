@@ -124,6 +124,7 @@ export async function inflatedActor(pose: SheetPose, blob: Blob, heightM = 1.72)
     return m;
   });
   const actor = GlbActor.fromScene(root, heightM);
+  actor.flat = true;
   // The drawing as the skin, in the drawing's own pose (the rest pose of this body), its measured face animated on it.
   actor.faceRig = new FaceRig(pose);
   actor.skin(bmp);

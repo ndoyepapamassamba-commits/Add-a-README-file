@@ -6,8 +6,8 @@
  */
 import * as THREE from 'three';
 import { buildRetarget, matchBones, retargetPose, type BoneMap, type Retarget, type RigBone } from '../../../server/jev/studio/actor/rig3d';
-import { JOINT_INDEX, SKELETON } from '../../../server/jev/studio/actor/skeleton';
-import { qInv, qRot, type Q, type V3 } from '../../../server/jev/studio/actor/math';
+import { JOINT_INDEX, SKELETON, eulerOf } from '../../../server/jev/studio/actor/skeleton';
+import { clamp, qEuler, qInv, qRot, type Q, type V3 } from '../../../server/jev/studio/actor/math';
 import type { Frame } from '../../../server/jev/studio/actor/actor';
 import type { Prop } from '../../../server/jev/studio/actor/cast3d';
 import { buildProp, toonRamp, type FaceState, type Puppet3D } from './actorBody';
@@ -15,6 +15,14 @@ import { alphaBounds, bakeProjection, projectedToon, type ProjectionBake } from 
 import { poseFromBody } from '../../../server/jev/studio/actor/pose2d';
 import type { SheetBody } from '../../../server/jev/studio/actor/puppetMotion';
 import type { FaceRig } from './faceWarp';
+
+/** Yaw allowed to each trunk joint of a flat (cut-out) body, radians. */
+const FLAT_YAW: Record<string, number> = { pelvis: 0.28, spine1: 0.04, spine2: 0.04, spine3: 0.04, neck: 0.08, head: 0.14 };
+function clampYaw(q: Q, lim: number | undefined): Q {
+  if (lim === undefined) return q;
+  const [x, y, z] = eulerOf(q);
+  return Math.abs(y) <= lim ? q : qEuler(x, clamp(y, -lim, lim), z);
+}
 
 export class GlbActor implements Puppet3D {
   readonly root = new THREE.Group();
@@ -25,6 +33,11 @@ export class GlbActor implements Puppet3D {
   readonly mapped: Record<string, string>;
   /** The drawn face animated on the projected skin (set before skin() by the inflated actor); null = no face. */
   faceRig: FaceRig | null = null;
+  /**
+   * A body inflated from a drawing is a cut-out: it can lean and nod, not turn its back (its sides and back are the
+   * mirrored drawing). The trunk's yaw towards a partner or the lens is kept small (≈ 30° in all).
+   */
+  flat = false;
   private constructor(
     private scene: THREE.Object3D,
     private nodes: THREE.Object3D[],
@@ -119,7 +132,8 @@ export class GlbActor implements Puppet3D {
     return b >= 0 ? this.nodes[b]! : null;
   }
   apply(f: Frame) {
-    const { local, hipsOffset } = retargetPose(this.rt, this.rig, f.pose.rot, f.pose.root, this.unitsPerMetre);
+    const rot = this.flat ? f.pose.rot.map((q, i) => clampYaw(q, FLAT_YAW[SKELETON[i]!.name])) : f.pose.rot;
+    const { local, hipsOffset } = retargetPose(this.rt, this.rig, rot, f.pose.root, this.unitsPerMetre);
     for (let b = 0; b < this.nodes.length; b++) {
       const q = local[b]!;
       this.nodes[b]!.quaternion.set(q[0], q[1], q[2], q[3]);

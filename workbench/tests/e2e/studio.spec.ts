@@ -1384,6 +1384,8 @@ test('Acteurs 3D: the @comedyvideos_100 troupe in the library, option ON → eve
 });
 
 test('Troupe intégrée: the owner’s planches, galleries and sets install themselves; the drawn actors TALK with their own lips (measured face) and blink — animation test', async ({ page }) => {
+  // The exact renderer (30 pictures per second, encoded one by one) is slow under software WebGL.
+  test.setTimeout(1_500_000);
   mock.models = [model('acme/free-text:free', '0', '0')];
   const errors = await open(page, [], { autopilot: true });
   const net = await intercept(page);
@@ -1447,7 +1449,7 @@ test('Troupe intégrée: the owner’s planches, galleries and sets install them
   await page.getByTestId('film-circuit').getByRole('switch').click();
   await page.getByTestId('film-actors3d').getByRole('switch').click();
   await page.getByTestId('film-create').click();
-  await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 240_000 });
+  await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 900_000 });
   expect(net.videoSubmits).toBe(0);
   if (process.env.ACTORS3D_DUMP) {
     const b64 = await page.evaluate(async () => {
