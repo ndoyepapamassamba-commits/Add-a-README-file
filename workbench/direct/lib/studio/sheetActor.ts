@@ -73,13 +73,13 @@ const MAP = `
   vec4 sampledDiffuseColor = faceSample(map, uvi, uDefocus, p, uvs, inGap);
   sampledDiffuseColor.rgb *= uGrade;
   // RELIEF: the drawing is a volume (inflated from its own silhouette, see inflate.ts): the key light of the set models
-  // it, the sides turn away from the lens and catch the set's light. The face keeps its drawn light (the identity of
-  // the character): the relief is half as strong above the chin.
+  // it, the sides turn away from the lens and catch the set's light. The face keeps its drawn light untouched (the
+  // identity of the character: v11 measured even a 30 % relief on the face as a slow drift when the camera moves).
   if (uRelief > 0.0 && inGap < 0.5) {
     vec3 nn = normalize(vN);
     float nl = max(0.0, dot(nn, uLightDir));
     float away = pow(1.0 - max(0.0, nn.z), 2.5);
-    float k = uRelief * (uFace > 0.5 && p.y < uChin.y + 0.02 ? 0.3 : 1.0);
+    float k = uRelief * (uFace > 0.5 && p.y < uChin.y + 0.02 ? 0.0 : 1.0);
     sampledDiffuseColor.rgb *= mix(1.0, 0.8 + 0.3 * nl, k);
     sampledDiffuseColor.rgb = mix(sampledDiffuseColor.rgb, uWrap, away * uWrapK * 1.5 * k);
   }
