@@ -51,14 +51,16 @@ def tracks_of(faces, W=540):
         active=nxt
     return tracks+active
 def upper_crop(im, x):
-    # the upper face (eyes, brows, forehead, nose) aligned on the eyes: 64x48, eye distance = 32 px
+    # the upper face (eyes, brows, forehead, nose) aligned on the eyes: 64x40, eye distance = 32 px; the crop stops at
+    # the nose (16 px under the eyes) so a talking mouth never enters it — on a cartoon face with big eyes the mouth sits
+    # less than one eye distance under them, and it was read as a drifting identity (v11)
     (lx,ly),(rx,ry)=x['pts'][0],x['pts'][1]
     ex,ey=(lx+rx)/2,(ly+ry)/2
     dist=max(1e-3,np.hypot(rx-lx,ry-ly)); a=np.arctan2(ry-ly,rx-lx); s=dist/32.0
     ca,sa=np.cos(a)*s,np.sin(a)*s
-    # output (u,v) -> input: centre of the crop (32,20) on the eye midpoint
-    A=(ca,-sa,ex-ca*32+sa*20, sa,ca,ey-sa*32-ca*20)
-    c=np.asarray(im.transform((64,48),Image.AFFINE,A,resample=Image.BILINEAR),dtype=np.float32)
+    # output (u,v) -> input: centre of the crop (32,24) on the eye midpoint
+    A=(ca,-sa,ex-ca*32+sa*24, sa,ca,ey-sa*32-ca*24)
+    c=np.asarray(im.transform((64,40),Image.AFFINE,A,resample=Image.BILINEAR),dtype=np.float32)
     c=c-c.mean(); n=np.linalg.norm(c)
     return c/n if n>1e-6 else None
 JUMP=0.35
