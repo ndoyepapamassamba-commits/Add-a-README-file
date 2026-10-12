@@ -503,6 +503,12 @@ export function ActorCasting({ projectId }: { projectId?: string }) {
                     Importer un .vrm / .glb riggé
                     <input type="file" accept=".vrm,.glb,.gltf" className="hidden" onChange={(e) => e.target.files?.[0] && void importVrm(e.target.files[0])} data-testid="actor-vrm-file" />
                   </label>
+                  {cur.sheet?.poses.some((p) => p.kind === 'neutre' && p.body) && (
+                    <label className="flex cursor-pointer items-center gap-1 rounded-lg border border-line px-2 py-1" title="Le dessin neutre de la planche devient un corps 3D (volume gonflé depuis sa silhouette, os posés sur son squelette mesuré, poids de peau automatiques, le dessin projeté comme peau) : le jeu corps entier du moteur l’anime en 3D. Première étape de l’architecture « corps 3D, peau 2D » : le visage n’est pas encore animé sur ce corps.">
+                      <input type="checkbox" checked={!!cur.body3d} onChange={(e) => save({ body3d: e.target.checked })} data-testid="actor-body3d" />
+                      Corps 3D (dessin gonflé)
+                    </label>
+                  )}
                   {cur.vrmAssetId && (
                     <Button size="sm" onClick={() => save({ vrmAssetId: undefined, source: 'manuel' })}>
                       Retirer le .vrm

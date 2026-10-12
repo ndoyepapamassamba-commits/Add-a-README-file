@@ -370,10 +370,11 @@ export function poseFor(o: { speaking: boolean; gesture?: string | null; emotion
   if (byGesture) return byGesture;
   const byEmotion = of(plain(o.emotion ?? ''));
   if (byEmotion) return byEmotion;
-  // No gesture written: a question accuses, an exclamation shrugs, otherwise neutral.
-  const x = (o.text ?? '').trim();
-  if (/\?\s*$/.test(x)) return 'accuse';
-  if (/!\s*$/.test(x)) return 'haussement';
+  // No gesture written: a question accuses only when it is an accusation (« qui », « pourquoi », « toi »…); plain
+  // questions and exclamations keep the neutral drawing — the puppet, the head and the brows act them (v9 measured
+  // a new drawing on almost every line as a jump and a change of face).
+  const x = plain((o.text ?? '').trim());
+  if (/\?\s*$/.test(x) && /\b(qui|pourquoi|toi|tu|vous|comment oses|c'est toi|avoue|hein)\b/.test(x)) return 'accuse';
   return 'neutre';
 }
 

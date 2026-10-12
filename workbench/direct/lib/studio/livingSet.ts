@@ -109,7 +109,7 @@ export async function setAssets(blob: Blob, depthBlob: Blob | null, fit: DecorFi
   const sharp = Object.assign(document.createElement('canvas'), { width: cw, height: chh });
   const sgc = sharp.getContext('2d')!;
   // The continuations (sides, top, floor) are out of focus: they extend the room, they must never show their seams.
-  sgc.filter = `blur(${Math.max(1.5, h * 0.008).toFixed(1)}px)`;
+  sgc.filter = `blur(${Math.max(1.5, h * 0.004).toFixed(1)}px)`;
   sgc.drawImage(full.c, 0, 0);
   sgc.filter = 'none';
   // The near floor under the picture darkens a little towards the lens (it is in the shade of the actors).
@@ -133,7 +133,7 @@ export async function setAssets(blob: Blob, depthBlob: Blob | null, fit: DecorFi
   // The far layer of the lens: the same set, much softer (half resolution is enough for a blur).
   const soft = Object.assign(document.createElement('canvas'), { width: Math.round(cw / 2), height: Math.round(chh / 2) });
   const sfc = soft.getContext('2d')!;
-  sfc.filter = `blur(${(5 * K * Math.max(1, ih / 500)).toFixed(1)}px)`;
+  sfc.filter = `blur(${(2.5 * K * Math.max(1, ih / 800)).toFixed(1)}px)`;
   sfc.drawImage(sharp, 0, 0, soft.width, soft.height);
   // Depth (measured, else guessed from the floor line), laid exactly like the colour, at the resolution of the relief.
   const segX = 140;
@@ -282,6 +282,10 @@ export function livingSet(a: SetAssets, outputHeight: number): LivingSet {
       uClose: { value: 0 },
       uOut: { value: a.outdoor ? 1 : 0 },
       uHaze: { value: haze },
+      // Acutance of the lens: a light unsharp mask on the set (v9 measured the upscaled set 9× softer than the crisp line
+      // art of the actors — same lens, same sharpness), two texels wide.
+      uSharp: { value: 0.55 },
+      uTexel: { value: new THREE.Vector2(2 / Math.max(1, (a.sharp.image as { width: number }).width), 2 / Math.max(1, (a.sharp.image as { height: number }).height)) },
     },
     vertexShader: `
       attribute float aDepth;
@@ -297,8 +301,9 @@ export function livingSet(a: SetAssets, outputHeight: number): LivingSet {
       }`,
     fragmentShader: `
       uniform sampler2D tSharp, tSoft, tPeople;
-      uniform float uTime, uClose, uOut, uPeople;
+      uniform float uTime, uClose, uOut, uPeople, uSharp;
       uniform vec3 uHaze;
+      uniform vec2 uTexel;
       varying vec2 vUv;
       varying float vDepth;
       varying vec3 vW;
@@ -318,9 +323,12 @@ export function livingSet(a: SetAssets, outputHeight: number): LivingSet {
           }
         }
         vec3 a = texture2D(tSharp, uv).rgb;
+        vec3 nb4 = texture2D(tSharp, uv + vec2(uTexel.x, 0.0)).rgb + texture2D(tSharp, uv - vec2(uTexel.x, 0.0)).rgb + texture2D(tSharp, uv + vec2(0.0, uTexel.y)).rgb + texture2D(tSharp, uv - vec2(0.0, uTexel.y)).rgb;
+        a = clamp(a + uSharp * (a - nb4 * 0.25), 0.0, 1.0);
         vec3 b = texture2D(tSoft, uv).rgb;
-        // A phone-camera lens: the far set softens, it never dissolves into colour patches (v51 market).
-        float blur = clamp((far - 0.4) * 0.7 + uClose * 0.35, 0.0, 0.5);
+        // A phone-camera lens: the far set softens a little (wide lens, 2–4 m: almost everything is in focus), it never
+        // dissolves into colour patches (v51 market) nor goes mushy behind the actors (v9).
+        float blur = clamp((far - 0.55) * 0.6 + uClose * 0.3, 0.0, 0.35);
         vec3 col = mix(a, b, blur);
         // The light lives: slow drifting light and shade (clouds, lamps, people passing by a window).
         float n = fbm(vW.xy * 0.45 + vec2(uTime * 0.035, -uTime * 0.02));

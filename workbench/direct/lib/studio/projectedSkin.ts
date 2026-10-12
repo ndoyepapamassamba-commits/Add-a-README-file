@@ -142,22 +142,24 @@ export function bakeProjection(root: THREE.Object3D, drawing: { width: number; h
  * Makes a toon material show the projected drawing where it was baked: unlit (the painting carries its own light),
  * blended by the baked visibility and the current facing (the drawing fades out as the surface turns away).
  */
-export function projectedToon(base: THREE.MeshToonMaterial, drawing: THREE.Texture): THREE.MeshToonMaterial {
+export function projectedToon(base: THREE.MeshToonMaterial, drawing: THREE.Texture, face?: { glsl: string; u: Record<string, THREE.IUniform> }): THREE.MeshToonMaterial {
   const mat = base.clone();
-  const u = { tDrawing: { value: drawing }, uProjK: { value: 1 } };
+  const u = { tDrawing: { value: drawing }, uProjK: { value: 1 }, uFacing: { value: new THREE.Vector2(0.25, 0.75) } };
   mat.onBeforeCompile = (sh) => {
-    Object.assign(sh.uniforms, u);
+    Object.assign(sh.uniforms, u, face?.u ?? {});
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nattribute vec2 projUv; attribute float projVis; varying vec2 vProjUv; varying float vProjVis; varying vec3 vWorldN;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvProjUv = projUv; vProjVis = projVis;')
       .replace('#include <defaultnormal_vertex>', '#include <defaultnormal_vertex>\nvWorldN = normalize((modelMatrix * vec4(transformedNormal, 0.0)).xyz);');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D tDrawing; uniform float uProjK; varying vec2 vProjUv; varying float vProjVis; varying vec3 vWorldN;')
+      .replace('#include <common>', `#include <common>\nuniform sampler2D tDrawing; uniform float uProjK; uniform vec2 uFacing; varying vec2 vProjUv; varying float vProjVis; varying vec3 vWorldN;\n${face?.glsl ?? ''}`)
       .replace(
         '#include <opaque_fragment>',
-        `vec4 drawn = texture2D(tDrawing, vProjUv);
-  // Facing the camera: the drawing; turned away: the 3D texture (the fade starts at 35° from the lens).
-  float facing = smoothstep(0.25, 0.75, dot(normalize(vWorldN), normalize(cameraPosition - vWorldPosition)));
+        `${face ? 'vec2 fP; vec2 fUv; float fGap;\n  vec4 drawn = faceSample(tDrawing, vProjUv, 0.0, fP, fUv, fGap);' : 'vec4 drawn = texture2D(tDrawing, vProjUv);'}
+  // Facing the camera: the drawing; turned away: the 3D texture (uFacing: where the fade starts and ends, as the
+  // cosine to the lens — a reconstructed model fades from 35°, a body inflated from the drawing keeps its drawing
+  // over its sides, like the edge of a paper cut-out).
+  float facing = smoothstep(uFacing.x, uFacing.y, dot(normalize(vWorldN), normalize(cameraPosition - vWorldPosition)));
   float k = vProjVis * drawn.a * uProjK * facing;
   outgoingLight = mix(outgoingLight, drawn.rgb, k);
   #include <opaque_fragment>`,
@@ -168,7 +170,7 @@ export function projectedToon(base: THREE.MeshToonMaterial, drawing: THREE.Textu
     if (!/varying vec3 vWorldPosition/.test(sh.vertexShader)) sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWorldPosition;');
     if (!/varying vec3 vWorldPosition/.test(sh.fragmentShader)) sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWorldPosition;');
   };
-  mat.customProgramCacheKey = () => 'projected-toon-v1';
+  mat.customProgramCacheKey = () => (face ? 'projected-toon-face-v1' : 'projected-toon-v1');
   mat.userData.projection = u;
   return mat;
 }

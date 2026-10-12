@@ -14,6 +14,7 @@ import { qRot } from '../../../server/jev/studio/actor/math';
 import { AfroActor, buildProp, darker, inked, toon, type FaceState, type Puppet3D } from './actorBody';
 import { SheetActor } from './sheetActor';
 import { GlbActor } from './glbActor';
+import { inflatedActor } from './inflatedActor';
 import { livingSet, setAssets, type LivingSet, type SetAssets } from './livingSet';
 import { extrasPlan, walkerX, type ExtraPlan } from '../../../server/jev/studio/actor/extras';
 import type { DecorFit } from './store';
@@ -556,21 +557,28 @@ export class Theater3D {
       if (!script) continue;
       const look = actorFor(s.cast, name);
       // The owner's drawn character first (its sheet), else its VRM, else the procedural body.
+      // CORPS 3D: the drawn character inflated into a 3D body from its neutral drawing (its measured skeleton drives
+      // the bones) — the engine's full-body acting then plays it like a rigged model, the drawing stays its skin.
+      const neutral = look.body3d ? look.sheet?.poses.find((p) => p.kind === 'neutre' && p.body) : undefined;
       const sid = `sheet|${look.key}|${look.sheet?.sourceAssetId ?? ''}`;
-      if (look.sheet && vrmOf && !this.sheets.has(sid)) this.sheets.set(sid, SheetActor.load(look, vrmOf).catch(() => null));
-      const sheet = look.sheet && vrmOf ? await this.sheets.get(sid)! : null;
+      if (look.sheet && vrmOf && !neutral && !this.sheets.has(sid)) this.sheets.set(sid, SheetActor.load(look, vrmOf).catch(() => null));
+      const sheet = look.sheet && vrmOf && !neutral ? await this.sheets.get(sid)! : null;
       sheet?.setGrade(grade);
       sheet?.setWrap(life ? life.avg : null);
-      const id = `${look.key}|${look.vrmAssetId ?? ''}|${look.updatedAt ?? 0}`;
+      const id = `${look.key}|${look.vrmAssetId ?? ''}|${neutral ? `3d:${neutral.assetId}` : ''}|${look.updatedAt ?? 0}`;
       if (!this.puppets.has(id))
         this.puppets.set(
           id,
-          look.vrmAssetId && vrmOf
-            ? vrmOf(look.vrmAssetId)
-                // A VRM keeps its expressions; any other rigged glTF/GLB (Mixamo, UniRig, Rigify…) is driven as a GlbActor.
-                .then((b) => (b ? VrmActor.load(b).catch(() => GlbActor.load(b, 1.72 * look.height)) : null))
+          neutral && vrmOf
+            ? vrmOf(neutral.assetId)
+                .then((b) => (b ? inflatedActor(neutral, b, 1.72 * look.height) : null))
                 .catch(() => null)
-            : Promise.resolve(null),
+            : look.vrmAssetId && vrmOf
+              ? vrmOf(look.vrmAssetId)
+                  // A VRM keeps its expressions; any other rigged glTF/GLB (Mixamo, UniRig, Rigify…) is driven as a GlbActor.
+                  .then((b) => (b ? VrmActor.load(b).catch(() => GlbActor.load(b, 1.72 * look.height)) : null))
+                  .catch(() => null)
+              : Promise.resolve(null),
         );
       let puppet = await this.puppets.get(id)!;
       if (!puppet) {
@@ -627,7 +635,7 @@ export class Theater3D {
       if (a.sheet) {
         // The drawn actor: its mark on the ground, the pose of the moment, facing its partner. In the two-shot its ink
         // lines are softened a touch (the same lens as the set — v51 measured the actors far sharper than the décor).
-        a.sheet.setDefocus(/^(close|react)/.test(rig.shot) ? 0 : 0.35);
+        a.sheet.setDefocus(/^(close|react)/.test(rig.shot) ? 0 : 0.5);
         a.sheet.root.position.set(p0[0], 0, p0[2]);
         const pose = poseFor({ speaking, gesture: speaking ? live.gesture : null, emotion: speaking ? live.emotion : undefined, text: speaking ? live.text : undefined, react });
         // Each drawn pose has its own direction (read on its face): mirrored when it would turn its back to the partner.

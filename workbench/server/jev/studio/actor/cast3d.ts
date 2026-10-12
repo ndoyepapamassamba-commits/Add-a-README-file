@@ -74,6 +74,8 @@ export interface ActorLook3D {
   belly: boolean;
   /** Optional VRM model (asset id of the .vrm blob) that replaces the procedural body. */
   vrmAssetId?: string;
+  /** The drawn character as a 3D body inflated from its own neutral drawing (needs its measured skeleton). */
+  body3d?: boolean;
   /**
    * The owner's CHARACTER SHEET (their own art, on a green screen): the cut-out poses play the character in the
    * montage, and the whole sheet is the reference image of the character for the image / video models.

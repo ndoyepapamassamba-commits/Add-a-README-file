@@ -1,4 +1,27 @@
-# Troupe 3D — un dessin de planche → un personnage 3D riggé (une fois par personnage, GPU gratuit)
+# Troupe 3D — un dessin de planche → un personnage 3D riggé
+
+## Voie 1 (par défaut, dans l'application, sans GPU, sans compte) : le dessin gonflé
+
+Chaque planche dont le squelette a été mesuré (BlazePose, à l'import) devient un **corps 3D dans le navigateur**,
+en une seconde, sans aucun service extérieur (casting → acteur → « Corps 3D (dessin gonflé) ») :
+
+1. **Gonflage** de la silhouette du dessin en volume fermé (`server/jev/studio/actor/inflate.ts`) — principe des
+   modeleurs par croquis (Teddy, Igarashi 1999 ; Monster Mash, Dvorožňák et al. 2020) : champ de Poisson Δp = −1 à
+   l'intérieur du contour, épaisseur √p (section ronde pour les parties rondes, elliptique pour les membres), avant +
+   dos cousus sur le contour.
+2. **Rig automatique** : les os (noms Mixamo) posés sur le squelette mesuré, poids de peau par **bone heat**
+   (`boneHeat.ts`, Baran & Popović 2007 — le principe des « poids automatiques » de Blender), calculés sur la grille
+   du dessin : un bras le long du corps reste au bras (la chaleur ne traverse pas le vide entre eux).
+3. **Peau** : le dessin projeté sur le corps (`projectedSkin.ts`), sur les deux faces et la tranche ; le **visage
+   dessiné** y est animé par le même warp que la planche plate (`faceWarp.ts` : lèvres, mâchoire, sourcils,
+   paupières mesurés).
+4. Le moteur le pilote comme tout modèle riggé (`GlbActor` : T-pose normalisée, retarget, jeu corps entier).
+
+Limite connue (J2) : un bras dessiné **devant** le corps partage son volume avec lui ; levé, la robe se tend sous
+lui (pas de calque séparé par membre — c'est la prochaine étape, à la Monster Mash : un calque par partie, le fond
+inpainté derrière).
+
+## Voie 2 (optionnelle, une fois par personnage, GPU gratuit) : reconstruction 3D neurale
 
 Le moteur joue les personnages en **3D riggée** (squelette, gestes, rotations) tout en gardant **votre dessin comme peau**
 (projection). La préparation 3D se fait **une seule fois par personnage**, hors application, sur un GPU gratuit
@@ -32,6 +55,10 @@ renommage d'os n'est nécessaire (`server/jev/studio/actor/rig3d.ts`).
 - **L4 / A10G 24 Go (Lightning, Colab Pro)** : TRELLIS.2 (meilleure géométrie, PBR).
 - **Sans GPU** : les démos Hugging Face des mêmes outils (gratuites, manuelles) :
   `huggingface.co/spaces/tencent/Hunyuan3D-2.1`, `huggingface.co/spaces/jasongzy/Make-It-Animatable-v2`.
+  Mesuré le 12/10/2026 sans compte : Hunyuan3D-2.1 refuse (durée GPU 270 s > quota anonyme), Hunyuan3D-2 « Turbo »
+  5 pas rend une forme inexploitable (277 morceaux), puis le quota ZeroGPU anonyme tombe à 0 s (TripoSG, Make-It-
+  Animatable refusés). Un compte Hugging Face gratuit (jeton dans le coffre de clés de l'application) élargit ce
+  quota ; la voie 1 n'en a pas besoin.
 
 ## Ce que la projection du dessin corrige
 

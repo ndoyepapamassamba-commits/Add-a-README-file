@@ -10,6 +10,8 @@ import type { ActorLook3D, SheetPose } from '../../../server/jev/studio/actor/ca
 import type { PoseKind } from '../../../server/jev/studio/actor/sheet';
 import { ArapSolver, gridMesh, nearestVertex } from '../../../server/jev/studio/actor/arap';
 import { BP, puppetTargets } from '../../../server/jev/studio/actor/puppetMotion';
+import { inflateMesh } from '../../../server/jev/studio/actor/inflate';
+import { FACE_GLSL, faceUniforms, setFacePose } from './faceWarp';
 
 /** The bending drawing of one pose: its mesh, its solver, which vertex holds which handle. */
 interface PoseRig {
@@ -58,118 +60,29 @@ const MARGIN = 0.05;
 const ANTICIP_S = 0.12;
 /** Is the actor talking at this instant (voice or open mouth)? */
 const talk0 = (s: SheetPlay) => s.energy > 0.02 || s.open > 0.05;
-const lin = (c: [number, number, number]) => new THREE.Vector3(...c.map((x) => Math.pow(x, 2.2)));
 
 const FRAG = `
-uniform float uA; uniform float uScaleM; uniform float uFace;
-uniform vec2 uL; uniform vec2 uR; uniform vec2 uSeam; uniform vec2 uChin; uniform float uOpenArt; uniform vec3 uCav;
-uniform float uJaw; uniform float uWide; uniform float uRound;
-uniform float uHeadA; uniform vec2 uPivot; uniform float uNeck;
-uniform vec4 uEye0; uniform vec4 uEye1; uniform float uEyes; uniform float uBlink; uniform vec3 uLid; uniform vec3 uGrade; uniform float uBrow;
-uniform vec3 uWrap; uniform float uWrapK; uniform vec2 uTexel; uniform float uDefocus;
-vec2 toIso(vec2 uv) { return vec2(uv.x * uA, 1.0 - uv.y); }
-vec2 fromIso(vec2 q) { return vec2(q.x / uA, 1.0 - q.y); }
-float lumS(vec3 c) { vec3 s = pow(max(c, vec3(0.0)), vec3(1.0 / 2.2)); return dot(s, vec3(0.299, 0.587, 0.114)); }
-float satS(vec3 c) { vec3 s = pow(max(c, vec3(0.0)), vec3(1.0 / 2.2)); return max(s.r, max(s.g, s.b)) - min(s.r, min(s.g, s.b)); }
-// The brow above one drawn eye moves up (raised) or down (frown): the band above the eye is sampled lower / higher,
-// fading out at the eye (which never moves) and at the forehead.
-float browShift(vec2 p, vec4 e, float b) {
-  float top = e.y - e.w;
-  float dx = abs(p.x - e.x) / (e.z * 1.6);
-  if (dx >= 1.0 || p.y > top || p.y < top - e.w * 2.6) return 0.0;
-  float k = (top - p.y) / (e.w * 2.6);
-  float w = smoothstep(0.0, 0.25, k) * (1.0 - smoothstep(0.55, 1.0, k)) * (1.0 - dx * dx);
-  return b * e.w * 0.45 * w;
-}
-// Closing lid over one drawn eye (only over the eye's own pixels: its white, iris, lashes).
-vec3 lidOver(vec3 col, vec2 p, vec4 e, float b) {
-  vec2 u = (p - e.xy) / (e.zw * vec2(1.15, 1.25));
-  if (dot(u, u) >= 1.0 || b <= 0.001) return col;
-  float h = sqrt(max(0.0, 1.0 - u.x * u.x));
-  float top = e.y - e.w * 1.25 * h;
-  float bot = e.y + e.w * 1.05 * h;
-  float yl = mix(top, bot, b);
-  float L = lumS(col);
-  float S = satS(col);
-  float eye = max(step(0.6, L) * step(S, 0.3), step(L, 0.42));
-  float lash = e.w * 0.16;
-  if (p.y < yl - lash * 0.5) {
-    float k = clamp((p.y - top) / max(1e-5, yl - top), 0.0, 1.0);
-    return mix(col, uLid * (0.86 + 0.16 * k), eye);
-  }
-  if (p.y < yl + lash * 0.5) return mix(col, vec3(0.012, 0.008, 0.007), eye * smoothstep(0.0, 0.25, b));
-  return col;
-}
+uniform vec3 uGrade; uniform vec3 uWrap; uniform float uWrapK; uniform vec2 uTexel; uniform float uDefocus;
+uniform vec3 uLightDir; uniform float uRelief; varying vec3 vN;
 `;
 const MAP = `
   vec2 uvi = (vMapUv - 0.5) * uScaleM + 0.5;
-  vec2 p = toIso(uvi);
-  vec2 src = p;
-  float inGap = 0.0;
-  vec3 gapCol = vec3(0.0);
-  if (uFace > 0.5) {
-    // Head turns about the top of the neck (weight 1 above the chin, 0 under the neck).
-    float hw = 1.0 - smoothstep(uChin.y, uPivot.y + uNeck, p.y);
-    float a = uHeadA * hw;
-    vec2 d = p - uPivot;
-    p = uPivot + vec2(cos(a) * d.x - sin(a) * d.y, sin(a) * d.x + cos(a) * d.y);
-    // Brows (only on faces whose two eyes were measured).
-    if (uEyes > 1.5 && abs(uBrow) > 0.001) p.y += browShift(p, uEye0, uBrow) + browShift(p, uEye1, uBrow);
-    // Mouth frame: s along the lips (corner to corner), t downwards.
-    vec2 ax = normalize(uR - uL);
-    vec2 nr = vec2(-ax.y, ax.x);
-    if (nr.y < 0.0) nr = -nr;
-    vec2 C = 0.5 * (uL + uR);
-    float hwM = 0.5 * length(uR - uL);
-    vec2 q = p - C;
-    float s = dot(q, ax);
-    float t = dot(q, nr);
-    // O / OU purse the lips (narrower), É / I stretch them (wider): the lips themselves, sampled further or closer.
-    float mreg = exp(-((s * s) / (hwM * hwM * 2.4) + (t * t) / (hwM * hwM * 0.7)));
-    s *= 1.0 + (uRound * 0.32 - uWide * 0.12) * mreg;
-    float sM = dot(uSeam - C, ax);
-    float tM = dot(uSeam - C, nr);
-    float tS = tM * max(0.0, hwM * hwM - s * s) / max(1e-6, hwM * hwM - sM * sM);
-    float tc = max(dot(uChin - C, nr), tM + 0.2 * hwM);
-    // The jaw of the drawing drops: the lower lip opens in an arc (corners stay closed), the chin goes down as a block,
-    // the neck takes it back.
-    float D = min(uJaw * 0.84 * hwM, 0.5 * (tc - tM));
-    float below = t - tS;
-    float g = pow(max(0.0, 1.0 - (s * s) / (hwM * hwM * 1.1)), 0.6);
-    float gj = 1.0 - smoothstep(1.25 * hwM, 2.5 * hwM, abs(s));
-    float blend = smoothstep(0.0, 0.85 * (tc - tM), below);
-    float fade = 1.0 - smoothstep(tc, tc + (tc - tM) + 2.0 * D, t);
-    float dd = below > 0.0 ? D * mix(g, gj, blend) * fade : 0.0;
-    if (below > 0.0 && t - dd < tS && dd > 1e-5) {
-      // Inside of the mouth, between the upper lip and the lowered lower lip.
-      inGap = 1.0;
-      float k = below / dd;
-      float side = clamp(abs(s) / hwM, 0.0, 1.0);
-      gapCol = uCav * (0.6 + 0.4 * (1.0 - side * side)) * (0.8 + 0.2 * k);
-      if (uOpenArt < 0.12) {
-        float teethH = min(0.5 * dd, 0.32 * hwM);
-        float teeth = step(below, teethH) * (1.0 - smoothstep(0.62, 0.8, side));
-        vec3 tc3 = vec3(0.86, 0.84, 0.78) * (1.0 - 0.25 * smoothstep(teethH * 0.55, teethH, below));
-        gapCol = mix(gapCol, tc3, teeth);
-        vec2 tg = vec2(s / (0.62 * hwM), (k - 1.0) / 0.42);
-        float tongue = 1.0 - smoothstep(0.8, 1.0, length(tg));
-        gapCol = mix(gapCol, vec3(0.42, 0.075, 0.085) * (0.75 + 0.25 * (1.0 - length(tg))), tongue * step(0.6 * hwM, dd));
-      }
-      // Soft edge under the upper lip.
-      gapCol *= 0.55 + 0.45 * smoothstep(0.0, 0.12 * dd + 1e-4, below);
-    }
-    src = C + ax * s + nr * (t - dd);
-  }
-  vec2 uvs = fromIso(src);
-  vec4 sampledDiffuseColor = texture2D(map, uvs, uDefocus);
-  sampledDiffuseColor.rgb /= max(sampledDiffuseColor.a, 1e-4);
-  if (uvs.x < 0.0 || uvs.x > 1.0 || uvs.y < 0.0 || uvs.y > 1.0) sampledDiffuseColor.a = 0.0;
-  if (inGap > 0.5) sampledDiffuseColor = vec4(gapCol, 1.0);
-  if (uFace > 0.5 && uEyes > 1.5 && uBlink > 0.0) {
-    sampledDiffuseColor.rgb = lidOver(sampledDiffuseColor.rgb, src, uEye0, uBlink);
-    sampledDiffuseColor.rgb = lidOver(sampledDiffuseColor.rgb, src, uEye1, uBlink);
-  }
+  vec2 p;
+  vec2 uvs;
+  float inGap;
+  vec4 sampledDiffuseColor = faceSample(map, uvi, uDefocus, p, uvs, inGap);
   sampledDiffuseColor.rgb *= uGrade;
+  // RELIEF: the drawing is a volume (inflated from its own silhouette, see inflate.ts): the key light of the set models
+  // it, the sides turn away from the lens and catch the set's light. The face keeps its drawn light (the identity of
+  // the character): the relief is half as strong above the chin.
+  if (uRelief > 0.0 && inGap < 0.5) {
+    vec3 nn = normalize(vN);
+    float nl = max(0.0, dot(nn, uLightDir));
+    float away = pow(1.0 - max(0.0, nn.z), 2.5);
+    float k = uRelief * (uFace > 0.5 && p.y < uChin.y + 0.02 ? 0.45 : 1.0);
+    sampledDiffuseColor.rgb *= mix(1.0, 0.8 + 0.3 * nl, k);
+    sampledDiffuseColor.rgb = mix(sampledDiffuseColor.rgb, uWrap, away * uWrapK * 1.5 * k);
+  }
   // LIGHT WRAP: the light of the set behind spills over the edge of the figure (it sits IN the picture, not on it).
   if (uWrapK > 0.0 && inGap < 0.5) {
     float aMin = min(min(texture2D(map, uvs + vec2(uTexel.x, 0.0)).a, texture2D(map, uvs - vec2(uTexel.x, 0.0)).a),
@@ -210,32 +123,14 @@ export class SheetActor {
   private browNow = 0;
   private blinkAt = -10;
   private u = {
-    uA: { value: 0.33 },
-    uScaleM: { value: 1 + 2 * MARGIN },
-    uFace: { value: 0 },
-    uL: { value: new THREE.Vector2() },
-    uR: { value: new THREE.Vector2() },
-    uSeam: { value: new THREE.Vector2() },
-    uChin: { value: new THREE.Vector2() },
-    uOpenArt: { value: 0 },
-    uCav: { value: new THREE.Vector3() },
-    uJaw: { value: 0 },
-    uWide: { value: 0 },
-    uRound: { value: 0 },
-    uHeadA: { value: 0 },
-    uPivot: { value: new THREE.Vector2() },
-    uNeck: { value: 0.05 },
-    uEye0: { value: new THREE.Vector4() },
-    uEye1: { value: new THREE.Vector4() },
-    uEyes: { value: 0 },
-    uBlink: { value: 0 },
-    uLid: { value: new THREE.Vector3() },
+    ...faceUniforms(),
     uGrade: { value: new THREE.Vector3(1, 1, 1) },
-    uBrow: { value: 0 },
     uWrap: { value: new THREE.Vector3(1, 1, 1) },
     uWrapK: { value: 0 },
     uTexel: { value: new THREE.Vector2(0.004, 0.002) },
     uDefocus: { value: 0 },
+    uLightDir: { value: new THREE.Vector3(0, 0, 1) },
+    uRelief: { value: 0 },
   };
   /** Height of the figure in metres (the cut-out spans head to feet). */
   readonly heightM: number;
@@ -243,15 +138,17 @@ export class SheetActor {
   private refH = 0;
   private constructor(look: ActorLook3D) {
     this.heightM = 1.72 * look.height;
+    this.u.uScaleM.value = 1 + 2 * MARGIN;
     const geo = new THREE.PlaneGeometry(1, 1, 1, 1);
     geo.translate(0, 0.5, 0);
     this.quad = geo;
     const mat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.01, depthWrite: false, side: THREE.DoubleSide });
     mat.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, this.u);
-      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>\n${FRAG}`).replace('#include <map_fragment>', MAP);
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vN;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvN = normalize(normalMatrix * normal);');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>\n${FACE_GLSL}\n${FRAG}`).replace('#include <map_fragment>', MAP);
     };
-    mat.customProgramCacheKey = () => 'sheet-actor-v5';
+    mat.customProgramCacheKey = () => 'sheet-actor-v7';
     this.mesh = new THREE.Mesh(geo, mat);
     this.root.add(this.mesh);
     const gmat = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, opacity: 0 });
@@ -359,12 +256,21 @@ export class SheetActor {
       uv[i * 2] = (mesh.rest[i * 2]! / p.w - 0.5) / M + 0.5;
       uv[i * 2 + 1] = (1 - mesh.rest[i * 2 + 1]! / p.h - 0.5) / M + 0.5;
     }
+    // The RELIEF of the drawing: its silhouette inflated (thickness + normals), the volume the light models.
+    const relief = inflateMesh(mesh, 0.8);
     const position = new Float32Array(n * 3);
+    const normal = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) {
       position[i * 3] = uv[i * 2]! - 0.5;
       position[i * 3 + 1] = uv[i * 2 + 1]!;
+      // z in the units of y (1 = p.h × M px), towards the lens; the mesh is scaled alike on y and z.
+      position[i * 3 + 2] = relief.z[i]! / (p.h * M);
+      normal[i * 3] = relief.nrm[i * 3]!;
+      normal[i * 3 + 1] = -relief.nrm[i * 3 + 1]!;
+      normal[i * 3 + 2] = relief.nrm[i * 3 + 2]!;
     }
     geom.setAttribute('position', new THREE.BufferAttribute(position, 3));
+    geom.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
     geom.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
     geom.setIndex(new THREE.BufferAttribute(mesh.tris, 1));
     return { geom, solver, rest: mesh.rest, vertLm, head, pos: new Float64Array(solver.handleIds.length * 2) };
@@ -461,29 +367,9 @@ export class SheetActor {
     return !!p?.face;
   }
   private setPose(p: SheetPose) {
-    const A = p.w / p.h;
-    const u = this.u;
-    u.uA.value = A;
+    setFacePose(this.u, p);
     // The spill reaches ~0.25 % of the figure's height into it.
-    u.uTexel.value.set((0.0025 * p.h) / p.w, 0.0025);
-    const f = p.face;
-    u.uFace.value = f ? 1 : 0;
-    if (!f) return;
-    const iso = (q: [number, number]) => new THREE.Vector2(q[0] * A, q[1]);
-    u.uL.value.copy(iso(f.l));
-    u.uR.value.copy(iso(f.r));
-    u.uSeam.value.copy(iso(f.seam));
-    u.uChin.value.copy(iso(f.chin));
-    u.uOpenArt.value = f.open;
-    u.uCav.value.copy(lin(f.cavity));
-    const faceH = Math.max(0.01, f.chin[1] - f.seam[1]);
-    u.uPivot.value.set(f.chin[0] * A, f.chin[1] + faceH * 0.55);
-    u.uNeck.value = faceH * 0.6;
-    const eyes = f.eyes;
-    u.uEyes.value = eyes.length;
-    if (eyes[0]) u.uEye0.value.set(eyes[0].c[0] * A, eyes[0].c[1], eyes[0].rx, eyes[0].ry);
-    if (eyes[1]) u.uEye1.value.set(eyes[1].c[0] * A, eyes[1].c[1], eyes[1].rx, eyes[1].ry);
-    u.uLid.value.copy(lin(f.lid));
+    this.u.uTexel.value.set((0.0025 * p.h) / p.w, 0.0025);
   }
   play(s: SheetPlay, camera: THREE.Camera) {
     this.beatNow += (s.beat - this.beatNow) * (s.beat > this.beatNow ? 0.45 : 0.12);
@@ -540,7 +426,10 @@ export class SheetActor {
     const sy = 1 + pop + breath + s.stretch + s.beat * 0.018 - 0.09 * antic;
     const sx = 1 - pop * 0.6 - s.stretch * 0.5 + 0.06 * antic;
     const M = 1 + 2 * MARGIN;
-    this.mesh.scale.set(w * sx * M * (s.flip ? -1 : 1), hM * sy * M, 1);
+    this.mesh.scale.set(w * sx * M * (s.flip ? -1 : 1), hM * sy * M, hM * sy * M);
+    this.u.uRelief.value = rig ? 1 : 0;
+    // The key light of the set (world, front-right and high), in the lens' frame for the shading of the relief.
+    this.u.uLightDir.value.set(2.2, 4, 3.5).normalize().applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()).invert());
     const axis = p.face ? (p.face.l[0] + p.face.r[0]) / 2 : p.mouth[0];
     // Weight shifts from one foot to the other (slow, never in sync with the partner).
     const ph = s.phase ?? 0;
@@ -560,7 +449,7 @@ export class SheetActor {
       sm.map = tex;
       sm.needsUpdate = true;
     }
-    this.shadow.scale.set(this.mesh.scale.x, this.mesh.scale.y * 0.55, 1);
+    this.shadow.scale.set(this.mesh.scale.x, this.mesh.scale.y * 0.55, 0.0001);
     this.shadow.position.set(this.mesh.position.x, -MARGIN * hM * sy * 0.55, 0);
     sm.opacity = 0.32 * Math.max(0.35, 1 - s.hop * 3);
     // Dissolve of the previous drawing.

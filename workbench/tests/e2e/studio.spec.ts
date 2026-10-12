@@ -1642,3 +1642,57 @@ test('Miroir — tout gratuit (troupe, voix réelles, HD)', async ({ page }) => 
   expect(net.imageCalls.length).toBe(0);
 });
 
+
+test('Corps 3D gonflé: a planche becomes a 3D body (inflated from its own drawing, bones on its measured skeleton, the drawing as skin) driven by the engine', async ({ page }) => {
+  test.setTimeout(420_000);
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  const errors = await open(page, [], { autopilot: true });
+  await intercept(page);
+  await page.getByTitle(/AI Film Studio/).click();
+  await page.getByTestId('actor-casting').locator('summary').click();
+  // Only in a build made with the owner's private troupe folder (never in the public repository).
+  test.skip((await page.getByTestId('troupe-install').count()) === 0, 'no embedded troupe in this build');
+  await page.getByTestId('troupe-install').click();
+  await expect(page.getByTestId('actors3d-note')).toContainText(/troupe installée : \d+ acteur\(s\)/, { timeout: 170_000 });
+  await page.getByTestId('actors3d-list').getByText('MAMAN NOUNOU', { exact: true }).click();
+  await expect(page.getByTestId('actor-preview').locator('canvas')).toBeVisible({ timeout: 20_000 });
+  const probe = () =>
+    page.evaluate(() => {
+      const src = document.querySelector('[data-testid=actor-preview-canvas]') as HTMLCanvasElement;
+      const c = document.createElement('canvas');
+      c.width = 100;
+      c.height = 140;
+      const g = c.getContext('2d', { willReadFrequently: true })!;
+      g.drawImage(src, 0, 0, c.width, c.height);
+      const d = g.getImageData(0, 0, c.width, c.height).data;
+      const px: number[] = [];
+      const set = new Set<number>();
+      for (let i = 0; i < d.length; i += 4) {
+        px.push(d[i]! + d[i + 1]! + d[i + 2]!);
+        set.add(((d[i]! >> 5) << 6) | ((d[i + 1]! >> 5) << 3) | (d[i + 2]! >> 5));
+      }
+      return { px, colors: set.size };
+    });
+  await page.waitForTimeout(2500);
+  const flat = await probe();
+  await page.getByTestId('actor-body3d').check();
+  const saved = async () => ((await kvGet(page, 'vs.actors')) as Record<string, { body3d?: boolean }>)['MAMAN NOUNOU']?.body3d;
+  await expect.poll(saved, { timeout: 15_000 }).toBe(true);
+  // The 3D body is built in the browser (a second or two) and plays: the drawing's colours, and it moves.
+  await page.waitForTimeout(7000);
+  const shots: { px: number[]; colors: number }[] = [];
+  for (let i = 0; i < 6; i++) {
+    if (process.env.ACTORS3D_DUMP) await page.getByTestId('actor-preview').screenshot({ path: path.join(process.env.ACTORS3D_DUMP, `body3d-${i}.png`) });
+    shots.push(await probe());
+    await page.waitForTimeout(450);
+  }
+  const diff = (a: number[], b: number[]) => a.reduce((s, v, i) => s + Math.abs(v - b[i]!), 0) / a.length;
+  for (const s of shots) expect(s.colors).toBeGreaterThan(12);
+  expect(Math.max(...shots.slice(1).map((s, i) => diff(shots[i]!.px, s.px)))).toBeGreaterThan(1.5);
+  // It is a different rendering from the flat cut-out (volume, lighting), still the drawing (its colours).
+  expect(diff(flat.px, shots[0]!.px)).toBeGreaterThan(3);
+  // Back to the cut-out: the toggle is per actor and reversible.
+  await page.getByTestId('actor-body3d').uncheck();
+  await expect.poll(saved, { timeout: 15_000 }).toBe(false);
+  expect(errors.filter((e) => !/favicon|ERR_|net::|GPU stall|WebGL/i.test(e))).toEqual([]);
+});

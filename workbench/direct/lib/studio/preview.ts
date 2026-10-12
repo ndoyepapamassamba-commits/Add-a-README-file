@@ -184,12 +184,13 @@ export function framed(ctx: CanvasRenderingContext2D, img: CanvasImageSource & {
 export function shockFrame(ctx: CanvasRenderingContext2D, W: number, H: number, age: number, kind: ReactionKind = 'choc', live = false) {
   // Over the punchline's picture, darkened (the scene stays readable behind the reaction) — never a black screen. Over a
   // LIVING scene (the actors keep reacting under it) the shade is lighter and the emoji smaller: the faces stay readable.
-  ctx.fillStyle = `rgba(0,0,0,${Math.min(live ? 0.3 : 0.55, age * 2.2)})`;
+  ctx.fillStyle = `rgba(0,0,0,${Math.min(live ? 0.18 : 0.55, age * 2.2)})`;
   ctx.fillRect(0, 0, W, H);
   const pop = age < 0.25 ? Math.sin((age / 0.25) * Math.PI * 0.5) * 1.15 : 1 + 0.15 * Math.exp(-(age - 0.25) * 8) * Math.cos((age - 0.25) * 18);
-  const r = Math.min(W, H) * (live ? 0.22 : 0.3) * pop;
+  // Over a living scene the emoji sits at the top of the picture, small, above the heads (v9 measured it on a face).
+  const r = Math.min(W, H) * (live ? 0.1 : 0.3) * pop;
   const cx = W / 2 + Math.sin(age * 60) * W * 0.004;
-  const cy = H / 2;
+  const cy = live ? H * 0.03 + Math.min(W, H) * 0.1 : H / 2;
   const g = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.4, r * 0.1, cx, cy, r);
   g.addColorStop(0, '#ffe680');
   g.addColorStop(0.7, '#f7b928');

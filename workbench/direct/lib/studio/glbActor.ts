@@ -14,6 +14,7 @@ import { buildProp, toonRamp, type FaceState, type Puppet3D } from './actorBody'
 import { alphaBounds, bakeProjection, projectedToon, type ProjectionBake } from './projectedSkin';
 import { poseFromBody } from '../../../server/jev/studio/actor/pose2d';
 import type { SheetBody } from '../../../server/jev/studio/actor/puppetMotion';
+import type { FaceRig } from './faceWarp';
 
 export class GlbActor implements Puppet3D {
   readonly root = new THREE.Group();
@@ -22,6 +23,8 @@ export class GlbActor implements Puppet3D {
   private prop: Prop | null = null;
   /** Bones recognised: engine joint → node name (for diagnostics and tests). */
   readonly mapped: Record<string, string>;
+  /** The drawn face animated on the projected skin (set before skin() by the inflated actor); null = no face. */
+  faceRig: FaceRig | null = null;
   private constructor(
     private scene: THREE.Object3D,
     private nodes: THREE.Object3D[],
@@ -29,6 +32,7 @@ export class GlbActor implements Puppet3D {
     private rt: Retarget,
     map: BoneMap,
     private restLocalPos: THREE.Vector3[],
+    private restLocalRot: THREE.Quaternion[],
     private restWorldRot: Q[],
     /** Model units per engine metre. */
     private unitsPerMetre: number,
@@ -50,7 +54,14 @@ export class GlbActor implements Puppet3D {
     const url = URL.createObjectURL(blob);
     try {
       const gltf = await new GLTFLoader().loadAsync(url);
-      const scene = gltf.scene;
+      return GlbActor.fromScene(gltf.scene, heightM);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+  /** Any rigged scene (a loaded model, or a body built in memory — the inflated drawing); throws when no humanoid skeleton is recognised. */
+  static fromScene(scene: THREE.Object3D, heightM = 1.72): GlbActor {
+    {
       scene.updateMatrixWorld(true);
       // Every node of the hierarchy, parents first (three's traverse is depth-first, parents before children).
       const nodes: THREE.Object3D[] = [];
@@ -98,9 +109,8 @@ export class GlbActor implements Puppet3D {
         m.material = Array.isArray(m.material) ? next : next[0]!;
       });
       const restLocalPos = nodes.map((o) => o.position.clone());
-      return new GlbActor(scene, nodes, rig, rt, map, restLocalPos, rest.rot, modelHeight / heightM, heightM, modelHeight, lo);
-    } finally {
-      URL.revokeObjectURL(url);
+      const restLocalRot = nodes.map((o) => o.quaternion.clone());
+      return new GlbActor(scene, nodes, rig, rt, map, restLocalPos, restLocalRot, rest.rot, modelHeight / heightM, heightM, modelHeight, lo);
     }
   }
   bone(name: string): THREE.Object3D | null {
@@ -129,10 +139,17 @@ export class GlbActor implements Puppet3D {
    * (fractions of the picture); without it the drawing is assumed to be in the model's rest pose.
    */
   skin(drawing: ImageBitmap | HTMLCanvasElement, body?: SheetBody, w = drawing.width, h = drawing.height): ProjectionBake {
-    const pose = body ? poseFromBody(body, w, h) : null;
-    const rot = pose ? pose.rot : SKELETON.map(() => [0, 0, 0, 1] as Q);
-    const root: V3 = pose ? pose.root : [0, 0.95, 0];
-    this.apply({ pose: { rot, root } } as unknown as Frame);
+    if (body) {
+      const pose = poseFromBody(body, w, h);
+      this.apply({ pose: { rot: pose.rot, root: pose.root } } as unknown as Frame);
+    } else {
+      // No measured skeleton: the drawing is assumed to be the model's OWN rest pose (a body inflated from the drawing
+      // is exactly that), so every bone goes back to its rest transform — not to the engine's T-pose.
+      this.nodes.forEach((o, i) => {
+        o.position.copy(this.restLocalPos[i]!);
+        o.quaternion.copy(this.restLocalRot[i]!);
+      });
+    }
     this.root.updateMatrixWorld(true);
     const bake = bakeProjection(this.scene, drawing, alphaBounds(drawing));
     // The drawing as a canvas texture (v up, like three's default) at full resolution.
@@ -145,13 +162,14 @@ export class GlbActor implements Puppet3D {
       const m = o as THREE.SkinnedMesh;
       if (!m.isSkinnedMesh) return;
       const mats = Array.isArray(m.material) ? m.material : [m.material];
-      const next = mats.map((x) => projectedToon(x as THREE.MeshToonMaterial, tex));
+      const next = mats.map((x) => projectedToon(x as THREE.MeshToonMaterial, tex, this.faceRig ? { glsl: this.faceRig.glsl, u: this.faceRig.u } : undefined));
       m.material = Array.isArray(m.material) ? next : next[0]!;
     });
     return bake;
   }
-  face(_s: FaceState) {
-    // A plain GLB has no expressions: the face of the hybrid actor is the drawing projected on the head (next step).
+  face(s: FaceState) {
+    // A plain GLB has no expressions; the hybrid actor's face is the drawing projected on its head, warped by its marks.
+    this.faceRig?.update(s);
   }
   setProp(p: Prop | null) {
     if (p === this.prop) return;
