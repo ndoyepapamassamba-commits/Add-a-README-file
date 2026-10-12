@@ -5,7 +5,7 @@
 import { useStudio } from './store';
 import { useStore } from '../store';
 import { blobs } from './blobs';
-import { loadRegistry, generateStory, generateSceneImage, generateLine, redrawCharacter, imageCandidates, rigScene, generatePlate, judgeHumor } from './actions';
+import { loadRegistry, generateStory, generateSceneImage, generateLine, redrawCharacter, imageCandidates, rigScene, rigSceneLocal, generatePlate, judgeHumor } from './actions';
 import { completeCharacterSheets, completeWorldSheets, addLocalMusic, compileSubtitles, buildEdit, generateSceneVideo, videoEnabled, runQA } from './actions2';
 import { setStudioTextModel } from './textModel';
 import { hfSpaceVideo, isCheapVideo, pollinationsModel, pollinationsVideo, POLLINATIONS_MODELS } from './cheapVideo';
@@ -349,10 +349,20 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
 /** Rigs every still scene without a clip (skeleton read by a vision model) and generates its clean plate — in parallel. */
 async function rigAll(projectId: string, c: FilmCtl): Promise<number> {
   let rigged = 0;
-  const todo = bpOf(projectId).scenes.filter((s) => s.imageAssetId && !s.videoAssetId && (!s.rig || !s.plateAssetId));
+  const todo = bpOf(projectId).scenes.filter((s) => s.imageAssetId && !s.videoAssetId && (!s.rig || !s.plateAssetId || !s.maskAssetId));
+  // CORPS ENTIER first: read in the browser, 0 $ (skeletons, cut-outs, background rebuilt). One scene at a time: the
+  // models share one WebAssembly runtime.
+  for (const sc of todo) {
+    check(c);
+    if (sc.maskAssetId) continue;
+    c.onStage('ANIMATION', 'running', `corps entier ${sc.scene_id} : squelettes, détourage et décor (gratuit, dans le navigateur)`);
+    const n = await rigSceneLocal(projectId, sc.scene_id);
+    if (n > 0) rigged++;
+  }
   await pool(todo, PARALLEL.rigs, async (sc) => {
     check(c);
-    if (!sc.rig) {
+    const cur = bpOf(projectId).scenes.find((x) => x.scene_id === sc.scene_id)!;
+    if (!cur.rig) {
       c.onStage('ANIMATION', 'running', `marionnette ${sc.scene_id} : squelette des personnages`);
       rigged += (await rigScene(projectId, sc.scene_id)) > 0 ? 1 : 0;
     }

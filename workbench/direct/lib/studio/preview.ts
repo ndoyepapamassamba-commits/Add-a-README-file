@@ -3,6 +3,7 @@
 // videos when generated) with the real voices, music, SFX and word-highlighted subtitles),
 // not the final film. When the browser lacks a capability the caller shows « Capability unavailable in current environment ».
 import { PuppetStage } from './puppetRender';
+import { masksFromImage } from './bodyDetect';
 import { gestureOf } from '../../../server/jev/studio/puppet';
 import { wordViseme } from '../../../server/jev/studio/emotionLayer';
 import { VIRAL_FORMAT, VIRAL_PRESETS, captionChunk, fitBand, parallelChunk, reactionFor, shockAfter, type ReactionKind } from '../../../server/jev/studio/viralFormat';
@@ -469,7 +470,20 @@ export async function renderPreview(
   const videos = await Promise.all(bp.scenes.map((s) => videoOf(s.videoAssetId)));
   // Rigged scenes (no video clip) are animated by the puppet engine.
   const plates = await Promise.all(bp.scenes.map((s, k) => (bitmaps[k] && !videos[k] && s.rig?.characters.length ? bitmapOf(s.plateAssetId) : null)));
-  const stages = bitmaps.map((b, k) => (b && !videos[k] && bp.scenes[k]!.rig?.characters.length ? new PuppetStage(b, bp.scenes[k]!.rig!, plates[k]) : null));
+  // CORPS ENTIER: the exact cut-outs read in the browser (one grey slice per character), at the stage's size.
+  const masks = await Promise.all(
+    bp.scenes.map(async (s, k) => {
+      const b = bitmaps[k];
+      if (!b || videos[k] || !s.rig?.characters.length || !s.maskAssetId) return null;
+      const m = await bitmapOf(s.maskAssetId);
+      if (!m) return null;
+      const { w, h } = PuppetStage.sizeFor(b);
+      const out = masksFromImage(m, s.rig.characters.length, w, h);
+      m.close();
+      return out;
+    }),
+  );
+  const stages = bitmaps.map((b, k) => (b && !videos[k] && bp.scenes[k]!.rig?.characters.length ? new PuppetStage(b, bp.scenes[k]!.rig!, plates[k], masks[k]) : null));
   // One camera move per scene, chosen from its content, never the same twice in a row.
   const dim3d = dimensionOf(bp.styleDNA) === '3D';
   const moves: Move[] = [];
@@ -632,6 +646,7 @@ export async function renderPreview(
           emphasis: k === bp.scenes.length - 1 ? Math.max(0, 1 - Math.abs(fr - 0.85) * 8) : 0,
           gesture: k === si ? gesture : null,
           lineAge: act ? now - act.line.start : undefined,
+          sceneAge: Math.max(0, now - sceneStart[k]!),
           emotion: (k === si ? dl?.emotion : undefined) || bp.scenes[k]!.emotion,
           viseme: k === si && act ? vz.open : undefined,
           visemeKey: k === si && act ? vz.key : undefined,

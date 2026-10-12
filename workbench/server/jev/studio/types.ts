@@ -191,6 +191,8 @@ export interface Scene {
   model?: string;
   /** Puppet rig of the scene image (Marionnette Afrikatoon engine), read once by a vision model. */
   rig?: import('./puppet').PuppetRig;
+  /** Exact cut-outs of the characters read in the browser (one grey slice per character, stacked) — CORPS ENTIER. */
+  maskAssetId?: string;
 }
 
 export interface Story {

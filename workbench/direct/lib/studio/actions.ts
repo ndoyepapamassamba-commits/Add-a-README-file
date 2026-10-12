@@ -597,6 +597,44 @@ export async function generatePlate(projectId: string, sceneId: string): Promise
   }
 }
 /**
+ * CORPS ENTIER, 0 $: the scene picture is read IN THE BROWSER (no key, no paid call): characters, full skeletons
+ * (shoulders → ankles, eyes, mouth) and exact cut-outs (MediaPipe), then the background behind them is rebuilt (MI-GAN).
+ * Returns the number of characters that got a full-body skeleton (0: models unavailable / nobody found).
+ */
+export async function rigSceneLocal(projectId: string, sceneId: string): Promise<number> {
+  const sc = bpOf(projectId).scenes.find((s) => s.scene_id === sceneId);
+  if (!sc?.imageAssetId) return 0;
+  const blob = await blobs.get(sc.imageAssetId);
+  if (!blob) return 0;
+  try {
+    const { readSceneFree } = await import('./sceneReader');
+    const { masksToPng } = await import('./bodyDetect');
+    const got = await readSceneFree(blob, sc.rig?.characters ?? [], !sc.plateAssetId);
+    if (!got) return 0;
+    const r = got.reading;
+    const bodies = r.characters.filter((c) => c.body2d).length;
+    const uidOf = (p: string) => `${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const maskId = uidOf('mask');
+    await blobs.put(maskId, await masksToPng(r.masks, r.w, r.h));
+    // The background behind the characters (when the app has no generated plate yet), rebuilt by MI-GAN.
+    let plateId: string | undefined;
+    if (got.plate) {
+      const c = new OffscreenCanvas(r.w, r.h);
+      c.getContext('2d')!.putImageData(new ImageData(new Uint8ClampedArray(got.plate), r.w, r.h), 0, 0);
+      plateId = uidOf('plate');
+      await blobs.put(plateId, await c.convertToBlob({ type: 'image/png' }));
+    }
+    const rig = { characters: r.characters, by: sc.rig?.by ? `${sc.rig.by} + corps local` : 'corps local (navigateur)' };
+    patch(projectId, (b) => ({
+      ...b,
+      scenes: b.scenes.map((s) => (s.scene_id === sceneId && s.imageAssetId === sc.imageAssetId ? { ...s, rig, maskAssetId: maskId, ...(plateId ? { plateAssetId: plateId } : {}) } : s)),
+    }));
+    return bodies;
+  } catch {
+    return 0;
+  }
+}
+/**
  * MARIONNETTE AFRIKATOON: a vision model rigs the scene image once (heads, eyes, mouths, bodies, arms) so the free
  * engine can move the characters themselves. Returns the number of characters rigged (0: nothing to rig / no model).
  */

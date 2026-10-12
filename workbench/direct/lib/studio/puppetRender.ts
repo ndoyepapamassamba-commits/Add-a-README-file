@@ -1,7 +1,8 @@
 // MARIONNETTE AFRIKATOON — browser renderer: the scene image is drawn, then each rigged character is redrawn through
 // its deformed mesh (affine-mapped triangles), then its eyes blink and its mouth opens with the voice.
-import { deformPoint, jawOffset, poseAt, springPose, warpGrid, type SpringState, type Pose, type PuppetCharacter, type PuppetRig } from '../../../server/jev/studio/puppet';
+import { deformPoint as deformPointOf, gestureOf, jawOffset, poseAt, springPose, warpGrid, type SpringState, type Pose, type PuppetCharacter, type PuppetRig } from '../../../server/jev/studio/puppet';
 import { characterLayer, inpaint, plateHole } from '../../../server/jev/studio/layers';
+import { apply, findHem, ownerOf, bodyModel, bodyTarget, boneMatrices, buildBodyMesh, deformMesh, poseFromTarget, restLimbs, springBody, type BodyMesh, type BodyModel, type BodySpring } from '../../../server/jev/studio/body2d';
 
 type Surface = OffscreenCanvas | HTMLCanvasElement;
 const surface = (w: number, h: number): Surface => (typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(w, h) : Object.assign(document.createElement('canvas'), { width: w, height: h }));
@@ -23,7 +24,20 @@ export interface PuppetFrameInput {
   /** Preston Blair mouth shape of the sound said now, and the voice accent (beat gestures). */
   visemeKey?: string;
   beat?: number;
+  /** Seconds since the scene began (the scene's action — walk in, fall, exit… — is played from its start). */
+  sceneAge?: number;
 }
+/** CORPS ENTIER state of one character: skeleton model, skinned mesh, springs, travel kept between gestures. */
+interface BodyState {
+  model: BodyModel;
+  mesh: BodyMesh;
+  dst: Float32Array;
+  spring?: BodySpring;
+  /** Part textures (pixels owned by one bone, cropped at ox / oy) for the border triangles of unconnected parts. */
+  parts: Map<number, { tex: Surface; ox: number; oy: number }>;
+}
+/** Actions played by the whole body for the whole scene (they win over the gestures of the lines). */
+const SCENE_ACTIONS = ['fall', 'exit', 'walk', 'run', 'dance', 'jump'];
 const rgb = (d: Uint8ClampedArray, w: number, h: number, x: number, y: number) => {
   const i = (Math.max(0, Math.min(h - 1, Math.round(y))) * w + Math.max(0, Math.min(w - 1, Math.round(x)))) * 4;
   return `rgb(${d[i]},${d[i + 1]},${d[i + 2]})`;
@@ -59,11 +73,15 @@ export class PuppetStage {
   private buf: Surface | null = null;
   /** Spring state per character (secondary motion: every part eases, overshoots a little and settles). */
   private springs = new Map<PuppetCharacter, SpringState>();
+  /** Characters animated by the CORPS ENTIER engine (skeleton read in the browser + exact cut-out). */
+  private bodies = new Map<PuppetCharacter, BodyState>();
   constructor(
     private img: CanvasImageSource & { width: number; height: number },
     private rig: PuppetRig,
     /** The same shot without the characters, when the app generated it (exact cut-out, true background). */
     plateImg?: (CanvasImageSource & { width: number; height: number }) | null,
+    /** Exact cut-outs read in the browser (one per character, at this stage's size) — see bodyDetect.ts. */
+    masks?: (Float32Array | null)[] | null,
   ) {
     const k = Math.min(1, 720 / Math.max(1, img.width));
     const w = Math.round(img.width * k);
@@ -85,17 +103,29 @@ export class PuppetStage {
       this.plate = pc;
       this.exactPlate = true;
     }
-    this.buildLayers(w, h, plateSrc);
+    this.buildLayers(w, h, plateSrc, masks ?? undefined);
+  }
+  /** Size of the stage canvas for an image (the caller reads the masks at this size). */
+  static sizeFor(img: { width: number; height: number }): { w: number; h: number } {
+    const k = Math.min(1, 720 / Math.max(1, img.width));
+    return { w: Math.round(img.width * k), h: Math.round(img.height * k) };
+  }
+  /** Number of characters played by the full-body engine. */
+  get fullBody(): number {
+    return this.bodies.size;
   }
   /**
    * Cuts the still into layers: a matte per character, a clean plate (characters removed, holes filled by push-pull),
    * a cut-out per character. A matte that looks wrong (almost empty / almost the whole box) keeps the single-image mode.
    */
-  private buildLayers(w: number, h: number, plateSrc?: Uint8ClampedArray) {
+  private buildLayers(w: number, h: number, plateSrc?: Uint8ClampedArray, masks?: (Float32Array | null)[]) {
     const given = this.plate;
     try {
       const chars = this.rig.characters;
-      const cuts = chars.map((c) => characterLayer(this.src, w, h, c, chars.filter((o) => o !== c), plateSrc));
+      const cuts = chars.map((c, k) => {
+        const m = masks?.[k];
+        return m && m.length === w * h ? { alpha: m, armsOk: c.arms.map(() => true) } : characterLayer(this.src, w, h, c, chars.filter((o) => o !== c), plateSrc);
+      });
       const mattes = cuts.map((x) => x.alpha);
       const ok = chars.every((c, k) => {
         const m = mattes[k]!;
@@ -106,7 +136,8 @@ export class PuppetStage {
             n++;
           }
         const cov = n ? on / n : 0;
-        return cov > 0.15 && cov < 0.93;
+        // An exact cut-out (segmenter) may fill a tight box; a colour matte that does is the background.
+        return masks?.[k] ? cov > 0.15 : cov > 0.15 && cov < 0.93;
       });
       if (!ok) {
         this.plate = null;
@@ -127,11 +158,75 @@ export class PuppetStage {
         const layer = surface(w, h);
         (layer.getContext('2d') as OffscreenCanvasRenderingContext2D).putImageData(new ImageData(px, w, h), 0, 0);
         this.layers.set(c, layer);
+        if (c.body2d) this.buildBody(c, m, w, h);
       });
     } catch {
       this.plate = null;
       this.layers.clear();
     }
+  }
+  /** Skinned mesh over the cut-out of a character with a skeleton (the mesh covers exactly its pixels). */
+  private buildBody(c: PuppetCharacter, m: Float32Array, w: number, h: number) {
+    try {
+      const model = bodyModel(c.body2d!, w / h);
+      let x0 = w;
+      let y0 = h;
+      let x1 = 0;
+      let y1 = 0;
+      for (let y = 0; y < h; y += 2)
+        for (let x = 0; x < w; x += 2)
+          if (m[y * w + x]! > 0.05) {
+            x0 = Math.min(x0, x);
+            x1 = Math.max(x1, x);
+            y0 = Math.min(y0, y);
+            y1 = Math.max(y1, y);
+          }
+      if (x1 <= x0 || y1 <= y0) return;
+      const alphaAt = (X: number, Y: number) => {
+        const x = Math.round(X * h);
+        const y = Math.round(Y * h);
+        return x < 0 || y < 0 || x >= w || y >= h ? 0 : m[y * w + x]!;
+      };
+      const pad = 3 / h;
+      model.hem = findHem(model, alphaAt);
+      const mesh = buildBodyMesh(model, alphaAt, { x0: x0 / h - pad, y0: y0 / h - pad, x1: x1 / h + pad, y1: y1 / h + pad }, 46);
+      if (mesh.tris.length < 30) return;
+      // Pixel ownership (nearest bone) → one cropped texture per part that borders an unconnected part.
+      const need = new Set([...mesh.part].filter((p) => p >= 0));
+      const parts = new Map<number, { tex: Surface; ox: number; oy: number }>();
+      if (need.size) {
+        const bw = x1 - x0 + 1;
+        const bh = y1 - y0 + 1;
+        const owner = new Int8Array(bw * bh).fill(-1);
+        for (let y = y0; y <= y1; y++)
+          for (let x = x0; x <= x1; x++) if (m[y * w + x]! > 0.02) owner[(y - y0) * bw + (x - x0)] = ownerOf(model, { x: x / h, y: y / h });
+        for (const p of need) {
+          const tex = surface(bw, bh);
+          const tg = tex.getContext('2d') as OffscreenCanvasRenderingContext2D;
+          const im = tg.createImageData(bw, bh);
+          for (let y = 0; y < bh; y++)
+            for (let x = 0; x < bw; x++) {
+              if (owner[y * bw + x] !== p) continue;
+              const si = ((y + y0) * w + (x + x0)) * 4;
+              const o = (y * bw + x) * 4;
+              im.data[o] = this.src[si]!;
+              im.data[o + 1] = this.src[si + 1]!;
+              im.data[o + 2] = this.src[si + 2]!;
+              im.data[o + 3] = Math.round(m[(y + y0) * w + (x + x0)]! * 255);
+            }
+          tg.putImageData(im, 0, 0);
+          parts.set(p, { tex, ox: x0, oy: y0 });
+        }
+      }
+      this.bodies.set(c, { model, mesh, dst: new Float32Array(mesh.src.length), parts });
+    } catch {
+      this.bodies.delete(c);
+    }
+  }
+  /** The character who performs the scene's action: named in it, else the speaker, else the first one. */
+  private actorOf(action: string | undefined, talker: PuppetCharacter | undefined): PuppetCharacter | undefined {
+    const a = (action ?? '').toLowerCase();
+    return this.rig.characters.find((c) => c.name.length > 2 && a.includes(c.name.toLowerCase())) ?? talker ?? [...this.rig.characters].sort((p, q) => p.box.x - q.box.x)[0];
   }
   /** True when the scene is rendered in 2.5D layers (plate + cut-outs). */
   get layered() {
@@ -283,7 +378,24 @@ export class PuppetStage {
       const sp = springPose(this.springs.get(c), raw, f.t);
       this.springs.set(c, sp.state);
       const pose = sp.pose;
-      if (this.layers.has(c)) {
+      const body = this.bodies.get(c);
+      if (body && this.layers.has(c)) {
+        if (!this.buf || this.buf.width !== W || this.buf.height !== H) this.buf = surface(W, H);
+        const bg = this.buf.getContext('2d') as OffscreenCanvasRenderingContext2D;
+        bg.setTransform(1, 0, 0, 1, 0, 0);
+        bg.globalCompositeOperation = 'source-over';
+        bg.clearRect(0, 0, W, H);
+        const headM = this.drawBody(c, body, f, mine, talker, facing, other, bg, W, H);
+        const aspect = W / H;
+        const map = (q: { x: number; y: number }) => {
+          const u = apply(headM, { x: q.x * aspect, y: q.y });
+          return { x: u.x / aspect, y: u.y };
+        };
+        bg.globalCompositeOperation = 'source-atop';
+        this.drawFace(c, pose, W, H, bg, this.buf, map);
+        bg.globalCompositeOperation = 'source-over';
+        g.drawImage(this.buf, 0, 0);
+      } else if (this.layers.has(c)) {
         // Character rendered alone in its buffer, face features clipped to its own pixels, then composited.
         if (!this.buf || this.buf.width !== W || this.buf.height !== H) this.buf = surface(W, H);
         const bg = this.buf.getContext('2d') as OffscreenCanvasRenderingContext2D;
@@ -327,8 +439,77 @@ export class PuppetStage {
         }
       }
   }
-  private drawFace(c: PuppetCharacter, p: Pose, W: number, H: number, g: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D = this.g, from: Surface = this.canvas) {
+  /**
+   * CORPS ENTIER: the character's own drawing, skinned on its skeleton, plays the clip of the moment (line gesture, or
+   * the scene's action for its performer). Returns the head matrix (the face follows it).
+   */
+  private drawBody(c: PuppetCharacter, B: BodyState, f: PuppetFrameInput, mine: boolean, talker: PuppetCharacter | undefined, facing: number, other: PuppetCharacter | undefined, g: OffscreenCanvasRenderingContext2D, W: number, H: number) {
+    const act = gestureOf(f.action);
+    let clip: string | null = mine && f.gesture ? f.gesture : null;
+    let age = f.lineAge ?? 0;
+    if (act && c === this.actorOf(f.action, talker) && (SCENE_ACTIONS.includes(act) || !clip)) {
+      clip = act;
+      age = f.sceneAge ?? f.t;
+    }
+    // Room to walk towards the other character (body heights), keeping a small gap.
+    const gap = other ? (facing > 0 ? other.box.x - (c.box.x + c.box.w) : c.box.x - (other.box.x + other.box.w)) : 0.3;
+    const room = Math.max(0, Math.min(1.2, (gap * (W / H)) / B.model.height + 0.05));
+    const target = bodyTarget(clip, {
+      t: f.t,
+      age,
+      speaking: mine,
+      energy: mine ? f.energy : 0,
+      beat: mine ? (f.beat ?? 0) : 0,
+      emotion: f.emotion,
+      rest: restLimbs(B.model, facing),
+      room,
+      travel: true,
+      phase: (c.name.length * 1.7 + c.box.x * 13) % 6,
+      // A fall goes to the side of the picture with the most room.
+      fallDir: (1 - c.box.x - c.box.w > c.box.x ? 1 : -1) * facing,
+    });
+    const sp = springBody(B.spring, poseFromTarget(B.model, target, facing), f.t);
+    B.spring = sp.state;
+    const mats = boneMatrices(B.model, sp.pose);
+    const d = deformMesh(B.mesh, mats, B.dst);
+    const s = B.mesh.src;
+    const layer = this.layers.get(c)!;
+    const tris = B.mesh.tris;
+    const st = (i: number, j: number, arr: Float32Array) => Math.hypot(arr[i * 2]! - arr[j * 2]!, arr[i * 2 + 1]! - arr[j * 2 + 1]!);
+    for (let t = 0; t < tris.length; t += 3) {
+      const a = tris[t]!;
+      const b = tris[t + 1]!;
+      const e = tris[t + 2]!;
+      // A triangle stretched far beyond its size (between two parts that moved apart) is a smear: it is not drawn.
+      const r0 = Math.max(st(a, b, s), st(b, e, s), st(e, a, s));
+      if (Math.max(st(a, b, d), st(b, e, d), st(e, a, d)) > r0 * 2.2 + 1 / H) continue;
+      const part = B.mesh.part[t / 3]!;
+      const pt = part >= 0 ? B.parts.get(part) : undefined;
+      const ox = pt?.ox ?? 0;
+      const oy = pt?.oy ?? 0;
+      const tex = pt?.tex ?? layer;
+      drawTriangle(
+        g,
+        tex,
+        pt ? tex.width : W,
+        pt ? tex.height : H,
+        [
+          { x: s[a * 2]! * H - ox, y: s[a * 2 + 1]! * H - oy },
+          { x: s[b * 2]! * H - ox, y: s[b * 2 + 1]! * H - oy },
+          { x: s[e * 2]! * H - ox, y: s[e * 2 + 1]! * H - oy },
+        ],
+        [
+          { x: d[a * 2]! * H, y: d[a * 2 + 1]! * H },
+          { x: d[b * 2]! * H, y: d[b * 2 + 1]! * H },
+          { x: d[e * 2]! * H, y: d[e * 2 + 1]! * H },
+        ],
+      );
+    }
+    return mats[B.model.bones.findIndex((x) => x.id === 'head')]!;
+  }
+  private drawFace(c: PuppetCharacter, p: Pose, W: number, H: number, g: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D = this.g, from: Surface = this.canvas, map?: (q: { x: number; y: number }) => { x: number; y: number }) {
     const { src } = this;
+    const deformPoint = map ? (_c: PuppetCharacter, _p: Pose, q: { x: number; y: number }) => map(q) : deformPointOf;
     g.setTransform(1, 0, 0, 1, 0, 0);
     const headCx = c.head.x + c.head.w / 2;
     for (const e of c.eyes) {

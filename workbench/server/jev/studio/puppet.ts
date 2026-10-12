@@ -25,6 +25,8 @@ export interface PuppetCharacter {
   mouth: RBox | null;
   /** Arms (from shoulder to hand) when visible. */
   arms: { shoulder: { x: number; y: number }; hand: { x: number; y: number } }[];
+  /** Full-body skeleton read in the browser (CORPS ENTIER engine): legs, arms and torso move, not only the head. */
+  body2d?: import('./body2d').BodyRig;
 }
 export interface PuppetRig {
   characters: PuppetCharacter[];
@@ -131,6 +133,12 @@ export const GESTURES: { id: string; re: RegExp }[] = [
   { id: 'startle', re: /\b(sursaute|choqué|surpris|stupeur|quoi ?!|startled|shocked)\b/i },
   { id: 'cry', re: /\b(pleure|sanglote|cry|cries)\b/i },
   { id: 'run', re: /\b(court|fuit|s'enfuit|cours|runs?)\b/i },
+  // Full-body actions (CORPS ENTIER engine; the head-and-arms engine plays them as their nearest gesture).
+  { id: 'fall', re: /\b(tombe|chute|s'effondre|s'évanouit|trébuche|glisse|falls?|faints?)\b/i },
+  { id: 'slap', re: /\b(gifle|frappe|cogne|slaps?|hits?|punch(es)?)\b/i },
+  { id: 'beg', re: /\b(supplie|implore|à genoux|pitié|begs?|pleads?)\b/i },
+  { id: 'exit', re: /\b(s'en va|quitte|s'éloigne|sort de|part en|leaves|exits?|walks? away)\b/i },
+  { id: 'walk', re: /\b(marche|avance|s'approche|arrive|entre|rejoint|walks?|approach(es)?|enters?)\b/i },
 ];
 export const gestureOf = (text: string | undefined): string | null => (text ? (GESTURES.find((g) => g.re.test(text))?.id ?? null) : null);
 /** Deterministic pseudo-random per character (blinks never in sync). */
@@ -286,6 +294,26 @@ export function poseAt(
       p.jump = 0.025 * Math.abs(Math.sin(t * 11));
       p.lean = face * 0.05;
       p.arms = p.arms.map((_, i) => 0.35 * Math.sin(t * 11 + i * Math.PI));
+      break;
+    case 'walk':
+    case 'exit':
+      p.jump = 0.012 * Math.abs(Math.sin(t * 7));
+      p.sway = 0.03 * Math.sin(t * 7);
+      p.arms = p.arms.map((_, i) => 0.15 * Math.sin(t * 7 + i * Math.PI));
+      break;
+    case 'fall':
+      p.lean = -face * 0.08;
+      p.squash = 0.92;
+      p.arms = p.arms.map(() => 0.7);
+      break;
+    case 'slap':
+      A(0, 0.2 + 0.6 * Math.max(0, Math.sin(t * 6)));
+      p.lean += face * 0.04;
+      break;
+    case 'beg':
+      p.arms = p.arms.map(() => 0.3);
+      p.lean += face * 0.04;
+      p.headNod += 0.03;
       break;
   }
   // Animation principles: the gesture starts with an anticipation, overshoots and settles (age = time since it began).
