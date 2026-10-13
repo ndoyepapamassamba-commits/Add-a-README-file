@@ -234,7 +234,21 @@ export function findTable(rows: Map<number, Cell[]>): Table | null {
 }
 
 // ── styles for the band ──────────────────────────────────────────────────────────────────────────────────────────
-function bandStyles(z: Zip, d: Design): { label: number[]; value: number[]; spacer: number } {
+export interface BandStyles {
+  label: number[];
+  /** Big value, Md / M format (amounts ≥ 1 Md). */
+  value: number[];
+  /** Big value, M / k format (the usual case: « 865,1 k », « 2,2 M »). */
+  valueK: number[];
+  spacer: number;
+  /** Sommaire sheet: navy band, title on it, subtitle, hyperlink, number (k / M), header. */
+  band: number;
+  title: number;
+  sub: number;
+  link: number;
+  num: number;
+}
+function bandStyles(z: Zip, d: Design): BandStyles {
   let st = rd(z, 'xl/styles.xml');
   const append = (tag: string, item: string): number => {
     const re = new RegExp(`<${tag}\\b([^>]*)>([\\s\\S]*?)</${tag}>`);
@@ -255,43 +269,63 @@ function bandStyles(z: Zip, d: Design): { label: number[]; value: number[]; spac
   // CARD LOOK (the best dashboards: white cards on a soft canvas, one accent edge, a soft base line, big number).
   const border = (accent: string) => `<border><left style="thick"><color rgb="FF${accent}"/></left><right style="thin">${line}</right><top style="thin">${line}</top><bottom/><diagonal/></border>`;
   const box = `<border><left style="thick"><color rgb="FF${c.line}"/></left><right style="thin">${line}</right><top/><bottom style="medium">${line}</bottom><diagonal/></border>`;
-  // numFmt for amounts in Md / M.
+  // numFmts for amounts: Md / M (≥ 1 Md) and M / k (the ExcelDemy card format — Excel allows two conditions).
   const fm = /<numFmts\b[^>]*>([\s\S]*?)<\/numFmts>/.exec(st);
   const code = '[&gt;=1000000000]#,##0.0,,,&quot; Md&quot;;[&gt;=1000000]#,##0.0,,&quot; M&quot;;#,##0';
+  const codeK = '[&gt;=1000000]#,##0.0,,&quot; M&quot;;[&gt;=1000]#,##0.0,&quot; k&quot;;#,##0';
   const ids = [...(fm?.[1] ?? '').matchAll(/numFmtId="(\d+)"/g)].map((m) => +m[1]!);
   const fmtId = Math.max(175, ...ids) + 1;
-  const item = `<numFmt numFmtId="${fmtId}" formatCode="${code}"/>`;
-  if (fm) st = st.replace(/<numFmts\b([^>]*)>([\s\S]*?)<\/numFmts>/, (_m, a: string, b: string) => `<numFmts${a.replace(/count="\d+"/, `count="${ids.length + 1}"`)}>${b}${item}</numFmts>`);
-  else st = st.replace(/<styleSheet\b([^>]*)>/, `<styleSheet$1><numFmts count="1">${item}</numFmts>`);
+  const fmtK = fmtId + 1;
+  const item = `<numFmt numFmtId="${fmtId}" formatCode="${code}"/><numFmt numFmtId="${fmtK}" formatCode="${codeK}"/>`;
+  if (fm) st = st.replace(/<numFmts\b([^>]*)>([\s\S]*?)<\/numFmts>/, (_m, a: string, b: string) => `<numFmts${a.replace(/count="\d+"/, `count="${ids.length + 2}"`)}>${b}${item}</numFmts>`);
+  else st = st.replace(/<styleSheet\b([^>]*)>/, `<styleSheet$1><numFmts count="2">${item}</numFmts>`);
   const accents = [c.blue, c.gold, c.navy, c.cyan];
   const xfs: string[] = [];
   const xf = (fontId: number, fillId: number, borderId: number, numFmt = 0, extra = '<alignment horizontal="center" vertical="center" wrapText="1"/>') =>
     `<xf numFmtId="${numFmt}" fontId="${fontId}" fillId="${fillId}" borderId="${borderId}" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1">${extra}</xf>`;
   const fLabel = append('fonts', font(c.text2, true, 8.5, d.font.ui));
   const fValue = append('fonts', font(c.navy, true, 18, d.font.mono));
+  const fTitle = append('fonts', font('FFFFFF', true, 16, d.font.ui));
+  const fSub = append('fonts', font(c.text2, false, 9, d.font.ui));
+  const fLink = append('fonts', `<font><u/><sz val="11"/><color rgb="FF${c.blue}"/><name val="${xesc(d.font.ui)}"/></font>`);
+  const fNum = append('fonts', font(c.navy, true, 11, d.font.mono));
   const fPanel = append('fills', fill(c.panel));
   const fWhite = append('fills', fill('FFFFFF'));
+  const fNavy = append('fills', fill(c.navy));
   const label: number[] = [];
   const value: number[] = [];
+  const valueK: number[] = [];
   const base = (/<cellXfs\b[^>]*>([\s\S]*?)<\/cellXfs>/.exec(st)?.[1]!.match(/<xf\b/g) ?? []).length;
   for (const a of accents) {
     const bTop = append('borders', border(a));
     label.push(base + xfs.length);
     xfs.push(xf(fLabel, fWhite, bTop, 0, '<alignment horizontal="left" vertical="center" indent="1" wrapText="1"/>'));
-    value.push(base + xfs.length);
     // The accent edge continues on the value cell: one card, not two cells.
     const bVal = append('borders', box.replace(`<left style="thick"><color rgb="FF${c.line}"/></left>`, `<left style="thick"><color rgb="FF${a}"/></left>`));
+    value.push(base + xfs.length);
     xfs.push(xf(fValue, fWhite, bVal, fmtId, '<alignment horizontal="left" vertical="center" indent="1"/>'));
+    valueK.push(base + xfs.length);
+    xfs.push(xf(fValue, fWhite, bVal, fmtK, '<alignment horizontal="left" vertical="center" indent="1"/>'));
   }
   const spacer = base + xfs.length;
   // The canvas: the soft panel colour around the cards and under the charts (the cards and charts read as objects).
   xfs.push(xf(0, fPanel, 0, 0, ''));
+  const band = base + xfs.length;
+  xfs.push(xf(0, fNavy, 0, 0, ''));
+  const title = base + xfs.length;
+  xfs.push(xf(fTitle, fNavy, 0, 0, '<alignment horizontal="left" vertical="center" indent="1"/>'));
+  const sub = base + xfs.length;
+  xfs.push(xf(fSub, fWhite, 0, 0, '<alignment horizontal="left" vertical="center" indent="1" wrapText="1"/>'));
+  const link = base + xfs.length;
+  xfs.push(xf(fLink, fWhite, 0, 0, '<alignment horizontal="left" vertical="center" indent="1"/>'));
+  const num = base + xfs.length;
+  xfs.push(xf(fNum, fWhite, 0, fmtK, '<alignment horizontal="right" vertical="center" indent="1"/>'));
   st = st.replace(/<cellXfs\b([^>]*)>([\s\S]*?)<\/cellXfs>/, (_m, a: string, b: string) => `<cellXfs${a.replace(/count="\d+"/, `count="${base + xfs.length}"`)}>${b}${xfs.join('')}</cellXfs>`);
   // Font children in schema order (openpyxl writes <name> first): a strict reader opens the file without repair.
   const ORDER = ['b', 'i', 'strike', 'condense', 'extend', 'outline', 'shadow', 'u', 'vertAlign', 'sz', 'color', 'name', 'family', 'charset', 'scheme'];
   st = st.replace(/<font>((?:<\w+\b[^>]*\/>)+)<\/font>/g, (_m, kids: string) => `<font>${[...kids.matchAll(/<(\w+)\b[^>]*\/>/g)].sort((a, b) => ORDER.indexOf(a[1]!) - ORDER.indexOf(b[1]!)).map((k) => k[0]).join('')}</font>`);
   wr(z, 'xl/styles.xml', st);
-  return { label, value, spacer };
+  return { label, value, valueK, spacer, band, title, sub, link, num };
 }
 
 // ── geometry ─────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -328,6 +362,10 @@ export interface MaisonResult {
   /** Charts moved above a table / created. */
   moved: number;
   created: number;
+  /** Native sparklines placed in « PROFIL » cards. */
+  sparklines: number;
+  /** A Sommaire sheet (links, live counts and totals) was (re)built first. */
+  sommaire: boolean;
 }
 const CHART_ROWS = 15;
 const CHART_ROW_PT = 18;
@@ -345,9 +383,10 @@ export function maisonBand(bytes: Uint8Array, design: Design, skip: ReadonlySet<
   const banded: string[] = [];
   let moved = 0;
   let created = 0;
-  let styles: ReturnType<typeof bandStyles> | null = null;
+  let sparklines = 0;
+  let styles: BandStyles | null = null;
   for (const sh of sheetsOf(z)) {
-    if (skip.has(sh.name) || !z[sh.part]) continue;
+    if (skip.has(sh.name) || isSommaire(sh.name) || !z[sh.part]) continue;
     const x0 = rd(z, sh.part);
     if (!/<sheetData>/.test(x0)) continue;
     const rows = readRows(x0, sst);
@@ -392,7 +431,11 @@ export function maisonBand(bytes: Uint8Array, design: Design, skip: ReadonlySet<
     const countCol = t.catCol ?? t.cols[0]!.col;
     kpis.push({ label: 'LIGNES', f: `SUBTOTAL(3,${colName(countCol)}${first}:${colName(countCol)}${last})`, v: t.last - t.first + 1 });
     for (const m of cards) kpis.push({ label: m.name.toUpperCase(), f: `SUBTOTAL(9,${colName(m.col)}${first}:${colName(m.col)}${last})`, v: vals(m.col) });
+    // PROFILE card: a native column sparkline over the first amount (the shape of the table at a glance).
+    const sparkable = cards[0] && t.last - t.first + 1 >= 3 && t.last - t.first + 1 <= 500 && used >= kpis.length + 1;
+    if (sparkable) kpis.push({ label: `PROFIL · ${cards[0]!.name.toUpperCase()}`, f: '', v: 0 });
     const k = Math.min(kpis.length, Math.max(1, used));
+    let sparkRef = '';
     const span = Math.max(1, Math.floor(used / k));
     let x = rd(z, sh.part);
     const rowLabel = at + 1;
@@ -403,9 +446,12 @@ export function maisonBand(bytes: Uint8Array, design: Design, skip: ReadonlySet<
     for (let i = 0; i < k; i++) {
       const c0 = i * span;
       const c1 = i === k - 1 ? Math.max(c0, used - 1) : c0 + span - 1;
+      // Md / M for amounts of a billion or more, M / k otherwise (« 865,1 k », « 2,2 M » — the exact value stays in the cell).
+      const vs = (kpis[i]!.v >= 1e9 ? styles.value : styles.valueK)[i % 4]!;
+      if (!kpis[i]!.f) sparkRef = `${colName(c0)}${rowValue}`;
       for (let c = c0; c <= c1; c++) {
         cellsL.push(c === c0 ? `<c r="${colName(c)}${rowLabel}" s="${styles.label[i % 4]}" t="inlineStr"><is><t>${xesc(kpis[i]!.label.slice(0, 60))}</t></is></c>` : `<c r="${colName(c)}${rowLabel}" s="${styles.label[i % 4]}"/>`);
-        cellsV.push(c === c0 ? `<c r="${colName(c)}${rowValue}" s="${styles.value[i % 4]}"><f>${xesc(kpis[i]!.f)}</f><v>${kpis[i]!.v}</v></c>` : `<c r="${colName(c)}${rowValue}" s="${styles.value[i % 4]}"/>`);
+        cellsV.push(c === c0 && kpis[i]!.f ? `<c r="${colName(c)}${rowValue}" s="${vs}"><f>${xesc(kpis[i]!.f)}</f><v>${kpis[i]!.v}</v></c>` : `<c r="${colName(c)}${rowValue}" s="${vs}"/>`);
       }
       if (c1 > c0) merges.push(`<mergeCell ref="${colName(c0)}${rowLabel}:${colName(c1)}${rowLabel}"/>`, `<mergeCell ref="${colName(c0)}${rowValue}:${colName(c1)}${rowValue}"/>`);
     }
@@ -437,6 +483,14 @@ export function maisonBand(bytes: Uint8Array, design: Design, skip: ReadonlySet<
         const before = /<(dataValidations|hyperlinks|printOptions|pageMargins|pageSetup|headerFooter|rowBreaks|colBreaks|customProperties|cellWatches|ignoredErrors|smartTags|drawing|legacyDrawing|legacyDrawingHF|picture|oleObjects|controls|webPublishItems|tableParts|extLst)\b/.exec(x);
         x = before ? x.slice(0, before.index) + cf + x.slice(before.index) : x.replace('</worksheet>', `${cf}</worksheet>`);
       }
+    }
+    if (sparkRef && cards[0]) {
+      // Sparkline (x14 extension, last child of the worksheet): series in the primary colour, peak in gold, low in red.
+      const col = colName(cards[0].col);
+      const q = `'${sh.name.replace(/'/g, "''")}'`;
+      const ext = `<ext uri="{05C60535-1F16-4fd2-B633-F4F36F0B64E0}" xmlns:x14="http://schemas.microsoft.com/office/spreadsheetml/2009/9/main"><x14:sparklineGroups xmlns:xm="http://schemas.microsoft.com/office/excel/2006/main"><x14:sparklineGroup type="column" displayEmptyCellsAs="gap" high="1" low="1"><x14:colorSeries rgb="FF${design.color.blue}"/><x14:colorNegative rgb="FF${design.color.risk}"/><x14:colorAxis rgb="FF${design.color.line}"/><x14:colorMarkers rgb="FF${design.color.blue}"/><x14:colorFirst rgb="FF${design.color.blue}"/><x14:colorLast rgb="FF${design.color.blue}"/><x14:colorHigh rgb="FF${design.color.gold}"/><x14:colorLow rgb="FF${design.color.risk}"/><x14:sparklines><x14:sparkline><xm:f>${xesc(`${q}!$${col}$${first}:$${col}$${last}`)}</xm:f><xm:sqref>${sparkRef}</xm:sqref></x14:sparkline></x14:sparklines></x14:sparklineGroup></x14:sparklineGroups></ext>`;
+      x = /<extLst>/.test(x) ? x.replace(/<\/extLst>\s*<\/worksheet>/, `${ext}</extLst></worksheet>`) : x.replace(/<\/worksheet>\s*$/, `<extLst>${ext}</extLst></worksheet>`);
+      sparklines++;
     }
     wr(z, sh.part, x);
     banded.push(sh.name);
@@ -520,5 +574,118 @@ export function maisonBand(bytes: Uint8Array, design: Design, skip: ReadonlySet<
     }
   }
   if (!banded.length) return null;
-  return { bytes: zipSync(z, { level: 6 }), banded, moved, created };
+  // The Sommaire sheet lists every sheet (links, live row counts and totals) — rebuilt so it never goes stale.
+  const sommaire = sommaireSheet(z, design, styles ?? bandStyles(z, design));
+  return { bytes: zipSync(z, { level: 6 }), banded, moved, created, sparklines, sommaire };
+}
+
+// ── Sommaire ─────────────────────────────────────────────────────────────────────────────────────────────────────
+export const SOMMAIRE = 'Sommaire';
+const SOMMAIRE_PART = 'xl/worksheets/sheet-sommaire.xml';
+export const isSommaire = (name: string) => name.trim().toLocaleLowerCase('fr') === 'sommaire';
+const DASHBOARDS = /tableau de bord|dashboard|synth[eè]se/i;
+
+/** Removes the Sommaire sheet (ours) so it can be rebuilt; sheet-scoped names are re-indexed. */
+export function dropSommaire(z: Zip): boolean {
+  let wb = rd(z, 'xl/workbook.xml');
+  const sheets = sheetsOf(z);
+  const own = sheets.find((s) => s.part === SOMMAIRE_PART);
+  if (!own) return false;
+  const rels = rd(z, 'xl/_rels/workbook.xml.rels');
+  const rid = new RegExp(`<Relationship\\b[^>]*Id="([^"]+)"[^>]*Target="(?:/xl/)?worksheets/sheet-sommaire\\.xml"`).exec(rels)?.[1] ?? new RegExp(`<Relationship\\b[^>]*Target="(?:/xl/)?worksheets/sheet-sommaire\\.xml"[^>]*Id="([^"]+)"`).exec(rels)?.[1];
+  wr(z, 'xl/_rels/workbook.xml.rels', rels.replace(/<Relationship\b[^>]*sheet-sommaire\.xml"[^>]*\/>/, ''));
+  wb = wb.replace(new RegExp(`<sheet\\b[^>]*r:id="${rid}"[^>]*\\/>`), '');
+  wb = wb.replace(/localSheetId="(\d+)"/g, (_m, n: string) => `localSheetId="${+n > own.index ? +n - 1 : +n}"`);
+  wr(z, 'xl/workbook.xml', wb);
+  delete z[SOMMAIRE_PART];
+  delete z[relsOf(SOMMAIRE_PART)];
+  wr(z, '[Content_Types].xml', rd(z, '[Content_Types].xml').replace(/<Override\b[^>]*sheet-sommaire\.xml"[^>]*\/>/, ''));
+  return true;
+}
+
+/**
+ * The Sommaire sheet, first in the workbook: a navy title band, then one line per sheet — its name as a hyperlink,
+ * a live row count and the total of its first amount (formulas), what it holds. Rebuilt on every pass.
+ */
+function sommaireSheet(z: Zip, design: Design, st: BandStyles): boolean {
+  dropSommaire(z);
+  const sst = sharedStrings(z);
+  const sheets = sheetsOf(z).filter((s) => !isSommaire(s.name) && z[s.part]);
+  if (sheets.length < 2) return false;
+  const q = (n: string) => `'${n.replace(/'/g, "''")}'`;
+  const lines: { name: string; rows: number | null; cnt: string; sum: string; total: number | null; measure: string; what: string }[] = [];
+  for (const sh of sheets) {
+    const x = rd(z, sh.part);
+    const t = /<sheetData>/.test(x) ? findTable(readRows(x, sst)) : null;
+    if (!t) {
+      lines.push({ name: sh.name, rows: null, cnt: '', sum: '', total: null, measure: '', what: DASHBOARDS.test(sh.name) ? 'Tableau de bord' : 'Feuille' });
+      continue;
+    }
+    const m = t.measures[0];
+    const rows = readRows(x, sst);
+    let total = 0;
+    if (m) for (let r = t.first; r <= t.last; r++) {
+      const v = rows.get(r)?.find((c) => c.col === m.col)?.v;
+      if (typeof v === 'number') total += v;
+    }
+    const cc = colName(t.catCol ?? t.cols[0]!.col);
+    lines.push({
+      name: sh.name,
+      rows: t.last - t.first + 1,
+      cnt: `SUBTOTAL(3,${q(sh.name)}!$${cc}$${t.first}:$${cc}$${t.last})`,
+      sum: m ? `SUM(${q(sh.name)}!$${colName(m.col)}$${t.first}:$${colName(m.col)}$${t.last})` : '',
+      total: m ? total : null,
+      measure: m?.name ?? '',
+      what: `${t.cols.length} colonnes${t.measures.length ? ` · ${t.measures.slice(0, 3).map((x) => x.name).join(', ')}` : ''}`,
+    });
+  }
+  const is = (ref: string, s: number, text: string) => `<c r="${ref}" s="${s}" t="inlineStr"><is><t>${xesc(text)}</t></is></c>`;
+  const rowsXml: string[] = [];
+  rowsXml.push(`<row r="1" ht="36" customHeight="1">${['A', 'B', 'C', 'D', 'E'].map((c) => (c === 'B' ? is('B1', st.title, SOMMAIRE) : `<c r="${c}1" s="${st.band}"/>`)).join('')}</row>`);
+  rowsXml.push(`<row r="2" ht="20" customHeight="1">${is('B2', st.sub, `${sheets.length} feuilles · édité le ${new Date().toLocaleDateString('fr-FR')} · cliquez sur un nom pour ouvrir la feuille`)}</row>`);
+  rowsXml.push(`<row r="3" ht="8" customHeight="1"/>`);
+  rowsXml.push(`<row r="4" ht="22" customHeight="1">${is('B4', st.label[0]!, 'FEUILLE')}${is('C4', st.label[1]!, 'LIGNES')}${is('D4', st.label[2]!, 'TOTAL (1RE MESURE)')}${is('E4', st.label[3]!, 'CONTENU')}</row>`);
+  const links: string[] = [];
+  lines.forEach((l, i) => {
+    const r = 5 + i;
+    const cells = [is(`B${r}`, st.link, l.name)];
+    if (l.rows !== null) cells.push(`<c r="C${r}" s="${st.num}"><f>${xesc(l.cnt)}</f><v>${l.rows}</v></c>`);
+    if (l.total !== null) cells.push(`<c r="D${r}" s="${st.num}"><f>${xesc(l.sum)}</f><v>${l.total}</v></c>`);
+    cells.push(is(`E${r}`, st.sub, l.measure ? `${l.what}` : l.what));
+    rowsXml.push(`<row r="${r}" ht="20" customHeight="1">${cells.join('')}</row>`);
+    links.push(`<hyperlink ref="B${r}" location="${xesc(`${q(l.name)}!A1`)}" display="${xesc(l.name)}" tooltip="${xesc(`Ouvrir ${l.name}`)}"/>`);
+  });
+  const last = 4 + lines.length;
+  wr(
+    z,
+    SOMMAIRE_PART,
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${NS_R}"><sheetPr><tabColor rgb="FF${design.color.gold}"/></sheetPr><dimension ref="A1:E${last}"/><sheetViews><sheetView workbookViewId="0" showGridLines="0" zoomScale="110" tabSelected="1"/></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols><col min="1" max="1" width="2.5" customWidth="1"/><col min="2" max="2" width="36" customWidth="1"/><col min="3" max="3" width="12" customWidth="1"/><col min="4" max="4" width="20" customWidth="1"/><col min="5" max="5" width="60" customWidth="1"/></cols><sheetData>${rowsXml.join('')}</sheetData><mergeCells count="2"><mergeCell ref="B1:E1"/><mergeCell ref="B2:E2"/></mergeCells>${links.length ? `<hyperlinks>${links.join('')}</hyperlinks>` : ''}<pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0.2" footer="0.2"/></worksheet>`,
+  );
+  addOverride(z, `/${SOMMAIRE_PART}`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml');
+  const rid = addRel(z, 'xl/_rels/workbook.xml.rels', `${NS_R}/worksheet`, 'worksheets/sheet-sommaire.xml', 'rIdSommaire');
+  let wb = ensureRootNs(rd(z, 'xl/workbook.xml'), 'r', NS_R);
+  const ids = [...wb.matchAll(/sheetId="(\d+)"/g)].map((m) => +m[1]!);
+  wb = wb.replace(/<sheets>/, `<sheets><sheet name="${SOMMAIRE}" sheetId="${(ids.length ? Math.max(...ids) : 0) + 1}" r:id="${rid}"/>`);
+  // First sheet: sheet-scoped names move by one; it is the active, only selected tab.
+  wb = wb.replace(/localSheetId="(\d+)"/g, (_m, n: string) => `localSheetId="${+n + 1}"`);
+  wb = /activeTab="\d+"/.test(wb) ? wb.replace(/activeTab="\d+"/, 'activeTab="0"') : wb;
+  wr(z, 'xl/workbook.xml', wb);
+  for (const sh of sheets) {
+    const x = rd(z, sh.part);
+    if (/ tabSelected="(1|true)"/.test(x)) wr(z, sh.part, x.replace(/ tabSelected="(1|true)"/g, ''));
+  }
+  return true;
+}
+
+/** Standalone pass: (re)builds the Sommaire sheet of a workbook (after other sheets were added). */
+export function refreshSommaire(bytes: Uint8Array, design: Design): Uint8Array | null {
+  let z: Zip;
+  try {
+    z = unzipSync(bytes);
+  } catch {
+    return null;
+  }
+  if (!z['xl/workbook.xml'] || !z['xl/styles.xml']) return null;
+  if (!sommaireSheet(z, design, bandStyles(z, design))) return null;
+  return zipSync(z, { level: 6 });
 }

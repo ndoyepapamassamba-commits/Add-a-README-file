@@ -2813,7 +2813,7 @@ async function applyClone(sid: string, since: number): Promise<{ n: number; note
         else if (from && from !== pd.from) notes.push(`chiffres du tableau de bord tirés de ${from}`);
         if (live) notes.push(`${f.path} : 1re feuille « Tableau de bord » VIVANTE au design de l'image (${live.kpis} indicateurs en formules, ${live.charts} graphiques Excel, filtres ${live.filters.map((x) => `« ${x} »`).join(', ') || '—'}, ${live.links} bouton(s) de navigation) — aucune image fixe`);
         // Every other sheet (the model's own, the data sheet) in Maison 2.0 with the image's colours and font.
-        const rs = out ? await heavy('restyleWorkbook', out, { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, font: c.clone.font }, new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)'])) : null;
+        const rs = out ? await heavy('restyleWorkbook', out, { dark: c.clone.palette.dark, primary: c.clone.palette.primary, accent: c.clone.palette.accent, font: c.clone.font }, new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)', 'Sommaire'])) : null;
         if (rs) {
           out = rs.bytes;
           notes.push(`feuilles ${rs.sheets.map((x) => `« ${x} »`).join(', ')} mises au format Maison 2.0 aux couleurs de l'image`);
@@ -2865,7 +2865,7 @@ async function finishWorkbooks(sid: string, since: number): Promise<string[]> {
   const design = c?.clone
     ? buildTheme({ primary: c.clone.palette.primary, accent: c.clone.palette.accent, dark: c.clone.palette.dark, font: c.clone.font })
     : buildTheme(c ? (c.theme === 'custom' ? (c.colors ?? null) : (c.theme as never)) : null);
-  const skip = new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)', 'Données du tableau de bord', 'Synthèse 3D', 'Agrégats']);
+  const skip = new Set(['Tableau de bord', 'Tableau de bord vivant', 'Tableau de bord (image)', 'Données du tableau de bord', 'Synthèse 3D', 'Agrégats', 'Sommaire']);
   const lines: string[] = [];
   // THE IMAGE'S DESIGN ON EVERY PAGE of the other exports (Word, PowerPoint, HTML and the PDF printed from it).
   // A catalogue model: its palette and its page layout (Word / HTML / PowerPoint) on every page.
@@ -2907,9 +2907,14 @@ async function finishWorkbooks(sid: string, since: number): Promise<string[]> {
   for (const f of Object.values(files())) {
     if (!f.binary || f.updatedAt < since || !/\.xlsx$/i.test(f.path) || f.path.startsWith('uploads/') || f.path.startsWith('assets/')) continue;
     const r = await heavy('maisonBand', bytesOf(f), design, skip);
-    if (!r) continue;
+    if (!r) {
+      // Already banded (data.export): the Sommaire sheet is still rebuilt so it lists every sheet of the final workbook.
+      const s = await heavy('refreshSommaire', bytesOf(f), design);
+      if (s) writeBytes(f.path, s, f.mime);
+      continue;
+    }
     writeBytes(f.path, r.bytes, f.mime);
-    lines.push(`${f.path} : indicateurs et graphiques placés au-dessus de l'en-tête sur ${r.banded.map((x) => `« ${x} »`).join(', ')} (${r.moved} graphique(s) déplacé(s), ${r.created} créé(s)).`);
+    lines.push(`${f.path} : indicateurs et graphiques placés au-dessus de l'en-tête sur ${r.banded.map((x) => `« ${x} »`).join(', ')} (${r.moved} graphique(s) déplacé(s), ${r.created} créé(s))${r.sparklines ? `, ${r.sparklines} sparkline(s)` : ''}${r.sommaire ? ', feuille « Sommaire » en tête' : ''}.`);
   }
   // CONTRÔLE DESIGN AVANT LIVRAISON — last: contrast, columns, page framing, overflowing text, on every deliverable.
   for (const f of Object.values(files())) {

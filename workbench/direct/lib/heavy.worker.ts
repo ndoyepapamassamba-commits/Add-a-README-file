@@ -4,11 +4,11 @@ import { houseXlsx } from '../../server/services/houseStyle';
 import { setActiveTheme, type Design } from '../../server/services/houseDesign';
 import { addLiveDashboard } from '../../server/services/liveDash';
 import { restyleWorkbook } from '../../server/services/officeRestyle';
-import { maisonBand } from '../../server/services/maisonBand';
+import { maisonBand, refreshSommaire } from '../../server/services/maisonBand';
 import { designQA } from '../../server/services/designQA';
 import { addImageSheet } from '../../server/services/officeLogo';
 
-const FNS = { houseXlsx, addLiveDashboard, restyleWorkbook, maisonBand, designQA, addImageSheet } as const;
+const FNS = { houseXlsx, addLiveDashboard, restyleWorkbook, maisonBand, refreshSommaire, designQA, addImageSheet } as const;
 export type HeavyFn = keyof typeof FNS;
 
 self.onmessage = (e: MessageEvent<{ id: number; fn: HeavyFn; args: unknown[]; theme?: Design }>) => {

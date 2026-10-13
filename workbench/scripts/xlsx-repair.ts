@@ -81,7 +81,7 @@ if (opt('live')) {
 }
 if (opt('maison')) {
   const design = buildTheme(custom ?? 'house');
-  const skip = new Set(['Tableau de bord', 'Tableau de bord vivant', 'Données du tableau de bord', 'Données filtrables']);
+  const skip = new Set(['Tableau de bord', 'Tableau de bord vivant', 'Données du tableau de bord', 'Données filtrables', 'Sommaire']);
   const rs = restyleWorkbook(out, { dark: `#${design.color.navy}`, primary: `#${design.color.blue}`, accent: `#${design.color.gold}`, font: design.font.ui }, skip);
   if (rs) {
     out = rs.bytes;

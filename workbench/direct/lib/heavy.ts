@@ -5,12 +5,12 @@ import { houseXlsx } from '../../server/services/houseStyle';
 import { activeDesign } from '../../server/services/houseDesign';
 import { addLiveDashboard } from '../../server/services/liveDash';
 import { restyleWorkbook } from '../../server/services/officeRestyle';
-import { maisonBand } from '../../server/services/maisonBand';
+import { maisonBand, refreshSommaire } from '../../server/services/maisonBand';
 import { designQA } from '../../server/services/designQA';
 import { addImageSheet } from '../../server/services/officeLogo';
 
-type Fns = { houseXlsx: typeof houseXlsx; addLiveDashboard: typeof addLiveDashboard; restyleWorkbook: typeof restyleWorkbook; maisonBand: typeof maisonBand; designQA: typeof designQA; addImageSheet: typeof addImageSheet };
-const LOCAL: Fns = { houseXlsx, addLiveDashboard, restyleWorkbook, maisonBand, designQA, addImageSheet };
+type Fns = { houseXlsx: typeof houseXlsx; addLiveDashboard: typeof addLiveDashboard; restyleWorkbook: typeof restyleWorkbook; maisonBand: typeof maisonBand; refreshSommaire: typeof refreshSommaire; designQA: typeof designQA; addImageSheet: typeof addImageSheet };
+const LOCAL: Fns = { houseXlsx, addLiveDashboard, restyleWorkbook, maisonBand, refreshSommaire, designQA, addImageSheet };
 
 let worker: Worker | null | undefined;
 let seq = 0;

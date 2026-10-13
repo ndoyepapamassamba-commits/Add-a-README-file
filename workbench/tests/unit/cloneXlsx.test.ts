@@ -156,7 +156,7 @@ describe('MAISON 2.0 on the model’s own sheets: KPI cards and charts ABOVE the
     const once = addLogoToOffice('x.xlsx', r.bytes, logo)!;
     const zz = unzipSync(once);
     const drawings = Object.keys(zz).filter((p) => /drawings\/[^/]+\.xml$/.test(p)).map((p) => strFromU8(zz[p]!));
-    expect(drawings.filter((d) => d.includes('name="Logo"')).length).toBe(2);
+    expect(drawings.filter((d) => d.includes('name="Logo"')).length).toBe(3); // the two sheets + the Sommaire sheet
     expect(addLogoToOffice('x.xlsx', once, logo)).toBeNull();
   });
 });

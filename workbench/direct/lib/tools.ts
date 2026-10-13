@@ -1381,6 +1381,7 @@ export const TOOLS: DirectTool[] = [
                       'Données',
                       'Agrégats',
                       'Synthèse 3D',
+                      'Sommaire',
                     ]),
                   )
                 : null;
