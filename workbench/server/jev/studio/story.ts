@@ -3,6 +3,7 @@
 import type { DialogueLine, Scene, Story } from './types';
 import { redactSecrets } from './secrets';
 import { humorBrief } from './humor';
+import { tiktokComedyBrief } from './tiktokComedy';
 
 export interface StoryBrief {
   idea: string;
@@ -12,6 +13,10 @@ export interface StoryBrief {
   characters: { name: string; role: string }[];
   /** The recurring cast of the channel (« NAME : comic role » lines): the writer reuses these exact names. */
   recurring?: string;
+  /** The full sheets of the universe characters of this story + their relations (characterBible.bibleFor). */
+  bible?: string;
+  /** What the place holds (objects, extras, animals, ambience) for the gags (livingWorld.placeBrief). */
+  world?: string;
   /** Compressed memory of what worked (from Production Memory) — optional. */
   hints?: string[];
   /** Rules added by the enabled craft skills (video-director, video-storyboard, cinema-skills, character-design). */
@@ -46,8 +51,12 @@ export function storyMessages(b: StoryBrief): { role: 'system' | 'user' | 'assis
         `Durée visée : ${b.durationSec} s (plus de 60 s pour TikTok Creator Rewards). Langue : ${b.language}. Plateforme : ${b.platform}.`,
         `Personnages :\n${chars}`,
         ...(b.recurring
-          ? [`DISTRIBUTION RÉCURRENTE de la chaîne (mêmes acteurs, mêmes visages d’un film à l’autre) : quand l’idée n’impose pas ses personnages, choisis 2 à 4 de ceux-ci et garde leur nom EXACT ; n’en invente un nouveau que si aucun rôle ne convient.\n${b.recurring}`]
+          ? [
+              `DISTRIBUTION RÉCURRENTE de la chaîne (mêmes acteurs, mêmes visages d’un film à l’autre) : quand l’idée n’impose pas ses personnages, choisis 2 à 4 de ceux-ci et garde leur nom EXACT ; n’en invente un nouveau que si aucun rôle ne convient.\n${b.recurring}`,
+            ]
           : []),
+        ...(b.bible ? [b.bible] : []),
+        ...(b.world ? [b.world] : []),
         ...(b.aspect || b.dimension || b.audience || b.realism !== undefined
           ? [
               `Format : ${b.aspect ?? '9:16'}${b.dimension ? ` · animation ${b.dimension}` : ''}${b.audience ? ` · public : ${redactSecrets(b.audience)}` : ''}${b.realism !== undefined ? ` · réalisme ${b.realism}/100 (0 = très stylisé)` : ''}.`,
@@ -61,8 +70,16 @@ export function storyMessages(b: StoryBrief): { role: 'system' | 'user' | 'assis
         ...(b.hints?.length
           ? [`Mémoire de production (ce qui a marché) :\n${b.hints.map((h) => `- ${h}`).join('\n')}`]
           : []),
-        ...(b.craft?.length ? [`Règles de réalisation (skills installées) :\n${b.craft.map((h) => `- ${h}`).join('\n')}`] : []),
+        ...(b.craft?.length
+          ? [`Règles de réalisation (skills installées) :\n${b.craft.map((h) => `- ${h}`).join('\n')}`]
+          : []),
         humorBrief(b.idea.length),
+        tiktokComedyBrief(),
+        ...(/MOT POUR MOT/i.test(b.idea)
+          ? [
+              'SCRIPT FOURNI : l’idée contient le script complet (« NOM : [pose] réplique »). Garde CHAQUE réplique telle quelle, dans le même ordre, dite par le même personnage ; la [pose] devient l’emotion de la réplique ; regroupe 2 à 4 répliques par scène ; n’ajoute ni ne retire aucune réplique.',
+            ]
+          : []),
         'Contraintes : accroche dans la 1re seconde, escalade, twist, chute de moins de 10 mots. Répliques de 12 mots maximum, écrites pour être dites à voix haute. ' +
           'Noms de personnages en MAJUSCULES. Une scène par plan.',
         'ENCHAÎNEMENT : chaque scène découle directement de la précédente (même lieu et même moment sauf raison montrée à l’image ; la situation ou l’objet de la scène d’avant continue) ; aucune scène ne contredit la précédente ; un nouveau personnage est introduit par l’action ; la chute répond à l’accroche. ' +
@@ -127,8 +144,10 @@ export function extractJson(text: string): unknown | null {
 /** Why an answer is unusable, in words the owner can act on. */
 export function explainNoJson(text: string, finishReason?: string): string {
   const t = (text ?? '').trim();
-  if (!t) return 'réponse vide (le modèle a probablement dépensé toute la longueur autorisée à « réfléchir »)';
-  if (finishReason === 'length') return `réponse coupée par la limite de longueur (${t.length} caractères reçus, JSON inachevé)`;
+  if (!t)
+    return 'réponse vide (le modèle a probablement dépensé toute la longueur autorisée à « réfléchir »)';
+  if (finishReason === 'length')
+    return `réponse coupée par la limite de longueur (${t.length} caractères reçus, JSON inachevé)`;
   if (!t.includes('{')) return `le modèle a répondu en texte au lieu de JSON : « ${t.slice(0, 90)}… »`;
   return 'la réponse ne contient pas de JSON valide';
 }
@@ -248,7 +267,9 @@ export function parseStory(
   const scenes: Scene[] = arr(d.scenes)
     .map((x, i) => normScene(x, i, issues))
     .map((sc) => {
-      const missing = [...new Set(sc.dialogue.map((l) => l.speaker))].filter((sp) => sp && !sc.characters.some((c) => c.toUpperCase() === sp.toUpperCase()));
+      const missing = [...new Set(sc.dialogue.map((l) => l.speaker))].filter(
+        (sp) => sp && !sc.characters.some((c) => c.toUpperCase() === sp.toUpperCase()),
+      );
       return missing.length ? { ...sc, characters: [...sc.characters, ...missing] } : sc;
     });
   if (!scenes.length)
@@ -302,6 +323,8 @@ export function sceneMessages(o: {
   index: number;
   instruction?: string;
   dialogue?: boolean;
+  /** Full sheets of the characters of the scene (characterBible.bibleFor). */
+  bible?: string;
 }): { role: 'system' | 'user'; content: string }[] {
   const around = o.scenes
     .map(
@@ -323,6 +346,7 @@ export function sceneMessages(o: {
         `Logline : ${redactSecrets(o.logline)}`,
         `Langue : ${o.language}. Scènes (>> = à réécrire) :\n${around}`,
         `Scène actuelle :\n${JSON.stringify({ beat: cur.beat, duration: cur.duration, location: cur.location, characters: cur.characters, action: cur.action, dialogue: cur.dialogue.map((d) => ({ speaker: d.speaker, text: d.text })) })}`,
+        ...(o.bible ? [o.bible] : []),
         o.instruction
           ? `Consigne : ${redactSecrets(o.instruction)}`
           : 'Consigne : propose une version différente et plus drôle, même rôle narratif.',

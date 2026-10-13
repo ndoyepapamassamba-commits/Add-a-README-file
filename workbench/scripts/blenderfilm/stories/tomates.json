@@ -1,0 +1,138 @@
+{
+ "title": "Les tomates de Maman Nounou",
+ "hook": "Le marchandage qui coûte cher",
+ "decor": "Marché",
+ "fps": 25,
+ "size": [
+  576,
+  1024
+ ],
+ "music": true,
+ "cast": [
+  {
+   "id": "nounou",
+   "name": "MAMAN NOUNOU",
+   "voice": "siwis",
+   "height": 1.6,
+   "x": -0.4,
+   "pitch": 0.95
+  },
+  {
+   "id": "modou",
+   "name": "MODOU",
+   "voice": "tom",
+   "height": 1.76,
+   "x": 0.42
+  }
+ ],
+ "beats": [
+  {
+   "who": "modou",
+   "pose": "neutre",
+   "text": "Maman, ton tas de tomates là, c’est combien ?",
+   "shot": "two"
+  },
+  {
+   "who": "nounou",
+   "pose": "rire",
+   "text": "Pour toi, mon fils ? Mille francs.",
+   "react": {
+    "modou": "choc"
+   }
+  },
+  {
+   "who": "modou",
+   "pose": "choc",
+   "text": "Mille ?! Hier c’était cinq cents !"
+  },
+  {
+   "who": "nounou",
+   "pose": "haussement",
+   "text": "Hier, tu n’avais pas ces sandales neuves."
+  },
+  {
+   "who": "modou",
+   "pose": "accuse",
+   "text": "Ce sont les sandales de mon grand frère !"
+  },
+  {
+   "who": "nounou",
+   "pose": "neutre",
+   "text": "Alors c’est ton grand frère qui va payer. Mille."
+  },
+  {
+   "who": "modou",
+   "pose": "neutre",
+   "text": "Je te donne trois cents. Dernier prix."
+  },
+  {
+   "who": "nounou",
+   "pose": "accuse",
+   "text": "Trois cents ? Tu veux les tomates ou la photo des tomates ?"
+  },
+  {
+   "who": "modou",
+   "pose": "rire",
+   "text": "Quatre cents, et je dis au marché que tu es belle."
+  },
+  {
+   "who": "nounou",
+   "pose": "rire",
+   "text": "Tout le monde le sait déjà. Mille deux cents.",
+   "react": {
+    "modou": "choc"
+   }
+  },
+  {
+   "who": "modou",
+   "pose": "choc",
+   "text": "Pourquoi ça monte encore ?!"
+  },
+  {
+   "who": "nounou",
+   "pose": "haussement",
+   "text": "Tu m’as fatiguée. La fatigue, ça se paye."
+  },
+  {
+   "who": "modou",
+   "pose": "accuse",
+   "text": "J’ai seulement cinq cents. Je prends, ou je pars !",
+   "shot": "two"
+  },
+  {
+   "who": "nounou",
+   "pose": "neutre",
+   "text": "Donne les cinq cents."
+  },
+  {
+   "who": "modou",
+   "pose": "neutre",
+   "text": "Voilà. Et les tomates ?"
+  },
+  {
+   "who": "nounou",
+   "pose": "haussement",
+   "text": "Moi, j’ai pris. Toi, tu pars.",
+   "react": {
+    "modou": "choc"
+   },
+   "shot": "cu"
+  },
+  {
+   "who": "modou",
+   "pose": "choc",
+   "text": "Maman, c’est du vol !",
+   "shot": "two"
+  },
+  {
+   "who": "nounou",
+   "pose": "rire",
+   "text": "Non, mon fils. C’est le marché.",
+   "shot": "cu"
+  }
+ ],
+ "punch": {
+  "beat": 15,
+  "emoji": "😂"
+ }
+}

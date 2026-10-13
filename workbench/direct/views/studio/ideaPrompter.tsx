@@ -44,8 +44,20 @@ export function IdeaPrompter({ onPick }: { onPick: (text: string) => void }) {
   }, []);
   const today = new Date().toISOString().slice(0, 10);
   const fresh = news.slice(0, 40);
-  const newsShown = fresh.length ? Array.from({ length: Math.min(4, fresh.length) }, (_, k) => fresh[(k + shift * 4) % fresh.length]!) : [];
-  const libShown = dailyPicks(IDEA_LIBRARY.filter((i) => i.format === 'court'), `${today}#${shift}`, 4);
+  const newsShown = fresh.length
+    ? Array.from({ length: Math.min(4, fresh.length) }, (_, k) => fresh[(k + shift * 4) % fresh.length]!)
+    : [];
+  const libShown = dailyPicks(
+    IDEA_LIBRARY.filter((i) => i.format === 'court'),
+    `${today}#${shift}`,
+    4,
+  );
+  // The 60-s stories already WRITTEN with the TikTok comedy bible: a click puts the whole script in the idea field.
+  const stories = dailyPicks(
+    IDEA_LIBRARY.filter((i) => i.format === 'histoire'),
+    `${today}#s${shift}`,
+    2,
+  );
   const card = (i: Idea) => (
     <button
       key={`${i.id}-${shift}`}
@@ -55,7 +67,13 @@ export function IdeaPrompter({ onPick }: { onPick: (text: string) => void }) {
       className="rounded-xl border border-line p-2 text-left text-[12px] hover:border-accent"
     >
       <div className="flex items-center gap-1 font-semibold">
-        {i.source === 'actualité' ? <Badge tone="info">actu {i.date?.slice(5)}</Badge> : <Badge tone="neutral">{i.family}</Badge>}
+        {i.source === 'actualité' ? (
+          <Badge tone="info">actu {i.date?.slice(5)}</Badge>
+        ) : i.format === 'histoire' ? (
+          <Badge tone="accent">histoire 60 s · écrite</Badge>
+        ) : (
+          <Badge tone="neutral">{i.family}</Badge>
+        )}
         <span className="truncate">{i.title}</span>
       </div>
       <div className="mt-0.5 line-clamp-2 text-muted">{i.setup}</div>
@@ -84,6 +102,11 @@ export function IdeaPrompter({ onPick }: { onPick: (text: string) => void }) {
       </div>
       {err && <div className="mb-1 text-[11px] text-warn">{err}</div>}
       {newsShown.length > 0 && <div className="mb-2 grid gap-2 sm:grid-cols-2">{newsShown.map(card)}</div>}
+      {stories.length > 0 && (
+        <div className="mb-2 grid gap-2 sm:grid-cols-2" data-testid="prompter-stories">
+          {stories.map(card)}
+        </div>
+      )}
       <div className="grid gap-2 sm:grid-cols-2">{libShown.map(card)}</div>
     </div>
   );

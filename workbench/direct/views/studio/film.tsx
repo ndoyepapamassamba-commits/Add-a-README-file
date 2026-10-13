@@ -193,6 +193,7 @@ const TONE = { ok: 'ok', fail: 'err', warn: 'warn', na: 'neutral' } as const;
 const ICON = { ok: '✓', fail: '✗', warn: '!', na: '·' } as const;
 import { QcRefPanel } from './qcRef';
 import { IdeaLibraryPanel } from './ideaLibrary';
+import { CharacterBiblePanel } from './characterBible';
 
 const Actor3DPanel = lazy(() => import('./actor3d'));
 
@@ -212,6 +213,7 @@ export function FilmTools() {
   return (
     <div className="space-y-3" data-testid="film-tools">
       <IdeaLibraryPanel />
+      <CharacterBiblePanel />
       <QcRefPanel />
       <Suspense fallback={<NoData>Chargement de l’acteur 3D…</NoData>}>
         <Actor3DPanel />

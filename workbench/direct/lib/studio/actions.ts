@@ -1,9 +1,24 @@
 // Studio actions (runtime): registry, story, character library + 2D redraw, scene images, voices. Every paid call goes
 // through executeMedia (selection, budget gate, retries, fallback, storage, memory, JEV_LOG).
-import { castBrief, decorPrompt, universeCharacter, universeSetOf } from '../../../server/jev/studio/actor/universe';
+import { decorPrompt, universeCharacter, universeSetOf } from '../../../server/jev/studio/actor/universe';
+import {
+  bibleFor,
+  castBriefRich,
+  namesIn,
+  sheetFields,
+} from '../../../server/jev/studio/actor/characterBible';
+import { placeBrief } from '../../../server/jev/studio/world/livingWorld';
 import { detectPanels, SINGLE_SHOT_RETRY } from '../../../server/jev/studio/panels';
 import { parseRig, RIG_PROMPT } from '../../../server/jev/studio/puppet';
-import { artQuality, artVerdict, enhanceInstruction, judgePrompt, parseJudgement, regenerateHint, type ArtJudgement } from '../../../server/jev/studio/artJudge';
+import {
+  artQuality,
+  artVerdict,
+  enhanceInstruction,
+  judgePrompt,
+  parseJudgement,
+  regenerateHint,
+  type ArtJudgement,
+} from '../../../server/jev/studio/artJudge';
 import { castVoices, naturalSpeed, speakerKey } from '../../../server/jev/studio/motion';
 import { useStudio } from './store';
 import { useStore } from '../store';
@@ -152,12 +167,17 @@ export async function generateStory(projectId: string, notes?: string): Promise<
   const bp = bpOf(projectId);
   patch(projectId, (b) => setStage(b, 'STORY', 'RUNNING'));
   const brief = {
-    idea: notes ? `${bp.project.idea}\n\nRÉÉCRIS POUR FAIRE PLUS RIRE (juge d’humour) : ${notes}` : bp.project.idea,
+    idea: notes
+      ? `${bp.project.idea}\n\nRÉÉCRIS POUR FAIRE PLUS RIRE (juge d’humour) : ${notes}`
+      : bp.project.idea,
     durationSec: bp.duration,
     language: bp.language,
     platform: bp.platform,
     characters: bp.characters.map((c) => ({ name: c.name, role: c.role })),
-    recurring: castBrief(),
+    recurring: castBriefRich(),
+    // The knowledge base: full sheets + relations of the universe characters named in the idea or already cast.
+    bible: bibleFor([...namesIn(bp.project.idea), ...bp.characters.map((c) => c.name)]),
+    world: placeBrief(bp.project.idea),
     hints: hints(useStudio.getState().memory),
     craft: craftStoryRules(craftSet()),
     aspect: bp.aspect,
@@ -189,7 +209,9 @@ export async function generateStory(projectId: string, notes?: string): Promise<
     const p = parseStory(r.text, { durationSec: bp.duration, language: bp.language });
     if ('story' in p && p.scenes.length) parsed = p;
     else {
-      const why = p.issues.some((i) => i.code === 'NO_JSON') ? explainNoJson(r.text, r.finishReason) : p.issues.map((i) => i.message).join(' ; ');
+      const why = p.issues.some((i) => i.code === 'NO_JSON')
+        ? explainNoJson(r.text, r.finishReason)
+        : p.issues.map((i) => i.message).join(' ; ');
       issues.push(`essai ${attempt + 1} (${r.model}) : ${why}`);
       const cut = r.finishReason === 'length' || !r.text.trim();
       messages = [
@@ -214,8 +236,23 @@ export async function generateStory(projectId: string, notes?: string): Promise<
     .filter((n) => !known.has(n))
     .map((name) => {
       const u = universeCharacter(name);
+      const f = sheetFields(name);
       return u
-        ? { ...emptyCharacter(name), role: u.role, gender: u.gender ?? '', age: u.age ?? '', body: u.body ?? '', hair: u.hair ?? '', clothing: u.visual, accessories: u.accessories ?? '', face: u.face ?? '', consistency: `${name}: ${u.visual}` }
+        ? {
+            ...emptyCharacter(name),
+            role: u.role,
+            gender: u.gender ?? '',
+            age: u.age ?? '',
+            body: u.body ?? '',
+            hair: u.hair ?? '',
+            clothing: u.visual,
+            accessories: u.accessories ?? '',
+            face: u.face ?? '',
+            consistency: `${name}: ${u.visual}`,
+            ...(f
+              ? { personality: f.personality, gestures: f.gestures, speakingStyle: f.speakingStyle }
+              : {}),
+          }
         : emptyCharacter(name);
     });
   patch(
@@ -279,6 +316,7 @@ export async function regenerateScene(
       index,
       instruction,
       dialogue: bp.options?.dialogue,
+      bible: bibleFor(bp.scenes[index]!.characters),
     }),
     maxTokens: 2500,
     temperature: 0.9,
@@ -605,7 +643,24 @@ export async function generatePlate(projectId: string, sceneId: string): Promise
     const out = await generateOne({
       projectId,
       sceneId,
-      compiled: { ...compileScene(sc, { style: bp.styleDNA, characters: [], worlds: bp.worlds, previous: null, next: null, platform: bp.platform, aspect: bp.aspect }, 'image', { maxChars: 1200 }), version: 'plate-1', text: `${PLATE_INSTRUCTION}\nSet: ${sc.location}. Avoid: people, characters, animals, hands, faces.` },
+      compiled: {
+        ...compileScene(
+          sc,
+          {
+            style: bp.styleDNA,
+            characters: [],
+            worlds: bp.worlds,
+            previous: null,
+            next: null,
+            platform: bp.platform,
+            aspect: bp.aspect,
+          },
+          'image',
+          { maxChars: 1200 },
+        ),
+        version: 'plate-1',
+        text: `${PLATE_INSTRUCTION}\nSet: ${sc.location}. Avoid: people, characters, animals, hands, faces.`,
+      },
       references: [sc.imageAssetId],
       task: 'SCENE-IMAGE',
       mission: `plaque ${sceneId}`,
@@ -614,7 +669,14 @@ export async function generatePlate(projectId: string, sceneId: string): Promise
       trace: new Trace(),
     });
     if (!out.assetId) return null;
-    patch(projectId, (b) => ({ ...b, scenes: b.scenes.map((s) => (s.scene_id === sceneId && s.imageAssetId === sc.imageAssetId ? { ...s, plateAssetId: out.assetId } : s)) }));
+    patch(projectId, (b) => ({
+      ...b,
+      scenes: b.scenes.map((s) =>
+        s.scene_id === sceneId && s.imageAssetId === sc.imageAssetId
+          ? { ...s, plateAssetId: out.assetId }
+          : s,
+      ),
+    }));
     return out.assetId;
   } catch {
     return null;
@@ -627,7 +689,11 @@ export const VERTICAL_DECOR_FIT = { mH: 3.0, floor: 0.86, cx: 0.5 } as const;
  * image model (the owner's set picture of that place as the reference) and kept in the set library « <place> (vertical) »
  * for every film after. A picture too small to be a set (under 512 px) is not kept.
  */
-export async function generateDecor(projectId: string, location: string, o: { forceModel?: string } = {}): Promise<string | null> {
+export async function generateDecor(
+  projectId: string,
+  location: string,
+  o: { forceModel?: string } = {},
+): Promise<string | null> {
   const bp = bpOf(projectId);
   if (bp.mode === 'ECO') return null;
   const lib = useStudio.getState().decors;
@@ -638,7 +704,20 @@ export async function generateDecor(projectId: string, location: string, o: { fo
   const { name, text } = decorPrompt(location, Boolean(ref));
   const sc = bp.scenes.find((x) => x.location === location) ?? bp.scenes[0];
   if (!sc) return null;
-  const base = compileScene(sc, { style: bp.styleDNA, characters: [], worlds: bp.worlds, previous: null, next: null, platform: bp.platform, aspect: '9:16' }, 'image', { maxChars: 1200 });
+  const base = compileScene(
+    sc,
+    {
+      style: bp.styleDNA,
+      characters: [],
+      worlds: bp.worlds,
+      previous: null,
+      next: null,
+      platform: bp.platform,
+      aspect: '9:16',
+    },
+    'image',
+    { maxChars: 1200 },
+  );
   const out = await generateOne({
     projectId,
     compiled: { ...base, version: 'decor-1', text },
@@ -688,10 +767,17 @@ export async function rigSceneLocal(projectId: string, sceneId: string): Promise
       plateId = uidOf('plate');
       await blobs.put(plateId, await c.convertToBlob({ type: 'image/png' }));
     }
-    const rig = { characters: r.characters, by: sc.rig?.by ? `${sc.rig.by} + corps local` : 'corps local (navigateur)' };
+    const rig = {
+      characters: r.characters,
+      by: sc.rig?.by ? `${sc.rig.by} + corps local` : 'corps local (navigateur)',
+    };
     patch(projectId, (b) => ({
       ...b,
-      scenes: b.scenes.map((s) => (s.scene_id === sceneId && s.imageAssetId === sc.imageAssetId ? { ...s, rig, maskAssetId: maskId, ...(plateId ? { plateAssetId: plateId } : {}) } : s)),
+      scenes: b.scenes.map((s) =>
+        s.scene_id === sceneId && s.imageAssetId === sc.imageAssetId
+          ? { ...s, rig, maskAssetId: maskId, ...(plateId ? { plateAssetId: plateId } : {}) }
+          : s,
+      ),
     }));
     return bodies;
   } catch {
@@ -712,11 +798,22 @@ export async function rigScene(projectId: string, sceneId: string): Promise<numb
       vision: true,
       maxTokens: 900,
       temperature: 0,
-      messages: [{ role: 'user', content: [{ type: 'text', text: RIG_PROMPT }, { type: 'image_url', image_url: { url: await dataUrl(sc.imageAssetId) } }] }],
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: RIG_PROMPT },
+            { type: 'image_url', image_url: { url: await dataUrl(sc.imageAssetId) } },
+          ],
+        },
+      ],
     });
     const rig = parseRig(r.text, r.model);
     if (!rig) return 0;
-    patch(projectId, (b) => ({ ...b, scenes: b.scenes.map((s) => (s.scene_id === sceneId ? { ...s, rig } : s)) }));
+    patch(projectId, (b) => ({
+      ...b,
+      scenes: b.scenes.map((s) => (s.scene_id === sceneId ? { ...s, rig } : s)),
+    }));
     return rig.characters.length;
   } catch {
     return 0;
@@ -740,7 +837,14 @@ async function judgeArt(projectId: string, sc: Scene, assetId: string): Promise<
         {
           role: 'user',
           content: [
-            { type: 'text', text: judgePrompt({ style: `${dimensionOf(bp.styleDNA)} — ${bp.styleDNA.renderStyle}`, characters: chars, action: sc.action ?? '' }) },
+            {
+              type: 'text',
+              text: judgePrompt({
+                style: `${dimensionOf(bp.styleDNA)} — ${bp.styleDNA.renderStyle}`,
+                characters: chars,
+                action: sc.action ?? '',
+              }),
+            },
             { type: 'image_url', image_url: { url: await dataUrl(assetId) } },
           ],
         },
@@ -755,22 +859,52 @@ async function judgeArt(projectId: string, sc: Scene, assetId: string): Promise<
  * One art-direction round: judge; « enhance » sends the image itself as the first reference with an edit instruction
  * (same shot, defects fixed); « regenerate » draws again with the judge's notes. The better judged image is kept.
  */
-async function artPass(projectId: string, sc: Scene, job: ImageJob, out: MediaOutcome<{ b64: string }>, trace: Trace): Promise<{ out: MediaOutcome<{ b64: string }>; judgement: ArtJudgement | null }> {
+async function artPass(
+  projectId: string,
+  sc: Scene,
+  job: ImageJob,
+  out: MediaOutcome<{ b64: string }>,
+  trace: Trace,
+): Promise<{ out: MediaOutcome<{ b64: string }>; judgement: ArtJudgement | null }> {
   const first = await judgeArt(projectId, sc, out.assetId!);
   if (!first) {
-    trace.stage('QA', `directeur artistique : aucun modèle vision n'a répondu — image gardée, qualité non mesurée`);
+    trace.stage(
+      'QA',
+      `directeur artistique : aucun modèle vision n'a répondu — image gardée, qualité non mesurée`,
+    );
     return { out, judgement: null };
   }
   const verdict = artVerdict(first);
-  trace.stage('QA', `directeur artistique : ${first.overall}/10 → ${verdict === 'accept' ? 'acceptée' : verdict === 'enhance' ? 'passe d’amélioration (image → image)' : 'redessinée avec les notes'}`);
+  trace.stage(
+    'QA',
+    `directeur artistique : ${first.overall}/10 → ${verdict === 'accept' ? 'acceptée' : verdict === 'enhance' ? 'passe d’amélioration (image → image)' : 'redessinée avec les notes'}`,
+  );
   if (verdict === 'accept') return { out, judgement: first };
   const second =
     verdict === 'enhance'
-      ? await generateOne({ ...job, references: [out.assetId!, ...job.references].slice(0, 4), compiled: { ...job.compiled, text: `${enhanceInstruction(first)}
+      ? await generateOne({
+          ...job,
+          references: [out.assetId!, ...job.references].slice(0, 4),
+          compiled: {
+            ...job.compiled,
+            text: `${enhanceInstruction(first)}
 
-${job.compiled.text}` }, regenerated: true, tags: [...(job.tags ?? []), 'enhanced'], trace: new Trace() })
-      : await generateOne({ ...job, compiled: { ...job.compiled, text: `${job.compiled.text}
-${regenerateHint(first)}` }, regenerated: true, trace: new Trace() });
+${job.compiled.text}`,
+          },
+          regenerated: true,
+          tags: [...(job.tags ?? []), 'enhanced'],
+          trace: new Trace(),
+        })
+      : await generateOne({
+          ...job,
+          compiled: {
+            ...job.compiled,
+            text: `${job.compiled.text}
+${regenerateHint(first)}`,
+          },
+          regenerated: true,
+          trace: new Trace(),
+        });
   if (!second.assetId) return { out, judgement: first };
   const again = await judgeArt(projectId, sc, second.assetId);
   // Kept only if the judge finds it better (never a blind replacement).
@@ -778,7 +912,10 @@ ${regenerateHint(first)}` }, regenerated: true, trace: new Trace() });
     trace.stage('QA', `directeur artistique : ${first.overall} → ${again.overall}/10, nouvelle image gardée`);
     return { out: second, judgement: again };
   }
-  trace.stage('QA', `directeur artistique : la reprise n'est pas meilleure (${again?.overall ?? 'non jugée'}), première image gardée`);
+  trace.stage(
+    'QA',
+    `directeur artistique : la reprise n'est pas meilleure (${again?.overall ?? 'non jugée'}), première image gardée`,
+  );
   return { out, judgement: first };
 }
 
@@ -837,7 +974,12 @@ export async function generateSceneImage(
     // A comic page (2-6 panels) instead of ONE shot makes the scene incoherent: drawn again once, strictly.
     if (out.assetId && (await isMultiPanel(out.assetId))) {
       trace.stage('QA', `image ${sceneId} : planche de BD détectée au lieu d'un plan unique — régénérée`);
-      const again = await generateOne({ ...job, compiled: { ...compiled, text: `${compiled.text}\n${SINGLE_SHOT_RETRY}` }, regenerated: true, trace: new Trace() });
+      const again = await generateOne({
+        ...job,
+        compiled: { ...compiled, text: `${compiled.text}\n${SINGLE_SHOT_RETRY}` },
+        regenerated: true,
+        trace: new Trace(),
+      });
       if (again.assetId && !(await isMultiPanel(again.assetId))) out = again;
     }
     // ART DIRECTOR: judge → accept / enhance (image-to-image on this image) / redraw with the notes. Not in ECO.
@@ -980,7 +1122,8 @@ export async function generateLine(
   // ONE voice per character for the whole film: the first line spoken fixes model + voice (v48: voices changed).
   const lock = bp.audio.castLock?.[key];
   const wantModel = o.forceModel ?? prof?.model ?? lock?.model;
-  const wantVoice = o.voice ?? prof?.voice ?? (lock && (!wantModel || lock.model === wantModel) ? lock.voice : undefined);
+  const wantVoice =
+    o.voice ?? prof?.voice ?? (lock && (!wantModel || lock.model === wantModel) ? lock.voice : undefined);
   const models = modelsWith(reg, 'speech', 'SPEECH').filter((m) => !wantModel || m.id === wantModel);
   const trace = new Trace();
   trace.stage('PRODUCTION_CLASSIFICATION', `voix ${line.speaker} · ${line.language}`);
@@ -990,13 +1133,23 @@ export async function generateLine(
       // same default voice for everybody).
       // Every speaker of the film is cast (also those without a sheet, e.g. « FRÈRE »), in a stable order, and the
       // voices already locked to someone else are never reused.
-      const sheets = bp.characters.map((c) => ({ id: c.id, name: c.name, gender: c.gender, age: c.age, voice: c.voice, role: c.role }));
+      const sheets = bp.characters.map((c) => ({
+        id: c.id,
+        name: c.name,
+        gender: c.gender,
+        age: c.age,
+        voice: c.voice,
+        role: c.role,
+      }));
       const extra = [...new Set(bp.scenes.flatMap((x) => x.dialogue.map((d) => speakerKey(d.speaker))))]
         .filter((k) => k && !sheets.some((c) => speakerKey(c.name) === k))
         .map((k) => ({ id: k, name: k }));
       // Deterministic over the WHOLE cast (parallel lines of one speaker get the same voice); the lock then keeps it.
       const cast = castVoices([...sheets, ...extra], m.voices, line.language || 'fr');
-      const voice = wantVoice && m.voices.includes(wantVoice) ? wantVoice : (cast[key] ?? cast[line.speaker.toUpperCase()] ?? m.voices[0]);
+      const voice =
+        wantVoice && m.voices.includes(wantVoice)
+          ? wantVoice
+          : (cast[key] ?? cast[line.speaker.toUpperCase()] ?? m.voices[0]);
       return { m, voice, v: validateSpeechRequest(m, { voice }) };
     })
     .filter((c) => c.v.ok)
@@ -1042,7 +1195,10 @@ export async function generateLine(
         [lineKey(sceneId, index)]: { assetId: out.assetId!, seconds, model: out.model },
       },
       // The first voice that really spoke for this character is kept for all its other lines.
-      castLock: b.audio.castLock?.[key] || !byId.get(out.model)?.voice ? b.audio.castLock : { ...(b.audio.castLock ?? {}), [key]: { model: out.model, voice: byId.get(out.model)!.voice! } },
+      castLock:
+        b.audio.castLock?.[key] || !byId.get(out.model)?.voice
+          ? b.audio.castLock
+          : { ...(b.audio.castLock ?? {}), [key]: { model: out.model, voice: byId.get(out.model)!.voice! } },
     },
   }));
   return { assetId: out.assetId!, seconds };
@@ -1052,7 +1208,12 @@ export type { Scene };
 /** The scene script as the humour judge reads it (actions + lines with gestures). */
 export function scriptText(bp: Blueprint): string {
   return bp.scenes
-    .map((s, i) => [`SCÈNE ${i + 1} (${s.beat}) — ${s.action}`, ...s.dialogue.map((d) => `${d.speaker}${d.gesture ? ` [${d.gesture}]` : ''} : ${d.text}`)].join('\n'))
+    .map((s, i) =>
+      [
+        `SCÈNE ${i + 1} (${s.beat}) — ${s.action}`,
+        ...s.dialogue.map((d) => `${d.speaker}${d.gesture ? ` [${d.gesture}]` : ''} : ${d.text}`),
+      ].join('\n'),
+    )
     .join('\n\n');
 }
 /** DEGRÉ D'HUMOUR: the judge scores the script on the reference grid (null when no model answered — nothing invented). */
@@ -1060,10 +1221,23 @@ export async function judgeHumor(projectId: string): Promise<HumorVerdict | null
   const bp = bpOf(projectId);
   if (!bp.scenes.length) return null;
   try {
-    const r = await runText({ projectId, purpose: 'juge humour (grille de référence)', maxTokens: 600, temperature: 0, messages: [{ role: 'user', content: humorPrompt(scriptText(bp)) }] });
+    const r = await runText({
+      projectId,
+      purpose: 'juge humour (grille de référence)',
+      maxTokens: 600,
+      temperature: 0,
+      messages: [{ role: 'user', content: humorPrompt(scriptText(bp)) }],
+    });
     const v = parseHumor(r.text);
     if (!v) return null;
-    patch(projectId, (b) => ({ ...b, qc: { ...(b.qc ?? { at: Date.now() }), humor: { ...v, model: r.model, at: Date.now() }, at: Date.now() } }));
+    patch(projectId, (b) => ({
+      ...b,
+      qc: {
+        ...(b.qc ?? { at: Date.now() }),
+        humor: { ...v, model: r.model, at: Date.now() },
+        at: Date.now(),
+      },
+    }));
     return v;
   } catch {
     return null;
@@ -1077,11 +1251,38 @@ export async function judgeHumor(projectId: string): Promise<HumorVerdict | null
 export async function useOwnSceneImage(projectId: string, sceneId: string, file: Blob): Promise<string> {
   const id = `asset-own-${Date.now().toString(36)}-${sceneId}`;
   await blobs.put(id, file);
-  useStudio.getState().addAsset({ id, kind: 'image', status: 'FINAL_ASSET', projectId, sceneId, model: 'import', createdAt: Date.now(), cost: 0, source: 'Votre image', tags: ['image', sceneId, 'import'], mime: file.type || 'image/png', bytes: file.size, name: `image-${sceneId}` });
+  useStudio.getState().addAsset({
+    id,
+    kind: 'image',
+    status: 'FINAL_ASSET',
+    projectId,
+    sceneId,
+    model: 'import',
+    createdAt: Date.now(),
+    cost: 0,
+    source: 'Votre image',
+    tags: ['image', sceneId, 'import'],
+    mime: file.type || 'image/png',
+    bytes: file.size,
+    name: `image-${sceneId}`,
+  });
   patch(projectId, (b) => ({
     ...b,
     assets: [...b.assets, id],
-    scenes: b.scenes.map((s) => (s.scene_id === sceneId ? { ...s, imageAssetId: id, status: 'APPROVED' as const, videoAssetId: undefined, rig: undefined, plateAssetId: undefined, maskAssetId: undefined, clipReport: undefined } : s)),
+    scenes: b.scenes.map((s) =>
+      s.scene_id === sceneId
+        ? {
+            ...s,
+            imageAssetId: id,
+            status: 'APPROVED' as const,
+            videoAssetId: undefined,
+            rig: undefined,
+            plateAssetId: undefined,
+            maskAssetId: undefined,
+            clipReport: undefined,
+          }
+        : s,
+    ),
   }));
   return id;
 }

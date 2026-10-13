@@ -1,0 +1,155 @@
+{
+ "title": "La facture du Docteur Sylla",
+ "hook": "Le docteur facture tout",
+ "decor": "Hôpital",
+ "fps": 25,
+ "size": [
+  576,
+  1024
+ ],
+ "music": true,
+ "cast": [
+  {
+   "id": "bouba",
+   "name": "BOUBACAR",
+   "voice": "pierre",
+   "height": 1.74,
+   "x": -0.42,
+   "pitch": 0.93
+  },
+  {
+   "id": "sylla",
+   "name": "DOCTEUR SYLLA",
+   "voice": "gilles",
+   "height": 1.76,
+   "x": 0.4
+  },
+  {
+   "id": "soeur",
+   "name": "SŒUR AWA",
+   "voice": "jessica",
+   "height": 1.64,
+   "x": 0.02,
+   "pitch": 1,
+   "enter": 4
+  }
+ ],
+ "beats": [
+  {
+   "who": "bouba",
+   "pose": "choc",
+   "text": "Docteur, j’ai mangé trois poulets. Mon ventre va exploser !"
+  },
+  {
+   "who": "sylla",
+   "pose": "rire",
+   "text": "Trois poulets ? Consultation : dix mille francs.",
+   "react": {
+    "bouba": "choc"
+   }
+  },
+  {
+   "who": "bouba",
+   "pose": "choc",
+   "text": "Tu ne m’as même pas encore touché !"
+  },
+  {
+   "who": "sylla",
+   "pose": "neutre",
+   "text": "Je t’ai regardé. Le regard, c’est cinq mille."
+  },
+  {
+   "who": "soeur",
+   "pose": "haussement",
+   "text": "Docteur, il faut au moins l’ausculter, non ?",
+   "shot": "two"
+  },
+  {
+   "who": "sylla",
+   "pose": "accuse",
+   "text": "Le stéthoscope est froid. Le froid, c’est deux mille.",
+   "react": {
+    "bouba": "choc"
+   }
+  },
+  {
+   "who": "bouba",
+   "pose": "accuse",
+   "text": "Tu factures même le froid de ton appareil ?!"
+  },
+  {
+   "who": "sylla",
+   "pose": "haussement",
+   "text": "Et la climatisation. Tu respires mon air depuis tantôt."
+  },
+  {
+   "who": "soeur",
+   "pose": "rire",
+   "text": "Boubacar, retiens ta respiration. Ça fera moins cher.",
+   "react": {
+    "bouba": "choc"
+   }
+  },
+  {
+   "who": "bouba",
+   "pose": "neutre",
+   "text": "Je n’ai pas d’argent. Mais j’ai ça."
+  },
+  {
+   "who": "sylla",
+   "pose": "choc",
+   "text": "Un poulet ? Dans ton boubou ?!"
+  },
+  {
+   "who": "bouba",
+   "pose": "rire",
+   "text": "Le quatrième. Pour les urgences."
+  },
+  {
+   "who": "sylla",
+   "pose": "rire",
+   "text": "Accepté ! Le poulet, c’est mon tarif préféré.",
+   "react": {
+    "soeur": "choc"
+   }
+  },
+  {
+   "who": "sylla",
+   "pose": "neutre",
+   "text": "Hmm… il est bien pimenté, ton poulet."
+  },
+  {
+   "who": "bouba",
+   "pose": "haussement",
+   "text": "Pimenté ? C’est le poulet d’avant-hier.",
+   "react": {
+    "sylla": "choc"
+   }
+  },
+  {
+   "who": "sylla",
+   "pose": "choc",
+   "text": "Sœur Awa ! Mon ventre ! Consultation, vite !",
+   "shot": "two"
+  },
+  {
+   "who": "soeur",
+   "pose": "rire",
+   "text": "Pour vous, docteur ? Dix mille francs.",
+   "react": {
+    "sylla": "choc"
+   },
+   "shot": "cu"
+  },
+  {
+   "who": "bouba",
+   "pose": "rire",
+   "text": "Et le regard, c’est cinq mille !",
+   "shot": "two"
+  }
+ ],
+ "punch": {
+  "beat": 16,
+  "emoji": "😂"
+ }
+}

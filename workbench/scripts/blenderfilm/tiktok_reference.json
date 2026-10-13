@@ -1,0 +1,10 @@
+{
+ "source": "mesures agrégées de 12 TikTok de la chaîne (même code : server/jev/studio/clipInspect.ts via scripts/blenderfilm/measure.ts)",
+ "seconds": {"min": 60.6, "median": 63.35, "max": 70.6},
+ "shotsPerMin": {"min": 8.4, "median": 11.4, "max": 23.2},
+ "shotMedianS": {"min": 1.17, "median": 5.17, "max": 9.17},
+ "motion": {"min": 0.0098, "median": 0.01845, "max": 0.027},
+ "coverage": {"min": 0.15, "median": 0.215, "max": 0.29},
+ "frozenS": {"min": 1.5, "median": 4.75, "max": 15.6},
+ "flicker": {"min": 0.0022, "median": 0.012, "max": 0.0218}
+}

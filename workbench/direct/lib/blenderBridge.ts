@@ -60,7 +60,9 @@ const withTimeout = (ms: number) => {
 };
 
 /** Is a bridge running? null when unreachable (the app then says how to start it). */
-export async function bridgeHealth(o: { fetchFn?: FetchFn; url?: string; timeoutMs?: number } = {}): Promise<BridgeHealth | null> {
+export async function bridgeHealth(
+  o: { fetchFn?: FetchFn; url?: string; timeoutMs?: number } = {},
+): Promise<BridgeHealth | null> {
   const url = o.url ?? bridgeUrl();
   const f = o.fetchFn ?? fetch;
   const t = withTimeout(o.timeoutMs ?? 2500);
@@ -85,7 +87,13 @@ const b64 = (bytes: Uint8Array): string => {
 /** Renders through the bridge and waits for the result (polling), reporting progress as frames land. */
 export async function bridgeRender(
   req: RenderRequest,
-  o: { fetchFn?: FetchFn; url?: string; onProgress?: (frames: number, total: number, status: string) => void; pollMs?: number; maxWaitMs?: number } = {},
+  o: {
+    fetchFn?: FetchFn;
+    url?: string;
+    onProgress?: (frames: number, total: number, status: string) => void;
+    pollMs?: number;
+    maxWaitMs?: number;
+  } = {},
 ): Promise<RenderResult> {
   const url = o.url ?? bridgeUrl();
   const f = o.fetchFn ?? fetch;
@@ -102,7 +110,11 @@ export async function bridgeRender(
     orbit: Boolean(req.orbit),
     still_only: Boolean(req.stillOnly),
   };
-  const start = await f(`${url}/render`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers() }, body: JSON.stringify(body) });
+  const start = await f(`${url}/render`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers() },
+    body: JSON.stringify(body),
+  });
   if (!start.ok) throw new Error(`pont Blender : ${start.status} ${(await start.text()).slice(0, 200)}`);
   const { id } = (await start.json()) as { id: string };
   const t0 = Date.now();
@@ -111,18 +123,134 @@ export async function bridgeRender(
   for (;;) {
     const r = await f(`${url}/jobs/${id}`, { headers: headers() });
     if (!r.ok) throw new Error(`pont Blender : tâche ${id} introuvable (${r.status})`);
-    const j = (await r.json()) as { status: string; frames: number; total: number; report?: RenderReport; error?: string; log?: string };
+    const j = (await r.json()) as {
+      status: string;
+      frames: number;
+      total: number;
+      report?: RenderReport;
+      error?: string;
+      log?: string;
+    };
     o.onProgress?.(j.frames, j.total, j.status);
     if (j.status === 'done' && j.report) {
       const get = async (part: string) => {
         const x = await f(`${url}/jobs/${id}/${part}`, { headers: headers() });
         return x.ok ? new Uint8Array(await x.arrayBuffer()) : null;
       };
-      return { id, report: j.report, video: j.report.frames ? await get('video') : null, verify: await get('verify') };
+      return {
+        id,
+        report: j.report,
+        video: j.report.frames ? await get('video') : null,
+        verify: await get('verify'),
+      };
     }
-    if (j.status === 'error') throw new Error(`rendu Blender en erreur : ${j.error ?? ''}\n${(j.log ?? '').slice(-600)}`);
+    if (j.status === 'error')
+      throw new Error(`rendu Blender en erreur : ${j.error ?? ''}\n${(j.log ?? '').slice(-600)}`);
     if (Date.now() - t0 > maxWait) throw new Error('rendu Blender : délai dépassé');
     await new Promise((res) => setTimeout(res, pollMs));
+  }
+}
+
+export interface FilmGate {
+  passed: boolean;
+  failed: string[];
+}
+/** The mandatory 3D conformity check of the scene (scripts/blenderfilm/preflight.py), run before the render. */
+export interface FilmPreflight {
+  /** Share of the quality objectives reached (%), and whether the scene was right at the first generation. */
+  taux_objectifs?: number;
+  conforme_des_la_generation?: boolean;
+  /** Ten measured dimensions (0–100, null = not applicable). */
+  dimensions?: Record<string, number | null>;
+  score: number;
+  verdict: string;
+  passed: boolean;
+  issues: number;
+  fixes: number;
+  critiques: string[];
+  categories: Record<string, { ok: boolean; n: number }>;
+}
+export interface FilmReport {
+  frames_expected: number;
+  frames_encoded: number;
+  video_s: number;
+  audio_s: number;
+  av_gap_ms: number;
+  loudness_lufs?: number | null;
+  shots: number;
+  gate?: FilmGate;
+  preflight?: FilmPreflight;
+}
+export interface FilmResult {
+  id: string;
+  report: FilmReport;
+  video: Uint8Array | null;
+  cover: Uint8Array | null;
+  srt: string | null;
+  post: string | null;
+  /** HTML report of the 3D conformity check. */
+  preflightHtml: string | null;
+}
+/**
+ * A WHOLE FILM shot by Blender on the user's machine (scripts/blenderfilm/film.py through the bridge): voices, living
+ * set, acting, cameras, grade, sound, quality gate — then the creator's kit (cover, captions, post text) is fetched.
+ */
+export async function bridgeFilm(
+  story: Record<string, unknown>,
+  o: {
+    fetchFn?: FetchFn;
+    url?: string;
+    onProgress?: (frames: number, total: number, status: string) => void;
+    pollMs?: number;
+    maxWaitMs?: number;
+    samples?: number;
+  } = {},
+): Promise<FilmResult> {
+  const url = o.url ?? bridgeUrl();
+  const f = o.fetchFn ?? fetch;
+  const start = await f(`${url}/film`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers() },
+    body: JSON.stringify({ story, samples: o.samples ?? 10 }),
+  });
+  if (!start.ok) throw new Error(`pont Blender : ${start.status} ${(await start.text()).slice(0, 200)}`);
+  const { id } = (await start.json()) as { id: string };
+  const t0 = Date.now();
+  for (;;) {
+    const r = await f(`${url}/jobs/${id}`, { headers: headers() });
+    if (!r.ok) throw new Error(`pont Blender : film ${id} introuvable (${r.status})`);
+    const j = (await r.json()) as {
+      status: string;
+      frames: number;
+      total: number;
+      report?: FilmReport;
+      error?: string;
+      log?: string;
+    };
+    o.onProgress?.(j.frames, j.total, j.status);
+    if (j.status === 'done' && j.report) {
+      const bin = async (part: string) => {
+        const x = await f(`${url}/jobs/${id}/${part}`, { headers: headers() });
+        return x.ok ? new Uint8Array(await x.arrayBuffer()) : null;
+      };
+      const txt = async (part: string) => {
+        const x = await f(`${url}/jobs/${id}/${part}`, { headers: headers() });
+        return x.ok ? await x.text() : null;
+      };
+      return {
+        id,
+        report: j.report,
+        video: await bin('video'),
+        cover: await bin('cover'),
+        srt: await txt('srt'),
+        post: await txt('post'),
+        preflightHtml: await txt('preflight'),
+      };
+    }
+    if (j.status === 'error')
+      throw new Error(`film Blender en erreur : ${j.error ?? ''}\n${(j.log ?? '').slice(-600)}`);
+    if (Date.now() - t0 > (o.maxWaitMs ?? 6 * 3_600_000)) throw new Error('film Blender : délai dépassé');
+    await new Promise((res) => setTimeout(res, o.pollMs ?? 3000));
   }
 }
 
