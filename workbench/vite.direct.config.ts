@@ -104,7 +104,16 @@ function troupeKit(): Plugin {
         const man = JSON.parse(readFileSync(dir + 'manifest.json', 'utf8')) as {
           planches?: { name: string; file: string; faces?: unknown[]; bodies?: unknown[] }[];
           galeries?: { file: string; names: string[]; faces?: unknown[]; bodies?: unknown[] }[];
-          decors?: { name: string; file: string; hd?: string; depth?: string; people?: string; fit?: unknown }[];
+          decors?: {
+            name: string;
+            file: string;
+            hd?: string;
+            depth?: string;
+            people?: string;
+            seg?: string;
+            floor?: string;
+            fit?: unknown;
+          }[];
         };
         const hash = createHash('sha256');
         const src = (f: string) => {
@@ -112,14 +121,35 @@ function troupeKit(): Plugin {
           hash.update(f).update(b);
           return `data:image/${/\.png$/i.test(f) ? 'png' : 'jpeg'};base64,${b.toString('base64')}`;
         };
-        const planches = (man.planches ?? []).map((p) => ({ name: p.name, src: src(p.file), faces: p.faces ?? [], bodies: p.bodies ?? [] }));
-        const galeries = (man.galeries ?? []).map((g) => ({ src: src(g.file), names: g.names, faces: g.faces ?? [], bodies: g.bodies ?? [] }));
-        // The set enlarged ×4 (Swin2SR) and its depth map (Depth Anything V2) when scripts/troupe-enhance.py made them.
+        const planches = (man.planches ?? []).map((p) => ({
+          name: p.name,
+          src: src(p.file),
+          faces: p.faces ?? [],
+          bodies: p.bodies ?? [],
+        }));
+        const galeries = (man.galeries ?? []).map((g) => ({
+          src: src(g.file),
+          names: g.names,
+          faces: g.faces ?? [],
+          bodies: g.bodies ?? [],
+        }));
+        // The set enlarged ×4 (Swin2SR), its depth map (Depth Anything V2), its scene parse and walkable floor (UperNet
+        // ADE20K — the « sol praticable » law) when scripts/troupe-enhance.py made them.
         const has = (f?: string) => !!f && existsSync(dir + f);
-        const decors = (man.decors ?? []).map((d) => ({ name: d.name, src: src(has(d.hd) ? d.hd! : d.file), ...(has(d.depth) ? { depth: src(d.depth!) } : {}), ...(has(d.people) ? { people: src(d.people!) } : {}), ...(d.fit ? { fit: d.fit } : {}) }));
+        const decors = (man.decors ?? []).map((d) => ({
+          name: d.name,
+          src: src(has(d.hd) ? d.hd! : d.file),
+          ...(has(d.depth) ? { depth: src(d.depth!) } : {}),
+          ...(has(d.people) ? { people: src(d.people!) } : {}),
+          ...(has(d.seg) ? { seg: src(d.seg!) } : {}),
+          ...(has(d.floor) ? { floor: src(d.floor!) } : {}),
+          ...(d.fit ? { fit: d.fit } : {}),
+        }));
         hash.update(JSON.stringify(man));
         kit = { version: hash.digest('hex').slice(0, 16), planches, galeries, decors };
-        this.info(`troupe intégrée : ${planches.length} planche(s), ${galeries.length} galerie(s), ${decors.length} décor(s)`);
+        this.info(
+          `troupe intégrée : ${planches.length} planche(s), ${galeries.length} galerie(s), ${decors.length} décor(s)`,
+        );
       } else this.info('troupe absente : aucun personnage embarqué');
       return `export default ${JSON.stringify(kit)};`;
     },

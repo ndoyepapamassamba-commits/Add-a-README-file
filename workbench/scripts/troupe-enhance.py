@@ -6,6 +6,11 @@ TROUPE — improves the owner's private sets before they are embedded (run once;
     and were stretched ×8 to fill a 1080×1920 film (a blurred set behind sharp actors);
   * DEPTH: a relative depth map of each set by Depth Anything V2 Small (Apache-2.0) — the set becomes a relief the
     camera moves through (true parallax), and the lens blur follows the distance.
+  * SOL: a scene parse of each set by UperNet ConvNeXt-small ADE20K (OpenMMLab, MIT) — labels (painted people for the
+    light direction, objects) and the walkable mask (floor, road, earth, sand, grass, rug…); the film engine fuses it
+    with the relief geometry (blenderfilm/ground.py). The model is exported once from the official weights by
+    scripts/export-scene-seg.py (needs torch once); without it this step is skipped and the engine assumes no painted
+    floor (it then builds a 3D forestage).
 
 Models are downloaded once into ~/.cache/massamba-models (never committed). The manifest gets `hd` and `depth` per set.
 Usage: python3 scripts/troupe-enhance.py [--force]
@@ -79,12 +84,47 @@ def depth(sess: ort.InferenceSession, im: Image.Image) -> Image.Image:
     return out
 
 
+SEG = os.path.join(CACHE, 'upernet-convnext-small-ade.onnx')
+SEG_H, SEG_W = 576, 1152  # fixed input of the exported model (pyramid pooling: feature map divisible by 1, 2, 3, 6)
+
+
+def seg_model():
+    if not os.path.exists(SEG):
+        print('  modèle de scène absent : python3 scripts/export-scene-seg.py (une fois) — étape SOL sautée', flush=True)
+        return None
+    return ort.InferenceSession(SEG, providers=['CPUExecutionProvider'])
+
+
+def segment(sess: ort.InferenceSession, im: Image.Image):
+    """ADE20K labels of a set (uint8, at most 512 px wide like the depth map) and its walkable mask (0/255)."""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'blenderfilm'))
+    import ground
+    im = im.convert('RGB')
+    W, H = im.size
+    k = min(SEG_W / W, SEG_H / H)
+    w, h = max(32, round(W * k)), max(32, round(H * k))
+    x = np.asarray(im.resize((w, h), Image.BICUBIC), dtype=np.float32) / 255.0
+    x = (x - np.array([0.485, 0.456, 0.406], np.float32)) / np.array([0.229, 0.224, 0.225], np.float32)
+    x = np.pad(x, ((0, SEG_H - h), (0, SEG_W - w), (0, 0)), mode='reflect')
+    lg = sess.run(None, {'pixel_values': x.transpose(2, 0, 1)[None].astype(np.float32)})[0][0]
+    lg = lg[:, : h * lg.shape[1] // SEG_H, : w * lg.shape[2] // SEG_W]
+    ow = min(512, W)
+    oh = round(ow * H / W)
+    import cv2
+    up = np.stack([cv2.resize(c, (ow, oh), interpolation=cv2.INTER_LINEAR) for c in lg])
+    lab = up.argmax(0).astype(np.uint8)
+    walk = np.isin(lab, list(ground.WALKABLE)).astype(np.uint8) * 255
+    walk = cv2.morphologyEx(walk, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))  # no isolated specks of « floor »
+    return Image.fromarray(lab, 'L'), Image.fromarray(walk, 'L')
+
+
 def main() -> None:
     force = '--force' in sys.argv
     man_path = os.path.join(ROOT, 'manifest.json')
     man = json.load(open(man_path, encoding='utf-8'))
     os.makedirs(os.path.join(ROOT, 'hd'), exist_ok=True)
-    sr = dav2 = None
+    sr = dav2 = seg = None
+    seg_tried = False
     for d in man.get('decors', []):
         src = os.path.join(ROOT, d['file'])
         stem = os.path.splitext(os.path.basename(d['file']))[0]
@@ -97,6 +137,16 @@ def main() -> None:
             dav2 = dav2 or model('depth-anything-v2-small.onnx')
             depth(dav2, Image.open(os.path.join(ROOT, hd_rel))).save(os.path.join(ROOT, dp_rel))
         d['hd'], d['depth'] = hd_rel, dp_rel
+        lb_rel, fl_rel = f'hd/{stem}.seg.png', f'hd/{stem}.floor.png'
+        if force or not os.path.exists(os.path.join(ROOT, fl_rel)):
+            if not seg_tried:
+                seg, seg_tried = seg_model(), True
+            if seg is not None:
+                lab, walk = segment(seg, Image.open(os.path.join(ROOT, hd_rel)))
+                lab.save(os.path.join(ROOT, lb_rel))
+                walk.save(os.path.join(ROOT, fl_rel))
+        if os.path.exists(os.path.join(ROOT, fl_rel)):
+            d['seg'], d['floor'] = lb_rel, fl_rel
         print(f"  {d['name']}: {Image.open(os.path.join(ROOT, hd_rel)).size} + profondeur ({time.time() - t:.0f} s)", flush=True)
     json.dump(man, open(man_path, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print('décors améliorés:', len(man.get('decors', [])))

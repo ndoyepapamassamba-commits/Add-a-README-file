@@ -33,6 +33,7 @@ CATEGORIES = [
     ('echelle', 'Échelle'), ('temps_reel', 'Performances temps réel'), ('eclairage', 'Éclairage'),
     ('rigs', 'Rigs, armatures, animations'), ('narratif', 'Cohérence narrative'), ('cameras', 'Caméras et mouvements'),
     ('image', 'Image et netteté'), ('physique', 'Physique et lois humaines'),
+    ('atelier', 'Style et physique des objets et animaux'),
 ]
 # Real-time budgets (orders of magnitude used by game pipelines for one scene on screen).
 BUDGETS = {
@@ -1028,6 +1029,63 @@ def _card(root, name):
     return max(cards, key=lambda c: c.dimensions.z, default=None)
 
 
+LIVING = ('prop-', 'poule-', 'coq-', 'chevre-', 'chien-', 'chat-', 'canard-', 'pigeon-', 'vache-', 'antilope-', 'singe-', 'oiseau-',
+          'margouillat-', 'papillon-', 'luciole-')
+AIRBORNE = ('oiseau-', 'papillon-', 'luciole-', 'margouillat-')
+
+
+def check_atelier(R, scene, objs):
+    """Every animal and every object of the scene must be in the troupe's style and obey physics:
+      • STYLE   — built by the workshop (atelier.py: real shape, troupe material) or forged from a real free photo redrawn
+                  in the troupe's style (asset-forge.py); a raw primitive with a flat colour is a major fault;
+      • SIZE    — its real size (a hen ~0.4 m, a crate ~0.3 m: atelier.REAL_SIZE / the forge's measured height);
+      • SUPPORT — what stands on the ground touches it (no floating, nothing sunk);
+      • FEET    — no object set down on an actor's feet (an object « through » a foot)."""
+    import bpy
+    try:
+        import atelier as AT
+        real = AT.REAL_SIZE
+    except Exception:
+        real = {}
+    scene.frame_set(scene.frame_start)
+    roots = [o for o in objs if o.type == 'EMPTY' and o.parent is None and o.name.lower().startswith(LIVING)]
+    feet = [(o, tuple(o['pieds'])) for o in objs if o.get('pieds') is not None]
+    for r in roots:
+        meshes = [c for c in r.children_recursive if c.type == 'MESH' and len(c.data.polygons) and not c.get('shell') and not c.hide_render]
+        if not meshes:
+            continue
+        styled = bool(r.get('atelier')) and all(c.get('atelier') or any(m and m.get('atelier') for m in c.data.materials) or c.name.startswith('carte-') for c in meshes)
+        R.tally('style', styled)
+        if not styled:
+            R.add('atelier', 'majeur', 'objet ou animal hors style (primitive, couleur plate) : il doit venir de l’atelier ou de la forge', r.name)
+        lo, hi = _union_bbox(meshes)
+        h = hi[2] - max(0.0, lo[2])
+        kind = re.sub(r'^(prop-)?([a-zé]+).*$', r'\2', r.name.lower())
+        rng = real.get(kind)
+        if r.get('hauteur') and not rng:
+            rng = (0.75 * float(r['hauteur']), 1.3 * float(r['hauteur']))
+        if rng and not r.name.lower().startswith(AIRBORNE):
+            ok = rng[0] * 0.7 <= h <= rng[1] * 1.4
+            R.tally('tailles', ok)
+            if not ok:
+                R.add('atelier', 'majeur', f'{kind} à une taille irréelle ({h:.2f} m, attendu {rng[0]:.2f}–{rng[1]:.2f} m)', r.name, round(h, 3))
+        if not r.name.lower().startswith(AIRBORNE):
+            ok = -0.03 <= lo[2] <= 0.03
+            R.tally('physique', ok)
+            if lo[2] > 0.03:
+                R.add('atelier', 'majeur', f'{kind} qui flotte ({lo[2]:.2f} m au-dessus du sol)', r.name, round(lo[2], 3))
+            elif lo[2] < -0.03:
+                R.add('atelier', 'majeur', f'{kind} enfoncé dans le sol ({lo[2]:.2f} m)', r.name, round(lo[2], 3))
+        if r.get('emprise_x') is not None:
+            a, b = tuple(r['emprise_x'])
+            for o, (fa, fb) in feet:
+                x = o.matrix_world.translation.x
+                hit = min(b, x + fb) - max(a, x + fa) > 0.0 and abs(o.matrix_world.translation.y - r.matrix_world.translation.y) < 0.6
+                R.tally('physique', not hit)
+                if hit:
+                    R.add('atelier', 'majeur', f'{kind} posé sur les pieds de {o.name.replace("-root", "")} (un pied le traverserait)', r.name)
+
+
 def check_plausibility(R, scene, life, actors, cam=None):
     """Physics and human laws on every person of the scene (plausibility.py): two bodies never in the same place;
     people who talk stand at conversation distance (Hall's personal zone) and never cover each other on screen; an
@@ -1419,6 +1477,7 @@ def run(kind='scene', subject='', story=None, life=None, cast=None, drawn=None, 
         check_plausibility(R, scene, life, people or [], cameras)
     if style:
         check_style(R, style)
+    check_atelier(R, scene, objs)
     if image:
         check_image(R, image)
     if kind == 'decor':

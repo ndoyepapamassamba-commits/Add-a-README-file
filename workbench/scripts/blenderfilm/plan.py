@@ -288,6 +288,17 @@ def main():
         if c['name'] not in rig['cast']:
             raise SystemExit(f"personnage absent du kit : {c['name']}")
     beats = story['beats']
+    # GESTURE ↔ STORY: a pointing gesture the drawing cannot play (the pointing law) is replaced by the closest pose by
+    # intent, and the line adapted — HERE, before the voices are recorded (gesture.py; the same law as the render).
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import gesture
+    try:
+        hts = {n: c['height'] for n, c in json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'characters.json'), encoding='utf-8')).items()}
+    except Exception:
+        hts = {}
+    for o in gesture.adapt_story(story, rig, rig['dir'], hts):
+        print(f"[récit] réplique {o['beat'] + 1} : « {o['pose']} » de {o['qui']} injouable (doigt à {o['ecart_cm']} cm du visage de {o['cible']}) → "
+              f"« {o['jouee']} »" + (f" ; texte : « {o['apres']} »" if o['apres'] != o['avant'] else ' ; texte inchangé (il ne reposait pas sur le geste)'), flush=True)
     vdir = os.path.join(a.out, 'voices')
     os.makedirs(vdir, exist_ok=True)
 

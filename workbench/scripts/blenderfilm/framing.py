@@ -65,6 +65,15 @@ def view_overflow(g, cam, tan_h, tan_v, n=72, steps=120):
         idx = np.where(hit.any(1), hit.argmax(1), steps - 1)
     r = np.arange(len(dirs))
     uh, vh = u[r, idx], v[r, idx]
+    st = g.get('stage')
+    if st:
+        # A 3D forestage (and the foot of the set) covers every ray that reaches the painting plane below its top: those
+        # rays see the floor the engine built, not a mirrored edge of the painting.
+        z_at = cam[2] + (Yp - cam[1]) * dirs[:, 2]
+        seen = z_at > st['z_top'] + 1e-6
+        if not seen.any():
+            return 0.0, 0.0, 0.0, 0.0
+        uh, vh = uh[seen], vh[seen]
     return (max(0.0, float((-uh).max()) * g['Wm']), max(0.0, float((uh - 1).max()) * g['Wm']),
             max(0.0, float((-vh).max()) * g['mH']), max(0.0, float((vh - 1).max()) * g['mH']))
 

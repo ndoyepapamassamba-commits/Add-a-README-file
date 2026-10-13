@@ -20,6 +20,7 @@ from mathutils import Matrix, Vector
 
 LENS = 35.0
 SENSOR = 36.0
+FEET_MARGIN = 0.07  # a full shot on a floor: the feet this share of the frame above its bottom edge
 
 
 def args():
@@ -266,6 +267,359 @@ def shadow_material(name='shadow'):
     return m
 
 
+# ── sol : sol peint, avant-scène 3D, pied du décor, ombres (ground.py) ──────────────────────────────────────────────────
+def load_map(path):
+    """A data map (mask, labels) as floats 0..1 = byte / 255, top row first — never colour-managed."""
+    img = bpy.data.images.load(path, check_existing=False)
+    img.colorspace_settings.name = 'Non-Color'
+    w, h = img.size
+    px = np.empty(w * h * 4, np.float32)
+    img.pixels.foreach_get(px)
+    out = px.reshape(h, w, 4)[::-1, :, 0].copy()
+    bpy.data.images.remove(img)
+    return out
+
+
+def analyse_ground(dec, grid):
+    """Painted floor (scene parse fused with the relief geometry) and the light of the painting (its painted people)."""
+    import ground
+    st = {}
+    grid['walk'] = grid['fl'] = None
+    if grid.get('dn') is not None and dec.get('floor') and os.path.isfile(dec['floor']):
+        grid['walk'] = load_map(dec['floor'])
+        grid['fl'], st = ground.floor_grid(grid, grid['walk'])
+    if dec.get('seg') and os.path.isfile(dec['seg']):
+        grid['light'] = ground.scene_light(grid['px'], np.round(load_map(dec['seg']) * 255).astype(np.uint8))
+    else:
+        grid['light'] = {'mode': 'frontale', 'sign': 0, 'strength': 0.0, 'figures': 0}
+    grid['shadow_vec'] = ground.shadow_vector(grid['light']['sign'], grid['light']['strength'])
+    L = grid['light']
+    print(f"[sol] sol peint : {100 * st.get('fusion', 0):.1f} % du décor (segmentation {100 * st.get('semantique', 0):.1f} %, "
+          f"surfaces tournées vers le haut {100 * st.get('geometrie', 0):.1f} %) ; lumière {L['mode']}"
+          + (f" venant de la {'droite' if L['sign'] > 0 else 'gauche'} ({L['figures']} personnages peints concordants)" if L['mode'] == 'laterale' else
+             f" ({L['figures']} personnage(s) peint(s) mesuré(s), pas assez concordants pour une lumière latérale)"), flush=True)
+
+
+def forestage_material(kind, rgb, yp):
+    """The 3D floor in front of the painting, in the painting's world: its colour (painted floor or kind brought to the
+    painting's light), two scales of grain (no flat area — the style law), tiles or planks indoors, and the shade at the
+    foot of the set (under a stall, under a sofa)."""
+    import ground
+    spec = ground.FLOOR_KINDS[kind]
+    m = bpy.data.materials.new(f'sol-{kind}')
+    m.use_nodes = True
+    nt = m.node_tree
+    for n in list(nt.nodes):
+        nt.nodes.remove(n)
+    N, L = nt.nodes, nt.links
+    out = N.new('ShaderNodeOutputMaterial')
+    tc = N.new('ShaderNodeTexCoord')
+    base = N.new('ShaderNodeRGB')
+    base.outputs[0].default_value = (*[srgb_to_linear(c) for c in rgb], 1)
+    col = base.outputs[0]
+    if spec['motif']:
+        br = N.new('ShaderNodeTexBrick')
+        br.offset = 0.0 if spec['motif'] == 'carreaux' else 0.5
+        br.inputs['Scale'].default_value = 1.0
+        br.inputs['Mortar Size'].default_value = 0.008 if spec['motif'] == 'carreaux' else 0.003
+        br.inputs['Brick Width'].default_value = 0.45 if spec['motif'] == 'carreaux' else 1.1
+        br.inputs['Row Height'].default_value = 0.45 if spec['motif'] == 'carreaux' else 0.13
+        lin = [srgb_to_linear(c) for c in rgb]
+        br.inputs['Color1'].default_value = (*[v * 1.03 for v in lin], 1)
+        br.inputs['Color2'].default_value = (*[v * 0.95 for v in lin], 1)
+        br.inputs['Mortar'].default_value = (*[v * 0.62 for v in lin], 1)
+        L.new(tc.outputs['Object'], br.inputs['Vector'])
+        col = br.outputs['Color']
+    grain = []
+    for scale, amp, detail in ((26.0, spec['fine'], 8.0), (2.4, spec['broad'], 3.0)):
+        nz = N.new('ShaderNodeTexNoise')
+        nz.inputs['Scale'].default_value = scale
+        nz.inputs['Detail'].default_value = detail
+        L.new(tc.outputs['Object'], nz.inputs['Vector'])
+        mr = N.new('ShaderNodeMapRange')
+        mr.inputs['To Min'].default_value = 1 - amp
+        mr.inputs['To Max'].default_value = 1 + amp
+        mr.inputs['From Min'].default_value = 0.3
+        mr.inputs['From Max'].default_value = 0.7
+        L.new(nz.outputs['Fac'], mr.inputs['Value'])
+        grain.append(mr.outputs[0])
+    if kind in ('terre', 'sable', 'beton', 'bitume'):
+        # Dust patches (lighter, drier) and small pebbles / grit (darker dots): the ground of a real place, not a stage.
+        dz = N.new('ShaderNodeTexNoise')
+        dz.inputs['Scale'].default_value = 5.5
+        dz.inputs['Detail'].default_value = 4.0
+        L.new(tc.outputs['Object'], dz.inputs['Vector'])
+        dm = N.new('ShaderNodeMapRange')
+        dm.inputs['From Min'].default_value = 0.52
+        dm.inputs['From Max'].default_value = 0.68
+        dm.inputs['To Min'].default_value = 1.0
+        dm.inputs['To Max'].default_value = 1.16
+        L.new(dz.outputs['Fac'], dm.inputs['Value'])
+        grain.append(dm.outputs[0])
+        vo = N.new('ShaderNodeTexVoronoi')
+        vo.inputs['Scale'].default_value = 34.0
+        L.new(tc.outputs['Object'], vo.inputs['Vector'])
+        pm = N.new('ShaderNodeMapRange')
+        pm.inputs['From Min'].default_value = 0.0
+        pm.inputs['From Max'].default_value = 0.09
+        pm.inputs['To Min'].default_value = 0.72
+        pm.inputs['To Max'].default_value = 1.0
+        L.new(vo.outputs['Distance'], pm.inputs['Value'])
+        grain.append(pm.outputs[0])
+    sep = N.new('ShaderNodeSeparateXYZ')
+    L.new(tc.outputs['Object'], sep.inputs[0])
+    shade = N.new('ShaderNodeMapRange')  # shade at the foot of the painted set (the stall, the sofa)
+    shade.inputs['From Min'].default_value = yp - 0.45
+    shade.inputs['From Max'].default_value = yp
+    shade.inputs['To Min'].default_value = 1.0
+    shade.inputs['To Max'].default_value = 0.58
+    shade.interpolation_type = 'SMOOTHSTEP'
+    L.new(sep.outputs['Y'], shade.inputs['Value'])
+    acc = shade.outputs[0]
+    for gsock in grain:
+        mm = N.new('ShaderNodeMath')
+        mm.operation = 'MULTIPLY'
+        L.new(acc, mm.inputs[0])
+        L.new(gsock, mm.inputs[1])
+        acc = mm.outputs[0]
+    f2 = mm
+    mul = N.new('ShaderNodeMix')
+    mul.data_type = 'RGBA'
+    mul.blend_type = 'MULTIPLY'
+    mul.inputs['Factor'].default_value = 1.0
+    L.new(col, mul.inputs['A'])
+    cmb = N.new('ShaderNodeCombineColor')
+    for i in range(3):
+        L.new(f2.outputs[0], cmb.inputs[i])
+    L.new(cmb.outputs[0], mul.inputs['B'])
+    tint = N.new('ShaderNodeMix')  # the light of the set (time of day), shared with the painting by the living world
+    tint.data_type = 'RGBA'
+    tint.blend_type = 'MULTIPLY'
+    tint.name = 'tint'
+    tint.inputs['Factor'].default_value = 1.0
+    tint.inputs['B'].default_value = (1, 1, 1, 1)
+    L.new(mul.outputs['Result'], tint.inputs['A'])
+    em = N.new('ShaderNodeEmission')
+    L.new(tint.outputs['Result'], em.inputs['Color'])
+    L.new(em.outputs[0], out.inputs['Surface'])
+    return m
+
+
+def build_forestage(bounds, place, xs_feet):
+    """The law of the walkable floor for the actors: when the painting does not show floor where they stand (nearly all
+    the troupe's sets — the bottom of the picture is a stall, a sofa, a desk), the engine builds the floor in front of
+    the painted set (« avant-scène »), and the foot of the set where the painting stops above the ground."""
+    import ground
+    g = bounds['grid']
+    share = ground.feet_zone(g, xs_feet) if g.get('fl') is not None else 0.0
+    if share >= 0.8:
+        g['stage'] = None
+        print(f'[sol] les pieds des acteurs sont sur le sol peint ({100 * share:.0f} % de la zone) : pas d’avant-scène', flush=True)
+        return None
+    kind = ground.floor_kind(place)
+    rgb, src = ground.floor_colour(kind, g['px'], g.get('walk'))
+    Wm = bounds['x1'] - bounds['x0']
+    x0, x1 = bounds['x0'] - 0.6 * Wm, bounds['x1'] + 0.6 * Wm
+    C0 = g['C0']
+    y0, y1 = C0[1] + 0.25, g['Yp'] - 0.002
+    fl_ob = mesh_object('avant-scene', [(x0, y0, 0), (x1, y0, 0), (x1, y1, 0), (x0, y1, 0)], [(0, 1, 2, 3)], [(0, 0), (1, 0), (1, 1), (0, 1)],
+                        forestage_material(kind, rgb, g['Yp']))
+    fl_ob['shell'] = True  # the ground itself (things rest ON it)
+    zb = bounds['z0']
+    if zb > 0.0:
+        # The painting stops above the ground at its own plane: its lowest rows continue down to the floor, in the shade
+        # (the base of the produce piles, of the furniture) — the colours of the painting, not a black band.
+        px = g['px']
+        rows = max(4, int(px.shape[0] * 0.04))
+        strip = px[-rows:][::-1]  # mirrored: the base of what is painted just above
+        Hs = max(8, rows)
+        grad = np.linspace(0.62, 0.30, Hs)[:, None, None]  # darker toward the ground (occlusion)
+        tex = np.clip(strip[np.linspace(0, rows - 1, Hs).astype(int)] * grad, 0, 1)
+        img = bpy.data.images.new('pied-du-decor', tex.shape[1], tex.shape[0], alpha=False)
+        img.pixels.foreach_set(np.dstack([tex, np.ones(tex.shape[:2])])[::-1].astype(np.float32).ravel())
+        mp, _ = emissive_material('pied-du-decor', img, alpha=False)
+        yb = g['Yp'] - 0.004
+        # UVs: the strip spans exactly the painting's width (x0 … x1 of the painting), mirrored beyond like the set.
+        P0, P1 = bounds['x0'], bounds['x1']
+        u = lambda x: (x - P0) / (P1 - P0)
+        pd_ = mesh_object('pied-du-decor', [(x0, yb, 0), (x1, yb, 0), (x1, yb, zb + 0.006), (x0, yb, zb + 0.006)], [(0, 1, 2, 3)],
+                          [(u(x0), 0), (u(x1), 0), (u(x1), 1), (u(x0), 1)], mp)
+        pd_['shell'] = True
+        mp.node_tree.nodes['Image Texture'].extension = 'MIRROR'
+    g['stage'] = {'x0': x0, 'x1': x1, 'y0': y0, 'y1': y1, 'z_top': max(0.0, zb), 'kind': kind, 'rgb': rgb, 'source': src}
+    print(f"[sol] avant-scène 3D « {kind} » devant le décor (le décor montre du sol sous {100 * share:.0f} % de la zone des pieds) ; "
+          f"couleur {'du sol peint' if src == 'peint' else 'du type de lieu, à la lumière de la peinture'}"
+          + (f' ; pied du décor sur {100 * zb:.0f} cm' if zb > 0 else ''), flush=True)
+    return g['stage']
+
+
+def shadow_group():
+    """Geometry Nodes: lays any standing geometry on the floor along the light — computed in WORLD space, so a hop
+    leaves the shadow on the ground (offset by the height of the jump) and a squash never lifts it."""
+    ng = bpy.data.node_groups.get('ombre-portee')
+    if ng:
+        return ng
+    ng = bpy.data.node_groups.new('ombre-portee', 'GeometryNodeTree')
+    ng.interface.new_socket('Geometry', in_out='INPUT', socket_type='NodeSocketGeometry')
+    for nm in ('dx', 'dy', 'sol'):
+        ng.interface.new_socket(nm, in_out='INPUT', socket_type='NodeSocketFloat')
+    ng.interface.new_socket('Geometry', in_out='OUTPUT', socket_type='NodeSocketGeometry')
+    N, L = ng.nodes, ng.links
+    gi, go = N.new('NodeGroupInput'), N.new('NodeGroupOutput')
+    so = N.new('GeometryNodeSelfObject')
+    oi = N.new('GeometryNodeObjectInfo')
+    oi.transform_space = 'ORIGINAL'
+    L.new(so.outputs[0], oi.inputs['Object'])
+    pos = N.new('GeometryNodeInputPosition')
+    tp = N.new('FunctionNodeTransformPoint')
+    L.new(pos.outputs[0], tp.inputs[0])
+    L.new(oi.outputs['Transform'], tp.inputs[1])
+    sep = N.new('ShaderNodeSeparateXYZ')
+    L.new(tp.outputs[0], sep.inputs[0])
+    sub = N.new('ShaderNodeMath')
+    sub.operation = 'SUBTRACT'
+    L.new(sep.outputs['Z'], sub.inputs[0])
+    L.new(gi.outputs['sol'], sub.inputs[1])
+    h = N.new('ShaderNodeMath')
+    h.operation = 'MAXIMUM'
+    L.new(sub.outputs[0], h.inputs[0])
+    h.inputs[1].default_value = 0.0
+    nx = N.new('ShaderNodeMath')
+    nx.operation = 'MULTIPLY_ADD'
+    L.new(h.outputs[0], nx.inputs[0])
+    L.new(gi.outputs['dx'], nx.inputs[1])
+    L.new(sep.outputs['X'], nx.inputs[2])
+    ny = N.new('ShaderNodeMath')
+    ny.operation = 'MULTIPLY_ADD'
+    L.new(h.outputs[0], ny.inputs[0])
+    L.new(gi.outputs['dy'], ny.inputs[1])
+    L.new(sep.outputs['Y'], ny.inputs[2])
+    nz = N.new('ShaderNodeMath')
+    nz.operation = 'ADD'
+    L.new(gi.outputs['sol'], nz.inputs[0])
+    nz.inputs[1].default_value = 0.004
+    cb = N.new('ShaderNodeCombineXYZ')
+    for i, s in enumerate((nx, ny, nz)):
+        L.new(s.outputs[0], cb.inputs[i])
+    inv = N.new('FunctionNodeInvertMatrix')
+    L.new(oi.outputs['Transform'], inv.inputs[0])
+    tp2 = N.new('FunctionNodeTransformPoint')
+    L.new(cb.outputs[0], tp2.inputs[0])
+    L.new(inv.outputs[0], tp2.inputs[1])
+    stn = N.new('GeometryNodeStoreNamedAttribute')
+    stn.data_type = 'FLOAT'
+    stn.domain = 'POINT'
+    L.new(gi.outputs['Geometry'], stn.inputs['Geometry'])
+    stn.inputs['Name'].default_value = 'hauteur'
+    L.new(h.outputs[0], stn.inputs['Value'])
+    sp = N.new('GeometryNodeSetPosition')
+    L.new(stn.outputs[0], sp.inputs['Geometry'])
+    L.new(tp2.outputs[0], sp.inputs['Position'])
+    L.new(sp.outputs[0], go.inputs[0])
+    return ng
+
+
+def cast_shadow_material(name, px, height, light):
+    """The shadow of a drawn figure: its own silhouette (alpha), softened (penumbra), darker at the feet and fading
+    along its length; stronger under a lateral sun than under a frontal / diffuse light."""
+    from world import gauss_blur
+    a = px[..., 3]
+    step = max(1, a.shape[0] // 256)
+    small = np.ascontiguousarray(a[::step, ::step])
+    soft = gauss_blur(small[..., None], max(1.5, small.shape[0] * 0.012))[..., 0]
+    h, w = soft.shape
+    img = bpy.data.images.new(f'ombre-{name}', w, h, alpha=True)
+    rgba = np.zeros((h, w, 4), np.float32)
+    rgba[..., 3] = soft
+    img.pixels.foreach_set(rgba[::-1].ravel())
+    img.colorspace_settings.name = 'Non-Color'
+    m = bpy.data.materials.new(f'ombre-{name}')
+    m.use_nodes = True
+    nt = m.node_tree
+    for n in list(nt.nodes):
+        nt.nodes.remove(n)
+    N, L = nt.nodes, nt.links
+    out = N.new('ShaderNodeOutputMaterial')
+    tex = N.new('ShaderNodeTexImage')
+    tex.image = img
+    tex.extension = 'CLIP'
+    at = N.new('ShaderNodeAttribute')
+    at.attribute_name = 'hauteur'
+    fade = N.new('ShaderNodeMapRange')
+    fade.inputs['From Min'].default_value = 0.0
+    fade.inputs['From Max'].default_value = max(0.3, height)
+    lateral = light.get('mode') == 'laterale'
+    fade.inputs['To Min'].default_value = 0.62 if lateral else 0.46
+    fade.inputs['To Max'].default_value = 0.18 if lateral else 0.06
+    L.new(at.outputs['Fac'], fade.inputs['Value'])
+    mul = N.new('ShaderNodeMath')
+    mul.operation = 'MULTIPLY'
+    L.new(tex.outputs['Alpha'], mul.inputs[0])
+    L.new(fade.outputs[0], mul.inputs[1])
+    tr = N.new('ShaderNodeBsdfTransparent')
+    em = N.new('ShaderNodeEmission')
+    em.inputs['Color'].default_value = (0.018, 0.013, 0.010, 1)
+    mix = N.new('ShaderNodeMixShader')
+    L.new(mul.outputs[0], mix.inputs['Fac'])
+    L.new(tr.outputs[0], mix.inputs[1])
+    L.new(em.outputs[0], mix.inputs[2])
+    L.new(mix.outputs[0], out.inputs['Surface'])
+    for attr, v in (('blend_method', 'BLEND'), ('surface_render_method', 'BLENDED')):
+        try:
+            setattr(m, attr, v)
+        except Exception:
+            pass
+    return m
+
+
+def attach_shadow(src, name, mat, vec, parent=None, armature=None):
+    """A linked duplicate of `src` (same mesh, same shape keys, same armature deformation) laid on the floor."""
+    sh = bpy.data.objects.new(name, src.data)
+    bpy.context.scene.collection.objects.link(sh)
+    sh.parent = parent if parent is not None else src.parent
+    sh.matrix_parent_inverse = src.matrix_parent_inverse.copy()
+    sh.location, sh.rotation_euler, sh.scale = src.location.copy(), src.rotation_euler.copy(), src.scale.copy()
+    if sh.material_slots:
+        sh.material_slots[0].link = 'OBJECT'
+        sh.material_slots[0].material = mat
+    else:
+        sh.data.materials.append(mat)
+    if armature is not None:
+        am = sh.modifiers.new('rig', 'ARMATURE')
+        am.object = armature
+    mod = sh.modifiers.new('ombre', 'NODES')
+    ng = shadow_group()
+    mod.node_group = ng
+    ids = {s.name: s.identifier for s in ng.interface.items_tree if getattr(s, 'in_out', '') == 'INPUT'}
+    mod[ids['dx']], mod[ids['dy']], mod[ids['sol']] = float(vec[0]), float(vec[1]), 0.0
+    sh['ombre_de'] = src.name
+    sh['shell'] = True  # a shadow is light, not matter: never a collision
+    return sh
+
+
+def actor_shadows(actors, g, rig_dir, rig):
+    """Every pose of every actor casts its own shadow (shown exactly when the pose is shown)."""
+    vec = g.get('shadow_vec', (0.0, 0.42))
+    n = 0
+    for aid, A in actors.items():
+        for kind, P in A['poses'].items():
+            pose = next(p for p in rig['cast'][A['plan']['name']]['poses'] if p['kind'] == kind)
+            _img, px = load_rgba(os.path.join(rig_dir, pose['png']))
+            mat = cast_shadow_material(f'{aid}-{kind}', px, P.top_z, g.get('light', {}))
+            sh = attach_shadow(P.ob, f'{aid}-ombre-{kind}', mat, vec, parent=P.arm, armature=P.arm)
+            prev = None
+            vis = getattr(P, 'vis', [])
+            for f in range(1, len(vis) - 1):
+                v = vis[f]
+                if v != prev:
+                    sh.hide_render = not v
+                    sh.keyframe_insert('hide_render', frame=f)
+                    prev = v
+            P.shadow = sh
+            n += 1
+    print(f"[ombres] {n} ombre(s) portée(s) d'acteurs, direction au sol ({vec[0]:+.2f}, {vec[1]:+.2f}) m par mètre de hauteur", flush=True)
+
+
 # ── acteurs ───────────────────────────────────────────────────────────────────────────────────────────────────────────
 class Pose:
     pass
@@ -463,6 +817,9 @@ def build_pose(actor, pose, k, rig_dir, scale, mirror, root):
     p.point = point
     p.width = (np.ptp(V[:, 0]) if len(V) else 0.5)
     p.xmin, p.xmax = (float(V[:, 0].min()), float(V[:, 0].max())) if len(V) else (-0.25, 0.25)
+    # Where the FEET are (the drawing's lowest 12 %): nothing is ever set down there (an object « through » a foot).
+    low = V[V[:, 2] < 0.12 * p.top_z] if len(V) else V
+    p.feet = (float(low[:, 0].min()), float(low[:, 0].max())) if len(low) else (-0.15, 0.15)
     return p
 
 
@@ -610,6 +967,7 @@ def main():
 
     dec = baked or rig['decors'][plan['decor']]
     decor, soft, bounds = build_decor(dec, (0.0, -2.4, 1.0))
+    analyse_ground(dec, bounds['grid'])
     actors = {}
     for i, ac in enumerate(plan['actors']):
         cast = rig['cast'][ac['name']]
@@ -626,18 +984,29 @@ def main():
             mirror = ac['mirror'] if ac.get('mirror') is not None else (look(pose) != want)
             poses[pose['kind']] = build_pose(ac, pose, k, rig_dir, scale, mirror, root)
             poses[pose['kind']].look = look(pose) * (-1 if mirror else 1)
-        # Contact shadow (a soft dark ellipse just behind the feet).
+        # Contact shadow: a soft dark ellipse LYING on the floor under the feet (the cast shadow comes later).
         wsh = poses['neutre'].width * 0.9
-        sh = mesh_object(f"{ac['id']}-shadow", [(-wsh / 2, 0, -0.04), (wsh / 2, 0, -0.04), (wsh / 2, 0, 0.07), (-wsh / 2, 0, 0.07)], [(0, 1, 2, 3)], [(0, 0), (1, 0), (1, 1), (0, 1)])
+        sh = mesh_object(f"{ac['id']}-shadow", [(-wsh / 2, -0.09, 0.002), (wsh / 2, -0.09, 0.002), (wsh / 2, 0.13, 0.002), (-wsh / 2, 0.13, 0.002)],
+                         [(0, 1, 2, 3)], [(0, 0), (1, 0), (1, 1), (0, 1)])
         m = shadow_material(f"{ac['id']}-shm")
         sh.data.materials.append(m)
         sh.parent = root
-        sh.location = (0, 0.03, 0)
+        sh['shell'] = True
         actors[ac['id']] = {'root': root, 'poses': poses, 'plan': ac, 'shadow': sh}
+        # Where the feet are over all poses (relative to the root): the physics control of the objects reads it.
+        root['pieds'] = (min(getattr(P, 'feet', (-0.15, 0.15))[0] for P in poses.values()), max(getattr(P, 'feet', (-0.15, 0.15))[1] for P in poses.values()))
 
     calibrate_stage(actors, bounds, plan['width'] / plan['height'])
     gestures = aim_points(actors, plan)
+    # The walkable-floor law for the actors: a 3D forestage when the painting shows no floor where they stand (a baked
+    # 3D place already has its real floor in the picture).
+    xs_ = [a['plan']['x'] for a in actors.values()]
+    if baked is None:
+        build_forestage(bounds, plan.get('decor') or (life or {}).get('place'), list(np.linspace(min(xs_) - 0.6, max(xs_) + 0.6, 15)))
+    else:
+        bounds['grid']['stage'] = None
     animate(plan, actors, fps)
+    actor_shadows(actors, bounds['grid'], rig_dir, rig)
     world_ = None
     if life:
         heights = {}
@@ -654,7 +1023,13 @@ def main():
         stage = {'cx': scx, 'hw0': side / 2, 'd': -C0_[1], 'cz': scz, 'hh0': frame_h / 2, 'camx': C0_[0], 'camz': C0_[2]}
         world_ = livingworld.build_life(life, {'stage': stage,'fps': fps, 'nF': plan['frames'], 'grid': g, 'shots': plan['shots'], 'tint': g.get('tint'), 'decor_strength': g.get('strength'), 'rig': rig, 'heights': heights,
                                       'actors': actors, 'mesh_object': mesh_object, 'flat_material': flat_material, 'emissive_material': emissive_material,
-                                      'load_rgba': load_rgba, 'key': key, 'shadow_material': shadow_material})
+                                      'load_rgba': load_rgba, 'key': key, 'shadow_material': shadow_material,
+                                      'attach_shadow': attach_shadow, 'cast_shadow_material': cast_shadow_material})
+    # The forestage takes the light of the set (time of day) like the painting.
+    if bounds['grid'].get('tint') is not None:
+        for m_ in bpy.data.materials:
+            if m_.name.startswith('sol-') and m_.node_tree and m_.node_tree.nodes.get('tint'):
+                m_.node_tree.nodes['tint'].inputs['B'].default_value = tuple(bounds['grid']['tint'].inputs['B'].default_value)
     shots_info = cameras(plan, actors, bounds, soft, fps)
     # Depth of field calibrated on the real cameras: the background stays legible (faces, expressions).
     image_qa = calibrate_softness(shots_info, plan, bounds, world_.softs if life else [])
@@ -830,6 +1205,12 @@ def max_two_width(bounds, asp, margin=0.04, lens=None):
     at the set plane Yp — stays INSIDE the painting (no mirrored edge, no black band)."""
     g = bounds['grid']
     wm, hm = bounds['x1'] - bounds['x0'], bounds['z1'] - bounds['z0']
+    if g.get('stage') and not lens:
+        # A 3D forestage covers everything below the painting: the wide shot shows the feet on the floor (FEET_MARGIN of
+        # the frame under them) and only the painting's TOP limits its height.
+        mpl_ = (g['Yp'] - g['C0'][1]) / -g['C0'][1]
+        z_feet = g['C0'][2] + (0.0 - g['C0'][2]) * mpl_
+        hm = (bounds['z1'] - z_feet) / (1 - FEET_MARGIN)
     if lens:  # a camera that dollies (the parallax of the relief eats the margin)
         return max(0.6, min(wm, hm * asp) * (1 - margin) - g['Yp'] / (lens / SENSOR))
     # From the painting's own viewpoint the frame scales linearly to the painting plane: no parallax margin.
@@ -1015,7 +1396,12 @@ def two_frame(here, bounds, asp, fmax=1.07):
     top = max(a['poses']['neutre'].top_z for a in here)
     side = min(max(xb - xa, 0.8), max_two_width(bounds, asp) / fmax)
     frame_h = side / asp
-    return (xa + xb) / 2, top + 0.07 - frame_h / 2, side, frame_h
+    cz = top + 0.07 - frame_h / 2
+    if bounds['grid'].get('stage'):
+        # Full shot on a real floor: the feet FEET_MARGIN above the bottom of the frame (never cut at the ankles or the
+        # calves), as long as the heads keep their headroom.
+        cz = max(cz, frame_h * (0.5 - FEET_MARGIN))
+    return (xa + xb) / 2, cz, side, frame_h
 
 
 def choose_two_lens(here, bounds, asp, fmax=1.07):
@@ -1107,11 +1493,12 @@ def cameras(plan, actors, bounds, soft, fps):
         for _ in range(80):
             fh = frame_h * tight
             hw, hh = fh * asp * fwide / 2 * mpl + drift * tight * mpl, fh * fwide / 2 * mpl
-            if 2 * hw > bounds['x1'] - bounds['x0'] - 0.01 or 2 * hh > bounds['z1'] - bounds['z0'] - 0.01:
+            zlo = -1e6 if g.get('stage') else bounds['z0']  # a 3D forestage covers what lies below the painting
+            if 2 * hw > bounds['x1'] - bounds['x0'] - 0.01 or 2 * hh > bounds['z1'] - zlo - 0.01:
                 tight *= 0.97
                 continue
             pcx = min(max(C0[0] + (cx0 - C0[0]) * mpl, bounds['x0'] + hw + 0.005), bounds['x1'] - hw - 0.005)
-            pcz = min(max(C0[2] + (cz0 - C0[2]) * mpl, bounds['z0'] + hh + 0.005), bounds['z1'] - hh - 0.005)
+            pcz = min(max(C0[2] + (cz0 - C0[2]) * mpl, zlo + hh + 0.005), bounds['z1'] - hh - 0.005)
             ncx, ncz = C0[0] + (pcx - C0[0]) / mpl, C0[2] + (pcz - C0[2]) / mpl
             if faces_ok(ncx, ncz, fh * ftight) or tight < 0.55:
                 cx, cz = ncx, ncz

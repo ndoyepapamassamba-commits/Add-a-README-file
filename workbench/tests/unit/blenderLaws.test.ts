@@ -128,3 +128,85 @@ print(json.dumps({'flatAplats': sf['aplats'], 'texAplats': st['aplats'], 'flatDe
     expect(r.flatOut).toBe(false);
   });
 });
+
+describe('Sol praticable et ombres (ground.py)', () => {
+  it('feet over the produce are refused; behind a stall with the head seen is natural occlusion; the forestage carries the actors', () => {
+    const r = py(`
+import json, numpy as np, ground as G
+# A painted set: a near stall (bright depth) on its lower half, a far wall above; no painted floor at all.
+dn = np.full((61, 81), 0.1); dn[30:, :] = 1.0
+g = {'C0': [0, -2.4, 1.0], 'Yp': 0.35, 'DEPTH': 2.4, 'x0': -2.0, 'Wm': 4.0, 'ztop': 2.4, 'mH': 2.3, 'EX': 0.35, 'EZ': 0.3, 'dn': dn,
+     'fl': np.zeros((61, 81), bool)}
+stage = {'x0': -4, 'x1': 4, 'y0': -2.1, 'y1': 0.348}
+behind = G.stance(g, 0.0, 1.3, 1.7)            # an adult behind the stall: legs hidden, head above it
+child = G.stance(g, 0.0, 1.3, 0.5)             # too small: swallowed whole
+front = G.stance(g, 0.0, 0.1, 1.7, stage)      # on the 3D forestage
+g2 = dict(g); g2['dn'] = np.full((61, 81), 0.05)  # a far wall everywhere, still no floor: feet seen over a wall
+vide = G.stance(g2, 0.0, 1.3, 1.7)
+g3 = dict(g2); g3['fl'] = np.ones((61, 81), bool)  # the same wall area recognised as painted floor
+peint = G.stance(g3, 0.0, 1.3, 1.7)
+print(json.dumps({'behind': [behind['pieds'], behind['tete'], G.legal(behind)], 'child': [child['pieds'], child['tete'], G.legal(child)],
+  'front': [front['pieds'], G.legal(front, animal=True)], 'vide': [vide['pieds'], G.legal(vide)], 'peint': [peint['pieds'], G.legal(peint, animal=True)],
+  'henBehind': G.legal(behind, animal=True)}))`);
+    if (!r) return;
+    expect(r.behind).toEqual(['cache', true, true]);
+    expect(r.child).toEqual(['cache', false, false]);
+    expect(r.front).toEqual(['avant-scene', true]);
+    expect(r.vide).toEqual(['vide', false]);
+    expect(r.peint).toEqual(['sol-peint', true]);
+    expect(r.henBehind).toBe(false); // an animal must be SEEN on a floor
+  });
+
+  it('a lateral light needs agreeing painted people; shadows fall away from the light; the floor kind follows the place', () => {
+    const r = py(`
+import json, numpy as np, ground as G
+H, W = 200, 400
+rgb = np.full((H, W, 3), 0.5); lab = np.zeros((H, W), np.uint8)
+for k in range(4):  # four painted people lit from the right (their right third brighter)
+    x0 = 40 + 90 * k
+    lab[60:180, x0:x0 + 40] = G.PERSON
+    rgb[60:180, x0:x0 + 13] = 0.35; rgb[60:180, x0 + 27:x0 + 40] = 0.75
+lat = G.scene_light(rgb, lab)
+one = G.scene_light(rgb, np.where(np.arange(W)[None, :] < 90, lab, 0))
+dx, dy = G.shadow_vector(lat['sign'], lat['strength'])
+quad = G.shadow_quad(-0.2, 0.2, 0.0, 1.7, 0.0, (dx, dy))
+print(json.dumps({'lat': lat['mode'], 'sign': lat['sign'], 'one': one['mode'], 'dx': dx, 'dy': dy, 'feet': quad[0][:2], 'head': quad[2][:2],
+  'kinds': [G.floor_kind(p) for p in ('Marché', 'Salon', 'Taxi', 'Plage', 'Tribunal')]}))`);
+    if (!r) return;
+    expect(r.lat).toBe('laterale');
+    expect(r.sign).toBe(1);
+    expect(r.one).toBe('frontale'); // one figure is not evidence
+    expect(r.dx as number).toBeLessThan(0); // light from the right: the shadow goes left
+    expect(r.dy as number).toBeGreaterThan(0); // and toward the back of the set
+    expect(r.feet).toEqual([-0.2, 0]); // the shadow starts at the feet
+    expect((r.head as number[])[0]).toBeLessThan(0.2);
+    expect(r.kinds).toEqual(['terre', 'carrelage', 'bitume', 'sable', 'parquet']);
+  });
+});
+
+describe('Geste et récit (gesture.py)', () => {
+  it('a drawn pointing arm that misses the partner is replayed by the closest pose, and a line that relied on it names the target', () => {
+    const r = py(`
+import json, os, tempfile, numpy as np, gesture as G
+from PIL import Image
+d = tempfile.mkdtemp()
+def drawing(name):
+    a = np.zeros((400, 200, 4), np.uint8); a[40:395, 60:140] = 255; Image.fromarray(a).save(os.path.join(d, name)); return name
+body = {'shL': [80, 110, 1], 'shR': [120, 110, 1], 'elR': [150, 90, 1], 'wrR': [185, 40, 1], 'hipL': [85, 220, 1], 'hipR': [115, 220, 1],
+        'anL': [90, 395, 1], 'anR': [110, 395, 1]}
+face = {'nose': [108, 70], 'eyes': [{'c': [95, 62]}, {'c': [115, 62]}], 'chin': [100, 95]}
+poses = [{'kind': k, 'png': drawing(k + '.png'), 'h': 400, 'body': body, 'face': face} for k in ('neutre', 'accuse', 'haussement')]
+rig = {'cast': {'AMI': {'poses': poses}, 'VOISINE': {'poses': poses}}}
+story = {'cast': [{'id': 'ami', 'name': 'AMI'}, {'id': 'voisine', 'name': 'VOISINE'}],
+         'beats': [{'who': 'ami', 'pose': 'accuse', 'text': 'Toi, là ! Rends-moi mes tomates.'}, {'who': 'voisine', 'pose': 'neutre', 'text': 'Quelles tomates ?'}]}
+out = G.adapt_story(story, rig, d, {'AMI': 1.7, 'VOISINE': 1.6})
+print(json.dumps({'n': len(out), 'pose': story['beats'][0]['pose'], 'text': story['beats'][0]['text'], 'note': bool(story['beats'][0].get('adaptation')),
+  'aim': G.pointing_ok({'point': {'E': (0.1, 1.2), 'T': (0.5, 1.4)}}, -0.4, (0.0, 1.5), 0.4)[0]}))`);
+    if (!r) return;
+    expect(r.n).toBe(1);
+    expect(r.pose).toBe('haussement'); // an accusation the drawing cannot aim becomes indignation
+    expect(r.text).toMatch(/^Toi, là, Voisine !/); // the words that pointed now name the person
+    expect(r.note).toBe(true);
+    expect(r.aim).toBe(true); // a line elbow → fingertip that meets the partner's face is accepted
+  });
+});

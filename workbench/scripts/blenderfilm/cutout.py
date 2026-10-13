@@ -428,7 +428,10 @@ def main():
         rig = sum(1 for f in figs if f['face'])
         print(f"[cutout] {g['file']}: {len(figs)} figures, {rig} visages mesurés, {added} nouveaux personnages", flush=True)
     print(f"[cutout] troupe : {len(cast)} personnages", flush=True)
-    decors = {d['name']: {'image': os.path.abspath(os.path.join(a.troupe, d['hd'])), 'depth': os.path.abspath(os.path.join(a.troupe, d['depth'])), 'fit': d['fit']} for d in man.get('decors', []) if d.get('hd')}
+    decors = {d['name']: {'image': os.path.abspath(os.path.join(a.troupe, d['hd'])), 'depth': os.path.abspath(os.path.join(a.troupe, d['depth'])), 'fit': d['fit'],
+                          # scene parse (ADE20K labels) and walkable mask — the « sol praticable » law (ground.py)
+                          **{k: os.path.abspath(os.path.join(a.troupe, d[k])) for k in ('seg', 'floor') if d.get(k)}}
+              for d in man.get('decors', []) if d.get('hd')}
     json.dump({'cast': cast, 'decors': decors, 'dir': os.path.abspath(a.out)}, open(os.path.join(a.out, 'rig.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1, default=lambda o: o.item() if hasattr(o, 'item') else str(o))
     print(f"[cutout] rig → {os.path.join(a.out, 'rig.json')}")
 

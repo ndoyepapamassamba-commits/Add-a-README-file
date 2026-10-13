@@ -135,11 +135,13 @@ def face_conflict(face, actor_faces, r, far, size=1.0, bodies=(), frame=None):
     return ''
 
 
-def layout(people, fixed, x_range, min_depth, lanes_step=0.35, proj=None, frame_half=None):
+def layout(people, fixed, x_range, min_depth, lanes_step=0.35, proj=None, frame_half=None, stand=None, report=None):
     """Places the static extras so that the laws hold — groups that talk at conversation distance facing each other,
     nobody on top of anybody on the same plane, nobody inside the personal zone of the actors' conversation.
     people: [{'id','w','x','y','group','talk'}] (x, y metres; y = depth behind the actors); fixed: the actors
-    [{'x','y','w'}]; x_range(y) → (xmin, xmax) visible at that depth. Returns {id: (x, y, face)} — face +1 looks right."""
+    [{'x','y','w'}]; x_range(y) → (xmin, xmax) visible at that depth; stand(x, y, height) → the walkable-floor law
+    (ground.py: feet on a floor, or hidden behind the set with the head in view). Returns {id: (x, y, face)} — face +1
+    looks right."""
     out = {}
     placed = [dict(p) for p in fixed]
     groups = {}
@@ -185,7 +187,7 @@ def layout(people, fixed, x_range, min_depth, lanes_step=0.35, proj=None, frame_
             gaps.append((ph, sc, af, HEAD / (2 * v['hh']), bodies, frame, allf))
         talk = len(members) > 1 and any(p.get('talk') for p in members)
         best, best_score = None, None
-        for tries in range(4):
+        for tries in range(10 if stand is not None else 4):
             lo, hi = x_range(y)
             span = (offs[-1] - offs[0]) / 2 + CORE * max(p['w'] for p in members)
             for k, offs in ((k, v) for k in range(0, 120) for v in variants):
@@ -203,6 +205,8 @@ def layout(people, fixed, x_range, min_depth, lanes_step=0.35, proj=None, frame_
                         break
                 if not ok:
                     continue
+                if stand is not None and not all(stand(xc + o, y, p.get('h', 1.7)) for p, o in zip(members, offs)):
+                    continue  # standing on the produce, on a table… — or swallowed whole by the set
                 # A conversation is seen whole or hidden whole — never one face visible and the other behind an actor.
                 split, hsum, eye = False, 0.0, False
                 for v, pj, oc, gp in zip(views, pjs, occs, gaps):
@@ -245,6 +249,10 @@ def layout(people, fixed, x_range, min_depth, lanes_step=0.35, proj=None, frame_
             y += lanes_step  # no clean room on this plane: one step further back
         xc, y = best or (x0, y + lanes_step)
         offs = best_offs if best else variants[0]
+        if report is not None:
+            # The laws the best place still breaks (None = no legal place at all): the caller decides (an extra who
+            # cannot stand anywhere lawful is not shown).
+            report[g] = None if best is None else best_score
         if os.environ.get('MASSAMBA_DEBUG_LAYOUT'):
             print('[layout-best]', g, 'x', round(xc, 3), 'y', round(y, 2), 'score', round(best_score or -1, 2), flush=True)
         n = len(members)

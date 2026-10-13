@@ -18,6 +18,8 @@ import json, math, os, random, re, unicodedata
 import rules as genrules  # generation rules (hardened by the root-cause analysis of the conformity check)
 import casting  # who may stand in the background of a place, doing what its drawing shows
 import plausibility  # physics and human laws (proxemics, gravity, walking speeds, bodies never overlapping)
+import ground  # the walkable-floor law (painted floor, 3D forestage, natural occlusion) and the shadows
+import atelier  # objects and animals with a real shape, colour and physics (no primitives)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -260,8 +262,8 @@ def build_life(life, ctx):
     W.grade()
     W.extras()
     W.crowd()
+    W.props()  # before the animals: they keep clear of the props (no hen « on » a crate)
     W.animals()
-    W.props()
     W.fx()
     return W
 
@@ -277,11 +279,14 @@ class World:
         self.g = ctx['grid']
         self.rnd = random.Random(7)
         self.softs = []  # soft versions of the drawn cards (recalibrated against the cameras)
+        self.shadows = []  # projected shadows of the drawn cards (ground.py)
+        self.removed = []  # extras the walkable-floor law could not place (never shown standing on nothing)
         self.spots = []  # where the ground animals really stand at the first frame (spacing rule)
         # A baked set is already lit for its hour: no second grade on top of it.
         self.tint = GRADES['naturel'] if life.get('kit') is None else GRADES.get(life.get('grade', 'naturel'), (1, 1, 1))
         self.punch = int(round(life['punch'] * self.fps)) + 1 if life.get('punch') is not None else None
         self.objs = []
+        self.atelier = atelier.Atelier(bpy, light=self.g.get('light'), tint=self.tint)
 
     # Placement in the STAGE seen by the two-shot (the widest shot of the film): s = -1 / +1 are its left / right
     # edges at that depth, so what lives around the actors is in the picture, not somewhere in an 11 m wide set.
@@ -454,10 +459,78 @@ class World:
             ob['face_z'] = (foot - fy_p) * s
         return ob
 
-    def shadow(self, parent, width):
-        ob = self.c['mesh_object'](f'{parent.name}-sh', [(-width / 2, 0.02, -0.02), (width / 2, 0.02, -0.02), (width / 2, 0.02, 0.05), (-width / 2, 0.02, 0.05)], [(0, 1, 2, 3)], [(0, 0), (1, 0), (1, 1), (0, 1)], self.c['shadow_material']())
+    # ── assets forgés (scripts/asset-forge.py) : vrais animaux / objets repris dans le style de la troupe ────────────
+    def forged(self, kind):
+        """The forged asset of a species / object kind, if the forge made one: (png path, metadata) or None."""
+        base = os.environ.get('MASSAMBA_ASSETS') or os.path.expanduser('~/.cache/massamba-assets')
+        png, meta = os.path.join(base, kind, 'asset.png'), os.path.join(base, kind, 'asset.json')
+        if os.path.isfile(png) and os.path.isfile(meta):
+            try:
+                return png, json.load(open(meta, encoding='utf-8'))
+            except Exception:
+                return None
+        return None
+
+    def image_card(self, name, png, height):
+        """A forged asset as a drawn card standing on its feet (lowest opaque row at z = 0), at its REAL height, with a
+        soft version for the close-ups (calibrated like the extras) and its projected shadow."""
+        import numpy as np
+        img, px = self.c['load_rgba'](png)
+        h, w = px.shape[:2]
+        a = px[..., 3]
+        ys = np.nonzero(a.max(1) > 0.5)[0]
+        foot = ys.max() if len(ys) else h - 1
+        top = ys.min() if len(ys) else 0
+        s = height / max(1, foot - top)
+        x0, x1 = -w / 2 * s, w / 2 * s
+        z0, z1 = -(h - 1 - foot) * s, (foot + 1) * s
+        m = self.card_material(name, img, px)
+        ob = self.c['mesh_object'](f'carte-{name}', [(x0, 0, z0), (x1, 0, z0), (x1, 0, z1), (x0, 0, z1)], [(0, 1, 2, 3)],
+                                   [(0, 0), (1, 0), (1, 1), (0, 1)], m)
+        ob['atelier'] = True  # a real subject redrawn in the troupe's style (asset-forge) — the style control accepts it
+        self.softs[-1].update({'obj': ob, 'm_per_px': s})
+        ob['largeur'] = float(x1 - x0) * float((a.max(0) > 0.5).sum()) / max(1, w)
+        return ob, px
+
+    def shadow(self, parent, width, depth=None):
+        """Contact shadow LYING on the floor under the feet (a soft dark ellipse)."""
+        d = depth if depth is not None else 0.4 * width
+        ob = self.c['mesh_object'](f'{parent.name}-sh', [(-width / 2, -d / 2, 0.002), (width / 2, -d / 2, 0.002), (width / 2, d / 2, 0.002), (-width / 2, d / 2, 0.002)],
+                                   [(0, 1, 2, 3)], [(0, 0), (1, 0), (1, 1), (0, 1)], self.c['shadow_material']())
         ob.parent = parent
+        ob['shell'] = True  # a shadow is light, not matter
         return ob
+
+    # ── la loi du sol (ground.py) ──────────────────────────────────────────────────────────────────────────────────
+    def stance(self, x, y, height):
+        g = self.g
+        if g.get('dn') is None:
+            return {'pieds': 'sol-peint', 'tete': True}
+        return ground.stance(g, x, y, height, g.get('stage'))
+
+    def can_stand(self, x, y, height, animal=False, walking=False):
+        """Feet on a floor (painted or the forestage), or — a person — hidden behind something with the head in view.
+        Someone WALKING may pass wholly behind a post or an awning; what is never allowed is to be seen standing on
+        something that is not a floor (the produce, a table)."""
+        st = self.stance(x, y, height)
+        if walking and not animal:
+            return st['pieds'] != 'vide'
+        return ground.legal(st, animal)
+
+    def cast(self, card, name, height, px):
+        """The projected shadow of a drawn card on the floor, along the light of the set (ground.py, world space)."""
+        att, mat = self.c.get('attach_shadow'), self.c.get('cast_shadow_material')
+        if att is None or mat is None:
+            return None
+        sh = att(card, f'{card.name}-ombre', mat(card.name, px, height, self.g.get('light', {})), self.g.get('shadow_vec', (0.0, 0.42)), parent=card.parent)
+        self.shadows.append(sh)
+        return sh
+
+    def hide_key(self, root, frame, value):
+        """Hiding a parent does not hide its children in Blender: the card and its shadows are hidden with it."""
+        for ob in [root] + [c for c in root.children_recursive if c.type == 'MESH']:
+            ob.hide_render = value
+            ob.keyframe_insert('hide_render', frame=frame)
 
     def place_people(self, cards):
         """Laws before animation (plausibility.py): the extras stand outside the personal zone of the actors'
@@ -480,6 +553,7 @@ class World:
             gid = gkey if e['behavior'] in ('discute', 'file') else f'{gkey}-{i}'
             e['groupe'] = gid
             people.append({'id': i, 'w': cards[e['name']].dimensions.x, 'x': self.ground(e['u'], e['depth'])[0], 'y': e['depth'],
+                           'h': self.c['heights'].get(e['name'], 1.7),
                            'group': gid, 'talk': e['behavior'] == 'discute', 'fdx': abs(cards[e['name']].get('face_dx', 0.0)),
                            'fz': cards[e['name']].get('face_z', 0.88 * cards[e['name']].dimensions.z)})
         # Screen x in the wide shots, over their whole moves: push / pull (distance × 0.97–1.32), drift (± 2.5 % of the
@@ -488,13 +562,27 @@ class World:
         camx, camz = st.get('camx', st['cx']), st.get('camz', st['cz'])
         views = [{'camx': camx, 'camz': camz, 'cx': st['cx'] + dxc, 'cz': st['cz'], 'd': st['d'], 'half': st['hw0'] * kd / st['d'], 'hh': st['hh0'] * kd}
                  for kd in (0.97, 1.0, 1.07, 1.32) for dxc in (-0.05 - 0.05 * st['hh0'], 0.0, 0.05 + 0.05 * st['hh0'])]
-        pos = plausibility.layout(people, fixed, x_range, min_depth, proj=views)
+        rep_ = {}
+        pos = plausibility.layout(people, fixed, x_range, min_depth, proj=views, stand=self.can_stand, report=rep_)
         statics = []
         for i, (x, y, face) in pos.items():
             e = self.life['extras'][i]
             e['u'], e['depth'] = round(self.ground_u(x, y), 3), round(y, 2)
             if face is not None:
                 e['face'] = face
+            sc_ = rep_.get(e.get('groupe'))
+            if sc_ is not None and sc_ >= 4.0:
+                # Standing lawfully (feet on a floor or hidden) is only possible where the face would merge with an
+                # actor's or cut the conversation's eyeline: such an extra is not shown.
+                e['absent'] = True
+                self.removed.append(e['name'])
+                print(f"[sol] {e['name']} retiré : partout où ses pieds sont sur un sol (ou cachés), son visage se collerait à celui d'un acteur", flush=True)
+                continue
+            if not self.can_stand(x, y, self.c['heights'].get(e['name'], 1.7)):
+                e['absent'] = True
+                self.removed.append(e['name'])
+                print(f"[sol] {e['name']} retiré : aucun endroit du décor où ses pieds touchent le sol ou sont cachés (tête visible)", flush=True)
+                continue
             statics.append(y)
         # Depth bands: who stands (front), who passes (middle, a full « plane » away from who stands — a passer-by goes
         # visibly behind, never slides across someone at the same depth), the crowd (back, one body behind the passers).
@@ -502,7 +590,19 @@ class World:
         for e in self.life['extras']:
             if e['behavior'] == 'passe':
                 front = max(statics, default=min_depth - plausibility.SAME_PLANE) + plausibility.SAME_PLANE + 0.05
-                e['depth'] = plausibility.lane(max(e['depth'], front), lanes, lo=front)
+                hgt = self.c['heights'].get(e['name'], 1.7)
+                # The walkable-floor law over the WHOLE crossing: a lane where the feet are on a floor or hidden behind
+                # the stalls (head in view) from one side of the picture to the other.
+                ok_lane = lambda d: all(self.can_stand(self.ground(u_, d)[0], d, hgt, walking=True) for u_ in [k_ / 12 - 1.2 for k_ in range(29)])
+                d0 = plausibility.lane(max(e['depth'], front), lanes, lo=front)
+                cands = [d0] + [round(d0 + 0.15 * k_, 2) for k_ in range(1, 15)]
+                good = [d_ for d_ in cands if all(abs(d_ - t) >= 0.35 for t in lanes) and ok_lane(d_)]
+                if not good:
+                    e['absent'] = True
+                    self.removed.append(e['name'])
+                    print(f"[sol] passant {e['name']} retiré : aucun couloir où ses pieds touchent le sol ou restent cachés d'un bord à l'autre", flush=True)
+                    continue
+                e['depth'] = good[0]
                 lanes.append(e['depth'])
                 # A human pace: 0.9–1.3 m/s (a running child 1.4–2.0), the crossing lasts what the distance requires.
                 run = re.search(r'court|dribble|course', fold(e.get('activite', '')))
@@ -530,25 +630,32 @@ class World:
                 continue
             height = self.c['heights'].get(name, 1.7)
             card = cards[name]
+            if e.get('absent'):
+                card.hide_render = True
+                card.hide_viewport = True
+                continue
             root = self.bpy.data.objects.new(f'figurant-root-{name}', None)
             self.bpy.context.scene.collection.objects.link(root)
             card.parent = root
             self.shadow(root, height * 0.35)
+            sp = next((c for c in self.softs if c.get('obj') is card), None)
+            if sp is not None:
+                self.cast(card, name, height, sp['px'])
             ph = e.get('phase', 0)
             if e['behavior'] == 'passe':
                 # Crossing the set behind the actors, then gone; back the other way later.
-                root.hide_render = True
-                key(root, 'hide_render', 1, True)
+                self.hide_key(root, 1, True)
                 for t0, t1, d in e['passes']:
                     f0, f1 = int(t0 * self.fps) + 1, int(t1 * self.fps) + 1
                     ua, ub = (-1.45, 1.45) if d > 0 else (1.45, -1.45)
-                    key(root, 'hide_render', f0 - 1, True)
-                    key(root, 'hide_render', f0, False)
+                    self.hide_key(root, f0 - 1, True)
+                    self.hide_key(root, f0, False)
                     for f in range(f0, f1 + 1, 2):
                         q = (f - f0) / max(1, f1 - f0)
                         u = ua + (ub - ua) * q
                         x, y, z, _ = self.ground(u, e['depth'])
-                        (px, py, pz), s = self.visible(x, y, z + 0.0)
+                        # Never pulled onto the painted relief: a stall in front hides the legs (walkable-floor law).
+                        (px, py, pz), s = (x, y, z), 1.0
                         step = abs(math.sin((f / self.fps) * math.pi * 1.9 + ph))
                         # Feet stay on the ground: the walk bobs the body (stretch from the feet), it never lifts off.
                         root.location = (px, py, pz)
@@ -559,10 +666,10 @@ class World:
                         root.keyframe_insert('location', frame=f)
                         root.keyframe_insert('scale', frame=f)
                         root.keyframe_insert('rotation_euler', frame=f)
-                    key(root, 'hide_render', f1, True)
+                    self.hide_key(root, f1, True)
             else:
                 x, y, z, _ = self.ground(e['u'], e['depth'])
-                (px, py, pz), s = self.visible(x, y, z)
+                (px, py, pz), s = (x, y, z), 1.0  # where the law placed them (place_people) — no pull onto the relief
                 face = e.get('face', 1) * (-1 if self.facing(name) < 0 else 1)
                 root.location = (px, py, pz)
                 root.scale = (s * face, s, s)
@@ -688,143 +795,152 @@ class World:
         self.bpy.context.scene.collection.objects.link(ob)
         return ob
 
-    def make_poule(self, i, white=False):
-        root = self.empty(f'poule-{i}')
-        body = self.empty(f'poule-{i}-body')
-        body.parent = root
-        c = (245, 240, 230) if white else self.rnd.choice([(150, 75, 35), (190, 110, 50), (90, 55, 30)])
-        self.blob('pb', (0, 0, 0.17), (0.13, 0.1, 0.1), c, body)
-        self.cone('pt', (-0.12, 0, 0.24), 0.06, 0.12, c, body, rot=(0, math.radians(-40), 0))
-        head = self.empty(f'poule-{i}-head')
-        head.parent = body
-        head.location = (0.1, 0, 0.27)
-        self.blob('ph', (0.0, 0, 0.0), (0.055, 0.05, 0.06), c, head)
-        self.cone('pk', (0.06, 0, -0.005), 0.018, 0.04, (240, 170, 40), head, rot=(0, math.radians(90), 0))
-        self.blob('pc', (0.0, 0, 0.055), (0.025, 0.012, 0.03), (210, 30, 30), head)
-        self.blob('pe', (0.03, 0.035, 0.01), (0.008, 0.004, 0.008), (10, 10, 10), head, seg=6)
-        for dy in (-0.035, 0.035):
-            self.cyl('pl', (0.01, dy, 0.04), 0.008, 0.09, (240, 170, 40), root)
-        return root, body, head
-
     def make_chevre(self, i):
-        root = self.empty(f'chevre-{i}')
-        body = self.empty(f'chevre-{i}-body')
-        body.parent = root
-        c = self.rnd.choice([(235, 230, 220), (120, 80, 50), (60, 45, 35)])
-        self.blob('cb', (0, 0, 0.42), (0.3, 0.14, 0.15), c, body)
-        for dx in (-0.2, 0.2):
-            for dy in (-0.08, 0.08):
-                self.cyl('cl', (dx, dy, 0.17), 0.025, 0.34, c, root)
-        head = self.empty(f'chevre-{i}-head')
-        head.parent = body
-        head.location = (0.3, 0, 0.55)
-        self.blob('ch', (0.05, 0, 0), (0.1, 0.065, 0.07), c, head)
-        self.cone('cho', (0.0, 0.03, 0.08), 0.015, 0.12, (90, 80, 70), head, rot=(0, math.radians(-30), 0))
-        self.cone('cho2', (0.0, -0.03, 0.08), 0.015, 0.12, (90, 80, 70), head, rot=(0, math.radians(-30), 0))
-        self.blob('cbe', (0.1, 0, -0.07), (0.02, 0.015, 0.04), (200, 195, 185), head, seg=6)
-        return root, body, head
+        return self.atelier.quadrupede(f'chevre-{i}', 'chevre')
 
     def make_chat(self, i):
-        root = self.empty(f'chat-{i}')
-        body = self.empty(f'chat-{i}-body')
-        body.parent = root
-        c = self.rnd.choice([(200, 120, 50), (60, 60, 60), (150, 140, 130)])
-        self.blob('kb', (0, 0, 0.07), (0.17, 0.13, 0.08), c, body)
-        head = self.empty(f'chat-{i}-head')
-        head.parent = body
-        head.location = (0.15, 0, 0.1)
-        self.blob('kh', (0, 0, 0), (0.07, 0.065, 0.06), c, head)
-        self.cone('ke1', (0, 0.035, 0.06), 0.025, 0.05, c, head)
-        self.cone('ke2', (0, -0.035, 0.06), 0.025, 0.05, c, head)
-        tail = self.cyl('kt', (-0.17, 0, 0.05), 0.015, 0.22, c, body, rot=(0, math.radians(70), 0))
-        return root, body, head
+        return self.atelier.quadrupede(f'chat-{i}', 'chat')
 
     def make_chien(self, i):
-        root, body, head = self.make_chevre(i)
-        for ob in list(root.children_recursive):
-            if ob.name.startswith('cho') or ob.name.startswith('cbe'):
-                ob.hide_render = True
-        return root, body, head
+        return self.atelier.quadrupede(f'chien-{i}', 'chien')
 
     def make_oiseau(self, i):
-        root = self.empty(f'oiseau-{i}')
-        c = (35, 35, 40)
-        self.blob('ob', (0, 0, 0), (0.06, 0.02, 0.02), c, root, seg=8)
-        wl = self.c['mesh_object'](f'ow1-{i}', [(0, 0, 0), (-0.04, 0.16, 0.02), (0.05, 0.02, 0)], [(0, 1, 2)], None, self.mat(c))
-        wr = self.c['mesh_object'](f'ow2-{i}', [(0, 0, 0), (-0.04, -0.16, 0.02), (0.05, -0.02, 0)], [(0, 1, 2)], None, self.mat(c))
-        wl.parent = root
-        wr.parent = root
-        return root, wl, wr
+        return self.atelier.oiseau_vol(f'oiseau-{i}')
 
     def make_margouillat(self, i):
-        root = self.empty(f'margouillat-{i}')
-        body = self.empty(f'margouillat-{i}-body')
-        body.parent = root
-        self.blob('lb', (0, 0, 0), (0.08, 0.025, 0.02), (60, 70, 80), body, seg=8)
-        self.blob('lh', (0.08, 0, 0.0), (0.035, 0.022, 0.018), (240, 120, 30), body, seg=8)
-        self.cone('lt', (-0.12, 0, 0), 0.015, 0.12, (60, 70, 80), body, rot=(0, math.radians(-90), 0))
-        return root, body, None
+        return self.atelier.margouillat(f'margouillat-{i}')
+
+    def clear_of_actors(self, x, y, margin=0.12):
+        """Impenetrability: an animal on the actors' plane never stands inside an actor's body, nor behind / inside a
+        prop of the scene (a hen right behind a crate reads as standing ON the crate)."""
+        for A in self.c.get('actors', {}).values():
+            ax, ay = A['root'].location.x, A['root'].location.y
+            if abs(y - ay) < plausibility.SAME_PLANE and abs(x - ax) < plausibility.CORE * A['poses']['neutre'].width + margin:
+                return False
+        for px_, py_ in getattr(self, 'prop_spots', []):
+            if abs(y - py_) < 0.45 and abs(x - px_) < 0.38:
+                return False
+        return True
+
+    def animal_spot(self, u, depth, size=0.3):
+        """Where a ground animal may stand at the screen place u: on the 3D forestage when there is one (between the
+        actors and the painted set), else on the painted floor — searched in depth. Never on the produce, a table or a
+        sofa (walkable-floor law); never inside an actor. Returns (x, y) or None."""
+        st = self.g.get('stage')
+        cands = []
+        if st:
+            lo, hi = 0.10, st['y1'] - 0.06
+            cands = [min(max(depth, lo), hi)] + [lo + k * (hi - lo) / 6 for k in range(7)]
+        cands += [depth + 0.15 * k for k in range(20)]
+        for y in cands:
+            x = self.ground(u, y)[0]
+            if self.can_stand(x, y, size, animal=True) and self.clear_of_actors(x, y):
+                return x, y
+        return None
 
     def free_u(self, a, depth):
-        """The animal's starting point, moved sideways until it stands clear of the animals already placed — measured
-        where it REALLY stands (after the pull toward the camera on the painted relief, which can bring a far animal
-        onto a near one). Generation rule « animal_min_dist », hardened by the root-cause analysis."""
+        """The animal's starting point: on a floor it can be SEEN standing on, clear of the actors, and apart from the
+        animals already placed (generation rule « animal_min_dist »). None when the set has no such floor."""
         md = genrules.get('animal_min_dist')
-        u0, u = a['u'], a['u']
-        for k in range(40):
+        u0 = a['u']
+        spot = None
+        for k in range(60):
             u = u0 + 0.05 * ((k + 1) // 2) * (1 if k % 2 else -1)
-            x, y, z, _ = self.ground(u, depth)
-            (px, py, _pz), _s = self.visible(x, y, z)
-            if all(math.hypot(px - qx, py - qy) >= md for qx, qy in self.spots):
+            sp_ = self.animal_spot(u, depth)
+            if sp_ and all(math.hypot(sp_[0] - qx, sp_[1] - qy) >= md for qx, qy in self.spots):
+                spot = sp_
                 break
-        self.spots.append((px, py))
-        a['u'] = round(u, 3)
+        if spot is None:
+            a['absent'] = True
+            print(f"[sol] {a['species']} retiré(e) : aucun sol visible où le poser dans ce décor", flush=True)
+            return None
+        self.spots.append(spot)
+        a['u'], a['y'] = round(u, 3), round(spot[1], 3)
+        st_ = self.stance(spot[0], spot[1], 0.3)['pieds']
+        print(f"[sol] {a['species']} posé(e) à x={spot[0]:+.2f} m, profondeur {spot[1]:.2f} m, sur {'l’avant-scène' if st_ == 'avant-scene' else 'le sol peint'}"
+              f" (place à l’écran u={u:+.2f})", flush=True)
         return a['u']
+
+    def animal_shadow(self, root, length, height):
+        """Contact shadow under the animal and its cast shadow along the light (a soft ellipse laid on the floor)."""
+        self.shadow(root, length * 1.1, length * 0.55)
+        dx, dy = self.g.get('shadow_vec', (0.0, 0.42))
+        L = math.hypot(dx, dy) * height
+        ob = self.shadow(root, length + L, length * 0.5)
+        ob.name = f'{root.name}-ombre'
+        ob.location = (dx * height / 2, dy * height / 2, 0.001)
+        ob.rotation_euler = (0, 0, math.atan2(dy, dx) if L > 1e-3 else 0)
+        return ob
 
     def animals(self):
         key = self.c['key']
         for i, a in enumerate(self.life['animals']):
             sp, ph, sp_k = a['species'], a.get('phase', 0), a.get('speed', 1.0)
             if sp in ('poule', 'pigeon', 'canard'):
-                self.free_u(a, a['depth'])
-                root, body, head = self.make_poule(i, white=(sp == 'canard'))
-                if sp == 'pigeon':
-                    for ob in root.children_recursive:
-                        if ob.type == 'MESH' and ob.data.materials:
-                            ob.data.materials[0] = self.mat((130, 135, 145))
-                    root.scale = (0.7, 0.7, 0.7)
-                x, y, z, _ = self.ground(a['u'], a['depth'])
+                if self.free_u(a, a['depth']) is None:
+                    continue
+                fa = self.forged(sp)
+                if fa:
+                    # A REAL hen (free photo) redrawn in the troupe's style: a drawn card like the troupe, on its feet.
+                    root = self.empty(f'{sp}-{i}')
+                    card, px_ = self.image_card(f'{sp}-{i}', fa[0], fa[1].get('hauteur_m', 0.4))
+                    card.parent = root
+                    body, head = self.empty(f'{sp}-{i}-pivot'), card  # the card pecks by tipping on its feet
+                    body.parent = root
+                    self.cast(card, f'{sp}-{i}', fa[1].get('hauteur_m', 0.4), px_)
+                    root['atelier'] = sp
+                    root['forge'] = fa[1].get('provenance', {}).get('source', '')
+                elif sp == 'poule':
+                    root, body, head = self.atelier.poule(f'poule-{i}')  # a real hen: shape, plumage, comb, legs and toes
+                elif sp == 'canard':
+                    root, body, head = self.atelier.canard(f'canard-{i}')
+                else:
+                    root, body, head = self.atelier.pigeon(f'pigeon-{i}')
+                if fa:
+                    self.shadow(root, 0.3, 0.13)  # contact shadow (the cast shadow is the card's own silhouette)
+                else:
+                    self.animal_shadow(root, 0.3 if sp != 'pigeon' else 0.2, 0.3 if sp != 'pigeon' else 0.2)
                 u = a['u']
                 fled = False
                 for f in range(1, self.nF + 1, 2):
                     t = f / self.fps
                     # Pecks every 1–2 s, little steps in between; flees off-set (fast) after the punchline.
                     peck = max(0.0, math.sin(t * 2.6 * sp_k + ph)) ** 6
-                    u += 0.002 * a['dir'] * (1 if math.sin(t * 0.5 + ph) > 0 else -0.6)
+                    du = 0.002 * a['dir'] * (1 if math.sin(t * 0.5 + ph) > 0 else -0.6)
                     if self.punch and f >= self.punch and sp == 'poule':
-                        u += 0.05 * a['dir']
+                        du = 0.05 * a['dir']
                         fled = True
-                    x, y, z, _ = self.ground(u, a['depth'])
-                    (px, py, pz), s = self.visible(x, y, z)
+                    nx_ = self.ground(u + du, a['y'])[0]
+                    others = [q for j_, q in self.__dict__.setdefault('animal_now', {}).items() if j_ != i]
+                    free_ = all(math.hypot(nx_ - qx, a['y'] - qy) >= 0.32 for qx, qy in others)
+                    if self.can_stand(nx_, a['y'], 0.3, animal=True) and self.clear_of_actors(nx_, a['y']) and free_:
+                        u += du
+                    elif not fled:
+                        a['dir'] = -a['dir']  # the edge of the floor (or an actor's feet): it turns around
+                    (px, py, pz), s = (self.ground(u, a['y'])[0], a['y'], 0.0), 1.0
+                    self.animal_now[i] = (px, py)
                     root.location = (px, py, pz + (0.03 * abs(math.sin(t * 18)) if fled else 0))
-                    sc = 0.7 if sp == 'pigeon' else 1.0
-                    root.scale = (sc * s, sc * s, sc * s)
+                    root.scale = (s, s, s)  # built at its real size
                     root.rotation_euler = (0, 0, 0 if a['dir'] > 0 else math.pi)
                     body.rotation_euler = (0, math.radians(35) * peck, 0)
-                    head.rotation_euler = (0, math.radians(25) * peck, 0)
+                    head.rotation_euler = (0, math.radians(10 if fa else 25) * peck, 0)
                     for ob, path in ((root, 'location'), (root, 'scale'), (root, 'rotation_euler'), (body, 'rotation_euler'), (head, 'rotation_euler')):
                         ob.keyframe_insert(path, frame=f)
             elif sp in ('chevre', 'chien'):
-                root, body, head = self.make_chevre(i) if sp == 'chevre' else self.make_chien(i)
                 u = self.free_u(a, a['depth'] + 0.3)
+                if u is None:
+                    continue
+                root, body, head = self.make_chevre(i) if sp == 'chevre' else self.make_chien(i)
+                self.animal_shadow(root, 0.7 if sp == 'chevre' else 0.55, 0.6 if sp == 'chevre' else 0.45)
                 for f in range(1, self.nF + 1, 2):
                     t = f / self.fps
                     if sp == 'chien':
-                        u += 0.004 * a['dir']
-                        if u > 1.3 or u < -1.3:
+                        nx_ = self.ground(u + 0.004 * a['dir'], a['y'])[0]
+                        if u + 0.004 * a['dir'] > 1.3 or u + 0.004 * a['dir'] < -1.3 or not (self.can_stand(nx_, a['y'], 0.45, animal=True) and self.clear_of_actors(nx_, a['y'])):
                             a['dir'] = -a['dir']
-                    x, y, z, _ = self.ground(u, a['depth'] + 0.3)
-                    (px, py, pz), s = self.visible(x, y, z)
+                        else:
+                            u += 0.004 * a['dir']
+                    (px, py, pz), s = (self.ground(u, a['y'])[0], a['y'], 0.0), 1.0
                     graze = (math.sin(t * 0.8 + ph) + 1) / 2 if sp == 'chevre' else 0.15
                     bob = 0.02 * abs(math.sin(t * 9)) if sp == 'chien' else 0
                     root.location = (px, py, pz + bob * s)
@@ -836,10 +952,11 @@ class World:
                     for ob, path in ((root, 'location'), (root, 'scale'), (root, 'rotation_euler'), (head, 'rotation_euler')):
                         ob.keyframe_insert(path, frame=f)
             elif sp == 'chat':
+                if self.free_u(a, a['depth']) is None:
+                    continue
                 root, body, head = self.make_chat(i)
-                self.free_u(a, a['depth'])
-                x, y, z, _ = self.ground(a['u'], a['depth'])
-                (px, py, pz), s = self.visible(x, y, z)
+                self.animal_shadow(root, 0.4, 0.3)
+                (px, py, pz), s = (self.ground(a['u'], a['y'])[0], a['y'], 0.0), 1.0
                 root.location = (px, py, pz)
                 for f in range(1, self.nF + 1, 3):
                     t = f / self.fps
@@ -910,16 +1027,31 @@ class World:
             if name not in self.c['rig']['cast']:
                 continue
             height = self.c['heights'].get(name, 1.7)
+            lo = max(2.1, getattr(self, 'bands', {}).get('passants', 0) + plausibility.BODY_DEPTH + 0.1)
+            # A starting point where the walkable-floor law holds (feet on a floor, or behind a stall with the head seen).
+            start = None
+            for _ in range(60):
+                depth = rng.uniform(lo, lo + 1.2)
+                x0, _, _, _ = self.ground(-1.7, depth)
+                x1, _, _, _ = self.ground(1.7, depth)
+                xs_ = rng.uniform(x0, x1)
+                if self.can_stand(xs_, depth, height, walking=True):
+                    start = (xs_, depth, x0, x1)
+                    break
+            if start is None:
+                self.removed.append(name)
+                print(f'[sol] foule : {name} retiré(e), aucun endroit où marcher sur un sol visible ou caché par le décor', flush=True)
+                continue
             card = self.cutout(name, height)
             root = self.bpy.data.objects.new(f'foule-root-{name}', None)
             self.bpy.context.scene.collection.objects.link(root)
             card.parent = root
             self.shadow(root, height * 0.35)
-            lo = max(2.1, getattr(self, 'bands', {}).get('passants', 0) + plausibility.BODY_DEPTH + 0.1)
-            depth = rng.uniform(lo, lo + 1.2)
-            x0, _, _, _ = self.ground(-1.7, depth)
-            x1, _, _, _ = self.ground(1.7, depth)
-            ag.append({'root': root, 'name': name, 'x': rng.uniform(x0, x1), 'y': depth, 'ymin': lo - 0.05, 'ymax': lo + 1.3, 'dir': rng.choice([-1, 1]), 'speed': rng.uniform(0.9, 1.3),
+            sp_ = next((c for c in self.softs if c.get('obj') is card), None)
+            if sp_ is not None:
+                self.cast(card, name, height, sp_['px'])
+            xs_, depth, x0, x1 = start
+            ag.append({'root': root, 'name': name, 'h': height, 'x': xs_, 'y': depth, 'ymin': lo - 0.05, 'ymax': lo + 1.3, 'dir': rng.choice([-1, 1]), 'speed': rng.uniform(0.9, 1.3),
                        'stop': 0.0, 'phase': rng.uniform(0, 6.28), 'lo': x0 - 0.7, 'hi': x1 + 0.7})
             self.objs.append(root)
         for f in range(1, self.nF + 1):
@@ -940,8 +1072,18 @@ class World:
                         vy += dy / d * push
                         if a['dir'] != b['dir'] and rng.random() < 0.003:
                             a['stop'] = rng.uniform(1.2, 2.5)  # they know each other: a word in passing
-                a['x'] += vx * dt
-                a['y'] = min(a['ymax'], max(a['ymin'], a['y'] + vy * dt * 0.5))
+                nx_ = a['x'] + vx * dt
+                ny_ = min(a['ymax'], max(a['ymin'], a['y'] + vy * dt * 0.5))
+                if not self.can_stand(nx_, ny_, a['h'], walking=True):
+                    # No floor ahead (or the stall would swallow the head): step sideways in depth to the nearest place
+                    # where the law holds, else turn back — people walk where there is ground.
+                    alt = [ny_ + d for d in (0.05, -0.05, 0.1, -0.1, 0.2, -0.2) if a['ymin'] <= ny_ + d <= a['ymax'] and self.can_stand(nx_, ny_ + d, a['h'], walking=True)]
+                    if alt:
+                        ny_ = alt[0]
+                    else:
+                        a['dir'] = -a['dir']
+                        nx_, ny_ = a['x'], a['y']
+                a['x'], a['y'] = nx_, ny_
                 if a['x'] > a['hi']:
                     a['x'] = a['lo']
                 elif a['x'] < a['lo']:
@@ -950,7 +1092,7 @@ class World:
             if f % 2 == 1 or f == self.nF or in_hop:
                 for a in ag:
                     root = a['root']
-                    (px, py, pz), s = self.visible(a['x'], a['y'], 0.0)
+                    (px, py, pz), s = (a['x'], a['y'], 0.0), 1.0  # never pulled onto the painted relief
                     walking = a['stop'] <= 0
                     t = f * dt
                     step = abs(math.sin(t * math.pi * 1.9 * a['speed'] + a['phase'])) if walking else 0.0
@@ -966,91 +1108,60 @@ class World:
 
     # ── faune sauvage et autres espèces ────────────────────────────────────────────────────────────────────────────
     def make_singe(self, i):
-        root = self.empty(f'singe-{i}')
-        body = self.empty(f'singe-{i}-body')
-        body.parent = root
-        c = (110, 80, 55)
-        self.blob('mb', (0, 0, 0.32), (0.13, 0.11, 0.17), c, body)
-        head = self.empty(f'singe-{i}-head')
-        head.parent = body
-        head.location = (0.05, 0, 0.55)
-        self.blob('mh', (0, 0, 0), (0.09, 0.09, 0.085), c, head)
-        self.blob('mf', (0.06, 0, -0.01), (0.04, 0.06, 0.05), (210, 170, 140), head, seg=8)
-        for dy in (-0.09, 0.09):
-            self.blob('me', (0, dy, 0.02), (0.02, 0.025, 0.03), (210, 170, 140), head, seg=6)
-            self.cyl('ma', (0.02, dy * 1.4, 0.25), 0.025, 0.36, c, body, rot=(0, math.radians(-15), 0))
-            self.cyl('mlg', (0.0, dy, 0.1), 0.03, 0.22, c, body)
-        self.cyl('mt', (-0.18, 0, 0.35), 0.015, 0.45, c, body, rot=(0, math.radians(-40), 0))
-        return root, body, head
+        return self.atelier.singe(f'singe-{i}')
 
     def make_antilope(self, i):
-        root, body, head = self.make_chevre(i)
-        root.name = f'antilope-{i}'
-        for ob in root.children_recursive:
-            if ob.type == 'MESH' and ob.data.materials:
-                ob.data.materials[0] = self.mat((190, 130, 70))
-        body.scale = (1.25, 1.0, 1.15)
-        return root, body, head
+        return self.atelier.quadrupede(f'antilope-{i}', 'antilope')
 
     def make_vache(self, i):
-        root, body, head = self.make_chevre(i)
-        root.name = f'vache-{i}'
-        for ob in root.children_recursive:
-            if ob.type == 'MESH' and ob.data.materials:
-                ob.data.materials[0] = self.mat(self.rnd.choice([(240, 235, 228), (130, 80, 45), (60, 45, 35)]))
-        root.scale = (2.1, 2.1, 2.1)
-        return root, body, head
+        return self.atelier.quadrupede(f'vache-{i}', 'vache')  # a zebu, at its real size (no scaled-up goat)
 
     def make_papillon(self, i, glow=False):
-        root = self.empty(f'{"luciole" if glow else "papillon"}-{i}')
-        c = self.rnd.choice([(250, 160, 40), (60, 150, 240), (240, 80, 150), (250, 240, 120)]) if not glow else (255, 250, 150)
-        if glow:
-            self.blob('lg', (0, 0, 0), (0.015, 0.015, 0.015), c, root, seg=6)
-            return root, None, None
-        self.blob('pb', (0, 0, 0), (0.025, 0.006, 0.006), (40, 30, 30), root, seg=6)
-        wl = self.empty(f'papillon-{i}-wl')
-        wl.parent = root
-        wr = self.empty(f'papillon-{i}-wr')
-        wr.parent = root
-        self.blob('pwl', (0, 0.035, 0), (0.03, 0.035, 0.003), c, wl, seg=8)
-        self.blob('pwr', (0, -0.035, 0), (0.03, 0.035, 0.003), c, wr, seg=8)
-        return root, wl, wr
+        return self.atelier.papillon(f'{"luciole" if glow else "papillon"}-{i}', glow=glow)
 
     def wild(self, i, a):
         """Behaviours of the species added to the living world (wild animals, insects, cattle)."""
         sp, ph = a['species'], a.get('phase', 0)
         if sp == 'singe':
+            u = self.free_u(a, a['depth'] + 0.3)
+            if u is None:
+                return
             root, body, head = self.make_singe(i)
-            u = self.free_u(a, a['depth'])
+            self.animal_shadow(root, 0.35, 0.4)
             for f in range(1, self.nF + 1, 2):
                 t = f / self.fps
                 cyc = (t + ph * 2) % 5.0
                 hop = abs(math.sin(cyc * math.pi * 1.6)) * 0.12 if cyc < 1.2 else 0.0  # little hops, then sits scratching
                 if self.punch and 0 <= f - self.punch < self.fps:
                     hop = 0.35 * abs(math.sin((f - self.punch) / self.fps * math.pi))  # jumps with the punchline
-                u += 0.003 * a['dir'] if cyc < 1.2 else 0.0
-                x, y, z, _ = self.ground(u, a['depth'] + 0.3)
-                (px, py, pz), s = self.visible(x, y, z)
+                if cyc < 1.2:
+                    nx_ = self.ground(u + 0.003 * a['dir'], a['y'])[0]
+                    if self.can_stand(nx_, a['y'], 0.4, animal=True) and self.clear_of_actors(nx_, a['y']):
+                        u += 0.003 * a['dir']
+                    else:
+                        a['dir'] = -a['dir']
+                (px, py, pz), s = (self.ground(u, a['y'])[0], a['y'], 0.0), 1.0
                 root.location = (px, py, pz + hop * s)
                 root.scale = (s, s, s)
                 head.rotation_euler = (0, 0, math.radians(25) * math.sin(t * 1.3 + ph))
                 for ob, path in ((root, 'location'), (root, 'scale'), (head, 'rotation_euler')):
                     ob.keyframe_insert(path, frame=f)
         elif sp in ('antilope', 'vache'):
-            root, body, head = self.make_antilope(i) if sp == 'antilope' else self.make_vache(i)
             u = self.free_u(a, a['depth'] + 1.2)
+            if u is None:
+                return
+            root, body, head = self.make_antilope(i) if sp == 'antilope' else self.make_vache(i)
+            self.animal_shadow(root, 0.9 if sp == 'antilope' else 1.9, 0.9 if sp == 'antilope' else 1.4)
             fled = 0.0
             for f in range(1, self.nF + 1, 2):
                 t = f / self.fps
                 graze = (math.sin(t * 0.6 + ph) + 1) / 2
                 if sp == 'antilope' and self.punch and f >= self.punch:
                     fled = min(3.0, fled + 0.05)  # bounds away after the punchline
-                x, y, z, _ = self.ground(u + fled * a['dir'], a['depth'] + 1.2)
-                (px, py, pz), s = self.visible(x, y, z)
+                (px, py, pz), s = (self.ground(u + fled * a['dir'], a['y'])[0], a['y'], 0.0), 1.0
                 jump = 0.15 * abs(math.sin(t * 7)) if fled > 0 else 0.0
                 root.location = (px, py, pz + jump)
-                sc = s * (2.1 if sp == 'vache' else 1.0)
-                root.scale = (sc, sc, sc)
+                root.scale = (s, s, s)  # built at its real size
                 root.rotation_euler = (0, 0, 0 if a['dir'] > 0 else math.pi)
                 head.rotation_euler = (0, math.radians(60) * graze * (0 if fled else 1), 0)
                 for ob, path in ((root, 'location'), (root, 'scale'), (root, 'rotation_euler'), (head, 'rotation_euler')):
@@ -1077,99 +1188,90 @@ class World:
 
     # ── objets de l'action ─────────────────────────────────────────────────────────────────────────────────────────
     def prop_mesh(self, kind, i):
-        root = self.empty(f'prop-{kind}-{i}')
-        if kind in ('poulet', 'assiette'):
-            self.cyl('plate', (0, 0, 0.008), 0.13, 0.016, (245, 245, 240), root)
-            if kind == 'poulet':
-                for dx, dy, r in ((-0.03, 0.02, 0.0), (0.04, -0.02, 0.6), (0.0, 0.05, -0.5)):
-                    leg = self.blob('leg', (dx, dy, 0.04), (0.05, 0.03, 0.03), (165, 95, 40), root, seg=10)
-                    leg.rotation_euler = (0, 0, r)
-            else:
-                self.blob('food', (0, 0, 0.03), (0.09, 0.09, 0.03), (240, 230, 200), root, seg=10)
-                self.blob('fish', (0.03, 0.02, 0.05), (0.05, 0.025, 0.02), (200, 120, 60), root, seg=8)
-            return root, 0.0
-        if kind == 'ballon':
-            self.blob('ball', (0, 0, 0.11), (0.11, 0.11, 0.11), (240, 120, 30), root, seg=16)
-            return root, 0.0
-        if kind == 'orange':
-            self.blob('or', (0, 0, 0.04), (0.04, 0.04, 0.04), (250, 150, 20), root, seg=12)
-            return root, 0.0
-        if kind == 'bouteilles':
-            for dx in (-0.04, 0.04):
-                self.cyl('b', (dx, 0, 0.11), 0.03, 0.22, (40, 120, 60), root)
-                self.cyl('bn', (dx, 0, 0.25), 0.012, 0.07, (40, 120, 60), root)
-            return root, 0.0
-        if kind == 'valise':
-            bpy = self.bpy
-            bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, 0.25))
-            ob = bpy.context.active_object
-            ob.scale = (0.4, 0.18, 0.5)
-            ob.data.materials.append(self.mat((180, 40, 50)))
-            ob.parent = root
-            return root, 0.0
-        if kind == 'tomates':
-            self.cyl('basket', (0, 0, 0.06), 0.16, 0.12, (170, 120, 60), root)
-            for j in range(9):
-                ang = j * 2.1
-                r = 0.08 if j < 6 else 0.03
-                self.blob('t', (r * math.cos(ang), r * math.sin(ang), 0.14 + (0.05 if j >= 6 else 0)), (0.045, 0.045, 0.04), (215, 40, 30), root, seg=10)
-            return root, 0.0
-        if kind == 'billets':
-            for j in range(3):
-                bpy = self.bpy
-                bpy.ops.mesh.primitive_cube_add(size=1, location=(0.01 * j, 0, 0.01 + 0.012 * j))
-                ob = bpy.context.active_object
-                ob.scale = (0.15, 0.07, 0.01)
-                ob.data.materials.append(self.mat((120, 170, 120)))
-                ob.parent = root
-            return root, 0.0
-        if kind == 'gateau':
-            self.cyl('g1', (0, 0, 0.06), 0.14, 0.12, (250, 235, 240), root)
-            self.cyl('g2', (0, 0, 0.15), 0.1, 0.07, (240, 150, 180), root)
-            for j in range(3):
-                self.cyl('cand', (-0.04 + 0.04 * j, 0, 0.22), 0.006, 0.06, (80, 160, 230), root)
-                self.blob('flame', (-0.04 + 0.04 * j, 0, 0.26), (0.008, 0.008, 0.016), (255, 200, 60), root, seg=6)
-            return root, 0.0
-        if kind == 'papiers':
-            for j in range(4):
-                bpy = self.bpy
-                bpy.ops.mesh.primitive_cube_add(size=1, location=(0.005 * j, 0, 0.005 + 0.01 * j))
-                ob = bpy.context.active_object
-                ob.scale = (0.21, 0.15, 0.008)
-                ob.data.materials.append(self.mat((245, 245, 240)))
-                ob.parent = root
-            return root, 0.0
-        if kind == 'marmite':
-            self.cyl('pot', (0, 0, 0.12), 0.16, 0.24, (35, 35, 35), root)
-            self.cyl('lid', (0, 0, 0.25), 0.15, 0.02, (60, 60, 60), root)
-            return root, 0.0
-        return None, 0.0
+        """Every object of the action is built by the workshop (atelier.py): real shape, real size, troupe material."""
+        A, n = self.atelier, f'prop-{kind}-{i}'
+        build = {
+            'poulet': lambda: A.assiette(n, plat='poulet'), 'assiette': lambda: A.assiette(n, plat='attieke'),
+            'ballon': lambda: A.ballon(n), 'orange': lambda: A.orange(n), 'bouteilles': lambda: A.bouteilles(n),
+            'valise': lambda: A.valise(n), 'tomates': lambda: A.caisse_de_tomates(n, (0, 0, 0), None, tas=False),
+            'billets': lambda: A.billets(n), 'gateau': lambda: A.gateau(n), 'papiers': lambda: A.papiers(n),
+            'marmite': lambda: A.marmite(n),
+        }.get(kind)
+        return (build(), 0.0) if build else (None, 0.0)
+
+    def feet_bands(self, margin=0.07):
+        """The floor intervals (x) taken by the actors' FEET over all their poses (+ margin): no object is set there."""
+        bands = []
+        for A in self.c.get('actors', {}).values():
+            x = A['root'].location.x
+            lo = min(getattr(P, 'feet', (-0.15, 0.15))[0] for P in A['poses'].values())
+            hi = max(getattr(P, 'feet', (-0.15, 0.15))[1] for P in A['poses'].values())
+            bands.append((x + lo - margin, x + hi + margin))
+        return sorted(bands)
+
+    def free_spans(self, xlo, xhi, taken):
+        spans, cur = [], xlo
+        for a, b in sorted(taken):
+            if b <= cur:
+                continue
+            if a > cur:
+                spans.append((cur, min(a, xhi)))
+            cur = max(cur, b)
+            if cur >= xhi:
+                break
+        if cur < xhi:
+            spans.append((cur, xhi))
+        return [(a, b) for a, b in spans if b - a > 0.02]
 
     def props(self):
+        """The objects of the action, set down on the floor where they physically fit: never on an actor's feet, never
+        on another object, inside the wide shot when possible; what is set down adapts to the room there is (a crate
+        where a crate fits, else the vendor's sack with tomato pyramids, else one pyramid)."""
         actors = self.c['actors']
-        taken = []
+        st = self.c['stage']
+        y = 0.17
+        half = st['hw0'] * (st['d'] + y) / st['d']  # half-width of the wide shot at that depth
+        xlo, xhi = st['cx'] - half + 0.03, st['cx'] + half - 0.03
+        taken = list(self.feet_bands())
         for i, p in enumerate(self.life['props']):
-            ob, _ = self.prop_mesh(p['kind'], i)
-            if ob is None:
-                continue
             ac = actors.get(p['near'])
-            ax = ac['plan']['x'] if ac else 0.0
-            side = 1 if ax <= 0 else -1
-            # Props line up on the floor next to their actor, never on top of each other (whoever they belong to):
-            # the next free spot outward, alternating a little in depth.
-            x, y, k = ax + side * 0.36, 0.16, 0
-            sp = genrules.get('prop_spacing')
-            while any(abs(x - tx) < sp and abs(y - ty) < 0.2 for tx, ty in taken) and k < 16:
-                k += 1
-                x += side * 0.24
-                y = 0.16 + 0.07 * (k % 2)
-            taken.append((x, y))
+            ax = ac['root'].location.x if ac else 0.0
+            spans = self.free_spans(xlo, xhi, taken)
+            if not spans:
+                print(f"[objets] {p.get('nom', p['kind'])} non posé : aucune place libre au sol dans le plan large", flush=True)
+                continue
+            # The room next to its owner first.
+            span = min(spans, key=lambda ab: (0 if ab[0] - 0.2 <= ax <= ab[1] + 0.2 else 1, -(ab[1] - ab[0])))
+            room = span[1] - span[0]
+            if p['kind'] == 'tomates':
+                if room >= 0.46:
+                    ob = self.atelier.caisse_de_tomates(f'prop-{p["kind"]}-{i}', (0, 0, 0), None, tas=room >= 0.86)
+                else:
+                    ob = self.atelier.etal_au_sol(f'prop-{p["kind"]}-{i}', None, width=min(room, 0.40))
+                w = ob.get('emprise', (0.42, 0.32))[0]
+            else:
+                ob, _ = self.prop_mesh(p['kind'], i)
+                if ob is None:
+                    continue
+                self.bpy.context.view_layer.update()
+                xs_ = [v for c in ob.children_recursive if c.type == 'MESH' for v in (c.matrix_world.translation.x,)]
+                w = min(room, max(0.12, (max(xs_) - min(xs_)) + 0.12)) if xs_ else 0.2
+            if w > room + 1e-3:
+                print(f"[objets] {p.get('nom', p['kind'])} non posé : {w:.2f} m pour {room:.2f} m libres entre les pieds", flush=True)
+                for c in list(ob.children_recursive) + [ob]:
+                    self.bpy.data.objects.remove(c, do_unlink=True)
+                continue
+            x = min(max(ax, span[0] + w / 2), span[1] - w / 2)
+            taken.append((x - w / 2 - 0.03, x + w / 2 + 0.03))
+            self.__dict__.setdefault('prop_spots', []).append((x, y))
             ob.location = (x, y, 0.0)
-            # When the line names it: a little life (the ball bounces, the rest jumps a little).
+            ob['emprise_x'] = (x - w / 2, x + w / 2)
+            print(f"[objets] {p.get('nom', p['kind'])} posé au sol à x={x:+.2f} m ({w:.2f} m de large, {room:.2f} m libres, hors des pieds)", flush=True)
+            # When the line names it: a little life (the ball bounces — a real bounce, the rest jumps a little).
             f0 = int(p['at'] * self.fps) + 1
             for f in range(max(1, f0 - 2), min(self.nF, f0 + int(0.8 * self.fps)) + 1):
                 q = (f - f0) / (0.8 * self.fps)
-                h = (0.25 if p['kind'] == 'ballon' else 0.03) * abs(math.sin(q * math.pi * (3 if p['kind'] == 'ballon' else 1))) * (1 - max(0, q)) if q >= 0 else 0
+                h = (0.25 if p['kind'] == 'ballon' else 0.0) * abs(math.sin(q * math.pi * 3)) * (1 - max(0, q)) if q >= 0 else 0
                 ob.location.z = h
                 ob.keyframe_insert('location', index=2, frame=f)
 
