@@ -182,22 +182,10 @@ def build_decor(dec, cam_ref):
             uvs.append((gx[i], 1 - gz[j]))
     faces = [(j * (NX + 1) + i, j * (NX + 1) + i + 1, (j + 1) * (NX + 1) + i + 1, (j + 1) * (NX + 1) + i) for j in range(NZ) for i in range(NX)]
     # Sharp and soft (close-ups) versions of the picture, mixed per shot.
+    # (Its strength is recalibrated once the cameras are known — calibrate_softness: faces stay readable.)
+    from world import gauss_blur
     soft = bpy.data.images.new('decor-soft', W, H, alpha=False)
-    small = px[::4, ::4, :3]
-    for _ in range(4):
-        small = (small + np.roll(small, 1, 0) + np.roll(small, -1, 0) + np.roll(small, 1, 1) + np.roll(small, -1, 1)) / 5
-    big = np.repeat(np.repeat(small, 4, 0), 4, 1)[:H, :W]
-    big = np.pad(big, ((0, H - big.shape[0]), (0, W - big.shape[1]), (0, 0)), mode='edge')
-    # Smooth the 4×4 steps away (separable box blur at full size): a lens blur, not mosaic.
-    for _ in range(2):
-        acc = big.copy()
-        for d in (1, 2, 3):
-            acc += np.roll(big, d, 0) + np.roll(big, -d, 0)
-        big = acc / 7
-        acc = big.copy()
-        for d in (1, 2, 3):
-            acc += np.roll(big, d, 1) + np.roll(big, -d, 1)
-        big = acc / 7
+    big = gauss_blur(px[..., :3], 2.0)
     soft.pixels.foreach_set(np.dstack([big, np.ones((H, W))])[::-1].astype(np.float32).ravel())
     m = bpy.data.materials.new('decor')
     m.use_nodes = True
@@ -208,9 +196,11 @@ def build_decor(dec, cam_ref):
     t1 = nt.nodes.new('ShaderNodeTexImage')
     t1.image = img
     t1.extension = 'MIRROR'
+    t1.interpolation = 'Cubic'  # the painting is magnified ×3–4 in the close-ups: bicubic, not blocky bilinear
     t2 = nt.nodes.new('ShaderNodeTexImage')
     t2.image = soft
     t2.extension = 'MIRROR'
+    t2.interpolation = 'Cubic'
     mx = nt.nodes.new('ShaderNodeMix')
     mx.data_type = 'RGBA'
     val = nt.nodes.new('ShaderNodeValue')
@@ -236,7 +226,7 @@ def build_decor(dec, cam_ref):
     nt.links.new(em.outputs[0], out.inputs['Surface'])
     ob = mesh_object('decor', verts, faces, uvs, m)
     grid = {'C0': C0.tolist(), 'Yp': Yp, 'DEPTH': DEPTH, 'x0': x0, 'Wm': Wm, 'ztop': ztop, 'mH': mH, 'EX': EX, 'EZ': EZ, 'dn': dn if dpx is not None else None,
-            'tint': tint, 'strength': strength.outputs[0]}
+            'tint': tint, 'strength': strength.outputs[0], 'px': px[..., :3], 'soft_img': soft, 'H_tex': H}
     return ob, val, {'x0': x0, 'x1': x0 + Wm, 'z0': ztop - mH, 'z1': ztop, 'grid': grid}
 
 
@@ -344,6 +334,39 @@ def build_pose(actor, pose, k, rig_dir, scale, mirror, root):
     w_head = smoothstep(neck[1] + band * 0.6, neck[1] - band * 0.6, vy) * (1 - smoothstep(hhalf * 1.1, hhalf * 1.7, np.abs(vx - hx)))
     w_root = smoothstep(hip[1] - band, hip[1] + band, vy)
     w_spine = np.clip(1 - w_root - w_head, 0, 1)
+    # Pointing arm (a gesture toward someone): forearm + hand on their own bone, aimed later at the partner (the line
+    # eye → fingertip must meet the person pointed at — aim_points()). Never the head: it stays on its own bone.
+    point, w_fore = None, None
+    if pose.get('kind') in POINTING and b:
+        # The pointing arm is UNFOLDED and held away from the body (forearm ≥ 70 % of the upper arm — not foreshortened —,
+        # its horizontal reach away from the body ≥ half its length, the hand above the hip); the highest hand wins.
+        best = None
+        for sd in ('L', 'R'):
+            s_, e_, r_ = b.get('sh' + sd), b.get('el' + sd), b.get('wr' + sd)
+            if not (s_ and e_ and r_) or min((v[2] if len(v) > 2 else 1) for v in (s_, e_, r_)) <= 0.5 or r_[1] >= hip[1]:
+                continue
+            upper = math.hypot(e_[0] - s_[0], e_[1] - s_[1])
+            fore = math.hypot(r_[0] - e_[0], r_[1] - e_[1])
+            away = (r_[0] - e_[0]) * (1 if r_[0] >= hip[0] else -1)
+            long_enough = fore >= 0.10 * (foot_y - top_y)  # an arm pointing across, not a hand turned toward the lens
+            if long_enough and fore >= 0.7 * upper and away >= 0.5 * fore and (best is None or r_[1] < best[0]):
+                best = (r_[1], e_[:2], r_[:2])
+        if best:
+            _, E, Wr = best
+            Lf = math.hypot(Wr[0] - E[0], Wr[1] - E[1])
+            T = (Wr[0] + 0.55 * (Wr[0] - E[0]), Wr[1] + 0.55 * (Wr[1] - E[1]))
+            ddx, ddy = T[0] - E[0], T[1] - E[1]
+            tt = ((vx - E[0]) * ddx + (vy - E[1]) * ddy) / max(ddx * ddx + ddy * ddy, 1e-6)
+            qx, qy = E[0] + np.clip(tt, 0, 1) * ddx, E[1] + np.clip(tt, 0, 1) * ddy
+            dist = np.hypot(vx - qx, vy - qy)
+            rr = 0.42 * Lf
+            w_fore = (1 - smoothstep(0.6 * rr, rr, dist)) * smoothstep(0.02, 0.15, tt) * (1 - smoothstep(1.05, 1.15, tt))
+            if f.get('chin'):
+                inside = ((vx - hx) / max(hhalf, 1)) ** 2 + ((vy - (top_y + chin[1]) / 2) / max((chin[1] - top_y) * 0.55, 1)) ** 2 < 1.0
+                w_fore = np.where(inside, 0.0, w_fore)
+            # The drawing is ONE layer (the hand may touch the chin): it is never bent — the gesture is measured only.
+            point = {'E': P(*E), 'W': P(*Wr), 'T': P(*T), 'px': (E, Wr)}
+            w_fore = None
     # Jaw: below the lip seam, around the mouth, down to under the chin.
     drawn_open = f.get('open', 0) >= 0.12
     if f.get('seam') and f.get('mouthWidth'):
@@ -437,8 +460,99 @@ def build_pose(actor, pose, k, rig_dir, scale, mirror, root):
     p.face_z = P(*(f.get('nose') or chin))[1] if f else (foot_y - top_y) * scale * 0.9
     p.face_x = P(*(f.get('nose') or chin))[0] if f else 0.0
     p.top_z = (foot_y - top_y) * scale
+    p.point = point
     p.width = (np.ptp(V[:, 0]) if len(V) else 0.5)
+    p.xmin, p.xmax = (float(V[:, 0].min()), float(V[:, 0].max())) if len(V) else (-0.25, 0.25)
     return p
+
+
+POINTING = ('accuse', 'pointe', 'montre', 'designe')
+# The closest poses by INTENT, in order, when a pose cannot be played as drawn (the emotion is kept as far as possible).
+SUBSTITUTES = {'accuse': ('haussement', 'choc', 'neutre'), 'pointe': ('haussement', 'neutre'), 'montre': ('haussement', 'neutre'),
+               'designe': ('haussement', 'neutre')}
+
+
+def aim_points(actors, plan):
+    """Pointing law, as the VIEWER reads it: the extension of the forearm and the index (elbow → fingertip) must meet
+    the person pointed at. A drawing is one layer — its arm is never bent to force it —, so a pointing pose whose DRAWN
+    line misses the partner's face (more than 15 cm) is replaced, automatically, by the character's closest pose by
+    intent (an accusation becomes indignation, then shock…) that obeys every law: it looks at the partner, it does not
+    point elsewhere. Returns the substitutions made."""
+    out = []
+    for a in actors.values():
+        others = [o for o in actors.values() if o is not a]
+        if not others:
+            continue
+        o = min(others, key=lambda o_: abs(o_['plan']['x'] - a['plan']['x']))
+        tr = plan['tracks'][a['plan']['id']]
+        for kind, P in a['poses'].items():
+            pt = getattr(P, 'point', None)
+            if not pt:
+                continue
+            tx = o['plan']['x'] - a['plan']['x'] + o['poses']['neutre'].face_x
+            tz = o['poses']['neutre'].face_z - 0.03
+            E, T = pt['E'], pt['T']
+            dx_, dz_ = T[0] - E[0], T[1] - E[1]
+            L = math.hypot(dx_, dz_) or 1e-6
+            ux, uz = dx_ / L, dz_ / L
+            ahead = (tx - E[0]) * ux + (tz - E[1]) * uz > L
+            perp = abs((tx - E[0]) * uz - (tz - E[1]) * ux)
+            pt['theta'], pt['ecart'], pt['cible'] = 0.0, perp, o['plan']['id']
+            if ahead and perp <= 0.15:
+                continue
+            n = sum(1 for _, k in tr['poses'] if k == kind)
+            if n:
+                want = 1 if o['plan']['x'] > a['plan']['x'] else -1
+                cands = [c for c in SUBSTITUTES.get(kind, ('neutre',)) if c in a['poses'] and not getattr(a['poses'][c], 'point', None)]
+                good = [c for c in cands if getattr(a['poses'][c], 'look', want) == want]
+                repl = (good or cands or ['neutre'])[0]
+                tr['poses'] = [[f, repl if k == kind else k] for f, k in tr['poses']]
+                z_line = E[1] + (tx - E[0]) * uz / ux if abs(ux) > 1e-6 else E[1]
+                where = 'au-dessus' if z_line > tz else 'au-dessous'  # height of the drawn line where the partner stands
+                out.append((a['plan']['id'], kind, o['plan']['id'], perp, n))
+                print(f"[geste] {a['plan']['id']} : pose « {kind} » remplacée automatiquement par « {repl} » ({n} passage(s)) — son doigt dessiné vise "
+                      f"{perp * 100:.0f} cm {where} du visage de {o['plan']['id']} (il désignerait quelqu’un d’autre). "
+                      f"Un dessin qui pointe vers {o['plan']['id']} rendrait ce geste possible.", flush=True)
+    return out
+
+
+def style_check(rig, plan, life, bounds):
+    """Inputs of the style law for the conformity check: the troupe's signature and the set's (the painted kit or the
+    baked 3D place, as the film shows it)."""
+    import style as stylemod
+    try:
+        return {'ref': style_reference(rig, plan, life), 'decor': stylemod.signature(bounds['grid']['px'])}
+    except Exception as e:
+        print('[style] mesure impossible :', e, flush=True)
+        return None
+
+
+def style_reference(rig, plan, life=None):
+    """The visual signature of the troupe (style.py), measured on the drawings of this film's people (actors, extras,
+    crowd) — or of the whole troupe when they are too few."""
+    import style as stylemod
+    names = [a['name'] for a in plan.get('actors', [])] + [e['name'] for e in (life or {}).get('extras', [])] + list(((life or {}).get('crowd') or {}).get('names', []))
+    names = [n for n in dict.fromkeys(names) if n in rig['cast']]
+    if len(names) < 8:
+        names = list(rig['cast'])
+    cards = []
+    for n in names:
+        _img, px = load_rgba(os.path.join(rig['dir'], rig['cast'][n]['poses'][0]['png']))
+        cards.append((px[..., :3], px[..., 3]))
+    return stylemod.reference(cards)
+
+
+def look(pose):
+    """Where the drawing LOOKS (+1 right, −1 left): the irises when the eyes are open and clearly turned (what a viewer
+    reads as the gaze), else the head (nose against the eyes). A head turned right with eyes looking left looks left."""
+    f = pose.get('face') or {}
+    eyes = [e for e in (f.get('eyes') or []) if e.get('iris') and e.get('rx')]
+    if eyes:
+        g = sum((e['iris'][0] - e['c'][0]) / e['rx'] for e in eyes) / len(eyes)
+        openness = sum(e.get('ry', 0) / e['rx'] for e in eyes) / len(eyes)
+        if abs(g) >= 0.15 and openness >= 0.4:
+            return 1 if g > 0 else -1
+    return facing(pose)
 
 
 def facing(pose):
@@ -462,7 +576,8 @@ def main():
     baked = None
     if plan.get('decor') not in rig['decors'] or (life and life.get('kit') is None and life.get('place')):
         # A place without a painted set: Blender bakes one (3D place, real light, depth) before the film is built.
-        baked = livingworld.bake_template(life or {'place': plan.get('decor', 'lieu'), 'template': 'piece'}, os.path.join(os.path.dirname(os.path.abspath(A.out)), 'decors'))
+        baked = livingworld.bake_template(life or {'place': plan.get('decor', 'lieu'), 'template': 'piece'}, os.path.join(os.path.dirname(os.path.abspath(A.out)), 'decors'),
+                                          style_ref=style_reference(rig, plan, life))
     bpy.ops.wm.read_factory_settings(use_empty=True)
     sc = bpy.context.scene
     fps = plan['fps']
@@ -507,8 +622,10 @@ def main():
         want = 1 if ac['x'] <= 0 else -1  # face the partner (left actor looks right)
         poses = {}
         for k, pose in enumerate(cast['poses']):
-            mirror = ac['mirror'] if ac.get('mirror') is not None else (facing(pose) != want)
+            # Each pose is turned so that its GAZE goes to the partner (eye contact; the listener looks at the speaker).
+            mirror = ac['mirror'] if ac.get('mirror') is not None else (look(pose) != want)
             poses[pose['kind']] = build_pose(ac, pose, k, rig_dir, scale, mirror, root)
+            poses[pose['kind']].look = look(pose) * (-1 if mirror else 1)
         # Contact shadow (a soft dark ellipse just behind the feet).
         wsh = poses['neutre'].width * 0.9
         sh = mesh_object(f"{ac['id']}-shadow", [(-wsh / 2, 0, -0.04), (wsh / 2, 0, -0.04), (wsh / 2, 0, 0.07), (-wsh / 2, 0, 0.07)], [(0, 1, 2, 3)], [(0, 0), (1, 0), (1, 1), (0, 1)])
@@ -518,7 +635,10 @@ def main():
         sh.location = (0, 0.03, 0)
         actors[ac['id']] = {'root': root, 'poses': poses, 'plan': ac, 'shadow': sh}
 
+    calibrate_stage(actors, bounds, plan['width'] / plan['height'])
+    gestures = aim_points(actors, plan)
     animate(plan, actors, fps)
+    world_ = None
     if life:
         heights = {}
         try:
@@ -527,18 +647,17 @@ def main():
             pass
         g = bounds['grid']
         # The stage of the two-shot (same maths as cameras()): where the living world must be to be SEEN.
-        xs = [a['plan']['x'] for a in actors.values()]
-        ws = [a['poses']['neutre'].width for a in actors.values()]
-        xa = min(x - w / 2 for x, w in zip(xs, ws)) - 0.12
-        xb = max(x + w / 2 for x, w in zip(xs, ws)) + 0.12
-        top = max(a['poses']['neutre'].top_z for a in actors.values()) + 0.1
-        side = max(xb - xa, top + 0.08)
         asp = plan['width'] / plan['height']
-        stage = {'cx': (xa + xb) / 2, 'hw0': side / 2, 'd': side * LENS / SENSOR, 'cz': max(side, top + 0.08) / 2 - 0.05, 'hh0': side / asp / 2}
-        livingworld.build_life(life, {'stage': stage,'fps': fps, 'nF': plan['frames'], 'grid': g, 'shots': plan['shots'], 'tint': g.get('tint'), 'decor_strength': g.get('strength'), 'rig': rig, 'heights': heights,
+        # The stage = the REAL wide shot (same lens choice as cameras()): the living world is placed where it is seen.
+        scx, scz, side, frame_h = two_frame(list(actors.values()), bounds, asp)
+        C0_ = g['C0']
+        stage = {'cx': scx, 'hw0': side / 2, 'd': -C0_[1], 'cz': scz, 'hh0': frame_h / 2, 'camx': C0_[0], 'camz': C0_[2]}
+        world_ = livingworld.build_life(life, {'stage': stage,'fps': fps, 'nF': plan['frames'], 'grid': g, 'shots': plan['shots'], 'tint': g.get('tint'), 'decor_strength': g.get('strength'), 'rig': rig, 'heights': heights,
                                       'actors': actors, 'mesh_object': mesh_object, 'flat_material': flat_material, 'emissive_material': emissive_material,
                                       'load_rgba': load_rgba, 'key': key, 'shadow_material': shadow_material})
-    cameras(plan, actors, bounds, soft, fps)
+    shots_info = cameras(plan, actors, bounds, soft, fps)
+    # Depth of field calibrated on the real cameras: the background stays legible (faces, expressions).
+    image_qa = calibrate_softness(shots_info, plan, bounds, world_.softs if life else [])
     sc.frame_set(1)
     # PREFLIGHT QA — mandatory: the scene is checked (geometry, materials, objects, collisions, scale, real time,
     # light, rigs and animation, narrative) before a single frame is rendered. A critical fault stops here.
@@ -550,7 +669,15 @@ def main():
     qa_out = os.path.join(os.path.dirname(os.path.abspath(A.out)), 'preflight')
     res = preflight.run('scene', plan.get('title', ''), story=plan.get('story'), life=life, cast=plan.get('actors'), drawn=set(rig['cast']),
                         probe_frames=[f for f in (hook_f, punch_f) if f and f <= plan['frames']], out=qa_out,
-                        cuts=[int(s_['start']) + 1 for s_ in plan.get('shots', [])])
+                        cuts=[int(s_['start']) + 1 for s_ in plan.get('shots', [])],
+                        cameras={'grid': bounds['grid'], 'shots': shots_info, 'captions': {'two': 0.865, 'close': 0.80}, 'height': plan['height']},
+                        image=image_qa, style=style_check(rig, plan, life, bounds),
+                        people=[{'nom': a['plan']['id'], 'root': a['root'].name, 'w': a['poses']['neutre'].width, 'h': a['poses']['neutre'].top_z,
+                                 'fx': a['poses']['neutre'].face_x, 'fz': a['poses']['neutre'].face_z,
+                                 'faces': {k_: [p_.face_x, p_.face_z] for k_, p_ in a['poses'].items()},
+                                 'points': {k_: {'E': list(p_.point['E']), 'T': list(p_.point['T']), 'theta': p_.point.get('theta', 0.0)}
+                                            for k_, p_ in a['poses'].items() if getattr(p_, 'point', None)}, 'looks': {k_: p_.look for k_, p_ in a['poses'].items()},
+                                 'track': plan['tracks'][a['plan']['id']]['poses']} for a in actors.values()])
     print(f"[conformité] objectifs {res['taux_objectifs']} % · qualité {res['score']}/100 · {res['verdict']} · conforme dès la génération : "
           f"{'oui' if res['conforme_des_la_generation'] else 'non'} · {len(res['corrections'])} correction(s) → {qa_out}.html", flush=True)
     if not res['passed'] and not A.force:
@@ -698,10 +825,222 @@ def animate(plan, actors, fps):
                         prev = v
 
 
+def max_two_width(bounds, asp, margin=0.04, lens=None):
+    """The widest frame (at the actors' plane) a vertical shot can have while its view of the painted set — further back,
+    at the set plane Yp — stays INSIDE the painting (no mirrored edge, no black band)."""
+    g = bounds['grid']
+    wm, hm = bounds['x1'] - bounds['x0'], bounds['z1'] - bounds['z0']
+    if lens:  # a camera that dollies (the parallax of the relief eats the margin)
+        return max(0.6, min(wm, hm * asp) * (1 - margin) - g['Yp'] / (lens / SENSOR))
+    # From the painting's own viewpoint the frame scales linearly to the painting plane: no parallax margin.
+    mpl = (g['Yp'] - g['C0'][1]) / -g['C0'][1]
+    return max(0.6, min(wm, hm * asp) * (1 - margin) / mpl)
+
+
+def calibrate_stage(actors, bounds, asp, fmax=1.07):
+    """Stage calibration (before anything is animated): neighbours are placed close enough for their two-shot to
+    fit inside the painted set, like actors blocked on a real set — the left one stays left, the group stays centred."""
+    order = sorted(actors.values(), key=lambda a: a['plan']['x'])
+    if len(order) < 2:
+        return
+    w_max = max_two_width(bounds, asp) / fmax
+    widths = [a['poses']['neutre'].width for a in order]
+    gaps = [order[i + 1]['plan']['x'] - order[i]['plan']['x'] for i in range(len(order) - 1)]
+    pairs = [(widths[i] + widths[i + 1]) / 2 for i in range(len(order) - 1)]
+    # The bodies (≈ 80 % of the drawn width) should fit the wide shot…
+    allowed = min(w_max - 0.8 * p - 0.08 for p in pairs)
+    # …but a gesture never lands on the partner's face: the furthest reach of every pose of the left actor stops 8 cm
+    # before the face of the right one (and the other way round). That wins over the width of the wide shot.
+    touch = 0.0
+    for i in range(len(order) - 1):
+        A, B = order[i], order[i + 1]
+        reach_a = max(p.xmax for p in A['poses'].values())
+        reach_b = min(p.xmin for p in B['poses'].values())
+        face_b = min(p.face_x for p in B['poses'].values())
+        face_a = max(p.face_x for p in A['poses'].values())
+        touch = max(touch, reach_a - face_b + 0.08, face_a - reach_b + 0.08)
+    gap = max(touch, min(min(gaps), allowed))
+    if abs(gap - min(gaps)) < 1e-3:
+        return
+    centre = sum(a['plan']['x'] for a in order) / len(order)
+    for i, a in enumerate(order):
+        x = centre + (i - (len(order) - 1) / 2) * gap
+        a['plan']['x'] = round(x, 3)
+        a['root'].location.x = x
+        # Alternating depth: two close neighbours are never on the same plane (no z-fighting, a clear front / back).
+        a['root'].location.y = -0.05 * (i % 2)
+    print(f'[plateau] écart entre acteurs recalibré à {gap:.2f} m (plan large ≤ {w_max:.2f} m dans le décor, '
+          f'geste le plus long sans toucher le visage du partenaire : {touch:.2f} m)', flush=True)
+
+
+def two_shot(here, bounds, asp, fmax=1.07, lens=None):
+    """Frame of a shot of several actors: as wide as needed but never wider than the painted set allows; heads in the
+    frame with their headroom; the whole view of the set (up to the start of a push-in) inside the painting."""
+    lens = lens or LENS
+    k = lens / SENSOR
+    yp = bounds['grid']['Yp']
+    xs = [a['plan']['x'] for a in here]
+    ws = [a['poses']['neutre'].width for a in here]
+    xa = min(x - w / 2 for x, w in zip(xs, ws)) - 0.06
+    xb = max(x + w / 2 for x, w in zip(xs, ws)) + 0.06
+    top = max(a['poses']['neutre'].top_z for a in here)
+    side = min(max(xb - xa, 0.8), max_two_width(bounds, asp, lens=lens) / fmax)
+    frame_h = side / asp
+    hw = (side * fmax + yp / k) / 2
+    hh = (frame_h * fmax + yp / (k * asp)) / 2
+    clamp = lambda v, lo, hi: (lo + hi) / 2 if lo > hi else min(max(v, lo), hi)
+    cx = clamp((xa + xb) / 2, bounds['x0'] + hw, bounds['x1'] - hw)
+    cz = clamp(top + 0.07 - frame_h / 2, bounds['z0'] + hh, bounds['z1'] - hh)
+    return cx, cz, side, frame_h, side * k
+
+
+def fit_view(g, cx, cz, d, tan_h, tan_v, spread=0.0, tol=0.004, faces=(), d_tight=None, cap_y=0.8):
+    """Moves the camera until everything it sees — at the widest moment of its move — is INSIDE the painting, without
+    ever pushing a face of the shot out of the frame (or under the captions) at any moment of the move: when a move
+    would cut a face, the camera tightens instead (closer, same aim). Returns (cx, cz, tightening, overflow left)."""
+    from framing import view_overflow, project
+    th = tan_h + spread / max(d, 1e-3)
+    d_tight = d if d_tight is None else d_tight
+
+    def faces_ok(x, z, f):
+        for dd in (d * f, d_tight * f):
+            for p in faces:
+                u, v, _ = project((x, -dd, z), th, tan_v, p)
+                if u is None or not (0.06 <= u <= 0.94) or not (0.06 <= v <= cap_y - 0.05):
+                    return False
+        return True
+
+    f = 1.0
+    for _ in range(120):
+        L, R, T, B = view_overflow(g, (cx, -d * f, cz), th, tan_v)
+        if max(L, R, T, B) <= tol:
+            return cx, cz, f, 0.0
+        if (L > tol and R > tol) or (T > tol and B > tol):
+            f *= 0.97
+            continue
+        ncx = cx + (L - R) + (0.003 if L > tol else -0.003 if R > tol else 0.0)
+        ncz = cz + (B - T) + (0.003 if B > tol else -0.003 if T > tol else 0.0)
+        if faces and not faces_ok(ncx, ncz, f) and f > 0.55:
+            f *= 0.97  # tighten rather than cut a face
+            continue
+        cx, cz = ncx, ncz
+    return cx, cz, f, round(max(view_overflow(g, (cx, -d * f, cz), th, tan_v)), 3)
+
+
+def calibrate_softness(info, plan, bounds, softs):
+    """Depth of field that keeps the background LEGIBLE: on every close-up the blur of the set and of the drawn
+    extras, measured on screen, stays under a ceiling (generation rule « background_blur_px », for a 1024-px-high
+    image) — faces and their expressions remain readable. Nearer extras are sharper than the set (like a lens
+    focused on the actors). Returns the per-shot measures for the conformity report."""
+    import rules as genrules
+    from world import gauss_blur, blur_sigma
+    g = bounds['grid']
+    Hs = plan['height']
+    T = float(genrules.get('background_blur_px')) * Hs / 1024
+    close = [i for i in info if i['type'] != 'two']
+    px_per_m = lambda D, i: Hs / (2 * D * i['tan_v'])
+    yp, depth = g['Yp'], g['DEPTH']
+    out = []
+
+    def sigma_for(cap_over_m):
+        sg = min(12.0, max(0.0, cap_over_m))  # bounded: a hidden or tiny card never asks for a giant kernel
+        while sg > 0.3 and blur_sigma(sg) > cap_over_m * 1.0001:
+            sg *= 0.97
+        return sg
+
+    # The set: its softness is set by the tightest close-up (largest magnification of the painting).
+    mdec = {i['k']: px_per_m(i['d_min'] + yp, i) * g['mH'] / g['H_tex'] for i in close}
+    sg_dec = sigma_for(T / max(mdec.values())) if mdec else 0.0
+    big = gauss_blur(g['px'], sg_dec)
+    H, W = big.shape[:2]
+    g['soft_img'].pixels.foreach_set(np.dstack([big, np.ones((H, W))])[::-1].astype(np.float32).ravel())
+    # The drawn extras: where each card stands during each close-up (it moves), and its texture size on screen.
+    sc = bpy.context.scene
+    cards = [c for c in softs if c.get('obj') is not None]
+    from framing import project
+    where = {}
+    for i in close:
+        sc.frame_set((i['start'] + i['end']) // 2 + 1)
+        cam = sc.objects.get(i['camera'])
+        cl = (*tuple(cam.matrix_world.translation), i.get('ox', 0.0), i.get('oz', 0.0)) if cam else (i['cx'], -i['d_min'], i['cz'])
+        for c in cards:
+            ob = c['obj']
+            mw = ob.matrix_world
+            sz = mw.to_scale().z
+            x, y, D = project(cl, i['tan_h'], i['tan_v'], tuple(mw.translation))
+            hidden = ob.hide_render or (ob.parent is not None and ob.parent.hide_render)
+            seen = sz > 1e-3 and not hidden and x is not None and -0.3 <= x <= 1.3 and -0.3 <= y <= 1.6
+            if seen:
+                where[(i['k'], c['name'])] = (mw.translation.y, sz * c['m_per_px'])
+    blur_card = {}
+    for c in cards:
+        caps = []
+        for i in close:
+            if (i['k'], c['name']) not in where:
+                continue  # not in this shot
+            y, mpp = where[(i['k'], c['name'])]
+            D = i['d_min'] + y
+            # Closer to the actors (the focus) = sharper; never blurrier than the set's ceiling.
+            w = min(1.0, max(0.35, (1 - i['d_min'] / D) / (1 - i['d_min'] / (i['d_min'] + yp + 0.5 * depth))))
+            caps.append(T * w / max(1e-6, px_per_m(D, i) * mpp))
+        sg = sigma_for(min(caps)) if caps else 1.0
+        c['sigma'] = sg
+        soft = gauss_blur(c['px'], sg)
+        c['img'].pixels.foreach_set(soft[::-1].astype(np.float32).ravel())
+        for i in close:
+            if (i['k'], c['name']) not in where:
+                continue
+            y, mpp = where[(i['k'], c['name'])]
+            blur_card[(i['k'], c['name'])] = blur_sigma(sg) * px_per_m(i['d_min'] + y, i) * mpp
+    for i in info:
+        e = {'plan': i['k'], 'type': i['type'], 'cible_px': round(T, 2), 'hors_decor_m': i['hors_decor_m'], 'resserre': i['resserre']}
+        if i['type'] != 'two':
+            e['flou_decor_px'] = round(blur_sigma(sg_dec) * mdec[i['k']], 2)
+            e['flou_figurants_px'] = round(max([v for (k, _), v in blur_card.items() if k == i['k']] or [0.0]), 2)
+        else:
+            e['flou_decor_px'] = e['flou_figurants_px'] = 0.0
+        out.append(e)
+    print(f'[netteté] flou du fond ≤ {T:.1f} px à l’écran (décor σ={sg_dec:.1f} px texture, {len(cards)} figurant(s) calibré(s))', flush=True)
+    return out
+
+
+def two_frame(here, bounds, asp, fmax=1.07):
+    """Wide shot of several actors from the painting's viewpoint: as wide as needed, never wider than the painting can
+    hold at the widest moment of the move (exact — no parallax from C0); heads in frame with their headroom.
+    Returns (cx, cz, side, frame_h) at the actors' plane."""
+    xs = [a['plan']['x'] for a in here]
+    ws = [a['poses']['neutre'].width for a in here]
+    xa = min(x - w / 2 for x, w in zip(xs, ws)) - 0.06
+    xb = max(x + w / 2 for x, w in zip(xs, ws)) + 0.06
+    top = max(a['poses']['neutre'].top_z for a in here)
+    side = min(max(xb - xa, 0.8), max_two_width(bounds, asp) / fmax)
+    frame_h = side / asp
+    return (xa + xb) / 2, top + 0.07 - frame_h / 2, side, frame_h
+
+
+def choose_two_lens(here, bounds, asp, fmax=1.07):
+    """In a vertical frame a painted set rarely holds two actors at 35 mm: the shortest focal length whose whole move
+    stays inside the set WITHOUT tightening and keeps both faces in frame (a longer lens stands back, closer to the
+    painting's own viewpoint: less parallax on the relief, flatter — right for drawn cards).
+    Returns (lens, cx, cz, side, frame_h, distance)."""
+    cand = None
+    for L_ in (35, 50, 65, 85, 105):
+        cx_, cz_, side_, fh_, d_ = two_shot(here, bounds, asp, fmax, lens=L_)
+        tv_ = SENSOR / 2 / L_ / asp
+        fc = [(a['plan']['x'] + a['poses']['neutre'].face_x, a['root'].location.y, a['poses']['neutre'].face_z) for a in here]
+        *_, t_, o_ = fit_view(bounds['grid'], cx_, cz_, d_ * fmax, tv_ * asp, tv_, faces=fc, d_tight=d_ * 0.97, cap_y=0.865)
+        cand = (L_, cx_, cz_, side_, fh_, d_)
+        if t_ >= 0.98 and o_ <= 0.004:
+            break
+    return cand
+
+
 def cameras(plan, actors, bounds, soft, fps):
     sc = bpy.context.scene
     W, H = plan['width'], plan['height']
     asp = W / H
+    info = []
+    lens_free = False  # (a fixed-lens production could set this; by default the two-shot lens is chosen by the fit)
     for k, s in enumerate(plan['shots']):
         cam = bpy.data.cameras.new(f'cam{k}')
         cam.lens = LENS
@@ -721,17 +1060,18 @@ def cameras(plan, actors, bounds, soft, fps):
                 kind = kd
         P = tgt['poses'].get(kind) or tgt['poses']['neutre']
         tx = tgt['plan']['x']
+        fmax = 1.32 if s.get('move') == 'punch' else 1.07
+        g = bounds['grid']
+        C0 = g['C0']
+        D0 = -C0[1]                        # the actors' plane (y = 0) seen from the painting's own viewpoint
+        mpl = (g['Yp'] - C0[1]) / D0       # actors' plane → painting plane
         if s['type'] == 'two' and len(here) > 1:
-            xs = [a['plan']['x'] for a in here]
-            ws = [a['poses']['neutre'].width for a in here]
-            xa = min(x - w / 2 for x, w in zip(xs, ws)) - 0.12
-            xb = max(x + w / 2 for x, w in zip(xs, ws)) + 0.12
-            top = max(a['poses']['neutre'].top_z for a in here) + 0.1
-            side = max(xb - xa, top + 0.08)
-            cx, cz = (xa + xb) / 2, max(side, top + 0.08) / 2 - 0.05
+            if len(here) > 2:
+                # Three or more on stage: the shot frames the speaker and the nearest partner (the others are off-frame).
+                near = sorted((a for a in here if a is not tgt), key=lambda a: abs(a['plan']['x'] - tgt['plan']['x']))[0]
+                here = [tgt, near]
+            cx, cz, side, frame_h = two_frame(here, bounds, asp, fmax)
             cam.sensor_fit = 'HORIZONTAL'
-            frame_h = side / asp
-            dist = side * LENS / SENSOR
         else:
             frame_h = (0.62 if s['type'] == 'mcu' else 0.36) * P.top_z
             look = -1 if tx > 0 else 1
@@ -740,26 +1080,69 @@ def cameras(plan, actors, bounds, soft, fps):
             cx = fx + look * frame_h * asp * (0.04 if s['type'] == 'cu' else 0.1)
             cz = (P.top_z - 0.40 * frame_h) if s['type'] == 'mcu' else (P.face_z + 0.06 * frame_h)
             cam.sensor_fit = 'VERTICAL'
-            dist = frame_h * LENS / SENSOR
-            # Keep the frame inside the painted set.
-            half_w = frame_h * asp / 2
-            cx = min(max(cx, bounds['x0'] + half_w + 0.02), bounds['x1'] - half_w - 0.02)
-            cz = min(max(cz, bounds['z0'] + frame_h / 2 + 0.02), bounds['z1'] - frame_h / 2 - 0.02)
         mv = s.get('move', 'push')
+        # Moves of a camera that stays at the painting's viewpoint: push / pull / punch are ZOOMS (focal length), drift
+        # is a lens SHIFT — the painted set is then seen exactly as painted (no rubber-sheet stretching of the painted
+        # people, whatever the framing), and the drawn cards stay frontal.
         if mv == 'punch':
-            # Snap zoom (the hook, the punchline): fast push-in over half a second, then a slow creep.
-            keys = [(s['start'] + 1, dist * 1.32, 0), (min(s['end'], s['start'] + 1 + int(0.45 * fps)), dist * 1.01, 0), (s['end'], dist * 0.97, 0)]
+            moves = [(s['start'] + 1, 1.32, 0), (min(s['end'], s['start'] + 1 + int(0.45 * fps)), 1.01, 0), (s['end'], 0.97, 0)]
         else:
-            d0, d1 = (dist * 1.07, dist) if mv == 'push' else (dist, dist * 1.06) if mv == 'pull' else (dist * 1.02, dist * 1.02)
+            m0, m1 = (1.07, 1.0) if mv == 'push' else (1.0, 1.06) if mv == 'pull' else (1.02, 1.02)
             dx0, dx1 = (-0.025 * frame_h, 0.025 * frame_h) if mv == 'drift' else (0, 0)
-            keys = [(s['start'] + 1, d0, dx0), (s['end'], d1, dx1)]
-        for f, d, dx in keys:
-            co.location = (cx + dx, -d, cz)
-            co.keyframe_insert('location', frame=f)
+            moves = [(s['start'] + 1, m0, dx0), (s['end'], m1, dx1)]
+        fwide, ftight = max(m for _, m, _ in moves), min(m for _, m, _ in moves)
+        drift = max(abs(x) for *_, x in moves)
+        shown = here if s['type'] == 'two' and len(here) > 1 else [tgt]
+        faces = [(a['plan']['x'] + (P.face_x if a is tgt else a['poses']['neutre'].face_x), a['root'].location.y,
+                  (P.face_z if a is tgt else a['poses']['neutre'].face_z)) for a in shown]
+        cap_y = 0.865 if s['type'] == 'two' else 0.80
+
+        def faces_ok(x, z, fh):
+            return all(0.06 <= 0.5 + (fx_ - x) / (fh * asp) <= 0.94 and 0.06 <= 0.5 - (fz_ - z) / fh <= cap_y - 0.05 for fx_, _y, fz_ in faces)
+
+        # Exact fit (linear from C0): the widest view of the move stays inside the painting; a face is never pushed out
+        # of frame to get there — the framing tightens instead.
+        cx0, cz0 = cx, cz
+        tight = 1.0
+        for _ in range(80):
+            fh = frame_h * tight
+            hw, hh = fh * asp * fwide / 2 * mpl + drift * tight * mpl, fh * fwide / 2 * mpl
+            if 2 * hw > bounds['x1'] - bounds['x0'] - 0.01 or 2 * hh > bounds['z1'] - bounds['z0'] - 0.01:
+                tight *= 0.97
+                continue
+            pcx = min(max(C0[0] + (cx0 - C0[0]) * mpl, bounds['x0'] + hw + 0.005), bounds['x1'] - hw - 0.005)
+            pcz = min(max(C0[2] + (cz0 - C0[2]) * mpl, bounds['z0'] + hh + 0.005), bounds['z1'] - hh - 0.005)
+            ncx, ncz = C0[0] + (pcx - C0[0]) / mpl, C0[2] + (pcz - C0[2]) / mpl
+            if faces_ok(ncx, ncz, fh * ftight) or tight < 0.55:
+                cx, cz = ncx, ncz
+                break
+            tight *= 0.97
+        if abs(cx - cx0) > 0.01 or abs(cz - cz0) > 0.01 or tight < 0.999:
+            print(f"[cadrage] plan {k + 1} ({s['type']}) : cadre décalé de {100 * (cx - cx0):+.0f}/{100 * (cz - cz0):+.0f} cm, "
+                  f"resserré de {100 * (1 - tight):.0f} % pour rester dans la peinture", flush=True)
+        frame_h *= tight
+        lens = D0 * SENSOR / (frame_h * asp if cam.sensor_fit == 'HORIZONTAL' else frame_h)
+        co.location = tuple(C0)
+        for f, m_, dx in moves:
+            fh_k = frame_h * m_
+            cam.lens = lens / m_
+            # Lens shift in units of the sensor-fit side of the frame (Blender): width for a horizontal fit, else height.
+            unit = fh_k * asp if cam.sensor_fit == 'HORIZONTAL' else fh_k
+            cam.shift_x = (cx + dx * tight - C0[0]) / unit
+            cam.shift_y = (cz - C0[2]) / unit
+            for path in ('lens', 'shift_x', 'shift_y'):
+                cam.keyframe_insert(path, frame=f)
+        import framing
+        th_w, tv_w, ox_w, oz_w = framing.lens_view(lens / fwide, cam.shift_x, cam.shift_y, cam.sensor_fit, asp, SENSOR)
+        over = round(max(framing.view_overflow(g, (C0[0], C0[1], C0[2], ox_w, oz_w), th_w, tv_w)), 3)
+        tan_v = SENSOR / 2 / (lens / ftight) / (asp if cam.sensor_fit == 'HORIZONTAL' else 1.0)
+        info.append({'k': k, 'type': s['type'], 'lens': lens, 'start': s['start'], 'end': s['end'], 'tan_v': tan_v, 'tan_h': tan_v * asp, 'target': s.get('target'),
+                     'faces': faces, 'names': [a['plan']['id'] for a in shown], 'camera': co.name, 'd_min': D0, 'd_max': D0,
+                     'ox': (cx - C0[0]) / D0, 'oz': (cz - C0[2]) / D0, 'cx': cx, 'cz': cz, 'resserre': round(1 - tight, 3), 'hors_decor_m': over})
         m = sc.timeline_markers.new(f'shot{k}', frame=s['start'] + 1)
         m.camera = co
-        # Close-ups: the set softly out of focus (like a real lens), wide shots sharp.
-        soft.outputs[0].default_value = 0.0 if s['type'] == 'two' else (0.55 if s['type'] == 'mcu' else 0.8)
+        # Close-ups: the set softly out of focus (like a real lens, strength calibrated to keep faces readable), wide shots sharp.
+        soft.outputs[0].default_value = 0.0 if s['type'] == 'two' else 1.0
         soft.outputs[0].keyframe_insert('default_value', frame=s['start'] + 1)
         if k:
             soft.outputs[0].keyframe_insert('default_value', frame=s['start'] + 1)
@@ -783,6 +1166,7 @@ def cameras(plan, actors, bounds, soft, fps):
                     kp.interpolation = 'CONSTANT'
     except Exception as e:
         print('[scene] interpolation:', e)
+    return info
 
 
 if __name__ == '__main__':

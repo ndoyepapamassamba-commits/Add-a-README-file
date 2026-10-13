@@ -12,8 +12,22 @@
  * Un lieu inconnu prend le gabarit le plus proche (intérieur / extérieur) : le nombre de lieux n'est pas limité.
  */
 
-export type Behavior = 'passe' | 'attend' | 'discute' | 'travaille' | 'file' | 'regarde';
-export type Species = 'poule' | 'oiseau' | 'pigeon' | 'chat' | 'chien' | 'chevre' | 'margouillat' | 'canard';
+/** 'foule' = procedural crowd agents (autonomous walkers that avoid each other), not troupe characters. */
+export type Behavior = 'passe' | 'attend' | 'discute' | 'travaille' | 'file' | 'regarde' | 'foule';
+export type Species =
+  | 'poule'
+  | 'oiseau'
+  | 'pigeon'
+  | 'chat'
+  | 'chien'
+  | 'chevre'
+  | 'margouillat'
+  | 'canard'
+  | 'singe'
+  | 'antilope'
+  | 'papillon'
+  | 'luciole'
+  | 'vache';
 export type Fx =
   'poussiere' | 'vapeur' | 'feuilles' | 'bokeh' | 'rayons' | 'ventilateur' | 'ecran' | 'vagues';
 export type Ambience =
@@ -28,7 +42,7 @@ export type Ambience =
   | 'ventilateur'
   | 'musique'
   | 'insectes';
-export type Template = 'piece' | 'hall' | 'rue' | 'parc';
+export type Template = 'piece' | 'hall' | 'rue' | 'parc' | 'ville' | 'maison' | 'nature' | 'imaginaire';
 export type Grade = 'jour' | 'doree' | 'soir' | 'nuit';
 
 export interface PlaceObject {
@@ -667,9 +681,127 @@ export const PLACES: Place[] = [
   },
 ];
 
+// Places built entirely by Blender's procedural library (no painted set): a city, a house, nature, imaginary worlds.
+PLACES.push(
+  {
+    id: 'ville',
+    nom: 'Plateau',
+    match:
+      /\b(plateau|centre ville|centre-ville|ville|tours?|building|immeubles?|boulevard|avenue|quartier des affaires)\b/,
+    exterieur: true,
+    template: 'ville',
+    palette: ['#cfd8dc', '#546e7a', '#ff7043'],
+    habitues: ['Bureau', 'Taxi', 'Marché'],
+    heure: 'jour',
+    objets: [
+      TELEPHONE,
+      O('valise', 'mallette', 'elle s’ouvre et tout s’envole', ['mallette', 'valise', 'dossier']),
+      BILLETS,
+    ],
+    pnj: [
+      N('foule des employés', 'foule', 8, 16),
+      N('vendeur à la sauvette', 'travaille', 0, 1),
+      N('policier qui règle la circulation', 'regarde', 0, 1),
+    ],
+    animaux: [
+      A('pigeon', 'picore sur le trottoir, s’envole quand on court', 0.8, 2, 5),
+      A('oiseau', 'traverse entre les tours', 0.5, 1, 3),
+    ],
+    fx: ['poussiere', 'rayons'],
+    sons: ['circulation', 'foule'],
+    vie: 'tours de verre, embouteillage de woro-woro, cravates pressées, vendeurs à la sauvette',
+  },
+  {
+    id: 'maison',
+    nom: 'Devant la maison',
+    match: /\b(villa|devant la maison|portail|facade|terrasse|cloture|maison de)\b/,
+    exterieur: true,
+    template: 'maison',
+    palette: ['#ffe0b2', '#a1887f', '#e91e63'],
+    habitues: ['Cour', 'Salon'],
+    heure: 'doree',
+    objets: [
+      CHAISE,
+      TELEPHONE,
+      O('portail', 'portail', 'il grince, il est fermé à clé au mauvais moment', ['portail', 'porte', 'clé']),
+    ],
+    pnj: [N('voisins qui passent', 'passe', 1, 2), N('gardien', 'regarde', 0, 1)],
+    animaux: [
+      A('chien', 'aboie derrière le portail', 0.7, 1, 1),
+      A('margouillat', 'hoche la tête sur le mur', 0.6, 1, 2),
+      A('oiseau', 'chante dans le bougainvillier', 0.6, 1, 3),
+    ],
+    fx: ['feuilles', 'rayons'],
+    sons: ['oiseaux', 'enfants'],
+    vie: 'bougainvillier rose sur le mur, portail en fer forgé, chaises plastique sur la terrasse',
+  },
+  {
+    id: 'nature',
+    nom: 'Brousse',
+    match:
+      /\b(brousse|savane|foret|campagne|champs?|montagne|riviere|fleuve|lac|cascade|nature|plantation)\b/,
+    exterieur: true,
+    template: 'nature',
+    palette: ['#7cb342', '#8d6e63', '#ffb300'],
+    habitues: ['Village', 'Cour'],
+    heure: 'doree',
+    objets: [O('marmite', 'calebasse d’eau', 'on la renverse en courant', ['eau', 'calebasse']), TELEPHONE],
+    pnj: [N('cultivateurs', 'travaille', 0, 2), N('chasseur', 'passe', 0, 1)],
+    animaux: [
+      A('singe', 'saute de branche en branche, vole ce qui traîne', 0.85, 1, 3),
+      A('antilope', 'broute au loin puis détale', 0.6, 1, 3),
+      A('oiseau', 'tourne dans le ciel', 0.8, 2, 4),
+      A('papillon', 'volette autour des fleurs', 0.6, 2, 5),
+    ],
+    fx: ['feuilles', 'rayons', 'poussiere'],
+    sons: ['oiseaux', 'insectes'],
+    vie: 'hautes herbes dorées, acacias, singes dans les arbres, antilopes au loin, chaleur qui tremble',
+  },
+  {
+    id: 'imaginaire',
+    nom: 'Monde imaginaire',
+    match: /\b(reve|imaginaire|magique|conte|fantastique|paradis|autre monde|planete|futur)\b/,
+    exterieur: true,
+    template: 'imaginaire',
+    palette: ['#7e57c2', '#26c6da', '#ffca28'],
+    habitues: ['Cérémonie', 'Plage'],
+    heure: 'soir',
+    objets: [
+      O('gateau', 'fruit lumineux', 'on le croque et tout change de couleur', ['fruit', 'magique', 'gâteau']),
+      O('orange', 'orbe lumineux', 'il flotte, il s’échappe quand on veut l’attraper', [
+        'orbe',
+        'boule',
+        'orange',
+      ]),
+    ],
+    pnj: [],
+    animaux: [
+      A('luciole', 'danse en essaim', 0.95, 4, 10),
+      A('papillon', 'géant et lumineux', 0.7, 2, 4),
+      A('oiseau', 'traverse le ciel violet', 0.5, 1, 3),
+    ],
+    fx: ['bokeh', 'rayons'],
+    sons: ['insectes', 'musique'],
+    vie: 'îles flottantes, champignons géants lumineux, cristaux, deux lunes dans un ciel violet',
+  },
+);
+// Crowds where the place is busy (procedural walkers, beyond the drawn troupe).
+for (const [id, n] of [
+  ['marche', [6, 12]],
+  ['gare', [6, 14]],
+  ['aeroport', [8, 16]],
+  ['centre-commercial', [6, 12]],
+  ['ceremonie', [6, 12]],
+  ['rue', [4, 10]],
+] as const) {
+  const p = PLACES.find((x) => x.id === id);
+  if (p && !p.pnj.some((s) => s.comportement === 'foule')) p.pnj.push(N('foule', 'foule', n[0], n[1]));
+}
+
 const fold = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[’']/g, ' ');
 /** The place of a location / idea text: the first catalogue place whose words appear, by priority of specificity. */
 const PRIORITY = [
+  'imaginaire',
   'salon-coiffure',
   'centre-commercial',
   'aeroport',
@@ -683,11 +815,14 @@ const PRIORITY = [
   'marche',
   'plage',
   'village',
+  'maison',
+  'nature',
   'parc',
   'chambre',
   'bureau',
   'salon',
   'cour',
+  'ville',
   'rue',
 ];
 export function placeOf(text: string): Place | null {
@@ -703,7 +838,17 @@ export function placeFor(text: string): Place {
   const known = placeOf(text);
   if (known) return known;
   const t = fold(text);
-  const out = /\b(dehors|exterieur|cour|terrain|stade|chantier|route|foret|riviere)\b/.test(t);
+  const out =
+    /\b(dehors|exterieur|cour|terrain|stade|chantier|route|foret|riviere|desert|ile|volcan|grotte|espace)\b/.test(
+      t,
+    );
+  const tpl: Template = /\b(foret|riviere|desert|ile|volcan|grotte|colline|jungle)\b/.test(t)
+    ? 'nature'
+    : /\b(espace|lune|etoile|magie|dragon|chateau)\b/.test(t)
+      ? 'imaginaire'
+      : out
+        ? 'rue'
+        : 'piece';
   return {
     id: `lieu-${
       t
@@ -714,7 +859,7 @@ export function placeFor(text: string): Place {
     nom: text.trim().slice(0, 40) || 'Nouveau lieu',
     match: /$^/,
     exterieur: out,
-    template: out ? 'rue' : 'piece',
+    template: tpl,
     palette: out ? ['#e0a96d', '#6d9dc5', '#c44536'] : ['#efe1c6', '#8a5a44', '#3d8b8b'],
     habitues: out ? ['Taxi', 'Marché', 'Cour'] : ['Salon', 'Bureau'],
     heure: 'jour',

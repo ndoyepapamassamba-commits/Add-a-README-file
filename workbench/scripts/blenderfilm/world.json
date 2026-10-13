@@ -1,5 +1,6 @@
 {
  "priority": [
+  "imaginaire",
   "salon-coiffure",
   "centre-commercial",
   "aeroport",
@@ -13,11 +14,14 @@
   "marche",
   "plage",
   "village",
+  "maison",
+  "nature",
   "parc",
   "chambre",
   "bureau",
   "salon",
   "cour",
+  "ville",
   "rue"
  ],
  "places": [
@@ -364,6 +368,14 @@
      "n": [
       1,
       1
+     ]
+    },
+    {
+     "role": "foule",
+     "comportement": "foule",
+     "n": [
+      6,
+      12
      ]
     }
    ],
@@ -836,6 +848,14 @@
       0,
       1
      ]
+    },
+    {
+     "role": "foule",
+     "comportement": "foule",
+     "n": [
+      6,
+      12
+     ]
     }
    ],
    "animaux": [
@@ -1302,6 +1322,14 @@
       0,
       1
      ]
+    },
+    {
+     "role": "foule",
+     "comportement": "foule",
+     "n": [
+      8,
+      16
+     ]
     }
    ],
    "animaux": [
@@ -1396,6 +1424,14 @@
      "n": [
       1,
       1
+     ]
+    },
+    {
+     "role": "foule",
+     "comportement": "foule",
+     "n": [
+      6,
+      14
      ]
     }
    ],
@@ -1514,6 +1550,14 @@
      "n": [
       0,
       2
+     ]
+    },
+    {
+     "role": "foule",
+     "comportement": "foule",
+     "n": [
+      4,
+      10
      ]
     }
    ],
@@ -1648,6 +1692,14 @@
      "n": [
       0,
       1
+     ]
+    },
+    {
+     "role": "foule",
+     "comportement": "foule",
+     "n": [
+      6,
+      12
      ]
     }
    ],
@@ -2103,6 +2155,403 @@
     "insectes"
    ],
    "vie": "ventilateur qui grince, moustiquaire, téléphone qui vibre sous l’oreiller"
+  },
+  {
+   "id": "ville",
+   "nom": "Plateau",
+   "match": "\\b(plateau|centre ville|centre-ville|ville|tours?|building|immeubles?|boulevard|avenue|quartier des affaires)\\b",
+   "exterieur": true,
+   "template": "ville",
+   "palette": [
+    "#cfd8dc",
+    "#546e7a",
+    "#ff7043"
+   ],
+   "habitues": [
+    "Bureau",
+    "Taxi",
+    "Marché"
+   ],
+   "heure": "jour",
+   "objets": [
+    {
+     "id": "telephone",
+     "nom": "téléphone",
+     "interaction": "il sonne au pire moment, il filme tout",
+     "mots": [
+      "téléphone",
+      "appel",
+      "filme",
+      "tiktok",
+      "live"
+     ]
+    },
+    {
+     "id": "valise",
+     "nom": "mallette",
+     "interaction": "elle s’ouvre et tout s’envole",
+     "mots": [
+      "mallette",
+      "valise",
+      "dossier"
+     ]
+    },
+    {
+     "id": "billets",
+     "nom": "liasse de billets",
+     "interaction": "on la compte, on la cache",
+     "mots": [
+      "liasse",
+      "billets"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "foule des employés",
+     "comportement": "foule",
+     "n": [
+      8,
+      16
+     ]
+    },
+    {
+     "role": "vendeur à la sauvette",
+     "comportement": "travaille",
+     "n": [
+      0,
+      1
+     ]
+    },
+    {
+     "role": "policier qui règle la circulation",
+     "comportement": "regarde",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "pigeon",
+     "comportement": "picore sur le trottoir, s’envole quand on court",
+     "p": 0.8,
+     "n": [
+      2,
+      5
+     ]
+    },
+    {
+     "espece": "oiseau",
+     "comportement": "traverse entre les tours",
+     "p": 0.5,
+     "n": [
+      1,
+      3
+     ]
+    }
+   ],
+   "fx": [
+    "poussiere",
+    "rayons"
+   ],
+   "sons": [
+    "circulation",
+    "foule"
+   ],
+   "vie": "tours de verre, embouteillage de woro-woro, cravates pressées, vendeurs à la sauvette"
+  },
+  {
+   "id": "maison",
+   "nom": "Devant la maison",
+   "match": "\\b(villa|devant la maison|portail|facade|terrasse|cloture|maison de)\\b",
+   "exterieur": true,
+   "template": "maison",
+   "palette": [
+    "#ffe0b2",
+    "#a1887f",
+    "#e91e63"
+   ],
+   "habitues": [
+    "Cour",
+    "Salon"
+   ],
+   "heure": "doree",
+   "objets": [
+    {
+     "id": "chaise",
+     "nom": "chaise en plastique",
+     "interaction": "on s’y effondre, on la tire pour s’asseoir",
+     "mots": [
+      "chaise",
+      "assieds",
+      "asseoir"
+     ]
+    },
+    {
+     "id": "telephone",
+     "nom": "téléphone",
+     "interaction": "il sonne au pire moment, il filme tout",
+     "mots": [
+      "téléphone",
+      "appel",
+      "filme",
+      "tiktok",
+      "live"
+     ]
+    },
+    {
+     "id": "portail",
+     "nom": "portail",
+     "interaction": "il grince, il est fermé à clé au mauvais moment",
+     "mots": [
+      "portail",
+      "porte",
+      "clé"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "voisins qui passent",
+     "comportement": "passe",
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "role": "gardien",
+     "comportement": "regarde",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "chien",
+     "comportement": "aboie derrière le portail",
+     "p": 0.7,
+     "n": [
+      1,
+      1
+     ]
+    },
+    {
+     "espece": "margouillat",
+     "comportement": "hoche la tête sur le mur",
+     "p": 0.6,
+     "n": [
+      1,
+      2
+     ]
+    },
+    {
+     "espece": "oiseau",
+     "comportement": "chante dans le bougainvillier",
+     "p": 0.6,
+     "n": [
+      1,
+      3
+     ]
+    }
+   ],
+   "fx": [
+    "feuilles",
+    "rayons"
+   ],
+   "sons": [
+    "oiseaux",
+    "enfants"
+   ],
+   "vie": "bougainvillier rose sur le mur, portail en fer forgé, chaises plastique sur la terrasse"
+  },
+  {
+   "id": "nature",
+   "nom": "Brousse",
+   "match": "\\b(brousse|savane|foret|campagne|champs?|montagne|riviere|fleuve|lac|cascade|nature|plantation)\\b",
+   "exterieur": true,
+   "template": "nature",
+   "palette": [
+    "#7cb342",
+    "#8d6e63",
+    "#ffb300"
+   ],
+   "habitues": [
+    "Village",
+    "Cour"
+   ],
+   "heure": "doree",
+   "objets": [
+    {
+     "id": "marmite",
+     "nom": "calebasse d’eau",
+     "interaction": "on la renverse en courant",
+     "mots": [
+      "eau",
+      "calebasse"
+     ]
+    },
+    {
+     "id": "telephone",
+     "nom": "téléphone",
+     "interaction": "il sonne au pire moment, il filme tout",
+     "mots": [
+      "téléphone",
+      "appel",
+      "filme",
+      "tiktok",
+      "live"
+     ]
+    }
+   ],
+   "pnj": [
+    {
+     "role": "cultivateurs",
+     "comportement": "travaille",
+     "n": [
+      0,
+      2
+     ]
+    },
+    {
+     "role": "chasseur",
+     "comportement": "passe",
+     "n": [
+      0,
+      1
+     ]
+    }
+   ],
+   "animaux": [
+    {
+     "espece": "singe",
+     "comportement": "saute de branche en branche, vole ce qui traîne",
+     "p": 0.85,
+     "n": [
+      1,
+      3
+     ]
+    },
+    {
+     "espece": "antilope",
+     "comportement": "broute au loin puis détale",
+     "p": 0.6,
+     "n": [
+      1,
+      3
+     ]
+    },
+    {
+     "espece": "oiseau",
+     "comportement": "tourne dans le ciel",
+     "p": 0.8,
+     "n": [
+      2,
+      4
+     ]
+    },
+    {
+     "espece": "papillon",
+     "comportement": "volette autour des fleurs",
+     "p": 0.6,
+     "n": [
+      2,
+      5
+     ]
+    }
+   ],
+   "fx": [
+    "feuilles",
+    "rayons",
+    "poussiere"
+   ],
+   "sons": [
+    "oiseaux",
+    "insectes"
+   ],
+   "vie": "hautes herbes dorées, acacias, singes dans les arbres, antilopes au loin, chaleur qui tremble"
+  },
+  {
+   "id": "imaginaire",
+   "nom": "Monde imaginaire",
+   "match": "\\b(reve|imaginaire|magique|conte|fantastique|paradis|autre monde|planete|futur)\\b",
+   "exterieur": true,
+   "template": "imaginaire",
+   "palette": [
+    "#7e57c2",
+    "#26c6da",
+    "#ffca28"
+   ],
+   "habitues": [
+    "Cérémonie",
+    "Plage"
+   ],
+   "heure": "soir",
+   "objets": [
+    {
+     "id": "gateau",
+     "nom": "fruit lumineux",
+     "interaction": "on le croque et tout change de couleur",
+     "mots": [
+      "fruit",
+      "magique",
+      "gâteau"
+     ]
+    },
+    {
+     "id": "orange",
+     "nom": "orbe lumineux",
+     "interaction": "il flotte, il s’échappe quand on veut l’attraper",
+     "mots": [
+      "orbe",
+      "boule",
+      "orange"
+     ]
+    }
+   ],
+   "pnj": [],
+   "animaux": [
+    {
+     "espece": "luciole",
+     "comportement": "danse en essaim",
+     "p": 0.95,
+     "n": [
+      4,
+      10
+     ]
+    },
+    {
+     "espece": "papillon",
+     "comportement": "géant et lumineux",
+     "p": 0.7,
+     "n": [
+      2,
+      4
+     ]
+    },
+    {
+     "espece": "oiseau",
+     "comportement": "traverse le ciel violet",
+     "p": 0.5,
+     "n": [
+      1,
+      3
+     ]
+    }
+   ],
+   "fx": [
+    "bokeh",
+    "rayons"
+   ],
+   "sons": [
+    "insectes",
+    "musique"
+   ],
+   "vie": "îles flottantes, champignons géants lumineux, cristaux, deux lunes dans un ciel violet"
   }
  ]
 }

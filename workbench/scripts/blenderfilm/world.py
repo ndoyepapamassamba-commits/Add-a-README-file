@@ -16,6 +16,8 @@ Blender, appelé par scene.py) le construit et l'anime. Catalogue des lieux : wo
 """
 import json, math, os, random, re, unicodedata
 import rules as genrules  # generation rules (hardened by the root-cause analysis of the conformity check)
+import casting  # who may stand in the background of a place, doing what its drawing shows
+import plausibility  # physics and human laws (proxemics, gravity, walking speeds, bodies never overlapping)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -68,16 +70,19 @@ def plan_life(story, timeline, cast_names, rig, fps, nF, seed=None):
     drawn = set(rig['cast'].keys())
     busy = set(cast_names)
     hab = set(place.get('habitues', [])) | {place.get('nom', '')}
+    RULES = genrules.load()
     regulars = [n for n, c in chars.items() if n in drawn and n not in busy and hab & set(c.get('lieux', []))]
-    others = [n for n in drawn if n not in busy and n not in regulars]
+    # Only the regulars of the place appear in its background (generation rule — a character never wanders into a
+    # place its sheet does not list).
+    others = [] if RULES.get('casting_regulars_only', True) else [n for n in drawn if n not in busy and n not in regulars]
     rnd.shuffle(regulars)
     rnd.shuffle(others)
     pool = regulars + others
-    RULES = genrules.load()
+    drawn_ok = lambda n, beh: (not RULES.get('casting_drawn_action', True)) or casting.verdict(chars.get(n, {}), hab, beh, n)[0]
     life = {'place': place['id'], 'nom': place['nom'], 'kit': place['use_kit'], 'template': place['template'], 'palette': place.get('palette', []),
             'exterieur': bool(place.get('exterieur')), 'grade': story.get('grade') or ('naturel' if place['use_kit'] else place.get('heure', 'jour')),
             'extras': [], 'animals': [], 'props': [], 'fx': list(place.get('fx', [])), 'sons': list(place.get('sons', [])),
-            'objets': [o['id'] for o in place.get('objets', [])]}
+            'objets': [o['id'] for o in place.get('objets', [])], 'habitues': sorted(hab)}
     punch_t = None
     if story.get('punch') and timeline:
         seg = timeline[story['punch']['beat']]
@@ -103,9 +108,20 @@ def plan_life(story, timeline, cast_names, rig, fps, nF, seed=None):
         lo, hi = slot['n']
         k = rnd.randint(lo, hi)
         beh = slot['comportement']
+        if beh == 'foule':
+            # Autonomous walkers that avoid each other — drawn by the troupe's own artist (same style as the actors:
+            # a painted world never gets flat 3D mannequins), the characters not already on stage.
+            names = [n for n in reversed(pool) if drawn_ok(n, 'foule')][:min(k, 8)]
+            for n in names:
+                pool.remove(n)
+            if names:
+                life['crowd'] = {'n': len(names), 'names': names, 'seed': rnd.randint(0, 10 ** 6), 'role': slot['role']}
+            continue
         group = []
         generic = re.search(r'passant|promeneur|voyageur|client|baigneur|invite|public|patient|collegue|badaud|membre|temoin|joggeur|danseur', fold(slot['role'])) is not None
-        cands = lambda: [n for n in pool if (generic or n in regulars) and fits(n, slot['role'])]
+        # The candidates whose drawing fits the place and the behaviour; the ones whose drawing shows the job first.
+        cands = lambda: sorted((n for n in pool if (generic or n in regulars) and fits(n, slot['role']) and drawn_ok(n, beh)),
+                               key=lambda n: -casting.role_match(chars.get(n, {}), slot['role']))
         for _ in range(k):
             pick = next(iter(cands()), None)
             if pick is None:
@@ -192,6 +208,49 @@ def hex_rgb(h):
 GRADES = {'naturel': (1.0, 1.0, 1.0), 'jour': (1.02, 1.0, 0.97), 'doree': (1.08, 0.96, 0.82), 'soir': (0.9, 0.82, 0.86), 'nuit': (0.55, 0.62, 0.9)}
 
 
+def blur_radii(sigma):
+    """Three box passes of radius r or r + 1 (variance r(r+1)/3 each) whose variances add up to sigma²."""
+    v = lambda r: r * (r + 1) / 3
+    lo = 0
+    while 3 * v(lo + 1) <= sigma * sigma:
+        lo += 1
+    up = max(0, min(3, int(round((sigma * sigma - 3 * v(lo)) / (v(lo + 1) - v(lo))))))
+    return [lo + 1] * up + [lo] * (3 - up)
+
+
+def blur_sigma(sigma):
+    """The blur actually obtained for a requested sigma (what the conformity report measures)."""
+    return 0.0 if sigma <= 0.3 else math.sqrt(sum(r * (r + 1) / 3 for r in blur_radii(sigma)))
+
+
+def gauss_blur(px, sigma):
+    """Gaussian blur of an image (H×W×C float array) at FULL resolution — three box passes per axis (cumulative
+    sums), the classic fast approximation. With an alpha channel the colour is premultiplied (no dark fringe)."""
+    import numpy as np
+    if sigma <= 0.3:
+        return px.copy()
+    sigma = min(sigma, 0.05 * max(px.shape[:2]))  # never a kernel larger than the picture itself
+    a = px.astype(np.float32)
+    alpha = a.shape[2] == 4
+    if alpha:
+        a = np.concatenate([a[..., :3] * a[..., 3:4], a[..., 3:4]], 2)
+    radii = blur_radii(sigma)
+    for axis in (0, 1):
+        for r in radii:
+            if r == 0:
+                continue
+            pad = [(0, 0)] * 3
+            pad[axis] = (r + 1, r)
+            c = np.cumsum(np.pad(a, pad, mode='edge'), axis=axis, dtype=np.float64)
+            n = a.shape[axis]
+            hi = np.take(c, np.arange(2 * r + 1, 2 * r + 1 + n), axis=axis)
+            lo = np.take(c, np.arange(0, n), axis=axis)
+            a = ((hi - lo) / (2 * r + 1)).astype(np.float32)
+    if alpha:
+        a = np.concatenate([a[..., :3] / np.maximum(a[..., 3:4], 1e-4), a[..., 3:4]], 2)
+    return a
+
+
 def build_life(life, ctx):
     """ctx: bpy, helpers (mesh_object, flat_material, emissive_material, load_rgba, key), decor grid (ray placement),
     rig, fps, nF, actors (id → root / x), tint node of the décor."""
@@ -200,6 +259,7 @@ def build_life(life, ctx):
     W = World(life, ctx)
     W.grade()
     W.extras()
+    W.crowd()
     W.animals()
     W.props()
     W.fx()
@@ -216,6 +276,8 @@ class World:
         self.nF = ctx['nF']
         self.g = ctx['grid']
         self.rnd = random.Random(7)
+        self.softs = []  # soft versions of the drawn cards (recalibrated against the cameras)
+        self.spots = []  # where the ground animals really stand at the first frame (spacing rule)
         # A baked set is already lit for its hour: no second grade on top of it.
         self.tint = GRADES['naturel'] if life.get('kit') is None else GRADES.get(life.get('grade', 'naturel'), (1, 1, 1))
         self.punch = int(round(life['punch'] * self.fps)) + 1 if life.get('punch') is not None else None
@@ -224,15 +286,26 @@ class World:
     # Placement in the STAGE seen by the two-shot (the widest shot of the film): s = -1 / +1 are its left / right
     # edges at that depth, so what lives around the actors is in the picture, not somewhere in an 11 m wide set.
     def ground(self, s, depth):
+        """A point on the floor at `depth` behind the actors, at the screen place s (−1 left edge … +1 right edge) of
+        the wide shot — whose camera may be off-axis (it stands at the painting's viewpoint, framed by lens shift)."""
         st = self.c['stage']
-        hw = st['hw0'] * (st['d'] + depth) / st['d']
-        return st['cx'] + s * hw, depth, 0.0, None
+        k = (st['d'] + depth) / st['d']
+        camx = st.get('camx', st['cx'])
+        return camx + (st['cx'] - camx + s * st['hw0']) * k, depth, 0.0, None
+
+    def ground_u(self, x, depth):
+        """Inverse of ground(): the screen place s of a floor point."""
+        st = self.c['stage']
+        k = (st['d'] + depth) / st['d']
+        camx = st.get('camx', st['cx'])
+        return ((x - camx) / k - (st['cx'] - camx)) / st['hw0']
 
     def sky(self, s, q, depth):
         """A point high in the two-shot frame: q = 0 centre line, 1 = top edge."""
         st = self.c['stage']
         k = (st['d'] + depth) / st['d']
-        return st['cx'] + s * st['hw0'] * k, depth, st['cz'] + q * st['hh0'] * k
+        camx, camz = st.get('camx', st['cx']), st.get('camz', st['cz'])
+        return camx + (st['cx'] - camx + s * st['hw0']) * k, depth, camz + (st['cz'] - camz + q * st['hh0']) * k
 
     def relief_depth(self, x_plane, z_plane):
         g = self.g
@@ -286,19 +359,11 @@ class World:
         import numpy as np
         bpy = self.bpy
         h, w = px.shape[:2]
-        k = 3
-        small = px[::k, ::k].copy()
-        prem = small[..., :3] * small[..., 3:4]
-        al = small[..., 3:4].copy()
-        for _ in range(3):
-            prem = (prem + np.roll(prem, 1, 0) + np.roll(prem, -1, 0) + np.roll(prem, 1, 1) + np.roll(prem, -1, 1)) / 5
-            al = (al + np.roll(al, 1, 0) + np.roll(al, -1, 0) + np.roll(al, 1, 1) + np.roll(al, -1, 1)) / 5
-        col = prem / np.maximum(al, 1e-4)
-        big = np.dstack([col, al])
-        big = np.repeat(np.repeat(big, k, 0), k, 1)[:h, :w]
-        big = np.pad(big, ((0, h - big.shape[0]), (0, w - big.shape[1]), (0, 0)), mode='edge')
+        # A first soft version; its strength is recalibrated once the cameras are known (scene.calibrate_softness:
+        # faces and expressions in the background stay readable — the blur on screen is capped by a generation rule).
         soft_img = bpy.data.images.new(f'soft-{name}', w, h, alpha=True)
-        soft_img.pixels.foreach_set(big[::-1].astype(np.float32).ravel())
+        soft_img.pixels.foreach_set(gauss_blur(px, 2.0)[::-1].astype(np.float32).ravel())
+        self.softs.append({'name': name, 'img': soft_img, 'px': px, 'sigma': 2.0})
         m = bpy.data.materials.new(f'x-{name}')
         m.use_nodes = True
         nt = m.node_tree
@@ -344,7 +409,7 @@ class World:
                 pass
         # Same softness as the set, shot by shot (hard cuts).
         for s in self.c.get('shots', []):
-            sv.outputs[0].default_value = 0.0 if s['type'] == 'two' else (0.55 if s['type'] == 'mcu' else 0.8)
+            sv.outputs[0].default_value = 0.0 if s['type'] == 'two' else 1.0
             sv.outputs[0].keyframe_insert('default_value', frame=s['start'] + 1)
         try:
             ad = m.node_tree.animation_data
@@ -378,6 +443,15 @@ class World:
         z0, z1 = -(h - 1 - foot) * s, (foot + 1) * s
         m = self.card_material(name, img, px)
         ob = self.c['mesh_object'](f'figurant-{name}', [(x0, 0, z0), (x1, 0, z0), (x1, 0, z1), (x0, 0, z1)], [(0, 1, 2, 3)], [(0, 0), (1, 0), (1, 1), (0, 1)], m)
+        self.softs[-1].update({'obj': ob, 'm_per_px': s})
+        # Where the drawn FACE is on the card (rig landmarks): the laws of the eyeline use the face, not the card centre.
+        f = pose.get('face') or {}
+        eyes = f.get('eyes') or []
+        if f.get('nose') or eyes:
+            fx_p = f['nose'][0] if f.get('nose') else sum(e['c'][0] for e in eyes) / len(eyes)
+            fy_p = sum(e['c'][1] for e in eyes) / len(eyes) if eyes else f['nose'][1]
+            ob['face_dx'] = (fx_p - w / 2) * s
+            ob['face_z'] = (foot - fy_p) * s
         return ob
 
     def shadow(self, parent, width):
@@ -385,14 +459,77 @@ class World:
         ob.parent = parent
         return ob
 
+    def place_people(self, cards):
+        """Laws before animation (plausibility.py): the extras stand outside the personal zone of the actors'
+        conversation (Hall's social distance), a talking group at conversation distance facing each other, nobody on
+        top of anybody on the same plane; each passer-by walks its own lane (never through someone)."""
+        min_depth = genrules.get('extras_min_depth')
+        st = self.c['stage']
+        # Where an extra may stand: the frame of the wide shot and beyond it (off-frame in the wide shot, seen in the
+        # close-ups) — the laws choose.
+        x_range = lambda y: (self.ground(-1.6, y)[0], self.ground(1.6, y)[0])
+        fixed = [{'x': a['plan']['x'], 'y': a['root'].location.y, 'w': a['poses']['neutre'].width, 'fx': a['plan']['x'] + a['poses']['neutre'].face_x,
+                  'fz': a['poses']['neutre'].face_z, 'faces': [(p_.face_x, p_.face_z) for p_ in a['poses'].values()]}
+                 for a in self.c.get('actors', {}).values()]
+        people, gid = [], None
+        for i, e in enumerate(self.life['extras']):
+            if e['behavior'] == 'passe' or e['name'] not in cards:
+                continue
+            # A conversation group = the consecutive « discute » extras of one slot (same role).
+            gkey = f"{e['role']}-{e['behavior']}"
+            gid = gkey if e['behavior'] in ('discute', 'file') else f'{gkey}-{i}'
+            e['groupe'] = gid
+            people.append({'id': i, 'w': cards[e['name']].dimensions.x, 'x': self.ground(e['u'], e['depth'])[0], 'y': e['depth'],
+                           'group': gid, 'talk': e['behavior'] == 'discute', 'fdx': abs(cards[e['name']].get('face_dx', 0.0)),
+                           'fz': cards[e['name']].get('face_z', 0.88 * cards[e['name']].dimensions.z)})
+        # Screen x in the wide shots, over their whole moves: push / pull (distance × 0.97–1.32), drift (± 2.5 % of the
+        # frame height sideways), and the small re-centring of the framing fit (± 5 cm).
+        # (the camera zooms — frame × 0.97–1.32 — and shifts sideways; it does not move)
+        camx, camz = st.get('camx', st['cx']), st.get('camz', st['cz'])
+        views = [{'camx': camx, 'camz': camz, 'cx': st['cx'] + dxc, 'cz': st['cz'], 'd': st['d'], 'half': st['hw0'] * kd / st['d'], 'hh': st['hh0'] * kd}
+                 for kd in (0.97, 1.0, 1.07, 1.32) for dxc in (-0.05 - 0.05 * st['hh0'], 0.0, 0.05 + 0.05 * st['hh0'])]
+        pos = plausibility.layout(people, fixed, x_range, min_depth, proj=views)
+        statics = []
+        for i, (x, y, face) in pos.items():
+            e = self.life['extras'][i]
+            e['u'], e['depth'] = round(self.ground_u(x, y), 3), round(y, 2)
+            if face is not None:
+                e['face'] = face
+            statics.append(y)
+        # Depth bands: who stands (front), who passes (middle, a full « plane » away from who stands — a passer-by goes
+        # visibly behind, never slides across someone at the same depth), the crowd (back, one body behind the passers).
+        lanes = []
+        for e in self.life['extras']:
+            if e['behavior'] == 'passe':
+                front = max(statics, default=min_depth - plausibility.SAME_PLANE) + plausibility.SAME_PLANE + 0.05
+                e['depth'] = plausibility.lane(max(e['depth'], front), lanes, lo=front)
+                lanes.append(e['depth'])
+                # A human pace: 0.9–1.3 m/s (a running child 1.4–2.0), the crossing lasts what the distance requires.
+                run = re.search(r'court|dribble|course', fold(e.get('activite', '')))
+                v = (1.4 + 0.6 * ((e.get('phase', 0) * 7.3) % 1)) if run else (0.9 + 0.4 * ((len(e['name']) * 0.37) % 1))
+                hw = st['hw0'] * (st['d'] + e['depth']) / st['d']
+                dist = 2 * 1.45 * hw
+                e['vitesse'] = round(v, 2)
+                e['passes'] = [[t0, round(t0 + dist / v, 2), d] for t0, _t1, d in e['passes']]
+        self.bands = {'debout': max(statics, default=min_depth), 'passants': max(lanes, default=min_depth)}
+
     def extras(self):
         key = self.c['key']
+        cast = self.c['rig']['cast']
+        cards = {}
+        for e in self.life['extras']:
+            if e['name'] in cast and e['name'] not in cards:
+                cards[e['name']] = self.cutout(e['name'], self.c['heights'].get(e['name'], 1.7))
+        self.place_people(cards)
+        fps = self.fps
+        hop_h = 0.05  # a little jump of joy at the punchline: 5 cm, so 0.20 s in the air (gravity)
+        hop_f = plausibility.airtime(hop_h) * fps
         for e in self.life['extras']:
             name = e['name']
-            if name not in self.c['rig']['cast']:
+            if name not in cast:
                 continue
             height = self.c['heights'].get(name, 1.7)
-            card = self.cutout(name, height)
+            card = cards[name]
             root = self.bpy.data.objects.new(f'figurant-root-{name}', None)
             self.bpy.context.scene.collection.objects.link(root)
             card.parent = root
@@ -413,8 +550,11 @@ class World:
                         x, y, z, _ = self.ground(u, e['depth'])
                         (px, py, pz), s = self.visible(x, y, z + 0.0)
                         step = abs(math.sin((f / self.fps) * math.pi * 1.9 + ph))
-                        root.location = (px, py, pz + 0.025 * step * s)
-                        root.scale = (s * (1 if d > 0 else -1) * (-1 if self.facing(name) < 0 else 1), s, s)
+                        # Feet stay on the ground: the walk bobs the body (stretch from the feet), it never lifts off.
+                        root.location = (px, py, pz)
+                        root['sol'] = pz
+                        root.keyframe_insert('["sol"]', frame=f)
+                        root.scale = (s * (1 if d > 0 else -1) * (-1 if self.facing(name) < 0 else 1), s, s * (1 + 0.012 * step))
                         root.rotation_euler = (0, math.radians(2.2) * math.sin((f / self.fps) * math.pi * 1.9 + ph), 0)
                         root.keyframe_insert('location', frame=f)
                         root.keyframe_insert('scale', frame=f)
@@ -426,7 +566,12 @@ class World:
                 face = e.get('face', 1) * (-1 if self.facing(name) < 0 else 1)
                 root.location = (px, py, pz)
                 root.scale = (s * face, s, s)
-                for f in range(1, self.nF + 1, 3):
+                root['sol'] = pz
+                root.keyframe_insert('["sol"]', frame=1)
+                frames = set(range(1, self.nF + 1, 3))
+                if self.punch:
+                    frames |= set(range(max(1, self.punch - 1), min(self.nF, self.punch + int(hop_f) + 3) + 1))
+                for f in sorted(frames):
                     t = f / self.fps
                     breath = 1 + 0.009 * math.sin(t * 1.6 + ph)
                     sway = math.radians(1.2) * math.sin(t * 0.7 + ph)
@@ -439,9 +584,8 @@ class World:
                         breath += 0.015 * abs(math.sin(t * 2.6 + ph))
                         sway += math.radians(3) * math.sin(t * 2.6 + ph)
                     hop = 0.0
-                    if self.punch and e['behavior'] in ('regarde', 'discute', 'attend', 'file', 'travaille') and 0 <= f - self.punch < int(0.5 * self.fps):
-                        q = (f - self.punch) / (0.5 * self.fps)
-                        hop = 0.06 * math.sin(q * math.pi)  # the extras react to the punchline
+                    if self.punch and e['behavior'] in ('regarde', 'discute', 'attend', 'file', 'travaille'):
+                        hop = plausibility.hop((f - self.punch) / fps, hop_h)  # the extras jump at the punchline — a real parabola
                     root.scale = (s * face, s, s * breath)
                     root.rotation_euler = (0, sway, 0)
                     root.location = (px, py, pz + hop * s)
@@ -621,11 +765,28 @@ class World:
         self.cone('lt', (-0.12, 0, 0), 0.015, 0.12, (60, 70, 80), body, rot=(0, math.radians(-90), 0))
         return root, body, None
 
+    def free_u(self, a, depth):
+        """The animal's starting point, moved sideways until it stands clear of the animals already placed — measured
+        where it REALLY stands (after the pull toward the camera on the painted relief, which can bring a far animal
+        onto a near one). Generation rule « animal_min_dist », hardened by the root-cause analysis."""
+        md = genrules.get('animal_min_dist')
+        u0, u = a['u'], a['u']
+        for k in range(40):
+            u = u0 + 0.05 * ((k + 1) // 2) * (1 if k % 2 else -1)
+            x, y, z, _ = self.ground(u, depth)
+            (px, py, _pz), _s = self.visible(x, y, z)
+            if all(math.hypot(px - qx, py - qy) >= md for qx, qy in self.spots):
+                break
+        self.spots.append((px, py))
+        a['u'] = round(u, 3)
+        return a['u']
+
     def animals(self):
         key = self.c['key']
         for i, a in enumerate(self.life['animals']):
             sp, ph, sp_k = a['species'], a.get('phase', 0), a.get('speed', 1.0)
             if sp in ('poule', 'pigeon', 'canard'):
+                self.free_u(a, a['depth'])
                 root, body, head = self.make_poule(i, white=(sp == 'canard'))
                 if sp == 'pigeon':
                     for ob in root.children_recursive:
@@ -655,7 +816,7 @@ class World:
                         ob.keyframe_insert(path, frame=f)
             elif sp in ('chevre', 'chien'):
                 root, body, head = self.make_chevre(i) if sp == 'chevre' else self.make_chien(i)
-                u = a['u']
+                u = self.free_u(a, a['depth'] + 0.3)
                 for f in range(1, self.nF + 1, 2):
                     t = f / self.fps
                     if sp == 'chien':
@@ -676,6 +837,7 @@ class World:
                         ob.keyframe_insert(path, frame=f)
             elif sp == 'chat':
                 root, body, head = self.make_chat(i)
+                self.free_u(a, a['depth'])
                 x, y, z, _ = self.ground(a['u'], a['depth'])
                 (px, py, pz), s = self.visible(x, y, z)
                 root.location = (px, py, pz)
@@ -709,6 +871,8 @@ class World:
                     root.keyframe_insert('hide_render', frame=f)
                     wl.keyframe_insert('rotation_euler', frame=f)
                     wr.keyframe_insert('rotation_euler', frame=f)
+            elif sp in ('singe', 'antilope', 'vache', 'papillon', 'luciole'):
+                self.wild(i, a)
             elif sp == 'margouillat':
                 root, body, _ = self.make_margouillat(i)
                 # On the wall: high in the picture, ON the painted relief (facing the camera), doing push-ups.
@@ -728,6 +892,188 @@ class World:
                     push = abs(math.sin(cyc * math.pi * 2.5)) if cyc < 1.2 else 0.0
                     body.location = (0, 0, 0.012 * push)
                     body.keyframe_insert('location', frame=f)
+
+    # ── foule autonome ─────────────────────────────────────────────────────────────────────────────────────────────
+    def crowd(self):
+        """Autonomous crowd of DRAWN characters (the troupe's cards — the same art as the actors): each walker crosses
+        the place at its own pace, avoids the others (separation steering), sometimes stops a moment with someone it
+        meets, hops at the punchline; the flow never ends (they come back in off-screen)."""
+        cr = self.life.get('crowd')
+        if not cr or not cr.get('names'):
+            return
+        rng = random.Random(cr['seed'])
+        dt = 1.0 / self.fps
+        hop_h = 0.04
+        hop_f = plausibility.airtime(hop_h) * self.fps
+        ag = []
+        for name in cr['names']:
+            if name not in self.c['rig']['cast']:
+                continue
+            height = self.c['heights'].get(name, 1.7)
+            card = self.cutout(name, height)
+            root = self.bpy.data.objects.new(f'foule-root-{name}', None)
+            self.bpy.context.scene.collection.objects.link(root)
+            card.parent = root
+            self.shadow(root, height * 0.35)
+            lo = max(2.1, getattr(self, 'bands', {}).get('passants', 0) + plausibility.BODY_DEPTH + 0.1)
+            depth = rng.uniform(lo, lo + 1.2)
+            x0, _, _, _ = self.ground(-1.7, depth)
+            x1, _, _, _ = self.ground(1.7, depth)
+            ag.append({'root': root, 'name': name, 'x': rng.uniform(x0, x1), 'y': depth, 'ymin': lo - 0.05, 'ymax': lo + 1.3, 'dir': rng.choice([-1, 1]), 'speed': rng.uniform(0.9, 1.3),
+                       'stop': 0.0, 'phase': rng.uniform(0, 6.28), 'lo': x0 - 0.7, 'hi': x1 + 0.7})
+            self.objs.append(root)
+        for f in range(1, self.nF + 1):
+            for a in ag:
+                if a['stop'] > 0:
+                    a['stop'] -= dt
+                    continue
+                vx, vy = a['dir'] * a['speed'], 0.0
+                for b in ag:
+                    if b is a:
+                        continue
+                    dx, dy = a['x'] - b['x'], a['y'] - b['y']
+                    d2 = dx * dx + dy * dy
+                    if 1e-6 < d2 < 0.7 * 0.7:
+                        d = math.sqrt(d2)
+                        push = (0.7 - d) / 0.7 * 1.8
+                        vx += dx / d * push
+                        vy += dy / d * push
+                        if a['dir'] != b['dir'] and rng.random() < 0.003:
+                            a['stop'] = rng.uniform(1.2, 2.5)  # they know each other: a word in passing
+                a['x'] += vx * dt
+                a['y'] = min(a['ymax'], max(a['ymin'], a['y'] + vy * dt * 0.5))
+                if a['x'] > a['hi']:
+                    a['x'] = a['lo']
+                elif a['x'] < a['lo']:
+                    a['x'] = a['hi']
+            in_hop = self.punch is not None and -1 <= f - self.punch <= hop_f + 2
+            if f % 2 == 1 or f == self.nF or in_hop:
+                for a in ag:
+                    root = a['root']
+                    (px, py, pz), s = self.visible(a['x'], a['y'], 0.0)
+                    walking = a['stop'] <= 0
+                    t = f * dt
+                    step = abs(math.sin(t * math.pi * 1.9 * a['speed'] + a['phase'])) if walking else 0.0
+                    # A real jump at the punchline (parabola, g = 9.81 m/s²); walking never lifts the feet off the ground.
+                    hop = plausibility.hop((f - self.punch) / self.fps, hop_h) if self.punch is not None else 0.0
+                    root.location = (px, py, pz + hop * s)
+                    root['sol'] = pz
+                    flip = (1 if a['dir'] > 0 else -1) * (-1 if self.facing(a['name']) < 0 else 1)
+                    root.scale = (s * flip, s, s * (1 + 0.012 * step))
+                    root.rotation_euler = (0, math.radians(2.2) * math.sin(t * math.pi * 1.9 + a['phase']) if walking else 0, 0)
+                    for path in ('location', 'scale', 'rotation_euler', '["sol"]'):
+                        root.keyframe_insert(path, frame=f)
+
+    # ── faune sauvage et autres espèces ────────────────────────────────────────────────────────────────────────────
+    def make_singe(self, i):
+        root = self.empty(f'singe-{i}')
+        body = self.empty(f'singe-{i}-body')
+        body.parent = root
+        c = (110, 80, 55)
+        self.blob('mb', (0, 0, 0.32), (0.13, 0.11, 0.17), c, body)
+        head = self.empty(f'singe-{i}-head')
+        head.parent = body
+        head.location = (0.05, 0, 0.55)
+        self.blob('mh', (0, 0, 0), (0.09, 0.09, 0.085), c, head)
+        self.blob('mf', (0.06, 0, -0.01), (0.04, 0.06, 0.05), (210, 170, 140), head, seg=8)
+        for dy in (-0.09, 0.09):
+            self.blob('me', (0, dy, 0.02), (0.02, 0.025, 0.03), (210, 170, 140), head, seg=6)
+            self.cyl('ma', (0.02, dy * 1.4, 0.25), 0.025, 0.36, c, body, rot=(0, math.radians(-15), 0))
+            self.cyl('mlg', (0.0, dy, 0.1), 0.03, 0.22, c, body)
+        self.cyl('mt', (-0.18, 0, 0.35), 0.015, 0.45, c, body, rot=(0, math.radians(-40), 0))
+        return root, body, head
+
+    def make_antilope(self, i):
+        root, body, head = self.make_chevre(i)
+        root.name = f'antilope-{i}'
+        for ob in root.children_recursive:
+            if ob.type == 'MESH' and ob.data.materials:
+                ob.data.materials[0] = self.mat((190, 130, 70))
+        body.scale = (1.25, 1.0, 1.15)
+        return root, body, head
+
+    def make_vache(self, i):
+        root, body, head = self.make_chevre(i)
+        root.name = f'vache-{i}'
+        for ob in root.children_recursive:
+            if ob.type == 'MESH' and ob.data.materials:
+                ob.data.materials[0] = self.mat(self.rnd.choice([(240, 235, 228), (130, 80, 45), (60, 45, 35)]))
+        root.scale = (2.1, 2.1, 2.1)
+        return root, body, head
+
+    def make_papillon(self, i, glow=False):
+        root = self.empty(f'{"luciole" if glow else "papillon"}-{i}')
+        c = self.rnd.choice([(250, 160, 40), (60, 150, 240), (240, 80, 150), (250, 240, 120)]) if not glow else (255, 250, 150)
+        if glow:
+            self.blob('lg', (0, 0, 0), (0.015, 0.015, 0.015), c, root, seg=6)
+            return root, None, None
+        self.blob('pb', (0, 0, 0), (0.025, 0.006, 0.006), (40, 30, 30), root, seg=6)
+        wl = self.empty(f'papillon-{i}-wl')
+        wl.parent = root
+        wr = self.empty(f'papillon-{i}-wr')
+        wr.parent = root
+        self.blob('pwl', (0, 0.035, 0), (0.03, 0.035, 0.003), c, wl, seg=8)
+        self.blob('pwr', (0, -0.035, 0), (0.03, 0.035, 0.003), c, wr, seg=8)
+        return root, wl, wr
+
+    def wild(self, i, a):
+        """Behaviours of the species added to the living world (wild animals, insects, cattle)."""
+        sp, ph = a['species'], a.get('phase', 0)
+        if sp == 'singe':
+            root, body, head = self.make_singe(i)
+            u = self.free_u(a, a['depth'])
+            for f in range(1, self.nF + 1, 2):
+                t = f / self.fps
+                cyc = (t + ph * 2) % 5.0
+                hop = abs(math.sin(cyc * math.pi * 1.6)) * 0.12 if cyc < 1.2 else 0.0  # little hops, then sits scratching
+                if self.punch and 0 <= f - self.punch < self.fps:
+                    hop = 0.35 * abs(math.sin((f - self.punch) / self.fps * math.pi))  # jumps with the punchline
+                u += 0.003 * a['dir'] if cyc < 1.2 else 0.0
+                x, y, z, _ = self.ground(u, a['depth'] + 0.3)
+                (px, py, pz), s = self.visible(x, y, z)
+                root.location = (px, py, pz + hop * s)
+                root.scale = (s, s, s)
+                head.rotation_euler = (0, 0, math.radians(25) * math.sin(t * 1.3 + ph))
+                for ob, path in ((root, 'location'), (root, 'scale'), (head, 'rotation_euler')):
+                    ob.keyframe_insert(path, frame=f)
+        elif sp in ('antilope', 'vache'):
+            root, body, head = self.make_antilope(i) if sp == 'antilope' else self.make_vache(i)
+            u = self.free_u(a, a['depth'] + 1.2)
+            fled = 0.0
+            for f in range(1, self.nF + 1, 2):
+                t = f / self.fps
+                graze = (math.sin(t * 0.6 + ph) + 1) / 2
+                if sp == 'antilope' and self.punch and f >= self.punch:
+                    fled = min(3.0, fled + 0.05)  # bounds away after the punchline
+                x, y, z, _ = self.ground(u + fled * a['dir'], a['depth'] + 1.2)
+                (px, py, pz), s = self.visible(x, y, z)
+                jump = 0.15 * abs(math.sin(t * 7)) if fled > 0 else 0.0
+                root.location = (px, py, pz + jump)
+                sc = s * (2.1 if sp == 'vache' else 1.0)
+                root.scale = (sc, sc, sc)
+                root.rotation_euler = (0, 0, 0 if a['dir'] > 0 else math.pi)
+                head.rotation_euler = (0, math.radians(60) * graze * (0 if fled else 1), 0)
+                for ob, path in ((root, 'location'), (root, 'scale'), (root, 'rotation_euler'), (head, 'rotation_euler')):
+                    ob.keyframe_insert(path, frame=f)
+        elif sp in ('papillon', 'luciole'):
+            glow = sp == 'luciole'
+            root, wl, wr = self.make_papillon(i, glow)
+            for f in range(1, self.nF + 1, 2):
+                t = f / self.fps + ph * 4
+                u = a['u'] + 0.25 * math.sin(t * 0.7) + 0.08 * math.sin(t * 2.3)
+                q = 0.05 + 0.25 * (0.5 + 0.5 * math.sin(t * 0.9 + ph)) if not glow else -0.35 + 0.3 * (0.5 + 0.5 * math.sin(t * 0.5 + ph))
+                root.location = self.sky(u, q, a['depth'] + 0.4)
+                root.keyframe_insert('location', frame=f)
+                if glow:
+                    on = 0.5 + 0.5 * math.sin(t * 3.1 + ph * 5)
+                    root.scale = (on, on, on)
+                    root.keyframe_insert('scale', frame=f)
+                else:
+                    flap = math.sin(t * 30)
+                    wl.rotation_euler = (math.radians(55) * flap, 0, 0)
+                    wr.rotation_euler = (math.radians(-55) * flap, 0, 0)
+                    wl.keyframe_insert('rotation_euler', frame=f)
+                    wr.keyframe_insert('rotation_euler', frame=f)
 
     # ── objets de l'action ─────────────────────────────────────────────────────────────────────────────────────────
     def prop_mesh(self, kind, i):
@@ -991,6 +1337,10 @@ def build_set(life, mat, lights=True):
         return reg(ob)
 
     def box(name, x0, x1, y0, y1, z0, z1, rgb, rough=0.7):
+        if RULES.get('box_sorted_bounds', True):
+            x0, x1 = min(x0, x1), max(x0, x1)
+            y0, y1 = min(y0, y1), max(y0, y1)
+            z0, z1 = min(z0, z1), max(z0, z1)
         v = [(x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0), (x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)]
         f = [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
         ob = obj(name, v, f, mat(name, rgb, rough))
@@ -1011,6 +1361,14 @@ def build_set(life, mat, lights=True):
 
     def sphere(name, loc, r, rgb, rough=0.8):
         bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, radius=r, location=loc)
+        ob = bpy.context.active_object
+        ob.name = name
+        ob.data.materials.append(mat(name, rgb, rough))
+        bpy.ops.object.shade_smooth()
+        return reg(ob)
+
+    def lowsphere(name, loc, r, rgb, rough=0.8):
+        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1, radius=r, location=loc)
         ob = bpy.context.active_object
         ob.name = name
         ob.data.materials.append(mat(name, rgb, rough))
@@ -1123,7 +1481,7 @@ def build_set(life, mat, lights=True):
     if tpl == 'hall':
         wall = tuple(int(c * 0.35 + 238 * 0.65) for c in wall)
     K = {'box': box, 'sphere': sphere, 'cyl': cyl, 'text': text, 'puffy': puffy, 'curtain': curtain, 'cone': cone, 'torus': torus, 'light': light,
-         'plan': FloorPlan(RULES['furniture_clearance']), 'G': G}
+         'plan': FloorPlan(RULES['furniture_clearance']), 'G': G, 'obj': obj, 'mat': mat, 'lowsphere': lowsphere, 'reg': reg}
     if tpl == 'piece':
         D, Hh, Wd = 3.4, 2.9, 6.0
         # Back wall in four pieces around a REAL window opening: the daylight enters and lands on the floor.
@@ -1212,6 +1570,19 @@ def build_set(life, mat, lights=True):
         so = bpy.data.objects.new('sun', sun)
         sc.collection.objects.link(so)
         so.rotation_euler = (math.radians(90 - max(elev, 2)), 0, math.radians(220))
+    if tpl in ('ville', 'maison', 'nature', 'imaginaire'):
+        # The procedural library: whole places generated on demand, in variants (life['variant']).
+        import procedural
+        if tpl == 'imaginaire' and lights:
+            # A violet dream sky lit by two moons and glowing life; a low pink sun.
+            for l in list(world.node_tree.links):
+                if l.to_node == bg:
+                    world.node_tree.links.remove(l)
+            bg.inputs[0].default_value = (0.32, 0.18, 0.55, 1)
+            bg.inputs[1].default_value = 0.9
+            sun.energy, sun.color = 1.6, (1.0, 0.6, 0.85)
+        getattr(procedural, f'build_{tpl}')(bpy, K, rnd, life)
+        return
     ground = (86, 150, 60) if tpl == 'parc' else (176, 150, 118)
     box('ground', -30, 30, -5, 40, -0.1, 0, ground, 0.95)
     if tpl == 'rue':
@@ -1241,11 +1612,8 @@ def build_set(life, mat, lights=True):
                 leaf = box(f'pl{xx}{k}', 0, 1.8, -0.12, 0.12, -0.02, 0.02, (60, 140, 60), 0.8)
                 leaf.location = (xx, 3.6, 5.2)
                 leaf.rotation_euler = (0, math.radians(25), ang)
-        box('taxi', -4.2, -1.9, 1.2, 2.2, 0.3, 1.0, (240, 150, 30), 0.3)
-        box('taxi-top', -3.8, -2.3, 1.3, 2.1, 1.0, 1.4, (240, 150, 30), 0.3)
-        box('taxi-glass', -3.75, -2.35, 1.28, 2.12, 1.05, 1.35, (60, 80, 100), 0.05)
-        for wx in (-3.9, -2.5):
-            cyl(f'wheel{wx}', (wx + 0.2, 1.15, 0.3), 0.3, 0.2, (30, 30, 30), 0.6).rotation_euler = (math.radians(90), 0, 0)
+        import vehicles
+        vehicles.car(bpy, K, 'taxi', (-3.1, 1.75, 0), kind='taxi', heading=0)
     else:
         box('path', -1.5, 1.5, -5, 40, 0, 0.01, (214, 176, 120), 0.95)
         for k in range(16):
@@ -1580,21 +1948,82 @@ def furnish_park(life, objs, box, sphere, cyl, rnd, G=None):
         sphere('ball', (2.6, 2.4, 0.12), 0.12, (240, 240, 240), 0.5)
 
 
-def bake_template(life, out_dir, samples=48, size=(2048, 1024)):
-    """Render the 3D place ONCE as a painted set + its depth map. Returns a décor entry like the kit's."""
+
+def bake_material_factory(life):
+    """The physically based materials of a built place (wood, plaster, fabric, wax, paint, glass, lights…), by name."""
     import bpy
-    import numpy as np
-    os.makedirs(out_dir, exist_ok=True)
-    key = 'v6-' + re.sub(r'[^a-z0-9]+', '-', fold(f"{life.get('place')}-{life.get('template')}-{life.get('grade')}-{'-'.join(life.get('palette', []))}-{'-'.join(sorted(life.get('objets') or []))}"))[:150]
-    img_path = os.path.join(out_dir, f'baked-{key}.png')
-    dep_path = os.path.join(out_dir, f'baked-{key}.depth.png')
-    fit = {'mH': 2.8, 'floor': 0.86, 'cx': 0.5}
-    if os.path.isfile(img_path) and os.path.isfile(dep_path):
-        return {'image': img_path, 'depth': dep_path, 'fit': fit, 'baked': True, 'preflight': os.path.join(out_dir, f'baked-{key}.preflight.json')}
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    sc = bpy.context.scene
+    cache = {}
 
     def mat(name, rgb, rough=0.7):
+        # One material per (kind, colour, roughness): a city of twelve cars needs a few dozen materials, not hundreds
+        # (real-time budget — game engines draw one call per material).
+        kind = re.sub(r'\d+$', '', name.split('-')[0])
+        key = (kind, tuple(int(c) for c in rgb), round(rough, 2))
+        if key not in cache:
+            cache[key] = _make(name, rgb, rough)
+            if not (name in ('win',) or name.startswith(('glow', 'screen', 'sky', 'tint', 'glass', 'net'))):
+                surface_detail(cache[key], rough)
+        return cache[key]
+
+    def surface_detail(m, rough):
+        """The MATTER of the troupe's style on every surface (measured gap — style.py: the drawings have almost no flat
+        area): colour variation at two scales, a fine relief, grime in the recesses (ambient occlusion), varying gloss."""
+        nt = m.node_tree
+        b = nt.nodes.get('Principled BSDF')
+        if b is None:
+            return
+        tc = nt.nodes.new('ShaderNodeTexCoord')
+        big = nt.nodes.new('ShaderNodeTexNoise')
+        big.inputs['Scale'].default_value = 3.5
+        big.inputs['Detail'].default_value = 6.0
+        fine = nt.nodes.new('ShaderNodeTexNoise')
+        fine.inputs['Scale'].default_value = 45.0
+        fine.inputs['Detail'].default_value = 3.0
+        for n_ in (big, fine):
+            nt.links.new(tc.outputs['Object'], n_.inputs['Vector'])
+
+        def remap(src, lo, hi):
+            mr = nt.nodes.new('ShaderNodeMapRange')
+            mr.inputs['To Min'].default_value, mr.inputs['To Max'].default_value = lo, hi
+            nt.links.new(src, mr.inputs['Value'])
+            return mr.outputs['Result']
+
+        def mul(a, b_):
+            mm = nt.nodes.new('ShaderNodeMath')
+            mm.operation = 'MULTIPLY'
+            nt.links.new(a, mm.inputs[0])
+            nt.links.new(b_, mm.inputs[1])
+            return mm.outputs[0]
+
+        ao = nt.nodes.new('ShaderNodeAmbientOcclusion')
+        ao.samples = 4
+        ao.inputs['Distance'].default_value = 0.3
+        shade = mul(mul(remap(big.outputs['Fac'], 0.82, 1.12), remap(fine.outputs['Fac'], 0.94, 1.06)), remap(ao.outputs['AO'], 0.72, 1.0))
+        cc = nt.nodes.new('ShaderNodeCombineColor')
+        for i in range(3):
+            nt.links.new(shade, cc.inputs[i])
+        mx = nt.nodes.new('ShaderNodeMix')
+        mx.data_type = 'RGBA'
+        mx.blend_type = 'MULTIPLY'
+        mx.inputs['Factor'].default_value = 1.0
+        base = b.inputs['Base Color']
+        if base.is_linked:
+            nt.links.new(base.links[0].from_socket, mx.inputs['A'])
+        else:
+            mx.inputs['A'].default_value = base.default_value
+        nt.links.new(cc.outputs['Color'], mx.inputs['B'])
+        nt.links.new(mx.outputs['Result'], base)
+        if not b.inputs['Normal'].is_linked:
+            bump = nt.nodes.new('ShaderNodeBump')
+            bump.inputs['Strength'].default_value = 0.18
+            bump.inputs['Distance'].default_value = 0.02
+            nt.links.new(fine.outputs['Fac'], bump.inputs['Height'])
+            nt.links.new(bump.outputs['Normal'], b.inputs['Normal'])
+        if not b.inputs['Roughness'].is_linked:
+            r0 = b.inputs['Roughness'].default_value
+            nt.links.new(remap(big.outputs['Fac'], max(0.05, r0 - 0.12), min(1.0, r0 + 0.12)), b.inputs['Roughness'])
+
+    def _make(name, rgb, rough):
         m = bpy.data.materials.new(name)
         m.use_nodes = True
         nt = m.node_tree
@@ -1604,7 +2033,9 @@ def bake_template(life, out_dir, samples=48, size=(2048, 1024)):
         b.inputs['Roughness'].default_value = rough
         if name in ('win',) or name.startswith('glow') or name.startswith('screen'):
             warm = (1.0, 0.8, 0.55, 1) if life.get('grade') in ('soir', 'nuit') else (1.0, 0.97, 0.9, 1)
-            b.inputs['Emission Color'].default_value = (0.75, 0.88, 1.0, 1) if name.startswith('screen') else ((1.0, 0.85, 0.6, 1) if name.startswith('glow') else warm)
+            mx_ = max(lin) or 1.0
+            own = (*[c / mx_ for c in lin], 1)
+            b.inputs['Emission Color'].default_value = (0.75, 0.88, 1.0, 1) if name.startswith('screen') else (own if name.startswith('glow') else warm)
             b.inputs['Emission Strength'].default_value = 6.0 if name == 'win' else (3.5 if name.startswith('glow') else 2.2)
             return m
         if name.startswith('wax'):
@@ -1643,6 +2074,81 @@ def bake_template(life, out_dir, samples=48, size=(2048, 1024)):
                 b.inputs['Sheen Weight'].default_value = 0.5
             except Exception:
                 pass
+            return m
+        if name.startswith('facade') or name.startswith('tiles'):
+            tc = nt.nodes.new('ShaderNodeTexCoord')
+            br = nt.nodes.new('ShaderNodeTexBrick')
+            if name.startswith('facade'):
+                # A facade is vertical: the brick pattern (X/Y) is laid on its X/Z plane.
+                mp = nt.nodes.new('ShaderNodeMapping')
+                mp.inputs['Rotation'].default_value = (math.radians(-90), 0, 0)
+                nt.links.new(tc.outputs['Object'], mp.inputs['Vector'])
+                nt.links.new(mp.outputs['Vector'], br.inputs['Vector'])
+            else:
+                nt.links.new(tc.outputs['Object'], br.inputs['Vector'])
+            if name.startswith('facade'):
+                # Windows (glass, some lit at dusk) in a grid, the wall between them in the facade colour.
+                br.offset = 0.0
+                br.inputs['Scale'].default_value = 1.0
+                br.inputs['Brick Width'].default_value = 2.4
+                br.inputs['Row Height'].default_value = 3.0
+                br.inputs['Mortar Size'].default_value = 0.55
+                br.inputs['Mortar Smooth'].default_value = 0.0
+                g = life.get('grade', 'jour')
+                glass = (0.12, 0.16, 0.22, 1) if g == 'jour' else (0.9, 0.62, 0.32, 1)
+                br.inputs['Color1'].default_value = glass
+                br.inputs['Color2'].default_value = (glass[0] * 0.8, glass[1] * 0.85, glass[2] * 0.9, 1)
+                br.inputs['Mortar'].default_value = (*lin, 1)
+                nt.links.new(br.outputs['Color'], b.inputs['Base Color'])
+                inv = nt.nodes.new('ShaderNodeMath')
+                inv.operation = 'SUBTRACT'
+                inv.inputs[0].default_value = 1.0
+                nt.links.new(br.outputs['Fac'], inv.inputs[1])
+                rr = nt.nodes.new('ShaderNodeMapRange')
+                rr.inputs['To Min'].default_value = rough
+                rr.inputs['To Max'].default_value = 0.08
+                nt.links.new(inv.outputs[0], rr.inputs['Value'])
+                nt.links.new(rr.outputs['Result'], b.inputs['Roughness'])
+                if g in ('soir', 'nuit'):
+                    nt.links.new(br.outputs['Color'], b.inputs['Emission Color'])
+                    em = nt.nodes.new('ShaderNodeMath')
+                    em.operation = 'MULTIPLY'
+                    em.inputs[1].default_value = 1.5
+                    nt.links.new(inv.outputs[0], em.inputs[0])
+                    nt.links.new(em.outputs[0], b.inputs['Emission Strength'])
+            else:
+                br.offset = 0.0
+                br.inputs['Scale'].default_value = 1.0
+                br.inputs['Brick Width'].default_value = 0.6
+                br.inputs['Row Height'].default_value = 0.6
+                br.inputs['Mortar Size'].default_value = 0.012
+                br.inputs['Color1'].default_value = (*lin, 1)
+                br.inputs['Color2'].default_value = (*[v * 0.88 for v in lin], 1)
+                br.inputs['Mortar'].default_value = (*[v * 0.55 for v in lin], 1)
+                nt.links.new(br.outputs['Color'], b.inputs['Base Color'])
+                bump = nt.nodes.new('ShaderNodeBump')
+                bump.inputs['Strength'].default_value = 0.2
+                nt.links.new(br.outputs['Fac'], bump.inputs['Height'])
+                nt.links.new(bump.outputs['Normal'], b.inputs['Normal'])
+            return m
+        if name.startswith('paint'):
+            # Car paint: coloured base with a fine metallic flake under a glossy clear coat.
+            b.inputs['Metallic'].default_value = 0.35
+            b.inputs['Roughness'].default_value = 0.3
+            for k, v in (('Coat Weight', 1.0), ('Coat Roughness', 0.03)):
+                try:
+                    b.inputs[k].default_value = v
+                except Exception:
+                    pass
+            return m
+        if name.startswith('tint'):
+            # Tinted car glass: dark and mirror-like (no see-through into an empty body).
+            b.inputs['Roughness'].default_value = 0.03
+            for k, v in (('Coat Weight', 1.0), ('Coat Roughness', 0.0), ('Specular IOR Level', 0.7)):
+                try:
+                    b.inputs[k].default_value = v
+                except Exception:
+                    pass
             return m
         if name.startswith('sky'):
             # The sky seen through the window: bright, warm at dusk, deep blue at night.
@@ -1757,6 +2263,57 @@ def bake_template(life, out_dir, samples=48, size=(2048, 1024)):
             nt.links.new(fine.outputs['Fac'], bump.inputs['Height'])
             nt.links.new(bump.outputs['Normal'], b.inputs['Normal'])
         return m
+    return mat
+
+
+def meter_exposure(sc, target=0.46, size=160):
+    """Spot meter: render the frame small and fast, read its mean luminance, set the exposure (stops) so that the full
+    render lands on `target`. Bounded to ±3 stops; never touches a scene already metered."""
+    import bpy
+    import numpy as np
+    import tempfile
+    rs = sc.render
+    keep = (rs.resolution_x, rs.resolution_y, rs.resolution_percentage, rs.filepath, sc.cycles.samples)
+    ar = rs.resolution_y / max(1, rs.resolution_x)
+    rs.resolution_x, rs.resolution_y, rs.resolution_percentage = size, max(16, int(size * ar)), 100
+    sc.cycles.samples = 8
+    tmp = os.path.join(tempfile.gettempdir(), f'meter-{os.getpid()}.png')
+    rs.filepath = tmp
+    try:
+        # A few readings, like a camera's metering loop: the display curve (AgX) compresses the highlights, so one
+        # reading under-corrects a sun-burnt place; we converge on the target before the bake.
+        for _ in range(4):
+            bpy.ops.render.render(write_still=True)
+            im = bpy.data.images.load(tmp)
+            a = np.empty(im.size[0] * im.size[1] * 4, np.float32)
+            im.pixels.foreach_get(a)
+            bpy.data.images.remove(im)
+            os.remove(tmp)
+            lum = float((a.reshape(-1, 4)[:, :3] @ np.array([0.2126, 0.7152, 0.0722], np.float32)).mean())
+            if abs(lum - target) <= 0.05:
+                break
+            stops = max(-3.0, min(3.0, math.log2(max(1e-3, target) / max(1e-3, lum)) * 1.6))
+            sc.view_settings.exposure = max(-6.0, min(6.0, sc.view_settings.exposure + stops))
+        print(f'[cellule] luminance {lum:.2f} → exposition {sc.view_settings.exposure:+.2f} IL', flush=True)
+    finally:
+        rs.resolution_x, rs.resolution_y, rs.resolution_percentage, rs.filepath, sc.cycles.samples = keep
+
+
+def bake_template(life, out_dir, samples=48, size=(2048, 1024), style_ref=None):
+    """Render the 3D place ONCE as a painted set + its depth map. Returns a décor entry like the kit's."""
+    import bpy
+    import numpy as np
+    os.makedirs(out_dir, exist_ok=True)
+    key = 'v12-' + re.sub(r'[^a-z0-9]+', '-', fold(f"{life.get('place')}-{life.get('template')}-{life.get('grade')}-v{int(life.get('variant', 0))}-{'-'.join(life.get('palette', []))}-{'-'.join(sorted(life.get('objets') or []))}"))[:150]
+    img_path = os.path.join(out_dir, f'baked-{key}.png')
+    dep_path = os.path.join(out_dir, f'baked-{key}.depth.png')
+    fit = {'mH': 2.8, 'floor': 0.86, 'cx': 0.5}
+    if os.path.isfile(img_path) and os.path.isfile(dep_path):
+        return {'image': img_path, 'depth': dep_path, 'fit': fit, 'baked': True, 'preflight': os.path.join(out_dir, f'baked-{key}.preflight.json')}
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    sc = bpy.context.scene
+
+    mat = bake_material_factory(life)
 
     build_set(life, mat, lights=True)
     W, H = size
@@ -1795,6 +2352,9 @@ def bake_template(life, out_dir, samples=48, size=(2048, 1024)):
         except Exception:
             continue
     sc.render.image_settings.file_format = 'PNG'
+    # Light meter (like a camera's): a tiny test render measures the light of the place and sets the exposure BEFORE
+    # the bake, so a wide sunny place is not burnt and a dim room not murky — right at the first render.
+    meter_exposure(sc, target=0.46)
     # PREFLIGHT QA of the built place before it is baked: a set with a critical fault is never used.
     import preflight
     qa = preflight.run('decor', life.get('nom') or life.get('place', ''), life=life, probe_frames=[1], out=os.path.join(out_dir, f'baked-{key}.preflight'))
@@ -1816,6 +2376,19 @@ def bake_template(life, out_dir, samples=48, size=(2048, 1024)):
     rgb = rgb * np.array(warm, np.float32)
     rgb = 0.5 + (rgb - 0.5) * 1.08
     a[:, :3] = np.clip(rgb, 0, 1)
+    # Then the MEASURED grade: toward the visual signature of the troupe's own drawings (style.py), bounded.
+    style_rep = None
+    if style_ref:
+        import style as stylemod
+        Wi, Hi = im.size
+        img_rgb = a[:, :3].reshape(Hi, Wi, 3)
+        before = stylemod.signature(img_rgb)
+        graded, gains = stylemod.grade(img_rgb, before, style_ref)
+        a[:, :3] = graded.reshape(-1, 3).astype(np.float32)
+        after = stylemod.signature(graded)
+        cmp_ = stylemod.compare(after, style_ref)
+        style_rep = {'avant': before, 'apres': after, 'reglages': gains, 'hors_plage': [k for k, v in cmp_.items() if not v[3]]}
+        print(f"[style] décor étalonné vers la troupe ({gains}) — hors plage : {style_rep['hors_plage'] or 'aucun critère'}", flush=True)
     im.pixels.foreach_set(a.ravel())
     im.filepath_raw = img_path
     im.file_format = 'PNG'
@@ -1839,4 +2412,4 @@ def bake_template(life, out_dir, samples=48, size=(2048, 1024)):
     img.filepath_raw = dep_path
     img.file_format = 'PNG'
     img.save()
-    return {'image': img_path, 'depth': dep_path, 'fit': fit, 'baked': True, 'preflight': os.path.join(out_dir, f'baked-{key}.preflight.json')}
+    return {'image': img_path, 'depth': dep_path, 'fit': fit, 'baked': True, 'preflight': os.path.join(out_dir, f'baked-{key}.preflight.json'), 'style': style_rep}

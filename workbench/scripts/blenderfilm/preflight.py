@@ -31,7 +31,8 @@ SEV_COST = {'critique': 25, 'majeur': 8, 'mineur': 2, 'info': 0}
 CATEGORIES = [
     ('geometrie', 'Géométrie'), ('materiaux', 'Matériaux et textures'), ('objets', 'Objets'), ('collisions', 'Collisions'),
     ('echelle', 'Échelle'), ('temps_reel', 'Performances temps réel'), ('eclairage', 'Éclairage'),
-    ('rigs', 'Rigs, armatures, animations'), ('narratif', 'Cohérence narrative'),
+    ('rigs', 'Rigs, armatures, animations'), ('narratif', 'Cohérence narrative'), ('cameras', 'Caméras et mouvements'),
+    ('image', 'Image et netteté'), ('physique', 'Physique et lois humaines'),
 ]
 # Real-time budgets (orders of magnitude used by game pipelines for one scene on screen).
 BUDGETS = {
@@ -52,7 +53,7 @@ SIZE_RULES = [
 GROUNDED = ('woodbed', 'metalbed', 'woodward', 'woodnight', 'woodtable', 'wooddesk', 'fabricsofa', 'woodshelf', 'metalcabinet',
             'potterra', 'metalfanbase', 'chairleg', 'woodleg', 'metalleg', 'woodtleg', 'woodtv')
 # Assemblies declared by the generator (asm-<name>) that stand on the floor: checked as ONE object (a bed on its legs).
-GROUNDED_ASM = ('lit', 'armoire', 'tablenuit', 'table', 'canape', 'etagere', 'chaise', 'ventilateur', 'plante', 'tv', 'classeur', 'bureau', 'banc', 'perfusion')
+GROUNDED_ASM = ('lit', 'armoire', 'tablenuit', 'table', 'canape', 'etagere', 'chaise', 'ventilateur', 'plante', 'tv', 'classeur', 'bureau', 'banc', 'perfusion', 'voiture')
 SHELL = ('plaster', 'planks', 'floor', 'ground', 'sky', 'back', 'wall', 'ceiling', 'road', 'sidewalk', 'path', 'decor')
 # Behaviours of animals that need an object of the set.
 NEEDS = [('lit', ('lit',), ('woodbed', 'metalbed')), ('arbre', ('arbre', 'manguier'), ('trunk', 'woodmango', 'palm')),
@@ -65,12 +66,18 @@ DIMENSIONS = [
     ('stabilite', 'Stabilité technique', 95), ('performances', 'Performances globales', 90), ('immersion', 'Immersion', 70),
 ]
 # Objects of a place (world.json ids) and the names the set builder gives them: the place must hold what it promises.
+# Only SET DRESSING is required in a built set; hand props (phone, case, notes, ball…) come with the actor who uses them.
 OBJ_TOKENS = {
-    'lit': ('woodbed', 'metalbed'), 'armoire': ('woodward',), 'telephone': ('phone',), 'table': ('woodtable', 'wooddesk', 'table'),
+    'lit': ('woodbed', 'metalbed'), 'armoire': ('woodward',), 'table': ('woodtable', 'wooddesk', 'table'),
     'chaise': ('chair', 'fabricchair'), 'tele': ('tv', 'screentv'), 'ordinateur': ('mon', 'screen'), 'tableau': ('board',),
-    'perfusion': ('metalivpole',), 'papiers': ('paper',), 'vitrine': ('glassfront', 'glowshop'), 'caddie': ('cart',),
-    'banc': ('bench',), 'ballon': ('ball',), 'valise': ('case', 'fabricsuitcase'), 'tapis': ('case',), 'marteau': ('sign',),
+    'perfusion': ('metalivpole',), 'vitrine': ('glassfront', 'glowshop'), 'caddie': ('cart',), 'banc': ('bench',),
+    'portail': ('metalgate',),
 }
+
+
+def _gn_source(ob):
+    """A model kept out of the scene ON PURPOSE: the source of a Geometry Nodes scatter (instanced, never drawn itself)."""
+    return any(c.name.startswith('gnsrc-') for c in ob.users_collection)
 
 
 class Report:
@@ -99,7 +106,7 @@ class Report:
     def dimensions(self):
         """The ten measured dimensions (0–100, None when they do not apply to this kind of generation)."""
         sev = lambda cats, s_: sum(1 for i in self.issues if i['categorie'] in cats and i['severite'] == s_)
-        tech = ('geometrie', 'materiaux', 'objets', 'rigs', 'collisions')
+        tech = ('geometrie', 'materiaux', 'objets', 'rigs', 'collisions', 'cameras')
         stab = max(0.0, 100.0 - 25 * sev(tech, 'critique') - 8 * sev(tech, 'majeur') - 1 * sev(tech, 'mineur'))
         d = {
             'stabilite': stab,
@@ -110,7 +117,8 @@ class Report:
             'performances': self.m.get('_perf'),
             'immersion': self.m.get('_immersion'),
         }
-        real = [x for x in (self.ratio('tailles'), self.ratio('pose_au_sol'), self.ratio('materiaux_riches'), self.ratio('exposition'), self.ratio('lumiere_concue')) if x is not None]
+        real = [x for x in (self.ratio('tailles'), self.ratio('pose_au_sol'), self.ratio('materiaux_riches'), self.ratio('exposition'), self.ratio('lumiere_concue'),
+                            self.ratio('lisibilite_fond'), self.ratio('physique'), self.ratio('style')) if x is not None]
         d['realisme'] = sum(real) / len(real) if real else None
         vals = [v for v in d.values() if v is not None]
         q = sum(vals) / len(vals) if vals else 0.0
@@ -296,7 +304,7 @@ def check_materials(R, objs, autofix=True):
 def check_objects(R, scene, objs, frames):
     import bpy
     names = {o.name for o in scene.objects}
-    orphans = [o.name for o in bpy.data.objects if o.name not in names]
+    orphans = [o.name for o in bpy.data.objects if o.name not in names and not _gn_source(o)]
     if orphans:
         R.add('objets', 'mineur', f'{len(orphans)} objet(s) hors de la scène (non reliés)', ', '.join(orphans[:6]), len(orphans))
     orphan_meshes = [m.name for m in bpy.data.meshes if m.users == 0]
@@ -417,16 +425,22 @@ def check_collisions(R, objs, autofix=True, frames=None):
                         found[key] = (f, dyn, 1.0, 'cache', inner.name, outer.name)
                         continue
                 if tree(a).overlap(tree(b)):
-                    found[key] = (f, dyn, vi / small, 'collision', a.name, b.name)
+                    found[key] = (f, dyn, vi / small, 'collision', a.name, b.name, top[a.name], top[b.name])
     if f_keep != scene.frame_current:
         scene.frame_set(f_keep)
-    for (f, dyn, r, what, a, b) in list(found.values())[:30]:
+    for v in list(found.values())[:30]:
+        f, dyn, r, what, a, b = v[:6]
+        # Named by their assemblies (« poule-0 », « asm-lit »), the part in brackets: the root cause is found by WHAT
+        # collides, not by the name of one of its pieces.
+        ta, tb = (v[6], v[7]) if len(v) > 7 else (a, b)
+        la = ta if ta == a else f'{ta} ({a})'
+        lb = tb if tb == b else f'{tb} ({b})'
         if what == 'cache':
             R.add('objets', 'mineur', f'objet caché : entièrement enfermé dans {b}', a)
         elif dyn:
-            R.add('collisions', 'mineur', f'{a} et {b} se chevauchent à l’image {f} ({r:.0%})', a)
+            R.add('collisions', 'mineur', f'{la} et {lb} se chevauchent à l’image {f} ({r:.0%})', ta)
         else:
-            R.add('collisions', 'majeur', f'{a} et {b} s’interpénètrent ({r:.0%} du plus petit)', a)
+            R.add('collisions', 'majeur', f'{la} et {lb} s’interpénètrent ({r:.0%} du plus petit)', ta)
     R.stats['collisions'] = {'solides': len(solids), 'mobiles': len(moving), 'instants': len(samples), 'chevauchements': sum(1 for v in found.values() if v[3] == 'collision'),
                              'caches': sum(1 for v in found.values() if v[3] == 'cache')}
 
@@ -442,6 +456,12 @@ def check_scale(R, objs, cast=None):
             continue
         lo, hi = _world_bbox(ob)
         ext = [hi[i] - lo[i] for i in range(3)]
+        if ob.name.startswith('paintbody-'):
+            # A car body: a real car is 3.6–5.4 m long.
+            ln = max(ext[0], ext[1])
+            R.tally('tailles', 3.6 <= ln <= 5.4)
+            if not 3.6 <= ln <= 5.4:
+                R.add('echelle', 'majeur', f'voiture irréaliste : {ln:.2f} m de long (attendu 3,6–5,4 m)', ob.name, round(ln, 2))
         for toks, axis, mn, mx in SIZE_RULES:
             if _base(ob.name) not in toks:
                 continue
@@ -474,14 +494,21 @@ def check_scale(R, objs, cast=None):
 def check_realtime(R, scene, objs):
     import bpy
     dg = bpy.context.evaluated_depsgraph_get()
-    tris = 0
-    for ob in objs:
-        if ob.type != 'MESH' or ob.hide_render:
+    tris, per, instances = 0, {}, 0
+    # Every drawn thing, Geometry Nodes instances included (a scattered forest counts tree by tree).
+    for inst in dg.object_instances:
+        ob = inst.object
+        if ob.type != 'MESH' or (not inst.is_instance and ob.original.hide_render):
             continue
-        me = ob.evaluated_get(dg).to_mesh()
-        me.calc_loop_triangles()
-        tris += len(me.loop_triangles)
-        ob.evaluated_get(dg).to_mesh_clear()
+        key = ob.name
+        if key not in per:
+            me = ob.to_mesh()
+            me.calc_loop_triangles()
+            per[key] = len(me.loop_triangles)
+            ob.to_mesh_clear()
+        tris += per[key]
+        instances += 1 if inst.is_instance else 0
+    R.m['_instances'] = instances
     mats = {s.material.name for ob in objs for s in getattr(ob, 'material_slots', []) if s.material}
     lights = sum(1 for ob in objs if ob.type == 'LIGHT')
     tex = sum(img.size[0] * img.size[1] * 4 for img in bpy.data.images if img.users and img.size[0]) / 2 ** 20
@@ -755,6 +782,548 @@ def check_narrative(R, story=None, life=None, objs=(), characters=None, drawn=No
                 R.tally('recit', any(n.startswith(f"prop-{pr.get('kind')}") for n in names))
 
 
+def check_casting(R, life, characters=None, world=None):
+    """Every extra and every member of the crowd belongs to the place (its sheet's « lieux »), and what its DRAWING
+    shows (a selfie, a hair-dryer, a pot…) is possible there and fits what it does (walk, chat, work)."""
+    if not life:
+        return
+    import casting
+    if characters is None:
+        try:
+            characters = json.load(open(os.path.join(HERE, 'characters.json'), encoding='utf-8'))
+        except Exception:
+            return
+    hab = set(life.get('habitues') or [])
+    if not hab:
+        try:
+            world = world or json.load(open(os.path.join(HERE, 'world.json'), encoding='utf-8'))
+            place = next((p for p in world.get('places', []) if p.get('id') == life.get('place')), None)
+            hab = casting.place_names(place) if place else set()
+        except Exception:
+            hab = set()
+    if not hab and life.get('nom'):
+        hab = {life['nom']}
+    people = [(e.get('name'), e.get('behavior'), e.get('role', '')) for e in life.get('extras', [])]
+    people += [(n, 'foule', 'foule') for n in (life.get('crowd') or {}).get('names', [])]
+    for name, beh, role in people:
+        sheet = characters.get(name)
+        if sheet is None:
+            continue
+        ok, why = casting.verdict(sheet, hab, beh, name)
+        R.tally('personnages', ok)
+        if not ok:
+            R.add('narratif', 'majeur', f"figurant incohérent ({role or beh}) à « {life.get('nom', '')} » : {why}", name)
+    R.stats['casting'] = {'figurants': len(people), 'lieu': sorted(hab)}
+
+
+def check_cameras(R, scene, cam):
+    """Every camera, at EVERY frame of its move, all around its frame (72 rays, every 5°, corners included):
+    the view stays inside the painted set; the faces of the shot stay in frame and above the captions; the camera
+    stays level, frontal (the drawings are cards: no orbit), on one side of the line of action (180° rule), at a
+    readable speed; its clip planes hold the scene; two cuts in a row are never the same framing (jump cut)."""
+    import framing
+    g, shots = cam['grid'], cam['shots']
+    cap = cam.get('captions') or {}
+    frames_total = frames_bad = frames_fast = 0
+    worst = {}
+    prev = None
+    side = None
+    for i, sh in enumerate(shots):
+        ob = scene.objects.get(sh.get('camera') or f"cam{sh['k']}")
+        if ob is None:
+            R.add('cameras', 'critique', f"plan {sh['k'] + 1} : caméra introuvable")
+            continue
+        end = shots[i + 1]['start'] if i + 1 < len(shots) else sh['end']
+        frames = list(range(sh['start'] + 1, max(sh['start'] + 2, end + 1)))
+        curves = {}
+        ad = ob.animation_data
+        if ad and ad.action:
+            for fc in _fcurves(ad.action):
+                if fc.data_path in ('location', 'rotation_euler'):
+                    curves[(fc.data_path, fc.array_index)] = fc
+        val = lambda path, j, f, base: curves[(path, j)].evaluate(f) if (path, j) in curves else base[j]
+        dcurves = _curves(ob.data)
+        cap_y = cap.get('two' if sh['type'] == 'two' else 'close', 0.8)
+        over_max, face_bad, last, fast = 0.0, [], None, 0
+        rot_bad = False
+        for f in frames:
+            loc, th, tv = _cam_at(scene, ob, f, None, dcurves)
+            rot = tuple(val('rotation_euler', j, f, ob.rotation_euler) for j in range(3))
+            # Level and frontal: pitch 90° (looking +y), no roll, no yaw.
+            if abs(rot[0] - math.pi / 2) > 1e-3 or abs(rot[1]) > 1e-3 or abs(rot[2]) > 1e-3:
+                rot_bad = True
+            L, Rr, T, B = framing.view_overflow(g, loc, th, tv)
+            over = max(L, Rr, T, B)
+            over_max = max(over_max, over)
+            frames_total += 1
+            if over > 0.006:
+                frames_bad += 1
+            for (fx, fy, fz), nm in zip(sh.get('faces', []), sh.get('names', [])):
+                x, y, D = framing.project(loc, th, tv, (fx, fy, fz))
+                if x is None or not (0.04 <= x <= 0.96) or not (0.03 <= y <= cap_y - 0.03):
+                    face_bad.append((f, nm, None if x is None else round(x, 2), None if y is None else round(y, 2)))
+            # Speed of the FRAME (what the viewer sees move): centre and size at the actors' plane, dolly, zoom and shift.
+            dist = max(1e-3, -loc[1])
+            fr = (loc[0] + dist * loc[3], loc[2] + dist * loc[4], 2 * dist * th, 2 * dist * tv)
+            if last is not None:
+                step = max(abs(fr[0] - last[0]) / fr[2], abs(fr[1] - last[1]) / fr[3], abs(fr[3] - last[3]) / fr[3])
+                if step > 0.05:
+                    fast += 1
+            last = fr
+            s_ = 'devant' if loc[1] < 0 else 'derrière'
+            side = side or s_
+            if s_ != side:
+                R.add('image', 'majeur', f"plan {sh['k'] + 1} : la caméra passe de l’autre côté de l’axe de l’action (règle des 180°)", ob.name)
+                side = s_
+        frames_fast += fast
+        R.tally('fluidite', fast == 0, len(frames))
+        R.tally('environnement', over_max <= 0.006)
+        if over_max > 0.006:
+            R.add('image', 'majeur', f"plan {sh['k'] + 1} : la caméra voit au-delà du décor peint (bord en miroir) de {over_max * 100:.1f} cm", ob.name, round(over_max, 3))
+        R.tally('recit', not face_bad)
+        if face_bad:
+            f, nm, x, y = face_bad[0]
+            R.add('image', 'majeur', f"plan {sh['k'] + 1} : visage de {nm} hors cadre ou sous les sous-titres ({len(face_bad)} image(s), ex. image {f})", ob.name)
+        if rot_bad:
+            R.add('cameras', 'majeur', f"plan {sh['k'] + 1} : caméra inclinée ou en orbite (les dessins sont des cartes : cadrage frontal et horizon droit exigés)", ob.name)
+        if fast:
+            R.add('cameras', 'mineur', f"plan {sh['k'] + 1} : mouvement trop rapide sur {fast} image(s) (> 5 % du cadre par image)", ob.name)
+        # Clip planes: the nearest actor and the farthest painted relief are inside the lens range.
+        dmin = min((fy - val('location', 1, f, ob.location) for f in frames[:1] for (_, fy, _) in sh.get('faces', [])), default=1.0)
+        far = g['Yp'] + g['DEPTH'] + 0.5 - min(val('location', 1, f, ob.location) for f in (frames[0], frames[-1]))
+        if ob.data.clip_start >= dmin - 0.02 or ob.data.clip_end <= far:
+            R.add('cameras', 'majeur', f"plan {sh['k'] + 1} : plans de coupe de la caméra trop serrés (acteurs ou décor coupés)", ob.name)
+        # Jump cut: same subject, same size, same place after a cut.
+        if prev is not None:
+            size = lambda x: x['d_min'] * x['tan_v']  # frame height at the actors' plane (dolly or zoom alike)
+            same = (prev['type'] == sh['type'] and prev.get('target') == sh.get('target') and abs(size(prev) - size(sh)) / max(size(sh), 1e-6) < 0.15
+                    and abs(prev['cx'] - sh['cx']) < 0.1 * 2 * sh['d_min'] * sh['tan_h'])
+            R.tally('recit', not same)
+            if same:
+                R.add('image', 'mineur', f"plans {prev['k'] + 1}→{sh['k'] + 1} : même cadrage sur le même personnage après la coupe (faux raccord)", ob.name)
+        prev = sh
+        worst[sh['k']] = round(over_max, 4)
+    # The painting must keep its shapes (painted people undistorted): rubber-sheet deformation of the relief, per shot,
+    # at the two ends of its move.
+    mesh = framing.decor_vertices(g)
+    deform = []
+    if mesh is not None:
+        for sh in shots:
+            ob = scene.objects.get(sh.get('camera') or f"cam{sh['k']}")
+            if ob is None:
+                continue
+            cc = _curves(ob)
+            end = sh['end']
+            worst_s, worst_p = 0.0, 1.0
+            for f in (sh['start'] + 1, end):
+                loc, th_, tv_ = _cam_at(scene, ob, f, cc)
+                share, p95, n = framing.decor_distortion(g, loc, th_, tv_, mesh)
+                worst_s, worst_p = max(worst_s, share), max(worst_p, p95)
+            deform.append((sh['k'], worst_s, worst_p))
+            ok = worst_s <= 0.05
+            R.tally('environnement', ok)
+            if not ok:
+                R.add('image', 'majeur', f"plan {sh['k'] + 1} : la peinture du décor est déformée sur {worst_s:.0%} de l’image (personnes peintes étirées, jusqu’à ×{worst_p:.2f})", ob.name)
+    R.stats['cameras'] = {'deformation_decor': {'plans_deformes': sum(1 for _, s_, _ in deform if s_ > 0.05), 'max_part': round(max((s_ for _, s_, _ in deform), default=0.0), 3),
+                                                'p95_max': round(max((p_ for *_, p_ in deform), default=1.0), 2)},
+                          'plans': len(shots), 'images_verifiees': frames_total, 'images_hors_decor': frames_bad, 'images_trop_rapides': frames_fast,
+                          'rayons_par_image': 72, 'depassement_max_m': max(worst.values()) if worst else 0.0}
+
+
+def check_image(R, image):
+    """Background legibility: on every close-up, the blur of the set and of the extras on screen stays under the
+    ceiling of the generation rule — faces and their expressions remain readable."""
+    worst = 0.0
+    for e in image:
+        b = max(e.get('flou_decor_px', 0.0), e.get('flou_figurants_px', 0.0))
+        worst = max(worst, b)
+        ok = b <= e['cible_px'] * 1.02
+        R.tally('lisibilite_fond', ok)
+        if not ok:
+            R.add('image', 'majeur', f"plan {e['plan'] + 1} : arrière-plan trop flou ({b:.1f} px > {e['cible_px']:.1f} px) — visages et expressions illisibles")
+    R.stats['nettete'] = {'plans': len(image), 'flou_max_px': round(worst, 2), 'plafond_px': image[0]['cible_px'] if image else None}
+
+
+def check_enclosure(R, scene, life):
+    """360° sweep from the set's camera: rays every 10° all around and from the floor to the ceiling. In the field a
+    camera can explore (±60° around the view, ±35° up/down) a room must be closed (no hole to the void) and an
+    outdoor place must have ground under the horizon everywhere. Behind the camera, an open « fourth wall » is normal
+    for a film set; it is reported (to be closed before a 360° export, game engines)."""
+    from mathutils import Vector
+    camo = scene.camera
+    if camo is None:
+        return
+    dg = bpy_ctx().evaluated_depsgraph_get()
+    o = camo.matrix_world.translation.copy()
+    outdoor = bool((life or {}).get('exterieur'))
+    front_holes, back_holes, n_front, n_back = [], 0, 0, 0
+    for yaw in range(0, 360, 10):
+        for el in (-60, -35, -15, 0, 15, 35, 60):
+            a, e = math.radians(yaw), math.radians(el)
+            d = Vector((math.sin(a) * math.cos(e), math.cos(a) * math.cos(e), math.sin(e)))
+            hit = scene.ray_cast(dg, o, d, distance=500.0)[0]
+            front = (yaw <= 60 or yaw >= 300) and abs(el) <= 35
+            need = (not outdoor) or el < 0
+            if front:
+                n_front += 1
+                if need and not hit:
+                    front_holes.append((yaw if yaw <= 180 else yaw - 360, el))
+            else:
+                n_back += 1
+                if need and not hit:
+                    back_holes += 1
+    ok = not front_holes
+    R.tally('environnement', ok)
+    if not ok:
+        R.add('objets', 'majeur', f"décor ouvert sur le vide dans le champ de la caméra ({len(front_holes)} direction(s), ex. {front_holes[0][0]}°, {front_holes[0][1]}°)")
+    if back_holes:
+        R.add('objets', 'info', f"4e mur ouvert derrière la caméra ({back_holes} direction(s) sur {n_back}) : normal pour un plateau de tournage, à fermer avant un export 360°")
+    R.stats['balayage_360'] = {'directions': n_front + n_back, 'champ_ferme': ok, 'trous_champ': len(front_holes), 'ouvert_derriere': back_holes, 'exterieur': outdoor}
+
+
+def check_style(R, st):
+    """The set belongs to the characters' world: its visual signature (saturation, contrast, shadow depth, warmth,
+    detail, flat areas — style.py) lies in the band of the troupe's own drawings, feature by feature."""
+    import style as stylemod
+    cmp_ = stylemod.compare(st['decor'], st['ref'])
+    labels = {'saturation': 'saturation', 'saturation_p90': 'couleurs vives', 'contraste': 'contraste', 'profondeur': 'profondeur des ombres',
+              'chaleur': 'chaleur', 'detail': 'richesse de détail', 'aplats': 'aplats (surfaces sans matière)'}
+    for k, (v, lo, hi, ok) in cmp_.items():
+        R.tally('style', ok)
+        if not ok:
+            sev = 'majeur' if k in ('detail', 'aplats') else 'mineur'
+            R.add('image', sev, f"décor hors du style des personnages — {labels[k]} : {v:.3f} (troupe : {lo:.3f}–{hi:.3f}) : deux mondes à l’image")
+    R.stats['style'] = {'decor': {k: round(v, 3) for k, v in st['decor'].items()}, 'troupe_dessins': st['ref'].get('_n'),
+                        'hors_plage': [k for k, v in cmp_.items() if not v[3]]}
+
+
+def _cam_at(scene, ob, f, cc=None, dc=None):
+    """The view of a camera at frame f, its move included (location, focal length — zooms —, lens shift): the camera
+    tuple (x, y, z, ox, oz) for framing.* and its half-extents (tan_h, tan_v)."""
+    import framing
+    cc = _curves(ob) if cc is None else cc
+    dc = _curves(ob.data) if dc is None else dc
+    ev = lambda c, path, i, base: c[(path, i)].evaluate(f) if (path, i) in c else base
+    loc = [ev(cc, 'location', i, ob.location[i]) for i in range(3)]
+    asp = scene.render.resolution_x / max(1, scene.render.resolution_y)
+    th, tv, ox, oz = framing.lens_view(ev(dc, 'lens', 0, ob.data.lens), ev(dc, 'shift_x', 0, ob.data.shift_x), ev(dc, 'shift_y', 0, ob.data.shift_y),
+                                       ob.data.sensor_fit, asp, ob.data.sensor_width)
+    return (loc[0], loc[1], loc[2], ox, oz), th, tv
+
+
+def _curves(ob):
+    out = {}
+    ad = ob.animation_data
+    if ad and ad.action:
+        for fc in _fcurves(ad.action):
+            out[(fc.data_path, fc.array_index)] = fc
+    return out
+
+
+def _card(root, name):
+    """The drawn card of an extra (never its contact shadow, which hangs from the same root)."""
+    if root is None:
+        return None
+    cards = [c for c in root.children if c.type == 'MESH' and c.name.split('.')[0] == f'figurant-{name}']
+    return max(cards, key=lambda c: c.dimensions.z, default=None)
+
+
+def check_plausibility(R, scene, life, actors, cam=None):
+    """Physics and human laws on every person of the scene (plausibility.py): two bodies never in the same place;
+    people who talk stand at conversation distance (Hall's personal zone) and never cover each other on screen; an
+    extra keeps the social distance from the actors' conversation; a jump lasts what gravity allows; nobody walks
+    faster than a human."""
+    import plausibility as P
+    import framing
+    fps = scene.render.fps or 30
+    f0, f1 = scene.frame_start, scene.frame_end
+    people = []
+    for a in actors:
+        ob = scene.objects.get(a['root'])
+        if ob is not None:
+            people.append({'nom': a['nom'], 'ob': ob, 'w': a['w'], 'h': a['h'], 'kind': 'acteur', 'group': 'dialogue', 'act': '', 'fx': a.get('fx', 0.0), 'fz': a.get('fz', 0.85 * a['h']),
+                           'looks': a.get('looks') or {}, 'track': a.get('track') or [], 'faces': a.get('faces') or {}, 'points': a.get('points') or {}})
+    for e in (life or {}).get('extras', []):
+        ob = scene.objects.get(f"figurant-root-{e['name']}")
+        card = _card(ob, e['name'])
+        if ob is not None and card is not None:
+            people.append({'nom': e['name'], 'ob': ob, 'w': card.dimensions.x, 'h': card.dimensions.z, 'fdx': card.get('face_dx', 0.0), 'fzc': card.get('face_z'),
+                           'kind': 'passant' if e['behavior'] == 'passe' else 'figurant',
+                           # people who talk = the « discute » extras of one slot (derived here, not taken from the generator)
+                           'group': f"{e.get('role')}-discute" if e['behavior'] == 'discute' else None, 'act': e.get('activite', '')})
+    for n in ((life or {}).get('crowd') or {}).get('names', []):
+        ob = scene.objects.get(f'foule-root-{n}')
+        card = _card(ob, n)
+        if ob is not None and card is not None:
+            people.append({'nom': n, 'ob': ob, 'w': card.dimensions.x, 'h': card.dimensions.z, 'kind': 'foule', 'group': None, 'act': ''})
+    if len(people) < 2:
+        return
+    for p in people:
+        p['c'] = _curves(p['ob'])
+    C0 = (cam or {}).get('grid', {}).get('C0') or (0.0, -2.4, 1.0)
+
+    def st(p, f):
+        ob, c = p['ob'], p['c']
+        ev = lambda path, i, base: c[(path, i)].evaluate(f) if (path, i) in c else base
+        loc = [ev('location', i, ob.location[i]) for i in range(3)]
+        sc = [ev('scale', i, ob.scale[i]) for i in range(3)]
+        hidden = ev('hide_render', 0, 1.0 if ob.hide_render else 0.0) > 0.5
+        sol = ev('["sol"]', 0, None) if ('["sol"]', 0) in c else None
+        s = abs(sc[1]) if p['kind'] != 'acteur' else 1.0
+        w = p['w'] * (abs(sc[0]) if p['kind'] != 'acteur' else 1.0)
+        # Where the person really is in the story: an extra pulled toward the lens by the painted relief (same place
+        # and size on screen, scale s) stands, for the laws, at its unpulled place C0 + (P − C0) / s.
+        sv = max(s, 1e-3)
+        return {'x': loc[0], 'y': loc[1], 'z': loc[2], 's': s, 'w': w, 'h': p['h'] * (abs(sc[2]) if p['kind'] != 'acteur' else 1.0),
+                'xv': C0[0] + (loc[0] - C0[0]) / sv, 'yv': C0[1] + (loc[1] - C0[1]) / sv, 'wv': w / sv,
+                'on': not hidden and s > 1e-3, 'sol': sol}
+
+    talkers = lambda a, b: a['group'] is not None and a['group'] == b['group']
+    pairs = [(i, j) for i in range(len(people)) for j in range(i + 1, len(people))]
+    # 1. Bodies never in the same place (every 3 frames, whole film).
+    hit = {}
+    for f in range(f0, f1 + 1, 3):
+        S = [st(p, f) for p in people]
+        for i, j in pairs:
+            a, b = S[i], S[j]
+            if a['on'] and b['on'] and (i, j) not in hit and abs(a['yv'] - b['yv']) < P.BODY_DEPTH and P.gap1d(P.core(a['xv'], a['wv']), P.core(b['xv'], b['wv'])) < 0:
+                hit[(i, j)] = f
+    for i, j in pairs:
+        R.tally('physique', (i, j) not in hit)
+    for (i, j), f in list(hit.items())[:12]:
+        R.add('physique', 'majeur', f"{people[i]['nom']} et {people[j]['nom']} occupent le même endroit à l’image {f} (deux corps ne s’interpénètrent pas)", people[i]['nom'])
+    # 2. Proxemics (Hall): who talks stands in the personal zone; an extra keeps the social distance from the actors.
+    S1 = [st(p, f0) for p in people]
+    acts = [k for k, p in enumerate(people) if p['kind'] == 'acteur']
+    for i, j in pairs:
+        a, b = people[i], people[j]
+        if talkers(a, b) and S1[i]['on'] and S1[j]['on']:
+            d = math.hypot(S1[i]['xv'] - S1[j]['xv'], S1[i]['yv'] - S1[j]['yv'])
+            ok = P.HALL['intime'] <= d <= P.HALL['personnelle'] + 0.02
+            R.tally('physique', ok)
+            if not ok:
+                R.add('physique', 'mineur', f"{a['nom']} et {b['nom']} se parlent à {d:.2f} m (zone {P.zone(d)}) : une conversation se tient à 0,45–1,2 m (proxémie de Hall)", a['nom'])
+    for k, p in enumerate(people):
+        if p['kind'] != 'figurant' or not S1[k]['on']:
+            continue
+        d = min((math.hypot(S1[k]['xv'] - S1[a]['xv'], S1[k]['yv'] - S1[a]['yv']) for a in acts), default=9.0)
+        ok = d >= P.HALL['personnelle']
+        R.tally('physique', ok)
+        if not ok:
+            R.add('physique', 'mineur', f"{p['nom']} se tient à {d:.2f} m des acteurs, dans la zone personnelle de leur conversation (distance sociale ≥ 1,2 m)", p['nom'])
+    # 3. On screen, shot by shot: people who talk never cover each other; nobody covers anybody on the same plane.
+    if cam:
+        worst, split, eyeline = {}, {}, {}
+        shots = cam['shots']
+        for n, sh in enumerate(shots):
+            ob = scene.objects.get(sh.get('camera') or f"cam{sh['k']}")
+            if ob is None:
+                continue
+            cc = _curves(ob)
+            end = shots[n + 1]['start'] if n + 1 < len(shots) else sh['end']
+            for f in sorted({sh['start'] + 1, (sh['start'] + end) // 2 + 1, max(sh['start'] + 1, end)}):
+                camloc, th_, tv_ = _cam_at(scene, ob, f, cc)
+                S = [st(p, f) for p in people]
+                boxes = []
+                for q in S:
+                    b = P.screen_box(framing.project, camloc, th_, tv_, q['x'], q['y'], q['w'], q['h'], q['z']) if q['on'] else None
+                    boxes.append(b if b and b[2] > 0 and b[0] < 1 and b[3] > 0 and b[1] < 1 else None)
+                # A background conversation is seen whole or hidden whole (never one face visible, the other behind an actor).
+                if sh['type'] == 'two':
+                    for i, j in pairs:
+                        a, b = people[i], people[j]
+                        if not talkers(a, b) or a['kind'] == 'acteur' or boxes[i] is None or boxes[j] is None:
+                            continue
+                        hid = []
+                        for k_ in (i, j):
+                            occ = [(boxes[m][0], boxes[m][2]) for m in acts if boxes[m] is not None and S[m]['yv'] < S[k_]['yv']]
+                            hid.append(P.hidden_share((boxes[k_][0], boxes[k_][2]), occ))
+                        if abs(hid[0] - hid[1]) > 0.5:
+                            split.setdefault((i, j), (sh['k'], f))
+                    # Faces: a background face is never glued to an actor's face (merger) nor in the speakers' eyeline.
+                    pr = lambda pt: framing.project(camloc, th_, tv_, pt)
+                    asp_ = th_ / tv_
+                    af, rr, bodies = [], [], []
+                    for m in acts:
+                        if boxes[m] is None:
+                            continue
+                        # the face of the pose PLAYED at this frame (each pose is turned toward the partner on its own)
+                        kind = 'neutre'
+                        for f0_, k_p in people[m].get('track', []):
+                            if f0_ < f:
+                                kind = k_p
+                        fxz = people[m].get('faces', {}).get(kind) or [people[m].get('fx', 0.0), people[m].get('fz', 0.85 * people[m]['h'])]
+                        hx, hz = S[m]['x'] + fxz[0], fxz[1]
+                        u_, v_, _ = pr((hx, S[m]['y'], hz))
+                        u2, _v2, _ = pr((hx + P.HEAD, S[m]['y'], hz))
+                        af.append((u_ * asp_, v_))
+                        rr.append(abs(u2 - u_) * asp_)
+                        bodies.append((boxes[m][0] * asp_, pr((hx, S[m]['y'], hz - 0.2))[1], boxes[m][2] * asp_, boxes[m][3]))
+                    af.sort()
+                    ref = [boxes[m][3] - boxes[m][1] for m in acts if boxes[m] is not None]
+                    for k_, q in enumerate(people):
+                        if q['kind'] != 'figurant' or boxes[k_] is None or not af:
+                            continue
+                        sc_x = q['ob'].scale.x if ('scale', 0) not in q['c'] else q['c'][('scale', 0)].evaluate(f)
+                        fzw = (q['fzc'] * S[k_]['h'] / max(q['h'], 1e-6)) if q.get('fzc') is not None else 0.88 * S[k_]['h']
+                        fx_, fy_, _d = pr((S[k_]['x'] + q.get('fdx', 0.0) * sc_x, S[k_]['y'], S[k_]['z'] + fzw))
+                        if fx_ is None or not (0 <= fx_ <= 1 and 0 <= fy_ <= 1):
+                            continue
+                        size = ((boxes[k_][3] - boxes[k_][1]) / max(1e-6, S[k_]['h'] / max(S[k_]['s'], 1e-3))) / max(1e-6, max(ref) / max(people[m]['h'] for m in acts))
+                        law = P.face_conflict((fx_ * asp_, fy_), af, max(rr), size <= P.BACKGROUND, size, bodies, (0.0, 0.0, asp_, 1.0))
+                        if os.environ.get('MASSAMBA_DEBUG_EYE') and f == int(os.environ['MASSAMBA_DEBUG_EYE']):
+                            print('[eye]', json.dumps({'nom': q['nom'], 'face': [fx_ * asp_, fy_], 'actors': af, 'r': max(rr), 'bodies': bodies, 'size': size, 'law': law, 'asp': asp_}), flush=True)
+                        if law:
+                            eyeline.setdefault(k_, (sh['k'], f, size, law))
+                for i, j in pairs:
+                    if boxes[i] is None or boxes[j] is None:
+                        continue
+                    a, b = people[i], people[j]
+                    both_actors = a['kind'] == b['kind'] == 'acteur'
+                    same_plane = abs(S[i]['yv'] - S[j]['yv']) < P.SAME_PLANE
+                    standing = a['kind'] in ('acteur', 'figurant') or b['kind'] in ('acteur', 'figurant')
+                    # Two walkers crossing each other is life; a body sliding over someone who stands at the same
+                    # depth is a superposition.
+                    if not (talkers(a, b) or both_actors or (same_plane and standing)):
+                        continue
+                    ov = P.box_overlap(boxes[i], boxes[j])
+                    lim = 0.05 if (talkers(a, b) or both_actors) else 0.15
+                    key = (i, j)
+                    if ov > lim and ov > worst.get(key, (0,))[0]:
+                        worst[key] = (ov, sh['k'], f, talkers(a, b) or both_actors)
+        checked = [(i, j) for i, j in pairs if talkers(people[i], people[j]) or people[i]['kind'] == people[j]['kind'] == 'acteur']
+        for key in checked:
+            R.tally('personnages', key not in worst)
+        for i, j in pairs:
+            if talkers(people[i], people[j]) and people[i]['kind'] != 'acteur':
+                R.tally('personnages', (i, j) not in split)
+        for k_, p in enumerate(people):
+            if p['kind'] == 'figurant':
+                R.tally('personnages', k_ not in eyeline)
+        for k_, (k, f, size, law) in eyeline.items():
+            what = ('a le visage collé à celui d’un acteur (deux têtes qui se confondent)' if law == 'fusion'
+                    else 'se tient dans la ligne de regard des interlocuteurs')
+            R.add('image', 'majeur' if law == 'fusion' else 'mineur', f"plan {k + 1} : {people[k_]['nom']} {what} ({size:.0%} de leur taille, image {f})", people[k_]['nom'])
+        for (i, j), (k, f) in split.items():
+            R.add('physique', 'mineur', f"plan {k + 1} : la conversation de {people[i]['nom']} et {people[j]['nom']} est coupée par un acteur (l’un visible, l’autre caché, image {f})", people[i]['nom'])
+        for (i, j), (ov, k, f, talk) in worst.items():
+            what = 'interlocuteurs superposés à l’écran' if talk else 'superposés au même plan'
+            R.add('physique', 'majeur', f"plan {k + 1} : {people[i]['nom']} et {people[j]['nom']} {what} ({ov:.0%} de la silhouette, image {f})", people[i]['nom'])
+    # 4. Gravity: a lift off the ground lasts no longer than the flight of a jump of that height.
+    floats = []
+    for p in people:
+        if ('["sol"]', 0) not in p['c']:
+            continue
+        run, top, s_ = 0, 0.0, 1.0
+        for f in range(f0, f1 + 2):
+            q = st(p, f) if f <= f1 else None
+            lift = (q['z'] - q['sol']) if q and q['on'] and q['sol'] is not None else 0.0
+            if lift > 0.004:
+                run += 1
+                top = max(top, lift)
+                s_ = q['s'] or 1.0
+            elif run:
+                h = top / max(s_, 1e-3)
+                if run / fps > P.airtime(h) * 1.25 + 2.0 / fps:
+                    floats.append((p['nom'], f - run, run / fps, h))
+                run, top = 0, 0.0
+        R.tally('physique', not any(x[0] == p['nom'] for x in floats))
+    for nom, f, T, h in floats[:8]:
+        R.add('physique', 'majeur', f"{nom} reste {T:.2f} s en l’air pour un saut de {h * 100:.0f} cm (gravité : {P.airtime(h):.2f} s)", nom)
+    # 5. Human speed (walkers), normalised by the depth pull of the painted relief.
+    fast = []
+    win = max(1, int(0.5 * fps))
+    for p in people:
+        if p['kind'] not in ('passant', 'foule'):
+            continue
+        vmax = P.RUN_MAX if re.search(r'court|dribble|course', p['act'] or '') else P.WALK_MAX
+        prev, top = None, 0.0
+        for f in range(f0, f1 + 1, win):
+            q = st(p, f)
+            if prev is not None and q['on'] and prev['on']:
+                dist = math.hypot(q['xv'] - prev['xv'], q['yv'] - prev['yv'])
+                if dist < 3.0:  # (a walker re-entering on the other side, off-screen, is not a move)
+                    top = max(top, dist / (win / fps))
+            prev = q
+        R.tally('physique', top <= vmax)
+        if top > vmax:
+            fast.append((p['nom'], top, vmax))
+    for nom, v, vmax in fast[:8]:
+        R.add('physique', 'mineur', f"{nom} se déplace à {v:.1f} m/s (humain : ≤ {vmax:.1f} m/s)", nom)
+    # 6. Eye contact: in every shot, each actor on stage looks toward the one they talk with (gaze of the pose played).
+    if cam and len(acts) >= 2:
+        wrong = []
+        for sh in cam['shots']:
+            for f in sorted({sh['start'] + 1, (sh['start'] + sh['end']) // 2 + 1}):
+                S = [st(p, f) for p in people]
+                for m in acts:
+                    p = people[m]
+                    if not p['looks'] or not S[m]['on']:
+                        continue
+                    kind = 'neutre'
+                    for f0_, k_ in p['track']:
+                        if f0_ < f:
+                            kind = k_
+                    lk = p['looks'].get(kind, p['looks'].get('neutre', 0))
+                    others = [S[o]['xv'] for o in acts if o != m and S[o]['on']]
+                    if not others or not lk:
+                        continue
+                    near = min(others, key=lambda x: abs(x - S[m]['xv']))
+                    want = 1 if near > S[m]['xv'] else -1
+                    ok = lk == want
+                    R.tally('personnages', ok)
+                    if not ok:
+                        wrong.append((p['nom'], kind, sh['k'], f))
+        for nom, kind, k, f in wrong[:8]:
+            R.add('physique', 'majeur', f"plan {k + 1} : {nom} ne regarde pas son interlocuteur (pose « {kind} », image {f})", nom)
+        # 7. Pointing law (as the viewer reads it): the line elbow → fingertip of a pointing pose meets the partner's face
+        #    (≤ 15 cm away).
+        bad_point, n_point = [], 0
+        for m in acts:
+            p = people[m]
+            for kind, pt in (p.get('points') or {}).items():
+                frames_k = [f0_ for f0_, k_ in p['track'] if k_ == kind]
+                if not frames_k:
+                    continue
+                f = frames_k[0] + 1
+                S = [st(q, f) for q in people]
+                th = pt.get('theta', 0.0)
+                E, T = pt['E'], pt['T']
+                vx_, vz_ = T[0] - E[0], T[1] - E[1]
+                tip = (E[0] + vx_ * math.cos(th) + vz_ * math.sin(th), E[1] - vx_ * math.sin(th) + vz_ * math.cos(th))
+                eye = (E[0], E[1])  # the line starts at the elbow: the forearm and the index
+                others = [o for o in acts if o != m]
+                if not others:
+                    continue
+                o = min(others, key=lambda o_: abs(S[o_]['xv'] - S[m]['xv']))
+                okind = 'neutre'
+                for f0_, k_ in people[o]['track']:
+                    if f0_ < f:
+                        okind = k_
+                ofz = people[o]['faces'].get(okind) or [people[o].get('fx', 0.0), people[o].get('fz', 1.4)]
+                tgt = (S[o]['xv'] - S[m]['xv'] + ofz[0], ofz[1])
+                dx_, dz_ = tip[0] - eye[0], tip[1] - eye[1]
+                L = math.hypot(dx_, dz_) or 1e-6
+                ux, uz = dx_ / L, dz_ / L
+                ahead = (tgt[0] - eye[0]) * ux + (tgt[1] - eye[1]) * uz > L
+                perp = abs((tgt[0] - eye[0]) * uz - (tgt[1] - eye[1]) * ux)
+                ok = ahead and perp <= 0.15
+                n_point += 1
+                R.tally('personnages', ok)
+                if not ok:
+                    bad_point.append((p['nom'], kind, people[o]['nom'], perp, f))
+        for nom, kind, onom, perp, f in bad_point[:6]:
+            R.add('physique', 'majeur', f"{nom} pointe du doigt (pose « {kind} ») mais le prolongement de son bras passe à {perp * 100:.0f} cm du visage de {onom} : il semble désigner quelqu’un d’autre (image {f})", nom)
+        R.stats['gestes'] = {'pointages': n_point, 'mal_vises': len(bad_point)}
+        R.stats['regards'] = {'verifies': sum(1 for _ in cam['shots']) * 2 * len(acts), 'detournes': len(wrong)}
+    R.stats['physique'] = {'personnes': len(people), 'paires': len(pairs), 'corps_superposes': len(hit), 'sauts_irrealistes': len(floats), 'vitesses_excessives': len(fast)}
+
+
+def bpy_ctx():
+    import bpy
+    return bpy.context
+
+
 def check_fluidity(R, scene, cuts=()):
     """Animation smoothness measured on the curves themselves (before any render): per animated channel, the frames
     where the acceleration jumps far above its own regime (a jerk) — camera cuts and snaps of a pose excluded."""
@@ -802,7 +1371,7 @@ def measure_immersion(R, life, objs, kind):
     comps = []
     names = [o.name.lower() for o in objs]
     if life and kind != 'decor':
-        comps.append(('population', min(1.0, (len(life.get('extras', [])) + len(life.get('animals', []))) / 3.0)))
+        comps.append(('population', min(1.0, (len(life.get('extras', [])) + len(life.get('animals', [])) + int((life.get('crowd') or {}).get('n', 0))) / 3.0)))
         comps.append(('ambiance sonore', min(1.0, len(life.get('sons', [])) / 2.0)))
         comps.append(('effets', min(1.0, len(life.get('fx', [])) / 2.0)))
         comps.append(('objets de l’action', 1.0 if life.get('props') else 0.5))
@@ -810,17 +1379,19 @@ def measure_immersion(R, life, objs, kind):
                       bool(life.get('extras') or life.get('animals')), bool(life.get('props'))])
         comps.append(('profondeur (plans)', layers / 3.0))
     else:
-        furn = sum(1 for o in objs if o.type == 'MESH' and not _is_shell(o))
+        furn = sum(1 for o in objs if o.type == 'MESH' and not _is_shell(o)) + R.m.get('_instances', 0) / 10.0
         comps.append(('richesse du décor', min(1.0, furn / 60.0)))
-        comps.append(('lumières pratiques', min(1.0, sum(1 for o in objs if o.type == 'LIGHT' and o.data.type in ('POINT', 'SPOT')) / 1.0 + (0.5 if any(n.startswith('glow') for n in names) else 0))))
-        comps.append(('ouverture sur le dehors', 1.0 if any(n.startswith(('sky', 'woodmango', 'skyline')) for n in names) or (life or {}).get('exterieur') else 0.4))
+        outdoor = bool((life or {}).get('exterieur'))
+        comps.append(('lumière vivante', 1.0 if outdoor else min(1.0, sum(1 for o in objs if o.type == 'LIGHT' and o.data.type in ('POINT', 'SPOT')) / 1.0 + (0.5 if any(n.startswith('glow') for n in names) else 0))))
+        comps.append(('profondeur de champ', 1.0 if outdoor or any(n.startswith(('sky', 'woodmango', 'skyline')) for n in names) else 0.4))
         comps.append(('matières', (R.ratio('materiaux_riches') or 0) / 100.0))
     R.m['_immersion'] = 100.0 * sum(v for _, v in comps) / len(comps) if comps else None
     R.stats['immersion'] = {k: round(v, 2) for k, v in comps}
 
 
 # ---------------------------------------------------------------------------------------------------------------------
-def run(kind='scene', subject='', story=None, life=None, cast=None, drawn=None, probe_frames=(), autofix=True, out=None, render_checks=True, cuts=()):
+def run(kind='scene', subject='', story=None, life=None, cast=None, drawn=None, probe_frames=(), autofix=True, out=None, render_checks=True, cuts=(),
+        cameras=None, image=None, people=None, style=None):
     """Measure the CURRENT Blender scene against its objectives. Returns the report (JSON + HTML written when `out`)."""
     import bpy
     import rules
@@ -841,6 +1412,17 @@ def run(kind='scene', subject='', story=None, life=None, cast=None, drawn=None, 
     check_rigs(R, scene, objs)
     check_fluidity(R, scene, cuts)
     check_narrative(R, story, life, objs, drawn=drawn)
+    check_casting(R, life)
+    if cameras:
+        check_cameras(R, scene, cameras)
+    if people is not None or life:
+        check_plausibility(R, scene, life, people or [], cameras)
+    if style:
+        check_style(R, style)
+    if image:
+        check_image(R, image)
+    if kind == 'decor':
+        check_enclosure(R, scene, life)
     measure_immersion(R, life, objs, kind)
     # Every defect met is traced back to its root cause; the generation rule responsible is hardened (prevention).
     causes = rules.learn(R.issues, R.fixes, subject=R.subject) if kind != 'test' else []
