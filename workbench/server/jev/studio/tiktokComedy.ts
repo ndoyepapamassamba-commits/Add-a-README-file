@@ -4,7 +4,8 @@
  * ÉCRITES selon ces règles (répliques complètes, poses, réactions), que l'Autopilot reprend mot pour mot et que le
  * pipeline Blender (scripts/blenderfilm) tourne directement.
  *
- * Mesures de la chaîne (vos 13 TikTok analysés) : 60–70 s, 8 à 16 plans par minute, un plan de 2 à 9 s.
+ * Mesures de la chaîne (vos 13 TikTok analysés) : 60–70 s, 8 à 16 plans par minute, un plan de 2 à 9 s. Rythme des
+ * dialogues et voix (6 vidéos « blague du jour » / sketchs, scripts/voice-study.py) : scripts/blenderfilm/tone_reference.json.
  */
 
 /** Les règles, dans l'ordre où le scénariste doit les appliquer. */
@@ -56,6 +57,10 @@ export const TIKTOK_BIBLE: { id: string; rule: string }[] = [
   {
     id: 'rhythm',
     rule: 'RYTHME TIKTOK : 14 à 18 répliques pour 60 s, chacune ≤ 12 mots ; un nouveau plan toutes les 3 à 5 s ; gros plan sur celui qui ment, plan à deux sur les réactions et sur la chute.',
+  },
+  {
+    id: 'measured',
+    rule: 'ÉCHANGES SERRÉS (mesuré sur 12 blagues de la chaîne) : une blague tient en 2 ou 3 répliques (≈ 7 s), chaque réplique ≈ 2,5 s ; la chute tombe 0,3 à 0,4 s après la réplique qui l’installe — pas de long silence avant la chute ; environ 1 réplique sur 6 est une réaction d’un ou deux mots (« Quoi ? », « Hein ? », « Toi ? », « Au passé ? ») ; après une chute forte, le personnage peut rire (« Ha ha ha ! », ≈ 4–5 s) ou faire un tchip (« Tchuuu ! ») ; entre deux blagues, une respiration de 3 à 5 s.',
   },
   {
     id: 'language',

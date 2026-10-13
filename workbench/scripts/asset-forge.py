@@ -25,6 +25,7 @@ import sys
 import urllib.parse
 import urllib.request
 
+import cv2
 import numpy as np
 from PIL import Image
 
@@ -34,20 +35,20 @@ BIREFNET = ('birefnet-lite.onnx', 'https://huggingface.co/onnx-community/BiRefNe
 
 # What to look for, and the real size of the subject (m) — the engine places it at that size.
 CATALOGUE = {
-    'poule': {'q': ['brown hen chicken side view', 'hen chicken standing', 'free range hen'], 'hauteur': 0.40, 'animal': True,
+    'poule': {'q': ['brown hen chicken side view', 'hen chicken standing', 'free range hen'], 'hauteur': 0.40, 'animal': True, 'owl': 'a chicken', 'tete': 'a beak',
               'decrit': 'a free-range hen with deep chestnut red-brown glossy feathers, golden orange neck feathers, a bright red comb and red wattles, yellow legs and feet, standing'},
-    'coq': {'q': ['rooster side view', 'rooster standing'], 'hauteur': 0.55, 'animal': True},
-    'chevre': {'q': ['goat standing side view', 'pygmy goat'], 'hauteur': 0.62, 'animal': True},
-    'chien': {'q': ['village dog standing side', 'basenji dog standing'], 'hauteur': 0.55, 'animal': True},
-    'chat': {'q': ['cat standing side view', 'tabby cat standing'], 'hauteur': 0.28, 'animal': True},
-    'canard': {'q': ['muscovy duck', 'duck standing side view'], 'hauteur': 0.45, 'animal': True},
-    'pigeon': {'q': ['pigeon standing side view', 'rock dove'], 'hauteur': 0.25, 'animal': True},
-    'vache': {'q': ['zebu cattle side view', 'zebu cow'], 'hauteur': 1.35, 'animal': True},
-    'tomates': {'q': ['crate of tomatoes', 'wooden crate tomatoes market', 'tomatoes in a wooden box'], 'hauteur': 0.30, 'animal': False,
+    'coq': {'q': ['rooster side view', 'rooster standing'], 'hauteur': 0.55, 'animal': True, 'owl': 'a rooster', 'tete': 'a beak'},
+    'chevre': {'q': ['goat standing side view', 'pygmy goat'], 'hauteur': 0.62, 'animal': True, 'owl': 'a goat'},
+    'chien': {'q': ['village dog standing side', 'basenji dog standing'], 'hauteur': 0.55, 'animal': True, 'owl': 'a dog'},
+    'chat': {'q': ['cat standing side view', 'tabby cat standing'], 'hauteur': 0.28, 'animal': True, 'owl': 'a cat'},
+    'canard': {'q': ['muscovy duck', 'duck standing side view'], 'hauteur': 0.45, 'animal': True, 'owl': 'a duck', 'tete': 'a beak'},
+    'pigeon': {'q': ['pigeon standing side view', 'rock dove'], 'hauteur': 0.25, 'animal': True, 'owl': 'a pigeon', 'tete': 'a beak'},
+    'vache': {'q': ['zebu cattle side view', 'zebu cow'], 'hauteur': 1.35, 'animal': True, 'owl': 'a cow'},
+    'tomates': {'q': ['crate of tomatoes', 'wooden crate tomatoes market', 'tomatoes in a wooden box'], 'hauteur': 0.30, 'animal': False, 'owl': 'a crate',
                 'decrit': 'a wooden crate full of ripe red tomatoes'},
-    'marmite': {'q': ['aluminium cooking pot', 'cooking pot lid'], 'hauteur': 0.27, 'animal': False},
-    'bouteilles': {'q': ['glass bottles', 'green glass bottle'], 'hauteur': 0.28, 'animal': False},
-    'ballon': {'q': ['soccer ball', 'football ball'], 'hauteur': 0.22, 'animal': False},
+    'marmite': {'q': ['aluminium cooking pot', 'cooking pot lid'], 'hauteur': 0.27, 'animal': False, 'owl': 'a cooking pot'},
+    'bouteilles': {'q': ['glass bottles', 'green glass bottle'], 'hauteur': 0.28, 'animal': False, 'owl': 'a bottle', 'unique': False},
+    'ballon': {'q': ['soccer ball', 'football ball'], 'hauteur': 0.22, 'animal': False, 'owl': 'a ball'},
 }
 
 
@@ -289,6 +290,94 @@ def iou(a, b):
     return float((A & B).sum() / max(1, (A | B).sum()))
 
 
+_OWL = None
+
+
+def detector():
+    """Open-vocabulary detector for the CONTENT check: OWLv2 base (Google, Apache-2.0) → OWL-ViT base (Apache-2.0) →
+    none (the silhouette checks remain). A blocked source never stops the forge."""
+    global _OWL
+    if _OWL is not None:
+        return _OWL or None
+    try:
+        import torch  # noqa: F401
+        from transformers import Owlv2ForObjectDetection, Owlv2Processor, OwlViTForObjectDetection, OwlViTProcessor
+    except ImportError:
+        _OWL = False
+        return None
+    for name, P, M in (('google/owlv2-base-patch16-ensemble', Owlv2Processor, Owlv2ForObjectDetection),
+                       ('google/owlvit-base-patch32', OwlViTProcessor, OwlViTForObjectDetection)):
+        try:
+            kw = {'cache_dir': os.path.join(MODELS, 'hf')}
+            _OWL = (name, P.from_pretrained(name, **kw), M.from_pretrained(name, **kw).eval())
+            print(f'  contrôle du contenu : {name} (Apache-2.0)', flush=True)
+            return _OWL
+        except Exception as e:
+            print(f'  détecteur {name} indisponible :', str(e)[:90], '— source suivante', flush=True)
+    _OWL = False
+    return None
+
+
+def _nms_count(boxes, scores, thr, iou_max=0.5):
+    """Instances above a score after non-maximum suppression (boxes cx, cy, w, h normalised)."""
+    keep = []
+    for i in np.argsort(-scores):
+        if scores[i] < thr:
+            break
+        cx, cy, w, h = boxes[i]
+        b = (cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2)
+        dup = False
+        for k in keep:
+            ix = max(0.0, min(b[2], k[2]) - max(b[0], k[0]))
+            iy = max(0.0, min(b[3], k[3]) - max(b[1], k[1]))
+            inter = ix * iy
+            union = (b[2] - b[0]) * (b[3] - b[1]) + (k[2] - k[0]) * (k[3] - k[1]) - inter
+            if inter / max(1e-9, union) > iou_max:
+                dup = True
+                break
+        if not dup:
+            keep.append(b)
+    return len(keep)
+
+
+def content_check(img, spec, subj_min=0.3, human_max=0.08, head_min=0.2):
+    """What the redrawn image CONTAINS — the law « un seul sujet, la bonne espèce, personne d'autre »: the subject is
+    recognised (score ≥ subj_min), appears ONCE (no second hen grown from the tail), and no person was added by the
+    style reference (max score of « a person / a man / a woman » < human_max). Measured on the hen: clean redraws
+    score ≤ 0.007 for people, redraws with an added person 0.33–0.35; a second hen scores 0.31–0.60."""
+    det = detector()
+    if det is None:
+        return {'ok': True, 'methode': 'aucun détecteur disponible (contrôles de silhouette seuls)'}
+    import torch
+    name, proc, model = det
+    subj = spec.get('owl', 'an animal' if spec.get('animal') else 'an object')
+    head = spec.get('tete')
+    Q = [subj, 'a person', 'a man', 'a woman'] + ([head] if head else [])
+    with torch.no_grad():
+        out = model(**proc(text=[Q], images=img.convert('RGB'), return_tensors='pt'))
+    lg = out.logits[0].sigmoid().numpy()
+    boxes = out.pred_boxes[0].numpy()
+    s_subj = float(lg[:, 0].max())
+    human = float(lg[:, 1:4].max())
+    n = _nms_count(boxes, lg[:, 0], subj_min)
+    unique = spec.get('unique', True)
+    # ONE HEAD: a second head can grow from the tail and stay fused to the body (one box for the subject). For birds the
+    # beak is the clearest sign — measured: every clean redraw and the photo show one beak (0.60–0.84), every redraw with
+    # a head grown on the tail shows a second one far from the first (0.23–0.42).
+    heads = 1
+    if head:
+        sc = lg[:, 4]
+        top = int(np.argmax(sc))
+        far = [i for i in np.nonzero(sc >= head_min)[0] if np.hypot(*(boxes[i][:2] - boxes[top][:2])) > 0.2]
+        heads = 1 + _nms_count(boxes[far], sc[far], head_min) if far else 1
+    ok = s_subj >= subj_min and human < human_max and (n <= 1 or not unique) and heads <= 1
+    why = [] if ok else [m for m, c in ((f'« {subj} » non reconnu ({s_subj:.2f})', s_subj < subj_min),
+                                         (f'personne ajoutée ({human:.2f})', human >= human_max),
+                                         (f'{n} sujets au lieu d’un', unique and n > 1),
+                                         (f'{heads} têtes', heads > 1)) if c]
+    return {'ok': ok, 'methode': name, 'sujet': round(s_subj, 3), 'instances': n, 'tetes': heads, 'humain': round(human, 3), 'pourquoi': why}
+
+
 def stylize(rgba, spec, strength=0.45, seed=7, size=None, plate=False):
     """The real subject redrawn in the troupe's style (3D animated film look) — LCM Dreamshaper v7 (MIT licence),
     image-to-image at a moderate strength: the real shape and colours are kept. On a plain green background (keyed
@@ -318,7 +407,7 @@ def stylize(rgba, spec, strength=0.45, seed=7, size=None, plate=False):
                 continue
             try:
                 pipe.load_ip_adapter(src, subfolder='models', weight_name='ip-adapter_sd15.safetensors', **kw)
-                pipe.set_ip_adapter_scale(0.6)
+                pipe.set_ip_adapter_scale(float(spec.get('_ip_scale', 0.5)))
                 pipe._ipa = True
                 print(f'  IP-Adapter (Apache-2.0) chargé depuis {src} : les dessins de la troupe guident le rendu', flush=True)
                 break
@@ -336,7 +425,10 @@ def stylize(rgba, spec, strength=0.45, seed=7, size=None, plate=False):
     where = '' if plate else ', plain flat green background'
     prompt = (f"3d animated movie still, pixar style render of {spec.get('decrit', 'the subject')}{where}, "
               'warm golden sunlight, vibrant saturated colors, glossy highlights, crisp details, strong contrast, smooth stylized shapes, high quality')
-    neg = 'photo, realistic, grainy, noisy, blurry, deformed, extra legs, scenery, grass, text'
+    # The style reference shows PEOPLE (the troupe): without this, the adapter adds a person or a second animal next to
+    # the subject (measured: 3 of 9 redraws at force ≥ 0.56 had one).
+    neg = ('photo, realistic, grainy, noisy, blurry, deformed, extra legs, extra head, scenery, grass, text, '
+           'person, people, human, man, woman, child, face, two animals, second animal, duplicate, crowd')
     out = pipe(prompt=prompt, negative_prompt=neg, image=bg.convert('RGB').resize(size, Image.LANCZOS), strength=strength,
                num_inference_steps=8, guidance_scale=1.5, generator=torch.manual_seed(seed), **ipa).images[0]
     return out
@@ -432,6 +524,9 @@ def main():
     ap.add_argument('--reutiliser', action='store_true', help='reprendre la photo déjà choisie et détourée (seulement le style)')
     ap.add_argument('--decor', action='store_true', help='un LIEU (vues réelles reprises en décors peints) au lieu d’un animal / objet')
     ap.add_argument('--vues', type=int, default=3, help='nombre de vues du lieu')
+    ap.add_argument('--forces', type=float, nargs='+', default=[0.40, 0.48, 0.56, 0.64])
+    ap.add_argument('--graines', type=int, nargs='+', default=[7, 21])
+    ap.add_argument('--ip-scale', type=float, default=0.5, help='poids des dessins de la troupe (IP-Adapter)')
     ap.add_argument('--troupe-decors', default='', help='dossier des décors peints de la troupe (référence de style des lieux)')
     A = ap.parse_args()
     if A.decor:
@@ -443,18 +538,29 @@ def main():
         import glob
         files = sorted(glob.glob(os.path.join(A.troupe, '**', '*.png'), recursive=True))
         if files:
-            # The style image: a collage of a few troupe drawings on the green ground (their light, colours, rendering).
+            # The style image: a collage of MATERIAL close-ups of the troupe drawings (fabric, skin, hair — their light,
+            # colours and rendering), not whole standing people: the adapter then transfers the rendering, not the
+            # subject (whole figures made it add people next to the hen).
             tiles = []
-            for f in files[:: max(1, len(files) // 6)][:6]:
+            for f in files[:: max(1, len(files) // 9)][:9]:
                 t = Image.open(f).convert('RGBA')
-                t.thumbnail((180, 300))
-                bg = Image.new('RGBA', (180, 300), (96, 178, 96, 255))
-                bg.alpha_composite(t, ((180 - t.size[0]) // 2, 300 - t.size[1]))
-                tiles.append(bg)
-            col = Image.new('RGB', (180 * 3, 300 * 2), (96, 178, 96))
+                a_ = np.asarray(t)[..., 3]
+                ys, xs = np.nonzero(a_ > 128)
+                if not len(ys):
+                    continue
+                y0, y1, x0, x1 = ys.min(), ys.max(), xs.min(), xs.max()
+                h_, w_ = y1 - y0, x1 - x0
+                box = (int(x0 + 0.22 * w_), int(y0 + 0.30 * h_), int(x1 - 0.22 * w_), int(y0 + 0.62 * h_))  # torso / clothes
+                c_ = t.crop(box).resize((200, 200), Image.LANCZOS)
+                bg = Image.new('RGBA', (200, 200), (96, 178, 96, 255))
+                bg.alpha_composite(c_)
+                tiles.append(bg.convert('RGB'))
+            col = Image.new('RGB', (600, 600), (96, 178, 96))
             for i_, t in enumerate(tiles):
-                col.paste(t.convert('RGB'), ((i_ % 3) * 180, (i_ // 3) * 300))
+                col.paste(t, ((i_ % 3) * 200, (i_ // 3) * 200))
             spec['_style_image'] = col
+            col.save(os.path.join(A.out, 'style-matieres.png'))
+    spec['_ip_scale'] = A.ip_scale
     out = os.path.join(A.out, A.espece)
     os.makedirs(out, exist_ok=True)
     sess = model(*BIREFNET)
@@ -506,21 +612,34 @@ def main():
         # measured look whose silhouette stays the real one (IoU with the photo ≥ 0.72) — an animal keeps its legs.
         a_photo = np.asarray(rgba)[..., 3] / 255.0
         best_sty = None
-        for strength in (0.48, 0.56, 0.64):
-            for seed in (7, 21, 33):
+        for strength in A.forces:
+            for seed in A.graines:
                 sty = stylize(rgba, spec, strength, seed)
                 if sty is None:
                     break
                 a2 = cutout(sess, sty)
                 cand = crop_rgba(sty, a2)
-                fid = iou(np.asarray(cand)[..., 3] / 255.0, a_photo)
+                # Silhouette compared in the SAME frame (the redraw keeps the photo's framing): comparing two crops
+                # hid a second subject, the crop simply grew around it.
+                fid = iou(a2, a_photo)
+                ph = cv2.resize(a_photo.astype(np.float32), (a2.shape[1], a2.shape[0])) > 0.5
+                grown = cv2.dilate(ph.astype(np.uint8), np.ones((15, 15), np.uint8)) > 0
+                added = float(((a2 > 0.5) & ~grown).sum() / max(1, (a2 > 0.5).sum()))
                 _sc, det = score(a2, spec['animal'])
+                cc = content_check(sty, spec)
                 cand = crisp_like_troupe(cand, ref)
                 dist, dd = style_distance(cand, ref) if ref else (0.0, {})
-                ok = fid >= 0.80 and (not spec['animal'] or det.get('pattes_visibles', True))
-                essais.append({'force': strength, 'graine': seed, 'fidelite_silhouette': round(fid, 3), 'distance_style': round(dist, 3),
-                               'pattes_visibles': det.get('pattes_visibles'), 'retenu': False, 'detail': dd})
-                print(f"  style force {strength:.2f} graine {seed}: fidélité {fid:.2f}, distance au style troupe {dist:.2f}{'' if ok else ' (rejeté)'}", flush=True)
+                ok = (fid >= 0.80 and added <= 0.06 and det.get('sujet_principal', 1) >= 0.95 and cc['ok']
+                      and (not spec['animal'] or det.get('pattes_visibles', True)))
+                why = cc.get('pourquoi', []) + ([f'silhouette {fid:.2f}'] if fid < 0.80 else []) + \
+                    ([f'matière ajoutée hors silhouette {added:.0%}'] if added > 0.06 else []) + \
+                    (['plusieurs morceaux'] if det.get('sujet_principal', 1) < 0.95 else []) + \
+                    (['pattes cachées'] if spec['animal'] and not det.get('pattes_visibles', True) else [])
+                essais.append({'force': strength, 'graine': seed, 'fidelite_silhouette': round(fid, 3), 'matiere_ajoutee': round(added, 3),
+                               'distance_style': round(dist, 3), 'pattes_visibles': det.get('pattes_visibles'), 'contenu': cc,
+                               'retenu': False, 'rejet': why, 'detail': dd})
+                print(f"  style force {strength:.2f} graine {seed}: fidélité {fid:.2f}, ajouté {added:.0%}, contenu {cc.get('instances', '?')} sujet(s) {cc.get('tetes', '?')} tête(s) "
+                      f"humain {cc.get('humain', '?')}, distance au style troupe {dist:.2f}{'' if ok else ' (rejeté : ' + ', '.join(why) + ')'}", flush=True)
                 cand.save(os.path.join(out, f'style-{int(strength * 100)}-{seed}.png'))
                 if ok and (best_sty is None or dist < best_sty[0]):
                     best_sty = (dist, cand, len(essais) - 1)

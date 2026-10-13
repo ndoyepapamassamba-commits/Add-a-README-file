@@ -57,3 +57,17 @@ blocage », « chercher automatiquement une autre alternative »)
 | Référence de style = dessins de la troupe | IP-Adapter SD1.5 (h94 ; miroir InvokeAI) | Apache-2.0 | guide le rendu vers les personnages |
 | Ambiance de couleurs | transfert Lab mesuré sur les dessins de la troupe | (code maison) | luminosité, saturation, chaleur ; teinte propre gardée |
 | Physique des tas | Bullet (moteur de corps rigides de Blender) | zlib (Blender GPL) | versement par gravité, contact exact |
+| Contrôle du CONTENU d'une image reprise (un seul sujet, une seule tête, aucune personne ajoutée) | OWLv2 base (Google) ; repli OWL-ViT base | Apache-2.0 | la forge rejette un essai où le style a ajouté une 2ᵉ poule, une tête sur la queue ou un humain (accord 12/12 avec l'examen visuel) |
+| Transcription des vidéos de la chaîne | faster-whisper « small » (Systran) | MIT | répliques horodatées (fichiers privés, jamais commités) |
+| Pauses réelles entre répliques | VAD Silero (livré avec faster-whisper) | MIT | silences mesurés même sous la musique |
+| Hauteur de voix | YIN (de Cheveigné & Kawahara 2002) | méthode publiée, code maison | hauteur et étendue de mélodie (filtre médian contre les erreurs d'octave) |
+| Voix des personnages | vocodeur WORLD (Morise 2016) via pyworld | BSD / MIT | mélodie élargie vers la chaîne, hauteur sans changer le timbre, formants d'enfant |
+
+## Leçons (à appliquer partout)
+- Une mesure de STYLE seule peut récompenser un défaut : la « distance au style » baissait quand l'IP-Adapter ajoutait des
+  personnages de la troupe à côté de la poule. Toujours coupler le style à un contrôle du CONTENU (que montre l'image ?).
+- Comparer des silhouettes dans le MÊME cadre (pas deux recadrages : le recadrage grandit autour d'un 2ᵉ sujet).
+- Une référence de style faite de personnages entiers transfère des personnages ; une référence de MATIÈRES (tissus, peau,
+  cheveux en gros plan) transfère le rendu.
+- Vérifier l'inventaire phonétique d'une voix (ex. « gilles » sans voyelles nasales) avant de l'attribuer ; une voix qui
+  ne sait pas dire « francs » est remplacée automatiquement.

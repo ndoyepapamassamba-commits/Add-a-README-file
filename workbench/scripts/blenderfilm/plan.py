@@ -46,9 +46,35 @@ def write_wav(path, a):
         w.writeframes((a * 32767).astype(np.int16).tobytes())
 
 
-def tts(text, voice, out, voices_dir, speed=1.0, pitch=1.0):
+# French needs its nasal vowels (an, on, in, un: the combining tilde U+0303). A voice model without that phoneme says
+# « francs » as « fra » (measured: « Mille francs » re-transcribed « le meilleur sardin »). Such a voice is replaced
+# by the closest voice of the same kind that has it, at the original voice's measured pitch (timbre of the stand-in).
+NASAL = '\u0303'
+STAND_IN = {'gilles': 'pierre'}
+_CAN = {}
+
+
+def speaks_french(voice, voices_dir):
+    if voice not in _CAN:
+        model, _ = VOICES.get(voice, VOICES['siwis'])
+        try:
+            _CAN[voice] = NASAL in json.load(open(os.path.join(voices_dir, model + '.json'), encoding='utf-8'))['phoneme_id_map']
+        except (OSError, ValueError, KeyError):
+            _CAN[voice] = True  # unknown: trusted as before
+    return _CAN[voice]
+
+
+def tts(text, voice, out, voices_dir, speed=1.0, pitch=1.0, expr=1.0, formant=1.0, stand_in=True):
     from piper import PiperVoice
     from piper.config import SynthesisConfig
+    if stand_in and not speaks_french(voice, voices_dir) and STAND_IN.get(voice) and speaks_french(STAND_IN[voice], voices_dir):
+        import tone
+        pp = tone.load().get('piper') or {}
+        ratio = (pp.get(voice, {}).get('f0') or 107.7) / (pp.get(STAND_IN[voice], {}).get('f0') or 141.9)
+        if voice not in _CAN.get('_dit', set()):
+            _CAN.setdefault('_dit', set()).add(voice)
+            print(f"[voix] « {voice} » ne prononce pas les voyelles nasales → « {STAND_IN[voice]} » à sa hauteur (×{ratio:.2f})", flush=True)
+        voice, pitch = STAND_IN[voice], pitch * ratio
     model, spk = VOICES.get(voice, VOICES['siwis'])
     v = PiperVoice.load(os.path.join(voices_dir, model))
     tmp = out + '.raw.wav'
@@ -56,7 +82,14 @@ def tts(text, voice, out, voices_dir, speed=1.0, pitch=1.0):
         v.synthesize_wav(text, w, SynthesisConfig(speaker_id=spk, length_scale=1.0 / speed))
     a = read_wav(tmp)
     os.remove(tmp)
-    if abs(pitch - 1) > 0.01:
+    shaped = None
+    if abs(pitch - 1) > 0.01 or abs(expr - 1) > 0.01 or abs(formant - 1) > 0.01:
+        # The channel's voice (tone.py): melody widened, pitch moved with the timbre kept (WORLD vocoder).
+        import tone
+        shaped = tone.shape(a, SR, pitch, expr, formant)
+    if shaped is not None:
+        a = shaped
+    elif abs(pitch - 1) > 0.01:
         # A child / cartoon voice: higher pitch, same duration (resample up, then time-stretch back with ffmpeg atempo).
         t = np.arange(int(len(a) / pitch)) * pitch
         a = np.interp(t, np.arange(len(a)), a).astype(np.float32)
@@ -302,6 +335,23 @@ def main():
     vdir = os.path.join(a.out, 'voices')
     os.makedirs(vdir, exist_ok=True)
 
+    # TONE OF THE CHANNEL (tone.py, measured on its videos): each voice gets the channel's melody range (and, for a
+    # child, its brightness), the lines are placed with the channel's silences.
+    import tone as tonelib
+    tone = tonelib.load()
+    try:
+        sheets = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'characters.json'), encoding='utf-8'))
+    except (OSError, ValueError):
+        sheets = {}
+    shape = {}
+    for cid, c in cast.items():
+        sheet = dict(sheets.get(c['name'], {}), **{k: v for k, v in c.items() if k in ('pitch', 'genre', 'age')})
+        tg = tonelib.targets(sheet, c.get('voice', 'siwis'), tone) if story.get('ton_chaine', True) else {}
+        shape[cid] = {'pitch': c.get('pitch', 1.0) * tg.get('luminosite', 1.0), 'expr': tg.get('expr', 1.0), 'formant': tg.get('formant', 1.0)}
+        if tg:
+            print(f"[ton] {c['name']} ({tg['type']}, voix {c.get('voice', 'siwis')}) : mélodie ×{tg.get('expr', 1)}"
+                  + (f", hauteur ×{tg['luminosite']}" if 'luminosite' in tg else '') + (f", formants ×{tg['formant']}" if tg.get('formant', 1) != 1 else ''), flush=True)
+
     def render_lines(speed):
         lines = []
         for i, b in enumerate(beats):
@@ -311,14 +361,16 @@ def main():
                 audio = read_wav(b['audio'])
                 write_wav(path, audio)
             else:
-                audio = tts(b['text'], c.get('voice', 'siwis'), path, a.voices, speed=speed * c.get('speed', 1.0), pitch=c.get('pitch', 1.0))
+                sh = shape[b['who']]
+                audio = tts(b['text'], c.get('voice', 'siwis'), path, a.voices, speed=speed * c.get('speed', 1.0), pitch=sh['pitch'], expr=sh['expr'], formant=sh['formant'])
             lines.append(audio)
         return lines
 
     # Voices, then a global tempo so that the film lasts the asked duration (pauses included).
     speed = float(story.get('speed', 1.0))
     lines = render_lines(speed)
-    lead, tail = 0.35, 0.45
+    tm = tonelib.timing(tone)
+    lead, tail = tm['lead'], tm['tail']
     speech = sum(len(x) / SR for x in lines)
     pauses = len(beats) * (lead + tail) + sum(float(b.get('hold', 0)) for b in beats)
     if speech + pauses > a.seconds + 0.5:
@@ -326,25 +378,14 @@ def main():
         speed = max(0.8, min(1.35, speed * speech / max(1.0, a.seconds - pauses)))
         lines = render_lines(speed)
         speech = sum(len(x) / SR for x in lines)
-    # Remaining time goes to the reactions (the « hold » after each line), so the film lasts exactly the duration.
-    spare = max(0.0, a.seconds - speech - pauses)
-    extra = spare / len(beats)
-
-    # COMIC TIMING: the hook starts at once (no breath before the first word); a silent BEAT before the punchline (the
-    # audience leans in); after the punchline, room for the reaction shot and the emoji before anything else.
+    # COMIC TIMING as measured on the channel: tight turns inside an exchange, a short beat before the punchline,
+    # breaths between exchanges; the time left to reach the duration goes to those breaths and to the reaction after the
+    # punchline before anything is spread evenly (tone.schedule).
     pb_i = story['punch']['beat'] if story.get('punch') else -1
-    BEAT, AFTER = 0.55, 1.25
-    extra = max(0.0, extra - (BEAT + AFTER) / len(beats)) if pb_i >= 0 else extra
-    timeline = []
-    t = 0.0
-    for i, b in enumerate(beats):
-        dur = len(lines[i]) / SR
-        start = t
-        speak0 = start + (0.1 if i == 0 else lead)
-        speak1 = speak0 + dur
-        end = speak1 + tail + float(b.get('hold', 0)) + extra + (BEAT if i == pb_i - 1 else 0) + (AFTER if i == pb_i else 0)
-        timeline.append({'i': i, 'start': start, 'speak0': speak0, 'speak1': speak1, 'end': end})
-        t = end
+    timeline, rep = tonelib.schedule([len(x) / SR for x in lines], pb_i, a.seconds, tone, holds=[float(b.get('hold', 0)) for b in beats])
+    print(f"[ton] rythme {'mesuré sur la chaîne' if rep['mesure'] else 'par défaut'} : tour de parole {rep['tour_s']} s, avant la chute {rep['avant_chute_s']} s, "
+          f"{rep['respirations']} respiration(s) entre échanges, réserve {rep['reserve_s']} s" + (f" dont {rep['etale_s']} s étalés (histoire courte pour le rythme de la chaîne)" if rep['etale_s'] > 0.05 else ''), flush=True)
+    t = timeline[-1]['end']
     total = t
     nF = int(round(total * fps))
     # The living world around the actors (extras, animals, props of the lines, ambience), decided for the whole film.

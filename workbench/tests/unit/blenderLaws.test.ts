@@ -210,3 +210,78 @@ print(json.dumps({'n': len(out), 'pose': story['beats'][0]['pose'], 'text': stor
     expect(r.aim).toBe(true); // a line elbow → fingertip that meets the partner's face is accepted
   });
 });
+
+describe('Ton et voix de la chaîne (tone.py, plan.py)', () => {
+  it('lines are placed with the measured silences: tight turns, a short beat before the punchline, breaths between exchanges', () => {
+    const r = py(`
+import json, tone as T
+ref = {'_mesure': True, 'rythme': {'tour_de_parole_s': 0.26, 'silence_avant_chute_p75_s': 0.40, 'repliques_par_blague': 3,
+       'entre_blagues_s': 3.52, 'entre_blagues_p75_s': 5.01, 'rire_s': 4.73}, 'voix': {}, 'piper': {}}
+tl, rep = T.schedule([2.0] * 6, 4, 0, ref)
+gaps = [round(b['speak0'] - a['speak1'], 2) for a, b in zip(tl, tl[1:])]
+tl60, rep60 = T.schedule([2.0] * 6, 4, 25, ref)
+old = T.timing(T.DEFAULT | {'_mesure': False})
+print(json.dumps({'gaps': gaps, 'end60': round(tl60[-1]['end'], 2), 'spread': rep60['etale_s'],
+  'breath60': round(tl60[3]['speak0'] - tl60[2]['speak1'], 2), 'oldTurn': round(old['lead'] + old['tail'], 2)}))`);
+    if (!r) return;
+    expect(r.gaps).toEqual([0.26, 0.26, 3.78, 0.4, 1.51]); // turn, turn, breath between exchanges, beat before the punch, reaction after it
+    expect(r.end60).toBeCloseTo(25, 1); // the asked duration is kept
+    // The spare time first widens the breaths up to the measured upper quartile (5.01 s + the turn), then the reaction
+    // after the punchline (a laugh's length); only the small remainder is spread over every line.
+    expect(r.breath60 as number).toBeGreaterThanOrEqual(5.27);
+    expect(r.breath60 as number).toBeLessThan(5.4);
+    expect(r.spread as number).toBeLessThan(0.5);
+    expect(r.oldTurn).toBe(0.8); // without a measurement, the former fixed silence
+  });
+
+  it('each voice gains the channel melody range; only a kind measured on its own changes pitch; a voice without nasal vowels is replaced', () => {
+    const r = py(`
+import json, os, tempfile, numpy as np, tone as T, plan as P
+ref = {'voix': {'enfant': {'f0': 333.0, 'etendue_relative': 0.51}, 'homme': {'f0': 216.0, 'etendue_relative': 0.57, 'partage': True}},
+       'piper': {'tom': {'f0': 131.0, 'etendue_relative': 0.233}, 'jessica': {'f0': 230.0, 'etendue_relative': 0.30}}}
+man = T.targets({'genre': 'homme', 'age': 40}, 'tom', ref)
+kid = T.targets({'genre': 'garçon', 'age': 9, 'pitch': 1.2}, 'jessica', ref)
+sr = 22050; t = np.arange(int(sr * 1.5)) / sr
+f = 200 + 20 * np.sin(2 * np.pi * 1.5 * t)
+x = (0.3 * np.sin(2 * np.pi * np.cumsum(f) / sr) + 0.1 * np.sin(4 * np.pi * np.cumsum(f) / sr)).astype(np.float32)
+y = T.shape(x, sr, 1.0, 2.0)
+m0, m1 = (T.melody(x, sr), T.melody(y, sr)) if y is not None else ((None, None), (None, None))
+d = tempfile.mkdtemp()
+json.dump({'phoneme_id_map': {'a': [1]}}, open(os.path.join(d, 'fr_FR-gilles-low.onnx.json'), 'w'))
+json.dump({'phoneme_id_map': {'a': [1], '\\u0303': [2]}}, open(os.path.join(d, 'fr_FR-upmc-medium.onnx.json'), 'w'))
+print(json.dumps({'man': man, 'kid': kid, 'world': y is not None, 'f0': [m0[0], m1[0]], 'rel': [m0[1], m1[1]],
+  'gilles': P.speaks_french('gilles', d), 'pierre': P.speaks_french('pierre', d), 'stand': P.STAND_IN['gilles']}))`);
+    if (!r) return;
+    const man = r.man as Record<string, number>;
+    const kid = r.kid as Record<string, number>;
+    expect(man.expr).toBe(2.2); // a flat voice (0.23) gets the channel's range, bounded
+    expect(man.luminosite).toBeUndefined(); // adults: men and women are not separated by the measure → pitch kept
+    expect(kid.luminosite).toBeGreaterThan(1); // children were measured on their own: brighter
+    expect(kid.formant).toBe(1.12);
+    if (r.world) {
+      const [a, b] = r.f0 as [number, number];
+      const [ra, rb] = r.rel as [number, number];
+      expect(Math.abs(b - a) / a).toBeLessThan(0.05); // the melody widens around the voice's own pitch
+      expect(rb / ra).toBeGreaterThan(1.6);
+    }
+    expect(r.gilles).toBe(false);
+    expect(r.pierre).toBe(true);
+    expect(r.stand).toBe('pierre');
+  });
+});
+
+describe('Forge : contenu de l’image reprise (asset-forge.py)', () => {
+  it('a second subject is counted, a duplicate box of the same subject is not', () => {
+    const r = py(`
+import json, importlib.util, numpy as np
+spec = importlib.util.spec_from_file_location('forge', '../asset-forge.py'); F = importlib.util.module_from_spec(spec); spec.loader.exec_module(F)
+one = F._nms_count(np.array([[0.5, 0.5, 0.9, 0.8], [0.52, 0.5, 0.88, 0.8], [0.9, 0.3, 0.15, 0.4]]), np.array([0.81, 0.4, 0.21]), 0.3)
+two = F._nms_count(np.array([[0.45, 0.5, 0.9, 0.8], [0.86, 0.25, 0.2, 0.45]]), np.array([0.6, 0.31]), 0.3)
+print(json.dumps({'one': one, 'two': two, 'hen': F.CATALOGUE['poule']['owl'], 'bottles': F.CATALOGUE['bouteilles'].get('unique')}))`);
+    if (!r) return;
+    expect(r.one).toBe(1); // the same hen boxed twice, and a weak partial box: one subject
+    expect(r.two).toBe(2); // a second hen grown from the tail (measured 0.31–0.60): two subjects → redraw rejected
+    expect(r.hen).toBe('a chicken');
+    expect(r.bottles).toBe(false); // several bottles are allowed
+  });
+});

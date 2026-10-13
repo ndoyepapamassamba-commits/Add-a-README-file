@@ -358,9 +358,12 @@ class World:
                 strength.keyframe_insert('default_value', frame=f)
 
     # ── figurants ────────────────────────────────────────────────────────────────────────────────────────────────
-    def card_material(self, name, img, px):
+    def card_material(self, name, img, px, front=False):
         """Emissive card of a drawing, a touch darker and tinted (it stays behind the actors), with a SOFT version mixed
-        in on the close-ups exactly like the painted set (same lens, same depth of field)."""
+        in on the close-ups exactly like the painted set (same lens, same depth of field). A card standing on the
+        forestage WITH the actors (`front`) is treated like them: neither darkened nor tinted, sharp in every shot (its
+        colours were already matched to the troupe's by the forge — measured: the background treatment made the hen
+        greyer than the drawn people beside it)."""
         import numpy as np
         bpy = self.bpy
         h, w = px.shape[:2]
@@ -391,7 +394,7 @@ class World:
         tint.data_type = 'RGBA'
         tint.blend_type = 'MULTIPLY'
         tint.inputs['Factor'].default_value = 1.0
-        tint.inputs['B'].default_value = (*[0.88 * v for v in self.tint], 1)
+        tint.inputs['B'].default_value = (1.0, 1.0, 1.0, 1) if front else (*[0.88 * v for v in self.tint], 1)
         em = nt.nodes.new('ShaderNodeEmission')
         tr = nt.nodes.new('ShaderNodeBsdfTransparent')
         mix = nt.nodes.new('ShaderNodeMixShader')
@@ -414,7 +417,7 @@ class World:
                 pass
         # Same softness as the set, shot by shot (hard cuts).
         for s in self.c.get('shots', []):
-            sv.outputs[0].default_value = 0.0 if s['type'] == 'two' else 1.0
+            sv.outputs[0].default_value = 0.0 if (s['type'] == 'two' or front) else 1.0
             sv.outputs[0].keyframe_insert('default_value', frame=s['start'] + 1)
         try:
             ad = m.node_tree.animation_data
@@ -471,7 +474,7 @@ class World:
                 return None
         return None
 
-    def image_card(self, name, png, height):
+    def image_card(self, name, png, height, front=False):
         """A forged asset as a drawn card standing on its feet (lowest opaque row at z = 0), at its REAL height, with a
         soft version for the close-ups (calibrated like the extras) and its projected shadow."""
         import numpy as np
@@ -484,7 +487,7 @@ class World:
         s = height / max(1, foot - top)
         x0, x1 = -w / 2 * s, w / 2 * s
         z0, z1 = -(h - 1 - foot) * s, (foot + 1) * s
-        m = self.card_material(name, img, px)
+        m = self.card_material(name, img, px, front)
         ob = self.c['mesh_object'](f'carte-{name}', [(x0, 0, z0), (x1, 0, z0), (x1, 0, z1), (x0, 0, z1)], [(0, 1, 2, 3)],
                                    [(0, 0), (1, 0), (1, 1), (0, 1)], m)
         ob['atelier'] = True  # a real subject redrawn in the troupe's style (asset-forge) — the style control accepts it
@@ -857,6 +860,7 @@ class World:
         self.spots.append(spot)
         a['u'], a['y'] = round(u, 3), round(spot[1], 3)
         st_ = self.stance(spot[0], spot[1], 0.3)['pieds']
+        a['sol'] = st_
         print(f"[sol] {a['species']} posé(e) à x={spot[0]:+.2f} m, profondeur {spot[1]:.2f} m, sur {'l’avant-scène' if st_ == 'avant-scene' else 'le sol peint'}"
               f" (place à l’écran u={u:+.2f})", flush=True)
         return a['u']
@@ -883,7 +887,7 @@ class World:
                 if fa:
                     # A REAL hen (free photo) redrawn in the troupe's style: a drawn card like the troupe, on its feet.
                     root = self.empty(f'{sp}-{i}')
-                    card, px_ = self.image_card(f'{sp}-{i}', fa[0], fa[1].get('hauteur_m', 0.4))
+                    card, px_ = self.image_card(f'{sp}-{i}', fa[0], fa[1].get('hauteur_m', 0.4), front=a.get('sol') == 'avant-scene')
                     card.parent = root
                     body, head = self.empty(f'{sp}-{i}-pivot'), card  # the card pecks by tipping on its feet
                     body.parent = root

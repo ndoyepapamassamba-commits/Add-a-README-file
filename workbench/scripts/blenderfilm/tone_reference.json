@@ -1,0 +1,84 @@
+{
+ "source": "mesures agrégées de 6 vidéos de la chaîne (scripts/voice-study.py : faster-whisper MIT, VAD Silero MIT, YIN) — aucune transcription ni extrait gardé ici",
+ "rythme": {
+  "blagues_mesurees": 12,
+  "tour_de_parole_s": 0.26,
+  "silence_avant_chute_s": 0.31,
+  "silence_avant_chute_p75_s": 0.4,
+  "reaction_avant_chute": 0.08,
+  "chute_s": 2.42,
+  "blague_s": 7.44,
+  "repliques_par_blague": 3.0,
+  "replique_mediane_s": 2.49,
+  "entre_blagues_s": 3.52,
+  "entre_blagues_p75_s": 5.01,
+  "rires": 3,
+  "rire_s": 4.73,
+  "reactions_part": 0.16,
+  "repliques_par_minute": 13.7,
+  "exclamations": 0.28,
+  "questions": 0.29
+ },
+ "voix": {
+  "enfant": {
+   "f0": 333.1,
+   "etendue_relative": 0.508,
+   "debit_syll_s": 3.81,
+   "voix_mesurees": 7
+  },
+  "adulte": {
+   "f0": 216.4,
+   "etendue_relative": 0.569,
+   "debit_syll_s": 5.89,
+   "voix_mesurees": 8
+  },
+  "femme": {
+   "f0": 216.4,
+   "etendue_relative": 0.569,
+   "debit_syll_s": 5.89,
+   "voix_mesurees": 8,
+   "partage": true
+  },
+  "homme": {
+   "f0": 216.4,
+   "etendue_relative": 0.569,
+   "debit_syll_s": 5.89,
+   "voix_mesurees": 8,
+   "partage": true
+  },
+  "aine": {
+   "f0": 216.4,
+   "etendue_relative": 0.569,
+   "debit_syll_s": 5.89,
+   "voix_mesurees": 8,
+   "partage": true
+  }
+ },
+ "piper": {
+  "siwis": {
+   "f0": 224.4,
+   "etendue_relative": 0.452
+  },
+  "tom": {
+   "f0": 134.5,
+   "etendue_relative": 0.22
+  },
+  "gilles": {
+   "f0": 108.6,
+   "etendue_relative": 0.474
+  },
+  "jessica": {
+   "f0": 238.2,
+   "etendue_relative": 0.362
+  },
+  "pierre": {
+   "f0": 141.5,
+   "etendue_relative": 0.459
+  }
+ },
+ "expressions": [
+  "ah",
+  "hein",
+  "papa"
+ ]
+}
