@@ -1187,6 +1187,57 @@ test('Circuit Grok « 10 s · entièrement animé »: no character sheet, voices
   expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
 });
 
+test('Circuit Grok allégé + acteurs 3D: Grok on the key shot only, EVERY other scene rendered by the engine into a clip and analysed — nothing left untreated', async ({ page }) => {
+  test.setTimeout(1_500_000);
+  mock.models = [model('acme/free-text:free', '0', '0')];
+  const errors = await open(page, [], { autopilot: true });
+  const net = await intercept(page);
+  net.videoCost = -1;
+  await page.getByTitle(/AI Film Studio/).click();
+  await page.getByTestId('actor-casting').locator('summary').click();
+  await page.getByTestId('actors3d-troupe').click();
+  await expect(page.getByTestId('actors3d-note')).toContainText(/univers @comedyvideos_100 : (3\d|4\d) acteur\(s\) ajouté\(s\)/);
+  await page.getByTestId('actor-casting').locator('summary').click();
+  const L = (speaker: string, text: string, emotion: string, gesture?: string) => ({ speaker, text, emotion, ...(gesture ? { gesture } : {}), language: 'fr' });
+  const SHORT = {
+    ...STORY,
+    characters: ['TANTIE AWA', 'PETIT MAMADOU', 'LE TONTON'],
+    scenes: [
+      { ...STORY.scenes[0]!, beat: 'hook', duration: 3, location: 'cour de la maison', characters: ['TANTIE AWA', 'PETIT MAMADOU'], action: 'TANTIE AWA cherche son crédit', dialogue: [L('TANTIE AWA', 'Qui a pris mon crédit ?', 'colère', 'point'), L('PETIT MAMADOU', 'Pas moi, tantie !', 'peur')] },
+      { ...STORY.scenes[1]!, beat: 'escalade', duration: 3, location: 'village', characters: ['PETIT MAMADOU', 'LE TONTON'], action: 'PETIT MAMADOU interroge LE TONTON', dialogue: [L('PETIT MAMADOU', 'Tonton, le téléphone de tantie ?', 'surprise'), L('LE TONTON', 'Quel téléphone ?', 'joie', 'shrug')] },
+      { ...STORY.scenes[1]!, scene_id: 'S03', beat: 'chute', duration: 3, location: 'village', characters: ['TANTIE AWA', 'LE TONTON'], action: 'TANTIE AWA surprend LE TONTON au téléphone', dialogue: [L('TANTIE AWA', 'C’est donc toi !', 'colère', 'point'), L('LE TONTON', 'C’est… le service client !', 'peur', 'laugh')] },
+    ],
+  };
+  mock.push({ text: JSON.stringify(SHORT) });
+  mock.fallback = () => ({ text: '{}' });
+  await page.getByTestId('film-idea-input').fill('Le tonton appelle sa chérie avec le crédit de tantie.');
+  await page.getByRole('button', { name: 'Afrikatoon 2D' }).click();
+  // The circuit is on by default; the 3D actors and « Grok on the key shots » are switched on.
+  await expect(page.getByTestId('film-circuit')).toHaveAttribute('data-on', '1');
+  await page.getByTestId('film-actors3d').getByRole('switch').click();
+  await page.getByTestId('film-grok-key').getByRole('switch').click();
+  await expect(page.getByTestId('film-grok-key')).toHaveAttribute('data-on', '1');
+  await page.getByTestId('film-create').click();
+  await expect(page.getByTestId('pipe-ANIMATION')).toHaveAttribute('data-state', /done|warning/, { timeout: 900_000 });
+  // Grok on the punchline only (one key shot, at most one retake); the two other scenes are rendered by the engine.
+  expect(net.videoSubmits).toBeGreaterThanOrEqual(1);
+  expect(net.videoSubmits).toBeLessThanOrEqual(2);
+  // The stage JOURNAL names every scene: the key shot for Grok, each other scene rendered and analysed by the engine.
+  const log = (await page.getByTestId('film-stage-log-ANIMATION').textContent()) ?? '';
+  expect(log).toMatch(/Grok sur 1 plan\(s\) clé\(s\) \(S03\)/);
+  expect(log).toMatch(/S01 \(1\/2\) rendu par le moteur/);
+  expect(log).toMatch(/S02 \(2\/2\) rendu par le moteur/);
+  expect(log).toMatch(/2 \/ 2 scène\(s\) rendue\(s\) en clip par le moteur/);
+  // EVERY scene now has a clip and a measured report (the analysis looked at all of them, not only the Grok ones).
+  await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 900_000 });
+  expect(await page.getByTestId('film-scenes').locator('video').count()).toBe(SHORT.scenes.length);
+  const projects = (await kvGet(page, 'vs.projects')) as Record<string, { scenes: { scene_id: string; videoAssetId?: string; clipReport?: { score: number | null } }[]; assets: string[] }>;
+  const bp = Object.values(projects)[0]!;
+  expect(bp.scenes.every((s) => Boolean(s.videoAssetId))).toBe(true);
+  expect(bp.scenes.every((s) => Boolean(s.clipReport))).toBe(true);
+  expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
+});
+
 test('Acteurs 3D: the @comedyvideos_100 troupe in the library, option ON → every scene played by the 3D actors (WebGL, lip-sync, chute), the film moves; the same actors come back', async ({ page }) => {
   test.setTimeout(1_500_000);
   mock.models = [model('acme/free-text:free', '0', '0')];

@@ -89,6 +89,9 @@ export interface PreviewOptions {
   onNote?: (msg: string) => void;
   /** Exact render (every picture at its instant, encoded frame by frame) when the browser can; false = live recorder. */
   exact?: boolean;
+  /** RAW: the scene picture only, full frame — no band, no captions, no cinema finish, no reaction insert, no music.
+   *  The engine clips (one scene rendered by the 3D theatre) are made this way, then assembled by the montage. */
+  raw?: boolean;
 }
 type Rect = { x: number; y: number; w: number; h: number };
 /** The cinema finish, prepared once: a soft vignette and a warm highlight grade (no frame is re-encoded twice). */
@@ -481,7 +484,7 @@ export async function renderPreview(
     t += last ? Math.max(1.6, last.end - t + 0.5) : Math.min(sc.duration || 3, 3);
   }
   // « Stupeur » inserts after the punchlines (or between sketches): the timeline, the voices and the SFX shift after them.
-  const viral = o.viral ?? bp.aspect === '9:16';
+  const viral = o.raw ? false : (o.viral ?? bp.aspect === '9:16');
   const shock = viral ? shockAfter(bp.scenes, o.compilation ?? false) : bp.scenes.map(() => false);
   // One story = ONE reaction insert, after its punchline (the last one the beats name); never two in a row.
   if (!o.compilation) {
@@ -584,7 +587,7 @@ export async function renderPreview(
       return null;
     }
   };
-  const music = await decode(bp.audio.music?.assetId);
+  const music = o.raw ? null : await decode(bp.audio.music?.assetId);
   const voiceBufs: { buf: AudioBuffer; at: number; env: number[]; side: number; mouth: MouthFrame[] }[] = [];
   for (const [k, v] of Object.entries(bp.audio.voices ?? {})) {
     const [sid, i] = k.split(':');
@@ -820,8 +823,8 @@ export async function renderPreview(
     if (a0 < 1 && si > 0) drawShot(si - 1, 1, 1);
     drawShot(si, f, si > 0 ? a0 : 1);
     if (!exact) for (const [k, v] of videos.entries()) if (v && k !== si && k !== si - 1 && !v.paused) v.pause();
-    if (o.cinema !== false) cinemaFinish(ctx, W, H, grade, now);
-    const a = act;
+    if (o.cinema !== false && !o.raw) cinemaFinish(ctx, W, H, grade, now);
+    const a = o.raw ? null : act;
     if (a && viral) {
       // French below the band (keyword yellow), English above it (keyword cyan), 1–3 words at a time.
       const fr = captionChunk(a.line.words.map((w) => w.text), a.wordIndex);

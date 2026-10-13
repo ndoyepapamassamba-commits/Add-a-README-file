@@ -21,7 +21,8 @@ import { ConfirmHost, Thumb, useActive, useBlobUrl, usd } from './common';
 import type { Scene } from '../../../server/jev/studio/types';
 
 interface FilmUi {
-  stages: Partial<Record<PipeStage, { st: StageState; note?: string }>>;
+  /** Per stage: its state, its last note and the JOURNAL of every note it emitted (each scene, each clip, each check). */
+  stages: Partial<Record<PipeStage, { st: StageState; note?: string; log?: string[] }>>;
   running: boolean;
   error: string | null;
   result: FilmResult | null;
@@ -49,7 +50,11 @@ async function start(projectId: string, from: PipeStage = 'STORY') {
         chosen: useFilm.getState().chosen,
         confirmEach: useFilm.getState().confirmEach,
         onStage: (s, st, note) => {
-          useFilm.setState((x) => ({ stages: { ...x.stages, [s]: { st, note } }, waiting: st === 'waiting' ? s : x.waiting === s ? null : x.waiting }));
+          useFilm.setState((x) => {
+            const prev = x.stages[s]?.log ?? [];
+            const log = note && prev[prev.length - 1] !== note ? [...prev, note].slice(-80) : prev;
+            return { stages: { ...x.stages, [s]: { st, note, log } }, waiting: st === 'waiting' ? s : x.waiting === s ? null : x.waiting };
+          });
           // The model plan is refined as soon as the real number of scenes is known.
           if (s === 'STORY' && st !== 'running') void buildPlans(projectId).then((plans) => useFilm.setState({ plans })).catch(() => undefined);
         },
@@ -201,6 +206,18 @@ function Pipeline({ projectId }: { projectId: string }) {
               <div className="mt-0.5 max-w-[180px] truncate text-[11px] text-muted" title={x.note}>
                 <Badge tone={TONE[x.st]}>{x.st}</Badge> {x.note ?? ''}
               </div>
+              {(x.log?.length ?? 0) > 1 && (
+                <details className="mt-1 max-w-[260px]" open={x.st === 'running'}>
+                  <summary className="cursor-pointer text-[11px] text-accent">journal ({x.log!.length})</summary>
+                  <ol className="mt-1 max-h-40 list-decimal overflow-auto pl-4 text-[11px] leading-tight text-muted" data-testid={`film-stage-log-${s}`}>
+                    {x.log!.map((l, k) => (
+                      <li key={k} className="whitespace-normal break-words">
+                        {l}
+                      </li>
+                    ))}
+                  </ol>
+                </details>
+              )}
               {waiting === s && (
                 <Button size="sm" variant="primary" className="mt-1" data-testid={`validate-${s}`} onClick={() => release?.()}>
                   Valider → suite

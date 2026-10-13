@@ -281,13 +281,16 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
             return { ...sc, duration: secs ? Math.max(2, Math.ceil(secs + 0.5)) : Math.min(sc.duration, 3) };
           });
           // With the troupe, Grok only takes the KEY shots (the punchline, the twist): the drawn actors play the rest,
-          // with their real lip-sync, at 0 $.
+          // with their real lip-sync, at 0 $. With the native 3D actors the same split applies when « Grok sur les
+          // plans clés » is on; otherwise Grok goes as far as the cap allows and the actors play what is left.
           const troupe = troupeReady(projectId) && webglOk();
+          const theatre = troupe || (Boolean(S().settings.actors3d) && webglOk());
+          const keyOnly = troupe || (theatre && Boolean(S().settings.grokKeyShots));
           const keyBeats = voiced.filter((sc) => sc.beat === 'chute' || sc.beat === 'twist');
-          const keyScenes = troupe ? (keyBeats.length ? keyBeats : voiced.slice(-1)) : voiced;
-          if (troupe) castActors(projectId);
+          const keyScenes = keyOnly ? (keyBeats.length ? keyBeats : voiced.slice(-1)) : voiced;
+          if (theatre) castActors(projectId);
           const plan = planCircuit(keyScenes, r, circuitBudget(b0.cap, spent(b0), later, 1));
-          if (troupe) c.onStage('ANIMATION', 'running', `Circuit Grok allégé : Grok sur ${keyScenes.length} plan(s) clé(s) (${keyScenes.map((x) => x.scene_id).join(', ')}), votre troupe joue les ${voiced.length - keyScenes.length} autre(s) (lip-sync réel, 0 $)`);
+          if (keyOnly) c.onStage('ANIMATION', 'running', `Circuit Grok allégé : Grok sur ${keyScenes.length} plan(s) clé(s) (${keyScenes.map((x) => x.scene_id).join(', ')}), ${troupe ? 'votre troupe joue' : 'vos acteurs 3D jouent'} les ${voiced.length - keyScenes.length} autre(s) (lip-sync réel, 0 $)`);
           c.onStage('ANIMATION', 'running', `Circuit Grok : ${plan.shots.length} plan(s), ${plan.seconds} s, ≤ ${plan.usd.toFixed(2)} $ (plafond ${b0.cap.toFixed(2)} $)`);
           if (!plan.shots.length) warn.push(`Circuit Grok : il reste ${(b0.cap - spent(b0)).toFixed(3)} $ après l’écriture, les images et les voix — pas assez pour un plan animé (${r.usdPerS} $/s) → Marionnette. Choisissez « 10 s · entièrement animé » ou un budget plus élevé.`);
           // Real price / announced price, learned on the clips already billed (v48: S01 billed 0.168 $ for 0.150 $
@@ -349,7 +352,7 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
               c.onStage('ANIMATION', 'running', `${shot.sceneId} : 1re prise gardée (${rep.score}/100 contre ${rep2?.score ?? '—'})`);
             } else c.onStage('ANIMATION', 'running', `${shot.sceneId} : reprise gardée ${rep2.score}/100 (au lieu de ${rep.score})`);
           }
-          if (plan.skipped.length) c.onStage('ANIMATION', 'running', `${plan.skipped.length} autre(s) scène(s) : ${troupe ? 'votre troupe' : 'Marionnette Afrikatoon'} (gratuit)`);
+          if (plan.skipped.length) c.onStage('ANIMATION', 'running', `${plan.skipped.length} autre(s) scène(s) : ${troupe ? 'votre troupe' : S().settings.actors3d && webglOk() ? 'vos acteurs 3D' : 'Marionnette Afrikatoon'} (gratuit)`);
         }
       } else if (isCheapVideo(anim)) {
         // Cheap engines (Pollinations ≈ 0,01 $/s, free HF Space): the scene image becomes a real moving clip.
@@ -381,13 +384,22 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
       else if (anim === LOCAL_ANIMATION) c.onStage('ANIMATION', 'running', 'animation 2.5D (caméra, parallaxe, voix) au montage');
       // ACTEURS 3D (option): every scene still without a clip is played by the reusable 3D actors at montage time —
       // casting from the library, 0 $, no rig needed. Without WebGL the Marionnette takes over.
-      const want3d = anim === ACTORS_3D || Boolean(S().settings.actors3d);
+      // The circuit with the troupe promised the troupe for the other scenes: the cast stays (v52: it was removed here
+      // when the « acteurs 3D » option was off, and the other scenes fell to the Marionnette).
+      const want3d = anim === ACTORS_3D || Boolean(S().settings.actors3d) || (isCircuit(anim) && troupeReady(projectId));
       const use3d = want3d && webglOk();
       if (want3d && !use3d) warn.push('Acteurs 3D : WebGL indisponible dans ce navigateur → Marionnette Afrikatoon');
       if (use3d) {
         const r = castActors(projectId);
         const n = bpOf(projectId).scenes.filter((s) => !s.videoAssetId).length;
-        c.onStage('ANIMATION', 'running', `Acteurs 3D : ${Object.keys(r.cast).length} acteur(s)${r.reused.length ? ` dont ${r.reused.length} réutilisé(s) (${r.reused.slice(0, 3).join(', ')})` : ''}${r.added.length ? `, ${r.added.length} nouveau(x) dans la bibliothèque` : ''} — ${n} scène(s) jouée(s) en 3D au montage`);
+        c.onStage('ANIMATION', 'running', `Acteurs 3D : ${Object.keys(r.cast).length} acteur(s)${r.reused.length ? ` dont ${r.reused.length} réutilisé(s) (${r.reused.slice(0, 3).join(', ')})` : ''}${r.added.length ? `, ${r.added.length} nouveau(x) dans la bibliothèque` : ''} — ${n} scène(s) à jouer en 3D`);
+        // CIRCUIT GROK + ACTEURS 3D (v52: « the animation only looks at two videos, the rest is not processed »): Grok
+        // took the key shots; every OTHER scene is rendered NOW by the engine into a real clip (30 i/s, 0 $) and
+        // analysed like a generated one — the stage treats every scene, the montage only assembles clips.
+        if (isCircuit(anim) && n) {
+          const made = await renderEngineClips(projectId, c, warn, troupeReady(projectId) ? 'votre troupe' : 'vos acteurs 3D');
+          c.onStage('ANIMATION', 'running', `${made} / ${n} scène(s) rendue(s) en clip par le moteur${made < n ? ` — ${n - made} jouée(s) au montage` : ''}`);
+        }
       } else {
         if (bpOf(projectId).actors3d) S().patchProject(projectId, (b) => ({ ...b, actors3d: undefined }), 'acteurs 3D retirés');
         // MARIONNETTE AFRIKATOON for every scene still without a clip: the characters are rigged (one vision read per
@@ -482,6 +494,53 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
   } finally {
     setStudioTextModel(null);
   }
+}
+
+/**
+ * ENGINE CLIPS: every scene still without a clip is rendered by the 3D theatre (the film's cast, the owner's sets,
+ * the real voices) into its own clip, stored like a generated one, then measured (motion, frozen spans, lip-sync) and
+ * judged while the film's cap allows it. A scene the theatre cannot play keeps no clip (it is played at montage time
+ * by the fallback engines). Returns the number of clips made.
+ */
+async function renderEngineClips(projectId: string, c: FilmCtl, warn: string[], who: string): Promise<number> {
+  const todo = bpOf(projectId).scenes.filter((s) => !s.videoAssetId && (s.characters.length || s.dialogue.length));
+  if (!todo.length || !bpOf(projectId).actors3d) return 0;
+  const width = Math.min(720, S().settings.renderWidth ?? 720);
+  let made = 0;
+  for (const [i, sc] of todo.entries()) {
+    check(c);
+    const b = bpOf(projectId);
+    const scene = b.scenes.find((x) => x.scene_id === sc.scene_id);
+    if (!scene || scene.videoAssetId) continue;
+    c.onStage('ANIMATION', 'running', `${who} : ${sc.scene_id} (${i + 1}/${todo.length}) rendu par le moteur, 30 i/s, 0 $`);
+    let dead = false;
+    try {
+      const r = await renderPreview({ ...b, scenes: [scene] }, {
+        width,
+        raw: true,
+        actors3d: true,
+        onNote: (m) => {
+          if (/Acteurs 3D indisponibles/.test(m)) dead = true;
+          warn.push(`${sc.scene_id} : ${m}`);
+        },
+      });
+      if (dead || r.seconds < 0.5) throw new Error('théâtre 3D indisponible');
+      const id = `asset-vid-${Date.now().toString(36)}-${sc.scene_id}`;
+      await blobs.put(id, r.blob);
+      S().addAsset({ id, kind: 'video', status: 'GENERATED_ASSET', projectId, sceneId: sc.scene_id, model: ACTORS_3D, createdAt: Date.now(), cost: 0, source: `Moteur 3D (${who}) · ${r.fps ?? 30} i/s`, tags: ['video', 'moteur', sc.scene_id], mime: r.mime, bytes: r.blob.size, name: `video-${sc.scene_id}` });
+      S().patchProject(projectId, (b2) => ({ ...b2, assets: [...b2.assets, id], scenes: b2.scenes.map((x) => (x.scene_id === sc.scene_id ? { ...x, videoAssetId: id } : x)) }), `clip moteur ${sc.scene_id}`);
+      made++;
+      // The same deep analysis as a generated clip; the vision judge only while the HARD cap keeps a margin for the QA.
+      const b3 = bpOf(projectId);
+      const judge = b3.cap - spent(b3) - CIRCUIT_TAIL_USD > 0.01;
+      c.onStage('ANIMATION', 'running', `analyse du clip ${sc.scene_id} (mouvement, bouche${judge ? ', anatomie, rire' : ''})…`);
+      const rep = await inspectSceneClip(projectId, sc.scene_id, { judge, expectedS: r.seconds }).catch(() => null);
+      if (rep) c.onStage('ANIMATION', 'running', `${sc.scene_id} : ${rep.score ?? '—'}/100${rep.reasons.length ? ` — ${rep.reasons.slice(0, 2).join(' ; ')}` : ' ✓'} (moteur)`);
+    } catch (e) {
+      warn.push(`${sc.scene_id} : rendu moteur impossible (${(e as Error).message.slice(0, 80)}) → jouée au montage`);
+    }
+  }
+  return made;
 }
 
 /** Rigs every still scene without a clip (skeleton read by a vision model) and generates its clean plate — in parallel. */
