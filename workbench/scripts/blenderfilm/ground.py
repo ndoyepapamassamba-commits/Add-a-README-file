@@ -250,3 +250,36 @@ def floor_colour(kind, rgb, walk=None):
     target = 0.82 * float(np.percentile(L, 60))
     k = min(1.3, max(0.85, target / max(1e-3, lum(base))))
     return tuple(float(min(1.0, v * k)) for v in base), 'type'
+
+
+def horizon_fit(labels, walk, eye=1.6, feet=0.95, min_blob=0.0004):
+    """The metric scale of a real photo used as a set (the engine's `fit`), from the HORIZON of a level camera held at
+    eye height: on the ground plane, one pixel at row y measures eye / (y - y_horizon) metres — whatever the lens. The
+    horizon is read from the painted people (standing adults' heads line up on the horizon of an eye-level photo, the
+    classic perspective rule), else from the far end of the walkable floor (a lower bound of the horizon). The actors
+    stand at row `feet` (share of the height). Returns {'mH', 'floor', 'cx', 'horizon', 'methode'}."""
+    lab = np.asarray(labels)
+    H, W = lab.shape[:2]
+    person = lab == PERSON
+    tops = []
+    if person.any():
+        try:
+            import cv2
+            n, cc, st, _ = cv2.connectedComponentsWithStats(person.astype(np.uint8), 8)
+            for k in range(1, n):
+                x, y, w, h, area = st[k]
+                # a whole standing figure (taller than wide, not cut by the top of the frame)
+                if area >= min_blob * H * W and h > 1.4 * w and y > 0:
+                    tops.append(y)
+        except ImportError:
+            pass
+    if len(tops) >= 2:
+        y_h, how = float(np.median(tops)) + 0.02 * H, f'têtes de {len(tops)} passants'  # heads ~10 cm above the eye
+    else:
+        wk = np.asarray(walk) > 0
+        rows = np.nonzero(wk.mean(1) > 0.05)[0]
+        y_h, how = (float(rows.min()) if len(rows) else 0.45 * H), 'bout du sol praticable'
+    y_f = feet * H
+    y_h = min(y_h, y_f - 0.15 * H)  # at least 15 % of the height between horizon and feet
+    mH = float(np.clip(eye * H / max(1.0, y_f - y_h), 2.0, 8.0))
+    return {'mH': round(mH, 2), 'floor': round(feet, 3), 'cx': 0.5, 'horizon': round(y_h / H, 3), 'methode': how}

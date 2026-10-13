@@ -54,7 +54,7 @@ CATALOGUE = {
 
 # Places: several real views per place (« plusieurs vues des lieux »), redrawn like the troupe's painted sets.
 DECORS = {
-    'ville': {'q': ['Dakar street', 'Abidjan street', 'West Africa city street', 'Accra street', 'Lagos street'],
+    'ville': {'q': ['Abidjan street', 'Dakar street', 'Abidjan', 'Dakar', 'Cotonou street', 'Accra street'],
               'decrit': 'a lively West African city street with colourful buildings, shop signs, palm trees and a paved road'},
     'rue': {'q': ['African neighborhood street', 'Senegal street houses', 'Ghana street houses'],
             'decrit': 'a West African neighbourhood street with painted houses, walls and a dirt road'},
@@ -67,22 +67,85 @@ DECORS = {
 }
 
 
-def http(url, timeout=60):
-    req = urllib.request.Request(url, headers={'User-Agent': 'massamba-asset-forge/1.0'})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read()
+# Wikimedia asks every client for a User-Agent with a way to reach its author (the public repository here).
+UA = 'massamba-asset-forge/1.0 (https://github.com/ndoyepapamassamba-commits/Add-a-README-file; free-licence asset forge)'
 
 
-def search(query, n=12):
+def http(url, timeout=60, tries=4):
+    """GET with a polite retry: on 429 / 503 the server's Retry-After is honoured (else 5, 10, 20 s)."""
+    import time
+    import urllib.error
+    for k in range(tries):
+        req = urllib.request.Request(url, headers={'User-Agent': UA})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.read()
+        except urllib.error.HTTPError as e:
+            if e.code not in (429, 503) or k == tries - 1:
+                raise
+            wait = float(e.headers.get('Retry-After') or 5 * 2 ** k)
+            time.sleep(min(60.0, wait))
+
+
+def search_openverse(query, n=12):
     """Openverse: CC0 or public-domain photos only (free for any use, commercial included)."""
     u = 'https://api.openverse.org/v1/images/?' + urllib.parse.urlencode({'q': query, 'license': 'cc0,pdm', 'page_size': n, 'category': 'photograph'})
     try:
         d = json.loads(http(u))
     except Exception as e:
-        print('  recherche impossible :', e, file=sys.stderr)
+        print('  Openverse indisponible :', str(e)[:80], file=sys.stderr)
         return []
     return [{'url': r['url'], 'licence': r['license'], 'source': r.get('foreign_landing_url') or r['url'], 'auteur': r.get('creator') or '',
              'titre': r.get('title') or '', 'w': r.get('width') or 0, 'h': r.get('height') or 0} for r in d.get('results', [])]
+
+
+# Wikimedia Commons structured data: P275 (licence) = CC0, or P6216 (copyright status) = public domain.
+COMMONS_FREE = {'cc0': 'haswbstatement:P275=Q6938433', 'pdm': 'haswbstatement:P6216=Q19652'}
+
+
+def search_commons(query, n=12):
+    """Wikimedia Commons, CC0 or public-domain files only (the licence is read from the file's structured data, and
+    checked again on its metadata). A 1600 px rendition is fetched, not the original."""
+    import html
+    import re
+    out = []
+    for lic, stmt in COMMONS_FREE.items():
+        u = 'https://commons.wikimedia.org/w/api.php?' + urllib.parse.urlencode({
+            'action': 'query', 'generator': 'search', 'gsrnamespace': 6, 'gsrlimit': n, 'format': 'json', 'gsrsearch': f'{query} {stmt}',
+            'prop': 'imageinfo', 'iiprop': 'url|size|extmetadata|mime', 'iiurlwidth': 1600})
+        try:
+            d = json.loads(http(u))
+        except Exception as e:
+            print('  Commons indisponible :', str(e)[:80], file=sys.stderr)
+            continue
+        for v in (d.get('query') or {}).get('pages', {}).values():
+            ii = (v.get('imageinfo') or [{}])[0]
+            meta = ii.get('extmetadata') or {}
+            short = (meta.get('LicenseShortName') or {}).get('value', '')
+            if ii.get('mime') not in ('image/jpeg', 'image/png') or not re.search(r'CC0|[Pp]ublic domain', short):
+                continue
+            artist = re.sub(r'<[^>]+>', '', html.unescape((meta.get('Artist') or {}).get('value', ''))).strip()
+            out.append({'url': ii.get('thumburl') or ii['url'], 'licence': lic, 'source': ii.get('descriptionurl') or ii['url'], 'auteur': artist,
+                        'titre': v['title'].replace('File:', ''), 'w': ii.get('width') or 0, 'h': ii.get('height') or 0})
+    return out
+
+
+def search(query, n=12):
+    """Free photos, from Openverse then Wikimedia Commons (a source with nothing — or down — is never a dead end)."""
+    seen, out = set(), []
+    for src in (search_openverse, search_commons):
+        for r in src(query, n):
+            if r['url'] not in seen:
+                seen.add(r['url'])
+                out.append(r)
+    return out
+
+
+def serie(r):
+    """Photos of one series (same author, same title before its number: « Abidjan en journée. 17 », « … 18 ») show the
+    same place from several points of view."""
+    import re
+    return (r.get('auteur', '').lower(), re.sub(r'[\s\d._()-]+(jpe?g|png)?$', '', r.get('titre', '').lower(), flags=re.I))
 
 
 def model(name, url):
@@ -179,15 +242,15 @@ def crop_rgba(im, a, pad=0.04):
     return Image.fromarray((np.clip(out, 0, 1) * 255).astype(np.uint8), 'RGBA')
 
 
-def troupe_look(troupe_dir, cache):
-    """The troupe's colour ambiance measured on ALL its drawings (alpha region): Lab lightness mean/std, chroma mean/std,
-    mean warmth (a, b). Cached."""
+def troupe_look(troupe_dir, cache, pattern='**/*.png'):
+    """The troupe's colour ambiance measured on ALL its drawings (alpha region) — or on its painted SETS (pattern
+    'hd/decor-*.jpg', the whole picture): Lab lightness mean/std, chroma mean/std, mean warmth (a, b). Cached."""
     if cache and os.path.exists(cache):
         return json.load(open(cache))
     import glob
     import cv2
     L, C, A_, B_ = [], [], [], []
-    for f in sorted(glob.glob(os.path.join(troupe_dir, '**', '*.png'), recursive=True))[:400]:
+    for f in sorted(glob.glob(os.path.join(troupe_dir, pattern), recursive=True))[:400]:
         im = np.asarray(Image.open(f).convert('RGBA'))
         a = im[..., 3] > 200
         if a.sum() < 2000:
@@ -198,7 +261,7 @@ def troupe_look(troupe_dir, cache):
         L.append(l[::step]); A_.append(aa[::step]); B_.append(bb[::step]); C.append(np.hypot(aa, bb)[::step])
     L, A_, B_, C = (np.concatenate(v) for v in (L, A_, B_, C))
     look = {'L_mean': float(L.mean()), 'L_std': float(L.std()), 'C_mean': float(C.mean()), 'C_std': float(C.std()),
-            'a_mean': float(A_.mean()), 'b_mean': float(B_.mean()), 'n_dessins': len(glob.glob(os.path.join(troupe_dir, '**', '*.png'), recursive=True))}
+            'a_mean': float(A_.mean()), 'b_mean': float(B_.mean()), 'n_dessins': len(glob.glob(os.path.join(troupe_dir, pattern), recursive=True))}
     if cache:
         json.dump(look, open(cache, 'w'), indent=1)
     return look
@@ -434,19 +497,60 @@ def stylize(rgba, spec, strength=0.45, seed=7, size=None, plate=False):
     return out
 
 
+def decor_reference(troupe_dir):
+    """The signature of the troupe's PAINTED SETS (style.py, whole picture) — what a forged place is calibrated on."""
+    import glob
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'blenderfilm'))
+    import style
+    fs = [f for f in sorted(glob.glob(os.path.join(troupe_dir, 'hd', 'decor-*.jpg')))] or sorted(glob.glob(os.path.join(troupe_dir, 'decor-*.jpg')))
+    cards = [(np.asarray(Image.open(f).convert('RGB'), dtype=np.float64) / 255.0, None) for f in fs]
+    return style.reference(cards) if cards else None
+
+
+def structure(a, b, w=320):
+    """How much of the real place's STRUCTURE a redraw keeps: correlation of the edge maps (Sobel magnitude of the
+    luminance) at the same framing. 1 = same lines everywhere."""
+    def edges(im):
+        g = np.asarray(im.convert('L').resize((w, int(w * im.size[1] / im.size[0]))), dtype=np.float32)
+        gx, gy = cv2.Sobel(g, cv2.CV_32F, 1, 0, ksize=3), cv2.Sobel(g, cv2.CV_32F, 0, 1, ksize=3)
+        return cv2.GaussianBlur(np.hypot(gx, gy), (5, 5), 0).ravel()
+    ea, eb = edges(a), edges(b.resize(a.size))
+    return float(np.corrcoef(ea, eb)[0, 1])
+
+
 def decor_main(A):
     """Real places → painted sets of the engine: photos with a visible GROUND (the actors stand on it) and few people
-    (an empty stage), redrawn in the style of the troupe's painted sets (IP-Adapter with their sets as the style image,
-    calibrated on their measured signature). Several views per place. Then troupe-enhance.py gives each view its HD,
-    depth and walkable floor."""
+    (an empty stage), redrawn in the style of the troupe's painted sets, CALIBRATED like the animals: several strengths,
+    each redraw checked — the place keeps its structure (edge correlation with the photo), no person is added, the
+    walkable floor stays — and the kept one is the closest to the troupe sets' measured signature. Several views per
+    place. Each view gets its metric scale from its horizon (ground.horizon_fit). With --enregistrer the views become
+    sets of the engine (manifest of the private kit) and troupe-enhance.py gives them depth and floor."""
     spec = DECORS[A.espece]
     out = os.path.join(A.out, 'decors', A.espece)
     os.makedirs(out, exist_ok=True)
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'blenderfilm'))
     import ground
+    import importlib.util
     import onnxruntime as ort
     seg_p = os.path.join(MODELS, 'upernet-convnext-small-ade.onnx')
     seg = ort.InferenceSession(seg_p, providers=['CPUExecutionProvider']) if os.path.exists(seg_p) else None
+    spec_e = importlib.util.spec_from_file_location('te', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'troupe-enhance.py'))
+    te = importlib.util.module_from_spec(spec_e)
+    spec_e.loader.exec_module(te)
+
+    def parse(im):
+        if seg is None:
+            return None, None, {}
+        lab, walk = te.segment(seg, im)
+        lab, walk = np.asarray(lab), np.asarray(walk) > 0
+        frac = lambda ids: round(float(np.isin(lab, ids).mean()), 3)
+        return lab, walk, {'sol': round(float(walk.mean()), 3), 'personnes': round(float((lab == ground.PERSON).mean()), 3),
+                           'sol_en_bas': round(float(walk[int(walk.shape[0] * 0.7):].mean()), 3),
+                           # a STAGE for people: built surroundings close by, not mostly sky; few vehicles (not a highway)
+                           'ciel': frac([2]), 'bati': frac([0, 1, 25, 48, 79]), 'vehicules': frac([20, 80, 83, 102])}
+
+    ref = decor_reference(A.troupe_decors) if A.troupe_decors and os.path.isdir(A.troupe_decors) else None
+    dlook = troupe_look(A.troupe_decors, os.path.join(A.out, 'decors-look.json'), 'hd/decor-*.jpg') if ref else None
     cands, seen = [], set()
     for q in spec['q']:
         for r in search(q, A.n):
@@ -463,41 +567,103 @@ def decor_main(A):
         except Exception as e:
             print('  ignorée :', str(e)[:60])
             continue
-        m = {}
-        if seg is not None:
-            import importlib.util
-            spec_e = importlib.util.spec_from_file_location('te', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'troupe-enhance.py'))
-            te = importlib.util.module_from_spec(spec_e)
-            spec_e.loader.exec_module(te)
-            lab, walk = te.segment(seg, im)
-            lab, walk = np.asarray(lab), np.asarray(walk) > 0
-            m = {'sol': round(float(walk.mean()), 3), 'personnes': round(float((lab == ground.PERSON).mean()), 3),
-                 'sol_en_bas': round(float(walk[int(walk.shape[0] * 0.7):].mean()), 3)}
+        hsv = np.asarray(im.convert('HSV').resize((256, 256)), dtype=np.float32) / 255.0
+        if hsv[..., 1].mean() < 0.12:
+            print(f"  {i:2d} ignorée : noir et blanc (ancienne carte postale) — {r['titre'][:50]}", flush=True)
+            continue
+        lab, walk, m = parse(im)
         sharp = float(np.var(np.diff(np.asarray(im.convert('L'), dtype=np.float32), axis=1)))
-        s_ = (min(1.0, m.get('sol_en_bas', 0.3) / 0.35) * max(0.0, 1 - m.get('personnes', 0) / 0.2) * min(1.0, sharp / 120.0))
+        s_ = (min(1.0, m.get('sol_en_bas', 0.3) / 0.35) * max(0.0, 1 - m.get('personnes', 0) / 0.2) * min(1.0, sharp / 120.0)
+              * max(0.0, 1 - max(0.0, m.get('ciel', 0) - 0.35) / 0.3)   # a street seen at eye level, not a skyline
+              * min(1.0, m.get('bati', 0.2) / 0.2)                       # walls and houses close by
+              * max(0.0, 1 - m.get('vehicules', 0) / 0.08))              # a road full of cars is not a stage
         r.update({'score': round(s_, 3), 'mesures': m})
         print(f"  {i:2d} score {s_:.3f} {m} — {r['titre'][:50]} ({r['licence']})", flush=True)
         scored.append((s_, i, r, im))
     scored.sort(key=lambda t: -t[0])
+    # SEVERAL VIEWS OF ONE PLACE: a series of the same author and title (the same street or quarter from several points
+    # of view) is preferred to unrelated photos, when it has enough good views.
+    good = [t for t in scored if t[0] >= 0.15]
+    groups = {}
+    for t in good:
+        groups.setdefault(serie(t[2]), []).append(t)
+    series = sorted((g for g in groups.values() if len(g) >= min(2, A.vues)), key=lambda g: -np.mean([t[0] for t in g[: A.vues]]))
+    if series and len(series[0]) >= min(2, A.vues):
+        chosen = series[0][: A.vues]
+        print(f"  série retenue : « {chosen[0][2]['titre'][:40]} » ({len(series[0])} vues du même lieu)", flush=True)
+    else:
+        chosen = good[: A.vues]
     views = []
-    for k, (s_, i, r, im) in enumerate(scored[: A.vues]):
-        if s_ < 0.15:
-            break
-        sty = None if A.no_style else stylize_decor(im, spec, A)
+    for k, (s_, i, r, im) in enumerate(chosen):
         name = f'vue-{k + 1}'
-        im.save(os.path.join(out, f'{name}-photo.jpg'), quality=92)
-        (sty or im).save(os.path.join(out, f'{name}.jpg'), quality=92)
+        w0, h0 = im.size
+        base = im.resize((1024, max(256, int(1024 * h0 / w0) // 8 * 8)), Image.LANCZOS)
+        base.save(os.path.join(out, f'{name}-photo.jpg'), quality=92)
+        lab0, walk0, m0 = parse(base)
+        best, essais = None, []
+        for strength in ([] if A.no_style else A.forces_decor):
+            sty = stylize_decor(base, spec, A, strength)
+            if sty is None:
+                break
+            sty = sty.resize(base.size, Image.LANCZOS)
+            lab1, walk1, m1 = parse(sty)
+            st = structure(base, sty)
+            added = m1.get('personnes', 0) - m0.get('personnes', 0)
+            floor_kept = m1.get('sol_en_bas', 1) / max(1e-3, m0.get('sol_en_bas', 1))
+            dist = style_distance(sty.convert('RGBA'), ref)[0] if ref else 0.0
+            ok = st >= A.structure_min and added <= 0.02 and floor_kept >= 0.6
+            why = ([f'structure {st:.2f}'] if st < A.structure_min else []) + ([f'passants ajoutés {added:+.1%}'] if added > 0.02 else []) + \
+                ([f'sol perdu ({floor_kept:.0%} gardé)'] if floor_kept < 0.6 else [])
+            essais.append({'force': strength, 'structure': round(st, 3), 'passants_ajoutes': round(added, 3), 'sol_garde': round(floor_kept, 2),
+                           'distance_style': round(dist, 3), 'rejet': why})
+            sty.save(os.path.join(out, f'{name}-style-{int(strength * 100)}.jpg'), quality=90)
+            print(f"  {name} force {strength:.2f} : structure {st:.2f}, passants {added:+.1%}, sol gardé {floor_kept:.0%}, distance au style des décors {dist:.2f}"
+                  + ('' if ok else ' (rejeté : ' + ', '.join(why) + ')'), flush=True)
+            if ok and (best is None or dist < best[0]):
+                best = (dist, sty, strength, lab1, walk1)
+        if best is not None:
+            final, lab_f, walk_f = best[1], best[3], best[4]
+            style_note = f"repris dans le style des décors de la troupe (force {best[2]:.2f}, distance {best[0]:.2f})"
+        else:
+            final, lab_f, walk_f = base, lab0, walk0
+            style_note = 'photo (aucune reprise de style ne gardait le lieu)' if essais else 'photo'
+        if dlook is not None:
+            final = match_look(final.convert('RGBA'), dlook)[0].convert('RGB')
+            style_note += ' → ambiance de couleurs des décors de la troupe (Lab)'
+        final.save(os.path.join(out, f'{name}.jpg'), quality=92)
+        fit = ground.horizon_fit(lab_f, walk_f) if lab_f is not None else {'mH': 3.0, 'floor': 0.95, 'cx': 0.5, 'methode': 'défaut'}
         views.append({'vue': name, 'score': s_, 'provenance': {kk: r[kk] for kk in ('url', 'source', 'licence', 'auteur', 'titre')}, 'mesures': r['mesures'],
-                      'style': 'repris dans le style des décors de la troupe' if sty is not None else 'photo'})
-        print(f"  → {name} : {r['titre'][:50]} ({r['licence']})", flush=True)
+                      'style': style_note, 'calibration': essais, 'fit': fit, 'w': final.size[0], 'h': final.size[1]})
+        print(f"  → {name} : {r['titre'][:50]} ({r['licence']}) — {style_note} ; échelle {fit['mH']} m de haut ({fit['methode']})", flush=True)
     json.dump({'lieu': A.espece, 'vues': views}, open(os.path.join(out, 'decor.json'), 'w'), ensure_ascii=False, indent=1)
     print(f'{len(views)} vue(s) de « {A.espece} » → {out}')
+    if A.enregistrer and views:
+        register_views(A.espece, out, views, A.enregistrer)
+
+
+def register_views(lieu, out, views, troupe_dir):
+    """The views become sets of the engine: copied into the PRIVATE kit (never committed) and listed in its manifest as
+    « <Lieu> 1 », « <Lieu> 2 »… with their scale and provenance; troupe-enhance.py then adds HD, depth and floor."""
+    import shutil
+    man_p = os.path.join(troupe_dir, 'manifest.json')
+    man = json.load(open(man_p, encoding='utf-8'))
+    os.makedirs(os.path.join(troupe_dir, 'forge'), exist_ok=True)
+    label = lieu.capitalize()
+    man['decors'] = [d for d in man.get('decors', []) if d.get('lieu') != lieu]
+    for k, v in enumerate(views):
+        rel = f"forge/{lieu}-{v['vue']}.jpg"
+        shutil.copy(os.path.join(out, f"{v['vue']}.jpg"), os.path.join(troupe_dir, rel))
+        man['decors'].append({'name': f'{label} {k + 1}', 'file': rel, 'w': v['w'], 'h': v['h'], 'lieu': lieu, 'vue': k + 1,
+                              'fit': {kk: v['fit'][kk] for kk in ('mH', 'floor', 'cx')}, 'forge': {'provenance': v['provenance'], 'style': v['style']}})
+    json.dump(man, open(man_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    print(f'{len(views)} décor(s) « {label} » enregistrés dans le kit → lancer scripts/troupe-enhance.py (profondeur, sol)')
 
 
 def stylize_decor(im, spec, A, strength=0.42):
-    """A real place redrawn in the troupe's painted-set style (1024 × 512 landscape)."""
+    """A real place redrawn in the troupe's painted-set style (the frame of `im`, 1024 px wide)."""
     sub = dict(spec)
     sub['decrit'] = spec['decrit'] + ', empty of people, background plate for an animated film'
+    sub['_ip_scale'] = A.ip_scale
     if A.troupe_decors and os.path.isdir(A.troupe_decors):
         import glob
         fs = sorted(glob.glob(os.path.join(A.troupe_decors, 'decor-*.jpg')))[:4]
@@ -509,8 +675,7 @@ def stylize_decor(im, spec, A, strength=0.42):
             sub['_style_image'] = col
     w, h = im.size
     base = im.resize((1024, max(256, int(1024 * h / w) // 8 * 8)), Image.LANCZOS)
-    rgba = base.convert('RGBA')
-    return stylize(rgba, sub, strength, seed=11, size=base.size, plate=True)
+    return stylize(base.convert('RGBA'), sub, strength, seed=11, size=base.size, plate=True)
 
 
 def main():
@@ -528,6 +693,9 @@ def main():
     ap.add_argument('--graines', type=int, nargs='+', default=[7, 21])
     ap.add_argument('--ip-scale', type=float, default=0.5, help='poids des dessins de la troupe (IP-Adapter)')
     ap.add_argument('--troupe-decors', default='', help='dossier des décors peints de la troupe (référence de style des lieux)')
+    ap.add_argument('--forces-decor', type=float, nargs='+', default=[0.30, 0.38, 0.46])
+    ap.add_argument('--structure-min', type=float, default=0.55, help='part des lignes du lieu réel gardées (corrélation des contours)')
+    ap.add_argument('--enregistrer', default='', help='dossier du kit privé de la troupe : les vues deviennent des décors du moteur')
     A = ap.parse_args()
     if A.decor:
         return decor_main(A)

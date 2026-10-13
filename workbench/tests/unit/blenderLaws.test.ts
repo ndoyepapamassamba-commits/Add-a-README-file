@@ -234,10 +234,10 @@ print(json.dumps({'gaps': gaps, 'end60': round(tl60[-1]['end'], 2), 'spread': re
     expect(r.oldTurn).toBe(0.8); // without a measurement, the former fixed silence
   });
 
-  it('each voice gains the channel melody range; only a kind measured on its own changes pitch; a voice without nasal vowels is replaced', () => {
+  it('each voice gains the channel melody range of its sex; a child keeps its pitch; a voice without nasal vowels is replaced', () => {
     const r = py(`
 import json, os, tempfile, numpy as np, tone as T, plan as P
-ref = {'voix': {'enfant': {'f0': 333.0, 'etendue_relative': 0.51}, 'homme': {'f0': 216.0, 'etendue_relative': 0.57, 'partage': True}},
+ref = {'voix': {'homme': {'f0': 229.0, 'etendue_relative': 0.516}, 'femme': {'f0': 306.9, 'etendue_relative': 0.512}},
        'piper': {'tom': {'f0': 131.0, 'etendue_relative': 0.233}, 'jessica': {'f0': 230.0, 'etendue_relative': 0.30}}}
 man = T.targets({'genre': 'homme', 'age': 40}, 'tom', ref)
 kid = T.targets({'genre': 'garçon', 'age': 9, 'pitch': 1.2}, 'jessica', ref)
@@ -255,8 +255,9 @@ print(json.dumps({'man': man, 'kid': kid, 'world': y is not None, 'f0': [m0[0], 
     const man = r.man as Record<string, number>;
     const kid = r.kid as Record<string, number>;
     expect(man.expr).toBe(2.2); // a flat voice (0.23) gets the channel's range, bounded
-    expect(man.luminosite).toBeUndefined(); // adults: men and women are not separated by the measure → pitch kept
-    expect(kid.luminosite).toBeGreaterThan(1); // children were measured on their own: brighter
+    expect(man.luminosite).toBe(1.3); // the channel's men speak high (229 Hz): half-way there, at most +30 %
+    expect(kid.luminosite).toBeUndefined(); // children were not measured apart: the sheet's pitch is kept
+    expect(kid.expr).toBeCloseTo(0.516 / 0.3, 1); // a boy gains the melody range measured on the channel's males
     expect(kid.formant).toBe(1.12);
     if (r.world) {
       const [a, b] = r.f0 as [number, number];
@@ -283,5 +284,52 @@ print(json.dumps({'one': one, 'two': two, 'hen': F.CATALOGUE['poule']['owl'], 'b
     expect(r.two).toBe(2); // a second hen grown from the tail (measured 0.31–0.60): two subjects → redraw rejected
     expect(r.hen).toBe('a chicken');
     expect(r.bottles).toBe(false); // several bottles are allowed
+  });
+});
+
+describe('Réactions, prises et échelle des lieux (tone.py, ground.py)', () => {
+  it('a short story gets the channel echo reactions by the listener, never around the punchline; takes are judged on what is heard', () => {
+    const r = py(`
+import json, tone as T
+beats = [{'who': 'a', 'text': 'Maman, ton tas de tomates là, c’est combien ?'}, {'who': 'b', 'text': 'Pour toi ? Mille francs.'},
+         {'who': 'a', 'text': 'Hier c’était cinq cents !'}, {'who': 'b', 'text': 'Hier, la tomate n’avait pas encore appris le prix du carburant.'},
+         {'who': 'a', 'text': 'Et aujourd’hui ?'}, {'who': 'b', 'text': 'Aujourd’hui elle a pris l’avion.'}]
+ins = T.reactions(beats, 5, 6.0, {'rythme': {'reactions_part': 0.16}}, ['a', 'b'])
+print(json.dumps({'ins': [[i, b['who'], b['text']] for i, b in ins], 'none': T.reactions(beats, 5, 0.5, {'rythme': {}}, ['a', 'b']),
+  'echo': [T.echo('On va libérer le lion, il va te poursuivre.'), T.echo('Euh... sûrement au passé, madame.')],
+  'n': [T.fr_number(71), T.fr_number(80), T.fr_number(1500)], 'wer': [T.wer('Pour toi ? Mille francs.', 'Pour toi, 1000 francs.'), T.wer('Mon fils', 'Non fils')]}))`);
+    if (!r) return;
+    // one reaction (1 line in 6, measured): on the line with an amount and an exclamation, by the listener, whole amount
+    expect(r.ins).toEqual([[2, 'b', 'Cinq cents ?!']]);
+    expect(r.none).toEqual([]); // no spare time, no reaction
+    expect(r.echo).toEqual(['Le lion ?!', 'Sûrement au passé ?!']); // the noun group, not the closing vocative or the next clause
+    expect(r.n).toEqual(['soixante-et-onze', 'quatre-vingts', 'mille-cinq-cents']);
+    expect(r.wer).toEqual([0, 0.5]); // « 1000 » heard for « Mille » is right; « Non » for « Mon » is one word wrong
+  });
+
+  it('a continuous story keeps tight turns; the scale of a real photo comes from its horizon', () => {
+    const r = py(`
+import json, numpy as np, tone as T, ground as G
+ref = {'_mesure': True, 'rythme': {'tour_de_parole_s': 0.26, 'silence_avant_chute_p75_s': 0.40, 'repliques_par_blague': 3, 'entre_blagues_s': 3.52,
+       'entre_blagues_p75_s': 5.01, 'rire_s': 4.73}, 'voix': {}, 'piper': {}}
+tl, rep = T.schedule([2.0] * 6, 4, 0, ref, breaths=False)
+gaps = [round(b['speak0'] - a['speak1'], 2) for a, b in zip(tl, tl[1:])]
+H, W = 400, 800
+lab = np.zeros((H, W), np.uint8); walk = np.zeros((H, W), np.uint8)
+walk[240:, :] = 255
+for x in (100, 300, 500):  # three standing passers-by whose heads are on row 160
+    lab[160:260, x:x + 30] = G.PERSON
+fit_people = G.horizon_fit(lab, walk)
+fit_floor = G.horizon_fit(np.zeros((H, W), np.uint8), walk)
+print(json.dumps({'gaps': gaps, 'people': fit_people, 'floor': fit_floor}))`);
+    if (!r) return;
+    expect(r.gaps).toEqual([0.26, 0.26, 0.26, 0.4, 1.51]); // no long breath inside one story
+    const p = r.people as Record<string, number | string>;
+    const f = r.floor as Record<string, number | string>;
+    expect(p.methode).toMatch(/têtes de 3 passants/);
+    expect(p.horizon).toBeCloseTo(0.42, 2); // heads at 40 % (+ 2 %: heads stand a little above the eye line)
+    expect(p.mH).toBeCloseTo((1.6 * 400) / (380 - 168), 1); // eye height / (feet row − horizon row) × picture height
+    expect(f.methode).toBe('bout du sol praticable');
+    expect(f.mH as number).toBeGreaterThan(p.mH as number); // the far end of the floor lies below the horizon: a larger scale
   });
 });

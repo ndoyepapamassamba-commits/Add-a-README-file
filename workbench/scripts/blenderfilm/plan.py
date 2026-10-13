@@ -347,23 +347,46 @@ def main():
     for cid, c in cast.items():
         sheet = dict(sheets.get(c['name'], {}), **{k: v for k, v in c.items() if k in ('pitch', 'genre', 'age')})
         tg = tonelib.targets(sheet, c.get('voice', 'siwis'), tone) if story.get('ton_chaine', True) else {}
-        shape[cid] = {'pitch': c.get('pitch', 1.0) * tg.get('luminosite', 1.0), 'expr': tg.get('expr', 1.0), 'formant': tg.get('formant', 1.0)}
+        want = ((tone.get('voix') or {}).get(tg.get('type')) or {}) if tg else {}
+        shape[cid] = {'pitch': c.get('pitch', 1.0) * tg.get('luminosite', 1.0), 'expr': tg.get('expr', 1.0), 'formant': tg.get('formant', 1.0),
+                      'cible': want.get('etendue_relative')}
         if tg:
             print(f"[ton] {c['name']} ({tg['type']}, voix {c.get('voice', 'siwis')}) : mélodie ×{tg.get('expr', 1)}"
                   + (f", hauteur ×{tg['luminosite']}" if 'luminosite' in tg else '') + (f", formants ×{tg['formant']}" if tg.get('formant', 1) != 1 else ''), flush=True)
 
+    # TAKES: a synthetic voice varies from one take to the next; each line is recorded several times and the take the
+    # listener understands best (Whisper re-transcription), with the melody closest to the channel's, is kept.
+    n_takes = max(1, int(story.get('prises', 3)))
+    takes_log = []
+
+    def render_one(i, b, speed):
+        c = cast[b['who']]
+        path = os.path.join(vdir, f'line-{i:02d}.wav')
+        if b.get('audio'):
+            audio = read_wav(b['audio'])
+            write_wav(path, audio)
+            return audio
+        sh = shape[b['who']]
+        takes = [tts(b['text'], c.get('voice', 'siwis'), path, a.voices, speed=speed * c.get('speed', 1.0), pitch=sh['pitch'], expr=sh['expr'], formant=sh['formant'])
+                 for _ in range(n_takes)]
+        k, det = tonelib.choose_take(takes, b['text'], SR, sh['cible']) if n_takes > 1 else (0, [])
+        write_wav(path, takes[k])
+        if det:
+            takes_log.append((i, k, det))
+        return takes[k]
+
     def render_lines(speed):
         lines = []
+        takes_log.clear()
         for i, b in enumerate(beats):
-            c = cast[b['who']]
-            path = os.path.join(vdir, f'line-{i:02d}.wav')
-            if b.get('audio'):
-                audio = read_wav(b['audio'])
-                write_wav(path, audio)
-            else:
-                sh = shape[b['who']]
-                audio = tts(b['text'], c.get('voice', 'siwis'), path, a.voices, speed=speed * c.get('speed', 1.0), pitch=sh['pitch'], expr=sh['expr'], formant=sh['formant'])
-            lines.append(audio)
+            lines.append(render_one(i, b, speed))
+        if takes_log and takes_log[0][2][0]['erreur'] is not None:
+            first = np.mean([d[0]['erreur'] for _, _, d in takes_log])
+            kept = np.mean([d[k]['erreur'] for _, k, d in takes_log])
+            print(f"[voix] {n_takes} prises par réplique : erreur de compréhension {first:.0%} (1re prise) → {kept:.0%} (prise retenue)", flush=True)
+            for i, k, d in takes_log:
+                if d[k]['erreur'] and d[k]['erreur'] > 0.25:
+                    print(f"[voix] réplique {i + 1} encore mal comprise ({d[k]['erreur']:.0%}) : « {beats[i]['text']} » entendu « {d[k]['entendu']} »", flush=True)
         return lines
 
     # Voices, then a global tempo so that the film lasts the asked duration (pauses included).
@@ -382,7 +405,55 @@ def main():
     # breaths between exchanges; the time left to reach the duration goes to those breaths and to the reaction after the
     # punchline before anything is spread evenly (tone.schedule).
     pb_i = story['punch']['beat'] if story.get('punch') else -1
-    timeline, rep = tonelib.schedule([len(x) / SR for x in lines], pb_i, a.seconds, tone, holds=[float(b.get('hold', 0)) for b in beats])
+    compilation = story.get('format') == 'compilation'
+    timeline, rep = tonelib.schedule([len(x) / SR for x in lines], pb_i, a.seconds, tone, holds=[float(b.get('hold', 0)) for b in beats], breaths=compilation)
+    # A story too short for the channel's tight rhythm gets the channel's REACTIONS (the listener echoes, stunned, the
+    # key words just said) instead of silences spread between the lines.
+    if not compilation and story.get('reactions', True) and rep['reserve_s'] > 1.5:
+        ins = tonelib.reactions(beats, pb_i, rep['reserve_s'], tone, list(cast))
+        for i, nb in reversed(ins):
+            beats.insert(i + 1, nb)
+            lines.insert(i + 1, None)
+            if pb_i > i:
+                pb_i += 1
+        if ins:
+            if story.get('punch'):
+                story['punch']['beat'] = pb_i
+            for j, b in enumerate(beats):
+                if lines[j] is None:
+                    lines[j] = render_one(j, b, speed)
+            # files are named by position: rewrite them in the new order
+            for j, x in enumerate(lines):
+                write_wav(os.path.join(vdir, f'line-{j:02d}.wav'), x)
+            for i, nb in ins:
+                print(f"[ton] réaction ajoutée : {cast[nb['who']]['name']} « {nb['text']} » (après « {beats[[k for k, b in enumerate(beats) if b is nb][0] - 1]['text'][:40]} »)", flush=True)
+            speech = sum(len(x) / SR for x in lines)
+            timeline, rep = tonelib.schedule([len(x) / SR for x in lines], pb_i, a.seconds, tone, holds=[float(b.get('hold', 0)) for b in beats], breaths=compilation)
+    # After the punchline, the one who SCORED it laughs — with its own voice, the way the channel's characters laugh
+    # (calls rate, breathed calls, pitch, brightness measured on the voice separated from the music). The one who was
+    # just had does not laugh (« Maman, c'est du vol ! » right after); a story can name the laugher (« rire_de »).
+    laugh_at = None
+    rp = tone.get('rire')
+    if not compilation and rp and story.get('rire', True) and pb_i >= 0 and rep['reserve_s'] > 2.5:
+        listener = story.get('rire_de') if story.get('rire_de') in cast else beats[pb_i]['who']
+        if listener:
+            c = cast[listener]
+            sh = shape[listener]
+            syl = tts('Ha !', c.get('voice', 'siwis'), os.path.join(vdir, 'ha.wav'), a.voices, pitch=sh['pitch'])
+            own = [x for b, x in zip(beats, lines) if b['who'] == listener]
+            f0v = tonelib.melody(np.concatenate(own), SR)[0] if own else None
+            y = tonelib.laugh(syl, SR, dict(rp, duree_s=min(float(rp['duree_s']), rep['reserve_s'] - 1.0)), f0v or tonelib.melody(syl, SR)[0] or 200.0)
+            if y is not None:
+                lp = os.path.join(vdir, 'rire.wav')
+                write_wav(lp, y)
+                beats.insert(pb_i + 1, {'who': listener, 'text': 'Ha ha ha !', 'audio': lp, 'pose': 'rire', 'insere': 'rire mesuré sur la chaîne'})
+                lines.insert(pb_i + 1, y)
+                for j, x in enumerate(lines):
+                    write_wav(os.path.join(vdir, f'line-{j:02d}.wav'), x)
+                laugh_at = pb_i + 1
+                timeline, rep = tonelib.schedule([len(x) / SR for x in lines], pb_i, a.seconds, tone, holds=[float(b.get('hold', 0)) for b in beats],
+                                                 breaths=compilation, react_at=laugh_at)
+                print(f"[ton] rire de {c['name']} après sa chute ({len(y) / SR:.1f} s, sa propre voix)", flush=True)
     print(f"[ton] rythme {'mesuré sur la chaîne' if rep['mesure'] else 'par défaut'} : tour de parole {rep['tour_s']} s, avant la chute {rep['avant_chute_s']} s, "
           f"{rep['respirations']} respiration(s) entre échanges, réserve {rep['reserve_s']} s" + (f" dont {rep['etale_s']} s étalés (histoire courte pour le rythme de la chaîne)" if rep['etale_s'] > 0.05 else ''), flush=True)
     t = timeline[-1]['end']

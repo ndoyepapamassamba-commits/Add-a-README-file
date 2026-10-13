@@ -63,6 +63,13 @@ blocage », « chercher automatiquement une autre alternative »)
 | Hauteur de voix | YIN (de Cheveigné & Kawahara 2002) | méthode publiée, code maison | hauteur et étendue de mélodie (filtre médian contre les erreurs d'octave) |
 | Voix des personnages | vocodeur WORLD (Morise 2016) via pyworld | BSD / MIT | mélodie élargie vers la chaîne, hauteur sans changer le timbre, formants d'enfant |
 
+| Séparer la voix de la musique | Demucs htdemucs (Meta) | MIT | rires et voix mesurés sans la musique de fond |
+| Regrouper les répliques d'une même voix | ECAPA-TDNN (SpeechBrain) | Apache-2.0 | vote du genre par groupe de voix |
+| Genre d'une voix | wav2vec2 XLSR-53 genre (alefiury) | Apache-2.0 | validé 5/5 voix Piper + 11/11 répliques au genre écrit dans la phrase |
+| Choisir la meilleure prise | faster-whisper « small » (réécoute) | MIT | prise la mieux comprise et la plus proche de la mélodie de la chaîne |
+| Photos de lieux libres (relais) | Wikimedia Commons, licence lue dans les données structurées (CC0 / domaine public) | CC0 / PDM | séries d'un même lieu = plusieurs vues ; User-Agent avec contact, reprise sur 429 |
+| Échelle d'une photo de lieu | règle de l'horizon (têtes des passants sur l'horizon, appareil à hauteur d'œil) | méthode classique | `ground.horizon_fit` |
+
 ## Leçons (à appliquer partout)
 - Une mesure de STYLE seule peut récompenser un défaut : la « distance au style » baissait quand l'IP-Adapter ajoutait des
   personnages de la troupe à côté de la poule. Toujours coupler le style à un contrôle du CONTENU (que montre l'image ?).
@@ -71,3 +78,8 @@ blocage », « chercher automatiquement une autre alternative »)
   cheveux en gros plan) transfère le rendu.
 - Vérifier l'inventaire phonétique d'une voix (ex. « gilles » sans voyelles nasales) avant de l'attribuer ; une voix qui
   ne sait pas dire « francs » est remplacée automatiquement.
+- Valider un modèle AVANT de s'en servir sur nos données, avec une vérité qu'on peut établir sans lui (planche de
+  contrôle, phrases dont le genre est écrit…). L'identification du locuteur à l'image (OWLv2 + mouvement de tête) a été
+  rejetée ainsi (≈ 4 bons sur 16) ; le classifieur de genre par la voix a été retenu (11/11).
+- Un bon score de « sol praticable » ne suffit pas pour un lieu : une autoroute a beaucoup de sol. Mesurer aussi le ciel,
+  le bâti proche et les véhicules.
