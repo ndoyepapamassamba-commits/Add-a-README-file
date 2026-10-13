@@ -53,6 +53,8 @@ export interface Panel extends PanelStyle {
   valueColor?: string;
   /** Navigation / slicer panels: every text slot of the image (menu items, buttons) — filled with the user's labels. */
   slots?: { box: Box; color: string }[];
+  /** What the pixel classifier read in the image (second opinion next to the vision label; the comparator shows both). */
+  pixelKind?: PanelKind;
 }
 export interface DashSpec {
   version: 1;
@@ -137,9 +139,9 @@ export function attachTexts(spec: DashSpec, texts: { box: { x0: number; y0: numb
 }
 
 // ── colour helpers ───────────────────────────────────────────────────────────────────────────────────────────────────
-const d2 = (a: RGB, b: RGB) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+export const d2 = (a: RGB, b: RGB) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
 const chroma = (c: RGB) => (Math.max(...c) - Math.min(...c)) / 255;
-const lum = (c: RGB) => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
+export const lum = (c: RGB) => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
 const hue = (c: RGB) => {
   const [r, g, b] = c.map((x) => x / 255) as RGB;
   const mx = Math.max(r, g, b);
@@ -152,7 +154,7 @@ const hueGap = (a: RGB, b: RGB) => {
   const d = Math.abs(hue(a) - hue(b));
   return Math.min(d, 360 - d);
 };
-const hexRgb = (h: string): RGB => [0, 2, 4].map((i) => parseInt(h.replace('#', '').slice(i, i + 2), 16)) as RGB;
+export const hexRgb = (h: string): RGB => [0, 2, 4].map((i) => parseInt(h.replace('#', '').slice(i, i + 2), 16)) as RGB;
 const at = (px: ArrayLike<number>, w: number, x: number, y: number): RGB => {
   const o = (y * w + x) * 4;
   return [px[o]!, px[o + 1]!, px[o + 2]!];
@@ -179,7 +181,7 @@ function* grid(x0: number, y0: number, x1: number, y1: number, step = 1): Genera
 }
 
 // ── 1. geometry ──────────────────────────────────────────────────────────────────────────────────────────────────────
-interface PxBox {
+export interface PxBox {
   x0: number;
   y0: number;
   x1: number;
@@ -958,7 +960,10 @@ export function classifyPanel(px: ArrayLike<number>, w: number, b: PxBox, style:
       cur.x1 = Math.max(cur.x1, kx);
       cur.y0 = Math.min(cur.y0, ky);
       cur.y1 = Math.max(cur.y1, ky);
-      for (const j of [kx > 0 ? k - 1 : -1, kx < gw - 1 ? k + 1 : -1, ky > 0 ? k - gw : -1, ky < gh - 1 ? k + gw : -1]) if (j >= 0 && g[j] && !seen[j]) (seen[j] = 1), st.push(j);
+      for (const j of [kx > 0 ? k - 1 : -1, kx < gw - 1 ? k + 1 : -1, ky > 0 ? k - gw : -1, ky < gh - 1 ? k + gw : -1]) if (j >= 0 && g[j] && !seen[j]) {
+          seen[j] = 1;
+          st.push(j);
+        }
     }
     if (cur.n > blob.n) blob = cur;
   }
@@ -1052,7 +1057,7 @@ export function parseSom(text: string): SomAnswer | null {
         legend: p.legend === 'right' || p.legend === 'bottom' ? p.legend : 'none',
       };
     }
-    return { kinds, font: typeof j.font === 'string' ? j.font.replace(/[^\w \-]/g, '').slice(0, 40) : undefined, titleAlign: j.title_align === 'left' ? 'left' : 'center' };
+    return { kinds, font: typeof j.font === 'string' ? j.font.replace(/[^\w -]/g, '').slice(0, 40) : undefined, titleAlign: j.title_align === 'left' ? 'left' : 'center' };
   } catch {
     return null;
   }
@@ -1090,7 +1095,7 @@ export function parseBoxes(text: string): VisionBoxes | null {
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
     if (!panels.length) return null;
-    return { title: toBox(j.title), panels, font: typeof j.font === 'string' ? j.font.replace(/[^\w \-]/g, '').slice(0, 40) : undefined, titleAlign: j.title_align === 'left' ? 'left' : 'center' };
+    return { title: toBox(j.title), panels, font: typeof j.font === 'string' ? j.font.replace(/[^\w -]/g, '').slice(0, 40) : undefined, titleAlign: j.title_align === 'left' ? 'left' : 'center' };
   } catch {
     return null;
   }
@@ -1165,7 +1170,7 @@ export function buildSpec(px: ArrayLike<number>, w: number, h: number, det: Dete
         return rgbToHex(modeColor(px, w, grid(x0, Math.round(b.y0 + (b.y1 - b.y0) * 0.15), x1, Math.round(b.y1 - (b.y1 - b.y0) * 0.15), 2)));
       });
     }
-    return { ...st, box: frac(b, w, h), kind, tiles, tileFills, titleAlign: label?.titleAlign ?? 'center', valueLabels: label?.valueLabels ?? false, legend: label?.legend ?? (kind === 'pie' || kind === 'donut' ? 'right' : 'none') };
+    return { ...st, box: frac(b, w, h), kind, pixelKind, tiles, tileFills, titleAlign: label?.titleAlign ?? 'center', valueLabels: label?.valueLabels ?? false, legend: label?.legend ?? (kind === 'pie' || kind === 'donut' ? 'right' : 'none') };
   });
   // Consistency: the panels of a design share ONE border colour and ONE text colour — the darkest measured ones
   // (anti-aliasing and small crops make some measures lighter than the real ink).

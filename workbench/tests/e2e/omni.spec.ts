@@ -557,6 +557,9 @@ test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, fram
   fs.copyFileSync(test.info().outputPath('clone-card.png'), '/tmp/claude-0/clone/e2e-card.png');
   // Below the 95 % design target the user must accept explicitly (the controller never lets it pass silently).
   await expect(page.getByTestId('design-checklist')).toBeVisible({ timeout: 30_000 });
+  // The COMPARATOR: four criteria measured on the pixels (agencement, couleurs, types, titres), each a percentage.
+  await expect(page.getByTestId('design-compare')).toBeVisible();
+  for (const id of ['layout', 'colors', 'charts', 'titles', 'overall']) await expect(page.getByTestId(`design-compare-${id}`)).toContainText('%');
   if (process.env.CLONE_DEBUG) fs.writeFileSync('/tmp/claude-0/clone/debug.json', JSON.stringify(await page.evaluate(() => (globalThis as unknown as { __cloneDebug?: unknown }).__cloneDebug)));
   console.log(`[clone] pré-score ${pre} % · contrôle : ${await page.getByTestId('design-checklist').innerText()}`);
   if (await page.getByTestId('design-accept-low').isVisible()) await page.getByTestId('design-accept-low').locator('input').check();
@@ -689,6 +692,9 @@ test('IMAGE DESIGN + Excel written by the model in code: the workbook OPENS on t
   await expect(page.getByTestId('design-clone')).toContainText('Provisions', { timeout: 20_000 });
   // Below the 95 % design target the user must accept explicitly (the controller never lets it pass silently).
   await expect(page.getByTestId('design-checklist')).toBeVisible({ timeout: 30_000 });
+  // The COMPARATOR: four criteria measured on the pixels (agencement, couleurs, types, titres), each a percentage.
+  await expect(page.getByTestId('design-compare')).toBeVisible();
+  for (const id of ['layout', 'colors', 'charts', 'titles', 'overall']) await expect(page.getByTestId(`design-compare-${id}`)).toContainText('%');
   if (await page.getByTestId('design-accept-low').isVisible()) await page.getByTestId('design-accept-low').locator('input').check();
   await page.getByTestId('design-go').click();
   await expect(page.getByText('Classeur livré.')).toBeVisible({ timeout: 40_000 });

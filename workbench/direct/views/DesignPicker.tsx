@@ -14,7 +14,7 @@ import { useStore } from '../lib/store';
 import { filesFor, importBrowserFile, sessionAllow, writeChatBytes } from '../lib/vfs';
 import type { DesignChoice } from '../lib/types';
 import { rankByScore, scoreTone } from '../../server/services/cloneFix';
-import { cloneDesign, prescoreDesign, FIDELITY_TARGET, KIND_LABEL as PANEL_LABEL, measureFidelity, previewData, refineClone, type ClonedDesign, type RefineResult } from '../lib/designClone';
+import { cloneDesign, confirmKinds, prescoreDesign, FIDELITY_TARGET, KIND_LABEL as PANEL_LABEL, measureFidelity, previewData, refineClone, type ClonedDesign, type RefineResult } from '../lib/designClone';
 import { renderCloneSvg } from '../../server/services/dashRender';
 import { PANEL_KINDS, type PanelKind } from '../../server/services/dashClone';
 import { generatedModels, MODEL_FORMATS, modelById, modelSpec, modelsFor, modelThumbnail, type ModelFormat } from '../../server/services/designModels';
@@ -56,7 +56,6 @@ function DesignCardOpen({ item }: { item: CardItem }) {
   const storeFiles = useStore((x) => x.files);
   const logos = useMemo(
     () => (sid ? Object.values(filesFor(sid, sessionAllow(sid))).filter((f) => isLogoFile(f.path) && !f.path.startsWith('assets/logo-')).sort((a, b) => b.updatedAt - a.updatedAt) : []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [sid, storeFiles],
   );
   const [logoPath, setLogoPath] = useState<string | null>(() => logos.find((f) => /logo/i.test(f.path))?.path ?? null);
@@ -75,7 +74,6 @@ function DesignCardOpen({ item }: { item: CardItem }) {
     return () => {
       live = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logoPath]);
   const [readBy, setReadBy] = useState('');
   // Photo-faithful clone of a dashboard image.
@@ -120,6 +118,20 @@ function DesignCardOpen({ item }: { item: CardItem }) {
       live = false;
     };
   }, [clone, preview]);
+  // ZOOM CONFIRMATION: the chart types the comparator could not settle are shown enlarged, one by one, to the vision model.
+  const confirmUnsure = async () => {
+    if (!clone || !refine) return;
+    try {
+      const { spec, changes } = await confirmKinds(clone, refine.compare.unsure, (st) => setBusy(st));
+      const c2 = { ...clone, spec };
+      const r = await refineClone(c2, preview.data, (st) => setBusy(st));
+      setRefine({ ...r, changes: [...changes, ...r.changes] });
+      setClone({ ...c2, spec: r.spec });
+    } catch {
+      /* the comparator keeps its « à confirmer » */
+    }
+    setBusy(null);
+  };
   const setKind = (i: number, kind: PanelKind) =>
     setClone((c) => (c ? { ...c, spec: { ...c.spec, panels: c.spec.panels.map((p, j) => (j === i ? { ...p, kind, legend: kind === 'pie' || kind === 'donut' ? 'right' : p.legend } : p)) } } : c));
   // ── MODÈLES ULTRA DESIGN: 20 per format, Excel drawn by the real dashboard renderer on the preview data.
@@ -263,7 +275,6 @@ function DesignCardOpen({ item }: { item: CardItem }) {
     return () => {
       live = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [decoded, palKey]);
   const go = async () => {
     const choice: DesignChoice = chosenModel && custom
@@ -445,7 +456,16 @@ function DesignCardOpen({ item }: { item: CardItem }) {
                 <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                   <figure className="m-0">
                     <figcaption className="mb-1 text-[11px] text-muted">Image choisie</figcaption>
-                    <img src={clone.source} alt="design choisi" className="w-full rounded-lg border border-line" />
+                    <div className="relative">
+                      <img src={clone.source} alt="design choisi" className="w-full rounded-lg border border-line" />
+                      {refine && refine.compare.overall < 100 && (
+                        <svg viewBox={`0 0 ${refine.compare.heat.gx} ${refine.compare.heat.gy}`} preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" data-testid="design-compare-heat" aria-hidden="true">
+                          {refine.compare.heat.cells.map((v, k) =>
+                            v > 0.08 ? <rect key={k} x={k % refine.compare.heat.gx} y={Math.floor(k / refine.compare.heat.gx)} width="1" height="1" fill="#DC2626" opacity={Math.min(0.55, v * 1.4)} /> : null,
+                          )}
+                        </svg>
+                      )}
+                    </div>
                   </figure>
                   <figure className="m-0">
                     <figcaption className="mb-1 text-[11px] text-muted">Reproduction avec {preview.from ? `vos données (${preview.from.split('/').pop()})` : 'des données d’exemple (joignez votre fichier pour voir vos chiffres)'}</figcaption>
@@ -470,6 +490,42 @@ function DesignCardOpen({ item }: { item: CardItem }) {
                       ))}
                     </div>
                     {refine.changes.length > 0 && <div className="text-muted">{refine.changes.slice(0, 6).join(' · ')}</div>}
+                  </div>
+                )}
+                {refine && (
+                  <div className="mt-1 rounded-lg border border-line px-2 py-1 text-[11.5px]" data-testid="design-compare">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                      <b>Comparateur image ↔ reproduction</b>
+                      {(
+                        [
+                          ['layout', 'Agencement', refine.compare.layout],
+                          ['colors', 'Couleurs', refine.compare.colors],
+                          ['charts', 'Types de graphiques', refine.compare.charts],
+                          ['titles', 'Titres', refine.compare.titles],
+                        ] as const
+                      ).map(([id, label, v]) => (
+                        <span key={id} className={v >= 100 ? 'text-ok' : v >= 80 ? '' : 'text-warn'} data-testid={`design-compare-${id}`}>
+                          {label} <b>{v} %</b>
+                        </span>
+                      ))}
+                      <span className="text-muted">
+                        · global <b data-testid="design-compare-overall">{refine.compare.overall} %</b> — les zones rouges sur l’image sont celles qui diffèrent (les chiffres sont les vôtres, pas ceux de l’image)
+                      </span>
+                      {refine.compare.unsure.length > 0 && (
+                        <button type="button" className="rounded-full border border-accent px-2 py-0.5 text-accent disabled:opacity-50" disabled={Boolean(busy)} onClick={() => void confirmUnsure()} data-testid="design-compare-confirm">
+                          🔍 Confirmer {refine.compare.unsure.length} type(s) par zoom
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-x-2 text-muted">
+                      {refine.compare.panels.map((p) => (
+                        <span key={p.i} title={`fidélité de la zone ${p.fidelity} %`}>
+                          <b>{p.i + 1}</b> {PANEL_LABEL[p.kind]}
+                          {p.pixelKind && p.pixelKind !== p.kind ? (p.agree ? ` (pixels : ${PANEL_LABEL[p.pixelKind]})` : ` ≠ pixels : ${PANEL_LABEL[p.pixelKind]} ⚠`) : ''} · agencement {p.layout} % · couleurs {p.colors} %{p.title === null ? '' : p.title ? ' · titre ✓' : ' · titre ✗'}
+                        </span>
+                      ))}
+                    </div>
+                    {refine.compare.notes.length > 0 && <div className="text-warn">{refine.compare.notes.slice(0, 5).join(' · ')}</div>}
                   </div>
                 )}
                 {refine && refine.fidelity < FIDELITY_TARGET && (

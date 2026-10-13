@@ -8,6 +8,7 @@ import { DataCore, isDataFile } from '../../server/services/dataCore';
 import { pickTable, type SheetTable } from '../../server/services/tablePick';
 import { askVision, imageBlob } from './designWeb';
 import { colorPatches, emptyZones, panelFor, restoreLines, ZONE_KINDS } from '../../server/services/cloneFix';
+import { compareClone, parseKindWord, ZOOM_PROMPT, type CompareReport } from '../../server/services/cloneCompare';
 import { bytesOf, filesFor, sessionAllow } from './vfs';
 
 export interface ClonedDesign {
@@ -276,6 +277,8 @@ export interface RefineResult {
   resemblance: number;
   changes: string[];
   checklist: CheckItem[];
+  /** The four-criteria comparator (agencement, couleurs, types, titres) with its heat grid and the unsettled types. */
+  compare: CompareReport;
 }
 /** Source pixels at a small working width (the search renders many candidates). */
 async function smallPixels(dataUrl: string, w: number, h: number): Promise<Uint8ClampedArray> {
@@ -379,6 +382,8 @@ export async function refineClone(c: ClonedDesign, data: CloneData, onStep: (s: 
     if (!improved) break;
   }
   const regions = spec.panels.map((p) => regionFidelity(src, cur, W, H, p.box));
+  // THE COMPARATOR: four criteria on the pixels (agencement, couleurs, types, titres) + where the two images differ.
+  const compare = compareClone(src, cur, W, H, spec);
   // Diagnostic (opt-in, never in normal use): the source and the reproduction as compared, for a visual diff.
   try {
     if (localStorage.getItem('clone.debug') === '1')
@@ -408,12 +413,60 @@ export async function refineClone(c: ClonedDesign, data: CloneData, onStep: (s: 
   const checklist: CheckItem[] = [
     { id: 'layout', label: 'Agencement', ok: meanRegion >= 90, note: `${spec.panels.length} panneaux aux positions mesurées · correspondance moyenne par panneau ${meanRegion} %` },
     { id: 'colors', label: 'Couleurs et fonds', ok: backdrop >= 90 && paletteOk === 1, note: `fonds, cadres, bandeaux et cartes ${backdrop} % · palette des graphiques ${Math.round(paletteOk * 100)} % mesurée sur l’image` },
-    { id: 'charts', label: 'Design des graphiques', ok: verified.size >= Math.min(charts, 6) || charts === 0, note: `${charts} graphique(s) ; ${verified.size} forme(s) vérifiée(s) sur les pixels${changes.length ? `, ${changes.length} correction(s)` : ''}` },
+    { id: 'charts', label: 'Design des graphiques', ok: (verified.size >= Math.min(charts, 6) || charts === 0) && !compare.unsure.length, note: `${charts} graphique(s) ; ${verified.size} forme(s) vérifiée(s) sur les pixels${changes.length ? `, ${changes.length} correction(s)` : ''}${compare.unsure.length ? ` ; ${compare.unsure.length} type(s) à confirmer (modèle ≠ pixels)` : ''}` },
     { id: 'legibility', label: 'Lisibilité', ok: readable === spec.panels.length, note: `${readable}/${spec.panels.length} panneaux avec un texte lisible sur leur fond (≥ 4,5:1) — les autres sont corrigés à l’export` },
     { id: 'data', label: 'Données logées', ok: withData > 0, note: `${withData} panneau(x) recevant vos données (indicateurs, graphiques, tableau, filtres) — aucun chiffre inventé` },
     { id: 'logo', label: 'Emplacement du logo', ok: logoFree, note: logoFree ? 'réservé à droite du bandeau de titre, sans chevauchement' : 'aucune zone libre en tête : logo en haut à droite de la page' },
   ];
-  return { spec, fidelity: design, before, resemblance, changes, checklist };
+  return { spec, fidelity: design, before, resemblance, changes, checklist, compare };
+}
+
+/** A panel of the source image cut out and enlarged (≥ 320 px wide) as a JPEG data URL — what the zoom shows the model. */
+async function cropPanel(c: ClonedDesign, box: DashSpec['panels'][number]['box']): Promise<string> {
+  const img = new Image();
+  await new Promise<void>((res, rej) => {
+    img.onload = () => res();
+    img.onerror = () => rej(new Error('image illisible'));
+    img.src = c.source;
+  });
+  const x = Math.max(0, Math.floor(box.x * c.width));
+  const y = Math.max(0, Math.floor(box.y * c.height));
+  const w = Math.max(8, Math.ceil(box.w * c.width));
+  const h = Math.max(8, Math.ceil(box.h * c.height));
+  const k = Math.max(1, 320 / w);
+  const cv = canvas(Math.round(w * k), Math.round(h * k));
+  const g = cv.getContext('2d')!;
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(img, x, y, w, h, 0, 0, cv.width, cv.height);
+  return cv.toDataURL('image/jpeg', 0.9);
+}
+/**
+ * ZOOM CONFIRMATION of the chart types the comparator could not settle (vision label ≠ pixel reading): each unsure panel
+ * is cut out of the image, enlarged and shown alone to the vision model (one word back). At most four panels.
+ */
+export async function confirmKinds(c: ClonedDesign, unsure: number[], onStep: (s: string) => void = () => {}): Promise<{ spec: DashSpec; changes: string[] }> {
+  const spec: DashSpec = JSON.parse(JSON.stringify(c.spec)) as DashSpec;
+  const changes: string[] = [];
+  for (const i of unsure.slice(0, 4)) {
+    const p = spec.panels[i];
+    if (!p) continue;
+    onStep(`confirmation du panneau ${i + 1} par zoom…`);
+    try {
+      const r = await askVision(ZOOM_PROMPT, await cropPanel(c, p.box), 20, 'design');
+      const kind = parseKindWord(r.content);
+      if (!kind) continue;
+      // Settled either way: the zoomed reading becomes the pixel opinion too, so the comparator stops flagging it.
+      if (kind !== p.kind) {
+        changes.push(`panneau ${i + 1} : ${KIND_LABEL[p.kind]} → ${KIND_LABEL[kind]} (confirmé en zoom par ${r.model.split('/').pop()})`);
+        p.kind = kind;
+        p.legend = kind === 'pie' || kind === 'donut' ? 'right' : p.legend;
+      } else changes.push(`panneau ${i + 1} : ${KIND_LABEL[kind]} confirmé en zoom`);
+      p.pixelKind = kind;
+    } catch {
+      /* no answer: the panel stays « à confirmer » */
+    }
+  }
+  return { spec, changes };
 }
 
 /**
