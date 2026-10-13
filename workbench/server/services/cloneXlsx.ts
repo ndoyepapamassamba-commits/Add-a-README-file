@@ -11,7 +11,7 @@
  */
 import { strFromU8, unzipSync, zipSync } from 'fflate';
 import type { DashSpec } from './dashClone';
-import { colorsFor, fmt, mixH, panelPlan, readableOn, slotTexts, type CloneData, type DataView } from './dashRender';
+import { colorsFor, fmt, mixH, panelPlan, readableOn, slotTexts, transferTexts, type CloneData, type DataView } from './dashRender';
 import { ooxml, type LogoImage } from './officeLogo';
 
 const { read, write, ensurePngType, addOverride, addRel, relsOf, ensureRootNs, NS_R, REL_IMAGE } = ooxml;
@@ -215,11 +215,20 @@ export function addNativeClone(bytes: Uint8Array, spec: DashSpec, d: CloneData, 
     write(z, '[Content_Types].xml', ct);
     const rid = addRel(z, relsOf(drawing), REL_IMAGE, `../media/massamba-design.${ext}`, 'rIdDashDesign');
     parts.push(crop({ x: 0, y: 0, w: W, h: H }, { x: 0, y: 0, w: 1, h: 1 }, rid).replace('name="Reproduction', 'name="Design'));
-    if (spec.title) {
+    if (spec.transfer) {
+      // TRANSFER: every replaced line of the image receives the user's word, at its measured place, size and colour.
+      transferTexts(spec, d).forEach(({ line: l, text }, k) => {
+        const b = P(l.box);
+        const room = l.anchor === 'middle' ? Math.max(b.w * 1.4, b.w + l.size * H * 2) : Math.max(b.w, l.maxX * W - b.x);
+        const x = l.anchor === 'middle' ? b.x + b.w / 2 - room / 2 : b.x;
+        const top = l.base * H - l.size * H * 0.85;
+        parts.push(txt({ x, y: top, w: room, h: l.size * H * 1.15 }, text, l.size * H * 0.95, l.color, { bold: l.weight >= 700, align: l.anchor === 'middle' ? 'ctr' : 'l', name: `Texte ${k + 1}` }));
+      });
+    } else if (spec.title) {
       const t = P(spec.title.box);
       parts.push(txt({ x: t.x, y: t.y, w: Math.max(t.w, W - t.x - 8), h: t.h }, d.title, t.h * 0.92, spec.title.color, { bold: true, name: 'Titre' }));
     }
-    if (spec.subtitle && d.subtitle) {
+    if (!spec.transfer && spec.subtitle && d.subtitle) {
       const t = P(spec.subtitle.box);
       parts.push(txt({ x: t.x, y: t.y, w: Math.max(t.w, W * 0.4), h: t.h }, d.subtitle, t.h * 0.92, spec.subtitle.color, { name: 'Sous-titre' }));
     }
@@ -250,7 +259,29 @@ export function addNativeClone(bytes: Uint8Array, spec: DashSpec, d: CloneData, 
     const { kind, view, kpis } = plan[i]!;
     const tiles = kind === 'kpi' ? Math.max(1, p.tiles) : 1;
     const multiTiles = kind === 'kpi' && tiles > 1 && p.tileFills?.length;
-    if (onBg) {
+    const tf = spec.transfer;
+    if (onBg && tf) {
+      // TRANSFER: texts are already placed; a chart goes into its measured plot area (or its rings' box).
+      const pl = tf.plots.find((x) => x.panel === i);
+      const rg = tf.rings.find((x) => x.panel === i);
+      if (!pl && !rg) return;
+      if (pl) {
+        const pr = P(pl.box);
+        r.x = pr.x;
+        r.y = pr.y;
+        r.w = pr.w;
+        r.h = pr.h;
+      } else if (rg) {
+        const o0 = rg.rings[0]!;
+        const R0 = (o0.r + o0.thick) * W;
+        const x0 = Math.min(...rg.rings.map((g) => (g.cx - g.r - g.thick) * W));
+        const x1 = Math.max(...rg.rings.map((g) => (g.cx + g.r + g.thick) * W));
+        r.x = x0;
+        r.y = o0.cy * H - R0;
+        r.w = Math.max(x1 - x0, R0 * 2);
+        r.h = R0 * 2;
+      }
+    } else if (onBg) {
       // Menus / slicers: their buttons are in the picture — their labels become the user's.
       if ((kind === 'filter' || kind === 'title') && p.slots?.length) {
         for (const t of slotTexts(p, d, P, r)) parts.push(txt({ x: t.x, y: t.y, w: Math.max(t.w, t.size * t.text.length * 0.6), h: t.h }, t.text, t.size, t.color, { bold: t.bold }));
@@ -272,8 +303,8 @@ export function addNativeClone(bytes: Uint8Array, spec: DashSpec, d: CloneData, 
       parts.push(shape(r, { fill: p.fill, line: p.border, lineW: Math.max(0.5, p.borderWidth * s), radius: p.radius * s, font, name: `Carte ${i + 1}` }));
       shapes++;
     }
-    const pad = Math.max(4, fs * 0.6);
-    const tbx = onBg && p.titleBox ? P(p.titleBox) : null;
+    const pad = spec.transfer ? 0 : Math.max(4, fs * 0.6);
+    const tbx = onBg && p.titleBox && !spec.transfer ? P(p.titleBox) : null;
     const top = tbx ? Math.max(r.y + pad, tbx.y + tbx.h + pad * 0.5) : r.y + pad;
     const inner: Rect = { x: r.x + pad, y: top, w: r.w - pad * 2, h: r.y + r.h - pad - top };
     if (inner.w < 8 || inner.h < 8) return;
@@ -318,7 +349,7 @@ export function addNativeClone(bytes: Uint8Array, spec: DashSpec, d: CloneData, 
       const rid = `rIdDashChart${charts.length + 1}`;
       charts.push({
         rid,
-        xml: chartXml({ kind: kind as CloneChartKind, title: onBg && tbx ? null : trunc(v.title, Math.round(r.w / (fs * 0.55))), c0, cats, vals, valueName: v.valueName, colors, byPoint: p.sequential && kind !== 'line' && kind !== 'area', text: p.text, muted: mixH(p.text, p.fill, 0.4), font, size: fs, labels: p.valueLabels || kind === 'hbar', legend: p.legend }),
+        xml: chartXml({ kind: kind as CloneChartKind, title: (onBg && tbx) || spec.transfer ? null : trunc(v.title, Math.round(r.w / (fs * 0.55))), c0, cats, vals, valueName: v.valueName, colors, byPoint: p.sequential && kind !== 'line' && kind !== 'area', text: p.text, muted: mixH(p.text, p.fill, 0.4), font, size: fs, labels: p.valueLabels || kind === 'hbar', legend: p.legend }),
       });
       parts.push(chartFrame(inner, rid, `Graphique ${i + 1}`));
       return;

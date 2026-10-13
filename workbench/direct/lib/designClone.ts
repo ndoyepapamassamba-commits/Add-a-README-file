@@ -3,7 +3,8 @@
 // close it is to the image. The vision model only labels; geometry and colours come from the pixels.
 import { attachTexts, BOXES_PROMPT, buildSpec, detectLayout, fidelityScore, backdropFidelity, panelCandidates, parseBoxes, parseSom, regionFidelity, SOM_PROMPT, withVisionBoxes, type DashSpec, type PanelKind, type SomAnswer } from '../../server/services/dashClone';
 import { cleanTemplate } from '../../server/services/cleanTemplate';
-import { cloneData, renderCloneSvg, type CloneData } from '../../server/services/dashRender';
+import { identityOutside, planTransfer, zonesShare } from '../../server/services/cloneTransfer';
+import { cloneData, renderCloneSvg, transferDrawnRects, transferTexts, type CloneData } from '../../server/services/dashRender';
 import { DataCore, isDataFile } from '../../server/services/dataCore';
 import { pickTable, type SheetTable } from '../../server/services/tablePick';
 import { askVision, imageBlob } from './designWeb';
@@ -19,6 +20,8 @@ export interface ClonedDesign {
   height: number;
   px: Uint8ClampedArray;
   labelledBy: string | null;
+  /** Thumbnail decorations the vision model named (stickers, video titles, buttons) — removed by the transfer. */
+  overlays?: { x: number; y: number; w: number; h: number }[];
 }
 
 function canvas(w: number, h: number) {
@@ -100,10 +103,10 @@ function gridded(dataUrl: string, w: number, h: number): Promise<string> {
 
 /** Measure the image and label its panels. */
 /** The clean background (RGBA) as a compact JPEG data URL. */
-function bgDataUrl(bg: Uint8ClampedArray, w: number, h: number): string {
+function bgDataUrl(bg: Uint8ClampedArray, w: number, h: number, q = 0.92): string {
   const c = canvas(w, h);
   c.getContext('2d')!.putImageData(new ImageData(new Uint8ClampedArray(bg), w, h), 0, 0);
-  return c.toDataURL('image/jpeg', 0.92);
+  return c.toDataURL('image/jpeg', q);
 }
 
 export async function cloneDesign(url: string, onStep: (s: string) => void = () => {}, o: { vision?: boolean } = {}): Promise<ClonedDesign> {
@@ -125,6 +128,7 @@ export async function cloneDesign(url: string, onStep: (s: string) => void = () 
   let som: SomAnswer | null = null;
   let labelledBy: string | null = null;
   let visionColors: (string[] | undefined)[] = [];
+  let overlays: { x: number; y: number; w: number; h: number }[] = [];
   // 1. The strongest box-locating vision model of the catalogue cuts the panels out on EVERY image (kinds, colours);
   //    the pixels then refine each edge. Without any vision model, the pixel segmentation alone.
   if (vision)
@@ -138,6 +142,7 @@ export async function cloneDesign(url: string, onStep: (s: string) => void = () 
       som = v.som;
       labelledBy = r.model;
       visionColors = vb.panels.map((p) => p.colors);
+      overlays = vb.overlays ?? [];
     }
   } catch {
     /* keep the pixel segmentation */
@@ -179,7 +184,7 @@ export async function cloneDesign(url: string, onStep: (s: string) => void = () 
   restoreLines(px, tpl.bg, w, h, spec.page, { panels: spec.panels.map((p) => p.box) });
   spec.background = bgDataUrl(tpl.bg, w, h);
   spec = attachTexts(spec, tpl.texts, w, h);
-  return { spec, source: dataUrl, width: w, height: h, px, labelledBy };
+  return { spec, source: dataUrl, width: w, height: h, px, labelledBy, overlays };
 }
 
 /** Rasterise an SVG to RGBA pixels and PNG bytes at a given size. */
@@ -404,7 +409,9 @@ export async function refineClone(c: ClonedDesign, data: CloneData, onStep: (s: 
   const chartPanels = spec.panels.filter((p) => ['bar', 'hbar', 'line', 'area', 'pie', 'donut', 'gauge', 'map'].includes(p.kind));
   const paletteOk = chartPanels.length ? chartPanels.filter((p) => p.colors.length > 0).length / chartPanels.length : 1;
   const formsOk = chartPanels.length ? Math.min(1, (verified.size + (c.labelledBy ? chartPanels.length : 0)) / chartPanels.length) : 1;
-  const design = Math.round(0.6 * backdrop + 20 * paletteOk + 20 * formsOk);
+  // The design score never ignores what the eye sees: half of it is the comparator's global reading (agencement,
+  // couleurs, types, titres) — a backdrop at 93 % with every card in the wrong form is not a 96 % copy.
+  const design0 = Math.round(0.6 * backdrop + 20 * paletteOk + 20 * formsOk);
   const meanRegion = regions.length ? Math.round(regions.reduce((a, b) => a + b, 0) / regions.length) : 0;
   const charts = spec.panels.filter((p) => ['bar', 'hbar', 'line', 'area', 'pie', 'donut', 'gauge', 'map'].includes(p.kind)).length;
   const readable = spec.panels.filter((p) => contrast(p.text, p.fill) >= 4.5).length;
@@ -418,7 +425,49 @@ export async function refineClone(c: ClonedDesign, data: CloneData, onStep: (s: 
     { id: 'data', label: 'Données logées', ok: withData > 0, note: `${withData} panneau(x) recevant vos données (indicateurs, graphiques, tableau, filtres) — aucun chiffre inventé` },
     { id: 'logo', label: 'Emplacement du logo', ok: logoFree, note: logoFree ? 'réservé à droite du bandeau de titre, sans chevauchement' : 'aucune zone libre en tête : logo en haut à droite de la page' },
   ];
+  const design = Math.round((design0 + compare.overall) / 2);
   return { spec, fidelity: design, before, resemblance, changes, checklist, compare };
+}
+
+/**
+ * « CORRIGER À 100 % » — TRANSFER ON THE IMAGE: the reproduction becomes the image itself where only the texts and the
+ * chart marks are replaced by the user's (cloneTransfer). The identity of the design is MEASURED: the share of pixels
+ * outside the replaced zones that are the image's own. No model call.
+ */
+export async function transferClone(c: ClonedDesign, data: CloneData, onStep: (s: string) => void = () => {}, before?: number): Promise<RefineResult> {
+  onStep('transfert sur l’image : lecture des textes, des tracés et des incrustations…');
+  const w = c.width;
+  const h = c.height;
+  const boxes = c.spec.panels.map((p) => ({ x0: p.box.x * w, y0: p.box.y * h, x1: (p.box.x + p.box.w) * w, y1: (p.box.y + p.box.h) * h }));
+  const photos = new Set(c.spec.panels.map((p, i) => (p.kind === 'image' ? i : -1)).filter((i) => i >= 0));
+  // Back to the image's original spec when a transfer is applied again (never a transfer of a transfer).
+  const base: DashSpec = { ...c.spec, transfer: undefined };
+  const tpl = cleanTemplate(c.px, w, h, boxes, photos);
+  onStep('transfert sur l’image : effacement local des textes et des tracés, vos données à leur place…');
+  const t = planTransfer({ px: c.px, w, h, spec: base, texts: tpl.texts, erased: tpl.erased, cleanBg: tpl.bg, overlays: c.overlays });
+  const spec: DashSpec = { ...t.spec, background: bgDataUrl(t.bg, w, h, 0.96) };
+  const texts = transferTexts(spec, data);
+  // IDENTITY at full size, against the image's own pixels (no resampling on either side): outside the replaced zones
+  // and outside the room the user's words actually take (a longer word than the image's is a replacement too).
+  const full = (await rasterise(renderCloneSvg(spec, data, w), w, h, { png: false })).px;
+  const drawn = transferDrawnRects(spec, data, w, h);
+  const identity = identityOutside(c.px, full, w, h, [...t.plan.zones, ...drawn]);
+  const covered = zonesShare([...t.plan.zones, ...drawn], w, h);
+  // The comparator at full size too (titles are a few pixels tall once reduced).
+  const compare = compareClone(c.px, full, w, h, spec);
+  const resemblance = fidelityScore(c.px, full, w, h, spec.page);
+  const roles = t.plan.lines.filter((l) => l.role !== 'erase').length;
+  const kpiSlots = new Set(t.plan.lines.filter((l) => l.role === 'kpiValue' || l.role === 'pairValue').map((l) => l.slot)).size;
+  const filled = new Set(texts.filter((x) => x.line.role === 'kpiValue' || x.line.role === 'pairValue').map((x) => x.line.slot)).size;
+  const checklist: CheckItem[] = [
+    { id: 'layout', label: 'Agencement', ok: identity >= 99, note: `image d’origine conservée pixel pour pixel hors des zones remplacées : ${identity} % (zones remplacées par vos textes et vos graphiques : ${covered} % de l’image)` },
+    { id: 'colors', label: 'Couleurs et fonds', ok: identity >= 99, note: 'fonds, dégradés, icônes, courbes décoratives, cadres et ombres = ceux de l’image (non redessinés)' },
+    { id: 'charts', label: 'Design des graphiques', ok: true, note: `${t.plan.plots.length} graphique(s) redessiné(s) dans leur zone de tracé, ${t.plan.rings.reduce((a, r) => a + r.rings.length, 0)} anneau(x) avec leur piste et leur couleur${t.plan.kinds.length ? ` ; ${t.plan.kinds.length} type(s) corrigé(s)` : ''}` },
+    { id: 'legibility', label: 'Lisibilité', ok: true, note: `${texts.length} texte(s) écrits avec la couleur, la taille, la graisse${t.plan.lines.some((l) => l.outline) ? ' et le contour' : ''} mesurés sur l’image` },
+    { id: 'data', label: 'Données logées', ok: filled > 0, note: `${filled}/${kpiSlots} emplacement(s) d’indicateur rempli(s) avec vos chiffres${kpiSlots > filled ? ' (les autres effacés : aucun chiffre inventé)' : ''} · ${roles} ligne(s) de l’image remplacée(s), aucune recopiée` },
+    { id: 'logo', label: 'Incrustations', ok: true, note: t.plan.overlays.length ? `${t.plan.overlays.length} incrustation(s) de miniature retirée(s)` : 'aucune incrustation de miniature détectée' },
+  ];
+  return { spec, fidelity: Math.floor(identity), before: before ?? resemblance, resemblance, changes: t.notes, checklist, compare };
 }
 
 /** A panel of the source image cut out and enlarged (≥ 320 px wide) as a JPEG data URL — what the zoom shows the model. */

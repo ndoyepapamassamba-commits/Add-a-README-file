@@ -14,7 +14,7 @@ import { useStore } from '../lib/store';
 import { filesFor, importBrowserFile, sessionAllow, writeChatBytes } from '../lib/vfs';
 import type { DesignChoice } from '../lib/types';
 import { rankByScore, scoreTone } from '../../server/services/cloneFix';
-import { cloneDesign, confirmKinds, prescoreDesign, FIDELITY_TARGET, KIND_LABEL as PANEL_LABEL, measureFidelity, previewData, refineClone, type ClonedDesign, type RefineResult } from '../lib/designClone';
+import { cloneDesign, confirmKinds, prescoreDesign, FIDELITY_TARGET, KIND_LABEL as PANEL_LABEL, measureFidelity, previewData, refineClone, transferClone, type ClonedDesign, type RefineResult } from '../lib/designClone';
 import { renderCloneSvg } from '../../server/services/dashRender';
 import { PANEL_KINDS, type PanelKind } from '../../server/services/dashClone';
 import { generatedModels, MODEL_FORMATS, modelById, modelSpec, modelsFor, modelThumbnail, type ModelFormat } from '../../server/services/designModels';
@@ -119,6 +119,22 @@ function DesignCardOpen({ item }: { item: CardItem }) {
     };
   }, [clone, preview]);
   // ZOOM CONFIRMATION: the chart types the comparator could not settle are shown enlarged, one by one, to the vision model.
+  // « CORRIGER À 100 % »: the image itself, only its texts and chart marks replaced by the user's (measured identity).
+  const [undo, setUndo] = useState<{ clone: ClonedDesign; refine: RefineResult | null } | null>(null);
+  const fix100 = async () => {
+    if (!clone) return;
+    setErr('');
+    setBusy('transfert sur l’image…');
+    try {
+      const r = await transferClone(clone, preview.data, (st) => setBusy(st), refine?.resemblance);
+      setUndo({ clone, refine });
+      setRefine(r);
+      setClone({ ...clone, spec: r.spec });
+    } catch (e) {
+      setErr(`Transfert impossible : ${(e as Error).message}`);
+    }
+    setBusy(null);
+  };
   const confirmUnsure = async () => {
     if (!clone || !refine) return;
     try {
@@ -152,6 +168,7 @@ function DesignCardOpen({ item }: { item: CardItem }) {
     if (!m) return;
     setModelSel(id);
     setClone(null);
+    setUndo(null);
     setLayout(null);
     setSite(null);
     setWebSel(null);
@@ -208,6 +225,7 @@ function DesignCardOpen({ item }: { item: CardItem }) {
     setSite(null);
     setReadBy('');
     setClone(null);
+    setUndo(null);
     // 1. Dashboards: photo-faithful clone measured on the pixels.
     try {
       const c = await cloneDesign(url, (st) => setBusy(st));
@@ -489,7 +507,32 @@ function DesignCardOpen({ item }: { item: CardItem }) {
                         </div>
                       ))}
                     </div>
-                    {refine.changes.length > 0 && <div className="text-muted">{refine.changes.slice(0, 6).join(' · ')}</div>}
+                    {refine.changes.length > 0 && <div className="text-muted">{refine.changes.slice(0, 8).join(' · ')}</div>}
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      {!clone.spec.transfer ? (
+                        <button type="button" className="rounded-full border border-accent bg-accent px-2.5 py-0.5 font-semibold text-white disabled:opacity-50" disabled={Boolean(busy)} onClick={() => void fix100()} data-testid="design-fix100" title="La reproduction devient l’image elle-même : seuls ses textes et ses tracés sont remplacés par vos données, à la même place, dans la même couleur et la même taille.">
+                          🎯 Corriger à 100 % (transfert sur l’image)
+                        </button>
+                      ) : (
+                        <span className="font-semibold text-ok" data-testid="design-fix100-done">
+                          ✓ Transfert sur l’image appliqué — design conservé à <span data-testid="design-identity">{refine.fidelity}</span> % hors zones remplacées
+                        </span>
+                      )}
+                      {clone.spec.transfer && undo && (
+                        <button
+                          type="button"
+                          className="rounded-full border border-line px-2 py-0.5 text-muted"
+                          onClick={() => {
+                            setClone(undo.clone);
+                            setRefine(undo.refine);
+                            setUndo(null);
+                          }}
+                          data-testid="design-fix100-undo"
+                        >
+                          ↩ Revenir à la reproduction précédente
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
                 {refine && (

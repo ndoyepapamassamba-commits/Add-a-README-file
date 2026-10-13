@@ -138,7 +138,9 @@ export function compareClone(src: ArrayLike<number>, out: ArrayLike<number>, w: 
       const tb = pad(toPx(p.titleBox, w, h), 2, w, h);
       const ink = inkColor(out, w, tb, fill);
       const wantC = p.titleColor ? hexRgb(p.titleColor) : null;
-      title = Boolean(ink) && (!wantC || d2(ink!, wantC) < 110 ** 2 || Math.abs(lum(ink!) - lum(wantC)) < 0.3);
+      // Same ink as the IMAGE shows at that place (an outlined or anti-aliased title mixes colours on both sides).
+      const inkSrc = inkColor(src, w, tb, fill);
+      title = Boolean(ink) && ((inkSrc !== null && d2(ink!, inkSrc) < 110 ** 2) || !wantC || d2(ink!, wantC) < 110 ** 2 || Math.abs(lum(ink!) - lum(wantC)) < 0.3);
     }
     if (chart && !agree) notes.push(`panneau ${i + 1} : type « ${p.kind} » lu par le modèle, « ${pixelKind} » par les pixels — à confirmer`);
     if (chart && want.length && colors < 100) notes.push(`panneau ${i + 1} : ${colors} % des couleurs de l’image retrouvées`);
@@ -151,7 +153,8 @@ export function compareClone(src: ArrayLike<number>, out: ArrayLike<number>, w: 
     const tb = pad(toPx(spec.title.box, w, h), 2, w, h);
     const bg = spec.title.fill ? hexRgb(spec.title.fill) : page;
     const ink = inkColor(out, w, tb, bg);
-    mainTitle = Boolean(ink) && d2(ink!, hexRgb(spec.title.color)) < 120 ** 2;
+    const inkSrc = inkColor(src, w, tb, bg);
+    mainTitle = Boolean(ink) && ((inkSrc !== null && d2(ink!, inkSrc) < 120 ** 2) || d2(ink!, hexRgb(spec.title.color)) < 120 ** 2);
     if (mainTitle === false) notes.push('titre principal absent ou d’une autre couleur');
   }
   const mean = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 100);

@@ -34,6 +34,7 @@ export function dashFit(d: CloneData): { ok: boolean; why: string } {
   if (!grouping && !d.views.some((v) => v.src?.month)) return { ok: false, why: 'aucun axe qui regroupe les lignes (chaque valeur est unique)' };
   return { ok: true, why: '' };
 }
+import type { TransferLine, TransferPlan } from './cloneTransfer';
 export interface CloneData {
   title: string;
   /** Source and date (shown where the image had a subtitle / brand strip). */
@@ -552,7 +553,175 @@ export function panelPlan(spec: DashSpec, d: CloneData): { kind: PlanKind; view?
   });
 }
 
+/**
+ * The texts a TRANSFER plan writes (« Corriger à 100 % »): each replaced line of the image receives the user's word for
+ * its role — title, chart titles, KPI figures and labels in reading order, list sections from the analysis segments.
+ * Never a word of the image; a line with nothing to receive stays erased.
+ */
+export function transferTexts(spec: DashSpec, d: CloneData): { line: TransferLine; text: string }[] {
+  const t = spec.transfer;
+  if (!t) return [];
+  const plan = panelPlan(spec, d);
+  // Lists: the analysis segments first, then the other real axes of the views (a period, another grouping) — once each.
+  const lists: { label: string; values: string[] }[] = (d.filters ?? []).map((f) => ({ label: f.label, values: f.values }));
+  for (const v of d.views) {
+    const label = v.ordered ? 'Période' : (v.title.split(' par ')[1] ?? v.valueName);
+    const key = [...v.categories].sort().join('|');
+    if (lists.some((x) => x.label.toLowerCase() === label.toLowerCase() || [...x.values].sort().join('|') === key)) continue;
+    lists.push({ label: label.charAt(0).toUpperCase() + label.slice(1), values: v.categories });
+  }
+  // KPI slots beyond the analysis' own indicators: figures READ from the views (the leading category, the last
+  // period and its change) — computed on the data, never invented.
+  const extra: CloneData['kpis'] = [];
+  for (const v of d.views) {
+    if (!v.values.length) continue;
+    if (v.ordered) {
+      const last = v.values[v.values.length - 1]!;
+      extra.push({ label: `${v.valueName} — ${v.categories[v.categories.length - 1]}`, value: fmt(last) });
+      if (v.values.length > 1 && v.values[0]) extra.push({ label: `Évolution ${v.valueName}`, value: `${last >= v.values[0] ? '+' : ''}${Math.round(((last - v.values[0]) / Math.abs(v.values[0])) * 1000) / 10} %`.replace('.', ',') });
+    } else {
+      let top = 0;
+      v.values.forEach((x, i) => (x > v.values[top]! ? (top = i) : 0));
+      extra.push({ label: `${v.valueName} — ${v.categories[top]}`, value: fmt(v.values[top]!) });
+    }
+  }
+  const kpiList = [...d.kpis, ...extra.filter((e) => !d.kpis.some((k) => k.label === e.label))];
+  const out: { line: TransferLine; text: string }[] = [];
+  for (const l of t.lines) {
+    const k = kpiList[l.slot];
+    let text = '';
+    if (l.role === 'title' || l.role === 'brand') text = d.title;
+    else if (l.role === 'panelTitle') {
+      const v = plan[l.panel]?.view;
+      text = v ? v.title : spec.panels[l.panel]?.kind === 'table' ? 'Détail' : '';
+    } else if (l.role === 'stripTitle') text = 'Tableau de bord';
+    else if (l.role === 'subtitle') text = d.subtitle ?? '';
+    else if (l.role === 'kpiValue' || l.role === 'pairValue') text = k?.value ?? '';
+    else if (l.role === 'kpiLabel' || l.role === 'pairLabel') text = k?.label ?? '';
+    else if (l.role === 'listHeader') text = lists[l.slot]?.label ?? '';
+    else if (l.role === 'listItem') text = lists[l.slot]?.values[l.item] ?? '';
+    if (text) out.push({ line: l, text });
+  }
+  return out;
+}
+
+/** Size, text and extent of a replaced line: shrunk then cut to fit its room (shared by the SVG and the measure). */
+export function fitTransferLine(l: TransferLine, text: string, W: number, H: number): { fs: number; text: string; rect: { x: number; y: number; w: number; h: number } } {
+  const x = l.box.x * W;
+  const bw = l.box.w * W;
+  let fs = Math.max(6, l.size * H);
+  const cw = l.weight >= 700 ? 0.58 : 0.53;
+  // A brand line stays inside its plate; a centred line may grow a little; a left-aligned one up to its card's edge.
+  const room = l.role === 'brand' ? bw * 1.1 : l.anchor === 'middle' ? Math.max(bw * 1.4, bw + fs * 2) : Math.max(bw, l.maxX * W - x);
+  if (text.length * fs * cw > room) fs = Math.max(fs * 0.72, room / (text.length * cw));
+  const t = text.length * fs * cw > room ? trunc(text, Math.max(3, Math.floor(room / (fs * cw)))) : text;
+  const tw = Math.min(room, t.length * fs * cw) + fs * 0.3;
+  const rx = l.anchor === 'middle' ? x + bw / 2 - tw / 2 : x;
+  return { fs, text: t, rect: { x: rx / W, y: (l.base * H - fs * 0.95) / H, w: tw / W, h: (fs * 1.25) / H } };
+}
+
+/** One replaced line, at its measured place, size, weight, colour and outline. */
+function transferLineSvg(l: TransferLine, text: string, W: number, H: number): string {
+  const x = l.box.x * W;
+  const bw = l.box.w * W;
+  const { fs, text: t } = fitTransferLine(l, text, W, H);
+  const tx = l.anchor === 'middle' ? x + bw / 2 : x;
+  const stroke = l.outline ? ` stroke="${l.outline}" stroke-width="${Math.max(1.5, fs * 0.08)}" paint-order="stroke" stroke-linejoin="round"` : '';
+  return `<text x="${tx}" y="${l.base * H}" text-anchor="${l.anchor}" font-size="${fs}" font-weight="${l.weight}" fill="${l.color}"${stroke}>${esc(t)}</text>`;
+}
+
+/** Labels of a ring chart (percent in each gauge and its category below; a legend kept INSIDE the card for radial bars). */
+function ringLabels(g: TransferPlan['rings'][number], v: DataView, p: Panel, W: number, H: number): { svg: string; rect: { x: number; y: number; w: number; h: number } }[][] {
+  const tot = v.values.reduce((a, b) => a + Math.max(0, b), 0) || 1;
+  const outer = g.rings[0]!;
+  const right = (p.box.x + p.box.w) * W - 6;
+  return g.rings.map((r, k) => {
+    const cx = r.cx * W;
+    const cy = r.cy * H;
+    const R = r.r * W;
+    const th = r.thick * W;
+    const frac = k < v.values.length ? Math.max(0, v.values[k]!) / tot : 0;
+    const pct = `${Math.round(frac * 1000) / 10} %`.replace('.', ',');
+    if (!g.concentric) {
+      const fs = Math.max(8, R * 0.36);
+      const cat = trunc(v.categories[k] ?? '', 16);
+      return [
+        { svg: `<text x="${cx}" y="${cy + fs * 0.35}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${p.text}">${esc(pct)}</text>`, rect: { x: (cx - fs * 2) / W, y: (cy - fs) / H, w: (fs * 4) / W, h: (fs * 1.6) / H } },
+        { svg: `<text x="${cx}" y="${cy + R + th + fs * 1.1}" text-anchor="middle" font-size="${fs * 0.8}" fill="${p.text}">${esc(cat)}</text>`, rect: { x: (cx - cat.length * fs * 0.3) / W, y: (cy + R + th + fs * 0.2) / H, w: (cat.length * fs * 0.6) / W, h: (fs * 1.2) / H } },
+      ];
+    }
+    const x = outer.cx * W + outer.r * W + outer.thick * W + 8;
+    const label = `${trunc(v.categories[k] ?? '', 12)} · ${pct}`;
+    // The legend stays inside the card: the type shrinks to the room left of its edge.
+    const fs = Math.max(6.5, Math.min(13, outer.r * W * 0.16, (right - x) / ((label.length + 2) * 0.55)));
+    const y = outer.cy * H - (g.rings.length * fs * 1.5) / 2 + k * fs * 1.5 + fs;
+    return [{ svg: `<rect x="${x}" y="${y - fs * 0.75}" width="${fs * 0.8}" height="${fs * 0.8}" fill="${r.color}"/><text x="${x + fs * 1.2}" y="${y}" font-size="${fs}" fill="${p.text}">${esc(label)}</text>`, rect: { x: x / W, y: (y - fs) / H, w: (fs * 1.2 + label.length * fs * 0.58) / W, h: (fs * 1.3) / H } }];
+  });
+}
+
+/** Everything the transfer WRITES (texts at their fitted size, ring labels) — the measure excludes it like the zones. */
+export function transferDrawnRects(spec: DashSpec, d: CloneData, W: number, H: number): { x: number; y: number; w: number; h: number }[] {
+  const t = spec.transfer;
+  if (!t) return [];
+  const plan = panelPlan(spec, d);
+  const rects = transferTexts(spec, d).map((x) => fitTransferLine(x.line, x.text, W, H).rect);
+  for (const g of t.rings) {
+    const p = spec.panels[g.panel];
+    const v = plan[g.panel]?.view ?? d.views.find((x) => !x.ordered) ?? d.views[0];
+    if (p && v) for (const ls of ringLabels(g, v, p, W, H)) for (const l of ls) rects.push(l.rect);
+  }
+  return rects;
+}
+
+/** The TRANSFER rendering: the image itself (texts and marks removed there only), the user's texts and data drawn on it. */
+function renderTransferSvg(spec: DashSpec, d: CloneData, W: number): string {
+  const t = spec.transfer!;
+  const H = Math.round(W / spec.aspect);
+  const P = (b: { x: number; y: number; w: number; h: number }) => ({ x: b.x * W, y: b.y * H, w: b.w * W, h: b.h * H });
+  const font = spec.font.replace(/[<>"]/g, '');
+  const fallback = spec.palette.series.length ? spec.palette.series : [spec.palette.primary, spec.palette.accent];
+  let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="'${font}', 'Segoe UI', Calibri, Arial, sans-serif" data-dash-clone="1" data-transfer="1">`;
+  if (spec.background) s += `<image href="${esc(spec.background)}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="none"/>`;
+  const plan = panelPlan(spec, d);
+  // Charts in their measured plot areas, in the image's own mark colours.
+  for (const pl of t.plots) {
+    const p = spec.panels[pl.panel];
+    if (!p) continue;
+    const r = P(pl.box);
+    const fs = Math.max(8, Math.min(14, Math.min(r.h * 0.07, r.w * 0.045)));
+    const v = plan[pl.panel]?.view ?? d.views[0];
+    const kind = p.kind;
+    if (kind === 'table') s += tableBlock(r, d.table, p, fs);
+    else if (!v) continue;
+    else if (kind === 'line' || kind === 'area') s += lineChart(r, v, p, kind === 'area', fs, fallback);
+    else if (kind === 'pie' || kind === 'donut') s += pieChart(r, v, { ...p, legend: r.w > r.h * 1.4 ? 'right' : 'none' }, kind === 'donut', fs, fallback);
+    // Bars of several colours in the image (grouped series, a colour per bar): the bars take its colours in turn.
+    else s += barChart(r, v, p.colors.length >= 2 && !p.sequential ? { ...p, sequential: true, ramp: [], colors: p.colors } : p, kind === 'hbar', fs, fallback);
+  }
+  // Rings (radial bars, progress circles): each ring keeps its track and colour; its arc is a category's share.
+  for (const g of t.rings) {
+    const p = spec.panels[g.panel];
+    const v = plan[g.panel]?.view ?? d.views.find((x) => !x.ordered) ?? d.views[0];
+    if (!p || !v) continue;
+    const tot = v.values.reduce((a, b) => a + Math.max(0, b), 0) || 1;
+    g.rings.forEach((r, k) => {
+      const cx = r.cx * W;
+      const cy = r.cy * H;
+      const R = r.r * W;
+      const th = r.thick * W;
+      const frac = k < v.values.length ? Math.max(0, v.values[k]!) / tot : 0;
+      const C = 2 * Math.PI * R;
+      s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${r.track}" stroke-width="${th}"/>`;
+      s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${r.color}" stroke-width="${th}" stroke-dasharray="${frac * C} ${C}" transform="rotate(-90 ${cx} ${cy})"/>`;
+      for (const lb of ringLabels(g, v, p, W, H)[k] ?? []) s += lb.svg;
+    });
+  }
+  for (const { line, text } of transferTexts(spec, d)) s += transferLineSvg(line, text, W, H);
+  return `${s}</svg>`;
+}
+
 export function renderCloneSvg(spec: DashSpec, d: CloneData, W = 1200): string {
+  if (spec.transfer) return renderTransferSvg(spec, d, W);
   const H = Math.round(W / spec.aspect);
   const P = (b: { x: number; y: number; w: number; h: number }) => ({ x: b.x * W, y: b.y * H, w: b.w * W, h: b.h * H });
   const font = spec.font.replace(/[<>"]/g, '');

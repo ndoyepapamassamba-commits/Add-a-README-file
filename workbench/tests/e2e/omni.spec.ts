@@ -590,6 +590,50 @@ test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, fram
   expect(strFromU8(z['xl/drawings/drawing-live-dash.xml']!)).toContain('<xdr:sp ');
 });
 
+test('CORRIGER À 100 %: the trap thumbnail (outlined title, sidebar, KPI icons and waves, rings, « #1 » sticker) becomes the image itself with only its words and marks replaced; the Excel follows', async ({ page }) => {
+  await open(page);
+  await page.removeLocatorHandler(page.getByTestId('design-go'));
+  const IMG = fs.readFileSync(path.join(ROOT, 'tests/fixtures/dashboard-linco-trap.png'));
+  await page.route('https://api.tavily.com/search', (route) =>
+    route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' }, body: JSON.stringify({ results: [], images: [{ url: 'https://example.com/linco.png', description: 'excel dashboard' }] }) }),
+  );
+  await page.route('https://example.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: IMG }));
+  await page.route('https://wsrv.nl/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body: IMG }));
+  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await page.getByTestId('tavily-key').fill('tvly-test-key');
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  const csv = ['mois,region,montant,volume', ...Array.from({ length: 30 }, (_, i) => `2025-0${(i % 6) + 1}-15,${['Nord', 'Sud', 'Est', 'Ouest', 'Centre'][i % 5]},${400 + ((i * 37) % 900)},${10 + (i % 7) * 4}`)].join('\n');
+  await page.locator('input[type=file]').first().setInputFiles({ name: 'ventes.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  // No vision model answers (pixels only): the hardest case — the transfer must still correct the reading.
+  mock.push({ text: '{}' }, { text: '{}' }, { toolCalls: [{ name: 'data.export', args: { path: 'uploads/ventes.csv', name: 'ventes', title: 'VENTES 2025', format: 'xlsx' } }] }, { text: 'Livré.' });
+  await send(page, 'Fais un classeur Excel analysé des ventes');
+  await expect(page.getByTestId('design-card')).toBeVisible({ timeout: 20_000 });
+  await page.getByTestId('design-web').click();
+  await expect(page.getByTestId('design-web-gallery').locator('button').first()).toHaveAttribute('data-score', /^\d+$/, { timeout: 60_000 });
+  await page.getByTestId('design-web-gallery').locator('button').first().click();
+  await expect(page.getByTestId('design-checklist')).toBeVisible({ timeout: 60_000 });
+  await page.getByTestId('design-fix100').click();
+  await expect(page.getByTestId('design-fix100-done')).toBeVisible({ timeout: 60_000 });
+  // The design is the image's own: measured outside the replaced zones.
+  expect(Number(await page.getByTestId('design-identity').innerText())).toBeGreaterThanOrEqual(99);
+  const src = (await page.getByTestId('design-clone-svg').getAttribute('src'))!;
+  const svg = decodeURIComponent(src.replace(/^data:image\/svg\+xml;charset=utf-8,/, ''));
+  expect(svg).toContain('data-transfer="1"');
+  for (const old of ['Linco', 'Create Excel', 'Total sales', 'mumin', 'Go Down']) expect(svg).not.toContain(old);
+  await expect(page.getByTestId('design-checklist')).toContainText('incrustation(s) de miniature retirée(s)');
+  await expect(page.getByTestId('design-checklist')).toContainText('→ kpi');
+  await page.getByTestId('design-clone').screenshot({ path: test.info().outputPath('transfer-card.png') });
+  // Undo goes back to the previous reproduction, and the transfer can be applied again.
+  await page.getByTestId('design-fix100-undo').click();
+  await expect(page.getByTestId('design-fix100')).toBeVisible();
+  await page.getByTestId('design-fix100').click();
+  await expect(page.getByTestId('design-fix100-done')).toBeVisible({ timeout: 60_000 });
+  await page.getByTestId('design-go').click();
+  await expect(page.getByText('Livré.')).toBeVisible({ timeout: 30_000 });
+});
+
 test('MODÈLES ULTRA DESIGN: 20 models per format in the gallery; an Excel model gives a LIVE dashboard in its design, checked before delivery', async ({ page }) => {
   await open(page);
   await page.removeLocatorHandler(page.getByTestId('design-go'));

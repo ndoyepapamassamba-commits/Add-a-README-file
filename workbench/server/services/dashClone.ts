@@ -13,6 +13,7 @@
  */
 import { analyzeLogo, rgbToHex, type RGB } from './logoHarmony';
 
+import type { TransferPlan } from './cloneTransfer';
 export interface Box {
   x: number;
   y: number;
@@ -78,6 +79,11 @@ export interface DashSpec {
   background?: string;
   /** The first free text line of the image below its title (subtitle, brand strip): the source / date goes there. */
   subtitle?: { box: Box; color: string } | null;
+  /**
+   * « Corriger à 100 % »: the background is the image itself with only its texts and chart marks replaced; this plan
+   * says what each replaced line receives and where the charts / rings are redrawn (cloneTransfer.ts).
+   */
+  transfer?: TransferPlan;
 }
 
 /**
@@ -1066,21 +1072,24 @@ export function parseSom(text: string): SomAnswer | null {
 // ── 3c. when the pixels are ambiguous (photos, mock-ups, blurry thumbnails): the vision model gives the BOXES ─────────
 export const BOXES_PROMPT = `This image shows a dashboard / report (it may be a photo, a mock-up or a screenshot). A light grid is drawn every 10 % to help you.
 List EVERY visual panel — each card / tile / chart box separately: KPI cards, charts, tables, text blocks, photos, AND navigation sidebars, menus, slicers / filter button groups — plus the main title. Give each bounding box as [x0,y0,x1,y1] in thousandths of the image width / height (0–1000; x0,x1 horizontal from the LEFT edge, y0,y1 vertical from the TOP edge), tight on the card's visible edges. Answer ONLY JSON:
-{"title":[x0,y0,x1,y1] or null,"panels":[{"box":[x0,y0,x1,y1],"kind":"kpi|bar|hbar|line|area|pie|donut|gauge|table|text|map|image|filter","tiles":1,"colors":["#RRGGBB"]}],"font":"closest font family","title_align":"left|center"}
+{"title":[x0,y0,x1,y1] or null,"panels":[{"box":[x0,y0,x1,y1],"kind":"kpi|bar|hbar|line|area|pie|donut|gauge|table|text|map|image|filter","tiles":1,"colors":["#RRGGBB"]}],"overlays":[[x0,y0,x1,y1]],"font":"closest font family","title_align":"left|center"}
 kind: bar = vertical columns, hbar = horizontal bars (also funnels and pictogram bars), line, area, pie, donut (also rings / progress circles), gauge = half circle, kpi = big figure card, table, text, map, image = photo or illustration, filter = navigation menu / sidebar / slicer buttons / calendar buttons.
 tiles = number of separate KPI cards inside the box. colors = the main colours of the chart's MARKS (bars, slices, lines), most used first (not the card background).
+overlays = decorations ADDED ON TOP of the dashboard that are not part of it (a video-thumbnail title banner is the title, but stickers such as « #1 », arrows, « Go down » / « subscribe » buttons, channel badges, play icons) — [] when none.
 Boxes must not overlap; follow the reading order (rows top to bottom, left to right).`;
 export interface VisionBoxes {
   title: Box | null;
   panels: { box: Box; kind?: PanelKind; tiles: number; colors?: string[] }[];
   font?: string;
   titleAlign?: 'left' | 'center';
+  /** Thumbnail decorations on top of the dashboard (stickers, buttons), removed by the transfer. */
+  overlays?: Box[];
 }
 export function parseBoxes(text: string): VisionBoxes | null {
   const m = /\{[\s\S]*\}/.exec(text);
   if (!m) return null;
   try {
-    const j = JSON.parse(m[0]) as { title?: unknown; panels?: { box?: unknown; kind?: unknown; tiles?: unknown; colors?: unknown }[]; font?: unknown; title_align?: unknown };
+    const j = JSON.parse(m[0]) as { title?: unknown; panels?: { box?: unknown; kind?: unknown; tiles?: unknown; colors?: unknown }[]; overlays?: unknown; font?: unknown; title_align?: unknown };
     const toBox = (v: unknown): Box | null => {
       if (!Array.isArray(v) || v.length !== 4 || !v.every((n) => typeof n === 'number' && Number.isFinite(n))) return null;
       const [x0, y0, x1, y1] = (v as number[]).map((n) => Math.max(0, Math.min(1000, n)) / 1000);
@@ -1095,7 +1104,8 @@ export function parseBoxes(text: string): VisionBoxes | null {
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
     if (!panels.length) return null;
-    return { title: toBox(j.title), panels, font: typeof j.font === 'string' ? j.font.replace(/[^\w -]/g, '').slice(0, 40) : undefined, titleAlign: j.title_align === 'left' ? 'left' : 'center' };
+    const overlays = Array.isArray(j.overlays) ? j.overlays.map(toBox).filter((b): b is Box => b !== null && b.w * b.h < 0.06) : [];
+    return { title: toBox(j.title), panels, font: typeof j.font === 'string' ? j.font.replace(/[^\w -]/g, '').slice(0, 40) : undefined, titleAlign: j.title_align === 'left' ? 'left' : 'center', ...(overlays.length ? { overlays } : {}) };
   } catch {
     return null;
   }
