@@ -24,10 +24,12 @@ float satS(vec3 c) { vec3 s = pow(max(c, vec3(0.0)), vec3(1.0 / 2.2)); return ma
 float browShift(vec2 p, vec4 e, float b) {
   float top = e.y - e.w;
   float dx = abs(p.x - e.x) / (e.z * 1.6);
-  if (dx >= 1.0 || p.y > top || p.y < top - e.w * 2.6) return 0.0;
-  float k = (top - p.y) / (e.w * 2.6);
-  float w = smoothstep(0.0, 0.25, k) * (1.0 - smoothstep(0.55, 1.0, k)) * (1.0 - dx * dx);
-  return b * e.w * 0.45 * w;
+  if (dx >= 1.0 || p.y > top || p.y < top - e.w * 3.4) return 0.0;
+  float k = (top - p.y) / (e.w * 3.4);
+  float w = smoothstep(0.0, 0.2, k) * (1.0 - smoothstep(0.55, 1.0, k)) * (1.0 - dx * dx);
+  // A cartoon raise: about two eye heights for a full raise (v55 visual control on the 3D body: 0.45 moved the brows
+  // by one pixel of a 280 px figure — invisible; 3.2 ≈ the brows of the drawn sheets when they go « oh ! »).
+  return b * e.w * 3.2 * w;
 }
 // Closing lid over one drawn eye (only over the eye's own pixels: its white, iris, lashes).
 vec3 lidOver(vec3 col, vec2 p, vec4 e, float b) {

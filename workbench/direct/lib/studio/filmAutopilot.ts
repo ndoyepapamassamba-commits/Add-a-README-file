@@ -401,9 +401,15 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
         // CIRCUIT GROK + ACTEURS 3D (v52: « the animation only looks at two videos, the rest is not processed »): Grok
         // took the key shots; every OTHER scene is rendered NOW by the engine into a real clip (30 i/s, 0 $) and
         // analysed like a generated one — the stage treats every scene, the montage only assembles clips.
-        if (isCircuit(anim) && n) {
-          const made = await renderEngineClips(projectId, c, warn, troupeReady(projectId) ? 'votre troupe' : 'vos acteurs 3D');
-          c.onStage('ANIMATION', 'running', `${made} / ${n} scène(s) rendue(s) en clip par le moteur${made < n ? ` — ${n - made} jouée(s) au montage` : ''}`);
+        if (isCircuit(anim)) {
+          const who = troupeReady(projectId) ? 'votre troupe' : 'vos acteurs 3D';
+          if (n) {
+            const made = await renderEngineClips(projectId, c, warn, who);
+            c.onStage('ANIMATION', 'running', `${made} / ${n} scène(s) rendue(s) en clip par le moteur${made < n ? ` — ${n - made} jouée(s) au montage` : ''}`);
+          }
+          // PORTE A/B (J3): the paid key shots face the engine's free take of the same scene; the better clip stays.
+          const ab = await abGate(projectId, c, warn, who);
+          if (ab.compared) c.onStage('ANIMATION', 'running', `Porte A/B : ${ab.compared} plan(s) comparé(s), ${ab.engine} gagné(s) par le moteur (0 $), ${ab.compared - ab.engine} gardé(s) à Grok`);
         }
       } else {
         if (bpOf(projectId).actors3d) S().patchProject(projectId, (b) => ({ ...b, actors3d: undefined }), 'acteurs 3D retirés');
@@ -507,33 +513,85 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
  * judged while the film's cap allows it. A scene the theatre cannot play keeps no clip (it is played at montage time
  * by the fallback engines). Returns the number of clips made.
  */
+/** One scene played by the 3D theatre into a real clip (30 i/s, 0 $), stored as an asset; null when the theatre cannot. */
+async function renderEngineClipFor(projectId: string, sceneId: string, who: string, warn: string[], tag = 'moteur'): Promise<{ id: string; seconds: number } | null> {
+  const b = bpOf(projectId);
+  const scene = b.scenes.find((x) => x.scene_id === sceneId);
+  if (!scene) return null;
+  const width = Math.min(720, S().settings.renderWidth ?? 720);
+  let dead = false;
+  try {
+    const r = await renderPreview({ ...b, scenes: [scene] }, {
+      width,
+      raw: true,
+      actors3d: true,
+      onNote: (m) => {
+        if (/Acteurs 3D indisponibles/.test(m)) dead = true;
+        warn.push(`${sceneId} : ${m}`);
+      },
+    });
+    if (dead || r.seconds < 0.5) throw new Error('théâtre 3D indisponible');
+    const id = `asset-vid-${Date.now().toString(36)}-${sceneId}${tag === 'moteur' ? '' : `-${tag}`}`;
+    await blobs.put(id, r.blob);
+    S().addAsset({ id, kind: 'video', status: 'GENERATED_ASSET', projectId, sceneId, model: ACTORS_3D, createdAt: Date.now(), cost: 0, source: `Moteur 3D (${who}) · ${r.fps ?? 30} i/s`, tags: ['video', 'moteur', tag, sceneId], mime: r.mime, bytes: r.blob.size, name: `video-${sceneId}${tag === 'moteur' ? '' : `-${tag}`}` });
+    S().patchProject(projectId, (b2) => ({ ...b2, assets: [...b2.assets, id] }), `clip moteur ${sceneId}`);
+    return { id, seconds: r.seconds };
+  } catch (e) {
+    warn.push(`${sceneId} : rendu moteur impossible (${(e as Error).message.slice(0, 80)}) → jouée au montage`);
+    return null;
+  }
+}
+
+/**
+ * PORTE A/B (J3): for every key shot Grok animated, the engine plays the same scene for free; both clips go through
+ * the same analysis and the better one is the scene's clip — the paid take is never thrown away (it stays in the
+ * library, the journal says which won and why). Off with settings.abGate = false.
+ */
+async function abGate(projectId: string, c: FilmCtl, warn: string[], who: string): Promise<{ compared: number; engine: number }> {
+  const out = { compared: 0, engine: 0 };
+  if (S().settings.abGate === false || !bpOf(projectId).actors3d) return out;
+  const paid = bpOf(projectId).scenes.filter((s) => {
+    const a = s.videoAssetId ? S().assets[s.videoAssetId] : null;
+    return Boolean(a && s.clipReport && a.model !== ACTORS_3D && !a.tags.includes('moteur'));
+  });
+  for (const sc of paid) {
+    check(c);
+    const grokId = sc.videoAssetId!;
+    const grokRep = sc.clipReport!;
+    c.onStage('ANIMATION', 'running', `Porte A/B ${sc.scene_id} : le moteur joue le même plan (0 $) face à Grok (${grokRep.score ?? '—'}/100)…`);
+    const r = await renderEngineClipFor(projectId, sc.scene_id, who, warn, 'ab');
+    if (!r) continue;
+    out.compared++;
+    // The candidate is scored exactly like the paid take (same analysis), then the scene points to the winner.
+    S().patchProject(projectId, (b2) => ({ ...b2, scenes: b2.scenes.map((x) => (x.scene_id === sc.scene_id ? { ...x, videoAssetId: r.id } : x)) }), `porte A/B ${sc.scene_id} : candidat moteur`);
+    const b3 = bpOf(projectId);
+    const judge = b3.cap - spent(b3) - CIRCUIT_TAIL_USD > 0.01;
+    const rep2 = await inspectSceneClip(projectId, sc.scene_id, { judge, expectedS: r.seconds }).catch(() => null);
+    if (rep2 && betterTake(grokRep, rep2) === 'b') {
+      out.engine++;
+      c.onStage('ANIMATION', 'running', `Porte A/B ${sc.scene_id} : moteur gardé (${rep2.score ?? '—'}/100 contre Grok ${grokRep.score ?? '—'}) — le clip Grok reste dans la bibliothèque`);
+    } else {
+      S().patchProject(projectId, (b2) => ({ ...b2, scenes: b2.scenes.map((x) => (x.scene_id === sc.scene_id ? { ...x, videoAssetId: grokId, clipReport: grokRep } : x)) }), `porte A/B ${sc.scene_id} : Grok gardé`);
+      c.onStage('ANIMATION', 'running', `Porte A/B ${sc.scene_id} : Grok gardé (${grokRep.score ?? '—'}/100 contre moteur ${rep2?.score ?? '—'})`);
+    }
+  }
+  return out;
+}
+
 async function renderEngineClips(projectId: string, c: FilmCtl, warn: string[], who: string): Promise<number> {
   const todo = bpOf(projectId).scenes.filter((s) => !s.videoAssetId && (s.characters.length || s.dialogue.length));
   if (!todo.length || !bpOf(projectId).actors3d) return 0;
-  const width = Math.min(720, S().settings.renderWidth ?? 720);
   let made = 0;
   for (const [i, sc] of todo.entries()) {
     check(c);
-    const b = bpOf(projectId);
-    const scene = b.scenes.find((x) => x.scene_id === sc.scene_id);
+    const scene = bpOf(projectId).scenes.find((x) => x.scene_id === sc.scene_id);
     if (!scene || scene.videoAssetId) continue;
     c.onStage('ANIMATION', 'running', `${who} : ${sc.scene_id} (${i + 1}/${todo.length}) rendu par le moteur, 30 i/s, 0 $`);
-    let dead = false;
-    try {
-      const r = await renderPreview({ ...b, scenes: [scene] }, {
-        width,
-        raw: true,
-        actors3d: true,
-        onNote: (m) => {
-          if (/Acteurs 3D indisponibles/.test(m)) dead = true;
-          warn.push(`${sc.scene_id} : ${m}`);
-        },
-      });
-      if (dead || r.seconds < 0.5) throw new Error('théâtre 3D indisponible');
-      const id = `asset-vid-${Date.now().toString(36)}-${sc.scene_id}`;
-      await blobs.put(id, r.blob);
-      S().addAsset({ id, kind: 'video', status: 'GENERATED_ASSET', projectId, sceneId: sc.scene_id, model: ACTORS_3D, createdAt: Date.now(), cost: 0, source: `Moteur 3D (${who}) · ${r.fps ?? 30} i/s`, tags: ['video', 'moteur', sc.scene_id], mime: r.mime, bytes: r.blob.size, name: `video-${sc.scene_id}` });
-      S().patchProject(projectId, (b2) => ({ ...b2, assets: [...b2.assets, id], scenes: b2.scenes.map((x) => (x.scene_id === sc.scene_id ? { ...x, videoAssetId: id } : x)) }), `clip moteur ${sc.scene_id}`);
+    const r = await renderEngineClipFor(projectId, sc.scene_id, who, warn);
+    if (!r) continue;
+    {
+      const id = r.id;
+      S().patchProject(projectId, (b2) => ({ ...b2, scenes: b2.scenes.map((x) => (x.scene_id === sc.scene_id ? { ...x, videoAssetId: id } : x)) }), `clip moteur ${sc.scene_id}`);
       made++;
       // The same deep analysis as a generated clip; the vision judge only while the HARD cap keeps a margin for the QA.
       const b3 = bpOf(projectId);
@@ -541,8 +599,6 @@ async function renderEngineClips(projectId: string, c: FilmCtl, warn: string[], 
       c.onStage('ANIMATION', 'running', `analyse du clip ${sc.scene_id} (mouvement, bouche${judge ? ', anatomie, rire' : ''})…`);
       const rep = await inspectSceneClip(projectId, sc.scene_id, { judge, expectedS: r.seconds }).catch(() => null);
       if (rep) c.onStage('ANIMATION', 'running', `${sc.scene_id} : ${rep.score ?? '—'}/100${rep.reasons.length ? ` — ${rep.reasons.slice(0, 2).join(' ; ')}` : ' ✓'} (moteur)`);
-    } catch (e) {
-      warn.push(`${sc.scene_id} : rendu moteur impossible (${(e as Error).message.slice(0, 80)}) → jouée au montage`);
     }
   }
   return made;

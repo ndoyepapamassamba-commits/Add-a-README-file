@@ -432,6 +432,8 @@ export interface LiveCue {
   gesture?: string | null;
   emotion?: string;
   lineAge?: number;
+  /** Test / bench override of the face state (mouth, blink, brows…) merged over the computed one. */
+  face?: Partial<FaceState>;
 }
 export interface Scene3DInput {
   /** The owner's empty set (their décor image) behind the actors, instead of the procedural set. */
@@ -676,7 +678,7 @@ export class Theater3D {
       a.puppet.apply({ ...f, pose: { ...f.pose, rot: applyHands(f.pose.rot, a.hands.cur, a.hands.prev, mix) } });
       a.puppet.setProp(a.prop);
       applyActing(a.puppet, acting);
-      a.puppet.face({
+      const faceState: FaceState = {
         blink: f.face.blink,
         smile: Math.max(f.face.smile, acting.laugh),
         frown: f.face.frown,
@@ -686,7 +688,8 @@ export class Theater3D {
         mouth: speaking ? live.mouth : { open: f.face.mouthOpen * 0.5, wide: 0, round: 0 },
         laugh: acting.laugh,
         shock: acting.shock,
-      });
+      };
+      a.puppet.face(live.face ? { ...faceState, ...live.face } : faceState);
       a.puppet.update(1 / 30);
       const p = f.world.pos[0]!;
       a.shadow.position.set(p[0], 0.005, p[2]);
@@ -820,7 +823,15 @@ export class Theater3D {
 }
 
 /** Live casting preview of one actor (it waves and says a line, in a loop). */
-export function actorPreview(look: ActorLook3D, W = 220, H = 300, vrmOf?: VrmSource): { canvas: HTMLCanvasElement; ready: Promise<void>; tick: (t: number) => void; dispose: () => void } {
+export interface ActorPreview {
+  canvas: HTMLCanvasElement;
+  ready: Promise<void>;
+  tick: (t: number) => void;
+  /** VISUAL CONTROL: force a face state and freeze the instant (null = back to the live loop). */
+  face: (s: Partial<FaceState> | null) => void;
+  dispose: () => void;
+}
+export function actorPreview(look: ActorLook3D, W = 220, H = 300, vrmOf?: VrmSource): ActorPreview {
   const th = new Theater3D(W, H);
   const line: CueLine = { speaker: look.name, start: 0.6, end: 3.2, text: 'Akwaba ! C’est moi la vedette.', gesture: 'wave', emotion: 'joie' };
   const cast = { [look.key]: look };
@@ -828,10 +839,16 @@ export function actorPreview(look: ActorLook3D, W = 220, H = 300, vrmOf?: VrmSou
   const mount = () => th.addScene(loop, { names: [look.name], lines: [line], seconds: 4, action: '', location: '', cast }, vrmOf);
   let ready = mount().then(() => undefined);
   const keys = ['AI', 'E', 'MBP', 'O', 'AI', 'L', 'U', 'E'];
+  let override: Partial<FaceState> | null = null;
   return {
     canvas: th.renderer.domElement,
     ready,
-    tick: (t: number) => {
+    face: (s) => {
+      override = s;
+    },
+    tick: (t0: number) => {
+      // Frozen on one instant of the line while a face state is forced: only the face changes between two frames.
+      const t = override ? 1.0 : t0;
       const lt = t % 4;
       const n = Math.floor(t / 4);
       if (n !== loop) {
@@ -844,7 +861,7 @@ export function actorPreview(look: ActorLook3D, W = 220, H = 300, vrmOf?: VrmSou
       }
       if (!th.has(loop)) return;
       const talking = lt >= line.start && lt < line.end;
-      th.render(loop, lt, { speaker: talking ? look.name : null, energy: talking ? 0.35 : 0, beat: talking && Math.floor(lt * 3) % 2 ? 0.6 : 0, mouth: mouthShape(talking ? keys[Math.floor(lt * 9) % keys.length]! : 'rest', 0.4), gesture: 'wave', emotion: 'joie', lineAge: lt - line.start });
+      th.render(loop, lt, { speaker: talking ? look.name : null, energy: talking ? 0.35 : 0, beat: talking && Math.floor(lt * 3) % 2 ? 0.6 : 0, mouth: mouthShape(talking ? keys[Math.floor(lt * 9) % keys.length]! : 'rest', 0.4), gesture: 'wave', emotion: 'joie', lineAge: lt - line.start , face: override ?? undefined });
     },
     dispose: () => th.dispose(),
   };

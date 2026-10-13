@@ -5,7 +5,7 @@
  * of the hybrid architecture (« corps 3D, peau 2D »): the drawing itself will be projected on it as its skin.
  */
 import * as THREE from 'three';
-import { buildRetarget, matchBones, retargetPose, type BoneMap, type Retarget, type RigBone } from '../../../server/jev/studio/actor/rig3d';
+import { buildRetarget, matchBones, normalizeName, retargetPose, type BoneMap, type Retarget, type RigBone } from '../../../server/jev/studio/actor/rig3d';
 import { JOINT_INDEX, SKELETON, eulerOf } from '../../../server/jev/studio/actor/skeleton';
 import { clamp, qEuler, qInv, qRot, type Q, type V3 } from '../../../server/jev/studio/actor/math';
 import type { Frame } from '../../../server/jev/studio/actor/actor';
@@ -24,6 +24,44 @@ function clampYaw(q: Q, lim: number | undefined): Q {
   return Math.abs(y) <= lim ? q : qEuler(x, clamp(y, -lim, lim), z);
 }
 
+const OTHER_FINGER = /middle|ring|pinky|little/;
+/** Middle / ring / little phalanges paired with the index phalanx of the same rank, per hand (rigs that have them). */
+export function fingerFollowers(rig: RigBone[], rt: Retarget): { from: number; to: number }[] {
+  const out: { from: number; to: number }[] = [];
+  const depthFrom = (b: number, root: number) => {
+    let d = 0;
+    for (let p = b; p >= 0 && p !== root; p = rig[p]!.parent) d++;
+    return d;
+  };
+  const under = (b: number, root: number) => {
+    for (let p = rig[b]!.parent; p >= 0; p = rig[p]!.parent) if (p === root) return true;
+    return false;
+  };
+  for (const side of ['l', 'r'] as const) {
+    const hand = rt.bone[JOINT_INDEX.get(`${side}_wrist`)!] ?? -1;
+    if (hand < 0) continue;
+    const index = [1, 2, 3].map((k) => rt.bone[JOINT_INDEX.get(`${side}_index${k}`)!] ?? -1).filter((b) => b >= 0);
+    if (!index.length) continue;
+    // The other finger chains of this hand, by finger keyword, ordered from the hand outwards.
+    const chains = new Map<string, number[]>();
+    rig.forEach((b, i) => {
+      if (!under(i, hand)) return;
+      const n = normalizeName(b.name);
+      const m = OTHER_FINGER.exec(n);
+      if (!m || /index|thumb/.test(n)) return;
+      chains.set(m[0], [...(chains.get(m[0]) ?? []), i]);
+    });
+    for (const chain of chains.values()) {
+      chain.sort((a, b) => depthFrom(a, hand) - depthFrom(b, hand));
+      index.forEach((from, k) => {
+        const to = chain[k];
+        if (to !== undefined) out.push({ from, to });
+      });
+    }
+  }
+  return out;
+}
+
 export class GlbActor implements Puppet3D {
   readonly root = new THREE.Group();
   private inner = new THREE.Group();
@@ -38,6 +76,12 @@ export class GlbActor implements Puppet3D {
    * mirrored drawing). The trunk's yaw towards a partner or the lens is kept small (≈ 30° in all).
    */
   flat = false;
+  /**
+   * THE OTHER FINGERS FOLLOW THE INDEX (J2 « mains »): the engine drives the index and the thumb; on a rig that also
+   * has middle / ring / little fingers (VRM, Mixamo…), each of their phalanges takes the index phalanx's rotation
+   * relative to rest (same hand, same rank in the chain) — a fist closes every finger, an open hand opens them all.
+   */
+  private followers: { from: number; to: number }[] = [];
   private constructor(
     private scene: THREE.Object3D,
     private nodes: THREE.Object3D[],
@@ -60,6 +104,7 @@ export class GlbActor implements Puppet3D {
     this.inner.add(scene);
     this.root.add(this.inner);
     this.bone('r_wrist')?.add(this.propHolder);
+    this.followers = fingerFollowers(rig, rt);
   }
   /** Loads a rigged glTF/GLB; throws when no humanoid skeleton is recognised. */
   static async load(blob: Blob, heightM = 1.72): Promise<GlbActor> {
@@ -137,6 +182,11 @@ export class GlbActor implements Puppet3D {
     for (let b = 0; b < this.nodes.length; b++) {
       const q = local[b]!;
       this.nodes[b]!.quaternion.set(q[0], q[1], q[2], q[3]);
+    }
+    for (const f of this.followers) {
+      // The index phalanx's rotation relative to its rest, applied over the follower's own rest.
+      const delta = this.restLocalRot[f.from]!.clone().invert().multiply(this.nodes[f.from]!.quaternion);
+      this.nodes[f.to]!.quaternion.copy(this.restLocalRot[f.to]!).multiply(delta);
     }
     const hips = this.rt.bone[0]!;
     if (hips >= 0) {

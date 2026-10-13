@@ -63,6 +63,8 @@ function Preview({ look }: { look: ActorLook3D }) {
         p = actorPreview(look, 200, 280, (id) => blobs.get(id));
         p.canvas.style.borderRadius = '10px';
         p.canvas.dataset.testid = 'actor-preview-canvas';
+        // Visual control (Playwright): the preview object on its canvas — face states can be forced from a test.
+        (p.canvas as unknown as { __preview?: unknown }).__preview = p;
         host.current.replaceChildren(p.canvas);
         const t0 = performance.now();
         const loop = () => {

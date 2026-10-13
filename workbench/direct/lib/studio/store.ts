@@ -36,6 +36,8 @@ export interface StudioSettings {
   actors3d?: boolean;
   /** With the owner's troupe the film is played by the engine for free; Grok animates the punchline ONLY when this is on (paid). */
   grokKeyShots?: boolean;
+  /** PORTE A/B (default on): each paid key shot is compared with the engine's free take of the same scene; the better clip stays. */
+  abGate?: boolean;
   /** Paid adapted sets (vertical, empty) made by the image model; off = the owner's set pictures completed in mirror (0 $). */
   adaptedDecors?: boolean;
   /** Width of the rendered film (9:16: 540 → 540×960, 720 → 720×1280, 1080 → 1080×1920 TikTok HD). Default 720. */

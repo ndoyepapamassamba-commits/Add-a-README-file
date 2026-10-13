@@ -1227,6 +1227,9 @@ test('Circuit Grok allégé + acteurs 3D: Grok on the key shot only, EVERY other
   expect(log).toMatch(/Grok sur 1 plan\(s\) clé\(s\) \(S03\)/);
   expect(log).toMatch(/S01 \(1\/2\) rendu par le moteur/);
   expect(log).toMatch(/S02 \(2\/2\) rendu par le moteur/);
+  // PORTE A/B (J3): the paid key shot is compared with the engine's free take of the same scene; a winner is named.
+  expect(log).toMatch(/Porte A\/B S03 : (moteur|Grok) gardé/);
+  expect(log).toMatch(/Porte A\/B : 1 plan\(s\) comparé\(s\)/);
   expect(log).toMatch(/2 \/ 2 scène\(s\) rendue\(s\) en clip par le moteur/);
   // EVERY scene now has a clip and a measured report (the analysis looked at all of them, not only the Grok ones).
   await expect(page.getByTestId('film-final')).toBeVisible({ timeout: 900_000 });
@@ -1744,6 +1747,48 @@ test('Corps 3D gonflé: a planche becomes a 3D body (inflated from its own drawi
   expect(Math.max(...shots.slice(1).map((s, i) => diff(shots[i]!.px, s.px)))).toBeGreaterThan(1.5);
   // It is a different rendering from the flat cut-out (volume, lighting), still the drawing (its colours).
   expect(diff(flat.px, shots[0]!.px)).toBeGreaterThan(3);
+  // VISAGE ANIMÉ SUR LE CORPS 3D (J2, contrôle visuel): the face state is forced on a frozen instant, so two frames
+  // differ by the face only — the mouth opens (pixels change low on the head), the lids close (higher up), the brows
+  // move; each change is local (a small share of the picture), never the whole body.
+  const face = async (st: Record<string, unknown> | null) => {
+    await page.evaluate((o) => (document.querySelector('[data-testid=actor-preview-canvas]') as unknown as { __preview: { face: (s: unknown) => void } }).__preview.face(o), st);
+    await page.waitForTimeout(350);
+    return probe();
+  };
+  const changed = (a: number[], b: number[]) => {
+    const W = 100;
+    let n = 0;
+    let sy = 0;
+    a.forEach((v, i) => {
+      if (Math.abs(v - b[i]!) > 48) {
+        n++;
+        sy += Math.floor(i / W);
+      }
+    });
+    return { n, y: n ? sy / n : 0, share: n / a.length };
+  };
+  const rest = await face({ mouth: { open: 0, wide: 0, round: 0 }, blink: 0, browUp: 0, browAngry: 0, laugh: 0, shock: 0, smile: 0, frown: 0 });
+  const dump = async (name: string) => process.env.ACTORS3D_DUMP && (await page.getByTestId('actor-preview').screenshot({ path: path.join(process.env.ACTORS3D_DUMP, `${name}.png`) }));
+  await dump('face3d-rest');
+  const mouthOpen = await face({ mouth: { open: 1, wide: 0.2, round: 0 }, blink: 0, browUp: 0, browAngry: 0, laugh: 0, shock: 0, smile: 0, frown: 0 });
+  await dump('face3d-open');
+  const blink = await face({ mouth: { open: 0, wide: 0, round: 0 }, blink: 1, browUp: 0, browAngry: 0, laugh: 0, shock: 0, smile: 0, frown: 0 });
+  await dump('face3d-blink');
+  const brows = await face({ mouth: { open: 0, wide: 0, round: 0 }, blink: 0, browUp: 1, browAngry: 0, laugh: 0, shock: 0, smile: 0, frown: 0 });
+  await dump('face3d-brows');
+  const still = await face({ mouth: { open: 0, wide: 0, round: 0 }, blink: 0, browUp: 0, browAngry: 0, laugh: 0, shock: 0, smile: 0, frown: 0 });
+  await face(null);
+  const mouth = changed(rest.px, mouthOpen.px);
+  const lids = changed(rest.px, blink.px);
+  const brow = changed(rest.px, brows.px);
+  const same = changed(rest.px, still.px);
+  console.log(`face3d: mouth ${mouth.n}px y=${mouth.y.toFixed(1)} · lids ${lids.n}px y=${lids.y.toFixed(1)} · brows ${brow.n}px y=${brow.y.toFixed(1)} · still ${same.n}px`);
+  expect(same.n).toBeLessThan(40); // frozen instant: the same state gives the same picture
+  expect(mouth.n).toBeGreaterThan(25); // the jaw drops on the 3D body
+  expect(mouth.share).toBeLessThan(0.25); // …locally, not the whole body
+  expect(lids.n).toBeGreaterThan(8); // the lids close
+  expect(mouth.y).toBeGreaterThan(lids.y); // the mouth is below the eyes
+  expect(brow.n).toBeGreaterThan(4); // the brows move
   // The 3D body plays IN a set of the library with a partner (the animation test): nothing else changes.
   await page.getByTestId('duo-toggle').click();
   await expect(page.getByTestId('duo-canvas').locator('canvas')).toBeVisible({ timeout: 60_000 });
