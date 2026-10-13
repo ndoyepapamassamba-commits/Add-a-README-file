@@ -3,6 +3,7 @@
 // DNA locked for every call. It never waits unless the user asked to validate each stage; a failed scene never stops the
 // film (it is reported and can be regenerated from the single view).
 import { useStudio } from './store';
+import { chooseKeyShots } from './keyShots';
 import { analyzeFilm, inspectSceneClip } from './clipAnalyzer';
 import { betterTake } from '../../../server/jev/studio/clipInspect';
 import { lockShortSetting, lockedVideoPrompt } from '../../../server/jev/studio/continuity';
@@ -286,7 +287,11 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
           const troupe = troupeReady(projectId) && webglOk();
           const theatre = troupe || (Boolean(S().settings.actors3d) && webglOk());
           const keyOnly = troupe || (theatre && Boolean(S().settings.grokKeyShots));
-          const keyBeats = voiced.filter((sc) => sc.beat === 'chute' || sc.beat === 'twist');
+          // JEV judges which scenes deserve Grok (punchline, twist, climax) in one typed call; the beat heuristic is
+          // the fallback — the choice is logged in the stage journal either way.
+          const pick = keyOnly ? await chooseKeyShots(voiced, b0.title, 3) : null;
+          if (pick) c.onStage('ANIMATION', 'running', `Plans clés — ${pick.note}`);
+          const keyBeats = pick ? pick.scenes : voiced.filter((sc) => sc.beat === 'chute' || sc.beat === 'twist');
           const keyScenes = keyOnly ? (keyBeats.length ? keyBeats : voiced.slice(-1)) : voiced;
           if (theatre) castActors(projectId);
           const plan = planCircuit(keyScenes, r, circuitBudget(b0.cap, spent(b0), later, 1));
