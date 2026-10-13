@@ -229,6 +229,31 @@ test('the APEX credit-risk skill is built in: listed in the library, applied to 
   expect(sys).toMatch(/04-douteux-recouvrement-pcb\.md|references\//);
 });
 
+test('the installed skills are built in: frontend-design applied to a page request, its design check on the written HTML, lots 1–2 listed', async ({ page }) => {
+  await open(page);
+  await page.getByLabel('Skills', { exact: true }).click();
+  for (const name of ['frontend-design', 'video-prompting', 'character-design', 'excel-pro', 'remotion-best-practices', 'visual-regression'])
+    await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Chat' }).click();
+  const html = `<!doctype html><html><head><style>body{background:#F4F1EA;font-family:Inter,sans-serif}.eyebrow{text-transform:uppercase;letter-spacing:.1em}.btn{background:#D97757;outline:none}@keyframes up{from{opacity:0;transform:translateY(10px)}}.a{animation:up 1s}.b{animation:up 1s}</style></head><body><h1>Boulangerie</h1><p class="eyebrow">Nos pains</p><a class="btn" href="#">Commander →</a></body></html>`;
+  mock.push({ toolCalls: [{ name: 'filesystem.write', args: { path: 'site/index.html', content: html } }] }, { text: 'Page écrite.' });
+  await send(page, 'Crée une landing page pour une boulangerie artisanale de Dakar, avec une vraie identité visuelle');
+  // The write asks for permission (risk: write) — approved once.
+  await page.getByRole('button', { name: /^1 Oui$/ }).click();
+  await expect(page.getByText('Page écrite.')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/Skills appliqués : .*frontend-design/)).toBeVisible();
+  const sys = systemOf(0);
+  expect(sys).toContain('design lead at a design studio');
+  expect(sys).toMatch(/frontend_design: Follow the frontend-design skill/);
+  // The design check ran on the written page and came back to the model with the tells and the quality floor.
+  const second = JSON.stringify(mock.requests[1]!.messages);
+  expect(second).toContain('Contrôle frontend-design');
+  expect(second).toContain('viewport-absent');
+  expect(second).toContain('eyebrow-capitales');
+  expect(second).toContain('palette-ia-creme-terracotta');
+  expect(second).toContain('fleche-boutons');
+});
+
 test('imported skills are enforced; custom agents restrict tools', async ({ page }) => {
   await open(page);
   const skill = path.join(tmp, 'SKILL.md');

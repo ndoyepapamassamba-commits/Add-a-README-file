@@ -279,6 +279,22 @@ describe('skills, MCP and agent loadouts', () => {
     const t = selectSkills('Rédige un poème sur la pluie', []);
     expect(t.selected.map((x) => x.skill.name)).not.toContain('apex_credit_risk');
   });
+  it('installed craft skills are engine methods: page / UI, Excel export, video, Blender, visual QA', () => {
+    const names = (text: string, files: string[] = []) => selectSkills(text, files).selected.map((x) => x.skill.name);
+    expect(names('Crée une landing page pour une boulangerie artisanale de Dakar, avec une vraie identité visuelle')).toEqual(expect.arrayContaining(['frontend_design', 'frontend_ui']));
+    expect(skillsPrompt(selectSkills('Crée une landing page', []).selected)).toMatch(/frontend-design skill/);
+    expect(names('Exporte le classeur Excel des provisions avec les formules', ['provisions.xlsx'])).toEqual(expect.arrayContaining(['office_xlsx', 'excel_analysis', 'documents_validation']));
+    expect(names('Prépare la présentation PowerPoint du comex')).toEqual(expect.arrayContaining(['office_pptx', 'presentation_design']));
+    expect(names('Écris le prompt vidéo Grok de la scène 3, image vers vidéo')).toEqual(expect.arrayContaining(['video_prompting', 'character_design']));
+    expect(names('Réalise un court métrage de 60 s avec un storyboard plan par plan')).toEqual(expect.arrayContaining(['video_director', 'video_storyboard', 'cinema_craft']));
+    expect(names('Construis la scène Blender avec un éclairage cinématographique')).toContain('blender_cinematic');
+    expect(names('Fais la QA visuelle de la page : débordements et responsive')).toEqual(expect.arrayContaining(['frontend_visual_qa', 'visual_regression']));
+    expect(names('Rédige un poème sur la pluie')).not.toEqual(expect.arrayContaining(['office_xlsx', 'video_director', 'frontend_design']));
+    // Performance: the selection over the whole registry stays cheap (measured, not promised).
+    const t0 = performance.now();
+    for (let i = 0; i < 200; i++) selectSkills('Prépare le classeur Excel et la présentation du comité avec la vidéo de lancement', ['a.xlsx']);
+    expect((performance.now() - t0) / 200).toBeLessThan(5);
+  });
   it('E — incompatible skill (vision needed, model without vision) is refused with its reason', () => {
     const s = selectSkills('Lis cette capture', ['ecran.png'], { model: LIVE[3] });
     expect(s.incompatible.find((i) => i.skill.name === 'ocr_vision')!.reason).toMatch(/images/);

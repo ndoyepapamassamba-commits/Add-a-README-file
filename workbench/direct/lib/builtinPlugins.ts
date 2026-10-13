@@ -140,6 +140,7 @@ export const BUILTIN_PLUGINS: BuiltinPlugin[] = [
               ),
             },
             camera: obj({ position: vec3, target: vec3, fov: { type: 'number' } }),
+            cinematic: { type: 'boolean', description: 'Cinematic rig (blender-cinematic-scene skill): three-point lighting, 50 mm camera with depth of field, filmic view, verification still. Default: on while the skill is enabled.' },
           },
           ['objects'],
         ),
@@ -147,7 +148,8 @@ export const BUILTIN_PLUGINS: BuiltinPlugin[] = [
         risk: 'write',
         label: (a) => `Scène 3D ${S(a.name) || ''}`.trim(),
         async run(a, ctx) {
-          const s = normalizeScene(a);
+          const skillOn = useStore.getState().skills.some((k) => k.name === 'blender-cinematic-scene' && k.enabled);
+          const s = normalizeScene({ ...(a as Record<string, unknown>), cinematic: typeof a.cinematic === 'boolean' ? a.cinematic : skillOn });
           const base = (S(a.name) || 'scene').replace(/[^\w.-]+/g, '-');
           const html = previewHtml(s, threeCode);
           const htmlPath = uniquePath(`3d/${base}.html`);

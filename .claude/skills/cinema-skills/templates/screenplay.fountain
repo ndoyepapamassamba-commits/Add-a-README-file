@@ -1,0 +1,124 @@
+Title: WORKING TITLE
+Episode: 01 — "Episode Title"
+Credit: Written by
+Author: Your Name
+Draft date: YYYY-MM-DD
+Contact:
+    your@email
+    github.com/you
+
+/*
+  PLAIN-TEXT SCREENPLAY TEMPLATE — Fountain format (https://fountain.io)
+
+  Fountain is ordinary text that screenplay apps (Highland, Beat, Slugline,
+  Afterwriting, Fade In, etc.) render as a correctly formatted screenplay.
+  Skills in this repo read and write this format, so keep to the rules below.
+
+  Cheat sheet
+  - Scene heading:     a line starting with INT. / EXT. / INT./EXT. / EST.
+                       (or force one with a leading dot: .FLASHBACK)
+                       Optional scene number at the end: #1#
+  - Action:            any normal paragraph. Present tense, what we SEE and HEAR.
+  - Character:         a line in ALL CAPS followed by dialogue on the next line.
+                       Extensions: (V.O.) voice-over, (O.S.) off-screen, (CONT'D)
+  - Parenthetical:     (quietly) on its own line under the character name.
+  - Dual dialogue:     add ^ after the second character's name.
+  - Transition:        ALL CAPS ending in TO:   e.g. CUT TO:   or force with >
+  - Centered text:     >THE END<
+  - Notes:             [[ note to yourself — not printed ]]
+  - Sections/synopses: # Act / sequence headers and = one-line synopses
+                       (outline only, not printed).
+  - Emphasis:          *italic*  **bold**  _underline_
+  - Page break:        ===
+  - Boneyard:          text between slash-star and star-slash is ignored (like this block).
+
+  Pipeline conventions for this repo
+  - One file per episode: script/ep01.fountain, script/ep02.fountain …
+  - Scene numbers (#1#, #2# …) must match the shot list IDs (EP01_SC01 …).
+  - Use [[ ]] notes for directing / look / sound intentions; the shot-list
+    skill picks them up.
+  - Voice-over lines get an ID in a note, e.g. [[VO01_L001]], so the voice
+    skill can generate and track each line.
+*/
+
+# ACT ONE
+
+= Mira, alone above the city, notices the car that should not be there.
+
+EXT. ROOFTOP - NIGHT #1#
+
+[[look: night_teal · sound: rain bed, distant traffic, no music]]
+
+Rain needles through the sodium glow. Antennas, a dead neon sign, puddles that hold the whole city upside down.
+
+MIRA (30s, hood up, one hand buried in her pocket) walks to the edge and stops.
+
+MIRA (V.O.)
+[[VO01_L001]]
+Every night I count the lights. Tonight one of them is missing.
+
+She looks down.
+
+EXT. STREET - CONTINUOUS #2#
+
+Far below, an empty street. A single car glides through the intersection, headlights off.
+
+BACK TO:
+
+EXT. ROOFTOP - NIGHT #3#
+
+Mira steps back from the edge. Her phone buzzes. She doesn't look at it.
+
+MIRA
+(to herself)
+Not tonight.
+
+The phone keeps buzzing.
+
+TOM (O.S.)
+(from the stairwell)
+Mira? You up there?
+
+MIRA
+Go home, Tom.
+
+TOM (O.S.)
+I am home.
+
+MIRA ^
+You're not.
+
+She turns. The rooftop door creaks open behind her — nobody there.
+
+SMASH CUT TO:
+
+INT. MIRA'S APARTMENT - NIGHT #4#
+
+[[look: warm tungsten practicals, deep shadows · lens: 35mm static]]
+
+A single lamp. Wet footprints on the floorboards lead *toward* the window, not away from it.
+
+Mira stands in the doorway, dripping.
+
+MIRA
+(barely audible)
+Who's there?
+
+Silence. Only the fridge hum.
+
+FADE OUT.
+
+===
+
+# ACT TWO
+
+= Write the next sequence here.
+
+INT. LOCATION - DAY #5#
+
+Action.
+
+CHARACTER
+Dialogue.
+
+>END OF EPISODE<

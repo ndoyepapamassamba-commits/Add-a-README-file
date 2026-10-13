@@ -31,6 +31,8 @@ export interface EngineSkill {
 
 const NATIVE = { source: 'MASSAMBA (natif)', version: '1.0', license: 'MIT' };
 
+import { CRAFT_SKILLS } from './skillsCraft';
+
 export const SKILL_REGISTRY: EngineSkill[] = [
   {
     ...NATIVE,
@@ -343,6 +345,53 @@ export const SKILL_REGISTRY: EngineSkill[] = [
   },
   {
     ...NATIVE,
+    name: 'frontend_design',
+    description:
+      'Design d’interface distinctif (skill Anthropic « frontend-design ») : direction artistique propre au sujet, typographie choisie, plan de design avant le code, auto-critique, contrôle des tics de page générée sur chaque HTML écrit.',
+    capabilities: [
+      'plan de design (palette nommée, typographie, maquette ASCII, principes)',
+      'revue du plan contre le brief',
+      'une seule audace, le reste discipliné',
+      'socle qualité (mobile, focus clavier, mouvement réduit, contraste)',
+      'écriture d’interface (voix active, casse de phrase)',
+      'contrôle frontend-design des pages HTML',
+    ],
+    triggers: [
+      'interface',
+      '\\bui\\b',
+      '\\bux\\b',
+      'landing',
+      'page (web|d.accueil|html|vitrine)',
+      'site (web|vitrine|internet|html)',
+      'maquette',
+      'front-?end',
+      'design (web|visuel|d.interface|de (la )?page|du site)',
+      'direction artistique',
+      'identit[ée] visuelle',
+      'composants?\\b',
+      '\\breact\\b',
+      '\\bcss\\b',
+      'tailwind',
+      'app(lication)? (web|html)',
+      'portfolio',
+      'vitrine',
+      '\\bhero\\b',
+      'refonte (du site|de la page|de l.interface|visuelle)',
+    ],
+    required_tools: ['filesystem.write'],
+    recommended_models: { metric: 'coding', tier: 'quality' },
+    incompatible_models: ['no-tools'],
+    cost_profile: 'faible',
+    security_profile: 'écrit dans l’espace de travail',
+    agents: ['coder', 'architect', 'product_ux'],
+    companions: ['frontend_ui', 'code_generation'],
+    source: 'Anthropic — skills/frontend-design (Apache 2.0), méthode MASSAMBA',
+    license: 'Apache-2.0',
+    playbook:
+      'Follow the frontend-design skill (active in ACTIVE SKILLS, else skill.read frontend-design) as the design lead of a studio known for distinct identities. 1) Ground the design in the subject: name the product, its audience and the page’s primary job before designing (propose and confirm when the brief is silent) — the subject’s industry, materials and vernacular are where the visual choices come from. 2) DESIGN PLAN FIRST, written to the user before any code: palette of 4–6 named hex values, typefaces and their roles (one family or two clearly distinct), layout concept with an ASCII wireframe and alignment, principles that make this page unique. Review the plan against the brief and rewrite whatever reads as the generic default (cream #F4F1EA + terracotta #D97757, near-black + acid green, broadsheet hairlines, SaaS card kit, ALL-CAPS eyebrows, “A · B · C” meta strings, “→” on buttons); say what you changed and why. The brief’s own words always win. 3) Build to the plan: one memorable element, everything else quiet; at most one orchestrated motion; copy written for the end user (active voice, sentence case, actions named by what they do, errors that say what to fix); line length under 80 characters; quality floor: responsive down to 360 px, visible :focus-visible, prefers-reduced-motion respected, AA contrast. 4) The design check (Contrôle frontend-design) runs on every .html you write: fix every blocking finding and rewrite the file before delivering; keep a warned choice only when it is deliberate for this brief and say so. Then open the page in the embedded browser (browser.open) and critique it: remove one accessory.',
+  },
+  {
+    ...NATIVE,
     name: 'financial_modeling',
     description: 'Scénarios et sensibilités : hypothèses, simulation, point de bascule.',
     capabilities: ['scénarios', 'sensibilité', 'point de bascule'],
@@ -459,6 +508,8 @@ export const SKILL_REGISTRY: EngineSkill[] = [
         license: 'MIT',
       }) as EngineSkill,
   ),
+  // ── Installed craft skills (Office, video / 3D, Remotion, cinema, visual QA) — see server/engine/skillsCraft.ts ──
+  ...CRAFT_SKILLS,
 ];
 
 export interface SkillMatch {
@@ -528,7 +579,7 @@ export function selectSkills(
   for (const m of scored) {
     const why = incompatibility(m.skill, ctx);
     if (why) incompatible.push({ skill: m.skill, reason: why });
-    else if (selected.length < (ctx.max ?? 6)) selected.push(m);
+    else if (selected.length < (ctx.max ?? 8)) selected.push(m);
   }
   return { selected, incompatible };
 }

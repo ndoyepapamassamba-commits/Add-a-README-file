@@ -7,6 +7,8 @@ import { artQuality, artVerdict, enhanceInstruction, judgePrompt, parseJudgement
 import { castVoices, naturalSpeed, speakerKey } from '../../../server/jev/studio/motion';
 import { useStudio } from './store';
 import { useStore } from '../store';
+import { craftSet } from './craftSet';
+import { craftStoryRules } from '../../../server/jev/studio/craftSkills';
 import { blobs, blobToDataUrl, base64ToBlob } from './blobs';
 import { discover, generateImage, loadImagePrices, speak } from './net';
 import { executeMedia, type MediaOutcome } from './exec';
@@ -157,6 +159,7 @@ export async function generateStory(projectId: string, notes?: string): Promise<
     characters: bp.characters.map((c) => ({ name: c.name, role: c.role })),
     recurring: castBrief(),
     hints: hints(useStudio.getState().memory),
+    craft: craftStoryRules(craftSet()),
     aspect: bp.aspect,
     dimension: dimensionOf(bp.styleDNA),
     audience: bp.options?.audience,

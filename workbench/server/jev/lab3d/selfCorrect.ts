@@ -22,6 +22,14 @@ export interface Round {
   /** What the model was told before this round (empty for the first). */
   feedback: string;
 }
+/** The blender-cinematic-scene skill, applied to WebGL: lighting, camera, tone mapping and verification rules. */
+export const CINEMATIC_WEBGL_RULES = [
+  'Éclairage trois points : une lumière principale (key) chaude et forte, un remplissage (fill) doux et froid à l’opposé, un contre-jour (rim) derrière le sujet ; ombres activées sur la key (renderer.shadowMap.enabled, castShadow / receiveShadow).',
+  'Caméra cinéma : PerspectiveCamera avec fov 35–45 (équivalent 50 mm), légèrement en plongée, sujet au tiers ; un seul mouvement de caméra lent dans onFrame (orbite ou travelling), jamais plusieurs.',
+  'Rendu filmique : renderer.toneMapping = THREE.ACESFilmicToneMapping, toneMappingExposure ≈ 1.0–1.2, renderer.outputColorSpace = THREE.SRGBColorSpace ; matériaux MeshStandardMaterial / MeshPhysicalMaterial avec roughness et metalness justifiés ; brouillard ou fond assorti à la palette.',
+  'Silhouette avant détail : blocs principaux visibles et lisibles depuis la caméra avant toute décoration ; échelle cohérente ; pas plus de ~200 draw calls (instancing pour les répétitions).',
+  'Vérification : le code se termine (pas de boucle while infinie) ; toute animation passe par onFrame ; rien hors du champ de la caméra.',
+];
 export const SYSTEM_3D = `Tu es un ingénieur three.js. Tu écris UNIQUEMENT du JavaScript pour le bac à sable décrit dans la documentation (pas d'import, pas de HTML). Réponds par un seul bloc \`\`\`js … \`\`\` contenant tout le code, sans explication autour. Code robuste : objets visibles depuis la caméra (4,3,6), échelle de quelques unités, couleurs agréables, animation par onFrame.`;
 
 /** The code of the answer: the first fenced block (js / javascript / none), else the whole text. */
@@ -73,10 +81,12 @@ export async function generateWithCorrection(o: {
   onRound?: (r: Round) => void;
   /** Code to start from (iterating on an existing scene). */
   base?: string;
+  /** Extra rules appended to the system prompt (e.g. the cinematic rules of the blender-cinematic-scene skill). */
+  rules?: string[];
 }): Promise<{ ok: boolean; rounds: Round[]; code: string }> {
   const maxRounds = Math.max(1, o.maxRounds ?? 3);
   const messages: Msg[] = [
-    { role: 'system', content: `${SYSTEM_3D}\n\n${ragContext(o.prompt, 3)}` },
+    { role: 'system', content: `${SYSTEM_3D}${o.rules?.length ? `\n\nRègles supplémentaires :\n${o.rules.map((r) => `- ${r}`).join('\n')}` : ''}\n\n${ragContext(o.prompt, 3)}` },
     {
       role: 'user',
       content: o.base

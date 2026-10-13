@@ -197,6 +197,20 @@ export interface Scene {
   rig?: import('./puppet').PuppetRig;
   /** Exact cut-outs of the characters read in the browser (one grey slice per character, stacked) — CORPS ENTIER. */
   maskAssetId?: string;
+  /** Shooting plan written by the installed craft skills at the SCENES stage (video-storyboard, video-director, cinema-skills). */
+  craft?: SceneCraft;
+}
+export interface SceneCraft {
+  /** ~5 s shots: size, one move, purpose (video-storyboard). */
+  shots?: { n: number; start: number; end: number; size: 'WS' | 'MS' | 'MCU' | 'CU' | 'ECU'; move: string; purpose: string }[];
+  /** 2–5 timed beats, explicit opening and final state, clips of 15 s at most (video-director). */
+  beats?: string[];
+  opening?: string;
+  final?: string;
+  clips?: number;
+  /** The shared visual language of the film (video-storyboard / cinema-skills). */
+  theme?: string;
+  warnings?: string[];
 }
 
 export interface Story {

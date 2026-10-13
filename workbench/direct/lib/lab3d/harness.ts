@@ -300,17 +300,23 @@ export function harnessMain(): void {
         'helpers',
         `"use strict";\nreturn (async () => {\n${code}\n})();`,
       );
-      await fn(
-        THREE,
-        CANNON,
-        scene,
-        camera,
-        renderer,
-        controls,
-        physics,
-        (f: (dt: number, t: number) => void) => frameFns.push(f),
-        helpers,
-      );
+      // Generated code often never returns (its own requestAnimationFrame loop, an await that never settles): that
+      // is NOT an infinite loop of the sandbox — after a grace delay the scene is evaluated as it stands.
+      const pending = await Promise.race([
+        fn(
+          THREE,
+          CANNON,
+          scene,
+          camera,
+          renderer,
+          controls,
+          physics,
+          (f: (dt: number, t: number) => void) => frameFns.push(f),
+          helpers,
+        ).then(() => false),
+        new Promise<boolean>((r) => setTimeout(() => r(true), 6000)),
+      ]);
+      if (pending) warnings.push('le code ne s’est pas terminé en 6 s (boucle d’animation ou attente) : scène évaluée en l’état, rendu en cours');
     } catch (e) {
       report('runtime', (e as Error)?.message ?? e, lineOf(e));
     }

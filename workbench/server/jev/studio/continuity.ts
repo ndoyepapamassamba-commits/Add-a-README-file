@@ -7,6 +7,7 @@
  *    d'animations » — sans jamais déformer l'anatomie.
  */
 import type { CharacterSheet, Scene } from './types';
+import { CRAFT, beatsSentence, characterAnchor, has, shapeVideoPrompt, shotLabel, type CraftSet } from './craftSkills';
 
 export const settingKey = (s: string) =>
   (s ?? '')
@@ -58,16 +59,27 @@ export function speakingOrder(sc: Pick<Scene, 'dialogue' | 'characters'>): strin
 }
 const look = (c: Partial<CharacterSheet>) => [c.age, c.clothing, c.accessories].filter(Boolean).join(', ').slice(0, 90);
 /** Image → video prompt: the motion of the beat, the first frame locked, deformation named as what to avoid. */
-export function lockedVideoPrompt(sc: Pick<Scene, 'video_prompt' | 'action' | 'characters' | 'location'> & Partial<Pick<Scene, 'dialogue'>>, cast: (Pick<CharacterSheet, 'name'> & Partial<CharacterSheet>)[] = []): string {
-  const motion = (sc.video_prompt || sc.action || '').trim().replace(/\s+/g, ' ').slice(0, 600);
+export function lockedVideoPrompt(
+  sc: Pick<Scene, 'video_prompt' | 'action' | 'characters' | 'location'> & Partial<Pick<Scene, 'dialogue' | 'craft' | 'duration'>>,
+  cast: (Pick<CharacterSheet, 'name'> & Partial<CharacterSheet>)[] = [],
+  o: { craft?: CraftSet; style?: string } = {},
+): string {
+  // video-director: the timed beats of the plan become the motion sentence; video-storyboard: the first shot frames it.
+  const planned = has(o.craft, CRAFT.director) && sc.craft?.beats?.length ? beatsSentence(sc.craft.beats) : '';
+  const framing = has(o.craft, CRAFT.storyboard) && sc.craft?.shots?.[0] ? ` ${shotLabel(sc.craft.shots[0])}.` : '';
+  let motion = `${(planned || sc.video_prompt || sc.action || '').trim().replace(/\s+/g, ' ')}${framing}`.slice(0, 600);
+  // video-prompting: cinematography vocabulary, one camera move, no model / duration / format in the text.
+  if (has(o.craft, CRAFT.prompt)) motion = shapeVideoPrompt(motion, { seconds: sc.duration }).text;
   const inShot = sc.characters.length ? sc.characters : cast.map((c) => c.name);
+  const anchor = has(o.craft, CRAFT.character);
   const names = inShot
     .map((n) => {
       const c = cast.find((x) => x.name.toUpperCase() === n.toUpperCase());
+      if (anchor && c) return characterAnchor(c, o.style);
       const l = c ? look(c) : '';
       return l ? `${n} (${l})` : n;
     })
-    .join(', ');
+    .join(anchor ? ' | ' : ', ');
   return [
     motion,
     speakingOrder({ dialogue: sc.dialogue ?? [], characters: sc.characters }),

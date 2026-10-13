@@ -14,6 +14,8 @@ export interface StoryBrief {
   recurring?: string;
   /** Compressed memory of what worked (from Production Memory) — optional. */
   hints?: string[];
+  /** Rules added by the enabled craft skills (video-director, video-storyboard, cinema-skills, character-design). */
+  craft?: string[];
   /** Wizard options (all optional). */
   aspect?: string;
   dimension?: '2D' | '3D';
@@ -59,6 +61,7 @@ export function storyMessages(b: StoryBrief): { role: 'system' | 'user' | 'assis
         ...(b.hints?.length
           ? [`Mémoire de production (ce qui a marché) :\n${b.hints.map((h) => `- ${h}`).join('\n')}`]
           : []),
+        ...(b.craft?.length ? [`Règles de réalisation (skills installées) :\n${b.craft.map((h) => `- ${h}`).join('\n')}`] : []),
         humorBrief(b.idea.length),
         'Contraintes : accroche dans la 1re seconde, escalade, twist, chute de moins de 10 mots. Répliques de 12 mots maximum, écrites pour être dites à voix haute. ' +
           'Noms de personnages en MAJUSCULES. Une scène par plan.',

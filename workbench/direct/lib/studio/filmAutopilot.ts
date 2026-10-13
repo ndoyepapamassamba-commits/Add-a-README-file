@@ -7,6 +7,9 @@ import { chooseKeyShots } from './keyShots';
 import { analyzeFilm, inspectSceneClip } from './clipAnalyzer';
 import { betterTake } from '../../../server/jev/studio/clipInspect';
 import { lockShortSetting, lockedVideoPrompt } from '../../../server/jev/studio/continuity';
+import { CRAFT, directorBeats, has, shotPlan, styleBible, visualTheme } from '../../../server/jev/studio/craftSkills';
+import { craftSet } from './craftSet';
+import { styleTag } from '../../../server/jev/studio/style';
 import { useStore } from '../store';
 import { blobs } from './blobs';
 import { loadRegistry, generateDecor, generateStory, generateSceneImage, generateLine, redrawCharacter, imageCandidates, rigScene, rigSceneLocal, generatePlate, judgeHumor } from './actions';
@@ -34,7 +37,7 @@ import type { Blueprint } from '../../../server/jev/studio/types';
 import { CIRCUIT, CIRCUIT_PREFIX, CIRCUIT_TAIL_USD, circuitShort, circuitBudget, circuitModelId, circuitRate, isCircuit, pickCircuitModel, planCircuit } from '../../../server/jev/studio/circuit';
 import { priorQuality } from '../../../server/jev/studio/director';
 import type { Registry } from '../../../server/jev/studio/capabilities';
-import { spent } from '../../../server/jev/studio/blueprint';
+import { addDecision, spent } from '../../../server/jev/studio/blueprint';
 
 const S = () => useStudio.getState();
 const bpOf = (id: string): Blueprint => S().projects[id]!;
@@ -186,7 +189,34 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
     if (start <= 1) {
       check(c);
       c.onStage('SCENES', 'running', `${bpOf(projectId).scenes.length} scènes`);
-      await gate('SCENES', []);
+      // CRAFT SKILLS (installed, enabled in the library): shooting plan per scene — ~5 s shots (video-storyboard),
+      // 2–5 beats / one event / ≤ 15 s per clip (video-director), one visual theme and a style bible (cinema-skills).
+      const craft = craftSet();
+      const sceneWarn: string[] = [];
+      if (has(craft, CRAFT.storyboard) || has(craft, CRAFT.director) || has(craft, CRAFT.cinema)) {
+        const bp0 = bpOf(projectId);
+        const theme = has(craft, CRAFT.storyboard) || has(craft, CRAFT.cinema) ? visualTheme(bp0.styleDNA) : undefined;
+        let shots = 0;
+        let cut = 0;
+        S().patchProject(
+          projectId,
+          (b) => ({
+            ...b,
+            scenes: b.scenes.map((sc) => {
+              const plan = has(craft, CRAFT.director) ? directorBeats(sc) : null;
+              const sh = has(craft, CRAFT.storyboard) ? shotPlan(sc) : undefined;
+              shots += sh?.length ?? 0;
+              if (plan && plan.clips > 1) cut++;
+              for (const w of plan?.warnings ?? []) sceneWarn.push(`${sc.scene_id} : ${w}`);
+              return { ...sc, craft: { ...(sc.craft ?? {}), shots: sh, beats: plan?.beats, opening: plan?.opening, final: plan?.final, clips: plan?.clips, theme, warnings: plan?.warnings } };
+            }),
+          }),
+          `plan de tournage (skills : ${[has(craft, CRAFT.storyboard) && 'video-storyboard', has(craft, CRAFT.director) && 'video-director', has(craft, CRAFT.cinema) && 'cinema-skills'].filter(Boolean).join(', ')})`,
+        );
+        if (has(craft, CRAFT.cinema)) S().patchProject(projectId, (b) => addDecision(b, 'SCENES', styleBible({ title: b.title, style: b.styleDNA, aspect: b.aspect, platform: b.platform, duration: b.duration })), 'bible de style');
+        c.onStage('SCENES', 'running', `plan de tournage : ${shots} plan(s)${cut ? `, ${cut} scène(s) > 15 s à couper` : ''}${theme ? ' · thème visuel verrouillé' : ''}`);
+      }
+      await gate('SCENES', sceneWarn);
     }
     // ── IMAGES: character references first (continuity), then each scene with the chosen model
     if (start <= 2) {
@@ -366,7 +396,7 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
           c.onStage('ANIMATION', 'running', `animation ${sc.scene_id} (${pollinationsModel(anim)?.name.split(' (')[0] ?? 'Space HF gratuit'})`);
           try {
             const img = (await blobs.get(sc.imageAssetId!))!;
-            const prompt = lockedVideoPrompt(sc, bpOf(projectId).characters).slice(0, 900);
+            const prompt = lockedVideoPrompt(sc, bpOf(projectId).characters, { craft: craftSet(), style: styleTag(bpOf(projectId).styleDNA) }).slice(0, 900);
             const secs = Math.min(10, Math.max(3, Math.round(sc.duration)));
             const r = pollinationsModel(anim) ? await pollinationsVideo(img, prompt, secs, bpOf(projectId).aspect, undefined, anim) : await hfSpaceVideo(img, prompt, secs);
             const id = `asset-vid-${Date.now().toString(36)}-${sc.scene_id}`;

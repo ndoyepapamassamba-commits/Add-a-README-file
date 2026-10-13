@@ -27,6 +27,8 @@ import { dimensionOf, styleTag } from '../../../server/jev/studio/style';
 import { TALK_LABEL, talkRoutes, videoFileName, type TalkRoute } from '../../../server/jev/studio/video';
 import { DEFAULT_MUSIC, proposeSfx, type MusicSpec, type SfxLabel } from '../../../server/jev/studio/sound';
 import { timeSubtitles, toSrt } from '../../../server/jev/studio/subtitles';
+import { CRAFT, has, pageCaptions } from '../../../server/jev/studio/craftSkills';
+import { craftSet } from './craftSet';
 import { autoTimeline } from '../../../server/jev/studio/timeline';
 import { buildQAReport, planRepairs, type Issue, type JudgeScores } from '../../../server/jev/studio/qa';
 import { socialMessages, parseSocial, type SocialPack } from '../../../server/jev/studio/social';
@@ -219,7 +221,9 @@ export function compileSubtitles(projectId: string): number {
     const [sid, i] = k.split(':');
     (voiceSeconds[sid!] ??= [])[Number(i)] = v.seconds;
   }
-  const lines = timeSubtitles(bp.scenes, { voiceSeconds });
+  // remotion-best-practices (captions): short pages timed on their words, never a wall of text.
+  const timed = timeSubtitles(bp.scenes, { voiceSeconds });
+  const lines = has(craftSet(), CRAFT.captions) ? pageCaptions(timed) : timed;
   patch(
     projectId,
     (b) =>
@@ -244,7 +248,8 @@ export const srtOf = (bp: Blueprint): string => {
     const [sid, i] = k.split(':');
     (voiceSeconds[sid!] ??= [])[Number(i)] = v.seconds;
   }
-  return toSrt(timeSubtitles(bp.scenes, { voiceSeconds }));
+  const timed = timeSubtitles(bp.scenes, { voiceSeconds });
+  return toSrt(has(craftSet(), CRAFT.captions) ? pageCaptions(timed) : timed);
 };
 export function buildEdit(projectId: string): void {
   const bp = bpOf(projectId);

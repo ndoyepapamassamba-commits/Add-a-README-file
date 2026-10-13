@@ -37,6 +37,8 @@ export interface SceneSpec {
   objects: SceneObject[];
   lights?: SceneLight[];
   camera?: { position?: [number, number, number]; target?: [number, number, number]; fov?: number };
+  /** blender-cinematic-scene skill: three-point lighting, 50 mm camera with depth of field, filmic view, verification still. */
+  cinematic?: boolean;
 }
 
 const SHAPES: Shape[] = [
@@ -106,6 +108,7 @@ export function normalizeScene(raw: unknown): SceneSpec {
   });
   const c = (r.camera ?? {}) as Record<string, unknown>;
   return {
+    cinematic: r.cinematic === true,
     title: typeof r.title === 'string' ? r.title.slice(0, 120) : 'Scène 3D',
     background: hex(r.background as string, '#EEF4F7'),
     ground: r.ground !== false,
@@ -211,6 +214,50 @@ const rgba = (h: string, a = 1) => {
 };
 
 /** Blender script (Scripting → Open → Run Script, or `blender --python file.py`). */
+/** Cinematic rig of the blender-cinematic-scene skill: key / fill / rim area lights around the scene, a 50 mm camera with
+ *  depth of field on the scene centre, a filmic view transform, and a verification still (`-- --verify`) — the skill
+ *  verifies on real renders, never on concept images. */
+export function cinematicRig(s: SceneSpec): string {
+  const pts: [number, number, number][] = s.objects.map((o) => o.position ?? [0, 0, 0]);
+  const cx = pts.reduce((a, p) => a + p[0], 0) / Math.max(1, pts.length);
+  const cy = pts.reduce((a, p) => a + p[1], 0) / Math.max(1, pts.length);
+  const cz = pts.reduce((a, p) => a + p[2], 0) / Math.max(1, pts.length);
+  const r = Math.max(4, ...pts.map((p) => Math.hypot(p[0] - cx, p[1] - cy, p[2] - cz) + 2));
+  const f = (n: number) => n.toFixed(2);
+  const light = (name: string, pos: [number, number, number], energy: number, size: number, color: string) => `
+bpy.ops.object.light_add(type="AREA", location=(${f(pos[0])}, ${f(-pos[2])}, ${f(pos[1])}))
+li = bpy.context.active_object
+li.name = ${JSON.stringify(name)}
+li.data.energy = ${f(energy)}
+li.data.size = ${f(size)}
+li.data.color = ${color}
+direction = mathutils.Vector((${f(cx)}, ${f(-cz)}, ${f(cy)})) - li.location
+li.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()`;
+  return `
+# ── Cinématique (skill blender-cinematic-scene) : éclairage trois points, caméra 50 mm + profondeur de champ, vue filmique
+${light('Key', [cx + r * 0.8, cy + r * 0.9, cz + r * 0.8], 180 * r, r * 0.6, '(1.0, 0.96, 0.9)')}
+${light('Fill', [cx - r * 1.1, cy + r * 0.5, cz + r * 0.6], 50 * r, r * 1.2, '(0.85, 0.9, 1.0)')}
+${light('Rim', [cx - r * 0.3, cy + r * 1.1, cz - r * 1.1], 120 * r, r * 0.4, '(1.0, 1.0, 1.0)')}
+# Ratio key / fill / rim ≈ 4 : 1 : 2.5 (rendu de vérification Cycles du 13/10 : premier essai surexposé à 1000 W·r)
+cam.data.lens = 50
+cam.data.dof.use_dof = True
+cam.data.dof.focus_distance = (mathutils.Vector((${f(cx)}, ${f(-cz)}, ${f(cy)})) - cam.location).length
+cam.data.dof.aperture_fstop = 2.8
+try:
+    scene.view_settings.view_transform = "AgX" if "AgX" in {i.identifier for i in bpy.types.ColorManagedViewSettings.bl_rna.properties["view_transform"].enum_items} else "Filmic"
+    scene.view_settings.look = "AgX - Medium High Contrast" if scene.view_settings.view_transform == "AgX" else "Medium High Contrast"
+except Exception as e:
+    print("vue filmique non appliquée :", e)
+# Image de vérification : blender --background --python ce_fichier.py -- --verify  → verify.png à côté du script
+import sys, os
+if "--verify" in sys.argv:
+    scene.render.resolution_x, scene.render.resolution_y = 1280, 720
+    scene.render.filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd(), "verify.png")
+    bpy.ops.render.render(write_still=True)
+    print("rendu de vérification :", scene.render.filepath)
+`;
+}
+
 export function blenderScript(s: SceneSpec): string {
   const prim = (o: SceneObject) => {
     const z = o.size ?? 1;
@@ -316,6 +363,7 @@ direction = mathutils.Vector(${bv(c.target!)}) - cam.location
 cam.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
 scene.camera = cam
 scene.render.engine = "BLENDER_EEVEE_NEXT" if "BLENDER_EEVEE_NEXT" in {e.identifier for e in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items} else "BLENDER_EEVEE"
+${s.cinematic ? cinematicRig(s) : ''}
 print("Scène « ${(s.title ?? '').replace(/"/g, "'")} » construite : ${s.objects.length} objet(s).")
 `;
 }

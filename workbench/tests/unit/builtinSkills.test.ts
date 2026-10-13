@@ -22,4 +22,48 @@ describe('compétences embarquées dans l’application monofichier (.claude/ski
     expect(apex.enabled).toBe(true);
     expect(apex.category).toBe('Métier');
   });
+  it('carries the installed skills (lots 1 and 2) with French triggers, their MASSAMBA adaptation and their licence', () => {
+    const names = all.map((s) => s.name);
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'frontend-design',
+        'video-prompting',
+        'character-design',
+        'blender-cinematic-scene',
+        'video-storyboard',
+        'video-director',
+        'remotion-motion-graphics',
+        'remotion-marketing-video',
+        'remotion-best-practices',
+        'cinema-skills',
+        'cinema-shot-list',
+        'frontend-visual-qa',
+        'visual-regression',
+        'excel-pro',
+        'pptx-comex',
+        'docx-editorial',
+        'pdf-livrable',
+        'documents-validation',
+      ]),
+    );
+    expect(names).not.toContain('m365-verification');
+    const fd = all.find((s) => s.name === 'frontend-design')!;
+    expect(fd.category).toBe('Design');
+    expect(fd.triggers).toEqual(expect.arrayContaining(['landing', 'interface', 'maquette', 'identite visuelle']));
+    expect(fd.body).toMatch(/design lead at a design studio/);
+    expect(fd.files['LICENSE.txt']).toMatch(/Apache License/);
+    const vp = all.find((s) => s.name === 'video-prompting')!;
+    expect(vp.category).toBe('Vidéo');
+    expect(vp.triggers).toEqual(expect.arrayContaining(['grok', 'image vers video', 'prompt video']));
+    expect(Object.keys(vp.files)).toEqual(expect.arrayContaining(['MASSAMBA.md', 'references/models/veo3/prompting.md']));
+    expect(vp.files['MASSAMBA.md']).toMatch(/shapeVideoPrompt/);
+    const rb = all.find((s) => s.name === 'remotion-best-practices')!;
+    expect(Object.keys(rb.files).some((f) => f.startsWith('remotion-captions/'))).toBe(true);
+    expect(Object.keys(rb.files).some((f) => f.startsWith('remotion-maps/'))).toBe(false);
+    const xl = all.find((s) => s.name === 'excel-pro')!;
+    expect(xl.category).toBe('Office');
+    expect(xl.body).toMatch(/Formules vivantes/);
+    // Every embedded file stays under the size cap (the app is a single HTML file).
+    for (const s of all) for (const [f, t] of Object.entries(s.files)) expect(t.length, `${s.name}/${f}`).toBeLessThanOrEqual(150_000);
+  });
 });

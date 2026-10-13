@@ -83,7 +83,7 @@ export class Lab3D {
     );
   }
   /** Runs three.js code in the sandbox (the scene is reset first). */
-  async run(code: string, timeoutMs = 15_000): Promise<RunResult> {
+  async run(code: string, timeoutMs = 20_000): Promise<RunResult> {
     const t0 = performance.now();
     const d = await this.ask('run', { code }, timeoutMs);
     const ms = Math.round(performance.now() - t0);
@@ -93,7 +93,7 @@ export class Lab3D {
         errors: [
           {
             kind: 'timeout',
-            msg: `le code n'a pas fini en ${timeoutMs / 1000} s (boucle infinie ?)`,
+            msg: `le bac à sable n'a pas répondu en ${timeoutMs / 1000} s (onglet en arrière-plan, WebGL perdu ou code bloquant)`,
             line: null,
           },
         ],

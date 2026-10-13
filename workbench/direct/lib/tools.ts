@@ -139,6 +139,8 @@ import { complete } from './llm';
 import { callTool, type McpToolInfo } from './mcp';
 import { runInWorkspace } from './run';
 import { uid, useStore } from './store';
+import { frontendDesignLint, isHtmlDocument, lintReport, lintSummary } from '../../server/services/frontendDesignLint';
+import { diffReport, pixelDiff } from '../../server/services/visualDiff';
 import type { ArtifactDef, PlanStep } from './types';
 import {
   bytesOf,
@@ -223,6 +225,17 @@ const ok = (summary: string, forModel: string, extra: Partial<ToolOut> = {}): To
   forModel,
   ...extra,
 });
+/**
+ * FRONTEND DESIGN CHECK (skill `frontend-design`): every HTML page the agent writes is checked for the tells of a
+ * generated page and the quality floor (mobile, keyboard focus, reduced motion). Runs while the skill is enabled in the
+ * library; turning the skill off turns the check off. Advice for the model, appended to the tool result — never a refusal.
+ */
+function designCheck(path: string, content: string): { summary: string; forModel: string } | null {
+  if (!isHtmlDocument(path, content)) return null;
+  if (!useStore.getState().skills.some((s) => s.name === 'frontend-design' && s.enabled)) return null;
+  const findings = frontendDesignLint(content);
+  return { summary: lintSummary(findings), forModel: lintReport(findings) };
+}
 const clip = (s: string, n = 60_000) =>
   s.length > n ? `${s.slice(0, n)}\n…[${s.length - n} caractères tronqués]` : s;
 
@@ -421,9 +434,10 @@ export const TOOLS: DirectTool[] = [
     async run(a) {
       const existed = Boolean(getFile(S(a.path)));
       const f = writeText(S(a.path), S(a.content));
+      const d = designCheck(f.path, S(a.content));
       return ok(
-        `${existed ? 'modifié' : 'créé'} · ${f.size} o`,
-        `${existed ? 'Updated' : 'Created'} ${f.path} (${f.size} bytes).`,
+        `${existed ? 'modifié' : 'créé'} · ${f.size} o${d ? ` · ${d.summary}` : ''}`,
+        `${existed ? 'Updated' : 'Created'} ${f.path} (${f.size} bytes).${d ? `\n\n${d.forModel}` : ''}`,
       );
     },
   },
@@ -458,11 +472,10 @@ export const TOOLS: DirectTool[] = [
     async run(a) {
       const f = getFile(S(a.path));
       if (!f || f.binary) throw new Error(`Fichier texte introuvable : ${S(a.path)}`);
-      writeText(
-        f.path,
-        replaceExact(f.data, S(a.old_string), S(a.new_string), Boolean(a.replace_all), f.path),
-      );
-      return ok('modifié', `Edited ${f.path}.`);
+      const after = replaceExact(f.data, S(a.old_string), S(a.new_string), Boolean(a.replace_all), f.path);
+      writeText(f.path, after);
+      const d = designCheck(f.path, after);
+      return ok(`modifié${d ? ` · ${d.summary}` : ''}`, `Edited ${f.path}.${d ? `\n\n${d.forModel}` : ''}`);
     },
   },
   {
@@ -1621,6 +1634,45 @@ export const TOOLS: DirectTool[] = [
         summary: `${suite.length - fails}/${suite.length} OK`,
         forModel: lines.join('\n'),
       };
+    },
+  },
+  {
+    name: 'visual.compare',
+    description:
+      'Visual regression (visual-regression / frontend-visual-qa skills): compare two images of the workspace (PNG, JPEG, WebP — screenshots, exports, renders) and report the share of changed pixels, a verdict (identique / stable / changé), the changed zones and a diff image written next to the "after" file.',
+    parameters: obj(
+      {
+        before: str('Path of the reference image (baseline)'),
+        after: str('Path of the new image'),
+        tolerance: { type: 'number', description: 'Per-channel difference under which a pixel is the same (0–255, default 24)' },
+        max_ratio: { type: 'number', description: 'Share of changed pixels under which the result is still "stable" (default 0.002)' },
+      },
+      ['before', 'after'],
+    ),
+    risk: 'write',
+    readOnly: false,
+    label: (a) => `Comparer ${S(a.before)} → ${S(a.after)}`,
+    async run(a) {
+      const load = async (p: string) => {
+        const f = getFile(p);
+        if (!f || !f.binary) throw new Error(`Image introuvable : ${p}`);
+        const bmp = await createImageBitmap(new Blob([bytesOf(f) as BlobPart], { type: f.mime }));
+        const cv = new OffscreenCanvas(bmp.width, bmp.height);
+        const g = cv.getContext('2d')!;
+        g.drawImage(bmp, 0, 0);
+        const id = g.getImageData(0, 0, bmp.width, bmp.height);
+        return { width: id.width, height: id.height, data: id.data };
+      };
+      const [b, c] = await Promise.all([load(S(a.before)), load(S(a.after))]);
+      const r = pixelDiff(b, c, { tolerance: typeof a.tolerance === 'number' ? a.tolerance : undefined, maxRatio: typeof a.max_ratio === 'number' ? a.max_ratio : undefined });
+      const w = Math.min(b.width, c.width);
+      const h = Math.min(b.height, c.height);
+      const cv = new OffscreenCanvas(w, h);
+      cv.getContext('2d')!.putImageData(new ImageData(new Uint8ClampedArray(r.diff) as Uint8ClampedArray<ArrayBuffer>, w, h), 0, 0);
+      const png = new Uint8Array(await (await cv.convertToBlob({ type: 'image/png' })).arrayBuffer());
+      const diffPath = uniquePath(normPath(S(a.after)).replace(/\.[a-z0-9]+$/i, '') + '.diff.png');
+      writeBytes(diffPath, png, 'image/png');
+      return ok(`${r.verdict} · ${(r.changed * 100).toFixed(2)} %`, `${diffReport(r, { before: S(a.before), after: S(a.after) })}\nDiff image: ${diffPath}`);
     },
   },
   {

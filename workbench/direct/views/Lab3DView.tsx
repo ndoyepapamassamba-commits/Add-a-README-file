@@ -5,7 +5,7 @@ import { Lab3D, type RunResult } from '../lib/lab3d/runner';
 import { complete } from '../lib/llm';
 import { useStore } from '../lib/store';
 import { download } from '../lib/vfs';
-import { generateWithCorrection, type Round } from '../../server/jev/lab3d/selfCorrect';
+import { CINEMATIC_WEBGL_RULES, generateWithCorrection, type Round } from '../../server/jev/lab3d/selfCorrect';
 
 type Tab = 'code' | 'shader' | 'physics' | 'ai';
 const EX_CODE = `// Cubes procéduraux en spirale + sol
@@ -159,8 +159,11 @@ export function Lab3DView() {
     setRounds([]);
     setBusy('génération IA');
     try {
+      const cinematic = useStore.getState().skills.some((k) => k.name === 'blender-cinematic-scene' && k.enabled);
+      if (cinematic) push('ok', 'skill blender-cinematic-scene active : éclairage trois points, caméra 50 mm, rendu filmique imposés à la génération');
       const r = await generateWithCorrection({
         prompt,
+        rules: cinematic ? CINEMATIC_WEBGL_RULES : undefined,
         maxRounds: 3,
         generate: async (messages) =>
           (

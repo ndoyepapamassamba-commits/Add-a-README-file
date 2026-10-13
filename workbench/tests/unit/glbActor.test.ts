@@ -44,7 +44,7 @@ function mixamoScene(): THREE.Object3D {
     b.name = name;
     const p = parent ? nodes.get(parent)! : null;
     const pp = p ? spec.find((s) => s[0] === parent)![2] : [0, 0, 0];
-    b.position.set(pos[0] - pp[0], pos[1] - pp[1], pos[2] - pp[2]);
+    b.position.set(pos[0] - (pp[0] ?? 0), pos[1] - (pp[1] ?? 0), pos[2] - (pp[2] ?? 0));
     (p ?? root).add(b);
     nodes.set(name, b);
   }

@@ -32,5 +32,19 @@ describe('3D studio', () => {
     expect(py).toContain('keyframe_new_interpolation_type = "LINEAR"');
     expect(py).toContain('bpy.ops.object.light_add(type="SUN"');
     expect(py).toContain('scene.camera = cam');
+    expect(py).not.toContain('blender-cinematic-scene');
+  });
+  it('the blender-cinematic-scene skill adds the three-point rig, the 50 mm camera with depth of field and the verification still', () => {
+    const py = blenderScript({ ...s, cinematic: true });
+    expect(py).toContain('li.name = "Key"');
+    expect(py).toContain('li.name = "Fill"');
+    expect(py).toContain('li.name = "Rim"');
+    expect(py).toContain('cam.data.lens = 50');
+    expect(py).toContain('cam.data.dof.use_dof = True');
+    expect(py).toMatch(/view_transform = "AgX"/);
+    expect(py).toContain('if "--verify" in sys.argv');
+    expect(py).toContain('bpy.ops.render.render(write_still=True)');
+    expect(normalizeScene({ objects: [{ type: 'cube' }], cinematic: true }).cinematic).toBe(true);
+    expect(normalizeScene({ objects: [{ type: 'cube' }] }).cinematic).toBe(false);
   });
 });

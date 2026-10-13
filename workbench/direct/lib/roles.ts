@@ -39,7 +39,7 @@ const BROWSE = [
 ];
 const VERIFY = ['code.run', 'terminal.execute', 'regression.run', ...BROWSE];
 
-const agent = (a: Omit<AgentDef, 'builtin' | 'model' | 'skills'> & { model?: string | null }): AgentDef => ({
+const agent = (a: Omit<AgentDef, 'builtin' | 'model' | 'skills'> & { model?: string | null; skills?: string[] }): AgentDef => ({
   model: null,
   skills: [],
   builtin: true,
@@ -196,6 +196,7 @@ Also: flag data quality issues that could bias the conclusion, reconcile totals 
     description: 'Parcours, accessibilité, cohérence visuelle, friction, lisibilité des livrables.',
     prompt: `You are the PRODUCT / UX AGENT. Evaluate user journeys, accessibility (contrast, keyboard, labels), visual consistency with the house style, mobile layout, friction and clarity of wording. Use the embedded browser to try the app like a first-time user. Give prioritised, concrete improvements (what, where, why, effort).`,
     tools: [...READ, ...BROWSE, 'artifact.create'],
+    skills: ['frontend-design'],
     effort: null,
   }),
   agent({
