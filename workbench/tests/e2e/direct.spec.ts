@@ -39,7 +39,7 @@ async function open(page: Page, errors: string[] = []) {
   await page.goto(pathToFileURL(FILE).href);
   await page.getByPlaceholder('sk-or-v1-…').fill('sk-or-v1-e2e-direct-key');
   await page.getByRole('button', { name: 'Commencer' }).click();
-  // Lands on Mission Control; most tests work in the chat.
+  // Lands on the Cockpit; most tests work in the chat.
   await expect(page.getByText('Nouvelle mission')).toBeVisible();
   await page.getByRole('button', { name: 'Chat', exact: true }).click();
   await expect(page.locator('textarea')).toBeVisible();
@@ -273,7 +273,7 @@ test('all views render without errors and data survives a reload', async ({ page
   await send(page, 'Retiens ceci');
   await expect(page.getByText('Mémorisé.')).toBeVisible();
   for (const v of [
-    'Mission Control',
+    'Cockpit IA',
     'Fichiers',
     'Données',
     'Terminal',
@@ -350,17 +350,17 @@ test('mission mode: pipeline, correction round, final review, verdict and .ai me
   expect(JSON.stringify(mock.requests[2]!.messages)).toContain('Correction round 2');
   // Final reviewer ran as an independent sub-agent.
   expect(systemOf(4)).toContain('Final Reviewer');
-  // Mission Control shows the session; .ai/ memory was updated.
+  // The Cockpit shows the session; .ai/ memory was updated.
   await page.getByRole('button', { name: 'Fichiers' }).click();
   await page.getByRole('button', { name: /\.ai\/CHANGELOG\.md/ }).click();
   await expect(page.getByText(/PASSED — Construis une petite app/)).toBeVisible();
-  await page.getByRole('button', { name: 'Mission Control' }).click();
+  await page.getByRole('button', { name: 'Cockpit IA' }).click();
   await expect(page.getByText('Construis une petite app').first()).toBeVisible();
 });
 
-test('Mission Control launches a mission and workflows run in one click', async ({ page }) => {
+test('The Cockpit launches a mission and workflows run in one click', async ({ page }) => {
   await open(page);
-  await page.getByRole('button', { name: 'Mission Control' }).click();
+  await page.getByRole('button', { name: 'Cockpit IA' }).click();
   mock.fallback = () => ({
     toolCalls: [{ name: 'mission.report', args: { status: 'PARTIAL', summary: 'partiel', checks: [] } }],
   });
@@ -375,6 +375,31 @@ test('Mission Control launches a mission and workflows run in one click', async 
     .click();
   await page.getByRole('button', { name: /Lancer la mission/ }).click();
   await expect(page.getByText('Workflow « Analyse de données complète »').first()).toBeVisible();
+});
+
+test('COCKPIT IA: four sections — catalogue with measured columns (« — » when never called), executable workflows + trace, observability KPIs', async ({ page }) => {
+  await open(page);
+  await page.getByRole('button', { name: 'Cockpit IA' }).click();
+  await expect(page.getByTestId('cockpit-tabs')).toBeVisible();
+  await page.getByTestId('cockpit-tab-catalogue').click();
+  await expect(page.getByText('Modèles au catalogue')).toBeVisible();
+  await page.getByTestId('cockpit-tab-orchestration').click();
+  await expect(page.getByTestId('orchestration-workflow').first()).toContainText('Analyse de données complète');
+  await expect(page.getByTestId('orchestration-workflow').first()).toContainText('→');
+  await page.getByTestId('cockpit-tab-observabilite').click();
+  await expect(page.getByTestId('observability-kpis')).toContainText('Appels (30 j)');
+  await expect(page.getByTestId('observability-days')).toBeVisible();
+  // After a chat turn, the trace shows the tools called and the catalogue / observability carry the measured call.
+  await page.getByTestId('cockpit-tab-cockpit').click();
+  mock.push({ toolCalls: [{ name: 'fs.write', args: { path: 'notes/a.md', content: 'ok' } }] }, { text: 'Fait.' });
+  await page.getByPlaceholder(/Construis cette application/).fill('Écris notes/a.md');
+  await page.getByRole('button', { name: 'Discuter', exact: true }).click();
+  await expect(page.getByText('Fait.')).toBeVisible({ timeout: 15_000 });
+  await page.getByRole('button', { name: 'Cockpit IA' }).click();
+  await page.getByTestId('cockpit-tab-orchestration').click();
+  await expect(page.getByTestId('orchestration-trace')).toContainText('fs.write');
+  await page.getByTestId('cockpit-tab-observabilite').click();
+  await expect(page.getByTestId('observability-kpis')).not.toContainText('Appels (30 j)0');
 });
 
 test('sessions can be renamed', async ({ page }) => {

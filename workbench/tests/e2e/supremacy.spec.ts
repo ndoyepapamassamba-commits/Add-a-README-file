@@ -39,7 +39,7 @@ async function open(page: Page, errors: string[] = []) {
   await page.goto(pathToFileURL(FILE).href);
   await page.getByPlaceholder('sk-or-v1-…').fill('sk-or-v1-e2e-direct-key');
   await page.getByRole('button', { name: 'Commencer' }).click();
-  // Lands on Mission Control; most tests work in the chat.
+  // Lands on the Cockpit; most tests work in the chat.
   await expect(page.getByText('Nouvelle mission')).toBeVisible();
   await page.getByRole('button', { name: 'Chat', exact: true }).click();
   await expect(page.locator('textarea')).toBeVisible();

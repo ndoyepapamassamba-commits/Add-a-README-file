@@ -27,7 +27,7 @@ import type { Attachment } from '../lib/types';
 import { importBrowserFile } from '../lib/vfs';
 import { allWorkflows, runWorkflow } from '../lib/workflows';
 
-function Panel({
+export function Panel({
   title,
   icon,
   right,
@@ -51,7 +51,7 @@ function Panel({
   );
 }
 
-function Kpi({
+export function Kpi({
   label,
   value,
   sub,
@@ -80,7 +80,7 @@ function Kpi({
   );
 }
 
-const Empty = ({ children }: { children: React.ReactNode }) => (
+export const Empty = ({ children }: { children: React.ReactNode }) => (
   <div className="p-3 text-center text-[12px] text-faint">{children}</div>
 );
 

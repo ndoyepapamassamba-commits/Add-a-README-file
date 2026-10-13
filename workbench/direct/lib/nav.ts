@@ -2,7 +2,7 @@
 import type { View } from './types';
 
 export const NAV_ITEMS: { id: View; label: string }[] = [
-  { id: 'home', label: 'Mission Control' },
+  { id: 'home', label: 'Cockpit IA' },
   { id: 'chat', label: 'Chat' },
   { id: 'files', label: 'Fichiers' },
   { id: 'data', label: 'Données' },

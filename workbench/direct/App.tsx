@@ -42,7 +42,7 @@ import { refreshCredits } from './lib/credits';
 import { hydrate, today, useStore } from './lib/store';
 import type { View } from './lib/types';
 import { ChatView } from './views/ChatView';
-import { HomeView } from './views/HomeView';
+import { CockpitView } from './views/CockpitView';
 import { WorkflowsView } from './views/WorkflowsView';
 import { FilesView } from './views/FilesView';
 import { DataView } from './views/DataView';
@@ -281,7 +281,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         </nav>
         {view === 'chat' && <SessionList />}
         <main className="min-w-0 flex-1">
-          {view === 'home' && <HomeView />}
+          {view === 'home' && <CockpitView />}
           {view === 'chat' && <ChatView />}
           {view === 'workflows' && <WorkflowsView />}
           {view === 'files' && <FilesView />}

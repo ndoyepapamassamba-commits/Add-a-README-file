@@ -358,7 +358,7 @@ test('Studio: loads, adds exactly one view, 20 spaces, all render, no console er
   await space(page, 'assets');
   await expect(page.getByTestId('studio-assets')).toContainText('Aucune donnée réelle disponible');
   // non-regression of the original views
-  for (const n of ['Mission Control', 'Chat', 'Fichiers', 'JEV', 'Réglages'])
+  for (const n of ['Cockpit IA', 'Chat', 'Fichiers', 'JEV', 'Réglages'])
     await page
       .getByTitle(new RegExp(`^${n}`))
       .first()
