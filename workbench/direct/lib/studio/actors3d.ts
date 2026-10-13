@@ -19,6 +19,7 @@ import { livingSet, setAssets, type LivingSet, type SetAssets } from './livingSe
 import { extrasPlan, walkerX, type ExtraPlan } from '../../../server/jev/studio/actor/extras';
 import type { DecorFit } from './store';
 import { poseFor } from '../../../server/jev/studio/actor/sheet';
+import { applyHands, handShapesFor, sameHands, type Hands } from '../../../server/jev/studio/actor/hands';
 
 export { AfroActor, type FaceState, type Puppet3D };
 
@@ -461,6 +462,8 @@ interface Cast3D {
   shadow: THREE.Mesh;
   last: Frame | null;
   lastT: number;
+  /** Hand shapes of the moment and the previous ones (blended over a quarter second). */
+  hands?: { cur: Hands; prev: Hands; since: number };
   phase: number;
   /** Object held in this scene (named by the action, or the actor's signature prop). */
   prop: Prop | null;
@@ -665,7 +668,12 @@ export class Theater3D {
         a.shadow.position.set(p0[0], 0.005, p0[2]);
         continue;
       }
-      a.puppet.apply(f);
+      // MAINS (J2): the hand shapes of the line (open, fist, point, thumb) as engine joints, blended, before the retarget.
+      const want = handShapesFor({ gesture: speaking ? live.gesture : null, emotion: speaking ? live.emotion : undefined, react });
+      if (!a.hands) a.hands = { cur: want, prev: want, since: t };
+      else if (!sameHands(a.hands.cur, want)) a.hands = { cur: want, prev: a.hands.cur, since: t };
+      const mix = Math.min(1, (t - a.hands.since) / 0.25);
+      a.puppet.apply({ ...f, pose: { ...f.pose, rot: applyHands(f.pose.rot, a.hands.cur, a.hands.prev, mix) } });
       a.puppet.setProp(a.prop);
       applyActing(a.puppet, acting);
       a.puppet.face({
