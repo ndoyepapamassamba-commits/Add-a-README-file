@@ -639,6 +639,9 @@ function sommaireSheet(z: Zip, design: Design, st: BandStyles): boolean {
       what: `${t.cols.length} colonnes${t.measures.length ? ` · ${t.measures.slice(0, 3).map((x) => x.name).join(', ')}` : ''}`,
     });
   }
+  // A dashboard opens the workbook (the reproduction, the 3D board): the Sommaire comes right after it.
+  let pos = 0;
+  while (pos < sheets.length && DASHBOARDS.test(sheets[pos]!.name)) pos++;
   const is = (ref: string, s: number, text: string) => `<c r="${ref}" s="${s}" t="inlineStr"><is><t>${xesc(text)}</t></is></c>`;
   const rowsXml: string[] = [];
   rowsXml.push(`<row r="1" ht="36" customHeight="1">${['A', 'B', 'C', 'D', 'E'].map((c) => (c === 'B' ? is('B1', st.title, SOMMAIRE) : `<c r="${c}1" s="${st.band}"/>`)).join('')}</row>`);
@@ -659,21 +662,26 @@ function sommaireSheet(z: Zip, design: Design, st: BandStyles): boolean {
   wr(
     z,
     SOMMAIRE_PART,
-    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${NS_R}"><sheetPr><tabColor rgb="FF${design.color.gold}"/></sheetPr><dimension ref="A1:E${last}"/><sheetViews><sheetView workbookViewId="0" showGridLines="0" zoomScale="110" tabSelected="1"/></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols><col min="1" max="1" width="2.5" customWidth="1"/><col min="2" max="2" width="36" customWidth="1"/><col min="3" max="3" width="12" customWidth="1"/><col min="4" max="4" width="20" customWidth="1"/><col min="5" max="5" width="60" customWidth="1"/></cols><sheetData>${rowsXml.join('')}</sheetData><mergeCells count="2"><mergeCell ref="B1:E1"/><mergeCell ref="B2:E2"/></mergeCells>${links.length ? `<hyperlinks>${links.join('')}</hyperlinks>` : ''}<pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0.2" footer="0.2"/></worksheet>`,
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="${NS_R}"><sheetPr><tabColor rgb="FF${design.color.gold}"/></sheetPr><dimension ref="A1:E${last}"/><sheetViews><sheetView workbookViewId="0" showGridLines="0" zoomScale="110"${pos === 0 ? ' tabSelected="1"' : ''}/></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols><col min="1" max="1" width="2.5" customWidth="1"/><col min="2" max="2" width="36" customWidth="1"/><col min="3" max="3" width="12" customWidth="1"/><col min="4" max="4" width="20" customWidth="1"/><col min="5" max="5" width="60" customWidth="1"/></cols><sheetData>${rowsXml.join('')}</sheetData><mergeCells count="2"><mergeCell ref="B1:E1"/><mergeCell ref="B2:E2"/></mergeCells>${links.length ? `<hyperlinks>${links.join('')}</hyperlinks>` : ''}<pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0.2" footer="0.2"/></worksheet>`,
   );
   addOverride(z, `/${SOMMAIRE_PART}`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml');
   const rid = addRel(z, 'xl/_rels/workbook.xml.rels', `${NS_R}/worksheet`, 'worksheets/sheet-sommaire.xml', 'rIdSommaire');
   let wb = ensureRootNs(rd(z, 'xl/workbook.xml'), 'r', NS_R);
   const ids = [...wb.matchAll(/sheetId="(\d+)"/g)].map((m) => +m[1]!);
-  wb = wb.replace(/<sheets>/, `<sheets><sheet name="${SOMMAIRE}" sheetId="${(ids.length ? Math.max(...ids) : 0) + 1}" r:id="${rid}"/>`);
-  // First sheet: sheet-scoped names move by one; it is the active, only selected tab.
-  wb = wb.replace(/localSheetId="(\d+)"/g, (_m, n: string) => `localSheetId="${+n + 1}"`);
-  wb = /activeTab="\d+"/.test(wb) ? wb.replace(/activeTab="\d+"/, 'activeTab="0"') : wb;
-  wr(z, 'xl/workbook.xml', wb);
-  for (const sh of sheets) {
-    const x = rd(z, sh.part);
-    if (/ tabSelected="(1|true)"/.test(x)) wr(z, sh.part, x.replace(/ tabSelected="(1|true)"/g, ''));
+  const entry = `<sheet name="${SOMMAIRE}" sheetId="${(ids.length ? Math.max(...ids) : 0) + 1}" r:id="${rid}"/>`;
+  const tags = [...wb.matchAll(/<sheet\b[^>]*\/>/g)];
+  const anchor = tags[pos];
+  wb = anchor ? wb.slice(0, anchor.index) + entry + wb.slice(anchor.index) : wb.replace(/<\/sheets>/, `${entry}</sheets>`);
+  // Sheet-scoped names at or after the insertion point move by one; first in the book, it is the only selected tab.
+  wb = wb.replace(/localSheetId="(\d+)"/g, (_m, n: string) => `localSheetId="${+n >= pos ? +n + 1 : +n}"`);
+  if (pos === 0) {
+    wb = /activeTab="\d+"/.test(wb) ? wb.replace(/activeTab="\d+"/, 'activeTab="0"') : wb;
+    for (const sh of sheets) {
+      const x = rd(z, sh.part);
+      if (/ tabSelected="(1|true)"/.test(x)) wr(z, sh.part, x.replace(/ tabSelected="(1|true)"/g, ''));
+    }
   }
+  wr(z, 'xl/workbook.xml', wb);
   return true;
 }
 

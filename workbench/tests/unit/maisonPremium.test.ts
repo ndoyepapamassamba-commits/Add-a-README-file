@@ -48,6 +48,16 @@ describe('Maison band — premium workbook (#124)', () => {
     const total = /<c r="[A-Z]+\d+" s="(\d+)"><f>SUBTOTAL\(9,/.exec(s2)![1];
     expect(xfs[+total!]).toContain(`numFmtId="${fmtMd}"`);
   });
+  it('a dashboard sheet keeps the first place: the Sommaire comes right after it', () => {
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Tableau de bord'], ['(image)']]), 'Tableau de bord');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(Array.from({ length: 6 }, (_, i) => ({ Agence: `A${i}`, Région: 'Nord', Encours: 1000 * (i + 1), Impayés: 10 * (i + 1), Statut: 'OK' }))), 'Données');
+    const bytes = new Uint8Array(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer);
+    const out = unzipSync(maisonBand(bytes, DESIGN)!.bytes);
+    const names = [...strFromU8(out['xl/workbook.xml']!).matchAll(/<sheet name="([^"]+)"/g)].map((m) => m[1]);
+    expect(names).toEqual(['Tableau de bord', 'Sommaire', 'Données']);
+    expect(strFromU8(out['xl/worksheets/sheet-sommaire.xml']!)).not.toContain('tabSelected');
+  });
   it('second pass: nothing to band (null); refreshSommaire rebuilds one Sommaire, never two', () => {
     expect(maisonBand(r.bytes, DESIGN)).toBeNull();
     const again = unzipSync(refreshSommaire(r.bytes, DESIGN)!);
