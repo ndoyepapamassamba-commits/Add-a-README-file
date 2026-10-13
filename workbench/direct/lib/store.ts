@@ -3,6 +3,7 @@ import type { CreditsInfo, ModelInfo } from '@shared/types';
 import { kv, saveLater } from './db';
 import { MARKET_SKILLS } from '../../server/services/skillMarket';
 import { extractTriggers } from '../../server/services/skillsCore';
+import { builtinSkills } from './builtinSkills';
 import { intelData, setIntelData, type IntelData } from '../../server/llm/modelIntel';
 import type { HouseKit } from '../../server/services/apexCore';
 import type { BenchResult, Ledger, ManualRule } from '../../server/agent/intelligence';
@@ -588,10 +589,26 @@ export async function hydrate(): Promise<void> {
     fabric: { ...EMPTY_FABRIC, ...(fabricSaved ?? {}) },
   });
   // DESIGN ARCHITECT SKILLS installed once (the user then keeps, turns off or deletes them like any skill).
+  let list = skills ?? [];
   if (!merged.designSkillsSeeded) {
-    const have = new Set((skills ?? []).map((x) => x.name));
+    const have = new Set(list.map((x) => x.name));
     const add = MARKET_SKILLS.filter((m) => m.category === 'Design' && !have.has(m.name)).map((m) => ({ name: m.name, description: m.description, body: m.body, files: {}, triggers: extractTriggers(m.description, m.name), enabled: true, category: m.category }));
-    useStore.getState().setSkills([...(skills ?? []), ...add].sort((a, b) => a.name.localeCompare(b.name)));
+    list = [...list, ...add].sort((a, b) => a.name.localeCompare(b.name));
+    useStore.getState().setSkills(list);
     useStore.getState().patchSettings({ designSkillsSeeded: true });
+  }
+  // BUILT-IN PROJECT SKILLS (APEX credit risk…): installed once per build version, refreshed when the embedded sheets
+  // change; a skill the user deleted or turned off keeps its state until the next version.
+  const builtin = builtinSkills();
+  const stamp = builtin.map((b) => `${b.name}:${b.body.length}:${Object.keys(b.files).length}`).join('|');
+  if (builtin.length && merged.builtinSkillsStamp !== stamp) {
+    const next = [...list];
+    for (const b of builtin) {
+      const i = next.findIndex((x) => x.name === b.name);
+      if (i < 0) next.push(b);
+      else next[i] = { ...b, enabled: next[i]!.enabled };
+    }
+    useStore.getState().setSkills(next.sort((a, b) => a.name.localeCompare(b.name)));
+    useStore.getState().patchSettings({ builtinSkillsStamp: stamp });
   }
 }

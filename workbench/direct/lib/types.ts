@@ -261,6 +261,8 @@ export interface Settings {
   visionModel?: string;
   /** The design-architect skills were installed once (the user can then turn them off or delete them). */
   designSkillsSeeded?: boolean;
+  /** Version stamp of the built-in project skills installed (APEX credit risk…): refreshed when the build changes them. */
+  builtinSkillsStamp?: string;
   /** Pollinations key (sk_…): cheap image → video (Wan 2.2 Fast ≈ 0,01 $ / s). Stays in this browser. */
   pollinationsKey?: string;
   /** fal.ai key (kept in this browser): skeletal performance → character (Wan2.2-Animate, motion transfer). */
