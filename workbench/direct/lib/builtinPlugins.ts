@@ -5,7 +5,8 @@ import threeCode from 'virtual:three-iife';
 import { blenderScript, glbExportHtml, normalizeScene, previewHtml, type SceneSpec } from './studio3dCore';
 import { uid, useStore } from './store';
 import type { DirectTool, ToolOut } from './tools';
-import { uniquePath, writeBytes, writeText } from './vfs';
+import { bytesOf, getFile, uniquePath, writeBytes, writeText } from './vfs';
+import { BRIDGE_HELP, bridgeHealth, bridgeRender } from './blenderBridge';
 
 export interface BuiltinPlugin {
   id: string;
@@ -178,6 +179,64 @@ export const BUILTIN_PLUGINS: BuiltinPlugin[] = [
             `${s.objects.length} objet(s) · ${[htmlPath, glbPath, pyPath].filter(Boolean).join(' · ')}`,
             `3D scene "${s.title}" (${s.objects.length} objects). Files: preview ${htmlPath}${glbPath ? `, glTF ${glbPath}` : ''}${glbNote}, Blender script ${pyPath}. Tell the user: in Blender, Scripting tab → Open ${pyPath.split('/').pop()} → Run Script (rebuilds the scene with materials, lights, camera, animation), or File → Import → glTF 2.0 for the .glb.`,
             { artifact: art.id },
+          );
+        },
+      }),
+      tool({
+        name: 'blender.render',
+        description:
+          'Render a 3D scene as a video with the user’s OWN Blender through the local bridge (scripts/blender-bridge.py on their machine: GPU, EEVEE, 0 $). Input: the Blender script written by blender.scene (script_path, 3d/<name>_blender.py) or a GLB of the workspace (glb_path: imported with the cinematic rig of the blender-cinematic-scene skill, camera auto-framed). Writes 3d/<name>.mp4 and 3d/<name>-verify.png. Fails with the start-up instructions when no bridge answers.',
+        parameters: obj(
+          {
+            script_path: str('Workspace path of a Blender script (.py) produced by blender.scene'),
+            glb_path: str('Workspace path of a .glb to render instead of a script'),
+            name: str('Output base name (default: the input file name)'),
+            seconds: { type: 'number', description: 'Video length in seconds (default 4)' },
+            fps: { type: 'number', description: 'Frames per second (default 24)' },
+            width: { type: 'number', description: 'Width in px (default 720)' },
+            height: { type: 'number', description: 'Height in px (default 1280, vertical 9:16)' },
+            engine: { type: 'string', enum: ['EEVEE', 'WORKBENCH', 'CYCLES'], description: 'Render engine (EEVEE on a GPU; CYCLES when the bridge runs on the bpy module without GPU)' },
+            orbit: { type: 'boolean', description: 'Camera orbits the scene over the duration (default true for a GLB)' },
+            still_only: { type: 'boolean', description: 'Only the verification still (fast check before a full render)' },
+          },
+          [],
+        ),
+        readOnly: false,
+        risk: 'write',
+        label: (a) => `Rendu Blender local ${S(a.name) || S(a.script_path) || S(a.glb_path)}`.trim(),
+        async run(a) {
+          const health = await bridgeHealth();
+          if (!health) throw new Error(BRIDGE_HELP);
+          const sp = S(a.script_path);
+          const gp = S(a.glb_path);
+          if (!sp && !gp) throw new Error('script_path (script Blender de blender.scene) ou glb_path requis');
+          const f = getFile(sp || gp);
+          if (!f) throw new Error(`Fichier introuvable : ${sp || gp}`);
+          const base = (S(a.name) || f.path.split('/').pop()!.replace(/(_blender)?\.(py|glb)$/i, '')).replace(/[^\w.-]+/g, '-');
+          const t0 = Date.now();
+          let last = '';
+          const r = await bridgeRender(
+            {
+              script: sp ? (f.binary ? new TextDecoder().decode(bytesOf(f)) : f.data) : undefined,
+              glb: gp ? bytesOf(f) : undefined,
+              name: base,
+              seconds: typeof a.seconds === 'number' ? a.seconds : 4,
+              fps: typeof a.fps === 'number' ? a.fps : 24,
+              width: typeof a.width === 'number' ? a.width : 720,
+              height: typeof a.height === 'number' ? a.height : 1280,
+              engine: (['EEVEE', 'WORKBENCH', 'CYCLES'].includes(S(a.engine)) ? S(a.engine) : health.mode === 'bpy' ? 'CYCLES' : 'EEVEE') as 'EEVEE' | 'WORKBENCH' | 'CYCLES',
+              orbit: typeof a.orbit === 'boolean' ? a.orbit : Boolean(gp),
+              stillOnly: a.still_only === true,
+            },
+            { onProgress: (fr, total, st) => (last = `${st} ${fr}/${total}`) },
+          );
+          const out: string[] = [];
+          if (r.verify) out.push(writeBytes(uniquePath(`3d/${base}-verify.png`), r.verify, 'image/png').path);
+          if (r.video) out.push(writeBytes(uniquePath(`3d/${base}.mp4`), r.video, 'video/mp4').path);
+          const rep = r.report;
+          return ok(
+            `${rep.frames ? `${rep.frames} images · ${rep.seconds} s` : 'image de vérification'} · ${rep.engine} · ${Math.round((Date.now() - t0) / 1000)} s`,
+            `Blender local (${health.blender ?? health.mode}) rendered ${rep.frames} frame(s) at ${rep.resolution[0]}×${rep.resolution[1]} ${rep.fps} fps with ${rep.engine} in ${rep.render_time_s} s (${rep.objects} objects). Files: ${out.join(', ')}. Last status: ${last}. Look at the verification still before delivering the video.`,
           );
         },
       }),

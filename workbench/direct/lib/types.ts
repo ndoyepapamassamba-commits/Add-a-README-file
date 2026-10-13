@@ -272,6 +272,10 @@ export interface Settings {
   falKey?: string;
   /** Hugging Face token (optional): free Wan 2.2 Space within the account's ZeroGPU quota. */
   hfToken?: string;
+  /** Local Blender bridge (scripts/blender-bridge.py on the user's machine): URL, default http://127.0.0.1:8765. */
+  blenderBridgeUrl?: string;
+  /** Optional token the bridge was started with (--token); stays in this browser. */
+  blenderBridgeToken?: string;
   /** Tavily API key (free monthly credits; callable from the browser, no relay). */
   tavilyKey?: string;
   /** Serper API key (Google results; free queries on signup; callable from the browser). */

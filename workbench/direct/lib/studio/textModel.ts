@@ -87,6 +87,8 @@ export async function runText(o: {
   json?: boolean;
   /** Reasoning effort: « low » for structured writing (a reasoning model must not spend the length limit thinking). */
   effort?: 'low' | 'medium' | 'high' | 'auto';
+  /** Imposed model (e.g. the judge's second attempt on another vision model); no router, no fallback. */
+  model?: string;
 }): Promise<TextRun> {
   const trace = new Trace();
   const safe = o.messages.map((m) => ({
@@ -95,7 +97,7 @@ export async function runText(o: {
   })) as ChatMessage[];
   const joined = safe.map((m) => (typeof m.content === 'string' ? m.content : '')).join('\n');
   trace.stage('PRODUCTION_CLASSIFICATION', `texte : ${o.purpose}`);
-  const pick = await pickTextModel(joined.slice(0, 1500), o.vision, o.teacher);
+  const pick = o.model ? { model: o.model, fallbacks: [] as string[], why: `modèle imposé : ${o.model}` } : await pickTextModel(joined.slice(0, 1500), o.vision, o.teacher);
   trace.stage('MODEL_SELECTION', pick.why);
   const models = useStore.getState().models;
   const t0 = performance.now();

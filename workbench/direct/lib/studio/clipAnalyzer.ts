@@ -3,9 +3,10 @@
 // et les soumet au juge visuel (rire, jeu, expressions, bouche, anatomie, cohérence). Sert au circuit Grok (chaque clip)
 // et à l'outil « Analyser une vidéo » (n'importe quel MP4 / WebM, dont les films déjà téléchargés).
 import { useStudio } from './store';
+import { useStore } from '../store';
 import { blobs } from './blobs';
 import { runText } from './textModel';
-import { clipJudgePrompt, clipVerdict, measureFrames, parseClipJudgement, segmentFilm, silentGaps, type ClipJudgement, type ClipReport, type FrameSeries, type Span } from '../../../server/jev/studio/clipInspect';
+import { clipJudgePrompt, clipVerdict, measureFrames, parseClipJudgement, pickJudgeFallback, segmentFilm, silentGaps, type ClipJudgement, type ClipReport, type FrameSeries, type Span } from '../../../server/jev/studio/clipInspect';
 import type { Scene } from '../../../server/jev/studio/types';
 
 const W = 96;
@@ -100,27 +101,29 @@ export async function judgeClip(projectId: string, sc: Pick<Scene, 'action' | 'l
   const bp = useStudio.getState().projects[projectId];
   const chars = sc && bp ? bp.characters.filter((c) => sc.characters.map((x) => x.toUpperCase()).includes(c.name.toUpperCase())).map((c) => `${c.name}: ${c.consistency || c.clothing}`).join(' | ') : '';
   try {
-    const r = await runText({
-      projectId,
-      purpose: 'analyse vidéo (juge clip)',
-      vision: true,
-      maxTokens: 900,
-      temperature: 0,
-      json: true,
-      effort: 'low',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: clipJudgePrompt({ action: sc?.action ?? 'sketch humoristique', location: sc?.location, characters: chars, lines: sc?.dialogue.map((d) => ({ speaker: d.speaker, text: d.text })) ?? [], frames: keyframes.length }) },
-            ...keyframes.map((url) => ({ type: 'image_url' as const, image_url: { url } })),
-          ],
-        },
-      ],
-    });
+    const messages = [
+      {
+        role: 'user' as const,
+        content: [
+          { type: 'text' as const, text: clipJudgePrompt({ action: sc?.action ?? 'sketch humoristique', location: sc?.location, characters: chars, lines: sc?.dialogue.map((d) => ({ speaker: d.speaker, text: d.text })) ?? [], frames: keyframes.length }) },
+          ...keyframes.map((url) => ({ type: 'image_url' as const, image_url: { url } })),
+        ],
+      },
+    ];
+    const r = await runText({ projectId, purpose: 'analyse vidéo (juge clip)', vision: true, maxTokens: 900, temperature: 0, json: true, effort: 'low', messages });
     const j = parseClipJudgement(r.text);
-    if (!j) lastJudgeNote = `réponse illisible de ${r.model} : « ${r.text.trim().slice(0, 60)}… »`;
-    return j;
+    if (j) return j;
+    // Unreadable (a reasoning model that spent its budget thinking, an empty answer): ONE retry on another vision model.
+    const alt = pickJudgeFallback(useStore.getState().models, r.model);
+    if (alt) {
+      const r2 = await runText({ projectId, purpose: 'analyse vidéo (juge clip, 2e modèle)', vision: true, maxTokens: 1200, temperature: 0, json: true, effort: 'low', model: alt, messages });
+      const j2 = parseClipJudgement(r2.text);
+      if (j2) return j2;
+      lastJudgeNote = `réponse illisible de ${r.model} puis de ${r2.model} : « ${(r2.text || r.text).trim().slice(0, 60)}… »`;
+      return null;
+    }
+    lastJudgeNote = `réponse illisible de ${r.model} : « ${r.text.trim().slice(0, 60)}… » (aucun autre modèle vision dans le catalogue)`;
+    return null;
   } catch (e) {
     lastJudgeNote = `aucun modèle vision n’a répondu (${(e as Error).message.slice(0, 80)})`;
     return null;

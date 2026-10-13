@@ -1,3 +1,4 @@
+import type { ModelInfo } from '@shared/types';
 /**
  * ANALYSE POUSSÉE D'UN CLIP (circuit Grok) — ce que l'œil reproche à « Le chef invisible » (v44), mesuré :
  *  - MOUVEMENT : différence moyenne entre images (gris 0–1, 12 i/s) et part de l'image qui bouge (grille 8×8).
@@ -170,8 +171,23 @@ export function clipJudgePrompt(o: { action: string; location?: string; characte
     'Réponds UNIQUEMENT en JSON : {"rire":n,"mouvement":n,"expressions":n,"bouche":n,"anatomie":n,"coherence":n,"defects":["…"],"fix":"…"}',
   ].join('\n');
 }
+/** Reasoning preambles (« We need answer JSON only… », <think> blocks) are dropped before the JSON is read. */
+export function stripReasoning(text: string): string {
+  return (text ?? '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/```(?:json)?/gi, '');
+}
+/**
+ * When the vision judge answers nothing readable (a reasoning model spending its budget thinking, an empty content),
+ * the second attempt goes to another vision model: structured outputs first, non-reasoning first, cheapest first.
+ */
+export function pickJudgeFallback(models: Pick<ModelInfo, 'id' | 'capabilities' | 'inputPrice' | 'outputPrice'>[], exclude: string): string | null {
+  const ok = models.filter((m) => m.id !== exclude && m.capabilities.vision);
+  if (!ok.length) return null;
+  const price = (m: (typeof ok)[number]) => (m.inputPrice ?? 5) + (m.outputPrice ?? 15);
+  ok.sort((a, b) => Number(b.capabilities.structuredOutputs) - Number(a.capabilities.structuredOutputs) || Number(a.capabilities.reasoning) - Number(b.capabilities.reasoning) || price(a) - price(b));
+  return ok[0]!.id;
+}
 export function parseClipJudgement(text: string): ClipJudgement | null {
-  const m = /\{[\s\S]*\}/.exec(text ?? '');
+  const m = /\{[\s\S]*\}/.exec(stripReasoning(text));
   if (!m) return null;
   try {
     const raw = JSON.parse(m[0]) as Record<string, unknown>;

@@ -1,6 +1,9 @@
 // MASSAMBA Intelligence Engine: evidence routing, cascade, skills, MCP registry,
 // GitHub security review, registry lifecycle, telemetry — including the special
 // cases A–N of the specification.
+import fs from 'node:fs';
+import path from 'node:path';
+import { CATALOGUE_SKILLS } from '../../server/engine/skillsCatalogue';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ModelInfo } from '@shared/types';
 import { analyzeTask, recordHealth, recordTypedOutcome } from '../../server/llm/routing';
@@ -294,6 +297,24 @@ describe('skills, MCP and agent loadouts', () => {
     const t0 = performance.now();
     for (let i = 0; i < 200; i++) selectSkills('Prépare le classeur Excel et la présentation du comité avec la vidéo de lancement', ['a.xlsx']);
     expect((performance.now() - t0) / 200).toBeLessThan(5);
+  });
+  it('lot 4: the catalogue skills are engine methods, the four missing cards included', () => {
+    const names = (text: string, files: string[] = []) => selectSkills(text, files).selected.map((x) => x.skill.name);
+    expect(names('Quels tests de non-régression relancer après ce changement ?')).toContain('regression_testing');
+    expect(names('Fais un rebase de ma branche et un commit conventionnel')).toContain('git_workflow');
+    expect(names('Mets en place l’observabilité : traces distribuées, SLO et runbook d’astreinte')).toContain('observability_engineering');
+    expect(names('Une clé API en clair dans le code : rotation des clés et variables d’environnement')).toContain('secrets_management');
+    expect(names('Audit d’accessibilité WCAG de la page avec navigation au clavier')).toContain('accessibility_audit');
+    expect(names('Dessine le diagramme C4 des conteneurs de l’application')).toContain('c4_diagramming');
+    expect(names('Éclairage Blender trois points et rendu Cycles de la scène')).toEqual(expect.arrayContaining(['blender_lighting_rendering', 'blender_cinematic']));
+    expect(names('Analyse statistique avec régression et séries temporelles', ['ventes.csv'])).toEqual(expect.arrayContaining(['data_analysis_advanced', 'excel_analysis']));
+    expect(skillsPrompt(selectSkills('Mets en place l’observabilité', []).selected)).toMatch(/skill\.read observability-engineering/);
+    // Every catalogue method points at an installed skill folder.
+    for (const m of CATALOGUE_SKILLS) {
+      const folder = m.capabilities[0]!;
+      expect(fs.existsSync(path.join(__dirname, '../../../.claude/skills', folder, 'SKILL.md')), folder).toBe(true);
+    }
+    expect(CATALOGUE_SKILLS.length).toBeGreaterThanOrEqual(42);
   });
   it('E — incompatible skill (vision needed, model without vision) is refused with its reason', () => {
     const s = selectSkills('Lis cette capture', ['ecran.png'], { model: LIVE[3] });

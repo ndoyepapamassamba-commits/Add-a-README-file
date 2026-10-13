@@ -32,6 +32,7 @@ export interface EngineSkill {
 const NATIVE = { source: 'MASSAMBA (natif)', version: '1.0', license: 'MIT' };
 
 import { CRAFT_SKILLS } from './skillsCraft';
+import { CATALOGUE_SKILLS } from './skillsCatalogue';
 
 export const SKILL_REGISTRY: EngineSkill[] = [
   {
@@ -510,6 +511,8 @@ export const SKILL_REGISTRY: EngineSkill[] = [
   ),
   // ── Installed craft skills (Office, video / 3D, Remotion, cinema, visual QA) — see server/engine/skillsCraft.ts ──
   ...CRAFT_SKILLS,
+  // ── Catalogue skills (lot 4: Scenario, Blender, data, dev / QA, security, observability, Git, secrets) ──
+  ...CATALOGUE_SKILLS,
 ];
 
 export interface SkillMatch {
@@ -579,7 +582,7 @@ export function selectSkills(
   for (const m of scored) {
     const why = incompatibility(m.skill, ctx);
     if (why) incompatible.push({ skill: m.skill, reason: why });
-    else if (selected.length < (ctx.max ?? 8)) selected.push(m);
+    else if (selected.length < (ctx.max ?? 10)) selected.push(m);
   }
   return { selected, incompatible };
 }

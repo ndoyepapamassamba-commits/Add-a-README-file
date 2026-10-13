@@ -5,6 +5,7 @@ import { Lab3D, type RunResult } from '../lib/lab3d/runner';
 import { complete } from '../lib/llm';
 import { useStore } from '../lib/store';
 import { download } from '../lib/vfs';
+import { BRIDGE_HELP, bridgeHealth, bridgeRender, type BridgeHealth } from '../lib/blenderBridge';
 import { CINEMATIC_WEBGL_RULES, generateWithCorrection, type Round } from '../../server/jev/lab3d/selfCorrect';
 
 type Tab = 'code' | 'shader' | 'physics' | 'ai';
@@ -105,7 +106,33 @@ export function Lab3DView() {
     'Une forêt low-poly de 200 arbres instanciés sur un terrain vallonné, au coucher du soleil',
   );
   const [rounds, setRounds] = useState<Round[]>([]);
+  const [bridge, setBridge] = useState<BridgeHealth | null>(null);
   const push = (k: string, m: string) => setLog((l) => [...l.slice(-200), { k, m }]);
+  useEffect(() => {
+    void bridgeHealth().then(setBridge);
+  }, []);
+  // The WebGL scene → GLB → the user's own Blender (local bridge, GPU) → cinematic rig, orbit, MP4.
+  const renderBlender = async () => {
+    const h = await bridgeHealth();
+    setBridge(h);
+    if (!h) return push('error', BRIDGE_HELP);
+    setBusy('rendu Blender local');
+    try {
+      const g = await lab.current!.exportGlb(false);
+      if ('error' in g) throw new Error(`export GLB : ${g.error}`);
+      push('ok', `GLB ${(g.bytes.byteLength / 1024).toFixed(1)} Ko envoyé au pont Blender (${h.blender ?? h.mode}) : rig cinéma + orbite 4 s`);
+      const r = await bridgeRender(
+        { glb: g.bytes, name: 'studio3d', seconds: 4, fps: 24, width: 720, height: 1280, engine: h.mode === 'bpy' ? 'CYCLES' : 'EEVEE', orbit: true },
+        { onProgress: (f, t, st) => setBusy(`rendu Blender local · ${st} ${f}/${t}`) },
+      );
+      if (r.video) download('studio3d-blender.mp4', r.video, 'video/mp4');
+      if (r.verify) download('studio3d-blender-verify.png', r.verify, 'image/png');
+      push('ok', `✓ Blender ${r.report.blender} : ${r.report.frames} images ${r.report.resolution[0]}×${r.report.resolution[1]} @ ${r.report.fps} i/s, ${r.report.engine}, ${r.report.render_time_s} s`);
+    } catch (e) {
+      push('error', `Blender local : ${(e as Error).message}`);
+    }
+    setBusy('');
+  };
   useEffect(() => {
     const l = new Lab3D(host.current!);
     l.onConsole = (k, m) => push(k, m);
@@ -366,6 +393,15 @@ export function Lab3DView() {
               className={btn}
             >
               Export GLB + Draco
+            </button>
+            <button
+              data-testid="lab3d-blender"
+              disabled={!!busy}
+              onClick={() => void renderBlender()}
+              className={btn}
+              title={bridge ? `Pont Blender local : ${bridge.blender ?? bridge.mode}` : BRIDGE_HELP}
+            >
+              {bridge ? `Rendre dans Blender local (${bridge.mode === 'bpy' ? 'bpy' : 'GPU'})` : 'Blender local : non détecté'}
             </button>
             <span data-testid="lab3d-stats" className="text-[12px] text-muted">
               {busy

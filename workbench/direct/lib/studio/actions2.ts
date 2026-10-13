@@ -628,8 +628,11 @@ export async function generateSceneVideo(projectId: string, sceneId: string, o: 
     })
     .filter((x): x is NonNullable<typeof x> => Boolean(x));
   // Image → video: the first frame's identity is locked and deformation is named (measured on the v44 Grok clips).
-  const base = frames.length ? lockedVideoPrompt(sc, bp.characters) : sc.video_prompt || sc.action;
+  // Craft skills (video-prompting, character-design, video-director, video-storyboard) shape the prompt when enabled.
+  const craft = craftSet();
+  const base = frames.length ? lockedVideoPrompt(sc, bp.characters, { craft, style: styleTag(bp.styleDNA) }) : sc.video_prompt || sc.action;
   const prompt = (o.promptExtra ? `${o.promptExtra.slice(0, 400)}. ${base}` : base).slice(0, 1500);
+  patch(projectId, (b) => addDecision(b, 'ANIMATION', `prompt vidéo ${sceneId}${craft.size ? ` (skills : ${[...craft].join(', ')})` : ''} : ${prompt.slice(0, 400)}${prompt.length > 400 ? '…' : ''}`), 'prompt vidéo journalisé');
   const first = frames.length ? await blobToDataUrl((await blobs.get(sc.imageAssetId!))!) : null;
   const by = new Map(cands.map((c) => [c.model.id, c]));
   const out = await executeMedia<{ blob: Blob }>({
