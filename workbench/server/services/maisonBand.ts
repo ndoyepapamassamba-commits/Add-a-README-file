@@ -252,8 +252,9 @@ function bandStyles(z: Zip, d: Design): { label: number[]; value: number[]; spac
   const font = (color: string, bold: boolean, size: number, face: string) => `<font>${bold ? '<b/>' : ''}<sz val="${size}"/><color rgb="FF${color}"/><name val="${xesc(face)}"/></font>`;
   const fill = (color: string) => `<fill><patternFill patternType="solid"><fgColor rgb="FF${color}"/><bgColor indexed="64"/></patternFill></fill>`;
   const line = `<color rgb="FF${c.line}"/>`;
-  const border = (top: string) => `<border><left style="thin">${line}</left><right style="thin">${line}</right><top style="medium"><color rgb="FF${top}"/></top><bottom style="thin">${line}</bottom><diagonal/></border>`;
-  const box = `<border><left style="thin">${line}</left><right style="thin">${line}</right><top/><bottom style="thin">${line}</bottom><diagonal/></border>`;
+  // CARD LOOK (the best dashboards: white cards on a soft canvas, one accent edge, a soft base line, big number).
+  const border = (accent: string) => `<border><left style="thick"><color rgb="FF${accent}"/></left><right style="thin">${line}</right><top style="thin">${line}</top><bottom/><diagonal/></border>`;
+  const box = `<border><left style="thick"><color rgb="FF${c.line}"/></left><right style="thin">${line}</right><top/><bottom style="medium">${line}</bottom><diagonal/></border>`;
   // numFmt for amounts in Md / M.
   const fm = /<numFmts\b[^>]*>([\s\S]*?)<\/numFmts>/.exec(st);
   const code = '[&gt;=1000000000]#,##0.0,,,&quot; Md&quot;;[&gt;=1000000]#,##0.0,,&quot; M&quot;;#,##0';
@@ -267,22 +268,24 @@ function bandStyles(z: Zip, d: Design): { label: number[]; value: number[]; spac
   const xf = (fontId: number, fillId: number, borderId: number, numFmt = 0, extra = '<alignment horizontal="center" vertical="center" wrapText="1"/>') =>
     `<xf numFmtId="${numFmt}" fontId="${fontId}" fillId="${fillId}" borderId="${borderId}" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1">${extra}</xf>`;
   const fLabel = append('fonts', font(c.text2, true, 8.5, d.font.ui));
-  const fValue = append('fonts', font(c.navy, true, 16, d.font.mono));
+  const fValue = append('fonts', font(c.navy, true, 18, d.font.mono));
   const fPanel = append('fills', fill(c.panel));
   const fWhite = append('fills', fill('FFFFFF'));
-  const bBox = append('borders', box);
   const label: number[] = [];
   const value: number[] = [];
   const base = (/<cellXfs\b[^>]*>([\s\S]*?)<\/cellXfs>/.exec(st)?.[1]!.match(/<xf\b/g) ?? []).length;
   for (const a of accents) {
     const bTop = append('borders', border(a));
     label.push(base + xfs.length);
-    xfs.push(xf(fLabel, fPanel, bTop));
+    xfs.push(xf(fLabel, fWhite, bTop, 0, '<alignment horizontal="left" vertical="center" indent="1" wrapText="1"/>'));
     value.push(base + xfs.length);
-    xfs.push(xf(fValue, fWhite, bBox, fmtId));
+    // The accent edge continues on the value cell: one card, not two cells.
+    const bVal = append('borders', box.replace(`<left style="thick"><color rgb="FF${c.line}"/></left>`, `<left style="thick"><color rgb="FF${a}"/></left>`));
+    xfs.push(xf(fValue, fWhite, bVal, fmtId, '<alignment horizontal="left" vertical="center" indent="1"/>'));
   }
   const spacer = base + xfs.length;
-  xfs.push(xf(0, 0, 0, 0, ''));
+  // The canvas: the soft panel colour around the cards and under the charts (the cards and charts read as objects).
+  xfs.push(xf(0, fPanel, 0, 0, ''));
   st = st.replace(/<cellXfs\b([^>]*)>([\s\S]*?)<\/cellXfs>/, (_m, a: string, b: string) => `<cellXfs${a.replace(/count="\d+"/, `count="${base + xfs.length}"`)}>${b}${xfs.join('')}</cellXfs>`);
   // Font children in schema order (openpyxl writes <name> first): a strict reader opens the file without repair.
   const ORDER = ['b', 'i', 'strike', 'condense', 'extend', 'outline', 'shadow', 'u', 'vertAlign', 'sz', 'color', 'name', 'family', 'charset', 'scheme'];
@@ -406,9 +409,14 @@ export function maisonBand(bytes: Uint8Array, design: Design, skip: ReadonlySet<
       }
       if (c1 > c0) merges.push(`<mergeCell ref="${colName(c0)}${rowLabel}:${colName(c1)}${rowLabel}"/>`, `<mergeCell ref="${colName(c0)}${rowValue}:${colName(c1)}${rowValue}"/>`);
     }
-    const bandRows = [`<row r="${at}" ht="8" customHeight="1"/>`, `<row r="${rowLabel}" ht="24" customHeight="1">${cellsL.join('')}</row>`, `<row r="${rowValue}" ht="42" customHeight="1">${cellsV.join('')}</row>`, `<row r="${at + 3}" ht="10" customHeight="1"/>`];
-    if (chartZone) for (let r = at + 4; r < at + 4 + CHART_ROWS; r++) bandRows.push(`<row r="${r}" ht="${CHART_ROW_PT}" customHeight="1"/>`);
-    if (chartZone) bandRows.push(`<row r="${at + 4 + CHART_ROWS}" ht="10" customHeight="1"/>`);
+    const canvas = (r: number) => Array.from({ length: used }, (_, cc) => `<c r="${colName(cc)}${r}" s="${styles!.spacer}"/>`).join('');
+    // Between the cards: a canvas gutter (the cards stay separate objects, like the best dashboards' 12-column grid).
+    const gutter = new Set<number>();
+    for (let i = 1; i < k; i++) gutter.add(i * span - 1);
+    const withGutter = (cells: string[]) => cells.map((cell, idx) => (gutter.has(idx) && !/t="inlineStr"|<f>/.test(cell) ? cell.replace(/ s="\d+"/, ` s="${styles!.spacer}"`) : cell));
+    const bandRows = [`<row r="${at}" ht="10" customHeight="1">${canvas(at)}</row>`, `<row r="${rowLabel}" ht="22" customHeight="1">${withGutter(cellsL).join('')}</row>`, `<row r="${rowValue}" ht="44" customHeight="1">${withGutter(cellsV).join('')}</row>`, `<row r="${at + 3}" ht="12" customHeight="1">${canvas(at + 3)}</row>`];
+    if (chartZone) for (let r = at + 4; r < at + 4 + CHART_ROWS; r++) bandRows.push(`<row r="${r}" ht="${CHART_ROW_PT}" customHeight="1">${canvas(r)}</row>`);
+    if (chartZone) bandRows.push(`<row r="${at + 4 + CHART_ROWS}" ht="12" customHeight="1">${canvas(at + 4 + CHART_ROWS)}</row>`);
     // Rows are kept in order: the band goes right before the first row at or after `at + n`.
     x = x.replace(/<sheetData>([\s\S]*?)<\/sheetData>/, (_m, body: string) => {
       const parts = [...body.matchAll(/<row\b[^>]*?\br="(\d+)"[^>]*?(?:\/>|>[\s\S]*?<\/row>)/g)].map((m) => ({ r: +m[1]!, xml: m[0] }));
@@ -421,6 +429,15 @@ export function maisonBand(bytes: Uint8Array, design: Design, skip: ReadonlySet<
     // mergeCells must follow sheetData / sheetProtection… and come before conditionalFormatting etc. — it was placed
     // right after sheetData when absent, which is a valid position unless sheetCalcPr / protection follow: move them.
     x = x.replace(/(<\/sheetData>)(<mergeCells\b[\s\S]*?<\/mergeCells>)((?:<sheetCalcPr\b[^>]*\/>)?(?:<sheetProtection\b[^>]*\/>)?(?:<protectedRanges>[\s\S]*?<\/protectedRanges>)?(?:<scenarios\b[\s\S]*?<\/scenarios>)?(?:<autoFilter\b[\s\S]*?(?:\/>|<\/autoFilter>))?(?:<sortState\b[\s\S]*?(?:\/>|<\/sortState>))?(?:<dataConsolidate\b[\s\S]*?(?:\/>|<\/dataConsolidate>))?(?:<customSheetViews>[\s\S]*?<\/customSheetViews>)?)/, '$1$3$2');
+    // DATA BARS on the first amount column (a glance shows the weight of each row), in the theme's primary colour.
+    if (cards[0]) {
+      const col = colName(cards[0].col);
+      const cf = `<conditionalFormatting sqref="${col}${first}:${col}${last}"><cfRule type="dataBar" priority="1"><dataBar><cfvo type="min"/><cfvo type="max"/><color rgb="FF${design.color.blue}"/></dataBar></cfRule></conditionalFormatting>`;
+      if (!/<conditionalFormatting\b/.test(x)) {
+        const before = /<(dataValidations|hyperlinks|printOptions|pageMargins|pageSetup|headerFooter|rowBreaks|colBreaks|customProperties|cellWatches|ignoredErrors|smartTags|drawing|legacyDrawing|legacyDrawingHF|picture|oleObjects|controls|webPublishItems|tableParts|extLst)\b/.exec(x);
+        x = before ? x.slice(0, before.index) + cf + x.slice(before.index) : x.replace('</worksheet>', `${cf}</worksheet>`);
+      }
+    }
     wr(z, sh.part, x);
     banded.push(sh.name);
     if (!chartZone) continue;
