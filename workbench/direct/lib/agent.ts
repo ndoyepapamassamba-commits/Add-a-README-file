@@ -107,7 +107,7 @@ import { LLMError, type ChatMessage, type ContentPart, type ToolCall } from '../
 import { complete, friendlyError } from './llm';
 import { connectedTools, ensureConnected, mcpState } from './mcp';
 import { BUILTIN_PLUGINS, builtinToolNames, builtinTools } from './builtinPlugins';
-import { findAgent, allAgents, allRoles, findRole } from './roles';
+import { findAgent, allRoles, findRole } from './roles';
 import { matchSkills } from './skills';
 import { uid, useStore } from './store';
 import { TOOLS, llmName, mcpTool, toolDefs, type DirectTool, type ToolCtx } from './tools';
@@ -2614,7 +2614,7 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
         if (k && (!args.chart || args.chart === 'none')) args.chart = k === 'line' || k === 'area' ? 'line' : k === 'pie' || k === 'donut' ? 'pie' : 'bar';
       }
       // The chosen logo also goes into the « Synthèse 3D » board band.
-      if (choice.logo && tool.name === 'data.export') args.logoPath = choice.logo.path;
+      if (choice.logo && (tool.name === 'data.export' || tool.name === 'report.export')) args.logoPath = choice.logo.path;
       if (choice.layout && tool.name === 'data.export') {
         args.layout = choice.layout;
         args.layoutSource = choice.source;
@@ -2779,7 +2779,7 @@ async function applyClone(sid: string, since: number): Promise<{ n: number; note
   for (const f of targets) {
     if (f.binary) {
       let b = bytesOf(f);
-      let out: Uint8Array | null = null;
+      let out: Uint8Array | null;
       if (/\.xlsx$/i.test(f.path)) {
         // Re-saved by the model (openpyxl drops shapes and pictures)? Our sheets are removed and applied again, intact.
         // « Tableau de bord » is removed only with OUR data sheet beside it (a user's own sheet of that name is never touched).
@@ -2886,13 +2886,22 @@ async function finishWorkbooks(sid: string, since: number): Promise<string[]> {
       const base = f.binary && /\.(docx|pptx)$/i.test(f.path) ? (recolorOffice(bytesOf(f), skinDesign)?.bytes ?? bytesOf(f)) : null;
       if (f.binary && /\.docx$/i.test(f.path)) {
         const out = skinDocx(base!, skin);
-        if (out) (writeBytes(f.path, out, f.mime), lines.push(`${f.path} : chaque page au design de l'image (bandeau d'en-tête, titres, tableaux, police).`));
+        if (out) {
+          writeBytes(f.path, out, f.mime);
+          lines.push(`${f.path} : chaque page au design de l'image (bandeau d'en-tête, titres, tableaux, police).`);
+        }
       } else if (f.binary && /\.pptx$/i.test(f.path)) {
         const out = skinPptx(base!, skin);
-        if (out) (writeBytes(f.path, out, f.mime), lines.push(`${f.path} : chaque diapositive au design de l'image (fond, bandeaux, titres, police).`));
+        if (out) {
+          writeBytes(f.path, out, f.mime);
+          lines.push(`${f.path} : chaque diapositive au design de l'image (fond, bandeaux, titres, police).`);
+        }
       } else if (!f.binary && /\.html?$/i.test(f.path)) {
         const out = skinHtml(f.data, skin);
-        if (out !== f.data) (writeText(f.path, out), lines.push(`${f.path} : page (et PDF imprimé) au design de l'image.`));
+        if (out !== f.data) {
+          writeText(f.path, out);
+          lines.push(`${f.path} : page (et PDF imprimé) au design de l'image.`);
+        }
       }
     }
   for (const f of Object.values(files())) {

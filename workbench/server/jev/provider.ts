@@ -193,6 +193,43 @@ export async function callJev1(
   }
 }
 
+/** Typed questions of any shape (choice / score / noul) over any state: the fast judgments the agents ask JEV for. */
+export type JevQuestion =
+  | { type: 'choice'; instructions: string; criteria: Record<string, string> }
+  | { type: 'score'; instructions: string; criteria: string[] }
+  | { type: 'noul'; instructions: string };
+export interface JevAnswers {
+  answers: Record<string, { choice?: string; confidence?: number; score?: number; noul?: number }>;
+  model: string;
+  inputTokens: number;
+  costUsd: number;
+  ms: number;
+}
+/** One JEV call with custom questions. Throws on any failure (the caller keeps its local heuristic). */
+export async function callJevQuestions(
+  cfg: JevApiConfig,
+  key: string | null,
+  state: Record<string, unknown>,
+  questions: Record<string, JevQuestion>,
+  fetchFn: FetchLike,
+): Promise<JevAnswers> {
+  const ac = new AbortController();
+  const t0 = Date.now();
+  const timer = setTimeout(() => ac.abort(), cfg.timeoutMs);
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (key) headers.Authorization = `Bearer ${key}`;
+    const res = await fetchFn(cfg.endpoint, { method: 'POST', headers, body: JSON.stringify({ state, model: cfg.model, questions }), signal: ac.signal });
+    if (!res.ok) throw new Error(`JEV API ${res.status}`);
+    const r = (await res.json()) as { model: string; answers: JevAnswers['answers']; usage?: { input_tokens: number } };
+    if (!r.answers || typeof r.answers !== 'object') throw new Error('JEV API : réponse mal formée');
+    const tokens = r.usage?.input_tokens ?? Math.ceil((JSON.stringify(state).length + 600) / 3.8);
+    return { answers: r.answers, model: r.model, inputTokens: tokens, costUsd: (tokens * JEV_PRICE_PER_MTOK) / 1e6, ms: Date.now() - t0 };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** Never log or display a key: masked form only. */
 export function maskSecret(s: string): string {
   if (!s) return '';

@@ -163,6 +163,23 @@ export const SKILL_REGISTRY: EngineSkill[] = [
   },
   {
     ...NATIVE,
+    name: 'advanced_reporting',
+    description:
+      'Reporting avancé : analyse poussée et rapide (brief calculé localement, 0 token), récit écrit à partir du brief seulement, lecture adaptée au domaine et à l’audience (JEV ou règles), leçons mémorisées par type de fichier, exports Excel / Word / PowerPoint / PDF / mail premium aux couleurs choisies.',
+    capabilities: ['brief local exact', 'récit contraint par les faits', 'lecture adaptée (domaine, audience, fait d’ouverture)', 'apprentissage par signature de données', 'exports premium thématisés'],
+    triggers: ['rapport', 'reporting', 'analyse (approfondie|pouss[ée]e|avanc[ée]e|compl[eè]te|d[ée]taill[ée]e)', 'synth[èe]se', 'note (de|d’|d\')', 'brief', 'constats?', 'recommandations?', 'tableau de bord', 'dashboard', 'comit[ée]', 'comex', 'direction'],
+    required_tools: ['data.inspect', 'report.analyse', 'report.export'],
+    recommended_models: { metric: 'intelligence', tier: 'balanced' },
+    incompatible_models: ['no-tools'],
+    cost_profile: 'faible',
+    security_profile: 'écrit dans l’espace de travail',
+    agents: ['reporting', 'data_analyst'],
+    companions: ['excel_analysis', 'document_reporting', 'deliverable_design'],
+    playbook:
+      'NOT A TEMPLATE — a method that adapts. 1) report.analyse on the file with `focus` = what the request asks (audience, question, decision): the brief comes back in a second with every figure and its method, plus a suggested reading (domain, audience, opening fact, sections). 2) If the question needs other cuts (a sub-population, another measure, a dimension the reader cares about), call report.analyse again with filters / measure / dims — never guess a figure, never pad with generic sentences. 3) Write the narrative from the brief only: each finding is a sentence with its figure, then the analysis (why, where, who), then dated recommendations with owners; adapt the sections to the audience the reading proposes, drop what the data cannot support. 4) report.export with brief = the .json path (unknown figures are flagged; fix them with data.query or remove them) in the theme the user chose, and data.export for the workbook (Maison 2, live dashboard, native charts). 5) End with the files and the limits (missing data, estimates). The lesson (measure, dimensions, focus) is kept for the next file of the same shape.',
+  },
+  {
+    ...NATIVE,
     name: 'document_reporting',
     description: 'Livrables au style maison : rapport Word, PDF, Excel, mail Outlook (.eml).',
     capabilities: ['docx', 'pdf', 'xlsx stylé', 'eml'],

@@ -263,6 +263,9 @@ export interface Settings {
   designSkillsSeeded?: boolean;
   /** Version stamp of the built-in project skills installed (APEX credit risk…): refreshed when the build changes them. */
   builtinSkillsStamp?: string;
+  /** What the reporting agent LEARNED per data signature (sorted column names): the measure and dimensions that served,
+   *  the theme asked, how many times it was used — re-applied on the next similar file, refined on each report. */
+  reportLessons?: Record<string, { measure?: string; dims?: string[]; theme?: string; focus?: string; uses: number; flagged: number; at: number }>;
   /** Pollinations key (sk_…): cheap image → video (Wan 2.2 Fast ≈ 0,01 $ / s). Stays in this browser. */
   pollinationsKey?: string;
   /** fal.ai key (kept in this browser): skeletal performance → character (Wan2.2-Animate, motion transfer). */

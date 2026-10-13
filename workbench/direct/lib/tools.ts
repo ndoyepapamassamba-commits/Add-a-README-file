@@ -25,7 +25,7 @@ import {
   type AiDoc,
   type MissionReport,
 } from '../../server/agent/mission';
-import { markdownToDocx, printableHtml } from '../../server/services/officeCore';
+import { imageSize as pngSize, markdownToDocx, printableHtml } from '../../server/services/officeCore';
 import { housePptx } from '../../server/services/housePptx';
 import { emlFromHtml, houseMailHtml } from '../../server/services/houseStyle';
 import { apexGuide, assembleApp, lintApp, referencePart } from '../../server/services/apexCore';
@@ -57,6 +57,10 @@ function workspaceTwin() {
 }
 import { shellRisk } from './shellCore';
 import { THEME_PARAMS, activeDesign } from '../../server/services/houseDesign';
+import { briefToMarkdown, buildBrief, checkNarrative, type Brief } from '../../server/services/reportBrief';
+import { hintQuestions, hintsFromAnswers, hintsLocal, hintsText } from '../../server/services/reportHints';
+import { callJevQuestions } from '../../server/jev/provider';
+import { getJevKey, jevSettings } from './jev';
 import { chart3dSvg, paletteOf, synthesisSvg } from '../../server/services/chart3d';
 import { dashboardData, renderLayoutHtml, type DesignLayout } from '../../server/services/layoutClone';
 import { BRAVE_DIRECT, braveText, braveUrl, parseBrave } from '../../server/jev/web/brave';
@@ -1127,6 +1131,65 @@ export const TOOLS: DirectTool[] = [
     },
   },
   {
+    name: 'report.analyse',
+    description:
+      'ANALYSE POUSSÉE ET RAPIDE (local, exact, 0 token): the BRIEF of a data file — main measure, what explains it (η²), top categories and concentration (top 3, HHI, n50 / n80) per dimension, trend by period, distribution bands, rates, anomalies, data quality — each figure with its method, written to outputs/<name>-brief.md and .json. ADAPT it to the situation: measure, dims, filters (same as data.query), top, focus (what the request asks); call it again with other cuts when the question needs them. The narrative is then written FROM THE BRIEF ONLY, then report.export with brief = the .json path (every figure absent from the brief is flagged) and data.export for the workbook. The agent LEARNS: the measure and dimensions that served a file are re-applied to the next similar file.',
+    parameters: obj(
+      {
+        path: str('Data file path'),
+        sheet: str('Excel sheet (optional)'),
+        name: str('Output base name, e.g. "impayes-septembre" (default: the file name)'),
+        title: str('Title of the analysis'),
+        focus: str('What the request asks, in one sentence (audience, question, decision) — drives the reading'),
+        measure: str('Main numeric column (default: the money-like column with the largest total)'),
+        dims: { type: 'array', items: { type: 'string' }, description: 'Text columns to cut by (default: the most explanatory, 2–60 values)' },
+        filters: { type: 'array', items: obj({ column: { type: 'string' }, op: { type: 'string', enum: ['eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'contains', 'in', 'is_null', 'not_null'] }, value: {} }, ['column', 'op']), description: 'Sub-population to brief (same filters as data.query)' },
+        top: { type: 'number', description: 'Categories listed per dimension (3–15, default 8)' },
+      },
+      ['path'],
+    ),
+    risk: 'read',
+    readOnly: false,
+    label: (a) => `Brief d'analyse ${S(a.path)}${S(a.focus) ? ` — ${S(a.focus).slice(0, 40)}` : ''}`,
+    async run(a) {
+      const ds = loadDataset(S(a.path), S(a.sheet) || undefined);
+      const filters = Array.isArray(a.filters) && a.filters.length ? (a.filters as object[]) : [];
+      const r = filters.length ? data.query(ds, QuerySpecSchema.parse(coerceQuery({ limit: 1_000_000, filters }))) : { columns: ds.columns, rows: ds.rows as Record<string, unknown>[], rowCount: ds.rows.length };
+      // WHAT WAS LEARNED on a file of the same shape (same columns): its measure and dimensions, unless asked otherwise.
+      const sig = [...ds.columns].sort().join('|').slice(0, 400);
+      const st0 = useStore.getState();
+      const lesson = st0.settings.reportLessons?.[sig];
+      const measure = S(a.measure) || lesson?.measure;
+      const dims = Array.isArray(a.dims) && a.dims.length ? a.dims.map(S) : lesson?.dims;
+      const title = S(a.title) || S(a.focus) || ds.path.split('/').pop() || 'Analyse';
+      const brief = buildBrief(r.columns, r.rows, { title, source: `${ds.path}${ds.sheet ? ` [${ds.sheet}]` : ''}${filters.length ? ' (filtré)' : ''}`, measure, dims, top: Number(a.top) || undefined });
+      const md = briefToMarkdown(brief);
+      const base = `outputs/${(S(a.name) || ds.path.split('/').pop()?.replace(/\.[^.]+$/, '') || 'analyse').replace(/[^\w.-]+/g, '-')}-brief`;
+      const mdPath = uniquePath(`${base}.md`);
+      writeText(mdPath, md);
+      const jsonPath = uniquePath(`${base}.json`);
+      writeText(jsonPath, JSON.stringify(brief));
+      // THE READING: JEV's typed judgments when a key is there (a few hundred tokens, a second), local rules otherwise.
+      let hints = hintsLocal(brief, r.columns, S(a.focus));
+      const cfg = jevSettings();
+      const key = getJevKey();
+      if (key && cfg.enabled) {
+        try {
+          const ans = await callJevQuestions(cfg, key, { request: S(a.focus) || title, columns: r.columns.slice(0, 60), facts: { rows: brief.rows, measure: brief.measureLabel, dims: brief.dims.slice(0, 3).map((d) => ({ dim: d.label, top3Share: d.top3Share, categories: d.categories })), trendDelta: brief.trend?.delta ?? null, anomalies: brief.anomalies.length, worstMissing: Math.max(0, ...brief.quality.map((q) => q.missingPct)) } }, hintQuestions(), (url, init) => fetch(url, init));
+          hints = hintsFromAnswers(ans.answers, hints);
+        } catch {
+          /* JEV unreachable: the local reading stands */
+        }
+      }
+      // The lesson is refined on every run (uses, measure, dimensions, focus).
+      useStore.getState().patchSettings({ reportLessons: { ...(st0.settings.reportLessons ?? {}), [sig]: { measure: brief.measure ?? undefined, dims: brief.dims.filter((d) => d.dim !== brief.entity).map((d) => d.dim), focus: S(a.focus) || lesson?.focus, theme: lesson?.theme, uses: (lesson?.uses ?? 0) + 1, flagged: lesson?.flagged ?? 0, at: Date.now() } } });
+      return ok(
+        `brief : ${brief.kpis.length} indicateurs, ${brief.dims.length} dimension(s), ${brief.anomalies.length} anomalie(s) → ${mdPath}`,
+        `${md}\n\n---\n${hintsText(hints)}${lesson ? `\nAppris d'une analyse précédente de ce type de fichier (${lesson.uses}×) : mesure « ${lesson.measure ?? '—'} », dimensions ${lesson.dims?.join(', ') ?? '—'}.` : ''}\n\nFichiers : ${mdPath}, ${jsonPath}.\nÉCRIVEZ LE RÉCIT avec ces chiffres seulement (constats chiffrés → analyse → recommandations datées), puis report.export avec brief: "${jsonPath}" (un chiffre absent du brief est signalé et doit venir d'un data.query, jamais d'une estimation) et data.export pour le classeur (Maison 2, thème choisi).`,
+      );
+    },
+  },
+  {
     name: 'report.export',
     description:
       'Export a Markdown report to deliverables in outputs/, in the house style by default (or the theme the user asks for): docx (Word), pptx (PowerPoint), html (printable — the user prints it to PDF), eml (colour mail draft for Outlook + .mail.html), md. Charts saved by data.chart (outputs/charts/*.png) are embedded when referenced as ![title](outputs/charts/x.png). Give markdown content or a markdown file path. Never overwrites existing files.',
@@ -1140,6 +1203,8 @@ export const TOOLS: DirectTool[] = [
           type: 'array',
           items: { type: 'string', enum: ['docx', 'pptx', 'html', 'pdf', 'md', 'eml'] },
         },
+        brief: str('Path of the brief .json written by report.analyse: every figure of the content absent from it is flagged (the technique is enforced: too many unknown figures and the export is refused until they are verified). With it the Word / PowerPoint files open on « L’essentiel en chiffres » (KPI cards + native charts from the brief) and close on a method note.'),
+        subtitle: str('Sub-title on the cover / title slide: audience, period or source (e.g. "Comité de crédit · T3 2025")'),
         ...THEME_PARAMS,
       },
       ['name'],
@@ -1150,6 +1215,25 @@ export const TOOLS: DirectTool[] = [
     async run(a, ctx) {
       const md = S(a.content) || (a.from_path ? (await readAsText(S(a.from_path))).text : '');
       if (!md) throw new Error('Provide content or from_path');
+      // THE TECHNIQUE IMPOSED ON THE MODEL: a report written from a brief cites the brief's figures. Unknown figures are
+      // named; beyond a quarter of them (three at least) the export waits for their verification.
+      let briefNote = '';
+      let briefObj: Brief | null = null;
+      if (S(a.brief)) {
+        const bf = getFile(S(a.brief));
+        const brief = bf ? (JSON.parse(new TextDecoder().decode(bytesOf(bf))) as Brief) : null;
+        if (!brief?.numbers) throw new Error(`Brief introuvable ou illisible : ${S(a.brief)}`);
+        briefObj = brief;
+        const chk = checkNarrative(md, brief);
+        if (chk.unknown.length) {
+          const sig = Object.keys(useStore.getState().settings.reportLessons ?? {}).find((k) => useStore.getState().settings.reportLessons![k]!.measure === brief.measure);
+          if (sig) useStore.getState().patchSettings({ reportLessons: { ...useStore.getState().settings.reportLessons, [sig]: { ...useStore.getState().settings.reportLessons![sig]!, flagged: (useStore.getState().settings.reportLessons![sig]!.flagged ?? 0) + chk.unknown.length } } });
+          const tooMany = chk.unknown.length >= 3 && chk.unknown.length / Math.max(1, chk.checked) > 0.25;
+          const list = chk.unknown.slice(0, 12).join(' ; ');
+          if (tooMany) throw new Error(`Export refusé : ${chk.unknown.length} chiffre(s) sur ${chk.checked} ne sont pas dans le brief (${list}). Vérifiez-les avec data.query (et citez-les tels quels) ou retirez-les, puis ré-exportez.`);
+          briefNote = ` ⚠ ${chk.unknown.length} chiffre(s) absent(s) du brief à vérifier : ${list}.`;
+        } else briefNote = ` ✔ ${chk.checked} chiffre(s) vérifié(s) contre le brief.`;
+      }
       const base = `outputs/${
         S(a.name)
           .replace(/[^\w.-]+/g, '-')
@@ -1159,19 +1243,25 @@ export const TOOLS: DirectTool[] = [
       const formats = (
         Array.isArray(a.formats) && a.formats.length ? a.formats.map(S) : ['docx', 'html']
       ).map((f) => (f === 'pdf' ? 'html' : f));
+      // PREMIUM Word / PowerPoint: cover + sommaire + header / footer (Word), agenda + sections + notes (PowerPoint),
+      // KPI cards and native charts when a brief is given, the user's logo (recoloured to the palette) when chosen.
+      const lg = typeof a.logoPath === 'string' ? getFile(a.logoPath) : undefined;
+      const lgBytes = lg?.binary ? bytesOf(lg) : null;
+      const lgSize = lgBytes ? pngSize(lgBytes) : null;
+      const extras = { premium: true, brief: briefObj, subtitle: S(a.subtitle) || undefined, logo: lgBytes && lgSize ? { png: lgBytes, ...lgSize } : null };
       const out: string[] = [];
       for (const f of [...new Set(formats)]) {
         const path = uniquePath(`${base}.${f}`);
         if (f === 'docx')
           writeBytes(
             path,
-            markdownToDocx(md, S(a.title) || undefined, resolveImage),
+            markdownToDocx(md, S(a.title) || S(a.name) || undefined, resolveImage, extras),
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           );
         else if (f === 'pptx')
           writeBytes(
             path,
-            housePptx(md, S(a.title) || undefined),
+            housePptx(md, S(a.title) || undefined, extras),
             'application/vnd.openxmlformats-officedocument.presentationml.presentation',
           );
         else if (f === 'html')
@@ -1195,7 +1285,7 @@ export const TOOLS: DirectTool[] = [
         });
       return ok(
         out.join(', '),
-        `Exported: ${out.join(', ')}${html ? ' (open the HTML and use "Print → Save as PDF" for a PDF)' : ''}`,
+        `Exported: ${out.join(', ')}${html ? ' (open the HTML and use "Print → Save as PDF" for a PDF)' : ''}${briefNote}`,
       );
     },
   },

@@ -116,6 +116,33 @@ test('uploads a CSV and the agent analyses it with data tools', async ({ page })
   expect(JSON.stringify(mock.requests[1]!.messages)).toContain('| 2026-02 | 35 |');
 });
 
+test('REPORTING AVANCÉ: the brief is computed locally (0 token), the narrative is checked against it, an invented figure is flagged', async ({ page }) => {
+  await open(page);
+  const csv = path.join(tmp, 'impayes.csv');
+  fs.writeFileSync(csv, 'agence,segment,montant,date\nDakar,PME,1500,2026-03-05\nThies,PME,2500,2026-03-09\nDakar,GE,3500,2026-04-02\nKaolack,PART,4500,2026-04-20\n');
+  await page.locator('input[type=file]').first().setInputFiles(csv);
+  await expect(page.getByText('impayes.csv').first()).toBeVisible();
+  mock.push(
+    { toolCalls: [{ name: 'report.analyse', args: { path: 'uploads/impayes.csv', name: 'impayes', focus: 'note pour la direction : qui porte les impayés ?' } }] },
+    { toolCalls: [{ name: 'report.export', args: { name: 'rapport-impayes', title: 'Impayés', content: '# Impayés\n\nLe total atteint 12 000 sur 4 lignes ; Kaolack porte 37,5 %. Un chiffre inventé : 987 654 dossiers.', formats: ['md'], brief: 'outputs/impayes-brief.json' } }] },
+    { text: 'Rapport prêt.' },
+  );
+  await send(page, 'Fais-moi un rapport avancé des impayés pour la direction');
+  await expect(page.getByText('Rapport prêt.')).toBeVisible();
+  // The brief went back to the model with its figures, methods and the suggested reading (no model call to compute it).
+  const r1 = JSON.stringify(mock.requests[1]!.messages);
+  expect(r1).toContain("Brief d'analyse");
+  expect(r1).toContain('SOMME(montant)');
+  expect(r1).toMatch(/Lecture conseillée/);
+  expect(r1).toContain('outputs/impayes-brief.json');
+  // The export checked the narrative: the brief's figures pass, the invented one is named.
+  const r2 = JSON.stringify(mock.requests[2]!.messages);
+  expect(r2).toContain('Exported: outputs/rapport-impayes.md');
+  expect(r2).toMatch(/absent\(s\) du brief/);
+  expect(r2).toContain('987 654');
+  expect(r2).not.toContain('12 000 ;');
+});
+
 test('NORMAL mode asks before writing; the file appears in the workspace', async ({ page }) => {
   await open(page);
   mock.push(

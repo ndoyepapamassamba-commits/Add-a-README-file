@@ -76,6 +76,7 @@ export const DIRECT_TOOLS = [
   'agent.delegate',
   'memory.doc',
   'report.export',
+  'report.analyse',
   'data.export',
 ];
 
