@@ -187,6 +187,21 @@ test('plan mode: plan card, edit and approve', async ({ page }) => {
   expect(JSON.stringify(mock.requests[1]!.messages)).toContain('2. Rédiger');
 });
 
+test('the APEX credit-risk skill is built in: listed in the library, applied to a commitments request with its sheets', async ({ page }) => {
+  await open(page);
+  await page.getByLabel('Skills', { exact: true }).click();
+  await expect(page.getByText('apex-credit-risk').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Chat' }).click();
+  mock.push({ text: 'Douteux : chiffres à venir depuis le fichier.' });
+  await send(page, 'Prépare le classeur des douteux et des provisions BCEAO du portefeuille');
+  await expect(page.getByText(/Skills appliqués : .*apex-credit-risk/)).toBeVisible();
+  const sys = systemOf(0);
+  expect(sys).toContain('Table de routage');
+  expect(sys).toContain('MANDATORY');
+  // The reference sheets travel with the skill (skill.read): the tool list names the skill files.
+  expect(sys).toMatch(/04-douteux-recouvrement-pcb\.md|references\//);
+});
+
 test('imported skills are enforced; custom agents restrict tools', async ({ page }) => {
   await open(page);
   const skill = path.join(tmp, 'SKILL.md');
