@@ -94,6 +94,8 @@ mesurées par `scene.py`, `ecran-plans.json`) — au milieu fixe, les têtes tom
   de l'acteur, l'accroche, puis sa fiche (âge ≥ 60 → vieux).
 - Budget de mouvement (mesuré sur le film 6 : 14 gestes sur 18 répliques → mouvement 0,0294 > 0,027 de la chaîne) : la
   moitié la plus forte des répliques garde son geste ; les gains vont de 0,35 à 0,9, sous les limites cartoon.
+- Réactions proposées par le modèle : seulement sur un cri, la chute ou une réplique énergique, et jamais en gros plan
+  sur celui qui réagit (mesuré : un dessin qui claque plein cadre = saut de lumière, faux raccord).
 
 ## 4. Feuille de route (gratuit, sans abonnement)
 
