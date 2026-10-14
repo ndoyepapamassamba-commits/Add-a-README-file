@@ -54,6 +54,8 @@ function setupRenderMode() {
 // ---------------------------------------------------------------- lecteur
 function setupPlayer() {
   const video = $('video');
+  const embedded = window.__ASSETS; // fichier HTML autonome (tools/build-standalone.mjs)
+  if (embedded?.video) video.src = embedded.video;
   if (params.get('src')) video.src = params.get('src');
   const videoTex = makeVideoTexture(video);
   compositor.setSource(videoTex);
@@ -177,7 +179,10 @@ function setupPlayer() {
       const bitrate = +$('quality').value;
       const codec = await MB.getFirstEncodableVideoCodec(['avc', 'hevc', 'vp9', 'av1'], { width: W, height: H, bitrate });
       if (!codec) throw new Error('aucun encodeur vidéo WebCodecs disponible (utilisez Chrome/Edge récent ou `npm run export`).');
-      const input = new MB.Input({ source: new MB.UrlSource(video.currentSrc || video.src), formats: MB.ALL_FORMATS });
+      const source = embedded?.videoBlob && !params.get('src')
+        ? new MB.BlobSource(embedded.videoBlob)
+        : new MB.UrlSource(video.currentSrc || video.src);
+      const input = new MB.Input({ source, formats: MB.ALL_FORMATS });
       const output = new MB.Output({ format: new MB.Mp4OutputFormat({ fastStart: 'in-memory' }), target: new MB.BufferTarget() });
       const srcCanvas = document.createElement('canvas');
       srcCanvas.width = W;

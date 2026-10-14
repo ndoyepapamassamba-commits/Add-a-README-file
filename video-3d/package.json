@@ -9,7 +9,8 @@
     "serve": "node tools/serve.mjs",
     "export": "node tools/export.mjs",
     "export:3d": "node tools/export.mjs --mode 3d",
-    "regression": "node tools/regression.mjs"
+    "regression": "node tools/regression.mjs",
+    "build": "node tools/build-standalone.mjs"
   },
   "devDependencies": {
     "mediabunny": "1.60.0",

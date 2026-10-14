@@ -363,9 +363,10 @@ export class Compositor {
 
 export async function loadDepth(base = './assets/') {
   try {
-    const meta = await (await fetch(base + 'depth-meta.json')).json();
+    const embedded = globalThis.__ASSETS; // fichier HTML autonome : données intégrées à la page
+    const meta = embedded?.depthMeta ?? await (await fetch(base + 'depth-meta.json')).json();
     const img = new Image();
-    img.src = base + 'depth-atlas.png';
+    img.src = embedded?.depthImage ?? base + 'depth-atlas.png';
     await img.decode();
     return { meta, image: img };
   } catch (err) {

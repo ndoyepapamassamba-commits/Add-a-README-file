@@ -44,6 +44,16 @@ cocher **A/B** pour superposer la vidéo source, puis **Exporter en MP4**.
 Raccourcis clavier : `Espace` lecture/pause · `←` `→` image par image.
 URL directes : `?mode=3d&camera=orbite&relief=0.2&subs=1`.
 
+## 📦 Fichier HTML autonome (un seul fichier)
+
+```bash
+npm run build        # → dist/ivrogne-3d.html (≈ 27 Mo)
+```
+
+Ce fichier contient tout : la vidéo, les cartes de profondeur, Three.js, Mediabunny et le studio.
+Il s'ouvre par **double-clic**, sans serveur ni connexion Internet, et garde toutes les fonctions
+(mode 3D, sous-titres, export MP4 dans Chrome ou Edge).
+
 ## 📤 Exporter en MP4
 
 ### 1. Depuis la page (Chrome, Edge)
@@ -93,6 +103,7 @@ npm run regression -- out/ivrogne-original.mp4
 | `tools/export.mjs` | Export MP4 en ligne de commande (Playwright + FFmpeg). |
 | `tools/regression.mjs` | Test de non-régression (PSNR, SSIM, audio, durée…). |
 | `tools/depth.py` | Régénère l'atlas de profondeur (Depth Anything V2, ONNX Runtime). |
+| `tools/build-standalone.mjs` | Fabrique le fichier HTML autonome `dist/ivrogne-3d.html`. |
 | `tools/serve.mjs` | Mini serveur local (gère les requêtes Range pour la vidéo). |
 | `vendor/` | Three.js et Mediabunny copiés localement : la page marche hors-ligne. |
 
