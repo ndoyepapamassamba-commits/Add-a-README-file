@@ -1,0 +1,683 @@
+{
+ "source": {
+  "file": "abidjan.webp",
+  "w": 1672,
+  "h": 941
+ },
+ "grid": {
+  "cols": 6,
+  "rows": 5
+ },
+ "depth": {
+  "tileW": 240,
+  "tileH": 160,
+  "cols": 6,
+  "rows": 5
+ },
+ "tiles": [
+  {
+   "i": 0,
+   "title": "PLATEAU",
+   "subtitle": "Boulevard de la République - Abidjan",
+   "rect": [
+    0,
+    0,
+    275,
+    182
+   ],
+   "caption": [
+    0,
+    135,
+    237,
+    47
+   ],
+   "up": {
+    "file": "tiles/01.webp",
+    "w": 1100,
+    "h": 728
+   }
+  },
+  {
+   "i": 1,
+   "title": "COCODY",
+   "subtitle": "Avenue Latrille - Abidjan",
+   "rect": [
+    278,
+    0,
+    280,
+    182
+   ],
+   "caption": [
+    0,
+    134,
+    230,
+    48
+   ],
+   "up": {
+    "file": "tiles/02.webp",
+    "w": 1120,
+    "h": 728
+   }
+  },
+  {
+   "i": 2,
+   "title": "RIVIERA",
+   "subtitle": "Rue Mermoz - Abidjan",
+   "rect": [
+    561,
+    0,
+    273,
+    182
+   ],
+   "caption": [
+    0,
+    135,
+    221,
+    47
+   ],
+   "up": {
+    "file": "tiles/03.webp",
+    "w": 1092,
+    "h": 728
+   }
+  },
+  {
+   "i": 3,
+   "title": "MARCORY",
+   "subtitle": "Boulevard Valéry Giscard d'Estaing - Abidjan",
+   "rect": [
+    837,
+    0,
+    277,
+    182
+   ],
+   "caption": [
+    0,
+    134,
+    259,
+    48
+   ],
+   "up": {
+    "file": "tiles/04.webp",
+    "w": 1108,
+    "h": 728
+   }
+  },
+  {
+   "i": 4,
+   "title": "TREICHVILLE",
+   "subtitle": "Boulevard de Marseille - Abidjan",
+   "rect": [
+    1117,
+    0,
+    277,
+    182
+   ],
+   "caption": [
+    0,
+    134,
+    240,
+    48
+   ],
+   "up": {
+    "file": "tiles/05.webp",
+    "w": 1108,
+    "h": 728
+   }
+  },
+  {
+   "i": 5,
+   "title": "KOUMASSI",
+   "subtitle": "Carrefour de Kouté - Abidjan",
+   "rect": [
+    1397,
+    0,
+    275,
+    182
+   ],
+   "caption": [
+    1,
+    134,
+    233,
+    48
+   ],
+   "up": {
+    "file": "tiles/06.webp",
+    "w": 1100,
+    "h": 728
+   }
+  },
+  {
+   "i": 6,
+   "title": "YOPOUGON",
+   "subtitle": "Quartier Maroc - Abidjan",
+   "rect": [
+    0,
+    185,
+    275,
+    182
+   ],
+   "caption": [
+    0,
+    134,
+    234,
+    48
+   ],
+   "up": {
+    "file": "tiles/07.webp",
+    "w": 1100,
+    "h": 728
+   }
+  },
+  {
+   "i": 7,
+   "title": "ADJAMÉ",
+   "subtitle": "Grand Marché - Abidjan",
+   "rect": [
+    278,
+    185,
+    280,
+    182
+   ],
+   "caption": [
+    0,
+    134,
+    225,
+    48
+   ],
+   "up": {
+    "file": "tiles/08.webp",
+    "w": 1120,
+    "h": 728
+   }
+  },
+  {
+   "i": 8,
+   "title": "ATTECOUBÉ",
+   "subtitle": "Quartier Sicogi - Abidjan",
+   "rect": [
+    561,
+    185,
+    273,
+    182
+   ],
+   "caption": [
+    0,
+    134,
+    225,
+    48
+   ],
+   "up": {
+    "file": "tiles/09.webp",
+    "w": 1092,
+    "h": 728
+   }
+  },
+  {
+   "i": 9,
+   "title": "PORT-BOUËT",
+   "subtitle": "Centre-ville - Abidjan",
+   "rect": [
+    837,
+    185,
+    277,
+    182
+   ],
+   "caption": [
+    1,
+    134,
+    207,
+    48
+   ],
+   "up": {
+    "file": "tiles/10.webp",
+    "w": 1108,
+    "h": 728
+   }
+  },
+  {
+   "i": 10,
+   "title": "ANYAMA",
+   "subtitle": "Centre-ville - Abidjan",
+   "rect": [
+    1117,
+    185,
+    277,
+    182
+   ],
+   "caption": [
+    1,
+    134,
+    235,
+    48
+   ],
+   "up": {
+    "file": "tiles/11.webp",
+    "w": 1108,
+    "h": 728
+   }
+  },
+  {
+   "i": 11,
+   "title": "BINGERVILLE",
+   "subtitle": "Centre-ville - Banlieue d'Abidjan",
+   "rect": [
+    1397,
+    185,
+    275,
+    182
+   ],
+   "caption": [
+    1,
+    134,
+    241,
+    48
+   ],
+   "up": {
+    "file": "tiles/12.webp",
+    "w": 1100,
+    "h": 728
+   }
+  },
+  {
+   "i": 12,
+   "title": "ABOBO",
+   "subtitle": "Carrefour N'Dotré - Abidjan",
+   "rect": [
+    0,
+    371,
+    275,
+    181
+   ],
+   "caption": [
+    0,
+    137,
+    216,
+    44
+   ],
+   "up": {
+    "file": "tiles/13.webp",
+    "w": 1100,
+    "h": 724
+   }
+  },
+  {
+   "i": 13,
+   "title": "SONGON",
+   "subtitle": "Quartier Kassemblé - Abidjan",
+   "rect": [
+    278,
+    371,
+    280,
+    181
+   ],
+   "caption": [
+    0,
+    135,
+    222,
+    46
+   ],
+   "up": {
+    "file": "tiles/14.webp",
+    "w": 1120,
+    "h": 724
+   }
+  },
+  {
+   "i": 14,
+   "title": "PLATEAU DOKUI",
+   "subtitle": "Zone précaire - Abidjan",
+   "rect": [
+    561,
+    371,
+    273,
+    181
+   ],
+   "caption": [
+    0,
+    135,
+    226,
+    46
+   ],
+   "up": {
+    "file": "tiles/15.webp",
+    "w": 1092,
+    "h": 724
+   }
+  },
+  {
+   "i": 15,
+   "title": "BANCO NORD",
+   "subtitle": "Quartier populaire - Abidjan",
+   "rect": [
+    837,
+    371,
+    277,
+    181
+   ],
+   "caption": [
+    2,
+    135,
+    217,
+    46
+   ],
+   "up": {
+    "file": "tiles/16.webp",
+    "w": 1108,
+    "h": 724
+   }
+  },
+  {
+   "i": 16,
+   "title": "VRIDI",
+   "subtitle": "Zone portuaire - Abidjan",
+   "rect": [
+    1117,
+    371,
+    277,
+    181
+   ],
+   "caption": [
+    0,
+    135,
+    219,
+    46
+   ],
+   "up": {
+    "file": "tiles/17.webp",
+    "w": 1108,
+    "h": 724
+   }
+  },
+  {
+   "i": 17,
+   "title": "ZONE 4",
+   "subtitle": "Rue des Jardins - Abidjan",
+   "rect": [
+    1397,
+    371,
+    275,
+    181
+   ],
+   "caption": [
+    1,
+    135,
+    218,
+    46
+   ],
+   "up": {
+    "file": "tiles/18.webp",
+    "w": 1100,
+    "h": 724
+   }
+  },
+  {
+   "i": 18,
+   "title": "WILLIAMSVILLE",
+   "subtitle": "Quartier résidentiel - Abidjan",
+   "rect": [
+    0,
+    556,
+    275,
+    179
+   ],
+   "caption": [
+    0,
+    131,
+    238,
+    48
+   ],
+   "up": {
+    "file": "tiles/19.webp",
+    "w": 1100,
+    "h": 716
+   }
+  },
+  {
+   "i": 19,
+   "title": "BIÉTRY",
+   "subtitle": "Avenue de France - Abidjan",
+   "rect": [
+    278,
+    556,
+    280,
+    179
+   ],
+   "caption": [
+    0,
+    131,
+    239,
+    48
+   ],
+   "up": {
+    "file": "tiles/20.webp",
+    "w": 1120,
+    "h": 716
+   }
+  },
+  {
+   "i": 20,
+   "title": "SOCOGI",
+   "subtitle": "Zone industrielle - Abidjan",
+   "rect": [
+    561,
+    556,
+    273,
+    179
+   ],
+   "caption": [
+    0,
+    131,
+    227,
+    48
+   ],
+   "up": {
+    "file": "tiles/21.webp",
+    "w": 1092,
+    "h": 716
+   }
+  },
+  {
+   "i": 21,
+   "title": "RIVIERA PALMERAIE",
+   "subtitle": "Résidentiel - Abidjan",
+   "rect": [
+    837,
+    556,
+    277,
+    179
+   ],
+   "caption": [
+    3,
+    131,
+    221,
+    48
+   ],
+   "up": {
+    "file": "tiles/22.webp",
+    "w": 1108,
+    "h": 716
+   }
+  },
+  {
+   "i": 22,
+   "title": "PORT DE PÊCHE",
+   "subtitle": "Vridi - Abidjan",
+   "rect": [
+    1117,
+    556,
+    277,
+    179
+   ],
+   "caption": [
+    0,
+    131,
+    231,
+    48
+   ],
+   "up": {
+    "file": "tiles/23.webp",
+    "w": 1108,
+    "h": 716
+   }
+  },
+  {
+   "i": 23,
+   "title": "MARCHÉ DE GROS",
+   "subtitle": "Treichville - Abidjan",
+   "rect": [
+    1397,
+    556,
+    275,
+    179
+   ],
+   "caption": [
+    1,
+    131,
+    205,
+    48
+   ],
+   "up": {
+    "file": "tiles/24.webp",
+    "w": 1100,
+    "h": 716
+   }
+  },
+  {
+   "i": 24,
+   "title": "MAISON MODESTE",
+   "subtitle": "Quartier populaire - Abidjan",
+   "rect": [
+    0,
+    739,
+    275,
+    202
+   ],
+   "caption": [
+    0,
+    140,
+    223,
+    51
+   ],
+   "up": {
+    "file": "tiles/25.webp",
+    "w": 1100,
+    "h": 808
+   }
+  },
+  {
+   "i": 25,
+   "title": "BIDONVILLE D'ADJAMÉ",
+   "subtitle": "Quartier Bracodi - Abidjan",
+   "rect": [
+    278,
+    739,
+    280,
+    202
+   ],
+   "caption": [
+    0,
+    140,
+    225,
+    51
+   ],
+   "up": {
+    "file": "tiles/26.webp",
+    "w": 1120,
+    "h": 808
+   }
+  },
+  {
+   "i": 26,
+   "title": "VILLAGE DE SONGON",
+   "subtitle": "Périphérie d'Abidjan",
+   "rect": [
+    561,
+    739,
+    273,
+    202
+   ],
+   "caption": [
+    1,
+    140,
+    212,
+    51
+   ],
+   "up": {
+    "file": "tiles/27.webp",
+    "w": 1092,
+    "h": 808
+   }
+  },
+  {
+   "i": 27,
+   "title": "VILLAGE DE BASSAM",
+   "subtitle": "Grand-Bassam",
+   "rect": [
+    837,
+    739,
+    277,
+    202
+   ],
+   "caption": [
+    3,
+    140,
+    207,
+    51
+   ],
+   "up": {
+    "file": "tiles/28.webp",
+    "w": 1108,
+    "h": 808
+   }
+  },
+  {
+   "i": 28,
+   "title": "VILLAGE DE JACQUEVILLE",
+   "subtitle": "Jacqueville",
+   "rect": [
+    1117,
+    739,
+    277,
+    202
+   ],
+   "caption": [
+    2,
+    140,
+    206,
+    51
+   ],
+   "up": {
+    "file": "tiles/29.webp",
+    "w": 1108,
+    "h": 808
+   }
+  },
+  {
+   "i": 29,
+   "title": "VILLAGE D'ASSINIE",
+   "subtitle": "Assinie",
+   "rect": [
+    1397,
+    739,
+    275,
+    202
+   ],
+   "caption": [
+    2,
+    140,
+    190,
+    51
+   ],
+   "up": {
+    "file": "tiles/30.webp",
+    "w": 1100,
+    "h": 808
+   }
+  }
+ ],
+ "models": [
+  "Real-ESRGAN General x4v3 (BSD-3)",
+  "Depth Anything V2 Small (Apache-2.0)"
+ ]
+}

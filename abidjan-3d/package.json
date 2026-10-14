@@ -1,0 +1,19 @@
+{
+  "name": "abidjan-3d",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Planche des quartiers d'Abidjan animée en relief 3D (Three.js), avec export MP4",
+  "type": "module",
+  "scripts": {
+    "serve": "node tools/serve.mjs",
+    "export": "node tools/export.mjs",
+    "export:slides": "node tools/export.mjs --format slides",
+    "check": "node tools/export.mjs --format mosaic --mode original --crf 12 --out out/abidjan-mosaique-original.mp4",
+    "build": "node tools/build-standalone.mjs"
+  },
+  "devDependencies": {
+    "mediabunny": "1.60.0",
+    "playwright-core": "1.56.1",
+    "three": "0.186.1"
+  }
+}

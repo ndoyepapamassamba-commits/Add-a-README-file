@@ -156,7 +156,7 @@ function readBody(req, size) {
 }
 
 async function launchBrowser(explicit) {
-  const args = ['--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'];
+  const args = ['--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--force-color-profile=srgb', '--js-flags=--expose-gc'];
   const candidates = [
     explicit && { executablePath: explicit },
     process.env.CHROMIUM_PATH && { executablePath: process.env.CHROMIUM_PATH },

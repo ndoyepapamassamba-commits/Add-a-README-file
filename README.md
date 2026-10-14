@@ -14,6 +14,7 @@ Aucun serveur, aucun abonnement. Tu ouvres, tu mets en ligne gratuitement, tu ve
 | **`images/`** | Les photos produits (`p1.jpg` … `p15.jpg`). Voir `images/README.md`. |
 | **`FOURNISSEURS.md`** | 📇 Répertoire de **grossistes & fournisseurs** (local Dakar + import). |
 | **`video-3d/`** | 🎬 La vidéo TikTok « Ivrogne » recodée en **HTML 3D** (Three.js), rendu identique à l'original + export **MP4**. Voir `video-3d/README.md`. |
+| **`abidjan-3d/`** | 🏙️ La planche des 30 quartiers d'Abidjan animée en **relief 3D** (mosaïque vivante + diaporama TikTok 9:16), export **MP4**. Voir `abidjan-3d/README.md`. |
 | **`README.md`** | Ce guide. |
 
 > Le panier est **partagé** entre les pages (il se souvient de tes articles d'une page à l'autre).

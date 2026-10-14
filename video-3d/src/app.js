@@ -37,6 +37,7 @@ function setupRenderMode() {
     compositor,
     texture: tex,
     async renderFrame(i, opts) {
+      if (i % 10 === 0) globalThis.gc?.(); // export CLI (--expose-gc) : libère les blocs déjà envoyés
       Object.assign(state, opts, { frame: i });
       const buf = await (await fetch(`/__frame/${i}`)).arrayBuffer();
       tex.image.data.set(new Uint8Array(buf));

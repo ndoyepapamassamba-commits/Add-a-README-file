@@ -46,6 +46,10 @@ export function startServer(port = 8080, { handler } = {}) {
       fs.createReadStream(file).pipe(res);
     }
   });
+  // Connexions gardées ouvertes longtemps : évite qu'un envoi de frame tombe sur une connexion que
+  // le serveur vient de fermer (course classique avec le délai par défaut de 5 s).
+  server.keepAliveTimeout = 120000;
+  server.headersTimeout = 125000;
   return new Promise((resolve) => server.listen(port, '127.0.0.1', () => resolve(server)));
 }
 
