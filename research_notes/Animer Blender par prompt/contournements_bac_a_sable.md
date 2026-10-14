@@ -104,3 +104,6 @@ Tout ce qui suit est lu sur la source primaire ou MESURÉ dans le conteneur (4 c
   images répétées SUR LA SOURCE (avant grain et sous-titres) et rattache le saut à la coupe qui le précède dans la
   fenêtre répétée. Un vrai saut loin d'une coupe reste compté (test unitaire). Le rendu final (toutes les images) n'a
   jamais eu ce décalage.
+- Contre-épreuve (remesure des films 7 et 8 avec la porte corrigée, sans re-rendre) : **film 8 → 0 saut, porte OUI** ;
+  **film 7 → 0 saut** mais toujours NON pour le mouvement (0,0294) et la couverture (0,46), qui étaient, eux, de vrais
+  excès corrigés par le budget. Les 1 + 2 « sauts » comptés sur les films 8 et 7 étaient donc le même artefact.
