@@ -570,8 +570,13 @@ def main():
     # Per-actor tracks, one value per film frame.
     ids = list(cast)
     jaw = {c: np.zeros(nF) for c in ids}
+    import lipsync
+    closures = 0
     for i, seg in enumerate(timeline):
         env = envelope(lines[i], fps)
+        # The lips meet on m / b / p (Rhubarb Lip Sync, MIT) — the loudness alone kept a loud « m » open.
+        env, ok = lipsync.line_jaw(os.path.join(vdir, f'line-{i:02d}.wav'), env, fps)
+        closures += ok
         f0 = int(round(seg['speak0'] * fps))
         w = beats[i]['who']
         jaw[w][f0:f0 + len(env)] = np.maximum(jaw[w][f0:f0 + len(env)], env[:max(0, nF - f0)])
@@ -687,6 +692,7 @@ def main():
         'title': story.get('title', ''), 'fps': fps, 'width': story.get('size', [576, 1024])[0], 'height': story.get('size', [576, 1024])[1], 'frames': nF, 'seconds': round(nF / fps, 3),
         'rig': os.path.abspath(a.rig), 'decor': story['decor'], 'audio': os.path.abspath(os.path.join(a.out, 'mix.wav')), 'speed': round(speed, 3),
         'actors': [{'id': c, 'name': cast[c]['name'], 'height': cast[c].get('height', 1.7), 'x': cast[c].get('x', 0), 'enter': enter[c], 'mirror': cast[c].get('mirror')} for c in ids],
+        'lipsync': f'volume de la voix + fermetures m/b/p (Rhubarb {lipsync.VERSION})' if closures else 'volume de la voix',
         'tracks': {c: {'jaw': [round(float(v), 3) for v in jaw[c]], 'turn': [round(float(v), 3) for v in turn[c]], 'nod': [round(float(v), 3) for v in nod[c]], 'blinks': blinks[c], 'poses': poses[c]} for c in ids},
         'shots': shots, 'captions': captions, 'emoji': emoji, 'timeline': timeline, 'coupes': coupes if len(coupes) > 1 else [],
         'hook': story.get('hook', ''), 'life': life,

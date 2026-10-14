@@ -50,6 +50,11 @@ def main():
     lf = subprocess.run([os.environ.get('MASSAMBA_PY', sys.executable), os.path.join(HERE, 'liveface.py'), '--plan', os.path.join(out, 'plan.json'), '--kit', a.troupe])
     if lf.returncode != 0:
         print('[film] visages vivants indisponibles (LivePortrait non installé ?) : dessins fixes', flush=True)
+    # The painted crowd, person by person (Mask R-CNN, once per view, kept in the kit): each painted person sways in
+    # its own rhythm instead of the whole crowd sliding as one block.
+    cr = subprocess.run([os.environ.get('MASSAMBA_PY', sys.executable), os.path.join(HERE, 'crowd.py'), '--plan', os.path.join(out, 'plan.json')])
+    if cr.returncode != 0:
+        print('[film] foule peinte non séparée (torchvision non installé ?) : une foule d’un seul bloc reste immobile', flush=True)
     frames_dir = os.path.join(out, 'apercu' if a.apercu else 'frames')
     scene = [os.path.join(HERE, 'scene.py'), '--plan', os.path.join(out, 'plan.json'), '--out', frames_dir, '--engine', engine,
              '--samples', str(4 if a.apercu else a.samples)] + (['--scale', '0.5', '--pas', '3'] if a.apercu else [])

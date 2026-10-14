@@ -60,6 +60,8 @@ puis les améliorer ensuite et les intégrer dans la tâche en cours. » — « 
 | Texte → mouvement 3D du corps | HY-Motion 1.0 (Tencent) | à vérifier | GPU | à évaluer |
 | Vidéo → mocap | GVHMR | non commercial | — | refusé |
 | Visage 3D depuis la voix | NVIDIA Audio2Face-3D | NVIDIA Open Model License | — | hors règle par défaut |
+| Fermetures des lèvres (m/b/p) | Rhubarb Lip Sync 1.14.0 | MIT (vérifiée) | **mesuré** : 1,65 s pour 1,78 s de voix (CPU) ; fermetures A 2,25× plus dans les mots à m/b/p | retenu pour les FERMETURES seulement — `scripts/blenderfilm/lipsync.py` |
+| Foule peinte séparée personne par personne | Mask R-CNN v2 (torchvision) | BSD-3 (code), poids COCO | **mesuré** : 49 s par vue, 27 personnes au Grand Marché | retenu — `scripts/blenderfilm/crowd.py` (décor vivant ancré aux pieds) |
 | GPU loué à la seconde | Runpod / Modal (serverless) | service à compte | L4 ≈ 0,0001–0,0002 $/s ; H100 ≈ 0,0005–0,0011 $/s (comparatif Cerebrium, juil. 2026) | demande un compte → non proposé par défaut |
 
 ## 4. Leçons

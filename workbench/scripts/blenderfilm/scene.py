@@ -37,6 +37,8 @@ def args():
     ap.add_argument('--force', action='store_true', help='rendre malgré un défaut critique du preflight (déconseillé)')
     ap.add_argument('--decor', default='', help='une autre vue du même lieu (coupe du plan : les images --frames dans cette vue)')
     ap.add_argument('--sans-visage', action='store_true', help='ignorer les visages vivants (liveface.py) : dessins fixes')
+    ap.add_argument('--sans-jeu', action='store_true', help='corps sans la couche de jeu pilotée par la voix — comparaison A/B')
+    ap.add_argument('--decor-fixe', action='store_true', help='décor sans vie (foule, vent, eau immobiles) — comparaison A/B')
     ap.add_argument('--pas', type=int, default=1, help='aperçu : une image rendue sur N, les autres la répètent')
     return ap.parse_args(argv)
 
@@ -55,6 +57,8 @@ def load_rgba(path):
     return img, px.reshape(h, w, 4)[::-1]  # top row first (image coordinates)
 
 
+JEU_CORPS = True  # --sans-jeu: bodies without the voice-driven acting layer (A/B check)
+DECOR_FIXE = False  # --decor-fixe: the painted set stays still (A/B check of the decor life)
 VISAGE = {}  # the film's living faces: <plan dir>/visage/<actor>/<pose>/f00001.png … (liveface.py)
 
 
@@ -160,6 +164,119 @@ def key(obj, path, frame, value, index=-1):
 
 
 # ── décor ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+SWAY = {4, 17, 72, 18, 86, 106, 114, 149, 66}      # ADE20K: tree, plant, palm, curtain, awning, canopy, tent, flag, flower
+WATER = {21, 26, 60, 104, 113}                      # water, sea, river, fountain, waterfall
+
+
+def decor_motion_map(dec):
+    """The LIFE of a painted set: R, G = the painted crowd's sway field as a quadrature pair (crowd.py: each person
+    separated by Mask R-CNN, its own phase, anchored at the feet), B = what the wind moves (trees, palms, awnings,
+    umbrellas' canopies, flags, curtains), A = water. The decor shader shifts its picture inside these fields a few
+    pixels, in time — the crowd sways and breathes person by person, the leaves and canopies stir, the water ripples.
+    Without a person-by-person map, a crowd the scene parse sees as ONE blob stays still (it would slide as a block)."""
+    seg_path = dec.get('seg')
+    if not seg_path or not os.path.isfile(seg_path):
+        return None
+    import cv2
+    import ground
+    import crowd
+    _, lab = load_rgba(seg_path)
+    lab = np.rint(lab[..., 0] * 255).astype(int)
+    person = lab == ground.PERSON
+    ip = crowd.inst_path(dec['image'])
+    note = ''
+    if os.path.isfile(ip):
+        inst = np.asarray(Image_open(ip))
+        note = f'{int(inst.max())} personne(s) séparée(s)'
+    else:
+        n, cc = cv2.connectedComponents(person.astype(np.uint8), connectivity=8)
+        areas = np.bincount(cc.ravel(), minlength=n)[1:]
+        if len(areas) and areas.max() > 0.4 * max(1, person.sum()):
+            inst = np.zeros(lab.shape, np.uint8)
+            note = 'foule d\u2019un seul bloc : immobile (lancer crowd.py pour la séparer personne par personne)'
+        else:
+            inst = np.where(cc < 255, cc, 0).astype(np.uint8)
+            note = f'{len(areas)} silhouette(s) isolée(s)'
+    h, w = inst.shape
+    C, S = crowd.sway_field(inst)
+    cmax = float(max(np.abs(C).max(), np.abs(S).max(), 1e-6))
+    rs = lambda m: cv2.GaussianBlur(cv2.resize(m.astype(np.float32), (w, h), interpolation=cv2.INTER_NEAREST), (0, 0), 1.5 * w / lab.shape[1])
+    sway, water = rs(np.isin(lab, list(SWAY))), rs(np.isin(lab, list(WATER)))
+    rgba = np.dstack([0.5 + 0.5 * C / cmax, 0.5 + 0.5 * S / cmax, sway, water]).astype(np.float32)
+    img = bpy.data.images.new('decor-vie', w, h, alpha=True, float_buffer=True)
+    img.alpha_mode = 'CHANNEL_PACKED'
+    img.colorspace_settings.name = 'Non-Color'
+    img.pixels.foreach_set(rgba[::-1].ravel())
+    return img, cmax, float(person.mean()), float(sway.mean()), float(water.mean()), note
+
+
+def Image_open(path):
+    from PIL import Image
+    return Image.open(path)
+
+
+SWAY_RATIO, BREATH_RATIO = 0.012, 0.005  # of the person's height, at the top of the head (≈ 2 cm and 0,9 cm on 1,70 m)
+
+
+def decor_life_uv(nt, motion, cmax, W_tex, fps):
+    """Shader nodes: the picture's UV shifted inside the life fields, in time (a driver on the frame number)."""
+    N, L = nt.nodes, nt.links
+    tc = N.new('ShaderNodeTexCoord')
+    mt = N.new('ShaderNodeTexImage')
+    mt.image = motion
+    mt.interpolation = 'Linear'
+    mt.extension = 'EXTEND'
+    L.new(tc.outputs['UV'], mt.inputs['Vector'])
+    sep = N.new('ShaderNodeSeparateColor')
+    L.new(mt.outputs['Color'], sep.inputs['Color'])
+    uvs = N.new('ShaderNodeSeparateXYZ')
+    L.new(tc.outputs['UV'], uvs.inputs['Vector'])
+    t = N.new('ShaderNodeValue')
+    t.name = 'temps'
+    d = t.outputs[0].driver_add('default_value').driver
+    d.type = 'SCRIPTED'
+    d.expression = f'frame / {float(fps)}'
+    mw, mh = motion.size
+    px = 1.0 / max(1, W_tex)  # one pixel of the picture, in UV
+
+    def math_(op, a, b=0.0):
+        m = N.new('ShaderNodeMath')
+        m.operation = op
+        for k, v in enumerate((a, b)):
+            if isinstance(v, (int, float)):
+                m.inputs[k].default_value = float(v)
+            else:
+                L.new(v, m.inputs[k])
+        return m.outputs[0]
+
+    def osc(freq, op):  # sin or cos of 2π·freq·t
+        return math_(op, math_('MULTIPLY', t.outputs[0], 2 * math.pi * freq))
+
+    def wave(freq, phase_sock, amp, mask_sock):
+        # amp · mask · sin(2π (t·freq + phase))
+        arg = math_('MULTIPLY', math_('ADD', math_('MULTIPLY', t.outputs[0], freq), phase_sock), 2 * math.pi)
+        return math_('MULTIPLY', math_('MULTIPLY', math_('SINE', arg), amp), mask_sock)
+
+    # The crowd: C, S decoded back to pixels of the map (each person's own phase is inside the pair).
+    Cd = math_('MULTIPLY', math_('SUBTRACT', sep.outputs['Red'], 0.5), 2 * cmax)
+    Sd = math_('MULTIPLY', math_('SUBTRACT', sep.outputs['Green'], 0.5), 2 * cmax)
+
+    def quad(freq, ratio, size):
+        v = math_('ADD', math_('MULTIPLY', Cd, osc(freq, 'SINE')), math_('MULTIPLY', Sd, osc(freq, 'COSINE')))
+        return math_('MULTIPLY', v, ratio / max(1, size))
+
+    dx = quad(0.45, SWAY_RATIO, mw)       # a slow sway of the upper body (feet still)
+    dy = quad(0.95, BREATH_RATIO, mh)     # breathing: the body lengthens a little above the feet
+    # The wind: the leaves and canopies stir along a travelling wave (higher in the picture moves first).
+    dx = math_('ADD', dx, wave(0.8, math_('MULTIPLY', uvs.outputs['Y'], 3.0), 2.6 * px, sep.outputs['Blue']))
+    # The water: small ripples travelling sideways.
+    dy = math_('ADD', dy, wave(1.6, math_('MULTIPLY', uvs.outputs['X'], 9.0), 1.2 * px, mt.outputs['Alpha']))
+    comb = N.new('ShaderNodeCombineXYZ')
+    L.new(math_('ADD', uvs.outputs['X'], dx), comb.inputs['X'])
+    L.new(math_('ADD', uvs.outputs['Y'], dy), comb.inputs['Y'])
+    return comb.outputs['Vector']
+
+
 def build_decor(dec, cam_ref):
     img, px = load_rgba(dec['image'])
     H, W = px.shape[:2]
@@ -236,6 +353,12 @@ def build_decor(dec, cam_ref):
     strength = nt.nodes.new('ShaderNodeValue')
     strength.name = 'strength'
     strength.outputs[0].default_value = 1.0
+    life = None if DECOR_FIXE else decor_motion_map(dec)
+    if life is not None:
+        uv = decor_life_uv(nt, life[0], life[1], W, bpy.context.scene.render.fps)
+        nt.links.new(uv, t1.inputs['Vector'])
+        nt.links.new(uv, t2.inputs['Vector'])
+        print(f'[décor vivant] foule peinte {life[2]:.0%} ({life[5]}) · vent {life[3]:.0%} · eau {life[4]:.0%} de l’image', flush=True)
     nt.links.new(val.outputs[0], mx.inputs['Factor'])
     nt.links.new(t1.outputs['Color'], mx.inputs['A'])
     nt.links.new(t2.outputs['Color'], mx.inputs['B'])
@@ -957,6 +1080,8 @@ def main():
     vdir = os.path.join(os.path.dirname(os.path.abspath(A.plan)), 'visage')
     if not A.sans_visage and os.path.isdir(vdir):
         VISAGE.update({'dir': vdir, 'frames': plan['frames']})
+    global DECOR_FIXE, JEU_CORPS
+    DECOR_FIXE, JEU_CORPS = A.decor_fixe, not A.sans_jeu
     if A.decor:
         if A.decor not in rig['decors']:
             raise SystemExit(f'vue inconnue du kit : {A.decor}')
@@ -1066,6 +1191,9 @@ def main():
             if m_.name.startswith('sol-') and m_.node_tree and m_.node_tree.nodes.get('tint'):
                 m_.node_tree.nodes['tint'].inputs['B'].default_value = tuple(bounds['grid']['tint'].inputs['B'].default_value)
     shots_info = cameras(plan, actors, bounds, soft, fps)
+    if JEU_CORPS:
+        span = tuple(int(x) for x in A.frames.split('-')) if A.frames else None
+        follow_faces(plan, actors, fps, span)
     # Depth of field calibrated on the real cameras: the background stays legible (faces, expressions).
     image_qa = calibrate_softness(shots_info, plan, bounds, world_.softs if life else [])
     sc.frame_set(1)
@@ -1106,6 +1234,9 @@ def main():
         frames = list(range(1, plan['frames'] + 1))
     if 1 in frames:
         screen_faces(sc, actors, plan, os.path.join(os.path.dirname(os.path.abspath(A.plan)), 'ecran-visages.json'))
+    if frames:
+        screen_shots(sc, actors, plan, os.path.join(os.path.dirname(os.path.abspath(A.plan)), 'ecran-plans.json'), (min(frames), max(frames)))
+        sc.frame_set(frames[0])
     import time
     t0 = time.time()
     step = max(1, A.pas) if not A.still else 1
@@ -1214,10 +1345,14 @@ def animate(plan, actors, fps):
             for d, v in enumerate((0.6, 1.0, 1.0, 0.5)):
                 if b + d < nF:
                     blink[b + d + 1] = v
-        tt = np.arange(nF + 1) / fps
         seed = sum(ord(c) for c in aid)
-        breath = np.sin(tt * 2 * math.pi / 3.6 + seed % 7)
-        sway = np.sin(tt * 2 * math.pi / 5.3 + seed % 5)
+        # The body plays the voice (acting.py, tested): lean toward the partner with the head following, syllable bob,
+        # visible breath, weight shifts, listening nods.
+        import acting
+        partner_nods = [plan['tracks'][o]['nod'] for o in plan['tracks'] if o != aid]
+        cv = acting.curves(jaw, partner_nods, A['plan']['x'], nF, fps, seed, on=JEU_CORPS)
+        head_rot, spine_rot, root_rot = cv['head'], cv['spine'], cv['root']
+        breath, breath_amp, listen_nod, bobv = cv['breath'], cv['breath_amp'], cv['listen'], cv['bob']
         for kind, P in poses.items():
             ob = P.ob
             sk = ob.data.shape_keys.key_blocks.get('jaw') if ob.data.shape_keys else None
@@ -1236,14 +1371,16 @@ def animate(plan, actors, fps):
                         P.cav.keyframe_insert('scale', index=2, frame=f)
                     last_j = j
                 if f % 2 == 1 or f == nF:
-                    pb['head'].rotation_euler[2] = math.radians(3.2) * float(turn[i] if i < len(turn) else 0)
+                    pb['head'].rotation_euler[2] = math.radians(3.2) * float(turn[i] if i < len(turn) else 0) + float(head_rot[i])
                     pb['head'].keyframe_insert('rotation_euler', index=2, frame=f)
-                    pb['head'].location[1] = -0.012 * float(nod[i] if i < len(nod) else 0)
+                    nd = float(nod[i] if i < len(nod) else 0) + float(listen_nod[i])
+                    pb['head'].location[1] = -0.024 * nd + float(bobv[i])
                     pb['head'].keyframe_insert('location', index=1, frame=f)
-                if f % 3 == 1 or f == nF:
-                    pb['spine'].scale[1] = 1 + 0.010 * float(breath[i])
+                    pb['spine'].scale[1] = 1 + breath_amp * float(breath[i])
                     pb['spine'].keyframe_insert('scale', index=1, frame=f)
-                    pb['root'].rotation_euler[2] = math.radians(0.7) * float(sway[i])
+                    pb['spine'].rotation_euler[2] = float(spine_rot[i])
+                    pb['spine'].keyframe_insert('rotation_euler', index=2, frame=f)
+                    pb['root'].rotation_euler[2] = float(root_rot[i])
                     pb['root'].keyframe_insert('rotation_euler', index=2, frame=f)
             for lid in P.lids:
                 prev = None
@@ -1621,6 +1758,104 @@ def cameras(plan, actors, bounds, soft, fps):
     except Exception as e:
         print('[scene] interpolation:', e)
     return info
+
+
+
+def screen_shots(sc, actors, plan, path, span=None):
+    """Where the faces are ON SCREEN in each two-shot (start, middle, end; after the acting and the camera moves), in
+    image shares (x0, y0, x1, y1 from the top-left): finish.py places the sharp square of the owner's two-shot style
+    on them — framed for the full vertical picture, the heads fell in the blurred band (film 6). Merged per run."""
+    from bpy_extras.object_utils import world_to_camera_view
+    nF = plan['frames']
+    lo, hi = span or (1, nF)
+    try:
+        out = json.load(open(path))
+    except (OSError, ValueError):
+        out = {}
+    for k, s in enumerate(plan['shots']):
+        if s['type'] != 'two' or s['end'] < lo or s['start'] + 1 > hi:
+            continue
+        co = bpy.data.objects.get(f'cam{k}')
+        if co is None:
+            continue
+        boxes = []
+        for f in sorted({s['start'] + 1, (s['start'] + s['end']) // 2, s['end']}):
+            sc.frame_set(f)
+            for aid, A in actors.items():
+                if (A['plan'].get('enter') or 0) > f - 1:
+                    continue
+                kind = 'neutre'
+                for f0, kd in plan['tracks'][aid]['poses']:
+                    if f0 + 1 <= f:
+                        kind = kd
+                P = A['poses'].get(kind) or A['poses']['neutre']
+                pb = P.arm.pose.bones['head']
+                D = P.arm.matrix_world @ pb.matrix @ pb.bone.matrix_local.inverted()
+                head = max(0.08, getattr(P, 'top_z', P.face_z + 0.15) - P.face_z)
+                uv = [world_to_camera_view(sc, co, D @ Vector((P.face_x + dx * head * 0.85, 0.0, P.face_z + dz)))
+                      for dx in (-1, 1) for dz in (head, -0.75 * head)]
+                if all(v.z > 0 for v in uv):
+                    boxes.append([round(min(v.x for v in uv), 3), round(min(1 - v.y for v in uv), 3),
+                                  round(max(v.x for v in uv), 3), round(max(1 - v.y for v in uv), 3)])
+        out[str(k)] = boxes
+    json.dump(out, open(path, 'w'), indent=0)
+
+
+def follow_faces(plan, actors, fps, span=None, follow=0.85):
+    """THE OPERATOR FOLLOWS THE FACE. In a close-up the frame is ≈ 30 cm wide: the acting layer (a lean of ≈ 7 cm toward
+    the partner, the weight shifts) took the face out of it (film 6, « Tu m'as fatiguée »). For every close shot the
+    face's real position (head bone, after the acting) is compared on screen with where the drawing's face would be
+    at rest, and the lens shift takes up `follow` of the difference, smoothed over 0.4 s like a camera operator — the
+    body still moves against the set, the face stays where the shot put it."""
+    from bpy_extras.object_utils import world_to_camera_view
+    sc = bpy.context.scene
+    nF = plan['frames']
+    lo, hi = span or (1, nF)
+    moved = 0
+    for k, s in enumerate(plan['shots']):
+        if s['type'] == 'two' or s['end'] < lo or s['start'] + 1 > hi:
+            continue
+        aid = s.get('target')
+        A = actors.get(aid)
+        co = bpy.data.objects.get(f'cam{k}')
+        if A is None or co is None:
+            continue
+        cam = co.data
+        seq = plan['tracks'][aid]['poses']
+        frames = list(range(s['start'] + 1, s['end'] + 1, 2)) + [s['end']]
+        sc.camera = co
+        dus, dvs, base = [], [], []
+        for f in frames:
+            kind = 'neutre'
+            for f0, kd in seq:
+                if f0 + 1 <= f:
+                    kind = kd
+            P = A['poses'].get(kind) or A['poses']['neutre']
+            sc.frame_set(f)
+            pb = P.arm.pose.bones['head']
+            rest = Vector((P.face_x, 0.0, P.face_z))
+            M = P.arm.matrix_world
+            now = M @ (pb.matrix @ pb.bone.matrix_local.inverted() @ rest)
+            u1, u0 = world_to_camera_view(sc, co, now), world_to_camera_view(sc, co, M @ rest)
+            # Screen motion per unit of lens shift, measured on this very camera at this frame.
+            sx, sy = cam.shift_x, cam.shift_y
+            cam.shift_x, cam.shift_y = sx + 0.01, sy + 0.01
+            u2 = world_to_camera_view(sc, co, M @ rest)
+            cam.shift_x, cam.shift_y = sx, sy
+            gx, gy = (u2.x - u0.x) / 0.01, (u2.y - u0.y) / 0.01
+            dus.append(-follow * (u1.x - u0.x) / gx if abs(gx) > 1e-6 else 0.0)
+            dvs.append(-follow * (u1.y - u0.y) / gy if abs(gy) > 1e-6 else 0.0)
+            base.append((sx, sy))
+        n = max(1, int(0.4 * fps / 2))
+        sm = lambda a: np.convolve(np.pad(np.asarray(a, float), (n, n), mode='edge'), np.ones(2 * n + 1) / (2 * n + 1), mode='valid')
+        dx, dy = sm(dus), sm(dvs)
+        for f, (sx, sy), ex, ey in zip(frames, base, dx, dy):
+            cam.shift_x, cam.shift_y = sx + float(ex), sy + float(ey)
+            cam.keyframe_insert('shift_x', frame=f)
+            cam.keyframe_insert('shift_y', frame=f)
+        moved = max(moved, float(np.max(np.abs(dx))) if len(dx) else 0.0)
+    sc.frame_set(lo)
+    print(f'[caméra] suit les visages des plans serrés (reprise jusqu’à {moved:.3f} du cadre)', flush=True)
 
 
 if __name__ == '__main__':

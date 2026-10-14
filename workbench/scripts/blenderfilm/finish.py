@@ -49,10 +49,33 @@ def emoji_card(ch, W, H, t):
     return card
 
 
-def band(img):
-    """Two-shot of the owner's style: the sharp square in the middle, the same picture blurred above and below."""
+def band_top(boxes, W, H, headroom=0.10, margin=0.04):
+    """Top row of the sharp square of a two-shot: on the FACES of the shot (scene.py → ecran-plans.json), with
+    headroom above the highest head; the middle of the picture when nothing was measured."""
+    if not boxes:
+        return (H - W) // 2
+    top = min(b[1] for b in boxes) * H
+    bot = max(b[3] for b in boxes) * H
+    y0 = top - headroom * W
+    if bot + margin * W > y0 + W:  # faces spread taller than the square: keep the lowest chin in
+        y0 = bot + margin * W - W
+    return int(round(min(max(y0, 0), H - W)))
+
+
+def shot_faces(plan_path):
+    """The faces of every two-shot on screen (scene.py → ecran-plans.json next to the plan), or {}."""
+    p = os.path.join(os.path.dirname(os.path.abspath(plan_path)), 'ecran-plans.json')
+    try:
+        return json.load(open(p))
+    except (OSError, ValueError):
+        return {}
+
+
+def band(img, y0=None):
+    """Two-shot of the owner's style: the sharp square, the same picture blurred above and below. The square sits on
+    the faces of the shot (y0 from band_top), never on a fixed middle that left the heads in the blur."""
     W, H = img.size
-    y0 = (H - W) // 2
+    y0 = (H - W) // 2 if y0 is None else y0
     sq = img.crop((0, y0, W, y0 + W))
     bg = sq.resize((H, H), Image.BILINEAR).crop(((H - W) // 2, 0, (H - W) // 2 + W, H)).filter(ImageFilter.GaussianBlur(18))
     bg = Image.eval(bg, lambda v: int(v * 0.82))
@@ -81,7 +104,7 @@ def film_look(img, rng, strength=1.0):
 
 
 
-def loudness_normalise(src, dst, target=-14.0, tp=-1.0):
+def loudness_normalise(src, dst, target=-14.0, tp=-1.0, _compressed=False):
     """Two-pass EBU R128 to the platforms' target (TikTok / Reels / Shorts play around -14 LUFS)."""
     try:
         r = subprocess.run(['ffmpeg', '-hide_banner', '-nostats', '-i', src, '-af', f'loudnorm=I={target}:TP={tp}:LRA=11:print_format=json', '-f', 'null', '-'], capture_output=True, text=True)
@@ -89,6 +112,14 @@ def loudness_normalise(src, dst, target=-14.0, tp=-1.0):
         af = (f"loudnorm=I={target}:TP={tp}:LRA=11:measured_I={js['input_i']}:measured_TP={js['input_tp']}:measured_LRA={js['input_lra']}:"
               f"measured_thresh={js['input_thresh']}:offset={js['target_offset']}:linear=true")
         subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', src, '-af', af, '-ar', '48000', dst], check=True)
+        got = lufs(dst)[0]
+        if got is not None and abs(got - target) > 0.5 and not _compressed:
+            # The linear gain stops where the peaks would clip (film 6: mix -19.2 LUFS with peaks at -1 dBFS → only
+            # -15.2). A gentle dialogue compressor first (the usual mix move), then the same two-pass normalisation.
+            pre = os.path.splitext(dst)[0] + '.comp.wav'
+            subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', src, '-af', 'acompressor=threshold=-20dB:ratio=3:attack=5:release=150:makeup=1', pre], check=True)
+            loudness_normalise(pre, dst, target, tp, _compressed=True)
+            os.remove(pre)
         return float(js['input_i'])
     except Exception as e:
         print('[finish] loudnorm ignoré :', e)
@@ -108,7 +139,7 @@ def srt_time(t):
     return f'{ms // 3600000:02d}:{ms // 60000 % 60:02d}:{ms // 1000 % 60:02d},{ms % 1000:03d}'
 
 
-def write_extras(plan, frames_have, out_mp4, rng):
+def write_extras(plan, frames_have, out_mp4, rng, plan_path=''):
     """For the creator: the TikTok COVER (expressive close-up + hook), the .srt captions, the post text."""
     base = os.path.splitext(out_mp4)[0]
     # Cover: the middle of the punchline shot (the biggest face), else the hook.
@@ -120,7 +151,7 @@ def write_extras(plan, frames_have, out_mp4, rng):
     f = min(max(1, f), len(frames_have))
     img = Image.open(frames_have[f]).convert('RGB')
     if pick['type'] == 'two':
-        img = band(img)
+        img = band(img, band_top(shot_faces(plan_path).get(str(shots.index(pick)), []) if plan_path else [], *img.size))
     img = film_look(img, rng)
     W, H = 1080, 1920
     img = img.resize((W, int(img.height * W / img.width)), Image.LANCZOS).crop((0, 0, W, H))
@@ -258,6 +289,9 @@ def main():
     shot_of = np.zeros(nF + 2, int)
     for k, s in enumerate(plan['shots']):
         shot_of[s['start'] + 1: s['end'] + 1] = k
+    # The sharp square of each two-shot, on its faces (one position per shot: the square never jumps inside a shot).
+    sp = shot_faces(a.plan)
+    band_y0 = {k: band_top(sp.get(str(k), []), W, H) for k, s in enumerate(plan['shots']) if s['type'] == 'two'}
     caps = []
     for c in plan['captions']:
         for ch in chunks(c['words']):
@@ -283,7 +317,7 @@ def main():
         s = plan['shots'][shot_of[f]]
         two = s['type'] == 'two'
         if two:
-            img = band(img)
+            img = band(img, band_y0.get(int(shot_of[f])))
         if not a.no_grade:
             img = film_look(img, rng)
         e = next((x for x in emo if x['start'] <= t < x['end']), None)
@@ -321,7 +355,7 @@ def main():
            'longest_frozen_s': round(frozen_max / fps, 2), 'brightness_jumps_outside_cuts': len(jumps), 'shots': len(plan['shots']), 'size': [W, H], 'fps': fps}
     out_lufs, out_peak = lufs(a.out)
     rep.update({'loudness_lufs': out_lufs, 'true_peak_dbfs': out_peak, 'graded': not a.no_grade, 'first_word_s': round(plan['timeline'][0]['speak0'], 2) if plan.get('timeline') else None})
-    write_extras(plan, have, a.out, rng)
+    write_extras(plan, have, a.out, rng, plan_path=a.plan)
     json.dump(rep, open(os.path.splitext(a.out)[0] + '.qa.json', 'w'), indent=1)
     print('[finish]', json.dumps(rep, ensure_ascii=False))
 

@@ -389,3 +389,59 @@ print(json.dumps({'smile': P.spoken_pose({'text': 'Pour toi, mon fils ? Mille fr
     expect(cycle.filter((t) => t === 'cu').length).toBeLessThanOrEqual(1);
   });
 });
+
+describe('Corps et décor vivants (acting.py, crowd.py)', () => {
+  it('a speaking actor leans toward the partner and the head follows; listening stands back up; the old idle stays still', () => {
+    const r = py(`
+import json, math, numpy as np, acting
+fps, nF = 25, 250
+jaw = np.zeros(nF); jaw[50:150] = 0.4          # speaks from 2 s to 6 s, then listens
+L = acting.curves(jaw, [np.zeros(nF)], -0.4, nF, fps, 7)
+R = acting.curves(jaw, [np.zeros(nF)], 0.42, nF, fps, 7)
+O = acting.curves(jaw, [np.zeros(nF)], -0.4, nF, fps, 7, on=False)
+d = lambda a: math.degrees(float(np.mean(a)))
+print(json.dumps({'leftSpeak': d(L['spine'][75:140]), 'leftListen': d(L['spine'][190:240]), 'leftHead': d(L['head'][75:140]),
+  'rightSpeak': d(R['spine'][75:140]), 'oldSpine': float(np.abs(O['spine']).max()), 'breath': L['breath_amp'],
+  'shift': math.degrees(float(np.ptp(L['root'])))}))`);
+    if (!r) return;
+    expect(r.leftSpeak as number).toBeLessThan(-3.5); // left actor: top toward +x (negative rotation, measured sign)
+    expect(Math.abs(r.leftListen as number)).toBeLessThan(1.0);
+    expect(r.leftHead as number).toBeLessThan(-0.5); // the head follows the lean, never cancels it
+    expect(r.rightSpeak as number).toBeGreaterThan(3.5);
+    expect(r.oldSpine).toBe(0);
+    expect(r.breath as number).toBeGreaterThanOrEqual(0.02);
+    expect(r.shift as number).toBeGreaterThan(1.5); // weight shifts are visible
+  });
+
+  it('the lips meet on m / b / p heard by Rhubarb, the rest of the loudness lips is untouched', () => {
+    const r = py(`
+import json, numpy as np, lipsync
+env = np.full(25, 0.6)
+out = lipsync.jaw_from_cues([{'start': 0.2, 'end': 0.32, 'value': 'A'}, {'start': 0.4, 'end': 0.6, 'value': 'D'}], env, 25)
+print(json.dumps({'closed': float(out[5:8].max()), 'open': float(out[12]), 'before': float(out[2])}))`);
+    if (!r) return;
+    expect(r.closed as number).toBeLessThanOrEqual(0.03); // « m » of « Maman »: lips meet even when loud
+    expect(r.open).toBe(0.6); // other shapes do not override the voice (they opened less on French voices)
+    expect(r.before).toBe(0.6);
+  });
+
+  it('the painted crowd sways person by person, feet still, without tearing between neighbours', () => {
+    const r = py(`
+import json, numpy as np, crowd
+inst = np.zeros((200, 160), np.uint8)
+inst[40:180, 20:80] = 1; inst[60:180, 80:140] = 2  # two painted people side by side, touching, feet on row 179
+C, S = crowd.sway_field(inst)
+amp = np.hypot(C, S)
+ang = lambda y, x: float(np.arctan2(S[y, x], C[y, x]))
+dx = 0.012 * C  # the shader's sway ratio
+print(json.dumps({'head1': float(amp[48, 50]), 'feet1': float(amp[178, 50]), 'head2': float(amp[68, 110]), 'feet2': float(amp[178, 110]),
+  'phaseGap': abs(ang(48, 50) - ang(68, 110)), 'stretch': float(np.abs(np.diff(dx, axis=1)).max()), 'tall1': float(amp[48, 50]) > float(amp[68, 110])}))`);
+    if (!r) return;
+    expect(r.head1 as number).toBeGreaterThan(50); // ≈ height × lever, in pixels
+    expect(r.feet1 as number).toBeLessThan(0.1 * (r.head1 as number)); // feet anchored (law of physics)
+    expect(r.feet2 as number).toBeLessThan(0.1 * (r.head2 as number));
+    expect(r.phaseGap as number).toBeGreaterThan(0.05); // two people never sway in lockstep
+    expect(r.stretch as number).toBeLessThan(0.25); // < 0.25 px of change per pixel: no tear at the seam
+    expect(r.tall1).toBe(true); // the taller person sways more (amplitude ∝ height)
+  });
+});

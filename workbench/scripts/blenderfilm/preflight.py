@@ -253,6 +253,29 @@ def check_geometry(R, objs, autofix=True):
         bm.free()
 
 
+def sequence_problem(first, frames):
+    """What is wrong with an image sequence on disk (first picture … picture n° frames), or '' when both ends exist and
+    decode to a real picture."""
+    import bpy
+    m = re.match(r'^(.*?)(\d+)(\.[^.]+)$', first)
+    if not m:
+        return f'nom sans numéro d’image : {os.path.basename(first)}'
+    head, num, ext = m.groups()
+    last = f'{head}{int(num) + max(1, int(frames)) - 1:0{len(num)}d}{ext}'
+    for p in (first, last):
+        if not os.path.isfile(p):
+            return f'image manquante : {os.path.basename(os.path.dirname(p))}/{os.path.basename(p)}'
+        try:
+            im = bpy.data.images.load(p, check_existing=False)
+            ok = im.size[0] > 0 and im.size[1] > 0
+            bpy.data.images.remove(im)
+        except RuntimeError:
+            ok = False
+        if not ok:
+            return f'image illisible : {os.path.basename(p)}'
+    return ''
+
+
 def check_materials(R, objs, autofix=True):
     import bpy
     fallback = None
@@ -289,6 +312,13 @@ def check_materials(R, objs, autofix=True):
                 img = n.image
                 if img is None:
                     R.add('materiaux', 'critique', 'nœud de texture sans image (rendu rose)', m.name)
+                    continue
+                if img.source == 'SEQUENCE':
+                    # A face sequence (liveface.py): Blender loads one picture per frame, so the datablock has no size
+                    # before the render — check the files themselves: the first and the last picture exist and decode.
+                    bad = sequence_problem(bpy.path.abspath(img.filepath), n.image_user.frame_duration)
+                    if bad:
+                        R.add('materiaux', 'critique', f'suite d’images : {bad}', m.name)
                     continue
                 if img.source == 'FILE' and not img.packed_file:
                     path = bpy.path.abspath(img.filepath)
