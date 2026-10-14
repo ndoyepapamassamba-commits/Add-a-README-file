@@ -8,6 +8,7 @@ import { VideoAnalyzer } from './videoAnalyzer';
 import { IdeaPrompter } from './ideaPrompter';
 import { ActorCasting } from './actorCasting';
 import { BlenderShoot } from './blenderShoot';
+import { VIDEO_3D } from '../../lib/features';
 import { useEffect, useMemo, useState } from 'react';
 import { create } from 'zustand';
 import { Badge, Button, Select, Spinner, Toggle } from '../../../web/components/ui';
@@ -122,7 +123,7 @@ function IdeaForm({
   onCreate: (idea: string, dim: Dimension, seconds: number, aspect: string, budget?: number) => void;
 }) {
   const [idea, setIdea] = useState('');
-  const [dim, setDim] = useState<Dimension>('3D');
+  const [dim, setDim] = useState<Dimension>(VIDEO_3D ? '3D' : '2D');
   const [sec, setSec] = useState(60);
   const [aspect, setAspect] = useState('9:16');
   const circuit = useStudio((s) => s.settings.circuit);
@@ -151,7 +152,7 @@ function IdeaForm({
       <IdeaPrompter onPick={setIdea} />
       <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
         <span className="text-muted">Style</span>
-        {(['3D', '2D'] as Dimension[]).map((d) => (
+        {(VIDEO_3D ? (['3D', '2D'] as Dimension[]) : (['2D'] as Dimension[])).map((d) => (
           <button
             key={d}
             onClick={() => setDim(d)}
@@ -207,7 +208,7 @@ function IdeaForm({
             <span className="text-faint">≈ {((cap ?? auto) * 0.8).toFixed(2)} $ pour la vidéo</span>
           )}
         </label>
-        <label
+        {VIDEO_3D && <label
           className="flex items-center gap-2"
           title="Les scènes sans clip vidéo sont jouées par les acteurs 3D réutilisables (créés depuis les fiches, ou vos modèles .vrm), avec lip-sync : 0 $. Les mêmes acteurs reviennent d’un film à l’autre."
         >
@@ -218,7 +219,7 @@ function IdeaForm({
             />
           </span>
           Acteurs 3D
-        </label>
+        </label>}
         <label
           className="flex items-center gap-2"
           title="Avec votre troupe (vos planches), le moteur joue TOUT le film gratuitement. Activez ceci seulement si vous voulez que Grok anime aussi la chute (payant)."
@@ -808,7 +809,7 @@ export function FilmAutopilot({ onExpert }: { onExpert: () => void }) {
                 ))}
               </div>
             )}
-            {bp.scenes.some((sc) => sc.dialogue.length > 0) && <BlenderShoot bp={bp} />}
+            {VIDEO_3D && bp.scenes.some((sc) => sc.dialogue.length > 0) && <BlenderShoot bp={bp} />}
             {result && (
               <div className="rounded-xl border border-ok p-3" data-testid="film-final">
                 <div className="mb-1 text-[13px] font-semibold">
@@ -831,7 +832,7 @@ export function FilmAutopilot({ onExpert }: { onExpert: () => void }) {
             )}
           </>
         )}
-        <ActorCasting projectId={bp?.project.id} />
+        {VIDEO_3D && <ActorCasting projectId={bp?.project.id} />}
         <VideoAnalyzer projectId={bp?.project.id} />
       </main>
     </div>

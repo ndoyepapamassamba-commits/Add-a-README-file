@@ -1,6 +1,7 @@
 // AI VISUAL STUDIO — production department of the Workbench (2D film / animation / social content factory), driven by JEV.
 // It is the pre-production and control room: it does NOT replace the local `afrikatoon-auto` engine, it feeds it (kit export).
 // Disabled → nothing is read from or written to IndexedDB and no request is made.
+import { VIDEO_3D } from '../../lib/features';
 import { useEffect, useState } from 'react';
 import { budgetTier } from '../../../server/jev/studio/film';
 import { dimensionOf } from '../../../server/jev/studio/style';
@@ -369,7 +370,7 @@ export function StudioView() {
           <div className="font-semibold">🎬 MASSAMBA AI FILM STUDIO</div>
           <div className="text-[10.5px] text-faint">AI-native audiovisual production system</div>
         </div>
-        <Badge tone="accent">2D / 3D · AI FILM · ANIMATION · SOCIAL</Badge>
+        <Badge tone="accent">{VIDEO_3D ? '2D / 3D' : '2D'} · AI FILM · ANIMATION · SOCIAL</Badge>
         {bp && <Badge tone="info">{dimensionOf(bp.styleDNA)}</Badge>}
         {bp && budgetTier(spent(bp), bp.cap).tier !== 'normal' && (
           <Badge tone={budgetTier(spent(bp), bp.cap).tier === 'hard-stop' ? 'err' : 'warn'}>

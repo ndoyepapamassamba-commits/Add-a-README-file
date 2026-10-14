@@ -1,7 +1,8 @@
 // Main views of the direct edition (ids + labels; icons live in App.tsx).
+import { VIDEO_3D } from './features';
 import type { View } from './types';
 
-export const NAV_ITEMS: { id: View; label: string }[] = [
+const ALL_NAV_ITEMS: { id: View; label: string }[] = [
   { id: 'home', label: 'Cockpit IA' },
   { id: 'chat', label: 'Chat' },
   { id: 'files', label: 'Fichiers' },
@@ -21,3 +22,5 @@ export const NAV_ITEMS: { id: View; label: string }[] = [
   { id: 'providers', label: 'Fournisseurs & coûts' },
   { id: 'settings', label: 'Réglages' },
 ];
+// The 3D video screens leave the navigation when VIDEO_3D is off (features.ts): a subject of its own.
+export const NAV_ITEMS = ALL_NAV_ITEMS.filter((n) => VIDEO_3D || n.id !== 'lab3d');

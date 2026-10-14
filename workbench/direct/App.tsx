@@ -57,6 +57,7 @@ import { CognitiveOS } from './views/CognitiveOS';
 import { exportArchive, importArchive, setArchived } from './lib/vault';
 import { NAV_ITEMS } from './lib/nav';
 import { Lab3DView } from './views/Lab3DView';
+import { VIDEO_3D } from './lib/features';
 import { ProvidersView } from './views/ProvidersView';
 import { StudioView } from './views/studio/StudioView';
 
@@ -296,7 +297,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           {view === 'jev' && <JevView />}
           {view === 'cognitive' && <CognitiveOS />}
           {view === 'studio' && <StudioView />}
-          {view === 'lab3d' && <Lab3DView />}
+          {view === 'lab3d' && (VIDEO_3D ? <Lab3DView /> : <div className="p-6 text-[13px] text-muted">La vidéo 3D est un sujet à part, hors de l’app pour l’instant (drapeau VIDEO_3D dans lib/features.ts). Ses acquis sont conservés dans le dépôt.</div>)}
           {view === 'providers' && <ProvidersView />}
           {view === 'settings' && <SettingsView onLogout={onLogout} />}
         </main>

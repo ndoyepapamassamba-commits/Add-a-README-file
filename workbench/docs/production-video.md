@@ -1,3 +1,5 @@
+> **14/10/2026 — la vidéo 3D est un sujet à part, hors de l'app** (drapeau `VIDEO_3D = false` dans `direct/lib/features.ts`). Les acquis sont conservés : voir `research_notes/Animer Blender par prompt/video_3d_etat_des_acquis.md`.
+
 # Chaîne de production vidéo — outils puissants, gratuits, sans abonnement
 
 État au 14/10/2026. Règles de l'utilisateur : outils **puissants mais gratuits**, **sans abonnement** ; chercher
