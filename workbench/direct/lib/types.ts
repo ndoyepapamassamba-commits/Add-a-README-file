@@ -11,6 +11,7 @@ export type View =
   | 'home'
   | 'chat'
   | 'prompts'
+  | 'realize'
   | 'files'
   | 'data'
   | 'terminal'

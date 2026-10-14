@@ -72,8 +72,9 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'sandbox',
     label: 'Bac à sable',
-    hint: 'Composer, tester et améliorer un prompt ; générer une scène 3D WebGL avec aperçu en direct et auto-correction.',
+    hint: 'Tout prompt devient une réalisation exécutée et corrigée (apps, tableaux de bord, jeux, 3D, schémas) ; composer et tester des prompts ; Studio 3D WebGL.',
     views: [
+      { id: 'realize', label: 'Réalisation' },
       { id: 'prompts', label: 'Prompt Studio' },
       { id: 'lab3d', label: 'Studio 3D' },
     ],
