@@ -16,7 +16,7 @@ Tout ce qui suit est lu sur la source primaire ou MESURÉ dans le conteneur (4 c
   cherche des mots entiers (« toi » ne se déclenche pas dans « toiture ») et garde l'indice le plus long.
 - Conditions CMU : « free for all uses », produits commerciaux permis, pas de revente des données, pas de crawl →
   téléchargement clip par clip (`ensure_clip`), jamais redistribué, seulement les films rendus.
-- Réserve : 100STYLE (CC BY 4.0, 100 styles de marche : à étiqueter pour les entrées en scène).
+- Réserve : **100STYLE** — lu sur la page officielle ([ianxmason.com/100style](https://ianxmason.com/100style/)) : licence CC BY 4.0 (crédit « The 100STYLE Dataset - Ian Mason »), 100 styles comprenant chacun marche/course avant, arrière, de côté, attente (idle) et transitions ; styles utiles aux entrées en scène et aux attentes de nos personnages : Angry, Depressed, Drunk, Elated, Old, Proud, Rushed, Strutting, Stiff, Tiptoe, Zombie, OnPhoneLeft/Right, ArmsFolded, HandsInPockets, Akimbo, Waving, LookUp, Heavyset. À étiqueter dans `direction-vocab.json` (v2 : « entre en scène » + style) — BVH, donc un lecteur BVH à ajouter à `mocap.py` (aujourd'hui ASF/AMC).
 
 ## 2. Le modèle texte sans clé : llama.cpp + Qwen3 1,7B (MESURÉ)
 - Licences : llama.cpp MIT ; Qwen3 1,7B GGUF **Apache-2.0** (balise `license:apache-2.0` lue sur la fiche
