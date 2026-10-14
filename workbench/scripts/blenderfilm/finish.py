@@ -192,9 +192,26 @@ def balanced_lines(d, text, fnt, maxw):
     return best[1]
 
 
-def draw_hook(img, text, t, dur=2.8):
+def hook_top(faces, bh, H, sub_top=0.78, top=0.105, margin=0.02):
+    """The card's top (pixels): under the TikTok top bar if no face is there, else below the faces (above the
+    captions), else above them — the hook never covers a face (audit of film 5: the title sat on Modou's head)."""
+    def free(y):
+        return all(y / H + bh / H + margin <= f[1] + 1e-9 or y / H >= f[3] + margin - 1e-9 for f in faces)
+    for y in [top * H] + [(f[3] + margin) * H for f in sorted(faces, key=lambda f: f[3])] + [(f[1] - margin) * H - bh for f in faces]:
+        y = math.ceil(y)
+        if y >= 0.06 * H and y + bh <= sub_top * H and free(y):
+            return y
+    # Faces everywhere: the place that covers the least face (vertical overlap × face width), nearest the top.
+    def cover(y):
+        a, b = y / H, (y + bh) / H
+        return sum(max(0.0, min(b, f[3]) - max(a, f[1])) * (f[2] - f[0]) for f in faces)
+    ys = [int(0.06 * H) + k * 4 for k in range(int(((sub_top - 0.06) * H - bh) // 4) + 1)]
+    return min(ys, key=lambda y: (round(cover(y), 4), y)) if ys else int(top * H)
+
+
+def draw_hook(img, text, t, dur=2.8, faces=()):
     """THE HOOK on screen (first seconds): bold black text on a white rounded card, popping in, top of the frame
-    (under the TikTok top bar), then fading out."""
+    (under the TikTok top bar) — or wherever no face is —, then fading out."""
     if not text or t >= dur:
         return
     W, H = img.size
@@ -208,7 +225,7 @@ def draw_hook(img, text, t, dur=2.8):
     lh = int(fs * 1.18)
     bw = int(max(d.textlength(x, font=fnt) for x in lines) + fs * 0.9)
     bh = lh * len(lines) + int(fs * 0.5)
-    x0, y0 = (W - bw) // 2, int(H * 0.115)
+    x0, y0 = (W - bw) // 2, hook_top(list(faces), bh, H)
     card = Image.new('RGBA', (bw, bh), (0, 0, 0, 0))
     cd = ImageDraw.Draw(card)
     cd.rounded_rectangle((0, 0, bw - 1, bh - 1), radius=int(fs * 0.35), fill=(255, 255, 255, int(240 * fade)))
@@ -234,6 +251,10 @@ def main():
     if missing:
         raise SystemExit(f'images manquantes : {len(missing)} (première : {missing[0]})')
     W, H = Image.open(have[1]).size
+    sf_p = os.path.join(os.path.dirname(os.path.abspath(a.plan)), 'ecran-visages.json')
+    screen = {int(k): v for k, v in json.load(open(sf_p)).items()} if os.path.isfile(sf_p) else {}
+    # the faces of the nearest measured frame (every other frame is measured)
+    hook_faces = lambda f: screen.get(f) or screen.get(f - 1) or []
     shot_of = np.zeros(nF + 2, int)
     for k, s in enumerate(plan['shots']):
         shot_of[s['start'] + 1: s['end'] + 1] = k
@@ -269,7 +290,7 @@ def main():
         if e:
             img = emoji_card(e['char'], W, H, t - e['start'])
         else:
-            draw_hook(img, plan.get('hook', ''), t)
+            draw_hook(img, plan.get('hook', ''), t, faces=hook_faces(f))
         if e:
             pass
         elif not a.no_captions:

@@ -371,4 +371,21 @@ print(json.dumps({'place': P.place_views('Gare — Adjamé', decors), 'named': P
     }
     expect(r.short).toEqual([{ decor: 'A', start: 0, end: 250 }]); // a 10 s film keeps one view
   });
+  it('the audit of film 5: laughter drawing only for laughter, the hook never on a face, mostly medium and wide shots', () => {
+    const r = py(`
+import json, plan as P, finish as F
+H, bh = 1024, 125
+print(json.dumps({'smile': P.spoken_pose({'text': 'Pour toi, mon fils ? Mille francs.', 'pose': 'rire'}),
+  'laugh': P.spoken_pose({'text': 'Ha ha ha !', 'pose': 'neutre'}), 'shrug': P.spoken_pose({'text': 'Moi, j’ai pris.', 'pose': 'haussement'}),
+  'free': F.hook_top([], bh, H), 'head_top': F.hook_top([[0.3, 0.08, 0.7, 0.35]], bh, H),
+  'cycle': P.SHOT_CYCLE}))`);
+    if (!r) return;
+    expect(r.smile).toBe('neutre'); // a spoken line is never played with the fit-of-laughter drawing
+    expect(r.laugh).toBe('rire');
+    expect(r.shrug).toBe('haussement');
+    expect(r.free).toBe(108); // under the TikTok top bar (10.5 % of the height) when no face is there
+    expect(r.head_top as number).toBeGreaterThanOrEqual(0.37 * 1024); // below a head at the top of the frame
+    const cycle = r.cycle as string[];
+    expect(cycle.filter((t) => t === 'cu').length).toBeLessThanOrEqual(1);
+  });
 });

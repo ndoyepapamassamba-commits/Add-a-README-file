@@ -10,7 +10,7 @@ mesurée sur la voix, mouvements de tête, hochements, clignements, poses jouée
 Sortie : plan.json + mix.wav (voix + musique, 48 kHz) dans --out. Aucune donnée inventée : les chiffres du plan sont mesurés
 sur les fichiers produits (durées, énergie de la voix).
 """
-import argparse, json, math, os, random, subprocess, sys, wave
+import argparse, json, math, os, random, re, subprocess, sys, wave
 import numpy as np
 
 SR = 48000
@@ -190,7 +190,10 @@ def music_bed(seconds, bpm=96, seed=3):
     return out
 
 
-SHOT_CYCLE = ['mcu', 'cu', 'mcu', 'two', 'cu', 'mcu']
+# Mostly medium and wide shots, like the channel's videos (the scene and both characters readable): a close-up
+# magnifies a few dozen pixels of the painted set over the whole screen (a blurred, dead background) — it is kept for
+# the reactions and one beat in six.
+SHOT_CYCLE = ['two', 'mcu', 'two', 'mcu', 'cu', 'two']
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import world as livingworld  # noqa: E402
@@ -309,6 +312,21 @@ def punch_sfx(kind='boom'):
     L = int(0.12 * SR)
     tt = np.arange(L) / SR
     return (np.sin(2 * np.pi * (500 + 1400 * tt / tt[-1]) * tt) * np.exp(-tt * 30) * 0.5).astype(np.float32)
+
+
+LAUGH = re.compile(r'\b(ha|hi|hé|ho)(\s*\1)+\b|😂|🤣', re.I)
+
+
+def spoken_pose(beat):
+    """The pose of the one who SPEAKS the line. The drawing of a burst of laughter (eyes shut, mouth wide open) is kept
+    for a line that IS laughter (« Ha ha ha »), whatever the story asked; a line spoken with a smile is played on the
+    neutral drawing (audit of film 5: Maman Nounou said « Pour toi, mon fils ? Mille francs. » with her
+    fit-of-laughter drawing)."""
+    p = beat.get('pose', 'neutre')
+    laughing = bool(LAUGH.search(beat.get('text', '')))
+    if laughing:
+        return 'rire'
+    return 'neutre' if p == 'rire' else p
 
 
 def place_views(name, decors):
@@ -585,7 +603,7 @@ def main():
     for i, seg in enumerate(timeline):
         b = beats[i]
         f0 = int(round(seg['start'] * fps))
-        want = {b['who']: b.get('pose', 'neutre')}
+        want = {b['who']: spoken_pose(b)}
         for c, p in (b.get('react') or {}).items():
             want[c] = p
         for c, p in want.items():
@@ -622,8 +640,9 @@ def main():
         typ = b.get('shot')
         move = b.get('move')
         if i == 0 and story.get('hook_cu', True):
-            # THE HOOK: the film opens on the face of the one who starts the conflict, with a snap zoom.
-            typ, move = 'cu', move or 'punch'
+            # THE HOOK: the film opens on the one who starts the conflict, with a snap zoom — a medium shot (the face
+            # whole and readable, the place visible behind; never a face cut by the frame or hidden by the title).
+            typ, move = 'mcu', move or 'punch'
         elif not typ:
             if any(enter[c] == int(round(seg['start'] * fps)) and enter[c] > 0 for c in ids):
                 typ = 'two'

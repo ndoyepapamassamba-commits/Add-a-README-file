@@ -36,6 +36,8 @@ def args():
     ap.add_argument('--blend', default='', help='enregistre aussi le .blend')
     ap.add_argument('--force', action='store_true', help='rendre malgré un défaut critique du preflight (déconseillé)')
     ap.add_argument('--decor', default='', help='une autre vue du même lieu (coupe du plan : les images --frames dans cette vue)')
+    ap.add_argument('--sans-visage', action='store_true', help='ignorer les visages vivants (liveface.py) : dessins fixes')
+    ap.add_argument('--pas', type=int, default=1, help='aperçu : une image rendue sur N, les autres la répètent')
     return ap.parse_args(argv)
 
 
@@ -51,6 +53,21 @@ def load_rgba(path):
     px = np.empty(w * h * 4, np.float32)
     img.pixels.foreach_get(px)
     return img, px.reshape(h, w, 4)[::-1]  # top row first (image coordinates)
+
+
+VISAGE = {}  # the film's living faces: <plan dir>/visage/<actor>/<pose>/f00001.png … (liveface.py)
+
+
+def sequence_texture(mat, first, frames):
+    """The pose card shows the face sequence of liveface.py (one image per film frame) instead of the still drawing."""
+    seq = bpy.data.images.load(first, check_existing=False)
+    seq.source = 'SEQUENCE'
+    tex = next(n for n in mat.node_tree.nodes if n.type == 'TEX_IMAGE')
+    tex.image = seq
+    u = tex.image_user
+    u.frame_start, u.frame_offset, u.frame_duration = 1, 0, frames
+    u.use_auto_refresh = True
+    return seq
 
 
 def emissive_material(name, img, alpha=True, fade=True):
@@ -672,6 +689,12 @@ def build_pose(actor, pose, k, rig_dir, scale, mirror, root):
                 quad.append(vid[jj, ii])
             faces.append(quad if not mirror else quad[::-1])
     mat, fade = emissive_material(f"{actor['id']}-{k}", img)
+    # A living face (liveface.py): the card plays the face sequence — lips, eyes — so the drawing is not bent below
+    # its lip seam and no flat lid is laid on its eyes.
+    seq_first = os.path.join(VISAGE['dir'], actor['id'], pose['kind'], 'f00001.png') if VISAGE.get('dir') else ''
+    live = bool(seq_first) and os.path.isfile(seq_first)
+    if live:
+        sequence_texture(mat, seq_first, VISAGE['frames'])
     ob = mesh_object(f"{actor['id']}-pose{k}", verts, faces, uvs, mat)
     V = np.array(verts)
     vx = V[:, 0] / scale * sx + ax  # back to drawing pixels
@@ -724,7 +747,7 @@ def build_pose(actor, pose, k, rig_dir, scale, mirror, root):
             w_fore = None
     # Jaw: below the lip seam, around the mouth, down to under the chin.
     drawn_open = f.get('open', 0) >= 0.12
-    if f.get('seam') and f.get('mouthWidth'):
+    if f.get('seam') and f.get('mouthWidth') and not live:
         mw = f['mouthWidth']
         mx_, my_ = f['seam']
         if drawn_open and f.get('bottom'):
@@ -804,7 +827,7 @@ def build_pose(actor, pose, k, rig_dir, scale, mirror, root):
         teeth.parent = cav
         teeth.location = (0, -0.0005, 0)
     lids = []
-    for e, eye in enumerate(f.get('eyes') or []):
+    for e, eye in enumerate([] if live else (f.get('eyes') or [])):
         rx, ry = eye['rx'] * 1.18 * scale, eye['ry'] * 1.25 * scale
         n = 24
         vs = [(rx * math.cos(2 * math.pi * t / n), 0, -ry + ry * math.sin(2 * math.pi * t / n)) for t in range(n)]
@@ -931,6 +954,9 @@ def main():
     rig = json.load(open(plan['rig'], encoding='utf-8'))
     rig_dir = rig['dir']
     life = plan.get('life') or {}
+    vdir = os.path.join(os.path.dirname(os.path.abspath(A.plan)), 'visage')
+    if not A.sans_visage and os.path.isdir(vdir):
+        VISAGE.update({'dir': vdir, 'frames': plan['frames']})
     if A.decor:
         if A.decor not in rig['decors']:
             raise SystemExit(f'vue inconnue du kit : {A.decor}')
@@ -1078,19 +1104,51 @@ def main():
         frames = list(range(f0, f1 + 1))
     else:
         frames = list(range(1, plan['frames'] + 1))
+    if 1 in frames:
+        screen_faces(sc, actors, plan, os.path.join(os.path.dirname(os.path.abspath(A.plan)), 'ecran-visages.json'))
     import time
     t0 = time.time()
+    step = max(1, A.pas) if not A.still else 1
+    last = None
     for n, fr in enumerate(frames):
         path = os.path.join(A.out, f'f{fr:05d}.png')
         if os.path.isfile(path) and not A.still:
+            last = path
+            continue
+        if step > 1 and (fr - frames[0]) % step and last:
+            os.link(last, path)  # preview « on twos / threes »: the frame repeats the last one rendered
             continue
         sc.frame_set(fr)
         sc.render.filepath = path
         bpy.ops.render.render(write_still=True)
+        last = path
         if n % 25 == 0:
             el = time.time() - t0
             print(f'[scene] image {fr} ({n + 1}/{len(frames)}) · {el / (n + 1):.2f} s/image', flush=True)
     print(f'[scene] OK {len(frames)} image(s) en {time.time() - t0:.0f} s', flush=True)
+
+
+def screen_faces(sc, actors, plan, path, seconds=3.2):
+    """Where each face is ON SCREEN during the first seconds (the hook text must never cover a face): one box per
+    visible actor, in image shares (x0, y0, x1, y1, from the top-left), every other frame."""
+    from bpy_extras.object_utils import world_to_camera_view
+    out = {}
+    for f in range(1, min(plan['frames'], int(seconds * plan['fps'])) + 1, 2):
+        sc.frame_set(f)
+        boxes = []
+        for a in actors.values():
+            if (a['plan'].get('enter') or 0) > f - 1:
+                continue
+            P = a['poses']['neutre']
+            head = max(0.08, getattr(P, 'top_z', P.face_z + 0.15) - P.face_z)
+            pts = [a['root'].matrix_world @ Vector((P.face_x + dx * head * 0.85, 0.0, P.face_z + dz)) for dx in (-1, 1)
+                   for dz in (head, -0.75 * head)]
+            uv = [world_to_camera_view(sc, sc.camera, q) for q in pts]
+            if all(v.z > 0 for v in uv):
+                xs, ys = [v.x for v in uv], [1 - v.y for v in uv]
+                boxes.append([round(min(xs), 3), round(min(ys), 3), round(max(xs), 3), round(max(ys), 3)])
+        out[f] = boxes
+    json.dump(out, open(path, 'w'), indent=0)
 
 
 def animate(plan, actors, fps):

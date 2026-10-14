@@ -33,6 +33,9 @@ def main():
     ap.add_argument('--engine', default='')
     ap.add_argument('--samples', type=int, default=10)
     ap.add_argument('--seconds', type=float, default=64, help='durée visée (> 60 s : programme de rémunération TikTok ; vos vidéos : 60,6 à 70,6 s)')
+    ap.add_argument('--apercu', action='store_true',
+                    help='APERÇU RAPIDE (« processeur fictif ») : demi-résolution, 4 échantillons, une image sur trois — '
+                         'pour valider histoire, lieux, cadrages et voix en quelques minutes ; le rendu final se fait sans')
     a = ap.parse_args()
     out = os.path.abspath(a.out)
     os.makedirs(out, exist_ok=True)
@@ -43,7 +46,13 @@ def main():
     if not os.path.isfile(os.path.join(out, 'plan.json')):
         run([sys.executable, os.path.join(HERE, 'plan.py'), '--story', a.story, '--rig', os.path.join(cut, 'rig.json'), '--voices', a.voices, '--out', out, '--seconds', str(a.seconds)])
     engine = a.engine or ('EEVEE' if a.blender else 'CYCLES')
-    scene = [os.path.join(HERE, 'scene.py'), '--plan', os.path.join(out, 'plan.json'), '--out', os.path.join(out, 'frames'), '--engine', engine, '--samples', str(a.samples)]
+    # The living faces (LivePortrait library, computed once per character pose and kept in the kit): ~0 s per film.
+    lf = subprocess.run([os.environ.get('MASSAMBA_PY', sys.executable), os.path.join(HERE, 'liveface.py'), '--plan', os.path.join(out, 'plan.json'), '--kit', a.troupe])
+    if lf.returncode != 0:
+        print('[film] visages vivants indisponibles (LivePortrait non installé ?) : dessins fixes', flush=True)
+    frames_dir = os.path.join(out, 'apercu' if a.apercu else 'frames')
+    scene = [os.path.join(HERE, 'scene.py'), '--plan', os.path.join(out, 'plan.json'), '--out', frames_dir, '--engine', engine,
+             '--samples', str(4 if a.apercu else a.samples)] + (['--scale', '0.5', '--pas', '3'] if a.apercu else [])
     # Several views of one place: each run of shots is rendered in its view (same actors, same sound — a cut).
     coupes = json.load(open(os.path.join(out, 'plan.json'), encoding='utf-8')).get('coupes') or [None]
     with open(os.path.join(out, 'render.log'), 'a', encoding='utf-8') as log:
@@ -53,12 +62,13 @@ def main():
                 run([a.blender, '-b', '--python', part[0], '--'] + part[1:], log)
             else:
                 run([sys.executable] + part, log)
-    film = os.path.join(out, 'film.mp4')
-    run([sys.executable, os.path.join(HERE, 'finish.py'), '--plan', os.path.join(out, 'plan.json'), '--frames', os.path.join(out, 'frames'), '--out', film])
-    qa = json.load(open(os.path.join(out, 'film.qa.json')))
+    film = os.path.join(out, 'apercu.mp4' if a.apercu else 'film.mp4')
+    run([sys.executable, os.path.join(HERE, 'finish.py'), '--plan', os.path.join(out, 'plan.json'), '--frames', frames_dir, '--out', film])
+    qa_p = os.path.splitext(film)[0] + '.qa.json'
+    qa = json.load(open(qa_p))
     qa['total_s'] = round(time.time() - t0)
     qa['engine'] = engine
-    json.dump(qa, open(os.path.join(out, 'film.qa.json'), 'w'), indent=1)
+    json.dump(qa, open(qa_p, 'w'), indent=1)
     print(f"[film] OK → {film} · {qa['frames_encoded']}/{qa['frames_expected']} images · image/son {qa['video_s']}/{qa['audio_s']} s · {qa['total_s']} s au total")
     # The quality gate (technique, TikTok rhythm of the channel, hook): the verdict and every check in film.gate.json.
     subprocess.run([sys.executable, os.path.join(HERE, 'gate.py'), film])
