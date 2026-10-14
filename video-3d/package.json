@@ -1,0 +1,19 @@
+{
+  "name": "video-3d-ivrogne",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vidéo « Ivrogne » recodée en HTML/Three.js (zéro régression) avec export MP4",
+  "type": "module",
+  "scripts": {
+    "vendor": "node tools/vendor.mjs",
+    "serve": "node tools/serve.mjs",
+    "export": "node tools/export.mjs",
+    "export:3d": "node tools/export.mjs --mode 3d",
+    "regression": "node tools/regression.mjs"
+  },
+  "devDependencies": {
+    "mediabunny": "1.60.0",
+    "playwright-core": "1.56.1",
+    "three": "0.186.1"
+  }
+}

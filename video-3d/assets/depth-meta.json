@@ -1,0 +1,22 @@
+{
+  "frames": 369,
+  "fps": 30,
+  "cutFrame": 301,
+  "tileW": 224,
+  "tileH": 178,
+  "cols": 18,
+  "rows": 21,
+  "sceneRect": [
+    0,
+    530,
+    1080,
+    860
+  ],
+  "emojiRect": [
+    0,
+    390,
+    1080,
+    1080
+  ],
+  "model": "Depth Anything V2 Small (Apache-2.0)"
+}

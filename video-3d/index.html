@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ivrogne 3D</title>
+  <link rel="icon" href="data:,">
+  <meta name="description" content="La vidéo « Ivrogne » recodée en HTML/Three.js : rendu identique à l'original, mode relief 3D et export MP4.">
+  <style>
+    :root {
+      --bg: #0e0f13; --panel: #171920; --panel-2: #1f222b; --line: #2b2f3a;
+      --text: #eef0f5; --muted: #9aa1b2; --accent: #ff4f8b; --accent-2: #3d8bff; --ok: #35c46b; --warn: #f0b429;
+      --radius: 14px;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    header { display: flex; align-items: center; gap: 12px; padding-block: 14px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--line); }
+    header h1 { font-size: 17px; margin: 0; letter-spacing: .2px; }
+    .badge { white-space: nowrap; font-size: 12px; padding: 3px 9px; border-radius: 99px; background: rgba(53,196,107,.14); color: var(--ok); border: 1px solid rgba(53,196,107,.35); }
+    main { display: grid; grid-template-columns: minmax(0, auto) 360px; gap: 24px; padding-block: 20px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); justify-content: center; align-items: start; }
+    .stage { position: relative; height: min(calc(100vh - 110px), 1100px); aspect-ratio: 9 / 16; max-width: 100%; border-radius: var(--radius); overflow: hidden; background: #000; box-shadow: 0 20px 60px rgba(0,0,0,.45); touch-action: none; }
+    .stage canvas, .stage video { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .stage video { visibility: hidden; }
+    .stage.ab video { visibility: visible; }
+    .stage.grab { cursor: grab; } .stage.grabbing { cursor: grabbing; }
+    .stage .tag { position: absolute; left: 10px; top: 10px; font-size: 12px; padding: 3px 8px; border-radius: 8px; background: rgba(0,0,0,.55); backdrop-filter: blur(4px); pointer-events: none; }
+    .stage .play-hint { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.25); border: 0; color: #fff; font-size: 64px; cursor: pointer; }
+    .stage .play-hint[hidden] { display: none; }
+    aside { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+    .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+    .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .row + .row { margin-top: 10px; }
+    button, select { font: inherit; color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+    button:hover:not(:disabled) { border-color: #444a59; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+    .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; width: 100%; }
+    .seg button { border: 0; background: transparent; padding: 7px 8px; border-radius: 8px; font-size: 14px; }
+    .seg button[aria-pressed="true"] { background: #2d3240; box-shadow: inset 0 0 0 1px #3b4152; }
+    input[type=range] { width: 100%; accent-color: var(--accent); }
+    label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .time { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+    .hint { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+    progress { width: 100%; height: 8px; accent-color: var(--accent); }
+    .status { font-size: 13px; color: var(--muted); min-height: 1.4em; word-break: break-word; }
+    .status.ok { color: var(--ok); } .status.err { color: #ff6b6b; }
+    a.dl { color: var(--accent-2); font-weight: 600; }
+    .grow { flex: 1; }
+    fieldset { border: 0; padding: 0; margin: 0; }
+    fieldset:disabled { opacity: .45; }
+    @media (max-width: 900px) {
+      main { grid-template-columns: minmax(0, 1fr); }
+      .stage { height: auto; width: 100%; max-width: 480px; margin: 0 auto; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Ivrogne — vidéo recodée en HTML 3D</h1>
+    <span class="badge" id="badge">Mode original · pixel exact</span>
+  </header>
+  <main>
+    <div class="stage" id="stage">
+      <video id="video" src="assets/source.mp4" playsinline preload="auto" crossorigin="anonymous"></video>
+      <canvas id="canvas" width="1080" height="1920" aria-label="Rendu WebGL de la vidéo"></canvas>
+      <span class="tag" id="tag">WebGL · Three.js</span>
+      <button class="play-hint" id="playHint" aria-label="Lire">▶</button>
+    </div>
+
+    <aside>
+      <section class="card">
+        <h2>Lecture</h2>
+        <div class="row">
+          <button id="play" aria-label="Lire / pause">▶ Lire</button>
+          <button id="mute" aria-label="Couper le son">🔊</button>
+          <span class="time grow" id="time">00:00.00 / 00:12.30 · frame 0</span>
+        </div>
+        <div class="row"><input type="range" id="scrub" min="0" max="368" step="1" value="0" aria-label="Position"></div>
+        <div class="row">
+          <label><input type="checkbox" id="ab"> A/B : afficher la vidéo source</label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Rendu</h2>
+        <div class="seg" role="group" aria-label="Mode de rendu">
+          <button id="modeOriginal" aria-pressed="true">Original</button>
+          <button id="mode3d" aria-pressed="false">Relief 3D</button>
+        </div>
+        <fieldset id="opts3d" disabled>
+          <div class="row">
+            <span>Caméra</span>
+            <select id="camera" class="grow">
+              <option value="travelling">Travelling cinéma</option>
+              <option value="orbite">Orbite</option>
+              <option value="fixe">Fixe (interactive)</option>
+            </select>
+          </div>
+          <div class="row">
+            <span>Relief</span>
+            <input type="range" id="relief" min="0" max="0.3" step="0.01" value="0.15" class="grow" aria-label="Intensité du relief">
+          </div>
+          <p class="hint">Glissez sur l'image pour tourner la caméra, molette pour zoomer, double-clic pour recentrer.</p>
+        </fieldset>
+        <div class="row">
+          <label><input type="checkbox" id="subs"> Sous-titres (dialogues)</label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Export MP4</h2>
+        <div class="row">
+          <span>Qualité</span>
+          <select id="quality" class="grow">
+            <option value="40000000">Maximale (≈ 40 Mb/s)</option>
+            <option value="20000000" selected>Haute (≈ 20 Mb/s)</option>
+            <option value="10000000">TikTok (≈ 10 Mb/s)</option>
+          </select>
+        </div>
+        <div class="row"><button class="primary grow" id="export">Exporter en MP4</button></div>
+        <div class="row"><progress id="progress" max="1" value="0" hidden></progress></div>
+        <div class="row"><button class="grow" id="save" hidden>Enregistrer le MP4</button></div>
+        <div class="status" id="status">Le rendu est calculé image par image (1080×1920, 30 i/s), avec le son d'origine copié tel quel.</div>
+        <p class="hint">Dans le navigateur, l'export passe par WebCodecs (Chrome, Edge). En ligne de commande : <code>npm run export</code> (FFmpeg).</p>
+      </section>
+    </aside>
+  </main>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
