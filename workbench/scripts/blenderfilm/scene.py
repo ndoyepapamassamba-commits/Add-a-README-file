@@ -37,6 +37,7 @@ def args():
     ap.add_argument('--force', action='store_true', help='rendre malgré un défaut critique du preflight (déconseillé)')
     ap.add_argument('--decor', default='', help='une autre vue du même lieu (coupe du plan : les images --frames dans cette vue)')
     ap.add_argument('--sans-visage', action='store_true', help='ignorer les visages vivants (liveface.py) : dessins fixes')
+    ap.add_argument('--sans-suivi', action='store_true', help='caméra fixe sur les plans serrés (sans suivre le visage) — comparaison A/B')
     ap.add_argument('--sans-jeu', action='store_true', help='corps sans la couche de jeu pilotée par la voix — comparaison A/B')
     ap.add_argument('--decor-fixe', action='store_true', help='décor sans vie (foule, vent, eau immobiles) — comparaison A/B')
     ap.add_argument('--pas', type=int, default=1, help='aperçu : une image rendue sur N, les autres la répètent')
@@ -1191,7 +1192,7 @@ def main():
             if m_.name.startswith('sol-') and m_.node_tree and m_.node_tree.nodes.get('tint'):
                 m_.node_tree.nodes['tint'].inputs['B'].default_value = tuple(bounds['grid']['tint'].inputs['B'].default_value)
     shots_info = cameras(plan, actors, bounds, soft, fps)
-    if JEU_CORPS:
+    if JEU_CORPS and not A.sans_suivi:
         span = tuple(int(x) for x in A.frames.split('-')) if A.frames else None
         follow_faces(plan, actors, fps, span)
     # Depth of field calibrated on the real cameras: the background stays legible (faces, expressions).
@@ -1350,7 +1351,8 @@ def animate(plan, actors, fps):
         # visible breath, weight shifts, listening nods.
         import acting
         partner_nods = [plan['tracks'][o]['nod'] for o in plan['tracks'] if o != aid]
-        cv = acting.curves(jaw, partner_nods, A['plan']['x'], nF, fps, seed, on=JEU_CORPS)
+        cv = acting.curves(jaw, partner_nods, A['plan']['x'], nF, fps, seed, on=JEU_CORPS,
+                           scale=acting.shot_scale(plan['shots'], aid, nF, fps))
         head_rot, spine_rot, root_rot = cv['head'], cv['spine'], cv['root']
         breath, breath_amp, listen_nod, bobv = cv['breath'], cv['breath_amp'], cv['listen'], cv['bob']
         for kind, P in poses.items():
@@ -1600,7 +1602,10 @@ def two_frame(here, bounds, asp, fmax=1.07):
     top = max(a['poses']['neutre'].top_z for a in here)
     side = min(max(xb - xa, 0.8), max_two_width(bounds, asp) / fmax)
     frame_h = side / asp
-    cz = top + 0.07 - frame_h / 2
+    # The owner's two-shot keeps a SHARP SQUARE (side × side) and blurs the rest (finish.py): the heads get their
+    # headroom under the top of that square, not under the top of the whole vertical picture (film 6: the heads touched
+    # the top edge, or fell in the blur).
+    cz = top + 0.07 - side / 2
     if bounds['grid'].get('stage'):
         # Full shot on a real floor: the feet FEET_MARGIN above the bottom of the frame (never cut at the ankles or the
         # calves), as long as the heads keep their headroom.
@@ -1664,6 +1669,11 @@ def cameras(plan, actors, bounds, soft, fps):
             cam.sensor_fit = 'HORIZONTAL'
         else:
             frame_h = (0.62 if s['type'] == 'mcu' else 0.36) * P.top_z
+            if s['type'] == 'cu':
+                # A vertical close-up 0.36 × height wide held a 28 cm head in 32 cm: the end of a punch-in cut the cheek
+                # (film 6, « Moi, j'ai pris »). The head never takes more than 62 % of the frame's width.
+                head_w = 1.7 * max(0.08, P.top_z - P.face_z)
+                frame_h = max(frame_h, head_w / 0.62 / asp)
             look = -1 if tx > 0 else 1
             # Centred on the FACE of the played pose (a bent laugh leans sideways), with room in the look direction.
             fx = tx + (P.face_x if s['type'] == 'cu' else P.face_x * 0.5)
@@ -1677,8 +1687,13 @@ def cameras(plan, actors, bounds, soft, fps):
         if mv == 'punch':
             moves = [(s['start'] + 1, 1.32, 0), (min(s['end'], s['start'] + 1 + int(0.45 * fps)), 1.01, 0), (s['end'], 0.97, 0)]
         else:
-            m0, m1 = (1.07, 1.0) if mv == 'push' else (1.0, 1.06) if mv == 'pull' else (1.02, 1.02)
-            dx0, dx1 = (-0.025 * frame_h, 0.025 * frame_h) if mv == 'drift' else (0, 0)
+            # Measured on the owner's channel: the CHARACTERS move, the camera barely (≤ 29 % of the picture moving);
+            # a 7 % push on a close shot moved the whole picture (64 % before any acting). Close shots: 3 %.
+            close = s['type'] != 'two'
+            zp = 1.03 if close else 1.07
+            m0, m1 = (zp, 1.0) if mv == 'push' else (1.0, zp - 0.01) if mv == 'pull' else (1.01, 1.01) if close else (1.02, 1.02)
+            dr = 0.012 if close else 0.025
+            dx0, dx1 = (-dr * frame_h, dr * frame_h) if mv == 'drift' else (0, 0)
             moves = [(s['start'] + 1, m0, dx0), (s['end'], m1, dx1)]
         fwide, ftight = max(m for _, m, _ in moves), min(m for _, m, _ in moves)
         drift = max(abs(x) for *_, x in moves)
@@ -1801,12 +1816,13 @@ def screen_shots(sc, actors, plan, path, span=None):
     json.dump(out, open(path, 'w'), indent=0)
 
 
-def follow_faces(plan, actors, fps, span=None, follow=0.85):
+def follow_faces(plan, actors, fps, span=None, follow=1.0, dead=0.06):
     """THE OPERATOR FOLLOWS THE FACE. In a close-up the frame is ≈ 30 cm wide: the acting layer (a lean of ≈ 7 cm toward
     the partner, the weight shifts) took the face out of it (film 6, « Tu m'as fatiguée »). For every close shot the
     face's real position (head bone, after the acting) is compared on screen with where the drawing's face would be
-    at rest, and the lens shift takes up `follow` of the difference, smoothed over 0.4 s like a camera operator — the
-    body still moves against the set, the face stays where the shot put it."""
+    at rest; the lens shift takes up what goes beyond a DEAD ZONE (`dead` of the frame), smoothed over 0.4 s like a
+    camera operator who does not chase every sway — the body moves against a still set, the face never leaves the
+    shot (measured: following everything moved 88 % of the picture, the channel's videos ≤ 29 %)."""
     from bpy_extras.object_utils import world_to_camera_view
     sc = bpy.context.scene
     nF = plan['frames']
@@ -1843,8 +1859,9 @@ def follow_faces(plan, actors, fps, span=None, follow=0.85):
             u2 = world_to_camera_view(sc, co, M @ rest)
             cam.shift_x, cam.shift_y = sx, sy
             gx, gy = (u2.x - u0.x) / 0.01, (u2.y - u0.y) / 0.01
-            dus.append(-follow * (u1.x - u0.x) / gx if abs(gx) > 1e-6 else 0.0)
-            dvs.append(-follow * (u1.y - u0.y) / gy if abs(gy) > 1e-6 else 0.0)
+            ex_ = lambda d: math.copysign(max(0.0, abs(d) - dead), d)
+            dus.append(-follow * ex_(u1.x - u0.x) / gx if abs(gx) > 1e-6 else 0.0)
+            dvs.append(-follow * ex_(u1.y - u0.y) / gy if abs(gy) > 1e-6 else 0.0)
             base.append((sx, sy))
         n = max(1, int(0.4 * fps / 2))
         sm = lambda a: np.convolve(np.pad(np.asarray(a, float), (n, n), mode='edge'), np.ones(2 * n + 1) / (2 * n + 1), mode='valid')

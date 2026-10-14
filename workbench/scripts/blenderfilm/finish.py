@@ -104,7 +104,7 @@ def film_look(img, rng, strength=1.0):
 
 
 
-def loudness_normalise(src, dst, target=-14.0, tp=-1.0, _compressed=False):
+def loudness_normalise(src, dst, target=-14.0, tp=-1.5, _compressed=False):
     """Two-pass EBU R128 to the platforms' target (TikTok / Reels / Shorts play around -14 LUFS)."""
     try:
         r = subprocess.run(['ffmpeg', '-hide_banner', '-nostats', '-i', src, '-af', f'loudnorm=I={target}:TP={tp}:LRA=11:print_format=json', '-f', 'null', '-'], capture_output=True, text=True)

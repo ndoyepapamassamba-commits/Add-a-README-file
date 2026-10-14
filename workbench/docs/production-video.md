@@ -49,6 +49,32 @@ trois — pour valider histoire, lieux, cadrages et voix en quelques minutes ; l
 **Lieux d'Abidjan** : 8 planches de l'utilisateur → vues nommées, groupées par lieu, à l'échelle de la foule peinte ;
 un film change de vue d'un même lieu entre deux plans (`lieux-planches.py`, `plan.py`).
 
+**Corps vivants** (`scripts/blenderfilm/acting.py`, testé) : le corps joue la voix — en parlant, le buste se penche
+vers le partenaire et la tête le suit ; battement des syllabes, respiration visible, report du poids toutes les 2,5 à
+4,5 s, hochements d'écoute. **Mesuré dans Blender** (film 6) : la tête de Nounou se déplace de 6,8 cm vers Modou quand
+elle parle (≈ 1 cm avant : la tête tournait contre le buste et annulait le penché).
+
+**Caméra qui suit le visage** (`scene.py`, `follow_faces`) : dans un gros plan (cadre ≈ 30 cm), le penché faisait
+sortir le visage ; la caméra reprend 85 % du déplacement réel de la tête, lissé sur 0,4 s, comme un cadreur.
+
+**Foule peinte vivante, personne par personne** (`crowd.py`) : la segmentation voyait la foule du Grand Marché comme
+UNE tache (99,7 %) — animée telle quelle, toute la foule aurait glissé d'un bloc. Mask R-CNN (torchvision, BSD-3)
+sépare 27 personnes (49 s par vue, une fois) ; chacune se balance et respire à son rythme, **pieds fixes**, sans
+déchirure entre voisins (champ lissé, étirement local ≤ 9 %). Vérifié par A/B dans Blender (`--decor-fixe`).
+
+**Lèvres** (`lipsync.py`) : Rhubarb Lip Sync (MIT) ferme la bouche sur m / b / p par-dessus l'ouverture au volume de
+la voix (mesuré : ses fermetures tombent 2,25× plus dans les mots à m/b/p ; ses autres formes, apprises sur l'anglais,
+ouvraient moins que la voix → écartées).
+
+**Plans à deux au format de la chaîne** (`finish.py`) : le carré net se pose sur les visages du plan (positions
+mesurées par `scene.py`, `ecran-plans.json`) — au milieu fixe, les têtes tombaient dans la bande floue.
+
+**Son** : compression douce des dialogues avant la normalisation quand le gain linéaire ne peut atteindre −14 LUFS
+(film 6 : −15,2 → −14,2 LUFS, crête −0,8 dBFS).
+
+**Vitesse mesurée** : aperçu complet du film 6 (64 s, 1 600 images, demi-résolution, une image sur trois) en
+**14 min 54 s** sur 4 cœurs de processeur — contre ≈ 3 h pour le film 5.
+
 ## 4. Feuille de route (gratuit, sans abonnement)
 
 1. Expressions produites par le modèle sur le dessin neutre (sourire, sourcils, regard) au lieu de changer de dessin ;

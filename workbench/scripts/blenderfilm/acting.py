@@ -31,7 +31,24 @@ def weight_shifts(nF, fps, seed):
     return ws
 
 
-def curves(jaw, partner_nods, x, nF, fps, seed, on=True):
+# Acting for the camera: the same lean covers ≈ 5 % of a two-shot but ≈ 23 % of a 30 cm close-up. Scaled by the shot
+# the actor is framed in, the motion keeps the same size ON SCREEN (measured on film 6: close shots moved ≈ 60 % of the
+# picture against ≤ 29 % on the channel's videos).
+SHOT_SCALE = {'cu': 0.45, 'mcu': 0.65, 'two': 1.0}
+
+
+def shot_scale(shots, aid, nF, fps):
+    """Per-frame amplitude of the acting of `aid` from the shots that frame it (eased over 0.2 s around the cuts)."""
+    sc = np.ones(nF + 1)
+    for s in shots:
+        if s.get('target') == aid and s['type'] in SHOT_SCALE:
+            sc[s['start']:min(nF + 1, s['end'] + 1)] = SHOT_SCALE[s['type']]
+    n = max(1, int(0.2 * fps))
+    padded = np.pad(sc, (n, n), mode='edge')  # no fade toward 0 at the film's two ends
+    return np.clip(np.convolve(padded, np.ones(n) / n, mode='same')[n:-n], 0.0, 1.0)
+
+
+def curves(jaw, partner_nods, x, nF, fps, seed, on=True, scale=None):
     """Per-frame acting curves of one actor (index = frame − 1).
     jaw: the actor's mouth opening track; partner_nods: the other actors' emphasis nods; x: the actor's place on the
     stage (≤ 0 = left, its partner on the right). Returns radians for head / spine / root rotations, the breath (−1…1)
@@ -54,10 +71,11 @@ def curves(jaw, partner_nods, x, nF, fps, seed, on=True):
         z = np.zeros(nF + 1)
         return {'head': z, 'spine': z, 'root': math.radians(0.7) * sway, 'breath': breath, 'breath_amp': 0.010,
                 'listen': z, 'bob': z, 'toward': toward, 'speak': speak}
-    head = (math.radians(1.5) * np.sin(tt * 2 * math.pi / 4.1 + seed % 4)
+    k = np.ones(nF + 1) if scale is None else np.asarray(scale, float)[: nF + 1]
+    head = k * (math.radians(1.5) * np.sin(tt * 2 * math.pi / 4.1 + seed % 4)
             + math.radians(2.0) * energy * np.sin(tt * 2 * math.pi * 2.1 + seed % 6)
             + toward * math.radians(1.2) * lean)
-    spine = math.radians(0.8) * sway + toward * math.radians(4.5) * lean
-    root = math.radians(1.2) * weight_shifts(nF, fps, seed) + math.radians(0.6) * sway
-    return {'head': head, 'spine': spine, 'root': root, 'breath': breath, 'breath_amp': 0.022, 'listen': listen,
-            'bob': 0.004 * energy * bob, 'toward': toward, 'speak': speak}
+    spine = k * (math.radians(0.8) * sway + toward * math.radians(4.5) * lean)
+    root = k * (math.radians(1.2) * weight_shifts(nF, fps, seed) + math.radians(0.6) * sway)
+    return {'head': head, 'spine': spine, 'root': root, 'breath': breath * k, 'breath_amp': 0.022, 'listen': listen,
+            'bob': 0.004 * energy * bob * k, 'toward': toward, 'speak': speak}

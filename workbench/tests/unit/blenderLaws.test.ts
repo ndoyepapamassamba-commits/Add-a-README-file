@@ -413,6 +413,25 @@ print(json.dumps({'leftSpeak': d(L['spine'][75:140]), 'leftListen': d(L['spine']
     expect(r.shift as number).toBeGreaterThan(1.5); // weight shifts are visible
   });
 
+  it('acting for the camera: a close-up plays smaller, a two-shot fully, without fading at the film ends', () => {
+    const r = py(`
+import json, numpy as np, acting
+shots = [{'start': 0, 'end': 80, 'type': 'mcu', 'target': 'a'}, {'start': 80, 'end': 160, 'type': 'two', 'target': 'a'},
+         {'start': 160, 'end': 250, 'type': 'cu', 'target': 'a'}]
+sc = acting.shot_scale(shots, 'a', 250, 25)
+jaw = np.full(250, 0.4)
+full = acting.curves(jaw, [], -0.4, 250, 25, 7)
+cu = acting.curves(jaw, [], -0.4, 250, 25, 7, scale=sc)
+print(json.dumps({'start': float(sc[0]), 'two': float(sc[120]), 'cu': float(sc[200]), 'end': float(sc[-1]),
+  'ratio': float(np.abs(cu['spine'][190:240]).mean() / np.abs(full['spine'][190:240]).mean())}))`);
+    if (!r) return;
+    expect(r.start).toBeCloseTo(0.65, 2); // the first shot is a medium close-up: no fade from 0 at the film start
+    expect(r.two).toBe(1);
+    expect(r.cu).toBeCloseTo(0.45, 2);
+    expect(r.end).toBeCloseTo(0.45, 2);
+    expect(r.ratio as number).toBeCloseTo(0.45, 2); // the lean in a close-up = 45 % of the two-shot lean
+  });
+
   it('the lips meet on m / b / p heard by Rhubarb, the rest of the loudness lips is untouched', () => {
     const r = py(`
 import json, numpy as np, lipsync
