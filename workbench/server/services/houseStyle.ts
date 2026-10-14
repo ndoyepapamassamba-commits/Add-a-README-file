@@ -82,9 +82,27 @@ export function lockSheetView(
       ? xml.replace(/<sheetPr([^>]*)\/>/, `<sheetPr$1>${tab}</sheetPr>`)
       : xml.replace(/(<sheetPr[^>]*>)/, `$1${tab}`);
   } else xml = xml.replace(/(<dimension )/, `<sheetPr>${tab}</sheetPr>$1`);
-  // The writer emits 6-digit colours; the schema (and a strict Excel) wants ARGB: opaque « FF » prefix.
-  if (z['xl/styles.xml']) z['xl/styles.xml'] = strToU8(strFromU8(z['xl/styles.xml']).replace(/\brgb="([0-9A-Fa-f]{6})"/g, 'rgb="FF$1"'));
+  if (z['xl/styles.xml']) z['xl/styles.xml'] = strToU8(fixStylesXml(strFromU8(z['xl/styles.xml'])));
   return zipSync({ ...z, [name]: strToU8(xml) });
+}
+
+/**
+ * styles.xml as Excel's schema wants it: 6-digit colours become opaque ARGB, and the children of every <font> follow
+ * the schema order (b, i, strike, …, sz, color, name, family, charset, scheme) — the writer emits sz / name / b / color,
+ * which the Open XML validator (and a strict Excel) refuses.
+ */
+export function fixStylesXml(xml: string): string {
+  const ORDER = ['b', 'i', 'strike', 'condense', 'extend', 'outline', 'shadow', 'u', 'vertAlign', 'sz', 'color', 'name', 'family', 'charset', 'scheme'];
+  return xml
+    .replace(/\brgb="([0-9A-Fa-f]{6})"/g, 'rgb="FF$1"')
+    .replace(/<font>([\s\S]*?)<\/font>/g, (_, inner: string) => {
+      const kids = inner.match(/<(\w+)\b[^>]*\/>/g) ?? [];
+      const rank = (k: string) => {
+        const i = ORDER.indexOf(/<(\w+)/.exec(k)![1]!);
+        return i < 0 ? 99 : i;
+      };
+      return `<font>${[...kids].sort((a, b) => rank(a) - rank(b)).join('')}</font>`;
+    });
 }
 
 export type ChartKind = 'bar' | 'line' | 'pie' | 'none';

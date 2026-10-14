@@ -14,6 +14,8 @@ export interface PremiumDesign {
 }
 export const PREMIUM_DESIGNS: PremiumDesign[] = [
   { id: 'house', label: THEMES.house.label, tagline: 'Bandeaux navy, filet or, cartes KPI', bestFor: 'Reporting bancaire, COMEX' },
+  { id: 'comite', label: THEMES.comite.label, tagline: 'Marine, bleu Ecobank, filet lime — les livrables du comité', bestFor: 'Comités, watchlist, direction des engagements' },
+  { id: 'extraordinaire', label: THEMES.extraordinaire.label, tagline: 'Indigo nuit, aurore teal, corail et safran', bestFor: 'Présentations qui doivent marquer' },
   { id: 'onyx', label: THEMES.onyx.label, tagline: 'Noir profond et or, serif élégante', bestFor: 'Direction, investisseurs' },
   { id: 'sapphire', label: THEMES.sapphire.label, tagline: 'Bleu royal, argent, très lisible', bestFor: 'Finance, conseil' },
   { id: 'emerald', label: THEMES.emerald.label, tagline: 'Vert émeraude et laiton', bestFor: 'Performance, ESG, budget' },

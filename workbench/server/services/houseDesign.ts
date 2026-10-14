@@ -173,6 +173,10 @@ export type ThemeId =
   | 'terracotta'
   | 'graphite'
   | 'swiss'
+  // Comité — the official Ecobank blue of the committee deliverables (deck, report, workbook of 30/09/2026).
+  | 'comite'
+  // Extraordinaire — the showpiece design: midnight indigo, aurora teal, coral and saffron on warm white.
+  | 'extraordinaire'
   // Maison 2.0 — the house structure (bands, filet, KPI cards, zebra, Segoe UI / Consolas) in harmonised palettes.
   | 'house-lime'
   | 'house-ocean'
@@ -255,6 +259,11 @@ export const GENERATED_HOUSE: Record<string, { label: string; color: Partial<Col
 export const THEMES: Record<ThemeId, { label: string; color: Partial<Col>; font?: string; series?: string[] }> = {
   ...(GENERATED_HOUSE as Record<`house-g-${string}`, { label: string; color: Partial<Col>; font?: string; series?: string[] }>),
   house: { label: 'Maison — Bleu Ecobank (GOD 3D)', color: {} },
+  // Read on the committee deliverables (ECOBANK Covenant & Trigger Intelligence, 30/09/2026): marine 00415E, primary 005C83,
+  // lime 8CC63F, light blue 1A86B3, text 12333F / 3E5C6B, fills EEF4F7 / CFE0E7, risk C0392B, vigilance B67D1C, Calibri.
+  comite: { label: 'Comité — Bleu Ecobank officiel', color: { ...P('00415E', '005C83', '8CC63F', '1A86B3', 'EEF4F7', 'CFE0E7', 'F6FAFC'), text: '12333F', text2: '3E5C6B', subtle: 'DCEBF2', risk: 'C0392B', warn: 'B67D1C', green: '6BA23A', orange: 'D4A13A' }, font: 'Calibri', series: ['005C83', '8CC63F', 'C0392B', 'B67D1C', '1A86B3', '00415E', 'A6D867', '3E5C6B'] },
+  // The showpiece: deep indigo night, aurora teal filet, coral and saffron series on a warm white page.
+  extraordinaire: { label: 'Extraordinaire — Aurore', color: { ...P('14102E', '2B1F6B', '00B3A4', 'FF6B57', 'F6F4FF', 'DCD6F5', 'FBFAFF'), text: '1A1633', text2: '4B4568', subtle: 'D9D3F7', risk: 'E0245E', warn: 'F2B705', green: '00B3A4', orange: 'FF6B57' }, font: 'Segoe UI', series: ['2B1F6B', '00B3A4', 'FF6B57', 'F2B705', '7C6FD6', '14102E', '5FD3C8', 'FFA08F'] },
   corporate: { label: 'Corporate gris-bleu', color: P('1F2937', '334155', '0EA5E9', '64748B', 'F1F5F9', 'E2E8F0'), font: 'Calibri' },
   modern: { label: 'Moderne violet', color: P('1E1B4B', '4F46E5', 'F59E0B', '06B6D4', 'EEF2FF', 'E0E7FF', 'F5F7FF'), font: 'Segoe UI' },
   minimal: { label: 'Minimal noir & blanc', color: P('111111', '333333', '999999', '666666', 'F5F5F5', 'E5E5E5', 'FAFAFA'), font: 'Arial' },
@@ -348,9 +357,9 @@ export function themeOf(a: Record<string, unknown>, fallback?: string): ThemeId 
 export const THEME_PARAMS = {
   theme: {
     type: 'string',
-    enum: ['house', 'corporate', 'modern', 'minimal', 'executive', 'warm', 'nature', 'onyx', 'sapphire', 'emerald', 'ivory', 'terracotta', 'graphite', 'swiss', 'custom'],
+    enum: ['house', 'comite', 'extraordinaire', 'corporate', 'modern', 'minimal', 'executive', 'warm', 'nature', 'onyx', 'sapphire', 'emerald', 'ivory', 'terracotta', 'graphite', 'swiss', 'custom'],
     description:
-      'Visual theme. Default "house" (GOD 3D · BLUE ECOBANK). Use another one ONLY when the user asks for a different look; "custom" with colors.',
+      'Visual theme. Default "house" (GOD 3D · BLUE ECOBANK); "comite" = the official Ecobank blue of the committee deliverables; "extraordinaire" = the showpiece design. Use another one ONLY when the user asks for a different look; "custom" with colors.',
   },
   colors: {
     type: 'object',
