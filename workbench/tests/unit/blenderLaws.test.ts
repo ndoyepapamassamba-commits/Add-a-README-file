@@ -402,8 +402,10 @@ O = acting.curves(jaw, [np.zeros(nF)], -0.4, nF, fps, 7, on=False)
 d = lambda a: math.degrees(float(np.mean(a)))
 print(json.dumps({'leftSpeak': d(L['spine'][75:140]), 'leftListen': d(L['spine'][190:240]), 'leftHead': d(L['head'][75:140]),
   'rightSpeak': d(R['spine'][75:140]), 'oldSpine': float(np.abs(O['spine']).max()), 'breath': L['breath_amp'],
-  'shift': math.degrees(float(np.ptp(L['root'])))}))`);
+  'shift': math.degrees(float(np.ptp(L['root']))), 'sameKeys': sorted(O) == sorted(L), 'oldLift': float(np.abs(O['lift']).max())}))`);
     if (!r) return;
+    expect(r.sameKeys).toBe(true); // the A/B idle carries every curve the scene reads (lift, squash): --sans-jeu crashed on film 9
+    expect(r.oldLift).toBe(0);
     expect(r.leftSpeak as number).toBeLessThan(-3.5); // left actor: top toward +x (negative rotation, measured sign)
     expect(Math.abs(r.leftListen as number)).toBeLessThan(1.0);
     expect(r.leftHead as number).toBeLessThan(-0.5); // the head follows the lean, never cancels it

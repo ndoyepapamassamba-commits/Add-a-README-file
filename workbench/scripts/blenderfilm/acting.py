@@ -81,7 +81,7 @@ def curves(jaw, partner_nods, x, nF, fps, seed, on=True, scale=None, clips=None,
     if not on:
         z = np.zeros(nF + 1)
         return {'head': z, 'spine': z, 'root': math.radians(0.7) * sway, 'breath': breath, 'breath_amp': 0.010,
-                'listen': z, 'bob': z, 'toward': toward, 'speak': speak}
+                'listen': z, 'bob': z, 'toward': toward, 'speak': speak, 'lift': z, 'squash': z}
     k = np.ones(nF + 1) if scale is None else np.asarray(scale, float)[: nF + 1]
     head = k * (math.radians(1.5) * np.sin(tt * 2 * math.pi / 4.1 + seed % 4)
             + math.radians(2.0) * energy * np.sin(tt * 2 * math.pi * 2.1 + seed % 6)
