@@ -787,6 +787,7 @@ def build_pose(actor, pose, k, rig_dir, scale, mirror, root):
         o.parent_bone = 'head'
         bpy.context.view_layer.update()
         o.matrix_world = mw_
+        o['visage_de'] = ob.name  # the preflight checks that the piece lies on its drawing
         extras.append(o)
         return o
     cav = None

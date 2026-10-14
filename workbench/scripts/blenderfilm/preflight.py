@@ -446,6 +446,21 @@ def check_collisions(R, objs, autofix=True, frames=None):
                              'caches': sum(1 for v in found.values() if v[3] == 'cache')}
 
 
+def check_face_parts(R, objs, tol=0.02):
+    """The pieces added on a drawn face (blink lids, mouth cavity) must lie ON that drawing: a piece placed in the
+    wrong space floats beside the face (a dark oval in mid-air at every blink)."""
+    by = {ob.name: ob for ob in objs}
+    for ob in objs:
+        host = by.get(ob.get('visage_de', '')) if hasattr(ob, 'get') else None
+        if host is None:
+            continue
+        lo, hi = _world_bbox(host)
+        p = ob.matrix_world.translation
+        off = max(lo[0] - p.x, p.x - hi[0], lo[2] - p.z, p.z - hi[2], 0.0)
+        if off > tol:
+            R.add('rigs', 'critique', f'pièce du visage hors de son dessin ({off:.2f} m) : elle flotte à côté du visage', ob.name, round(off, 3))
+
+
 def check_scale(R, objs, cast=None):
     for ob in objs:
         if ob.type not in ('MESH', 'EMPTY', 'ARMATURE'):
@@ -1468,6 +1483,7 @@ def run(kind='scene', subject='', story=None, life=None, cast=None, drawn=None, 
         for f in probe_frames:
             probe_exposure(R, scene, f)
     check_rigs(R, scene, objs)
+    check_face_parts(R, objs)
     check_fluidity(R, scene, cuts)
     check_narrative(R, story, life, objs, drawn=drawn)
     check_casting(R, life)
