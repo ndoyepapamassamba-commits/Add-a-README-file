@@ -64,7 +64,12 @@ def speaks_french(voice, voices_dir):
     return _CAN[voice]
 
 
-def tts(text, voice, out, voices_dir, speed=1.0, pitch=1.0, expr=1.0, formant=1.0, stand_in=True):
+# Piper is deterministic (the same text gives the same samples): the takes of a line are made DIFFERENT on purpose —
+# the shaped voice, another prosody draw of the model, and a half-shaped voice (closer to the model's own, often clearer).
+TAKES = [{'noise': None, 'noise_w': None, 'shape': 1.0}, {'noise': 0.45, 'noise_w': 0.6, 'shape': 1.0}, {'noise': None, 'noise_w': None, 'shape': 0.5}]
+
+
+def tts(text, voice, out, voices_dir, speed=1.0, pitch=1.0, expr=1.0, formant=1.0, stand_in=True, take=0):
     from piper import PiperVoice
     from piper.config import SynthesisConfig
     if stand_in and not speaks_french(voice, voices_dir) and STAND_IN.get(voice) and speaks_french(STAND_IN[voice], voices_dir):
@@ -79,7 +84,11 @@ def tts(text, voice, out, voices_dir, speed=1.0, pitch=1.0, expr=1.0, formant=1.
     v = PiperVoice.load(os.path.join(voices_dir, model))
     tmp = out + '.raw.wav'
     with wave.open(tmp, 'wb') as w:
-        v.synthesize_wav(text, w, SynthesisConfig(speaker_id=spk, length_scale=1.0 / speed))
+        tk = TAKES[take % len(TAKES)]
+        v.synthesize_wav(text, w, SynthesisConfig(speaker_id=spk, length_scale=1.0 / speed, noise_scale=tk['noise'], noise_w_scale=tk['noise_w']))
+        if tk['shape'] != 1.0:
+            # half-way shaping, in log terms (pitch and melody factors)
+            pitch, expr, formant = pitch ** tk['shape'], 1 + (expr - 1) * tk['shape'], formant ** tk['shape']
     a = read_wav(tmp)
     os.remove(tmp)
     shaped = None
@@ -367,8 +376,8 @@ def main():
             write_wav(path, audio)
             return audio
         sh = shape[b['who']]
-        takes = [tts(b['text'], c.get('voice', 'siwis'), path, a.voices, speed=speed * c.get('speed', 1.0), pitch=sh['pitch'], expr=sh['expr'], formant=sh['formant'])
-                 for _ in range(n_takes)]
+        takes = [tts(b['text'], c.get('voice', 'siwis'), path, a.voices, speed=speed * c.get('speed', 1.0), pitch=sh['pitch'], expr=sh['expr'], formant=sh['formant'], take=t)
+                 for t in range(n_takes)]
         k, det = tonelib.choose_take(takes, b['text'], SR, sh['cible']) if n_takes > 1 else (0, [])
         write_wav(path, takes[k])
         if det:
