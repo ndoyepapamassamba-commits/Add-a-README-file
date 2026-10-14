@@ -16,6 +16,34 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # Measures where lower is better (a ceiling only) and the ones the living world is allowed to exceed (factor on the max).
 ONE_SIDED = ('frozenS', 'flicker')
 LIVING = {'coverage': 1.5}
+# A PREVIEW holds each rendered frame (--pas 3): the picture changes on one step in three, so motion and coverage read
+# low — measured on film 9 (14/10/2026): 0,0232 / 0,42 with held frames against 0,0271 / 0,53 on the full render (the
+# full render held on threes gives the preview's numbers back). Above this share of held frames, those measures are
+# reported, never judged: the full render (or « --apercu --pas 1 ») decides.
+HELD_MAX = 0.2
+PREVIEW_BLIND = ('motion', 'coverage', 'frozenS', 'flicker')
+
+
+def rhythm_checks(m, ref, held_share=0.0):
+    """The channel-rhythm checks of a film's measures; `ok` is None where a preview cannot measure (held frames)."""
+    out = []
+    blind = (held_share or 0) > HELD_MAX
+    for k in ('seconds', 'shotsPerMin', 'shotMedianS', 'motion', 'coverage', 'frozenS', 'flicker'):
+        r = ref[k]
+        if k in ONE_SIDED:
+            # Less is better: frozen seconds and flicker only have a ceiling (beating every reference is no fault).
+            ok, want = m[k] <= r['max'], f"≤ {r['max']} (médiane de la chaîne {r['median']})"
+        elif k in LIVING:
+            # The living world moves more of the picture than the channel's videos (asked for): floor + a 1.5× ceiling.
+            ok, want = r['min'] <= m[k] <= r['max'] * LIVING[k], f"{r['min']} – {round(r['max'] * LIVING[k], 3)} (chaîne ≤ {r['max']}, monde vivant)"
+        else:
+            ok, want = r['min'] <= m[k] <= r['max'], f"{r['min']} – {r['max']} (médiane {r['median']})"
+        c = {'check': f'rythme TikTok : {k}', 'ok': bool(ok), 'value': m[k], 'want': want}
+        if blind and k in PREVIEW_BLIND:
+            c['ok'] = None
+            c['note'] = f"non mesurable sur un aperçu ({round(100 * held_share)} % d’images répétées) : rendu complet requis"
+        out.append(c)
+    return out
 
 
 def measure(mp4):
@@ -60,22 +88,14 @@ def main():
         check('conformité 3D (preflight)', False, 'aucun rapport', 'rapport preflight.json présent')
     m = measure(mp4)
     if m:
-        for k in ('seconds', 'shotsPerMin', 'shotMedianS', 'motion', 'coverage', 'frozenS', 'flicker'):
-            r = ref[k]
-            if k in ONE_SIDED:
-                # Less is better: frozen seconds and flicker only have a ceiling (beating every reference is no fault).
-                check(f'rythme TikTok : {k}', m[k] <= r['max'], m[k], f"≤ {r['max']} (médiane de la chaîne {r['median']})")
-            elif k in LIVING:
-                # The living world moves more of the picture than the channel's videos (asked for): floor + a 1.5× ceiling.
-                check(f'rythme TikTok : {k}', r['min'] <= m[k] <= r['max'] * LIVING[k], m[k], f"{r['min']} – {round(r['max'] * LIVING[k], 3)} (chaîne ≤ {r['max']}, monde vivant)")
-            else:
-                check(f'rythme TikTok : {k}', r['min'] <= m[k] <= r['max'], m[k], f"{r['min']} – {r['max']} (médiane {r['median']})")
-    passed = all(c['ok'] for c in checks)
-    out = {'film': os.path.basename(mp4), 'passed': passed, 'checks': checks, 'measures': m}
+        checks += rhythm_checks(m, ref, qa.get('held_share', 0))
+    blind = [c for c in checks if c['ok'] is None]
+    passed = all(c['ok'] for c in checks if c['ok'] is not None)
+    out = {'film': os.path.basename(mp4), 'passed': passed, 'checks': checks, 'measures': m, 'apercu': bool(blind)}
     json.dump(out, open(base + '.gate.json', 'w'), ensure_ascii=False, indent=1)
     for c in checks:
-        print(('✓' if c['ok'] else '✗'), c['check'], '→', c['value'], f"(attendu {c['want']})")
-    print('PORTE DE QUALITÉ :', 'OUI' if passed else 'NON')
+        print(('○' if c['ok'] is None else '✓' if c['ok'] else '✗'), c['check'], '→', c['value'], f"(attendu {c['want']})" + (f" — {c['note']}" if c.get('note') else ''))
+    print('PORTE DE QUALITÉ :', ('OUI' if passed else 'NON') + (' (aperçu : rythme non mesuré, rendu complet requis)' if blind else ''))
     return 0 if passed else 2
 
 

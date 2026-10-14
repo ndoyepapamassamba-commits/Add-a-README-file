@@ -76,10 +76,14 @@ Consignes de l'utilisateur (14/10/2026) : « la veille internet doit être perma
 | 14/10/2026 | Gestes du corps depuis la voix | EMAGE (CVPR 2024, PantoMatrix), AMUSE (MPI, mars 2026), LiveGesture (arXiv avr. 2026, temps réel), DialoGen (mars 2026, deux interlocuteurs) | EMAGE : Apache-2.0 sur un MIROIR Hugging Face seulement, dépôt d'origine non lu ; sorties au format SMPL-X, dont le modèle de corps est sous licence MPI non commerciale (à vérifier) ; autres : licence non trouvée | aucun retenu → couche de jeu PROCÉDURALE pilotée par la voix (`scene.py` `animate`) : instantanée, gratuite ; à revoir si un modèle MIT/Apache sans dépendance SMPL sort |
 | 14/10/2026 | Décor animé depuis une image fixe (foule, arbres, eau) | glb99/cinemagraph (effets procéduraux sway / ripple / wind), 3D Cinemagraphy (CVPR 2023, xingyi-li), LoRA Cinemagraph de LTX-2.5 | glb99 : Apache-2.0 (code, poids optionnels à part) ; 3D Cinemagraphy : Apache-2.0 annoncé, GPU ; LTX-2.5 : licence communautaire LTX → hors règle | même principe que notre shader « décor vivant » (masques de segmentation + déplacement d'UV) : gardé, instantané ; 3D Cinemagraphy à essayer sur GPU de l'utilisateur pour l'eau |
 | 14/10/2026 | Visage vivant, plans génératifs, lip-sync | LivePortrait, FasterLivePortrait, Wan 2.2, LatentSync, MuseTalk, LTX-2, Veo / Grok / Kling | voir registre de `outils-puissants-d-abord` | voir registre |
+| 14/10/2026 | Rendu Blender plus rapide SANS carte graphique (un film de 64 s en minutes) | EEVEE via le module bpy sur OpenGL logiciel (Mesa/llvmpipe) ; ferme de rendu bénévole SheepIt ; notes de version Blender 5.0 (identifiant EEVEE redevenu `BLENDER_EEVEE`) | Blender GPL (outil, rien de redistribué) ; SheepIt : conditions d'utilisation lues | EEVEE sans GPU : **mesuré** ≈ 150 s par image fixe de preflight (contre 1 s en Cycles CPU) et erreurs EGL_BAD_MATCH → écarté ; SheepIt : gratuit mais le fichier .blend (dessins de la troupe) part chez des bénévoles → seulement avec accord explicite ; Cycles CPU reste la voie : **2,57 s/image mesuré** (576×1024, 10 échantillons), film 9 de 64 s rendu en 75 min, 4 515 s avec montage et porte |
 
 Sources du 14/10/2026 : [EMAGE (CVPR 2024)](https://openaccess.thecvf.com/content/CVPR2024/papers/Liu_EMAGE_Towards_Unified_Holistic_Co-Speech_Gesture_Generation_via_Expressive_Masked_CVPR_2024_paper.pdf),
 [miroir EMAGE](https://huggingface.co/camenduru/EMAGE/tree/main/pyrender/docs/source),
 [LiveGesture](https://arxiv.org/abs/2604.10927),
 [glb99/cinemagraph](https://github.com/glb99/cinemagraph),
 [3D Cinemagraphy](https://github.com/xingyi-li/3d-cinemagraphy),
-[LoRA Cinemagraph LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5-22b-LoRA-Cinemagraph).
+[LoRA Cinemagraph LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5-22b-LoRA-Cinemagraph),
+[notes de version Blender 5.0 — EEVEE](https://developer.blender.org/docs/release_notes/5.0/eevee/),
+[SheepIt — conditions d'utilisation](https://sheepit-renderfarm.com/termsofuse),
+[devtalk — EEVEE sans écran](https://devtalk.blender.org/t/blender-2-8-unable-to-open-a-display-by-the-rendering-on-the-background-eevee/1436).

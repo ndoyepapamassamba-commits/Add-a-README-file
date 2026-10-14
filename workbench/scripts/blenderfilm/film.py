@@ -40,6 +40,9 @@ def main():
     ap.add_argument('--apercu', action='store_true',
                     help='APERÇU RAPIDE (« processeur fictif ») : demi-résolution, 4 échantillons, une image sur trois — '
                          'pour valider histoire, lieux, cadrages et voix en quelques minutes ; le rendu final se fait sans')
+    ap.add_argument('--pas', type=int, default=0,
+                    help='aperçu : une image rendue sur N (3 par défaut) ; 1 = toutes les images à demi-résolution, pour MESURER le rythme '
+                         '(un aperçu sur trois sous-estime mouvement et couverture de 14 à 20 %%, mesuré sur le film 9)')
     a = ap.parse_args()
     out = os.path.abspath(a.out)
     os.makedirs(out, exist_ok=True)
@@ -69,7 +72,7 @@ def main():
         print('[film] foule peinte non séparée (torchvision non installé ?) : une foule d’un seul bloc reste immobile', flush=True)
     frames_dir = os.path.join(out, 'apercu' if a.apercu else 'frames')
     scene = [os.path.join(HERE, 'scene.py'), '--plan', os.path.join(out, 'plan.json'), '--out', frames_dir, '--engine', engine,
-             '--samples', str(4 if a.apercu else a.samples)] + (['--scale', '0.5', '--pas', '3'] if a.apercu else [])
+             '--samples', str(4 if a.apercu else a.samples)] + (['--scale', '0.5', '--pas', str(a.pas or 3)] if a.apercu else [])
     # Several views of one place: each run of shots is rendered in its view (same actors, same sound — a cut).
     coupes = json.load(open(os.path.join(out, 'plan.json'), encoding='utf-8')).get('coupes') or [None]
     with open(os.path.join(out, 'render.log'), 'a', encoding='utf-8') as log:

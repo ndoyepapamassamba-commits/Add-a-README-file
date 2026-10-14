@@ -41,6 +41,7 @@ def args():
     ap.add_argument('--sans-suivi', action='store_true', help='caméra fixe sur les plans serrés (sans suivre le visage) — comparaison A/B')
     ap.add_argument('--sans-jeu', action='store_true', help='corps sans la couche de jeu pilotée par la voix — comparaison A/B')
     ap.add_argument('--decor-fixe', action='store_true', help='décor sans vie (foule, vent, eau immobiles) — comparaison A/B')
+    ap.add_argument('--camera-fixe', action='store_true', help='caméra sans mouvement (ni zoom ni glissement, chute comprise) — comparaison A/B')
     ap.add_argument('--pas', type=int, default=1, help='aperçu : une image rendue sur N, les autres la répètent')
     return ap.parse_args(argv)
 
@@ -62,6 +63,7 @@ def load_rgba(path):
 MOCAP = True  # --sans-mocap: no captured clips on the poses (A/B check)
 JEU_CORPS = True  # --sans-jeu: bodies without the voice-driven acting layer (A/B check)
 DECOR_FIXE = False  # --decor-fixe: the painted set stays still (A/B check of the decor life)
+CAMERA_FIXE = False  # --camera-fixe: no zoom, no lens shift (A/B check of the camera's share of the picture's motion)
 VISAGE = {}  # the film's living faces: <plan dir>/visage/<actor>/<pose>/f00001.png … (liveface.py)
 
 
@@ -1083,8 +1085,8 @@ def main():
     vdir = os.path.join(os.path.dirname(os.path.abspath(A.plan)), 'visage')
     if not A.sans_visage and os.path.isdir(vdir):
         VISAGE.update({'dir': vdir, 'frames': plan['frames']})
-    global DECOR_FIXE, JEU_CORPS, MOCAP
-    DECOR_FIXE, JEU_CORPS, MOCAP = A.decor_fixe, not A.sans_jeu, not A.sans_mocap
+    global DECOR_FIXE, CAMERA_FIXE, JEU_CORPS, MOCAP
+    DECOR_FIXE, CAMERA_FIXE, JEU_CORPS, MOCAP = A.decor_fixe, A.camera_fixe, not A.sans_jeu, not A.sans_mocap
     if A.decor:
         if A.decor not in rig['decors']:
             raise SystemExit(f'vue inconnue du kit : {A.decor}')
@@ -1715,6 +1717,8 @@ def cameras(plan, actors, bounds, soft, fps):
             dr = 0.012 if close else 0.025
             dx0, dx1 = (-dr * frame_h, dr * frame_h) if mv == 'drift' else (0, 0)
             moves = [(s['start'] + 1, m0, dx0), (s['end'], m1, dx1)]
+        if CAMERA_FIXE:
+            moves = [(s['start'] + 1, 1.0, 0), (s['end'], 1.0, 0)]
         fwide, ftight = max(m for _, m, _ in moves), min(m for _, m, _ in moves)
         drift = max(abs(x) for *_, x in moves)
         shown = here if s['type'] == 'two' and len(here) > 1 else [tgt]

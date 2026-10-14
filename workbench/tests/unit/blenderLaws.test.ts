@@ -689,4 +689,19 @@ print(json.dumps({'preview_cut': finish.brightness_jumps(lum, dup, {479}), 'real
     if (!r) return;
     expect(r).toEqual({ preview_cut: [], real: [11], at_cut: [], small: [] });
   });
+  it('a preview on threes cannot judge motion / coverage (held frames read 14–20 % low): reported, not judged; the full render is', () => {
+    const r = py(`
+import json, gate
+ref = json.load(open('tiktok_reference.json'))
+m = {'seconds': 64, 'shotsPerMin': 20.6, 'shotMedianS': 2.75, 'motion': 0.0235, 'coverage': 0.42, 'frozenS': 0, 'flicker': 0.0034}
+prev = gate.rhythm_checks(m, ref, 0.66)
+full = gate.rhythm_checks(dict(m, motion=0.0271, coverage=0.53), ref, 0.0)
+print(json.dumps({'prev': {c['check'].split(': ')[1]: c['ok'] for c in prev}, 'note': 'rendu complet requis' in prev[3]['note'],
+  'full': {c['check'].split(': ')[1]: c['ok'] for c in full}, 'held_full': gate.rhythm_checks(m, ref, 0.0)[4]['ok']}))`);
+    if (!r) return;
+    expect(r.prev).toEqual({ seconds: true, shotsPerMin: true, shotMedianS: true, motion: null, coverage: null, frozenS: null, flicker: null });
+    expect(r.note).toBe(true);
+    expect(r.full).toEqual({ seconds: true, shotsPerMin: true, shotMedianS: true, motion: false, coverage: false, frozenS: true, flicker: true });
+    expect(r.held_full).toBe(true); // the same numbers on a full render are judged — and 0,42 passes
+  });
 });

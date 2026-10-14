@@ -373,7 +373,9 @@ def main():
     cuts = {s['start'] + 1 for s in plan['shots']} | {int(x['start'] * fps) + 1 for x in emo} | {int(x['end'] * fps) + 1 for x in emo}
     jumps = brightness_jumps(lum, dup, cuts)
     rep = {'frames_expected': nF, 'frames_encoded': int(vframes or 0), 'video_s': round(vdur, 3), 'audio_s': round(adur, 3), 'av_gap_ms': round(abs(vdur - adur) * 1000),
-           'longest_frozen_s': round(frozen_max / fps, 2), 'brightness_jumps_outside_cuts': len(jumps), 'shots': len(plan['shots']), 'size': [W, H], 'fps': fps}
+           'longest_frozen_s': round(frozen_max / fps, 2), 'brightness_jumps_outside_cuts': len(jumps), 'shots': len(plan['shots']), 'size': [W, H], 'fps': fps,
+           # Share of frames identical to the previous source frame: ≈ 0,66 for a preview on threes, ≈ 0 for a full render.
+           'held_share': round(sum(1 for x in dup if x) / max(1, len(dup)), 3)}
     out_lufs, out_peak = lufs(a.out)
     rep.update({'loudness_lufs': out_lufs, 'true_peak_dbfs': out_peak, 'graded': not a.no_grade, 'first_word_s': round(plan['timeline'][0]['speak0'], 2) if plan.get('timeline') else None})
     write_extras(plan, have, a.out, rng, plan_path=a.plan)
