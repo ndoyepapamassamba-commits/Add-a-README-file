@@ -134,7 +134,7 @@ export const kindForTool = (tool: string, args: Record<string, unknown>): Delive
  * The REQUEST asks for a deliverable (the gallery opens BEFORE the work starts, whatever tool the model uses later).
  * A file merely attached (« le fichier Excel joint ») is not a deliverable; « retourne-moi un fichier excel » is.
  */
-export function deliverableFromText(text: string): DeliverableKind | null {
+export function deliverableFromText(text: string, attachments: string[] = []): DeliverableKind | null {
   const t = text.toLowerCase().replace(/\b(joint|jointe|attaché|attachée|ci-joint|en pièce jointe)\b/g, ' ');
   const produce =
     /\b(retourn|renvoi|renvoie|produi|génèr|gener|génér|crée|créer|créé|cree|creer|livre[rz]?\b|livrable|export|prépar|prepar|rédig|redig|construi|fabriqu|sors|sortir|donne[- ]moi|fais[- ]moi|fais un|fais une|faire un|faire une|élabor|elabor|mets? en forme|transforme|convertis|envoie)/.test(t) ||
@@ -145,6 +145,14 @@ export function deliverableFromText(text: string): DeliverableKind | null {
   if (/\b(pptx|powerpoint|présentation|presentation|diaporama|slides?|deck)\b/.test(t)) return 'slides';
   if (/\b(site|application|appli|app|page web|landing|dashboard html|tableau de bord html|interface)\b/.test(t)) return 'web';
   if (/\b(word|docx|pdf|rapport|note|mémo|memo|courrier|lettre|mail|e-mail|email|courriel|compte[- ]rendu|synthèse écrite)\b/.test(t)) return 'document';
+  // « Retourne-moi un fichier structuré », « livre-moi le résultat » : no format named — the attached file says which
+  // deliverable is expected (a workbook in → a workbook out), else a document. The gallery opens either way.
+  if (/\b(fichier|document|livrable|résultat|resultat|structur|tableau|synthèse|synthese|export|version)/.test(t)) {
+    const ext = attachments.map((n) => /\.([a-z0-9]+)$/i.exec(n)?.[1]?.toLowerCase() ?? '');
+    if (ext.some((e) => ['xlsx', 'xlsm', 'xls', 'csv', 'tsv'].includes(e))) return 'excel';
+    if (ext.some((e) => ['pptx', 'ppt'].includes(e))) return 'slides';
+    return 'document';
+  }
   return null;
 }
 /** Code that writes an Office file (Python openpyxl / pandas / python-docx / pptx, JS writeFile). */

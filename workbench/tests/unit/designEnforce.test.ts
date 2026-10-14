@@ -12,6 +12,11 @@ describe('deliverable detection', () => {
   it('a request for a file opens the gallery; an attached file alone or a question does not', () => {
     expect(deliverableFromText('Analyse le fichier Excel joint : anomalies, tendances et 3 graphiques clés et me retourné un fichier excel analysé')).toBe('excel');
     expect(deliverableFromText('Analyse le fichier Excel joint : anomalies, tendances')).toBeNull();
+    // Régression du 14/10/2026 : « retourne-moi un fichier structuré » sans format nommé → la pièce jointe décide, la galerie s'ouvre.
+    expect(deliverableFromText('analyse le fichier attaché et retourne moi un fichier structuré', ['Provisions.xlsx'])).toBe('excel');
+    expect(deliverableFromText('analyse le fichier attaché et retourne moi un fichier structuré', ['note.docx'])).toBe('document');
+    expect(deliverableFromText('analyse et retourne moi le résultat structuré', [])).toBe('document');
+    expect(deliverableFromText('analyse le fichier attaché', ['Provisions.xlsx'])).toBeNull();
     expect(deliverableFromText('résume le fichier excel joint')).toBeNull();
     expect(deliverableFromText('le crédit est-il risqué ?')).toBeNull();
     expect(deliverableFromText('Prépare une présentation pour le COMEX')).toBe('slides');

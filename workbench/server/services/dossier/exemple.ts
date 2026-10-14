@@ -162,3 +162,22 @@ export function exampleDossier(): Dossier {
     provenance: 'Chaque indicateur est calculé une seule fois par le moteur (analysis.json → kpis) puis repris à l’identique ; aucune valeur n’est saisie à la main.',
   };
 }
+
+/** Synthetic rows behind the example (seeded, no real client): 420 relations with segment, manager, factor, CTI band. */
+export function exampleData(): import('./dossierXlsx').DossierData {
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)]!;
+  const seg = ['Corporate', 'Commercial', 'SME', 'Public', 'Particuliers'];
+  const gest = ['Gestionnaire A', 'Gestionnaire B', 'Gestionnaire C', 'Gestionnaire D', 'Gestionnaire E', 'Gestionnaire F'];
+  const fact = ['Assurance échue', 'Deferral > 180 j', 'Limite échue', 'Domiciliation ligne', 'Domiciliation SME'];
+  const band = ['Surveillance', 'Modéré', 'Élevé', 'Critique'];
+  const rows = Array.from({ length: 420 }, (_, i) => {
+    const s = pick(seg);
+    const base = s === 'Corporate' ? 2.5e9 : s === 'Public' ? 4e9 : s === 'Commercial' ? 6e8 : s === 'SME' ? 1.5e8 : 2e7;
+    const enc = Math.round(base * (0.05 + rnd() * rnd() * 3));
+    const cti = Math.round(rnd() * rnd() * 100);
+    return { Client: `Client ${String(i + 1).padStart(3, '0')}`, Segment: s, Gestionnaire: pick(gest), Facteur: pick(fact), 'Bande CTI': band[cti >= 60 ? 3 : cti >= 40 ? 2 : cti >= 20 ? 1 : 0]!, CTI: cti, 'Encours XOF': enc };
+  });
+  return { columns: ['Client', 'Segment', 'Gestionnaire', 'Facteur', 'Bande CTI', 'CTI', 'Encours XOF'], rows, measure: 'Encours XOF', measureLabel: 'Encours exposé', entity: 'Client', selectors: ['Segment', 'Gestionnaire', 'Facteur', 'Bande CTI'], source: 'données synthétiques (exemple)' };
+}

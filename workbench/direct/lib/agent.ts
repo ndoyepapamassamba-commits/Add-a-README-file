@@ -110,7 +110,7 @@ import { BUILTIN_PLUGINS, builtinToolNames, builtinTools } from './builtinPlugin
 import { findAgent, allRoles, findRole } from './roles';
 import { matchSkills } from './skills';
 import { uid, useStore } from './store';
-import { TOOLS, llmName, mcpTool, toolDefs, type DirectTool, type ToolCtx } from './tools';
+import { HOUSE_FILES, TOOLS, llmName, mcpTool, toolDefs, type DirectTool, type ToolCtx } from './tools';
 import type { AgentDef, AgentMode, Attachment, PlanStep, Session } from './types';
 import { acquireScope, writeBytes, bytesOf, chatScope, dataUrl, files, files as filesView, filesFor, getFile, readAsText, scopeGate, sessionAllow, setChatScope, tree, writeText } from './vfs';
 
@@ -129,9 +129,10 @@ const SAFE_HIDDEN = new Set([
 const MISSION_ONLY = new Set(['mission.stage', 'mission.report']);
 
 /** Creates missing .ai/ memory documents (never overwrites). */
-function ensureAiDocs(): void {
-  for (const d of AI_DOCS)
-    if (!getFile(aiDocPath(d))) writeText(aiDocPath(d), aiDocTemplate(d, 'Espace de travail'));
+/** Creates the given .ai/ memory documents when missing (never overwrites). Only the documents actually written are
+ *  created: nine empty templates in every chat made the model read them (time) and misreport their content. */
+function ensureAiDocs(only: AiDoc[] = [...AI_DOCS]): void {
+  for (const d of only) if (!getFile(aiDocPath(d))) writeText(aiDocPath(d), aiDocTemplate(d, 'Espace de travail'));
 }
 function aiDigest(): string {
   const docs: Partial<Record<AiDoc, string>> = {};
@@ -142,7 +143,7 @@ function aiDigest(): string {
   return memoryDigest(docs);
 }
 function recordMission(goal: string, r: MissionReport, meta: { model: string; cost: number }): void {
-  ensureAiDocs();
+  ensureAiDocs(['CHANGELOG', 'TESTS']);
   writeText(
     aiDocPath('CHANGELOG'),
     `${getFile(aiDocPath('CHANGELOG'))!.data.trimEnd()}\n${changelogEntry(goal, r, meta)}`,
@@ -1266,7 +1267,6 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
   if (inp.attachments.length) stage(sid, `Préparation : lecture de ${inp.attachments.length} pièce(s) jointe(s)…`);
   const content = await userContent(inp.text, inp.attachments, vision, firstTurn && !lane?.minimalPrompt, bridge);
   if (firstTurn && !label && !lane?.minimalPrompt) {
-    if (inp.session.mode !== 'safe') ensureAiDocs();
     // OMNIPOTENT MEMORY GOVERNOR (hard): only the paragraphs of the project memory that fit the current mission are shown.
     const digest = omni ? omniRt.filterMemory(omni, aiDigest()) : aiDigest();
     if (digest && content[0]?.type === 'text')
@@ -2502,8 +2502,8 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
 async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp: LoopInput): Promise<string> {
   const st = useStore.getState();
   const sid = inp.session.id;
-  const tool = offered.find((t) => llmName(t.name) === call.function.name || t.name === call.function.name);
-  const name = tool?.name ?? call.function.name.replace(/__/g, '.');
+  let tool = offered.find((t) => llmName(t.name) === call.function.name || t.name === call.function.name);
+  let name = tool?.name ?? call.function.name.replace(/__/g, '.');
   let args: Record<string, unknown> = {};
   try {
     args = call.function.arguments?.trim()
@@ -2511,6 +2511,20 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
       : {};
   } catch {
     return `Error: arguments are not valid JSON: ${call.function.arguments?.slice(0, 300)}`;
+  }
+  // HOUSE FORMATS (consigne du 14/10/2026) : once the request's design gallery opened, EVERY deliverable comes out in the
+  // committee formats — whatever was chosen (theme, catalogue model, design found on the Internet): its colours apply.
+  // A whole-file data.export becomes dossier.export on that file (workbook + the formats chosen in the gallery).
+  let houseNote = '';
+  if (sid && runHouse.has(sid) && name === 'data.export' && typeof args.path === 'string' && args.path) {
+    const house = TOOLS.find((t) => t.name === 'dossier.export');
+    if (house) {
+      const chosen = runFormats.get(sid);
+      args = { data: args.path, sheet: args.sheet, focus: runRequest.get(sid) ?? '', name: args.name, formats: chosen?.length ? chosen.map((f) => (f === 'pdf' ? 'html' : f)) : ['xlsx', 'pptx', 'docx'] };
+      tool = house;
+      name = house.name;
+      houseNote = '\n[format] Livrable produit dans les formats comité (classeur à boutons et sélecteurs, deck, rapport) au design choisi.';
+    }
   }
   const itemId = uid();
   const lbl = tool?.label(args) ?? name;
@@ -2534,6 +2548,12 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
       `Error: tool "${name}" is not available${inp.plan ? ' in PLAN MODE (read-only until the plan is approved)' : ''}. Use only the provided tools.`,
     );
 
+  if (sid && runHouse.has(sid) && tool.name === 'code.run' && deliverableFromCode(String(args.code ?? '')))
+    return fail(
+      'error',
+      'livrable → formats comité',
+      'Refused: this chat expects the committee formats chosen in the design gallery. Do not write the Office file with code: call dossier.export with data = the source file (and formats), or dossier.compose then dossier.export when the analysis must be written. Use code.run only for calculations.',
+    );
   const grants = st.grants[sid] ?? [];
   const decision = decide(inp.session.mode, tool, grants.includes(tool.name), args);
   if (decision === 'deny')
@@ -2682,7 +2702,7 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
       if (n) out.forModel += `\n[logo] logo de l'utilisateur placé dans ${n} fichier(s).`;
     }
     releaseScope?.();
-    out.forModel += designNote;
+    out.forModel += designNote + houseNote;
     st.updateItem(sid, itemId, {
       status: out.ok ? 'ok' : 'error',
       summary: out.summary,
@@ -2706,6 +2726,9 @@ function stage(sid: string, text: string): void {
 /** Design of this chat: remembered for the chat, else chosen for the current request. */
 const runDesign = new Map<string, DesignChoice>();
 const runFormats = new Map<string, string[]>();
+/** Chats whose current request opened the design gallery: every deliverable of the run takes the committee formats. */
+const runHouse = new Set<string>();
+const runRequest = new Map<string, string>();
 function designFor(sid: string): DesignChoice | undefined {
   return useStore.getState().sessions.find((x) => x.id === sid)?.design ?? runDesign.get(sid);
 }
@@ -2779,7 +2802,7 @@ async function applyClone(sid: string, since: number): Promise<{ n: number; note
   if (!c?.clone) return { n: 0, note: '' };
   const pd = previewData(sid, 'Tableau de bord');
   // Never invented figures: the chat's data file, else (workbooks) the detail table of the workbook itself.
-  const targets = Object.values(files()).filter((f) => f.updatedAt >= since && !f.path.startsWith('assets/') && !f.path.startsWith('uploads/') && (/\.xlsx$/i.test(f.path) || (pd.from && (/\.(docx|pptx)$/i.test(f.path) || (/\.html?$/i.test(f.path) && !f.data.includes('data-dash-clone'))))));
+  const targets = Object.values(files()).filter((f) => f.updatedAt >= since && !HOUSE_FILES.has(f.path) && !f.path.startsWith('assets/') && !f.path.startsWith('uploads/') && (/\.xlsx$/i.test(f.path) || (pd.from && (/\.(docx|pptx)$/i.test(f.path) || (/\.html?$/i.test(f.path) && !f.data.includes('data-dash-clone'))))));
   if (!targets.length) return { n: 0, note: '' };
   const W = 1400;
   const H = Math.round(W / c.clone.aspect);
@@ -2853,7 +2876,7 @@ function applyLogo(sid: string, since: number): number {
   const url = `data:image/png;base64,${lf.data}`;
   let n = 0;
   for (const f of Object.values(files())) {
-    if (f.updatedAt < since || f.path.startsWith('assets/') || f.path.startsWith('uploads/')) continue;
+    if (f.updatedAt < since || HOUSE_FILES.has(f.path) || f.path.startsWith('assets/') || f.path.startsWith('uploads/')) continue;
     if (f.binary && isOffice(f.path)) {
       const out = addLogoToOffice(f.path, bytesOf(f), logo);
       if (out) {
@@ -2892,7 +2915,7 @@ async function finishWorkbooks(sid: string, since: number): Promise<string[]> {
   const skinDesign = skin ? buildTheme({ primary: skin.primary, accent: skin.accent, dark: skin.dark, font: skin.font }) : null;
   if (skin && skinDesign)
     for (const f of Object.values(files())) {
-      if (f.updatedAt < since || f.path.startsWith('uploads/') || f.path.startsWith('assets/')) continue;
+      if (f.updatedAt < since || HOUSE_FILES.has(f.path) || f.path.startsWith('uploads/') || f.path.startsWith('assets/')) continue;
       // House colours written by the exporters (navy / blue / gold) become the image's first.
       const base = f.binary && /\.(docx|pptx)$/i.test(f.path) ? (recolorOffice(bytesOf(f), skinDesign)?.bytes ?? bytesOf(f)) : null;
       if (f.binary && /\.docx$/i.test(f.path)) {
@@ -2916,7 +2939,7 @@ async function finishWorkbooks(sid: string, since: number): Promise<string[]> {
       }
     }
   for (const f of Object.values(files())) {
-    if (!f.binary || f.updatedAt < since || !/\.xlsx$/i.test(f.path) || f.path.startsWith('uploads/') || f.path.startsWith('assets/')) continue;
+    if (!f.binary || f.updatedAt < since || HOUSE_FILES.has(f.path) || !/\.xlsx$/i.test(f.path) || f.path.startsWith('uploads/') || f.path.startsWith('assets/')) continue;
     const r = await heavy('maisonBand', bytesOf(f), design, skip);
     if (!r) {
       // Already banded (data.export): the Sommaire sheet is still rebuilt so it lists every sheet of the final workbook.
@@ -2929,7 +2952,7 @@ async function finishWorkbooks(sid: string, since: number): Promise<string[]> {
   }
   // CONTRÔLE DESIGN AVANT LIVRAISON — last: contrast, columns, page framing, overflowing text, on every deliverable.
   for (const f of Object.values(files())) {
-    if (f.updatedAt < since || f.path.startsWith('uploads/') || f.path.startsWith('assets/') || !/\.(xlsx|docx|pptx|html?)$/i.test(f.path)) continue;
+    if (f.updatedAt < since || HOUSE_FILES.has(f.path) || f.path.startsWith('uploads/') || f.path.startsWith('assets/') || !/\.(xlsx|docx|pptx|html?)$/i.test(f.path)) continue;
     try {
       const r = await heavy('designQA', f.path, f.binary ? bytesOf(f) : f.data);
       if (!r) continue;
@@ -2951,7 +2974,7 @@ function enforceDesign(sid: string, since: number): number {
   const design = buildTheme(c.theme === 'custom' ? (c.colors ?? null) : (c.theme as never));
   let n = 0;
   for (const f of Object.values(files())) {
-    if (!f.binary || f.updatedAt < since || !isOffice(f.path)) continue;
+    if (!f.binary || f.updatedAt < since || HOUSE_FILES.has(f.path) || !isOffice(f.path)) continue;
     const r = recolorOffice(bytesOf(f), design);
     if (!r) continue;
     writeBytes(f.path, r.bytes, f.mime);
@@ -3186,8 +3209,13 @@ export async function runAgent(
   acct.reset(sessionId);
   // PREMIUM DESIGN FIRST: a request that asks for a deliverable (Excel, Word, PPT, PDF, mail, site, app) opens the
   // gallery BEFORE any work — whatever tool the model uses afterwards (native exporter or its own Python code).
-  const wanted = deliverableFromText(text);
+  const wanted = deliverableFromText(text, attachments.map((a) => a.name));
   if (wanted) runDesign.delete(sessionId);
+  runHouse.delete(sessionId);
+  if (wanted) {
+    runHouse.add(sessionId);
+    runRequest.set(sessionId, text.slice(0, 300));
+  }
   if (wanted && !experimentRun && st.settings.designPicker !== false && !designFor(sessionId) && !ac.signal.aborted) {
     const d = await askDesign(sessionId, ac.signal, 'request', wanted, FORMATS_OF[wanted], FORMATS_OF[wanted].slice(0, 1));
     if (d.formats?.length) runFormats.set(sessionId, d.formats);

@@ -2,7 +2,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setActiveTheme, type ThemeId } from '../server/services/houseDesign';
-import { exampleDossier } from '../server/services/dossier/exemple';
+import { exampleData, exampleDossier } from '../server/services/dossier/exemple';
 import { dossierPptx } from '../server/services/dossier/dossierPptx';
 import { dossierDocx } from '../server/services/dossier/dossierDocx';
 import { dossierXlsx } from '../server/services/dossier/dossierXlsx';
@@ -20,7 +20,7 @@ const t1 = Date.now();
 writeFileSync(join(out, `dossier-${theme}.docx`), dossierDocx(d));
 console.log(`docx ok (${Date.now() - t1} ms) → ${out}/dossier-${theme}.docx`);
 const t2 = Date.now();
-writeFileSync(join(out, `dossier-${theme}.xlsx`), dossierXlsx(d));
+writeFileSync(join(out, `dossier-${theme}.xlsx`), dossierXlsx(d, { data: exampleData() }));
 console.log(`xlsx ok (${Date.now() - t2} ms) → ${out}/dossier-${theme}.xlsx`);
 writeFileSync(join(out, `dossier-${theme}.html`), dossierHtml(d));
 writeFileSync(join(out, `dossier-${theme}.mail.html`), dossierMailHtml(d));

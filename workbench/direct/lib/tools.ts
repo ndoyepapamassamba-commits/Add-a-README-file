@@ -31,7 +31,7 @@ import { allRecos, checkDepth, normalizeDossier, todayFr, type Dossier } from '.
 import { dossierFromMarkdown } from '../../server/services/dossier/dossierFromMarkdown';
 import { dossierDocx } from '../../server/services/dossier/dossierDocx';
 import { dossierPptx } from '../../server/services/dossier/dossierPptx';
-import { dossierXlsx } from '../../server/services/dossier/dossierXlsx';
+import { dossierXlsx, type DossierData } from '../../server/services/dossier/dossierXlsx';
 import { dossierHtml, dossierMailHtml } from '../../server/services/dossier/dossierHtml';
 import {
   composeSystemPrompt,
@@ -306,6 +306,29 @@ function datasetForQuery(path: string, sheet: string | undefined, spec: Record<s
   throw new Error(`Colonne(s) introuvable(s)${where} : ${r.missing.join(', ')}.${elsewhere} Colonnes disponibles : ${ds.columns.slice(0, 60).join(' | ')}${ds.columns.length > 60 ? ' …' : ''}`);
 }
 
+/** The data file a brief was computed on (path, sheet, measure, entity, the explanatory dimensions as selectors). */
+function briefDataRef(b: Brief): Dossier['data'] {
+  const m = /^(.*?)(?:\s\[(.+?)\])?(?:\s\(filtré\))?$/.exec(b.source.trim());
+  const selectors = b.dims.filter((x) => x.dim !== b.entity && x.categories >= 2 && x.categories <= 80).map((x) => x.dim).slice(0, 4);
+  return { path: (m?.[1] ?? b.source).trim(), sheet: m?.[2] || undefined, measure: b.measure ?? undefined, entity: b.entity ?? undefined, selectors };
+}
+/** The rows behind a dossier, for the workbook's selectors, live indicators and top 10 (null when unreadable). */
+function dossierData(ref: Dossier['data']): DossierData | null {
+  if (!ref?.path) return null;
+  try {
+    const ds = loadDataset(ref.path, ref.sheet);
+    let { measure, entity, selectors } = ref;
+    if (!measure || !selectors?.length) {
+      const b = buildBrief(ds.columns, ds.rows as Record<string, unknown>[], { title: ref.path, source: ref.path, measure });
+      measure = measure || b.measure || undefined;
+      entity = entity || b.entity || undefined;
+      selectors = selectors?.length ? selectors : briefDataRef(b)?.selectors;
+    }
+    return { columns: ds.columns, rows: ds.rows as Record<string, unknown>[], measure, entity, selectors, source: `${ds.path}${ds.sheet ? ` [${ds.sheet}]` : ''}` };
+  } catch {
+    return null;
+  }
+}
 /** Depth issues of a dossier in one French line (the rules are code: no issue, no line). */
 function depthNote(d: Dossier): string {
   const issues = checkDepth(d);
@@ -316,6 +339,8 @@ function depthNote(d: Dossier): string {
         .join(' ; ')}).`
     : ' Profondeur : règles tenues.';
 }
+/** Files written by the committee engine this session: already in the chosen design, the old post-processors skip them. */
+export const HOUSE_FILES = new Set<string>();
 /**
  * DOSSIER → FILES: the same structured dossier rendered in every format asked, in the ACTIVE theme (set around the
  * tool by the agent from the gallery choice, the settings or the `theme` parameter): workbook, deck, report, page, mail.
@@ -333,7 +358,7 @@ function renderDossier(
     const path = uniquePath(`${base}.${f}`);
     if (f === 'docx') writeBytes(path, dossierDocx(d, { logo, brand }), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     else if (f === 'pptx') writeBytes(path, dossierPptx(d, { logo, brand }), 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
-    else if (f === 'xlsx') writeBytes(path, dossierXlsx(d), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    else if (f === 'xlsx') writeBytes(path, dossierXlsx(d, { data: dossierData(d.data), logo }), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     else if (f === 'html') writeText(path, dossierHtml(d, { brand }));
     else if (f === 'eml') {
       // Colour mail in the theme: .eml draft (Outlook) + the same mail as .html.
@@ -348,6 +373,7 @@ function renderDossier(
   }
   const html = out.find((p) => p.endsWith('.html') && !p.endsWith('.mail.html'));
   if (html) saveArtifact(sessionId, { name: html.split('/').pop()!, type: 'html', content: getFile(html)!.data });
+  out.forEach((p) => HOUSE_FILES.add(p));
   return { out, html };
 }
 /** A brief .json written by report.analyse, or an error naming the path. */
@@ -764,7 +790,7 @@ export const TOOLS: DirectTool[] = [
   {
     name: 'code.run',
     description:
-      'Run JavaScript or Python in an isolated sandbox (no access to the page). Every workspace file is available, binaries included. JS: async code, use console.log; readFile(path) → string for text files, Uint8Array for binaries (PDF, xlsx, docx, images); readBytes(path) → Uint8Array; await readText(path) → extracted text of a PDF / Word / PowerPoint; writeFile(path, string | Uint8Array) saves a file. Python (Pyodide; numpy, pandas, openpyxl, xlrd, pypdf): workspace files are mounted at their path (pd.read_excel works); await read_text(path) gives the text of a PDF / Word file; files written in outputs/ are saved back. If Python is unavailable (blocked network, no offline pack), use JavaScript: it reads the same files.',
+      'For calculations only — never to build an Office deliverable (report, structured file, workbook, deck): use dossier.export (data = the file) for those. Run JavaScript or Python in an isolated sandbox (no access to the page). Every workspace file is available, binaries included. JS: async code, use console.log; readFile(path) → string for text files, Uint8Array for binaries (PDF, xlsx, docx, images); readBytes(path) → Uint8Array; await readText(path) → extracted text of a PDF / Word / PowerPoint; writeFile(path, string | Uint8Array) saves a file. Python (Pyodide; numpy, pandas, openpyxl, xlrd, pypdf): workspace files are mounted at their path (pd.read_excel works); await read_text(path) gives the text of a PDF / Word file; files written in outputs/ are saved back. If Python is unavailable (blocked network, no offline pack), use JavaScript: it reads the same files.',
     parameters: obj(
       {
         language: { type: 'string', enum: ['javascript', 'python'] },
@@ -1337,6 +1363,7 @@ export const TOOLS: DirectTool[] = [
         asOf: S(a.as_of) || undefined,
         confidentiality: S(a.confidentiality) || undefined,
       });
+      if (briefObj) d.data = briefDataRef(briefObj);
       const { out, html } = renderDossier(d, base, formats.filter((f) => f !== 'md'), logoOf(a), ctx.sessionId);
       if (formats.includes('md')) {
         const mp = uniquePath(`${base}.md`);
@@ -1358,27 +1385,43 @@ export const TOOLS: DirectTool[] = [
       'Render a structured dossier (.dossier.json written by dossier.compose or report.export) into committee-grade deliverables in outputs/, all in the chosen theme (house by default) on every sheet / page / slide: xlsx (workbook: cockpit with live indicators, one sheet per chapter with native 3D charts and written analysis, action plan with status cells, decisions, hypotheses, parameters, data quality, sources, glossary, data sheet), pptx (deck with « Lecture — » band on each slide, recommendation cards, decisions, timed notes), docx (report with cover, native TOC, chapters, figures, annexes A–E), html (printable page), eml (colour mail), md (summary). Same figures everywhere.',
     parameters: obj(
       {
-        from: str('Path of the .dossier.json'),
+        from: str('Path of the .dossier.json (written by dossier.compose or report.export). Optional when `data` is given'),
+        data: str('Data file behind the dossier (e.g. "uploads/Provisions.xlsx"): the workbook gets selectors, live indicators, top 10 and a DONNÉES table on it. Alone (no `from`), the dossier is built from the file by the rules (fast, no model call)'),
+        sheet: str('Sheet of the data file'),
+        focus: str('What the deliverable must answer (title / thesis when built from the data alone)'),
+        measure: str('Numeric column to measure (default: detected)'),
+        selectors: { type: 'array', items: { type: 'string' }, description: 'Up to 4 columns offered as selectors (default: the most explanatory dimensions)' },
         name: str('Base file name without extension (default: the dossier file name)'),
         formats: { type: 'array', items: { type: 'string', enum: ['xlsx', 'pptx', 'docx', 'html', 'pdf', 'eml', 'md'] } },
         ...THEME_PARAMS,
       },
-      ['from'],
+      [],
     ),
     risk: 'read',
     readOnly: false,
-    label: (a) => `Livrables du dossier ${S(a.from).split('/').pop() ?? ''}`,
+    label: (a) => `Livrables du dossier ${(S(a.from) || S(a.data)).split('/').pop() ?? ''}`,
     async run(a, ctx) {
-      const f = getFile(S(a.from));
-      if (!f) throw new Error(`Dossier introuvable : ${S(a.from)} (écrit par dossier.compose ou report.export).`);
-      let raw: unknown;
-      try {
-        raw = JSON.parse(new TextDecoder().decode(bytesOf(f)));
-      } catch {
-        throw new Error(`Dossier illisible (JSON attendu) : ${S(a.from)}`);
-      }
-      const d = normalizeDossier(raw);
-      const base = `outputs/${(S(a.name) || S(a.from).split('/').pop()!.replace(/(\.dossier)?\.json$/i, '')).replace(/[^\w.-]+/g, '-') || 'dossier'}`;
+      let d: Dossier;
+      if (S(a.from)) {
+        const f = getFile(S(a.from));
+        if (!f) throw new Error(`Dossier introuvable : ${S(a.from)} (écrit par dossier.compose ou report.export).`);
+        let raw: unknown;
+        try {
+          raw = JSON.parse(new TextDecoder().decode(bytesOf(f)));
+        } catch {
+          throw new Error(`Dossier illisible (JSON attendu) : ${S(a.from)}`);
+        }
+        d = normalizeDossier(raw);
+      } else if (S(a.data)) {
+        // From the file alone: the brief (local, exact) and the rules write the dossier — no model call, seconds.
+        const ds = loadDataset(S(a.data), S(a.sheet) || undefined);
+        const brief = buildBrief(ds.columns, ds.rows as Record<string, unknown>[], { title: S(a.focus) || ds.path.split('/').pop() || 'Analyse', source: `${ds.path}${ds.sheet ? ` [${ds.sheet}]` : ''}`, measure: S(a.measure) || undefined, dims: Array.isArray(a.selectors) && a.selectors.length ? a.selectors.map(S) : undefined });
+        d = dossierFromBrief({ focus: S(a.focus) || `Analyse de ${ds.path.split('/').pop()}`, brief });
+        d.data = briefDataRef(brief);
+      } else throw new Error('Donnez `from` (un .dossier.json) ou `data` (le fichier de données).');
+      if (S(a.data)) d.data = { ...(d.data ?? { path: S(a.data) }), path: S(a.data), sheet: S(a.sheet) || d.data?.sheet, measure: S(a.measure) || d.data?.measure, selectors: Array.isArray(a.selectors) && a.selectors.length ? a.selectors.map(S).slice(0, 4) : d.data?.selectors };
+      const stem = S(a.from) ? S(a.from).split('/').pop()!.replace(/(\.dossier)?\.json$/i, '') : (S(a.data).split('/').pop() ?? 'dossier').replace(/\.[^.]+$/, '');
+      const base = `outputs/${(S(a.name) || stem).replace(/[^\w.-]+/g, '-') || 'dossier'}`;
       const formats = (Array.isArray(a.formats) && a.formats.length ? a.formats.map(S) : ['xlsx', 'pptx', 'docx', 'html']).map((x) => (x === 'pdf' ? 'html' : x));
       const { out, html } = renderDossier(d, base, formats, logoOf(a), ctx.sessionId);
       if (!out.length) throw new Error('Aucun format reconnu (xlsx, pptx, docx, html, eml, md).');
@@ -1557,6 +1600,7 @@ export const TOOLS: DirectTool[] = [
           judgeNote = ' JEV injoignable : tons, priorités et figures tels qu\'écrits.';
         }
       }
+      if (brief) d.data = briefDataRef(brief);
       const name = (S(a.name) || 'dossier').replace(/[^\w.-]+/g, '-').replace(/\.(dossier\.)?(json|md)$/i, '');
       const jp = uniquePath(`outputs/${name}.dossier.json`);
       writeText(jp, JSON.stringify(d, null, 1));

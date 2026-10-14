@@ -77,7 +77,9 @@ for path in sys.argv[1:]:
         root = ET.fromstring(x); seq = [ch.tag.split('}')[1] for ch in root]
         idx = [order.index(t) if t in order else -1 for t in seq]
         if idx != sorted(idx) or -1 in idx: errs.append(f'{name}: worksheet child order {seq}')
-        if len(seq) != len(set(seq)): errs.append(f'{name}: duplicate worksheet children {seq}')
+        # conditionalFormatting is repeatable (one element per range, as Excel writes it); everything else is unique.
+        once = [t for t in seq if t != 'conditionalFormatting']
+        if len(once) != len(set(once)): errs.append(f'{name}: duplicate worksheet children {seq}')
         # sheet rels targets exist
         rp = posixpath.join(posixpath.dirname(part), '_rels', posixpath.basename(part) + '.rels')
         if rp in names:
@@ -94,6 +96,8 @@ for path in sys.argv[1:]:
                     for rid2 in re.findall(r'r:(?:embed|id)="([^"]+)"', d):
                         if f'Id="{rid2}"' not in drel: errs.append(f'{p}: rid {rid2} not in rels')
                     for t2 in re.findall(r'Target="([^"]+)"', drel):
+                        if t2.startswith('#'):
+                            continue  # internal link of a shape (button → sheet), not a part of the package
                         p2 = resolve(p, t2)
                         if p2 not in names: errs.append(f'{p}: target missing {p2}')
                         elif 'charts/' in p2:

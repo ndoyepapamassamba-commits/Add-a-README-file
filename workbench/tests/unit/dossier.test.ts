@@ -6,7 +6,7 @@ import { dossierFromMarkdown } from '../../server/services/dossier/dossierFromMa
 import { dossierHtml, dossierMailHtml, figureSvg } from '../../server/services/dossier/dossierHtml';
 import { dossierPptx } from '../../server/services/dossier/dossierPptx';
 import { dossierXlsx } from '../../server/services/dossier/dossierXlsx';
-import { exampleDossier } from '../../server/services/dossier/exemple';
+import { exampleData, exampleDossier } from '../../server/services/dossier/exemple';
 import { THEMES, withTheme } from '../../server/services/houseDesign';
 
 const parts = (b: Uint8Array) => Object.keys(unzipSync(b));
@@ -64,21 +64,56 @@ describe('Les livrables du dossier — deck, rapport, classeur, page, mail (mêm
     expect(read(b, 'word/footer1.xml')).toContain('NUMPAGES');
     expect(read(b, 'word/header1.xml')).toContain('CONFIDENTIEL');
   });
-  it('workbook: one sheet per view, charts linked to cells on several sheets, validations, live KPI formulas, schema-ordered fonts', () => {
+  it('workbook « nouveau concept »: the reference grid, styled buttons on every view, numbered sections, live KPI links, charts, validations', () => {
     const b = dossierXlsx(d);
     const p = parts(b);
     const wb = read(b, 'xl/workbook.xml');
-    for (const name of ['COCKPIT', 'PLAN D&apos;ACTIONS', 'DÉCISIONS', 'HYPOTHÈSES', 'PARAMÈTRES', 'QUALITÉ', 'SOURCES', 'GLOSSAIRE', 'DATA_KPI']) expect(wb.replace(/'/g, '&apos;')).toContain(name);
-    expect(p.filter((x) => /^xl\/drawings\/drawing\d+\.xml$/.test(x)).length).toBeGreaterThanOrEqual(5);
+    for (const name of ['⌂ COCKPIT', 'PLAN D&apos;ACTIONS', 'DÉCISIONS', 'HYPOTHÈSES', 'PARAMÈTRES', 'QUALITÉ DONNÉES', 'SOURCES', 'GLOSSAIRE', 'DATA_KPI', 'CALC']) expect(wb.replace(/'/g, '&apos;')).toContain(name);
+    expect(wb).toContain('fullCalcOnLoad="1"');
+    expect(wb).toMatch(/<definedName name="ARRETE">/);
+    expect(wb).toMatch(/<definedName name="KPI_K01">/);
+    const ck = read(b, 'xl/worksheets/sheet1.xml');
+    // The 13-column grid of the reference (A and M are margins), the KPI tiles read DATA_KPI with live formulas.
+    expect((ck.match(/<col /g) ?? []).length).toBe(13);
+    expect(ck).toMatch(/DATA_KPI(&apos;|')!\$D\$3/);
+    expect(ck).toContain('01  ·  INDICATEURS CLÉS');
+    expect(ck).toContain('LA THÈSE');
+    expect(ck).toContain('dataBar');
+    // Styled buttons: rounded pills in a gradient with a round badge, each linked to its sheet.
+    const dr = read(b, 'xl/drawings/drawing1.xml');
+    expect(dr).toContain('prst="roundRect"');
+    expect(dr).toContain('<a:gradFill');
+    expect(dr).toContain('prst="ellipse"');
+    expect(dr).toContain('<a:hlinkClick');
+    expect(read(b, 'xl/drawings/_rels/drawing1.xml.rels')).toMatch(/Target="#&apos;1\. ASSURANCES&apos;!A1"/);
     expect(p.filter((x) => /^xl\/charts\/chart\d+\.xml$/.test(x)).length).toBeGreaterThanOrEqual(10);
-    expect(read(b, 'xl/worksheets/sheet1.xml')).toMatch(/DATA_KPI(&apos;|')!\$C\$2/);
-    const plan = p.find((x) => /^xl\/worksheets\/sheet\d+\.xml$/.test(x) && read(b, x).includes('dataValidations'))!;
+    const plan = p.filter((x) => /^xl\/worksheets\/sheet\d+\.xml$/.test(x)).map((x) => read(b, x)).find((x) => x.includes('À faire,En cours,Fait,Abandonné'))!;
     expect(plan).toBeDefined();
-    const sheet = read(b, plan);
-    expect(sheet.indexOf('<dataValidations')).toBeLessThan(sheet.indexOf('<ignoredErrors') < 0 ? Infinity : sheet.indexOf('<ignoredErrors'));
+    expect(plan.indexOf('<conditionalFormatting')).toBeLessThan(plan.indexOf('<dataValidations'));
+    expect(plan.indexOf('<dataValidations')).toBeLessThan(plan.indexOf('<pageMargins'));
+    expect(plan).toContain('COUNTIF(');
     const fonts = read(b, 'xl/styles.xml').match(/<font>(.*?)<\/font>/g)!;
     expect(fonts.every((f) => !/<color[^>]*\/><b\/>|<name[^>]*\/><b\/>|<sz[^>]*\/><b\/>/.test(f))).toBe(true);
     expect(read(b, 'xl/styles.xml')).not.toMatch(/rgb="[0-9A-F]{6}"/);
+    expect(read(b, 'xl/styles.xml')).toMatch(/<dxfs count="[1-9]/);
+  });
+  it('workbook with data: selectors (lists) drive SÉLECTION, live tiles, the top 10 and the charts; DONNÉES is an Excel table', () => {
+    const b = dossierXlsx(d, { data: exampleData() });
+    const p = parts(b);
+    const wb = read(b, 'xl/workbook.xml');
+    for (const n of ['SEL_1', 'LISTE_1', 'D_SEL', 'D_KEY', 'D_MES', 'D_ENT', 'D_S1']) expect(wb).toContain(`name="${n}"`);
+    const ck = read(b, 'xl/worksheets/sheet1.xml');
+    expect(ck).toContain('SÉLECTEURS');
+    expect(ck).toMatch(/<formula1>LISTE_1<\/formula1>/);
+    expect(ck).toContain('SUMIFS(D_MES,D_SEL,1)');
+    expect(ck).toContain('TOP 10');
+    expect(p.some((x) => /^xl\/tables\/table1\.xml$/.test(x))).toBe(true);
+    const sheets = p.filter((x) => /^xl\/worksheets\/sheet\d+\.xml$/.test(x)).map((x) => read(b, x));
+    const data = sheets.find((x) => x.includes('<tableParts'))!;
+    expect(data).toContain('IF(AND(OR(SEL_1=&quot;(Tous)&quot;');
+    expect(data).toContain('state="frozen"');
+    const calc = sheets.find((x) => x.includes('LARGE(D_KEY,1)'))!;
+    expect(calc).toContain('INDEX(D_ENT');
   });
   it('page and mail: inline SVG figures, the ten tiles, the decisions; the mail stays table-only', () => {
     const h = dossierHtml(d);

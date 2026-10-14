@@ -138,6 +138,8 @@ export interface Dossier {
   minutes?: number;
   /** Where the figures come from (the brief, the model, the rules). */
   provenance?: string;
+  /** The data file behind the dossier: the workbook's selectors, live indicators and top 10 are computed on it. */
+  data?: { path: string; sheet?: string; measure?: string; entity?: string; selectors?: string[] };
 }
 
 // ── French formatting ─────────────────────────────────────────────────────────
@@ -257,6 +259,12 @@ export function normalizeChapter(x: unknown, i: number): Chapter | null {
 }
 
 /** Whatever the model handed over → a complete dossier: numbered, formatted, every list bounded. */
+function dataRef(x: unknown): Dossier['data'] | undefined {
+  const o = (x && typeof x === 'object' ? x : null) as Record<string, unknown> | null;
+  const path = o ? str(o.path, 300) : '';
+  if (!path) return undefined;
+  return { path, sheet: str(o!.sheet, 80) || undefined, measure: str(o!.measure, 120) || undefined, entity: str(o!.entity, 120) || undefined, selectors: strs(o!.selectors, 4) };
+}
 export function normalizeDossier(raw: unknown, base: Partial<Dossier> = {}): Dossier {
   const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
   const chapters = arr(o.chapters, normalizeChapter, 14);
@@ -319,6 +327,7 @@ export function normalizeDossier(raw: unknown, base: Partial<Dossier> = {}): Dos
     sources,
     minutes: num(o.minutes) ?? base.minutes,
     provenance: str(o.provenance, 200) || base.provenance,
+    data: dataRef(o.data) ?? base.data,
   };
 }
 
