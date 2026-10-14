@@ -97,7 +97,7 @@ export async function buildPlans(projectId: string): Promise<StagePlan[]> {
   if (r) {
     const others = [plans[0]!, plans[1]!, plans[3]!].reduce((a, p) => a + (p.options.find((o) => o.id === p.recommended)?.stageUsd ?? 0), 0);
     const left = circuitBudget(bp.cap, spent(bp) + others, CIRCUIT.reserveUsd);
-    const o = { id: `${CIRCUIT_PREFIX}${r.id}`, name: `Circuit Grok ${bp.cap.toFixed(2)} $ — ${r.name.replace(/^[^:]+:\s*/, '')} ${CIRCUIT.resolution} (plans clés) + Marionnette`, stageUsd: Math.round(left * 1000) / 1000, costLabel: costLabel(left), quality: priorQuality('video', r.id, r.name), qualitySource: 'a priori' as const, speed: 'Moyen' as const, afrikatoon: 9.3, score: 0, why: `vrai mouvement génératif (${r.usdPerS} $/s + ${r.usdPerClip} $ par plan, prix annoncé) sur l’accroche et la chute, plafond DUR ${bp.cap.toFixed(2)} $ pour tout le film, avec votre clé OpenRouter` };
+    const o = { id: `${CIRCUIT_PREFIX}${r.id}`, name: `Circuit Grok ${bp.cap.toFixed(2)} $ — ${r.name.replace(/^[^:]+:\s*/, '')} ${r.resolution} (plans clés) + Marionnette`, stageUsd: Math.round(left * 1000) / 1000, costLabel: costLabel(left), quality: priorQuality('video', r.id, r.name), qualitySource: 'a priori' as const, speed: 'Moyen' as const, afrikatoon: 9.3, score: 0, why: `vrai mouvement génératif (${r.usdPerS} $/s + ${r.usdPerClip} $ par plan, prix annoncé) sur l’accroche et la chute, plafond DUR ${bp.cap.toFixed(2)} $ pour tout le film, avec votre clé OpenRouter` };
     anim.options = [{ ...o, score: 10 }, ...anim.options];
     anim.recommended = o.id;
   }
@@ -342,7 +342,7 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
             }
             c.onStage('ANIMATION', 'running', `Circuit Grok ${shot.sceneId} : ${shot.seconds} s (${shot.usd.toFixed(2)} $)`);
             const before = spent(b);
-            await generateSceneVideo(projectId, shot.sceneId, { mode: 'image', duration: shot.seconds, resolution: CIRCUIT.resolution, forceModel: r.id, circuit: true }).catch((e) =>
+            await generateSceneVideo(projectId, shot.sceneId, { mode: 'image', duration: shot.seconds, resolution: r.resolution, forceModel: r.id, circuit: true }).catch((e) =>
               warn.push(`${shot.sceneId} : ${(e as Error).message.slice(0, 80)} → Marionnette`),
             );
             // Billed above the announced price → the rate is RECALIBRATED (the cap is checked with it before each
@@ -377,7 +377,7 @@ export async function runFilm(projectId: string, c: FilmCtl, from: PipeStage = '
               continue;
             }
             c.onStage('ANIMATION', 'running', `reprise ${shot.sceneId} avec la correction : ${rep.fix.slice(0, 90)}`);
-            const ok2 = await generateSceneVideo(projectId, shot.sceneId, { mode: 'image', duration: shot.seconds, resolution: CIRCUIT.resolution, forceModel: r.id, circuit: true, promptExtra: rep.fix })
+            const ok2 = await generateSceneVideo(projectId, shot.sceneId, { mode: 'image', duration: shot.seconds, resolution: r.resolution, forceModel: r.id, circuit: true, promptExtra: rep.fix })
               .then(() => true)
               .catch((e) => (warn.push(`${shot.sceneId} reprise : ${(e as Error).message.slice(0, 80)}`), false));
             const rep2 = ok2 ? await inspectSceneClip(projectId, shot.sceneId, { expectedS }).catch(() => null) : null;

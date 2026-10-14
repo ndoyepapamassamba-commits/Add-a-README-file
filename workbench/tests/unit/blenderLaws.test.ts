@@ -362,12 +362,12 @@ print(json.dumps({'place': P.place_views('Gare — Adjamé', decors), 'named': P
       'Gare — Adjamé · vue 2',
       'Gare — Adjamé · vue 3',
     ]);
-    expect(cuts[0].start).toBe(0);
-    expect(cuts[cuts.length - 1].end).toBe(1500);
+    expect(cuts[0]!.start).toBe(0);
+    expect(cuts[cuts.length - 1]!.end).toBe(1500);
     for (let i = 1; i < cuts.length; i++) {
-      expect(cuts[i].start).toBe(cuts[i - 1].end); // no gap, no overlap
-      expect(cuts[i].start % 100).toBe(0); // on a shot boundary
-      expect(cuts[i].start).toBeLessThanOrEqual(1300); // never between the punchline and its reaction
+      expect(cuts[i]!.start).toBe(cuts[i - 1]!.end); // no gap, no overlap
+      expect(cuts[i]!.start % 100).toBe(0); // on a shot boundary
+      expect(cuts[i]!.start).toBeLessThanOrEqual(1300); // never between the punchline and its reaction
     }
     expect(r.short).toEqual([{ decor: 'A', start: 0, end: 250 }]); // a 10 s film keeps one view
   });

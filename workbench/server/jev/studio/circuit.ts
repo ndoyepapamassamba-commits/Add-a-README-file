@@ -27,6 +27,8 @@ export const circuitCap = (seconds: number): number =>
 export interface CircuitRate {
   id: string;
   name: string;
+  /** The resolution the price was read for — the one the call MUST ask (a 720p-only model has no 480p price). */
+  resolution: string;
   usdPerS: number;
   /** Billed once per clip for the first-frame image (0 when the provider does not bill it). */
   usdPerClip: number;
@@ -38,35 +40,55 @@ const num = (s: string | undefined): number | null => {
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 };
-/** Certain $/s of an image → video model at a resolution, or null (token billing, unknown format, no first frame). */
+/** Resolutions tried, lowest first: the montage frames the clip in a 540 px band, but a model that starts at 720p
+ *  (Veo 3.1 Lite, Kling 3.0) must not be thrown out for having no 480p price (deep research, 14/10/2026). */
+const RES_LADDER = ['480p', '720p', '768p'];
+const cents = (v: number | null): number | null => (v === null ? null : v / 100);
+/** Certain $/s of an image → video model, at the requested resolution or the lowest one it offers above it; null
+ *  for token billing, an unknown format or no first frame. */
 export function circuitRate(m: MediaModel, aspect: string, res: string = CIRCUIT.resolution): CircuitRate | null {
   if (!m.caps.includes('IMAGE_TO_VIDEO') || !m.video) return null;
   if (m.video.aspectRatios.length && !m.video.aspectRatios.includes(aspect)) return null;
-  if (m.video.resolutions.length && !m.video.resolutions.includes(res)) return null;
   const sk = m.pricing.skus ?? {};
   if (num(sk.minimum_cents_per_generation)) return null;
-  const perS: [string, number | null][] = [
-    [`image_to_video_duration_seconds_${res}`, num(sk[`image_to_video_duration_seconds_${res}`])],
-    [`duration_seconds_without_audio_${res}`, num(sk[`duration_seconds_without_audio_${res}`])],
-    [`duration_seconds_${res}`, num(sk[`duration_seconds_${res}`])],
-    [`cents_per_video_output_second_${res}`, num(sk[`cents_per_video_output_second_${res}`]) === null ? null : num(sk[`cents_per_video_output_second_${res}`])! / 100],
-    [`cents_per_second_output_${res}`, num(sk[`cents_per_second_output_${res}`]) === null ? null : num(sk[`cents_per_second_output_${res}`])! / 100],
-  ];
-  const hit = perS.find(([, v]) => v !== null && v > 0);
-  if (!hit) return null;
-  const img = num(sk.cents_per_image_input);
+  const ladder = [res, ...RES_LADDER.slice(Math.max(0, RES_LADDER.indexOf(res) + 1))];
+  const offered = m.video.resolutions;
+  for (const r of ladder) {
+    if (offered.length && !offered.includes(r)) continue;
+    const perS: [string, number | null][] = [
+      [`image_to_video_duration_seconds_${r}`, num(sk[`image_to_video_duration_seconds_${r}`])],
+      [`duration_seconds_without_audio_${r}`, num(sk[`duration_seconds_without_audio_${r}`])],
+      [`duration_seconds_${r}`, num(sk[`duration_seconds_${r}`])],
+      [`cents_per_video_output_second_${r}`, cents(num(sk[`cents_per_video_output_second_${r}`]))],
+      [`cents_per_second_output_${r}`, cents(num(sk[`cents_per_second_output_${r}`]))],
+      // A price that does not depend on the resolution (Wan 2.7, Kling 3.0, Hailuo 3): the bare per-second key,
+      // silent first (the circuit never asks for generated audio — the film has its own voices).
+      ['duration_seconds_without_audio', num(sk.duration_seconds_without_audio)],
+      ['duration_seconds', num(sk.duration_seconds)],
+      ['cents_per_second_output', cents(num(sk.cents_per_second_output))],
+    ];
+    const hit = perS.find(([, v]) => v !== null && v > 0);
+    if (!hit) continue;
+    return rateOf(m, r, hit, num(sk.cents_per_image_input));
+  }
+  return null;
+}
+function rateOf(m: MediaModel, resolution: string, hit: [string, number | null], img: number | null): CircuitRate {
+  const durs = m.video?.durations ?? [];
   return {
     id: m.id,
     name: m.name,
+    resolution,
     usdPerS: hit[1]!,
     usdPerClip: img === null ? 0 : img / 100,
-    durations: m.video.durations.length ? [...m.video.durations].sort((a, b) => a - b) : [],
+    durations: durs.length ? [...durs].sort((a, b) => a - b) : [],
     sku: hit[0],
   };
 }
-/** Clip length: the scene duration rounded, within the durations the model accepts (never longer than needed). */
+/** Clip length: the shortest duration the model accepts that COVERS the scene (rounded up — a clip shorter than its
+ *  lines left 5 s of frozen picture in v44, clipInspect.ts); the montage trims the surplus. */
 export function clipSeconds(r: CircuitRate, sceneSeconds: number): number | null {
-  const want = Math.max(1, Math.round(sceneSeconds));
+  const want = Math.max(1, Math.ceil(sceneSeconds - 1e-6));
   if (!r.durations.length) return want;
   return r.durations.find((d) => d >= want) ?? r.durations[r.durations.length - 1] ?? null;
 }
@@ -74,15 +96,28 @@ export const clipUsd = (r: CircuitRate, seconds: number): number =>
   Math.round((r.usdPerS * seconds + r.usdPerClip) * 10000) / 10000;
 
 /**
- * The circuit's model: the cheapest certain price for a typical 8 s clip; prices within 15 % are a tie, broken by the
- * quality prior (Grok Imagine, Seedance… ahead of a talking-avatar engine).
+ * The circuit's model: the cheapest certain price for the film's REAL shots (each billed at the shortest accepted
+ * duration that covers it — a 4 s minimum makes short shots dear), a typical 8 s clip when the shots are unknown;
+ * prices within 15 % are a tie, broken by the quality prior. `firstLast`: only models that take the first AND the
+ * last frame (the Blender engine pins both ends of each shot: the troupe and the set stay exact).
  */
-export function pickCircuitModel(models: MediaModel[], aspect: string, prior: (m: MediaModel) => number): CircuitRate | null {
+export function pickCircuitModel(
+  models: MediaModel[],
+  aspect: string,
+  prior: (m: MediaModel) => number,
+  opts: { shots?: number[]; firstLast?: boolean } = {},
+): CircuitRate | null {
   const rated = models
+    .filter((m) => !opts.firstLast || m.caps.includes('FIRST_LAST_FRAME'))
     .map((m) => ({ m, r: circuitRate(m, aspect) }))
     .filter((x): x is { m: MediaModel; r: CircuitRate } => Boolean(x.r) && !/avatar|talking.?head|heygen|edit|upscale/i.test(x.m.id + ' ' + x.m.name));
   if (!rated.length) return null;
-  const c8 = (r: CircuitRate) => clipUsd(r, 8);
+  const shots = opts.shots?.length ? opts.shots : [8];
+  const c8 = (r: CircuitRate) =>
+    shots.reduce((a, d) => {
+      const sec = clipSeconds(r, d);
+      return a + (sec === null ? Infinity : clipUsd(r, sec));
+    }, 0);
   const best = Math.min(...rated.map((x) => c8(x.r)));
   const near = rated.filter((x) => c8(x.r) <= best * 1.15);
   near.sort((a, b) => prior(b.m) - prior(a.m) || c8(a.r) - c8(b.r));

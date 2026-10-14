@@ -52,9 +52,44 @@ describe('CIRCUIT GROK 0,30 $ (prix réels du catalogue OpenRouter)', () => {
   });
   it('clip length follows the scene and the durations the model accepts; a spent budget plans nothing', () => {
     const r = pickCircuitModel(CATALOG, '9:16', prior)!;
-    expect(clipSeconds(r, 6.4)).toBe(6);
+    expect(clipSeconds(r, 6.4)).toBe(7); // the clip COVERS its scene (rounded down, v44 froze 5 s): the montage trims
     expect(clipSeconds(r, 40)).toBe(15);
     expect(planCircuit([scene('S01', 'hook', 5)], r, circuitBudget(0.3, 0.2, 0.03)).shots).toEqual([]);
+  });
+});
+
+describe('Circuit « Blender épingle, l\'API interpole » (recherche approfondie du 14/10/2026)', () => {
+  // The 23 real shots of film 6 (seconds), read from its plan.json.
+  const FILM6 = [3.28, 2.52, 2.72, 1.32, 2.84, 3.0, 3.24, 3.36, 1.48, 3.6, 3.6, 2.96, 2.32, 3.64, 4.52, 1.4, 1.68, 2.44, 2.0, 0.56, 6.72, 2.16, 2.64];
+  it('a 720p-only model is rated at its lowest resolution, and the call asks for that resolution', () => {
+    const veo = circuitRate(CATALOG.find((m) => m.id === 'google/veo-3.1-lite')!, '9:16')!;
+    expect(veo.resolution).toBe('720p');
+    expect(veo.usdPerS).toBe(0.03); // silent 720p: the film has its own voices
+    const grok = circuitRate(CATALOG.find((m) => m.id === 'x-ai/grok-imagine-video-1.5-lite')!, '9:16')!;
+    expect(grok.resolution).toBe('480p');
+  });
+  it('a price that does not depend on the resolution (bare duration_seconds) is read', () => {
+    const wan = circuitRate(CATALOG.find((m) => m.id === 'alibaba/wan-2.7')!, '9:16')!;
+    expect(wan.usdPerS).toBe(0.1);
+    const kling = circuitRate(CATALOG.find((m) => m.id === 'kwaivgi/kling-v3.0-std')!, '9:16')!;
+    expect(kling.usdPerS).toBe(0.084); // without audio, not the 0,126 with audio
+  });
+  it('first + last frame on the real shots of film 6: Veo 3.1 Lite, 98 s billed, 2,94 $ for the whole film', () => {
+    expect(FILM6.length).toBe(23);
+    expect(FILM6.reduce((a, b) => a + b, 0)).toBeCloseTo(64, 0);
+    const r = pickCircuitModel(CATALOG, '9:16', prior, { shots: FILM6, firstLast: true })!;
+    expect(r.id).toBe('google/veo-3.1-lite');
+    const billed = FILM6.reduce((a, d) => a + clipSeconds(r, d)!, 0);
+    expect(billed).toBe(98); // 4 s minimum: 21 shots under 4 s are billed 4 s
+    expect(Math.round(FILM6.reduce((a, d) => a + clipUsd(r, clipSeconds(r, d)!), 0) * 100) / 100).toBe(2.94);
+    // every clip covers its shot
+    expect(FILM6.every((d) => clipSeconds(r, d)! >= d)).toBe(true);
+  });
+  it('first frame only on the same shots: Grok Imagine 1.5 Lite 480p, 74 s billed, 1,71 $', () => {
+    const r = pickCircuitModel(CATALOG, '9:16', prior, { shots: FILM6 })!;
+    expect(r.id).toBe('x-ai/grok-imagine-video-1.5-lite');
+    expect(FILM6.reduce((a, d) => a + clipSeconds(r, d)!, 0)).toBe(74);
+    expect(Math.round(FILM6.reduce((a, d) => a + clipUsd(r, clipSeconds(r, d)!), 0) * 100) / 100).toBe(1.71);
   });
 });
 
