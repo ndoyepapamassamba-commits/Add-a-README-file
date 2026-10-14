@@ -68,6 +68,13 @@ gratuit est minuscule : **5 min/jour** connecté, **2 min/jour** anonyme. Concr�
 et par compte gratuit. Appel programmatique officiel via `gradio_client` avec jeton. Les Inference Providers n'offrent
 **plus aucun crédit mensuel aux comptes gratuits**.
 
+> **Correctif du 14/10/2026 (veille, après la question de l'utilisateur)** : en plus du quota de temps, Hugging Face
+> limite les comptes gratuits à **3 exécutions de Spaces ZeroGPU par jour** — « The current request-based limit is
+> three times per day » (hysts, personnel Hugging Face, 13/04/2026,
+> [forum HF](https://discuss.huggingface.co/t/free-account-zerogpu-quota-issue/175180)). Le quota de temps est compté
+> sur la durée DEMANDÉE par le Space (60 s par défaut), pas sur la durée réelle. Donc **3 clips par jour au plus**, et
+> non 4 : les 3 plans clés d'un film par jour ; un film de 13 clips ≈ 5 jours.
+
 ### Cited Findings
 - Matériel : `large` (défaut) = « Half NVIDIA RTX Pro 6000 Blackwell », 48 Go, coût 1× ; `xlarge` = carte entière, 96 Go, coût **2×** du quota — [HF docs, Spaces ZeroGPU](https://huggingface.co/docs/hub/spaces-zerogpu) (lue le 14/10/2026).
 - Quotas quotidiens : anonyme 2 min (priorité basse), compte gratuit 5 min (moyenne), PRO 40 min (« extensible »), Team 40 min, Enterprise 60 min ; remise à zéro « exactly 24 hours after your first GPU usage » ; le quota restant influe sur la priorité de file — [HF docs ZeroGPU](https://huggingface.co/docs/hub/spaces-zerogpu).
