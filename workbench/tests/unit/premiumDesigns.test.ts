@@ -3,8 +3,9 @@ import { PREMIUM_DESIGNS, applyWebTheme, designThumbnail, kindForTool, thumbnail
 import { designSignature, DESIGN_LOCK, THEMES } from '../../server/services/houseDesign';
 
 describe('premium design gallery', () => {
-  it('14 designs, every one has a theme; the house charter stays intact', () => {
-    expect(PREMIUM_DESIGNS).toHaveLength(14);
+  it('16 designs (house, comité, extraordinaire and the palettes), every one has a theme; the house charter stays intact', () => {
+    expect(PREMIUM_DESIGNS).toHaveLength(16);
+    expect(PREMIUM_DESIGNS.slice(0, 3).map((d) => d.id)).toEqual(['house', 'comite', 'extraordinaire']);
     for (const d of PREMIUM_DESIGNS) expect(THEMES[d.id]).toBeTruthy();
     expect(designSignature()).toBe(DESIGN_LOCK);
   });

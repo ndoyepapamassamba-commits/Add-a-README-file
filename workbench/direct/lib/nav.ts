@@ -5,6 +5,7 @@ import type { View } from './types';
 const ALL_NAV_ITEMS: { id: View; label: string }[] = [
   { id: 'home', label: 'Cockpit IA' },
   { id: 'chat', label: 'Chat' },
+  { id: 'prompts', label: 'Prompt Studio' },
   { id: 'files', label: 'Fichiers' },
   { id: 'data', label: 'Données' },
   { id: 'terminal', label: 'Terminal' },

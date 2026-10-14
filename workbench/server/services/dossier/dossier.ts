@@ -141,9 +141,9 @@ export interface Dossier {
 }
 
 // ── French formatting ─────────────────────────────────────────────────────────
-const NBSP = ' ';
-export const fmtInt = (n: number): string => Math.round(n).toLocaleString('fr-FR').replace(/ | /g, ' ');
-export const fmtDec = (n: number, d = 1): string => n.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/ | /g, ' ');
+const NBSP = '\u202f';
+export const fmtInt = (n: number): string => Math.round(n).toLocaleString('fr-FR').replace(/[\u202f\u00a0]/g, ' ');
+export const fmtDec = (n: number, d = 1): string => n.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/[\u202f\u00a0]/g, ' ');
 export const fmtPct = (x: number, d = 1): string => `${fmtDec(x * 100, d)}${NBSP}%`;
 /** Money in the house manner: 1 234 → « 1 234 », 1,8e9 → « 1,8 Mds », 4,69e8 → « 469 M ». */
 export function fmtMoney(n: number, unit = ''): string {
@@ -160,7 +160,7 @@ const strs = (v: unknown, max = 40): string[] => arr(v, (x) => (str(x) ? str(x) 
 const num = (v: unknown): number | undefined => {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
   if (typeof v === 'string') {
-    const x = Number(v.replace(/\s| /g, '').replace(',', '.'));
+    const x = Number(v.replace(/[\s\u202f]/g, '').replace(',', '.'));
     return Number.isFinite(x) ? x : undefined;
   }
   return undefined;
@@ -360,6 +360,6 @@ export const allFigures = (d: Dossier): { chapter: Chapter; figure: Figure; n: n
 export function dossierNumbers(d: Dossier): string[] {
   const texts = [d.thesis, ...d.messages, ...d.chapters.flatMap((c) => [...c.constats, ...c.analyse, c.lecture ?? '', ...c.figures.map((f) => f.lecture ?? '')])];
   const out: string[] = [];
-  for (const t of texts) for (const m of t.matchAll(/\d[\d\s ]*(?:[.,]\d+)?/g)) out.push(m[0].replace(/[\s ]/g, ''));
+  for (const t of texts) for (const m of t.matchAll(/\d[\d\s\u202f]*(?:[.,]\d+)?/g)) out.push(m[0].replace(/[\s\u202f]/g, ''));
   return out;
 }

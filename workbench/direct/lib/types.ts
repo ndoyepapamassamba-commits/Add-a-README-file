@@ -10,6 +10,7 @@ export type AgentMode = 'chat' | 'plan' | 'mission';
 export type View =
   | 'home'
   | 'chat'
+  | 'prompts'
   | 'files'
   | 'data'
   | 'terminal'

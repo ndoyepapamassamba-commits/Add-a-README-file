@@ -118,6 +118,25 @@ Une demande qui réclame un fichier (Excel, Word, PowerPoint, PDF, mail, site, a
     - le top 10 se fait par nom (client, société…), jamais par code.
   - La carte « Lecture » ne contient que des faits calculés, sans recommandations inventées.
 
+## Thèmes « Comité » et « Extraordinaire » (14/10/2026)
+- La galerie propose désormais 16 designs : maison, **Comité — Bleu Ecobank officiel** (palette des livrables de comité :
+  00415E / 005C83 / 8CC63F / 1A86B3, Calibri), **Extraordinaire — Aurore** (14102E / 2B1F6B / 00B3A4 / FF6B57, Segoe UI),
+  puis les 13 palettes.
+- Le choix s'applique à `report.export`, `data.export`, `dossier.export` (classeur, deck, rapport, page, mail) : mêmes
+  couleurs sur toutes les feuilles, pages et diapositives (voir `docs/CHARTE-EXPORT.md`, « Grammaire Comité »).
+- Le logo choisi dans la galerie va dans le badge de la page de garde (Word), la plaque de la diapositive de titre
+  (PowerPoint) et le bandeau des classeurs.
+
+## Prompt Studio (bac à sable de prompting)
+- Vue **Prompt Studio** : sept blocs (rôle, mission, contexte & données, profondeur & méthode, livrables & design,
+  contraintes, format de sortie) → un méga-prompt compilé ; variables `{{…}}` ; cinq gabarits (dossier de comité, note
+  impayés, provisions IFRS 9 / BCEAO, reporting libre, amélioration de design) ; estimation de jetons et de coût au prix
+  du modèle ; contrôle maison (un secret ou une mission vide **bloque** l'exécution, règle appliquée par le code) ;
+  jugement JEV (clarté, complétude, risque d'invention, risque de secret, meilleur levier) ; exécution en continu avec
+  coût mesuré ; « Améliorer » (proposition du modèle, appliquée seulement sur clic, ancienne version conservée) ;
+  « Au chat » (nouveau chat avec le prompt dans la zone de saisie) ; versions (30 au plus). Les prompts restent dans le
+  navigateur (IndexedDB).
+
 ## Mémoire
 - Tout fait vient du chat : messages, pièces jointes, fichiers, résultats d'outils.
 - Ce qui vient d'ailleurs (leçons, coffre d'expérience, missions similaires) sert seulement de méthode. Les chiffres y sont masqués (`methodOnly`).

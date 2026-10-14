@@ -55,7 +55,7 @@ const circle = (x: number, y: number, d: number, rgb: string, label: string, sz 
   `<p:sp><p:nvSpPr><p:cNvPr id="${++nid}" name="Pastille"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${d}" cy="${d}"/></a:xfrm><a:prstGeom prst="ellipse"><a:avLst/></a:prstGeom>${fill(rgb)}<a:ln><a:noFill/></a:ln></p:spPr><p:txBody><a:bodyPr anchor="ctr" lIns="0" rIns="0" tIns="0" bIns="0"/><a:lstStyle/>${para(run(label, { sz, color, b: true }), { algn: 'ctr', spc: 0 })}</p:txBody></p:sp>`;
 const text = (x: number, y: number, w: number, h: number, paras: string[], name: string, o: { anchor?: 'ctr' | 't' | 'b'; inset?: number; fit?: boolean } = {}) =>
   `<p:sp><p:nvSpPr><p:cNvPr id="${++nid}" name="${esc(name)}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr><p:txBody><a:bodyPr wrap="square" lIns="${o.inset ?? 45720}" rIns="${o.inset ?? 45720}" tIns="36000" bIns="36000" anchor="${o.anchor ?? 't'}">${o.fit === false ? '' : '<a:normAutofit/>'}</a:bodyPr><a:lstStyle/>${paras.join('')}</p:txBody></p:sp>`;
-const isNum = (s: string) => /^[-+]?[\d\s .,]+(%|Mds?|M|k)?$/.test(s.trim()) && /\d/.test(s);
+const isNum = (s: string) => /^[-+]?[\d\s\u202f.,]+(%|Mds?|M|k)?$/.test(s.trim()) && /\d/.test(s);
 function table(x: number, y: number, w: number, head: string[], rows: string[][], o: { widths?: number[]; sz?: number; rowH?: number; firstColTone?: (r: string[]) => string | null } = {}): string {
   const n = Math.max(1, head.length);
   const widths = o.widths && o.widths.length === n ? o.widths.map((p) => Math.floor(w * p)) : Array.from({ length: n }, () => Math.floor(w / n));
@@ -97,8 +97,6 @@ interface Part {
   weight: number;
 }
 
-/** Lines of text that fit a width (chars per line from the size), used to choose sizes and continuations. */
-const linesOf = (t: string, widthIn: number, sz: number) => Math.max(1, Math.ceil(t.length / Math.max(8, Math.floor((widthIn * 72) / (sz * 0.52)))));
 
 export function dossierPptx(d: Dossier, opts: DeckOptions = {}): Uint8Array {
   const logo = opts.logo && opts.logo.png.length ? opts.logo : null;

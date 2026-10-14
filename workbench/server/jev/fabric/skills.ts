@@ -88,6 +88,8 @@ const VERB: Record<string, string> = {
   'web.search': 'Chercher les sources sur le web',
   'browser.open': 'Ouvrir la page',
   'report.export': 'Exporter le rapport',
+  'dossier.compose': 'Composer le dossier de comité',
+  'dossier.export': 'Rendre les livrables du dossier',
   'plan.update': 'Tenir le plan à jour',
 };
 const CRITERIA_BY_TYPE: Record<string, string[]> = {

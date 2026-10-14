@@ -20,7 +20,6 @@ const mono = (extra: Record<string, unknown> = {}) => ({ name: activeDesign().fo
 const toneColor = (t?: Tone): string => (t === 'risk' ? C.risk : t === 'warn' ? C.warn : t === 'ok' ? C.green : t === 'info' ? C.cyan : C.blue);
 const E = (v = ''): Cell => ({ v, t: 's', s: { fill: solid(C.white) } });
 const safeName = (s: string) => s.slice(0, 31).replace(/[\\/?*[\]:]/g, ' ').trim();
-const colL = (i: number) => XLSXS.utils.encode_col(i);
 
 interface SheetBuild {
   name: string;

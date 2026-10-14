@@ -110,6 +110,10 @@ export function applyWebTheme(html: string, id: ThemeId | CustomTheme): string {
   const css = webThemeCss(id);
   return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => `${m}\n${css}`) : `${css}\n${html}`;
 }
+/** Tools whose output takes the chosen theme (the agent sets the active design around the call). */
+export const THEMED_TOOLS = /^(report|data)\.export$|^dossier\.(export|compose)$|^apex\.build_app$/;
+/** Tools that receive the logo chosen in the gallery (`logoPath`). */
+export const LOGO_TOOLS = /^(data|report|dossier)\.export$/;
 export const kindForTool = (tool: string, args: Record<string, unknown>): DeliverableKind | null => {
   if (tool === 'data.export') return 'excel';
   if (tool === 'apex.build_app') return 'web';
@@ -117,6 +121,11 @@ export const kindForTool = (tool: string, args: Record<string, unknown>): Delive
   if (tool === 'report.export') {
     const f = (args.formats as string[] | undefined) ?? [];
     return f.length === 1 && f[0] === 'pptx' ? 'slides' : 'document';
+  }
+  if (tool === 'dossier.export') {
+    // The dossier's deliverables: the gallery is asked once, for the format that leads (slides alone, workbook alone, else the report).
+    const f = (args.formats as string[] | undefined) ?? [];
+    return f.length === 1 && f[0] === 'pptx' ? 'slides' : f.length === 1 && f[0] === 'xlsx' ? 'excel' : 'document';
   }
   return null;
 };

@@ -25,9 +25,26 @@ import {
   type AiDoc,
   type MissionReport,
 } from '../../server/agent/mission';
-import { imageSize as pngSize, markdownToDocx, printableHtml } from '../../server/services/officeCore';
-import { housePptx } from '../../server/services/housePptx';
-import { emlFromHtml, houseMailHtml } from '../../server/services/houseStyle';
+import { imageSize as pngSize } from '../../server/services/officeCore';
+import { emlFromHtml } from '../../server/services/houseStyle';
+import { allRecos, checkDepth, normalizeDossier, todayFr, type Dossier } from '../../server/services/dossier/dossier';
+import { dossierFromMarkdown } from '../../server/services/dossier/dossierFromMarkdown';
+import { dossierDocx } from '../../server/services/dossier/dossierDocx';
+import { dossierPptx } from '../../server/services/dossier/dossierPptx';
+import { dossierXlsx } from '../../server/services/dossier/dossierXlsx';
+import { dossierHtml, dossierMailHtml } from '../../server/services/dossier/dossierHtml';
+import {
+  composeSystemPrompt,
+  composeUserPrompt,
+  deepenPrompt,
+  dossierFromBrief,
+  dossierSummaryMarkdown,
+  parseDossierJson,
+  verifyAgainstBrief,
+  type ComposeInput,
+  type ResearchNote,
+} from '../../server/services/dossier/dossierCompose';
+import { applyJudgments, chaptersFromPlan, dossierQuestions, dossierState, planQuestions, planState } from '../../server/services/dossier/dossierJudge';
 import { apexGuide, assembleApp, lintApp, referencePart } from '../../server/services/apexCore';
 import { getHouseKit, qaInFrame, syntaxError } from './apex';
 import { browser, snapshotText, type BrowserSnapshot } from './browser';
@@ -86,7 +103,6 @@ function browserAct(r: { snap: BrowserSnapshot; downloads: { path: string; size:
   const errors = browser.state.console.filter((c) => c.startsWith('error')).slice(-5);
   return `${r.downloads.length ? `Downloaded: ${r.downloads.map((d) => `${d.path} (${d.size} bytes)`).join(', ')}\n` : ''}${errors.length ? `Recent page errors: ${errors.join(' | ')}\n` : ''}${snapshotText(r.snap, 5000)}`;
 }
-import { marked } from 'marked';
 import * as echarts from 'echarts/core';
 import { chartOption } from '../../web/components/rich';
 
@@ -122,20 +138,10 @@ function imageSize(href: string): Promise<{ href: string; width: number; height:
   });
 }
 /** Workspace images referenced as ![alt](path) in Markdown. */
-function resolveImage(src: string): { data: Uint8Array; type: 'png' | 'jpeg' } | null {
-  const f = getFile(src.replace(/^\.\//, ''));
-  if (!f || !f.binary || !/^image\/(png|jpeg)/.test(f.mime)) return null;
-  return { data: bytesOf(f), type: f.mime.includes('jpeg') ? 'jpeg' : 'png' };
-}
-function inlineImages(md: string): string {
-  return md.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (m, alt: string, src: string) => {
-    const f = getFile(src.replace(/^\.\//, ''));
-    return f && f.binary && f.mime.startsWith('image/') ? `![${alt}](${dataUrl(f)})` : m;
-  });
-}
 import { DEFAULT_AUTO_TIERS } from '../../server/services/settings';
 import type { ModelInfo } from '@shared/types';
 import { complete } from './llm';
+import type { ChatMessage } from '../../server/llm/types';
 import { callTool, type McpToolInfo } from './mcp';
 import { runInWorkspace } from './run';
 import { uid, useStore } from './store';
@@ -300,6 +306,64 @@ function datasetForQuery(path: string, sheet: string | undefined, spec: Record<s
   throw new Error(`Colonne(s) introuvable(s)${where} : ${r.missing.join(', ')}.${elsewhere} Colonnes disponibles : ${ds.columns.slice(0, 60).join(' | ')}${ds.columns.length > 60 ? ' …' : ''}`);
 }
 
+/** Depth issues of a dossier in one French line (the rules are code: no issue, no line). */
+function depthNote(d: Dossier): string {
+  const issues = checkDepth(d);
+  return issues.length
+    ? ` Profondeur : ${issues.length} point(s) sous la règle (${issues
+        .slice(0, 4)
+        .map((x) => `${x.where} : ${x.issue}`)
+        .join(' ; ')}).`
+    : ' Profondeur : règles tenues.';
+}
+/**
+ * DOSSIER → FILES: the same structured dossier rendered in every format asked, in the ACTIVE theme (set around the
+ * tool by the agent from the gallery choice, the settings or the `theme` parameter): workbook, deck, report, page, mail.
+ */
+function renderDossier(
+  d: Dossier,
+  base: string,
+  formats: string[],
+  logo: { png: Uint8Array; width: number; height: number } | null,
+  sessionId: string,
+): { out: string[]; html?: string } {
+  const out: string[] = [];
+  const brand = [d.org, d.unit].filter(Boolean).join(' · ') || undefined;
+  for (const f of [...new Set(formats)]) {
+    const path = uniquePath(`${base}.${f}`);
+    if (f === 'docx') writeBytes(path, dossierDocx(d, { logo, brand }), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    else if (f === 'pptx') writeBytes(path, dossierPptx(d, { logo, brand }), 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+    else if (f === 'xlsx') writeBytes(path, dossierXlsx(d), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    else if (f === 'html') writeText(path, dossierHtml(d, { brand }));
+    else if (f === 'eml') {
+      // Colour mail in the theme: .eml draft (Outlook) + the same mail as .html.
+      const mail = dossierMailHtml(d, { brand });
+      writeText(path, emlFromHtml(d.title, mail));
+      const mh = uniquePath(`${base}.mail.html`);
+      writeText(mh, mail);
+      out.push(mh);
+    } else if (f === 'md') writeText(path, dossierSummaryMarkdown(d));
+    else continue;
+    out.push(path);
+  }
+  const html = out.find((p) => p.endsWith('.html') && !p.endsWith('.mail.html'));
+  if (html) saveArtifact(sessionId, { name: html.split('/').pop()!, type: 'html', content: getFile(html)!.data });
+  return { out, html };
+}
+/** A brief .json written by report.analyse, or an error naming the path. */
+function loadBrief(path: string): Brief {
+  const bf = getFile(path);
+  const brief = bf ? (JSON.parse(new TextDecoder().decode(bytesOf(bf))) as Brief) : null;
+  if (!brief?.numbers) throw new Error(`Brief introuvable ou illisible : ${path}`);
+  return brief;
+}
+/** The user's logo chosen in the gallery (PNG bytes + size), when the tool received one. */
+function logoOf(a: Record<string, unknown>): { png: Uint8Array; width: number; height: number } | null {
+  const lg = typeof a.logoPath === 'string' ? getFile(a.logoPath) : undefined;
+  const bytes = lg?.binary ? bytesOf(lg) : null;
+  const size = bytes ? pngSize(bytes) : null;
+  return bytes && size ? { png: bytes, ...size } : null;
+}
 function saveArtifact(
   sessionId: string,
   a: Omit<ArtifactDef, 'id' | 'createdAt' | 'sessionId'>,
@@ -1205,7 +1269,7 @@ export const TOOLS: DirectTool[] = [
   {
     name: 'report.export',
     description:
-      'Export a Markdown report to deliverables in outputs/, in the house style by default (or the theme the user asks for): docx (Word), pptx (PowerPoint), html (printable — the user prints it to PDF), eml (colour mail draft for Outlook + .mail.html), md. Charts saved by data.chart (outputs/charts/*.png) are embedded when referenced as ![title](outputs/charts/x.png). Give markdown content or a markdown file path. Never overwrites existing files.',
+      'Export a Markdown report to committee-grade deliverables in outputs/, in the chosen theme (house by default): docx (Word report with cover, native TOC, chapters, native charts, recommendations, annexes), pptx (deck with timed notes), html (printable — the user prints it to PDF), eml (colour mail), md. The Markdown is read as a structured dossier (headings → chapters; sections constats / analyse / cadre / cas / recommandations; tables with responsable and échéance columns → action plan; sections décisions / hypothèses / glossaire / sources); the brief adds its indicators and figures. Deeper and adaptive: dossier.compose writes the full dossier, dossier.export renders it (xlsx included).',
     parameters: obj(
       {
         name: str('Base file name without extension, e.g. "rapport-ventes"'),
@@ -1216,8 +1280,14 @@ export const TOOLS: DirectTool[] = [
           type: 'array',
           items: { type: 'string', enum: ['docx', 'pptx', 'html', 'pdf', 'md', 'eml'] },
         },
-        brief: str('Path of the brief .json written by report.analyse: every figure of the content absent from it is flagged (the technique is enforced: too many unknown figures and the export is refused until they are verified). With it the Word / PowerPoint files open on « L’essentiel en chiffres » (KPI cards + native charts from the brief) and close on a method note.'),
+        brief: str('Path of the brief .json written by report.analyse: every figure of the content absent from it is flagged (the technique is enforced: too many unknown figures and the export is refused until they are verified with data.query); its indicators and figures join the deliverables'),
         subtitle: str('Sub-title on the cover / title slide: audience, period or source (e.g. "Comité de crédit · T3 2025")'),
+        org: str('Organisation (cover and footer)'),
+        unit: str('Unit / department'),
+        author: str('Issuer (name, function)'),
+        audience: str('Recipients (e.g. "Comité Watchlist")'),
+        as_of: str('Closing date jj/mm/aaaa'),
+        confidentiality: str('e.g. "CONFIDENTIEL — usage interne"'),
         ...THEME_PARAMS,
       },
       ['name'],
@@ -1233,9 +1303,7 @@ export const TOOLS: DirectTool[] = [
       let briefNote = '';
       let briefObj: Brief | null = null;
       if (S(a.brief)) {
-        const bf = getFile(S(a.brief));
-        const brief = bf ? (JSON.parse(new TextDecoder().decode(bytesOf(bf))) as Brief) : null;
-        if (!brief?.numbers) throw new Error(`Brief introuvable ou illisible : ${S(a.brief)}`);
+        const brief = loadBrief(S(a.brief));
         briefObj = brief;
         const chk = checkNarrative(md, brief);
         if (chk.unknown.length) {
@@ -1243,7 +1311,7 @@ export const TOOLS: DirectTool[] = [
           if (sig) useStore.getState().patchSettings({ reportLessons: { ...useStore.getState().settings.reportLessons, [sig]: { ...useStore.getState().settings.reportLessons![sig]!, flagged: (useStore.getState().settings.reportLessons![sig]!.flagged ?? 0) + chk.unknown.length } } });
           const tooMany = chk.unknown.length >= 3 && chk.unknown.length / Math.max(1, chk.checked) > 0.25;
           const list = chk.unknown.slice(0, 12).join(' ; ');
-          if (tooMany) throw new Error(`Export refusé : ${chk.unknown.length} chiffre(s) sur ${chk.checked} ne sont pas dans le brief (${list}). Vérifiez-les avec data.query (et citez-les tels quels) ou retirez-les, puis ré-exportez.`);
+          if (tooMany) throw new Error(`Export refusé : ${chk.unknown.length} chiffre(s) sur ${chk.checked} ne sont pas dans le brief (${list}). Vérifiez-les avec data.query (et citez-les tels quels) ou retirez-les, puis relancez.`);
           briefNote = ` ⚠ ${chk.unknown.length} chiffre(s) absent(s) du brief à vérifier : ${list}.`;
         } else briefNote = ` ✔ ${chk.checked} chiffre(s) vérifié(s) contre le brief.`;
       }
@@ -1256,49 +1324,248 @@ export const TOOLS: DirectTool[] = [
       const formats = (
         Array.isArray(a.formats) && a.formats.length ? a.formats.map(S) : ['docx', 'html']
       ).map((f) => (f === 'pdf' ? 'html' : f));
-      // PREMIUM Word / PowerPoint: cover + sommaire + header / footer (Word), agenda + sections + notes (PowerPoint),
-      // KPI cards and native charts when a brief is given, the user's logo (recoloured to the palette) when chosen.
-      const lg = typeof a.logoPath === 'string' ? getFile(a.logoPath) : undefined;
-      const lgBytes = lg?.binary ? bytesOf(lg) : null;
-      const lgSize = lgBytes ? pngSize(lgBytes) : null;
-      const extras = { premium: true, brief: briefObj, subtitle: S(a.subtitle) || undefined, logo: lgBytes && lgSize ? { png: lgBytes, ...lgSize } : null };
-      const out: string[] = [];
-      for (const f of [...new Set(formats)]) {
-        const path = uniquePath(`${base}.${f}`);
-        if (f === 'docx')
-          writeBytes(
-            path,
-            markdownToDocx(md, S(a.title) || S(a.name) || undefined, resolveImage, extras),
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          );
-        else if (f === 'pptx')
-          writeBytes(
-            path,
-            housePptx(md, S(a.title) || undefined, extras),
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-          );
-        else if (f === 'html')
-          writeText(path, printableHtml(title, marked.parse(inlineImages(md), { async: false }) as string));
-        else if (f === 'eml') {
-          // Colour mail in the house style: .eml draft (Outlook) + the same mail as .html.
-          const mail = houseMailHtml(title, marked.parse(inlineImages(md), { async: false }) as string);
-          writeText(path, emlFromHtml(title, mail));
-          const mh = uniquePath(`${base}.mail.html`);
-          writeText(mh, mail);
-          out.push(mh);
-        } else writeText(path, md);
-        out.push(path);
+      // THE DOSSIER: the Markdown becomes one structured dossier (thesis, indicators, chapters, recommendations,
+      // decisions, hypotheses, sources) rendered identically in every format, in the active theme, with the user's logo.
+      const d = dossierFromMarkdown(md, {
+        title,
+        subtitle: S(a.subtitle) || undefined,
+        brief: briefObj,
+        org: S(a.org) || undefined,
+        unit: S(a.unit) || undefined,
+        author: S(a.author) || undefined,
+        audience: S(a.audience) || undefined,
+        asOf: S(a.as_of) || undefined,
+        confidentiality: S(a.confidentiality) || undefined,
+      });
+      const { out, html } = renderDossier(d, base, formats.filter((f) => f !== 'md'), logoOf(a), ctx.sessionId);
+      if (formats.includes('md')) {
+        const mp = uniquePath(`${base}.md`);
+        writeText(mp, md);
+        out.push(mp);
       }
-      const html = out.find((p) => p.endsWith('.html'));
-      if (html)
-        saveArtifact(ctx.sessionId, {
-          name: html.split('/').pop()!,
-          type: 'html',
-          content: getFile(html)!.data,
-        });
+      // The dossier itself is kept: dossier.export renders it again (other formats, other theme) without rewriting.
+      const dj = uniquePath(`${base}.dossier.json`);
+      writeText(dj, JSON.stringify(d));
       return ok(
         out.join(', '),
-        `Exported: ${out.join(', ')}${html ? ' (open the HTML and use "Print → Save as PDF" for a PDF)' : ''}${briefNote}`,
+        `Exported: ${out.join(', ')} (dossier : ${dj})${html ? ' (open the HTML and use "Print → Save as PDF" for a PDF)' : ''}${briefNote}${depthNote(d)}`,
+      );
+    },
+  },
+  {
+    name: 'dossier.export',
+    description:
+      'Render a structured dossier (.dossier.json written by dossier.compose or report.export) into committee-grade deliverables in outputs/, all in the chosen theme (house by default) on every sheet / page / slide: xlsx (workbook: cockpit with live indicators, one sheet per chapter with native 3D charts and written analysis, action plan with status cells, decisions, hypotheses, parameters, data quality, sources, glossary, data sheet), pptx (deck with « Lecture — » band on each slide, recommendation cards, decisions, timed notes), docx (report with cover, native TOC, chapters, figures, annexes A–E), html (printable page), eml (colour mail), md (summary). Same figures everywhere.',
+    parameters: obj(
+      {
+        from: str('Path of the .dossier.json'),
+        name: str('Base file name without extension (default: the dossier file name)'),
+        formats: { type: 'array', items: { type: 'string', enum: ['xlsx', 'pptx', 'docx', 'html', 'pdf', 'eml', 'md'] } },
+        ...THEME_PARAMS,
+      },
+      ['from'],
+    ),
+    risk: 'read',
+    readOnly: false,
+    label: (a) => `Livrables du dossier ${S(a.from).split('/').pop() ?? ''}`,
+    async run(a, ctx) {
+      const f = getFile(S(a.from));
+      if (!f) throw new Error(`Dossier introuvable : ${S(a.from)} (écrit par dossier.compose ou report.export).`);
+      let raw: unknown;
+      try {
+        raw = JSON.parse(new TextDecoder().decode(bytesOf(f)));
+      } catch {
+        throw new Error(`Dossier illisible (JSON attendu) : ${S(a.from)}`);
+      }
+      const d = normalizeDossier(raw);
+      const base = `outputs/${(S(a.name) || S(a.from).split('/').pop()!.replace(/(\.dossier)?\.json$/i, '')).replace(/[^\w.-]+/g, '-') || 'dossier'}`;
+      const formats = (Array.isArray(a.formats) && a.formats.length ? a.formats.map(S) : ['xlsx', 'pptx', 'docx', 'html']).map((x) => (x === 'pdf' ? 'html' : x));
+      const { out, html } = renderDossier(d, base, formats, logoOf(a), ctx.sessionId);
+      if (!out.length) throw new Error('Aucun format reconnu (xlsx, pptx, docx, html, eml, md).');
+      return ok(
+        out.join(', '),
+        `Exported: ${out.join(', ')}${html ? ' (open the HTML and use "Print → Save as PDF" for a PDF)' : ''} — ${d.kpis.length} indicateurs, ${d.chapters.length} chapitres, ${allRecos(d).length} recommandations, ${d.decisions.length} décisions, mêmes chiffres partout.${depthNote(d)}`,
+      );
+    },
+  },
+  {
+    name: 'dossier.compose',
+    description:
+      'Write a complete committee dossier from a brief (report.analyse), notes and web sources: thesis, indicators (K01…), key messages, method, chapters adapted to the case (findings, analysis, regulatory frame and research, cases, native figures, tables, recommendations with owner / deadline / closing indicator), decisions to vote, hypotheses, data quality, glossary, sources. Always deep: the depth rules are enforced by code and a second pass deepens what is thin; every figure must come from the brief or the notes (unknown ones are named). JEV judges the plan (which dimensions become chapters), the tone of each indicator, the priority of each recommendation, the chart of each figure and the readiness. Writes outputs/<name>.dossier.json + .dossier.md; then dossier.export renders it in the chosen theme.',
+    parameters: obj(
+      {
+        focus: str('What the dossier must answer: the question, the decision at stake, the audience'),
+        name: str('Base file name, e.g. "comite-watchlist-T3"'),
+        title: str('Title (default: written by the model)'),
+        audience: str('Recipients, e.g. "Comité Watchlist"'),
+        org: str('Organisation'),
+        unit: str('Unit / department'),
+        author: str('Issuer (name, function)'),
+        as_of: str('Closing date jj/mm/aaaa'),
+        confidentiality: str('e.g. "CONFIDENTIEL — usage interne"'),
+        brief: str('Path of the brief .json written by report.analyse (with the notes, the only source of figures)'),
+        notes: str('Markdown notes already established (findings, figures from data.query, cases), or the path of a workspace file'),
+        research: {
+          type: 'array',
+          description: 'Web sources found (web.search / web.fetch) with what each one teaches; cited as [Rx-nn]',
+          items: obj(
+            {
+              title: str('Title'),
+              url: str('URL'),
+              author: str('Author / institution'),
+              date: str('Date'),
+              lesson: str('What the source teaches'),
+              axis: str('R1 regulation, R2 accounting standards, R3 supervision, R4 academic research, R5 security law, R6 market, R7 macro, R8 data, R9 other'),
+            },
+            ['title'],
+          ),
+        },
+        minutes: { type: 'number', description: 'Deck duration in minutes (default 30)' },
+      },
+      ['focus', 'name'],
+    ),
+    risk: 'read',
+    readOnly: false,
+    label: (a) => `Composer le dossier ${S(a.name)}`,
+    async run(a, ctx) {
+      const brief = S(a.brief) ? loadBrief(S(a.brief)) : null;
+      let notes = S(a.notes);
+      if (notes && !/\n/.test(notes) && notes.length < 240 && getFile(notes)) notes = (await readAsText(notes)).text;
+      const research: ResearchNote[] = Array.isArray(a.research)
+        ? (a.research as Record<string, unknown>[])
+            .filter((r) => r && typeof r === 'object' && S(r.title))
+            .map((r) => ({ title: S(r.title), url: S(r.url) || undefined, author: S(r.author) || undefined, date: S(r.date) || undefined, lesson: S(r.lesson) || undefined, axis: S(r.axis) || undefined }))
+        : [];
+      const input: ComposeInput = {
+        focus: S(a.focus),
+        title: S(a.title) || undefined,
+        audience: S(a.audience) || undefined,
+        org: S(a.org) || undefined,
+        unit: S(a.unit) || undefined,
+        author: S(a.author) || undefined,
+        asOf: S(a.as_of) || undefined,
+        confidentiality: S(a.confidentiality) || undefined,
+        brief,
+        notes: notes || undefined,
+        research,
+        minutes: Number(a.minutes) > 0 ? Number(a.minutes) : undefined,
+      };
+      const cfg = jevSettings();
+      const key = getJevKey();
+      const jev = Boolean(key && cfg.enabled);
+      let jevCost = 0;
+      let jevMs = 0;
+      const jevCall = async (state: Record<string, unknown>, questions: Record<string, ReturnType<typeof planQuestions>[string]>) => {
+        const t0 = Date.now();
+        const ans = await callJevQuestions(cfg, key, state, questions, (url, init) => fetch(url, init));
+        jevCost += ans.costUsd;
+        jevMs += ans.ms;
+        acct.add(ctx.sessionId, { kind: 'jev1', step: 0, model: ans.model, tokensIn: ans.inputTokens, tokensOut: 0, cost: ans.costUsd, costSource: 'calculated', ms: Date.now() - t0 });
+        return ans.answers;
+      };
+      // 1. THE PLAN — JEV decides which dimensions of the brief deserve a chapter and what opens the dossier (rules otherwise).
+      let planNote = '';
+      if (brief) {
+        let answers: Awaited<ReturnType<typeof jevCall>> | null = null;
+        if (jev) {
+          try {
+            answers = await jevCall(planState(brief, input.focus), planQuestions(brief));
+          } catch {
+            /* JEV unreachable: the rules plan */
+          }
+        }
+        const kept = chaptersFromPlan(brief, answers);
+        input.plan = { chapters: kept.map((i) => brief.dims[i]!.label), lead: answers?.lead?.choice };
+        planNote = ` Plan (${answers ? 'JEV' : 'règles'}) : ${kept.length} chapitre(s) — ${input.plan.chapters.join(', ') || 'aucune dimension retenue'}${input.plan.lead ? ` ; ouverture : ${input.plan.lead}` : ''}.`;
+      }
+      // 2. THE WRITING — the model, in the closed grammar; the rules check the depth and ask for one deeper pass.
+      const model = pickFromTier(ctx.models, DEFAULT_AUTO_TIERS.balanced, {})?.id ?? pickFromTier(ctx.models, DEFAULT_AUTO_TIERS.fast, {})?.id ?? 'openai/gpt-4o-mini';
+      const base: Partial<Dossier> = {
+        title: input.title,
+        audience: input.audience,
+        org: input.org,
+        unit: input.unit,
+        author: input.author,
+        asOf: input.asOf,
+        confidentiality: input.confidentiality,
+        date: todayFr(),
+        minutes: input.minutes,
+      };
+      const messages: ChatMessage[] = [
+        { role: 'system', content: composeSystemPrompt() },
+        { role: 'user', content: composeUserPrompt(input) },
+      ];
+      let cost = 0;
+      let used = model;
+      let passes = 0;
+      let source = 'calculated';
+      const call = async (msgs: ChatMessage[]) => {
+        const t0 = Date.now();
+        const r = await complete(
+          { model, messages: msgs, maxTokens: 14000, temperature: 0.3, signal: ctx.signal },
+          { models: ctx.models, fallbacks: [], effort: 'auto', maxRetries: 1, purpose: 'dossier' },
+        );
+        useStore.getState().addSpend(r.cost);
+        // Scientific accounting: an LLM call made INSIDE a tool is the tool's cost, not the mission model's.
+        acct.add(ctx.sessionId, { kind: 'tool', step: 0, model: r.model, tokensIn: r.usage.promptTokens, tokensOut: r.usage.completionTokens, cost: r.cost, costSource: r.costSource, ms: Date.now() - t0 });
+        cost += r.cost;
+        used = r.model;
+        source = r.costSource;
+        passes++;
+        return r.content ?? '';
+      };
+      let d: Dossier | null = null;
+      let modelNote = '';
+      try {
+        const text = await call(messages);
+        const raw = parseDossierJson(text);
+        if (raw) d = normalizeDossier(raw, base);
+        else modelNote = ' Le modèle n\'a pas renvoyé un JSON lisible : ';
+        if (d) {
+          const issues = checkDepth(d);
+          if (issues.length) {
+            const text2 = await call([...messages, { role: 'assistant', content: text }, { role: 'user', content: deepenPrompt(d, issues) }]);
+            const raw2 = parseDossierJson(text2);
+            const d2 = raw2 ? normalizeDossier(raw2, base) : null;
+            // The second pass stands only if it is not thinner than the first.
+            if (d2 && checkDepth(d2).length <= issues.length) d = d2;
+          }
+        }
+      } catch (e) {
+        modelNote = ` Modèle indisponible (${(e as Error).message.slice(0, 140)}) : `;
+      }
+      if (!d) {
+        d = dossierFromBrief(input);
+        modelNote += 'dossier construit par les règles seules (plus mince ; relancer avec un modèle disponible).';
+      }
+      // 3. THE FIGURES — every number must come from the brief; the unknown ones are named for verification, never kept blindly.
+      let verifNote = '';
+      if (brief) {
+        const v = verifyAgainstBrief(d, brief);
+        verifNote = v.unknown.length
+          ? ` ⚠ ${v.unknown.length} chiffre(s) absent(s) du brief à vérifier avec data.query : ${v.unknown.slice(0, 12).join(' ; ')}.`
+          : ` ✔ ${v.checked} chiffre(s) vérifié(s) contre le brief.`;
+      }
+      // 4. THE JUDGMENTS — JEV sets the tone of each indicator, the priority of each recommendation, the chart of each figure,
+      // and says whether the dossier is ready for the committee (confident answers only; the rules guard each change).
+      let judgeNote = ' JEV non configuré : tons, priorités et figures tels qu\'écrits.';
+      if (jev) {
+        try {
+          const rep = applyJudgments(d, await jevCall(dossierState(d), dossierQuestions(d)));
+          judgeNote = ` JEV : ${rep.tones} ton(s), ${rep.priorities} priorité(s), ${rep.figures} figure(s) ajustés${rep.ready ? ` · prêt pour le comité : ${rep.ready.label} (${rep.ready.score.toFixed(1)}/4, confiance ${Math.round(rep.ready.confidence * 100)} %)` : ''}${rep.thesisDecisional != null ? ` · thèse décisionnelle : ${Math.round(rep.thesisDecisional * 100)} %` : ''}.`;
+        } catch {
+          judgeNote = ' JEV injoignable : tons, priorités et figures tels qu\'écrits.';
+        }
+      }
+      const name = (S(a.name) || 'dossier').replace(/[^\w.-]+/g, '-').replace(/\.(dossier\.)?(json|md)$/i, '');
+      const jp = uniquePath(`outputs/${name}.dossier.json`);
+      writeText(jp, JSON.stringify(d, null, 1));
+      const summary = dossierSummaryMarkdown(d);
+      const mp = uniquePath(`outputs/${name}.dossier.md`);
+      writeText(mp, summary);
+      return ok(
+        `dossier : ${d.kpis.length} indicateurs, ${d.chapters.length} chapitres, ${allRecos(d).length} recommandations, ${d.decisions.length} décisions → ${jp}`,
+        `${summary}\n\n---\nÉcrit : ${jp} (résumé ${mp}). ${passes} passe(s) de ${used} · ${cost.toFixed(4)} $ (${source})${jevCost ? ` · JEV ${jevCost.toFixed(4)} $ en ${jevMs} ms` : ''}.${modelNote}${planNote}${verifNote}${judgeNote}${depthNote(d)}\nProchaine étape : dossier.export avec from="${jp}" (formats xlsx, pptx, docx, html, eml) — le thème choisi s'applique à toutes les feuilles, pages et diapositives.`,
       );
     },
   },

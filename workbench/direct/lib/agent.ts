@@ -58,7 +58,7 @@ import { seedHits } from '../../server/jev/memory/seed';
 import { ALTERATION } from '../../server/jev/omni/mission';
 import { pilotAnchor } from '../../server/jev/omni/pilot';
 import { THEMES, buildTheme, setActiveTheme, themeOf } from '../../server/services/houseDesign';
-import { applyWebTheme, deliverableFromCode, deliverableFromText, kindForTool, type DeliverableKind } from '../../server/services/premiumDesigns';
+import { LOGO_TOOLS, THEMED_TOOLS, applyWebTheme, deliverableFromCode, deliverableFromText, kindForTool, type DeliverableKind } from '../../server/services/premiumDesigns';
 import { isOffice, recolorOffice } from '../../server/services/officeRecolor';
 import { addImagePageDocx, addImageSlidePptx, addImageToHtml, addLogoToHtml, addLogoToOffice } from '../../server/services/officeLogo';
 import { removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
@@ -120,6 +120,8 @@ const SAFE_HIDDEN = new Set([
   ...WRITE_TOOLS,
   'memory.doc',
   'report.export',
+  'dossier.compose',
+  'dossier.export',
   'data.export',
   'artifact.create',
   'apex.build_app',
@@ -1602,7 +1604,7 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
   let continuations = 0;
   // OMNIPOTENT OUTPUT DRIFT GUARD (hard, after the model): a fluent answer that is about another mission, or merely describes a
   // repair it did not make, is NOT delivered. One clean retry packet (capsule + failure signature, never the transcript), max 2.
-  const WRITE_TOOLS_USED = ['filesystem.write', 'filesystem.edit', 'artifact.create', 'data.export', 'report.export', 'apex.build_app'];
+  const WRITE_TOOLS_USED = ['filesystem.write', 'filesystem.edit', 'artifact.create', 'data.export', 'report.export', 'dossier.compose', 'dossier.export', 'apex.build_app'];
   const tryDrift = (answer: string): boolean => {
     if (!omni || !top || inp.mission || phase === 'planning' || !answer.trim()) return false;
     const used = [...toolsUsed];
@@ -2587,17 +2589,26 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     let choice = designFor(sid);
     const asked = typeof args.theme === 'string' && args.theme !== 'house' ? (args.theme as string) : null;
     if (!choice && !asked && !inp.signal.aborted) {
-      const formats = tool.name === 'report.export' ? ['docx', 'pptx', 'pdf', 'html', 'eml', 'md'] : tool.name === 'data.export' ? ['xlsx', 'csv', 'json'] : [];
+      const formats =
+        tool.name === 'report.export'
+          ? ['docx', 'pptx', 'pdf', 'html', 'eml', 'md']
+          : tool.name === 'dossier.export'
+            ? ['xlsx', 'pptx', 'docx', 'pdf', 'html', 'eml']
+            : tool.name === 'data.export'
+              ? ['xlsx', 'csv', 'json']
+              : [];
       const chosenFormats =
         tool.name === 'report.export'
           ? ((args.formats as string[] | undefined)?.length ? (args.formats as string[]) : ['docx'])
-          : tool.name === 'data.export'
-            ? [String(args.format || 'xlsx')]
-            : [];
+          : tool.name === 'dossier.export'
+            ? ((args.formats as string[] | undefined)?.length ? (args.formats as string[]) : ['xlsx', 'pptx', 'docx', 'html'])
+            : tool.name === 'data.export'
+              ? [String(args.format || 'xlsx')]
+              : [];
       const d = await askDesign(sid, inp.signal, tool.name, dkind, formats, chosenFormats);
       choice = d.choice;
       if (d.formats?.length) {
-        if (tool.name === 'report.export') args.formats = d.formats;
+        if (tool.name === 'report.export' || tool.name === 'dossier.export') args.formats = d.formats;
         if (tool.name === 'data.export') args.format = d.formats[0];
       }
       if (tool.name === 'code.run') designNote = `\n\n${designPrompt(choice)}`;
@@ -2614,7 +2625,7 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
         if (k && (!args.chart || args.chart === 'none')) args.chart = k === 'line' || k === 'area' ? 'line' : k === 'pie' || k === 'donut' ? 'pie' : 'bar';
       }
       // The chosen logo also goes into the « Synthèse 3D » board band.
-      if (choice.logo && (tool.name === 'data.export' || tool.name === 'report.export')) args.logoPath = choice.logo.path;
+      if (choice.logo && LOGO_TOOLS.test(tool.name)) args.logoPath = choice.logo.path;
       if (choice.layout && tool.name === 'data.export') {
         args.layout = choice.layout;
         args.layoutSource = choice.source;
@@ -2643,7 +2654,7 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
   const releaseScope = sid && tool.name !== 'agent.delegate' ? await acquireScope(sid) : null;
   if (sid) setChatScope(sid, sessionAllow(sid));
   // EXPORT THEMES: the house charter is the default, not a cage — a theme or custom colours given by the model apply.
-  const themed = /^(report|data)\.export$|^apex\.build_app$/.test(tool.name);
+  const themed = THEMED_TOOLS.test(tool.name);
   const prevTheme = themed ? setActiveTheme(themeOf(args, useStore.getState().settings.exportTheme)) : null;
   try {
     const t0 = Date.now();

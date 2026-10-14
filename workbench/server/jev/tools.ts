@@ -24,7 +24,7 @@ export const TOOL_FAMILIES: Record<string, string[]> = {
     'browser.back',
     'browser.console',
   ],
-  deliver: ['report.export', 'artifact.create'],
+  deliver: ['report.export', 'dossier.compose', 'dossier.export', 'artifact.create'],
   decide: ['decision.simulate', 'info.value', 'knowledge.query'],
   plan: ['plan.update'],
   memory: ['memory.doc', 'manual.add'],

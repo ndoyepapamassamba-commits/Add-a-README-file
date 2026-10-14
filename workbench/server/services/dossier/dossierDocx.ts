@@ -44,7 +44,7 @@ const label = (t: string) => para(run(t, { b: true, sz: 17, color: C.blue, caps:
 const bullet = (t: string, o: { color?: string; char?: string; sz?: number } = {}) =>
   para(`${run(`${o.char ?? '▪'}  `, { color: o.color ?? C.gold, b: true, sz: o.sz ?? 20 })}${run(t, { sz: o.sz ?? 20 })}`, { pPr: `<w:ind w:left="360" w:hanging="240"/>${spacing(0, 60)}` });
 const body = (t: string, o: R = {}) => para(run(t, { sz: 20, ...o }), { pPr: spacing(0, 100) });
-const isNum = (s: string) => /^[-+]?[\d\s .,]+(%|Mds?|M|k)?$/.test(s.trim()) && /\d/.test(s);
+const isNum = (s: string) => /^[-+]?[\d\s\u202f.,]+(%|Mds?|M|k)?$/.test(s.trim()) && /\d/.test(s);
 
 /** A styled data table: navy header with a filet, zebra rows, numbers right-aligned in the mono font. */
 function dataTable(head: string[], rows: string[][], widths?: number[], o: { firstColTone?: (r: string[]) => string | null; sz?: number } = {}): string {

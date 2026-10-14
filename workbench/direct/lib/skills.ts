@@ -77,6 +77,8 @@ export const DIRECT_TOOLS = [
   'memory.doc',
   'report.export',
   'report.analyse',
+  'dossier.compose',
+  'dossier.export',
   'data.export',
 ];
 

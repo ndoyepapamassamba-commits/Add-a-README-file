@@ -25,6 +25,7 @@ import {
   BrainCircuit,
   Cpu,
   Box,
+  PenTool,
 } from 'lucide-react';
 import {
   Button,
@@ -42,6 +43,7 @@ import { refreshCredits } from './lib/credits';
 import { hydrate, today, useStore } from './lib/store';
 import type { View } from './lib/types';
 import { ChatView } from './views/ChatView';
+import { PromptStudioView } from './views/PromptStudioView';
 import { CockpitView } from './views/CockpitView';
 import { WorkflowsView } from './views/WorkflowsView';
 import { FilesView } from './views/FilesView';
@@ -64,6 +66,7 @@ import { StudioView } from './views/studio/StudioView';
 const ICONS: Record<View, React.ReactNode> = {
   home: <LayoutDashboard size={17} />,
   chat: <MessageSquare size={17} />,
+  prompts: <PenTool size={17} />,
   files: <FolderOpen size={17} />,
   data: <Database size={17} />,
   terminal: <TerminalSquare size={17} />,
@@ -284,6 +287,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         <main className="min-w-0 flex-1">
           {view === 'home' && <CockpitView />}
           {view === 'chat' && <ChatView />}
+          {view === 'prompts' && <PromptStudioView />}
           {view === 'workflows' && <WorkflowsView />}
           {view === 'files' && <FilesView />}
           {view === 'data' && <DataView />}

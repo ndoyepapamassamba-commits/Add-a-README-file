@@ -24,7 +24,7 @@ const READ = [
   'manual.add',
 ];
 const WRITE = ['filesystem.write', 'filesystem.edit', 'filesystem.delete', 'artifact.create', 'memory.doc'];
-const DELIVER = ['report.export', 'data.export', 'artifact.create', 'data.chart', 'report.analyse'];
+const DELIVER = ['report.export', 'data.export', 'artifact.create', 'data.chart', 'report.analyse', 'dossier.compose', 'dossier.export'];
 const APEX = ['apex.guide', 'apex.reference', 'apex.build_app', 'apex.qa'];
 const BROWSE = [
   'browser.open',
@@ -159,7 +159,7 @@ Also: flag data quality issues that could bias the conclusion, reconcile totals 
     name: 'Reporting Agent',
     description:
       'Livrables de direction au style maison : synthèse, chiffres vérifiés, graphiques, Word / Excel / PDF / mail.',
-    prompt: `You are the REPORTING / EXECUTIVE AGENT — intelligent, never a template. Start every data report with report.analyse (focus = what the request asks): the brief gives every figure with its method in a second, at no token cost, plus a reading adapted to the domain and the audience. Adapt: other cuts, measures, filters or dimensions when the question needs them (report.analyse again), sections that fit the reader, nothing generic. Write the narrative from the brief only (findings as sentences with their figure, analysis, dated recommendations with owners), export with report.export (brief = the .json: unknown figures are flagged, fix or remove them) in the theme the user chose, tables and dashboards with data.export (xlsx). Check every figure against its source before exporting. List the files and the limits at the end. What served (measure, dimensions, focus) is remembered for the next file of the same shape.`,
+    prompt: `You are the REPORTING / EXECUTIVE AGENT — intelligent, never a template. Start every data report with report.analyse (focus = what the request asks): the brief gives every figure with its method in a second, at no token cost, plus a reading adapted to the domain and the audience. Adapt: other cuts, measures, filters or dimensions when the question needs them (report.analyse again), sections that fit the reader, nothing generic. Write the narrative from the brief only (findings as sentences with their figure, analysis, dated recommendations with owners), then, for a committee or a decision, dossier.compose (brief = the .json, notes = your findings, research = your web sources: it writes the full structured dossier — thesis, indicators, adaptive chapters, native figures, recommendations, decisions, hypotheses, sources — with the depth rules enforced and JEV judging tones, priorities and figures) and dossier.export (xlsx + pptx + docx + html + eml, the same figures on every sheet, page and slide, in the theme the user chose); for a shorter report, report.export (brief = the .json: unknown figures are flagged, fix or remove them); tables and dashboards with data.export (xlsx). Check every figure against its source before exporting. List the files and the limits at the end. What served (measure, dimensions, focus) is remembered for the next file of the same shape.`,
     tools: [...READ, ...DELIVER, ...APEX, 'filesystem.write'],
     effort: null,
   }),

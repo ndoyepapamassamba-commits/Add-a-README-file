@@ -14,7 +14,7 @@ export function briefKpis(b: Brief): Kpi[] {
 export function briefFigures(b: Brief): Figure[] {
   const out: Figure[] = [];
   for (const dim of b.dims.filter((d) => d.dim !== b.entity).slice(0, 3)) {
-    if (dim.top.length >= 2) out.push({ kind: dim.top.length > 6 ? 'bar3d' : 'col3d', title: `${b.measureLabel} par ${dim.label}`, categories: dim.top.map((t) => t.key), series: [{ name: b.measureLabel, values: dim.top.map((t) => t.sum) }], lecture: `${dim.top[0]!.key} porte ${Math.round(dim.top[0]!.share * 100)} % du total ; ${dim.n80} catégorie(s) sur ${dim.categories} suffisent pour 80 %.` });
+    if (dim.top.length >= 2) out.push({ kind: dim.top.length > 6 ? 'bar3d' : 'col3d', title: `${b.measureLabel} par ${dim.label}`, categories: dim.top.map((t) => t.key), series: [{ name: b.measureLabel, values: dim.top.map((t) => t.sum) }], lecture: `${dim.top[0]!.key} porte ${Math.round(dim.top[0]!.share * 100)} % du total ; ${dim.n80} catégorie(s) sur ${dim.categories} suffisent pour les quatre cinquièmes du total.` });
   }
   if (b.trend && b.trend.points.length >= 3) out.push({ kind: 'line', title: `Évolution ${b.trend.by === 'month' ? 'mensuelle' : 'annuelle'} — ${b.measureLabel}`, categories: b.trend.points.map((p) => p.period), series: [{ name: b.measureLabel, values: b.trend.points.map((p) => p.sum) }], lecture: b.trend.delta != null ? `Dernière période ${b.trend.last} : ${b.trend.delta >= 0 ? '+' : ''}${Math.round(b.trend.delta * 100)} % par rapport à la précédente.` : undefined });
   if (b.bands.length >= 3) out.push({ kind: 'col3d', title: `Répartition par tranche — ${b.measureLabel}`, categories: b.bands.map((x) => x.label), series: [{ name: 'Nombre', values: b.bands.map((x) => x.count) }], fmt: '0' });
