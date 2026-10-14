@@ -777,10 +777,11 @@ def build_pose(actor, pose, k, rig_dir, scale, mirror, root):
     # Mouth (cavity + teeth) and lids, children of the head bone (they follow every head move).
     extras = []
     def on_head(o, px_xy, dy=-0.003):
+        # In the ACTOR's space, like the mesh (P is relative to the feet; the root may already stand off-centre — placed
+        # in world space, a lid or a mouth floated beside the face by the actor's offset).
         X, Z = P(*px_xy)
-        o.location = (X, dy, Z)
         bpy.context.view_layer.update()
-        mw_ = o.matrix_world.copy()
+        mw_ = ao.matrix_world @ Matrix.Translation((X, dy, Z))
         o.parent = ao
         o.parent_type = 'BONE'
         o.parent_bone = 'head'
