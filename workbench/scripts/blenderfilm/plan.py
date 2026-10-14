@@ -628,7 +628,10 @@ def main():
                 k += 1
         if story.get('punch') and i == story['punch']['beat']:
             move = move or 'punch'
-        shots.append({'start': int(round(seg['start'] * fps)), 'end': int(round(seg['end'] * fps)), 'type': typ, 'target': b.get('target', b['who']), 'move': move or ['push', 'drift', 'push', 'pull'][i % 4]})
+        # The cycle rests the camera one shot in two (« fixe »): measured on film 9 at full frame rate, a moving camera
+        # on a two-shot put 0,63–0,79 of the picture in motion against 0,41 still (channel ≤ 0,29).
+        shots.append({'start': int(round(seg['start'] * fps)), 'end': int(round(seg['end'] * fps)), 'type': typ, 'target': b.get('target', b['who']),
+                      'move': move or ['push', 'fixe', 'pull', 'fixe'][i % 4], 'move_explicit': bool(b.get('move'))})
     # A reaction added by the DIRECTOR'S MODEL never snaps inside a close-up on the one who reacts: measured on film 8
     # (14/10/2026), the snap of a full-frame drawing is a brightness jump of +39,9 that the gate counts as a cut outside
     # a cut (frame 910). The story's own reactions are the author's and stay.

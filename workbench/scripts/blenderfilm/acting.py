@@ -35,17 +35,28 @@ def weight_shifts(nF, fps, seed):
 # the actor is framed in, the motion keeps the same size ON SCREEN (measured on film 6: close shots moved ≈ 60 % of the
 # picture against ≤ 29 % on the channel's videos).
 SHOT_SCALE = {'cu': 0.45, 'mcu': 0.65, 'two': 1.0}
+# The BODY (spine, pelvis, breath, lift, the clips' lean) in a close shot: measured on film 9 at full frame rate
+# (14/10/2026), the whole drawn silhouette moving in a medium close-up put 0,79–0,83 of the picture in motion whatever the
+# camera or the set did (channel ≤ 0,29): on a phone video a person's torso holds still, the head and the mouth carry the
+# life. Head, nods and mouth keep SHOT_SCALE; the body gets this smaller share.
+BODY_SCALE = {'cu': 0.2, 'mcu': 0.35, 'two': 1.0}
 
 
-def shot_scale(shots, aid, nF, fps):
+def shot_scale(shots, aid, nF, fps, table=None):
     """Per-frame amplitude of the acting of `aid` from the shots that frame it (eased over 0.2 s around the cuts)."""
+    table = table or SHOT_SCALE
     sc = np.ones(nF + 1)
     for s in shots:
-        if s.get('target') == aid and s['type'] in SHOT_SCALE:
-            sc[s['start']:min(nF + 1, s['end'] + 1)] = SHOT_SCALE[s['type']]
+        if s.get('target') == aid and s['type'] in table:
+            sc[s['start']:min(nF + 1, s['end'] + 1)] = table[s['type']]
     n = max(1, int(0.2 * fps))
     padded = np.pad(sc, (n, n), mode='edge')  # no fade toward 0 at the film's two ends
     return np.clip(np.convolve(padded, np.ones(n) / n, mode='same')[n:-n], 0.0, 1.0)
+
+
+def body_scale(shots, aid, nF, fps):
+    """Per-frame amplitude of the BODY's motion (BODY_SCALE): the torso of a close shot holds still, head and mouth live."""
+    return shot_scale(shots, aid, nF, fps, BODY_SCALE)
 
 
 def mocap_spans(poses, nF, kinds):
@@ -59,7 +70,7 @@ def mocap_spans(poses, nF, kinds):
     return spans
 
 
-def curves(jaw, partner_nods, x, nF, fps, seed, on=True, scale=None, clips=None, height_m=1.6):
+def curves(jaw, partner_nods, x, nF, fps, seed, on=True, scale=None, clips=None, height_m=1.6, body=None):
     """Per-frame acting curves of one actor (index = frame − 1).
     jaw: the actor's mouth opening track; partner_nods: the other actors' emphasis nods; x: the actor's place on the
     stage (≤ 0 = left, its partner on the right). Returns radians for head / spine / root rotations, the breath (−1…1)
@@ -83,11 +94,12 @@ def curves(jaw, partner_nods, x, nF, fps, seed, on=True, scale=None, clips=None,
         return {'head': z, 'spine': z, 'root': math.radians(0.7) * sway, 'breath': breath, 'breath_amp': 0.010,
                 'listen': z, 'bob': z, 'toward': toward, 'speak': speak, 'lift': z, 'squash': z}
     k = np.ones(nF + 1) if scale is None else np.asarray(scale, float)[: nF + 1]
+    kb = k if body is None else np.asarray(body, float)[: nF + 1]  # the body's own share (BODY_SCALE)
     head = k * (math.radians(1.5) * np.sin(tt * 2 * math.pi / 4.1 + seed % 4)
             + math.radians(2.0) * energy * np.sin(tt * 2 * math.pi * 2.1 + seed % 6)
             + toward * math.radians(1.2) * lean)
-    spine = k * (math.radians(0.8) * sway + toward * math.radians(4.5) * lean)
-    root = k * (math.radians(1.2) * weight_shifts(nF, fps, seed) + math.radians(0.6) * sway)
+    spine = kb * (math.radians(0.8) * sway + toward * math.radians(4.5) * lean)
+    root = kb * (math.radians(1.2) * weight_shifts(nF, fps, seed) + math.radians(0.6) * sway)
     lift = np.zeros(nF + 1)
     squash = np.zeros(nF + 1)
     # REAL HUMAN MOTION on the poses that have a captured clip (CMU mocap, mocap.py): a laugh doubles over, a shrug
@@ -98,12 +110,12 @@ def curves(jaw, partner_nods, x, nF, fps, seed, on=True, scale=None, clips=None,
         gain = float(span[3]) if len(span) > 3 else 1.0
         import mocap
         o = mocap.overlay(kind, b - a, fps, height_m, gain=gain)
-        kk = k[a:b]
+        kk, kb_ = k[a:b], kb[a:b]
         mirror = toward  # the clip's lean toward its partner follows ours
         head[a:b] += kk * o['head'] * mirror
-        spine[a:b] += kk * o['spine'] * mirror
-        root[a:b] += kk * o['root'] * mirror
-        lift[a:b] += kk * o['lift']
-        squash[a:b] = np.maximum(squash[a:b], kk * o['squash'])
-    return {'head': head, 'spine': spine, 'root': root, 'breath': breath * k, 'breath_amp': 0.022, 'listen': listen,
+        spine[a:b] += kb_ * o['spine'] * mirror
+        root[a:b] += kb_ * o['root'] * mirror
+        lift[a:b] += kb_ * o['lift']
+        squash[a:b] = np.maximum(squash[a:b], kb_ * o['squash'])
+    return {'head': head, 'spine': spine, 'root': root, 'breath': breath * kb, 'breath_amp': 0.022, 'listen': listen,
             'bob': 0.004 * energy * bob * k, 'toward': toward, 'speak': speak, 'lift': lift, 'squash': squash}

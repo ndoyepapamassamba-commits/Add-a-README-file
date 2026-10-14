@@ -1369,6 +1369,7 @@ def animate(plan, actors, fps):
                 clips = []
         cv = acting.curves(jaw, partner_nods, A['plan']['x'], nF, fps, seed, on=JEU_CORPS,
                            scale=acting.shot_scale(plan['shots'], aid, nF, fps), clips=clips,
+                           body=acting.body_scale(plan['shots'], aid, nF, fps),
                            height_m=A['plan'].get('height') or 1.6)
         if clips:
             print(f"[mocap] {A['plan'].get('name', aid)} : {', '.join(f'{s_[2]} {(s_[1] - s_[0]) / fps:.1f} s' for s_ in clips)} (capture CMU)", flush=True)
@@ -1709,13 +1710,15 @@ def cameras(plan, actors, bounds, soft, fps):
         if mv == 'punch':
             moves = [(s['start'] + 1, 1.32, 0), (min(s['end'], s['start'] + 1 + int(0.45 * fps)), 1.01, 0), (s['end'], 0.97, 0)]
         else:
-            # Measured on the owner's channel: the CHARACTERS move, the camera barely (≤ 29 % of the picture moving);
-            # a 7 % push on a close shot moved the whole picture (64 % before any acting). Close shots: 3 %.
+            # Measured on the owner's channel: the CHARACTERS move, the camera barely (≤ 29 % of the picture moving).
+            # Film 9 at full frame rate (14/10/2026): a 7 % push or a 2,5 % lens drift on a two-shot moved 0,63–0,79 of
+            # the picture, the same shot with a still camera 0,41. So 3 % zooms everywhere, and a « drift » is a still
+            # shot (the phone is posed): only the story's own explicit move keeps a lens shift.
             close = s['type'] != 'two'
-            zp = 1.03 if close else 1.07
+            zp = 1.03
             m0, m1 = (zp, 1.0) if mv == 'push' else (1.0, zp - 0.01) if mv == 'pull' else (1.01, 1.01) if close else (1.02, 1.02)
             dr = 0.012 if close else 0.025
-            dx0, dx1 = (-dr * frame_h, dr * frame_h) if mv == 'drift' else (0, 0)
+            dx0, dx1 = (-dr * frame_h, dr * frame_h) if mv == 'drift' and s.get('move_explicit') else (0, 0)
             moves = [(s['start'] + 1, m0, dx0), (s['end'], m1, dx1)]
         if CAMERA_FIXE:
             moves = [(s['start'] + 1, 1.0, 0), (s['end'], 1.0, 0)]

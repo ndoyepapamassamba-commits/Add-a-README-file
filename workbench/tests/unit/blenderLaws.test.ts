@@ -424,14 +424,27 @@ sc = acting.shot_scale(shots, 'a', 250, 25)
 jaw = np.full(250, 0.4)
 full = acting.curves(jaw, [], -0.4, 250, 25, 7)
 cu = acting.curves(jaw, [], -0.4, 250, 25, 7, scale=sc)
+kb = acting.body_scale(shots, 'a', 250, 25)
+body = acting.curves(jaw, [], -0.4, 250, 25, 7, scale=sc, body=kb)
+r_ = lambda a, b: float(np.abs(a).mean() / np.abs(b).mean())
 print(json.dumps({'start': float(sc[0]), 'two': float(sc[120]), 'cu': float(sc[200]), 'end': float(sc[-1]),
-  'ratio': float(np.abs(cu['spine'][190:240]).mean() / np.abs(full['spine'][190:240]).mean())}))`);
+  'ratio': r_(cu['spine'][190:240], full['spine'][190:240]), 'bodyMcu': float(kb[40]), 'bodyTwo': float(kb[120]), 'bodyCu': float(kb[200]),
+  'spineCu': r_(body['spine'][190:240], full['spine'][190:240]), 'headCu': r_(body['head'][190:240], full['head'][190:240]),
+  'breathMcu': r_(body['breath'][20:60], full['breath'][20:60])}))`);
     if (!r) return;
     expect(r.start).toBeCloseTo(0.65, 2); // the first shot is a medium close-up: no fade from 0 at the film start
     expect(r.two).toBe(1);
     expect(r.cu).toBeCloseTo(0.45, 2);
     expect(r.end).toBeCloseTo(0.45, 2);
     expect(r.ratio as number).toBeCloseTo(0.45, 2); // the lean in a close-up = 45 % of the two-shot lean
+    // The BODY of a close shot holds still (film 9: the whole silhouette moving put 0,8 of a medium close-up in motion);
+    // the head keeps its share, the two-shot plays fully.
+    expect(r.bodyMcu).toBeCloseTo(0.35, 2);
+    expect(r.bodyTwo).toBe(1);
+    expect(r.bodyCu).toBeCloseTo(0.2, 2);
+    expect(r.spineCu as number).toBeCloseTo(0.2, 2);
+    expect(r.headCu as number).toBeCloseTo(0.45, 2);
+    expect(r.breathMcu as number).toBeCloseTo(0.35, 2);
   });
 
   it('captured motion (ASF/AMC) is read in the plane of our cards, clamped for a drawing, played once then settles', () => {
