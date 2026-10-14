@@ -59,3 +59,24 @@ Tout ce qui suit est lu sur la source primaire ou MESURÉ dans le conteneur (4 c
 - `plan.py` : piste `clips` par acteur ; `scene.py` la lit ;
 - app : `server/jev/studio/stageDirections.ts` (+ 5 tests) et l'onglet **Réalisateur** du Studio 3D Pro
   (`direct/views/Lab3DView.tsx`) : « QUI : réplique » → consignes validées → `story.directed.json` pour le moteur.
+
+## 7. Suite du 14/10/2026 : 100STYLE branché, mouvement calibré
+- Lecteur BVH maison (`parse_bvh`, `forward_bvh`, `card_curves_bvh`) : mêmes courbes de carte (buste, tête, bassin, rebond,
+  flexion) que pour CMU. Mesuré : Angry_FW (4 942 images, 60 i/s) lu en 0,19 s.
+- Le zip Zenodo de 1 469 Mo n'est jamais téléchargé : répertoire central lu par requêtes Range (0,5 Mo), puis le seul
+  membre voulu (2–11 Mo). Le serveur coupe les connexions longues : 5 reprises avec pause.
+- Amplitudes crête à crête (clip entier → fenêtre la plus expressive de 1,2 s) :
+
+| Style | buste | tête | bassin | rebond | fenêtre 1,2 s |
+|---|---|---|---|---|---|
+| Angry_FW | 29° | 34° | 27° | 12,7 cm | buste 11°, rebond 8,4 cm |
+| Drunk_FW | 28° | 46° | 30° | 16,1 cm | buste 14°, rebond 7,3 cm |
+| Elated_FW | 26° | 32° | 23° | 17,3 cm | buste 8°, rebond 5,9 cm |
+| Proud_FW | 23° | 25° | 18° | 6,9 cm | buste 4°, rebond 5,8 cm |
+| Rushed_FW | 29° | 32° | 34° | 18,6 cm | buste 8°, rebond 7,4 cm |
+
+  Les limites cartoon (`LIMITS` : buste 9°, tête 12°, rebond 5 cm) écrêtent ensuite chaque clip.
+- Film 7 = film 6 dirigé (modèle local + règles, 14 gestes sur 18 répliques) : rendu en 1 139 s, toutes les images,
+  son conforme, conformité 3D 100 %, **mais** mouvement 0,0294 (chaîne ≤ 0,027 ; film 6 : 0,0195), couverture 0,46
+  (≤ 0,435 ; film 6 : 0,41), 2 sauts de lumière hors coupe. Trop de gestes → **budget de mouvement** (`motion_budget`) :
+  la moitié la plus forte des répliques garde son geste (chute, mot-indice, énergie), gains 0,35–0,9. Film 8 en mesure.

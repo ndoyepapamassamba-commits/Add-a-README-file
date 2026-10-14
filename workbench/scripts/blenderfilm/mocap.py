@@ -257,8 +257,12 @@ _CURVES = {}
 def clip_curves(kind, fps=25, height_m=1.6):
     key = (kind, fps, round(height_m, 2))
     if key not in _CURVES:
-        asf, amc = ensure_clip(kind)
-        _CURVES[key] = card_curves(parse_asf(asf), parse_amc(amc), fps=fps, height_m=height_m)
+        if kind.startswith('bvh:'):
+            skel, frames, src_fps = parse_bvh(ensure_bvh(kind))
+            _CURVES[key] = card_curves_bvh(skel, frames, fps=fps, src_fps=src_fps, height_m=height_m)
+        else:
+            asf, amc = ensure_clip(kind)
+            _CURVES[key] = card_curves(parse_asf(asf), parse_amc(amc), fps=fps, height_m=height_m)
     return _CURVES[key]
 
 
@@ -339,6 +343,214 @@ def search(text):
         for w in g.get('mots') or []:
             w_ = _fold(w)
             # Whole words only (« toi » must not fire inside « toiture »); punctuation inside a cue is kept literal.
+            if w_ and re.search(r'(?<![a-z0-9])' + re.escape(w_) + r'(?![a-z0-9])', t) and len(w_) > best[1]:
+                best = (tag, len(w_))
+    return best[0]
+
+
+# ── BVH (100STYLE, CC BY 4.0 — « The 100STYLE Dataset - Ian Mason ») : 100 styles de marche et d'attente ──────────────
+# Zenodo 8127870 publie un seul zip de 1,47 Go ; on ne le télécharge jamais entier : lecture du répertoire central par
+# requêtes HTTP Range (≈ 0,5 Mo) puis extraction du seul membre demandé (2–11 Mo), gardé dans le cache des modèles.
+ZENODO_100STYLE = 'https://zenodo.org/api/records/8127870/files/100STYLE.zip/content'
+
+
+class _RangeFile:
+    """A seekable, read-only view of a remote file (HTTP Range), 1 Mo blocks, retried on a dropped connection."""
+
+    def __init__(self, url, block=1 << 20):
+        import urllib.request
+        self.url, self.block, self.pos, self.cache = url, block, 0, {}
+        with urllib.request.urlopen(urllib.request.Request(url, method='HEAD'), timeout=60) as r:
+            self.size = int(r.headers['Content-Length'])
+
+    def _chunk(self, i):
+        import time
+        import urllib.request
+        if i not in self.cache:
+            a, b = i * self.block, min(self.size, (i + 1) * self.block) - 1
+            for attempt in range(5):
+                try:
+                    req = urllib.request.Request(self.url, headers={'Range': f'bytes={a}-{b}'})
+                    with urllib.request.urlopen(req, timeout=120) as r:
+                        self.cache[i] = r.read()
+                    break
+                except Exception:  # noqa: BLE001 — dropped or truncated connection (IncompleteRead is not an OSError): retry
+                    if attempt == 4:
+                        raise
+                    time.sleep(2 + 3 * attempt)
+        return self.cache[i]
+
+    def seekable(self):
+        return True
+
+    def readable(self):
+        return True
+
+    def tell(self):
+        return self.pos
+
+    def seek(self, off, whence=0):
+        self.pos = off if whence == 0 else self.pos + off if whence == 1 else self.size + off
+        return self.pos
+
+    def read(self, n=-1):
+        n = self.size - self.pos if n is None or n < 0 else min(n, self.size - self.pos)
+        out = bytearray()
+        while len(out) < n:
+            i, o = divmod(self.pos + len(out), self.block)
+            c = self._chunk(i)
+            out += c[o:o + (n - len(out))]
+        self.pos += n
+        return bytes(out)
+
+
+def ensure_bvh(kind):
+    """Local path of a BVH clip: 'bvh:100style/Angry_FW' → ~/.cache/massamba-models/100style/Angry_FW.bvh, fetched
+    once from the Zenodo zip (member '100STYLE/Angry/Angry_FW.bvh') without downloading the archive."""
+    import os
+    import zipfile
+    lib, name = kind[4:].split('/', 1)
+    if lib != '100style':
+        raise ValueError(f'bibliothèque BVH inconnue : {lib}')
+    d = os.path.join(os.path.dirname(_cache_dir()), '100style')
+    os.makedirs(d, exist_ok=True)
+    out = os.path.join(d, name + '.bvh')
+    if not os.path.isfile(out):
+        style = name.split('_')[0]
+        z = zipfile.ZipFile(_RangeFile(ZENODO_100STYLE))
+        data = z.read(f'100STYLE/{style}/{name}.bvh')
+        with open(out, 'wb') as f:
+            f.write(data)
+    return out
+
+
+def parse_bvh(path):
+    """Minimal BVH reader: skeleton (joint names, parents, offsets, channel lists) + motion frames + frame rate."""
+    import re
+    with open(path, encoding='utf-8', errors='replace') as f:
+        txt = f.read()
+    head, motion = txt.split('MOTION', 1)
+    joints, parents, offsets, channels = [], [], [], []
+    stack = []
+    tokens = head.replace('{', ' { ').replace('}', ' } ').split()
+    i = 0
+    while i < len(tokens):
+        tk = tokens[i]
+        if tk in ('ROOT', 'JOINT'):
+            joints.append(tokens[i + 1])
+            parents.append(stack[-1] if stack else -1)
+            offsets.append([0.0, 0.0, 0.0])
+            channels.append([])
+            i += 2
+        elif tk == 'End':  # End Site: an offset only, no channels — kept as a leaf named <parent>_end
+            joints.append(joints[stack[-1]] + '_end')
+            parents.append(stack[-1])
+            offsets.append([0.0, 0.0, 0.0])
+            channels.append([])
+            i += 2
+        elif tk == '{':
+            stack.append(len(joints) - 1)
+            i += 1
+        elif tk == '}':
+            stack.pop()
+            i += 1
+        elif tk == 'OFFSET':
+            offsets[len(joints) - 1] = [float(tokens[i + 1]), float(tokens[i + 2]), float(tokens[i + 3])]
+            i += 4
+        elif tk == 'CHANNELS':
+            n = int(tokens[i + 1])
+            channels[len(joints) - 1] = tokens[i + 2:i + 2 + n]
+            i += 2 + n
+        else:
+            i += 1
+    m = re.search(r'Frame Time:\s*([0-9.eE+-]+)', motion)
+    frame_time = float(m.group(1)) if m else 1 / 60
+    rows = [ln.split() for ln in motion.split('\n') if ln.strip() and not ln.startswith('Frame')]
+    frames = np.array([[float(v) for v in r] for r in rows if len(r) > 6], dtype=float)
+    skel = {'joints': joints, 'parents': parents, 'offsets': np.array(offsets), 'channels': channels}
+    return skel, frames, round(1 / frame_time)
+
+
+def forward_bvh(skel, row):
+    """Global rotation and position of every joint for one frame (channel order honoured: the first listed rotation
+    is the outermost)."""
+    G, P = {}, {}
+    c = 0
+    for j, name in enumerate(skel['joints']):
+        R = np.eye(3)
+        pos = np.array(skel['offsets'][j], float)
+        for ch in skel['channels'][j]:
+            v = row[c]
+            c += 1
+            if ch == 'Xposition':
+                pos[0] = v
+            elif ch == 'Yposition':
+                pos[1] = v
+            elif ch == 'Zposition':
+                pos[2] = v
+            elif ch.endswith('rotation'):
+                R = R @ _rot(ch[0].lower(), v)
+        par = skel['parents'][j]
+        if par < 0:
+            G[name], P[name] = R, pos
+        else:
+            pn = skel['joints'][par]
+            G[name] = G[pn] @ R
+            P[name] = P[pn] + G[pn] @ pos
+    return G, P
+
+
+def card_curves_bvh(skel, frames, fps=25, src_fps=60, height_m=1.6, names=None):
+    """Same output as card_curves (spine / head / root tilts, bob, bend, seconds) from a BVH clip. Default joint
+    names are 100STYLE's (Hips, Chest…Chest4, Neck, Head, LeftToe / RightToe); units are read from the body height."""
+    names = names or {'root': 'Hips', 'chest': 'Chest4', 'neck': 'Neck', 'head': 'Head', 'ltoes': 'LeftToe', 'rtoes': 'RightToe'}
+    idx = np.arange(0, len(frames), max(1e-6, src_fps / fps)).astype(int)
+    spine, head, rootr, bob, h_sub, fwd_bend = [], [], [], [], [], []
+    for i in idx:
+        G, P = forward_bvh(skel, frames[i])
+        fwd = G[names['root']] @ np.array([0, 0, 1.0])
+        yaw = math.atan2(fwd[0], fwd[2])
+        Ry = _rot('y', -math.degrees(yaw))
+
+        def tilt(v):
+            v = Ry @ v
+            return math.asin(max(-1.0, min(1.0, v[0] / max(1e-9, float(np.linalg.norm(v))))))
+
+        def bend(v):
+            v = Ry @ v
+            return math.asin(max(-1.0, min(1.0, v[2] / max(1e-9, float(np.linalg.norm(v))))))
+        top, bottom = P[names['chest']], P[names['root']]
+        neck, headp = P[names['neck']], P[names['head']]
+        spine.append(tilt(top - bottom))
+        fwd_bend.append(bend(top - bottom))
+        head.append(tilt(headp - neck) - spine[-1])
+        rootr.append(tilt(G[names['root']] @ np.array([0, 1.0, 0])))
+        bob.append(P[names['root']][1])
+        h_sub.append(headp[1] - min(P[names['ltoes']][1], P[names['rtoes']][1]))
+    spine, head, rootr, fwd_bend = (np.array(a) for a in (spine, head, rootr, fwd_bend))
+    unit = height_m / max(1e-6, float(np.median(h_sub)))  # metres per BVH unit (the subject's own height)
+    bob = (np.array(bob) - np.median(bob)) * unit
+    return {'spine': spine - np.median(spine), 'head': head - np.median(head), 'root': rootr - np.median(rootr),
+            'bob': bob, 'bend': fwd_bend - np.median(fwd_bend), 'seconds': len(idx) / fps}
+
+
+def entrance_clip(tag):
+    """'entre_colere' → 'bvh:100style/Angry_FW' (direction-vocab.json 'entrees'), None for an unknown tag."""
+    e = vocab().get('entrees', {}).get(tag)
+    return 'bvh:' + e['clip'] if isinstance(e, dict) and e.get('clip') else None
+
+
+def search_entrance(text):
+    """The entrance style a line (or a character sheet) calls for, 'entre_normal' otherwise — same whole-word rule
+    as search()."""
+    import re
+    t = _fold(text)
+    best = ('entre_normal', 0)
+    for tag, e in vocab().get('entrees', {}).items():
+        if not isinstance(e, dict):
+            continue
+        for w in e.get('mots') or []:
+            w_ = _fold(w)
             if w_ and re.search(r'(?<![a-z0-9])' + re.escape(w_) + r'(?![a-z0-9])', t) and len(w_) > best[1]:
                 best = (tag, len(w_))
     return best[0]

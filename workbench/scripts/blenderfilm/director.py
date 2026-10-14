@@ -36,6 +36,15 @@ def vocab():
     return mocap.vocab()
 
 
+def character_sheets():
+    """characters.json (name → height, voice, age, activity…), {} when absent."""
+    try:
+        with open(os.path.join(HERE, 'characters.json'), encoding='utf-8') as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
 def character_poses(rig, name):
     """The drawn poses of an actor (what the troupe's board contains), 'neutre' at least."""
     c = (rig.get('cast') or {}).get(name) or {}
@@ -275,9 +284,54 @@ def direct(story, rig, mode='auto', log=print):
             nb['move'] = v['camera']  # a camera punch only where the story puts its punchline
         nb['_source'] = {'geste': 'regles' if r['geste'] != 'aucun' else ('modele' if 'geste' in v else 'regles'),
                          'modele': bool(v)}
+    # Entrances: an actor who arrives on a beat walks in with a STYLE (100STYLE clip), read from its first line, the
+    # story's hook and its character sheet (age, activity) — rules only, deterministic.
+    sheets = character_sheets()
+    for c in out['cast']:
+        if c.get('enter') and not c.get('entree'):
+            first = next((b.get('text', '') for b in beats if b['who'] == c['id']), '')
+            sheet = sheets.get(c['name'], {})
+            # Priority: what the actor SAYS on arriving, then the story's hook, then its sheet (activity, then age).
+            tag = 'entre_normal'
+            for src in (first, story.get('hook', ''), str(sheet.get('activite', ''))):
+                tag = mocap.search_entrance(src)
+                if tag != 'entre_normal':
+                    break
+            if tag == 'entre_normal' and (sheet.get('age') or 0) >= 60:
+                tag = 'entre_vieux'
+            c['entree'] = tag
+    motion_budget(out, log)
     out['_director'] = {'backend': backend, 'model': model_name, 'seconds': round(time.time() - t0, 1),
                         'usage': usage, 'date': time.strftime('%Y-%m-%d')}
     return out
+
+
+# MOTION BUDGET — measured on film 6 (14/10/2026): a gesture clip on 14 lines of 18 pushed the film's motion to 0,0294
+# and its coverage to 0,46, above the channel's range (motion ≤ 0,027, coverage ≤ 0,435; the same film without the
+# director: 0,0195 / 0,41). The channel's own videos gesture on about half the lines: the director keeps the gestures
+# of the strongest half (the punchline first, then the lines with a cue word, then by energy) and plays the rest with
+# the procedural acting only.
+GESTURE_SHARE = 0.5
+
+
+def motion_budget(story, log=print):
+    beats = story['beats']
+    punch_i = (story.get('punch') or {}).get('beat', -1)
+    cand = [i for i, b in enumerate(beats) if b.get('geste', 'aucun') != 'aucun']
+    keep_n = max(1, int(round(GESTURE_SHARE * len(beats))))
+    if len(cand) <= keep_n:
+        return
+    def rank(i):
+        b = beats[i]
+        src = (b.get('_source') or {}).get('geste', '')
+        cue = mocap.search(b.get('text', '')) != 'aucun'
+        return (i == punch_i, cue, src == 'regles', float(b.get('energie', 0)))
+    keep = set(sorted(cand, key=rank, reverse=True)[:keep_n])
+    for i in cand:
+        if i not in keep:
+            beats[i]['geste'] = 'aucun'
+            beats[i].setdefault('_source', {})['geste'] = 'budget'
+    log(f'[réalisateur] budget de mouvement : {len(keep)} gestes gardés sur {len(cand)} ({len(beats)} répliques)')
 
 
 def summary(story):
@@ -286,6 +340,9 @@ def summary(story):
         rows.append(f"{i + 1:>2}. {b['who']:<8} {b.get('pose', 'neutre'):<10} geste={b.get('geste', 'aucun'):<12} "
                     f"énergie={b.get('energie', 0):.2f} {('caméra=' + b['move']) if b.get('move') else '':<13} "
                     f"réactions={b.get('react') or {}} ({b.get('_source', {}).get('geste', '')})")
+    for c in story.get('cast', []):
+        if c.get('entree'):
+            rows.append(f"entrée de {c['name']} (réplique {c.get('enter')}) : {c['entree']}")
     d = story.get('_director', {})
     rows.append(f"réalisateur : {d.get('backend')} {d.get('model', '')} en {d.get('seconds')} s")
     return '\n'.join(rows)

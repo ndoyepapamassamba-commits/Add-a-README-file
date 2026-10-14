@@ -89,6 +89,11 @@ mesurées par `scene.py`, `ecran-plans.json`) — au milieu fixe, les têtes tom
 - Gestes disponibles (25) : rire, joie, triste, pleure, peur, dispute, explique, pointe, haussement, salut de la main,
   révérence, bâille, poignée de main, tape dans la main, menace, frappe, boit, mange, téléphone, cherche, réfléchit,
   ramasse, lance, balaie, danse.
+- Entrées en scène stylées (100STYLE, CC BY 4.0, lecteur BVH, clips lus un par un dans le zip Zenodo) : colère, fier,
+  frimeur, ivre, pressé, joyeux, abattu, zombie, discret, téléphone, vieux, normal — choisis d'après la première réplique
+  de l'acteur, l'accroche, puis sa fiche (âge ≥ 60 → vieux).
+- Budget de mouvement (mesuré sur le film 6 : 14 gestes sur 18 répliques → mouvement 0,0294 > 0,027 de la chaîne) : la
+  moitié la plus forte des répliques garde son geste ; les gains vont de 0,35 à 0,9, sous les limites cartoon.
 
 ## 4. Feuille de route (gratuit, sans abonnement)
 

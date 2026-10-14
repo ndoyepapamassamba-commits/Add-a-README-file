@@ -481,5 +481,141 @@
         }
       }
     }
+  },
+  "entrees": {
+    "_": "Entrée en scène d'un acteur qui arrive sur sa réplique (cast 'enter') : la marche STYLÉE de 100STYLE (CC BY 4.0, « The 100STYLE Dataset - Ian Mason », Zenodo 8127870) jouée dans le plan de la carte pendant l'arrivée (1,2 s). Le réalisateur choisit le style d'après la première réplique de l'acteur et sa fiche.",
+    "entre_normal": {
+      "desc": "marche neutre",
+      "clip": "100style/Neutral_FW",
+      "mots": []
+    },
+    "entre_colere": {
+      "desc": "arrive en colère",
+      "clip": "100style/Angry_FW",
+      "mots": [
+        "colère",
+        "énervé",
+        "furieux",
+        "voleur",
+        "escroc",
+        "arrête"
+      ]
+    },
+    "entre_fier": {
+      "desc": "arrive fier, torse bombé",
+      "clip": "100style/Proud_FW",
+      "mots": [
+        "patron",
+        "chef",
+        "fier",
+        "excellence",
+        "directeur",
+        "docteur",
+        "maître"
+      ]
+    },
+    "entre_frimeur": {
+      "desc": "arrive en frimant",
+      "clip": "100style/Strutting_FW",
+      "mots": [
+        "frimeur",
+        "regardez-moi",
+        "nouvelle voiture",
+        "bling",
+        "ma montre",
+        "champion"
+      ]
+    },
+    "entre_ivre": {
+      "desc": "arrive titubant",
+      "clip": "100style/Drunk_FW",
+      "mots": [
+        "ivre",
+        "bière",
+        "soûl",
+        "bourré",
+        "un dernier verre"
+      ]
+    },
+    "entre_presse": {
+      "desc": "arrive pressé",
+      "clip": "100style/Rushed_FW",
+      "mots": [
+        "pressé",
+        "vite",
+        "retard",
+        "dépêche",
+        "urgence",
+        "vite vite"
+      ]
+    },
+    "entre_joyeux": {
+      "desc": "arrive tout content",
+      "clip": "100style/Elated_FW",
+      "mots": [
+        "content",
+        "heureux",
+        "génial",
+        "bonne nouvelle",
+        "on a gagné",
+        "youpi"
+      ]
+    },
+    "entre_abattu": {
+      "desc": "arrive abattu",
+      "clip": "100style/Depressed_FW",
+      "mots": [
+        "triste",
+        "déprimé",
+        "perdu",
+        "malheur",
+        "hélas",
+        "désolé"
+      ]
+    },
+    "entre_zombie": {
+      "desc": "arrive épuisé, traînant",
+      "clip": "100style/Zombie_FW",
+      "mots": [
+        "zombie",
+        "épuisé",
+        "malade",
+        "crevé",
+        "pas dormi"
+      ]
+    },
+    "entre_discret": {
+      "desc": "arrive sur la pointe des pieds",
+      "clip": "100style/Tiptoe_FW",
+      "mots": [
+        "chut",
+        "discret",
+        "doucement",
+        "en cachette",
+        "personne ne me voit"
+      ]
+    },
+    "entre_telephone": {
+      "desc": "arrive au téléphone",
+      "clip": "100style/OnPhoneRight_FW",
+      "mots": [
+        "allô",
+        "téléphone",
+        "portable",
+        "je te rappelle"
+      ]
+    },
+    "entre_vieux": {
+      "desc": "arrive à pas lents de vieille personne",
+      "clip": "100style/Old_FW",
+      "mots": [
+        "vieux",
+        "grand-père",
+        "grand-mère",
+        "papi",
+        "mamie",
+        "mes genoux"
+      ]
+    }
   }
 }

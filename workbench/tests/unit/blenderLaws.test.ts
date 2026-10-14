@@ -580,3 +580,100 @@ print(json.dumps({'rules': rules, 'v': v, 'bad': bad, 'beats': [{k: b.get(k) for
     expect(r.backend).toBe('regles');
   });
 });
+
+describe('Entrées en scène stylées (mocap.py BVH, 100STYLE) — lecteur BVH, clip par étiquette, règles du réalisateur', () => {
+  it('reads a BVH skeleton and motion, gives the card curves, and maps an entrance tag to a 100STYLE clip', () => {
+    const r = py(`
+import json, os, tempfile, numpy as np, mocap, director
+bvh = """HIERARCHY
+ROOT Hips
+{
+ OFFSET 0 0 0
+ CHANNELS 6 Xposition Yposition Zposition Yrotation Xrotation Zrotation
+ JOINT Chest4
+ {
+  OFFSET 0 40 0
+  CHANNELS 3 Yrotation Xrotation Zrotation
+  JOINT Neck
+  {
+   OFFSET 0 20 0
+   CHANNELS 3 Yrotation Xrotation Zrotation
+   JOINT Head
+   {
+    OFFSET 0 10 0
+    CHANNELS 3 Yrotation Xrotation Zrotation
+    End Site
+    {
+     OFFSET 0 10 0
+    }
+   }
+  }
+ }
+ JOINT LeftToe
+ {
+  OFFSET -10 -90 0
+  CHANNELS 3 Yrotation Xrotation Zrotation
+  End Site
+  {
+   OFFSET 0 0 5
+  }
+ }
+ JOINT RightToe
+ {
+  OFFSET 10 -90 0
+  CHANNELS 3 Yrotation Xrotation Zrotation
+  End Site
+  {
+   OFFSET 0 0 5
+  }
+ }
+}
+MOTION
+Frames: 4
+Frame Time: 0.0333333
+"""
+# 4 frames: the chest tilts 0 → 10° → 0 → -10° sideways (Z rotation of Chest4), the hips bob 0 / 2 / 0 / 2 units.
+z = [0] * 21  # 6 channels (Hips) + 3 × 5 joints
+rows = [list(z), list(z), list(z), list(z)]
+rows[1][1] = 2; rows[1][8] = 10   # frame 2: hips 2 units up, chest Z rotation +10°
+rows[3][1] = 2; rows[3][8] = -10  # frame 4: hips 2 units up, chest Z rotation −10°
+with tempfile.NamedTemporaryFile('w', suffix='.bvh', delete=False, encoding='utf-8') as f:
+    f.write(bvh + '\\n'.join(' '.join(str(v) for v in r) for r in rows) + '\\n')
+    path = f.name
+skel, frames, fps = mocap.parse_bvh(path)
+c = mocap.card_curves_bvh(skel, frames, fps=30, src_fps=fps, height_m=1.6)
+os.unlink(path)
+print(json.dumps({'joints': skel['joints'], 'frames': list(frames.shape), 'fps': fps, 'spine_deg': [round(float(np.degrees(v)), 1) for v in c['spine']], 'head_deg': [round(float(np.degrees(v)), 1) for v in c['head']],
+  'bob_cm': [round(100 * float(v), 1) for v in c['bob']], 'seconds': c['seconds'],
+  'clip': mocap.entrance_clip('entre_colere'), 'none': mocap.entrance_clip('x'),
+  'presse': mocap.search_entrance('Pardon chef, je suis en retard'), 'normal': mocap.search_entrance('Bonjour'),
+  'vieux': mocap.search_entrance('Mes genoux me font mal')}))`);
+    if (!r) return;
+    expect(r.joints).toEqual(['Hips', 'Chest4', 'Neck', 'Head', 'Head_end', 'LeftToe', 'LeftToe_end', 'RightToe', 'RightToe_end']);
+    expect(r.frames).toEqual([4, 21]);
+    expect(r.fps).toBe(30);
+    // Chest4's own rotation moves its children (neck, head), not its position: the HEAD tilts ±10° relative to the
+    // chest, the chest line (hips → Chest4) stays vertical; the hips bob 2 units on a 160-unit body (1,6 m) → 2 cm.
+    // Sign convention of the card curves (as for CMU): a positive tilt sends the top toward −x, so a +10° Z rotation
+    // reads −10°.
+    const head = r.head_deg as number[];
+    expect(head[1]! - head[0]!).toBeCloseTo(-10, 0);
+    expect(head[3]! - head[0]!).toBeCloseTo(10, 0);
+    expect(Math.max(...(r.spine_deg as number[]).map(Math.abs))).toBeLessThan(0.5);
+    const bob = r.bob_cm as number[];
+    expect(Math.abs(bob[1]! - bob[0]!)).toBeCloseTo(2.0, 0);
+    expect(r.seconds as number).toBeCloseTo(4 / 30, 3);
+    expect(r).toMatchObject({ clip: 'bvh:100style/Angry_FW', none: null, presse: 'entre_presse', normal: 'entre_normal', vieux: 'entre_vieux' });
+  });
+  it('the director gives every entering actor a walk style from its first line or its sheet (age ≥ 60 → old)', () => {
+    const r = py(`
+import json, director
+story = {'title': 'T', 'hook': 'H', 'cast': [{'id': 'a', 'name': 'MODOU'}, {'id': 'b', 'name': 'GRAND-PÈRE NDIAYE', 'enter': 1}, {'id': 'c', 'name': 'KOFFI', 'enter': 2}, {'id': 'd', 'name': 'TANTIE AWA', 'enter': 2, 'entree': 'entre_discret'}],
+  'beats': [{'who': 'a', 'text': 'Bonjour'}, {'who': 'b', 'text': 'Bonjour les enfants.'}, {'who': 'c', 'text': 'Pardon, je suis en retard !'}, {'who': 'd', 'text': 'Chut.'}]}
+rig = {'cast': {}}
+d = director.direct(story, rig, mode='regles', log=lambda *a: None)
+print(json.dumps({c['id']: c.get('entree') for c in d['cast']}))`);
+    if (!r) return;
+    expect(r).toEqual({ a: null, b: 'entre_vieux', c: 'entre_presse', d: 'entre_discret' }); // the author's choice is kept
+  });
+});

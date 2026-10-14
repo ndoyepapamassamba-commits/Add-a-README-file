@@ -637,7 +637,7 @@ def main():
         if not poses[c] or poses[c][0][0] > 0:
             poses[c].insert(0, [0, 'neutre'])
     # The director's GESTURES (director.py: beat 'geste' = a tag of direction-vocab.json, 'energie' 0…1): a captured CMU
-    # clip over the spoken line, dosed by the energy (gain 0,5 … 1,3) — plan tracks 'clips', read by scene.py.
+    # clip over the spoken line, dosed by the energy (gain 0,35 … 0,9) — plan tracks 'clips', read by scene.py.
     clips = {c: [] for c in ids}
     for i, seg in enumerate(timeline):
         b = beats[i]
@@ -647,9 +647,14 @@ def main():
         f0, f1 = int(round(seg['speak0'] * fps)), int(round(seg['end'] * fps))
         if f1 - f0 >= 4:
             e = min(1.0, max(0.0, float(b.get('energie', 0.6))))
-            clips[b['who']].append([f0, f1, kind, round(0.5 + 0.8 * e, 2)])
+            clips[b['who']].append([f0, f1, kind, round(0.35 + 0.55 * e, 2)])
     # Entrances (an actor arrives on its beat) and presence.
     enter = {c: (int(round(timeline[cast[c]['enter']]['start'] * fps)) if cast[c].get('enter') is not None else 0) for c in ids}
+    # The director's ENTRANCE style (cast 'entree' → a 100STYLE walk): played over the arrival, full energy.
+    for c in ids:
+        kind = mocap.entrance_clip(cast[c].get('entree') or '') if enter[c] > 0 else None
+        if kind:
+            clips[c].insert(0, [enter[c], enter[c] + int(1.2 * fps), kind, 1.0])
     # Shots: the story's, else a cycle like the owner's TikToks (a two-shot when someone enters, close-ups on the speaker).
     shots = []
     k = 0
