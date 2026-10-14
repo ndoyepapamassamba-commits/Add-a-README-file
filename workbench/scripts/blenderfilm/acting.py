@@ -48,7 +48,18 @@ def shot_scale(shots, aid, nF, fps):
     return np.clip(np.convolve(padded, np.ones(n) / n, mode='same')[n:-n], 0.0, 1.0)
 
 
-def curves(jaw, partner_nods, x, nF, fps, seed, on=True, scale=None):
+def mocap_spans(poses, nF, kinds):
+    """(start, end, kind) of every span where the actor plays a pose that has a captured clip (track poses are
+    (frame, kind) changes; the pose shows from frame + 1)."""
+    spans = []
+    for i, (f, kind) in enumerate(poses):
+        end = poses[i + 1][0] if i + 1 < len(poses) else nF
+        if kind in kinds and end - f >= 4:
+            spans.append((f, end, kind))
+    return spans
+
+
+def curves(jaw, partner_nods, x, nF, fps, seed, on=True, scale=None, clips=None, height_m=1.6):
     """Per-frame acting curves of one actor (index = frame − 1).
     jaw: the actor's mouth opening track; partner_nods: the other actors' emphasis nods; x: the actor's place on the
     stage (≤ 0 = left, its partner on the right). Returns radians for head / spine / root rotations, the breath (−1…1)
@@ -77,5 +88,19 @@ def curves(jaw, partner_nods, x, nF, fps, seed, on=True, scale=None):
             + toward * math.radians(1.2) * lean)
     spine = k * (math.radians(0.8) * sway + toward * math.radians(4.5) * lean)
     root = k * (math.radians(1.2) * weight_shifts(nF, fps, seed) + math.radians(0.6) * sway)
+    lift = np.zeros(nF + 1)
+    squash = np.zeros(nF + 1)
+    # REAL HUMAN MOTION on the poses that have a captured clip (CMU mocap, mocap.py): a laugh doubles over, a shrug
+    # lifts, a pointing argument leans in — the clip's most expressive stretch, in the plane of our cards.
+    for (a, b, kind) in clips or []:
+        import mocap
+        o = mocap.overlay(kind, b - a, fps, height_m)
+        kk = k[a:b]
+        mirror = toward  # the clip's lean toward its partner follows ours
+        head[a:b] += kk * o['head'] * mirror
+        spine[a:b] += kk * o['spine'] * mirror
+        root[a:b] += kk * o['root'] * mirror
+        lift[a:b] += kk * o['lift']
+        squash[a:b] = np.maximum(squash[a:b], kk * o['squash'])
     return {'head': head, 'spine': spine, 'root': root, 'breath': breath * k, 'breath_amp': 0.022, 'listen': listen,
-            'bob': 0.004 * energy * bob * k, 'toward': toward, 'speak': speak}
+            'bob': 0.004 * energy * bob * k, 'toward': toward, 'speak': speak, 'lift': lift, 'squash': squash}

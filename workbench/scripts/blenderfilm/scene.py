@@ -37,6 +37,7 @@ def args():
     ap.add_argument('--force', action='store_true', help='rendre malgré un défaut critique du preflight (déconseillé)')
     ap.add_argument('--decor', default='', help='une autre vue du même lieu (coupe du plan : les images --frames dans cette vue)')
     ap.add_argument('--sans-visage', action='store_true', help='ignorer les visages vivants (liveface.py) : dessins fixes')
+    ap.add_argument('--sans-mocap', action='store_true', help='sans les clips de capture de mouvement CMU — comparaison A/B')
     ap.add_argument('--sans-suivi', action='store_true', help='caméra fixe sur les plans serrés (sans suivre le visage) — comparaison A/B')
     ap.add_argument('--sans-jeu', action='store_true', help='corps sans la couche de jeu pilotée par la voix — comparaison A/B')
     ap.add_argument('--decor-fixe', action='store_true', help='décor sans vie (foule, vent, eau immobiles) — comparaison A/B')
@@ -58,6 +59,7 @@ def load_rgba(path):
     return img, px.reshape(h, w, 4)[::-1]  # top row first (image coordinates)
 
 
+MOCAP = True  # --sans-mocap: no captured clips on the poses (A/B check)
 JEU_CORPS = True  # --sans-jeu: bodies without the voice-driven acting layer (A/B check)
 DECOR_FIXE = False  # --decor-fixe: the painted set stays still (A/B check of the decor life)
 VISAGE = {}  # the film's living faces: <plan dir>/visage/<actor>/<pose>/f00001.png … (liveface.py)
@@ -1081,8 +1083,8 @@ def main():
     vdir = os.path.join(os.path.dirname(os.path.abspath(A.plan)), 'visage')
     if not A.sans_visage and os.path.isdir(vdir):
         VISAGE.update({'dir': vdir, 'frames': plan['frames']})
-    global DECOR_FIXE, JEU_CORPS
-    DECOR_FIXE, JEU_CORPS = A.decor_fixe, not A.sans_jeu
+    global DECOR_FIXE, JEU_CORPS, MOCAP
+    DECOR_FIXE, JEU_CORPS, MOCAP = A.decor_fixe, not A.sans_jeu, not A.sans_mocap
     if A.decor:
         if A.decor not in rig['decors']:
             raise SystemExit(f'vue inconnue du kit : {A.decor}')
@@ -1351,8 +1353,22 @@ def animate(plan, actors, fps):
         # visible breath, weight shifts, listening nods.
         import acting
         partner_nods = [plan['tracks'][o]['nod'] for o in plan['tracks'] if o != aid]
+        clips = []
+        if JEU_CORPS and MOCAP:
+            import mocap
+            try:
+                clips = acting.mocap_spans(tr['poses'], nF, mocap.LIBRARY)
+                for a_, b_, k_ in clips:
+                    mocap.clip_curves(k_, fps, A['plan'].get('height') or 1.6)
+            except Exception as e:  # noqa: BLE001 — no network for the first download: the procedural acting stays
+                print(f'[mocap] clips indisponibles ({e.__class__.__name__}) : jeu procédural seul', flush=True)
+                clips = []
         cv = acting.curves(jaw, partner_nods, A['plan']['x'], nF, fps, seed, on=JEU_CORPS,
-                           scale=acting.shot_scale(plan['shots'], aid, nF, fps))
+                           scale=acting.shot_scale(plan['shots'], aid, nF, fps), clips=clips,
+                           height_m=A['plan'].get('height') or 1.6)
+        if clips:
+            print(f"[mocap] {A['plan'].get('name', aid)} : {', '.join(f'{k_} {(b_ - a_) / fps:.1f} s' for a_, b_, k_ in clips)} (capture CMU)", flush=True)
+        lift, squash = cv['lift'], cv['squash']
         head_rot, spine_rot, root_rot = cv['head'], cv['spine'], cv['root']
         breath, breath_amp, listen_nod, bobv = cv['breath'], cv['breath_amp'], cv['listen'], cv['bob']
         for kind, P in poses.items():
@@ -1378,12 +1394,14 @@ def animate(plan, actors, fps):
                     nd = float(nod[i] if i < len(nod) else 0) + float(listen_nod[i])
                     pb['head'].location[1] = -0.024 * nd + float(bobv[i])
                     pb['head'].keyframe_insert('location', index=1, frame=f)
-                    pb['spine'].scale[1] = 1 + breath_amp * float(breath[i])
+                    pb['spine'].scale[1] = (1 + breath_amp * float(breath[i])) * (1 - float(squash[i]))
                     pb['spine'].keyframe_insert('scale', index=1, frame=f)
                     pb['spine'].rotation_euler[2] = float(spine_rot[i])
                     pb['spine'].keyframe_insert('rotation_euler', index=2, frame=f)
                     pb['root'].rotation_euler[2] = float(root_rot[i])
                     pb['root'].keyframe_insert('rotation_euler', index=2, frame=f)
+                    pb['root'].location[1] = float(lift[i])  # along the root bone (feet → hips): up
+                    pb['root'].keyframe_insert('location', index=1, frame=f)
             for lid in P.lids:
                 prev = None
                 for f in range(1, nF + 1):

@@ -432,6 +432,77 @@ print(json.dumps({'start': float(sc[0]), 'two': float(sc[120]), 'cu': float(sc[2
     expect(r.ratio as number).toBeCloseTo(0.45, 2); // the lean in a close-up = 45 % of the two-shot lean
   });
 
+  it('captured motion (ASF/AMC) is read in the plane of our cards, clamped for a drawing, played once then settles', () => {
+    const r = py(`
+import json, math, os, tempfile, numpy as np, mocap
+d = tempfile.mkdtemp()
+asf = os.path.join(d, 't.asf'); amc = os.path.join(d, 't.amc')
+open(asf, 'w').write('''
+:units
+  length 1.0
+  angle deg
+:root
+   order TX TY TZ RX RY RZ
+   axis XYZ
+   position 0 0 0
+   orientation 0 0 0
+:bonedata
+  begin
+     name lowerback
+     direction 0 1 0
+     length 10
+     axis 0 0 0 XYZ
+    dof rx ry rz
+  end
+  begin
+     name thorax
+     direction 0 1 0
+     length 10
+     axis 0 0 0 XYZ
+    dof rx ry rz
+  end
+  begin
+     name upperneck
+     direction 0 1 0
+     length 3
+     axis 0 0 0 XYZ
+    dof rx ry rz
+  end
+  begin
+     name head
+     direction 0 1 0
+     length 5
+     axis 0 0 0 XYZ
+    dof rx ry rz
+  end
+:hierarchy
+  begin
+    root lowerback
+    lowerback thorax
+    thorax upperneck
+    upperneck head
+  end
+''')
+lines = [':FULLY-SPECIFIED', ':DEGREES']
+for i in range(240):
+    a = 20 * math.sin(i / 240 * 2 * math.pi)  # the chest bends sideways ±20° (rz) over 2 s at 120 fps
+    lines += [str(i + 1), 'root 0 40 0 0 0 0', f'lowerback 0 0 {a:.3f}', 'thorax 0 0 0', 'upperneck 0 0 0', 'head 0 0 0']
+open(amc, 'w').write(chr(10).join(lines))
+c = mocap.card_curves(mocap.parse_asf(asf), mocap.parse_amc(amc), fps=25)
+mocap._CURVES[('t', 25, 1.6)] = c
+mocap.LIBRARY['t'] = {'subject': 'x', 'trial': 'x', 'desc': 'test', 'words': ('test',)}
+o = mocap.overlay('t', 80, 25)
+print(json.dumps({'tilt': math.degrees(float(np.ptp(c['spine']))), 'secs': c['seconds'], 'clamp': math.degrees(float(np.max(np.abs(o['spine'])))),
+  'start': float(o['spine'][0]), 'end': float(o['spine'][-1]), 'prompt': mocap.from_prompt('elle se plie de rire')}))`);
+    if (!r) return;
+    expect(r.tilt as number).toBeGreaterThan(35); // ±20° sideways bend read as ≈ 40° peak to peak, seen from the front
+    expect(r.secs as number).toBeCloseTo(2.0, 1);
+    expect(r.clamp as number).toBeLessThanOrEqual(9.01); // a drawn card never leans more than 9°
+    expect(r.start).toBe(0); // starts from our drawing's pose
+    expect(Math.abs(r.end as number)).toBeLessThan(1e-6); // played once, then settles back (no frozen offset)
+    expect(r.prompt).toBe('rire');
+  });
+
   it('the lips meet on m / b / p heard by Rhubarb, the rest of the loudness lips is untouched', () => {
     const r = py(`
 import json, numpy as np, lipsync
