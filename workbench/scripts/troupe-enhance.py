@@ -13,7 +13,7 @@ TROUPE — improves the owner's private sets before they are embedded (run once;
     floor (it then builds a 3D forestage).
 
 Models are downloaded once into ~/.cache/massamba-models (never committed). The manifest gets `hd` and `depth` per set.
-Usage: python3 scripts/troupe-enhance.py [--force]
+Usage: python3 scripts/troupe-enhance.py [--force] [--seulement <lieu>]   (--seulement : les décors dont le nom ou le lieu contient ce texte)
 """
 import json
 import os
@@ -125,7 +125,10 @@ def main() -> None:
     os.makedirs(os.path.join(ROOT, 'hd'), exist_ok=True)
     sr = dav2 = seg = None
     seg_tried = False
+    only = sys.argv[sys.argv.index('--seulement') + 1].lower() if '--seulement' in sys.argv else ''
     for d in man.get('decors', []):
+        if only and only not in (d['name'] + ' ' + d.get('lieu', '')).lower():
+            continue
         src = os.path.join(ROOT, d['file'])
         stem = os.path.splitext(os.path.basename(d['file']))[0]
         hd_rel, dp_rel = f'hd/{stem}.jpg', f'hd/{stem}.depth.png'

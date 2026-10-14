@@ -35,6 +35,7 @@ def args():
     ap.add_argument('--scale', type=float, default=1.0, help='résolution relative (0.5 = aperçu rapide)')
     ap.add_argument('--blend', default='', help='enregistre aussi le .blend')
     ap.add_argument('--force', action='store_true', help='rendre malgré un défaut critique du preflight (déconseillé)')
+    ap.add_argument('--decor', default='', help='une autre vue du même lieu (coupe du plan : les images --frames dans cette vue)')
     return ap.parse_args(argv)
 
 
@@ -928,6 +929,12 @@ def main():
     rig = json.load(open(plan['rig'], encoding='utf-8'))
     rig_dir = rig['dir']
     life = plan.get('life') or {}
+    if A.decor:
+        if A.decor not in rig['decors']:
+            raise SystemExit(f'vue inconnue du kit : {A.decor}')
+        plan['decor'] = A.decor
+        if life:
+            life['kit'] = A.decor
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import world as livingworld
     baked = None

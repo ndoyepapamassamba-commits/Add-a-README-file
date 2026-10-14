@@ -311,6 +311,41 @@ def punch_sfx(kind='boom'):
     return (np.sin(2 * np.pi * (500 + 1400 * tt / tt[-1]) * tt) * np.exp(-tt * 30) * 0.5).astype(np.float32)
 
 
+def place_views(name, decors):
+    """The views of the story's place, in order: `decor` names one view of a place (« Gare Routière — Adjamé · vue 2 »)
+    or the place itself (« Gare Routière — Adjamé »); a set without a place is its only view."""
+    d = decors.get(name)
+    lieu = (d or {}).get('lieu') or next((v['lieu'] for v in decors.values() if name and name in (v.get('lieu_nom'), v.get('lieu'))), None)
+    if lieu is None:
+        return [name] if name in decors else []
+    views = sorted((k for k, v in decors.items() if v.get('lieu') == lieu), key=lambda k: decors[k].get('vue', 0))
+    if name in views:  # the named view opens the film
+        views.remove(name)
+        views.insert(0, name)
+    return views
+
+
+def cut_views(shots, views, fps, nF, punch_frame=None, every_s=15.0, min_s=4.0):
+    """Where the film changes view of its place: about every `every_s` seconds, only where a shot starts anyway (a cut
+    never interrupts a shot), each view held at least `min_s` seconds, and never between the punchline and the reaction
+    to it (the gag stays in one picture). Returns [{'decor', 'start', 'end'}] (frames, end excluded)."""
+    n = min(len(views), max(1, int(round(nF / (every_s * fps)))))
+    if n < 2:
+        return [{'decor': views[0], 'start': 0, 'end': nF}] if views else []
+    cands = sorted({int(sh['start']) for sh in shots if 0 < sh['start'] < nF and (punch_frame is None or sh['start'] <= punch_frame)})
+    cuts, last = [], 0
+    for k in range(1, n):
+        want = k * nF / n
+        ok = [f for f in cands if f - last >= min_s * fps and nF - f >= min_s * fps]
+        if not ok:
+            break
+        f = min(ok, key=lambda f: abs(f - want))
+        cuts.append(f)
+        last = f
+    edges = [0] + cuts + [nF]
+    return [{'decor': views[i % len(views)], 'start': edges[i], 'end': edges[i + 1]} for i in range(len(edges) - 1)]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--story', required=True)
@@ -330,6 +365,10 @@ def main():
         if c['name'] not in rig['cast']:
             raise SystemExit(f"personnage absent du kit : {c['name']}")
     beats = story['beats']
+    # The place's views (the owner's boards give several per place): the film opens in the first and cuts to the others.
+    views = place_views(story.get('decor', ''), rig.get('decors', {}))
+    if views:
+        story['decor'] = views[0]
     # GESTURE ↔ STORY: a pointing gesture the drawing cannot play (the pointing law) is replaced by the closest pose by
     # intent, and the line adapted — HERE, before the voices are recorded (gesture.py; the same law as the render).
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -621,12 +660,16 @@ def main():
         pb = story['punch']
         seg = timeline[pb['beat']]
         emoji.append({'start': round(seg['speak1'] + 0.7, 3), 'end': round(min(seg['end'], seg['speak1'] + 1.55), 3), 'char': pb.get('emoji', '😂')})
+    pf = int(round(timeline[story['punch']['beat']]['start'] * fps)) if story.get('punch') else None
+    coupes = cut_views(shots, views, fps, nF, pf, every_s=float(story.get('vue_toutes_s', 15.0))) if story.get('vues', True) is not False else []
+    if len(coupes) > 1:
+        print('[plan] vues du lieu : ' + ' → '.join(f"{c['decor']} ({(c['end'] - c['start']) / fps:.1f} s)" for c in coupes), flush=True)
     plan = {
         'title': story.get('title', ''), 'fps': fps, 'width': story.get('size', [576, 1024])[0], 'height': story.get('size', [576, 1024])[1], 'frames': nF, 'seconds': round(nF / fps, 3),
         'rig': os.path.abspath(a.rig), 'decor': story['decor'], 'audio': os.path.abspath(os.path.join(a.out, 'mix.wav')), 'speed': round(speed, 3),
         'actors': [{'id': c, 'name': cast[c]['name'], 'height': cast[c].get('height', 1.7), 'x': cast[c].get('x', 0), 'enter': enter[c], 'mirror': cast[c].get('mirror')} for c in ids],
         'tracks': {c: {'jaw': [round(float(v), 3) for v in jaw[c]], 'turn': [round(float(v), 3) for v in turn[c]], 'nod': [round(float(v), 3) for v in nod[c]], 'blinks': blinks[c], 'poses': poses[c]} for c in ids},
-        'shots': shots, 'captions': captions, 'emoji': emoji, 'timeline': timeline,
+        'shots': shots, 'captions': captions, 'emoji': emoji, 'timeline': timeline, 'coupes': coupes if len(coupes) > 1 else [],
         'hook': story.get('hook', ''), 'life': life,
         # The story itself travels with the plan: the scene's preflight checks the narrative against it.
         'story': story,

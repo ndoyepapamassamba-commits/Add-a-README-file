@@ -321,7 +321,10 @@ for x in (100, 300, 500):  # three standing passers-by whose heads are on row 16
     lab[160:260, x:x + 30] = G.PERSON
 fit_people = G.horizon_fit(lab, walk)
 fit_floor = G.horizon_fit(np.zeros((H, W), np.uint8), walk)
-print(json.dumps({'gaps': gaps, 'people': fit_people, 'floor': fit_floor}))`);
+crowd = np.zeros((H, W), np.uint8)
+crowd[170:300, 100:700] = G.PERSON  # a dense crowd parsed as one blob, its head line on row 170
+fit_crowd = G.horizon_fit(crowd, walk)
+print(json.dumps({'gaps': gaps, 'people': fit_people, 'floor': fit_floor, 'crowd': fit_crowd}))`);
     if (!r) return;
     expect(r.gaps).toEqual([0.26, 0.26, 0.26, 0.4, 1.51]); // no long breath inside one story
     const p = r.people as Record<string, number | string>;
@@ -331,5 +334,41 @@ print(json.dumps({'gaps': gaps, 'people': fit_people, 'floor': fit_floor}))`);
     expect(p.mH).toBeCloseTo((1.6 * 400) / (380 - 168), 1); // eye height / (feet row − horizon row) × picture height
     expect(f.methode).toBe('bout du sol praticable');
     expect(f.mH as number).toBeGreaterThan(p.mH as number); // the far end of the floor lies below the horizon: a larger scale
+    const c = r.crowd as Record<string, number | string>;
+    expect(c.methode).toBe('ligne des têtes de la foule');
+    expect(c.horizon).toBeCloseTo(0.445, 2); // the crowd's head line (row 170 = 42.5 %) + 2 %
+  });
+
+  it('a place with several views: the film opens in the named view and cuts only between shots, never inside the gag', () => {
+    const r = py(`
+import json, plan as P
+decors = {'Gare — Adjamé · vue 1': {'lieu': 'gare', 'lieu_nom': 'Gare — Adjamé', 'vue': 1}, 'Gare — Adjamé · vue 2': {'lieu': 'gare', 'vue': 2},
+          'Gare — Adjamé · vue 3': {'lieu': 'gare', 'vue': 3}, 'Salon': {}}
+fps, nF = 25, 25 * 60
+shots = [{'start': s} for s in range(0, nF, 100)]  # a shot every 4 s
+punch = 1300  # the punchline starts at 52 s: no cut after it (the reaction stays in the same picture)
+cuts = P.cut_views(shots, P.place_views('Gare — Adjamé', decors), fps, nF, punch)
+print(json.dumps({'place': P.place_views('Gare — Adjamé', decors), 'named': P.place_views('Gare — Adjamé · vue 2', decors),
+  'single': P.place_views('Salon', decors), 'none': P.place_views('Lune', decors), 'cuts': cuts,
+  'short': P.cut_views(shots[:3], ['A', 'B'], fps, 250)}))`);
+    if (!r) return;
+    expect(r.place).toEqual(['Gare — Adjamé · vue 1', 'Gare — Adjamé · vue 2', 'Gare — Adjamé · vue 3']);
+    expect((r.named as string[])[0]).toBe('Gare — Adjamé · vue 2'); // the view the story names opens the film
+    expect(r.single).toEqual(['Salon']);
+    expect(r.none).toEqual([]);
+    const cuts = r.cuts as { decor: string; start: number; end: number }[];
+    expect(cuts.map((c) => c.decor)).toEqual([
+      'Gare — Adjamé · vue 1',
+      'Gare — Adjamé · vue 2',
+      'Gare — Adjamé · vue 3',
+    ]);
+    expect(cuts[0].start).toBe(0);
+    expect(cuts[cuts.length - 1].end).toBe(1500);
+    for (let i = 1; i < cuts.length; i++) {
+      expect(cuts[i].start).toBe(cuts[i - 1].end); // no gap, no overlap
+      expect(cuts[i].start % 100).toBe(0); // on a shot boundary
+      expect(cuts[i].start).toBeLessThanOrEqual(1300); // never between the punchline and its reaction
+    }
+    expect(r.short).toEqual([{ decor: 'A', start: 0, end: 250 }]); // a 10 s film keeps one view
   });
 });

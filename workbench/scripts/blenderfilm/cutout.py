@@ -389,14 +389,32 @@ def cut_sheet(path, faces, bodies, out_dir, slug, gallery=False):
     return poses
 
 
+def decor_entries(man, troupe):
+    """The kit's sets as the film reads them (only those improved by troupe-enhance.py: HD + relief)."""
+    return {d['name']: {'image': os.path.abspath(os.path.join(troupe, d['hd'])), 'depth': os.path.abspath(os.path.join(troupe, d['depth'])), 'fit': d['fit'],
+                        # scene parse (ADE20K labels) and walkable mask — the « sol praticable » law (ground.py)
+                        **{k: os.path.abspath(os.path.join(troupe, d[k])) for k in ('seg', 'floor') if d.get(k)},
+                        # the place this set is one view of (several views of a place: the film cuts between them)
+                        **{k: d[k] for k in ('lieu', 'lieu_nom', 'vue') if d.get(k) is not None}}
+            for d in man.get('decors', []) if d.get('hd')}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--troupe', required=True, help='dossier du kit troupe (manifest.json + planches + hd/)')
     ap.add_argument('--out', required=True)
     ap.add_argument('--only', default='', help='noms séparés par des virgules (défaut : toute la troupe)')
+    ap.add_argument('--decors', action='store_true', help='mettre à jour seulement les décors d’un rig déjà découpé (nouveaux lieux du kit)')
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     man = json.load(open(os.path.join(a.troupe, 'manifest.json'), encoding='utf-8'))
+    if a.decors:
+        rp = os.path.join(a.out, 'rig.json')
+        rig = json.load(open(rp, encoding='utf-8'))
+        rig['decors'] = decor_entries(man, a.troupe)
+        json.dump(rig, open(rp, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+        print(f"[cutout] décors du rig mis à jour : {len(rig['decors'])}")
+        return
     only = {x.strip().upper() for x in a.only.split(',') if x.strip()}
     cast = {}
     for p in man['planches']:
@@ -428,10 +446,7 @@ def main():
         rig = sum(1 for f in figs if f['face'])
         print(f"[cutout] {g['file']}: {len(figs)} figures, {rig} visages mesurés, {added} nouveaux personnages", flush=True)
     print(f"[cutout] troupe : {len(cast)} personnages", flush=True)
-    decors = {d['name']: {'image': os.path.abspath(os.path.join(a.troupe, d['hd'])), 'depth': os.path.abspath(os.path.join(a.troupe, d['depth'])), 'fit': d['fit'],
-                          # scene parse (ADE20K labels) and walkable mask — the « sol praticable » law (ground.py)
-                          **{k: os.path.abspath(os.path.join(a.troupe, d[k])) for k in ('seg', 'floor') if d.get(k)}}
-              for d in man.get('decors', []) if d.get('hd')}
+    decors = decor_entries(man, a.troupe)
     json.dump({'cast': cast, 'decors': decors, 'dir': os.path.abspath(a.out)}, open(os.path.join(a.out, 'rig.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1, default=lambda o: o.item() if hasattr(o, 'item') else str(o))
     print(f"[cutout] rig → {os.path.join(a.out, 'rig.json')}")
 

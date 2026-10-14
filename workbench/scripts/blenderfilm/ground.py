@@ -256,8 +256,9 @@ def horizon_fit(labels, walk, eye=1.6, feet=0.95, min_blob=0.0004):
     """The metric scale of a real photo used as a set (the engine's `fit`), from the HORIZON of a level camera held at
     eye height: on the ground plane, one pixel at row y measures eye / (y - y_horizon) metres — whatever the lens. The
     horizon is read from the painted people (standing adults' heads line up on the horizon of an eye-level photo, the
-    classic perspective rule), else from the far end of the walkable floor (a lower bound of the horizon). The actors
-    stand at row `feet` (share of the height). Returns {'mH', 'floor', 'cx', 'horizon', 'methode'}."""
+    classic perspective rule) — separate figures, or the head line of a dense crowd —, else from the far end of the
+    walkable floor (a lower bound of the horizon). The actors stand at row `feet` (share of the height).
+    Returns {'mH', 'floor', 'cx', 'horizon', 'methode'}."""
     lab = np.asarray(labels)
     H, W = lab.shape[:2]
     person = lab == PERSON
@@ -273,8 +274,13 @@ def horizon_fit(labels, walk, eye=1.6, feet=0.95, min_blob=0.0004):
                     tops.append(y)
         except ImportError:
             pass
+    # A dense crowd parses as one blob (no separate figures): its HEAD LINE — the top of the people, column by column —
+    # lies on the horizon all the same (every standing adult's head is at eye level, near or far).
+    cols = np.nonzero(person.any(0))[0] if person.any() else np.array([], int)
     if len(tops) >= 2:
         y_h, how = float(np.median(tops)) + 0.02 * H, f'têtes de {len(tops)} passants'  # heads ~10 cm above the eye
+    elif person.mean() >= 0.03 and len(cols) >= 0.2 * W:
+        y_h, how = float(np.median(person[:, cols].argmax(0))) + 0.02 * H, 'ligne des têtes de la foule'
     else:
         wk = np.asarray(walk) > 0
         rows = np.nonzero(wk.mean(1) > 0.05)[0]

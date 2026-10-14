@@ -69,6 +69,8 @@ blocage », « chercher automatiquement une autre alternative »)
 | Choisir la meilleure prise | faster-whisper « small » (réécoute) | MIT | prise la mieux comprise et la plus proche de la mélodie de la chaîne |
 | Photos de lieux libres (relais) | Wikimedia Commons, licence lue dans les données structurées (CC0 / domaine public) | CC0 / PDM | séries d'un même lieu = plusieurs vues ; User-Agent avec contact, reprise sur 429 |
 | Échelle d'une photo de lieu | règle de l'horizon (têtes des passants sur l'horizon, appareil à hauteur d'œil) | méthode classique | `ground.horizon_fit` |
+| Lire le nom d'un lieu (cartouche, enseigne) | EasyOCR (détecteur CRAFT) | Apache-2.0 (CRAFT : MIT) | planches de lieux du propriétaire → vues nommées et groupées par lieu |
+| Effacer un cartouche | LaMa big-lama (ONNX `Carve/LaMa-ONNX`) | Apache-2.0 | la scène reconstituée sous le nom ; repli OpenCV Telea |
 
 ## Leçons (à appliquer partout)
 - Une mesure de STYLE seule peut récompenser un défaut : la « distance au style » baissait quand l'IP-Adapter ajoutait des
@@ -83,3 +85,8 @@ blocage », « chercher automatiquement une autre alternative »)
   rejetée ainsi (≈ 4 bons sur 16) ; le classifieur de genre par la voix a été retenu (11/11).
 - Un bon score de « sol praticable » ne suffit pas pour un lieu : une autoroute a beaucoup de sol. Mesurer aussi le ciel,
   le bâti proche et les véhicules.
+- Planches de lieux : un cartouche se repère RANGÉE PAR RANGÉE depuis le coin bas gauche (fermer le masque de couleur
+  fusionne le ciel bleu avec le bleu marine) ; les rangées traversant de grosses lettres sont pontées ; une bande mince
+  plus haut que 85 % de la hauteur est une devanture, pas un cartouche. Sans cartouche, la grande enseigne peinte nomme
+  la vue (elle reste dans l'image). Deux vues ne sont du même lieu que si leurs villes ou quartiers ne se contredisent
+  pas (« Grand marché » de Bouaké ≠ d'Adjamé).

@@ -44,11 +44,15 @@ def main():
         run([sys.executable, os.path.join(HERE, 'plan.py'), '--story', a.story, '--rig', os.path.join(cut, 'rig.json'), '--voices', a.voices, '--out', out, '--seconds', str(a.seconds)])
     engine = a.engine or ('EEVEE' if a.blender else 'CYCLES')
     scene = [os.path.join(HERE, 'scene.py'), '--plan', os.path.join(out, 'plan.json'), '--out', os.path.join(out, 'frames'), '--engine', engine, '--samples', str(a.samples)]
+    # Several views of one place: each run of shots is rendered in its view (same actors, same sound — a cut).
+    coupes = json.load(open(os.path.join(out, 'plan.json'), encoding='utf-8')).get('coupes') or [None]
     with open(os.path.join(out, 'render.log'), 'a', encoding='utf-8') as log:
-        if a.blender:
-            run([a.blender, '-b', '--python', scene[0], '--'] + scene[1:], log)
-        else:
-            run([sys.executable] + scene, log)
+        for c in coupes:
+            part = scene + (['--decor', c['decor'], '--frames', f"{c['start'] + 1}-{c['end']}"] if c else [])
+            if a.blender:
+                run([a.blender, '-b', '--python', part[0], '--'] + part[1:], log)
+            else:
+                run([sys.executable] + part, log)
     film = os.path.join(out, 'film.mp4')
     run([sys.executable, os.path.join(HERE, 'finish.py'), '--plan', os.path.join(out, 'plan.json'), '--frames', os.path.join(out, 'frames'), '--out', film])
     qa = json.load(open(os.path.join(out, 'film.qa.json')))
