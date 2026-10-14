@@ -80,10 +80,10 @@ def rules(beat, i, story):
 
 
 def reaction_trigger(beat, i, story, r):
-    """Does the line give the partner a reason to react (a question, a cry, the punchline, an energetic line)?"""
+    """Does the line give the partner a reason to react (a cry, the punchline, an energetic line)?"""
     text = beat.get('text', '')
     punch = bool(story.get('punch')) and story['punch'].get('beat') == i
-    return punch or '!' in text or '?' in text or r['energie'] >= 0.7
+    return punch or '!' in text or r['energie'] >= 0.7  # a plain question is not a reason (film 8: 11 reactions on 18 lines)
 
 
 # ── 2/3. Modèles : le prompt, la grammaire, la validation ────────────────────────────────────────────────────────────
@@ -278,6 +278,7 @@ def direct(story, rig, mode='auto', log=print):
                 cid = next((c['id'] for c in present if c['name'] == name), None)
                 if cid and cid not in react and pose != 'neutre':
                     react[cid] = pose
+                    nb.setdefault('_react_model', []).append(cid)  # plan.py keeps it out of a close-up on cid
         if react:
             nb['react'] = react
         if 'move' not in b and v.get('camera') and v['camera'] != 'aucun' and v['camera'] in ('punch',) and story.get('punch', {}).get('beat') == i:

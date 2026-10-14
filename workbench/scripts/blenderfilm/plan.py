@@ -603,6 +603,45 @@ def main():
         while f < nF - 4:
             blinks[c].append(f)
             f += int(rng.uniform(2.5, 5.5) * fps)
+    # Entrances (an actor arrives on its beat): known first, the shots and the poses depend on it.
+    enter = {c: (int(round(timeline[cast[c]['enter']]['start'] * fps)) if cast[c].get('enter') is not None else 0) for c in ids}
+    # Shots: the story's, else a cycle like the owner's TikToks (a two-shot when someone enters, close-ups on the speaker).
+    shots = []
+    k = 0
+    for i, seg in enumerate(timeline):
+        b = beats[i]
+        typ = b.get('shot')
+        move = b.get('move')
+        if i == 0 and story.get('hook_cu', True):
+            # THE HOOK: the film opens on the one who starts the conflict, with a snap zoom — a medium shot (the face
+            # whole and readable, the place visible behind; never a face cut by the frame or hidden by the title).
+            typ, move = 'mcu', move or 'punch'
+        elif not typ:
+            if any(enter[c] == int(round(seg['start'] * fps)) and enter[c] > 0 for c in ids):
+                typ = 'two'
+            elif i == 1:
+                typ = 'mcu'
+            elif i == 2:
+                typ = 'two'
+            else:
+                typ = SHOT_CYCLE[k % len(SHOT_CYCLE)]
+                k += 1
+        if story.get('punch') and i == story['punch']['beat']:
+            move = move or 'punch'
+        shots.append({'start': int(round(seg['start'] * fps)), 'end': int(round(seg['end'] * fps)), 'type': typ, 'target': b.get('target', b['who']), 'move': move or ['push', 'drift', 'push', 'pull'][i % 4]})
+    # A reaction added by the DIRECTOR'S MODEL never snaps inside a close-up on the one who reacts: measured on film 8
+    # (14/10/2026), the snap of a full-frame drawing is a brightness jump of +39,9 that the gate counts as a cut outside
+    # a cut (frame 910). The story's own reactions are the author's and stay.
+    dropped = 0
+    for i, b in enumerate(beats):
+        for cid in list(b.get('_react_model') or []):
+            at = int(round((timeline[i]['speak0'] + 0.4) * fps))
+            sh = next((s for s in shots if s['start'] <= at < s['end']), None)
+            if sh and sh['type'] == 'cu' and sh['target'] == cid and cid in (b.get('react') or {}):
+                del b['react'][cid]
+                dropped += 1
+    if dropped:
+        print(f'[plan] {dropped} réaction(s) du réalisateur retirée(s) : un dessin qui claque en gros plan est un saut de lumière', flush=True)
     # Poses: the speaker's pose for the line; the reactions asked by the story; the rest keep their pose.
     pose_of = {c: 'neutre' for c in ids}
     poses = {c: [] for c in ids}
@@ -649,36 +688,11 @@ def main():
             e = min(1.0, max(0.0, float(b.get('energie', 0.6))))
             clips[b['who']].append([f0, f1, kind, round(0.35 + 0.55 * e, 2)])
     # Entrances (an actor arrives on its beat) and presence.
-    enter = {c: (int(round(timeline[cast[c]['enter']]['start'] * fps)) if cast[c].get('enter') is not None else 0) for c in ids}
     # The director's ENTRANCE style (cast 'entree' → a 100STYLE walk): played over the arrival, full energy.
     for c in ids:
         kind = mocap.entrance_clip(cast[c].get('entree') or '') if enter[c] > 0 else None
         if kind:
             clips[c].insert(0, [enter[c], enter[c] + int(1.2 * fps), kind, 1.0])
-    # Shots: the story's, else a cycle like the owner's TikToks (a two-shot when someone enters, close-ups on the speaker).
-    shots = []
-    k = 0
-    for i, seg in enumerate(timeline):
-        b = beats[i]
-        typ = b.get('shot')
-        move = b.get('move')
-        if i == 0 and story.get('hook_cu', True):
-            # THE HOOK: the film opens on the one who starts the conflict, with a snap zoom — a medium shot (the face
-            # whole and readable, the place visible behind; never a face cut by the frame or hidden by the title).
-            typ, move = 'mcu', move or 'punch'
-        elif not typ:
-            if any(enter[c] == int(round(seg['start'] * fps)) and enter[c] > 0 for c in ids):
-                typ = 'two'
-            elif i == 1:
-                typ = 'mcu'
-            elif i == 2:
-                typ = 'two'
-            else:
-                typ = SHOT_CYCLE[k % len(SHOT_CYCLE)]
-                k += 1
-        if story.get('punch') and i == story['punch']['beat']:
-            move = move or 'punch'
-        shots.append({'start': int(round(seg['start'] * fps)), 'end': int(round(seg['end'] * fps)), 'type': typ, 'target': b.get('target', b['who']), 'move': move or ['push', 'drift', 'push', 'pull'][i % 4]})
     # The REACTION SHOT: right after the punchline, a close-up on the one who takes it (the reaction makes people
     # laugh as much as the line), until the emoji.
     if pb_i >= 0:

@@ -83,3 +83,13 @@ Tout ce qui suit est lu sur la source primaire ou MESURÉ dans le conteneur (4 c
   son conforme, conformité 3D 100 %, **mais** mouvement 0,0294 (chaîne ≤ 0,027 ; film 6 : 0,0195), couverture 0,46
   (≤ 0,435 ; film 6 : 0,41), 2 sauts de lumière hors coupe. Trop de gestes → **budget de mouvement** (`motion_budget`) :
   la moitié la plus forte des répliques garde son geste (chute, mot-indice, énergie), gains 0,35–0,9. Film 8 en mesure.
+
+## 8. Film 8 (budget de mouvement) et film 9 (réactions hors gros plan) — mesures
+- **Film 8** = film 6 dirigé sous budget (9 gestes sur 18 répliques, gains 0,35–0,9, 11 réactions du modèle) : rendu
+  1 119 s, 1 600/1 600 images, −14,4 LUFS, crête −1,2, conformité 3D 100 %, **mouvement 0,0225** (chaîne 0,0098–0,027,
+  film 6 : 0,0195), **couverture 0,41** (= film 6), scintillement 0,003, plans/min 20,6, **1 saut de lumière hors coupe**
+  (image 910, +39,9 de luminance) : la pose « haussement » d'une réaction ajoutée par le modèle claque en GROS PLAN sur
+  Maman Nounou — un dessin plein cadre qui change d'un coup est un faux raccord.
+- Règles ajoutées : une réaction du modèle n'est gardée que sur un cri, la chute ou une réplique énergique (plus sur une
+  simple question) ; `plan.py` connaît maintenant les plans avant les poses et retire toute réaction du modèle qui
+  tomberait dans un gros plan sur celui qui réagit (les réactions écrites par l'auteur restent). Film 9 en mesure.

@@ -144,9 +144,9 @@ export function validateDirection(raw: unknown, beat: Beat, i: number, story: St
     out.camera = 'punch';
     fromModel++;
   }
-  // A partner's reaction proposed by the model needs a TRIGGER in the line (a question, a cry, the punchline, an
+  // A partner's reaction proposed by the model needs a TRIGGER in the line (a cry, the punchline, an
   // energetic line): measured on film 6, a 1,7B model put « accuse » on 15 lines of 18 — a pose ping-pong.
-  const trigger = story.punch?.beat === i || /[!?]/.test(beat.text ?? '') || r.energie >= 0.7;
+  const trigger = story.punch?.beat === i || /!/.test(beat.text ?? '') || r.energie >= 0.7; // a plain question is no reason
   const reactions = trigger && d.reactions && typeof d.reactions === 'object' ? (d.reactions as Record<string, unknown>) : {};
   for (const [name, pose] of Object.entries(reactions)) {
     const c = present.find((x) => x.name === name);

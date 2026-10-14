@@ -57,8 +57,10 @@ describe('Réalisateur (stageDirections.ts) — vocabulaire fermé, règles mesu
     expect(d.energie).toBe(0.95); // a flat line may be raised by the model
     expect(d.pose).toBe('accuse'); // a drawn pose of MODOU
     expect(d.camera).toBe('aucun'); // a punch is only accepted on the punchline
-    expect(d.reactions).toEqual({ nounou: 'choc' }); // PETIT MAMADOU is not on stage yet; MODOU speaks
+    expect(d.reactions).toEqual({}); // a plain question gives the partner no reason to react
     expect(d.source).toBe('mixte');
+    // « Mille ?! » is a cry: the partner's reaction is taken — for the people on stage only (PETIT MAMADOU enters later).
+    expect(validateDirection({ reactions: { 'MAMAN NOUNOU': 'choc', 'PETIT MAMADOU': 'rire', MODOU: 'rire' } }, STORY.beats[2]!, 2, STORY).reactions).toEqual({ nounou: 'choc' });
     // A cue in the line wins over the model; a value outside the vocabulary is dropped.
     const d2 = validateDirection({ geste: 'danse', energie: 'x', pose: 'cheval', camera: 'zoom' }, STORY.beats[1]!, 1, STORY);
     expect(d2).toMatchObject({ geste: 'pointe', energie: 0.6, camera: 'aucun', source: 'regles' });
