@@ -75,6 +75,21 @@ mesurées par `scene.py`, `ecran-plans.json`) — au milieu fixe, les têtes tom
 **Vitesse mesurée** : aperçu complet du film 6 (64 s, 1 600 images, demi-résolution, une image sur trois) en
 **14 min 54 s** sur 4 cœurs de processeur — contre ≈ 3 h pour le film 5.
 
+### 3 bis. Le réalisateur (14/10/2026) — prompt → consignes de jeu validées → moteur, 0 $ de vidéo
+- `scripts/blenderfilm/director.py` tourne avant `plan.py` (`film.py`, désactivable par `--sans-realisateur`). Pour chaque
+  réplique : la pose dessinée de celui qui parle, un **geste capturé** (étiquette de `direction-vocab.json` → clip CMU),
+  l'**énergie** (dose l'amplitude du clip), les **réactions** des partenaires présents, un mouvement de caméra.
+- Trois réalisateurs combinés « règles d'abord, modèle pour les trous » : règles mesurables (mots du vocabulaire, « ?! »,
+  chute, pose demandée) ; modèle local llama.cpp (MIT) + Qwen3 1,7B (Apache-2.0, `~/.cache/massamba-models/llm/`) ;
+  modèle gratuit OpenRouter (« :free », une requête par film, clé dans l'environnement). Le modèle n'écrit jamais de bpy.
+- Mesuré sur le film 6 : règles en 0,2 s ; modèle local en 161 s (5,3 jetons/s sur 4 cœurs) ; une réaction proposée par le
+  modèle n'est gardée que sous déclencheur (question, cri, chute, énergie ≥ 0,7).
+- Dans l'app : onglet **Réalisateur** du Studio 3D Pro — « QUI : réplique » → consignes validées → `story.directed.json`
+  à donner à `film.py --story`. Même vocabulaire (`server/jev/studio/stageDirections.ts`).
+- Gestes disponibles (25) : rire, joie, triste, pleure, peur, dispute, explique, pointe, haussement, salut de la main,
+  révérence, bâille, poignée de main, tape dans la main, menace, frappe, boit, mange, téléphone, cherche, réfléchit,
+  ramasse, lance, balaie, danse.
+
 ## 4. Feuille de route (gratuit, sans abonnement)
 
 1. Expressions produites par le modèle sur le dessin neutre (sourire, sourcils, regard) au lieu de changer de dessin ;

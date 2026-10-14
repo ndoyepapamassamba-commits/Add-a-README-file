@@ -197,6 +197,7 @@ SHOT_CYCLE = ['two', 'mcu', 'two', 'mcu', 'cu', 'two']
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import world as livingworld  # noqa: E402
+import mocap  # noqa: E402
 
 
 def noise(n, rng, color='pink'):
@@ -635,6 +636,18 @@ def main():
         poses[c] = seq
         if not poses[c] or poses[c][0][0] > 0:
             poses[c].insert(0, [0, 'neutre'])
+    # The director's GESTURES (director.py: beat 'geste' = a tag of direction-vocab.json, 'energie' 0…1): a captured CMU
+    # clip over the spoken line, dosed by the energy (gain 0,5 … 1,3) — plan tracks 'clips', read by scene.py.
+    clips = {c: [] for c in ids}
+    for i, seg in enumerate(timeline):
+        b = beats[i]
+        kind = mocap.gesture_clip(b.get('geste') or 'aucun', seed=i)
+        if not kind or b['who'] not in clips:
+            continue
+        f0, f1 = int(round(seg['speak0'] * fps)), int(round(seg['end'] * fps))
+        if f1 - f0 >= 4:
+            e = min(1.0, max(0.0, float(b.get('energie', 0.6))))
+            clips[b['who']].append([f0, f1, kind, round(0.5 + 0.8 * e, 2)])
     # Entrances (an actor arrives on its beat) and presence.
     enter = {c: (int(round(timeline[cast[c]['enter']]['start'] * fps)) if cast[c].get('enter') is not None else 0) for c in ids}
     # Shots: the story's, else a cycle like the owner's TikToks (a two-shot when someone enters, close-ups on the speaker).
@@ -693,7 +706,7 @@ def main():
         'rig': os.path.abspath(a.rig), 'decor': story['decor'], 'audio': os.path.abspath(os.path.join(a.out, 'mix.wav')), 'speed': round(speed, 3),
         'actors': [{'id': c, 'name': cast[c]['name'], 'height': cast[c].get('height', 1.7), 'x': cast[c].get('x', 0), 'enter': enter[c], 'mirror': cast[c].get('mirror')} for c in ids],
         'lipsync': f'volume de la voix + fermetures m/b/p (Rhubarb {lipsync.VERSION})' if closures else 'volume de la voix',
-        'tracks': {c: {'jaw': [round(float(v), 3) for v in jaw[c]], 'turn': [round(float(v), 3) for v in turn[c]], 'nod': [round(float(v), 3) for v in nod[c]], 'blinks': blinks[c], 'poses': poses[c]} for c in ids},
+        'tracks': {c: {'jaw': [round(float(v), 3) for v in jaw[c]], 'turn': [round(float(v), 3) for v in turn[c]], 'nod': [round(float(v), 3) for v in nod[c]], 'blinks': blinks[c], 'poses': poses[c], 'clips': clips[c]} for c in ids},
         'shots': shots, 'captions': captions, 'emoji': emoji, 'timeline': timeline, 'coupes': coupes if len(coupes) > 1 else [],
         'hook': story.get('hook', ''), 'life': life,
         # The story itself travels with the plan: the scene's preflight checks the narrative against it.

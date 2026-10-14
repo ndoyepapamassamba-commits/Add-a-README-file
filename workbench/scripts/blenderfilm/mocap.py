@@ -215,11 +215,21 @@ def _cache_dir():
     return d
 
 
+def trial_of(kind):
+    """'cmu:13_14' or a LIBRARY key → (subject, trial)."""
+    if kind.startswith('cmu:'):
+        trial = kind[4:]
+        return trial.split('_')[0], trial
+    e = LIBRARY[kind]
+    return e['subject'], e['trial']
+
+
 def ensure_clip(kind):
     """Local paths of the clip of `kind` (downloaded once from mocap.cs.cmu.edu — a handful of files, never a crawl)."""
     import os
     import urllib.request
-    e = LIBRARY[kind]
+    subject, trial = trial_of(kind)
+    e = {'subject': subject, 'trial': trial}
     d = _cache_dir()
     out = []
     for name in (f"{e['subject']}.asf", f"{e['trial']}.amc"):
@@ -252,7 +262,7 @@ def clip_curves(kind, fps=25, height_m=1.6):
     return _CURVES[key]
 
 
-def overlay(kind, n, fps=25, height_m=1.6, ease_s=0.25):
+def overlay(kind, n, fps=25, height_m=1.6, ease_s=0.25, gain=1.0):
     """`n` frames of the clip's most EXPRESSIVE stretch (sliding window of maximal motion energy), clamped to the
     cartoon limits and eased in/out over `ease_s`: {'spine','head','root' (rad), 'lift' (m), 'squash' (share)}."""
     c = clip_curves(kind, fps, height_m)
@@ -278,7 +288,8 @@ def overlay(kind, n, fps=25, height_m=1.6, ease_s=0.25):
         a = a - (a[0] if len(a) else 0.0)  # start from our drawing's pose
         a = tail(a)
         peak = float(np.max(np.abs(a))) or 1.0
-        return a * min(1.0, lim / peak)
+        # The director's energy scales the clip, the cartoon limit still wins (a gain > 1 only unlocks a clamped clip).
+        return a * min(gain, lim / peak)
     k = max(1, int(ease_s * fps))
     env = np.ones(n)
     env[:k] = np.linspace(0, 1, min(k, n))
@@ -287,4 +298,47 @@ def overlay(kind, n, fps=25, height_m=1.6, ease_s=0.25):
     squash = tail(squash)
     return {'spine': fit(c['spine'], LIMITS['spine']) * env, 'head': fit(c['head'], LIMITS['head']) * env,
             'root': fit(c['root'], LIMITS['root']) * env, 'lift': fit(c['bob'], LIMITS['lift']) * env,
-            'squash': np.minimum(squash, LIMITS['squash']) * env}
+            'squash': np.minimum(squash * min(gain, 1.0), LIMITS['squash']) * env}
+
+
+# ── Gestes par ÉTIQUETTE (direction-vocab.json) : le réalisateur choisit « dispute », le moteur prend un clip CMU ─────
+_VOCAB = None
+
+
+def vocab():
+    global _VOCAB
+    if _VOCAB is None:
+        import json
+        import os
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'direction-vocab.json'), encoding='utf-8') as f:
+            _VOCAB = json.load(f)
+    return _VOCAB
+
+
+def gesture_clip(tag, seed=0):
+    """The 'cmu:…' kind for a gesture tag (one of its clips, chosen by `seed` so the same line always gets the same
+    clip and two lines with the same gesture differ), or None for 'aucun' / an unknown tag."""
+    g = vocab()['gestes'].get(tag)
+    if not g or not g['clips']:
+        return None
+    return 'cmu:' + g['clips'][int(seed) % len(g['clips'])]
+
+
+def _fold(s):
+    import unicodedata
+    return ''.join(ch for ch in unicodedata.normalize('NFD', (s or '').lower()) if unicodedata.category(ch) != 'Mn')
+
+
+def search(text):
+    """The gesture tag a line calls for, from its words (« je ne sais pas, bof » → 'haussement'), or 'aucun'.
+    The longest matching cue wins (« c'est pas possible » beats « non ! »); ties go to the first tag of the vocabulary."""
+    import re
+    t = _fold(text)
+    best = ('aucun', 0)
+    for tag, g in vocab()['gestes'].items():
+        for w in g.get('mots') or []:
+            w_ = _fold(w)
+            # Whole words only (« toi » must not fire inside « toiture »); punctuation inside a cue is kept literal.
+            if w_ and re.search(r'(?<![a-z0-9])' + re.escape(w_) + r'(?![a-z0-9])', t) and len(w_) > best[1]:
+                best = (tag, len(w_))
+    return best[0]

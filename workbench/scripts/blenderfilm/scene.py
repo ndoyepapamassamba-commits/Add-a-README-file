@@ -1357,9 +1357,11 @@ def animate(plan, actors, fps):
         if JEU_CORPS and MOCAP:
             import mocap
             try:
-                clips = acting.mocap_spans(tr['poses'], nF, mocap.LIBRARY)
-                for a_, b_, k_ in clips:
-                    mocap.clip_curves(k_, fps, A['plan'].get('height') or 1.6)
+                # The director's gestures (plan tracks 'clips': [start, end, 'cmu:…', gain], director.py) when the
+                # story was directed, else the clips tied to the drawn poses (laugh, shrug, pointing).
+                clips = [tuple(c_) for c_ in (tr.get('clips') or [])] or acting.mocap_spans(tr['poses'], nF, mocap.LIBRARY)
+                for span_ in clips:
+                    mocap.clip_curves(span_[2], fps, A['plan'].get('height') or 1.6)
             except Exception as e:  # noqa: BLE001 — no network for the first download: the procedural acting stays
                 print(f'[mocap] clips indisponibles ({e.__class__.__name__}) : jeu procédural seul', flush=True)
                 clips = []
@@ -1367,7 +1369,7 @@ def animate(plan, actors, fps):
                            scale=acting.shot_scale(plan['shots'], aid, nF, fps), clips=clips,
                            height_m=A['plan'].get('height') or 1.6)
         if clips:
-            print(f"[mocap] {A['plan'].get('name', aid)} : {', '.join(f'{k_} {(b_ - a_) / fps:.1f} s' for a_, b_, k_ in clips)} (capture CMU)", flush=True)
+            print(f"[mocap] {A['plan'].get('name', aid)} : {', '.join(f'{s_[2]} {(s_[1] - s_[0]) / fps:.1f} s' for s_ in clips)} (capture CMU)", flush=True)
         lift, squash = cv['lift'], cv['squash']
         head_rot, spine_rot, root_rot = cv['head'], cv['spine'], cv['root']
         breath, breath_amp, listen_nod, bobv = cv['breath'], cv['breath_amp'], cv['listen'], cv['bob']

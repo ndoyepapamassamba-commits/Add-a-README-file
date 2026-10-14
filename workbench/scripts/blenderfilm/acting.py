@@ -92,9 +92,12 @@ def curves(jaw, partner_nods, x, nF, fps, seed, on=True, scale=None, clips=None,
     squash = np.zeros(nF + 1)
     # REAL HUMAN MOTION on the poses that have a captured clip (CMU mocap, mocap.py): a laugh doubles over, a shrug
     # lifts, a pointing argument leans in — the clip's most expressive stretch, in the plane of our cards.
-    for (a, b, kind) in clips or []:
+    for span in clips or []:
+        # (start, end, kind) or (start, end, kind, gain): the director's energy scales the clip (0,5 … 1,3).
+        a, b, kind = span[0], span[1], span[2]
+        gain = float(span[3]) if len(span) > 3 else 1.0
         import mocap
-        o = mocap.overlay(kind, b - a, fps, height_m)
+        o = mocap.overlay(kind, b - a, fps, height_m, gain=gain)
         kk = k[a:b]
         mirror = toward  # the clip's lean toward its partner follows ours
         head[a:b] += kk * o['head'] * mirror

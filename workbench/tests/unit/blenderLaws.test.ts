@@ -535,3 +535,48 @@ print(json.dumps({'head1': float(amp[48, 50]), 'feet1': float(amp[178, 50]), 'he
     expect(r.tall1).toBe(true); // the taller person sways more (amplitude ∝ height)
   });
 });
+
+describe('Réalisateur (director.py, mocap.py) — gestes par étiquette, règles mesurables, validation fermée', () => {
+  it('finds the gesture a line calls for (whole words, longest cue) and maps a tag to a CMU clip by seed', () => {
+    const r = py(`
+import json, mocap
+print(json.dumps({'bof': mocap.search('Je ne sais pas moi, bof'), 'vol': mocap.search("Maman, c'est du vol !"), 'toiture': mocap.search('la toiture'),
+  'toi': mocap.search('Toi, tu pars.'), 'tel': mocap.search('Allô ? oui'), 'rien': mocap.search('rien'),
+  'clip0': mocap.gesture_clip('dispute', 0), 'clip1': mocap.gesture_clip('dispute', 1), 'aucun': mocap.gesture_clip('aucun'),
+  'trial': list(mocap.trial_of('cmu:18_10')), 'lib': list(mocap.trial_of('rire')), 'n': len(mocap.vocab()['gestes'])}))`);
+    if (!r) return;
+    expect(r).toMatchObject({ bof: 'haussement', vol: 'dispute', toiture: 'aucun', toi: 'pointe', tel: 'telephone', rien: 'aucun', aucun: null });
+    expect(r.clip0).toMatch(/^cmu:\d+_\d+$/);
+    expect(r.clip0).not.toBe(r.clip1); // two lines with the same gesture get two different clips
+    expect(r.trial).toEqual(['18', '18_10']);
+    expect(r.lib).toEqual(['13', '13_14']);
+    expect(r.n as number).toBeGreaterThanOrEqual(20);
+  });
+  it('rules first, the model for the gaps, everything validated against the drawn poses of the people on stage', () => {
+    const r = py(`
+import json, director
+story = {'title': 'T', 'hook': 'H', 'punch': {'beat': 2},
+  'cast': [{'id': 'modou', 'name': 'MODOU'}, {'id': 'nounou', 'name': 'MAMAN NOUNOU'}, {'id': 'mamadou', 'name': 'PETIT MAMADOU', 'enter': 2}],
+  'beats': [{'who': 'modou', 'text': "Maman, c'est combien ?"}, {'who': 'nounou', 'text': 'Mille ?! Hier cinq cents !', 'pose': 'choc'},
+            {'who': 'nounou', 'text': 'Moi, j’ai pris. Toi, tu pars.'}]}
+rig = {'cast': {'MODOU': {'poses': [{'kind': k} for k in ('neutre', 'accuse', 'choc', 'haussement', 'rire')]},
+                'MAMAN NOUNOU': {'poses': [{'kind': k} for k in ('neutre', 'accuse', 'choc', 'haussement', 'rire')]},
+                'PETIT MAMADOU': {'poses': [{'kind': 'neutre'}]}}}
+rules = [director.rules(b, i, story) for i, b in enumerate(story['beats'])]
+v = director.validate({'pose': 'accuse', 'geste': 'explique', 'energie': 1.4, 'camera': 'zoom', 'reactions': {'MAMAN NOUNOU': 'choc', 'MODOU': 'rire', 'PETIT MAMADOU': 'rire'}},
+                      director.character_poses(rig, 'MODOU'), {'MAMAN NOUNOU': director.character_poses(rig, 'MAMAN NOUNOU')})
+bad = director.validate({'pose': 'cheval', 'geste': 'danse-du-ventre', 'energie': 'x'}, ['neutre'], {})
+d = director.direct(story, rig, mode='regles', log=lambda *a: None)
+print(json.dumps({'rules': rules, 'v': v, 'bad': bad, 'beats': [{k: b.get(k) for k in ('geste', 'energie', 'move', 'react')} for b in d['beats']], 'backend': d['_director']['backend']}))`);
+    if (!r) return;
+    const rules = r.rules as { geste: string; energie: number }[];
+    expect(rules[0]).toMatchObject({ geste: 'aucun', energie: 0.6 });
+    expect(rules[1]).toMatchObject({ geste: 'dispute', energie: 0.8 }); // « ?! » argues even without a cue word
+    expect(rules[2]).toMatchObject({ geste: 'pointe', energie: 0.9 }); // the punchline is explosive
+    expect(r.v).toEqual({ pose: 'accuse', geste: 'explique', energie: 1.0, reactions: { 'MAMAN NOUNOU': 'choc' } }); // clamped, unknown camera dropped, absent people dropped
+    expect(r.bad).toEqual({});
+    const beats = r.beats as { geste: string; energie: number }[];
+    expect(beats.map((b) => b.geste)).toEqual(['aucun', 'dispute', 'pointe']);
+    expect(r.backend).toBe('regles');
+  });
+});

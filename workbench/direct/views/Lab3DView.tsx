@@ -7,8 +7,26 @@ import { useStore } from '../lib/store';
 import { download } from '../lib/vfs';
 import { BRIDGE_HELP, bridgeHealth, bridgeRender, type BridgeHealth } from '../lib/blenderBridge';
 import { CINEMATIC_WEBGL_RULES, generateWithCorrection, type Round } from '../../server/jev/lab3d/selfCorrect';
+import {
+  directStory,
+  freeModels,
+  parseDirections,
+  storyFromLines,
+  systemPrompt,
+  userPrompt,
+  type Story,
+} from '../../server/jev/studio/stageDirections';
 
-type Tab = 'code' | 'shader' | 'physics' | 'ai';
+type Tab = 'code' | 'shader' | 'physics' | 'ai' | 'director';
+// LE RÉALISATEUR : « QUI : réplique » → consignes de jeu validées (gestes CMU, énergie, réactions, caméra) pour le
+// moteur Blender (scripts/blenderfilm/film.py --story story.directed.json), 0 $ de vidéo. Un modèle texte GRATUIT
+// propose, les règles tranchent, le code valide ; sans clé, les règles seules dirigent.
+const EX_SCENE = `Modou : Maman, ton tas de tomates là, c’est combien ?
+Maman Nounou : Pour toi, mon fils ? Mille francs.
+Modou : Mille ?! Hier c’était cinq cents !
+Maman Nounou : Hier, tu n’avais pas ces sandales neuves.
+Modou : Maman, c’est du vol !
+Maman Nounou : Non, mon fils. C’est le marché.`;
 const EX_CODE = `// Cubes procéduraux en spirale + sol
 helpers.grid(20);
 const geo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
@@ -106,6 +124,8 @@ export function Lab3DView() {
     'Une forêt low-poly de 200 arbres instanciés sur un terrain vallonné, au coucher du soleil',
   );
   const [rounds, setRounds] = useState<Round[]>([]);
+  const [sceneText, setSceneText] = useState(EX_SCENE);
+  const [directed, setDirected] = useState<ReturnType<typeof directStory> | null>(null);
   const [bridge, setBridge] = useState<BridgeHealth | null>(null);
   const push = (k: string, m: string) => setLog((l) => [...l.slice(-200), { k, m }]);
   useEffect(() => {
@@ -220,11 +240,45 @@ export function Lab3DView() {
     }
     setBusy('');
   };
+  const direct = async () => {
+    const story: Story = storyFromLines(sceneText, 'Scène du bac à sable');
+    if (!story.beats.length) return push('error', 'aucune réplique : une ligne par réplique, « QUI : texte »');
+    setBusy('réalisateur');
+    const free = freeModels(models);
+    let raw: unknown[] = [];
+    let via = 'règles seules (aucun modèle gratuit joignable)';
+    if (free.length) {
+      try {
+        const r = await complete(
+          {
+            model: free[0]!.id,
+            messages: [
+              { role: 'system', content: systemPrompt(story) },
+              { role: 'user', content: userPrompt(story) },
+            ],
+            maxTokens: 1200,
+            temperature: 0.3,
+          },
+          { models, fallbacks: free.slice(1, 3).map((m) => m.id), effort: 'auto', purpose: 'stage-directions' },
+        );
+        raw = parseDirections(r.content);
+        via = raw.length ? `${r.model} (gratuit, 1 requête) + règles` : `${r.model} : réponse illisible → règles seules`;
+      } catch (e) {
+        via = `règles seules (${(e as Error).message.slice(0, 80)})`;
+      }
+    }
+    const s = directStory(story, raw);
+    setDirected(s);
+    const gestes = s.beats.filter((b) => (b as { geste?: string }).geste !== 'aucun').length;
+    push('ok', `✓ ${s.beats.length} réplique(s) dirigée(s) via ${via} : ${gestes} geste(s) capturé(s), ${s.beats.filter((b) => b.react).length} réaction(s)`);
+    setBusy('');
+  };
   const tabs: [Tab, string][] = [
     ['code', 'Code three.js'],
     ['shader', 'Shaders GLSL'],
     ['physics', 'Physique'],
     ['ai', 'Génération IA'],
+    ['director', 'Réalisateur'],
   ];
   return (
     <div data-testid="lab3d" className="flex h-full min-h-0 flex-col gap-3 p-4">
@@ -369,6 +423,75 @@ export function Lab3DView() {
                     Le modèle écrit le code avec la documentation locale (three.js, GLSL, glTF, cannon-es)
                     dans son contexte ; chaque erreur réelle du rendu lui est renvoyée avec les lignes
                     fautives, jusqu'à 3 tours.
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+          {tab === 'director' && (
+            <>
+              <label className="text-[12px] text-muted">
+                Une réplique par ligne, « QUI : texte ». Le réalisateur choisit pour chacune un geste capturé (base CMU),
+                l’énergie, la réaction des partenaires et la caméra — rien que ce que le moteur Blender sait jouer.
+              </label>
+              <textarea
+                data-testid="lab3d-scene"
+                spellCheck={false}
+                value={sceneText}
+                onChange={(e) => setSceneText(e.target.value)}
+                className="h-40 resize-none rounded-lg border border-line bg-elev p-2 font-mono text-[12px]"
+              />
+              <div className="flex flex-wrap gap-2">
+                <button data-testid="lab3d-direct" disabled={!!busy} onClick={() => void direct()} className={btnMain}>
+                  Diriger (modèle gratuit + règles)
+                </button>
+                <button
+                  data-testid="lab3d-direct-download"
+                  disabled={!directed}
+                  onClick={() => directed && download('story.directed.json', JSON.stringify(directed, null, 1), 'application/json')}
+                  className={btn}
+                >
+                  Télécharger pour le moteur Blender
+                </button>
+                <span className="text-[12px] text-muted">
+                  {freeModels(models).length
+                    ? `${freeModels(models).length} modèle(s) gratuit(s) : 50 requêtes/jour sans crédit`
+                    : 'aucun modèle gratuit dans le catalogue : règles seules'}
+                </span>
+              </div>
+              <div data-testid="lab3d-directions" className="min-h-0 flex-1 overflow-auto rounded-lg border border-line text-[12px]">
+                {directed ? (
+                  <table className="w-full">
+                    <thead className="text-left text-muted">
+                      <tr>
+                        <th className="p-1">#</th>
+                        <th className="p-1">Qui</th>
+                        <th className="p-1">Geste</th>
+                        <th className="p-1">Énergie</th>
+                        <th className="p-1">Réactions</th>
+                        <th className="p-1">Caméra</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {directed.beats.map((b, i) => {
+                        const d = b as { geste?: string; energie?: number; react?: Record<string, string>; move?: string };
+                        return (
+                          <tr key={i} className="border-t border-line">
+                            <td className="p-1">{i + 1}</td>
+                            <td className="p-1">{b.who}</td>
+                            <td className="p-1">{d.geste}</td>
+                            <td className="p-1">{d.energie}</td>
+                            <td className="p-1">{Object.entries(d.react ?? {}).map(([k, v]) => `${k}: ${v}`).join(', ') || '—'}</td>
+                            <td className="p-1">{d.move ?? '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="p-2 text-muted">
+                    Le fichier téléchargé se donne au moteur : <code>film.py --story story.directed.json</code>. Les gestes sont
+                    des clips de capture de mouvement CMU (libres d’usage), joués dans le plan des dessins de la troupe.
                   </p>
                 )}
               </div>

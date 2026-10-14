@@ -1,0 +1,485 @@
+{
+  "_": "Vocabulaire FERMÉ des consignes de jeu (réalisateur → moteur Blender). Lu par director.py / mocap.py (Python) et stageDirections.ts (app). Un geste = une étiquette française → des clips de la base de capture CMU (mocap.cs.cmu.edu, « free for all uses », pas de revente des données, pas de crawl : les clips sont téléchargés un par un, jamais redistribués). Descriptions officielles de l'index CMU (compilé par B. Hahne, cgspeed), lu le 14/10/2026.",
+  "poses": {
+    "neutre": "le dessin de base, parle et écoute",
+    "accuse": "doigt pointé, reproche",
+    "choc": "bouche ouverte, surprise ou indignation",
+    "haussement": "épaules levées, « je ne sais pas / tant pis »",
+    "rire": "éclat de rire, yeux fermés"
+  },
+  "camera": {
+    "punch": "zoom sec : chute comique, révélation",
+    "push": "la caméra avance doucement",
+    "pull": "la caméra recule doucement",
+    "drift": "glissement latéral",
+    "aucun": "laisser le cycle du montage choisir"
+  },
+  "gestes": {
+    "aucun": {
+      "desc": "pas de geste capturé, jeu procédural seul",
+      "clips": []
+    },
+    "rire": {
+      "desc": "éclat de rire, le buste se plie",
+      "mots": [
+        "rire",
+        "rit",
+        "ha ha",
+        "hi hi",
+        "éclate",
+        "fou rire",
+        "mdr",
+        "drôle"
+      ],
+      "clips": [
+        "13_14",
+        "13_15",
+        "13_16",
+        "14_17",
+        "14_18",
+        "14_19",
+        "79_70",
+        "80_44"
+      ]
+    },
+    "joie": {
+      "desc": "très content, bras qui s'ouvrent",
+      "mots": [
+        "content",
+        "heureux",
+        "génial",
+        "bravo",
+        "youpi",
+        "super",
+        "victoire",
+        "merci"
+      ],
+      "clips": [
+        "79_69",
+        "80_43",
+        "142_08"
+      ]
+    },
+    "triste": {
+      "desc": "abattu, épaules qui tombent",
+      "mots": [
+        "triste",
+        "dommage",
+        "hélas",
+        "pardon",
+        "désolé",
+        "malheur"
+      ],
+      "clips": [
+        "79_71",
+        "142_15"
+      ]
+    },
+    "pleure": {
+      "desc": "pleurs, mains au visage",
+      "mots": [
+        "pleure",
+        "larmes",
+        "snif",
+        "ouin"
+      ],
+      "clips": [
+        "79_72",
+        "80_45",
+        "80_46"
+      ]
+    },
+    "peur": {
+      "desc": "recul effrayé",
+      "mots": [
+        "peur",
+        "au secours",
+        "aïe",
+        "attention",
+        "danger",
+        "sorcier",
+        "police"
+      ],
+      "clips": [
+        "79_73",
+        "142_16",
+        "142_17"
+      ]
+    },
+    "dispute": {
+      "desc": "mains en colère, le corps avance",
+      "mots": [
+        "colère",
+        "énervé",
+        "jamais",
+        "voleur",
+        "menteur",
+        "arrête",
+        "assez",
+        "du vol",
+        "c'est du vol",
+        "escroc",
+        "tu exagères",
+        "n'importe quoi"
+      ],
+      "clips": [
+        "18_10",
+        "18_11",
+        "19_10",
+        "19_11",
+        "80_48"
+      ]
+    },
+    "explique": {
+      "desc": "explique avec les mains, posé",
+      "mots": [
+        "parce que",
+        "écoute",
+        "regarde",
+        "en fait",
+        "donc",
+        "alors",
+        "je t'explique"
+      ],
+      "clips": [
+        "18_08",
+        "18_09",
+        "19_08",
+        "19_09"
+      ]
+    },
+    "pointe": {
+      "desc": "pointe du doigt, accuse",
+      "mots": [
+        "toi",
+        "c'est lui",
+        "c'est elle",
+        "là-bas",
+        "regarde-moi ça",
+        "celui-là"
+      ],
+      "clips": [
+        "22_21",
+        "23_21",
+        "13_27",
+        "13_28",
+        "14_24",
+        "14_25",
+        "14_26"
+      ]
+    },
+    "haussement": {
+      "desc": "haussement d'épaules",
+      "mots": [
+        "je ne sais pas",
+        "sais pas",
+        "bof",
+        "tant pis",
+        "peut-être",
+        "on verra"
+      ],
+      "clips": [
+        "111_25",
+        "113_16",
+        "141_21"
+      ]
+    },
+    "salut_main": {
+      "desc": "salut de la main, bonjour, au revoir",
+      "mots": [
+        "bonjour",
+        "salut",
+        "au revoir",
+        "bonsoir",
+        "ciao",
+        "hé !",
+        "ohé"
+      ],
+      "clips": [
+        "111_37",
+        "113_27",
+        "141_16"
+      ]
+    },
+    "reverence": {
+      "desc": "révérence, respect exagéré",
+      "mots": [
+        "monsieur",
+        "madame",
+        "excellence",
+        "patron",
+        "chef",
+        "s'il vous plaît"
+      ],
+      "clips": [
+        "111_02",
+        "113_02"
+      ]
+    },
+    "baille": {
+      "desc": "s'étire et bâille, ennui",
+      "mots": [
+        "ennuie",
+        "fatigué",
+        "dormir",
+        "bâille",
+        "pff",
+        "encore toi"
+      ],
+      "clips": [
+        "111_32",
+        "113_23",
+        "141_13",
+        "143_30"
+      ]
+    },
+    "poignee_main": {
+      "desc": "poignée de main, marché conclu",
+      "mots": [
+        "d'accord",
+        "marché conclu",
+        "tope là",
+        "vendu",
+        "ok",
+        "ça marche"
+      ],
+      "clips": [
+        "79_06",
+        "141_23",
+        "18_01",
+        "19_01"
+      ]
+    },
+    "tape_main": {
+      "desc": "tape dans la main, célébration",
+      "mots": [
+        "champion",
+        "on a gagné",
+        "yes",
+        "trop fort"
+      ],
+      "clips": [
+        "141_28"
+      ]
+    },
+    "menace": {
+      "desc": "brandit, menace de frapper",
+      "mots": [
+        "je vais te",
+        "tu vas voir",
+        "attends un peu",
+        "gare à toi",
+        "sors d'ici"
+      ],
+      "clips": [
+        "22_20",
+        "23_20"
+      ]
+    },
+    "frappe": {
+      "desc": "frappe sur un objet, frustration",
+      "mots": [
+        "non !",
+        "zut",
+        "mince",
+        "c'est pas possible",
+        "ras-le-bol"
+      ],
+      "clips": [
+        "82_16",
+        "82_17"
+      ]
+    },
+    "boit": {
+      "desc": "boit",
+      "mots": [
+        "bois",
+        "boire",
+        "bière",
+        "jus",
+        "eau",
+        "soda",
+        "bissap"
+      ],
+      "clips": [
+        "13_09",
+        "14_37",
+        "79_38",
+        "79_40",
+        "80_40"
+      ]
+    },
+    "mange": {
+      "desc": "mange",
+      "mots": [
+        "mange",
+        "manger",
+        "riz",
+        "garba",
+        "attiéké",
+        "poulet",
+        "sauce",
+        "miam"
+      ],
+      "clips": [
+        "79_12",
+        "79_15",
+        "80_24"
+      ]
+    },
+    "telephone": {
+      "desc": "décroche ou compose au téléphone",
+      "mots": [
+        "allô",
+        "téléphone",
+        "appelle",
+        "appel",
+        "portable",
+        "whatsapp"
+      ],
+      "clips": [
+        "79_36",
+        "79_37",
+        "80_25",
+        "80_26"
+      ]
+    },
+    "cherche": {
+      "desc": "regarde autour, cherche quelque chose",
+      "mots": [
+        "où est",
+        "où sont",
+        "cherche",
+        "perdu",
+        "disparu",
+        "qui a pris"
+      ],
+      "clips": [
+        "77_05"
+      ]
+    },
+    "reflechit": {
+      "desc": "menton dans la main, réfléchit",
+      "mots": [
+        "hmm",
+        "voyons",
+        "réfléchis",
+        "attends",
+        "laisse-moi penser",
+        "euh"
+      ],
+      "clips": [
+        "13_04",
+        "13_05",
+        "13_06",
+        "14_30"
+      ]
+    },
+    "ramasse": {
+      "desc": "se penche et ramasse",
+      "mots": [
+        "ramasse",
+        "tombé",
+        "par terre",
+        "au sol"
+      ],
+      "clips": [
+        "02_06",
+        "26_10",
+        "26_11"
+      ]
+    },
+    "lance": {
+      "desc": "lance un objet",
+      "mots": [
+        "tiens",
+        "attrape",
+        "lance",
+        "jette"
+      ],
+      "clips": [
+        "111_33",
+        "113_24",
+        "141_11",
+        "143_20"
+      ]
+    },
+    "balaie": {
+      "desc": "balaie, nettoie, s'affaire",
+      "mots": [
+        "balaie",
+        "nettoie",
+        "range",
+        "travail",
+        "boutique"
+      ],
+      "clips": [
+        "13_23",
+        "13_24",
+        "13_25",
+        "79_55",
+        "80_61"
+      ]
+    },
+    "danse": {
+      "desc": "danse, bras en l'air",
+      "mots": [
+        "danse",
+        "coupé-décalé",
+        "fête",
+        "musique",
+        "ambiance"
+      ],
+      "clips": [
+        "05_12",
+        "49_09",
+        "93_06"
+      ]
+    }
+  },
+  "energie": {
+    "min": 0,
+    "max": 1,
+    "desc": "0 = calme (amplitude des gestes × 0,5), 1 = explosif (× 1,3)"
+  },
+  "schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "pose",
+      "geste",
+      "energie",
+      "camera",
+      "reactions"
+    ],
+    "properties": {
+      "pose": {
+        "type": "string"
+      },
+      "geste": {
+        "type": "string"
+      },
+      "energie": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "camera": {
+        "type": "string",
+        "enum": [
+          "punch",
+          "push",
+          "pull",
+          "drift",
+          "aucun"
+        ]
+      },
+      "reactions": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

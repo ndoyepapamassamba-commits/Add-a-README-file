@@ -33,6 +33,10 @@ def main():
     ap.add_argument('--engine', default='')
     ap.add_argument('--samples', type=int, default=10)
     ap.add_argument('--seconds', type=float, default=64, help='durée visée (> 60 s : programme de rémunération TikTok ; vos vidéos : 60,6 à 70,6 s)')
+    ap.add_argument('--sans-realisateur', action='store_true',
+                    help='sans le réalisateur (director.py : gestes, énergie, réactions, caméra par réplique) — comparaison A/B')
+    ap.add_argument('--realisateur', default=os.environ.get('MASSAMBA_DIRECTOR', 'auto'),
+                    help='auto | regles | local | openrouter (auto = OpenRouter gratuit si clé, sinon modèle local, sinon règles)')
     ap.add_argument('--apercu', action='store_true',
                     help='APERÇU RAPIDE (« processeur fictif ») : demi-résolution, 4 échantillons, une image sur trois — '
                          'pour valider histoire, lieux, cadrages et voix en quelques minutes ; le rendu final se fait sans')
@@ -43,8 +47,16 @@ def main():
     cut = os.path.join(out, 'troupe')
     if not os.path.isfile(os.path.join(cut, 'rig.json')):
         run([sys.executable, os.path.join(HERE, 'cutout.py'), '--troupe', a.troupe, '--out', cut])
+    # THE DIRECTOR (director.py): every line gets its gesture (CMU clip by tag), energy, the partners' reactions and a
+    # camera hint — rules first, a free text model for the gaps; 0 $ of video. The directed story feeds the plan.
+    story = a.story
+    if not a.sans_realisateur:
+        directed = os.path.join(out, 'story.directed.json')
+        if not os.path.isfile(directed):
+            run([sys.executable, os.path.join(HERE, 'director.py'), '--story', a.story, '--rig', os.path.join(cut, 'rig.json'), '--out', directed, '--mode', a.realisateur])
+        story = directed
     if not os.path.isfile(os.path.join(out, 'plan.json')):
-        run([sys.executable, os.path.join(HERE, 'plan.py'), '--story', a.story, '--rig', os.path.join(cut, 'rig.json'), '--voices', a.voices, '--out', out, '--seconds', str(a.seconds)])
+        run([sys.executable, os.path.join(HERE, 'plan.py'), '--story', story, '--rig', os.path.join(cut, 'rig.json'), '--voices', a.voices, '--out', out, '--seconds', str(a.seconds)])
     engine = a.engine or ('EEVEE' if a.blender else 'CYCLES')
     # The living faces (LivePortrait library, computed once per character pose and kept in the kit): ~0 s per film.
     lf = subprocess.run([os.environ.get('MASSAMBA_PY', sys.executable), os.path.join(HERE, 'liveface.py'), '--plan', os.path.join(out, 'plan.json'), '--kit', a.troupe])
