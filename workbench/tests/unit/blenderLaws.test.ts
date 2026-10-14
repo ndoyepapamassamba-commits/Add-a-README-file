@@ -677,3 +677,16 @@ print(json.dumps({c['id']: c.get('entree') for c in d['cast']}))`);
     expect(r).toEqual({ a: null, b: 'entre_vieux', c: 'entre_presse', d: 'entre_discret' }); // the author's choice is kept
   });
 });
+
+describe('Porte de qualité : sauts de lumière hors coupe (finish.py) — un aperçu répète ses images', () => {
+  it('a cut that lands on a repeated frame of the preview is still a cut; a real jump far from any cut is counted', () => {
+    const r = py(`
+import json, finish
+lum = [50] * 480 + [90] * 10
+dup = [False] * 478 + [True, True] + [False, True, True] * 3 + [False]
+print(json.dumps({'preview_cut': finish.brightness_jumps(lum, dup, {479}), 'real': finish.brightness_jumps([50] * 10 + [90] * 5, [False] * 15, {3}),
+  'at_cut': finish.brightness_jumps([50] * 10 + [90] * 5, [False] * 15, {11}), 'small': finish.brightness_jumps([50] * 10 + [60] * 5, [False] * 15, set())}))`);
+    if (!r) return;
+    expect(r).toEqual({ preview_cut: [], real: [11], at_cut: [], small: [] });
+  });
+});

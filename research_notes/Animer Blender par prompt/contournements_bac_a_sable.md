@@ -93,3 +93,14 @@ Tout ce qui suit est lu sur la source primaire ou MESURÉ dans le conteneur (4 c
 - Règles ajoutées : une réaction du modèle n'est gardée que sur un cri, la chute ou une réplique énergique (plus sur une
   simple question) ; `plan.py` connaît maintenant les plans avant les poses et retire toute réaction du modèle qui
   tomberait dans un gros plan sur celui qui réagit (les réactions écrites par l'auteur restent). Film 9 en mesure.
+
+## 9. Film 9 — PORTE DE QUALITÉ : OUI
+- Film 9 = film 6 dirigé (budget de mouvement + réactions du modèle hors gros plan) : rendu 1 119 s, 1 600/1 600 images,
+  −14,4 LUFS, crête −1,2, conformité 3D 100 %, **mouvement 0,0235** (film 6 : 0,0195 ; chaîne ≤ 0,027), **couverture
+  0,42**, scintillement 0,0034, plans/min 20,6, **0 saut de lumière hors coupe → OUI**.
+- La porte comptait d'abord 6 « sauts » : tous exactement 2 images après une coupe. Cause mesurée : l'aperçu rend une
+  image sur trois et répète la précédente (images 473/474, 476/477… identiques octet pour octet), si bien qu'une coupe
+  tombée sur une image répétée n'apparaît qu'à l'image rendue suivante. `finish.brightness_jumps` lit maintenant les
+  images répétées SUR LA SOURCE (avant grain et sous-titres) et rattache le saut à la coupe qui le précède dans la
+  fenêtre répétée. Un vrai saut loin d'une coupe reste compté (test unitaire). Le rendu final (toutes les images) n'a
+  jamais eu ce décalage.

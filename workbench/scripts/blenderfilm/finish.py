@@ -265,6 +265,23 @@ def draw_hook(img, text, t, dur=2.8, faces=()):
     img.paste(card, (x0, y0), card)
 
 
+def brightness_jumps(lum, dup, cuts, thresh=18.0):
+    """1-based frame numbers where the mean luminance jumps by more than `thresh` OUTSIDE a cut. `dup[i]` says frame i
+    repeats frame i-1 (a preview renders one frame in three and repeats it): the real change then happened somewhere
+    between the last rendered frame and this one, so a cut anywhere in that window makes the jump a cut — measured on
+    film 9 (14/10/2026): 6 « jumps » that all sat exactly 2 repeated frames after a cut."""
+    out = []
+    for i in range(1, len(lum)):
+        if abs(lum[i] - lum[i - 1]) <= thresh:
+            continue
+        r = i - 1
+        while r > 0 and dup[r]:
+            r -= 1
+        if not any(f in cuts for f in range(r + 1, i + 2)):
+            out.append(i + 1)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--plan', required=True)
@@ -308,12 +325,16 @@ def main():
            # Exactly nF frames: the length is the picture's (the sound is padded), never cut one frame short by -shortest.
            '-frames:v', str(nF), '-t', f'{nF / fps:.3f}', '-movflags', '+faststart', a.out]
     ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    lum, prev = [], None
+    lum, dup, prev, prev_src = [], [], None, None
     frozen_run, frozen_max = 0, 0
     fs = int(W * 0.08)
     for f in range(1, nF + 1):
         t = (f - 1) / fps
         img = Image.open(have[f]).convert('RGB')
+        # A preview (--pas 3) repeats each rendered frame: read on the SOURCE picture, before grain and captions.
+        src_g = np.asarray(img)[::8, ::8]
+        dup.append(prev_src is not None and bool(np.array_equal(src_g, prev_src)))
+        prev_src = src_g
         s = plan['shots'][shot_of[f]]
         two = s['type'] == 'two'
         if two:
@@ -350,7 +371,7 @@ def main():
     vdur = float(probe('v:0', 'stream=duration') or 0)
     adur = float(probe('a:0', 'stream=duration') or 0)
     cuts = {s['start'] + 1 for s in plan['shots']} | {int(x['start'] * fps) + 1 for x in emo} | {int(x['end'] * fps) + 1 for x in emo}
-    jumps = [i + 1 for i in range(1, len(lum)) if abs(lum[i] - lum[i - 1]) > 18 and (i + 1) not in cuts and i not in cuts]
+    jumps = brightness_jumps(lum, dup, cuts)
     rep = {'frames_expected': nF, 'frames_encoded': int(vframes or 0), 'video_s': round(vdur, 3), 'audio_s': round(adur, 3), 'av_gap_ms': round(abs(vdur - adur) * 1000),
            'longest_frozen_s': round(frozen_max / fps, 2), 'brightness_jumps_outside_cuts': len(jumps), 'shots': len(plan['shots']), 'size': [W, H], 'fps': fps}
     out_lufs, out_peak = lufs(a.out)

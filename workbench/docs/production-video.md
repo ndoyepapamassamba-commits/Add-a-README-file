@@ -96,6 +96,10 @@ mesurées par `scene.py`, `ecran-plans.json`) — au milieu fixe, les têtes tom
   moitié la plus forte des répliques garde son geste ; les gains vont de 0,35 à 0,9, sous les limites cartoon.
 - Réactions proposées par le modèle : seulement sur un cri, la chute ou une réplique énergique, et jamais en gros plan
   sur celui qui réagit (mesuré : un dessin qui claque plein cadre = saut de lumière, faux raccord).
+- Mesuré sur le film 6 dirigé (film 9, 14/10/2026) : porte de qualité **OUI** — mouvement 0,0235 (sans réalisateur 0,0195 ;
+  chaîne ≤ 0,027), couverture 0,42, 0 saut de lumière, conformité 3D 100 %, son conforme ; 0 $ de vidéo.
+- La porte rattache désormais un saut de lumière à la coupe qui le précède dans une fenêtre d'images répétées (aperçu
+  `--pas 3`) : un vrai saut hors coupe reste compté.
 
 ## 4. Feuille de route (gratuit, sans abonnement)
 
