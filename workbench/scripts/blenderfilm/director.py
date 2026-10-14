@@ -324,8 +324,10 @@ def motion_budget(story, log=print):
     def rank(i):
         b = beats[i]
         src = (b.get('_source') or {}).get('geste', '')
-        cue = mocap.search(b.get('text', '')) != 'aucun'
-        return (i == punch_i, cue, src == 'regles', float(b.get('energie', 0)))
+        # A cue word in the line or the author's own pose (a laugh, a shrug, an accusation) are explicit asks; the
+        # model's fills come after; the energy breaks ties.
+        explicit = mocap.search(b.get('text', '')) != 'aucun' or POSE_GESTE.get(b.get('pose', 'neutre'), 'aucun') != 'aucun'
+        return (i == punch_i, explicit, src == 'regles', float(b.get('energie', 0)))
     keep = set(sorted(cand, key=rank, reverse=True)[:keep_n])
     for i in cand:
         if i not in keep:
