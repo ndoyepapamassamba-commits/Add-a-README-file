@@ -40,7 +40,7 @@ const tc = (inner: string, o: { w: number; fill?: string; borders?: string; vAli
 const NO_BORDERS = ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map((s) => `<w:${s} w:val="nil"/>`).join('');
 const tbl = (rows: string[], widths: number[], o: { borders?: string; extra?: string } = {}) =>
   `<w:tbl><w:tblPr><w:tblW w:w="${widths.reduce((a, b) => a + b, 0)}" w:type="dxa"/><w:tblBorders>${o.borders ?? NO_BORDERS}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="90" w:type="dxa"/><w:right w:w="90" w:type="dxa"/></w:tblCellMar>${o.extra ?? ''}</w:tblPr><w:tblGrid>${widths.map((w) => `<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>${rows.join('')}</w:tbl>`;
-const label = (t: string) => para(run(t, { b: true, sz: 17, color: C.blue, caps: true }), { pPr: `${spacing(200, 60)}<w:keepNext/>` });
+const label = (t: string) => para(run(t, { b: true, sz: 17, color: C.blue, caps: true }), { pPr: `<w:keepNext/><w:pBdr><w:left w:val="single" w:sz="18" w:space="6" w:color="${C.gold}"/></w:pBdr>${spacing(200, 60)}<w:ind w:left="120"/>` });
 const bullet = (t: string, o: { color?: string; char?: string; sz?: number } = {}) =>
   para(`${run(`${o.char ?? '▪'}  `, { color: o.color ?? C.gold, b: true, sz: o.sz ?? 20 })}${run(t, { sz: o.sz ?? 20 })}`, { pPr: `<w:ind w:left="360" w:hanging="240"/>${spacing(0, 60)}` });
 const body = (t: string, o: R = {}) => para(run(t, { sz: 20, ...o }), { pPr: spacing(0, 100) });
@@ -68,7 +68,7 @@ function dataTable(head: string[], rows: string[][], widths?: number[], o: { fir
   return tbl(rowsXml, ws) + para('', { pPr: spacing(0, 80) });
 }
 
-function kpiStrip(kpis: Kpi[], cols: number): string {
+function kpiStrip(kpis: Kpi[], cols: number, cover = false): string {
   const out: string[] = [];
   for (let r0 = 0; r0 < kpis.length; r0 += cols) {
     const slice = kpis.slice(r0, r0 + cols);
@@ -83,11 +83,14 @@ function kpiStrip(kpis: Kpi[], cols: number): string {
       }
       widths.push(cw);
       const tone = toneColor(k.tone);
-      const inner =
-        para(run(`${k.code} · ${k.label}`, { b: true, sz: 13, color: C.text2, caps: true }), { pPr: `${spacing(80, 40)}<w:ind w:left="100" w:right="60"/>` }) +
-        para(run(k.value, { b: true, sz: k.value.length > 9 ? 26 : 32, color: C.navy, mono: true }), { pPr: `${spacing(0, 40)}<w:ind w:left="100"/>` }) +
-        para(run(k.sub ?? k.method ?? '', { i: true, sz: 13, color: tone }), { pPr: `${spacing(0, 80)}<w:ind w:left="100" w:right="60"/><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="2" w:color="${tone}"/></w:pBdr>` });
-      cells.push(tc(inner, { w: cw, fill: C.white, borders: `<w:top w:val="single" w:sz="4" w:color="${C.line}"/><w:left w:val="single" w:sz="4" w:color="${C.line}"/><w:bottom w:val="single" w:sz="4" w:color="${C.line}"/><w:right w:val="single" w:sz="4" w:color="${C.line}"/>`, vAlign: 'top' }));
+      const inner = cover
+        ? para(run(k.value, { b: true, sz: k.value.length > 9 ? 30 : 36, color: C.navy, mono: true }), { pPr: `${spacing(100, 20)}<w:ind w:left="100"/>` }) +
+          para(run(k.label, { sz: 15, color: C.text2 }), { pPr: `${spacing(0, 100)}<w:ind w:left="100" w:right="60"/>` })
+        : para(run(`${k.code} · ${k.label}`, { b: true, sz: 13, color: C.text2, caps: true }), { pPr: `${spacing(80, 40)}<w:ind w:left="100" w:right="60"/>` }) +
+          para(run(k.value, { b: true, sz: k.value.length > 9 ? 26 : 32, color: C.navy, mono: true }), { pPr: `${spacing(0, 40)}<w:ind w:left="100"/>` }) +
+          para(run(k.sub ?? k.method ?? '', { i: true, sz: 13, color: tone }), { pPr: `${spacing(0, 80)}<w:ind w:left="100" w:right="60"/><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="2" w:color="${tone}"/></w:pBdr>` });
+      // The reference's tiles: no frame, a pale panel, the tone as a rule (on top for the cover strip).
+      cells.push(tc(inner, { w: cw, fill: C.panel, borders: cover ? `<w:top w:val="single" w:sz="24" w:color="${tone}"/>` : '' }));
     });
     while (slice.length < cols && cells.length) {
       widths.push(gap, cw);
@@ -110,11 +113,11 @@ function recoTable(recos: Reco[], withAxis = false): string {
     ...recos.map((r, i) => {
       const tone = r.priority === 'P1' ? C.risk : r.priority === 'P2' ? C.warn : C.blue;
       const zebra = i % 2 ? C.panel : undefined;
-      const ref = para(run(r.ref, { b: true, sz: 15, color: C.white, mono: true }), { pPr: `<w:jc w:val="center"/>${spacing(60, 0)}` }) + para(run(r.priority, { b: true, sz: 13, color: C.white }), { pPr: `<w:jc w:val="center"/>${spacing(0, 60)}` });
+      const ref = para(`${run(r.ref, { b: true, sz: 15, color: tone, mono: true })}${run(` ${r.priority}`, { b: true, sz: 12, color: tone })}`, { pPr: `<w:jc w:val="left"/>${spacing(60, 60)}` });
       const act = para(run(r.title, { b: true, sz: 16, color: C.navy }), { pPr: spacing(40, 20) }) + para(run(r.action, { sz: 15 }), { pPr: spacing(0, 20) }) + (r.ground ? para(run(`Fondement : ${r.ground}`, { i: true, sz: 13, color: C.text2 }), { pPr: spacing(0, 40) }) : '');
       const cells = withAxis
-        ? [cell(ref, 0, tone), cell(act, 1, zebra), cell(para(run(r.axis ?? '', { sz: 14 }), { pPr: spacing(40, 40) }), 2, zebra), cell(para(run(r.owner, { sz: 14 }), { pPr: spacing(40, 40) }), 3, zebra), cell(para(run(r.due, { sz: 14, mono: true }), { pPr: spacing(40, 40) }), 4, zebra), cell(para(run(r.kpi, { sz: 14, i: true }), { pPr: spacing(40, 40) }), 5, zebra)]
-        : [cell(ref, 0, tone), cell(act, 1, zebra), cell(para(run(r.owner, { sz: 14 }), { pPr: spacing(40, 40) }), 2, zebra), cell(para(run(r.due, { sz: 14, mono: true }), { pPr: spacing(40, 40) }), 3, zebra), cell(para(run(r.kpi, { sz: 14, i: true }), { pPr: spacing(40, 40) }), 4, zebra)];
+        ? [cell(ref, 0, zebra), cell(act, 1, zebra), cell(para(run(r.axis ?? '', { sz: 14 }), { pPr: spacing(40, 40) }), 2, zebra), cell(para(run(r.owner, { sz: 14 }), { pPr: spacing(40, 40) }), 3, zebra), cell(para(run(r.due, { sz: 14, mono: true }), { pPr: spacing(40, 40) }), 4, zebra), cell(para(run(r.kpi, { sz: 14, i: true }), { pPr: spacing(40, 40) }), 5, zebra)]
+        : [cell(ref, 0, zebra), cell(act, 1, zebra), cell(para(run(r.owner, { sz: 14 }), { pPr: spacing(40, 40) }), 2, zebra), cell(para(run(r.due, { sz: 14, mono: true }), { pPr: spacing(40, 40) }), 3, zebra), cell(para(run(r.kpi, { sz: 14, i: true }), { pPr: spacing(40, 40) }), 4, zebra)];
       return `<w:tr><w:trPr><w:cantSplit/></w:trPr>${cells.join('')}</w:tr>`;
     }),
   ];
@@ -132,28 +135,30 @@ export function dossierDocx(d: Dossier, opts: { logo?: ReportLogo | null; brand?
   const addFigure = (f: Parameters<typeof figureChartXml>[0]) => {
     const n = charts.length + 1;
     const rid = `rIdChart${n}`;
-    charts.push({ rid, file: `chart${n}.xml`, xml: figureChartXml(f, { titleInside: false }) });
+    // The report's figures are flat (print): the deck and the workbook keep the 3D.
+    const flat = { ...f, kind: f.kind === 'col3d' ? 'col' : f.kind === 'bar3d' ? 'bar' : f.kind } as typeof f;
+    charts.push({ rid, file: `chart${n}.xml`, xml: figureChartXml(flat, { titleInside: true }) });
     figN++;
-    b.push(para(docxChartRun(rid, 7000 + n, f.title, 6_000_000, 3_000_000), { pPr: `<w:jc w:val="center"/><w:keepNext/>${spacing(80, 40)}` }));
-    b.push(para(`${run(`Figure ${figN} — ${f.title}`, { b: true, sz: 16, color: C.navy })}${f.lecture ? run(`   Lecture — ${f.lecture}`, { i: true, sz: 15, color: C.text2 }) : ''}`, { pPr: `<w:jc w:val="center"/>${spacing(0, 160)}` }));
+    b.push(para(docxChartRun(rid, 7000 + n, f.title, 6_000_000, 2_900_000), { pPr: `<w:jc w:val="center"/><w:keepNext/>${spacing(80, 40)}` }));
+    b.push(para(run(`Figure ${figN} — ${f.title}`, { b: true, sz: 16, color: C.navy }), { pPr: `<w:keepNext/>${spacing(0, 20)}` }));
+    b.push(para(`${f.lecture ? run(`Lecture — ${f.lecture}`, { i: true, sz: 15, color: C.text2 }) : ''}${d.dataSource ? run(`${f.lecture ? '  ' : ''}Source : ${d.dataSource.slice(0, 90)}`, { sz: 13, color: C.text2 }) : ''}`, { pPr: spacing(0, 160) }));
   };
 
-  // ── Cover ──
+  // ── Cover — the reference: a full navy block (logo plate, kicker, title in white, subtitle), the accent filet ──
   const brand = d.org ?? opts.brand ?? 'MASSAMBA Workbench';
+  const plate = logo
+    ? para(pictureXml('rIdLogo', 9002, 'Logo', logo.width, logo.height, 46 * 12700), { pPr: spacing(160, 200) })
+    : tbl([`<w:tr>${tc(para(run(brand.slice(0, 26), { b: true, sz: 22, color: C.navy }), { pPr: `<w:jc w:val="center"/>${spacing(120, 120)}` }), { w: 3000, fill: C.white, vAlign: 'center', borders: `<w:top w:val="single" w:sz="8" w:color="${C.line}"/><w:left w:val="single" w:sz="8" w:color="${C.line}"/><w:bottom w:val="single" w:sz="8" w:color="${C.line}"/><w:right w:val="single" w:sz="8" w:color="${C.line}"/>` })}</w:tr>`], [3000]) + para('', { pPr: spacing(0, 160) });
+  const block =
+    plate +
+    para(run(d.kicker ?? `${brand} · ${d.date}`, { b: true, sz: 17, color: C.gold, caps: true }), { pPr: spacing(120, 60) }) +
+    para(run(d.title, { b: true, sz: d.title.length > 48 ? 46 : 54, color: C.white }), { pPr: spacing(0, 80) }) +
+    (d.subtitle ? para(run(d.subtitle, { sz: 21, color: C.subtle }), { pPr: spacing(0, 120) }) : '') +
+    para(run([d.org, d.unit].filter(Boolean).join(' · ') || brand, { sz: 16, color: C.subtle }), { pPr: spacing(0, 240) });
   b.push(
-    tbl(
-      [
-        `<w:tr>${tc(para(run(d.kicker ?? `${brand} · ${d.date}`, { b: true, sz: 17, color: C.gold, caps: true }), { pPr: spacing(160, 40) }) + para(run([d.org, d.unit].filter(Boolean).join(' · ') || brand, { sz: 16, color: C.subtle }), { pPr: spacing(0, 160) }), { w: PAGE_W - 2400, fill: C.navy, vAlign: 'center' })}${tc(
-          logo ? para(pictureXml('rIdLogo', 9002, 'Logo', logo.width, logo.height, 42 * 12700), { pPr: `<w:jc w:val="right"/>${spacing(100, 100)}` }) : para(run(brand.slice(0, 18), { b: true, sz: 20, color: C.navy }), { pPr: `<w:jc w:val="center"/>${spacing(140, 140)}` }),
-          { w: 2400, fill: C.white, vAlign: 'center', borders: `<w:top w:val="single" w:sz="24" w:color="${C.navy}"/><w:bottom w:val="single" w:sz="24" w:color="${C.navy}"/><w:right w:val="single" w:sz="24" w:color="${C.navy}"/>` },
-        )}</w:tr>`,
-      ],
-      [PAGE_W - 2400, 2400],
-    ),
-    para('', { pPr: `<w:pBdr><w:bottom w:val="single" w:sz="18" w:space="1" w:color="${C.gold}"/></w:pBdr>${spacing(0, 400)}` }),
-    para(run(d.title, { b: true, sz: d.title.length > 48 ? 48 : 56, color: C.navy }), { pPr: spacing(200, 120) }),
-    d.subtitle ? para(run(d.subtitle, { sz: 24, color: C.text2 }), { pPr: spacing(0, 360) }) : '',
-    kpiStrip(d.kpis.slice(0, 4), 4),
+    tbl([`<w:tr><w:trPr><w:cantSplit/></w:trPr>${tc(block, { w: PAGE_W, fill: C.navy, vAlign: 'top' })}</w:tr>`], [PAGE_W], { extra: '' }),
+    para('', { pPr: `<w:pBdr><w:bottom w:val="single" w:sz="24" w:space="1" w:color="${C.gold}"/></w:pBdr>${spacing(0, 360)}` }),
+    kpiStrip(d.kpis.slice(0, 4), 4, true),
     callout('La thèse', d.thesis),
     para(`${run('Émetteur : ', { b: true, sz: 18, color: C.navy })}${run(d.author ?? brand, { sz: 18 })}`, { pPr: spacing(200, 40) }),
     d.audience ? para(`${run('Destinataires : ', { b: true, sz: 18, color: C.navy })}${run(d.audience, { sz: 18 })}`, { pPr: spacing(0, 40) }) : '',
@@ -172,9 +177,9 @@ export function dossierDocx(d: Dossier, opts: { logo?: ReportLogo | null; brand?
   if (d.sources.length) annexes.push('Annexe E — Bibliographie');
   annexes.forEach((a) => tocEntries.push({ style: 'TOC1', text: a }));
   b.push(para(run('Sommaire', { b: true, sz: 32, color: C.navy }), { pPr: `<w:pBdr><w:bottom w:val="single" w:sz="18" w:space="4" w:color="${C.gold}"/></w:pBdr>${spacing(0, 200)}` }));
-  const begin = '<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-1" \\h \\z \\u \\n </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>';
+  const begin = '<w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-1" \\h \\z \\u \\n </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>';
   const end = '<w:r><w:fldChar w:fldCharType="end"/></w:r>';
-  tocEntries.forEach((e, i) => b.push(para(`${i === 0 ? begin : ''}${run(e.text, { sz: 20 })}${i === tocEntries.length - 1 ? end : ''}`, { style: e.style })));
+  tocEntries.forEach((e, i) => b.push(para(`${i === 0 ? begin : ''}${run(e.text, { sz: 20 })}<w:r><w:tab/></w:r>${i === tocEntries.length - 1 ? end : ''}`, { style: e.style })));
   b.push(pageBreak());
 
   // ── Ce qu'il faut retenir ──
