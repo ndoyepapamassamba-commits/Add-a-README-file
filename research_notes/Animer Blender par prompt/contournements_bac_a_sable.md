@@ -64,7 +64,10 @@ Tout ce qui suit est lu sur la source primaire ou MESURÉ dans le conteneur (4 c
 - Lecteur BVH maison (`parse_bvh`, `forward_bvh`, `card_curves_bvh`) : mêmes courbes de carte (buste, tête, bassin, rebond,
   flexion) que pour CMU. Mesuré : Angry_FW (4 942 images, 60 i/s) lu en 0,19 s.
 - Le zip Zenodo de 1 469 Mo n'est jamais téléchargé : répertoire central lu par requêtes Range (0,5 Mo), puis le seul
-  membre voulu (2–11 Mo). Le serveur coupe les connexions longues : 5 reprises avec pause.
+  membre voulu (2–11 Mo). Le serveur coupe les connexions longues : 5 reprises avec pause (y compris sur lecture
+  tronquée, `IncompleteRead`). Mesuré depuis le moteur (`mocap.ensure_bvh`) : 63 à 182 s par clip selon le
+  débit de Zenodo (Strutting 63 s, Depressed 82 s, Tiptoe 91 s, Neutral 135 s, Zombie 142 s, Old 177 s,
+  OnPhoneRight 182 s) ; 0,01 s quand le clip est déjà dans le cache. Les 12 styles d'entrée sont en cache (67 Mo).
 - Amplitudes crête à crête (clip entier → fenêtre la plus expressive de 1,2 s) :
 
 | Style | buste | tête | bassin | rebond | fenêtre 1,2 s |
