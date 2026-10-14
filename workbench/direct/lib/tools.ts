@@ -965,7 +965,7 @@ export const TOOLS: DirectTool[] = [
         }
       }
       if (errs.length && !ws.braveKey && ws.braveFallback === false)
-        throw new Error(`Recherche web indisponible (${errs.join(' ; ')}). Vérifiez la clé dans Réglages.`);
+        throw new Error(`Recherche web indisponible (${errs.join(' ; ')}). Vérifiez la clé dans Paramètres.`);
       if (ws.braveKey) {
         const n = Math.min(10, Number(a.max_results) || 6);
         const bases = [ws.braveRelay, BRAVE_DIRECT].filter((x): x is string => Boolean(x));
@@ -990,7 +990,7 @@ export const TOOLS: DirectTool[] = [
         }
         if (ws.braveFallback === false)
           throw new Error(
-            `Brave Search indisponible (${lastErr}). Vérifiez la clé / le relais dans Réglages.`,
+            `Brave Search indisponible (${lastErr}). Vérifiez la clé / le relais dans Paramètres.`,
           );
       }
       const model = pickFromTier(ctx.models, DEFAULT_AUTO_TIERS.fast, {})?.id ?? 'openai/gpt-4o-mini';

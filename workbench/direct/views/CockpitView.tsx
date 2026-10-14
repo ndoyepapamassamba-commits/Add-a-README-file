@@ -5,7 +5,7 @@
 //  · Orchestration : the workflows as executable chains + the live trace of the latest session (stages, tools, agents);
 //  · Observabilité & coûts : calls, tokens, cost and latency per day / model / agent, budgets, recent errors.
 import { useMemo, useState } from 'react';
-import { Activity, BarChart3, Bot, Gauge as GaugeIcon, LayoutDashboard, Library, Play, Search, Workflow as WorkflowIcon } from 'lucide-react';
+import { Activity, BarChart3, Bot, Check, Gauge as GaugeIcon, Library, Play, Search, Workflow as WorkflowIcon } from 'lucide-react';
 import { Button, Gauge } from '../../web/components/ui';
 import { cx, fmtCost, fmtDuration, fmtRelative, fmtTokens, shortModel } from '../../web/lib/format';
 import { agentStats, dailySeries, modelStats, percentile } from '../lib/cockpit';
@@ -13,48 +13,19 @@ import { allAgents } from '../lib/roles';
 import { today, useStore } from '../lib/store';
 import { allWorkflows, runWorkflow } from '../lib/workflows';
 import { Empty, HomeView, Kpi, Panel } from './HomeView';
+import { PageHeader } from './PageHeader';
 
-type Tab = 'cockpit' | 'catalogue' | 'orchestration' | 'observabilite';
-const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: 'cockpit', label: 'Cockpit', icon: <LayoutDashboard size={13} /> },
-  { id: 'catalogue', label: 'Catalogue LLM', icon: <Library size={13} /> },
-  { id: 'orchestration', label: 'Orchestration', icon: <WorkflowIcon size={13} /> },
-  { id: 'observabilite', label: 'Observabilité & coûts', icon: <BarChart3 size={13} /> },
-];
 const DAYS30 = 30 * 86400_000;
 const price = (v: number | null) => (v === null ? '—' : v === 0 ? 'gratuit' : `${v.toFixed(v < 1 ? 3 : 2)} $`);
 const ctx = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)} M` : n >= 1000 ? `${Math.round(n / 1000)} k` : String(n));
 
+/** Cockpit IA — the front page (mission launcher, KPIs, 24 h pulse, missions, sessions, failures, workflows). */
 export function CockpitView() {
-  const [tab, setTab] = useState<Tab>('cockpit');
-  return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center gap-1 border-b border-line bg-elev px-3 py-1.5" data-testid="cockpit-tabs">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={cx('flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12.5px]', tab === t.id ? 'bg-accent/15 font-semibold text-accent' : 'text-muted hover:bg-hover')}
-            data-testid={`cockpit-tab-${t.id}`}
-          >
-            {t.icon} {t.label}
-          </button>
-        ))}
-        <span className="ml-auto text-[11px] text-faint">chaque chiffre vient des magasins de l’application — rien n’est estimé</span>
-      </div>
-      <div className="min-h-0 flex-1">
-        {tab === 'cockpit' && <HomeView />}
-        {tab === 'catalogue' && <ModelCatalogue />}
-        {tab === 'orchestration' && <Orchestration />}
-        {tab === 'observabilite' && <Observability />}
-      </div>
-    </div>
-  );
+  return <HomeView />;
 }
 
 /** The real catalogue + what was measured on it. */
-function ModelCatalogue() {
+export function ModelCatalogue() {
   const models = useStore((s) => s.models);
   const usage = useStore((s) => s.usage);
   const [q, setQ] = useState('');
@@ -71,9 +42,32 @@ function ModelCatalogue() {
   }, [models, q, onlyMeasured, stats]);
   const measured = models.filter((m) => stats.has(m.id)).length;
   const top = [...stats.values()].sort((a, b) => b.calls - a.calls)[0];
+  const defaultModel = useStore((x) => x.settings.defaultModel);
+  const session = useStore((x) => x.sessions.find((y) => y.id === x.currentId));
+  const busy = useStore((x) => Boolean(session && x.running[session.id]));
+  const chosen = session?.model ?? defaultModel;
+  const choose = (id: string) => {
+    const st = useStore.getState();
+    if (session && !busy) st.patchSession(session.id, { model: id });
+    else st.patchSettings({ defaultModel: id });
+    st.toast('ok', session && !busy ? `Modèle de la session : ${shortModel(id)}` : `Modèle par défaut : ${shortModel(id)}`);
+  };
   return (
     <div className="h-full overflow-auto">
       <div className="mx-auto max-w-[1400px] space-y-3 p-4">
+        <PageHeader
+          title="Catalogue LLM"
+          subtitle="Sélectionnez le modèle adapté à votre tâche : prix, contexte, capacités, latence et fiabilité mesurées chez vous"
+          right={
+            <span className="flex items-center gap-2 rounded-lg border border-line bg-panel px-2.5 py-1.5 text-[12px]" data-testid="catalogue-chosen">
+              <span className="text-faint">{session ? 'Modèle de cette session' : 'Modèle par défaut'}</span>
+              <b>{chosen === 'auto' ? 'Auto (routage)' : shortModel(chosen)}</b>
+              <button className="text-accent hover:underline" onClick={() => useStore.getState().setView('settings')}>
+                Configurer
+              </button>
+            </span>
+          }
+        />
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
           <Kpi label="Modèles au catalogue" value={String(models.length)} sub={models.length ? 'lus chez les fournisseurs' : 'catalogue non chargé (clé fournisseur ?)'} />
           <Kpi label="Modèles mesurés (30 j)" value={String(measured)} sub="appelés au moins une fois" tone={measured ? 'ok' : undefined} />
@@ -95,7 +89,7 @@ function ModelCatalogue() {
             </span>
           }
         >
-          {!rows.length && <Empty>{models.length ? 'Aucun modèle ne correspond.' : 'Le catalogue se charge avec une clé fournisseur (Réglages).'}</Empty>}
+          {!rows.length && <Empty>{models.length ? 'Aucun modèle ne correspond.' : 'Le catalogue se charge avec une clé fournisseur (Paramètres).'}</Empty>}
           {rows.length > 0 && (
             <table className="w-full text-[12px]" data-testid="catalogue-table">
               <thead className="text-left text-faint">
@@ -111,13 +105,14 @@ function ModelCatalogue() {
                   <th className="px-2 py-1 text-right">p95</th>
                   <th className="px-2 py-1 text-right">Fiabilité</th>
                   <th className="px-2 py-1 text-right">Coût 30 j</th>
+                  <th className="px-2 py-1 text-right">Choix</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((m) => {
                   const s = stats.get(m.id);
                   return (
-                    <tr key={m.id} className="border-t border-line">
+                    <tr key={m.id} className={cx('border-t border-line', m.id === chosen && 'bg-accent-soft')}>
                       <td className="px-2 py-1 font-medium" title={m.id}>
                         {m.name}
                       </td>
@@ -133,6 +128,21 @@ function ModelCatalogue() {
                       <td className="px-2 py-1 text-right tabular-nums">{s ? fmtDuration(s.p95) : '—'}</td>
                       <td className={cx('px-2 py-1 text-right tabular-nums', s && s.reliability < 0.9 && 'text-warn')}>{s ? `${Math.round(s.reliability * 100)} %` : '—'}</td>
                       <td className="px-2 py-1 text-right tabular-nums">{s ? fmtCost(s.cost) : '—'}</td>
+                      <td className="px-2 py-1 text-right">
+                        {m.id === chosen ? (
+                          <span className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-accent">
+                            <Check size={12} /> choisi
+                          </span>
+                        ) : (
+                          <button
+                            className="rounded-md border border-line px-2 py-0.5 text-[11.5px] hover:border-accent hover:text-accent"
+                            onClick={() => choose(m.id)}
+                            title={session && !busy ? 'Utiliser ce modèle dans la session en cours' : 'En faire le modèle par défaut'}
+                          >
+                            Choisir
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
@@ -146,7 +156,7 @@ function ModelCatalogue() {
 }
 
 /** Workflows as executable chains + the live trace of the latest session. */
-function Orchestration() {
+export function Orchestration() {
   const workflows = useStore((s) => s.workflows);
   const sessions = useStore((s) => s.sessions);
   const running = useStore((s) => s.running);
@@ -164,6 +174,17 @@ function Orchestration() {
   return (
     <div className="h-full overflow-auto">
       <div className="mx-auto grid max-w-[1400px] gap-3 p-4 lg:grid-cols-2">
+        <div className="lg:col-span-2">
+          <PageHeader
+            title="Orchestration des agents"
+            subtitle="Définissez et exécutez des workflows d’agents pour vos tâches complexes ; suivez la trace en direct"
+            right={
+              <Button size="sm" variant="primary" onClick={() => useStore.getState().setView('workflows')}>
+                <WorkflowIcon size={13} /> Créer un workflow
+              </Button>
+            }
+          />
+        </div>
         <Panel
           title="Workflows exécutables"
           icon={<WorkflowIcon size={13} />}
@@ -271,7 +292,7 @@ function Orchestration() {
 }
 
 /** Calls, tokens, cost and latency — per day, model and agent — plus budgets and recent errors. */
-function Observability() {
+export function Observability() {
   const usage = useStore((s) => s.usage);
   const spend = useStore((s) => s.spend);
   const settings = useStore((s) => s.settings);
@@ -298,6 +319,15 @@ function Observability() {
   return (
     <div className="h-full overflow-auto">
       <div className="mx-auto max-w-[1400px] space-y-3 p-4">
+        <PageHeader
+          title="Observabilité & coûts"
+          subtitle="Surveillez l’exécution, analysez les performances et maîtrisez vos dépenses (30 derniers jours, mesuré)"
+          right={
+            <Button size="sm" variant="ghost" onClick={() => useStore.getState().setView('providers')}>
+              Coûts par fournisseur
+            </Button>
+          }
+        />
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6" data-testid="observability-kpis">
           <Kpi label="Appels (30 j)" value={String(recent.length)} sub={`${byModel.length} modèle(s)`} />
           <Kpi label="Tokens (30 j)" value={fmtTokens(tokens)} sub={`${fmtTokens(recent.reduce((a, u) => a + u.tokensOut, 0))} en sortie`} />

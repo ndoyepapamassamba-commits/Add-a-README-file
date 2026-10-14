@@ -439,7 +439,7 @@ export function previewCouncil(
 ): CouncilPreview {
   const st = useStore.getState();
   const models = st.models;
-  if (!models.length) throw new Error('Catalogue de modèles vide : ouvrez Réglages.');
+  if (!models.length) throw new Error('Catalogue de modèles vide : ouvrez Paramètres.');
   const s = fabricSettings();
   const profile = analyzeTask({ text: task });
   const type = profile.type;

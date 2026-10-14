@@ -412,7 +412,7 @@ function CenterTab() {
         </div>
       </Section>
       <Section
-        title="Réglages"
+        title="Paramètres"
         hint="Seuils de la porte qualité par risque, poids de l’ApprenticeScore (normalisés, renforcés pour les tâches high / critical), budget de la capsule."
       >
         <div className="mb-2 flex flex-wrap items-center gap-3 text-[12px]" data-testid="apprentice-gates">
@@ -622,7 +622,7 @@ function RegistryTab() {
             ])}
           />
         ) : (
-          <Empty>Aucun modèle gratuit : chargez le catalogue (Réglages) puis « Découvrir ».</Empty>
+          <Empty>Aucun modèle gratuit : chargez le catalogue (Paramètres) puis « Découvrir ».</Empty>
         )}
       </Section>
       {sel && (

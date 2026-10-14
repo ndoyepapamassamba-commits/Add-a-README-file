@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { startMockOpenRouter, type MockOpenRouter } from '../helpers/mockOpenRouter';
+import { openView } from './nav';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FILE = path.join(ROOT, 'dist/massamba-workbench-direct.html');
@@ -41,7 +42,7 @@ async function open(page: Page, errors: string[] = []) {
   await page.getByRole('button', { name: 'Commencer' }).click();
   // Lands on the Cockpit; most tests work in the chat.
   await expect(page.getByText('Nouvelle mission')).toBeVisible();
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await expect(page.locator('textarea')).toBeVisible();
   // Explicit model so requests are predictable.
   await page.evaluate(() => undefined);
@@ -53,7 +54,7 @@ test('Cognitive Super-Fabric: all tabs render, no fabricated data, non-regressio
 }) => {
   const errors: string[] = [];
   await open(page, errors);
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   const tabs = [
     'Mission cognitive',
     'Model Council',

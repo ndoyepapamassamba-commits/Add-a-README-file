@@ -78,3 +78,46 @@ export function agentStats(usage: UsageEntry[], since = 0): { agent: string; cal
   }
   return [...m.entries()].map(([agent, r]) => ({ agent, calls: r.calls, cost: r.cost, p50: percentile(r.ms, 50) })).sort((a, b) => b.calls - a.calls);
 }
+
+export interface HourPoint {
+  /** Start of the hour (ms). */
+  ts: number;
+  calls: number;
+  cost: number;
+  /** Median call duration in the hour (ms, 0 when there was no call). */
+  p50: number;
+}
+/** One point per hour over the last `hours` hours (current hour last), zeros on quiet hours. Measured only. */
+export function hourlySeries(usage: UsageEntry[], hours = 24, now = Date.now()): HourPoint[] {
+  const H = 3600_000;
+  const first = Math.floor(now / H) * H - (hours - 1) * H;
+  const buckets = Array.from({ length: hours }, (_, i) => ({ ts: first + i * H, calls: 0, cost: 0, ms: [] as number[] }));
+  for (const u of usage) {
+    const i = Math.floor((u.ts - first) / H);
+    if (i < 0 || i >= hours) continue;
+    const b = buckets[i]!;
+    b.calls++;
+    b.cost += u.cost;
+    b.ms.push(u.durationMs);
+  }
+  return buckets.map((b) => ({ ts: b.ts, calls: b.calls, cost: b.cost, p50: percentile(b.ms, 50) }));
+}
+
+export interface Pulse {
+  calls: number;
+  cost: number;
+  /** Median duration of the calls of the window (ms), null without call. */
+  p50: number | null;
+  /** Share of calls served without fallback (0..1), null without call. */
+  success: number | null;
+}
+/** Totals of a window [since, now] of the usage log. */
+export function pulse(usage: UsageEntry[], since: number): Pulse {
+  const w = usage.filter((u) => u.ts >= since);
+  return {
+    calls: w.length,
+    cost: w.reduce((a, u) => a + u.cost, 0),
+    p50: w.length ? percentile(w.map((u) => u.durationMs), 50) : null,
+    success: w.length ? 1 - w.filter((u) => u.fallback).length / w.length : null,
+  };
+}

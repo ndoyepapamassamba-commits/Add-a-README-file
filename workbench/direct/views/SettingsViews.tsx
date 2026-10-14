@@ -189,7 +189,10 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
 
   return (
     <div className="mx-auto h-full max-w-[760px] overflow-auto p-6">
-      <h1 className="mb-4 text-[18px] font-semibold">Réglages</h1>
+      <div className="mb-4">
+        <h1 className="text-[20px] font-semibold tracking-tight sm:text-[22px]">Paramètres</h1>
+        <p className="mt-0.5 text-[13px] text-muted">L’essentiel ici ; le reste est rangé dans « Avancé ».</p>
+      </div>
       <Section title="Fournisseur IA — OpenRouter">
         <div className="rounded-xl border border-line bg-panel p-4">
           <div className="mb-3 flex items-center gap-2 text-[13px]">
@@ -263,13 +266,6 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
               options={modelOptions}
             />
           </Field>
-          <Field label="Modèle de secours" hint="Utilisé seulement si « Garder le même modèle » est désactivé">
-            <Select
-              value={s.fallbackModel}
-              onChange={(v) => patch({ fallbackModel: v })}
-              options={[{ value: '', label: '— aucun —' }, ...modelOptions.slice(1)]}
-            />
-          </Field>
           <Field label="Garder le même modèle pendant toute la discussion" hint="Aucun changement automatique de modèle en cours de chat (routage, escalade, repli). « Auto » choisit une seule fois, au premier message.">
             <span data-testid="pin-model">
               <Toggle checked={s.pinModel !== false} onChange={(v) => patch({ pinModel: v })} />
@@ -300,52 +296,13 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
         </div>
       </Section>
 
-      <Section title="Animation vidéo économique (Studio)">
-        <div className="grid gap-x-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-2">
-          <Field label="Clé Pollinations (recommandé : ≈ 0,05 $ le plan de 5 s)" hint="enter.pollinations.ai → compte → clé sk_… et un petit solde (les pollens de « quêtes » gratuites ne paient pas la vidéo). Moteur : Wan 2.2 Fast, image → vidéo. La clé reste dans ce navigateur.">
-            <Input type="password" value={s.pollinationsKey ?? ''} onChange={(e) => patch({ pollinationsKey: e.target.value.trim() })} placeholder="sk_…" data-testid="pollinations-key" />
-          </Field>
-          <Field label="Jeton Hugging Face (option gratuite, selon quota)" hint="huggingface.co → Settings → Access Tokens (lecture). Utilise le Space gratuit « Wan 2.2 14B Fast » dans la limite du quota GPU gratuit de votre compte.">
-            <Input type="password" value={s.hfToken ?? ''} onChange={(e) => patch({ hfToken: e.target.value.trim() })} placeholder="hf_…" data-testid="hf-token" />
-          </Field>
-          <Field label="Pont Blender local (rendu 3D sur votre machine, 0 $)" hint="Sur votre PC : python3 scripts/blender-bridge.py --blender <chemin de blender> (ou sans --blender après pip install bpy). L’app envoie la scène, Blender rend avec votre GPU (EEVEE) et renvoie l’image de vérification et le MP4. Rien ne quitte votre machine.">
-            <Input value={s.blenderBridgeUrl ?? ''} onChange={(e) => patch({ blenderBridgeUrl: e.target.value.trim() })} placeholder="http://127.0.0.1:8765" data-testid="blender-bridge-url" />
-          </Field>
-          <Field label="Jeton du pont Blender (si démarré avec --token)" hint="Reste dans ce navigateur ; envoyé dans l’en-tête X-Bridge-Token.">
-            <Input type="password" value={s.blenderBridgeToken ?? ''} onChange={(e) => patch({ blenderBridgeToken: e.target.value.trim() })} placeholder="(optionnel)" data-testid="blender-bridge-token" />
-          </Field>
-          <Field label="Clé fal.ai (acteur 3D → personnage, ≈ 0,04–0,08 $ / s)" hint="fal.ai → Dashboard → Keys. L’acteur virtuel 3D joue la scène (squelette complet), puis Wan2.2-Animate transfère ses mouvements au personnage de l’image (corps entier, rendu génératif). La clé reste dans ce navigateur.">
-            <Input type="password" value={s.falKey ?? ''} onChange={(e) => patch({ falKey: e.target.value.trim() })} placeholder="clé fal" data-testid="fal-key" />
-          </Field>
-        </div>
-      </Section>
-
-      <Section title="Internet (recherche web) et vision">
+      <Section title="Recherche web">
         <div className="grid gap-x-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-2">
           <Field label="Clé Tavily (recommandé, gratuit)" hint="tavily.com → inscription → API key (tvly-…). Crédits gratuits chaque mois, sans carte ; fonctionne directement, sans relais.">
             <Input type="password" value={s.tavilyKey ?? ''} onChange={(e) => patch({ tavilyKey: e.target.value.trim() })} placeholder="tvly-…" data-testid="tavily-key" />
           </Field>
-          <Field label="Clé Serper (option : résultats Google)" hint="serper.dev → inscription → API key. Requêtes gratuites à l’inscription ; fonctionne directement, sans relais.">
-            <Input type="password" value={s.serperKey ?? ''} onChange={(e) => patch({ serperKey: e.target.value.trim() })} placeholder="clé Serper" />
-          </Field>
-          <Field label="Clé Brave Search (option, relais requis)" hint="Brave n’a plus d’offre gratuite (crédits mensuels, carte demandée) et bloque les appels directs du navigateur.">
-            <Input type="password" value={s.braveKey ?? ''} onChange={(e) => patch({ braveKey: e.target.value.trim() })} placeholder="BSA…" data-testid="brave-key" />
-          </Field>
-          <Field label="Relais Brave (URL)" hint="Brave bloque les appels directs d’un navigateur : déployez relay/brave-relay (Supabase) et collez son URL.">
-            <Input value={s.braveRelay ?? ''} onChange={(e) => patch({ braveRelay: e.target.value.trim() })} placeholder="https://xxxx.supabase.co/functions/v1/brave-relay" />
-          </Field>
           <Field label="Si la recherche gratuite échoue, utiliser la recherche OpenRouter (payante)">
             <Toggle checked={s.braveFallback !== false} onChange={(v) => patch({ braveFallback: v })} />
-          </Field>
-          <Field label="Pont vision JEV" hint="Un modèle sans vision reçoit la description exacte et l’OCR de l’image, lue une seule fois par un petit modèle vision (cache).">
-            <Toggle checked={s.visionBridge !== false} onChange={(v) => patch({ visionBridge: v })} />
-          </Field>
-          <Field label="Modèle vision du pont" hint="Vide = gratuit d’abord, puis le moins cher">
-            <Select
-              value={s.visionModel ?? ''}
-              onChange={(v) => patch({ visionModel: v })}
-              options={[{ value: '', label: 'Automatique (le moins cher)' }, ...models.filter((m) => m.capabilities.vision).map((m) => ({ value: m.id, label: shortModel(m.id) }))]}
-            />
           </Field>
         </div>
       </Section>
@@ -390,6 +347,62 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
           </Field>
         </div>
       </Section>
+
+      <details className="group mb-6 rounded-xl border border-line bg-panel" data-testid="settings-advanced">
+        <summary className="cursor-pointer select-none list-none px-4 py-3 text-[13px] font-semibold">
+          <span className="mr-1 inline-block transition-transform group-open:rotate-90">›</span> Avancé
+          <span className="ml-2 font-normal text-faint">modèle de secours, autres moteurs de recherche, pont vision, vidéo et 3D</span>
+        </summary>
+        <div className="border-t border-line p-4">
+          <div className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-faint">Modèle et recherche</div>
+          <div className="grid gap-x-3 sm:grid-cols-2">
+          <Field label="Modèle de secours" hint="Utilisé seulement si « Garder le même modèle » est désactivé">
+            <Select
+              value={s.fallbackModel}
+              onChange={(v) => patch({ fallbackModel: v })}
+              options={[{ value: '', label: '— aucun —' }, ...modelOptions.slice(1)]}
+            />
+          </Field>
+          <Field label="Clé Serper (option : résultats Google)" hint="serper.dev → inscription → API key. Requêtes gratuites à l’inscription ; fonctionne directement, sans relais.">
+            <Input type="password" value={s.serperKey ?? ''} onChange={(e) => patch({ serperKey: e.target.value.trim() })} placeholder="clé Serper" />
+          </Field>
+          <Field label="Clé Brave Search (option, relais requis)" hint="Brave n’a plus d’offre gratuite (crédits mensuels, carte demandée) et bloque les appels directs du navigateur.">
+            <Input type="password" value={s.braveKey ?? ''} onChange={(e) => patch({ braveKey: e.target.value.trim() })} placeholder="BSA…" data-testid="brave-key" />
+          </Field>
+          <Field label="Relais Brave (URL)" hint="Brave bloque les appels directs d’un navigateur : déployez relay/brave-relay (Supabase) et collez son URL.">
+            <Input value={s.braveRelay ?? ''} onChange={(e) => patch({ braveRelay: e.target.value.trim() })} placeholder="https://xxxx.supabase.co/functions/v1/brave-relay" />
+          </Field>
+          <Field label="Pont vision JEV" hint="Un modèle sans vision reçoit la description exacte et l’OCR de l’image, lue une seule fois par un petit modèle vision (cache).">
+            <Toggle checked={s.visionBridge !== false} onChange={(v) => patch({ visionBridge: v })} />
+          </Field>
+          <Field label="Modèle vision du pont" hint="Vide = gratuit d’abord, puis le moins cher">
+            <Select
+              value={s.visionModel ?? ''}
+              onChange={(v) => patch({ visionModel: v })}
+              options={[{ value: '', label: 'Automatique (le moins cher)' }, ...models.filter((m) => m.capabilities.vision).map((m) => ({ value: m.id, label: shortModel(m.id) }))]}
+            />
+          </Field>
+          </div>
+          <div className="mb-2 mt-4 text-[12px] font-semibold uppercase tracking-wide text-faint">Vidéo et 3D (hors de l’app pour l’instant, réglages conservés)</div>
+          <div className="grid gap-x-3 sm:grid-cols-2">
+          <Field label="Clé Pollinations (recommandé : ≈ 0,05 $ le plan de 5 s)" hint="enter.pollinations.ai → compte → clé sk_… et un petit solde (les pollens de « quêtes » gratuites ne paient pas la vidéo). Moteur : Wan 2.2 Fast, image → vidéo. La clé reste dans ce navigateur.">
+            <Input type="password" value={s.pollinationsKey ?? ''} onChange={(e) => patch({ pollinationsKey: e.target.value.trim() })} placeholder="sk_…" data-testid="pollinations-key" />
+          </Field>
+          <Field label="Jeton Hugging Face (option gratuite, selon quota)" hint="huggingface.co → Settings → Access Tokens (lecture). Utilise le Space gratuit « Wan 2.2 14B Fast » dans la limite du quota GPU gratuit de votre compte.">
+            <Input type="password" value={s.hfToken ?? ''} onChange={(e) => patch({ hfToken: e.target.value.trim() })} placeholder="hf_…" data-testid="hf-token" />
+          </Field>
+          <Field label="Pont Blender local (rendu 3D sur votre machine, 0 $)" hint="Sur votre PC : python3 scripts/blender-bridge.py --blender <chemin de blender> (ou sans --blender après pip install bpy). L’app envoie la scène, Blender rend avec votre GPU (EEVEE) et renvoie l’image de vérification et le MP4. Rien ne quitte votre machine.">
+            <Input value={s.blenderBridgeUrl ?? ''} onChange={(e) => patch({ blenderBridgeUrl: e.target.value.trim() })} placeholder="http://127.0.0.1:8765" data-testid="blender-bridge-url" />
+          </Field>
+          <Field label="Jeton du pont Blender (si démarré avec --token)" hint="Reste dans ce navigateur ; envoyé dans l’en-tête X-Bridge-Token.">
+            <Input type="password" value={s.blenderBridgeToken ?? ''} onChange={(e) => patch({ blenderBridgeToken: e.target.value.trim() })} placeholder="(optionnel)" data-testid="blender-bridge-token" />
+          </Field>
+          <Field label="Clé fal.ai (acteur 3D → personnage, ≈ 0,04–0,08 $ / s)" hint="fal.ai → Dashboard → Keys. L’acteur virtuel 3D joue la scène (squelette complet), puis Wan2.2-Animate transfère ses mouvements au personnage de l’image (corps entier, rendu génératif). La clé reste dans ce navigateur.">
+            <Input type="password" value={s.falKey ?? ''} onChange={(e) => patch({ falKey: e.target.value.trim() })} placeholder="clé fal" data-testid="fal-key" />
+          </Field>
+        </div>
+        </div>
+      </details>
 
       <Section title="Données de ce navigateur">
         <div className="flex flex-wrap gap-2 rounded-xl border border-line bg-panel p-4">

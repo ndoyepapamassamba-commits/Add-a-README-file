@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { startMockOpenRouter, type MockOpenRouter } from '../helpers/mockOpenRouter';
+import { openView } from './nav';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FILE = path.join(ROOT, 'dist/massamba-workbench-direct.html');
@@ -41,7 +42,7 @@ async function open(page: Page, errors: string[] = []) {
   await page.getByRole('button', { name: 'Commencer' }).click();
   // Lands on the Cockpit; most tests work in the chat.
   await expect(page.getByText('Nouvelle mission')).toBeVisible();
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await expect(page.locator('textarea')).toBeVisible();
   // Explicit model so requests are predictable.
   await page.evaluate(() => undefined);
@@ -59,10 +60,10 @@ const systemOf = (i: number) =>
 
 /** Model lock OFF: lets the run switch models (escalation / free-first fallback), as the user can choose in Settings. */
 async function unlockModel(page: Page) {
-  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await openView(page, 'Réglages');
   await page.locator('[data-testid=pin-model] [role=switch]').click();
   await expect(page.locator('[data-testid=pin-model] [role=switch]')).toHaveAttribute('aria-checked', 'false');
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
 }
 
 test('onboarding, streaming chat, real cost and credits gauge', async ({ page }) => {
@@ -158,7 +159,7 @@ test('NORMAL mode asks before writing; the file appears in the workspace', async
   await expect(yes).toBeVisible();
   await yes.click();
   await expect(page.getByText('Fichier créé.')).toBeVisible();
-  await page.getByRole('button', { name: 'Fichiers' }).click();
+  await openView(page, 'Fichiers');
   await page.getByRole('button', { name: /notes\/hello\.md/ }).click();
   await expect(page.getByRole('heading', { name: 'Bonjour Dakar' })).toBeVisible();
 });
@@ -218,7 +219,7 @@ test('the APEX credit-risk skill is built in: listed in the library, applied to 
   await open(page);
   await page.getByLabel('Skills', { exact: true }).click();
   await expect(page.getByText('apex-credit-risk').first()).toBeVisible();
-  await page.getByRole('button', { name: 'Chat' }).click();
+  await openView(page, 'Chat');
   mock.push({ text: 'Douteux : chiffres à venir depuis le fichier.' });
   await send(page, 'Prépare le classeur des douteux et des provisions BCEAO du portefeuille');
   await expect(page.getByText(/Skills appliqués : .*apex-credit-risk/)).toBeVisible();
@@ -234,7 +235,7 @@ test('the installed skills are built in: frontend-design applied to a page reque
   await page.getByLabel('Skills', { exact: true }).click();
   for (const name of ['frontend-design', 'video-prompting', 'character-design', 'excel-pro', 'remotion-best-practices', 'visual-regression'])
     await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
-  await page.getByRole('button', { name: 'Chat' }).click();
+  await openView(page, 'Chat');
   const html = `<!doctype html><html><head><style>body{background:#F4F1EA;font-family:Inter,sans-serif}.eyebrow{text-transform:uppercase;letter-spacing:.1em}.btn{background:#D97757;outline:none}@keyframes up{from{opacity:0;transform:translateY(10px)}}.a{animation:up 1s}.b{animation:up 1s}</style></head><body><h1>Boulangerie</h1><p class="eyebrow">Nos pains</p><a class="btn" href="#">Commander →</a></body></html>`;
   mock.push({ toolCalls: [{ name: 'filesystem.write', args: { path: 'site/index.html', content: html } }] }, { text: 'Page écrite.' });
   await send(page, 'Crée une landing page pour une boulangerie artisanale de Dakar, avec une vraie identité visuelle');
@@ -264,7 +265,7 @@ test('imported skills are enforced; custom agents restrict tools', async ({ page
   await page.getByLabel('Skills', { exact: true }).click();
   await page.locator('input[type=file]').setInputFiles(skill);
   await expect(page.getByText('rapport-risque').first()).toBeVisible();
-  await page.getByRole('button', { name: 'Chat' }).click();
+  await openView(page, 'Chat');
   mock.push({ text: 'Rapport…\n\n## Recommandations' });
   await send(page, 'Fais un rapport de risque IFRS9');
   await expect(page.getByText(/Skills appliqués : .*rapport-risque/)).toBeVisible();
@@ -276,10 +277,10 @@ test('imported skills are enforced; custom agents restrict tools', async ({ page
     agent,
     '---\nname: Lecteur\ndescription: Lit seulement\ntools: Read, Grep\n---\nCONSIGNE-AGENT-7',
   );
-  await page.getByRole('button', { name: 'Agents' }).click();
+  await openView(page, 'Agents');
   await page.locator('input[type=file]').setInputFiles(agent);
   await expect(page.getByText('Lecteur').first()).toBeVisible();
-  await page.getByRole('button', { name: 'Chat' }).click();
+  await openView(page, 'Chat');
   await page.getByTitle('Agent', { exact: true }).click();
   await page.getByText('Lecteur', { exact: true }).last().click();
   mock.push({ text: 'Lecture seule.' });
@@ -303,20 +304,25 @@ test('all views render without errors and data survives a reload', async ({ page
     'Données',
     'Terminal',
     'Navigateur',
+    'Orchestration',
     'Workflows',
     'Agents',
     'Skills',
     'Plugins',
+    'Catalogue LLM',
     'Modèles',
+    'Prompt Studio',
+    'Observabilité',
+    'Coûts',
     'Réglages',
     'Chat',
   ]) {
-    await page.getByRole('button', { name: v, exact: true }).click();
+    await openView(page, v);
     await page.waitForTimeout(200);
   }
   await page.waitForTimeout(600); // debounced IndexedDB save
   await page.reload();
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await expect(page.getByText('Mémorisé.')).toBeVisible();
   expect(errors.filter((e) => !/ResizeObserver/.test(e))).toEqual([]);
 });
@@ -376,23 +382,23 @@ test('mission mode: pipeline, correction round, final review, verdict and .ai me
   // Final reviewer ran as an independent sub-agent.
   expect(systemOf(4)).toContain('Final Reviewer');
   // The Cockpit shows the session; .ai/ memory was updated.
-  await page.getByRole('button', { name: 'Fichiers' }).click();
+  await openView(page, 'Fichiers');
   await page.getByRole('button', { name: /\.ai\/CHANGELOG\.md/ }).click();
   await expect(page.getByText(/PASSED — Construis une petite app/)).toBeVisible();
-  await page.getByRole('button', { name: 'Cockpit IA' }).click();
+  await openView(page, 'Cockpit IA');
   await expect(page.getByText('Construis une petite app').first()).toBeVisible();
 });
 
 test('The Cockpit launches a mission and workflows run in one click', async ({ page }) => {
   await open(page);
-  await page.getByRole('button', { name: 'Cockpit IA' }).click();
+  await openView(page, 'Cockpit IA');
   mock.fallback = () => ({
     toolCalls: [{ name: 'mission.report', args: { status: 'PARTIAL', summary: 'partiel', checks: [] } }],
   });
   await page.getByPlaceholder(/Construis cette application/).fill('Recherche les tendances IA');
   await page.getByRole('button', { name: /Lancer la mission/ }).click();
   await expect(page.getByText('PARTIAL').first()).toBeVisible({ timeout: 15_000 });
-  await page.getByRole('button', { name: 'Workflows', exact: true }).click();
+  await openView(page, 'Workflows');
   await expect(page.getByText('Analyse de données complète')).toBeVisible();
   await page
     .getByRole('button', { name: /Lancer/ })
@@ -402,29 +408,66 @@ test('The Cockpit launches a mission and workflows run in one click', async ({ p
   await expect(page.getByText('Workflow « Analyse de données complète »').first()).toBeVisible();
 });
 
-test('COCKPIT IA: four sections — catalogue with measured columns (« — » when never called), executable workflows + trace, observability KPIs', async ({ page }) => {
+test('COCKPIT IA: catalogue with measured columns (« — » when never called), executable workflows + trace, observability KPIs — each its own sidebar section', async ({ page }) => {
   await open(page);
-  await page.getByRole('button', { name: 'Cockpit IA' }).click();
-  await expect(page.getByTestId('cockpit-tabs')).toBeVisible();
-  await page.getByTestId('cockpit-tab-catalogue').click();
+  await openView(page, 'Cockpit IA');
+  await expect(page.getByTestId('cockpit-kpis')).toContainText('Requêtes (24 h)');
+  await expect(page.getByTestId('cockpit-pulse')).toContainText('Aucun appel sur les dernières 24 h');
+  await openView(page, 'Catalogue LLM');
   await expect(page.getByText('Modèles au catalogue')).toBeVisible();
-  await page.getByTestId('cockpit-tab-orchestration').click();
+  await openView(page, 'Orchestration');
   await expect(page.getByTestId('orchestration-workflow').first()).toContainText('Analyse de données complète');
   await expect(page.getByTestId('orchestration-workflow').first()).toContainText('→');
-  await page.getByTestId('cockpit-tab-observabilite').click();
+  await openView(page, 'Observabilité');
   await expect(page.getByTestId('observability-kpis')).toContainText('Appels (30 j)');
   await expect(page.getByTestId('observability-days')).toBeVisible();
   // After a chat turn, the trace shows the tools called and the catalogue / observability carry the measured call.
-  await page.getByTestId('cockpit-tab-cockpit').click();
+  await openView(page, 'Cockpit IA');
   mock.push({ toolCalls: [{ name: 'fs.write', args: { path: 'notes/a.md', content: 'ok' } }] }, { text: 'Fait.' });
   await page.getByPlaceholder(/Construis cette application/).fill('Écris notes/a.md');
   await page.getByRole('button', { name: 'Discuter', exact: true }).click();
   await expect(page.getByText('Fait.')).toBeVisible({ timeout: 15_000 });
-  await page.getByRole('button', { name: 'Cockpit IA' }).click();
-  await page.getByTestId('cockpit-tab-orchestration').click();
+  await openView(page, 'Orchestration');
   await expect(page.getByTestId('orchestration-trace')).toContainText('fs.write');
-  await page.getByTestId('cockpit-tab-observabilite').click();
+  await openView(page, 'Observabilité');
   await expect(page.getByTestId('observability-kpis')).not.toContainText('Appels (30 j)0');
+  // The cockpit pulse now carries the measured call.
+  await openView(page, 'Cockpit IA');
+  await expect(page.getByTestId('cockpit-pulse')).not.toContainText('Aucun appel sur les dernières 24 h');
+  // « Choisir » in the catalogue sets the model of the current session.
+  await openView(page, 'Catalogue LLM');
+  await page.getByTestId('catalogue-table').getByRole('button', { name: 'Choisir' }).first().click();
+  await expect(page.getByTestId('catalogue-table').getByText('choisi')).toBeVisible();
+});
+
+test('REDESIGN: twelve labelled sections, no AI Film Studio, help dialog, collapsible sidebar, mobile drawer', async ({ page }) => {
+  await open(page);
+  const nav = page.getByTestId('main-nav');
+  for (const label of ['Cockpit IA', 'Chats', 'Agents', 'Catalogue LLM', 'Orchestration', 'Workspace', 'Fichiers', 'Outils', 'Bac à sable', 'Observabilité', 'Coûts', 'Paramètres'])
+    await expect(nav.getByRole('button', { name: label, exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'AI Film Studio' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Studio 3D Pro' })).toHaveCount(0);
+  // Grouped screens show their tabs.
+  await openView(page, 'Terminal');
+  await expect(page.getByTestId('view-tabs').getByRole('tab', { name: 'Terminal' })).toHaveAttribute('aria-selected', 'true');
+  // Help.
+  await nav.getByRole('button', { name: 'Aide & Docs' }).click();
+  await expect(page.getByRole('dialog')).toContainText('Raccourcis');
+  await page.keyboard.press('Escape');
+  // Collapse keeps every section reachable (accessible names stay).
+  await nav.getByRole('button', { name: 'Replier le menu' }).click();
+  await expect(nav.getByRole('button', { name: 'Paramètres', exact: true })).toBeVisible();
+  await nav.getByRole('button', { name: 'Déplier le menu' }).click();
+  // Settings: the essentials, the rest under « Avancé ».
+  await openView(page, 'Paramètres');
+  await expect(page.getByTestId('settings-advanced')).not.toHaveAttribute('open', '');
+  await expect(page.getByTestId('pollinations-key')).toBeHidden();
+  // Phone width: the sidebar becomes a drawer.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(nav).toBeHidden();
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await page.getByTestId('nav-drawer').getByRole('button', { name: 'Chats', exact: true }).click();
+  await expect(page.getByTestId('nav-drawer')).toBeHidden();
 });
 
 test('sessions can be renamed', async ({ page }) => {
@@ -484,7 +527,7 @@ test('APEX Studio rejects an app without KIT / with a syntax error', async ({ pa
 
 test('embedded terminal: pipes, redirections, diagnosis', async ({ page }) => {
   const errors = await open(page);
-  await page.getByRole('button', { name: 'Terminal', exact: true }).first().click();
+  await openView(page, 'Terminal');
   const cmd = page.getByLabel('Commande');
   await cmd.fill('echo "agence,montant" > v.csv && echo "Dakar,10" >> v.csv && cat v.csv | grep -c ,');
   await cmd.press('Enter');
@@ -528,7 +571,7 @@ document.getElementById('x').onclick = () => { const a = document.createElement(
   expect(msgs).toContain('Downloaded: downloads/resultat.txt');
   expect(msgs).toContain('lignes=3');
   // The user sees the same page in the Browser view, with the captured download.
-  await page.getByRole('button', { name: 'Navigateur', exact: true }).first().click();
+  await openView(page, 'Navigateur');
   await expect(page.getByText('resultat.txt')).toBeVisible();
   await expect(page.frameLocator('iframe[title="Navigateur intégré"]').getByText('3 lignes')).toBeVisible();
 });
@@ -575,7 +618,7 @@ test('built-in plugins: 3D studio (preview + .glb + Blender script) and exchange
   expect(msgs).toContain('3d/agence_blender.py');
   expect(msgs).toContain('XOF: 655.957');
   // Switching a plugin off removes its tools.
-  await page.getByRole('button', { name: 'Plugins', exact: true }).first().click();
+  await openView(page, 'Plugins');
   await expect(page.getByText('Studio 3D → Blender')).toBeVisible();
 });
 
@@ -701,7 +744,7 @@ test('auto-benchmark feeds the personal leaderboard; Time Machine diff and resto
     { text: '```js\nfunction formatXof(n){return "faux"}\n```' },
     { text: '7 500 000' },
   );
-  await page.getByRole('button', { name: 'Modèles', exact: true }).first().click();
+  await openView(page, 'Modèles');
   await page.getByRole('tab', { name: 'Mon classement' }).click();
   await page.getByPlaceholder('id du modèle').fill('mock/smart-2');
   await page.getByRole('button', { name: /Lancer/ }).click();
@@ -710,7 +753,7 @@ test('auto-benchmark feeds the personal leaderboard; Time Machine diff and resto
   await expect(page.getByText('✗ code-fn')).toBeVisible();
 
   // Time Machine: a task modifies a file → diff + restore from the Files view.
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
   mock.push(
@@ -732,7 +775,7 @@ test('auto-benchmark feeds the personal leaderboard; Time Machine diff and resto
   );
   await send(page, 'Modifie notes/plan.md');
   await expect(page.getByText('v2.', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Fichiers', exact: true }).first().click();
+  await openView(page, 'Fichiers');
   await page.getByText('actualiser').click();
   await page.getByRole('button', { name: 'diff' }).first().click();
   await expect(page.getByText(/fonctions ajoutées : nouvelle/)).toBeVisible();
@@ -795,7 +838,7 @@ test('terminal: node reads binary files (PDF bytes + text), Python runs offline 
   await page.locator('input[type=file]').first().setInputFiles([pdf, xlsx]);
   await expect(page.getByText('portefeuille.xlsx').first()).toBeVisible();
 
-  await page.getByRole('button', { name: 'Terminal', exact: true }).first().click();
+  await openView(page, 'Terminal');
   const cmd = page.getByLabel('Commande');
   const run = async (c: string, expected: RegExp, timeout = 30_000) => {
     await cmd.fill(c);
@@ -813,10 +856,10 @@ test('terminal: node reads binary files (PDF bytes + text), Python runs offline 
   // Without the pack, Python reports clearly what to do.
   await run(`python -c "print(1)"`, /PYTHON_UNAVAILABLE/, 60_000);
 
-  await page.getByRole('button', { name: 'Plugins', exact: true }).first().click();
+  await openView(page, 'Plugins');
   await page.getByTestId('python-pack').locator('input[type=file]').setInputFiles(PACK);
   await expect(page.getByText(/importé et vérifié/)).toBeVisible({ timeout: 60_000 });
-  await page.getByRole('button', { name: 'Terminal', exact: true }).first().click();
+  await openView(page, 'Terminal');
   await run(
     `python -c "import pandas as pd; df = pd.read_excel('uploads/portefeuille.xlsx'); print('total', int(df['montant'].sum()))"`,
     /total 1500/,
@@ -900,7 +943,7 @@ test('Intelligence Engine: explained routing card, cascade escalation after a fa
   const price = (id: string) => SCORED.findIndex((m) => m.id === id);
   expect(price(second)).toBeGreaterThan(price(first));
   // Telemetry and routing log in the INTELLIGENCE space.
-  await page.getByRole('button', { name: 'Intelligence', exact: true }).first().click();
+  await openView(page, 'Intelligence');
   await page.getByRole('tab', { name: 'Routing Log' }).click();
   await expect(page.getByText(/Rédige une note de synthèse/).first()).toBeVisible();
   await page.getByRole('tab', { name: 'Télémétrie' }).click();
@@ -966,7 +1009,7 @@ test('INTELLIGENCE: GitHub discovery → security review → approve → install
       ? route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' }, body })
       : route.fulfill({ status: 404, headers: { 'access-control-allow-origin': '*' }, body: '' });
   });
-  await page.getByRole('button', { name: 'Intelligence', exact: true }).first().click();
+  await openView(page, 'Intelligence');
   // Model Router: live explained decision.
   await expect(page.getByTestId('routing-card').first()).toContainText('Pourquoi');
   for (const t of [
@@ -1002,11 +1045,11 @@ test('INTELLIGENCE: GitHub discovery → security review → approve → install
   await expect(row('acme/ifrs9-skill')).toContainText('Activé');
   await row('acme/ifrs9-skill').getByRole('button', { name: 'Rollback' }).click();
   await expect(row('acme/ifrs9-skill')).toContainText('Installé');
-  await page.getByRole('button', { name: 'Skills', exact: true }).first().click();
+  await openView(page, 'Skills');
   await expect(page.getByText('ifrs9-check').first()).toBeVisible();
   // GitHub offline: discovery falls back to the dated local snapshot.
   offline = true;
-  await page.getByRole('button', { name: 'Intelligence', exact: true }).first().click();
+  await openView(page, 'Intelligence');
   await page.getByRole('tab', { name: 'GitHub Discovery' }).click();
   await page.getByRole('button', { name: /Découvrir/ }).click();
   await expect(page.getByText(/GitHub indisponible/)).toBeVisible();
@@ -1055,7 +1098,7 @@ test('JEV: packet + live trace, tool pack sent to the model, ADD TOOL, targeted 
   );
   expect(second).toContain('filesystem__write');
   // 3. Every run is in the JEV_LOG, with measured tokens and the tool-definition savings.
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await page.getByRole('tab', { name: 'JEV_LOG' }).click();
   await expect(page.getByTestId('jev-log').locator('tbody tr')).toHaveCount(2);
 });
@@ -1096,7 +1139,7 @@ test('JEV Control Center: tabs, mode, API key masked and never in the DOM, JEV-1
       }),
     });
   });
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   for (const t of [
     'Trace live',
     'JEV_LOG',
@@ -1121,7 +1164,7 @@ test('JEV Control Center: tabs, mode, API key masked and never in the DOM, JEV-1
   await page.getByRole('tab', { name: 'Régression' }).click();
   await expect(page.getByText(/Aucune régression/)).toBeVisible();
   // A mission: JEV-1 is consulted through the relay.
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   mock.push({ text: 'Total : 1 650.' });
   await send(page, 'Peux-tu regarder les chiffres ?');
   await expect(page.getByText('Total : 1 650.')).toBeVisible();
@@ -1136,7 +1179,7 @@ test('JEV Control Center: tabs, mode, API key masked and never in the DOM, JEV-1
   await t.getByRole('button').first().click();
   await expect(t).toContainText(/indisponible/);
   // A/B benchmark on two categories: the same mission without then with JEV.
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await page.getByRole('tab', { name: 'Benchmark 2.0' }).click();
   for (const label of [
     'CODING',
@@ -1270,7 +1313,7 @@ test('JEV LIVE: stagnation → REPLAN sent to the model, live Control Center, us
   // 👍 feedback → JEV_LOG marked.
   await card.getByRole('button', { name: 'Bonne réponse' }).click();
   await expect(card).toContainText('noté : réussite');
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await expect(page.getByTestId('jev-live-panel')).toContainText('JEV LIVE');
   await expect(page.getByTestId('jev-live-panel')).toContainText('REPLAN');
 });
@@ -1281,7 +1324,7 @@ test('JEV SCIENTIFIC VALIDATION: paired experiment with enough repetitions → c
   mock.models = SCORED;
   await open(page);
   page.on('dialog', (d) => void d.accept());
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await page.getByRole('tab', { name: 'Validation scientifique' }).click();
   // Nothing runs on its own.
   await expect(page.getByTestId('verdict')).toContainText('Données insuffisantes');
@@ -1301,11 +1344,11 @@ test('JEV SCIENTIFIC VALIDATION: paired experiment with enough repetitions → c
   await expect(page.getByTestId('sci-charts')).toContainText('Décomposition du coût');
   // Adaptive policy: opt-in, applied only where the sample is sufficient, recorded in the log.
   await page.getByRole('switch', { name: /Politique adaptative/ }).click();
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   mock.push({ text: 'Salut !' });
   await send(page, 'Dis bonjour en une phrase.');
   await expect(page.getByText('Salut !')).toBeVisible();
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await page.getByRole('tab', { name: 'JEV_LOG' }).click();
   const [dl] = await Promise.all([
     page.waitForEvent('download'),

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { startMockOpenRouter, type MockOpenRouter } from '../helpers/mockOpenRouter';
+import { openView } from './nav';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FILE = path.join(ROOT, 'dist/massamba-workbench-direct.html');
@@ -31,7 +32,7 @@ const consoleText = (page: Page) => page.getByTestId('lab3d-console');
 test('Studio 3D Pro: run, real JS / GLSL errors with their line, physics, GLB export', async ({ page }) => {
   test.setTimeout(120_000);
   await open(page);
-  await page.getByRole('button', { name: 'Studio 3D Pro' }).click();
+  await openView(page, 'Studio 3D');
   await expect(page.getByTestId('lab3d')).toBeVisible();
   // The example runs on its own: 120 meshes.
   await expect(stats(page)).toContainText('✓ 120 mesh', { timeout: 30_000 });
@@ -81,7 +82,7 @@ test('Génération IA: the broken first answer is corrected from the real error,
   mock.push({
     text: '```js\nconst m = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({ color: "#f59e0b" }));\nscene.add(m);\nonFrame((dt) => { m.rotation.y += dt; });\n```',
   });
-  await page.getByRole('button', { name: 'Studio 3D Pro' }).click();
+  await openView(page, 'Studio 3D');
   await page.getByTestId('lab3d-tab-ai').click();
   await page.getByTestId('lab3d-model').selectOption({ index: 1 });
   await page.getByTestId('lab3d-prompt').fill('un cube orange qui tourne');
@@ -94,7 +95,7 @@ test('Génération IA: the broken first answer is corrected from the real error,
   expect(last).toContain('CubeGeometry is not a constructor');
   expect(last).toContain('DOCUMENTATION TECHNIQUE');
   // Telemetry: the two calls are in the finance dashboard with their TTFT.
-  await page.getByRole('button', { name: 'Fournisseurs & coûts' }).click();
+  await openView(page, 'Fournisseurs & coûts');
   await expect(page.getByTestId('finance-models')).toContainText('openrouter');
   await expect(page.getByTestId('finance-Appels')).toHaveText(/^[2-9]/);
 });
@@ -128,7 +129,7 @@ test('Coffre de clés chiffré + appel direct Anthropic (rotation, coût, TTFT)'
     });
   });
   await open(page);
-  await page.getByRole('button', { name: 'Fournisseurs & coûts' }).click();
+  await openView(page, 'Fournisseurs & coûts');
   await page.getByTestId('vault-password').fill('mot-de-passe-maitre-e2e');
   await page.getByTestId('vault-unlock').click();
   await page.getByTestId('vault-key').fill('sk-ant-e2e-SECRET-9876');
@@ -146,7 +147,7 @@ test('Coffre de clés chiffré + appel direct Anthropic (rotation, coût, TTFT)'
   await expect(page.getByTestId('finance-models')).toContainText('claude-test-1');
   // After a reload the vault is locked; a wrong password does not open it.
   await page.reload();
-  await page.getByRole('button', { name: 'Fournisseurs & coûts' }).click();
+  await openView(page, 'Fournisseurs & coûts');
   await page.getByTestId('vault-password').fill('mauvais-mot-de-passe');
   await page.getByTestId('vault-unlock').click();
   await expect(page.getByText('Mot de passe incorrect.')).toBeVisible();

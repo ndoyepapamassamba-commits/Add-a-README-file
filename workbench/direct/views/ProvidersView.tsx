@@ -248,7 +248,7 @@ function Vault({ onChange }: { onChange: () => void }) {
           {!keys.length && (
             <tr>
               <td colSpan={9} className="py-2 text-muted">
-                Aucune clé : ajoutez-en une ci-dessus (OpenRouter reste configuré dans Réglages).
+                Aucune clé : ajoutez-en une ci-dessus (OpenRouter reste configuré dans Paramètres).
               </td>
             </tr>
           )}

@@ -1,31 +1,29 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Brain,
-  Clapperboard,
+  Activity,
   Bot,
-  Database,
+  ChevronsLeft,
+  ChevronsRight,
+  FlaskConical,
   FolderOpen,
   KeyRound,
+  LayoutDashboard,
+  Layers,
+  LifeBuoy,
+  Library,
+  Menu,
   MessageSquare,
   Moon,
-  Plug,
+  Pencil,
   Plus,
-  Puzzle,
   Search,
   Settings as SettingsIcon,
-  Sparkles,
   Sun,
   Trash2,
   Wallet,
-  LayoutDashboard,
-  Pencil,
   Workflow as WorkflowIcon,
-  TerminalSquare,
-  Globe,
-  BrainCircuit,
-  Cpu,
-  Box,
-  PenTool,
+  Wrench,
+  X,
 } from 'lucide-react';
 import {
   Button,
@@ -33,6 +31,8 @@ import {
   Gauge,
   IconButton,
   Input,
+  Kbd,
+  Modal,
   Spinner,
   Toggle,
   EditableTitle,
@@ -51,43 +51,39 @@ import { DataView } from './views/DataView';
 import { AgentsView, SkillsView } from './views/LibraryViews';
 import { PluginsView } from './views/PluginsView';
 import { ModelsView, SettingsView } from './views/SettingsViews';
+import { ModelCatalogue, Observability, Orchestration } from './views/CockpitView';
 import { TerminalView } from './views/TerminalView';
 import { BrowserView } from './views/BrowserView';
 import { IntelligenceView } from './views/IntelligenceView';
 import { JevView } from './views/JevView';
 import { CognitiveOS } from './views/CognitiveOS';
 import { exportArchive, importArchive, setArchived } from './lib/vault';
-import { NAV_ITEMS } from './lib/nav';
-import { Lab3DView } from './views/Lab3DView';
-import { VIDEO_3D } from './lib/features';
+import { NAV_GROUPS, groupOf, type Group } from './lib/nav';
 import { ProvidersView } from './views/ProvidersView';
-import { StudioView } from './views/studio/StudioView';
+import { Lab3DView } from './views/Lab3DView';
 
-const ICONS: Record<View, React.ReactNode> = {
-  home: <LayoutDashboard size={17} />,
+const ICONS: Record<Group, React.ReactNode> = {
+  cockpit: <LayoutDashboard size={17} />,
   chat: <MessageSquare size={17} />,
-  prompts: <PenTool size={17} />,
-  files: <FolderOpen size={17} />,
-  data: <Database size={17} />,
-  terminal: <TerminalSquare size={17} />,
-  browser: <Globe size={17} />,
-  workflows: <WorkflowIcon size={17} />,
   agents: <Bot size={17} />,
-  skills: <Puzzle size={17} />,
-  plugins: <Plug size={17} />,
-  models: <Sparkles size={17} />,
-  intelligence: <BrainCircuit size={17} />,
-  jev: <Cpu size={17} />,
-  cognitive: <Brain size={17} />,
-  studio: <Clapperboard size={17} />,
-  lab3d: <Box size={17} />,
-  providers: <KeyRound size={17} />,
+  catalogue: <Library size={17} />,
+  orchestration: <WorkflowIcon size={17} />,
+  workspace: <Layers size={17} />,
+  files: <FolderOpen size={17} />,
+  tools: <Wrench size={17} />,
+  sandbox: <FlaskConical size={17} />,
+  observability: <Activity size={17} />,
+  costs: <Wallet size={17} />,
   settings: <SettingsIcon size={17} />,
 };
-const NAV: { id: View; label: string; icon: React.ReactNode }[] = NAV_ITEMS.map((n) => ({
-  ...n,
-  icon: ICONS[n.id],
-}));
+const NAV_COLLAPSED = 'wb.nav.collapsed';
+const readCollapsed = () => {
+  try {
+    return localStorage.getItem(NAV_COLLAPSED) === '1';
+  } catch {
+    return false;
+  }
+};
 
 export function Logo({ size = 28 }: { size?: number }) {
   return (
@@ -218,24 +214,26 @@ function Shell({ onLogout }: { onLogout: () => void }) {
   const theme = useStore((s) => s.settings.theme);
   const patchSettings = useStore((s) => s.patchSettings);
   const toasts = useStore((s) => s.toasts);
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const [drawer, setDrawer] = useState(false);
+  const [help, setHelp] = useState(false);
+  const group = groupOf(view);
+  // A screen out of the navigation (former AI Film Studio, Studio 3D Pro) falls back to the cockpit.
+  const shown: View = group.views.some((v) => v.id === view) ? view : 'home';
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         useStore.getState().newSession();
+        setDrawer(false);
       }
-      // The 15th view has no digit shortcut (Alt+5 is taken): Alt+Shift+S opens the AI Visual Studio.
-      if (e.altKey && e.shiftKey && e.code === 'KeyS') {
-        e.preventDefault();
-        setView('studio');
-        return;
-      }
-      if (e.altKey && /^[0-9]$/.test(e.key)) {
-        const n = e.key === '0' ? 9 : Number(e.key) - 1;
-        if (NAV[n]) {
+      // Alt+1 … Alt+9, Alt+0: the first ten sections.
+      if (e.altKey && !e.shiftKey && /^[0-9]$/.test(e.key)) {
+        const g = NAV_GROUPS[e.key === '0' ? 9 : Number(e.key) - 1];
+        if (g) {
           e.preventDefault();
-          setView(NAV[n].id);
+          setView(g.views[0]!.id);
         }
       }
     };
@@ -243,12 +241,25 @@ function Shell({ onLogout }: { onLogout: () => void }) {
     return () => removeEventListener('keydown', onKey);
   }, [setView]);
 
+  const toggleCollapsed = () =>
+    setCollapsed((c) => {
+      try {
+        localStorage.setItem(NAV_COLLAPSED, c ? '0' : '1');
+      } catch {
+        /* private window: the choice lasts for the tab */
+      }
+      return !c;
+    });
+
   return (
     <div className="flex h-full flex-col bg-bg text-fg">
-      <header className="flex h-11 shrink-0 items-center gap-2 border-b border-line bg-elev px-3">
-        <Logo size={22} />
-        <span className="text-[13.5px] font-semibold">MASSAMBA Workbench</span>
-        <span className="rounded-md bg-accent-soft px-1.5 py-0.5 text-[10.5px] font-medium text-accent">
+      <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line bg-elev px-2 sm:px-3">
+        <IconButton label="Menu" className="md:hidden" onClick={() => setDrawer(true)}>
+          <Menu size={18} />
+        </IconButton>
+        <Logo size={24} />
+        <span className="truncate text-[14px] font-semibold">MASSAMBA Workbench</span>
+        <span className="hidden rounded-md bg-accent-soft px-1.5 py-0.5 text-[10.5px] font-medium text-accent sm:inline">
           accès direct
         </span>
         <div className="flex-1" />
@@ -261,51 +272,109 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         </IconButton>
       </header>
       <div className="flex min-h-0 flex-1">
-        <nav className="flex w-12 shrink-0 flex-col items-center gap-1 border-r border-line bg-elev py-2">
-          {NAV.map((n, i) => (
-            <button
-              key={n.id}
-              aria-label={n.label}
-              title={
-                n.id === 'studio'
-                  ? `${n.label} (Alt+Maj+S)`
-                  : i < 10
-                    ? `${n.label} (Alt+${(i + 1) % 10})`
-                    : n.label
-              }
-              onClick={() => setView(n.id)}
-              className={cx(
-                'flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-hover hover:text-fg',
-                view === n.id && 'bg-accent-soft text-accent hover:bg-accent-soft hover:text-accent',
-              )}
+        <aside
+          className={cx(
+            'hidden shrink-0 border-r border-line bg-elev transition-[width] duration-150 md:flex',
+            collapsed ? 'w-[60px]' : 'w-[60px] lg:w-[220px]',
+          )}
+        >
+          <Sidebar
+            current={group.id}
+            compact={collapsed ? 'always' : 'below-lg'}
+            onGo={(id) => setView(id)}
+            onHelp={() => setHelp(true)}
+            onToggle={toggleCollapsed}
+            collapsed={collapsed}
+          />
+        </aside>
+        {drawer && (
+          <div className="fixed inset-0 z-40 md:hidden" data-testid="nav-drawer">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setDrawer(false)} />
+            <aside className="wb-in absolute inset-y-0 left-0 flex w-[86vw] max-w-[320px] flex-col overflow-hidden border-r border-line bg-elev shadow-pop">
+              <div className="flex h-12 shrink-0 items-center gap-2 border-b border-line px-3">
+                <Logo size={22} />
+                <span className="text-[13.5px] font-semibold">Menu</span>
+                <IconButton label="Fermer le menu" className="ml-auto" onClick={() => setDrawer(false)}>
+                  <X size={16} />
+                </IconButton>
+              </div>
+              <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+                <Sidebar
+                  current={group.id}
+                  compact="never"
+                  onGo={(id) => {
+                    setView(id);
+                    setDrawer(false);
+                  }}
+                  onHelp={() => {
+                    setDrawer(false);
+                    setHelp(true);
+                  }}
+                />
+                {group.id === 'chat' && (
+                  <div className="border-t border-line">
+                    <SessionList embedded onPicked={() => setDrawer(false)} />
+                  </div>
+                )}
+              </div>
+            </aside>
+          </div>
+        )}
+        {shown === 'chat' && (
+          <div className="hidden md:flex">
+            <SessionList />
+          </div>
+        )}
+        <main className="flex min-w-0 flex-1 flex-col">
+          {group.views.length > 1 && (
+            <div
+              role="tablist"
+              aria-label={group.label}
+              data-testid="view-tabs"
+              className="flex h-10 shrink-0 items-center gap-1 overflow-x-auto border-b border-line bg-elev px-2 sm:px-3"
             >
-              {n.icon}
-            </button>
-          ))}
-        </nav>
-        {view === 'chat' && <SessionList />}
-        <main className="min-w-0 flex-1">
-          {view === 'home' && <CockpitView />}
-          {view === 'chat' && <ChatView />}
-          {view === 'prompts' && <PromptStudioView />}
-          {view === 'workflows' && <WorkflowsView />}
-          {view === 'files' && <FilesView />}
-          {view === 'data' && <DataView />}
-          {view === 'terminal' && <TerminalView />}
-          {view === 'browser' && <BrowserView />}
-          {view === 'agents' && <AgentsView />}
-          {view === 'skills' && <SkillsView />}
-          {view === 'plugins' && <PluginsView />}
-          {view === 'models' && <ModelsView />}
-          {view === 'intelligence' && <IntelligenceView />}
-          {view === 'jev' && <JevView />}
-          {view === 'cognitive' && <CognitiveOS />}
-          {view === 'studio' && <StudioView />}
-          {view === 'lab3d' && (VIDEO_3D ? <Lab3DView /> : <div className="p-6 text-[13px] text-muted">La vidéo 3D est un sujet à part, hors de l’app pour l’instant (drapeau VIDEO_3D dans lib/features.ts). Ses acquis sont conservés dans le dépôt.</div>)}
-          {view === 'providers' && <ProvidersView />}
-          {view === 'settings' && <SettingsView onLogout={onLogout} />}
+              {group.views.map((v) => (
+                <button
+                  key={v.id}
+                  role="tab"
+                  aria-selected={shown === v.id}
+                  onClick={() => setView(v.id)}
+                  className={cx(
+                    'h-7 shrink-0 rounded-md px-2.5 text-[12.5px] font-medium transition-colors',
+                    shown === v.id ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-hover hover:text-fg',
+                  )}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="min-h-0 flex-1">
+            {shown === 'home' && <CockpitView />}
+            {shown === 'chat' && <ChatView />}
+            {shown === 'prompts' && <PromptStudioView />}
+            {shown === 'lab3d' && <Lab3DView />}
+            {shown === 'catalogue' && <ModelCatalogue />}
+            {shown === 'models' && <ModelsView />}
+            {shown === 'orchestration' && <Orchestration />}
+            {shown === 'workflows' && <WorkflowsView />}
+            {shown === 'files' && <FilesView />}
+            {shown === 'data' && <DataView />}
+            {shown === 'terminal' && <TerminalView />}
+            {shown === 'browser' && <BrowserView />}
+            {shown === 'agents' && <AgentsView />}
+            {shown === 'skills' && <SkillsView />}
+            {shown === 'plugins' && <PluginsView />}
+            {shown === 'observability' && <Observability />}
+            {shown === 'intelligence' && <IntelligenceView />}
+            {shown === 'jev' && <JevView />}
+            {shown === 'cognitive' && <CognitiveOS />}
+            {shown === 'providers' && <ProvidersView />}
+            {shown === 'settings' && <SettingsView onLogout={onLogout} />}
+          </div>
         </main>
       </div>
+      <HelpDialog open={help} onClose={() => setHelp(false)} />
       <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex flex-col gap-2">
         {toasts.map((t) => (
           <div
@@ -324,6 +393,145 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         ))}
       </div>
     </div>
+  );
+}
+
+/** Labelled sidebar of the mockup: « Nouvelle session », twelve sections, « Aide & Docs », current project. */
+function Sidebar({
+  current,
+  compact,
+  onGo,
+  onHelp,
+  onToggle,
+  collapsed,
+}: {
+  current: Group;
+  /** When the labels are hidden: always (collapsed), below the lg breakpoint, or never (mobile drawer). */
+  compact: 'always' | 'below-lg' | 'never';
+  onGo: (v: View) => void;
+  onHelp: () => void;
+  onToggle?: () => void;
+  collapsed?: boolean;
+}) {
+  const session = useStore((s) => s.sessions.find((x) => x.id === s.currentId));
+  const running = useStore((s) => s.running);
+  const label = compact === 'always' ? 'hidden' : compact === 'below-lg' ? 'hidden lg:inline' : 'inline';
+  const row = compact === 'always' ? 'justify-center' : compact === 'below-lg' ? 'justify-center lg:justify-start' : 'justify-start';
+  const busy = Object.keys(running).length;
+  return (
+    <nav className="flex w-full min-w-0 flex-col gap-0.5 p-2" data-testid="main-nav" aria-label="Navigation principale">
+      <button
+        aria-label="Nouvelle session"
+        title="Nouvelle session (Ctrl+K)"
+        onClick={() => {
+          useStore.getState().newSession();
+          onGo('chat');
+        }}
+        className={cx(
+          'mb-2 flex h-9 items-center gap-2 rounded-lg border border-line bg-panel px-2.5 text-[13px] font-medium shadow-sm transition-colors hover:border-accent hover:text-accent',
+          row,
+        )}
+      >
+        <Plus size={16} className="shrink-0" />
+        <span className={label}>Nouvelle session</span>
+      </button>
+      {NAV_GROUPS.map((g, i) => (
+        <button
+          key={g.id}
+          aria-label={g.label}
+          aria-current={current === g.id ? 'page' : undefined}
+          title={`${g.label}${i < 10 ? ` (Alt+${(i + 1) % 10})` : ''} — ${g.hint}`}
+          onClick={() => onGo(g.views[0]!.id)}
+          className={cx(
+            'relative flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] transition-colors',
+            row,
+            current === g.id ? 'bg-accent-soft font-semibold text-fg' : 'text-muted hover:bg-hover hover:text-fg',
+          )}
+        >
+          <span className={cx('shrink-0', current === g.id && 'text-accent')}>{ICONS[g.id]}</span>
+          <span className={cx('truncate', label)}>{g.label}</span>
+          {g.id === 'chat' && busy > 0 && (
+            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-ok" title={`${busy} session(s) en cours`} />
+          )}
+        </button>
+      ))}
+      <div className="min-h-3 flex-1" />
+      <button
+        aria-label="Aide & Docs"
+        title="Aide & Docs — raccourcis, rubriques, bonnes pratiques"
+        onClick={onHelp}
+        className={cx('flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] text-muted hover:bg-hover hover:text-fg', row)}
+      >
+        <LifeBuoy size={17} className="shrink-0" />
+        <span className={label}>Aide & Docs</span>
+      </button>
+      <button
+        aria-label="Projet actuel"
+        title={session ? `Projet actuel : ${session.title}` : 'Aucune session ouverte'}
+        onClick={() => onGo('chat')}
+        className={cx('mt-1 flex items-center gap-2 rounded-lg border border-line bg-panel/60 px-2 py-1.5 text-left hover:bg-hover', row)}
+      >
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent">
+          {(session?.title ?? 'M').trim().charAt(0).toUpperCase()}
+        </span>
+        <span className={cx('min-w-0', compact === 'always' ? 'hidden' : compact === 'below-lg' ? 'hidden lg:block' : 'block')}>
+          <span className="block text-[10.5px] uppercase tracking-wide text-faint">Projet actuel</span>
+          <span className="block truncate text-[12.5px] font-medium">{session?.title ?? 'Aucune session'}</span>
+        </span>
+      </button>
+      {onToggle && (
+        <button
+          aria-label={collapsed ? 'Déplier le menu' : 'Replier le menu'}
+          title={collapsed ? 'Déplier le menu' : 'Replier le menu'}
+          onClick={onToggle}
+          className="mt-1 hidden h-7 items-center justify-center rounded-md text-faint hover:bg-hover hover:text-fg lg:flex"
+        >
+          {collapsed ? <ChevronsRight size={15} /> : <ChevronsLeft size={15} />}
+        </button>
+      )}
+    </nav>
+  );
+}
+
+/** « Aide & Docs »: shortcuts, what each section is for, good habits. Everything here works offline. */
+function HelpDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <Modal open={open} onClose={onClose} title="Aide & Docs" width={720}>
+      <div className="space-y-4 text-[13px]">
+        <section>
+          <h3 className="mb-1.5 font-semibold">Raccourcis</h3>
+          <ul className="grid gap-1 sm:grid-cols-2">
+            <li><Kbd>Ctrl</Kbd> + <Kbd>K</Kbd> nouvelle session</li>
+            <li><Kbd>Alt</Kbd> + <Kbd>1</Kbd>…<Kbd>0</Kbd> les dix premières rubriques</li>
+            <li><Kbd>Entrée</Kbd> envoyer · <Kbd>Maj</Kbd> + <Kbd>Entrée</Kbd> nouvelle ligne</li>
+            <li><Kbd>Échap</Kbd> fermer une fenêtre</li>
+          </ul>
+        </section>
+        <section>
+          <h3 className="mb-1.5 font-semibold">Rubriques</h3>
+          <ul className="space-y-1">
+            {NAV_GROUPS.map((g) => (
+              <li key={g.id} className="flex gap-2">
+                <span className="mt-0.5 text-accent">{ICONS[g.id]}</span>
+                <span>
+                  <b>{g.label}</b>
+                  {g.views.length > 1 && <span className="text-faint"> ({g.views.map((v) => v.label).join(' · ')})</span>} — {g.hint}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section>
+          <h3 className="mb-1.5 font-semibold">Bien démarrer</h3>
+          <ul className="list-disc space-y-1 pl-5 text-muted">
+            <li>Joignez votre fichier (Excel, CSV, PDF, Word) dans le chat, puis dites ce que vous voulez : « analyse », « rapport », « tableau de bord ».</li>
+            <li>Pour un livrable, la galerie de designs s’ouvre d’abord : le design choisi (catalogue ou trouvé sur Internet) s’applique au classeur, au rapport Word et au deck PowerPoint au format comité.</li>
+            <li>Le budget par tâche et par jour (Paramètres) est appliqué par l’app : l’IA s’arrête avant de le dépasser.</li>
+            <li>Vos clés, sessions et fichiers restent dans ce navigateur. « Paramètres › Données » permet de tout sauvegarder.</li>
+          </ul>
+        </section>
+      </div>
+    </Modal>
   );
 }
 
@@ -405,7 +613,7 @@ function Row({ k, v }: { k: string; v: string }) {
   );
 }
 
-function SessionList() {
+function SessionList({ embedded, onPicked }: { embedded?: boolean; onPicked?: () => void } = {}) {
   const sessions = useStore((s) => s.sessions);
   const currentId = useStore((s) => s.currentId);
   const running = useStore((s) => s.running);
@@ -431,15 +639,12 @@ function SessionList() {
       return n;
     });
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-elev/60">
+    <aside
+      className={cx('flex shrink-0 flex-col bg-elev/60', embedded ? 'w-full' : 'w-60 border-r border-line')}
+      data-testid="session-list"
+    >
       <div className="space-y-2 p-2">
-        <Button
-          className="w-full justify-start"
-          onClick={() => useStore.getState().newSession()}
-          title="Ctrl+K"
-        >
-          <Plus size={14} /> Nouvelle session
-        </Button>
+        {embedded && <div className="px-1 text-[11px] font-semibold uppercase tracking-wide text-faint">Sessions</div>}
         <div className="flex flex-wrap items-center gap-1 text-[11.5px]" data-testid="archive-bar">
           <button
             className={cx('rounded px-1.5 py-0.5', !showArchived ? 'bg-hover text-fg' : 'text-muted')}
@@ -448,7 +653,7 @@ function SessionList() {
               setSel(null);
             }}
           >
-            Chats
+            Actifs
           </button>
           <button
             className={cx('rounded px-1.5 py-0.5', showArchived ? 'bg-hover text-fg' : 'text-muted')}
@@ -537,11 +742,17 @@ function SessionList() {
           />
         </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-auto px-1.5 pb-2">
+      <div className={cx('px-1.5 pb-2', embedded ? '' : 'min-h-0 flex-1 overflow-auto')}>
         {list.map((s) => (
           <div
             key={s.id}
-            onClick={() => (sel ? toggle(s.id) : useStore.getState().selectSession(s.id))}
+            onClick={() => {
+              if (sel) toggle(s.id);
+              else {
+                useStore.getState().selectSession(s.id);
+                onPicked?.();
+              }
+            }}
             className={cx(
               'group mb-0.5 cursor-pointer rounded-lg px-2.5 py-2',
               s.id === currentId ? 'bg-hover' : 'hover:bg-hover/60',

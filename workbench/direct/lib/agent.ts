@@ -1657,11 +1657,11 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
     const spentToday = useStore.getState().spend[new Date().toISOString().slice(0, 10)] ?? 0;
     if (ws.budgetDaily > 0 && spentToday >= ws.budgetDaily)
       throw new Error(
-        `Budget journalier atteint ($${spentToday.toFixed(4)} / $${ws.budgetDaily}). Modifiez-le dans Réglages.`,
+        `Budget journalier atteint ($${spentToday.toFixed(4)} / $${ws.budgetDaily}). Modifiez-le dans Paramètres.`,
       );
     if (ws.budgetPerTask > 0 && cost >= ws.budgetPerTask)
       throw new Error(
-        `Budget par tâche atteint ($${cost.toFixed(4)} / $${ws.budgetPerTask}). Modifiez-le dans Réglages.`,
+        `Budget par tâche atteint ($${cost.toFixed(4)} / $${ws.budgetPerTask}). Modifiez-le dans Paramètres.`,
       );
 
     if (pendingImages.length && vision) {
@@ -2377,7 +2377,7 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
         stopReason = 'step_limit';
         break;
       } catch {
-        throw new Error(`Limite de ${maxSteps} étapes atteinte. Augmentez-la dans Réglages ou répondez « continue ».`);
+        throw new Error(`Limite de ${maxSteps} étapes atteinte. Augmentez-la dans Paramètres ou répondez « continue ».`);
       }
     }
   }

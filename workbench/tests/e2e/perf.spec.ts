@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { startMockOpenRouter, type MockOpenRouter } from '../helpers/mockOpenRouter';
+import { openView } from './nav';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FILE = path.join(ROOT, 'dist/massamba-workbench-direct.html');
@@ -41,7 +42,7 @@ async function open(page: Page) {
   await page.goto(pathToFileURL(FILE).href);
   await page.getByPlaceholder('sk-or-v1-…').fill('sk-or-v1-e2e-perf-key');
   await page.getByRole('button', { name: 'Commencer' }).click();
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await expect(page.locator('textarea')).toBeVisible();
   await page.evaluate(() => {
     const w = window as unknown as { __long: number[]; __frames: number };

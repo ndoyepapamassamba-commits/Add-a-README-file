@@ -110,7 +110,7 @@ export function PromptStudioView() {
   const stop = () => abort.current?.abort();
 
   const call = async (messages: { role: 'system' | 'user'; content: string }[], o: { maxTokens: number; temperature?: number; onText?: (d: string) => void; purpose: string }) => {
-    if (!resolvedModel) throw new Error('Aucun modèle disponible : vérifiez la clé OpenRouter dans Réglages.');
+    if (!resolvedModel) throw new Error('Aucun modèle disponible : vérifiez la clé OpenRouter dans Paramètres.');
     const ac = new AbortController();
     abort.current = ac;
     const t0 = Date.now();
@@ -167,7 +167,7 @@ export function PromptStudioView() {
     if (!doc) return;
     const cfg = jevSettings();
     const key = getJevKey();
-    if (!key || !cfg.enabled) return toast('info', 'JEV n’est pas configuré (Réglages → JEV) : le contrôle local reste appliqué.');
+    if (!key || !cfg.enabled) return toast('info', 'JEV n’est pas configuré (Paramètres → JEV) : le contrôle local reste appliqué.');
     setRunning('judge');
     const t0 = Date.now();
     try {

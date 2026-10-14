@@ -41,7 +41,7 @@ async function open(page: Page, errors: string[] = []) {
   await page.getByRole('button', { name: 'Commencer' }).click();
   // Lands on the Cockpit; most tests work in the chat.
   await expect(page.getByText('Nouvelle mission')).toBeVisible();
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await expect(page.locator('textarea')).toBeVisible();
   // Explicit model so requests are predictable.
   await page.evaluate(() => undefined);
@@ -72,6 +72,7 @@ const CATALOG = [
 
 import { entry, many } from '../helpers/logEntry';
 import type { ApprenticeTag } from '../../server/jev/apprentice/types';
+import { openView } from './nav';
 
 const TEXTS = [
   'Calcule la provision ECL IFRS9 du portefeuille corporate',
@@ -116,17 +117,17 @@ async function seedLog(page: Page, log: unknown[]) {
 }
 async function enableAfterReload(page: Page) {
   await page.reload();
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await page.getByRole('tab', { name: 'JEV APPRENTICE', exact: true }).click();
   await page.getByRole('switch', { name: /Activer JEV Apprentice/ }).click();
   await expect(page.getByText('FREE-FIRST ✓ ACTIVE')).toBeVisible();
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
 }
 
 async function openLab(page: Page) {
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await page.getByRole('tab', { name: 'CHAMPION SCIENCE LAB', exact: true }).click();
   await expect(page.getByTestId('champion-science')).toBeVisible();
 }
@@ -212,7 +213,7 @@ test('Champion Science: after a real mission the lab crowns the measured champio
   await page.reload();
   await openLab(page);
   await expect(page.getByTestId('champion-overview')).toContainText('Aucun champion');
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
   mock.push({ text: 'Réponse hors apprenti.' });

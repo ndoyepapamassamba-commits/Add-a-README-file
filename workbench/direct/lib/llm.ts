@@ -102,7 +102,7 @@ export async function complete(
 ): Promise<ChatResult & { cost: number; model: string; costSource: 'measured' | 'calculated' }> {
   const chain = [...new Set([req.model, ...o.fallbacks].filter((m) => m && m !== 'auto'))];
   if (!getKey() && !chain.every(isDirect))
-    throw new LLMError('Clé OpenRouter manquante : ouvrez Réglages et collez votre clé.', 401, false);
+    throw new LLMError('Clé OpenRouter manquante : ouvrez Paramètres et collez votre clé.', 401, false);
   const maxRetries = o.maxRetries ?? 2;
   let last: unknown = null;
   for (let i = 0; i < chain.length; i++) {
@@ -201,7 +201,7 @@ export async function complete(
 
 export function friendlyError(err: unknown): string {
   const e = err as LLMError;
-  if (e?.status === 401) return 'OpenRouter refuse la clé (401). Vérifiez-la dans Réglages.';
+  if (e?.status === 401) return 'OpenRouter refuse la clé (401). Vérifiez-la dans Paramètres.';
   if (e?.status === 402) return `Crédits OpenRouter insuffisants : ${e.message}`;
   if (e?.status === 0 || /Failed to fetch|NetworkError/i.test(e?.message ?? ''))
     return 'Impossible de joindre openrouter.ai (connexion internet, pare-feu ou proxy de l’entreprise ?).';

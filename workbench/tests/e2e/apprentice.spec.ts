@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { startMockOpenRouter, type MockOpenRouter } from '../helpers/mockOpenRouter';
+import { openView } from './nav';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FILE = path.join(ROOT, 'dist/massamba-workbench-direct.html');
@@ -41,7 +42,7 @@ async function open(page: Page, errors: string[] = []) {
   await page.getByRole('button', { name: 'Commencer' }).click();
   // Lands on the Cockpit; most tests work in the chat.
   await expect(page.getByText('Nouvelle mission')).toBeVisible();
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await expect(page.locator('textarea')).toBeVisible();
   // Explicit model so requests are predictable.
   await page.evaluate(() => undefined);
@@ -74,11 +75,11 @@ const CATALOG = [
 ];
 
 async function enable(page: Page) {
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await page.getByRole('tab', { name: 'JEV APPRENTICE', exact: true }).click();
   await page.getByRole('switch', { name: /Activer JEV Apprentice/ }).click();
   await expect(page.getByText('FREE-FIRST ✓ ACTIVE')).toBeVisible();
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
 }
@@ -86,16 +87,16 @@ async function enable(page: Page) {
 
 /** Model lock OFF: lets the run switch models (escalation / free-first fallback), as the user can choose in Settings. */
 async function unlockModel(page: Page) {
-  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await openView(page, 'Réglages');
   await page.locator('[data-testid=pin-model] [role=switch]').click();
   await expect(page.locator('[data-testid=pin-model] [role=switch]')).toHaveAttribute('aria-checked', 'false');
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
 }
 
 test('Apprentice: OFF by default (V5 routing untouched), tab shows N/A without data', async ({ page }) => {
   mock.models = CATALOG;
   await open(page);
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await page.getByRole('tab', { name: 'JEV APPRENTICE', exact: true }).click();
   await expect(page.getByText(/FREE-FIRST OFF/)).toBeVisible();
   await expect(page.getByRole('switch', { name: /Activer JEV Apprentice/ })).not.toBeChecked();
@@ -120,7 +121,7 @@ test('Apprentice: free-first runs on the FREE model, adapted by a capsule, accep
   expect(systemOf(0)).toContain('jev_capsule');
   expect(systemOf(0)).toContain('inference-time');
   await expect(page.getByText('JEV Apprentice — FREE-FIRST actif')).toBeVisible();
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await page.getByRole('tab', { name: 'JEV APPRENTICE', exact: true }).click();
   const live = page.getByTestId('apprentice-live');
   await expect(live).toContainText(FREE);
@@ -144,7 +145,7 @@ test('Apprentice: free fails the quality gate → automatic fallback to the V5 m
   expect(mock.requests[1]!.model).not.toBe(FREE);
   expect(JSON.stringify(mock.requests[1]!.messages)).toMatch(/QUALITY GATE|JEV QA found precise problems/);
   await expect(page.getByText(/JEV Apprentice — routage V5/)).toBeVisible();
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await page.getByRole('tab', { name: 'JEV APPRENTICE', exact: true }).click();
   await expect(page.getByTestId('apprentice-live')).toContainText('FALLBACK');
   await expect(page.getByTestId('apprentice-live')).toContainText('→');

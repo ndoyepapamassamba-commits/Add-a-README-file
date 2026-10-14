@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { MOCK_MODELS, startMockOpenRouter, type MockOpenRouter } from '../helpers/mockOpenRouter';
+import { openView } from './nav';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FILE = path.join(ROOT, 'dist/massamba-workbench-direct.html');
@@ -36,7 +37,7 @@ async function open(page: Page) {
   await page.getByPlaceholder('sk-or-v1-…').fill('sk-or-v1-e2e-direct-key');
   await page.getByRole('button', { name: 'Commencer' }).click();
   await expect(page.getByText('Nouvelle mission')).toBeVisible();
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await expect(page.locator('textarea')).toBeVisible();
   return errors;
 }
@@ -69,7 +70,7 @@ const send = async (page: Page, text: string) => {
 
 test('JEV Cognitive OS: 18 sub-tabs, regression report without FAIL, no fabricated figure on an empty log', async ({ page }) => {
   const errors = await open(page);
-  await page.getByRole('button', { name: 'JEV Cognitive OS', exact: true }).first().click();
+  await openView(page, 'JEV Cognitive OS');
   await expect(page.getByTestId('cognitive-os')).toBeVisible();
   await expect(page.getByRole('tab')).toHaveCount(18);
   await page.getByRole('tab', { name: 'Régression', exact: true }).click();
@@ -143,7 +144,7 @@ test('chat memory stays in the chat: a second chat never sees the first chat\'s 
   await page.getByRole('button', { name: 'Tout archiver' }).click();
   await expect(page.getByText(/Archives \(2\)/)).toBeVisible();
   // The vault entry is listed in JEV Cognitive OS.
-  await page.getByRole('button', { name: 'JEV Cognitive OS', exact: true }).first().click();
+  await openView(page, 'JEV Cognitive OS');
   await page.getByRole('tab', { name: 'Coffre & leçons', exact: true }).click();
   await expect(page.getByTestId('vault-list')).toContainText('rapport A');
 });
@@ -159,9 +160,9 @@ test('free web search: Tavily is called directly from the browser (no relay) and
       body: JSON.stringify({ results: [{ title: 'Taux directeur BCEAO', url: 'https://www.bceao.int/fr/taux', content: 'Le taux directeur est fixé à 3,25 %.', published_date: '2026-09-15' }] }),
     });
   });
-  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await openView(page, 'Réglages');
   await page.getByTestId('tavily-key').fill('tvly-test-key');
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
   mock.push({ toolCalls: [{ name: 'web.search', args: { query: 'taux directeur BCEAO' } }] }, { text: 'Le taux directeur BCEAO est de 3,25 % (source : bceao.int).' });
@@ -183,9 +184,9 @@ test('premium design gallery: before an Excel deliverable the user picks a desig
       body: JSON.stringify({ results: [], images: [{ url: 'https://example.com/design-1.png', description: 'dashboard' }, { url: 'https://example.com/design-2.png', description: 'kpi' }] }),
     }),
   );
-  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await openView(page, 'Réglages');
   await page.getByTestId('tavily-key').fill('tvly-test-key');
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
   mock.push(
@@ -286,9 +287,9 @@ test('Internet design → REAL copy: its layout is read, previewed, then rebuilt
     route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' }, body: JSON.stringify({ results: [], images: [{ url: 'https://example.com/dash.png', description: 'dark dashboard' }] }) }),
   );
   await page.route('https://example.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') }));
-  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await openView(page, 'Réglages');
   await page.getByTestId('tavily-key').fill('tvly-test-key');
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
   const LAYOUT = { dark: true, navigation: 'sidebar', header: 'minimal', kpis: { count: 3, style: 'tile' }, charts: [{ type: 'donut', span: 1 }, { type: 'area', span: 2 }], table: { style: 'lined', position: 'bottom' }, columns: 3, radius: 18, shadow: true, palette: { bg: '#0B1020', surface: '#141B2D', primary: '#7C3AED', accent: '#22D3EE', text: '#E5E7EB', muted: '#94A3B8', series: ['#7C3AED', '#22D3EE', '#F59E0B'] }, font: 'Poppins' };
@@ -481,9 +482,9 @@ test('vision model refusing (« only available on agentic harnesses ») → the 
     route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' }, body: JSON.stringify({ results: [], images: [{ url: 'https://example.com/kpi.png', description: 'kpi dashboard' }] }) }),
   );
   await page.route('https://example.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') }));
-  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await openView(page, 'Réglages');
   await page.getByTestId('tavily-key').fill('tvly-test-key');
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
   const LAYOUT = { dark: false, navigation: 'top', header: 'band', kpis: { count: 3, style: 'card' }, charts: [{ type: 'line', span: 2 }], table: { style: 'zebra', position: 'bottom' }, columns: 3, radius: 10, shadow: true, palette: { bg: '#FFF7ED', surface: '#FFFFFF', primary: '#C2410C', accent: '#FACC15', text: '#1C1917', muted: '#78716C', series: ['#C2410C', '#FACC15'] }, font: 'Montserrat' };
@@ -522,9 +523,9 @@ test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, fram
   );
   await page.route('https://example.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: IMG }));
   await page.route('https://wsrv.nl/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body: IMG }));
-  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await openView(page, 'Réglages');
   await page.getByTestId('tavily-key').fill('tvly-test-key');
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   // The chat's data, attached: the preview shows THESE figures.
   const csv = ['date,produit,region,ventes', ...Array.from({ length: 60 }, (_, i) => `2023-0${(i % 9) + 1}-15,${['Cupcake', 'Brownie', 'Macaron', 'Cookie', 'Donut'][i % 5]},${['Dakar', 'Thiès', 'Kaolack'][i % 3]},${100 + ((i * 37) % 900)}`)].join('\n');
   await page.locator('input[type=file]').first().setInputFiles({ name: 'ventes.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
@@ -599,9 +600,9 @@ test('CORRIGER À 100 %: the trap thumbnail (outlined title, sidebar, KPI icons 
   );
   await page.route('https://example.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: IMG }));
   await page.route('https://wsrv.nl/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body: IMG }));
-  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await openView(page, 'Réglages');
   await page.getByTestId('tavily-key').fill('tvly-test-key');
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   const csv = ['mois,region,montant,volume', ...Array.from({ length: 30 }, (_, i) => `2025-0${(i % 6) + 1}-15,${['Nord', 'Sud', 'Est', 'Ouest', 'Centre'][i % 5]},${400 + ((i * 37) % 900)},${10 + (i % 7) * 4}`)].join('\n');
   await page.locator('input[type=file]').first().setInputFiles({ name: 'ventes.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
   await page.getByTitle('Mode de permissions', { exact: true }).click();
@@ -685,7 +686,7 @@ test('a design card left behind (mission stopped, page reloaded): « Générer �
   await expect(page.getByTestId('design-card')).toBeVisible({ timeout: 20_000 });
   await page.waitForTimeout(700); // debounced save
   await page.reload();
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await expect(page.getByTestId('design-card')).toBeVisible({ timeout: 10_000 });
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
@@ -711,9 +712,9 @@ test('IMAGE DESIGN + Excel written by the model in code: the workbook OPENS on t
   );
   await page.route('https://example.com/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: IMG }));
   await page.route('https://wsrv.nl/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body: IMG }));
-  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await openView(page, 'Réglages');
   await page.getByTestId('tavily-key').fill('tvly-test-key');
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   // A workbook like the user's: a summary « Dashboard » sheet first (blocks side by side, TOTAL rows), the detail after.
   await page.locator('input[type=file]').first().setInputFiles(path.join(ROOT, 'tests/fixtures/provisions-like.xlsx'));
   await page.getByTitle('Mode de permissions', { exact: true }).click();

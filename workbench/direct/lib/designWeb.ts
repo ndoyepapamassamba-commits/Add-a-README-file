@@ -19,7 +19,7 @@ export async function searchDesigns(
   opts: { page?: number; style?: DesignStyle; extra?: string; seen?: Set<string> } = {},
 ): Promise<{ url: string; description: string }[]> {
   const key = useStore.getState().settings.tavilyKey;
-  if (!key) throw new Error('Ajoutez une clé Tavily dans Réglages pour voir des designs sur Internet.');
+  if (!key) throw new Error('Ajoutez une clé Tavily dans Paramètres pour voir des designs sur Internet.');
   const queries = designQueries(kind, opts.page ?? 0, opts.style ?? 'Tous', opts.extra ?? '');
   const settled = await Promise.allSettled(
     queries.map(async (q) => {

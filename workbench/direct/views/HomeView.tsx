@@ -26,6 +26,9 @@ import { today, useStore } from '../lib/store';
 import type { Attachment } from '../lib/types';
 import { importBrowserFile } from '../lib/vfs';
 import { allWorkflows, runWorkflow } from '../lib/workflows';
+import { pulse } from '../lib/cockpit';
+import { CockpitPulse } from './Pulse';
+import { PageHeader } from './PageHeader';
 
 export function Panel({
   title,
@@ -84,6 +87,19 @@ export const Empty = ({ children }: { children: React.ReactNode }) => (
   <div className="p-3 text-center text-[12px] text-faint">{children}</div>
 );
 
+/** « +12 % vs veille » — only when the previous window has data; lower is better for latency. */
+function delta(now: number, before: number, label: string, lowerIsBetter = false): React.ReactNode {
+  if (!before) return now ? 'pas de point de comparaison' : '—';
+  const d = Math.round(((now - before) / before) * 100);
+  const good = lowerIsBetter ? d <= 0 : d >= 0;
+  return (
+    <span className={good ? 'text-ok' : 'text-warn'}>
+      {d > 0 ? '+' : ''}
+      {d} % {label}
+    </span>
+  );
+}
+
 export function HomeView() {
   const sessions = useStore((s) => s.sessions);
   const running = useStore((s) => s.running);
@@ -106,6 +122,12 @@ export function HomeView() {
     .filter(([d]) => d.startsWith(month))
     .reduce((a, [, v]) => a + v, 0);
   const daySpend = spend[today()] ?? 0;
+  const weekSpend = Object.entries(spend)
+    .filter(([d]) => d > new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10))
+    .reduce((a, [, v]) => a + v, 0);
+  const dayStart = new Date(new Date().toDateString()).getTime();
+  const p24 = useMemo(() => pulse(usage, Date.now() - 86400_000), [usage]);
+  const p48 = useMemo(() => pulse(usage.filter((u) => u.ts < Date.now() - 86400_000), Date.now() - 2 * 86400_000), [usage]);
   const since = Date.now() - 30 * 86400_000;
   const recentUsage = useMemo(() => usage.filter((u) => u.ts >= since), [usage, since]);
   const todayUsage = useMemo(
@@ -190,6 +212,15 @@ export function HomeView() {
   return (
     <div className="h-full overflow-auto">
       <div className="mx-auto max-w-[1400px] space-y-3 p-4">
+        <PageHeader
+          title="Cockpit IA"
+          subtitle="Vue d’ensemble de vos agents, modèles et ressources en temps réel"
+          right={
+            <Button size="sm" variant="ghost" onClick={() => void refreshCredits()} title="Relire les crédits OpenRouter">
+              Actualiser
+            </Button>
+          }
+        />
         {/* NEW MISSION */}
         <div className="rounded-2xl border border-line bg-elev p-3">
           <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold">
@@ -290,30 +321,40 @@ export function HomeView() {
           </div>
         </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
+        {/* KPIs (mockup): every figure measured in this browser, compared with the previous window when one exists. */}
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6" data-testid="cockpit-kpis">
           <Kpi
-            label="Missions actives"
+            label="Sessions actives"
             value={String(active.length)}
-            sub={`${Object.keys(running).length} session(s) en cours`}
+            sub={`${sessions.filter((s) => s.createdAt >= dayStart).length} créée(s) aujourd’hui`}
             tone={active.length ? 'ok' : undefined}
           />
+          <Kpi label="Requêtes (24 h)" value={String(p24.calls)} sub={delta(p24.calls, p48.calls, 'vs veille')} />
           <Kpi
-            label="Coût aujourd’hui"
-            value={fmtCost(daySpend)}
+            label="Latence médiane (24 h)"
+            value={p24.p50 === null ? '—' : fmtDuration(p24.p50)}
+            sub={p24.p50 !== null && p48.p50 !== null ? delta(p24.p50, p48.p50, 'vs veille', true) : 'par appel de modèle'}
+          />
+          <Kpi
+            label="Missions réussies"
+            value={passRate === null ? '—' : `${passRate} %`}
+            sub={`${missions.length} mission(s) · ${failed.length} en échec`}
+            tone={passRate !== null && passRate < 60 ? 'warn' : passRate === null ? undefined : 'ok'}
+          />
+          <Kpi
+            label="Dépenses (7 j)"
+            value={fmtCost(weekSpend)}
             sub={
               settings.budgetDaily ? (
-                <Gauge value={daySpend} max={settings.budgetDaily} className="mt-1" />
+                <span className="block">
+                  aujourd’hui {fmtCost(daySpend)} / {fmtCost(settings.budgetDaily, 2)}
+                  <Gauge value={daySpend} max={settings.budgetDaily} className="mt-1" />
+                </span>
               ) : (
-                'pas de budget'
+                `aujourd’hui ${fmtCost(daySpend)} · mois ${fmtCost(monthSpend)}`
               )
             }
             tone={settings.budgetDaily && daySpend >= settings.budgetDaily * 0.8 ? 'warn' : undefined}
-          />
-          <Kpi
-            label="Coût du mois"
-            value={fmtCost(monthSpend)}
-            sub={`${fmtTokens(todayUsage.reduce((a, u) => a + u.tokensIn + u.tokensOut, 0))} tokens aujourd’hui`}
           />
           <Kpi
             label="Crédits OpenRouter"
@@ -322,21 +363,11 @@ export function HomeView() {
                 ? fmtCost((credits?.keyLimitRemaining ?? credits?.remaining) as number, 2)
                 : '—'
             }
-            sub="restants"
-          />
-          <Kpi
-            label="Missions réussies"
-            value={passRate === null ? '—' : `${passRate} %`}
-            sub={`${missions.length} mission(s)`}
-            tone={passRate !== null && passRate < 60 ? 'warn' : 'ok'}
-          />
-          <Kpi
-            label="Tâches en échec"
-            value={String(failed.length)}
-            sub="FAILED / PARTIAL / erreurs"
-            tone={failed.length ? 'err' : undefined}
+            sub={`restants · ${fmtTokens(todayUsage.reduce((a, u) => a + u.tokensIn + u.tokensOut, 0))} tokens aujourd’hui`}
           />
         </div>
+
+        <CockpitPulse />
 
         <div className="grid gap-3 lg:grid-cols-3">
           <Panel title="Missions actives" icon={<Activity size={13} />} className="max-h-[300px]">

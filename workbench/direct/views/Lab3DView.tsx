@@ -6,6 +6,7 @@ import { complete } from '../lib/llm';
 import { useStore } from '../lib/store';
 import { download } from '../lib/vfs';
 import { BRIDGE_HELP, bridgeHealth, bridgeRender, type BridgeHealth } from '../lib/blenderBridge';
+import { VIDEO_3D } from '../lib/features';
 import { CINEMATIC_WEBGL_RULES, generateWithCorrection, type Round } from '../../server/jev/lab3d/selfCorrect';
 import {
   directStory,
@@ -129,7 +130,8 @@ export function Lab3DView() {
   const [bridge, setBridge] = useState<BridgeHealth | null>(null);
   const push = (k: string, m: string) => setLog((l) => [...l.slice(-200), { k, m }]);
   useEffect(() => {
-    void bridgeHealth().then(setBridge);
+    // The local Blender bridge belongs to the 3D video chain (VIDEO_3D): not probed while that chain is out of the app.
+    if (VIDEO_3D) void bridgeHealth().then(setBridge);
   }, []);
   // The WebGL scene → GLB → the user's own Blender (local bridge, GPU) → cinematic rig, orbit, MP4.
   const renderBlender = async () => {
@@ -278,12 +280,13 @@ export function Lab3DView() {
     ['shader', 'Shaders GLSL'],
     ['physics', 'Physique'],
     ['ai', 'Génération IA'],
-    ['director', 'Réalisateur'],
+    // The Blender « réalisateur » is part of the 3D video chain, out of the app while VIDEO_3D is off.
+    ...(VIDEO_3D ? ([['director', 'Réalisateur']] as [Tab, string][]) : []),
   ];
   return (
     <div data-testid="lab3d" className="flex h-full min-h-0 flex-col gap-3 p-4">
       <div className="flex items-center gap-2">
-        <h1 className="text-[15px] font-semibold">Studio 3D Pro</h1>
+        <h1 className="text-[15px] font-semibold">Studio 3D</h1>
         <span className="text-[12px] text-muted">
           bac à sable WebGL isolé · three.js r186 · cannon-es · GLSL · export GLB / Draco
         </span>
@@ -517,6 +520,7 @@ export function Lab3DView() {
             >
               Export GLB + Draco
             </button>
+            {VIDEO_3D && (
             <button
               data-testid="lab3d-blender"
               disabled={!!busy}
@@ -526,6 +530,7 @@ export function Lab3DView() {
             >
               {bridge ? `Rendre dans Blender local (${bridge.mode === 'bpy' ? 'bpy' : 'GPU'})` : 'Blender local : non détecté'}
             </button>
+            )}
             <span data-testid="lab3d-stats" className="text-[12px] text-muted">
               {busy
                 ? `${busy}…`

@@ -250,7 +250,7 @@ function Dashboard() {
             <Toggle
               checked={cfg.budgetStop}
               onChange={(v) => set({ budgetStop: v })}
-              label="Arrêt automatique quand le budget tokens / temps est épuisé (sinon : compression et poursuite ; le budget coût des Réglages s’applique toujours)"
+              label="Arrêt automatique quand le budget tokens / temps est épuisé (sinon : compression et poursuite ; le budget coût des Paramètres s’applique toujours)"
             />
           </div>
           <div className="mb-1 text-[12px] font-medium">Décision courante</div>
@@ -764,7 +764,7 @@ function BenchTab() {
         .getState()
         .models.filter((x) => x.capabilities.tools && (x.inputPrice ?? 0) > 0 && !/:(free|batch)$/.test(x.id))
         .sort((a, b) => (a.inputPrice ?? 0) - (b.inputPrice ?? 0))[0];
-      if (!m) throw new Error('Aucun modèle avec outils dans le catalogue : ouvrez Réglages.');
+      if (!m) throw new Error('Aucun modèle avec outils dans le catalogue : ouvrez Paramètres.');
       const r = await runBench(sel, (msg) => setBusy(msg), stop.current, {
         variants,
         reps,

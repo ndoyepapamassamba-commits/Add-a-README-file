@@ -41,7 +41,7 @@ async function open(page: Page, errors: string[] = []) {
   await page.getByRole('button', { name: 'Commencer' }).click();
   // Lands on the Cockpit; most tests work in the chat.
   await expect(page.getByText('Nouvelle mission')).toBeVisible();
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await expect(page.locator('textarea')).toBeVisible();
   // Explicit model so requests are predictable.
   await page.evaluate(() => undefined);
@@ -72,6 +72,7 @@ const CATALOG = [
 
 import { entry, many } from '../helpers/logEntry';
 import type { ApprenticeTag } from '../../server/jev/apprentice/types';
+import { openView } from './nav';
 
 const TEXTS = [
   'Calcule la provision ECL IFRS9 du portefeuille corporate',
@@ -131,11 +132,11 @@ async function seedLog(page: Page, log: unknown[]) {
 }
 async function enableAfterReload(page: Page) {
   await page.reload();
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await page.getByRole('tab', { name: 'JEV APPRENTICE', exact: true }).click();
   await page.getByRole('switch', { name: /Activer JEV Apprentice/ }).click();
   await expect(page.getByText('FREE-FIRST ✓ ACTIVE')).toBeVisible();
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
 }
@@ -143,10 +144,10 @@ async function enableAfterReload(page: Page) {
 
 /** Model lock OFF: lets the run switch models after a failed quality gate, as the user can choose in Settings. */
 async function unlockModel(page: Page) {
-  await page.getByRole('button', { name: 'Réglages', exact: true }).first().click();
+  await openView(page, 'Réglages');
   await page.locator('[data-testid=pin-model] [role=switch]').click();
   await expect(page.locator('[data-testid=pin-model] [role=switch]')).toHaveAttribute('aria-checked', 'false');
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await openView(page, 'Chat');
 }
 
 test('Supremacy: a VALIDATED champion is selected BEFORE any premium model, shown in Champions, and the premium is never called', async ({
@@ -167,7 +168,7 @@ test('Supremacy: a VALIDATED champion is selected BEFORE any premium model, show
   await expect(page.getByText(/Validated Apprentice for/).first()).toBeVisible();
   await expect(page.getByText(/Premium reference: N\/A/).first()).toBeVisible();
   // Champions tab: evidence is displayed with the champion.
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await page.getByRole('tab', { name: 'JEV APPRENTICE', exact: true }).click();
   await page.getByRole('tab', { name: 'Apprentice Champions' }).click();
   const t = page.getByTestId('champions-table');
@@ -214,7 +215,7 @@ test('Supremacy: demonstration is labelled SIMULATED TEST ONLY and walks the who
 }) => {
   mock.models = CATALOG;
   await open(page);
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await page.getByRole('tab', { name: 'JEV APPRENTICE', exact: true }).click();
   await page.getByRole('tab', { name: /Démonstration/ }).click();
   await page.getByRole('button', { name: /Lancer la démonstration/ }).click();
@@ -231,7 +232,7 @@ test('Supremacy: payback and learning graph show N/A without data (no fabricated
 }) => {
   mock.models = CATALOG;
   await open(page);
-  await page.getByRole('button', { name: 'JEV', exact: true }).first().click();
+  await openView(page, 'JEV');
   await page.getByRole('tab', { name: 'JEV APPRENTICE', exact: true }).click();
   await page.getByRole('tab', { name: /Payback/ }).click();
   await expect(page.getByTestId('learning-payback')).toContainText('N/A');
