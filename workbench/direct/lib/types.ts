@@ -12,6 +12,7 @@ export type View =
   | 'chat'
   | 'prompts'
   | 'realize'
+  | 'videogen'
   | 'files'
   | 'data'
   | 'terminal'

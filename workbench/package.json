@@ -46,6 +46,8 @@
     "mammoth": "^1.13.0",
     "marked": "^18.0.14",
     "mediabunny": "1.61.3",
+    "mp4-muxer": "^5.2.2",
+    "mp4box": "^2.4.1",
     "papaparse": "^5.7.0",
     "playwright": "1.56.1",
     "three": "^0.186.1",

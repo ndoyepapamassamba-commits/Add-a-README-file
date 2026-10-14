@@ -17,6 +17,7 @@ const MAP: Record<string, [string, string?]> = {
   Fichiers: ['Fichiers'],
   Skills: ['Outils', 'Skills'],
   Plugins: ['Outils', 'Plugins'],
+  'Vidéo IA': ['Bac à sable', 'Vidéo IA'],
   Réalisation: ['Bac à sable', 'Réalisation'],
   'Prompt Studio': ['Bac à sable', 'Prompt Studio'],
   'Studio 3D': ['Bac à sable', 'Studio 3D'],

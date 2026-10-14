@@ -115,6 +115,7 @@ export function systemPrompt(kind: RealizeKind, opts: { data?: DataInfo | null; 
             '- TOUT est dessiné DANS ce canvas : 3D avec three.js (renderer sur ce canvas, setSize(' + w + ', ' + h + ', false)), titres, sous-titres, textes et graphiques animés dessinés dans la scène ou en Canvas 2D par-dessus (un second canvas n’est PAS filmé : compose dans le même). Aucun élément HTML visible hors du canvas.',
             `- Déroulé : démarre tout seul au chargement, animation pilotée par le temps t = (performance.now() − t0) / 1000, découpée en plans (intro, développement, temps fort, fin) ; à t ≥ ${v.seconds} s, reste figée sur la dernière image ; expose window.VIDEO = { duration: ${v.seconds}, width: ${w}, height: ${h} }.`,
             '- Qualité cinéma : mouvements de caméra lents et fluides (easing), éclairage soigné, couleurs harmonieuses, typographie lisible, pas de texte coupé, 30 images par seconde visées.',
+            '- Le temps est PILOTÉ par le moteur, image par image : utilise uniquement requestAnimationFrame et performance.now() (jamais new Date() ni setInterval pour animer) ; ainsi chaque image est calculée à son instant exact et la vidéo est parfaitement fluide.',
             '- Pas de son (la vidéo est muette), pas d’interaction requise.',
           ];
         })()
@@ -167,8 +168,13 @@ export const videoExt = (mime: string) => (mime.startsWith('video/mp4') ? 'mp4' 
 export const BRIDGE = [
   '(function(){',
   `var VIDEO_TYPES=${JSON.stringify(VIDEO_TYPES)};`,
-  'var P=function(m){try{m.t=window.__RZ_TOKEN;parent.postMessage(m,"*");}catch(e){}};',
-  'var start=Date.now();',
+  'var P=function(m){try{m.t=window.__RZ_TOKEN;parent.postMessage(m,"*",m.bitmap?[m.bitmap]:[]);}catch(e){}};',
+  'var RST=window.setTimeout.bind(window);var start=Date.now();',
+  'var REC0=window.__RZ_REC;var VT=null;',
+  'if(REC0&&REC0.exact){VT={now:0,raf:[],timers:[],id:1};var pn=performance.now.bind(performance);var base=Date.now();performance.now=function(){return VT.now;};Date.now=function(){return base+VT.now;};window.requestAnimationFrame=function(cb){var id=VT.id++;VT.raf.push({id:id,cb:cb});return id;};window.cancelAnimationFrame=function(id){VT.raf=VT.raf.filter(function(r){return r.id!==id;});};var addT=function(cb,ms,every,args){var id=VT.id++;VT.timers.push({id:id,at:VT.now+Math.max(0,ms||0),every:every?Math.max(1,ms||0):0,cb:cb,args:args});return id;};window.setTimeout=function(cb,ms){return addT(cb,ms,false,[].slice.call(arguments,2));};window.setInterval=function(cb,ms){return addT(cb,ms,true,[].slice.call(arguments,2));};window.clearTimeout=window.clearInterval=function(id){VT.timers=VT.timers.filter(function(t){return t.id!==id;});};}',
+  'var vstep=function(now){VT.now=now;var guard=0;while(guard++<1000){var due=VT.timers.filter(function(t){return t.at<=VT.now;});if(!due.length){break;}due.sort(function(a,b){return a.at-b.at;});var t=due[0];if(t.every){t.at+=t.every;}else{VT.timers=VT.timers.filter(function(x){return x!==t;});}try{if(typeof t.cb==="function"){t.cb.apply(window,t.args||[]);}}catch(err){P({rz:"err",kind:"runtime",msg:String(err&&err.message||err),line:null});}}var cbs=VT.raf;VT.raf=[];for(var i=0;i<cbs.length;i++){try{cbs[i].cb(VT.now);}catch(err){P({rz:"err",kind:"runtime",msg:String(err&&err.message||err),line:null});}}try{document.getAnimations().forEach(function(a){a.pause();a.currentTime=VT.now;});}catch(_){}};',
+  'var bigCanvas=function(){var cs=[].slice.call(document.querySelectorAll("canvas")).filter(function(c){return c.width>10&&c.height>10;}).sort(function(a,b){return b.width*b.height-a.width*a.height;});return cs[0]||null;};',
+  'var EXACT=function(ms,fps){var c=bigCanvas();if(!c){P({rz:"video",error:"nocanvas"});return;}var n=Math.max(1,Math.round(ms*fps/1000));var i=0;var next=function(){if(i>=n){P({rz:"video-done",frames:n,width:c.width,height:c.height});return;}vstep(i*1000/fps);var k=i;i++;createImageBitmap(c).then(function(b){P({rz:"frame",i:k,n:n,bitmap:b});}).catch(function(err){P({rz:"video",error:String(err&&err.message||err)});});};window.addEventListener("message",function(e){if(e.data&&e.data.rz==="next"){next();}});next();};',
   'window.addEventListener("error",function(e){var t=e.target;if(t&&t!==window&&t.tagName&&/^(SCRIPT|LINK|IMG|AUDIO|VIDEO)$/.test(t.tagName)){P({rz:"err",kind:"resource",msg:(t.tagName==="SCRIPT"&&!t.src)?"un module importé par un <script type=module> n’a pas pu être chargé (bibliothèque absente du moteur, ou réseau coupé)":"ressource introuvable : "+(t.src||t.href||t.tagName),line:null});return;}P({rz:"err",kind:"runtime",msg:String(e.message||(e.error&&e.error.message)||"erreur"),line:e.lineno||null});},true);',
   'window.addEventListener("unhandledrejection",function(e){var r=e.reason;P({rz:"err",kind:"promise",msg:"promesse rejetée : "+String((r&&r.message)||r),line:null});});',
   'document.addEventListener("securitypolicyviolation",function(e){P({rz:"err",kind:"csp",msg:"Content Security Policy : "+e.violatedDirective+" "+(e.blockedURI||""),line:e.lineNumber||null});});',
@@ -177,7 +183,7 @@ export const BRIDGE = [
   'var measure=function(){var b=document.body;var els=b?b.querySelectorAll("*"):[];var vis=0;for(var i=0;i<els.length&&i<5000;i++){var r=els[i].getBoundingClientRect();if(r.width>2&&r.height>2){vis++;}}P({rz:"stats",elements:vis,text:b?(b.innerText||"").trim().length:0,canvases:document.querySelectorAll("canvas").length,svgs:document.querySelectorAll("svg").length,ms:Date.now()-start,loading:document.readyState!=="complete"});};',
   'var REC=function(ms,fps){var cs=[].slice.call(document.querySelectorAll("canvas")).filter(function(c){return c.width>10&&c.height>10;}).sort(function(a,b){return b.width*b.height-a.width*a.height;});if(!cs.length){P({rz:"video",error:"nocanvas"});return;}var c=cs[0];var mime="";for(var i=0;i<VIDEO_TYPES.length;i++){if(window.MediaRecorder&&MediaRecorder.isTypeSupported(VIDEO_TYPES[i])){mime=VIDEO_TYPES[i];break;}}if(!mime){P({rz:"video",error:"norecorder"});return;}var rec=new MediaRecorder(c.captureStream(fps||30),{mimeType:mime,videoBitsPerSecond:8000000});var parts=[];rec.ondataavailable=function(ev){if(ev.data&&ev.data.size){parts.push(ev.data);}};rec.onstop=function(){P({rz:"video",blob:new Blob(parts,{type:mime.split(";")[0]}),mime:mime,width:c.width,height:c.height});};rec.start(250);setTimeout(function(){rec.stop();},ms);};',
   'window.addEventListener("message",function(e){if(e.data&&e.data.rz==="measure"){measure();}if(e.data&&e.data.rz==="record"){try{REC(e.data.ms||8000,e.data.fps||30);}catch(err){P({rz:"video",error:String(err&&err.message||err)});}}});',
-  'window.addEventListener("load",function(){if(window.__RZ_REC){try{REC(window.__RZ_REC.ms,window.__RZ_REC.fps||30);}catch(err){P({rz:"video",error:String(err&&err.message||err)});}}setTimeout(measure,1200);});',
+  'window.addEventListener("load",function(){if(window.__RZ_REC){try{if(window.__RZ_REC.exact){vstep(0);RST(function(){EXACT(window.__RZ_REC.ms,window.__RZ_REC.fps||30);},50);}else{REC(window.__RZ_REC.ms,window.__RZ_REC.fps||30);}}catch(err){P({rz:"video",error:String(err&&err.message||err)});}}RST(measure,1200);});',
   '})();',
 ].join('');
 
@@ -221,7 +227,7 @@ export function verdict(errors: RealizeError[], warnings: string[], stats: (Omit
  * numbers of the model's code are unchanged): the security policy, the import map (merged with one the model may have
  * written), the bridge and the user's data. A fragment without <html> is wrapped first.
  */
-export function buildDocument(html: string, o: { bridge?: string; data?: unknown; meta?: unknown; token?: string; record?: { ms: number; fps?: number } }): string {
+export function buildDocument(html: string, o: { bridge?: string; data?: unknown; meta?: unknown; token?: string; record?: { ms: number; fps?: number; exact?: boolean } }): string {
   let doc = html.trim();
   if (!/<html[\s>]/i.test(doc)) doc = `<!doctype html><html lang="fr"><head><meta charset="utf-8"></head><body>${doc}</body></html>`;
   // A model-written import map is merged into ours (only one map is allowed before the first module).

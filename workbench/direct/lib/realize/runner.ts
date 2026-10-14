@@ -2,6 +2,7 @@
 // d'accès à l'app, à ses clés, à son stockage) dans laquelle la page du modèle s'exécute avec le moteur esm.sh. Le pont
 // injecté renvoie les erreurs réelles et les mesures ; le verdict est rendu par le module pur (server/jev/realize).
 import { VIDEO_TYPES, buildDocument, verdict, type RealizeError, type RealizeRun } from '../../../server/jev/realize/realize';
+import { openMp4, type Mp4Stream } from '../videogen/encode';
 
 export interface Video {
   blob: Blob;
@@ -20,6 +21,10 @@ export class Realizer {
   private stats: { elements: number; text: number; canvases: number; svgs: number; ms: number; loading?: boolean } | null = null;
   private wake: (() => void) | null = null;
   private video: ((v: Video | { error: string }) => void) | null = null;
+  private exact: ((b: ImageBitmap, i: number, n: number) => Promise<void>) | null = null;
+  private exactDone: (() => Promise<void>) | null = null;
+  /** Progress of a frame-exact render (frames done, total). */
+  onFrames?: (done: number, total: number) => void;
   private readonly onMsg = (e: MessageEvent) => {
     if (e.source !== this.frame.contentWindow) return;
     const d = e.data as { t?: string; rz?: string; kind?: RealizeError['kind']; msg?: string; line?: number | null; level?: string } & Record<string, number>;
@@ -32,6 +37,11 @@ export class Realizer {
       if (d.level === 'error') this.errors.push({ kind: 'console', msg, line: null });
       else if (d.level === 'warn') this.warnings.push(msg);
       this.onConsole?.(d.level ?? 'log', msg);
+    } else if (d.rz === 'frame' && this.exact) {
+      const b = (d as unknown as { bitmap: ImageBitmap }).bitmap;
+      void this.exact(b, Number(d.i), Number(d.n));
+    } else if (d.rz === 'video-done' && this.exactDone) {
+      void this.exactDone();
     } else if (d.rz === 'video') {
       const v = d as unknown as { blob?: Blob; mime?: string; width?: number; height?: number; error?: string };
       this.video?.(v.blob ? { blob: v.blob, mime: v.mime ?? 'video/webm', width: v.width, height: v.height } : { error: v.error ?? 'échec' });
@@ -110,7 +120,68 @@ export class Realizer {
    * Renders a VIDEO page from its start: the page is reloaded and filmed from the « load » event for `seconds` (the
    * page draws everything on its canvas, see the « video » rules). Resolves with the recorded file.
    */
-  renderVideo(html: string, seconds: number, o: { data?: unknown; meta?: unknown } = {}): Promise<Video | { error: string }> {
+  async renderVideo(html: string, seconds: number, o: { data?: unknown; meta?: unknown; fps?: number } = {}): Promise<Video | { error: string }> {
+    // Frame-exact first (virtual clock in the page + WebCodecs), real-time recording as the fallback.
+    if (typeof VideoEncoder !== 'undefined') {
+      const r = await this.renderExact(html, seconds, o);
+      if (!('error' in r) || r.error === 'nocanvas') return r;
+      this.onConsole?.('warn', `rendu image par image impossible (${r.error}) : enregistrement en temps réel`);
+    }
+    return this.renderRealtime(html, seconds, o);
+  }
+
+  /** The page runs on a virtual clock; each image is computed at its exact time, captured and encoded with its timestamp. */
+  private renderExact(html: string, seconds: number, o: { data?: unknown; meta?: unknown; fps?: number }): Promise<Video | { error: string }> {
+    const fps = o.fps ?? 30;
+    this.token = Math.random().toString(36).slice(2);
+    this.errors = [];
+    this.warnings = [];
+    this.stats = null;
+    const ms = Math.round(seconds * 1000);
+    let stream: Mp4Stream | null = null;
+    let opening: Promise<Mp4Stream | null> | null = null;
+    return new Promise((resolve) => {
+      let settled = false;
+      const done = (v: Video | { error: string }) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(t);
+        this.exact = this.exactDone = null;
+        this.video = null;
+        resolve(v);
+      };
+      const t = setTimeout(() => done({ error: 'délai dépassé' }), ms * 20 + 60_000);
+      this.video = (v) => done(v);
+      this.exact = async (b, i, n) => {
+        try {
+          opening ??= openMp4(b.width, b.height, fps);
+          stream ??= await opening;
+          if (!stream) {
+            b.close();
+            return done({ error: 'encodeur MP4 indisponible' });
+          }
+          await stream.push(b, i);
+          b.close();
+          this.onFrames?.(i + 1, n);
+          this.frame.contentWindow?.postMessage({ rz: 'next' }, '*');
+        } catch (e) {
+          done({ error: (e as Error).message });
+        }
+      };
+      this.exactDone = async () => {
+        if (!stream) return done({ error: 'aucune image reçue' });
+        try {
+          const r = await stream.close();
+          done({ blob: r.blob, mime: r.mime, width: r.width, height: r.height });
+        } catch (e) {
+          done({ error: (e as Error).message });
+        }
+      };
+      this.frame.srcdoc = buildDocument(html, { data: o.data, meta: o.meta, token: this.token, record: { ms, fps, exact: true } });
+    });
+  }
+
+  private renderRealtime(html: string, seconds: number, o: { data?: unknown; meta?: unknown } = {}): Promise<Video | { error: string }> {
     this.token = Math.random().toString(36).slice(2);
     this.errors = [];
     this.warnings = [];

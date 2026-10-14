@@ -74,6 +74,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Bac à sable',
     hint: 'Tout prompt devient une réalisation exécutée et corrigée (apps, tableaux de bord, jeux, 3D, schémas) ; composer et tester des prompts ; Studio 3D WebGL.',
     views: [
+      { id: 'videogen', label: 'Vidéo IA' },
       { id: 'realize', label: 'Réalisation' },
       { id: 'prompts', label: 'Prompt Studio' },
       { id: 'lab3d', label: 'Studio 3D' },

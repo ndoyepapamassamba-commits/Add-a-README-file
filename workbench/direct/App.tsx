@@ -62,6 +62,7 @@ import { NAV_GROUPS, groupOf, type Group } from './lib/nav';
 import { ProvidersView } from './views/ProvidersView';
 import { Lab3DView } from './views/Lab3DView';
 import { RealizeView } from './views/RealizeView';
+import { VideoGenView } from './views/VideoGenView';
 
 const ICONS: Record<Group, React.ReactNode> = {
   cockpit: <LayoutDashboard size={17} />,
@@ -353,6 +354,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           <div className="min-h-0 flex-1">
             {shown === 'home' && <CockpitView />}
             {shown === 'chat' && <ChatView />}
+            {shown === 'videogen' && <VideoGenView />}
             {shown === 'realize' && <RealizeView />}
             {shown === 'prompts' && <PromptStudioView />}
             {shown === 'lab3d' && <Lab3DView />}
