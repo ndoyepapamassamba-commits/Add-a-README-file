@@ -116,7 +116,8 @@ export function dossierPptx(d: Dossier, opts: DeckOptions = {}): Uint8Array {
   const frame = (title: string, kicker: string, body: string, lecture?: string) => {
     nid = 1;
     const pageNo = parts.length + 1;
-    const tSz = title.length > 95 ? 15 : title.length > 70 ? 17 : 19;
+    // One line in the band whatever the title: the size follows the width (0.58 em per bold character, 13 pt at least).
+    const tSz = Math.max(13, Math.min(19, Math.floor((72 * ((W - inch(3.2)) / EMU)) / (0.58 * Math.max(20, title.length)))));
     const shapes =
       rect(0, 0, W, BAND, C.navy, 'Bandeau') +
       rect(0, BAND, W, Math.round(0.035 * EMU), C.gold, 'Filet') +

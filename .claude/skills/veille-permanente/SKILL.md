@@ -96,10 +96,13 @@ Sources du 14/10/2026 : [EMAGE (CVPR 2024)](https://openaccess.thecvf.com/conten
   analyses : structure de dossier (pyramide, décision d'abord), méthodes (concentration, η², scénarios, SICR / ECL,
   provisions BCEAO), vérification des chiffres, jugements typés (JEV) ; (c) outils : générateurs OOXML, bibliothèques de
   graphiques, bacs à sable de prompts — licences MIT / Apache-2.0 / BSD seulement pour ce qui tourne chez nous.
-- **Cadence** : à chaque requête touchant un export ou une analyse (§1) ; et une **passe hebdomadaire** (tâche
-  planifiée « Veille design & analyses », lundi matin, heure de Dakar) qui cherche, vérifie les licences, consigne ici
-  (§4) et dans `workbench/research_notes/veille-design-analyses/<date>.md`, puis propose au plus trois améliorations
-  concrètes (module, test, thème) — rien n'est fabriqué : une trouvaille sans source lue est écrite « à vérifier ».
+- **Cadence : PERMANENTE** (consigne du 14/10/2026 : « la tâche doit être permanente, pas hebdomadaire ») :
+  à chaque requête touchant un export, une analyse ou un prompt (§1) ; et une **passe quotidienne** (tâche planifiée
+  « Veille permanente design & analyses », tous les jours à 8 h 54, heure de Dakar — le planificateur ne descend pas
+  sous l'heure) qui cherche, vérifie les licences, consigne ici (§4) et dans
+  `workbench/research_notes/veille-design-analyses/<date>.md`, puis propose au plus trois améliorations concrètes
+  (module, test, thème) — rien n'est fabriqué : une trouvaille sans source lue est écrite « à vérifier » ; un jour sans
+  nouveauté s'écrit « rien de neuf » avec les requêtes faites.
 - **Sources à couvrir** : ibcs.com, iso.org, Storytelling with Data, Perceptual Edge (S. Few), E. Tufte, Datawrapper
   / Flourish (blogs), Microsoft 365 Insider (nouveautés Excel / PowerPoint / Word), GitHub (python-pptx, docx, pptxgenjs,
   openpyxl, SheetJS, ECharts, Vega-Lite, Plotly), arXiv cs.HC / q-fin, Banque des règlements internationaux, BCEAO, EBA,
