@@ -17,7 +17,7 @@ import {
   emptyWorld,
 } from './actions';
 import { estimateVideo } from '../../../server/jev/studio/cost';
-import { circuitRate, clipUsd } from '../../../server/jev/studio/circuit';
+import { circuitAudio, circuitRate, clipUsd } from '../../../server/jev/studio/circuit';
 import { lockedVideoPrompt } from '../../../server/jev/studio/continuity';
 import { modelsWith, validateVideoRequest } from '../../../server/jev/studio/capabilities';
 import { StudioError, classifyError } from '../../../server/jev/studio/errors';
@@ -606,7 +606,7 @@ export async function generateSceneVideo(projectId: string, sceneId: string, o: 
         resolution: res,
         duration: o.duration,
         frames: [...frames],
-        generate_audio: o.audio,
+        generate_audio: o.audio ?? (o.circuit ? circuitAudio(m) : undefined),
       });
       const cr = o.circuit ? circuitRate(m, bp.aspect, res) : null;
       if (o.circuit && !cr) return null;
@@ -618,7 +618,7 @@ export async function generateSceneVideo(projectId: string, sceneId: string, o: 
               : estimateVideo(m, {
               duration: o.duration,
               resolution: res,
-              audio: o.audio,
+              audio: o.audio ?? (o.circuit ? circuitAudio(m) : undefined),
               mode: o.mode,
             }),
             aspect,
@@ -659,7 +659,7 @@ export async function generateSceneVideo(projectId: string, sceneId: string, o: 
         resolution: c.res,
         aspect_ratio: c.aspect,
         frame_images: first ? [{ url: first, frame_type: 'first_frame' }] : undefined,
-        generate_audio: o.audio,
+        generate_audio: o.audio ?? (o.circuit ? circuitAudio(m) : undefined),
       });
       job.onSubmitted(sub.id, sub.pollingUrl);
       try {

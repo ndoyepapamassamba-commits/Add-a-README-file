@@ -85,6 +85,10 @@ function rateOf(m: MediaModel, resolution: string, hit: [string, number | null],
     sku: hit[0],
   };
 }
+/** Audio flag of a circuit call: OpenRouter generates audio BY DEFAULT on the models that can (Veo, Kling, Seedance) and
+ *  bills it (Veo 3.1 Lite 0,05 $/s instead of 0,03 — catalogue read 14/10/2026). The circuit's price is the silent one
+ *  and the film has its own voices, so a model that can make sound is asked for silence; the others get no flag. */
+export const circuitAudio = (m: MediaModel): false | undefined => (m.video?.generateAudio ? false : undefined);
 /** Clip length: the shortest duration the model accepts that COVERS the scene (rounded up — a clip shorter than its
  *  lines left 5 s of frozen picture in v44, clipInspect.ts); the montage trims the surplus. */
 export function clipSeconds(r: CircuitRate, sceneSeconds: number): number | null {

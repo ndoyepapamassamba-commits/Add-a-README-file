@@ -3,7 +3,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseVideoModels } from '../../server/jev/studio/capabilities';
 import { priorQuality } from '../../server/jev/studio/director';
-import { CIRCUIT, circuitBudget, circuitCap, circuitRate, clipSeconds, clipUsd, pickCircuitModel, planCircuit } from '../../server/jev/studio/circuit';
+import { CIRCUIT, circuitAudio, circuitBudget, circuitCap, circuitRate, clipSeconds, clipUsd, pickCircuitModel, planCircuit } from '../../server/jev/studio/circuit';
 
 // The real OpenRouter /videos/models catalogue (public, read 2026-10-11): prices as announced by the providers.
 const CATALOG = parseVideoModels(JSON.parse(fs.readFileSync(path.join(__dirname, '../fixtures/studio/videos-catalog-2026-10.json'), 'utf8')));
@@ -90,6 +90,13 @@ describe('Circuit « Blender épingle, l\'API interpole » (recherche approfondi
     expect(r.id).toBe('x-ai/grok-imagine-video-1.5-lite');
     expect(FILM6.reduce((a, d) => a + clipSeconds(r, d)!, 0)).toBe(74);
     expect(Math.round(FILM6.reduce((a, d) => a + clipUsd(r, clipSeconds(r, d)!), 0) * 100) / 100).toBe(1.71);
+  });
+  it('asks for SILENCE from a model that makes sound by default (billed price = the silent price), no flag otherwise', () => {
+    const veo = CATALOG.find((m) => m.id === 'google/veo-3.1-lite')!;
+    const grok = CATALOG.find((m) => m.id === 'x-ai/grok-imagine-video-1.5-lite')!;
+    expect(circuitAudio(veo)).toBe(false);
+    expect(circuitRate(veo, '9:16')!.sku).toBe('duration_seconds_without_audio_720p');
+    expect(circuitAudio(grok)).toBeUndefined();
   });
 });
 
