@@ -107,3 +107,30 @@ Tout ce qui suit est lu sur la source primaire ou MESURÉ dans le conteneur (4 c
 - Contre-épreuve (remesure des films 7 et 8 avec la porte corrigée, sans re-rendre) : **film 8 → 0 saut, porte OUI** ;
   **film 7 → 0 saut** mais toujours NON pour le mouvement (0,0294) et la couverture (0,46), qui étaient, eux, de vrais
   excès corrigés par le budget. Les 1 + 2 « sauts » comptés sur les films 8 et 7 étaient donc le même artefact.
+
+## 10. Film 9 en PLEINE RÉSOLUTION (14/10/2026) : l'aperçu mentait sur le rythme
+- Rendu complet : 1 600/1 600 images 576×1024, 10 échantillons Cycles sur 4 cœurs CPU, **2,57 s/image** (sonde de 4 images :
+  2,7 s/image, 930 Ko par PNG), rendu 4 106 s, **4 515 s au total** avec montage et porte. Technique : 0 saut de lumière,
+  −14,4 LUFS, crête −1,2, image = son, conformité 3D 100 %. **Porte : NON** — mouvement 0,0271 (chaîne ≤ 0,027) et
+  couverture 0,53 (≤ 0,435 avec la marge « monde vivant » ; chaîne ≤ 0,29).
+- Cause mesurée : l'aperçu rend une image sur trois et répète les deux autres ; à l'échantillonnage de la mesure (12 i/s),
+  une partie des pas compare deux images identiques. Le film complet « tenu sur trois images » (ffmpeg `framestep=3,fps=25`)
+  redonne exactement les chiffres de l'aperçu : mouvement 0,0232 (aperçu 0,0235), couverture 0,42 (aperçu 0,42). L'aperçu
+  sous-estimait donc le mouvement de 14 % et la couverture de 20 % — les films 6 à 9 « OUI » en aperçu ne l'étaient pas.
+- Correctif : `finish.py` écrit la part d'images répétées (`held_share`, ≈ 0,66 en aperçu) ; `gate.py` n'évalue plus
+  mouvement, couverture, images figées et scintillement au-dessus de 20 % d'images répétées (affichés « non mesurables sur
+  un aperçu : rendu complet requis », verdict « OUI (aperçu : rythme non mesuré) ») ; `film.py --apercu --pas 1` rend
+  toutes les images à demi-résolution (0,68 s/image, ≈ 20 min) : mesuré sur les plans 2 et 7, demi-résolution et pleine
+  résolution donnent les mêmes chiffres (couverture 0,81, mouvement 0,053 / 0,053).
+- Grain et sous-titres n'expliquent rien : sur les images rendues brutes, mouvement 0,0265 et couverture 0,55.
+- Où ça bouge (carte 8×8 de la mesure, film complet) : le centre de l'image (lignes 2 à 5) bouge sur 60 à 83 % des pas,
+  le ciel 12 à 28 %. Par plan : gros plan moyen en avancée 0,73, en glissement 0,72, chute 0,70, plan à deux en glissement
+  0,63 ; reculs 0,32–0,34. Les différences entre deux images consécutives d'un gros plan moyen montrent TOUT le contour
+  du dessin (balancement, respiration, marionnette : la carte entière se déplace) et, en avancée ou glissement, tout le
+  décor derrière (zoom / décalage d'objectif) — alors que dans les TikTok de la chaîne le téléphone est posé et seule la
+  personne bouge (couverture 0,15–0,29).
+- Vie du décor (foule, vent, eau) : part négligeable sur les gros plans moyens — plans 2 et 7 : 0,81 tel quel, 0,80 décor
+  figé (`--decor-fixe`). Expériences `--sans-jeu` et `--camera-fixe` (nouvelle option A/B) : voir le tableau ci-dessous.
+- Veille du jour, mesurée : EEVEE via bpy sans carte graphique (OpenGL logiciel) = erreurs EGL_BAD_MATCH et ≈ 150 s par
+  image fixe de preflight contre 1 s en Cycles → écarté ; SheepIt (ferme bénévole gratuite) enverrait le .blend et les
+  dessins chez des inconnus → seulement avec accord explicite.
