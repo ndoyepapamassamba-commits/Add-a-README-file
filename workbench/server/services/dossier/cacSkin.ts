@@ -87,7 +87,8 @@ export function cacDesign(d: Design): Design {
       subtle: tintOf(hx(c.blue), 0.87),
       risk: CAC_NEUTRALS.alert,
     },
-    font: { ...d.font, ui: 'Calibri', mono: 'Calibri' },
+    // APP look (v64): the system UI face of Windows (what a web app renders there), tabular digits for the figures.
+    font: { ...d.font, ui: 'Segoe UI', mono: 'Segoe UI' },
     chartSeries: [hx(c.blue), hx(c.gold), ...states].filter((x, i, a) => a.indexOf(x) === i).slice(0, 10),
   } as Design;
 }
@@ -117,11 +118,17 @@ interface SpOpt {
   ins?: [number, number, number, number];
   wrap?: boolean;
   shadow?: boolean;
+  /** Radial gradient [centre, edge] instead of a solid fill (the KPI cards' coloured halo). */
+  grad?: [string, string];
 }
 /** One DrawingML shape (geometry, fill, line, optional hyperlink and paragraphs). */
 export function sp(o: SpOpt): string {
   const link = o.link ? `<a:hlinkClick xmlns:r="${REL}" r:id="${o.link}" tooltip="${xe(o.tooltip ?? '')}"/>` : '';
-  const fill = o.fill ? `<a:solidFill><a:srgbClr val="${o.fill}"/></a:solidFill>` : '<a:noFill/>';
+  const fill = o.grad
+    ? `<a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:srgbClr val="${o.grad[0]}"/></a:gs><a:gs pos="100000"><a:srgbClr val="${o.grad[1]}"/></a:gs></a:gsLst><a:path path="circle"><a:fillToRect l="50000" t="50000" r="50000" b="50000"/></a:path></a:gradFill>`
+    : o.fill
+      ? `<a:solidFill><a:srgbClr val="${o.fill}"/></a:solidFill>`
+      : '<a:noFill/>';
   const ln = o.line ? `<a:ln w="${o.lineW ?? 9525}"><a:solidFill><a:srgbClr val="${o.line}"/></a:solidFill></a:ln>` : '<a:ln><a:noFill/></a:ln>';
   const fx = o.shadow ? '<a:effectLst><a:outerShdw blurRad="38100" dist="12700" dir="5400000" algn="t" rotWithShape="0"><a:srgbClr val="000000"><a:alpha val="16000"/></a:srgbClr></a:outerShdw></a:effectLst>' : '';
   const [l, t, r, b] = o.ins ?? [72000, 36000, 72000, 36000];
@@ -173,6 +180,11 @@ const BUTTON_EMOJI: [RegExp, string][] = [
 const BUTTON_SPARE = ['📁', '📌', '🧾', '💠', '🗃️', '🧭', '📎', '🪙', '🏷️', '📐'];
 const foldFr = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 /** The premium emoji of a button or page label (`i` picks a distinct spare emoji when no topic matches). */
+/** The topic emoji of a label, or null when no topic matches. */
+export function topicEmoji(label: string): string | null {
+  const t = foldFr(label);
+  return BUTTON_EMOJI.find(([re]) => re.test(t))?.[1] ?? null;
+}
 export function buttonEmoji(label: string, i = 0): string {
   const t = foldFr(label);
   return BUTTON_EMOJI.find(([re]) => re.test(t))?.[1] ?? BUTTON_SPARE[Math.abs(i) % BUTTON_SPARE.length]!;
@@ -182,6 +194,14 @@ export function buttonEmoji(label: string, i = 0): string {
 // camembert seulement ≤ 5 parts, étiquettes sur les données, axe à zéro, une palette, l'élément de tête en accent) ──
 /** Ordered categories (periods, brackets « 0-30 j », years) keep their order; free categories are ranked. */
 export const ORDERED = /\d|\b(janv|févr|fevr|mars|avr|mai|juin|juil|août|aout|sept|oct|nov|déc|dec)\b|\bt[1-4]\b|\bs[12]\b|trimestre|semestre|tranche|bucket|\bstage\b/i;
+/** Where the doughnut's plot sits in its chart (fractions): its hole's centre is (x + w/2, y + h/2). */
+export const DONUT = { x: 0.04, y: 0.17, w: 0.56, h: 0.78 } as const;
+/** « 104,9 Mds », « 469 M », « 1 234 » — the short French form of a total. */
+export function shortFr(v: number): string {
+  const a = Math.abs(v);
+  const f = (n: number, d: number) => n.toFixed(d).replace('.', ',');
+  return a >= 1e9 ? `${f(v / 1e9, 1)} Mds` : a >= 1e6 ? `${f(v / 1e6, 1)} M` : Math.round(v).toLocaleString('fr-FR').replace(/\u202f|\u00a0/g, ' ');
+}
 /** The CAC figure: 3D → flat; pie / doughnut → doughnut only with ≤ 5 parts, else ranked bars; free categories ranked. */
 export function flatFigure(f: Figure): Figure {
   const single = f.series.length === 1;
@@ -226,6 +246,8 @@ export function flatChart(xml: string, o: { primary: string; accent: string }): 
   }
   if (/<c:pie3DChart>/.test(x))
     x = x
+      // A fixed plot area (left 56 %) so the hole's centre is known: the total is written in it (dossierXlsx).
+      .replace('<c:plotArea><c:layout/>', `<c:plotArea><c:layout><c:manualLayout><c:layoutTarget val="inner"/><c:xMode val="edge"/><c:yMode val="edge"/><c:x val="${DONUT.x}"/><c:y val="${DONUT.y}"/><c:w val="${DONUT.w}"/><c:h val="${DONUT.h}"/></c:manualLayout></c:layout>`)
       .replace(/<c:pie3DChart>([\s\S]*?)<\/c:pie3DChart>/, '<c:doughnutChart>$1<c:firstSliceAng val="0"/><c:holeSize val="62"/></c:doughnutChart>')
       .replace(/(<c:dPt><c:idx val="\d+"\/><c:bubble3D val="0"\/><c:spPr><a:solidFill><a:srgbClr val="[0-9A-Fa-f]{6}"\/><\/a:solidFill>)<a:ln w="9525"><a:solidFill><a:srgbClr val="[0-9A-Fa-f]{6}"\/><\/a:solidFill><\/a:ln>/g, '$1<a:ln w="19050"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:ln>');
   return x;

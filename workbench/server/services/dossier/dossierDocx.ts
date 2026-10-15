@@ -6,7 +6,8 @@
 // page. Colours and fonts from the active design.
 import { strToU8, zipSync } from 'fflate';
 import { activeDesign, liveColorProxy, setActiveTheme, type Design } from '../houseDesign';
-import { CAC_NEUTRALS, cacDesign, cacStates, flatFigure } from './cacSkin';
+import { emojiRelId, emojiRelsFor, fluentB64 } from '../../assets/fluentEmoji';
+import { CAC_NEUTRALS, buttonEmoji, cacDesign, cacStates, flatFigure, tintOf } from './cacSkin';
 import { CHART_CT, CHART_REL, docxChartRun } from '../officeChart';
 import { orderPPr } from '../officeCore';
 import { allRecos, type Dossier, type Kpi, type Reco, type Tone } from './dossier';
@@ -131,7 +132,7 @@ function kpiStrip(kpis: Kpi[], cols: number, cover = false): string {
           para(run(v, { b: true, sz: fitValueSz(v, cw, 44), color: C.navy }), { pPr: `${spacing(0, 20)}<w:ind w:left="100"/>` }) +
           para(run(k.sub ?? k.method ?? '', { sz: 16, color: C.text2 }), { pPr: `${spacing(0, 80)}<w:ind w:left="100" w:right="60"/>` });
         const thin = (side: string) => `<w:${side} w:val="single" w:sz="4" w:color="${C.line}"/>`;
-        cells.push(tc(inner, { w: cw, fill: 'FFFFFF', borders: `<w:top w:val="single" w:sz="24" w:color="${top}"/>${thin('left')}${thin('bottom')}${thin('right')}` }));
+        cells.push(tc(inner, { w: cw, fill: tintOf(top, 0.93), borders: `<w:top w:val="single" w:sz="24" w:color="${top}"/>${thin('left')}${thin('bottom')}${thin('right')}` }));
         return;
       }
       const tone = toneColor(k.tone);
@@ -233,8 +234,8 @@ function dossierDocxCore(d: Dossier, opts: { logo?: ReportLogo | null; brand?: s
       lead ? para(run(`⚠  ${lead.value} · ${lead.label}`, { b: true, sz: 21, color: CAC_NEUTRALS.alert }), { pPr: `<w:shd w:val="clear" w:color="auto" w:fill="${CAC_NEUTRALS.alertBg}"/>${spacing(80, 80)}<w:ind w:left="60"/>` }) : '',
       para('', { pPr: `<w:pBdr><w:bottom w:val="single" w:sz="16" w:space="1" w:color="${C.line}"/></w:pBdr>${spacing(0, 240)}` }),
       kpiStrip(d.kpis.slice(0, 8), 4, true),
-      para(run('📣  01    Le message clé', { b: true, sz: 26, color: C.navy }), { pPr: `<w:shd w:val="clear" w:color="auto" w:fill="${C.panel}"/><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="2" w:color="${C.navy}"/></w:pBdr>${spacing(200, 120)}` }),
-      para(run(`💡  ${d.thesis}`, { b: true, sz: 28, color: C.navy }), { pPr: spacing(0, 120) }),
+      para(emojiRun('📣', 13) + run('  01    Le message clé', { b: true, sz: 26, color: C.navy }), { pPr: `<w:shd w:val="clear" w:color="auto" w:fill="${C.panel}"/><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="2" w:color="${C.navy}"/></w:pBdr>${spacing(200, 120)}` }),
+      para(emojiRun('💡', 14) + run(`  ${d.thesis}`, { b: true, sz: 28, color: C.navy }), { pPr: spacing(0, 120) }),
       d.messages[0] ? body(d.messages[0]) : '',
       para(`${run('Émetteur : ', { b: true, sz: 18, color: C.navy })}${run(d.author ?? brand, { sz: 18 })}`, { pPr: spacing(200, 40) }),
       d.dataSource ? para(`${run('Sources : ', { b: true, sz: 18, color: C.navy })}${run(`${d.dataSource}${d.asOf ? ` (arrêté du ${d.asOf})` : ''}${d.sources.length ? `, ${d.sources.length} sources documentaires` : ''}`, { sz: 18 })}`, { pPr: spacing(0, 40) }) : '',
@@ -291,7 +292,7 @@ function dossierDocxCore(d: Dossier, opts: { logo?: ReportLogo | null; brand?: s
     if (cacD()) {
       // CAC: « 01    Titre » on the pale panel with its marine rule, then « Analyse de la feuille » in the chapter's colour.
       const col = ST[(ch.n - 1) % Math.max(1, ST.length)] ?? C.navy;
-      b.push(para(`${run('▌ ', { b: true, sz: 30, color: col })}${run(`${pad2(ch.n)}    ${ch.title}`, { b: true, sz: 30, color: C.navy })}`, { style: 'Heading1', pPr: '<w:pageBreakBefore/>' }));
+      b.push(para(`${run('▌ ', { b: true, sz: 30, color: col })}${emojiRun(buttonEmoji(ch.title, ch.n - 1), 15)}${run(`  ${pad2(ch.n)}    ${ch.title}`, { b: true, sz: 30, color: C.navy })}`, { style: 'Heading1', pPr: '<w:pageBreakBefore/>' }));
       const lead = ch.headline ?? ch.lecture;
       if (lead) {
         b.push(label('Analyse de la feuille'));
@@ -386,6 +387,11 @@ function dossierDocxCore(d: Dossier, opts: { logo?: ReportLogo | null; brand?: s
   return pack(d, b.join(''), charts, logo);
 }
 
+let EMO_ID = 9100;
+/** A Fluent 3D emoji as an inline picture (size in points), or the emoji font when the pack lacks it. */
+function emojiRun(e: string, pt: number): string {
+  return fluentB64(e) ? pictureXml(emojiRelId(e), EMO_ID++, 'Émoji', 64, 64, Math.round(pt * 12700)) : `<w:r><w:rPr><w:rFonts w:ascii="Segoe UI Emoji" w:hAnsi="Segoe UI Emoji"/><w:sz w:val="${Math.round(pt * 2)}"/></w:rPr><w:t xml:space="preserve">${esc(e)}</w:t></w:r>`;
+}
 function pictureXml(rid: string, id: number, name: string, w: number, h: number, fitH: number): string {
   let cx = w * 9525;
   let cy = h * 9525;
@@ -406,6 +412,9 @@ function pack(d: Dossier, bodyXml: string, charts: { rid: string; file: string; 
     `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="${basedOn}"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="120"/>${extra}</w:pPr><w:rPr><w:b/><w:color w:val="${color}"/><w:sz w:val="${size}"/></w:rPr></w:style>`;
   const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${W}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${D.font.ui}" w:hAnsi="${D.font.ui}" w:eastAsia="${D.font.ui}" w:cs="${D.font.ui}"/><w:color w:val="${C.text}"/><w:sz w:val="20"/><w:lang w:val="fr-FR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>${style('Heading1', 'heading 1', cacD() ? 26 : 30, C.navy, cacD() ? `<w:pBdr><w:bottom w:val="single" w:sz="12" w:space="4" w:color="${C.navy}"/></w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="${C.panel}"/><w:outlineLvl w:val="0"/>` : `<w:pBdr><w:bottom w:val="single" w:sz="18" w:space="4" w:color="${C.gold}"/></w:pBdr><w:outlineLvl w:val="0"/>`)}${style('Heading2', 'heading 2', 24, C.blue, '<w:outlineLvl w:val="1"/>')}${style('Heading3', 'heading 3', 21, C.navy, '<w:outlineLvl w:val="2"/>')}<w:style w:type="paragraph" w:styleId="TOC1"><w:name w:val="toc 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="39"/><w:pPr><w:tabs><w:tab w:val="right" w:leader="dot" w:pos="${PAGE_W}"/></w:tabs><w:spacing w:after="60"/></w:pPr></w:style><w:style w:type="paragraph" w:styleId="TOC2"><w:name w:val="toc 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="39"/><w:pPr><w:ind w:left="300"/><w:spacing w:after="40"/></w:pPr></w:style><w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:tblPr><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style></w:styles>`;
   const settings = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings ${W}><w:defaultTabStop w:val="708"/><w:characterSpacingControl w:val="doNotCompress"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>`;
+  // Fluent 3D emoji pictures used in the body: one rel + one media file each.
+  const emoFiles: Record<string, Uint8Array> = {};
+  const emoRels = emojiRelsFor(doc, emoFiles, 'word/media', 'media');
   const files: Record<string, Uint8Array> = {
     '[Content_Types].xml': strToU8(
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>${charts.map((c) => `<Override PartName="/word/charts/${c.file}" ContentType="${CHART_CT}"/>`).join('')}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`,
@@ -413,7 +422,7 @@ function pack(d: Dossier, bodyXml: string, charts: { rid: string; file: string; 
     '_rels/.rels': strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${RELS}/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`),
     'docProps/core.xml': strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${esc(d.title)}</dc:title><dc:subject>${esc(d.subtitle ?? '')}</dc:subject><dc:creator>${esc(d.author || 'MASSAMBA Workbench')}</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:created></cp:coreProperties>`),
     'word/_rels/document.xml.rels': strToU8(
-      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${RELS}/styles" Target="styles.xml"/><Relationship Id="rId2" Type="${RELS}/settings" Target="settings.xml"/><Relationship Id="rIdHdr" Type="${RELS}/header" Target="header1.xml"/><Relationship Id="rIdFtr" Type="${RELS}/footer" Target="footer1.xml"/>${logo ? `<Relationship Id="rIdLogo" Type="${RELS}/image" Target="media/dossier-logo.png"/>` : ''}${charts.map((c) => `<Relationship Id="${c.rid}" Type="${CHART_REL}" Target="charts/${c.file}"/>`).join('')}</Relationships>`,
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${RELS}/styles" Target="styles.xml"/><Relationship Id="rId2" Type="${RELS}/settings" Target="settings.xml"/><Relationship Id="rIdHdr" Type="${RELS}/header" Target="header1.xml"/><Relationship Id="rIdFtr" Type="${RELS}/footer" Target="footer1.xml"/>${logo ? `<Relationship Id="rIdLogo" Type="${RELS}/image" Target="media/dossier-logo.png"/>` : ''}${emoRels}${charts.map((c) => `<Relationship Id="${c.rid}" Type="${CHART_REL}" Target="charts/${c.file}"/>`).join('')}</Relationships>`,
     ),
     'word/document.xml': strToU8(orderPPr(doc)),
     'word/styles.xml': strToU8(orderPPr(styles)),
@@ -422,6 +431,7 @@ function pack(d: Dossier, bodyXml: string, charts: { rid: string; file: string; 
     'word/footer1.xml': strToU8(orderPPr(ftr)),
   };
   if (logo) files['word/media/dossier-logo.png'] = logo.png;
+  Object.assign(files, emoFiles);
   for (const c of charts) files[`word/charts/${c.file}`] = strToU8(c.xml);
   return zipSync(files);
 }

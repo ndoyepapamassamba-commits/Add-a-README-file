@@ -124,6 +124,8 @@ export interface ChartSpec {
   series: { col: number; name: string; values: number[] }[];
   /** Excel number format of the labels and the value axis (else chosen from the magnitude). */
   fmt?: string;
+  /** Doughnut: the figure written in its hole (« 104,9 Mds » over « total »), static figures only. */
+  center?: { value: string; caption: string };
 }
 const xesc = (t: string) =>
   t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

@@ -12,7 +12,8 @@
 import XLSXS from 'xlsx-js-style';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { activeDesign, liveColorProxy, setActiveTheme, type Design } from '../houseDesign';
-import { CAC_GRID, CAC_NEUTRALS, EMOJI_RX, buttonEmoji, cacDesign, cacStates, flatChart, flatFigure, run, sp, tintOf } from './cacSkin';
+import { fluentPng } from '../../assets/fluentEmoji';
+import { CAC_GRID, CAC_NEUTRALS, DONUT, EMOJI_RX, buttonEmoji, topicEmoji, cacDesign, cacStates, flatChart, flatFigure, run, shortFr, sp, sp as shapeXml, tintOf } from './cacSkin';
 import { chartXml, fixStylesXml, type ChartSpec } from '../houseStyle';
 import { allRecos, type Chapter, type Dossier, type Figure, type Kpi, type Tone } from './dossier';
 import { columnConcepts } from '../dataLexicon';
@@ -39,6 +40,8 @@ export interface XlsxOptions {
 /** Active layout grammar while a workbook is being written (set and restored by dossierXlsx). */
 let SKIN: 'comite' | 'cac' = 'comite';
 const cac = () => SKIN === 'cac';
+/** CAC visual sheets get the APP look (canvas, cards, no grid headings); data sheets stay plain grids. */
+const appSheet = (s: { name: string; headRows?: number }) => cac() && s.headRows != null && !['DONNÉES', 'CALC', 'LISTES', 'DATA_KPI'].includes(s.name);
 /** One colour per view in the CAC grammar (tab, band, tile), from the palette's hues. */
 let STATES: string[] = [];
 
@@ -80,7 +83,7 @@ const MDS_FMT = '[>=1000000000]#,##0.0,,," Mds";[>=1000000]#,##0.0,," M";#,##0';
 const fmtFor = (k: Kpi): string => (k.value.includes('%') ? '0.0%' : k.num != null && Math.abs(k.num) >= 1e6 ? MDS_FMT : k.num != null && !Number.isInteger(k.num) ? '#,##0.0' : '#,##0');
 
 interface Shape {
-  kind: 'button' | 'plate' | 'picture' | 'cac';
+  kind: 'button' | 'plate' | 'picture' | 'cac' | 'emoji';
   /** CAC shapes: absolute top (EMU from the sheet top) and height instead of a row. */
   y?: number;
   h?: number;
@@ -98,6 +101,8 @@ interface Shape {
   active?: boolean;
   small?: boolean;
   png?: Uint8Array;
+  /** Fixed-size (one-cell) anchor: medallions stay round. */
+  round?: boolean;
 }
 interface Placed {
   spec: ChartSpec;
@@ -123,6 +128,13 @@ class Sheet {
   color?: string;
   alertAt?: { r: number; c: number };
   table?: { r1: number; r2: number; c1: number; c2: number; names: string[]; name: string };
+  /** APP look (CAC): each section's content is a white card on the page canvas; « bare » blocks (KPI cards, tiles) are
+   *  their own cards. `canvasRef` is a cell holding the canvas style (its style becomes the columns' default). */
+  blocks: { r1: number; r2: number; bare?: boolean; deco?: string }[] = [];
+  open?: { r1: number; bare?: boolean; deco?: string };
+  /** A text card with an illustration: its paragraphs stop at this column, the right third carries the 3D emoji. */
+  textC2?: number;
+  canvasRef?: string;
   landscape = true;
   constructor(public name: string, public tab: string, public cols: number[] = cac() ? CAC_GRID : GRID) {}
   get last(): number {
@@ -237,28 +249,35 @@ function label(s: Sheet, text: string, color = C.blue) {
   s.span(r, FIRST, r, s.last, { v: text.toUpperCase(), t: 's', s: { font: F({ sz: 8.5, bold: true, color: { rgb: color } }), alignment: { vertical: 'bottom' }, border: { bottom: bd(color) } } });
 }
 /** A paragraph over B→L (or a span), height from its length. */
-function para(s: Sheet, text: string, o: { italic?: boolean; fill?: string; accent?: string; color?: string; sz?: number; bold?: boolean; c1?: number; c2?: number } = {}) {
+function para(s: Sheet, text: string, o: { italic?: boolean; fill?: string; accent?: string; color?: string; sz?: number; bold?: boolean; c1?: number; c2?: number; indent?: number } = {}) {
   const c1 = o.c1 ?? FIRST;
-  const c2 = o.c2 ?? s.last;
+  const c2 = o.c2 ?? s.textC2 ?? s.last;
   const sz = o.sz ?? 9.5;
   const lines = estLines(text, widthOf(s, c1, c2), sz);
   const r = s.row(Math.min(400, Math.max(18, lines * (sz * 1.45) + 8)));
   s.span(r, c1, r, c2, {
     v: text,
     t: 's',
-    s: { font: F({ sz, italic: Boolean(o.italic), bold: Boolean(o.bold), color: { rgb: o.color ?? C.text } }), fill: o.fill ? solid(o.fill) : undefined, alignment: { wrapText: true, vertical: 'center', horizontal: 'left', indent: 1 }, border: o.accent ? { left: bd(o.accent, 'thick') } : undefined },
+    s: { font: F({ sz, italic: Boolean(o.italic), bold: Boolean(o.bold), color: { rgb: o.color ?? C.text } }), fill: o.fill ? solid(o.fill) : undefined, alignment: { wrapText: true, vertical: 'center', horizontal: 'left', indent: o.indent ?? 1 }, border: o.accent ? { left: bd(o.accent, 'thick') } : undefined },
   });
   return r;
 }
 const lecture = (s: Sheet, text: string, c1?: number, c2?: number) => para(s, text.startsWith('Lecture') ? text : `Lecture — ${text}`, { italic: true, fill: C.ice, accent: C.gold, color: C.text2, sz: 9, c1, c2 });
-const bullets = (s: Sheet, items: string[], mark = '▸') => items.forEach((t) => para(s, `${mark} ${t}`));
+/** A list; in the CAC grammar each item gets a 3D emoji (📌 findings, ⚖️ rules, 📍 cases…) instead of a typographic mark. */
+const bullets = (s: Sheet, items: string[], mark = '▸', glyph?: string) =>
+  items.forEach((t) => {
+    if (!(cac() && glyph && emojiPng(glyph))) return void para(s, `${mark} ${t}`);
+    const r = para(s, t, { indent: 3 });
+    const d = ptEmu(12);
+    emojiPic(s, s.colX(FIRST) + ptEmu(7), topOf(s, r) + Math.round((ptEmu(s.heights[r] ?? 15) - d) / 2), d, glyph);
+  });
 
 // ── CAC grammar (cacSkin.ts) ──────────────────────────────────────────────────
 const pad2 = (n: number) => String(n).padStart(2, '0');
 /** Top of a row, in EMU from the sheet's top. */
 const topOf = (s: Sheet, r: number) => Array.from({ length: r }, (_, i) => ptEmu(s.heights[i] ?? 15)).reduce((a, b) => a + b, 0);
 /** A CAC shape at an absolute place (x, y, w, h in EMU). */
-const cacShape = (s: Sheet, x: number, y: number, w: number, h: number, body: Shape['body']) => s.shapes.push({ kind: 'cac', r: 0, x, w, y, h, inset: 0, body });
+const cacShape = (s: Sheet, x: number, y: number, w: number, h: number, body: Shape['body'], round = false) => s.shapes.push({ kind: 'cac', r: 0, x, w, y, h, inset: 0, body, round });
 /** The emoji of a section, from its title (the reference puts a medallion before every « 01  Titre »). */
 const SPARE = ['📁', '📌', '🧾', '🏦', '📈', '🛡️', '🔎', '💼', '🗂️', '🧮', '🏷️', '🔐'];
 function glyphOf(title: string, i = -1): string {
@@ -271,8 +290,28 @@ function glyphOf(title: string, i = -1): string {
   return map.find(([re]) => re.test(t))?.[1] ?? (i >= 0 ? SPARE[i % SPARE.length]! : '◆');
 }
 /** Round medallion with a glyph (white disc, ring in the colour's tint). */
+/** Fluent 3D emoji bytes, one object per emoji (the drawing and the package keep ONE media file per emoji). */
+const PNG_CACHE = new Map<string, Uint8Array | null>();
+const emojiPng = (e: string): Uint8Array | null => {
+  if (!PNG_CACHE.has(e)) PNG_CACHE.set(e, fluentPng(e));
+  return PNG_CACHE.get(e)!;
+};
+/** A Fluent 3D emoji picture at an absolute place (EMU), optionally a link to a sheet. False when the pack lacks it. */
+function emojiPic(s: Sheet, x: number, y: number, d: number, glyph: string, target?: string): boolean {
+  const png = emojiPng(glyph);
+  if (!png) return false;
+  s.shapes.push({ kind: 'emoji', r: 0, x, w: d, y, h: d, inset: 0, png, glyph, target });
+  return true;
+}
 function medallion(s: Sheet, x: number, y: number, d: number, glyph: string, color = C.navy) {
-  cacShape(s, x, y, d, d, (id) => sp({ id, name: 'Médaillon', prst: 'ellipse', fill: 'FFFFFF', line: tintOf(color, 0.45), lineW: 12700, paras: [run(glyph, { sz: Math.max(8, Math.round((d / 12700) * 0.5)), color: color, font: ui() })], algn: 'ctr', ins: [0, 0, 0, 0], wrap: false }));
+  // The 3D emoji sits on a white disc ringed in the colour's tint (the system emoji font when the pack lacks it).
+  if (emojiPng(glyph)) {
+    cacShape(s, x, y, d, d, (id) => sp({ id, name: 'Médaillon', prst: 'ellipse', fill: 'FFFFFF', line: tintOf(color, 0.45), lineW: 12700, shadow: true }), true);
+    const e = Math.round(d * 0.72);
+    emojiPic(s, x + Math.round((d - e) / 2), y + Math.round((d - e) / 2), e, glyph);
+    return;
+  }
+  cacShape(s, x, y, d, d, (id) => sp({ id, name: 'Médaillon', prst: 'ellipse', fill: 'FFFFFF', line: tintOf(color, 0.45), lineW: 12700, paras: [run(glyph, { sz: Math.max(8, Math.round((d / 12700) * 0.5)), color: color, font: ui() })], algn: 'ctr', ins: [0, 0, 0, 0], wrap: false }), true);
 }
 /** Header: marine (or the sheet's colour) 5 pt band, breadcrumb, 20 pt title, warm subtitle + CONFIDENTIEL, alert pill, warm 2 pt rule. */
 function cacHeader(s: Sheet, ctx: Ctx, title: string, subtitle: string) {
@@ -311,7 +350,7 @@ function cacHeader(s: Sheet, ctx: Ctx, title: string, subtitle: string) {
     cacShape(s, ax + Math.round(aw * 0.07) + k * Math.round(bw * 1.6), ay + ah - Math.round(ah * 0.12) - bh, bw, bh, (id) => sp({ id, name: 'Barre', fill: tintOf(band, 0.62) }));
   });
   const md = Math.round(Math.min(ah * 0.72, aw * 0.3));
-  medallion(s, ax + aw - md - Math.round(aw * 0.08), ay + Math.round((ah - md) / 2), md, idx === 0 ? '🏠' : glyphOf(title, idx - 1), band);
+  medallion(s, ax + aw - md - Math.round(aw * 0.08), ay + Math.round((ah - md) / 2), md, idx === 0 ? '🏠' : buttonEmoji(title.replace(/^\s*\d+\s*[·.-]?\s*/, ''), idx - 1), band);
   const lw = s.colX(12) - s.colX(10) - ptEmu(6);
   const lh = topOf(s, r3) - topOf(s, r1) - ptEmu(4);
   if (ctx.logo) {
@@ -337,25 +376,98 @@ function cacMenu(s: Sheet, ctx: Ctx) {
     const words = ctx.menu?.[v.name] ?? `${v.label.charAt(0)}${v.label.slice(1).toLowerCase()}`;
     const label = `  ${pad2(i + 1)} · ${words}`;
     // A premium emoji before each page (colour emoji font), the words in the format's font.
-    const emo = run(buttonEmoji(i === 0 ? 'accueil' : words, i), { sz: 9, color: on ? 'FFFFFF' : C.navy, font: ui() });
+    const glyph = buttonEmoji(i === 0 ? 'accueil' : words, i);
+    const pic = Boolean(emojiPng(glyph));
+    const emo = pic ? '' : run(glyph, { sz: 9, color: on ? 'FFFFFF' : C.navy, font: ui() });
     cacShape(s, x, y, w, ptEmu(20), (id, link) =>
-      sp({ id, name: `Page ${v.label}`, prst: 'roundRect', adj: '<a:gd name="adj" fmla="val 50000"/>', fill: on ? color : 'FFFFFF', line: on ? color : tintOf(color, 0.5), lineW: 12700, link: link(v.name), tooltip: `Ouvrir ${v.label}`, paras: [emo + run(label, { sz: label.length > 18 ? 7.5 : 8.5, bold: true, color: on ? 'FFFFFF' : C.navy, font: ui() })], ins: [72000, 0, 36000, 0], wrap: false }),
+      sp({ id, name: `Page ${v.label}`, prst: 'roundRect', adj: '<a:gd name="adj" fmla="val 50000"/>', fill: on ? color : 'FFFFFF', line: on ? color : tintOf(color, 0.5), lineW: 12700, link: link(v.name), tooltip: `Ouvrir ${v.label}`, shadow: on, paras: [emo + run(label, { sz: label.length > 18 ? 7.5 : 8.5, bold: true, color: on ? 'FFFFFF' : C.navy, font: ui() })], ins: [pic ? ptEmu(22) : 72000, 0, 36000, 0], wrap: false }),
     );
+    // The 3D emoji over the pill's left end, linked to the page like the pill.
+    if (pic) emojiPic(s, x + ptEmu(5), y + ptEmu(2.5), ptEmu(15), glyph, v.name);
     y += ptEmu(25);
   });
 }
 /** « 01    Titre » 13 pt on the palette's pale panel, a medium marine rule, a medallion before the number. */
+/** Closes the open card: a white padding row inside, then canvas space before what follows. */
+function closeCard(s: Sheet) {
+  if (!s.open) return;
+  s.gap(10);
+  s.blocks.push({ r1: s.open.r1, r2: s.aoa.length - 1, bare: s.open.bare, deco: s.open.deco });
+  s.open = undefined;
+  s.textC2 = undefined;
+  s.gap(12);
+}
 function cacSection(s: Sheet, title: string) {
+  closeCard(s);
   s.section++;
   const r = s.row(28);
-  s.span(r, FIRST, r, s.last, { v: `${pad2(s.section)}    ${title.replace(/^\s*\d+\s*[·.-]\s*/, '')}`, t: 's', s: { font: F({ sz: 13, bold: true, color: { rgb: C.navy } }), fill: solid(C.panel), alignment: { vertical: 'center', horizontal: 'left', indent: 3 }, border: { bottom: bd(C.navy, 'medium') } } });
-  const d = ptEmu(20);
-  medallion(s, s.colX(FIRST) + ptEmu(4), topOf(s, r) + ptEmu(4), d, glyphOf(title));
-  s.gap(8);
+  // APP look: the heading sits on the page canvas (like a web app's section title), its content in a white card below.
+  s.span(r, FIRST, r, s.last, { v: `${pad2(s.section)}   ${title.replace(/^\s*\d+\s*[·.-]\s*/, '')}`, t: 's', s: { font: F({ sz: 13, bold: true, color: { rgb: C.navy } }), alignment: { vertical: 'center', horizontal: 'left', indent: 3 } } });
+  const d = ptEmu(22);
+  medallion(s, s.colX(FIRST) + ptEmu(2), topOf(s, r) + ptEmu(3), d, glyphOf(title));
+  s.gap(6);
+  s.open = { r1: s.aoa.length };
+  s.gap(10);
+}
+/** A text card illustrated like a magazine page: the text on the left two thirds, a gradient halo with the topic's
+ *  3D emoji on the right third (no white expanse beside short lines). */
+const illustrate = (s: Sheet, glyph: string) => {
+  if (!cac() || !s.open || !emojiPng(glyph)) return;
+  s.open.deco = glyph;
+  s.textC2 = 8;
+};
+/** The open section's cards are its own (KPI cards, tiles): no white card around them. */
+const bareCard = (s: Sheet) => {
+  if (s.open) s.open.bare = true;
+};
+/**
+ * APP look, last pass of a CAC visual sheet: every cell without a fill takes the page canvas (a pale tint of the
+ * palette), the cells of a section card take white with a light frame (a deeper bottom line as a soft shadow).
+ */
+function appPass(s: Sheet) {
+  closeCard(s);
+  for (const b of s.blocks.filter((x) => x.deco && !x.bare)) {
+    const y1 = topOf(s, b.r1);
+    const y2 = topOf(s, b.r2 + 1);
+    const room = s.colX(s.last + 1) - s.colX(9);
+    const hd = Math.round(Math.min(ptEmu(96), y2 - y1 - ptEmu(14), room - ptEmu(24)));
+    if (hd < ptEmu(30)) continue;
+    const hx = s.colX(9) + Math.round((room - hd) / 2);
+    const hy = y1 + Math.round((y2 - y1 - hd) / 2);
+    const color = s.color ?? C.navy;
+    cacShape(s, hx, hy, hd, hd, (id) => sp({ id, name: 'Illustration', prst: 'ellipse', grad: [tintOf(color, 0.45), tintOf(color, 0.9)], shadow: true }), true);
+    const ed = Math.round(hd * 0.6);
+    emojiPic(s, hx + Math.round((hd - ed) / 2), hy + Math.round((hd - ed) / 2), ed, b.deco!);
+  }
+  const canvas = solid(C.panel);
+  const white = solid('FFFFFF');
+  const frame = bd(tintOf(C.navy, 0.8));
+  const shadow = bd(tintOf(C.navy, 0.7), 'medium');
+  for (let r = 0; r < s.aoa.length; r++) {
+    const b = s.blocks.find((x) => !x.bare && r >= x.r1 && r <= x.r2);
+    for (let c = 0; c < s.cols.length; c++) {
+      const cell = s.aoa[r]![c] ?? { v: '', t: 's' as const };
+      const card = Boolean(b) && c >= FIRST && c <= s.last;
+      const st: Record<string, unknown> = { ...(cell.s ?? {}) };
+      if (!st.fill) st.fill = card ? white : canvas;
+      if (card && b) {
+        const edge: Record<string, unknown> = {};
+        if (c === FIRST) edge.left = bd(s.color ?? C.navy, 'thick');
+        if (c === s.last) edge.right = frame;
+        if (r === b.r1) edge.top = frame;
+        if (r === b.r2) edge.bottom = shadow;
+        if (Object.keys(edge).length) st.border = { ...((st.border as object) ?? {}), ...edge };
+      }
+      s.aoa[r]![c] = { ...cell, s: st };
+      if (!s.canvasRef && st.fill === canvas && !s.merges.some((m) => r >= m.s.r && r <= m.e.r && c >= m.s.c && c <= m.e.c)) s.canvasRef = `${colName(c)}${r + 1}`;
+    }
+  }
 }
 /** Key-figure cards, four per row: caps label under a thick top rule in the card's colour, 24 pt value, warm sub-line. */
 function cacKpis(s: Sheet, list: Tile[]) {
-  const toneGlyph = (t?: Tone) => (t === 'risk' ? '⚠️' : t === 'warn' ? '⏳' : t === 'ok' ? '✅' : t === 'info' ? '📊' : '🏦');
+  bareCard(s);
+  // The card's own topic (encours 💼, top 10 🏆, lignes 🗂️…); a risk card keeps the warning sign.
+  const toneGlyph = (t: Tile) => (t.tone === 'risk' ? '⚠️' : (topicEmoji(t.label) ?? (t.tone === 'warn' ? '⏳' : t.tone === 'ok' ? '✅' : '📊')));
   for (let k = 0; k < list.length; k += 4) {
     const r = [s.row(20), s.row(40), s.row(18)] as const;
     const part = list.slice(k, k + 4);
@@ -363,16 +475,28 @@ function cacKpis(s: Sheet, list: Tile[]) {
     part.forEach((t, j) => {
       const [c1, c2] = slots[j]!;
       const color = t.tone === 'risk' ? CAC_NEUTRALS.alert : STATES[(k + j) % Math.max(1, STATES.length)] ?? C.navy;
-      const side = { left: bd(C.line), right: bd(C.line) };
-      s.span(r[0], c1, r[0], c2, { v: t.label.toUpperCase(), t: 's', s: { font: F({ sz: 8.5, bold: true, color: { rgb: C.text2 } }), fill: solid('FFFFFF'), alignment: { vertical: 'center', horizontal: 'left', indent: 1, wrapText: true }, border: { ...side, top: bd(color, 'thick') } } });
+      // APP look: a thick canvas line between two cards reads as the gap between web cards.
+      const side = { left: j === 0 ? bd(C.line) : bd(C.panel, 'thick'), right: j === part.length - 1 ? bd(C.line) : bd(C.panel, 'thick') };
+      // Colour play: each card wears a light tint of its own colour (no flat white expanse).
+      const tint = tintOf(color, 0.93);
+      s.span(r[0], c1, r[0], c2, { v: t.label.toUpperCase(), t: 's', s: { font: F({ sz: 8.5, bold: true, color: { rgb: C.text2 } }), fill: solid(tint), alignment: { vertical: 'center', horizontal: 'left', indent: 1, wrapText: true }, border: { ...side, top: bd(color, 'thick') } } });
       // A word as value (« Gestionnaire F ») takes 16 pt and stops before the medallion; a figure keeps the 24 pt.
       const v = t.value.v;
-      const isText = (t.value.t === 's' && !t.value.f) || (typeof v === 'string' && /[A-Za-zÀ-ÿ]{3}/.test(v) && !/^\s*[\d−-]/.test(v));
-      s.span(r[1], c1, r[1], c2, { ...t.value, s: { font: F({ sz: isText ? 16 : 24, bold: true, color: { rgb: C.navy } }), fill: solid('FFFFFF'), alignment: { vertical: 'center', horizontal: 'left', indent: 1, shrinkToFit: true, wrapText: isText }, border: side } });
-      s.span(r[2], c1, r[2], c2, { ...t.sub, s: { font: F({ sz: 9, color: { rgb: C.text2 } }), fill: solid('FFFFFF'), alignment: { vertical: 'center', horizontal: 'left', indent: 1, wrapText: true }, border: { ...side, bottom: bd(C.line) } } });
-      // The medallion only beside a figure (a word as value uses the whole width).
-      const d = ptEmu(24);
-      if (!isText) medallion(s, s.colX(c2 + 1) - d - ptEmu(8), topOf(s, r[1]) + ptEmu(8), d, toneGlyph(t.tone), color);
+      // A word (« Gestionnaire F »), not a figure written as text (« 58 », « 2,8 Mds »).
+      const isText = typeof v === 'string' && /[A-Za-zÀ-ÿ]{3}/.test(v) && !/^\s*[\d−-]/.test(v);
+      s.span(r[1], c1, r[1], c2, { ...t.value, s: { font: F({ sz: isText ? 16 : 24, bold: true, color: { rgb: C.navy } }), fill: solid(tint), alignment: { vertical: 'center', horizontal: 'left', indent: 1, shrinkToFit: true, wrapText: isText }, border: side } });
+      s.span(r[2], c1, r[2], c2, { ...t.sub, s: { font: F({ sz: 9, color: { rgb: C.text2 } }), fill: solid(tint), alignment: { vertical: 'center', horizontal: 'left', indent: 1, wrapText: true }, border: { ...side, bottom: bd(C.line) } } });
+      // Beside a figure: a halo in the card's colour (radial gradient) carrying a big 3D emoji of the topic — the
+      // card's right half is no longer empty. A word as value keeps the whole width.
+      if (!isText) {
+        const wide = s.colX(c2 + 1) - s.colX(c1) > ptEmu(260);
+        const hd = ptEmu(wide ? 66 : 54);
+        const hx = s.colX(c2 + 1) - hd - ptEmu(wide ? 22 : 10);
+        const hy = topOf(s, r[0]) + Math.round((ptEmu(78) - hd) / 2);
+        cacShape(s, hx, hy, hd, hd, (id) => sp({ id, name: 'Halo', prst: 'ellipse', grad: [tintOf(color, 0.5), tintOf(color, 0.88)], shadow: true }), true);
+        const ed = Math.round(hd * 0.62);
+        if (!emojiPic(s, hx + Math.round((hd - ed) / 2), hy + Math.round((hd - ed) / 2), ed, toneGlyph(t))) medallion(s, hx + Math.round((hd - ed) / 2), hy + Math.round((hd - ed) / 2), ed, toneGlyph(t), color);
+      }
     });
     s.gap(8);
   }
@@ -380,6 +504,7 @@ function cacKpis(s: Sheet, list: Tile[]) {
 /** Clickable state tiles, three per row: card, left liseré, tinted band with a soft quarter-disc, medallion, « NN · TITRE », big
  *  figure, sub-line, description, « Ouvrir → » — every part links to the sheet. */
 function cacStateTiles(s: Sheet, items: { title: string; value: string; sub: string; desc: string; color: string; glyph: string; target: string }[]) {
+  bareCard(s);
   const thirds: [number, number][] = [[1, 4], [5, 8], [9, 11]];
   const slotsFor = (m: number): [number, number][] => (m >= 4 ? QUARTERS : m === 3 ? thirds : m === 2 ? [[1, 6], [7, 11]] : [[1, 11]]);
   // Balanced rows: as few rows as 4 per row allows, the same count on each (4 → 4, 5 → 3 + 2, 7 → 4 + 3, 6 → 3 + 3).
@@ -407,7 +532,8 @@ function cacStateTiles(s: Sheet, items: { title: string; value: string; sub: str
       cacShape(s, x + ptEmu(14), y + bandH + ptEmu(4), w - ptEmu(24), ptEmu(30), (id, link) => sp({ id, name: 'Chiffre', paras: [run(t.value, { sz: 22, bold: true, color: C.navy, font: ui() })], ins: [0, 0, 0, 0], ...go(link) }));
       cacShape(s, x + ptEmu(14), y + bandH + ptEmu(34), w - ptEmu(24), ptEmu(14), (id) => sp({ id, name: 'Sous-titre', paras: [run(t.sub, { sz: 8.5, bold: true, color: C.text2, font: ui() })], ins: [0, 0, 0, 0] }));
       cacShape(s, x + ptEmu(14), y + bandH + ptEmu(50), w - ptEmu(24), ptEmu(30), (id) => sp({ id, name: 'Description', paras: [run(t.desc, { sz: 8.5, color: C.text, font: ui() })], ins: [0, 0, 0, 0], anchor: 't' }));
-      cacShape(s, x + w - ptEmu(84), y + h - ptEmu(20), ptEmu(76), ptEmu(16), (id, link) => sp({ id, name: 'Ouvrir', paras: [run('📂', { sz: 9, color: t.color, font: ui() }) + run(' Ouvrir  →', { sz: 9, bold: true, color: t.color, font: ui() })], algn: 'r', ins: [0, 0, 0, 0], ...go(link) }));
+      cacShape(s, x + w - ptEmu(84), y + h - ptEmu(20), ptEmu(76), ptEmu(16), (id, link) => sp({ id, name: 'Ouvrir', paras: [(emojiPng('📂') ? '' : run('📂', { sz: 9, color: t.color, font: ui() })) + run(' Ouvrir  →', { sz: 9, bold: true, color: t.color, font: ui() })], algn: 'r', ins: [0, 0, 0, 0], ...go(link) }));
+      emojiPic(s, x + w - ptEmu(84) + ptEmu(10), y + h - ptEmu(20) + ptEmu(1), ptEmu(14), '📂', t.target);
     });
     s.gap(6);
   }
@@ -418,7 +544,8 @@ function cacPill(s: Sheet, r: number, c: number, label: string, target: string, 
   const w = colEmu(s.cols[c]!) - ptEmu(12);
   const h = ptEmu(18);
   const y = topOf(s, r) + Math.round((ptEmu(s.heights[r] ?? 15) - h) / 2);
-  cacShape(s, x, y, w, h, (id, link) => sp({ id, name: `Voir ${label}`, prst: 'roundRect', adj: '<a:gd name="adj" fmla="val 50000"/>', fill: tintOf(color, 0.88), line: tintOf(color, 0.45), link: link(target), tooltip: `Ouvrir ${target}`, paras: [run(buttonEmoji(label), { sz: 8.5, color: color, font: ui() }) + run(` ${label}  ›`, { sz: 8.5, bold: true, color: color, font: ui() })], algn: 'ctr', ins: [0, 0, 0, 0], wrap: false }));
+  cacShape(s, x, y, w, h, (id, link) => sp({ id, name: `Voir ${label}`, prst: 'roundRect', adj: '<a:gd name="adj" fmla="val 50000"/>', fill: tintOf(color, 0.88), line: tintOf(color, 0.45), link: link(target), tooltip: `Ouvrir ${target}`, paras: [(emojiPng(buttonEmoji(label)) ? '' : run(buttonEmoji(label), { sz: 8.5, color: color, font: ui() })) + run(` ${label}  ›`, { sz: 8.5, bold: true, color: color, font: ui() })], algn: 'ctr', ins: [emojiPng(buttonEmoji(label)) ? ptEmu(14) : 0, 0, 0, 0], wrap: false }));
+  emojiPic(s, x + ptEmu(8), y + ptEmu(2), h - ptEmu(4), buttonEmoji(label), target);
 }
 
 interface Tile {
@@ -464,9 +591,10 @@ function table(s: Sheet, cols: Col[], rows: (Cell | string | number)[][], o: { m
   const hr = s.row(cac() ? 32 : 26);
   // CAC: bold marine on the palette's pale tint, a marine rule under it (the reference's « DEF0FB » header row).
   const headStyle = cac()
-    ? { font: F({ sz: 9, bold: true, color: { rgb: C.navy } }), fill: solid(C.subtle), alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: { bottom: bd(C.navy), top: bd(C.line), left: bd(C.line), right: bd(C.line) } }
+    ? // APP look: a web table — caps label in grey on the canvas tint, one rule under it, no vertical lines.
+      { font: F({ sz: 8.5, bold: true, color: { rgb: C.text2 } }), fill: solid(C.panel), alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: { bottom: bd(tintOf(C.navy, 0.6)) } }
     : { font: F({ sz: 8.5, bold: true, color: { rgb: C.white } }), fill: solid(C.navy), alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: box(C.navy) };
-  cols.forEach((c) => s.span(hr, c.c1, hr, c.c2 ?? c.c1, { v: c.head, t: 's', s: headStyle }));
+  cols.forEach((c) => s.span(hr, c.c1, hr, c.c2 ?? c.c1, { v: cac() ? c.head.toUpperCase() : c.head, t: 's', s: headStyle }));
   const r0 = hr + 1;
   rows.forEach((row, i) => {
     const fill = cac() ? C.white : i % 2 ? C.panel : C.white;
@@ -476,7 +604,7 @@ function table(s: Sheet, cols: Col[], rows: (Cell | string | number)[][], o: { m
       const cell: Cell = raw && typeof raw === 'object' ? (raw as Cell) : typeof raw === 'number' ? { v: raw, t: 'n', z: Number.isInteger(raw) ? '#,##0' : '#,##0.0' } : { v: String(raw ?? ''), t: 's' };
       if (cell.t === 's' && !cell.f) h = Math.max(h, estLines(String(cell.v), widthOf(s, c.c1, c.c2 ?? c.c1), 9) * 13 + 6);
       const isNum = cell.t === 'n';
-      const base = { font: (c.mono || isNum ? M : F)({ sz: 9 }), fill: solid(fill), alignment: { horizontal: c.align ?? (isNum ? 'right' : 'left'), vertical: 'center', wrapText: c.wrap !== false, indent: isNum ? 0 : 1 }, border: box() };
+      const base = { font: (c.mono || isNum ? M : F)({ sz: 9 }), fill: solid(fill), alignment: { horizontal: c.align ?? (isNum ? 'right' : 'left'), vertical: 'center', wrapText: c.wrap !== false, indent: isNum ? 0 : 1 }, border: cac() ? { bottom: bd(tintOf(C.navy, 0.88)) } : box() };
       const r = hr + 1 + i;
       if (r >= s.aoa.length) s.row(19);
       s.span(r, c.c1, r, c.c2 ?? c.c1, { ...cell, s: { ...base, ...(cell.s ?? {}), font: { ...base.font, ...((cell.s?.font as object) ?? {}) }, alignment: { ...base.alignment, ...((cell.s?.alignment as object) ?? {}) } } });
@@ -519,7 +647,9 @@ function placeFigure(s: Sheet, calc: Calc, f0: Figure, c1: number, c2: number, r
   const b = calc.block(f.title, f.categories, f.series.map((se) => ({ name: se.name, values: se.values })));
   // More than 6 categories in columns → their names are cut once rotated: horizontal bars keep every name readable.
   const kind: ChartSpec['kind'] = f.kind === 'col3d' ? (f.categories.length > 6 ? 'hbar3d' : 'bar3d') : f.kind === 'bar3d' ? 'hbar3d' : f.kind === 'pie' || f.kind === 'doughnut' ? 'pie3d' : f.kind === 'line' ? 'line' : f.kind === 'bar' ? 'bar' : 'bar';
-  placeChart(s, { kind, title: f.title, fmt: f.fmt ?? (f.unit === '%' ? '0" %"' : undefined), sheet: 'CALC', first: b.first, last: b.last, anchorCol: c1, anchorRow: 0, cat: { col: b.catCol, name: 'Catégorie', values: f.categories }, series: f.series.map((se, j) => ({ col: b.cols[j]!, name: se.name, values: se.values })) }, c1, c2, rows, startRow);
+  // CAC doughnut: its total in the hole (the figure's own values; a share in % has no total to show).
+  const center = cac() && kind === 'pie3d' && f.categories.length <= 5 && f.unit !== '%' && !/%/.test(f.fmt ?? '') ? { value: `${shortFr(f.series[0]!.values.reduce((a, b) => a + b, 0))}${f.unit && !/mds|xof|m\b/i.test(f.unit) ? ` ${f.unit}` : ''}`, caption: 'total' } : undefined;
+  placeChart(s, { kind, center, title: f.title, fmt: f.fmt ?? (f.unit === '%' ? '0" %"' : undefined), sheet: 'CALC', first: b.first, last: b.last, anchorCol: c1, anchorRow: 0, cat: { col: b.catCol, name: 'Catégorie', values: f.categories }, series: f.series.map((se, j) => ({ col: b.cols[j]!, name: se.name, values: se.values })) }, c1, c2, rows, startRow);
 }
 /** Reserve `rows` rows of 15 pt and anchor the chart over them. */
 function placeChart(s: Sheet, spec: ChartSpec, c1: number, c2: number, rows: number, startRow?: number) {
@@ -792,7 +922,8 @@ function dossierXlsxCore(d: Dossier, o: XlsxOptions): Uint8Array {
   // CAC: « Le message clé » opens the home page (the thesis in 14 pt with its first message).
   if (cac()) {
     section(ck, 'Le message clé');
-    para(ck, `💡  ${d.thesis}`, { sz: 14, bold: true, color: C.navy });
+    illustrate(ck, '💡');
+    para(ck, emojiPng('💡') ? d.thesis : `💡  ${d.thesis}`, { sz: 14, bold: true, color: C.navy });
     if (d.messages[0]) para(ck, d.messages[0], { sz: 10.5 });
     ck.gap(6);
   }
@@ -862,7 +993,7 @@ function dossierXlsxCore(d: Dossier, o: XlsxOptions): Uint8Array {
           sub: (k ? k.label : `${c.recommandations.length} recommandation(s)`).slice(0, 70),
           desc: (c.headline ?? c.lecture ?? c.analyse[0] ?? '').slice(0, 150),
           color: colors[chapterNames[i]!] ?? C.navy,
-          glyph: glyphOf(c.title, i),
+          glyph: buttonEmoji(c.title, i),
           target: chapterNames[i]!,
         };
       }),
@@ -938,7 +1069,11 @@ function dossierXlsxCore(d: Dossier, o: XlsxOptions): Uint8Array {
     );
     const n = d.chapters.length;
     ck.cfs.push(colorScale(`${colName(8)}${r0 + 1}:${colName(8)}${r0 + n}`, C.white, mix(C.risk, 0.7)));
-    d.chapters.forEach((_, i) => ck.shapes.push({ kind: 'button', r: r0 + i, x: ck.colX(11) + ptEmu(6), w: colEmu(ck.cols[11]!) - ptEmu(12), inset: ptEmu(3), label: 'OUVRIR', glyph: '📂', target: chapterNames[i]!, small: true }));
+    d.chapters.forEach((_, i) =>
+      cac()
+        ? cacPill(ck, r0 + i, 11, 'Ouvrir', chapterNames[i]!, colors[chapterNames[i]!] ?? C.navy)
+        : ck.shapes.push({ kind: 'button', r: r0 + i, x: ck.colX(11) + ptEmu(6), w: colEmu(ck.cols[11]!) - ptEmu(12), inset: ptEmu(3), label: 'OUVRIR', glyph: '📂', target: chapterNames[i]!, small: true }),
+    );
     if (d.chapters[0]?.lecture || d.messages[0]) lecture(ck, d.messages[0] ?? d.chapters[0]!.lecture!);
     ck.gap(8);
   }
@@ -1049,7 +1184,7 @@ function dossierXlsxCore(d: Dossier, o: XlsxOptions): Uint8Array {
       'Les chiffres clés sont des formules vivantes (DATA_KPI) : ils suivent les données du classeur.',
       'Chaque chapitre s’ouvre sur « Analyse de la feuille », puis le constat chiffré, les visuels, l’analyse, ce que disent la réglementation et la recherche, les recommandations.',
       'Les sources (Internet comprises) sont datées dans l’onglet SOURCES ; le rouge signale une alerte.',
-    ], '▸');
+    ], '▸', '💡');
   }
   const sheets: Sheet[] = [ck];
 
@@ -1070,7 +1205,7 @@ function dossierXlsxCore(d: Dossier, o: XlsxOptions): Uint8Array {
     if (ch.kpis?.length || ch.constats.length) {
       section(s, 'Le constat chiffré');
       if (ch.kpis?.length) tiles(s, ch.kpis.slice(0, 4).map((k) => kpiTile({ ...k, code: '' })));
-      bullets(s, ch.constats, '▪');
+      bullets(s, ch.constats, '▪', '📌');
       s.gap(6);
     }
     if (ch.figures.length) {
@@ -1087,17 +1222,20 @@ function dossierXlsxCore(d: Dossier, o: XlsxOptions): Uint8Array {
     }
     if (ch.analyse.length) {
       section(s, 'Analyse');
+      illustrate(s, '📝');
       ch.analyse.forEach((t) => para(s, t));
       s.gap(6);
     }
     if (ch.cadre.length) {
       section(s, 'Ce que disent la réglementation et la recherche');
-      bullets(s, ch.cadre);
+      illustrate(s, '⚖️');
+      bullets(s, ch.cadre, '▸', '📚');
       s.gap(6);
     }
     if (ch.cas.length) {
       section(s, 'Cas emblématiques');
-      bullets(s, ch.cas, '◆');
+      illustrate(s, '🔎');
+      bullets(s, ch.cas, '◆', '📍');
       s.gap(6);
     }
     for (const t of ch.tables) {
@@ -1245,6 +1383,7 @@ function dossierXlsxCore(d: Dossier, o: XlsxOptions): Uint8Array {
   // ── Build ──
   const wb = XLSXS.utils.book_new();
   for (const s of sheets) {
+    if (appSheet(s)) appPass(s);
     const ws = XLSXS.utils.aoa_to_sheet(s.aoa.map((r) => r.map((c) => ({ v: c.v, t: c.t, s: c.s, z: c.z, f: c.f, l: c.l }))));
     ws['!merges'] = s.merges;
     ws['!cols'] = s.cols.map((w) => ({ wch: w }));
@@ -1330,6 +1469,14 @@ function anchorXml(s: Sheet, x: number, w: number, r: number, inset: number, bod
   const tr = locate(rh, bottom);
   return `<xdr:twoCellAnchor editAs="absolute"><xdr:from><xdr:col>${f.i}</xdr:col><xdr:colOff>${f.off}</xdr:colOff><xdr:row>${fr.i}</xdr:row><xdr:rowOff>${fr.off}</xdr:rowOff></xdr:from><xdr:to><xdr:col>${t.i}</xdr:col><xdr:colOff>${t.off}</xdr:colOff><xdr:row>${tr.i}</xdr:row><xdr:rowOff>${tr.off}</xdr:rowOff></xdr:to>${body}<xdr:clientData/></xdr:twoCellAnchor>`;
 }
+/** A one-cell anchor (place + fixed size): a round medallion or an emoji never stretches with the columns' rounding. */
+function anchorOne(s: Sheet, x: number, w: number, y: number, h: number, body: string): string {
+  const cw = [...s.cols.map(colEmu), ...Array.from({ length: 30 }, () => colEmu(10))];
+  const rh = Array.from({ length: s.aoa.length + 400 }, (_, i) => ptEmu(s.heights[i] ?? 15));
+  const f = locate(cw, Math.max(0, x));
+  const fr = locate(rh, Math.max(0, y));
+  return `<xdr:oneCellAnchor><xdr:from><xdr:col>${f.i}</xdr:col><xdr:colOff>${f.off}</xdr:colOff><xdr:row>${fr.i}</xdr:row><xdr:rowOff>${fr.off}</xdr:rowOff></xdr:from><xdr:ext cx="${Math.round(w)}" cy="${Math.round(h)}"/>${body}<xdr:clientData/></xdr:oneCellAnchor>`;
+}
 /** An anchor at an absolute place (EMU), whatever rows and columns it crosses (CAC shapes, menu below the last row). */
 function anchorAbs(s: Sheet, x: number, w: number, y: number, h: number, body: string): string {
   const cw = [...s.cols.map(colEmu), ...Array.from({ length: 30 }, () => colEmu(10))];
@@ -1349,7 +1496,18 @@ function shapesXml(s: Sheet, links: string[], pics: Uint8Array[], idBase: number
         links.push(t);
         return `rIdL${links.length}`;
       };
-      out.push(anchorAbs(s, sh.x, sh.w, sh.y ?? 0, sh.h ?? 0, sh.body(id++, reg)));
+      out.push((sh.round ? anchorOne : anchorAbs)(s, sh.x, sh.w, sh.y ?? 0, sh.h ?? 0, sh.body(id++, reg)));
+      continue;
+    }
+    if (sh.kind === 'emoji' && sh.png) {
+      let k = pics.indexOf(sh.png);
+      if (k < 0) k = pics.push(sh.png) - 1;
+      let link = '';
+      if (sh.target) {
+        links.push(sh.target);
+        link = `<a:hlinkClick xmlns:r="${REL}" r:id="rIdL${links.length}" tooltip="${xesc(`Ouvrir ${sh.target}`)}"/>`;
+      }
+      out.push(anchorOne(s, sh.x, sh.w, sh.y ?? 0, sh.h ?? 0, `<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${id++}" name="Émoji ${xesc(sh.glyph ?? '')}" descr="">${link}</xdr:cNvPr><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip xmlns:r="${REL}" r:embed="rIdP${k + 1}"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic>`));
       continue;
     }
     if (sh.kind === 'picture' && sh.png && sh.y != null) {
@@ -1422,6 +1580,7 @@ function finishWorkbook(bytes: Uint8Array, sheets: Sheet[], d: Dossier): Uint8Ar
   let ct = strFromU8(z['[Content_Types].xml']!);
   let chartNo = 0;
   let picNo = 0;
+  const mediaOf = new Map<Uint8Array, string>();
   let tableNo = 0;
   const zoom = activeDesign().xlsx.zoom;
   const foot = (t: string) => t.replace(/&/g, '&&');
@@ -1437,8 +1596,16 @@ function finishWorkbook(bytes: Uint8Array, sheets: Sheet[], d: Dossier): Uint8Ar
         : fr
           ? `<pane ySplit="${fr}" topLeftCell="A${fr + 1}" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="B${fr + 1}" sqref="B${fr + 1}"/>`
           : '';
-    const view = `<sheetViews><sheetView showGridLines="0" zoomScale="${s.name === 'DONNÉES' ? 85 : zoom}" zoomScaleNormal="${zoom}" workbookViewId="0"${i === 0 ? ' tabSelected="1"' : ''}>${pane}</sheetView></sheetViews>`;
+    const view = `<sheetViews><sheetView showGridLines="0"${appSheet(s) ? ' showRowColHeaders="0"' : ''} zoomScale="${s.name === 'DONNÉES' ? 85 : zoom}" zoomScaleNormal="${zoom}" workbookViewId="0"${i === 0 ? ' tabSelected="1"' : ''}>${pane}</sheetView></sheetViews>`;
     xml = /<sheetViews>[\s\S]*?<\/sheetViews>/.test(xml) ? xml.replace(/<sheetViews>[\s\S]*?<\/sheetViews>/, view) : xml.replace(/(<dimension [^>]*\/>)/, `$1${view}`);
+    // APP look: the canvas is every column's default style, so the page has no white grid beyond the content either.
+    const canvasXf = appSheet(s) && s.canvasRef ? new RegExp(`<c r="${s.canvasRef}"[^>]*?\\ss="(\\d+)"`).exec(xml)?.[1] : undefined;
+    if (canvasXf)
+      xml = xml.replace(/<cols>([\s\S]*?)<\/cols>/, (_m, inner: string) => {
+        const styled = inner.replace(/<col (?![^>]*\bstyle=)/g, `<col style="${canvasXf}" `);
+        const maxCol = Math.max(0, ...[...inner.matchAll(/\bmax="(\d+)"/g)].map((m) => Number(m[1])));
+        return `<cols>${styled}<col min="${maxCol + 1}" max="16384" width="9.140625" style="${canvasXf}"/></cols>`;
+      });
     const sp = `<sheetPr><tabColor rgb="FF${s.tab}"/><pageSetUpPr fitToPage="1"/></sheetPr>`;
     xml = /<sheetPr[\s\S]*?(\/>|<\/sheetPr>)/.test(xml) ? xml.replace(/<sheetPr[^>]*\/>|<sheetPr[\s\S]*?<\/sheetPr>/, sp) : xml.replace(/(<dimension )/, `${sp}$1`);
     // Conditional formatting, then validations (schema order: mergeCells, conditionalFormatting, dataValidations, hyperlinks, …).
@@ -1462,6 +1629,18 @@ function finishWorkbook(bytes: Uint8Array, sheets: Sheet[], d: Dossier): Uint8Ar
       const rh = Array.from({ length: s.aoa.length + 2 }, (_, j) => ptEmu(s.heights[j] ?? 15));
       const y1 = rh.slice(0, p.r1).reduce((a, b) => a + b, 0) + ptEmu(2);
       const y2 = rh.slice(0, p.r2 + 1).reduce((a, b) => a + b, 0) - ptEmu(2);
+      // The doughnut's total, centred in its hole (the plot area is fixed by flatChart: DONUT).
+      if (p.spec.center && cac() && p.spec.cat.values.length <= 5) {
+        const W = x2 - x1;
+        const H = y2 - y1;
+        const dia = Math.min(DONUT.w * W, DONUT.h * H);
+        const cx = x1 + (DONUT.x + DONUT.w / 2) * W;
+        const cy = y1 + (DONUT.y + DONUT.h / 2) * H;
+        const bw = Math.round(dia * 0.56);
+        const bh = Math.round(dia * 0.36);
+        const c = p.spec.center;
+        cacShape(s, Math.round(cx - bw / 2), Math.round(cy - bh / 2), bw, bh, (id) => shapeXml({ id, name: 'Total de l’anneau', paras: [run(c.value, { sz: Math.max(11, Math.min(20, Math.round(bw / 12700 / 5.2))), bold: true, color: C.navy, font: activeDesign().font.ui }), run(c.caption.toUpperCase(), { sz: 7.5, bold: true, color: C.text2, font: activeDesign().font.ui })], algn: 'ctr', ins: [0, 0, 0, 0], wrap: false }));
+      }
       const f = locate(cw, x1);
       const t = locate(cw, x2);
       const fr = locate(rh, y1);
@@ -1479,10 +1658,16 @@ function finishWorkbook(bytes: Uint8Array, sheets: Sheet[], d: Dossier): Uint8Ar
       const rels = [
         ...anchors.map((a, k) => `<Relationship Id="rIdC${k + 1}" Type="${REL}/chart" Target="../charts/chart${a.no}.xml"/>`),
         ...links.map((t, k) => `<Relationship Id="rIdL${k + 1}" Type="${REL}/hyperlink" Target="${xesc(`#${quote(t)}!A1`)}"/>`),
-        ...pics.map((_, k) => {
-          picNo++;
-          z[`xl/media/logo${picNo}.png`] = new Uint8Array(pics[k]!);
-          return `<Relationship Id="rIdP${k + 1}" Type="${REL}/image" Target="../media/logo${picNo}.png"/>`;
+        ...pics.map((png, k) => {
+          // One media file per image in the whole workbook (an emoji used on 17 sheets is stored once).
+          let file = mediaOf.get(png);
+          if (!file) {
+            picNo++;
+            file = `logo${picNo}.png`;
+            mediaOf.set(png, file);
+            z[`xl/media/${file}`] = new Uint8Array(png);
+          }
+          return `<Relationship Id="rIdP${k + 1}" Type="${REL}/image" Target="../media/${file}"/>`;
         }),
       ];
       z[`xl/drawings/_rels/drawing${dn}.xml.rels`] = strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.join('')}</Relationships>`);

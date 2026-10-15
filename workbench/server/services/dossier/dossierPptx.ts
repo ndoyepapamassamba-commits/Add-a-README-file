@@ -5,7 +5,8 @@
 // notes timed on the whole deck. Colours and fonts come from the active design: the same deck in every theme.
 import { strToU8, zipSync } from 'fflate';
 import { activeDesign, liveColorProxy, setActiveTheme, type Design } from '../houseDesign';
-import { CAC_NEUTRALS, cacDesign, cacStates, flatFigure, tintOf } from './cacSkin';
+import { emojiRelId, emojiRelsFor, fluentB64 } from '../../assets/fluentEmoji';
+import { CAC_NEUTRALS, buttonEmoji, cacDesign, cacStates, flatFigure, tintOf, topicEmoji } from './cacSkin';
 /** CAC format (cacSkin.ts) while a deck is written; the band colour of the current chapter. */
 let CAC_ON = false;
 let ST: string[] = [];
@@ -62,6 +63,12 @@ const rect = (x: number, y: number, w: number, h: number, rgb: string, name: str
 const SHADOW = () => `<a:effectLst><a:outerShdw blurRad="76200" dist="25400" dir="5400000" algn="t" rotWithShape="0"><a:srgbClr val="${C.navy}"><a:alpha val="14000"/></a:srgbClr></a:outerShdw></a:effectLst>`;
 const card = (x: number, y: number, w: number, h: number, rgb: string, name: string, o: { shadow?: boolean; line?: string; radius?: number } = {}) =>
   sp(x, y, w, h, `${fill(rgb)}${o.line ? `<a:ln w="9525">${fill(o.line)}</a:ln>` : '<a:ln><a:noFill/></a:ln>'}${o.shadow === false ? '' : SHADOW()}`, name, 'roundRect', `<a:gd name="adj" fmla="val ${o.radius ?? 6000}"/>`);
+/** A soft halo (radial gradient of a colour) carrying a big 3D emoji — fills an empty part of a card or slide. */
+function halo(x: number, y: number, d: number, color: string, glyph: string, strength = 0.5): string {
+  const g = `<a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:srgbClr val="${tintOf(color, strength)}"/></a:gs><a:gs pos="100000"><a:srgbClr val="${tintOf(color, 0.9)}"/></a:gs></a:gsLst><a:path path="circle"><a:fillToRect l="50000" t="50000" r="50000" b="50000"/></a:path></a:gradFill><a:ln><a:noFill/></a:ln>${SHADOW()}`;
+  const e = Math.round(d * 0.6);
+  return sp(Math.round(x), Math.round(y), Math.round(d), Math.round(d), g, 'Halo', 'ellipse') + (emojiPicXml(glyph, x + (d - e) / 2, y + (d - e) / 2, e) ?? '');
+}
 const circle = (x: number, y: number, d: number, rgb: string, label: string, sz = 12, color = C.white) =>
   `<p:sp><p:nvSpPr><p:cNvPr id="${++nid}" name="Pastille"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${d}" cy="${d}"/></a:xfrm><a:prstGeom prst="ellipse"><a:avLst/></a:prstGeom>${fill(rgb)}<a:ln><a:noFill/></a:ln></p:spPr><p:txBody><a:bodyPr anchor="ctr" lIns="0" rIns="0" tIns="0" bIns="0"/><a:lstStyle/>${para(run(label, { sz, color, b: true }), { algn: 'ctr', spc: 0 })}</p:txBody></p:sp>`;
 const text = (x: number, y: number, w: number, h: number, paras: string[], name: string, o: { anchor?: 'ctr' | 't' | 'b'; inset?: number; fit?: boolean } = {}) =>
@@ -85,6 +92,13 @@ function table(x: number, y: number, w: number, head: string[], rows: string[][]
 const sld = (shapes: string, bg: string) =>
   `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgPr>${fill(bg)}<a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${shapes}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
 const LOGO_RID = 'rIdLogo';
+/** Relationship id of a Fluent 3D emoji picture (the packer adds the rel and the media for every id it finds). */
+const emojiRid = emojiRelId;
+/** A Fluent 3D emoji picture (null when the pack lacks it: the caller keeps the emoji font). */
+function emojiPicXml(e: string, x: number, y: number, d: number): string | null {
+  if (!fluentB64(e)) return null;
+  return `<p:pic><p:nvPicPr><p:cNvPr id="${++nid}" name="Émoji" descr=""/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${emojiRid(e)}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${Math.round(x)}" y="${Math.round(y)}"/><a:ext cx="${Math.round(d)}" cy="${Math.round(d)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+}
 /** The badge at the top-right of every slide: a white plate with the logo, or the organisation on a plate. */
 function badge(d: Dossier, logo: DeckLogo | null, xRight: number, y: number, h: number): string {
   if (logo) {
@@ -197,6 +211,8 @@ function dossierPptxCore(d: Dossier, opts: DeckOptions): Uint8Array {
         (lead ? card(M, inch(3.3), W - 2 * M - inch(2.6), inch(0.48), CAC_NEUTRALS.alertBg, 'Alerte', { shadow: false, radius: 20000 }) + text(M + inch(0.15), inch(3.3), W - 2 * M - inch(2.9), inch(0.48), [para(run(`⚠  ${lead.value} · ${lead.label}`, { sz: 13, color: CAC_NEUTRALS.alert, b: true }), { spc: 0 })], 'Texte alerte', { anchor: 'ctr' }) : '') +
         text(W - M - inch(2.4), inch(1.2), inch(2.4), inch(0.3), [para(run(`🔒 ${(d.confidentiality ?? 'CONFIDENTIEL').toUpperCase().slice(0, 30)}`, { sz: 9, color: CAC_NEUTRALS.alert, b: true }), { algn: 'r', spc: 0 })], 'Confidentialité', { anchor: 'ctr' }) +
         rect(M, inch(4.05), W - 2 * M, inch(0.03), C.line, 'Filet') +
+        // The empty right of the title: a big halo with the dossier's 3D emoji (its first chapter's topic).
+        halo(W - M - inch(2.3), inch(1.65), inch(2.0), C.navy, buttonEmoji(d.chapters[0]?.title ?? d.title, 0), 0.6) +
         cards +
         text(M, inch(6.4), W - 2 * M, inch(0.4), [para(run(`${d.author ? `Présenté par ${d.author}` : ''}${d.dataSource ? ` · ${d.dataSource}` : ''}`.replace(/^ · /, ''), { sz: 9, color: C.text2, i: true }), { spc: 0 })], 'Auteur', { anchor: 'ctr' });
       push(sld(cacShapes, C.white), { notes: `${d.title}\n${d.subtitle ?? ''}\n${d.thesis}`, weight: 0.6 });
@@ -448,15 +464,17 @@ function kpiTile(x: number, y: number, w: number, h: number, k: Kpi, cacColor?: 
     // CAC card: white, thin warm frame, thick top rule in the card's colour (red for a risk), caps label, 24 pt figure,
     // warm sub-line, a round medallion with the tone's emoji.
     const top = k.tone === 'risk' ? CAC_NEUTRALS.alert : cacColor ?? C.navy;
-    const glyph = k.tone === 'risk' ? '⚠️' : k.tone === 'warn' ? '⏳' : k.tone === 'ok' ? '✅' : k.tone === 'info' ? '📊' : '🏦';
-    const md = Math.min(inch(0.42), Math.round(h * 0.3));
+    const glyph = k.tone === 'risk' ? '⚠️' : (topicEmoji(k.label) ?? (k.tone === 'warn' ? '⏳' : k.tone === 'ok' ? '✅' : k.tone === 'info' ? '📊' : '🏦'));
+    const md = Math.min(inch(0.62), Math.round(h * 0.4));
+    const e = Math.round(md * 0.72);
+    const pic = emojiPicXml(glyph, x + w - md - inch(0.1) + (md - e) / 2, y + inch(0.12) + (md - e) / 2, e);
     const vSz = h < inch(1.2) ? 16 : k.value.length > 9 ? 20 : 24;
     return (
-      card(x, y, w, h, 'FFFFFF', 'Carte chiffrée', { line: C.line, shadow: false, radius: 1500 }) +
+      card(x, y, w, h, tintOf(top, 0.93), 'Carte chiffrée', { line: tintOf(top, 0.7), shadow: true, radius: 3000 }) +
       rect(x, y, w, inch(0.06), top, 'Filet supérieur') +
       text(x + inch(0.1), y + inch(0.1), w - md - inch(0.25), inch(0.4), [para(run(k.code ? `${k.code} · ${k.label}` : k.label, { sz: 8, color: C.text2, b: true, caps: true }), { spc: 0 })], 'Étiquette') +
-      sp(x + w - md - inch(0.1), y + inch(0.12), md, md, `${fill('FFFFFF')}<a:ln w="12700">${fill(tintOf(top, 0.45))}</a:ln>`, 'Médaillon', 'ellipse') +
-      text(x + w - md - inch(0.1), y + inch(0.12), md, md, [para(run(glyph, { sz: Math.max(9, Math.round((md / EMU) * 30)), color: top, font: 'Segoe UI Emoji' }), { algn: 'ctr', spc: 0 })], 'Icône', { anchor: 'ctr', inset: 0 }) +
+      (pic ? halo(x + w - md - inch(0.1), y + inch(0.12), md, top, glyph) : sp(x + w - md - inch(0.1), y + inch(0.12), md, md, `${fill('FFFFFF')}<a:ln w="12700">${fill(tintOf(top, 0.45))}</a:ln>`, 'Médaillon', 'ellipse')) +
+      (pic ? '' : text(x + w - md - inch(0.1), y + inch(0.12), md, md, [para(run(glyph, { sz: Math.max(9, Math.round((md / EMU) * 30)), color: top, font: 'Segoe UI Emoji' }), { algn: 'ctr', spc: 0 })], 'Icône', { anchor: 'ctr', inset: 0 })) +
       text(x + inch(0.1), y + inch(0.5), w - inch(0.2), Math.max(inch(0.45), h - inch(0.95)), [para(run(k.value, { sz: vSz, color: C.navy, b: true }), { spc: 0 })], 'Valeur', { anchor: 'ctr' }) +
       (k.sub ? text(x + inch(0.1), y + h - inch(0.45), w - inch(0.2), inch(0.38), [para(run(k.sub, { sz: 8, color: C.text2 }), { spc: 0 })], 'Sous-titre', { anchor: 'ctr' }) : '')
     );
@@ -545,7 +563,7 @@ function packDeck(d: Dossier, parts: Part[], logo: DeckLogo | null): Uint8Array 
     const n = i + 1;
     files[`ppt/slides/slide${n}.xml`] = strToU8(p.xml);
     files[`ppt/slides/_rels/slide${n}.xml.rels`] = strToU8(
-      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rIdNotes" Type="${REL}/notesSlide" Target="../notesSlides/notesSlide${n}.xml"/>${logo ? `<Relationship Id="${LOGO_RID}" Type="${REL}/image" Target="../media/dossier-logo.png"/>` : ''}${p.charts.map((_, k) => `<Relationship Id="rIdChart${k + 1}" Type="${CHART_REL}" Target="../charts/chart${n}_${k + 1}.xml"/>`).join('')}</Relationships>`,
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rIdNotes" Type="${REL}/notesSlide" Target="../notesSlides/notesSlide${n}.xml"/>${logo ? `<Relationship Id="${LOGO_RID}" Type="${REL}/image" Target="../media/dossier-logo.png"/>` : ''}${p.charts.map((_, k) => `<Relationship Id="rIdChart${k + 1}" Type="${CHART_REL}" Target="../charts/chart${n}_${k + 1}.xml"/>`).join('')}${emojiRelsFor(p.xml, files, 'ppt/media')}</Relationships>`,
     );
     p.charts.forEach((c, k) => (files[`ppt/charts/chart${n}_${k + 1}.xml`] = strToU8(c)));
     const paras = timed[i]!.split('\n').map((l) => `<a:p><a:r><a:rPr lang="fr-FR" sz="1200" dirty="0"/><a:t>${esc(l)}</a:t></a:r></a:p>`).join('');
