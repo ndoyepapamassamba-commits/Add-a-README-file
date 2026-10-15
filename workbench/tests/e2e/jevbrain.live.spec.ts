@@ -87,17 +87,23 @@ test('sans clé : réflexes JEV, calcul par code exécuté, réponse d’un mod�
   const calc = await ask(page, 'Calcule la mensualité d’un prêt de 10 000 000 FCFA à 8 % par an sur 5 ans', 120_000);
   const calcShown = await page.getByText('exécuté dans le bac à sable').first().isVisible().catch(() => false);
   // 4. A real question answered by a FREE model (no key), fed by JEV (packet, capsule, tools).
-  const q = await ask(page, 'En deux phrases, explique la différence entre le stage 2 et le stage 3 d’IFRS 9.', 180_000);
+  const Q = 'En deux phrases, explique la différence entre le stage 2 et le stage 3 d’IFRS 9.';
+  const q = await ask(page, Q, 180_000);
   const body = await page.locator('body').innerText();
+  // What came AFTER the question (the question itself already says « stage 3 »): the model's own words.
+  const reply = body.slice(body.lastIndexOf(Q) + Q.length);
+  const answered = /dépréci|en défaut|défaut avéré|significativ|pertes? (de crédit )?attendues|impair|credit-impaired|lifetime|durée de vie/i.test(reply);
+  // The model that actually answered: the message footer « <model> · 6.2k → 164 tokens · $0 » (fallback notes name others).
+  const servedBy = [...reply.matchAll(/([\w./:-]+) · [\d.,]+k? → [\d.,]+k? tokens/g)].at(-1)?.[1] ?? null;
   report.chat = {
     reflexeChange: { ms: fx.ms, ok: /983\s?935,5/.test(body) },
     reflexeEntite: { ms: ent.ms, ok: /Lomé|Siège de Ecobank/i.test(body) },
     calculParCode: { ms: calc.ms, executed: calcShown, sample: calc.answer.slice(0, 300) },
-    modeleGratuit: { ms: q.ms, sample: q.answer.slice(0, 400), stage: /stage\s?3/i.test(body) },
+    modeleGratuit: { ms: q.ms, answered, servedBy, answer: (() => { const f = reply.replace(/\s+/g, ' '); const i = f.search(/dépréci|en défaut|défaut avéré|significativ|pertes? (de crédit )?attendues|impair|lifetime|durée de vie/i); return i < 0 ? '' : f.slice(Math.max(0, i - 250), i + 350); })(), footer: reply.replace(/\s+/g, ' ').slice(-260) },
   };
   console.log(JSON.stringify(report.chat, null, 2));
   expect(/983\s?935,5/.test(body)).toBe(true);
-  expect(/stage\s?3/i.test(body)).toBe(true);
+  expect(answered).toBe(true);
 });
 
 test('sondes : chaque service gratuit appelé depuis la page (lecture, BCE, Wikidata, modèles, 19 sources de la bibliothèque)', async ({ page }) => {
