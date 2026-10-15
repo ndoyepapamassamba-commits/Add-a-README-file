@@ -28,7 +28,16 @@ function reset() {
   mock.reset();
   mock.models = [
     ...MOCK_MODELS,
-    { id: FREE, name: 'NVIDIA: Nemotron 3 Ultra (free)', created: 1_790_000_000, context_length: 1_000_000, architecture: { input_modalities: ['text'] }, pricing: { prompt: '0', completion: '0' }, top_provider: { context_length: 1_000_000, max_completion_tokens: 32_000 }, supported_parameters: ['tools', 'tool_choice', 'temperature'] },
+    {
+      id: FREE,
+      name: 'NVIDIA: Nemotron 3 Ultra (free)',
+      created: 1_790_000_000,
+      context_length: 1_000_000,
+      architecture: { input_modalities: ['text'] },
+      pricing: { prompt: '0', completion: '0' },
+      top_provider: { context_length: 1_000_000, max_completion_tokens: 32_000 },
+      supported_parameters: ['tools', 'tool_choice', 'temperature'],
+    },
   ];
 }
 test.afterEach(async ({ page }) => {
@@ -62,7 +71,9 @@ const send = async (page: Page, text: string) => {
 type Req = MockOpenRouter['requests'][number];
 const isVerifier = (r: Req) => JSON.stringify(r.messages).includes('VÉRIFICATEUR FINAL');
 
-test('÷100 : brouillons et étapes d’outils par le gratuit, le modèle payant vérifie / corrige / refait — facteur mesuré', async ({ page }) => {
+test('÷100 : brouillons et étapes d’outils par le gratuit, le modèle payant vérifie / corrige / refait — facteur mesuré', async ({
+  page,
+}) => {
   test.setTimeout(240_000);
   reset();
   await boot(page);
@@ -79,12 +90,23 @@ test('÷100 : brouillons et étapes d’outils par le gratuit, le modèle payant
 
   // 1. A tool step then the final answer, both written by the free model; the paid model only validates.
   mock.push(
-    { toolCalls: [{ name: 'skill.read', args: { name: 'apex-credit-risk', path: 'SKILL.md' } }], priced: true },
-    { text: 'Le stage 2 regroupe les expositions dont le risque de crédit a augmenté significativement depuis l’octroi ; le stage 3 les actifs dépréciés (défaut avéré), provisionnés sur la durée de vie.', priced: true },
+    {
+      toolCalls: [{ name: 'skill.read', args: { name: 'apex-credit-risk', path: 'SKILL.md' } }],
+      priced: true,
+    },
+    {
+      text: 'Le stage 2 regroupe les expositions dont le risque de crédit a augmenté significativement depuis l’octroi ; le stage 3 les actifs dépréciés (défaut avéré), provisionnés sur la durée de vie.',
+      priced: true,
+    },
     { text: '{"verdict":"ok","patches":[],"lesson":"","why":"exact"}', priced: true },
   );
-  await send(page, 'Consulte la skill de risque de crédit puis explique la différence entre le stage 2 et le stage 3 d’IFRS 9.');
-  await expect(page.getByText('le stage 3 les actifs dépréciés (défaut avéré)').first()).toBeVisible({ timeout: 30_000 });
+  await send(
+    page,
+    'Consulte la skill de risque de crédit puis explique la différence entre le stage 2 et le stage 3 d’IFRS 9.',
+  );
+  await expect(page.getByText('le stage 3 les actifs dépréciés (défaut avéré)').first()).toBeVisible({
+    timeout: 30_000,
+  });
   const t1 = [...mock.requests];
   expect(t1.map((r) => r.model)).toEqual([FREE, FREE, PREMIUM]);
   expect(isVerifier(t1[2]!)).toBe(true);
@@ -94,11 +116,19 @@ test('÷100 : brouillons et étapes d’outils par le gratuit, le modèle payant
   // 2. A localized error: the paid model answers with a patch, JEV applies it (the wrong words never stay).
   reset();
   mock.push(
-    { text: 'Le stage 3 le classe comme probable sous l’hypothèque d’un crédit ; la provision passe à la perte attendue d’escompte.', priced: true },
-    { text: '{"verdict":"fix","patches":[{"find":"le classe comme probable sous l’hypothèque d’un crédit","replace":"regroupe les actifs dépréciés (défaut avéré)"},{"find":"perte attendue d’escompte","replace":"perte attendue sur la durée de vie"}],"lesson":"Stage 3 = actifs dépréciés (défaut avéré), pertes attendues sur la durée de vie.","why":"définition fausse"}', priced: true },
+    {
+      text: 'Le stage 3 le classe comme probable sous l’hypothèque d’un crédit ; la provision passe à la perte attendue d’escompte.',
+      priced: true,
+    },
+    {
+      text: '{"verdict":"fix","patches":[{"find":"le classe comme probable sous l’hypothèque d’un crédit","replace":"regroupe les actifs dépréciés (défaut avéré)"},{"find":"perte attendue d’escompte","replace":"perte attendue sur la durée de vie"}],"lesson":"Stage 3 = actifs dépréciés (défaut avéré), pertes attendues sur la durée de vie.","why":"définition fausse"}',
+      priced: true,
+    },
   );
   await send(page, 'Rappelle ce qu’est le stage 3 d’IFRS 9 en une phrase.');
-  await expect(page.getByText('regroupe les actifs dépréciés (défaut avéré)').first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText('regroupe les actifs dépréciés (défaut avéré)').first()).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(page.getByText('perte attendue d’escompte')).toHaveCount(0);
   const t2 = [...mock.requests];
   expect(t2.map((r) => r.model)).toEqual([FREE, PREMIUM]);
@@ -106,12 +136,23 @@ test('÷100 : brouillons et étapes d’outils par le gratuit, le modèle payant
   // 3. A wrong draft: refused, the paid model writes the answer (normal path, with its tools).
   reset();
   mock.push(
-    { text: 'Le ratio de liquidité à court terme est de 42 % selon la circulaire de 1999 de la BCEAO.', priced: true },
-    { text: '{"verdict":"redo","patches":[],"lesson":"Ne jamais citer un chiffre ou un texte réglementaire absent des éléments fournis.","why":"chiffres inventés"}', priced: true },
-    { text: 'Le LCR rapporte les actifs liquides de haute qualité aux sorties nettes de trésorerie sur 30 jours ; le minimum réglementaire est fixé par le régulateur.', priced: true },
+    {
+      text: 'Le ratio de liquidité à court terme est de 42 % selon la circulaire de 1999 de la BCEAO.',
+      priced: true,
+    },
+    {
+      text: '{"verdict":"redo","patches":[],"lesson":"Ne jamais citer un chiffre ou un texte réglementaire absent des éléments fournis.","why":"chiffres inventés"}',
+      priced: true,
+    },
+    {
+      text: 'Le LCR rapporte les actifs liquides de haute qualité aux sorties nettes de trésorerie sur 30 jours ; le minimum réglementaire est fixé par le régulateur.',
+      priced: true,
+    },
   );
   await send(page, 'Qu’est-ce que le ratio de liquidité à court terme ?');
-  await expect(page.getByText('sorties nettes de trésorerie sur 30 jours').first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText('sorties nettes de trésorerie sur 30 jours').first()).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(page.getByText('42 % selon la circulaire')).toHaveCount(0);
   const t3 = [...mock.requests];
   expect(t3.map((r) => r.model)).toEqual([FREE, PREMIUM, PREMIUM]);
@@ -120,7 +161,12 @@ test('÷100 : brouillons et étapes d’outils par le gratuit, le modèle payant
   // 4. Privacy: once a file tool has answered, the conversation carries the user's material → no free service.
   reset();
   mock.push(
-    { toolCalls: [{ name: 'filesystem.write', args: { path: 'notes/eco.md', content: 'IFRS 9 : stages 1, 2, 3' } }], priced: true },
+    {
+      toolCalls: [
+        { name: 'filesystem.write', args: { path: 'notes/eco.md', content: 'IFRS 9 : stages 1, 2, 3' } },
+      ],
+      priced: true,
+    },
     { text: 'Note écrite dans notes/eco.md.', priced: true },
   );
   await send(page, 'Écris un résumé des trois stages dans notes/eco.md.');
@@ -152,7 +198,9 @@ test('÷100 : brouillons et étapes d’outils par le gratuit, le modèle payant
   await expect(stats).toContainText('Stage 3 = actifs dépréciés');
 });
 
-test('÷100 sur une mission : 5 étapes d’outils écrites par le gratuit, 1 réponse finale vérifiée — facteur mesuré du tour', async ({ page }) => {
+test('÷100 sur une mission : 5 étapes d’outils écrites par le gratuit, 1 réponse finale vérifiée — facteur mesuré du tour', async ({
+  page,
+}) => {
   test.setTimeout(240_000);
   reset();
   await boot(page);
@@ -164,14 +212,31 @@ test('÷100 sur une mission : 5 étapes d’outils écrites par le gratuit, 1 r�
   await openView(page, 'Chat');
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
-  const paths = ['SKILL.md', 'references/01-classification.md', 'references/02-provisions.md', 'references/03-garanties.md', 'references/04-douteux-recouvrement-pcb.md'];
+  const paths = [
+    'SKILL.md',
+    'references/01-classification.md',
+    'references/02-provisions.md',
+    'references/03-garanties.md',
+    'references/04-douteux-recouvrement-pcb.md',
+  ];
   mock.push(
-    ...paths.map((p) => ({ toolCalls: [{ name: 'skill.read', args: { name: 'apex-credit-risk', path: p } }], priced: true })),
-    { text: 'Synthèse : classement en sains, sensibles et douteux ; provisions selon l’ancienneté des impayés et la valeur des garanties retenues ; suivi des douteux jusqu’au recouvrement ou au passage en perte.', priced: true },
+    ...paths.map((p) => ({
+      toolCalls: [{ name: 'skill.read', args: { name: 'apex-credit-risk', path: p } }],
+      priced: true,
+    })),
+    {
+      text: 'Synthèse : classement en sains, sensibles et douteux ; provisions selon l’ancienneté des impayés et la valeur des garanties retenues ; suivi des douteux jusqu’au recouvrement ou au passage en perte.',
+      priced: true,
+    },
     { text: '{"verdict":"ok","patches":[],"lesson":"","why":"conforme aux références"}', priced: true },
   );
-  await send(page, 'Lis les références de la skill de risque de crédit et fais-moi une synthèse de la méthode de classement et de provisionnement.');
-  await expect(page.getByText('suivi des douteux jusqu’au recouvrement').first()).toBeVisible({ timeout: 60_000 });
+  await send(
+    page,
+    'Lis les références de la skill de risque de crédit et fais-moi une synthèse de la méthode de classement et de provisionnement.',
+  );
+  await expect(page.getByText('suivi des douteux jusqu’au recouvrement').first()).toBeVisible({
+    timeout: 60_000,
+  });
   const reqs = [...mock.requests];
   expect(reqs.filter((r) => r.model === FREE)).toHaveLength(6);
   expect(reqs.filter((r) => r.model === PREMIUM)).toHaveLength(1);
@@ -179,16 +244,29 @@ test('÷100 sur une mission : 5 étapes d’outils écrites par le gratuit, 1 r�
   await openView(page, 'Réglages');
   const factor = await page.getByTestId('economy-factor').innerText();
   const stats = (await page.getByTestId('economy-stats').innerText()).replace(/\s+/g, ' ');
-  measures.mission = { facteurAffiche: factor, registre: stats.slice(0, 600), appels: reqs.map((r) => `${r.model}${isVerifier(r) ? ' (vérification)' : ''}`) };
+  measures.mission = {
+    facteurAffiche: factor,
+    registre: stats.slice(0, 600),
+    appels: reqs.map((r) => `${r.model}${isVerifier(r) ? ' (vérification)' : ''}`),
+  };
   // The panel as the user sees it (design check).
-  await page.getByTestId('economy-panel').screenshot({ path: path.join(ROOT, 'test-results', 'economy-panel.png') });
+  await page
+    .getByTestId('economy-panel')
+    .screenshot({ path: path.join(ROOT, 'test-results', 'economy-panel.png') });
   console.log(JSON.stringify(measures.mission, null, 2));
   const f = Number(factor.replace('÷', '').replace(',', '.'));
   expect(f).toBeGreaterThan(50);
   // Règle par décades : la position affichée = log10(facteur) / 3, l'ESR affiché = 1 − 1/facteur (au 0,1 % près).
   const pos = Number(await page.getByTestId('economy-bars').getAttribute('data-pos'));
   expect(pos).toBeCloseTo(Math.log10(f) / 3, 2);
-  const esr = Number((await page.getByTestId('economy-esr').innerText()).replace(/[^\d,]/g, '').replace(',', '.'));
+  const esr = Number(
+    (await page.getByTestId('economy-esr').innerText()).replace(/[^\d,]/g, '').replace(',', '.'),
+  );
   expect(Math.abs(esr - (1 - 1 / f) * 100)).toBeLessThan(0.15);
-  measures.regle = { position: pos, esr: `${esr} %` };
+  // Zone nommée par son sens (÷95 → « bon ») et montants au format fr-FR (virgule décimale, jamais « 0.324 $ »).
+  const zone = await page.getByTestId('economy-zone').innerText();
+  expect(zone).toContain(f >= 100 ? 'Objectif ÷100 atteint' : f >= 10 ? 'Zone « bon »' : 'Zone « faible »');
+  expect(stats).not.toMatch(/\d\.\d+ \$/);
+  expect(stats).toMatch(/\d,\d+ \$/);
+  measures.regle = { position: pos, esr: `${esr} %`, zone };
 });
