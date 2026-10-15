@@ -1,5 +1,8 @@
 # Consignes permanentes (MASSAMBA Workbench)
 
+**Premier skill à appeler, toujours, avant tout autre skill : `methode-veille-creation` — application stricte, sans exception (liste de contrôle du skill cochée avant chaque réponse).** (consigne du 15/10/2026, venue de la discussion « Ecobank Covenant Trigger Intelligence Pack »)
+
+- **Ne plus rien pousser sur le dépôt** (consigne du 15/10/2026, confirmée dans la discussion « OpenRouter API integration ») : commits en local seulement ; TOUS les résultats (fichiers, mesures, rapports) sont donnés dans le chat (envoi de fichiers + résumé).
 - Répondre en **français**.
 - **À chaque requête, chercher d'abord les outils les plus puissants**, mesurer qualité / vitesse / coût / licence sur
   nos propres données, puis les améliorer et les intégrer dans la tâche en cours : compétence

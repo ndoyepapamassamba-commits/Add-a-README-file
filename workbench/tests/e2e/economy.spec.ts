@@ -185,4 +185,10 @@ test('÷100 sur une mission : 5 étapes d’outils écrites par le gratuit, 1 r�
   console.log(JSON.stringify(measures.mission, null, 2));
   const f = Number(factor.replace('÷', '').replace(',', '.'));
   expect(f).toBeGreaterThan(50);
+  // Règle par décades : la position affichée = log10(facteur) / 3, l'ESR affiché = 1 − 1/facteur (au 0,1 % près).
+  const pos = Number(await page.getByTestId('economy-bars').getAttribute('data-pos'));
+  expect(pos).toBeCloseTo(Math.log10(f) / 3, 2);
+  const esr = Number((await page.getByTestId('economy-esr').innerText()).replace(/[^\d,]/g, '').replace(',', '.'));
+  expect(Math.abs(esr - (1 - 1 / f) * 100)).toBeLessThan(0.15);
+  measures.regle = { position: pos, esr: `${esr} %` };
 });

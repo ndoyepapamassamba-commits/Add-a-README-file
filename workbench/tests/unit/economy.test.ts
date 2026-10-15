@@ -7,6 +7,7 @@ import {
   draftChain,
   draftGate,
   ecoStats,
+  effectiveSavingsRate,
   evidenceDigest,
   factorLabel,
   familyOf,
@@ -15,6 +16,7 @@ import {
   parseVerdict,
   requestTokens,
   riskOf,
+  rulerPosition,
   standardCost,
   toolCallsSane,
   updateTrust,
@@ -187,5 +189,21 @@ describe('v64 — économie JEV ÷100 : registre et facteur', () => {
     const trusted = (5 * 5 * raw) / verify;
     expect(learning).toBeCloseTo(97.2, 0);
     expect(trusted).toBeCloseTo(486.1, 0);
+  });
+});
+
+describe('v64 — panneau : règle par décades et taux d’économie effectif (ESR)', () => {
+  it('÷1 au début, ÷10 au tiers, ÷100 aux deux tiers (repère objectif), 0 $ au bout ; ESR = 1 − payé / standard', () => {
+    expect(rulerPosition({ standardUsd: 1, paidUsd: 1 })).toBe(0);
+    expect(rulerPosition({ standardUsd: 1, paidUsd: 0.1 })).toBeCloseTo(1 / 3, 6);
+    expect(rulerPosition({ standardUsd: 1, paidUsd: 0.01 })).toBeCloseTo(2 / 3, 6);
+    expect(rulerPosition({ standardUsd: 1, paidUsd: 0 })).toBe(1);
+    expect(rulerPosition({ standardUsd: 0, paidUsd: 0 })).toBeNull();
+    expect(rulerPosition({ standardUsd: 1, paidUsd: 2 })).toBe(0); // plus cher que le standard : bloqué au début, jamais négatif
+    // mission mesurée en e2e : 0,323 $ → 0,0034 $ (÷95) → juste sous le repère ÷100, ESR ≈ 98,9 %
+    expect(rulerPosition({ standardUsd: 0.323, paidUsd: 0.0034 })!).toBeLessThan(2 / 3);
+    expect(effectiveSavingsRate({ standardUsd: 0.323, paidUsd: 0.0034 })!).toBeCloseTo(0.9895, 3);
+    expect(effectiveSavingsRate({ standardUsd: 0, paidUsd: 0 })).toBeNull();
+    expect(effectiveSavingsRate({ standardUsd: 1, paidUsd: 2 })).toBe(0);
   });
 });

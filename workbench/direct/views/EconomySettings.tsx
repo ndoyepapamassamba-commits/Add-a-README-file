@@ -6,7 +6,7 @@ import { Coins, Trash2 } from 'lucide-react';
 import { Button, Field, Select, Toggle } from '../../web/components/ui';
 import { clearEconomyNote, economyOptions, economyState, onEconomyChange, resetEconomyLedger, setEconomyOptions } from '../lib/economy';
 import { useStore } from '../lib/store';
-import { ecoStats, factorLabel, isPremium, wilsonLower, type EcoPath } from '../../server/jev/economy';
+import { ecoStats, effectiveSavingsRate, factorLabel, isPremium, rulerPosition, wilsonLower, type EcoPath, type EcoStats } from '../../server/jev/economy';
 import { isAnonFree } from '../../server/llm/freeRoute';
 
 const PATH_LABEL: Record<EcoPath, string> = {
@@ -19,6 +19,10 @@ const PATH_LABEL: Record<EcoPath, string> = {
   'premium-direct': 'Sans brouillon possible (données, images…)',
 };
 const usd = (n: number) => (n < 0.01 ? `${n.toFixed(5)} $` : `${n.toFixed(3)} $`);
+const pct = (r: number) => `${(r * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`;
+/** Ce qu'il manque pour ÷100, en multiplicateur (ex. « ×3,2 de plus »). */
+const factorGap = (s: Pick<EcoStats, 'standardUsd' | 'paidUsd'>) =>
+  `×${((100 * s.paidUsd) / s.standardUsd).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} de plus`;
 
 export function EconomySettings() {
   const [, rerender] = useReducer((x: number) => x + 1, 0);
@@ -37,6 +41,8 @@ export function EconomySettings() {
   );
   const paid = state ? state.ledger.filter((e) => e.premium !== '—') : [];
   const s = ecoStats(paid);
+  const pos = rulerPosition(s);
+  const esr = effectiveSavingsRate(s);
   const cross = state ? state.ledger.filter((e) => e.path === 'free-crosschecked').length : 0;
 
   return (
@@ -87,23 +93,37 @@ export function EconomySettings() {
           </span>
           {cross > 0 && <span>· {cross} réponse(s) gratuite(s) contre-vérifiée(s)</span>}
         </div>
-        {s.n > 0 && (
-          <div className="my-2" data-testid="economy-bars">
-            <div className="mb-1 text-[12.5px] text-fg">
-              Par réponse : <b>{usd(s.paidUsd / s.n)}</b> payés au lieu de {usd(s.standardUsd / s.n)}
+        {s.n > 0 && pos !== null && (
+          <div className="my-2" data-testid="economy-bars" data-pos={pos.toFixed(3)}>
+            <div className="mb-1 flex flex-wrap items-baseline gap-x-3 text-[12.5px] text-fg">
+              <span>
+                Par réponse : <b>{usd(s.paidUsd / s.n)}</b> payés au lieu de {usd(s.standardUsd / s.n)}
+              </span>
+              {esr !== null && (
+                <span title="Taux d’économie effectif (ESR, FinOps Foundation) : part du prix standard qui n’a pas été payée.">
+                  Économie effective : <b data-testid="economy-esr">{pct(esr)}</b>
+                </span>
+              )}
             </div>
-            {[
-              { label: 'Prix standard', v: s.standardUsd, cls: 'bg-muted/40' },
-              { label: 'Payé avec JEV', v: s.paidUsd, cls: 'bg-accent' },
-            ].map((b) => (
-              <div key={b.label} className="mb-1 flex items-center gap-2 text-[11px]">
-                <span className="w-24 shrink-0">{b.label}</span>
-                <div className="h-2.5 flex-1 rounded bg-line/40">
-                  <div className={`h-2.5 rounded ${b.cls}`} style={{ width: `${Math.max(0.5, s.standardUsd ? (b.v / s.standardUsd) * 100 : 0)}%` }} />
-                </div>
-                <span className="w-20 shrink-0 text-right">{usd(b.v)}</span>
-              </div>
-            ))}
+            {/* Règle par décades (échelle log) : une barre linéaire rendrait « payé » invisible dès ÷50 ; ici chaque
+                décade = ÷10, l’objectif ÷100 est un repère fixe aux 2/3, comme la cible d’un bullet chart. */}
+            <div className="relative mt-3 h-3 rounded-full" role="img" aria-label={`Facteur ${factorLabel(s)} sur une règle allant de ÷1 à ÷1000, objectif ÷100`}>
+              <div className="absolute inset-y-0 left-0 w-1/3 rounded-l-full bg-warn/25" />
+              <div className="absolute inset-y-0 left-1/3 w-1/3 bg-accent/20" />
+              <div className="absolute inset-y-0 right-0 w-1/3 rounded-r-full bg-ok/25" />
+              <div className="absolute inset-y-[3px] left-0 rounded-full bg-accent" style={{ width: `${Math.max(1.5, pos * 100)}%` }} />
+              <div className="absolute -inset-y-1 w-[2px] bg-fg" style={{ left: '66.667%' }} title="Objectif ÷100" />
+            </div>
+            <div className="relative mt-1 h-4 text-[10.5px]">
+              {['÷1', '÷10', '÷100', '÷1000'].map((t, i) => (
+                <span key={t} className={`absolute -translate-x-1/2 ${t === '÷100' ? 'font-semibold text-fg' : ''}`} style={{ left: `${(i / 3) * 100}%` }}>
+                  {t}
+                </span>
+              ))}
+            </div>
+            <div className="text-[11px]">
+              {pos >= 2 / 3 ? 'Objectif ÷100 atteint.' : `Il manque ${factorGap(s)} pour atteindre ÷100.`} Zones : rouge &lt; ÷10 · orange ÷10–÷100 · vert ≥ ÷100.
+            </div>
           </div>
         )}
         <div className="text-[11.5px]">
@@ -117,7 +137,8 @@ export function EconomySettings() {
                   <td className="py-0.5 pr-2">{PATH_LABEL[p]}</td>
                   <td className="pr-2 text-right">{b.n}</td>
                   <td className="pr-2 text-right">{usd(b.standardUsd)}</td>
-                  <td className="text-right">{usd(b.paidUsd)}</td>
+                  <td className="pr-2 text-right">{usd(b.paidUsd)}</td>
+                  <td className="text-right font-semibold text-fg">{factorLabel(b)}</td>
                 </tr>
               ))}
             </tbody>

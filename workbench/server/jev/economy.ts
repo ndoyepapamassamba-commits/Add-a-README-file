@@ -88,6 +88,19 @@ export function factorLabel(s: Pick<EcoStats, 'standardUsd' | 'paidUsd' | 'n'>):
   return f >= 10 ? `÷${Math.round(f)}` : `÷${f.toFixed(1).replace('.', ',')}`;
 }
 
+/** Taux d'économie effectif (ESR, FinOps Foundation) : part du prix standard qui n'a PAS été payée. */
+export function effectiveSavingsRate(s: Pick<EcoStats, 'standardUsd' | 'paidUsd'>): number | null {
+  return s.standardUsd > 0 ? Math.max(0, 1 - s.paidUsd / s.standardUsd) : null;
+}
+/** Règle par décades : ÷1 → 0, ÷10 → 1/3, ÷100 (objectif) → 2/3, ÷1000 → 1. 0 $ payé = bout de la règle. */
+export const RULER_DECADES = 3;
+export function rulerPosition(s: Pick<EcoStats, 'standardUsd' | 'paidUsd'>): number | null {
+  if (!(s.standardUsd > 0)) return null;
+  if (s.paidUsd <= 0) return 1;
+  const f = s.standardUsd / s.paidUsd;
+  return Math.min(1, Math.max(0, Math.log10(f) / RULER_DECADES));
+}
+
 // ── contrôle local du brouillon (0 $) ────────────────────────────────────────────────────────────────────────────────
 const REFUSAL = /\b(je ne (peux|suis pas en mesure)|i can(no|')t (help|assist|do)|as an ai|en tant qu['’]ia|je n['’]ai pas accès)\b/i;
 const EN_WORDS = /\b(the|and|with|which|this|that|is|are|of)\b/gi;
