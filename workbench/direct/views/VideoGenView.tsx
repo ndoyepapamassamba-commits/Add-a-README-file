@@ -37,6 +37,7 @@ import { projectDepth, projectImages, type ProjectImage } from '../lib/videogen/
 import { importTroupePacks, loadTroupePacks, type PackState } from '../lib/videogen/troupePacks';
 import { packFileName } from '../../server/jev/videogen/troupePack';
 import { imageSceneHtml } from '../lib/videogen/videoScene3d';
+import { isAnonFree } from '../../server/llm/freeRoute';
 
 type Mode = 'image' | 'idea' | 'video';
 const LOOK_LABELS: Record<(typeof LOOKS)[number], string> = { cinematic: 'Cinéma', cartoon: 'Dessin animé', lowpoly: 'Low poly', clay: 'Pâte à modeler', neon: 'Néon' };
@@ -111,7 +112,7 @@ function IdeaToVideo() {
   const file = useRef<HTMLInputElement>(null);
   const toast = useStore((s) => s.toast);
 
-  const pickModel = () => model || (defaultModel && defaultModel !== 'auto' ? defaultModel : (models.find((x) => /claude-sonnet|gpt-5|gemini-2\.5-pro|qwen3/i.test(x.id))?.id ?? models[0]?.id ?? ''));
+  const pickModel = () => model || (defaultModel && defaultModel !== 'auto' ? defaultModel : (models.find((x) => !isAnonFree(x.id) && /claude-sonnet|gpt-5|gemini-2\.5-pro|qwen3/i.test(x.id))?.id ?? models[0]?.id ?? ''));
   useEffect(() => {
     void bridgeHealth().then((h) => setBridge(Boolean(h)));
     return () => dir.current?.dispose();
