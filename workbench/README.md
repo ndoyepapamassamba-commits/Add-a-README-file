@@ -255,3 +255,32 @@ Couche additive au-dessus de JEV V5 (registre de capacités, Skill Factory, Mode
 
 ## JEV Champion Science Engine (v1.2)
 Laboratoire Champion ↔ Challenger ↔ Premium avec statistiques réelles (IC, non-infériorité), rollback et Teacher ROI. Voir [docs/JEV-CHAMPION-SCIENCE.md](docs/JEV-CHAMPION-SCIENCE.md).
+
+## L'analyste (v62) : lecture complète, toute demande, sources et recherche gratuite
+
+- **Lecture rédigée complète d'un classement** (ex. Top 20 de contreparties), écrite par des règles, sans modèle, et
+  chaque chiffre vérifié contre le fichier (`server/services/dossier/creditFacts.ts`, `rankingLens.ts`) :
+  - lentille crédit : concentration (HHI, n80), impayés, provisions et couverture (aucune insuffisance conclue sans
+    PD / LGD / stage), garanties, utilisation des limites ;
+  - la mesure de base est l'encours, jamais les limites autorisées ;
+  - sans vocabulaire crédit, une lecture générique de classement (concentration, chaque mesure rapportée à la principale,
+    entités hors norme nommées) : ventes, agences, fournisseurs…
+- **Multimodal** : les notes de l'analyste (autres requêtes, documents, images, web) forment le chapitre « Lecture de
+  l'analyste » ; un chiffre absent du fichier y est marqué « à vérifier ».
+- **Corpus de sources** (`sourceCorpus.ts`) : références réelles et datées (IFRS 9, Bâle, EBA, BCEAO, OHADA, HHI, Pareto,
+  Minto, IBCS…), puis la mémoire de recherche de l'app, puis une recherche Internet sur le sujet du chat.
+- **Recherche Internet gratuite, sans clé ni compte** (`direct/lib/freeEngines.ts`) — quatre moteurs complets :
+  - Tavily sans clé, Parallel Search (MCP public), Exa (MCP public), Firecrawl sans clé ;
+  - relais : Wikipédia, Crossref, DuckDuckGo.
+  - **Rotation** : chaque moteur a son quota, les quotas s'additionnent ; un moteur saturé se repose 15 min.
+  - **Aucun n'est illimité** : compteur mensuel par moteur dans Paramètres → Recherche web.
+  - Bouton **« Tester la recherche gratuite »** : statut, latence, résultats et cause d'échec de chaque service, depuis la
+    page de l'app.
+- **Recherche affinée selon le cas du chat** (`server/jev/web/searchPlan.ts`) :
+  - intention (actualité, réglementation, étude, entreprise, données, design, méthode) ;
+  - zone et langue (XOF / BCEAO → UMOA) ;
+  - la forme que chaque moteur lit le mieux ;
+  - ordre des moteurs par cas, sources officielles remontées, titres de PDF réparés.
+- **Galerie de designs Internet** : images Firecrawl avec leur taille en plus de Tavily, vignettes et logos écartés,
+  originaux Dribbble / Behance remontés, vitrines premium (Dribbble shots, Behance, Awwwards, Mobbin, Refero…).
+- Test réseau réel : `LIVE_WEB=1 npx playwright test tests/e2e/freesearch.live.spec.ts` (après `npm run build:direct:single`).

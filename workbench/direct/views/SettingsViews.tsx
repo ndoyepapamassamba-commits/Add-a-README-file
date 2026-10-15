@@ -13,6 +13,54 @@ import { BenchmarkLab } from '../../web/components/BenchmarkLab';
 import { runBenchmark } from '../lib/bench';
 import { INTEL_ENDPOINT, parseIntel, type IntelData } from '../../server/llm/modelIntel';
 import { DEFAULT_AUTO_TIERS } from '../../server/services/settings';
+import { probeFreeSearch, probeSummary, type ProbeRow } from '../lib/freeSearchProbe';
+import { keylessUsage } from '../lib/freeEngines';
+
+/** « Tester la recherche gratuite » : each keyless service called from this page, with status, latency and reason. */
+function FreeSearchProbe() {
+  const [rows, setRows] = useState<ProbeRow[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const run = async () => {
+    setBusy(true);
+    try {
+      setRows(await probeFreeSearch());
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="sm:col-span-2" data-testid="free-search-probe">
+      <Button size="sm" variant="ghost" onClick={() => void run()} disabled={busy} data-testid="free-search-probe-run">
+        <RefreshCw size={13} className={busy ? 'animate-spin' : ''} /> {busy ? 'Test en cours…' : 'Tester la recherche gratuite'}
+      </Button>
+      <div className="mt-2 text-[12px] text-muted" data-testid="keyless-usage">
+        Ce mois-ci (compté sur cet appareil) :{' '}
+        {keylessUsage()
+          .map((u) => `${u.label} ${u.month}${u.resting ? ' (au repos : quota atteint)' : ''}${u.lastQuota ? ` · dernière limite ${new Date(u.lastQuota).toLocaleString('fr-FR')}` : ''}`)
+          .join(' · ')}
+        . Aucun de ces moteurs n’est illimité : leurs quotas gratuits s’additionnent, un moteur saturé passe la main au suivant, et une question déjà cherchée est resservie par la mémoire sans nouvel appel.
+      </div>
+      {rows && (
+        <div className="mt-2 text-[12px]">
+          <div className="mb-1 font-medium" data-testid="free-search-probe-summary">{probeSummary(rows)}</div>
+          <table className="w-full">
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} data-testid={`probe-${r.id}`} data-ok={r.ok ? '1' : '0'} className="border-t border-line">
+                  <td className="py-1 pr-2">{r.ok ? '✓' : '✗'} {r.label}</td>
+                  <td className="py-1 pr-2 tabular-nums text-muted">{r.status ?? '—'}</td>
+                  <td className="py-1 pr-2 tabular-nums text-muted">{r.ms} ms</td>
+                  <td className="py-1 pr-2 tabular-nums text-muted">{r.hits} résultat(s)</td>
+                  <td className="py-1 text-muted">{r.note}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /** Browser refresh of the scores: works only if OpenRouter allows this origin (CORS). */
 async function browserIntel(models: { id: string; slug?: string }[]): Promise<IntelData> {
@@ -298,12 +346,13 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
 
       <Section title="Recherche web">
         <div className="grid gap-x-3 rounded-xl border border-line bg-panel p-4 sm:grid-cols-2">
-          <Field label="Clé Tavily (recommandé, gratuit)" hint="tavily.com → inscription → API key (tvly-…). Crédits gratuits chaque mois, sans carte ; fonctionne directement, sans relais.">
+          <Field label="Clé Tavily (facultative)" hint="Sans clé, l’app fait tourner quatre moteurs web gratuits sans compte — Tavily, Parallel Search, Exa et Firecrawl (chacun son quota, un moteur saturé est mis au repos 15 min ; la requête est affinée selon le cas du chat) — puis Wikipédia, Crossref et DuckDuckGo. Une clé (tavily.com → API key tvly-…, 1 000 crédits gratuits par mois, sans carte) donne un quota à vous ; quand il est épuisé, l’app repasse seule sur l’accès sans clé.">
             <Input type="password" value={s.tavilyKey ?? ''} onChange={(e) => patch({ tavilyKey: e.target.value.trim() })} placeholder="tvly-…" data-testid="tavily-key" />
           </Field>
           <Field label="Si la recherche gratuite échoue, utiliser la recherche OpenRouter (payante)">
             <Toggle checked={s.braveFallback !== false} onChange={(v) => patch({ braveFallback: v })} />
           </Field>
+          <FreeSearchProbe />
         </div>
       </Section>
 

@@ -119,9 +119,13 @@ export function verifyAgainstBrief(d: Dossier, b: Brief): { checked: number; unk
 /** Rules only (no model): a dossier built from the brief — honest, measured, thinner than the model's; the depth rules say so. */
 export function dossierFromBrief(i: ComposeInput): Dossier {
   const b = i.brief;
-  const kpis = b ? briefKpis(b) : [];
+  // A table read through a LENS (credit, else the generic ranking reading): its chapters lead, the dimension chapters
+  // follow, the data quality closes when it has something to say (v62 — the Top 20 Local Corporate had only « qualité des
+  // données »). Under a lens an extreme value is the concentration itself, not a quality defect.
+  const lens = b?.lens?.narrative ?? null;
+  const kpis = lens ? lens.kpis : b ? briefKpis(b) : [];
   const figs = b ? briefFigures(b) : [];
-  const chapters: Record<string, unknown>[] = [];
+  const chapters: Record<string, unknown>[] = lens ? [...lens.chapters] : [];
   if (b) {
     const dims = b.dims.filter((d) => d.dim !== b.entity).slice(0, 4);
     dims.forEach((dim, k) => {
@@ -144,19 +148,35 @@ export function dossierFromBrief(i: ComposeInput): Dossier {
       });
     });
     if (b.trend && b.trend.points.length >= 3) chapters.push({ title: 'Évolution', headline: `${b.trend.last} : ${b.trend.delta != null ? `${b.trend.delta >= 0 ? '+' : ''}${Math.round(b.trend.delta * 100)} %` : 'dernière période'} par rapport à la précédente`, constats: [`${b.trend.points.length} périodes observées ; meilleure : ${b.trend.best}, plus faible : ${b.trend.worst}`], analyse: ['La tendance se lit sur la figure : la dernière période est à comparer à la précédente et au pic.'], cadre: [], cas: [], figures: figs.filter((f) => f.kind === 'line'), tables: [], recommandations: [{ priority: 'P2', title: 'Suivi mensuel de la tendance', action: 'Mettre la série sous suivi mensuel avec un seuil d’alerte.', owner: 'Pilotage', due: 'Prochain arrêté', kpi: 'Série publiée chaque mois' }] });
-    if (b.quality.length) chapters.push({ title: 'Qualité des données', headline: `${b.quality.filter((q) => q.missingPct > 0.2).length} colonne(s) avec plus d'un cinquième de valeurs manquantes`, constats: [`${b.quality.length} colonne(s) lue(s) ; ${b.quality.filter((q) => q.missingPct > 0).length} avec des valeurs manquantes ; ${b.quality.filter((q) => q.missingPct > 0.2).length} au-delà d'un cinquième`, ...b.quality.filter((q) => q.missingPct > 0).slice(0, 4).map((q) => `${q.col} : ${fmtPct(q.missingPct)} de valeurs manquantes, ${fmtInt(q.distinct)} valeurs distinctes`)], analyse: ['Une donnée manquante n’est pas un zéro : les colonnes incomplètes sont exclues du dénominateur.'], cadre: [], cas: [], figures: [], tables: [{ head: ['Colonne', 'Type', 'Manquant', 'Distinct'], rows: b.quality.slice(0, 15).map((q) => [q.col, q.type, fmtPct(q.missingPct), fmtInt(q.distinct)]) }], recommandations: [{ priority: 'P3', title: 'Compléter les colonnes incomplètes à la source', action: 'Renseigner les champs manquants dans le système source avant le prochain arrêté.', owner: 'Propriétaire de la donnée', due: 'Prochain arrêté', kpi: 'Taux de complétude ≥ 95 %' }] });
+    if (b.quality.length && (!lens || b.quality.some((q) => q.missingPct > 0.2) || b.anomalies.some((x) => !/extrême/.test(x)))) chapters.push({ title: 'Qualité des données', headline: `${b.quality.filter((q) => q.missingPct > 0.2).length} colonne(s) avec plus d'un cinquième de valeurs manquantes`, constats: [`${b.quality.length} colonne(s) lue(s) ; ${b.quality.filter((q) => q.missingPct > 0).length} avec des valeurs manquantes ; ${b.quality.filter((q) => q.missingPct > 0.2).length} au-delà d'un cinquième`, ...b.quality.filter((q) => q.missingPct > 0).slice(0, 4).map((q) => `${q.col} : ${fmtPct(q.missingPct)} de valeurs manquantes, ${fmtInt(q.distinct)} valeurs distinctes`)], analyse: ['Une donnée manquante n’est pas un zéro : les colonnes incomplètes sont exclues du dénominateur.'], cadre: [], cas: [], figures: [], tables: [{ head: ['Colonne', 'Type', 'Manquant', 'Distinct'], rows: b.quality.slice(0, 15).map((q) => [q.col, q.type, fmtPct(q.missingPct), fmtInt(q.distinct)]) }], recommandations: [{ priority: 'P3', title: 'Compléter les colonnes incomplètes à la source', action: 'Renseigner les champs manquants dans le système source avant le prochain arrêté.', owner: 'Propriétaire de la donnée', due: 'Prochain arrêté', kpi: 'Taux de complétude ≥ 95 %' }] });
   }
+  // THE ANALYST'S OWN READING (any modality: data queries, documents, images, the web — written by the agent): its
+  // lines become a chapter; a figure that is not in the file is marked « à vérifier », never presented as computed.
+  const noteLines = (i.notes ?? '')
+    .split('\n')
+    .map((l) => l.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, '').replace(/\*\*/g, '').trim())
+    .filter((l) => l.length > 25 && !/^#/.test(l))
+    .slice(0, 12);
+  if (noteLines.length) {
+    const flagged = noteLines.map((l) => {
+      const unknown = b ? checkNarrative(l, b).unknown : [];
+      return unknown.length ? `${l} (chiffre(s) hors fichier, à vérifier : ${unknown.slice(0, 3).join(', ')})` : l;
+    });
+    chapters.push({ title: "Lecture de l'analyste", headline: flagged[0]!.slice(0, 150), constats: flagged.slice(0, 8), analyse: flagged.slice(8), cadre: [], cas: [], figures: [], tables: [], recommandations: [], lecture: undefined });
+  }
+  const research = i.research ?? [];
   const raw = {
     title: i.title || b?.title || i.focus.slice(0, 80),
     subtitle: i.focus,
     kicker: `${i.audience ?? 'Comité'} · ${i.asOf ? `arrêté du ${i.asOf}` : todayFr()}`.toUpperCase(),
-    thesis: b ? `${b.measureLabel} : ${fmtFact(b.kpis[0] ?? { id: '', label: '', value: 0, fmt: 'int', method: '' })} sur ${b.rows.toLocaleString('fr-FR')} lignes. ${chapters[0]?.headline ?? ''}. Les chapitres suivent les dimensions qui expliquent la mesure ; les recommandations ciblent les catégories qui portent les quatre cinquièmes du total.` : i.focus,
+    thesis: lens ? lens.thesis : b ? `${b.measureLabel} : ${fmtFact(b.kpis[0] ?? { id: '', label: '', value: 0, fmt: 'int', method: '' })} sur ${b.rows.toLocaleString('fr-FR')} lignes. ${chapters[0]?.headline ?? ''}. Les chapitres suivent les dimensions qui expliquent la mesure ; les recommandations ciblent les catégories qui portent les quatre cinquièmes du total.` : i.focus,
     kpis,
-    messages: chapters.map((c) => String(c.headline)).filter(Boolean),
-    method: { steps: [{ label: 'Lecture du fichier', detail: b ? `${b.rows} lignes, ${b.columns} colonnes` : '' }, { label: 'Brief local', detail: 'mesure, dimensions, concentration, tendance, qualité' }, { label: 'Dossier par règles', detail: 'aucun modèle sollicité' }], rules: ['Aucun chiffre saisi à la main : tout vient du brief', 'Une donnée manquante est exclue du dénominateur'], research: (i.research ?? []).slice(0, 4).map((r, k) => `${r.lesson ?? r.title} [${r.axis ?? 'R1'}-${String(k + 1).padStart(2, '0')}]`) },
+    messages: [...(lens ? lens.messages : []), ...chapters.slice(lens ? lens.chapters.length : 0).map((c) => String(c.headline))].filter(Boolean).slice(0, 10),
+    method: { steps: [{ label: 'Lecture du fichier', detail: b ? `${b.rows} lignes, ${b.columns} colonnes` : '' }, { label: 'Brief local', detail: lens ? `mesure, concentration, ratios — ${b?.lens?.label}` : 'mesure, dimensions, concentration, tendance, qualité' }, ...(research.length ? [{ label: 'Sources', detail: `${research.length} référence(s) : corpus, connaissances apprises, recherche sur le sujet` }] : []), { label: 'Dossier par règles', detail: 'aucun modèle sollicité, chaque phrase porte un chiffre du fichier' }], rules: ['Aucun chiffre saisi à la main : tout vient du brief', 'Une donnée manquante est exclue du dénominateur', 'Aucune conclusion au-delà de ce que les colonnes permettent (ex. pas d’insuffisance de provision sans PD / LGD / stage)'], research: research.slice(0, 6).map((r, k) => `${r.lesson ?? r.title} [${r.axis ?? 'R1'}-${String(k + 1).padStart(2, '0')}]`) },
     chapters,
-    decisions: chapters.slice(0, 3).map((c) => `Valider la revue ciblée proposée pour « ${c.title} » et désigner son responsable.`),
+    decisions: lens && lens.decisions.length ? lens.decisions.slice(0, 6) : chapters.slice(0, 3).map((c) => `Valider la revue ciblée proposée pour « ${c.title} » et désigner son responsable.`),
     hypotheses: [
+      ...(lens ? lens.hypotheses : []),
       { title: 'Mesure principale', text: b ? `« ${b.measureLabel} » est la colonne analysée (${b.measure ?? 'choisie par le brief'}).` : 'Non précisée.' },
       { title: 'Dimensions', text: b ? `Dimensions retenues : ${b.dims.map((d) => d.label).join(', ')}.` : 'Non précisées.' },
       { title: 'Valeurs manquantes', text: 'Une cellule vide est « non renseignée », exclue du dénominateur ; un zéro saisi est un zéro.' },
@@ -164,8 +184,8 @@ export function dossierFromBrief(i: ComposeInput): Dossier {
       { title: 'Arrêté', text: i.asOf ? `Chiffres arrêtés au ${i.asOf}.` : `Chiffres lus le ${todayFr()}.` },
     ],
     dataQuality: b ? { items: b.quality.slice(0, 10).map((q) => ({ item: q.col, note: `${q.type} · ${fmtPct(q.missingPct)} manquant`, score: Math.round(100 * (1 - q.missingPct)) })) } : undefined,
-    glossary: [{ term: 'HHI', def: 'Indice de Herfindahl : somme des parts au carré, 1 = une seule catégorie.' }, { term: 'η²', def: 'Part de la variance de la mesure expliquée par une dimension.' }, { term: 'n80', def: 'Nombre de catégories nécessaires pour atteindre 80 % du total.' }, { term: 'Brief', def: 'Faits calculés localement sur le fichier, avant toute rédaction.' }, { term: 'P1 / P2 / P3', def: 'Priorité d’une recommandation : immédiate, sous trois mois, programme.' }, { term: 'Arrêté', def: 'Date de référence des chiffres.' }],
-    sources: (i.research ?? []).map((r, k) => ({ id: `${r.axis ?? 'R1'}-${String(k + 1).padStart(2, '0')}`, axis: r.axis ?? 'R1', title: r.title, author: r.author, date: r.date, url: r.url, lesson: r.lesson ?? '—' })),
+    glossary: [...(lens ? lens.glossary.filter((g) => g.term !== 'HHI' && g.term !== 'n80') : []), { term: 'HHI', def: 'Indice de Herfindahl : somme des parts au carré, 1 = une seule catégorie.' }, { term: 'η²', def: 'Part de la variance de la mesure expliquée par une dimension.' }, { term: 'n80', def: 'Nombre de catégories nécessaires pour atteindre 80 % du total.' }, { term: 'Brief', def: 'Faits calculés localement sur le fichier, avant toute rédaction.' }, { term: 'P1 / P2 / P3', def: 'Priorité d’une recommandation : immédiate, sous trois mois, programme.' }, { term: 'Arrêté', def: 'Date de référence des chiffres.' }],
+    sources: research.map((r, k) => ({ id: `${r.axis ?? 'R1'}-${String(k + 1).padStart(2, '0')}`, axis: r.axis ?? 'R1', title: r.title, author: r.author, date: r.date, url: r.url, lesson: r.lesson ?? '—' })),
     minutes: i.minutes,
   };
   return normalizeDossier(raw, { date: todayFr(), org: i.org, unit: i.unit, author: i.author, audience: i.audience, asOf: i.asOf, confidentiality: i.confidentiality, dataSource: b ? `${b.source} — ${b.rows.toLocaleString('fr-FR')} lignes` : undefined, provenance: 'Dossier construit par règles depuis le brief (aucun modèle) : les indicateurs sont ceux du brief.' });

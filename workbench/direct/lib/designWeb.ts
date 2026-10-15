@@ -1,8 +1,10 @@
-// Designs found on the Internet (thumbnails before validation): image search through the user's Tavily key, then a small
+// Designs found on the Internet (thumbnails before validation): image search (Tavily — key or keyless — and Firecrawl
+// keyless, ranked by quality), then a small
 // vision model reads the chosen image and returns its palette and font → a custom premium theme.
 import { useStore } from './store';
 import { complete } from './llm';
-import { designQueries, parseTavilyImages, tavilyImagesRequest, type DesignStyle } from '../../server/jev/web/search';
+import { designQueries, parseTavilyImages, rankDesignImages, tavilyImagesRequest, type DesignStyle, type WebImage } from '../../server/jev/web/search';
+import { keylessImages } from './freeEngines';
 import { PALETTE_PROMPT, parsePalette, type DeliverableKind } from '../../server/services/premiumDesigns';
 import { withVisionModel } from './visionGuard';
 import { paletteFromPixels } from '../../server/services/imagePalette';
@@ -17,29 +19,38 @@ import { extractSiteTokens, siteLayout, stylesheetUrls, type SiteTokens } from '
 export async function searchDesigns(
   kind: DeliverableKind,
   opts: { page?: number; style?: DesignStyle; extra?: string; seen?: Set<string> } = {},
-): Promise<{ url: string; description: string }[]> {
-  const key = useStore.getState().settings.tavilyKey;
-  if (!key) throw new Error('Ajoutez une clé Tavily dans Paramètres pour voir des designs sur Internet.');
+): Promise<WebImage[]> {
+  // The user's key when there is one; otherwise — or when its monthly credits are used up — Tavily's FREE KEYLESS
+  // access (same results, no account; v62). Firecrawl's free keyless image search runs alongside on the first two
+  // queries: it gives each image's SIZE, so thumbnails are dropped and the full-size shots rise to the top.
+  const key = useStore.getState().settings.tavilyKey || null;
   const queries = designQueries(kind, opts.page ?? 0, opts.style ?? 'Tous', opts.extra ?? '');
-  const settled = await Promise.allSettled(
-    queries.map(async (q) => {
-      const rq = tavilyImagesRequest(key, q);
-      const res = await fetch(rq.url, rq.init);
-      if (!res.ok) throw new Error(`Tavily HTTP ${res.status}`);
-      return parseTavilyImages(await res.json());
-    }),
-  );
-  const ok = settled.filter((r): r is PromiseFulfilledResult<{ url: string; description: string }[]> => r.status === 'fulfilled');
-  if (!ok.length) throw (settled[0] as PromiseRejectedResult).reason;
-  const seen = opts.seen ?? new Set<string>();
-  const out: { url: string; description: string }[] = [];
-  for (const r of ok)
-    for (const img of r.value) {
-      const k = img.url.split('?')[0]!;
-      if (seen.has(k)) continue;
-      seen.add(k);
-      out.push(img);
+  const tavily = queries.map(async (q) => {
+    let rq = tavilyImagesRequest(key, q);
+    let res = await fetch(rq.url, rq.init);
+    if (!res.ok && key && [401, 403, 429, 432, 433].includes(res.status)) {
+      rq = tavilyImagesRequest(null, q);
+      res = await fetch(rq.url, rq.init);
     }
+    if (!res.ok) throw new Error(`Tavily HTTP ${res.status}`);
+    return parseTavilyImages(await res.json()) as WebImage[];
+  });
+  const firecrawl = queries.slice(0, 2).map((q) => keylessImages(q, 10));
+  const settled = await Promise.allSettled([...tavily, ...firecrawl]);
+  const ok = settled.filter((r): r is PromiseFulfilledResult<WebImage[]> => r.status === 'fulfilled');
+  if (!ok.some((r) => r.value.length) && settled.some((r) => r.status === 'rejected')) throw (settled.find((r) => r.status === 'rejected') as PromiseRejectedResult).reason;
+  const seen = opts.seen ?? new Set<string>();
+  // Interleave the sources before ranking, so equal scores keep a mix of both engines.
+  const lists = ok.map((r) => r.value);
+  const mixed: WebImage[] = [];
+  for (let i = 0; lists.some((l) => l.length > i); i++) for (const l of lists) if (l[i]) mixed.push(l[i]!);
+  const out: WebImage[] = [];
+  for (const img of rankDesignImages(mixed, 80)) {
+    const k = img.url.split('?')[0]!;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(img);
+  }
   return out;
 }
 

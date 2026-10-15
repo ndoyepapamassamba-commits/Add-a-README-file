@@ -154,7 +154,7 @@ export function human(col: string, max = 32): string {
   const words = s.split(/\s+/).filter(Boolean);
   const out: string[] = [];
   for (const w of words) {
-    if (/^[A-Z0-9]{2,5}$/.test(w)) out.push(w);
+    if (/^\(?[A-Z0-9]{2,5}\)?$/.test(w)) out.push(w); // acronyms and units « (XOF) » keep their capitals
     else if (DROP.has(w.toLowerCase())) continue;
     else if (w.toLowerCase() === 'local') out.push('locales');
     else out.push(WORDS[w.toLowerCase()] ?? w.toLowerCase());

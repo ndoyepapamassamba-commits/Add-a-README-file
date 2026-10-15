@@ -73,12 +73,13 @@ export async function fetchHeadlines(): Promise<{ headlines: Headline[]; sources
   await tryOne('GDELT · presse ivoirienne', async () => parseGdelt(await getJson(gdeltUrl())));
   await tryOne('Wikipédia · actualité', async () => parseWikiNews(await getJson(WIKI_NEWS_URL)).slice(0, 10));
   const s = useStore.getState().settings;
-  if (out.length < 8 && (s.tavilyKey || s.serperKey)) {
-    const provider = s.tavilyKey ? 'tavily' : 'serper';
-    await tryOne(provider === 'tavily' ? 'Tavily' : 'Serper', async () => {
+  // Tavily with the user's key, else its free keyless access (v62); Serper when only its key is set.
+  if (out.length < 8) {
+    const provider = s.tavilyKey || !s.serperKey ? 'tavily' : 'serper';
+    await tryOne(provider === 'tavily' ? (s.tavilyKey ? 'Tavily' : 'Tavily sans clé') : 'Serper', async () => {
       const h: Headline[] = [];
       for (const q of NEWS_QUERIES.slice(0, 2)) {
-        const rq = provider === 'tavily' ? tavilyRequest(s.tavilyKey!, q, 6) : serperRequest(s.serperKey!, q, 6);
+        const rq = provider === 'tavily' ? tavilyRequest(s.tavilyKey || null, q, 6) : serperRequest(s.serperKey!, q, 6);
         const j = await getJson(rq.url, rq.init);
         for (const x of provider === 'tavily' ? parseTavily(j, 6) : parseSerper(j, 6)) h.push({ title: `${x.title} — ${x.snippet}`, source: provider });
       }

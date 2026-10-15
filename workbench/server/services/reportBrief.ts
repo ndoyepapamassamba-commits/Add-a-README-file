@@ -6,6 +6,8 @@
 // Pure: no DOM, no network, no store.
 import { eta2, human, isRate, profileColumns } from './dashInsight';
 import { toDate, toNumber, type Cell } from './dataCore';
+import { columnConcepts } from './dataLexicon';
+import { lensOf, type Lens } from './dossier/rankingLens';
 
 export interface Fact {
   id: string;
@@ -92,6 +94,8 @@ export interface Brief {
   quality: QualityRow[];
   /** Every number the brief states (for the narrative check). */
   numbers: number[];
+  /** The business reading of an entity table (credit lens, else the generic ranking reading) — figures from the rows. */
+  lens?: Lens | null;
 }
 
 type Row = Record<string, unknown>;
@@ -165,11 +169,19 @@ export function buildBrief(columns: string[], rows: Row[], o: { title?: string; 
   const rateCols = numCols.filter((c) => isRate(c.col) || (c.values.every((v) => v >= 0 && v <= 1) && /%|taux|rate|ratio|part|share/i.test(c.col)));
   const measures = numCols.filter((c) => !rateCols.includes(c));
   const asked = o.measure ? measures.find((c) => c.col.toLowerCase() === o.measure!.toLowerCase()) : undefined;
+  // Business weight of a column (v62: « Limites » won over « Encours total » by its larger total): what is owed /
+  // exposed is the measure, an authorised limit or a count never is.
+  const weight = (col: string) => {
+    const c = columnConcepts(col);
+    if (c.has('limit') || c.has('count')) return 0.25;
+    if (c.has('outstanding') || c.has('exposure')) return 8;
+    return MONEY_NAME.test(col) ? 4 : 1;
+  };
   const main =
     asked ??
     [...measures].sort((a, b) => {
-      const sa = Math.abs(a.values.reduce((x, y) => x + y, 0)) * (MONEY_NAME.test(a.col) ? 4 : 1);
-      const sb = Math.abs(b.values.reduce((x, y) => x + y, 0)) * (MONEY_NAME.test(b.col) ? 4 : 1);
+      const sa = Math.abs(a.values.reduce((x, y) => x + y, 0)) * weight(a.col);
+      const sb = Math.abs(b.values.reduce((x, y) => x + y, 0)) * weight(b.col);
       return sb - sa;
     })[0];
   const measure = main?.col ?? null;
@@ -323,7 +335,15 @@ export function buildBrief(columns: string[], rows: Row[], o: { title?: string; 
   }
   if (dup) kpis.push({ id: 'dup', label: 'Lignes en double', value: dup, fmt: 'int', method: 'lignes identiques sur toutes les colonnes' });
   for (const q of quality) note(Math.round(q.missingPct * 1000) / 10);
-  return { title: o.title ?? 'Analyse', source: o.source ?? '', rows: rows.length, columns: columns.length, measure, measureLabel, entity, kpis, dims, trend, bands, rates, anomalies, quality, numbers: [...numbers] };
+  // 8. The business reading of an entity table (credit lens, else the generic ranking reading).
+  let lens: Lens | null;
+  try {
+    lens = lensOf(columns, rows, entity, measure);
+  } catch {
+    lens = null;
+  }
+  for (const v of lens?.numbers ?? []) note(v);
+  return { title: o.title ?? 'Analyse', source: o.source ?? '', rows: rows.length, columns: columns.length, measure, measureLabel, entity, kpis, dims, trend, bands, rates, anomalies, quality, numbers: [...numbers], lens };
 }
 
 // ── formatting (French) ───────────────────────────────────────────────────────────────────────────────────────────
@@ -359,6 +379,10 @@ export function briefToMarkdown(b: Brief): string {
   else L.push('- aucune anomalie détectée par les contrôles automatiques');
   L.push('', '## Qualité des colonnes', '', '| Colonne | Type | Manquants | Distincts |', '|---|---|---:|---:|');
   for (const q of b.quality) L.push(`| ${q.col} | ${q.type} | ${fmtPct(q.missingPct)} | ${fmtInt(q.distinct)} |`);
+  if (b.lens) {
+    const n = b.lens.narrative;
+    L.push('', `## Lecture métier — ${b.lens.label}`, '', ...n.kpis.map((k) => `- ${String(k.label)} : ${String(k.value)}${k.sub ? ` (${String(k.sub)})` : ''} — ${String(k.method ?? '')}`), '', ...n.messages.map((m) => `- ${m}`), '', ...n.chapters.flatMap((c) => [`### ${String(c.title)}`, ...((c.constats as string[]) ?? []).map((x) => `- ${x}`)]));
+  }
   L.push('', '> Tous les chiffres ci-dessus sont calculés sur les lignes du fichier ; le récit ne doit en citer aucun autre.');
   return L.join('\n');
 }

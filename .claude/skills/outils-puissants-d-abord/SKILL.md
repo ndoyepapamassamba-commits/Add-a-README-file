@@ -47,6 +47,11 @@ puis les améliorer ensuite et les intégrer dans la tâche en cours. » — « 
 
 | Capacité | Outil | Licence | Vitesse / coût mesurés ou cités | Verdict |
 |---|---|---|---|---|
+| Recherche web gratuite sans clé (1) | Tavily keyless | service gratuit | **mesuré** 1,5–2,3 s, 5 résultats, 3/3 depuis file:// | retenu — rotation `direct/lib/freeEngines.ts` |
+| Recherche web gratuite sans clé (2) | Parallel Search (MCP public anonyme) | service gratuit | **mesuré** 1,3–2,3 s, 8 résultats avec extraits datés, 3/3 | retenu — données chiffrées, contexte |
+| Recherche web gratuite sans clé (3) | Exa (MCP public mcp.exa.ai) | service gratuit (REST = payant) | **mesuré** 1,2–1,5 s, PDF officiels trouvés (BCEAO) | retenu — réglementation, études, entreprises |
+| Recherche web + actualités + images sans clé (4) | Firecrawl keyless | service gratuit (~1 000 crédits/mois/IP) | **mesuré** 0,3–0,8 s web ; images avec largeur/hauteur | retenu — actualité, galerie de designs |
+| Relais gratuits | Wikipédia, Crossref, DuckDuckGo IA | services gratuits | Crossref 3/3 ; Wikipédia 1/3 et DDG 0/3 depuis l'IP partagée du conteneur | relais seulement |
 | Visage vivant (lèvres, yeux, tête) depuis un dessin | LivePortrait (KwaiVGI / Kling) | MIT (code + poids) | **mesuré** : 7,9 s/image sur 4 cœurs CPU du conteneur ; ≈ 30 i/s sur GPU RTX 3090 (FasterLivePortrait, TensorRT) | retenu — `scripts/blenderfilm/liveface.py`, en BIBLIOTHÈQUE d'états (gratuit, ~0 s par film) |
 | Détection de visage de la démo LivePortrait | InsightFace buffalo_l | non commercial | — | refusé : repères de la troupe + landmark.onnx de LivePortrait |
 | LivePortrait accéléré | FasterLivePortrait (ONNX / TensorRT, option MediaPipe) | MIT (vérifié : LICENSE + fiche HF) | **mesuré** 17,6 s/image en ONNX sur ce CPU (pas plus rapide) ; 30+ i/s sur RTX 3090 (annoncé) | pour un GPU ; inutile sur CPU |

@@ -13,6 +13,7 @@ import {
   type Dataset,
   type QuerySpec,
 } from '../../server/services/dataCore';
+import { corpusFor, researchSubject } from '../../server/services/dossier/sourceCorpus';
 import { DICT_SHEET, dictionaryFrom, missingText, resolveColumnSmart, resolveQuery, schemaPacket, shapeSignature, type LexiconCtx } from '../../server/services/dataLexicon';
 import { ChartSpecSchema, computeChart } from '../../server/services/vizEngine';
 import { isImage } from '../../server/services/documentsCore';
@@ -92,12 +93,21 @@ import {
   type KnowledgeDomain,
 } from '../../server/jev/knowledge/learned';
 import {
+  ACADEMIC,
   PROVIDER_LABEL,
+  crossrefUrl,
+  ddgUrl,
+  mergeHits,
+  parseCrossref,
+  parseDdg,
   parseSerper,
   parseTavily,
+  parseWiki,
   serperRequest,
   tavilyRequest,
+  wikiUrl,
 } from '../../server/jev/web/search';
+import type { BraveHit } from '../../server/jev/web/brave';
 import { diagnose, formatDiagnosis } from '../../server/tools/diagnose';
 
 /** Result of a browser action for the model: new downloads, errors, then the page. */
@@ -147,6 +157,7 @@ import type { ChatMessage } from '../../server/llm/types';
 import { callTool, type McpToolInfo } from './mcp';
 import { runInWorkspace } from './run';
 import { uid, useStore } from './store';
+import { keylessSearch } from './freeEngines';
 import { frontendDesignLint, isHtmlDocument, lintReport, lintSummary } from '../../server/services/frontendDesignLint';
 import { diffReport, pixelDiff } from '../../server/services/visualDiff';
 import type { ArtifactDef, PlanStep } from './types';
@@ -440,6 +451,90 @@ async function prepareQueryFast(ctx: ToolCtx, path: string, sheet: string | unde
     const r = prepareQuery(path, sheet, raw, defaults, picks);
     return { ...r, note: `${r.note}(colonne ambiguë tranchée par JEV en ${ms} ms d'après la demande : ${e.items.map((it) => `${it.name} → ${picks[normName(it.name)]}`).join(' ; ')})\n` };
   }
+}
+/**
+ * FREE WEB SEARCH, NO KEY (v62): Tavily keyless first (full results), then DuckDuckGo + Wikipédia (+ Crossref when the
+ * ask is scholarly) in parallel, merged. Each step has its own timeout; a provider at its limit is simply skipped.
+ */
+async function freeWebSearch(query: string, n: number, signal?: AbortSignal, chat = ''): Promise<{ hits: BraveHit[]; via: string; errors: string[] }> {
+  const errors: string[] = [];
+  const timed = async <T,>(ms: number, f: (s: AbortSignal) => Promise<T>): Promise<T> => {
+    const ac = new AbortController();
+    const stop = () => ac.abort();
+    signal?.addEventListener('abort', stop);
+    const t = setTimeout(stop, ms);
+    try {
+      return await f(ac.signal);
+    } finally {
+      clearTimeout(t);
+      signal?.removeEventListener('abort', stop);
+    }
+  };
+  // Four complete web engines without key (Tavily, Parallel, Exa, Firecrawl — each with its own quota), the query
+  // refined for the case of the chat (intention, zone, language, the form each engine reads best).
+  const k = await keylessSearch(query, n, signal, chat);
+  if (k.hits.length) return { hits: k.hits, via: k.via, errors: k.errors };
+  errors.push(...k.errors);
+  const get = (url: string, parse: (j: unknown) => BraveHit[], label: string) =>
+    timed(8_000, (s) => fetch(url, { signal: s }))
+      .then(async (r) => {
+        if (!r.ok) return errors.push(`${label} HTTP ${r.status}`), [];
+        // DuckDuckGo answers 200/202 with an EMPTY body when it suspects a robot (measured 15/10/2026).
+        const body = await r.text();
+        return body.trim() ? parse(JSON.parse(body)) : (errors.push(`${label} : réponse vide (anti-robot)`), []);
+      })
+      .catch((e: unknown) => (errors.push(`${label} : ${(e as Error).message}`), [] as BraveHit[]));
+  const academic = ACADEMIC.test(query);
+  const lists = await Promise.all([
+    get(ddgUrl(query), (j) => parseDdg(j, n), 'DuckDuckGo'),
+    get(wikiUrl(query, 'fr', 4), (j) => parseWiki(j, 'fr', 4), 'Wikipédia'),
+    ...(academic ? [get(crossrefUrl(query, 4), (j) => parseCrossref(j, 4), 'Crossref')] : []),
+  ]);
+  let hits = mergeHits(lists, n);
+  // Last resort (Wikipédia rate-limited, DuckDuckGo empty): the scholarly index, which answered in 2 tests out of 3.
+  if (!hits.length && !academic) hits = await get(crossrefUrl(query, 4), (j) => parseCrossref(j, 4), 'Crossref');
+  return { hits, via: PROVIDER_LABEL.free, errors };
+}
+/** The request of the chat (the last message typed by the user), for the analyst's research and the JEV arbiter. */
+function requestOf(sessionId: string): string {
+  const sess = useStore.getState().sessions.find((x) => x.id === sessionId);
+  const turns = sess?.turns ?? [];
+  const last = [...(sess?.items ?? [])].reverse().find((i) => i.kind === 'user') as { text?: string } | undefined;
+  return String(turns.at(-1)?.text ?? last?.text ?? '').slice(0, 600);
+}
+/**
+ * THE ANALYST'S SOURCES for a subject (v62 — « un corpus de sources et des recherches sur le sujet du chat »): the
+ * embedded corpus (verifiable references, by domain), the knowledge the app learned before (0 search), then a FREE
+ * search on the subject (four keyless engines refined for the case, then Wikipédia, Crossref) learned for next time.
+ * Never blocks a deliverable: 10 s at most, the corpus alone otherwise.
+ */
+// The axis of a web source by its publisher: regulators (R1), supervisors and standard setters (R3), research (R4).
+const axisOf = (url: string) =>
+  /bceao\.int|beac\.int|uemoa\.int|ohada\.(org|com)|eur-lex|legifrance/.test(url) ? 'R1' : /bis\.org|eba\.europa|ecb\.europa|ifrs\.org|sgcobac|acpr|imf\.org|worldbank/.test(url) ? 'R3' : /doi\.org|arxiv|ssrn|\.edu\b|hal\./.test(url) ? 'R4' : 'R9';
+async function researchFor(ctx: ToolCtx, subject: string, lens: 'credit' | 'ranking' | null): Promise<ResearchNote[]> {
+  const out: ResearchNote[] = [...corpusFor(subject, lens, 6)];
+  const kb = useStore.getState().knowledge;
+  const known = subject ? recallKnowledge(kb, subject) : null;
+  if (known) for (const src of known.entry.sources.slice(0, 3)) out.push({ title: src.title || src.url, url: src.url, lesson: known.entry.text.replace(/\s+/g, ' ').slice(0, 300), axis: 'R9' });
+  else if (subject.length >= 6) {
+    try {
+      const free = await Promise.race([freeWebSearch(subject, 5, ctx.signal, requestOf(ctx.sessionId)), new Promise<null>((r) => setTimeout(() => r(null), 10_000))]);
+      if (free?.hits.length) {
+        for (const h of free.hits.slice(0, 4)) out.push({ title: h.title, url: h.url, lesson: h.snippet || h.title, date: h.age, axis: axisOf(h.url) });
+        const text = braveText(subject, free.hits).replace('(Brave Search)', `(${free.via})`);
+        useStore.getState().setKnowledge(rememberKnowledge(useStore.getState().knowledge, { query: subject, text, sources: sourcesOf(text), origin: 'search' }));
+      }
+    } catch {
+      /* offline: the corpus alone */
+    }
+  }
+  const seen = new Set<string>();
+  return out.filter((r) => {
+    const k = (r.url || r.title).toLowerCase();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  }).slice(0, 10);
 }
 /** One column name of a chart / brief resolved like a query column (business words, dictionary, learned aliases). */
 function columnOf(ds: Dataset, name: string): string {
@@ -1161,6 +1256,18 @@ export const TOOLS: DirectTool[] = [
           errs.push(`${PROVIDER_LABEL[p]} : ${(e as Error).message}`);
         }
       }
+      // FREE, NO KEY (v62 — « une solution gratuite à Tavily pour éviter les limitations »): four keyless engines in
+      // rotation (Tavily, Parallel, Exa, Firecrawl), the query refined for the case of the chat, then Wikipédia +
+      // Crossref + DuckDuckGo, all callable from the page. A keyed quota used up falls through to here.
+      {
+        const free = await freeWebSearch(S(a.query), n0, ctx.signal, requestOf(ctx.sessionId));
+        if (free.hits.length) {
+          const text = braveText(S(a.query), free.hits).replace('(Brave Search)', `(${free.via})`);
+          learn(text);
+          return ok(`${free.via} · ${free.hits.length} résultat(s) · 0 $`, text, { output: text });
+        }
+        errs.push(...free.errors);
+      }
       if (errs.length && !ws.braveKey && ws.braveFallback === false)
         throw new Error(`Recherche web indisponible (${errs.join(' ; ')}). Vérifiez la clé dans Paramètres.`);
       if (ws.braveKey) {
@@ -1683,11 +1790,13 @@ export const TOOLS: DirectTool[] = [
       const brief = S(a.brief) ? loadBrief(S(a.brief), S(a.focus)) : null;
       let notes = S(a.notes);
       if (notes && !/\n/.test(notes) && notes.length < 240 && getFile(notes)) notes = (await readAsText(notes)).text;
-      const research: ResearchNote[] = Array.isArray(a.research)
+      let research: ResearchNote[] = Array.isArray(a.research)
         ? (a.research as Record<string, unknown>[])
             .filter((r) => r && typeof r === 'object' && S(r.title))
             .map((r) => ({ title: S(r.title), url: S(r.url) || undefined, author: S(r.author) || undefined, date: S(r.date) || undefined, lesson: S(r.lesson) || undefined, axis: S(r.axis) || undefined }))
         : [];
+      // No source given: the analyst gathers its own (corpus, learned knowledge, a free search on the subject).
+      if (!research.length) research = await researchFor(ctx, researchSubject(`${S(a.focus)} ${requestOf(ctx.sessionId)}`), brief?.lens?.kind ?? null);
       const input: ComposeInput = {
         focus: S(a.focus),
         title: S(a.title) || undefined,
@@ -1860,6 +1969,7 @@ export const TOOLS: DirectTool[] = [
           type: 'object',
           description: 'Optional data.query spec: filters, groupBy, aggregations, select, sort, limit',
         },
+        notes: str('Your own analysis to carry into the workbook (Markdown bullets): findings from other queries, documents, images, the web. Figures not in the exported rows are marked « à vérifier ».'),
         ...THEME_PARAMS,
       },
       ['path', 'name'],
@@ -1889,7 +1999,11 @@ export const TOOLS: DirectTool[] = [
       if (committee && r.rows.length) {
         const src = `${S(a.path)}${S(a.sheet) ? ` [${S(a.sheet)}]` : ''}${a.query ? ' (filtré)' : ''}`;
         const brief = buildBrief(r.columns, r.rows, { title: meta.title, source: src });
-        const d = dossierFromBrief({ focus: meta.title, brief });
+        // THE ANALYST'S SOURCES (v62): the embedded corpus, what the app already learned, a search on the subject of the
+        // chat (free, no key) — cited in the SOURCES sheet and the method.
+        const request = requestOf(ctx.sessionId);
+        const research = await researchFor(ctx, researchSubject(request || meta.title, [brief.lens?.kind === 'credit' ? 'risque de crédit' : '']), brief.lens?.kind ?? null);
+        const d = dossierFromBrief({ focus: meta.title, brief, notes: S(a.notes) || undefined, research });
         const ref = briefDataRef(brief);
         d.data = ref;
         writeBytes(

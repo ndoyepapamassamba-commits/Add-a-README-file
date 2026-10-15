@@ -125,7 +125,13 @@ describe('Internet gallery: many more designs per category', () => {
     const { searchDesigns } = await import('../../direct/lib/designWeb');
     useStore.setState({ settings: { ...useStore.getState().settings, tavilyKey: 'tvly-x' } });
     let n = 0;
-    globalThis.fetch = (async () => {
+    let fc = 0;
+    globalThis.fetch = (async (url: string) => {
+      // v62: Firecrawl's free image search runs alongside the first two queries (images WITH their size).
+      if (String(url).includes('firecrawl')) {
+        fc++;
+        return new Response(JSON.stringify({ data: { images: [{ title: 'Dashboard', imageUrl: `https://img/fc${fc}.png`, imageWidth: 1600, imageHeight: 1000, url: 'https://dribbble.com/shots/1' }, { imageUrl: `https://img/thumb${fc}.png`, imageWidth: 200, imageHeight: 150 }] } }), { status: 200 });
+      }
       n++;
       if (n === 2) return new Response('err', { status: 500 });
       return new Response(JSON.stringify({ images: [{ url: `https://img/${n}a.png` }, { url: 'https://img/shared.png?x=1' }, { url: `https://img/${n}b.png` }] }), { status: 200 });
@@ -133,7 +139,10 @@ describe('Internet gallery: many more designs per category', () => {
     const seen = new Set<string>();
     const r = await searchDesigns('excel', { seen });
     expect(n).toBe(4);
-    expect(r.map((x) => x.url)).toHaveLength(7); // 3 ok searches × 2 own + 1 shared
+    expect(fc).toBe(2);
+    // 3 ok Tavily searches × 2 own + 1 shared + 2 full-size Firecrawl shots (the 200 px thumbnails are dropped).
+    expect(r.map((x) => x.url)).toHaveLength(9);
+    expect(r.slice(0, 2).map((x) => x.url)).toEqual(['https://img/fc1.png', 'https://img/fc2.png']);
     const more = await searchDesigns('excel', { page: 1, seen });
     expect(more.some((x) => x.url.startsWith('https://img/shared'))).toBe(false);
   });

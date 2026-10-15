@@ -43,6 +43,7 @@ const CONCEPTS: Record<string, string[]> = {
   rating: ['note', 'notation', 'rating', 'ratings', 'grade', 'orr', 'frr', 'score', 'scoring', 'cotation'],
   contract: ['contrat', 'contrats', 'contract', 'contracts', 'account', 'accounts', 'compte', 'comptes', 'facility', 'facilities', 'facilite', 'dossier', 'pret', 'prets', 'loan', 'loans', 'ligne'],
   code: ['code', 'codes', 'id', 'identifiant', 'numero', 'num', 'ref', 'reference'],
+  count: ['nb', 'nombre', 'count', 'cnt', 'effectif'],
   net: ['net', 'nette', 'nets', 'nettes'],
   gross: ['gross', 'brut', 'brute', 'bruts', 'brutes'],
   domicile: ['domicile', 'domiciliation', 'repayment'],
@@ -63,6 +64,14 @@ export function tokensOf(s: string): string[] {
     .filter((t) => t && !STOP.has(t));
 }
 const conceptsOf = (t: string) => CONCEPT_OF.get(t) ?? CONCEPT_OF.get(t.replace(/s$/, '')) ?? [];
+/** Business concepts a column name carries (« Impayés PDO (XOF) » → arrears, local…). */
+export function columnConcepts(col: string): Set<string> {
+  const out = new Set<string>();
+  for (const t of tokensOf(col)) for (const c of conceptsOf(t)) out.add(c);
+  // Glued source prefixes (« Cprovisions », « Ftotal », « Ototal ») and words inside a token.
+  for (const t of tokensOf(col)) for (const [c, words] of Object.entries(CONCEPTS)) if (words.some((w) => w.length >= 6 && t.includes(w))) out.add(c);
+  return out;
+}
 
 /** How well a requested word is found in a column's words (1 = same word … 0 = absent). */
 function wordScore(t: string, words: string[]): number {
