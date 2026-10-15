@@ -24,14 +24,48 @@ export const KIND_LABELS: Record<RealizeKind, string> = {
 /** The kind of realization a prompt asks for (the user can always override it). */
 export function detectKind(prompt: string, hasData = false): RealizeKind {
   const p = prompt.toLowerCase();
-  if (/vid[ée]o|\bclip\b|\bmp4\b|motion design|intro anim[ée]e|g[ée]n[ée]rique|teaser|bande[- ]annonce|spot (publicitaire|pub)|\d+\s*(s|sec|secondes)\b/.test(p)) return 'video';
-  if (/\b3d\b|three\.?js|webgl|en trois dimensions|plan[eè]te|syst[eè]me solaire|galaxie|voxel|sc[eè]ne 3d/.test(p)) return '3d';
-  if (/\bjeu\b|\bgame\b|snake|serpent|tetris|pong|casse-briques|morpion|plateforme|flappy|sprite|physique|rebond|particules/.test(p)) return 'game';
-  if (hasData || /graphique|tableau de bord|dashboard|courbe|histogramme|camembert|donn[ée]es|statistique|kpi|analyse|visualis/.test(p)) return 'data';
-  if (/\bsvg\b|logo|illustration|ic[oô]ne|affiche|dessin|diagramme|sch[ée]ma|organigramme|infographie/.test(p)) return 'svg';
+  if (
+    /vid[ée]o|\bclip\b|\bmp4\b|motion design|intro anim[ée]e|g[ée]n[ée]rique|teaser|bande[- ]annonce|spot (publicitaire|pub)|\d+\s*(s|sec|secondes)\b/.test(
+      p,
+    )
+  )
+    return 'video';
+  if (
+    /\b3d\b|three\.?js|webgl|en trois dimensions|plan[eè]te|syst[eè]me solaire|galaxie|voxel|sc[eè]ne 3d/.test(
+      p,
+    )
+  )
+    return '3d';
+  if (
+    /\bjeu\b|\bgame\b|snake|serpent|tetris|pong|casse-briques|morpion|plateforme|flappy|sprite|physique|rebond|particules/.test(
+      p,
+    )
+  )
+    return 'game';
+  if (
+    hasData ||
+    /graphique|tableau de bord|dashboard|courbe|histogramme|camembert|donn[ée]es|statistique|kpi|analyse|visualis/.test(
+      p,
+    )
+  )
+    return 'data';
+  if (
+    /\bsvg\b|logo|illustration|ic[oô]ne|affiche|dessin|diagramme|sch[ée]ma|organigramme|infographie/.test(p)
+  )
+    return 'svg';
   // A described SCENE (a place, a landscape, a moment of light) is an illustration, not an application.
-  if (/paysage|cit[ée] |ville|village|ch[âa]teau|for[êe]t|rivi[èe]re|montagne|[îi]le |plage|coucher de soleil|cr[ée]puscule|aube|d[ée]cor|vue a[ée]rienne|panorama|march[ée] |port |jardin|savane|d[ée]sert/.test(p)) return 'svg';
-  if (/rapport|article|cv\b|curriculum|lettre|fiche|documentation|page d.accueil|landing|newsletter|menu de restaurant|invitation/.test(p)) return 'doc';
+  if (
+    /paysage|cit[ée] |ville|village|ch[âa]teau|for[êe]t|rivi[èe]re|montagne|[îi]le |plage|coucher de soleil|cr[ée]puscule|aube|d[ée]cor|vue a[ée]rienne|panorama|march[ée] |port |jardin|savane|d[ée]sert/.test(
+      p,
+    )
+  )
+    return 'svg';
+  if (
+    /rapport|article|cv\b|curriculum|lettre|fiche|documentation|page d.accueil|landing|newsletter|menu de restaurant|invitation/.test(
+      p,
+    )
+  )
+    return 'doc';
   return 'app';
 }
 
@@ -49,34 +83,218 @@ export interface Lib {
 }
 const esm = (p: string) => `https://esm.sh/${p}`;
 export const LIBRARIES: Lib[] = [
-  { name: 'react', version: '19.3.1', license: 'MIT', use: 'interfaces à composants (avec react-dom/client ; JSX interdit : utiliser htm)', url: esm('react@19.3.1'), kinds: ['app', 'data', 'doc'] },
-  { name: 'react-dom/client', version: '19.3.1', license: 'MIT', use: 'createRoot pour React', url: esm('react-dom@19.3.1/client?deps=react@19.3.1'), kinds: ['app', 'data', 'doc'] },
-  { name: 'htm', version: '3.1.1', license: 'Apache-2.0', use: 'syntaxe proche du JSX sans compilation : const html = htm.bind(React.createElement)', url: esm('htm@3.1.1'), kinds: ['app', 'data', 'doc'] },
-  { name: 'preact', version: '11.0.1', license: 'MIT', use: 'alternative légère à React (h, render)', url: esm('preact@11.0.1'), kinds: ['app', 'game'] },
-  { name: 'chart.js/auto', version: '4.5.1', license: 'MIT', use: 'graphiques (barres, courbes, secteurs, radar, mixtes) : import Chart from "chart.js/auto"', url: esm('chart.js@4.5.1/auto'), kinds: ['data', 'app', 'doc', 'video'] },
-  { name: 'echarts', version: '6.1.0', license: 'Apache-2.0', use: 'graphiques riches et animés (cartes de chaleur, sankey, jauges, treemap) : import * as echarts from "echarts"', url: esm('echarts@6.1.0'), kinds: ['data', 'app'] },
-  { name: 'plotly.js-dist-min', version: '4.1.2', license: 'MIT', use: 'graphiques scientifiques et 3D (surface, nuage 3D, statistiques)', url: esm('plotly.js-dist-min@4.1.2'), kinds: ['data'] },
-  { name: 'vega-embed', version: '7.3.0', license: 'BSD-3-Clause', use: 'grammaire de graphiques Vega-Lite déclarative : vegaEmbed(el, spec)', url: esm('vega-embed@7.3.0'), kinds: ['data'] },
-  { name: 'papaparse', version: '5.7.0', license: 'MIT', use: 'lecture CSV', url: esm('papaparse@5.7.0'), kinds: ['data', 'app'] },
-  { name: 'xlsx', version: '0.18.5', license: 'Apache-2.0', use: 'lecture / écriture Excel (export d’un tableau en .xlsx)', url: esm('xlsx@0.18.5'), kinds: ['data', 'app'] },
-  { name: 'dayjs', version: '1.11.23', license: 'MIT', use: 'dates (format, différences, calendrier)', url: esm('dayjs@1.11.23'), kinds: ['app', 'data', 'doc'] },
-  { name: 'three', version: '0.186.1', license: 'MIT', use: '3D WebGL (scènes, matériaux, lumières) ; contrôles : import { OrbitControls } from "three/addons/controls/OrbitControls.js"', url: esm('three@0.186.1'), kinds: ['3d', 'game', 'video'] },
-  { name: 'three/addons/', version: '0.186.1', license: 'MIT', use: 'compléments three.js (OrbitControls, GLTFLoader, EffectComposer…)', url: esm('three@0.186.1/examples/jsm/'), kinds: ['3d', 'game', 'video'] },
-  { name: 'cannon-es', version: '0.20.0', license: 'MIT', use: 'physique 3D (gravité, collisions)', url: esm('cannon-es@0.20.0'), kinds: ['3d', 'game', 'video'] },
-  { name: 'matter-js', version: '0.20.0', license: 'MIT', use: 'physique 2D (corps rigides, contraintes)', url: esm('matter-js@0.20.0'), kinds: ['game', 'video'] },
-  { name: 'pixi.js', version: '8.22.0', license: 'MIT', use: 'rendu 2D WebGL rapide (sprites, particules, jeux)', url: esm('pixi.js@8.22.0'), kinds: ['game', 'video'] },
-  { name: 'animejs', version: '4.5.0', license: 'MIT', use: 'animations (DOM, SVG, CSS) : import { animate } from "animejs"', url: esm('animejs@4.5.0'), kinds: ['svg', 'app', 'game', 'doc', 'video'] },
-  { name: 'tone', version: '15.1.22', license: 'MIT', use: 'son et musique synthétisés (après un clic de l’utilisateur)', url: esm('tone@15.1.22'), kinds: ['game', 'app'] },
-  { name: 'howler', version: '2.2.4', license: 'MIT', use: 'lecture de sons', url: esm('howler@2.2.4'), kinds: ['game'] },
-  { name: 'leaflet', version: '1.9.4', license: 'BSD-2-Clause', use: 'cartes interactives (tuiles OpenStreetMap)', url: esm('leaflet@1.9.4'), css: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css', kinds: ['app', 'data'] },
-  { name: 'mermaid', version: '12.2.0', license: 'MIT', use: 'diagrammes depuis du texte (flux, séquence, Gantt, organigramme)', url: esm('mermaid@12.2.0'), kinds: ['svg', 'doc'] },
-  { name: 'katex', version: '0.19.0', license: 'MIT', use: 'formules mathématiques', url: esm('katex@0.19.0'), css: 'https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/katex.min.css', kinds: ['doc'] },
-  { name: 'marked', version: '18.1.1', license: 'MIT', use: 'Markdown → HTML', url: esm('marked@18.1.1'), kinds: ['doc', 'app'] },
-  { name: 'alpinejs', version: '3.17.4', license: 'MIT', use: 'interactivité déclarative légère (x-data, x-on)', url: esm('alpinejs@3.17.4'), kinds: ['app', 'doc'] },
+  {
+    name: 'react',
+    version: '19.3.1',
+    license: 'MIT',
+    use: 'interfaces à composants (avec react-dom/client ; JSX interdit : utiliser htm)',
+    url: esm('react@19.3.1'),
+    kinds: ['app', 'data', 'doc'],
+  },
+  {
+    name: 'react-dom/client',
+    version: '19.3.1',
+    license: 'MIT',
+    use: 'createRoot pour React',
+    url: esm('react-dom@19.3.1/client?deps=react@19.3.1'),
+    kinds: ['app', 'data', 'doc'],
+  },
+  {
+    name: 'htm',
+    version: '3.1.1',
+    license: 'Apache-2.0',
+    use: 'syntaxe proche du JSX sans compilation : const html = htm.bind(React.createElement)',
+    url: esm('htm@3.1.1'),
+    kinds: ['app', 'data', 'doc'],
+  },
+  {
+    name: 'preact',
+    version: '11.0.1',
+    license: 'MIT',
+    use: 'alternative légère à React (h, render)',
+    url: esm('preact@11.0.1'),
+    kinds: ['app', 'game'],
+  },
+  {
+    name: 'chart.js/auto',
+    version: '4.5.1',
+    license: 'MIT',
+    use: 'graphiques (barres, courbes, secteurs, radar, mixtes) : import Chart from "chart.js/auto"',
+    url: esm('chart.js@4.5.1/auto'),
+    kinds: ['data', 'app', 'doc', 'video'],
+  },
+  {
+    name: 'echarts',
+    version: '6.1.0',
+    license: 'Apache-2.0',
+    use: 'graphiques riches et animés (cartes de chaleur, sankey, jauges, treemap) : import * as echarts from "echarts"',
+    url: esm('echarts@6.1.0'),
+    kinds: ['data', 'app'],
+  },
+  {
+    name: 'plotly.js-dist-min',
+    version: '4.1.2',
+    license: 'MIT',
+    use: 'graphiques scientifiques et 3D (surface, nuage 3D, statistiques)',
+    url: esm('plotly.js-dist-min@4.1.2'),
+    kinds: ['data'],
+  },
+  {
+    name: 'vega-embed',
+    version: '7.3.0',
+    license: 'BSD-3-Clause',
+    use: 'grammaire de graphiques Vega-Lite déclarative : vegaEmbed(el, spec)',
+    url: esm('vega-embed@7.3.0'),
+    kinds: ['data'],
+  },
+  {
+    name: 'papaparse',
+    version: '5.7.0',
+    license: 'MIT',
+    use: 'lecture CSV',
+    url: esm('papaparse@5.7.0'),
+    kinds: ['data', 'app'],
+  },
+  {
+    name: 'xlsx',
+    version: '0.18.5',
+    license: 'Apache-2.0',
+    use: 'lecture / écriture Excel (export d’un tableau en .xlsx)',
+    url: esm('xlsx@0.18.5'),
+    kinds: ['data', 'app'],
+  },
+  {
+    name: 'dayjs',
+    version: '1.11.23',
+    license: 'MIT',
+    use: 'dates (format, différences, calendrier)',
+    url: esm('dayjs@1.11.23'),
+    kinds: ['app', 'data', 'doc'],
+  },
+  {
+    name: 'three',
+    version: '0.186.1',
+    license: 'MIT',
+    use: '3D WebGL (scènes, matériaux, lumières) ; contrôles : import { OrbitControls } from "three/addons/controls/OrbitControls.js"',
+    url: esm('three@0.186.1'),
+    kinds: ['3d', 'game', 'video'],
+  },
+  {
+    name: 'three/addons/',
+    version: '0.186.1',
+    license: 'MIT',
+    use: 'compléments three.js (OrbitControls, GLTFLoader, EffectComposer…)',
+    url: esm('three@0.186.1/examples/jsm/'),
+    kinds: ['3d', 'game', 'video'],
+  },
+  {
+    name: 'cannon-es',
+    version: '0.20.0',
+    license: 'MIT',
+    use: 'physique 3D (gravité, collisions)',
+    url: esm('cannon-es@0.20.0'),
+    kinds: ['3d', 'game', 'video'],
+  },
+  {
+    name: 'matter-js',
+    version: '0.20.0',
+    license: 'MIT',
+    use: 'physique 2D (corps rigides, contraintes)',
+    url: esm('matter-js@0.20.0'),
+    kinds: ['game', 'video'],
+  },
+  {
+    name: 'pixi.js',
+    version: '8.22.0',
+    license: 'MIT',
+    use: 'rendu 2D WebGL rapide (sprites, particules, jeux)',
+    url: esm('pixi.js@8.22.0'),
+    kinds: ['game', 'video'],
+  },
+  {
+    name: 'animejs',
+    version: '4.5.0',
+    license: 'MIT',
+    use: 'animations (DOM, SVG, CSS) : import { animate } from "animejs"',
+    url: esm('animejs@4.5.0'),
+    kinds: ['svg', 'app', 'game', 'doc', 'video'],
+  },
+  {
+    name: 'tone',
+    version: '15.1.22',
+    license: 'MIT',
+    use: 'son et musique synthétisés (après un clic de l’utilisateur)',
+    url: esm('tone@15.1.22'),
+    kinds: ['game', 'app'],
+  },
+  {
+    name: 'howler',
+    version: '2.2.4',
+    license: 'MIT',
+    use: 'lecture de sons',
+    url: esm('howler@2.2.4'),
+    kinds: ['game'],
+  },
+  {
+    name: 'leaflet',
+    version: '1.9.4',
+    license: 'BSD-2-Clause',
+    use: 'cartes interactives (tuiles OpenStreetMap)',
+    url: esm('leaflet@1.9.4'),
+    css: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css',
+    kinds: ['app', 'data'],
+  },
+  {
+    name: 'mermaid',
+    version: '12.2.0',
+    license: 'MIT',
+    use: 'diagrammes depuis du texte (flux, séquence, Gantt, organigramme)',
+    url: esm('mermaid@12.2.0'),
+    kinds: ['svg', 'doc'],
+  },
+  {
+    name: 'katex',
+    version: '0.19.0',
+    license: 'MIT',
+    use: 'formules mathématiques',
+    url: esm('katex@0.19.0'),
+    css: 'https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/katex.min.css',
+    kinds: ['doc'],
+  },
+  {
+    name: 'marked',
+    version: '18.1.1',
+    license: 'MIT',
+    use: 'Markdown → HTML',
+    url: esm('marked@18.1.1'),
+    kinds: ['doc', 'app'],
+  },
+  {
+    name: 'alpinejs',
+    version: '3.17.4',
+    license: 'MIT',
+    use: 'interactivité déclarative légère (x-data, x-on)',
+    url: esm('alpinejs@3.17.4'),
+    kinds: ['app', 'doc'],
+  },
   // v64 — physique de corps rigides haute performance (Rapier, Apache-2.0 ; build « compat » : le WASM est embarqué).
-  { name: '@dimforge/rapier3d-compat', version: '0.21.0', license: 'Apache-2.0', use: 'physique 3D rapide et stable (corps rigides, articulations, beaucoup d’objets) : import RAPIER from "@dimforge/rapier3d-compat"; await RAPIER.init()', url: esm('@dimforge/rapier3d-compat@0.21.0'), kinds: ['3d', 'game', 'video'] },
+  {
+    name: '@dimforge/rapier3d-compat',
+    version: '0.21.0',
+    license: 'Apache-2.0',
+    use: 'physique 3D rapide et stable (corps rigides, articulations, beaucoup d’objets) : import RAPIER from "@dimforge/rapier3d-compat"; await RAPIER.init()',
+    url: esm('@dimforge/rapier3d-compat@0.21.0'),
+    kinds: ['3d', 'game', 'video'],
+  },
   // v64 — la bibliothèque scientifique de JEV (mouvement humain, physique, quantique, mathématiques, projection 3D).
-  { name: 'jev', version: JEVLIB_VERSION, license: 'maison', use: 'sciences vérifiées pour le bac à sable : import * as jev from "jev" (détail plus bas)', url: jevlibUrl(), kinds: ['3d', 'game', 'video', 'svg', 'app', 'data', 'doc'] },
+  {
+    name: 'jev',
+    version: JEVLIB_VERSION,
+    license: 'maison',
+    use: 'sciences vérifiées pour le bac à sable : import * as jev from "jev" (détail plus bas)',
+    url: jevlibUrl(),
+    kinds: ['3d', 'game', 'video', 'svg', 'app', 'data', 'doc'],
+  },
 ];
 /** Tailwind (MIT) as a classic script — utility classes without a build. */
 export const TAILWIND = 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3';
@@ -90,7 +308,11 @@ export interface VideoSpec {
   seconds: number;
   format: '16:9' | '9:16' | '1:1';
 }
-export const VIDEO_SIZES: Record<VideoSpec['format'], [number, number]> = { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080] };
+export const VIDEO_SIZES: Record<VideoSpec['format'], [number, number]> = {
+  '16:9': [1920, 1080],
+  '9:16': [1080, 1920],
+  '1:1': [1080, 1080],
+};
 
 /** Kinds whose result is a PICTURE of the request (a scene, an illustration, a 3D world, a video): checked element by element. */
 export const FIDELITY_KINDS: RealizeKind[] = ['svg', '3d', 'video'];
@@ -102,13 +324,18 @@ function fidelityRules(kind: RealizeKind): string[] {
     '- Un élément nommé est VISIBLE et RECONNAISSABLE à sa place (pas caché derrière un autre, pas transparent, pas minuscule) ; « dense », « serré », « nombreux » = beaucoup d’objets rapprochés ; une heure du jour fixe la lumière (fin d’après-midi : soleil bas sur l’horizon, lumière dorée rasante, ombres longues dans le même sens).',
     '- Aucun texte, légende ou titre n’annonce ce qui n’est pas dessiné.',
     ...(kind === 'svg' || kind === '3d' || kind === 'video'
-      ? ['- Scène : composition en plans (ciel, lointain, plan moyen, premier plan), perspective cohérente (taille décroissante avec la distance, brume atmosphérique au loin), une seule direction de lumière, détails crédibles (créneaux, toits, fenêtres, reflets) — jamais un assemblage de formes plates posées au hasard.']
+      ? [
+          '- Scène : composition en plans (ciel, lointain, plan moyen, premier plan), perspective cohérente (taille décroissante avec la distance, brume atmosphérique au loin), une seule direction de lumière, détails crédibles (créneaux, toits, fenêtres, reflets) — jamais un assemblage de formes plates posées au hasard.',
+        ]
       : []),
     '',
   ];
 }
 
-export function systemPrompt(kind: RealizeKind, opts: { data?: DataInfo | null; video?: VideoSpec; ask?: string } = {}): string {
+export function systemPrompt(
+  kind: RealizeKind,
+  opts: { data?: DataInfo | null; video?: VideoSpec; ask?: string } = {},
+): string {
   const libs = LIBRARIES.filter((l) => l.kinds.includes(kind));
   // JEV directs the sandbox: the knowledge cards of the domains the request touches + its scientific library.
   const cards = sandboxCards(opts.ask ?? '', kind);
@@ -133,16 +360,32 @@ export function systemPrompt(kind: RealizeKind, opts: { data?: DataInfo | null; 
     '- Interdits dans le bac à sable : alert/prompt/confirm, localStorage/sessionStorage/cookies (garde l’état en mémoire), window.open, formulaires envoyés (utilise preventDefault).',
     '- JSX interdit (pas de compilation) : avec React, utilise htm (`const html = htm.bind(React.createElement)`).',
     '- Animation : requestAnimationFrame ; jamais de boucle while bloquante.',
-    ...(kind === '3d' ? ['- 3D : renderer à la taille de la fenêtre (resize géré), OrbitControls, éclairage trois points, ACESFilmicToneMapping, objets visibles depuis la caméra.'] : []),
-    ...(kind === 'data' ? ['- Données : titre, indicateurs clés en tuiles, graphiques lisibles (axes, unités, légende), tableau détaillé triable ; formats français (espaces des milliers, virgule décimale).'] : []),
-    ...(kind === 'game' ? ['- Jeu : commandes clavier ET tactiles, score, écran de fin avec « Rejouer », vitesse indépendante du nombre d’images par seconde.'] : []),
+    ...(kind === '3d'
+      ? [
+          '- 3D : renderer à la taille de la fenêtre (resize géré), OrbitControls, éclairage trois points, ACESFilmicToneMapping, objets visibles depuis la caméra.',
+        ]
+      : []),
+    ...(kind === 'data'
+      ? [
+          '- Données : titre, indicateurs clés en tuiles, graphiques lisibles (axes, unités, légende), tableau détaillé triable ; formats français (espaces des milliers, virgule décimale).',
+        ]
+      : []),
+    ...(kind === 'game'
+      ? [
+          '- Jeu : commandes clavier ET tactiles, score, écran de fin avec « Rejouer », vitesse indépendante du nombre d’images par seconde.',
+        ]
+      : []),
     ...(kind === 'video'
       ? (() => {
           const v = opts.video ?? { seconds: 15, format: '16:9' as const };
           const [w, h] = VIDEO_SIZES[v.format];
           return [
             `- VIDÉO : la page EST une vidéo de ${v.seconds} secondes, filmée image par image depuis UN SEUL <canvas> (id="video") de ${w}×${h} pixels (format ${v.format}), affiché en entier (CSS : width/height 100 %, object-fit: contain, fond noir).`,
-            '- TOUT est dessiné DANS ce canvas : 3D avec three.js (renderer sur ce canvas, setSize(' + w + ', ' + h + ', false)), titres, sous-titres, textes et graphiques animés dessinés dans la scène ou en Canvas 2D par-dessus (un second canvas n’est PAS filmé : compose dans le même). Aucun élément HTML visible hors du canvas.',
+            '- TOUT est dessiné DANS ce canvas : 3D avec three.js (renderer sur ce canvas, setSize(' +
+              w +
+              ', ' +
+              h +
+              ', false)), titres, sous-titres, textes et graphiques animés dessinés dans la scène ou en Canvas 2D par-dessus (un second canvas n’est PAS filmé : compose dans le même). Aucun élément HTML visible hors du canvas.',
             `- Déroulé : démarre tout seul au chargement, animation pilotée par le temps t = (performance.now() − t0) / 1000, découpée en plans (intro, développement, temps fort, fin) ; à t ≥ ${v.seconds} s, reste figée sur la dernière image ; expose window.VIDEO = { duration: ${v.seconds}, width: ${w}, height: ${h} }.`,
             '- Qualité cinéma : mouvements de caméra lents et fluides (easing), éclairage soigné, couleurs harmonieuses, typographie lisible, pas de texte coupé, 30 images par seconde visées.',
             '- Le temps est PILOTÉ par le moteur, image par image : utilise uniquement requestAnimationFrame et performance.now() (jamais new Date() ni setInterval pour animer) ; ainsi chaque image est calculée à son instant exact et la vidéo est parfaitement fluide.',
@@ -171,12 +414,34 @@ export interface DataInfo {
 export function describeData(name: string, rows: Record<string, unknown>[]): DataInfo {
   const cols = rows.length ? Object.keys(rows[0]!) : [];
   const typeOf = (c: string): 'nombre' | 'date' | 'texte' => {
-    const vals = rows.slice(0, 50).map((r) => r[c]).filter((v) => v !== null && v !== undefined && v !== '');
-    if (vals.length && vals.every((v) => typeof v === 'number' || (typeof v === 'string' && /^-?[\d\s.,]+$/.test(v.trim()) && /\d/.test(v)))) return 'nombre';
-    if (vals.length && vals.every((v) => v instanceof Date || (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}|^\d{2}\/\d{2}\/\d{4}/.test(v)))) return 'date';
+    const vals = rows
+      .slice(0, 50)
+      .map((r) => r[c])
+      .filter((v) => v !== null && v !== undefined && v !== '');
+    if (
+      vals.length &&
+      vals.every(
+        (v) =>
+          typeof v === 'number' || (typeof v === 'string' && /^-?[\d\s.,]+$/.test(v.trim()) && /\d/.test(v)),
+      )
+    )
+      return 'nombre';
+    if (
+      vals.length &&
+      vals.every(
+        (v) =>
+          v instanceof Date || (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}|^\d{2}\/\d{2}\/\d{4}/.test(v)),
+      )
+    )
+      return 'date';
     return 'texte';
   };
-  return { name, rows: rows.length, columns: cols.map((c) => ({ name: c, type: typeOf(c) })), sample: rows[0] ?? {} };
+  return {
+    name,
+    rows: rows.length,
+    columns: cols.map((c) => ({ name: c, type: typeOf(c) })),
+    sample: rows[0] ?? {},
+  };
 }
 
 /**
@@ -188,7 +453,10 @@ export function extractHtml(text: string): string {
   const m = /```html\s*\n([\s\S]*?)```/i.exec(text) ?? /```[a-z]*\s*\n([\s\S]*?)```/i.exec(text);
   let out = (m ? m[1]! : text).trim();
   // Unclosed fence: drop the opening line (and a lone closing fence at the end).
-  out = out.replace(/^```[\w-]*[^\n]*\n/, '').replace(/\n?```\s*$/, '').trim();
+  out = out
+    .replace(/^```[\w-]*[^\n]*\n/, '')
+    .replace(/\n?```\s*$/, '')
+    .trim();
   const start = out.search(/<!doctype html|<html[\s>]/i);
   const end = out.toLowerCase().lastIndexOf('</html>');
   if (start >= 0 && end > start) out = out.slice(start, end + 7);
@@ -204,15 +472,29 @@ export function videoProblem(run: RealizeRun, spec: VideoSpec): RealizeError | n
   const [w, h] = VIDEO_SIZES[spec.format];
   const c = run.stats.canvas;
   if (!run.stats.canvases)
-    return { kind: 'video', msg: `ce n’est pas une vidéo : la page n’a aucun <canvas>. Dessine TOUT dans <canvas id="video" width="${w}" height="${h}"> (titres compris), aucun élément HTML visible autour.`, line: null };
+    return {
+      kind: 'video',
+      msg: `ce n’est pas une vidéo : la page n’a aucun <canvas>. Dessine TOUT dans <canvas id="video" width="${w}" height="${h}"> (titres compris), aucun élément HTML visible autour.`,
+      line: null,
+    };
   // At least 640×360 worth of pixels, in the asked orientation (± 15 %): the default 300×150 of an unsized canvas fails.
   if (c && (c.w * c.h < 640 * 360 || Math.abs(c.w / c.h / (w / h) - 1) > 0.15))
-    return { kind: 'video', msg: `ce n’est pas une vidéo filmable : le plus grand canvas mesure ${c.w}×${c.h} au lieu de ${w}×${h}. Crée <canvas id="video" width="${w}" height="${h}">, rends la scène DEDANS (three.js : renderer sur ce canvas, setSize(${w}, ${h}, false)), sans boutons ni panneaux HTML (la vidéo démarre seule).`, line: null };
+    return {
+      kind: 'video',
+      msg: `ce n’est pas une vidéo filmable : le plus grand canvas mesure ${c.w}×${c.h} au lieu de ${w}×${h}. Crée <canvas id="video" width="${w}" height="${h}">, rends la scène DEDANS (three.js : renderer sur ce canvas, setSize(${w}, ${h}, false)), sans boutons ni panneaux HTML (la vidéo démarre seule).`,
+      line: null,
+    };
   return null;
 }
 
 /** Recording formats, best first: MP4 (H.264) where the browser records it (Chrome / Edge ≥ 126, Safari), WebM otherwise. */
-export const VIDEO_TYPES = ['video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+export const VIDEO_TYPES = [
+  'video/mp4;codecs=avc1.640028',
+  'video/mp4;codecs=avc1.42E01E',
+  'video/mp4',
+  'video/webm;codecs=vp9',
+  'video/webm',
+];
 /** Extension of a recorded video from its mime type. */
 export const videoExt = (mime: string) => (mime.startsWith('video/mp4') ? 'mp4' : 'webm');
 
@@ -239,22 +521,93 @@ export const BRIDGE = [
   'var tagged=function(){var out={};var ref=null;var big=0;[].slice.call(document.querySelectorAll("svg,canvas")).forEach(function(x){var r=x.getBoundingClientRect();if(r.width*r.height>big&&!(x.parentElement&&x.parentElement.closest("svg"))){big=r.width*r.height;ref=r;}});var vw=window.innerWidth||1,vh=window.innerHeight||1;if(!ref||big<vw*vh*0.15){ref={left:0,top:0,width:vw,height:vh};}[].slice.call(document.querySelectorAll("[data-element]")).forEach(function(el){var n=(el.getAttribute("data-element")||"").trim();if(!n){return;}var r=el.getBoundingClientRect();var cs=getComputedStyle(el);var op=parseFloat(cs.opacity||"1");if(cs.visibility==="hidden"||cs.display==="none"){op=0;}var x0=Math.max(r.left,ref.left),y0=Math.max(r.top,ref.top),x1=Math.min(r.right,ref.left+ref.width),y1=Math.min(r.bottom,ref.top+ref.height);var a=Math.max(0,x1-x0)*Math.max(0,y1-y0)/(ref.width*ref.height)*Math.min(1,op*1.25);var o=out[n]||(out[n]={name:n,area:0,cx:0,cy:0,w:0});if(a>0){o.cx=(o.cx*o.w+((x0+x1)/2-ref.left)/ref.width*a)/(o.w+a);o.cy=(o.cy*o.w+((y0+y1)/2-ref.top)/ref.height*a)/(o.w+a);o.w+=a;}o.area=Math.min(1,o.area+a);});return Object.keys(out).map(function(k){var o=out[k];return {name:o.name,area:Math.round(o.area*10000)/10000,cx:Math.round(o.cx*100)/100,cy:Math.round(o.cy*100)/100};});};',
   'var measure=function(){var b=document.body;var els=b?b.querySelectorAll("*"):[];var vis=0;for(var i=0;i<els.length&&i<5000;i++){var r=els[i].getBoundingClientRect();if(r.width>2&&r.height>2){vis++;}}P({rz:"stats",elements:vis,text:b?(b.innerText||"").trim().length:0,canvases:document.querySelectorAll("canvas").length,canvas:(function(){var c=bigCanvas();return c?{w:c.width,h:c.height}:null;})(),spec:(function(){var e=document.getElementById("realize-spec");return e?(e.textContent||"").slice(0,4000):null;})(),tagged:(function(){try{return tagged();}catch(_){return [];}})(),declared:(function(){try{var d=window.REALIZE_ELEMENTS;return Array.isArray(d)?d.map(function(x){return String(x&&x.name||x);}).slice(0,60):null;}catch(_){return null;}})(),svgs:document.querySelectorAll("svg").length,ms:Date.now()-start,loading:document.readyState!=="complete"});};',
   'var REC=function(ms,fps){var cs=[].slice.call(document.querySelectorAll("canvas")).filter(function(c){return c.width>10&&c.height>10;}).sort(function(a,b){return b.width*b.height-a.width*a.height;});if(!cs.length){P({rz:"video",error:"nocanvas"});return;}var c=cs[0];var mime="";for(var i=0;i<VIDEO_TYPES.length;i++){if(window.MediaRecorder&&MediaRecorder.isTypeSupported(VIDEO_TYPES[i])){mime=VIDEO_TYPES[i];break;}}if(!mime){P({rz:"video",error:"norecorder"});return;}var rec=new MediaRecorder(c.captureStream(fps||30),{mimeType:mime,videoBitsPerSecond:8000000});var parts=[];rec.ondataavailable=function(ev){if(ev.data&&ev.data.size){parts.push(ev.data);}};rec.onstop=function(){P({rz:"video",blob:new Blob(parts,{type:mime.split(";")[0]}),mime:mime,width:c.width,height:c.height});};rec.start(250);setTimeout(function(){rec.stop();},ms);};',
-  'window.addEventListener("message",function(e){if(e.data&&e.data.rz==="measure"){measure();}if(e.data&&e.data.rz==="record"){try{REC(e.data.ms||8000,e.data.fps||30);}catch(err){P({rz:"video",error:String(err&&err.message||err)});}}});',
+  // SNAP (v64): a JPEG of the largest canvas, sized for the eye of JEV (Jev 1.14 reads images: 280–1568 px per side).
+  'var SNAP=function(max){var cs=[].slice.call(document.querySelectorAll("canvas")).filter(function(c){return c.width>10&&c.height>10;}).sort(function(a,b){return b.width*b.height-a.width*a.height;});if(!cs.length){P({rz:"snap",error:"nocanvas"});return;}var c=cs[0];requestAnimationFrame(function(){try{var s=Math.min(1,max/Math.max(c.width,c.height));var w=Math.max(280,Math.round(c.width*s)),h=Math.max(280,Math.round(c.height*s));var o=document.createElement("canvas");o.width=w;o.height=h;var g=o.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,w,h);g.drawImage(c,0,0,w,h);P({rz:"snap",data:o.toDataURL("image/jpeg",0.82),w:w,h:h});}catch(err){P({rz:"snap",error:String(err&&err.message||err)});}});};',
+  'window.addEventListener("message",function(e){if(e.data&&e.data.rz==="snap"){SNAP(e.data.max||1024);}if(e.data&&e.data.rz==="measure"){measure();}if(e.data&&e.data.rz==="record"){try{REC(e.data.ms||8000,e.data.fps||30);}catch(err){P({rz:"video",error:String(err&&err.message||err)});}}});',
   'window.addEventListener("load",function(){if(window.__RZ_REC){try{if(window.__RZ_REC.exact){vstep(0);RST(function(){EXACT(window.__RZ_REC.ms,window.__RZ_REC.fps||30);},50);}else{REC(window.__RZ_REC.ms,window.__RZ_REC.fps||30);}}catch(err){P({rz:"video",error:String(err&&err.message||err)});}}RST(measure,1200);});',
   '})();',
 ].join('');
 
 // ── FIDÉLITÉ : the request's items, the page's spec, what is really visible ─────────────────────────────────────────
-const fold = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[’']/g, ' ').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
-const STOPW = new Set(['un', 'une', 'des', 'le', 'la', 'les', 'l', 'du', 'de', 'd', 'avec', 'et', 'ou', 'son', 'sa', 'ses', 'leur', 'leurs', 'au', 'aux', 'en', 'tres', 'plein', 'pleine', 'beaucoup', 'quelques', 'plusieurs', 'petit', 'petite', 'petits', 'petites', 'grand', 'grande', 'grands', 'grandes', 'joli', 'jolie', 'beau', 'belle', 'beaux', 'belles', 'on', 'y', 'voit', 'qui', 'que', 'dont', 'sur', 'sous', 'pres', 'autour']);
+const fold = (t: string) =>
+  t
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[’']/g, ' ')
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+const STOPW = new Set([
+  'un',
+  'une',
+  'des',
+  'le',
+  'la',
+  'les',
+  'l',
+  'du',
+  'de',
+  'd',
+  'avec',
+  'et',
+  'ou',
+  'son',
+  'sa',
+  'ses',
+  'leur',
+  'leurs',
+  'au',
+  'aux',
+  'en',
+  'tres',
+  'plein',
+  'pleine',
+  'beaucoup',
+  'quelques',
+  'plusieurs',
+  'petit',
+  'petite',
+  'petits',
+  'petites',
+  'grand',
+  'grande',
+  'grands',
+  'grandes',
+  'joli',
+  'jolie',
+  'beau',
+  'belle',
+  'beaux',
+  'belles',
+  'on',
+  'y',
+  'voit',
+  'qui',
+  'que',
+  'dont',
+  'sur',
+  'sous',
+  'pres',
+  'autour',
+]);
 const CIRCUM = /^(a|au|aux|en|vers|dans|sous|pendant|par|lors|le soir|le matin|la nuit|de nuit|de jour)\b/;
 /** The concrete items a request names (« château central », « rivière »…) and its circumstances (« à la fin d’après-midi »). */
-export function promptItems(prompt: string): { items: { text: string; head: string }[]; circumstances: string[] } {
+export function promptItems(prompt: string): {
+  items: { text: string; head: string }[];
+  circumstances: string[];
+} {
   // The FORMAT words (« une vidéo de 15 secondes », « dessine-moi une illustration de ») are not elements of the scene.
   const body = prompt
     .replace(/^\s*(dessine|fais|cr[ée]e|g[ée]n[èe]re|montre|r[ée]alise|imagine)[- ]?(moi|nous)?\s*/i, '')
-    .replace(/\b(une?|la|le)\s+(vid[ée]o|illustration|image|sc[èe]ne|vue|animation|dessin|film|clip|affiche|page)(\s+(3d|anim[ée]e|svg|r[ée]aliste))?(\s+de\s+\d+\s*(secondes?|sec|minutes?|min|s)\b)?\s*(de |d['’]|:|—|-)?/gi, ' ');
-  const segs = body.split(/[,;:\n]| et | avec | ainsi que | entour[ée]e? de | o[uù] /i).map((x) => x.trim()).filter(Boolean);
+    .replace(
+      /\b(une?|la|le)\s+(vid[ée]o|illustration|image|sc[èe]ne|vue|animation|dessin|film|clip|affiche|page)(\s+(3d|anim[ée]e|svg|r[ée]aliste))?(\s+de\s+\d+\s*(secondes?|sec|minutes?|min|s)\b)?\s*(de |d['’]|:|—|-)?/gi,
+      ' ',
+    );
+  const segs = body
+    .split(/[,;:\n]| et | avec | ainsi que | entour[ée]e? de | o[uù] /i)
+    .map((x) => x.trim())
+    .filter(Boolean);
   const items: { text: string; head: string }[] = [];
   const circumstances: string[] = [];
   for (const seg of segs) {
@@ -269,10 +622,22 @@ export function promptItems(prompt: string): { items: { text: string; head: stri
   }
   return { items: items.slice(0, 16), circumstances };
 }
-const stem = (w: string) => fold(w).replace(/(x|s)$/, '').replace(/e$/, '');
-const mentions = (text: string, head: string) => fold(text).split(' ').some((w) => w.length >= 3 && (stem(w) === stem(head) || (stem(head).length >= 5 && stem(w).startsWith(stem(head).slice(0, 5)))));
+const stem = (w: string) =>
+  fold(w)
+    .replace(/(x|s)$/, '')
+    .replace(/e$/, '');
+const mentions = (text: string, head: string) =>
+  fold(text)
+    .split(' ')
+    .some(
+      (w) =>
+        w.length >= 3 &&
+        (stem(w) === stem(head) || (stem(head).length >= 5 && stem(w).startsWith(stem(head).slice(0, 5)))),
+    );
 type SpecEl = { name: string; where?: string; size?: string };
-function parseSpec(raw: string | null | undefined): { elements: SpecEl[]; light: string; view: string } | null {
+function parseSpec(
+  raw: string | null | undefined,
+): { elements: SpecEl[]; light: string; view: string } | null {
   if (!raw) return null;
   try {
     const o = JSON.parse(raw) as { elements?: unknown; light?: unknown; view?: unknown; time?: unknown };
@@ -280,10 +645,26 @@ function parseSpec(raw: string | null | undefined): { elements: SpecEl[]; light:
       .map((e) => (typeof e === 'string' ? { name: e } : (e as SpecEl)))
       .filter((e) => e && typeof e.name === 'string' && e.name.trim())
       .slice(0, 40);
-    return { elements, light: `${String(o.light ?? '')} ${String(o.time ?? '')}`.trim(), view: String(o.view ?? '') };
+    return {
+      elements,
+      light: `${String(o.light ?? '')} ${String(o.time ?? '')}`.trim(),
+      view: String(o.view ?? ''),
+    };
   } catch {
     return null;
   }
+}
+/** What the eye of JEV must see: the page's own spec elements (with their place), else the request's items; its circumstances. */
+export function eyeTargets(
+  prompt: string,
+  run: RealizeRun,
+): { elements: { name: string; where?: string }[]; circumstances: string[] } {
+  const spec = parseSpec(run.stats.spec);
+  const { items, circumstances } = promptItems(prompt);
+  const elements = spec?.elements.length
+    ? spec.elements.map((e) => ({ name: e.name, where: e.where }))
+    : items.map((i) => ({ name: i.text }));
+  return { elements: elements.slice(0, 12), circumstances: circumstances.slice(0, 4) };
 }
 /** Where an element must stand (fractions of the scene): centre, left, right, top, bottom. */
 function placeIssue(where: string | undefined, cx: number, cy: number): string | null {
@@ -304,16 +685,37 @@ export function fidelityProblems(prompt: string, run: RealizeRun): RealizeError[
   const out: RealizeError[] = [];
   const spec = parseSpec(run.stats.spec);
   if (!spec || !spec.elements.length) {
-    out.push({ kind: 'spec', msg: 'cahier des charges absent : ajoute <script type="application/json" id="realize-spec"> avec chaque élément nommé par la demande, puis data-element sur chacun.', line: null });
+    out.push({
+      kind: 'spec',
+      msg: 'cahier des charges absent : ajoute <script type="application/json" id="realize-spec"> avec chaque élément nommé par la demande, puis data-element sur chacun.',
+      line: null,
+    });
     return out;
   }
   const { items, circumstances } = promptItems(prompt);
   for (const it of items)
-    if (!spec.elements.some((e) => mentions(e.name, it.head) || mentions(`${e.name} ${(e as { detail?: string }).detail ?? ''}`, it.head)))
-      out.push({ kind: 'spec', msg: `la demande nomme « ${it.text} » : aucun élément du cahier des charges ne le représente — ajoute-le et dessine-le.`, line: null });
+    if (
+      !spec.elements.some(
+        (e) =>
+          mentions(e.name, it.head) ||
+          mentions(`${e.name} ${(e as { detail?: string }).detail ?? ''}`, it.head),
+      )
+    )
+      out.push({
+        kind: 'spec',
+        msg: `la demande nomme « ${it.text} » : aucun élément du cahier des charges ne le représente — ajoute-le et dessine-le.`,
+        line: null,
+      });
   for (const c of circumstances) {
-    const words = fold(c).split(' ').filter((w) => w.length >= 4 && !STOPW.has(w));
-    if (words.length && !words.some((w) => mentions(`${spec.light} ${spec.view}`, w))) out.push({ kind: 'spec', msg: `la demande précise « ${c} » : le cahier des charges (light / view) ne le reprend pas — la lumière et le point de vue doivent le montrer.`, line: null });
+    const words = fold(c)
+      .split(' ')
+      .filter((w) => w.length >= 4 && !STOPW.has(w));
+    if (words.length && !words.some((w) => mentions(`${spec.light} ${spec.view}`, w)))
+      out.push({
+        kind: 'spec',
+        msg: `la demande précise « ${c} » : le cahier des charges (light / view) ne le reprend pas — la lumière et le point de vue doivent le montrer.`,
+        line: null,
+      });
   }
   const tagged = run.stats.tagged ?? [];
   const declared = run.stats.declared ?? null;
@@ -321,18 +723,37 @@ export function fidelityProblems(prompt: string, run: RealizeRun): RealizeError[
   for (const e of spec.elements) {
     const t = tagged.find((x) => fold(x.name) === fold(e.name));
     if (canvasOnly) {
-      if (!declared?.some((d) => fold(d) === fold(e.name))) out.push({ kind: 'spec', msg: `« ${e.name} » n’est pas déclaré rendu (window.REALIZE_ELEMENTS) : dessine-le dans la scène et déclare-le.`, line: null });
+      if (!declared?.some((d) => fold(d) === fold(e.name)))
+        out.push({
+          kind: 'spec',
+          msg: `« ${e.name} » n’est pas déclaré rendu (window.REALIZE_ELEMENTS) : dessine-le dans la scène et déclare-le.`,
+          line: null,
+        });
       continue;
     }
     if (!t) {
-      out.push({ kind: 'spec', msg: `« ${e.name} » (cahier des charges) n’a aucun élément data-element="${e.name}" dans la page : dessine-le et marque-le.`, line: null });
+      out.push({
+        kind: 'spec',
+        msg: `« ${e.name} » (cahier des charges) n’a aucun élément data-element="${e.name}" dans la page : dessine-le et marque-le.`,
+        line: null,
+      });
       continue;
     }
     const min = /petit/.test(fold(e.size ?? '')) ? 0.0008 : /grand/.test(fold(e.size ?? '')) ? 0.03 : 0.004;
-    if (t.area < min) out.push({ kind: 'spec', msg: `« ${e.name} » est presque invisible : ${(t.area * 100).toFixed(2)} % de la scène${e.size ? ` alors qu’il est « ${e.size} »` : ''} — agrandis-le, sors-le de derrière les autres, rends-le opaque.`, line: null });
+    if (t.area < min)
+      out.push({
+        kind: 'spec',
+        msg: `« ${e.name} » est presque invisible : ${(t.area * 100).toFixed(2)} % de la scène${e.size ? ` alors qu’il est « ${e.size} »` : ''} — agrandis-le, sors-le de derrière les autres, rends-le opaque.`,
+        line: null,
+      });
     else {
       const p = placeIssue(e.where, t.cx, t.cy);
-      if (p) out.push({ kind: 'spec', msg: `« ${e.name} » doit être ${p} : son centre est à ${Math.round(t.cx * 100)} % de largeur, ${Math.round(t.cy * 100)} % de hauteur.`, line: null });
+      if (p)
+        out.push({
+          kind: 'spec',
+          msg: `« ${e.name} » doit être ${p} : son centre est à ${Math.round(t.cx * 100)} % de largeur, ${Math.round(t.cy * 100)} % de hauteur.`,
+          line: null,
+        });
     }
   }
   return out.slice(0, 10);
@@ -352,14 +773,35 @@ export function librariesUsed(code: string): string[] {
 }
 
 /** Verdict of a run from what the bridge reported (pure: the runner only collects). */
-export function verdict(errors: RealizeError[], warnings: string[], stats: (Omit<RealizeRun['stats'], 'libs'> & { loading?: boolean }) | null, code: string): RealizeRun {
+export function verdict(
+  errors: RealizeError[],
+  warnings: string[],
+  stats: (Omit<RealizeRun['stats'], 'libs'> & { loading?: boolean }) | null,
+  code: string,
+): RealizeRun {
   const errs = [...errors];
   const warns = [...warnings];
-  if (stats?.loading) errs.push({ kind: 'timeout', msg: 'la page chargeait encore ses bibliothèques au moment de la mesure (réseau lent ou bloqué)', line: null });
+  if (stats?.loading)
+    errs.push({
+      kind: 'timeout',
+      msg: 'la page chargeait encore ses bibliothèques au moment de la mesure (réseau lent ou bloqué)',
+      line: null,
+    });
   const st = stats ?? { elements: 0, text: 0, canvases: 0, svgs: 0, ms: 0 };
-  if (!stats) errs.push({ kind: 'timeout', msg: 'la page ne s’est pas chargée à temps (bibliothèque injoignable, réseau coupé ou script bloquant)', line: null });
+  if (!stats)
+    errs.push({
+      kind: 'timeout',
+      msg: 'la page ne s’est pas chargée à temps (bibliothèque injoignable, réseau coupé ou script bloquant)',
+      line: null,
+    });
   // An empty page whose libraries did not arrive is a network failure, not an empty design.
-  else if (st.text === 0 && st.canvases === 0 && st.svgs === 0 && st.elements < 2 && !errs.some((e) => e.kind === 'resource' || e.kind === 'timeout'))
+  else if (
+    st.text === 0 &&
+    st.canvases === 0 &&
+    st.svgs === 0 &&
+    st.elements < 2 &&
+    !errs.some((e) => e.kind === 'resource' || e.kind === 'timeout')
+  )
     errs.push({ kind: 'empty', msg: 'la page est vide : rien de visible ne s’affiche', line: null });
   // Duplicates (the same error at every frame) are reported once.
   const seen = new Set<string>();
@@ -370,7 +812,12 @@ export function verdict(errors: RealizeError[], warnings: string[], stats: (Omit
     return true;
   });
   const { loading: _loading, ...measures } = st as typeof st & { loading?: boolean };
-  return { ok: unique.length === 0, errors: unique, warnings: [...new Set(warns)].slice(0, 10), stats: { ...measures, libs: librariesUsed(code) } };
+  return {
+    ok: unique.length === 0,
+    errors: unique,
+    warnings: [...new Set(warns)].slice(0, 10),
+    stats: { ...measures, libs: librariesUsed(code) },
+  };
 }
 
 /**
@@ -378,15 +825,26 @@ export function verdict(errors: RealizeError[], warnings: string[], stats: (Omit
  * numbers of the model's code are unchanged): the security policy, the import map (merged with one the model may have
  * written), the bridge and the user's data. A fragment without <html> is wrapped first.
  */
-export function buildDocument(html: string, o: { bridge?: string; data?: unknown; meta?: unknown; token?: string; record?: { ms: number; fps?: number; exact?: boolean } }): string {
+export function buildDocument(
+  html: string,
+  o: {
+    bridge?: string;
+    data?: unknown;
+    meta?: unknown;
+    token?: string;
+    record?: { ms: number; fps?: number; exact?: boolean };
+  },
+): string {
   let doc = html.trim();
-  if (!/<html[\s>]/i.test(doc)) doc = `<!doctype html><html lang="fr"><head><meta charset="utf-8"></head><body>${doc}</body></html>`;
+  if (!/<html[\s>]/i.test(doc))
+    doc = `<!doctype html><html lang="fr"><head><meta charset="utf-8"></head><body>${doc}</body></html>`;
   // A model-written import map is merged into ours (only one map is allowed before the first module).
   const map = importMap();
   doc = doc.replace(/<script\s+type=["']importmap["'][^>]*>([\s\S]*?)<\/script>/gi, (_m, body: string) => {
     try {
       const extra = JSON.parse(body) as { imports?: Record<string, string> };
-      for (const [k, v] of Object.entries(extra.imports ?? {})) if (/^https:\/\/(esm\.sh|cdn\.jsdelivr\.net)\//.test(v)) map.imports[k] = v;
+      for (const [k, v] of Object.entries(extra.imports ?? {}))
+        if (/^https:\/\/(esm\.sh|cdn\.jsdelivr\.net)\//.test(v)) map.imports[k] = v;
     } catch {
       /* invalid map: dropped, ours stays */
     }
@@ -413,7 +871,17 @@ export function buildDocument(html: string, o: { bridge?: string; data?: unknown
 }
 
 export interface RealizeError {
-  kind: 'runtime' | 'promise' | 'console' | 'resource' | 'csp' | 'empty' | 'timeout' | 'blocked' | 'video' | 'spec';
+  kind:
+    | 'runtime'
+    | 'promise'
+    | 'console'
+    | 'resource'
+    | 'csp'
+    | 'empty'
+    | 'timeout'
+    | 'blocked'
+    | 'video'
+    | 'spec';
   msg: string;
   line: number | null;
 }
@@ -449,23 +917,44 @@ export function linesAround(code: string, line: number, span = 2): string {
   const a = Math.max(1, line - span);
   const b = Math.min(ls.length, line + span);
   const out: string[] = [];
-  for (let i = a; i <= b; i++) out.push(`${i === line ? '>>' : '  '} ${String(i).padStart(3)} | ${ls[i - 1]}`);
+  for (let i = a; i <= b; i++)
+    out.push(`${i === line ? '>>' : '  '} ${String(i).padStart(3)} | ${ls[i - 1]}`);
   return out.join('\n');
 }
 
 const HINTS: [RegExp, string][] = [
-  [/Failed to resolve module specifier|bare specifier/i, 'Importe seulement les noms du MOTEUR DISPONIBLE (ex. "chart.js/auto", "three", "three/addons/controls/OrbitControls.js").'],
-  [/Content Security Policy|Refused to (load|connect|execute)/i, 'Le bac à sable n’autorise que esm.sh et cdn.jsdelivr.net : retire tout autre lien réseau (dessine en SVG/canvas au lieu d’images distantes).'],
-  [/localStorage|sessionStorage|document\.cookie|SecurityError/i, 'Le stockage du navigateur est bloqué dans le bac à sable : garde l’état dans des variables JavaScript.'],
-  [/alert|confirm|prompt\b|showModal|modal/i, 'alert/confirm/prompt sont bloqués : affiche les messages dans la page.'],
-  [/is not defined/i, 'Déclare la variable ou importe le module correspondant dans le <script type="module">.'],
+  [
+    /Failed to resolve module specifier|bare specifier/i,
+    'Importe seulement les noms du MOTEUR DISPONIBLE (ex. "chart.js/auto", "three", "three/addons/controls/OrbitControls.js").',
+  ],
+  [
+    /Content Security Policy|Refused to (load|connect|execute)/i,
+    'Le bac à sable n’autorise que esm.sh et cdn.jsdelivr.net : retire tout autre lien réseau (dessine en SVG/canvas au lieu d’images distantes).',
+  ],
+  [
+    /localStorage|sessionStorage|document\.cookie|SecurityError/i,
+    'Le stockage du navigateur est bloqué dans le bac à sable : garde l’état dans des variables JavaScript.',
+  ],
+  [
+    /alert|confirm|prompt\b|showModal|modal/i,
+    'alert/confirm/prompt sont bloqués : affiche les messages dans la page.',
+  ],
+  [
+    /is not defined/i,
+    'Déclare la variable ou importe le module correspondant dans le <script type="module">.',
+  ],
   [/Unexpected token '<'|JSX/i, 'Pas de JSX : utilise htm (`const html = htm.bind(React.createElement)`).'],
-  [/Cannot read properties of null|is null/i, 'L’élément visé n’existe pas encore : exécute le script après le HTML (fin de <body>) ou vérifie l’id.'],
+  [
+    /Cannot read properties of null|is null/i,
+    'L’élément visé n’existe pas encore : exécute le script après le HTML (fin de <body>) ou vérifie l’id.',
+  ],
 ];
 
 /** The correction message: every real error, the faulty lines, targeted hints. */
 export function realizeFeedback(code: string, run: RealizeRun): string {
-  const errs = run.errors.slice(0, 8).map((e, i) => `${i + 1}. [${e.kind}] ${e.msg}${e.line ? `\n${linesAround(code, e.line)}` : ''}`);
+  const errs = run.errors
+    .slice(0, 8)
+    .map((e, i) => `${i + 1}. [${e.kind}] ${e.msg}${e.line ? `\n${linesAround(code, e.line)}` : ''}`);
   const all = run.errors.map((e) => e.msg).join(' ');
   const hints = HINTS.filter(([re]) => re.test(all)).map(([, h]) => `- ${h}`);
   const fidelity = run.errors.length > 0 && run.errors.every((e) => e.kind === 'spec' || e.kind === 'video');
@@ -507,11 +996,19 @@ export async function realizeWithCorrection(o: {
   onRound?: (r: RealizeRound) => void;
   /** Page to start from (iterating on an existing realization). */
   base?: string;
+  /** THE EYE OF JEV (v64): looks at the rendered image and returns what the request names but it does not SEE (French
+   *  problems), [] when all is seen, null when it cannot look (no canvas, no key, budget, network): never blocks. */
+  see?: (run: RealizeRun) => Promise<string[] | null>;
 }): Promise<{ ok: boolean; rounds: RealizeRound[]; code: string; network?: boolean }> {
   const maxRounds = Math.max(1, o.maxRounds ?? 3);
   const messages: Msg[] = [
     { role: 'system', content: systemPrompt(o.kind, { data: o.data, video: o.video, ask: o.prompt }) },
-    { role: 'user', content: o.base ? `Page actuelle :\n\`\`\`html\n${o.base}\n\`\`\`\n\nModification demandée : ${o.prompt}` : o.prompt },
+    {
+      role: 'user',
+      content: o.base
+        ? `Page actuelle :\n\`\`\`html\n${o.base}\n\`\`\`\n\nModification demandée : ${o.prompt}`
+        : o.prompt,
+    },
   ];
   const rounds: RealizeRound[] = [];
   let feedback = '';
@@ -532,6 +1029,14 @@ export async function realizeWithCorrection(o: {
         run.errors.push(...fp);
       } else if (fp.length) run.warnings.push(...fp.map((e) => `fidélité : ${e.msg}`));
     }
+    // THE EYE: once the page is right in the DOM, Jev 1.14 checks that the elements are really VISIBLE in the image.
+    if (run.ok && o.see && FIDELITY_KINDS.includes(o.kind) && !o.base) {
+      const seen = await o.see(run).catch(() => null);
+      if (seen?.length && r < maxRounds) {
+        run.ok = false;
+        run.errors.push(...seen.map((msg) => ({ kind: 'spec' as const, msg, line: null })));
+      } else if (seen?.length) run.warnings.push(...seen.map((m) => `œil de JEV : ${m}`));
+    }
     const round = { round: r, code, run, feedback };
     rounds.push(round);
     o.onRound?.(round);
@@ -539,7 +1044,10 @@ export async function realizeWithCorrection(o: {
     // The network, not the code: asking the model to « fix » it would cost tokens and change nothing.
     if (networkOnly(run, code)) return { ok: false, rounds, code, network: true };
     feedback = realizeFeedback(code, run);
-    messages.push({ role: 'assistant', content: `\`\`\`html\n${code}\n\`\`\`` }, { role: 'user', content: feedback });
+    messages.push(
+      { role: 'assistant', content: `\`\`\`html\n${code}\n\`\`\`` },
+      { role: 'user', content: feedback },
+    );
   }
   return { ok: false, rounds, code: rounds[rounds.length - 1]!.code };
 }

@@ -3,6 +3,15 @@
 // metrics / explain. JEV-0 is local and deterministic; JEV-1 (TypeSafe Jev) is
 // called only through the ROI gate; JEV-2 (a cheap LLM arbitration) only on a
 // real conflict. Any failure falls back to JEV-0: JEV never blocks the Workbench.
+import {
+  callEye,
+  eyeBody,
+  eyeSize,
+  fidelityQuestions,
+  readEye,
+  type EyeElement,
+  type EyeVerdict,
+} from '../../server/jev/eye';
 import { JevCache } from '../../server/jev/cache';
 import { budgetsFor, marginalGain, type ExecutionMonitor } from '../../server/jev/control';
 import { compileContext, estTokens, type ContextItem } from '../../server/jev/context';
@@ -611,3 +620,74 @@ export const jev = {
   metrics,
   explain,
 };
+
+/**
+ * THE EYE OF JEV (Jev 1.14 reads images): typed judgments on ONE image — is each requested element seen (probability),
+ * are the circumstances conveyed, how finished is it. null when it cannot look (provider local, no key, daily budget,
+ * error): the caller goes on without it. The cost is TypeSafe's published price on the input tokens it reports.
+ */
+export async function jevSee(
+  dataUrl: string,
+  elements: EyeElement[],
+  circumstances: string[] = [],
+  o: { boxes?: boolean } = {},
+): Promise<EyeVerdict | null> {
+  const s = jevSettings();
+  if (s.provider === 'local' || !getJevKey()) return null;
+  if ((useStore.getState().jevSpend[today()] ?? 0) >= s.budgetDaily) return null;
+  const m = /^data:image\/(png|jpe?g);base64,(.+)$/.exec(dataUrl);
+  if (!m || !elements.length) return null;
+  try {
+    eyeStatus.calls++;
+    const r = await callEye(
+      s,
+      getJevKey(),
+      eyeBody(m[2]!, m[1] === 'png' ? 'png' : 'jpg', fidelityQuestions(elements, circumstances, o)),
+      (url, init) => fetch(url, init) as never,
+    );
+    const v = readEye(r.raw as never, elements, circumstances);
+    Object.assign(eyeStatus, { ok: true, lastError: null, lastMs: r.ms });
+    addJevSpend(v.costUsd);
+    return v;
+  } catch (e) {
+    // Kept apart from the text status: an old relay (no images header) must not mark JEV-1 as down.
+    Object.assign(eyeStatus, { ok: false, lastError: jevErrorText(e, Math.max(8000, s.timeoutMs)) });
+    return null;
+  }
+}
+/** The eye's own status (calls, last outcome): shown in the JEV centre, separate from the text judgments. */
+const eyeStatus: { calls: number; ok: boolean | null; lastError: string | null; lastMs: number | null } = {
+  calls: 0,
+  ok: null,
+  lastError: null,
+  lastMs: null,
+};
+export const jevEyeStatus = () => ({ ...eyeStatus });
+
+/** The eye on an image Blob (generated picture): fitted to the API's limits, sent as JPEG; null when it cannot look. */
+export async function jevSeeBlob(
+  blob: Blob,
+  elements: EyeElement[],
+  circumstances: string[] = [],
+): Promise<EyeVerdict | null> {
+  try {
+    if (typeof createImageBitmap !== 'function' || typeof OffscreenCanvas === 'undefined') return null;
+    const bmp = await createImageBitmap(blob);
+    const z = eyeSize(bmp.width, bmp.height);
+    const cv = new OffscreenCanvas(z.w, z.h);
+    const g = cv.getContext('2d');
+    if (!g) return null;
+    g.drawImage(bmp, 0, 0, z.w, z.h);
+    bmp.close();
+    const jpg = await cv.convertToBlob({ type: 'image/jpeg', quality: 0.82 });
+    const url = await new Promise<string>((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(String(fr.result));
+      fr.onerror = () => rej(fr.error);
+      fr.readAsDataURL(jpg);
+    });
+    return jevSee(url, elements, circumstances);
+  } catch {
+    return null;
+  }
+}

@@ -25,6 +25,8 @@ import { useStore } from '../store';
 import { craftSet } from './craftSet';
 import { craftStoryRules } from '../../../server/jev/studio/craftSkills';
 import { blobs, blobToDataUrl, base64ToBlob } from './blobs';
+import { rankVariants, sceneEyeTargets } from '../../../server/jev/eye';
+import { jevSeeBlob } from '../jev';
 import { discover, generateImage, loadImagePrices, speak } from './net';
 import { executeMedia, type MediaOutcome } from './exec';
 import { runText } from './textModel';
@@ -989,6 +991,28 @@ export async function generateSceneImage(
       if (best.judgement && i === 0) arts.set(sceneId, best.judgement);
     }
     if (out.assetId) ids.push(out.assetId);
+  }
+  // BEST OF N — the eye of JEV (Jev 1.14): the variant where the characters, the setting, the moment are the most surely
+  // SEEN goes first (it becomes the scene's image). Without the eye (no key, budget, relay) the order stays as generated.
+  if (ids.length > 1) {
+    const t = sceneEyeTargets(sc, bp.characters);
+    const judged = await Promise.all(
+      ids.map(async (id) => {
+        const b = await blobs.get(id);
+        const verdict = b ? await jevSeeBlob(b, t.elements, t.circumstances) : null;
+        return verdict ? { id, verdict } : null;
+      }),
+    );
+    const ok = judged.filter((x): x is NonNullable<typeof x> => Boolean(x));
+    if (ok.length === ids.length) {
+      const ranked = rankVariants(ok);
+      ids.splice(0, ids.length, ...ranked.map((x) => x.id));
+      const best = ranked[0]!.verdict;
+      trace.stage(
+        'QA',
+        `œil de JEV : variante retenue parmi ${ranked.length} — fidélité ${best.fidelity.toFixed(2)}, ${best.seen.length}/${best.seen.length + best.missing.length} éléments vus${best.missing.length ? ` (manque : ${best.missing.map((m) => m.name).join(', ')})` : ''}`,
+      );
+    }
   }
   if (ids.length)
     patch(projectId, (b) => ({
