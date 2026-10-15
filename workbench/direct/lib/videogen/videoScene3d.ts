@@ -3,9 +3,12 @@
 // son d'origine, export RGBD (couleur | profondeur côte à côte dans un seul MP4) et page HTML 3D autonome.
 import * as THREE from 'three';
 import { cameraState } from '../../../server/jev/videogen/imageMotion';
-import { DepthTracker, depthAt, keyframeStride, outputSizeFor, quantize, toLuma, trackSize, type DepthTrack, type VideoSceneSpec } from '../../../server/jev/videogen/videoDepth';
+import { DepthTracker, atlasLayout, dilateNear, depthAt, isCut, keyframeStride, outputSizeFor, placeBand, quantize, rowSharpness, sharpBand, toLuma, trackSize, type DepthTrack, type VideoSceneSpec } from '../../../server/jev/videogen/videoDepth';
+import { extractAac, type AacTrack } from './audioCopy';
 import { frameDepth } from './depth';
-import { decodeAudio, openMp4, type Encoded } from './encode';
+import { decodeAudio, openMp4, type AudioCopy, type AudioTrack, type Encoded } from './encode';
+import { bytesB64, pageLibs } from './pageLibs';
+import { buildScenePage, type SceneCamera } from './scenePage';
 import { finishFrame, sceneRuntime, type SceneCam, type SceneLook } from './videoScene';
 
 export interface VideoClip {
@@ -75,43 +78,88 @@ export async function analyseClip(
   small.width = w;
   small.height = h;
   const sg = small.getContext('2d', { willReadFrequently: true })!;
-  const [mw, mh] = trackSize(clip.width, clip.height, 518);
+  const grab = async (i: number) => {
+    await seekTo(clip.el, i / fps + 0.001);
+    sg.drawImage(clip.el, 0, 0, w, h);
+    return toLuma(sg.getImageData(0, 0, w, h).data, w, h);
+  };
+  // A shot laid over its own blurred copy (vertical layout): depth is measured on the sharp band only.
+  const rows = new Float32Array(h);
+  for (let i = 0; i < Math.min(n, 6); i++) rowSharpness(await grab(Math.floor((i * n) / 6)), w, h, rows);
+  const band = sharpBand(rows);
+  const [y0, y1] = band ?? [0, h];
+  const sy0 = Math.round((y0 * clip.height) / h);
+  const sy1 = Math.round((y1 * clip.height) / h);
+  // The model sees the band (or the frame) with its short side near 518 px; the small canvas holds the band at track width.
+  const [mw, mh] = trackSize(clip.width, sy1 - sy0, 518);
   const big = document.createElement('canvas');
   big.width = mw;
   big.height = mh;
   const bg = big.getContext('2d')!;
+  const bandC = document.createElement('canvas');
+  bandC.width = w;
+  bandC.height = y1 - y0;
+  const bandG = bandC.getContext('2d', { willReadFrequently: true })!;
   const tracker = new DepthTracker(w, h);
   const frames: Uint8Array[] = [];
+  const cuts: number[] = [];
   let stride = 1;
   let keyframes = 0;
   let source = '';
+  let prev: Uint8Array | null = null;
+  let sinceKey = 0;
   for (let i = 0; i < n; i++) {
     if (o.signal?.aborted) throw new Error('analyse interrompue');
-    await seekTo(clip.el, i / fps + 0.001);
-    sg.drawImage(clip.el, 0, 0, w, h);
-    const luma = toLuma(sg.getImageData(0, 0, w, h).data, w, h);
+    const luma = await grab(i);
+    // A new shot: nothing is carried over, and its first frame is always measured.
+    const cut = prev !== null && isCut(prev, luma);
+    if (cut) {
+      cuts.push(i);
+      tracker.reset();
+    }
     let fresh: Float32Array | null = null;
-    if (i % stride === 0) {
-      bg.drawImage(clip.el, 0, 0, mw, mh);
-      const d = await frameDepth(big, small, w, h, { allowModel: o.allowModel, onStatus: o.onStatus });
-      fresh = d.data;
+    if (i === 0 || cut || sinceKey >= stride) {
+      bg.drawImage(clip.el, 0, sy0, clip.width, sy1 - sy0, 0, 0, mw, mh);
+      bandG.drawImage(clip.el, 0, sy0, clip.width, sy1 - sy0, 0, 0, w, y1 - y0);
+      const d = await frameDepth(big, bandC, w, y1 - y0, { allowModel: o.allowModel, onStatus: o.onStatus });
+      fresh = placeBand(d.data, w, h, y0, y1, 0);
       keyframes++;
+      sinceKey = 0;
       if (!source) source = d.source;
       else if (source !== d.source && !source.includes('+')) source = `${source} + ${d.source}`;
       if (i === 0) {
-        // The first measured cost sets the key-frame rhythm that fits the budget.
+        // The measured inference time sets the key-frame rhythm that fits the budget.
         stride = keyframeStride(n, d.ms + 25, o.budgetMs ?? 45_000);
-        o.onStatus?.(`profondeur ${d.source} : ${d.ms} ms par image clé → une image clé toutes les ${stride} image(s)`);
+        o.onStatus?.(`profondeur ${d.source} : ${d.ms} ms par image clé → une image clé toutes les ${stride} image(s)${band ? ' · bande nette détectée' : ''}`);
       }
     }
-    frames.push(quantize(tracker.push(luma, fresh)));
+    sinceKey++;
+    frames.push(quantize(dilateNear(tracker.push(luma, fresh), w, h)));
+    prev = luma;
     if (i % 3 === 0) {
       o.onProgress?.(i + 1, n);
       await new Promise((r) => setTimeout(r, 0));
     }
   }
   o.onProgress?.(n, n);
-  return { frames, w, h, fps, source: source || 'heuristique', keyframes, stride, ms: Math.round(performance.now() - t0) };
+  return { frames, w, h, fps, source: source || 'heuristique', keyframes, stride, ms: Math.round(performance.now() - t0), band: band ?? undefined, cuts };
+}
+
+/** The sound to put in an exported MP4: the original AAC copied bit for bit when the file is an MP4, else re-encoded. */
+async function soundOf(clip: VideoClip, seconds: number): Promise<AudioCopy | AudioTrack | null> {
+  const aac = await aacOf(clip);
+  if (aac) return { copy: aac, seconds };
+  const pcm = await decodeAudio(clip.file);
+  return pcm ? { buffer: pcm, seconds } : null;
+}
+const aacCache = new WeakMap<Blob, Promise<AacTrack | null>>();
+function aacOf(clip: VideoClip): Promise<AacTrack | null> {
+  let p = aacCache.get(clip.file);
+  if (!p) {
+    p = clip.file.arrayBuffer().then((b) => extractAac(b));
+    aacCache.set(clip.file, p);
+  }
+  return p;
 }
 
 export function lookOf(spec: VideoSceneSpec): SceneLook {
@@ -149,8 +197,7 @@ export async function renderSceneMp4(clip: VideoClip, track: DepthTrack, spec: V
   const frames = Math.max(1, Math.floor(clip.duration * fps));
   const sc = openScene(clip, track, spec.quality);
   const out = document.createElement('canvas');
-  const sound = spec.audio ? await decodeAudio(clip.file) : null;
-  const mp4 = await openMp4(sc.width, sc.height, fps, undefined, sound ? { buffer: sound, seconds: frames / fps } : null);
+  const mp4 = await openMp4(sc.width, sc.height, fps, undefined, spec.audio ? await soundOf(clip, frames / fps) : null);
   if (!mp4) {
     sc.dispose();
     throw new Error('ce navigateur n’a pas d’encodeur vidéo WebCodecs (Chrome ou Edge récents)');
@@ -189,8 +236,7 @@ export async function renderRgbdMp4(clip: VideoClip, track: DepthTrack, o: { fps
   const dg = dc.getContext('2d')!;
   const img = dg.createImageData(track.w, track.h);
   const buf = new Uint8Array(track.w * track.h);
-  const sound = o.audio !== false ? await decodeAudio(clip.file) : null;
-  const mp4 = await openMp4(W * 2, H, fps, Math.round(W * 2 * H * fps * 0.16), sound ? { buffer: sound, seconds: frames / fps } : null);
+  const mp4 = await openMp4(W * 2, H, fps, Math.round(W * 2 * H * fps * 0.16), o.audio !== false ? await soundOf(clip, frames / fps) : null);
   if (!mp4) throw new Error('ce navigateur n’a pas d’encodeur vidéo WebCodecs (Chrome ou Edge récents)');
   g.imageSmoothingQuality = 'high';
   for (let i = 0; i < frames; i++) {
@@ -213,67 +259,65 @@ export async function renderRgbdMp4(clip: VideoClip, track: DepthTrack, o: { fps
   return mp4.close();
 }
 
-const esc = (s: string) => s.replace(/<\/script/gi, '<\\/script');
-function blobToDataUrl(b: Blob): Promise<string> {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(String(r.result));
-    r.onerror = () => rej(r.error);
-    r.readAsDataURL(b);
+/** Self-contained HTML page (one file, works offline): the ORIGINAL video untouched, one depth map per frame (lossless
+ *  atlas), the original AAC sound, three.js and mp4-muxer embedded; MP4 export inside the page. */
+export async function sceneToHtml(clip: VideoClip, track: DepthTrack, meta: { title: string; spec: VideoSceneSpec; camera?: SceneCamera }): Promise<string> {
+  const L = atlasLayout(track.frames.length, track.w, track.h);
+  const c = document.createElement('canvas');
+  c.width = L.width;
+  c.height = L.height;
+  const g = c.getContext('2d')!;
+  const img = g.createImageData(L.width, L.height);
+  track.frames.forEach((f, k) => {
+    const cx = (k % L.cols) * track.w;
+    const cy = Math.floor(k / L.cols) * track.h;
+    for (let y = 0; y < track.h; y++)
+      for (let x = 0; x < track.w; x++) {
+        const q = ((cy + y) * L.width + cx + x) * 4;
+        img.data[q] = img.data[q + 1] = img.data[q + 2] = f[y * track.w + x]!;
+        img.data[q + 3] = 255;
+      }
+  });
+  g.putImageData(img, 0, 0);
+  const png = await new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('atlas de profondeur'))), 'image/png'));
+  const aac = await aacOf(clip);
+  const mime = clip.file.type || (aac ? 'video/mp4' : 'video/webm');
+  return buildScenePage({
+    title: meta.title,
+    video: { b64: bytesB64(new Uint8Array(await clip.file.arrayBuffer())), mime, width: clip.width, height: clip.height, duration: clip.duration, fps: 30, hasAudio: true },
+    depth: { atlasB64: bytesB64(new Uint8Array(await png.arrayBuffer())), w: track.w, h: track.h, n: track.frames.length, fps: track.fps, cols: L.cols, cuts: track.cuts ?? [], band: track.band ?? null, source: track.source },
+    audio: aac ? { codec: aac.codec, sampleRate: aac.sampleRate, channels: aac.channels, descB64: bytesB64(aac.description), dataB64: bytesB64(aac.data), table: aac.table } : null,
+    libs: pageLibs(),
+    look: lookOf(meta.spec),
+    camera: meta.camera ?? (meta.spec.preset === 'travelling_avant' ? 'travelling' : meta.spec.preset === 'fixe_vivant' ? 'fixe' : 'orbite'),
   });
 }
 
-/** Self-contained HTML page: the RGBD video becomes a live 3D scene (drag to move the camera, wheel to dolly). */
-export async function sceneToHtml(rgbd: Blob, meta: { title: string; aspect: number; dw: number; dh: number; spec: VideoSceneSpec }): Promise<string> {
-  const src = await blobToDataUrl(rgbd);
-  const map = { imports: { three: 'https://esm.sh/three@0.186.1' } };
-  const title = (meta.title || 'Scène 3D vidéo').replace(/</g, '&lt;');
-  const init = { aspect: meta.aspect, dw: meta.dw, dh: meta.dh, packed: true };
-  const look = lookOf(meta.spec);
-  return `<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title} — scène 3D</title>
-<style>
-:root{--bg:#07080c;--fg:#eef1f6;--mut:#9aa3b2;--acc:#f26b3a}
-*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,sans-serif}
-main{display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 16px;min-height:100%}
-h1{font-size:17px;margin:0}p{margin:0;color:var(--mut);font-size:12.5px;text-align:center}
-.stage{position:relative;width:min(100%, calc((100vh - 150px) * ${meta.aspect.toFixed(4)}));aspect-ratio:${meta.aspect.toFixed(4)};background:#000;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.55);touch-action:none;cursor:grab}
-.stage canvas{width:100%;height:100%;display:block}
-.bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-button{background:#161a26;color:var(--fg);border:1px solid #2a3142;border-radius:10px;padding:7px 12px;font:inherit;font-size:13px;cursor:pointer}
-button.on{background:var(--acc);border-color:var(--acc);color:#fff}
-video{display:none}
-</style>
-<script type="importmap">${JSON.stringify(map)}</script></head>
-<body><main>
-<h1>${title}</h1>
-<div class="stage" id="stage"><canvas id="c"></canvas></div>
-<div class="bar"><button id="play" class="on">❚❚ Pause</button><button id="snd">🔇 Son</button><button data-s="relief">Relief</button><button data-s="nuage">Nuage de points</button><button data-s="holo">Hologramme</button><button id="auto" class="on">Caméra auto</button></div>
-<p id="msg">Glissez pour déplacer la caméra, molette ou pincement pour avancer. Pixels d’origine + une carte de profondeur par image (three.js, MIT).</p>
-</main>
-<video id="v" src="${src}" muted loop playsinline></video>
-<script type="module">
-import * as THREE from 'three';
-const sceneRuntime = ${esc(sceneRuntime.toString())};
-const INIT = ${JSON.stringify(init)}, LOOK = ${JSON.stringify(look)};
-const v = document.getElementById('v'), cv = document.getElementById('c'), stage = document.getElementById('stage'), msg = document.getElementById('msg');
-let rt = null, auto = true, drag = null, off = { x: 0, y: 0, z: 0 }, t0 = performance.now();
-function size() { const r = stage.getBoundingClientRect(), k = Math.min(2, window.devicePixelRatio || 1); return [Math.max(2, Math.round(r.width * k)), Math.max(2, Math.round(r.height * k))]; }
-function open() { if (rt) rt.dispose(); const [w, h] = size(); cv.width = w; cv.height = h; rt = sceneRuntime(THREE, cv, Object.assign({ width: w, height: h }, INIT)); }
-function cam(t) { const a = auto ? Math.sin(t * 0.35) : 0, b = auto ? Math.cos(t * 0.27) : 0;
-  return { ox: 0.03 * a + off.x, oy: 0.012 * b + off.y, zoom: 1.06, dolly: Math.max(-0.6, Math.min(0.9, off.z + (auto ? 0.15 + 0.15 * Math.sin(t * 0.2) : 0))), focus: 0.5, roll: auto ? 0.006 * a : 0 }; }
-function frame() { if (v.readyState >= 2) rt.render(v, null, cam((performance.now() - t0) / 1000), LOOK, v.currentTime); requestAnimationFrame(frame); }
-stage.onpointerdown = (e) => { drag = [e.clientX, e.clientY, off.x, off.y]; stage.setPointerCapture(e.pointerId); };
-stage.onpointermove = (e) => { if (!drag) return; const r = stage.getBoundingClientRect(); off.x = drag[2] + (e.clientX - drag[0]) / r.width * 0.12; off.y = drag[3] + (e.clientY - drag[1]) / r.height * 0.08; };
-stage.onpointerup = () => (drag = null);
-stage.onwheel = (e) => { e.preventDefault(); off.z = Math.max(-0.6, Math.min(0.9, off.z - e.deltaY * 0.0012)); };
-document.getElementById('play').onclick = (e) => { if (v.paused) { v.play(); e.target.textContent = '❚❚ Pause'; e.target.classList.add('on'); } else { v.pause(); e.target.textContent = '▶ Lire'; e.target.classList.remove('on'); } };
-document.getElementById('snd').onclick = (e) => { v.muted = !v.muted; e.target.textContent = v.muted ? '🔇 Son' : '🔊 Son'; e.target.classList.toggle('on', !v.muted); if (v.paused) v.play(); };
-document.getElementById('auto').onclick = (e) => { auto = !auto; e.target.classList.toggle('on', auto); };
-for (const b of document.querySelectorAll('[data-s]')) { b.classList.toggle('on', b.dataset.s === LOOK.style); b.onclick = () => { LOOK.style = b.dataset.s; for (const x of document.querySelectorAll('[data-s]')) x.classList.toggle('on', x === b); }; }
-window.addEventListener('resize', open);
-open(); v.play().catch(() => (msg.textContent = 'Cliquez sur ▶ pour lancer la scène.')); requestAnimationFrame(frame);
-window.__scene = { ready: () => v.readyState >= 2 && !!rt };
-</script></body></html>`;
+/** The same self-contained 3D page for a STILL IMAGE: its original file untouched, its depth map (≤ 512 px), a camera
+ *  move of `seconds` (orbit, travelling or mouse), MP4 export inside the page. */
+export async function imageSceneHtml(file: Blob, size: { width: number; height: number }, depth: { data: Float32Array; w: number; h: number; source: string }, o: { title: string; seconds: number; look: SceneLook; camera: SceneCamera }): Promise<string> {
+  const [w, h] = trackSize(size.width, size.height, 512);
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const g = c.getContext('2d')!;
+  const img = g.createImageData(w, h);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const v = depth.data[Math.min(depth.h - 1, Math.floor(((y + 0.5) * depth.h) / h)) * depth.w + Math.min(depth.w - 1, Math.floor(((x + 0.5) * depth.w) / w))] ?? 0;
+      const q = (y * w + x) * 4;
+      img.data[q] = img.data[q + 1] = img.data[q + 2] = Math.round(Math.min(1, Math.max(0, v)) * 255);
+      img.data[q + 3] = 255;
+    }
+  g.putImageData(img, 0, 0);
+  const png = await new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('carte de profondeur'))), 'image/png'));
+  return buildScenePage({
+    title: o.title,
+    video: { b64: bytesB64(new Uint8Array(await file.arrayBuffer())), mime: file.type || 'image/jpeg', width: size.width, height: size.height, duration: o.seconds, fps: 30, hasAudio: false, kind: 'image' },
+    depth: { atlasB64: bytesB64(new Uint8Array(await png.arrayBuffer())), w, h, n: 1, fps: 1, cols: 1, cuts: [], band: null, source: depth.source },
+    audio: null,
+    libs: pageLibs(),
+    look: o.look,
+    camera: o.camera,
+  });
 }

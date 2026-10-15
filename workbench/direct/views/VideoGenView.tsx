@@ -33,6 +33,8 @@ import { encodeMp4, type Encoded } from '../lib/videogen/encode';
 import { openDirector, planToHtml, renderPlanVideo, sizeOf, type Quality } from '../lib/videogen/htmlVideo';
 import { PageHeader } from './PageHeader';
 import { VideoToScene } from './VideoSceneMode';
+import { projectDepth, projectImages, type ProjectImage } from '../lib/videogen/projectImages';
+import { imageSceneHtml } from '../lib/videogen/videoScene3d';
 
 type Mode = 'image' | 'idea' | 'video';
 const LOOK_LABELS: Record<(typeof LOOKS)[number], string> = { cinematic: 'Cinéma', cartoon: 'Dessin animé', lowpoly: 'Low poly', clay: 'Pâte à modeler', neon: 'Néon' };
@@ -377,6 +379,11 @@ function ImageToVideo() {
   const [playing, setPlaying] = useState(false);
   const [video, setVideo] = useState<(Encoded & { url: string }) | null>(null);
   const [regions, setRegions] = useState<{ sky: number; water: number } | null>(null);
+  const [orig, setOrig] = useState<{ blob: Blob; width: number; height: number; name: string } | null>(null);
+  const [gallery, setGallery] = useState(false);
+  const [gKind, setGKind] = useState<ProjectImage['kind']>('décor');
+  const [gFilter, setGFilter] = useState('');
+  const project = useMemo(() => projectImages(), []);
   const canvas = useRef<HTMLCanvasElement>(null);
   const anim = useRef<ImageAnimator | null>(null);
   const masks = useRef<{ sky: Uint8Array; water: Uint8Array; w: number; h: number } | null>(null);
@@ -385,8 +392,9 @@ function ImageToVideo() {
   const t0 = useRef(0);
   const full: ImageMotionSpec = { ...spec, title: title ? { text: title, start: 0.6, duration: Math.min(4, spec.seconds - 1) } : undefined };
 
-  const load = async (f: File) => {
+  const load = async (f: Blob, name = 'image') => {
     const bmp = await createImageBitmap(f);
+    setOrig({ blob: f, width: bmp.width, height: bmp.height, name });
     const max = 2048;
     const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
     const c = document.createElement('canvas');
@@ -397,12 +405,28 @@ function ImageToVideo() {
     setDepth(null);
     setVideo(null);
     setStrokes([]);
+    return c;
   };
 
-  const analyse = async () => {
-    if (!img) return;
+  // An image of the project: its pixels, and its depth map when the project already has one (instant).
+  const pick = async (p: ProjectImage) => {
+    setBusy(`chargement de « ${p.name} »`);
+    try {
+      const blob = await (await fetch(p.src)).blob();
+      const c = await load(blob, p.name);
+      setGallery(false);
+      if (p.depth) await analyse(c, await projectDepth(p.depth));
+    } catch (e) {
+      toast('err', `Image du projet : ${(e as Error).message}`);
+    }
+    setBusy('');
+  };
+
+  const analyse = async (source: HTMLCanvasElement | null = img, given?: DepthMap) => {
+    if (!source) return;
+    const img = source;
     setBusy('analyse de l’image');
-    const d = await estimateDepth(img, { onStatus: (s) => setBusy(s) });
+    const d = given ?? (await estimateDepth(img, { onStatus: (s) => setBusy(s) }));
     setDepth(d);
     // Regions on the depth resolution.
     const c = document.createElement('canvas');
@@ -493,6 +517,25 @@ function ImageToVideo() {
     setBusy('');
   };
 
+  const exportPage = async () => {
+    if (!depth || !orig) return;
+    setBusy('page HTML 3D autonome');
+    try {
+      const camera = spec.preset === 'orbite' ? 'orbite' : spec.preset === 'fixe_vivant' ? 'fixe' : 'travelling';
+      const html = await imageSceneHtml(orig.blob, orig, depth, {
+        title: title || orig.name,
+        seconds: spec.seconds,
+        look: { style: 'relief', relief: 0.5, cut: 0.12, fog: spec.effects.fog, relight: false, dust: spec.effects.dust, snow: spec.effects.snow, rain: spec.effects.rain },
+        camera,
+      });
+      download(`${slugOf(orig.name)}-scene-3d.html`, html, 'text/html');
+      toast('ok', `Page HTML 3D autonome : ${(html.length / 1048576).toFixed(1)} Mo (image d’origine, profondeur, three.js et export MP4 intégrés)`);
+    } catch (e) {
+      toast('err', `Page HTML : ${(e as Error).message}`);
+    }
+    setBusy('');
+  };
+
   const pos = (e: React.PointerEvent<HTMLCanvasElement>): [number, number] => {
     const r = e.currentTarget.getBoundingClientRect();
     return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
@@ -517,7 +560,7 @@ function ImageToVideo() {
             onChange={(e) => {
               const f = e.target.files?.[0];
               e.target.value = '';
-              if (f) void load(f);
+              if (f) void load(f, f.name.replace(/\.[a-z0-9]+$/i, ''));
             }}
           />
           <div className="flex flex-wrap gap-2">
@@ -527,7 +570,39 @@ function ImageToVideo() {
             <Button size="sm" variant="primary" disabled={!img || Boolean(busy)} onClick={() => void analyse()} data-testid="videogen-analyse">
               <Sparkles size={13} /> Analyser et animer
             </Button>
+            {project.length > 0 && (
+              <Button size="sm" variant={gallery ? 'primary' : 'ghost'} onClick={() => setGallery((g) => !g)} data-testid="videogen-project">
+                Images du projet ({project.length})
+              </Button>
+            )}
           </div>
+          {gallery && (
+            <div className="space-y-2 rounded-lg border border-line p-2" data-testid="videogen-project-gallery">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(['décor', 'personnage', 'galerie'] as const).map((k) => (
+                  <button key={k} onClick={() => setGKind(k)} className={cx('rounded-full border px-2 py-0.5 capitalize', gKind === k ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted')}>
+                    {k}s ({project.filter((p) => p.kind === k).length})
+                  </button>
+                ))}
+                <input value={gFilter} onChange={(e) => setGFilter(e.target.value)} placeholder="Chercher (Marché, Plage…)" className="h-7 min-w-0 flex-1 rounded-lg border border-line bg-input px-2" aria-label="Chercher une image du projet" />
+              </div>
+              <div className="grid max-h-72 grid-cols-3 gap-1.5 overflow-auto sm:grid-cols-4">
+                {project
+                  .filter((p) => p.kind === gKind && p.name.toLowerCase().includes(gFilter.toLowerCase()))
+                  .slice(0, 48)
+                  .map((p) => (
+                    <button key={p.id} onClick={() => void pick(p)} disabled={Boolean(busy)} className="group overflow-hidden rounded-md border border-line text-left hover:border-accent" title={p.name} data-testid="videogen-project-item">
+                      <img src={p.src} alt={p.name} loading="lazy" className="aspect-video w-full bg-black object-cover" />
+                      <span className="block truncate px-1 py-0.5 text-[11px]">
+                        {p.name}
+                        {p.depth ? ' · 3D prête' : ''}
+                      </span>
+                    </button>
+                  ))}
+              </div>
+              <p className="text-faint">Les images de votre projet Vidéo 3D, embarquées dans l’app (jamais publiées). Les décors ont déjà leur carte de profondeur.</p>
+            </div>
+          )}
           <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={2} className="w-full rounded-lg border border-line bg-input px-2 py-1.5 outline-none focus:border-accent" placeholder="Le mouvement voulu (travelling, orbite, pluie, brume…)" />
           <label className="flex items-center gap-2">
             Caméra
@@ -585,6 +660,9 @@ function ImageToVideo() {
           <span className="mr-auto px-1 text-[12.5px] font-semibold">Aperçu (GPU)</span>
           <Button size="sm" variant="ghost" disabled={!depth} onClick={() => setPlaying((p) => !p)}>
             {playing ? <Pause size={13} /> : <Play size={13} />} {playing ? 'Pause' : 'Lire'}
+          </Button>
+          <Button size="sm" variant="ghost" disabled={!depth || !orig || Boolean(busy)} onClick={() => void exportPage()} title="Un seul fichier HTML, hors ligne : l’image d’origine, sa profondeur, la caméra à la souris et l’export MP4" data-testid="videogen-image-html">
+            <FileCode2 size={13} /> Page HTML 3D
           </Button>
           <Button size="sm" variant="primary" disabled={!depth || Boolean(busy)} onClick={() => void exportMp4()} data-testid="videogen-image-mp4">
             <Film size={13} /> Vidéo MP4

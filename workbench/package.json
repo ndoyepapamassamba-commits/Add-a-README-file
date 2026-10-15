@@ -26,7 +26,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:live": "cross-env OPENROUTER_LIVE=1 vitest run tests/live"
+    "test:live": "cross-env OPENROUTER_LIVE=1 vitest run tests/live",
+    "video:scene": "tsx scripts/video-scene-page.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.0",

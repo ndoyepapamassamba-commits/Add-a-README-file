@@ -7,7 +7,7 @@ export interface DepthMap {
   data: Float32Array; // 1 = near, 0 = far
   w: number;
   h: number;
-  source: 'Depth Anything V2 (local)' | 'heuristique';
+  source: 'Depth Anything V2 (local)' | 'heuristique' | 'carte du projet (Depth Anything V2)';
   ms: number;
 }
 const TRANSFORMERS = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1/+esm';

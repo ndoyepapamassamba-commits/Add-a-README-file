@@ -146,21 +146,27 @@ test('Vidéo → scène 3D : pixels d’origine + profondeur par image → MP4 a
   await expect(page.getByTestId('videogen-video-rgbd-result')).toBeVisible({ timeout: 300_000 });
   const html = await saveDownload(page, () => page.getByTestId('videogen-video-html').click(), 'scene-3d.html');
   const body = readFileSync(html, 'utf8');
-  expect(body).toContain('data:video/mp4;base64,');
-  expect(body).toContain('esm.sh/three@0.186.1');
+  expect(body).toContain('id="asset-video"'); // the original video, untouched
+  expect(body).not.toContain('esm.sh'); // three.js and mp4-muxer are embedded: the page works offline
 
-  // The exported page plays by itself (three.js served from the local package instead of esm.sh).
-  const three = path.join(ROOT, 'node_modules/three/build');
+  // The exported page plays by itself with the network fully cut.
   const p2 = await context.newPage();
-  await p2.route('https://esm.sh/three@0.186.1', (r) => r.fulfill({ path: path.join(three, 'three.module.js'), contentType: 'text/javascript', headers: { 'access-control-allow-origin': '*' } }));
-  await p2.route('https://esm.sh/three.core.js', (r) => r.fulfill({ path: path.join(three, 'three.core.js'), contentType: 'text/javascript', headers: { 'access-control-allow-origin': '*' } }));
+  const external: string[] = [];
+  await p2.route(/^https?:/, (r) => {
+    external.push(r.request().url());
+    return r.abort();
+  });
   const errors: string[] = [];
   p2.on('pageerror', (e) => errors.push(e.message));
   await p2.goto(pathToFileURL(html).href);
-  await p2.waitForFunction(() => (window as unknown as { __scene?: { ready: () => boolean } }).__scene?.ready(), null, { timeout: 60_000 });
-  await p2.waitForTimeout(800);
+  await p2.waitForFunction(() => {
+    const s = (window as unknown as { __scene?: { ready?: boolean; error?: string } }).__scene;
+    return s?.ready || s?.error;
+  }, null, { timeout: 60_000 });
+  expect(await p2.evaluate(() => (window as unknown as { __scene: { error?: string } }).__scene.error ?? null)).toBeNull();
+  await p2.waitForTimeout(500);
   await p2.locator('#stage').screenshot({ path: path.join(OUT, 'page-html.png') });
-  const st2 = await p2.locator('#c').evaluate((c: HTMLCanvasElement) => {
+  const st2 = await p2.locator('#canvas').evaluate((c: HTMLCanvasElement) => {
     const g = document.createElement('canvas');
     g.width = g.height = 48;
     const x = g.getContext('2d')!;
@@ -176,6 +182,7 @@ test('Vidéo → scène 3D : pixels d’origine + profondeur par image → MP4 a
     return Math.sqrt(Math.max(0, s2 / n - (s / n) ** 2));
   });
   expect(errors).toEqual([]);
+  expect(external).toEqual([]);
   expect(st2).toBeGreaterThan(10);
   writeFileSync(path.join(OUT, 'timings.json'), JSON.stringify({ analyseMs, renderMs, probe, htmlBytes: body.length }, null, 2));
 });
@@ -253,4 +260,22 @@ test('Vidéo → scène 3D avec le vrai modèle de profondeur (Depth Anything V2
   await page.mouse.move(box.x + box.width * 0.95, box.y + box.height / 2, { steps: 5 });
   await page.mouse.up();
   await page.getByTestId('videogen-video-preview').screenshot({ path: path.join(OUT, 'real-drag.png') });
+});
+
+// The owner's project images (private, embedded at build time only when .private/troupe exists — never in the repo).
+test('Images du projet : un décor embarqué avec sa profondeur devient une scène 3D et une page HTML autonome', async ({ page }) => {
+  test.setTimeout(300_000);
+  await open(page);
+  await page.getByTestId('videogen-mode-image').click();
+  const has = await page.getByTestId('videogen-project').count();
+  test.skip(!has, 'pas d’images de projet dans ce build (dossier privé absent)');
+  await page.getByTestId('videogen-project').click();
+  await expect(page.getByTestId('videogen-project-item').first()).toBeVisible();
+  await page.getByTestId('videogen-project-item').first().click();
+  await expect(page.getByTestId('videogen-image-html')).toBeEnabled({ timeout: 60_000 });
+  await expect(page.getByTestId('videogen-stages')).toContainText('carte du projet');
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 120_000 }), page.getByTestId('videogen-image-html').click()]);
+  const html = path.join(OUT, 'projet.html');
+  await dl.saveAs(html);
+  expect(readFileSync(html, 'utf8')).toContain('"kind":"image"');
 });

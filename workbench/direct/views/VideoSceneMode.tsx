@@ -162,16 +162,20 @@ export function VideoToScene() {
   };
   const exportHtml = async () => {
     if (!clip || !track) return;
-    const r = rgbd ?? (await makeRgbd(720));
-    if (!r) return;
-    const html = await sceneToHtml(r.blob, { title: title || clip.name.replace(/\.[a-z0-9]+$/i, ''), aspect: clip.width / clip.height, dw: track.w, dh: track.h, spec: full });
-    download(`${slugOf(clip.name)}-scene-3d.html`, html, 'text/html');
-    toast('ok', `Page HTML 3D : ${(html.length / 1048576).toFixed(1)} Mo (vidéo RGBD intégrée)`);
+    setBusy('page HTML 3D autonome');
+    try {
+      const html = await sceneToHtml(clip, track, { title: title || clip.name.replace(/\.[a-z0-9]+$/i, ''), spec: full });
+      download(`${slugOf(clip.name)}-scene-3d.html`, html, 'text/html');
+      toast('ok', `Page HTML 3D autonome : ${(html.length / 1048576).toFixed(1)} Mo (vidéo d’origine, profondeur, son, three.js et export MP4 intégrés)`);
+    } catch (e) {
+      toast('err', `Page HTML : ${(e as Error).message}`);
+    }
+    setBusy('');
   };
 
   const stages = [
     { stage: 'Vidéo', detail: clip ? `${clip.width}×${clip.height} · ${clip.duration.toFixed(1)} s · pixels d’origine conservés` : 'choisir une vidéo (MP4, WebM, MOV)', done: Boolean(clip) },
-    { stage: 'Profondeur par image', detail: track ? `${track.frames.length} cartes ${track.w}×${track.h} à ${track.fps} i/s · ${track.keyframes} images clés (${track.source}) · une toutes les ${track.stride} · ${(track.ms / 1000).toFixed(1)} s` : `budget ${budget} s, images clés + flot optique`, done: Boolean(track) },
+    { stage: 'Profondeur par image', detail: track ? `${track.frames.length} cartes ${track.w}×${track.h} à ${track.fps} i/s · ${track.keyframes} images clés (${track.source}) · une toutes les ${track.stride}${track.band ? ' · bande nette détectée' : ''}${track.cuts?.length ? ` · ${track.cuts.length} changement(s) de plan` : ''} · ${(track.ms / 1000).toFixed(1)} s` : `budget ${budget} s, images clés + flot optique`, done: Boolean(track) },
     { stage: 'Scène 3D', detail: `${SCENE_STYLES[spec.style]} · relief ${Math.round(spec.relief * 100)} %`, done: Boolean(track) },
     { stage: 'Caméra', detail: `${CAMERA_PRESETS[spec.preset]} · intensité ${Math.round(spec.intensity * 100)} % · glisser sur l’aperçu pour la déplacer`, done: Boolean(track) },
     { stage: 'Rendu', detail: video ? `MP4 ${video.width}×${video.height}, ${video.frames} images${video.audio ? `, son ${video.audio}` : ', sans son'}` : '30 i/s image par image, son d’origine', done: Boolean(video) },
@@ -295,7 +299,7 @@ export function VideoToScene() {
           <Button size="sm" variant="ghost" disabled={!track || Boolean(busy)} onClick={() => void makeRgbd(1080)} title="Couleur | profondeur côte à côte dans un seul MP4 (format d’échange pour Blender, Unreal, After Effects)" data-testid="videogen-video-rgbd">
             <Layers size={13} /> MP4 RGBD
           </Button>
-          <Button size="sm" variant="ghost" disabled={!track || Boolean(busy)} onClick={() => void exportHtml()} title="Page HTML autonome : la scène 3D se joue dans le navigateur, caméra à la souris" data-testid="videogen-video-html">
+          <Button size="sm" variant="ghost" disabled={!track || Boolean(busy)} onClick={() => void exportHtml()} title="Un seul fichier HTML, hors ligne : vidéo d’origine, profondeur par image, son d’origine, caméra à la souris et export MP4" data-testid="videogen-video-html">
             <FileCode2 size={13} /> Page HTML 3D
           </Button>
           <Button size="sm" variant="primary" disabled={!track || Boolean(busy)} onClick={() => void exportMp4()} data-testid="videogen-video-mp4">

@@ -16,6 +16,7 @@
 import { suggestFromPrompt, type CameraPreset } from './imageMotion';
 
 export const SCENE_STYLES = {
+  original: 'Original (pixels exacts, sans relief)',
   relief: 'Relief 3D (pixels d’origine)',
   nuage: 'Nuage de points',
   holo: 'Hologramme',
@@ -216,6 +217,11 @@ export class DepthTracker {
     this.h = h;
     this.o = { alpha: o.alpha ?? 0.6, change: o.change ?? 26, block: o.block ?? 8, radius: o.radius ?? 6 };
   }
+  /** A new shot starts: nothing is carried over from the previous one. */
+  reset(): void {
+    this.prevLuma = null;
+    this.state = null;
+  }
   /** Next frame: its luma, and the model's depth when this is a key frame (1 = near). Returns the depth to use. */
   push(luma: Uint8Array, fresh?: Float32Array | null): Float32Array {
     const { w, h } = this;
@@ -282,6 +288,10 @@ export interface DepthTrack {
   keyframes: number;
   stride: number;
   ms: number;
+  /** Rows [y0, y1) of the sharp picture when the video is a shot laid over its own blurred copy. */
+  band?: [number, number];
+  /** Depth frames where a new shot begins (no blending across them). */
+  cuts?: number[];
 }
 /** Depth at time t (s), blended between the two nearest depth frames. */
 export function depthAt(track: DepthTrack, t: number, out?: Uint8Array): Uint8Array {
@@ -291,9 +301,15 @@ export function depthAt(track: DepthTrack, t: number, out?: Uint8Array): Uint8Ar
   const f = clamp(t * track.fps, 0, n - 1);
   const i0 = Math.floor(f);
   const i1 = Math.min(n - 1, i0 + 1);
-  const k = f - i0;
+  let k = f - i0;
+  // Never blend two different shots: the nearest frame wins.
+  if (track.cuts?.includes(i1)) k = k < 0.5 ? 0 : 1;
   const a = track.frames[i0]!;
   const b = track.frames[i1]!;
+  if (k >= 1) {
+    r.set(b);
+    return r;
+  }
   if (k < 1e-3 || i0 === i1) {
     r.set(a);
     return r;
@@ -311,4 +327,109 @@ export function trackSize(w: number, h: number, long = 288): [number, number] {
 export function outputSizeFor(w: number, h: number, quality: number): [number, number] {
   const k = Math.min(1, quality / Math.max(w, h));
   return [Math.max(2, Math.round((w * k) / 2) * 2), Math.max(2, Math.round((h * k) / 2) * 2)];
+}
+
+/** Shot change between two frames (luma): the brightness histogram jumps, or the picture changes almost everywhere.
+ *  A camera move keeps the histogram; a cut does not. */
+export function isCut(prev: Uint8Array, cur: Uint8Array): boolean {
+  const ha = new Float32Array(16);
+  const hb = new Float32Array(16);
+  let mad = 0;
+  let n = 0;
+  for (let i = 0; i < cur.length; i += 3) {
+    ha[prev[i]! >> 4]!++;
+    hb[cur[i]! >> 4]!++;
+    mad += Math.abs(prev[i]! - cur[i]!);
+    n++;
+  }
+  let dist = 0;
+  for (let b = 0; b < 16; b++) dist += Math.abs(ha[b]! - hb[b]!) / Math.max(1, n);
+  return dist > 0.6 || mad / Math.max(1, n) > 60;
+}
+
+/** Sharpness of each row (mean absolute gradient). Summing it over a few frames makes the band detection stable. */
+export function rowSharpness(luma: Uint8Array, w: number, h: number, acc?: Float32Array): Float32Array {
+  const out = acc ?? new Float32Array(h);
+  for (let y = 0; y < h - 1; y++) {
+    let e = 0;
+    const r = y * w;
+    for (let x = 0; x < w - 1; x++) e += Math.abs(luma[r + x + 1]! - luma[r + x]!) + Math.abs(luma[r + w + x]! - luma[r + x]!);
+    out[y]! += e / (w - 1);
+  }
+  return out;
+}
+/** The rows of the sharp picture when a video is a smaller shot laid over its own enlarged, blurred copy (a very
+ *  common vertical layout). Returns null when the whole frame is sharp (or nothing clear stands out). */
+export function sharpBand(rows: Float32Array): [number, number] | null {
+  const h = rows.length;
+  const sm = new Float32Array(h);
+  for (let y = 0; y < h; y++) {
+    let s = 0;
+    let n = 0;
+    for (let j = -2; j <= 2; j++) {
+      const v = rows[y + j];
+      if (v !== undefined) {
+        s += v;
+        n++;
+      }
+    }
+    sm[y] = s / n;
+  }
+  const sorted = Array.from(sm).sort((a, b) => a - b);
+  const hi = sorted[Math.floor(h * 0.9)] ?? 0;
+  if (hi <= 0) return null;
+  const thr = hi * 0.4;
+  let best: [number, number] = [0, 0];
+  let start = -1;
+  for (let y = 0; y <= h; y++) {
+    const on = y < h && sm[y]! > thr;
+    if (on && start < 0) start = y;
+    if (!on && start >= 0) {
+      if (y - start > best[1] - best[0]) best = [start, y];
+      start = -1;
+    }
+  }
+  const len = best[1] - best[0];
+  if (len < h * 0.2 || len > h * 0.88) return null;
+  // The rest must be clearly blurred, otherwise this is just a busy area of an ordinary frame.
+  let out = 0;
+  let cnt = 0;
+  for (let y = 0; y < h; y++)
+    if (y < best[0] - 3 || y >= best[1] + 3) {
+      out += sm[y]!;
+      cnt++;
+    }
+  let inside = 0;
+  for (let y = best[0]; y < best[1]; y++) inside += sm[y]!;
+  if (cnt && out / cnt > (inside / len) * 0.45) return null;
+  return best;
+}
+/** Model depth of the band (bw × (y1 − y0)) placed into a full frame; outside the band = far (the blurred copy). */
+export function placeBand(band: Float32Array, w: number, h: number, y0: number, y1: number, far = 0): Float32Array {
+  const out = new Float32Array(w * h).fill(far);
+  out.set(band.subarray(0, w * (y1 - y0)), y0 * w);
+  return out;
+}
+
+/** Grid of the depth atlas (all the depth frames tiled in one lossless picture). */
+export function atlasLayout(n: number, w: number, h: number, maxW = 4096): { cols: number; rows: number; width: number; height: number } {
+  const cols = Math.max(1, Math.min(n, Math.floor(maxW / w)));
+  const rows = Math.ceil(n / cols);
+  return { cols, rows, width: cols * w, height: rows * h };
+}
+
+/** Near surfaces grown by one texel (3×3 max): at a depth edge the stretch then falls in the background instead of
+ *  tearing the silhouette of the person in front (usual « 3D photo » practice). Applied to the stored copy only. */
+export function dilateNear(d: Float32Array, w: number, h: number): Float32Array {
+  const out = new Float32Array(d.length);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      let m = 0;
+      for (let j = -1; j <= 1; j++) {
+        const yy = Math.min(h - 1, Math.max(0, y + j)) * w;
+        for (let i = -1; i <= 1; i++) m = Math.max(m, d[yy + Math.min(w - 1, Math.max(0, x + i))]!);
+      }
+      out[y * w + x] = m;
+    }
+  return out;
 }

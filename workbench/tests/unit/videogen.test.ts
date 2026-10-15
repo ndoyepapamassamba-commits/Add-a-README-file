@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -8,9 +8,17 @@ import { HUMAN_RIG, bake, qJoint } from '../../server/jev/videogen/animate';
 import { sceneSpec } from '../../server/jev/videogen/assets';
 import { planToBpy } from '../../server/jev/videogen/bpy';
 import { cameraState, eulerianSample, heuristicDepth, motionField, outputSize, suggestFromPrompt } from '../../server/jev/videogen/imageMotion';
+import { ArrayBufferTarget, Muxer } from 'mp4-muxer';
+import { extractAac } from '../../direct/lib/videogen/audioCopy';
+import { buildScenePage } from '../../direct/lib/videogen/scenePage';
 import {
   DEFAULT_SCENE,
   DepthTracker,
+  atlasLayout,
+  isCut,
+  placeBand,
+  rowSharpness,
+  sharpBand,
   alignScaleShift,
   blockFlow,
   depthAt,
@@ -190,5 +198,79 @@ describe('Vidéo → scène 3D (videoDepth.ts) — pixels d’origine + profonde
     expect(s.relief).toBe(0.3);
     expect(sceneFromPrompt('nuage de points, travelling avant').style).toBe('nuage');
     expect(DEFAULT_SCENE.audio).toBe(true);
+  });
+});
+
+describe('Vidéo → scène 3D : plans, bande nette, atlas, son copié, page autonome', () => {
+  const w = 40, h = 72;
+  const pattern = (shift: number, contrast = 60) => {
+    const l = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) l[y * w + x] = Math.round(128 + contrast * Math.sin((x + shift) * 0.9) * Math.cos(y * 0.7));
+    return l;
+  };
+  it('un changement de plan est détecté, un petit mouvement de caméra non', () => {
+    expect(isCut(pattern(0), pattern(1))).toBe(false);
+    expect(isCut(pattern(0), new Uint8Array(w * h).fill(10))).toBe(true); // cut to a dark card
+  });
+  it('vidéo posée sur sa copie floue (format vertical) : la bande nette est trouvée ; une image normale n’en a pas', () => {
+    const l = new Uint8Array(w * h).fill(120);
+    const sharp = pattern(0, 90);
+    for (let y = 20; y < 50; y++) for (let x = 0; x < w; x++) l[y * w + x] = sharp[y * w + x]!;
+    expect(sharpBand(rowSharpness(l, w, h))).toEqual([expect.closeTo(20, -0.5), expect.closeTo(50, -0.5)]);
+    expect(sharpBand(rowSharpness(pattern(0), w, h))).toBeNull();
+    const placed = placeBand(new Float32Array(w * 30).fill(1), w, h, 20, 50, 0);
+    expect(placed[10 * w]).toBe(0);
+    expect(placed[30 * w]).toBe(1);
+  });
+  it('jamais de mélange de profondeur entre deux plans ; atlas sous 4096 px de large', () => {
+    const track = { frames: [new Uint8Array([10]), new Uint8Array([250])], w: 1, h: 1, fps: 10, source: 't', keyframes: 2, stride: 1, ms: 0, cuts: [1] };
+    expect(depthAt(track, 0.04)[0]).toBe(10);
+    expect(depthAt(track, 0.06)[0]).toBe(250);
+    const L = atlasLayout(185, 162, 288);
+    expect(L.width).toBeLessThanOrEqual(4096);
+    expect(L.cols * L.rows).toBeGreaterThanOrEqual(185);
+  });
+  it('le son AAC d’origine est relu (mp4box) puis réécrit tel quel (mp4-muxer) : octets identiques', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'aac-'));
+    const src = join(dir, 'src.mp4');
+    try {
+      execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1:sample_rate=44100', '-c:a', 'aac', '-b:a', '96k', src]);
+    } catch {
+      return; // no ffmpeg here
+    }
+    return (async () => {
+      const buf = readFileSync(src);
+      const t = await extractAac(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+      expect(t?.codec).toBe('mp4a.40.2');
+      const muxer = new Muxer({ target: new ArrayBufferTarget(), audio: { codec: 'aac', numberOfChannels: t!.channels, sampleRate: t!.sampleRate }, fastStart: 'in-memory' });
+      let off = 0;
+      t!.table.forEach(([size, ts, dur], i) => {
+        muxer.addAudioChunkRaw(t!.data.subarray(off, off + size), 'key', ts, dur, i === 0 ? ({ decoderConfig: { codec: t!.codec, sampleRate: t!.sampleRate, numberOfChannels: t!.channels, description: t!.description } } as EncodedAudioChunkMetadata) : undefined);
+        off += size;
+      });
+      muxer.finalize();
+      const out = join(dir, 'copy.mp4');
+      writeFileSync(out, Buffer.from(muxer.target.buffer));
+      const raw = (f: string) => execFileSync('ffmpeg', ['-v', 'error', '-i', f, '-map', '0:a', '-c', 'copy', '-f', 'data', '-']);
+      expect(Buffer.compare(raw(src), raw(out))).toBe(0);
+    })();
+  });
+  it('la page autonome n’appelle rien à l’extérieur et embarque vidéo, profondeur, son et bibliothèques', () => {
+    const html = buildScenePage({
+      title: 'Essai <test>',
+      video: { b64: 'AAAA', mime: 'video/mp4', width: 1080, height: 1920, duration: 2, fps: 30, hasAudio: true },
+      depth: { atlasB64: 'BBBB', w: 162, h: 288, n: 30, fps: 15, cols: 25, cuts: [12], band: [77, 211], source: 'test' },
+      audio: { codec: 'mp4a.40.2', sampleRate: 44100, channels: 2, descB64: 'EhA=', dataB64: 'CCCC', table: [[3, 0, 23219]] },
+      libs: { threeCoreB64: 'X', threeB64: 'Y', muxerB64: 'Z' },
+      look: { style: 'relief', relief: 0.5, cut: 0.12, fog: false, relight: false, dust: false, snow: false, rain: false },
+      camera: 'orbite',
+    });
+    expect(html).not.toMatch(/<script[^>]+src=|<link[^>]+stylesheet|https?:\/\/[^"'\s]+\.(m?js|css)/);
+    for (const id of ['asset-video', 'asset-depth', 'asset-audio', 'lib-three-core', 'lib-three', 'lib-muxer', 'meta']) expect(html).toContain(`id="${id}"`);
+    expect(html).toContain('Essai &lt;test&gt;');
+    expect(html).toContain('addAudioChunkRaw');
+    expect(html).toContain('function sceneRuntime');
+    // The inline script must parse (a duplicate declaration once broke every page).
+    for (const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) expect(() => new Function(m[1]!)).not.toThrow();
   });
 });

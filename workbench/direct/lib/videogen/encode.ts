@@ -2,6 +2,7 @@
 // dessinée puis encodée avec son horodatage exact, donc la vidéo a la durée et la cadence demandées, que la machine
 // soit lente ou rapide (pas de capture en temps réel). Repli : VP9 dans le MP4, puis l'enregistreur du navigateur.
 import { ArrayBufferTarget, Muxer } from 'mp4-muxer';
+import { aacUntil, type AacTrack } from './audioCopy';
 
 export interface EncodeJob {
   width: number;
@@ -26,9 +27,14 @@ export interface Encoded {
   /** Audio codec of the sound track, when there is one. */
   audio?: string;
 }
-/** A sound track to put in the MP4 (the first `seconds` of the buffer). */
+/** A sound track to put in the MP4 (the first `seconds` of the buffer), re-encoded. */
 export interface AudioTrack {
   buffer: AudioBuffer;
+  seconds: number;
+}
+/** The original AAC samples, copied bit for bit (no re-encoding). */
+export interface AudioCopy {
+  copy: AacTrack;
   seconds: number;
 }
 
@@ -104,6 +110,16 @@ async function encodeAudio(muxer: Muxer<ArrayBufferTarget>, track: AudioTrack, c
   enc.close();
   if (failure) throw failure;
 }
+/** Writes the original AAC samples as they are (bit-exact sound). */
+export function copyAac(muxer: Muxer<ArrayBufferTarget>, t: AacTrack, seconds: number): void {
+  const n = aacUntil(t, seconds);
+  let off = 0;
+  for (let i = 0; i < n; i++) {
+    const [size, ts, dur] = t.table[i]!;
+    muxer.addAudioChunkRaw(t.data.subarray(off, off + size), 'key', ts, dur, i === 0 ? { decoderConfig: { codec: t.codec, sampleRate: t.sampleRate, numberOfChannels: t.channels, description: t.description } } : undefined);
+    off += size;
+  }
+}
 /** The sound of a video / audio file, decoded at 48 kHz (null when it has none or the browser cannot read it). */
 export async function decodeAudio(file: Blob): Promise<AudioBuffer | null> {
   try {
@@ -117,20 +133,29 @@ export async function decodeAudio(file: Blob): Promise<AudioBuffer | null> {
 
 /** Opens a streaming MP4 encoder (null when the browser has no WebCodecs encoder for these sizes). With `audio`, the
  *  sound track (AAC, else Opus) is written first, so the pictures pushed afterwards are in sync with it. */
-export async function openMp4(w: number, h: number, fps: number, bitrate?: number, audio?: AudioTrack | null): Promise<Mp4Stream | null> {
+export async function openMp4(w: number, h: number, fps: number, bitrate?: number, audio?: AudioTrack | AudioCopy | null): Promise<Mp4Stream | null> {
   const t0 = performance.now();
   const width = even(w);
   const height = even(h);
   const pick = await pickCodec(width, height, fps, bitrate ?? Math.round(width * height * fps * 0.12));
   if (!pick) return null;
-  const apick = audio ? await pickAudio(audio.buffer) : null;
+  const copy = audio && 'copy' in audio ? audio : null;
+  const enc = audio && 'buffer' in audio ? audio : null;
+  const apick = enc ? await pickAudio(enc.buffer) : null;
+  const audioOpt = copy
+    ? { codec: 'aac' as const, numberOfChannels: copy.copy.channels, sampleRate: copy.copy.sampleRate }
+    : apick
+      ? { codec: apick.mux, numberOfChannels: apick.config.numberOfChannels, sampleRate: apick.config.sampleRate }
+      : null;
   const muxer = new Muxer({
     target: new ArrayBufferTarget(),
     video: { codec: pick.muxCodec, width, height, frameRate: fps },
-    ...(apick ? { audio: { codec: apick.mux, numberOfChannels: apick.config.numberOfChannels, sampleRate: apick.config.sampleRate } } : {}),
+    ...(audioOpt ? { audio: audioOpt } : {}),
     fastStart: 'in-memory',
   });
-  if (apick && audio) await encodeAudio(muxer, audio, apick.config);
+  if (copy) copyAac(muxer, copy.copy, copy.seconds);
+  else if (apick && enc) await encodeAudio(muxer, enc, apick.config);
+  const audioLabel = copy ? `${copy.copy.codec} (copie exacte)` : apick?.config.codec;
   let failure: Error | null = null;
   const encoder = new VideoEncoder({ output: (chunk, meta) => muxer.addVideoChunk(chunk, meta), error: (e) => (failure = e as Error) });
   encoder.configure(pick.config);
@@ -164,7 +189,7 @@ export async function openMp4(w: number, h: number, fps: number, bitrate?: numbe
       if (failure) throw failure;
       muxer.finalize();
       const buf = (muxer.target as ArrayBufferTarget).buffer;
-      return { blob: new Blob([buf], { type: 'video/mp4' }), mime: 'video/mp4', codec: pick.config.codec, width, height, frames, seconds: frames / fps, ms: Math.round(performance.now() - t0), audio: apick?.config.codec };
+      return { blob: new Blob([buf], { type: 'video/mp4' }), mime: 'video/mp4', codec: pick.config.codec, width, height, frames, seconds: frames / fps, ms: Math.round(performance.now() - t0), audio: audioLabel };
     },
   };
 }

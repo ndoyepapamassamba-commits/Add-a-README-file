@@ -17,7 +17,7 @@ export interface SceneCam {
   roll: number;
 }
 export interface SceneLook {
-  style: 'relief' | 'nuage' | 'holo';
+  style: 'original' | 'relief' | 'nuage' | 'holo';
   relief: number;
   cut: number;
   fog: boolean;
@@ -100,6 +100,9 @@ export function sceneRuntime(THREE: any, canvas: HTMLCanvasElement, init: SceneI
     uPoints: { value: 0 },
     uHolo: { value: 0 },
     uPointSize: { value: 2 },
+    // Source texels per output pixel at rest (to tell a stretched gap from an ordinary triangle).
+    uDensRest: { value: 1 },
+    uSrc: { value: new THREE.Vector2(1, 1) },
   };
   const vertex = [
     'uniform sampler2D uDepth; uniform vec4 uDepthRect; uniform float uRelief, uFocus, uD, uPointSize; uniform vec2 uTexel;',
@@ -120,21 +123,27 @@ export function sceneRuntime(THREE: any, canvas: HTMLCanvasElement, init: SceneI
   ].join('\n');
   const fragment = [
     'uniform sampler2D uColor, uDepth; uniform vec4 uColorRect, uDepthRect; uniform vec2 uTexel;',
-    'uniform float uCut, uFog, uRelight, uTime, uPoints, uHolo; uniform vec3 uFogColor, uLight;',
+    'uniform float uCut, uFog, uRelight, uTime, uPoints, uHolo, uDensRest; uniform vec3 uFogColor, uLight; uniform vec2 uSrc;',
     'varying vec2 vUv; varying float vD; varying float vEdge; varying vec3 vN;',
     'float depF(vec2 uv){ return texture2D(uDepth, uDepthRect.xy + clamp(uv, 0.0, 1.0) * uDepthRect.zw).r; }',
     'void main(){',
-    '  vec2 uv = vUv;',
+    '  vec2 uv = vUv; float fill = 0.0; vec2 uvFar = vUv;',
     '  if (uPoints > 0.5) { vec2 q = gl_PointCoord - 0.5; if (dot(q, q) > 0.25) discard; }',
     '  else if (vEdge > uCut) {',
-    // A stretched triangle spans a near and a far surface: paint the gap with what is BEHIND (the far side), the way
-    // the « 3D photo » methods fill disocclusions, instead of a smear of both or a hole.
-    '    vec2 g = vec2(depF(vUv + vec2(uTexel.x, 0.0)) - depF(vUv - vec2(uTexel.x, 0.0)), depF(vUv + vec2(0.0, uTexel.y)) - depF(vUv - vec2(0.0, uTexel.y)));',
-    '    vec2 dir = -g / max(1e-4, length(g));',
-    '    float d0 = depF(vUv);',
-    '    for (int i = 1; i <= 8; i++) { vec2 q = vUv + dir * uTexel * float(i) * 1.5; uv = q; if (depF(q) < d0 - 0.5 * uCut) break; }',
+    // Only a triangle really STRETCHED on screen (camera moved: few source texels per screen pixel) is a gap; it is
+    // painted with what is BEHIND (colour searched on the far side), the way « 3D photo » methods fill disocclusions.
+    // At rest nothing is stretched, so the original pixels are untouched.
+    '    vec2 dd = fwidth(vUv) * uSrc; float ratio = min(dd.x, dd.y) / max(1e-4, uDensRest);',
+    '    fill = smoothstep(0.6, 0.35, ratio);',
+    '    if (fill > 0.0) {',
+    '      vec2 g = vec2(depF(vUv + vec2(uTexel.x, 0.0)) - depF(vUv - vec2(uTexel.x, 0.0)), depF(vUv + vec2(0.0, uTexel.y)) - depF(vUv - vec2(0.0, uTexel.y)));',
+    '      vec2 dir = -g / max(1e-4, length(g));',
+    '      float d0 = depF(vUv);',
+    '      for (int i = 1; i <= 8; i++) { vec2 q = vUv + dir * uTexel * float(i) * 1.5; uvFar = q; if (depF(q) < d0 - 0.5 * uCut) break; }',
+    '    }',
     '  }',
     '  vec3 c = texture2D(uColor, uColorRect.xy + clamp(uv, 0.0, 1.0) * uColorRect.zw).rgb;',
+    '  if (fill > 0.0) c = mix(c, texture2D(uColor, uColorRect.xy + clamp(uvFar, 0.0, 1.0) * uColorRect.zw).rgb, fill);',
     '  if (uRelight > 0.0) { float l = max(dot(normalize(vN), normalize(uLight)), 0.0); c *= mix(1.0, 0.55 + 0.85 * l, uRelight); }',
     '  c = mix(c, uFogColor, uFog * pow(1.0 - vD, 1.6));',
     '  if (uHolo > 0.5) { float gr = dot(c, vec3(0.3, 0.59, 0.11)); float scan = 0.72 + 0.28 * sin(gl_FragCoord.y * 1.4 + uTime * 9.0);',
@@ -143,16 +152,14 @@ export function sceneRuntime(THREE: any, canvas: HTMLCanvasElement, init: SceneI
     '}',
   ].join('\n');
 
-  const segX = Math.max(2, init.dw - 1);
-  const segY = Math.max(2, init.dh - 1);
-  const plane = new THREE.PlaneGeometry(init.aspect * cover, cover, segX, segY);
-  const meshMat = new THREE.ShaderMaterial({ uniforms: uniforms, vertexShader: vertex, fragmentShader: fragment });
-  const mesh = new THREE.Mesh(plane, meshMat);
-  scene.add(mesh);
-  // Points: twice the depth density, so the cloud stays dense.
+  // Twice the depth density (depth sampled bilinearly): smoother silhouettes, and a dense point cloud.
   const pw = Math.min(720, init.dw * 2);
   const ph = Math.min(1280, init.dh * 2);
   const pgeo = new THREE.PlaneGeometry(init.aspect * cover, cover, pw - 1, ph - 1);
+  const plane = pgeo;
+  const meshMat = new THREE.ShaderMaterial({ uniforms: uniforms, vertexShader: vertex, fragmentShader: fragment });
+  const mesh = new THREE.Mesh(plane, meshMat);
+  scene.add(mesh);
   const pointMat = new THREE.ShaderMaterial({ uniforms: uniforms, vertexShader: vertex, fragmentShader: fragment, transparent: false });
   const points = new THREE.Points(pgeo, pointMat);
   points.visible = false;
@@ -234,7 +241,8 @@ export function sceneRuntime(THREE: any, canvas: HTMLCanvasElement, init: SceneI
 
   /** Renders one frame: `color` is the source picture (video, canvas or packed RGBD), `depth` the bytes (unpacked mode). */
   function render(color: any, depth: Uint8Array | null, cam: SceneCam, look: SceneLook, t: number) {
-    colorFor(color).needsUpdate = true;
+    const tex = colorFor(color);
+    if (tex.isVideoTexture || tex.version === 0 || !(typeof HTMLImageElement !== 'undefined' && color instanceof HTMLImageElement)) tex.needsUpdate = true;
     if (depth && depthBytes) {
       depthBytes.set(depth);
       depthTex.needsUpdate = true;
@@ -242,36 +250,45 @@ export function sceneRuntime(THREE: any, canvas: HTMLCanvasElement, init: SceneI
     // Background: the colour part of the frame, small and blurred.
     const cw = (color && (color.videoWidth || color.width)) || 2;
     const ch = (color && (color.videoHeight || color.height)) || 2;
+    uniforms.uSrc.value.set(cw * colorRect.z, ch * colorRect.w);
+    uniforms.uDensRest.value = (ch * colorRect.w) / (H * cover);
     bgCtx.filter = 'blur(3px)';
     bgCtx.drawImage(color, 0, 0, init.packed ? cw / 2 : cw, ch, 0, 0, bgCanvas.width, bgCanvas.height);
     bgTex.needsUpdate = true;
-    const relief = 0.06 + look.relief * 0.5;
+    // « Original »: flat, camera exactly at rest, nothing added — the frame shows the source pixels.
+    const orig = look.style === 'original';
+    const relief = orig ? 0 : 0.06 + look.relief * 0.5;
     uniforms.uRelief.value = relief;
     uniforms.uCut.value = look.cut;
-    uniforms.uFog.value = look.fog ? 0.55 : 0;
-    uniforms.uRelight.value = look.relight ? 0.85 : 0;
+    uniforms.uFog.value = look.fog && !orig ? 0.55 : 0;
+    uniforms.uRelight.value = look.relight && !orig ? 0.85 : 0;
     uniforms.uLight.value.set(Math.sin(t * 0.6) * 0.8, 0.55, 0.75);
     uniforms.uTime.value = t;
     uniforms.uHolo.value = look.style === 'holo' ? 1 : 0;
-    const pts = look.style !== 'relief';
+    const pts = look.style === 'nuage' || look.style === 'holo';
     uniforms.uPoints.value = pts ? 1 : 0;
     uniforms.uPointSize.value = (H / (pts ? init.dh * 2 : init.dh)) * (look.style === 'holo' ? 1.15 : 1.7) / cover;
     mesh.visible = !pts;
     points.visible = pts;
-    bg.visible = !pts;
+    bg.visible = !pts && !orig;
     const zb = -0.5 * relief - 0.02;
     bg.position.z = zb;
     bg.scale.setScalar(((D - zb) / D) * 1.04);
     scene.background.setRGB(look.style === 'holo' ? 0.01 : 0, look.style === 'holo' ? 0.03 : 0, look.style === 'holo' ? 0.06 : 0);
-    fx.visible = look.snow || look.rain || look.dust;
+    fx.visible = !orig && (look.snow || look.rain || look.dust);
     fxUniforms.uKind.value = look.rain ? 2 : look.snow ? 1 : 0;
     fxUniforms.uTime.value = t;
-    setCamera(cam, relief);
+    if (orig) {
+      camera.fov = FOV;
+      camera.position.set(0, 0, D);
+      camera.up.set(0, 1, 0);
+      camera.lookAt(0, 0, 0);
+      camera.updateProjectionMatrix();
+    } else setCamera(cam, relief);
     renderer.render(scene, camera);
     return canvas;
   }
   function dispose() {
-    plane.dispose();
     pgeo.dispose();
     fxGeo.dispose();
     meshMat.dispose();
