@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Fabrique UN SEUL fichier HTML autonome (planche, 30 vignettes agrandies, profondeur, Three.js,
-// Mediabunny et le studio intégrés). Il s'ouvre par double-clic, sans serveur ni Internet.
+// Mediabunny, l'interprète de prompts et le studio intégrés). Il s'ouvre par double-clic, sans serveur ni Internet.
 //   node tools/build-standalone.mjs [--out dist/abidjan-3d.html]
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,11 +25,13 @@ const modules = {
   'three-core': text('vendor/three.core.js'),
   three: rewrite(text('vendor/three.module.js'), "'./three.core.js'", "'three-core'", 'three.module.js'),
   mediabunny: text('vendor/mediabunny.min.mjs'),
-  studio: rewrite(text('src/studio.js'), "'../vendor/three.module.js'", "'three'", 'studio.js'),
+  studio: rewrite(rewrite(text('src/studio.js'), "'../vendor/three.module.js'", "'three'", 'studio.js'), "'./prompt.js'", "'prompt'", 'studio.js'),
+  prompt: text('src/prompt.js'),
 };
 let app = text('src/app.js');
 app = rewrite(app, "'./studio.js'", "'studio'", 'app.js');
 app = rewrite(app, "'../vendor/mediabunny.min.mjs'", "'mediabunny'", 'app.js');
+app = rewrite(app, "'./prompt.js'", "'prompt'", 'app.js');
 
 const BOOT = `(() => {
   const text = (id) => document.getElementById(id).textContent;
@@ -51,7 +53,7 @@ const BOOT = `(() => {
   map.type = 'importmap';
   const js = (id) => url(id, 'text/javascript;charset=utf-8');
   map.textContent = JSON.stringify({ imports: {
-    three: js('mod-three'), 'three-core': js('mod-three-core'), mediabunny: js('mod-mediabunny'), studio: js('mod-studio'),
+    three: js('mod-three'), 'three-core': js('mod-three-core'), mediabunny: js('mod-mediabunny'), studio: js('mod-studio'), prompt: js('mod-prompt'),
   } });
   document.head.append(map);
   const main = document.createElement('script');

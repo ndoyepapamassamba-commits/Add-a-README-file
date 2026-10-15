@@ -5,6 +5,8 @@
 //   node tools/export.mjs                                   # mosaïque animée, relief 3D (boucle 8 s)
 //   node tools/export.mjs --format slides                   # diaporama vertical 1080×1920
 //   node tools/export.mjs --format mosaic --mode original   # contrôle zéro régression
+//   node tools/export.mjs --prompt "Vidéo de 10 s : zoom avant sur Cocody, titre « Abidjan »"
+//   node tools/export.mjs --prompt "Une affiche carrée du village d'Assinie"   # → image PNG
 // Options : --format mosaic|slides  --mode 3d|original  --camera respiration|vague|souris
 //           --relief 0.2  --duration 2.5  --crf 16  --chroma 420|444  --audio musique.mp3  --out <fichier>  --frames <n>
 // --chroma 444 : master aux couleurs pleine résolution (fichier plus lourd, moins de lecteurs compatibles).
@@ -26,12 +28,13 @@ const render = {
   camera: opts.camera || 'respiration',
   relief: opts.relief != null ? +opts.relief : null,
   slideDuration: +(opts.duration || 2.5),
+  prompt: typeof opts.prompt === 'string' ? opts.prompt : null,
 };
-const name = `abidjan-${render.format === 'slides' ? 'diaporama' : 'mosaique'}-${render.mode === '3d' ? `3d${render.format === 'mosaic' ? `-${render.camera}` : ''}` : 'original'}.mp4`;
-const outFile = path.resolve(ROOT, opts.out || path.join('out', name));
-fs.mkdirSync(path.dirname(outFile), { recursive: true });
+const slug = (txt) => txt.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+const baseName = render.prompt ? `prompt-${slug(render.prompt)}`
+  : `abidjan-${render.format === 'slides' ? 'diaporama' : 'mosaique'}-${render.mode === '3d' ? `3d${render.format === 'mosaic' ? `-${render.camera}` : ''}` : 'original'}`;
 
-let encoder = null, encoderDone = null, firstFrame = null, nextFrame = 0;
+let encoder = null, encoderDone = null, firstFrame = null, nextFrame = 0, outFile = null;
 const server = await startServer(0, {
   async handler(req, res, url) {
     const m = /^\/__out\/(\d+)$/.exec(url.pathname);
@@ -57,7 +60,14 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}/index.html?render=1`);
   await page.waitForFunction(() => window.__studioReady === true, null, { timeout: 60000 });
   info = await page.evaluate((o) => window.__studio.prepare(o), render);
-  const frames = Math.min(info.frames, +(opts.frames || info.frames));
+  const still = info.output === 'image' || opts.image === true;
+  outFile = path.resolve(ROOT, opts.out || path.join('out', `${baseName}.${still ? 'png' : 'mp4'}`));
+  fs.mkdirSync(path.dirname(outFile), { recursive: true });
+  if (render.prompt) {
+    console.log('Prompt compris :');
+    for (const line of info.understood) console.log(`  · ${line}`);
+  }
+  const frames = still ? 1 : Math.min(info.frames, +(opts.frames || info.frames));
 
   if (render.format === 'mosaic' && render.mode === 'original') {
     const v = await page.evaluate(() => window.__studio.verifyOriginal());
@@ -65,7 +75,10 @@ try {
     if (v.diff) process.exitCode = 1;
   }
 
-  encoder = spawn('ffmpeg', ['-y', '-v', 'error',
+  encoder = still
+    ? spawn('ffmpeg', ['-y', '-v', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${info.w}x${info.h}`, '-i', 'pipe:0',
+      '-vf', 'vflip', '-frames:v', '1', outFile], { stdio: ['pipe', 'inherit', 'inherit'] })
+    : spawn('ffmpeg', ['-y', '-v', 'error',
     '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${info.w}x${info.h}`, '-framerate', '30', '-i', 'pipe:0',
     ...(opts.audio ? ['-i', path.resolve(opts.audio), '-map', '0:v', '-map', '1:a', '-c:a', 'aac', '-b:a', '192k', '-shortest'] : []),
     '-vf', `vflip,scale=flags=${SWS}:out_color_matrix=bt709:out_range=tv,format=${PIX}`,
@@ -77,10 +90,10 @@ try {
   encoderDone = new Promise((ok, ko) => encoder.on('close', (c, sig) => (c === 0 ? ok() : ko(new Error(`ffmpeg s'est arrêté (code ${c}${sig ? `, signal ${sig}` : ''})`)))));
   encoderDone.catch((e) => console.error(`\n${e.message}`));
 
-  console.log(`▶ ${frames} frames ${info.w}×${info.h} · ${render.format} · ${render.mode}${render.mode === '3d' && render.format === 'mosaic' ? ` · caméra ${render.camera}` : ''}`);
+  console.log(still ? `▶ image ${info.w}×${info.h}` : `▶ ${frames} frames ${info.w}×${info.h} · ${info.format} · ${render.mode}${render.mode === '3d' && info.format === 'mosaic' && !render.prompt ? ` · caméra ${render.camera}` : ''}`);
   const t0 = Date.now();
   for (let i = 0; i < frames; i++) {
-    await page.evaluate((f) => window.__studio.renderFrame(f), i);
+    await page.evaluate((f) => window.__studio.renderFrame(f), still ? info.still : i);
     if (i % 30 === 0 || i === frames - 1) {
       process.stdout.write(`\r  frame ${String(i + 1).padStart(4)}/${frames}  (${((i + 1) / ((Date.now() - t0) / 1000)).toFixed(1)} i/s)   `);
     }
@@ -92,11 +105,11 @@ try {
   encoder?.stdin.end();
 }
 await encoderDone;
-console.log(`✔ MP4 écrit : ${path.relative(process.cwd(), outFile)} (${(fs.statSync(outFile).size / 1e6).toFixed(1)} Mo)`);
+console.log(`✔ ${outFile.endsWith('.png') ? 'Image' : 'MP4'} écrit${outFile.endsWith('.png') ? 'e' : ''} : ${path.relative(process.cwd(), outFile)} (${(fs.statSync(outFile).size / 1e6).toFixed(1)} Mo)`);
 
 // Perte due à l'encodage : première frame du MP4 comparée à la frame rendue, dans l'espace de la vidéo
 // (même conversion de couleurs), comme on mesure habituellement une vidéo.
-if (firstFrame && !opts['no-check']) {
+if (firstFrame && !opts['no-check'] && outFile.endsWith('.mp4')) {
   const ref = path.join(os.tmpdir(), `abidjan-ref-${process.pid}.rgba`);
   fs.writeFileSync(ref, firstFrame);
   const graph = `[1:v]vflip,scale=flags=${SWS}:out_color_matrix=bt709:out_range=tv,format=${PIX}[r];[0:v][r]`;

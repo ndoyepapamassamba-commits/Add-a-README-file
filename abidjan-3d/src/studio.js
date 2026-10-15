@@ -8,14 +8,13 @@
 //  - DIAPORAMA 9:16 : chaque vignette agrandie ×4 (Real-ESRGAN) en plein cadre vertical, sur fond
 //    flou, avec un mouvement de caméra 3D et un fondu enchaîné ; le bandeau reste un calque fixe.
 import * as THREE from '../vendor/three.module.js';
+import { FORMATS, MOVES } from './prompt.js';
 
 THREE.ColorManagement.enabled = false;
 
 export const FPS = 30;
 export const MOSAIC_LOOP = 8;         // secondes, boucle parfaite
-export const SLIDE_W = 1080;
-export const SLIDE_H = 1920;
-export const SLIDE_FADE = 0.5;        // secondes de fondu entre deux vignettes
+export const FADE = 0.5;              // secondes de fondu entre deux plans
 
 const FOV = 30;
 const TAN = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
@@ -39,14 +38,6 @@ export const MOSAIC_CAMERAS = {
   },
   souris: (_t, _tile, ptr) => ({ yaw: -0.13 * ptr.x, pitch: 0.08 * ptr.y, zoom: 0.98 }),
 };
-
-// Mouvements du diaporama (u de 0 à 1 sur la durée d'une vignette), en alternance.
-export const SLIDE_MOVES = [
-  { name: 'Approche', f: (u) => ({ yaw: 0.03 * u, pitch: 0, zoom: 1 - 0.1 * u }) },
-  { name: 'Orbite →', f: (u) => ({ yaw: -0.09 + 0.18 * u, pitch: 0.01, zoom: 0.97 }) },
-  { name: 'Orbite ←', f: (u) => ({ yaw: 0.09 - 0.18 * u, pitch: -0.01, zoom: 0.97 }) },
-  { name: 'Plongée', f: (u) => ({ yaw: 0.02, pitch: 0.07 - 0.1 * u, zoom: 0.96 - 0.04 * u }) },
-];
 
 // ------------------------------------------------------------------------------------- shaders
 const FULLSCREEN_VERT = /* glsl */ `
@@ -75,8 +66,10 @@ uniform sampler2D uDepth;
 uniform vec2 uTile; uniform vec2 uTileSize; uniform vec2 uAtlasSize;
 uniform float uRelief; uniform float uOverscan; uniform vec3 uEye;
 uniform vec4 uCapT; // bandeau en fraction de la vignette (x, y depuis le haut, l, h) ; l = 0 : aucun
+uniform float uDepthMode; // 0 : carte de profondeur ; 1 : image importée, sol proche en bas, loin en haut
 out vec2 vT;
 float depthAt(vec2 t) {
+  if (uDepthMode > 0.5) return pow(clamp(1.0 - t.y, 0.0, 1.0), 1.5) * 0.9;
   vec2 tp = vec2(t.x * (uTileSize.x - 1.0) + 0.5, (1.0 - t.y) * (uTileSize.y - 1.0) + 0.5);
   vec2 p = vec2(t.x, 1.0 - t.y);
   if (uCapT.z > 0.0 && p.x <= uCapT.x + uCapT.z + 0.01 && p.y >= uCapT.y - 0.02)
@@ -116,11 +109,12 @@ void main() {
 
 const BLUR_FRAG = /* glsl */ `
 precision highp float;
-uniform sampler2D uTex; uniform float uAspect; uniform float uZoom; uniform float uAlpha;
+uniform sampler2D uTex; uniform float uAspect; uniform float uScreenAspect; uniform float uZoom; uniform float uAlpha;
 in vec2 vUv; out vec4 outColor;
 void main() {
   vec2 c = vUv - 0.5;
-  vec2 t = vec2(c.x * ${(SLIDE_W / SLIDE_H).toFixed(6)} / uAspect, c.y) / uZoom + 0.5; // « cover »
+  vec2 t = uScreenAspect < uAspect ? vec2(c.x * uScreenAspect / uAspect, c.y) : vec2(c.x, c.y * uAspect / uScreenAspect); // « cover »
+  t = t / uZoom + 0.5;
   outColor = vec4(textureLod(uTex, t, 5.2).rgb * 0.62, uAlpha);
 }
 `;
@@ -131,6 +125,13 @@ precision highp float;
 uniform sampler2D uTex; uniform float uAlpha;
 in vec2 vT; out vec4 outColor;
 void main() { outColor = vec4(texture(uTex, clamp(vT, 0.0, 1.0)).rgb, uAlpha); }
+`;
+
+const OVERLAY_FRAG = /* glsl */ `
+precision highp float;
+uniform sampler2D uTex; uniform float uAlpha;
+in vec2 vUv; out vec4 outColor;
+void main() { vec4 c = texture(uTex, vUv); outColor = vec4(c.rgb, c.a * uAlpha); }
 `;
 
 const raw = (vertexShader, fragmentShader, uniforms, extra = {}) => new THREE.RawShaderMaterial({
@@ -195,19 +196,25 @@ export class Studio {
     this.capsMat = raw(FULLSCREEN_VERT, EXACT_FRAG, this.exactMat.uniforms);
     this.capsMesh = this.mesh(this.captionGeometry(), this.capsMat);
 
-    // Diaporama : fond flou, plaque 3D, bandeau fixe.
-    this.blurMat = raw(FULLSCREEN_VERT, BLUR_FRAG, { uTex: { value: null }, uAspect: { value: 1.5 }, uZoom: { value: 1 }, uAlpha: { value: 1 } }, { transparent: true });
+    // Montage (plans) : fond flou, plaque 3D, calque texte.
+    this.blurMat = raw(FULLSCREEN_VERT, BLUR_FRAG, {
+      uTex: { value: null }, uAspect: { value: 1.5 }, uScreenAspect: { value: 9 / 16 }, uZoom: { value: 1 }, uAlpha: { value: 1 },
+    }, { transparent: true });
     this.blurMesh = this.mesh(fullscreen, this.blurMat);
     this.plateMat = raw(MESH_VERT, PLATE_FRAG, {
-      ...meshUniforms(), uTex: { value: null }, uAlpha: { value: 1 },
+      ...meshUniforms(), uTex: { value: null }, uAlpha: { value: 1 }, uDepthMode: { value: 0 },
     }, { depthTest: true, depthWrite: true, transparent: true });
-    this.plateMat.uniforms.uRelief.value = 0.15;
     this.plateMesh = this.mesh(new THREE.PlaneGeometry(1, 1, 159, 105), this.plateMat);
+    this.tileMat.uniforms.uDepthMode = { value: 0 };
+    this.overlayMat = raw(FULLSCREEN_VERT, OVERLAY_FRAG, { uTex: { value: null }, uAlpha: { value: 1 } }, { transparent: true });
+    this.overlayMesh = this.mesh(fullscreen, this.overlayMat);
 
-    this.textures = new Map(); // vignettes agrandies chargées (cache LRU)
+    this.textures = new Map(); // images chargées, par identifiant « tile:i » (cache LRU)
     this.loading = new Map();
-    this.format = null;
-    this.setFormat('mosaic');
+    this.uploads = [];         // images importées par l'utilisateur
+    this.texts = new Map();    // calques texte déjà dessinés
+    this.sizeKey = null;
+    this.resize({ format: 'mosaic' });
   }
 
   mesh(geometry, material) {
@@ -237,58 +244,110 @@ export class Studio {
 
   get tiles() { return this.meta.tiles; }
 
-  get size() { return this.format === 'mosaic' ? this.mosaicSize : { w: SLIDE_W, h: SLIDE_H }; }
-
-  setFormat(format) {
-    if (format === this.format) return;
-    this.format = format;
-    const { w, h } = this.size;
-    this.renderer.setSize(w, h, false);
+  /** Taille du cadre pour un état : mosaïque native, ou format du plan (9:16, 16:9, 1:1). */
+  sizeFor(s) {
+    if (s.format === 'mosaic') return this.mosaicSize;
+    const f = FORMATS[s.plan?.format] || FORMATS['9:16'];
+    return { w: f.w, h: f.h };
   }
 
-  slideTotal(s) { return this.tiles.length * s.slideDuration + SLIDE_FADE; }
+  get size() { return this.current; }
 
-  frameCount(s) {
-    return s.format === 'mosaic' ? MOSAIC_LOOP * FPS : Math.round(this.slideTotal(s) * FPS);
+  resize(s) {
+    const size = this.sizeFor(s);
+    const key = `${size.w}x${size.h}`;
+    if (key === this.sizeKey) return;
+    this.sizeKey = key;
+    this.current = size;
+    this.renderer.setSize(size.w, size.h, false);
   }
 
-  // Vignettes visibles à l'instant t du diaporama (fondu : la précédente reste dessous).
-  slideAt(t, s) {
-    const n = this.tiles.length, D = s.slideDuration;
-    const j = Math.min(Math.floor(t / D), n - 1);
-    const local = t - j * D;
-    const u = (k) => Math.min(1, Math.max(0, (t - k * D) / (D + SLIDE_FADE)));
+  /** Ajoute une image importée ; renvoie son identifiant « upload:k ». */
+  addUpload(img, name) {
+    const tex = new THREE.Texture(img);
+    Object.assign(tex, { colorSpace: THREE.NoColorSpace, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: true, anisotropy: 4 });
+    tex.needsUpdate = true;
+    this.uploads.push({ name, tex, aspect: (img.naturalWidth || img.width) / (img.naturalHeight || img.height) });
+    return `upload:${this.uploads.length - 1}`;
+  }
+
+  imageInfo(id) {
+    const [kind, n] = String(id).split(':');
+    if (kind === 'upload') {
+      const u = this.uploads[+n];
+      return u ? { kind, aspect: u.aspect } : null;
+    }
+    const tile = this.tiles[+n];
+    return tile ? { kind: 'tile', tile, aspect: tile.up.w / tile.up.h } : null;
+  }
+
+  // ---------------------------------------------------------------- montage
+  segments(plan) {
+    const F = plan.transition === 'fondu' ? FADE : 0;
+    const segs = [];
+    let t = 0;
+    const push = (seg, dur) => { segs.push({ ...seg, start: t, dur }); t += dur; };
+    if (plan.title) push({ kind: 'card', text: plan.title.text, image: plan.shots[0]?.image }, plan.title.duration);
+    plan.shots.forEach((shot, k) => push({ kind: 'shot', shot, image: shot.image, index: k }, shot.duration));
+    if (plan.end) push({ kind: 'card', text: plan.end.text, image: plan.shots.at(-1)?.image }, plan.end.duration);
+    return { segs, total: t, F };
+  }
+
+  /** Plans visibles à l'instant t (pendant un fondu, le précédent reste dessous). */
+  layersAt(s, t) {
+    const { segs, F } = this.segments(s.plan);
+    if (!segs.length) return [];
+    let j = 0;
+    while (j < segs.length - 1 && segs[j + 1].start <= t) j++;
+    const local = t - segs[j].start;
+    const u = (k) => Math.min(1, Math.max(0, (t - segs[k].start) / (segs[k].dur + F)));
     const layers = [];
-    if (j > 0 && local < SLIDE_FADE) layers.push({ i: j - 1, u: u(j - 1), alpha: 1 });
-    layers.push({ i: j, u: u(j), alpha: j > 0 ? ease(local / SLIDE_FADE) : 1 });
+    if (j > 0 && F > 0 && local < F) layers.push({ seg: segs[j - 1], u: u(j - 1), alpha: 1 });
+    layers.push({ seg: segs[j], u: u(j), alpha: j > 0 && F > 0 ? ease(local / F) : 1 });
     return layers;
   }
 
-  /** Charge les textures nécessaires à une frame (diaporama) et précharge la suivante. */
-  async prepare(s, frame) {
-    if (s.format !== 'slides') return;
-    const t = frame / FPS;
-    const layers = this.slideAt(t, s);
-    const next = Math.min(this.tiles.length - 1, layers[layers.length - 1].i + 1);
-    await Promise.all(layers.map((l) => this.texture(l.i)));
-    this.texture(next);
+  frameCount(s) {
+    if (s.format === 'mosaic') return MOSAIC_LOOP * FPS;
+    return Math.max(1, Math.round(this.segments(s.plan).total * FPS));
   }
 
-  texture(i) {
-    if (this.textures.has(i)) {
-      const tex = this.textures.get(i);
-      this.textures.delete(i);
-      this.textures.set(i, tex); // LRU : remis en fin de file
+  /** Frame utilisée pour une image fixe : au milieu du premier plan. */
+  stillFrame(s) {
+    if (s.format === 'mosaic') return Math.round(MOSAIC_LOOP * FPS * 0.15);
+    const seg = this.segments(s.plan).segs.find((x) => x.kind === 'shot');
+    return seg ? Math.round((seg.start + seg.dur * 0.6) * FPS) : 0;
+  }
+
+  /** Charge les images nécessaires à une frame et précharge le plan suivant. */
+  async prepare(s, frame) {
+    if (s.format === 'mosaic') return;
+    const t = frame / FPS;
+    const { segs } = this.segments(s.plan);
+    const layers = this.layersAt(s, t);
+    const lastIdx = segs.indexOf(layers.at(-1)?.seg);
+    const ids = [...layers.map((l) => l.seg.image), segs[lastIdx + 1]?.image].filter(Boolean);
+    await Promise.all(ids.slice(0, layers.length).map((id) => this.texture(id)));
+    if (ids[layers.length]) this.texture(ids[layers.length]);
+  }
+
+  texture(id) {
+    const [kind, n] = String(id).split(':');
+    if (kind === 'upload') return Promise.resolve(this.uploads[+n]?.tex || null);
+    if (this.textures.has(id)) {
+      const tex = this.textures.get(id);
+      this.textures.delete(id);
+      this.textures.set(id, tex); // LRU : remis en fin de file
       return Promise.resolve(tex);
     }
-    if (!this.loading.has(i)) {
-      this.loading.set(i, this.loadTile(i).then((img) => {
+    if (!this.loading.has(id)) {
+      this.loading.set(id, this.loadTile(+n).then((img) => {
         const tex = new THREE.Texture(img);
         Object.assign(tex, { colorSpace: THREE.NoColorSpace, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: true, anisotropy: 4 });
         tex.needsUpdate = true;
-        this.textures.set(i, tex);
-        this.loading.delete(i);
-        while (this.textures.size > 5) {
+        this.textures.set(id, tex);
+        this.loading.delete(id);
+        while (this.textures.size > 6) {
           const [old, oldTex] = this.textures.entries().next().value;
           oldTex.dispose();
           this.textures.delete(old);
@@ -296,23 +355,28 @@ export class Studio {
         return tex;
       }));
     }
-    return this.loading.get(i);
+    return this.loading.get(id);
+  }
+
+  textureNow(id) {
+    const [kind, n] = String(id).split(':');
+    return kind === 'upload' ? this.uploads[+n]?.tex : this.textures.get(id);
   }
 
   /**
-   * @param {object} s  état : format, mode ('original'|'3d'), camera, relief, slideDuration, user, pointer
+   * @param {object} s  état : format ('mosaic'|'plan'), plan, mode ('original'|'3d'), camera, relief, user, pointer
    * @param {number} frame
    */
   render(s, frame) {
-    this.setFormat(s.format);
+    this.resize(s);
     const r = this.renderer;
     const { w, h } = this.size;
     r.setScissorTest(false);
     r.setViewport(0, 0, w, h);
     r.clear();
-    for (const m of [this.bgMesh, this.tileMesh, this.capsMesh, this.blurMesh, this.plateMesh]) m.visible = false;
+    for (const m of [this.bgMesh, this.tileMesh, this.capsMesh, this.blurMesh, this.plateMesh, this.overlayMesh]) m.visible = false;
     if (s.format === 'mosaic') this.renderMosaic(s, frame / FPS);
-    else this.renderSlides(s, frame / FPS);
+    else this.renderPlan(s, frame / FPS);
   }
 
   draw(meshObj, camera = this.dummyCam) {
@@ -357,53 +421,128 @@ export class Studio {
     this.draw(this.capsMesh);
   }
 
-  renderSlides(s, t) {
-    const r = this.renderer;
-    for (const layer of this.slideAt(t, s)) {
-      const tex = this.textures.get(layer.i);
-      if (!tex) { this.texture(layer.i); continue; }
-      const tile = this.tiles[layer.i];
-      const aspect = tile.up.w / tile.up.h;
-      const plateH = SLIDE_W / aspect;
-      const a = layer.alpha;
+  renderPlan(s, t) {
+    const { w: W, h: H } = this.size;
+    const plan = s.plan;
+    const still = s.mode !== '3d';
+    for (const { seg, u: progress, alpha } of this.layersAt(s, t)) {
+      const info = seg.image && this.imageInfo(seg.image);
+      const tex = seg.image && this.textureNow(seg.image);
+      if (seg.image && !tex) { this.texture(seg.image); continue; }
 
-      this.blurMat.uniforms.uTex.value = tex;
-      this.blurMat.uniforms.uAspect.value = aspect;
-      this.blurMat.uniforms.uZoom.value = 1 + 0.06 * layer.u;
-      this.blurMat.uniforms.uAlpha.value = a;
-      this.draw(this.blurMesh);
+      if (tex) {
+        this.blurMat.uniforms.uTex.value = tex;
+        this.blurMat.uniforms.uAspect.value = info.aspect;
+        this.blurMat.uniforms.uScreenAspect.value = W / H;
+        this.blurMat.uniforms.uZoom.value = 1 + 0.06 * progress;
+        this.blurMat.uniforms.uAlpha.value = alpha;
+        this.draw(this.blurMesh);
+      }
 
-      const u = this.plateMat.uniforms;
-      const dist = SLIDE_H / 2 / TAN;
-      u.uTex.value = tex;
-      u.uAlpha.value = a;
-      u.uRelief.value = s.relief ?? 0.15;
-      u.uEye.value.set(0, 0, dist);
-      u.uTile.value.set(tile.i % this.meta.depth.cols, Math.floor(tile.i / this.meta.depth.cols));
-      const c = tile.caption;
-      const [rw, rh] = [tile.rect[2], tile.rect[3]];
-      u.uCapT.value.set(c ? c[0] / rw : 0, c ? c[1] / rh : 0, c ? c[2] / rw : 0, c ? c[3] / rh : 0);
-      this.plateMesh.scale.set(SLIDE_W, plateH, 1);
-      const mv = SLIDE_MOVES[layer.i % SLIDE_MOVES.length].f(ease(layer.u));
-      const user = s.user || { yaw: 0, pitch: 0, zoom: 1 };
-      const still = s.mode !== '3d';
-      this.placeCamera(this.camera, SLIDE_W / SLIDE_H, dist,
-        still ? 0 : mv.yaw + user.yaw, still ? 0 : mv.pitch + user.pitch, still ? 1 : mv.zoom * user.zoom);
-      if (still) u.uRelief.value = 0;
-      r.clearDepth();
-      this.draw(this.plateMesh, this.camera);
+      if (seg.kind === 'shot' && tex) {
+        const pw = Math.min(W, H * info.aspect), ph = pw / info.aspect; // « contain »
+        const pu = this.plateMat.uniforms;
+        const dist = H / 2 / TAN;
+        pu.uTex.value = tex;
+        pu.uAlpha.value = alpha;
+        pu.uRelief.value = still ? 0 : plan.relief;
+        pu.uEye.value.set(0, 0, dist);
+        pu.uDepthMode.value = info.kind === 'upload' ? 1 : 0;
+        if (info.kind === 'tile') {
+          const { tile } = info;
+          pu.uTile.value.set(tile.i % this.meta.depth.cols, Math.floor(tile.i / this.meta.depth.cols));
+          const c = tile.caption, [rw, rh] = [tile.rect[2], tile.rect[3]];
+          pu.uCapT.value.set(c ? c[0] / rw : 0, c ? c[1] / rh : 0, c ? c[2] / rw : 0, c ? c[3] / rh : 0);
+        } else pu.uCapT.value.set(0, 0, 0, 0);
+        this.plateMesh.scale.set(pw, ph, 1);
+        const m = MOVES[seg.shot.move] || MOVES.fixe;
+        const e = ease(progress), k = plan.intensity;
+        const at = (key, neutral) => {
+          const a = m.from[key] ?? neutral, b = m.to[key] ?? neutral;
+          return neutral + (a + (b - a) * e - neutral) * k;
+        };
+        const user = s.user || { yaw: 0, pitch: 0, zoom: 1 };
+        this.placeCamera(this.camera, W / H, dist,
+          still ? 0 : at('yaw', 0) + user.yaw, still ? 0 : at('pitch', 0) + user.pitch, still ? 1 : at('zoom', 1) * user.zoom,
+          still ? 0 : at('panX', 0) * pw, still ? 0 : at('panY', 0) * pw);
+        this.renderer.clearDepth();
+        this.draw(this.plateMesh, this.camera);
+        if (seg.shot.text) this.drawText(seg.shot.text, 'shot', alpha, { ph });
+      }
 
+      if (seg.kind === 'card') {
+        if (!tex) {
+          this.renderer.setClearColor(0x13284f, 1);
+          this.renderer.clear();
+          this.renderer.setClearColor(0x000000, 1);
+        }
+        this.drawText(seg.text, 'card', alpha * Math.min(1, progress * 6), { progress });
+      }
     }
   }
 
-  placeCamera(cam, aspect, dist, yaw, pitch, zoom) {
+  // Calque texte dessiné en 2D (titre de carton ou texte de plan), mis en cache par contenu.
+  drawText(text, style, alpha, { ph = 0 } = {}) {
+    const { w: W, h: H } = this.size;
+    const key = `${style}|${W}x${H}|${ph | 0}|${text}`;
+    let tex = this.texts.get(key);
+    if (!tex) {
+      const c = document.createElement('canvas');
+      c.width = W;
+      c.height = H;
+      const ctx = c.getContext('2d');
+      const font = (px) => `800 ${px}px system-ui, -apple-system, "Segoe UI", Roboto, "DejaVu Sans", sans-serif`;
+      const size = Math.round(Math.min(W, H) * (style === 'card' ? 0.085 : 0.08));
+      ctx.font = font(size);
+      const lines = wrap(ctx, text, W * 0.84);
+      const lh = size * 1.18;
+      const y0 = style === 'card' ? H / 2 - ((lines.length - 1) * lh) / 2 : Math.max(size * 1.4, ((H - ph) / 2) * 0.5) - ((lines.length - 1) * lh) / 2;
+      if (style === 'shot' && (H - ph) / 2 < size * 2.2) { // texte posé sur l'image : dégradé sombre derrière
+        const bottom = y0 + (lines.length - 1) * lh + size * 1.6;
+        const g = ctx.createLinearGradient(0, 0, 0, bottom);
+        g.addColorStop(0, 'rgba(0,0,0,0.55)');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, bottom);
+      }
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineJoin = 'round';
+      lines.forEach((line, i) => {
+        const y = y0 + i * lh;
+        ctx.lineWidth = Math.max(6, size * 0.16);
+        ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+        ctx.strokeText(line, W / 2, y);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(line, W / 2, y);
+      });
+      if (style === 'card') { // filet orange sous le titre
+        const bw = Math.min(W * 0.3, size * 3);
+        ctx.fillStyle = '#f28c28';
+        ctx.fillRect(W / 2 - bw / 2, y0 + (lines.length - 1) * lh + size * 0.85, bw, Math.max(4, size * 0.09));
+      }
+      tex = new THREE.CanvasTexture(c);
+      Object.assign(tex, { colorSpace: THREE.NoColorSpace, generateMipmaps: false, minFilter: THREE.LinearFilter });
+      this.texts.set(key, tex);
+      while (this.texts.size > 16) {
+        const [old, oldTex] = this.texts.entries().next().value;
+        oldTex.dispose();
+        this.texts.delete(old);
+      }
+    }
+    this.overlayMat.uniforms.uTex.value = tex;
+    this.overlayMat.uniforms.uAlpha.value = alpha;
+    this.draw(this.overlayMesh);
+  }
+
+  placeCamera(cam, aspect, dist, yaw, pitch, zoom, panX = 0, panY = 0) {
     cam.aspect = aspect;
     cam.near = dist * 0.05;
     cam.far = dist * 4;
     cam.updateProjectionMatrix();
     const dd = dist * zoom;
-    cam.position.set(dd * Math.sin(yaw) * Math.cos(pitch), dd * Math.sin(pitch), dd * Math.cos(yaw) * Math.cos(pitch));
-    cam.lookAt(0, 0, 0);
+    cam.position.set(panX + dd * Math.sin(yaw) * Math.cos(pitch), panY + dd * Math.sin(pitch), dd * Math.cos(yaw) * Math.cos(pitch));
+    cam.lookAt(panX, panY, 0);
   }
 
   readPixels(out) {
@@ -412,4 +551,16 @@ export class Studio {
     gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, out);
     return out;
   }
+}
+
+function wrap(ctx, text, maxWidth) {
+  const words = String(text).split(/\s+/);
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = word; } else line = test;
+  }
+  if (line) lines.push(line);
+  return lines.slice(0, 4);
 }
