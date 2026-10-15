@@ -13,6 +13,9 @@
 - Ne jamais afficher ni demander de clés, secrets ou jetons ; ne jamais créer de compte au nom de l'utilisateur.
 - Le dépôt est public : images et vidéos de l'utilisateur seulement dans `workbench/.private/` (ignoré par git) ou le
   scratchpad.
-- **Livraison de l'app = toujours le dossier complet, app + paquets** (consigne du 15/10/2026) : `npm run build:direct`
-  produit `workbench/dist/livraison/MASSAMBA Workbench/` (app, paquets de décors `massamba-troupe-N.js`, `LISEZ-MOI.txt`),
-  contrôle chaque fichier sous 30 Mio et la version des paquets ; envoyer tous ces fichiers ensemble, jamais l'app seule.
+- **Livraison de l'app = seulement les fichiers modifiés** (consignes du 15/10/2026) : `npm run build:direct` produit le
+  dossier complet `workbench/dist/livraison/MASSAMBA Workbench/` (app, paquets de décors `massamba-troupe-N.js`,
+  `LISEZ-MOI.txt`, chaque fichier sous 30 Mio, versions contrôlées) et `dist/livraison/A ENVOYER/` = les fichiers qui
+  diffèrent de la dernière livraison envoyée. Envoyer exactement ce dossier « A ENVOYER » (le plus souvent l'app seule ;
+  les paquets seulement si les décors changent), puis `npm run livraison:envoyee`. Dossier complet sur demande ou si
+  l'utilisateur l'a perdu : `npm run livraison:complet`.

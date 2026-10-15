@@ -1,12 +1,19 @@
-// LIVRAISON — consigne de l'utilisateur (15/10/2026) : « tu livreras désormais l'app avec les paquets ».
-// Assemble dist/livraison/MASSAMBA Workbench/ : l'app, les paquets de décors massamba-troupe-N.js et LISEZ-MOI.txt
-// (installation, vérification, repli, tailles, empreintes SHA-256). Contrôle bloquant : chaque fichier sous la limite
-// d'envoi de 30 Mio, et les paquets de la même version que l'app. Les images de l'utilisateur restent hors du dépôt
-// (dist/ est ignoré par git).
+// LIVRAISON — consignes de l'utilisateur (15/10/2026) : « tu livreras désormais l'app avec les paquets », puis
+// « limiter la règle aux livrables modifiés seulement ».
+// Assemble dist/livraison/MASSAMBA Workbench/ (le dossier complet : app, paquets massamba-troupe-N.js, LISEZ-MOI.txt) et
+// dist/livraison/A ENVOYER/ : SEULEMENT les fichiers qui diffèrent de la dernière livraison envoyée (empreintes gardées
+// dans .private/livraison-envoyee.json, ignoré par git). Contrôles bloquants : chaque fichier sous 30 Mio, paquets de la
+// même version que l'app.
+//   node scripts/livraison.mjs            → prépare « A ENVOYER » (fichiers modifiés)
+//   node scripts/livraison.mjs --complet  → « A ENVOYER » = tout le dossier (première fois, dossier perdu)
+//   node scripts/livraison.mjs --envoyee  → enregistre la livraison qui vient d'être envoyée
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
+const args = new Set(process.argv.slice(2));
+const STATE = path.join('.private', 'livraison-envoyee.json');
+const SEND = path.join('dist', 'livraison', 'A ENVOYER');
 const LIMIT = 30 * 1024 * 1024; // limite d'envoi d'un fichier
 const WARN = 27 * 1024 * 1024; // marge : au-delà, prévoir de déplacer du contenu de l'app vers les paquets
 const APP = 'massamba-workbench-direct.html';
@@ -55,17 +62,20 @@ for (const f of files) {
     console.warn(`livraison : attention, l'app approche la limite (${(size / 1048576).toFixed(1)} Mio) — déplacer planches et galeries dans les paquets`);
 }
 
-const date = new Date().toLocaleDateString('fr-FR');
 const n = packs.length;
+// The notice only depends on the packs (no date, no app fingerprint): it changes — and is sent again — only when they do.
 const notice = [
   'MASSAMBA WORKBENCH - DOSSIER A ENREGISTRER SUR LE BUREAU',
-  `Version du ${date}${want ? ` - paquets de decors version ${want[1]}` : ''}`,
+  want ? `Paquets de decors version ${want[1]}` : 'App sans paquets de decors',
   '',
-  'INSTALLATION',
+  'INSTALLATION (premiere fois)',
   '1. Sur le Bureau, creez un dossier nomme : MASSAMBA Workbench',
-  `2. Enregistrez dans ce dossier les ${files.length + 1} fichiers de la livraison, sans les renommer.`,
+  `2. Enregistrez-y ${APP}${n ? `, les ${n} paquets massamba-troupe-*.js` : ''} et ce fichier, sans les renommer.`,
   `3. Double-cliquez sur ${APP} (Chrome ou Edge conseilles).`,
-  '   Une nouvelle livraison remplace TOUS les fichiers du dossier.',
+  '',
+  'MISES A JOUR',
+  'Une livraison ne contient que les fichiers modifies : remplacez seulement ceux-la dans le dossier.',
+  "Le plus souvent, c'est l'app seule ; les paquets ne changent que si les decors changent.",
   '',
   ...(n
     ? [
@@ -78,22 +88,53 @@ const notice = [
         "  Un navigateur peut ajouter (1) au nom d'un fichier telecharge deux fois.",
         '- Sinon, dans la galerie Images du projet, cliquez sur Importer les paquets de decors',
         `  et choisissez les ${n} fichiers .js. A faire une seule fois : ils restent dans le navigateur.`,
+        '- Une app plus recente refuse des paquets d une autre version : remplacez-les par la livraison indiquee.',
+        '',
+        'PAQUETS DE DECORS (taille en octets, empreinte SHA-256)',
+        ...rows.filter((r) => r.f !== APP).map((r) => `${r.f}  ${r.size}  ${r.sha}`),
         '',
       ]
     : []),
-  'CONTENU DU DOSSIER (taille en octets, empreinte SHA-256)',
-  ...rows.map((r) => `${r.f}  ${r.size}  ${r.sha}`),
-  '',
   'CONFIDENTIALITE',
   'Ces fichiers contiennent vos propres images (planches, galeries, decors).',
   'Gardez-les sur votre poste ; ne les publiez pas.',
   '',
 ].join('\r\n');
 fs.writeFileSync(path.join(OUT, 'LISEZ-MOI.txt'), notice);
+rows.push({ f: 'LISEZ-MOI.txt', size: Buffer.byteLength(notice), sha: createHash('sha256').update(notice).digest('hex') });
 
 for (const r of rows) console.log(`livraison : ${r.f} ${(r.size / 1048576).toFixed(1)} Mio`);
 if (errors.length) {
   console.error(`livraison REFUSÉE :\n- ${errors.join('\n- ')}`);
   process.exit(1);
 }
-console.log(`livraison prête → ${OUT} (${files.length + 1} fichiers, chacun sous 30 Mio)`);
+
+// What the user already has: the last delivery sent (fingerprints). Only what differs goes out.
+let sent = {};
+try {
+  sent = JSON.parse(fs.readFileSync(STATE, 'utf8')).files ?? {};
+} catch {
+  /* nothing recorded yet: everything is new */
+}
+if (args.has('--envoyee')) {
+  fs.mkdirSync(path.dirname(STATE), { recursive: true });
+  fs.writeFileSync(STATE, JSON.stringify({ at: new Date().toISOString(), files: Object.fromEntries(rows.map((r) => [r.f, r.sha])) }, null, 1));
+  console.log(`livraison enregistrée comme envoyée (${rows.length} fichiers) → ${STATE}`);
+  process.exit(0);
+}
+const toSend = args.has('--complet') ? rows : rows.filter((r) => sent[r.f] !== r.sha);
+fs.rmSync(SEND, { recursive: true, force: true });
+fs.mkdirSync(SEND, { recursive: true });
+for (const r of toSend) {
+  try {
+    fs.linkSync(path.join(OUT, r.f), path.join(SEND, r.f));
+  } catch {
+    fs.copyFileSync(path.join(OUT, r.f), path.join(SEND, r.f));
+  }
+}
+console.log(`livraison prête → ${OUT} (${rows.length} fichiers, chacun sous 30 Mio)`);
+console.log(
+  toSend.length
+    ? `à envoyer (${toSend.length}) → ${SEND} : ${toSend.map((r) => r.f).join(', ')}${args.has('--complet') ? ' (dossier complet)' : ' — les autres fichiers du dossier de l’utilisateur restent valables'}`
+    : 'à envoyer : rien, l’utilisateur a déjà ces fichiers',
+);

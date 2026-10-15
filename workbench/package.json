@@ -16,6 +16,8 @@
     "build:direct": "MASSAMBA_TROUPE_PACKS=1 vite build -c vite.direct.config.ts && node scripts/copy-standalone.mjs && node scripts/livraison.mjs",
     "build:direct:packs": "npm run build:direct",
     "build:direct:single": "vite build -c vite.direct.config.ts && node scripts/copy-standalone.mjs",
+    "livraison:envoyee": "node scripts/livraison.mjs --envoyee",
+    "livraison:complet": "node scripts/livraison.mjs --complet",
     "dev:direct": "vite -c vite.direct.config.ts",
     "build:server": "node scripts/build-server.mjs",
     "sync:intel": "tsx scripts/sync-intel.ts",
