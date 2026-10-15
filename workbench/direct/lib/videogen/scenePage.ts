@@ -14,6 +14,9 @@ export interface ScenePageInput {
   /** Original AAC samples (copied as they are into the exported MP4); null → the sound is decoded and re-encoded. */
   audio: { codec: string; sampleRate: number; channels: number; descB64: string; dataB64: string; table: [number, number, number][] } | null;
   libs: { threeCoreB64: string; threeB64: string; muxerB64: string };
+  /** Still image in layers: the set rebuilt behind the foreground (LaMa), its depth, masks (foreground, sky, water,
+   *  vegetation) — the camera then sees the real set behind the people, and the set lives. */
+  layers?: { plateB64: string; plateMime: string; plateDepthB64: string; pdw: number; pdh: number; masksB64: string; note: string } | null;
   look: SceneLook;
   camera: SceneCamera;
 }
@@ -30,6 +33,7 @@ export function buildScenePage(i: ScenePageInput): string {
     audio: i.audio ? { codec: i.audio.codec, sampleRate: i.audio.sampleRate, channels: i.audio.channels, desc: i.audio.descB64, table: i.audio.table } : null,
     look: i.look,
     camera: i.camera,
+    layers: i.layers ? { plateMime: i.layers.plateMime, pdw: i.layers.pdw, pdh: i.layers.pdh, note: i.layers.note } : null,
   };
   const ar = i.video.width / i.video.height;
   const runtime = sceneRuntime.toString().replace(/<\/script/gi, '<\\/script');
@@ -75,6 +79,7 @@ progress{width:100%;height:8px;accent-color:var(--accent)}.status{font-size:13px
       <div class="seg" role="group" aria-label="Style"><button data-style="original">Original</button><button data-style="relief">Relief 3D</button><button data-style="nuage">Points</button><button data-style="holo">Holo</button></div>
       <div class="row"><span>Caméra</span><select id="camera" class="grow" aria-label="Caméra"><option value="orbite">Orbite</option><option value="travelling">Travelling avant</option><option value="fixe">Fixe (à la souris)</option></select></div>
       <div class="row"><span>Relief</span><input type="range" id="relief" min="0.05" max="1" step="0.05" class="grow" aria-label="Relief"></div>
+      <div class="row" id="aliveRow" hidden><label><input type="checkbox" id="alive" checked> Décor vivant (ciel, eau, arbres)</label></div>
       <p class="note">Glissez sur l’image pour déplacer la caméra, molette pour avancer, double-clic pour recentrer.</p>
     </section>
     <section class="card"><h2>Export MP4</h2>
@@ -85,13 +90,16 @@ progress{width:100%;height:8px;accent-color:var(--accent)}.status{font-size:13px
       <div class="status" id="status">Chaque image est rendue à son instant exact (${i.video.width}×${i.video.height}, ${i.video.fps} i/s).</div>
       <p class="note">Fichier autonome : tout fonctionne hors ligne. Export : Chrome ou Edge sur ordinateur (WebCodecs).</p>
     </section>
-    <p class="note">Profondeur : ${esc(i.depth.source)} · three.js (MIT) · mp4-muxer (MIT). ${i.video.kind === 'image' ? 'Pixels d’origine conservés.' : 'Pixels et son d’origine conservés.'}</p>
+    <p class="note">Profondeur : ${esc(i.depth.source)}${i.layers ? ` · ${esc(i.layers.note)}` : ''} · three.js (MIT) · mp4-muxer (MIT). ${i.video.kind === 'image' ? 'Pixels d’origine conservés.' : 'Pixels et son d’origine conservés.'}</p>
   </aside>
 </main>
 <script type="application/json" id="meta">${JSON.stringify(meta).replace(/</g, '\\u003c')}</script>
 <script type="application/octet-stream" id="asset-video">${i.video.b64}</script>
 <script type="application/octet-stream" id="asset-depth">${i.depth.atlasB64}</script>
 <script type="application/octet-stream" id="asset-audio">${i.audio?.dataB64 ?? ''}</script>
+<script type="application/octet-stream" id="asset-plate">${i.layers?.plateB64 ?? ''}</script>
+<script type="application/octet-stream" id="asset-plate-depth">${i.layers?.plateDepthB64 ?? ''}</script>
+<script type="application/octet-stream" id="asset-masks">${i.layers?.masksB64 ?? ''}</script>
 <script type="application/octet-stream" id="lib-three-core">${i.libs.threeCoreB64}</script>
 <script type="application/octet-stream" id="lib-three">${i.libs.threeB64}</script>
 <script type="application/octet-stream" id="lib-muxer">${i.libs.muxerB64}</script>
@@ -160,7 +168,19 @@ const sceneRuntime = ${runtime};
     };
     const canvas = $('canvas'); canvas.width = V.width; canvas.height = V.height;
     const rt = sceneRuntime(THREE, canvas, { width: V.width, height: V.height, aspect: V.width / V.height, dw: D.w, dh: D.h });
-    const look = Object.assign({}, M.look);
+    // Layers: the rebuilt set behind the foreground, its depth, the masks.
+    if (M.layers) {
+      const pic = async (id, mime) => { const im = new Image(); im.src = URL.createObjectURL(new Blob([asset(id)], { type: mime })); await im.decode(); return im; };
+      const plate = await pic('asset-plate', M.layers.plateMime), masks = await pic('asset-masks', 'image/png'), pdi = await pic('asset-plate-depth', 'image/png');
+      const dc = document.createElement('canvas'); dc.width = M.layers.pdw; dc.height = M.layers.pdh;
+      const dg = dc.getContext('2d', { willReadFrequently: true }); dg.drawImage(pdi, 0, 0, dc.width, dc.height);
+      const dp = dg.getImageData(0, 0, dc.width, dc.height).data, pd = new Uint8Array(dc.width * dc.height);
+      for (let k = 0; k < pd.length; k++) pd[k] = dp[k * 4];
+      rt.setLayers({ plate, plateDepth: pd, pdw: dc.width, pdh: dc.height, masks });
+      $('aliveRow').hidden = false;
+    }
+    const look = Object.assign({ alive: true }, M.look);
+    $('alive').onchange = (e) => { look.alive = e.target.checked; dirty = true; };
     let camMode = M.camera, drag = { x: 0, y: 0, z: 0 }, exporting = false, dirty = true;
     const ease = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
     const cam = (t) => {
@@ -177,7 +197,7 @@ const sceneRuntime = ${runtime};
     const fmt = (s) => { const m = Math.floor(s / 60), r = s - m * 60; return String(m).padStart(2, '0') + ':' + r.toFixed(2).padStart(5, '0'); };
     const showTime = () => { const t = now(); $('time').textContent = fmt(t) + ' / ' + fmt(V.duration) + ' · image ' + Math.min(n - 1, Math.floor(t * V.fps + 1e-6)); if (!paused()) scrub.value = String(Math.floor(t * V.fps)); };
     const loop = (ts) => { tick(ts); if (!exporting && (dirty || !paused())) { draw(now()); showTime(); dirty = false; } requestAnimationFrame(loop); };
-    const setStyle = (s) => { look.style = s; for (const b of document.querySelectorAll('[data-style]')) b.setAttribute('aria-pressed', String(b.dataset.style === s)); $('badge').textContent = s === 'original' ? 'Original · pixels d’origine' : 'Relief 3D · une profondeur par image'; $('camera').disabled = $('relief').disabled = s === 'original'; dirty = true; };
+    const setStyle = (s) => { look.style = s; for (const b of document.querySelectorAll('[data-style]')) b.setAttribute('aria-pressed', String(b.dataset.style === s)); $('badge').textContent = s === 'original' ? 'Original · pixels d’origine' : M.layers && s === 'relief' ? 'Relief 3D · décor reconstruit derrière les personnages' : 'Relief 3D · une profondeur par image'; $('camera').disabled = $('relief').disabled = s === 'original'; dirty = true; };
     for (const b of document.querySelectorAll('[data-style]')) b.onclick = () => setStyle(b.dataset.style);
     $('camera').value = camMode; $('camera').onchange = (e) => { camMode = e.target.value; dirty = true; };
     $('relief').value = String(look.relief); $('relief').oninput = (e) => { look.relief = Number(e.target.value); dirty = true; };

@@ -11,11 +11,13 @@ export interface ProjectImage {
   kind: 'décor' | 'personnage' | 'galerie';
   src: string;
   depth?: string;
+  /** The set rebuilt behind its people (LaMa), its depth and its masks — data URLs. */
+  layers?: { plate: string; plateDepth: string; masks: string };
 }
 export function projectImages(): ProjectImage[] {
   if (!kit) return [];
   return [
-    ...kit.decors.map((d, i) => ({ id: `d${i}`, name: d.name, kind: 'décor' as const, src: d.src, depth: d.depth })),
+    ...kit.decors.map((d, i) => ({ id: `d${i}`, name: d.name, kind: 'décor' as const, src: d.src, depth: d.depth, layers: d.plate && d.plateDepth && d.masks ? { plate: d.plate, plateDepth: d.plateDepth, masks: d.masks } : undefined })),
     ...kit.planches.map((p, i) => ({ id: `p${i}`, name: p.name, kind: 'personnage' as const, src: p.src })),
     ...kit.galeries.map((g, i) => ({ id: `g${i}`, name: g.names.slice(0, 3).join(', ') || `Galerie ${i + 1}`, kind: 'galerie' as const, src: g.src })),
   ];

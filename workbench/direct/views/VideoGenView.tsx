@@ -379,7 +379,7 @@ function ImageToVideo() {
   const [playing, setPlaying] = useState(false);
   const [video, setVideo] = useState<(Encoded & { url: string }) | null>(null);
   const [regions, setRegions] = useState<{ sky: number; water: number } | null>(null);
-  const [orig, setOrig] = useState<{ blob: Blob; width: number; height: number; name: string } | null>(null);
+  const [orig, setOrig] = useState<{ blob: Blob; width: number; height: number; name: string; layers?: ProjectImage['layers'] } | null>(null);
   const [gallery, setGallery] = useState(false);
   const [gKind, setGKind] = useState<ProjectImage['kind']>('décor');
   const [gFilter, setGFilter] = useState('');
@@ -414,6 +414,7 @@ function ImageToVideo() {
     try {
       const blob = await (await fetch(p.src)).blob();
       const c = await load(blob, p.name);
+      if (p.layers) setOrig((o) => (o ? { ...o, layers: p.layers } : o));
       setGallery(false);
       if (p.depth) await analyse(c, await projectDepth(p.depth));
     } catch (e) {
@@ -525,8 +526,9 @@ function ImageToVideo() {
       const html = await imageSceneHtml(orig.blob, orig, depth, {
         title: title || orig.name,
         seconds: spec.seconds,
-        look: { style: 'relief', relief: 0.5, cut: 0.12, fog: spec.effects.fog, relight: false, dust: spec.effects.dust, snow: spec.effects.snow, rain: spec.effects.rain },
+        look: { style: 'relief', relief: 0.5, cut: 0.12, fog: spec.effects.fog, relight: false, dust: spec.effects.dust, snow: spec.effects.snow, rain: spec.effects.rain, alive: true },
         camera,
+        layers: orig.layers,
       });
       download(`${slugOf(orig.name)}-scene-3d.html`, html, 'text/html');
       toast('ok', `Page HTML 3D autonome : ${(html.length / 1048576).toFixed(1)} Mo (image d’origine, profondeur, three.js et export MP4 intégrés)`);
@@ -595,12 +597,12 @@ function ImageToVideo() {
                       <img src={p.src} alt={p.name} loading="lazy" className="aspect-video w-full bg-black object-cover" />
                       <span className="block truncate px-1 py-0.5 text-[11px]">
                         {p.name}
-                        {p.depth ? ' · 3D prête' : ''}
+                        {p.layers ? ' · 3D en couches' : p.depth ? ' · 3D prête' : ''}
                       </span>
                     </button>
                   ))}
               </div>
-              <p className="text-faint">Les images de votre projet Vidéo 3D, embarquées dans l’app (jamais publiées). Les décors ont déjà leur carte de profondeur.</p>
+              <p className="text-faint">Les images de votre projet Vidéo 3D, embarquées dans l’app (jamais publiées). Les décors ont déjà leur carte de profondeur ; « en couches » : le décor a été reconstruit derrière les personnages (LaMa) et la page HTML 3D le montre quand la caméra tourne, avec ciel, eau et arbres vivants.</p>
             </div>
           )}
           <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={2} className="w-full rounded-lg border border-line bg-input px-2 py-1.5 outline-none focus:border-accent" placeholder="Le mouvement voulu (travelling, orbite, pluie, brume…)" />

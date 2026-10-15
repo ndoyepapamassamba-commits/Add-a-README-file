@@ -15,7 +15,7 @@ export interface TroupeKit {
   version: string;
   planches: { name: string; src: string; faces: SheetFaceMarks[]; bodies?: SheetBodyMarks[] }[];
   galeries: { src: string; names: string[]; faces: SheetFaceMarks[]; bodies?: SheetBodyMarks[] }[];
-  decors: { name: string; src: string; depth?: string; people?: string; fit?: DecorFit }[];
+  decors: { name: string; src: string; depth?: string; people?: string; fit?: DecorFit; plate?: string; plateDepth?: string; masks?: string }[];
 }
 export const troupeKit: TroupeKit | null = kit;
 /** Revision of the import (cut-out, face measure): a better import reinstalls the troupe once. */

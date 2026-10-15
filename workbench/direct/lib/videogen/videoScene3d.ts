@@ -295,7 +295,12 @@ export async function sceneToHtml(clip: VideoClip, track: DepthTrack, meta: { ti
 
 /** The same self-contained 3D page for a STILL IMAGE: its original file untouched, its depth map (≤ 512 px), a camera
  *  move of `seconds` (orbit, travelling or mouse), MP4 export inside the page. */
-export async function imageSceneHtml(file: Blob, size: { width: number; height: number }, depth: { data: Float32Array; w: number; h: number; source: string }, o: { title: string; seconds: number; look: SceneLook; camera: SceneCamera }): Promise<string> {
+export async function imageSceneHtml(
+  file: Blob,
+  size: { width: number; height: number },
+  depth: { data: Float32Array; w: number; h: number; source: string },
+  o: { title: string; seconds: number; look: SceneLook; camera: SceneCamera; layers?: { plate: string; plateDepth: string; masks: string } },
+): Promise<string> {
   const [w, h] = trackSize(size.width, size.height, 512);
   const c = document.createElement('canvas');
   c.width = w;
@@ -319,5 +324,21 @@ export async function imageSceneHtml(file: Blob, size: { width: number; height: 
     libs: pageLibs(),
     look: o.look,
     camera: o.camera,
+    layers: o.layers ? await layersOf(o.layers) : null,
   });
+}
+/** Data URLs of a set's layers → the page's layer assets (base64 + plate-depth size read from the PNG header). */
+async function layersOf(l: { plate: string; plateDepth: string; masks: string }) {
+  const b64 = (u: string) => u.slice(u.indexOf(',') + 1);
+  const pdBytes = Uint8Array.from(atob(b64(l.plateDepth)).slice(0, 24), (c) => c.charCodeAt(0));
+  const dv = new DataView(pdBytes.buffer);
+  return {
+    plateB64: b64(l.plate),
+    plateMime: l.plate.slice(5, l.plate.indexOf(';')) || 'image/jpeg',
+    plateDepthB64: b64(l.plateDepth),
+    pdw: dv.getUint32(16),
+    pdh: dv.getUint32(20),
+    masksB64: b64(l.masks),
+    note: 'décor reconstruit : LaMa (Apache-2.0), éléments : UperNet ADE20K (MIT)',
+  };
 }

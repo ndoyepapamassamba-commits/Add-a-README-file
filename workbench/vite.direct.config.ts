@@ -113,6 +113,9 @@ function troupeKit(): Plugin {
             seg?: string;
             floor?: string;
             fit?: unknown;
+            plate?: string;
+            plateDepth?: string;
+            masks?: string;
           }[];
         };
         const hash = createHash('sha256');
@@ -143,6 +146,8 @@ function troupeKit(): Plugin {
           ...(has(d.people) ? { people: src(d.people!) } : {}),
           ...(has(d.seg) ? { seg: src(d.seg!) } : {}),
           ...(has(d.floor) ? { floor: src(d.floor!) } : {}),
+          // Layers (scripts/troupe-plates.py): the set rebuilt behind its people (LaMa), its depth, the masks.
+          ...(has(d.plate) && has(d.plateDepth) && has(d.masks) ? { plate: src(d.plate!), plateDepth: src(d.plateDepth!), masks: src(d.masks!) } : {}),
           ...(d.fit ? { fit: d.fit } : {}),
         }));
         hash.update(JSON.stringify(man));

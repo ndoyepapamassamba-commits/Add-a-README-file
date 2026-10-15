@@ -7,6 +7,8 @@
 //        [--model chemin/model.onnx] [--depth-cache profondeur.f32] [--fps 15] [--style relief|original|nuage|holo] [--camera orbite|travelling|fixe]
 //        [--seconds 8]   (image fixe : durée du mouvement de caméra)
 // Une IMAGE (png, jpg, webp…) donne la même page : ses pixels + sa carte de profondeur (plus fine : 512 px), caméra animée.
+// En couches (par défaut pour une image, --no-layers pour s'en passer) : premier plan détecté (UperNet, MIT), décor
+// reconstruit derrière (LaMa, Apache-2.0) et sa profondeur → la caméra voit le vrai décor derrière les personnages.
 //
 // Les vidéos de l'utilisateur restent hors du dépôt (workbench/.private/ ou dossier temporaire).
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -129,6 +131,22 @@ frames.forEach((f, k) => {
 });
 const png = grayPng(atlas, L.width, L.height);
 
+// 5 bis. Still image in layers (scripts/scene_layers.py).
+let layers: { plateB64: string; plateMime: string; plateDepthB64: string; pdw: number; pdh: number; masksB64: string; note: string } | null = null;
+if (isImage && !args.includes('--no-layers')) {
+  const dir = mkdtempSync(path.join(tmpdir(), 'layers-'));
+  const r = spawnSync('python3', [path.join(ROOT, 'scripts/scene_layers.py'), '--image', input, '--out-dir', dir, ...(opt('seg') ? ['--seg', opt('seg')!] : [])], { stdio: ['ignore', 'pipe', 'inherit'] });
+  if (r.status === 0) {
+    const info = JSON.parse(r.stdout.toString().trim().split('\n').at(-1)!) as { masks: [number, number]; foreground_share: number; fill: string };
+    const pdBuf = readFileSync(path.join(dir, 'plate-depth.png'));
+    const pdw = pdBuf.readUInt32BE(16);
+    const pdh = pdBuf.readUInt32BE(20);
+    layers = { plateB64: readFileSync(path.join(dir, 'plate.jpg')).toString('base64'), plateMime: 'image/jpeg', plateDepthB64: pdBuf.toString('base64'), pdw, pdh, masksB64: readFileSync(path.join(dir, 'masks.png')).toString('base64'), note: `décor reconstruit : ${info.fill}, éléments : UperNet ADE20K (MIT)` };
+    console.error(`couches : premier plan ${(info.foreground_share * 100).toFixed(1)} %, ${info.fill}`);
+  } else console.error('couches indisponibles (modèles absents ?) : page sans couches');
+  rmSync(dir, { recursive: true, force: true });
+}
+
 // 6. Original sound (AAC copied as is) and the libraries.
 const file = readFileSync(input);
 const aac = isMp4 ? await extractAac(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength)) : null;
@@ -143,11 +161,12 @@ const html = buildScenePage({
   audio: aac ? { codec: aac.codec, sampleRate: aac.sampleRate, channels: aac.channels, descB64: Buffer.from(aac.description).toString('base64'), dataB64: Buffer.from(aac.data).toString('base64'), table: aac.table } : null,
   libs: { threeCoreB64: b64('node_modules/three/build/three.core.js'), threeB64: b64('node_modules/three/build/three.module.js'), muxerB64: b64('node_modules/mp4-muxer/build/mp4-muxer.mjs') },
   look,
+  layers,
   camera: (opt('camera', isImage ? 'travelling' : 'orbite') as SceneCamera) ?? 'orbite',
 });
 writeFileSync(output, html);
 rmSync(tmp, { recursive: true, force: true });
-console.log(JSON.stringify({ output, bytes: html.length, frames: frames.length, track: [tw, th], band, cuts, source, model: modelInfo, audio: aac ? `${aac.codec} ${aac.table.length} échantillons (copie exacte)` : hasAudio ? 'réencodé à l’export' : 'aucun', atlas: [L.width, L.height, png.length], seconds: Math.round((Date.now() - t0) / 100) / 10 }));
+console.log(JSON.stringify({ output, layers: !!layers, bytes: html.length, frames: frames.length, track: [tw, th], band, cuts, source, model: modelInfo, audio: aac ? `${aac.codec} ${aac.table.length} échantillons (copie exacte)` : hasAudio ? 'réencodé à l’export' : 'aucun', atlas: [L.width, L.height, png.length], seconds: Math.round((Date.now() - t0) / 100) / 10 }));
 
 function imageMime(f: string): string {
   const e = path.extname(f).toLowerCase();

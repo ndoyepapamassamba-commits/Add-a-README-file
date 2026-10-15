@@ -274,3 +274,23 @@ describe('Vidéo → scène 3D : plans, bande nette, atlas, son copié, page aut
     for (const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) expect(() => new Function(m[1]!)).not.toThrow();
   });
 });
+
+describe('Page 3D en couches (décor reconstruit derrière les personnages)', () => {
+  it('embarque le décor reconstruit, sa profondeur et les masques ; le script reste valide', () => {
+    const html = buildScenePage({
+      title: 'Plage',
+      video: { b64: 'AAAA', mime: 'image/jpeg', width: 1504, height: 1064, duration: 6, fps: 30, hasAudio: false, kind: 'image' },
+      depth: { atlasB64: 'BBBB', w: 512, h: 362, n: 1, fps: 1, cols: 1, cuts: [], band: null, source: 'carte du projet' },
+      audio: null,
+      libs: { threeCoreB64: 'X', threeB64: 'Y', muxerB64: 'Z' },
+      layers: { plateB64: 'PPPP', plateMime: 'image/jpeg', plateDepthB64: 'DDDD', pdw: 512, pdh: 362, masksB64: 'MMMM', note: 'décor reconstruit : LaMa' },
+      look: { style: 'relief', relief: 0.5, cut: 0.12, fog: false, relight: false, dust: false, snow: false, rain: false, alive: true },
+      camera: 'travelling',
+    });
+    for (const id of ['asset-plate', 'asset-plate-depth', 'asset-masks']) expect(html).toContain(`id="${id}"`);
+    expect(html).toContain('"layers":{"plateMime":"image/jpeg","pdw":512,"pdh":362');
+    expect(html).toContain('Décor vivant');
+    expect(html).toContain('#ifdef PLATE');
+    for (const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) expect(() => new Function(m[1]!)).not.toThrow();
+  });
+});

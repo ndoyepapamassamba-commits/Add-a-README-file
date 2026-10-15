@@ -271,11 +271,15 @@ test('Images du projet : un décor embarqué avec sa profondeur devient une scè
   test.skip(!has, 'pas d’images de projet dans ce build (dossier privé absent)');
   await page.getByTestId('videogen-project').click();
   await expect(page.getByTestId('videogen-project-item').first()).toBeVisible();
-  await page.getByTestId('videogen-project-item').first().click();
+  const label = (await page.getByTestId('videogen-project-item').first().textContent()) ?? '';
+  await page.getByTestId('videogen-project-item').first().click(); // the gallery closes once a picture is chosen
   await expect(page.getByTestId('videogen-image-html')).toBeEnabled({ timeout: 60_000 });
   await expect(page.getByTestId('videogen-stages')).toContainText('carte du projet');
   const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 120_000 }), page.getByTestId('videogen-image-html').click()]);
   const html = path.join(OUT, 'projet.html');
   await dl.saveAs(html);
-  expect(readFileSync(html, 'utf8')).toContain('"kind":"image"');
+  const page3d = readFileSync(html, 'utf8');
+  expect(page3d).toContain('"kind":"image"');
+  // A set in layers (scripts/troupe-plates.py) carries its rebuilt set behind the people.
+  if (label.includes('en couches')) expect(page3d).toContain('"layers":{');
 });
