@@ -21,7 +21,7 @@ Ajouter une planche : placez l'image dans `assets/<nom>/`, écrivez `titres.json
 
 ```bash
 python tools/prepare.py assets/<nom>/image.webp esrgan.onnx depth.onnx assets/<nom>/ --titres assets/<nom>/titres.json --sans-bandeaux
-python tools/prepare_anim.py <mask2former> lama_fp32.onnx --assets assets/<nom>
+python tools/prepare_anim.py <mask2former> lama_fp32.onnx --assets assets/<nom> --pose <vitpose> --sam <slimsam>
 python tools/build_mosaic_anim.py --assets assets/<nom>
 ```
 
@@ -53,9 +53,23 @@ Comment c'est fait (tout est gratuit et tourne sur un ordinateur sans carte grap
 Case « Animer l'univers » dans la carte Rendu (activée par défaut) ; dans un prompt, « figé » ou « immobile »
 la désactive ; en ligne de commande, `--fige`.
 
-**Limite honnête** : les personnages se déplacent, mais leurs jambes ne marchent pas vraiment. Pour animer les
-corps (marche, gestes), il faut un modèle IA « image → vidéo » (par exemple Wan 2.2, licence Apache-2.0) qui
-demande une carte graphique NVIDIA ; ses clips pourront ensuite être importés dans le studio.
+**Personnages articulés.** Une IA (ViTPose, Apache-2.0) repère les articulations de chaque personnage :
+tête, épaules, coudes, poignets, hanches, genoux. Le studio en fait une marionnette 2D dont la peau suit
+les os (maillage déformé à chaque image) :
+
+- **debout** (le maître) : hoche la tête en parlant, tourne la tête, le bras qui montre accompagne la parole ;
+- **assis** : respire, se balance, tourne et incline la tête ; une main levée s'agite depuis le coude ;
+- **en marche** (dehors) : bras et jambes en opposition, rebond des pas.
+
+Ce que la main tient (craie, stylo, téléphone, livre) part avec elle, même quand la segmentation ne l'a pas
+reconnu ; un bras levé oublié par la segmentation (devant une fenêtre, derrière la tête d'un voisin) est
+découpé par SAM (SlimSAM, Apache-2.0), guidé par l'épaule, le coude et le poignet. En intérieur, l'arrière-plan vit aussi : rayons de soleil obliques qui glissent, poussière dorée
+dans la lumière, lumière qui respire.
+
+**Limite honnête** : c'est une animation « marionnette » à partir d'une seule image ; les visages ne parlent
+pas (pas de lèvres synchronisées) et un membre caché ne peut pas apparaître. Pour cela, il faut un modèle IA
+« image → vidéo » (par exemple Wan 2.2, licence Apache-2.0) qui demande une carte graphique NVIDIA, ou vos
+outils habituels (Kling, Hailuo, Veo) ; leurs clips pourront ensuite être importés dans le studio.
 
 Refaire la préparation (optionnel) :
 
@@ -64,7 +78,9 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install transformers onnxruntime opencv-python-headless scipy pillow numpy
 # Mask2Former : https://huggingface.co/facebook/mask2former-swin-tiny-coco-panoptic
 # LaMa (ONNX, Apache-2.0) : https://huggingface.co/Carve/LaMa-ONNX
-python tools/prepare_anim.py <dossier mask2former> lama_fp32.onnx   # ≈ 5 min sur CPU
+# ViTPose (Apache-2.0) : https://huggingface.co/usyd-community/vitpose-base-simple
+# SlimSAM (Apache-2.0) : https://huggingface.co/Zigeng/SlimSAM-uniform-77
+python tools/prepare_anim.py <dossier mask2former> lama_fp32.onnx --pose <dossier vitpose> --sam <dossier slimsam>   # ≈ 5 min sur CPU
 python tools/build_mosaic_anim.py                                    # planche animée
 ```
 
@@ -180,7 +196,8 @@ node tools/export.mjs --format slides --duration 1.5 --audio musique.mp3
 | `assets/tiles/*.webp` | Les 30 vignettes agrandies ×4 (≈ 1100×728). |
 | `assets/depth-atlas.png`, `assets/meta.json` | Cartes de profondeur, grille, bandeaux, légendes. |
 | `tools/prepare.py` | Découpe la grille, détecte les bandeaux, agrandit (Real-ESRGAN), calcule la profondeur. |
-| `tools/prepare_anim.py` | Univers animé : détourage (Mask2Former), décor reconstruit (LaMa), trajectoires. |
+| `tools/prepare_anim.py` | Univers animé : détourage (Mask2Former), squelettes et objets tenus (ViTPose), bras oubliés (SlimSAM), décor reconstruit (LaMa), trajectoires. |
+| `tools/prepare_pose.py` | Ajoute seulement les squelettes à une préparation faite sans `--pose`. |
 | `tools/build_mosaic_anim.py` | Assemble la planche animée (décor, masques, découpes à l'échelle de la planche). |
 | `assets/anim/`, `assets/anim.json` | Décors reconstruits, découpes, masques ciel/arbres/eau et trajectoires. |
 | `tools/export.mjs` | Export MP4 en ligne de commande, avec contrôle de fidélité. |
@@ -199,7 +216,8 @@ python tools/prepare.py assets/abidjan.webp real_esrgan_general_x4v3.onnx depth_
 
 Three.js (MIT) · Mediabunny (MPL-2.0) · FFmpeg + x264 (LGPL/GPL) · Playwright + Chromium (Apache-2.0/BSD) ·
 Real-ESRGAN General x4v3 (BSD-3) · Depth Anything V2 Small (Apache-2.0) · ONNX Runtime (MIT) ·
-Mask2Former (Meta, code MIT) · LaMa (Apache-2.0) · PyTorch (BSD) · Transformers (Apache-2.0) · OpenCV (Apache-2.0).
+Mask2Former (Meta, code MIT) · LaMa (Apache-2.0) · ViTPose (Apache-2.0) · SlimSAM (Apache-2.0) · PyTorch (BSD) ·
+Transformers (Apache-2.0) · OpenCV (Apache-2.0).
 
 Remarque : deux coquilles de l'image d'origine (« Trechville », « SOCOGİ ») sont conservées dans les pixels ;
 la liste des quartiers du studio affiche « Treichville » et « SOCOGI ».

@@ -45,12 +45,15 @@ def main():
             cw, ch = max(2, round(aw * k)), max(2, round(ah * k))
             cut = atlas.crop((ax, ay, ax + aw, ay + ah)).resize((cw, ch), Image.LANCZOS)
             rx, ry, rw, rh = e['rect']
-            cuts.append({
+            c = {
                 'tile': i, 'cut': cut,
                 'rect': [round(x + rx * k, 2), round(y + ry * k, 2), round(rw * k, 2), round(rh * k, 2)],
                 'pied': [round(x + e['pied'][0] * k, 2), round(y + e['pied'][1] * k, 2)],
                 'profondeur': e['profondeur'], 'genre': e['genre'], 'mouvement': e['mouvement'],
-            })
+            }
+            if e.get('pose'):  # squelette ramené à l'échelle de la planche
+                c['pose'] = [[round(x + px * k, 2), round(y + py * k, 2), s_] for px, py, s_ in e['pose']]
+            cuts.append(c)
         a['fuitePlanche'] = [round(x + a['fuite'][0] * k, 2), round(y + a['fuite'][1] * k, 2)]
 
     # Atlas unique des découpes réduites (rangées).

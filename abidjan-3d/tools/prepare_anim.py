@@ -9,9 +9,14 @@ Pour chaque vignette agrandie (assets/tiles/NN.webp) :
     mouvement de chaque découpe).
 
 Usage :
-    python tools/prepare_anim.py <dossier mask2former-swin-tiny-coco-panoptic> <lama_fp32.onnx> [--assets assets/scenes] [i ...]
+    python tools/prepare_anim.py <dossier mask2former-swin-tiny-coco-panoptic> <lama_fp32.onnx> [--assets assets/scenes]
+                                 [--pose <dossier vitpose-base-simple>] [--sam <dossier SlimSAM-uniform-77>] [i ...]
 En intérieur (pas de rue ni de ciel), les personnes restent à leur place : assises, elles respirent et se
 balancent ; debout, elles se balancent et font de petits pas ; une main levée s'agite.
+--pose : squelette de chaque personne (ViTPose, Apache-2.0), utilisé par le studio pour l'animation articulée,
+et pour emporter avec la main ce qu'elle tient (craie, stylo, téléphone…) que la segmentation n'a pas reconnu.
+--sam (avec --pose) : un bras levé oublié par la segmentation est découpé par SAM (SlimSAM, Apache-2.0),
+guidé par le coude et le poignet.
 Dépendances : torch (CPU), transformers, onnxruntime, numpy, pillow, opencv-python-headless, scipy.
 """
 import json
@@ -108,6 +113,135 @@ def vanishing_point(seg, segments, w, h):
     return [w / 2, max(h * 0.25, min(h * 0.6, vy))]
 
 
+# Objets que l'on porte : un segment de ces classes collé à une personne part avec elle.
+HANDHELD = {'book', 'cell phone', 'cup', 'bottle', 'umbrella', 'handbag', 'backpack', 'tie', 'knife', 'fork', 'spoon',
+            'scissors', 'toothbrush', 'remote', 'baseball bat', 'tennis racket', 'kite', 'frisbee', 'sports ball',
+            'wine glass', 'banana', 'apple', 'orange', 'teddy bear', 'baseball glove', 'suitcase', 'hair drier'}
+# Seulement s'ils sont dans une main (un livre ouvert est souvent pris pour un ordinateur portable).
+HELD_IF_IN_HAND = {'laptop', 'keyboard', 'mouse', 'bowl', 'vase', 'potted plant'}
+
+
+def estimate_poses(pose_model, img, boxes):
+    """17 points COCO [x, y, score] par boîte [x, y, l, h] (ViTPose)."""
+    proc, model = pose_model
+    with torch.no_grad():
+        out = model(**proc(img, boxes=[boxes], return_tensors='pt'))
+    res = proc.post_process_pose_estimation(out, boxes=[boxes])[0]
+    return [[[round(float(x), 1), round(float(y), 1), round(float(sc), 2)] for (x, y), sc in zip(r['keypoints'].numpy(), r['scores'].numpy())]
+            for r in res]
+
+
+def _seg_dist(xx, yy, a, b):
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    t = np.clip(((xx - a[0]) * dx + (yy - a[1]) * dy) / max(1e-6, dx * dx + dy * dy), 0, 1)
+    return np.hypot(xx - a[0] - t * dx, yy - a[1] - t * dy)
+
+
+def sam_embed(sam, img):
+    proc, model = sam
+    with torch.no_grad():
+        return model.get_image_embeddings(proc(img, return_tensors='pt')['pixel_values'])
+
+
+def sam_arms(sam, img, emb, m, pose, others):
+    """Bras oubliés par la segmentation (un bras levé devant une fenêtre…) : SAM, guidé par le coude et le poignet,
+    découpe le bras et la main ; on garde ce qui reste dans le couloir des os et touche la personne."""
+    proc, model = sam
+    h, w = m.shape
+    add = np.zeros_like(m)
+    area = m.sum()
+    ok = lambda i: pose[i][2] >= 0.3
+    for sh, el, wr in ((5, 7, 9), (6, 8, 10)):
+        if not (ok(el) and ok(wr)):
+            continue
+        e, wv = np.array(pose[el][:2]), np.array(pose[wr][:2])
+        v = wv - e
+        L = float(np.linalg.norm(v))
+        if L < 8:
+            continue
+        pts = [e.tolist(), (e + 0.5 * v).tolist(), wv.tolist(), (wv + 0.4 * v).tolist()]
+        if ok(sh):  # le haut du bras aussi : sinon l'avant-bras peut rester séparé du corps
+            pts.insert(0, ((np.array(pose[sh][:2]) + e) / 2).tolist())
+        pts = [pts]
+        ip = proc(img, input_points=[pts], return_tensors='pt')
+        with torch.no_grad():
+            o = model(image_embeddings=emb, input_points=ip['input_points'], multimask_output=True)
+        masks = proc.image_processor.post_process_masks(o.pred_masks, ip['original_sizes'], ip['reshaped_input_sizes'])[0][0].numpy()
+        sm = masks[int(o.iou_scores[0, 0].argmax())]
+        segs = [(e, wv + 1.0 * v, 0.6 * L)]
+        if ok(sh):
+            a = np.array(pose[sh][:2])
+            segs.append((a, e, 0.5 * max(L, float(np.linalg.norm(e - a)))))
+        pts_ = np.array([q for a_, b_, _ in segs for q in (a_, b_)])
+        rmax = max(r for *_, r in segs)
+        x0, y0 = np.floor(pts_.min(0) - rmax).astype(int)
+        x1, y1 = np.ceil(pts_.max(0) + rmax).astype(int) + 1
+        x0, y0, x1, y1 = max(0, x0), max(0, y0), min(w, x1), min(h, y1)
+        if x1 - x0 < 4 or y1 - y0 < 4:
+            continue
+        yy, xx = np.mgrid[y0:y1, x0:x1]
+        inside = np.min([_seg_dist(xx, yy, a_, b_) / r for a_, b_, r in segs], axis=0) <= 1
+        mm = m[y0:y1, x0:x1]
+        cand = sm[y0:y1, x0:x1] & inside & ~mm & ~others[y0:y1, x0:x1]
+        lbl, n = ndimage.label(cand)
+        touch = cv2.dilate(mm.astype(np.uint8), np.ones((3, 3), np.uint8)) > 0
+        # Bras qui passe derrière un voisin (il ne touche pas le corps à l'image) : on l'accepte si l'épaule est
+        # sur la personne ou tout près (elle-même peut être cachée) et que la tache contient le poignet.
+        shoulder_on = False
+        if ok(sh):
+            sx, sy = int(round(pose[sh][0])), int(round(pose[sh][1]))
+            r = int(max(6, 0.5 * np.hypot(pose[el][0] - pose[sh][0], pose[el][1] - pose[sh][1])))
+            shoulder_on = m[max(0, sy - r):sy + r + 1, max(0, sx - r):sx + r + 1].any()
+        near_wrist = np.hypot(xx - wv[0], yy - wv[1]) <= max(4.0, 0.2 * L)
+        for k in range(1, n + 1):
+            comp = lbl == k
+            linked = (comp & touch).sum() >= 4 or (shoulder_on and (comp & near_wrist).any())
+            if linked and comp.sum() < 0.35 * area:
+                add[y0:y1, x0:x1] |= comp
+    return add
+
+
+def held_objects(m, pose, lab, others):
+    """Pixels tenus en main que la segmentation a laissés au décor : au bout de chaque avant-bras, les taches
+    qui tranchent sur un fond uni et touchent la main (craie sur le tableau, stylo, téléphone…)."""
+    h, w = m.shape
+    add = np.zeros_like(m)
+    near = cv2.dilate(m.astype(np.uint8), np.ones((3, 3), np.uint8)) > 0  # contact direct avec la main
+    area = m.sum()
+    for el, wr in ((7, 9), (8, 10)):
+        if pose[wr][2] < 0.3 or pose[el][2] < 0.3:
+            continue
+        (ex, ey), (wx, wy) = pose[el][:2], pose[wr][:2]
+        vx, vy = wx - ex, wy - ey
+        L = float(np.hypot(vx, vy))
+        if L < 6:
+            continue
+        cx, cy, R = wx + 0.4 * vx, wy + 0.4 * vy, 1.1 * L
+        x0, x1 = int(max(0, cx - R)), int(min(w, cx + R + 1))
+        y0, y1 = int(max(0, cy - R)), int(min(h, cy + R + 1))
+        if x1 - x0 < 4 or y1 - y0 < 4:
+            continue
+        yy, xx = np.mgrid[y0:y1, x0:x1]
+        dist = np.hypot(xx - cx, yy - cy)
+        free = (dist <= R) & ~m[y0:y1, x0:x1] & ~others[y0:y1, x0:x1]
+        ring = free & (dist >= 0.75 * R)
+        if ring.sum() < 30:
+            continue
+        sub = lab[y0:y1, x0:x1].astype(np.float32)
+        ref = np.median(sub[ring], axis=0)
+        dist_ref = np.linalg.norm(sub - ref, axis=-1)
+        if np.percentile(dist_ref[ring], 80) > 18:
+            continue  # fond trop varié (affiches, fenêtre…) : on ne saurait pas distinguer un objet tenu
+        sal = free & (dist_ref > 32)
+        lbl, n = ndimage.label(sal)
+        touch = near[y0:y1, x0:x1]
+        for k in range(1, n + 1):
+            comp = lbl == k
+            if (comp & touch).sum() >= 4 and comp.sum() < 0.05 * area:
+                add[y0:y1, x0:x1] |= comp
+    return add
+
+
 def posture(m):
     """Posture d'une personne d'après sa silhouette : (« debout » | « assis », main levée ?)."""
     ys, xs = np.where(m)
@@ -124,6 +258,18 @@ def main():
     if '--assets' in flags:
         k = flags.index('--assets')
         assets = (Path.cwd() / flags[k + 1]).resolve()
+        flags = flags[:k] + flags[k + 2:]
+    pose_model = None
+    if '--pose' in flags:
+        k = flags.index('--pose')
+        from transformers import AutoProcessor, VitPoseForPoseEstimation
+        pose_model = (AutoProcessor.from_pretrained(flags[k + 1]), VitPoseForPoseEstimation.from_pretrained(flags[k + 1]).eval())
+        flags = flags[:k] + flags[k + 2:]
+    sam = None
+    if '--sam' in flags:
+        k = flags.index('--sam')
+        from transformers import SamModel, SamProcessor
+        sam = (SamProcessor.from_pretrained(flags[k + 1]), SamModel.from_pretrained(flags[k + 1]).eval())
         flags = flags[:k] + flags[k + 2:]
     m2f_dir, lama_path = flags[0], flags[1]
     torch.set_num_threads(4)
@@ -166,8 +312,64 @@ def main():
 
         sprites, holes = [], np.zeros((h, w), bool)
         ambiance = np.zeros((h // 2, w // 2, 3), np.uint8)
+        masks = {sid: seg == sid for sid, name, _ in segments if name in MOVING or name in HANDHELD or name in HELD_IF_IN_HAND}
+        persons = [sid for sid, name, _ in segments if name == 'person']
+        things = np.zeros((h, w), bool)
+        for mm in masks.values():
+            things |= mm
+        poses = {}
+        if pose_model is not None:
+            cand = []
+            for sid in persons:
+                mm = masks[sid]
+                ar = mm.sum()
+                if ar < w * h * 0.0012 or (mm & cap).sum() > ar * 0.1:
+                    continue
+                ys, xs = np.where(mm)
+                # boîte élargie (surtout vers le haut) : un bras levé oublié par le masque y reste
+                bw, bh = xs.max() - xs.min() + 1, ys.max() - ys.min() + 1
+                bx0, by0 = max(0, xs.min() - 0.2 * bw), max(0, ys.min() - 0.3 * bh)
+                bx1, by1 = min(w - 1, xs.max() + 0.2 * bw), min(h - 1, ys.max() + 0.05 * bh)
+                cand.append((sid, [float(bx0), float(by0), float(bx1 - bx0 + 1), float(by1 - by0 + 1)]))
+            if cand:
+                for (sid, _), pz in zip(cand, estimate_poses(pose_model, img, [b for _, b in cand])):
+                    poses[sid] = pz
+        # Objets portés : un objet que tient un poignet (squelette) part avec la personne ; sans squelette,
+        # chaque objet de la liste HANDHELD rejoint la personne qu'il touche le plus.
+        for sid, name, _ in segments:
+            if (name not in HANDHELD and name not in HELD_IF_IN_HAND) or not persons:
+                continue
+            owner = None
+            if poses:
+                ys_, xs_ = np.where(masks[sid])
+                for p_, pz in poses.items():
+                    if name in HELD_IF_IN_HAND and len(xs_) > 0.15 * masks[p_].sum():
+                        continue  # trop grand pour être tenu (ordinateur posé sur le bureau)
+                    for el, wr in ((7, 9), (8, 10)):
+                        if pz[wr][2] < 0.3:
+                            continue
+                        reach = 0.6 * np.hypot(pz[wr][0] - pz[el][0], pz[wr][1] - pz[el][1]) if pz[el][2] >= 0.3 else 10
+                        if np.min(np.hypot(xs_ - pz[wr][0], ys_ - pz[wr][1])) <= max(8, reach):
+                            owner = p_
+                    if owner is not None:
+                        break
+            elif name in HANDHELD:
+                ring = cv2.dilate(masks[sid].astype(np.uint8), np.ones((9, 9), np.uint8)) > 0
+                c, p_ = max((int((ring & masks[q]).sum()), q) for q in persons)
+                owner = p_ if c > 0 else None
+            if owner is not None:
+                masks[owner] = masks[owner] | masks[sid]
+        if pose_model is not None:
+            lab = cv2.cvtColor(rgb, cv2.COLOR_RGB2LAB)
+            emb = sam_embed(sam, img) if sam is not None and poses else None
+            for sid, pz in poses.items():
+                if emb is not None:
+                    masks[sid] = masks[sid] | sam_arms(sam, img, emb, masks[sid], pz, things & ~masks[sid])
+                masks[sid] = masks[sid] | held_objects(masks[sid], pz, lab, things & ~masks[sid])
         for sid, name, score in segments:
-            m = seg == sid
+            if name in HANDHELD or name in HELD_IF_IN_HAND:
+                continue
+            m = masks.get(sid, seg == sid)
             if name in SKY | TREES | WATER:
                 ch_idx = 0 if name in SKY else 1 if name in TREES else 2
                 small = cv2.resize((m & ~cap).astype(np.uint8) * 255, (w // 2, h // 2), interpolation=cv2.INTER_AREA)
@@ -208,6 +410,8 @@ def main():
                 move = {'type': 'tangage', 'phase': round(float(rng.random()) * 6.28, 2)}
             sprites.append({'classe': name, 'genre': kind, 'cut': cut, 'rect': [int(x0), int(y0), int(x1 - x0 + 1), int(y1 - y0 + 1)],
                             'pied': [round(foot[0], 1), round(foot[1], 1)], 'profondeur': round(d, 3), 'mouvement': move})
+            if sid in poses:
+                sprites[-1]['pose'] = poses[sid]
 
         # Décor reconstruit derrière les découpes.
         hole_mask = cv2.dilate(holes.astype(np.uint8), np.ones((15, 15), np.uint8)) > 0  # franges des silhouettes incluses
@@ -250,7 +454,7 @@ def main():
             kinds[g] = kinds.get(g, 0) + 1
         print(f"  {i + 1:02d} {tile['title']:<24} {', '.join(f'{k} ×{v}' for k, v in kinds.items()) or 'aucune découpe'}  ({time.time() - t0:.0f} s)", flush=True)
 
-    anim['modeles'] = ['Mask2Former Swin-T COCO panoptique (Meta)', 'LaMa (Apache-2.0)']
+    anim['modeles'] = ['Mask2Former Swin-T COCO panoptique (Meta)', 'LaMa (Apache-2.0)'] + (['ViTPose base (Apache-2.0)'] if pose_model else []) + (['SlimSAM (Apache-2.0)'] if sam else [])
     anim_path.write_text(json.dumps(anim, ensure_ascii=False, indent=1))
     print(f'ok ({time.time() - t0:.0f} s)')
 

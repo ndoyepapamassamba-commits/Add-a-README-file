@@ -23,6 +23,189 @@ const TAU = Math.PI * 2;
 
 const ease = (x) => 0.5 - 0.5 * Math.cos(Math.PI * Math.min(1, Math.max(0, x)));
 
+// ------------------------------------------------------------------ squelette 2D (animation articulée)
+// Points COCO : 0 nez, 1-2 yeux, 3-4 oreilles, 5-6 épaules, 7-8 coudes, 9-10 poignets, 11-12 hanches,
+// 13-14 genoux, 15-16 chevilles. Chaque personnage devient une marionnette : tête, bras, avant-bras,
+// cuisses et jambes tournent autour de leurs articulations ; la peau suit (pondération douce).
+const RIG_NX = 16, RIG_NY = 32;
+const DEG = Math.PI / 180;
+
+function segDist(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy || 1)));
+  return Math.hypot(px - ax - t * dx, py - ay - t * dy);
+}
+
+function buildRig(e) {
+  const P = e.pose;
+  if (!P) return null;
+  const ok = (i) => P[i] && P[i][2] > 0.3;
+  const pt = (i) => [P[i][0], P[i][1]];
+  const [x0, y0, w, h] = e.rect;
+  const n = (RIG_NX + 1) * (RIG_NY + 1);
+  const vx = new Float32Array(n), vy = new Float32Array(n);
+  for (let iy = 0, k = 0; iy <= RIG_NY; iy++) for (let ix = 0; ix <= RIG_NX; ix++, k++) {
+    vx[k] = x0 + (ix / RIG_NX) * w;
+    vy[k] = y0 + (iy / RIG_NY) * h;
+  }
+  const sw = ok(5) && ok(6) ? Math.hypot(P[5][0] - P[6][0], P[5][1] - P[6][1]) : w * 0.4;
+  const headPts = [0, 1, 2, 3, 4].filter(ok);
+  let head = null;
+  if (headPts.length) {
+    const hc = [headPts.reduce((a, i) => a + P[i][0], 0) / headPts.length, headPts.reduce((a, i) => a + P[i][1], 0) / headPts.length];
+    const neck = ok(5) && ok(6) ? [(P[5][0] + P[6][0]) / 2, (P[5][1] + P[6][1]) / 2] : [hc[0], hc[1] + sw * 0.6];
+    const hr = Math.max(6, Math.hypot(hc[0] - neck[0], hc[1] - neck[1]), sw * 0.35);
+    head = { hc, neck, hr };
+  }
+  // Une main levée près du visage ne doit pas emporter la tête : les bras n'agissent pas dans le disque de la tête.
+  const offHead = (k) => {
+    if (!head) return 1;
+    const d = Math.hypot(vx[k] - head.hc[0], vy[k] - head.hc[1]) / head.hr;
+    return Math.max(0, Math.min(1, (d - 0.85) / 0.4));
+  };
+  const bones = [];
+  // hand = true : au-delà du poignet, un cône qui s'élargit emporte la main et ce qu'elle tient (craie, livre).
+  const addSeg = (name, a, b, r, parent = null, hand = false) => {
+    const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1, L = Math.sqrt(L2);
+    const wts = new Float32Array(n);
+    for (let k = 0; k < n; k++) {
+      const t = ((vx[k] - a[0]) * dx + (vy[k] - a[1]) * dy) / L2;
+      if (hand && t > 1) {
+        const dp = Math.abs((vx[k] - a[0]) * dy - (vy[k] - a[1]) * dx) / L;
+        const rr = r * (1 + 2.2 * (t - 1)); // cône large : toute la main tourne d'un bloc (doigts non écrasés)
+        wts[k] = Math.exp(-((dp / rr) ** 2)) * (t < 2.3 ? 1 : Math.exp(-(((t - 2.3) * 3) ** 2)));
+      } else {
+        const d = segDist(vx[k], vy[k], a[0], a[1], b[0], b[1]);
+        wts[k] = Math.exp(-((d / r) ** 2) * 1.6);
+      }
+      if (/bras/.test(name)) wts[k] *= offHead(k);
+    }
+    bones.push({ name, pivot: a, parent, w: wts });
+    return bones.length - 1;
+  };
+  for (const [side, sh, el, wr] of [['g', 5, 7, 9], ['d', 6, 8, 10]]) {
+    if (!ok(sh) || !ok(el)) continue;
+    const r = Math.max(4, sw * 0.24);
+    const up = addSeg(`bras-${side}`, pt(sh), pt(el), r);
+    const wrist = ok(wr) ? pt(wr) : [P[el][0] + (P[el][0] - P[sh][0]) * 0.9, P[el][1] + (P[el][1] - P[sh][1]) * 0.9];
+    addSeg(`avant-bras-${side}`, pt(el), wrist, r * 0.95, up, true);
+    bones[up].raised = wrist[1] < P[sh][1]; // main au-dessus de l'épaule : bras levé
+  }
+  for (const [side, hp, kn, an] of [['g', 11, 13, 15], ['d', 12, 14, 16]]) {
+    if (!ok(hp) || !ok(kn)) continue;
+    const r = Math.max(4, sw * 0.28);
+    const th = addSeg(`cuisse-${side}`, pt(hp), pt(kn), r);
+    if (ok(an)) addSeg(`jambe-${side}`, pt(kn), pt(an), r * 0.9, th, true);
+  }
+  if (head) {
+    const { hc, neck, hr } = head;
+    const ny = neck[1] - hr * 0.15;
+    const wts = new Float32Array(n);
+    for (let k = 0; k < n; k++) {
+      const above = Math.max(0, Math.min(1, (ny - vy[k]) / (hr * 0.45)));
+      // un bras (et la main) l'emporte sur la tête quand ils se croisent
+      let arm = 0;
+      for (const b of bones) if (/bras/.test(b.name)) arm = Math.max(arm, b.w[k]);
+      wts[k] = above * Math.exp(-(((vx[k] - hc[0]) / (hr * 1.25)) ** 2)) * Math.max(0, 1 - arm * 1.5);
+    }
+    bones.push({ name: 'tete', pivot: [neck[0], ny], parent: null, w: wts });
+  }
+  // Debout : hanches et genoux visibles, cuisse verticale et assez longue (le maître, même bras tendu).
+  let standing = false;
+  for (const [hp, kn, sh] of [[11, 13, 5], [12, 14, 6]]) {
+    if (!ok(hp) || !ok(kn) || !ok(sh)) continue;
+    const thigh = P[kn][1] - P[hp][1], torsoH = P[hp][1] - P[sh][1];
+    if (thigh > 0.6 * torsoH && Math.abs(P[kn][0] - P[hp][0]) < 0.5 * thigh) standing = true;
+  }
+  if (!bones.length) return null;
+  // Normalisation : le reste du poids va au buste ; un bras l'emporte sur la tête quand ils se croisent.
+  const total = new Float32Array(n);
+  for (let k = 0; k < n; k++) {
+    let sum = 0;
+    for (const b of bones) sum += b.w[k];
+    const torso = Math.max(0, 1 - sum);
+    total[k] = sum + torso;
+  }
+  for (const b of bones) for (let k = 0; k < n; k++) b.w[k] /= total[k] || 1;
+  const baseY = y0 + h;
+  return { vx, vy, bones, rect: e.rect, baseY, standing, out: new Float32Array(n * 3) };
+}
+
+/** Pose le squelette : angles en radians par os, buste (respiration, balancement). Renvoie les positions locales. */
+function poseRig(rig, ang, breath, sway) {
+  const { vx, vy, bones, rect, baseY, out } = rig;
+  const [x0, y0, w, h] = rect;
+  const torso = (x, y) => {
+    const k = (baseY - y) / h; // 0 à la base, 1 en haut
+    return [x + sway * k * k * h, baseY - (baseY - y) * (1 + breath)];
+  };
+  const tf = bones.map((b) => {
+    const a = ang[b.name] || 0;
+    const p = torso(b.pivot[0], b.pivot[1]);
+    return { a, c: Math.cos(a), s: Math.sin(a), p };
+  });
+  const apply = (bi, x, y) => { // rotation de l'os puis de ses parents
+    let X = x, Y = y;
+    for (let j = bi; j != null; j = bones[j].parent) {
+      const t = tf[j];
+      const dx = X - t.p[0], dy = Y - t.p[1];
+      X = t.p[0] + dx * t.c - dy * t.s;
+      Y = t.p[1] + dx * t.s + dy * t.c;
+    }
+    return [X, Y];
+  };
+  for (let k = 0; k < vx.length; k++) {
+    const [tx, ty] = torso(vx[k], vy[k]);
+    let wsum = 0, X = 0, Y = 0;
+    for (let bi = 0; bi < bones.length; bi++) {
+      const wk = bones[bi].w[k];
+      if (wk < 1e-3) continue;
+      const [bx, by] = apply(bi, tx, ty);
+      X += wk * bx; Y += wk * by; wsum += wk;
+    }
+    const wt = Math.max(0, 1 - wsum);
+    X += wt * tx; Y += wt * ty;
+    out[k * 3] = (X - x0) / w - 0.5;
+    out[k * 3 + 1] = 0.5 - (Y - y0) / h;
+    out[k * 3 + 2] = 0;
+  }
+  return out;
+}
+
+/** Gestes selon le comportement : vie assise, vie debout (parle, montre), marche. */
+function rigAngles(rig, m, time, f) {
+  const ang = {};
+  let breath = 0, sway = 0;
+  const S = (hz, ph = 0) => Math.sin(time * f(hz) + (m.phase || 0) + ph);
+  const raised = (side) => rig.bones.find((b) => b.name === `bras-${side}`)?.raised;
+  if (m.type === 'marche') {
+    const c = S(1.8);
+    ang['bras-g'] = 18 * DEG * c; ang['bras-d'] = -18 * DEG * c;
+    ang['avant-bras-g'] = 10 * DEG * Math.max(0, c); ang['avant-bras-d'] = 10 * DEG * Math.max(0, -c);
+    ang['cuisse-g'] = -20 * DEG * c; ang['cuisse-d'] = 20 * DEG * c;
+    ang['jambe-g'] = 18 * DEG * Math.max(0, S(1.8, 1.2)); ang['jambe-d'] = 18 * DEG * Math.max(0, -S(1.8, 1.2));
+    ang.tete = 3 * DEG * S(3.6);
+    breath = 0.01 * S(3.6);
+  } else if (m.posture === 'debout' || rig.standing) { // parle et montre
+    ang.tete = 6 * DEG * S(3.2) + 5 * DEG * S(0.7, 1);
+    for (const side of ['g', 'd']) {
+      if (raised(side)) { ang[`bras-${side}`] = 7 * DEG * S(1.3); ang[`avant-bras-${side}`] = 12 * DEG * S(1.3, 0.8); }
+      else { ang[`bras-${side}`] = 5 * DEG * S(0.9, side === 'g' ? 0 : 2); ang[`avant-bras-${side}`] = 9 * DEG * S(1.1, 1); }
+    }
+    breath = 0.015 * S(1.6);
+    sway = 0.03 * S(0.6);
+  } else { // assis : respire, se penche, tourne la tête ; main levée qui s'agite
+    ang.tete = 8 * DEG * S(1.1) + 4 * DEG * S(2.6, 2);
+    for (const side of ['g', 'd']) {
+      if (raised(side)) { ang[`bras-${side}`] = 6 * DEG * S(4.2); ang[`avant-bras-${side}`] = 15 * DEG * S(4.2, 0.6); }
+      else { ang[`bras-${side}`] = 4 * DEG * S(0.8, side === 'g' ? 0 : 1.5); ang[`avant-bras-${side}`] = 7 * DEG * S(1.4, 2); }
+    }
+    breath = 0.022 * S(1.7);
+    sway = 0.05 * S(0.9);
+  }
+  return { ang, breath, sway };
+}
+
 // Caméras de la mosaïque : (t, vignette, pointeur) → { yaw, pitch, zoom }. Fréquences multiples de
 // 1/MOSAIC_LOOP : l'animation boucle sans saut.
 export const MOSAIC_CAMERAS = {
@@ -44,6 +227,34 @@ const FULLSCREEN_VERT = /* glsl */ `
 in vec3 position; in vec2 uv;
 out vec2 vUv;
 void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
+`;
+
+// Intérieur : poussière dorée qui flotte dans les zones éclairées, lumière du soleil qui respire.
+const INDOOR = /* glsl */ `
+// uv : position dans la vignette (0..1, y vers le haut) ; gs : densité de la poussière.
+vec3 indoorLight(vec3 col, vec2 uv, vec2 gs, float t) {
+  float lum = dot(col, vec3(0.299, 0.587, 0.114));
+  // rayons de soleil obliques (depuis la fenêtre, en haut) qui glissent lentement
+  float s = uv.x + (1.0 - uv.y) * 0.6;
+  float beam = pow(0.5 + 0.5 * sin(s * 11.0 - t * 0.45 + sin(s * 3.7 + t * 0.21) * 1.3), 5.0);
+  beam *= 0.55 + 0.45 * sin(s * 4.3 + t * 0.33);
+  beam *= smoothstep(-0.1, 0.7, uv.y);
+  vec2 g = uv * gs;
+  float dust = 0.0;
+  for (int k = 0; k < 3; k++) {
+    vec2 gp = g * (1.0 + float(k) * 0.37) + vec2(float(k) * 17.3, float(k) * 9.1);
+    vec2 cell = floor(gp);
+    vec2 h = fract(sin(vec2(dot(cell, vec2(127.1, 311.7)), dot(cell, vec2(269.5, 183.3)))) * 43758.5453);
+    vec2 c = cell + 0.5 + 0.38 * vec2(sin(t * 0.55 + h.x * 6.28), sin(t * 0.42 + h.y * 6.28));
+    float d = length(gp - c);
+    float tw = 0.55 + 0.45 * sin(t * (1.2 + h.x * 2.0) + h.y * 6.28);
+    dust += smoothstep(0.13, 0.0, d) * step(0.7, h.x) * tw;
+  }
+  // poussière dorée : surtout dans les rayons et les zones claires
+  col += vec3(1.0, 0.86, 0.58) * dust * (0.25 + 1.1 * beam) * smoothstep(0.3, 0.8, lum) * 0.75;
+  col += vec3(1.0, 0.84, 0.55) * beam * (0.05 + 0.08 * lum);
+  return col * (1.0 + 0.05 * sin(t * 0.9) * smoothstep(0.45, 0.9, lum));
+}
 `;
 
 // Copie exacte de l'image source (fond de la mosaïque et bandeaux).
@@ -97,8 +308,9 @@ precision highp float;
 uniform sampler2D uSrc; uniform vec2 uSrcSize;
 uniform vec4 uRect;  // vignette, pixels image (x, y, l, h)
 uniform vec4 uCap;   // bandeau, pixels image (l = 0 : aucun)
-uniform sampler2D uAmbM; uniform float uAnim; uniform float uTime; uniform float uLoop;
+uniform sampler2D uAmbM; uniform float uAnim; uniform float uTime; uniform float uLoop; uniform float uIndoor;
 in vec2 vT; out vec4 outColor;
+${INDOOR}
 void main() {
   vec2 t = clamp(vT, 0.0, 1.0);
   vec2 px = uRect.xy + vec2(t.x, 1.0 - t.y) * uRect.zw;
@@ -117,6 +329,7 @@ void main() {
   vec2 sp = clamp(px - vec2(sin(uTime * w) * 0.02 * uRect.z, 0.0), lo, hi);
   col = mix(col, texture(uSrc, sp / uSrcSize).rgb, amb.r * texture(uAmbM, sp / uSrcSize).r);
   col += amb.b * pow(max(0.0, sin(uTime * w * 4.0 + px.x * 0.55 + sin(px.y * 0.35 + uTime * w) * 2.0)), 24.0) * 0.2;
+  if (uIndoor > 0.5) col = indoorLight(col, vec2((px.x - uRect.x) / uRect.z, 1.0 - (px.y - uRect.y) / uRect.w), vec2(30.0, 18.0), uTime * w * 1.5);
   outColor = vec4(col, 1.0);
 }
 `;
@@ -138,14 +351,15 @@ void main() {
 const PLATE_FRAG = /* glsl */ `
 precision highp float;
 uniform sampler2D uTex; uniform float uAlpha;
-uniform sampler2D uAmb; uniform float uAnim; uniform float uTime;
+uniform sampler2D uAmb; uniform float uAnim; uniform float uTime; uniform float uIndoor;
 in vec2 vT; out vec4 outColor;
+${INDOOR}
 void main() {
   vec2 p = clamp(vT, 0.0, 1.0);
   if (uAnim < 0.5) { outColor = vec4(texture(uTex, p).rgb, uAlpha); return; }
   vec3 amb = texture(uAmb, p).rgb;
   // vent : les feuillages ondulent, davantage en hauteur
-  float wind = amb.g * p.y * (sin(uTime * 1.6 + p.y * 9.0 + p.x * 3.0) * 0.005 + sin(uTime * 2.9 + p.y * 21.0) * 0.0015);
+  float wind = amb.g * p.y * (sin(uTime * 1.6 + p.y * 9.0 + p.x * 3.0) * 0.009 + sin(uTime * 2.9 + p.y * 21.0) * 0.003);
   // eau : petites vagues
   float wave = amb.b * sin(uTime * 2.0 + p.x * 70.0 + p.y * 30.0) * 0.0018;
   vec3 col = texture(uTex, p + vec2(wind, wave)).rgb;
@@ -154,6 +368,7 @@ void main() {
   col = mix(col, texture(uTex, sp).rgb, amb.r * texture(uAmb, sp).r);
   // reflets du soleil sur l'eau
   col += amb.b * pow(max(0.0, sin(uTime * 3.0 + p.x * 140.0 + sin(p.y * 90.0 + uTime) * 2.0)), 24.0) * 0.2;
+  if (uIndoor > 0.5) col = indoorLight(col, p, vec2(54.0, 34.0), uTime);
   outColor = vec4(col, uAlpha);
 }
 `;
@@ -171,8 +386,9 @@ uniform float uWave;   // main levée : seul le sommet s'agite
 out vec2 vUv;
 void main() {
   vUv = uv;
-  vec2 local = (uv - uPivot) * uSize;
-  float hy = max(0.0, uv.y - uPivot.y) / max(1e-3, 1.0 - uPivot.y);
+  vec2 q = position.xy + 0.5; // = uv, ou position déformée par le squelette (animation articulée)
+  vec2 local = (q - uPivot) * uSize;
+  float hy = max(0.0, q.y - uPivot.y) / max(1e-3, 1.0 - uPivot.y);
   local.x += (uBend * hy * hy + uWave * pow(hy, 6.0)) * uSize.y;
   local.y *= 1.0 + uBreath * hy;
   float c = cos(uRot), s = sin(uRot);
@@ -268,7 +484,7 @@ export class Studio {
     this.tileMat = raw(MESH_VERT, TILE_FRAG, {
       ...meshUniforms(), uSrc: { value: this.src }, uSrcSize: { value: this.srcSize },
       uRect: { value: new THREE.Vector4() }, uCap: { value: new THREE.Vector4() },
-      uAmbM: { value: null }, uAnim: { value: 0 }, uTime: { value: 0 }, uLoop: { value: MOSAIC_LOOP },
+      uAmbM: { value: null }, uAnim: { value: 0 }, uTime: { value: 0 }, uLoop: { value: MOSAIC_LOOP }, uIndoor: { value: 0 },
     }, { depthTest: true, depthWrite: true });
     this.mosaicAnim = null; // textures de la planche animée (fond reconstruit, ambiance, découpes)
     this.tileMat.uniforms.uOverscan.value = OVERSCAN;
@@ -284,7 +500,7 @@ export class Studio {
     this.blurMesh = this.mesh(fullscreen, this.blurMat);
     const plateUniforms = () => ({
       ...meshUniforms(), uTex: { value: null }, uAlpha: { value: 1 }, uDepthMode: { value: 0 },
-      uAmb: { value: null }, uAnim: { value: 0 }, uTime: { value: 0 },
+      uAmb: { value: null }, uAnim: { value: 0 }, uTime: { value: 0 }, uIndoor: { value: 0 },
     });
     this.plateMat = raw(MESH_VERT, PLATE_FRAG, plateUniforms(), { depthTest: true, depthWrite: true, transparent: true });
     this.plateMesh = this.mesh(new THREE.PlaneGeometry(1, 1, 159, 105), this.plateMat);
@@ -296,6 +512,9 @@ export class Studio {
     });
     this.spriteMat = raw(SPRITE_VERT, SPRITE_FRAG, { ...spriteUniforms(), uAtlas: { value: null }, uAtlasRect: { value: new THREE.Vector4() } }, { transparent: true });
     this.spriteMesh = this.mesh(new THREE.PlaneGeometry(1, 1, 6, 16), this.spriteMat); // subdivisé : le corps peut se courber
+    this.rigMesh = this.mesh(new THREE.PlaneGeometry(1, 1, RIG_NX, RIG_NY), this.spriteMat); // personnage articulé
+    this.rigMesh.geometry.attributes.position.setUsage(THREE.DynamicDrawUsage);
+    this.rigs = new WeakMap();
     this.shadowMat = raw(SPRITE_VERT, SHADOW_FRAG, spriteUniforms(), { transparent: true });
     this.shadowMesh = this.mesh(new THREE.PlaneGeometry(1, 1), this.shadowMat);
     this.capMat = raw(MESH_VERT, PLATE_FRAG, plateUniforms(), { transparent: true });
@@ -515,7 +734,7 @@ export class Studio {
     r.setScissorTest(false);
     r.setViewport(0, 0, w, h);
     r.clear();
-    for (const m of [this.bgMesh, this.tileMesh, this.capsMesh, this.blurMesh, this.plateMesh, this.overlayMesh, this.spriteMesh, this.shadowMesh, this.capMesh]) m.visible = false;
+    for (const m of [this.bgMesh, this.tileMesh, this.capsMesh, this.blurMesh, this.plateMesh, this.overlayMesh, this.spriteMesh, this.shadowMesh, this.capMesh, this.rigMesh]) m.visible = false;
     if (s.format === 'mosaic') this.renderMosaic(s, frame / FPS);
     else this.renderPlan(s, frame / FPS);
   }
@@ -557,6 +776,7 @@ export class Studio {
       const c = tile.caption;
       u.uCap.value.set(c ? x + c[0] : 0, c ? y + c[1] : 0, c ? c[2] : 0, c ? c[3] : 0);
       u.uCapT.value.set(c ? c[0] / tw : 0, c ? c[1] / th : 0, c ? c[2] / tw : 0, c ? c[3] / th : 0);
+      u.uIndoor.value = animM && this.animData.tiles[tile.i]?.scene === 'interieur' ? 1 : 0;
       this.tileMesh.scale.set(tw, th, 1);
       const v = camFn(t, tile, ptr, this.meta.grid);
       this.placeCamera(cam, tw / th, dist, v.yaw + (s.user?.yaw || 0), v.pitch + (s.user?.pitch || 0), v.zoom * (s.user?.zoom || 1));
@@ -607,6 +827,7 @@ export class Studio {
         pu.uAnim.value = anim ? 1 : 0;
         pu.uAmb.value = anim ? anim.ambiance : null;
         pu.uTime.value = tau;
+        pu.uIndoor.value = anim && this.animData.tiles[info.tile.i]?.scene === 'interieur' ? 1 : 0;
         pu.uAlpha.value = alpha;
         pu.uRelief.value = still ? 0 : plan.relief;
         pu.uEye.value.set(0, 0, dist);
@@ -702,7 +923,18 @@ export class Studio {
       const edgeAt = (x, y, k) => Math.min(x - (w * k) / 2 - bx0, bx1 - (x + (w * k) / 2), by1 - y + h * k * 0.15) / Math.max(1e-3, (w * k) * 0.3);
       const edge = m.type === 'vie' ? 1 : edgeAt(px, py, sc) - Math.min(0, edgeAt(fx, fy, 1));
       const a = a0 * Math.max(0, Math.min(1, edge + 1));
-      return { e, x0, y0, w, h, fx, fy, px, py, sc, rot, bob, bend, breath, wave, a, depth: Math.max(0, Math.min(1, e.profondeur + (sc - 1) * 0.35)) };
+      // Personnage avec squelette : la marionnette remplace la simple flexion.
+      let rigPos = null;
+      if (e.pose && (m.type === 'vie' || m.type === 'marche')) {
+        let rig = this.rigs.get(e);
+        if (rig === undefined) { rig = buildRig(e); this.rigs.set(e, rig); }
+        if (rig) {
+          const g = rigAngles(rig, m, time, f);
+          rigPos = poseRig(rig, g.ang, g.breath, g.sway).slice();
+          bend = breath = wave = 0;
+        }
+      }
+      return { e, x0, y0, w, h, fx, fy, px, py, sc, rot, bob, bend, breath, wave, a, rigPos, depth: Math.max(0, Math.min(1, e.profondeur + (sc - 1) * 0.35)) };
     };
     const items = [];
     for (const e of list) {
@@ -747,7 +979,12 @@ export class Studio {
       u.uAlpha.value = it.a;
       const [ax, ay, aw, ah] = it.e.atlas;
       u.uAtlasRect.value.set(ax / AW, ay / AH, aw / AW, ah / AH);
-      this.draw(this.spriteMesh, this.camera);
+      if (it.rigPos) {
+        const attr = this.rigMesh.geometry.attributes.position;
+        attr.array.set(it.rigPos);
+        attr.needsUpdate = true;
+        this.draw(this.rigMesh, this.camera);
+      } else this.draw(this.spriteMesh, this.camera);
     }
   }
 
