@@ -181,6 +181,8 @@ export function creditNarrative(f: CreditFacts, unit = 'XOF'): CreditNarrative {
   // The thresholds quoted in the text are analysis rules (documented in the hypotheses), not data.
   const nums: number[] = [...Object.values(THRESHOLDS), 0.15, 0.25, 1];
   const N = (v: number) => (nums.push(v), v);
+  // The chapter's own tiles (its four key figures, at the top of its sheet / page / slide).
+  const CK = (label: string, value: string, sub: string, tone: string, n?: number) => ({ label, value, sub, tone, num: n });
   // « … et 13 autre(s) » : the remainder of a long list is a figure of the text too.
   for (const l of Object.values(f.flags)) if (l.length > 5) N(l.length - 5);
 
@@ -204,6 +206,12 @@ export function creditNarrative(f: CreditFacts, unit = 'XOF'): CreditNarrative {
   chapters.push({
     title: `Concentration de l'${B}`,
     headline: `${f.conc.leader} porte ${fmtPct(f.conc.leaderShare)} de l'${B} ; les 5 premiers ${fmtPct(f.conc.top5)}`,
+    kpis: [
+      CK('Part du premier', fmtPct(f.conc.leaderShare), f.conc.leader, f.conc.leaderShare >= 0.25 ? 'risk' : 'warn', f.conc.leaderShare),
+      CK('Part des 5 premiers', fmtPct(f.conc.top5), `${fmtPct(f.conc.top3)} pour les 3 premiers`, f.conc.top5 >= 0.6 ? 'risk' : 'warn', f.conc.top5),
+      CK('Noms pour 80 %', fmtInt(f.conc.n80), `sur ${f.entities} contreparties`, 'neutral', f.conc.n80),
+      CK('Indice HHI', fmtDec(f.conc.hhi, 3), hhiReading(f.conc.hhi).split(' (')[0]!, f.conc.hhi >= 0.25 ? 'risk' : f.conc.hhi >= 0.15 ? 'warn' : 'ok', f.conc.hhi),
+    ],
     constats: [
       `${f.entities} contreparties portent ${money(T, unit)} d'${B} ; la première, ${f.conc.leader}, en porte ${money(f.ranking[0]!.v[f.base], unit)} soit ${fmtPct(f.conc.leaderShare)}.`,
       `Les 3 premières portent ${fmtPct(f.conc.top3)}, les 5 premières ${fmtPct(f.conc.top5)}${f.entities > 10 ? `, les 10 premières ${fmtPct(f.conc.top10)}` : ''}.`,
@@ -238,6 +246,12 @@ export function creditNarrative(f: CreditFacts, unit = 'XOF'): CreditNarrative {
     const highA = N(sumOf(f, f.flags.highArrears, 'arrears'));
     chapters.push({
       title: 'Impayés et dégradation',
+      kpis: [
+        CK('Impayés', money(A, unit), `${fmtPct(f.ratios.arrearsRate ?? 0)} de l'${B}`, (f.ratios.arrearsRate ?? 0) >= 0.1 ? 'risk' : 'warn', A),
+        CK("Taux d'impayés", fmtPct(f.ratios.arrearsRate ?? 0), `impayés / ${B}`, (f.ratios.arrearsRate ?? 0) >= 0.1 ? 'risk' : (f.ratios.arrearsRate ?? 0) >= 0.03 ? 'warn' : 'ok', f.ratios.arrearsRate),
+        CK('En impayé', fmtInt(f.flags.withArrears.length), `contreparties sur ${f.entities}`, 'neutral', f.flags.withArrears.length),
+        CK('Dégradées', fmtInt(f.flags.highArrears.length), `impayés ≥ ${fmtPct(THRESHOLDS.highArrears, 0)} de l'${B}`, f.flags.highArrears.length ? 'risk' : 'ok', f.flags.highArrears.length),
+      ],
       headline: `${money(A, unit)} d'impayés, soit ${fmtPct(f.ratios.arrearsRate ?? 0)} de l'${B} ; ${f.flags.highArrears.length} contrepartie(s) en impayé sur plus de la moitié de leur ${B}`,
       constats: [
         `${f.flags.withArrears.length} contrepartie(s) sur ${f.entities} présentent des impayés, pour ${money(A, unit)} — ${fmtPct(f.ratios.arrearsRate ?? 0)} de l'${B}.`,
@@ -271,6 +285,12 @@ export function creditNarrative(f: CreditFacts, unit = 'XOF'): CreditNarrative {
     const provNoArrears = N(f.ranking.filter((e) => (e.v.provision ?? 0) > 0 && !(e.v.arrears ?? 0)).length);
     chapters.push({
       title: 'Provisions et couverture',
+      kpis: [
+        CK('Provisions', money(P, unit), `${fmtPct(f.ratios.provToOut ?? 0)} de l'${B}`, 'neutral', P),
+        ...(f.ratios.provToArrears !== undefined ? [CK('Couverture des impayés', fmtPct(f.ratios.provToArrears), 'provisions / impayés', f.ratios.provToArrears < 0.5 ? 'warn' : 'ok', f.ratios.provToArrears)] : []),
+        CK('Taux de provisionnement', fmtPct(f.ratios.provToOut ?? 0), `provisions / ${B}`, 'neutral', f.ratios.provToOut),
+        ...(f.roles.arrears ? [CK('Faible couverture', fmtInt(f.flags.lowCoverage.length), `sous ${fmtPct(THRESHOLDS.lowCoverage, 0)} des impayés`, f.flags.lowCoverage.length ? 'warn' : 'ok', f.flags.lowCoverage.length)] : []),
+      ],
       headline: f.ratios.provToArrears !== undefined ? `Les provisions (${money(P, unit)}) couvrent ${fmtPct(f.ratios.provToArrears)} des impayés` : `Provisions : ${money(P, unit)}, soit ${fmtPct(f.ratios.provToOut ?? 0)} de l'${B}`,
       constats: [
         `Provisions : ${money(P, unit)}, soit ${fmtPct(f.ratios.provToOut ?? 0)} de l'${B}${f.ratios.provToArrears !== undefined ? ` et ${fmtPct(f.ratios.provToArrears)} des impayés` : ''}.`,
@@ -298,6 +318,12 @@ export function creditNarrative(f: CreditFacts, unit = 'XOF'): CreditNarrative {
     const uncA = N(sumOf(f, f.flags.uncovered, 'arrears'));
     chapters.push({
       title: 'Garanties',
+      kpis: [
+        CK('Garanties déclarées', money(C, unit), 'avant décote', 'neutral', C),
+        CK(`Garanties / ${B}`, fmtPct(f.ratios.collToOut ?? 0), 'couverture déclarée', (f.ratios.collToOut ?? 0) < 0.5 ? 'warn' : 'ok', f.ratios.collToOut),
+        CK('Sans garantie', fmtInt(f.flags.noCollateral.length), `contreparties sur ${f.entities}`, f.flags.noCollateral.length ? 'warn' : 'ok', f.flags.noCollateral.length),
+        ...(f.roles.arrears ? [CK('Garanties < impayés', fmtInt(f.flags.uncovered.length), 'contreparties en impayé', f.flags.uncovered.length ? 'risk' : 'ok', f.flags.uncovered.length)] : []),
+      ],
       headline: `Les garanties (${money(C, unit)}) représentent ${fmtPct(f.ratios.collToOut ?? 0)} de l'${B}`,
       constats: [
         `Garanties déclarées : ${money(C, unit)}, soit ${fmtPct(f.ratios.collToOut ?? 0)} de l'${B}${f.ratios.collToArrears !== undefined ? ` et ${fmtPct(f.ratios.collToArrears)} des impayés` : ''}.`,
@@ -320,6 +346,12 @@ export function creditNarrative(f: CreditFacts, unit = 'XOF'): CreditNarrative {
     const L = f.totals.limit;
     chapters.push({
       title: 'Utilisation des limites',
+      kpis: [
+        CK('Limites autorisées', money(L, unit), `${money(Math.max(0, L - T), unit)} non tirées`, 'neutral', L),
+        CK('Utilisation', fmtPct(f.ratios.utilisation ?? 0), `${B} / limites`, (f.ratios.utilisation ?? 0) >= THRESHOLDS.nearLimit ? 'warn' : 'ok', f.ratios.utilisation),
+        CK('Dépassements', fmtInt(f.flags.overLimit.length), 'au-delà de 100 %', f.flags.overLimit.length ? 'risk' : 'ok', f.flags.overLimit.length),
+        CK('Limites saturées', fmtInt(f.flags.nearLimit.length), `au moins ${fmtPct(THRESHOLDS.nearLimit, 0)}`, f.flags.nearLimit.length ? 'warn' : 'ok', f.flags.nearLimit.length),
+      ],
       headline: `${fmtPct(f.ratios.utilisation ?? 0)} des limites utilisées ; ${f.flags.overLimit.length} dépassement(s)`,
       constats: [
         `Limites autorisées : ${money(L, unit)} pour ${money(T, unit)} d'${B}, soit ${fmtPct(f.ratios.utilisation ?? 0)} d'utilisation et ${money(N(Math.max(0, L - T)), unit)} de marge non tirée.`,

@@ -30,7 +30,11 @@ let nid = 1;
 const fill = (rgb: string) => `<a:solidFill><a:srgbClr val="${rgb}"/></a:solidFill>`;
 const font = () => activeDesign().font.ui;
 const mono = () => activeDesign().font.mono;
-const toneColor = (t?: Tone): string => (t === 'risk' ? C.risk : t === 'warn' ? C.warn : t === 'ok' ? C.green : t === 'info' ? C.cyan : C.blue);
+// Harmonised tones (v62): the theme's colours carry the meaning — primary / dark for neutral and information, the
+// accent for « à surveiller », red only for a risk; text in a darkened accent so it stays readable.
+const toneColor = (t?: Tone): string => (t === 'risk' ? C.risk : t === 'warn' ? C.gold : t === 'ok' ? C.green : t === 'info' ? C.blue : C.navy);
+const darken = (hex: string, f: number) => [0, 2, 4].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - f)).toString(16).padStart(2, '0')).join('').toUpperCase();
+const toneInk = (t?: Tone): string => (t === 'warn' ? darken(C.gold, 0.45) : t === 'risk' ? C.risk : t === 'ok' ? darken(C.green, 0.25) : C.text2);
 
 // ── primitives ────────────────────────────────────────────────────────────────
 interface RunOpt {
@@ -181,11 +185,13 @@ export function dossierPptx(d: Dossier, opts: DeckOptions = {}): Uint8Array {
   // 3 ── The indicators: ten tiles (two rows), the same in every deliverable.
   if (d.kpis.length) {
     const kp = d.kpis.slice(0, 10);
-    const cols = kp.length > 5 ? 5 : kp.length;
+    // Balanced rows, no empty slot (8 → 4 × 2, 6 → 3 × 2, 9-10 → 5 × 2); the tiles fill the height down to the reading.
+    const cols = kp.length <= 5 ? kp.length : kp.length === 6 ? 3 : kp.length <= 8 ? 4 : 5;
     const rowsN = Math.ceil(kp.length / cols);
     const gap = inch(0.2);
     const tw = Math.floor((W - 2 * M - gap * (cols - 1)) / cols);
-    const th = rowsN > 1 ? inch(1.85) : inch(2.4);
+    const availH = lectureTop - contentTop - inch(0.15);
+    const th = Math.min(inch(2.6), Math.floor((availH - inch(0.22) * (rowsN - 1)) / rowsN));
     let body = '';
     kp.forEach((k, i) => {
       const x = M + (i % cols) * (tw + gap);
@@ -237,7 +243,7 @@ export function dossierPptx(d: Dossier, opts: DeckOptions = {}): Uint8Array {
       const bodyH = lectureTop - contentTop - inch(0.15);
       if (tiles.length) {
         const th = Math.floor((bodyH - inch(0.15) * (tiles.length - 1)) / tiles.length);
-        tiles.forEach((k, i) => (body += kpiTile(M, contentTop + i * (th + inch(0.15)), leftW, Math.min(th, inch(1.6)), k)));
+        tiles.forEach((k, i) => (body += kpiTile(M, contentTop + i * (th + inch(0.15)), leftW, Math.min(th, inch(1.6)), { ...k, code: '' })));
       } else {
         body +=
           card(M, contentTop, leftW, bodyH, C.panel, 'Constats', { line: C.line, shadow: false }) +
@@ -318,7 +324,7 @@ export function dossierPptx(d: Dossier, opts: DeckOptions = {}): Uint8Array {
   if (recos.length) {
     const p1 = recos.filter((r) => r.priority === 'P1');
     const shown = (p1.length >= 4 ? p1 : recos).slice(0, 12);
-    const body = table(M, contentTop, W - 2 * M, ['Réf.', 'Recommandation', 'Axe', 'Responsable', 'Échéance'], shown.map((r) => [r.ref, r.title, r.axis ?? '', r.owner, r.due]), { widths: [0.07, 0.48, 0.15, 0.18, 0.12], sz: 8.5, rowH: 0.3, firstColTone: (r) => (recos.find((x) => x.ref === r[0])?.priority === 'P1' ? C.risk : recos.find((x) => x.ref === r[0])?.priority === 'P2' ? C.warn : C.blue) });
+    const body = table(M, contentTop, W - 2 * M, ['Réf.', 'Recommandation', 'Axe', 'Responsable', 'Échéance'], shown.map((r) => [r.ref, r.title, r.axis ?? '', r.owner, r.due]), { widths: [0.07, 0.48, 0.15, 0.18, 0.12], sz: 8.5, rowH: 0.3, firstColTone: (r) => (recos.find((x) => x.ref === r[0])?.priority === 'P1' ? C.risk : recos.find((x) => x.ref === r[0])?.priority === 'P2' ? darken(C.gold, 0.3) : C.blue) });
     push(frame(`${recos.length} recommandations, dont ${p1.length} priorité P1`, 'Décisions · plan d’actions', body, `Le plan complet (${recos.length} recommandations) figure dans le rapport et le classeur ; chaque action a un responsable, une échéance et un indicateur.`), { notes: recos.map((r) => `${r.ref} [${r.priority}] ${r.title} — ${r.owner}, ${r.due}, KPI : ${r.kpi}`).join('\n'), weight: 1.3 });
   }
 
@@ -374,14 +380,14 @@ function kpiTile(x: number, y: number, w: number, h: number, k: Kpi): string {
   const vSz = h < inch(1.2) ? 16 : k.value.length > 9 ? 18 : 22;
   return (
     card(x, y, w, h, C.white, 'Tuile KPI', { line: C.line, shadow: true }) +
-    text(x + inch(0.08), y + inch(0.04), w - inch(0.16), inch(0.42), [para(run(`${k.code} · ${k.label}`, { sz: 7.5, color: C.text2, b: true, caps: true }), { spc: 0 })], 'Étiquette') +
+    text(x + inch(0.08), y + inch(0.04), w - inch(0.16), inch(0.42), [para(run(k.code ? `${k.code} · ${k.label}` : k.label, { sz: 7.5, color: C.text2, b: true, caps: true }), { spc: 0 })], 'Étiquette') +
     text(x + inch(0.08), y + inch(0.42), w - inch(0.16), Math.max(inch(0.45), h - inch(0.95)), [para(run(k.value, { sz: vSz, color: C.navy, b: true, font: mono() }), { spc: 0 })], 'Valeur', { anchor: 'ctr' }) +
-    (k.sub ? text(x + inch(0.08), y + h - inch(0.5), w - inch(0.16), inch(0.38), [para(run(k.sub, { sz: 7.5, color: tone, i: true }), { spc: 0 })], 'Sous-titre', { anchor: 'ctr' }) : '') +
+    (k.sub ? text(x + inch(0.08), y + h - inch(0.5), w - inch(0.16), inch(0.38), [para(run(k.sub, { sz: 7.5, color: toneInk(k.tone), i: true }), { spc: 0 })], 'Sous-titre', { anchor: 'ctr' }) : '') +
     rect(x + inch(0.08), y + h - inch(0.1), inch(0.8), inch(0.035), tone, 'Soulignement')
   );
 }
 function recoCard(x: number, y: number, w: number, h: number, r: Reco): string {
-  const tone = r.priority === 'P1' ? C.risk : r.priority === 'P2' ? C.warn : C.blue;
+  const tone = r.priority === 'P1' ? C.risk : r.priority === 'P2' ? C.gold : C.blue;
   const meta = `Responsable : ${r.owner} · Échéance : ${r.due} · Indicateur : ${r.kpi}`;
   const aSz = h > inch(1.6) ? 9 : 8.5;
   return (

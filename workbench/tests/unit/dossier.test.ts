@@ -78,7 +78,9 @@ describe('Les livrables du dossier — deck, rapport, classeur, page, mail (mêm
     expect(ck).toMatch(/DATA_KPI(&apos;|')!\$D\$3/);
     expect(ck).toContain('01  ·  INDICATEURS CLÉS');
     expect(ck).toContain('LA THÈSE');
-    expect(ck).toContain('dataBar');
+    // v62 design review: the P1 column keeps its colour scale; no data bar compares a % with an amount any more.
+    expect(ck).toContain('colorScale');
+    expect(ck).not.toContain('dataBar');
     // Styled buttons: rounded pills in a gradient with a round badge, each linked to its sheet.
     const dr = read(b, 'xl/drawings/drawing1.xml');
     expect(dr).toContain('prst="roundRect"');

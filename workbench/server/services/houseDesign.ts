@@ -306,6 +306,23 @@ const tabsOf = (c: Partial<Col>): Design['xlsx'] => ({
     plan: DESIGN.xlsx.tabColor.plan,
   },
 });
+/** Lighten a hex colour toward white (0-1). */
+const tint = (h: string, f: number) =>
+  [0, 2, 4]
+    .map((i) => {
+      const x = parseInt(h.slice(i, i + 2), 16);
+      return Math.round(x + (255 - x) * f).toString(16).padStart(2, '0');
+    })
+    .join('')
+    .toUpperCase();
+/**
+ * EIGHT HARMONISED SERIES from the theme's own three colours (v62 — « harmoniser la couleur des segments ») : the
+ * primary, the accent and the dark tone, then their tints and a deeper shade — never an orange or a green borrowed from
+ * another palette. Neighbouring series keep a strong contrast of hue or lightness (primary ↔ accent alternate).
+ */
+export function harmonicSeries(primary: string, accent: string, dark: string): string[] {
+  return [primary, accent, dark, tint(primary, 0.45), tint(accent, 0.45), shade(primary, 0.35), tint(dark, 0.55), tint(accent, 0.7)];
+}
 export function buildTheme(t: ThemeId | CustomTheme | undefined | null): Design {
   if (!t || t === 'house') return DESIGN;
   if (typeof t === 'string') {
@@ -316,7 +333,7 @@ export function buildTheme(t: ThemeId | CustomTheme | undefined | null): Design 
       color: { ...DESIGN.color, ...th.color },
       font: { ...DESIGN.font, ui: th.font ?? DESIGN.font.ui },
       // A palette with its own harmonised series uses it entirely (no orange from the house tail in an emerald design).
-      chartSeries: th.series ?? [th.color.blue ?? DESIGN.color.blue, th.color.cyan ?? DESIGN.color.cyan, th.color.gold ?? DESIGN.color.gold, ...DESIGN.chartSeries.slice(3)],
+      chartSeries: th.series ?? harmonicSeries(th.color.blue ?? DESIGN.color.blue, th.color.gold ?? DESIGN.color.gold, th.color.navy ?? DESIGN.color.navy),
       filet: { ...DESIGN.filet, color: th.color.gold ?? DESIGN.filet.color },
       xlsx: tabsOf(th.color),
     } as Design;
@@ -329,7 +346,7 @@ export function buildTheme(t: ThemeId | CustomTheme | undefined | null): Design 
     name: 'Thème personnalisé',
     color: { ...DESIGN.color, navy: dark, blue: primary, gold: accent, cyan: accent, sky: accent },
     font: { ...DESIGN.font, ui: (t.font ?? DESIGN.font.ui).replace(/[^\w -]/g, '').slice(0, 40) || DESIGN.font.ui },
-    chartSeries: [primary, accent, dark, ...DESIGN.chartSeries.slice(3)],
+    chartSeries: harmonicSeries(primary, accent, dark),
     filet: { ...DESIGN.filet, color: accent },
     xlsx: tabsOf({ navy: dark, blue: primary, gold: accent, cyan: accent }),
   } as Design;

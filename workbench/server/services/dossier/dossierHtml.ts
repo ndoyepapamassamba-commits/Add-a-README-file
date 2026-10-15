@@ -7,7 +7,8 @@ import { allRecos, type Dossier, type Figure, type Kpi, type Tone } from './doss
 const C = liveColorProxy((c) => c) as Design['color'];
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const h = (rgb: string) => `#${rgb}`;
-const toneColor = (t?: Tone): string => (t === 'risk' ? C.risk : t === 'warn' ? C.warn : t === 'ok' ? C.green : t === 'info' ? C.cyan : C.blue);
+// Harmonised tones (v62): theme colours carry the meaning; red only for a risk, the accent for « à surveiller ».
+const toneColor = (t?: Tone): string => (t === 'risk' ? C.risk : t === 'warn' ? C.gold : t === 'ok' ? C.green : t === 'info' ? C.blue : C.navy);
 const fmtV = (v: number, unit?: string) => (unit === '%' ? `${v.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %` : Math.abs(v) >= 1e9 ? `${(v / 1e9).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} Mds` : Math.abs(v) >= 1e6 ? `${(v / 1e6).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} M` : v.toLocaleString('fr-FR', { maximumFractionDigits: 1 }));
 
 /** Inline SVG of a figure: columns (grouped), horizontal bars, a line, or a doughnut — in the palette. */
@@ -95,7 +96,7 @@ export function figureSvg(f: Figure, W = 640, H = 300): string {
 }
 
 const kpiTile = (k: Kpi) =>
-  `<div class="kpi" style="border-bottom:3px solid ${h(toneColor(k.tone))}"><div class="kpi-l">${esc(k.code)} · ${esc(k.label)}</div><div class="kpi-v">${esc(k.value)}</div><div class="kpi-s" style="color:${h(toneColor(k.tone))}">${esc(k.sub ?? k.method ?? '')}</div></div>`;
+  `<div class="kpi" style="border-bottom:3px solid ${h(toneColor(k.tone))}"><div class="kpi-l">${k.code ? `${esc(k.code)} · ` : ''}${esc(k.label)}</div><div class="kpi-v">${esc(k.value)}</div><div class="kpi-s" style="color:${h(toneColor(k.tone))}">${esc(k.sub ?? k.method ?? '')}</div></div>`;
 
 export function dossierHtml(d: Dossier, o: { brand?: string } = {}): string {
   const D = activeDesign();
@@ -128,14 +129,14 @@ export function dossierHtml(d: Dossier, o: { brand?: string } = {}): string {
   .src{margin:0 0 8px 0;font-size:9pt}.src .id{font-family:"${esc(D.font.mono)}",monospace;color:var(--blue);font-weight:700}.src .les{color:var(--text2);font-style:italic;margin-left:14px;display:block}`;
   const chapters = d.chapters
     .map(
-      (ch) => `<section class="break"><h2>${ch.n}. ${esc(ch.title)}${ch.headline ? ` : ${esc(ch.headline)}` : ''}</h2>${ch.kpis?.length ? `<div class="kpis">${ch.kpis.slice(0, 4).map(kpiTile).join('')}</div>` : ''}${
+      (ch) => `<section class="break"><h2>${ch.n}. ${esc(ch.title)}${ch.headline ? ` : ${esc(ch.headline)}` : ''}</h2>${ch.kpis?.length ? `<div class="kpis">${ch.kpis.slice(0, 4).map((k) => kpiTile({ ...k, code: '' })).join('')}</div>` : ''}${
         ch.constats.length ? `<h3>Constat chiffré</h3><ul>${ch.constats.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>` : ''
       }${ch.figures.map((f, i) => `<div class="fig">${figureSvg(f)}</div><div class="figcap">Figure ${i + 1} — ${esc(f.title)}${f.lecture ? ` <i>Lecture — ${esc(f.lecture)}</i>` : ''}</div>`).join('')}${
         ch.analyse.length ? `<h3>Analyse</h3>${ch.analyse.map((a) => `<p>${esc(a)}</p>`).join('')}` : ''
       }${ch.tables.map((t) => `${t.title ? `<h3>${esc(t.title)}</h3>` : ''}<table><thead><tr>${t.head.map((x) => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${t.rows.map((r) => `<tr>${r.map((c) => `<td${/^[-+]?[\d\s\u202f.,]+(%|Mds?|M|k)?$/.test(c.trim()) && /\d/.test(c) ? ' class="num"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>${t.lecture ? `<div class="lecture">Lecture — ${esc(t.lecture)}</div>` : ''}`).join('')}${
         ch.cadre.length ? `<h3>Cadre réglementaire et recherche</h3><ul>${ch.cadre.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>` : ''
       }${ch.cas.length ? `<h3>Cas emblématiques</h3><ul>${ch.cas.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}${
-        ch.recommandations.length ? `<h3>Recommandations</h3><table><thead><tr><th>Réf.</th><th>Recommandation et action</th><th>Responsable</th><th>Échéance</th><th>Indicateur</th></tr></thead><tbody>${ch.recommandations.map((r) => `<tr><td><span class="ref" style="background:${h(r.priority === 'P1' ? C.risk : r.priority === 'P2' ? C.warn : C.blue)}">${esc(r.ref)} · ${r.priority}</span></td><td><b style="color:${h(C.navy)}">${esc(r.title)}</b><br>${esc(r.action)}${r.ground ? `<br><i class="meta">Fondement : ${esc(r.ground)}</i>` : ''}</td><td>${esc(r.owner)}</td><td class="num">${esc(r.due)}</td><td><i>${esc(r.kpi)}</i></td></tr>`).join('')}</tbody></table>` : ''
+        ch.recommandations.length ? `<h3>Recommandations</h3><table><thead><tr><th>Réf.</th><th>Recommandation et action</th><th>Responsable</th><th>Échéance</th><th>Indicateur</th></tr></thead><tbody>${ch.recommandations.map((r) => `<tr><td><span class="ref" style="background:${h(r.priority === 'P1' ? C.risk : r.priority === 'P2' ? C.gold : C.blue)}">${esc(r.ref)} · ${r.priority}</span></td><td><b style="color:${h(C.navy)}">${esc(r.title)}</b><br>${esc(r.action)}${r.ground ? `<br><i class="meta">Fondement : ${esc(r.ground)}</i>` : ''}</td><td>${esc(r.owner)}</td><td class="num">${esc(r.due)}</td><td><i>${esc(r.kpi)}</i></td></tr>`).join('')}</tbody></table>` : ''
       }${ch.lecture ? `<div class="lecture">Lecture — ${esc(ch.lecture)}</div>` : ''}</section>`,
     )
     .join('');
@@ -155,7 +156,7 @@ export function dossierHtml(d: Dossier, o: { brand?: string } = {}): string {
 <p class="meta"><b>Émetteur :</b> ${esc(d.author ?? brand)}${d.audience ? ` · <b>Destinataires :</b> ${esc(d.audience)}` : ''}${d.dataSource ? ` · <b>Sources :</b> ${esc(d.dataSource)}` : ''} · <b>Diffusion :</b> <span style="color:${h(C.risk)};font-weight:700">${esc(d.confidentiality ?? 'Usage interne')}</span> · édité le ${esc(d.date)}</p>
 <section class="break"><h2>Ce qu’il faut retenir</h2><div class="kpis">${d.kpis.slice(0, 10).map(kpiTile).join('')}</div>${d.provenance ? `<p class="meta"><i>${esc(d.provenance)}</i></p>` : ''}${d.messages.length ? `<h3>${d.messages.length} messages clés</h3><ol>${d.messages.map((m) => `<li>${esc(m)}</li>`).join('')}</ol>` : ''}${d.method?.steps.length ? `<h3>Méthode</h3><table><thead><tr><th>Étape</th><th>Ce qui est fait</th></tr></thead><tbody>${d.method.steps.map((s) => `<tr><td>${s.n}. ${esc(s.label)}</td><td>${esc(s.detail ?? '')}</td></tr>`).join('')}</tbody></table>` : ''}${d.method?.research?.length ? `<h3>Ce que la recherche change dans notre lecture</h3><ul>${d.method.research.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>` : ''}</section>
 ${chapters}
-<section class="break"><h2>${d.chapters.length + 1}. Plan d’actions et décisions soumises au comité</h2>${recos.length ? `<p>${recos.length} recommandations, dont ${recos.filter((r) => r.priority === 'P1').length} priorité P1.</p><table><thead><tr><th>Réf.</th><th>Recommandation</th><th>Axe</th><th>Responsable</th><th>Échéance</th><th>Indicateur</th></tr></thead><tbody>${recos.map((r) => `<tr><td><span class="ref" style="background:${h(r.priority === 'P1' ? C.risk : r.priority === 'P2' ? C.warn : C.blue)}">${esc(r.ref)} · ${r.priority}</span></td><td><b>${esc(r.title)}</b></td><td>${esc(r.axis ?? '')}</td><td>${esc(r.owner)}</td><td class="num">${esc(r.due)}</td><td><i>${esc(r.kpi)}</i></td></tr>`).join('')}</tbody></table>` : ''}${d.decisions.length ? `<h3>Décisions soumises au vote</h3>${d.decisions.map((x) => `<div class="dec"><div class="n">${esc(x.code)}</div><div>${esc(x.text)}</div><div class="vote">☐ Pour &nbsp; ☐ Contre</div></div>`).join('')}` : ''}</section>
+<section class="break"><h2>${d.chapters.length + 1}. Plan d’actions et décisions soumises au comité</h2>${recos.length ? `<p>${recos.length} recommandations, dont ${recos.filter((r) => r.priority === 'P1').length} priorité P1.</p><table><thead><tr><th>Réf.</th><th>Recommandation</th><th>Axe</th><th>Responsable</th><th>Échéance</th><th>Indicateur</th></tr></thead><tbody>${recos.map((r) => `<tr><td><span class="ref" style="background:${h(r.priority === 'P1' ? C.risk : r.priority === 'P2' ? C.gold : C.blue)}">${esc(r.ref)} · ${r.priority}</span></td><td><b>${esc(r.title)}</b></td><td>${esc(r.axis ?? '')}</td><td>${esc(r.owner)}</td><td class="num">${esc(r.due)}</td><td><i>${esc(r.kpi)}</i></td></tr>`).join('')}</tbody></table>` : ''}${d.decisions.length ? `<h3>Décisions soumises au vote</h3>${d.decisions.map((x) => `<div class="dec"><div class="n">${esc(x.code)}</div><div>${esc(x.text)}</div><div class="vote">☐ Pour &nbsp; ☐ Contre</div></div>`).join('')}` : ''}</section>
 ${annexes.join('')}
 <div class="foot"><span>${esc([d.unit, d.audience].filter(Boolean).join(' · ') || brand)}</span><span>${esc(brand)} · ${esc(d.date)}</span></div>
 </div></body></html>`;

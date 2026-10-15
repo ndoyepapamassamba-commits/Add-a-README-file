@@ -284,3 +284,20 @@ Laboratoire Champion ↔ Challenger ↔ Premium avec statistiques réelles (IC, 
 - **Galerie de designs Internet** : images Firecrawl avec leur taille en plus de Tavily, vignettes et logos écartés,
   originaux Dribbble / Behance remontés, vitrines premium (Dribbble shots, Behance, Awwwards, Mobbin, Refero…).
 - Test réseau réel : `LIVE_WEB=1 npx playwright test tests/e2e/freesearch.live.spec.ts` (après `npm run build:direct:single`).
+
+### Revue design des livrables comité (v62)
+
+- Couleurs : les séries des graphiques dérivent des trois couleurs du thème choisi ; le rouge est réservé au risque, l'accent
+  à « à surveiller » (en texte, assombri pour rester lisible).
+- Aucun vide non calibré :
+  - pas de bande « Sélecteurs » sans sélecteur ;
+  - une figure ou une tuile seule prend toute la largeur ;
+  - le top 10 occupe toute la largeur (part cumulée, puis impayés, provisions, garanties, limites) ;
+  - les grilles d'indicateurs sont équilibrées (8 → 4 × 2).
+- Graphiques épurés :
+  - barres étiquetées sans quadrillage ni axe ;
+  - pas d'étiquettes qui se chevauchent ;
+  - noms longs en barres horizontales ;
+  - aucun graphique en double.
+- Chaque chapitre ouvre sur ses quatre indicateurs chiffrés (classeur, rapport, deck, page).
+- Galerie de designs : style « Immersif » (profondeur 3D, sombre, verre, lumière) tiré des vitrines primées.

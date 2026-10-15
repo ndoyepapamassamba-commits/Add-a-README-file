@@ -118,9 +118,11 @@ export const DESIGN_QUERY: Record<'excel' | 'document' | 'slides' | 'web', strin
   web: 'premium web app dashboard UI design',
 };
 /** Style families offered as filters in the Internet gallery (same for every category). */
-export const DESIGN_STYLES = ['Tous', 'Sombre', 'Minimal', 'Luxe', 'Corporate', 'Coloré', 'Finance', 'Afrique', 'Glass', 'Bento', 'Éditorial', 'Pastel'] as const;
+export const DESIGN_STYLES = ['Tous', 'Immersif', 'Sombre', 'Minimal', 'Luxe', 'Corporate', 'Coloré', 'Finance', 'Afrique', 'Glass', 'Bento', 'Éditorial', 'Pastel'] as const;
 export type DesignStyle = (typeof DESIGN_STYLES)[number];
 const STYLE_WORDS: Record<Exclude<DesignStyle, 'Tous'>, string> = {
+  // v62 — « n'hésite pas sur les designs immersifs » : depth, light and 3D, from the award showcases.
+  Immersif: 'immersive 3D depth dark glassmorphism glow award winning',
   Sombre: 'dark mode',
   Minimal: 'minimalist clean white',
   Luxe: 'luxury elegant gold black',

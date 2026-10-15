@@ -19,7 +19,11 @@ export interface ReportLogo {
 const C = liveColorProxy((c) => c) as Design['color'];
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const PAGE_W = 9638; // A4 text width in twips with 2 cm margins
-const toneColor = (t?: Tone): string => (t === 'risk' ? C.risk : t === 'warn' ? C.warn : t === 'ok' ? C.green : t === 'info' ? C.cyan : C.blue);
+// Harmonised tones (v62): theme colours carry the meaning; red only for a risk, the accent for « à surveiller ».
+const toneColor = (t?: Tone): string => (t === 'risk' ? C.risk : t === 'warn' ? C.gold : t === 'ok' ? C.green : t === 'info' ? C.blue : C.navy);
+const darken = (hex: string, f: number) => [0, 2, 4].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - f)).toString(16).padStart(2, '0')).join('').toUpperCase();
+/** The tone as TEXT on a pale panel: the accent darkened so it stays readable. */
+const toneInk = (t?: Tone): string => (t === 'warn' ? darken(C.gold, 0.45) : t === 'risk' ? C.risk : t === 'ok' ? darken(C.green, 0.25) : C.text2);
 
 // ── primitives ────────────────────────────────────────────────────────────────
 interface R {
@@ -93,10 +97,13 @@ export function compactValue(text: string, w: number, min = 16): string {
 }
 function kpiStrip(kpis: Kpi[], cols: number, cover = false): string {
   const out: string[] = [];
+  // Balanced rows (8 → 4 + 4, 7 → 4 + 3) and a last row whose tiles share the full width: no empty cell.
+  const rowsN = Math.ceil(kpis.length / cols);
+  cols = Math.ceil(kpis.length / rowsN);
   for (let r0 = 0; r0 < kpis.length; r0 += cols) {
     const slice = kpis.slice(r0, r0 + cols);
     const gap = 120;
-    const cw = Math.floor((PAGE_W - gap * (cols - 1)) / cols);
+    const cw = Math.floor((PAGE_W - gap * (slice.length - 1)) / slice.length);
     const widths: number[] = [];
     const cells: string[] = [];
     slice.forEach((k, i) => {
@@ -109,17 +116,12 @@ function kpiStrip(kpis: Kpi[], cols: number, cover = false): string {
       const inner = cover
         ? para(run(compactValue(k.value, cw), { b: true, sz: fitValueSz(compactValue(k.value, cw), cw, 36), color: C.navy, mono: true }), { pPr: `${spacing(100, 20)}<w:ind w:left="100"/>` }) +
           para(run(k.label, { sz: 15, color: C.text2 }), { pPr: `${spacing(0, 100)}<w:ind w:left="100" w:right="60"/>` })
-        : para(run(`${k.code} · ${k.label}`, { b: true, sz: 13, color: C.text2, caps: true }), { pPr: `${spacing(80, 40)}<w:ind w:left="100" w:right="60"/>` }) +
+        : para(run(k.code ? `${k.code} · ${k.label}` : k.label, { b: true, sz: 13, color: C.text2, caps: true }), { pPr: `${spacing(80, 40)}<w:ind w:left="100" w:right="60"/>` }) +
           para(run(compactValue(k.value, cw), { b: true, sz: fitValueSz(compactValue(k.value, cw), cw, 32), color: C.navy, mono: true }), { pPr: `${spacing(0, 40)}<w:ind w:left="100"/>` }) +
-          para(run(k.sub ?? k.method ?? '', { i: true, sz: 13, color: tone }), { pPr: `${spacing(0, 80)}<w:ind w:left="100" w:right="60"/><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="2" w:color="${tone}"/></w:pBdr>` });
+          para(run(k.sub ?? k.method ?? '', { i: true, sz: 13, color: toneInk(k.tone) }), { pPr: `${spacing(0, 80)}<w:ind w:left="100" w:right="60"/><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="2" w:color="${tone}"/></w:pBdr>` });
       // The reference's tiles: no frame, a pale panel, the tone as a rule (on top for the cover strip).
       cells.push(tc(inner, { w: cw, fill: C.panel, borders: cover ? `<w:top w:val="single" w:sz="24" w:color="${tone}"/>` : '' }));
     });
-    while (slice.length < cols && cells.length) {
-      widths.push(gap, cw);
-      cells.push(tc('', { w: gap }), tc('', { w: cw }));
-      slice.push({ code: '', label: '', value: '' });
-    }
     out.push(tbl([`<w:tr><w:trPr><w:cantSplit/></w:trPr>${cells.join('')}</w:tr>`], widths), para('', { pPr: spacing(0, 100) }));
   }
   return out.join('');
@@ -134,7 +136,7 @@ function recoTable(recos: Reco[], withAxis = false): string {
   const rows = [
     `<w:tr><w:trPr><w:tblHeader/><w:cantSplit/></w:trPr>${head.map((h, j) => cell(para(run(h, { b: true, sz: 16, color: C.white }), { pPr: `<w:jc w:val="center"/>${spacing(40, 40)}` }), j, C.navy, true)).join('')}</w:tr>`,
     ...recos.map((r, i) => {
-      const tone = r.priority === 'P1' ? C.risk : r.priority === 'P2' ? C.warn : C.blue;
+      const tone = r.priority === 'P1' ? C.risk : r.priority === 'P2' ? C.gold : C.blue;
       const zebra = i % 2 ? C.panel : undefined;
       const ref = para(`${run(r.ref, { b: true, sz: 15, color: tone, mono: true })}${run(` ${r.priority}`, { b: true, sz: 12, color: tone })}`, { pPr: `<w:jc w:val="left"/>${spacing(60, 60)}` });
       const act = para(run(r.title, { b: true, sz: 16, color: C.navy }), { pPr: spacing(40, 20) }) + para(run(r.action, { sz: 15 }), { pPr: spacing(0, 20) }) + (r.ground ? para(run(`Fondement : ${r.ground}`, { i: true, sz: 13, color: C.text2 }), { pPr: spacing(0, 40) }) : '');
@@ -227,7 +229,7 @@ export function dossierDocx(d: Dossier, opts: { logo?: ReportLogo | null; brand?
   // ── Chapters ──
   for (const ch of d.chapters) {
     b.push(para(run(`${ch.n}. ${ch.title}${ch.headline ? ` : ${ch.headline}` : ''}`, { b: true, sz: 30, color: C.navy }), { style: 'Heading1', pPr: '<w:pageBreakBefore/>' }));
-    if (ch.kpis?.length) b.push(kpiStrip(ch.kpis.slice(0, 4), Math.min(4, ch.kpis.length)));
+    if (ch.kpis?.length) b.push(kpiStrip(ch.kpis.slice(0, 4).map((k) => ({ ...k, code: '' })), Math.min(4, ch.kpis.length)));
     if (ch.constats.length) {
       b.push(label('Constat chiffré'));
       ch.constats.forEach((c) => b.push(bullet(c)));

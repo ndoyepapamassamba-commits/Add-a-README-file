@@ -116,6 +116,12 @@ export function rankingNarrative(f: RankingFacts): CreditNarrative {
   let cum = 0;
   chapters.push({
     title: `Concentration — ${B}`,
+    kpis: [
+      { label: `${B} total`, value: amount(T, f.base), sub: `${f.entities} entités`, tone: 'neutral', num: T },
+      { label: 'Part du premier', value: fmtPct(f.conc.leaderShare), sub: f.conc.leader, tone: f.conc.leaderShare >= 0.25 ? 'risk' : 'warn', num: f.conc.leaderShare },
+      { label: 'Part des 5 premiers', value: fmtPct(f.conc.top5), sub: `${fmtPct(f.conc.top3)} pour les 3 premiers`, tone: f.conc.top5 >= 0.6 ? 'risk' : 'neutral', num: f.conc.top5 },
+      { label: 'Entités pour 80 %', value: String(f.conc.n80), sub: `sur ${f.entities}`, tone: 'neutral', num: f.conc.n80 },
+    ],
     headline: `${f.conc.leader} porte ${fmtPct(f.conc.leaderShare)} ; les 5 premiers ${fmtPct(f.conc.top5)}`,
     constats: [
       `${f.entities} entités pour ${amount(T, f.base)} de ${b} ; ${f.conc.leader} en porte ${fmtPct(f.conc.leaderShare)}.`,
@@ -136,6 +142,12 @@ export function rankingNarrative(f: RankingFacts): CreditNarrative {
     const byM = [...f.ranking].sort((a, c) => (c.v[l.measure] ?? 0) - (a.v[l.measure] ?? 0)).slice(0, 10);
     chapters.push({
       title: `${M} rapporté à ${b}`,
+      kpis: [
+        { label: M, value: amount(f.totals[l.measure], l.measure), sub: 'total', tone: 'neutral', num: f.totals[l.measure] },
+        { label: `Norme (${lowerFirst(M)} / ${b})`, value: fmtPct(l.rate), sub: 'taux d’ensemble', tone: 'neutral', num: l.rate },
+        { label: 'Au-dessus de la norme', value: String(l.high.length), sub: 'au moins 1,5 fois le taux', tone: l.high.length ? 'warn' : 'ok', num: l.high.length },
+        { label: 'Sous la moitié', value: String(l.low.length), sub: 'du taux d’ensemble', tone: 'neutral', num: l.low.length },
+      ],
       headline: `${M} : ${fmtPct(l.rate)} du ${b} ; ${l.high.length} entité(s) nettement au-dessus`,
       constats: [
         `${M} : ${amount(f.totals[l.measure], l.measure)}, soit ${fmtPct(l.rate)} du ${b} total.`,

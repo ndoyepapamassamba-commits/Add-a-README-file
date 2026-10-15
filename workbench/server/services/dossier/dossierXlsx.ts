@@ -14,6 +14,7 @@ import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { activeDesign, liveColorProxy, type Design } from '../houseDesign';
 import { chartXml, fixStylesXml, type ChartSpec } from '../houseStyle';
 import { allRecos, type Chapter, type Dossier, type Figure, type Kpi, type Tone } from './dossier';
+import { columnConcepts } from '../dataLexicon';
 
 /** The rows behind the dossier: the selectors and the live indicators are computed on them. */
 export interface DossierData {
@@ -42,7 +43,11 @@ const bd = (rgb: string, style = 'thin') => ({ style, color: { rgb } });
 const box = (rgb?: string) => ({ top: bd(rgb ?? C.line), bottom: bd(rgb ?? C.line), left: bd(rgb ?? C.line), right: bd(rgb ?? C.line) });
 const F = (extra: Record<string, unknown> = {}) => ({ name: ui(), sz: 9.5, color: { rgb: C.text }, ...extra });
 const M = (extra: Record<string, unknown> = {}) => ({ name: monoFont(), sz: 9.5, color: { rgb: C.text }, ...extra });
-const toneColor = (t?: Tone): string => (t === 'risk' ? C.risk : t === 'warn' ? C.warn : t === 'ok' ? C.green : t === 'info' ? C.cyan : C.blue);
+// Harmonised tones (v62, « harmoniser la couleur des segments ») : the theme's own colours carry the meaning — navy /
+// primary for neutral and information, the accent for « à surveiller », red ONLY for a risk, green for « conforme ».
+const toneColor = (t?: Tone): string => (t === 'risk' ? C.risk : t === 'warn' ? C.gold : t === 'ok' ? C.green : t === 'info' ? C.blue : C.navy);
+/** The same tone as TEXT on a light panel: the accent is darkened so it stays readable (contrast ≥ 4.5:1). */
+const toneInk = (t?: Tone): string => (t === 'warn' ? mix(C.gold, -0.45) : t === 'risk' ? C.risk : t === 'ok' ? mix(C.green, -0.25) : C.text2);
 const toneMark = (t?: Tone): string => (t === 'risk' ? '▲' : t === 'warn' ? '◆' : t === 'ok' ? '▼' : t === 'info' ? '●' : '■');
 const xesc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 /** Lighten (t > 0) or darken (t < 0) a hex colour. */
@@ -233,19 +238,21 @@ interface Tile {
 function tiles(s: Sheet, list: Tile[]) {
   for (let k = 0; k < list.length; k += 4) {
     const r = [s.row(17), s.row(34), s.row(17)];
-    list.slice(k, k + 4).forEach((t, j) => {
-      const [c1, c2] = QUARTERS[j]!;
+    const part = list.slice(k, k + 4);
+    const slots: [number, number][] = part.length === 4 ? QUARTERS : part.length === 3 ? [[1, 4], [5, 8], [9, 11]] : part.length === 2 ? [[1, 6], [7, 11]] : [[1, 11]];
+    part.forEach((t, j) => {
+      const [c1, c2] = slots[j]!;
       const tone = toneColor(t.tone);
       const edge = { left: bd(tone, 'thick'), top: bd(C.line), bottom: bd(C.line), right: bd(C.line) };
-      s.span(r[0]!, c1, r[0]!, c2, { v: t.label.toUpperCase(), t: 's', s: { font: F({ sz: 7.5, bold: true, color: { rgb: C.text2 } }), fill: solid(C.panel), alignment: { vertical: 'bottom', indent: 1, wrapText: true }, border: { ...edge, bottom: undefined } } });
-      s.span(r[1]!, c1, r[1]!, c2, { ...t.value, s: { font: F({ sz: 19, bold: true, color: { rgb: C.navy } }), fill: solid(C.panel), alignment: { vertical: 'center', horizontal: 'left', indent: 1 }, border: { left: edge.left, right: edge.right } } });
-      s.span(r[2]!, c1, r[2]!, c2, { ...t.sub, s: { font: F({ sz: 7.5, italic: true, color: { rgb: tone } }), fill: solid(C.panel), alignment: { vertical: 'top', indent: 1, wrapText: true }, border: { ...edge, top: undefined } } });
+      s.span(r[0]!, c1, r[0]!, c2, { v: t.label.toUpperCase(), t: 's', s: { font: F({ sz: 7.5, bold: true, color: { rgb: C.text2 } }), fill: solid(C.panel), alignment: { vertical: 'bottom', horizontal: 'left', indent: 2, wrapText: true }, border: { ...edge, bottom: undefined } } });
+      s.span(r[1]!, c1, r[1]!, c2, { ...t.value, s: { font: F({ sz: 19, bold: true, color: { rgb: C.navy } }), fill: solid(C.panel), alignment: { vertical: 'center', horizontal: 'left', indent: 2, shrinkToFit: true }, border: { left: edge.left, right: edge.right } } });
+      s.span(r[2]!, c1, r[2]!, c2, { ...t.sub, s: { font: F({ sz: 7.5, italic: true, color: { rgb: toneInk(t.tone) } }), fill: solid(C.panel), alignment: { vertical: 'top', horizontal: 'left', indent: 2, wrapText: true }, border: { ...edge, top: undefined } } });
     });
     s.gap(5);
   }
 }
 const kpiTile = (k: Kpi, f?: string): Tile => ({
-  label: `${k.code} · ${k.label}`,
+  label: k.code ? `${k.code} · ${k.label}` : k.label,
   value: k.num != null ? { v: k.num, t: 'n', f, z: fmtFor(k) } : { v: k.value, t: 's' },
   sub: { v: `${toneMark(k.tone)} ${k.sub ?? k.method ?? ''}`.trim(), t: 's' },
   tone: k.tone,
@@ -283,7 +290,7 @@ function table(s: Sheet, cols: Col[], rows: (Cell | string | number)[][], o: { m
 
 // ── CALC: the data blocks the charts read (figures of the dossier, live aggregations) ──
 class Calc {
-  sheet = new Sheet('CALC', 'A6A6A6', [3, 34, 16, 16, 16, 16, 16, 3]);
+  sheet = new Sheet('CALC', 'A6A6A6', [3, 34, 16, 16, 16, 16, 16, 16, 16, 16, 16, 3]);
   constructor() {
     const r = this.sheet.row(24);
     this.sheet.span(r, 1, r, 6, { v: 'CALC — blocs de données des graphiques et du top 10 (ne pas modifier : alimentés par les formules)', t: 's', s: { font: F({ bold: true, color: { rgb: C.white } }), fill: solid(C.navy), alignment: { vertical: 'center', indent: 1 } } });
@@ -309,7 +316,8 @@ class Calc {
 /** A figure of the dossier → its block in CALC and a native chart placed on the sheet over [c1, c2] for `rows` rows. */
 function placeFigure(s: Sheet, calc: Calc, f: Figure, c1: number, c2: number, rows = 16, startRow?: number): void {
   const b = calc.block(f.title, f.categories, f.series.map((se) => ({ name: se.name, values: se.values })));
-  const kind: ChartSpec['kind'] = f.kind === 'col3d' ? 'bar3d' : f.kind === 'bar3d' ? 'hbar3d' : f.kind === 'pie' || f.kind === 'doughnut' ? 'pie3d' : f.kind === 'line' ? 'line' : f.kind === 'bar' ? 'bar' : 'bar';
+  // More than 6 categories in columns → their names are cut once rotated: horizontal bars keep every name readable.
+  const kind: ChartSpec['kind'] = f.kind === 'col3d' ? (f.categories.length > 6 ? 'hbar3d' : 'bar3d') : f.kind === 'bar3d' ? 'hbar3d' : f.kind === 'pie' || f.kind === 'doughnut' ? 'pie3d' : f.kind === 'line' ? 'line' : f.kind === 'bar' ? 'bar' : 'bar';
   placeChart(s, { kind, title: f.title, sheet: 'CALC', first: b.first, last: b.last, anchorCol: c1, anchorRow: 0, cat: { col: b.catCol, name: 'Catégorie', values: f.categories }, series: f.series.map((se, j) => ({ col: b.cols[j]!, name: se.name, values: se.values })) }, c1, c2, rows, startRow);
 }
 /** Reserve `rows` rows of 15 pt and anchor the chart over them. */
@@ -382,10 +390,38 @@ function buildLive(d: DossierData, calc: Calc, selCellRefs: string[]): Live | nu
   const divisor = Math.abs(total) >= 1e9 ? 1e9 : Math.abs(total) >= 1e6 ? 1e6 : 1;
   const unit = divisor === 1e9 ? ' Mds' : divisor === 1e6 ? ' M' : '';
   const live: Live = { n: rows.length, total, divisor, unit, sel, names, dimBlocks: [], top: { first: 0, last: 0, rows: [] }, sheet: s, lists, selectorCells: selCellRefs };
-  Object.assign(live, { _rows: rows, _cols: cols, _measure: measure, _entity: entity, _q: q });
+  // The other measures of the file (impayés, provisions, garanties…), largest first: the top 10 shows them beside the
+  // main one so its row runs the full width of the cockpit (v62 — no empty half).
+  const ID = /\bid\b|identifiant|code|num[ée]ro|matricule|compte|account|contrat|r[ée]f|ann[ée]e|year|mois|month|date|rang|rank/i;
+  const ORDER = ['arrears', 'provision', 'collateral', 'limit', 'regulatory', 'exposure'];
+  const rankOf = (c: string) => {
+    const k = columnConcepts(c);
+    const i = ORDER.findIndex((o) => k.has(o));
+    return i < 0 ? ORDER.length : i;
+  };
+  const extras = cols
+    .filter((c) => c !== measure && c !== entity && !sel.includes(c) && !ID.test(c))
+    .map((c) => {
+      let n = 0;
+      let k = 0;
+      let tot = 0;
+      for (const r of rows.slice(0, 500)) {
+        const v = r[c];
+        if (v === null || v === undefined || v === '') continue;
+        n++;
+        if (typeof v === 'number' || (typeof v === 'string' && /^-?[\d\s\u00a0\u202f.,]+$/.test(v))) k++;
+      }
+      for (const r of rows) tot += Math.abs(toNum(r[c]));
+      return { c, ok: n > 0 && k / n >= 0.9 && tot > 0, tot };
+    })
+    .filter((x) => x.ok)
+    // The business order first (arrears, provisions, collateral, limits…), then the size.
+    .sort((a, b) => rankOf(a.c) - rankOf(b.c) || b.tot - a.tot)
+    .map((x) => x.c);
+  Object.assign(live, { _rows: rows, _cols: cols, _measure: measure, _entity: entity, _q: q, _extras: extras });
   return live;
 }
-type LiveX = Live & { _rows: Record<string, unknown>[]; _cols: string[]; _measure: string; _entity?: string; _q: string };
+type LiveX = Live & { _rows: Record<string, unknown>[]; _cols: string[]; _measure: string; _entity?: string; _q: string; _extras: string[] };
 /** Writes DONNÉES (table + helper columns) from row `start`, defines D_* names, then the live CALC blocks. */
 function writeData(live: LiveX, calc: Calc): void {
   const s = live.sheet;
@@ -427,6 +463,9 @@ function writeData(live: LiveX, calc: Calc): void {
   live.names.push({ Name: 'D_SEL', Ref: rng(selCol) }, { Name: 'D_KEY', Ref: rng(keyCol) }, { Name: 'D_MES', Ref: rng(mCol) });
   if (live._entity) live.names.push({ Name: 'D_ENT', Ref: rng(1 + cols.indexOf(live._entity)) });
   dimCols.forEach((dc, j) => live.names.push({ Name: `D_S${j + 1}`, Ref: rng(dc) }));
+  const extraN = Math.max(0, 4 - Math.min(3, live.sel.length));
+  live._extras = live._extras.slice(0, extraN);
+  live._extras.forEach((c, j) => live.names.push({ Name: `D_N${j + 1}`, Ref: rng(1 + cols.indexOf(c)) }));
   s.table = { r1: head, r2: lastRow - 1, c1: 1, c2: keyCol, names, name: 'T_DONNEES' };
   s.freezeRow = head + 1;
   void hr;
@@ -455,7 +494,8 @@ function writeData(live: LiveX, calc: Calc): void {
   cs.span(t, 1, t, 6, { v: 'Top 10 de la sélection (rang → ligne → valeurs)', t: 's', s: { font: F({ bold: true, color: { rgb: C.navy } }), border: { bottom: bd(C.navy) } } });
   const h = cs.row(18);
   ['Entité', live._measure, 'Ligne', ...live.sel.slice(0, 3)].forEach((x, j) => cs.put(h, 1 + j, { v: x, t: 's', s: { font: F({ bold: true, color: { rgb: C.white } }), fill: solid(C.blue) } }));
-  const topRows: Live['top']['rows'] = [];
+  live._extras.forEach((x, j) => cs.put(h, 7 + j, { v: x, t: 's', s: { font: F({ bold: true, color: { rgb: C.white } }), fill: solid(C.blue) } }));
+  const topRows: (Live['top']['rows'][number] & { extra: number[] })[] = [];
   for (let k = 1; k <= 10; k++) {
     const r = cs.row(15);
     const hit = keyed[k - 1];
@@ -468,10 +508,13 @@ function writeData(live: LiveX, calc: Calc): void {
     cs.put(r, 2, { v: val, t: 'n', f: `IF(${lineRef}="","",INDEX(D_MES,${lineRef}))`, z: '#,##0', s: { font: M(), border: box() } });
     cs.put(r, 3, { v: hit ? rows.indexOf(hit.r) + 1 : 0, t: 'n', f: lineF, s: { font: M(), border: box() } });
     dims.forEach((dv, j) => cs.put(r, 4 + j, { v: dv, t: 's', f: `IF(${lineRef}="","",INDEX(D_S${j + 1},${lineRef}))`, s: { font: F(), border: box() } }));
-    topRows.push({ ent, val, dims });
+    const extra = live._extras.map((c) => (hit ? toNum(hit.r[c]) : 0));
+    extra.forEach((xv, j) => cs.put(r, 7 + j, { v: xv, t: 'n', f: `IF(${lineRef}="","",INDEX(D_N${j + 1},${lineRef}))`, z: '#,##0', s: { font: M(), border: box() } }));
+    topRows.push({ ent, val, dims, extra });
   }
   cs.gap(8);
   live.top = { first: h + 2, last: h + 11, rows: topRows };
+  (live as LiveX & { _topExtra?: number[][] })._topExtra = topRows.map((t) => t.extra);
 }
 
 // ── The workbook ──────────────────────────────────────────────────────────────
@@ -484,10 +527,26 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
   const recos = allRecos(d);
 
   // Views and their short button labels (the reference: CAPS, a word or two).
-  const short = (t: string) => t.replace(/^[\d.\s·-]+/, '').split(/[—:,(]/)[0]!.trim().toUpperCase().slice(0, 16);
+  // A button says one whole word or two (never a cut word): the subject of the title, not its generic head
+  // (« Utilisation des limites » → LIMITES, « Lecture de l'analyste » → ANALYSTE).
+  const STOP = /^(de|des|du|la|le|les|l|et|d|en|à|a|par|sur|au|aux|pour|un|une)$/i;
+  const GENERIC = /^(utilisation|lecture|analyse|part|niveau|suivi|revue|taux|évolution|evolution|synthèse|synthese|point|état|etat)$/i;
+  const short = (t: string) => {
+    const words = t.replace(/^[\d.\s·-]+/, '').split(/[—:,(]/)[0]!.split(/[\s'’]+/).filter((w) => w && !STOP.test(w));
+    let pick = words.length > 1 && GENERIC.test(words[0]!) ? words[words.length - 1]! : words[0] ?? t;
+    if (pick.length <= 7 && words[1] && words[1] !== pick && `${pick} ${words[1]}`.length <= 14) pick = `${pick} ${words[1]}`;
+    const up = pick.toUpperCase();
+    return up.length > 14 ? `${up.slice(0, 13)}.` : up;
+  };
   const views: { name: string; label: string }[] = [{ name: '⌂ COCKPIT', label: 'COCKPIT' }];
   const chapterNames = d.chapters.map((c) => safeName(`${c.n}. ${c.title}`.toUpperCase()));
-  d.chapters.forEach((c, i) => views.push({ name: chapterNames[i]!, label: short(c.title) }));
+  const used = new Set<string>();
+  d.chapters.forEach((c, i) => {
+    let lb = short(c.title);
+    if (used.has(lb)) lb = `${lb.slice(0, 11)} ${c.n}`;
+    used.add(lb);
+    views.push({ name: chapterNames[i]!, label: lb });
+  });
   if (recos.length) views.push({ name: "PLAN D'ACTIONS", label: 'PLAN D’ACTIONS' });
   if (d.decisions.length) views.push({ name: 'DÉCISIONS', label: 'DÉCISIONS' });
   if (d.hypotheses.length) views.push({ name: 'HYPOTHÈSES', label: 'HYPOTHÈSES' });
@@ -508,10 +567,11 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
   header(ck, ctx, d.title, sub);
   nav(ck, ctx);
   if (data) {
-    section(ck, 'Sélecteurs — pilotent les indicateurs, les graphiques et le top 10');
-    const lr = ck.row(15);
-    const vr = ck.row(22);
     const dims = (data.selectors ?? []).filter((c) => data.columns.includes(c) && c !== data.measure).slice(0, 4);
+    // No category to select → no « Sélecteurs » band at all (an empty band is a hole in the design).
+    if (dims.length) section(ck, 'Sélecteurs — pilotent les indicateurs, les graphiques et le top 10');
+    const lr = dims.length ? ck.row(15) : 0;
+    const vr = dims.length ? ck.row(22) : 0;
     const refs = dims.map((_, j) => `${quote(ck.name)}!$${colName(QUARTERS[j]![0])}$${vr + 1}`);
     live = buildLive({ ...data, selectors: dims }, calc, refs) as LiveX | null;
     (live?.sel ?? []).forEach((dim, j) => {
@@ -520,7 +580,7 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
       ck.span(vr, c1, vr, c2, { v: '(Tous)', t: 's', s: { font: F({ sz: 10, bold: true, color: { rgb: C.navy } }), fill: solid(C.white), alignment: { vertical: 'center', indent: 1 }, border: { left: bd(C.gold, 'thick'), top: bd(C.line), bottom: bd(C.line), right: bd(C.line) } } });
       ck.validations.push({ ref: `${colName(c1)}${vr + 1}`, formula: `LISTE_${j + 1}` });
     });
-    ck.gap(8);
+    if (dims.length) ck.gap(8);
   }
   // DONNÉES + live CALC blocks (needs the sheet's header first).
   if (live) {
@@ -540,10 +600,10 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
     const tot = 'SUMIFS(D_MES,D_SEL,1)';
     const fx = (expr: string) => `FIXED(${expr},1)`;
     const lt: Tile[] = [
-      { label: 'Lignes sélectionnées', value: { v: live.n, t: 'n', f: 'SUM(D_SEL)', z: '#,##0' }, sub: { v: `sur ${live.n} lignes du fichier`, t: 's', f: `"sur "&ROWS(D_SEL)&" lignes du fichier"` }, tone: 'info' },
-      { label: `${data!.measureLabel ?? live._measure} — sélection`, value: { v: live.total, t: 'n', f: tot, z: MDS_FMT }, sub: { v: '▲ 100,0 % du total du fichier', t: 's', f: `"▲ "&${fx(`100*${tot}/SUM(D_MES)`)}&" % du total du fichier"` }, tone: 'warn' },
+      { label: 'Lignes sélectionnées', value: { v: live.n, t: 'n', f: 'SUM(D_SEL)', z: '#,##0' }, sub: { v: `sur ${live.n} lignes du fichier`, t: 's', f: `"sur "&ROWS(D_SEL)&" lignes du fichier"` }, tone: 'neutral' },
+      { label: `${data!.measureLabel ?? live._measure} — sélection`, value: { v: live.total, t: 'n', f: tot, z: MDS_FMT }, sub: { v: '▲ 100,0 % du total du fichier', t: 's', f: `"▲ "&${fx(`100*${tot}/SUM(D_MES)`)}&" % du total du fichier"` }, tone: 'info' },
       { label: 'Moyenne par ligne', value: { v: live.total / Math.max(1, live.n), t: 'n', f: `IFERROR(AVERAGEIFS(D_MES,D_SEL,1),0)`, z: MDS_FMT }, sub: { v: '● sur les lignes sélectionnées', t: 's' }, tone: 'neutral' },
-      { label: 'Part du top 10', value: { v: live.top.rows.reduce((a, r) => a + r.val, 0) / (live.total || 1), t: 'n', f: `IFERROR(SUM(${quote('CALC')}!$C$${live.top.first}:$C$${live.top.last})/${tot},0)`, z: '0.0%' }, sub: { v: '◆ concentration de la sélection', t: 's' }, tone: 'risk' },
+      { label: 'Part du top 10', value: { v: live.top.rows.reduce((a, r) => a + r.val, 0) / (live.total || 1), t: 'n', f: `IFERROR(SUM(${quote('CALC')}!$C$${live.top.first}:$C$${live.top.last})/${tot},0)`, z: '0.0%' }, sub: { v: '◆ concentration de la sélection', t: 's' }, tone: 'warn' },
     ];
     live.dimBlocks.slice(0, 4).forEach((b) => {
       const cat = `${quote('CALC')}!$B$${b.first}:$B$${b.last}`;
@@ -571,7 +631,7 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
         k.label,
         k.num != null ? { v: k.num, t: 'n', f: kpiRef(i), z: fmtFor(k), s: { font: M({ bold: true, color: { rgb: C.navy } }) } } : { v: k.value, t: 's', s: { font: M({ bold: true, color: { rgb: C.navy } }), alignment: { horizontal: 'right' } } },
         { v: k.method ?? '', t: 's', s: { font: F({ italic: true, color: { rgb: C.text2 } }) } },
-        { v: k.sub ?? '', t: 's', s: { font: F({ sz: 8.5, color: { rgb: toneColor(k.tone) } }) } },
+        { v: k.sub ?? '', t: 's', s: { font: F({ sz: 8.5, color: { rgb: toneInk(k.tone) } }) } },
       ]),
     );
     ck.gap(8);
@@ -579,7 +639,7 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
   // 05 · Scorecard of the chapters (data bar on the key figure, colour scale on the P1 count, an « Ouvrir » button).
   if (d.chapters.length) {
     section(ck, `Scorecard des ${d.chapters.length} chapitres`);
-    const keyOf = (c: Chapter): number => c.kpis?.find((k) => k.num != null)?.num ?? c.figures[0]?.series[0]?.values.reduce((a, b) => a + b, 0) ?? 0;
+    const keyOf = (c: Chapter): Kpi | null => c.kpis?.find((k) => k.num != null) ?? null;
     const { r0 } = table(
       ck,
       [{ head: 'N°', c1: 1, align: 'center' }, { head: 'Chapitre', c1: 2, c2: 3 }, { head: 'Chiffre clé', c1: 4, c2: 5, align: 'right' }, { head: 'Constats', c1: 6, align: 'center' }, { head: 'Recos', c1: 7, align: 'center' }, { head: 'P1', c1: 8, align: 'center' }, { head: 'Lecture', c1: 9, c2: 10 }, { head: 'Vue', c1: 11, align: 'center' }],
@@ -588,7 +648,7 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
         return [
           { v: c.n, t: 'n', s: { font: M({ bold: true }), alignment: { horizontal: 'center' } } },
           { v: c.title, t: 's', s: { font: F({ bold: true, color: { rgb: C.navy } }) } },
-          { v: k, t: 'n', z: Math.abs(k) >= 1e6 ? MDS_FMT : '#,##0.##' },
+          k ? { v: k.num, t: 'n', z: fmtFor(k), s: { font: M({ bold: true, color: { rgb: k.tone === 'risk' ? C.risk : C.navy } }) } } : { v: '—', t: 's', s: { font: M({ color: { rgb: C.text2 } }), alignment: { horizontal: 'right' } } },
           { v: c.constats.length, t: 'n', s: { alignment: { horizontal: 'center' } } },
           { v: c.recommandations.length, t: 'n', s: { alignment: { horizontal: 'center' } } },
           { v: c.recommandations.filter((r) => r.priority === 'P1').length, t: 'n', s: { alignment: { horizontal: 'center' } } },
@@ -599,7 +659,7 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
       { minH: 24 },
     );
     const n = d.chapters.length;
-    ck.cfs.push(dataBar(`${colName(4)}${r0 + 1}:${colName(4)}${r0 + n}`, C.cyan), colorScale(`${colName(8)}${r0 + 1}:${colName(8)}${r0 + n}`, C.white, mix(C.risk, 0.45)));
+    ck.cfs.push(colorScale(`${colName(8)}${r0 + 1}:${colName(8)}${r0 + n}`, C.white, mix(C.risk, 0.7)));
     d.chapters.forEach((_, i) => ck.shapes.push({ kind: 'button', r: r0 + i, x: ck.colX(11) + ptEmu(6), w: colEmu(ck.cols[11]!) - ptEmu(12), inset: ptEmu(3), label: 'OUVRIR', glyph: '›', target: chapterNames[i]!, small: true }));
     if (d.chapters[0]?.lecture || d.messages[0]) lecture(ck, d.messages[0] ?? d.chapters[0]!.lecture!);
     ck.gap(8);
@@ -623,17 +683,21 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
         lect: { v: 'Lecture — classement dynamique : il suit les sélecteurs du cockpit.', t: 's' },
       });
     }
-    for (const f of d.chapters.flatMap((c) => c.figures.slice(0, 1))) {
+    const topNames = live ? live.top.rows.slice(0, 5).map((t) => t.ent.slice(0, 22)) : [];
+    const repeatsTop = (f: Figure) => topNames.length > 0 && f.series.length === 1 && f.categories.slice(0, 5).every((c, i) => c.slice(0, 22) === topNames[i]);
+    for (const f of d.chapters.flatMap((c) => c.figures.slice(0, 2)).filter((f) => !repeatsTop(f))) {
       if (visuals.length >= 4) break;
-      visuals.push({ place: (c1, c2, r) => placeFigure(ck, calc, f, c1, c2, 16, r), lect: { v: `Lecture — ${f.lecture ?? f.title}`, t: 's' } });
+      visuals.push({ place: (c1, c2, r) => placeFigure(ck, calc, f, c1, c2, 16, r), lect: { v: `Lecture — ${(f.lecture ?? f.title).replace(/^Lecture — /, '')}`, t: 's' } });
     }
     if (visuals.length) {
       section(ck, 'Visuels de synthèse');
       for (let k = 0; k < visuals.length; k += 2) {
         const r = ck.aoa.length;
-        visuals.slice(k, k + 2).forEach((v, j) => v.place(HALVES[j]![0], HALVES[j]![1], r));
+        // An odd last visual takes the full width (no empty half).
+        const halves: [number, number][] = visuals.slice(k, k + 2).length === 1 ? [[1, 11]] : HALVES;
+        visuals.slice(k, k + 2).forEach((v, j) => v.place(halves[j]![0], halves[j]![1], r));
         const lr = ck.row(40);
-        visuals.slice(k, k + 2).forEach((v, j) => ck.span(lr, HALVES[j]![0], lr, HALVES[j]![1], { ...v.lect, s: { font: F({ sz: 8.5, italic: true, color: { rgb: C.text2 } }), fill: solid(C.ice), alignment: { wrapText: true, vertical: 'center', indent: 1 }, border: { left: bd(C.gold, 'thick') } } }));
+        visuals.slice(k, k + 2).forEach((v, j) => ck.span(lr, halves[j]![0], lr, halves[j]![1], { ...v.lect, s: { font: F({ sz: 8.5, italic: true, color: { rgb: C.text2 } }), fill: solid(C.ice), alignment: { wrapText: true, vertical: 'center', indent: 1 }, border: { left: bd(C.gold, 'thick') } } }));
         ck.gap(8);
       }
     }
@@ -644,20 +708,32 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
     const q = quote('CALC');
     const { r0 } = table(
       ck,
-      [{ head: 'Rang', c1: 1, align: 'center' }, { head: live._entity ?? 'Entité', c1: 2, c2: 3 }, { head: live._measure, c1: 4, c2: 5, align: 'right' }, { head: '% sélection', c1: 6, c2: 7, align: 'right' }, ...live.sel.slice(0, 3).map((dm, j) => ({ head: dm, c1: 8 + j }))],
+      [
+        { head: 'Rang', c1: 1, align: 'center' },
+        { head: live._entity ?? 'Entité', c1: 2, c2: 3 },
+        { head: live._measure, c1: 4, c2: 5, align: 'right' },
+        { head: '% sélection', c1: 6, align: 'right' },
+        { head: '% cumulé', c1: 7, align: 'right' },
+        ...live.sel.slice(0, 3).map((dm, j) => ({ head: dm, c1: 8 + j })),
+        ...live._extras.map((x, j) => ({ head: x, c1: 8 + Math.min(3, live!.sel.length) + j, align: 'right' as const })),
+      ],
       live.top.rows.map((t, i) => {
         const r = live!.top.first + i;
+        const cum = live!.top.rows.slice(0, i + 1).reduce((a, x) => a + x.val, 0);
+        const ex = (live as LiveX & { _topExtra?: number[][] })._topExtra?.[i] ?? [];
         return [
           { v: i + 1, t: 'n', s: { font: M({ bold: true }), alignment: { horizontal: 'center' } } },
           { v: t.ent, t: 's', f: `${q}!$B$${r}`, s: { font: F({ bold: true, color: { rgb: C.navy } }) } },
           { v: t.val, t: 'n', f: `${q}!$C$${r}`, z: MDS_FMT },
           { v: t.val / (live!.total || 1), t: 'n', f: `IFERROR(${q}!$C$${r}/SUMIFS(D_MES,D_SEL,1),"")`, z: '0.0%' },
+          { v: cum / (live!.total || 1), t: 'n', f: `IFERROR(SUM(${q}!$C$${live!.top.first}:$C$${r})/SUMIFS(D_MES,D_SEL,1),"")`, z: '0.0%', s: { font: M({ color: { rgb: C.text2 } }) } },
           ...t.dims.map((dv, j) => ({ v: dv, t: 's' as const, f: `${q}!$${colName(4 + j)}$${r}` })),
+          ...live!._extras.map((_, j) => ({ v: ex[j] ?? 0, t: 'n' as const, f: `${q}!$${colName(7 + j)}$${r}`, z: MDS_FMT })),
         ];
       }),
       { minH: 20 },
     );
-    ck.cfs.push(dataBar(`${colName(4)}${r0 + 1}:${colName(4)}${r0 + 10}`, C.risk));
+    ck.cfs.push(dataBar(`${colName(4)}${r0 + 1}:${colName(4)}${r0 + 10}`, C.blue));
     ck.gap(8);
   }
   // 08 · Written analysis: key messages and the decisions to vote.
@@ -672,11 +748,11 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
       ck.gap(8);
     }
     if (d.decisions.length) {
-      label(ck, 'Décisions soumises au vote du comité', C.risk);
-      d.decisions.forEach((x) => {
-        const r = para(ck, x.text, { c1: 3, c2: 10, bold: true, color: C.navy, fill: mix(C.risk, 0.9) });
-        ck.span(r, 1, r, 2, { v: x.code, t: 's', s: { font: M({ sz: 11, bold: true, color: { rgb: C.white } }), fill: solid(C.risk), alignment: { horizontal: 'center', vertical: 'center' } } });
-        ck.put(r, 11, { v: '☐ Pour   ☐ Contre', t: 's', s: { font: F({ sz: 9, bold: true, color: { rgb: C.navy } }), fill: solid(C.white), alignment: { horizontal: 'center', vertical: 'center' }, border: box(mix(C.risk, 0.5)) } });
+      label(ck, 'Décisions soumises au vote du comité', C.navy);
+      d.decisions.forEach((x, i) => {
+        const r = para(ck, x.text, { c1: 3, c2: 10, bold: true, color: C.navy, fill: i % 2 ? mix(C.gold, 0.88) : mix(C.gold, 0.8) });
+        ck.span(r, 1, r, 2, { v: x.code, t: 's', s: { font: M({ sz: 11, bold: true, color: { rgb: C.gold } }), fill: solid(C.navy), alignment: { horizontal: 'center', vertical: 'center' } } });
+        ck.put(r, 11, { v: '☐ Pour   ☐ Contre', t: 's', s: { font: F({ sz: 9, bold: true, color: { rgb: C.navy } }), fill: solid(C.white), alignment: { horizontal: 'center', vertical: 'center' }, border: box(mix(C.gold, 0.2)) } });
       });
       ck.gap(8);
     }
@@ -696,7 +772,7 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
     nav(s, ctx);
     if (ch.kpis?.length || ch.constats.length) {
       section(s, 'Le constat chiffré');
-      if (ch.kpis?.length) tiles(s, ch.kpis.slice(0, 4).map((k) => kpiTile(k)));
+      if (ch.kpis?.length) tiles(s, ch.kpis.slice(0, 4).map((k) => kpiTile({ ...k, code: '' })));
       bullets(s, ch.constats, '▪');
       s.gap(6);
     }
@@ -704,9 +780,11 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
       section(s, 'Visuels');
       for (let k = 0; k < ch.figures.length; k += 2) {
         const r = s.aoa.length;
-        ch.figures.slice(k, k + 2).forEach((f, j) => placeFigure(s, calc, f, HALVES[j]![0], HALVES[j]![1], 16, r));
+        // A single (or odd last) figure takes the full width: no empty half beside it.
+        const halves: [number, number][] = ch.figures.slice(k, k + 2).length === 1 ? [[1, 11]] : HALVES;
+        ch.figures.slice(k, k + 2).forEach((f, j) => placeFigure(s, calc, f, halves[j]![0], halves[j]![1], 16, r));
         const lr = s.row(40);
-        ch.figures.slice(k, k + 2).forEach((f, j) => s.span(lr, HALVES[j]![0], lr, HALVES[j]![1], { v: `Figure ${k + j + 1} — ${f.title}. Lecture — ${f.lecture ?? ''}`, t: 's', s: { font: F({ sz: 8.5, italic: true, color: { rgb: C.text2 } }), fill: solid(C.ice), alignment: { wrapText: true, vertical: 'center', indent: 1 }, border: { left: bd(C.gold, 'thick') } } }));
+        ch.figures.slice(k, k + 2).forEach((f, j) => s.span(lr, halves[j]![0], lr, halves[j]![1], { v: `Figure ${k + j + 1} — ${f.title}.${f.lecture ? ` Lecture — ${f.lecture.replace(/^Lecture — /, '')}` : ''}`, t: 's', s: { font: F({ sz: 8.5, italic: true, color: { rgb: C.text2 } }), fill: solid(C.ice), alignment: { wrapText: true, vertical: 'center', indent: 1 }, border: { left: bd(C.gold, 'thick') } } }));
         s.gap(8);
       }
     }
@@ -883,7 +961,7 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
 
 /** The recommendations table (Réf · priority chip · title · action · owner · deadline · indicator [· status]). */
 function recoTable(s: Sheet, recos: Dossier['chapters'][number]['recommandations'], status = false) {
-  const prio = (p: string) => (p === 'P1' ? C.risk : p === 'P2' ? C.warn : C.cyan);
+  const prio = (p: string) => (p === 'P1' ? C.risk : p === 'P2' ? C.gold : C.blue);
   const cols: Col[] = status
     ? [{ head: 'Réf.', c1: 1, align: 'center' }, { head: 'Prio.', c1: 2, align: 'center' }, { head: 'Recommandation', c1: 3 }, { head: 'Action', c1: 4, c2: 7 }, { head: 'Responsable', c1: 8 }, { head: 'Échéance', c1: 9, align: 'center' }, { head: 'Indicateur de clôture', c1: 10 }, { head: 'Statut', c1: 11, align: 'center' }]
     : [{ head: 'Réf.', c1: 1, align: 'center' }, { head: 'Prio.', c1: 2, align: 'center' }, { head: 'Recommandation', c1: 3 }, { head: 'Action', c1: 4, c2: 8 }, { head: 'Responsable', c1: 9 }, { head: 'Échéance', c1: 10, align: 'center' }, { head: 'Indicateur de clôture', c1: 11 }];
