@@ -297,6 +297,14 @@ export function matchFilter(row: DataRow, f: DataFilter): boolean {
 
 const display = (v: Cell): string | number | boolean | null =>
   v instanceof Date ? v.toISOString().slice(0, 10) : v;
+/** Grouping value: the same code typed as a number in one row and as text in another (8200 / « 8200 », a frequent mix in
+ *  bank extracts, .xlsb included), or a label with stray spaces, is ONE group. Codes with a leading zero stay text. */
+const groupValue = (v: Cell): string | number | boolean | null => {
+  const d = display(v);
+  if (typeof d !== 'string') return d;
+  const t = d.trim();
+  return /^-?(0|[1-9]\d*)(\.\d+)?$/.test(t) ? Number(t) : t;
+};
 
 // ── engine ─────────────────────────────────────────────────────────────
 export class DataCore {
@@ -534,7 +542,7 @@ export class DataCore {
           if (g.bucket) {
             const d = toDate(v ?? null) ?? (typeof v === 'number' ? excelSerialToDate(v) : null);
             keys[g.column] = d ? bucketKey(d, g.bucket) : null;
-          } else keys[g.column] = display(v ?? null);
+          } else keys[g.column] = groupValue(v ?? null);
         }
         const k = JSON.stringify(keys);
         let grp = groups.get(k);

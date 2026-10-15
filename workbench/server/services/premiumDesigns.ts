@@ -134,22 +134,34 @@ export const kindForTool = (tool: string, args: Record<string, unknown>): Delive
  * The REQUEST asks for a deliverable (the gallery opens BEFORE the work starts, whatever tool the model uses later).
  * A file merely attached (« le fichier Excel joint ») is not a deliverable; « retourne-moi un fichier excel » is.
  */
+/** Lower case without accents (« élabore » → « elabore »): JavaScript's \b ignores accented letters, so a verb such as
+ *  « élabore » or « générer » was never recognised. Every pattern below is written without accents. */
+const plainText = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’']/g, ' ');
+
 export function deliverableFromText(text: string, attachments: string[] = []): DeliverableKind | null {
-  const t = text.toLowerCase().replace(/\b(joint|jointe|attaché|attachée|ci-joint|en pièce jointe)\b/g, ' ');
+  const t = plainText(text).replace(/\b(joints?|jointes?|attachee?s?|ci-jointe?|en piece jointe)\b/g, ' ');
+  const FORMAT = '(?:excel|xlsx|word|docx|pdf|pptx|powerpoint)';
+  const THING = '(?:fichier|classeur|tableau de bord|tableau|dashboard|rapport|document|presentation|deck|note|memo|synthese|site|application|appli|mail|courriel|excel|word|pdf|pptx|xlsx)';
   const produce =
-    /\b(retourn|renvoi|renvoie|produi|génèr|gener|génér|crée|créer|créé|cree|creer|livre[rz]?\b|livrable|export|prépar|prepar|rédig|redig|construi|fabriqu|sors|sortir|donne[- ]moi|fais[- ]moi|fais un|fais une|faire un|faire une|élabor|elabor|mets? en forme|transforme|convertis|envoie)/.test(t) ||
-    /\b(en|au format|version)\s+(excel|xlsx|word|docx|pdf|pptx|powerpoint)\b/.test(t) ||
-    /\b(excel|xlsx|word|pdf|pptx)\s+(analys|final|propre|premium|mis en forme|consolid|de synthèse|de restitution)/.test(t);
+    /\b(retourn|renvoi|produi|gener|cree|creer|livre[rz]?\b|livrable|export|prepar|redig|construi|fabriqu|sors|sortir|elabor|mets? en forme|transforme|convertis|envoie|realise|dresse)/.test(t) ||
+    // « donne-moi », « donnes moi », « donnez-moi », « fais-moi », « file-moi », « sors-nous »…
+    /\b(donn|fai|fil|pass|sor|envoi)(e|es|ez|s|t)?[- ]?(moi|nous)\b/.test(t) ||
+    /\b(fais|faire|faites) (un|une|des|moi)\b/.test(t) ||
+    // « je veux / il me faut / j'ai besoin d'un fichier excel… » (an indefinite article: a NEW file, not the attached one)
+    new RegExp(`\\b(je veux|je voudrais|j aimerais|il me faut|j ai besoin d|peux[- ]tu (me )?(faire|sortir|donner|preparer)|merci de (me )?(faire|sortir|preparer|produire))\\b[^.?!]{0,60}\\b(un|une|des)\\s+${THING}`).test(t) ||
+    new RegExp(`\\b(un|une)\\s+(fichier|classeur|tableau de bord|dashboard|rapport|document|presentation|deck|note|memo)\\s+${FORMAT}\\b`).test(t) ||
+    new RegExp(`\\b(en|au format|version)\\s+${FORMAT}\\b`).test(t) ||
+    new RegExp(`\\b(excel|xlsx|word|pdf|pptx|classeur|rapport|deck)\\s+(analys|final|propre|premium|ultra|design|pro\\b|professionnel|mis en forme|consolid|de synthese|de restitution|de pilotage|interactif|dynamique)`).test(t);
   if (!produce) return null;
   if (/\b(excel|xlsx|classeur|tableur|feuille de calcul)\b/.test(t)) return 'excel';
-  if (/\b(pptx|powerpoint|présentation|presentation|diaporama|slides?|deck)\b/.test(t)) return 'slides';
+  if (/\b(pptx|powerpoint|presentation|diaporama|slides?|deck)\b/.test(t)) return 'slides';
   if (/\b(site|application|appli|app|page web|landing|dashboard html|tableau de bord html|interface)\b/.test(t)) return 'web';
-  if (/\b(word|docx|pdf|rapport|note|mémo|memo|courrier|lettre|mail|e-mail|email|courriel|compte[- ]rendu|synthèse écrite)\b/.test(t)) return 'document';
+  if (/\b(word|docx|pdf|rapport|note|memo|courrier|lettre|mail|e-mail|email|courriel|compte[- ]rendu|synthese ecrite)\b/.test(t)) return 'document';
   // « Retourne-moi un fichier structuré », « livre-moi le résultat » : no format named — the attached file says which
   // deliverable is expected (a workbook in → a workbook out), else a document. The gallery opens either way.
-  if (/\b(fichier|document|livrable|résultat|resultat|structur|tableau|synthèse|synthese|export|version)/.test(t)) {
+  if (/\b(fichier|document|livrable|resultat|structur|tableau|synthese|export|version)/.test(t)) {
     const ext = attachments.map((n) => /\.([a-z0-9]+)$/i.exec(n)?.[1]?.toLowerCase() ?? '');
-    if (ext.some((e) => ['xlsx', 'xlsm', 'xls', 'csv', 'tsv'].includes(e))) return 'excel';
+    if (ext.some((e) => ['xlsx', 'xlsm', 'xlsb', 'xls', 'ods', 'csv', 'tsv'].includes(e))) return 'excel';
     if (ext.some((e) => ['pptx', 'ppt'].includes(e))) return 'slides';
     return 'document';
   }

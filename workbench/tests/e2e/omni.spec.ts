@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
+import * as XLSX from 'xlsx';
 import { MOCK_MODELS, startMockOpenRouter, type MockOpenRouter } from '../helpers/mockOpenRouter';
 import { openView } from './nav';
 
@@ -282,6 +283,52 @@ test('design FIRST: a request for an Excel file opens the gallery before any mod
   expect(xml).not.toContain('00415E');
   expect(xml).not.toContain('8CC63F');
   expect(xml).toContain('Georgia');
+});
+
+test('régression du 15/10/2026 : « donnes moi un fichier excel ultra design » + .xlsb joint → galerie AVANT tout appel au modèle, puis le classeur comité au design choisi', async ({ page }) => {
+  await open(page);
+  await page.removeLocatorHandler(page.getByTestId('design-go'));
+  // A portfolio like the user's .xlsb: the 8200 code typed as a number on some rows, as text on others.
+  const aoa: (string | number)[][] = [['client', 'segment_code', 'segment', 'encours']];
+  for (let i = 0; i < 40; i++) aoa.push([`CLIENT ${i + 1}`, i % 2 ? 8200 : '8200', 'Local Corporate', 1_000_000 + i * 37_000]);
+  for (let i = 0; i < 10; i++) aoa.push([`PME ${i + 1}`, 8100, 'SME', 200_000 + i * 9_000]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'Portefeuille');
+  const xlsb = Buffer.from(XLSX.write(wb, { type: 'array', bookType: 'xlsb' }) as ArrayBuffer);
+  await page.locator('input[type=file]').first().setInputFiles({ name: 'ESN_Portfolio_202606-.xlsb', mimeType: 'application/vnd.ms-excel.sheet.binary.macroEnabled.12', buffer: xlsb });
+  await page.getByTitle('Mode de permissions', { exact: true }).click();
+  await page.getByText('AUTONOME').click();
+  mock.push(
+    { toolCalls: [{ name: 'dossier.export', args: { data: 'uploads/ESN_Portfolio_202606-.xlsb', sheet: 'Portefeuille', focus: 'Top 20 du segment 8200 Local Corporate', name: 'top20-8200', formats: ['xlsx'] } }] },
+    { text: 'Classeur top 20 livré.' },
+  );
+  const before = mock.requests.length;
+  await send(page, 'Dans le fichier attaché , donnes moi un fichier excel ultra design analysant le top 20 du segment code 8200 Local Corporate');
+  await expect(page.getByTestId('design-card')).toBeVisible({ timeout: 20_000 });
+  expect(mock.requests.length).toBe(before); // the design comes first, before any model call
+  await page.getByTestId('design-onyx').click();
+  await page.getByTestId('design-go').click();
+  await expect(page.getByText('Classeur top 20 livré.')).toBeVisible({ timeout: 30_000 });
+  const read = () =>
+    page.evaluate(
+      () =>
+        new Promise<string>((resolve) => {
+          const req = indexedDB.open('openrouter-workbench-direct', 1);
+          req.onsuccess = () => {
+            const g = req.result.transaction('kv', 'readonly').objectStore('kv').get('files');
+            g.onsuccess = () => {
+              const files = (g.result ?? {}) as Record<string, { data: string }>;
+              const key = Object.keys(files).find((k) => k.endsWith('outputs/top20-8200.xlsx'));
+              resolve(key ? files[key]!.data : '');
+            };
+          };
+        }),
+    );
+  await expect.poll(async () => (await read()).length, { timeout: 15_000 }).toBeGreaterThan(100);
+  const { unzipSync, strFromU8 } = await import('fflate');
+  const z = unzipSync(new Uint8Array(Buffer.from(await read(), 'base64')));
+  expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/<sheets><sheet name="⌂ COCKPIT"/);
+  expect(strFromU8(z['xl/styles.xml']!)).toContain('0B0B0F'); // Onyx, the design chosen in the gallery
 });
 
 test('Internet design → REAL copy: its layout is read, previewed, then rebuilt with the processed data (Excel + dashboard)', async ({ page }) => {

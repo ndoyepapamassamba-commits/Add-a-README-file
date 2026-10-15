@@ -23,6 +23,21 @@ describe('deliverable detection', () => {
     expect(deliverableFromText('Fais-moi un rapport Word')).toBe('document');
     expect(deliverableFromText('Crée un site vitrine')).toBe('web');
   });
+  it('régression du 15/10/2026 : « donnes moi un fichier excel ultra design » ouvre la galerie (pièce jointe .xlsb)', () => {
+    const user = 'Dans le fichier attaché , donnes moi un fichier excel ultra design analysant le top 20 du segment code 8200 Local Corporate';
+    expect(deliverableFromText(user, ['ESN_Portfolio_202606-.xlsb'])).toBe('excel');
+    expect(deliverableFromText(user)).toBe('excel');
+    // Spellings and turns of phrase a user really types.
+    for (const s of ['donnez-moi un classeur des impayés', 'donne moi un excel des provisions', 'il me faut un fichier excel du top 10', "j'ai besoin d'un tableau de bord excel", 'je veux un fichier excel premium', 'file-moi un excel propre', 'un fichier excel ultra design sur le segment 8200'])
+      expect(deliverableFromText(s), s).toBe('excel');
+    // An accent at the start of the verb no longer hides it (JavaScript's \\b ignores accented letters).
+    expect(deliverableFromText('Élabore un rapport Word sur les provisions')).toBe('document');
+    expect(deliverableFromText('Générer une présentation du portefeuille')).toBe('slides');
+    expect(deliverableFromText('sors-moi le résultat structuré', ['Portefeuille.xlsb'])).toBe('excel');
+    // Questions about the attached file stay questions.
+    for (const s of ['Quel est le total du fichier excel joint ?', 'explique-moi ce classeur', 'peux-tu me dire combien de lignes dans le classeur ?', 'le segment 8200 est-il en hausse ?'])
+      expect(deliverableFromText(s, ['ESN_Portfolio_202606-.xlsb']), s).toBeNull();
+  });
   it('code that writes an Office file is a deliverable', () => {
     expect(deliverableFromCode("wb.save('outputs/analyse.xlsx')")).toBe('excel');
     expect(deliverableFromCode("df.to_excel('outputs/x.xlsx')")).toBe('excel');
