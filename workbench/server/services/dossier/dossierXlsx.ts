@@ -318,7 +318,7 @@ function placeFigure(s: Sheet, calc: Calc, f: Figure, c1: number, c2: number, ro
   const b = calc.block(f.title, f.categories, f.series.map((se) => ({ name: se.name, values: se.values })));
   // More than 6 categories in columns → their names are cut once rotated: horizontal bars keep every name readable.
   const kind: ChartSpec['kind'] = f.kind === 'col3d' ? (f.categories.length > 6 ? 'hbar3d' : 'bar3d') : f.kind === 'bar3d' ? 'hbar3d' : f.kind === 'pie' || f.kind === 'doughnut' ? 'pie3d' : f.kind === 'line' ? 'line' : f.kind === 'bar' ? 'bar' : 'bar';
-  placeChart(s, { kind, title: f.title, sheet: 'CALC', first: b.first, last: b.last, anchorCol: c1, anchorRow: 0, cat: { col: b.catCol, name: 'Catégorie', values: f.categories }, series: f.series.map((se, j) => ({ col: b.cols[j]!, name: se.name, values: se.values })) }, c1, c2, rows, startRow);
+  placeChart(s, { kind, title: f.title, fmt: f.fmt ?? (f.unit === '%' ? '0" %"' : undefined), sheet: 'CALC', first: b.first, last: b.last, anchorCol: c1, anchorRow: 0, cat: { col: b.catCol, name: 'Catégorie', values: f.categories }, series: f.series.map((se, j) => ({ col: b.cols[j]!, name: se.name, values: se.values })) }, c1, c2, rows, startRow);
 }
 /** Reserve `rows` rows of 15 pt and anchor the chart over them. */
 function placeChart(s: Sheet, spec: ChartSpec, c1: number, c2: number, rows: number, startRow?: number) {
@@ -599,11 +599,13 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
     section(ck, 'Indicateurs clés (formules vivantes)');
     const tot = 'SUMIFS(D_MES,D_SEL,1)';
     const fx = (expr: string) => `FIXED(${expr},1)`;
+    // The most critical figure top-left, where the eye starts (veille design 15/10/2026 — BizInfograph, IBCS « say »):
+    // the measure itself, then its concentration, the average, and the row count last.
     const lt: Tile[] = [
-      { label: 'Lignes sélectionnées', value: { v: live.n, t: 'n', f: 'SUM(D_SEL)', z: '#,##0' }, sub: { v: `sur ${live.n} lignes du fichier`, t: 's', f: `"sur "&ROWS(D_SEL)&" lignes du fichier"` }, tone: 'neutral' },
       { label: `${data!.measureLabel ?? live._measure} — sélection`, value: { v: live.total, t: 'n', f: tot, z: MDS_FMT }, sub: { v: '▲ 100,0 % du total du fichier', t: 's', f: `"▲ "&${fx(`100*${tot}/SUM(D_MES)`)}&" % du total du fichier"` }, tone: 'info' },
-      { label: 'Moyenne par ligne', value: { v: live.total / Math.max(1, live.n), t: 'n', f: `IFERROR(AVERAGEIFS(D_MES,D_SEL,1),0)`, z: MDS_FMT }, sub: { v: '● sur les lignes sélectionnées', t: 's' }, tone: 'neutral' },
       { label: 'Part du top 10', value: { v: live.top.rows.reduce((a, r) => a + r.val, 0) / (live.total || 1), t: 'n', f: `IFERROR(SUM(${quote('CALC')}!$C$${live.top.first}:$C$${live.top.last})/${tot},0)`, z: '0.0%' }, sub: { v: '◆ concentration de la sélection', t: 's' }, tone: 'warn' },
+      { label: 'Moyenne par ligne', value: { v: live.total / Math.max(1, live.n), t: 'n', f: `IFERROR(AVERAGEIFS(D_MES,D_SEL,1),0)`, z: MDS_FMT }, sub: { v: '● sur les lignes sélectionnées', t: 's' }, tone: 'neutral' },
+      { label: 'Lignes sélectionnées', value: { v: live.n, t: 'n', f: 'SUM(D_SEL)', z: '#,##0' }, sub: { v: `sur ${live.n} lignes du fichier`, t: 's', f: `"sur "&ROWS(D_SEL)&" lignes du fichier"` }, tone: 'neutral' },
     ];
     live.dimBlocks.slice(0, 4).forEach((b) => {
       const cat = `${quote('CALC')}!$B$${b.first}:$B$${b.last}`;

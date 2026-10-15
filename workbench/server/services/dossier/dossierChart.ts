@@ -21,6 +21,9 @@ export function figureChartXml(f: Figure, o: { titleInside?: boolean; legend?: b
   const series = f.series.map((s) => ({ name: s.name, values: s.values.slice(0, n).map((v) => (Number.isFinite(v) ? v : 0)) }));
   const max = Math.max(0, ...series.flatMap((s) => s.values.map((v) => Math.abs(v))));
   const fmt = f.fmt ?? (f.unit === '%' ? '0.0" %"' : shortFormat(max));
+  // A deviation chart crosses zero (no axis cut at 0); a share curve stops at 100 % (IBCS: never a misleading scale).
+  const hasNeg = series.some((x) => x.values.some((v) => v < 0));
+  const valScale = f.kind === 'line' ? (f.unit === '%' && max <= 100 ? '<c:max val="100"/><c:min val="0"/>' : '') : hasNeg ? '' : '<c:min val="0"/>';
   const is3d = f.kind === 'col3d' || f.kind === 'bar3d';
   const pieLike = f.kind === 'pie' || f.kind === 'doughnut';
   const horizontal = f.kind === 'bar' || f.kind === 'bar3d';
@@ -33,7 +36,7 @@ export function figureChartXml(f: Figure, o: { titleInside?: boolean; legend?: b
     `<c:ser><c:idx val="${i}"/><c:order val="${i}"/><c:tx><c:v>${esc(s.name)}</c:v></c:tx><c:spPr>${fill(palette[i % palette.length]!)}${noLine}</c:spPr>${extra}${lbl}${cat}${val(s.values)}</c:ser>`;
   const axes = () =>
     `<c:catAx><c:axId val="10"/><c:scaling><c:orientation val="${horizontal ? 'maxMin' : 'minMax'}"/></c:scaling><c:delete val="0"/><c:axPos val="${horizontal ? 'l' : 'b'}"/><c:numFmt formatCode="General" sourceLinked="1"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="low"/><c:spPr><a:ln w="9525">${fill(K.line)}</a:ln></c:spPr>${txPr(850, K.text2)}<c:crossAx val="20"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx>` +
-    `<c:valAx><c:axId val="20"/><c:scaling><c:orientation val="minMax"/>${f.kind === 'line' ? '' : '<c:min val="0"/>'}</c:scaling><c:delete val="0"/><c:axPos val="${horizontal ? 'b' : 'l'}"/><c:majorGridlines><c:spPr><a:ln w="6350">${fill(K.line)}</a:ln></c:spPr></c:majorGridlines><c:numFmt formatCode="${esc(fmt)}" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr>${noLine}</c:spPr>${txPr(800, K.text2, false, D.font.mono)}<c:crossAx val="10"/><c:crosses val="autoZero"/><c:crossBetween val="between"/></c:valAx>`;
+    `<c:valAx><c:axId val="20"/><c:scaling><c:orientation val="minMax"/>${valScale}</c:scaling><c:delete val="0"/><c:axPos val="${horizontal ? 'b' : 'l'}"/><c:majorGridlines><c:spPr><a:ln w="6350">${fill(K.line)}</a:ln></c:spPr></c:majorGridlines><c:numFmt formatCode="${esc(fmt)}" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr>${noLine}</c:spPr>${txPr(800, K.text2, false, D.font.mono)}<c:crossAx val="10"/><c:crosses val="autoZero"/><c:crossBetween val="between"/></c:valAx>`;
   let plot: string;
   let view3d = '';
   let legend = o.legend ?? (series.length > 1 || pieLike) ? `<c:legend><c:legendPos val="${pieLike ? 'r' : 'b'}"/><c:overlay val="0"/>${txPr(850, K.text2)}</c:legend>` : '';

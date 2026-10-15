@@ -122,6 +122,8 @@ export interface ChartSpec {
   abs?: { x: number; y: number; w: number; h: number };
   cat: { col: number; name: string; values: string[] };
   series: { col: number; name: string; values: number[] }[];
+  /** Excel number format of the labels and the value axis (else chosen from the magnitude). */
+  fmt?: string;
 }
 const xesc = (t: string) =>
   t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -170,7 +172,7 @@ export function chartXml(c: ChartSpec): string {
   const pieLike = c.kind === 'pie' || c.kind === 'pie3d';
   const max = Math.max(0, ...c.series.flatMap((s) => s.values.map((v) => Math.abs(v))));
   // Value labels in the reference's short form: « 1,8 Mds », « 469 M ».
-  const shortFmt = max >= 1e9 ? '#,##0.0,,," Mds"' : max >= 1e6 ? '#,##0,," M"' : '#,##0';
+  const shortFmt = c.fmt ?? (max >= 1e9 ? '#,##0.0,,," Mds"' : max >= 1e6 ? '#,##0,," M"' : '#,##0');
   const rngOf = (col: number) =>
     `${q}!$${XLSXS.utils.encode_col(col)}$${c.first}:$${XLSXS.utils.encode_col(col)}$${c.last}`;
   const txt = (sz: number, color: string, bold = false) =>
@@ -220,7 +222,10 @@ export function chartXml(c: ChartSpec): string {
     c.kind === 'hbar3d'
       ? `${catAxXml.replace('<c:orientation val="minMax"/>', '<c:orientation val="maxMin"/>').replace('<c:axPos val="b"/>', '<c:axPos val="l"/>')}<c:valAx>${valAxXml.replace('<c:axPos val="l"/>', '<c:axPos val="b"/>').replace('<c:crosses val="autoZero"/>', '<c:crosses val="max"/>')}`
       : axes;
-  const axes3d = clean(axes3d0);
+  // Names stay at the left edge even when a bar goes negative (deviation charts); a % curve stops at 100 %.
+  const axes3d = clean(axes3d0).replace(/(<c:catAx>[\s\S]*?)<c:tickLblPos val="nextTo"\/>/, '$1<c:tickLblPos val="low"/>');
+  const pctCurve = c.kind === 'line' && /%/.test(c.fmt ?? '') && max <= 100;
+  const axesL = pctCurve ? axes.replace('<c:valAx><c:axId val="222"/><c:scaling><c:orientation val="minMax"/>', '<c:valAx><c:axId val="222"/><c:scaling><c:orientation val="minMax"/><c:max val="100"/><c:min val="0"/>') : axes;
   const plot =
     c.kind === 'pie3d'
       ? `<c:pie3DChart><c:varyColors val="1"/>${ser}</c:pie3DChart>`
@@ -229,7 +234,7 @@ export function chartXml(c: ChartSpec): string {
       : c.kind === 'pie'
       ? `<c:pieChart><c:varyColors val="1"/>${ser}<c:firstSliceAng val="0"/></c:pieChart>`
       : c.kind === 'line'
-        ? `<c:lineChart><c:grouping val="standard"/><c:varyColors val="0"/>${ser}<c:marker val="1"/><c:axId val="111"/><c:axId val="222"/></c:lineChart>${axes}`
+        ? `<c:lineChart><c:grouping val="standard"/><c:varyColors val="0"/>${ser}<c:marker val="1"/><c:axId val="111"/><c:axId val="222"/></c:lineChart>${axesL}`
         : `<c:barChart><c:barDir val="col"/><c:grouping val="clustered"/><c:varyColors val="0"/>${ser}<c:gapWidth val="60"/><c:axId val="111"/><c:axId val="222"/></c:barChart>${axes}`;
   const noFill = '<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>';
   const view3d =

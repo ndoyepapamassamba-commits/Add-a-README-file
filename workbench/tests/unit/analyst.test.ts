@@ -36,9 +36,9 @@ describe('v62 — the analyst writes a COMPLETE reading of a counterparty rankin
     expect(brief.lens?.kind).toBe('credit');
     expect(creditRoles(columns, rows)).toMatchObject({ outstanding: 'Encours total (XOF)', arrears: 'Impayés PDO (XOF)', provision: 'Provisions IFRS9 (XOF)', collateral: 'Garanties (XOF)', limit: 'Limites (XOF)', exposure: 'Exposition nette (XOF)', facilities: 'Nb facilités' });
   });
-  it('five analytical chapters, each with findings, analysis, a figure or table and a recommendation', () => {
+  it('seven analytical chapters (veille: Basel watchlist, uncovered exposure), each with findings, analysis, a figure or table and a recommendation', () => {
     const d = dossierFromBrief({ focus: 'Top 20', brief });
-    expect(d.chapters.map((c) => c.title)).toEqual(["Concentration de l'encours", 'Impayés et dégradation', 'Provisions et couverture', 'Garanties', 'Utilisation des limites']);
+    expect(d.chapters.map((c) => c.title)).toEqual(["Concentration de l'encours", 'Impayés et dégradation', 'Provisions et couverture', 'Garanties', 'Exposition non couverte', 'Utilisation des limites', 'Liste de surveillance']);
     for (const c of d.chapters) {
       expect(c.constats.length, c.title).toBeGreaterThanOrEqual(2);
       expect(c.analyse.length, c.title).toBeGreaterThanOrEqual(1);
@@ -94,5 +94,37 @@ describe('v62 — the analyst is not limited to credit: any ranking is read (sal
     expect(d.chapters.some((c) => /^Marge \(EUR\) rapporté/.test(c.title) && c.constats.join(' ').includes('Client 6'))).toBe(true);
     expect(verifyAgainstBrief(d, brief).unknown).toEqual([]);
     expect(corpusFor('ventes par client concentration', 'ranking').map((x) => x.title)).toEqual(expect.arrayContaining(['Quality Control Handbook']));
+  });
+});
+
+describe('v62 — veille analyses: watchlist (Basel 2025), uncovered exposure, UMOA large exposures, Pareto and deviation charts', () => {
+  const { columns, rows } = top20();
+  const brief = buildBrief(columns, rows, { title: 'Top 20' });
+  const d = dossierFromBrief({ focus: 'Top 20', brief });
+  it('watchlist: names with two signals or more, scored, with the size × degradation matrix', () => {
+    const w = d.chapters.find((c) => c.title === 'Liste de surveillance')!;
+    expect(w.tables[0]!.title).toBe('Liste de surveillance proposée');
+    expect(w.tables[0]!.rows[0]![0]).toBe('CLIENT A SA');
+    expect(w.tables[1]!.title).toBe('Matrice de priorisation');
+    expect(w.constats.join(' ')).toMatch(/gros et dégradés \d+ nom\(s\)/);
+    expect(d.decisions.some((x) => /liste de surveillance/.test(x.text))).toBe(true);
+  });
+  it('uncovered exposure = outstanding − provisions − declared collateral, never negative', () => {
+    const u = d.chapters.find((c) => c.title === 'Exposition non couverte')!;
+    const first = rows[0]!;
+    const expected = Math.max(0, (first['Encours total (XOF)'] as number) - (first['Provisions IFRS9 (XOF)'] as number) - (first['Garanties (XOF)'] as number));
+    expect(u.kpis![0]!.num).toBeGreaterThan(expected - 1);
+    expect(u.tables[0]!.head).toEqual(['Contrepartie', 'encours', 'Provisions', 'Garanties', 'Non couvert', 'Non couvert / encours']);
+  });
+  it('the UMOA rule is quoted exactly (10 % / 25 % of T1), the Pareto curve is in %, the limit deviation is signed', () => {
+    const c = d.chapters[0]!;
+    expect(c.cadre[0]).toMatch(/10 % des fonds propres de base \(T1\).*25 % du T1/);
+    const pareto = c.figures.find((f) => f.kind === 'line')!;
+    expect(pareto.unit).toBe('%');
+    expect(pareto.series[0]!.values.at(-1)).toBeCloseTo(100, 0);
+    const lim = d.chapters.find((x) => x.title === 'Utilisation des limites')!.figures[0]!;
+    expect(lim.fmt).toMatch(/^\+/);
+    expect(verifyAgainstBrief(d, brief).unknown).toEqual([]);
+    expect(corpusFor('division des risques grands risques UMOA', 'credit').map((x) => x.date)).toContain('24 juin 2016');
   });
 });

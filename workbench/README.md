@@ -301,3 +301,16 @@ Laboratoire Champion ↔ Challenger ↔ Premium avec statistiques réelles (IC, 
   - aucun graphique en double.
 - Chaque chapitre ouvre sur ses quatre indicateurs chiffrés (classeur, rapport, deck, page).
 - Galerie de designs : style « Immersif » (profondeur 3D, sombre, verre, lumière) tiré des vitrines primées.
+
+### Veille analyses et design appliquée (v62, 15/10/2026)
+
+- Liste de surveillance :
+  - les contreparties à au moins deux signaux (impayés, couverture, garanties, limite), avec leur score ;
+  - une matrice de priorisation taille × dégradation ;
+  - source : principes de Bâle, révision du 30/04/2025.
+- Exposition non couverte : encours − provisions − garanties déclarées, soit la perte maximale avant décote.
+- Concentration :
+  - la règle UMOA exacte (grand risque dès 10 % du T1, plafond 25 % du T1, dispositif prudentiel 2016 § 451-452) ;
+  - une courbe de Pareto.
+- Limites : barres d'écart à la limite signées + / − (grille du Financial Times et règles IBCS).
+- Cockpit : le chiffre critique (l'encours) en haut à gauche.

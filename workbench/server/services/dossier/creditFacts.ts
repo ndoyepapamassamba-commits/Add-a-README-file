@@ -223,9 +223,15 @@ export function creditNarrative(f: CreditFacts, unit = 'XOF'): CreditNarrative {
         : `L'${B} est réparti sur un nombre suffisant de contreparties pour qu'aucune ne déplace seule le profil de risque ; le suivi peut rester statistique.`,
       `Lecture du HHI : 1 / HHI = ${fmtDec(N(f.conc.hhi ? 1 / f.conc.hhi : 0), 1)} contreparties « équivalentes » — le portefeuille se comporte comme s'il en comptait ce nombre, de même poids.`,
     ],
-    cadre: ['Division des risques (dispositif prudentiel UMOA) : le suivi des grands risques porte sur les expositions rapportées aux fonds propres — à rapprocher de ces montants.'],
+    cadre: [
+      "Dispositif prudentiel UMOA (décision n° 013/24/2016/CM/UMOA, § 451-452) : un client ou un groupe de clients liés devient « grand risque » dès 10 % des fonds propres de base (T1) et ne peut dépasser 25 % du T1 (risques pondérés) — seuil atteint en 2022 après 65 % en 2018. Le tableau ne donne pas le T1 : à rapprocher des montants ci-dessus.",
+    ],
     cas: [],
-    figures: [{ kind: 'bar3d', title: `${B[0]!.toUpperCase()}${B.slice(1)} par contrepartie — ${Math.min(10, f.entities)} premières`, categories: top.map((e) => e.key.slice(0, 28)), series: [{ name: B, values: top.map((e) => Math.round(e.v[f.base] ?? 0)) }], unit, lecture: `${f.conc.leader} porte ${fmtPct(f.conc.leaderShare)} ; ${f.conc.n80} contrepartie(s) font les quatre cinquièmes.` }],
+    figures: [
+      { kind: 'bar3d', title: `${B[0]!.toUpperCase()}${B.slice(1)} par contrepartie — ${Math.min(10, f.entities)} premières`, categories: top.map((e) => e.key.slice(0, 28)), series: [{ name: B, values: top.map((e) => Math.round(e.v[f.base] ?? 0)) }], unit, lecture: `${f.conc.leader} porte ${fmtPct(f.conc.leaderShare)} ; ${f.conc.n80} contrepartie(s) font les quatre cinquièmes.` },
+      // The Pareto curve: the cumulative share by rank (part-to-whole read as a curve — FT Visual Vocabulary).
+      { kind: 'line', title: `Courbe de Pareto — part cumulée de l'${B}`, categories: f.ranking.map((_, i) => String(i + 1)), series: [{ name: 'Part cumulée', values: (() => { let a = 0; return f.ranking.map((e) => Math.round((a += share(e)) * 1000) / 10); })() }], unit: '%', fmt: '0" %"', lecture: `${f.conc.n50} nom(s) font la moitié de l'${B}, ${f.conc.n80} les quatre cinquièmes : plus la courbe monte vite, plus le risque est concentré.` },
+    ],
     tables: [{ title: `Les ${top.length} premières contreparties`, head: ['Rang', 'Contrepartie', B, 'Part', 'Part cumulée'], rows: concRows, lecture: `la part cumulée atteint ${fmtPct(cum)} avec ${top.length} noms.` }],
     recommandations: [
       { priority: f.conc.top5 >= 0.5 ? 'P1' : 'P2', title: 'Fixer une limite de concentration par contrepartie', action: `Proposer au comité un plafond de part d'${B} par contrepartie et par groupe, appliqué d'abord aux ${Math.min(5, f.entities)} premières (${list(f.ranking.slice(0, 5).map((e) => e.key))}).`, owner: 'Direction des risques', due: 'Prochain comité', kpi: `Part du premier ≤ plafond voté (aujourd'hui ${fmtPct(f.conc.leaderShare)})` },
@@ -341,6 +347,47 @@ export function creditNarrative(f: CreditFacts, unit = 'XOF'): CreditNarrative {
     messages.push(`Garanties déclarées : ${fmtPct(f.ratios.collToOut ?? 0)} de l'${B} ; ${f.flags.noCollateral.length} contrepartie(s) sans aucune garantie.`);
   }
 
+  // 5. EXPOSITION NON COUVERTE (encours − provisions − garanties déclarées) : la perte maximale avant décote des sûretés.
+  if (f.roles.collateral || f.roles.provision) {
+    const unc = f.ranking
+      .map((e) => ({ key: e.key, base: e.v[f.base] ?? 0, prov: e.v.provision ?? 0, coll: e.v.collateral ?? 0, u: Math.max(0, (e.v[f.base] ?? 0) - (e.v.provision ?? 0) - (e.v.collateral ?? 0)) }))
+      .sort((a, b) => b.u - a.u);
+    const U = N(unc.reduce((a, x) => a + x.u, 0));
+    const withU = unc.filter((x) => x.u > 0);
+    const top5U = N(withU.slice(0, 5).reduce((a, x) => a + x.u, 0));
+    N(T ? U / T : 0);
+    N(U ? top5U / U : 0);
+    N(withU.length);
+    const full = unc.filter((x) => x.base > 0 && x.u >= x.base * 0.999).map((x) => x.key);
+    N(full.length);
+    if (full.length > 5) N(full.length - 5);
+    chapters.push({
+      title: 'Exposition non couverte',
+      headline: `${money(U, unit)} d'${B} ne sont couverts ni par les provisions ni par les garanties déclarées, soit ${fmtPct(T ? U / T : 0)}`,
+      kpis: [
+        CK('Non couvert', money(U, unit), `${fmtPct(T ? U / T : 0)} de l'${B}`, T && U / T >= 0.5 ? 'risk' : 'warn', U),
+        CK('Contreparties concernées', fmtInt(withU.length), `sur ${f.entities}`, 'neutral', withU.length),
+        CK('Part des 5 premières', fmtPct(U ? top5U / U : 0), 'du non couvert', 'warn', U ? top5U / U : 0),
+        CK('Sans aucune couverture', fmtInt(full.length), 'ni provision ni garantie', full.length ? 'risk' : 'ok', full.length),
+      ],
+      constats: [
+        `Exposition non couverte (${B} − provisions − garanties déclarées) : ${money(U, unit)}, soit ${fmtPct(T ? U / T : 0)} de l'${B}, sur ${withU.length} contrepartie(s).`,
+        withU.length ? `Les 5 premières (${list(withU.slice(0, 5).map((x) => x.key))}) portent ${money(top5U, unit)}, soit ${fmtPct(U ? top5U / U : 0)} du non couvert.` : 'Toutes les contreparties sont couvertes par leurs provisions et leurs garanties déclarées.',
+        full.length ? `${full.length} contrepartie(s) n'ont ni provision ni garantie déclarée : ${list(full)}.` : '',
+      ].filter(Boolean),
+      analyse: [
+        `C'est la perte maximale si ces contreparties faisaient défaut sans aucun recouvrement, AVANT la décote des garanties (une garantie se réalise rarement à 100 %) : la perte probable dépend de la PD et de la LGD, absentes du tableau. Elle désigne les dossiers où renforcer d'abord sûretés ou provisions.`,
+      ],
+      cadre: ['IFRS 9 et Bâle : la garantie réduit la perte en cas de défaut (LGD), pas la probabilité de défaut ; la valeur retenue est la valeur de réalisation après décote (Acte uniforme OHADA portant organisation des sûretés : rang, opposabilité, réalisation).'],
+      cas: [],
+      figures: withU.length >= 2 ? [{ kind: 'bar3d', title: 'Exposition non couverte — les plus élevées', categories: withU.slice(0, 10).map((x) => x.key.slice(0, 28)), series: [{ name: 'Non couvert', values: withU.slice(0, 10).map((x) => Math.round(x.u)) }], unit, lecture: `${withU[0]!.key} : ${money(withU[0]!.u, unit)} non couverts.` }] : [],
+      tables: withU.length ? [{ title: 'Exposition non couverte par contrepartie', head: ['Contrepartie', B, 'Provisions', 'Garanties', 'Non couvert', `Non couvert / ${B}`], rows: withU.slice(0, 12).map((x) => [x.key, money(x.base, unit), money(x.prov, unit), money(x.coll, unit), money(x.u, unit), fmtPct(x.base ? x.u / x.base : 0)]) }] : [],
+      recommandations: withU.length ? [{ priority: T && U / T >= 0.3 ? 'P1' : 'P2', title: `Couvrir d'abord les ${Math.min(5, withU.length)} expositions non couvertes les plus élevées`, action: `Pour ${list(withU.slice(0, 5).map((x) => x.key))} : recherche de sûretés complémentaires, revue du provisionnement, ou réduction de l'encours.`, owner: 'Engagements / Risques', due: 'Sous 3 mois', kpi: `Non couvert de ces contreparties (aujourd'hui ${money(top5U, unit)})` }] : [],
+      lecture: `${fmtPct(T ? U / T : 0)} de l'${B} n'est adossé à rien de déclaré : c'est le premier risque de perte.`,
+    });
+    messages.push(`Exposition non couverte : ${money(U, unit)} (${fmtPct(T ? U / T : 0)} de l'${B}), dont ${fmtPct(U ? top5U / U : 0)} sur 5 contreparties.`);
+  }
+
   // 5. LIMITES.
   if (f.roles.limit && f.totals.limit !== undefined) {
     const L = f.totals.limit;
@@ -361,13 +408,88 @@ export function creditNarrative(f: CreditFacts, unit = 'XOF'): CreditNarrative {
       analyse: [f.flags.overLimit.length ? 'Un dépassement de limite est un engagement non autorisé : il appelle une régularisation (autorisation ou remboursement) et la recherche de sa cause.' : `Les limites encadrent l'${B} ; la marge non tirée est un engagement potentiel à suivre (hors bilan).`],
       cadre: [],
       cas: [],
-      figures: [],
+      // Deviation from the reference (the limit): headroom to the right, excess to the left (FT Visual Vocabulary).
+      figures: (() => {
+        // Only the names whose limit differs from their outstanding: a row of zeros says nothing.
+        const dev = f.ranking.filter((e) => (e.v.limit ?? 0) > 0).map((e) => ({ key: e.key, d: (e.v.limit ?? 0) - (e.v[f.base] ?? 0) })).filter((x) => Math.abs(x.d) >= 1).sort((a, b) => a.d - b.d).slice(0, 10);
+        const mx = Math.max(...dev.map((x) => Math.abs(x.d)));
+        // IBCS: a variance always carries its sign (« + » headroom, « − » excess).
+        const sfmt = mx >= 1e9 ? '+#,##0.0,,," Mds";-#,##0.0,,," Mds";0' : mx >= 1e6 ? '+#,##0,," M";-#,##0,," M";0' : '+#,##0;-#,##0;0';
+        return dev.length >= 2 ? [{ kind: 'bar3d', title: 'Marge sur limite (+) ou dépassement (−) — les plus serrées', categories: dev.map((x) => x.key.slice(0, 28)), series: [{ name: 'Marge', values: dev.map((x) => Math.round(x.d)) }], unit, fmt: sfmt, lecture: dev[0]!.d < 0 ? `${dev[0]!.key} dépasse sa limite de ${money(N(-dev[0]!.d), unit)}.` : `La marge la plus faible est celle de ${dev[0]!.key} : ${money(N(dev[0]!.d), unit)}.` }] : [];
+      })(),
       tables: f.flags.overLimit.length || f.flags.nearLimit.length ? [{ title: 'Limites saturées ou dépassées', head: ['Contrepartie', B, 'Limite', 'Utilisation'], rows: f.ranking.filter((e) => f.flags.overLimit.includes(e.key) || f.flags.nearLimit.includes(e.key)).slice(0, 12).map((e) => [e.key, money(e.v[f.base], unit), money(e.v.limit, unit), fmtPct((e.v.limit ?? 0) ? (e.v[f.base] ?? 0) / (e.v.limit ?? 1) : 0)]) }] : [],
       recommandations: [{ priority: f.flags.overLimit.length ? 'P1' : 'P3', title: f.flags.overLimit.length ? `Régulariser les ${f.flags.overLimit.length} dépassement(s) de limite` : 'Suivre la marge non tirée', action: f.flags.overLimit.length ? `Pour ${list(f.flags.overLimit)} : autorisation complémentaire ou plan de réduction, cause du dépassement documentée.` : 'Suivi mensuel de la marge non tirée par contrepartie.', owner: 'Engagements', due: f.flags.overLimit.length ? 'Sous 15 jours' : 'Prochain arrêté', kpi: f.flags.overLimit.length ? 'Nombre de dépassements : 0' : 'Marge non tirée publiée' }],
       lecture: `utilisation ${fmtPct(f.ratios.utilisation ?? 0)} ; ${f.flags.overLimit.length} dépassement(s).`,
     });
     messages.push(`Limites utilisées à ${fmtPct(f.ratios.utilisation ?? 0)} ; ${f.flags.overLimit.length} dépassement(s), ${f.flags.nearLimit.length} limite(s) saturée(s) à ${fmtPct(THRESHOLDS.nearLimit, 0)} ou plus.`);
     if (f.flags.overLimit.length) decisions.push(`Régulariser sous 15 jours les ${f.flags.overLimit.length} dépassement(s) de limite.`);
+  }
+
+  // 7. LISTE DE SURVEILLANCE (Bâle : les crédits qui se dégradent sont suivis sur une liste revue par la direction) et la
+  // matrice de priorisation taille × dégradation.
+  {
+    const median = (() => {
+      const v = f.ranking.map((e) => e.v[f.base] ?? 0).sort((a, b) => a - b);
+      return v.length ? v[Math.floor((v.length - 1) / 2)]! : 0;
+    })();
+    const score = f.ranking.map((e) => {
+      const why: string[] = [];
+      if (f.flags.highArrears.includes(e.key)) why.push(`impayés ≥ ${fmtPct(THRESHOLDS.highArrears, 0)}`);
+      else if (f.flags.withArrears.includes(e.key)) why.push('en impayé');
+      if (f.flags.lowCoverage.includes(e.key)) why.push('faible couverture');
+      if (f.flags.uncovered.includes(e.key)) why.push('garanties < impayés');
+      if (f.flags.overLimit.includes(e.key)) why.push('limite dépassée');
+      if (f.ranking.slice(0, 5).some((x) => x.key === e.key)) why.push('top 5');
+      const pts = why.length + (f.flags.highArrears.includes(e.key) ? 1 : 0);
+      return { key: e.key, base: e.v[f.base] ?? 0, arrears: e.v.arrears ?? 0, pts, why };
+    });
+    const watch = score.filter((x) => x.pts >= 2 && x.why.some((w) => w !== 'top 5')).sort((a, b) => b.pts - a.pts || b.base - a.base);
+    if (watch.length) {
+      const W = N(watch.reduce((a, x) => a + x.base, 0));
+      const WA = N(watch.reduce((a, x) => a + x.arrears, 0));
+      N(watch.length);
+      N(T ? W / T : 0);
+      if (f.totals.arrears) N(WA / f.totals.arrears);
+      if (watch.length > 5) N(watch.length - 5);
+      const quad = (big: boolean, bad: boolean) => f.ranking.filter((e) => ((e.v[f.base] ?? 0) > median) === big && ((e.v.arrears ?? 0) > 0) === bad);
+      const cell = (big: boolean, bad: boolean) => {
+        const q = quad(big, bad);
+        const amt = N(q.reduce((a, e) => a + (e.v[f.base] ?? 0), 0));
+        N(q.length);
+        return `${q.length} nom(s) · ${money(amt, unit)}`;
+      };
+      const priority = quad(true, true);
+      N(priority.length);
+      chapters.push({
+        title: 'Liste de surveillance',
+        headline: `${watch.length} contrepartie(s) proposées en liste de surveillance : ${money(W, unit)} d'${B} (${fmtPct(T ? W / T : 0)})`,
+        kpis: [
+          CK('Sous surveillance', fmtInt(watch.length), `sur ${f.entities} contreparties`, 'warn', watch.length),
+          CK(`${B[0]!.toUpperCase()}${B.slice(1)} concerné`, money(W, unit), `${fmtPct(T ? W / T : 0)} du total`, T && W / T >= 0.3 ? 'risk' : 'warn', W),
+          ...(f.totals.arrears ? [CK('Part des impayés', fmtPct(WA / f.totals.arrears), 'portée par la liste', 'risk', WA / f.totals.arrears)] : []),
+          CK('Gros et dégradés', fmtInt(priority.length), `${B} > médiane et en impayé`, priority.length ? 'risk' : 'ok', priority.length),
+        ],
+        constats: [
+          `${watch.length} contrepartie(s) cumulent au moins deux signaux d'alerte (impayés, couverture, garanties, limite) : ${list(watch.map((x) => x.key))} — ${money(W, unit)} d'${B}, soit ${fmtPct(T ? W / T : 0)}.`,
+          f.totals.arrears ? `Elles portent ${fmtPct(WA / f.totals.arrears)} des impayés du périmètre.` : '',
+          `Matrice de priorisation (${B} au-dessus ou au-dessous de la médiane × avec ou sans impayé) : gros et dégradés ${cell(true, true)} ; gros et sains ${cell(true, false)} ; petits et dégradés ${cell(false, true)} ; petits et sains ${cell(false, false)}.`,
+        ].filter(Boolean),
+        analyse: [
+          `La liste se lit par le score (nombre de signaux, un impayé d'au moins ${fmtPct(THRESHOLDS.highArrears, 0)} compte double) puis par l'${B} : en tête, les dossiers où une décision change le plus le risque. Le quadrant « gros et dégradés » appelle un traitement nominatif immédiat ; « gros et sains », une surveillance de concentration ; « petits et dégradés », un traitement de recouvrement standard.`,
+        ],
+        cadre: ["Comité de Bâle, principes de gestion du risque de crédit : les crédits qui se dégradent font l'objet d'un suivi renforcé (contacts plus fréquents, inscription sur une liste de surveillance revue régulièrement par la direction)."],
+        cas: [],
+        figures: [],
+        tables: [
+          { title: 'Liste de surveillance proposée', head: ['Contrepartie', B, 'Impayés', 'Score', 'Signaux'], rows: watch.slice(0, 15).map((x) => [x.key, money(x.base, unit), money(x.arrears, unit), String(x.pts), x.why.join(' · ')]) },
+          { title: 'Matrice de priorisation', head: ['Taille', 'Avec impayés', 'Sans impayé'], rows: [[`${B} > médiane`, cell(true, true), cell(true, false)], [`${B} ≤ médiane`, cell(false, true), cell(false, false)]] },
+        ],
+        recommandations: [{ priority: 'P1', title: `Inscrire les ${watch.length} contrepartie(s) à la liste de surveillance`, action: `Revue mensuelle en comité des risques : ${list(watch.map((x) => x.key))} ; pour chacune, plan d'actions daté (régularisation, sûretés, restructuration ou recouvrement) et décision de classement.`, owner: 'Direction des risques', due: 'Prochain comité', kpi: `Contreparties sous surveillance avec plan validé : ${watch.length}/${watch.length}` }],
+        lecture: `${watch.length} nom(s) concentrent les signaux : la liste dit où porter l'attention du comité.`,
+      });
+      messages.push(`Liste de surveillance proposée : ${watch.length} contrepartie(s), ${money(W, unit)} d'${B} (${fmtPct(T ? W / T : 0)}).`);
+      decisions.push(`Inscrire ${watch.length} contrepartie(s) à la liste de surveillance revue chaque mois par la direction (${list(watch.map((x) => x.key), 3)}).`);
+    }
   }
 
   const thesis = [
