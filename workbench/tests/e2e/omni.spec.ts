@@ -231,7 +231,7 @@ test('premium design gallery: before an Excel deliverable the user picks a desig
   // THE COMMITTEE WORKBOOK everywhere (consignes du 14/10 et du 15/10/2026), in the chosen design: cockpit first,
   // analysis sheets with native charts, the data; the workbook's own palette (colour picker) is Onyx too.
   const wbXml = strFromU8(zip['xl/workbook.xml']!);
-  expect(wbXml).toMatch(/<sheets><sheet name="⌂ COCKPIT"/);
+  expect(wbXml).toMatch(/<sheets><sheet name="(⌂ COCKPIT|ACCUEIL)"/);
   expect(wbXml).toContain('name="DONNÉES"');
   expect(Object.keys(zip).some((k) => /^xl\/charts\/chart\d+\.xml$/.test(k))).toBe(true);
   expect(strFromU8(zip['xl/theme/theme1.xml']!)).toContain('0B0B0F');
@@ -327,7 +327,7 @@ test('régression du 15/10/2026 : « donnes moi un fichier excel ultra design »
   await expect.poll(async () => (await read()).length, { timeout: 15_000 }).toBeGreaterThan(100);
   const { unzipSync, strFromU8 } = await import('fflate');
   const z = unzipSync(new Uint8Array(Buffer.from(await read(), 'base64')));
-  expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/<sheets><sheet name="⌂ COCKPIT"/);
+  expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/<sheets><sheet name="(⌂ COCKPIT|ACCUEIL)"/);
   expect(strFromU8(z['xl/styles.xml']!)).toContain('0B0B0F'); // Onyx, the design chosen in the gallery
 });
 
@@ -378,7 +378,7 @@ test('Internet design → REAL copy: its layout is read, previewed, then rebuilt
   expect(Object.keys(all).some((k) => k.endsWith('tableau-de-bord.html'))).toBe(false);
   const { unzipSync, strFromU8 } = await import('fflate');
   const z = unzipSync(new Uint8Array(Buffer.from(all[Object.keys(all).find((k) => k.endsWith('outputs/ventes.xlsx'))!]!.data, 'base64')));
-  expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/<sheets><sheet name="⌂ COCKPIT"/);
+  expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/<sheets><sheet name="(⌂ COCKPIT|ACCUEIL)"/);
   const styles = strFromU8(z['xl/styles.xml']!);
   expect(styles).toContain('7C3AED'); // the design's primary colour
   expect(styles).toContain('Poppins'); // its font
@@ -644,7 +644,7 @@ test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, fram
   // A LIVE dashboard, no fixed picture: shapes on the image's design, native charts, figures as formulas.
   expect(z['xl/media/massamba-dashboard.png']).toBeUndefined();
   expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/<sheets><sheet name="Tableau de bord"/);
-  expect(strFromU8(z['xl/workbook.xml']!)).toContain('name="⌂ COCKPIT"'); // then the committee workbook
+  expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/name="(⌂ COCKPIT|ACCUEIL)"/); // then the committee workbook
   expect(strFromU8(z['xl/drawings/drawing-live-dash.xml']!)).toContain('<xdr:sp ');
 });
 
@@ -735,7 +735,7 @@ test('MODÈLES ULTRA DESIGN: 20 models per format in the gallery; an Excel model
   // The model's own colours (Midnight Neon violet) on the live dashboard; no fixed picture.
   expect(strFromU8(z['xl/drawings/drawing-live-dash.xml']!)).toContain('7C3AED');
   expect(Object.keys(z).some((k) => k.startsWith('xl/media/massamba-dashboard'))).toBe(false);
-  expect(strFromU8(z['xl/workbook.xml']!)).toContain('name="⌂ COCKPIT"'); // the committee workbook follows, in the model's colours
+  expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/name="(⌂ COCKPIT|ACCUEIL)"/); // the committee workbook follows, in the model's colours
   expect(strFromU8(z['xl/styles.xml']!)).toContain('7C3AED');
 });
 
@@ -825,7 +825,7 @@ test('IMAGE DESIGN + Excel written by the model in code: the workbook OPENS on t
   await expect.poll(async () => strFromU8((await wb())?.['xl/workbook.xml'] ?? new Uint8Array()), { timeout: 20_000 }).toMatch(/<sheets><sheet name="Tableau de bord"/);
   const z = (await wb())!;
   const wbXml = strFromU8(z['xl/workbook.xml']!);
-  expect(wbXml).toContain('name="⌂ COCKPIT"'); // the committee workbook follows the reproduction
+  expect(wbXml).toMatch(/name="(⌂ COCKPIT|ACCUEIL)"/); // the committee workbook follows the reproduction
   // The reproduction is a NATIVE dashboard: the image's cards as shapes and its charts as editable Excel charts.
   const dr = strFromU8(z['xl/drawings/drawing-live-dash.xml']!);
   expect(dr).toContain('<xdr:sp ');

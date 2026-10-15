@@ -614,12 +614,14 @@ async function renderDossier(
 ): Promise<{ out: string[]; html?: string }> {
   const out: string[] = [];
   const brand = [d.org, d.unit].filter(Boolean).join(' · ') || undefined;
+  // The layout grammar (CAC by default since 15/10/2026: the user's reference workbook), in the chosen palette + logo.
+  const skin = useStore.getState().settings.exportFormat ?? 'cac';
   for (const f of [...new Set(formats)]) {
     const path = uniquePath(`${base}.${f}`);
-    if (f === 'docx') writeBytes(path, dossierDocx(d, { logo, brand }), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    else if (f === 'pptx') writeBytes(path, dossierPptx(d, { logo, brand }), 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+    if (f === 'docx') writeBytes(path, dossierDocx(d, { logo, brand, skin }), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    else if (f === 'pptx') writeBytes(path, dossierPptx(d, { logo, brand, skin }), 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
     // The workbook is built in the BACKGROUND thread (in the active theme): the page stays fluid on big files.
-    else if (f === 'xlsx') writeBytes(path, await heavy('dossierXlsx', d, { data: dossierData(d.data), logo }), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    else if (f === 'xlsx') writeBytes(path, await heavy('dossierXlsx', d, { data: dossierData(d.data), logo, skin }), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     else if (f === 'html') writeText(path, dossierHtml(d, { brand }));
     else if (f === 'eml') {
       // Colour mail in the theme: .eml draft (Outlook) + the same mail as .html.
@@ -2008,7 +2010,7 @@ export const TOOLS: DirectTool[] = [
         d.data = ref;
         writeBytes(
           path,
-          await heavy('dossierXlsx', d, { data: { columns: r.columns, rows: r.rows, measure: ref?.measure ?? null, entity: ref?.entity ?? null, selectors: ref?.selectors ?? [], source: src }, logo: logoOf(a) }),
+          await heavy('dossierXlsx', d, { data: { columns: r.columns, rows: r.rows, measure: ref?.measure ?? null, entity: ref?.entity ?? null, selectors: ref?.selectors ?? [], source: src }, logo: logoOf(a), skin: useStore.getState().settings.exportFormat ?? 'cac' }),
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         );
         HOUSE_FILES.add(path);

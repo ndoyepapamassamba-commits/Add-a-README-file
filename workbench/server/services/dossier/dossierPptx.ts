@@ -4,7 +4,12 @@
 // owner, deadline, indicator), the decisions put to the vote with their Pour / Contre boxes, the annexes, speaker
 // notes timed on the whole deck. Colours and fonts come from the active design: the same deck in every theme.
 import { strToU8, zipSync } from 'fflate';
-import { activeDesign, liveColorProxy, type Design } from '../houseDesign';
+import { activeDesign, liveColorProxy, setActiveTheme, type Design } from '../houseDesign';
+import { CAC_NEUTRALS, cacDesign, cacStates, tintOf } from './cacSkin';
+/** CAC format (cacSkin.ts) while a deck is written; the band colour of the current chapter. */
+let CAC_ON = false;
+let ST: string[] = [];
+let BAND_COLOR: string | null = null;
 import { CHART_CT, CHART_REL, pptxChartFrame } from '../officeChart';
 import { allRecos, type Chapter, type Dossier, type Kpi, type Reco, type Tone } from './dossier';
 import { figureChartXml } from './dossierChart';
@@ -102,7 +107,22 @@ interface Part {
 }
 
 
-export function dossierPptx(d: Dossier, opts: DeckOptions = {}): Uint8Array {
+export function dossierPptx(d: Dossier, opts: DeckOptions & { skin?: 'comite' | 'cac' } = {}): Uint8Array {
+  if (opts.skin !== 'cac') return dossierPptxCore(d, opts);
+  const base = activeDesign();
+  ST = cacStates(base.color, base.chartSeries);
+  const prev = setActiveTheme(cacDesign(base));
+  CAC_ON = true;
+  try {
+    return dossierPptxCore(d, opts);
+  } finally {
+    CAC_ON = false;
+    ST = [];
+    BAND_COLOR = null;
+    setActiveTheme(prev);
+  }
+}
+function dossierPptxCore(d: Dossier, opts: DeckOptions): Uint8Array {
   const logo = opts.logo && opts.logo.png.length ? opts.logo : null;
   const parts: Part[] = [];
   const footerText = [d.org, d.unit, d.confidentiality].filter(Boolean).join(' · ') || `${d.title} · ${d.date}`;
@@ -122,11 +142,18 @@ export function dossierPptx(d: Dossier, opts: DeckOptions = {}): Uint8Array {
     const pageNo = parts.length + 1;
     // One line in the band whatever the title: the size follows the width (0.58 em per bold character, 13 pt at least).
     const tSz = Math.max(13, Math.min(19, Math.floor((72 * ((W - inch(3.2)) / EMU)) / (0.58 * Math.max(20, title.length)))));
+    // CAC: white header — 5 pt band in the chapter's colour, breadcrumb, marine title, warm 2 pt rule.
+    const head = CAC_ON
+      ? rect(0, 0, W, inch(0.07), BAND_COLOR ?? C.navy, 'Bandeau') +
+        text(M, inch(0.1), W - inch(3.2), inch(0.22), [para(run(`📄  ${String(pageNo).padStart(2, '0')}  ·  ${kicker}`, { sz: 8.5, color: C.navy, b: true, caps: true }), { spc: 0 })], 'Fil d’Ariane', { anchor: 'ctr' }) +
+        text(M, inch(0.32), W - inch(3.2), inch(0.42), [para(run(title, { sz: Math.min(20, tSz), color: C.navy, b: true }), { spc: 0 })], 'Titre', { anchor: 'ctr' }) +
+        rect(M, BAND - inch(0.01), W - 2 * M, inch(0.025), C.line, 'Filet')
+      : rect(0, 0, W, BAND, C.navy, 'Bandeau') +
+        rect(0, BAND, W, Math.round(0.035 * EMU), C.gold, 'Filet') +
+        text(M, inch(0.06), W - inch(3.2), inch(0.5), [para(run(title, { sz: tSz, color: C.white, b: true }), { spc: 0 })], 'Titre', { anchor: 'ctr' }) +
+        text(M, inch(0.5), W - inch(3.2), inch(0.26), [para(run(kicker, { sz: 8, color: C.subtle, b: true, caps: true }), { spc: 0 })], 'Rubrique', { anchor: 'ctr' });
     const shapes =
-      rect(0, 0, W, BAND, C.navy, 'Bandeau') +
-      rect(0, BAND, W, Math.round(0.035 * EMU), C.gold, 'Filet') +
-      text(M, inch(0.06), W - inch(3.2), inch(0.5), [para(run(title, { sz: tSz, color: C.white, b: true }), { spc: 0 })], 'Titre', { anchor: 'ctr' }) +
-      text(M, inch(0.5), W - inch(3.2), inch(0.26), [para(run(kicker, { sz: 8, color: C.subtle, b: true, caps: true }), { spc: 0 })], 'Rubrique', { anchor: 'ctr' }) +
+      head +
       badge(d, logo, W - M, inch(0.14), inch(0.5)) +
       body +
       (lecture
@@ -154,6 +181,24 @@ export function dossierPptx(d: Dossier, opts: DeckOptions = {}): Uint8Array {
         text(x + inch(0.1), y + inch(0.68), tw - inch(0.2), inch(0.4), [para(run(k.label, { sz: 9, color: C.text2 }), { spc: 0 })], 'Étiquette') +
         rect(x + inch(0.1), y + inch(1.08), inch(0.9), inch(0.035), toneColor(k.tone), 'Soulignement');
     });
+    if (CAC_ON) {
+      // CAC title slide: 5 pt marine band, breadcrumb, title, warm subtitle, alert pill, warm rule, key-figure cards.
+      const lead = d.kpis.find((k) => k.tone === 'risk') ?? d.kpis[0];
+      let cards = '';
+      tiles.forEach((k, i) => (cards += kpiTile(M + i * (tw + inch(0.25)), inch(4.55), tw, inch(1.5), k, ST[i % Math.max(1, ST.length)])));
+      const cacShapes =
+        rect(0, 0, W, inch(0.08), C.navy, 'Bandeau') +
+        badge(d, logo, W - M, inch(0.3), inch(0.62)) +
+        text(M, inch(0.25), W - inch(3.2), inch(0.3), [para(run(`🏠  01  ·  DECK   —   Arrêté du ${d.asOf ?? d.date}${d.audience ? ` · ${d.audience}` : ''}`, { sz: 10, color: C.navy, b: true }), { spc: 0 })], 'Fil d’Ariane', { anchor: 'ctr' }) +
+        text(M, inch(0.7), W - inch(3.2), inch(1.5), [para(run(d.title, { sz: d.title.length > 48 ? 30 : 36, color: C.navy, b: true }), { spc: 0 })], 'Titre', { anchor: 'ctr' }) +
+        text(M, inch(2.25), W - inch(3.2), inch(0.9), [para(run(d.subtitle || [d.org, d.unit].filter(Boolean).join(' · '), { sz: 14, color: C.text2 }), { spc: 0 })], 'Sous-titre') +
+        (lead ? card(M, inch(3.3), W - 2 * M - inch(2.6), inch(0.48), CAC_NEUTRALS.alertBg, 'Alerte', { shadow: false, radius: 20000 }) + text(M + inch(0.15), inch(3.3), W - 2 * M - inch(2.9), inch(0.48), [para(run(`⚠  ${lead.value} · ${lead.label}`, { sz: 13, color: CAC_NEUTRALS.alert, b: true }), { spc: 0 })], 'Texte alerte', { anchor: 'ctr' }) : '') +
+        text(W - M - inch(2.4), inch(1.2), inch(2.4), inch(0.3), [para(run(`🔒 ${(d.confidentiality ?? 'CONFIDENTIEL').toUpperCase().slice(0, 30)}`, { sz: 9, color: CAC_NEUTRALS.alert, b: true }), { algn: 'r', spc: 0 })], 'Confidentialité', { anchor: 'ctr' }) +
+        rect(M, inch(4.05), W - 2 * M, inch(0.03), C.line, 'Filet') +
+        cards +
+        text(M, inch(6.4), W - 2 * M, inch(0.4), [para(run(`${d.author ? `Présenté par ${d.author}` : ''}${d.dataSource ? ` · ${d.dataSource}` : ''}`.replace(/^ · /, ''), { sz: 9, color: C.text2, i: true }), { spc: 0 })], 'Auteur', { anchor: 'ctr' });
+      push(sld(cacShapes, C.white), { notes: `${d.title}\n${d.subtitle ?? ''}\n${d.thesis}`, weight: 0.6 });
+    }
     const shapes =
       rect(0, 0, W, inch(1.05), C.navy, 'Bandeau') +
       rect(0, inch(1.05), W, inch(0.04), C.gold, 'Filet') +
@@ -166,7 +211,7 @@ export function dossierPptx(d: Dossier, opts: DeckOptions = {}): Uint8Array {
       body +
       text(M, inch(6.3), W - 2 * M - inch(2), inch(0.5), [para(run(`${d.author ? `Présenté par ${d.author}` : ''}${d.asOf ? ` · arrêté du ${d.asOf}` : ''}${d.dataSource ? ` · ${d.dataSource}` : ''}`.replace(/^ · /, ''), { sz: 9, color: C.text2, i: true }), { spc: 0 })], 'Auteur', { anchor: 'ctr' }) +
       text(W - M - inch(2), inch(6.3), inch(2), inch(0.5), [para(run(d.confidentiality || opts.brand || 'MASSAMBA Workbench', { sz: 9, color: C.risk, b: true, caps: true }), { algn: 'r', spc: 0 })], 'Confidentialité', { anchor: 'ctr' });
-    push(sld(shapes, C.white), { notes: `${d.title}\n${d.subtitle ?? ''}\n${d.thesis}`, weight: 0.6 });
+    if (!CAC_ON) push(sld(shapes, C.white), { notes: `${d.title}\n${d.subtitle ?? ''}\n${d.thesis}`, weight: 0.6 });
   }
 
   // 2 ── The figure: one huge number, the thesis under it.
@@ -196,7 +241,7 @@ export function dossierPptx(d: Dossier, opts: DeckOptions = {}): Uint8Array {
     kp.forEach((k, i) => {
       const x = M + (i % cols) * (tw + gap);
       const y = contentTop + Math.floor(i / cols) * (th + inch(0.22));
-      body += kpiTile(x, y, tw, th, k);
+      body += kpiTile(x, y, tw, th, k, CAC_ON ? ST[i % Math.max(1, ST.length)] : undefined);
     });
     push(frame(`${kp.length} indicateurs à retenir — les mêmes dans le classeur, le deck et le rapport`, 'Ce qu’il faut retenir', body, d.provenance || 'Chaque indicateur est calculé une seule fois puis repris à l’identique dans les trois livrables ; aucune valeur n’est saisie à la main.'), {
       notes: kp.map((k) => `${k.code} ${k.label} = ${k.value}${k.method ? ` — ${k.method}` : ''}`).join('\n'),
@@ -233,6 +278,7 @@ export function dossierPptx(d: Dossier, opts: DeckOptions = {}): Uint8Array {
 
   // 5… ── Chapters: a findings screen (tiles + figures + Lecture) then a cases-and-actions screen.
   for (const ch of d.chapters) {
+    BAND_COLOR = CAC_ON ? ST[(ch.n - 1) % Math.max(1, ST.length)] ?? null : null;
     const kicker = ch.kicker ?? `CHAPITRE ${ch.n} · ${ch.title.toUpperCase()}`;
     const headline = ch.headline || ch.constats[0] || ch.title;
     // (a) findings: left column = chapter KPIs or the first constats; right = up to two figures (or a table).
@@ -243,7 +289,7 @@ export function dossierPptx(d: Dossier, opts: DeckOptions = {}): Uint8Array {
       const bodyH = lectureTop - contentTop - inch(0.15);
       if (tiles.length) {
         const th = Math.floor((bodyH - inch(0.15) * (tiles.length - 1)) / tiles.length);
-        tiles.forEach((k, i) => (body += kpiTile(M, contentTop + i * (th + inch(0.15)), leftW, Math.min(th, inch(1.6)), { ...k, code: '' })));
+        tiles.forEach((k, i) => (body += kpiTile(M, contentTop + i * (th + inch(0.15)), leftW, Math.min(th, inch(1.6)), { ...k, code: '' }, CAC_ON ? (BAND_COLOR ?? ST[i]) : undefined)));
       } else {
         body +=
           card(M, contentTop, leftW, bodyH, C.panel, 'Constats', { line: C.line, shadow: false }) +
@@ -319,6 +365,7 @@ export function dossierPptx(d: Dossier, opts: DeckOptions = {}): Uint8Array {
     }
   }
 
+  BAND_COLOR = null;
   // ── Action plan: the P1 recommendations in one table.
   const recos = allRecos(d);
   if (recos.length) {
@@ -375,7 +422,24 @@ export function dossierPptx(d: Dossier, opts: DeckOptions = {}): Uint8Array {
   return packDeck(d, parts, logo);
 }
 
-function kpiTile(x: number, y: number, w: number, h: number, k: Kpi): string {
+function kpiTile(x: number, y: number, w: number, h: number, k: Kpi, cacColor?: string): string {
+  if (CAC_ON) {
+    // CAC card: white, thin warm frame, thick top rule in the card's colour (red for a risk), caps label, 24 pt figure,
+    // warm sub-line, a round medallion with the tone's emoji.
+    const top = k.tone === 'risk' ? CAC_NEUTRALS.alert : cacColor ?? C.navy;
+    const glyph = k.tone === 'risk' ? '⚠️' : k.tone === 'warn' ? '⏳' : k.tone === 'ok' ? '✅' : k.tone === 'info' ? '📊' : '🏦';
+    const md = Math.min(inch(0.42), Math.round(h * 0.3));
+    const vSz = h < inch(1.2) ? 16 : k.value.length > 9 ? 20 : 24;
+    return (
+      card(x, y, w, h, 'FFFFFF', 'Carte chiffrée', { line: C.line, shadow: false, radius: 1500 }) +
+      rect(x, y, w, inch(0.06), top, 'Filet supérieur') +
+      text(x + inch(0.1), y + inch(0.1), w - md - inch(0.25), inch(0.4), [para(run(k.code ? `${k.code} · ${k.label}` : k.label, { sz: 8, color: C.text2, b: true, caps: true }), { spc: 0 })], 'Étiquette') +
+      sp(x + w - md - inch(0.1), y + inch(0.12), md, md, `${fill('FFFFFF')}<a:ln w="12700">${fill(tintOf(top, 0.45))}</a:ln>`, 'Médaillon', 'ellipse') +
+      text(x + w - md - inch(0.1), y + inch(0.12), md, md, [para(run(glyph, { sz: Math.max(9, Math.round((md / EMU) * 30)), color: top, font: 'Segoe UI Emoji' }), { algn: 'ctr', spc: 0 })], 'Icône', { anchor: 'ctr', inset: 0 }) +
+      text(x + inch(0.1), y + inch(0.5), w - inch(0.2), Math.max(inch(0.45), h - inch(0.95)), [para(run(k.value, { sz: vSz, color: C.navy, b: true }), { spc: 0 })], 'Valeur', { anchor: 'ctr' }) +
+      (k.sub ? text(x + inch(0.1), y + h - inch(0.45), w - inch(0.2), inch(0.38), [para(run(k.sub, { sz: 8, color: C.text2 }), { spc: 0 })], 'Sous-titre', { anchor: 'ctr' }) : '')
+    );
+  }
   const tone = toneColor(k.tone);
   const vSz = h < inch(1.2) ? 16 : k.value.length > 9 ? 18 : 22;
   return (

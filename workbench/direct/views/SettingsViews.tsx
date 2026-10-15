@@ -381,6 +381,16 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
               options={Object.entries(THEMES).map(([id, t]) => ({ value: id, label: t.label }))}
             />
           </Field>
+          <Field label="Format des livrables comité (Excel, Word, PowerPoint)" hint="« Format CAC » reprend la mise en page de votre classeur de référence (accueil à tuiles cliquables, menu PAGES, sections numérotées, cartes chiffrées, une couleur par feuille) dans la palette et avec le logo choisis.">
+            <Select
+              value={s.exportFormat ?? 'cac'}
+              onChange={(v) => patch({ exportFormat: v as 'cac' | 'comite' })}
+              options={[
+                { value: 'cac', label: 'Format CAC (par défaut)' },
+                { value: 'comite', label: 'Format comité (précédent)' },
+              ]}
+            />
+          </Field>
         </div>
       </Section>
 

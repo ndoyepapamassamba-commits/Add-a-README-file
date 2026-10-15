@@ -238,9 +238,9 @@ export function committeePack(file: string, sheet?: string, focus?: string): str
   fs.mkdirSync(dir, { recursive: true });
   const data = { columns: ds.columns, rows, measure: brief.measure, measureLabel: brief.measureLabel, entity: brief.entity };
   const out = { xlsx: path.join(dir, `${title} — classeur.xlsx`), docx: path.join(dir, `${title} — rapport.docx`), pptx: path.join(dir, `${title} — deck.pptx`) };
-  fs.writeFileSync(out.xlsx, dossierXlsx(d, { data }));
-  fs.writeFileSync(out.docx, dossierDocx(d));
-  fs.writeFileSync(out.pptx, dossierPptx(d));
+  fs.writeFileSync(out.xlsx, dossierXlsx(d, { data, skin: 'cac' }));
+  fs.writeFileSync(out.docx, dossierDocx(d, { skin: 'cac' }));
+  fs.writeFileSync(out.pptx, dossierPptx(d, { skin: 'cac' }));
   return `Dossier comité écrit sur cet ordinateur (aucune donnée envoyée) :\n- ${out.xlsx}\n- ${out.docx}\n- ${out.pptx}\n\n${d.chapters.length} chapitre(s) : ${d.chapters.map((c) => c.title).join(' · ')}`;
 }
 

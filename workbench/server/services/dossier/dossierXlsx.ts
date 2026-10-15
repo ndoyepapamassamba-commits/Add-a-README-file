@@ -11,7 +11,8 @@
 // Toutes les couleurs viennent du thème actif : toutes les feuilles changent ensemble.
 import XLSXS from 'xlsx-js-style';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
-import { activeDesign, liveColorProxy, type Design } from '../houseDesign';
+import { activeDesign, liveColorProxy, setActiveTheme, type Design } from '../houseDesign';
+import { CAC_GRID, CAC_NEUTRALS, cacDesign, cacStates, run, sp, tintOf } from './cacSkin';
 import { chartXml, fixStylesXml, type ChartSpec } from '../houseStyle';
 import { allRecos, type Chapter, type Dossier, type Figure, type Kpi, type Tone } from './dossier';
 import { columnConcepts } from '../dataLexicon';
@@ -32,7 +33,14 @@ export interface DossierData {
 export interface XlsxOptions {
   data?: DossierData | null;
   logo?: { png: Uint8Array; width: number; height: number } | null;
+  /** Layout grammar: « comite » (default) or « cac » (the format of the user's CAC workbook, in the chosen palette). */
+  skin?: 'comite' | 'cac';
 }
+/** Active layout grammar while a workbook is being written (set and restored by dossierXlsx). */
+let SKIN: 'comite' | 'cac' = 'comite';
+const cac = () => SKIN === 'cac';
+/** One colour per view in the CAC grammar (tab, band, tile), from the palette's hues. */
+let STATES: string[] = [];
 
 type Cell = { v: unknown; t: 's' | 'n' | 'b'; s?: Record<string, unknown>; z?: string; f?: string; l?: { Target: string; Tooltip?: string } };
 const C = liveColorProxy((c) => c) as Design['color'];
@@ -72,7 +80,12 @@ const MDS_FMT = '[>=1000000000]#,##0.0,,," Mds";[>=1000000]#,##0.0,," M";#,##0';
 const fmtFor = (k: Kpi): string => (k.value.includes('%') ? '0.0%' : k.num != null && Math.abs(k.num) >= 1e6 ? MDS_FMT : k.num != null && !Number.isInteger(k.num) ? '#,##0.0' : '#,##0');
 
 interface Shape {
-  kind: 'button' | 'plate' | 'picture';
+  kind: 'button' | 'plate' | 'picture' | 'cac';
+  /** CAC shapes: absolute top (EMU from the sheet top) and height instead of a row. */
+  y?: number;
+  h?: number;
+  /** CAC shapes: the DrawingML body; `link` registers a hyperlink to a sheet and returns its relationship id. */
+  body?: (id: number, link: (target: string) => string) => string;
   r: number;
   /** Absolute horizontal span in EMU (from the sheet's left edge). */
   x: number;
@@ -104,9 +117,14 @@ class Sheet {
   cfs: string[] = [];
   section = 0;
   freezeRow?: number;
+  /** CAC: rows of the frozen header (the « PAGES » column A is frozen with them). */
+  headRows?: number;
+  /** CAC: the sheet's own colour (tab, top band, tile) and where its alert pill sits. */
+  color?: string;
+  alertAt?: { r: number; c: number };
   table?: { r1: number; r2: number; c1: number; c2: number; names: string[]; name: string };
   landscape = true;
-  constructor(public name: string, public tab: string, public cols: number[] = GRID) {}
+  constructor(public name: string, public tab: string, public cols: number[] = cac() ? CAC_GRID : GRID) {}
   get last(): number {
     return this.cols.length - 2;
   }
@@ -146,11 +164,16 @@ const widthOf = (s: Sheet, c1: number, c2: number) => s.cols.slice(c1, c2 + 1).r
 interface Ctx {
   d: Dossier;
   views: { name: string; label: string }[];
+  /** CAC: colour of each view (menu pill, tile, tab). */
+  colors?: Record<string, string>;
+  /** CAC: the menu's label of each view (sentence case, acronyms kept). */
+  menu?: Record<string, string>;
   logo?: XlsxOptions['logo'];
   alert: Cell;
 }
 /** Title band (2 rows): logo plate, title + subtitle, ARRÊTÉ / public, the live alert pill; then the accent filet. */
 function header(s: Sheet, ctx: Ctx, title: string, subtitle: string) {
+  if (cac()) return cacHeader(s, ctx, title, subtitle);
   const L = s.last;
   const r1 = s.row(30);
   const r2 = s.row(26);
@@ -175,6 +198,7 @@ function header(s: Sheet, ctx: Ctx, title: string, subtitle: string) {
 }
 /** Two (or more) rows of styled buttons: ◀ PRÉCÉDENT, ⌂ COCKPIT, the views, SUIVANT ▶ — the current view in accent. */
 function nav(s: Sheet, ctx: Ctx) {
+  if (cac()) return cacMenu(s, ctx);
   const i = ctx.views.findIndex((v) => v.name === s.name);
   const prev = ctx.views[(i - 1 + ctx.views.length) % ctx.views.length]!;
   const next = ctx.views[(i + 1) % ctx.views.length]!;
@@ -199,6 +223,7 @@ function nav(s: Sheet, ctx: Ctx) {
 }
 /** « 01 · TITLE » on a navy band with the accent filet under it. */
 function section(s: Sheet, title: string) {
+  if (cac()) return cacSection(s, title);
   s.section++;
   const r = s.row(22);
   s.span(r, FIRST, r, s.last, { v: `${String(s.section).padStart(2, '0')}  ·  ${title.toUpperCase()}`, t: 's', s: { font: F({ sz: 10, bold: true, color: { rgb: C.white } }), fill: solid(C.navy), alignment: { vertical: 'center', horizontal: 'left', indent: 1 } } });
@@ -228,6 +253,166 @@ function para(s: Sheet, text: string, o: { italic?: boolean; fill?: string; acce
 const lecture = (s: Sheet, text: string, c1?: number, c2?: number) => para(s, text.startsWith('Lecture') ? text : `Lecture — ${text}`, { italic: true, fill: C.ice, accent: C.gold, color: C.text2, sz: 9, c1, c2 });
 const bullets = (s: Sheet, items: string[], mark = '▸') => items.forEach((t) => para(s, `${mark} ${t}`));
 
+// ── CAC grammar (cacSkin.ts) ──────────────────────────────────────────────────
+const pad2 = (n: number) => String(n).padStart(2, '0');
+/** Top of a row, in EMU from the sheet's top. */
+const topOf = (s: Sheet, r: number) => Array.from({ length: r }, (_, i) => ptEmu(s.heights[i] ?? 15)).reduce((a, b) => a + b, 0);
+/** A CAC shape at an absolute place (x, y, w, h in EMU). */
+const cacShape = (s: Sheet, x: number, y: number, w: number, h: number, body: Shape['body']) => s.shapes.push({ kind: 'cac', r: 0, x, w, y, h, inset: 0, body });
+/** The emoji of a section, from its title (the reference puts a medallion before every « 01  Titre »). */
+const SPARE = ['📁', '📌', '🧾', '🏦', '📈', '🛡️', '🔎', '💼', '🗂️', '🧮', '🏷️', '🔐'];
+function glyphOf(title: string, i = -1): string {
+  const t = title.toLowerCase();
+  const map: [RegExp, string][] = [
+    [/message|thèse/, '📣'], [/chiffr|indicateur|kpi/, '🔢'], [/chapitre|états|cliquez/, '🧭'], [/attention|alerte|risque/, '⚠️'], [/lire|lecture|comment/, '📖'],
+    [/visuel|graphique|figure/, '📊'], [/top|classement/, '🏆'], [/analyse/, '📝'], [/réglementation|recherche/, '⚖️'], [/recommandation|plan|action/, '✅'],
+    [/décision|vote/, '🗳️'], [/hypothèse/, '🧩'], [/paramètre/, '⚙️'], [/qualité/, '🔍'], [/source/, '📚'], [/glossaire|terme/, '📘'], [/sélecteur/, '🎚️'], [/cas/, '📌'], [/donnée/, '🗂️'],
+  ];
+  return map.find(([re]) => re.test(t))?.[1] ?? (i >= 0 ? SPARE[i % SPARE.length]! : '◆');
+}
+/** Round medallion with a glyph (white disc, ring in the colour's tint). */
+function medallion(s: Sheet, x: number, y: number, d: number, glyph: string, color = C.navy) {
+  cacShape(s, x, y, d, d, (id) => sp({ id, name: 'Médaillon', prst: 'ellipse', fill: 'FFFFFF', line: tintOf(color, 0.45), lineW: 12700, paras: [run(glyph, { sz: Math.max(8, Math.round((d / 12700) * 0.5)), color: color, font: ui() })], algn: 'ctr', ins: [0, 0, 0, 0], wrap: false }));
+}
+/** Header: marine (or the sheet's colour) 5 pt band, breadcrumb, 20 pt title, warm subtitle + CONFIDENTIEL, alert pill, warm 2 pt rule. */
+function cacHeader(s: Sheet, ctx: Ctx, title: string, subtitle: string) {
+  const L = s.last;
+  const idx = Math.max(0, ctx.views.findIndex((v) => v.name === s.name));
+  const band = idx === 0 ? C.navy : s.color ?? ctx.colors?.[s.name] ?? C.navy;
+  const r0 = s.row(5);
+  for (let c = 0; c <= L + 1; c++) s.put(r0, c, { v: '', t: 's', s: { fill: solid(band) } });
+  const asOf = ctx.d.asOf ?? ctx.d.date;
+  const r1 = s.row(18);
+  s.span(r1, 1, r1, 7, { v: `${idx === 0 ? '🏠' : '📄'}  ${pad2(idx + 1)}  ·  ${(ctx.views[idx]?.label ?? s.name).toUpperCase()}   —   Arrêté du ${asOf}${ctx.d.audience ? ` · ${ctx.d.audience}` : ''}`, t: 's', s: { font: F({ sz: 9, bold: true, color: { rgb: C.navy } }), alignment: { vertical: 'center', horizontal: 'left' } } });
+  const lines = Math.min(2, estLines(title, widthOf(s, 1, 7), 20 * 0.62));
+  const r2 = s.row(lines > 1 ? 52 : 30);
+  s.span(r2, 1, r2, 7, { v: title, t: 's', s: { font: F({ sz: 20, bold: true, color: { rgb: C.navy } }), alignment: { vertical: 'center', horizontal: 'left', wrapText: true } } });
+  const r3 = s.row(30);
+  s.span(r3, 1, r3, 7, { v: subtitle.length > 220 ? `${subtitle.slice(0, 217)}…` : subtitle, t: 's', s: { font: F({ sz: 10, color: { rgb: C.text2 } }), alignment: { vertical: 'top', horizontal: 'left', wrapText: true } } });
+  s.span(r3, 10, r3, 11, { v: `🔒 ${(ctx.d.confidentiality ?? 'CONFIDENTIEL').toUpperCase().slice(0, 30)}`, t: 's', s: { font: F({ sz: 8, bold: true, color: { rgb: CAC_NEUTRALS.alert } }), alignment: { vertical: 'center', horizontal: 'right' } } });
+  const r4 = s.row(22);
+  s.span(r4, 1, r4, 7, { ...ctx.alert, s: { font: F({ sz: 10.5, bold: true, color: { rgb: CAC_NEUTRALS.alert } }), fill: solid(CAC_NEUTRALS.alertBg), alignment: { vertical: 'center', horizontal: 'left', indent: 1 } } });
+  s.alertAt = { r: r4, c: 1 };
+  s.row(8);
+  const rule = s.row(2);
+  for (let c = 1; c <= L; c++) s.put(rule, c, { v: '', t: 's', s: { fill: solid(C.line) } });
+  s.headRows = s.aoa.length;
+  // The header art (pale bars + a medallion), as in the reference, then the logo top-right.
+  const ax = s.colX(8) + ptEmu(4);
+  const aw = s.colX(10) - s.colX(8) - ptEmu(10);
+  const ay = topOf(s, r1) + ptEmu(2);
+  const ah = topOf(s, r4 + 1) - topOf(s, r1) - ptEmu(4);
+  const pale = tintOf(band, 0.86);
+  cacShape(s, ax, ay, aw, ah, (id) => sp({ id, name: 'Illustration', prst: 'roundRect', adj: '<a:gd name="adj" fmla="val 6000"/>', fill: pale }));
+  const bars = [0.55, 0.78, 0.3, 0.86, 0.5, 0.66, 0.74];
+  const bw = Math.round((aw * 0.55) / (bars.length * 1.6));
+  bars.forEach((f, k) => {
+    const bh = Math.round(ah * 0.7 * f);
+    cacShape(s, ax + Math.round(aw * 0.07) + k * Math.round(bw * 1.6), ay + ah - Math.round(ah * 0.12) - bh, bw, bh, (id) => sp({ id, name: 'Barre', fill: tintOf(band, 0.62) }));
+  });
+  const md = Math.round(Math.min(ah * 0.72, aw * 0.3));
+  medallion(s, ax + aw - md - Math.round(aw * 0.08), ay + Math.round((ah - md) / 2), md, idx === 0 ? '🏠' : glyphOf(title, idx - 1), band);
+  const lw = s.colX(12) - s.colX(10) - ptEmu(6);
+  const lh = topOf(s, r3) - topOf(s, r1) - ptEmu(4);
+  if (ctx.logo) {
+    const ratio = ctx.logo.width / Math.max(1, ctx.logo.height);
+    const w = Math.min(lw, Math.round(lh * ratio));
+    const h = Math.round(w / ratio);
+    s.shapes.push({ kind: 'picture', r: 0, x: s.colX(12) - ptEmu(4) - w, w, y: topOf(s, r1) + ptEmu(2), h, inset: 0, png: ctx.logo.png });
+  } else {
+    const org = ctx.d.org || ctx.d.unit || 'Dossier';
+    cacShape(s, s.colX(10) + ptEmu(6), topOf(s, r1) + ptEmu(2), lw - ptEmu(6), lh, (id) => sp({ id, name: 'Plaque', prst: 'roundRect', adj: '<a:gd name="adj" fmla="val 12000"/>', fill: C.navy, paras: [run(org, { sz: 11, bold: true, color: 'FFFFFF', font: ui() })], algn: 'ctr' }));
+  }
+}
+/** The « PAGES » menu, frozen in column A: one pill per view, the current one filled in its colour. */
+function cacMenu(s: Sheet, ctx: Ctx) {
+  const x = ptEmu(6);
+  const w = colEmu(s.cols[0]!) - ptEmu(12);
+  let y = topOf(s, s.headRows ?? s.aoa.length) + ptEmu(8);
+  cacShape(s, x, y, w, ptEmu(14), (id) => sp({ id, name: 'Pages', paras: [run('P A G E S', { sz: 8, bold: true, color: C.text2, font: ui() })], ins: [36000, 0, 0, 0], wrap: false }));
+  y += ptEmu(18);
+  ctx.views.forEach((v, i) => {
+    const color = ctx.colors?.[v.name] ?? C.navy;
+    const on = v.name === s.name;
+    const label = `${pad2(i + 1)} · ${ctx.menu?.[v.name] ?? `${v.label.charAt(0)}${v.label.slice(1).toLowerCase()}`}`;
+    cacShape(s, x, y, w, ptEmu(20), (id, link) =>
+      sp({ id, name: `Page ${v.label}`, prst: 'roundRect', adj: '<a:gd name="adj" fmla="val 50000"/>', fill: on ? color : 'FFFFFF', line: on ? color : tintOf(color, 0.5), lineW: 12700, link: link(v.name), tooltip: `Ouvrir ${v.label}`, paras: [run(label, { sz: 8.5, bold: true, color: on ? 'FFFFFF' : C.navy, font: ui() })], ins: [90000, 0, 36000, 0], wrap: false }),
+    );
+    y += ptEmu(25);
+  });
+}
+/** « 01    Titre » 13 pt on the palette's pale panel, a medium marine rule, a medallion before the number. */
+function cacSection(s: Sheet, title: string) {
+  s.section++;
+  const r = s.row(28);
+  s.span(r, FIRST, r, s.last, { v: `${pad2(s.section)}    ${title.replace(/^\s*\d+\s*[·.-]\s*/, '')}`, t: 's', s: { font: F({ sz: 13, bold: true, color: { rgb: C.navy } }), fill: solid(C.panel), alignment: { vertical: 'center', horizontal: 'left', indent: 3 }, border: { bottom: bd(C.navy, 'medium') } } });
+  const d = ptEmu(20);
+  medallion(s, s.colX(FIRST) + ptEmu(4), topOf(s, r) + ptEmu(4), d, glyphOf(title));
+  s.gap(8);
+}
+/** Key-figure cards, four per row: caps label under a thick top rule in the card's colour, 24 pt value, warm sub-line. */
+function cacKpis(s: Sheet, list: Tile[]) {
+  const toneGlyph = (t?: Tone) => (t === 'risk' ? '⚠️' : t === 'warn' ? '⏳' : t === 'ok' ? '✅' : t === 'info' ? '📊' : '🏦');
+  for (let k = 0; k < list.length; k += 4) {
+    const r = [s.row(20), s.row(40), s.row(18)] as const;
+    const part = list.slice(k, k + 4);
+    const slots: [number, number][] = part.length === 4 ? QUARTERS : part.length === 3 ? [[1, 4], [5, 8], [9, 11]] : part.length === 2 ? [[1, 6], [7, 11]] : [[1, 11]];
+    part.forEach((t, j) => {
+      const [c1, c2] = slots[j]!;
+      const color = t.tone === 'risk' ? CAC_NEUTRALS.alert : STATES[(k + j) % Math.max(1, STATES.length)] ?? C.navy;
+      const side = { left: bd(C.line), right: bd(C.line) };
+      s.span(r[0], c1, r[0], c2, { v: t.label.toUpperCase(), t: 's', s: { font: F({ sz: 8.5, bold: true, color: { rgb: C.text2 } }), fill: solid('FFFFFF'), alignment: { vertical: 'center', horizontal: 'left', indent: 1, wrapText: true }, border: { ...side, top: bd(color, 'thick') } } });
+      // A word as value (« Gestionnaire F ») takes 16 pt and stops before the medallion; a figure keeps the 24 pt.
+      const isText = t.value.t === 's' && !t.value.f;
+      s.span(r[1], c1, r[1], c2, { ...t.value, s: { font: F({ sz: isText ? 16 : 24, bold: true, color: { rgb: C.navy } }), fill: solid('FFFFFF'), alignment: { vertical: 'center', horizontal: 'left', indent: 1, shrinkToFit: true, wrapText: isText }, border: side } });
+      s.span(r[2], c1, r[2], c2, { ...t.sub, s: { font: F({ sz: 9, color: { rgb: C.text2 } }), fill: solid('FFFFFF'), alignment: { vertical: 'center', horizontal: 'left', indent: 1, wrapText: true }, border: { ...side, bottom: bd(C.line) } } });
+      // The medallion only beside a figure (a word as value uses the whole width).
+      const d = ptEmu(24);
+      if (!isText) medallion(s, s.colX(c2 + 1) - d - ptEmu(8), topOf(s, r[1]) + ptEmu(8), d, toneGlyph(t.tone), color);
+    });
+    s.gap(8);
+  }
+}
+/** Clickable state tiles, three per row: card, left liseré, tinted band with a soft quarter-disc, medallion, « NN · TITRE », big
+ *  figure, sub-line, description, « Ouvrir → » — every part links to the sheet. */
+function cacStateTiles(s: Sheet, items: { title: string; value: string; sub: string; desc: string; color: string; glyph: string; target: string }[]) {
+  const thirds: [number, number][] = [[1, 4], [5, 8], [9, 11]];
+  for (let k = 0; k < items.length; k += 3) {
+    const r = s.row(136);
+    items.slice(k, k + 3).forEach((t, j) => {
+      const [c1, c2] = thirds[j]!;
+      const x = s.colX(c1) + ptEmu(4);
+      const w = s.colX(c2 + 1) - s.colX(c1) - ptEmu(8);
+      const y = topOf(s, r) + ptEmu(4);
+      const h = ptEmu(128);
+      const bandH = ptEmu(32);
+      const go = (link: (t: string) => string) => ({ link: link(t.target), tooltip: `Ouvrir ${t.title}` });
+      cacShape(s, x, y, w, h, (id, link) => sp({ id, name: `Tuile ${t.title}`, fill: 'FFFFFF', line: tintOf(t.color, 0.5), shadow: true, ...go(link) }));
+      cacShape(s, x + 6350, y + 6350, w - 12700, bandH, (id, link) => sp({ id, name: 'Bandeau', fill: tintOf(t.color, 0.86), ...go(link) }));
+      // A soft oval in the band's right part, always inside the card (the reference's decorative disc).
+      const rx = Math.round(w * 0.3);
+      cacShape(s, x + w - rx - ptEmu(6), y + Math.round(bandH * 0.12), rx, Math.round(bandH * 0.86), (id) => sp({ id, name: 'Disque', prst: 'ellipse', fill: tintOf(t.color, 0.74) }));
+      cacShape(s, x, y, ptEmu(5), h, (id) => sp({ id, name: 'Liseré', fill: t.color }));
+      const md = ptEmu(24);
+      medallion(s, x + ptEmu(12), y + Math.round((bandH - md) / 2), md, t.glyph, t.color);
+      cacShape(s, x + ptEmu(42), y, w - ptEmu(48), bandH, (id, link) => sp({ id, name: 'Titre', paras: [run(t.title.toUpperCase(), { sz: 10.5, bold: true, color: C.navy, font: ui() })], ins: [0, 0, 0, 0], ...go(link) }));
+      cacShape(s, x + ptEmu(14), y + bandH + ptEmu(4), w - ptEmu(24), ptEmu(30), (id, link) => sp({ id, name: 'Chiffre', paras: [run(t.value, { sz: 22, bold: true, color: C.navy, font: ui() })], ins: [0, 0, 0, 0], ...go(link) }));
+      cacShape(s, x + ptEmu(14), y + bandH + ptEmu(34), w - ptEmu(24), ptEmu(14), (id) => sp({ id, name: 'Sous-titre', paras: [run(t.sub, { sz: 8.5, bold: true, color: C.text2, font: ui() })], ins: [0, 0, 0, 0] }));
+      cacShape(s, x + ptEmu(14), y + bandH + ptEmu(50), w - ptEmu(24), ptEmu(30), (id) => sp({ id, name: 'Description', paras: [run(t.desc, { sz: 8.5, color: C.text, font: ui() })], ins: [0, 0, 0, 0], anchor: 't' }));
+      cacShape(s, x + w - ptEmu(84), y + h - ptEmu(20), ptEmu(76), ptEmu(16), (id, link) => sp({ id, name: 'Ouvrir', paras: [run('Ouvrir  →', { sz: 9, bold: true, color: t.color, font: ui() })], algn: 'r', ins: [0, 0, 0, 0], ...go(link) }));
+    });
+    s.gap(6);
+  }
+}
+/** A « Voir › » pill on a row (points of attention), linking to a sheet. */
+function cacPill(s: Sheet, r: number, c: number, label: string, target: string, color = C.navy) {
+  const x = s.colX(c) + ptEmu(6);
+  const w = colEmu(s.cols[c]!) - ptEmu(12);
+  const h = ptEmu(18);
+  const y = topOf(s, r) + Math.round((ptEmu(s.heights[r] ?? 15) - h) / 2);
+  cacShape(s, x, y, w, h, (id, link) => sp({ id, name: `Voir ${label}`, prst: 'roundRect', adj: '<a:gd name="adj" fmla="val 50000"/>', fill: tintOf(color, 0.88), line: tintOf(color, 0.45), link: link(target), tooltip: `Ouvrir ${target}`, paras: [run(`${label}  ›`, { sz: 8.5, bold: true, color: color, font: ui() })], algn: 'ctr', ins: [0, 0, 0, 0], wrap: false }));
+}
+
 interface Tile {
   label: string;
   value: Cell;
@@ -236,6 +421,7 @@ interface Tile {
 }
 /** Tiles four per row: label (small caps), value (big, live formula), sub (tone mark). Left liseré in the tone. */
 function tiles(s: Sheet, list: Tile[]) {
+  if (cac()) return cacKpis(s, list);
   for (let k = 0; k < list.length; k += 4) {
     const r = [s.row(17), s.row(34), s.row(17)];
     const part = list.slice(k, k + 4);
@@ -267,11 +453,15 @@ interface Col {
 }
 /** A table over column spans: navy header, zebra rows, wrapped text, row height from the longest cell. */
 function table(s: Sheet, cols: Col[], rows: (Cell | string | number)[][], o: { minH?: number } = {}): { hr: number; r0: number } {
-  const hr = s.row(26);
-  cols.forEach((c) => s.span(hr, c.c1, hr, c.c2 ?? c.c1, { v: c.head, t: 's', s: { font: F({ sz: 8.5, bold: true, color: { rgb: C.white } }), fill: solid(C.navy), alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: box(C.navy) } }));
+  const hr = s.row(cac() ? 32 : 26);
+  // CAC: bold marine on the palette's pale tint, a marine rule under it (the reference's « DEF0FB » header row).
+  const headStyle = cac()
+    ? { font: F({ sz: 9, bold: true, color: { rgb: C.navy } }), fill: solid(C.subtle), alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: { bottom: bd(C.navy), top: bd(C.line), left: bd(C.line), right: bd(C.line) } }
+    : { font: F({ sz: 8.5, bold: true, color: { rgb: C.white } }), fill: solid(C.navy), alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: box(C.navy) };
+  cols.forEach((c) => s.span(hr, c.c1, hr, c.c2 ?? c.c1, { v: c.head, t: 's', s: headStyle }));
   const r0 = hr + 1;
   rows.forEach((row, i) => {
-    const fill = i % 2 ? C.panel : C.white;
+    const fill = cac() ? C.white : i % 2 ? C.panel : C.white;
     let h = o.minH ?? 19;
     cols.forEach((c, j) => {
       const raw = row[j];
@@ -519,6 +709,22 @@ function writeData(live: LiveX, calc: Calc): void {
 
 // ── The workbook ──────────────────────────────────────────────────────────────
 export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
+  if (o.skin !== 'cac') return dossierXlsxCore(d, o);
+  // CAC format in the chosen palette: the state colours come from the palette, then the CAC design (warm neutrals,
+  // Calibri) is active while the workbook is written, and the previous theme comes back whatever happens.
+  const base = activeDesign();
+  STATES = cacStates(base.color, base.chartSeries);
+  const prev = setActiveTheme(cacDesign(base));
+  SKIN = 'cac';
+  try {
+    return dossierXlsxCore(d, o);
+  } finally {
+    SKIN = 'comite';
+    STATES = [];
+    setActiveTheme(prev);
+  }
+}
+function dossierXlsxCore(d: Dossier, o: XlsxOptions): Uint8Array {
   const X = activeDesign().xlsx;
   const sub = `${[d.org, d.unit].filter(Boolean).join(' · ')}${d.subtitle ? ` — ${d.subtitle}` : ''}`;
   const calc = new Calc();
@@ -538,8 +744,8 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
     const up = pick.toUpperCase();
     return up.length > 14 ? `${up.slice(0, 13)}.` : up;
   };
-  const views: { name: string; label: string }[] = [{ name: '⌂ COCKPIT', label: 'COCKPIT' }];
-  const chapterNames = d.chapters.map((c) => safeName(`${c.n}. ${c.title}`.toUpperCase()));
+  const views: { name: string; label: string }[] = [cac() ? { name: 'ACCUEIL', label: 'ACCUEIL' } : { name: '⌂ COCKPIT', label: 'COCKPIT' }];
+  const chapterNames = d.chapters.map((c) => safeName((cac() ? `${String(c.n).padStart(2, '0')} ${c.title}` : `${c.n}. ${c.title}`).toUpperCase()));
   const used = new Set<string>();
   d.chapters.forEach((c, i) => {
     let lb = short(c.title);
@@ -558,14 +764,27 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
   if (data) views.push({ name: 'DONNÉES', label: 'DONNÉES' });
 
   // The cockpit's selector cells are at fixed places (row 13 of the section « 01 · SÉLECTEURS »): computed below.
-  const ck = new Sheet('⌂ COCKPIT', X.tabColor.summary);
+  const ck = new Sheet(views[0]!.name, X.tabColor.summary);
   const lead = d.kpis.find((k) => k.tone === 'risk') ?? d.kpis[0];
-  const ctx: Ctx = { d, views, logo: o.logo ?? null, alert: { v: lead ? `⚠ ${lead.value} · ${lead.label}`.slice(0, 60) : `⚠ ${d.kpis.length} indicateurs`, t: 's' } };
+  // CAC: one colour per view (the home page keeps the marine).
+  const colors: Record<string, string> = cac() ? Object.fromEntries(views.map((v, i) => [v.name, i === 0 ? C.navy : STATES[(i - 1) % Math.max(1, STATES.length)] ?? C.navy])) : {};
+  // CAC: the menu says the chapter's own words (« IFRS 9 et BCEAO », not « Ifrs 9 »), cut on a word.
+  const cut = (t: string, n = 19) => (t.length <= n ? t : `${t.slice(0, n).replace(/\s+\S*$/, '')}…`);
+  const FIXED: Record<string, string> = { ACCUEIL: 'Accueil', "PLAN D'ACTIONS": 'Plan d’actions', DÉCISIONS: 'Décisions', HYPOTHÈSES: 'Hypothèses', PARAMÈTRES: 'Paramètres', 'QUALITÉ DONNÉES': 'Qualité', SOURCES: 'Sources', GLOSSAIRE: 'Glossaire', DONNÉES: 'Données' };
+  const menu: Record<string, string> = cac() ? { ...FIXED, ...Object.fromEntries(d.chapters.map((c, i) => [chapterNames[i]!, cut(c.title)])) } : {};
+  const ctx: Ctx = { d, views, colors, menu, logo: o.logo ?? null, alert: { v: lead ? `⚠ ${lead.value} · ${lead.label}`.slice(0, 60) : `⚠ ${d.kpis.length} indicateurs`, t: 's' } };
 
   // Header + nav first (row positions are needed for the selector cells).
   let live: LiveX | null = null;
   header(ck, ctx, d.title, sub);
   nav(ck, ctx);
+  // CAC: « Le message clé » opens the home page (the thesis in 14 pt with its first message).
+  if (cac()) {
+    section(ck, 'Le message clé');
+    para(ck, `💡  ${d.thesis}`, { sz: 14, bold: true, color: C.navy });
+    if (d.messages[0]) para(ck, d.messages[0], { sz: 10.5 });
+    ck.gap(6);
+  }
   if (data) {
     const dims = (data.selectors ?? []).filter((c) => data.columns.includes(c) && c !== data.measure).slice(0, 4);
     // No category to select → no « Sélecteurs » band at all (an empty band is a hole in the design).
@@ -590,13 +809,14 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
     const tot = `SUMIFS(D_MES,D_SEL,1)`;
     ctx.alert = { v: `⚠ ${live.n.toLocaleString('fr-FR')} lignes · ${(live.total / live.divisor).toLocaleString('fr-FR', { maximumFractionDigits: 1 })}${live.unit}`, t: 's', f: `"⚠ "&SUM(D_SEL)&" lignes · "&FIXED(${tot}/${live.divisor},1)&"${live.unit}"` };
     // The cockpit's alert pill becomes live (it was written by header() with the static text).
-    const pill = ck.aoa[1]![ck.last - 1]!;
-    ck.aoa[1]![ck.last - 1] = { ...ctx.alert, s: pill.s };
+    const at = ck.alertAt ?? { r: 1, c: ck.last - 1 };
+    const pill = ck.aoa[at.r]![at.c]!;
+    ck.aoa[at.r]![at.c] = { ...ctx.alert, s: pill.s };
   }
 
   // 02 · Indicators: live tiles in data mode, else the dossier's indicators (DATA_KPI).
   if (live) {
-    section(ck, 'Indicateurs clés (formules vivantes)');
+    section(ck, cac() ? 'Les chiffres clés — formules vivantes' : 'Indicateurs clés (formules vivantes)');
     const tot = 'SUMIFS(D_MES,D_SEL,1)';
     const fx = (expr: string) => `FIXED(${expr},1)`;
     // The most critical figure top-left, where the eye starts (veille design 15/10/2026 — BizInfograph, IBCS « say »):
@@ -615,13 +835,48 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
     });
     tiles(ck, lt.slice(0, 8));
   } else {
-    section(ck, 'Indicateurs clés');
+    section(ck, cac() ? 'Les chiffres clés' : 'Indicateurs clés');
     tiles(ck, d.kpis.slice(0, 8).map((k, i) => kpiTile(k, k.num != null ? kpiRef(i) : undefined)));
   }
-  // 03 · Thesis.
-  section(ck, 'La thèse — en une phrase pour le comité');
-  para(ck, d.thesis, { italic: true, fill: C.ice, accent: C.gold, sz: 10 });
-  ck.gap(6);
+  // CAC: the chapters as clickable state tiles, then the points of attention (P1 actions, risk indicators) with « Voir ».
+  if (cac() && d.chapters.length) {
+    section(ck, 'Les chapitres — cliquez pour ouvrir');
+    cacStateTiles(
+      ck,
+      d.chapters.map((c, i) => {
+        const k = c.kpis?.find((x) => x.num != null) ?? c.kpis?.[0];
+        return {
+          title: `${String(c.n).padStart(2, '0')} · ${c.title}`.slice(0, 42),
+          value: k ? k.value : `${c.constats.length} constat(s)`,
+          sub: (k ? k.label : `${c.recommandations.length} recommandation(s)`).slice(0, 70),
+          desc: (c.headline ?? c.lecture ?? c.analyse[0] ?? '').slice(0, 150),
+          color: colors[chapterNames[i]!] ?? C.navy,
+          glyph: glyphOf(c.title, i),
+          target: chapterNames[i]!,
+        };
+      }),
+    );
+  }
+  if (cac()) {
+    const attn = [
+      ...d.chapters.flatMap((c, i) => c.recommandations.filter((r) => r.priority === 'P1').map((r) => ({ text: `${r.ref} · ${r.title}${r.owner ? ` — ${r.owner}` : ''}${r.due ? `, ${r.due}` : ''}`, target: chapterNames[i]!, glyph: '🎯' }))),
+      ...d.kpis.filter((k) => k.tone === 'risk').map((k) => ({ text: `${k.label} : ${k.value}${k.sub ? ` — ${k.sub}` : ''}`, target: views[1]?.name ?? views[0]!.name, glyph: '⚠️' })),
+    ].slice(0, 8);
+    if (attn.length) {
+      section(ck, 'Les points d’attention');
+      attn.forEach((a, i) => {
+        const r = para(ck, `${a.glyph}  ${a.text}`, { c2: 10, sz: 9.5, fill: i % 2 ? C.white : C.panel });
+        cacPill(ck, r, 11, 'Voir', a.target, colors[a.target] ?? C.navy);
+      });
+      ck.gap(6);
+    }
+  }
+  // 03 · Thesis (the CAC home page already opens on it).
+  if (!cac()) {
+    section(ck, 'La thèse — en une phrase pour le comité');
+    para(ck, d.thesis, { italic: true, fill: C.ice, accent: C.gold, sz: 10 });
+    ck.gap(6);
+  }
   // 04 · The committee indicators (same as the deck and the report).
   if (d.kpis.length) {
     section(ck, `Les ${d.kpis.length} indicateurs du comité — identiques dans le deck et le rapport`);
@@ -765,6 +1020,16 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
     ck.span(r, FIRST, r, ck.last, { v: '⚖  Ce que dit la recherche', t: 's', s: { font: F({ bold: true, color: { rgb: C.navy } }), fill: solid(C.ice), alignment: { vertical: 'center', indent: 1 }, border: { left: bd(C.gold, 'thick') } } });
     research.slice(0, 4).forEach((t) => para(ck, `▸ ${t}`, { fill: C.ice, sz: 9, accent: C.gold }));
   }
+  if (cac()) {
+    section(ck, 'Comment lire ce classeur');
+    bullets(ck, [
+      'Le menu PAGES, à gauche, reste visible : un clic ouvre la feuille ; chaque feuille garde sa couleur (onglet, bande, tuile).',
+      'Les tuiles de l’accueil et les boutons « Voir » s’ouvrent d’un clic.',
+      'Les chiffres clés sont des formules vivantes (DATA_KPI) : ils suivent les données du classeur.',
+      'Chaque chapitre s’ouvre sur « Analyse de la feuille », puis le constat chiffré, les visuels, l’analyse, ce que disent la réglementation et la recherche, les recommandations.',
+      'Les sources (Internet comprises) sont datées dans l’onglet SOURCES ; le rouge signale une alerte.',
+    ], '▸');
+  }
   const sheets: Sheet[] = [ck];
 
   // ── One view per chapter ──
@@ -772,6 +1037,15 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
     const s = new Sheet(chapterNames[i]!, X.tabColor.detail);
     header(s, ctx, `${ch.n}. ${ch.title}${ch.headline ? ` — ${ch.headline}` : ''}`, `${ch.kicker ?? `CHAPITRE ${ch.n}`} · ${sub}`);
     nav(s, ctx);
+    // CAC: every sheet opens on « Analyse de la feuille » (cream, liseré in the sheet's colour).
+    if (cac()) {
+      const lead = ch.lecture ?? ch.analyse[0] ?? ch.headline;
+      if (lead) {
+        label(s, 'Analyse de la feuille');
+        para(s, lead, { fill: C.ice, accent: colors[s.name] ?? C.navy, sz: 9.5 });
+        s.gap(8);
+      }
+    }
     if (ch.kpis?.length || ch.constats.length) {
       section(s, 'Le constat chiffré');
       if (ch.kpis?.length) tiles(s, ch.kpis.slice(0, 4).map((k) => kpiTile({ ...k, code: '' })));
@@ -945,6 +1219,8 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
   }
   sheets.push(calc.sheet);
 
+  // CAC: each view's tab takes its colour.
+  if (cac()) for (const sh of sheets) if (colors[sh.name]) sh.tab = colors[sh.name]!;
   // ── Build ──
   const wb = XLSXS.utils.book_new();
   for (const s of sheets) {
@@ -1033,10 +1309,33 @@ function anchorXml(s: Sheet, x: number, w: number, r: number, inset: number, bod
   const tr = locate(rh, bottom);
   return `<xdr:twoCellAnchor editAs="absolute"><xdr:from><xdr:col>${f.i}</xdr:col><xdr:colOff>${f.off}</xdr:colOff><xdr:row>${fr.i}</xdr:row><xdr:rowOff>${fr.off}</xdr:rowOff></xdr:from><xdr:to><xdr:col>${t.i}</xdr:col><xdr:colOff>${t.off}</xdr:colOff><xdr:row>${tr.i}</xdr:row><xdr:rowOff>${tr.off}</xdr:rowOff></xdr:to>${body}<xdr:clientData/></xdr:twoCellAnchor>`;
 }
+/** An anchor at an absolute place (EMU), whatever rows and columns it crosses (CAC shapes, menu below the last row). */
+function anchorAbs(s: Sheet, x: number, w: number, y: number, h: number, body: string): string {
+  const cw = [...s.cols.map(colEmu), ...Array.from({ length: 30 }, () => colEmu(10))];
+  const rh = Array.from({ length: s.aoa.length + 400 }, (_, i) => ptEmu(s.heights[i] ?? 15));
+  const f = locate(cw, Math.max(0, x));
+  const t = locate(cw, Math.max(0, x + w));
+  const fr = locate(rh, Math.max(0, y));
+  const tr = locate(rh, Math.max(0, y + h));
+  return `<xdr:twoCellAnchor editAs="absolute"><xdr:from><xdr:col>${f.i}</xdr:col><xdr:colOff>${f.off}</xdr:colOff><xdr:row>${fr.i}</xdr:row><xdr:rowOff>${fr.off}</xdr:rowOff></xdr:from><xdr:to><xdr:col>${t.i}</xdr:col><xdr:colOff>${t.off}</xdr:colOff><xdr:row>${tr.i}</xdr:row><xdr:rowOff>${tr.off}</xdr:rowOff></xdr:to>${body}<xdr:clientData/></xdr:twoCellAnchor>`;
+}
 function shapesXml(s: Sheet, links: string[], pics: Uint8Array[], idBase: number): string {
   let id = idBase;
   const out: string[] = [];
   for (const sh of s.shapes) {
+    if (sh.kind === 'cac' && sh.body) {
+      const reg = (t: string) => {
+        links.push(t);
+        return `rIdL${links.length}`;
+      };
+      out.push(anchorAbs(s, sh.x, sh.w, sh.y ?? 0, sh.h ?? 0, sh.body(id++, reg)));
+      continue;
+    }
+    if (sh.kind === 'picture' && sh.png && sh.y != null) {
+      pics.push(sh.png);
+      out.push(anchorAbs(s, sh.x, sh.w, sh.y, sh.h ?? 0, `<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${id++}" name="Logo"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip xmlns:r="${REL}" r:embed="rIdP${pics.length}"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic>`));
+      continue;
+    }
     const rh = ptEmu(s.heights[sh.r] ?? 15);
     // A button keeps its height whatever the row (a tall scorecard row must not inflate it).
     if (sh.kind === 'button') sh.inset = Math.max(sh.inset, Math.round((rh - ptEmu(sh.small ? 16 : 18)) / 2));
@@ -1109,7 +1408,14 @@ function finishWorkbook(bytes: Uint8Array, sheets: Sheet[], d: Dossier): Uint8Ar
     const key = `xl/worksheets/sheet${i + 1}.xml`;
     if (!z[key]) return;
     let xml = strFromU8(z[key]!);
-    const pane = s.freezeRow ? `<pane ySplit="${s.freezeRow}" topLeftCell="A${s.freezeRow + 1}" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="B${s.freezeRow + 1}" sqref="B${s.freezeRow + 1}"/>` : '';
+    // CAC: the header rows AND the « PAGES » column A are frozen (the reference's B10).
+    const fr = s.freezeRow ?? (cac() ? s.headRows : undefined);
+    const pane =
+      cac() && s.headRows && fr
+        ? `<pane xSplit="1" ySplit="${fr}" topLeftCell="B${fr + 1}" activePane="bottomRight" state="frozen"/><selection pane="topRight" activeCell="B1" sqref="B1"/><selection pane="bottomLeft" activeCell="A${fr + 1}" sqref="A${fr + 1}"/><selection pane="bottomRight" activeCell="B${fr + 1}" sqref="B${fr + 1}"/>`
+        : fr
+          ? `<pane ySplit="${fr}" topLeftCell="A${fr + 1}" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="B${fr + 1}" sqref="B${fr + 1}"/>`
+          : '';
     const view = `<sheetViews><sheetView showGridLines="0" zoomScale="${s.name === 'DONNÉES' ? 85 : zoom}" zoomScaleNormal="${zoom}" workbookViewId="0"${i === 0 ? ' tabSelected="1"' : ''}>${pane}</sheetView></sheetViews>`;
     xml = /<sheetViews>[\s\S]*?<\/sheetViews>/.test(xml) ? xml.replace(/<sheetViews>[\s\S]*?<\/sheetViews>/, view) : xml.replace(/(<dimension [^>]*\/>)/, `$1${view}`);
     const sp = `<sheetPr><tabColor rgb="FF${s.tab}"/><pageSetUpPr fitToPage="1"/></sheetPr>`;

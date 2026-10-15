@@ -301,6 +301,8 @@ export interface Settings {
   designPicker?: boolean;
   /** Default export theme (house = GOD 3D · BLUE ECOBANK). */
   exportTheme?: string;
+  /** Layout grammar of the committee deliverables (xlsx / docx / pptx): « cac » (default since 15/10/2026) or « comite ». */
+  exportFormat?: 'cac' | 'comite';
   rememberKey: boolean;
   defaultModel: string;
   fallbackModel: string;

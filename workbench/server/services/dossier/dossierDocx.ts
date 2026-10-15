@@ -5,7 +5,8 @@
 // the decisions; annexes A–E (hypotheses, data quality, parameters, glossary, bibliography). Header and footer on every
 // page. Colours and fonts from the active design.
 import { strToU8, zipSync } from 'fflate';
-import { activeDesign, liveColorProxy, type Design } from '../houseDesign';
+import { activeDesign, liveColorProxy, setActiveTheme, type Design } from '../houseDesign';
+import { CAC_NEUTRALS, cacDesign, cacStates } from './cacSkin';
 import { CHART_CT, CHART_REL, docxChartRun } from '../officeChart';
 import { orderPPr } from '../officeCore';
 import { allRecos, type Dossier, type Kpi, type Reco, type Tone } from './dossier';
@@ -19,6 +20,11 @@ export interface ReportLogo {
 const C = liveColorProxy((c) => c) as Design['color'];
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const PAGE_W = 9638; // A4 text width in twips with 2 cm margins
+/** CAC format (cacSkin.ts) while a report is written: its colours per chapter come from the palette. */
+let CAC_ON = false;
+let ST: string[] = [];
+const cacD = () => CAC_ON;
+const pad2 = (n: number) => String(n).padStart(2, '0');
 // Harmonised tones (v62): theme colours carry the meaning; red only for a risk, the accent for « à surveiller ».
 const toneColor = (t?: Tone): string => (t === 'risk' ? C.risk : t === 'warn' ? C.gold : t === 'ok' ? C.green : t === 'info' ? C.blue : C.navy);
 const darken = (hex: string, f: number) => [0, 2, 4].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - f)).toString(16).padStart(2, '0')).join('').toUpperCase();
@@ -44,7 +50,10 @@ const tc = (inner: string, o: { w: number; fill?: string; borders?: string; vAli
 const NO_BORDERS = ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map((s) => `<w:${s} w:val="nil"/>`).join('');
 const tbl = (rows: string[], widths: number[], o: { borders?: string; extra?: string } = {}) =>
   `<w:tbl><w:tblPr><w:tblW w:w="${widths.reduce((a, b) => a + b, 0)}" w:type="dxa"/><w:tblBorders>${o.borders ?? NO_BORDERS}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="90" w:type="dxa"/><w:right w:w="90" w:type="dxa"/></w:tblCellMar>${o.extra ?? ''}</w:tblPr><w:tblGrid>${widths.map((w) => `<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>${rows.join('')}</w:tbl>`;
-const label = (t: string) => para(run(t, { b: true, sz: 17, color: C.blue, caps: true }), { pPr: `<w:keepNext/><w:pBdr><w:left w:val="single" w:sz="18" w:space="6" w:color="${C.gold}"/></w:pBdr>${spacing(200, 60)}<w:ind w:left="120"/>` });
+const label = (t: string) =>
+  cacD()
+    ? para(run(t, { b: true, sz: 18, color: C.blue, caps: true }), { pPr: `<w:keepNext/><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="2" w:color="${C.blue}"/></w:pBdr>${spacing(220, 80)}` })
+    : para(run(t, { b: true, sz: 17, color: C.blue, caps: true }), { pPr: `<w:keepNext/><w:pBdr><w:left w:val="single" w:sz="18" w:space="6" w:color="${C.gold}"/></w:pBdr>${spacing(200, 60)}<w:ind w:left="120"/>` });
 const bullet = (t: string, o: { color?: string; char?: string; sz?: number } = {}) =>
   para(`${run(`${o.char ?? '▪'}  `, { color: o.color ?? C.gold, b: true, sz: o.sz ?? 20 })}${run(t, { sz: o.sz ?? 20 })}`, { pPr: `<w:ind w:left="360" w:hanging="240"/>${spacing(0, 60)}` });
 const body = (t: string, o: R = {}) => para(run(t, { sz: 20, ...o }), { pPr: spacing(0, 100) });
@@ -56,10 +65,11 @@ function dataTable(head: string[], rows: string[][], widths?: number[], o: { fir
   const ws = widths && widths.length === n ? widths.map((p) => Math.floor(PAGE_W * p)) : Array.from({ length: n }, () => Math.floor(PAGE_W / n));
   const sz = o.sz ?? 17;
   const cell = (t: string, j: number, header: boolean, tone: string | null, zebra: boolean) =>
-    tc(para(run(t, { sz, b: header || (j === 0 && Boolean(tone)), color: header ? C.white : tone && j === 0 ? C.white : C.text, mono: !header && isNum(t) }), { pPr: `<w:jc w:val="${header ? 'center' : isNum(t) ? 'right' : 'left'}"/>${spacing(40, 40)}` }), {
+    tc(para(run(t, { sz, b: header || (j === 0 && Boolean(tone)), color: header ? (cacD() ? C.navy : C.white) : tone && j === 0 ? C.white : C.text, mono: !header && isNum(t) }), { pPr: `<w:jc w:val="${header ? 'center' : isNum(t) ? 'right' : 'left'}"/>${spacing(40, 40)}` }), {
       w: ws[j]!,
-      fill: header ? C.navy : tone && j === 0 ? tone : zebra ? C.panel : undefined,
-      borders: header ? `<w:bottom w:val="single" w:sz="12" w:color="${C.gold}"/>` : `<w:bottom w:val="single" w:sz="4" w:color="${C.line}"/>`,
+      // CAC: bold marine on the palette's pale tint with a marine rule; no zebra.
+      fill: header ? (cacD() ? C.subtle : C.navy) : tone && j === 0 ? tone : zebra && !cacD() ? C.panel : undefined,
+      borders: header ? `<w:bottom w:val="single" w:sz="${cacD() ? 8 : 12}" w:color="${cacD() ? C.navy : C.gold}"/>` : `<w:bottom w:val="single" w:sz="4" w:color="${C.line}"/>`,
       vAlign: 'center',
     });
   const rowsXml = [
@@ -112,6 +122,18 @@ function kpiStrip(kpis: Kpi[], cols: number, cover = false): string {
         cells.push(tc('', { w: gap }));
       }
       widths.push(cw);
+      if (cacD()) {
+        // CAC card: white, a thick top rule in the card's colour (red for a risk), caps label, 24 pt figure, warm sub-line.
+        const top = k.tone === 'risk' ? CAC_NEUTRALS.alert : ST[(r0 + i) % Math.max(1, ST.length)] ?? C.navy;
+        const v = compactValue(k.value, cw);
+        const inner =
+          para(run(k.code && !cover ? `${k.code} · ${k.label}` : k.label, { b: true, sz: 15, color: C.text2, caps: true }), { pPr: `${spacing(80, 20)}<w:ind w:left="100" w:right="60"/>` }) +
+          para(run(v, { b: true, sz: fitValueSz(v, cw, 44), color: C.navy }), { pPr: `${spacing(0, 20)}<w:ind w:left="100"/>` }) +
+          para(run(k.sub ?? k.method ?? '', { sz: 16, color: C.text2 }), { pPr: `${spacing(0, 80)}<w:ind w:left="100" w:right="60"/>` });
+        const thin = (side: string) => `<w:${side} w:val="single" w:sz="4" w:color="${C.line}"/>`;
+        cells.push(tc(inner, { w: cw, fill: 'FFFFFF', borders: `<w:top w:val="single" w:sz="24" w:color="${top}"/>${thin('left')}${thin('bottom')}${thin('right')}` }));
+        return;
+      }
       const tone = toneColor(k.tone);
       const inner = cover
         ? para(run(compactValue(k.value, cw), { b: true, sz: fitValueSz(compactValue(k.value, cw), cw, 36), color: C.navy, mono: true }), { pPr: `${spacing(100, 20)}<w:ind w:left="100"/>` }) +
@@ -152,7 +174,21 @@ function recoTable(recos: Reco[], withAxis = false): string {
 const callout = (title: string, text: string, color = C.gold) =>
   tbl([`<w:tr>${tc(para(run(title, { b: true, sz: 17, color: C.navy }), { pPr: spacing(80, 40) }) + para(run(text, { i: true, sz: 19, color: C.text }), { pPr: spacing(0, 100) }), { w: PAGE_W, fill: C.ice, borders: `<w:left w:val="single" w:sz="24" w:color="${color}"/>` })}</w:tr>`], [PAGE_W]) + para('', { pPr: spacing(0, 80) });
 
-export function dossierDocx(d: Dossier, opts: { logo?: ReportLogo | null; brand?: string } = {}): Uint8Array {
+export function dossierDocx(d: Dossier, opts: { logo?: ReportLogo | null; brand?: string; skin?: 'comite' | 'cac' } = {}): Uint8Array {
+  if (opts.skin !== 'cac') return dossierDocxCore(d, opts);
+  const base = activeDesign();
+  ST = cacStates(base.color, base.chartSeries);
+  const prev = setActiveTheme(cacDesign(base));
+  CAC_ON = true;
+  try {
+    return dossierDocxCore(d, opts);
+  } finally {
+    CAC_ON = false;
+    ST = [];
+    setActiveTheme(prev);
+  }
+}
+function dossierDocxCore(d: Dossier, opts: { logo?: ReportLogo | null; brand?: string }): Uint8Array {
   const logo = opts.logo && opts.logo.png.length ? opts.logo : null;
   const charts: { rid: string; file: string; xml: string }[] = [];
   const b: string[] = [];
@@ -180,7 +216,31 @@ export function dossierDocx(d: Dossier, opts: { logo?: ReportLogo | null; brand?
     para(run(d.title, { b: true, sz: d.title.length > 48 ? 46 : 54, color: C.white }), { pPr: spacing(0, 80) }) +
     (d.subtitle ? para(run(d.subtitle, { sz: 21, color: C.subtle }), { pPr: spacing(0, 120) }) : '') +
     para(run([d.org, d.unit].filter(Boolean).join(' · ') || brand, { sz: 16, color: C.subtle }), { pPr: spacing(0, 240) });
-  b.push(
+  if (cacD()) {
+    // CAC cover: marine 5 pt band, breadcrumb, 20 pt title and warm subtitle beside the logo, CONFIDENTIEL, the alert pill,
+    // the warm 2 pt rule, the key-figure cards, then « Le message clé ».
+    const lead = d.kpis.find((k) => k.tone === 'risk') ?? d.kpis[0];
+    const left =
+      para(run(`🏠  01  ·  RAPPORT   —   Arrêté du ${d.asOf ?? d.date}${d.audience ? ` · ${d.audience}` : ''}`, { b: true, sz: 18, color: C.navy }), { pPr: spacing(60, 60) }) +
+      para(run(d.title, { b: true, sz: d.title.length > 60 ? 36 : 40, color: C.navy }), { pPr: spacing(0, 60) }) +
+      para(run(d.subtitle ?? [d.org, d.unit].filter(Boolean).join(' · '), { sz: 20, color: C.text2 }), { pPr: spacing(0, 60) });
+    const right =
+      (logo ? para(pictureXml('rIdLogo', 9002, 'Logo', logo.width, logo.height, 40 * 12700), { pPr: `<w:jc w:val="right"/>${spacing(60, 60)}` }) : para(run(brand.slice(0, 26), { b: true, sz: 22, color: C.navy }), { pPr: `<w:jc w:val="right"/>${spacing(60, 60)}` })) +
+      para(run(`🔒 ${(d.confidentiality ?? 'CONFIDENTIEL').toUpperCase().slice(0, 30)}`, { b: true, sz: 16, color: CAC_NEUTRALS.alert }), { pPr: `<w:jc w:val="right"/>${spacing(0, 0)}` });
+    b.push(
+      para('', { pPr: `<w:pBdr><w:top w:val="single" w:sz="40" w:space="1" w:color="${C.navy}"/></w:pBdr>${spacing(0, 60)}` }),
+      tbl([`<w:tr><w:trPr><w:cantSplit/></w:trPr>${tc(left, { w: 6900, vAlign: 'top' })}${tc(right, { w: PAGE_W - 6900, vAlign: 'top' })}</w:tr>`], [6900, PAGE_W - 6900]),
+      lead ? para(run(`⚠  ${lead.value} · ${lead.label}`, { b: true, sz: 21, color: CAC_NEUTRALS.alert }), { pPr: `<w:shd w:val="clear" w:color="auto" w:fill="${CAC_NEUTRALS.alertBg}"/>${spacing(80, 80)}<w:ind w:left="60"/>` }) : '',
+      para('', { pPr: `<w:pBdr><w:bottom w:val="single" w:sz="16" w:space="1" w:color="${C.line}"/></w:pBdr>${spacing(0, 240)}` }),
+      kpiStrip(d.kpis.slice(0, 8), 4, true),
+      para(run('📣  01    Le message clé', { b: true, sz: 26, color: C.navy }), { pPr: `<w:shd w:val="clear" w:color="auto" w:fill="${C.panel}"/><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="2" w:color="${C.navy}"/></w:pBdr>${spacing(200, 120)}` }),
+      para(run(`💡  ${d.thesis}`, { b: true, sz: 28, color: C.navy }), { pPr: spacing(0, 120) }),
+      d.messages[0] ? body(d.messages[0]) : '',
+      para(`${run('Émetteur : ', { b: true, sz: 18, color: C.navy })}${run(d.author ?? brand, { sz: 18 })}`, { pPr: spacing(200, 40) }),
+      d.dataSource ? para(`${run('Sources : ', { b: true, sz: 18, color: C.navy })}${run(`${d.dataSource}${d.asOf ? ` (arrêté du ${d.asOf})` : ''}${d.sources.length ? `, ${d.sources.length} sources documentaires` : ''}`, { sz: 18 })}`, { pPr: spacing(0, 40) }) : '',
+      pageBreak(),
+    );
+  } else b.push(
     tbl([`<w:tr><w:trPr><w:cantSplit/></w:trPr>${tc(block, { w: PAGE_W, fill: C.navy, vAlign: 'top' })}</w:tr>`], [PAGE_W], { extra: '' }),
     para('', { pPr: `<w:pBdr><w:bottom w:val="single" w:sz="24" w:space="1" w:color="${C.gold}"/></w:pBdr>${spacing(0, 360)}` }),
     kpiStrip(d.kpis.slice(0, 4), 4, true),
@@ -228,7 +288,16 @@ export function dossierDocx(d: Dossier, opts: { logo?: ReportLogo | null; brand?
 
   // ── Chapters ──
   for (const ch of d.chapters) {
-    b.push(para(run(`${ch.n}. ${ch.title}${ch.headline ? ` : ${ch.headline}` : ''}`, { b: true, sz: 30, color: C.navy }), { style: 'Heading1', pPr: '<w:pageBreakBefore/>' }));
+    if (cacD()) {
+      // CAC: « 01    Titre » on the pale panel with its marine rule, then « Analyse de la feuille » in the chapter's colour.
+      const col = ST[(ch.n - 1) % Math.max(1, ST.length)] ?? C.navy;
+      b.push(para(`${run('▌ ', { b: true, sz: 30, color: col })}${run(`${pad2(ch.n)}    ${ch.title}`, { b: true, sz: 30, color: C.navy })}`, { style: 'Heading1', pPr: '<w:pageBreakBefore/>' }));
+      const lead = ch.headline ?? ch.lecture;
+      if (lead) {
+        b.push(label('Analyse de la feuille'));
+        b.push(tbl([`<w:tr>${tc(para(run(lead, { sz: 19, color: C.text }), { pPr: spacing(60, 60) }), { w: PAGE_W, fill: C.ice, borders: `<w:left w:val="single" w:sz="24" w:color="${col}"/>` })}</w:tr>`], [PAGE_W]) + para('', { pPr: spacing(0, 80) }));
+      }
+    } else b.push(para(run(`${ch.n}. ${ch.title}${ch.headline ? ` : ${ch.headline}` : ''}`, { b: true, sz: 30, color: C.navy }), { style: 'Heading1', pPr: '<w:pageBreakBefore/>' }));
     if (ch.kpis?.length) b.push(kpiStrip(ch.kpis.slice(0, 4).map((k) => ({ ...k, code: '' })), Math.min(4, ch.kpis.length)));
     if (ch.constats.length) {
       b.push(label('Constat chiffré'));
@@ -322,7 +391,7 @@ function pictureXml(rid: string, id: number, name: string, w: number, h: number,
   let cy = h * 9525;
   cx = Math.round((cx * fitH) / Math.max(1, cy));
   cy = fitH;
-  return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="${esc(name)}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="${esc(name)}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:drawing></w:r>`;
+  return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="${esc(name)}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="${esc(name)}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
 }
 
 function pack(d: Dossier, bodyXml: string, charts: { rid: string; file: string; xml: string }[], logo: ReportLogo | null): Uint8Array {
@@ -335,7 +404,7 @@ function pack(d: Dossier, bodyXml: string, charts: { rid: string; file: string; 
   const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${W}><w:body>${bodyXml}<w:sectPr><w:headerReference w:type="default" r:id="rIdHdr"/><w:footerReference w:type="default" r:id="rIdFtr"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/><w:titlePg/></w:sectPr></w:body></w:document>`;
   const style = (id: string, name: string, size: number, color: string, extra = '', basedOn = 'Normal') =>
     `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="${basedOn}"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="120"/>${extra}</w:pPr><w:rPr><w:b/><w:color w:val="${color}"/><w:sz w:val="${size}"/></w:rPr></w:style>`;
-  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${W}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${D.font.ui}" w:hAnsi="${D.font.ui}" w:eastAsia="${D.font.ui}" w:cs="${D.font.ui}"/><w:color w:val="${C.text}"/><w:sz w:val="20"/><w:lang w:val="fr-FR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>${style('Heading1', 'heading 1', 30, C.navy, `<w:pBdr><w:bottom w:val="single" w:sz="18" w:space="4" w:color="${C.gold}"/></w:pBdr><w:outlineLvl w:val="0"/>`)}${style('Heading2', 'heading 2', 24, C.blue, '<w:outlineLvl w:val="1"/>')}${style('Heading3', 'heading 3', 21, C.navy, '<w:outlineLvl w:val="2"/>')}<w:style w:type="paragraph" w:styleId="TOC1"><w:name w:val="toc 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="39"/><w:pPr><w:tabs><w:tab w:val="right" w:leader="dot" w:pos="${PAGE_W}"/></w:tabs><w:spacing w:after="60"/></w:pPr></w:style><w:style w:type="paragraph" w:styleId="TOC2"><w:name w:val="toc 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="39"/><w:pPr><w:ind w:left="300"/><w:spacing w:after="40"/></w:pPr></w:style><w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:tblPr><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style></w:styles>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${W}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${D.font.ui}" w:hAnsi="${D.font.ui}" w:eastAsia="${D.font.ui}" w:cs="${D.font.ui}"/><w:color w:val="${C.text}"/><w:sz w:val="20"/><w:lang w:val="fr-FR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>${style('Heading1', 'heading 1', cacD() ? 26 : 30, C.navy, cacD() ? `<w:pBdr><w:bottom w:val="single" w:sz="12" w:space="4" w:color="${C.navy}"/></w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="${C.panel}"/><w:outlineLvl w:val="0"/>` : `<w:pBdr><w:bottom w:val="single" w:sz="18" w:space="4" w:color="${C.gold}"/></w:pBdr><w:outlineLvl w:val="0"/>`)}${style('Heading2', 'heading 2', 24, C.blue, '<w:outlineLvl w:val="1"/>')}${style('Heading3', 'heading 3', 21, C.navy, '<w:outlineLvl w:val="2"/>')}<w:style w:type="paragraph" w:styleId="TOC1"><w:name w:val="toc 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="39"/><w:pPr><w:tabs><w:tab w:val="right" w:leader="dot" w:pos="${PAGE_W}"/></w:tabs><w:spacing w:after="60"/></w:pPr></w:style><w:style w:type="paragraph" w:styleId="TOC2"><w:name w:val="toc 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="39"/><w:pPr><w:ind w:left="300"/><w:spacing w:after="40"/></w:pPr></w:style><w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:tblPr><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style></w:styles>`;
   const settings = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings ${W}><w:defaultTabStop w:val="708"/><w:characterSpacingControl w:val="doNotCompress"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>`;
   const files: Record<string, Uint8Array> = {
     '[Content_Types].xml': strToU8(
