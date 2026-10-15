@@ -13,6 +13,11 @@ export const FREE_CLOUD = ['llm7:gpt-oss:20b', 'llm7:nemotron-3-nano:30b', 'llm7
 /** The in-browser model (nothing leaves the computer). */
 export const BROWSER_MODELS = ['browser:qwen3-0.6b', 'browser:qwen3-1.7b'] as const;
 export type BrowserModel = (typeof BROWSER_MODELS)[number];
+/**
+ * A keyless anonymous service or the in-browser model. They are listed (the user may pick them) but never enter the
+ * AUTO routing or the Apprentice free pool: they answer through the free chain (no key, or every provider failed).
+ */
+export const isAnonFree = (id: string): boolean => /^(llm7|pollinations|browser):/.test(id);
 
 const DATA_TOOL = /^(data|report|dossier|filesystem|memory|knowledge|decision|project|vault|terminal|code|apex)(__|\.)/;
 const DATA_FILE = /\.(xlsx|xlsm|xls|csv|tsv|json|parquet|docx|pdf|pptx|txt)\b/i;

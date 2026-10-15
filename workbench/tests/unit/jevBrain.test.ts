@@ -13,7 +13,10 @@ import {
   readableUrls,
   wikidataQuery,
 } from '../../server/jev/web/freeTools';
-import { carriesImages, carriesPrivateData, freeCanTakeOver, freePlan, FREE_CLOUD, restMsFor } from '../../server/llm/freeRoute';
+import { carriesImages, carriesPrivateData, freeCanTakeOver, freePlan, FREE_CLOUD, isAnonFree, restMsFor } from '../../server/llm/freeRoute';
+import { rankByValue } from '../../server/llm/routing';
+import { freePool } from '../../server/jev/fabric/council';
+import type { ModelInfo } from '../../shared/types';
 import { compactRequest, forSmallModel, jevParts, parseQwenOutput, pickTools } from '../../server/llm/browserPrompt';
 import {
   acceptTechnique,
@@ -185,6 +188,28 @@ describe('v63 — lot B : modèles gratuits sans clé', () => {
     expect(freeCanTakeOver({ status: 403, message: 'Key limit exceeded' })).toBe(true);
     expect(carriesImages([{ role: 'user', content: [{ type: 'text', text: 'décris' }, { type: 'image_url', image_url: { url: 'data:image/png;base64,AA' } }] }])).toBe(true);
     expect(carriesImages([{ role: 'user', content: 'texte seul' }])).toBe(false);
+  });
+
+  it('jamais en routage AUTO ni dans le vivier Apprentice : seulement par la chaîne gratuite ou au choix de l’utilisateur', () => {
+    const info = (id: string, price: number): ModelInfo => ({
+      id,
+      name: id,
+      provider: id.split(/[:/]/)[0]!,
+      created: 1_750_000_000,
+      contextLength: 128_000,
+      maxCompletionTokens: null,
+      inputPrice: price,
+      outputPrice: price,
+      capabilities: { tools: true, reasoning: false, vision: false, structuredOutputs: false },
+      efforts: [],
+      defaultEffort: null,
+      description: '',
+    });
+    const models = [info('llm7:gpt-oss:20b', 0), info('browser:qwen3-0.6b', 0), info('pollinations:openai', 0), info('openai/gpt-4o-mini', 0.00000015), info('acme/x:free', 0)];
+    expect(['llm7:gpt-oss:20b', 'pollinations:openai', 'browser:qwen3-1.7b'].every(isAnonFree)).toBe(true);
+    expect(isAnonFree('openai/gpt-4o-mini')).toBe(false);
+    expect(rankByValue(models, { tier: 'cheap', needsVision: false, contextTokens: 1000 }).map((r) => r.m.id).filter(isAnonFree)).toEqual([]);
+    expect(freePool(models).map((m) => m.id)).toEqual(['acme/x:free']);
   });
 });
 

@@ -185,7 +185,7 @@ test('Champion Science: empty lab shows no champion and no fabricated figure; th
   await expect(page.getByTestId('champion-scenario')).toContainText('SIMULATED TEST ONLY');
   await expect(page.getByTestId('champion-scenario')).toContainText('ROLLBACK');
   // the simulation changed nothing real
-  await page.getByRole('tab', { name: 'Vue d’ensemble' }).click();
+  await page.getByTestId('champion-science').getByRole('tab', { name: 'Vue d’ensemble' }).click();
   await expect(page.getByTestId('champion-overview')).toContainText('Aucun champion');
   expect(((await readKv(page, 'jevLog')) as unknown[] | undefined)?.length ?? 0).toBe(0);
   expect(errors.filter((e) => !/Failed to load resource|net::/.test(e))).toEqual([]);

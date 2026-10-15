@@ -3,6 +3,7 @@
 // each extra model must pass the economic governor, the evaluator is deterministic first, and a
 // paid LLM judge only looks at the DISPUTED point.
 import type { ModelInfo } from '../../../shared/types';
+import { isAnonFree } from '../../llm/freeRoute';
 import type { JevLogEntry } from '../metrics';
 import { similarity } from '../live';
 import { qualityCheck, type QaResult } from '../qa';
@@ -250,7 +251,7 @@ export interface FreeModel {
 export const isFree = (m: ModelInfo) => m.id.endsWith(':free') || (m.inputPrice === 0 && m.outputPrice === 0);
 export function freePool(models: ModelInfo[]): FreeModel[] {
   return models
-    .filter(isFree)
+    .filter((m) => isFree(m) && !isAnonFree(m.id))
     .map((m) => ({
       id: m.id,
       name: m.name,

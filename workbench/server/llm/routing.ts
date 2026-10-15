@@ -8,6 +8,7 @@ import { reclassify } from '../jev/omni/reclassify';
 import type { ModelInfo } from '@shared/types';
 import type { AutoTiers } from '../services/settings';
 import { intelMax, intelligenceInfo, type IntelMetric } from './modelIntel';
+import { isAnonFree } from './freeRoute';
 
 export type QualityTier = 'cheap' | 'balanced' | 'quality' | 'maximum';
 export type TaskType =
@@ -347,7 +348,8 @@ export function rankByValue(
   const maxI = intelMax('intelligence');
   const pool: RankedModel[] = [];
   for (const m of models) {
-    if (!usable(m) || !m.capabilities.tools) continue;
+    // Anonymous free services and the in-browser model are never AUTO-routed: they answer through the free chain only.
+    if (!usable(m) || !m.capabilities.tools || isAnonFree(m.id)) continue;
     if (p.needsVision && !m.capabilities.vision) continue;
     if (m.contextLength && m.contextLength < p.contextTokens * 1.25) continue;
     const info = intelligenceInfo(m.id, m.slug);
