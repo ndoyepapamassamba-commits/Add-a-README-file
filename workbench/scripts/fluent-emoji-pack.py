@@ -1,42 +1,44 @@
-import json, os, sys, urllib.request, urllib.parse
+# Génère server/assets/fluentEmoji3d.ts : émojis Microsoft Fluent Emoji 3D (licence MIT, © Microsoft Corporation),
+# 64 px, PNG 128 couleurs. Usage : python3 scripts/fluent-emoji-pack.py [--add]  (réseau requis vers raw.githubusercontent.com)
+import base64, json, re, sys, urllib.parse, urllib.request
 from io import BytesIO
 from PIL import Image
-# emoji → Fluent folder (CLDR short name); skin-tone folders use Default/
-NAMES = {
- '🏠':'House','🛡️':'Shield','⏳':'Hourglass not done','🏦':'Bank','⚖️':'Balance scale','💸':'Money with wings','🧮':'Abacus',
- '🔐':'Locked with key','🎯':'Bullseye','🏆':'Trophy','✅':'Check mark button','🗳️':'Ballot box with ballot','🧩':'Puzzle piece',
- '⚙️':'Gear','🔍':'Magnifying glass tilted left','📚':'Books','📘':'Blue book','🗂️':'Card index dividers','⚠️':'Warning',
- '📊':'Bar chart','📈':'Chart increasing','📉':'Chart decreasing','🏭':'Factory','👥':'Busts in silhouette','💼':'Briefcase','💧':'Droplet',
- '🏛️':'Classical building','☂️':'Umbrella','🕵️':'Detective','🧪':'Test tube','⬅️':'Left arrow','➡️':'Right arrow',
- '📂':'Open file folder','🔎':'Magnifying glass tilted right','📁':'File folder','📌':'Pushpin','🧾':'Receipt','💠':'Diamond with a dot',
- '🗃️':'Card file box','🧭':'Compass','📎':'Paperclip','🪙':'Coin','🏷️':'Label','📐':'Triangular ruler','📣':'Megaphone',
- '🔢':'Input numbers','📖':'Open book','📝':'Memo','🎚️':'Level slider','🔒':'Locked','💡':'Light bulb','📄':'Page facing up',
- '🚀':'Rocket','✨':'Sparkles','🧠':'Brain','👁️':'Eye','🎬':'Clapper board','🎨':'Artist palette','🗓️':'Spiral calendar',
- '💬':'Speech balloon','🧰':'Toolbox','🔑':'Key','🗑️':'Wastebasket','💾':'Floppy disk','📥':'Inbox tray','📤':'Outbox tray',
- '🔄':'Counterclockwise arrows button','▶️':'Play button','⏹️':'Stop button','⏸️':'Pause button','✏️':'Pencil','📋':'Clipboard',
- '🔗':'Link','🌐':'Globe with meridians','🖼️':'Framed picture','🎥':'Movie camera','🎙️':'Studio microphone','🔊':'Speaker high volume',
- '❌':'Cross mark','➕':'Plus','🧹':'Broom','📦':'Package','🛠️':'Hammer and wrench','🔬':'Microscope','🤖':'Robot','⭐':'Star',
- '🏁':'Chequered flag','📸':'Camera with flash','🗺️':'World map','🧱':'Brick','🎲':'Game die','💎':'Gem stone','🪄':'Magic wand',
- '🔥':'Fire','⚡':'High voltage','🎉':'Party popper','👀':'Eyes','🙋':'Person raising hand','🧑‍💻':'Technologist','🤝':'Handshake',
- '🗨️':'Left speech bubble','🧬':'Dna','🪟':'Window','🖨️':'Printer','📧':'E-mail','📅':'Calendar','⏱️':'Stopwatch','💰':'Money bag',
- '📮':'Postbox','🧯':'Fire extinguisher','📍':'Round pushpin','🔔':'Bell','🔧':'Wrench','🖥️':'Desktop computer','📱':'Mobile phone',
- '🗄️':'File cabinet','📑':'Bookmark tabs','🧷':'Safety pin','🎛️':'Control knobs','🏗️':'Building construction','🌍':'Globe showing europe-africa',
- '📰':'Newspaper','🎓':'Graduation cap','🧑‍⚖️':'Judge','🏢':'Office building','🚦':'Vertical traffic light','🎁':'Wrapped gift',
-}
-base='https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/'
-out={}; miss=[]
-for e,n in NAMES.items():
-    slug=n.lower().replace(' ','_').replace('-','_')
-    cands=[f'{n}/3D/{slug}_3d.png', f'{n}/Default/3D/{slug}_3d_default.png']
-    ok=False
-    for c in cands:
-        url=base+urllib.parse.quote(c)
+
+OUT = 'server/assets/fluentEmoji3d.ts'
+BASE = 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/'
+# émoji → dossier Fluent (nom court CLDR) ; les émojis à teinte de peau sont dans Default/
+NAMES = json.load(open('scripts/fluent-emoji-names.json', encoding='utf8'))
+
+def fetch(name):
+    slug = name.lower().replace(' ', '_').replace('-', '_')
+    for c in (f'{name}/3D/{slug}_3d.png', f'{name}/Default/3D/{slug}_3d_default.png'):
         try:
-            b=urllib.request.urlopen(url,timeout=20).read()
-            im=Image.open(BytesIO(b)).convert('RGBA').resize((72,72),Image.LANCZOS)
-            bio=BytesIO(); im.save(bio,'PNG',optimize=True); out[e]=bio.getvalue(); ok=True; break
-        except Exception as ex: pass
-    if not ok: miss.append((e,n))
-import base64
-json.dump({e:base64.b64encode(v).decode() for e,v in out.items()}, open('pack.json','w'))
-print('ok',len(out),'miss',miss, 'bytes', sum(len(v) for v in out.values()))
+            b = urllib.request.urlopen(BASE + urllib.parse.quote(c), timeout=20).read()
+        except Exception:
+            continue
+        im = Image.open(BytesIO(b)).convert('RGBA').resize((64, 64), Image.LANCZOS)
+        q = im.quantize(colors=128, method=Image.FASTOCTREE, dither=Image.FLOYDSTEINBERG)
+        bio = BytesIO(); q.save(bio, 'PNG', optimize=True)
+        return base64.b64encode(bio.getvalue()).decode()
+    return None
+
+have = {}
+if '--add' in sys.argv:
+    for k, v in re.findall(r'^  ("[^"]+"): ("[A-Za-z0-9+/=]+"),$', open(OUT, encoding='utf8').read(), re.M):
+        have[json.loads(k)] = json.loads(v)
+miss = []
+for e, n in NAMES.items():
+    k = e.replace('️', '')
+    if k in have: continue
+    b = fetch(n)
+    if b: have[k] = b
+    else: miss.append(n)
+lines = ['// GENERATED by scripts/fluent-emoji-pack.py — do not edit by hand.',
+         '// Microsoft Fluent Emoji 3D (MIT, © Microsoft Corporation — see FLUENT-EMOJI-LICENSE.txt), 64 px, 128-colour PNG.',
+         "// The premium emoji of the exports (medallions, menu, buttons) and of the app's buttons: the same clay-like 3D look",
+         '// on Windows, macOS, Android and in Office, where the system emoji fonts all differ.',
+         '/* eslint-disable */', 'export const FLUENT_3D_PNG: Record<string, string> = {']
+lines += [f'  {json.dumps(k, ensure_ascii=False)}: {json.dumps(v)},' for k, v in have.items()]
+lines.append('};')
+open(OUT, 'w', encoding='utf8').write('\n'.join(lines) + '\n')
+print('emojis', len(have), 'absents', miss)

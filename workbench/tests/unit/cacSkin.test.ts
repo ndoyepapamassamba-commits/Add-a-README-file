@@ -135,7 +135,7 @@ describe('v64 — exports « application » : émojis 3D, graphiques plats, cart
     expect(buttonEmoji('Assurances')).toBe('🛡️');
     expect(buttonEmoji('IFRS 9 et BCEAO')).toBe('⚖️');
     expect(buttonEmoji('Impayés > 90 jours')).toBe('💸');
-    expect(topicEmoji('Sans rapport')).toBeNull();
+    expect(topicEmoji('zzz qqq')).toBeNull();
     expect(ORDERED.test('Jamais respecté')).toBe(false);
     expect(ORDERED.test('Échue > 180 j')).toBe(true);
   });

@@ -7,7 +7,7 @@
 import { strToU8, zipSync } from 'fflate';
 import { activeDesign, liveColorProxy, setActiveTheme, type Design } from '../houseDesign';
 import { emojiRelId, emojiRelsFor, fluentB64 } from '../../assets/fluentEmoji';
-import { CAC_NEUTRALS, buttonEmoji, cacDesign, cacStates, flatFigure, tintOf } from './cacSkin';
+import { CAC_NEUTRALS, buttonEmoji, cacDesign, cacStates, flatFigure, tintOf, setEmojiContext } from './cacSkin';
 import { CHART_CT, CHART_REL, docxChartRun } from '../officeChart';
 import { orderPPr } from '../officeCore';
 import { allRecos, type Dossier, type Kpi, type Reco, type Tone } from './dossier';
@@ -175,7 +175,7 @@ function recoTable(recos: Reco[], withAxis = false): string {
 const callout = (title: string, text: string, color = C.gold) =>
   tbl([`<w:tr>${tc(para(run(title, { b: true, sz: 17, color: C.navy }), { pPr: spacing(80, 40) }) + para(run(text, { i: true, sz: 19, color: C.text }), { pPr: spacing(0, 100) }), { w: PAGE_W, fill: C.ice, borders: `<w:left w:val="single" w:sz="24" w:color="${color}"/>` })}</w:tr>`], [PAGE_W]) + para('', { pPr: spacing(0, 80) });
 
-export function dossierDocx(d: Dossier, opts: { logo?: ReportLogo | null; brand?: string; skin?: 'comite' | 'cac' } = {}): Uint8Array {
+function dossierDocxSkinned(d: Dossier, opts: { logo?: ReportLogo | null; brand?: string; skin?: 'comite' | 'cac' } = {}): Uint8Array {
   if (opts.skin !== 'cac') return dossierDocxCore(d, opts);
   const base = activeDesign();
   ST = cacStates(base.color, base.chartSeries);
@@ -434,4 +434,14 @@ function pack(d: Dossier, bodyXml: string, charts: { rid: string; file: string; 
   Object.assign(files, emoFiles);
   for (const c of charts) files[`word/charts/${c.file}`] = strToU8(c.xml);
   return zipSync(files);
+}
+
+/** The report's adaptive emoji (its domain, one distinct emoji per chapter) are set for the whole export. */
+export function dossierDocx(d: Dossier, opts: { logo?: ReportLogo | null; brand?: string; skin?: 'comite' | 'cac' } = {}): Uint8Array {
+  setEmojiContext(d);
+  try {
+    return dossierDocxSkinned(d, opts);
+  } finally {
+    setEmojiContext(null);
+  }
 }

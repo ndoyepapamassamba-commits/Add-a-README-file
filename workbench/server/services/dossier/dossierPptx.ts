@@ -6,7 +6,7 @@
 import { strToU8, zipSync } from 'fflate';
 import { activeDesign, liveColorProxy, setActiveTheme, type Design } from '../houseDesign';
 import { emojiRelId, emojiRelsFor, fluentB64 } from '../../assets/fluentEmoji';
-import { CAC_NEUTRALS, buttonEmoji, cacDesign, cacStates, flatFigure, tintOf, topicEmoji } from './cacSkin';
+import { CAC_NEUTRALS, buttonEmoji, cacDesign, cacStates, flatFigure, tintOf, topicEmoji, setEmojiContext } from './cacSkin';
 /** CAC format (cacSkin.ts) while a deck is written; the band colour of the current chapter. */
 let CAC_ON = false;
 let ST: string[] = [];
@@ -123,7 +123,7 @@ interface Part {
 }
 
 
-export function dossierPptx(d: Dossier, opts: DeckOptions & { skin?: 'comite' | 'cac' } = {}): Uint8Array {
+function dossierPptxSkinned(d: Dossier, opts: DeckOptions & { skin?: 'comite' | 'cac' } = {}): Uint8Array {
   if (opts.skin !== 'cac') return dossierPptxCore(d, opts);
   const base = activeDesign();
   ST = cacStates(base.color, base.chartSeries);
@@ -579,3 +579,13 @@ function packDeck(d: Dossier, parts: Part[], logo: DeckLogo | null): Uint8Array 
 
 export const deckSlideCount = (d: Dossier): number => 4 + d.chapters.length * 2 + 2 + 2; // indicative
 export type { Chapter };
+
+/** The report's adaptive emoji (its domain, one distinct emoji per chapter) are set for the whole export. */
+export function dossierPptx(d: Dossier, opts: DeckOptions & { skin?: 'comite' | 'cac' } = {}): Uint8Array {
+  setEmojiContext(d);
+  try {
+    return dossierPptxSkinned(d, opts);
+  } finally {
+    setEmojiContext(null);
+  }
+}

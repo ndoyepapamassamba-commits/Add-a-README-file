@@ -9,6 +9,7 @@
 // la référence utilisait des images figées.
 import type { Design } from '../houseDesign';
 import type { Figure } from './dossier';
+import { adaptiveEmoji, assignEmojis, detectDomain, domainEmoji } from '../../assets/emojiLexicon';
 
 type Col = Design['color'];
 const hx = (c: string) => c.replace('#', '').slice(-6).toUpperCase();
@@ -139,55 +140,39 @@ export function sp(o: SpOpt): string {
 }
 export { hsl as hslOf, hexOf as hexFromHsl, REL as REL_NS, EMOJI as EMOJI_RX };
 
-// ── Premium button emoji (v64, consigne du 15/10/2026 : « partout où il y a un bouton, un émoji premium de décoration »)
-// The emoji of a button / page, from its words: the topic first (assurances 🛡️, impayés 💸, IFRS 9 ⚖️…), then the action
-// (ouvrir 📂, voir 🔎). Rendered in the colour emoji font (Segoe UI Emoji in Microsoft 365, Apple / Noto elsewhere).
-const BUTTON_EMOJI: [RegExp, string][] = [
-  [/accueil|cockpit|home|sommaire/, '🏠'],
-  [/assurance/, '🛡️'],
-  [/deferral|differ|report[ée]?s?\b|echeanc/, '⏳'],
-  [/domicil/, '🏦'],
-  [/ifrs|bceao|reglement|prudenti|norme|contentieux|litige/, '⚖️'],
-  [/impaye|arriere|retard|recouvr/, '💸'],
-  [/provision|depreciation|\becl\b/, '🧮'],
-  [/garantie|surete|collateral/, '🔐'],
-  [/concentration|exposition|contrepartie/, '🎯'],
-  [/top|classement|palmares/, '🏆'],
-  [/plan d|action|recommand/, '✅'],
-  [/decision|vote/, '🗳️'],
-  [/hypothese/, '🧩'],
-  [/parametre|reglage/, '⚙️'],
-  [/qualite/, '🔍'],
-  [/source|reference/, '📚'],
-  [/glossaire|lexique/, '📘'],
-  [/donnee|base|liste/, '🗂️'],
-  [/risque|alerte|attention/, '⚠️'],
-  [/synthese|tableau de bord|dashboard|indicateur|kpi|chiffre/, '📊'],
-  [/tendance|evolution|croissance/, '📈'],
-  [/secteur|industrie/, '🏭'],
-  [/client|tiers|beneficiaire/, '👥'],
-  [/credit|engagement|pret|portefeuille|encours/, '💼'],
-  [/liquidit|tresorerie/, '💧'],
-  [/capital|fonds propres|solvabilit/, '🏛️'],
-  [/couverture/, '☂️'],
-  [/conformit|fraude|audit|controle/, '🕵️'],
-  [/methode|analyse/, '🧪'],
-  [/precedent/, '⬅️'],
-  [/suivant/, '➡️'],
-  [/ouvrir/, '📂'],
-  [/voir|detail/, '🔎'],
+// ── Premium emoji (v64) — ADAPTIVE (consigne : « différents reportings, les émojis doivent suivre ») ──────────────
+// Navigation words keep their emoji (ouvrir 📂, voir 🔎…); every other label gets the emoji of its MEANING in the report's
+// domain (emojiLexicon), the chapters of one report all different. Exporters set the report's context first.
+const ACTION_EMOJI: [RegExp, string][] = [
+  [/^(accueil|cockpit|home|sommaire)\b/, '🏠'],
+  [/^precedent/, '⬅️'],
+  [/^suivant/, '➡️'],
+  [/^ouvrir\b/, '📂'],
+  [/^(voir|detail)\b/, '🔎'],
 ];
-const BUTTON_SPARE = ['📁', '📌', '🧾', '💠', '🗃️', '🧭', '📎', '🪙', '🏷️', '📐'];
-const foldFr = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-/** The premium emoji of a button or page label (`i` picks a distinct spare emoji when no topic matches). */
-/** The topic emoji of a label, or null when no topic matches. */
+const foldFr = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+let EMO_CTX: { domain: string; titles: Map<string, string> } = { domain: 'general', titles: new Map() };
+/** The report's emoji context: its domain and one distinct emoji per chapter (null resets). */
+export function setEmojiContext(d: { title?: string; chapters?: { title: string }[]; kpis?: { label: string }[] } | null): void {
+  if (!d) {
+    EMO_CTX = { domain: 'general', titles: new Map() };
+    return;
+  }
+  const chapters = (d.chapters ?? []).map((c) => c.title);
+  const domain = detectDomain([d.title ?? '', ...chapters, ...(d.kpis ?? []).map((k) => k.label)].join(' '));
+  const picks = assignEmojis(chapters, domain);
+  EMO_CTX = { domain, titles: new Map(chapters.map((t, i) => [foldFr(t), picks[i]!])) };
+}
+export const emojiDomain = () => EMO_CTX.domain;
+/** The topic emoji of a label in the current report, or null when no word of it evokes one. */
 export function topicEmoji(label: string): string | null {
   const t = foldFr(label);
-  return BUTTON_EMOJI.find(([re]) => re.test(t))?.[1] ?? null;
+  return EMO_CTX.titles.get(t) ?? adaptiveEmoji(label, { domain: EMO_CTX.domain });
 }
+/** The premium emoji of a button or page label: navigation, the chapter's own, its meaning, else the domain's. */
 export function buttonEmoji(label: string, i = 0): string {
   const t = foldFr(label);
-  return BUTTON_EMOJI.find(([re]) => re.test(t))?.[1] ?? BUTTON_SPARE[Math.abs(i) % BUTTON_SPARE.length]!;
+  return ACTION_EMOJI.find(([re]) => re.test(t))?.[1] ?? topicEmoji(label) ?? domainEmoji(EMO_CTX.domain, i);
 }
 
 // ── Flat, IBCS-style figures (v64, veille du 15/10/2026 : pas de 3D, barres horizontales pour comparer des catégories,

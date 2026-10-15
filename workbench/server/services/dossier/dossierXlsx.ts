@@ -13,7 +13,8 @@ import XLSXS from 'xlsx-js-style';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { activeDesign, liveColorProxy, setActiveTheme, type Design } from '../houseDesign';
 import { fluentPng } from '../../assets/fluentEmoji';
-import { CAC_GRID, CAC_NEUTRALS, DONUT, EMOJI_RX, buttonEmoji, topicEmoji, cacDesign, cacStates, flatChart, flatFigure, run, shortFr, sp, sp as shapeXml, tintOf } from './cacSkin';
+import { adaptiveEmoji, domainEmoji } from '../../assets/emojiLexicon';
+import { CAC_GRID, CAC_NEUTRALS, DONUT, EMOJI_RX, buttonEmoji, emojiDomain, topicEmoji, cacDesign, cacStates, flatChart, flatFigure, run, shortFr, sp, sp as shapeXml, tintOf, setEmojiContext } from './cacSkin';
 import { chartXml, fixStylesXml, type ChartSpec } from '../houseStyle';
 import { allRecos, type Chapter, type Dossier, type Figure, type Kpi, type Tone } from './dossier';
 import { columnConcepts } from '../dataLexicon';
@@ -467,7 +468,13 @@ function appPass(s: Sheet) {
 function cacKpis(s: Sheet, list: Tile[]) {
   bareCard(s);
   // The card's own topic (encours 💼, top 10 🏆, lignes 🗂️…); a risk card keeps the warning sign.
-  const toneGlyph = (t: Tile) => (t.tone === 'risk' ? '⚠️' : (topicEmoji(t.label) ?? (t.tone === 'warn' ? '⏳' : t.tone === 'ok' ? '✅' : '📊')));
+  // Adaptive and distinct within the strip: the card's meaning in the report's domain, never twice the same emoji.
+  const usedK = new Set<string>();
+  const toneGlyph = (t: Tile, i: number) => {
+    const e = t.tone === 'risk' ? '⚠️' : (adaptiveEmoji(t.label, { domain: emojiDomain(), avoid: usedK }) ?? domainEmoji(emojiDomain(), i, usedK));
+    usedK.add(e);
+    return e;
+  };
   for (let k = 0; k < list.length; k += 4) {
     const r = [s.row(20), s.row(40), s.row(18)] as const;
     const part = list.slice(k, k + 4);
@@ -495,7 +502,8 @@ function cacKpis(s: Sheet, list: Tile[]) {
         const hy = topOf(s, r[0]) + Math.round((ptEmu(78) - hd) / 2);
         cacShape(s, hx, hy, hd, hd, (id) => sp({ id, name: 'Halo', prst: 'ellipse', grad: [tintOf(color, 0.5), tintOf(color, 0.88)], shadow: true }), true);
         const ed = Math.round(hd * 0.62);
-        if (!emojiPic(s, hx + Math.round((hd - ed) / 2), hy + Math.round((hd - ed) / 2), ed, toneGlyph(t))) medallion(s, hx + Math.round((hd - ed) / 2), hy + Math.round((hd - ed) / 2), ed, toneGlyph(t), color);
+        const g = toneGlyph(t, k + j);
+        if (!emojiPic(s, hx + Math.round((hd - ed) / 2), hy + Math.round((hd - ed) / 2), ed, g)) medallion(s, hx + Math.round((hd - ed) / 2), hy + Math.round((hd - ed) / 2), ed, g, color);
       }
     });
     s.gap(8);
@@ -849,7 +857,7 @@ function writeData(live: LiveX, calc: Calc): void {
 }
 
 // ── The workbook ──────────────────────────────────────────────────────────────
-export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
+function dossierXlsxSkinned(d: Dossier, o: XlsxOptions = {}): Uint8Array {
   if (o.skin !== 'cac') return dossierXlsxCore(d, o);
   // CAC format in the chosen palette: the state colours come from the palette, then the CAC design (warm neutrals,
   // Calibri) is active while the workbook is written, and the previous theme comes back whatever happens.
@@ -1730,4 +1738,14 @@ function addRel(z: Record<string, Uint8Array>, sheetNo: number, rel: string) {
   const key = `xl/worksheets/_rels/sheet${sheetNo}.xml.rels`;
   const xml = z[key] ? strFromU8(z[key]!) : `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`;
   z[key] = strToU8(xml.replace('</Relationships>', `${rel}</Relationships>`));
+}
+
+/** The report's adaptive emoji (its domain, one distinct emoji per chapter) are set for the whole export. */
+export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
+  setEmojiContext(d);
+  try {
+    return dossierXlsxSkinned(d, o);
+  } finally {
+    setEmojiContext(null);
+  }
 }
