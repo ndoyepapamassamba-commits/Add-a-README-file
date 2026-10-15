@@ -377,3 +377,141 @@ export function designGate(bytes: Uint8Array, d: Design, o: { skip?: ReadonlySet
   if (kept) fixed.push(`${kept} graphique(s) conservé(s) tel(s) quel(s) (références non lisibles) — couleurs du design appliquées`);
   return { bytes: zipSync(z, { level: 6 }), score: Math.max(0, 100 - 20 * failed.length), fixed, failed, checked };
 }
+
+/**
+ * PALETTE FIDELITY: share of the coloured uses (fills, fonts, borders, chart and shape colours — neutrals aside) of an
+ * Office file that belong to the design: its palette and surfaces, its chart series, or a tint / shade of its hues.
+ * Status colours (risk, warning, success…) carry a meaning and are left out of the count. A deliverable announced « in
+ * the chosen design » must measure ≥ 0.9; the workbook of v64 delivered in remembered Ecobank colours scores ~0 on Onyx.
+ */
+export function paletteFidelity(bytes: Uint8Array, d: Design): { share: number; coloured: number; foreign: { hex: string; n: number }[] } | null {
+  let z: Zip;
+  try {
+    z = unzipSync(bytes, { filter: (e) => /^(xl\/(styles|charts\/chart\d*|drawings\/drawing\d*)|word\/(document|styles|header\d*|footer\d*)|ppt\/(slides\/slide\d*|slideMasters\/slideMaster\d*|slideLayouts\/slideLayout\d*))\.xml$/.test(e.name) });
+  } catch {
+    return null;
+  }
+  const c = d.color as Record<string, string>;
+  const core = new Set([...['navy', 'blue', 'gold', 'cyan', 'sky', 'ice', 'panel', 'line', 'subtle', 'text', 'text2'].map((k) => c[k]).filter((x): x is string => !!x), ...d.chartSeries].map(hx));
+  const status = new Set(['risk', 'warn', 'green', 'orange', 'orange2', 'hit', 'hitText', 'input'].map((k) => c[k]).filter((x): x is string => !!x).map(hx));
+  const hues = designHues(d);
+  const foreign = new Map<string, number>();
+  let coloured = 0;
+  let own = 0;
+  for (const part of Object.values(z)) {
+    for (const m of strFromU8(part).matchAll(/(?:rgb="(?:FF)?|srgbClr val="|w:(?:color|fill) w:val="|fill="#)([0-9A-Fa-f]{6})"/g)) {
+      const h = hx(m[1]!);
+      if (neutral(h) || status.has(h)) continue;
+      coloured++;
+      if (core.has(h) || hues.some((a) => sameFamily(h, a)) || [...core].some((a) => tonalFamily(h, a))) own++;
+      else foreign.set(h, (foreign.get(h) ?? 0) + 1);
+    }
+  }
+  return {
+    share: coloured ? own / coloured : 1,
+    coloured,
+    foreign: [...foreign].map(([hex, n]) => ({ hex, n })).sort((a, b) => b.n - a.n),
+  };
+}
+
+/** Hue gap in degrees. */
+const hueGap = (a: number, b: number) => Math.abs(((a - b + 540) % 360) - 180);
+/**
+ * A near-neutral design colour (charcoal 1C1C24 of Onyx, graphite…) still has a hue: its tints and shades of the same hue
+ * and a similar (low) saturation belong to it — `sameFamily` ignores such colours on purpose (s < 0.25).
+ */
+export function tonalFamily(h: string, a: string): boolean {
+  const [h1, s1] = hsl(h);
+  const [h2, s2] = hsl(a);
+  return s2 >= 0.05 && s2 < 0.25 && s1 >= 0.05 && hueGap(h1, h2) <= 14 && Math.abs(s1 - s2) <= 0.2;
+}
+
+/**
+ * RE-PALETTE an Office file already produced, colours and fonts only — no cell, text, formula, chart range or layout
+ * changes (the full design gate adds bands and rebuilds charts; a « same file, other palette » must not). The coloured
+ * uses are grouped by hue into families; the most used family takes the design's primary, the next its accent, then its
+ * secondary colours, each colour keeping its relief (lightness offset from the family base). Pale surfaces take the
+ * design's surface of nearest lightness; status colours (red, amber, green of the alerts) keep their meaning.
+ */
+export function repaletteOffice(bytes: Uint8Array, d: Design): { bytes: Uint8Array; replaced: number; families: { from: string; to: string; n: number }[] } | null {
+  let z: Zip;
+  try {
+    z = unzipSync(bytes);
+  } catch {
+    return null;
+  }
+  const PART = /^(xl\/(styles|theme\/theme\d*|charts\/chart\d*|drawings\/drawing\d*)|word\/(document|styles|theme\/theme\d*|header\d*|footer\d*)|ppt\/(slides\/slide\d*|slideMasters\/slideMaster\d*|slideLayouts\/slideLayout\d*|theme\/theme\d*))\.xml$/;
+  // Colour attributes only: a 6-digit number elsewhere (satMod val="300000", sizes…) is not a colour.
+  const RX = /((?:\brgb|lastClr|w:fill)="|<a:srgbClr val="|<w:color w:val=")(FF)?([0-9A-Fa-f]{6})(")/g;
+  const count = new Map<string, number>();
+  for (const [k, v] of Object.entries(z)) {
+    if (!PART.test(k)) continue;
+    for (const m of strFromU8(v).matchAll(RX)) {
+      const h = m[3]!.toUpperCase();
+      if (!neutral(h)) count.set(h, (count.get(h) ?? 0) + 1);
+    }
+  }
+  // Families by hue (±20°), seeded by the strong colours (mid lightness, saturated) in order of use.
+  const strong = (h: string) => {
+    const [, sat, l] = hsl(h);
+    return sat >= 0.25 && l >= 0.12 && l <= 0.8;
+  };
+  const byUse = [...count].sort((a, b) => b[1] - a[1]);
+  const fams: { base: string; hue: number; n: number; members: string[] }[] = [];
+  for (const [h, n] of byUse) {
+    if (!strong(h)) continue;
+    const f = fams.find((x) => hueGap(x.hue, hsl(h)[0]) <= 20);
+    if (f) f.n += n;
+    else fams.push({ base: h, hue: hsl(h)[0], n, members: [] });
+  }
+  fams.sort((a, b) => b.n - a.n);
+  // Status hues (red, amber, green) are left alone unless they are one of the two main families of the file.
+  const STATUS = [0, 38, 142];
+  const isStatus = (hue: number) => STATUS.some((x) => hueGap(x, hue) <= 12) && !fams.slice(0, 2).some((f) => hueGap(f.hue, hue) <= 20);
+  const c = d.color;
+  const targets = [c.blue, c.gold, c.cyan, c.sky, c.navy].map(hx);
+  const surfaces = [c.ice, c.panel, c.line, c.subtle].filter((x): x is string => !!x).map(hx);
+  const memo = new Map<string, string>();
+  const famStats = new Map<string, number>();
+  const mapOne = (h: string): string => {
+    const hit = memo.get(h);
+    if (hit) return hit;
+    const [hue, , l] = hsl(h);
+    let out = h;
+    if (neutral(h) || isStatus(hue)) out = h;
+    else if (l > 0.85) out = surfaces.reduce((best, x) => (Math.abs(hsl(x)[2] - l) < Math.abs(hsl(best)[2] - l) ? x : best), surfaces[0] ?? h);
+    else {
+      const i = fams.findIndex((f) => hueGap(f.hue, hue) <= 20);
+      const f = i >= 0 ? fams[i]! : null;
+      const to = targets[Math.max(0, i) % targets.length]!;
+      out = f ? retint(h, f.base, to) : l < 0.3 ? hx(c.navy) : to;
+      if (f) famStats.set(`${f.base}→${to}`, (famStats.get(`${f.base}→${to}`) ?? 0) + 1);
+    }
+    memo.set(h, out);
+    return out;
+  };
+  let replaced = 0;
+  const mono = d.font.mono;
+  for (const [k, v] of Object.entries(z)) {
+    if (!PART.test(k)) continue;
+    const x = strFromU8(v)
+      .replace(RX, (m, pre: string, alpha: string | undefined, hex: string, post: string) => {
+        const to = mapOne(hex.toUpperCase());
+        if (to === hex.toUpperCase()) return m;
+        replaced++;
+        return `${pre}${alpha ?? ''}${to}${post}`;
+      })
+      // Fonts follow the design (figures keep the monospace font).
+      .replace(/(<name val=")([^"]+)("\/>)/g, (m, a: string, f: string, b: string) => (f === mono || /consolas|mono/i.test(f) ? m : `${a}${d.font.ui}${b}`))
+      .replace(/(<a:latin typeface=")([^"+][^"]*)(")/g, (m, a: string, f: string, b: string) => (f === mono || /consolas|mono/i.test(f) ? m : `${a}${d.font.ui}${b}`));
+    z[k] = strToU8(x);
+  }
+  return {
+    bytes: zipSync(z, { level: 6 }),
+    replaced,
+    families: [...famStats].map(([key, n]) => {
+      const [from, to] = key.split('→') as [string, string];
+      return { from, to, n };
+    }),
+  };
+}

@@ -112,6 +112,30 @@ export function applyWebTheme(html: string, id: ThemeId | CustomTheme): string {
 }
 /** Tools whose output takes the chosen theme (the agent sets the active design around the call). */
 export const THEMED_TOOLS = /^(report|data)\.export$|^dossier\.(export|compose)$|^apex\.build_app$/;
+/**
+ * Did the USER ask for the theme the model passes? Only when the user's own words name it: one of the hex colours the
+ * model sends, the theme (its id or the first word of its label), or a colour word. Otherwise the theme comes from the
+ * model's memory (« style maison marine #00415E… ») and the design the user picked in the gallery must win (v64: a
+ * workbook was delivered in the remembered Ecobank colours while the user had chosen Onyx & Or — only the logo followed).
+ */
+const fold = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const COLOUR_WORDS = /\b(rouge|bleu|bleue|vert|verte|violet|violette|mauve|orange|jaune|noir|noire|blanc|blanche|gris|grise|rose|marron|brun|beige|turquoise|cyan|magenta|bordeaux|or|doree?|argent|ivoire|indigo|emeraude|saphir|corail|terracotta|lime|marine|olive|kaki|ocre|lavande|prune|anthracite|ardoise)\b/;
+export function themeAskedByUser(args: Record<string, unknown>, userText: string): boolean {
+  const t = fold(userText);
+  if (!t.trim()) return false;
+  const colors = (args.colors ?? {}) as Record<string, unknown>;
+  for (const v of Object.values(colors)) {
+    const h = typeof v === 'string' ? v.replace('#', '').toLowerCase() : '';
+    if (/^[0-9a-f]{6}$/.test(h) && t.includes(h)) return true;
+  }
+  const id = typeof args.theme === 'string' ? args.theme : '';
+  if (id && id !== 'custom' && id !== 'house') {
+    const th = THEMES[id as ThemeId];
+    const word = fold(th?.label.replace(/^Maison — /, '') ?? '').match(/[a-z]{4,}/)?.[0];
+    if (t.includes(fold(id)) || (word && t.includes(word))) return true;
+  }
+  return COLOUR_WORDS.test(t);
+}
 /** Tools that receive the logo chosen in the gallery (`logoPath`). */
 export const LOGO_TOOLS = /^(data|report|dossier)\.export$/;
 export const kindForTool = (tool: string, args: Record<string, unknown>): DeliverableKind | null => {

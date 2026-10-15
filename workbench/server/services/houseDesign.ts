@@ -323,6 +323,45 @@ const tint = (h: string, f: number) =>
 export function harmonicSeries(primary: string, accent: string, dark: string): string[] {
   return [primary, accent, dark, tint(primary, 0.45), tint(accent, 0.45), shade(primary, 0.35), tint(dark, 0.55), tint(accent, 0.7)];
 }
+/** WCAG 2.x contrast ratio of two hex colours (no #). */
+const lumOf = (h: string) => {
+  const [r, g, b] = [0, 2, 4].map((i) => {
+    const c = parseInt(h.slice(i, i + 2), 16) / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+export const contrastOf = (a: string, b: string) => {
+  const [x, y] = [lumOf(a), lumOf(b)].sort((m, n) => n - m) as [number, number];
+  return (x + 0.05) / (y + 0.05);
+};
+/** Darkens a colour until it reaches `min` contrast on white (text derived from the palette stays readable). */
+const readableOn = (h: string, min: number) => {
+  let x = h;
+  for (let i = 0; i < 24 && contrastOf(x, 'FFFFFF') < min; i++) x = shade(x, 0.12);
+  return x;
+};
+/** Mixes two hex colours (f = share of b). */
+const mixHex = (a: string, b: string, f: number) =>
+  [0, 2, 4]
+    .map((i) => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - f) + parseInt(b.slice(i, i + 2), 16) * f).toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
+/**
+ * The neutrals of a custom palette come from the palette itself (v64: a custom theme kept the house surfaces F5F9FF /
+ * DBE6F7 and the slate text 0F172A, so the chosen colours looked « not reproduced »): surfaces are tints of the primary,
+ * borders a deeper tint, text the dark tone made readable (≥ 12:1 on white), secondary text ≥ 5.5:1.
+ */
+export function customNeutrals(primary: string, dark: string): Pick<Col, 'ice' | 'panel' | 'line' | 'subtle' | 'text' | 'text2'> {
+  return {
+    ice: tint(primary, 0.9),
+    panel: tint(primary, 0.955),
+    line: tint(primary, 0.78),
+    subtle: tint(primary, 0.85),
+    text: readableOn(dark, 12),
+    text2: readableOn(mixHex(dark, '7A7A7A', 0.45), 5.5),
+  };
+}
 export function buildTheme(t: ThemeId | CustomTheme | undefined | null): Design {
   if (!t || t === 'house') return DESIGN;
   if (typeof t === 'string') {
@@ -344,7 +383,7 @@ export function buildTheme(t: ThemeId | CustomTheme | undefined | null): Design 
   return {
     ...DESIGN,
     name: 'Thème personnalisé',
-    color: { ...DESIGN.color, navy: dark, blue: primary, gold: accent, cyan: accent, sky: accent },
+    color: { ...DESIGN.color, ...customNeutrals(primary, dark), navy: dark, blue: primary, gold: accent, cyan: accent, sky: accent },
     font: { ...DESIGN.font, ui: (t.font ?? DESIGN.font.ui).replace(/[^\w -]/g, '').slice(0, 40) || DESIGN.font.ui },
     chartSeries: harmonicSeries(primary, accent, dark),
     filet: { ...DESIGN.filet, color: accent },

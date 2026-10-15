@@ -58,7 +58,7 @@ import { seedHits } from '../../server/jev/memory/seed';
 import { ALTERATION } from '../../server/jev/omni/mission';
 import { pilotAnchor } from '../../server/jev/omni/pilot';
 import { THEMES, buildTheme, setActiveTheme, themeOf } from '../../server/services/houseDesign';
-import { LOGO_TOOLS, THEMED_TOOLS, applyWebTheme, deliverableFromCode, deliverableFromText, kindForTool, type DeliverableKind } from '../../server/services/premiumDesigns';
+import { LOGO_TOOLS, THEMED_TOOLS, applyWebTheme, deliverableFromCode, deliverableFromText, kindForTool, themeAskedByUser, type DeliverableKind } from '../../server/services/premiumDesigns';
 import { isContinuation, missionOf, resumeText } from '../../server/services/missionResume';
 import { isOffice, recolorOffice } from '../../server/services/officeRecolor';
 import { addImagePageDocx, addImageSlidePptx, addImageToHtml, addLogoToHtml, addLogoToOffice } from '../../server/services/officeLogo';
@@ -2625,7 +2625,8 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
   let designNote = '';
   if (dkind && !experimentRun && useStore.getState().settings.designPicker !== false) {
     let choice = designFor(sid);
-    const asked = typeof args.theme === 'string' && args.theme !== 'house' ? (args.theme as string) : null;
+    // The model's theme counts only when the user's own words asked for it; otherwise the gallery choice wins.
+    const asked = typeof args.theme === 'string' && args.theme !== 'house' && themeAskedByUser(args, inp.text) ? (args.theme as string) : null;
     if (!choice && !asked && !inp.signal.aborted) {
       const formats =
         tool.name === 'report.export'
@@ -2653,7 +2654,9 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
     }
     if (choice && !asked) {
       args.theme = choice.theme;
+      // Colours the model remembered never ride along with the user's theme.
       if (choice.colors) args.colors = choice.colors;
+      else delete args.colors;
       // A design copied from the Internet: Excel takes its chart type, and a dashboard reproducing its layout is built.
       // In the committee formats (dossier.export), the Internet design gives its colours to every file and its dashboard
       // is reproduced as an HTML page with the same data.
