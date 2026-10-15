@@ -1,0 +1,252 @@
+{
+ "source": {
+  "file": "scenes.webp",
+  "w": 1536,
+  "h": 1024
+ },
+ "grid": {
+  "cols": 4,
+  "rows": 4
+ },
+ "depth": {
+  "tileW": 240,
+  "tileH": 160,
+  "cols": 4,
+  "rows": 4
+ },
+ "tiles": [
+  {
+   "i": 0,
+   "title": "LE SALON",
+   "subtitle": "À la maison",
+   "rect": [
+    0,
+    0,
+    505,
+    248
+   ],
+   "caption": null,
+   "up": {
+    "file": "tiles/01.webp",
+    "w": 2020,
+    "h": 992
+   }
+  },
+  {
+   "i": 1,
+   "title": "LE MARCHÉ",
+   "subtitle": "Fruits, légumes et pagnes",
+   "rect": [
+    513,
+    0,
+    506,
+    248
+   ],
+   "caption": null,
+   "up": {
+    "file": "tiles/02.webp",
+    "w": 2024,
+    "h": 992
+   }
+  },
+  {
+   "i": 2,
+   "title": "LE MAQUIS",
+   "subtitle": "Soirée foot entre amis",
+   "rect": [
+    1026,
+    0,
+    510,
+    248
+   ],
+   "caption": null,
+   "up": {
+    "file": "tiles/03.webp",
+    "w": 2040,
+    "h": 992
+   }
+  },
+  {
+   "i": 3,
+   "title": "LE VILLAGE",
+   "subtitle": "Sous le baobab",
+   "rect": [
+    0,
+    255,
+    505,
+    250
+   ],
+   "caption": null,
+   "up": {
+    "file": "tiles/04.webp",
+    "w": 2020,
+    "h": 1000
+   }
+  },
+  {
+   "i": 4,
+   "title": "LE MARIAGE",
+   "subtitle": "La cérémonie",
+   "rect": [
+    513,
+    255,
+    506,
+    250
+   ],
+   "caption": null,
+   "up": {
+    "file": "tiles/05.webp",
+    "w": 2024,
+    "h": 1000
+   }
+  },
+  {
+   "i": 5,
+   "title": "L'HÔPITAL",
+   "subtitle": "La visite de l'infirmière",
+   "rect": [
+    1026,
+    255,
+    510,
+    250
+   ],
+   "caption": null,
+   "up": {
+    "file": "tiles/06.webp",
+    "w": 2040,
+    "h": 1000
+   }
+  },
+  {
+   "i": 6,
+   "title": "LA CLASSE",
+   "subtitle": "Le maître au tableau",
+   "rect": [
+    0,
+    513,
+    505,
+    234
+   ],
+   "caption": null,
+   "up": {
+    "file": "tiles/07.webp",
+    "w": 2020,
+    "h": 936
+   }
+  },
+  {
+   "i": 7,
+   "title": "LE TAXI",
+   "subtitle": "Négociation du prix",
+   "rect": [
+    513,
+    513,
+    506,
+    234
+   ],
+   "caption": null,
+   "up": {
+    "file": "tiles/08.webp",
+    "w": 2024,
+    "h": 936
+   }
+  },
+  {
+   "i": 8,
+   "title": "LE SALON DE COIFFURE",
+   "subtitle": "Tresses et brushing",
+   "rect": [
+    1026,
+    513,
+    510,
+    234
+   ],
+   "caption": null,
+   "up": {
+    "file": "tiles/09.webp",
+    "w": 2040,
+    "h": 936
+   }
+  },
+  {
+   "i": 9,
+   "title": "LA PLAGE",
+   "subtitle": "Pirogues et pêcheurs",
+   "rect": [
+    0,
+    754,
+    379,
+    270
+   ],
+   "caption": null,
+   "up": {
+    "file": "tiles/10.webp",
+    "w": 1516,
+    "h": 1080
+   }
+  },
+  {
+   "i": 10,
+   "title": "LE TRIBUNAL",
+   "subtitle": "L'audience",
+   "rect": [
+    387,
+    754,
+    381,
+    270
+   ],
+   "caption": null,
+   "up": {
+    "file": "tiles/11.webp",
+    "w": 1524,
+    "h": 1080
+   }
+  },
+  {
+   "i": 11,
+   "title": "LA DOUANE",
+   "subtitle": "Contrôle des bagages",
+   "rect": [
+    776,
+    754,
+    354,
+    270
+   ],
+   "caption": null,
+   "up": {
+    "file": "tiles/12.webp",
+    "w": 1416,
+    "h": 1080
+   }
+  },
+  {
+   "i": 12,
+   "title": "LE BUREAU",
+   "subtitle": "L'administration",
+   "rect": [
+    1138,
+    754,
+    398,
+    270
+   ],
+   "caption": null,
+   "up": {
+    "file": "tiles/13.webp",
+    "w": 1592,
+    "h": 1080
+   }
+  }
+ ],
+ "models": [
+  "Real-ESRGAN General x4v3 (BSD-3)",
+  "Depth Anything V2 Small (Apache-2.0)"
+ ],
+ "nom": "Scènes de vie 3D",
+ "exemples": [
+  "Vidéo TikTok de 10 s : la classe, travelling lent, relief fort, titre « À l'école »",
+  "La classe en format YouTube, 12 secondes, zoom avant lent",
+  "Le marché, le maquis puis le salon de coiffure, 3 s par plan, avec les noms",
+  "La plage et le village, rythme lent, fin « Abonne-toi »",
+  "La mosaïque en vague"
+ ]
+}

@@ -1,9 +1,72 @@
-# 🏙️ Abidjan 3D — studio de prompts en relief
+# 🏙️ Abidjan 3D — l'univers de la photo animé en 3D
 
 La planche « Abidjan » (30 vignettes de quartiers, 1672×941) animée en **HTML/WebGL (Three.js)** avec le
 même principe que la vidéo « Ivrogne » : une carte de profondeur par image → un vrai maillage 3D → une
 caméra qui bouge. Le studio **lit des prompts**, les traduit en **scène HTML** modifiable, puis les
 **exécute en vidéo (MP4) ou en image (PNG)**. Il fonctionne aussi en **fichier HTML autonome**.
+
+## 🖼️ Plusieurs planches
+
+Le studio anime n'importe quelle planche de vignettes :
+
+| Planche | Dossier | Ouvrir |
+|---|---|---|
+| Abidjan · 30 quartiers | `assets/` | `index.html` |
+| Scènes de vie · 13 scènes (salon, marché, maquis, village, mariage, hôpital, **classe**, taxi, coiffure, plage, tribunal, douane, bureau) | `assets/scenes/` | `index.html#scenes` |
+
+Le sélecteur en haut de la page passe de l'une à l'autre. Fichiers autonomes :
+`npm run build` (Abidjan) et `node tools/build-standalone.mjs --planche scenes`.
+
+Ajouter une planche : placez l'image dans `assets/<nom>/`, écrivez `titres.json`, puis
+
+```bash
+python tools/prepare.py assets/<nom>/image.webp esrgan.onnx depth.onnx assets/<nom>/ --titres assets/<nom>/titres.json --sans-bandeaux
+python tools/prepare_anim.py <mask2former> lama_fp32.onnx --assets assets/<nom>
+python tools/build_mosaic_anim.py --assets assets/<nom>
+```
+
+et ajoutez-la à `assets/planches.json`. La grille peut être irrégulière (colonnes différentes selon les rangées).
+
+## 🚶 Univers animé : personnages, véhicules, vent, eau
+
+Au-delà du mouvement de caméra, **le contenu de la photo s'anime en 3D** :
+
+- **véhicules** (voitures, bus, motos) : ils roulent sur la route, vers le point de fuite ou vers le
+  spectateur, et grandissent ou rétrécissent avec la perspective ;
+- **piétons** (scènes d'extérieur) : ils se déplacent avec un léger rebond de pas et un balancement ;
+- **personnes en intérieur** (classe, salon, tribunal…) : elles restent à leur place et vivent. Assises, elles
+  respirent et se penchent ; debout, elles transfèrent leur appui et font un geste lent du bras ; une **main
+  levée** s'agite ;
+- **bateaux** : ils tanguent ;
+- **palmiers et arbres** : ils ondulent au vent ; **nuages** : ils dérivent ; **mer** : vagues et reflets du soleil ;
+- chaque découpe a une **ombre douce** au sol et garde sa place dans la profondeur 3D ;
+- la **légende** reste toujours devant.
+
+Comment c'est fait (tout est gratuit et tourne sur un ordinateur sans carte graphique) :
+
+1. **Détourage** de chaque élément (Mask2Former, panoptique COCO) : personnes, voitures, bus, motos, vélos,
+   bateaux, ciel, arbres, eau ;
+2. **Reconstruction du décor** derrière les personnages et véhicules (LaMa) ;
+3. chaque personnage ou véhicule devient une **découpe placée en 3D** avec sa trajectoire ;
+4. le studio Three.js anime le tout, en boucle parfaite de 8 s pour la mosaïque.
+
+Case « Animer l'univers » dans la carte Rendu (activée par défaut) ; dans un prompt, « figé » ou « immobile »
+la désactive ; en ligne de commande, `--fige`.
+
+**Limite honnête** : les personnages se déplacent, mais leurs jambes ne marchent pas vraiment. Pour animer les
+corps (marche, gestes), il faut un modèle IA « image → vidéo » (par exemple Wan 2.2, licence Apache-2.0) qui
+demande une carte graphique NVIDIA ; ses clips pourront ensuite être importés dans le studio.
+
+Refaire la préparation (optionnel) :
+
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install transformers onnxruntime opencv-python-headless scipy pillow numpy
+# Mask2Former : https://huggingface.co/facebook/mask2former-swin-tiny-coco-panoptic
+# LaMa (ONNX, Apache-2.0) : https://huggingface.co/Carve/LaMa-ONNX
+python tools/prepare_anim.py <dossier mask2former> lama_fp32.onnx   # ≈ 5 min sur CPU
+python tools/build_mosaic_anim.py                                    # planche animée
+```
 
 ## ✍️ Prompts : du texte à la vidéo ou à l'image
 
@@ -35,6 +98,8 @@ Exemples :
 | « avec les noms des quartiers » | Nom affiché sur chaque plan |
 | « coupe », « fondu » | Transition |
 | « image », « affiche », « miniature » | Sortie PNG au lieu de MP4 |
+| « plein écran », « immersif », « remplir » | L'image remplit le cadre (par exemple une scène large en 9:16) et la caméra la parcourt |
+| « figé », « immobile » | Personnages et véhicules immobiles, seule la caméra bouge |
 | « mes images » | Utilise les images importées (relief simulé : sol proche, fond lointain) |
 
 **Deux interprètes** produisent le même plan :
@@ -115,6 +180,9 @@ node tools/export.mjs --format slides --duration 1.5 --audio musique.mp3
 | `assets/tiles/*.webp` | Les 30 vignettes agrandies ×4 (≈ 1100×728). |
 | `assets/depth-atlas.png`, `assets/meta.json` | Cartes de profondeur, grille, bandeaux, légendes. |
 | `tools/prepare.py` | Découpe la grille, détecte les bandeaux, agrandit (Real-ESRGAN), calcule la profondeur. |
+| `tools/prepare_anim.py` | Univers animé : détourage (Mask2Former), décor reconstruit (LaMa), trajectoires. |
+| `tools/build_mosaic_anim.py` | Assemble la planche animée (décor, masques, découpes à l'échelle de la planche). |
+| `assets/anim/`, `assets/anim.json` | Décors reconstruits, découpes, masques ciel/arbres/eau et trajectoires. |
 | `tools/export.mjs` | Export MP4 en ligne de commande, avec contrôle de fidélité. |
 | `tools/build-standalone.mjs` | Fichier HTML unique et autonome. |
 
@@ -130,7 +198,8 @@ python tools/prepare.py assets/abidjan.webp real_esrgan_general_x4v3.onnx depth_
 ## 🆓 Outils libres et gratuits
 
 Three.js (MIT) · Mediabunny (MPL-2.0) · FFmpeg + x264 (LGPL/GPL) · Playwright + Chromium (Apache-2.0/BSD) ·
-Real-ESRGAN General x4v3 (BSD-3) · Depth Anything V2 Small (Apache-2.0) · ONNX Runtime (MIT).
+Real-ESRGAN General x4v3 (BSD-3) · Depth Anything V2 Small (Apache-2.0) · ONNX Runtime (MIT) ·
+Mask2Former (Meta, code MIT) · LaMa (Apache-2.0) · PyTorch (BSD) · Transformers (Apache-2.0) · OpenCV (Apache-2.0).
 
 Remarque : deux coquilles de l'image d'origine (« Trechville », « SOCOGİ ») sont conservées dans les pixels ;
 la liste des quartiers du studio affiche « Treichville » et « SOCOGI ».

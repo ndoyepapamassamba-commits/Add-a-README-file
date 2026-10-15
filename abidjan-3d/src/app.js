@@ -15,21 +15,58 @@ const loadImage = async (src) => {
   return img;
 };
 
-const meta = embedded?.meta ?? await (await fetch('assets/meta.json')).json();
+// Planche à animer : ?p=scenes charge assets/scenes/ (par défaut, la planche d'Abidjan dans assets/).
+// (le choix passe aussi par l'ancre #scenes : sur claude.ai, seule l'ancre parvient à la page)
+const planche = params.get('p') || location.hash.slice(1);
+const BASE = /^[a-z0-9-]+$/.test(planche) ? `assets/${planche}/` : 'assets/';
+const meta = embedded?.meta ?? await (await fetch(`${BASE}meta.json`)).json();
 const [sourceImage, depthImage] = await Promise.all([
-  loadImage(embedded?.source ?? `assets/${meta.source.file}`),
-  loadImage(embedded?.depth ?? 'assets/depth-atlas.png'),
+  loadImage(embedded?.source ?? `${BASE}${meta.source.file}`),
+  loadImage(embedded?.depth ?? `${BASE}depth-atlas.png`),
 ]);
+if (meta.nom) {
+  document.title = meta.nom;
+  const h1 = document.querySelector('header h1');
+  if (h1) h1.textContent = meta.nom;
+}
+// Sélecteur de planche (absent du fichier autonome, qui n'en contient qu'une).
+if (!embedded) {
+  fetch('assets/planches.json').then((r) => (r.ok ? r.json() : [])).then((list) => {
+    const sel = document.getElementById('planche');
+    if (!sel || list.length < 2) return;
+    for (const p of list) sel.append(new Option(p.nom, p.id, false, p.id === (BASE === 'assets/' ? '' : BASE.slice(7, -1))));
+    sel.hidden = false;
+    sel.onchange = () => { location.hash = sel.value; location.reload(); };
+  }).catch(() => {});
+}
+// Univers animé (découpes, décor reconstruit, masques ciel/arbres/eau), s'il a été préparé.
+const animData = embedded?.anim ?? await fetch(`${BASE}anim.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+const loadAnim = async (i) => {
+  const d = animData.tiles[i];
+  const [fond, decoupes, ambiance] = await Promise.all([d.fond, d.decoupes, d.ambiance].map((f) => loadImage(embedded?.animFiles?.[f] ?? `${BASE}${f}`)));
+  return { fond, decoupes, ambiance };
+};
 const studio = new Studio({
   canvas: $('canvas'), meta, sourceImage, depthImage,
-  loadTile: (i) => loadImage(embedded?.tiles?.[i] ?? `assets/${meta.tiles[i].up.file}`),
+  loadTile: (i) => loadImage(embedded?.tiles?.[i] ?? `${BASE}${meta.tiles[i].up.file}`),
+  animData, loadAnim: animData ? loadAnim : null,
 });
+// Planche animée (mosaïque) : chargée au démarrage si elle a été préparée.
+if (animData?.planche) {
+  try {
+    const [fond, ambiance, decoupes] = await Promise.all([animData.planche.fond, animData.planche.ambiance, animData.planche.decoupes]
+      .map((f) => loadImage(embedded?.animFiles?.[f] ?? `${BASE}${f}`)));
+    studio.setMosaicAnim({ fond, ambiance, decoupes });
+  } catch (err) {
+    console.warn('Planche animée indisponible :', err);
+  }
+}
 const catalog = () => makeCatalog(meta, studio.uploads);
 
 // Diaporama : plan automatique avec les 30 quartiers.
 const SLIDE_MOVES = ['approche', 'orbite-droite', 'orbite-gauche', 'plongee'];
-const autoPlan = (duration = 2.5) => normalizePlan({
-  output: 'video', format: '9:16', relief: 0.15, intensity: 1, transition: 'fondu',
+const autoPlan = (duration = 2.5, animate = true) => normalizePlan({
+  output: 'video', format: '9:16', relief: 0.15, intensity: 1, transition: 'fondu', animate,
   shots: meta.tiles.map((t, i) => ({ image: `tile:${t.i}`, move: SLIDE_MOVES[i % 4], duration })),
 }, catalog());
 
@@ -41,6 +78,7 @@ const state = {
   mode: params.get('mode') === 'original' ? 'original' : '3d',
   camera: params.get('camera') || 'respiration',
   relief: params.has('relief') ? +params.get('relief') : 0.2,
+  animate: params.get('fige') !== '1',   // mosaïque : univers animé
   slideDuration: params.has('duration') ? +params.get('duration') : 2.5,
   user: { yaw: 0, pitch: 0, zoom: 1 },
   pointer: { x: 0, y: 0 },
@@ -52,6 +90,7 @@ function applyPlan(plan) {
   if (plan.format === 'mosaique') {
     state.format = 'mosaic';
     state.camera = plan.camera;
+    state.animate = plan.animate !== false;
     state.relief = plan.relief > 0 ? Math.max(plan.relief, 0.12) : 0;
   } else {
     state.format = 'plan';
@@ -67,7 +106,7 @@ function setupRenderMode() {
   let buf = null;
   window.__studio = {
     async prepare(opts) {
-      Object.assign(state, { mode: opts.mode === 'original' ? 'original' : '3d', autoPointer: true });
+      Object.assign(state, { mode: opts.mode === 'original' ? 'original' : '3d', autoPointer: true, animate: opts.animate !== false });
       let output = 'video', understood = [];
       if (opts.prompt) {
         const r = interpretLocal(opts.prompt, catalog());
@@ -76,7 +115,7 @@ function setupRenderMode() {
         understood = r.understood;
       } else if (opts.format === 'slides') {
         state.format = 'plan';
-        state.plan = autoPlan(opts.slideDuration || 2.5);
+        state.plan = autoPlan(opts.slideDuration || 2.5, opts.animate !== false);
         if (opts.relief != null) state.plan.relief = opts.relief;
       } else {
         state.format = 'mosaic';
@@ -143,7 +182,7 @@ function setupPlayer() {
   const target = { x: 0, y: 0 };
 
   // ---- exemples de prompts
-  const EXAMPLES = [
+  const EXAMPLES = meta.exemples || [
     'Vidéo TikTok de 12 s : travelling sur Cocody puis le Plateau, relief fort, titre « Bienvenue à Abidjan »',
     'Tous les villages au bord de la mer, rythme lent, format YouTube, fin « Abonne-toi »',
     '5 quartiers populaires au hasard, coupes sèches, 2 s par plan, avec les noms des quartiers',
@@ -186,6 +225,9 @@ function setupPlayer() {
     $('cameraRow').hidden = !mosaic;
     $('durationRow').hidden = state.view !== 'slides';
     $('relief').value = mosaic ? state.relief : state.plan.relief;
+    $('animRow').hidden = !animData;
+    $('animate').checked = mosaic ? state.animate !== false : state.plan.animate !== false;
+    $('animate').disabled = state.mode !== '3d';
     $('relief').disabled = state.mode !== '3d';
     $('camera').value = state.camera;
     $('camera').disabled = state.mode !== '3d';
@@ -210,7 +252,7 @@ function setupPlayer() {
     t = 0;
     playing = true;
     if (view === 'mosaic') state.format = 'mosaic';
-    else if (view === 'slides') { state.format = 'plan'; state.plan = autoPlan(state.slideDuration); }
+    else if (view === 'slides') { state.format = 'plan'; state.plan = autoPlan(state.slideDuration, state.animateSlides !== false); }
     else if (state.promptPlan) applyPlan(state.promptPlan);
     syncUI();
   }
@@ -223,6 +265,12 @@ function setupPlayer() {
   $('camera').onchange = (e) => { state.camera = e.target.value; syncUI(); };
   $('duration').value = String(state.slideDuration);
   $('duration').onchange = (e) => { state.slideDuration = +e.target.value; setView('slides'); };
+  $('animate').onchange = (e) => {
+    if (state.format === 'mosaic') { state.animate = e.target.checked; return; }
+    state.plan.animate = e.target.checked;
+    if (state.promptPlan && state.view === 'plan') state.promptPlan.animate = e.target.checked;
+    state.animateSlides = e.target.checked;
+  };
   $('relief').oninput = (e) => {
     if (state.format === 'mosaic') state.relief = +e.target.value;
     else state.plan.relief = +e.target.value;

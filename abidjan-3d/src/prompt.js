@@ -134,7 +134,11 @@ export function interpretLocal(prompt, catalog) {
   // Sujets : noms cités (dans l'ordre du prompt), sinon catégories, sinon une sélection variée.
   const names = [];
   const entries = catalog.tiles
-    .flatMap((t) => [norm(t.title), ...(EXTRA_ALIASES[t.title] || [])].map((alias) => ({ t, alias })))
+    .flatMap((t) => {
+      const n = norm(t.title);
+      const bare = n.replace(/^(le|la|les|l) /, ''); // « classe » trouve « LA CLASSE »
+      return [...new Set([n, bare, ...(EXTRA_ALIASES[t.title] || [])])].map((alias) => ({ t, alias }));
+    })
     .sort((a, b) => b.alias.length - a.alias.length);
   let scan = text;
   for (const { t, alias } of entries) {
@@ -216,6 +220,8 @@ export function interpretLocal(prompt, catalog) {
   const end = endQ ? { text: endQ.text, duration: 2.5 } : null;
   const showNames = /\b(noms? des? (quartiers?|lieux)|afficher? les noms|avec les noms|titre de chaque|nom de chaque)\b/.test(text);
   const transition = /\b(coupe\w*|cut|sans fondu|enchainement sec|sec)\b/.test(text) ? 'coupe' : 'fondu';
+  const animate = !/\b(sans animation|fige\w*|immobiles?|statiques?|photo fixe|sans mouvement)\b/.test(text);
+  const fit = /\b(plein ecran|remplir|rempli\w*|immersi\w*|cadrage serre|sans bandes?|sans flou)\b/.test(text) ? 'cover' : 'contain';
   const camera = /\bvague\b/.test(text) ? 'vague' : /\bsouris\b/.test(text) ? 'souris' : 'respiration';
 
   const fixed = (title?.duration || 0) + (end?.duration || 0);
@@ -223,7 +229,7 @@ export function interpretLocal(prompt, catalog) {
   if (!per && total && ids.length) perShot = Math.max(0.8, (total - fixed) / ids.length);
 
   const plan = normalizePlan({
-    output, format, intensity, relief, transition, camera, title, end,
+    output, format, intensity, relief, transition, camera, title, end, animate, fit,
     shots: ids.map((image, i) => ({
       image,
       move: moves.length ? moves[i % moves.length] : AUTO_MOVES[i % AUTO_MOVES.length],
@@ -246,6 +252,8 @@ export function normalizePlan(p, catalog) {
     intensity: clamp(p?.intensity, 0.3, 2, 1),
     relief: clamp(p?.relief, 0, 0.35, 0.15),
     transition: p?.transition === 'coupe' ? 'coupe' : 'fondu',
+    animate: p?.animate !== false,
+    fit: p?.fit === 'cover' ? 'cover' : 'contain', // cover : l'image remplit le cadre, la caméra la parcourt
     camera: ['respiration', 'vague', 'souris'].includes(p?.camera) ? p.camera : 'respiration',
     title: p?.title?.text ? { text: String(p.title.text).slice(0, 80), duration: clamp(p.title.duration, 1, 8, 2.5) } : null,
     end: p?.end?.text ? { text: String(p.end.text).slice(0, 80), duration: clamp(p.end.duration, 1, 8, 2.5) } : null,
@@ -295,6 +303,8 @@ export function describePlan(plan, catalog, hints = {}) {
     out.push(`Durée : ${per.toFixed(1).replace('.', ',')} s par plan, ${planDuration(plan).toFixed(1).replace('.', ',')} s au total · transition ${plan.transition}`);
   }
   out.push(`Relief : ${plan.relief === 0 ? 'aucun' : plan.relief >= 0.24 ? 'fort' : plan.relief <= 0.09 ? 'léger' : 'normal'}`);
+  if (plan.fit === 'cover') out.push('Cadrage plein écran : l’image remplit le cadre, la caméra la parcourt.');
+  out.push(plan.animate ? 'Univers animé : personnages et véhicules en mouvement, vent, nuages, eau.' : 'Univers figé : seule la caméra bouge.');
   if (plan.title) out.push(`Titre d'ouverture : « ${plan.title.text} »`);
   if (plan.end) out.push(`Carton de fin : « ${plan.end.text} »`);
   if (plan.shots.some((s) => s.text)) out.push('Texte affiché sur les plans.');
@@ -317,6 +327,8 @@ Schéma :
   "intensity": nombre 0.5 à 1.6 (1 = normal, plus grand = caméra plus ample),
   "relief": nombre 0 à 0.3 (0.15 = normal, 0 = sans relief),
   "transition": "fondu" | "coupe",
+  "animate": true pour animer personnages, véhicules, vent et eau ; false si l'utilisateur veut une image figée,
+  "fit": "contain" (image entière sur fond flou) ou "cover" (plein écran, la caméra parcourt l'image),
   "camera": "respiration" | "vague" | "souris" (seulement pour le format mosaique),
   "title": {"text": "titre d'ouverture", "duration": secondes} ou null,
   "end": {"text": "carton de fin", "duration": secondes} ou null,

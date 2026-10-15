@@ -46,6 +46,7 @@
     .status { font-size: 13px; color: var(--muted); min-height: 1.4em; word-break: break-word; }
     .status.ok { color: var(--ok); } .status.err { color: #ff6b6b; }
     .grow { flex: 1; }
+    label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
     fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
     .places { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
     .places button { font-size: 12px; padding: 4px 8px; border-radius: 7px; background: var(--navy); border-color: #2a4f9a; letter-spacing: .3px; }
@@ -80,7 +81,8 @@
   <header>
     <h1>Abidjan 3D</h1>
     <span class="badge" id="badge">Mosaïque · relief 3D</span>
-    <p>Écrivez un prompt : le studio le traduit en scène 3D, puis en vidéo ou en image.</p>
+    <select id="planche" aria-label="Planche à animer" hidden></select>
+    <p>Écrivez un prompt : le studio anime la photo en 3D, puis l'exporte en vidéo ou en image.</p>
   </header>
   <main>
     <div class="stage-wrap">
@@ -160,6 +162,9 @@
               <option value="2.5" selected>2,5 s (76 s au total)</option>
               <option value="4">4 s (2 min au total)</option>
             </select>
+          </div>
+          <div class="row" id="animRow">
+            <label><input type="checkbox" id="animate" checked> Animer l'univers : personnages, véhicules, vent, eau</label>
           </div>
           <div class="row">
             <span>Relief</span>

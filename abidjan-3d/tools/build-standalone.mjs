@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 // Fabrique UN SEUL fichier HTML autonome (planche, 30 vignettes agrandies, profondeur, Three.js,
 // Mediabunny, l'interprète de prompts et le studio intégrés). Il s'ouvre par double-clic, sans serveur ni Internet.
-//   node tools/build-standalone.mjs [--out dist/abidjan-3d.html]
+//   node tools/build-standalone.mjs [--planche scenes] [--out dist/scenes-3d.html]
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const outArg = process.argv.indexOf('--out');
-const outFile = path.resolve(ROOT, outArg > 0 ? process.argv[outArg + 1] : 'dist/abidjan-3d.html');
+const arg = (name) => { const k = process.argv.indexOf(name); return k > 0 ? process.argv[k + 1] : null; };
+const planche = arg('--planche') || '';
+const A = planche ? `assets/${planche}/` : 'assets/';
+const outFile = path.resolve(ROOT, arg('--out') || `dist/${planche || 'abidjan'}-3d.html`);
 const read = (p) => fs.readFileSync(path.resolve(ROOT, p));
 const text = (p) => read(p).toString('utf8');
 const b64 = (buf) => Buffer.from(buf).toString('base64');
@@ -20,7 +22,12 @@ function rewrite(code, from, to, label) {
   return parts.join(to);
 }
 
-const meta = JSON.parse(text('assets/meta.json'));
+const meta = JSON.parse(text(`${A}meta.json`));
+const anim = fs.existsSync(path.resolve(ROOT, `${A}anim.json`)) ? JSON.parse(text(`${A}anim.json`)) : null;
+const animFiles = anim ? [...new Set([
+  ...Object.values(anim.tiles).flatMap((t) => [t.fond, t.decoupes, t.ambiance]),
+  ...(anim.planche ? [anim.planche.fond, anim.planche.ambiance, anim.planche.decoupes] : []),
+])] : [];
 const modules = {
   'three-core': text('vendor/three.core.js'),
   three: rewrite(text('vendor/three.module.js'), "'./three.core.js'", "'three-core'", 'three.module.js'),
@@ -43,8 +50,15 @@ const BOOT = `(() => {
   };
   const url = (id, type) => URL.createObjectURL(new Blob([bytes(id)], { type }));
   const meta = JSON.parse(text('asset-meta'));
+  const animEl = document.getElementById('asset-anim');
+  const anim = animEl ? JSON.parse(animEl.textContent) : null;
+  const animFiles = {};
+  document.querySelectorAll('script[data-anim]').forEach((el) => {
+    const f = el.dataset.anim;
+    animFiles[f] = url(el.id, f.endsWith('.png') ? 'image/png' : 'image/webp');
+  });
   window.__ASSETS = {
-    meta,
+    meta, anim, animFiles,
     source: url('asset-source', 'image/webp'),
     depth: url('asset-depth', 'image/png'),
     tiles: meta.tiles.map((t) => url('asset-tile-' + t.i, 'image/webp')),
@@ -65,9 +79,11 @@ const BOOT = `(() => {
 const block = (id, type, data) => `<script id="${id}" type="${type}">${data}</script>`;
 const payload = [
   block('asset-meta', 'application/json', JSON.stringify(meta)),
-  block('asset-source', 'image/webp;base64', b64(read(`assets/${meta.source.file}`))),
-  block('asset-depth', 'image/png;base64', b64(read('assets/depth-atlas.png'))),
-  ...meta.tiles.map((t) => block(`asset-tile-${t.i}`, 'image/webp;base64', b64(read(`assets/${t.up.file}`)))),
+  block('asset-source', 'image/webp;base64', b64(read(`${A}${meta.source.file}`))),
+  block('asset-depth', 'image/png;base64', b64(read(`${A}depth-atlas.png`))),
+  ...meta.tiles.map((t) => block(`asset-tile-${t.i}`, 'image/webp;base64', b64(read(`${A}${t.up.file}`)))),
+  ...(anim ? [block('asset-anim', 'application/json', JSON.stringify(anim))] : []),
+  ...animFiles.map((f, k) => `<script id="asset-anim-${k}" data-anim="${f}" type="application/octet-stream;base64">${b64(read(`${A}${f}`))}</script>`),
   ...Object.entries(modules).map(([name, code]) => block(`mod-${name}`, 'text/plain;base64', b64(Buffer.from(code, 'utf8')))),
   block('mod-app', 'text/plain;base64', b64(Buffer.from(app, 'utf8'))),
   `<script>${BOOT}</script>`,

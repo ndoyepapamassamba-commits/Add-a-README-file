@@ -8,6 +8,9 @@
 
 Usage :
     python tools/prepare.py assets/abidjan.webp esrgan.onnx depth.onnx assets/
+    python tools/prepare.py planche.webp esrgan.onnx depth.onnx assets/scenes/ --titres titres.json --sans-bandeaux
+(--titres : liste JSON de [titre, sous-titre] dans l'ordre de lecture ; --sans-bandeaux : la planche n'a pas
+de bandeaux de légende.) La grille peut être irrégulière : les colonnes sont cherchées rangée par rangée.
 Dépendances : numpy, pillow, onnxruntime.
 """
 import json
@@ -75,6 +78,28 @@ def detect_grid(gray):
     return xs, ys
 
 
+def detect_cells(gray):
+    """Cellules [(x0, x1, y0, y1)] : rangées entre séparateurs pleine largeur, puis colonnes de chaque rangée."""
+    def bounds(mean, std, size):
+        seps = runs((mean > 236) & (std < 14))
+        for s_ in seps:
+            while s_[1] - s_[0] < 2:
+                s_[0] -= 1
+                s_[1] += 1
+        out, prev = [], 0
+        for a, b in seps:
+            out.append((prev, a - 1))
+            prev = b + 1
+        out.append((prev, size - 1))
+        return [(a, b) for a, b in out if b - a > 20]
+    cells = []
+    for y0, y1 in bounds(gray.mean(1), gray.std(1), gray.shape[0]):
+        band = gray[y0:y1 + 1]
+        for x0, x1 in bounds(band.mean(0), band.std(0), gray.shape[1]):
+            cells.append((x0, x1, y0, y1))
+    return cells
+
+
 def detect_caption(tile):
     """Rectangle (x, y, w, h) du bandeau bleu marine, relatif à la vignette."""
     r, g, b = (tile[..., i].astype(int) for i in range(3))
@@ -126,25 +151,36 @@ def depth_map(session, rgb):
 
 
 def main():
-    src_path, esrgan_path, depth_path, out_dir = sys.argv[1], sys.argv[2], sys.argv[3], Path(sys.argv[4])
+    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    flags = sys.argv[1:]
+    src_path, esrgan_path, depth_path, out_dir = args[0], args[1], args[2], Path(args[3])
+    titles = CAPTIONS
+    if '--titres' in flags:
+        titles = [tuple(x) for x in json.loads(Path(flags[flags.index('--titres') + 1]).read_text())]
+    no_caption = '--sans-bandeaux' in flags
     (out_dir / 'tiles').mkdir(parents=True, exist_ok=True)
     img = np.asarray(Image.open(src_path).convert('RGB'))
     gray = img.mean(2)
     xs, ys = detect_grid(gray)
-    print(f'grille : {len(xs)} colonnes × {len(ys)} lignes')
+    cells = detect_cells(gray)
+    regular = len(cells) == len(xs) * len(ys)
+    if regular:  # grille régulière : découpe historique (colonnes et lignes communes)
+        cells = [(x0, x1, y0, y1) for (y0, y1) in ys for (x0, x1) in xs]
+    print(f'grille : {len(cells)} vignettes ({len(xs)} colonnes × {len(ys)} lignes)' if regular else f'grille irrégulière : {len(cells)} vignettes')
     esrgan = ort.InferenceSession(esrgan_path, providers=['CPUExecutionProvider'])
     depth = ort.InferenceSession(depth_path, providers=['CPUExecutionProvider'])
 
-    cols = len(xs)
+    cols = len(xs) if regular else max(1, int(np.ceil(np.sqrt(len(cells)))))
+    rows = (len(cells) + cols - 1) // cols
     tw, th = DEPTH_TILE
-    atlas = np.zeros((len(ys) * th, cols * tw), np.uint8)
+    atlas = np.zeros((rows * th, cols * tw), np.uint8)
     tiles = []
     t0 = time.time()
-    for r, (y0, y1) in enumerate(ys):
-        for c, (x0, x1) in enumerate(xs):
-            i = r * cols + c
+    for i, (x0, x1, y0, y1) in enumerate(cells):
+        r, c = divmod(i, cols)
+        if True:
             tile = img[y0:y1 + 1, x0:x1 + 1]
-            cap = detect_caption(tile)
+            cap = None if no_caption else detect_caption(tile)
             up = esrgan_upscale(esrgan, tile)
             name = f'tiles/{i + 1:02d}.webp'
             Image.fromarray(up).save(out_dir / name, quality=92, method=6)
@@ -157,7 +193,7 @@ def main():
                 ref = float(np.median(d[max(0, ay0 - 4):max(1, ay0), ax0:ax1]))
                 d[ay0:, ax0:ax1] = ref
             atlas[r * th:(r + 1) * th, c * tw:(c + 1) * tw] = np.round(d * 255)
-            title, subtitle = CAPTIONS[i] if i < len(CAPTIONS) else (f'VIGNETTE {i + 1}', '')
+            title, subtitle = titles[i] if i < len(titles) else (f'VIGNETTE {i + 1}', '')
             tiles.append({
                 'i': i, 'title': title, 'subtitle': subtitle,
                 'rect': [int(x0), int(y0), int(x1 - x0 + 1), int(y1 - y0 + 1)],
@@ -167,9 +203,9 @@ def main():
 
     Image.fromarray(atlas, 'L').save(out_dir / 'depth-atlas.png', optimize=True)
     meta = {
-        'source': {'file': 'abidjan.webp', 'w': int(img.shape[1]), 'h': int(img.shape[0])},
-        'grid': {'cols': cols, 'rows': len(ys)},
-        'depth': {'tileW': tw, 'tileH': th, 'cols': cols, 'rows': len(ys)},
+        'source': {'file': Path(src_path).name, 'w': int(img.shape[1]), 'h': int(img.shape[0])},
+        'grid': {'cols': cols, 'rows': rows},
+        'depth': {'tileW': tw, 'tileH': th, 'cols': cols, 'rows': rows},
         'tiles': tiles,
         'models': ['Real-ESRGAN General x4v3 (BSD-3)', 'Depth Anything V2 Small (Apache-2.0)'],
     }

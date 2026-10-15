@@ -8,7 +8,7 @@
 //   node tools/export.mjs --prompt "Vidéo de 10 s : zoom avant sur Cocody, titre « Abidjan »"
 //   node tools/export.mjs --prompt "Une affiche carrée du village d'Assinie"   # → image PNG
 // Options : --format mosaic|slides  --mode 3d|original  --camera respiration|vague|souris
-//           --relief 0.2  --duration 2.5  --crf 16  --chroma 420|444  --audio musique.mp3  --out <fichier>  --frames <n>
+//           --planche scenes (autre planche, dans assets/scenes/)  --fige (sans animation de l'univers)  --relief 0.2  --duration 2.5  --crf 16  --chroma 420|444  --audio musique.mp3  --out <fichier>  --frames <n>
 // --chroma 444 : master aux couleurs pleine résolution (fichier plus lourd, moins de lecteurs compatibles).
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -29,10 +29,11 @@ const render = {
   relief: opts.relief != null ? +opts.relief : null,
   slideDuration: +(opts.duration || 2.5),
   prompt: typeof opts.prompt === 'string' ? opts.prompt : null,
+  animate: !opts.fige, // --fige : seule la caméra bouge (personnages et véhicules immobiles)
 };
 const slug = (txt) => txt.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
 const baseName = render.prompt ? `prompt-${slug(render.prompt)}`
-  : `abidjan-${render.format === 'slides' ? 'diaporama' : 'mosaique'}-${render.mode === '3d' ? `3d${render.format === 'mosaic' ? `-${render.camera}` : ''}` : 'original'}`;
+  : `abidjan-${render.format === 'slides' ? 'diaporama' : 'mosaique'}-${render.mode === '3d' ? `3d${render.format === 'mosaic' ? `-${render.camera}` : ''}${render.animate ? '-anime' : ''}` : 'original'}`;
 
 let encoder = null, encoderDone = null, firstFrame = null, nextFrame = 0, outFile = null;
 const server = await startServer(0, {
@@ -57,7 +58,8 @@ let info;
 try {
   const page = await browser.newPage({ viewport: { width: 400, height: 400 } });
   page.on('pageerror', (e) => console.error('Erreur page :', e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/index.html?render=1`);
+  const planche = typeof opts.planche === 'string' ? `&p=${encodeURIComponent(opts.planche)}` : '';
+  await page.goto(`http://127.0.0.1:${server.address().port}/index.html?render=1${planche}`);
   await page.waitForFunction(() => window.__studioReady === true, null, { timeout: 60000 });
   info = await page.evaluate((o) => window.__studio.prepare(o), render);
   const still = info.output === 'image' || opts.image === true;

@@ -1,0 +1,5073 @@
+{
+ "tiles": {
+  "0": {
+   "fond": "anim/01-fond.webp",
+   "decoupes": "anim/01-decoupes.webp",
+   "ambiance": "anim/01-ambiance.png",
+   "atlas": [
+    2048,
+    216
+   ],
+   "taille": [
+    2020,
+    992
+   ],
+   "fuite": [
+    1010.0,
+    416.6
+   ],
+   "scene": "interieur",
+   "decoupesListe": [
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      0,
+      11,
+      119,
+      216
+     ],
+     "pied": [
+      85.1,
+      223.0
+     ],
+     "profondeur": 0.243,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.93,
+      "amp": 1.16
+     },
+     "atlas": [
+      0,
+      0,
+      119,
+      216
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1435,
+      335,
+      252,
+      162
+     ],
+     "pied": [
+      1553.9,
+      493.0
+     ],
+     "profondeur": 0.138,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": true,
+      "phase": 4.87,
+      "amp": 0.89
+     },
+     "atlas": [
+      121,
+      0,
+      252,
+      162
+     ]
+    }
+   ],
+   "fuitePlanche": [
+    252.5,
+    104.15
+   ]
+  },
+  "1": {
+   "fond": "anim/02-fond.webp",
+   "decoupes": "anim/02-decoupes.webp",
+   "ambiance": "anim/02-ambiance.png",
+   "atlas": [
+    2048,
+    1293
+   ],
+   "taille": [
+    2024,
+    992
+   ],
+   "fuite": [
+    1012.0,
+    416.6
+   ],
+   "scene": "interieur",
+   "decoupesListe": [
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1653,
+      423,
+      128,
+      126
+     ],
+     "pied": [
+      1691.7,
+      545.0
+     ],
+     "profondeur": 0.134,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.85,
+      "amp": 0.82
+     },
+     "atlas": [
+      0,
+      0,
+      128,
+      126
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      827,
+      421,
+      190,
+      130
+     ],
+     "pied": [
+      957.4,
+      547.0
+     ],
+     "profondeur": 0.017,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 6.25,
+      "amp": 1.12
+     },
+     "atlas": [
+      130,
+      0,
+      190,
+      130
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1423,
+      403,
+      108,
+      158
+     ],
+     "pied": [
+      1470.6,
+      557.0
+     ],
+     "profondeur": 0.117,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 5.01,
+      "amp": 0.99
+     },
+     "atlas": [
+      322,
+      0,
+      108,
+      158
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1455,
+      385,
+      212,
+      194
+     ],
+     "pied": [
+      1578.4,
+      575.0
+     ],
+     "profondeur": 0.145,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 1.6,
+      "amp": 0.98
+     },
+     "atlas": [
+      432,
+      0,
+      212,
+      194
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      829,
+      405,
+      130,
+      178
+     ],
+     "pied": [
+      893.1,
+      579.0
+     ],
+     "profondeur": 0.051,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.91,
+      "amp": 1.2
+     },
+     "atlas": [
+      646,
+      0,
+      130,
+      178
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      983,
+      391,
+      150,
+      198
+     ],
+     "pied": [
+      1064.7,
+      585.0
+     ],
+     "profondeur": 0.047,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 1.9,
+      "amp": 0.91
+     },
+     "atlas": [
+      778,
+      0,
+      150,
+      198
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1127,
+      405,
+      160,
+      184
+     ],
+     "pied": [
+      1211.8,
+      585.0
+     ],
+     "profondeur": 0.069,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 0.22,
+      "amp": 1.01
+     },
+     "atlas": [
+      930,
+      0,
+      160,
+      184
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      0,
+      355,
+      105,
+      320
+     ],
+     "pied": [
+      35.9,
+      671.0
+     ],
+     "profondeur": 0.142,
+     "mouvement": {
+      "type": "vie",
+      "posture": "debout",
+      "leve": false,
+      "phase": 1.89,
+      "amp": 1.15
+     },
+     "atlas": [
+      1092,
+      0,
+      105,
+      320
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1225,
+      365,
+      236,
+      390
+     ],
+     "pied": [
+      1298.0,
+      751.0
+     ],
+     "profondeur": 0.252,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 1.35,
+      "amp": 0.86
+     },
+     "atlas": [
+      1199,
+      0,
+      236,
+      390
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      41,
+      309,
+      364,
+      490
+     ],
+     "pied": [
+      265.5,
+      795.0
+     ],
+     "profondeur": 0.368,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 0.03,
+      "amp": 1.13
+     },
+     "atlas": [
+      1437,
+      0,
+      364,
+      490
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      299,
+      191,
+      618,
+      801
+     ],
+     "pied": [
+      613.5,
+      988.0
+     ],
+     "profondeur": 0.665,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.17,
+      "amp": 1.02
+     },
+     "atlas": [
+      0,
+      492,
+      618,
+      801
+     ]
+    }
+   ],
+   "fuitePlanche": [
+    766.0,
+    104.15
+   ]
+  },
+  "2": {
+   "fond": "anim/03-fond.webp",
+   "decoupes": "anim/03-decoupes.webp",
+   "ambiance": "anim/03-ambiance.png",
+   "atlas": [
+    2048,
+    1141
+   ],
+   "taille": [
+    2040,
+    992
+   ],
+   "fuite": [
+    1020.0,
+    416.6
+   ],
+   "scene": "exterieur",
+   "decoupesListe": [
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      305,
+      371,
+      182,
+      180
+     ],
+     "pied": [
+      453.2,
+      547.0
+     ],
+     "profondeur": 0.2,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.25,
+      "phase": 3.95
+     },
+     "atlas": [
+      0,
+      0,
+      182,
+      180
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1481,
+      437,
+      202,
+      174
+     ],
+     "pied": [
+      1499.0,
+      607.0
+     ],
+     "profondeur": 0.155,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.223,
+      "phase": 1.26
+     },
+     "atlas": [
+      184,
+      0,
+      202,
+      174
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1355,
+      447,
+      140,
+      166
+     ],
+     "pied": [
+      1477.6,
+      609.0
+     ],
+     "profondeur": 0.168,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.159,
+      "phase": 1.68
+     },
+     "atlas": [
+      388,
+      0,
+      140,
+      166
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1939,
+      421,
+      101,
+      194
+     ],
+     "pied": [
+      2007.0,
+      611.0
+     ],
+     "profondeur": 0.279,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.205,
+      "phase": 3.19
+     },
+     "atlas": [
+      530,
+      0,
+      101,
+      194
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1735,
+      417,
+      234,
+      270
+     ],
+     "pied": [
+      1792.0,
+      683.0
+     ],
+     "profondeur": 0.23,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.201,
+      "phase": 5.32
+     },
+     "atlas": [
+      633,
+      0,
+      234,
+      270
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      0,
+      345,
+      325,
+      356
+     ],
+     "pied": [
+      281.8,
+      697.0
+     ],
+     "profondeur": 0.386,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.202,
+      "phase": 3.12
+     },
+     "atlas": [
+      869,
+      0,
+      325,
+      356
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      697,
+      493,
+      114,
+      208
+     ],
+     "pied": [
+      734.5,
+      697.0
+     ],
+     "profondeur": 0.311,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.141,
+      "phase": 1.21
+     },
+     "atlas": [
+      1196,
+      0,
+      114,
+      208
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      371,
+      397,
+      396,
+      584
+     ],
+     "pied": [
+      732.9,
+      977.0
+     ],
+     "profondeur": 0.547,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.217,
+      "phase": 4.66
+     },
+     "atlas": [
+      1312,
+      0,
+      396,
+      584
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1017,
+      437,
+      410,
+      555
+     ],
+     "pied": [
+      1082.5,
+      988.0
+     ],
+     "profondeur": 0.506,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.14,
+      "phase": 5.21
+     },
+     "atlas": [
+      0,
+      586,
+      410,
+      555
+     ]
+    }
+   ],
+   "fuitePlanche": [
+    1281.0,
+    104.15
+   ]
+  },
+  "3": {
+   "fond": "anim/04-fond.webp",
+   "decoupes": "anim/04-decoupes.webp",
+   "ambiance": "anim/04-ambiance.png",
+   "atlas": [
+    2048,
+    382
+   ],
+   "taille": [
+    2020,
+    1000
+   ],
+   "fuite": [
+    1010.0,
+    600.0
+   ],
+   "scene": "exterieur",
+   "decoupesListe": [
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1875,
+      571,
+      112,
+      164
+     ],
+     "pied": [
+      1944.7,
+      731.0
+     ],
+     "profondeur": 0.476,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.193,
+      "phase": 1.5
+     },
+     "atlas": [
+      0,
+      0,
+      112,
+      164
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1069,
+      611,
+      66,
+      130
+     ],
+     "pied": [
+      1104.5,
+      737.0
+     ],
+     "profondeur": 0.225,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.147,
+      "phase": 2.43
+     },
+     "atlas": [
+      114,
+      0,
+      66,
+      130
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1125,
+      595,
+      84,
+      174
+     ],
+     "pied": [
+      1145.2,
+      765.0
+     ],
+     "profondeur": 0.281,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.211,
+      "phase": 3.8
+     },
+     "atlas": [
+      182,
+      0,
+      84,
+      174
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      335,
+      565,
+      102,
+      240
+     ],
+     "pied": [
+      390.8,
+      801.0
+     ],
+     "profondeur": 0.442,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.245,
+      "phase": 2.27
+     },
+     "atlas": [
+      268,
+      0,
+      102,
+      240
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1427,
+      583,
+      96,
+      232
+     ],
+     "pied": [
+      1465.7,
+      811.0
+     ],
+     "profondeur": 0.433,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.179,
+      "phase": 0.94
+     },
+     "atlas": [
+      372,
+      0,
+      96,
+      232
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1317,
+      585,
+      120,
+      230
+     ],
+     "pied": [
+      1373.5,
+      811.0
+     ],
+     "profondeur": 0.4,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.152,
+      "phase": 6.08
+     },
+     "atlas": [
+      470,
+      0,
+      120,
+      230
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      635,
+      591,
+      104,
+      234
+     ],
+     "pied": [
+      662.5,
+      821.0
+     ],
+     "profondeur": 0.413,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.186,
+      "phase": 6.15
+     },
+     "atlas": [
+      592,
+      0,
+      104,
+      234
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1593,
+      577,
+      176,
+      382
+     ],
+     "pied": [
+      1647.7,
+      955.0
+     ],
+     "profondeur": 0.694,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.221,
+      "phase": 0.95
+     },
+     "atlas": [
+      698,
+      0,
+      176,
+      382
+     ]
+    }
+   ],
+   "fuitePlanche": [
+    252.5,
+    405.0
+   ]
+  },
+  "4": {
+   "fond": "anim/05-fond.webp",
+   "decoupes": "anim/05-decoupes.webp",
+   "ambiance": "anim/05-ambiance.png",
+   "atlas": [
+    2048,
+    484
+   ],
+   "taille": [
+    2024,
+    1000
+   ],
+   "fuite": [
+    1012.0,
+    420.0
+   ],
+   "scene": "exterieur",
+   "decoupesListe": [
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1375,
+      563,
+      144,
+      88
+     ],
+     "pied": [
+      1484.1,
+      647.0
+     ],
+     "profondeur": 0.478,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.156,
+      "phase": 5.31
+     },
+     "atlas": [
+      0,
+      0,
+      144,
+      88
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      369,
+      525,
+      158,
+      154
+     ],
+     "pied": [
+      431.0,
+      675.0
+     ],
+     "profondeur": 0.594,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.246,
+      "phase": 4.03
+     },
+     "atlas": [
+      146,
+      0,
+      158,
+      154
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      527,
+      441,
+      124,
+      252
+     ],
+     "pied": [
+      640.2,
+      689.0
+     ],
+     "profondeur": 0.359,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.166,
+      "phase": 4.22
+     },
+     "atlas": [
+      306,
+      0,
+      124,
+      252
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      791,
+      383,
+      198,
+      484
+     ],
+     "pied": [
+      894.2,
+      863.0
+     ],
+     "profondeur": 0.387,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.248,
+      "phase": 3.58
+     },
+     "atlas": [
+      432,
+      0,
+      198,
+      484
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      973,
+      399,
+      184,
+      474
+     ],
+     "pied": [
+      1069.4,
+      869.0
+     ],
+     "profondeur": 0.367,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.245,
+      "phase": 4.16
+     },
+     "atlas": [
+      632,
+      0,
+      184,
+      474
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      633,
+      403,
+      178,
+      478
+     ],
+     "pied": [
+      712.3,
+      877.0
+     ],
+     "profondeur": 0.419,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.157,
+      "phase": 1.21
+     },
+     "atlas": [
+      818,
+      0,
+      178,
+      478
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1583,
+      529,
+      284,
+      360
+     ],
+     "pied": [
+      1611.5,
+      885.0
+     ],
+     "profondeur": 0.784,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.206,
+      "phase": 1.13
+     },
+     "atlas": [
+      998,
+      0,
+      284,
+      360
+     ]
+    }
+   ],
+   "fuitePlanche": [
+    766.0,
+    360.0
+   ]
+  },
+  "5": {
+   "fond": "anim/06-fond.webp",
+   "decoupes": "anim/06-decoupes.webp",
+   "ambiance": "anim/06-ambiance.png",
+   "atlas": [
+    2048,
+    985
+   ],
+   "taille": [
+    2040,
+    1000
+   ],
+   "fuite": [
+    1020.0,
+    420.0
+   ],
+   "scene": "interieur",
+   "decoupesListe": [
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      661,
+      243,
+      664,
+      622
+     ],
+     "pied": [
+      1117.5,
+      861.0
+     ],
+     "profondeur": 0.398,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.58,
+      "amp": 0.95
+     },
+     "atlas": [
+      0,
+      0,
+      664,
+      622
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1235,
+      15,
+      458,
+      985
+     ],
+     "pied": [
+      1609.5,
+      996.0
+     ],
+     "profondeur": 0.307,
+     "mouvement": {
+      "type": "vie",
+      "posture": "debout",
+      "leve": false,
+      "phase": 2.58,
+      "amp": 0.9
+     },
+     "atlas": [
+      666,
+      0,
+      458,
+      985
+     ]
+    }
+   ],
+   "fuitePlanche": [
+    1281.0,
+    360.0
+   ]
+  },
+  "6": {
+   "fond": "anim/07-fond.webp",
+   "decoupes": "anim/07-decoupes.webp",
+   "ambiance": "anim/07-ambiance.png",
+   "atlas": [
+    2048,
+    1051
+   ],
+   "taille": [
+    2020,
+    936
+   ],
+   "fuite": [
+    1010.0,
+    393.1
+   ],
+   "scene": "interieur",
+   "decoupesListe": [
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      0,
+      449,
+      69,
+      222
+     ],
+     "pied": [
+      31.5,
+      667.0
+     ],
+     "profondeur": 0.349,
+     "mouvement": {
+      "type": "vie",
+      "posture": "debout",
+      "leve": false,
+      "phase": 2.23,
+      "amp": 1.01
+     },
+     "atlas": [
+      0,
+      0,
+      69,
+      222
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      361,
+      419,
+      246,
+      280
+     ],
+     "pied": [
+      525.3,
+      695.0
+     ],
+     "profondeur": 0.085,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 2.69,
+      "amp": 1.01
+     },
+     "atlas": [
+      71,
+      0,
+      246,
+      280
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      15,
+      417,
+      170,
+      302
+     ],
+     "pied": [
+      97.1,
+      715.0
+     ],
+     "profondeur": 0.122,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 0.24,
+      "amp": 1.15
+     },
+     "atlas": [
+      319,
+      0,
+      170,
+      302
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      665,
+      485,
+      218,
+      258
+     ],
+     "pied": [
+      747.5,
+      739.0
+     ],
+     "profondeur": 0.215,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 0.16,
+      "amp": 0.95
+     },
+     "atlas": [
+      491,
+      0,
+      218,
+      258
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      0,
+      651,
+      153,
+      132
+     ],
+     "pied": [
+      101.2,
+      779.0
+     ],
+     "profondeur": 0.421,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": true,
+      "phase": 3.71,
+      "amp": 1.07
+     },
+     "atlas": [
+      711,
+      0,
+      153,
+      132
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1217,
+      149,
+      510,
+      640
+     ],
+     "pied": [
+      1464.0,
+      785.0
+     ],
+     "profondeur": 0.133,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 0.19,
+      "amp": 0.85
+     },
+     "atlas": [
+      866,
+      0,
+      510,
+      640
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1015,
+      507,
+      344,
+      338
+     ],
+     "pied": [
+      1179.1,
+      841.0
+     ],
+     "profondeur": 0.324,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": true,
+      "phase": 6.07,
+      "amp": 1.06
+     },
+     "atlas": [
+      1378,
+      0,
+      344,
+      338
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      0,
+      527,
+      705,
+      409
+     ],
+     "pied": [
+      337.4,
+      932.0
+     ],
+     "profondeur": 0.805,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 2.94,
+      "amp": 1.02
+     },
+     "atlas": [
+      0,
+      642,
+      705,
+      409
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      767,
+      553,
+      384,
+      383
+     ],
+     "pied": [
+      1034.5,
+      932.0
+     ],
+     "profondeur": 0.502,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 2.02,
+      "amp": 1.1
+     },
+     "atlas": [
+      707,
+      642,
+      384,
+      383
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1781,
+      693,
+      239,
+      243
+     ],
+     "pied": [
+      2012.8,
+      932.0
+     ],
+     "profondeur": 0.492,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 5.48,
+      "amp": 0.94
+     },
+     "atlas": [
+      1093,
+      642,
+      239,
+      243
+     ]
+    }
+   ],
+   "fuitePlanche": [
+    252.5,
+    611.27
+   ]
+  },
+  "7": {
+   "fond": "anim/08-fond.webp",
+   "decoupes": "anim/08-decoupes.webp",
+   "ambiance": "anim/08-ambiance.png",
+   "atlas": [
+    2048,
+    1796
+   ],
+   "taille": [
+    2024,
+    936
+   ],
+   "fuite": [
+    1012.0,
+    393.1
+   ],
+   "scene": "exterieur",
+   "decoupesListe": [
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1531,
+      291,
+      88,
+      82
+     ],
+     "pied": [
+      1598.6,
+      369.0
+     ],
+     "profondeur": 0.066,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.237,
+      "phase": 0.86
+     },
+     "atlas": [
+      0,
+      0,
+      88,
+      82
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1607,
+      315,
+      94,
+      86
+     ],
+     "pied": [
+      1647.4,
+      397.0
+     ],
+     "profondeur": 0.106,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.249,
+      "phase": 0.95
+     },
+     "atlas": [
+      90,
+      0,
+      94,
+      86
+     ]
+    },
+    {
+     "classe": "car",
+     "genre": "vehicule",
+     "rect": [
+      1647,
+      287,
+      377,
+      280
+     ],
+     "pied": [
+      1878.8,
+      563.0
+     ],
+     "profondeur": 0.173,
+     "mouvement": {
+      "type": "route",
+      "sens": "eloigne",
+      "vitesse": 0.039
+     },
+     "atlas": [
+      186,
+      0,
+      377,
+      280
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      51,
+      265,
+      226,
+      332
+     ],
+     "pied": [
+      61.1,
+      593.0
+     ],
+     "profondeur": 0.146,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.167,
+      "phase": 1.25
+     },
+     "atlas": [
+      565,
+      0,
+      226,
+      332
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      0,
+      307,
+      109,
+      322
+     ],
+     "pied": [
+      7.6,
+      625.0
+     ],
+     "profondeur": 0.149,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.252,
+      "phase": 0.03
+     },
+     "atlas": [
+      793,
+      0,
+      109,
+      322
+     ]
+    },
+    {
+     "classe": "car",
+     "genre": "vehicule",
+     "rect": [
+      1877,
+      425,
+      147,
+      216
+     ],
+     "pied": [
+      2013.1,
+      637.0
+     ],
+     "profondeur": 0.219,
+     "mouvement": {
+      "type": "route",
+      "sens": "eloigne",
+      "vitesse": 0.033
+     },
+     "atlas": [
+      904,
+      0,
+      147,
+      216
+     ]
+    },
+    {
+     "classe": "bicycle",
+     "genre": "deux-roues",
+     "rect": [
+      37,
+      523,
+      146,
+      198
+     ],
+     "pied": [
+      84.0,
+      717.0
+     ],
+     "profondeur": 0.208,
+     "mouvement": {
+      "type": "route",
+      "sens": "approche",
+      "vitesse": 0.048
+     },
+     "atlas": [
+      1053,
+      0,
+      146,
+      198
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      805,
+      417,
+      356,
+      306
+     ],
+     "pied": [
+      870.5,
+      719.0
+     ],
+     "profondeur": 0.581,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.202,
+      "phase": 4.56
+     },
+     "atlas": [
+      1201,
+      0,
+      356,
+      306
+     ]
+    },
+    {
+     "classe": "car",
+     "genre": "vehicule",
+     "rect": [
+      163,
+      269,
+      1861,
+      667
+     ],
+     "pied": [
+      1202.7,
+      932.0
+     ],
+     "profondeur": 0.689,
+     "mouvement": {
+      "type": "route",
+      "sens": "eloigne",
+      "vitesse": 0.034
+     },
+     "atlas": [
+      0,
+      334,
+      1861,
+      667
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      159,
+      143,
+      528,
+      793
+     ],
+     "pied": [
+      387.5,
+      932.0
+     ],
+     "profondeur": 0.602,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.142,
+      "phase": 3.95
+     },
+     "atlas": [
+      0,
+      1003,
+      528,
+      793
+     ]
+    }
+   ],
+   "fuitePlanche": [
+    766.0,
+    611.27
+   ]
+  },
+  "8": {
+   "fond": "anim/09-fond.webp",
+   "decoupes": "anim/09-decoupes.webp",
+   "ambiance": "anim/09-ambiance.png",
+   "atlas": [
+    2048,
+    1561
+   ],
+   "taille": [
+    2040,
+    936
+   ],
+   "fuite": [
+    1020.0,
+    393.1
+   ],
+   "scene": "interieur",
+   "decoupesListe": [
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      153,
+      67,
+      224,
+      194
+     ],
+     "pied": [
+      316.1,
+      257.0
+     ],
+     "profondeur": 0.128,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.24,
+      "amp": 1.01
+     },
+     "atlas": [
+      0,
+      0,
+      224,
+      194
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      359,
+      61,
+      184,
+      206
+     ],
+     "pied": [
+      479.9,
+      263.0
+     ],
+     "profondeur": 0.104,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 1.71,
+      "amp": 1.18
+     },
+     "atlas": [
+      226,
+      0,
+      184,
+      206
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      303,
+      331,
+      286,
+      426
+     ],
+     "pied": [
+      413.1,
+      753.0
+     ],
+     "profondeur": 0.145,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 5.63,
+      "amp": 1.1
+     },
+     "atlas": [
+      412,
+      0,
+      286,
+      426
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      33,
+      453,
+      302,
+      380
+     ],
+     "pied": [
+      324.9,
+      829.0
+     ],
+     "profondeur": 0.18,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 2.17,
+      "amp": 1.18
+     },
+     "atlas": [
+      700,
+      0,
+      302,
+      380
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      525,
+      0,
+      630,
+      936
+     ],
+     "pied": [
+      769.4,
+      932.0
+     ],
+     "profondeur": 0.6,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.6,
+      "amp": 0.94
+     },
+     "atlas": [
+      1004,
+      0,
+      630,
+      936
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1075,
+      313,
+      854,
+      623
+     ],
+     "pied": [
+      1532.8,
+      932.0
+     ],
+     "profondeur": 0.787,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 2.79,
+      "amp": 1.19
+     },
+     "atlas": [
+      0,
+      938,
+      854,
+      623
+     ]
+    }
+   ],
+   "fuitePlanche": [
+    1281.0,
+    611.27
+   ]
+  },
+  "9": {
+   "fond": "anim/10-fond.webp",
+   "decoupes": "anim/10-decoupes.webp",
+   "ambiance": "anim/10-ambiance.png",
+   "atlas": [
+    2048,
+    646
+   ],
+   "taille": [
+    1516,
+    1080
+   ],
+   "fuite": [
+    758.0,
+    648.0
+   ],
+   "scene": "exterieur",
+   "decoupesListe": [
+    {
+     "classe": "boat",
+     "genre": "bateau",
+     "rect": [
+      0,
+      349,
+      1109,
+      272
+     ],
+     "pied": [
+      839.9,
+      617.0
+     ],
+     "profondeur": 0.361,
+     "mouvement": {
+      "type": "tangage",
+      "phase": 4.25
+     },
+     "atlas": [
+      0,
+      0,
+      1109,
+      272
+     ]
+    },
+    {
+     "classe": "boat",
+     "genre": "bateau",
+     "rect": [
+      0,
+      557,
+      789,
+      68
+     ],
+     "pied": [
+      77.2,
+      621.0
+     ],
+     "profondeur": 0.594,
+     "mouvement": {
+      "type": "tangage",
+      "phase": 3.65
+     },
+     "atlas": [
+      1111,
+      0,
+      789,
+      68
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      841,
+      585,
+      64,
+      92
+     ],
+     "pied": [
+      875.5,
+      673.0
+     ],
+     "profondeur": 0.157,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.216,
+      "phase": 6.1
+     },
+     "atlas": [
+      1902,
+      0,
+      64,
+      92
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      907,
+      565,
+      62,
+      120
+     ],
+     "pied": [
+      934.2,
+      681.0
+     ],
+     "profondeur": 0.145,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.202,
+      "phase": 5.97
+     },
+     "atlas": [
+      1968,
+      0,
+      62,
+      120
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1101,
+      571,
+      52,
+      114
+     ],
+     "pied": [
+      1123.0,
+      681.0
+     ],
+     "profondeur": 0.198,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.146,
+      "phase": 1.34
+     },
+     "atlas": [
+      0,
+      274,
+      52,
+      114
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1367,
+      559,
+      66,
+      154
+     ],
+     "pied": [
+      1403.0,
+      709.0
+     ],
+     "profondeur": 0.15,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.245,
+      "phase": 2.59
+     },
+     "atlas": [
+      54,
+      274,
+      66,
+      154
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1427,
+      551,
+      64,
+      170
+     ],
+     "pied": [
+      1456.4,
+      717.0
+     ],
+     "profondeur": 0.178,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.18,
+      "phase": 2.5
+     },
+     "atlas": [
+      122,
+      274,
+      64,
+      170
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      785,
+      613,
+      58,
+      128
+     ],
+     "pied": [
+      820.9,
+      737.0
+     ],
+     "profondeur": 0.24,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.25,
+      "phase": 5.28
+     },
+     "atlas": [
+      188,
+      274,
+      58,
+      128
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      935,
+      563,
+      184,
+      228
+     ],
+     "pied": [
+      1000.1,
+      787.0
+     ],
+     "profondeur": 0.436,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.251,
+      "phase": 0.43
+     },
+     "atlas": [
+      248,
+      274,
+      184,
+      228
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1157,
+      487,
+      170,
+      330
+     ],
+     "pied": [
+      1283.2,
+      813.0
+     ],
+     "profondeur": 0.385,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.17,
+      "phase": 5.06
+     },
+     "atlas": [
+      434,
+      274,
+      170,
+      330
+     ]
+    },
+    {
+     "classe": "boat",
+     "genre": "bateau",
+     "rect": [
+      0,
+      545,
+      873,
+      372
+     ],
+     "pied": [
+      22.5,
+      913.0
+     ],
+     "profondeur": 0.812,
+     "mouvement": {
+      "type": "tangage",
+      "phase": 0.71
+     },
+     "atlas": [
+      606,
+      274,
+      873,
+      372
+     ]
+    }
+   ],
+   "fuitePlanche": [
+    189.5,
+    916.0
+   ]
+  },
+  "10": {
+   "fond": "anim/11-fond.webp",
+   "decoupes": "anim/11-decoupes.webp",
+   "ambiance": "anim/11-ambiance.png",
+   "atlas": [
+    2048,
+    494
+   ],
+   "taille": [
+    1524,
+    1080
+   ],
+   "fuite": [
+    762.0,
+    453.6
+   ],
+   "scene": "interieur",
+   "decoupesListe": [
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      743,
+      191,
+      374,
+      238
+     ],
+     "pied": [
+      931.9,
+      425.0
+     ],
+     "profondeur": 0.035,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.99,
+      "amp": 0.87
+     },
+     "atlas": [
+      0,
+      0,
+      374,
+      238
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      309,
+      183,
+      408,
+      468
+     ],
+     "pied": [
+      495.1,
+      647.0
+     ],
+     "profondeur": 0.16,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 1.93,
+      "amp": 1.18
+     },
+     "atlas": [
+      376,
+      0,
+      408,
+      468
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1145,
+      551,
+      148,
+      110
+     ],
+     "pied": [
+      1226.6,
+      657.0
+     ],
+     "profondeur": 0.2,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.73,
+      "amp": 1.06
+     },
+     "atlas": [
+      786,
+      0,
+      148,
+      110
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      0,
+      389,
+      267,
+      458
+     ],
+     "pied": [
+      178.8,
+      843.0
+     ],
+     "profondeur": 0.549,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.79,
+      "amp": 0.99
+     },
+     "atlas": [
+      936,
+      0,
+      267,
+      458
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1141,
+      359,
+      383,
+      494
+     ],
+     "pied": [
+      1185.3,
+      849.0
+     ],
+     "profondeur": 0.549,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 2.93,
+      "amp": 1.05
+     },
+     "atlas": [
+      1205,
+      0,
+      383,
+      494
+     ]
+    }
+   ],
+   "fuitePlanche": [
+    577.5,
+    867.4
+   ]
+  },
+  "11": {
+   "fond": "anim/12-fond.webp",
+   "decoupes": "anim/12-decoupes.webp",
+   "ambiance": "anim/12-ambiance.png",
+   "atlas": [
+    2048,
+    895
+   ],
+   "taille": [
+    1416,
+    1080
+   ],
+   "fuite": [
+    708.0,
+    648.0
+   ],
+   "scene": "exterieur",
+   "decoupesListe": [
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      9,
+      215,
+      110,
+      244
+     ],
+     "pied": [
+      29.4,
+      455.0
+     ],
+     "profondeur": 0.141,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.144,
+      "phase": 0.13
+     },
+     "atlas": [
+      0,
+      0,
+      110,
+      244
+     ]
+    },
+    {
+     "classe": "truck",
+     "genre": "vehicule",
+     "rect": [
+      721,
+      459,
+      238,
+      180
+     ],
+     "pied": [
+      728.5,
+      635.0
+     ],
+     "profondeur": 0.129,
+     "mouvement": {
+      "type": "route",
+      "sens": "eloigne",
+      "vitesse": 0.039
+     },
+     "atlas": [
+      112,
+      0,
+      238,
+      180
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      11,
+      353,
+      162,
+      368
+     ],
+     "pied": [
+      80.5,
+      717.0
+     ],
+     "profondeur": 0.169,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.189,
+      "phase": 4.8
+     },
+     "atlas": [
+      352,
+      0,
+      162,
+      368
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      1359,
+      483,
+      57,
+      280
+     ],
+     "pied": [
+      1410.3,
+      759.0
+     ],
+     "profondeur": 0.177,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.203,
+      "phase": 5.75
+     },
+     "atlas": [
+      516,
+      0,
+      57,
+      280
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      63,
+      161,
+      674,
+      738
+     ],
+     "pied": [
+      414.8,
+      895.0
+     ],
+     "profondeur": 0.467,
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.228,
+      "phase": 0.71
+     },
+     "atlas": [
+      575,
+      0,
+      674,
+      738
+     ]
+    },
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      801,
+      185,
+      500,
+      895
+     ],
+     "pied": [
+      1144.4,
+      1076.0
+     ],
+     "profondeur": 0.616,
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.236,
+      "phase": 5.51
+     },
+     "atlas": [
+      1251,
+      0,
+      500,
+      895
+     ]
+    }
+   ],
+   "fuitePlanche": [
+    953.0,
+    916.0
+   ]
+  },
+  "12": {
+   "fond": "anim/13-fond.webp",
+   "decoupes": "anim/13-decoupes.webp",
+   "ambiance": "anim/13-ambiance.png",
+   "atlas": [
+    2048,
+    650
+   ],
+   "taille": [
+    1592,
+    1080
+   ],
+   "fuite": [
+    796.0,
+    453.6
+   ],
+   "scene": "interieur",
+   "decoupesListe": [
+    {
+     "classe": "person",
+     "genre": "pieton",
+     "rect": [
+      427,
+      123,
+      764,
+      650
+     ],
+     "pied": [
+      1023.6,
+      769.0
+     ],
+     "profondeur": 0.243,
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 1.59,
+      "amp": 0.9
+     },
+     "atlas": [
+      0,
+      0,
+      764,
+      650
+     ]
+    }
+   ],
+   "fuitePlanche": [
+    1337.0,
+    867.4
+   ]
+  }
+ },
+ "modeles": [
+  "Mask2Former Swin-T COCO panoptique (Meta)",
+  "LaMa (Apache-2.0)"
+ ],
+ "planche": {
+  "fond": "anim/planche-fond.webp",
+  "ambiance": "anim/planche-ambiance.png",
+  "decoupes": "anim/planche-decoupes.webp",
+  "atlas": [
+   2048,
+   496
+  ],
+  "parVignette": {
+   "5": [
+    {
+     "rect": [
+      1334.75,
+      258.75,
+      114.5,
+      246.25
+     ],
+     "pied": [
+      1428.38,
+      504.0
+     ],
+     "profondeur": 0.307,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "debout",
+      "leve": false,
+      "phase": 2.58,
+      "amp": 0.9
+     },
+     "atlas": [
+      0,
+      0,
+      114,
+      246
+     ]
+    },
+    {
+     "rect": [
+      1191.25,
+      315.75,
+      166.0,
+      155.5
+     ],
+     "pied": [
+      1305.38,
+      470.25
+     ],
+     "profondeur": 0.398,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.58,
+      "amp": 0.95
+     },
+     "atlas": [
+      1653,
+      0,
+      166,
+      156
+     ]
+    }
+   ],
+   "8": [
+    {
+     "rect": [
+      1157.25,
+      513.0,
+      157.5,
+      234.0
+     ],
+     "pied": [
+      1218.35,
+      746.0
+     ],
+     "profondeur": 0.6,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.6,
+      "amp": 0.94
+     },
+     "atlas": [
+      116,
+      0,
+      158,
+      234
+     ]
+    },
+    {
+     "rect": [
+      1294.75,
+      591.25,
+      213.5,
+      155.75
+     ],
+     "pied": [
+      1409.2,
+      746.0
+     ],
+     "profondeur": 0.787,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 2.79,
+      "amp": 1.19
+     },
+     "atlas": [
+      1821,
+      0,
+      214,
+      156
+     ]
+    },
+    {
+     "rect": [
+      1101.75,
+      595.75,
+      71.5,
+      106.5
+     ],
+     "pied": [
+      1129.28,
+      701.25
+     ],
+     "profondeur": 0.145,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 5.63,
+      "amp": 1.1
+     },
+     "atlas": [
+      715,
+      248,
+      72,
+      106
+     ]
+    },
+    {
+     "rect": [
+      1034.25,
+      626.25,
+      75.5,
+      95.0
+     ],
+     "pied": [
+      1107.22,
+      720.25
+     ],
+     "profondeur": 0.18,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 2.17,
+      "amp": 1.18
+     },
+     "atlas": [
+      1172,
+      248,
+      76,
+      95
+     ]
+    },
+    {
+     "rect": [
+      1115.75,
+      528.25,
+      46.0,
+      51.5
+     ],
+     "pied": [
+      1145.97,
+      578.75
+     ],
+     "profondeur": 0.104,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 1.71,
+      "amp": 1.18
+     },
+     "atlas": [
+      1074,
+      396,
+      46,
+      52
+     ]
+    },
+    {
+     "rect": [
+      1064.25,
+      529.75,
+      56.0,
+      48.5
+     ],
+     "pied": [
+      1105.03,
+      577.25
+     ],
+     "profondeur": 0.128,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.24,
+      "amp": 1.01
+     },
+     "atlas": [
+      1282,
+      396,
+      56,
+      48
+     ]
+    }
+   ],
+   "11": [
+    {
+     "rect": [
+      976.25,
+      800.25,
+      125.0,
+      223.75
+     ],
+     "pied": [
+      1062.1,
+      1023.0
+     ],
+     "profondeur": 0.616,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.236,
+      "phase": 5.51
+     },
+     "atlas": [
+      276,
+      0,
+      125,
+      224
+     ]
+    },
+    {
+     "rect": [
+      791.75,
+      794.25,
+      168.5,
+      184.5
+     ],
+     "pied": [
+      879.7,
+      977.75
+     ],
+     "profondeur": 0.467,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.228,
+      "phase": 0.71
+     },
+     "atlas": [
+      693,
+      0,
+      168,
+      184
+     ]
+    },
+    {
+     "rect": [
+      778.75,
+      842.25,
+      40.5,
+      92.0
+     ],
+     "pied": [
+      796.12,
+      933.25
+     ],
+     "profondeur": 0.169,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.189,
+      "phase": 4.8
+     },
+     "atlas": [
+      1470,
+      248,
+      40,
+      92
+     ]
+    },
+    {
+     "rect": [
+      1115.75,
+      874.75,
+      14.25,
+      70.0
+     ],
+     "pied": [
+      1128.58,
+      943.75
+     ],
+     "profondeur": 0.177,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.203,
+      "phase": 5.75
+     },
+     "atlas": [
+      160,
+      396,
+      14,
+      70
+     ]
+    },
+    {
+     "rect": [
+      778.25,
+      807.75,
+      27.5,
+      61.0
+     ],
+     "pied": [
+      783.35,
+      867.75
+     ],
+     "profondeur": 0.141,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.144,
+      "phase": 0.13
+     },
+     "atlas": [
+      666,
+      396,
+      28,
+      61
+     ]
+    },
+    {
+     "rect": [
+      956.25,
+      868.75,
+      59.5,
+      45.0
+     ],
+     "pied": [
+      958.12,
+      912.75
+     ],
+     "profondeur": 0.129,
+     "genre": "vehicule",
+     "mouvement": {
+      "type": "route",
+      "sens": "eloigne",
+      "vitesse": 0.039
+     },
+     "atlas": [
+      1430,
+      396,
+      60,
+      45
+     ]
+    }
+   ],
+   "1": [
+    {
+     "rect": [
+      587.75,
+      47.75,
+      154.5,
+      200.25
+     ],
+     "pied": [
+      666.38,
+      247.0
+     ],
+     "profondeur": 0.665,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.17,
+      "amp": 1.02
+     },
+     "atlas": [
+      403,
+      0,
+      154,
+      200
+     ]
+    },
+    {
+     "rect": [
+      523.25,
+      77.25,
+      91.0,
+      122.5
+     ],
+     "pied": [
+      579.38,
+      198.75
+     ],
+     "profondeur": 0.368,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 0.03,
+      "amp": 1.13
+     },
+     "atlas": [
+      303,
+      248,
+      91,
+      122
+     ]
+    },
+    {
+     "rect": [
+      819.25,
+      91.25,
+      59.0,
+      97.5
+     ],
+     "pied": [
+      837.5,
+      187.75
+     ],
+     "profondeur": 0.252,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 1.35,
+      "amp": 0.86
+     },
+     "atlas": [
+      967,
+      248,
+      59,
+      98
+     ]
+    },
+    {
+     "rect": [
+      513.0,
+      88.75,
+      26.25,
+      80.0
+     ],
+     "pied": [
+      521.98,
+      167.75
+     ],
+     "profondeur": 0.142,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "debout",
+      "leve": false,
+      "phase": 1.89,
+      "amp": 1.15
+     },
+     "atlas": [
+      1858,
+      248,
+      26,
+      80
+     ]
+    },
+    {
+     "rect": [
+      758.75,
+      97.75,
+      37.5,
+      49.5
+     ],
+     "pied": [
+      779.17,
+      146.25
+     ],
+     "profondeur": 0.047,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 1.9,
+      "amp": 0.91
+     },
+     "atlas": [
+      1122,
+      396,
+      38,
+      50
+     ]
+    },
+    {
+     "rect": [
+      876.75,
+      96.25,
+      53.0,
+      48.5
+     ],
+     "pied": [
+      907.6,
+      143.75
+     ],
+     "profondeur": 0.145,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 1.6,
+      "amp": 0.98
+     },
+     "atlas": [
+      1200,
+      396,
+      53,
+      48
+     ]
+    },
+    {
+     "rect": [
+      794.75,
+      101.25,
+      40.0,
+      46.0
+     ],
+     "pied": [
+      815.95,
+      146.25
+     ],
+     "profondeur": 0.069,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 0.22,
+      "amp": 1.01
+     },
+     "atlas": [
+      1340,
+      396,
+      40,
+      46
+     ]
+    },
+    {
+     "rect": [
+      720.25,
+      101.25,
+      32.5,
+      44.5
+     ],
+     "pied": [
+      736.27,
+      144.75
+     ],
+     "profondeur": 0.051,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.91,
+      "amp": 1.2
+     },
+     "atlas": [
+      1492,
+      396,
+      32,
+      44
+     ]
+    },
+    {
+     "rect": [
+      868.75,
+      100.75,
+      27.0,
+      39.5
+     ],
+     "pied": [
+      880.65,
+      139.25
+     ],
+     "profondeur": 0.117,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 5.01,
+      "amp": 0.99
+     },
+     "atlas": [
+      1751,
+      396,
+      27,
+      40
+     ]
+    },
+    {
+     "rect": [
+      926.25,
+      105.75,
+      32.0,
+      31.5
+     ],
+     "pied": [
+      935.92,
+      136.25
+     ],
+     "profondeur": 0.134,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.85,
+      "amp": 0.82
+     },
+     "atlas": [
+      1880,
+      396,
+      32,
+      32
+     ]
+    },
+    {
+     "rect": [
+      719.75,
+      105.25,
+      47.5,
+      32.5
+     ],
+     "pied": [
+      752.35,
+      136.75
+     ],
+     "profondeur": 0.017,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 6.25,
+      "amp": 1.12
+     },
+     "atlas": [
+      1914,
+      396,
+      48,
+      32
+     ]
+    }
+   ],
+   "7": [
+    {
+     "rect": [
+      552.75,
+      548.75,
+      132.0,
+      198.25
+     ],
+     "pied": [
+      609.88,
+      746.0
+     ],
+     "profondeur": 0.602,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.142,
+      "phase": 3.95
+     },
+     "atlas": [
+      559,
+      0,
+      132,
+      198
+     ]
+    },
+    {
+     "rect": [
+      553.75,
+      580.25,
+      465.25,
+      166.75
+     ],
+     "pied": [
+      813.67,
+      746.0
+     ],
+     "profondeur": 0.689,
+     "genre": "vehicule",
+     "mouvement": {
+      "type": "route",
+      "sens": "eloigne",
+      "vitesse": 0.034
+     },
+     "atlas": [
+      863,
+      0,
+      465,
+      167
+     ]
+    },
+    {
+     "rect": [
+      525.75,
+      579.25,
+      56.5,
+      83.0
+     ],
+     "pied": [
+      528.27,
+      661.25
+     ],
+     "profondeur": 0.146,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.167,
+      "phase": 1.25
+     },
+     "atlas": [
+      1756,
+      248,
+      56,
+      83
+     ]
+    },
+    {
+     "rect": [
+      513.0,
+      589.75,
+      27.25,
+      80.5
+     ],
+     "pied": [
+      514.9,
+      669.25
+     ],
+     "profondeur": 0.149,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.252,
+      "phase": 0.03
+     },
+     "atlas": [
+      1886,
+      248,
+      27,
+      80
+     ]
+    },
+    {
+     "rect": [
+      714.25,
+      617.25,
+      89.0,
+      76.5
+     ],
+     "pied": [
+      730.62,
+      692.75
+     ],
+     "profondeur": 0.581,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.202,
+      "phase": 4.56
+     },
+     "atlas": [
+      1959,
+      248,
+      89,
+      76
+     ]
+    },
+    {
+     "rect": [
+      924.75,
+      584.75,
+      94.25,
+      70.0
+     ],
+     "pied": [
+      982.7,
+      653.75
+     ],
+     "profondeur": 0.173,
+     "genre": "vehicule",
+     "mouvement": {
+      "type": "route",
+      "sens": "eloigne",
+      "vitesse": 0.039
+     },
+     "atlas": [
+      64,
+      396,
+      94,
+      70
+     ]
+    },
+    {
+     "rect": [
+      982.25,
+      619.25,
+      36.75,
+      54.0
+     ],
+     "pied": [
+      1016.27,
+      672.25
+     ],
+     "profondeur": 0.219,
+     "genre": "vehicule",
+     "mouvement": {
+      "type": "route",
+      "sens": "eloigne",
+      "vitesse": 0.033
+     },
+     "atlas": [
+      1005,
+      396,
+      37,
+      54
+     ]
+    },
+    {
+     "rect": [
+      522.25,
+      643.75,
+      36.5,
+      49.5
+     ],
+     "pied": [
+      534.0,
+      692.25
+     ],
+     "profondeur": 0.208,
+     "genre": "deux-roues",
+     "mouvement": {
+      "type": "route",
+      "sens": "approche",
+      "vitesse": 0.048
+     },
+     "atlas": [
+      1162,
+      396,
+      36,
+      50
+     ]
+    },
+    {
+     "rect": [
+      914.75,
+      591.75,
+      23.5,
+      21.5
+     ],
+     "pied": [
+      924.85,
+      612.25
+     ],
+     "profondeur": 0.106,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.249,
+      "phase": 0.95
+     },
+     "atlas": [
+      95,
+      468,
+      24,
+      22
+     ]
+    },
+    {
+     "rect": [
+      895.75,
+      585.75,
+      22.0,
+      20.5
+     ],
+     "pied": [
+      912.65,
+      605.25
+     ],
+     "profondeur": 0.066,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.237,
+      "phase": 0.86
+     },
+     "atlas": [
+      121,
+      468,
+      22,
+      20
+     ]
+    }
+   ],
+   "12": [
+    {
+     "rect": [
+      1244.75,
+      784.75,
+      191.0,
+      162.5
+     ],
+     "pied": [
+      1393.9,
+      946.25
+     ],
+     "profondeur": 0.243,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 1.59,
+      "amp": 0.9
+     },
+     "atlas": [
+      1330,
+      0,
+      191,
+      162
+     ]
+    }
+   ],
+   "6": [
+    {
+     "rect": [
+      304.25,
+      550.25,
+      127.5,
+      160.0
+     ],
+     "pied": [
+      366.0,
+      709.25
+     ],
+     "profondeur": 0.133,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 0.19,
+      "amp": 0.85
+     },
+     "atlas": [
+      1523,
+      0,
+      128,
+      160
+     ]
+    },
+    {
+     "rect": [
+      0.0,
+      644.75,
+      176.25,
+      102.25
+     ],
+     "pied": [
+      84.35,
+      746.0
+     ],
+     "profondeur": 0.805,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 2.94,
+      "amp": 1.02
+     },
+     "atlas": [
+      789,
+      248,
+      176,
+      102
+     ]
+    },
+    {
+     "rect": [
+      191.75,
+      651.25,
+      96.0,
+      95.75
+     ],
+     "pied": [
+      258.62,
+      746.0
+     ],
+     "profondeur": 0.502,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 2.02,
+      "amp": 1.1
+     },
+     "atlas": [
+      1074,
+      248,
+      96,
+      96
+     ]
+    },
+    {
+     "rect": [
+      253.75,
+      639.75,
+      86.0,
+      84.5
+     ],
+     "pied": [
+      294.77,
+      723.25
+     ],
+     "profondeur": 0.324,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": true,
+      "phase": 6.07,
+      "amp": 1.06
+     },
+     "atlas": [
+      1668,
+      248,
+      86,
+      84
+     ]
+    },
+    {
+     "rect": [
+      3.75,
+      617.25,
+      42.5,
+      75.5
+     ],
+     "pied": [
+      24.27,
+      691.75
+     ],
+     "profondeur": 0.122,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 0.24,
+      "amp": 1.15
+     },
+     "atlas": [
+      1915,
+      248,
+      42,
+      76
+     ]
+    },
+    {
+     "rect": [
+      90.25,
+      617.75,
+      61.5,
+      70.0
+     ],
+     "pied": [
+      131.32,
+      686.75
+     ],
+     "profondeur": 0.085,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 2.69,
+      "amp": 1.01
+     },
+     "atlas": [
+      0,
+      396,
+      62,
+      70
+     ]
+    },
+    {
+     "rect": [
+      166.25,
+      634.25,
+      54.5,
+      64.5
+     ],
+     "pied": [
+      186.88,
+      697.75
+     ],
+     "profondeur": 0.215,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 0.16,
+      "amp": 0.95
+     },
+     "atlas": [
+      515,
+      396,
+      54,
+      64
+     ]
+    },
+    {
+     "rect": [
+      445.25,
+      686.25,
+      59.75,
+      60.75
+     ],
+     "pied": [
+      503.2,
+      746.0
+     ],
+     "profondeur": 0.492,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 5.48,
+      "amp": 0.94
+     },
+     "atlas": [
+      604,
+      396,
+      60,
+      61
+     ]
+    },
+    {
+     "rect": [
+      0.0,
+      625.25,
+      17.25,
+      55.5
+     ],
+     "pied": [
+      7.88,
+      679.75
+     ],
+     "profondeur": 0.349,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "debout",
+      "leve": false,
+      "phase": 2.23,
+      "amp": 1.01
+     },
+     "atlas": [
+      954,
+      396,
+      17,
+      56
+     ]
+    },
+    {
+     "rect": [
+      0.0,
+      675.75,
+      38.25,
+      33.0
+     ],
+     "pied": [
+      25.3,
+      707.75
+     ],
+     "profondeur": 0.421,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": true,
+      "phase": 3.71,
+      "amp": 1.07
+     },
+     "atlas": [
+      1840,
+      396,
+      38,
+      33
+     ]
+    }
+   ],
+   "2": [
+    {
+     "rect": [
+      1118.75,
+      99.25,
+      99.0,
+      146.0
+     ],
+     "pied": [
+      1209.22,
+      244.25
+     ],
+     "profondeur": 0.547,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.217,
+      "phase": 4.66
+     },
+     "atlas": [
+      0,
+      248,
+      99,
+      146
+     ]
+    },
+    {
+     "rect": [
+      1280.25,
+      109.25,
+      102.5,
+      138.75
+     ],
+     "pied": [
+      1296.62,
+      247.0
+     ],
+     "profondeur": 0.506,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.14,
+      "phase": 5.21
+     },
+     "atlas": [
+      101,
+      248,
+      102,
+      139
+     ]
+    },
+    {
+     "rect": [
+      1026.0,
+      86.25,
+      81.25,
+      89.0
+     ],
+     "pied": [
+      1096.45,
+      174.25
+     ],
+     "profondeur": 0.386,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.202,
+      "phase": 3.12
+     },
+     "atlas": [
+      1585,
+      248,
+      81,
+      89
+     ]
+    },
+    {
+     "rect": [
+      1459.75,
+      104.25,
+      58.5,
+      67.5
+     ],
+     "pied": [
+      1474.0,
+      170.75
+     ],
+     "profondeur": 0.23,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.201,
+      "phase": 5.32
+     },
+     "atlas": [
+      176,
+      396,
+      58,
+      68
+     ]
+    },
+    {
+     "rect": [
+      1200.25,
+      123.25,
+      28.5,
+      52.0
+     ],
+     "pied": [
+      1209.62,
+      174.25
+     ],
+     "profondeur": 0.311,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.141,
+      "phase": 1.21
+     },
+     "atlas": [
+      1044,
+      396,
+      28,
+      52
+     ]
+    },
+    {
+     "rect": [
+      1510.75,
+      105.25,
+      25.25,
+      48.5
+     ],
+     "pied": [
+      1527.75,
+      152.75
+     ],
+     "profondeur": 0.279,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.205,
+      "phase": 3.19
+     },
+     "atlas": [
+      1255,
+      396,
+      25,
+      48
+     ]
+    },
+    {
+     "rect": [
+      1102.25,
+      92.75,
+      45.5,
+      45.0
+     ],
+     "pied": [
+      1139.3,
+      136.75
+     ],
+     "profondeur": 0.2,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.25,
+      "phase": 3.95
+     },
+     "atlas": [
+      1382,
+      396,
+      46,
+      45
+     ]
+    },
+    {
+     "rect": [
+      1396.25,
+      109.25,
+      50.5,
+      43.5
+     ],
+     "pied": [
+      1400.75,
+      151.75
+     ],
+     "profondeur": 0.155,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.223,
+      "phase": 1.26
+     },
+     "atlas": [
+      1526,
+      396,
+      50,
+      44
+     ]
+    },
+    {
+     "rect": [
+      1364.75,
+      111.75,
+      35.0,
+      41.5
+     ],
+     "pied": [
+      1395.4,
+      152.25
+     ],
+     "profondeur": 0.168,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.159,
+      "phase": 1.68
+     },
+     "atlas": [
+      1601,
+      396,
+      35,
+      42
+     ]
+    }
+   ],
+   "10": [
+    {
+     "rect": [
+      672.25,
+      843.75,
+      95.75,
+      123.5
+     ],
+     "pied": [
+      683.33,
+      966.25
+     ],
+     "profondeur": 0.549,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 2.93,
+      "amp": 1.05
+     },
+     "atlas": [
+      205,
+      248,
+      96,
+      124
+     ]
+    },
+    {
+     "rect": [
+      464.25,
+      799.75,
+      102.0,
+      117.0
+     ],
+     "pied": [
+      510.77,
+      915.75
+     ],
+     "profondeur": 0.16,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 1.93,
+      "amp": 1.18
+     },
+     "atlas": [
+      542,
+      248,
+      102,
+      117
+     ]
+    },
+    {
+     "rect": [
+      387.0,
+      851.25,
+      66.75,
+      114.5
+     ],
+     "pied": [
+      431.7,
+      964.75
+     ],
+     "profondeur": 0.549,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.79,
+      "amp": 0.99
+     },
+     "atlas": [
+      646,
+      248,
+      67,
+      114
+     ]
+    },
+    {
+     "rect": [
+      572.75,
+      801.75,
+      93.5,
+      59.5
+     ],
+     "pied": [
+      619.98,
+      860.25
+     ],
+     "profondeur": 0.035,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.99,
+      "amp": 0.87
+     },
+     "atlas": [
+      724,
+      396,
+      94,
+      60
+     ]
+    },
+    {
+     "rect": [
+      673.25,
+      891.75,
+      37.0,
+      27.5
+     ],
+     "pied": [
+      693.65,
+      918.25
+     ],
+     "profondeur": 0.2,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.73,
+      "amp": 1.06
+     },
+     "atlas": [
+      0,
+      468,
+      37,
+      28
+     ]
+    }
+   ],
+   "4": [
+    {
+     "rect": [
+      710.75,
+      350.75,
+      49.5,
+      121.0
+     ],
+     "pied": [
+      736.55,
+      470.75
+     ],
+     "profondeur": 0.387,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.248,
+      "phase": 3.58
+     },
+     "atlas": [
+      396,
+      248,
+      50,
+      121
+     ]
+    },
+    {
+     "rect": [
+      671.25,
+      355.75,
+      44.5,
+      119.5
+     ],
+     "pied": [
+      691.08,
+      474.25
+     ],
+     "profondeur": 0.419,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.157,
+      "phase": 1.21
+     },
+     "atlas": [
+      448,
+      248,
+      44,
+      120
+     ]
+    },
+    {
+     "rect": [
+      756.25,
+      354.75,
+      46.0,
+      118.5
+     ],
+     "pied": [
+      780.35,
+      472.25
+     ],
+     "profondeur": 0.367,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.245,
+      "phase": 4.16
+     },
+     "atlas": [
+      494,
+      248,
+      46,
+      118
+     ]
+    },
+    {
+     "rect": [
+      908.75,
+      387.25,
+      71.0,
+      90.0
+     ],
+     "pied": [
+      915.88,
+      476.25
+     ],
+     "profondeur": 0.784,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.206,
+      "phase": 1.13
+     },
+     "atlas": [
+      1512,
+      248,
+      71,
+      90
+     ]
+    },
+    {
+     "rect": [
+      644.75,
+      365.25,
+      31.0,
+      63.0
+     ],
+     "pied": [
+      673.05,
+      427.25
+     ],
+     "profondeur": 0.359,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.166,
+      "phase": 4.22
+     },
+     "atlas": [
+      571,
+      396,
+      31,
+      63
+     ]
+    },
+    {
+     "rect": [
+      605.25,
+      386.25,
+      39.5,
+      38.5
+     ],
+     "pied": [
+      620.75,
+      423.75
+     ],
+     "profondeur": 0.594,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.246,
+      "phase": 4.03
+     },
+     "atlas": [
+      1780,
+      396,
+      40,
+      38
+     ]
+    },
+    {
+     "rect": [
+      856.75,
+      395.75,
+      36.0,
+      22.0
+     ],
+     "pied": [
+      884.02,
+      416.75
+     ],
+     "profondeur": 0.478,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.156,
+      "phase": 5.31
+     },
+     "atlas": [
+      57,
+      468,
+      36,
+      22
+     ]
+    }
+   ],
+   "3": [
+    {
+     "rect": [
+      398.25,
+      399.25,
+      44.0,
+      95.5
+     ],
+     "pied": [
+      411.93,
+      493.75
+     ],
+     "profondeur": 0.694,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.221,
+      "phase": 0.95
+     },
+     "atlas": [
+      1028,
+      248,
+      44,
+      96
+     ]
+    },
+    {
+     "rect": [
+      83.75,
+      396.25,
+      25.5,
+      60.0
+     ],
+     "pied": [
+      97.7,
+      455.25
+     ],
+     "profondeur": 0.442,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.245,
+      "phase": 2.27
+     },
+     "atlas": [
+      696,
+      396,
+      26,
+      60
+     ]
+    },
+    {
+     "rect": [
+      356.75,
+      400.75,
+      24.0,
+      58.0
+     ],
+     "pied": [
+      366.43,
+      457.75
+     ],
+     "profondeur": 0.433,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.179,
+      "phase": 0.94
+     },
+     "atlas": [
+      820,
+      396,
+      24,
+      58
+     ]
+    },
+    {
+     "rect": [
+      329.25,
+      401.25,
+      30.0,
+      57.5
+     ],
+     "pied": [
+      343.38,
+      457.75
+     ],
+     "profondeur": 0.4,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.152,
+      "phase": 6.08
+     },
+     "atlas": [
+      846,
+      396,
+      30,
+      58
+     ]
+    },
+    {
+     "rect": [
+      158.75,
+      402.75,
+      26.0,
+      58.5
+     ],
+     "pied": [
+      165.62,
+      460.25
+     ],
+     "profondeur": 0.413,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.186,
+      "phase": 6.15
+     },
+     "atlas": [
+      878,
+      396,
+      26,
+      58
+     ]
+    },
+    {
+     "rect": [
+      281.25,
+      403.75,
+      21.0,
+      43.5
+     ],
+     "pied": [
+      286.3,
+      446.25
+     ],
+     "profondeur": 0.281,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.211,
+      "phase": 3.8
+     },
+     "atlas": [
+      1578,
+      396,
+      21,
+      44
+     ]
+    },
+    {
+     "rect": [
+      468.75,
+      397.75,
+      28.0,
+      41.0
+     ],
+     "pied": [
+      486.18,
+      437.75
+     ],
+     "profondeur": 0.476,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.193,
+      "phase": 1.5
+     },
+     "atlas": [
+      1656,
+      396,
+      28,
+      41
+     ]
+    },
+    {
+     "rect": [
+      267.25,
+      407.75,
+      16.5,
+      32.5
+     ],
+     "pied": [
+      276.12,
+      439.25
+     ],
+     "profondeur": 0.225,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.147,
+      "phase": 2.43
+     },
+     "atlas": [
+      1964,
+      396,
+      16,
+      32
+     ]
+    }
+   ],
+   "9": [
+    {
+     "rect": [
+      0.0,
+      890.25,
+      218.25,
+      93.0
+     ],
+     "pied": [
+      5.62,
+      982.25
+     ],
+     "profondeur": 0.812,
+     "genre": "bateau",
+     "mouvement": {
+      "type": "tangage",
+      "phase": 0.71
+     },
+     "atlas": [
+      1250,
+      248,
+      218,
+      93
+     ]
+    },
+    {
+     "rect": [
+      289.25,
+      875.75,
+      42.5,
+      82.5
+     ],
+     "pied": [
+      320.8,
+      957.25
+     ],
+     "profondeur": 0.385,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.17,
+      "phase": 5.06
+     },
+     "atlas": [
+      1814,
+      248,
+      42,
+      82
+     ]
+    },
+    {
+     "rect": [
+      0.0,
+      841.25,
+      277.25,
+      68.0
+     ],
+     "pied": [
+      209.97,
+      908.25
+     ],
+     "profondeur": 0.361,
+     "genre": "bateau",
+     "mouvement": {
+      "type": "tangage",
+      "phase": 4.25
+     },
+     "atlas": [
+      236,
+      396,
+      277,
+      68
+     ]
+    },
+    {
+     "rect": [
+      233.75,
+      894.75,
+      46.0,
+      57.0
+     ],
+     "pied": [
+      250.03,
+      950.75
+     ],
+     "profondeur": 0.436,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.251,
+      "phase": 0.43
+     },
+     "atlas": [
+      906,
+      396,
+      46,
+      57
+     ]
+    },
+    {
+     "rect": [
+      356.75,
+      891.75,
+      16.0,
+      42.5
+     ],
+     "pied": [
+      364.1,
+      933.25
+     ],
+     "profondeur": 0.178,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.18,
+      "phase": 2.5
+     },
+     "atlas": [
+      1638,
+      396,
+      16,
+      42
+     ]
+    },
+    {
+     "rect": [
+      341.75,
+      893.75,
+      16.5,
+      38.5
+     ],
+     "pied": [
+      350.75,
+      931.25
+     ],
+     "profondeur": 0.15,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.245,
+      "phase": 2.59
+     },
+     "atlas": [
+      1822,
+      396,
+      16,
+      38
+     ]
+    },
+    {
+     "rect": [
+      196.25,
+      907.25,
+      14.5,
+      32.0
+     ],
+     "pied": [
+      205.22,
+      938.25
+     ],
+     "profondeur": 0.24,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.25,
+      "phase": 5.28
+     },
+     "atlas": [
+      1982,
+      396,
+      14,
+      32
+     ]
+    },
+    {
+     "rect": [
+      226.75,
+      895.25,
+      15.5,
+      30.0
+     ],
+     "pied": [
+      233.55,
+      924.25
+     ],
+     "profondeur": 0.145,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.202,
+      "phase": 5.97
+     },
+     "atlas": [
+      1998,
+      396,
+      16,
+      30
+     ]
+    },
+    {
+     "rect": [
+      275.25,
+      896.75,
+      13.0,
+      28.5
+     ],
+     "pied": [
+      280.75,
+      924.25
+     ],
+     "profondeur": 0.198,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": 1,
+      "vitesse": 0.146,
+      "phase": 1.34
+     },
+     "atlas": [
+      2016,
+      396,
+      13,
+      28
+     ]
+    },
+    {
+     "rect": [
+      210.25,
+      900.25,
+      16.0,
+      23.0
+     ],
+     "pied": [
+      218.88,
+      922.25
+     ],
+     "profondeur": 0.157,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "marche",
+      "dir": -1,
+      "vitesse": 0.216,
+      "phase": 6.1
+     },
+     "atlas": [
+      39,
+      468,
+      16,
+      23
+     ]
+    },
+    {
+     "rect": [
+      0.0,
+      893.25,
+      197.25,
+      17.0
+     ],
+     "pied": [
+      19.3,
+      909.25
+     ],
+     "profondeur": 0.594,
+     "genre": "bateau",
+     "mouvement": {
+      "type": "tangage",
+      "phase": 3.65
+     },
+     "atlas": [
+      145,
+      468,
+      197,
+      17
+     ]
+    }
+   ],
+   "0": [
+    {
+     "rect": [
+      0.0,
+      2.75,
+      29.75,
+      54.0
+     ],
+     "pied": [
+      21.27,
+      55.75
+     ],
+     "profondeur": 0.243,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": false,
+      "phase": 3.93,
+      "amp": 1.16
+     },
+     "atlas": [
+      973,
+      396,
+      30,
+      54
+     ]
+    },
+    {
+     "rect": [
+      358.75,
+      83.75,
+      63.0,
+      40.5
+     ],
+     "pied": [
+      388.48,
+      123.25
+     ],
+     "profondeur": 0.138,
+     "genre": "pieton",
+     "mouvement": {
+      "type": "vie",
+      "posture": "assis",
+      "leve": true,
+      "phase": 4.87,
+      "amp": 0.89
+     },
+     "atlas": [
+      1686,
+      396,
+      63,
+      40
+     ]
+    }
+   ]
+  }
+ }
+}

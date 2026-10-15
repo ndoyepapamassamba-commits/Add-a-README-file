@@ -66,6 +66,7 @@ uniform sampler2D uDepth;
 uniform vec2 uTile; uniform vec2 uTileSize; uniform vec2 uAtlasSize;
 uniform float uRelief; uniform float uOverscan; uniform vec3 uEye;
 uniform vec4 uCapT; // bandeau en fraction de la vignette (x, y depuis le haut, l, h) ; l = 0 : aucun
+uniform vec4 uSub;  // sous-rectangle de l'image couvert par ce maillage (x, y depuis le bas, l, h)
 uniform float uDepthMode; // 0 : carte de profondeur ; 1 : image importée, sol proche en bas, loin en haut
 out vec2 vT;
 float depthAt(vec2 t) {
@@ -82,7 +83,7 @@ float depthAt(vec2 t) {
   return d;
 }
 void main() {
-  vT = (uv - 0.5) * uOverscan + 0.5;
+  vT = uSub.xy + ((uv - 0.5) * uOverscan + 0.5) * uSub.zw;
   float d = depthAt(clamp(vT, 0.0, 1.0));
   vec4 wp = modelMatrix * vec4(position, 1.0);
   wp.xyz += (uEye - wp.xyz) * (d * uRelief); // le long du rayon de la caméra au repos
@@ -96,14 +97,27 @@ precision highp float;
 uniform sampler2D uSrc; uniform vec2 uSrcSize;
 uniform vec4 uRect;  // vignette, pixels image (x, y, l, h)
 uniform vec4 uCap;   // bandeau, pixels image (l = 0 : aucun)
+uniform sampler2D uAmbM; uniform float uAnim; uniform float uTime; uniform float uLoop;
 in vec2 vT; out vec4 outColor;
 void main() {
   vec2 t = clamp(vT, 0.0, 1.0);
   vec2 px = uRect.xy + vec2(t.x, 1.0 - t.y) * uRect.zw;
   // Sous le bandeau (calque fixe), on étale la ligne du dessus : pas de doublon qui dépasse.
   if (uCap.z > 0.0 && px.x <= uCap.x + uCap.z + 3.0 && px.y >= uCap.y - 3.0 && px.y <= uCap.y + uCap.w + 1.0) px.y = uCap.y - 4.0;
-  px = clamp(px, uRect.xy + 0.5, uRect.xy + uRect.zw - 0.5);
-  outColor = vec4(texture(uSrc, px / uSrcSize).rgb, 1.0);
+  vec2 lo = uRect.xy + 0.5, hi = uRect.xy + uRect.zw - 0.5;
+  px = clamp(px, lo, hi);
+  if (uAnim < 0.5) { outColor = vec4(texture(uSrc, px / uSrcSize).rgb, 1.0); return; }
+  // Univers animé, en boucle parfaite de uLoop secondes : vent, nuages, vagues, reflets.
+  float w = 6.2831853 / uLoop;
+  vec3 amb = texture(uAmbM, px / uSrcSize).rgb;
+  float ty = 1.0 - (px.y - uRect.y) / uRect.w;
+  float wind = amb.g * ty * (sin(uTime * w * 2.0 + ty * 9.0 + px.x * 0.02) * 0.011 + sin(uTime * w * 4.0 + ty * 21.0) * 0.003) * uRect.z;
+  float wave = amb.b * sin(uTime * w * 3.0 + px.x * 0.25 + px.y * 0.12) * 0.004 * uRect.w;
+  vec3 col = texture(uSrc, clamp(px + vec2(wind, wave), lo, hi) / uSrcSize).rgb;
+  vec2 sp = clamp(px - vec2(sin(uTime * w) * 0.02 * uRect.z, 0.0), lo, hi);
+  col = mix(col, texture(uSrc, sp / uSrcSize).rgb, amb.r * texture(uAmbM, sp / uSrcSize).r);
+  col += amb.b * pow(max(0.0, sin(uTime * w * 4.0 + px.x * 0.55 + sin(px.y * 0.35 + uTime * w) * 2.0)), 24.0) * 0.2;
+  outColor = vec4(col, 1.0);
 }
 `;
 
@@ -120,11 +134,74 @@ void main() {
 `;
 
 // Plaque du diaporama : la légende fait partie de la plaque (profondeur plate, donc jamais déformée).
+// Univers animé : uAmb porte les masques ciel (R), arbres (G) et eau (B) de la vignette.
 const PLATE_FRAG = /* glsl */ `
 precision highp float;
 uniform sampler2D uTex; uniform float uAlpha;
+uniform sampler2D uAmb; uniform float uAnim; uniform float uTime;
 in vec2 vT; out vec4 outColor;
-void main() { outColor = vec4(texture(uTex, clamp(vT, 0.0, 1.0)).rgb, uAlpha); }
+void main() {
+  vec2 p = clamp(vT, 0.0, 1.0);
+  if (uAnim < 0.5) { outColor = vec4(texture(uTex, p).rgb, uAlpha); return; }
+  vec3 amb = texture(uAmb, p).rgb;
+  // vent : les feuillages ondulent, davantage en hauteur
+  float wind = amb.g * p.y * (sin(uTime * 1.6 + p.y * 9.0 + p.x * 3.0) * 0.005 + sin(uTime * 2.9 + p.y * 21.0) * 0.0015);
+  // eau : petites vagues
+  float wave = amb.b * sin(uTime * 2.0 + p.x * 70.0 + p.y * 30.0) * 0.0018;
+  vec3 col = texture(uTex, p + vec2(wind, wave)).rgb;
+  // nuages : le ciel dérive lentement
+  vec2 sp = p - vec2(uTime * 0.008, 0.0);
+  col = mix(col, texture(uTex, sp).rgb, amb.r * texture(uAmb, sp).r);
+  // reflets du soleil sur l'eau
+  col += amb.b * pow(max(0.0, sin(uTime * 3.0 + p.x * 140.0 + sin(p.y * 90.0 + uTime) * 2.0)), 24.0) * 0.2;
+  outColor = vec4(col, uAlpha);
+}
+`;
+
+// Découpe (personnage, véhicule) : panneau placé en 3D, ancré à son pied, légèrement pivoté.
+const SPRITE_VERT = /* glsl */ `
+precision highp float;
+in vec3 position; in vec2 uv;
+uniform mat4 viewMatrix; uniform mat4 projectionMatrix;
+uniform vec3 uFoot; uniform vec2 uSize; uniform vec2 uPivot; uniform float uRot;
+uniform float uDepth; uniform float uRelief; uniform vec3 uEye;
+uniform float uBend;   // le haut du corps se penche (courbure), la base reste en place
+uniform float uBreath; // respiration : le buste s'allonge un peu
+uniform float uWave;   // main levée : seul le sommet s'agite
+out vec2 vUv;
+void main() {
+  vUv = uv;
+  vec2 local = (uv - uPivot) * uSize;
+  float hy = max(0.0, uv.y - uPivot.y) / max(1e-3, 1.0 - uPivot.y);
+  local.x += (uBend * hy * hy + uWave * pow(hy, 6.0)) * uSize.y;
+  local.y *= 1.0 + uBreath * hy;
+  float c = cos(uRot), s = sin(uRot);
+  vec3 wp = uFoot + vec3(c * local.x - s * local.y, s * local.x + c * local.y, 0.0);
+  wp += (uEye - wp) * (uDepth * uRelief); // le long du rayon de la caméra au repos, comme la plaque
+  gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
+}
+`;
+const SPRITE_FRAG = /* glsl */ `
+precision highp float;
+uniform sampler2D uAtlas; uniform vec4 uAtlasRect; uniform float uAlpha;
+in vec2 vUv; out vec4 outColor;
+void main() {
+  vec2 a = vec2(uAtlasRect.x + vUv.x * uAtlasRect.z, uAtlasRect.y + (1.0 - vUv.y) * uAtlasRect.w);
+  vec4 c = texture(uAtlas, vec2(a.x, 1.0 - a.y));
+  if (c.a < 0.02) discard;
+  outColor = vec4(c.rgb, c.a * uAlpha);
+}
+`;
+const SHADOW_FRAG = /* glsl */ `
+precision highp float;
+uniform float uAlpha;
+in vec2 vUv; out vec4 outColor;
+void main() {
+  vec2 q = vUv * 2.0 - 1.0;
+  float d = dot(q, q);
+  if (d > 1.0) discard;
+  outColor = vec4(0.0, 0.0, 0.0, (1.0 - d) * (1.0 - d) * uAlpha);
+}
 `;
 
 const OVERLAY_FRAG = /* glsl */ `
@@ -148,9 +225,11 @@ export class Studio {
    * @param {CanvasImageSource} o.depthImage    assets/depth-atlas.png
    * @param {(i:number) => Promise<CanvasImageSource>} o.loadTile  vignette agrandie i
    */
-  constructor({ canvas, meta, sourceImage, depthImage, loadTile }) {
+  constructor({ canvas, meta, sourceImage, depthImage, loadTile, animData = null, loadAnim = null }) {
     this.meta = meta;
     this.loadTile = loadTile;
+    this.animData = animData;   // assets/anim.json : découpes et trajectoires par vignette
+    this.loadAnim = loadAnim;   // (i) => Promise<{fond, decoupes, ambiance}>
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(1);
     this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
@@ -184,12 +263,14 @@ export class Studio {
     const meshUniforms = () => ({
       uDepth: { value: this.depth }, uTile: { value: new THREE.Vector2() }, uTileSize: { value: this.tileSize },
       uAtlasSize: { value: this.atlasSize }, uRelief: { value: 0.2 }, uOverscan: { value: 1 }, uEye: { value: new THREE.Vector3() },
-      uCapT: { value: new THREE.Vector4() },
+      uCapT: { value: new THREE.Vector4() }, uSub: { value: new THREE.Vector4(0, 0, 1, 1) },
     });
     this.tileMat = raw(MESH_VERT, TILE_FRAG, {
       ...meshUniforms(), uSrc: { value: this.src }, uSrcSize: { value: this.srcSize },
       uRect: { value: new THREE.Vector4() }, uCap: { value: new THREE.Vector4() },
+      uAmbM: { value: null }, uAnim: { value: 0 }, uTime: { value: 0 }, uLoop: { value: MOSAIC_LOOP },
     }, { depthTest: true, depthWrite: true });
+    this.mosaicAnim = null; // textures de la planche animée (fond reconstruit, ambiance, découpes)
     this.tileMat.uniforms.uOverscan.value = OVERSCAN;
     this.tileMesh = this.mesh(new THREE.PlaneGeometry(OVERSCAN, OVERSCAN, 95, 63), this.tileMat);
 
@@ -201,10 +282,26 @@ export class Studio {
       uTex: { value: null }, uAspect: { value: 1.5 }, uScreenAspect: { value: 9 / 16 }, uZoom: { value: 1 }, uAlpha: { value: 1 },
     }, { transparent: true });
     this.blurMesh = this.mesh(fullscreen, this.blurMat);
-    this.plateMat = raw(MESH_VERT, PLATE_FRAG, {
+    const plateUniforms = () => ({
       ...meshUniforms(), uTex: { value: null }, uAlpha: { value: 1 }, uDepthMode: { value: 0 },
-    }, { depthTest: true, depthWrite: true, transparent: true });
+      uAmb: { value: null }, uAnim: { value: 0 }, uTime: { value: 0 },
+    });
+    this.plateMat = raw(MESH_VERT, PLATE_FRAG, plateUniforms(), { depthTest: true, depthWrite: true, transparent: true });
     this.plateMesh = this.mesh(new THREE.PlaneGeometry(1, 1, 159, 105), this.plateMat);
+    // Univers animé : découpes, ombres, bandeau redessiné par-dessus.
+    const spriteUniforms = () => ({
+      uFoot: { value: new THREE.Vector3() }, uSize: { value: new THREE.Vector2() }, uPivot: { value: new THREE.Vector2() },
+      uRot: { value: 0 }, uDepth: { value: 0 }, uRelief: { value: 0.15 }, uEye: { value: new THREE.Vector3() }, uAlpha: { value: 1 },
+      uBend: { value: 0 }, uBreath: { value: 0 }, uWave: { value: 0 },
+    });
+    this.spriteMat = raw(SPRITE_VERT, SPRITE_FRAG, { ...spriteUniforms(), uAtlas: { value: null }, uAtlasRect: { value: new THREE.Vector4() } }, { transparent: true });
+    this.spriteMesh = this.mesh(new THREE.PlaneGeometry(1, 1, 6, 16), this.spriteMat); // subdivisé : le corps peut se courber
+    this.shadowMat = raw(SPRITE_VERT, SHADOW_FRAG, spriteUniforms(), { transparent: true });
+    this.shadowMesh = this.mesh(new THREE.PlaneGeometry(1, 1), this.shadowMat);
+    this.capMat = raw(MESH_VERT, PLATE_FRAG, plateUniforms(), { transparent: true });
+    this.capMesh = this.mesh(new THREE.PlaneGeometry(1, 1, 8, 4), this.capMat);
+    this.animTextures = new Map();
+    this.animLoading = new Map();
     this.tileMat.uniforms.uDepthMode = { value: 0 };
     this.overlayMat = raw(FULLSCREEN_VERT, OVERLAY_FRAG, { uTex: { value: null }, uAlpha: { value: 1 } }, { transparent: true });
     this.overlayMesh = this.mesh(fullscreen, this.overlayMat);
@@ -302,8 +399,8 @@ export class Studio {
     const local = t - segs[j].start;
     const u = (k) => Math.min(1, Math.max(0, (t - segs[k].start) / (segs[k].dur + F)));
     const layers = [];
-    if (j > 0 && F > 0 && local < F) layers.push({ seg: segs[j - 1], u: u(j - 1), alpha: 1 });
-    layers.push({ seg: segs[j], u: u(j), alpha: j > 0 && F > 0 ? ease(local / F) : 1 });
+    if (j > 0 && F > 0 && local < F) layers.push({ seg: segs[j - 1], u: u(j - 1), tau: t - segs[j - 1].start, alpha: 1 });
+    layers.push({ seg: segs[j], u: u(j), tau: local, alpha: j > 0 && F > 0 ? ease(local / F) : 1 });
     return layers;
   }
 
@@ -329,6 +426,50 @@ export class Studio {
     const ids = [...layers.map((l) => l.seg.image), segs[lastIdx + 1]?.image].filter(Boolean);
     await Promise.all(ids.slice(0, layers.length).map((id) => this.texture(id)));
     if (ids[layers.length]) this.texture(ids[layers.length]);
+    const animIds = ids.map((id) => this.imageInfo(id)).filter((info) => info && this.animOn(s, info)).map((info) => info.tile.i);
+    await Promise.all(animIds.slice(0, layers.length).map((i) => this.animTexturesFor(i)));
+    if (animIds[layers.length] != null) this.animTexturesFor(animIds[layers.length]);
+  }
+
+  /** Planche animée : décor reconstruit, masques d'ambiance et découpes à l'échelle de la planche. */
+  setMosaicAnim({ fond, ambiance, decoupes }) {
+    const mk = (img, flipY) => {
+      const t = new THREE.Texture(img);
+      Object.assign(t, { flipY, colorSpace: THREE.NoColorSpace, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: false });
+      t.needsUpdate = true;
+      return t;
+    };
+    this.mosaicAnim = { fond: mk(fond, false), ambiance: mk(ambiance, false), decoupes: mk(decoupes, true) };
+  }
+
+  /** L'univers de cette vignette est-il animé (personnages, véhicules, vent, eau) ? */
+  animOn(s, info) {
+    return s.mode === '3d' && s.plan?.animate !== false && info?.kind === 'tile' && !!this.animData?.tiles?.[info.tile.i] && !!this.loadAnim;
+  }
+
+  animTexturesFor(i) {
+    if (this.animTextures.has(i)) return Promise.resolve(this.animTextures.get(i));
+    if (!this.animLoading.has(i)) {
+      this.animLoading.set(i, this.loadAnim(i).then(({ fond, decoupes, ambiance }) => {
+        const mk = (img, mip) => {
+          const t = new THREE.Texture(img);
+          Object.assign(t, { colorSpace: THREE.NoColorSpace, magFilter: THREE.LinearFilter, generateMipmaps: mip,
+            minFilter: mip ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter });
+          t.needsUpdate = true;
+          return t;
+        };
+        const set = { fond: mk(fond, true), decoupes: mk(decoupes, false), ambiance: mk(ambiance, false) };
+        this.animTextures.set(i, set);
+        this.animLoading.delete(i);
+        while (this.animTextures.size > 4) {
+          const [k, old] = this.animTextures.entries().next().value;
+          Object.values(old).forEach((t) => t.dispose());
+          this.animTextures.delete(k);
+        }
+        return set;
+      }));
+    }
+    return this.animLoading.get(i);
   }
 
   texture(id) {
@@ -374,7 +515,7 @@ export class Studio {
     r.setScissorTest(false);
     r.setViewport(0, 0, w, h);
     r.clear();
-    for (const m of [this.bgMesh, this.tileMesh, this.capsMesh, this.blurMesh, this.plateMesh, this.overlayMesh]) m.visible = false;
+    for (const m of [this.bgMesh, this.tileMesh, this.capsMesh, this.blurMesh, this.plateMesh, this.overlayMesh, this.spriteMesh, this.shadowMesh, this.capMesh]) m.visible = false;
     if (s.format === 'mosaic') this.renderMosaic(s, frame / FPS);
     else this.renderPlan(s, frame / FPS);
   }
@@ -398,6 +539,11 @@ export class Studio {
       ? { x: 0.8 * Math.cos((TAU * t) / MOSAIC_LOOP), y: 0.6 * Math.sin((TAU * t) / MOSAIC_LOOP) }
       : (s.pointer || { x: 0, y: 0 });
     u.uRelief.value = s.relief ?? 0.2;
+    const animM = s.animate !== false && this.mosaicAnim && this.animData?.planche;
+    u.uSrc.value = animM ? this.mosaicAnim.fond : this.src;
+    u.uAmbM.value = animM ? this.mosaicAnim.ambiance : null;
+    u.uAnim.value = animM ? 1 : 0;
+    u.uTime.value = t;
     r.setScissorTest(true);
     for (const tile of this.tiles) {
       const [x, y, tw, th] = tile.rect;
@@ -415,6 +561,15 @@ export class Studio {
       const v = camFn(t, tile, ptr, this.meta.grid);
       this.placeCamera(cam, tw / th, dist, v.yaw + (s.user?.yaw || 0), v.pitch + (s.user?.pitch || 0), v.zoom * (s.user?.zoom || 1));
       this.draw(this.tileMesh, cam);
+      const list = animM && this.animData.planche.parVignette[tile.i];
+      if (list?.length) {
+        const cx = x + tw / 2, cy = y + th / 2;
+        this.drawSprites(list, {
+          vp: this.animData.tiles[tile.i].fuitePlanche, atlas: this.mosaicAnim.decoupes, atlasSize: this.animData.planche.atlas,
+          toWorld: (px, py, vec) => vec.set(px - cx, cy - py, 0), unitX: 1, unitY: 1, bounds: [x, y, x + tw, y + th],
+          tau: t, loop: MOSAIC_LOOP, relief: u.uRelief.value, dist, alpha: 1,
+        });
+      }
     }
     r.setScissorTest(false);
     r.setViewport(0, 0, this.mosaicSize.w, H);
@@ -425,7 +580,7 @@ export class Studio {
     const { w: W, h: H } = this.size;
     const plan = s.plan;
     const still = s.mode !== '3d';
-    for (const { seg, u: progress, alpha } of this.layersAt(s, t)) {
+    for (const { seg, u: progress, tau, alpha } of this.layersAt(s, t)) {
       const info = seg.image && this.imageInfo(seg.image);
       const tex = seg.image && this.textureNow(seg.image);
       if (seg.image && !tex) { this.texture(seg.image); continue; }
@@ -440,10 +595,18 @@ export class Studio {
       }
 
       if (seg.kind === 'shot' && tex) {
-        const pw = Math.min(W, H * info.aspect), ph = pw / info.aspect; // « contain »
+        const cover = plan.fit === 'cover';
+        const pw = cover ? Math.max(W, H * info.aspect) : Math.min(W, H * info.aspect); // « cover » ou « contain »
+        const ph = pw / info.aspect;
+        const span = cover ? Math.max(0, (pw - W) / 2 - 2) / pw : 0; // marge de panoramique (fraction de largeur)
         const pu = this.plateMat.uniforms;
         const dist = H / 2 / TAN;
-        pu.uTex.value = tex;
+        const anim = this.animOn(s, info) ? this.animTextures.get(info.tile.i) : null;
+        if (this.animOn(s, info) && !anim) this.animTexturesFor(info.tile.i);
+        pu.uTex.value = anim ? anim.fond : tex;
+        pu.uAnim.value = anim ? 1 : 0;
+        pu.uAmb.value = anim ? anim.ambiance : null;
+        pu.uTime.value = tau;
         pu.uAlpha.value = alpha;
         pu.uRelief.value = still ? 0 : plan.relief;
         pu.uEye.value.set(0, 0, dist);
@@ -458,7 +621,12 @@ export class Studio {
         const m = MOVES[seg.shot.move] || MOVES.fixe;
         const e = ease(progress), k = plan.intensity;
         const at = (key, neutral) => {
-          const a = m.from[key] ?? neutral, b = m.to[key] ?? neutral;
+          let a = m.from[key] ?? neutral, b = m.to[key] ?? neutral;
+          if (key === 'panX' && span > 0 && seg.shot.move.startsWith('travelling')) { // plein écran : parcourt toute l'image
+            a = Math.sign(a) * span;
+            b = Math.sign(b) * span;
+            return a + (b - a) * e;
+          }
           return neutral + (a + (b - a) * e - neutral) * k;
         };
         const user = s.user || { yaw: 0, pitch: 0, zoom: 1 };
@@ -467,6 +635,16 @@ export class Studio {
           still ? 0 : at('panX', 0) * pw, still ? 0 : at('panY', 0) * pw);
         this.renderer.clearDepth();
         this.draw(this.plateMesh, this.camera);
+        if (anim) {
+          const data = this.animData.tiles[info.tile.i];
+          const [iw, ih] = data.taille;
+          this.drawSprites(data.decoupesListe, {
+            vp: data.fuite, atlas: anim.decoupes, atlasSize: data.atlas,
+            toWorld: (px, py, vec) => vec.set((px / iw - 0.5) * pw, (0.5 - py / ih) * ph, 0), unitX: pw / iw, unitY: ph / ih,
+            bounds: [0, 0, iw, ih], tau, relief: pu.uRelief.value, dist, alpha,
+          });
+          this.drawCaption(info.tile, anim.fond, pu, { pw, ph, alpha });
+        }
         if (seg.shot.text) this.drawText(seg.shot.text, 'shot', alpha, { ph });
       }
 
@@ -479,6 +657,122 @@ export class Studio {
         this.drawText(seg.text, 'card', alpha * Math.min(1, progress * 6), { progress });
       }
     }
+  }
+
+  // Personnages et véhicules : chaque découpe suit sa trajectoire, du plus loin au plus proche.
+  // loop > 0 : boucle parfaite (en fin de boucle, la découpe se fond et réapparaît à son point de départ).
+  drawSprites(list, { vp, atlas, atlasSize, toWorld, unitX, unitY, bounds, tau, loop = 0, relief, dist, alpha }) {
+    const [vx, vy] = vp;
+    const [AW, AH] = atlasSize;
+    const [bx0, by0, bx1, by1] = bounds;
+    const at = (e, time, a0) => {
+      const [x0, y0, w, h] = e.rect;
+      const [fx, fy] = e.pied;
+      const m = e.mouvement;
+      let px = fx, py = fy, sc = 1, rot = 0, bob = 0, bend = 0, breath = 0, wave = 0;
+      // en boucle, les fréquences sont des multiples de 2π/loop : le mouvement revient exactement au départ
+      const f = (hz) => (loop > 0 ? Math.max(1, Math.round((hz * loop) / (2 * Math.PI))) * (2 * Math.PI) / loop : hz);
+      if (m.type === 'vie') { // intérieur : la personne reste à sa place
+        const A = m.amp || 1;
+        breath = Math.sin(time * f(1.7) + m.phase) * 0.012 * A;
+        bend = (Math.sin(time * f(0.9) + m.phase) * 0.035 + Math.sin(time * f(2.3) + m.phase * 1.7) * 0.012) * A;
+        if (m.posture === 'debout') {
+          px = fx + Math.sin(time * f(0.5) + m.phase) * h * 0.015; // léger transfert d'appui
+          bob = Math.abs(Math.sin(time * f(1.0) + m.phase)) * h * 0.005;
+          bend *= 0.7;
+          wave = Math.sin(time * f(1.3) + m.phase) * 0.03;          // geste lent du bras levé
+        }
+        if (m.leve) wave = Math.sin(time * f(5.5) + m.phase) * 0.06;
+      } else if (m.type === 'route') { // vers le point de fuite (s'éloigne) ou vers le spectateur (approche)
+        const k = (m.sens === 'eloigne' ? 1 : -1) * m.vitesse * time;
+        px = fx + (vx - fx) * k;
+        py = fy + (vy - fy) * k;
+        sc = Math.max(0.25, Math.min(2.2, (py - vy) / Math.max(1e-3, fy - vy)));
+        bob = Math.sin(time * 11 + x0) * h * 0.002; // vibration du moteur
+      } else if (m.type === 'marche') {
+        px = fx + m.dir * m.vitesse * h * time;
+        bob = Math.abs(Math.sin(time * 5.6 + m.phase)) * h * 0.018; // rebond des pas
+        rot = Math.sin(time * 2.8 + m.phase) * 0.025;               // balancement
+      } else {
+        rot = Math.sin(time * 1.3 + m.phase) * 0.035;
+        bob = Math.sin(time * 1.3 + m.phase) * h * 0.01;
+      }
+      // fondu quand la découpe sort du cadre (par rapport à sa position de départ : une découpe qui
+      // touchait déjà le bord au repos reste entière)
+      const edgeAt = (x, y, k) => Math.min(x - (w * k) / 2 - bx0, bx1 - (x + (w * k) / 2), by1 - y + h * k * 0.15) / Math.max(1e-3, (w * k) * 0.3);
+      const edge = m.type === 'vie' ? 1 : edgeAt(px, py, sc) - Math.min(0, edgeAt(fx, fy, 1));
+      const a = a0 * Math.max(0, Math.min(1, edge + 1));
+      return { e, x0, y0, w, h, fx, fy, px, py, sc, rot, bob, bend, breath, wave, a, depth: Math.max(0, Math.min(1, e.profondeur + (sc - 1) * 0.35)) };
+    };
+    const items = [];
+    for (const e of list) {
+      if (loop > 0 && (e.mouvement.type === 'vie' || e.mouvement.type === 'tangage')) {
+        items.push(at(e, ((tau % loop) + loop) % loop, alpha)); // déjà périodique : pas de fondu de boucle
+      } else if (loop > 0) {
+        const tl = ((tau % loop) + loop) % loop, F = 0.8;
+        const fade = tl > loop - F ? (loop - tl) / F : 1;
+        items.push(at(e, tl, alpha * fade));
+        if (fade < 1) items.push(at(e, 0, alpha * (1 - fade)));
+      } else items.push(at(e, tau, alpha));
+    }
+    const visible = items.filter((it) => it.a > 0.01).sort((p, q) => p.py - q.py);
+
+    for (const mat of [this.shadowMat, this.spriteMat]) {
+      mat.uniforms.uEye.value.set(0, 0, dist);
+      mat.uniforms.uRelief.value = relief;
+    }
+    this.spriteMat.uniforms.uAtlas.value = atlas;
+    for (const it of visible) {
+      const su = this.shadowMat.uniforms;
+      toWorld(it.px, it.py, su.uFoot.value);
+      su.uSize.value.set(it.w * it.sc * 0.85 * unitX, Math.max(it.h * 0.05, it.w * 0.11) * it.sc * unitY);
+      su.uPivot.value.set(0.5, 0.5);
+      su.uRot.value = 0;
+      su.uBend.value = 0;
+      su.uBreath.value = 0;
+      su.uWave.value = 0;
+      su.uDepth.value = it.depth;
+      su.uAlpha.value = it.a * (it.e.mouvement.type === 'vie' ? (it.e.mouvement.posture === 'debout' ? 0.22 : 0.1) : it.e.genre === 'pieton' ? 0.3 : 0.4);
+      this.draw(this.shadowMesh, this.camera);
+
+      const u = this.spriteMat.uniforms;
+      toWorld(it.px, it.py - it.bob, u.uFoot.value);
+      u.uSize.value.set(it.w * it.sc * unitX, it.h * it.sc * unitY);
+      u.uPivot.value.set((it.fx - it.x0) / it.w, (it.y0 + it.h - it.fy) / it.h);
+      u.uRot.value = it.rot;
+      u.uBend.value = it.bend;
+      u.uBreath.value = it.breath;
+      u.uWave.value = it.wave;
+      u.uDepth.value = it.depth;
+      u.uAlpha.value = it.a;
+      const [ax, ay, aw, ah] = it.e.atlas;
+      u.uAtlasRect.value.set(ax / AW, ay / AH, aw / AW, ah / AH);
+      this.draw(this.spriteMesh, this.camera);
+    }
+  }
+
+  // Bandeau de légende redessiné par-dessus les découpes (même place 3D que sur la plaque).
+  drawCaption(tile, texFond, pu, { pw, ph, alpha }) {
+    const c = tile.caption;
+    if (!c) return;
+    const [rw, rh] = [tile.rect[2], tile.rect[3]];
+    const u = this.capMat.uniforms;
+    u.uDepth.value = pu.uDepth.value; // même texture de profondeur (référence, pas de copie)
+    u.uTileSize.value = pu.uTileSize.value;
+    u.uAtlasSize.value = pu.uAtlasSize.value;
+    u.uRelief.value = pu.uRelief.value;
+    u.uDepthMode.value = pu.uDepthMode.value;
+    u.uTile.value.copy(pu.uTile.value);
+    u.uEye.value.copy(pu.uEye.value);
+    u.uCapT.value.copy(pu.uCapT.value);
+    u.uOverscan.value = 1;
+    u.uTex.value = texFond;
+    u.uAnim.value = 0;
+    u.uAlpha.value = alpha;
+    u.uSub.value.set(c[0] / rw, 1 - (c[1] + c[3]) / rh, c[2] / rw, c[3] / rh);
+    this.capMesh.position.set(((c[0] + c[2] / 2) / rw - 0.5) * pw, (0.5 - (c[1] + c[3] / 2) / rh) * ph, 0);
+    this.capMesh.scale.set((c[2] / rw) * pw, (c[3] / rh) * ph, 1);
+    this.draw(this.capMesh, this.camera);
   }
 
   // Calque texte dessiné en 2D (titre de carton ou texte de plan), mis en cache par contenu.
