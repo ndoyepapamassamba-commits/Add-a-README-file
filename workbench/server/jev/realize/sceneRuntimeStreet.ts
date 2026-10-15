@@ -1120,9 +1120,11 @@ export function sceneStreet(THREE: typeof T, OrbitControls: typeof OC, S: SceneS
   let composer: InstanceType<ScenePost['EffectComposer']> | null = null;
   if (PP) {
     try {
-      composer = new PP.EffectComposer(renderer, new THREE.WebGLRenderTarget(window.innerWidth * PR, window.innerHeight * PR, { samples: 4, type: THREE.HalfFloatType }));
+      // « #leger » dans l'adresse : sans anticrénelage MSAA ni occlusion ambiante (machines sans carte graphique, tournage)
+      const LITE = /leger|lite/.test(location.hash);
+      composer = new PP.EffectComposer(renderer, new THREE.WebGLRenderTarget(window.innerWidth * PR, window.innerHeight * PR, { samples: LITE ? 0 : 4, type: THREE.HalfFloatType }));
       composer.addPass(new PP.RenderPass(scene, camera));
-      if (PP.GTAOPass) {
+      if (PP.GTAOPass && !LITE) {
         // occlusion ambiante : ombres de contact (pieds des façades, sous les véhicules, entre les objets)
         const ao = new PP.GTAOPass(scene, camera, window.innerWidth, window.innerHeight);
         ao.blendIntensity = 0.9;
