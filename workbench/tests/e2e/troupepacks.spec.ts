@@ -14,6 +14,8 @@ import { openView } from './nav';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const DIST = path.join(ROOT, 'dist');
+// The folder delivered to the user (MASSAMBA_DIR, e.g. a desktop path with spaces and accents), else dist/.
+const HERE = process.env.MASSAMBA_DIR ?? DIST;
 const APP = 'massamba-workbench-direct.html';
 const PACKS = existsSync(DIST) ? readdirSync(DIST).filter((f) => /^massamba-troupe-\d+\.js$/.test(f)).sort() : [];
 const OUT = path.join(ROOT, 'test-results/troupepacks');
@@ -56,7 +58,7 @@ test.describe('App en paquets de décors', () => {
 
   test('paquets à côté de l’app : décors chargés tout seuls, scène 3D en couches prête', async ({ page }) => {
     test.setTimeout(300_000);
-    const errors = await open(page, path.join(DIST, APP));
+    const errors = await open(page, path.join(HERE, APP));
     const status = page.getByTestId('videogen-troupe-status');
     await expect(status).toContainText('chargés depuis les paquets', { timeout: 120_000 });
     const n = Number(/(\d+) décors/.exec((await status.textContent()) ?? '')?.[1]);
