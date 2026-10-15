@@ -798,7 +798,7 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
   // PARAMÈTRES: named cells (the reference's ARRETE, seuils…): the date, and every parameter of the hypotheses.
   const names: { Name: string; Ref: string }[] = [];
   {
-    const s = new Sheet('PARAMÈTRES', 'A6D867');
+    const s = new Sheet('PARAMÈTRES', X.tabColor.data);
     header(s, ctx, 'Paramètres — cellules nommées, à ajuster puis recalcul', sub);
     nav(s, ctx);
     section(s, 'Paramètres du dossier');
@@ -831,7 +831,7 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
     sheets.push(s);
   }
   if (d.sources.length) {
-    const s = new Sheet('SOURCES', '3E5C6B');
+    const s = new Sheet('SOURCES', C.text2);
     header(s, ctx, `${d.sources.length} sources — bibliographie datée, enseignement et application`, sub);
     nav(s, ctx);
     section(s, 'Sources par axe');
@@ -843,7 +843,7 @@ export function dossierXlsx(d: Dossier, o: XlsxOptions = {}): Uint8Array {
     sheets.push(s);
   }
   if (d.glossary.length) {
-    const s = new Sheet('GLOSSAIRE', '3E5C6B');
+    const s = new Sheet('GLOSSAIRE', C.text2);
     header(s, ctx, 'Glossaire', sub);
     nav(s, ctx);
     section(s, `${d.glossary.length} termes`);
@@ -1104,6 +1104,24 @@ function finishWorkbook(bytes: Uint8Array, sheets: Sheet[], d: Dossier): Uint8Ar
       st = /<dxfs[^>]*\/>/.test(st) ? st.replace(/<dxfs[^>]*\/>/, block) : /<dxfs[\s\S]*?<\/dxfs>/.test(st) ? st.replace(/<dxfs[\s\S]*?<\/dxfs>/, block) : st.replace(/(<tableStyles|<colors|<extLst|<\/styleSheet>)/, `${block}$1`);
     }
     z['xl/styles.xml'] = strToU8(st);
+  }
+  // The workbook's own palette (Excel's colour picker, charts the user adds, hyperlinks) and fonts follow the theme.
+  if (z['xl/theme/theme1.xml']) {
+    const D = activeDesign();
+    const hex = (v: string) => v.replace(/^#/, '').toUpperCase();
+    const six = [...D.chartSeries, C.blue, C.gold, C.cyan, C.navy, C.text2, C.green].map(hex).slice(0, 6);
+    const slot = (tag: string, v: string) => `<a:${tag}><a:srgbClr val="${hex(v)}"/></a:${tag}>`;
+    const font = D.font.ui.replace(/[^\w -]/g, '');
+    let th = strFromU8(z['xl/theme/theme1.xml']);
+    th = th
+      .replace(/<a:clrScheme name="[^"]*">/, `<a:clrScheme name="${D.name.replace(/[^\p{L}\p{N} \-—]/gu, '')}">`)
+      .replace(/<a:dk2>[\s\S]*?<\/a:dk2>/, slot('dk2', C.navy))
+      .replace(/<a:lt2>[\s\S]*?<\/a:lt2>/, slot('lt2', C.ice))
+      .replace(/<a:hlink>[\s\S]*?<\/a:hlink>/, slot('hlink', C.blue))
+      .replace(/<a:folHlink>[\s\S]*?<\/a:folHlink>/, slot('folHlink', C.navy))
+      .replace(/(<a:(?:major|minor)Font><a:latin typeface=")[^"]*/g, `$1${font}`);
+    six.forEach((v, i) => (th = th.replace(new RegExp(`<a:accent${i + 1}>[\\s\\S]*?</a:accent${i + 1}>`), slot(`accent${i + 1}`, v))));
+    z['xl/theme/theme1.xml'] = strToU8(th);
   }
   // Recalculate everything when Excel opens the file (the cached values are those of « (Tous) »).
   if (z['xl/workbook.xml']) {

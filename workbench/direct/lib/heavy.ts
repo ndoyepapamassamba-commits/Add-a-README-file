@@ -8,9 +8,10 @@ import { restyleWorkbook } from '../../server/services/officeRestyle';
 import { maisonBand, refreshSommaire } from '../../server/services/maisonBand';
 import { designQA } from '../../server/services/designQA';
 import { addImageSheet } from '../../server/services/officeLogo';
+import { dossierXlsx } from '../../server/services/dossier/dossierXlsx';
 
-type Fns = { houseXlsx: typeof houseXlsx; addLiveDashboard: typeof addLiveDashboard; restyleWorkbook: typeof restyleWorkbook; maisonBand: typeof maisonBand; refreshSommaire: typeof refreshSommaire; designQA: typeof designQA; addImageSheet: typeof addImageSheet };
-const LOCAL: Fns = { houseXlsx, addLiveDashboard, restyleWorkbook, maisonBand, refreshSommaire, designQA, addImageSheet };
+type Fns = { houseXlsx: typeof houseXlsx; addLiveDashboard: typeof addLiveDashboard; restyleWorkbook: typeof restyleWorkbook; maisonBand: typeof maisonBand; refreshSommaire: typeof refreshSommaire; designQA: typeof designQA; addImageSheet: typeof addImageSheet; dossierXlsx: typeof dossierXlsx };
+const LOCAL: Fns = { houseXlsx, addLiveDashboard, restyleWorkbook, maisonBand, refreshSommaire, designQA, addImageSheet, dossierXlsx };
 
 let worker: Worker | null | undefined;
 let seq = 0;

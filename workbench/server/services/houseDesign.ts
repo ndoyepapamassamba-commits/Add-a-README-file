@@ -294,6 +294,18 @@ const shade = (h: string, f: number) =>
     .map((i) => Math.round(parseInt(h.slice(i, i + 2), 16) * (1 - f)).toString(16).padStart(2, '0'))
     .join('')
     .toUpperCase();
+/** Sheet tab colours follow the theme (summary = accent, data = second accent, consolidation = dark, detail = primary);
+ *  the action plan keeps its status green. */
+const tabsOf = (c: Partial<Col>): Design['xlsx'] => ({
+  ...DESIGN.xlsx,
+  tabColor: {
+    summary: c.gold ?? DESIGN.xlsx.tabColor.summary,
+    data: c.cyan ?? DESIGN.xlsx.tabColor.data,
+    consolidation: c.navy ?? DESIGN.xlsx.tabColor.consolidation,
+    detail: c.blue ?? DESIGN.xlsx.tabColor.detail,
+    plan: DESIGN.xlsx.tabColor.plan,
+  },
+});
 export function buildTheme(t: ThemeId | CustomTheme | undefined | null): Design {
   if (!t || t === 'house') return DESIGN;
   if (typeof t === 'string') {
@@ -306,6 +318,7 @@ export function buildTheme(t: ThemeId | CustomTheme | undefined | null): Design 
       // A palette with its own harmonised series uses it entirely (no orange from the house tail in an emerald design).
       chartSeries: th.series ?? [th.color.blue ?? DESIGN.color.blue, th.color.cyan ?? DESIGN.color.cyan, th.color.gold ?? DESIGN.color.gold, ...DESIGN.chartSeries.slice(3)],
       filet: { ...DESIGN.filet, color: th.color.gold ?? DESIGN.filet.color },
+      xlsx: tabsOf(th.color),
     } as Design;
   }
   const primary = clean(t.primary) ?? DESIGN.color.blue;
@@ -315,9 +328,10 @@ export function buildTheme(t: ThemeId | CustomTheme | undefined | null): Design 
     ...DESIGN,
     name: 'Thème personnalisé',
     color: { ...DESIGN.color, navy: dark, blue: primary, gold: accent, cyan: accent, sky: accent },
-    font: { ...DESIGN.font, ui: (t.font ?? DESIGN.font.ui).replace(/[^\w \-]/g, '').slice(0, 40) || DESIGN.font.ui },
+    font: { ...DESIGN.font, ui: (t.font ?? DESIGN.font.ui).replace(/[^\w -]/g, '').slice(0, 40) || DESIGN.font.ui },
     chartSeries: [primary, accent, dark, ...DESIGN.chartSeries.slice(3)],
     filet: { ...DESIGN.filet, color: accent },
+    xlsx: tabsOf({ navy: dark, blue: primary, gold: accent, cyan: accent }),
   } as Design;
 }
 let ACTIVE: Design = DESIGN;

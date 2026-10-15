@@ -31,7 +31,7 @@ import { allRecos, checkDepth, normalizeDossier, todayFr, type Dossier } from '.
 import { dossierFromMarkdown } from '../../server/services/dossier/dossierFromMarkdown';
 import { dossierDocx } from '../../server/services/dossier/dossierDocx';
 import { dossierPptx } from '../../server/services/dossier/dossierPptx';
-import { dossierXlsx, type DossierData } from '../../server/services/dossier/dossierXlsx';
+import type { DossierData } from '../../server/services/dossier/dossierXlsx';
 import { dossierHtml, dossierMailHtml } from '../../server/services/dossier/dossierHtml';
 import {
   composeSystemPrompt,
@@ -345,20 +345,21 @@ export const HOUSE_FILES = new Set<string>();
  * DOSSIER → FILES: the same structured dossier rendered in every format asked, in the ACTIVE theme (set around the
  * tool by the agent from the gallery choice, the settings or the `theme` parameter): workbook, deck, report, page, mail.
  */
-function renderDossier(
+async function renderDossier(
   d: Dossier,
   base: string,
   formats: string[],
   logo: { png: Uint8Array; width: number; height: number } | null,
   sessionId: string,
-): { out: string[]; html?: string } {
+): Promise<{ out: string[]; html?: string }> {
   const out: string[] = [];
   const brand = [d.org, d.unit].filter(Boolean).join(' · ') || undefined;
   for (const f of [...new Set(formats)]) {
     const path = uniquePath(`${base}.${f}`);
     if (f === 'docx') writeBytes(path, dossierDocx(d, { logo, brand }), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     else if (f === 'pptx') writeBytes(path, dossierPptx(d, { logo, brand }), 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
-    else if (f === 'xlsx') writeBytes(path, dossierXlsx(d, { data: dossierData(d.data), logo }), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    // The workbook is built in the BACKGROUND thread (in the active theme): the page stays fluid on big files.
+    else if (f === 'xlsx') writeBytes(path, await heavy('dossierXlsx', d, { data: dossierData(d.data), logo }), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     else if (f === 'html') writeText(path, dossierHtml(d, { brand }));
     else if (f === 'eml') {
       // Colour mail in the theme: .eml draft (Outlook) + the same mail as .html.
@@ -382,6 +383,22 @@ function loadBrief(path: string): Brief {
   const brief = bf ? (JSON.parse(new TextDecoder().decode(bytesOf(bf))) as Brief) : null;
   if (!brief?.numbers) throw new Error(`Brief introuvable ou illisible : ${path}`);
   return brief;
+}
+/**
+ * The dashboard of a design chosen on the Internet (image) or in the catalogue, rebuilt LIVE as the first sheet of a
+ * committee workbook: shapes in the design, figures as formulas, filters, native charts — premium Excel, never an HTML
+ * page nor a pasted picture. Only when the rows deserve a dashboard (dashFit). Returns a note for the model.
+ */
+async function addCloneSheet(path: string, spec: DashSpec, title: string, columns: string[], rows: Record<string, unknown>[]): Promise<string> {
+  const f = getFile(path);
+  if (!f || typeof document === 'undefined') return '';
+  const cd = cloneData(title, columns, rows);
+  const fit = dashFit(cd);
+  if (!fit.ok) return ` (pas de tableau de bord vivant ajouté : ${fit.why})`;
+  const live = await heavy('addLiveDashboard', bytesOf(f), spec, cd);
+  if (!live) return '';
+  writeBytes(path, live.bytes, f.mime);
+  return ` + 1re feuille « Tableau de bord » VIVANTE au design choisi (${live.kpis} indicateurs en formules, ${live.charts} graphiques Excel, filtres ${live.filters.map((x) => `« ${x} »`).join(', ') || '—'})`;
 }
 /** The user's logo chosen in the gallery (PNG bytes + size), when the tool received one. */
 function logoOf(a: Record<string, unknown>): { png: Uint8Array; width: number; height: number } | null {
@@ -1364,7 +1381,7 @@ export const TOOLS: DirectTool[] = [
         confidentiality: S(a.confidentiality) || undefined,
       });
       if (briefObj) d.data = briefDataRef(briefObj);
-      const { out, html } = renderDossier(d, base, formats.filter((f) => f !== 'md'), logoOf(a), ctx.sessionId);
+      const { out, html } = await renderDossier(d, base, formats.filter((f) => f !== 'md'), logoOf(a), ctx.sessionId);
       if (formats.includes('md')) {
         const mp = uniquePath(`${base}.md`);
         writeText(mp, md);
@@ -1423,11 +1440,19 @@ export const TOOLS: DirectTool[] = [
       const stem = S(a.from) ? S(a.from).split('/').pop()!.replace(/(\.dossier)?\.json$/i, '') : (S(a.data).split('/').pop() ?? 'dossier').replace(/\.[^.]+$/, '');
       const base = `outputs/${(S(a.name) || stem).replace(/[^\w.-]+/g, '-') || 'dossier'}`;
       const formats = (Array.isArray(a.formats) && a.formats.length ? a.formats.map(S) : ['xlsx', 'pptx', 'docx', 'html']).map((x) => (x === 'pdf' ? 'html' : x));
-      const { out, html } = renderDossier(d, base, formats, logoOf(a), ctx.sessionId);
+      const { out, html } = await renderDossier(d, base, formats, logoOf(a), ctx.sessionId);
       if (!out.length) throw new Error('Aucun format reconnu (xlsx, pptx, docx, html, eml, md).');
+      // A dashboard design chosen on the Internet or in the catalogue: the committee files carry its colours, and its
+      // dashboard is rebuilt LIVE as the first sheet of the committee workbook (premium Excel, never an HTML page).
+      let dashNote = '';
+      const xl = out.find((p) => p.endsWith('.xlsx'));
+      if (xl && a.clone && typeof a.clone === 'object') {
+        const rows = dossierData(d.data);
+        if (rows?.rows.length) dashNote = await addCloneSheet(xl, a.clone as DashSpec, d.title, rows.columns, rows.rows);
+      }
       return ok(
         out.join(', '),
-        `Exported: ${out.join(', ')}${html ? ' (open the HTML and use "Print → Save as PDF" for a PDF)' : ''} — ${d.kpis.length} indicateurs, ${d.chapters.length} chapitres, ${allRecos(d).length} recommandations, ${d.decisions.length} décisions, mêmes chiffres partout.${depthNote(d)}`,
+        `Exported: ${out.join(', ')}${dashNote}${html ? ' (open the HTML and use "Print → Save as PDF" for a PDF)' : ''} — ${d.kpis.length} indicateurs, ${d.chapters.length} chapitres, ${allRecos(d).length} recommandations, ${d.decisions.length} décisions, mêmes chiffres partout.${depthNote(d)}`,
       );
     },
   },
@@ -1627,7 +1652,7 @@ export const TOOLS: DirectTool[] = [
           type: 'string',
           enum: ['none', 'bar', 'line', 'pie'],
           description:
-            'House style 2.0 is AUTOMATIC: KPI cards + three NATIVE Excel 3D charts above the table header (3D columns, 3D pie, trend or top-10 3D bars, fed by live SUMIF formulas on an « Agrégats » sheet) and a first « Synthèse 3D » sheet (3D board + reading card). Omit it; give bar / line / pie to put that kind first; none = plain table only.',
+            'The xlsx is the COMMITTEE workbook automatically (cockpit with live indicators, one analysis sheet per dimension with native charts, action plan, decisions, hypotheses, data quality, sources, DONNÉES), in the chosen theme. Omit it. none = plain house table only.',
         },
         visuals: {
           type: 'boolean',
@@ -1659,6 +1684,29 @@ export const TOOLS: DirectTool[] = [
         chart: (['bar', 'line', 'pie', 'none'].includes(S(a.chart)) ? S(a.chart) : undefined) as
           'bar' | 'line' | 'pie' | 'none' | undefined,
       };
+      // THE NEW STYLE EVERYWHERE (consigne du 15/10/2026): an Excel export is the COMMITTEE workbook (cockpit, one sheet
+      // per dimension, action plan, decisions, hypotheses, data quality, sources, DONNÉES) built from THESE rows — the
+      // query's filters are kept — in the active theme (a design chosen on the Internet gives its colours). Its dashboard
+      // becomes the live first sheet (premium Excel, no HTML page). Chart « none » asks for the plain house table.
+      const committee = fmt === 'xlsx' && a.chart !== 'none';
+      if (committee && r.rows.length) {
+        const src = `${S(a.path)}${S(a.sheet) ? ` [${S(a.sheet)}]` : ''}${a.query ? ' (filtré)' : ''}`;
+        const brief = buildBrief(r.columns, r.rows, { title: meta.title, source: src });
+        const d = dossierFromBrief({ focus: meta.title, brief });
+        const ref = briefDataRef(brief);
+        d.data = ref;
+        writeBytes(
+          path,
+          await heavy('dossierXlsx', d, { data: { columns: r.columns, rows: r.rows, measure: ref?.measure ?? null, entity: ref?.entity ?? null, selectors: ref?.selectors ?? [], source: src }, logo: logoOf(a) }),
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        );
+        HOUSE_FILES.add(path);
+        const dashNote = a.clone && typeof a.clone === 'object' ? await addCloneSheet(path, a.clone as DashSpec, meta.title, r.columns, r.rows) : '';
+        return ok(
+          `${r.rowCount} lignes → ${path} (classeur comité${dashNote ? ' + tableau de bord vivant' : ''})`,
+          `Saved ${r.rowCount} rows to ${path} as the committee workbook in the chosen theme: cockpit with live indicators, ${d.chapters.length} analysis sheet(s) with native charts, action plan, decisions, hypotheses, data quality, sources and the DONNÉES table (${r.rowCount} rows${a.query ? ', filtered' : ''})${dashNote}.${depthNote(d)}`,
+        );
+      }
       // The workbook is built in the BACKGROUND thread (the page stays fluid, other chats keep streaming).
       writeBytes(
         path,

@@ -72,7 +72,7 @@ test('JEV Cognitive OS: 18 sub-tabs, regression report without FAIL, no fabricat
   const errors = await open(page);
   await openView(page, 'JEV Cognitive OS');
   await expect(page.getByTestId('cognitive-os')).toBeVisible();
-  await expect(page.getByRole('tab')).toHaveCount(18);
+  await expect(page.getByTestId('cognitive-os').getByRole('tab')).toHaveCount(18);
   await page.getByRole('tab', { name: 'Régression', exact: true }).click();
   await expect(page.getByTestId('cog-regression-table')).toBeVisible();
   await expect(page.getByTestId('cog-regression-table')).not.toContainText('FAIL');
@@ -197,7 +197,7 @@ test('premium design gallery: before an Excel deliverable the user picks a desig
   await send(page, 'Fais un classeur Excel des ventes par agence');
   const card = page.getByTestId('design-card');
   await expect(card).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByTestId('design-gallery').locator('img')).toHaveCount(14);
+  await expect(page.getByTestId('design-gallery').locator('img')).toHaveCount(16);
   // Designs found on the Internet, shown as thumbnails before validation
   await page.getByTestId('design-web').click();
   await expect(page.getByTestId('design-web-gallery').locator('img')).toHaveCount(2);
@@ -227,13 +227,13 @@ test('premium design gallery: before an Excel deliverable the user picks a desig
   const xml = Object.entries(zip).filter(([k]) => /styles|sheet1/.test(k)).map(([, v]) => strFromU8(v)).join('');
   expect(xml).toContain('0B0B0F');
   expect(xml).not.toContain('001B4D');
-  // MAISON 2.0 / GOD 3D: a « Synthèse 3D » board (picture) as the first sheet + native Excel 3D charts on the data sheet.
+  // THE COMMITTEE WORKBOOK everywhere (consignes du 14/10 et du 15/10/2026), in the chosen design: cockpit first,
+  // analysis sheets with native charts, the data; the workbook's own palette (colour picker) is Onyx too.
   const wbXml = strFromU8(zip['xl/workbook.xml']!);
-  expect(wbXml.indexOf('name="Synthèse 3D"')).toBeGreaterThan(-1);
-  expect(wbXml.indexOf('name="Synthèse 3D"')).toBeLessThan(wbXml.indexOf('name="Données"'));
-  expect(wbXml).toContain('name="Agrégats"');
-  expect(zip['xl/media/massamba-dashboard.png']!.length).toBeGreaterThan(20_000);
-  expect(strFromU8(zip['xl/charts/chart1.xml']!)).toContain('<c:bar3DChart>');
+  expect(wbXml).toMatch(/<sheets><sheet name="⌂ COCKPIT"/);
+  expect(wbXml).toContain('name="DONNÉES"');
+  expect(Object.keys(zip).some((k) => /^xl\/charts\/chart\d+\.xml$/.test(k))).toBe(true);
+  expect(strFromU8(zip['xl/theme/theme1.xml']!)).toContain('0B0B0F');
 });
 
 test('design FIRST: a request for an Excel file opens the gallery before any model call; the model\'s own code output takes the chosen design', async ({ page }) => {
@@ -243,6 +243,8 @@ test('design FIRST: a request for an Excel file opens the gallery before any mod
   await page.getByText('AUTONOME').click();
   mock.push(
     { toolCalls: [{ name: 'code.run', args: { language: 'javascript', code: CODE_XLSX } }] },
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'data/portefeuille.csv', content: 'agence,segment,encours\nDakar,CORPORATE,1250\nThies,RETAIL,430\nKaolack,CORPORATE,980\nZiguinchor,RETAIL,610\n' } }] },
+    { toolCalls: [{ name: 'dossier.export', args: { data: 'data/portefeuille.csv', name: 'provisions-analyse', formats: ['xlsx'] } }] },
     { text: 'Classeur analysé prêt : outputs/provisions-analyse.xlsx' },
   );
   await send(page, 'Analyse ce portefeuille et retourne-moi un fichier excel analysé');
@@ -253,8 +255,10 @@ test('design FIRST: a request for an Excel file opens the gallery before any mod
   await page.getByTestId('design-go').click();
   await expect(page.getByTestId('design-card-done')).toContainText('Onyx');
   await expect(page.getByText('Classeur analysé prêt')).toBeVisible({ timeout: 20_000 });
-  // The palette was given to the model, and the file its code wrote was re-skinned (no house colour, onyx + Georgia).
+  // The palette was given to the model; the Office file its code tried to write was refused for the committee
+  // exporter, whose workbook carries the chosen design (no house colour, onyx + Georgia).
   expect(JSON.stringify(mock.requests[0]!.messages)).toContain('DESIGN_CHOICE');
+  expect(JSON.stringify(mock.requests[1]!.messages)).toContain('committee formats');
   expect(await page.getByTestId('design-card-done').count()).toBe(1); // one gallery, not a second one for code.run
   const readXml = () => page.evaluate(
     () =>
@@ -321,15 +325,19 @@ test('Internet design → REAL copy: its layout is read, previewed, then rebuilt
           };
         }),
     );
-  await expect.poll(async () => Object.keys(await files()).some((k) => k.endsWith('ventes-tableau-de-bord.html')), { timeout: 10_000 }).toBe(true);
+  // Premium Excel, never an HTML page (consigne du 15/10/2026): the committee workbook in the design's palette and font.
+  await expect.poll(async () => Object.keys(await files()).some((k) => k.endsWith('outputs/ventes.xlsx')), { timeout: 10_000 }).toBe(true);
   const all = await files();
-  const html = all[Object.keys(all).find((k) => k.endsWith('ventes-tableau-de-bord.html'))!]!.data;
-  expect(html).toContain('<aside class="side">'); // sidebar reproduced
-  expect(html).toContain('kpi tile'); // KPI style reproduced
-  expect(html).toContain('--primary:#7C3AED'); // palette reproduced
-  expect(html).toContain('1 980'); // real processed total (1250 + 430 + 300)
-  expect(html).toContain('Poppins');
-  expect(Object.keys(all).some((k) => k.endsWith('ventes.xlsx'))).toBe(true);
+  expect(Object.keys(all).some((k) => k.endsWith('tableau-de-bord.html'))).toBe(false);
+  const { unzipSync, strFromU8 } = await import('fflate');
+  const z = unzipSync(new Uint8Array(Buffer.from(all[Object.keys(all).find((k) => k.endsWith('outputs/ventes.xlsx'))!]!.data, 'base64')));
+  expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/<sheets><sheet name="⌂ COCKPIT"/);
+  const styles = strFromU8(z['xl/styles.xml']!);
+  expect(styles).toContain('7C3AED'); // the design's primary colour
+  expect(styles).toContain('Poppins'); // its font
+  // The real processed rows (1250 + 430 + 300), as numbers in the workbook's cells.
+  const cells = Object.entries(z).filter(([k]) => /^xl\/worksheets\/sheet\d+\.xml$/.test(k)).map(([, v]) => strFromU8(v)).join('');
+  for (const v of ['1250', '430', '300']) expect(cells).toMatch(new RegExp(`<v>${v}</v>`));
 });
 
 test('REAL website reproduced: its code gives the exact colours / fonts, its screenshot the structure; Excel + dashboard use them with the chat data', async ({ page }) => {
@@ -380,19 +388,21 @@ test('REAL website reproduced: its code gives the exact colours / fonts, its scr
           };
         }),
     );
-  await expect.poll(async () => Object.keys(await files()).some((k) => k.endsWith('ventes-tableau-de-bord.html')), { timeout: 10_000 }).toBe(true);
+  // Premium Excel, never an HTML page: the committee workbook in the site's exact colours (its CSS, not the vision
+  // guess) and its web font, with the chat data.
+  await expect.poll(async () => Object.keys(await files()).some((k) => k.endsWith('outputs/ventes.xlsx')), { timeout: 10_000 }).toBe(true);
   const all = await files();
-  const html = all[Object.keys(all).find((k) => k.endsWith('ventes-tableau-de-bord.html'))!]!.data;
-  expect(html).toContain('--primary:#0E7C66'); // exact colour from the site's CSS, not the vision guess
-  expect(html).not.toContain('#FF0000');
-  expect(html).toContain('family=Manrope'); // the site's web font
-  expect(html).toContain('<aside class="side">'); // structure from the screenshot
-  expect(html).toContain('accent-left');
-  expect(html).toContain('1 680'); // real total of the chat data
+  expect(Object.keys(all).some((k) => k.endsWith('tableau-de-bord.html'))).toBe(false);
   const { unzipSync, strFromU8 } = await import('fflate');
-  const xlsx = all[Object.keys(all).find((k) => k.endsWith('ventes.xlsx'))!]!.data;
-  const xml = Object.entries(unzipSync(new Uint8Array(Buffer.from(xlsx, 'base64')))).filter(([k]) => /styles|sheet1/.test(k)).map(([, v]) => strFromU8(v)).join('');
-  expect(xml).toContain('0E7C66');
+  const z = unzipSync(new Uint8Array(Buffer.from(all[Object.keys(all).find((k) => k.endsWith('outputs/ventes.xlsx'))!]!.data, 'base64')));
+  const styles = strFromU8(z['xl/styles.xml']!);
+  expect(styles).toContain('0E7C66');
+  expect(styles).not.toContain('FF0000');
+  // The site's web font is not an Office font: Excel gets its Office equivalent, never the vision model's guess.
+  expect(styles).toContain('Segoe UI');
+  expect(styles).not.toContain('Comic Sans');
+  const cells = Object.entries(z).filter(([k]) => /^xl\/worksheets\/sheet\d+\.xml$/.test(k)).map(([, v]) => strFromU8(v)).join('');
+  for (const v of ['1250', '430']) expect(cells).toMatch(new RegExp(`<v>${v}</v>`)); // the chat data
 });
 
 test('LOGO: the attached logo is offered in the gallery, recoloured harmoniously to the chosen design, and placed in the Excel', async ({ page }) => {
@@ -448,12 +458,12 @@ test('LOGO: the attached logo is offered in the gallery, recoloured harmoniously
     .poll(async () => {
       const a = await files();
       const k = Object.keys(a).find((x) => x.endsWith('outputs/ventes.xlsx'));
-      return k ? Boolean(unzipSync(new Uint8Array(Buffer.from(a[k]!.data, 'base64')))['xl/media/massamba-logo.png']) : false;
+      return k ? Object.keys(unzipSync(new Uint8Array(Buffer.from(a[k]!.data, 'base64')))).some((x) => /^xl\/media\/logo\d+\.png$/.test(x)) : false;
     }, { timeout: 15_000 })
     .toBe(true);
   const all = await files();
   const z = unzipSync(new Uint8Array(Buffer.from(all[Object.keys(all).find((k) => k.endsWith('outputs/ventes.xlsx'))!]!.data, 'base64')));
-  const media = z['xl/media/massamba-logo.png'];
+  const media = z[Object.keys(z).find((x) => /^xl\/media\/logo\d+\.png$/.test(x))!];
   expect(media).toBeTruthy();
   expect(Object.keys(z).some((k) => k.startsWith('xl/charts/'))).toBe(true); // the chart is kept
   // The logo in the workbook IS recoloured: its background is now the Onyx primary, not the original blue.
@@ -578,16 +588,16 @@ test('PHOTO-FAITHFUL CLONE: the chosen dashboard image is measured (panels, fram
           };
         }),
     );
-  await expect.poll(async () => Object.keys(await files()).some((k) => k.endsWith('sweetshop-tableau-de-bord.html')), { timeout: 15_000 }).toBe(true);
+  await expect.poll(async () => Object.keys(await files()).some((k) => k.endsWith('outputs/sweetshop.xlsx')), { timeout: 15_000 }).toBe(true);
   const all = await files();
-  const html = all[Object.keys(all).find((k) => k.endsWith('sweetshop-tableau-de-bord.html'))!]!.data;
-  expect(html).toContain('data-dash-clone');
-  expect(html).toContain('SWEETSHOP — ANALYSE 2023');
+  // Premium Excel, never an HTML page (consigne du 15/10/2026).
+  expect(Object.keys(all).some((k) => k.endsWith('tableau-de-bord.html'))).toBe(false);
   const { unzipSync, strFromU8 } = await import('fflate');
   const z = unzipSync(new Uint8Array(Buffer.from(all[Object.keys(all).find((k) => k.endsWith('outputs/sweetshop.xlsx'))!]!.data, 'base64')));
   // A LIVE dashboard, no fixed picture: shapes on the image's design, native charts, figures as formulas.
   expect(z['xl/media/massamba-dashboard.png']).toBeUndefined();
   expect(strFromU8(z['xl/workbook.xml']!)).toMatch(/<sheets><sheet name="Tableau de bord"/);
+  expect(strFromU8(z['xl/workbook.xml']!)).toContain('name="⌂ COCKPIT"'); // then the committee workbook
   expect(strFromU8(z['xl/drawings/drawing-live-dash.xml']!)).toContain('<xdr:sp ');
 });
 
@@ -641,7 +651,8 @@ test('MODÈLES ULTRA DESIGN: 20 models per format in the gallery; an Excel model
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
   mock.push(
-    { toolCalls: [{ name: 'filesystem.write', args: { path: 'data/ventes.csv', content: 'agence,segment,montant\nDakar,CORPORATE,1250\nThies,RETAIL,430\nKaolack,CORPORATE,980\nZiguinchor,RETAIL,610\n' } }] },
+    // 16 rows: a dashboard is only built when the rows deserve one (12 at least).
+    { toolCalls: [{ name: 'filesystem.write', args: { path: 'data/ventes.csv', content: `agence,segment,montant\n${Array.from({ length: 16 }, (_, i) => `${['Dakar', 'Thies', 'Kaolack', 'Ziguinchor'][i % 4]},${i % 3 ? 'RETAIL' : 'CORPORATE'},${400 + ((i * 173) % 900)}`).join('\n')}\n` } }] },
     { toolCalls: [{ name: 'data.export', args: { path: 'data/ventes.csv', name: 'ventes-modele', title: 'Ventes', format: 'xlsx' } }] },
     { text: 'Classeur modèle livré.' },
   );
@@ -677,6 +688,8 @@ test('MODÈLES ULTRA DESIGN: 20 models per format in the gallery; an Excel model
   // The model's own colours (Midnight Neon violet) on the live dashboard; no fixed picture.
   expect(strFromU8(z['xl/drawings/drawing-live-dash.xml']!)).toContain('7C3AED');
   expect(Object.keys(z).some((k) => k.startsWith('xl/media/massamba-dashboard'))).toBe(false);
+  expect(strFromU8(z['xl/workbook.xml']!)).toContain('name="⌂ COCKPIT"'); // the committee workbook follows, in the model's colours
+  expect(strFromU8(z['xl/styles.xml']!)).toContain('7C3AED');
 });
 
 test('a design card left behind (mission stopped, page reloaded): « Générer » relaunches the request with the design — never a dead button', async ({ page }) => {
@@ -726,6 +739,8 @@ test('IMAGE DESIGN + Excel written by the model in code: the workbook OPENS on t
     { text: '{}' },
     { text: JSON.stringify(SOM) },
     { toolCalls: [{ name: 'code.run', args: { language: 'javascript', code: CODE } }] },
+    // Refused (an Office deliverable written by code): the committee exporter on the detail sheet instead.
+    { toolCalls: [{ name: 'dossier.export', args: { data: 'uploads/provisions-like.xlsx', sheet: 'Provisions', name: 'provisions-analyse', formats: ['xlsx'] } }] },
     { text: 'Classeur livré.' },
   );
   await send(page, 'Analyse ces provisions et retourne-moi un fichier excel analysé');
@@ -763,7 +778,7 @@ test('IMAGE DESIGN + Excel written by the model in code: the workbook OPENS on t
   await expect.poll(async () => strFromU8((await wb())?.['xl/workbook.xml'] ?? new Uint8Array()), { timeout: 20_000 }).toMatch(/<sheets><sheet name="Tableau de bord"/);
   const z = (await wb())!;
   const wbXml = strFromU8(z['xl/workbook.xml']!);
-  expect(wbXml).toContain('name="Synthese"'); // the model's own sheets are kept, after the reproduction
+  expect(wbXml).toContain('name="⌂ COCKPIT"'); // the committee workbook follows the reproduction
   // The reproduction is a NATIVE dashboard: the image's cards as shapes and its charts as editable Excel charts.
   const dr = strFromU8(z['xl/drawings/drawing-live-dash.xml']!);
   expect(dr).toContain('<xdr:sp ');

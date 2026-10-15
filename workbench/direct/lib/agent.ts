@@ -2516,7 +2516,8 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
   // committee formats — whatever was chosen (theme, catalogue model, design found on the Internet): its colours apply.
   // A whole-file data.export becomes dossier.export on that file (workbook + the formats chosen in the gallery).
   let houseNote = '';
-  if (sid && runHouse.has(sid) && name === 'data.export' && typeof args.path === 'string' && args.path) {
+  // A filtered export (query) stays data.export: its committee workbook is built from the filtered rows.
+  if (sid && runHouse.has(sid) && name === 'data.export' && typeof args.path === 'string' && args.path && !args.query) {
     const house = TOOLS.find((t) => t.name === 'dossier.export');
     if (house) {
       const chosen = runFormats.get(sid);
@@ -2637,6 +2638,16 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
       args.theme = choice.theme;
       if (choice.colors) args.colors = choice.colors;
       // A design copied from the Internet: Excel takes its chart type, and a dashboard reproducing its layout is built.
+      // In the committee formats (dossier.export), the Internet design gives its colours to every file and its dashboard
+      // is reproduced as an HTML page with the same data.
+      if (choice.clone && tool.name === 'dossier.export') {
+        args.clone = choice.clone;
+        args.layoutSource = choice.source;
+      }
+      if (choice.layout && tool.name === 'dossier.export') {
+        args.layout = choice.layout;
+        args.layoutSource = choice.source;
+      }
       if (choice.clone && tool.name === 'data.export') {
         args.clone = choice.clone;
         args.layoutSource = choice.source;

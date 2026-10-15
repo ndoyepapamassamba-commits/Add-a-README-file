@@ -7,8 +7,10 @@ import { restyleWorkbook } from '../../server/services/officeRestyle';
 import { maisonBand, refreshSommaire } from '../../server/services/maisonBand';
 import { designQA } from '../../server/services/designQA';
 import { addImageSheet } from '../../server/services/officeLogo';
+import { dossierXlsx } from '../../server/services/dossier/dossierXlsx';
 
-const FNS = { houseXlsx, addLiveDashboard, restyleWorkbook, maisonBand, refreshSommaire, designQA, addImageSheet } as const;
+// The committee workbook too (5 000 rows froze the page ≈ 1 s on the page thread).
+const FNS = { houseXlsx, addLiveDashboard, restyleWorkbook, maisonBand, refreshSommaire, designQA, addImageSheet, dossierXlsx } as const;
 export type HeavyFn = keyof typeof FNS;
 
 self.onmessage = (e: MessageEvent<{ id: number; fn: HeavyFn; args: unknown[]; theme?: Design }>) => {
