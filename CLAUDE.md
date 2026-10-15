@@ -13,3 +13,6 @@
 - Ne jamais afficher ni demander de clés, secrets ou jetons ; ne jamais créer de compte au nom de l'utilisateur.
 - Le dépôt est public : images et vidéos de l'utilisateur seulement dans `workbench/.private/` (ignoré par git) ou le
   scratchpad.
+- **Livraison de l'app = toujours le dossier complet, app + paquets** (consigne du 15/10/2026) : `npm run build:direct`
+  produit `workbench/dist/livraison/MASSAMBA Workbench/` (app, paquets de décors `massamba-troupe-N.js`, `LISEZ-MOI.txt`),
+  contrôle chaque fichier sous 30 Mio et la version des paquets ; envoyer tous ces fichiers ensemble, jamais l'app seule.

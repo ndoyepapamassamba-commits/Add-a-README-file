@@ -33,7 +33,7 @@ Deux éditions, chacune en **un seul fichier HTML** : l'**accès direct**, qui f
 
 La clé n'est jamais écrite dans le fichier : elle reste dans le stockage local du navigateur et n'est envoyée qu'à `openrouter.ai`. Décochez « Se souvenir de la clé » sur un ordinateur partagé, et fixez une limite de dépenses sur la clé côté OpenRouter. Le code exécuté par l'agent et les aperçus HTML tournent dans des iframes isolées, sans accès à la clé. Jev (TypeSafe) n'est pas disponible dans cette édition : son API n'accepte pas les appels depuis un navigateur ; le routage AUTO utilise alors l'heuristique intégrée.
 
-Pour la reconstruire : `npm run build:direct` → `dist/massamba-workbench-direct.html`.
+Pour la reconstruire : `npm run build:direct` → `dist/livraison/MASSAMBA Workbench/` : l'app `massamba-workbench-direct.html`, les paquets de décors `massamba-troupe-N.js` (moins de 30 Mio chacun) et `LISEZ-MOI.txt`. Ce dossier entier se pose sur le Bureau ; l'app charge les paquets voisins toute seule. `npm run build:direct:single` produit l'ancienne version en un seul fichier (125 Mo avec les décors).
 
 ## Orchestration autonome
 
