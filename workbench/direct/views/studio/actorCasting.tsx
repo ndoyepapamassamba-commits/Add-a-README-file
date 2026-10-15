@@ -10,7 +10,7 @@ import { lookFromSheet, type ActorLook3D, type BodyShape, type Footwear, type Ha
 import { TROUPE } from '../../../server/jev/studio/actor/troupe';
 import { POSE_LABEL, POSE_ORDER, galleryNames, type PoseKind } from '../../../server/jev/studio/actor/sheet';
 import { importSheet } from '../../lib/studio/sheetImport';
-import { ensureTroupeKit, troupeKit } from '../../lib/studio/troupeKit';
+import { ensureTroupeKit, kitDecorCount, troupeKit } from '../../lib/studio/troupeKit';
 import { UNIVERSE_SETS } from '../../../server/jev/studio/actor/universe';
 import { speakerKey } from '../../../server/jev/studio/motion';
 
@@ -378,7 +378,7 @@ export function ActorCasting({ projectId }: { projectId?: string }) {
               title="Vos planches, galeries et décors sont intégrés à ce fichier (jamais publiés) et installés tout seuls ; ce bouton les réinstalle."
               onClick={() => void installTroupe(true)}
             >
-              {installing ? 'Installation de votre troupe…' : `Votre troupe intégrée (${troupeKit.planches.length} planches, ${troupeKit.galeries.reduce((a, g) => a + g.names.length, 0)} figures, ${troupeKit.decors.length} décors)`}
+              {installing ? 'Installation de votre troupe…' : `Votre troupe intégrée (${troupeKit.planches.length} planches, ${troupeKit.galeries.reduce((a, g) => a + g.names.length, 0)} figures, ${kitDecorCount(troupeKit)} décors)`}
             </Button>
           )}
           <span className="flex items-center gap-1" title="Votre planche de personnage sur fond vert (plusieurs poses : neutre, accuse, choc, haussement, fou rire). Le personnage joue avec VOS dessins, et la planche devient sa référence pour les images et les clips Grok.">

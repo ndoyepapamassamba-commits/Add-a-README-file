@@ -5,6 +5,7 @@
 // ont été mesurés à l'avance (bouche, menton, yeux) pour que chacun parle et cligne avec son propre dessin.
 import kit from 'virtual:troupe-kit';
 import { blobs } from './blobs';
+import { loadTroupePacks } from '../videogen/troupePacks';
 import { importSheet, type SheetBodyMarks, type SheetFaceMarks } from './sheetImport';
 import { useStudio, type DecorFit } from './store';
 import { lookFromSheet, type ActorLook3D } from '../../../server/jev/studio/actor/cast3d';
@@ -16,7 +17,11 @@ export interface TroupeKit {
   planches: { name: string; src: string; faces: SheetFaceMarks[]; bodies?: SheetBodyMarks[] }[];
   galeries: { src: string; names: string[]; faces: SheetFaceMarks[]; bodies?: SheetBodyMarks[] }[];
   decors: { name: string; src: string; depth?: string; people?: string; fit?: DecorFit; plate?: string; plateDepth?: string; masks?: string }[];
+  /** Pack build: the sets are in massamba-troupe-N.js files next to the app (direct/lib/videogen/troupePacks.ts). */
+  packs?: { version: string; count: number; decors: number };
 }
+/** Number of sets of the kit, embedded or in packs. */
+export const kitDecorCount = (k: TroupeKit) => k.decors.length || (k.packs?.decors ?? 0);
 export const troupeKit: TroupeKit | null = kit;
 /** Revision of the import (cut-out, face measure): a better import reinstalls the troupe once. */
 const IMPORT_REV = 3;
@@ -91,7 +96,8 @@ export function ensureTroupeKit(o: { force?: boolean; onNote?: (m: string) => vo
     }
     if (looks.length) useStudio.getState().upsertActors(looks);
     out.actors = looks.length;
-    for (const d of k.decors) {
+    const decors = k.packs ? ((await loadTroupePacks()).decors as TroupeKit['decors']) : k.decors;
+    for (const d of decors) {
       try {
         const id = `decor-troupe-${speakerKey(d.name).toLowerCase()}-${k.version.slice(0, 6)}`;
         await blobs.put(id, await blobOf(d.src));

@@ -3,10 +3,11 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { fileURLToPath } from 'node:url';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import type { Plugin } from 'vite';
 import { loadHouseKit } from './server/services/houseKitFs';
+import { packFileName, packText, splitDecors, type PackDecor } from './server/jev/videogen/troupePack';
 
 // The user's house kit (logo, 3D export kit, app shell) is read from their own
 // skill folder at build time and embedded in the HTML — never committed.
@@ -91,10 +92,19 @@ function houseKit(): Plugin {
 
 // The owner's troupe (character sheets, green galleries, empty sets — their own art) is read from the git-ignored
 // .private/troupe folder at build time and embedded in the HTML, never committed (the repository is public).
+// MASSAMBA_TROUPE_PACKS=1 (npm run build:direct:packs): the sets go to massamba-troupe-N.js files (< 30 MB each) next
+// to the app instead of inside it — the full app is too big to be sent as one file.
 function troupeKit(): Plugin {
   const id = 'virtual:troupe-kit';
+  let packs: string[] = [];
   return {
     name: 'massamba-troupe-kit',
+    writeBundle(o) {
+      if (!packs.length || !o.dir) return;
+      mkdirSync(o.dir, { recursive: true });
+      packs.forEach((t, i) => writeFileSync(`${o.dir}/${packFileName(i + 1)}`, t));
+      this.info(`décors rangés dans ${packs.length} paquet(s) : ${packs.map((t, i) => `${packFileName(i + 1)} ${(t.length / 1e6).toFixed(1)} Mo`).join(', ')}`);
+    },
     resolveId: (s) => (s === id ? `\0${id}` : null),
     load(s) {
       if (s !== `\0${id}`) return null;
@@ -139,21 +149,25 @@ function troupeKit(): Plugin {
         // The set enlarged ×4 (Swin2SR), its depth map (Depth Anything V2), its scene parse and walkable floor (UperNet
         // ADE20K — the « sol praticable » law) when scripts/troupe-enhance.py made them.
         const has = (f?: string) => !!f && existsSync(dir + f);
-        const decors = (man.decors ?? []).map((d) => ({
+        // (The scene parse and floor maps stay in the private folder: the app does not read them.)
+        const decors: PackDecor[] = (man.decors ?? []).map((d) => ({
           name: d.name,
           src: src(has(d.hd) ? d.hd! : d.file),
           ...(has(d.depth) ? { depth: src(d.depth!) } : {}),
           ...(has(d.people) ? { people: src(d.people!) } : {}),
-          ...(has(d.seg) ? { seg: src(d.seg!) } : {}),
-          ...(has(d.floor) ? { floor: src(d.floor!) } : {}),
           // Layers (scripts/troupe-plates.py): the set rebuilt behind its people (LaMa), its depth, the masks.
           ...(has(d.plate) && has(d.plateDepth) && has(d.masks) ? { plate: src(d.plate!), plateDepth: src(d.plateDepth!), masks: src(d.masks!) } : {}),
           ...(d.fit ? { fit: d.fit } : {}),
         }));
         hash.update(JSON.stringify(man));
-        kit = { version: hash.digest('hex').slice(0, 16), planches, galeries, decors };
+        const version = hash.digest('hex').slice(0, 16);
+        if (process.env.MASSAMBA_TROUPE_PACKS) {
+          const groups = splitDecors(decors);
+          packs = groups.map((g, i) => packText({ kind: 'massamba-troupe', version, part: i + 1, of: groups.length, decors: g }));
+          kit = { version, planches, galeries, decors: [], packs: { version, count: groups.length, decors: decors.length } };
+        } else kit = { version, planches, galeries, decors };
         this.info(
-          `troupe intégrée : ${planches.length} planche(s), ${galeries.length} galerie(s), ${decors.length} décor(s)`,
+          `troupe intégrée : ${planches.length} planche(s), ${galeries.length} galerie(s), ${decors.length} décor(s)${packs.length ? ` (décors en ${packs.length} paquets à côté de l’app)` : ''}`,
         );
       } else this.info('troupe absente : aucun personnage embarqué');
       return `export default ${JSON.stringify(kit)};`;

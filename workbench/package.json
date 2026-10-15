@@ -14,6 +14,7 @@
     "build": "npm run typecheck && npm run build:web && npm run build:server",
     "build:web": "vite build && vite build -c vite.direct.config.ts && node scripts/copy-standalone.mjs",
     "build:direct": "vite build -c vite.direct.config.ts && node scripts/copy-standalone.mjs",
+    "build:direct:packs": "MASSAMBA_TROUPE_PACKS=1 vite build -c vite.direct.config.ts && node scripts/copy-standalone.mjs",
     "dev:direct": "vite -c vite.direct.config.ts",
     "build:server": "node scripts/build-server.mjs",
     "sync:intel": "tsx scripts/sync-intel.ts",

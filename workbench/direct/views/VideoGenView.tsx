@@ -34,6 +34,8 @@ import { openDirector, planToHtml, renderPlanVideo, sizeOf, type Quality } from 
 import { PageHeader } from './PageHeader';
 import { VideoToScene } from './VideoSceneMode';
 import { projectDepth, projectImages, type ProjectImage } from '../lib/videogen/projectImages';
+import { importTroupePacks, loadTroupePacks, type PackState } from '../lib/videogen/troupePacks';
+import { packFileName } from '../../server/jev/videogen/troupePack';
 import { imageSceneHtml } from '../lib/videogen/videoScene3d';
 
 type Mode = 'image' | 'idea' | 'video';
@@ -383,7 +385,30 @@ function ImageToVideo() {
   const [gallery, setGallery] = useState(false);
   const [gKind, setGKind] = useState<ProjectImage['kind']>('décor');
   const [gFilter, setGFilter] = useState('');
-  const project = useMemo(() => projectImages(), []);
+  const [packs, setPacks] = useState<PackState | null>(null);
+  const project = useMemo(() => projectImages(packs?.decors), [packs]);
+  const packFile = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    let live = true;
+    void loadTroupePacks().then((s) => live && setPacks(s));
+    return () => {
+      live = false;
+    };
+  }, []);
+  // Pack build: the sets the user imports (massamba-troupe-N.js) are read as data and kept in this browser.
+  const importPacks = async (files: File[]) => {
+    if (!files.length) return;
+    setBusy('import des paquets de décors');
+    try {
+      const s = await importTroupePacks(files);
+      setPacks(s);
+      toast(s.missing.length ? 'info' : 'ok', `Décors du projet : ${s.decors.length}/${s.expected}${s.missing.length ? ` — manquent ${s.missing.map(packFileName).join(', ')}` : ''}`);
+    } catch (e) {
+      toast('err', `Import refusé : ${(e as Error).message}`);
+    } finally {
+      setBusy('');
+    }
+  };
   const canvas = useRef<HTMLCanvasElement>(null);
   const anim = useRef<ImageAnimator | null>(null);
   const masks = useRef<{ sky: Uint8Array; water: Uint8Array; w: number; h: number } | null>(null);
@@ -578,8 +603,41 @@ function ImageToVideo() {
               </Button>
             )}
           </div>
+          <input
+            ref={packFile}
+            type="file"
+            accept=".js,text/javascript"
+            multiple
+            hidden
+            data-testid="videogen-troupe-file"
+            onChange={(e) => {
+              const fs = [...(e.target.files ?? [])];
+              e.target.value = '';
+              void importPacks(fs);
+            }}
+          />
           {gallery && (
             <div className="space-y-2 rounded-lg border border-line p-2" data-testid="videogen-project-gallery">
+              {packs && packs.count > 0 && (
+                <div className={cx('rounded-md border px-2 py-1.5', packs.missing.length ? 'border-amber-500/50 bg-amber-500/10' : 'border-line')} data-testid="videogen-troupe-status">
+                  {packs.missing.length ? (
+                    <>
+                      <p>
+                        Décors du projet : {packs.decors.length}/{packs.expected}. {packs.missing.length > 1 ? 'Les paquets' : 'Le paquet'} {packs.missing.map(packFileName).join(', ')}{' '}
+                        {packs.missing.length > 1 ? 'manquent' : 'manque'} : placez-les dans le même dossier que l’app puis rouvrez-la, ou importez-les ici (une seule fois, ils restent dans ce navigateur).
+                        {packs.note ? ` ${packs.note}.` : ''}
+                      </p>
+                      <Button size="sm" className="mt-1" disabled={Boolean(busy)} onClick={() => packFile.current?.click()} data-testid="videogen-troupe-import">
+                        Importer les paquets de décors
+                      </Button>
+                    </>
+                  ) : (
+                    <p className="text-faint">
+                      {packs.decors.length} décors {packs.source === 'importés' ? 'importés (gardés dans ce navigateur)' : 'chargés depuis les paquets à côté de l’app'}.
+                    </p>
+                  )}
+                </div>
+              )}
               <div className="flex flex-wrap items-center gap-1.5">
                 {(['décor', 'personnage', 'galerie'] as const).map((k) => (
                   <button key={k} onClick={() => setGKind(k)} className={cx('rounded-full border px-2 py-0.5 capitalize', gKind === k ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted')}>
@@ -602,7 +660,7 @@ function ImageToVideo() {
                     </button>
                   ))}
               </div>
-              <p className="text-faint">Les images de votre projet Vidéo 3D, embarquées dans l’app (jamais publiées). Les décors ont déjà leur carte de profondeur ; « en couches » : le décor a été reconstruit derrière les personnages (LaMa) et la page HTML 3D le montre quand la caméra tourne, avec ciel, eau et arbres vivants.</p>
+              <p className="text-faint">Les images de votre projet Vidéo 3D, embarquées dans l’app ou ses paquets de décors (jamais publiées). Les décors ont déjà leur carte de profondeur ; « en couches » : le décor a été reconstruit derrière les personnages (LaMa) et la page HTML 3D le montre quand la caméra tourne, avec ciel, eau et arbres vivants.</p>
             </div>
           )}
           <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={2} className="w-full rounded-lg border border-line bg-input px-2 py-1.5 outline-none focus:border-accent" placeholder="Le mouvement voulu (travelling, orbite, pluie, brume…)" />

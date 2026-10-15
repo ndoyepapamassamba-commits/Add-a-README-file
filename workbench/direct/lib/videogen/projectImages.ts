@@ -4,6 +4,7 @@
 // scène 3D est immédiate, sans modèle à charger.
 import kit from 'virtual:troupe-kit';
 import type { DepthMap } from './depth';
+import type { PackDecor } from '../../../server/jev/videogen/troupePack';
 
 export interface ProjectImage {
   id: string;
@@ -14,10 +15,11 @@ export interface ProjectImage {
   /** The set rebuilt behind its people (LaMa), its depth and its masks — data URLs. */
   layers?: { plate: string; plateDepth: string; masks: string };
 }
-export function projectImages(): ProjectImage[] {
+/** The project's pictures; `decors` = the sets when they come from packs (troupePacks.ts), else the embedded ones. */
+export function projectImages(decors: PackDecor[] = kit?.decors ?? []): ProjectImage[] {
   if (!kit) return [];
   return [
-    ...kit.decors.map((d, i) => ({ id: `d${i}`, name: d.name, kind: 'décor' as const, src: d.src, depth: d.depth, layers: d.plate && d.plateDepth && d.masks ? { plate: d.plate, plateDepth: d.plateDepth, masks: d.masks } : undefined })),
+    ...decors.map((d, i) => ({ id: `d${i}`, name: d.name, kind: 'décor' as const, src: d.src, depth: d.depth, layers: d.plate && d.plateDepth && d.masks ? { plate: d.plate, plateDepth: d.plateDepth, masks: d.masks } : undefined })),
     ...kit.planches.map((p, i) => ({ id: `p${i}`, name: p.name, kind: 'personnage' as const, src: p.src })),
     ...kit.galeries.map((g, i) => ({ id: `g${i}`, name: g.names.slice(0, 3).join(', ') || `Galerie ${i + 1}`, kind: 'galerie' as const, src: g.src })),
   ];
