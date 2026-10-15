@@ -25,19 +25,30 @@ const HF_BASE = 'https://zerogpu-aoti-wan2-2-fp8da-aoti-faster.hf.space';
 
 export const isCheapVideo = (id: string | undefined | null) => Boolean(pollinationsModel(id)) || id === HF_VIDEO;
 
-/** Pollinations: upload the frame to its media store, then ask the video for that start frame. */
-export async function pollinationsVideo(img: Blob, prompt: string, seconds: number, aspect: string, signal?: AbortSignal, engine: string = POLLINATIONS_VIDEO): Promise<{ blob: Blob; usd: number }> {
-  const pm = pollinationsModel(engine) ?? POLLINATIONS_MODELS.at(-1)!;
+/** The user's Pollinations key (kept in this browser), or a clear error. */
+export function pollinationsKey(): string {
   const key = useStore.getState().settings.pollinationsKey?.trim();
   if (!key) throw new Error('Clé Pollinations absente : Réglages → Animation vidéo économique (compte sur enter.pollinations.ai, quelques pollens suffisent).');
-  const auth = { Authorization: `Bearer ${key}` };
+  return key;
+}
+/** Uploads an image to Pollinations' media store; returns its public URL (start frame or reference image). */
+export async function pollinationsUpload(img: Blob, key: string, signal?: AbortSignal): Promise<string> {
   const fd = new FormData();
   fd.append('file', img, 'scene.png');
-  const up = await fetch('https://media.pollinations.ai/upload', { method: 'POST', headers: auth, body: fd, signal });
+  const up = await fetch('https://media.pollinations.ai/upload', { method: 'POST', headers: { Authorization: `Bearer ${key}` }, body: fd, signal });
   if (!up.ok) throw new Error(`Pollinations (envoi de l'image) : HTTP ${up.status}`);
   const upj = (await up.json().catch(() => ({}))) as { url?: string; id?: string };
   const url = upj.url ?? (upj.id ? `https://media.pollinations.ai/${upj.id}` : '');
   if (!url) throw new Error('Pollinations : URL de l’image non renvoyée');
+  return url;
+}
+
+/** Pollinations: upload the frame to its media store, then ask the video for that start frame. */
+export async function pollinationsVideo(img: Blob, prompt: string, seconds: number, aspect: string, signal?: AbortSignal, engine: string = POLLINATIONS_VIDEO): Promise<{ blob: Blob; usd: number }> {
+  const pm = pollinationsModel(engine) ?? POLLINATIONS_MODELS.at(-1)!;
+  const key = pollinationsKey();
+  const auth = { Authorization: `Bearer ${key}` };
+  const url = await pollinationsUpload(img, key, signal);
   const dur = Math.max(2, Math.min(10, Math.round(seconds)));
   const q = new URLSearchParams({ model: pm.model, image: url, duration: String(dur), aspectRatio: aspect });
   const r = await fetch(`https://gen.pollinations.ai/video/${encodeURIComponent(prompt.slice(0, 900))}?${q}`, { headers: auth, signal });

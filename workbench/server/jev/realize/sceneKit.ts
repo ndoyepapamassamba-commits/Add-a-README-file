@@ -820,11 +820,12 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';${spec.theme === 'scifi' || spec.theme === 'coastal' ? "\nimport { Reflector } from 'three/addons/objects/Reflector.js';" : ''}
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';${spec.theme === 'scifi' || spec.theme === 'coastal' ? "\nimport { Reflector } from 'three/addons/objects/Reflector.js';" : ''}
 const SPEC = ${safeJson(spec)};
 // (a transpiler may wrap named functions in __name(): harmless here)
 const __name = (f) => f;
-(${RUNTIME(spec.theme).toString()})(THREE, OrbitControls, SPEC, { EffectComposer, RenderPass, UnrealBloomPass, OutputPass, ShaderPass${spec.theme === 'scifi' || spec.theme === 'coastal' ? ', Reflector' : ''} });
+(${RUNTIME(spec.theme).toString()})(THREE, OrbitControls, SPEC, { EffectComposer, RenderPass, UnrealBloomPass, OutputPass, ShaderPass, GTAOPass${spec.theme === 'scifi' || spec.theme === 'coastal' ? ', Reflector' : ''} });
 </script></body></html>`;
 }
 

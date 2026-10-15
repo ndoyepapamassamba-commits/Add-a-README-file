@@ -5,6 +5,7 @@
 // colonnes et une ligne d'exemple.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Camera,
   Clapperboard,
   Code2,
   Download,
@@ -49,6 +50,8 @@ import {
   type SceneSpec,
 } from '../../server/jev/realize/sceneKit';
 import { complete } from '../lib/llm';
+import { DEFAULT_PHOTO_MODEL, PHOTO_MODELS, photoMotionPrompt, photoPass, photorealPrompt } from '../lib/studio/photoPass';
+import { POLLINATIONS_VIDEO, pollinationsVideo } from '../lib/studio/cheapVideo';
 import { Realizer, type Video } from '../lib/realize/runner';
 import { useStore } from '../lib/store';
 import { download, uniquePath, writeText } from '../lib/vfs';
@@ -144,6 +147,10 @@ export function RealizeView() {
   const [cost, setCost] = useState(0);
   const [spec, setSpec] = useState<VideoSpec>({ seconds: 15, format: '16:9' });
   const [video, setVideo] = useState<(Video & { url: string }) | null>(null);
+  // passe photo réaliste : la scène construite par le moteur, rendue en photographie par un modèle d'édition d'image
+  const [sceneSpec, setSceneSpec] = useState<SceneSpec | null>(null);
+  const [photoModel, setPhotoModel] = useState(DEFAULT_PHOTO_MODEL);
+  const [photo, setPhoto] = useState<{ url: string; blob: Blob; usd: number; model: string; eye: string } | null>(null);
   const host = useRef<HTMLDivElement>(null);
   const rz = useRef<Realizer | null>(null);
   const file = useRef<HTMLInputElement>(null);
@@ -220,7 +227,15 @@ export function RealizeView() {
       },
       onRound: (round) => setRounds((x) => [...x, round]),
     });
+    if (!r.ok) {
+      // le moteur n'a pas pu tourner (bibliothèque injoignable, erreur réelle) : le modèle prend le relais, jamais d'impasse
+      setBusy('');
+      setRounds([]);
+      useStore.getState().toast('info', `Moteur de scène : ${r.rounds.at(-1)?.run.errors[0]?.msg ?? 'échec'} — le modèle prend le relais`);
+      return false;
+    }
     let code = r.code;
+    setSceneSpec(r.spec);
     try {
       localStorage.setItem(LESSONS_KEY, JSON.stringify(learnLessons(readLessons(), r.spec, r.ok)));
     } catch {
@@ -278,6 +293,7 @@ export function RealizeView() {
     if (!prompt.trim()) return;
     setRounds([]);
     setEye(null);
+    setSceneSpec(null);
     setBusy('le modèle écrit la page');
     let spent = 0;
     try {
@@ -362,6 +378,56 @@ export function RealizeView() {
           'info',
           'Ce navigateur n’enregistre pas le MP4 : vidéo en WebM (Chrome ou Edge récents enregistrent en MP4).',
         );
+  };
+  /** Rendu du moteur → photographie (modèle d'édition d'image), vérifiée par l'œil de JEV. */
+  const toPhoto = async () => {
+    try {
+      setBusy('capture du rendu');
+      const shot = await rz.current!.snapshot(1280);
+      if ('error' in shot) throw new Error('aucune image à photographier (la page n’a pas de canvas)');
+      const frame = await (await fetch(shot.data)).blob();
+      setBusy('le modèle photo transforme le rendu en photographie');
+      const wide = shot.w >= shot.h;
+      const r = await photoPass(frame, photorealPrompt(sceneSpec, prompt), { model: photoModel, width: wide ? 1280 : 720, height: wide ? 720 : 1280 });
+      let eyeNote = '';
+      if (last) {
+        try {
+          const dataUrl = await new Promise<string>((ok, ko) => {
+            const fr = new FileReader();
+            fr.onload = () => ok(String(fr.result));
+            fr.onerror = () => ko(new Error('lecture'));
+            fr.readAsDataURL(r.blob);
+          });
+          const t = eyeTargets(prompt.trim(), last);
+          setBusy('l’œil de JEV vérifie la photo');
+          const v = await jevSee(dataUrl, t.elements, t.circumstances);
+          if (v) eyeNote = `œil de JEV : ${v.seen.length}/${v.seen.length + v.missing.length} éléments vus`;
+        } catch {
+          /* JEV indisponible : la photo reste, sans verdict */
+        }
+      }
+      setPhoto((old) => {
+        if (old) URL.revokeObjectURL(old.url);
+        return { url: URL.createObjectURL(r.blob), blob: r.blob, usd: r.usd, model: r.model, eye: eyeNote };
+      });
+      setCost((c) => c + r.usd);
+    } catch (e) {
+      useStore.getState().toast('err', `Photo réaliste : ${(e as Error).message}`);
+    }
+    setBusy('');
+  };
+  /** La photo devient l'image de départ d'une vidéo (image → vidéo, Wan 2.2 Fast ≈ 0,01 $/s). */
+  const animatePhoto = async () => {
+    if (!photo) return;
+    try {
+      setBusy('le modèle vidéo anime la photo (≈ 1 à 3 min)');
+      const r = await pollinationsVideo(photo.blob, photoMotionPrompt(sceneSpec), 5, spec.format === '9:16' ? '9:16' : '16:9', undefined, POLLINATIONS_VIDEO);
+      keepVideo({ blob: r.blob, mime: r.blob.type || 'video/mp4' });
+      setCost((c) => c + r.usd);
+    } catch (e) {
+      useStore.getState().toast('err', `Animation de la photo : ${(e as Error).message}`);
+    }
+    setBusy('');
   };
   const dataOpts = () =>
     data ? { data: data.rows, meta: { name: data.name, columns: data.info.columns } } : {};
@@ -664,6 +730,28 @@ export function RealizeView() {
             <Button
               size="sm"
               variant="ghost"
+              disabled={!code || Boolean(busy)}
+              onClick={() => void toPhoto()}
+              title="Transformer le rendu en PHOTOGRAPHIE réelle (même composition) avec un modèle d’édition d’image — clé Pollinations, coût affiché"
+              data-testid="realize-photo"
+            >
+              <Camera size={13} /> Photo réaliste
+            </Button>
+            <select
+              aria-label="Modèle de la photo réaliste"
+              value={photoModel}
+              onChange={(e) => setPhotoModel(e.target.value)}
+              className="h-7 max-w-[11rem] rounded-lg border border-line bg-input px-1 text-[11.5px]"
+            >
+              {PHOTO_MODELS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+            <Button
+              size="sm"
+              variant="ghost"
               disabled={!code}
               onClick={() => {
                 const url = URL.createObjectURL(new Blob([standalone()], { type: 'text/html' }));
@@ -717,6 +805,27 @@ export function RealizeView() {
               </div>
             )}
           </div>
+          {photo && (
+            <div className="flex flex-wrap items-center gap-3 border-t border-line p-2" data-testid="realize-photo-result">
+              <a href={photo.url} target="_blank" rel="noopener noreferrer">
+                <img src={photo.url} alt="Version photographique du rendu" className="h-28 rounded-lg bg-black object-cover" />
+              </a>
+              <div className="text-[12px] text-muted">
+                Photo réaliste · {photo.model.split('/').pop()} · ≈ {photo.usd.toLocaleString('fr-FR')} pollen
+                {photo.eye ? ` · ${photo.eye}` : ''}
+              </div>
+              <a
+                href={photo.url}
+                download={`${slug}-photo.jpg`}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-3 text-[13px] hover:border-accent"
+              >
+                <Download size={13} /> Photo
+              </a>
+              <Button size="sm" disabled={Boolean(busy)} onClick={() => void animatePhoto()} data-testid="realize-photo-animate">
+                <Clapperboard size={13} /> Animer la photo (5 s, ≈ 0,05 $)
+              </Button>
+            </div>
+          )}
           {video && (
             <div
               className="flex flex-wrap items-center gap-3 border-t border-line p-2"

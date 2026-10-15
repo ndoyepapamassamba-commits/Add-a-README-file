@@ -12,6 +12,7 @@ import type { RenderPass as RP } from 'three/examples/jsm/postprocessing/RenderP
 import type { UnrealBloomPass as UB } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import type { OutputPass as OP } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { ShaderPass as SPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import type { GTAOPass as GTAO } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import type { SceneSpec } from './sceneKit';
 
 /** The post-processing modules (three/addons), passed by the page when they load. */
@@ -21,6 +22,8 @@ export interface ScenePost {
   UnrealBloomPass: typeof UB;
   OutputPass: typeof OP;
   ShaderPass: typeof SPass;
+  /** Occlusion ambiante (ombres de contact) — three.js, MIT. */
+  GTAOPass?: typeof GTAO;
 }
 
 export function sceneMain(THREE: typeof T, OrbitControls: typeof OC, S: SceneSpec, PP?: ScenePost): void {
@@ -2476,8 +2479,13 @@ export function sceneMain(THREE: typeof T, OrbitControls: typeof OC, S: SceneSpe
   let grade: SPass | null = null;
   if (PP) {
     try {
-      composer = new PP.EffectComposer(renderer);
+      // rendu multi-échantillonné (MSAA 4×) : arêtes nettes malgré la post-production
+      composer = new PP.EffectComposer(renderer, new THREE.WebGLRenderTarget(window.innerWidth * PR, window.innerHeight * PR, { samples: 4, type: THREE.HalfFloatType }));
       composer.addPass(new PP.RenderPass(scene, camera));
+      // Pas d'occlusion ambiante GTAO ici : sa passe de normales rend opaques les plans de nuages transparents et
+      // assombrit le ciel en grands rectangles (constaté au rendu du 15/10/2026). Les paysages vus de loin n'en ont
+      // pas besoin ; la rue et la mégapole la gardent.
+      void city;
       const night = S.time === 'night';
       composer.addPass(new PP.UnrealBloomPass(new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), night ? 0.6 : 0.24, 0.7, night ? 0.55 : 0.86));
       grade = new PP.ShaderPass({

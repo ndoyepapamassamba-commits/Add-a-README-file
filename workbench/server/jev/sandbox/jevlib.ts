@@ -5,10 +5,12 @@
 // tests/unit/sandboxKnowledge.test.ts (normalisations quantiques, projection aller-retour, intégrateurs…).
 // Valeurs du mouvement humain : approximations lissées de courbes de manuel (marche normale), signalées comme telles.
 
-export const JEVLIB_VERSION = '1.0.0';
+import { JEVLIB_ANIM_SOURCE } from './jevlibAnim';
 
-export const JEVLIB_SOURCE = String.raw`
-// jev ${'1.0.0'} — bibliothèque scientifique du bac à sable MASSAMBA (code maison).
+export const JEVLIB_VERSION = '1.1.0';
+
+const JEVLIB_CORE = String.raw`
+// jev ${'1.1.0'} — bibliothèque scientifique du bac à sable MASSAMBA (code maison).
 export const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
 export const deg = (r) => r / DEG;
@@ -274,6 +276,8 @@ export const human = {
   blink: (t, perMin = 15, seed = 3) => { const period = 60 / perMin, jitter = (Math.sin(seed * 12.9898 + Math.floor(t / period) * 78.233) * 43758.5453) % 1; const u = (t % period) - Math.abs(jitter) * period * 0.5; return u >= 0 && u < 0.12 ? Math.sin((Math.PI * u) / 0.12) : 0; },
 };
 `;
+/** The module served to the pages: core science + animation, cinema and the character-animation procedure (v1.1). */
+export const JEVLIB_SOURCE = JEVLIB_CORE + JEVLIB_ANIM_SOURCE;
 
 /** What the model is told the library offers (kept short: names and signatures). */
 export const JEVLIB_API = [
@@ -283,6 +287,13 @@ export const JEVLIB_API = [
   '• jev.quantum : boxEnergy/boxPsi (puits infini), oscillatorPsi(n, ξ), hydrogenRadial(n,l,r), realY(l,m,θ,φ), hydrogenDensity(n,l,m,x,y,z), sampleOrbital(n,l,m,count) → Float32Array pour THREE.Points, doubleSlit(θ,λ,d,a), tunneling(E,V0,largeur), wavePacket(x,t), bloch(θ,φ), hydrogenEnergy(n) ; constantes h, hbar, me, eV, a0, c',
   '• jev.proj : perspective, lookAt, project(point, {eye,target,up,fov,near,far,width,height}) → {x,y,depth,visible}, unproject(px,py,cam) → rayon, fovFromFocal(mm), focalFromFov(°)',
   '• jev.v3, jev.quat (fromAxisAngle, mul, slerp, rotate), jev.catmullRom, jev.bezier, jev.makeNoise(seed) → {noise2, noise3, fbm}, jev.rk4, jev.solveQuadratic, jev.fourier, jev.ease.*, jev.clamp, jev.lerp, jev.smoothstep, jev.rad, jev.deg',
+  '• jev.motion (mouvements humains et non humains) : flap(t,hz) / glide, wingHz{…}, swim(x,t,vitesse) (Strouhal), slither, sway (vent), flag(u,v,t) (tissu), flicker (flamme), bob (flotter), breathe, wag, headBob (poule), leg(allure "pas|trot|amble|galop", patte "LF|RF|LH|RH", phase) → {stance, lift, reach}, hop(t,h), find(texte) → recettes',
+  '• jev.speech (parole FR) : plan(texte, {start, rate}) → {syllables, visemes (bouches A–H, X), accents (fin de groupe), start, end} ; mouthAt(plan, t) → {open, wide, round, shape} (coarticulation, bouche en avance) ; blinks(plan) ; lidAt(blinks, t)',
+  '• jev.music : beat(t, bpm) → {index, phase, bar, downbeat}, pulse(t, bpm), dance(t, bpm, "groove|afro|coupe-decale") → {hipY, sway, shoulders, chest, armL, armR, head}, detectBpm(Float32Array, sampleRate)',
+  '• jev.smooth : damp(x, cible, demi-vie, dt), spring(x, v, cible, demi-vie, dt) → [x, v], oneEuro() → filtre(x, t), deadBlend(x0, v0, cible, t), inertialize(x0, v0, durée, t)',
+  '• jev.qa (contrôle du mouvement) : jitter(série, dt), footSkate(pied[[x,y,z]], dt), penetration(points), kinematicBeats(vitesses, dt), beatAlignment(mvt, musique), lipSync(bouche[], énergie[], fps) → {offset, verdict}, limits(pose)',
+  '• jev.cine : sizes (TGP GP PR PA PM PE PG), lenses, aspects, letterbox(w,h,ratio), frame(sujet{pos,height,facing}, taille, {angle, mm}) → {eye, target, fov}, twoShot(A,B), overShoulder(A,B), move("dolly-in|dolly-out|truck|crane|drone|pan|tilt|orbit|vertigo", plan, u), shake(t), dof(mm, N, mise au point m), miniatureRisk, bokeh(), grades{…} + gradeShader(nom) pour ShaderPass, thirds(x,y,w,h), coverage(répliques) → découpage, check(plans) → faux raccords (180°, 30°)',
+  '• jev.character : procedure (14 étapes), plan(répliques[{who,text,emotion}]) → {lines, tracks, shots, issues}, pose(plan, qui, t) → {mouth, lid, gaze, headGaze, nod, gesture, breath, speaking}',
 ].join('\n');
 
 /** The module as a data: URL for the sandbox import map (the page's CSP allows data: scripts). */

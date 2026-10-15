@@ -511,8 +511,14 @@ export function sceneScifi(THREE: typeof T, OrbitControls: typeof OC, S: SceneSp
   let composer: InstanceType<ScenePost['EffectComposer']> | null = null;
   if (PP) {
     try {
-      composer = new PP.EffectComposer(renderer);
+      composer = new PP.EffectComposer(renderer, new THREE.WebGLRenderTarget(window.innerWidth * PR, window.innerHeight * PR, { samples: 4, type: THREE.HalfFloatType }));
       composer.addPass(new PP.RenderPass(scene, camera));
+      if (PP.GTAOPass) {
+        // occlusion ambiante : ombres de contact (pieds des façades, sous les véhicules, entre les objets)
+        const ao = new PP.GTAOPass(scene, camera, window.innerWidth, window.innerHeight);
+        ao.blendIntensity = 0.6;
+        composer.addPass(ao);
+      }
       composer.addPass(new PP.UnrealBloomPass(new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), day ? 0.22 : 0.55, 0.5, day ? 0.88 : 0.62));
       composer.addPass(
         new PP.ShaderPass({
