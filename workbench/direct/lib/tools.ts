@@ -14,6 +14,7 @@ import {
   type QuerySpec,
 } from '../../server/services/dataCore';
 import { corpusFor, researchSubject } from '../../server/services/dossier/sourceCorpus';
+import { coverageNote, keepRelevant, relevanceQuestions, relevanceState, researchFacets, splitKnown, type Hit } from '../../server/jev/knowledge/gaps';
 import { DICT_SHEET, dictionaryFrom, missingText, resolveColumnSmart, resolveQuery, schemaPacket, shapeSignature, type LexiconCtx } from '../../server/services/dataLexicon';
 import { ChartSpecSchema, computeChart } from '../../server/services/vizEngine';
 import { isImage } from '../../server/services/documentsCore';
@@ -513,28 +514,56 @@ const axisOf = (url: string) =>
   /bceao\.int|beac\.int|uemoa\.int|ohada\.(org|com)|eur-lex|legifrance/.test(url) ? 'R1' : /bis\.org|eba\.europa|ecb\.europa|ifrs\.org|sgcobac|acpr|imf\.org|worldbank/.test(url) ? 'R3' : /doi\.org|arxiv|ssrn|\.edu\b|hal\./.test(url) ? 'R4' : 'R9';
 async function researchFor(ctx: ToolCtx, subject: string, lens: 'credit' | 'ranking' | null): Promise<ResearchNote[]> {
   const out: ResearchNote[] = [...corpusFor(subject, lens, 6)];
-  const kb = useStore.getState().knowledge;
-  const known = subject ? recallKnowledge(kb, subject) : null;
-  if (known) for (const src of known.entry.sources.slice(0, 3)) out.push({ title: src.title || src.url, url: src.url, lesson: known.entry.text.replace(/\s+/g, ' ').slice(0, 300), axis: 'R9' });
-  else if (subject.length >= 6) {
+  // DEEP, GAP-DRIVEN research (v64): the subject's facets; what the memory knows is reused (0 search), only the GAPS
+  // are searched (in parallel), JEV keeps the relevant results, each facet is remembered as learned.
+  const facets = subject.length >= 6 ? researchFacets(subject, lens) : [];
+  const { known, gaps } = splitKnown(facets, (q) => recallKnowledge(useStore.getState().knowledge, q));
+  for (const k of known) for (const src of k.entry.entry.sources.slice(0, 2)) out.push({ title: src.title || src.url, url: src.url, lesson: `${k.facet.label} — ${k.entry.entry.text.replace(/\s+/g, ' ').slice(0, 260)}`, axis: axisOf(src.url) });
+  let kept = 0;
+  let judged = false;
+  if (gaps.length) {
     try {
-      const free = await Promise.race([freeWebSearch(subject, 5, ctx.signal, requestOf(ctx.sessionId)), new Promise<null>((r) => setTimeout(() => r(null), 10_000))]);
-      if (free?.hits.length) {
-        for (const h of free.hits.slice(0, 4)) out.push({ title: h.title, url: h.url, lesson: h.snippet || h.title, date: h.age, axis: axisOf(h.url) });
-        const text = braveText(subject, free.hits).replace('(Brave Search)', `(${free.via})`);
-        useStore.getState().setKnowledge(rememberKnowledge(useStore.getState().knowledge, { query: subject, text, sources: sourcesOf(text), origin: 'search' }));
+      const searched = await Promise.race([
+        Promise.all(gaps.slice(0, 4).map(async (f) => ({ facet: f, hits: ((await freeWebSearch(f.query, 5, ctx.signal, requestOf(ctx.sessionId)).catch(() => null))?.hits ?? []).map((h) => ({ title: h.title, url: h.url, snippet: h.snippet, age: h.age })) }))),
+        new Promise<null>((r) => setTimeout(() => r(null), 12_000)),
+      ]);
+      if (searched) {
+        const groups = searched.filter((g) => g.hits.length);
+        // JEV's relevance judgment (one call for every hit), when a key and the day's budget allow it.
+        let answers: Record<string, { noul?: number }> | null = null;
+        const cfg = jevSettings();
+        const key = getJevKey();
+        if (groups.length && key && cfg.enabled && cfg.provider !== 'local') {
+          try {
+            const ans = await callJevQuestions(cfg, key, relevanceState(groups), relevanceQuestions(groups), (url, init) => fetch(url, init));
+            acct.add(ctx.sessionId, { kind: 'jev1', step: 0, model: ans.model, tokensIn: ans.inputTokens, tokensOut: 0, cost: ans.costUsd, costSource: 'calculated', ms: ans.ms });
+            answers = ans.answers;
+            judged = true;
+          } catch {
+            /* JEV unavailable: the first results of each facet */
+          }
+        }
+        for (const g of keepRelevant(groups, answers)) {
+          if (!g.hits.length) continue;
+          const hits = g.hits as (Hit & { age?: string })[];
+          for (const h of hits.slice(0, 3)) out.push({ title: h.title, url: h.url, lesson: `${g.facet.label} — ${h.snippet || h.title}`, date: h.age, axis: axisOf(h.url) });
+          kept += Math.min(3, hits.length);
+          const text = braveText(g.facet.query, hits.map((h) => ({ title: h.title, url: h.url, snippet: h.snippet ?? '', age: h.age })) as never).replace('(Brave Search)', '(recherche par facette)');
+          useStore.getState().setKnowledge(rememberKnowledge(useStore.getState().knowledge, { query: g.facet.query, text, sources: sourcesOf(text), origin: 'search' }));
+        }
       }
     } catch {
-      /* offline: the corpus alone */
+      /* offline: the corpus and the memory alone */
     }
   }
+  if (facets.length) ctx.mission?.stage('Recherche', coverageNote(facets.length, known.length, Math.min(4, gaps.length), kept, judged));
   const seen = new Set<string>();
   return out.filter((r) => {
     const k = (r.url || r.title).toLowerCase();
     if (seen.has(k)) return false;
     seen.add(k);
     return true;
-  }).slice(0, 10);
+  }).slice(0, 14);
 }
 /** One column name of a chart / brief resolved like a query column (business words, dictionary, learned aliases). */
 function columnOf(ds: Dataset, name: string): string {

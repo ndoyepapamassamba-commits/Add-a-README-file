@@ -88,8 +88,9 @@ export function cacDesign(d: Design): Design {
       subtle: tintOf(hx(c.blue), 0.87),
       risk: CAC_NEUTRALS.alert,
     },
-    // APP look (v64): the system UI face of Windows (what a web app renders there), tabular digits for the figures.
-    font: { ...d.font, ui: 'Segoe UI', mono: 'Segoe UI' },
+    // APP look (v64): the system UI face of Windows (what a web app renders there) — unless the CHOSEN design names its
+    // own typeface (Georgia, a brand font…): the user's design is reproduced, font included.
+    font: /^(calibri|segoe ui|aptos|arial|helvetica|inter|system-ui)?$/i.test(d.font.ui ?? '') ? { ...d.font, ui: 'Segoe UI', mono: 'Segoe UI' } : d.font,
     chartSeries: [hx(c.blue), hx(c.gold), ...states].filter((x, i, a) => a.indexOf(x) === i).slice(0, 10),
   } as Design;
 }

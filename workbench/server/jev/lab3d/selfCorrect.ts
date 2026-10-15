@@ -83,6 +83,9 @@ export async function generateWithCorrection(o: {
   base?: string;
   /** Extra rules appended to the system prompt (e.g. the cinematic rules of the blender-cinematic-scene skill). */
   rules?: string[];
+  /** THE EYE OF JEV (v64): what the request names but the rendered scene does not SHOW (French problems), [] when all is
+   *  seen, null when it cannot look — never blocks. */
+  see?: (code: string) => Promise<string[] | null>;
 }): Promise<{ ok: boolean; rounds: Round[]; code: string }> {
   const maxRounds = Math.max(1, o.maxRounds ?? 3);
   const messages: Msg[] = [
@@ -100,7 +103,15 @@ export async function generateWithCorrection(o: {
     const answer = await o.generate(messages);
     const code = extractCode(answer);
     const run = await o.run(code);
-    const good = run.ok && run.stats.meshes > 0;
+    let good = run.ok && run.stats.meshes > 0;
+    // The scene runs: does it SHOW what was asked? (Jev 1.14 looks at the canvas; only what it does not see goes back.)
+    if (good && o.see && r < maxRounds) {
+      const missing = await o.see(code).catch(() => null);
+      if (missing?.length) {
+        good = false;
+        run.errors.push(...missing.map((msg) => ({ kind: 'eye', msg, line: null })));
+      }
+    }
     const round = { round: r, code, run: { ...run, ok: good }, feedback };
     rounds.push(round);
     o.onRound?.(round);

@@ -50,6 +50,8 @@ import type { JevMode } from '../../server/jev/tools';
 import type { TaskType } from '../../server/llm/routing';
 import { classificationConfidence } from '../../server/llm/routing';
 import { useStore } from './store';
+import { callJevQuestions } from '../../server/jev/provider';
+import { jevSceneQuestions, jevSceneState, parseSceneLocal, specFromJev, type SceneSpec } from '../../server/jev/realize/sceneKit';
 
 export interface JevSettings extends JevApiConfig {
   enabled: boolean;
@@ -689,5 +691,26 @@ export async function jevSeeBlob(
     return jevSee(url, elements, circumstances);
   } catch {
     return null;
+  }
+}
+
+/**
+ * JEV READS A SCENE (moteur de scène instantané, v64): one typed call (≈ 0,0001 $) refines the local reading —
+ * universe, components named or implied, counts, time, season, framing, mood. The local reading is kept as is when JEV
+ * cannot answer (provider local, no key, daily budget, error). The universe JEV picks with confidence re-reads the
+ * request with that universe's catalogue.
+ */
+export async function jevSceneSpec(prompt: string, local: SceneSpec): Promise<SceneSpec> {
+  const s = jevSettings();
+  if (s.provider === 'local' || !getJevKey()) return local;
+  if ((useStore.getState().jevSpend[today()] ?? 0) >= s.budgetDaily) return local;
+  try {
+    const r = await callJevQuestions(s, getJevKey(), jevSceneState(prompt), jevSceneQuestions(), (url, init) => fetch(url, init));
+    addJevSpend(r.costUsd);
+    const th = r.answers.theme;
+    const base = th?.choice && th.choice !== local.theme && (th.confidence ?? 0) >= 0.7 ? parseSceneLocal(prompt, { theme: th.choice as SceneSpec['theme'] }) : local;
+    return specFromJev(base, r.answers, prompt);
+  } catch {
+    return local;
   }
 }

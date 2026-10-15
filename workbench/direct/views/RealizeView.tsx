@@ -35,7 +35,19 @@ import {
   videoExt,
 } from '../../server/jev/realize/realize';
 import { eyeProblems, type EyeVerdict } from '../../server/jev/eye';
-import { jevSee } from '../lib/jev';
+import { jevSee, jevSceneSpec } from '../lib/jev';
+import {
+  addonSystemPrompt,
+  addonUserPrompt,
+  applyLessons,
+  instantSuited,
+  learnLessons,
+  parseSceneLocal,
+  realizeInstant,
+  withAddon,
+  type SceneLessons,
+  type SceneSpec,
+} from '../../server/jev/realize/sceneKit';
 import { complete } from '../lib/llm';
 import { Realizer, type Video } from '../lib/realize/runner';
 import { useStore } from '../lib/store';
@@ -43,6 +55,31 @@ import { download, uniquePath, writeText } from '../lib/vfs';
 import { PageHeader } from './PageHeader';
 
 const IDEAS: { label: string; prompt: string }[] = [
+  {
+    label: '🏰 Cité médiévale au coucher du soleil (instantané)',
+    prompt:
+      'Une immense cité médiévale fortifiée construite sur une colline dominant une vaste vallée. Au centre se dresse un château royal avec plusieurs donjons, remparts, tours de guet et bannières flottant au vent. Des centaines de maisons à colombages autour d’une place centrale avec un marché animé, une grande église en pierre et des rues pavées éclairées par des lanternes. De vastes champs de blé ondulent sous le vent, traversés par des chemins empruntés par des charrettes. Une rivière passe sous un grand pont de pierre et rejoint un lac lointain. Des milliers d’arbres. Le soleil se couche derrière les montagnes. Des oiseaux survolent la ville, quelques nuages. Style cinématique, vue panoramique.',
+  },
+  {
+    label: '🌃 Mégapole futuriste sous la pluie (instantané)',
+    prompt:
+      'Une immense mégapole futuriste jusqu’à l’horizon. Des milliers de gratte-ciels, des écrans holographiques géants, des véhicules volants sur plusieurs niveaux, des trains suspendus, une gigantesque tour iconique illuminée de néons bleus et violets, une pluie légère sur les avenues réfléchissantes, de la vapeur qui s’échappe des bouches d’aération. Caméra volante de blockbuster.',
+  },
+  {
+    label: '🌍 Planète vue de l’espace, descente continue (instantané)',
+    prompt:
+      'Une planète entière observée depuis l’espace. La caméra s’approche de l’atmosphère : continents, océans, chaînes de montagnes, déserts et forêts, gigantesques systèmes nuageux, aurores boréales près des pôles, villes illuminées, océans qui reflètent le soleil. Transition continue depuis l’orbite.',
+  },
+  {
+    label: '🌲 Forêt magique au lever du soleil (instantané)',
+    prompt:
+      'Une forêt magique immense au lever du soleil : des milliers d’arbres géants, un sol de mousse, des rayons lumineux à travers la canopée, des lucioles, des ruisseaux et des cascades cristallines, des cristaux lumineux, une brume matinale, des oiseaux, des cerfs et des créatures fantastiques. Ambiance féerique.',
+  },
+  {
+    label: '🚀 Colonie martienne (instantané)',
+    prompt:
+      'Une gigantesque colonie humaine dans une vallée martienne : dômes transparents abritant des villes, véhicules autonomes sur des pistes rouges, fermes hydroponiques, champs de panneaux solaires, fusées qui décollent d’un spatioport central, montagnes martiennes, ciel rouge et tempêtes de poussière.',
+  },
   {
     label: 'Tableau de bord des données jointes',
     prompt:
@@ -143,7 +180,96 @@ export function RealizeView() {
     return r;
   };
 
+  // MOTEUR DE SCÈNE INSTANTANÉ (v64) : un paysage, une cité, une planète… décrits par le prompt sont construits tout de
+  // suite par le moteur procédural (0 token de code), vérifiés par l'œil de JEV, corrigés par ses réglages ; ce que le
+  // moteur ne dessine pas est ajouté AUTOMATIQUEMENT par le modèle sous forme d'un petit module (pas de page à réécrire).
+  const LESSONS_KEY = 'massamba.sceneLessons';
+  const readLessons = (): SceneLessons => {
+    try {
+      return JSON.parse(localStorage.getItem(LESSONS_KEY) ?? '{}') as SceneLessons;
+    } catch {
+      return {};
+    }
+  };
+  const instant = async (): Promise<boolean> => {
+    if (data || !['svg', '3d', 'video'].includes(effective)) return false;
+    const local = parseSceneLocal(prompt.trim());
+    if (!instantSuited(local)) return false;
+    setRounds([]);
+    setEye(null);
+    setBusy('JEV lit la scène');
+    let spec: SceneSpec = await jevSceneSpec(prompt.trim(), local);
+    if (!instantSuited(spec)) spec = local;
+    spec = applyLessons(spec, readLessons());
+    setBusy('le moteur construit la scène (0 token de code)');
+    const r = await realizeInstant({
+      prompt: prompt.trim(),
+      spec,
+      run: runPage,
+      maxRounds: 2,
+      see: async (run, sp) => {
+        const shot = await rz.current!.snapshot(1024);
+        if ('error' in shot) return null;
+        const t = eyeTargets(prompt.trim(), run);
+        setBusy('l’œil de JEV regarde le rendu');
+        const v = await jevSee(shot.data, t.elements, t.circumstances);
+        void sp;
+        if (!v) return null;
+        setEye(v);
+        return eyeProblems(v);
+      },
+      onRound: (round) => setRounds((x) => [...x, round]),
+    });
+    let code = r.code;
+    try {
+      localStorage.setItem(LESSONS_KEY, JSON.stringify(learnLessons(readLessons(), r.spec, r.ok)));
+    } catch {
+      /* stockage indisponible : rien n'est appris cette fois */
+    }
+    // Le complément automatique : seulement ce qui manque, par un petit module branché sur la scène.
+    const m = pickModel();
+    if (r.spec.missing.length && m) {
+      setBusy(`le modèle ajoute : ${r.spec.missing.slice(0, 3).join(', ')}`);
+      try {
+        const res = await complete(
+          {
+            model: m,
+            messages: [
+              { role: 'system', content: addonSystemPrompt(r.spec) },
+              { role: 'user', content: addonUserPrompt(r.spec.missing) },
+            ],
+            maxTokens: 6000,
+            temperature: 0.3,
+          },
+          { models, fallbacks: [], effort: 'auto', purpose: 'realize' },
+        );
+        setCost(res.cost);
+        const withIt = withAddon(code, res.content);
+        const run = await runPage(withIt);
+        if (run.ok) code = withIt;
+        else await runPage(code);
+      } catch {
+        /* le modèle est injoignable : la scène instantanée reste */
+      }
+    }
+    setCode(code);
+    setBusy('');
+    const parts = [`Scène instantanée (${r.spec.theme}) en ${r.rounds.length} passage(s), 0 token de code`];
+    if (r.spec.missing.length) parts.push(m ? 'compléments ajoutés par le modèle' : `hors moteur : ${r.spec.missing.slice(0, 3).join(', ')}`);
+    useStore.getState().toast(r.ok ? 'ok' : 'info', parts.join(' · '));
+    if (r.ok && effective === 'video') void film(code);
+    return true;
+  };
+
   const realize = async (iterate = false) => {
+    if (!iterate && prompt.trim()) {
+      try {
+        if (await instant()) return;
+      } catch (e) {
+        setBusy('');
+        useStore.getState().toast('info', `Moteur de scène : ${(e as Error).message} — le modèle prend le relais`);
+      }
+    }
     const m = pickModel();
     if (!m)
       return useStore

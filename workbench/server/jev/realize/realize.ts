@@ -37,7 +37,7 @@ export function detectKind(prompt: string, hasData = false): RealizeKind {
   )
     return '3d';
   if (
-    /\bjeu\b|\bgame\b|snake|serpent|tetris|pong|casse-briques|morpion|plateforme|flappy|sprite|physique|rebond|particules/.test(
+    /\bjeu\b|\bgame\b|snake|\bserpent\b|tetris|pong|casse-briques|morpion|plateforme|flappy|sprite|physique|rebond|particules/.test(
       p,
     )
   )

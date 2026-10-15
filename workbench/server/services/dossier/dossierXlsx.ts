@@ -293,8 +293,14 @@ function glyphOf(title: string, i = -1): string {
 /** Round medallion with a glyph (white disc, ring in the colour's tint). */
 /** Fluent 3D emoji bytes, one object per emoji (the drawing and the package keep ONE media file per emoji). */
 const PNG_CACHE = new Map<string, Uint8Array | null>();
+/** The emoji pictures' bytes (their media files are named emojiN.png, the logo keeps logoN.png). */
+const EMOJI_BYTES = new WeakSet<Uint8Array>();
 const emojiPng = (e: string): Uint8Array | null => {
-  if (!PNG_CACHE.has(e)) PNG_CACHE.set(e, fluentPng(e));
+  if (!PNG_CACHE.has(e)) {
+    const png = fluentPng(e);
+    if (png) EMOJI_BYTES.add(png);
+    PNG_CACHE.set(e, png);
+  }
   return PNG_CACHE.get(e)!;
 };
 /** A Fluent 3D emoji picture at an absolute place (EMU), optionally a link to a sheet. False when the pack lacks it. */
@@ -1671,7 +1677,7 @@ function finishWorkbook(bytes: Uint8Array, sheets: Sheet[], d: Dossier): Uint8Ar
           let file = mediaOf.get(png);
           if (!file) {
             picNo++;
-            file = `logo${picNo}.png`;
+            file = `${EMOJI_BYTES.has(png) ? 'emoji' : 'logo'}${picNo}.png`;
             mediaOf.set(png, file);
             z[`xl/media/${file}`] = new Uint8Array(png);
           }

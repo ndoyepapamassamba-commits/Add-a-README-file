@@ -37,12 +37,16 @@ describe('couleurs d’états tirées de la palette choisie', () => {
         expect(hues.some((h) => sameFamily(s, h) || tonalFamily(s, h) || s === h)).toBe(true);
     }
   });
-  it('le design CAC garde la marine et l’accent de la palette, prend les neutres chauds du format et la police d’interface (allure application)', () => {
-    const t = cacDesign(buildTheme('onyx'));
-    expect(t.color.navy).toBe(buildTheme('onyx').color.navy);
+  it('le design CAC garde la marine et l’accent de la palette, prend les neutres chauds du format et la police d’interface (allure application) — sauf une police CHOISIE dans la galerie, conservée', () => {
+    const base = buildTheme('onyx');
+    const t = cacDesign(base);
+    expect(t.color.navy).toBe(base.color.navy);
     expect(t.color.text).toBe('17130C');
     expect(t.color.line).toBe('C7C4BD');
-    expect(t.font.ui).toBe('Segoe UI');
+    const neutral = /^(calibri|segoe ui|aptos|arial|helvetica|inter|system-ui)?$/i.test(base.font.ui ?? '');
+    expect(t.font.ui).toBe(neutral ? 'Segoe UI' : base.font.ui);
+    // une police neutre (Calibri…) devient la police d'interface de l'allure application
+    expect(cacDesign({ ...base, font: { ...base.font, ui: 'Calibri' } }).font.ui).toBe('Segoe UI');
   });
 });
 

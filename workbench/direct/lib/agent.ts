@@ -68,6 +68,7 @@ import { DESIGN_ARCHITECT, needsArchitect } from '../../server/services/designAr
 import { propose } from '../../server/jev/memory/updateGate';
 import { modelById } from '../../server/services/designModels';
 import { heavy } from './heavy';
+import { swarmBlock, swarmPlan } from '../../server/jev/swarm';
 import { skinDocx, skinHtml, skinPptx, type Skin } from '../../server/services/officeSkin';
 import { knowledgeBlock, related as relatedKnowledge } from '../../server/jev/knowledge/learned';
 import { cloneData, dashFit, renderCloneSvg, type CloneData } from '../../server/services/dashRender';
@@ -1196,7 +1197,13 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
     const exp = vaultRecall(inp.text);
     // LEARNED KNOWLEDGE (past web searches, filed rules): reused instead of searching again.
     const known = relatedKnowledge(useStore.getState().knowledge, inp.text, 4);
-    semMemory = [memoryBlock(chatHits, [...lessonHits, ...seedHits(inp.text)].slice(0, 3)), exp ? vaultBlock(exp) : '', knowledgeBlock(known)].filter(Boolean).join('\n');
+    // JEV SWARM: a heavy request is split by JEV's prescription into sub-agents that run in parallel (agent.delegate).
+    const swarm = inp.depth < MAX_DEPTH && packTools.some((t) => t.name === 'agent.delegate') ? swarmPlan({ text: inp.text, attachments: inp.attachments.length, complexity: dna.complexity, outputs: dna.outputs }) : null;
+    if (swarm?.heavy) {
+      traceAdd({ name: 'JEV_CHECKPOINT', ms: 0, tokens: 0, cost: 0, decision: `tâche lourde (score ${swarm.score.toFixed(2)} : ${swarm.reasons.join(', ')}) → ${swarm.parts.length} sous-agents en parallèle` });
+      stage(sid, `JEV découpe la tâche en ${swarm.parts.length} sous-agents parallèles`);
+    }
+    semMemory = [memoryBlock(chatHits, [...lessonHits, ...seedHits(inp.text)].slice(0, 3)), exp ? vaultBlock(exp) : '', knowledgeBlock(known), swarm ? swarmBlock(swarm, allRoles(st.agents).map((a) => a.id)) : ''].filter(Boolean).join('\n');
     if (semMemory)
       traceAdd({ name: 'JEV_CONTEXT', ms: 0, tokens: Math.ceil(semMemory.length / 3.8), cost: 0, decision: `mémoire sémantique : ${chatHits.length} fait(s) du chat, ${lessonHits.length} leçon(s)` });
   }

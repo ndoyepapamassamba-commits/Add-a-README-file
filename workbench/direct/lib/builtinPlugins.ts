@@ -7,6 +7,7 @@ import { uid, useStore } from './store';
 import type { DirectTool, ToolOut } from './tools';
 import { bytesOf, getFile, uniquePath, writeBytes, writeText } from './vfs';
 import { BRIDGE_HELP, bridgeHealth, bridgeRender } from './blenderBridge';
+import { jevSeeBlob } from './jev';
 import { keylessPreprints, keylessRead } from './freeEngines';
 import { runLibrary } from './library';
 import { remember as rememberKnowledge } from '../../server/jev/knowledge/learned';
@@ -216,6 +217,7 @@ export const BUILTIN_PLUGINS: BuiltinPlugin[] = [
             engine: { type: 'string', enum: ['EEVEE', 'WORKBENCH', 'CYCLES'], description: 'Render engine (EEVEE on a GPU; CYCLES when the bridge runs on the bpy module without GPU)' },
             orbit: { type: 'boolean', description: 'Camera orbits the scene over the duration (default true for a GLB)' },
             still_only: { type: 'boolean', description: 'Only the verification still (fast check before a full render)' },
+            look_for: str('Elements the render must SHOW, comma-separated (from the user request): the eye of JEV checks the verification still and says what it cannot see'),
           },
           [],
         ),
@@ -250,11 +252,22 @@ export const BUILTIN_PLUGINS: BuiltinPlugin[] = [
           );
           const out: string[] = [];
           if (r.verify) out.push(writeBytes(uniquePath(`3d/${base}-verify.png`), r.verify, 'image/png').path);
+          // THE EYE OF JEV on the verification still: are the requested elements (or the script's named objects) VISIBLE?
+          let eyeLine = '';
+          if (r.verify) {
+            const script = sp ? (f.binary ? new TextDecoder().decode(bytesOf(f)) : f.data) : '';
+            const wanted = (S(a.look_for) ? S(a.look_for).split(/[,;]+/) : blenderObjectNames(script)).map((x) => x.trim()).filter(Boolean).slice(0, 10);
+            if (wanted.length) {
+              const v = await jevSeeBlob(new Blob([r.verify as BlobPart], { type: 'image/png' }), wanted.map((name) => ({ name })));
+              if (v)
+                eyeLine = ` JEV's eye on the verification still: ${v.seen.length}/${wanted.length} element(s) visible${v.missing.length ? `; NOT visible: ${v.missing.map((m: { name: string; p: number }) => `${m.name} (p=${m.p.toFixed(2)})`).join(', ')} — fix the script (camera framing, scale, light, materials) and render again` : ''}${v.finish != null ? `; finish ${v.finish.toFixed(1)}/3` : ''}.`;
+            }
+          }
           if (r.video) out.push(writeBytes(uniquePath(`3d/${base}.mp4`), r.video, 'video/mp4').path);
           const rep = r.report;
           return ok(
             `${rep.frames ? `${rep.frames} images · ${rep.seconds} s` : 'image de vérification'} · ${rep.engine} · ${Math.round((Date.now() - t0) / 1000)} s`,
-            `Blender local (${health.blender ?? health.mode}) rendered ${rep.frames} frame(s) at ${rep.resolution[0]}×${rep.resolution[1]} ${rep.fps} fps with ${rep.engine} in ${rep.render_time_s} s (${rep.objects} objects). Files: ${out.join(', ')}. Last status: ${last}. Look at the verification still before delivering the video.`,
+            `${eyeLine ? `${eyeLine.trim()} ` : ''}Blender local (${health.blender ?? health.mode}) rendered ${rep.frames} frame(s) at ${rep.resolution[0]}×${rep.resolution[1]} ${rep.fps} fps with ${rep.engine} in ${rep.render_time_s} s (${rep.objects} objects). Files: ${out.join(', ')}. Last status: ${last}. Look at the verification still before delivering the video.`,
           );
         },
       }),
@@ -797,3 +810,9 @@ export function builtinTools(disabled: string[] = []): DirectTool[] {
   return BUILTIN_PLUGINS.filter((p) => !disabled.includes(p.id)).flatMap((p) => p.tools);
 }
 export const builtinToolNames = new Set(BUILTIN_PLUGINS.flatMap((p) => p.tools.map((t) => t.name)));
+
+/** The objects a Blender script names (for the eye of JEV): cameras, lights and empties left out. */
+export function blenderObjectNames(script: string): string[] {
+  const names = [...script.matchAll(/(?:objects\.new\(|\.name\s*=\s*|name\s*=\s*)["']([^"']{2,40})["']/g)].map((m) => m[1]!);
+  return [...new Set(names)].filter((n) => !/^(camera|cam|light|lamp|sun|key|fill|rim|empty|world|scene|collection|material|mat_)/i.test(n)).slice(0, 10);
+}

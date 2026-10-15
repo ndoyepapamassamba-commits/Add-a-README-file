@@ -8,6 +8,9 @@ import { download } from '../lib/vfs';
 import { BRIDGE_HELP, bridgeHealth, bridgeRender, type BridgeHealth } from '../lib/blenderBridge';
 import { VIDEO_3D } from '../lib/features';
 import { CINEMATIC_WEBGL_RULES, generateWithCorrection, type Round } from '../../server/jev/lab3d/selfCorrect';
+import { eyeProblems } from '../../server/jev/eye';
+import { promptItems } from '../../server/jev/realize/realize';
+import { jevSeeBlob } from '../lib/jev';
 import {
   directStory,
   freeModels,
@@ -222,6 +225,18 @@ export function Lab3DView() {
             )
           ).content,
         run: (c) => lab.current!.run(c),
+        // The eye of JEV on the rendered canvas: the elements the prompt names must be visible.
+        see: async () => {
+          const png = await lab.current!.screenshot();
+          if (!png) return null;
+          const { items, circumstances } = promptItems(prompt);
+          if (!items.length) return null;
+          // Fitted to the eye's limits (≤ 1568 px a side) before it is sent.
+          const v = await jevSeeBlob(await (await fetch(png)).blob(), items.map((i) => ({ name: i.text })), circumstances);
+          if (!v) return null;
+          push(v.missing.length ? 'warn' : 'ok', `Œil de JEV : ${v.seen.length}/${v.seen.length + v.missing.length} élément(s) vus${v.missing.length ? ` — manque : ${v.missing.map((m) => m.name).join(', ')}` : ''}`);
+          return eyeProblems(v);
+        },
         onRound: (r) => {
           setRounds((x) => [...x, r]);
           push(
