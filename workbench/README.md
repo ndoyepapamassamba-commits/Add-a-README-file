@@ -314,3 +314,18 @@ Laboratoire Champion ↔ Challenger ↔ Premium avec statistiques réelles (IC, 
   - une courbe de Pareto.
 - Limites : barres d'écart à la limite signées + / − (grille du Financial Times et règles IBCS).
 - Cockpit : le chiffre critique (l'encours) en haut à gauche.
+
+## JEV, cerveau de l'app — gratuit, sans clé (v63)
+
+- **Sans clé** : « Utiliser sans clé » à l'ouverture. Les modèles gratuits LLM7 (gpt-oss 20B, Nemotron 30B, Codestral) puis Pollinations répondent. Avec une clé, ils prennent le relais quand vos fournisseurs échouent (clé, crédit, quota, réseau) — jamais sur une requête avec image (ils ne lisent que du texte) ni sur le refus propre à un modèle (« only available on… »), que l'app traite elle-même. Les conversations qui portent vos fichiers ne partent jamais vers un service gratuit anonyme sans votre accord : seul le modèle intégré au navigateur (Qwen3, Apache-2.0, transformers.js, WebGPU ou processeur) les traite.
+- **JEV sur chaque appel** (`direct/lib/jevBrain.ts`, `server/jev/brain.ts`) :
+  - *avant* — cadre d'objectif (livrable, critères, interdits), techniques apprises, leçons, cache des réponses identiques, et pour les tâches légères les modèles gratuits d'abord ;
+  - *pendant* — une boucle de répétition ou un changement de langue coupe l'appel, qui est relancé avec une consigne corrective ;
+  - *après* — contrôle qualité local ; une réponse gratuite insuffisante passe la main au modèle demandé ;
+  - *en fond* — veille Internet sur ce qui manque et mise à jour perpétuelle des techniques utilisées. Plafond dur : 25 recherches par jour. Ni chiffres ni noms propres envoyés.
+- **Réflexes sans modèle** (`server/jev/reflex.ts`) : taux BCE, conversions en franc CFA, fiches d'entité, définitions. Pour un **calcul**, JEV fait écrire le programme par un modèle gratuit, l'exécute dans le bac à sable et lit le résultat.
+- **Requêtes vers les modèles gratuits compactées** (`compactRequest`) : blocs JEV d'abord, 14 outils au plus. Mesuré : −58 % de caractères. Un service saturé est mis au repos pour la durée qu'il annonce.
+- **Bibliothèque mondiale** (`server/jev/library.ts`, outil `library.search`) : 19 sources publiques gratuites — Wikipédia, Crossref, DOAJ, HAL, Europe PMC, OpenAlex, Open Library, Internet Archive, Stack Overflow, npm, Hugging Face, PubChem, GBIF, iNaturalist, Open Food Facts, MusicBrainz, TVmaze, Al-Quran Cloud.
+- **Nouveaux outils** : `web.read` (page entière via Exa, Parallel, puis Jina), `papers.preprints` (SSRN / arXiv), `fx.ecb` (BCE + parité fixe 655,957), `entity.lookup` (Wikidata). Préréglages MCP ajoutés : Exa et Parallel ; Mermaid Chart marqué « compte requis ».
+- **Serveur MCP « massamba »** (`server/mcp/massamba.ts`, `npm run build:mcp`) : `dist/mcp/massamba-jev.mcpb` (Claude Desktop) et `massamba-mcp.mjs` (`claude mcp add massamba -- node massamba-mcp.mjs`). 8 outils : recherche et lecture Internet, bibliothèque, BCE, Wikidata, prépublications, **analyse locale d'un Excel** et **dossier comité** Excel + Word + PowerPoint écrit à côté du fichier.
+- **Tests** : `tests/unit/jevBrain.test.ts`, `tests/unit/massambaMcp.test.ts`, `tests/e2e/jevbrain.spec.ts` (hors réseau, mesures dans `test-results/jev-brain-measures.json`), `tests/e2e/jevbrain.live.spec.ts` (`LIVE_WEB=1`, réel ; `LOCAL_MODEL=1` pour le modèle du navigateur).

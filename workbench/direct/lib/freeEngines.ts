@@ -29,6 +29,16 @@ import {
   type WebImage,
 } from '../../server/jev/web/search';
 import { exaQuery, planLabel, rankForPlan, searchPlan, type SearchPlan } from '../../server/jev/web/searchPlan';
+import {
+  jinaReaderUrl,
+  keepPreprints,
+  parseExaFetch,
+  parseJinaReader,
+  parseParallelFetch,
+  preprintQueries,
+  type PreprintSource,
+  type ReadPage,
+} from '../../server/jev/web/freeTools';
 import type { BraveHit } from '../../server/jev/web/brave';
 
 const STATE_KEY = 'massamba.keyless';
@@ -191,4 +201,92 @@ export async function keylessImages(query: string, n = 10, signal?: AbortSignal)
     }
     return parseFirecrawlImages(await r.json(), n);
   });
+}
+
+// ── lecture de pages entières et prépublications, sans clé (v63) ──────────────────────────────────────────────────────
+// Lire la page complète (et pas seulement l'extrait d'un moteur) : Exa `web_fetch_exa`, puis Parallel `web_fetch`, puis
+// Jina Reader. Les prépublications SSRN / arXiv : la recherche Exa (puis Parallel) restreinte au site.
+type Reader = (urls: string[], focus: string, s: AbortSignal) => Promise<ReadPage[]>;
+const READERS: { id: KeylessEngine | 'jina'; label: string; run: Reader }[] = [
+  { id: 'exa', label: 'Exa', run: async (urls, _f, s) => parseExaFetch(await mcpTool(EXA_MCP, 'web_fetch_exa', { urls, maxCharacters: 6000 }, s)) },
+  {
+    id: 'parallel',
+    label: 'Parallel',
+    run: async (urls, focus, s) => parseParallelFetch(await mcpTool(PARALLEL_MCP, 'web_fetch', { urls, ...(focus ? { objective: focus.slice(0, 200) } : {}) }, s)),
+  },
+  {
+    id: 'jina',
+    label: 'Jina Reader',
+    run: async (urls, _f, s) =>
+      (
+        await Promise.all(
+          urls.map(async (u) => {
+            const r = await fetch(jinaReaderUrl(u), { headers: { Accept: 'text/plain' }, signal: s });
+            if (!r.ok) throw new EngineError(`HTTP ${r.status}`, r.status);
+            return parseJinaReader(await r.text(), u);
+          }),
+        )
+      ).filter((p): p is ReadPage => Boolean(p)),
+  },
+];
+/** Reads up to 5 pages in full; the first reader that returns text wins, the pages it missed go to the next one. */
+export async function keylessRead(urls: string[], focus = '', signal?: AbortSignal): Promise<{ pages: ReadPage[]; via: string[]; errors: string[] }> {
+  const errors: string[] = [];
+  const via: string[] = [];
+  const pages: ReadPage[] = [];
+  let todo = [...urls];
+  for (const rd of READERS) {
+    if (!todo.length || signal?.aborted) break;
+    if (rd.id !== 'jina' && (state.cooled[rd.id] ?? 0) > Date.now()) continue;
+    if (rd.id !== 'jina') count(rd.id);
+    try {
+      const got = await timed(25_000, signal, (s) => rd.run(todo, focus, s));
+      const fresh = got.filter((p) => p.text.length > 80);
+      if (fresh.length) {
+        pages.push(...fresh);
+        via.push(rd.label);
+        const done = new Set(fresh.map((p) => p.url.replace(/\/$/, '')));
+        todo = todo.filter((u) => !done.has(u.replace(/\/$/, '')));
+        // A reader may normalise the URL (redirect): as many pages as asked = all done.
+        if (pages.length >= urls.length) todo = [];
+      } else errors.push(`${rd.label} : page vide`);
+    } catch (err) {
+      const status = (err as EngineError).status ?? null;
+      if (status && isQuota(status) && rd.id !== 'jina') rest(rd.id);
+      errors.push(`${rd.label} : ${(err as Error).name === 'AbortError' ? 'délai dépassé' : (err as Error).message}`);
+    }
+  }
+  return { pages, via, errors };
+}
+
+/** Working papers on SSRN and/or arXiv (free, no key), newest engines first. */
+export async function keylessPreprints(query: string, source: PreprintSource, n: number, signal?: AbortSignal): Promise<{ hits: BraveHit[]; via: string; errors: string[] }> {
+  const qs = preprintQueries(query, source);
+  const errors: string[] = [];
+  const runs: { id: KeylessEngine; label: string; run: (s: AbortSignal) => Promise<BraveHit[]> }[] = [
+    {
+      id: 'exa',
+      label: 'Exa',
+      run: async (s) => (await Promise.all(qs.map(async (q) => parseExa(await mcpTool(EXA_MCP, 'web_search_exa', { query: q, numResults: Math.min(10, Math.max(3, n)) }, s), n)))).flat(),
+    },
+    {
+      id: 'parallel',
+      label: 'Parallel',
+      run: async (s) => parseParallel(await mcpTool(PARALLEL_MCP, 'web_search', { objective: `Working papers (${source === 'both' ? 'SSRN, arXiv' : source.toUpperCase()}) on: ${query}`.slice(0, 200), search_queries: qs }, s), n * 2),
+    },
+  ];
+  for (const e of runs) {
+    if ((state.cooled[e.id] ?? 0) > Date.now() || signal?.aborted) continue;
+    count(e.id);
+    try {
+      const hits = keepPreprints(await timed(20_000, signal, e.run), source).slice(0, n);
+      if (hits.length) return { hits, via: `${e.label} · ${source === 'both' ? 'SSRN + arXiv' : source.toUpperCase()}`, errors };
+      errors.push(`${e.label} : 0 prépublication`);
+    } catch (err) {
+      const status = (err as EngineError).status ?? null;
+      if (status && isQuota(status)) rest(e.id);
+      errors.push(`${e.label} : ${(err as Error).message}`);
+    }
+  }
+  return { hits: [], via: '', errors };
 }

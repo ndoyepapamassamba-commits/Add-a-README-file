@@ -7,6 +7,22 @@ import { uid, useStore } from './store';
 import type { DirectTool, ToolOut } from './tools';
 import { bytesOf, getFile, uniquePath, writeBytes, writeText } from './vfs';
 import { BRIDGE_HELP, bridgeHealth, bridgeRender } from './blenderBridge';
+import { keylessPreprints, keylessRead } from './freeEngines';
+import { runLibrary } from './library';
+import { remember as rememberKnowledge } from '../../server/jev/knowledge/learned';
+import { DOMAINS, LIBRARY, type LibDomain } from '../../server/jev/library';
+import {
+  ecbRates,
+  ecbText,
+  entitiesText,
+  frankfurterUrl,
+  pagesText,
+  parseWikidata,
+  readableUrls,
+  wikidataQuery,
+  wikidataUrl,
+  type PreprintSource,
+} from '../../server/jev/web/freeTools';
 
 export interface BuiltinPlugin {
   id: string;
@@ -31,6 +47,8 @@ const ok = (summary: string, forModel: string, extra: Partial<ToolOut> = {}): To
   forModel,
   ...extra,
 });
+const ok_ = (r: { groups: { hits: unknown[] }[]; text: string }, n: number): ToolOut =>
+  ok(`${n}/${r.groups.length} source(s) · ${r.groups.reduce((a, g) => a + g.hits.length, 0)} résultat(s) · 0 $`, r.text, { output: r.text });
 async function getJson<T = unknown>(url: string): Promise<T> {
   const r = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!r.ok) throw new Error(`HTTP ${r.status} (${new URL(url).host})`);
@@ -368,6 +386,27 @@ export const BUILTIN_PLUGINS: BuiltinPlugin[] = [
           );
         },
       }),
+      tool({
+        name: 'fx.ecb',
+        description:
+          'OFFICIAL ECB reference rates (European Central Bank, via Frankfurter, free, no key): the reference for audit, IFRS conversions and committee files. base EUR, USD, XOF, XAF…; optional symbols; optional date « YYYY-MM-DD » (or a range « YYYY-MM-DD..YYYY-MM-DD », last day returned). XOF / XAF come from the legal fixed parity 1 EUR = 655.957.',
+        parameters: obj(
+          {
+            base: str('Base currency (EUR, USD, XOF…)'),
+            symbols: { type: 'array', items: { type: 'string' } },
+            date: str('Optional date YYYY-MM-DD (or range start..end)'),
+          },
+          ['base'],
+        ),
+        label: (a) => `Taux BCE ${S(a.base)}${a.date ? ` au ${S(a.date)}` : ''}`,
+        async run(a) {
+          const syms = Array.isArray(a.symbols) ? a.symbols.map(S) : [];
+          const j = await getJson(frankfurterUrl(S(a.base), { date: S(a.date) || undefined, symbols: syms }));
+          const r = ecbRates(j, S(a.base), syms);
+          if (!r) throw new Error(`devise ${S(a.base)} absente des taux BCE`);
+          return ok(`${Object.keys(r.rates).length} taux BCE · ${r.date}`, ecbText(r));
+        },
+      }),
     ],
   },
   {
@@ -556,6 +595,133 @@ export const BUILTIN_PLUGINS: BuiltinPlugin[] = [
               )
               .join('\n'),
           );
+        },
+      }),
+      tool({
+        name: 'papers.preprints',
+        description:
+          'Working papers and preprints on SSRN (finance, economics, banking, law) and arXiv (quantitative finance, statistics, ML): the most recent research, often before journals. Free, no key. source: ssrn, arxiv or both.',
+        parameters: obj(
+          {
+            query: str('Search terms, English works best (e.g. IFRS 9 expected credit loss Africa)'),
+            source: { type: 'string', enum: ['ssrn', 'arxiv', 'both'] },
+            max_results: { type: 'integer', description: '1-10 (default 6)' },
+          },
+          ['query'],
+        ),
+        label: (a) => `Prépublications : ${S(a.query)}`,
+        async run(a, ctx) {
+          const src = (['ssrn', 'arxiv', 'both'].includes(S(a.source)) ? S(a.source) : 'both') as PreprintSource;
+          const r = await keylessPreprints(S(a.query), src, Math.min(10, Number(a.max_results) || 6), ctx.signal);
+          if (!r.hits.length) throw new Error(`Aucune prépublication trouvée (${r.errors.join(' ; ')}).`);
+          const text = r.hits.map((h) => `- ${h.title}${h.age ? ` (${h.age})` : ''} — ${h.url}${h.snippet ? `\n  ${h.snippet.slice(0, 400)}` : ''}`).join('\n');
+          return ok(`${r.hits.length} prépublication(s) · ${r.via} · 0 $`, `${text}\n\n(web.read lit un article en entier.)`, { output: text });
+        },
+      }),
+    ],
+  },
+  {
+    id: 'library',
+    name: 'Bibliothèque mondiale JEV (tous les domaines)',
+    category: 'Données & recherche',
+    description:
+      'Savoirs, sciences, santé, finance et droit, livres et archives, code, nature, alimentation, culture, spiritualité, pays : 19 sources publiques gratuites et sans clé, interrogées en parallèle selon la demande.',
+    source: LIBRARY.map((s) => s.label.split(' (')[0]).join(' · '),
+    tools: [
+      tool({
+        name: 'library.search',
+        description: `JEV WORLD LIBRARY (free, no key): asks the 2-4 best public sources for the request in parallel and returns titles, links and abstracts. Domains: ${DOMAINS.join(', ')} (auto-detected when omitted). Sources: ${LIBRARY.map((s) => s.id).join(', ')}. Use it for any fact, reference, book, scientific / medical / legal / financial literature, species, food, music, code library, or religious text; then web.read to read a result in full.`,
+        parameters: obj(
+          {
+            query: str('What to look for (keywords work best)'),
+            domains: { type: 'array', items: { type: 'string', enum: DOMAINS }, description: 'Optional: 1-2 domains' },
+            sources: { type: 'array', items: { type: 'string', enum: LIBRARY.map((s) => s.id) }, description: 'Optional: exact sources' },
+            max_results: { type: 'integer', description: 'Per source, 1-8 (default 4)' },
+          },
+          ['query'],
+        ),
+        label: (a) => `Bibliothèque : ${S(a.query)}`,
+        async run(a, ctx) {
+          const r = await runLibrary(
+            S(a.query),
+            {
+              domains: Array.isArray(a.domains) ? (a.domains.map(S).filter((d) => (DOMAINS as string[]).includes(d)) as LibDomain[]) : undefined,
+              sources: Array.isArray(a.sources) ? a.sources.map(S) : undefined,
+              n: Number(a.max_results) || 4,
+            },
+            ctx.signal,
+          );
+          const ok = r.groups.filter((g) => g.hits.length);
+          if (!ok.length) throw new Error(`Aucune source n'a répondu (${r.groups.map((g) => `${g.source.label} : ${g.error ?? '0 résultat'}`).join(' ; ')}).`);
+          return ok_(r, ok.length);
+        },
+      }),
+    ],
+  },
+  {
+    id: 'reader',
+    name: 'Lecture de pages entières (Exa · Parallel · Jina)',
+    category: 'Données & recherche',
+    description:
+      'Lit une page web ou un PDF EN ENTIER (pas seulement l’extrait d’un moteur) : textes officiels, rapports, normes. Gratuit, sans clé.',
+    source: 'mcp.exa.ai · search.parallel.ai · r.jina.ai',
+    tools: [
+      tool({
+        name: 'web.read',
+        description:
+          'Read up to 5 web pages or PDFs IN FULL (clean Markdown, with title and publication date). Use after web.search to quote a regulation, a report or an article precisely, instead of relying on a snippet. Free, no key (Exa, then Parallel, then Jina Reader). focus = what to look for (helps long pages).',
+        parameters: obj(
+          {
+            urls: { type: 'array', items: { type: 'string' }, description: '1-5 http(s) URLs' },
+            focus: str('Optional: what you are looking for in these pages'),
+          },
+          ['urls'],
+        ),
+        label: (a) => `Lecture : ${readableUrls(a.urls).map((u) => new URL(u).hostname).join(', ') || S(a.urls)}`,
+        async run(a, ctx) {
+          const urls = readableUrls(a.urls);
+          if (!urls.length) throw new Error('Aucune adresse http(s) valide à lire.');
+          const r = await keylessRead(urls, S(a.focus), ctx.signal);
+          if (!r.pages.length) throw new Error(`Lecture impossible (${r.errors.join(' ; ') || 'aucune réponse'}).`);
+          const missed = urls.length - r.pages.length;
+          const text = pagesText(r.pages, r.via.join(' + ')) + (missed > 0 ? `\n\n(${missed} page(s) non lue(s) : ${r.errors.join(' ; ')})` : '');
+          // What was read feeds JEV's memory (the same page is not read again for the same question).
+          const st = useStore.getState();
+          st.setKnowledge(
+            rememberKnowledge(st.knowledge, {
+              query: S(a.focus) || r.pages.map((p) => p.title).join(' · '),
+              text: pagesText(r.pages, r.via.join(' + ')).slice(0, 5500),
+              sources: r.pages.map((p) => ({ url: p.url, title: p.title })),
+              origin: 'search',
+            }),
+          );
+          return ok(`${r.pages.length} page(s) lue(s) · ${r.via.join(' + ')} · 0 $`, text, { output: text });
+        },
+      }),
+    ],
+  },
+  {
+    id: 'entity',
+    name: 'Fiche d’entité (Wikidata)',
+    category: 'Données & recherche',
+    description:
+      'Fiche publique d’une banque, d’un groupe, d’une entreprise ou d’un pays : pays, siège, maison mère, secteur, création, effectif, cotation, ISIN.',
+    source: 'query.wikidata.org',
+    tools: [
+      tool({
+        name: 'entity.lookup',
+        description:
+          'Public facts on a company, bank, group, institution or country from Wikidata (free, no key): country, headquarters, parent organisation, industry, inception, employees, stock exchange, ISIN, website. Good to identify a counterparty or a group before an analysis. Declarative data: cross-check with financial statements.',
+        parameters: obj({ name: str('Name of the entity (e.g. Ecobank, Sonatel, BOAD)'), lang: str('fr or en (default fr)') }, ['name']),
+        label: (a) => `Fiche : ${S(a.name)}`,
+        async run(a, ctx) {
+          const r = await fetch(wikidataUrl(wikidataQuery(S(a.name), S(a.lang) || 'fr')), {
+            headers: { Accept: 'application/sparql-results+json' },
+            signal: ctx.signal,
+          });
+          if (!r.ok) throw new Error(`Wikidata HTTP ${r.status}`);
+          const list = parseWikidata(await r.json());
+          return ok(`${list.length} entité(s) · Wikidata · 0 $`, entitiesText(list, S(a.name)));
         },
       }),
     ],

@@ -15,14 +15,31 @@ import {
 } from './types';
 
 export type ProviderId =
-  'anthropic' | 'openai' | 'gemini' | 'mistral' | 'groq' | 'deepseek' | 'ollama' | 'lmstudio';
+  | 'anthropic'
+  | 'openai'
+  | 'gemini'
+  | 'mistral'
+  | 'groq'
+  | 'deepseek'
+  | 'ollama'
+  | 'lmstudio'
+  | 'llm7'
+  | 'pollinations'
+  | 'browser';
 export interface ProviderSpec {
   id: ProviderId;
   label: string;
-  kind: 'anthropic' | 'openai';
+  /** « browser » = the model running inside the page (transformers.js), not an HTTP API. */
+  kind: 'anthropic' | 'openai' | 'browser';
   base: string;
   /** Local server: no key needed. */
   local?: boolean;
+  /** Free cloud service answering WITHOUT any key (anonymous quota). */
+  keyless?: boolean;
+  /** Chat endpoint when it is not « /chat/completions ». */
+  chatPath?: string;
+  /** Models offered without listing them first (keyless and in-browser providers). */
+  defaultModels?: string[];
   /** The stream reports token usage when asked (stream_options.include_usage). */
   usageInStream: boolean;
   /** Prefix of the same models in the OpenRouter public catalogue (prices), null = no reliable match. */
@@ -104,7 +121,44 @@ export const PROVIDERS: Record<ProviderId, ProviderSpec> = {
     catalogPrefix: null,
     keyHint: 'aucune clé',
   },
+  // FREE, NO KEY (v63, measured 15/10/2026 from the app's origin): CORS open, streaming, tool calls.
+  llm7: {
+    id: 'llm7',
+    label: 'LLM7 (gratuit sans clé)',
+    kind: 'openai',
+    base: 'https://api.llm7.io/v1',
+    keyless: true,
+    usageInStream: true,
+    catalogPrefix: null,
+    keyHint: 'aucune clé',
+    defaultModels: ['gpt-oss:20b', 'nemotron-3-nano:30b', 'codestral-latest'],
+  },
+  pollinations: {
+    id: 'pollinations',
+    label: 'Pollinations (gratuit sans clé)',
+    kind: 'openai',
+    base: 'https://text.pollinations.ai',
+    chatPath: '/openai',
+    keyless: true,
+    usageInStream: false,
+    catalogPrefix: null,
+    keyHint: 'aucune clé',
+    defaultModels: ['openai'],
+  },
+  browser: {
+    id: 'browser',
+    label: 'Modèle intégré au navigateur (hors ligne)',
+    kind: 'browser',
+    base: '',
+    local: true,
+    usageInStream: false,
+    catalogPrefix: null,
+    keyHint: 'aucune clé',
+    defaultModels: ['qwen3-0.6b', 'qwen3-1.7b'],
+  },
 };
+/** No key needed: a local server, the in-browser model or a free keyless service. */
+export const noKeyNeeded = (p: ProviderId) => Boolean(PROVIDERS[p].local || PROVIDERS[p].keyless);
 export const PROVIDER_IDS = Object.keys(PROVIDERS) as ProviderId[];
 const ROUTE = new RegExp(`^(${PROVIDER_IDS.join('|')}):(.+)$`);
 /** « anthropic:claude-x » → { provider, model }; null for OpenRouter ids (« anthropic/claude-x »). */
@@ -245,7 +299,9 @@ export async function universalChat(
   const spec = PROVIDERS[route.provider];
   const now = o.now ?? (() => performance.now());
   const base = (o.base ?? spec.base).replace(/\/$/, '');
-  if (!spec.local && !o.key)
+  if (spec.kind === 'browser')
+    throw new LLMError('Le modèle intégré au navigateur se lance par la page, pas par HTTP.', 400, false);
+  if (!noKeyNeeded(route.provider) && !o.key)
     throw new LLMError(
       `Clé ${spec.label} absente : ajoutez-la dans le coffre de clés (Fournisseurs).`,
       401,
@@ -302,7 +358,7 @@ export async function universalChat(
     }
     const headers: Record<string, string> = { 'content-type': 'application/json' };
     if (o.key) headers.authorization = `Bearer ${o.key}`;
-    res = await o.fetch(`${base}/chat/completions`, {
+    res = await o.fetch(`${base}${spec.chatPath ?? '/chat/completions'}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -439,6 +495,8 @@ export async function universalChat(
 /** The provider's model list (OpenAI-compatible /models, Anthropic /v1/models). */
 export async function listProviderModels(provider: ProviderId, o: UniversalOptions): Promise<string[]> {
   const spec = PROVIDERS[provider];
+  // Keyless services list hundreds of paid models: only the ones verified free (with tools) are offered.
+  if (spec.keyless || spec.kind === 'browser') return [...(spec.defaultModels ?? [])];
   const base = (o.base ?? spec.base).replace(/\/$/, '');
   const headers: Record<string, string> =
     spec.kind === 'anthropic'
@@ -470,6 +528,7 @@ export function priceFromCatalog(
 ): { input: number; output: number; source: string } | null {
   const spec = PROVIDERS[provider];
   if (spec.local) return { input: 0, output: 0, source: 'local (gratuit)' };
+  if (spec.keyless) return { input: 0, output: 0, source: 'gratuit sans clé (quota anonyme)' };
   if (!spec.catalogPrefix) return null;
   const want = `${spec.catalogPrefix}${model}`.toLowerCase();
   // Exact id, or the catalogue id without its date / version suffix (claude-sonnet-4-5-20250929 → claude-sonnet-4.5).

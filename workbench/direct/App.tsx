@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { startBrain } from './lib/jevBrain';
+import { freeOptions, setFreeOptions } from './lib/freeMode';
 import {
   Activity,
   Bot,
@@ -99,9 +101,12 @@ export function Logo({ size = 28 }: { size?: number }) {
 
 export function App() {
   const ready = useStore((s) => s.ready);
-  const [hasKey, setHasKey] = useState(() => Boolean(getKey()));
+  // Without a key the app runs on the free models fed by JEV (v63 — « tout en gratuit sans que je ne mette de clé »).
+  const [hasKey, setHasKey] = useState(() => Boolean(getKey()) || freeOptions().started);
 
   useEffect(() => {
+    // JEV's brain on every model call of the app + the perpetual update of its knowledge (v63).
+    startBrain();
     void hydrate().then(() => {
       void loadCatalog()
         .then((models) => useStore.setState({ models, modelsError: null }))
@@ -119,7 +124,7 @@ export function App() {
       </div>
     );
   if (!hasKey) return <Onboarding onDone={() => setHasKey(true)} />;
-  return <Shell onLogout={() => setHasKey(false)} />;
+  return <Shell onLogout={() => (setFreeOptions({ started: false }), setHasKey(false))} />;
 }
 
 function Onboarding({ onDone }: { onDone: () => void }) {
@@ -201,6 +206,20 @@ function Onboarding({ onDone }: { onDone: () => void }) {
             {busy ? <Spinner /> : null} Commencer
           </Button>
         </form>
+        <Button
+          variant="ghost"
+          className="mt-3 w-full"
+          data-testid="start-free"
+          onClick={() => {
+            setFreeOptions({ started: true });
+            onDone();
+          }}
+        >
+          Utiliser sans clé — modèles gratuits nourris par JEV (0 $)
+        </Button>
+        <div className="mt-1 text-center text-[11.5px] text-faint">
+          LLM7 et Pollinations sans compte ; vos fichiers restent sur l’ordinateur (modèle intégré au navigateur, à activer dans Réglages). Une clé peut être ajoutée plus tard.
+        </div>
         <div className="mt-4 rounded-2xl border border-line bg-panel/60 p-4 text-[12.5px] text-muted">
           Conseil : sur openrouter.ai, fixez une <b>limite de dépenses</b> sur cette clé. Vos sessions,
           fichiers, skills et agents sont enregistrés dans ce navigateur.

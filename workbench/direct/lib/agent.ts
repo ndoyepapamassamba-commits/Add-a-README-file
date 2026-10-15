@@ -105,7 +105,8 @@ import { HOUSE_RULES } from '../../server/services/houseStyle';
 import { isDataFile, profileToText, DataCore } from '../../server/services/dataCore';
 import { isDocument, isImage } from '../../server/services/documentsCore';
 import { LLMError, type ChatMessage, type ContentPart, type ToolCall } from '../../server/llm/types';
-import { complete, friendlyError } from './llm';
+import { complete, friendlyError, getKey } from './llm';
+import { reflexAnswer } from './jevBrain';
 import { connectedTools, ensureConnected, mcpState } from './mcp';
 import { BUILTIN_PLUGINS, builtinToolNames, builtinTools } from './builtinPlugins';
 import { findAgent, allRoles, findRole } from './roles';
@@ -961,7 +962,11 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
   // ── JEV APPRENTICE (free-first): Task DNA → eligibility → free model → micro-adaptation. Off → V5 untouched. ──
   let apprentice: apprenticeRt.ApprenticePrep | null = null;
   const v5Chain = [sel.model, ...routedFallbacks];
-  if (top && !inp.mission && !inp.plan && (jp || apprenticeRun?.arm)) {
+  // FREE WITHOUT A KEY (v63 — « alimenter les LLM gratuits aux ressources et outils à partir de JEV »): with no key
+  // the answer comes from a free model, so JEV ALWAYS prepares its knowledge capsule (Task DNA, validated skills,
+  // successful examples, failure patterns, output contract) — the free model is fed, not left alone.
+  const freeRoute = !getKey();
+  if (top && !inp.mission && !inp.plan && (jp || apprenticeRun?.arm || freeRoute)) {
     try {
       apprentice = apprenticeRt.prepareApprentice({
         text: inp.text,
@@ -981,7 +986,7 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
       // The Apprentice must never block the Workbench: any failure falls back to the V5 routing.
       apprentice = null;
     }
-    if (apprentice?.plan.use && !apprentice.forced && apprentice.plan.chosen) {
+    if (apprentice?.plan.use && !apprentice.forced && apprentice.plan.chosen && !freeRoute) {
       const c = apprentice.plan.chosen;
       sel.model = c.id;
       sel.reason = `JEV Apprentice (free-first) : ${apprentice.plan.reason}`;
@@ -3122,10 +3127,12 @@ export async function runAgent(
     st.patchSession(sessionId, { title: text.split('\n')[0]!.slice(0, 70) || 'Session' });
   const started = Date.now();
   // JEV L0: requests answered without any model (pure arithmetic, date / time).
+  // JEV REFLEXES (v63): ECB rates, CFA conversions, entity cards, definitions — and computations JEV codes, EXECUTES in
+  // the sandbox and interprets — answered without the chat model (0 token for the reflexes, a free coder for the code).
+  const reflexOk = jevEnabled() && !attachments.length && (opts.mode ?? st.agentMode) !== 'plan' && !experimentRun;
   const direct =
-    jevEnabled() && !attachments.length && (opts.mode ?? st.agentMode) !== 'plan'
-      ? jevRt.directAnswer(text)
-      : null;
+    (reflexOk ? jevRt.directAnswer(text) : null) ??
+    (reflexOk ? await reflexAnswer(text, ac.signal).catch(() => null) : null);
   if (direct) {
     const t0 = performance.now();
     st.pushItem(sessionId, { kind: 'assistant', id: uid(), text: direct });

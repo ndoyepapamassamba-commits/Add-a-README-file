@@ -27,7 +27,10 @@ const packs = fs
   .readdirSync('dist')
   .filter((f) => /^massamba-troupe-\d+\.js$/.test(f))
   .sort((a, b) => Number(/\d+/.exec(a)[0]) - Number(/\d+/.exec(b)[0]));
-const files = [APP, ...packs];
+// v63: the « massamba » MCP server (JEV's tools in Claude Desktop / Claude Code), when built.
+const MCP = ['massamba-jev.mcpb', 'massamba-mcp.mjs'].filter((f) => fs.existsSync(path.join('dist', 'mcp', f)));
+const files = [APP, ...packs, ...MCP];
+const srcOf = (f) => (MCP.includes(f) ? path.join('dist', 'mcp', f) : path.join('dist', f));
 
 // Same version on both sides: the app refuses packs of another build.
 const app = fs.readFileSync(path.join('dist', APP), 'utf8');
@@ -46,7 +49,7 @@ fs.rmSync(path.dirname(OUT), { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
 const rows = [];
 for (const f of files) {
-  const src = path.join('dist', f);
+  const src = srcOf(f);
   const dst = path.join(OUT, f);
   try {
     fs.linkSync(src, dst); // no extra disk space
@@ -92,6 +95,17 @@ const notice = [
         '',
         'PAQUETS DE DECORS (taille en octets, empreinte SHA-256)',
         ...rows.filter((r) => r.f !== APP).map((r) => `${r.f}  ${r.size}  ${r.sha}`),
+        '',
+      ]
+    : []),
+  ...(MCP.length
+    ? [
+        'JEV DANS CLAUDE (FACULTATIF) - SERVEUR MCP MASSAMBA',
+        '- Claude Desktop : double-cliquez sur massamba-jev.mcpb (ou Reglages > Extensions > Installer).',
+        '- Claude Code : claude mcp add massamba -- node "<chemin>/massamba-mcp.mjs"',
+        '- Outils : recherche et lecture Internet gratuites, bibliotheque mondiale, taux BCE + F CFA,',
+        '  fiches d entreprises, prepublications, analyse LOCALE de fichiers Excel et dossier comite.',
+        '- Aucune cle. Les fichiers analyses restent sur l ordinateur.',
         '',
       ]
     : []),

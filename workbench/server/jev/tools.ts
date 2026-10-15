@@ -12,7 +12,9 @@ export const TOOL_FAMILIES: Record<string, string[]> = {
   write: ['filesystem.write', 'filesystem.edit', 'filesystem.delete'],
   data: ['data.inspect', 'data.query', 'data.chart', 'data.export'],
   code: ['code.run', 'terminal.execute', 'project.impact', 'project.twin', 'regression.run'],
-  web: ['web.search', 'knowledge.save', 'wikipedia.search', 'papers.search'],
+  web: ['web.search', 'web.read', 'knowledge.save', 'wikipedia.search', 'papers.search', 'papers.preprints', 'entity.lookup'],
+  // JEV's world library (v63): every task type gets it — « des outils plus que nécessaire pour devenir le cerveau ».
+  library: ['library.search', 'web.read'],
   browser: [
     'browser.open',
     'browser.snapshot',
@@ -30,26 +32,26 @@ export const TOOL_FAMILIES: Record<string, string[]> = {
   memory: ['memory.doc', 'manual.add'],
   history: ['timemachine.list', 'timemachine.diff', 'timemachine.restore'],
   apex: ['apex.guide', 'apex.reference', 'apex.build_app', 'apex.qa'],
-  finance: ['fx.rates', 'worldbank.indicator'],
+  finance: ['fx.rates', 'fx.ecb', 'worldbank.indicator', 'entity.lookup'],
   visual: ['diagram.render', 'image.generate', 'blender.scene'],
   geo: ['geo.search', 'weather.forecast', 'holidays.list', 'crypto.price'],
 };
 
 const BY_TYPE: Record<TaskType, string[]> = {
-  chat: ['read'],
-  writing: ['read', 'deliver', 'write'],
-  data: ['read', 'data', 'deliver', 'decide', 'code', 'write'],
-  code: ['read', 'write', 'code', 'deliver', 'plan', 'browser'],
-  research: ['read', 'web', 'deliver'],
-  browser: ['read', 'browser', 'code', 'write'],
-  document: ['read', 'deliver', 'data', 'write'],
-  review: ['read', 'code', 'deliver'],
-  vision: ['read', 'deliver'],
+  chat: ['read', 'library'],
+  writing: ['read', 'deliver', 'write', 'library'],
+  data: ['read', 'data', 'deliver', 'decide', 'code', 'write', 'library'],
+  code: ['read', 'write', 'code', 'deliver', 'plan', 'browser', 'library'],
+  research: ['read', 'web', 'deliver', 'library'],
+  browser: ['read', 'browser', 'code', 'write', 'library'],
+  document: ['read', 'deliver', 'data', 'write', 'library'],
+  review: ['read', 'code', 'deliver', 'library'],
+  vision: ['read', 'deliver', 'library'],
 };
 
 const KEYWORD_FAMILIES: [RegExp, string][] = [
   [/\b(apex|dashboard|tableau de bord|cockpit|application html|app (html|offline))\b/i, 'apex'],
-  [/\b(taux de change|xof|fcfa|devise|inflation|pib|gdp|banque mondiale)\b/i, 'finance'],
+  [/\b(taux de change|xof|fcfa|devise|inflation|pib|gdp|banque mondiale|bce|taux de r[ée]f[ée]rence|maison m[èe]re|fiche|groupe bancaire|filiale)\b/i, 'finance'],
   [/\b(diagramme|sch[ée]ma|image|logo|illustration|3d|blender|sc[èe]ne)\b/i, 'visual'],
   [/\b(m[ée]t[ée]o|jours? f[ée]ri[ée]s?|adresse|g[ée]ocod|crypto|bitcoin)\b/i, 'geo'],
   [/\b(restaure|annule|version pr[ée]c[ée]dente|time ?machine|rollback)\b/i, 'history'],

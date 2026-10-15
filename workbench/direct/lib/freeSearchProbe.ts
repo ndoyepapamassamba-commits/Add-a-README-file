@@ -2,10 +2,11 @@
 // livrer »). Chaque service sans clé est appelé DEPUIS LE NAVIGATEUR de l'app (origine file:// ou http://localhost), comme
 // le fera l'analyste : statut HTTP, latence, nombre de résultats utiles, et la raison d'un échec (quota, CORS, réseau).
 // Rien n'est inventé : une ligne « disponible » est un appel qui vient de répondre avec des résultats.
+import { ecbRates, frankfurterUrl, jinaReaderUrl, parseExaFetch, parseJinaReader, parseParallelFetch, parseWikidata, wikidataQuery, wikidataUrl } from '../../server/jev/web/freeTools';
 import { crossrefUrl, ddgUrl, EXA_MCP, firecrawlSearchRequest, mcpRpc, PARALLEL_MCP, parseExa, parallelQueries, parseCrossref, parseDdg, parseFirecrawl, parseFirecrawlImages, parseMcpBody, parseParallel, parseTavily, parseTavilyImages, parseWiki, tavilyImagesRequest, tavilyRequest, wikiUrl } from '../../server/jev/web/search';
 
 export interface ProbeRow {
-  id: 'tavily' | 'tavily-images' | 'parallel' | 'exa' | 'firecrawl' | 'firecrawl-images' | 'duckduckgo' | 'wikipedia' | 'crossref';
+  id: string;
   label: string;
   ok: boolean;
   status: number | null;
@@ -75,6 +76,37 @@ export async function probeFreeSearch(query = 'risque de concentration bancaire'
     one('duckduckgo', 'DuckDuckGo (réponse instantanée)', ddgUrl('IFRS 9'), {}, (j) => parseDdg(j, 5).length, signal),
     one('wikipedia', 'Wikipédia (fr)', wikiUrl(query, 'fr', 4), {}, (j) => parseWiki(j, 'fr', 4).length, signal),
     one('crossref', 'Crossref (articles scientifiques)', crossrefUrl(query, 4), {}, (j) => parseCrossref(j, 4).length, signal),
+  ]);
+}
+
+const PAGE = 'https://www.bis.org/bcbs/publ/d595.htm';
+const llm = (base: string, path: string, model: string): [string, RequestInit] => [
+  `${base}${path}`,
+  { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model, max_tokens: 400, messages: [{ role: 'user', content: 'Réponds en une phrase : que mesure le ratio de créances en souffrance ?' }] }) },
+];
+/** v63: the new free services (page reading, ECB, Wikidata, keyless LLMs), called from this page like the app does. */
+export async function probeFreeTools(signal?: AbortSignal): Promise<ProbeRow[]> {
+  const H = { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream', 'MCP-Protocol-Version': '2025-06-18' };
+  const mcpInit = (url: string, tool: string, args: Record<string, unknown>) => async (s: AbortSignal): Promise<RequestInit> => {
+    const r = await fetch(url, { method: 'POST', headers: H, body: mcpRpc(1, 'initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'massamba-probe', version: '63' } }), signal: s });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const sid = r.headers.get('mcp-session-id');
+    await r.text();
+    const h = { ...H, ...(sid ? { 'Mcp-Session-Id': sid } : {}) };
+    await fetch(url, { method: 'POST', headers: h, body: mcpRpc(null, 'notifications/initialized'), signal: s }).then((x) => x.text());
+    return { method: 'POST', headers: h, body: mcpRpc(2, 'tools/call', { name: tool, arguments: args }) };
+  };
+  const answered = (j: unknown) => ((j as { choices?: { message?: { content?: string } }[] })?.choices?.[0]?.message?.content?.trim() ? 1 : 0);
+  const [l7u, l7i] = llm('https://api.llm7.io/v1', '/chat/completions', 'gpt-oss:20b');
+  const [pou, poi] = llm('https://text.pollinations.ai', '/openai', 'openai');
+  return Promise.all([
+    one('exa-read', 'Lecture de page — Exa (web_fetch_exa)', EXA_MCP, mcpInit(EXA_MCP, 'web_fetch_exa', { urls: [PAGE], maxCharacters: 2000 }), (t) => parseExaFetch(parseMcpBody(String(t))).length, signal, true),
+    one('parallel-read', 'Lecture de page — Parallel (web_fetch)', PARALLEL_MCP, mcpInit(PARALLEL_MCP, 'web_fetch', { urls: [PAGE], objective: 'principes de gestion du risque de crédit' }), (t) => parseParallelFetch(parseMcpBody(String(t))).length, signal, true),
+    one('jina-read', 'Lecture de page — Jina Reader', jinaReaderUrl(PAGE), { headers: { Accept: 'text/plain' } }, (t) => (parseJinaReader(String(t), PAGE) ? 1 : 0), signal, true),
+    one('ecb', 'Taux de référence BCE (Frankfurter)', frankfurterUrl('EUR', { symbols: ['USD'] }), {}, (j) => (ecbRates(j, 'EUR', ['USD', 'XOF'])?.rates.USD ? 2 : 0), signal),
+    one('wikidata', 'Fiche d’entité (Wikidata)', wikidataUrl(wikidataQuery('Ecobank', 'fr', 1)), { headers: { Accept: 'application/sparql-results+json' } }, (j) => parseWikidata(j).length, signal),
+    one('llm7', 'Modèle gratuit sans clé — LLM7 (gpt-oss 20B)', l7u, l7i, answered, signal),
+    one('pollinations', 'Modèle gratuit sans clé — Pollinations', pou, poi, answered, signal),
   ]);
 }
 

@@ -217,7 +217,7 @@ test('plan mode: plan card, edit and approve', async ({ page }) => {
 
 test('the APEX credit-risk skill is built in: listed in the library, applied to a commitments request with its sheets', async ({ page }) => {
   await open(page);
-  await page.getByLabel('Skills', { exact: true }).click();
+  await openView(page, 'Skills');
   await expect(page.getByText('apex-credit-risk').first()).toBeVisible();
   await openView(page, 'Chat');
   mock.push({ text: 'Douteux : chiffres à venir depuis le fichier.' });
@@ -232,7 +232,7 @@ test('the APEX credit-risk skill is built in: listed in the library, applied to 
 
 test('the installed skills are built in: frontend-design applied to a page request, its design check on the written HTML, lots 1–2 listed', async ({ page }) => {
   await open(page);
-  await page.getByLabel('Skills', { exact: true }).click();
+  await openView(page, 'Skills');
   for (const name of ['frontend-design', 'video-prompting', 'character-design', 'excel-pro', 'remotion-best-practices', 'visual-regression'])
     await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
   await openView(page, 'Chat');
@@ -262,7 +262,7 @@ test('imported skills are enforced; custom agents restrict tools', async ({ page
     skill,
     '---\nname: rapport-risque\ndescription: Rapports de risque. Se déclenche avec "rapport de risque", "IFRS9".\n---\nRÈGLE-42 : terminer par une section Recommandations.\n',
   );
-  await page.getByLabel('Skills', { exact: true }).click();
+  await openView(page, 'Skills');
   await page.locator('input[type=file]').setInputFiles(skill);
   await expect(page.getByText('rapport-risque').first()).toBeVisible();
   await openView(page, 'Chat');
@@ -294,6 +294,8 @@ test('imported skills are enforced; custom agents restrict tools', async ({ page
 });
 
 test('all views render without errors and data survives a reload', async ({ page }) => {
+  const failed: string[] = [];
+  page.on('requestfailed', (r) => failed.push(r.url()));
   const errors = await open(page);
   mock.push({ text: 'Mémorisé.' });
   await send(page, 'Retiens ceci');
@@ -324,7 +326,9 @@ test('all views render without errors and data survives a reload', async ({ page
   await page.reload();
   await openView(page, 'Chat');
   await expect(page.getByText('Mémorisé.')).toBeVisible();
-  expect(errors.filter((e) => !/ResizeObserver/.test(e))).toEqual([]);
+  // The local Blender bridge (http://127.0.0.1:8765) is probed and absent in tests: only that refused connection is expected.
+  expect(failed.filter((u) => !u.startsWith('http://127.0.0.1:8765'))).toEqual([]);
+  expect(errors.filter((e) => !/ResizeObserver/.test(e) && !(/ERR_CONNECTION_REFUSED/.test(e) && failed.length > 0))).toEqual([]);
 });
 
 test('mission mode: pipeline, correction round, final review, verdict and .ai memory', async ({ page }) => {
@@ -437,7 +441,7 @@ test('COCKPIT IA: catalogue with measured columns (« — » when never called),
   // « Choisir » in the catalogue sets the model of the current session.
   await openView(page, 'Catalogue LLM');
   await page.getByTestId('catalogue-table').getByRole('button', { name: 'Choisir' }).first().click();
-  await expect(page.getByTestId('catalogue-table').getByText('choisi')).toBeVisible();
+  await expect(page.getByTestId('catalogue-table').getByText('choisi', { exact: true })).toBeVisible();
 });
 
 test('REDESIGN: twelve labelled sections, no AI Film Studio, help dialog, collapsible sidebar, mobile drawer', async ({ page }) => {

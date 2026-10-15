@@ -99,7 +99,7 @@ export function PluginsView() {
               <div className="flex items-center gap-2">
                 <Plug size={14} className="text-accent" />
                 <div className="flex-1 text-[13.5px] font-medium">{p.name}</div>
-                <Badge tone="ok">gratuit</Badge>
+                {p.needsToken ? <Badge tone="warn">compte requis</Badge> : <Badge tone="ok">gratuit · sans clé</Badge>}
               </div>
               <div className="mt-1 text-[12.5px] text-muted">{p.description}</div>
               <Button

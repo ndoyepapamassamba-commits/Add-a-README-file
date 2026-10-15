@@ -1,7 +1,7 @@
 // FOURNISSEURS & COÛTS — coffre-fort de clés chiffré (mot de passe maître), routeur universel (Anthropic, OpenAI,
 // Gemini, Mistral, Groq, DeepSeek, Ollama, LM Studio), tableau de bord financier et télémétrie (TTFT, tokens / s).
 import { useEffect, useState } from 'react';
-import { PROVIDERS, PROVIDER_IDS, type ProviderId } from '../../server/llm/universal';
+import { PROVIDERS, PROVIDER_IDS, noKeyNeeded, type ProviderId } from '../../server/llm/universal';
 import {
   directChat,
   localBase,
@@ -101,7 +101,7 @@ function Vault({ onChange }: { onChange: () => void }) {
             </option>
           ))}
         </select>
-        {!PROVIDERS[prov].local && (
+        {!noKeyNeeded(prov) && (
           <input
             data-testid="vault-key"
             type="password"
@@ -111,14 +111,14 @@ function Vault({ onChange }: { onChange: () => void }) {
             className="w-72 rounded-lg border border-line bg-elev px-2 py-1.5 text-[12.5px]"
           />
         )}
-        {PROVIDERS[prov].local && (
+        {PROVIDERS[prov].local && PROVIDERS[prov].kind !== 'browser' && (
           <input
             value={localBase(prov) ?? PROVIDERS[prov].base}
             onChange={(e) => (setLocalBase(prov, e.target.value), refresh())}
             className="w-72 rounded-lg border border-line bg-elev px-2 py-1.5 text-[12.5px]"
           />
         )}
-        {!PROVIDERS[prov].local && (
+        {!noKeyNeeded(prov) && (
           <input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
@@ -126,7 +126,10 @@ function Vault({ onChange }: { onChange: () => void }) {
             className="w-40 rounded-lg border border-line bg-elev px-2 py-1.5 text-[12.5px]"
           />
         )}
-        {!PROVIDERS[prov].local && (
+        {PROVIDERS[prov].keyless && (
+          <span className="self-center text-[12px] text-ok">Gratuit, sans clé : rien à saisir.</span>
+        )}
+        {!noKeyNeeded(prov) && (
           <button
             data-testid="vault-add"
             className={btnMain}

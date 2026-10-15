@@ -13,8 +13,10 @@ import { BenchmarkLab } from '../../web/components/BenchmarkLab';
 import { runBenchmark } from '../lib/bench';
 import { INTEL_ENDPOINT, parseIntel, type IntelData } from '../../server/llm/modelIntel';
 import { DEFAULT_AUTO_TIERS } from '../../server/services/settings';
-import { probeFreeSearch, probeSummary, type ProbeRow } from '../lib/freeSearchProbe';
+import { probeFreeSearch, probeFreeTools, probeSummary, type ProbeRow } from '../lib/freeSearchProbe';
+import { probeLibrary } from '../lib/library';
 import { keylessUsage } from '../lib/freeEngines';
+import { BrainSettings } from './BrainSettings';
 
 /** « Tester la recherche gratuite » : each keyless service called from this page, with status, latency and reason. */
 function FreeSearchProbe() {
@@ -23,7 +25,9 @@ function FreeSearchProbe() {
   const run = async () => {
     setBusy(true);
     try {
-      setRows(await probeFreeSearch());
+      // v63: search engines + page reading, ECB, Wikidata, keyless LLMs + every source of JEV's world library.
+      const [a, b, c] = await Promise.all([probeFreeSearch(), probeFreeTools(), probeLibrary()]);
+      setRows([...a, ...b, ...c.map((r) => ({ ...r, status: null }))]);
     } finally {
       setBusy(false);
     }
@@ -31,7 +35,7 @@ function FreeSearchProbe() {
   return (
     <div className="sm:col-span-2" data-testid="free-search-probe">
       <Button size="sm" variant="ghost" onClick={() => void run()} disabled={busy} data-testid="free-search-probe-run">
-        <RefreshCw size={13} className={busy ? 'animate-spin' : ''} /> {busy ? 'Test en cours…' : 'Tester la recherche gratuite'}
+        <RefreshCw size={13} className={busy ? 'animate-spin' : ''} /> {busy ? 'Test en cours…' : 'Tester tous les services gratuits (recherche, lecture, BCE, modèles, bibliothèque)'}
       </Button>
       <div className="mt-2 text-[12px] text-muted" data-testid="keyless-usage">
         Ce mois-ci (compté sur cet appareil) :{' '}
@@ -342,6 +346,10 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
             />
           </Field>
         </div>
+      </Section>
+
+      <Section title="Cerveau JEV & modèles gratuits (sans clé)">
+        <BrainSettings />
       </Section>
 
       <Section title="Recherche web">

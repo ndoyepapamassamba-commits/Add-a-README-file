@@ -3,7 +3,10 @@ import type { CreditsInfo, ModelInfo, ReasoningEffort } from '@shared/types';
 import { OpenRouterProvider, resolveEffort, type FetchLike } from '../../server/llm/openrouterCore';
 import { applyPromptCaching } from '../../server/llm/service';
 import { LLMError, type ChatRequest, type ChatResult } from '../../server/llm/types';
-import { directChat, directModelInfos, isDirect, recordOpenRouter } from './providers';
+import { directChat, directModelInfos, freeCooled, isDirect, recordOpenRouter } from './providers';
+import { carriesImages, carriesPrivateData, freeCanTakeOver, freePlan, type FreePlan } from '../../server/llm/freeRoute';
+import { langOfRequest, lastUserText, streamWatch, type Intervention } from '../../server/jev/brain';
+import { freeOptions } from './freeMode';
 
 const BASE = 'https://openrouter.ai/api/v1';
 const KEY_NAME = 'wbd.openrouter-key';
@@ -84,7 +87,27 @@ export interface CompleteOptions {
   onFallback?: (from: string, to: string, reason: string) => void;
   /** What the call serves (telemetry: chat, 3D generation, auto-correction…). */
   purpose?: string;
+  /** false = JEV's brain does not touch this call (its own learning calls). */
+  jev?: boolean;
 }
+
+type Completion = ChatResult & { cost: number; model: string; costSource: 'measured' | 'calculated' };
+/**
+ * THE JEV BRAIN on every model call of the app (v63): before — focus frame, learned techniques, lessons, cached answer,
+ * the model JEV prefers (free first for light tasks); after — local QA, cache, learning. Registered by jevBrain.ts.
+ */
+export interface BrainHooks {
+  before(req: ChatRequest, o: CompleteOptions): Promise<{ req: ChatRequest; cached?: Completion; prefer?: string[] }>;
+  after(req: ChatRequest, o: CompleteOptions, res: Completion, info: { preferred: boolean }): Promise<{ accept: boolean }>;
+  /** JEV intervened DURING the request (loop, language drift). */
+  onIntervene?(kind: string): void;
+  /** The stream is watched during the request. */
+  watching?(): boolean;
+}
+let brain: BrainHooks | null = null;
+export const setBrainHooks = (h: BrainHooks | null) => {
+  brain = h;
+};
 
 const sleep = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((resolve, reject) => {
@@ -95,14 +118,111 @@ const sleep = (ms: number, signal?: AbortSignal) =>
     });
   });
 
-/** Streaming completion with retries, effort mapping, prompt caching and a fallback chain. */
-export async function complete(
-  req: ChatRequest,
-  o: CompleteOptions,
-): Promise<ChatResult & { cost: number; model: string; costSource: 'measured' | 'calculated' }> {
-  const chain = [...new Set([req.model, ...o.fallbacks].filter((m) => m && m !== 'auto'))];
-  if (!getKey() && !chain.every(isDirect))
-    throw new LLMError('Clé OpenRouter manquante : ouvrez Paramètres et collez votre clé.', 401, false);
+/** The free chain for this request (keyless services, then the in-browser model; private data → in-browser only). */
+export function freeChainFor(req: ChatRequest): FreePlan {
+  const fo = freeOptions();
+  return freePlan({
+    privateData: carriesPrivateData(req.messages),
+    allowCloudOnPrivate: fo.allowCloudOnPrivate,
+    browser: fo.browser,
+    cooled: freeCooled(),
+    now: Date.now(),
+  });
+}
+
+/**
+ * Streaming completion with retries, effort mapping, prompt caching and a fallback chain, fed and checked by JEV.
+ * FREE WITHOUT A KEY (v63): with no OpenRouter key the free chain answers; with a key, it takes over when every model
+ * failed for a key, credit, quota or network reason.
+ */
+export async function complete(req: ChatRequest, o: CompleteOptions): Promise<Completion> {
+  if (!brain || o.jev === false) return completeCore(req, o);
+  const pre: Awaited<ReturnType<BrainHooks['before']>> | null = await brain.before(req, o).catch(() => null);
+  if (pre?.cached) return pre.cached;
+  const fed = pre?.req ?? req;
+  // JEV TAKES THE MODEL IN HAND: a light task tries the free models first; its QA hands over to the asked model.
+  if (pre?.prefer?.length && !req.signal?.aborted) {
+    try {
+      const r = await watched(fed, { ...o, fallbacks: [] }, pre.prefer);
+      const v = await brain.after(fed, o, r, { preferred: true }).catch(() => ({ accept: true }));
+      if (v.accept) return r;
+      o.onReset?.();
+      o.onFallback?.(r.model, req.model, 'JEV QA : réponse gratuite insuffisante → modèle demandé');
+    } catch (err) {
+      if (req.signal?.aborted) throw err;
+      o.onReset?.();
+    }
+  }
+  const r = await watched(fed, o);
+  await brain.after(fed, o, r, { preferred: false }).catch(() => undefined);
+  return r;
+}
+
+/**
+ * JEV DURING THE REQUEST: the streamed text is watched; a repetition loop or a language drift stops the call at once
+ * (tokens no longer paid) and the same request is sent again ONCE with the corrective instruction.
+ */
+async function watched(req: ChatRequest, o: CompleteOptions, override?: string[]): Promise<Completion> {
+  if (!o.onText || !brain?.watching?.()) return completeCore(req, o, override);
+  const ws = { text: '', lang: langOfRequest(lastUserText(req.messages)) };
+  const inner = new AbortController();
+  const outer = req.signal;
+  const stop = () => inner.abort();
+  outer?.addEventListener('abort', stop);
+  const seen: { hit: Intervention | null } = { hit: null };
+  const retry = (hit: Intervention) => {
+    brain?.onIntervene?.(hit.kind);
+    o.onReset?.();
+    o.onStatus?.(`JEV intervient pendant la requête : ${hit.why} → relance corrigée`);
+    return completeCore({ ...req, messages: [...req.messages, { role: 'user', content: hit.fix }] }, o, override);
+  };
+  try {
+    const r = await completeCore(
+      { ...req, signal: inner.signal },
+      {
+        ...o,
+        onText: (d) => {
+          ws.text += d;
+          o.onText?.(d);
+          if (!seen.hit && (seen.hit = streamWatch(ws))) inner.abort();
+        },
+      },
+      override,
+    );
+    // The stream may have ended before the cut took effect: a detected loop / drift is never accepted.
+    return seen.hit && !outer?.aborted ? await retry(seen.hit) : r;
+  } catch (err) {
+    const hit = seen.hit;
+    if (!hit || outer?.aborted) throw err;
+    return retry(hit);
+  } finally {
+    outer?.removeEventListener('abort', stop);
+  }
+}
+
+async function completeCore(req: ChatRequest, o: CompleteOptions, override?: string[]): Promise<Completion> {
+  let chain = override ?? [...new Set([req.model, ...o.fallbacks].filter((m) => m && m !== 'auto'))];
+  let freeUsed = false;
+  if (!getKey() && !chain.every(isDirect)) {
+    const p = freeChainFor(req);
+    chain = [...new Set([...chain.filter(isDirect), ...p.chain])];
+    freeUsed = true;
+    if (!chain.length) throw new LLMError(`Aucune clé et aucun modèle gratuit utilisable : ${p.note}.`, 401, false);
+    o.onStatus?.(`Sans clé — ${p.note}`);
+  }
+  try {
+    return await runChain(req, o, chain);
+  } catch (err) {
+    if (freeUsed || req.signal?.aborted || carriesImages(req.messages) || !freeCanTakeOver(err)) throw err;
+    const p = freeChainFor(req);
+    const rest = p.chain.filter((m) => !chain.includes(m));
+    if (!rest.length) throw err;
+    o.onFallback?.(chain[chain.length - 1] ?? req.model, rest[0]!, `${String((err as Error).message ?? err).slice(0, 120)} → ${p.note}`);
+    return runChain(req, o, rest);
+  }
+}
+
+async function runChain(req: ChatRequest, o: CompleteOptions, chain: string[]): Promise<Completion> {
   const maxRetries = o.maxRetries ?? 2;
   let last: unknown = null;
   for (let i = 0; i < chain.length; i++) {

@@ -65,12 +65,29 @@ export const MCP_PRESETS: McpServerDef[] = [
     autoApprove: true,
     description: 'Schémas Excalidraw « dessinés à la main » : architectures, processus (gratuit).',
   },
+  // Re-measured on 15/10/2026 (curl, Origin: null): keyless, CORS open, initialize + tools/list OK.
+  {
+    name: 'exa',
+    url: 'https://mcp.exa.ai/mcp',
+    enabled: true,
+    autoApprove: true,
+    description: 'Recherche web Exa + lecture de pages entières (web_fetch_exa) — gratuit, sans clé.',
+  },
+  {
+    name: 'parallel',
+    url: 'https://search.parallel.ai/mcp',
+    enabled: true,
+    autoApprove: true,
+    description: 'Recherche web Parallel (extraits longs et datés) + lecture de pages (web_fetch) — gratuit, sans clé.',
+  },
   {
     name: 'mermaid-chart',
     url: 'https://mcp.mermaidchart.com/mcp',
-    enabled: true,
-    autoApprove: true,
-    description: 'Diagrammes Mermaid : validation et rendu (flux, séquences, Gantt) (gratuit).',
+    enabled: false,
+    autoApprove: false,
+    needsToken:
+      'Depuis 2026, Mermaid Chart exige une connexion (OAuth, HTTP 401 mesuré le 15/10/2026). Les diagrammes Mermaid restent gratuits sans clé par le plugin intégré « Diagrammes (Kroki) ».',
+    description: 'Diagrammes Mermaid : validation et rendu (compte Mermaid Chart).',
   },
   {
     name: 'svelte',
