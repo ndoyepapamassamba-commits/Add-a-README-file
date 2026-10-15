@@ -5,7 +5,7 @@
 // notes timed on the whole deck. Colours and fonts come from the active design: the same deck in every theme.
 import { strToU8, zipSync } from 'fflate';
 import { activeDesign, liveColorProxy, setActiveTheme, type Design } from '../houseDesign';
-import { CAC_NEUTRALS, cacDesign, cacStates, tintOf } from './cacSkin';
+import { CAC_NEUTRALS, cacDesign, cacStates, flatFigure, tintOf } from './cacSkin';
 /** CAC format (cacSkin.ts) while a deck is written; the band colour of the current chapter. */
 let CAC_ON = false;
 let ST: string[] = [];
@@ -13,6 +13,8 @@ let BAND_COLOR: string | null = null;
 import { CHART_CT, CHART_REL, pptxChartFrame } from '../officeChart';
 import { allRecos, type Chapter, type Dossier, type Kpi, type Reco, type Tone } from './dossier';
 import { figureChartXml } from './dossierChart';
+/** CAC: flat IBCS figures (no 3D, ranked bars, doughnut ≤ 5 parts); the committee deck keeps its 3D. */
+const chartOf = (f: Parameters<typeof figureChartXml>[0]) => figureChartXml(CAC_ON ? flatFigure(f) : f);
 
 export interface DeckLogo {
   png: Uint8Array;
@@ -302,7 +304,7 @@ function dossierPptxCore(d: Dossier, opts: DeckOptions): Uint8Array {
       if (figs.length) {
         const fw = figs.length === 2 ? Math.floor((rw - inch(0.2)) / 2) : rw;
         figs.forEach((f, i) => {
-          charts.push(figureChartXml(f));
+          charts.push(chartOf(f));
           body += pptxChartFrame(`rIdChart${i + 1}`, ++nid, 'Graphique', rx + i * (fw + inch(0.2)), contentTop, fw, bodyH);
         });
       } else if (ch.tables[0]) {
@@ -354,24 +356,43 @@ function dossierPptxCore(d: Dossier, opts: DeckOptions): Uint8Array {
       let body = '';
       const charts: string[] = [];
       pair.forEach((f, k) => {
-        charts.push(figureChartXml(f));
+        charts.push(chartOf(f));
         body += pptxChartFrame(`rIdChart${k + 1}`, ++nid, 'Graphique', M + k * (fw + inch(0.25)), contentTop, fw, bodyH);
       });
       push(frame(pair[0]!.title, `${kicker} · figures`, body, pair[0]!.lecture ?? pair[1]?.lecture), { charts, notes: pair.map((f) => `${f.title} : ${f.categories.map((c, j) => `${c} ${f.series[0]!.values[j]}`).join(', ')}`).join('\n'), weight: 1 });
     }
     for (const t of ch.tables.slice(ch.figures.length ? 0 : 1)) {
-      const body = table(M, contentTop, W - 2 * M, t.head, t.rows.slice(0, 12), { sz: 8.5, rowH: 0.3 });
-      push(frame(t.title ?? ch.title, `${kicker} · tableau`, body, t.lecture), { notes: t.rows.map((r) => r.join(' | ')).join('\n'), weight: 1 });
+      const rows = t.rows.slice(0, 12);
+      // No empty two thirds under a short table: rows fill the height; a numeric column also becomes ranked bars at the
+      // right (the table's own figures, nothing added) — the reader sees the order before reading the cells.
+      const avail = (lectureTop - contentTop - inch(0.1)) / 914400;
+      const rowH = Math.max(0.3, Math.min(0.55, avail / (rows.length + 1)));
+      const num = (v: string) => Number(String(v).replace(/\s/g, '').replace(',', '.').replace(/[^\d.-]/g, ''));
+      const numCol = [...t.head.keys()].reverse().find((j) => j > 0 && rows.length >= 3 && rows.every((r) => r[j] != null && r[j] !== '' && Number.isFinite(num(r[j]!))));
+      if (numCol != null && rows.length <= 8) {
+        const tw = Math.floor((W - 2 * M) * 0.52);
+        const fig = { kind: 'bar' as const, title: `${t.head[numCol]} par ${String(t.head[0]).toLowerCase()}`, categories: rows.map((r) => String(r[0])), series: [{ name: String(t.head[numCol]), values: rows.map((r) => num(r[numCol]!)) }] };
+        const body = table(M, contentTop, tw, t.head, rows, { sz: rowH > 0.42 ? 10 : 8.5, rowH }) + pptxChartFrame('rIdChart1', ++nid, 'Graphique', M + tw + inch(0.3), contentTop, W - 2 * M - tw - inch(0.3), lectureTop - contentTop - inch(0.1));
+        push(frame(t.title ?? ch.title, `${kicker} · tableau`, body, t.lecture), { charts: [chartOf(fig)], notes: rows.map((r) => r.join(' | ')).join('\n'), weight: 1 });
+      } else {
+        const body = table(M, contentTop, W - 2 * M, t.head, rows, { sz: rowH > 0.42 ? 10 : 8.5, rowH });
+        push(frame(t.title ?? ch.title, `${kicker} · tableau`, body, t.lecture), { notes: rows.map((r) => r.join(' | ')).join('\n'), weight: 1 });
+      }
     }
   }
 
   BAND_COLOR = null;
+  // The plan's rows fill the slide (no empty two thirds): taller rows, larger text when there is room.
+  const planFit = (n: number) => {
+    const rowH = Math.max(0.3, Math.min(0.8, (lectureTop - contentTop - inch(0.1)) / 914400 / (n + 1)));
+    return { rowH, sz: rowH > 0.6 ? 11.5 : rowH > 0.45 ? 10.5 : rowH > 0.36 ? 9.5 : 8.5 };
+  };
   // ── Action plan: the P1 recommendations in one table.
   const recos = allRecos(d);
   if (recos.length) {
     const p1 = recos.filter((r) => r.priority === 'P1');
     const shown = (p1.length >= 4 ? p1 : recos).slice(0, 12);
-    const body = table(M, contentTop, W - 2 * M, ['Réf.', 'Recommandation', 'Axe', 'Responsable', 'Échéance'], shown.map((r) => [r.ref, r.title, r.axis ?? '', r.owner, r.due]), { widths: [0.07, 0.48, 0.15, 0.18, 0.12], sz: 8.5, rowH: 0.3, firstColTone: (r) => (recos.find((x) => x.ref === r[0])?.priority === 'P1' ? C.risk : recos.find((x) => x.ref === r[0])?.priority === 'P2' ? darken(C.gold, 0.3) : C.blue) });
+    const body = table(M, contentTop, W - 2 * M, ['Réf.', 'Recommandation', 'Axe', 'Responsable', 'Échéance'], shown.map((r) => [r.ref, r.title, r.axis ?? '', r.owner, r.due]), { widths: [0.07, 0.48, 0.15, 0.18, 0.12], ...planFit(shown.length), firstColTone: (r) => (recos.find((x) => x.ref === r[0])?.priority === 'P1' ? C.risk : recos.find((x) => x.ref === r[0])?.priority === 'P2' ? darken(C.gold, 0.3) : C.blue) });
     push(frame(`${recos.length} recommandations, dont ${p1.length} priorité P1`, 'Décisions · plan d’actions', body, `Le plan complet (${recos.length} recommandations) figure dans le rapport et le classeur ; chaque action a un responsable, une échéance et un indicateur.`), { notes: recos.map((r) => `${r.ref} [${r.priority}] ${r.title} — ${r.owner}, ${r.due}, KPI : ${r.kpi}`).join('\n'), weight: 1.3 });
   }
 
@@ -400,7 +421,7 @@ function dossierPptxCore(d: Dossier, opts: DeckOptions): Uint8Array {
     body += card(M, contentTop, colW, bodyH, C.panel, 'Hypothèses', { line: C.line, shadow: false }) + text(M + inch(0.12), contentTop + inch(0.04), colW - inch(0.24), bodyH - inch(0.08), [para(run('Hypothèses structurantes (extrait du registre)', { sz: 10, color: C.navy, b: true, caps: true }), { spc: 0, after: 250 }), ...d.hypotheses.slice(0, 8).map((h) => para(`${run(`${h.code} `, { sz: 8.5, color: C.blue, b: true, font: mono() })}${run(`${h.title} — ${h.text}`, { sz: 8.5, color: C.text })}`, { bullet: true, spc: 150 }))], 'Hypothèses texte');
     const dq = d.dataQuality;
     if (dq?.items.length && dq.items.some((it) => it.score != null)) {
-      charts.push(figureChartXml({ kind: 'col3d', title: 'Indice de qualité par source (/100)', categories: dq.items.filter((it) => it.score != null).map((it) => it.item), series: [{ name: 'Qualité', values: dq.items.filter((it) => it.score != null).map((it) => it.score!) }], fmt: '0' }));
+      charts.push(chartOf({ kind: 'col3d', title: 'Indice de qualité par source (/100)', categories: dq.items.filter((it) => it.score != null).map((it) => it.item), series: [{ name: 'Qualité', values: dq.items.filter((it) => it.score != null).map((it) => it.score!) }], fmt: '0' }));
       body += pptxChartFrame('rIdChart1', ++nid, 'Graphique', M + colW + inch(0.3), contentTop, colW, bodyH);
     } else if (dq?.items.length) body += card(M + colW + inch(0.3), contentTop, colW, bodyH, C.panel, 'Qualité', { line: C.line, shadow: false }) + text(M + colW + inch(0.42), contentTop + inch(0.04), colW - inch(0.24), bodyH - inch(0.08), [para(run('Qualité des données', { sz: 10, color: C.navy, b: true, caps: true }), { spc: 0, after: 250 }), ...dq.items.slice(0, 8).map((it) => para(run(`${it.item} — ${it.note}`, { sz: 8.5, color: C.text }), { bullet: true, spc: 150 }))], 'Qualité texte');
     push(frame('Annexe — Hypothèses et qualité des données', 'Annexes · hypothèses', body, dq?.score != null ? `Indice de qualité global ${dq.score}/100 ; les hypothèses sont numérotées, motivées et reliées aux paramètres.` : 'Chaque hypothèse est numérotée et motivée ; aucune question bloquante n’a été posée.'), { charts, notes: d.hypotheses.map((h) => `${h.code} ${h.title} : ${h.text}`).join('\n'), weight: 0.8 });
@@ -411,7 +432,7 @@ function dossierPptxCore(d: Dossier, opts: DeckOptions): Uint8Array {
     const axes = [...byAxis.entries()].sort((a, b) => a[0].localeCompare(b[0]));
     const colW = Math.floor((W - 2 * M - inch(0.3)) / 2);
     const bodyH = lectureTop - contentTop - inch(0.15);
-    const charts = [figureChartXml({ kind: 'col3d', title: 'Sources par axe de recherche', categories: axes.map((a) => a[0]), series: [{ name: 'Sources', values: axes.map((a) => a[1]) }], fmt: '0' })];
+    const charts = [chartOf({ kind: 'col3d', title: 'Sources par axe de recherche', categories: axes.map((a) => a[0]), series: [{ name: 'Sources', values: axes.map((a) => a[1]) }], fmt: '0' })];
     const body =
       pptxChartFrame('rIdChart1', ++nid, 'Graphique', M, contentTop, colW, bodyH) +
       card(M + colW + inch(0.3), contentTop, colW, bodyH, C.panel, 'Références', { line: C.line, shadow: false }) +

@@ -6,7 +6,7 @@
 // page. Colours and fonts from the active design.
 import { strToU8, zipSync } from 'fflate';
 import { activeDesign, liveColorProxy, setActiveTheme, type Design } from '../houseDesign';
-import { CAC_NEUTRALS, cacDesign, cacStates } from './cacSkin';
+import { CAC_NEUTRALS, cacDesign, cacStates, flatFigure } from './cacSkin';
 import { CHART_CT, CHART_REL, docxChartRun } from '../officeChart';
 import { orderPPr } from '../officeCore';
 import { allRecos, type Dossier, type Kpi, type Reco, type Tone } from './dossier';
@@ -197,7 +197,7 @@ function dossierDocxCore(d: Dossier, opts: { logo?: ReportLogo | null; brand?: s
     const n = charts.length + 1;
     const rid = `rIdChart${n}`;
     // The report's figures are flat (print): the deck and the workbook keep the 3D.
-    const flat = { ...f, kind: f.kind === 'col3d' ? 'col' : f.kind === 'bar3d' ? 'bar' : f.kind } as typeof f;
+    const flat = cacD() ? flatFigure(f) : ({ ...f, kind: f.kind === 'col3d' ? 'col' : f.kind === 'bar3d' ? 'bar' : f.kind } as typeof f);
     charts.push({ rid, file: `chart${n}.xml`, xml: figureChartXml(flat, { titleInside: true }) });
     figN++;
     b.push(para(docxChartRun(rid, 7000 + n, f.title, 6_000_000, 2_900_000), { pPr: `<w:jc w:val="center"/><w:keepNext/>${spacing(80, 40)}` }));

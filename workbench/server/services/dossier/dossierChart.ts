@@ -5,6 +5,7 @@
 import { activeDesign } from '../houseDesign';
 import { shortFormat } from '../officeChart';
 import type { Figure } from './dossier';
+import { ORDERED } from './cacSkin';
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const fill = (rgb: string) => `<a:solidFill><a:srgbClr val="${rgb}"/></a:solidFill>`;
@@ -55,13 +56,16 @@ export function figureChartXml(f: Figure, o: { titleInside?: boolean; legend?: b
   } else if (is3d) {
     view3d = `<c:view3D><c:rotX val="15"/><c:rotY val="20"/><c:rAngAx val="1"/></c:view3D><c:floor><c:thickness val="0"/><c:spPr><a:noFill/>${noLine}</c:spPr></c:floor><c:sideWall><c:thickness val="0"/><c:spPr><a:noFill/>${noLine}</c:spPr></c:sideWall><c:backWall><c:thickness val="0"/><c:spPr><a:noFill/>${noLine}</c:spPr></c:backWall>`;
     // Single series: the leading bar in the accent colour (the eye goes to the first category), the others primary.
-    const lead = series.length === 1 && n > 1 ? `<c:dPt><c:idx val="0"/><c:invertIfNegative val="0"/><c:bubble3D val="0"/><c:spPr>${fill(K.gold)}${noLine}</c:spPr></c:dPt>` : '';
+    const lead = series.length === 1 && n > 1 && !cats.some((c) => ORDERED.test(String(c))) ? `<c:dPt><c:idx val="0"/><c:invertIfNegative val="0"/><c:bubble3D val="0"/><c:spPr>${fill(K.gold)}${noLine}</c:spPr></c:dPt>` : '';
     plot = `<c:bar3DChart><c:barDir val="${horizontal ? 'bar' : 'col'}"/><c:grouping val="clustered"/><c:varyColors val="0"/>${series.map((s, i) => ser(s, i, `<c:invertIfNegative val="0"/>${i === 0 ? lead : ''}`, labels(undefined, K.text))).join('')}<c:gapWidth val="${series.length > 1 ? 80 : 60}"/><c:shape val="box"/><c:axId val="10"/><c:axId val="20"/></c:bar3DChart>${axes()}`;
     if (series.length === 1) legend = '';
   } else {
-    const lead = series.length === 1 && n > 1 ? `<c:dPt><c:idx val="0"/><c:invertIfNegative val="0"/><c:bubble3D val="0"/><c:spPr>${fill(K.gold)}${noLine}</c:spPr></c:dPt>` : '';
+    const lead = series.length === 1 && n > 1 && !cats.some((c) => ORDERED.test(String(c))) ? `<c:dPt><c:idx val="0"/><c:invertIfNegative val="0"/><c:bubble3D val="0"/><c:spPr>${fill(K.gold)}${noLine}</c:spPr></c:dPt>` : '';
     plot = `<c:barChart><c:barDir val="${horizontal ? 'bar' : 'col'}"/><c:grouping val="clustered"/><c:varyColors val="0"/>${series.map((s, i) => ser(s, i, `<c:invertIfNegative val="0"/>${i === 0 ? lead : ''}`, labels('outEnd', K.text))).join('')}<c:gapWidth val="${series.length > 1 ? 80 : 50}"/><c:overlap val="${series.length > 1 ? -10 : 0}"/><c:axId val="10"/><c:axId val="20"/></c:barChart>${axes()}`;
     if (series.length === 1) legend = '';
+    // Data-ink (IBCS): every bar carries its value → the gridlines and the value axis only repeat it; both go.
+    if (series.length === 1 || n <= 6)
+      plot = plot.replace(/<c:majorGridlines>[\s\S]*?<\/c:majorGridlines>/g, '').replace(/(<c:valAx><c:axId val="20"\/><c:scaling>[\s\S]*?<\/c:scaling>)<c:delete val="0"\/>/, '$1<c:delete val="1"/>');
   }
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:roundedCorners val="0"/><c:chart>${title}${view3d}<c:plotArea><c:layout/>${plot}<c:spPr><a:noFill/>${noLine}</c:spPr></c:plotArea>${legend}<c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart><c:spPr><a:noFill/>${noLine}</c:spPr><c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr><a:latin typeface="${D.font.ui}"/></a:defRPr></a:pPr><a:endParaRPr lang="fr-FR"/></a:p></c:txPr></c:chartSpace>`;
 }

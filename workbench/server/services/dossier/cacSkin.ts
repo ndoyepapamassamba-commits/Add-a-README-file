@@ -8,6 +8,7 @@
 // Les formes sont natives (DrawingML) : nettes à tout zoom, éditables, recolorables, lisibles par un lecteur d'écran —
 // la référence utilisait des images figées.
 import type { Design } from '../houseDesign';
+import type { Figure } from './dossier';
 
 type Col = Design['color'];
 const hx = (c: string) => c.replace('#', '').slice(-6).toUpperCase();
@@ -130,3 +131,102 @@ export function sp(o: SpOpt): string {
   return `<xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="${o.id}" name="${xe(o.name)}">${link}</xdr:cNvPr><xdr:cNvSpPr/></xdr:nvSpPr><xdr:spPr><a:prstGeom prst="${o.prst ?? 'rect'}"><a:avLst>${o.adj ?? ''}</a:avLst></a:prstGeom>${fill}${ln}${fx}</xdr:spPr>${body}</xdr:sp>`;
 }
 export { hsl as hslOf, hexOf as hexFromHsl, REL as REL_NS, EMOJI as EMOJI_RX };
+
+// ── Premium button emoji (v64, consigne du 15/10/2026 : « partout où il y a un bouton, un émoji premium de décoration »)
+// The emoji of a button / page, from its words: the topic first (assurances 🛡️, impayés 💸, IFRS 9 ⚖️…), then the action
+// (ouvrir 📂, voir 🔎). Rendered in the colour emoji font (Segoe UI Emoji in Microsoft 365, Apple / Noto elsewhere).
+const BUTTON_EMOJI: [RegExp, string][] = [
+  [/accueil|cockpit|home|sommaire/, '🏠'],
+  [/assurance/, '🛡️'],
+  [/deferral|differ|report[ée]?s?\b|echeanc/, '⏳'],
+  [/domicil/, '🏦'],
+  [/ifrs|bceao|reglement|prudenti|norme|contentieux|litige/, '⚖️'],
+  [/impaye|arriere|retard|recouvr/, '💸'],
+  [/provision|depreciation|\becl\b/, '🧮'],
+  [/garantie|surete|collateral/, '🔐'],
+  [/concentration|exposition|contrepartie/, '🎯'],
+  [/top|classement|palmares/, '🏆'],
+  [/plan d|action|recommand/, '✅'],
+  [/decision|vote/, '🗳️'],
+  [/hypothese/, '🧩'],
+  [/parametre|reglage/, '⚙️'],
+  [/qualite/, '🔍'],
+  [/source|reference/, '📚'],
+  [/glossaire|lexique/, '📘'],
+  [/donnee|base|liste/, '🗂️'],
+  [/risque|alerte|attention/, '⚠️'],
+  [/synthese|tableau de bord|dashboard|indicateur|kpi|chiffre/, '📊'],
+  [/tendance|evolution|croissance/, '📈'],
+  [/secteur|industrie/, '🏭'],
+  [/client|tiers|beneficiaire/, '👥'],
+  [/credit|engagement|pret|portefeuille|encours/, '💼'],
+  [/liquidit|tresorerie/, '💧'],
+  [/capital|fonds propres|solvabilit/, '🏛️'],
+  [/couverture/, '☂️'],
+  [/conformit|fraude|audit|controle/, '🕵️'],
+  [/methode|analyse/, '🧪'],
+  [/precedent/, '⬅️'],
+  [/suivant/, '➡️'],
+  [/ouvrir/, '📂'],
+  [/voir|detail/, '🔎'],
+];
+const BUTTON_SPARE = ['📁', '📌', '🧾', '💠', '🗃️', '🧭', '📎', '🪙', '🏷️', '📐'];
+const foldFr = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+/** The premium emoji of a button or page label (`i` picks a distinct spare emoji when no topic matches). */
+export function buttonEmoji(label: string, i = 0): string {
+  const t = foldFr(label);
+  return BUTTON_EMOJI.find(([re]) => re.test(t))?.[1] ?? BUTTON_SPARE[Math.abs(i) % BUTTON_SPARE.length]!;
+}
+
+// ── Flat, IBCS-style figures (v64, veille du 15/10/2026 : pas de 3D, barres horizontales pour comparer des catégories,
+// camembert seulement ≤ 5 parts, étiquettes sur les données, axe à zéro, une palette, l'élément de tête en accent) ──
+/** Ordered categories (periods, brackets « 0-30 j », years) keep their order; free categories are ranked. */
+export const ORDERED = /\d|\b(janv|févr|fevr|mars|avr|mai|juin|juil|août|aout|sept|oct|nov|déc|dec)\b|\bt[1-4]\b|\bs[12]\b|trimestre|semestre|tranche|bucket|\bstage\b/i;
+/** The CAC figure: 3D → flat; pie / doughnut → doughnut only with ≤ 5 parts, else ranked bars; free categories ranked. */
+export function flatFigure(f: Figure): Figure {
+  const single = f.series.length === 1;
+  const ordered = f.categories.some((c) => ORDERED.test(c));
+  let kind: Figure['kind'] = f.kind === 'col3d' ? (f.categories.length > 6 || !ordered ? 'bar' : 'col') : f.kind === 'bar3d' ? 'bar' : f.kind;
+  if ((kind === 'pie' || kind === 'doughnut') && (!single || f.categories.length > 5)) kind = 'bar';
+  else if (kind === 'pie') kind = 'doughnut';
+  if (kind !== 'bar' || !single || ordered) return { ...f, kind };
+  const idx = f.categories.map((_, i) => i).sort((a, b) => (f.series[0]!.values[b] ?? 0) - (f.series[0]!.values[a] ?? 0));
+  return { ...f, kind, categories: idx.map((i) => f.categories[i]!), series: f.series.map((s) => ({ ...s, values: idx.map((i) => s.values[i] ?? 0) })) };
+}
+/**
+ * A native chart XML made flat: 3D bars → bars (no box shape, no depth axis), 3D pie → doughnut with thin white
+ * separators, gradients → their base colour, no 3D view nor walls; a single-series bar chart gets ONE accent (the leader)
+ * and the primary for the rest — the eye goes to the first category (the committee format kept its 3D on request).
+ */
+export function flatChart(xml: string, o: { primary: string; accent: string }): string {
+  let x = xml
+    .replace(/<c:view3D>[\s\S]*?<\/c:view3D>/g, '')
+    .replace(/<c:(floor|sideWall|backWall)>[\s\S]*?<\/c:\1>/g, '')
+    .replace(/<a:gradFill\b[\s\S]*?<\/a:gradFill>/g, (g) => {
+      const base = /<a:gs pos="55000"><a:srgbClr val="([0-9A-Fa-f]{6})"/.exec(g)?.[1] ?? /<a:srgbClr val="([0-9A-Fa-f]{6})"/.exec(g)?.[1] ?? o.primary;
+      return `<a:solidFill><a:srgbClr val="${base}"/></a:solidFill>`;
+    });
+  if (/<c:bar3DChart>/.test(x)) {
+    const sers = (x.match(/<c:ser>/g) ?? []).length;
+    x = x
+      .replace('<c:bar3DChart>', '<c:barChart>')
+      .replace('</c:bar3DChart>', '</c:barChart>')
+      .replace(/<c:shape val="box"\/>/g, '')
+      .replace(/<c:axId val="0"\/>/g, '')
+      .replace(/<c:gapWidth val="\d+"\/>/, `<c:gapWidth val="${sers > 1 ? 70 : 45}"/>`);
+    // The accent marks the LEADER of a ranking only; ordered categories (periods, brackets) stay in one colour.
+    const cats = [...(/<c:cat>[\s\S]*?<\/c:cat>/.exec(x)?.[0] ?? '').matchAll(/<c:v>([^<]*)<\/c:v>/g)].map((m) => m[1]!);
+    if (sers === 1 && cats.some((c) => ORDERED.test(c))) x = x.replace(/<c:dPt>[\s\S]*?<\/c:dPt>/g, '');
+    else if (sers === 1) {
+      const fillOf = (c: string) => `<c:spPr><a:solidFill><a:srgbClr val="${c}"/></a:solidFill><a:ln><a:noFill/></a:ln></c:spPr>`;
+      x = x
+        .replace(/<c:dPt>[\s\S]*?<\/c:dPt>/g, '')
+        .replace(/(<c:ser><c:idx val="0"\/>[\s\S]*?<\/c:tx>)<c:spPr>[\s\S]*?<\/c:spPr>(<c:invertIfNegative val="0"\/>)/, `$1${fillOf(o.primary)}$2<c:dPt><c:idx val="0"/><c:invertIfNegative val="0"/><c:bubble3D val="0"/>${fillOf(o.accent)}</c:dPt>`);
+    }
+  }
+  if (/<c:pie3DChart>/.test(x))
+    x = x
+      .replace(/<c:pie3DChart>([\s\S]*?)<\/c:pie3DChart>/, '<c:doughnutChart>$1<c:firstSliceAng val="0"/><c:holeSize val="62"/></c:doughnutChart>')
+      .replace(/(<c:dPt><c:idx val="\d+"\/><c:bubble3D val="0"\/><c:spPr><a:solidFill><a:srgbClr val="[0-9A-Fa-f]{6}"\/><\/a:solidFill>)<a:ln w="9525"><a:solidFill><a:srgbClr val="[0-9A-Fa-f]{6}"\/><\/a:solidFill><\/a:ln>/g, '$1<a:ln w="19050"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:ln>');
+  return x;
+}
