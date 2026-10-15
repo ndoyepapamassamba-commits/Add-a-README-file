@@ -30,6 +30,12 @@ describe('Réalisation — moteur pur (tout prompt devient une page exécutée e
   });
   it('le moteur : seulement des licences MIT / Apache-2.0 / BSD, versions exactes, carte d’imports esm.sh', () => {
     for (const l of LIBRARIES) {
+      // v64: the only exception is JEV's own scientific library (in-house code, served inline as a data: module).
+      if (l.name === 'jev') {
+        expect(l.license).toBe('maison');
+        expect(l.url).toMatch(/^data:text\/javascript;base64,/);
+        continue;
+      }
       expect(['MIT', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause']).toContain(l.license);
       expect(l.version).toMatch(/^\d+\.\d+\.\d+$/);
       expect(l.url).toMatch(/^https:\/\/esm\.sh\//);

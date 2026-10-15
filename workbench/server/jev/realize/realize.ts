@@ -6,6 +6,9 @@
 // bibliothèques libres listées ci-dessous (licences MIT, Apache-2.0, BSD seulement — vérifiées le 14/10/2026 sur npm).
 // Pur : la génération et l'exécution sont injectées (testé en Node).
 
+import { JEVLIB_API, JEVLIB_VERSION, jevlibUrl } from '../sandbox/jevlib';
+import { sandboxBlock, sandboxCards } from '../sandbox/knowledge';
+
 export type RealizeKind = 'app' | 'data' | 'game' | 'svg' | '3d' | 'doc' | 'video';
 
 export const KIND_LABELS: Record<RealizeKind, string> = {
@@ -36,7 +39,7 @@ export interface Lib {
   /** Bare specifier usable in `import … from '<name>'`. */
   name: string;
   version: string;
-  license: 'MIT' | 'Apache-2.0' | 'BSD-2-Clause' | 'BSD-3-Clause';
+  license: 'MIT' | 'Apache-2.0' | 'BSD-2-Clause' | 'BSD-3-Clause' | 'maison';
   /** What it is for, in a few words (shown to the model). */
   use: string;
   /** Module URL (esm.sh) — or a classic script for the few libraries that are not modules. */
@@ -70,6 +73,10 @@ export const LIBRARIES: Lib[] = [
   { name: 'katex', version: '0.19.0', license: 'MIT', use: 'formules mathématiques', url: esm('katex@0.19.0'), css: 'https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/katex.min.css', kinds: ['doc'] },
   { name: 'marked', version: '18.1.1', license: 'MIT', use: 'Markdown → HTML', url: esm('marked@18.1.1'), kinds: ['doc', 'app'] },
   { name: 'alpinejs', version: '3.17.4', license: 'MIT', use: 'interactivité déclarative légère (x-data, x-on)', url: esm('alpinejs@3.17.4'), kinds: ['app', 'doc'] },
+  // v64 — physique de corps rigides haute performance (Rapier, Apache-2.0 ; build « compat » : le WASM est embarqué).
+  { name: '@dimforge/rapier3d-compat', version: '0.21.0', license: 'Apache-2.0', use: 'physique 3D rapide et stable (corps rigides, articulations, beaucoup d’objets) : import RAPIER from "@dimforge/rapier3d-compat"; await RAPIER.init()', url: esm('@dimforge/rapier3d-compat@0.21.0'), kinds: ['3d', 'game', 'video'] },
+  // v64 — la bibliothèque scientifique de JEV (mouvement humain, physique, quantique, mathématiques, projection 3D).
+  { name: 'jev', version: JEVLIB_VERSION, license: 'maison', use: 'sciences vérifiées pour le bac à sable : import * as jev from "jev" (détail plus bas)', url: jevlibUrl(), kinds: ['3d', 'game', 'video', 'svg', 'app', 'data', 'doc'] },
 ];
 /** Tailwind (MIT) as a classic script — utility classes without a build. */
 export const TAILWIND = 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3';
@@ -101,8 +108,10 @@ function fidelityRules(kind: RealizeKind): string[] {
   ];
 }
 
-export function systemPrompt(kind: RealizeKind, opts: { data?: DataInfo | null; video?: VideoSpec } = {}): string {
+export function systemPrompt(kind: RealizeKind, opts: { data?: DataInfo | null; video?: VideoSpec; ask?: string } = {}): string {
   const libs = LIBRARIES.filter((l) => l.kinds.includes(kind));
+  // JEV directs the sandbox: the knowledge cards of the domains the request touches + its scientific library.
+  const cards = sandboxCards(opts.ask ?? '', kind);
   const others = LIBRARIES.filter((l) => !l.kinds.includes(kind)).map((l) => l.name);
   return [
     `Tu es un ingénieur front-end et designer d’exception. Tu RÉALISES la demande de l’utilisateur sous la forme d’UNE page HTML complète et autonome, exécutée dans un bac à sable isolé. Type de réalisation : ${KIND_LABELS[kind]}.`,
@@ -110,11 +119,13 @@ export function systemPrompt(kind: RealizeKind, opts: { data?: DataInfo | null; 
     '',
     'MOTEUR DISPONIBLE (déjà branché, ne PAS ajouter de carte d’imports) — dans un <script type="module">, importe par leur nom :',
     ...libs.map((l) => `- "${l.name}" (${l.license}) : ${l.use}`),
+    ...(libs.some((l) => l.name === 'jev') ? [JEVLIB_API] : []),
     `- Aussi disponibles : ${others.join(', ')}.`,
     `- Tailwind : <script src="${TAILWIND}"></script> dans <head> pour les classes utilitaires (facultatif).`,
     'Aucune autre ressource réseau : pas d’autre CDN, pas d’API externe, pas d’image distante (dessine en SVG / canvas, ou utilise des emoji).',
     '',
     ...(FIDELITY_KINDS.includes(kind) ? fidelityRules(kind) : []),
+    ...(cards.length ? [sandboxBlock(cards), ''] : []),
     'RÈGLES DE RÉALISATION :',
     '- Quelque chose de visible et d’utile s’affiche immédiatement (moins de 2 s), même sans interaction.',
     '- Textes en français, mise en page responsive (mobile → grand écran), design soigné : variables CSS, typographie system-ui, espacements généreux, contrastes lisibles, états hover/focus.',
@@ -499,7 +510,7 @@ export async function realizeWithCorrection(o: {
 }): Promise<{ ok: boolean; rounds: RealizeRound[]; code: string; network?: boolean }> {
   const maxRounds = Math.max(1, o.maxRounds ?? 3);
   const messages: Msg[] = [
-    { role: 'system', content: systemPrompt(o.kind, { data: o.data, video: o.video }) },
+    { role: 'system', content: systemPrompt(o.kind, { data: o.data, video: o.video, ask: o.prompt }) },
     { role: 'user', content: o.base ? `Page actuelle :\n\`\`\`html\n${o.base}\n\`\`\`\n\nModification demandée : ${o.prompt}` : o.prompt },
   ];
   const rounds: RealizeRound[] = [];

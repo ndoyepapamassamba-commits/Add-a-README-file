@@ -166,3 +166,32 @@ test('v62 — Réalisation FIDÉLITÉ: an element the request names but that is 
   // The prompt asked for an illustration of a scene: the illustration rules (planes, perspective, light) were given.
   expect(JSON.stringify(mock.requests[0]!.messages)).toContain('FIDÉLITÉ À LA DEMANDE');
 });
+
+test('Réalisation (v64) : JEV dirige le bac à sable — fiches de savoirs dans les consignes, bibliothèque « jev » importée et exécutée dans la page isolée', async ({ page }) => {
+  test.setTimeout(90_000);
+  mock.reset();
+  await open(page);
+  mock.push({
+    text:
+      '```html\n<!doctype html><html><head><title>q</title></head><body><p id="e"></p><p id="g"></p><p id="o"></p>\n<script type="module">\n' +
+      'import * as jev from "jev";\n' +
+      'document.getElementById("e").textContent = "E1 = " + jev.quantum.hydrogenEnergy(1).toFixed(2) + " eV";\n' +
+      'document.getElementById("g").textContent = "hanche " + Math.round(jev.human.gait(0).hip) + "°";\n' +
+      'document.getElementById("o").textContent = "points " + jev.quantum.sampleOrbital(2, 1, 0, 300).length / 3;\n' +
+      '</script></body></html>\n```',
+  });
+  await openView(page, 'Réalisation');
+  await page.getByTestId('realize-prompt').fill('Montre l’énergie de l’atome d’hydrogène, une orbitale 2p et la pose d’un homme qui marche');
+  await page.getByTestId('realize-model').selectOption({ index: 1 });
+  await page.getByTestId('realize-go').click();
+  const frame = page.frameLocator('[data-testid=realize-frame]');
+  await expect(frame.locator('#e')).toHaveText('E1 = -13.61 eV', { timeout: 30_000 });
+  await expect(frame.locator('#g')).toHaveText('hanche 30°');
+  await expect(frame.locator('#o')).toHaveText('points 300');
+  // What the model was told: the quantum and human-motion cards + the library API.
+  const sys = JSON.stringify(mock.requests[0]!.messages);
+  expect(sys).toContain('SAVOIRS DE JEV');
+  expect(sys).toContain('Physique quantique montrée juste');
+  expect(sys).toContain('Marche et course humaines crédibles');
+  expect(sys).toContain('import * as jev from \\"jev\\"');
+});

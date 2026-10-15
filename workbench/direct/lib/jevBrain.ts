@@ -11,7 +11,8 @@
 // l'utilisateur ne part en veille (brainTopic retire chiffres, noms propres, adresses).
 import { useStore } from './store';
 import { kv } from './db';
-import { complete, setBrainHooks, freeChainFor, type CompleteOptions } from './llm';
+import { complete, setBrainHooks, freeChainFor, type BrainHooks, type CompleteOptions } from './llm';
+import { economyHook } from './economy';
 import { keylessRead, keylessSearch } from './freeEngines';
 import { runLibrary } from './library';
 import { runCode } from './sandbox';
@@ -136,7 +137,7 @@ function saveCache() {
 // ── tâches légères que JEV confie d'abord aux modèles gratuits ───────────────────────────────────────────────────────
 const LIGHT = /^(prompt-improve|stage-directions|id[ée]es|titre|title|r[ée]sum[ée]|summary|reformul|traduction|translate|jev-)/i;
 
-const hooks = {
+const hooks: BrainHooks = {
   async before(req: ChatRequest, o: CompleteOptions) {
     const opts = brainOptions();
     const purpose = o.purpose ?? 'chat';
@@ -202,6 +203,8 @@ const hooks = {
     void kind;
   },
   watching: () => on() && brainOptions().watch,
+  // JEV ÷100: the paid model verifies and patches a free draft (its own switch, in Paramètres).
+  economy: (fed, raw, o, run) => (on() ? economyHook(fed, raw, o, run) : Promise.resolve(null)),
 };
 
 // ── veille : apprendre ce qui manque, perfectionner après un échec ────────────────────────────────────────────────────

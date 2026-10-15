@@ -91,7 +91,7 @@ export interface CompleteOptions {
   jev?: boolean;
 }
 
-type Completion = ChatResult & { cost: number; model: string; costSource: 'measured' | 'calculated' };
+export type Completion = ChatResult & { cost: number; model: string; costSource: 'measured' | 'calculated' };
 /**
  * THE JEV BRAIN on every model call of the app (v63): before — focus frame, learned techniques, lessons, cached answer,
  * the model JEV prefers (free first for light tasks); after — local QA, cache, learning. Registered by jevBrain.ts.
@@ -103,6 +103,11 @@ export interface BrainHooks {
   onIntervene?(kind: string): void;
   /** The stream is watched during the request. */
   watching?(): boolean;
+  /**
+   * JEV ÷100: a free model drafts, the asked (premium) model only verifies and patches. Null = not applicable → the
+   * normal path. `run` is the watched completion (an override chain forces the models).
+   */
+  economy?(req: ChatRequest, raw: ChatRequest, o: CompleteOptions, run: (r: ChatRequest, o: CompleteOptions, override?: string[]) => Promise<Completion>): Promise<Completion | null>;
 }
 let brain: BrainHooks | null = null;
 export const setBrainHooks = (h: BrainHooks | null) => {
@@ -140,6 +145,16 @@ export async function complete(req: ChatRequest, o: CompleteOptions): Promise<Co
   const pre: Awaited<ReturnType<BrainHooks['before']>> | null = await brain.before(req, o).catch(() => null);
   if (pre?.cached) return pre.cached;
   const fed = pre?.req ?? req;
+  // JEV ÷100: the premium model verifies a free draft instead of writing everything (any failure → the normal path).
+  if (brain.economy && !req.signal?.aborted) {
+    try {
+      const r = await brain.economy(fed, req, o, (rq, oo, ov) => watched(rq, oo, ov));
+      if (r) return r;
+    } catch (err) {
+      if (req.signal?.aborted || (err as LLMError)?.code === 'cancelled') throw err;
+      o.onReset?.();
+    }
+  }
   // JEV TAKES THE MODEL IN HAND: a light task tries the free models first; its QA hands over to the asked model.
   if (pre?.prefer?.length && !req.signal?.aborted) {
     try {

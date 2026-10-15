@@ -6,6 +6,9 @@
   `.claude/skills/outils-puissants-d-abord`. Un film d'une minute doit sortir en minutes, pas en heures.
 - **Veille Internet permanente** à chaque requête (pas seulement quand un résultat déçoit), outils puissants,
   gratuits, sans abonnement ; trouvailles datées dans le journal de `.claude/skills/veille-permanente`.
+- **Veille → combiner → créer et innover** (consigne du 15/10/2026) : la veille de chaque requête (technique, DESIGN,
+  ANALYSE) n'est jamais reprise telle quelle ; elle est combinée aux outils natifs pour créer du neuf, et la réponse dit
+  ce qui a été innové (`.claude/skills/veille-permanente`, §00).
 - **Chaque point faible sans solution fiable → veille Internet et outils puissants d'abord** (dépôts GitHub, modèles
   ouverts), méthode maison seulement en dernier recours.
 - Modèles et code exécutés chez nous : licences MIT, Apache-2.0 ou BSD seulement (`.claude/skills/modeles-libres-moteur`).

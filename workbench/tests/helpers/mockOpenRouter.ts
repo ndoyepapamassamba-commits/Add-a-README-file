@@ -8,6 +8,11 @@ export interface ScriptedTurn {
   /** Return an HTTP error instead of a stream. */
   error?: { status: number; message: string };
   usage?: { prompt_tokens: number; completion_tokens: number; cost: number };
+  /**
+   * Bill this turn like OpenRouter: tokens ≈ characters / 4 of what was really sent (messages + tools) and written,
+   * priced with the catalogue price of the requested model (0 for a « :free » model).
+   */
+  priced?: boolean;
   finish?: string;
   /** Pause between streamed text chunks (a real model writes for seconds — used by the performance tests). */
   chunkDelayMs?: number;
@@ -117,6 +122,13 @@ export async function startMockOpenRouter(): Promise<MockOpenRouter> {
           body,
         });
         const turn = queue.shift() ?? mock.fallback(body);
+        const priced = (b: Record<string, unknown>, t: ScriptedTurn) => {
+          const prompt_tokens = Math.ceil(JSON.stringify({ m: b.messages, t: b.tools ?? [] }).length / 4);
+          const completion_tokens = Math.ceil(((t.text ?? '').length + JSON.stringify(t.toolCalls ?? []).length) / 4);
+          const m = ((mock.models ?? MOCK_MODELS) as { id: string; pricing?: { prompt: string; completion: string } }[]).find((x) => x.id === b.model);
+          const cost = m?.pricing ? prompt_tokens * Number(m.pricing.prompt) + completion_tokens * Number(m.pricing.completion) : 0;
+          return { prompt_tokens, completion_tokens, cost: Math.round(cost * 1e8) / 1e8 };
+        };
         if (turn.error) {
           res.statusCode = turn.error.status;
           res.setHeader('Content-Type', 'application/json');
@@ -186,7 +198,7 @@ export async function startMockOpenRouter(): Promise<MockOpenRouter> {
         send({
           model: body.model,
           choices: [],
-          usage: turn.usage ?? { prompt_tokens: 1000, completion_tokens: 50, cost: 0.0012 },
+          usage: turn.priced ? priced(body, turn) : (turn.usage ?? { prompt_tokens: 1000, completion_tokens: 50, cost: 0.0012 }),
         });
         res.write('data: [DONE]\n\n');
         res.end();
