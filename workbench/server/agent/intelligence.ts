@@ -553,6 +553,12 @@ export function unsupportedNumbers(answer: string, evidence: string[], max = 12)
   const corpus = evidence.map(digits).join('\n');
   const corpusPlain = evidence.join('\n').replace(/[\s\u00a0\u202f]/g, '');
   const found = new Set<string>();
+  // Every number of the evidence, parsed once (lazily: most answers need no rounding check).
+  let nums: number[] | null = null;
+  const values = () =>
+    (nums ??= [...evidence.join('\n').matchAll(/-?\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?:[.,]\d+)?|-?\d+(?:[.,]\d+)?(?:e[+-]?\d+)?/gi)]
+      .map((x) => Number(digits(x[0])))
+      .filter((x) => Number.isFinite(x)));
   const re =
     /(?<![\w.,/-])(\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?)\s*(%|k|m|md|mds|millions?|milliards?)?(?![\w/-])/gi;
   for (const m of answer.matchAll(re)) {
@@ -573,6 +579,13 @@ export function unsupportedNumbers(answer: string, evidence: string[], max = 12)
     if (variants.some((v) => corpus.includes(v) || corpusPlain.includes(v))) continue;
     // Percentages may be computed from a ratio (0.125 ↔ 12.5 %).
     if (m[2] === '%' && (corpus.includes(String(n / 100)) || corpus.includes((n / 100).toFixed(3)))) continue;
+    // A ROUNDED figure in thousands / millions / billions (« 34,2 Md », « 1 119 083,1 M ») is backed by the exact value of a
+    // tool result (v62: every bank figure written in M / Md XOF was flagged, each flag costing a model round trip).
+    const unit = (m[2] ?? '').toLowerCase();
+    const scale = unit === 'k' ? 1e3 : unit === 'm' || unit.startsWith('million') ? 1e6 : unit === 'md' || unit === 'mds' || unit.startsWith('milliard') ? 1e9 : 1;
+    const dec = (/[.,](\d+)$/.exec(raw)?.[1] ?? '').length;
+    const tol = 0.5 * 10 ** -dec * scale + 1e-9;
+    if ((scale > 1 || dec > 0) && values().some((x) => Math.abs(Math.abs(x) - n * scale) <= tol)) continue;
     found.add(raw + (m[2] ? ` ${m[2]}` : ''));
     if (found.size >= max) break;
   }

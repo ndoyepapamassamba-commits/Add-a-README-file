@@ -272,6 +272,11 @@ export interface Settings {
   /** What the reporting agent LEARNED per data signature (sorted column names): the measure and dimensions that served,
    *  the theme asked, how many times it was used — re-applied on the next similar file, refined on each report. */
   reportLessons?: Record<string, { measure?: string; dims?: string[]; theme?: string; focus?: string; uses: number; flagged: number; at: number }>;
+  /** Column aliases LEARNED per data file shape (asked word → real column, e.g. « provision » → Cprovisions IFRS9…):
+   *  an ambiguous word settled once is understood on every later extract of the same shape. Stays in this browser. */
+  columnAliases?: Record<string, Record<string, string>>;
+  /** How often each column served the analyses of a data file shape (the portfolio card lists the most used first). */
+  columnUsage?: Record<string, Record<string, number>>;
   /** Pollinations key (sk_…): cheap image → video (Wan 2.2 Fast ≈ 0,01 $ / s). Stays in this browser. */
   pollinationsKey?: string;
   /** fal.ai key (kept in this browser): skeletal performance → character (Wan2.2-Animate, motion transfer). */

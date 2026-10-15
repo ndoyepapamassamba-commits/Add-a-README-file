@@ -254,3 +254,11 @@ describe('Decision simulator, information value, operating manual, regression su
     expect(by.reasoning!.check('7 500 000')).toBe(true);
   });
 });
+
+describe('v62 — rounded bank figures are backed by the exact tool values', () => {
+  it('« 34,2 Md » and « 1 119 083,1 M » are found; an invented count is not', () => {
+    const ev = ['| Segment | sum_Net Exposure |\n| 8200 | 34213456789.4 |\n| total | 1119083104512 |', '16887 result rows'];
+    expect(unsupportedNumbers('Segment 8200 : 34,2 Md XOF ; total 1 119 083,1 M XOF ; 16 887 lignes.', ev)).toEqual([]);
+    expect(unsupportedNumbers('41 629 expositions ; provision totale 293 095 M FCFA.', ev)).toEqual(['41 629', '293 095 M']);
+  });
+});

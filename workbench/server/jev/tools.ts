@@ -61,6 +61,10 @@ const KEYWORD_FAMILIES: [RegExp, string][] = [
     'write',
   ],
   [/\b(simul|sc[ée]nario|what if|si .* alors)\b/i, 'decide'],
+  // v62: an analysis of a data file + a deliverable asked → the data AND deliver tools from the first step (the ESN
+  // chat lost three model round trips asking for them with tools.request).
+  [/(\.(xlsx|xlsb|xlsm|xls|csv|tsv|ods|json)\b|\b(excel|classeur|tableur|portefeuille|segment|top ?\d+|analys\w*|agr[ée]g\w*|requ[êe]te|donn[ée]es|encours|provisions?|exposition|impay[ée]s|ifrs ?9|stage|npl)\b)/i, 'data'],
+  [/\b(excel|xlsx|word|docx|powerpoint|pptx|pdf|rapport|dossier|pr[ée]sentation|deck|livrable|comit[ée]|tableau de bord|dashboard|mail|ultra design|premium)\b/i, 'deliver'],
 ];
 
 export interface ToolPack {

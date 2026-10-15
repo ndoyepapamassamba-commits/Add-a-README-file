@@ -18,7 +18,7 @@ export class Realizer {
   private token = '';
   private errors: RealizeError[] = [];
   private warnings: string[] = [];
-  private stats: { elements: number; text: number; canvases: number; svgs: number; ms: number; loading?: boolean } | null = null;
+  private stats: (Omit<RealizeRun['stats'], 'libs'> & { loading?: boolean }) | null = null;
   private wake: (() => void) | null = null;
   private video: ((v: Video | { error: string }) => void) | null = null;
   private exact: ((b: ImageBitmap, i: number, n: number) => Promise<void>) | null = null;
@@ -47,7 +47,20 @@ export class Realizer {
       this.video?.(v.blob ? { blob: v.blob, mime: v.mime ?? 'video/webm', width: v.width, height: v.height } : { error: v.error ?? 'échec' });
       this.video = null;
     } else if (d.rz === 'stats') {
-      this.stats = { elements: d.elements ?? 0, text: d.text ?? 0, canvases: d.canvases ?? 0, svgs: d.svgs ?? 0, ms: d.ms ?? 0, loading: Boolean(d.loading) };
+      const x = d as unknown as { canvas?: { w: number; h: number } | null; spec?: string | null; tagged?: { name: string; area: number; cx: number; cy: number }[]; declared?: string[] | null };
+      this.stats = {
+        elements: d.elements ?? 0,
+        text: d.text ?? 0,
+        canvases: d.canvases ?? 0,
+        svgs: d.svgs ?? 0,
+        ms: d.ms ?? 0,
+        loading: Boolean(d.loading),
+        // The fidelity measures (v62): largest canvas, the page's own spec, the tagged elements, the declared ones.
+        canvas: x.canvas ?? null,
+        spec: typeof x.spec === 'string' ? x.spec : null,
+        tagged: Array.isArray(x.tagged) ? x.tagged.slice(0, 80) : [],
+        declared: Array.isArray(x.declared) ? x.declared.map(String).slice(0, 80) : undefined,
+      };
       this.wake?.();
     }
   };
@@ -121,13 +134,27 @@ export class Realizer {
    * page draws everything on its canvas, see the « video » rules). Resolves with the recorded file.
    */
   async renderVideo(html: string, seconds: number, o: { data?: unknown; meta?: unknown; fps?: number } = {}): Promise<Video | { error: string }> {
+    let r: Video | { error: string } | null = null;
     // Frame-exact first (virtual clock in the page + WebCodecs), real-time recording as the fallback.
     if (typeof VideoEncoder !== 'undefined') {
-      const r = await this.renderExact(html, seconds, o);
-      if (!('error' in r) || r.error === 'nocanvas') return r;
-      this.onConsole?.('warn', `rendu image par image impossible (${r.error}) : enregistrement en temps réel`);
+      r = await this.renderExact(html, seconds, o);
+      if ('error' in r && r.error !== 'nocanvas') {
+        this.onConsole?.('warn', `rendu image par image impossible (${r.error}) : enregistrement en temps réel`);
+        r = null;
+      }
     }
-    return this.renderRealtime(html, seconds, o);
+    r ??= await this.renderRealtime(html, seconds, o);
+    // The preview comes back ALIVE (v62: after filming it stayed on the virtual clock, frozen on the last image).
+    this.live(html, o);
+    // An empty file is not a video (v62: « 0,0 Mo · 300×150 » was offered for download).
+    if (!('error' in r) && ((r.width ?? 999) * (r.height ?? 999) < 320 * 200 || r.blob.size < 2_000))
+      return { error: `vidéo vide (${r.width ?? '?'}×${r.height ?? '?'}, ${r.blob.size} octets) : la page ne dessine pas sa scène dans un canvas de la taille demandée` };
+    return r;
+  }
+  /** Reloads the page in normal (real-time, interactive) mode. */
+  private live(html: string, o: { data?: unknown; meta?: unknown } = {}): void {
+    this.token = Math.random().toString(36).slice(2);
+    this.frame.srcdoc = buildDocument(html, { data: o.data, meta: o.meta, token: this.token });
   }
 
   /** The page runs on a virtual clock; each image is computed at its exact time, captured and encoded with its timestamp. */

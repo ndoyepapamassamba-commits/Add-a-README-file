@@ -154,3 +154,59 @@ describe('Réalisation — moteur pur (tout prompt devient une page exécutée e
     expect(extractHtml(answers[0] ?? '```html\n<p>x</p>\n```')).toBe('<p>x</p>');
   });
 });
+
+import { extractHtml as extractHtml62, videoProblem } from '../../server/jev/realize/realize';
+describe('v62 — sandbox: no stray fence, a video page must be filmable', () => {
+  it('an UNCLOSED ```html fence is stripped (it showed at the top of the page)', () => {
+    expect(extractHtml62('```html\n<!doctype html><html><body>ok</body></html>')).toBe('<!doctype html><html><body>ok</body></html>');
+    expect(extractHtml62('Voici la page :\n```html\n<!doctype html><html><body>ok</body></html>\n```\nBonne lecture')).toBe('<!doctype html><html><body>ok</body></html>');
+    expect(extractHtml62('Texte avant <!doctype html><html><body>x</body></html> après')).toBe('<!doctype html><html><body>x</body></html>');
+  });
+  it('a 300×150 canvas under HTML controls is not a 1920×1080 video → sent back for correction', () => {
+    const run = (canvas: { w: number; h: number } | null, canvases = canvas ? 1 : 0) => ({ ok: true, errors: [], warnings: [], stats: { elements: 30, text: 120, canvases, svgs: 0, ms: 900, libs: ['three'], canvas } });
+    expect(videoProblem(run({ w: 300, h: 150 }), { seconds: 15, format: '16:9' })?.msg).toMatch(/300×150 au lieu de 1920×1080/);
+    expect(videoProblem(run(null), { seconds: 15, format: '16:9' })?.msg).toMatch(/aucun <canvas>/);
+    expect(videoProblem(run({ w: 1920, h: 1080 }), { seconds: 15, format: '16:9' })).toBeNull();
+    expect(videoProblem(run({ w: 1080, h: 1920 }), { seconds: 10, format: '9:16' })).toBeNull();
+    expect(videoProblem(run({ w: 640, h: 360 }), { seconds: 5, format: '16:9' })).toBeNull();
+    expect(videoProblem(run({ w: 1920, h: 1080 }), { seconds: 10, format: '9:16' })?.msg).toMatch(/1920×1080 au lieu de 1080×1920/);
+  });
+});
+
+import { fidelityProblems, promptItems, detectKind as detectKind62 } from '../../server/jev/realize/realize';
+describe('v62 — FIDÉLITÉ: the request is realised exactly (cité médiévale example)', () => {
+  const PROMPT = 'Une cité médiévale fortifiée avec château central, murailles, village serré avec église, champs dorés, rivière et forêt dense, à la fin d’après-midi';
+  const base = (spec: unknown, tagged: { name: string; area: number; cx: number; cy: number }[]) => ({ ok: true, errors: [], warnings: [], stats: { elements: 80, text: 200, canvases: 0, svgs: 1, ms: 900, libs: [], spec: spec === null ? null : JSON.stringify(spec), tagged } });
+  it('the request is split into its concrete items and its circumstances; a scene is an illustration', () => {
+    const r = promptItems(PROMPT);
+    expect(r.items.map((i) => i.head)).toEqual(['cite', 'chateau', 'murailles', 'village', 'eglise', 'champs', 'riviere', 'foret']);
+    expect(r.circumstances).toEqual(['à la fin d’après-midi']);
+    expect(detectKind62(PROMPT)).toBe('svg');
+  });
+  it('a page without spec, a forgotten village and a hidden church are sent back with measured gaps', () => {
+    expect(fidelityProblems(PROMPT, base(null, []))[0]!.msg).toMatch(/cahier des charges absent/);
+    const spec = {
+      elements: [
+        { name: 'cité fortifiée', where: 'centre' }, { name: 'château central', where: 'centre', size: 'grand' }, { name: 'murailles', where: 'centre' },
+        { name: 'église', where: 'centre' }, { name: 'champs dorés', where: 'bas' }, { name: 'rivière', where: 'bas' }, { name: 'forêt dense', where: 'arrière-plan' },
+      ],
+      light: 'fin d’après-midi, soleil bas doré',
+      view: 'vue plongeante',
+    };
+    const tagged = [
+      { name: 'cité fortifiée', area: 0.4, cx: 0.5, cy: 0.5 }, { name: 'château central', area: 0.08, cx: 0.5, cy: 0.42 }, { name: 'murailles', area: 0.06, cx: 0.5, cy: 0.62 },
+      { name: 'église', area: 0.0005, cx: 0.5, cy: 0.6 }, { name: 'champs dorés', area: 0.2, cx: 0.3, cy: 0.75 }, { name: 'rivière', area: 0.05, cx: 0.5, cy: 0.2 }, { name: 'forêt dense', area: 0.15, cx: 0.5, cy: 0.3 },
+    ];
+    const msgs = fidelityProblems(PROMPT, base(spec, tagged)).map((e) => e.msg);
+    expect(msgs.some((m) => /« village serré »/.test(m))).toBe(true); // named by the request, missing from the spec
+    expect(msgs.some((m) => /« église » est presque invisible/.test(m))).toBe(true);
+    expect(msgs.some((m) => /« rivière » doit être en bas/.test(m))).toBe(true);
+    expect(msgs.some((m) => /château central/.test(m))).toBe(false);
+    expect(msgs.some((m) => /fin d’après-midi/.test(m))).toBe(false); // the light says it
+  });
+  it('a faithful page passes', () => {
+    const spec = { elements: ['cité', 'château', 'murailles', 'village', 'église', 'champs', 'rivière', 'forêt'].map((name) => ({ name })), light: 'fin d’après-midi dorée', view: 'vue aérienne' };
+    const tagged = spec.elements.map((e) => ({ name: e.name, area: 0.05, cx: 0.5, cy: 0.5 }));
+    expect(fidelityProblems(PROMPT, base(spec, tagged))).toEqual([]);
+  });
+});

@@ -26,6 +26,8 @@ export function detectKind(prompt: string, hasData = false): RealizeKind {
   if (/\bjeu\b|\bgame\b|snake|serpent|tetris|pong|casse-briques|morpion|plateforme|flappy|sprite|physique|rebond|particules/.test(p)) return 'game';
   if (hasData || /graphique|tableau de bord|dashboard|courbe|histogramme|camembert|donn[ée]es|statistique|kpi|analyse|visualis/.test(p)) return 'data';
   if (/\bsvg\b|logo|illustration|ic[oô]ne|affiche|dessin|diagramme|sch[ée]ma|organigramme|infographie/.test(p)) return 'svg';
+  // A described SCENE (a place, a landscape, a moment of light) is an illustration, not an application.
+  if (/paysage|cit[ée] |ville|village|ch[âa]teau|for[êe]t|rivi[èe]re|montagne|[îi]le |plage|coucher de soleil|cr[ée]puscule|aube|d[ée]cor|vue a[ée]rienne|panorama|march[ée] |port |jardin|savane|d[ée]sert/.test(p)) return 'svg';
   if (/rapport|article|cv\b|curriculum|lettre|fiche|documentation|page d.accueil|landing|newsletter|menu de restaurant|invitation/.test(p)) return 'doc';
   return 'app';
 }
@@ -83,6 +85,22 @@ export interface VideoSpec {
 }
 export const VIDEO_SIZES: Record<VideoSpec['format'], [number, number]> = { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080] };
 
+/** Kinds whose result is a PICTURE of the request (a scene, an illustration, a 3D world, a video): checked element by element. */
+export const FIDELITY_KINDS: RealizeKind[] = ['svg', '3d', 'video'];
+function fidelityRules(kind: RealizeKind): string[] {
+  return [
+    'FIDÉLITÉ À LA DEMANDE (contrôlée par le bac à sable, au pixel près) :',
+    '- Commence le <body> par <script type="application/json" id="realize-spec"> {"elements":[{"name":"…","where":"centre|gauche|droite|haut|bas|premier plan|arrière-plan|partout","size":"petit|moyen|grand","detail":"…"}],"light":"…","view":"…","style":"…"} </script> : le cahier des charges tiré de la demande, avec CHAQUE élément concret qu’elle nomme (mêmes mots que la demande), sa place, sa taille, ses détails (nombre, densité, couleur, matière), la lumière / l’heure, le point de vue.',
+    '- Chaque élément du cahier des charges est RÉELLEMENT dessiné et porte data-element="<name>" sur son groupe (<g>, <div>, <section>…) ; en canvas / three.js, expose window.REALIZE_ELEMENTS = ["<name>", …] avec les éléments effectivement rendus.',
+    '- Un élément nommé est VISIBLE et RECONNAISSABLE à sa place (pas caché derrière un autre, pas transparent, pas minuscule) ; « dense », « serré », « nombreux » = beaucoup d’objets rapprochés ; une heure du jour fixe la lumière (fin d’après-midi : soleil bas sur l’horizon, lumière dorée rasante, ombres longues dans le même sens).',
+    '- Aucun texte, légende ou titre n’annonce ce qui n’est pas dessiné.',
+    ...(kind === 'svg' || kind === '3d' || kind === 'video'
+      ? ['- Scène : composition en plans (ciel, lointain, plan moyen, premier plan), perspective cohérente (taille décroissante avec la distance, brume atmosphérique au loin), une seule direction de lumière, détails crédibles (créneaux, toits, fenêtres, reflets) — jamais un assemblage de formes plates posées au hasard.']
+      : []),
+    '',
+  ];
+}
+
 export function systemPrompt(kind: RealizeKind, opts: { data?: DataInfo | null; video?: VideoSpec } = {}): string {
   const libs = LIBRARIES.filter((l) => l.kinds.includes(kind));
   const others = LIBRARIES.filter((l) => !l.kinds.includes(kind)).map((l) => l.name);
@@ -96,6 +114,7 @@ export function systemPrompt(kind: RealizeKind, opts: { data?: DataInfo | null; 
     `- Tailwind : <script src="${TAILWIND}"></script> dans <head> pour les classes utilitaires (facultatif).`,
     'Aucune autre ressource réseau : pas d’autre CDN, pas d’API externe, pas d’image distante (dessine en SVG / canvas, ou utilise des emoji).',
     '',
+    ...(FIDELITY_KINDS.includes(kind) ? fidelityRules(kind) : []),
     'RÈGLES DE RÉALISATION :',
     '- Quelque chose de visible et d’utile s’affiche immédiatement (moins de 2 s), même sans interaction.',
     '- Textes en français, mise en page responsive (mobile → grand écran), design soigné : variables CSS, typographie system-ui, espacements généreux, contrastes lisibles, états hover/focus.',
@@ -149,10 +168,36 @@ export function describeData(name: string, rows: Record<string, unknown>[]): Dat
   return { name, rows: rows.length, columns: cols.map((c) => ({ name: c, type: typeOf(c) })), sample: rows[0] ?? {} };
 }
 
-/** The HTML of the answer: the first ```html block, else the first fenced block, else the text. */
+/**
+ * The HTML of the answer: the first ```html block, else the first fenced block, else the text. A fence the model did not
+ * close (answer cut at the token limit, or simply forgotten) is stripped too — v62: « ```html » showed at the top of
+ * the page. When the text holds a whole document, only <!doctype …> … </html> is kept (no prose around it).
+ */
 export function extractHtml(text: string): string {
   const m = /```html\s*\n([\s\S]*?)```/i.exec(text) ?? /```[a-z]*\s*\n([\s\S]*?)```/i.exec(text);
-  return (m ? m[1]! : text).trim();
+  let out = (m ? m[1]! : text).trim();
+  // Unclosed fence: drop the opening line (and a lone closing fence at the end).
+  out = out.replace(/^```[\w-]*[^\n]*\n/, '').replace(/\n?```\s*$/, '').trim();
+  const start = out.search(/<!doctype html|<html[\s>]/i);
+  const end = out.toLowerCase().lastIndexOf('</html>');
+  if (start >= 0 && end > start) out = out.slice(start, end + 7);
+  else if (start > 0) out = out.slice(start);
+  return out.trim();
+}
+
+/**
+ * A VIDEO page must be filmable (v62: a page of HTML controls over a 300×150 canvas gave an empty 0,0 Mo MP4 and a
+ * frozen preview): its largest canvas must cover at least half of the frame asked. Null when it does.
+ */
+export function videoProblem(run: RealizeRun, spec: VideoSpec): RealizeError | null {
+  const [w, h] = VIDEO_SIZES[spec.format];
+  const c = run.stats.canvas;
+  if (!run.stats.canvases)
+    return { kind: 'video', msg: `ce n’est pas une vidéo : la page n’a aucun <canvas>. Dessine TOUT dans <canvas id="video" width="${w}" height="${h}"> (titres compris), aucun élément HTML visible autour.`, line: null };
+  // At least 640×360 worth of pixels, in the asked orientation (± 15 %): the default 300×150 of an unsized canvas fails.
+  if (c && (c.w * c.h < 640 * 360 || Math.abs(c.w / c.h / (w / h) - 1) > 0.15))
+    return { kind: 'video', msg: `ce n’est pas une vidéo filmable : le plus grand canvas mesure ${c.w}×${c.h} au lieu de ${w}×${h}. Crée <canvas id="video" width="${w}" height="${h}">, rends la scène DEDANS (three.js : renderer sur ce canvas, setSize(${w}, ${h}, false)), sans boutons ni panneaux HTML (la vidéo démarre seule).`, line: null };
+  return null;
 }
 
 /** Recording formats, best first: MP4 (H.264) where the browser records it (Chrome / Edge ≥ 126, Safari), WebM otherwise. */
@@ -180,12 +225,107 @@ export const BRIDGE = [
   'document.addEventListener("securitypolicyviolation",function(e){P({rz:"err",kind:"csp",msg:"Content Security Policy : "+e.violatedDirective+" "+(e.blockedURI||""),line:e.lineNumber||null});});',
   '["error","warn","log","info"].forEach(function(k){var o=console[k];console[k]=function(){try{var a=[].slice.call(arguments).map(function(x){try{return typeof x==="string"?x:((x&&x.stack)||JSON.stringify(x));}catch(_){return String(x);}}).join(" ");P({rz:"console",level:k,msg:a.slice(0,600)});}catch(_){}return o.apply(console,arguments);};});',
   '["alert","confirm","prompt"].forEach(function(k){window[k]=function(){P({rz:"err",kind:"blocked",msg:k+"() est bloqué dans le bac à sable",line:null});return null;};});',
-  'var measure=function(){var b=document.body;var els=b?b.querySelectorAll("*"):[];var vis=0;for(var i=0;i<els.length&&i<5000;i++){var r=els[i].getBoundingClientRect();if(r.width>2&&r.height>2){vis++;}}P({rz:"stats",elements:vis,text:b?(b.innerText||"").trim().length:0,canvases:document.querySelectorAll("canvas").length,svgs:document.querySelectorAll("svg").length,ms:Date.now()-start,loading:document.readyState!=="complete"});};',
+  'var tagged=function(){var out={};var ref=null;var big=0;[].slice.call(document.querySelectorAll("svg,canvas")).forEach(function(x){var r=x.getBoundingClientRect();if(r.width*r.height>big&&!(x.parentElement&&x.parentElement.closest("svg"))){big=r.width*r.height;ref=r;}});var vw=window.innerWidth||1,vh=window.innerHeight||1;if(!ref||big<vw*vh*0.15){ref={left:0,top:0,width:vw,height:vh};}[].slice.call(document.querySelectorAll("[data-element]")).forEach(function(el){var n=(el.getAttribute("data-element")||"").trim();if(!n){return;}var r=el.getBoundingClientRect();var cs=getComputedStyle(el);var op=parseFloat(cs.opacity||"1");if(cs.visibility==="hidden"||cs.display==="none"){op=0;}var x0=Math.max(r.left,ref.left),y0=Math.max(r.top,ref.top),x1=Math.min(r.right,ref.left+ref.width),y1=Math.min(r.bottom,ref.top+ref.height);var a=Math.max(0,x1-x0)*Math.max(0,y1-y0)/(ref.width*ref.height)*Math.min(1,op*1.25);var o=out[n]||(out[n]={name:n,area:0,cx:0,cy:0,w:0});if(a>0){o.cx=(o.cx*o.w+((x0+x1)/2-ref.left)/ref.width*a)/(o.w+a);o.cy=(o.cy*o.w+((y0+y1)/2-ref.top)/ref.height*a)/(o.w+a);o.w+=a;}o.area=Math.min(1,o.area+a);});return Object.keys(out).map(function(k){var o=out[k];return {name:o.name,area:Math.round(o.area*10000)/10000,cx:Math.round(o.cx*100)/100,cy:Math.round(o.cy*100)/100};});};',
+  'var measure=function(){var b=document.body;var els=b?b.querySelectorAll("*"):[];var vis=0;for(var i=0;i<els.length&&i<5000;i++){var r=els[i].getBoundingClientRect();if(r.width>2&&r.height>2){vis++;}}P({rz:"stats",elements:vis,text:b?(b.innerText||"").trim().length:0,canvases:document.querySelectorAll("canvas").length,canvas:(function(){var c=bigCanvas();return c?{w:c.width,h:c.height}:null;})(),spec:(function(){var e=document.getElementById("realize-spec");return e?(e.textContent||"").slice(0,4000):null;})(),tagged:(function(){try{return tagged();}catch(_){return [];}})(),declared:(function(){try{var d=window.REALIZE_ELEMENTS;return Array.isArray(d)?d.map(function(x){return String(x&&x.name||x);}).slice(0,60):null;}catch(_){return null;}})(),svgs:document.querySelectorAll("svg").length,ms:Date.now()-start,loading:document.readyState!=="complete"});};',
   'var REC=function(ms,fps){var cs=[].slice.call(document.querySelectorAll("canvas")).filter(function(c){return c.width>10&&c.height>10;}).sort(function(a,b){return b.width*b.height-a.width*a.height;});if(!cs.length){P({rz:"video",error:"nocanvas"});return;}var c=cs[0];var mime="";for(var i=0;i<VIDEO_TYPES.length;i++){if(window.MediaRecorder&&MediaRecorder.isTypeSupported(VIDEO_TYPES[i])){mime=VIDEO_TYPES[i];break;}}if(!mime){P({rz:"video",error:"norecorder"});return;}var rec=new MediaRecorder(c.captureStream(fps||30),{mimeType:mime,videoBitsPerSecond:8000000});var parts=[];rec.ondataavailable=function(ev){if(ev.data&&ev.data.size){parts.push(ev.data);}};rec.onstop=function(){P({rz:"video",blob:new Blob(parts,{type:mime.split(";")[0]}),mime:mime,width:c.width,height:c.height});};rec.start(250);setTimeout(function(){rec.stop();},ms);};',
   'window.addEventListener("message",function(e){if(e.data&&e.data.rz==="measure"){measure();}if(e.data&&e.data.rz==="record"){try{REC(e.data.ms||8000,e.data.fps||30);}catch(err){P({rz:"video",error:String(err&&err.message||err)});}}});',
   'window.addEventListener("load",function(){if(window.__RZ_REC){try{if(window.__RZ_REC.exact){vstep(0);RST(function(){EXACT(window.__RZ_REC.ms,window.__RZ_REC.fps||30);},50);}else{REC(window.__RZ_REC.ms,window.__RZ_REC.fps||30);}}catch(err){P({rz:"video",error:String(err&&err.message||err)});}}RST(measure,1200);});',
   '})();',
 ].join('');
+
+// ── FIDÉLITÉ : the request's items, the page's spec, what is really visible ─────────────────────────────────────────
+const fold = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[’']/g, ' ').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+const STOPW = new Set(['un', 'une', 'des', 'le', 'la', 'les', 'l', 'du', 'de', 'd', 'avec', 'et', 'ou', 'son', 'sa', 'ses', 'leur', 'leurs', 'au', 'aux', 'en', 'tres', 'plein', 'pleine', 'beaucoup', 'quelques', 'plusieurs', 'petit', 'petite', 'petits', 'petites', 'grand', 'grande', 'grands', 'grandes', 'joli', 'jolie', 'beau', 'belle', 'beaux', 'belles', 'on', 'y', 'voit', 'qui', 'que', 'dont', 'sur', 'sous', 'pres', 'autour']);
+const CIRCUM = /^(a|au|aux|en|vers|dans|sous|pendant|par|lors|le soir|le matin|la nuit|de nuit|de jour)\b/;
+/** The concrete items a request names (« château central », « rivière »…) and its circumstances (« à la fin d’après-midi »). */
+export function promptItems(prompt: string): { items: { text: string; head: string }[]; circumstances: string[] } {
+  // The FORMAT words (« une vidéo de 15 secondes », « dessine-moi une illustration de ») are not elements of the scene.
+  const body = prompt
+    .replace(/^\s*(dessine|fais|cr[ée]e|g[ée]n[èe]re|montre|r[ée]alise|imagine)[- ]?(moi|nous)?\s*/i, '')
+    .replace(/\b(une?|la|le)\s+(vid[ée]o|illustration|image|sc[èe]ne|vue|animation|dessin|film|clip|affiche|page)(\s+(3d|anim[ée]e|svg|r[ée]aliste))?(\s+de\s+\d+\s*(secondes?|sec|minutes?|min|s)\b)?\s*(de |d['’]|:|—|-)?/gi, ' ');
+  const segs = body.split(/[,;:\n]| et | avec | ainsi que | entour[ée]e? de | o[uù] /i).map((x) => x.trim()).filter(Boolean);
+  const items: { text: string; head: string }[] = [];
+  const circumstances: string[] = [];
+  for (const seg of segs) {
+    const f = fold(seg);
+    if (!f) continue;
+    if (CIRCUM.test(f)) {
+      circumstances.push(seg);
+      continue;
+    }
+    const head = f.split(' ').find((w) => w.length >= 3 && !STOPW.has(w));
+    if (head && !items.some((i) => i.head === head)) items.push({ text: seg, head });
+  }
+  return { items: items.slice(0, 16), circumstances };
+}
+const stem = (w: string) => fold(w).replace(/(x|s)$/, '').replace(/e$/, '');
+const mentions = (text: string, head: string) => fold(text).split(' ').some((w) => w.length >= 3 && (stem(w) === stem(head) || (stem(head).length >= 5 && stem(w).startsWith(stem(head).slice(0, 5)))));
+type SpecEl = { name: string; where?: string; size?: string };
+function parseSpec(raw: string | null | undefined): { elements: SpecEl[]; light: string; view: string } | null {
+  if (!raw) return null;
+  try {
+    const o = JSON.parse(raw) as { elements?: unknown; light?: unknown; view?: unknown; time?: unknown };
+    const elements = (Array.isArray(o.elements) ? o.elements : [])
+      .map((e) => (typeof e === 'string' ? { name: e } : (e as SpecEl)))
+      .filter((e) => e && typeof e.name === 'string' && e.name.trim())
+      .slice(0, 40);
+    return { elements, light: `${String(o.light ?? '')} ${String(o.time ?? '')}`.trim(), view: String(o.view ?? '') };
+  } catch {
+    return null;
+  }
+}
+/** Where an element must stand (fractions of the scene): centre, left, right, top, bottom. */
+function placeIssue(where: string | undefined, cx: number, cy: number): string | null {
+  const w = fold(where ?? '');
+  if (!w || /partout|libre/.test(w)) return null;
+  if (/centr|milieu/.test(w) && (cx < 0.28 || cx > 0.72 || cy < 0.15 || cy > 0.85)) return 'au centre';
+  if (/gauche/.test(w) && cx > 0.55) return 'à gauche';
+  if (/droite/.test(w) && cx < 0.45) return 'à droite';
+  if (/(haut|ciel)/.test(w) && cy > 0.6) return 'en haut';
+  if (/(bas|premier plan|avant plan)/.test(w) && cy < 0.4) return 'en bas / au premier plan';
+  return null;
+}
+/**
+ * PRECISION CHECK (v62 — « l’interprétation du prompt doit être encore plus précise »): the page's own spec must cover
+ * every item the request names, and every spec element must really be visible at its place. Returns the problems.
+ */
+export function fidelityProblems(prompt: string, run: RealizeRun): RealizeError[] {
+  const out: RealizeError[] = [];
+  const spec = parseSpec(run.stats.spec);
+  if (!spec || !spec.elements.length) {
+    out.push({ kind: 'spec', msg: 'cahier des charges absent : ajoute <script type="application/json" id="realize-spec"> avec chaque élément nommé par la demande, puis data-element sur chacun.', line: null });
+    return out;
+  }
+  const { items, circumstances } = promptItems(prompt);
+  for (const it of items)
+    if (!spec.elements.some((e) => mentions(e.name, it.head) || mentions(`${e.name} ${(e as { detail?: string }).detail ?? ''}`, it.head)))
+      out.push({ kind: 'spec', msg: `la demande nomme « ${it.text} » : aucun élément du cahier des charges ne le représente — ajoute-le et dessine-le.`, line: null });
+  for (const c of circumstances) {
+    const words = fold(c).split(' ').filter((w) => w.length >= 4 && !STOPW.has(w));
+    if (words.length && !words.some((w) => mentions(`${spec.light} ${spec.view}`, w))) out.push({ kind: 'spec', msg: `la demande précise « ${c} » : le cahier des charges (light / view) ne le reprend pas — la lumière et le point de vue doivent le montrer.`, line: null });
+  }
+  const tagged = run.stats.tagged ?? [];
+  const declared = run.stats.declared ?? null;
+  const canvasOnly = !tagged.length && (run.stats.canvases ?? 0) > 0;
+  for (const e of spec.elements) {
+    const t = tagged.find((x) => fold(x.name) === fold(e.name));
+    if (canvasOnly) {
+      if (!declared?.some((d) => fold(d) === fold(e.name))) out.push({ kind: 'spec', msg: `« ${e.name} » n’est pas déclaré rendu (window.REALIZE_ELEMENTS) : dessine-le dans la scène et déclare-le.`, line: null });
+      continue;
+    }
+    if (!t) {
+      out.push({ kind: 'spec', msg: `« ${e.name} » (cahier des charges) n’a aucun élément data-element="${e.name}" dans la page : dessine-le et marque-le.`, line: null });
+      continue;
+    }
+    const min = /petit/.test(fold(e.size ?? '')) ? 0.0008 : /grand/.test(fold(e.size ?? '')) ? 0.03 : 0.004;
+    if (t.area < min) out.push({ kind: 'spec', msg: `« ${e.name} » est presque invisible : ${(t.area * 100).toFixed(2)} % de la scène${e.size ? ` alors qu’il est « ${e.size} »` : ''} — agrandis-le, sors-le de derrière les autres, rends-le opaque.`, line: null });
+    else {
+      const p = placeIssue(e.where, t.cx, t.cy);
+      if (p) out.push({ kind: 'spec', msg: `« ${e.name} » doit être ${p} : son centre est à ${Math.round(t.cx * 100)} % de largeur, ${Math.round(t.cy * 100)} % de hauteur.`, line: null });
+    }
+  }
+  return out.slice(0, 10);
+}
 
 /** Library names a page imports (for the badges and the telemetry). */
 export function librariesUsed(code: string): string[] {
@@ -262,7 +402,7 @@ export function buildDocument(html: string, o: { bridge?: string; data?: unknown
 }
 
 export interface RealizeError {
-  kind: 'runtime' | 'promise' | 'console' | 'resource' | 'csp' | 'empty' | 'timeout' | 'blocked';
+  kind: 'runtime' | 'promise' | 'console' | 'resource' | 'csp' | 'empty' | 'timeout' | 'blocked' | 'video' | 'spec';
   msg: string;
   line: number | null;
 }
@@ -270,7 +410,21 @@ export interface RealizeRun {
   ok: boolean;
   errors: RealizeError[];
   warnings: string[];
-  stats: { elements: number; text: number; canvases: number; svgs: number; ms: number; libs: string[] };
+  stats: {
+    elements: number;
+    text: number;
+    canvases: number;
+    svgs: number;
+    ms: number;
+    libs: string[];
+    canvas?: { w: number; h: number } | null;
+    /** The page's own spec (realize-spec JSON), as written. */
+    spec?: string | null;
+    /** Tagged elements measured in the page: visible share of the scene and centre (fractions 0–1). */
+    tagged?: { name: string; area: number; cx: number; cy: number }[];
+    /** Elements a canvas / three.js page says it rendered (window.REALIZE_ELEMENTS). */
+    declared?: string[];
+  };
 }
 export interface RealizeRound {
   round: number;
@@ -303,13 +457,18 @@ export function realizeFeedback(code: string, run: RealizeRun): string {
   const errs = run.errors.slice(0, 8).map((e, i) => `${i + 1}. [${e.kind}] ${e.msg}${e.line ? `\n${linesAround(code, e.line)}` : ''}`);
   const all = run.errors.map((e) => e.msg).join(' ');
   const hints = HINTS.filter(([re]) => re.test(all)).map(([, h]) => `- ${h}`);
+  const fidelity = run.errors.length > 0 && run.errors.every((e) => e.kind === 'spec' || e.kind === 'video');
   return [
-    'Ta page a échoué dans le bac à sable. Erreurs réelles relevées pendant l’exécution :',
+    fidelity
+      ? 'Ta page s’exécute, mais elle ne réalise pas EXACTEMENT la demande. Écarts mesurés dans la page :'
+      : 'Ta page a échoué dans le bac à sable. Erreurs réelles relevées pendant l’exécution :',
     ...errs,
     ...(run.warnings.length ? ['Avertissements :', ...run.warnings.slice(0, 4).map((w) => `- ${w}`)] : []),
     ...(hints.length ? ['Pistes :', ...hints] : []),
     '',
-    'Corrige la CAUSE sans retirer de fonctionnalité demandée, et renvoie le document COMPLET corrigé dans un seul bloc ```html.',
+    fidelity
+      ? 'Corrige chaque écart (élément ajouté, agrandi, déplacé, rendu visible ; cahier des charges complété) sans rien retirer, et renvoie le document COMPLET dans un seul bloc ```html.'
+      : 'Corrige la CAUSE sans retirer de fonctionnalité demandée, et renvoie le document COMPLET corrigé dans un seul bloc ```html.',
   ].join('\n');
 }
 
@@ -348,6 +507,20 @@ export async function realizeWithCorrection(o: {
   for (let r = 1; r <= maxRounds; r++) {
     const code = extractHtml(await o.generate(messages));
     const run = await o.run(code);
+    // A video page that cannot be filmed is a failure to correct, not a success (it would give an empty MP4).
+    const vp = o.kind === 'video' && run.ok && o.video ? videoProblem(run, o.video) : null;
+    if (vp) {
+      run.ok = false;
+      run.errors.push(vp);
+    }
+    // FIDELITY: what the request names is in the page, visible, at its place (data dashboards are checked by their data).
+    if (run.ok && FIDELITY_KINDS.includes(o.kind) && !o.base) {
+      const fp = fidelityProblems(o.prompt, run);
+      if (fp.length && r < maxRounds) {
+        run.ok = false;
+        run.errors.push(...fp);
+      } else if (fp.length) run.warnings.push(...fp.map((e) => `fidélité : ${e.msg}`));
+    }
     const round = { round: r, code, run, feedback };
     rounds.push(round);
     o.onRound?.(round);

@@ -158,7 +158,13 @@ export const todayFr = (d = new Date()): string => `${String(d.getDate()).padSta
 // ── Normalisation: whatever the model (or a markdown adapter) hands over becomes a complete, numbered dossier ──
 const str = (v: unknown, max = 4000): string => (typeof v === 'string' ? v : v == null ? '' : String(v)).trim().slice(0, max);
 const arr = <T>(v: unknown, f: (x: unknown, i: number) => T | null, max = 60): T[] => (Array.isArray(v) ? v.map((x, i) => f(x, i)).filter((x): x is T => x !== null).slice(0, max) : []);
-const strs = (v: unknown, max = 40): string[] => arr(v, (x) => (str(x) ? str(x) : null), max);
+// A single text where a list is expected (« findings": "…" ») is a one-item list.
+const strs = (v: unknown, max = 40): string[] => arr(typeof v === 'string' && v.trim() ? [v] : v, (x) => (str(x) ? str(x) : null), max);
+/** The first key present (French, English and the usual model variants of the same field). */
+const pick = (o: Record<string, unknown>, ...keys: string[]): unknown => {
+  for (const k of keys) if (o[k] !== undefined && o[k] !== null && o[k] !== '') return o[k];
+  return undefined;
+};
 const num = (v: unknown): number | undefined => {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
   if (typeof v === 'string') {
@@ -172,16 +178,16 @@ const KINDS: FigureKind[] = ['col3d', 'bar3d', 'col', 'bar', 'doughnut', 'pie', 
 
 export function normalizeKpi(x: unknown, i: number): Kpi | null {
   const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
-  const label = str(o.label, 80);
+  const label = str(pick(o, 'label', 'name', 'title', 'libelle', 'indicator', 'indicateur', 'kpi'), 80);
   if (!label) return null;
   const n = num(o.num ?? o.value);
   return {
     code: str(o.code, 8) || `K${String(i + 1).padStart(2, '0')}`,
     label,
     value: str(o.value, 40) || (n !== undefined ? fmtMoney(n) : '—'),
-    sub: str(o.sub, 120) || undefined,
+    sub: str(pick(o, 'sub', 'note', 'comment', 'commentaire', 'context', 'detail'), 120) || undefined,
     tone: TONES.includes(o.tone as Tone) ? (o.tone as Tone) : undefined,
-    method: str(o.method, 300) || undefined,
+    method: str(pick(o, 'method', 'methode', 'formula', 'formule', 'source'), 300) || undefined,
     num: n,
   };
 }
@@ -213,17 +219,18 @@ export function normalizeFigure(x: unknown): Figure | null {
 }
 export function normalizeReco(x: unknown, i: number, axis?: string): Reco | null {
   const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
-  const title = str(o.title, 160) || str(o.action, 160);
+  if (typeof x === 'string' && x.trim()) return normalizeReco({ title: x }, i, axis);
+  const title = str(pick(o, 'title', 'titre', 'recommendation', 'recommandation', 'text', 'action'), 160);
   if (!title) return null;
-  const p = str(o.priority, 2).toUpperCase();
+  const p = str(o.priority ?? o.priorite, 2).toUpperCase();
   return {
     ref: str(o.ref, 8) || `R-${String(i + 1).padStart(2, '0')}`,
     priority: p === 'P2' || p === 'P3' ? p : 'P1',
     title,
-    action: str(o.action, 1200) || title,
-    owner: str(o.owner, 120) || 'À désigner',
-    due: str(o.due, 40) || 'À fixer',
-    kpi: str(o.kpi, 200) || 'Indicateur à définir',
+    action: str(pick(o, 'action', 'detail', 'description'), 1200) || title,
+    owner: str(pick(o, 'owner', 'responsable', 'responsible', 'porteur', 'who'), 120) || 'À désigner',
+    due: str(pick(o, 'due', 'echeance', 'échéance', 'deadline', 'when', 'date'), 40) || 'À fixer',
+    kpi: str(pick(o, 'kpi', 'indicateur', 'indicator', 'metric', 'measure'), 200) || 'Indicateur à définir',
     axis: str(o.axis, 60) || axis,
     ground: str(o.ground, 300) || undefined,
   };
@@ -237,19 +244,19 @@ export function normalizeTable(x: unknown): Table | null {
 }
 export function normalizeChapter(x: unknown, i: number): Chapter | null {
   const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
-  const title = str(o.title, 140);
+  const title = str(pick(o, 'title', 'titre', 'name', 'heading', 'nom'), 140);
   if (!title) return null;
   const n = i + 1;
-  const recos = arr(o.recommandations ?? o.recommendations, (r, k) => normalizeReco(r, k, title), 12);
+  const recos = arr(pick(o, 'recommandations', 'recommendations', 'recos', 'actions', 'plan_action', 'action_plan'), (r, k) => normalizeReco(r, k, title), 12);
   return {
     n,
     title,
     kicker: str(o.kicker, 80) || `CHAPITRE ${n} · ${title.toUpperCase().slice(0, 48)}`,
     headline: str(o.headline, 160) || undefined,
-    constats: strs(o.constats ?? o.findings, 12),
-    analyse: strs(o.analyse ?? o.analysis, 12),
-    cadre: strs(o.cadre ?? o.frame, 10),
-    cas: strs(o.cas ?? o.cases, 10),
+    constats: strs(pick(o, 'constats', 'findings', 'key_findings', 'observations', 'facts', 'points'), 12),
+    analyse: strs(pick(o, 'analyse', 'analysis', 'discussion', 'insights', 'body', 'content', 'text'), 12),
+    cadre: strs(pick(o, 'cadre', 'frame', 'framework', 'regulation', 'reglementation'), 10),
+    cas: strs(pick(o, 'cas', 'cases', 'examples', 'exemples'), 10),
     figures: arr(o.figures, normalizeFigure, 6),
     tables: arr(o.tables, normalizeTable, 4),
     recommandations: recos,
@@ -267,13 +274,24 @@ function dataRef(x: unknown): Dossier['data'] | undefined {
 }
 export function normalizeDossier(raw: unknown, base: Partial<Dossier> = {}): Dossier {
   const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
-  const chapters = arr(o.chapters, normalizeChapter, 14);
+  const chapters = arr(pick(o, 'chapters', 'chapitres', 'sections', 'parts', 'parties'), normalizeChapter, 14);
+  // Recommendations written at the TOP of the dossier (v62: « 0 recommandations » twice in the ESN chat) go to the
+  // chapter they name (axis / chapter title), else to the last chapter, else to a « Plan d'action » chapter.
+  const loose = arr(pick(o, 'recommandations', 'recommendations', 'recos', 'actions', 'action_plan', 'plan_action'), (x, k) => normalizeReco(x, k), 30);
+  if (loose.length) {
+    if (!chapters.length) chapters.push({ ...normalizeChapter({ title: "Plan d'action" }, 0)! });
+    for (const rec of loose) {
+      const fold = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\W+/g, ' ').trim();
+      const target = chapters.find((c) => rec.axis && fold(c.title) === fold(rec.axis)) ?? chapters[chapters.length - 1]!;
+      if (target.recommandations.length < 12) target.recommandations.push({ ...rec, axis: rec.axis ?? target.title });
+    }
+  }
   // Recommendation references are unique across the dossier (R-01 … in reading order).
   let r = 0;
   for (const c of chapters) for (const rec of c.recommandations) rec.ref = `R-${String(++r).padStart(2, '0')}`;
-  const kpis = arr(o.kpis, normalizeKpi, 10).map((k, i) => ({ ...k, code: `K${String(i + 1).padStart(2, '0')}` }));
-  const decisions = arr(o.decisions, (d, i) => {
-    const text = typeof d === 'string' ? str(d, 400) : str((d as Record<string, unknown>)?.text, 400);
+  const kpis = arr(pick(o, 'kpis', 'indicators', 'indicateurs', 'metrics', 'key_figures', 'chiffres_cles'), normalizeKpi, 10).map((k, i) => ({ ...k, code: `K${String(i + 1).padStart(2, '0')}` }));
+  const decisions = arr(pick(o, 'decisions', 'décisions', 'decisions_requested', 'asks', 'decisions_attendues'), (d, i) => {
+    const text = typeof d === 'string' ? str(d, 400) : str(pick((d ?? {}) as Record<string, unknown>, 'text', 'decision', 'title', 'label'), 400);
     return text ? { code: `D${i + 1}`, text } : null;
   }, 9);
   const hypotheses = arr(o.hypotheses ?? o.hypotheses_register, (h, i) => {
@@ -306,9 +324,9 @@ export function normalizeDossier(raw: unknown, base: Partial<Dossier> = {}): Dos
     asOf: str(o.asOf, 10) || base.asOf,
     confidentiality: str(o.confidentiality, 80) || base.confidentiality,
     dataSource: str(o.dataSource, 240) || base.dataSource,
-    thesis: str(o.thesis, 1500) || base.thesis || '',
+    thesis: str(pick(o, 'thesis', 'these', 'thèse', 'summary', 'executive_summary', 'synthese', 'synthèse'), 1500) || base.thesis || '',
     kpis,
-    messages: strs(o.messages ?? o.key_messages, 10),
+    messages: strs(pick(o, 'messages', 'key_messages', 'messages_cles', 'highlights', 'takeaways'), 10),
     method: method
       ? {
           steps: arr(method.steps, (s, i) => {

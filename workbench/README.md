@@ -202,7 +202,11 @@ Le script a été vérifié dans Blender 5 (exécution, rendu Cycles, import du 
 - **Plugins MCP** (stdio, HTTP, SSE, OAuth) : préréglages Blender, Canva, Figma, Notion, Linear et MCP gratuits (Context7, DeepWiki, Fetch, Time, DuckDuckGo, Memory, Sequential Thinking, Playwright, Git). L'agent les utilise automatiquement, sous contrôle des permissions.
 - **Code** : éditeur Monaco (onglets, diff, « Demander à l'IA »), arbre de fichiers, recherche, **aperçu en direct**, changements **acceptables / annulables**, Git (commit ; jamais de push sans confirmation).
 - **Terminal** avec classification du risque des commandes, **navigateur intégré** Playwright en direct (actions, console, réseau, captures, téléchargements).
-- **Données** : CSV, Excel, JSON — profil, anomalies, requêtes, graphiques interactifs, exports.
+- **Données** : CSV, Excel (.xlsx, .xlsb…), JSON — profil, anomalies, requêtes, graphiques interactifs, exports.
+  - **Carte du portefeuille** jointe à chaque fichier de données : noms exacts des colonnes, codes avec leur libellé (segment 8200 = Entreprises locales, via la codification APEX), descriptions de la feuille dictionnaire du fichier (« ColumnDescription »…), colonnes les plus utilisées sur cette forme de fichier.
+  - **Requêtes tolérantes** : les formes écrites par les modèles sont comprises (`"sum(X)"`, `{sum:"X"}`, `==`, `not in`, `between`, JSON en texte, tri sur l'alias d'une agrégation…) et les mots métier aussi (« expo », « encours », « statut », « provision IFRS 9 »). Deux colonnes possibles = liste courte, ou arbitrage JEV quand il est sûr (p ≥ 0,85) ; le choix fait ensuite est **appris** pour les extractions suivantes (navigateur seulement).
+  - **« continue »** reprend la mission du chat telle quelle (même demande, même design, fichiers déjà produits) ; les chiffres d'une réponse sont toujours confrontés aux résultats des outils.
+- **Bac à sable « Réalisation »** : une demande d'image ou de scène devient un **cahier des charges** (`realize-spec`) que la page doit tenir ; chaque élément nommé est mesuré au pixel (présence, taille, position) et les écarts reviennent au modèle. Une vidéo doit être filmable (canvas à la taille demandée) ; l'aperçu redevient vivant après le tournage.
 - **Téléversement** de fichiers, textes, documents (PDF, Word, PowerPoint…), photos (vision).
 - Mémoire de projet (`PROJECT_CONTEXT.md`), artefacts, palette de commandes `Ctrl+K`, sessions persistantes, export Markdown / JSON / PDF, journal d'audit.
 

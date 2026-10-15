@@ -13,7 +13,7 @@ export interface ToolFirewallResult {
   available: number;
 }
 const FILES = /(fichier|file|dossier|r[ée]pertoire|chemin|path|lis (?:le|la|ce)|ouvre|\.\w{2,5}\b|repo|projet)/i;
-const COMPUTE = /(calcul\w*|total\w*|moyenne|somme|combien|pourcentage|ratio|compare\w* (?:les )?chiffres)/i;
+const COMPUTE = /(calcul\w*|total\w*|moyenne|somme|combien|pourcentage|ratio|compare\w* (?:les )?chiffres|analys\w*|top ?\d+|classement|segment|agr[ée]g\w*|r[ée]partition|concentration|portefeuille|encours|provisions?|exposition)/i;
 const WEB = /(cherche\w*|recherche\w*|actualit[ée]|web|internet|sources?|prix actuel|cours (?:du|de)|derni[èe]res? nouvelles?|aujourd['’]hui)/i;
 const BROWSE = /(https?:\/\/|ouvre le site|navigue|navigateur|page web|capture d['’][ée]cran|rendu)/i;
 const DELIVER = /(rapport|export\w*|excel|xlsx|word|docx|powerpoint|pptx|pdf|livrable|tableau de bord|dashboard|mail|e-?mail|synth[èe]se)/i;
@@ -37,7 +37,8 @@ export function toolFirewall(o: { names: string[]; lane: LanePolicy; reclass: Re
     if (COMPUTE.test(t) && (o.attachments > 0 || FILES.test(t))) need.push(...family('data'), 'code.run');
     if (WEB.test(t)) need.push(...family('web'));
     if (BROWSE.test(t) || rc.visualRegression) need.push(...family('browser'));
-    if (DELIVER.test(t) && rc.mutationRequired) need.push(...family('deliver'));
+    // A deliverable asked on an attached / named file is a deliverable to produce, even when the reclassifier saw no mutation.
+    if (DELIVER.test(t) && (rc.mutationRequired || o.attachments > 0 || FILES.test(t))) need.push(...family('deliver'));
     for (const n of need) allow.add(n);
     reasons.push(`voie ${o.lane.lane} : ensemble minimal dérivé de la mission (${[...allow].length - 1} outil(s))`);
   } else {

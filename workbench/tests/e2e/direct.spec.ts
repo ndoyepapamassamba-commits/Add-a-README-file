@@ -113,7 +113,7 @@ test('uploads a CSV and the agent analyses it with data tools', async ({ page })
   await send(page, 'Total par mois ?');
   await expect(page.getByText('Février : 35.')).toBeVisible();
   // The attachment profile went into the user turn, and the exact tool result back to the model.
-  expect(JSON.stringify(mock.requests[0]!.messages)).toContain('Rows: 3');
+  expect(JSON.stringify(mock.requests[0]!.messages)).toContain('PORTFOLIO CARD — uploads/ventes.csv · 3 rows');
   expect(JSON.stringify(mock.requests[1]!.messages)).toContain('| 2026-02 | 35 |');
 });
 

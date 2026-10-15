@@ -8,10 +8,12 @@ import {
   rowsToText,
   QuerySpecSchema,
   coerceQuery,
-  resolveColumn,
-  resolveQueryColumns,
+  normName,
+  queryColumns,
   type Dataset,
+  type QuerySpec,
 } from '../../server/services/dataCore';
+import { DICT_SHEET, dictionaryFrom, missingText, resolveColumnSmart, resolveQuery, schemaPacket, shapeSignature, type LexiconCtx } from '../../server/services/dataLexicon';
 import { ChartSpecSchema, computeChart } from '../../server/services/vizEngine';
 import { isImage } from '../../server/services/documentsCore';
 import { pickFromTier } from '../../server/llm/router';
@@ -279,31 +281,194 @@ function loadDataset(path: string, sheet?: string): Dataset {
   dsCache.set(key, ds);
   return ds;
 }
-/**
- * The dataset a query really targets: column names forgiven (case, accents, spaces); when no sheet was given and the
- * columns live in ANOTHER sheet of the workbook, that sheet is used (and said). Unknown columns → an error listing the
- * real ones, per sheet — the model can fix its query in one step instead of looping.
- */
-function datasetForQuery(path: string, sheet: string | undefined, spec: Record<string, unknown>): { ds: Dataset; query: Record<string, unknown>; note: string } {
-  const ds = loadDataset(path, sheet);
-  const r = resolveQueryColumns(spec, ds.columns);
-  if (!r.missing.length) return { ds, query: r.query, note: '' };
-  if (!sheet)
-    for (const other of ds.sheets.filter((x) => x !== ds.sheet)) {
-      const o = loadDataset(path, other);
-      const r2 = resolveQueryColumns(spec, o.columns);
-      if (!r2.missing.length) return { ds: o, query: r2.query, note: `(feuille « ${other} » utilisée : les colonnes demandées s'y trouvent)\n` };
+/** The file's own dictionary sheet (« ColumnDescription »…: column → description), looked for once per file version. */
+const dictCache = new Map<string, { dict: Record<string, string> | null; sheet: string | null }>();
+export function dictionaryOfFile(ds: Dataset): { dict: Record<string, string> | null; sheet: string | null } {
+  const f = getFile(ds.path);
+  if (!f || ds.sheets.length < 2) return { dict: null, sheet: null };
+  const key = `${f.path}|${f.size}|${f.updatedAt}|${ds.sheet ?? ''}`;
+  const hit = dictCache.get(key);
+  if (hit) return hit;
+  let out: { dict: Record<string, string> | null; sheet: string | null } = { dict: null, sheet: null };
+  for (const s of ds.sheets.filter((x) => x !== ds.sheet && DICT_SHEET.test(x)).slice(0, 3))
+    try {
+      const d = loadDataset(ds.path, s);
+      const dict = d.rows.length <= 2000 ? dictionaryFrom(d, ds.columns) : null;
+      if (dict) {
+        out = { dict, sheet: s };
+        break;
+      }
+    } catch {
+      /* an unreadable sheet is not a dictionary */
     }
-  const where = ds.sheets.length > 1 ? ` de la feuille « ${ds.sheet} »` : '';
-  const elsewhere = ds.sheets
-    .filter((x) => x !== ds.sheet)
-    .map((x) => {
-      const cols = loadDataset(path, x).columns;
-      const hits = r.missing.filter((m) => resolveColumn(cols, m));
-      return hits.length ? ` La feuille « ${x} » contient : ${hits.join(', ')} → ajoutez "sheet": "${x}".` : '';
-    })
-    .join('');
-  throw new Error(`Colonne(s) introuvable(s)${where} : ${r.missing.join(', ')}.${elsewhere} Colonnes disponibles : ${ds.columns.slice(0, 60).join(' | ')}${ds.columns.length > 60 ? ' …' : ''}`);
+  dictCache.set(key, out);
+  return out;
+}
+/** What the app knows of this file SHAPE: its dictionary and the aliases learned on it (kept in this browser only). */
+function lexiconOf(ds: Dataset): LexiconCtx & { sig: string } {
+  const sig = shapeSignature(ds.columns);
+  return { sig, dict: dictionaryOfFile(ds).dict ?? undefined, aliases: useStore.getState().settings.columnAliases?.[sig] };
+}
+/** Asks that were ambiguous, per file shape: the column the next successful query uses among the candidates is LEARNED. */
+const pendingAsks = new Map<string, { name: string; candidates: string[] }[]>();
+function learnAliases(sig: string, query: Record<string, unknown>) {
+  const used = new Set(queryColumns(query));
+  // USAGE MEMORY: the columns the analyses of this file shape really use (shown first on the portfolio card next time).
+  if (used.size) {
+    const st = useStore.getState();
+    const all = { ...(st.settings.columnUsage ?? {}) };
+    const cur = { ...(all[sig] ?? {}) };
+    for (const c of used) cur[c] = (cur[c] ?? 0) + 1;
+    all[sig] = cur;
+    // Bounded: the 40 most recent file shapes.
+    const keys = Object.keys(all);
+    if (keys.length > 40) delete all[keys[0]!];
+    st.patchSettings({ columnUsage: all });
+  }
+  const pend = pendingAsks.get(sig);
+  if (!pend?.length) return;
+  const learned: Record<string, string> = {};
+  for (const p of pend) {
+    const hit = p.candidates.filter((c) => used.has(c));
+    if (hit.length === 1) learned[normName(p.name)] = hit[0]!;
+  }
+  pendingAsks.set(sig, pend.filter((p) => !learned[normName(p.name)]));
+  if (!Object.keys(learned).length) return;
+  const st = useStore.getState();
+  const all = { ...(st.settings.columnAliases ?? {}) };
+  all[sig] = { ...(all[sig] ?? {}), ...learned };
+  st.patchSettings({ columnAliases: all });
+}
+/**
+ * The dataset and the VALID query a model meant (v62 — ESN chat: a dozen failed data.query in a row): the query shape
+ * is forgiven (coerceQuery), column names are resolved by the lexicon (business words, the file's dictionary sheet,
+ * aliases learned on this file shape), a sort on an aggregation output works; when no sheet was given and the columns
+ * live in ANOTHER sheet, that sheet is used (and said). What cannot be resolved is an error naming, per column, the
+ * short list to choose from — the model fixes its query in one step instead of looping.
+ */
+class AmbiguousColumns extends Error {
+  constructor(
+    message: string,
+    readonly ds: Dataset,
+    readonly items: { name: string; candidates: string[] }[],
+  ) {
+    super(message);
+  }
+}
+function prepareQuery(path: string, sheet: string | undefined, raw: unknown, defaults: Record<string, unknown> = {}, extra: Record<string, string> = {}): { ds: Dataset; spec: QuerySpec; note: string } {
+  const spec = { ...defaults, ...((coerceQuery(raw) as Record<string, unknown>) ?? {}) };
+  const ds = loadDataset(path, sheet);
+  const attempt = (d: Dataset) => {
+    const lx = lexiconOf(d);
+    if (Object.keys(extra).length) lx.aliases = { ...(lx.aliases ?? {}), ...extra };
+    return { d, lx, r: resolveQuery(spec, d.columns, lx) };
+  };
+  let a = attempt(ds);
+  let note = '';
+  if (a.r.missing.length && !sheet)
+    for (const other of ds.sheets.filter((x) => x !== ds.sheet && !DICT_SHEET.test(x))) {
+      const b = attempt(loadDataset(path, other));
+      if (!b.r.missing.length) {
+        a = b;
+        note = `(feuille « ${other} » utilisée : les colonnes demandées s'y trouvent)\n`;
+        break;
+      }
+    }
+  if (a.r.missing.length) {
+    const amb = a.r.missing.filter((m) => m.ambiguous);
+    if (amb.length) pendingAsks.set(a.lx.sig, [...(pendingAsks.get(a.lx.sig) ?? []).filter((p) => !amb.some((m) => m.name === p.name)), ...amb.map((m) => ({ name: m.name, candidates: m.candidates }))]);
+    const where = a.d.sheets.length > 1 ? ` (feuille « ${a.d.sheet} »)` : '';
+    const msg = `Colonne(s) à préciser${where} : ${missingText(a.r.missing)}. Colonnes disponibles : ${a.d.columns.slice(0, 60).join(' | ')}${a.d.columns.length > 60 ? ' …' : ''}`;
+    if (a.r.missing.every((m) => m.ambiguous)) throw new AmbiguousColumns(msg, a.d, a.r.missing.map((m) => ({ name: m.name, candidates: m.candidates })));
+    throw new Error(msg);
+  }
+  const parsed = QuerySpecSchema.safeParse(a.r.query);
+  if (!parsed.success)
+    throw new Error(
+      `Requête invalide : ${parsed.error.issues.map((i) => `${i.path.join('.')} — ${i.message}`).join(' ; ')}. Exemple valide : {"path":"${a.d.path}","sheet":"${a.d.sheet ?? ''}","filters":[{"column":"${a.d.columns[0] ?? 'Colonne'}","op":"eq","value":"…"}],"groupBy":[{"column":"${a.d.columns[0] ?? 'Colonne'}"}],"aggregations":[{"column":"*","fn":"count","as":"n"},{"column":"${a.d.columns[1] ?? 'Montant'}","fn":"sum","as":"total"}],"sort":[{"column":"total","dir":"desc"}],"limit":20}`,
+    );
+  learnAliases(a.lx.sig, a.r.query);
+  if (a.r.mapped.length) note += `(colonnes interprétées : ${a.r.mapped.map((m) => `${m.from} → ${m.to}`).join(' ; ')})\n`;
+  return { ds: a.d, spec: parsed.data, note };
+}
+/**
+ * JEV ARBITER (v62, « aller vite ») — an AMBIGUOUS column (« Provision » = IFRS 9 or regulatory?) is settled by one JEV
+ * System One judgment (a few hundred ms, ≈ 0 $) reading the user's request, instead of a full model round trip. Only a
+ * confident pick (p ≥ 0.85, never « none ») is applied, and it is said; otherwise the short list goes back to the model.
+ */
+async function prepareQueryFast(ctx: ToolCtx, path: string, sheet: string | undefined, raw: unknown, defaults: Record<string, unknown> = {}): Promise<{ ds: Dataset; spec: QuerySpec; note: string }> {
+  try {
+    return prepareQuery(path, sheet, raw, defaults);
+  } catch (e) {
+    if (!(e instanceof AmbiguousColumns)) throw e;
+    const cfg = jevSettings();
+    const key = getJevKey();
+    if (!key || !cfg.enabled) throw e;
+    const sess = useStore.getState().sessions.find((x) => x.id === ctx.sessionId);
+    const request = [...(sess?.items ?? [])].reverse().find((i) => i.kind === 'user') as { text?: string } | undefined;
+    const { dict } = dictionaryOfFile(e.ds);
+    const state = {
+      request: String(request?.text ?? '').slice(0, 1500),
+      file: e.ds.path.split('/').pop(),
+      asks: e.items.map((it) => ({ asked: it.name, candidates: it.candidates.map((c) => ({ column: c, description: dict?.[c] ?? '' })) })),
+    };
+    const questions: Record<string, { type: 'choice'; instructions: string; criteria: Record<string, string> }> = {};
+    e.items.forEach((it, i) => {
+      const criteria: Record<string, string> = {};
+      it.candidates.forEach((c, k) => (criteria[`c${k}`] = `the column « ${c} »${dict?.[c] ? ` — ${dict[c]}` : ''}`));
+      criteria.none = 'none of these columns: the request does not say which one is meant';
+      questions[`ask_${i}`] = { type: 'choice', instructions: `In \`asks[${i}]\`, the analyst wrote « ${it.name} » in a query on the data file, while working on the user's \`request\`. Which real column of the file did they mean?`, criteria };
+    });
+    const picks: Record<string, string> = {};
+    let ms: number;
+    try {
+      const t0 = Date.now();
+      const ans = await callJevQuestions(cfg, key, state, questions, (url, init) => fetch(url, init));
+      ms = Date.now() - t0;
+      acct.add(ctx.sessionId, { kind: 'jev1', step: 0, model: ans.model, tokensIn: ans.inputTokens, tokensOut: 0, cost: ans.costUsd, costSource: 'calculated', ms });
+      e.items.forEach((it, i) => {
+        const a = ans.answers[`ask_${i}`] as { choice?: string; confidence?: number; probabilities?: Record<string, number> } | undefined;
+        const choice = a?.choice ?? '';
+        const p = a?.probabilities?.[choice] ?? a?.confidence ?? 0;
+        const k = /^c(\d+)$/.exec(choice);
+        if (k && p >= 0.85 && it.candidates[Number(k[1])]) picks[normName(it.name)] = it.candidates[Number(k[1])]!;
+      });
+    } catch {
+      throw e;
+    }
+    if (Object.keys(picks).length < e.items.length) throw e;
+    const r = prepareQuery(path, sheet, raw, defaults, picks);
+    return { ...r, note: `${r.note}(colonne ambiguë tranchée par JEV en ${ms} ms d'après la demande : ${e.items.map((it) => `${it.name} → ${picks[normName(it.name)]}`).join(' ; ')})\n` };
+  }
+}
+/** One column name of a chart / brief resolved like a query column (business words, dictionary, learned aliases). */
+function columnOf(ds: Dataset, name: string): string {
+  const r = resolveColumnSmart(ds.columns, name, lexiconOf(ds));
+  if (r.column) return r.column;
+  throw new Error(`Colonne à préciser : ${missingText([{ name, candidates: r.candidates, ambiguous: !!r.ambiguous }])}. Colonnes disponibles : ${ds.columns.slice(0, 60).join(' | ')}`);
+}
+/** The PORTFOLIO CARD of a data file (columns, codes with their labels, dictionary, learned aliases), read locally. */
+export function portfolioCard(ds: Dataset): string {
+  const prof = data.profile(ds);
+  const { dict, sheet } = dictionaryOfFile(ds);
+  const lx = lexiconOf(ds);
+  const cols = prof.columns.map((c) => {
+    let codes: { value: string; count: number }[] | undefined;
+    if ((c.type === 'integer' || c.type === 'number') && c.unique <= 40) {
+      const m = new Map<string, number>();
+      for (const r of ds.rows) {
+        const v = r[c.name];
+        if (v === null || v === undefined || v === '') continue;
+        const k = String(v).trim();
+        m.set(k, (m.get(k) ?? 0) + 1);
+      }
+      codes = [...m.entries()].sort((x, y) => y[1] - x[1]).map(([value, count]) => ({ value, count }));
+    }
+    return { name: c.name, type: c.type, unique: c.unique, missing: c.missing, top: c.top, codes, sum: c.numeric?.sum };
+  });
+  const card = schemaPacket({ path: ds.path, sheet: ds.sheet, sheets: ds.sheets, rowCount: prof.rowCount, columns: cols, dict, dictSheet: sheet, aliases: lx.aliases, usage: useStore.getState().settings.columnUsage?.[lx.sig] });
+  const num = prof.columns.filter((c) => c.numeric && c.unique > 40).map((c) => `${c.name}: sum ${Math.round(c.numeric!.sum).toLocaleString('fr-FR')} · min ${c.numeric!.min} · max ${c.numeric!.max}`);
+  return `${card}${num.length ? `\nTotals (whole file — check every figure you write against a query): ${num.slice(0, 12).join(' ; ')}` : ''}${prof.anomalies.length ? `\nAnomalies: ${prof.anomalies.slice(0, 6).join(' ; ')}` : ''}`;
 }
 
 /** The data file a brief was computed on (path, sheet, measure, entity, the explanatory dimensions as selectors). */
@@ -378,10 +543,22 @@ async function renderDossier(
   return { out, html };
 }
 /** A brief .json written by report.analyse, or an error naming the path. */
-function loadBrief(path: string): Brief {
+function loadBrief(path: string, focus = ''): Brief {
   const bf = getFile(path);
-  const brief = bf ? (JSON.parse(new TextDecoder().decode(bytesOf(bf))) as Brief) : null;
-  if (!brief?.numbers) throw new Error(`Brief introuvable ou illisible : ${path}`);
+  if (!bf) throw new Error(`Brief introuvable : ${path}`);
+  // A DATA FILE given as the brief (v62: « Unexpected token 'P', "PK…" is not valid JSON » on an .xlsx): the brief is
+  // computed from it, locally, like report.analyse would.
+  if (isDataFile(bf.path) && !/\.json$/i.test(bf.path)) {
+    const ds = loadDataset(bf.path);
+    return buildBrief(ds.columns, ds.rows as Record<string, unknown>[], { title: focus || bf.path.split('/').pop() || 'Analyse', source: `${ds.path}${ds.sheet ? ` [${ds.sheet}]` : ''}` });
+  }
+  let brief: Brief | null;
+  try {
+    brief = JSON.parse(new TextDecoder().decode(bytesOf(bf))) as Brief;
+  } catch {
+    throw new Error(`Brief illisible : ${path} n'est pas un brief .json (report.analyse l'écrit) ni un fichier de données.`);
+  }
+  if (!brief?.numbers) throw new Error(`Brief illisible : ${path} (attendu : le .json écrit par report.analyse, ou le fichier de données lui-même).`);
   return brief;
 }
 /**
@@ -632,7 +809,7 @@ export const TOOLS: DirectTool[] = [
   {
     name: 'data.query',
     description:
-      'Exact computations on a data file: filters, group by (with date buckets day/week/month/quarter/year), aggregations (sum, avg, count, min, max, median, count_distinct), sort, limit.',
+      'Exact computations on a data file: filters, group by (with date buckets day/week/month/quarter/year), aggregations (sum, avg, count, min, max, median, count_distinct), sort, limit. Use the exact column names of the PORTFOLIO CARD (business words like « expo », « statut », « encours » are also resolved). A « top N of a segment » is ONE call: filters + groupBy + aggregations with "as" + sort on that alias + limit N.',
     parameters: obj(
       {
         path: str('Data file path'),
@@ -686,15 +863,12 @@ export const TOOLS: DirectTool[] = [
     risk: 'read',
     readOnly: true,
     label: (a) => `Requête sur ${S(a.path)}`,
-    async run(a) {
+    async run(a, ctx) {
       const { path, sheet, ...spec } = a;
-      const { ds, query, note } = datasetForQuery(S(path), S(sheet) || undefined, coerceQuery(spec) as Record<string, unknown>);
-      const parsed = QuerySpecSchema.safeParse(query);
-      if (!parsed.success)
-        throw new Error(
-          `Requête invalide : ${parsed.error.issues.map((i) => `${i.path.join('.')} — ${i.message}`).join(' ; ')}. Exemple valide : {"path":"${ds.path}","sheet":"${ds.sheet ?? ''}","groupBy":[{"column":"${ds.columns[0] ?? 'Colonne'}"}],"aggregations":[{"column":"*","fn":"count"},{"column":"${ds.columns[1] ?? 'Montant'}","fn":"sum"}]}`,
-        );
-      const r = data.query(ds, parsed.data);
+      // A whole query given as one « query » / « spec » object (or a JSON string) is read the same way.
+      const raw = spec.query ?? spec.spec ?? spec;
+      const { ds, spec: q, note } = await prepareQueryFast(ctx, S(path), S(sheet) || undefined, raw);
+      const r = data.query(ds, q);
       return ok(
         `${r.rowCount} ligne(s)${note ? ` · feuille « ${ds.sheet} »` : ''}`,
         // At most 60 rows go back to the model (tokens): aggregate, or page with limit / offset for more.
@@ -752,7 +926,13 @@ export const TOOLS: DirectTool[] = [
     label: (a) => `Graphique « ${S(a.title)} »`,
     async run(a, ctx) {
       const spec = ChartSpecSchema.parse(a) as ChartSpec;
-      const chart = computeChart(loadDataset(spec.source.path, spec.source.sheet), spec);
+      const cds = loadDataset(spec.source.path, spec.source.sheet);
+      // Column names read like data.query's (business words, the file's dictionary, learned aliases).
+      if (spec.x) spec.x = { ...spec.x, column: columnOf(cds, spec.x.column) };
+      if (spec.y) spec.y = spec.y.map((y) => ({ ...y, column: y.column === '*' ? y.column : columnOf(cds, y.column) }));
+      if (spec.series) spec.series = columnOf(cds, spec.series);
+      if (spec.filters?.length) spec.filters = prepareQuery(spec.source.path, spec.source.sheet, { filters: spec.filters }).spec.filters ?? spec.filters;
+      const chart = computeChart(cds, spec);
       const art = saveArtifact(ctx.sessionId, {
         name: spec.title,
         type: 'chart',
@@ -1271,18 +1451,22 @@ export const TOOLS: DirectTool[] = [
     risk: 'read',
     readOnly: false,
     label: (a) => `Brief d'analyse ${S(a.path)}${S(a.focus) ? ` — ${S(a.focus).slice(0, 40)}` : ''}`,
-    async run(a) {
-      const ds = loadDataset(S(a.path), S(a.sheet) || undefined);
-      const filters = Array.isArray(a.filters) && a.filters.length ? (a.filters as object[]) : [];
-      const r = filters.length ? data.query(ds, QuerySpecSchema.parse(coerceQuery({ limit: 1_000_000, filters }))) : { columns: ds.columns, rows: ds.rows as Record<string, unknown>[], rowCount: ds.rows.length };
+    async run(a, ctx) {
+      const filters = a.filters !== undefined && a.filters !== null && !(Array.isArray(a.filters) && !a.filters.length) ? a.filters : null;
+      // Filters are read like data.query's (business words, « == », « not in »…) and may move to the sheet that has them.
+      const pq = filters ? await prepareQueryFast(ctx, S(a.path), S(a.sheet) || undefined, { filters }, { limit: 5_000_000 }) : null;
+      const ds = pq?.ds ?? loadDataset(S(a.path), S(a.sheet) || undefined);
+      const r = pq ? data.query(ds, pq.spec) : { columns: ds.columns, rows: ds.rows as Record<string, unknown>[], rowCount: ds.rows.length };
       // WHAT WAS LEARNED on a file of the same shape (same columns): its measure and dimensions, unless asked otherwise.
       const sig = [...ds.columns].sort().join('|').slice(0, 400);
       const st0 = useStore.getState();
       const lesson = st0.settings.reportLessons?.[sig];
-      const measure = S(a.measure) || lesson?.measure;
-      const dims = Array.isArray(a.dims) && a.dims.length ? a.dims.map(S) : lesson?.dims;
+      // « expo », « provision IFRS9 », « segment »: the real columns (an unknown name is left to the brief, which says so).
+      const soft = (n: string) => (n ? resolveColumnSmart(ds.columns, n, lexiconOf(ds)).column ?? n : n);
+      const measure = soft(S(a.measure)) || lesson?.measure;
+      const dims = Array.isArray(a.dims) && a.dims.length ? a.dims.map((x) => soft(S(x))) : lesson?.dims;
       const title = S(a.title) || S(a.focus) || ds.path.split('/').pop() || 'Analyse';
-      const brief = buildBrief(r.columns, r.rows, { title, source: `${ds.path}${ds.sheet ? ` [${ds.sheet}]` : ''}${filters.length ? ' (filtré)' : ''}`, measure, dims, top: Number(a.top) || undefined });
+      const brief = buildBrief(r.columns, r.rows, { title, source: `${ds.path}${ds.sheet ? ` [${ds.sheet}]` : ''}${pq ? ' (filtré)' : ''}`, measure, dims, top: Number(a.top) || undefined });
       const md = briefToMarkdown(brief);
       const base = `outputs/${(S(a.name) || ds.path.split('/').pop()?.replace(/\.[^.]+$/, '') || 'analyse').replace(/[^\w.-]+/g, '-')}-brief`;
       const mdPath = uniquePath(`${base}.md`);
@@ -1496,7 +1680,7 @@ export const TOOLS: DirectTool[] = [
     readOnly: false,
     label: (a) => `Composer le dossier ${S(a.name)}`,
     async run(a, ctx) {
-      const brief = S(a.brief) ? loadBrief(S(a.brief)) : null;
+      const brief = S(a.brief) ? loadBrief(S(a.brief), S(a.focus)) : null;
       let notes = S(a.notes);
       if (notes && !/\n/.test(notes) && notes.length < 240 && getFile(notes)) notes = (await readAsText(notes)).text;
       const research: ResearchNote[] = Array.isArray(a.research)
@@ -1602,9 +1786,22 @@ export const TOOLS: DirectTool[] = [
       } catch (e) {
         modelNote = ` Modèle indisponible (${(e as Error).message.slice(0, 140)}) : `;
       }
+      // An EMPTY dossier (v62: « 0 indicateurs, 0 chapitres » twice) is not a dossier: the rules build it from the brief.
+      if (d && !d.chapters.length && !d.kpis.length) {
+        modelNote += ' Le modèle a renvoyé un dossier vide (ni indicateur ni chapitre) : ';
+        d = null;
+      }
+      if (!d && !brief && notes) {
+        // Notes only: the markdown adapter keeps their chapters and figures (the rules alone would leave them out).
+        const md = dossierFromMarkdown(notes, { title: input.title, org: input.org, unit: input.unit, author: input.author, audience: input.audience, asOf: input.asOf, confidentiality: input.confidentiality });
+        if (md.chapters.length || md.kpis.length) {
+          d = md;
+          modelNote += 'dossier repris des notes (leurs chapitres et leurs chiffres).';
+        }
+      }
       if (!d) {
         d = dossierFromBrief(input);
-        modelNote += 'dossier construit par les règles seules (plus mince ; relancer avec un modèle disponible).';
+        modelNote += brief || notes ? 'dossier construit par les règles à partir du brief / des notes.' : 'dossier construit par les règles seules (donner `brief` = le fichier de données pour un dossier chiffré).';
       }
       // 3. THE FIGURES — every number must come from the brief; the unknown ones are named for verification, never kept blindly.
       let verifNote = '';
@@ -1670,11 +1867,11 @@ export const TOOLS: DirectTool[] = [
     risk: 'read',
     readOnly: false,
     label: (a) => `Exporter ${S(a.name)}.${S(a.format) || 'xlsx'}`,
-    async run(a) {
-      const ds = loadDataset(S(a.path), S(a.sheet) || undefined);
-      const r = a.query
-        ? data.query(ds, QuerySpecSchema.parse(coerceQuery({ limit: 100_000, ...(a.query as object) })))
-        : { columns: ds.columns, rows: ds.rows as Record<string, unknown>[], rowCount: ds.rows.length };
+    async run(a, ctx) {
+      // The query is read like data.query's (top N of a segment in ONE call: filters + groupBy + sort + limit).
+      const pq = a.query ? await prepareQueryFast(ctx, S(a.path), S(a.sheet) || undefined, a.query, { limit: 5_000_000 }) : null;
+      const ds = pq?.ds ?? loadDataset(S(a.path), S(a.sheet) || undefined);
+      const r = pq ? data.query(ds, pq.spec) : { columns: ds.columns, rows: ds.rows as Record<string, unknown>[], rowCount: ds.rows.length };
       const fmt = (S(a.format) || 'xlsx') as 'xlsx' | 'csv' | 'json';
       const path = uniquePath(`outputs/${S(a.name).replace(/[^\w.-]+/g, '-') || 'export'}.${fmt}`);
       const meta = {

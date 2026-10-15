@@ -121,48 +121,231 @@ export const QuerySpecSchema = z.object({
   aggregations: z.array(z.object({ column: z.string(), fn: AggFn, as: z.string().optional() })).optional(),
   select: z.array(z.string()).optional(),
   sort: z.array(z.object({ column: z.string(), dir: z.enum(['asc', 'desc']).default('asc') })).optional(),
-  limit: z.number().int().min(1).max(100_000).optional(),
+  limit: z.number().int().min(1).max(5_000_000).optional(),
   offset: z.number().int().min(0).optional(),
 });
 export type QuerySpec = z.infer<typeof QuerySpecSchema>;
 
 /**
- * Tolerant reading of a query written by a model: single objects where a list
- * is expected, "col" strings for select / groupBy / sort, "desc" sort shortcuts,
- * "op" / "agg" for the aggregation function.
+ * Tolerant reading of a query written by a model (v62: the ESN chat lost minutes on « Invalid option » loops). Accepted:
+ * single objects where a list is expected; JSON written as a string; SQL-ish / pandas-ish aliases at the top level
+ * (where, group_by, by, aggs, metrics, order_by, top…); aggregations as "sum(X)", {sum:"X"}, {"X":"sum"}, a pandas
+ * named-aggregation map, several columns for one function; filters with "==", ">=", "like", "not in", "between", a
+ * {column: value} map, no op (= eq, list = in); sort as "-X", "X desc", {X:"desc"}, ascending / descending flags.
  */
+const AGG_FN: Record<string, string> = {
+  sum: 'sum', total: 'sum', somme: 'sum', add: 'sum',
+  avg: 'avg', mean: 'avg', average: 'avg', moyenne: 'avg',
+  count: 'count', nb: 'count', nombre: 'count', n: 'count', size: 'count', cnt: 'count', count_rows: 'count', rows: 'count',
+  count_distinct: 'count_distinct', distinct_count: 'count_distinct', countdistinct: 'count_distinct', distinct: 'count_distinct',
+  nunique: 'count_distinct', unique: 'count_distinct', dcount: 'count_distinct', count_unique: 'count_distinct',
+  min: 'min', minimum: 'min', max: 'max', maximum: 'max', median: 'median', mediane: 'median', p50: 'median',
+};
+const FILTER_OP: Record<string, string> = {
+  '=': 'eq', '==': 'eq', '===': 'eq', eq: 'eq', equals: 'eq', equal: 'eq', is: 'eq', egal: 'eq',
+  '!=': 'neq', '!==': 'neq', '<>': 'neq', ne: 'neq', neq: 'neq', not_eq: 'neq', not_equal: 'neq', not_equals: 'neq', is_not: 'neq', different: 'neq',
+  '>': 'gt', gt: 'gt', greater: 'gt', greater_than: 'gt', '>=': 'gte', gte: 'gte', ge: 'gte', greater_or_equal: 'gte',
+  '<': 'lt', lt: 'lt', less: 'lt', less_than: 'lt', '<=': 'lte', lte: 'lte', le: 'lte', less_or_equal: 'lte',
+  like: 'contains', ilike: 'contains', contains: 'contains', includes: 'contains', has: 'contains', contient: 'contains',
+  in: 'in', isin: 'in', one_of: 'in', any_of: 'in',
+  is_null: 'is_null', isnull: 'is_null', null: 'is_null', empty: 'is_null', is_empty: 'is_null', missing: 'is_null',
+  not_null: 'not_null', notnull: 'not_null', is_not_null: 'not_null', exists: 'not_null', not_empty: 'not_null', present: 'not_null',
+  not_in: 'not_in', nin: 'not_in', notin: 'not_in', between: 'between', range: 'between',
+};
+const BUCKET: Record<string, string> = {
+  day: 'day', jour: 'day', daily: 'day', d: 'day', week: 'week', semaine: 'week', weekly: 'week', w: 'week',
+  month: 'month', mois: 'month', monthly: 'month', m: 'month', quarter: 'quarter', trimestre: 'quarter', quarterly: 'quarter', q: 'quarter',
+  year: 'year', annee: 'year', yearly: 'year', annual: 'year', y: 'year',
+};
+const TOP_ALIAS: Record<string, string> = {
+  where: 'filters', filter: 'filters', conditions: 'filters',
+  group_by: 'groupBy', groupby: 'groupBy', group: 'groupBy', by: 'groupBy', dimensions: 'groupBy', dims: 'groupBy',
+  aggs: 'aggregations', aggregation: 'aggregations', aggregate: 'aggregations', agg: 'aggregations', metrics: 'aggregations', measures: 'aggregations',
+  order_by: 'sort', orderby: 'sort', sort_by: 'sort', sortby: 'sort',
+  columns: 'select', fields: 'select', top: 'limit', head: 'limit', n: 'limit', max_rows: 'limit', page_size: 'limit', skip: 'offset',
+};
+const key = (s: unknown) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+/** JSON passed as a string ('[{"column":"Relationship"}]') is read as JSON. */
+const unjson = (v: unknown): unknown => {
+  if (typeof v !== 'string') return v;
+  const t = v.trim();
+  if (!/^[[{]/.test(t)) return v;
+  try {
+    return JSON.parse(t) as unknown;
+  } catch {
+    return v;
+  }
+};
+const aggFn = (v: unknown) => (typeof v === 'string' ? AGG_FN[key(v)] ?? key(v) : v);
+const colOf = (o: Record<string, unknown>) => o.column ?? o.col ?? o.field ?? o.key ?? o.of ?? o.on ?? o.target ?? o.measure ?? o.metric ?? o.column_name ?? o.colonne;
+const COL_KEYS = new Set(['column', 'col', 'field', 'key', 'of', 'on', 'target', 'measure', 'metric', 'column_name', 'colonne', 'name']);
+const FN_KEYS = ['fn', 'op', 'agg', 'function', 'func', 'operation', 'aggregate', 'aggregation', 'method', 'how', 'type'];
+
+function coerceAggs(v: unknown): unknown[] | undefined {
+  v = unjson(v);
+  if (v === undefined || v === null) return undefined;
+  // A map: {"X": "sum"}, {"X": ["sum","avg"]}, {"alias": {"column":"X","fn":"sum"}} (pandas named aggregation).
+  if (isObj(v) && !Object.keys(v).some((k) => COL_KEYS.has(k) || FN_KEYS.includes(k) || k === 'as')) {
+    const out: unknown[] = [];
+    for (const [k, x] of Object.entries(v)) {
+      if (AGG_FN[key(k)] && typeof x === 'string') out.push({ fn: AGG_FN[key(k)], column: x });
+      else if (typeof x === 'string') out.push({ column: k, fn: x });
+      else if (Array.isArray(x)) for (const f of x) out.push({ column: k, fn: f });
+      else if (isObj(x)) out.push({ ...x, as: x.as ?? k });
+    }
+    v = out;
+  }
+  const list = Array.isArray(v) ? v : [v];
+  const out: Record<string, unknown>[] = [];
+  for (const raw of list) {
+    let x = unjson(raw);
+    if (typeof x === 'string') {
+      // "sum(Net Exposure) as expo", "count(*)", "count".
+      const m = /^\s*([a-z_]+)\s*\(\s*(.*?)\s*\)\s*(?:as\s+(.+?))?\s*$/i.exec(x);
+      if (m && AGG_FN[key(m[1])]) x = { fn: m[1], column: m[2] || '*', ...(m[3] ? { as: m[3] } : {}) };
+      else if (AGG_FN[key(x)]) x = { fn: x };
+      else x = { column: x };
+    }
+    if (!isObj(x)) continue;
+    const o: Record<string, unknown> = { ...x };
+    // {sum: "X"} / {"X": "sum"} with one key.
+    const keys = Object.keys(o);
+    if (keys.length === 1 && !COL_KEYS.has(keys[0]!) && !FN_KEYS.includes(keys[0]!)) {
+      const k = keys[0]!;
+      const val = o[k];
+      if (AGG_FN[key(k)]) out.push({ fn: AGG_FN[key(k)], column: val });
+      else if (typeof val === 'string' && AGG_FN[key(val)]) out.push({ column: k, fn: AGG_FN[key(val)] });
+      else out.push(o);
+      continue;
+    }
+    o.column = colOf(o) ?? (o.as !== undefined || FN_KEYS.some((k) => o[k] !== undefined) ? o.name : undefined);
+    if (o.name !== undefined && o.column !== o.name && o.as === undefined) o.as = o.name;
+    o.as ??= o.alias ?? o.label ?? o.output;
+    let fn: unknown;
+    for (const k of FN_KEYS) if (o[k] !== undefined && typeof o[k] === 'string' && AGG_FN[key(o[k])]) { fn = o[k]; break; }
+    fn ??= o.fn ?? o.op ?? o.agg ?? o.function;
+    const clean: Record<string, unknown> = { fn: aggFn(fn) };
+    if (o.as !== undefined && o.as !== null && o.as !== '') clean.as = String(o.as);
+    const cols = Array.isArray(o.column) ? o.column : [o.column];
+    for (const c of cols) {
+      const col = c === undefined || c === null || c === '' ? (clean.fn === 'count' ? '*' : c) : c;
+      out.push({ ...clean, column: col, ...(cols.length > 1 && clean.as ? { as: `${String(clean.as)}_${String(col)}` } : {}) });
+    }
+  }
+  return out;
+}
+
+function coerceFilters(v: unknown): unknown[] | undefined {
+  v = unjson(v);
+  if (v === undefined || v === null) return undefined;
+  // {column: value} map (value list = in, {">": 5} = an operator).
+  if (isObj(v) && !Object.keys(v).some((k) => COL_KEYS.has(k) || k === 'op' || k === 'operator' || k === 'value')) {
+    v = Object.entries(v).map(([column, x]) => {
+      if (Array.isArray(x)) return { column, op: 'in', value: x };
+      if (isObj(x) && Object.keys(x).length === 1) {
+        const [op, value] = Object.entries(x)[0]!;
+        return { column, op, value };
+      }
+      return { column, op: 'eq', value: x };
+    });
+  }
+  const out: Record<string, unknown>[] = [];
+  for (const raw of Array.isArray(v) ? v : [v]) {
+    const x = unjson(raw);
+    if (!isObj(x)) continue;
+    const o: Record<string, unknown> = { ...x };
+    o.column = colOf(o) ?? o.name;
+    const value = o.value ?? o.val ?? o.values ?? o.valeur;
+    const rawOp = o.op ?? o.operator ?? o.operation ?? o.cmp ?? o.condition ?? o.comparison;
+    let op = rawOp === undefined ? (Array.isArray(value) ? 'in' : value === undefined ? 'not_null' : 'eq') : FILTER_OP[key(rawOp)] ?? key(rawOp);
+    if (op === 'eq' && Array.isArray(value)) op = 'in';
+    if (op === 'in' && !Array.isArray(value)) {
+      out.push({ column: o.column, op: 'in', value: value === undefined ? [] : [value] });
+      continue;
+    }
+    if (op === 'not_in') {
+      // not in [a, b] = ≠ a AND ≠ b.
+      for (const y of Array.isArray(value) ? value : [value]) out.push({ column: o.column, op: 'neq', value: y });
+      continue;
+    }
+    if (op === 'between') {
+      const [lo, hi] = Array.isArray(value) ? value : isObj(value) ? [value.min ?? value.from ?? value.low, value.max ?? value.to ?? value.high] : [value, undefined];
+      if (lo !== undefined && lo !== null) out.push({ column: o.column, op: 'gte', value: lo });
+      if (hi !== undefined && hi !== null) out.push({ column: o.column, op: 'lte', value: hi });
+      continue;
+    }
+    out.push({ column: o.column, op, ...(value !== undefined ? { value } : {}) });
+  }
+  return out;
+}
+
+function coerceSort(v: unknown, dirDefault?: string): unknown[] | undefined {
+  v = unjson(v);
+  if (v === undefined || v === null) return undefined;
+  if (isObj(v) && !Object.keys(v).some((k) => COL_KEYS.has(k) || ['dir', 'order', 'direction', 'ascending', 'descending', 'desc', 'asc', 'by'].includes(k)))
+    v = Object.entries(v).map(([column, d]) => ({ column, dir: d }));
+  const dirOf = (d: unknown) => (typeof d === 'string' && /^desc|^dec|^decroissant|^down/i.test(d.normalize('NFD').replace(/[̀-ͯ]/g, '')) ? 'desc' : 'asc');
+  const out: Record<string, unknown>[] = [];
+  for (const raw of Array.isArray(v) ? v : [v]) {
+    const x = unjson(raw);
+    if (typeof x === 'string') {
+      const m = /^\s*(-)?(.*?)(?:[\s:]+(asc|desc|ascending|descending))?\s*$/i.exec(x)!;
+      out.push({ column: m[2], dir: m[1] ? 'desc' : m[3] ? dirOf(m[3]) : dirDefault ?? 'asc' });
+      continue;
+    }
+    if (!isObj(x)) continue;
+    const o: Record<string, unknown> = { ...x };
+    const column = colOf(o) ?? o.by ?? o.name;
+    let dir: string = dirDefault ?? 'asc';
+    const d = o.dir ?? o.order ?? o.direction ?? o.sort;
+    if (typeof d === 'string') dir = dirOf(d);
+    if (o.ascending === false || o.descending === true || o.desc === true || o.asc === false) dir = 'desc';
+    if (o.ascending === true || o.asc === true || o.desc === false) dir = 'asc';
+    out.push({ column, dir });
+  }
+  return out;
+}
+
 export function coerceQuery(raw: unknown): unknown {
-  if (!raw || typeof raw !== 'object') return raw;
-  const q = { ...(raw as Record<string, unknown>) };
-  const list = (v: unknown) => (v === undefined || v === null ? v : Array.isArray(v) ? v : [v]);
-  for (const k of ['filters', 'groupBy', 'aggregations', 'select', 'sort']) q[k] = list(q[k]);
-  if (Array.isArray(q.groupBy)) q.groupBy = q.groupBy.map((g) => (typeof g === 'string' ? { column: g } : g));
-  if (Array.isArray(q.sort))
-    q.sort = q.sort.map((x) => {
-      if (typeof x === 'string')
-        return { column: x.replace(/^-/, ''), dir: x.startsWith('-') ? 'desc' : 'asc' };
-      const o = { ...(x as Record<string, unknown>) };
-      if (typeof o.dir === 'string') o.dir = /^desc/i.test(o.dir) ? 'desc' : 'asc';
-      if (o.order && !o.dir) o.dir = /^desc/i.test(String(o.order)) ? 'desc' : 'asc';
-      return o;
+  raw = unjson(raw);
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw;
+  const q: Record<string, unknown> = { ...(raw as Record<string, unknown>) };
+  for (const [k, v] of Object.entries(q)) {
+    const target = TOP_ALIAS[key(k)] ?? TOP_ALIAS[k];
+    if (target && target !== k && q[target] === undefined) {
+      q[target] = v;
+      delete q[k];
+    }
+  }
+  // A top-level direction (« order: "desc" », « ascending: false ») applies to the sort keys that give none.
+  const topDir = typeof q.order === 'string' && /^(asc|desc)/i.test(q.order) ? (/^desc/i.test(q.order) ? 'desc' : 'asc') : q.ascending === false || q.descending === true ? 'desc' : undefined;
+  if (q.sort === undefined && typeof q.order === 'string' && !topDir) q.sort = q.order;
+  for (const k of ['order', 'ascending', 'descending']) delete q[k];
+  q.filters = coerceFilters(q.filters);
+  q.aggregations = coerceAggs(q.aggregations);
+  q.sort = coerceSort(q.sort, topDir);
+  const gb = unjson(q.groupBy);
+  if (gb !== undefined && gb !== null)
+    q.groupBy = (Array.isArray(gb) ? gb : [gb]).map((g) => {
+      const x = unjson(g);
+      if (typeof x === 'string') return { column: x };
+      if (!isObj(x)) return x;
+      const b = x.bucket ?? x.granularity ?? x.period ?? x.freq ?? x.interval;
+      return { column: colOf(x) ?? x.name, ...(b !== undefined && b !== null ? { bucket: BUCKET[key(b)] ?? key(b) } : {}) };
     });
-  const firstCol = (o: Record<string, unknown>) => {
-    o.column ??= o.col ?? o.field ?? o.name;
-    if (Array.isArray(o.column)) o.column = o.column[0];
-    return o;
-  };
-  if (Array.isArray(q.aggregations))
-    q.aggregations = q.aggregations.map((x) => {
-      const o = firstCol(typeof x === 'string' ? { fn: x } : { ...(x as Record<string, unknown>) });
-      o.fn ??= o.op ?? o.agg ?? o.function;
-      if (typeof o.fn === 'string') o.fn = o.fn.toLowerCase().replace(/^average$|^mean$/, 'avg').replace(/^distinct_count$|^nunique$/, 'count_distinct');
-      // « count » without a column = count of rows (v48: dozens of « expected string » errors in a row).
-      if ((o.column === undefined || o.column === null || o.column === '') && o.fn === 'count') o.column = '*';
-      return o;
-    });
-  for (const k of ['filters', 'groupBy', 'sort'])
-    if (Array.isArray(q[k])) q[k] = (q[k] as unknown[]).map((x) => (x && typeof x === 'object' ? firstCol({ ...(x as Record<string, unknown>) }) : x));
-  if (Array.isArray(q.filters)) q.filters = (q.filters as Record<string, unknown>[]).map((f) => (f && typeof f === 'object' && f.op === 'ne' ? { ...f, op: 'neq' } : f));
+  const sel = unjson(q.select);
+  if (sel !== undefined && sel !== null) {
+    const list = (Array.isArray(sel) ? sel : typeof sel === 'string' && sel.includes(',') && !sel.includes('"') ? sel.split(',').map((s) => s.trim()) : [sel])
+      .map((s) => (isObj(s) ? colOf(s) ?? s.name : s))
+      .filter((s) => s !== '*');
+    q.select = list.length ? list : undefined;
+  }
+  for (const k of ['limit', 'offset']) {
+    const n = typeof q[k] === 'string' ? Number(q[k]) : isObj(q[k]) ? Number((q[k] as Record<string, unknown>).n ?? (q[k] as Record<string, unknown>).limit) : q[k];
+    q[k] = typeof n === 'number' && Number.isFinite(n) ? Math.min(5_000_000, Math.max(k === 'limit' ? 1 : 0, Math.round(n))) : undefined;
+  }
+  for (const k of Object.keys(q)) if (q[k] === undefined) delete q[k];
   return q;
 }
 
@@ -258,6 +441,17 @@ export function aggregate(values: Cell[], fn: z.infer<typeof AggFn>): number | n
   }
 }
 
+/** Equality as a reader means it: numbers by value (8200 = « 8200 »), dates by day, text without case / accents / stray spaces. */
+function sameValue(v: Cell | undefined, w: Cell | undefined): boolean {
+  const a = toNumber(v ?? null);
+  const b = toNumber(w ?? null);
+  if (a !== null && b !== null) return a === b;
+  const s = (x: Cell | undefined) => (x instanceof Date ? x.toISOString().slice(0, 10) : String(x ?? '').trim());
+  const x = s(v);
+  const y = s(w);
+  return x === y || normName(x) === normName(y);
+}
+
 export function matchFilter(row: DataRow, f: DataFilter): boolean {
   const v = row[f.column];
   switch (f.op) {
@@ -269,11 +463,11 @@ export function matchFilter(row: DataRow, f: DataFilter): boolean {
       return String(v ?? '')
         .toLowerCase()
         .includes(String(f.value ?? '').toLowerCase());
-    case 'in':
-      return (
-        Array.isArray(f.value) &&
-        f.value.map(String).includes(v instanceof Date ? v.toISOString().slice(0, 10) : String(v))
-      );
+    case 'in': {
+      // Same tolerance as « eq » (8200 = « 8200 », « np » = « NP », stray spaces) for each listed value.
+      if (!Array.isArray(f.value)) return false;
+      return f.value.some((x) => sameValue(v, x as Cell));
+    }
     default: {
       const a = toNumber(v);
       const b = toNumber(f.value as Cell);
@@ -283,10 +477,8 @@ export function matchFilter(row: DataRow, f: DataFilter): boolean {
       if (a !== null && b !== null) cmp = a - b;
       else if (da && db) cmp = da.getTime() - db.getTime();
       else cmp = String(v ?? '').localeCompare(String(f.value ?? ''));
-      if (f.op === 'eq')
-        return a !== null && b !== null ? a === b : String(v ?? '') === String(f.value ?? '');
-      if (f.op === 'neq')
-        return a !== null && b !== null ? a !== b : String(v ?? '') !== String(f.value ?? '');
+      if (f.op === 'eq') return sameValue(v, f.value as Cell);
+      if (f.op === 'neq') return !sameValue(v, f.value as Cell);
       if (f.op === 'gt') return cmp > 0;
       if (f.op === 'gte') return cmp >= 0;
       if (f.op === 'lt') return cmp < 0;
@@ -334,13 +526,16 @@ export class DataCore {
       return { path: absPath, sheet: null, sheets: [], columns, rows };
     }
     if (['.xlsx', '.xls', '.xlsm', '.xlsb', '.ods'].includes(ext)) {
-      const wb = XLSX.read(bytes, { type: 'array', cellDates: true, dense: true });
+      // Only the sheet asked is parsed (v62: a 3-sheet .xlsb was parsed whole for each sheet looked at).
+      const names = XLSX.read(bytes, { type: 'array', bookSheets: true }).SheetNames;
       // Tolerant sheet name (« Portefeuille », « PORTEFEUILLE ») — an unknown sheet is an ERROR listing the real ones,
       // never a silent fallback to the first sheet (v48: every PORTEFEUILLE column became « unknown »).
       const wanted = sheet?.trim();
-      const name = wanted ? (wb.SheetNames.find((s) => s === wanted) ?? wb.SheetNames.find((s) => normName(s) === normName(wanted))) : wb.SheetNames[0];
-      if (wanted && !name) throw new Error(`Feuille « ${wanted} » introuvable. Feuilles du fichier : ${wb.SheetNames.map((s) => `« ${s} »`).join(', ')}`);
+      const name = wanted ? (names.find((s) => s === wanted) ?? names.find((s) => normName(s) === normName(wanted))) : names[0];
+      if (wanted && !name) throw new Error(`Feuille « ${wanted} » introuvable. Feuilles du fichier : ${names.map((s) => `« ${s} »`).join(', ')}`);
       if (!name) return { path: absPath, sheet: null, sheets: [], columns: [], rows: [] };
+      let wb = XLSX.read(bytes, { type: 'array', cellDates: true, dense: true, sheets: name });
+      if (!wb.Sheets[name]) wb = XLSX.read(bytes, { type: 'array', cellDates: true, dense: true });
       const ws = wb.Sheets[name]!;
       const matrix = XLSX.utils.sheet_to_json<Cell[]>(ws, {
         header: 1,
@@ -367,7 +562,7 @@ export class DataCore {
         columns.forEach((c, i) => (row[c] = (r[i] ?? null) as Cell));
         return row;
       });
-      return { path: absPath, sheet: name, sheets: wb.SheetNames, columns, rows };
+      return { path: absPath, sheet: name, sheets: names, columns, rows };
     }
     if (ext === '.json' || ext === '.jsonl' || ext === '.ndjson') {
       const raw = decode();

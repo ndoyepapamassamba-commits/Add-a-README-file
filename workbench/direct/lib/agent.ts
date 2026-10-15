@@ -59,6 +59,7 @@ import { ALTERATION } from '../../server/jev/omni/mission';
 import { pilotAnchor } from '../../server/jev/omni/pilot';
 import { THEMES, buildTheme, setActiveTheme, themeOf } from '../../server/services/houseDesign';
 import { LOGO_TOOLS, THEMED_TOOLS, applyWebTheme, deliverableFromCode, deliverableFromText, kindForTool, type DeliverableKind } from '../../server/services/premiumDesigns';
+import { isContinuation, missionOf, resumeText } from '../../server/services/missionResume';
 import { isOffice, recolorOffice } from '../../server/services/officeRecolor';
 import { addImagePageDocx, addImageSlidePptx, addImageToHtml, addLogoToHtml, addLogoToOffice } from '../../server/services/officeLogo';
 import { removeSheets, REPRO_SHEETS } from '../../server/services/cloneXlsx';
@@ -110,7 +111,7 @@ import { BUILTIN_PLUGINS, builtinToolNames, builtinTools } from './builtinPlugin
 import { findAgent, allRoles, findRole } from './roles';
 import { matchSkills } from './skills';
 import { uid, useStore } from './store';
-import { HOUSE_FILES, TOOLS, llmName, mcpTool, toolDefs, type DirectTool, type ToolCtx } from './tools';
+import { HOUSE_FILES, TOOLS, llmName, mcpTool, portfolioCard, toolDefs, type DirectTool, type ToolCtx } from './tools';
 import type { AgentDef, AgentMode, Attachment, PlanStep, Session } from './types';
 import { acquireScope, writeBytes, bytesOf, chatScope, dataUrl, files, files as filesView, filesFor, getFile, readAsText, scopeGate, sessionAllow, setChatScope, tree, writeText } from './vfs';
 
@@ -259,8 +260,16 @@ async function userContent(
         } else notes.push(`Image ${f.path} attached (this model cannot see images).`);
       } else if (isDataFile(f.path)) {
         const ds = data.parseBytes(f.path, bytesOf(f), null);
+        // THE PORTFOLIO CARD (v62): exact column names, codes with their labels (segment 8200 = Entreprises locales),
+        // the file's own dictionary sheet, aliases learned on this file shape — the first query can be the right one.
+        let card: string;
+        try {
+          card = portfolioCard(ds);
+        } catch {
+          card = profileToText(data.profile(ds));
+        }
         notes.push(
-          `Data file attached: ${f.path}\n${profileToText(data.profile(ds))}\n(Use data.query / data.chart for exact figures.)`,
+          `Data file attached: ${f.path}\n${card}\n(Use data.query / data.export for exact figures: ONE query with filters + groupBy + aggregations + sort + limit answers a « top N of a segment ».)`,
         );
       } else if (isDocument(f.path) || !f.binary) {
         const { text: t, kind } = await readAsText(f.path);
@@ -1978,7 +1987,10 @@ async function loopBody(inp: LoopInput, releasePrologue: () => void): Promise<Lo
         gates++;
         shadow?.observeFinal(r.content);
         const alerts = shadow?.take() ?? [];
-        const unsupported = strategy?.verify.evidence && (lane?.evidenceReask ?? true) ? unsupportedNumbers(r.content, evidence) : [];
+        // Figures computed on the owner's data are ALWAYS checked against the tool results (v62: the ESN « continue »
+        // turn wrote 41 629 exposures and 293 095 M of provisions that no query had returned).
+        const dataTurn = [...toolsUsed].some((t) => /^(data\.|dossier\.|report\.)/.test(t));
+        const unsupported = (strategy?.verify.evidence || dataTurn) && (dataTurn || (lane?.evidenceReask ?? true)) ? unsupportedNumbers(r.content, evidence) : [];
         if (lane && !lane.evidenceReask) omni!.avoidedReasks++;
         const notes: string[] = [];
         if (alerts.length) {
@@ -2655,14 +2667,15 @@ async function runTool(call: ToolCall, offered: DirectTool[], ctx: ToolCtx, inp:
         const k = choice.clone.panels.find((p) => ['bar', 'hbar', 'line', 'area', 'pie', 'donut'].includes(p.kind))?.kind;
         if (k && (!args.chart || args.chart === 'none')) args.chart = k === 'line' || k === 'area' ? 'line' : k === 'pie' || k === 'donut' ? 'pie' : 'bar';
       }
-      // The chosen logo also goes into the « Synthèse 3D » board band.
-      if (choice.logo && LOGO_TOOLS.test(tool.name)) args.logoPath = choice.logo.path;
       if (choice.layout && tool.name === 'data.export') {
         args.layout = choice.layout;
         args.layoutSource = choice.source;
         if (!args.chart || args.chart === 'none') args.chart = excelChart(choice.layout);
       }
     }
+    // The chosen LOGO goes into every deliverable even when the model passed its own theme / colours (v62: the ESN
+    // workbook and report came out with a text plate instead of the logo picked in the gallery).
+    if (choice?.logo && LOGO_TOOLS.test(tool.name) && !args.logoPath) args.logoPath = choice.logo.path;
     // Sites and apps: the chosen design becomes a premium stylesheet injected in the page.
     if (dkind === 'web' && tool.name === 'artifact.create' && typeof args.content === 'string') {
       const t = themeOf(args, useStore.getState().settings.exportTheme);
@@ -3078,6 +3091,20 @@ export async function runAgent(
   useStore.setState({ running: { ...st.running, [sessionId]: ac } });
   // A queued follow-up is already on screen (queueMessage).
   if (!opts.shown) st.pushItem(sessionId, { kind: 'user', id: uid(), text, attachments, ts: Date.now() });
+  // « continue » carries on THE SAME mission (v62 — ESN chat: « continue » became an empty request, the context compiler
+  // dropped « top 20 du segment code 8200 » and a provisions study started instead). The model, the tool pack, the
+  // context compiler and the design gallery all read the resumed mission; the chat shows what the user typed.
+  const resumed = !attachments.length && isContinuation(text) ? missionOf(session?.turns) : null;
+  let missionTurn = text;
+  if (resumed) {
+    const since = [...(session?.turns ?? [])].reverse().find((t) => t.text.trim() === resumed)?.at ?? 0;
+    const produced = Object.values(files())
+      .filter((f) => f.path.startsWith('outputs/') && f.updatedAt >= since)
+      .sort((x, y) => y.updatedAt - x.updatedAt)
+      .map((f) => f.path);
+    text = resumeText(text, resumed, produced);
+    missionTurn = resumed;
+  }
   // JEV USER FEEDBACK LOOP: « parfait » / « c'est mauvais » judge the previous answer.
   const fb = jevRt.feedbackOf(text);
   if (fb) jevRt.feedback(sessionId, fb);
@@ -3221,7 +3248,8 @@ export async function runAgent(
   // PREMIUM DESIGN FIRST: a request that asks for a deliverable (Excel, Word, PPT, PDF, mail, site, app) opens the
   // gallery BEFORE any work — whatever tool the model uses afterwards (native exporter or its own Python code).
   const wanted = deliverableFromText(text, attachments.map((a) => a.name));
-  if (wanted) runDesign.delete(sessionId);
+  // A new deliverable request picks its design again; « continue » keeps the design chosen for the mission it resumes.
+  if (wanted && !resumed) runDesign.delete(sessionId);
   runHouse.delete(sessionId);
   if (wanted) {
     runHouse.add(sessionId);
@@ -3247,7 +3275,7 @@ export async function runAgent(
   currentPacket = null;
   beginCheckpoint(sessionId, text);
   // Mission boundary: the history firewall reads these marks (the raw history is never deleted).
-  st.patchSession(sessionId, (cur) => ({ turns: [...(cur.turns ?? []), { start: cur.history.length, text: text.slice(0, 400), at: Date.now() }].slice(-200) }));
+  st.patchSession(sessionId, (cur) => ({ turns: [...(cur.turns ?? []), { start: cur.history.length, text: missionTurn.slice(0, 400), at: Date.now() }].slice(-200) }));
   let result: LoopResult | null = null;
   let errored = false;
   let failureNote = '';

@@ -68,6 +68,29 @@ function dataTable(head: string[], rows: string[][], widths?: number[], o: { fir
   return tbl(rowsXml, ws) + para('', { pPr: spacing(0, 80) });
 }
 
+/** Font size (half-points) that keeps a monospaced value on ONE line in a tile of `w` twips (v62: « 1 119 083,1 M XOF »
+ *  broke over two lines in the 5-tile strip). A digit of a monospaced face is ≈ 0.6 em wide. */
+export function fitValueSz(text: string, w: number, max: number, min = 16): number {
+  const fit = Math.floor((2 * tileAvail(w)) / (0.62 * Math.max(1, [...text].length)));
+  return Math.max(min, Math.min(max, fit));
+}
+/** Usable width of a tile in points: its width minus the cell margins (≈ 108 twips each side) and the 100-twip indent. */
+const tileAvail = (w: number) => (w - 330) / 20;
+/**
+ * The same quantity in the next unit when it cannot fit even at the smallest size: « 1 119 083,1 M XOF » →
+ * « 1 119,1 Md XOF », « 34 500 k » → « 34,5 M ». Only the display changes; the indicator keeps its exact value elsewhere.
+ */
+export function compactValue(text: string, w: number, min = 16): string {
+  if ((0.62 * [...text].length * min) / 2 <= tileAvail(w)) return text;
+  const m = /^(-?[\d\s\u00a0\u202f]+(?:,\d+)?)\s*(k|M|Mds?|Md)\b\s*(.*)$/.exec(text.trim());
+  if (!m) return text;
+  const n = Number(m[1]!.replace(/[\s\u00a0\u202f]/g, '').replace(',', '.'));
+  if (!Number.isFinite(n) || Math.abs(n) < 1000) return text;
+  const next = m[2] === 'k' ? 'M' : m[2] === 'M' ? 'Md' : null;
+  if (!next) return text;
+  const v = (n / 1000).toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).replace(/\u202f/g, ' ');
+  return `${v} ${next}${m[3] ? ` ${m[3]}` : ''}`;
+}
 function kpiStrip(kpis: Kpi[], cols: number, cover = false): string {
   const out: string[] = [];
   for (let r0 = 0; r0 < kpis.length; r0 += cols) {
@@ -84,10 +107,10 @@ function kpiStrip(kpis: Kpi[], cols: number, cover = false): string {
       widths.push(cw);
       const tone = toneColor(k.tone);
       const inner = cover
-        ? para(run(k.value, { b: true, sz: k.value.length > 9 ? 30 : 36, color: C.navy, mono: true }), { pPr: `${spacing(100, 20)}<w:ind w:left="100"/>` }) +
+        ? para(run(compactValue(k.value, cw), { b: true, sz: fitValueSz(compactValue(k.value, cw), cw, 36), color: C.navy, mono: true }), { pPr: `${spacing(100, 20)}<w:ind w:left="100"/>` }) +
           para(run(k.label, { sz: 15, color: C.text2 }), { pPr: `${spacing(0, 100)}<w:ind w:left="100" w:right="60"/>` })
         : para(run(`${k.code} · ${k.label}`, { b: true, sz: 13, color: C.text2, caps: true }), { pPr: `${spacing(80, 40)}<w:ind w:left="100" w:right="60"/>` }) +
-          para(run(k.value, { b: true, sz: k.value.length > 9 ? 26 : 32, color: C.navy, mono: true }), { pPr: `${spacing(0, 40)}<w:ind w:left="100"/>` }) +
+          para(run(compactValue(k.value, cw), { b: true, sz: fitValueSz(compactValue(k.value, cw), cw, 32), color: C.navy, mono: true }), { pPr: `${spacing(0, 40)}<w:ind w:left="100"/>` }) +
           para(run(k.sub ?? k.method ?? '', { i: true, sz: 13, color: tone }), { pPr: `${spacing(0, 80)}<w:ind w:left="100" w:right="60"/><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="2" w:color="${tone}"/></w:pBdr>` });
       // The reference's tiles: no frame, a pale panel, the tone as a rule (on top for the cover strip).
       cells.push(tc(inner, { w: cw, fill: C.panel, borders: cover ? `<w:top w:val="single" w:sz="24" w:color="${tone}"/>` : '' }));
