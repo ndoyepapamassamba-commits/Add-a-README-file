@@ -67,3 +67,18 @@ l'échelle des personnages (ligne de sol `fit.floor`, hauteur de scène `fit.mH`
 - Simuler un rendu : aucun MP4 n'est annoncé sans fichier réel, décodé en entier et contrôlé par ffprobe.
 - Pousser les dessins ou les décors de la troupe sur le dépôt public : ils restent dans `studio-troupe/.private/`.
 - Dépendre d'un modèle ou d'une voix dont la licence interdit l'usage commercial des vidéos.
+
+## Règle d'amélioration continue (décidée par le propriétaire)
+
+Pour **tout écart** de fluidité ou de qualité entre nos rendus et les vidéos TikTok du compte (@comedyvideos_100),
+les vidéos de référence qu'il désigne ou les films d'animation 3D :
+
+1. **Mesurer** l'écart avec le comparateur (`outils/comparer/`) : mouvement, fluidité, rythme des plans, caméra,
+   visage, lèvres, netteté, couleur, son. On mesure, on ne se contente pas d'une impression.
+2. **Chercher sur Internet** les outils gratuits qui résolvent cet écart. Leur licence doit permettre l'usage
+   commercial des vidéos produites.
+3. **Apprendre** leur code et leurs articles.
+4. **Reproduire** la technique dans notre moteur, avec des tests.
+5. **Remesurer**, et recommencer jusqu'à dépasser la référence.
+
+Objectif fixé : dépasser le niveau des studios Pixar et Disney.
