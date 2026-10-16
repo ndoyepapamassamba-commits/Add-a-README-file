@@ -52,15 +52,28 @@
     "verdict": "à dupliquer"
   },
   {
+    "nom": "ComfyUI-WanVideoWrapper",
+    "url": "https://github.com/kijai/ComfyUI-WanVideoWrapper",
+    "commit": "088128b224242e110d3906c6750e9a3a348a659b",
+    "date_commit": "2026-05-24T16:07:12+03:00",
+    "etape": "execution-faible-vram",
+    "licence": "Apache-2.0 (racine, wanvideo/, diffsynth/vram_management/, enhance_a_video/, fantasyportrait/, radial_attention/sparse_sage) ; fantasyportrait/pd_fgc/PF-FGC_LICENSE.txt CC BY 4.0 ; Ovi/bigvgan MIT ; Ovi/vae/edm2_utils.py CC BY-NC-SA 4.0 ; nœuds exécutés dans ComfyUI (GPL-3.0) ; GGUF Kijai/WanVideo_comfy_GGUF Apache-2.0",
+    "usage_commercial": "oui sous conditions",
+    "conditions": "Dépendance épinglée, installée dans custom_nodes/ à ce commit, pas un fork. Voie T4 de One-to-All (onetoall/), InfiniteTalk et MultiTalk (multitalk/), HuMo (HuMo/) et SCAIL (SCAIL/). N'utiliser que ces nœuds, les nœuds Wan et GGUF. Exclure Ovi (Ovi/vae/edm2_utils.py sous CC BY-NC-SA ; audio dérivé de MMAudio), lynx (InsightFace buffalo, « non-commercial research purposes only », signalé dans l'exemple lynx), FantasyPortrait (pd_fgc en CC BY 4.0 et deux ONNX de détection de visage commités sans provenance : face_det.onnx, face_landmark.onnx) et FlashVSR. Poids : GGUF Kijai/WanVideo_comfy_GGUF (Apache-2.0) acceptés, mais pas les LoRA ni conversions de Kijai/WanVideo_comfy (sans licence) ; jamais CausVid ni FusionX. Workflows d'exemple : ils exigent VideoHelperSuite (GPL-3.0), KJNodes (GPL-3.0), ComfyUI-MelBandRoFormer et ComfyUI-WanAnimatePreprocess (Apache-2.0, non audité ; son détecteur ONNX doit respecter la règle YOLOv10 du § 4.1). Remplacer VHS_VideoCombine et VHS_LoadVideo par les nœuds natifs CreateVideo + SaveVideo et LoadVideo de ComfyUI (comfy_extras/nodes_video.py) ; KJNodes en outil local seulement, ou nœuds natifs équivalents (GetImageSize, primitives) ; MelBandRoFormer inutile avec un dialogue enregistré propre. Mainteneur unique, dernier commit le 24/05/2026 : garder une archive privée.",
+    "t4": "Prévu pour la faible VRAM, non mesuré par nous : attention sdpa par défaut (nodes_model_loading.py:1022), base_precision à passer de bf16 (défaut) à fp16, GGUF (gguf/), échange de blocs blocks_to_swap (défaut 20 sur 40 pour un 14B), quantification fp8 en stockage seulement. Aucun chrono T4.",
+    "cpu": "Non pour la génération (nœuds CUDA) ; le conteneur sert à préparer les workflows JSON.",
+    "verdict": "à dupliquer"
+  },
+  {
     "nom": "Wan2GP",
     "url": "https://github.com/deepbeepmeep/Wan2GP",
     "commit": "de302eec64b692dc83949d687cadf7d60bd74091",
     "date_commit": "2026-10-16T00:57:48+02:00",
     "etape": "execution-faible-vram",
-    "licence": "WanGP Community License 2.0 (licence maison non OSI, mmgp 4.0.0 inclus) ; poids Wan, FastWan, InfiniteTalk et MultiTalk Apache-2.0 ; chinese-wav2vec2-base MIT",
+    "licence": "WanGP Community License 2.0 (licence maison non OSI, mmgp 4.0.0 inclus) ; poids Wan, FastWan, InfiniteTalk et MultiTalk Apache-2.0 ; chinese-wav2vec2-base MIT ; ACE-Step 1.5 MIT ; nombreux composants embarqués sous d'autres licences, dont plusieurs non commerciales (voir conditions)",
     "usage_commercial": "oui sous conditions",
-    "conditions": "Vidéos publiables et vendables (§6.1). Crédit « Made with WanGP » exigé seulement en cas de vente directe d'une vidéo (§6.2). Interdit sans licence commerciale écrite : vendre ou louer le moteur, le proposer en API, SaaS ou marque blanche, l'intégrer à un produit payant (§1.9, §5). Fork redistribué : avec LICENSE.txt, mentions conservées, modifications signalées et datées (§4.1). Épingler ce commit (clause 13.4) et ne jamais installer mmgp depuis PyPI (versions ≤ 3.8.x : GPL et clause « non commercial » contradictoires). N'utiliser que des poids Apache ou MIT ; écarter Hunyuan (exclusion UE, Royaume-Uni, Corée), Fish Audio Drama 3 (commercial seulement sous 500 000 USD de chiffre d'affaires) ; LTX-2 et Flux3 non examinés.",
-    "t4": "Partiel : passage automatique en fp16 si la capacité est < 8 (T4 = 7.5), poids int8 fp16 fournis, --attention sdpa, profils de délestage 4, 4.5 et 5, --gpu cuda:1 pour le 2e T4. FastWan 5B : garder la version non quantifiée (l'int8 impose bf16). Aucun chrono T4 dans le dépôt (voir Wan2GP-on-Colab). À vérifier : pilote Kaggle pour torch 2.10, RAM pour le 14B.",
+    "conditions": "Vidéos publiables et vendables (§6.1). Crédit « Made with WanGP » exigé seulement en cas de vente directe d'une vidéo (§6.2). Interdit sans licence commerciale écrite : vendre ou louer le moteur, le proposer en API, SaaS ou marque blanche, l'intégrer à un produit payant (§1.9, §5). Fork redistribué : avec LICENSE.txt, mentions conservées, modifications signalées et datées (§4.1). Épingler ce commit (clause 13.4) et ne jamais installer mmgp depuis PyPI (versions ≤ 3.8.x : GPL et clause « non commercial » contradictoires). LISTE BLANCHE (seuls modèles à charger) : Wan 2.1/2.2 et FastWan (Apache), InfiniteTalk et MultiTalk (Apache), Qwen3-TTS (Apache), Chatterbox (MIT), ACE-Step 1.5 (MIT, models/TTS/ace_step15). LISTE NOIRE : MMAudio (« generate soundtracks », README:41 : poids CC-BY-NC 4.0 selon le README amont hkchengrex/MMAudio:183 et le tag HF, et postprocessing/mmaudio/ext/autoencoder/edm2_utils.py:3-4 sous CC BY-NC-SA) ; YuE2 (models/TTS/yue2/MODEL_LICENSE : poids CC BY-NC 4.0, mis en avant pour les chansons) ; Qwen-Image-2.1 (models/qwen21/LICENSE : Qwen RESEARCH LICENSE, non commerciale) ; Flux3 (models/flux3/WEIGHTS_LICENSE.md:27 : « Non-Commercial Use Only ») ; Fish Audio Drama 3 (commercial seulement sous 500 000 USD de chiffre d'affaires) ; Hunyuan (exclusion UE, Royaume-Uni, Corée) ; MiniMax-H3 (territoires exclus) ; Stable Audio 3 (licence communautaire Stability, accès restreint) ; LTX-2 (plafond de revenus). IndexTTS2 et 2.5 : licence bilibili (INDEXTTS_LICENSE §2.2 : licence séparée au-delà de 100 M d'utilisateurs actifs mensuels ou 1 Md RMB de chiffre d'affaires ; §3.4c : interdit de s'en servir pour améliorer un autre modèle) : à éviter. Non examinés, donc exclus par défaut : MiniMax Music 3, HeartMuLa, KugelAudio, OmniVoice, AuK et les modèles 3D. Les poids réhébergés sous DeepBeepMeep/* n'ont pas de champ de licence : c'est la licence du modèle d'origine qui s'applique. models/recon3d (MapAnything) n'est pas en cause : mapanything.py:1-6 déclare des poids map-anything-apache et une tête DPT réécrite à la place du code CroCo (CC BY-NC-SA).",
+    "t4": "Partiel : passage automatique en fp16 si la capacité est < 8 (T4 = 7.5), poids int8 fp16 fournis, --attention sdpa, profils de délestage 4, 4.5 et 5, --gpu cuda:1 pour le 2e T4. Seul chiffre T4 connu : FastWan 5B, ≈ 8 min par clip de 5 s en 480p, annoncé par un tiers (Wan2GP-on-Colab) ; les autres modèles ne sont pas prouvés sur T4. FastWan 5B : garder la version non quantifiée (l'int8 impose bf16). À vérifier : pilote Kaggle pour torch 2.10, RAM pour le 14B.",
     "cpu": "Non : torch.cuda.get_device_capability() est appelé au chargement du module. Le conteneur sert à écrire les réglages JSON et les files --process.",
     "verdict": "à dupliquer"
   },
@@ -73,7 +86,7 @@
     "licence": "Apache-2.0 (notebook d'installation seulement) ; le moteur exécuté reste WanGP Community License 2.0",
     "usage_commercial": "oui sous conditions",
     "conditions": "Apache ne couvre que ≈ 300 lignes d'installation : les conditions de Wan2GP s'appliquent au moteur. Le notebook clone Wan2GP sans version : fixer le commit de302ee. FFmpeg BtbN « -gpl » : ne pas redistribuer le binaire sans sa source. Ne pas lancer Gradio --share sur Colab gratuit (interdit par la FAQ Colab) ; sur Kaggle, remplacer la cellule 14 par wgp.py --process (sans interface). Garder LICENSE et ajouter un NOTICE de modification.",
-    "t4": "Oui pour FastWan 5B en 480p : ≈ 8 min par clip de 5 s sur un T4 Colab gratuit (annoncé par l'auteur), --profile 5, fp16 automatique, int8, SDPA. Poids ≈ 15,4 Go en int8.",
+    "t4": "FastWan 5B en 480p seulement : ≈ 8 min par clip de 5 s sur un T4 Colab gratuit, annoncé par l'auteur du notebook (« producing roughly a 5 second 480p clip in about 8 minutes »), non mesuré par nous. --profile 5, fp16 automatique, int8, SDPA. Poids ≈ 15,4 Go en int8. Autres modèles WanGP : aucun chiffre T4.",
     "cpu": "Non (nvidia-smi exigé, CUDA requis au démarrage de WanGP).",
     "verdict": "à dupliquer"
   },
@@ -99,7 +112,7 @@
     "licence": "Apache-2.0 (code et sous-module SCAIL-Pose) ; poids MIT (zai-org/SCAIL-2, Comfy-Org/SCAIL-2, GGUF realrebelai et vantagewithai)",
     "usage_commercial": "oui sous conditions",
     "conditions": "Rester en mode e2e : le mode pose-driven utilise les poids NLF, non commerciaux. Remplacer ultralytics (AGPL-3.0) et SAM3 (accès restreint, licence « other ») par le paquet sam2 avec SAM2.1 (Apache). Retirer prompt_enhancer.py (clé Gemini), wan/utils/prompt_extend.py et dashscope. LoRA LightX2V : prendre la version officielle lightx2v (Apache), pas l'extraction Kijai. SCAIL-2-Tuner (sans licence) et le jeu MotionPair (formulaire) : ne pas utiliser. Ne pas redistribuer examples/. Branche par défaut wan-scail2 ; sous-module SCAIL-Pose. Multi-références par images séparées « expérimental » : composer les personnages sur une image de référence unique avec masque coloré.",
-    "t4": "Code natif : non (checkpoint fp32 de 65,6 Go chargé en entier, flash_attention obligatoire, bf16). Chemin réaliste : ComfyUI natif + GGUF MIT (Q3_K_M 8,1 Go, Q4_K_M 10,9 Go) + LoRA LightX2V 8 pas, umT5, CLIP et VAE sur le 2e T4. Estimation non mesurée : 15 à 25 min par segment de 5 s en 512×896.",
+    "t4": "Code natif : non (checkpoint fp32 de 65,6 Go chargé en entier, flash_attention obligatoire, bf16). Chemin T4 : ComfyUI natif + GGUF MIT, NON PROUVÉ, délestage partiel nécessaire. model_scail2.py ajoute à la séquence les jetons de référence (torch.cat([ref_latents, x], dim=2)) et des jetons de pose à demi-résolution (pose_length = T*(H//2)*(W//2)) : en 512×896×81, ≈ 37 632 jetons vidéo + 1 792 de référence + 9 408 de pose ≈ 48 800 jetons, soit ≈ 49 % de plus que le 832×480×81 (32 760 jetons) où un 14B Q4_K_M de 9,7 Go culminait déjà à 14,9 Gio (mesure tiers, voir ComfyUI-GGUF). Or SCAIL-2-Q4_K_M pèse 10,86 Go et un T4 offre ≈ 15 Gio utiles. Premier essai : Q3_K_M (8,11 Go) et/ou 384×672 (≈ 27 500 jetons), ou streaming des poids de ComfyUI, umT5, CLIP et VAE sur le 2e T4, LoRA LightX2V 8 pas. RAM hôte Kaggle ≈ 29 Go selon des tiers (non lue sur la doc officielle ; relever free -g en début de session) : le délestage en dépend. Aucune durée par segment avancée avant mesure.",
     "cpu": "Non pour l'inférence ; préparation des masques colorés et assemblage seulement.",
     "verdict": "à dupliquer"
   },
@@ -112,8 +125,21 @@
     "licence": "Apache-2.0 (code et poids One-to-All 1.3B et 14B) ; base Wan2.1 Apache-2.0 ; fichiers non commerciaux embarqués (voir conditions)",
     "usage_commercial": "oui sous conditions",
     "conditions": "Fork élagué obligatoire : supprimer video-generation/opensora/models/diffusion/utils/pos_embed.py et curope/ (Naver CroCo, CC BY-NC-SA 4.0), benchmark/ (Poseur et SMPL-X non commerciaux), examples/ et assets/ (médias tiers, dont la photo d'une personne réelle et une vidéo Douyin). Remplacer yolov10m.onnx (YOLOv10, AGPL-3.0, infer_utils.py:21) par yolox_l.onnx (Apache). Retirer HF_ENDPOINT=hf-mirror.com (4 scripts) et le miroir pip aliyun. Ne pas redistribuer le jeu de données (clips cartoon et TikTok). Faire sa propre conversion fp16 plutôt que reprendre celle de Kijai (sans licence).",
-    "t4": "Scripts du dépôt : non tels quels (bf16 en dur, pas de délestage, OOM probable). Chemin T4 : ComfyUI + nœuds onetoall de kijai/ComfyUI-WanVideoWrapper avec le 1.3B en fp16 (4,42 Go) ; « 11 min pour 10 s en 832×480 » annoncé, tutoriel non vérifiable. Le « 1.3B » fait en réalité 2,21 G paramètres ; le 14B passe seulement en GGUF. Entraînement prévu pour 8 GPU ZeRO-3 ; --lora non implémentée.",
+    "t4": "Scripts du dépôt : non tels quels (bf16 en dur, pas de délestage, OOM probable). Chemin T4 : ComfyUI + nœuds onetoall de ComfyUI-WanVideoWrapper (épinglé dans ce fichier) avec le 1.3B en fp16 (4,42 Go) ; « 11 min pour 10 s en 832×480 » annoncé, tutoriel non vérifiable. Le « 1.3B » fait en réalité 2,21 G paramètres ; le 14B passe seulement en GGUF. Entraînement prévu pour 8 GPU ZeRO-3 ; --lora non implémentée.",
     "cpu": "Diffusion : non (câblée CUDA). Le prétraitement de pose en ONNX peut tourner sur CPU, lentement.",
+    "verdict": "à dupliquer"
+  },
+  {
+    "nom": "VideoX-Fun",
+    "url": "https://github.com/aigc-apps/VideoX-Fun",
+    "commit": "13bb3c625e8b1e457d7124d92207b49e00e4a6fe",
+    "date_commit": "2026-10-14T09:43:58+08:00",
+    "etape": "personnage-animation",
+    "licence": "Apache-2.0 (code) ; poids alibaba-pai/Wan2.2-Fun-5B-InP, 5B-Control et 5B-Control-Camera Apache-2.0 (tags HF) ; le même code charge aussi des modèles sous d'autres licences (voir conditions)",
+    "usage_commercial": "oui sous conditions",
+    "conditions": "N'utiliser que Wan2.2-Fun-5B : 5B-Control avec image de référence (examples/wan2.2_fun/predict_v2v_control_ref_5b.py : pose, profondeur, canny, MLSD, trajectoire) pour l'animation pilotée par un comédien sur la base 5B déjà choisie pour le T4 ; 5B-InP (« supporting first/last frame prediction ») pour enchaîner les plans d'un sketch de 25 à 60 s ; 5B-Control-Camera pour les mouvements de caméra. Exclure CogVideoX-5B (README:673 : CogVideoX LICENSE), Qwen-Image-2.1 (qwen-research), MiniMax-H3 et HunyuanVideo (territoires exclus), LTX-2 (plafond de revenus) et FLUX.2 [dev] (non commercial), tous chargeables par le même dépôt. Ne pas utiliser videox_fun/utils/utils_yolo.py (ultralytics, AGPL, et yolov8x-seg téléchargé depuis un OSS aliyun). Extraction de pose : la nôtre (prétraitement ONNX de One-to-All avec yolox_l). Ne pas redistribuer asset/ (médias de démonstration, droits non vérifiés). Entraînement : scripts/wan2.2_fun/train_lora.py et train_control_lora.py (README_TRAIN_LORA.md, README_TRAIN_CONTROL_LORA.md, variantes A14B et 5B) ; workflows ComfyUI comfyui/wan2_2_fun/v1/*pose_ref*.json et *flf*.json.",
+    "t4": "Plausible, non mesuré : attention SDPA quand flash-attn est absent (videox_fun/models/attention_utils.py), weight_dtype à passer en torch.float16 (le script le prévoit pour les cartes sans bf16 comme la V100 ou la 2080 Ti ; README:61 cite une V100 16 Go), GPU_memory_mode model_cpu_offload, model_cpu_offload_and_qfloat8 ou sequential_cpu_offload (README:144-148). Poids HF : DiT 5B 10,0 Go en bf16 + umT5 11,4 Go + VAE Wan2.2 2,8 Go (24,2 Go) : DiT seul sur un T4, umT5 délesté ou sur le 2e T4. Taille par défaut 704×1280 (9:16), 121 images à 24 i/s : premier essai en 480×832 et moins d'images. fp16 non validé (risque de NaN).",
+    "cpu": "Non pour générer ; préparation des vidéos de pose et des listes d'images.",
     "verdict": "à dupliquer"
   },
   {
@@ -140,6 +166,19 @@
     "conditions": "Rien à forker : passer par diffusers (ZImagePipeline et LoRA), stable-diffusion.cpp (GGUF) ou ComfyUI-GGUF, et DiffSynth pour entraîner les LoRA. Le dépôt sert de référence (Turbo : 8 à 9 pas, CFG 0 ; base : 28 à 50 pas, CFG 3 à 5). Préférer les poids bf16 Comfy-Org ou GGUF unsloth/leejet au Turbo officiel stocké en fp32 (32,9 Go). Z-Image-Edit et Omni ne sont pas publiés.",
     "t4": "fp16 : images noires (issues #14 et #125, cette dernière sur 2×T4). bf16 émulé : OOM à 1024² sur 2×T4 avec diffusers. Voie T4 : GGUF (Turbo Q4_K_M 5,02 Go) via stable-diffusion.cpp ou ComfyUI-GGUF, précision à valider. Attention par défaut _native_flash incompatible sm75 : ZIMAGE_ATTENTION=_native.",
     "cpu": "Possible en GGUF via stable-diffusion.cpp (≈ 8 Go de RAM) ; 10 à 30 min par image estimées, non mesuré.",
+    "verdict": "à référencer seulement"
+  },
+  {
+    "nom": "flux2",
+    "url": "https://github.com/black-forest-labs/flux2",
+    "commit": "50fe5162777813d869182b139e83b10743caef15",
+    "date_commit": "2026-03-12T16:00:27+01:00",
+    "etape": "planches-images-cles",
+    "licence": "Apache-2.0 (code, LICENSE.md) ; poids FLUX.2 [klein] 4B et 4B Base Apache-2.0 (3 875 544 576 paramètres, encodeur Qwen3-4B) ; klein 9B, 9B KV, 9B Base et FLUX.2 [dev] sous FLUX Non-Commercial License (README:25-26 et 28-29)",
+    "usage_commercial": "oui (4B et 4B Base seulement)",
+    "conditions": "Règle : uniquement black-forest-labs/FLUX.2-klein-4B ou FLUX.2-klein-base-4B (Apache) et leurs dérivés Apache (leejet/FLUX.2-klein-4B-GGUF, Comfy-Org/vae-text-encorder-for-flux-klein-4b) ; jamais klein 9B, 9B KV, 9B Base ni FLUX.2 [dev]. Piège : docs/flux2.md de stable-diffusion.cpp renvoie au VAE du dépôt FLUX.2-dev (accès restreint, non commercial) : prendre le vae/ de FLUX.2-klein-4B ou FLUX.2-small-decoder (Apache). Le dépôt est une référence (code bf16 en dur) : exécuter via diffusers (Flux2KleinPipeline), ComfyUI (modèle Flux2) ou stable-diffusion.cpp. Usage visé : fiches personnages et images clés par édition multi-références (README:24), à comparer à Qwen-Image-Edit-2511 sur T4.",
+    "t4": "Plausible, non mesuré : « Klein 4B fits in ~8GB VRAM » (README:49) ; DiT 7,75 Go en bf16 et encodeur Qwen3-4B ≈ 8 Go, à répartir sur les deux T4 ou en GGUF. ComfyUI déclare le fp16 pris en charge pour Flux2 (supported_models.py:811), sans validation sur T4. Plus léger que Qwen-Image-Edit-2511 (DiT de 20B) : banc comparatif à faire.",
+    "cpu": "Possible en GGUF via stable-diffusion.cpp (4 pas annoncés pour le distillé), lent, non mesuré.",
     "verdict": "à référencer seulement"
   },
   {
@@ -176,9 +215,22 @@
     "etape": "levres-voix",
     "licence": "Apache-2.0 (code et poids) ; base Wan2.1-I2V-14B-480P Apache-2.0 ; chinese-wav2vec2-base MIT",
     "usage_commercial": "oui",
-    "conditions": "Exclure la LoRA FusionX citée dans le README (contient CausVid, non commercial) et les fichiers quant_models/*_lora.safetensors (LoRA fusionnée non identifiée). LoRA lightx2v : depuis le dépôt lightx2v (Apache), pas Kijai. Ne pas appeler dashscope (wan/utils/prompt_extend.py). Ajouter dans le fork les mentions de licence de Kokoro (Apache) et de StyleTTS2 (MIT), vendorisés sans fichier LICENSE. Français non prouvé (encodeur audio pré-entraîné sur du mandarin) ; 2 locuteurs maximum par passe.",
-    "t4": "Non en l'état : flash-attn 2 codé en dur (wan/modules/clip.py:85 et 197, multitalk_model.py), bf16, ≈ 27 Go de RAM en mode quantifié, --quant int8 cassé (t5_int8 absent de HF), LoRA interdite avec la quantification. Voie la plus crédible : ComfyUI-WanVideoWrapper + GGUF kijai InfiniteTalk Q4_K_M (1,40 Go), ou Wan2GP. À chronométrer.",
+    "conditions": "Exclure la LoRA FusionX citée dans le README (contient CausVid, non commercial) et les fichiers quant_models/*_lora.safetensors (LoRA fusionnée non identifiée). LoRA lightx2v : depuis le dépôt lightx2v (Apache), pas Kijai. Ne pas appeler dashscope (wan/utils/prompt_extend.py). Ajouter dans le fork les mentions de licence de Kokoro (Apache) et de StyleTTS2 (MIT), vendorisés sans fichier LICENSE. Français non prouvé (encodeur audio pré-entraîné sur du mandarin) : test A/B contre HuMo-1.7B (encodeur Whisper multilingue) sur les mêmes répliques avant d'adopter l'un ou l'autre ; 2 locuteurs maximum par passe.",
+    "t4": "Non en l'état : flash-attn 2 codé en dur (wan/modules/clip.py:85 et 197, multitalk_model.py), bf16, ≈ 27 Go de RAM en mode quantifié, --quant int8 cassé (t5_int8 absent de HF), LoRA interdite avec la quantification. Voie la plus crédible : ComfyUI-WanVideoWrapper (épinglé dans ce fichier) ou Wan2GP. Budget réel : le GGUF kijai Wan2_1-InfiniteTalk_Single_Q4_K_M (1,40 Go) n'est que l'adaptateur audio ; il faut aussi la base Wan2.1-I2V-14B-480P (city96, Q4_K_M 11,34 Go ; Q3_K_M 8,59 Go), soit ≈ 12,7 Go de poids DiT en Q4 (≈ 10 Go en Q3) avant umT5, CLIP-H, wav2vec2 et les activations : aussi serré que SCAIL-2. Prendre Q3_K_M ou l'échange de blocs (blocks_to_swap), encodeurs sur le 2e T4. Tenue sur T4 : à mesurer.",
     "cpu": "Non pour la génération ; préparation des JSON d'entrée, découpage audio et encodage wav2vec2 possibles.",
+    "verdict": "à dupliquer"
+  },
+  {
+    "nom": "HuMo",
+    "url": "https://github.com/Phantom-video/HuMo",
+    "commit": "845f44736e21be93aa5d8cf406b6eb01af9bff67",
+    "date_commit": "2026-01-26T01:13:56+08:00",
+    "etape": "levres-voix",
+    "licence": "Apache-2.0 (code) ; poids bytedance-research/HuMo (1.7B et 17B) et repack Comfy-Org/HuMo_ComfyUI Apache-2.0 ; encodeur audio openai/whisper-large-v3 Apache-2.0 ; VAE et umT5 de Wan2.1-T2V-1.3B Apache-2.0",
+    "usage_commercial": "oui sous conditions",
+    "conditions": "Candidat lèvres en français, en A/B contre InfiniteTalk sur les mêmes répliques : texte + image de référence + audio en une passe, encodeur Whisper-large-v3 multilingue (au lieu du wav2vec2 chinois d'InfiniteTalk), avantage non mesuré. Prendre le 1.7B. Ne pas utiliser le séparateur vocal huangjackson/Kim_Vocal_2 (sans licence déclarée ; non accessible par l'API HF le 16/10/2026) : fournir un dialogue enregistré propre. Le code du dépôt sert de référence : flash_attn==2.6.3 à l'installation et bf16 en dur (humo/generate_1_7B.py:214, 254, 564) ; exécuter via ComfyUI natif (nœud WanHuMoImageToVideo, Whisper large v3 natif) ou ComfyUI-WanVideoWrapper. Ne pas redistribuer examples/ (image et audio de démonstration, droits non vérifiés). Pas de code d'entraînement. Plans de 97 images à 25 i/s (≈ 3,9 s) : enchaîner les segments. Pas de mode multi-locuteur documenté : un personnage parlant par passe.",
+    "t4": "Plausible, non mesuré : repack Comfy-Org humo_1.7B_fp16 3,48 Go + whisper_large_v3_fp16 3,09 Go ; umT5 et VAE Wan2.1 sur le 2e T4. L'auteur annonce 8 min par vidéo 480p sur une carte de 32 Go (README:27). Le 17B (fp8 17,1 Go) est hors de portée d'un T4.",
+    "cpu": "Non pour la génération.",
     "verdict": "à dupliquer"
   },
   {
@@ -192,6 +244,19 @@
     "conditions": "Remplacer les poids face-parse BiSeNet 79999_iter.pth (entraînés sur CelebAMask-HQ, non commercial), obligatoires dans musetalk/utils/blending.py, par un masque géométrique ou maison. Ne pas vendoriser data/ ni assets/demo (non commerciaux). Poids S3FD sans licence explicite (téléchargés depuis adrianbulat.com au lancement) : fournir les cadres des visages depuis notre propre compositing. SyncNet de LatentSync (OpenRAIL++) : entraînement seulement. Épingler une révision HF postérieure au 22/09/2026 (avant : creativeml-openrail-m). Retirer hf-mirror de download_weights.sh, tensorflow (jamais importé) et mmpose/DWPose.",
     "t4": "Inférence : oui (UNet ≈ 860 M, ≈ 1,7 Go en fp16 avec --use_float16, ni bf16 ni FA). Versions figées torch 2.0.1 et mmcv fragiles sur Kaggle. Un seul visage par image : recadrer chaque personnage, puis recomposer. Entraînement (étape 2 ≈ 54 Go) : non.",
     "cpu": "Possible en fp32 via scripts/inference.py ; de l'ordre de l'heure pour 25 s (estimation) : tests seulement.",
+    "verdict": "à dupliquer"
+  },
+  {
+    "nom": "ACE-Step-1.5",
+    "url": "https://github.com/ace-step/ACE-Step-1.5",
+    "commit": "ca1e85fe9430179831e6bc6be790c332190a3866",
+    "date_commit": "2026-08-29T16:25:18+08:00",
+    "etape": "musique-ambiance",
+    "licence": "MIT (code ; nano-vllm vendorisé MIT) ; poids ACE-Step/Ace-Step1.5 MIT (DiT 2B turbo, LM 5 Hz 1.7B, VAE, Qwen3-Embedding-0.6B), LM 0.6B et XL turbo MIT ; ACE-Step v1 3.5B Apache-2.0",
+    "usage_commercial": "oui sous conditions",
+    "conditions": "Garder la notice MIT. Musique utilisable commercialement selon la fiche HF (« You can strictly use the generated music for commercial purposes » ; données annoncées sous licence, libres de droits ou synthétiques, non vérifiable). Risque Content ID : le README (l. 297) avertit d'un plagiat involontaire par similarité de style ; ne pas utiliser les modes cover ou repaint sur un morceau existant, ne pas imiter un artiste nommé, ne pas déposer nos pistes dans un système d'identification de contenu, garder le prompt et la graine de chaque piste comme preuve. Forcer le téléchargement depuis Hugging Face (sinon bascule automatique vers ModelScope si google.com est injoignable, model_downloader.py:140-154). Paroles en français possibles (50+ langues annoncées, README:45) : qualité à écouter. Remplace les 29 musiques de MoneyPrinterTurbo, à supprimer.",
+    "t4": "Prévu pour les cartes pré-Ampere, non mesuré : fp16 et attention eager choisis automatiquement si bf16 absent (init_service_orchestrator.py:92-99, init_service_loader.py:146, correctifs des NaN #924 et #927). Lancer avec --backend pt : nano-vllm importe flash_attn, qui ne gère pas Turing. « less than 4GB of VRAM » (README:41) ; README:129-138 conseille 2B turbo + LM 1.7B pour 12 à 16 Go.",
+    "cpu": "Inférence possible mais lente (docs/en/INSTALL.md, « CPU-Only Mode ») ; entraînement de LoRA non recommandé. Non mesuré : pistes de 30 à 60 s à tester la nuit.",
     "verdict": "à dupliquer"
   },
   {
@@ -254,7 +319,7 @@
     "etape": "interpolation-upscale",
     "licence": "Apache-2.0 (code, sauf color_fix.py) ; poids SeedVR2 3B et 7B et reconversions numz, AInVFX, cmeka Apache-2.0",
     "usage_commercial": "oui sous conditions",
-    "conditions": "src/utils/color_fix.py reprend 7 fonctions de StableSR (S-Lab License 1.0, non commerciale) : les supprimer ou les réécrire en salle blanche ; d'ici là, lancer avec --color_correction hsv ou none (pas lab, réglage par défaut de la CLI, ni wavelet, wavelet_adaptive ou adain). Garder LICENSE et les en-têtes ByteDance. Utiliser la CLI inference_cli.py (n'importe pas comfy_api), pas l'intégration native de ComfyUI (GPL-3.0). Vérifier l'identité des personnages après agrandissement (sur-génération de détails sur les vidéos IA en 480p-720p).",
+    "conditions": "src/utils/color_fix.py reprend 7 fonctions de StableSR (S-Lab License 1.0, non commerciale) : les supprimer ou les réécrire en salle blanche ; d'ici là, lancer avec --color_correction hsv ou none (pas lab, réglage par défaut de la CLI, ni wavelet, wavelet_adaptive ou adain). Garder LICENSE et les en-têtes ByteDance. Utiliser la CLI inference_cli.py (n'importe pas comfy_api), pas l'intégration native de ComfyUI (GPL-3.0). Vérifier l'identité des personnages après agrandissement (sur-génération de détails sur les vidéos IA en 480p-720p). Le dépôt commite deux tenseurs picklés, pos_emb.pt (595 Ko) et neg_emb.pt (657 Ko), embeddings de prompt chargés avec torch.load(..., weights_only=True) (generation_utils.py:537-538) : récupérés par recuperer.sh.",
     "t4": "Oui en principe, sans retour public : SDPA par défaut, FP8 et GGUF stockés puis convertis, BlockSwap, tuilage du VAE, --cuda_device 0,1. Calcul en bf16 émulé sur Turing (lent, non mesuré). 3B Q8 ou fp8 + VAE ≈ 2,5 à 4,2 Go.",
     "cpu": "Techniquement possible, inutilisable en pratique.",
     "verdict": "à dupliquer"
@@ -265,9 +330,9 @@
     "commit": "fd18b3d055cb0fc6f066ca90fe2c3c8cbb698490",
     "date_commit": "2026-08-21T23:28:07+08:00",
     "etape": "qa-metriques",
-    "licence": "Apache-2.0 (code) ; RAFT BSD-3 ; AMT et CoTracker CC BY-NC 4.0 ; VBench-2.0 GPL-3 (YOLO-World)",
+    "licence": "Apache-2.0 (code) ; RAFT BSD-3 ; AMT et CoTracker CC BY-NC 4.0 ; VBench-2.0 GPL-3 (YOLO-World) ; détecteur NudeNet AGPL-3.0 (ONNX commité dans le dépôt)",
     "usage_commercial": "oui sous conditions",
-    "conditions": "Copier à la carte ; ne pas faire pip install vbench (installe pyiqa, sous PolyForm Noncommercial, et fige transformers 4.33.2 et numpy < 2). Copier seulement subject_consistency, background_consistency, dynamic_degree, aesthetic_quality, vbench2_beta_i2v/i2v_subject.py, les transformations de utils.py et RAFT (garder la notice BSD). Exclure AMT (motion_smoothness), pyiqa/MUSIQ (imaging_quality), CoTracker et VBench-2.0. Zones grises : poids RAFT entraînés sur FlyingThings et FlyingChairs (« research only » ; alternative : flux OpenCV DIS ou Farneback sans poids) et fiche du modèle CLIP d'OpenAI (usage déployé hors périmètre) : contrôle qualité interne seulement. Épingler DINO (chargé par torch.hub sans version).",
+    "conditions": "Copier à la carte ; ne pas faire pip install vbench (installe pyiqa, sous PolyForm Noncommercial, et fige transformers 4.33.2 et numpy < 2). Copier seulement subject_consistency, background_consistency, dynamic_degree, aesthetic_quality, vbench2_beta_i2v/i2v_subject.py, les transformations de utils.py et RAFT (garder la notice BSD). Exclure AMT (motion_smoothness), pyiqa/MUSIQ (imaging_quality), CoTracker, VBench-2.0 et tout vbench2_beta_trustworthiness/ : il contient third_party/nudenet/best.onnx (12,1 Mo, commité dans git, donc téléchargé par recuperer.sh), détecteur NudeNet dont le dépôt amont notAI-tech/NudeNet est sous AGPL-3.0 et dont les modèles sont des YOLOv8 d'ultralytics (AGPL). Zones grises : poids RAFT entraînés sur FlyingThings et FlyingChairs (« research only » ; alternative : flux OpenCV DIS ou Farneback sans poids) et fiche du modèle CLIP d'OpenAI (usage déployé hors périmètre) : contrôle qualité interne seulement. Épingler DINO (chargé par torch.hub sans version).",
     "t4": "Oui, largement (< 2 Go de VRAM), après sous-échantillonnage des vidéos (sinon OOM en 1080p, chargement complet en float32).",
     "cpu": "Plausible par l'API Python (pas par la CLI, qui fixe cuda) après transcodage (fps=8, 288×512), découpage en lots et no_grad ; non testé.",
     "verdict": "à dupliquer"

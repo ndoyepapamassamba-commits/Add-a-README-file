@@ -12,11 +12,19 @@
 # (par exemple /kaggle/working/src sur Kaggle).
 #
 # Garanties :
-#   - aucun poids téléchargé : aucun appel à Hugging Face ou ModelScope, GIT_LFS_SKIP_SMUDGE=1 ;
+#   - aucun poids hors des dépôts git : aucun appel à Hugging Face ou ModelScope,
+#     GIT_LFS_SKIP_SMUDGE=1. Attention, quelques dépôts commitent des fichiers de modèle :
+#     VBench (best.onnx de NudeNet, 12 Mo, AGPL), SeedVR2 (pos_emb.pt, neg_emb.pt),
+#     ComfyUI-WanVideoWrapper (deux ONNX de visage, encoded_silence.safetensors) ;
 #   - aucune exécution du code récupéré (ni build, ni pip, ni hook git) ;
 #   - sous-modules non récupérés (la commande est affichée quand un dépôt en a) ;
-#   - idempotent : un dossier déjà au bon commit est laissé tel quel, et un dossier
-#     modifié localement n'est jamais écrasé.
+#   - variables GIT_DIR, GIT_WORK_TREE, etc. héritées ignorées : le script n'agit que sur vendor/src ;
+#   - idempotent : un dossier déjà au bon commit est laissé tel quel ; un dossier avec des
+#     modifications locales ou des fichiers non suivis n'est pas mis à jour ; un fichier ignoré
+#     par git (poids posés dans models/, ckpts/…) n'est jamais écrasé : l'extraction s'arrête
+#     s'il gêne ;
+#   - reprise : un dossier vide, ou un clone interrompu avant l'extraction, est repris ;
+#     sinon le script refuse et indique quoi faire.
 #
 # Codes de sortie : 0 succès ; 1 au moins une récupération a échoué ; 2 usage ou moteurs.json
 # invalide ; 3 nom inconnu ; 4 dépôt « à référencer seulement » (non récupéré).
@@ -28,9 +36,14 @@ DEST="${MOTEURS_SRC:-$ICI/src}"
 
 export GIT_LFS_SKIP_SMUDGE=1   # ne jamais tirer de gros fichiers LFS (poids)
 export GIT_TERMINAL_PROMPT=0   # pas de demande d'identifiants si un dépôt a disparu
+# Lancé depuis un hook git, une tâche d'IDE ou une CI, le shell peut porter GIT_DIR ou GIT_WORK_TREE :
+# chaque « git -C <cible> » agirait alors sur ce dépôt extérieur (origin réécrit, HEAD détaché).
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES \
+  GIT_COMMON_DIR GIT_NAMESPACE GIT_CEILING_DIRECTORIES
 
 aide() {
-  sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
+  # en-tête : lignes de commentaire qui suivent le shebang
+  awk 'NR == 1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$0"
 }
 
 mode=tout
@@ -144,26 +157,41 @@ recuperer_un() {
   local cible="$DEST/$nom"
   local actuel=""
 
+  # Dossier vide créé à l'avance : on le prend comme une nouvelle cible.
+  if [ -d "$cible" ] && [ ! -e "$cible/.git" ] && [ -z "$(ls -A "$cible" 2>/dev/null)" ]; then
+    rmdir "$cible" || return 1
+  fi
+
   if [ -e "$cible" ] && [ ! -d "$cible/.git" ]; then
-    echo "!! $nom : $cible existe mais n'est pas un dépôt git ; je n'y touche pas." >&2
+    echo "!! $nom : $cible existe, n'est pas vide et n'est pas un dépôt git ; je n'y touche pas." >&2
+    echo "   Pour le récupérer : déplacez ou supprimez ce dossier, puis relancez." >&2
     return 1
   fi
 
   if [ -d "$cible/.git" ]; then
     actuel=$(git -C "$cible" rev-parse -q --verify 'HEAD^{commit}' 2>/dev/null || true)
-    if [ -n "$(git -C "$cible" status --porcelain 2>/dev/null)" ]; then
+    if [ -z "$actuel" ]; then
+      # Aucun commit extrait : clone interrompu (pendant le téléchargement ou l'extraction).
+      if [ -n "$(ls -A "$cible" | grep -vx '.git')" ]; then
+        echo "!! $nom : clone interrompu pendant l'extraction (aucun commit extrait, mais des fichiers présents) ;" >&2
+        echo "   reprise impossible sans risque d'écraser un fichier. Supprimez $cible puis relancez." >&2
+        return 1
+      fi
+      echo "~  $nom : reprise d'un clone interrompu (aucun commit extrait)."
+    else
+      if [ -n "$(git -C "$cible" status --porcelain 2>/dev/null)" ]; then
+        if [ "$actuel" = "$sha" ]; then
+          echo "=  $nom : déjà au commit ${sha:0:12}, avec des modifications locales (conservées)."
+          return 0
+        fi
+        echo "!! $nom : modifications locales ou fichiers non suivis, et commit différent (${actuel:0:12}) ; je n'écrase rien." >&2
+        echo "   Sauvegardez ou annulez ces modifications (git -C \"$cible\" status), puis relancez." >&2
+        return 1
+      fi
       if [ "$actuel" = "$sha" ]; then
-        echo "=  $nom : déjà au commit ${sha:0:12}, avec des modifications locales (conservées)."
+        echo "=  $nom : déjà au commit ${sha:0:12}, rien à faire."
         return 0
       fi
-      echo "!! $nom : modifications locales et commit différent (${actuel:0:12}) ; je n'écrase rien." >&2
-      return 1
-    fi
-    if [ "$actuel" = "$sha" ]; then
-      echo "=  $nom : déjà au commit ${sha:0:12}, rien à faire."
-      return 0
-    fi
-    if [ -n "$actuel" ]; then
       echo "~  $nom : passage du commit ${actuel:0:12} au commit ${sha:0:12}."
     fi
   else
@@ -183,9 +211,12 @@ recuperer_un() {
     echo "!! $nom : échec du téléchargement du commit $sha." >&2
     return 1
   fi
+  # --no-overwrite-ignore : un fichier ignoré par git (poids téléchargés dans models/, ckpts/…)
+  # qui porte le nom d'un fichier suivi par le nouveau commit arrête l'extraction au lieu d'être écrasé.
   if ! git -C "$cible" -c core.hooksPath=/dev/null -c advice.detachedHead=false \
-      checkout -q --detach FETCH_HEAD; then
-    echo "!! $nom : échec de l'extraction du commit $sha." >&2
+      checkout -q --no-overwrite-ignore --detach FETCH_HEAD; then
+    echo "!! $nom : échec de l'extraction du commit $sha (rien n'a été écrasé)." >&2
+    echo "   Si git cite des fichiers ignorés qui seraient écrasés, déplacez-les hors de $cible, puis relancez." >&2
     return 1
   fi
 
