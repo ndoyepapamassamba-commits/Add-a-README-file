@@ -46,6 +46,8 @@ hors règle sont signalés ci-dessous, avec la façon dont ils sont isolés et c
 | onnxruntime | 1.31 | MIT | github.com/microsoft/onnxruntime | inférence CPU | conforme |
 | Rhubarb Lip Sync | 1.14.0 | MIT | github.com/DanielSWolf/rhubarb-lip-sync | contrôle indépendant des bouches ; depuis le 16/10/2026, visèmes du tournage « troupe générée » (mode phonétique, `levres.py`) | conforme |
 | Z-Image-Turbo (Tongyi-MAI) via AI Horde | 6B, turbo | **Apache-2.0** (modèle) ; AI Horde : service communautaire gratuit, usage anonyme | huggingface.co/Tongyi-MAI/Z-Image-Turbo ; aihorde.net | fiches personnages et scènes 3D | conforme ; exécuté hors de chez nous |
+| Wan2.2-S2V (Alibaba) via Model Studio ou le Space Wan-AI | 14B (distillé côté service) | **Apache-2.0** (modèle) ; service Alibaba avec la clé de l'utilisateur, ou démonstration publique | huggingface.co/Wan-AI/Wan2.2-S2V-14B ; huggingface.co/spaces/Wan-AI/Wan2.2-S2V | animation des plans parlants (bouche, tête, buste, gestes) depuis l'image et la voix | conforme ; exécuté hors de chez nous |
+| SDK dashscope | 1.27.7 | Apache-2.0 | pypi.org/project/dashscope | envoi des images et sons au service Wan2.2-S2V | conforme |
 | WORLD (vocodeur) + pyworld | 0.3.4 | BSD modifiée (WORLD) ; MIT (pyworld) | github.com/mmorise/World ; github.com/JeremyCCHsu/Python-Wrapper-for-World-Vocoder | hauteur, étendue et timbre des voix au ton de la chaîne | conforme |
 | EasyOCR | 1.7 | Apache-2.0 | github.com/JaidedAI/EasyOCR | repérer le texte parasite des images générées (effacé par LaMa) | conforme |
 | faster-whisper (Whisper small) | 1.1.0 | MIT | github.com/SYSTRAN/faster-whisper | contrôle d'intelligibilité de chaque réplique | conforme |

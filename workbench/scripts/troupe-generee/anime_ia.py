@@ -1,0 +1,129 @@
+# ANIMATION PAR OUTIL (16/10/2026) — consigne : « cherche l'outil d'animation de la scène et des personnages ».
+# Veille : Wan2.2-S2V (Alibaba, Apache-2.0) anime une image + une voix (bouche, tête, buste, gestes), dessin animé et
+# plusieurs personnages compris ; InfiniteTalk / MultiTalk (MeiGen, Apache-2.0) font de même en plusieurs personnes.
+# Ce script branche ces outils sur NOTRE film : chaque plan qui contient une réplique est envoyé tel quel (le cadre du
+# plan pris dans l'image générée + le son exact du plan, silences compris) ; le plan animé remplace nos images, le reste
+# du film (montage, sous-titres, cartes, son) ne change pas. Si l'outil ne répond pas, le plan du moteur maison reste.
+#
+#   python3 anime_ia.py prepare  v16 timeline.json            → v16/ia/<t0>.png + <t0>.wav (+ plans.json)
+#   python3 anime_ia.py genere   v16 [dashscope|hf] [N max]   → v16/ia/<t0>.mp4
+#   python3 anime_ia.py insere   v16                          → remplace les images des plans animés dans v16/clip
+#
+# Fournisseurs :
+#   dashscope : Alibaba Model Studio, modèle « wan2.2-s2v » (protocole lu dans le code du Space officiel Wan-AI) ;
+#               clé lue dans la variable d'environnement DASHSCOPE_API_KEY (jamais écrite ni affichée) ;
+#               DASHSCOPE_REGION=intl (Singapour) ou cn (Pékin, défaut du Space officiel).
+#   hf        : le Space public Wan-AI/Wan2.2-S2V (gratuit, sans compte) — refusé d'office si sa file dépasse HF_FILE_MAX.
+import json, os, subprocess, sys, time, wave
+import numpy as np, cv2
+
+CW, CH, FPS = 576, 460, 30
+cmd, D = sys.argv[1], sys.argv[2]
+IA = f'{D}/ia'; os.makedirs(IA, exist_ok=True)
+
+def plans_parlants(T, SH):
+    """plans qui contiennent au moins une réplique (le locuteur y est cadré) ; les plans larges muets restent au moteur."""
+    out = []
+    for s in SH:
+        t0, t1 = s[0], s[1]
+        if s[4] is None: continue
+        if any(L['t0'] < t1 and L['t0'] + L['dur'] > t0 for L in T['lines']): out.append(s)
+    return out
+
+if cmd == 'prepare':
+    T = json.load(open(sys.argv[3])); SH = json.load(open(f'{D}/tournage.json'))['decoupage']
+    with wave.open('voix/mix.wav') as w: sr = w.getframerate(); mix = np.frombuffer(w.readframes(w.getnframes()), np.int16)
+    P = []
+    for s in plans_parlants(T, SH):
+        k = f'{s[0]:06.2f}'
+        src = f'{D}/source/{k}.jpg'
+        if not os.path.isfile(src): continue
+        cv2.imwrite(f'{IA}/{k}.png', cv2.imread(src))
+        seg = mix[int(s[0] * sr):int(s[1] * sr)]
+        with wave.open(f'{IA}/{k}.wav', 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes(seg.tobytes())
+        P.append({'cle': k, 't0': s[0], 't1': s[1], 'plan': s[3], 'qui': s[4]})
+    json.dump(P, open(f'{IA}/plans.json', 'w'), ensure_ascii=False, indent=1)
+    print(f'{len(P)} plans parlants préparés ({sum(p["t1"] - p["t0"] for p in P):.1f} s à animer sur {T["total"]:.1f} s)')
+
+elif cmd == 'genere':
+    prov = sys.argv[3] if len(sys.argv) > 3 else 'dashscope'; NMAX = int(sys.argv[4]) if len(sys.argv) > 4 else 999
+    P = json.load(open(f'{IA}/plans.json'))[:NMAX]
+    def dashscope_s2v(img, wav):
+        import dashscope, requests
+        from dashscope.utils.oss_utils import check_and_upload_local
+        key = os.environ.get('DASHSCOPE_API_KEY')
+        if not key: raise RuntimeError('DASHSCOPE_API_KEY absente de l’environnement')
+        base = 'https://dashscope-intl.aliyuncs.com/api/v1' if os.environ.get('DASHSCOPE_REGION', 'cn') == 'intl' else 'https://dashscope.aliyuncs.com/api/v1'
+        dashscope.base_http_api_url = base; dashscope.api_key = key
+        _, iu = check_and_upload_local('wan2.2-s2v', img, key); _, au = check_and_upload_local('wan2.2-s2v', wav, key)
+        h = {'X-DashScope-Async': 'enable', 'X-DashScope-OssResourceResolve': 'enable', 'Authorization': f'Bearer {key}', 'Content-Type': 'application/json'}
+        r = requests.post(f'{base}/services/aigc/image2video/video-synthesis/', headers=h, timeout=60,
+                          json={'model': 'wan2.2-s2v', 'input': {'image_url': iu, 'audio_url': au}, 'parameters': {'style': 'speech', 'resolution': '480P'}})
+        r.raise_for_status(); tid = r.json()['output']['task_id']
+        while True:
+            time.sleep(5); g = requests.get(f'{base}/tasks/{tid}', headers={'Authorization': f'Bearer {key}'}, timeout=60).json()['output']
+            if g['task_status'] == 'SUCCEEDED': return g['results']['video_url']
+            if g['task_status'] in ('FAILED', 'CANCELED', 'UNKNOWN'): raise RuntimeError(g.get('message', g['task_status']))
+    def hf_s2v(img, wav):
+        import urllib.request
+        from gradio_client import Client, handle_file
+        q = json.loads(urllib.request.urlopen('https://wan-ai-wan2-2-s2v.hf.space/gradio_api/queue/status', timeout=30).read())
+        if q.get('queue_size', 0) > int(os.environ.get('HF_FILE_MAX', '30')): raise RuntimeError(f"file publique trop longue : {q.get('queue_size')}")
+        r = Client('Wan-AI/Wan2.2-S2V', verbose=False).predict(ref_img=handle_file(img), audio=handle_file(wav), resolution='480P', api_name='/predict')
+        return r['video'] if isinstance(r, dict) else r
+    fn = {'dashscope': dashscope_s2v, 'hf': hf_s2v}[prov]
+    for p in P:
+        out = f'{IA}/{p["cle"]}.mp4'
+        if os.path.isfile(out): continue
+        t = time.time()
+        try:
+            res = fn(f'{IA}/{p["cle"]}.png', f'{IA}/{p["cle"]}.wav')
+            if str(res).startswith('http'): subprocess.run(['curl', '-s', '-L', '-o', out, res], check=True)
+            else: subprocess.run(['cp', res, out], check=True)
+            print(f'{p["cle"]} {p["qui"]} animé en {time.time() - t:.0f} s', flush=True)
+        except Exception as e:
+            print(f'{p["cle"]} {p["qui"]} : outil indisponible ({e}) → le plan du moteur reste', flush=True)
+
+def arbitre_jev(outil, moteur, reference):
+    """L'ŒIL DE JEV tranche chaque plan : le plan de l'outil n'entre dans le film que s'il garde le personnage (visage,
+    coiffure, tenue, couleurs de la scène d'origine), sans déformation, et s'il est jugé plus vivant que le plan maison."""
+    import base64, uuid, urllib.request
+    enc = lambda im: base64.b64encode(cv2.imencode('.jpg', im, [cv2.IMWRITE_JPEG_QUALITY, 90])[1].tobytes()).decode()
+    r = {n: f'{n}-' + uuid.uuid4().hex[:10] for n in ('outil', 'moteur', 'reference')}
+    Q = {'identite': {'type': 'noul', 'instructions': 'Are the characters in `outil` the same characters as in `reference` (same faces, hair, outfits, colors and place)?'},
+         'deforme': {'type': 'noul', 'instructions': 'In `outil`, does any face or body look deformed, melted, stretched or anatomically wrong?'},
+         'vivant': {'type': 'choice', 'instructions': 'Which frame looks more alive and natural, like a frame from a 3D animated feature film where the character is speaking and moving: `outil` or `moteur`?',
+                    'criteria': {'outil': 'the frame named outil', 'moteur': 'the frame named moteur'}}}
+    body = {'model': 'jev-1.14.0', 'state': {k: v for k, v in r.items()},
+            'assets': {r[k]: {'type': 'image', 'format': 'jpg', 'data_base64': enc(im)} for k, im in (('outil', outil), ('moteur', moteur), ('reference', reference))}, 'questions': Q}
+    req = urllib.request.Request('https://api.typesafe.ai/v1/systemone', data=json.dumps(body).encode(), headers={'Content-Type': 'application/json', 'TypeSafe-Danger-Zone-Images': 'true'})
+    a = json.loads(urllib.request.urlopen(req, timeout=120).read())['answers']
+    v = {'identite': round(a['identite']['noul'], 2), 'deforme': round(a['deforme']['noul'], 2), 'vivant': a['vivant'].get('choice')}
+    v['garde_outil'] = v['identite'] >= 0.6 and v['deforme'] < 0.5 and v['vivant'] == 'outil'
+    return v
+
+if cmd == 'insere':
+    P = json.load(open(f'{IA}/plans.json')); n = 0
+    for p in P:
+        mp4 = f'{IA}/{p["cle"]}.mp4'
+        if not os.path.isfile(mp4): continue
+        cap = cv2.VideoCapture(mp4); fps = cap.get(cv2.CAP_PROP_FPS) or 25; fr = []
+        while True:
+            ok, f = cap.read()
+            if not ok: break
+            fr.append(f)
+        if not fr: continue
+        h, w = fr[0].shape[:2]; s = max(CW / w, CH / h)   # même cadre que le plan d'origine : on recadre au centre, sans étirer
+        f0, f1 = int(round(p['t0'] * FPS)), int(round(p['t1'] * FPS))
+        if os.environ.get('ARBITRE', '1') == '1':
+            mid = fr[len(fr) // 2]; im = cv2.resize(mid, (int(round(w * s)), int(round(h * s)))); y0, x0 = (im.shape[0] - CH) // 2, (im.shape[1] - CW) // 2
+            v = arbitre_jev(im[y0:y0 + CH, x0:x0 + CW], cv2.imread(f'{D}/clip/f{(f0 + f1) // 2:05d}.jpg'), cv2.imread(f'{IA}/{p["cle"]}.png'))
+            print(f'{p["cle"]} {p["qui"]} : JEV {v}', flush=True)
+            if not v['garde_outil']: continue
+        for k in range(f0, f1):
+            src = fr[min(len(fr) - 1, int((k - f0) / FPS * fps))]
+            im = cv2.resize(src, (int(round(w * s)), int(round(h * s))), interpolation=cv2.INTER_AREA)
+            y0, x0 = (im.shape[0] - CH) // 2, (im.shape[1] - CW) // 2
+            cv2.imwrite(f'{D}/clip/f{k:05d}.jpg', im[y0:y0 + CH, x0:x0 + CW], [cv2.IMWRITE_JPEG_QUALITY, 94])
+        n += 1; print(f'{p["cle"]} {p["qui"]} : {len(fr)} images de l’outil ({fps:.0f} i/s) → {f1 - f0} images du film')
+    print(f'{n} plans remplacés par l’outil d’animation')

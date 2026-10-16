@@ -14,6 +14,7 @@ privés : ils ne sont jamais dans ce dépôt (scratchpad ou `workbench/.private/
 | Texte parasite effacé | `texte.py` | EasyOCR + LaMa (Apache-2.0) |
 | Visages (une fois par scène) | `visages.py` | LivePortrait (MIT) — seules bouche et paupières sont greffées, alignées |
 | Voix au ton de la chaîne | `voix.py`, `f0.py`, `ecoute.py` | Piper siwis (CC-BY) / gilles (CC0), WORLD (BSD), Whisper (MIT) |
+| **Animation par outil** (plan par plan, arbitrée par JEV) | `anime_ia.py` | Wan2.2-S2V (Apache-2.0) : image + voix → bouche, tête, buste, gestes ; API Alibaba Model Studio (clé `DASHSCOPE_API_KEY`) ou Space public Wan-AI ; JEV garde le plan de l'outil seulement s'il est fidèle, sans déformation et plus vivant ; sinon le plan du moteur reste |
 | Visèmes depuis l'audio | `levres.py` | Rhubarb Lip Sync (MIT), mode phonétique (les voix Piper utilisées ne donnent pas d'alignement) |
 | Tournage | `tourne.py` | jeu sur place, découpage mesuré, règles « tête entière ou absente » et « pas de corps sans tête », aucun plan < 0,5 s ; mâchoire paramétrique quand LivePortrait n'ouvre pas la bouche (barbe, lunettes noires) ; acteur en bicubique, cadre sous-pixel |
 | Montage 9:16 | `compose.py` | sous-titres karaoké, cartes émoji Fluent (MIT), −14 LUFS |
@@ -31,4 +32,6 @@ python3 controle_video.py sortie/film.mp4 timeline.json sortie/tournage.json sor
 python3 jev_plans.py sortie/film.mp4 sortie/tournage.json sortie/jev_plans.json
 python3 jev_diff.py sortie/film.mp4 sortie/tournage.json sortie/source sortie/jev_diff.json
 python3 levres_roi.py sortie/film.mp4 timeline.json montage.json sortie/levres_roi.json
+# animation par outil : préparer les plans parlants, animer, réinsérer (JEV arbitre), puis remonter
+python3 anime_ia.py prepare sortie timeline.json && python3 anime_ia.py genere sortie dashscope && python3 anime_ia.py insere sortie
 ```
