@@ -2,7 +2,8 @@
  * Maillage d'un personnage tiré de son masque alpha (import, une fois par image) :
  *
  * 1. masque binaire `α ≥ seuil` → champ de distance signé exact ;
- * 2. contours de l'iso-ligne `distance = marge` (masque dilaté de `marge` px) par **marching squares** avec
+ * 2. fermeture morphologique (comble les fissures de moins de 4 px), puis contours de l'iso-ligne du masque fermé et
+ *    dilaté de `marge` px, par **marching squares** avec
  *    interpolation linéaire (contours sous-pixel, lisses) ; levée des selles par la valeur au centre de la cellule ;
  * 3. simplification de Douglas-Peucker (tolérance < marge : le polygone contient toujours le masque) puis
  *    rééchantillonnage au **pas local** ;
@@ -52,6 +53,8 @@ export interface OptionsMaillage {
   aireMinBoucle?: number;
   /** Itérations maximales de mise en conformité. Défaut 16. */
   iterationsConformite?: number;
+  /** Rayon de la fermeture morphologique du masque (px) : comble les fissures plus fines que 2 × rayon. Défaut 2. */
+  fermeture?: number;
   /** Tours de raffinement des triangles aigus. Défaut 4. */
   raffinements?: number;
   /** Angle minimal visé par le raffinement (degrés). Défaut 22. */
@@ -446,9 +449,21 @@ export function construireMaillage(image: ImageRGBA, options: OptionsMaillage = 
   if (yMax < 0) throw new Error('Maillage : le masque alpha est vide (image entièrement transparente ?)');
   const pasBase = options.pas ?? Math.max(6, (yMax - yMin + 1) / 72);
   const distance = distanceSignee(masque, largeur, hauteur);
+  // Fermeture morphologique (dilatation puis érosion de `fermeture` px) : comble les fissures et les contacts
+  // presque fermés (pied sur la semelle, oreille contre la tête), sans intérêt pour l'animation et impossibles à
+  // trianguler proprement. Le contour final est celui du masque fermé, dilaté de `marge`.
+  const fermeture = options.fermeture ?? 2;
+  let champContour = distance;
+  let niveau = marge;
+  if (fermeture > 0) {
+    const dilate = new Uint8Array(masque.length);
+    for (let i = 0; i < masque.length; i++) dilate[i] = distance[i]! <= marge + fermeture ? 1 : 0;
+    champContour = distanceSignee(dilate, largeur, hauteur);
+    niveau = -fermeture;
+  }
 
-  // 1. Contours du masque dilaté, simplifiés, rééchantillonnés au pas local.
-  const brutes = contoursIso(distance, largeur, hauteur, marge)
+  // 1. Contours du masque fermé et dilaté, simplifiés, rééchantillonnés au pas local.
+  const brutes = contoursIso(champContour, largeur, hauteur, niveau)
     .filter((b) => Math.abs(aireBoucle(b)) >= aireMin)
     .sort((a, b) => Math.abs(aireBoucle(b)) - Math.abs(aireBoucle(a)));
   const px: number[] = [];
@@ -485,11 +500,11 @@ export function construireMaillage(image: ImageRGBA, options: OptionsMaillage = 
   const dy = ecart * Math.sqrt(3) / 2;
   for (let j = 0, y = 0.5; y < hauteur; j++, y += dy) {
     for (let x = 0.5 + (j % 2 ? ecart / 2 : 0); x < largeur; x += ecart) {
-      const sd = distance[Math.floor(y) * largeur + Math.floor(x)]!;
-      if (sd > marge) continue;
+      const sd = champContour[Math.floor(y) * largeur + Math.floor(x)]!;
+      if (sd > niveau) continue;
       const h = pasLocal(x, y, pasBase, zones);
-      // Distance au bord du polygone ≈ marge − sd.
-      if (marge - echantillonner(distance, largeur, hauteur, x - 0.5, y - 0.5) < 0.55 * h) continue;
+      // Distance au bord du polygone ≈ niveau − champ.
+      if (niveau - echantillonner(champContour, largeur, hauteur, x - 0.5, y - 0.5) < 0.55 * h) continue;
       candidats.push({ x, y, h });
     }
   }
@@ -582,8 +597,10 @@ export function construireMaillage(image: ImageRGBA, options: OptionsMaillage = 
         if (!aretes.has(cle)) aCouper.push(a);
       }
       manquants = aCouper.length;
-      if (manquants === 0 || iter === maxIter - 1) break;
-      for (const a of aCouper) couperSegment(a);
+      // Un segment plus court que 0,2 px n'est plus coupé (contact quasi ponctuel) : il reste « manquant ».
+      const coupables = aCouper.filter((a) => Math.hypot(px[suivant[a]!]! - px[a]!, py[suivant[a]!]! - py[a]!) > 0.2);
+      if (manquants === 0 || coupables.length === 0 || iter === maxIter - 1) break;
+      for (const a of coupables) couperSegment(a);
     }
     // Triangles intérieurs (pair-impair sur les segments de contour).
     const nbBord = px.length;
