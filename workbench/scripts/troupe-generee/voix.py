@@ -120,7 +120,7 @@ def main():
         for li, L in enumerate(S['repliques']):
             y, ph = synth(L['qui'], L['texte'])
             nsyl = len(SYL.findall(L['texte'])); rate = nsyl / (len(y) / SR)
-            if abs(rate / DEBIT[L['qui']] - 1) > 0.08:  # un passage de réglage : la vitesse suit le débit mesuré de la chaîne
+            if abs(rate / DEBIT[L['qui']] - 1) > 0.08 and not (L.get('chute') and rate > DEBIT[L['qui']]):  # la vitesse suit le débit de la chaîne ; une chute n'est jamais accélérée (dite calmement, et comprise : Whisper)
                 ls = max(0.55, min(1.3, CAST[L['qui']][4] * rate / DEBIT[L['qui']]))
                 y, ph = synth(L['qui'], L['texte'], ls); rate = nsyl / (len(y) / SR)
             L = dict(L, debit=round(rate, 2))
