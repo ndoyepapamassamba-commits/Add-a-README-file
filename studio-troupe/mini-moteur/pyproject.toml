@@ -1,0 +1,16 @@
+[project]
+name = "minimoteur"
+version = "0.1.0"
+description = "Mini-moteur vidéo de la troupe : recréation miniature de la recette Wan / Veo (VAE 3D causal + DiT + flow matching), entraînable sur CPU."
+requires-python = ">=3.10"
+dependencies = ["torch>=2.4", "numpy", "pillow"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools]
+packages = ["minimoteur"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

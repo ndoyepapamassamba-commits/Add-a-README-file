@@ -1,0 +1,5 @@
+# checkpoints, caches et sorties d'entraînement
+runs/
+__pycache__/
+.pytest_cache/
+*.pyc

@@ -39,7 +39,7 @@ from typing import Iterable, Sequence
 
 import numpy as np
 
-from .config import RUNS_DIR, TROUPE_JSON
+from .config import TROUPE_JSON
 
 DATA_VERSION = 1  # à incrémenter si le rendu change (invalide le cache)
 
@@ -471,13 +471,10 @@ def _background_cached(decor: str, size: int, ss: int) -> np.ndarray:
     if decor == "Marché":
         put(Y < 21, _c(150, 205, 240))  # ciel
         for cx, col in ((5, _c(225, 70, 60)), (16, _c(60, 170, 95)), (27, _c(70, 110, 220))):
-            put((X - cx) ** 2 + (Y - 9.5) ** 2 <= 5.5 ** 2, col)  # parasols
-            put(Y > 9.5, _c(150, 205, 240)) if False else None
-        put((Y > 9.5) & (Y < 21), _c(150, 205, 240))
-        for cx, col in ((5, _c(225, 70, 60)), (16, _c(60, 170, 95)), (27, _c(70, 110, 220))):
-            dome = ((X - cx) ** 2 + (Y - 9.5) ** 2 <= 5.5 ** 2) & (Y <= 9.5)
-            put(dome & (np.mod(X - cx + 50, 2.2) < 1.1), col)
-            put(dome & ~(np.mod(X - cx + 50, 2.2) < 1.1), _c(245, 235, 210))
+            dome = ((X - cx) ** 2 + (Y - 9.5) ** 2 <= 5.5 ** 2) & (Y <= 9.5)  # parasols rayés
+            bande = np.mod(X - cx + 50, 2.2) < 1.1
+            put(dome & bande, col)
+            put(dome & ~bande, _c(245, 235, 210))
             put((np.abs(X - cx) < 0.4) & (Y > 9.5) & (Y < 17), _c(90, 70, 50))  # mâts
         put((Y >= 17) & (Y < 21), _c(170, 120, 70))  # étals en bois
         tomates = ((np.mod(X, 3.0) - 1.5) ** 2 + (Y - 16.6) ** 2) <= 0.9 ** 2
@@ -664,8 +661,8 @@ class ClipDataset:
 
 
 def build_dataset(split: str, n: int, seed: int = 1234, supersample: int = 3, *,
-                  cache: bool = True, workers: int | None = None) -> ClipDataset:
-    """Construit (ou relit depuis runs/cache) ``n`` clips du split demandé.
+                  cache_dir: str | Path | None = None, workers: int | None = None) -> ClipDataset:
+    """Construit (ou relit depuis ``cache_dir``) ``n`` clips du split demandé.
 
     * ``train``   : triplets vus, graines (seed, 0, i)
     * ``seen``    : triplets vus, autres graines (seed, 2, i) -> évaluation « vu »
@@ -675,8 +672,10 @@ def build_dataset(split: str, n: int, seed: int = 1234, supersample: int = 3, *,
     triples = split_triples(split)
     chosen = [triples[i % len(triples)] for i in range(n)]
     prompts = [prompt_for(*tr) for tr in chosen]
-    path = RUNS_DIR / "cache" / f"clips_{split}_{n}_s{seed}_ss{supersample}_v{DATA_VERSION}.npz"
-    if cache and path.exists():
+    path = None
+    if cache_dir is not None:
+        path = Path(cache_dir) / f"clips_{split}_{n}_s{seed}_ss{supersample}_v{DATA_VERSION}.npz"
+    if path is not None and path.exists():
         clips = np.load(path)["clips"]
         if clips.shape[0] == n:
             return ClipDataset(clips, chosen, prompts)
@@ -690,7 +689,7 @@ def build_dataset(split: str, n: int, seed: int = 1234, supersample: int = 3, *,
     else:
         clips_list = [_render_job(j) for j in jobs]
     clips = np.stack(clips_list) if clips_list else np.zeros((0, 17, 32, 32, 3), np.uint8)
-    if cache:
+    if path is not None:
         path.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(path, clips=clips)
     return ClipDataset(clips, chosen, prompts)

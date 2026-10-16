@@ -10,7 +10,7 @@ Ordres de grandeur (mini-moteur vs Wan 2.1 / 2.2) :
 
     clip       : 17 images 32x32 (1 + 4k)       vs 81-121 images 832x480 à 1280x720
     VAE        : 4x temps, 4x4 espace, 8 canaux vs 4x8x8 / 16 canaux (2.1), 4x16x16 / 48 canaux (2.2)
-    DiT        : ~5 M paramètres, 80 jetons      vs 1,3 à 14 milliards, ~30 000 à 75 000 jetons
+    DiT        : ~7 M paramètres, 80 jetons      vs 1,3 à 14 milliards, ~30 000 à 75 000 jetons
     texte      : petit Transformer appris        vs umT5-XXL gelé (~5,7 milliards de paramètres)
 
 Toutes les classes sont des dataclasses sérialisables (``asdict``) : la
@@ -59,8 +59,9 @@ class VAEConfig:
     17x32x32 -> 9x16x16 -> 5x8x8 (compression 4x en temps, 4x4 en espace).
     """
 
-    channels: tuple[int, ...] = (32, 64, 96)
-    n_res_blocks: int = 1
+    channels: tuple[int, ...] = (16, 32, 64)
+    n_res_blocks: tuple[int, ...] = (1, 2, 2)  # blocs résiduels par étage (plus profond là où c'est bon marché)
+    norm: str = "groupnorm_image"  # "groupnorm_image" (par image, causal) ou "rms" (RMSNorm par position, comme Wan)
     latent_channels: int = 8
     kl_weight: float = 1e-4  # beta du terme KL (petit, comme Wan : 3e-6 relatif)
     mse_weight: float = 1.0  # perte = L1 + mse_weight * MSE + kl_weight * KL
@@ -116,12 +117,12 @@ class FlowConfig:
 class TrainConfig:
     """Hyper-paramètres d'entraînement (CPU, 4 cœurs)."""
 
-    vae_steps: int = 1500
-    vae_batch: int = 16
+    vae_steps: int = 1600
+    vae_batch: int = 8
     vae_lr: float = 3e-4
-    dit_steps: int = 4000
-    dit_batch: int = 64
-    dit_lr: float = 4e-4
+    dit_steps: int = 3000
+    dit_batch: int = 32
+    dit_lr: float = 3e-4
     weight_decay: float = 0.01
     warmup: int = 100
     ema_decay: float = 0.999
