@@ -87,3 +87,4 @@ hors règle sont signalés ci-dessous, avec la façon dont ils sont isolés et c
 **Rappel :** les films produits ne deviennent pas GPL parce qu'un outil GPL les a encodés. Redistribuer un logiciel GPL
 modifié, ou lier sa bibliothèque à notre code, imposerait en revanche ses obligations. C'est pourquoi les outils GPL
 restent des programmes séparés, que l'app ne livre pas.
+| RIFE (ECCV2022-RIFE, Megvii Inc.) | MIT | interpolation d'images des plans générés (scripts/troupe-generee/fluide.py) ; poids TensorForger/RIFE-safetensors (MIT), téléchargés à l'usage, non inclus |
