@@ -70,3 +70,35 @@ Notes de veille du moteur fluide :
   duaux, que la session « troupe village » a déjà.
 - Le décor est flou en gros plan, parce que la peinture ne fait que 1336×704.
 - La voix synthétique n'a pas l'accent ivoirien, et « Walay » est entendu « voilày ».
+
+## Retours de la session « troupe village », à intégrer à la reprise
+
+Reçus pendant la veille, par messages de session à session ; rien n'a été codé ici.
+
+- **Lèvres mesurées sur l'image rendue, pas seulement sur le signal du moteur.** Le défaut « Modou est muet » passait
+  la porte qualité.
+  - Mesure : Δ moyen de la zone de bouche projetée à l'écran, d'une image à l'autre.
+  - Repères : Δ ≥ 11 et bouche en mouvement sur au moins 64 % des images pour celui qui parle ; Δ de 2 à 5 pour celui qui
+    écoute.
+  - Ouverture : énergie normalisée par réplique (p90), courbe γ 0,7.
+  - Déformeur de mâchoire : le menton descend de 0,6 × la largeur de la bouche à pleine ouverture.
+- **Rire** piloté par les éclats du son, avec un plan sur celui qui rit et des secousses du buste.
+- **Format de la vidéo de référence du propriétaire** (sa plus vue) : clip 576 × 460 posé sur un fond qui est la même
+  image agrandie et floutée ; sous-titres karaoké en majuscules, mot prononcé en vert, groupes de 2 à 4 mots ; caméra
+  fixe.
+- **Règle bloquante « tête entière ou absente »** pour tous les acteurs visibles, sur les 4 bords du cadre.
+- **Voix Piper mls : à contrôler avec Whisper** (faster-whisper, MIT).
+  - Chez eux, les locuteurs 33, 91 et 13 sortent du charabia.
+  - Notre locuteur 16 a été relu en « voilày c'est pas moi qui ai mangé le poulet », donc compréhensible ; la
+    vérification reste à généraliser.
+  - Leur solution : sources siwis (CC-BY) et gilles (CC0), et WORLD (pyworld) pour la hauteur et le timbre de chaque
+    personnage.
+  - Ne jamais accélérer une chute : à 6,5 syllabes par seconde, elle n'est plus comprise.
+- **LivePortrait sur visages Pixar** : il redessine toute la tête.
+  - Leur correction : aligner l'original et la sortie par similitude sur les points stables (yeux, nez, contour), puis ne
+    greffer que la bouche et les paupières sous un masque doux.
+  - S'y ajoutent un fondu entre états voisins et un lissage de la mâchoire sur ±2 images.
+  - Résultat : 1,41 saute/s ramenées vers la référence de 0,13 à 0,35.
+- **Leurs modules disponibles sur demande**, envoyés en texte brut avec les tests (ils n'ont pas le droit de pousser) :
+  `armature2d.ts` (peau duale), `boneHeat.ts`, contacts et contraintes refaites après le ressort, `ressorts.ts` avec
+  retard de groupe compensé.
