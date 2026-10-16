@@ -208,8 +208,8 @@ export class Ecriture {
   tangage(pts: Points, o: OptionsCourbe = {}): void {
     const or = this.m.orientation;
     if (or === 0) {
-      this.brut('tete', 'ty', pts.map(([t, v]) => [t, 0.022 * this.H * v * this.g] as const), o);
-      this.brut('tete', 'sy', pts.map(([t, v]) => [t, -0.06 * Math.abs(v) * this.g] as const), o);
+      this.brut('tete', 'ty', pts.map(([t, v]) => [t, 0.03 * this.H * v * this.g] as const), o);
+      this.brut('tete', 'sy', pts.map(([t, v]) => [t, -0.08 * Math.abs(v) * this.g] as const), o);
       this.brut('cou', 'sy', pts.map(([t, v]) => [t, 0.08 * -v * this.g] as const), o);
     } else {
       this.brut('tete', 'r', pts.map(([t, v]) => [t, or * v * 0.42 * this.g] as const), o);
@@ -219,9 +219,9 @@ export class Ecriture {
   /** Lacet de la tête vers la droite (+) ou la gauche (−) de l'image, −1 … 1 (de face : glissement + écrasement). */
   lacet(pts: Points, o: OptionsCourbe = {}): void {
     if (this.m.orientation === 0) {
-      this.brut('tete', 'tx', pts.map(([t, v]) => [t, 0.014 * this.H * v * this.g] as const), o);
-      this.brut('tete', 'sx', pts.map(([t, v]) => [t, -0.07 * Math.abs(v) * this.g] as const), o);
-      this.brut('cou', 'tx', pts.map(([t, v]) => [t, 0.005 * this.H * v * this.g] as const), o);
+      this.brut('tete', 'tx', pts.map(([t, v]) => [t, 0.018 * this.H * v * this.g] as const), o);
+      this.brut('tete', 'sx', pts.map(([t, v]) => [t, -0.08 * Math.abs(v) * this.g] as const), o);
+      this.brut('cou', 'tx', pts.map(([t, v]) => [t, 0.006 * this.H * v * this.g] as const), o);
     } else {
       this.brut('tete', 'sx', pts.map(([t, v]) => [t, -0.03 * Math.abs(v) * this.g] as const), o);
     }
@@ -446,13 +446,13 @@ const regarder: Recette = {
     const tangage = borner(dy * 1.2, -0.8, 0.8);
     e.lacet(de(lacet), { zone: z });
     e.tangage(de(tangage), { zone: z });
-    if (Math.abs(dx) > 0.2) e.roulis(Math.sign(dx), de(3 * Math.abs(dx)), { zone: z });
+    if (Math.abs(dx) > 0.2) e.roulis(Math.sign(dx), de(4.5 * Math.abs(dx)), { zone: z });
     if (Math.abs(dx) > 0.5 && e.m.orientation === 0) {
       e.pencher('torse', Math.sign(dx), [
         [0, 0],
         [t1 + e.T(0.08), 0],
-        [t2 + e.T(0.12), 2.5 * Math.abs(dx)],
-        [tR, 2.2 * Math.abs(dx)],
+        [t2 + e.T(0.12), 3.5 * Math.abs(dx)],
+        [tR, 3 * Math.abs(dx)],
         [fin, 0],
       ], { zone: z });
     }
@@ -1528,8 +1528,10 @@ function geometrieMarche(p: ParamsRecette): GeometrieMarche | null {
   const longueur = Math.hypot(du * cc.aspect, dv);
   if (longueur < 1e-6) return null;
   const hm = hauteurMonde(cc, cc.declaration.tailleM, depart.v);
-  const nominal = 0.7 * hm;
-  const n = Math.max(1, Math.round(longueur / (nominal / 2)));
+  // Pas nominal ≈ 0,62 × la taille ; nombre de demi-cycles arrondi au-dessus (pas jamais plus longs que le
+  // nominal), au moins deux pas.
+  const nominal = 0.62 * hm;
+  const n = Math.max(2, Math.ceil(longueur / (nominal / 2) - 1e-9));
   const miroir = miroirA(cc, p.debut + 1e-3) ? -1 : 1;
   const dirW = du >= 0 ? 1 : -1;
   return {

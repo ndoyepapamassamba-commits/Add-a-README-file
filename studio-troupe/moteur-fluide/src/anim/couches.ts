@@ -224,6 +224,8 @@ export function compiler(cc: ContexteAnim): AnimationCompilee {
   }
 
   // ── Construction des contributions ──
+  // La graine d'une action implicite ne dépend pas des actions explicites (vie de base identique avec ou sans geste).
+  const rangExplicite = (index: number): number => brouillons.slice(0, index).filter((x) => !x.implicite).length;
   const actions: ActionCompilee[] = brouillons.map((b, index) => {
     const a = b.action;
     const k = Math.max(0.1, (a.tempo ?? 1) * perso.tempo);
@@ -240,7 +242,7 @@ export function compiler(cc: ContexteAnim): AnimationCompilee {
       m: cc.morph,
       sens: sensImage(cc, b.debut + 1e-3),
       cible: resoudreCible(cc, cible, tApex),
-      graine: graineAction(cc.graine, a, index),
+      graine: graineAction(cc.graine, a, b.implicite ? -1 : rangExplicite(index)),
       accents: accentsJeu
         .filter((x) => x.t >= b.debut - 0.5 && x.t <= b.debut + b.D + 0.5)
         .map((x) => ({ t: x.t - b.debut, force: x.force })),

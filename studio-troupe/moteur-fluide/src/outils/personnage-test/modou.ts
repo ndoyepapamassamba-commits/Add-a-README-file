@@ -53,7 +53,9 @@ const HANCHE_D = v(312, 806);
 const GENOU_D = v(306, 1072);
 const CHEVILLE_D = v(302, 1290);
 const BOUT_PIED_D = v(298, 1378);
-const SEMELLE_Y = 1395;
+const SEMELLE_Y = 1392;
+const REVERS_HAUT = 1246;
+const REVERS_BAS = 1294;
 
 /** Articulations nommées (repos). */
 export const ARTICULATIONS: ArticulationsHumanoide = {
@@ -156,9 +158,9 @@ const PEAU_M: Matiere = { albedo: albedoPeau, relief: 22, speculaire: 0.16, bril
 
 /** T-shirt : vert délavé par plaques, salissures vers l'ourlet, trame fine. */
 function albedoTshirt(x: number, y: number): Rvb {
-  let c = melange(VERT, VERT_DELAVE, borne(0.45 + 0.9 * fbm(x, y, 70, 21)) * 0.75);
-  c = melange(c, SALISSURE, borne((y - 560) / 220) * borne(0.4 + fbm(x, y, 35, 22)) * 0.85);
-  const tache = borne(0.6 * fbm(x, y, 18, 23) - 0.15) * 0.4;
+  let c = melange(VERT, VERT_DELAVE, borne(0.4 + 0.8 * fbm(x, y, 120, 21, 3)) * 0.5);
+  c = melange(c, SALISSURE, borne((y - 600) / 200) * borne(0.4 + fbm(x, y, 50, 22, 3)) * 0.45);
+  const tache = borne(0.6 * fbm(x, y, 26, 23, 3) - 0.2) * 0.18;
   c = melange(c, VERT_DELAVE, tache);
   const trame = 0.035 * bruit2D(x / 1.3, y / 1.3, 24) + 0.02 * Math.sin((x + y) * 1.7);
   return [c[0] * (1 + trame), c[1] * (1 + trame), c[2] * (1 + trame)];
@@ -177,13 +179,13 @@ function albedoPantalon(x: number, y: number): Rvb {
 const TSHIRT_M: Matiere = { albedo: albedoTshirt, relief: 60, speculaire: 0.02, brillance: 6, enveloppe: 0.3, contreJour: 0.3, lisere: 0.2 };
 const PANTALON_M: Matiere = { albedo: albedoPantalon, relief: 40, speculaire: 0.02, brillance: 6, enveloppe: 0.25, contreJour: 0.25, lisere: 0.22 };
 const CHEVEUX_M: Matiere = {
-  albedo: (x, y) => melange(CHEVEUX, [0.16, 0.12, 0.1], borne(0.5 + 0.8 * bruit2D(x / 2.2, y / 2.2, 41)) * 0.5),
+  albedo: (x, y) => melange(CHEVEUX, [0.15, 0.115, 0.1], borne(0.5 + 0.7 * fbm(x, y, 7, 41, 2)) * 0.45),
   relief: 30,
-  speculaire: 0.12,
-  brillance: 10,
-  contreJour: 0.5,
+  speculaire: 0.1,
+  brillance: 8,
+  contreJour: 0.45,
   lisere: 0.1,
-  bosses: (x, y) => 0.9 * Math.abs(bruit2D(x / 3.1, y / 3.1, 42)),
+  bosses: (x, y) => 0.32 * Math.abs(bruit2D(x / 4.2, y / 4.2, 42)),
 };
 const POILS_M: Matiere = { ...CHEVEUX_M, relief: 4, bosses: (x, y) => 0.5 * bruit2D(x / 1.6, y / 1.6, 43) };
 const NOIR_M: Matiere = { albedo: NOIR, relief: 9, speculaire: 0.35, brillance: 30, contreJour: 0.45, lisere: 0.05 };
@@ -210,9 +212,9 @@ function bras(cote: 'D' | 'G') {
   const versCorps = cote === 'D' ? 1 : -1;
   const p = v(-uy * -versCorps, ux * -versCorps); // perpendiculaire orientée vers le corps
   const perp = v(p.x, p.y);
-  const paume = ellipse(plus(w, u, 27), 19, 26, Math.atan2(uy, ux) - Math.PI / 2);
+  const paume = ellipse(plus(w, u, 27), 20.5, 27, Math.atan2(uy, ux) - Math.PI / 2);
   const doigts: Forme[] = [];
-  const longueurs = [27, 33, 32, 26];
+  const longueurs = [29, 35, 34, 28];
   [-11.5, -3.8, 3.8, 11.5].forEach((k, i) => {
     const base = plus(plus(w, u, 44), perp, k);
     const milieu = plus(plus(base, u, longueurs[i]! * 0.6), perp, 1.5);
@@ -233,29 +235,29 @@ function jambe(cote: 'D' | 'G') {
   const g = s(GENOU_D);
   const ch = s(CHEVILLE_D);
   const cuisse = capsule(h, g, 46, 37);
-  const tibia = capsule(g, plus(ch, v(0, -4)), 37, 34);
+  // Jambe du pantalon coupée net au bas du revers.
+  const tibia = interDouce(5, capsule(g, plus(ch, v(0, 30)), 37, 35), auDessus(() => REVERS_BAS - 2, TOUT));
   const jambeF = unionDouce(14, cuisse, tibia);
-  // Revers roulé.
-  const revers = inter(decaler(tibia, 5), boite(v(ch.x, 1268), 60, 24, 6));
+  // Revers roulé : bourrelet arrondi un peu plus large que la jambe.
+  const revers = unionDouce(10, boite(v(ch.x, REVERS_HAUT + 22), 40, 22, 11), capsule(v(ch.x - 34, REVERS_BAS - 8), v(ch.x + 34, REVERS_BAS - 8), 9));
   // Poche cargo côté extérieur.
   const ext = cote === 'D' ? -1 : 1;
   const poche = boite(v(h.x + ext * 34, 935), 21, 46, 6, ext * 0.03);
   const rabat = boite(v(h.x + ext * 34, 896), 23, 10, 4, ext * 0.03);
-  // Pied (vue de face) : cheville, dos du pied, orteils.
-  const pied0 = s(v(298, 1352));
-  const cheville = capsule(s(v(302, 1272)), s(v(300, 1335)), 16, 17.5);
-  const dos = ellipse(pied0, 28, 21);
+  // Pied (vue de face) : cheville, cou-de-pied qui s'élargit vers les orteils, orteils posés sur la semelle.
+  const cheville = capsule(s(v(302, REVERS_BAS - 14)), s(v(300, 1334)), 16, 18.5);
+  const dos = unionDouce(10, ellipse(s(v(299, 1351)), 29, 21), boite(s(v(299, 1366)), 31, 9, 8));
   const orteils: Forme[] = [
-    [281, 1369, 5.2],
-    [290, 1371, 5.6],
-    [298.5, 1372, 6.0],
-    [307.5, 1372, 6.4],
-    [318, 1370, 8.2],
+    [274.5, 1375, 5.6],
+    [284, 1377, 6.1],
+    [294, 1378, 6.5],
+    [304.5, 1378, 6.9],
+    [317, 1376, 8.8],
   ].map(([x, y, r]) => cercle(s(v(x!, y!)), r!));
-  const pied = unionDouce(8, cheville, dos, unionDouce(3, ...orteils));
-  const semelle = boite(s(v(299, 1386)), 38, 9, 7);
-  const sangle = inter(decaler(unionDouce(8, cheville, dos), 3.5), moins(boite(s(v(299, 1343)), 50, 11, 5), cercle(s(v(299, 1300)), 10)));
-  const ongles = orteils.map((o, i) => inter(decaler(o, -2.2), auDessous((x) => (i === 4 ? 1366 : 1367.5), TOUT)));
+  const pied = unionDouce(9, cheville, dos, unionDouce(3, ...orteils));
+  const semelle = boite(s(v(299, SEMELLE_Y - 8)), 40, 8, 6);
+  const sangle = inter(decaler(unionDouce(8, cheville, dos), 3), boite(s(v(299, 1343)), 52, 11, 5));
+  const ongles = orteils.map((o, i) => inter(decaler(o, -2.4), auDessous(() => (i === 4 ? 1371 : 1373), TOUT)));
   return { cuisse, tibia, jambeF, revers, poche, rabat, pied, semelle, sangle, cheville, dos, orteils, ongles, h, g, ch };
 }
 
@@ -286,7 +288,7 @@ export function calquesModou(): Calque[] {
   const mancheD = manche('D');
   const mancheG = manche('G');
   const encolure = ellipse(v(CX, 383), 33, 19);
-  const ourlet = (x: number) => 758 + 3.5 * bruit2D(x / 16, 0, 51) + (Math.abs(x - 333) < 7 ? 7 - Math.abs(x - 333) : 0) * 0.0;
+  const ourlet = (x: number) => 758 + 1.6 * bruit2D(x / 22, 0, 51);
   let chemise = moinsDouce(6, unionDouce(20, torse, mancheD, mancheG), encolure);
   chemise = inter(chemise, auDessus(ourlet, TOUT));
   // Petite déchirure à l'ourlet.
@@ -321,8 +323,15 @@ export function calquesModou(): Calque[] {
     // Creux du coude.
     L.push({ nom: 'coude', forme: trait(bezier2(plus(b.c, b.perp, 6), plus(plus(b.c, b.perp, 10), b.u, 4), plus(plus(b.c, b.perp, 13), b.u, -2), 6), 1.2, 0.6), matiere: detail([0.7, 0.55, 0.5]), mode: 'multiplier', decoupe: b.peau, flou: 2 });
   }
-  // ── 4. Pantalon, poches, coutures, revers.
-  L.push({ nom: 'pantalon', forme: pantalon, matiere: PANTALON_M, os: [[bassin, 'bassin'], [jD.cuisse, 'cuisseD'], [jD.tibia, 'jambeD'], [jG.cuisse, 'cuisseG'], [jG.tibia, 'jambeG']], ombres: [{ forme: chemise, dx: 0, dy: 11, flou: 12, force: 0.55 }] });
+  // ── 4. Pieds et sandales (sous le revers).
+  for (const [j, cote] of [[jD, 'D'], [jG, 'G']] as const) {
+    L.push({ nom: 'semelle', forme: j.semelle, matiere: { ...NOIR_M, relief: 8 }, os: `pied${cote}` });
+    L.push({ nom: 'pied', forme: j.pied, matiere: { ...PEAU_M, relief: 16 }, os: `pied${cote}`, ombres: [{ forme: j.revers, dx: 0, dy: 9, flou: 7, force: 0.6 }, { forme: j.sangle, dx: 0, dy: 4, flou: 4, force: 0.45 }] });
+    for (const o of j.ongles) L.push({ nom: 'ongle', forme: o, matiere: { albedo: [0.72, 0.56, 0.48], relief: 3, speculaire: 0.3, brillance: 20 }, opacite: 0.8, flou: 1 });
+    L.push({ nom: 'sangle', forme: j.sangle, matiere: NOIR_M, os: `pied${cote}` });
+  }
+  // ── 5. Pantalon, poches, coutures, revers (par-dessus les chevilles).
+  L.push({ nom: 'pantalon', forme: pantalon, matiere: PANTALON_M, os: [[bassin, 'bassin'], [jD.cuisse, 'cuisseD'], [jD.tibia, 'jambeD'], [jG.cuisse, 'cuisseG'], [jG.tibia, 'jambeG']], ombres: [{ forme: chemise, dx: 0, dy: 9, flou: 10, force: 0.42 }] });
   for (const j of [jD, jG]) {
     L.push({ nom: 'poche', forme: j.poche, matiere: { albedo: [0.82, 0.8, 0.78], relief: 0 }, mode: 'multiplier', decoupe: pantalon, flou: 1.5 });
     L.push({ nom: 'poche relief', forme: j.poche, matiere: { ...PANTALON_M, relief: 8 }, opacite: 0.55, decoupe: pantalon, flou: 1.2 });
@@ -340,15 +349,9 @@ export function calquesModou(): Calque[] {
   L.push({ nom: 'braguette', forme: trait(bezier2(v(CX + 2, 768), v(CX - 1, 805), v(CX - 10, 836)), 1.0), matiere: detail([0.55, 0.43, 0.36]), mode: 'multiplier', decoupe: pantalon, flou: 1.5 });
   L.push({ nom: 'entrejambe', forme: trait(bezier2(v(CX - 6, 840), v(CX, 852), v(CX + 6, 840)), 3), matiere: detail([0.55, 0.45, 0.4]), mode: 'multiplier', decoupe: pantalon, flou: 4 });
   for (const j of [jD, jG]) {
-    L.push({ nom: 'revers', forme: j.revers, matiere: { albedo: (x, y) => melange(REVERS, MARRON_USE, borne(0.5 + fbm(x, y, 20, 61))), relief: 12, speculaire: 0.03, lisere: 0.25 }, os: j === jD ? 'jambeD' : 'jambeG', ombres: [] });
-    L.push({ nom: 'revers pli', forme: trait([v(j.ch.x - 40, 1268), v(j.ch.x + 40, 1268)], 1.0), matiere: detail([0.6, 0.48, 0.4]), mode: 'multiplier', decoupe: j.revers, flou: 2 });
-  }
-  // ── 5. Pieds et sandales.
-  for (const [j, cote] of [[jD, 'D'], [jG, 'G']] as const) {
-    L.push({ nom: 'semelle', forme: j.semelle, matiere: { ...NOIR_M, relief: 8 }, os: `pied${cote}` });
-    L.push({ nom: 'pied', forme: j.pied, matiere: { ...PEAU_M, relief: 16 }, os: `pied${cote}`, ombres: [{ forme: j.revers, dx: 0, dy: 9, flou: 7, force: 0.6 }, { forme: j.sangle, dx: 0, dy: 4, flou: 4, force: 0.45 }] });
-    for (const o of j.ongles) L.push({ nom: 'ongle', forme: o, matiere: { albedo: [0.72, 0.56, 0.48], relief: 3, speculaire: 0.3, brillance: 20 }, opacite: 0.8, flou: 1 });
-    L.push({ nom: 'sangle', forme: j.sangle, matiere: NOIR_M, os: `pied${cote}` });
+    L.push({ nom: 'revers', forme: j.revers, matiere: { albedo: (x, y) => melange(REVERS, MARRON_USE, borne(0.5 + fbm(x, y, 20, 61)) * 0.6), relief: 16, speculaire: 0.03, lisere: 0.25 }, os: j === jD ? 'jambeD' : 'jambeG', ombres: [] });
+    L.push({ nom: 'revers pli', forme: trait(bezier2(v(j.ch.x - 40, REVERS_BAS - 17), v(j.ch.x, REVERS_BAS - 13), v(j.ch.x + 40, REVERS_BAS - 17)), 1.3), matiere: detail([0.62, 0.5, 0.42]), mode: 'multiplier', decoupe: j.revers, flou: 2 });
+    L.push({ nom: 'revers haut', forme: trait([v(j.ch.x - 40, REVERS_HAUT + 1), v(j.ch.x + 40, REVERS_HAUT + 1)], 1.6), matiere: detail([0.55, 0.45, 0.4]), mode: 'multiplier', decoupe: j.revers, flou: 3 });
   }
   // ── 6. T-shirt (par-dessus bras et pantalon), bordures, plis.
   L.push({ nom: 't-shirt', forme: chemise, matiere: TSHIRT_M, os: [[torse, osTshirt], [mancheD, 'brasD'], [mancheG, 'brasG']], ombres: [{ forme: tete, dx: 4, dy: 18, flou: 22, force: 0.35 }] });
@@ -365,9 +368,8 @@ export function calquesModou(): Calque[] {
     [bezier2(v(420, 680), v(400, 710), v(398, 748)), 2.0],
     [bezier2(v(350, 430), v(345, 470), v(352, 500)), 1.5],
   ];
-  for (const [pts, r] of plisTshirt) L.push({ nom: 'pli t-shirt', forme: trait(pts, r, r * 0.5), matiere: detail([0.72, 0.78, 0.7]), mode: 'multiplier', decoupe: chemise, flou: 6 });
-  L.push({ nom: 'ourlet', forme: inter(chemise, auDessous((x) => ourlet(x) - 9, TOUT)), matiere: detail([0.86, 0.86, 0.8]), mode: 'multiplier', flou: 2 });
-  for (const x of [292, 351, 377, 431]) L.push({ nom: 'effiloché', forme: trait([v(x, 752), v(x + 2, 761)], 0.7), matiere: detail([0.5, 0.55, 0.45]), mode: 'multiplier', decoupe: chemise, flou: 1 });
+  for (const [pts, r] of plisTshirt) L.push({ nom: 'pli t-shirt', forme: trait(pts, r * 2.2, r), matiere: detail([0.8, 0.85, 0.78]), mode: 'multiplier', decoupe: chemise, flou: 12, opacite: 0.8 });
+  L.push({ nom: 'ourlet', forme: trait([v(266, 748), v(CX, 749), v(454, 748)], 0.9), matiere: detail([0.7, 0.75, 0.66]), mode: 'multiplier', decoupe: chemise, flou: 1.5 });
 
   // ── 7. Tête : visage, joues, cheveux, sourcils, yeux, nez, bouche, moustache, bouc.
   const nez = ellipse(v(CX, 236), 27, 22);
@@ -393,7 +395,7 @@ export function calquesModou(): Calque[] {
   }
   // Cheveux courts (casque bosselé au-dessus de la ligne frontale).
   const ligneFront = (x: number) => 112 + 0.0052 * (x - CX) ** 2 + 2 * bruit2D(x / 9, 0, 71);
-  const cheveux = bruiter(inter(decaler(crane, 7), auDessus(ligneFront, TOUT)), 2.2, 5, 72);
+  const cheveux = bruiter(inter(decaler(crane, 7), auDessus(ligneFront, TOUT)), 1.5, 4, 72);
   L.push({ nom: 'cheveux', forme: cheveux, matiere: CHEVEUX_M, os: 'tete', ombres: [] });
   L.push({ nom: 'ligne cheveux', forme: inter(cheveux, auDessous((x) => ligneFront(x) - 6, TOUT)), matiere: detail([0.75, 0.7, 0.7]), mode: 'multiplier', flou: 4 });
   // Sourcils épais.

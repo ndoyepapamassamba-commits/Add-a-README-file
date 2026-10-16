@@ -97,6 +97,29 @@ const CONTRE: [number, number] = [0.86, -0.5];
 const COULEUR_CONTRE: Rvb = [1.0, 0.88, 0.7];
 const DEMI_CLE = norm3(CLE[0], CLE[1], CLE[2] + 1);
 
+/** Flou boîte séparable (deux passes ≈ gaussien) d'une grille, bords répétés. */
+function flouBoite(g: Float32Array, l: number, h: number, r: number): Float32Array {
+  let a = Float32Array.from(g);
+  const b = new Float32Array(g.length);
+  for (let passe = 0; passe < 2; passe++) {
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < l; x++) {
+        let s = 0;
+        for (let k = -r; k <= r; k++) s += a[y * l + Math.min(l - 1, Math.max(0, x + k))]!;
+        b[y * l + x] = s / (2 * r + 1);
+      }
+    }
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < l; x++) {
+        let s = 0;
+        for (let k = -r; k <= r; k++) s += b[Math.min(h - 1, Math.max(0, y + k)) * l + x]!;
+        a[y * l + x] = s / (2 * r + 1);
+      }
+    }
+  }
+  return a;
+}
+
 /** Peint une pile de calques (du fond vers l'avant). */
 export function peindre(largeur: number, hauteur: number, calques: readonly Calque[]): Peinture {
   const n = largeur * hauteur;
@@ -126,6 +149,9 @@ export function peindre(largeur: number, hauteur: number, calques: readonly Calq
     const g = new Float32Array(gl * gh);
     for (let j = 0; j < gh; j++) for (let i = 0; i < gl; i++) g[j * gl + i] = c.forme.f(x0 - 1 + i + 0.5, y0 - 1 + j + 0.5);
     const m = c.matiere;
+    // Champ lissé pour les normales des grands reliefs : efface les arêtes de l'axe médian (coins de polygone).
+    const rayonFlou = Math.round(m.relief * 0.1);
+    const gn = rayonFlou >= 2 ? flouBoite(g, gl, gh, rayonFlou) : g;
     const albedoFixe = typeof m.albedo === 'function' ? null : m.albedo;
     const opacite = c.opacite ?? 1;
     const mode = c.mode ?? 'normal';
@@ -146,12 +172,12 @@ export function peindre(largeur: number, hauteur: number, calques: readonly Calq
         let bl = versLin(albedo[2]);
         if (!m.emissif && mode === 'normal') {
           // Normale : profil circulaire de rayon `relief` depuis le bord.
-          let gx = (g[gi + 1]! - g[gi - 1]!) / 2;
-          let gy = (g[gi + gl]! - g[gi - gl]!) / 2;
+          let gx = (gn[gi + 1]! - gn[gi - 1]!) / 2;
+          let gy = (gn[gi + gl]! - gn[gi - gl]!) / 2;
           const lg = Math.hypot(gx, gy) || 1;
           gx /= lg;
           gy /= lg;
-          const prof = Math.max(0, -d);
+          const prof = Math.max(0, -Math.max(d, gn[gi]!));
           let nx = 0;
           let ny = 0;
           let nz = 1;
