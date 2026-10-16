@@ -5,8 +5,9 @@
 # Adapté à la carte T4 gratuite de Colab (15 Go, pas de bf16) et à ses 12 Go de mémoire vive :
 #   - l'encodeur de texte (umt5-xxl, 11 Go) n'est chargé qu'UNE fois, en lecture directe du disque (mmap), dans un
 #     processus séparé : la consigne de jeu est la même pour tous les plans, ses vecteurs sont gardés puis il est libéré ;
+#   - ses vecteurs repartent avec les plans (texte.pt) : la production suivante ne télécharge plus ces 11 Go ;
 #   - l'animation tourne en demi-précision (fp16) ; si une vidéo sort noire (débordement fp16), bascule en fp32.
-import gc, glob, json, math, os, subprocess, sys, threading, time
+import gc, glob, json, math, os, shutil, subprocess, sys, threading, time
 
 ENTREE = os.environ.get('NOYAU_ENTREE', '/content/paquet')
 SORTIE = os.environ.get('NOYAU_SORTIE', '/content/sortie'); os.makedirs(SORTIE, exist_ok=True)
@@ -54,12 +55,34 @@ def installe():
     lance([sys.executable, '-m', 'pip', 'install', '-q', 'diffusers>=0.30.1,<1', 'transformers>=4.46.2,<5', 'accelerate>=0.25.0', 'omegaconf',
            'einops', 'imageio[ffmpeg]', 'librosa', 'pyloudnorm', 'ftfy', 'sentencepiece', 'opencv-python-headless', 'scipy', 'safetensors', 'huggingface_hub'])
 
+T5 = 'models_t5_umt5-xxl-enc-bf16.pth'                    # encodeur de texte : 11,4 Go pour une seule phrase, toujours la même
+SIGNE = TEXTE + '\n' + NEG
+GARDE = os.path.isfile(f'{PAQ}/texte.pt') and os.path.isfile(f'{PAQ}/texte.txt') and open(f'{PAQ}/texte.txt', encoding='utf-8').read() == SIGNE
+
+def liste(depot, voulus=None):
+    import urllib.request
+    arbre = json.load(urllib.request.urlopen(f'https://huggingface.co/api/models/{depot}/tree/main?recursive=true', timeout=60))
+    return [(f['path'], f.get('size', 0)) for f in arbre if f['type'] == 'file' and (voulus is None or f['path'] in voulus)]
+
 def telecharge():
-    from huggingface_hub import hf_hub_download, snapshot_download
-    snapshot_download('alibaba-pai/Wan2.1-Fun-V1.1-1.3B-InP', local_dir=BASE, max_workers=8)
-    hf_hub_download('BadToBest/EchoMimicV3', 'echomimicv3-flash-pro/diffusion_pytorch_model.safetensors', local_dir=f'{R}/flash')
-    snapshot_download('TencentGameMate/chinese-wav2vec2-base', local_dir=W2V, allow_patterns=['config.json', 'preprocessor_config.json', 'pytorch_model.bin'])
-    M['go_telecharges'] = round(sum(os.path.getsize(f) for f in glob.glob(f'{R}/**/*', recursive=True) if os.path.isfile(f)) / 1e9, 2)
+    """même méthode que le noyau Wan (mesurée sur Colab : ~20 Go en 122,6 s) : curl en parallèle, reprise, tailles contrôlées.
+    Si le paquet rapporte les vecteurs du texte d'une production précédente, l'encodeur T5 n'est pas téléchargé."""
+    F = [(d, c, n, f'{dest}/{c}') for d, dest, voulus in (
+            ('alibaba-pai/Wan2.1-Fun-V1.1-1.3B-InP', BASE, None),
+            ('BadToBest/EchoMimicV3', f'{R}/flash', {'echomimicv3-flash-pro/diffusion_pytorch_model.safetensors'}),
+            ('TencentGameMate/chinese-wav2vec2-base', W2V, {'config.json', 'preprocessor_config.json', 'pytorch_model.bin'}))
+         for c, n in liste(d, voulus)]
+    if GARDE: F = [f for f in F if f[1] != T5]; dit('vecteurs du texte rapportés par le paquet : encodeur T5 (11,4 Go) non téléchargé')
+    complet = lambda f: os.path.isfile(f[3]) and os.path.getsize(f[3]) == f[2]
+    for _ in range(3):
+        procs = []
+        for d, c, n, out in [f for f in F if not complet(f)]:
+            os.makedirs(os.path.dirname(out), exist_ok=True)
+            procs.append(subprocess.Popen(['curl', '-s', '-L', '--retry', '5', '-C', '-', '-o', out, f'https://huggingface.co/{d}/resolve/main/{c}']))
+        for p in procs: p.wait()
+    manque = [f[1] for f in F if not complet(f)]
+    if manque: raise SystemExit(f'téléchargement incomplet : {manque}')
+    M['go_telecharges'] = round(sum(f[2] for f in F) / 1e9, 2); dit(f'{len(F)} fichiers, {M["go_telecharges"]} Go')
 
 TEXTE_PY = r'''
 import sys, inspect, torch, accelerate
@@ -90,10 +113,14 @@ with torch.no_grad():
 torch.save(out, sortie)
 '''
 def texte():
-    open(f'{R}/texte.py', 'w').write(TEXTE_PY)
-    r = lance([sys.executable, f'{R}/texte.py', CODE, BASE, f'{R}/texte.pt', TEXTE, NEG])
-    dit((r.stdout or '')[-600:])
-    if r.returncode or not os.path.isfile(f'{R}/texte.pt'): raise SystemExit('encodage du texte impossible : voir journal.txt')
+    if GARDE: shutil.copy(f'{PAQ}/texte.pt', f'{R}/texte.pt'); dit('vecteurs du texte repris du paquet')
+    else:
+        open(f'{R}/texte.py', 'w').write(TEXTE_PY)
+        r = lance([sys.executable, f'{R}/texte.py', CODE, BASE, f'{R}/texte.pt', TEXTE, NEG])
+        dit((r.stdout or '')[-600:])
+        if r.returncode or not os.path.isfile(f'{R}/texte.pt'): raise SystemExit('encodage du texte impossible : voir journal.txt')
+    shutil.copy(f'{R}/texte.pt', f'{SORTIE}/texte.pt')         # rapportés avec les plans : la production suivante saute T5
+    open(f'{SORTIE}/texte.txt', 'w', encoding='utf-8').write(SIGNE)
 
 if not os.environ.get('NOYAU_ESSAI'):
     etape('installation', installe); etape('telechargement', telecharge); etape('texte', texte)

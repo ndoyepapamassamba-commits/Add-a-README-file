@@ -13,7 +13,7 @@
 #   python3 kaggle_moteur.py quota                            → heures de carte graphique restantes cette semaine
 # Réglages facultatifs (variables d'environnement) : KAGGLE_QUANT (Q3_K_M, Q4_K_M, Q5_K_M, Q8_0), KAGGLE_PAS (pas de
 # calcul), KAGGLE_CARTES (1 ou 2 serveurs si la machine a deux T4), COMFY_PROMPT (consigne de jeu).
-import json, os, re, shutil, sys, time
+import glob, json, os, re, shutil, sys, time
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 cmd = sys.argv[1] if len(sys.argv) > 1 else 'aide'
@@ -41,6 +41,9 @@ def construit(film, kit, utilisateur='UTILISATEUR'):
     for p in P:
         for ext in ('png', 'wav'): shutil.copy(f'{ia}/{p["cle"]}.{ext}', paq)
     shutil.copy(f'{ia}/plans.json', paq); shutil.copy(f'{ICI}/comfy_wan.py', paq)
+    gardes = sorted(glob.glob(f'{ICI}/../v*/ia*/texte.pt'), key=os.path.getmtime)   # vecteurs du texte d'EchoMimic déjà calculés
+    if gardes and os.path.isfile(gardes[-1][:-2] + 'txt'):
+        shutil.copy(gardes[-1], paq); shutil.copy(gardes[-1][:-2] + 'txt', paq)
     cfg = {'kit': kit, 'cartes': int(os.environ.get('KAGGLE_CARTES', '1'))}
     if os.environ.get('KAGGLE_QUANT'): cfg['quant'] = os.environ['KAGGLE_QUANT']
     if os.environ.get('KAGGLE_PAS'): cfg['pas'] = int(os.environ['KAGGLE_PAS'])
