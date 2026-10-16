@@ -278,12 +278,17 @@ function easingDe(nom: NomEasing | undefined, defaut: NomEasing): (u: number) =>
   return EASINGS[nom ?? defaut] ?? EASINGS[defaut];
 }
 
-/** Fin d'influence d'un mouvement ponctuel : début du mouvement de cadrage suivant (ou la fin du plan). */
-function releve(mouvements: ReadonlyArray<{ m: MouvementCamera; i: number }>, k: number, finPlan: number): { debut: number; duree: number } {
+/**
+ * Fin d'influence d'un mouvement ponctuel : début du mouvement de cadrage suivant (ou la fin du plan). Un `recadrer`
+ * relâche le punch-in sur TOUTE sa durée (dézoom posé, sans à-coup de caméra) ; un panoramique ou un filé le relâche
+ * en 0,6 s au plus (le mouvement lui-même porte l'énergie).
+ */
+export function releve(mouvements: ReadonlyArray<{ m: MouvementCamera; i?: number }>, k: number, finPlan: number): { debut: number; duree: number } {
   for (let j = k + 1; j < mouvements.length; j++) {
     const m = mouvements[j]!.m;
     if (m.type === 'recadrer' || m.type === 'panoramique' || m.type === 'file' || m.type === 'punchIn') {
-      return { debut: m.debut, duree: Math.max(0.05, m.type === 'punchIn' ? m.duree : Math.min(m.duree, 0.6)) };
+      const duree = m.type === 'punchIn' || m.type === 'recadrer' ? m.duree : Math.min(m.duree, 0.6);
+      return { debut: m.debut, duree: Math.max(0.05, duree) };
     }
   }
   return { debut: finPlan + 1e9, duree: 1 };

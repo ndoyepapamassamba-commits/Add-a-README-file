@@ -16,7 +16,8 @@
     "rendre": "tsx src/export/rendre.ts",
     "verifier": "npm run typecheck && npm test",
     "voix": "tsx src/outils/voix/dire.ts",
-    "preparer": "tsx src/outils/affiner/preparer.ts"
+    "preparer": "tsx src/outils/affiner/preparer.ts",
+    "affiner": "tsx src/outils/affiner/affiner.ts"
   },
   "dependencies": {
     "delaunator": "5.1.0",

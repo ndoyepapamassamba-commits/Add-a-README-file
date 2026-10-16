@@ -332,7 +332,7 @@
       {
         "type": "recadrer",
         "debut": 7.6,
-        "duree": 0.9,
+        "duree": 1.4,
         "cadrage": {
           "taille": "moyen",
           "sujets": [

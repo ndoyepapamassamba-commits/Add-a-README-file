@@ -17,14 +17,14 @@ import type { EllipseDouce } from './formes';
 export const REGLAGES_OMBRES = Object.freeze({
   couleur: [0.04, 0.028, 0.024] as const,
   /** Ombre du corps : alpha relatif et marge latérale autour des pieds. */
-  corps: 0.6,
+  corps: 0.7,
   margeCorps: 0.11,
   /** Ombre douce sous chaque pied : demi-largeur et alpha relatif. */
   piedLarge: 0.075,
-  pied: 0.85,
+  pied: 1,
   /** Noyau d'occlusion sous la semelle : demi-largeur et alpha relatif. */
   piedNoyau: 0.04,
-  noyau: 0.9,
+  noyau: 1,
   /** Hauteur de levée (fraction de la hauteur) à laquelle le contact tombe à 1/e. */
   levee: 0.03,
 });

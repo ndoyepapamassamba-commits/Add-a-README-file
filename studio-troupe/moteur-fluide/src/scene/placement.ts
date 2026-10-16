@@ -26,7 +26,7 @@ export const REGLAGES_PLACEMENT = Object.freeze({
   /** Demi-largeur de l'ombre de contact, en hauteurs du personnage. */
   largeurOmbre: 0.17,
   /** Opacité de base de l'ombre de contact (augmentée avec le contraste de la lumière du décor). */
-  opaciteOmbre: 0.5,
+  opaciteOmbre: 0.6,
   /** Part de la statistique locale (autour du personnage) dans l'étalonnage, le reste étant globale. */
   partLocale: 0.5,
   /** Force de l'étalonnage (1 = transfert partiel complet). */
@@ -101,7 +101,7 @@ export function ombrePour(decor: InfoDecor | null, sujet: Pick<GeometrieSujet, '
   const contraste = decor?.analyse?.lumiere.contraste ?? 0.4;
   const o = ombreNeutre(REGLAGES_PLACEMENT.largeurOmbre * sujet.hauteur);
   o.aplatissement = aplatissementSol(decor, sujet.v);
-  o.opacite = borner(REGLAGES_PLACEMENT.opaciteOmbre + 0.2 * contraste, 0, 0.75);
+  o.opacite = borner(REGLAGES_PLACEMENT.opaciteOmbre + 0.2 * contraste, 0, 0.8);
   o.flou = 6;
   return o;
 }

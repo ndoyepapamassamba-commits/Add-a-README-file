@@ -203,7 +203,10 @@ export function agrandirBicubique(img: ImageRGBA, L: number, H: number): ImageRG
       }
       const a = Math.min(1, Math.max(0, acc[3]! / wt));
       const o = 4 * (y * L + x);
-      for (let k = 0; k < 3; k++) r.donnees[o + k] = a > 1e-4 ? Math.min(255, Math.max(0, Math.round(acc[k]! / wt / a))) : 0;
+      // Couleur = somme prémultipliée / somme des alphas (exacte pour une couleur unie, même quand les lobes négatifs
+      // du noyau font dépasser l'alpha avant son bornage).
+      const sa = acc[3]!;
+      for (let k = 0; k < 3; k++) r.donnees[o + k] = a > 1e-4 && Math.abs(sa) > 1e-6 ? Math.min(255, Math.max(0, Math.round(acc[k]! / sa))) : 0;
       r.donnees[o + 3] = Math.round(a * 255);
     }
   }

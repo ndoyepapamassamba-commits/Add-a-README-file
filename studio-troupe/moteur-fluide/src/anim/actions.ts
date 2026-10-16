@@ -578,8 +578,13 @@ const hausserEpaules: Recette = {
     // Hauteur des épaules et écart des coudes : des CIBLES bornées (le gain d'exagération ne doit pas décoller la
     // manche du cou ni écarteler les bras d’un dessin unique). Épaules ≤ 5 % de la hauteur (≈ 6,5 % au dépassement) ; coudes ≤ 30°, et
     // ≤ 21° pour un dessin de trois quarts (le bras du fond se cache derrière le corps).
-    const lev = Math.min(0.055, 0.05 / Math.max(1e-6, e.g));
+    const lev = Math.min(0.055, (e.m.orientation === 0 ? 0.05 : 0.028) / Math.max(1e-6, e.g));
     const ecart = Math.min(26, (e.m.orientation === 0 ? 30 : 21) / Math.max(1e-6, e.g));
+    // Trois quarts : l'épaule monte moins (la manche ne se décolle pas du torse), l'avant-bras se raccourcit moins
+    // (le raccourci « vers le spectateur » est un effet de face) et le poignet plie moins (la main garde sa forme).
+    const troisQuarts = e.m.orientation !== 0;
+    const raccourci = troisQuarts ? -0.18 : -0.42;
+    const poignet = troisQuarts ? Math.min(40, 26 / Math.max(1e-6, e.g)) : 40;
     COTES.forEach((c, i) => {
       const d = i * e.T(0.03);
       e.epaule(c, [
@@ -607,14 +612,14 @@ const hausserEpaules: Recette = {
       ]);
       e.brut('avantBras' + c, 'sy', [
         [0, 0],
-        [A + P + d, -0.42],
-        [tR, -0.38],
+        [A + P + d, raccourci],
+        [tR, raccourci * 0.9],
         [fin, 0],
       ]);
       e.main(c, [
         [0, 0],
-        [A + P + d, 40],
-        [tR, 36],
+        [A + P + d, poignet],
+        [tR, poignet * 0.9],
         [fin, 0],
       ]);
     });
@@ -1291,7 +1296,13 @@ function construireRire(e: Ecriture, p: ParamsRecette): { A: number; tR: number;
   // Pli total (pli × gain) ≤ 78° : au-delà, sur un dessin unique, la main remonte vers le visage et le coude se
   // replie en boucle (avant-bras « doublé »).
   const pli = Math.min(78, 78 / Math.max(1e-6, e.g));
+  // Dessin de trois quarts : seul le bras PROCHE (côté opposé au regard) vient au ventre, devant le corps. Le bras du
+  // fond reste presque baissé, derrière le torse : sinon les deux avant-bras se croisent devant le ventre et se lisent
+  // comme un seul bras étiré en ruban, avec une main qui dépasse de chaque côté.
+  const proche: Cote | null = e.m.orientation === 0 ? null : e.m.cote.G === -e.m.orientation ? 'G' : 'D';
+  const pliFond = Math.min(22, 22 / Math.max(1e-6, e.g));
   for (const c of COTES) {
+    const fond = proche !== null && c !== proche;
     e.epaule(c, [
       [0, 0],
       [A, 0.02],
@@ -1301,14 +1312,15 @@ function construireRire(e: Ecriture, p: ParamsRecette): { A: number; tR: number;
     ]);
     e.abduction(c, [
       [0, 0],
-      [A + 0.25, -8],
-      [tR, -8],
+      [A + 0.25, fond ? -4 : -8],
+      [tR, fond ? -4 : -8],
       [fin, 0],
     ]);
+    const pliCote = fond ? pliFond : pli;
     e.avantBras(c, [
       [0, 0],
-      [A + 0.25, -pli],
-      [tR, -pli * 0.97],
+      [A + 0.25, -pliCote],
+      [tR, -pliCote * 0.97],
       [fin, 0],
     ]);
     e.main(c, [
@@ -1318,7 +1330,8 @@ function construireRire(e: Ecriture, p: ParamsRecette): { A: number; tR: number;
       [fin, 0],
     ]);
   }
-  e.devant(['avantBrasG', 'mainG', 'avantBrasD', 'mainD'], A, tR + 0.2);
+  // Devant le ventre : les deux avant-bras de face, seulement le bras proche de trois quarts.
+  e.devant(proche === null ? ['avantBrasG', 'mainG', 'avantBrasD', 'mainD'] : ['avantBras' + proche, 'main' + proche], A, tR + 0.2);
   e.tangage([
     [0, 0],
     [A, -0.2],

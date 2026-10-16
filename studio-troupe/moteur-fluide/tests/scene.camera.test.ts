@@ -239,3 +239,15 @@ describe('caméra : raccord de clarté au filé à travers une coupe', () => {
     expect(ex(4.5)).toBe(1);
   });
 });
+
+describe('caméra : relève d’un punch-in', () => {
+  it('un recadrer relâche le punch-in sur toute sa durée ; un panoramique en 0,6 s au plus', async () => {
+    const { releve } = await import('../src/scene/camera');
+    const punch = { m: { type: 'punchIn' as const, debut: 1, duree: 0.2, sujet: 'a' } };
+    const recadrer = { m: { type: 'recadrer' as const, debut: 3, duree: 1.4, cadrage: { taille: 'moyen' as const } } };
+    const pano = { m: { type: 'panoramique' as const, debut: 3, duree: 2, vers: { u: 0.5, v: 0.9 } } };
+    expect(releve([punch, recadrer], 0, 10)).toEqual({ debut: 3, duree: 1.4 });
+    expect(releve([punch, pano], 0, 10)).toEqual({ debut: 3, duree: 0.6 });
+    expect(releve([punch], 0, 10).debut).toBeGreaterThan(10);
+  });
+});
