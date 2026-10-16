@@ -6,10 +6,10 @@
 
 Tapez `"MODOU saute dans la Cour"` : le moteur part d'un bloc de bruit et, en 30 pas guidés par le texte, **doit** faire
 apparaître un clip de 17 images où MODOU (t-shirt vert délavé, pantalon cargo marron) saute devant le mur de parpaings de
-la Cour. **Avec le checkpoint livré** (1 500 pas d'entraînement seulement), ce prompt précis donne encore MAMAN NOUNOU qui
-« parle » : environ 4 clips texte→vidéo sur 10 seulement ont à la fois le bon personnage, la bonne action et le bon décor
-(voir [Résultats mesurés](#résultats-mesurés)). Donnez-lui en plus une première image : il l'anime (image→vidéo, comme
-Wan I2V ou Kling), et là 8 clips sur 10 sont justes sur les trois critères (prompts vus).
+la Cour. **Avec le checkpoint livré** (3 200 pas d'entraînement), c'est bien ce qu'il fait sur ce prompt, et environ
+2 clips texte→vidéo sur 3 ont à la fois le bon personnage, la bonne action et le bon décor sur les prompts vus (4 sur 10
+sur les combinaisons jamais vues ; voir [Résultats mesurés](#résultats-mesurés)). Donnez-lui en plus une première image :
+il l'anime (image→vidéo, comme Wan I2V ou Kling), et là près de 8 clips sur 10 sont justes sur les trois critères.
 
 ## Soyons honnêtes sur l'échelle
 
@@ -18,7 +18,7 @@ Wan I2V ou Kling), et là 8 clips sur 10 sont justes sur les trois critères (pr
 | image | **32×32 px**, 17 images (~2 s à 8 i/s) | 1280×704, 121 images (5 s à 24 i/s) | jusqu'à 1080p, 8 s et plus |
 | paramètres | **~9,1 millions** (VAE 1,8 M + texte 0,4 M + DiT 6,9 M) | 5 milliards (TI2V-5B) à 27 milliards (A14B, MoE) + umT5 gelé | non publiés |
 | données | ~3 000 clips de marionnettes **dessinés par le programme** | « des milliards d'images et de vidéos » (~1 000 milliards de jetons) | non publiées |
-| calcul | **4 cœurs CPU, ~33 min** d'entraînement | des centaines de GPU (budget non publié) | TPU / GPU, non publié |
+| calcul | **4 cœurs CPU, ~45 min** d'entraînement | des centaines de GPU (budget non publié) | TPU / GPU, non publié |
 
 Recréer un vrai moteur coûte au moins ~200 000 $ (Open-Sora 2.0, borne basse publiée). Ce projet ne produit donc **pas**
 de vidéos utilisables sur TikTok : il **prouve la recette de bout en bout**, pièce par pièce, avec un code que vous
@@ -148,7 +148,7 @@ n'a pas donné le détail.
 | **CFG** | embedding « nul » appris, texte effacé 10 % du temps | prompt négatif par défaut (texte « vide » / négatif) | non publié |
 | **Audio** | aucun | modèles séparés (Wan-S2V, audio → vidéo) | **audio et vidéo générés ensemble** (diffusion conjointe des deux latents) |
 | **Accélération** | aucune (EMA des poids seulement) | communauté : distillation 4-8 pas (LightX2V), cache, quantification GGUF/FP8 | non publié |
-| **Matériel** | CPU 4 cœurs, ~33 min | centaines de GPU (exemple publié : 128 GPU) | non publié |
+| **Matériel** | CPU 4 cœurs, ~45 min | centaines de GPU (exemple publié : 128 GPU) | non publié |
 
 Ce que le mini-moteur **ne** reproduit **pas** : la super-résolution en cascade, l'audio, le post-entraînement
 (SFT, préférences/DPO), la réécriture de prompt par un LLM, la distillation, les références multiples de personnage.
@@ -178,10 +178,12 @@ python -m minimoteur.train vae --fg-weight 1 --out runs/vae_etape1.pt           
 python -m minimoteur.train vae --init runs/vae_etape1.pt --steps 1500 --lr 5e-4  # reprise, pixels du personnage x4, ~11 min
 
 # 3) entraîner le DiT + l'encodeur de texte, VAE gelé -> runs/dit.pt
-#    Le DiT mesuré plus bas = les 1 500 premiers pas d'un calendrier de 3 200 (entraînement interrompu, voir
-#    « Ce qui s'est passé ») ; --stop-at s'arrête là sans changer le calendrier (~10 min) :
-python -m minimoteur.train dit --steps 3200 --lr 5e-4 --stop-at 1500
-#    Calendrier complet, jamais mesuré ici (3 200 pas, lr 5e-4 : les valeurs de config.py, ~21 min) :
+#    Le DiT mesuré plus bas a été entraîné en deux temps (voir « Ce qui s'est passé ») : les 1 500 premiers pas d'un
+#    calendrier de 3 200 (--stop-at s'arrête là sans changer le calendrier, ~10 min), puis une reprise de 1 700 pas
+#    avec un nouveau calendrier court (~12 min). Pour le refaire à l'identique :
+python -m minimoteur.train dit --steps 3200 --lr 5e-4 --stop-at 1500 --out runs/dit_1500.pt
+python -m minimoteur.train dit --init runs/dit_1500.pt --steps 1700 --lr 3e-4 --out runs/dit.pt
+#    Calendrier complet d'un seul tenant, jamais mesuré ici (3 200 pas, lr 5e-4 : les valeurs de config.py, ~22 min) :
 #    python -m minimoteur.train dit
 
 # 4) générer : texte -> vidéo (MP4 256x256 + GIF ; les .mp4/.gif écrits ici sont ignorés par git)
@@ -216,8 +218,8 @@ le verbe). Un prompt hors gabarit déclenche un avertissement.
 
 Les checkpoints, journaux (`runs/*_log.jsonl`, une ligne JSON par mesure) et le cache des clips/latents vont dans
 `runs/` (ignoré par git). Le checkpoint `dit.pt` contient aussi le VAE et le vocabulaire : il se suffit à lui-même. Ceux
-produits par cette version du code contiennent en plus l'état de l'optimiseur AdamW (pour `--init`) ; le `dit.pt` mesuré
-plus bas, plus ancien, ne l'a pas.
+produits par cette version du code contiennent en plus l'état de l'optimiseur AdamW (pour `--init`) ; le checkpoint du
+pas 1 500 mesuré plus bas, plus ancien, ne l'avait pas (la reprise a donc remis les moments d'AdamW à zéro).
 
 `train dit` ne reprend du checkpoint du VAE que ce qui définit les latents (format des clips, données, VAE) ; le reste
 (texte, DiT, flow, entraînement) vient de [`config.py`](minimoteur/config.py).
@@ -226,25 +228,26 @@ plus bas, plus ancien, ne l'a pas.
 
 ## Résultats mesurés
 
-Mesures du 16/10/2026, sur 4 cœurs Xeon 2,1 GHz (avec AMX), sans GPU. Fichiers bruts : `runs/eval.json`, `runs/eval.md`,
-`runs/balayage.json`, `runs/*_log.jsonl` (ignorés par git), [`exemples/exemples.json`](exemples/exemples.json). Tous sont
-refaits par les commandes 5, 5b et 6 ci-dessus (évaluation relancée après la correction du détecteur d'identité :
-chiffres inchangés).
+Mesures du 16/10/2026, sur 4 cœurs Xeon 2,1 GHz (avec AMX), sans GPU. Fichiers bruts : `runs/eval.json` et
+`runs/eval.md` (checkpoint livré, pas 3 200), `runs/eval_1500.json` et `.md` (checkpoint intermédiaire du pas 1 500),
+`runs/balayage.json`, `runs/*_log.jsonl` (ignorés par git), [`exemples/exemples.json`](exemples/exemples.json). Ils sont
+refaits par les commandes 5, 5b et 6 ci-dessus.
 
-**En bref.** Le moteur **reconnaît le personnage et le décor** demandés, et **anime une première image** de façon fidèle.
-Par contre, en texte→vidéo, il **ne fait la bonne action qu'une fois sur deux au mieux**. Deux des cinq objectifs fixés
-avant l'entraînement sont manqués : le PSNR du VAE (de 0,3 dB) et l'action en texte→vidéo (42 % au lieu de 60 %). Le DiT
-livré n'a fait que **1 500 pas sur les 3 200 prévus** (voir « Ce qui s'est passé »).
+**En bref.** Le moteur **reconnaît le personnage** (95 %) **et le décor** (100 %) demandés, **anime fidèlement une
+première image**, et fait **la bonne action dans 70 % des clips texte→vidéo** sur les prompts vus. Quatre des cinq
+objectifs fixés avant l'entraînement sont atteints ; seul le PSNR du VAE reste manqué, de 0,3 dB. L'action « parle »
+reste invisible (limite du VAE, voir plus bas), et sur les combinaisons jamais vues l'action se transfère moins bien
+(42 % en texte→vidéo).
 
 ### Objectifs de qualité
 
-| objectif (fixé avant l'entraînement) | mesuré | verdict |
-|---|---|---|
-| VAE : PSNR sur clips tenus à l'écart ≥ 26 dB | **25,68 dB** (min 20,83 dB, 200 clips) | **manqué** de 0,3 dB |
-| texte→vidéo : identité ≥ 80 % | **92 %** (prompts vus) ; 98 % (tenus à l'écart) | atteint |
-| texte→vidéo : décor ≥ 90 % | **100 %** (vus) ; 100 % (tenus à l'écart) | atteint |
-| texte→vidéo : action ≥ 60 % sur les prompts vus | **42 %** (vus) ; 22 % (tenus à l'écart) | **manqué** |
-| image→vidéo : PSNR de l'image 0 ≥ 24 dB | **28,8 dB** (vus) ; 28,4 dB (tenus à l'écart) | atteint |
+| objectif (fixé avant l'entraînement) | mesuré (checkpoint livré, pas 3 200) | au pas 1 500 | verdict |
+|---|---|---|---|
+| VAE : PSNR sur clips tenus à l'écart ≥ 26 dB | **25,68 dB** (min 20,83 dB, 200 clips) | idem (même VAE) | **manqué** de 0,3 dB |
+| texte→vidéo : identité ≥ 80 % | **95 %** (prompts vus) ; 100 % (tenus à l'écart) | 92 % ; 98 % | atteint |
+| texte→vidéo : décor ≥ 90 % | **100 %** (vus) ; 100 % (tenus à l'écart) | 100 % ; 100 % | atteint |
+| texte→vidéo : action ≥ 60 % sur les prompts vus | **70 %** (vus) ; 42 % (tenus à l'écart) | 42 % ; 22 % | atteint |
+| image→vidéo : PSNR de l'image 0 ≥ 24 dB | **29,1 dB** (vus) ; 28,9 dB (tenus à l'écart) | 28,8 ; 28,4 dB | atteint |
 
 ### Temps d'entraînement et taille
 
@@ -252,26 +255,26 @@ livré n'a fait que **1 500 pas sur les 3 200 prévus** (voir « Ce qui s'est pa
 |---|---|---|---|---|
 | VAE, étape 1 (perte uniforme, lr 1e-3) | 1 600 × 8 | 0,39 | 10,9 min | 24,66 dB |
 | VAE, étape 2 (reprise, pixels du personnage ×4, lr 5e-4) | 1 500 × 8 | 0,43 | 11,0 min | **25,68 dB** |
-| encodage des 3 000 clips en latents (une fois) | — | — | 0,6 min | latents de moyenne 0,00 et d'écart-type 1,00 |
-| DiT + texte (bf16, lr 5e-4, EMA 0,999), **arrêté au pas 1 500 / 3 200** (`--stop-at 1500` le refait) | 1 500 × 32 | 0,40 | 10,1 min | perte de vitesse 0,23 |
-| **total** | | | **~33 min** | |
+| encodage des 3 000 clips en latents (une fois, puis en cache) | — | — | 0,6 min | latents de moyenne 0,00 et d'écart-type 1,00 |
+| DiT + texte, partie 1 : pas 1 → 1 500 d'un calendrier de 3 200 (bf16, lr 5e-4, EMA 0,999), **interrompue** | 1 500 × 32 | 0,40 | 10,1 min | perte de vitesse 0,23 |
+| DiT + texte, partie 2 : reprise 1 500 → 3 200 (nouveau calendrier court : montée sur 100 pas puis cosinus de 3e-4 à 3e-5 ; moments d'AdamW remis à zéro ; EMA continuée) | 1 700 × 32 | 0,41 | 11,6 min | perte de vitesse **0,15** |
+| **total** | | | **~45 min** | |
 
 Paramètres : VAE 1 792 819, DiT 6 944 032, encodeur de texte 402 048, soit **9 138 899** au total. Les autres temps
 mesurés sont les suivants :
 
-- génération d'un clip (30 pas, CFG 4) : ~0,7 s ;
+- génération d'un clip (30 pas, CFG 4) : ~0,6 s ;
 - évaluation complète (160 clips générés + plafonds) : 1 min 30 ;
-- balayage CFG / shift (320 clips) : 2 min 20 (2 fils, CPU partagé) ;
-- 53 tests réussis : 15 s avec `MINIMOTEUR_THREADS=2` sur ce CPU partagé ; avec les 4 fils par défaut pendant que
-  l'autre calcul tournait, 3 min 51 (`python -m pytest -q tests` tel quel).
+- balayage CFG / shift (320 clips) : 2 min 20 (2 fils, CPU partagé ; fait sur le checkpoint du pas 1 500) ;
+- 53 tests réussis : ~15 s avec `MINIMOTEUR_THREADS=2` ; avec les 4 fils par défaut pendant qu'un autre calcul lourd
+  tournait, 3 min 51 (`python -m pytest -q tests` tel quel).
 
 ### Tableau complet (`python -m minimoteur.evaluate`, 30 pas, CFG 4, shift 3, 2 graines × 20 prompts par groupe)
 
 Les détecteurs vérifient d'abord qu'un personnage est là : une image compte comme « avec personnage » si au moins 20
 pixels hors décor tombent sur la palette de la troupe (vrais clips : au moins 53 ; décor vide passé dans le VAE : au plus 7).
 Sans personnage sur au moins la moitié des images, l'identité vaut « absent », donc fausse ; une image sans personnage
-compte comme une erreur de persistance. Dans cette évaluation, tous les clips générés ont un personnage sur toutes
-leurs images.
+compte comme une erreur de persistance.
 
 | mesure | prompts | identité | action | décor | les 3 | persistance de l'identité | saccade du centre (px/image²) | PSNR image 0 |
 |---|---|---|---|---|---|---|---|---|
@@ -279,50 +282,57 @@ leurs images.
 | vrais clips (plafond du détecteur) | vus | 100 % | 100 % | 100 % | 100 % | 100 % | 0,69 | — |
 | reconstruction par le VAE | tenus à l'écart | 95 % | 82 % | 100 % | 78 % | 92 % | 0,54 | — |
 | reconstruction par le VAE | vus | 92 % | 88 % | 100 % | 80 % | 90 % | 0,58 | — |
-| **texte→vidéo** | tenus à l'écart | 98 % | 22 % | 100 % | 22 % | 92 % | 0,50 | — |
-| **texte→vidéo** | vus | 92 % | 42 % | 100 % | 40 % | 88 % | 0,53 | — |
-| **image→vidéo** | tenus à l'écart | 98 % | 70 % | 100 % | 70 % | 92 % | 0,54 | 28,4 dB |
-| **image→vidéo** | vus | 100 % | 80 % | 100 % | 80 % | 94 % | 0,55 | 28,8 dB |
+| **texte→vidéo** | tenus à l'écart | 100 % | 42 % | 100 % | 42 % | 93 % | 0,55 | — |
+| **texte→vidéo** | vus | 95 % | 70 % | 100 % | 65 % | 93 % | 0,53 | — |
+| **image→vidéo** | tenus à l'écart | 98 % | 70 % | 100 % | 70 % | 93 % | 0,53 | 28,9 dB |
+| **image→vidéo** | vus | 92 % | 85 % | 100 % | 78 % | 94 % | 0,54 | 29,1 dB |
 
 Action par action (même évaluation) :
 
 | mode | prompts | saute | marche → droite | marche → gauche | parle | tombe |
 |---|---|---|---|---|---|---|
 | reconstruction par le VAE | vus | 100 % | 100 % | 100 % | **17 %** | 100 % |
-| texte→vidéo | vus | 62 % | 50 % | 38 % | 0 % | 50 % |
-| texte→vidéo | tenus à l'écart | 38 % | 25 % | 25 % | 0 % | 25 % |
-| image→vidéo | vus | 100 % | 100 % | 88 % | 0 % | 90 % |
-| image→vidéo | tenus à l'écart | 88 % | 100 % | 100 % | 0 % | 62 % |
+| texte→vidéo | vus | 100 % | 62 % | 62 % | 0 % | 100 % |
+| texte→vidéo | tenus à l'écart | 75 % | 38 % | 50 % | 0 % | 50 % |
+| image→vidéo | vus | 100 % | 100 % | 100 % | 0 % | 100 % |
+| image→vidéo | tenus à l'écart | 75 % | 100 % | 100 % | 0 % | 75 % |
 
-### Ce qui s'est passé, et pourquoi deux objectifs sont manqués
+### Ce qui s'est passé
 
-1. **Le DiT a été arrêté au pas 1 500 sur 3 200.** Vers le pas 1 800, un autre calcul lourd a démarré sur la même
-   machine : un banc d'essai de Wan 2.1 1,3B sur CPU, lancé en parallèle par une autre tâche. Il a pris la moitié des
-   cœurs. Avec deux programmes qui se disputent 4 cœurs, un pas est passé de 0,40 s à **~20 s**, ce qui rendait
-   impossible de finir dans le budget. Le checkpoint livré est celui du pas 1 500 (poids EMA). Son taux d'apprentissage
-   était encore à 3e-4 : la décroissance cosinus finale n'a pas eu lieu.
+1. **Le DiT a été entraîné en deux temps.** Vers le pas 1 800 du premier entraînement, un autre calcul lourd a démarré
+   sur la même machine : un banc d'essai de Wan 2.1 1,3B sur CPU (voir [`../banc-cpu/`](../banc-cpu/)). Avec deux
+   programmes qui se disputaient 4 cœurs, un pas est passé de 0,40 s à **~20 s**. L'entraînement a été arrêté et le
+   checkpoint du pas 1 500 gardé. Une fois le CPU libre, il a été repris jusqu'au pas 3 200 (11,6 min).
 
-   La tendance est bonne. L'action en texte→vidéo (prompts vus) est passée de 25 % (essai à 1 000 pas, ancien VAE) à
-   42 % (1 500 pas). La perte, elle, est descendue à 0,19 au pas 1 900, mais ces poids-là n'ont pas été sauvegardés.
+   Cette reprise n'est **pas** exactement le calendrier d'un seul tenant : nouveau calendrier court du taux
+   d'apprentissage, moments d'AdamW remis à zéro (le checkpoint du pas 1 500 ne les contenait pas). L'EMA, elle, a
+   continué au pas global, et la graine des tirages a été décalée de 1 500. Le calendrier d'un seul tenant n'a pas été
+   mesuré.
+
+   Effet de la reprise (texte→vidéo) : action **42 → 70 %** sur les prompts vus et **22 → 42 %** sur les combinaisons
+   jamais vues ; « les 3 critères » 40 → 65 % et 22 → 42 % ; perte de vitesse 0,23 → 0,15. C'est la leçon de toute la
+   recherche : **le savoir du moteur vient du temps d'entraînement**, pas des réglages.
 2. **« parle » est hors d'atteinte avec ce VAE.** Même les reconstructions des VRAIS clips ne sont reconnues comme
    « parle » que dans 12 à 17 % des cas. La bouche fait 1 pixel et le geste du bras est petit : le VAE (4×4 en espace,
-   8 canaux) les efface, et le clip devient « immobile » pour le détecteur.
-
-   Le plafond de l'action en texte→vidéo est donc d'environ 85 %, et non 100 %. Sans « parle », l'action en
-   texte→vidéo sur les prompts vus est de 50 %.
+   8 canaux) les efface, et le clip devient « immobile » pour le détecteur. Le plafond de l'action est donc d'environ
+   85 %, et non 100 %. Sans « parle », l'action en texte→vidéo atteint 82 % sur les prompts vus (28 clips sur 34) et 53 % sur les combinaisons jamais vues. C'est le problème
+   des vrais moteurs en miniature : ce qui est petit à l'écran (lèvres, doigts) est ce que la compression perd en premier,
+   d'où les modules de lip-sync dédiés.
 3. **Le VAE à 25,7 dB.** 75 % de l'erreur de reconstruction tombait sur le personnage, qui ne couvre que 16 % des
-   pixels. La reprise de l'entraînement avec ces pixels pondérés ×4 a fait passer le PSNR de 24,66 à 25,68 dB. Elle a
-   surtout fait passer l'identité reconnue après reconstruction de 70-75 % à 92-95 %. Il manque 0,3 dB, faute de temps
-   (la courbe montait encore).
-4. **L'image→vidéo est bien meilleure que le texte→vidéo** (action 80 % au lieu de 42 %). La première image fixe déjà
-   le personnage, sa taille et sa position : le modèle n'a plus qu'à le faire bouger. C'est la même raison qui pousse
-   les créateurs à passer par une image de référence avec Kling ou Wan I2V.
-5. **Généralisation compositionnelle.** Sur les 20 combinaisons jamais vues, l'identité (98 %) et le décor (100 %) se
-   recombinent presque toujours. L'action se transfère moins bien (22 % en texte→vidéo, 70 % en image→vidéo).
-6. **Fluidité.** La saccade du centre des clips générés vaut 0,50-0,55 px/image², contre 0,69-0,73 pour les vrais
-   clips. Les clips générés ne sont pas saccadés, ils sont plutôt « trop sages » : ils bougent moins que les vrais.
-7. **Réglages d'échantillonnage.** Balayage archivé (`python -m minimoteur.evaluate --balayage` → `runs/balayage.json`),
-   texte→vidéo, mêmes 2 × 20 prompts et mêmes graines que l'évaluation complète :
+   pixels. La reprise de l'entraînement avec ces pixels pondérés ×4 a fait passer le PSNR de 24,66 à 25,68 dB, et surtout
+   l'identité reconnue après reconstruction de 70-75 % à 92-95 %. Il manque 0,3 dB, faute de temps (la courbe montait
+   encore).
+4. **L'image→vidéo reste meilleure que le texte→vidéo** (action 85 % au lieu de 70 % sur les prompts vus, 70 % au lieu
+   de 42 % sur les combinaisons jamais vues). La première image fixe déjà le personnage, sa taille et sa position : le
+   modèle n'a plus qu'à le faire bouger. C'est la même raison qui pousse à animer les planches de la troupe en I2V avec
+   Wan ou Kling plutôt qu'à tout demander au texte.
+5. **Généralisation compositionnelle.** Sur les 20 combinaisons jamais vues, l'identité (100 %) et le décor (100 %) se
+   recombinent toujours. L'action se transfère moins bien (42 % en texte→vidéo, 70 % en image→vidéo).
+6. **Fluidité.** La saccade du centre des clips générés vaut 0,53-0,55 px/image², contre 0,69-0,73 pour les vrais
+   clips. Les clips générés ne sont pas saccadés, ils sont plutôt « trop sages » : ils bougent un peu moins que les vrais.
+7. **Réglages d'échantillonnage.** Balayage archivé, fait sur le checkpoint du **pas 1 500** et non refait au pas 3 200
+   (`python -m minimoteur.evaluate --balayage` → `runs/balayage.json`), texte→vidéo, mêmes 2 × 20 prompts et mêmes
+   graines que l'évaluation complète :
 
    | CFG | shift | identité (vus / tenus à l'écart) | action (vus / tenus à l'écart) | les 3 (vus / tenus à l'écart) |
    |---|---|---|---|---|
@@ -331,47 +341,39 @@ Action par action (même évaluation) :
    | 7 | 3 | 98 % / 100 % | 35 % / 20 % | 35 % / 20 % |
    | 4 | 6 | 92 % / 98 % | 45 % / 22 % | 42 % / 22 % |
 
-   Avec 40 clips par case, un pourcentage n'est connu qu'à ±16 points près : les écarts d'action (35 à 48 %) restent
-   dans le bruit de la mesure. Seule tendance nette : plus de CFG donne une identité plus sûre (82 → 98 % sur les prompts
-   vus) mais pas plus d'action. On garde donc CFG 4 et shift 3.
+   Avec 40 clips par case, un pourcentage n'est connu qu'à ±16 points près : les écarts d'action restent dans le bruit
+   de la mesure. Seule tendance nette : plus de CFG donne une identité plus sûre (82 → 98 % sur les prompts vus) mais pas
+   plus d'action. On garde donc CFG 4 et shift 3. Comparez avec l'effet de la reprise (point 1) : 1 700 pas
+   d'entraînement de plus ont apporté +28 points d'action, aucun réglage n'en apportait plus de quelques-uns.
 
-**Pour atteindre les objectifs** (quand le CPU est libre), il faut d'abord poursuivre le DiT. `--out` garde intact le
-checkpoint mesuré :
-
-```bash
-python -m minimoteur.train dit --init runs/dit.pt --steps 1700 --lr 3e-4 --out runs/dit_suite.pt   # ~11 min
-python -m minimoteur.evaluate --ckpt runs/dit_suite.pt --out-json runs/eval_suite.json --out-md runs/eval_suite.md \
-    --sheet runs/eval_suite_planche.png
-```
-
-Ce n'est **pas** la suite exacte du calendrier interrompu : le taux d'apprentissage suit un nouveau calendrier court
-(montée sur 100 pas, puis cosinus de 3e-4 à 3e-5), et les moments d'AdamW repartent de zéro, car le `dit.pt` livré ne
-les contient pas. Par contre, l'EMA continue au pas global (elle n'est pas écrasée), la graine des tirages est décalée de
-1 500 (on ne rejoue ni les mêmes lots ni les mêmes bruits) et le checkpoint final indique 3 200 pas. Pour « parle », il
-faut un VAE qui garde les petits détails : plus de pas, ou 16 canaux latents comme Wan 2.1.
+**Pour aller plus loin** : pour « parle », il faut un VAE qui garde les petits détails (16 canaux latents comme
+Wan 2.1, ou une compression spatiale moins forte) ; pour l'action sur les combinaisons jamais vues, plus de pas et plus
+de variété de données. Le mini-moteur a rempli son rôle : la recette est comprise et prouvée pièce par pièce ; la suite
+se joue avec les vrais poids (dernière section).
 
 ### Les exemples ([`exemples/`](exemples/), 0,9 Mo)
 
-Les prompts ont été choisis **avant** de voir les résultats, avec la graine 0 et sans aucun tri. Chaque MP4 (256×256,
-H.264, 8 i/s) est accompagné d'une planche PNG. La ligne du haut montre le clip de référence dessiné par le moteur de
-rendu des marionnettes (pour l'image→vidéo : l'image donnée), la ligne du bas montre le clip généré. Les verdicts des
-détecteurs sont écrits à côté.
+Les prompts ont été choisis **avant** de voir les résultats, avec la graine 0 et sans aucun tri ; ils ont été régénérés
+avec le checkpoint livré (pas 3 200). Chaque MP4 (256×256, H.264, 8 i/s) est accompagné d'une planche PNG. La ligne du
+haut montre le clip de référence dessiné par le moteur de rendu des marionnettes (pour l'image→vidéo : l'image donnée),
+la ligne du bas montre le clip généré. Les verdicts des détecteurs sont écrits à côté.
 
 | fichier | mode | prompt | identité | action (vue) | décor |
 |---|---|---|---|---|---|
-| `t2v_vu_modou_saute_cour` | T2V, vu | MODOU saute dans la Cour | non (MAMAN NOUNOU) | non (parle) | oui |
+| `t2v_vu_modou_saute_cour` | T2V, vu | MODOU saute dans la Cour | oui | **oui** (saute) | oui |
 | `t2v_vu_coumba_parle_salon` | T2V, vu | COUMBA parle dans le Salon | oui | non (immobile) | oui |
 | `t2v_vu_baye_ndiaye_marche_droite_marche` | T2V, vu | BAYE NDIAYE marche vers la droite au Marché | oui | **oui** | oui |
-| `t2v_vu_koffi_marche_gauche_salon` | T2V, vu | KOFFI marche vers la gauche dans le Salon | oui | non (parle) | oui |
-| `t2v_vu_maman_nounou_tombe_maquis` | T2V, vu | MAMAN NOUNOU tombe au Maquis | non (PETIT MAMADOU) | non (saute) | oui |
+| `t2v_vu_koffi_marche_gauche_salon` | T2V, vu | KOFFI marche vers la gauche dans le Salon | oui | non (marche vers la droite) | oui |
+| `t2v_vu_maman_nounou_tombe_maquis` | T2V, vu | MAMAN NOUNOU tombe au Maquis | oui | **oui** | oui |
 | `t2v_tenu_a_l_ecart_tantie_awa_saute_maquis` | T2V, **jamais vu** | TANTIE AWA saute au Maquis | oui | **oui** | oui |
 | `t2v_tenu_a_l_ecart_petit_mamadou_marche_droite_maquis` | T2V, **jamais vu** | PETIT MAMADOU marche vers la droite au Maquis | oui | non (saute) | oui |
 | `i2v_vu_modou_marche_droite_salon` | I2V, vu | MODOU marche vers la droite dans le Salon | oui | **oui** | oui |
 | `i2v_tenu_a_l_ecart_koffi_parle_maquis` | I2V, **jamais vu** | KOFFI parle au Maquis | oui | non (immobile) | oui |
 
-Ce qu'on y voit : le décor est net et toujours juste. Les personnages sont des silhouettes floues aux bonnes couleurs
-(boubou bleu de BAYE NDIAYE, robe orange de TANTIE AWA), sans visage. Le mouvement est présent mais souvent mou. En
-image→vidéo, la première image est reproduite fidèlement, puis le personnage se brouille au fil des images.
+Bilan : 9 identités et 9 décors justes sur 9, 5 actions justes sur 9 (dont les 2 « parle », hors d'atteinte). Ce qu'on
+y voit : le décor est net et toujours juste. Les personnages sont des silhouettes floues aux bonnes couleurs (t-shirt
+vert de MODOU, boubou bleu de BAYE NDIAYE, robe orange de TANTIE AWA), sans visage. En image→vidéo, la première image
+est reproduite fidèlement, puis le personnage se brouille au fil des images.
 
 **[`comparaison_pas_cfg.png`](exemples/comparaison_pas_cfg.png)** : « COUMBA saute au Marché » avec le même bruit
 initial, en 4, 10 ou 30 pas d'Euler, avec CFG 1 ou 4.
@@ -380,10 +382,11 @@ initial, en 4, 10 ou 30 pas d'Euler, avec CFG 1 ou 4.
   pas transposable aux vrais moteurs : les poids de base de Wan 2.2 ont besoin de 40 à 50 pas, et les versions en 4-8 pas
   (LightX2V, DMD2, rCM) sont des modèles **distillés à part**, entraînés exprès pour aller vite. Ne lancez pas
   TI2V-5B non distillé en 4 pas.
-- **La CFG coûte 2 passes par pas** (60 passes au lieu de 30) et change nettement le résultat : la silhouette devient
-  plus contrastée.
-- Sur cet exemple tiré au hasard, **aucun réglage ne donne le bon personnage** (le détecteur voit MAMAN NOUNOU) : c'est
-  un échec représentatif d'un DiT pas assez entraîné. Les réglages ne remplacent pas l'entraînement.
+- **La CFG coûte 2 passes par pas** (60 passes au lieu de 30) et change le résultat : avec CFG 4, l'action « saute »
+  est juste à 4, 10 et 30 pas ; sans guidance (CFG 1), seul l'essai à 4 pas saute, les autres « marchent vers la droite ».
+- Sur cet exemple, **aucun réglage ne donne le bon personnage** : le détecteur voit MAMAN NOUNOU au lieu de COUMBA. C'est
+  la confusion d'identité la plus fréquente qui reste (deux robes à dominante rose/rouge). Les réglages ne remplacent pas
+  l'entraînement.
 
 Pour refaire les exemples : `python -m minimoteur.exemples` (~15 s).
 
