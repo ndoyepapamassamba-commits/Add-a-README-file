@@ -1084,11 +1084,12 @@ export function sceneStreet(THREE: typeof T, OrbitControls: typeof OC, S: SceneS
       new THREE.Vector3(L - 40, 30, 8),
       new THREE.Vector3(170, 90, 120),
       new THREE.Vector3(150, 60, 50),
+      // au niveau de la rue, la caméra reste au-dessus des bus et camions (≈ 3,2 m) : jamais à travers un véhicule
       new THREE.Vector3(110, 8, 3.8),
-      new THREE.Vector3(30, 3.4, 3.8),
-      new THREE.Vector3(-60, 3.4, 3.8),
-      new THREE.Vector3(-150, 3.2, 1.0),
-      new THREE.Vector3(-230, 4.5, 4.5),
+      new THREE.Vector3(30, 4.6, 3.8),
+      new THREE.Vector3(-60, 4.6, 3.8),
+      new THREE.Vector3(-150, 4.6, 1.0),
+      new THREE.Vector3(-230, 5.2, 4.5),
       new THREE.Vector3(-260, 40, 30),
       new THREE.Vector3(-160, 120, 140),
       new THREE.Vector3(60, 170, 220),
@@ -1103,9 +1104,14 @@ export function sceneStreet(THREE: typeof T, OrbitControls: typeof OC, S: SceneS
     const k = u * u * (3 - 2 * u);
     const p = path.getPointAt(k);
     const ahead = path.getPointAt(Math.min(1, k + 0.03));
-    const low = p.y < 12;
-    // plan d'ouverture : dans l'axe de la rue, vers le soleil couchant et la skyline au bout
-    const tgt = k < 0.04 ? new THREE.Vector3(-L, 6, 0) : low ? new THREE.Vector3(ahead.x - 12, 2.6, ahead.z * 0.3) : new THREE.Vector3(0, 6, 0).lerp(ahead, 0.25);
+    // cible fondue (jamais de saut de regard) : ouverture dans l'axe de la rue vers le soleil couchant et la skyline,
+    // puis regard qui précède la caméra au ras de la rue, et vue d'ensemble en hauteur
+    const low = new THREE.Vector3(ahead.x - 12, 2.6, ahead.z * 0.3);
+    const high = new THREE.Vector3(0, 6, 0).lerp(ahead, 0.25);
+    const hw = Math.min(1, Math.max(0, (p.y - 9) / 7));
+    const tgt = low.lerp(high, hw * hw * (3 - 2 * hw));
+    const ow = Math.min(1, Math.max(0, (k - 0.02) / 0.05));
+    tgt.lerp(new THREE.Vector3(-L, 6, 0), 1 - ow * ow * (3 - 2 * ow));
     return { p, tgt };
   };
   const c0 = camAt(0);
@@ -1169,6 +1175,7 @@ export function sceneStreet(THREE: typeof T, OrbitControls: typeof OC, S: SceneS
   let frames = 0;
   let last = t0;
   const STOP = ROAD / 2 + 3.5; // ligne d'arrêt avant le carrefour
+  let camLift = 0;
   const frame = () => {
     const now = performance.now();
     const t = (now - t0) / 1000;
@@ -1414,6 +1421,24 @@ export function sceneStreet(THREE: typeof T, OrbitControls: typeof OC, S: SceneS
       camera.lookAt(c.tgt);
       controls.target.copy(c.tgt);
     } else controls.update();
+    // garde anti-collision : si un véhicule passe sous la caméra (avec 0,6 s d'anticipation), elle s'élève au-dessus,
+    // en douceur ; elle redescend ensuite à sa hauteur
+    {
+      let need = 0;
+      for (const v of vehs) {
+        const sp = SPEC[v.type];
+        const vx = v.axis === 'main' ? v.s : CROSS[1]! + v.lane;
+        const vz = v.axis === 'main' ? v.lane : v.s;
+        const ahead = v.v * 0.6 * v.dir;
+        const hx = (v.axis === 'main' ? sp.len : sp.w) / 2 + 1;
+        const hz = (v.axis === 'main' ? sp.w : sp.len) / 2 + 1;
+        const cx = v.axis === 'main' ? vx + ahead / 2 : vx;
+        const cz = v.axis === 'main' ? vz : vz + ahead / 2;
+        if (Math.abs(camera.position.x - cx) < hx + Math.abs(v.axis === 'main' ? ahead : 0) / 2 && Math.abs(camera.position.z - cz) < hz + Math.abs(v.axis === 'main' ? 0 : ahead) / 2) need = Math.max(need, sp.h + 1.2 - camera.position.y);
+      }
+      camLift += (Math.max(0, need) - camLift) * Math.min(1, dt * 5);
+      if (camLift > 1e-3) camera.position.y += camLift;
+    }
     sky.position.copy(camera.position);
     if (composer) composer.render(dt);
     else renderer.render(scene, camera);
