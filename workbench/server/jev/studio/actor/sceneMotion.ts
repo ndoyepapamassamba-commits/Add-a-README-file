@@ -166,8 +166,14 @@ export interface StageExtra {
   kind: 'personne' | 'animal';
   heightM: number;
   widthM: number;
-  /** its painted spot (where the picture shows it) */
-  painted: StageSpot;
+  /** its painted spot (where the picture shows it); none for a figurant brought in from the troupe's own cast (clean
+   *  cut-out of a character of the owner's galleries): it is placed in the field or absent from the film */
+  painted?: StageSpot;
+  /** depth to aim for when there is no painted spot (default: the farthest free spot behind the actors) */
+  preferDepth?: number;
+  /** height of the cut-out in its SOURCE pixels: on screen it may not be blown up past maxMagnify (a painted villager
+   *  of 120 px pulled to the foreground becomes a blurred smudge next to sharp actors — director review 16/10) */
+  sourcePx?: number;
   /** false for a body the cut-out does not show whole (seated, cut by an object or the picture's edge): it can only
    *  stay where the painting put it — moved, it would be half a person standing on the ground */
   movable?: boolean;
@@ -176,10 +182,78 @@ export interface StageExtra {
 }
 export interface StagePlacement {
   id: string;
-  spot: StageSpot;
+  /** null: a cast figurant with no free spot (not in the film) */
+  spot: StageSpot | null;
   moved: boolean;
   box: Box | null;
   reason: string;
+}
+
+/** Quality of a cut-out (RGBA pixels), measured on its pixels — the test that would have caught v4's villagers (a
+ *  child whose head was cut flat by the detector's box, a seated woman cut flat at the waist, wedges of ground carried
+ *  along): a side is CUT when the opaque silhouette runs along that edge of the image (outer 2 px band; a head apex or
+ *  two feet touch it on a few pixels only). `ground` (optional) gives the colours of the set around the element: an
+ *  opaque region touching the silhouette's border with one of those colours is a chunk of set carried along. */
+export function cutoutQuality(rgba: ArrayLike<number>, w: number, h: number, o: { ground?: [number, number, number][]; tol?: number } = {}): { clipped: ('haut' | 'bas' | 'gauche' | 'droite')[]; chunk: number; straight: boolean; ok: boolean; reasons: string[] } {
+  const A = (x: number, y: number) => rgba[(y * w + x) * 4 + 3]! >= 128;
+  const band = (side: 'haut' | 'bas' | 'gauche' | 'droite') => {
+    let n = 0;
+    const len = side === 'haut' || side === 'bas' ? w : h;
+    for (let k = 0; k < 2; k++) for (let i = 0; i < len; i++) {
+      const [x, y] = side === 'haut' ? [i, k] : side === 'bas' ? [i, h - 1 - k] : side === 'gauche' ? [k, i] : [w - 1 - k, i];
+      if (x >= 0 && y >= 0 && x < w && y < h && A(x, y)) n++;
+    }
+    return n / Math.max(1, 2 * len);
+  };
+  // the feet stand on the bottom edge (two feet ≈ 15–35 % of the width); a body cut at the waist runs along most of it
+  const lim = { haut: 0.08, gauche: 0.08, droite: 0.08, bas: 0.45 } as const;
+  const clipped = (['haut', 'bas', 'gauche', 'droite'] as const).filter((s) => band(s) > lim[s]);
+  // a STRAIGHT CUT inside the picture (a neighbour's hand cut by the gallery's crop, a body cut by the detector's box
+  // then padded): a matte's outline is soft (partly transparent pixels), a crop is a HARD step (opaque next to empty);
+  // a hard step that stays on the very same column over ≥ 8 % of the height, or the same row over ≥ 30 % of the width
+  // above the feet, is a cut — a drawn outline is never both hard and pixel-straight that long
+  const al = (x: number, y: number) => rgba[(y * w + x) * 4 + 3]!;
+  const hard = (x: number, y: number, x2: number, y2: number) => al(x, y) >= 240 && al(x2, y2) <= 10;
+  let straight = 0;
+  const vRun = Math.max(8, Math.round(0.08 * h)), hRun = Math.max(8, Math.round(0.3 * w));
+  let ys = h, ye = 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (A(x, y)) { ys = Math.min(ys, y); ye = Math.max(ye, y); }
+  for (let x = 1; x < w && !straight; x++) {
+    let rl = 0, rr = 0;
+    for (let y = 0; y < h; y++) {
+      rl = hard(x, y, x - 1, y) ? rl + 1 : 0;
+      rr = hard(x - 1, y, x, y) ? rr + 1 : 0;
+      if (rl >= vRun || rr >= vRun) { straight = 1; break; }
+    }
+  }
+  const feetFrom = ye - 0.06 * (ye - ys);
+  for (let y = 1; y < h && !straight; y++) {
+    if (y >= feetFrom) break;
+    let rt = 0, rb = 0;
+    for (let x = 0; x < w; x++) {
+      rt = hard(x, y, x, y - 1) ? rt + 1 : 0;
+      rb = hard(x, y - 1, x, y) ? rb + 1 : 0;
+      if (rt >= hRun || rb >= hRun) { straight = 1; break; }
+    }
+  }
+  let chunk = 0;
+  if (o.ground?.length) {
+    const tol = (o.tol ?? 26) ** 2;
+    let opaque = 0, near = 0;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (!A(x, y)) continue;
+      opaque++;
+      // only the silhouette's rim (a transparent pixel within 3 px): a chunk of ground hangs on the outline
+      let rim = false;
+      for (let dy = -3; dy <= 3 && !rim; dy++) for (let dx = -3; dx <= 3; dx++) { const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= w || yy >= h || !A(xx, yy)) { rim = true; break; } }
+      if (!rim) continue;
+      const i = (y * w + x) * 4, r = rgba[i]!, g = rgba[i + 1]!, b = rgba[i + 2]!;
+      if (o.ground.some(([R, G, B]) => (r - R) ** 2 + (g - G) ** 2 + (b - B) ** 2 <= tol)) near++;
+    }
+    chunk = near / Math.max(1, opaque);
+  }
+  const reasons = [...clipped.map((s) => `corps coupé net au bord ${s === 'haut' ? 'du haut' : s === 'bas' ? 'du bas' : s === 'gauche' ? 'gauche' : 'droit'}`), ...(straight ? ['coupe droite dans la silhouette (morceau coupé par un cadre)'] : []), ...(chunk > 0.06 ? [`morceaux de décor emportés (${Math.round(100 * chunk)} %)`] : [])];
+  return { clipped, chunk, straight: !!straight, ok: reasons.length === 0, reasons };
 }
 
 /**
@@ -194,7 +268,10 @@ export interface StagePlacement {
  *    nothing may cover any part of them; never over another extra; among the free spots the one closest to its
  *    painted depth (same scale relation to the set) and farthest from the centre of the action;
  *  - at most maxPersons people and maxAnimals animals in frame (a dialogue scene keeps a calm background);
- *  - no free spot → it stays painted where it was, and the reason is given.
+ *  - no free spot → it stays painted where it was, and the reason is given;
+ *  - (director review of v4, 16/10) a painted villager is moved only if its cut-out is CLEAN (cutoutQuality: no body
+ *    cut flat by the crop, no chunk of ground carried along) and never blown up past maxMagnify of its source pixels;
+ *    a figurant of the troupe's cast (clean, sharp, same style as the actors) has no painted spot: placed or absent.
  * `project` turns a spot and a body size into its screen box in the shot (null when behind the camera).
  */
 export function stageFigurants(o: {
@@ -218,6 +295,8 @@ export function stageFigurants(o: {
   maxAnimals?: number;
   /** any other rule of the book the spot must obey (e.g. not cut by the edge of the OTHER shots); false = refused */
   allow?: (s: StageSpot, heightM: number, widthM: number, e?: StageExtra) => boolean;
+  /** largest blow-up of a cut-out's source pixels on screen (rule figuration.resolution, default 1.35) */
+  maxMagnify?: number;
 }): StagePlacement[] {
   const { w, h } = o.frame, m = o.margin ?? 0.04, minPx = o.minPx ?? { personne: 48, animal: 18 };
   const caps = { personne: o.maxPersons ?? 4, animal: o.maxAnimals ?? 2 };
@@ -238,6 +317,7 @@ export function stageFigurants(o: {
     const b = o.project(s, e.heightM, e.widthM, e);
     if (!b || !inFrame(b)) return no('hors cadre');
     if (b[3] - b[1] < minPx[e.kind]) return no('trop petit');
+    if (e.sourcePx && (b[3] - b[1]) / e.sourcePx > (o.maxMagnify ?? 1.35)) return no('trop agrandi');
     if (o.keepOut.some((k) => hits(b, k, 6))) return no('visage ou regards');
     if (taken.some((k) => hits(b, k, 8))) return no('autre figurant');
     if (o.actorDepth !== undefined && s.depth < o.actorDepth) { if ((o.frontKeepOut ?? occ).some((k) => hits(b, k, 6))) return no('devant un acteur'); }
@@ -248,26 +328,30 @@ export function stageFigurants(o: {
   // people first (they are what the eye reads), the larger first; then animals
   const order = [...o.extras].sort((a, b) => (a.kind === b.kind ? b.heightM - a.heightM : a.kind === 'personne' ? -1 : 1));
   const out: StagePlacement[] = [];
+  // painted extras first when they already stand well in the field (the painting is right), then the others
   for (const e of order) {
-    if (count[e.kind] >= caps[e.kind]) { out.push({ id: e.id, spot: e.painted, moved: false, box: null, reason: 'fond déjà assez peuplé : reste à sa place peinte' }); continue; }
-    const here = free(e, e.painted);
-    if (here) { taken.push(here); count[e.kind]++; out.push({ id: e.id, spot: e.painted, moved: false, box: here, reason: 'déjà dans le champ, à sa place peinte' }); continue; }
-    if (e.movable === false) { out.push({ id: e.id, spot: e.painted, moved: false, box: null, reason: 'découpe incomplète (corps pas entier) : reste à sa place peinte' }); continue; }
+    const stays = e.painted ? 'reste à sa place peinte' : 'absent du film';
+    if (count[e.kind] >= caps[e.kind]) { out.push({ id: e.id, spot: e.painted ?? null, moved: false, box: null, reason: `fond déjà assez peuplé : ${stays}` }); continue; }
     why = {};
+    const here = e.painted ? free(e, e.painted) : null;
+    if (here) { taken.push(here); count[e.kind]++; out.push({ id: e.id, spot: e.painted!, moved: false, box: here, reason: 'déjà dans le champ, à sa place peinte' }); continue; }
+    if (e.movable === false) { out.push({ id: e.id, spot: e.painted ?? null, moved: false, box: null, reason: `découpe incomplète ou sale (corps coupé, morceaux de décor) : on ne la déplace pas : ${stays}` }); continue; }
+    why = {};
+    const aim = e.painted?.depth ?? e.preferDepth;
     let best: { s: StageSpot; b: Box; score: number } | null = null;
     for (const s of o.spots) {
       const b = free(e, s);
       if (!b) continue;
-      const score = -Math.abs(Math.log(s.depth / e.painted.depth)) + 0.6 * (Math.abs((b[0] + b[2]) / 2 - cx) / w);
+      const score = (aim ? -Math.abs(Math.log(s.depth / aim)) : 0.02 * s.depth) + 0.6 * (Math.abs((b[0] + b[2]) / 2 - cx) / w);
       if (!best || score > best.score) best = { s, b, score };
     }
     if (!best) {
       const top = Object.entries(why).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} ${k}`).join(', ');
-      out.push({ id: e.id, spot: e.painted, moved: false, box: null, reason: `aucune place libre dans le champ (${top || 'aucun sol'}) : reste à sa place peinte` });
+      out.push({ id: e.id, spot: e.painted ?? null, moved: false, box: null, reason: `aucune place libre dans le champ (${top || 'aucun sol'}) : ${stays}` });
       continue;
     }
     taken.push(best.b); count[e.kind]++;
-    out.push({ id: e.id, spot: best.s, moved: true, box: best.b, reason: `placé dans le champ, à ${best.s.depth.toFixed(1)} m (peint à ${e.painted.depth.toFixed(1)} m)` });
+    out.push({ id: e.id, spot: best.s, moved: true, box: best.b, reason: `placé dans le champ, à ${best.s.depth.toFixed(1)} m${e.painted ? ` (peint à ${e.painted.depth.toFixed(1)} m)` : ' (figurant de la troupe)'}` });
   }
   return out;
 }

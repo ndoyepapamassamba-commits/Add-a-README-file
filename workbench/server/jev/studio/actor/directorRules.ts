@@ -24,10 +24,14 @@ export interface PlanShot {
   /** PE plan d'ensemble / à deux, PA plan américain, PR plan rapproché, GP gros plan */
   size: string;
   subject: string;
+  /** how many screen pixels one pixel of the painted set covers in this shot, and the defocus applied (blur px) */
+  bgMagnify?: number;
+  bgBlur?: number;
 }
 export interface PlanBody {
   id: string;
-  role: 'acteur' | 'figurant' | 'animal';
+  /** peint = a villager painted in the set, never moved (part of the backdrop): checked for tangents, gazes, front */
+  role: 'acteur' | 'figurant' | 'animal' | 'peint';
   box: Box;
   /** actors only: where the face is */
   head?: Box;
@@ -38,6 +42,14 @@ export interface PlanBody {
   facing?: 1 | -1;
   /** cast shadow: ground direction (unit, x/z) and width ÷ height of the body */
   shadow?: { dir: [number, number]; widthRatio: number };
+  /** actors: screen points of the hands (wrists and finger tips of the DEFORMED drawing) */
+  hands?: [number, number][];
+  /** actors: triangles of the deformed mesh folded over (orientation flipped vs the drawing) */
+  folds?: number;
+  /** actors: share of the outline's pixels carrying a green-screen fringe (green above both red and blue) */
+  spill?: number;
+  /** figurants: the cut-out — shown away from its painted place? clean? blow-up of its source pixels on screen */
+  cutout?: { moved: boolean; clean: boolean; magnify: number; why?: string };
 }
 export interface PlanFrame {
   t: number;
@@ -75,6 +87,10 @@ export interface Plan {
   liar?: string;
   /** top of the burnt-in subtitle band (px): actors stand above it in a wide shot, faces stay above it in a close one */
   subtitleTop?: number;
+  /** every burnt-in text (subtitles, names, credit) with its screen box and when it shows */
+  texts?: { id: string; t0: number; t1: number; box: Box }[];
+  /** fade from black at the start (s): the first frame is the hook and the thumbnail, never a black picture */
+  openingFade?: number;
 }
 export interface ChannelRef {
   turnGap: number;
@@ -89,7 +105,7 @@ export const CHANNEL: ChannelRef = { turnGap: 0.26, preBeat: 0.31, preBeatP75: 0
 export type Severity = 'bloquant' | 'avertissement';
 export interface RuleDef {
   id: string;
-  family: 'cadre' | 'regards' | 'échelle' | 'sol' | 'ombres' | 'montage' | 'rythme' | 'comique' | 'fluidité';
+  family: 'cadre' | 'regards' | 'échelle' | 'sol' | 'ombres' | 'montage' | 'rythme' | 'comique' | 'fluidité' | 'figuration' | 'image';
   rule: string;
   severity: Severity;
 }
@@ -135,6 +151,16 @@ export const RULES: RuleDef[] = [
   { id: 'comique.reaction', family: 'comique', severity: 'bloquant', rule: 'l’autre réagit (choc, rire) moins de 0,8 s après la chute' },
   { id: 'comique.fond-reagit', family: 'comique', severity: 'avertissement', rule: 'quand le fond est peuplé, il réagit à la chute (rire) et aux éclats (têtes tournées)' },
   { id: 'fluidite.camera-fixe', family: 'fluidité', severity: 'avertissement', rule: 'caméra immobile dans le plan (fluidité de la vidéo de référence) ; le mouvement passe par les coupes' },
+  // revue image par image du film v4 (16/10, « tu n'as rien remarqué ? ») : ce que le livre ne mesurait pas encore
+  { id: 'cadre.mains-entieres', family: 'cadre', severity: 'bloquant', rule: 'les mains d’un acteur restent dans le cadre (marge 1 %) : on ne coupe pas un geste au poignet' },
+  { id: 'cadre.taille-acteurs', family: 'cadre', severity: 'avertissement', rule: 'plan à deux : chaque acteur mesure au moins 30 % de la hauteur de l’image (visages lisibles sur un téléphone, pas une moitié d’image de sol vide)' },
+  { id: 'figuration.decoupe-propre', family: 'figuration', severity: 'bloquant', rule: 'un figurant montré ailleurs qu’à sa place peinte a une découpe propre : corps entier (pas coupé net par la boîte du détecteur), sans morceau de décor emporté' },
+  { id: 'figuration.resolution', family: 'figuration', severity: 'bloquant', rule: 'aucun figurant net agrandi à plus de 1,35 fois ses pixels d’origine (sinon tache floue à côté d’acteurs nets) ; dans un plan serré au fond flou, pas plus que le flou' },
+  { id: 'image.lisere', family: 'image', severity: 'bloquant', rule: 'pas de liseré vert d’incrustation autour des acteurs (au plus 3 % du contour)' },
+  { id: 'image.maillage', family: 'image', severity: 'bloquant', rule: 'aucun triangle du dessin déformé ne se replie (main pliée, pli en V, déchirure)' },
+  { id: 'image.fond-agrandi', family: 'image', severity: 'bloquant', rule: 'dans un plan serré, un décor agrandi à plus de 1,6× est mis au flou (flou ≥ l’agrandissement, en px) : pas de pavés ni d’escaliers de pixels' },
+  { id: 'montage.textes', family: 'montage', severity: 'bloquant', rule: 'deux textes incrustés ne se chevauchent jamais (générique, noms, sous-titres)' },
+  { id: 'montage.premiere-image', family: 'montage', severity: 'bloquant', rule: 'la première image montre la scène (fondu d’ouverture ≤ 2 images) : c’est l’accroche et la miniature' },
 ];
 const DEF = new Map(RULES.map((r) => [r.id, r]));
 
@@ -192,14 +218,38 @@ export function checkPlan(p: Plan, ref: ChannelRef = CHANNEL): Violation[] {
     }
     for (const o of allOthers) {
       const inside = inter(o.box, [0, 0, w, h]) / area(o.box);
+      if (o.role === 'peint') continue; // the backdrop is framed by the painting itself; only what moves is staged
       if (!edgeOk(o.box, p.frame, wide(shot))) v('cadre.bord', `${o.id} coupé au bord (${Math.round(100 * inside)} % dans le cadre)`, f.t);
       if (o.role === 'figurant' && inside > 0 && (o.heightM < 1.1 || o.heightM > 2.0)) v('echelle.tailles', `figurant ${o.id} de ${o.heightM.toFixed(2)} m`, f.t);
     }
     for (const b of f.bodies) if (!b.onGround && inter(b.box, [0, 0, w, h]) > 0) v('sol.pieds', `${b.id} n’a pas les pieds sur le sol`, f.t);
+    for (const a of actors) {
+      const seenA = inter(a.box, [0, 0, w, h]) / area(a.box);
+      if (seenA >= 0.3) for (const [x, y] of a.hands ?? []) if (x < 0.01 * w || x > 0.99 * w || y < 0.01 * h || y > 0.995 * h) { v('cadre.mains-entieres', `main de ${a.id} coupée au bord (${Math.round(x)}, ${Math.round(y)})`, f.t); break; }
+      if (wide(shot) && actors.length >= 2 && a.box[3] - a.box[1] < 0.3 * h) v('cadre.taille-acteurs', `${a.id} ne fait que ${Math.round((100 * (a.box[3] - a.box[1])) / h)} % de la hauteur`, f.t);
+      if (seenA > 0.02 && (a.folds ?? 0) > 0) v('image.maillage', `${a.folds} triangle(s) replié(s) dans le dessin de ${a.id}`, f.t);
+      if (seenA > 0.02 && (a.spill ?? 0) > 0.03) v('image.lisere', `liseré vert sur ${Math.round(100 * a.spill!)} % du contour de ${a.id}`, f.t);
+    }
+    for (const o of allOthers) {
+      const c = o.cutout;
+      if (!c || inter(o.box, [0, 0, w, h]) / area(o.box) <= 0.02) continue;
+      if (c.moved && !c.clean) v('figuration.decoupe-propre', `${o.id} déplacé avec une découpe sale${c.why ? ` (${c.why})` : ''}`, f.t);
+      // in a defocused close shot the figurant is out of focus with the set: allowed up to the blur (same as image.fond-agrandi)
+      const tol = wide(shot) ? 1.35 : Math.max(1.35, shot.bgBlur ?? 0);
+      if (c.magnify > tol) v('figuration.resolution', `${o.id} agrandi ${c.magnify.toFixed(2)}× ses pixels${wide(shot) ? '' : ` (flou du plan ${(shot.bgBlur ?? 0).toFixed(1)} px)`}`, f.t);
+    }
     const shadows = f.bodies.filter((b) => b.shadow && inter(b.box, [0, 0, w, h]) > 0);
     for (const b of shadows) if (b.shadow!.widthRatio < 0.2) v('ombres.volume', `ombre de ${b.id} trop fine (${b.shadow!.widthRatio.toFixed(2)})`, f.t);
     for (const b of shadows) { const d = shadows[0]!.shadow!.dir, e = b.shadow!.dir; if (d[0] * e[0] + d[1] * e[1] < 0.99) v('ombres.une-lumiere', `ombre de ${b.id} dans une autre direction`, f.t); }
   }
+  // ── image et textes ──
+  for (const s of p.shots) if (!wide(s) && (s.bgMagnify ?? 0) > 1.6 && (s.bgBlur ?? 0) < s.bgMagnify!) v('image.fond-agrandi', `plan ${s.size} ${s.subject} : décor agrandi ${s.bgMagnify!.toFixed(1)}× sans flou suffisant (${(s.bgBlur ?? 0).toFixed(1)} px)`, s.t0);
+  const T = p.texts ?? [];
+  for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) {
+    const a = T[i]!, b = T[j]!;
+    if (a.t0 < b.t1 && b.t0 < a.t1 && inter(a.box, b.box) > 0) v('montage.textes', `« ${a.id} » et « ${b.id} » se chevauchent à ${Math.max(a.t0, b.t0).toFixed(2)} s`, Math.max(a.t0, b.t0));
+  }
+  if ((p.openingFade ?? 0) > 2 / 30 + 1e-9) v('montage.premiere-image', `fondu au noir de ${p.openingFade!.toFixed(2)} s à l’ouverture : la première image est noire`, 0);
   // ── montage ──
   const cuts = p.shots.slice(1).map((s) => s.t0);
   const perMin = (p.shots.length / Math.max(1, p.total)) * 60;

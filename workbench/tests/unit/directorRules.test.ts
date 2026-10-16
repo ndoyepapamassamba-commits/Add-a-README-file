@@ -33,7 +33,7 @@ const good = (): Plan => ({
 describe('livre de règles du réalisateur (anticipées, vérifiées avant le rendu)', () => {
   it('every rule is written down with its family and severity, before anything is rendered', () => {
     expect(RULES.length).toBeGreaterThanOrEqual(25);
-    for (const fam of ['cadre', 'regards', 'échelle', 'sol', 'ombres', 'montage', 'rythme', 'comique', 'fluidité']) expect(RULES.some((r) => r.family === fam), fam).toBe(true);
+    for (const fam of ['cadre', 'regards', 'échelle', 'sol', 'ombres', 'montage', 'rythme', 'comique', 'fluidité', 'figuration', 'image']) expect(RULES.some((r) => r.family === fam), fam).toBe(true);
     expect(new Set(RULES.map((r) => r.id)).size).toBe(RULES.length);
   });
   it('a well-directed plan passes the whole book', () => {
@@ -80,6 +80,30 @@ describe('livre de règles du réalisateur (anticipées, vérifiées avant le re
     expect(broken((p) => { p.swaps.push({ who: 'Maman', t: 2 }, { who: 'Maman', t: 9 }, { who: 'Modou', t: 15.5 }); })).toContain('comique.prises-max-2');
     expect(broken((p) => { p.quietBeforePunch = 4; })).toContain('comique.immobile-avant-chute');
     expect(broken((p) => { p.quietBeforePunch = 0.6; p.swaps.push({ who: 'Maman', t: 5, seen: false }, { who: 'Maman', t: 7, seen: false }); })).toEqual([]);
+  });
+  it('director review of v4 (« tu n’as rien remarqué ? »): what was only visible in the pixels is now in the book', () => {
+    // a hand cut by the frame edge in a close shot
+    expect(broken((p) => { p.frames[1]!.bodies[0] = { ...actor('Modou', 110, 1), hands: [[300, 600], [575, 520]] }; })).toContain('cadre.mains-entieres');
+    expect(broken((p) => { p.frames[1]!.bodies[0] = { ...actor('Modou', 110, 1), hands: [[300, 600], [520, 520]] }; })).not.toContain('cadre.mains-entieres');
+    // tiny actors and half a picture of empty ground in the two-shot
+    expect(broken((p) => { p.frames[0]!.bodies[0] = { ...actor('Modou', 110, 1), box: [110, 380, 160, 640] }; })).toContain('cadre.taille-acteurs');
+    // a villager pulled out of the painting with its head cut flat and a wedge of ground; a 120-px villager blown up 2×
+    expect(broken((p) => { p.frames[0]!.bodies[2] = { ...villager, cutout: { moved: true, clean: false, magnify: 1.1, why: 'corps coupé net au bord du haut' } }; })).toContain('figuration.decoupe-propre');
+    expect(broken((p) => { p.frames[0]!.bodies[2] = { ...villager, cutout: { moved: false, clean: false, magnify: 1.0 } }; })).not.toContain('figuration.decoupe-propre');
+    expect(broken((p) => { p.frames[0]!.bodies[2] = { ...villager, cutout: { moved: true, clean: true, magnify: 2.0 } }; })).toContain('figuration.resolution');
+    // in a close shot whose background is defocused by 5 px, a figurant blown up 2× is as soft as the set around it
+    expect(broken((p) => { p.shots[1]!.bgBlur = 5; p.frames[1]!.shot = 1; p.frames[1]!.bodies[2] = { ...villager, cutout: { moved: true, clean: true, magnify: 2.0 } }; })).not.toContain('figuration.resolution');
+    // green fringe around an actor, a folded triangle in a hand
+    expect(broken((p) => { p.frames[1]!.bodies[0] = { ...actor('Modou', 110, 1), spill: 0.2 }; })).toContain('image.lisere');
+    expect(broken((p) => { p.frames[1]!.bodies[0] = { ...actor('Modou', 110, 1), folds: 3 }; })).toContain('image.maillage');
+    // a set blown up 4× behind a close-up without defocus (blocks and pixel stairs)
+    expect(broken((p) => { p.shots[1]!.bgMagnify = 4; p.shots[1]!.bgBlur = 0; })).toContain('image.fond-agrandi');
+    expect(broken((p) => { p.shots[1]!.bgMagnify = 4; p.shots[1]!.bgBlur = 5; })).not.toContain('image.fond-agrandi');
+    // the credit printed over « Ha ha ha ! », and a first frame that is black
+    expect(broken((p) => { p.texts = [{ id: 'Ha ha ha !', t0: 15.7, t1: 19.2, box: [200, 700, 380, 740] }, { id: 'générique', t0: 17.6, t1: 19.2, box: [40, 720, 540, 745] }]; })).toContain('montage.textes');
+    expect(broken((p) => { p.texts = [{ id: 'Ha ha ha !', t0: 15.7, t1: 19.2, box: [200, 700, 380, 740] }, { id: 'générique', t0: 17.6, t1: 19.2, box: [40, 960, 540, 985] }]; })).not.toContain('montage.textes');
+    expect(broken((p) => { p.openingFade = 0.4; })).toContain('montage.premiere-image');
+    expect(broken((p) => { p.openingFade = 0; })).not.toContain('montage.premiere-image');
   });
   it('a cut inside a line is allowed only in one of its silences (the voice pauses)', () => {
     const cutAt = (p: Plan, c: number) => { p.shots.splice(2, 1, { t0: 12.17, t1: c, size: 'PE', subject: 'groupe' }, { t0: c, t1: 17.2, size: 'PA', subject: 'Modou' }); };

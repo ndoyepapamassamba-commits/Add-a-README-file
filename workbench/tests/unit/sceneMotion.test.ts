@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MOVES } from '../../server/jev/studio/actor/bodyMoves';
-import { FIGURANT_ACTIONS, classOf, figurantCues, gust, motionOf, sceneLifeReport, screenAmplitude, seedOf, stageFigurants, validateInstance, type Box, type StageSpot } from '../../server/jev/studio/actor/sceneMotion';
+import { FIGURANT_ACTIONS, classOf, cutoutQuality, figurantCues, gust, motionOf, sceneLifeReport, screenAmplitude, seedOf, stageFigurants, validateInstance, type Box, type StageSpot } from '../../server/jev/studio/actor/sceneMotion';
 
 describe('la vie de toute la scène (un seul système de mouvement)', () => {
   it('every detector / scene-parser name gets a class; an unknown name stays still', () => {
@@ -106,7 +106,7 @@ describe('la vie de toute la scène (un seul système de mouvement)', () => {
       const b = x.box!;
       expect(b[0]).toBeGreaterThanOrEqual(0.04 * 576); expect(b[2]).toBeLessThanOrEqual(0.96 * 576);
       for (const k of [...actors, gaze]) expect(b[0] < k[2] && k[0] < b[2] && b[1] < k[3] && k[1] < b[3], `${x.id} sur un acteur`).toBe(false);
-      expect(x.spot.depth).toBeGreaterThanOrEqual(x.id === 'coq' ? 5 : 8);
+      expect(x.spot!.depth).toBeGreaterThanOrEqual(x.id === 'coq' ? 5 : 8);
     }
     expect(r).toEqual(stageFigurants({ frame: { w: 576, h: 1024 }, extras, spots, project, keepOut: [...actors, gaze], minDepth: { personne: 8, animal: 5 } })); // deterministic
     // staging in depth: an extra may stand behind an actor's BODY if its own head is clear and ≥ 65 % of it is seen
@@ -124,14 +124,62 @@ describe('la vie de toute la scène (un seul système de mouvement)', () => {
     // in FRONT of the actors (a hen in the foreground) nothing may cover them, not even partly
     const front = stageFigurants({ frame: { w: 576, h: 1024 }, extras: [extras[2]!], spots, project, keepOut: [heads], occluders: [body], actorDepth: 10, minDepth: { personne: 8, animal: 3 } });
     const fb = front[0]!.box!;
-    if (front[0]!.spot.depth < 10) expect(fb[0] < body[2] && body[0] < fb[2] && fb[1] < body[3] && body[1] < fb[3]).toBe(false);
+    if (front[0]!.spot!.depth < 10) expect(fb[0] < body[2] && body[0] < fb[2] && fb[1] < body[3] && body[1] < fb[3]).toBe(false);
     // any other rule of the book can veto a spot (here: nothing on the left half, as if a close-up cut it there)
     const vetoed = stageFigurants({ frame: { w: 576, h: 1024 }, extras: [extras[0]!], spots, project, keepOut: [], minDepth: { personne: 8, animal: 5 }, allow: (sp) => sp.u > 0.5 });
-    expect(vetoed[0]!.spot.u).toBeGreaterThan(0.5);
+    expect(vetoed[0]!.spot!.u).toBeGreaterThan(0.5);
     // no room at all → stays painted, and says why
     const full = stageFigurants({ frame: { w: 576, h: 1024 }, extras: [extras[0]!], spots, project, keepOut: [[0, 0, 576, 1024]], minDepth: { personne: 8, animal: 5 } });
     expect(full[0]!.moved).toBe(false);
     expect(full[0]!.reason).toMatch(/aucune place/);
+  });
+  it('director review of v4: a cast figurant (no painted spot) is placed or absent; nothing is blown up past its pixels', () => {
+    const spots = Array.from({ length: 40 }, (_, i) => ({ u: (i % 8) / 8 + 0.06, v: 0.6 + Math.floor(i / 8) * 0.08, depth: 9 + Math.floor(i / 8) * 3 }));
+    const project = (sp: { u: number; v: number; depth: number }, hM: number, wM: number): Box => { const s = 900 / sp.depth, x = sp.u * 576; return [x - (wM * s) / 2, 700 - hM * s, x + (wM * s) / 2, 700]; };
+    const cast = { id: 'mamie', kind: 'personne' as const, heightM: 1.6, widthM: 0.6, preferDepth: 20, sourcePx: 410 };
+    const r = stageFigurants({ frame: { w: 576, h: 1024 }, extras: [cast], spots, project, keepOut: [], minDepth: { personne: 8, animal: 5 } });
+    expect(r[0]!.moved).toBe(true);
+    expect(r[0]!.reason).toMatch(/troupe/);
+    // a 30-px painted villager may not be pulled to a spot where it would be shown 3× bigger than its pixels
+    const small = { id: 'peint', kind: 'personne' as const, heightM: 1.6, widthM: 0.6, painted: { u: 2, v: 0.5, depth: 40 }, sourcePx: 30 };
+    const big = stageFigurants({ frame: { w: 576, h: 1024 }, extras: [small], spots, project, keepOut: [], minDepth: { personne: 8, animal: 5 }, minPx: { personne: 20, animal: 10 } });
+    expect(big[0]!.moved).toBe(false);
+    expect(big[0]!.reason).toMatch(/trop agrandi/);
+    // no room at all for a cast figurant → not in the film (spot null), never a stray body somewhere
+    const none = stageFigurants({ frame: { w: 576, h: 1024 }, extras: [cast], spots, project, keepOut: [[0, 0, 576, 1024]], minDepth: { personne: 8, animal: 5 } });
+    expect(none[0]!.spot).toBeNull();
+    expect(none[0]!.reason).toMatch(/absent du film/);
+  });
+  it('cut-out quality is measured on the pixels: a head cut flat, a body cut at the waist, ground carried along', () => {
+    const W = 60, H = 120;
+    // a matte has a SOFT outline (partly transparent rim); `cut` marks pixels whose edge is a hard crop
+    const img = (inside: (x: number, y: number) => boolean, col: (x: number, y: number) => [number, number, number] = () => [40, 90, 200], cut: (x: number, y: number) => boolean = () => false) => {
+      const a = new Uint8ClampedArray(W * H * 4);
+      const inn = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H && inside(x, y);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const i = (y * W + x) * 4, c = col(x, y), rim = inn(x, y) && !cut(x, y) && (!inn(x - 1, y) || !inn(x + 1, y) || !inn(x, y - 1) || !inn(x, y + 1));
+        a[i] = c[0]; a[i + 1] = c[1]; a[i + 2] = c[2]; a[i + 3] = !inn(x, y) ? 0 : rim ? 140 : 255;
+      }
+      return a;
+    };
+    // a whole person: head apex and two feet touch the edges on a few pixels only
+    const body = (x: number, y: number) => (Math.hypot(x - 30, y - 12) < 10) || (y >= 22 && y < 100 && Math.abs(x - 30) < 12 + 3 * Math.sin(y / 6)) || (y >= 100 && (Math.abs(x - 22) < 2 + (y - 100) / 6 || Math.abs(x - 38) < 2 + (y - 100) / 6));
+    expect(cutoutQuality(img((x, y) => body(x, y) && y >= 2), W, H).ok).toBe(true);
+    // the detector's box cut the head flat (v4: the child in the orange shirt)
+    const flatHead = cutoutQuality(img((x, y) => Math.hypot(x - 30, y - 4) < 10 || (y >= 14 && body(x, y))), W, H);
+    expect(flatHead.clipped).toContain('haut');
+    // seated woman cut flat at the waist (v4: floating over the hut)
+    const waist = cutoutQuality(img((x, y) => (Math.hypot(x - 30, y - 12) < 10) || (y >= 22 && Math.abs(x - 30) < 26)), W, H);
+    expect(waist.clipped).toContain('bas');
+    // a neighbour's hand cut by the gallery's crop, inside a padded picture: a pixel-straight edge (v4 review)
+    const hand = cutoutQuality(img((x, y) => (body(x, y) && y >= 2) || (x >= 4 && x < 17 && y >= 40 + (x % 3) && y < 58 - (x % 2)), undefined, (x) => x === 4), W, H);
+    expect(hand.straight).toBe(true);
+    expect(cutoutQuality(img((x, y) => body(x, y) && y >= 2), W, H).straight).toBe(false);
+    // a wedge of ground hanging on the outline, with the colour of the set around it
+    const ground: [number, number, number] = [205, 110, 50];
+    const wedge = cutoutQuality(img((x, y) => (body(x, y) && y >= 2) || (x > 44 && y > 40 && y < 90), (x) => (x > 44 ? ground : [40, 90, 200])), W, H, { ground: [ground] });
+    expect(wedge.chunk).toBeGreaterThan(0.06);
+    expect(wedge.ok).toBe(false);
   });
   it('the life report says what moves and why the rest stays still', () => {
     const r = sceneLifeReport([{ id: 'f1', label: 'person', cls: 'figurant' }, { id: 'h1', label: 'house', cls: 'bati' }, { id: 'p1', label: 'bird', cls: 'oiseau' }]);

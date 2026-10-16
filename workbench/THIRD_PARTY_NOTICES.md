@@ -15,6 +15,10 @@ hors règle sont signalés ci-dessous, avec la façon dont ils sont isolés et c
 | mp4-muxer | 5.2.2 | MIT | github.com/Vanilagy/mp4-muxer | MP4 depuis WebCodecs dans la page |
 | mediabunny | 1.61.3 | MPL-2.0 | github.com/Vanilagy/mediabunny | muxage dans l'app — **copyleft faible au niveau fichier** : fichiers non modifiés, source amont citée |
 | Marionnette ARAP (`server/jev/studio/actor/arap.ts`, `puppetMotion.ts`) | maison | — | code de l'app | dessins pliés autour du squelette (Sorkine & Alexa 2007) |
+| Moteur squelettique 2D (`server/jev/studio/actor/armature2d.ts`) | maison, 16/10/2026 | — (réécrit, aucune ligne copiée) | méthode du runtime DragonBones, **MIT** (github.com/DragonBones/DragonBonesJS, lu pour la méthode) | os, peau pondérée, IK deux os, mélange en couches ; peau par nombres duaux d'après Kavan et al. 2007 (publication) |
+| Poids de peau par diffusion de chaleur (`boneHeat.ts`) | maison | — | méthode Pinocchio, Baran & Popović 2007 (publication) | poids de chaque os sur le maillage du dessin |
+| Ressorts analytiques (`server/jev/studio/actor/ressorts.ts`) | maison, 16/10/2026 | — | repris du « moteur fluide » du même dépôt (branche `claude/youthful-pasteur-7wbiqt`, même auteur) ; paramétrage (f, ζ, r) de t3ssel8r (vidéo « Giving Personality to Procedural Animations using Math », méthode) | dépassement, retour au calme, chevauchement des os, en forme fermée |
+| Membres séparés (`limbs.ts`) | maison | — | code de l'app | coupe du maillage entre parties non articulées (option, désactivée par défaut) |
 | jevlib (`server/jev/sandbox/jevlib*.ts`) | 1.1 | — | code de l'app | parole, cinéma, contrôle qualité |
 
 ## Outils lancés en processus séparé (pas liés à notre code)
@@ -46,6 +50,7 @@ hors règle sont signalés ci-dessous, avec la façon dont ils sont isolés et c
 | Voix Piper `fr_FR-tom-medium` | données d'entraînement **AGPL-3.0** (fiche du modèle) | **à remplacer avant toute diffusion** |
 | Couches de visage générées avec LivePortrait | code MIT ; détecteur de visage tiers à licence distincte | à vérifier avant diffusion commerciale |
 | Planches, décors et voix de la troupe | propriété de l'utilisateur | jamais dans le dépôt public (`workbench/.private/`) |
+| Capture de mouvement CMU (mocap.cs.cmu.edu, essais 13, 14, 18, 19, 22, 23, 77, 113, 141) | usage libre, y compris commercial, selon la page de la base ; remerciement demandé (« The data used in this project was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217. ») | retargetée en 2D par `scripts/blenderfilm/mocap2d.py` (méthode d'Animated Drawings, Meta, **MIT**) ; remerciement à mettre au générique de fin |
 | Police des sous-titres DejaVu Sans Bold | licence Bitstream Vera / DejaVu (permissive) | — |
 
 ## Évalués par la veille, non utilisés dans le film
