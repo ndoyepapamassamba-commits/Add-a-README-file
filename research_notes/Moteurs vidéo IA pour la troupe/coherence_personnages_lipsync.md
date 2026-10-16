@@ -5,6 +5,12 @@ Périmètre : cohérence d'identité et de style sur de nombreuses vidéos, anim
 7 personnages avec planche de 5 poses, 32 avec une seule image de galerie, 8 en texte seul, et un essai Blender jugé « trop
 lego », au mouvement saccadé.
 
+**Contrainte ajoutée en cours de recherche : budget ZÉRO** (« je veux tout gratuit »). Les outils ouverts et gratuits qui
+tournent sur GPU gratuit (Kaggle T4×2 16 Go ; Colab T4 gratuit ; le P100 Kaggle est retiré depuis le 15/09/2026 selon les
+notes antérieures) ou sur CPU (4 cœurs, 15 Go de RAM) passent en premier. Les outils fermés ou payants ne figurent plus qu'en
+comparaison. La question Q8 traite à part l'adéquation au T4 et les durées sur T4 ou CPU, outil par outil. Le classement de Q7
+en tient compte.
+
 Notes antérieures réutilisées sans les refaire : `research_notes/Animer Blender par prompt/animation_personnages_dessines.md`
 (transfert de mouvement, avatars parlants, 2D, alpha, matériel), `modeles_video_ouverts_pilotes.md` (famille Wan, licences,
 vitesses) et le rapport `reports/Animer Blender par prompt.md` (chaîne « Blender épingle, l'API interpole », prix OpenRouter
@@ -108,7 +114,9 @@ routage régional par l'attention (prouvé en image, pas en vidéo Wan) ou l'ép
   LoRA se mélangent dès qu'on en combine. Le schéma raisonnable est le suivant :
   (a) **une LoRA de style « troupe »**, entraînée sur l'ensemble des 7 planches et des 32 images de galerie, pour verrouiller
   le rendu Pixar ou Franco-africain 2D ;
-  (b) **des LoRA d'identité I2V seulement pour les 5 à 7 personnages vedettes** ;
+  (b) **des LoRA d'identité I2V seulement pour les 5 à 7 personnages vedettes**. Sous budget zéro, cette étape passe par des
+  **LoRA d'image** (Z-Image-Turbo, < 12 Go) qui fabriquent les images clés : la LoRA vidéo Wan 14B n'est pas raisonnable sur
+  un T4 (voir Q8) ;
   (c) l'identité de tous les autres portée par la **première image** (I2V) ou par des **références** (Q2).
 - Pour les 7 planches, 5 poses ne suffisent pas. Il faut les étendre à 20–30 images avec Qwen-Image-Edit-2511 (angles 3/4,
   dos, gros plans visage, bouches ouvertes sur les voyelles A/O/I/M, lumières différentes), puis faire une revue humaine et
@@ -239,7 +247,7 @@ rapide et les changements de caméra font dériver l'identité, et il faut prév
 - Chaîne existante du projet : Blender rend la première image et une image épinglée à la fin. Veo 3.1 Lite 720p
   (première + dernière, 4/6/8 s) est le moins cher de ce mode à 0,03 $/s, devant Kling 3.0 Std (0,084 $/s) et Hailuo 3 Max
   480p (liste OpenRouter du 14/10/2026) *(rapport antérieur)* —
-  [rapport](../../reports/Animer%20Blender%20par%20prompt.md), [liste OpenRouter](https://openrouter.ai/api/v1/videos/models).
+  [rapport](/tmp/claude-0/-home-user-Add-a-README-file/913411a4-1822-5f5b-968c-9c552d4beafd/scratchpad/repo/reports/Animer%20Blender%20par%20prompt.md), [liste OpenRouter](https://openrouter.ai/api/v1/videos/models).
 - Poids ouverts première + dernière image : **Wan2.1-FLF2V-14B-720P** et **VideoX-Fun** *(notes antérieures)* —
   [HF FLF2V](https://huggingface.co/Wan-AI/Wan2.1-FLF2V-14B-720P), [VideoX-Fun](https://github.com/aigc-apps/VideoX-Fun).
 - Kling 3.0 en mode image(s) de début/fin lie jusqu'à 3 éléments supplémentaires, qui doivent être visibles dans ces images —
@@ -547,38 +555,44 @@ existent sur TikTok, mais leur cohérence n'est pas documentée.
   [TikTok, African AI](https://www.tiktok.com/discover/african-ai).
 - Pipeline du projet déjà conçu : Blender épingle la première et la dernière image, l'API (Veo 3.1 Lite) interpole, et les
   gros plans parlés gardent le rendu synchronisé du moteur. Coût estimé à 1,62 $ pour le mode hybride d'un film de 64 s
-  *(rapport antérieur)* — [rapport](../../reports/Animer%20Blender%20par%20prompt.md).
+  *(rapport antérieur)* — [rapport](/tmp/claude-0/-home-user-Add-a-README-file/913411a4-1822-5f5b-968c-9c552d4beafd/scratchpad/repo/reports/Animer%20Blender%20par%20prompt.md).
 
 ### Inferences
-**Playbook classé** (qualité, coût, effort ; 1 = premier choix ; toutes les lignes sont des inférences tirées des sources
-ci-dessus)
+**Playbook classé sous budget ZÉRO** (1 = premier choix ; GPU gratuit = Kaggle T4×2 ou Colab T4 ; les durées viennent de Q8
+et sont des chiffres communautaires ou des extrapolations ; toutes les lignes sont des inférences tirées des sources
+citées)
 
-| Rang | Méthode | Outils (licence) | Qualité attendue | Coût | Effort / matériel | Quand |
+| Rang | Méthode | Outils gratuits (licence) | Tient sur T4 16 Go ? | Qualité attendue | Effort | Quand |
 |---|---|---|---|---|---|---|
-| 1 | **Image clé composite validée → I2V ou 1re + dernière image**, avec une LoRA de style troupe | Qwen-Image-Edit-2511 (Apache) pour les images clés ; Wan 2.2 I2V 14B + LoRA (Apache ; musubi-tuner / ai-toolkit) ; repli API Veo 3.1 Lite / Kling 3.0 | Élevée pour l'identité, car portée par les pixels ; mouvement naturel | 0 $ en local ; ≈ 0,03–0,08 $/s en API (rapport antérieur) | 1 LoRA de style (≈ 4 h sur 12 Go, 15–25 min sur A100) ; ≥ 12–24 Go de VRAM ou location | Défaut pour tous les plans |
-| 2 | **Lip-sync audio-piloté sur l'image clé** (plans parlés) | MultiTalk / InfiniteTalk (Apache), LongCat-Avatar 1.5 (MIT), SkyReels-V3 Talking Avatar (Skywork) ; voix Qwen3-TTS (Apache) / Chatterbox (MIT) | Bonne revendiquée sur cartoon et multi-personnes ; français non prouvé | 0 $ en local | 8–24 Go selon le modèle (notes antérieures) | Plans parlés, 2–4 personnages |
-| 3 | **Acteur filmé → transfert de mouvement** | Wan-Animate-2 (Apache), SCAIL-2 (Apache/MIT), One-to-All 1.3B (Apache) | Meilleur jeu comique, mouvement réel ; grosses têtes à tester | 0 $ en local, mais GPU lourd (2 × A800 conseillés pour Animate-2) | Tournage au téléphone ; T4 possible avec One-to-All 1.3B | Gags physiques, plans clés |
-| 4 | **Éléments ou références dans un service fermé** (voix liée) | Kling 3.0 Omni / O1 (7 éléments, voix liée ; Pro pour 54 éléments) ; Wan 2.7 R2V (5 réf., voix) ; Seedance 2.0/2.5 ; Vidu Q2 (7 images) ; Veo 3.1 (3 images, 9:16) | Très bonne, selon les éditeurs ; français natif probable sur Veo | Abonnement ou paiement à la seconde (Wan 2.7 ≈ 0,086 $/s en 720p) | Faible ; aucune VRAM | Prototypage rapide, plans difficiles |
-| 5 | **Référence → vidéo ouvert sans LoRA** | SkyReels-V3 R2V (1–4 réf., 9:16), Phantom-Wan (≤ 4 réf.), VACE | Moyenne : copier-coller, vertical instable (Phantom) | 0 $ | 24 Go ou `--low_vram` | Personnages secondaires à 1 image |
-| 6 | **LoRA d'identité par personnage** | musubi-tuner / ai-toolkit sur Wan 2.2 I2V | Excellente en solo ; **mélange à plusieurs** | ≈ 4 h × N sur 12 Go | Jeu de 20–30 images par personnage | Seulement les 5–7 vedettes |
-| 7 | **Marionnette 2D à calques** et ToonCrafter / AniSora | Inochi2D (BSD-2), Qwen-Image-Layered (Apache), AniSora V3 (Apache), ToonCrafter (Apache) | Identité parfaite, mouvement limité ; biais anime japonais | 0 $ | Rig manuel par personnage | Bouches, plans 2D spéciaux |
+| 1 | **Image clé composite validée → I2V** (Wan 2.2 I2V 14B en GGUF Q4–Q6, ou Wan 2.1 / VACE 1.3B) | Qwen-Image-Edit-2511 (Apache) ou Z-Image-Turbo (Apache) pour l'image clé ; Wan 2.2 I2V GGUF (Apache) | **Oui en GGUF** (Q5 ≈ 10–11 Go, Q6_K ≈ 12 Go) ; ≈ 9–15 min par clip de 5 s en 480p (communauté) | Identité portée par les pixels ; mouvement naturel | Moyen (notebook Kaggle) | Défaut pour les plans muets et larges |
+| 2 | **LoRA d'image (pas de vidéo) par personnage et/ou de style**, pour fabriquer des images clés cohérentes | Z-Image-Turbo + ai-toolkit (Apache / MIT) | **Probable** (< 12 Go signalé ; 1–2 h pour 2000 pas sur une carte 12 Go, plus lent sur T4) | Très bonne cohérence des images clés, donc des vidéos | Moyen | Les 7 vedettes, puis la troupe |
+| 3 | **Lip-sync audio-piloté** sur l'image clé | InfiniteTalk / MultiTalk (Apache) ; voix Qwen3-TTS (Apache) / Chatterbox (MIT) / Piper (voix CC-BY) | **Oui** : InfiniteTalk ≈ 12,7 Go, ≈ 0,5–1 image/s en 480p sur T4 | Revendiquée sur cartoon et multi-personnes ; français non prouvé | Moyen | Plans parlés |
+| 4 | **Lip-sync après coup** sur un plan I2V | MuseTalk (MIT, ≥ 4 Go) ; LatentSync **1.5** (8 Go) — la 1.6 (18 Go) ne tient pas | **Oui** (MuseTalk, LatentSync 1.5) | Bouche seule ; correct sur visages proches de l'humain, cartoon non prouvé | Faible | Gros plans parlés |
+| 5 | **Acteur filmé → transfert de mouvement** | One-to-All 1.3B (Apache) ; Wan2.2-Animate 14B en GGUF Q3–Q6 (Apache ; notebook Kaggle 2×T4) | **Oui** : One-to-All ≈ 11 min pour 10 s en 832×480 ; Animate GGUF sans chrono publié ; Wan-Animate-2 **non** (2 × A800) | Meilleur jeu comique | Tournage au téléphone | Gags physiques |
+| 6 | **Référence → vidéo ouvert** | Phantom-Wan **1.3B** (Apache) ; SkyReels-V3 R2V 14B `--low_vram` (à tester) | 1.3B probable ; 14B incertain sur T4 (pas de FP8 matériel) ; MAGREF **non** (70 Go) | Moyenne (copier-coller, vertical instable) | Moyen | Personnages secondaires à 1 image |
+| 7 | **LoRA vidéo Wan** (identité ou style) | musubi-tuner / ai-toolkit | 1.3B probable ; **14B déconseillé sur T4** (24 Go recommandés, 16 Go seulement avec fp8 et block swap, aucun chrono T4) | Excellente en solo ; mélange à plusieurs | Élevé | Plus tard, sur GPU loué ou ZeroGPU |
+| 8 | **Marionnette 2D à calques** et outils CPU | Inochi2D (BSD-2), AnimatedDrawings (MIT), LivePortrait (MIT, 7,9 s/image sur CPU) | **CPU** | Identité parfaite, mouvement limité | Rig manuel | Bouches, secours sans GPU |
+| — | *Comparaison payante* | Kling 3.0 Omni (éléments et voix), Wan 2.7 R2V (0,086 $/s), Veo 3.1 (français natif selon un formateur), Seedance 2.x, Vidu Q2 | n/a | Très bonne selon les éditeurs | Faible | Hors budget zéro |
 
-- **Pipeline cible proposé** :
-  1. **Bible de la troupe** : une fiche par personnage avec image canonique, planche de 5 poses étendue à 20–30 images par
-     Qwen-Image-Edit, voix de référence de 10–30 s et tics de langage. Les 8 personnages en texte seul passent d'abord par la
-     génération et la validation d'une image canonique.
-  2. **LoRA de style troupe** (Wan 2.2 I2V), plus des LoRA d'identité pour les vedettes.
+- **Pipeline cible à 0 €** :
+  1. **Bible de la troupe** : image canonique, planche étendue à 20–30 images par Qwen-Image-Edit-2511 sur Kaggle, et voix
+     de référence de 10–30 s par personnage, enregistrée par un comédien ou générée.
+  2. **LoRA d'image Z-Image** pour les vedettes et pour le style.
   3. Script → découpage JSON.
-  4. Images clés composites, validées.
-  5. Voix : TTS cloné ou comédien.
-  6. Plans muets → I2V ou 1re + dernière image ; plans parlés → InfiniteTalk / MultiTalk / SkyReels-V3 Avatar sur l'image
-     clé ; gags physiques → acteur et Wan-Animate-2 ou SCAIL-2.
-  7. Contrôle qualité : identité, lèvres, 9:16.
+  4. Images clés composites (2–4 personnages), validées.
+  5. TTS cloné (Qwen3-TTS ou Chatterbox sur T4, Piper sur CPU en secours).
+  6. Plans muets → Wan 2.2 I2V GGUF sur T4 ; plans parlés → InfiniteTalk / MultiTalk sur T4, ou MuseTalk sur un plan I2V ;
+     gags → One-to-All 1.3B ou Wan2.2-Animate GGUF.
+  7. Contrôle qualité.
   8. Montage.
 
-  Kling 3.0 Omni ou Wan 2.7 sert de témoin et de repli payant.
-- Tout le pipeline doit être **mesuré sur 3 plans pilotes** (gros plan parlé, plan à 3 personnages, gag physique) avant
-  d'être industrialisé, comme le banc proposé dans le rapport antérieur.
+  La file Kaggle (CLI `kernels push`) utilise les deux T4 en parallèle, un plan par GPU.
+- **Débit estimé** pour un sketch de 40 s : environ 6 plans muets (≈ 9–15 min chacun en 480p, soit ≈ 1–1,5 h) et ≈ 25 s
+  parlées (≈ 625 images à 0,5–1 image/s, soit ≈ 10–20 min), plus le chargement des poids. Il faut donc ≈ 2–3 h de T4 par
+  sketch. Avec ≈ 30 h de quota par semaine, on obtient **≈ 10–15 sketches par semaine au plus**, ou à peu près le double si
+  les deux T4 travaillent en parallèle. Ce calcul est une inférence à mesurer, et la sortie reste en 480p, à agrandir ensuite.
+- Tout le pipeline doit être **mesuré sur 3 plans pilotes** (gros plan parlé, plan à 3 personnages, gag physique) sur Kaggle
+  T4 avant d'être industrialisé.
 
 ### Gaps
 - Aucune étude de cas vérifiée (méthode et métriques) d'une série IA à personnages récurrents sur TikTok en Afrique de l'Ouest
@@ -586,3 +600,182 @@ ci-dessus)
 - Aucun « post-mortem » public d'un créateur décrivant la gestion de plus de 50 personnages récurrents.
 - Les coûts de location de GPU (A100/4090) pour l'entraînement et l'inférence ne sont pas couverts ici ; ils sont dans
   `calcul_gpu_gratuit.md` des notes antérieures.
+
+---
+
+## Q8 — Budget zéro : quels outils tiennent sur un GPU gratuit de 16 Go (Kaggle T4×2, Colab T4 ; P100) ou sur CPU (4 cœurs, 15 Go), et en combien de temps ?
+
+### Takeaway
+Sur un **T4 16 Go**, tout le pipeline tient en **480p**, et seulement à certaines conditions :
+- **vidéo** en Wan 2.2 I2V 14B **GGUF** (≈ 9–15 min par clip de 5 s, chiffre communautaire) ou en Wan 1.3B ;
+- **lip-sync audio-piloté** avec InfiniteTalk (≈ 12,7 Go, ≈ 0,5–1 image/s générée) ;
+- **lip-sync après coup** avec MuseTalk (≥ 4 Go) ou LatentSync 1.5 (8 Go) ;
+- **transfert de mouvement** avec One-to-All 1.3B (≈ 11 min pour 10 s) ou Wan2.2-Animate en GGUF (notebook Kaggle 2×T4,
+  sans chrono) ;
+- **TTS** avec Qwen3-TTS ou Chatterbox, plus rapides que le temps réel sur un petit GPU.
+
+Ne tiennent pas, ou sont déconseillés : MAGREF (70 Go), Wan-Animate-2 (2 × A800), LatentSync 1.6 (18 Go), StableAvatar
+(18 Go), Wan2.2-S2V (80 Go), et **l'entraînement d'une LoRA vidéo Wan 14B**. Ce dernier demande 24 Go recommandés, et aucun
+chrono T4 n'existe ; il vaut mieux entraîner une **LoRA d'image** (Z-Image-Turbo, < 12 Go). Le **P100 n'est plus disponible
+sur Kaggle depuis le 15/09/2026**. Sur **CPU**, seuls le TTS (Piper, Kokoro, Qwen3-TTS lent) et les outils non génératifs
+(LivePortrait 7,9 s/image, AnimatedDrawings, Inochi2D) sont réalistes. Le T4 n'a **ni bf16 natif, ni FP8, ni
+FlashAttention-2**, ce qui exclut les recettes d'accélération récentes : il faut travailler en fp16 et en GGUF.
+
+### Cited Findings
+**Plateformes gratuites** *(notes antérieures)*
+- Kaggle : ≈ 30 h de GPU par semaine en T4×2 (2 × 16 Go), sessions de 12 h. La CLI officielle `kaggle kernels push`
+  lance un notebook sans navigateur. Le P100 est annoncé « Sunsetting … on September 15, 2026 » —
+  [Kaggle Efficient GPU Usage](https://www.kaggle.com/docs/efficient-gpu-usage),
+  [Kaggle API kernels.md](https://github.com/Kaggle/kaggle-api/blob/main/docs/kernels.md),
+  [annonce P100](https://www.kaggle.com/product-announcements/735239). Un T4×2 n'accélère pas un clip seul, mais permet
+  deux clips en parallèle (inférence des notes antérieures).
+- Colab gratuit : GPU non garanti, 12 h au plus, et l'usage d'une interface web (Gradio/ComfyUI) restreint pour les comptes
+  gratuits *(notes antérieures, voir `calcul_gpu_gratuit.md`)*.
+- HF ZeroGPU gratuit : 5 min par jour et **3 exécutions par jour** pour un compte gratuit, sur RTX Pro 6000 (48 Go) —
+  [HF docs ZeroGPU](https://huggingface.co/docs/hub/spaces-zerogpu),
+  [forum HF, 13/04/2026](https://discuss.huggingface.co/t/free-account-zerogpu-quota-issue/175180) *(notes antérieures)*.
+- PyTorch a abandonné les roues Pascal (P100) dans ses versions récentes ; « bf16 requires Ampere, Ada, or Hopper GPUs » pour
+  FlashAttention *(notes antérieures)* —
+  [dev-discuss PyTorch](https://dev-discuss.pytorch.org/t/cuda-toolkit-version-and-architecture-support-update-maxwell-and-pascal-architecture-support-removed-in-cuda-12-8-and-12-9-builds/3128),
+  [flash-attention](https://github.com/Dao-AILab/flash-attention).
+
+**Vidéo I2V / référence**
+- Le notebook communautaire « WanGP-Kaggle » vise le T4 (15 Go utiles), recommande le 480p et annonce « Expect ~9-15 minutes
+  per video on T4 » *(notes antérieures)* — [WanGP-Kaggle](https://github.com/kayas881/WanGP-Kaggle). Le modèle exact n'est
+  pas précisé.
+- Wan 2.2 I2V A14B en GGUF : il faut les deux experts (haut et bas bruit). Les fichiers Q5 pèsent ≈ 10–11 Go et Q6_K ≈ 12 Go.
+  Un jeu de données Kaggle fournit `wan2.2_i2v_low_noise_14B_Q4_K_M.gguf`, l'encodeur de texte et le VAE —
+  [QuantStack GGUF](https://huggingface.co/QuantStack/Wan2.2-I2V-A14B-GGUF),
+  [stablediffusiontutorials](https://www.stablediffusiontutorials.com/2025/08/wan-2.2-video-generation.html),
+  [Kaggle dataset](https://www.kaggle.com/datasets/faturismee/wan-2-2-i2v).
+- Un notebook Kaggle « Wan 2.2 TI2V 5B Diffusers Free GPU Test » affiche 6 min 56 s d'exécution sur P100 (réglages non
+  vérifiés) *(notes antérieures)* — [Kaggle](https://www.kaggle.com/code/ali9999008/wan-2-2-ti2v-5b-diffusers-free-gpu-test).
+  Sous stable-diffusion.cpp, le VAE de TI2V-5B réclame un tampon de 20 895,80 Mo pour 2 s en 832×480, ce qui pose un problème
+  sur 16 Go — [discussion sd.cpp](https://github.com/leejet/stable-diffusion.cpp/discussions/868).
+- Wan2.1-T2V-1.3B : Apache-2.0 (fiche HF) — [HF](https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B). Il demande 8,19 Go et 261 s
+  par clip 480p sur une RTX 4090 *(notes antérieures)* — [fiche VACE-1.3B](https://huggingface.co/Wan-AI/Wan2.1-VACE-1.3B).
+- MAGREF : « around 70 GB of VRAM » — [GitHub](https://github.com/MAGREF-Video/MAGREF). SkyReels-V3 : `--low_vram` (FP8
+  poids seuls et déchargement de blocs) pour les GPU de moins de 24 Go, sans chiffre — [GitHub](https://github.com/SkyworkAI/SkyReels-V3).
+
+**Transfert de mouvement**
+- One-to-All 1.3B : « Run … for free on Kaggle's 16 GB T4 … It takes 11 minutes to generate a 10-second 832×480 video »
+  *(notes antérieures)* — [README](https://github.com/ssj9596/One-to-All-Animation). Poids Apache-2.0 —
+  [HF](https://huggingface.co/MochunniaN1/One-to-All-1.3b_2).
+- Wan2.2-Animate 14B sur Kaggle : un dépôt communautaire fournit des notebooks ComfyUI pour « 2 x T4 GPU (16 GB VRAM) ». Ils
+  utilisent un GGUF QuantStack **Q3_K_M** par défaut (Q6_K dans la version Gradio), la LoRA de ré-éclairage et la LoRA
+  LightX2V I2V 480p, et demandent **32 Go de RAM**. Aucune durée par clip ni résolution n'est indiquée —
+  [kelvinweijun/wan-2.2-animate-comfyui-kaggle](https://github.com/kelvinweijun/wan-2.2-animate-comfyui-kaggle).
+- Wan-Animate-2 : configuration prévue pour 2 × A800 en 480p *(notes antérieures)* —
+  [HF](https://huggingface.co/Wan-AI/Wan2.2-Animate-2-14B).
+
+**Avatars parlants et lip-sync**
+- InfiniteTalk sur Colab gratuit : T4 au minimum, **12,7 Go de VRAM** dans le tableau, 12,7 Go de RAM au minimum (25 Go
+  conseillés), 30–50 Go de disque. Vitesse ≈ **0,5–1 « FPS (Generation) » en 480p sur T4**, contre 2–3 sur L4 et 5–8 sur
+  A100. En cas de manque de mémoire, on règle `--num_persistent_param_in_dit 0` et `motion_frame` à 3–5. Le notebook principal
+  ne télécharge pas tous les poids sur un T4 gratuit, d'où un notebook ComfyUI de repli. Base : Wan2.1-I2V-14B-480P
+  (≈ 27 Go) — [sruckh/InfiniteTalk-Google-Collab](https://github.com/sruckh/InfiniteTalk-Google-Collab).
+- MultiTalk : Wan2GP « very low VRAM hardware (8 GB) » ; descendre à 10 pas « will not hurt the lip synchronization accuracy »
+  *(notes antérieures)* — [README MultiTalk](https://github.com/MeiGen-AI/MultiTalk).
+- EchoMimic v3 : « 12G VRAM is All YOU NEED », testé sur V100 16 Go *(notes antérieures)* —
+  [README](https://github.com/antgroup/echomimic_v3). OmniAvatar : mode 8 Go à 22,1 s/it ; FantasyTalking : mode 5 Go à
+  42,6 s/it (GPU de référence non précisé) *(notes antérieures)* — [OmniAvatar](https://github.com/Omni-Avatar/OmniAvatar),
+  [FantasyTalking](https://github.com/Fantasy-AMAP/fantasy-talking). StableAvatar : 18 Go ; Wan2.2-S2V : 80 Go
+  *(notes antérieures)*.
+- MuseTalk : « 30fps … on a single NVIDIA Tesla V100 », débit mesuré après préparation de l'avatar. Un test utilisateur en
+  basse VRAM a pris 171 s pour 7 s d'audio. Un notebook communautaire (camenduru) tourne sur T4 —
+  [sync.so](https://sync.so/blog/what-is-musetalk),
+  [tomodahinata](https://tomodahinata.com/en/blog/musetalk-realtime-lip-sync-production-guide),
+  [hyper.ai](https://hyper.ai/en/notebooks/33760). Les poids sont sous MIT — [HF](https://huggingface.co/TMElyralab/MuseTalk).
+- LatentSync : ≈ 8 Go pour la v1.5 et 18 Go pour la v1.6 —
+  [creativeainews](https://www.creativeainews.com/articles/open-source-lip-sync-licenses-commercial-use-2026/). Les deux
+  versions de poids sont sous OpenRAIL++ — [HF 1.5](https://huggingface.co/ByteDance/LatentSync-1.5),
+  [HF 1.6](https://huggingface.co/ByteDance/LatentSync-1.6). C'est un modèle de diffusion, donc plus lent que MuseTalk —
+  [Instavar](https://instavar.com/research/ai-video/open-source-lip-sync-models).
+
+**Images clés et LoRA d'image**
+- Z-Image-Turbo : Apache-2.0 — [HF](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo). Des LoRA s'entraînent avec moins de
+  12 Go via ai-toolkit (options Low VRAM et Layer Offloading, 512 px) —
+  [lilys.ai](https://lilys.ai/notes/ru/openai-agent-builder-20260208/free-lora-training-z-image-turbo-low-vram). Sur une
+  carte 12 Go, il faut ≈ 2–3 s/it, soit **2000 pas en ≈ 1–2 h**, en 512–768 px ; « 6~10 images » ont suffi selon le rapport
+  — [Z-Image issue #36](https://github.com/Tongyi-MAI/Z-Image/issues/36).
+- Un notebook Colab Z-Image (payant) annonce ≈ 1 min par image en 9 pas sur T4 (extrait de recherche). Aucun chrono T4 n'a été
+  trouvé pour Qwen-Image-Edit-2509/2511 en GGUF —
+  [hackernoon](https://hackernoon.com/a-beginners-guide-to-qwen-image-edit-rapid-aio-gguf-best-use-cases-limitations-plus-more),
+  [Replicate GGUF](https://replicate.com/jackieyaung/qwen-image-edit-2509-gguf).
+
+**LoRA vidéo sur 16 Go**
+- musubi-tuner : 24 Go pour entraîner sur des images 720×1280. `--fp8_fast` est réservé aux RTX 40x0. Le block swap monte
+  jusqu'à 29 blocs pour le 1.3B — [docs/wan.md](https://github.com/kohya-ss/musubi-tuner/blob/main/docs/wan.md).
+- Avec FP8 et block swap, « some users report I2V LoRA training on 16 GB ; 24 GB is smoother ». Une réponse de forum HF donne
+  « at least 12GB, preferably 24GB » — [synthèse de forum HF](https://huggingface.co/datasets/John6666/forum1/blob/e2772d17729a88bbc2d7379c6220c46b85ef5a31/wan22_lora_training.md),
+  [forum HF](https://discuss.huggingface.co/t/wan-lora-traning/167838). Aucun chrono de LoRA Wan sur T4 n'a été trouvé.
+  Une ancienne issue signale des LoRA 1.3B de musubi inutilisables dans ComfyUI après conversion (peut-être corrigé) —
+  [issue #134](https://github.com/kohya-ss/musubi-tuner/issues/134).
+
+**Voix (GPU modeste ou CPU)**
+- Un banc personnel sur GPU portable RTX 4050 donne pour Qwen3-TTS un **RTF de 0,91 sur GPU et 5,4 sur CPU**, le plus lent
+  des trois modèles testés. Aucun des trois (XTTS-v2, Qwen3-TTS, Chatterbox Multilingual v3) ne tourne en temps réel sur CPU
+  — [banc LinkedIn (source unique)](https://ar.linkedin.com/in/santiagoacu).
+- Chatterbox Multilingual : le CPU est pris en charge, mais plus lent ; avec un GPU de 6 Go ou plus, on approche le temps
+  réel. Une version GGUF existe — [mintlify](https://www.mintlify.com/yocxy2/chatterboxyocxy/models/chatterbox-multilingual),
+  [HF GGUF](https://huggingface.co/hans00/Chatterbox-Multilingual-TTS-GGUF).
+- **Voix françaises Piper** (fiches du dépôt `rhasspy/piper-voices`) :
+  - `siwis` medium : 1 locuteur, CC-BY 4.0 ;
+  - `upmc` medium : 2 locuteurs, CC-BY-SA 4.0 ;
+  - `mls` medium : **125 locuteurs**, CC-BY 4.0 ;
+  - `gilles` low : CC0 ;
+  - `tom` medium : jeu de données sous AGPLv3.
+
+  Toutes sont en français de France —
+  [piper-voices fr_FR](https://huggingface.co/rhasspy/piper-voices/tree/main/fr/fr_FR).
+- Kokoro (82 M, Apache-2.0) n'a qu'une voix française (`ff_siwis`, B-) —
+  [VOICES.md](https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md).
+
+**CPU seul (4 cœurs)**
+- LivePortrait (MIT) a été mesuré à 7,9 s/image sur 4 cœurs, soit ≈ 16 min pour 5 s à 25 i/s. AnimatedDrawings (MIT) rend
+  sans écran. Aucun chiffre CPU n'existe pour une vidéo Wan *(notes antérieures)* —
+  [LivePortrait LICENSE](https://github.com/KwaiVGI/LivePortrait/blob/main/LICENSE),
+  [AnimatedDrawings](https://github.com/facebookresearch/AnimatedDrawings),
+  [sd.cpp docs Wan](https://github.com/leejet/stable-diffusion.cpp/blob/main/docs/wan.md).
+
+### Inferences
+**Tableau d'adéquation budget zéro** (✔ = tient ; ~ = tient sous conditions ou sans preuve ; ✘ = ne tient pas)
+
+| Brique | Outil gratuit | T4 16 Go | Durée indicative sur T4 | CPU 4 cœurs |
+|---|---|---|---|---|
+| Jeu d'images d'un personnage | Qwen-Image-Edit-2511 GGUF (Apache) | ~ (20B quantifié, encodeur sur CPU ; non mesuré) | inconnue ; ≈ 1 min/image pour Z-Image en 9 pas (affirmation) | ✘ |
+| LoRA d'image (personnage, style) | Z-Image-Turbo + ai-toolkit | ~ probable (< 12 Go signalé, en fp16) | ≥ 1–2 h pour 2000 pas (chiffre 12 Go ; T4 plus lent) | ✘ |
+| LoRA vidéo Wan 2.2 14B | musubi-tuner / ai-toolkit | ✘ déconseillé (24 Go conseillés ; FP8 non matériel ; RAM Kaggle limite) | aucun chiffre ; > 4 h probables | ✘ |
+| LoRA vidéo Wan 1.3B (T2V) | musubi-tuner | ~ probable | inconnue | ✘ |
+| I2V / première + dernière image | Wan 2.2 I2V 14B GGUF Q4–Q6 ; Wan 2.1 1.3B / VACE 1.3B | ✔ en 480p | ≈ 9–15 min par clip de 5 s | ✘ (aucun chiffre) |
+| Référence → vidéo | Phantom-Wan 1.3B ; SkyReels-V3 R2V `--low_vram` | ~ (1.3B probable ; 14B non prouvé) | inconnue | ✘ |
+| Transfert de mouvement | One-to-All 1.3B ; Wan2.2-Animate GGUF Q3–Q6 | ✔ / ~ | 11 min pour 10 s (One-to-All) ; Animate inconnue | ✘ |
+| Audio → vidéo parlée | InfiniteTalk / MultiTalk | ✔ (12,7 Go ; 8 Go via Wan2GP) | ≈ 25–50 s de calcul par seconde de vidéo à 25 i/s (déduit de 0,5–1 image/s) | ✘ |
+| Lip-sync après coup | MuseTalk ; LatentSync 1.5 | ✔ | MuseTalk proche du temps réel (30 i/s sur V100, T4 plus lent) ; LatentSync quelques minutes par clip | ~ très lent |
+| TTS français cloné | Qwen3-TTS ; Chatterbox ML V3 | ✔ | ≈ temps réel ou mieux (RTF 0,91 sur une petite carte) | ✔ lent (RTF ≈ 5,4 pour Qwen3-TTS) |
+| TTS français léger | Piper (voix CC-BY/CC0) ; Kokoro (1 voix) | inutile | — | ✔ (conçu pour CPU ; connaissance générale, non mesurée ici) |
+| Visage piloté et marionnette | LivePortrait ; AnimatedDrawings ; Inochi2D | ✔ | rapide | ✔ (7,9 s/image pour LivePortrait) |
+
+- **Changement de stratégie imposé par le budget zéro** : la cohérence se fait **au niveau de l'image clé**, avec une LoRA
+  d'image Z-Image et l'édition par Qwen-Image-Edit, puis l'I2V Wan GGUF sur T4. Ce n'est plus une LoRA vidéo 14B,
+  inentraînable confortablement sur T4. L'identité dans la vidéo est alors portée par la première image, et éventuellement
+  par la dernière (FLF2V / VideoX-Fun).
+- **Voix** : Qwen3-TTS (Apache) ou Chatterbox (MIT) sur le T4, dans le même notebook que la vidéo. Les 125 locuteurs de Piper
+  `mls` (CC-BY) offrent un vivier de voix distinctes, gratuites et sur CPU, pour les 47 personnages secondaires, mais avec un
+  accent de France et non ivoirien. La meilleure solution gratuite reste de faire enregistrer 10–30 s par des amis ou
+  comédiens ivoiriens, puis de cloner.
+- **Plafond de qualité** : 480p en sortie sur T4. Pour TikTok en 1080×1920, il faudra agrandir, avec un outil gratuit à
+  évaluer, non couvert ici.
+- **Appoint** : ZeroGPU (3 exécutions par jour, carte de 48 Go) peut servir aux 1 à 3 plans les plus exigeants d'un sketch,
+  par exemple un plan Wan 2.2 14B en 720p.
+
+### Gaps
+- **Aucun chrono T4 mesuré** pour : Wan2.2-Animate GGUF, MultiTalk, SkyReels-V3, Phantom 1.3B, Qwen-Image-Edit GGUF, LoRA Z-Image
+  et LoRA Wan. Les seuls chiffres T4 trouvés sont One-to-All (11 min pour 10 s), WanGP (9–15 min par clip, communauté) et
+  InfiniteTalk (0,5–1 image/s, notebook communautaire à l'unité mal définie).
+- La faisabilité de l'entraînement fp16 sur T4 (sans bf16) n'est pas documentée pour ai-toolkit ni pour musubi-tuner, qui
+  utilisent bf16 par défaut. C'est à tester.
+- La RAM exacte des sessions Kaggle T4 en octobre 2026 n'a pas été vérifiée (le notebook Wan2.2-Animate exige 32 Go). Le
+  temps de téléchargement des poids (≈ 27 Go pour InfiniteTalk) à chaque session réduit le quota utile.
+- Les licences des voix Piper « tom » (AGPLv3 sur les données) et les conditions précises d'OpenRAIL++ pour LatentSync
+  doivent être relues avant un usage monétisé.
