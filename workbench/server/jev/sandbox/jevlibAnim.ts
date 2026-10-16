@@ -360,6 +360,29 @@ export const qa = {
     const spikes = acc.filter((a) => mag(a) > k * Math.max(med, 1e-6)).length;
     return { jerkRms: jr, spikes };
   },
+  /** Sauts d'image d'un film rendu : diffs[i] = écart moyen entre l'image i et i+1. Un pic isolé (> k × médiane et
+   *  > ratio × ses voisins) près d'une coupe prévue est une coupe ; ailleurs c'est un saut imprévu. Des écarts élevés
+   *  soutenus sont un mouvement rapide (panoramique, geste), pas un saut. Une coupe prévue sans pic est signalée.
+   *  allowed : discontinuités permises mais non obligatoires (changement de dessin d'un acteur, parfois hors champ). */
+  frameJumps(diffs, opts = {}) {
+    const fps = opts.fps || 24, k = opts.k || 4, ratio = opts.ratio || 2, cuts = opts.cuts || [], allowed = opts.allowed || [], tol = opts.tol == null ? 1.5 / fps : opts.tol;
+    const sorted = diffs.slice().sort((a, b) => a - b), med = Math.max(1e-6, sorted[Math.floor(sorted.length / 2)] || 0);
+    const found = [], jumps = [], fast = [], swaps = [];
+    let run = null;
+    for (let i = 0; i < diffs.length; i++) {
+      const v = diffs[i], t = (i + 1) / fps, high = v > k * med;
+      const spike = high && v > ratio * Math.max(diffs[i - 1] || 0, diffs[i + 1] || 0);
+      if (spike) {
+        const near = cuts.find((c) => Math.abs(c - t) <= tol), ok = allowed.find((c) => Math.abs(c - t) <= tol);
+        (near != null ? found : ok != null ? swaps : jumps).push({ t, frame: i + 1, ratio: v / med, cut: near ?? ok });
+      }
+      if (high && !spike) { if (!run) run = { t0: t, t1: t, peak: 0 }; run.t1 = t; run.peak = Math.max(run.peak, v / med); }
+      else if (run) { fast.push(run); run = null; }
+    }
+    if (run) fast.push(run);
+    const missing = cuts.filter((c) => !found.some((f) => Math.abs(f.t - c) <= tol));
+    return { median: med, cuts: found, swaps, jumps, fast, missing, ok: !jumps.length && !missing.length };
+  },
   /** Glissement des pieds : vitesse horizontale moyenne (m/s) d'un pied pendant qu'il touche le sol (y < contact). */
   footSkate(foot, dt, contact = 0.03) {
     let s = 0, n = 0;
@@ -566,18 +589,21 @@ export const cine = {
     // une première réplique courte se dit sur le plan d'ensemble (sinon on couperait au bout d'un instant)
     const firstOnWide = lines[0].t1 - (start + est) < 1.2;
     if (firstOnWide) shots[0].t1 = lines[0].t1;
-    const tighter = (sz) => ORDER[Math.min(ORDER.length - 1, ORDER.indexOf(sz) + 1)];
+    // garde de résolution : maxSize = plan le plus serré que l'image source supporte (ex. dessin de 900 px → 'PA')
+    const capI = opts.maxSize ? ORDER.indexOf(opts.maxSize) : ORDER.length - 1;
+    const cap = (sz) => (ORDER.indexOf(sz) > capI ? ORDER[capI] : sz);
+    const tighter = (sz) => ORDER[Math.min(capI, ORDER.indexOf(sz) + 1)];
     lines.forEach((l, i) => {
       if (i === 0 && firstOnWide) return;
       const emo = l.emotion == null ? Math.min(1, i / Math.max(4, lines.length)) : l.emotion;
-      let size = emo > 0.75 ? 'GP' : emo > 0.4 ? 'PR' : 'PA';
+      let size = cap(emo > 0.75 ? 'GP' : emo > 0.4 ? 'PR' : 'PA');
       const t0 = Math.max(shots[shots.length - 1].t0 + 0.8, i ? l.t0 - jLead : start + est, i === 1 && firstOnWide ? shots[0].t1 - jLead : -Infinity);
       const prev = shots[shots.length - 1];
       const kind = i % 2 ? 'amorce' : 'champ';
       const angle = l.who === lines[0].who ? 30 : -30;
-      if (prev.subject === l.who && prev.size === size && prev.kind === 'réaction') {
-        // la réaction se prolonge : celui qui écoutait se met à parler dans le même plan (pas de faux raccord)
-        prev.kind = kind;
+      if (prev.subject === l.who && prev.size === size && (prev.kind === 'réaction' || tighter(size) === size)) {
+        // la réaction se prolonge (ou on ne peut plus resserrer) : on reste dans le même plan, pas de faux raccord
+        prev.kind = prev.kind === 'réaction' ? kind : prev.kind;
         prev.t1 = l.t1;
       } else {
         if (prev.subject === l.who && prev.size === size) size = tighter(size); // même personnage : on resserre
@@ -585,7 +611,7 @@ export const cine = {
       }
       // réaction : sur une question ou une chute (« ! », « ? », « … »), plan court sur celui qui écoute
       const listener = lines.find((o) => o.who !== l.who);
-      if (/[?!…]\s*$/.test(l.text) && listener && l.t1 - t0 > 1.6) shots.push({ t0: l.t1 - 0.6, t1: l.t1 + 0.4, size: size === 'GP' ? 'GP' : 'PR', subject: listener.who, kind: 'réaction', side, angle: listener.who === lines[0].who ? 30 : -30 });
+      if (/[?!…]\s*$/.test(l.text) && listener && l.t1 - t0 > 1.6) shots.push({ t0: l.t1 - 0.6, t1: l.t1 + 0.4, size: cap(size === 'GP' ? 'GP' : 'PR'), subject: listener.who, kind: 'réaction', side, angle: listener.who === lines[0].who ? 30 : -30 });
     });
     for (let i = 0; i < shots.length - 1; i++) shots[i].t1 = shots[i + 1].t0;
     return shots;

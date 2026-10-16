@@ -225,6 +225,44 @@ describe('jev 1.1 — cinéma', () => {
     ];
     expect(jev.cine.check(bad).map((i: { rule: string }) => i.rule).join(' ')).toMatch(/180°.*faux raccord/);
   });
+  it('garde de résolution (maxSize) : jamais plus serré que permis, et pas de faux raccord créé par le plafond', () => {
+    // dialogue de la troupe : question → réaction sur Modou (PR) puis Modou répond très ému (GP) — plafonnés à PA
+    const lines = [
+      { who: 'MN', text: 'Modou ! Tu étais où depuis ce matin ?', t0: 1, t1: 3.3, emotion: 0.5 },
+      { who: 'Modou', text: 'Maman, je cherchais du travail en ville.', t0: 3.57, t1: 6.3, emotion: 0.3 },
+      { who: 'MN', text: 'Et alors ? Tu as trouvé ?', t0: 6.82, t1: 8.6, emotion: 0.6 },
+      { who: 'Modou', text: 'Oui ! Le travail m’a vu… et il s’est sauvé !', t0: 8.81, t1: 12.2, emotion: 0.85 },
+      { who: 'MN', text: 'Ah, Modou ! Toi, tu es un vrai comédien !', t0: 12.51, t1: 16.5, emotion: 0.9 },
+    ];
+    const shots = jev.cine.coverage(lines, { establish: 1.4, maxSize: 'PA' });
+    const order = jev.cine.order as string[];
+    for (const s of shots) expect(order.indexOf(s.size)).toBeLessThanOrEqual(order.indexOf('PA'));
+    expect(jev.cine.check(shots)).toEqual([]);
+    // sans plafond, le découpage resserre bien sur l'émotion
+    expect(jev.cine.coverage(lines, { establish: 1.4 }).some((s: { size: string }) => s.size === 'GP')).toBe(true);
+  });
+});
+
+describe('jev 1.1 — contrôle des sauts d’image d’un film', () => {
+  it('sépare coupes prévues, saut imprévu, mouvement rapide et coupe manquante', () => {
+    const d = Array.from({ length: 96 }, () => 2);
+    d[23] = 70; // coupe à 1,0 s (image 24)
+    d[59] = 40; // saut isolé à 2,5 s, non prévu
+    for (let i = 70; i < 80; i++) d[i] = 20; // panoramique de 0,4 s
+    const r = jev.qa.frameJumps(d, { fps: 24, cuts: [1.0, 3.5] });
+    expect(r.cuts.map((c: { t: number }) => c.t)).toEqual([1]);
+    expect(r.jumps).toHaveLength(1);
+    expect(r.jumps[0].t).toBeCloseTo(2.5, 6);
+    expect(r.fast).toHaveLength(1);
+    expect(r.fast[0].peak).toBeCloseTo(10, 6);
+    expect(r.missing).toEqual([3.5]);
+    expect(r.ok).toBe(false);
+    // un changement de dessin déclaré n'est ni un saut, ni une coupe manquante quand il se passe hors champ
+    const r2 = jev.qa.frameJumps(d, { fps: 24, cuts: [1.0], allowed: [2.5, 3.9] });
+    expect(r2.swaps.map((x: { t: number }) => x.t)).toEqual([2.5]);
+    expect(r2.jumps).toEqual([]);
+    expect(r2.ok).toBe(true);
+  });
 });
 
 describe('jev 1.1 — procédure d’animation de personnage', () => {
