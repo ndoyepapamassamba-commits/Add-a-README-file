@@ -205,27 +205,62 @@ taskset -c 0-2 npm run rendre -- projets/pilote.json --sortie ../sorties/pilote.
   --rig modou=../sorties/cache/personnages/modou/rig.json
 ```
 
-Sans `sd-cli` ni les poids Real-ESRGAN, `npm run preparer -- … --methode bicubique` donne une texture plus douce. Sans
+Crédit obligatoire dans la description de la vidéo : « Voix : Piper fr_FR mls medium (CC BY 4.0) » (voir
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)). Sans `sd-cli` ni les poids Real-ESRGAN, `npm run preparer -- … --methode bicubique` donne une texture plus douce. Sans
 `--rig`, le rendu prend le `rig.json` source du dossier privé (maillage grossier, image ×2 au plus proche voisin :
 pixels visibles et « dents » aux coutures — à éviter).
 
 ### Échelle du décor : pourquoi `"decors": {"rue-des-maquis-marcory": {"mH": 3}}`
 
 `fit.mH` est la hauteur de scène, en mètres, au niveau de la ligne de sol `fit.floor`. Pour cette peinture, le kit
-donne 7,38 m, ce qui rend MODOU (1,76 m) minuscule à côté des figurants assis. On l'a recalibré **par projet** sur les
-figurants : une personne assise au premier plan mesure ≈ 1,3 m, et sa hauteur dans la peinture, à la ligne de sol,
-donne ≈ 3,0 m pour toute la hauteur de l'image (horizon ≈ 0,42). Pour calibrer un autre décor : mesurer en pixels la
+donne 7,38 m, ce qui rend MODOU (1,76 m) minuscule à côté des figurants assis. On l'a recalibré **par projet** en
+mesurant les figurants de la peinture près de la ligne de sol : ≈ 3,0 m pour toute la hauteur de l'image (horizon
+≈ 0,42). Pour calibrer un autre décor : mesurer en pixels la
 hauteur d'un figurant debout (ou assis) dont les pieds sont près de `floor`, puis `mH ≈ taille réelle × hauteur de
 l'image / hauteur du figurant`. La correction s'écrit dans le projet (`decors.<id>.mH`), le kit n'est pas modifié ;
 la CLI l'annonce (« correction du décor … »).
 
 ### Résultats mesurés (rendu final)
 
-{{RESULTATS}}
+Rendu du 16/10/2026 (`sorties/pilote.mp4`, rapport `sorties/pilote.rapport.md`), machine partagée (4 vCPU, autres
+travaux en cours), Chromium sans écran avec SwiftShader :
+
+| Mesure | Valeur |
+|---|---|
+| Vérification du MP4 | **CONFORME** : H.264 High 1080×1920 yuv420p, 30/1, BT.709, 300 images décodées sans erreur, horodatage exact, 18/18 échantillons identiques aux captures (PSNR min 45,3 dB), AAC 48 kHz de 10,000 s, −14,4 LUFS, crête −1,3 dBTP, moov en tête |
+| Porte qualité sur l'état | **PASS**, 24/24 critères : énergie 0,124 H/s, part de mouvement franc 0,38, à-coups c99 324 H/s³ (≤ 3000), 0 saut de pose, glissement des pieds c95 1,13 px/image (≤ 2), 2 clignements, fermetures M/B/P 4/4, corrélation bouche ↔ voix 0,735 au décalage 0, caméra ≤ 0,55 écran/s |
+| Porte qualité sur les pixels | **PASS** : 97,7 % d'images qui changent, aucune image figée hors gel, aucun saut de lumière |
+| Rendu 1080×1920, flou 4 sous-images | **1,44 s par image** (1,42 s dans la page) ; capture 7 min 18 s ; commande complète 7 min 40 s pour 10 s de vidéo |
+| Aperçu 540×960 sans flou | 0,15 à 0,17 s par image ; ≈ 1 min pour tout le pilote |
+| Voix (Piper mls, 2 fils) | 2,3 s pour la réplique de 2,5 s (phrase porteuse comprise) |
+| Préparation du personnage | 80 s la première fois (Real-ESRGAN sur CPU, 2 fils), 3 à 4 s ensuite (cache) ; 6 956 sommets, 13 076 triangles |
+| Évaluation de l'état d'une image | ≈ 1 ms |
+
+Intelligibilité de la voix (reconnaissance automatique wav2vec2 français) : « voilày c'est pas moi qui ai mangé le
+poulet » — seul « Walay », mot nouchi, est entendu « voilày ».
 
 ### Ce qui est honnêtement atteint, et ce qui ne l'est pas encore
 
-{{ETAT}}
+**Atteint.** Un MP4 9:16 réel, vérifié de bout en bout, avec le dessin de l'utilisateur déformé (jamais redessiné),
+net et peint grâce à la texture affinée ; des gestes francs avec anticipation, dépassement et retour au calme ; la
+respiration, les clignements, le regard caméra, les sourcils qui montent sur les accents ; une vraie voix française
+dont la bouche suit l'énergie (corrélation 0,735, fermetures sur M/B/P) ; un décor vivant (figurants, ampoules,
+bokeh) ; punch-in, gel avec scratch, tremblement au rire et sous-titres mot à mot.
+
+**Pas encore au niveau voulu.**
+- **Bras dans les grands gestes** : au rire, l'avant-bras proche passe à l'horizontale devant le ventre et se lit
+  encore un peu comme une bande plate (coude arrondi « caoutchouc ») ; au haussement, les bras de trois quarts restent
+  longs et fins. Un dessin unique n'a ni l'avant-bras vu de face ni la main de profil : il faudra des planches de
+  poses (main, avant-bras raccourci) ou des segments découpés à part.
+- **Coutures** : de petites marches restent visibles au haut de l'épaule et le long du flanc dans le gros plan figé
+  (4,5–5 s).
+- **Dessin source petit** (≈ 350 px de haut réels) : l'agrandisseur Real-ESRGAN réinterprète un peu les détails fins
+  (moustache, dents) ; une fiche en plus haute définition réglera cela à la source.
+- **Décor** : la peinture `rue-des-maquis-marcory` ne fait que 1 336 px de large ; en gros plan, l'arrière-plan est
+  très flou (assumé comme un flou de profondeur).
+- **Voix** : accent de France (aucune voix libre ivoirienne) ; « Walay » est prononcé « wa-la-ï » par notre
+  phonétiseur, le modèle le rend proche de « voilà-y ».
+- **Rythme** : après le recadrage (8–10 s), MODOU ne fait que respirer ; il faudrait une réaction finale.
 
 ## Licences
 
