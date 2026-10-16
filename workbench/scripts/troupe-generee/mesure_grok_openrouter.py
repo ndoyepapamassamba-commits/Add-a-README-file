@@ -2,12 +2,13 @@
 # si les nouvelles branches fonctionnent ». OpenRouter sert depuis mai 2026 les modèles vidéo de SpaceXAI (Grok Imagine
 # Video, 1.5 et 1.5 Lite) par une API vidéo asynchrone : POST /api/v1/videos → tâche → GET /api/v1/videos/{id} → contenu.
 #   python3 mesure_grok_openrouter.py catalogue v16          → modèles Grok en service, prix lus en direct, coût du film
-#   python3 mesure_grok_openrouter.py essai v16 [cle,...]     → anime les plans (image de départ du plan) avec chaque
-#                                                              modèle Grok, mesure temps / statut / coût réel, puis JEV
+#   python3 mesure_grok_openrouter.py catalogue-tout v16     → les 30 modèles vidéo : image, voix, prix, coût du film
+#   python3 mesure_grok_openrouter.py essai v16 [cle,...] [modele,...] → anime les plans (image de départ du plan) avec
+#                                                              chaque modèle (Grok par défaut), mesure temps / statut / coût réel, puis JEV
 # Clé : variable d'environnement OPENROUTER_API_KEY (ajoutée par l'utilisateur dans les réglages de l'environnement ;
 # jamais écrite ni affichée). Plafond DUR : la dépense estimée d'un essai ne peut pas dépasser PLAFOND_USD (1,00 $ par
 # défaut) — le script refuse de lancer au-delà.
-import base64, json, math, os, subprocess, sys, time, urllib.error, urllib.request
+import base64, json, math, os, re, subprocess, sys, time, urllib.error, urllib.request
 
 API = os.environ.get('OPENROUTER_URL', 'https://openrouter.ai/api/v1')
 GROK = ['x-ai/grok-imagine-video-1.5-lite', 'x-ai/grok-imagine-video', 'x-ai/grok-imagine-video-1.5']
@@ -45,12 +46,52 @@ if cmd == 'catalogue':
               f'images {m["supported_frame_images"]}, prix {m["pricing_skus"]} → film complet ≈ {cout(m, total, len(P)):.2f} $')
     sys.exit(0)
 
+RES = ['480p', '720p', '768p', '1080p']
+def usd_par_seconde(m):
+    """prix par seconde à la plus petite définition proposée (USD), lu dans les clés de prix d'OpenRouter ; les modèles
+    au jeton (Seedance) sont convertis par la formule de ByteDance jetons = largeur × hauteur × 24 i/s / 1024 (calcul)."""
+    s = m.get('pricing_skus') or {}
+    for r in RES:
+        for k, f in ((f'cents_per_video_output_second_{r}', .01), (f'cents_per_second_output_{r}', .01), (f'duration_seconds_{r}', 1),
+                     (f'image_to_video_duration_seconds_{r}', 1), (f'duration_seconds_with_audio_{r}', 1), (f'duration_seconds_without_audio_{r}', 1)):
+            if k in s: return float(s[k]) * f, r
+    for k, f in (('cents_per_second_output', .01), ('duration_seconds', 1), ('duration_seconds_without_audio', 1)):
+        if k in s: return float(s[k]) * f, (m.get('supported_resolutions') or ['?'])[0]
+    for r in ('2K', '2k', '4K', '4k'):
+        for k, f in ((f'cents_per_second_output_{r}', .01), (f'duration_seconds_{r}', 1), (f'duration_seconds_without_audio_{r}', 1)):
+            if k in s: return float(s[k]) * f, r
+    if 'video_tokens' in s or 'video_tokens_without_audio' in s:
+        jt = float(s.get('video_tokens_without_audio', s.get('video_tokens'))); return 854 * 480 * 24 / 1024 * jt, '480p (calcul jetons)'
+    return None, None
+
+def secondes_facturees(m, sec):
+    D = sorted(m.get('supported_durations') or [])
+    if not D: return math.ceil(sec)
+    return next((d for d in D if d >= sec), D[-1])
+
+if cmd == 'catalogue-tout':                     # les 30 modèles vidéo : capacités, prix lus en direct, coût du film
+    M = appel('/videos/models')['data']; L = []
+    for m in M:
+        prix, res = usd_par_seconde(m); fact = sum(secondes_facturees(m, p['t1'] - p['t0']) for p in P)
+        img = '+'.join(x.replace('_frame', '') for x in (m.get('supported_frame_images') or [])) or '—'
+        L.append((m['id'], img, res or '—', prix, fact, round(prix * fact, 2) if prix is not None else None))
+    L.sort(key=lambda x: (x[5] is None, x[5] or 0))
+    lignes = ['| modèle | image de départ | définition | $/s | s facturées (film v16) | coût film (calcul) |', '|---|---|---|---|---|---|']
+    lignes += [f'| {i} | {im} | {r} | {"—" if p is None else f"{p:.3f}"} | {f} | {"—" if c is None else f"{c:.2f} $"} |' for i, im, r, p, f, c in L]
+    os.makedirs(f'{film}/openrouter', exist_ok=True); open(f'{film}/openrouter/catalogue_video.md', 'w').write('\n'.join(lignes) + '\n')
+    print('\n'.join(lignes)); sys.exit(0)
+
 if cmd == 'essai':
     cle = os.environ.get('OPENROUTER_API_KEY')
     if not cle: raise SystemExit("OPENROUTER_API_KEY absente : l'ajouter dans les réglages de l'environnement (jamais dans la discussion)")
     cles = sys.argv[3].split(',') if len(sys.argv) > 3 else ['003.14']
-    C = catalogue(); plans = [p for p in P if p['cle'] in cles]
-    devis = sum(cout(m, duree(p)) for m in C.values() for p in plans)
+    voulus = sys.argv[4].split(',') if len(sys.argv) > 4 else GROK
+    tous = {m['id']: m for m in appel('/videos/models')['data']}; C = {k: tous[k] for k in voulus if k in tous}
+    inconnus = [k for k in voulus if k not in tous]
+    if inconnus: print('modèles absents du catalogue :', inconnus)
+    plans = [p for p in P if p['cle'] in cles]
+    def prix_plan(m, p): u, _ = usd_par_seconde(m); return round((u or 0) * secondes_facturees(m, p['t1'] - p['t0']) + float((m.get('pricing_skus') or {}).get('cents_per_image_input', 0)) / 100, 4)
+    devis = sum(prix_plan(m, p) for m in C.values() for p in plans)
     print(f'devis : {devis:.2f} $ pour {len(plans)} plan(s) × {len(C)} modèle(s) en {RESOLUTION} (plafond {PLAFOND:.2f} $)')
     if devis > PLAFOND: raise SystemExit(f'refusé : devis {devis:.2f} $ au-dessus du plafond {PLAFOND:.2f} $ (PLAFOND_USD)')
     R = {}
@@ -58,12 +99,15 @@ if cmd == 'essai':
         dos = f'{SORTIE}/{k.split("/")[-1]}'; os.makedirs(dos, exist_ok=True)
         for p in plans:
             img = base64.b64encode(open(f'{IA}/{p["cle"]}.png', 'rb').read()).decode()
-            corps = {'model': k, 'duration': duree(p), 'resolution': RESOLUTION, 'aspect_ratio': '4:3',
+            res = RESOLUTION if RESOLUTION in (m.get('supported_resolutions') or [RESOLUTION]) else (m.get('supported_resolutions') or [None])[0]
+            corps = {'model': k, 'duration': secondes_facturees(m, p['t1'] - p['t0']), 'resolution': res, 'aspect_ratio': '4:3',
                      'prompt': f'3D animated African cartoon film. {p["qui"].title()} is talking with natural lip movement, '
                                'head and hand gestures; the other characters listen and react; same characters, same place, '
                                'camera stays still.',
                      'frame_images': [{'type': 'image_url', 'image_url': {'url': f'data:image/png;base64,{img}'}, 'frame_type': 'first_frame'}]}
-            t0 = time.time(); rec = {'modele': k, 'plan': p['cle'], 'qui': p['qui'], 'duree_demandee': duree(p), 'devis_usd': cout(m, duree(p))}
+            if not m.get('supported_frame_images'): print(k, ': pas d\'image de départ, sauté'); continue
+            corps = {x: v for x, v in corps.items() if v is not None}
+            t0 = time.time(); rec = {'modele': k, 'plan': p['cle'], 'qui': p['qui'], 'duree_demandee': corps['duration'], 'devis_usd': prix_plan(m, p)}
             try:
                 job = appel('/videos', corps, cle); rec['secondes_soumission'] = round(time.time() - t0, 1)
                 while True:
