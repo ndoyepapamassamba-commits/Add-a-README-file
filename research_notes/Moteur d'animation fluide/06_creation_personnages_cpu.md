@@ -5,10 +5,11 @@ Conventions :
   (AVX-512 et AMX présents), 15 Go de RAM, sans GPU. **3 threads** pour tous les calculs lourds, un seul calcul lourd à la fois.
 - Scripts du banc (écrits pour ce banc, non versionnés, **aucun code tiers copié**) :
   `scratchpad/bench-perso/scripts/` → `detourage.py`, `reperes.py`, `autodecoupe.py`, `recadrer_recoller.py`,
-  `yeux_cartoon.py`, `klein_chaine.sh`, `planche.py`, `mesure.py` (repris de `studio-troupe/banc-cpu/scripts/mesure.py` :
+  `yeux_cartoon.py`, `visage_mp.py`, `klein_chaine.sh`, `planche.py`, `mesure.py` (repris de `studio-troupe/banc-cpu/scripts/mesure.py` :
   temps mural et pic de RAM `ru_maxrss` des enfants).
   `scratchpad` = `/tmp/claude-0/-home-user-Add-a-README-file/913411a4-1822-5f5b-968c-9c552d4beafd/scratchpad`.
-- Sorties (images, journaux, JSON), **hors dépôt** : `scratchpad/bench-perso/out/`. Poids : `scratchpad/modeles/`
+- Sorties (images, journaux, JSON), **hors dépôt** : `scratchpad/bench-perso/out/` ; vue d'ensemble dans
+  `out/planche_banc_perso.jpg`. Poids : `scratchpad/modeles/`
   (9,4 Go pour la génération + 0,8 Go pour la vision, sommes SHA-256 dans `modeles/SHA256SUMS.txt`).
 - Personnage testé : **MODOU**, description **verbatim** de la bible (`studio-troupe/troupe/troupe.json`) :
   « thin lanky West-African man, short hair, thin moustache and goatee, faded worn green t-shirt, brown cargo trousers
@@ -123,8 +124,9 @@ Remarques sur ces mesures :
 - **klein** :
   - **Vraie A-pose**, avec les bras nettement écartés : c'est idéal pour la découpe.
   - Cargo retroussé à mi-mollet plutôt qu'à la cheville. T-shirt taché, avec poche.
-  - Proportions plus réalistes et tête plus petite : moins « Pixar ». Cela rejoint la plainte « personnage irréel » dans
-    l'autre sens : le cartoon de Z-Image est plus séduisant.
+  - Proportions plus réalistes et tête plus petite : moins « Pixar ». C'est peut-être une réponse à la plainte
+    « personnage irréel, manque de réalisme », mais le cartoon de Z-Image est plus séduisant. C'est à l'utilisateur de
+    trancher, sur `out/planche_generation.jpg`.
   - Fond uni avec une ombre douce.
 
 ### Inferences
@@ -193,7 +195,7 @@ python -I detourage.py $S/modeles/vision out/zimg_modou_576x1024_s42.png out/det
 
 - **IoU des masques binaires** : ISNet-anime / BiRefNet-lite **0,993** ; U2Net / BiRefNet-lite 0,989 ; clé de fond plat /
   modèles 0,83.
-- **Incident** : lors d'un premier essai, pendant que Z-Image tournait (6,5 Go), BiRefNet-lite a été **tué par l'OOM**
+- **Incident** : lors d'un premier essai de débogage (image de test), pendant que Z-Image tournait (6,5 Go), BiRefNet-lite a été **tué par l'OOM**
   du cgroup à 7,2 Go RSS. Il faut donc ordonnancer : jamais BiRefNet en même temps qu'un sd-cli.
 - **Inspection à l'œil** (zoom ×3 sur fond bleu : main, sandale, aisselle ; `out/zoom_detourage.jpg`) :
   - ISNet-anime et BiRefNet-lite : bords nets, doigts séparés, espace bras-torse ouvert, sans liseré gris.
@@ -304,7 +306,8 @@ Pic RSS du processus : 0,9 Go.
     ±0,22 × la distance inter-iris), pixels à ΔE < 42 et pas trop sombres, composante connexe qui touche l'iris.
   - Paupière **haute** : tracé fidèle sur les deux yeux.
   - Paupière **basse** : sous-estimée, car la sclérotique ombrée en bas sort du seuil.
-  - Ouverture hauteur/largeur mesurée : 0,64 et 0,82.
+  - Ouverture hauteur/largeur mesurée : 0,62 et 0,89 (repères MediaPipe recalculés sur le recadrage de 512 px), et
+    0,64 et 0,82 avec les repères de l'image entière. L'écart vient du centre d'iris, dont dépend l'échantillonnage.
   - Coût : moins de 50 ms.
 
 ### Inferences
@@ -391,10 +394,11 @@ torse/bassin (qui doit suivre l'ourlet du vêtement) et un cou séparé.
 ## Q5. Poses supplémentaires et formes de bouche cohérentes : édition sur CPU (klein) ou déformation ?
 
 ### Takeaway
-**L'édition klein sur un recadrage du visage marche très bien sur CPU** : **12,8 à 13,4 min, 5,6 Go** par variante en
-512². « Rire » et « choc » gardent le même visage (crâne, oreilles, nez, moustache, bouc, teint, cadrage). Une fois
-recalé (ECC 0,991–0,994, décalage inférieur à 1 px) et recollé, **le raccord est invisible** à l'échelle du plein pied,
-et MediaPipe confirme l'expression demandée en écart au neutre.
+**L'édition klein sur un recadrage du visage marche très bien sur CPU** : **12,7 à 13,4 min, 5,6 Go** par variante en
+512². « Rire », « choc » et « iii » gardent le même visage (crâne, oreilles, nez, moustache, bouc, teint, cadrage).
+Une fois recalé (ECC 0,991–0,996, décalage inférieur à 1 px) et recollé, **le raccord est invisible** à l'échelle du
+plein pied, et MediaPipe confirme l'expression demandée en écart au neutre. On recolle le **bas du visage** pour les
+visèmes et le **visage entier** pour les expressions ; la bouche seule ne marche pas.
 
 **L'édition de pose en pied, elle, est à éviter** : **27,0 min, 7,2 Go**, et le personnage y **perd un bras**, avec des
 artefacts sur le pantalon. **Les poses doivent venir du rig. La génération ne sert qu'à fabriquer des « substitutions »** :
@@ -440,31 +444,49 @@ bouches, yeux, mains en raccourci.
 | k3 visage « rire » | 512², 1 024 + 1 024 | 12,3 s | 20,4 s | 4 × 176 s | 30 s | **12,8 min** | 5,64 Go |
 | k4 visage « choc » | 512², 1 024 + 1 024 | 12,7 s | 24,2 s | 4 × 184 s | 29 s | **13,4 min** | 5,64 Go |
 | k2 pose « accuse » en pied | 576×1024, 2 304 + 2 304 | 29,4 s | 20,2 s | 4 × 376 s | 64 s | **27,0 min** | 7,21 Go |
-| k5 bouche « iii » | [[K5]] |
+| k5 bouche « iii » | 512², 1 024 + 1 024 | 11,8 s | 20,9 s | 4 × 175 s | 28,5 s | **12,7 min** | 5,64 Go |
 
 - **Coût par pas** : environ 0,08 s par jeton d'image (sortie + référence) à 3 threads, quasi linéaire sur la plage
   2 048–4 608 jetons. Doubler les jetons double le temps, ce qui montre que l'attention pèse encore peu à ces tailles.
 - **Qualité, jugée à l'œil** (`out/klein/cmp_visages.jpg`, `out/klein/cmp_pose.jpg`, `out/klein/recolle_rire_zoom.jpg`) :
   - *Rire* : bouche grande ouverte, dents du haut et langue, yeux plissés avec des rides de rire. Identité intacte,
-    cadrage identique au pixel près.
+    cadrage conservé à moins d'un pixel (Q5, recalage).
   - *Choc* : yeux écarquillés (sclérotique entière), bouche ouverte « ah » plutôt qu'un « O » rond, sourcils à peine
     plus hauts.
+  - *« iii »* : sourire tendu, dents serrées visibles, yeux et sourcils inchangés. C'est exactement le visème I/S-Z
+    demandé.
   - *Accuse, en pied* :
     - Bons points : visage colère réussi, index pointé vers le spectateur avec une **main en raccourci** convaincante,
       t-shirt, cargo retroussé et sandales conservés.
-    - Défauts : **le bras gauche a disparu**, et des cordons parasites pendent des poches du cargo.
+    - Défauts : **le bras gauche du personnage a disparu**, et des cordons parasites pendent des poches du cargo.
 - **[mesure] Recalage et recollage** (`recadrer_recoller.py paste … visage`), en niveaux de gris, hors de la région
   éditée :
 
   | Variante | ECC | Translation estimée | Erreur absolue moyenne avant → après recalage et correction Lab |
   |---|---|---|---|
-  | Rire | 0,9939 | (−0,39 ; +0,60) px | **7,63 → 2,77** |
-  | Choc | 0,9906 | (−0,47 ; +0,40) px | **6,35 → 1,74** |
+  | Rire, visage entier | 0,9939 | (−0,39 ; +0,60) px | **7,63 → 2,77** |
+  | Choc, visage entier | 0,9906 | (−0,47 ; +0,40) px | **6,35 → 1,74** |
+  | « iii », visage entier | 0,9944 | (−0,31 ; +0,36) px | **6,63 → 1,96** |
+  | « iii », **bas du visage** (points sous la ligne des iris + 0,3 × la distance inter-iris, joues comprises) | 0,9962 | (−0,40 ; +0,81) px | **6,80 → 1,89** |
+  | « iii », bouche seule (lèvres dilatées de 0,18·S) | 0,9949 | (−0,42 ; +0,74) px | 6,95 → **8,86** (pire) |
+  | Rire, bas du visage, sur yeux neutres | 0,9675 | (−0,46 ; +0,89) px | 10,0 → 12,96 (les yeux du rire ont changé, hors région) |
 
-  - Recoller la **seule bouche** du rire dégrade le résultat (11,2 → 25,8) : l'éditeur a aussi changé les yeux et les
-    joues, et la correction Lab, calculée sur un anneau qui inclut ces joues modifiées, est faussée.
-  - **Un sprite « bouche seule » doit donc être produit par un prompt qui ne change que la bouche, et contrôlé par cette
-    même mesure hors région.**
+  - Recoller la **seule bouche** dégrade le résultat : rire 11,2 → 25,8, « iii » 6,95 → 8,86. Les joues bougent avec la
+    bouche (sourire, rire), si bien que l'anneau de raccord tombe sur une peau déjà modifiée et que la correction Lab est
+    faussée.
+  - **La bonne unité est le « bas du visage »** (sous les yeux, joues comprises). Pour « iii », le raccord est invisible
+    (`out/klein/recolles_zoom.jpg`, 2ᵉ vignette).
+  - Le bas du visage du rire posé sous des yeux neutres « marche », mais laisse des plis de rire sous des yeux ouverts et
+    un léger halo clair à la joue. Les **expressions** qui touchent les yeux se recollent donc en **visage entier**.
+  - Dans « iii », les yeux restent inchangés (0,62 et 0,82, contre 0,62 et 0,89 au neutre), comme le demandait le
+    prompt.
+  - Commandes :
+    ```bash
+    python -I recadrer_recoller.py crop  out/zimg_modou_576x1024_s42.png out/reperes/modou_reperes.json out/klein/visage_512.png out/klein/visage_box.json 512
+    sd-cli <communs klein> -W 512 -H 512 -r out/klein/visage_512.png -p "<préfixe> Change only his mouth: …" -o out/klein/k5_visage_i.png
+    python -I recadrer_recoller.py paste out/zimg_modou_576x1024_s42.png out/reperes/modou_reperes.json out/klein/visage_box.json \
+           out/klein/k5_visage_i.png bas_visage out/klein/recolle_k5_visage_i_bas.png
+    ```
 - **[mesure] Vérification de l'étiquette** (`visage_mp.py` sur le recadrage 512², puis `yeux_cartoon.py`) :
 
   | | ouverture bouche ‖13−14‖/‖61−291‖ | largeur bouche | jawOpen | mouthSmile G/D | eyeSquint G | eyeWide G/D | Paupières (notre mesure) |
@@ -472,6 +494,7 @@ bouches, yeux, mains en raccourci.
   | Neutre | 0,004 | 110 px | 0,20 | 0 / 0 | 0,02 | 0,17 / 0,34 | 0,62 / 0,89 |
   | Rire | **0,357** | 161 px | **0,58** | **0,99 / 1,00** | **0,74** | 0,00 / 0,01 | **fermés / fermés** |
   | Choc | **0,470** | 93 px | **0,69** | 0 / 0 | 0,01 | **0,34 / 0,60** | **0,92 / 1,00** |
+  | « iii » | 0,204 (dents visibles entre les lèvres) | **152 px** | 0,42 | **0,99 / 0,99** | 0,04 | 0,15 / 0,17 | 0,62 / 0,82 (inchangés) |
 
   `browInnerUp` vaut déjà 0,99 sur le neutre (sourcils « fatigués ») : la hausse des sourcils du choc **n'est pas
   mesurable** par MediaPipe sur ce personnage.
@@ -490,7 +513,7 @@ bouches, yeux, mains en raccourci.
   raccourci.
 - **Les planches de l'utilisateur** (7 personnages × 5 poses : neutre, rire, choc, haussement, accuse) servent de
   **références pour klein** : on peut passer plusieurs références avec `-r` (multi-référence, non testé ici). Les poses
-  « rire » et « choc » de la planche fournissent aussi le **neutre de calibration** des seuils de la porte qualité (G6).
+  neutre, rire et choc de ces planches servent aussi à **calibrer les seuils** de la porte qualité (G6).
 - **Coût à l'échelle** : environ 13 min par sprite 512² à 3 threads. Les 13 visèmes de la spec plus 5 états d'yeux font
   18 sprites, soit ≈ 4 h par personnage. Les 7 personnages à planche coûtent ≈ 27 h, et les 54 ≈ 9 jours de CPU. Il faut
   donc **prioriser** :
@@ -631,12 +654,15 @@ z par défaut (face) : jambes 1, bassin 2, torse 3, bras 4, avant-bras et mains 
 - **Recaler** : ECC euclidien (OpenCV `findTransformECC`, `MOTION_EUCLIDEAN`, 100 itérations, ε = 1e-5, pyramide
   gaussienne 5) entre le recadrage d'origine et le résultat, **sur le masque complémentaire** de la région dilatée de
   25 px. Mesuré : décalage de 0,4 à 0,6 px, ECC 0,991 à 0,994.
-- **Recoller** :
+- **Recoller** — **unité = bas du visage** pour les visèmes (points MediaPipe sous `y_iris + 0,3·d_iris`, joues
+  comprises), **visage entier** pour les expressions qui touchent les yeux. Jamais la bouche seule, qui a été mesurée
+  pire que sans recalage :
   - décalage Lab moyen calculé sur l'anneau de 15 px autour de la région ;
   - fondu `α = G_σ ∗ 𝟙_région` avec `σ = 0,02·S` ;
   - retour à la taille d'origine en `INTER_AREA`.
   
-  Mesuré : erreur absolue moyenne hors région de **7,6 → 2,8** (rire) et **6,4 → 1,7** (choc) niveaux de gris.
+  Mesuré : erreur absolue moyenne hors région de **7,6 → 2,8** (rire), **6,4 → 1,7** (choc) et **6,8 → 1,9** (« iii »,
+  bas du visage) niveaux de gris.
 - **Porte qualité d'un sprite** (on l'accepte seulement si tout passe ; sinon on régénère avec une autre graine) :
   - **identité** : ECC ≥ 0,98 et erreur absolue moyenne hors région ≤ 4 niveaux de gris après recalage ;
   - **cohérence de couleur** : |ΔL*| ≤ 3 sur l'anneau ;
@@ -649,14 +675,15 @@ z par défaut (face) : jambes 1, bassin 2, torse 3, bras 4, avant-bras et mains 
     | M/B/P | ouv ≤ 0,02 | neutre 0,004 |
     | A / rire | ouv ≥ 0,30 et ΔjawOpen ≥ +0,30 | rire : ouv 0,357, ΔjawOpen +0,38, smile 0,99, yeux fermés |
     | O / choc | ouv ≥ 0,30 et largeur ≤ 0,9 × largeur neutre ; choc : ΔeyeWide ≥ +0,15 | choc : ouv 0,47, largeur 0,84×, ΔeyeWide +0,18 / +0,27 |
-    | I / S-Z | ouv ≤ 0,12 et largeur ≥ 1,15 × neutre | voir k5 |
+    | I / S-Z | largeur ≥ 1,15 × neutre, mouthSmile ≥ 0,8, ΔjawOpen ≤ +0,30 (l'ouverture des lèvres compte les dents : ne pas la borner) | « iii » : largeur 1,38×, smile 0,99, ΔjawOpen +0,22, ouv 0,204 |
 
     Les seuils sont initiaux et à calibrer sur les 7 planches de l'utilisateur.
-- **Format moteur** : chaque sprite est un `Attachment { kind: 'region' }` (note 02 G1) attaché au slot `bouche` ou `yeux`,
+- **Format moteur** : chaque sprite est un `Attachment { kind: 'region' }` (note 02 G1) attaché au slot `bas_visage`
+  (visèmes) ou `visage` (expressions),
   avec ses 20 points de contour de lèvres. La `VisemeTrack` (note 04 G4) choisit le sprite. Entre deux sprites, la TPS
   de la note 01 G5 déforme le sprite courant vers les points du suivant pendant 1 à 2 images : c'est un **fondu
   géométrique**, pas un fondu enchaîné.
-- **Budget** : 12,8 à 13,4 min par sprite en 512², mesuré. Un jeu « principal » de 9 bouches (équivalent des formes de
+- **Budget** : 12,7 à 13,4 min par sprite en 512², mesuré. Un jeu « principal » de 9 bouches (équivalent des formes de
   Rhubarb, note 04) + 3 états d'yeux (fermé, mi-clos, écarquillé) + 3 expressions (rire, choc, colère), soit 15 sprites,
   coûte **≈ 3,3 h par personnage**. Pour la famille (≈ 10 personnages) : ≈ 33 h. Il faut viser 384² (estimé 2,2 fois
   moins cher, non mesuré) une fois la qualité vérifiée.

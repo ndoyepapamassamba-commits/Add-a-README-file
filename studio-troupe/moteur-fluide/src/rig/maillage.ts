@@ -52,6 +52,10 @@ export interface OptionsMaillage {
   aireMinBoucle?: number;
   /** Itérations maximales de mise en conformité. Défaut 16. */
   iterationsConformite?: number;
+  /** Tours de raffinement des triangles aigus. Défaut 4. */
+  raffinements?: number;
+  /** Angle minimal visé par le raffinement (degrés). Défaut 22. */
+  angleMin?: number;
 }
 
 /** Maillage brut (avant poids et groupes). */
@@ -472,7 +476,6 @@ export function construireMaillage(image: ImageRGBA, options: OptionsMaillage = 
     const fin = px.length;
     for (let i = depart; i < fin; i++) suivant.push(i + 1 < fin ? i + 1 : depart);
   }
-  const nbBordInitial = px.length;
 
   // 2. Points de Steiner : réseau hexagonal fin, tirage glouton du plus fin au plus large.
   let pasMin = pasBase;
@@ -512,88 +515,158 @@ export function construireMaillage(image: ImageRGBA, options: OptionsMaillage = 
     steinerH.push(c.h);
   }
 
-  // 3. Delaunay conforme.
-  const actifSteiner = new Uint8Array(steinerX.length).fill(1);
+  // 3. Delaunay conforme, puis raffinement borné des triangles trop aigus (insertion du centre du cercle
+  //    circonscrit, ou coupure du segment de contour sur lequel il empiète), à la manière de Ruppert.
+  const actifSteiner: number[] = steinerX.map(() => 1);
   const grilleSteiner = new GrillePoints(pasBase);
   for (let i = 0; i < steinerX.length; i++) grilleSteiner.ajouter(i, steinerX[i]!, steinerY[i]!);
   const maxIter = options.iterationsConformite ?? 16;
+  const tours = options.raffinements ?? 4;
+  const angleCible = options.angleMin ?? 22;
   let triangles: Uint32Array = new Uint32Array(0);
-  let indexGlobal: Int32Array = new Int32Array(0); // index compact → index global (bord : 0…, Steiner : nbBord + i)
+  let indexGlobal: Int32Array = new Int32Array(0); // index compact → index global (bord ≥ 0, Steiner : −(i + 1))
   let manquants = 0;
   let iter = 0;
-  for (iter = 0; iter < maxIter; iter++) {
-    // Retirer les points de Steiner dans le cercle diamétral d'un segment.
-    for (let a = 0; a < px.length; a++) {
-      const b = suivant[a]!;
-      const mx = (px[a]! + px[b]!) / 2;
-      const my = (py[a]! + py[b]!) / 2;
-      const r = Math.hypot(px[b]! - px[a]!, py[b]! - py[a]!) / 2;
-      grilleSteiner.voisins(mx, my, r, (id) => {
-        if (actifSteiner[id] && (steinerX[id]! - mx) ** 2 + (steinerY[id]! - my) ** 2 < r * r) actifSteiner[id] = 0;
-      });
-    }
-    const nbBord = px.length;
-    const coords: number[] = [];
-    const glob: number[] = [];
-    for (let i = 0; i < nbBord; i++) {
-      coords.push(px[i]!, py[i]!);
-      glob.push(i);
-    }
-    for (let i = 0; i < steinerX.length; i++) {
-      if (!actifSteiner[i]) continue;
-      coords.push(steinerX[i]!, steinerY[i]!);
-      glob.push(-(i + 1));
-    }
-    const d = new Delaunator(Float64Array.from(coords));
-    triangles = d.triangles;
-    indexGlobal = Int32Array.from(glob);
-    // Arêtes présentes (entre points de bord seulement : clé a·N + b).
-    const aretes = new Set<number>();
-    const N = nbBord + 1;
-    for (let t = 0; t < triangles.length; t += 3) {
-      for (let e = 0; e < 3; e++) {
-        const u = triangles[t + e]!;
-        const v = triangles[t + ((e + 1) % 3)]!;
-        if (u < nbBord && v < nbBord) aretes.add(u < v ? u * N + v : v * N + u);
+  let gardes: number[] = [];
+  let test: TestPairImpair = new TestPairImpair(new Float64Array(0));
+  const coordGlobal = (gi: number): [number, number] => (gi >= 0 ? [px[gi]!, py[gi]!] : [steinerX[-gi - 1]!, steinerY[-gi - 1]!]);
+  const couperSegment = (a: number): void => {
+    const b = suivant[a]!;
+    const m = px.length;
+    px.push((px[a]! + px[b]!) / 2);
+    py.push((py[a]! + py[b]!) / 2);
+    suivant[a] = m;
+    suivant.push(b);
+  };
+  for (let tour = 0; tour <= tours; tour++) {
+    for (iter = 0; iter < maxIter; iter++) {
+      // Retirer les points de Steiner dans le cercle diamétral d'un segment.
+      for (let a = 0; a < px.length; a++) {
+        const b = suivant[a]!;
+        const mx = (px[a]! + px[b]!) / 2;
+        const my = (py[a]! + py[b]!) / 2;
+        const r = Math.hypot(px[b]! - px[a]!, py[b]! - py[a]!) / 2;
+        grilleSteiner.voisins(mx, my, r, (id) => {
+          if (actifSteiner[id] && (steinerX[id]! - mx) ** 2 + (steinerY[id]! - my) ** 2 < r * r) actifSteiner[id] = 0;
+        });
       }
+      const nbBord = px.length;
+      const coords: number[] = [];
+      const glob: number[] = [];
+      for (let i = 0; i < nbBord; i++) {
+        coords.push(px[i]!, py[i]!);
+        glob.push(i);
+      }
+      for (let i = 0; i < steinerX.length; i++) {
+        if (!actifSteiner[i]) continue;
+        coords.push(steinerX[i]!, steinerY[i]!);
+        glob.push(-(i + 1));
+      }
+      const d = new Delaunator(Float64Array.from(coords));
+      triangles = d.triangles;
+      indexGlobal = Int32Array.from(glob);
+      // Arêtes présentes (entre points de bord seulement : clé a·N + b).
+      const aretes = new Set<number>();
+      const N = nbBord + 1;
+      for (let t = 0; t < triangles.length; t += 3) {
+        for (let e = 0; e < 3; e++) {
+          const u = triangles[t + e]!;
+          const v = triangles[t + ((e + 1) % 3)]!;
+          if (u < nbBord && v < nbBord) aretes.add(u < v ? u * N + v : v * N + u);
+        }
+      }
+      const aCouper: number[] = [];
+      for (let a = 0; a < nbBord; a++) {
+        const b = suivant[a]!;
+        const cle = a < b ? a * N + b : b * N + a;
+        if (!aretes.has(cle)) aCouper.push(a);
+      }
+      manquants = aCouper.length;
+      if (manquants === 0 || iter === maxIter - 1) break;
+      for (const a of aCouper) couperSegment(a);
     }
-    const aCouper: number[] = [];
+    // Triangles intérieurs (pair-impair sur les segments de contour).
+    const nbBord = px.length;
+    const segs = new Float64Array(4 * nbBord);
     for (let a = 0; a < nbBord; a++) {
       const b = suivant[a]!;
-      const cle = a < b ? a * N + b : b * N + a;
-      if (!aretes.has(cle)) aCouper.push(a);
+      segs.set([px[a]!, py[a]!, px[b]!, py[b]!], 4 * a);
     }
-    manquants = aCouper.length;
-    if (manquants === 0) break;
-    if (iter === maxIter - 1) break;
-    for (const a of aCouper) {
-      const b = suivant[a]!;
-      const m = px.length;
-      px.push((px[a]! + px[b]!) / 2);
-      py.push((py[a]! + py[b]!) / 2);
-      suivant[a] = m;
-      suivant.push(b);
+    test = new TestPairImpair(segs);
+    gardes = [];
+    for (let t = 0; t < triangles.length; t += 3) {
+      const [ax, ay] = coordGlobal(indexGlobal[triangles[t]!]!);
+      const [bx, by] = coordGlobal(indexGlobal[triangles[t + 1]!]!);
+      const [cx, cy] = coordGlobal(indexGlobal[triangles[t + 2]!]!);
+      const aire = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay);
+      if (Math.abs(aire) < 1e-6) continue;
+      if (!test.dedans((ax + bx + cx) / 3, (ay + by + cy) / 3)) continue;
+      gardes.push(t);
     }
-  }
-  const nbBord = px.length;
-
-  // 4. Triangles intérieurs (pair-impair sur les segments de contour).
-  const segs = new Float64Array(4 * nbBord);
-  for (let a = 0; a < nbBord; a++) {
-    const b = suivant[a]!;
-    segs.set([px[a]!, py[a]!, px[b]!, py[b]!], 4 * a);
-  }
-  const test = new TestPairImpair(segs);
-  const coordGlobal = (gi: number): [number, number] => (gi >= 0 ? [px[gi]!, py[gi]!] : [steinerX[-gi - 1]!, steinerY[-gi - 1]!]);
-  const gardes: number[] = [];
-  for (let t = 0; t < triangles.length; t += 3) {
-    const [ax, ay] = coordGlobal(indexGlobal[triangles[t]!]!);
-    const [bx, by] = coordGlobal(indexGlobal[triangles[t + 1]!]!);
-    const [cx, cy] = coordGlobal(indexGlobal[triangles[t + 2]!]!);
-    const aire = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay);
-    if (Math.abs(aire) < 1e-6) continue;
-    if (!test.dedans((ax + bx + cx) / 3, (ay + by + cy) / 3)) continue;
-    gardes.push(t);
+    if (tour === tours || manquants > 0) break;
+    // Raffinement : triangles intérieurs dont le plus petit angle est sous la cible.
+    const grilleSegs = new GrillePoints(pasBase);
+    for (let a = 0; a < nbBord; a++) grilleSegs.ajouter(a, (px[a]! + px[suivant[a]!]!) / 2, (py[a]! + py[suivant[a]!]!) / 2);
+    const segmentsACouper = new Set<number>();
+    const nouveaux = new GrillePoints(pasBase);
+    let ajouts = 0;
+    for (const t of gardes) {
+      const [ax, ay] = coordGlobal(indexGlobal[triangles[t]!]!);
+      const [bx, by] = coordGlobal(indexGlobal[triangles[t + 1]!]!);
+      const [cx, cy] = coordGlobal(indexGlobal[triangles[t + 2]!]!);
+      if (anglesTriangle(ax, ay, bx, by, cx, cy) >= angleCible) continue;
+      const gx = (ax + bx + cx) / 3;
+      const gy = (ay + by + cy) / 3;
+      const h = pasLocal(gx, gy, pasBase, zones);
+      const cote = Math.min(Math.hypot(bx - ax, by - ay), Math.hypot(cx - bx, cy - by), Math.hypot(ax - cx, ay - cy));
+      if (cote < 0.3 * h) continue; // détail plus fin que le pas : on n'insiste pas
+      // Centre du cercle circonscrit.
+      const D = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+      if (Math.abs(D) < 1e-12) continue;
+      const a2 = ax * ax + ay * ay;
+      const b2 = bx * bx + by * by;
+      const c2 = cx * cx + cy * cy;
+      const ux = (a2 * (by - cy) + b2 * (cy - ay) + c2 * (ay - by)) / D;
+      const uy = (a2 * (cx - bx) + b2 * (ax - cx) + c2 * (bx - ax)) / D;
+      // Empiète-t-il sur un segment de contour ?
+      let empiete = -1;
+      grilleSegs.voisins(ux, uy, pasBase, (a) => {
+        const b = suivant[a]!;
+        const mx = (px[a]! + px[b]!) / 2;
+        const my = (py[a]! + py[b]!) / 2;
+        const r2 = ((px[b]! - px[a]!) ** 2 + (py[b]! - py[a]!) ** 2) / 4;
+        if ((ux - mx) ** 2 + (uy - my) ** 2 < r2) {
+          empiete = a;
+          return true;
+        }
+        return false;
+      });
+      if (empiete >= 0) {
+        const l = Math.hypot(px[suivant[empiete]!]! - px[empiete]!, py[suivant[empiete]!]! - py[empiete]!);
+        if (l > 0.35 * h) segmentsACouper.add(empiete);
+        continue;
+      }
+      if (!test.dedans(ux, uy)) continue;
+      let proche = false;
+      nouveaux.voisins(ux, uy, 0.5 * h, (id) => {
+        if ((steinerX[id]! - ux) ** 2 + (steinerY[id]! - uy) ** 2 < 0.25 * h * h) {
+          proche = true;
+          return true;
+        }
+        return false;
+      });
+      if (proche) continue;
+      const id = steinerX.length;
+      steinerX.push(ux);
+      steinerY.push(uy);
+      steinerH.push(h);
+      actifSteiner.push(1);
+      grilleSteiner.ajouter(id, ux, uy);
+      nouveaux.ajouter(id, ux, uy);
+      ajouts++;
+    }
+    for (const a of segmentsACouper) couperSegment(a);
+    if (ajouts === 0 && segmentsACouper.size === 0) break;
   }
 
   // 5. Compactage : bord d'abord (dans l'ordre des boucles), puis Steiner utilisés.
@@ -636,7 +709,6 @@ export function construireMaillage(image: ImageRGBA, options: OptionsMaillage = 
     angles.push(anglesTriangle(pos[2 * a]!, pos[2 * a + 1]!, pos[2 * b]!, pos[2 * b + 1]!, pos[2 * c]!, pos[2 * c + 1]!));
   }
   angles.sort((a, b) => a - b);
-  void nbBordInitial;
   return {
     positions: pos,
     triangles: tri,
