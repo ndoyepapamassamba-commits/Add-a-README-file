@@ -7,7 +7,7 @@
 #   4. démarre un serveur par carte, anime chaque plan, écrit /kaggle/working/<cle>.mp4 + mesures.json (temps MESURÉS,
 #      carte, mémoire maximale, erreurs) au fil de l'eau : un arrêt en cours de route garde les plans déjà faits.
 # Essai hors Kaggle : NOYAU_ESSAI=1 NOYAU_ENTREE=<dossier> NOYAU_SORTIE=<dossier> COMFY_URL=<serveur déjà lancé>
-import glob, json, os, subprocess, sys, threading, time, urllib.request, wave
+import glob, json, os, re, subprocess, sys, threading, time, urllib.request, wave
 
 ESSAI = os.environ.get('NOYAU_ESSAI') == '1'
 ENTREE = os.environ.get('NOYAU_ENTREE', '/kaggle/input')
@@ -72,6 +72,27 @@ UNET = motif.format(q=Q); M.update(quant=Q, unet=UNET); dit(f'kit {KIT} : {UNET}
 
 # ---------- 3. installation (figée) ----------
 CU = f'{RACINE}/ComfyUI'
+TORCH = {'torch', 'torchvision', 'torchaudio'}      # déjà fournis (avec CUDA) par Kaggle / Colab : on ne les réinstalle pas
+MODULES = {'yaml': 'pyyaml', 'PIL': 'pillow', 'cv2': 'opencv-python-headless', 'sklearn': 'scikit-learn'}
+def nom_paquet(ligne):                              # « torchsde>=0.2 » → « torchsde » (et pas « torch »)
+    return re.split(r'[<>=!~\[; ]', ligne.strip(), maxsplit=1)[0].strip().lower()
+
+def demarrage_ok(cu, essais=5):
+    """test de démarrage de ComfyUI ; répare tout seul un module manquant, ou un torch trop ancien, puis réessaie."""
+    for _ in range(essais):
+        r = lance([sys.executable, 'main.py', '--quick-test-for-ci'], cwd=cu)
+        if r.returncode == 0: dit('ComfyUI démarre'); return True
+        err = r.stdout + r.stderr
+        m = re.search(r"No module named '([^'.]+)", err)
+        if m:
+            mod = m.group(1); pq = MODULES.get(mod, mod.replace('_', '-')); dit(f'module manquant « {mod} » : installation de {pq}')
+            lance([sys.executable, '-m', 'pip', 'install', '-q', pq]); continue
+        if any(k in err for k in ('custom_op', 'infer_schema', 'torch.library', 'requires torch', 'torch>=')):
+            dit('torch trop ancien pour ComfyUI : mise à niveau (CUDA 12.8)')
+            lance([sys.executable, '-m', 'pip', 'install', '-q', '-U', 'torch', 'torchvision', 'torchaudio', '--index-url', 'https://download.pytorch.org/whl/cu128']); continue
+        M['erreur_demarrage'] = err[-2000:]; sauve(); raise SystemExit('ComfyUI ne démarre pas : voir journal.txt')
+    M['erreur_demarrage'] = 'échec après plusieurs réparations'; sauve(); raise SystemExit('ComfyUI ne démarre pas : voir journal.txt')
+
 def installe():
     os.makedirs(RACINE, exist_ok=True)
     if not os.path.isdir(f'{CU}/.git'):
@@ -82,12 +103,9 @@ def installe():
         lance(['git', 'init', '-q', G]); lance(['git', '-C', G, 'remote', 'add', 'origin', 'https://github.com/city96/ComfyUI-GGUF.git'])
         if lance(['git', '-C', G, 'fetch', '-q', '--depth', '1', 'origin', GGUF_COMMIT]).returncode: lance(['git', '-C', G, 'fetch', '-q', '--depth', '1', 'origin', 'HEAD'])
         lance(['git', '-C', G, 'checkout', '-q', 'FETCH_HEAD'])
-    req = [l.strip() for l in open(f'{CU}/requirements.txt') if l.strip() and not l.startswith('#') and not l.split('=')[0].split('>')[0].split('<')[0].strip().startswith(('torch', 'torchvision', 'torchaudio'))]
+    req = [l.strip() for l in open(f'{CU}/requirements.txt') if l.strip() and not l.lstrip().startswith('#') and nom_paquet(l) not in TORCH]
     lance([sys.executable, '-m', 'pip', 'install', '-q'] + req + ['gguf>=0.13.0', 'sentencepiece', 'protobuf'])
-    if lance([sys.executable, 'main.py', '--quick-test-for-ci'], cwd=CU).returncode:       # torch trop ancien pour ComfyUI : mise à niveau
-        dit('ComfyUI ne démarre pas avec le torch fourni : mise à niveau de torch (CUDA 12.8)')
-        lance([sys.executable, '-m', 'pip', 'install', '-q', '-U', 'torch', 'torchvision', 'torchaudio', '--index-url', 'https://download.pytorch.org/whl/cu128'])
-        if lance([sys.executable, 'main.py', '--quick-test-for-ci'], cwd=CU).returncode: raise SystemExit('ComfyUI ne démarre pas')
+    demarrage_ok(CU)
     import torch; M['torch'] = torch.__version__; dit('torch', torch.__version__)
 
 def telecharge():
