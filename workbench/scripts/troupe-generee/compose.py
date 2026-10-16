@@ -23,7 +23,7 @@ def words_of(L):
         if re.fullmatch(r'[!?.,;:…»«]+', t) and ws: ws[-1] += t; continue
         ws.append(t)
     # temps des mots : partage des voyelles du texte sur la durée réelle de parole (phonèmes non muets)
-    sp = [p for p in L['phonemes'] if p['ph'] not in (' ', '^', '$', '_', ',', '.', '!', '?')]
+    sp = [p for p in L['phonemes'] if p['ph'] not in (' ', '^', '$', '_', ',', '.', '!', '?', 'X')]  # X = bouche au repos (visèmes Rhubarb)
     a0 = L['t0'] + (sp[0]['t0'] if sp else 0); a1 = L['t0'] + (sp[-1]['t1'] if sp else L['dur'])
     n = [max(1, len(re.findall(r'[aeiouyéèêëàâîïôûœ]+', w.lower()))) for w in ws]; tot = sum(n); out, c = [], a0
     for w, k in zip(ws, n): dt = (a1 - a0) * k / tot; out.append((w, c, c + dt)); c += dt

@@ -25,6 +25,7 @@ hors règle sont signalés ci-dessous, avec la façon dont ils sont isolés et c
 | Composition « format de la chaîne » (`scripts/blenderfilm/compose_chaine.py`) | maison | — | mesurée sur la vidéo TikTok la plus vue de l'utilisateur | clip au centre, fond flouté, sous-titres karaoké |
 | Chaîne « troupe générée » (`scripts/troupe-generee/`) | maison, 16/10/2026 | — | voir les outils ci-dessous | fiches et scènes générées, juge JEV, incrustation à l'échelle, plaque LaMa, visages greffés, tournage et montage au format de la chaîne |
 | jevlib (`server/jev/sandbox/jevlib*.ts`) | 1.1 | — | code de l'app | parole, cinéma, contrôle qualité |
+| Mâchoire paramétrique (`scripts/troupe-generee/tourne.py`, `bouche_param`) | maison, 16/10/2026 | — (réécrit) | méthode des déformeurs de Live2D / Inochi2D (**BSD-2**, méthode seulement) | bouche des visages que LivePortrait n'ouvre pas (barbe, lunettes noires) : lèvre et menton déplacés par un champ doux, intérieur de bouche peint |
 
 ## Outils lancés en processus séparé (pas liés à notre code)
 
@@ -43,7 +44,7 @@ hors règle sont signalés ci-dessous, avec la façon dont ils sont isolés et c
 | OpenCV | 5.0 | Apache-2.0 | opencv.org/license | retouche de couture du décor (Telea) | conforme |
 | NumPy | 2.4 | BSD-3-Clause | numpy.org | synthèse du sol (quilting), contrôles | conforme |
 | onnxruntime | 1.31 | MIT | github.com/microsoft/onnxruntime | inférence CPU | conforme |
-| Rhubarb Lip Sync | 1.14.0 | MIT | github.com/DanielSWolf/rhubarb-lip-sync | contrôle indépendant des bouches | conforme |
+| Rhubarb Lip Sync | 1.14.0 | MIT | github.com/DanielSWolf/rhubarb-lip-sync | contrôle indépendant des bouches ; depuis le 16/10/2026, visèmes du tournage « troupe générée » (mode phonétique, `levres.py`) | conforme |
 | Z-Image-Turbo (Tongyi-MAI) via AI Horde | 6B, turbo | **Apache-2.0** (modèle) ; AI Horde : service communautaire gratuit, usage anonyme | huggingface.co/Tongyi-MAI/Z-Image-Turbo ; aihorde.net | fiches personnages et scènes 3D | conforme ; exécuté hors de chez nous |
 | WORLD (vocodeur) + pyworld | 0.3.4 | BSD modifiée (WORLD) ; MIT (pyworld) | github.com/mmorise/World ; github.com/JeremyCCHsu/Python-Wrapper-for-World-Vocoder | hauteur, étendue et timbre des voix au ton de la chaîne | conforme |
 | EasyOCR | 1.7 | Apache-2.0 | github.com/JaidedAI/EasyOCR | repérer le texte parasite des images générées (effacé par LaMa) | conforme |
