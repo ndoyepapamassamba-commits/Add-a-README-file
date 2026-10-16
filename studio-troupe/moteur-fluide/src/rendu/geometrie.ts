@@ -375,11 +375,21 @@ export function vieAuxSommets(g: GrilleDecor, cellules: CelluleFigurant[], etiqu
 
 /** Réglages de la vie des figurants (fractions de la hauteur de la personne). */
 export const REGLAGES_FIGURANTS = Object.freeze({
-  respiration: 0.007,
-  balancementRad: 0.45 * (Math.PI / 180),
-  teteX: 0.014,
-  teteY: 0.007,
+  respiration: 0.011,
+  balancementRad: 0.8 * (Math.PI / 180),
+  teteX: 0.026,
+  teteY: 0.01,
+  /** Salves de jeu des figurants actifs (rire, conversation) : sautillement et rotation de la tête. */
+  salve: 0.016,
 });
+
+/** Enveloppe (0 … 1) des salves de jeu d'un figurant : quelques secondes de rire ou de conversation, à des
+ * instants différents pour chacun (bruit lent seuillé en douceur). */
+function salve(c: CelluleFigurant, temps: number): number {
+  const x = (bruit1D(0.11 * temps + c.phase, c.graine + 11) - 0.2) / 0.4;
+  const t = Math.min(1, Math.max(0, x));
+  return t * t * (3 - 2 * t);
+}
 
 /**
  * Déplacements (monde, 2V) des sommets de la grille pour les figurants à l'instant `temps` :
@@ -398,8 +408,8 @@ export function deplacementsFigurants(g: GrilleDecor, vie: VieFigurants, temps: 
       a: c.amplitude,
       resp: R.respiration * Math.sin(w * temps + c.phase),
       bal: R.balancementRad * Math.sin((w / 1.7) * temps + 1.3 * c.phase),
-      tx: c.activite * R.teteX * bruit1D(0.55 * temps + c.phase, c.graine),
-      ty: c.activite * R.teteY * bruit1D(0.9 * temps + c.phase, c.graine + 7),
+      tx: c.activite * (R.teteX * bruit1D(0.55 * temps + c.phase, c.graine) + 0.6 * R.salve * salve(c, temps) * Math.sin(2 * Math.PI * 1.3 * temps + c.phase)),
+      ty: c.activite * (R.teteY * bruit1D(0.9 * temps + c.phase, c.graine + 7) + R.salve * salve(c, temps) * Math.sin(2 * Math.PI * 4.2 * temps + 2 * c.phase)),
       h: Math.max(1e-3, c.vPieds - c.vHaut),
       pieds: c.vPieds,
     };
@@ -516,7 +526,13 @@ export function detecterLumieres(
 export function intensiteHalo(t: TacheLumiere, temps: number): number {
   const lent = bruit1D(t.frequence * temps + t.phase, t.graine);
   const vif = bruit1D(3.1 * t.frequence * temps + t.phase, t.graine + 3);
-  return Math.min(1, Math.max(0, 0.55 + 0.3 * lent + 0.15 * vif));
+  let i = 0.5 + 0.3 * lent + 0.2 * vif;
+  // Une ampoule sur quatre « grésille » : brèves baisses franches, à des instants propres à chacune.
+  if ((t.graine >>> 3) % 4 === 0) {
+    const g = bruit1D(9 * t.frequence * temps + 2 * t.phase, t.graine + 17);
+    if (g > 0.45) i *= 0.35 + 0.65 * Math.min(1, (0.75 - g) / 0.3);
+  }
+  return Math.min(1, Math.max(0, i));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────

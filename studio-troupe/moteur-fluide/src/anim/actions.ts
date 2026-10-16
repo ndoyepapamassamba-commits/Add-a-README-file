@@ -575,13 +575,18 @@ const hausserEpaules: Recette = {
     const e = new Ecriture(p);
     const { A, P, tR, fin } = phases(p.D, p.k, 0.1, 0.14, 0.5);
     const vif: ModifRessort = { facteurF: 1.3 };
+    // Hauteur des épaules et écart des coudes : des CIBLES bornées (le gain d'exagération ne doit pas décoller la
+    // manche du cou ni écarteler les bras d’un dessin unique). Épaules ≤ 5 % de la hauteur (≈ 6,5 % au dépassement) ; coudes ≤ 30°, et
+    // ≤ 21° pour un dessin de trois quarts (le bras du fond se cache derrière le corps).
+    const lev = Math.min(0.055, 0.05 / Math.max(1e-6, e.g));
+    const ecart = Math.min(26, (e.m.orientation === 0 ? 30 : 21) / Math.max(1e-6, e.g));
     COTES.forEach((c, i) => {
       const d = i * e.T(0.03);
       e.epaule(c, [
         [0, 0],
         [A + d, -0.012],
-        [A + P + d, 0.055],
-        [tR, 0.05],
+        [A + P + d, lev],
+        [tR, lev * 0.9],
         [fin, 0],
       ], { ressort: vif });
       // Coudes écartés, avant-bras pointés vers le spectateur (raccourcis en perspective), paumes ouvertes vers
@@ -589,8 +594,8 @@ const hausserEpaules: Recette = {
       e.abduction(c, [
         [0, 0],
         [A + d, -3],
-        [A + P + d, 26],
-        [tR, 23],
+        [A + P + d, ecart],
+        [tR, ecart * 0.88],
         [fin, 0],
       ]);
       e.avantBras(c, [
@@ -1281,6 +1286,11 @@ const gene: Recette = {
 function construireRire(e: Ecriture, p: ParamsRecette): { A: number; tR: number; fin: number } {
   const { A, tR, fin } = phases(p.D, p.k, 0.2, 0.3, 0.5);
   const milieu = A + (tR - A) * 0.5;
+  // « Mains au ventre » est une CIBLE, pas une amplitude : le gain d'exagération ne doit pas replier l'avant-bras
+  // au-delà de la cible.
+  // Pli total (pli × gain) ≤ 78° : au-delà, sur un dessin unique, la main remonte vers le visage et le coude se
+  // replie en boucle (avant-bras « doublé »).
+  const pli = Math.min(78, 78 / Math.max(1e-6, e.g));
   for (const c of COTES) {
     e.epaule(c, [
       [0, 0],
@@ -1297,8 +1307,8 @@ function construireRire(e: Ecriture, p: ParamsRecette): { A: number; tR: number;
     ]);
     e.avantBras(c, [
       [0, 0],
-      [A + 0.25, -95],
-      [tR, -92],
+      [A + 0.25, -pli],
+      [tR, -pli * 0.97],
       [fin, 0],
     ]);
     e.main(c, [

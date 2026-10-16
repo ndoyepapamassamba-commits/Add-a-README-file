@@ -3,51 +3,372 @@
   "titre": "Pilote — Modou et le poulet",
   "fps": 30,
   "duree": 10,
-  "sortie": { "largeur": 1080, "hauteur": 1920, "sousImages": 4, "obturateur": 0.5, "graine": 11 },
+  "sortie": {
+    "largeur": 1080,
+    "hauteur": 1920,
+    "sousImages": 4,
+    "obturateur": 0.5,
+    "graine": 11
+  },
   "personnages": [
-    { "id": "modou", "nom": "MODOU", "rig": "modou", "tailleM": 1.76, "personnalite": { "exageration": 1.25 } }
+    {
+      "id": "modou",
+      "nom": "MODOU",
+      "rig": "modou",
+      "tailleM": 1.76,
+      "personnalite": {
+        "exageration": 1.25
+      }
+    }
   ],
+  "decors": {
+    "rue-des-maquis-marcory": {
+      "mH": 3
+    }
+  },
   "plans": [
     {
       "id": "p1",
       "debut": 0,
       "fin": 10,
-      "decor": "maquis",
-      "cadrage": { "taille": "moyen", "sujets": ["modou"] },
-      "personnages": [{ "personnage": "modou", "u": 0.45, "orientation": 1 }]
+      "decor": "rue-des-maquis-marcory",
+      "cadrage": {
+        "taille": "moyen",
+        "sujets": [
+          "modou"
+        ]
+      },
+      "personnages": [
+        {
+          "personnage": "modou",
+          "u": 0.5,
+          "v": 0.93,
+          "orientation": 1
+        }
+      ]
     }
   ],
   "pistes": {
     "actions": [
-      { "personnage": "modou", "action": "respirer", "debut": 0, "duree": 10 },
-      { "personnage": "modou", "action": "attendre", "debut": 0, "duree": 1.8 },
-      { "personnage": "modou", "action": "regarder", "debut": 0.2, "duree": 9.4, "cible": { "camera": true } },
-      { "personnage": "modou", "action": "hausserEpaules", "debut": 1.7, "duree": 1.5, "intensite": 1.3 },
-      { "personnage": "modou", "action": "pointer", "debut": 3.25, "duree": 1.5, "cible": { "camera": true }, "intensite": 1.3 },
-      { "personnage": "modou", "action": "rire", "debut": 5.2, "duree": 2.6, "intensite": 1.3 }
+      {
+        "personnage": "modou",
+        "action": "respirer",
+        "debut": 0,
+        "duree": 10
+      },
+      {
+        "personnage": "modou",
+        "action": "attendre",
+        "debut": 0,
+        "duree": 1.9
+      },
+      {
+        "personnage": "modou",
+        "action": "regarder",
+        "debut": 0.2,
+        "duree": 9.4,
+        "cible": {
+          "camera": true
+        }
+      },
+      {
+        "personnage": "modou",
+        "action": "hausserEpaules",
+        "debut": 2.05,
+        "duree": 1.4,
+        "intensite": 1.2
+      },
+      {
+        "personnage": "modou",
+        "action": "pointer",
+        "debut": 3,
+        "duree": 1.55,
+        "cible": {
+          "camera": true
+        },
+        "intensite": 1.2
+      },
+      {
+        "personnage": "modou",
+        "action": "rire",
+        "debut": 5.1,
+        "duree": 2.6,
+        "intensite": 1.2
+      }
     ],
     "dialogue": [
       {
         "id": "r1",
         "personnage": "modou",
         "texte": "Walay, c'est pas moi qui ai mangé le poulet !",
-        "debut": 1.8,
-        "fin": 4.6,
-        "emotion": "malice"
+        "debut": 1.6,
+        "fin": 5.05,
+        "emotion": "malice",
+        "audio": "../../sorties/voix/pilote-r1.wav",
+        "phonemes": [
+          {
+            "ph": "w",
+            "debut": 0.03,
+            "fin": 0.0881
+          },
+          {
+            "ph": "a",
+            "debut": 0.0881,
+            "fin": 0.1345
+          },
+          {
+            "ph": "l",
+            "debut": 0.1345,
+            "fin": 0.1926
+          },
+          {
+            "ph": "a",
+            "debut": 0.1926,
+            "fin": 0.3551,
+            "accent": true
+          },
+          {
+            "ph": "j",
+            "debut": 0.3551,
+            "fin": 0.4248
+          },
+          {
+            "ph": "sil",
+            "debut": 0.4248,
+            "fin": 0.5293
+          },
+          {
+            "ph": "s",
+            "debut": 0.5293,
+            "fin": 0.5989
+          },
+          {
+            "ph": "ɛ",
+            "debut": 0.5989,
+            "fin": 0.715
+          },
+          {
+            "ph": "p",
+            "debut": 0.715,
+            "fin": 0.7382
+          },
+          {
+            "ph": "a",
+            "debut": 0.7382,
+            "fin": 0.9008
+          },
+          {
+            "ph": "m",
+            "debut": 0.9008,
+            "fin": 0.9472
+          },
+          {
+            "ph": "w",
+            "debut": 0.9472,
+            "fin": 0.982
+          },
+          {
+            "ph": "a",
+            "debut": 0.982,
+            "fin": 1.0591
+          },
+          {
+            "ph": "sil",
+            "debut": 1.0591,
+            "fin": 1.2491
+          },
+          {
+            "ph": "k",
+            "debut": 1.2491,
+            "fin": 1.2955
+          },
+          {
+            "ph": "i",
+            "debut": 1.2955,
+            "fin": 1.5277
+          },
+          {
+            "ph": "ɛ",
+            "debut": 1.5277,
+            "fin": 1.667,
+            "accent": true
+          },
+          {
+            "ph": "m",
+            "debut": 1.667,
+            "fin": 1.7135
+          },
+          {
+            "ph": "ɑ̃",
+            "debut": 1.7135,
+            "fin": 1.818
+          },
+          {
+            "ph": "ʒ",
+            "debut": 1.818,
+            "fin": 1.8644
+          },
+          {
+            "ph": "e",
+            "debut": 1.8644,
+            "fin": 1.9921
+          },
+          {
+            "ph": "l",
+            "debut": 1.9921,
+            "fin": 2.0153
+          },
+          {
+            "ph": "ə",
+            "debut": 2.0153,
+            "fin": 2.1082
+          },
+          {
+            "ph": "p",
+            "debut": 2.1082,
+            "fin": 2.1314
+          },
+          {
+            "ph": "u",
+            "debut": 2.1314,
+            "fin": 2.2127
+          },
+          {
+            "ph": "l",
+            "debut": 2.2127,
+            "fin": 2.2708
+          },
+          {
+            "ph": "ɛ",
+            "debut": 2.2708,
+            "fin": 2.3765,
+            "accent": true
+          },
+          {
+            "ph": "sil",
+            "debut": 2.3765,
+            "fin": 2.4565
+          }
+        ],
+        "mots": [
+          {
+            "texte": "Walay,",
+            "debut": 0.03,
+            "fin": 0.4248
+          },
+          {
+            "texte": "c'est",
+            "debut": 0.5293,
+            "fin": 0.715
+          },
+          {
+            "texte": "pas",
+            "debut": 0.715,
+            "fin": 0.9008
+          },
+          {
+            "texte": "moi",
+            "debut": 0.9008,
+            "fin": 1.0591
+          },
+          {
+            "texte": "qui",
+            "debut": 1.2491,
+            "fin": 1.5277
+          },
+          {
+            "texte": "ai",
+            "debut": 1.5277,
+            "fin": 1.667
+          },
+          {
+            "texte": "mangé",
+            "debut": 1.667,
+            "fin": 1.9921
+          },
+          {
+            "texte": "le",
+            "debut": 1.9921,
+            "fin": 2.1082
+          },
+          {
+            "texte": "poulet",
+            "debut": 2.1082,
+            "fin": 2.3765
+          },
+          {
+            "texte": "!",
+            "debut": 2.3765,
+            "fin": 2.3765
+          }
+        ]
       }
     ],
     "camera": [
-      { "type": "fondu", "debut": 0, "duree": 0.4, "sens": "entree" },
-      { "type": "punchIn", "debut": 4.0, "duree": 0.22, "sujet": "modou", "facteur": 1.5 },
-      { "type": "gel", "debut": 4.6, "duree": 0.5 },
-      { "type": "tremblement", "debut": 5.35, "duree": 0.7, "amplitude": 0.006 },
-      { "type": "recadrer", "debut": 7.6, "duree": 0.9, "cadrage": { "taille": "moyen", "sujets": ["modou"] } },
-      { "type": "fondu", "debut": 9.5, "duree": 0.5, "sens": "sortie" }
+      {
+        "type": "fondu",
+        "debut": 0,
+        "duree": 0.4,
+        "sens": "entree"
+      },
+      {
+        "type": "punchIn",
+        "debut": 3.85,
+        "duree": 0.22,
+        "sujet": "modou",
+        "facteur": 1.6
+      },
+      {
+        "type": "gel",
+        "debut": 4.55,
+        "duree": 0.5
+      },
+      {
+        "type": "tremblement",
+        "debut": 5.3,
+        "duree": 0.7,
+        "amplitude": 0.006
+      },
+      {
+        "type": "recadrer",
+        "debut": 7.6,
+        "duree": 0.9,
+        "cadrage": {
+          "taille": "moyen",
+          "sujets": [
+            "modou"
+          ]
+        }
+      },
+      {
+        "type": "fondu",
+        "debut": 9.5,
+        "duree": 0.5,
+        "sens": "sortie"
+      }
     ],
     "sons": [
-      { "id": "whoosh-punch", "fichier": "synth:whoosh?duree=0.35", "debut": 3.9, "volume": 0.5, "type": "effet" },
-      { "id": "scratch-gel", "fichier": "synth:scratch", "debut": 4.6, "volume": 0.9, "type": "effet" },
-      { "id": "badumtss", "fichier": "synth:badumtss", "debut": 8.0, "volume": 0.7, "type": "effet" }
+      {
+        "id": "whoosh-punch",
+        "fichier": "synth:whoosh?duree=0.35",
+        "debut": 3.75,
+        "volume": 0.45,
+        "type": "effet"
+      },
+      {
+        "id": "scratch-gel",
+        "fichier": "synth:scratch",
+        "debut": 4.55,
+        "volume": 0.9,
+        "type": "effet"
+      },
+      {
+        "id": "badumtss",
+        "fichier": "synth:badumtss",
+        "debut": 7.9,
+        "volume": 0.7,
+        "type": "effet"
+      }
     ]
   }
 }

@@ -373,7 +373,11 @@ export interface CharacterRig {
   id: string;
   /** Nom lisible (« MODOU »…). */
   nom: string;
-  /** Image source du personnage (détourée, alpha). Chemin lu sur place, jamais copié dans le dépôt. */
+  /**
+   * Image source du personnage (détourée, alpha). Chemin lu sur place, jamais copié dans le dépôt. `largeur` et
+   * `hauteur` sont la taille LOGIQUE du dessin (repère des positions et des ancrages, en px) ; le fichier peut être
+   * une version affinée plus définie du même cadre (`outils/affiner`), les coordonnées de texture étant normalisées.
+   */
   image: { chemin: string; largeur: number; hauteur: number };
   /** Hauteur du personnage dans l'image (px), du sommet de la tête à la semelle. */
   hauteurPx: number;
@@ -940,6 +944,12 @@ export interface Projet {
   /** Plans, sans chevauchement, triés par début. */
   plans: Plan[];
   pistes: Pistes;
+  /**
+   * Corrections, pour ce projet, de l'ajustement `fit` du kit d'un décor (`mH`, `floor`, `cx` partiels), par
+   * identifiant de décor. Sert quand le `fit` du kit ne correspond pas à la perspective de la peinture (personnage
+   * trop grand ou trop petit à côté des figurants). Facultatif ; appliqué au chargement des décors.
+   */
+  decors?: Record<string, Partial<Pick<InfoDecor['fit'], 'mH' | 'floor' | 'cx'>>>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────

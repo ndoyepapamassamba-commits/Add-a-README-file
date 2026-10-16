@@ -97,3 +97,23 @@ export function chargerDecors(manifeste: string = MANIFESTE_DECORS_DEFAUT): {
   }
   return { decors, manquants };
 }
+
+/**
+ * Applique les corrections de `fit` d'un projet (`projet.decors`) aux décors chargés. Renvoie une nouvelle table
+ * (les décors corrigés sont copiés) et la liste des corrections appliquées, pour le rapport.
+ */
+export function appliquerCorrectionsDecors(
+  decors: Readonly<Record<string, InfoDecor>>,
+  corrections: Readonly<Record<string, Partial<Pick<InfoDecor['fit'], 'mH' | 'floor' | 'cx'>>>> | undefined,
+): { decors: Record<string, InfoDecor>; appliquees: string[] } {
+  const r: Record<string, InfoDecor> = { ...decors };
+  const appliquees: string[] = [];
+  for (const [id, c] of Object.entries(corrections ?? {})) {
+    const d = r[id];
+    if (!d) continue;
+    const fit = { ...d.fit, ...c };
+    r[id] = { ...d, fit };
+    appliquees.push(`${id} : fit ${JSON.stringify(d.fit)} → ${JSON.stringify(fit)}`);
+  }
+  return { decors: r, appliquees };
+}

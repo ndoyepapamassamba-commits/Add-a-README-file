@@ -119,7 +119,7 @@ describe('figurants', () => {
     for (const c of r.cellules) expect(c.amplitude).toBe(0);
   });
 
-  it('mouvement subtil (≤ 2 % de la hauteur d’une personne), nul hors des personnes, nul sans amplitude', () => {
+  it('mouvement vivant mais borné (≤ 6 % de la hauteur d’une personne), nul hors des personnes, nul sans amplitude', () => {
     const g = creerGrille(2, 64, 32, 0);
     const doux = flouBoite(masque, 1);
     const vie = vieAuxSommets(g, cellules, etiquettes, doux, L, H);
@@ -134,7 +134,7 @@ describe('figurants', () => {
       }
     }
     expect(max).toBeGreaterThan(0);
-    expect(max).toBeLessThan(0.02 * 0.4);
+    expect(max).toBeLessThan(0.06 * 0.4);
     deplacementsFigurants(g, vie, 1.3, 0, s);
     expect(Math.max(...s.map(Math.abs))).toBe(0);
   });

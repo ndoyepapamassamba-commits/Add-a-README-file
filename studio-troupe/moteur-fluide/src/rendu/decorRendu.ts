@@ -56,7 +56,7 @@ export const REGLAGES_RENDU_DECOR = Object.freeze({
   /** Rayon du flou des cartes de profondeur (px de la carte 512) : déformation douce, sans marches. */
   flouProfondeur: 2,
   /** Intensité des halos (additifs). */
-  halo: 0.3,
+  halo: 0.42,
   /** Rayon des halos, en rayons de tache, et rayon maximal (fraction de la hauteur de sortie). */
   rayonHalo: 2.8,
   rayonHaloMax: 0.035,

@@ -25,7 +25,7 @@ import { capturerVideo, ENCODAGE_DEFAUT, type FormatCapture, type ResultatCaptur
 import { OutilAbsent, verifierOutils, versionsOutils } from './export/processus';
 import { ecrireRapportVerification, verificationEnMarkdown, verifierVideo, type RapportVerification } from './export/verifier';
 import { formaterDuree, imageVersTemps, lireTimecode, nombreImages, timecode } from './noyau/temps';
-import { DOSSIER_SORTIES, MANIFESTE_DECORS_DEFAUT, RACINE_MOTEUR, chargerDecors } from './outils/kit';
+import { DOSSIER_SORTIES, MANIFESTE_DECORS_DEFAUT, RACINE_MOTEUR, appliquerCorrectionsDecors, chargerDecors } from './outils/kit';
 import { analyserPixels, plancheContact, portePixels } from './qa/pixels';
 import { porteProjet, qualiteEnMarkdown, type SeuilsQualite } from './qa/porte';
 import type { RapportQualite } from './qa/types';
@@ -429,7 +429,9 @@ async function executerRendu(o: Options): Promise<number> {
   let decors: Record<string, InfoDecor> = {};
   const manifeste = o.kit ?? MANIFESTE_DECORS_DEFAUT;
   if (existsSync(manifeste)) {
-    decors = chargerDecors(manifeste).decors;
+    const corrige = appliquerCorrectionsDecors(chargerDecors(manifeste).decors, projet.decors);
+    decors = corrige.decors;
+    for (const c of corrige.appliquees) console.log(`  correction du décor ${c}`);
     for (const p of projet.plans) if (!decors[p.decor]) avertir(`décor « ${p.decor} » absent du kit (plan ${p.id})`);
   } else avertir(`kit des décors introuvable (${manifeste})`);
   const dossiersRigs = o.rigs.length ? o.rigs : [join(RACINE_MOTEUR, 'assets-test'), resolve(RACINE_MOTEUR, '..', '.private', 'personnages')];

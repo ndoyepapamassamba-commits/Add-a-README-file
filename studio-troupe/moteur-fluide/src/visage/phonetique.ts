@@ -93,6 +93,13 @@ const LEXIQUE: Readonly<Record<string, string[]>> = {
   yako: ['j', 'a', 'k', 'o'],
   enjaillement: [AN, 'ʒ', 'a', 'j', 'm', AN],
   enjaillé: [AN, 'ʒ', 'a', 'j', 'e'],
+  // « Walaye ! » (je te jure) : /walaj/, toutes graphies courantes.
+  walay: ['w', 'a', 'l', 'a', 'j'],
+  walaye: ['w', 'a', 'l', 'a', 'j'],
+  wallay: ['w', 'a', 'l', 'a', 'j'],
+  wallaye: ['w', 'a', 'l', 'a', 'j'],
+  walaï: ['w', 'a', 'l', 'a', 'j'],
+  wallaï: ['w', 'a', 'l', 'a', 'j'],
 };
 
 /** Formes élidées (c', l', d', j', m', n', s', t', qu'). */

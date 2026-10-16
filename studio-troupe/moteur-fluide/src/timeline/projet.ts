@@ -85,6 +85,21 @@ export function validerProjet(entree: unknown): ResultatValidation {
     }
   }
 
+  if (p.decors !== undefined) {
+    if (!estObjet(p.decors)) err('decors', 'objet attendu (corrections du fit par décor)');
+    else
+      for (const [id, f] of Object.entries(p.decors)) {
+        if (!estObjet(f)) {
+          err(`decors.${id}`, 'objet attendu ({ mH, floor, cx })');
+          continue;
+        }
+        for (const [k, v] of Object.entries(f)) {
+          if (k !== 'mH' && k !== 'floor' && k !== 'cx') err(`decors.${id}.${k}`, 'réglage inconnu (mH, floor, cx)');
+          else if (!estNombre(v) || v <= 0 || (k === 'mH' && v > 100) || (k !== 'mH' && v > 2)) err(`decors.${id}.${k}`, 'nombre positif plausible attendu');
+        }
+      }
+  }
+
   const ids = new Set<string>();
   if (!Array.isArray(p.personnages)) err('personnages', 'tableau attendu');
   else {
