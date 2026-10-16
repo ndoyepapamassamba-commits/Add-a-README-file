@@ -22,7 +22,10 @@ M = {'moteur': 'echomimicv3-flash', 'debut': time.strftime('%Y-%m-%d %H:%M:%S'),
 
 def dit(*a):
     t = time.strftime('%H:%M:%S') + ' ' + ' '.join(str(x) for x in a); print(t, flush=True); JOURNAL.write(t + '\n'); JOURNAL.flush()
-def sauve(): json.dump(M, open(f'{SORTIE}/mesures.json', 'w'), ensure_ascii=False, indent=1)
+VERROU = threading.Lock()                                   # le guetteur de mémoire et le calcul écrivent les mesures tour à tour
+def sauve():
+    with VERROU: json.dump(M, open(f'{SORTIE}/mesures.tmp', 'w'), ensure_ascii=False, indent=1); os.replace(f'{SORTIE}/mesures.tmp', f'{SORTIE}/mesures.json')
+def ram_libre(): return round(int([l for l in open('/proc/meminfo') if l.startswith('MemAvailable')][0].split()[1]) / 2 ** 20, 2)
 def lance(cmd, **kw):
     dit('$', ' '.join(cmd)); r = subprocess.run(cmd, capture_output=True, text=True, **kw)
     if r.returncode: dit('  code', r.returncode, (r.stdout + r.stderr)[-2000:])
@@ -34,8 +37,10 @@ def surveille():
         try:
             u = subprocess.run(['nvidia-smi', '--query-gpu=memory.used', '--format=csv,noheader,nounits'], capture_output=True, text=True).stdout.split()
             if u: M['vram_max_mio'] = max([M['vram_max_mio']] + [int(x) for x in u])
-            libre = int([l for l in open('/proc/meminfo') if l.startswith('MemAvailable')][0].split()[1]) / 2 ** 20
-            M['ram_min_libre_go'] = round(libre if M['ram_min_libre_go'] is None else min(M['ram_min_libre_go'], libre), 2)
+        except Exception: pass
+        try:
+            libre = ram_libre(); M['ram_min_libre_go'] = libre if M['ram_min_libre_go'] is None else min(M['ram_min_libre_go'], libre)
+            sauve()
         except Exception: pass
         time.sleep(5)
 
@@ -105,7 +110,7 @@ except Exception: tok = AutoTokenizer.from_pretrained("google/umt5-xxl")
 out = []
 with torch.no_grad():
     for p in (texte, neg):
-        t = tok([p], padding="max_length", max_length=512, truncation=True, add_special_tokens=True, return_tensors="pt")
+        t = tok([p], max_length=512, truncation=True, add_special_tokens=True, return_tensors="pt")   # sans bourrage : seuls les vrais jetons sont calculés
         n = int(t.attention_mask.gt(0).sum())
         e = m(t.input_ids, attention_mask=t.attention_mask)[0][0, :n].float()
         print("vecteurs", tuple(e.shape), "fini" if torch.isfinite(e).all() else "NON FINI", flush=True)
@@ -167,14 +172,32 @@ def tokeniseur():
     try: return AutoTokenizer.from_pretrained(f'{BASE}/google/umt5-xxl')
     except Exception: return AutoTokenizer.from_pretrained('google/umt5-xxl')
 
+def clip_econome(chemin, dt, appareil='cuda'):
+    """CLIP (4,8 Go en fp32) construit SANS poids (appareil « meta »), rempli en lecture directe du disque (mmap) puis envoyé
+    en demi-précision sur la carte : la mémoire vive de Colab ne porte jamais le modèle en double (cause de l'arrêt du 16/10)."""
+    import src.wan_image_encoder as wie
+    vrai = wie.clip_xlm_roberta_vit_h_14
+    wie.clip_xlm_roberta_vit_h_14 = lambda **kw: vrai(**kw, device='meta')
+    try: m = CLIPModel()
+    finally: wie.clip_xlm_roberta_vit_h_14 = vrai
+    try: sd = torch.load(chemin, map_location='cpu', mmap=True, weights_only=True)
+    except Exception: sd = torch.load(chemin, map_location='cpu', weights_only=False)
+    m.load_state_dict({'model.' + k: v for k, v in sd.items()}, strict=True, assign=True); del sd
+    reste = [n for n, x in list(m.named_parameters()) + list(m.named_buffers()) if x.is_meta]
+    if reste: raise SystemExit(f'CLIP : {len(reste)} tenseurs sans poids ({reste[:3]})')
+    return m.to(appareil, dt).eval()
+
 def charge(dt):
     t0 = time.time(); cfg = OmegaConf.load(f'{CODE}/config/config.yaml')
     tr = WanTransformer.from_pretrained(os.path.join(BASE, cfg['transformer_additional_kwargs'].get('transformer_subpath', 'transformer')),
                                         transformer_additional_kwargs=OmegaConf.to_container(cfg['transformer_additional_kwargs']), low_cpu_mem_usage=True, torch_dtype=dt)
-    sd = load_file(FLASH); sd = sd.get('state_dict', sd); m, u = tr.load_state_dict(sd, strict=False); del sd; gc.collect()
-    dit(f'poids Flash : {len(m)} clés manquantes, {len(u)} inattendues'); tr = tr.to('cuda', dt)
+    tr = tr.to('cuda', dt); gc.collect(); dit(f'transformeur sur la carte (mémoire vive libre {ram_libre()} Go)')
+    sd = load_file(FLASH, device='cuda'); sd = sd.get('state_dict', sd); m, u = tr.load_state_dict(sd, strict=False); del sd; torch.cuda.empty_cache()
+    dit(f'poids Flash : {len(m)} clés manquantes, {len(u)} inattendues (chargés directement sur la carte)')
     vae = AutoencoderKLWan.from_pretrained(os.path.join(BASE, cfg['vae_kwargs'].get('vae_subpath', 'vae')), additional_kwargs=OmegaConf.to_container(cfg['vae_kwargs'])).to('cuda', dt)
-    clip = CLIPModel.from_pretrained(os.path.join(BASE, cfg['image_encoder_kwargs'].get('image_encoder_subpath', 'image_encoder'))).to(dt).eval().to('cuda'); gc.collect()
+    dit(f'VAE sur la carte (mémoire vive libre {ram_libre()} Go)')
+    clip = clip_econome(os.path.join(BASE, cfg['image_encoder_kwargs'].get('image_encoder_subpath', 'image_encoder')), dt); gc.collect()
+    dit(f'CLIP sur la carte (mémoire vive libre {ram_libre()} Go)')
     sk = OmegaConf.to_container(cfg['scheduler_kwargs']); sk['shift'] = 1
     pe, ne = torch.load(f'{R}/texte.pt'); tok = tokeniseur()
     pipe = WanFunInpaintAudioPipeline(transformer=tr, vae=vae, tokenizer=tok, text_encoder=TexteFixe(dt, tok, {TEXTE: pe, NEG: ne}), scheduler=FlowUniPCMultistepScheduler(**filter_kwargs(FlowUniPCMultistepScheduler, sk)), clip_image_encoder=clip)
