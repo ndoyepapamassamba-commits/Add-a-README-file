@@ -17,7 +17,9 @@
  * 4. **Harmonique** : dans chaque composante libre, chaque poids résout `L·w = 0` (laplacien cotangent à poids
  *    positifs) avec les sommets fixés comme conditions aux limites. Principe du maximum : `0 ≤ w ≤ 1`, `Σ w = 1`.
  *    On garde les 4 plus forts et on renormalise.
- * 5. **Centres de rotation** (Le & Hodgins 2016) pour les sommets à plusieurs influences :
+ * 5. **Centres de rotation** pour les sommets à plusieurs influences. Paire parent/enfant : l'articulation (le sommet
+ *    tourne autour du coude de l'angle mélangé, contour extérieur en arc exact). Sinon, centre optimisé
+ *    (Le & Hodgins 2016) :
  *    `p* = Σ_t s(w_p, w_t)·A_t·c_t / Σ_t s(w_p, w_t)·A_t`, avec
  *    `s = Σ_{j≠k} w_pj·w_pk·w_tj·w_tk·exp(−(w_pj·w_tk − w_pk·w_tj)²/σ²)`, σ = 0,1, sommé seulement sur les triangles
  *    qui partagent au moins deux os avec le sommet.
@@ -573,6 +575,19 @@ export function calculerPoids(brut: MaillageBrut, squelette: Squelette, options:
     const wp = poidsDe(v);
     if (wp.size < 2) continue;
     const os = [...wp.keys()].sort((p, q) => p - q);
+    if (os.length === 2) {
+      // Paire parent/enfant (coude, genou, poignet, cou…) : le centre est l'articulation elle-même. Les deux os
+      // l'envoient au même point, si bien que le sommet tourne autour du coude de l'angle mélangé : le contour
+      // extérieur reste un arc exact (rayon conservé à 100 %).
+      const [a, b] = os as [number, number];
+      const enfant = idx.parents[b] === a ? b : idx.parents[a] === b ? a : -1;
+      if (enfant >= 0) {
+        centres[2 * v] = squelette.os[enfant]!.pivot.x;
+        centres[2 * v + 1] = squelette.os[enfant]!.pivot.y;
+        sommetsCor++;
+        continue;
+      }
+    }
     let num = 0;
     let numX = 0;
     let numY = 0;

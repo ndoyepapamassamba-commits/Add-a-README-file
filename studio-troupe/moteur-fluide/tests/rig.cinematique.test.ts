@@ -137,7 +137,8 @@ describe('cinématique inverse à deux os', () => {
       precedent = a;
     }
     expect((sautMax * 180) / Math.PI).toBeLessThan(0.5);
-    expect(distanceDouce(1000, L, 0.05)).toBeLessThan(L);
+    expect(distanceDouce(310, L, 0.05)).toBeLessThan(L);
+    expect(distanceDouce(310, L, 0.05)).toBeGreaterThan(0.95 * L);
     expect(distanceDouce(100, L, 0.05)).toBe(100);
   });
 
