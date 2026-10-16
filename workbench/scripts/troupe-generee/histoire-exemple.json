@@ -1,0 +1,193 @@
+{
+ "titre": "Business en famille",
+ "duree_cible_s": 60,
+ "reference": "format de la vidéo la plus vue de la chaîne (plusieurs sketchs, cartes émoji entre eux) ; rythme mesuré sur 12 vidéos : ~7 s par blague, ~3 répliques par blague, 0,3 s de silence avant la chute, 13,7 répliques par minute",
+ "sketchs": [
+  {
+   "id": "cachette",
+   "titre": "Les dix mille ont pris ma route",
+   "lieu": "Cour",
+   "image": "cour",
+   "pourquoi": "seul lieu commun aux trois fiches (Baye : Salon, Cour, Cérémonie, Village ; Maman Nounou : Marché, Salon, Cour, Cérémonie ; Petit Mamadou : Cour, École, Salon, Marché), et l'histoire parle d'argent caché à la maison",
+   "acteurs": [
+    "BAYE NDIAYE",
+    "MAMAN NOUNOU",
+    "PETIT MAMADOU"
+   ],
+   "repliques": [
+    {
+     "qui": "MAMAN NOUNOU",
+     "texte": "Baye ! Mes dix mille du marché ont pris quelle route ?",
+     "jeu": "accuse",
+     "role": "accroche"
+    },
+    {
+     "qui": "BAYE NDIAYE",
+     "texte": "Quel argent ? Je ne connais même plus sa couleur !",
+     "jeu": "innocent",
+     "role": "marche 1 : mauvaise foi"
+    },
+    {
+     "qui": "PETIT MAMADOU",
+     "texte": "Papi, ta sandale gauche fait crac-crac quand tu marches.",
+     "jeu": "malice",
+     "role": "le témoin accuse (preuve visible : les sandales)"
+    },
+    {
+     "qui": "BAYE NDIAYE",
+     "texte": "Mamadou ! On avait dit cinq cents pour ta bouche !",
+     "jeu": "panique",
+     "role": "aveu involontaire"
+    },
+    {
+     "qui": "MAMAN NOUNOU",
+     "texte": "Cinq cents ? Moi, je paie mille. Parle, mon fils.",
+     "jeu": "marchande",
+     "role": "marche 2 : surenchère"
+    },
+    {
+     "qui": "PETIT MAMADOU",
+     "texte": "Sandale gauche, Mamie. Mais elle est vide.",
+     "jeu": "malice",
+     "role": "contre-pied"
+    },
+    {
+     "qui": "BAYE NDIAYE",
+     "texte": "Vide ?!",
+     "jeu": "choc",
+     "role": "réaction"
+    },
+    {
+     "qui": "PETIT MAMADOU",
+     "texte": "Les dix mille ont pris ma route.",
+     "jeu": "malice",
+     "chute": true,
+     "role": "chute : rappel de l'accroche retourné"
+    },
+    {
+     "qui": "MAMAN NOUNOU",
+     "texte": "Petit voleur ! Rends aussi mes mille !",
+     "jeu": "choc",
+     "role": "bouton : le prix revient contre elle"
+    }
+   ]
+  },
+  {
+   "id": "addition",
+   "titre": "L'argent dort dehors",
+   "lieu": "Maquis",
+   "image": "maquis",
+   "pourquoi": "lieu commun aux deux fiches (Koffi : Maquis, Cérémonie, Bureau ; Coumba : Salon de coiffure, Maquis, Cérémonie, Salon) ; le bluff de Koffi se démasque à l'addition",
+   "acteurs": [
+    "KOFFI",
+    "COUMBA"
+   ],
+   "repliques": [
+    {
+     "qui": "KOFFI",
+     "texte": "Commande tout, ma belle. Chez moi, l'argent dort dehors.",
+     "jeu": "frime",
+     "role": "accroche : énormité"
+    },
+    {
+     "qui": "COUMBA",
+     "texte": "Alors : poulet braisé, attiéké, alloco… et deux à emporter.",
+     "jeu": "malice",
+     "role": "marche : elle escalade la commande"
+    },
+    {
+     "qui": "KOFFI",
+     "texte": "Trente-cinq mille ?! Le poulet a fait des études ?",
+     "jeu": "panique",
+     "role": "réaction drôle à l'addition"
+    },
+    {
+     "qui": "COUMBA",
+     "texte": "Tu as dit que l'argent dort dehors.",
+     "jeu": "malice",
+     "role": "rappel"
+    },
+    {
+     "qui": "KOFFI",
+     "texte": "Oui… et ce soir, il ne rentre pas.",
+     "jeu": "camera",
+     "chute": true,
+     "role": "chute : rappel retourné"
+    },
+    {
+     "qui": "COUMBA",
+     "texte": "Ha ha ! C'était un test. Tu as échoué.",
+     "jeu": "rire",
+     "role": "rire court (1,5–2,5 s, mesure Ladjagaï/Afrikatoon) + bouton"
+    }
+   ]
+  },
+  {
+   "id": "poulet",
+   "titre": "Le poulet a payé le loyer",
+   "lieu": "Cour",
+   "image": "chambre",
+   "pourquoi": "Modou loue une chambre au fond de la cour des Ndiaye et Tantie Awa tient la concession (lieux communs : Cour, Marché) ; la preuve est sur son tee-shirt",
+   "acteurs": [
+    "TANTIE AWA",
+    "MODOU"
+   ],
+   "repliques": [
+    {
+     "qui": "TANTIE AWA",
+     "texte": "Modou ! J'avais sept poulets ce matin. J'en compte six.",
+     "jeu": "accuse",
+     "role": "accroche"
+    },
+    {
+     "qui": "MODOU",
+     "texte": "Le septième est peut-être parti à l'école, Tantie ?",
+     "jeu": "innocent",
+     "role": "excuse 1"
+    },
+    {
+     "qui": "TANTIE AWA",
+     "texte": "Regarde-moi dans les yeux. Et ces plumes sur ton tee-shirt ?",
+     "jeu": "soupcon",
+     "role": "preuve visible"
+    },
+    {
+     "qui": "MODOU",
+     "texte": "C'est la mode, Tantie ! À Paris, tout le monde porte ça !",
+     "jeu": "frime",
+     "role": "excuse 2, plus grosse"
+    },
+    {
+     "qui": "TANTIE AWA",
+     "texte": "Et la marmite qui sent le poulet derrière ta porte ?",
+     "jeu": "soupcon",
+     "role": "preuve 2"
+    },
+    {
+     "qui": "MODOU",
+     "texte": "Tantie… il est venu payer mon loyer !",
+     "jeu": "panique",
+     "chute": true,
+     "role": "chute : règle absurde inventée sur-le-champ (mécanique Ladjagaï), liée à son défaut (loyer en retard)"
+    },
+    {
+     "qui": "TANTIE AWA",
+     "texte": "Ehhh Dieu ! Dans cette maison ?!",
+     "jeu": "choc",
+     "role": "réaction-signature de Tantie Awa"
+    }
+   ]
+  }
+ ],
+ "mots_chute": [
+  "ROUTE",
+  "VIDE",
+  "MILLE",
+  "DEHORS",
+  "RENTRE",
+  "ÉCHOUÉ",
+  "MARMITE",
+  "DIEU"
+ ],
+ "ecriture": "Répliques ORIGINALES écrites selon la bible comique mesurée sur les TikTok de l'utilisateur (server/jev/studio/tiktokComedy.ts) : accroche = conflit dès la 1re réplique, un seul moteur par sketch, escalade en 3 marches, preuve visible niée (ironie dramatique), contre-pied, chute ≤ 8 mots qui RAPPELLE l'accroche en la retournant, réaction après chaque punch, français d'Abidjan dosé. Aucune réplique reprise d'une vidéo existante. Genre Ladjagaï (mesuré le 16/10) : transaction qui monte en 3 temps, chute calme du gagnant = titre du sketch, chute courte (~1,2 s), gros plan de réaction tenu, rires courts. Genre Afrikatoon : un retournement verbal par sketch."
+}
