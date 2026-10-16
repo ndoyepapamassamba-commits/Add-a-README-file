@@ -267,7 +267,9 @@ export function exclusionsCameraDuProjet(projet: Projet): ExclusionCamera[] {
   const r: ExclusionCamera[] = [];
   for (const c of projet.pistes.camera) {
     if (c.type === 'file') r.push({ debut: c.debut, fin: c.debut + c.duree, type: 'deplacement' });
-    else if (c.type === 'punchIn') r.push({ debut: c.debut, fin: c.debut + c.duree, type: 'zoom' });
+    // Punch-in : zoom éclair ANCRÉ SUR LE VISAGE — le visage reste fixe à l'écran, donc le centre du cadre se déplace
+    // forcément pendant le zoom ; ce n'est pas un panoramique. Fenêtre élargie au dépassement du ressort (≈ 2 × durée).
+    else if (c.type === 'punchIn') r.push({ debut: c.debut, fin: c.debut + 2 * c.duree, type: 'tout' });
     else if (c.type === 'gel') r.push({ debut: c.debut, fin: c.debut + c.duree, type: 'zoom' });
   }
   return r;

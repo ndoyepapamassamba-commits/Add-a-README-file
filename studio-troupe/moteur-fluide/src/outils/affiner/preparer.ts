@@ -77,6 +77,61 @@ export function zonesFrontieres(parties: ImageRGBA, os: readonly string[], pas =
   return zones;
 }
 
+/**
+ * Épaules en fondu : la région d'un os d'épaule (épaule → bras) suit l'épaule près du bras, puis rend son poids
+ * progressivement au torse en allant vers le cou. Sans cela, monter l'épaule (haussement, posture d'émotion)
+ * décale d'un bloc toute la région étiquetée « épaule » et le haut du t-shirt se découpe en marches d'escalier.
+ * Les sommets modifiés passent en mélange linéaire (centre de rotation `NaN`). Renvoie le nombre de sommets adoucis.
+ */
+export function adoucirEpaules(rig: CharacterRig): number {
+  const os = rig.squelette.os;
+  const index = new Map(os.map((o, i) => [o.nom, i]));
+  const m = rig.maillage;
+  let n = 0;
+  for (const c of ['G', 'D']) {
+    const ie = index.get('epaule' + c);
+    const bras = os[index.get('bras' + c) ?? -1];
+    if (ie === undefined || !bras) continue;
+    const parent = os[ie]!.parent;
+    const it = parent ? index.get(parent) : undefined;
+    if (it === undefined) continue;
+    const L = Math.max(8, os[ie]!.longueur);
+    for (let v = 0; v < m.positions.length / 2; v++) {
+      let ke = -1;
+      let kt = -1;
+      let libre = -1;
+      for (let k = 0; k < 4; k++) {
+        const j = m.influences[4 * v + k]!;
+        if (j === ie) ke = k;
+        else if (j === it) kt = k;
+        else if (j < 0 && libre < 0) libre = k;
+      }
+      if (ke < 0) continue;
+      const d = Math.hypot(m.positions[2 * v]! - bras.pivot.x, m.positions[2 * v + 1]! - bras.pivot.y);
+      const u = Math.min(1, Math.max(0, (1.4 * L - d) / L));
+      const garde = u * u * (3 - 2 * u);
+      if (garde >= 0.999) continue;
+      const w = m.poids[4 * v + ke]!;
+      const rendu = w * (1 - garde);
+      if (kt < 0 && libre < 0) {
+        // Aucune case pour le torse : le poids de l'épaule passe en entier au plus proche des deux.
+        if (garde < 0.5) m.influences[4 * v + ke] = it;
+      } else {
+        const cible = kt >= 0 ? kt : libre;
+        m.influences[4 * v + cible] = it;
+        m.poids[4 * v + cible] = (kt >= 0 ? m.poids[4 * v + cible]! : 0) + rendu;
+        m.poids[4 * v + ke] = w - rendu;
+      }
+      if (m.centresRotation) {
+        m.centresRotation[2 * v] = Number.NaN;
+        m.centresRotation[2 * v + 1] = Number.NaN;
+      }
+      n++;
+    }
+  }
+  return n;
+}
+
 /** Ajoute le calque « dessous » : atlas [image | dessous] et groupe rigide sur l'os du corps, derrière tout. */
 export function ajouterDessous(rig: CharacterRig, image: ImageRGBA, dessous: ImageRGBA, zone: ImageRGBA, zoneOs: ImageRGBA, osParties: readonly string[]): { rig: CharacterRig; atlas: ImageRGBA } {
   const W = image.largeur;
@@ -202,6 +257,8 @@ Options :
   --modele <fichier.pth>        RealESRGAN_x4plus_anime_6B.pth, ou variable MOTEUR_ESRGAN
   --pas-frontiere <px>          pas du maillage aux frontières des parties (défaut 1,2)
   --sans-dessous                ne pas ajouter le calque « dessous »
+  --sans-fondu-epaules          garder les épaules rigides (par défaut, leur poids revient au torse vers le cou)
+  --bande-min <px>              largeur minimale des bandes de mélange des poids aux articulations (défaut du rig : 6)
   --fils <n>                    fils de calcul (défaut 2)
 `;
 
@@ -217,6 +274,8 @@ async function principal(argv: string[]): Promise<number> {
       modele: { type: 'string' },
       'pas-frontiere': { type: 'string' },
       'sans-dessous': { type: 'boolean' },
+      'bande-min': { type: 'string' },
+      'sans-fondu-epaules': { type: 'boolean' },
       fils: { type: 'string' },
       aide: { type: 'boolean', short: 'h' },
     },
@@ -234,9 +293,15 @@ async function principal(argv: string[]): Promise<number> {
   const parties = source.parties ? lirePNG(resolve(dossier, source.parties.image)) : undefined;
   const pas = Number(values['pas-frontiere'] ?? 1.2);
   const zonesF = parties && source.parties ? zonesFrontieres(parties, source.parties.os, pas) : [];
-  const enrichie: SourceRig = { ...source, maillage: { ...(source.maillage ?? {}), zones: [...(source.maillage?.zones ?? []), ...zonesF] } };
+  const bandeMin = values['bande-min'] !== undefined ? Number(values['bande-min']) : undefined;
+  const enrichie: SourceRig = {
+    ...source,
+    maillage: { ...(source.maillage ?? {}), zones: [...(source.maillage?.zones ?? []), ...zonesF] },
+    ...(bandeMin !== undefined ? { poids: { ...(source.poids ?? {}), bandeMin } } : {}),
+  };
   const { rig: base, rapport } = construireRig(enrichie, image, { cheminImage, ...(parties ? { parties } : {}) });
   console.log(`Maillage : ${rapport.maillage.sommets} sommets, ${rapport.maillage.triangles} triangles (${zonesF.length} zones de frontière au pas ${pas} px)`);
+  if (!values['sans-fondu-epaules']) console.log(`Épaules en fondu : ${adoucirEpaules(base)} sommets`);
   let rig = base;
   let texture: ImageRGBA = image;
   const fichiersDessous = ['rgba_dessous.png', 'dessous_zone.png', 'dessous_zone_os.png'].map((f) => join(dossier, f));

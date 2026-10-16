@@ -579,7 +579,7 @@ const hausserEpaules: Recette = {
     // manche du cou ni écarteler les bras d’un dessin unique). Épaules ≤ 5 % de la hauteur (≈ 6,5 % au dépassement) ; coudes ≤ 30°, et
     // ≤ 21° pour un dessin de trois quarts (le bras du fond se cache derrière le corps).
     const lev = Math.min(0.055, (e.m.orientation === 0 ? 0.05 : 0.028) / Math.max(1e-6, e.g));
-    const ecart = Math.min(26, (e.m.orientation === 0 ? 30 : 21) / Math.max(1e-6, e.g));
+    const ecart = Math.min(26, (e.m.orientation === 0 ? 30 : 14) / Math.max(1e-6, e.g));
     // Trois quarts : l'épaule monte moins (la manche ne se décolle pas du torse), l'avant-bras se raccourcit moins
     // (le raccourci « vers le spectateur » est un effet de face) et le poignet plie moins (la main garde sa forme).
     const troisQuarts = e.m.orientation !== 0;
