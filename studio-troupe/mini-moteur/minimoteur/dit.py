@@ -19,14 +19,32 @@ Chemin d'un pas de débruitage :
   Le produit q·k ne dépend alors que de la position RELATIVE des jetons.
 * Modulation adaLN « partagée » façon Wan : un seul MLP prédit 6 vecteurs
   (shift, scale, gate) x 2 à partir de t, chaque bloc y ajoute sa propre table
-  apprise. Les gates et la couche finale sont initialisés à ZÉRO : au départ
-  chaque bloc est l'identité et la sortie vaut 0 (« adaLN-Zero » du DiT).
-* Image->vidéo comme Wan I2V : en entrée, on concatène au latent bruité le
-  latent de la 1re image (les autres images latentes à 0) et un masque
-  (1 = image latente fournie). Texte->vidéo = latent de condition nul + masque 0.
-  Un même modèle fait donc T2V et I2V (comme Wan2.2-TI2V-5B, Seedance).
-  Différences : Wan met 4 canaux de masque (pas temporel du VAE) et ajoute des
-  caractéristiques CLIP de l'image par cross-attention ; ici 1 canal, pas de CLIP.
+  apprise. La projection partagée de t et la tête finale sont initialisées à
+  ZÉRO (idée « adaLN-Zero » du DiT) : au départ les gates valent 0, donc les
+  branches self-attention et MLP ne contribuent pas, et la sortie vaut 0 grâce
+  à la tête nulle. Les blocs ne sont PAS l'identité pour autant : la
+  cross-attention, non modulée (pas de gate, comme dans Wan), est active dès
+  le départ. (Wan n'est pas non plus en adaLN-Zero strict : sa table par bloc
+  part d'un tirage aléatoire ; parmi les poids, seul celui de sa tête part de zéro.)
+* Image->vidéo par CONCATÉNATION DE CANAUX, le mécanisme de Wan 2.1 I2V et de
+  Wan2.2-I2V-A14B : en entrée, on concatène au latent bruité un latent de
+  condition et un masque (1 = image latente fournie). Texte->vidéo = latent de
+  condition nul + masque 0. Un même modèle fait donc T2V et I2V.
+  Écarts avec I2V-A14B (16 bruités + 4 masque + 16 condition = 36 canaux) :
+    - masque sur 1 canal ici, 4 chez Wan (pas temporel du VAE) ;
+    - condition : ici, latent de l'image 0 seule et images latentes 1..4 mises
+      à ZÉRO ; chez Wan, VAE(image + images noires), dont les latents 1..4 ne
+      sont pas nuls ;
+    - pas de CLIP (Wan 2.1 I2V en ajoute par cross-attention ; Wan 2.2 non).
+  ATTENTION : Wan2.2-TI2V-5B (lui aussi T2V + I2V dans un seul modèle) ne
+  concatène RIEN (48 canaux en entrée = 48 en sortie). Il REMPLACE la 1re image
+  latente du bruit par celle de l'image, avant la boucle et après chaque pas,
+  et donne aux jetons de cette image un pas de temps t = 0 (t par jeton). Pour
+  imiter TI2V-5B, il faudrait ici : entrée à C canaux, t de forme (B, N) dans
+  ``DiT.forward`` et ré-injection de l'image 0 dans ``euler_sample``.
+* Normalisation q/k (qk_norm) : RMSNorm tête par tête ici ; Wan normalise sur
+  toute la dimension (toutes têtes ensemble, « rms_norm_across_heads »), avant
+  le découpage en têtes. Statistiques différentes : écart assumé.
 * Sortie : la VITESSE v = bruit - x0 (voir ``flow.py``).
 """
 
@@ -95,7 +113,8 @@ class SelfAttention(nn.Module):
         super().__init__()
         self.heads, self.head_dim = heads, dim // heads
         self.qkv = nn.Linear(dim, 3 * dim)
-        self.q_norm = nn.RMSNorm(self.head_dim, eps=1e-6)  # qk_norm=True comme Wan
+        # qk_norm par tête (Wan : RMSNorm sur toute la dimension, avant le découpage en têtes)
+        self.q_norm = nn.RMSNorm(self.head_dim, eps=1e-6)
         self.k_norm = nn.RMSNorm(self.head_dim, eps=1e-6)
         self.out = nn.Linear(dim, dim)
 
@@ -186,7 +205,8 @@ class DiT(nn.Module):
         nn.init.zeros_(self.patch_embed.bias)
         nn.init.normal_(self.time_embed[0].weight, std=0.02)
         nn.init.normal_(self.time_embed[2].weight, std=0.02)
-        # adaLN-Zero : modulation et tête finale à zéro -> sortie nulle au départ.
+        # Projection de t et tête finale à zéro -> gates nuls et sortie nulle au départ
+        # (la cross-attention, sans gate, reste active).
         nn.init.zeros_(self.time_proj[1].weight)
         nn.init.zeros_(self.time_proj[1].bias)
         nn.init.zeros_(self.head.weight)
@@ -232,6 +252,8 @@ def first_frame_condition(first_latent: torch.Tensor, n_latent_frames: int) -> t
     Grâce au VAE causal, le latent 0 d'un clip ne dépend que de l'image 0 :
     encoder l'image seule donne exactement ce latent. Les autres images
     latentes de la condition sont mises à zéro, et le masque vaut 1 en t = 0.
+    (Wan I2V encode plutôt « image + images noires » : ses latents 1..4 de
+    condition ne sont pas nuls.)
     """
     B, C, _, h, w = first_latent.shape
     cond = first_latent.new_zeros(B, C, n_latent_frames, h, w)

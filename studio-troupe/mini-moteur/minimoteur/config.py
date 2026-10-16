@@ -19,6 +19,7 @@ configuration est enregistrée dans chaque checkpoint pour pouvoir le recharger.
 
 from __future__ import annotations
 
+import os
 from dataclasses import MISSING, asdict, dataclass, field, fields, is_dataclass
 from pathlib import Path
 from typing import Any
@@ -28,6 +29,11 @@ PACKAGE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = PACKAGE_DIR.parent
 RUNS_DIR = PROJECT_DIR / "runs"
 TROUPE_JSON = PROJECT_DIR.parent / "troupe" / "troupe.json"
+
+# Fils de calcul CPU par défaut de toutes les commandes (et des tests). 4 sur une machine libre ;
+# si un autre calcul lourd tourne déjà, « export MINIMOTEUR_THREADS=1 » (ou 2) évite que les fils
+# se marchent dessus (un pas peut sinon devenir 50 fois plus lent).
+DEFAULT_THREADS = int(os.environ.get("MINIMOTEUR_THREADS", "4"))
 
 
 @dataclass
@@ -119,15 +125,17 @@ class TrainConfig:
 
     vae_steps: int = 1600
     vae_batch: int = 8
-    vae_lr: float = 3e-4
-    dit_steps: int = 3000
+    vae_lr: float = 1e-3
+    vae_fg_weight: float = 4.0  # poids des pixels « personnage » dans la perte du VAE (1 = uniforme)
+    dit_steps: int = 3200
     dit_batch: int = 32
-    dit_lr: float = 3e-4
+    dit_lr: float = 5e-4
     weight_decay: float = 0.01
     warmup: int = 100
     ema_decay: float = 0.999
     grad_clip: float = 1.0
-    threads: int = 4
+    threads: int = DEFAULT_THREADS
+    bf16: bool = True  # DiT : calcul en bfloat16 (autocast CPU, ~13 % plus rapide mesuré ici avec AMX), poids en float32
     log_every: int = 25
     save_every: int = 500
 

@@ -3,3 +3,9 @@ runs/
 __pycache__/
 .pytest_cache/
 *.pyc
+# environnement Python créé par le README (« python -m venv .venv »)
+.venv/
+# clips écrits à la racine du paquet par les commandes du README (les exemples suivis sont dans exemples/)
+/*.mp4
+/*.gif
+/*_image0.png

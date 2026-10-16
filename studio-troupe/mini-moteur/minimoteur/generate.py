@@ -24,9 +24,9 @@ from pathlib import Path
 
 import torch
 
-from .config import RUNS_DIR
+from .config import DEFAULT_THREADS, RUNS_DIR
 from .pipeline import generate, load_moteur
-from .troupe_data import render_first_frame
+from .troupe_data import canonical_prompt, render_first_frame
 from .video_io import load_image, save_png, write_gif, write_mp4
 
 
@@ -52,8 +52,28 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--scale", type=int, default=8, help="agrandissement au plus proche voisin (défaut 8)")
     p.add_argument("--fps", type=int, default=None, help="images par seconde (défaut : 8)")
     p.add_argument("--no-ema", action="store_true", help="utiliser les poids bruts plutôt que la moyenne EMA")
-    p.add_argument("--threads", type=int, default=4, help="fils de calcul CPU")
+    p.add_argument("--threads", type=int, default=DEFAULT_THREADS,
+                   help="fils de calcul CPU (défaut 4 ou $MINIMOTEUR_THREADS ; 1 ou 2 si la machine est déjà occupée)")
     return p
+
+
+def check_prompt(prompt: str, tokenizer) -> str:
+    """Ramène le prompt à la légende exacte du gabarit, ou prévient s'il en sort.
+
+    Le tokenizer ignore la casse mais pas les accents : sans ce contrôle,
+    « MODOU saute au Marche » serait lu avec le VERBE « marche » et sans décor.
+    """
+    canon = canonical_prompt(prompt)
+    if canon is not None:
+        if canon != prompt:
+            print(f"prompt normalisé : « {prompt} » -> « {canon} »")
+        return canon
+    unknown = [w for w in tokenizer.split(prompt) if tokenizer.encode(w) == [tokenizer.unk_id]]
+    print("attention : ce prompt ne suit pas le gabarit « NOM action décor » appris "
+          "(ex. « MODOU saute dans la Cour ») ; le résultat est imprévisible.", file=sys.stderr)
+    if unknown:
+        print(f"attention : mots inconnus du vocabulaire (ignorés -> <unk>) : {unknown}", file=sys.stderr)
+    return prompt
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -69,10 +89,8 @@ def main(argv: list[str] | None = None) -> int:
         first = render_first_frame(args.image_from, seed=args.image_seed, supersample=m.cfg.data.supersample)
         img_path = save_png(first, out.with_name(out.stem + "_image0.png"))
         print(f"1re image dessinée -> {img_path}")
-    unknown = [w for w in m.tokenizer.split(args.prompt) if m.tokenizer.encode(w) == [m.tokenizer.unk_id]]
-    if unknown:
-        print(f"attention : mots inconnus du vocabulaire (ignorés -> <unk>) : {unknown}", file=sys.stderr)
-    clip = generate(m, [args.prompt], None if first is None else first[None], steps=args.steps,
+    prompt = check_prompt(args.prompt, m.tokenizer)
+    clip = generate(m, [prompt], None if first is None else first[None], steps=args.steps,
                     cfg_scale=args.cfg, shift=args.shift, seed=args.seed)[0]
     fps = args.fps or m.cfg.clip.fps
     mp4 = write_mp4(clip, out, fps=fps, scale=args.scale)
@@ -81,7 +99,7 @@ def main(argv: list[str] | None = None) -> int:
         gif = write_gif(clip, Path(args.gif) if args.gif else out.with_suffix(".gif"), fps=fps, scale=args.scale)
         print(f"GIF   -> {gif}")
     mode = "image->vidéo" if first is not None else "texte->vidéo"
-    print(f"{mode} « {args.prompt} » : {args.steps} pas, CFG {args.cfg}, shift {args.shift}, graine {args.seed} "
+    print(f"{mode} « {prompt} » : {args.steps} pas, CFG {args.cfg}, shift {args.shift}, graine {args.seed} "
           f"({time.time() - t0:.1f} s)")
     return 0
 

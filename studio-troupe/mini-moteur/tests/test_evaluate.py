@@ -34,3 +34,20 @@ def test_markdown():
            "texte_video": {"vus": {"n": 1, "identite_ok": 1.0, "action_ok": 0.5, "decor_ok": 1.0, "tout_ok": 0.5}}}
     md = ev.to_markdown(res)
     assert "30.0 dB" in md and "texte→vidéo" in md and "50 %" in md
+
+
+def test_decor_vide_bruite_ne_valide_aucune_identite():
+    # Un décor sans personnage, avec quelques pixels « parasites » aux couleurs de la troupe (comme le bruit
+    # d'un VAE) : aucun personnage ne doit être reconnu, ni sur le clip ni image par image.
+    assert ev.classify_identity(np.zeros((0, 3), np.float32))[0] == ev.ABSENT
+    rng = np.random.default_rng(0)
+    _, cb = ev.codebook()
+    for decor in td.DECORS:
+        fond = (td.render_background(decor)[None] * 255 + 0.5).astype(np.uint8).repeat(17, 0)
+        for t in range(17):
+            ys, xs = rng.integers(0, 32, 7), rng.integers(0, 32, 7)
+            fond[t, ys, xs] = (cb[rng.integers(0, len(cb), 7)] * 255).astype(np.uint8)
+        for nom in td.PERSONNAGES:
+            r = ev.analyse_clip(fond, nom, "saute", decor)
+            assert not r["identite_ok"] and r["identite_vue"] == ev.ABSENT, (decor, nom)
+            assert r["persistance_identite"] == 0.0 and r["action_vue"] == ev.ABSENT

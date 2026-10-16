@@ -31,6 +31,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import unicodedata
 import warnings
 from dataclasses import dataclass
 from functools import lru_cache
@@ -236,8 +237,38 @@ def prompt_for(nom: str, action: str, decor: str) -> str:
     return f"{nom} {action} {DECOR_PHRASE[decor]}"
 
 
+def _plier(text: str) -> str:
+    """Forme de comparaison : minuscules, sans accents, apostrophes et espaces normalisés."""
+    t = unicodedata.normalize("NFKD", text.replace("’", "'")).encode("ascii", "ignore").decode().lower()
+    return " ".join(t.split())
+
+
+@lru_cache(maxsize=1)
+def _prompts_plies() -> dict[str, tuple[str, str, str]]:
+    """Forme pliée de chacune des 140 légendes -> (personnage, action, décor)."""
+    return {_plier(prompt_for(*tr)): tr for tr in all_triples()}
+
+
+def canonical_prompt(text: str) -> str | None:
+    """Légende exacte du gabarit correspondant à ``text`` sans tenir compte des accents, de la casse et des espaces.
+
+    « modou saute au MARCHE » -> « MODOU saute au Marché ». Renvoie None si le
+    texte n'est pas une des 140 légendes. Utile car le tokenizer, lui, est
+    sensible aux accents (« Marche » sans accent y est le verbe « marche »).
+    """
+    tr = _prompts_plies().get(_plier(text))
+    return None if tr is None else prompt_for(*tr)
+
+
 def parse_prompt(text: str) -> tuple[str, str, str]:
-    """Retrouve (personnage, action, décor) dans un prompt du vocabulaire fermé."""
+    """Retrouve (personnage, action, décor) dans un prompt du vocabulaire fermé.
+
+    Une légende du gabarit écrite sans accents ou dans une autre casse est
+    reconnue (comme dans ``generate.py``) ; sinon on cherche les mots tels quels.
+    """
+    tr = _prompts_plies().get(_plier(text))
+    if tr is not None:
+        return tr
     t = " ".join(text.lower().replace("’", "'").split())
     nom = next((n for n in sorted(PERSONNAGES, key=len, reverse=True) if n.lower() in t), None)
     action = next((a for a in sorted(ACTIONS, key=len, reverse=True) if a in t), None)

@@ -12,10 +12,11 @@ from minimoteur.vae import VideoVAE, psnr
 CFG = VAEConfig(channels=(8, 16, 16), latent_channels=8)
 
 
-@pytest.fixture
-def vae():
+@pytest.fixture(params=["groupnorm_image", "rms"])
+def vae(request):
+    """Les deux normalisations proposées doivent rester causales."""
     torch.manual_seed(0)
-    return VideoVAE(CFG).eval()
+    return VideoVAE(VAEConfig(channels=(8, 16, 16), latent_channels=8, norm=request.param)).eval()
 
 
 def test_formes_et_aller_retour(vae):
@@ -86,3 +87,22 @@ def test_le_vae_apprend():
         losses.append(loss.item())
     assert losses[-1] < 0.6 * losses[0]
     assert psnr(r.detach(), x).mean() > 12
+
+
+def test_perte_ponderee():
+    """Poids uniforme = perte non pondérée ; un poids sur une zone n'y compte que cette zone."""
+    torch.manual_seed(0)
+    v = VideoVAE(CFG)
+    x = torch.rand(2, 3, 5, 32, 32) * 2 - 1
+    r = torch.rand(2, 3, 5, 32, 32) * 2 - 1
+    mu, logvar = torch.zeros(2, 8, 2, 8, 8), torch.zeros(2, 8, 2, 8, 8)
+    base, _ = v.loss(x, r, mu, logvar)
+    uni, _ = v.loss(x, r, mu, logvar, torch.full((2, 1, 5, 32, 32), 3.0))
+    assert torch.allclose(base, uni, atol=1e-6)
+    w = torch.zeros(2, 1, 5, 32, 32)
+    w[..., :8, :8] = 1.0
+    r2 = r.clone()
+    r2[..., 8:, :] = 5.0  # erreur énorme HORS de la zone pondérée : ignorée
+    a, _ = v.loss(x, r, mu, logvar, w)
+    b, _ = v.loss(x, r2, mu, logvar, w)
+    assert torch.allclose(a, b, atol=1e-6)

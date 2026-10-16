@@ -19,9 +19,12 @@ le latent k ne dépend que des images <= 4k : la 1re image est compressée SEULE
 * une image fixe = une vidéo d'une image (encode d'un clip de longueur 1) ;
 * image->vidéo : le latent de la 1re image se calcule sans le reste du clip ;
 * on pourrait encoder/décoder des vidéos longues par morceaux (cache, streaming).
-Les normalisations sont des RMSNorm par position (sur les canaux) : une
-GroupNorm mélangerait les instants et casserait la causalité (Wan a fait le même
-remplacement).
+Normalisation : une GroupNorm 3D classique calcule ses statistiques sur tous
+les instants et casserait la causalité. Wan la remplace par une RMSNorm par
+position (option ``norm="rms"``). Par défaut on utilise une GroupNorm calculée
+image par image (``norm="groupnorm_image"``) : tout aussi causale, et nettement
+plus rapide à entraîner dans nos essais sur CPU (sur-apprentissage de 2 clips en
+300 pas : ~28 dB contre ~22 dB).
 
 Compression (mini-moteur vs vrais VAE)
 --------------------------------------
@@ -30,7 +33,9 @@ Compression (mini-moteur vs vrais VAE)
 * Wan 2.2     : 4x temps, 16x16 espace, 48 canaux (~64x, 4x32x32 avec la patchification)
 
 Choix de régularisation : VAE à KL faible (beta = 1e-4, perte L1 + MSE + beta.KL),
-comme Wan (L1 + KL 3e-6 + LPIPS + GAN, sans LPIPS ni GAN ici). Le latent n'est
+comme Wan (L1 + KL 3e-6 + LPIPS + GAN, sans LPIPS ni GAN ici). À l'entraînement, les pixels
+du personnage peuvent compter davantage (``weight``, x4 par défaut) : ils ne couvrent que 16 %
+de l'image mais portaient 75 % de l'erreur. Le latent n'est
 pas forcément centré-réduit : après l'entraînement, on mesure sur les données
 la moyenne et l'écart-type de chaque canal (``latent_mean`` / ``latent_std``,
 comme les listes ``mean``/``std`` du Wan-VAE) et ``encode()`` renvoie un latent
@@ -246,9 +251,20 @@ class VideoVAE(nn.Module):
         z = mu + torch.exp(0.5 * logvar) * torch.randn_like(mu)
         return self.decoder(z), mu, logvar
 
-    def loss(self, x: torch.Tensor, recon: torch.Tensor, mu: torch.Tensor, logvar: torch.Tensor):
-        l1 = (recon - x).abs().mean()
-        mse = (recon - x).pow(2).mean()
+    def loss(self, x: torch.Tensor, recon: torch.Tensor, mu: torch.Tensor, logvar: torch.Tensor,
+             weight: torch.Tensor | None = None):
+        """Perte L1 + MSE + beta.KL. ``weight`` (B, 1, T, H, W) optionnel pondère les pixels.
+
+        On s'en sert pour donner plus de poids aux pixels du PERSONNAGE (16 % de
+        l'image mais ~75 % de l'erreur) : moyenne pondérée, normalisée par le poids moyen.
+        """
+        err = recon - x
+        if weight is None:
+            l1, mse = err.abs().mean(), err.pow(2).mean()
+        else:
+            wsum = weight.expand_as(err).sum()
+            l1 = (weight * err.abs()).sum() / wsum
+            mse = (weight * err.pow(2)).sum() / wsum
         kl = 0.5 * (mu.pow(2) + logvar.exp() - 1.0 - logvar).mean()
         total = l1 + self.cfg.mse_weight * mse + self.cfg.kl_weight * kl
         return total, {"l1": l1.item(), "mse": mse.item(), "kl": kl.item()}

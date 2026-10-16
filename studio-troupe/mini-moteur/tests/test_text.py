@@ -40,3 +40,14 @@ def test_encodeur_formes_et_embedding_nul():
     c2, m2 = enc.encode_with_dropout(ids, mask, torch.tensor([True, False]))
     assert torch.allclose(c2[0], nctx[0]) and torch.equal(m2[0], nm[0])
     assert torch.allclose(c2[1], ctx[1]) and torch.equal(m2[1], mask[1])
+
+
+def test_generate_normalise_le_prompt(capsys):
+    from minimoteur.generate import check_prompt
+
+    tok = Tokenizer.default()
+    assert check_prompt("MODOU saute au Marche", tok) == "MODOU saute au Marché"
+    assert tok.encode(check_prompt("MODOU saute au Marche", tok))[-1] == tok.vocab.index("Marché")
+    assert check_prompt("MODOU danse à la plage", tok) == "MODOU danse à la plage"
+    err = capsys.readouterr().err
+    assert "gabarit" in err and "danse" in err

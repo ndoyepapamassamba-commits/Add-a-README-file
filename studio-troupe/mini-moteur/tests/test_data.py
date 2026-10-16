@@ -28,6 +28,18 @@ def test_legendes_et_articles():
     assert td.parse_prompt("petit mamadou MARCHE VERS LA DROITE au marché") == ("PETIT MAMADOU", "marche vers la droite", "Marché")
 
 
+def test_prompt_sans_accents():
+    # Le tokenizer distingue « marche » (verbe) et « Marché » (décor) : on ramène d'abord le prompt au gabarit.
+    assert td.canonical_prompt("MODOU saute au Marche") == "MODOU saute au Marché"
+    assert td.canonical_prompt("  modou saute   au MARCHE ") == "MODOU saute au Marché"
+    assert td.canonical_prompt("modou marche vers la droite au marche") == "MODOU marche vers la droite au Marché"
+    assert td.canonical_prompt("MODOU vole au Marché") is None
+    assert td.parse_prompt("MODOU saute au Marche") == ("MODOU", "saute", "Marché")
+    assert td.parse_prompt("MODOU marche vers la gauche dans la Cour") == ("MODOU", "marche vers la gauche", "Cour")
+    for tr in td.all_triples():
+        assert td.canonical_prompt(td.prompt_for(*tr)) == td.prompt_for(*tr)
+
+
 def test_clip_forme_et_determinisme():
     a = td.render_clip("COUMBA", "parle", "Salon", seed=3, supersample=2)
     b = td.render_clip("COUMBA", "parle", "Salon", seed=3, supersample=2)

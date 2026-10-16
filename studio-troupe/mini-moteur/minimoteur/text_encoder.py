@@ -12,11 +12,18 @@ phrases puis GELÉS : le DiT apprend à lire un « sens » déjà construit, ce 
 lui permet de comprendre des prompts jamais vus.
 
 Ici, impossible : un T5 ne tient ni dans le budget CPU ni dans un vocabulaire de
-25 mots. On entraîne donc un petit Transformer (2 couches) EN MÊME TEMPS que le
-DiT, sur un vocabulaire fermé. Conséquence : le mini-moteur ne comprend que
-les mots de la troupe (personnages, actions, décors) ; un mot inconnu devient
-``<unk>``. Quand on passera aux vrais poids (Wan 2.2), ce module sera remplacé
-par umT5 gelé, sans changer l'interface (embeddings + masque).
+26 mots (28 entrées avec ``<pad>`` et ``<unk>``). On entraîne donc un petit
+Transformer (2 couches) EN MÊME TEMPS que le DiT, sur un vocabulaire fermé.
+Conséquence : le mini-moteur ne comprend que les mots de la troupe
+(personnages, actions, décors) ; un mot inconnu devient ``<unk>``.
+
+Le tokenizer ignore la casse mais PAS les accents : « Marche » est le verbe
+« marche », pas le décor « Marché ». La ligne de commande (``generate.py``)
+ramène donc d'abord le prompt à sa forme exacte avec
+``troupe_data.canonical_prompt`` (accents, casse, espaces).
+
+Avec de vrais poids (Wan 2.2), ce rôle est tenu par umT5 gelé, avec la même
+interface (embeddings + masque).
 
 Guidance sans classifieur (CFG) : pendant l'entraînement, ~10 % des prompts sont
 remplacés par un embedding « nul » APPRIS (``null``) ; à l'inférence on calcule
@@ -38,7 +45,7 @@ _SPLIT = re.compile(r"[\s']+")
 
 
 class Tokenizer:
-    """Tokenizer au niveau du mot sur un vocabulaire fermé (insensible à la casse)."""
+    """Tokenizer au niveau du mot sur un vocabulaire fermé (insensible à la casse, sensible aux accents)."""
 
     def __init__(self, words: Iterable[str]):
         self.vocab: list[str] = [PAD, UNK]

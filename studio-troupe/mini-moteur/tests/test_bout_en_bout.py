@@ -14,8 +14,14 @@ def test_cli_bout_en_bout(tmp_path: Path):
     vae = tmp_path / "vae.pt"
     dit = tmp_path / "dit.pt"
     assert train.main(["vae", "--tiny", "--steps", "3", "--n-clips", "8", "--out", str(vae)]) == 0
+    vae2 = tmp_path / "vae_reprise.pt"  # reprise d'un VAE existant (--init)
+    assert train.main(["vae", "--tiny", "--steps", "2", "--n-clips", "8", "--init", str(vae), "--out", str(vae2)]) == 0
+    assert vae2.exists()
     assert train.main(["dit", "--tiny", "--steps", "3", "--vae", str(vae), "--out", str(dit)]) == 0
     assert vae.exists() and dit.exists() and (tmp_path / "dit_log.jsonl").exists()
+    dit2 = tmp_path / "dit_suite.pt"  # reprise du DiT (--init)
+    assert train.main(["dit", "--tiny", "--steps", "2", "--vae", str(vae), "--init", str(dit), "--out", str(dit2)]) == 0
+    assert dit2.exists()
 
     out = tmp_path / "clip.mp4"
     assert generate.main(["--prompt", "MODOU saute dans la Cour", "--steps", "2", "--ckpt", str(dit),
