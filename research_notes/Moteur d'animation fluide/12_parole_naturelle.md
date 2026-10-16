@@ -103,11 +103,146 @@ Sources :
 
 ---
 
-@@Q2@@
+## Q2. Banc : vitesse sur 2 fils, naturel, intelligibilité, colère
+
+### Takeaway
+| Moteur (voix) | RTF sur 2 fils, médiane [min–max] | UTMOS moyen [min–max] | CER ivoirien / colère (médianes) | Écart-type F0 (demi-tons) | Durées |
+|---|---|---|---|---|---|
+| Piper mls (36, 11) | **0,16** [0,10–0,23] | 2,61 [2,04–3,08] | 0,226 / 0,192 | 2,04 | exactes |
+| Kokoro (ff_siwis) | 1,52 [1,50–1,60] | **3,91** [3,67–4,28] | 0,143 / 0,158 | 2,63 | 25 ms |
+| **Pocket TTS** (6 voix) | **0,77** [0,69–0,88] | 3,20 [1,67–4,00] ; **3,93** sur paul, george, alba | **0,143 / 0,082** | **1,21** (plat) | non |
+| **Chatterbox** q4 (3 références) | 11,0 [7,5–21,0] | **3,74** [3,37–4,17] | 0,167 / **0,068** | **2,67** | non |
+| *Humains CML-TTS (8 extraits)* | — | *3,11* [2,56–3,81] | — | *2,32* | — |
+
+Lecture :
+- **Chatterbox** est le plus naturel *et* le plus expressif des modèles qui offrent plusieurs voix. Il est aussi le seul
+  à jouer la colère de façon mesurable. Mais il est **lent** : le décodeur pèse 70 à 80 % du temps.
+- **Pocket TTS** est le meilleur compromis vitesse/naturel/casting. Il tourne plus vite que le temps réel sur 2 fils
+  chargés, et 3 voix sur 6 sont au niveau de Chatterbox pour le juge. Défauts mesurés : **mélodie plate**
+  (écart-type F0 de 1,2 demi-ton contre 2,3 chez les humains) et **un raté sur 12** (voix `marius` : 1,44 s, CER 0,36,
+  UTMOS 1,67).
+- **Piper** reste imbattable pour l'aperçu (RTF 0,16, durées exactes). C'est le moins naturel.
+- **Kokoro** a une belle voix, mais une seule, de femme.
+
+Le juge UTMOS est entraîné sur de l'anglais. Il donne **3,11 en moyenne à de vraies voix humaines françaises**, et
+2,03 à l'enregistrement CC0 `estelle`. Ses notes ne servent donc qu'à **classer des synthèses entre elles**, pas à
+dire « humain ou non ». **Aucune écoute humaine** n'a été faite : le propriétaire doit écouter les fichiers de
+`S/bench-parole/audio/`.
+
+### Cited Findings
+**Protocole** [mesure]
+- Chaque moteur est chargé une fois, chauffé sur « Bonjour. », puis chronométré réplique par réplique, sans le
+  chargement.
+- Réglages :
+  - torch : `set_num_threads(2)` ;
+  - onnxruntime : `intra_op_num_threads=2`, `inter_op=1`.
+- Charge machine relevée pendant les mesures : 7,3 à 11,8, soit 4 vCPU partagés avec un `sd-cli` et d'autres bancs.
+  Kokoro, mesuré à RTF 0,54 sur machine calme dans la note 04, sort ici à 1,52 : **les RTF de ce banc sont donc environ
+  2 à 3 fois trop pessimistes**, mais comparables entre eux.
+- Chargement :
+  - Piper : 3,1 s ;
+  - Kokoro : 4,8 s ;
+  - Pocket : 6,6 s ;
+  - Chatterbox : **139 s**. C'est l'optimisation des graphes ONNX fp32 ; il faut garder le processus vivant entre
+    répliques.
+- Juges :
+  - **UTMOS22 strong** (prédicteur de MOS de naturel, MIT, poids de SpeechMOS) ;
+  - **CER** d'une ASR française (wav2vec2 xlsr-53-french, Apache-2.0) ;
+  - traits prosodiques par notre YIN : F0 médiane, plage 5–95 % et écart-type en demi-tons, énergie p95,
+    pente spectrale 1–4 kHz / 0–1 kHz, débit.
+- « Walay » n'existe pas pour l'ASR française : elle écrit « voilà » ou « voilez » pour **tous** les moteurs. C'est un
+  plancher d'environ 0,12 sur le CER ivoirien.
+
+**Détail Pocket TTS** [mesure] (UTMOS ivoirien / colère ; CER ivoirien / colère)
+
+| Voix | Licence | UTMOS | CER | F0 médiane |
+|---|---|---|---|---|
+| paul (VCTK) | CC-BY | 4,00 / 3,86 | 0,143 / 0,082 | 111–124 Hz |
+| george (VCTK) | CC-BY | 3,86 / 4,00 | 0,143 / 0,068 | 123–128 Hz |
+| alba | CC-BY | 3,94 / 3,27 | 0,143 / 0,082 | 117–147 Hz |
+| estelle (française native) | CC0 | 3,02 / 3,11 | 0,143 / 0,164 | 248–251 Hz |
+| javert (don) | CC0 | 2,11 / 2,77 | 0,119 / 0,027 | 77–96 Hz |
+| marius (don) | CC0 | **1,67** / 2,85 | **0,357** / 0,164 | non voisé détecté |
+
+**Détail Chatterbox** [mesure] (référence de 10 s ; temps encodeur / LM / décodeur)
+- Ivoirien, exagération 0,5 : 2,36 à 2,80 s d'audio.
+  - LM : 4,5 à 9,4 s. C'est environ **75 ms par jeton** de parole à 25 jetons/s, soit un RTF du LM d'environ 2.
+  - Décodeur : **22,9 à 42,6 s**.
+- Toutes les générations se sont arrêtées sur le jeton de fin. Aucune boucle ni troncature.
+- Le décodeur (flow matching + vocodeur) traite **la référence ET la sortie** : `prompt_token` est concaténé aux
+  jetons générés. Son coût suit donc la longueur de la référence. @@CBXREF@@
+
+**Colère : ce que le bouton change vraiment** [mesure] (même voix, réglage « colère » moins réglage neutre, réplique
+colère)
+
+| Moteur, voix | Δ F0 médiane | Δ plage F0 | Δ énergie p95 | Δ pente HF | Durée |
+|---|---|---|---|---|---|
+| Chatterbox cml5830, exagération 0,5 → 1,0 | −0,5 dt | **+5,5 dt** | **+4,9 dB** | **+3,1 dB** | 4,28 → 5,48 s |
+| Chatterbox cml2114, 0,5 → 1,0 | 0 | −1,1 dt | +1,0 dB | −1,6 dB | 4,36 → 4,92 s |
+| Chatterbox piper36, 0,5 → 1,0 | +0,1 dt | −2,1 dt | +1,4 dB | +0,7 dB | 4,84 → 3,80 s |
+| Piper 36, `length_scale` 0,85 + bruit 0,6 | +1,6 dt | +1,0 dt | +1,5 dB | +0,5 dB | 3,34 → 3,65 s |
+| Piper 11, idem | −0,5 dt | +0,3 dt | 0 | −0,2 dB | 3,91 → 3,97 s |
+| Kokoro, vitesse 1,15 | 0 | −0,5 dt | −0,1 dB | −0,4 dB | 4,68 → 4,18 s |
+
+- La colère « chaude » se signale par une F0 plus haute et plus variable, plus d'intensité et plus d'aigus (voix
+  tendue).
+- Chatterbox la produit nettement avec une **référence expressive** (cml5830, elle-même très mobile : plage de 13,6 dt).
+  Avec une référence posée (cml2114, piper36), il ne fait que monter un peu le volume.
+- Piper et Kokoro n'ont pas de bouton d'émotion : accélérer ne fait pas une colère.
+- En clair, **l'émotion vient surtout de la référence** : un personnage en colère se clone depuis une prise **en
+  colère** du même comédien. C'est valable pour Chatterbox comme pour Pocket avec clonage.
+
+### Inferences
+- **Choix pour la troupe : trois étages, un seul format de sortie** (WAV + `phonemes` + `prosodie`) :
+  1. **Aperçu / animatique** : Piper mls. Instantané, durées exactes, 125 locuteurs.
+  2. **Voix de travail et de rendu par défaut** : **Pocket TTS français**, avec une voix préréglée CC0/CC-BY par
+     personnage. Plus tard, des voix clonées **avec consentement** (dépôt à accès contrôlé, à ouvrir par le
+     propriétaire). Une minute de dialogue prend environ 45 s de calcul ici, et moins sur machine calme.
+  3. **Répliques à forte émotion** (colère, panique, chute) : **Chatterbox** avec une référence jouée dans
+     l'émotion, `exaggeration` 0,7 à 1,0. Une réplique de 4 s coûte 30 à 90 s ici.
+- **Porte de qualité obligatoire** sur toute voix neuronale : CER ASR ≤ 0,15 (hors mots ivoiriens), UTMOS ≥ 3,0,
+  durée plausible (≥ 55 ms par phonème), PER d'alignement ≤ 0,35. Sinon nouvel essai avec une autre graine, jusqu'à
+  3 fois, puis repli sur Piper. Le raté `marius` aurait été rattrapé.
+- **Mélodie plate de Pocket** : la partition de jeu (Q5) compense à l'image, avec des accents lus sur la durée et
+  l'énergie quand la F0 bouge peu. Côté son, un léger renfort de F0 sur les accents (± 1 demi-ton par PSOLA) est
+  possible, mais il n'est pas prioritaire.
 
 ---
 
-@@Q3@@
+## Q3. Lèvres exactes sans durées : l'alignement forcé suffit-il pour Pocket et Chatterbox ?
+
+### Takeaway
+@@Q3TAKE@@
+
+### Cited Findings
+**Qui donne quoi** [code lu, mesure]
+
+| Moteur | Durées par phonème | Pas | Comment |
+|---|---|---|---|
+| Piper mls | **oui, exactes** | 11,6 ms | sortie `w_ceil` du prédicteur de durée (note 04, `piper_onnx.py`) |
+| Kokoro | oui | 25 ms | `pred_dur` par jeton |
+| Pocket TTS | **non** | — | modèle de langue audio continu à 12,5 trames/s, sans alignement exposé ; une variante communautaire ajoute des horodatages **par mot** seulement ([liste du README](https://huggingface.co/kyutai/pocket-tts)) |
+| Chatterbox (ONNX) | **non** | — | la version PyTorch analyse l'attention pour arrêter la génération, sans l'exposer ; l'export ONNX n'a rien |
+
+**Notre aligneur** (`scripts/aligner.py`) [mesure]
+- Modèle wav2vec2 `xlsr-53-espeak-cv-ft` (Apache-2.0) et notre Viterbi CTC de la note 04, avec les phones espeak `fr`
+  du texte. Sortie au format `phonemes` du projet. Un trou de plus de 120 ms devient `sil`.
+- **Vérité terrain sur une autre voix que Piper** : Kokoro donne `pred_dur`. Sur 6 phrases (les deux répliques et 4
+  phrases ivoiriennes), on compare les débuts de phones alignés aux débuts Kokoro, après appariement des deux suites
+  par plus longue sous-suite commune :
+@@Q3KOKORO@@
+- **Sur les voix sans durées** (PER = taux d'erreur de phones en décodage libre, confiance = probabilité CTC moyenne
+  au pic de chaque phone) :
+@@Q3ALIGN@@
+
+### Inferences
+@@Q3INF@@
+
+### Gaps
+- Pas de vérité terrain **humaine** : Kokoro et Piper sont des générateurs, leurs durées sont leur alignement
+  interne. Le protocole de la note 04 (20 répliques enregistrées par un comédien, frontières annotées) reste à faire.
+- L'aligneur ne connaît pas les mots ivoiriens (« walay », « gâter » au sens ivoirien) mieux qu'espeak. Une erreur de
+  phonétisation devient une erreur d'alignement locale. Le lexique nouchi du phonétiseur (note 04, G1) la corrige.
 
 ---
 

@@ -6,3 +6,6 @@ sorties/
 cache/
 *.mp4
 *.wav
+
+# Modèles téléchargés par les outils (poids tiers : jamais dans le dépôt)
+outils/comparer/modeles/
