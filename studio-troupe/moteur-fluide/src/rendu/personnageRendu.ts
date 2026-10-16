@@ -3,8 +3,8 @@
  * (skinning du module `rig/`, champ de déplacement du visage, racine de la pose, placement monde avec la
  * parallaxe du sol, caméra). Le visage est déformé (mâchoire, coins, regard, sourcils) et recouvert, dans l'ordre
  * de dessin du groupe de la tête, par l'intérieur de la bouche et les bandes de lèvres et de paupières prélevées
- * sur la peinture. Ombres de contact sous chaque pied (plus sombres au contact, qui s'effacent quand le pied se
- * lève) et sous le corps. Étalonnage vers le décor et liseré de lumière dans le shader.
+ * sur la peinture. Ombres de contact (`rendu/ombres`) : occlusion sous chaque semelle, sur la ligne de sol de ce
+ * pied, qui s'efface quand il se lève, et ombre douce du corps. Étalonnage vers le décor et liseré de lumière dans le shader.
  */
 import { Container, type Shader, type Texture } from 'pixi.js';
 import { calculerFK, deformerSommets, matriceOs, type EtatSquelette } from '../rig';
@@ -12,7 +12,8 @@ import { composer } from '../noyau/maths2d';
 import { deplacerParallaxe } from '../scene/decor';
 import { matriceImageVersMonde, matriceRacine } from '../timeline/projection';
 import type { CharacterRig, Couleur, EtatImage, EtatPersonnage, Mat2D, Vec2 } from '../timeline/types';
-import { anneauxGaussiens, type EllipseDouce, type MaillageCouleur } from './formes';
+import { anneauxGaussiens, type MaillageCouleur } from './formes';
+import { ellipsesContact } from './ombres';
 import { creerMaillage, creerShader, majTampon, programme, uniformes, type MaillageLibre } from './pixi';
 import { FRAGMENT_COULEUR, FRAGMENT_PERSONNAGE, SOMMET_COULEUR, SOMMET_TEXTURE } from './shaders';
 import { deplacementsVisage, preparerVisage, recouvrementsVisage, visageAuRepos, type VisagePrepare } from './visage';
@@ -33,13 +34,7 @@ export interface GeometriePersonnage {
   lisere: number;
 }
 
-/** Réglages des ombres de contact. */
-export const REGLAGES_OMBRES = Object.freeze({
-  couleur: [0.05, 0.035, 0.03] as const,
-  corps: 0.62,
-  pied: 1,
-  largeurPied: 0.42,
-});
+export { REGLAGES_OMBRES } from './ombres';
 
 function appliquerM(m: Mat2D, x: number, y: number): Vec2 {
   return { x: m.a * x + m.c * y + m.tx, y: m.b * x + m.d * y + m.ty };
@@ -292,49 +287,17 @@ export class PersonnageRendu {
     ech: number,
   ): MaillageCouleur {
     const rig = this.rig;
-    const o = ep.ombre;
-    if (o.opacite <= 0) return anneauxGaussiens([]);
-    const hauteurMonde = rig.hauteurPx * ech;
     const W = composer(versMonde, racine);
-    const pied = (os: string, p: Vec2): Vec2 => {
-      const m = matriceOs(rig.squelette, fk, os);
-      return appliquerM(W, m.a * p.x + m.c * p.y + m.tx, m.b * p.x + m.d * p.y + m.ty);
-    };
-    const pg = rig.pieds ? pied(this.osPieds.G, rig.pieds.gauche) : position;
-    const pd = rig.pieds ? pied(this.osPieds.D, rig.pieds.droit) : position;
-    const sol = position.y;
-    // Hauteur du corps au-dessus du sol (saut) : décalage de la racine.
-    const saut = Math.max(0, -ep.pose.racine.decalage.y * ech);
-    const facteurSaut = Math.exp(-saut / (0.25 * hauteurMonde));
-    const s = Math.hypot(camera.a, camera.b);
-    const rot = Math.atan2(camera.b, camera.a);
-    const versEcran = (x: number, y: number) => appliquerM(camera, x, y);
-    const C = REGLAGES_OMBRES.couleur;
-    const ellipses: EllipseDouce[] = [];
-    const ecartPieds = Math.abs(pg.x - pd.x);
-    const rxCorps = (o.largeur * 1.1 + 0.5 * ecartPieds) * (1 + (0.4 * saut) / hauteurMonde);
-    ellipses.push({
-      centre: versEcran((pg.x + pd.x) / 2, sol),
-      rx: rxCorps * s,
-      ry: rxCorps * o.aplatissement * s,
-      rotation: rot,
-      couleur: C,
-      alpha: o.opacite * REGLAGES_OMBRES.corps * facteurSaut,
-    });
-    for (const p of [pg, pd]) {
-      const leve = Math.max(0, sol - p.y);
-      const f = Math.exp(-leve / (0.035 * hauteurMonde));
-      const rx = o.largeur * REGLAGES_OMBRES.largeurPied;
-      ellipses.push({
-        centre: versEcran(p.x, sol),
-        rx: rx * s * (1 + leve / (0.05 * hauteurMonde)),
-        ry: rx * o.aplatissement * 1.2 * s,
-        rotation: rot,
-        couleur: C,
-        alpha: o.opacite * REGLAGES_OMBRES.pied * f,
-      });
-    }
-    return anneauxGaussiens(ellipses);
+    const pied = (os: string, p: Vec2): Vec2 => appliquerM(matriceOs(rig.squelette, fk, os), p.x, p.y);
+    // Sans semelles déclarées : un seul point au sol (l'ancrage).
+    const repos: [Vec2, Vec2] = rig.pieds ? [rig.pieds.gauche, rig.pieds.droit] : [rig.ancrageSol, rig.ancrageSol];
+    const poses: [Vec2, Vec2] = rig.pieds
+      ? [pied(this.osPieds.G, rig.pieds.gauche), pied(this.osPieds.D, rig.pieds.droit)]
+      : [rig.ancrageSol, rig.ancrageSol];
+    void position;
+    return anneauxGaussiens(
+      ellipsesContact({ ombre: ep.ombre, hauteurMonde: rig.hauteurPx * ech, piedsRepos: repos, piedsPose: poses, W, W0: versMonde, camera }),
+    );
   }
 
   /** Envoie la géométrie d'une image. */

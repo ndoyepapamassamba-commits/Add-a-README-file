@@ -4,7 +4,7 @@
  * squelette, les poids et les ancrages du visage ne changent pas (ils restent dans le repère du dessin d'origine :
  * `rig.image.largeur/hauteur` gardent la taille logique) ; seule l'image lue par la page de rendu change.
  *
- *   npm run affiner -- <rig.json> --sortie <dossier> [--methode esrgan|bicubique] [--facteur 2]
+ *   npm run affiner -- <rig.json> --sortie ../sorties/cache/affiner/<id> [--methode esrgan|bicubique] [--facteur 2]
  *                      [--sd-cli <binaire>] [--modele <RealESRGAN_x4plus_anime_6B.pth>] [--fils 2]
  *
  * Méthodes :
@@ -17,8 +17,9 @@
  * dessin avait été agrandi ×2 au plus proche voisin → agrandissement → alpha agrandi en bicubique puis rendu net
  * mais adouci. Écrit `<dossier>/texture.png` et `<dossier>/rig.json` (rig complet qui pointe vers la texture).
  *
- * Les personnages de la troupe sont PRIVÉS : la sortie doit rester hors du dépôt (`studio-troupe/.private/` ou
- * `studio-troupe/sorties/`, ignorés par git).
+ * Les personnages de la troupe sont PRIVÉS : la sortie doit rester hors du dépôt, dans
+ * `studio-troupe/sorties/cache/affiner/<id>/` (ignoré par git). `outils/affiner/preparer.ts` (maillage fin aux
+ * coutures + calque « dessous » + cette texture) écrit, lui, dans `sorties/cache/personnages/<id>/`.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
@@ -30,7 +31,7 @@ import { agrandirBicubique, alphaNet, avecAlpha, facteurPixels, flouAlpha, opaqu
 
 const AIDE = `Affinage de la texture d'un personnage (même cadre, plus de définition)
 
-  npm run affiner -- <rig.json> --sortie <dossier> [options]
+  npm run affiner -- <rig.json> --sortie ../sorties/cache/affiner/<id> [options]
 
 Options :
   --methode <esrgan|bicubique>  agrandisseur (défaut : esrgan si sd-cli et le modèle sont trouvés, sinon bicubique)

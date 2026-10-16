@@ -19,7 +19,7 @@ import { statsLabImage } from './couleur';
 export const DOSSIER_CACHE_ANALYSES = join(DOSSIER_SORTIES, 'cache', 'analyses-decors');
 
 /** Version de l'algorithme (invalide le cache quand elle change). */
-const VERSION_ANALYSE = 4;
+const VERSION_ANALYSE = 5;
 
 /** Décode une image (JPEG, PNG…) en RGBA 8 bits, redimensionnée à `largeur` (hauteur proportionnelle). */
 export function decoderImage(chemin: string, largeur?: number): PixelsRGBA {

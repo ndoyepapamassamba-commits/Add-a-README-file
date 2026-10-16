@@ -105,6 +105,17 @@ PixiJS embarque les paquets suivants ; esbuild conserve leurs commentaires de li
 | FFmpeg / ffprobe (`/usr/bin`) | 6.1.1-3ubuntu5 | build Ubuntu `--enable-gpl` (libx264 GPL) | encodage et vérification en processus séparé, usage local, non redistribué ; `export/` consigne `ffmpeg -version` et `-buildconf` dans son rapport ; `scene/analyse.ts` l'appelle aussi (processus séparé) pour décoder les images du kit en RGBA brut |
 | Police Inter (`/usr/share/fonts/opentype/inter`, paquet système) | celle du système | SIL Open Font License 1.1 | sous-titres incrustés (nommée par la page, jamais copiée ni redistribuée ; l'OFL autorise son usage dans les vidéos produites). Repli : DejaVu Sans (licence libre Bitstream Vera / domaine public) |
 
+## Outils de préparation facultatifs (hors npm, processus séparés, jamais inclus dans le dépôt)
+
+| Outil ou ressource | Version | Licence | Usage |
+|---|---|---|---|
+| onnxruntime (Python) | 1.31.0 | MIT | `outils/voix/piper_onnx.py` : exécute le modèle de voix (notre propre appel, sans le code Piper) |
+| onnx (Python) | 1.23.2 | Apache-2.0 | lecture du graphe de voix et sortie des durées (`w_ceil`) |
+| numpy (Python) | 2.5.4 | BSD-3-Clause | tampons audio |
+| Voix Piper `fr_FR-mls-medium` (fichier `.onnx` + `.onnx.json`, téléchargé hors dépôt) | version des piper-voices (Hugging Face `rhasspy/piper-voices`) | **CC BY 4.0** (données Multilingual LibriSpeech, CC BY 4.0) | voix des répliques (`npm run voix`). **Attribution obligatoire** dans les crédits des vidéos : « Voix : Piper fr_FR mls medium (CC BY 4.0) ». Licence de contenu permissive mais distincte de MIT/BSD/Apache : signalée ici. Le moteur `piper-tts` (GPL-3.0) et espeak-ng (GPL-3.0) ne sont PAS utilisés : la phonétisation est la nôtre (`visage/phonetique`). |
+| `sd-cli` de stable-diffusion.cpp | compilé localement | MIT | agrandissement de la texture d'un personnage (`outils/affiner`) |
+| Poids `RealESRGAN_x4plus_anime_6B.pth` (xinntao/Real-ESRGAN, publication GitHub) | fichier publié avec Real-ESRGAN | BSD-3-Clause | agrandisseur ×4 de la texture d'un dessin trop petit (`outils/affiner`) |
+
 ## Ressources privées
 
 Les décors (`studio-troupe/.private/kit/`) et les dessins de la troupe sont **lus sur place** et ne sont jamais copiés dans le

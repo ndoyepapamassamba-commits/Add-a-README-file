@@ -31,6 +31,7 @@ import { porteProjet, qualiteEnMarkdown, type SeuilsQualite } from './qa/porte';
 import type { RapportQualite } from './qa/types';
 import { chargerRig } from './rig/charger';
 import { enrichirRessources } from './scene/analyse';
+import { partSolPraticable } from './scene/sol';
 import { evaluer } from './timeline/evaluer';
 import { validerProjet } from './timeline/projet';
 import type { CharacterRig, InfoDecor, Moteur, Projet } from './timeline/types';
@@ -444,6 +445,22 @@ async function executerRendu(o: Options): Promise<number> {
     ressources = await etape('analyse des décors', () => enrichirRessources(ressources, [...new Set(projet.plans.map((p) => p.decor))]));
   } catch (e) {
     avertir(`analyse des décors impossible (${(e as Error).message.split('\n')[0]}) : rendu sans étalonnage fin`);
+  }
+  // Sol praticable sous les pieds de chaque personnage placé (table, chaise ou figurant sous les pieds = il flotte).
+  for (const plan of projet.plans) {
+    const d = ressources.decors[plan.decor];
+    if (!d) continue;
+    for (const pl of plan.personnages) {
+      const v = pl.v ?? d.fit.floor;
+      const part = partSolPraticable(d, pl.u, v);
+      if (part === null) continue;
+      if (part < 0.5) {
+        avertir(
+          `plan ${plan.id} : les pieds de « ${pl.personnage} » (u ${pl.u}, v ${v.toFixed(3)}) ne sont pas sur le sol visible du décor ` +
+            `(part de sol ${part.toFixed(2)}) : il semblera flotter ; choisir un u/v où le sol est visible`,
+        );
+      } else console.log(`  sol sous « ${pl.personnage} » (plan ${plan.id}) : ${(100 * part).toFixed(0)} % praticable`);
+    }
   }
   const moteur = creerMoteurComplet(ressources);
 

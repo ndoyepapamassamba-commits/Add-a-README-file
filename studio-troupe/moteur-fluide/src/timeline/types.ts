@@ -1006,6 +1006,12 @@ export interface AnalyseDecor {
   lumiere: { direction: Vec2; couleur: Couleur; contraste: number };
   /** Profondeur du sol selon la hauteur : `d(v) = a·v + b` sur la bande du sol, avec la qualité `r2` de l'ajustement. */
   sol: { a: number; b: number; r2: number };
+  /**
+   * Sol praticable (facultatif) : part (0 … 1) des pixels de chaque cellule dont la profondeur suit le plan du sol
+   * (ni table, ni chaise, ni figurant), sur une grille `colonnes × lignes` (lignes d'abord) couvrant `v ∈ [v0, 1]`.
+   * Sert à vérifier qu'un personnage pose les pieds sur le sol visible et pas sur un meuble.
+   */
+  praticable?: { colonnes: number; lignes: number; v0: number; part: number[] };
   /** Part du ciel (masque vert) et des figurants (masque rouge) dans l'image. */
   ciel: number;
   figurants: number;

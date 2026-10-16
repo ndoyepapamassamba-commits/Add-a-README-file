@@ -236,3 +236,29 @@ describe('décor 2,5D', () => {
     expect(d.lumieres.amplitude).toBeCloseTo(0.3, 9);
   });
 });
+
+describe('sol praticable', () => {
+  it('part de sol : 1 sur le plan du sol, 0 sur un objet plus proche, null sans analyse', async () => {
+    const { solPraticable } = await import('../src/scene/analyse-pixels');
+    const { partSolPraticable } = await import('../src/scene/sol');
+    const L = 64;
+    const H = 32;
+    const prof = { largeur: L, hauteur: H, donnees: new Uint8Array(4 * L * H) };
+    const masques = { largeur: L, hauteur: H, donnees: new Uint8Array(4 * L * H) };
+    const sol = { a: 2, b: -1, r2: 0.99 };
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < L; x++) {
+        const v = (y + 0.5) / H;
+        // Sol partout, sauf une « table » (profondeur constante, plus proche) dans la moitié droite.
+        const d = x >= L / 2 && v > 0.7 ? 0.95 : Math.max(0, Math.min(1, sol.a * v + sol.b));
+        prof.donnees[4 * (y * L + x)] = Math.round(d * 255);
+      }
+    const p = solPraticable(prof, masques, sol, 0.6)!;
+    expect(p).not.toBeNull();
+    const decor = { analyse: { praticable: p } } as unknown as Parameters<typeof partSolPraticable>[0];
+    expect(partSolPraticable(decor, 0.2, 0.9)!).toBeGreaterThan(0.9);
+    expect(partSolPraticable(decor, 0.8, 0.8)!).toBeLessThan(0.2);
+    expect(partSolPraticable(null, 0.5, 0.9)).toBeNull();
+    expect(solPraticable(prof, masques, { a: 2, b: -1, r2: 0.2 }, 0.6)).toBeNull();
+  });
+});

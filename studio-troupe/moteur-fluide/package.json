@@ -14,7 +14,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "node scripts/construire-page.mjs",
     "rendre": "tsx src/export/rendre.ts",
-    "verifier": "npm run typecheck && npm test"
+    "verifier": "npm run typecheck && npm test",
+    "voix": "tsx src/outils/voix/dire.ts",
+    "preparer": "tsx src/outils/affiner/preparer.ts"
   },
   "dependencies": {
     "delaunator": "5.1.0",

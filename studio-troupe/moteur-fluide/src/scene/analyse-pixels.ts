@@ -181,12 +181,16 @@ export function analyserPixelsDecor(
     sol = { a: arrondir(a), b: arrondir(b), r2: arrondir(r2) };
   }
 
+  // Sol praticable : pixels hors figurants dont la profondeur suit le plan du sol (à ±0,05), par cellule.
+  const praticable = solPraticable(profondeur, masques, sol, v0);
+
   return {
     version: 1,
     lab: { moyenne: arrondir3(lab.moyenne), ecart: arrondir3(lab.ecart) },
     grille,
     lumiere: { direction, couleur, contraste },
     sol,
+    ...(praticable ? { praticable } : {}),
     ciel: arrondir(ciel / n),
     figurants: arrondir(figurants / n),
   };
@@ -194,6 +198,42 @@ export function analyserPixelsDecor(
 
 function arrondir(x: number): number {
   return Math.round(x * 1e4) / 1e4;
+}
+
+/**
+ * Grille du sol praticable (voir `AnalyseDecor.praticable`) : un pixel est « sol » s'il n'est pas un figurant et si
+ * sa profondeur est à moins de `tolerance` de l'ajustement `a·v + b`. `null` sans ajustement fiable (r² < 0,5).
+ */
+export function solPraticable(
+  profondeur: PixelsRGBA,
+  masques: PixelsRGBA,
+  sol: { a: number; b: number; r2: number },
+  v0: number,
+  options: { colonnes?: number; lignes?: number; tolerance?: number } = {},
+): { colonnes: number; lignes: number; v0: number; part: number[] } | null {
+  if (sol.r2 < 0.5 || sol.a <= 0) return null;
+  const colonnes = options.colonnes ?? 32;
+  const lignes = options.lignes ?? 16;
+  const tol = options.tolerance ?? 0.05;
+  const PW = profondeur.largeur;
+  const PH = profondeur.hauteur;
+  const n = new Array<number>(colonnes * lignes).fill(0);
+  const oui = new Array<number>(colonnes * lignes).fill(0);
+  for (let y = 0; y < PH; y++) {
+    const v = (y + 0.5) / PH;
+    if (v < v0) continue;
+    const j = Math.min(lignes - 1, Math.floor(((v - v0) / Math.max(1e-6, 1 - v0)) * lignes));
+    for (let x = 0; x < PW; x++) {
+      const u = (x + 0.5) / PW;
+      const i = Math.min(colonnes - 1, Math.floor(u * colonnes));
+      const k = j * colonnes + i;
+      n[k]!++;
+      if (echantillon(masques, u, v, 0) > 0.5) continue;
+      const d = profondeur.donnees[4 * (y * PW + x)]! / 255;
+      if (Math.abs(d - (sol.a * v + sol.b)) <= tol) oui[k]!++;
+    }
+  }
+  return { colonnes, lignes, v0: arrondir(v0), part: n.map((c, k) => (c > 0 ? arrondir(oui[k]! / c) : 0)) };
 }
 
 function arrondir3(v: readonly number[]): [number, number, number] {

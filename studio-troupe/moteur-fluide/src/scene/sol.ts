@@ -119,3 +119,26 @@ export function geometrieSujet(
   const sommet = { x: yeux.x, y: pieds.y - hauteur };
   return { pieds, yeux, sommet, hauteur, echelle, u: pos.u, v: pos.v, orientation, enMarche: pos.enMarche };
 }
+
+/**
+ * Part de sol praticable sous des pieds placés en `(u, v)` (0 … 1, moyenne sur une petite fenêtre autour des pieds),
+ * ou `null` si le décor n'a pas d'analyse du sol. Une valeur basse signale des pieds posés sur un meuble, une table
+ * ou un figurant : le personnage semblera flotter.
+ */
+export function partSolPraticable(decor: InfoDecor | null, u: number, v: number): number | null {
+  const p = decor?.analyse?.praticable;
+  if (!p) return null;
+  if (v < p.v0) return 0;
+  const vs = [v - 0.02, v, Math.min(0.999, v + 0.02)];
+  const us = [u - 0.02, u, u + 0.02];
+  let s = 0;
+  let n = 0;
+  for (const vv of vs)
+    for (const uu of us) {
+      const i = Math.min(p.colonnes - 1, Math.max(0, Math.floor(uu * p.colonnes)));
+      const j = Math.min(p.lignes - 1, Math.max(0, Math.floor(((vv - p.v0) / Math.max(1e-6, 1 - p.v0)) * p.lignes)));
+      s += p.part[j * p.colonnes + i] ?? 0;
+      n++;
+    }
+  return n > 0 ? s / n : null;
+}
