@@ -1,0 +1,35 @@
+{
+  "name": "moteur-fluide",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Moteur d'animation fluide de la troupe : personnages peints déformés (jamais redessinés), ressorts analytiques, décors 2,5D d'Abidjan, export MP4 9:16 vérifié.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "node scripts/construire-page.mjs",
+    "rendre": "tsx src/export/rendre.ts",
+    "verifier": "npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "delaunator": "5.1.0",
+    "pixi.js": "8.22.0",
+    "pngjs": "7.0.0"
+  },
+  "devDependencies": {
+    "@types/delaunator": "5.0.3",
+    "@types/node": "22.20.5",
+    "@types/pngjs": "6.0.5",
+    "esbuild": "0.28.2",
+    "playwright": "1.56.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vite": "7.3.7",
+    "vitest": "4.1.11"
+  }
+}

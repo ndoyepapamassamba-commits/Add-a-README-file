@@ -64,7 +64,9 @@ C'est trop lent pour la vidéo, mais **largement suffisant pour fabriquer une fo
   `d1023499…`), apache-2.0 — [dépôt HF](https://huggingface.co/leejet/FLUX.2-klein-4B-GGUF).
 - VAE de klein : `black-forest-labs/FLUX.2-small-decoder` @ `a3efc24f`, `full_encoder_small_decoder.safetensors`
   (249 519 092 o, sha256 `ea4273f0…`), apache-2.0. La doc de sd.cpp le cite comme VAE alternatif. Nous évitons ainsi le VAE
-  du dépôt FLUX.2-dev — [API HF](https://huggingface.co/api/models/black-forest-labs/FLUX.2-small-decoder?blobs=true),
+  du dépôt FLUX.2-dev, qui est sous `flux-non-commercial-license` et à accès restreint
+  ([API HF](https://huggingface.co/api/models/black-forest-labs/FLUX.2-dev)) —
+  [API HF](https://huggingface.co/api/models/black-forest-labs/FLUX.2-small-decoder?blobs=true),
   [docs/flux2.md](https://github.com/leejet/stable-diffusion.cpp/blob/master/docs/flux2.md).
 - **Pièges de licence de la même famille** :
   - FLUX.2 [klein] **9B** : `flux-non-commercial-license`
@@ -106,8 +108,8 @@ python3 -I mesure.py $SD --diffusion-model $M/flux-2-klein-4b-Q4_0.gguf --vae $M
 Remarques sur ces mesures :
 - Un pas de klein 4B coûte presque autant qu'un pas de Z-Image 6B à cette taille. Le gain de klein vient surtout du
   nombre de pas : 4 contre 8.
-- Le **décodage VAE** est le pic de RAM des deux modèles, à 2,8–3,7 Go de tampon. La doc de sd.cpp signale aussi un mode
-  `--taesd` (décodeur rapide) pour les aperçus.
+- Le **décodage VAE** est le pic de RAM des deux modèles, à 2,8–3,7 Go de tampon. L'aide de `sd-cli` propose aussi
+  `--taesd` (« Tiny AutoEncoder for fast decoding (low quality) ») pour les aperçus.
 
 **Qualité, jugée à l'œil** (`out/zimg_modou_576x1024_s42.png`, `out/klein/k1_t2i_576x1024.png`, planche `out/planche_generation.jpg`)
 - **Z-Image** :
@@ -389,7 +391,14 @@ torse/bassin (qui doit suivre l'ourlet du vêtement) et un cou séparé.
 ## Q5. Poses supplémentaires et formes de bouche cohérentes : édition sur CPU (klein) ou déformation ?
 
 ### Takeaway
-[[Q5_TAKEAWAY]]
+**L'édition klein sur un recadrage du visage marche très bien sur CPU** : **12,8 à 13,4 min, 5,6 Go** par variante en
+512². « Rire » et « choc » gardent le même visage (crâne, oreilles, nez, moustache, bouc, teint, cadrage). Une fois
+recalé (ECC 0,991–0,994, décalage inférieur à 1 px) et recollé, **le raccord est invisible** à l'échelle du plein pied,
+et MediaPipe confirme l'expression demandée en écart au neutre.
+
+**L'édition de pose en pied, elle, est à éviter** : **27,0 min, 7,2 Go**, et le personnage y **perd un bras**, avec des
+artefacts sur le pantalon. **Les poses doivent venir du rig. La génération ne sert qu'à fabriquer des « substitutions »** :
+bouches, yeux, mains en raccourci.
 
 ### Cited Findings
 **Options d'édition, licences et faisabilité CPU**
@@ -425,16 +434,263 @@ torse/bassin (qui doit suivre l'ourlet du vêtement) et un cou séparé.
 - Visage : recadrage carré de 1,5 × l'étendue des 478 points MediaPipe, de 219 px dans l'image 576×1024, agrandi à
   512×512 en Lanczos (`recadrer_recoller.py crop`).
 
-[[Q5_TABLE]]
+| Essai (fichier `out/klein/…`) | Taille, jetons d'image (sortie + référence) | Encodage réf. | Texte | Diffusion | Décodage | **Total** | **Pic RAM** |
+|---|---|---|---|---|---|---|---|
+| k1 texte → image (Q1) | 576×1024, 2 304 | — | 21,5 s | 4 × 196 s | 66 s | **14,6 min** | 7,07 Go |
+| k3 visage « rire » | 512², 1 024 + 1 024 | 12,3 s | 20,4 s | 4 × 176 s | 30 s | **12,8 min** | 5,64 Go |
+| k4 visage « choc » | 512², 1 024 + 1 024 | 12,7 s | 24,2 s | 4 × 184 s | 29 s | **13,4 min** | 5,64 Go |
+| k2 pose « accuse » en pied | 576×1024, 2 304 + 2 304 | 29,4 s | 20,2 s | 4 × 376 s | 64 s | **27,0 min** | 7,21 Go |
+| k5 bouche « iii » | [[K5]] |
+
+- **Coût par pas** : environ 0,08 s par jeton d'image (sortie + référence) à 3 threads, quasi linéaire sur la plage
+  2 048–4 608 jetons. Doubler les jetons double le temps, ce qui montre que l'attention pèse encore peu à ces tailles.
+- **Qualité, jugée à l'œil** (`out/klein/cmp_visages.jpg`, `out/klein/cmp_pose.jpg`, `out/klein/recolle_rire_zoom.jpg`) :
+  - *Rire* : bouche grande ouverte, dents du haut et langue, yeux plissés avec des rides de rire. Identité intacte,
+    cadrage identique au pixel près.
+  - *Choc* : yeux écarquillés (sclérotique entière), bouche ouverte « ah » plutôt qu'un « O » rond, sourcils à peine
+    plus hauts.
+  - *Accuse, en pied* :
+    - Bons points : visage colère réussi, index pointé vers le spectateur avec une **main en raccourci** convaincante,
+      t-shirt, cargo retroussé et sandales conservés.
+    - Défauts : **le bras gauche a disparu**, et des cordons parasites pendent des poches du cargo.
+- **[mesure] Recalage et recollage** (`recadrer_recoller.py paste … visage`), en niveaux de gris, hors de la région
+  éditée :
+
+  | Variante | ECC | Translation estimée | Erreur absolue moyenne avant → après recalage et correction Lab |
+  |---|---|---|---|
+  | Rire | 0,9939 | (−0,39 ; +0,60) px | **7,63 → 2,77** |
+  | Choc | 0,9906 | (−0,47 ; +0,40) px | **6,35 → 1,74** |
+
+  - Recoller la **seule bouche** du rire dégrade le résultat (11,2 → 25,8) : l'éditeur a aussi changé les yeux et les
+    joues, et la correction Lab, calculée sur un anneau qui inclut ces joues modifiées, est faussée.
+  - **Un sprite « bouche seule » doit donc être produit par un prompt qui ne change que la bouche, et contrôlé par cette
+    même mesure hors région.**
+- **[mesure] Vérification de l'étiquette** (`visage_mp.py` sur le recadrage 512², puis `yeux_cartoon.py`) :
+
+  | | ouverture bouche ‖13−14‖/‖61−291‖ | largeur bouche | jawOpen | mouthSmile G/D | eyeSquint G | eyeWide G/D | Paupières (notre mesure) |
+  |---|---|---|---|---|---|---|---|
+  | Neutre | 0,004 | 110 px | 0,20 | 0 / 0 | 0,02 | 0,17 / 0,34 | 0,62 / 0,89 |
+  | Rire | **0,357** | 161 px | **0,58** | **0,99 / 1,00** | **0,74** | 0,00 / 0,01 | **fermés / fermés** |
+  | Choc | **0,470** | 93 px | **0,69** | 0 / 0 | 0,01 | **0,34 / 0,60** | **0,92 / 1,00** |
+
+  `browInnerUp` vaut déjà 0,99 sur le neutre (sourcils « fatigués ») : la hausse des sourcils du choc **n'est pas
+  mesurable** par MediaPipe sur ce personnage.
 
 ### Inferences
-[[Q5_INF]]
+- **Le partage des rôles est net** :
+  - **poses** = rig (notes 01 et 02 : cut-out, ARAP, IK) ;
+  - **substitutions** = édition klein sur recadrage (bouche, yeux, sourcils, main) ;
+  - **jamais** de génération de pose en pied pour l'animation.
+  
+  C'est aussi la réponse au « trop lego » : les poses tenues par le rig restent souples (maillages, correctifs de la
+  note 02 G7), et les expressions extrêmes sont **dessinées** par le modèle au lieu d'être déformées.
+- **La main qui pointe**, que le rig 2D ne sait pas faire en raccourci, vaut une substitution. On l'obtient en
+  recadrant l'avant-bras et la main (comme pour le visage) et en éditant « pointing index finger towards the viewer ».
+  Ce n'est pas mesuré, mais c'est la même chaîne que k3/k4, et le résultat de k2 montre que klein dessine bien ce
+  raccourci.
+- **Les planches de l'utilisateur** (7 personnages × 5 poses : neutre, rire, choc, haussement, accuse) servent de
+  **références pour klein** : on peut passer plusieurs références avec `-r` (multi-référence, non testé ici). Les poses
+  « rire » et « choc » de la planche fournissent aussi le **neutre de calibration** des seuils de la porte qualité (G6).
+- **Coût à l'échelle** : environ 13 min par sprite 512² à 3 threads. Les 13 visèmes de la spec plus 5 états d'yeux font
+  18 sprites, soit ≈ 4 h par personnage. Les 7 personnages à planche coûtent ≈ 27 h, et les 54 ≈ 9 jours de CPU. Il faut
+  donc **prioriser** :
+  - visèmes regroupés comme Rhubarb (9 formes, note 04) ;
+  - famille principale d'abord ;
+  - **384²** pour les bouches, soit 576 + 576 jetons, ≈ 2,2 fois moins cher (estimation linéaire en jetons, non
+    mesurée), car une bouche occupe environ 110 px dans l'image en pied.
 
 ### Gaps
-[[Q5_GAPS]]
+- **Non testés** :
+  - l'inpainting **Z-Image** sur le recadrage (`-i` + `--mask`, l'autre voie de cohérence) ;
+  - l'édition multi-références ;
+  - la vue de trois quarts et de profil ;
+  - les 13 visèmes complets ;
+  - l'édition 384² ;
+  - la main seule recadrée.
+- La **stabilité entre graines** de l'édition reste inconnue : une seule graine (42) par variante. Le taux de rejet de la
+  porte G6 n'est donc pas connu.
+- **Aucune mesure objective d'identité** : nous n'avons pas de modèle de reconnaissance faciale permissif adapté aux
+  cartoons (InsightFace est non commercial, notes antérieures). L'identité est jugée à l'œil et par l'erreur hors région
+  après recalage.
+- Le transfert du **style Z-Image** vers une pose klein (ou l'inverse) n'a pas été étudié.
 
 ---
 
 ## Ce que nous greffons dans notre moteur
 
-[[GREFFES]]
+Principe, dans la continuité des notes 01 et 02 : **la génération sert une seule fois, hors ligne, à fabriquer les
+dessins. Le mouvement, lui, vient toujours du rig** (cut-out + maillages), qui est pur et déterministe.
+- On ne génère que ce que la déformation ne sait pas inventer : planche neutre, intérieur de bouche et dents, yeux
+  fermés ou écarquillés, formes de main.
+- Tout le reste (poses, gestes, respiration) est fait par `PoseBlend` sur le rig.
+
+C'est ce qui garantit l'identité d'un plan à l'autre, là où la vidéo générée invente un visage par graine
+(`banc-cpu/README.md`). Les outils ci-dessous tournent **hors ligne** dans Node, en lançant `sd-cli` ou onnxruntime ;
+**aucun ne tourne dans `evaluate(t)`**. Tout est réimplémenté par nous à partir des formules ci-dessous.
+
+### G1. `CharacterForge` — de la fiche de la bible à la planche neutre (hors ligne)
+- **Prompt figé** = `STYLE` (champ `style` de `troupe.json`, sans « warm sunlight » pour la planche) + bloc pose
+  (« full body shot, front view, neutral A-pose, both arms held slightly away from the body, hands open, feet slightly
+  apart ») + **`visuel` verbatim** + `details.face` + `age` + bloc fond (« plain flat light grey background, even soft
+  studio lighting »). La bible reste ainsi la source unique de vérité.
+- **Graine déterministe** `seed = FNV-1a(nom) mod 2³¹`. On consigne la commande `sd-cli` complète, le commit de sd.cpp,
+  la révision HF et le SHA-256 de chaque poids, ainsi que le SHA-256 de l'image produite. Le tout va dans
+  `character_manifest.json` (rubrique `provenance`), puis dans l'`AssetRegistry` de la spec.
+- **Deux passes**, ce qui améliore la pratique courante « une graine au hasard » :
+  1. Aperçus en 288×512 pour K = 4 graines `seed + i·7919` (environ 4 × 7 min estimées, à mesurer).
+  2. **Score automatique** de chaque aperçu, détaillé ci-dessous.
+  3. Rendu final 576×1024 de la meilleure graine : 30 min en Z-Image, 14,6 min en klein, mesurés.
+- **Score automatique**, à partir de Q2 et Q3 :
+  ```
+  aPose    = min(angle(bras_g, axe_torse), angle(bras_d, axe_torse)) ≥ 12°   (vecteurs épaule→coude, épaule→hanche)
+  pleinPied= nez.y > 0,03H  et  max(chevilles.y, orteils.y) < 0,97H  et  visibilités MP ≥ 0,8
+  unique   = aire(plus grande composante alpha) / aire(alpha) ≥ 0,97
+  fondUni  = σ_fond (modèle plan Lab sur la bordure de 8 px) < 15
+  tête     = hauteur_tête / hauteur_corps ∈ [0,18 ; 0,30]   (style « Pixar » ; Z-Image : ≈ 0,21, klein : ≈ 0,17)
+  score    = 𝟙[pleinPied ∧ unique ∧ fondUni] · (min(aPose,25°)/25° + 1 − |tête − 0,23|/0,07)
+  ```
+  On rejette tout score nul. Si aucune graine ne passe, on prend klein pour la planche neutre, puisque son A-pose est
+  meilleure.
+- **Ordonnanceur** : un seul `sd-cli` à la fois, à 3 threads et `nice 19`. **Jamais de BiRefNet en même temps** : le
+  cgroup a tué le processus à 7,2 Go RSS (Q2).
+
+### G2. `Detoureur` — alpha propre, bords décontaminés, ombre resynthétisée
+- ISNet-anime en 1024² ONNX. Prétraitement : `x = (I/max(I) − (0,485 ; 0,456 ; 0,406)) / 1`. Sortie normalisée par
+  min-max, puis remise à la taille d'origine en bilinéaire.
+- **Second avis** : BiRefNet-lite, avec `x = (I/255 − µ_ImageNet)/σ_ImageNet` et une sigmoïde sur la dernière sortie. On
+  le lance si `IoU(ISNet, BiRefNet) < 0,98` est attendu, c'est-à-dire si `fondUni` est faux (planche de l'utilisateur sur
+  décor). Si les deux restent en désaccord, on signale le cas pour une retouche à la main.
+- **Décontamination** : `F = (I − (1 − α)·B) / max(α ; 0,05)`, avec B la médiane de la bordure. On la stocke dans le
+  calque, pour qu'un personnage sur fond gris ne laisse pas de liseré gris sur un mur ocre d'Abidjan.
+- **Ombre au sol resynthétisée** par le moteur, et non peinte. Pour chaque pied en contact (contacts de la note 01 G3) :
+  ```
+  ombre(x, y) = s0 · exp(−((x − x_f)/σx)² − ((y − y_f)/σy)²),  σx = 0,6·L_pied,  σy = 0,15·σx,
+  s0 = 0,45 · exp(−h_pied / 0,05 m)        (h_pied = hauteur du pied au-dessus du sol, en m)
+  couleur = plaque · (1 − ombre)           (multiplication, sur le calque « sol » du décor 2.5D)
+  ```
+  On corrige ainsi le défaut de la clé de fond (Q2) et l'on garde une ombre cohérente avec le sol du décor.
+
+### G3. `Reperes` — squelette fusionné, visage réparé pour le cartoon
+- **Corps** : boîte englobante tirée de l'alpha, ×1,25, rapport 3:4. RTMW-l 384×288 (SimCC, décodage `argmax/2` puis
+  affine inverse) et MediaPipe Pose heavy.
+  - Fusion sur les 13 articulations communes : `p = (s_R·p_R + s_M·p_M)/(s_R + s_M)`, avec `s_R` le score SimCC normalisé
+    (`min(1, score/5)`) et `s_M` la visibilité MediaPipe.
+  - **Signal QA** si `‖p_R − p_M‖ > 0,08·L_torse`.
+  - Mains : 21 points RTMW par main. Pieds : talon et orteils RTMW. Les hanches sont décalées de `+0,08·L_torse` vers le
+    bas, car les deux modèles les posent à l'ourlet du t-shirt.
+- **Visage** :
+  - Recadrage de la tête : centre = moyenne des points 0–4 de RTMW, demi-côté = 2,6 × la distance oreille-oreille.
+    Agrandissement à 512 px, puis MediaPipe Face. On garde la **bouche** (61, 291 = commissures ; 13, 14 = lèvres
+    intérieures ; 0, 17 = milieux extérieurs), les **centres d'iris** (468, 473), les sourcils (70, 63, 105, 66, 107 /
+    336, 296, 334, 293, 300) et le menton (152).
+  - **Paupières, par notre méthode** (jamais par le contour MediaPipe, qui ne voit que l'iris) :
+    ```
+    ref_sclère = moyenne de la moitié la plus claire de deux carrés 5×5 à iris ± 0,22·d_iris (horizontal)
+    si L*(ref) < L*(joue[50,280]) + 25 → œil fermé (ouverture 0)
+    sinon sclère = {ΔE76(pixel, ref) < 42 et L* > L*(ref) − 60} ∪ disque(iris, 0,12·d_iris), fermeture 5×5,
+          composante connexe contenant l'iris → paupière haute = min y par colonne, basse = max y ; ouverture = h/w
+    ```
+    Mesuré : neutre 0,62 et 0,89 ; choc 0,92 et 1,00 ; rire « fermé » sur les deux yeux. À faire : prendre la paupière
+    basse en **chroma seule**, car l'ombre la tronque.
+- Le résultat sert à deux choses : le `SkeletonGuess` de `CharacterRigAdapter.build` (note 02 G1) et les **points de
+  contrôle du visage** de la TPS de la note 01 G5 (paupières, commissures, lèvres, menton).
+
+### G4. `AutoDecoupe` — parties du cut-out, pivots, coiffes (prototype mesuré : 1,4 s)
+```
+entrées : alpha A (≥ 0,5), repères fusionnés K, table OS = {partie: (début, fin, parent, z)}
+graines : pour chaque os, points de [début, fin] pour t ∈ [0,15 ; 0,85] dans A ;
+          torse : quadrilatère (épaule_g, épaule_d, hanche_d, hanche_g) rétréci de 15 % vers son centre
+coût d'arête (amélioration à implémenter) : c(p,q) = ‖p − q‖ · (1 + β·‖∇Lab‖(q)/G),  β = 4, G = 95ᵉ centile de ‖∇Lab‖
+          → les frontières se collent aux bords de vêtement (ourlet, manche) au lieu de couper au milieu du tissu
+propagation : Dijkstra multi-sources, 8-connexe, dans A ; label(q) = label de la graine qui atteint q en premier
+règles : au-dessus du menton et |x − x_nez| < 1,6·d_oreilles → tête ; cou = partie propre, pivots (base, nuque)
+sorties : un PNG RGBA par partie + coiffe = disque(pivot, 1,1·demi-épaisseur) ∩ A, pris sur l'image ;
+          character_manifest.json {id, file, offset, pivot, end, parent, z, pixels, cap_radius, provenance}
+z par défaut (face) : jambes 1, bassin 2, torse 3, bras 4, avant-bras et mains 5, tête 6 — éditables
+```
+- Ce manifeste devient l'entrée `CutoutLayers` de la note 02. Chaque partie y devient un `mesh` pondéré sur son os et sur
+  l'os parent, dans la bande d'articulation de la note 02 G1.
+- *Mieux qu'Animated Drawings* : le torse est ensemencé par une **surface** (sans quoi les manches dévorent le t-shirt, ce
+  qui a été observé), et les coupes suivent les bords de vêtement.
+
+### G5. Complétion des zones cachées des coiffes (hors ligne, à mesurer)
+- En A-pose, la seule zone cachée est le **secteur de la coiffe** que le voisin recouvre quand on tourne au-delà
+  d'environ 40°.
+- **Petites zones** (moins de 1 % de la partie) : inpainting OpenCV Telea, en millisecondes.
+- **Zones plus grandes** : inpainting `sd-cli -i recadrage.png --mask masque.png` sur un recadrage de 512² centré sur
+  l'articulation, avec le prompt de la planche. sd.cpp débruite seulement la zone masquée (`denoise_mask`, Q5).
+- Le résultat est ajouté au calque **sous** le voisin. Il ne remplace jamais un pixel visible.
+
+### G6. `BibliothequeSubstitutions` — bouches, yeux, mains, par recadrer → éditer → recaler → recoller
+- **Recadrer** : `c` = moyenne des 478 points ; demi-côté `h = 0,75·max(étendue_x, étendue_y)` ; carré
+  `[c_x − h, c_y − 1,05h]` de côté `2h`, avec bord répliqué ; agrandissement Lanczos à `S = 512`.
+- **Éditer** : klein 4B, 4 pas, `-r recadrage`, préfixe « Keep exactly the same character… » plus **un seul**
+  changement : « Change only his mouth: … ». Pour les visèmes : « lips pressed together (M/B/P) », « mouth wide open
+  (A) », « rounded lips (O) », « lips pushed forward (OU) », « upper teeth on lower lip (F/V) », « teeth together,
+  lips stretched (S/Z, I) », etc.
+- **Recaler** : ECC euclidien (OpenCV `findTransformECC`, `MOTION_EUCLIDEAN`, 100 itérations, ε = 1e-5, pyramide
+  gaussienne 5) entre le recadrage d'origine et le résultat, **sur le masque complémentaire** de la région dilatée de
+  25 px. Mesuré : décalage de 0,4 à 0,6 px, ECC 0,991 à 0,994.
+- **Recoller** :
+  - décalage Lab moyen calculé sur l'anneau de 15 px autour de la région ;
+  - fondu `α = G_σ ∗ 𝟙_région` avec `σ = 0,02·S` ;
+  - retour à la taille d'origine en `INTER_AREA`.
+  
+  Mesuré : erreur absolue moyenne hors région de **7,6 → 2,8** (rire) et **6,4 → 1,7** (choc) niveaux de gris.
+- **Porte qualité d'un sprite** (on l'accepte seulement si tout passe ; sinon on régénère avec une autre graine) :
+  - **identité** : ECC ≥ 0,98 et erreur absolue moyenne hors région ≤ 4 niveaux de gris après recalage ;
+  - **cohérence de couleur** : |ΔL*| ≤ 3 sur l'anneau ;
+  - **localité** : pour un sprite « bouche », l'écart blendshapes œil/sourcil au neutre ≤ 0,15 ;
+  - **étiquette**, mesurée par MediaPipe **en écart au neutre** du même personnage (Q3), avec
+    `ouv = ‖P13 − P14‖ / ‖P61 − P291‖` :
+
+    | Sprite | Condition (Δ = valeur − neutre) | Mesuré sur MODOU |
+    |---|---|---|
+    | M/B/P | ouv ≤ 0,02 | neutre 0,004 |
+    | A / rire | ouv ≥ 0,30 et ΔjawOpen ≥ +0,30 | rire : ouv 0,357, ΔjawOpen +0,38, smile 0,99, yeux fermés |
+    | O / choc | ouv ≥ 0,30 et largeur ≤ 0,9 × largeur neutre ; choc : ΔeyeWide ≥ +0,15 | choc : ouv 0,47, largeur 0,84×, ΔeyeWide +0,18 / +0,27 |
+    | I / S-Z | ouv ≤ 0,12 et largeur ≥ 1,15 × neutre | voir k5 |
+
+    Les seuils sont initiaux et à calibrer sur les 7 planches de l'utilisateur.
+- **Format moteur** : chaque sprite est un `Attachment { kind: 'region' }` (note 02 G1) attaché au slot `bouche` ou `yeux`,
+  avec ses 20 points de contour de lèvres. La `VisemeTrack` (note 04 G4) choisit le sprite. Entre deux sprites, la TPS
+  de la note 01 G5 déforme le sprite courant vers les points du suivant pendant 1 à 2 images : c'est un **fondu
+  géométrique**, pas un fondu enchaîné.
+- **Budget** : 12,8 à 13,4 min par sprite en 512², mesuré. Un jeu « principal » de 9 bouches (équivalent des formes de
+  Rhubarb, note 04) + 3 états d'yeux (fermé, mi-clos, écarquillé) + 3 expressions (rire, choc, colère), soit 15 sprites,
+  coûte **≈ 3,3 h par personnage**. Pour la famille (≈ 10 personnages) : ≈ 33 h. Il faut viser 384² (estimé 2,2 fois
+  moins cher, non mesuré) une fois la qualité vérifiée.
+
+### G7. Contrôles « assets » de l'`AnimationQualityGate` (spec §8)
+- Tests :
+  - planche : `aPose`, `pleinPied`, `unique`, `fondUni` (G1) ;
+  - alpha : IoU entre deux détoureurs ≥ 0,98 sur fond uni ;
+  - repères : désaccord ≤ 0,08 du torse ;
+  - découpe : 0 pixel non étiqueté, chaque partie > 0,3 % de l'alpha, parents sans cycle ;
+  - sprites : porte G6.
+- **Écrire les mesures dans le manifeste** (et non un simple OK). Une planche refaite doit pouvoir être comparée à
+  l'ancienne : IoU de silhouette, ΔE moyen par partie.
+
+### G8. `tool-manifest.json` et `THIRD_PARTY_NOTICES.md` (entrées à créer)
+
+| id | version / révision | SPDX | mode | test de santé |
+|---|---|---|---|---|
+| stable-diffusion.cpp `sd-cli` | `8cd731e7` (master-968) | MIT | local | 1 image 256×256, 1 pas |
+| z-image-turbo-gguf | leejet @ `c61c0e42`, Q4_K | Apache-2.0 | local | SHA-256 `14b375ab…` |
+| flux2-klein-4b-gguf | leejet @ `3b1f5a9d`, Q4_0 | Apache-2.0 | local | SHA-256 `d1023499…` |
+| qwen3-4b-gguf (encodeur de texte) | unsloth @ `22c9fc8a`, Q4_K_M | Apache-2.0 | local | SHA-256 `f6f85177…` |
+| flux1-ae (VAE Z-Image) | Comfy-Org @ `6fc90a3b` | Apache-2.0 | local | SHA-256 `afc8e282…` |
+| flux2-small-decoder | BFL @ `a3efc24f` | Apache-2.0 | local | SHA-256 `ea4273f0…` |
+| isnet-anime | release rembg v0.0.0 (modèle SkyTNT) | Apache-2.0 (données : non précisée) | local | IoU ≥ 0,98 sur l'image test |
+| birefnet-lite | release BiRefNet v1, epoch 232 | MIT | local | idem |
+| rtmw-l-384 | openmmlab 20231122 | Apache-2.0 (données Cocktail14 : mixtes) | local | 133 points sur l'image test |
+| mediapipe pose / face landmarker | 1.1.1, `.task` float16 latest | Apache-2.0 | local | 33 / 478 points |
+| onnxruntime | 1.31.0 | MIT | local | import |
+| opencv-python-headless | 5.0.0.93 | Apache-2.0 | local | import |
+
+### Ce que nous NE prenons pas
+- FLUX.2 [klein] 9B (non commercial), FLUX.3 Image Klein (`flux-kommunity-license`), X-Pose/UniPose (recherche non
+  commerciale).
+- La génération vidéo pour le jeu des personnages : identité instable d'une graine à l'autre (`banc-cpu/README.md`).
+- Le contour d'œil MediaPipe sur les cartoons (il ne voit que l'iris), les blendshapes en valeur absolue, et la clé de
+  fond couleur comme détoureur principal (ombres de contact).

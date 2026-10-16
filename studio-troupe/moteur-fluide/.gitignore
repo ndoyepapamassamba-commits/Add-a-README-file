@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.log
+# Rendus et fichiers intermédiaires : jamais dans le dépôt (ils vont dans studio-troupe/sorties/)
+sorties/
+cache/
+*.mp4
+*.wav
