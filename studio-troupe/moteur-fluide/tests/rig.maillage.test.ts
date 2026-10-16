@@ -49,11 +49,18 @@ describe('maillage depuis le masque', () => {
   const { image } = imageFigure();
   const brut = construireMaillage(image, { pas: 10 });
 
-  it('couvre le masque (> 0,97) sans triangle dehors', () => {
+  it('couvre le masque (> 0,97) sans triangle dehors (au-delà de marge + fermeture = 3,5 px)', () => {
     const masque = masqueAlpha(image, 12);
-    const c = couvertureMasque(brut.positions, brut.triangles, masque, image.largeur, image.hauteur, brut.distance, 2);
+    const c = couvertureMasque(brut.positions, brut.triangles, masque, image.largeur, image.hauteur, brut.distance, 3.5);
     expect(c.couverture).toBeGreaterThan(0.97);
     expect(c.trianglesDehors).toBe(0);
+  });
+
+  it('sans fermeture, aucun triangle n’est à plus de 2 px du masque', () => {
+    const sans = construireMaillage(image, { pas: 10, fermeture: 0 });
+    const c = couvertureMasque(sans.positions, sans.triangles, masqueAlpha(image, 12), image.largeur, image.hauteur, sans.distance, 2);
+    expect(c.trianglesDehors).toBe(0);
+    expect(c.couverture).toBeGreaterThan(0.999);
   });
 
   it('est conforme : tous les segments du contour sont des arêtes', () => {

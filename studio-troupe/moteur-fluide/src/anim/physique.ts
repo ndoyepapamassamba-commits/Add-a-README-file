@@ -58,8 +58,8 @@ export function creerPendule(
     : { valeur: (t) => masse.consigne(t), vitesse: (t) => (masse.consigne(t + 1e-4) - masse.consigne(t - 1e-4)) / 2e-4 };
   // θ = (Y − X)/L avec y vers le bas : la masse à gauche de l'attache (Y < X) = rotation horaire (> 0).
   return {
-    angle: (t) => -(masse.valeur(t) - attache.valeur(t)) / L,
-    vitesse: (t) => -(masse.vitesse(t) - attache.vitesse(t)) / L,
+    angle: (t) => (attache.valeur(t) - masse.valeur(t)) / L + 0,
+    vitesse: (t) => (attache.vitesse(t) - masse.vitesse(t)) / L + 0,
   };
 }
 

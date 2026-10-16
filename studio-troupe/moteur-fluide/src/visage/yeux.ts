@@ -1,9 +1,10 @@
 /**
  * Yeux : clignements et regard, déterministes (hachages à graine) et purs.
  *
- * **Clignements** : processus de renouvellement à taux variable λ(t) (≈ 17/min au repos, 24/min en parlant,
- * 10/min en écoute attentive). On intègre `Λ(t) = ∫λ` (linéaire par morceaux) ; le clignement `i` tombe à
- * `Λ⁻¹(i + u₀ + 0,8·(uᵢ − ½))` : apériodique (coefficient de variation ≈ 0,33), jamais collé au précédent.
+ * **Clignements** : processus de renouvellement à taux variable λ(t) (15/min au repos, 21/min en parlant,
+ * 9/min en écoute attentive ; avec 12 % de doublés, ≈ 17, 23 et 10 fermetures par minute). On intègre
+ * `Λ(t) = ∫λ` (linéaire par morceaux) ; le clignement `i` tombe à `Λ⁻¹(i + u₀ + 0,8·(uᵢ − ½))` : apériodique
+ * (coefficient de variation ≈ 0,33), jamais collé au précédent.
  * Durée 180 à 300 ms : fermeture 60 à 90 ms (accélérée), fermé 20 à 50 ms, ouverture 100 à 160 ms (freinée).
  * 12 % de doubles clignements. Clignements forcés aux grands changements de regard et aux prises ; aucun pendant
  * une prise (`sansClignement`) ni pendant un gel (le temps de jeu est figé).

@@ -73,8 +73,8 @@ export function posesDeTest(rig: CharacterRig): Array<{ nom: string; pose: Pose;
     poses.push({ nom: 'flexion (IK pieds)', pose });
   }
   poses.push({
-    nom: 'étirement',
-    pose: { os: { avantBrasG: r(0.4, { x: 1.25, y: 0.9 }), brasG: r(-1.4), tete: r(0.3, { x: 1.06, y: 0.96 }), torse: r(-0.12) }, racine },
+    nom: 'étirement et écrasement',
+    pose: { os: { avantBrasG: r(0.4, { x: 0.95, y: 1.25 }), brasG: r(-1.4), tete: r(0.3, { x: 1.08, y: 0.93 }), torse: r(-0.12, { x: 1.03, y: 0.97 }) }, racine },
   });
   return poses;
 }

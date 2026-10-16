@@ -8,8 +8,11 @@
  *      capsules normalisées `d/r` autour de chaque os visible depuis le sommet (la droite sommet → os reste dans le
  *      masque), puis propagation géodésique sur le maillage (Voronoï le long des arêtes : ne traverse aucun vide)
  *      et lissage par vote majoritaire.
- * 2. **Coupure des ponts** : un triangle qui relie deux parties non voisines dans l'arbre (main contre cuisse, coude
- *    contre torse…) est retiré, pour que les membres se décollent proprement.
+ * 2. **Découpe des contacts** : un triangle qui relie deux parties non voisines dans l'arbre (main contre cuisse,
+ *    coude contre torse…) est donné à sa partie majoritaire, avec des clones de ses autres sommets : le maillage est
+ *    découpé le long du contact, les membres se décollent sans trou ni étirement. Entre parties à deux pas (bras et
+ *    torse), la jonction est gardée si elle est peinte d'un seul tenant (couture), découpée si elle enjambe un vide
+ *    du masque d'origine (simple contact comblé par la fermeture).
  * 3. **Bandes** : un sommet est « libre » s'il est à moins d'une largeur de bande (≈ 0,9 × rayon du membre le plus
  *    fin) de la frontière avec une partie voisine ; seul le côté le plus fin plie (cou sous la tête, bras contre le
  *    torse), sauf près de l'articulation où la bande est symétrique (coude, genou). Les autres sommets sont fixés à
@@ -30,7 +33,7 @@ import type { AncresVisage, GroupeDessin, Squelette, Vec2 } from '../timeline/ty
 import { echantillonner } from './distance';
 import { construireAdjacence, dijkstra, gradientConjugue, type Adjacence } from './graphe';
 import type { MaillageBrut } from './maillage';
-import { distanceArborescente, estAncetre, indexerSquelette, membreDe, ordreMembres, articulationEntre } from './squelette';
+import { articulationEntre, distanceArborescente, estAncetre, indexerSquelette, membreDe, ordreMembres } from './squelette';
 
 /** Réglages des poids. */
 export interface OptionsPoids {
@@ -74,6 +77,7 @@ export interface MaillagePondere {
 
 /** Mesures de contrôle des poids. */
 export interface StatsPoids {
+  /** Triangles de contact découpés (donnés à une partie, sommets clonés). */
   pontsRetires: number;
   sommetsLibres: number;
   sommetsCor: number;
@@ -204,8 +208,7 @@ function etiquettesAutomatiques(
       }
     }
   }
-  // Cœurs : capsules normalisées, os visibles. Un os doté d'une zone explicite n'a que sa zone.
-  const avecZone = new Set(Object.keys(options.zones ?? {}).map((nom) => idx.index.get(nom)).filter((j) => j !== undefined));
+  // Cœurs : capsules normalisées, os visibles (les zones forcées gardent la priorité).
   const sources: Array<[number, number, number]> = [];
   for (let v = 0; v < n; v++) {
     const x = pos[2 * v]!;
@@ -217,7 +220,6 @@ function etiquettesAutomatiques(
     let best = -1;
     let bestScore = 1;
     for (let j = 0; j < os.length; j++) {
-      if (avecZone.has(j)) continue;
       const s = segs[j]!;
       const dx = s.b.x - s.a.x;
       const dy = s.b.y - s.a.y;
@@ -330,40 +332,7 @@ export function calculerPoids(brut: MaillageBrut, squelette: Squelette, options:
   const iRacine = idx.index.get(squelette.racine) ?? 0;
   for (let v = 0; v < n; v++) if (etiquettes[v]! < 0) etiquettes[v] = iRacine;
 
-  // 2. Coupure des ponts entre parties non voisines.
-  const gardes: number[] = [];
-  let pontsRetires = 0;
-  const distCache = new Map<number, number>();
-  const distOs = (a: number, b: number): number => {
-    const k = a * 4096 + b;
-    let d = distCache.get(k);
-    if (d === undefined) {
-      d = distanceArborescente(idx, a, b);
-      distCache.set(k, d);
-    }
-    return d;
-  };
-  for (let t = 0; t < tri.length; t += 3) {
-    const la = etiquettes[tri[t]!]!;
-    const lb = etiquettes[tri[t + 1]!]!;
-    const lc = etiquettes[tri[t + 2]!]!;
-    if (distOs(la, lb) > distancePontMax || distOs(lb, lc) > distancePontMax || distOs(la, lc) > distancePontMax) {
-      pontsRetires++;
-      continue;
-    }
-    gardes.push(tri[t]!, tri[t + 1]!, tri[t + 2]!);
-  }
-  if (pontsRetires > 0) {
-    const c = compacter(pos, gardes, boucles, etiquettes);
-    pos = c.pos;
-    tri = c.tri;
-    boucles = c.boucles;
-    etiquettes = c.etiquettes;
-    n = pos.length / 2;
-    adj = construireAdjacence(pos, tri, n);
-  }
-
-  // 3. Rayon de chaque partie : 90e centile de la profondeur de ses sommets.
+  // 2. Rayon de chaque partie : 90e centile de la profondeur de ses sommets.
   const profondeurs: number[][] = Array.from({ length: nOs }, () => []);
   for (let v = 0; v < n; v++) {
     const sd = echantillonner(brut.distance, brut.largeur, brut.hauteur, pos[2 * v]! - 0.5, pos[2 * v + 1]! - 0.5);
@@ -377,6 +346,113 @@ export function calculerPoids(brut: MaillageBrut, squelette: Squelette, options:
     rayons[j] = p.length ? Math.max(3, p[Math.floor(0.9 * (p.length - 1))]!) : 10;
     statsRayons[squelette.os[j]!.nom] = Math.round(rayons[j]! * 10) / 10;
     statsSommets[squelette.os[j]!.nom] = p.length;
+  }
+
+  // 3. Découpe des contacts. Parties non voisines (distance > 2 dans l'arbre) : toujours découpées. Parties à distance 2
+  //    (bras contre torse, cuisse contre cuisse) : la jonction est gardée quand elle est peinte d'un seul tenant
+  //    (couture de la manche), découpée quand une arête mixte traverse le vide du masque d'origine : c'est alors un
+  //    simple contact (l'intérieur du bras qui frôle le flanc), comblé par la fermeture ou la dilatation.
+  const gardes: number[] = [];
+  let pontsRetires = 0;
+  const distCache = new Map<number, number>();
+  const distOs = (a: number, b: number): number => {
+    const k = a * 4096 + b;
+    let d = distCache.get(k);
+    if (d === undefined) {
+      d = distanceArborescente(idx, a, b);
+      distCache.set(k, d);
+    }
+    return d;
+  };
+  // Un segment traverse-t-il le vide du masque d'origine (avant fermeture et dilatation) ?
+  const traverseVide = (u: number, v: number): boolean => {
+    const ax = pos[2 * u]!;
+    const ay = pos[2 * u + 1]!;
+    const bx = pos[2 * v]!;
+    const by = pos[2 * v + 1]!;
+    const n = Math.max(2, Math.ceil(Math.hypot(bx - ax, by - ay) * 2));
+    for (let k = 1; k < n; k++) {
+      const x = Math.floor(ax + ((bx - ax) * k) / n);
+      const y = Math.floor(ay + ((by - ay) * k) / n);
+      if (x < 0 || y < 0 || x >= brut.largeur || y >= brut.hauteur || !brut.masque[y * brut.largeur + x]) return true;
+    }
+    return false;
+  };
+  const pontAccepte = (a: number, b: number, u: number, v: number): boolean => {
+    if (a === b) return true;
+    const d = distOs(a, b);
+    if (d <= 1) return true;
+    if (d > distancePontMax) return false;
+    return !traverseVide(u, v);
+  };
+  // Un triangle de contact n'est pas supprimé (sa peinture compte) : il est donné à la partie qui y possède le plus
+  // de peinture, et ses
+  // sommets des autres parties sont remplacés par des CLONES étiquetés comme elle. Le maillage est ainsi découpé le
+  // long du contact : au repos rien ne change, en mouvement les deux parties se séparent sans trou ni étirement.
+  const posListe = Array.from(pos);
+  const etiquettesListe = Array.from(etiquettes);
+  const clones = new Map<number, number>(); // (sommet, partie) → clone
+  const cloner = (v: number, partie: number): number => {
+    const cle = v * 4096 + partie;
+    let c = clones.get(cle);
+    if (c === undefined) {
+      c = etiquettesListe.length;
+      posListe.push(pos[2 * v]!, pos[2 * v + 1]!);
+      etiquettesListe.push(partie);
+      clones.set(cle, c);
+    }
+    return c;
+  };
+  for (let t = 0; t < tri.length; t += 3) {
+    const sommets = [tri[t]!, tri[t + 1]!, tri[t + 2]!];
+    const parties = sommets.map((v) => etiquettes[v]!);
+    const [la, lb, lc] = parties as [number, number, number];
+    if (la !== lb || lb !== lc) {
+      const [va, vb, vc] = sommets as [number, number, number];
+      if (!pontAccepte(la, lb, va, vb) || !pontAccepte(lb, lc, vb, vc) || !pontAccepte(la, lc, va, vc)) {
+        pontsRetires++;
+        // Partie qui possède le plus de peinture dans le triangle (chaque échantillon peint va au sommet le plus
+        // proche en barycentriques). Un triangle presque vide (le vide comblé du contact) est abandonné.
+        const compte = new Map<number, number>();
+        let peints = 0;
+        let total = 0;
+        const N = 6;
+        for (let i = 0; i <= N; i++) {
+          for (let j = 0; i + j <= N; j++) {
+            const b0 = (i + 0.33) / (N + 1);
+            const b1 = (j + 0.33) / (N + 1);
+            const b2 = 1 - b0 - b1;
+            if (b2 < 0) continue;
+            total++;
+            const x = Math.floor(b0 * pos[2 * va]! + b1 * pos[2 * vb]! + b2 * pos[2 * vc]!);
+            const y = Math.floor(b0 * pos[2 * va + 1]! + b1 * pos[2 * vb + 1]! + b2 * pos[2 * vc + 1]!);
+            if (x < 0 || y < 0 || x >= brut.largeur || y >= brut.hauteur || !brut.masque[y * brut.largeur + x]) continue;
+            peints++;
+            const k = b0 >= b1 && b0 >= b2 ? 0 : b1 >= b2 ? 1 : 2;
+            compte.set(parties[k]!, (compte.get(parties[k]!) ?? 0) + 1);
+          }
+        }
+        if (peints < 0.25 * total) continue;
+        let maj = la;
+        let best = -1;
+        for (const [l, c] of compte) if (c > best) {
+          best = c;
+          maj = l;
+        }
+        for (let k = 0; k < 3; k++) gardes.push(parties[k] === maj ? sommets[k]! : cloner(sommets[k]!, maj));
+        continue;
+      }
+    }
+    gardes.push(sommets[0]!, sommets[1]!, sommets[2]!);
+  }
+  if (pontsRetires > 0) {
+    const c = compacter(Float64Array.from(posListe), gardes, boucles, Int32Array.from(etiquettesListe));
+    pos = c.pos;
+    tri = c.tri;
+    boucles = c.boucles;
+    etiquettes = c.etiquettes;
+    n = pos.length / 2;
+    adj = construireAdjacence(pos, tri, n);
   }
 
   // 4. Bandes : sommets libres près des frontières entre parties voisines.

@@ -1,22 +1,16 @@
 /**
- * Module QA (à construire) : porte qualité chiffrée sur l'ÉTAT du moteur et sur la vidéo — énergie de mouvement,
- * à-coups, sauts de pose, glissement des pieds, clignements, fermetures M/B/P, couverture des images, synchro
- * audio, vérification ffprobe et décodage intégral. Verdict PASS / FAIL avec les mesures.
+ * Module QA : porte qualité chiffrée sur l'ÉTAT du moteur et sur la vidéo — énergie de mouvement (minimum ET
+ * maximum : l'échec « trop lego » était un mouvement trop faible), à-coups et tremblement, sauts de pose, glissement
+ * des pieds, immobilité, clignements, fermetures M/B/P et synchro labiale, vitesses de caméra, valeurs non finies,
+ * déterminisme ; puis, sur le MP4, différences entre images (degré de dynamique, images figées, sauts de lumière) et
+ * planche contact. Verdict PASS / FAIL avec les mesures.
  *
- * ÉTAT : types du rapport seulement. Le constructeur du module complète ce fichier.
+ * - `metriques.ts` : séries et mesures (fonctions pures) ;
+ * - `porte.ts` : seuils, verdict, rapport Markdown ;
+ * - `pixels.ts` : mesures sur les pixels du MP4 et planche contact (FFmpeg).
  */
 
-/** Un critère mesuré. */
-export interface MesureQualite {
-  nom: string;
-  valeur: number;
-  seuil: string;
-  ok: boolean;
-  detail?: string;
-}
-
-/** Rapport de la porte qualité. */
-export interface RapportQualite {
-  verdict: 'PASS' | 'FAIL';
-  mesures: MesureQualite[];
-}
+export type { MesureQualite, RapportQualite } from './types';
+export * from './metriques';
+export * from './porte';
+export * from './pixels';

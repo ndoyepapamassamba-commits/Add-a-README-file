@@ -113,10 +113,24 @@ function avecRotation(t: TransformOs, rotation: number): TransformOs {
   return { rotation, translation: { ...t.translation }, echelle: { ...t.echelle } };
 }
 
+/** Inverse d'une matrice affine. */
+function inverse(m: { a: number; b: number; c: number; d: number; tx: number; ty: number }) {
+  const det = m.a * m.d - m.b * m.c || 1e-12;
+  const a = m.d / det;
+  const b = -m.b / det;
+  const c = -m.c / det;
+  const d = m.a / det;
+  return { a, b, c, d, tx: -(a * m.tx + c * m.ty), ty: -(b * m.tx + d * m.ty) };
+}
+
 /**
  * Applique une IK à deux os sur une pose : renvoie une NOUVELLE pose (la pose d'entrée n'est pas modifiée) dont les
  * rotations de `def.os[0]` et `def.os[1]` amènent le bout de la chaîne (pivot de l'effecteur s'il est donné, sinon
  * bout de l'os inférieur) sur `cible` (px image, repère posé avant la racine).
+ *
+ * La résolution se fait dans le repère local du parent de la chaîne (exacte même si le parent est tourné, écrasé
+ * ou cisaillé) ; si les deux os de la chaîne portent eux-mêmes une échelle, trois passes de correction ramènent
+ * l'écart sous le centième de pixel.
  */
 export function appliquerIK(
   squelette: Squelette,
@@ -139,46 +153,64 @@ export function appliquerIK(
   const etat = calculerFK(squelette, pose, options);
   const ta = transformLocale(pose, osA.nom);
   const tb = transformLocale(pose, osB.nom);
-  // Géométrie de la chaîne dans les repères de repos (échelles propres comprises).
-  const appliquerA = (o: typeof osA, t: TransformOs, v: Vec2): Vec2 => {
-    const ca = Math.cos(o.angleRepos);
-    const sa = Math.sin(o.angleRepos);
-    const u = ca * v.x + sa * v.y;
-    const w = -sa * v.x + ca * v.y;
-    const us = u * t.echelle.x;
-    const ws = w * t.echelle.y;
-    return { x: ca * us - sa * ws, y: sa * us + ca * ws };
-  };
   const finRepos: Vec2 =
     ie !== undefined
       ? squelette.os[ie]!.pivot
       : { x: osB.pivot.x + Math.cos(osB.angleRepos) * osB.longueur, y: osB.pivot.y + Math.sin(osB.angleRepos) * osB.longueur };
-  const v1a = appliquerA(osA, ta, { x: osB.pivot.x - osA.pivot.x, y: osB.pivot.y - osA.pivot.y });
-  const v1 = { x: v1a.x + tb.translation.x, y: v1a.y + tb.translation.y };
-  const v2 = appliquerA(osB, tb, { x: finRepos.x - osB.pivot.x, y: finRepos.y - osB.pivot.y });
+  // Repère local du parent de la chaîne (identité pour une racine).
+  const pa = idx.parents[ia]!;
+  const Wp = pa >= 0 ? etat.peau[pa]! : { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+  const Wpi = inverse(Wp);
+  const versLocal = (p: Vec2): Vec2 => ({ x: Wpi.a * p.x + Wpi.c * p.y + Wpi.tx, y: Wpi.b * p.x + Wpi.d * p.y + Wpi.ty });
+  // Segments dans le repère local (échelles des deux os appliquées au repos, approximation corrigée ensuite).
+  const sa = ta.echelle;
+  const sb = tb.echelle;
+  const v1 = { x: (osB.pivot.x + tb.translation.x - osA.pivot.x) * sa.x, y: (osB.pivot.y + tb.translation.y - osA.pivot.y) * sa.y };
+  const v2 = { x: (finRepos.x - osB.pivot.x) * sa.x * sb.x, y: (finRepos.y - osB.pivot.y) * sa.y * sb.y };
   const L1 = Math.hypot(v1.x, v1.y);
   const L2 = Math.hypot(v2.x, v2.y);
   const beta1 = Math.atan2(v1.y, v1.x);
   const beta2 = Math.atan2(v2.y, v2.x);
-  const pa = idx.parents[ia]!;
-  const thetaParent = pa >= 0 ? etat.angles[pa]! : 0;
-  const P = etat.pivots[ia]!;
+  const P = { x: osA.pivot.x + ta.translation.x, y: osA.pivot.y + ta.translation.y };
   const douceur = options.douceur ?? def.douceur ?? 0;
-  const sol = resoudreDeuxSegments(P, L1, L2, cible, def.plier, douceur);
-  let rotA = enrouler(sol.angleHaut - thetaParent - beta1);
-  let rotB = enrouler(sol.angleBas - sol.angleHaut + beta1 - beta2);
   const avecLimites = options.limitesIK ?? options.limites ?? true;
-  if (avecLimites && osB.limites && (rotB < osB.limites.min || rotB > osB.limites.max)) {
-    // Coude borné : on fige l'angle relatif et on vise la cible avec la chaîne rigide obtenue.
-    rotB = Math.min(osB.limites.max, Math.max(osB.limites.min, rotB));
-    const delta = rotB + beta2 - beta1; // angleBas − angleHaut
-    const ex = L1 + L2 * Math.cos(delta);
-    const ey = L2 * Math.sin(delta);
-    const gamma = Math.atan2(ey, ex);
-    const versCible = Math.atan2(cible.y - P.y, cible.x - P.x);
-    rotA = enrouler(versCible - gamma - thetaParent - beta1);
+  const resoudre = (cibleLocale: Vec2): [number, number] => {
+    const sol = resoudreDeuxSegments(P, L1, L2, cibleLocale, def.plier, douceur);
+    let rotA = enrouler(sol.angleHaut - beta1);
+    let rotB = enrouler(sol.angleBas - sol.angleHaut + beta1 - beta2);
+    if (avecLimites && osB.limites && (rotB < osB.limites.min || rotB > osB.limites.max)) {
+      // Coude borné : on fige l'angle relatif et on vise la cible avec la chaîne rigide obtenue.
+      rotB = Math.min(osB.limites.max, Math.max(osB.limites.min, rotB));
+      const delta = rotB + beta2 - beta1;
+      const gamma = Math.atan2(L2 * Math.sin(delta), L1 + L2 * Math.cos(delta));
+      rotA = enrouler(Math.atan2(cibleLocale.y - P.y, cibleLocale.x - P.x) - gamma - beta1);
+    }
+    if (avecLimites && osA.limites) rotA = Math.min(osA.limites.max, Math.max(osA.limites.min, rotA));
+    return [rotA, rotB];
+  };
+  const fabriquer = (rotA: number, rotB: number): Pose => {
+    const os: Record<string, TransformOs> = { ...pose.os };
+    os[osA.nom] = avecRotation(ta, rotA);
+    os[osB.nom] = avecRotation(tb, rotB);
+    return { ...pose, os };
+  };
+  const boutAtteint = (p: Pose): Vec2 => {
+    const e = calculerFK(squelette, p, { ...options, limites: false });
+    const kb = e.peau[ib]!;
+    return { x: kb.a * finRepos.x + kb.c * finRepos.y + kb.tx, y: kb.b * finRepos.x + kb.d * finRepos.y + kb.ty };
+  };
+  const cibleLocale = versLocal(cible);
+  let [rotA, rotB] = resoudre(cibleLocale);
+  const echelonne = sa.x !== 1 || sa.y !== 1 || sb.x !== 1 || sb.y !== 1;
+  if (echelonne && douceur === 0) {
+    // Corrections : on décale la cible locale de l'écart restant (convergence rapide pour des échelles ≈ 1).
+    let visee = { ...cibleLocale };
+    for (let k = 0; k < 3; k++) {
+      const atteint = versLocal(boutAtteint(fabriquer(rotA, rotB)));
+      visee = { x: visee.x + cibleLocale.x - atteint.x, y: visee.y + cibleLocale.y - atteint.y };
+      [rotA, rotB] = resoudre(visee);
+    }
   }
-  if (avecLimites && osA.limites) rotA = Math.min(osA.limites.max, Math.max(osA.limites.min, rotA));
   const rotationHaut = rotA;
   const rotationBas = rotB;
   const melange = Math.min(1, Math.max(0, options.melange ?? 1));
@@ -186,22 +218,22 @@ export function appliquerIK(
     rotA = ta.rotation + melange * enrouler(rotA - ta.rotation);
     rotB = tb.rotation + melange * enrouler(rotB - tb.rotation);
   }
-  const os: Record<string, TransformOs> = { ...pose.os };
-  os[osA.nom] = avecRotation(ta, rotA);
-  os[osB.nom] = avecRotation(tb, rotB);
+  let nouvelle = fabriquer(rotA, rotB);
   if (options.angleEffecteur !== undefined && ie !== undefined) {
+    // Orientation imposée de l'effecteur : direction voulue ramenée dans le repère de son parent (l'os inférieur).
     const osE = squelette.os[ie]!;
     const te = transformLocale(pose, osE.nom);
-    const thetaB = thetaParent + rotA + rotB;
-    let rotE = enrouler(options.angleEffecteur - osE.angleRepos - thetaB);
+    const Kb = calculerFK(squelette, nouvelle, { ...options, limites: false }).peau[ib]!;
+    const Kbi = inverse(Kb);
+    const dx = Math.cos(options.angleEffecteur);
+    const dy = Math.sin(options.angleEffecteur);
+    const lx = Kbi.a * dx + Kbi.c * dy;
+    const ly = Kbi.b * dx + Kbi.d * dy;
+    let rotE = enrouler(Math.atan2(ly, lx) - osE.angleRepos);
     if (avecLimites && osE.limites) rotE = limiterDoux(rotE, osE.limites.min, osE.limites.max, 0);
-    os[osE.nom] = avecRotation(te, rotE);
+    nouvelle = { ...nouvelle, os: { ...nouvelle.os, [osE.nom]: avecRotation(te, rotE) } };
   }
-  const nouvelle: Pose = { ...pose, os };
-  // Bout effectivement atteint (FK de la nouvelle pose, mêmes options).
-  const etatFinal = calculerFK(squelette, nouvelle, { ...options, limites: false });
-  const kb = etatFinal.peau[ib]!;
-  const bout = { x: kb.a * finRepos.x + kb.c * finRepos.y + kb.tx, y: kb.b * finRepos.x + kb.d * finRepos.y + kb.ty };
+  const bout = boutAtteint(nouvelle);
   return { pose: nouvelle, rotationHaut, rotationBas, bout, ecart: Math.hypot(bout.x - cible.x, bout.y - cible.y) };
 }
 

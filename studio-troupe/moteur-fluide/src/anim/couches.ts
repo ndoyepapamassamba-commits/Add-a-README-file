@@ -414,9 +414,9 @@ export function compiler(cc: ContexteAnim): AnimationCompilee {
     for (const x of directs) {
       const tl = t - x.a.debut;
       if (tl < x.d.debut || tl > x.d.fin) continue;
-      x.d.fn(tl, (os, prop, v) => {
+      x.d.fn(tl, (os, prop, v, zone) => {
         if (v === 0) return;
-        const z = zoneOs(os);
+        const z = zone ?? zoneOs(os);
         let w = x.cacheZones.get(z);
         if (!w) x.cacheZones.set(z, (w = poidsDe(x.a, z)));
         acc.ajouter(os, prop, w.unite ? v : v * w.fn(t));

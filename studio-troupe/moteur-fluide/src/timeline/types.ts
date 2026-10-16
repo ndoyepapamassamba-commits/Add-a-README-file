@@ -393,6 +393,17 @@ export interface CharacterRig {
   secondaire?: ChaineSecondaire[];
   /** Origine de l'image et licence (registre des ressources). */
   provenance?: { source: string; licence: string; empreinte?: string };
+  /**
+   * Statistiques de couleur du dessin (pixels opaques, espace Lab), pour l'accorder au décor
+   * (`scene/couleur`). Facultatif : calculé par `scene/analyse.enrichirRig` (Node) ou par la page de rendu.
+   */
+  couleur?: StatsLab;
+}
+
+/** Moyenne et écart-type d'un ensemble de couleurs dans l'espace CIE Lab (D65), `[L, a, b]`. */
+export interface StatsLab {
+  moyenne: [number, number, number];
+  ecart: [number, number, number];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -465,6 +476,11 @@ export interface EtatOmbre {
 export interface Etalonnage {
   gain: Couleur;
   decalage: Couleur;
+  /**
+   * Liseré de lumière (rim light) venu de la lumière du décor, facultatif : `direction` = vers la lumière, dans le
+   * repère écran (unitaire, y vers le bas) ; `intensite` 0 … 1 ; `largeur` en px de l'image du personnage.
+   */
+  lisere?: { direction: Vec2; couleur: Couleur; intensite: number; largeur: number };
 }
 
 /** État d'un personnage à un instant. */
@@ -506,6 +522,11 @@ export interface EtatCamera {
   flouBouge: Vec2;
   /** Profondeur nette (0 … 1) pour la profondeur de champ ; `null` = tout net. */
   profondeurNette: number | null;
+  /**
+   * Gain d'exposition appliqué à l'image (1 = neutre ; facultatif). `scene/` s'en sert pour raccorder la clarté de
+   * deux décors pendant un panoramique filé qui traverse une coupe.
+   */
+  exposition?: number;
 }
 
 /** État du décor 2,5D. */
@@ -649,6 +670,11 @@ export interface Cadrage {
   centre?: PointDecor;
   /** Zoom imposé (prioritaire sur `taille`). */
   zoom?: number;
+  /**
+   * Caméra « à main levée » : amplitude de la micro-dérive (respiration de l'opérateur), 0 = pied fixe, 1 = épaule
+   * franche. Facultatif (défaut 0,35 : vivant sans être remarqué).
+   */
+  mainLevee?: number;
 }
 
 /** Placement d'un personnage au début d'un plan. */
@@ -935,6 +961,11 @@ export interface InfoDecor {
    */
   fit: { mH: number; floor: number; cx: number; blur?: number };
   /**
+   * Analyse du décor (couleur, lumière, profondeur du sol), facultative : calculée une fois par `scene/analyse`
+   * (Node, lecture sur place) ou par la page de rendu. Sans elle, `scene/` retombe sur des valeurs neutres.
+   */
+  analyse?: AnalyseDecor;
+  /**
    * Chemins des fichiers (lus sur place, jamais copiés) : peinture avec figurants, plaque sans figurants, profondeurs
    * (clair = proche), masques (rouge = figurants, vert = ciel), personnes (facultatif).
    */
@@ -946,6 +977,28 @@ export interface InfoDecor {
     masks: string;
     people?: string;
   };
+}
+
+/**
+ * Analyse d'un décor (module `scene/`), sérialisable. Les statistiques Lab sont prises sur la plaque, hors
+ * figurants et hors ciel. Repère : fractions du décor (`u` vers la droite, `v` vers le bas).
+ */
+export interface AnalyseDecor {
+  version: 1;
+  /** Statistiques globales. */
+  lab: StatsLab;
+  /**
+   * Statistiques locales sur une grille `colonnes × lignes` (lignes d'abord) : `moyennes[i]` et `ecarts[i]` de la
+   * cellule `i = ligne·colonnes + colonne` ; `poids[i]` = part de pixels utiles (0 = cellule vide, repli global).
+   */
+  grille: { colonnes: number; lignes: number; moyennes: Array<[number, number, number]>; ecarts: Array<[number, number, number]>; poids: number[] };
+  /** Lumière dominante : `direction` vers la lumière (repère écran, unitaire), couleur et contraste (0 … 1). */
+  lumiere: { direction: Vec2; couleur: Couleur; contraste: number };
+  /** Profondeur du sol selon la hauteur : `d(v) = a·v + b` sur la bande du sol, avec la qualité `r2` de l'ajustement. */
+  sol: { a: number; b: number; r2: number };
+  /** Part du ciel (masque vert) et des figurants (masque rouge) dans l'image. */
+  ciel: number;
+  figurants: number;
 }
 
 /** Ressources disponibles pendant l'évaluation (chargées **avant**, jamais pendant `evaluer`). */

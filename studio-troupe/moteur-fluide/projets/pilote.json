@@ -1,0 +1,53 @@
+{
+  "format": "moteur-fluide/projet@1",
+  "titre": "Pilote — Modou et le poulet",
+  "fps": 30,
+  "duree": 10,
+  "sortie": { "largeur": 1080, "hauteur": 1920, "sousImages": 4, "obturateur": 0.5, "graine": 11 },
+  "personnages": [
+    { "id": "modou", "nom": "MODOU", "rig": "modou", "tailleM": 1.76, "personnalite": { "exageration": 1.25 } }
+  ],
+  "plans": [
+    {
+      "id": "p1",
+      "debut": 0,
+      "fin": 10,
+      "decor": "maquis",
+      "cadrage": { "taille": "moyen", "sujets": ["modou"] },
+      "personnages": [{ "personnage": "modou", "u": 0.45, "orientation": 1 }]
+    }
+  ],
+  "pistes": {
+    "actions": [
+      { "personnage": "modou", "action": "respirer", "debut": 0, "duree": 10 },
+      { "personnage": "modou", "action": "attendre", "debut": 0, "duree": 1.8 },
+      { "personnage": "modou", "action": "regarder", "debut": 0.2, "duree": 9.4, "cible": { "camera": true } },
+      { "personnage": "modou", "action": "hausserEpaules", "debut": 1.7, "duree": 1.5, "intensite": 1.3 },
+      { "personnage": "modou", "action": "pointer", "debut": 3.25, "duree": 1.5, "cible": { "camera": true }, "intensite": 1.3 },
+      { "personnage": "modou", "action": "rire", "debut": 5.2, "duree": 2.6, "intensite": 1.3 }
+    ],
+    "dialogue": [
+      {
+        "id": "r1",
+        "personnage": "modou",
+        "texte": "Walay, c'est pas moi qui ai mangé le poulet !",
+        "debut": 1.8,
+        "fin": 4.6,
+        "emotion": "malice"
+      }
+    ],
+    "camera": [
+      { "type": "fondu", "debut": 0, "duree": 0.4, "sens": "entree" },
+      { "type": "punchIn", "debut": 4.0, "duree": 0.22, "sujet": "modou", "facteur": 1.5 },
+      { "type": "gel", "debut": 4.6, "duree": 0.5 },
+      { "type": "tremblement", "debut": 5.35, "duree": 0.7, "amplitude": 0.006 },
+      { "type": "recadrer", "debut": 7.6, "duree": 0.9, "cadrage": { "taille": "moyen", "sujets": ["modou"] } },
+      { "type": "fondu", "debut": 9.5, "duree": 0.5, "sens": "sortie" }
+    ],
+    "sons": [
+      { "id": "whoosh-punch", "fichier": "synth:whoosh?duree=0.35", "debut": 3.9, "volume": 0.5, "type": "effet" },
+      { "id": "scratch-gel", "fichier": "synth:scratch", "debut": 4.6, "volume": 0.9, "type": "effet" },
+      { "id": "badumtss", "fichier": "synth:badumtss", "debut": 8.0, "volume": 0.7, "type": "effet" }
+    ]
+  }
+}

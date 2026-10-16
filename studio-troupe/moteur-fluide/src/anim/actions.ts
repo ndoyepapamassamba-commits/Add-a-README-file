@@ -19,10 +19,10 @@ import { bruitFractal1D, hash01, hashChaine } from '../noyau/aleatoire';
 import { hermite, smoothstep, smootherstep } from '../noyau/courbes';
 import { borner, ecartAngle } from '../noyau/maths2d';
 import { DUREE_DEMI_TOUR_DEFAUT, DUREE_MARCHE_DEFAUT, marchesDansPlan, positionAuSol } from '../timeline/trajets';
-import type { ActionPlacee, PointDecor, ValeurParametre } from '../timeline/types';
+import type { ActionPlacee, ParametresRessort, PointDecor, ValeurParametre } from '../timeline/types';
 import { courbe, RACINE, VISAGE, type CourbePL, type IndiceVisage, type Propriete } from './canaux';
 import { hauteurMonde, miroirA, type CibleResolue, type ContexteAnim } from './cibles';
-import { aOs, angleRepos, longueurOs, pivotOs, signeAbduction, signeVers, type Morphologie } from './corps';
+import { aOs, angleRepos, limitesOs, longueurOs, pivotOs, signeAbduction, signeVers, type Morphologie } from './corps';
 import type { ModifRessort, Zone } from './reglages';
 
 const DEG = Math.PI / 180;
@@ -66,8 +66,8 @@ export interface ParamsRecette {
   cc: ContexteAnim;
 }
 
-/** Fonction d'ajout d'un signal direct. */
-export type Ajout = (os: string, prop: string, v: number) => void;
+/** Fonction d'ajout d'un signal direct (zone de masque imposée pour des sorties couplées). */
+export type Ajout = (os: string, prop: string, v: number, zone?: Zone) => void;
 
 /** Courbe d'intention d'une action. */
 export interface CourbeAction {
@@ -186,9 +186,27 @@ export class Ecriture {
   abduction(c: Cote, pts: Points, o: OptionsCourbe = {}): void {
     this.rot('bras' + c, signeAbduction(this.m, 'bras' + c, c), pts, o);
   }
-  /** Ouvre l'avant-bras vers l'extérieur et le haut (négatif = le replie vers le corps). */
+  /**
+   * Ouvre l'avant-bras vers l'extérieur et le haut (négatif = le replie vers le corps). Le coude ne s'ouvre pas
+   * au-delà de sa limite articulaire : l'excédent passe au bras (la direction de la main est conservée, le bras
+   * se lève davantage au lieu de casser le coude).
+   */
   avantBras(c: Cote, pts: Points, o: OptionsCourbe = {}): void {
-    this.rot('avantBras' + c, signeAbduction(this.m, 'avantBras' + c, c), pts, o);
+    const nom = 'avantBras' + c;
+    const s = signeAbduction(this.m, nom, c);
+    const lim = limitesOs(this.m, nom);
+    if (!lim) {
+      this.rot(nom, s, pts, o);
+      return;
+    }
+    // Ouverture maximale (degrés anatomiques) avant la marge de la limite douce du rig.
+    const marge = 0.1;
+    const maxRad = s > 0 ? lim.max - marge : -(lim.min + marge);
+    const max = Math.max(0, maxRad) / DEG / Math.max(1e-6, this.g);
+    const garde = pts.map(([t, v]) => [t, Math.min(v, max)] as const);
+    const exces = pts.map(([t, v]) => [t, Math.max(0, v - max)] as const);
+    this.rot(nom, s, garde, o);
+    if (exces.some(([, v]) => v > 0)) this.rot('bras' + c, signeAbduction(this.m, 'bras' + c, c), exces, o);
   }
   /** Ouvre la main vers l'extérieur (négatif = vers l'intérieur). */
   main(c: Cote, pts: Points, o: OptionsCourbe = {}): void {
@@ -298,6 +316,54 @@ function h(p: ParamsRecette, ...n: number[]): number {
   return hash01(p.graine, ...n);
 }
 
+/** Ressort et zone communs des canaux liés (racine et jambes d'une flexion), sans retard de chaîne. */
+const LIE: OptionsCourbe = { ressort: { absolu: { f: 2.1, zeta: 0.8 } }, retard: 0, zone: 'jambes' };
+
+/** Échantillonne finement une courbe de clés (8 sous-points par segment) pour une fonction non linéaire. */
+function affiner(pts: Points, f: (v: number) => number): Points {
+  const r: Array<readonly [number, number]> = [];
+  pts.forEach(([t, v], i) => {
+    r.push([t, f(v)]);
+    const s = pts[i + 1];
+    if (s && s[0] > t) for (let k = 1; k < 8; k++) r.push([t + ((s[0] - t) * k) / 8, f(v + ((s[1] - v) * k) / 8)]);
+  });
+  return r;
+}
+
+/** Longueur hanche → cheville d'un côté (px). */
+function longueurJambe(m: Morphologie, c: Cote): number {
+  return longueurOs(m, 'cuisse' + c, 0.2) + longueurOs(m, 'jambe' + c, 0.18);
+}
+
+/**
+ * Déplace le bassin horizontalement (px, courbe de clés) **sans faire glisser les pieds** : la racine se
+ * translate, chaque jambe pivote à la hanche de `asin(−dx/L)` et le pied compense. Racine et jambes partagent
+ * un ressort et n'ont pas de retard de chaîne.
+ */
+function deplacerBassin(e: Ecriture, pts: Points, ressort: ParametresRessort): void {
+  // Une seule zone de masque pour les courbes couplées : une atténuation les touche toutes pareil.
+  const o: OptionsCourbe = { ressort: { absolu: ressort }, retard: 0, zone: 'racine' };
+  e.racine('tx', pts, o);
+  for (const c of COTES) {
+    const L = longueurJambe(e.m, c);
+    const s = signeVers(e.m, 'cuisse' + c, -1, 0, -1);
+    const angle = affiner(pts, (dx) => s * Math.asin(borner(dx / L, -0.9, 0.9)));
+    e.brut('cuisse' + c, 'r', angle, o);
+    e.brut('pied' + c, 'r', angle.map(([t, v]) => [t, -v] as const), o);
+  }
+}
+
+/** Version directe : ajoute un déplacement `dx` (px) du bassin, pieds fixes. */
+function deplacerBassinDirect(m: Morphologie, aj: Ajout, dx: number): void {
+  if (dx === 0) return;
+  aj(RACINE, 'tx', dx, 'racine');
+  for (const c of COTES) {
+    const a = signeVers(m, 'cuisse' + c, -1, 0, -1) * Math.asin(borner(dx / longueurJambe(m, c), -0.9, 0.9));
+    aj('cuisse' + c, 'r', a, 'racine');
+    aj('pied' + c, 'r', -a, 'racine');
+  }
+}
+
 /** Masque plein corps. */
 const CORPS_ENTIER: Partial<Record<Zone, number>> = { racine: 1, jambes: 0.5, torse: 1, tete: 1, brasG: 1, brasD: 1, visage: 1 };
 
@@ -385,16 +451,20 @@ const attendre: Recette = {
     }
     const H = e.H;
     const sur = (f: (v: number) => number): Points => poids.map(([tt, v]) => [tt, f(v)] as const);
-    e.racine('tx', sur((v) => v * 0.014 * H * g), { ressort: lent });
+    deplacerBassin(e, sur((v) => v * 0.014 * H * g), { f: 1.05, zeta: 0.85 });
     e.racine('r', sur((v) => v * 1.1 * DEG * g), { ressort: lent });
     e.brut('torse', 'r', sur((v) => -v * 1.6 * DEG * g * signeVers(e.m, 'torse', 1)), { ressort: lent });
     e.brut('tete', 'r', sur((v) => v * 0.8 * DEG * g * signeVers(e.m, 'tete', 1)), { ressort: lent });
-    // Jambe libre : genou légèrement plié vers l'intérieur (côté opposé à l'appui).
+    // Jambe libre : genou qui se relâche (cuisse +α, jambe −2α, pied +α : le pied reste en place, talon levé).
+    const relache: OptionsCourbe = { ressort: { absolu: { f: 1.05, zeta: 0.85 } }, retard: 0, zone: 'racine' };
     for (const c of COTES) {
       const ext = e.m.cote[c];
       const libre = (v: number): number => (Math.sign(v) === ext ? 0 : Math.abs(v));
-      e.brut('jambe' + c, 'r', sur((v) => -libre(v) * 3.5 * DEG * g * signeAbduction(e.m, 'jambe' + c, c)), { ressort: lent });
-      e.brut('cuisse' + c, 'r', sur((v) => libre(v) * 1.5 * DEG * g * signeAbduction(e.m, 'cuisse' + c, c)), { ressort: lent });
+      const sC = signeAbduction(e.m, 'cuisse' + c, c);
+      const sJ = signeAbduction(e.m, 'jambe' + c, c);
+      e.brut('cuisse' + c, 'r', sur((v) => libre(v) * 2.2 * DEG * g * sC), relache);
+      e.brut('jambe' + c, 'r', sur((v) => -libre(v) * 4.4 * DEG * g * sJ), relache);
+      e.brut('pied' + c, 'r', sur((v) => libre(v) * 2.2 * DEG * g * sJ), relache);
     }
     const s = p.graine;
     e.direct(0, p.D, (tl, aj) => {
@@ -492,7 +562,7 @@ const hocher: Recette = {
   },
 };
 
-/** Hausser les épaules : épaules qui montent fort, paumes vers le ciel, tête qui s'enfonce et penche, moue. */
+/** Hausser les épaules : épaules qui montent fort, coudes écartés, paumes ouvertes, tête qui s'enfonce et penche, moue. */
 const hausserEpaules: Recette = {
   id: 'hausserEpaules',
   alias: ['haussement', 'hausser'],
@@ -514,24 +584,32 @@ const hausserEpaules: Recette = {
         [tR, 0.05],
         [fin, 0],
       ], { ressort: vif });
+      // Coudes écartés, avant-bras pointés vers le spectateur (raccourcis en perspective), paumes ouvertes vers
+      // l'extérieur : le haussement de face, sans casser le coude.
       e.abduction(c, [
         [0, 0],
         [A + d, -3],
-        [A + P + d, 14],
-        [tR, 12],
+        [A + P + d, 26],
+        [tR, 23],
         [fin, 0],
       ]);
       e.avantBras(c, [
         [0, 0],
         [A + d, -6],
-        [A + P + d, 42],
-        [tR, 38],
+        [A + P + d, 12],
+        [tR, 10],
+        [fin, 0],
+      ]);
+      e.brut('avantBras' + c, 'sy', [
+        [0, 0],
+        [A + P + d, -0.42],
+        [tR, -0.38],
         [fin, 0],
       ]);
       e.main(c, [
         [0, 0],
-        [A + P + d, 28],
-        [tR, 25],
+        [A + P + d, 40],
+        [tR, 36],
         [fin, 0],
       ]);
     });
@@ -611,7 +689,7 @@ const pointer: Recette = {
   construire(p) {
     const e = new Ecriture(p);
     const { cote, angle, dir } = visee(p);
-    const { A, P, tR, fin } = phases(p.D, p.k, 0.15, 0.18, 0.45);
+    const { A, P, tR, fin } = phases(p.D, p.k, 0.2, 0.18, 0.45);
     const m = e.m;
     const a1 = angleRepos(m, 'bras' + cote, Math.PI / 2);
     const a2 = angleRepos(m, 'avantBras' + cote, a1);
@@ -622,7 +700,8 @@ const pointer: Recette = {
     const frappe: ModifRessort = { facteurF: 1.35, zeta: 0.55 };
     e.brut('bras' + cote, 'r', [
       [0, 0],
-      [A, -0.2 * rotBras * Math.min(1.3, e.g)],
+      [A * 0.5, -0.25 * rotBras * Math.min(1.3, e.g)],
+      [A, -0.25 * rotBras * Math.min(1.3, e.g)],
       [A + P * 0.5, rotBras],
       [tR, rotBras],
       [fin, 0],
@@ -717,21 +796,27 @@ const mainsOuvertes: Recette = {
       e.abduction(c, [
         [0, 0],
         [A + d, -8],
-        [A + P + d, 24],
-        [tR, 21],
+        [A + P + d, 34],
+        [tR, 30],
         [fin, 0],
       ], { ressort: rebond });
       e.avantBras(c, [
         [0, 0],
         [A + d, -12],
-        [A + P + d, 48],
-        [tR, 44],
+        [A + P + d, 12],
+        [tR, 10],
         [fin, 0],
       ], { ressort: rebond });
+      e.brut('avantBras' + c, 'sy', [
+        [0, 0],
+        [A + P + d, -0.2],
+        [tR, -0.18],
+        [fin, 0],
+      ]);
       e.main(c, [
         [0, 0],
-        [A + P + d, 25],
-        [tR, 22],
+        [A + P + d, 42],
+        [tR, 38],
         [fin, 0],
       ]);
       e.epaule(c, [
@@ -862,8 +947,8 @@ const surprise: Recette = {
   construire(p) {
     const e = new Ecriture(p);
     const { A, P, tR, fin } = phases(p.D, p.k, 0.09, 0.08, 0.45);
-    const prise: ModifRessort = { facteurF: 2, zeta: 0.35 };
-    const saut: ModifRessort = { facteurF: 2, zeta: 0.55 };
+    const prise: ModifRessort = { facteurF: 2, zeta: 0.4 };
+    const saut: ModifRessort = { facteurF: 2, zeta: 0.75 };
     const g = e.g;
     const H = e.H;
     const t1 = A + P;
@@ -984,7 +1069,7 @@ const surprise: Recette = {
       [tR, 1],
       [tR + 0.01, 0],
     ], { ressort: { facteurF: 5 } });
-    e.c.clignements.push(0);
+    // Pas de clignement forcé : le plissement d'anticipation en tient lieu, les yeux s'ouvrent net sur la prise.
     return e.c;
   },
 };
@@ -1074,7 +1159,7 @@ const colere: Recette = {
       aj('tete', 'r', 1.1 * DEG * a * bruit(tl * 9, s + 32));
       aj('brasG', 'r', 1.6 * DEG * a * bruit(tl * 11, s + 33));
       aj('brasD', 'r', 1.6 * DEG * a * bruit(tl * 11.5, s + 34));
-      aj(RACINE, 'tx', 0.002 * H * a * bruit(tl * 11, s + 35));
+      deplacerBassinDirect(e.m, aj, 0.002 * H * a * bruit(tl * 11, s + 35));
     });
     const vis = (v: number): Points => [
       [0, 0],
@@ -1173,7 +1258,7 @@ const gene: Recette = {
       const env = smoothstep(t1, t1 + 0.2, tl) * (1 - smoothstep(tR - 0.25, tR, tl));
       if (env > 0) aj('avantBras' + c, 'r', signeGratte * 5 * DEG * env * Math.sin(2 * Math.PI * 4.5 * (tl - t1)));
       const envP = smoothstep(A, t1, tl) * (1 - smoothstep(tR, fin, tl));
-      if (envP > 0) aj(RACINE, 'tx', 0.008 * H * envP * e.g * Math.sin((2 * Math.PI * (tl - A)) / 1.6));
+      if (envP > 0) deplacerBassinDirect(e.m, aj, 0.008 * H * envP * e.g * Math.sin((2 * Math.PI * (tl - A)) / 1.6));
     });
     const vis = (v: number): Points => [
       [0, 0],
@@ -1299,15 +1384,18 @@ function flechirJambes(e: Ecriture, alphaPts: Points, sens: 1 | -1): void {
   const m = e.m;
   const L1 = longueurOs(m, 'cuisseG', 0.2);
   const L2 = longueurOs(m, 'jambeG', 0.18);
+  // Même ressort, sans retard de chaîne, pour la racine et les jambes : les pieds restent au sol.
+  const lie = LIE;
   for (const c of COTES) {
     const dir = m.orientation === 0 ? m.cote[c] : sens;
     const sC = signeVers(m, 'cuisse' + c, dir, 0, dir);
     const sJ = signeVers(m, 'jambe' + c, dir, 0, dir);
-    e.brut('cuisse' + c, 'r', alphaPts.map(([t, a]) => [t, sC * a] as const));
-    e.brut('jambe' + c, 'r', alphaPts.map(([t, a]) => [t, -2 * sJ * a] as const));
-    e.brut('pied' + c, 'r', alphaPts.map(([t, a]) => [t, sJ * a] as const));
+    e.brut('cuisse' + c, 'r', alphaPts.map(([t, a]) => [t, sC * a] as const), lie);
+    e.brut('jambe' + c, 'r', alphaPts.map(([t, a]) => [t, -2 * sJ * a] as const), lie);
+    e.brut('pied' + c, 'r', alphaPts.map(([t, a]) => [t, sJ * a] as const), lie);
   }
-  e.racine('ty', alphaPts.map(([t, a]) => [t, (L1 + L2) * (1 - Math.cos(a))] as const));
+  // La descente (1 − cos α) n'est pas linéaire en α : courbe échantillonnée finement entre les clés.
+  e.racine('ty', affiner(alphaPts, (a) => (L1 + L2) * (1 - Math.cos(a))), lie);
 }
 
 /** Rire avec flexion : le rire, plus les genoux qui plient et le buste qui se plie. */
@@ -1322,7 +1410,7 @@ const rireFlexion: Recette = {
   construire(p) {
     const e = new Ecriture(p);
     const { A, tR, fin } = construireRire(e, p);
-    const alpha = Math.min(40, 26 * e.g) * DEG;
+    const alpha = Math.min(38, 26 * e.g) * DEG;
     flechirJambes(e, [
       [0, 0],
       [A + 0.3, alpha * 0.4],
@@ -1382,13 +1470,13 @@ const recul: Recette = {
       [tR, -3.5],
       [fin, 0],
     ], { ressort: vif });
-    e.racine('tx', [
+    deplacerBassin(e, [
       [0, 0],
       [A, 0.006 * H * dir],
       [t1 + 0.1, -0.035 * H * dir * e.g],
       [tR, -0.035 * H * dir * e.g],
       [fin, 0],
-    ], { ressort: vif });
+    ], { f: 2.6 * p.k, zeta: 0.5 });
     e.racine('sy', [
       [0, 0],
       [A, -0.03 * e.g],
@@ -1446,7 +1534,8 @@ const flexion: Recette = {
     const e = new Ecriture(p);
     const { A, P, tR, fin } = phases(p.D, p.k, 0.12, 0.45, 0.6);
     const t1 = A + P;
-    const alpha = Math.min(55, 32 * e.g) * DEG;
+    // α ≤ 38° : jambe repliée de 2α et pied de α, dans les limites du genou (≈ 92°) et de la cheville (40°).
+    const alpha = Math.min(38, 32 * e.g) * DEG;
     flechirJambes(e, [
       [0, 0],
       [A, -0.08 * alpha],
@@ -1544,6 +1633,13 @@ function geometrieMarche(p: ParamsRecette): GeometrieMarche | null {
   };
 }
 
+/** Extrémité d'un os au repos (px image), ou `null`. */
+function extremite(m: Morphologie, nom: string): { x: number; y: number } | null {
+  const o = m.os.get(nom);
+  if (!o) return null;
+  return { x: o.pivot.x + Math.cos(o.angle) * o.longueur, y: o.pivot.y + Math.sin(o.angle) * o.longueur };
+}
+
 /** Résout une jambe à deux os : angles absolus de la cuisse et de la jambe pour atteindre `T` (depuis la hanche). */
 function ikJambe(T: { x: number; y: number }, L1: number, L2: number, pli: number): { a1: number; a2: number } {
   const d = Math.max(1e-6, Math.hypot(T.x, T.y));
@@ -1583,14 +1679,18 @@ const marcher: Recette = {
     const g = Math.min(1.4, e.g);
     const jambes = COTES.map((c) => {
       const hanche = pivotOs(m, 'cuisse' + c, { x: m.cote[c] * 0.04, y: -0.45 });
-      const genou = pivotOs(m, 'jambe' + c, { x: m.cote[c] * 0.05, y: -0.25 });
-      const cheville = pivotOs(m, 'pied' + c, { x: m.cote[c] * 0.06, y: -0.06 });
+      const genou = aOs(m, 'jambe' + c) ? pivotOs(m, 'jambe' + c, { x: 0, y: 0 }) : extremite(m, 'cuisse' + c) ?? pivotOs(m, '', { x: m.cote[c] * 0.05, y: -0.25 });
+      const cheville = aOs(m, 'pied' + c) ? pivotOs(m, 'pied' + c, { x: 0, y: 0 }) : extremite(m, 'jambe' + c) ?? pivotOs(m, '', { x: m.cote[c] * 0.06, y: -0.06 });
       const L1 = Math.hypot(genou.x - hanche.x, genou.y - hanche.y) || longueurOs(m, 'cuisse' + c, 0.2);
       const L2 = Math.hypot(cheville.x - genou.x, cheville.y - genou.y) || longueurOs(m, 'jambe' + c, 0.18);
       const V0 = { x: cheville.x - hanche.x, y: cheville.y - hanche.y };
-      const rho = Math.min(Math.hypot(V0.x, V0.y), 0.998 * (L1 + L2));
-      const pli = geo.lateral >= 0.3 ? geo.dir : m.cote[c];
-      const repos = ikJambe(V0, L1, L2, pli);
+      const n0 = Math.hypot(V0.x, V0.y);
+      const rho = Math.min(n0, 0.998 * (L1 + L2));
+      // De face, le genou ne plie que vers l'extérieur (limites des rigs) ; de profil, vers l'avant.
+      const pli = m.orientation !== 0 && geo.lateral >= 0.3 ? geo.dir : m.cote[c];
+      // Même bornage qu'en marche : au repos, la jambe résolue doit redonner exactement la pose de repos.
+      const k0 = n0 > rho ? rho / n0 : 1;
+      const repos = ikJambe({ x: V0.x * k0, y: V0.y * k0 }, L1, L2, pli);
       return { c, L1, L2, V0, rho, pli, repos, decalage: c === 'G' ? 0 : 0.5 };
     });
     const pas = geo.cycle * geo.pxParMonde;
@@ -1653,7 +1753,7 @@ const marcher: Recette = {
       aj('tete', 'ty', -0.25 * dy);
       aj('tete', 'r', -0.6 * DEG * wA * Math.sin(4 * Math.PI * ph));
       aj('ventre', 'sy', 0.012 * wA * Math.sin(4 * Math.PI * ph - 0.9));
-      if (geo.lateral < 0.7) aj(RACINE, 'tx', 0.01 * H * wA * (1 - geo.lateral) * Math.sin(2 * Math.PI * ph));
+      if (geo.lateral < 0.7) aj(RACINE, 'tx', 0.01 * H * wA * (1 - geo.lateral) * Math.sin(2 * Math.PI * ph)); // balancement de face (pieds en l'air à tour de rôle)
     });
     // Arrêt : le buste continue sur sa lancée, dépasse, revient (ressort peu amorti).
     const arret: ModifRessort = { zeta: 0.45 };
@@ -1764,7 +1864,8 @@ const parler: Recette = {
   priorite: 3,
   dureeDefaut: 2,
   protection: 0,
-  masque: () => ({ brasG: 1, brasD: 1 }),
+  // Sans parole pendant l'action, aucun battement : le geste ne réclame alors aucune zone.
+  masque: (p) => (p.accents.length > 0 || p.parole.length > 0 ? { brasG: 1, brasD: 1 } : {}),
   construire(p) {
     const e = new Ecriture(p);
     const g = p.implicite ? 0.65 : 1;
@@ -1872,31 +1973,21 @@ const sAsseoir: Recette = {
     const t1 = A + P;
     const m = e.m;
     const L1 = longueurOs(m, 'cuisseG', 0.2);
-    const lent: ModifRessort = { facteurF: 0.9, zeta: 0.6 };
+    // Jambes et racine en signal direct exactement couplé : les pieds ne quittent pas le sol, même en transition.
+    // Profil de descente C² (smootherstep), tenue, remontée ; le rebond vient du tassement à ressort plus bas.
+    const s = (tl: number): number => smootherstep(A, t1, tl) * (1 - smootherstep(tR, fin, tl));
     if (m.orientation === 0) {
-      const sy = -0.72;
-      for (const c of COTES) {
-        e.brut('cuisse' + c, 'sy', [
-          [0, 0],
-          [A, 0],
-          [t1, sy],
-          [tR, sy],
-          [fin, 0],
-        ], { ressort: lent });
-        e.rot('cuisse' + c, signeAbduction(m, 'cuisse' + c, c), [
-          [0, 0],
-          [t1, 8],
-          [tR, 8],
-          [fin, 0],
-        ], { ressort: lent }, 1);
-      }
-      e.racine('ty', [
-        [0, 0],
-        [A, -0.01 * e.H],
-        [t1, L1 * 0.72],
-        [tR, L1 * 0.72],
-        [fin, 0],
-      ], { ressort: lent });
+      // De face : cuisses raccourcies en perspective (la jambe, enfant de la cuisse, est compensée).
+      const k = 0.72;
+      e.direct(0, p.D, (tl, aj) => {
+        const v = s(tl);
+        if (v === 0) return;
+        for (const c of COTES) {
+          aj('cuisse' + c, 'sy', -k * v, 'jambes');
+          aj('jambe' + c, 'sy', 1 / (1 - k * v) - 1, 'jambes');
+        }
+        aj(RACINE, 'ty', k * L1 * v, 'jambes');
+      });
       e.brut('torse', 'sy', [
         [0, 0],
         [A + P * 0.5, -0.05],
@@ -1905,31 +1996,18 @@ const sAsseoir: Recette = {
         [tR + 0.3, 0],
       ]);
     } else {
+      // De profil : cuisses à l'horizontale, jambes verticales.
       const a = 85 * DEG;
-      for (const c of COTES) {
-        const s = signeVers(m, 'cuisse' + c, p.sens, 0, p.sens);
-        e.brut('cuisse' + c, 'r', [
-          [0, 0],
-          [A, 0],
-          [t1, s * a],
-          [tR, s * a],
-          [fin, 0],
-        ], { ressort: lent });
-        e.brut('jambe' + c, 'r', [
-          [0, 0],
-          [A, 0],
-          [t1, -s * a],
-          [tR, -s * a],
-          [fin, 0],
-        ], { ressort: lent });
-      }
-      e.racine('ty', [
-        [0, 0],
-        [A, -0.01 * e.H],
-        [t1, L1 * (1 - Math.cos(a))],
-        [tR, L1 * (1 - Math.cos(a))],
-        [fin, 0],
-      ], { ressort: lent });
+      e.direct(0, p.D, (tl, aj) => {
+        const v = s(tl);
+        if (v === 0) return;
+        for (const c of COTES) {
+          const sg = signeVers(m, 'cuisse' + c, p.sens, 0, p.sens);
+          aj('cuisse' + c, 'r', sg * a * v, 'jambes');
+          aj('jambe' + c, 'r', -sg * a * v, 'jambes');
+        }
+        aj(RACINE, 'ty', L1 * (1 - Math.cos(a * v)), 'jambes');
+      });
       e.pencher('torse', p.sens, [
         [0, 0],
         [A + P * 0.5, 25],
@@ -2037,7 +2115,7 @@ function construirePrise(p: ParamsRecette, poser: boolean): Contribution {
   ]);
   const bas = p.cible && !p.cible.camera ? borner(p.cible.dy, 0, 1) : 0.5;
   if (bas > 0.3) {
-    const alpha = Math.min(45, 50 * bas) * DEG;
+    const alpha = Math.min(38, 50 * bas) * DEG;
     flechirJambes(e, [
       [0, 0],
       [A, 0],

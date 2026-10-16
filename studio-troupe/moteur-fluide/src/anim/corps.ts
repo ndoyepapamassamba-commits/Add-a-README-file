@@ -17,6 +17,8 @@ export interface InfoOs {
   /** Direction absolue au repos (rad). */
   angle: number;
   longueur: number;
+  /** Limites de la rotation locale ajoutée (rad), si le rig en déclare. */
+  limites?: { min: number; max: number };
 }
 
 /** Morphologie d'un rig. */
@@ -46,7 +48,9 @@ export function aOs(m: Morphologie, nom: string): boolean {
 export function morphologie(rig: CharacterRig): Morphologie {
   const os = new Map<string, InfoOs>();
   for (const o of rig.squelette.os) {
-    os.set(o.nom, { nom: o.nom, parent: o.parent, pivot: { ...o.pivot }, angle: o.angleRepos, longueur: o.longueur });
+    const info: InfoOs = { nom: o.nom, parent: o.parent, pivot: { ...o.pivot }, angle: o.angleRepos, longueur: o.longueur };
+    if (o.limites) info.limites = { ...o.limites };
+    os.set(o.nom, info);
   }
   const H = rig.hauteurPx > 0 ? rig.hauteurPx : 1000;
   const coteDe = (c: 'G' | 'D'): 1 | -1 | 0 => {
@@ -111,6 +115,11 @@ export function signeAbduction(m: Morphologie, nom: string, cote: 'G' | 'D'): 1 
   return signeVers(m, nom, ext, -0.3, ext === 1 ? -1 : 1);
 }
 
+/** Limites articulaires d'un os du rig (rad), ou `null`. */
+export function limitesOs(m: Morphologie, nom: string): { min: number; max: number } | null {
+  return m.os.get(nom)?.limites ?? null;
+}
+
 /** Angle absolu au repos d'un os (rad), ou `repli`. */
 export function angleRepos(m: Morphologie, nom: string, repli: number): number {
   return m.os.get(nom)?.angle ?? repli;
@@ -159,8 +168,39 @@ const PROPORTIONS: ReadonlyArray<readonly [string, string | null, number, number
 ];
 
 /**
- * Rig de référence (squelette standard complet, maillage vide, sans visage), de hauteur `hauteurPx`, dessiné de
- * face (`orientationDessin` réglable). Ancrage au sol au milieu des pieds.
+ * Limites articulaires de référence (degrés, rotation locale ajoutée au repos), pour le côté G (à droite de l'image
+ * sur un dessin de face) ; le côté D est en miroir. Mêmes conventions que les rigs construits par `rig/` : le coude
+ * et le genou ne plient que d'un côté (coude vers le corps, genou vers l'extérieur).
+ */
+const LIMITES_G: Readonly<Record<string, readonly [number, number]>> = {
+  bassin: [-34, 34],
+  torse: [-40, 40],
+  ventre: [-20, 20],
+  cou: [-34, 34],
+  tete: [-40, 40],
+  epaule: [-26, 20],
+  bras: [-178, 69],
+  avantBras: [-14, 155],
+  main: [-74, 74],
+  cuisse: [-69, 52],
+  jambe: [-20, 92],
+  pied: [-40, 40],
+};
+
+/** Limites de référence d'un os (rad), ou `undefined`. */
+export function limitesReference(nom: string): { min: number; max: number } | undefined {
+  const m = /^(epaule|bras|avantBras|main|cuisse|jambe|pied)([GD])$/.exec(nom);
+  const base = m ? m[1]! : nom;
+  const l = LIMITES_G[base];
+  if (!l) return undefined;
+  const k = Math.PI / 180;
+  if (m && m[2] === 'D') return { min: -l[1] * k, max: -l[0] * k };
+  return { min: l[0] * k, max: l[1] * k };
+}
+
+/**
+ * Rig de référence (squelette standard complet avec limites articulaires, maillage vide, sans visage), de hauteur
+ * `hauteurPx`, dessiné de face (`orientationDessin` réglable). Ancrage au sol au milieu des pieds.
  */
 export function rigReference(hauteurPx = 1000, orientationDessin: -1 | 0 | 1 = 0, id = 'reference'): CharacterRig {
   const cx = hauteurPx * 0.3;
@@ -169,13 +209,16 @@ export function rigReference(hauteurPx = 1000, orientationDessin: -1 | 0 | 1 = 0
   const os: Os[] = PROPORTIONS.map(([nom, parent, x0, y0, x1, y1]) => {
     const a = px(x0, y0);
     const b = px(x1, y1);
-    return {
+    const os: Os = {
       nom,
       parent,
       pivot: a,
       longueur: Math.hypot(b.x - a.x, b.y - a.y),
       angleRepos: Math.atan2(b.y - a.y, b.x - a.x),
     };
+    const l = limitesReference(nom);
+    if (l) os.limites = l;
+    return os;
   });
   return {
     format: 'moteur-fluide/rig@1',

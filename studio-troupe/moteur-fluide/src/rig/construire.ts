@@ -78,7 +78,7 @@ export interface RapportRig {
   poids: StatsPoids;
   /** Fraction des pixels du masque couverts par au moins un triangle. */
   couverture: number;
-  /** Triangles dont le centroïde est hors du masque dilaté de 2 px (0 attendu). */
+  /** Triangles dont le centroïde est à plus de `marge + fermeture` px (3,5 px par défaut) hors du masque (0 attendu). */
   trianglesDehors: number;
   pixelsMasque: number;
   dureeMs: number;
@@ -247,7 +247,10 @@ export function construireRig(
       return g && d ? { gauche: g, droit: d } : undefined;
     })();
   const ancrageSol = source.ancrageSol ?? (pieds ? { x: (pieds.gauche.x + pieds.droit.x) / 2, y: (pieds.gauche.y + pieds.droit.y) / 2 } : { x: (xMin + xMax + 1) / 2, y: bas });
-  const couverture = couvertureMasque(pondere.positions, pondere.triangles, brut.masque, brut.largeur, brut.hauteur, brut.distance, 2);
+  // Tolérance « dehors » = marge + fermeture : un triangle peut combler une fissure ou un coin rentrant de moins de
+  // 2 × fermeture px, jamais davantage (aucun pont par-dessus un vide plus large).
+  const toleranceDehors = (reglages.marge ?? 1.5) + (reglages.fermeture ?? 2);
+  const couverture = couvertureMasque(pondere.positions, pondere.triangles, brut.masque, brut.largeur, brut.hauteur, brut.distance, toleranceDehors);
   const rig: CharacterRig = {
     format: 'moteur-fluide/rig@1',
     id: source.id,

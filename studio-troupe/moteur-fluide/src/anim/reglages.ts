@@ -124,6 +124,11 @@ export interface ModifRessort {
   ecartZeta?: number;
   /** Remplace la réponse initiale r (r > 1 : attaque sèche). */
   r?: number;
+  /**
+   * Ressort imposé tel quel (seul le tempo s'applique) : pour des canaux qui doivent rester liés entre eux
+   * (genoux et racine d'une flexion : pieds au sol pendant toute la transition).
+   */
+  absolu?: ParametresRessort;
 }
 
 /** Zones de masquage des couches (un geste « possède » des zones ; les couches plus faibles y sont atténuées). */
@@ -173,6 +178,9 @@ export function ressortCanal(
   tempo: number,
   modif?: ModifRessort,
 ): ParametresRessort {
+  if (modif?.absolu) {
+    return { f: borner(modif.absolu.f * tempo, 0.2, 40), zeta: borner(modif.absolu.zeta, 0.12, 2), r: modif.absolu.r ?? 0 };
+  }
   const groupe = indice ? groupeIndice(indice) : groupeOs(nom);
   const base = perso.ressorts[groupe];
   const cle = osDeBase(nom);

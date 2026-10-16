@@ -71,22 +71,54 @@ describe('cinématique directe', () => {
     expect(e.pivots[iM]!.y).toBeCloseTo(attendu.y, 9);
   });
 
-  it('étire un os le long de son axe sans déformer ses enfants', () => {
-    const pose: Pose = { os: { avantBrasD: os(0, { x: 1.5, y: 1 }) }, racine };
-    const e = calculerFK(squelette, pose);
-    const iA = idx.index.get('avantBrasD')!;
-    const iM = idx.index.get('mainD')!;
+  it('suit le contrat : L = T(pivot + tr)·R·S·T(−pivot) dans le repère du parent, composé (échelle héritée)', () => {
+    const al = creerAleatoire(3);
+    const ref = (pose: Pose): Map<string, number[]> => {
+      // Composition de référence, écrite indépendamment (matrices 3×3 en tableaux).
+      const mul = (m: number[], n: number[]) => [
+        m[0]! * n[0]! + m[1]! * n[3]!, m[0]! * n[1]! + m[1]! * n[4]!, m[0]! * n[2]! + m[1]! * n[5]! + m[2]!,
+        m[3]! * n[0]! + m[4]! * n[3]!, m[3]! * n[1]! + m[4]! * n[4]!, m[3]! * n[2]! + m[4]! * n[5]! + m[5]!,
+      ];
+      const T = (x: number, y: number) => [1, 0, x, 0, 1, y];
+      const res = new Map<string, number[]>();
+      for (const o of squelette.os) {
+        const t = pose.os[o.nom]!;
+        const R = [Math.cos(t.rotation), -Math.sin(t.rotation), 0, Math.sin(t.rotation), Math.cos(t.rotation), 0];
+        const S = [t.echelle.x, 0, 0, 0, t.echelle.y, 0];
+        let L = mul(T(o.pivot.x + t.translation.x, o.pivot.y + t.translation.y), mul(R, mul(S, T(-o.pivot.x, -o.pivot.y))));
+        if (o.parent) L = mul(res.get(o.parent)!, L);
+        res.set(o.nom, L);
+      }
+      return res;
+    };
+    for (let k = 0; k < 20; k++) {
+      const pose: Pose = { os: {}, racine };
+      for (const o of squelette.os) {
+        pose.os[o.nom] = os(al.plage(-0.5, 0.5), { x: al.plage(0.8, 1.2), y: al.plage(0.8, 1.2) }, { x: al.plage(-5, 5), y: al.plage(-5, 5) });
+      }
+      const e = calculerFK(squelette, pose, { limites: false });
+      const r = ref(pose);
+      squelette.os.forEach((o, i) => {
+        const m = e.peau[i]!;
+        const q = r.get(o.nom)!;
+        expect(m.a).toBeCloseTo(q[0]!, 9);
+        expect(m.c).toBeCloseTo(q[1]!, 9);
+        expect(m.tx).toBeCloseTo(q[2]!, 7);
+        expect(m.b).toBeCloseTo(q[3]!, 9);
+        expect(m.d).toBeCloseTo(q[4]!, 9);
+        expect(m.ty).toBeCloseTo(q[5]!, 7);
+      });
+    }
+  });
+
+  it('écrase dans les axes de l’image : la tête plus large et plus basse avec echelle (1,1 ; 0,9)', () => {
+    const iT = idx.index.get('tete')!;
+    const e = calculerFK(squelette, { os: { tete: os(0, { x: 1.1, y: 0.9 }) }, racine });
+    const sommet = boutPose(squelette, e, iT);
     const a = ARTICULATIONS_FIGURE;
-    // Le poignet s'éloigne du coude de 50 %.
-    const attendu = { x: a.coudeD.x + 1.5 * (a.poignetD.x - a.coudeD.x), y: a.coudeD.y + 1.5 * (a.poignetD.y - a.coudeD.y) };
-    expect(e.pivots[iM]!.x).toBeCloseTo(attendu.x, 9);
-    expect(e.pivots[iM]!.y).toBeCloseTo(attendu.y, 9);
-    expect(boutPose(squelette, e, iA).x).toBeCloseTo(attendu.x, 9);
-    // La main est seulement translatée : sa matrice linéaire reste l'identité.
-    const m = e.peau[iM]!;
-    expect(m.a).toBeCloseTo(1, 12);
-    expect(m.d).toBeCloseTo(1, 12);
-    expect(pointAttache(squelette, e, 'mainD', a.boutMainD).x).toBeCloseTo(attendu.x + (a.boutMainD.x - a.poignetD.x), 9);
+    expect(sommet.y).toBeCloseTo(a.baseTete.y + 0.9 * (a.sommetTete.y - a.baseTete.y), 9);
+    expect(pointAttache(squelette, e, 'tete', { x: a.baseTete.x + 30, y: a.baseTete.y }).x).toBeCloseTo(a.baseTete.x + 33, 9);
+    expect(e.etire).toBe(true);
   });
 
   it('applique les limites en contrainte douce et continue', () => {
@@ -161,6 +193,17 @@ describe('cinématique inverse à deux os', () => {
       reussies++;
     }
     expect(reussies).toBe(200);
+  });
+
+  it('atteint la cible même si le parent est écrasé et la chaîne étirée', () => {
+    const brasG = ikStandard(0, 0).find((d) => d.nom === 'brasG')!;
+    const pose: Pose = {
+      os: { torse: os(0.15, { x: 0.92, y: 1.08 }), epauleG: os(-0.1), brasG: os(0, { x: 1, y: 1.1 }), avantBrasG: os(0, { x: 1.05, y: 0.95 }) },
+      racine,
+    };
+    const cible = { x: 230, y: 230 };
+    const r = appliquerIK(squelette, pose, brasG, cible, { limites: false });
+    expect(r.ecart).toBeLessThan(0.01);
   });
 
   it('respecte la limite du coude et vise au mieux', () => {

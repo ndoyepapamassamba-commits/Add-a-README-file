@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Page d'essai de la capture</title>
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}</style>
+</head>
+<body>
+<script>
+// Page de rendu minimale pour les tests de `export/capture` : même contrat que `window.moteurFluide`
+// (initialiser, dessiner, capturer), dessin 2D simple piloté par l'état (instant t, flou = moyenne des sous-états).
+(function () {
+  let c = null;
+  let g = null;
+  let options = null;
+  window.moteurFluide = {
+    version: 'essai',
+    async initialiser(o) {
+      options = o;
+      c = document.createElement('canvas');
+      c.width = o.largeur;
+      c.height = o.hauteur;
+      document.body.appendChild(c);
+      g = c.getContext('2d', { alpha: false });
+    },
+    async dessiner(sousEtats) {
+      if (sousEtats.length === 0) throw new Error('dessiner : aucun état');
+      const L = c.width, H = c.height;
+      g.globalAlpha = 1;
+      g.fillStyle = 'rgb(40,60,90)';
+      g.fillRect(0, 0, L, H);
+      // Pastille de couleur fixe (contrôle colorimétrique) : rgb(217,130,43).
+      g.fillStyle = 'rgb(217,130,43)';
+      g.fillRect(0, 0, Math.round(L / 3), Math.round(H / 6));
+      // Carré qui se déplace avec t ; flou de bougé = moyenne des sous-états.
+      g.globalAlpha = 1 / sousEtats.length;
+      for (const e of sousEtats) {
+        const x = ((e.t * 0.6) % 1) * (L - 40);
+        g.fillStyle = 'rgb(240,240,240)';
+        g.fillRect(x, H / 2, 40, 40);
+      }
+      g.globalAlpha = 1;
+    },
+    async capturer(format, qualite) {
+      return c.toDataURL(format === 'png' ? 'image/png' : 'image/jpeg', qualite);
+    },
+  };
+})();
+</script>
+</body>
+</html>

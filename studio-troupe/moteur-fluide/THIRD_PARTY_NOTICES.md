@@ -102,7 +102,8 @@ PixiJS embarque les paquets suivants ; esbuild conserve leurs commentaires de li
 | Outil | Version | Licence | Usage |
 |---|---|---|---|
 | Chromium (navigateur de Playwright, `chromium-1194`, préinstallé dans `/opt/pw-browsers`) | celui de Playwright 1.56.1 | BSD-3-Clause et licences de ses composants | rendu WebGL sans écran (SwiftShader), usage local, non redistribué |
-| FFmpeg / ffprobe (`/usr/bin`) | 6.1.1-3ubuntu5 | build Ubuntu `--enable-gpl` (libx264 GPL) | encodage et vérification en processus séparé, usage local, non redistribué ; `export/` consigne `ffmpeg -version` et `-buildconf` dans son rapport |
+| FFmpeg / ffprobe (`/usr/bin`) | 6.1.1-3ubuntu5 | build Ubuntu `--enable-gpl` (libx264 GPL) | encodage et vérification en processus séparé, usage local, non redistribué ; `export/` consigne `ffmpeg -version` et `-buildconf` dans son rapport ; `scene/analyse.ts` l'appelle aussi (processus séparé) pour décoder les images du kit en RGBA brut |
+| Police Inter (`/usr/share/fonts/opentype/inter`, paquet système) | celle du système | SIL Open Font License 1.1 | sous-titres incrustés (nommée par la page, jamais copiée ni redistribuée ; l'OFL autorise son usage dans les vidéos produites). Repli : DejaVu Sans (licence libre Bitstream Vera / domaine public) |
 
 ## Ressources privées
 
