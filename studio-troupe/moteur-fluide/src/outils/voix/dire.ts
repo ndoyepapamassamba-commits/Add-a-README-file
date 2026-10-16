@@ -247,6 +247,21 @@ export function motsHorodates(texte: string, phones: readonly PhoneTexte[], phon
   return mots;
 }
 
+/**
+ * Fusionne la voix d'une réplique dans le texte JSON d'un projet : seuls `audio`, `phonemes` et `mots` de la
+ * réplique `id` changent ; tous les autres champs (y compris inconnus) sont conservés. Lève une erreur si la réplique
+ * est absente. Renvoie le nouveau texte (indentation de 2 espaces).
+ */
+export function fusionnerVoix(texteProjet: string, id: string, voix: { audio: string; phonemes: Phoneme[]; mots: Mot[] }): string {
+  const projet = JSON.parse(texteProjet) as { pistes?: { dialogue?: Array<Record<string, unknown>> } };
+  const r = projet.pistes?.dialogue?.find((x) => x.id === id);
+  if (!r) throw new Error(`réplique « ${id} » introuvable dans le projet`);
+  r.audio = voix.audio;
+  r.phonemes = voix.phonemes;
+  r.mots = voix.mots;
+  return `${JSON.stringify(projet, null, 2)}\n`;
+}
+
 export const AIDE = `Voix française d'une réplique, avec durées exactes des phonèmes
 
 Utilisation :
@@ -394,11 +409,12 @@ async function principal(argv: string[]): Promise<number> {
   console.log(`Voix : ${wav} (${duree.toFixed(2)} s, ${phonemes.length} phonèmes, synthèse ${((performance.now() - t0) / 1000).toFixed(1)} s)`);
   console.log(`Phonèmes et mots : ${sortie}.json`);
   if (projet && replique && projetChemin) {
-    replique.audio = relative(dirname(projetChemin), wav);
-    replique.phonemes = phonemes;
-    replique.mots = mots;
-    writeFileSync(projetChemin, `${JSON.stringify(projet, null, 2)}\n`);
-    console.log(`Projet mis à jour : ${projetChemin} (réplique ${String(replique.id)})`);
+    // Fusion : on RELIT le projet juste avant d'écrire (il a pu changer pendant la synthèse) et on ne touche qu'aux
+    // champs de voix de la réplique ; tout le reste (décors, plans, placements, actions…) est conservé tel quel.
+    const texteActuel = readFileSync(projetChemin, 'utf8');
+    const fusion = fusionnerVoix(texteActuel, String(replique.id), { audio: relative(dirname(projetChemin), wav), phonemes, mots });
+    writeFileSync(projetChemin, fusion);
+    console.log(`Projet mis à jour : ${projetChemin} (réplique ${String(replique.id)} : audio, phonèmes, mots ; le reste est inchangé)`);
   }
   return 0;
 }
