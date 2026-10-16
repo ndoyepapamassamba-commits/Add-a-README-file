@@ -153,6 +153,7 @@ export const RULES: RuleDef[] = [
   { id: 'fluidite.camera-fixe', family: 'fluidité', severity: 'avertissement', rule: 'caméra immobile dans le plan (fluidité de la vidéo de référence) ; le mouvement passe par les coupes' },
   // revue image par image du film v4 (16/10, « tu n'as rien remarqué ? ») : ce que le livre ne mesurait pas encore
   { id: 'cadre.mains-entieres', family: 'cadre', severity: 'bloquant', rule: 'les mains d’un acteur restent dans le cadre (marge 1 %) : on ne coupe pas un geste au poignet' },
+  { id: 'cadre.tetes-entieres', family: 'cadre', severity: 'bloquant', rule: 'la tête de tout acteur visible reste entière dans le cadre (revue du 16/10 : la tête de Modou coupée en haut dans le plan de Maman) — pas seulement celle du sujet du plan' },
   { id: 'cadre.taille-acteurs', family: 'cadre', severity: 'avertissement', rule: 'plan à deux : chaque acteur mesure au moins 30 % de la hauteur de l’image (visages lisibles sur un téléphone, pas une moitié d’image de sol vide)' },
   { id: 'figuration.decoupe-propre', family: 'figuration', severity: 'bloquant', rule: 'un figurant montré ailleurs qu’à sa place peinte a une découpe propre : corps entier (pas coupé net par la boîte du détecteur), sans morceau de décor emporté' },
   { id: 'figuration.resolution', family: 'figuration', severity: 'bloquant', rule: 'aucun figurant net agrandi à plus de 1,35 fois ses pixels d’origine (sinon tache floue à côté d’acteurs nets) ; dans un plan serré au fond flou, pas plus que le flou' },
@@ -168,7 +169,9 @@ const inter = (a: Box, b: Box) => Math.max(0, Math.min(a[2], b[2]) - Math.max(a[
 const area = (b: Box) => Math.max(1e-9, (b[2] - b[0]) * (b[3] - b[1]));
 const cx = (b: Box) => (b[0] + b[2]) / 2;
 const words = (s: string) => s.replace(/[!?.…,;:«»"]/g, ' ').split(/\s+/).filter(Boolean);
-const wide = (s: PlanShot) => s.size === 'PE' || s.subject === 'groupe';
+// plan large = ensemble, plan à deux, ou plan moyen EN PIED (format bande de la chaîne : on y voit les deux corps entiers —
+// un figurant coupé au bord s'y voit comme dans un plan large, revue du 16/10)
+const wide = (s: PlanShot) => s.size === 'PE' || s.size === 'PM' || s.subject === 'groupe';
 
 /** cadre.bord, the same test for generation (stageFigurants veto) and for the check: in a wide shot an extra is whole
  *  (≥ 70 % inside) or absent; in a closer shot a part cut by the edge is allowed when it is small (≤ 5 % of the image),
@@ -225,6 +228,7 @@ export function checkPlan(p: Plan, ref: ChannelRef = CHANNEL): Violation[] {
     for (const b of f.bodies) if (!b.onGround && inter(b.box, [0, 0, w, h]) > 0) v('sol.pieds', `${b.id} n’a pas les pieds sur le sol`, f.t);
     for (const a of actors) {
       const seenA = inter(a.box, [0, 0, w, h]) / area(a.box);
+      if (seenA >= 0.3 && a.head && (a.head[1] < 0.005 * h || a.head[0] < 0.005 * w || a.head[2] > 0.995 * w)) v('cadre.tetes-entieres', `tête de ${a.id} coupée au bord (boîte ${a.head.map((q) => Math.round(q)).join(', ')})`, f.t);
       if (seenA >= 0.3) for (const [x, y] of a.hands ?? []) if (x < 0.01 * w || x > 0.99 * w || y < 0.01 * h || y > 0.995 * h) { v('cadre.mains-entieres', `main de ${a.id} coupée au bord (${Math.round(x)}, ${Math.round(y)})`, f.t); break; }
       if (wide(shot) && actors.length >= 2 && a.box[3] - a.box[1] < 0.3 * h) v('cadre.taille-acteurs', `${a.id} ne fait que ${Math.round((100 * (a.box[3] - a.box[1])) / h)} % de la hauteur`, f.t);
       if (seenA > 0.02 && (a.folds ?? 0) > 0) v('image.maillage', `${a.folds} triangle(s) replié(s) dans le dessin de ${a.id}`, f.t);

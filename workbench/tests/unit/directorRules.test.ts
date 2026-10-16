@@ -53,8 +53,16 @@ describe('livre de règles du réalisateur (anticipées, vérifiées avant le re
     expect(broken((p) => { p.frames[2]!.bodies[2] = { ...villager, box: [540, 400, 640, 560] }; p.frames[2]!.shot = 1; })).not.toContain('cadre.bord');
     expect(broken((p) => { p.frames[2]!.bodies[2] = { ...villager, box: [400, 300, 800, 900] }; p.frames[2]!.shot = 1; })).toContain('cadre.bord');
     expect(broken((p) => { for (const f of p.frames) f.bodies.pop(); })).toContain('cadre.fond-vivant');
+    // un plan moyen en pied (format bande) est jugé comme un plan large : un figurant à moitié coupé y est refusé
+    expect(broken((p) => { p.shots[1]!.size = 'PM'; p.frames[2]!.bodies[2] = { ...villager, box: [540, 400, 640, 560] }; p.frames[2]!.shot = 1; })).toContain('cadre.bord');
     // a sliver of a few pixels at the edge is not in the picture: it touches no face
     expect(broken((p) => { p.frames[2]!.shot = 1; p.frames[2]!.bodies[2] = { ...villager, box: [571, 300, 1400, 700] }; p.frames[2]!.bodies[1] = { ...p.frames[2]!.bodies[1]!, head: [300, 300, 600, 420] }; })).not.toContain('cadre.tangente-tete');
+  });
+  it('heads: the head of ANY visible actor cut by the top or side edge is caught, not only the subject of the shot', () => {
+    // plan sur Maman (plus petite) : la tête de Modou, à côté, sort par le haut (revue du 16/10, format bande)
+    expect(broken((p) => { p.frames[1]!.bodies[0] = { ...p.frames[1]!.bodies[0]!, box: [110, -20, 250, 800], head: [140, -20, 220, 80] }; })).toContain('cadre.tetes-entieres');
+    expect(broken((p) => { p.frames[1]!.bodies[1] = { ...p.frames[1]!.bodies[1]!, head: [520, 320, 600, 420] }; })).toContain('cadre.tetes-entieres');
+    expect(checkPlan(good()).map((x) => x.rule)).not.toContain('cadre.tetes-entieres');
   });
   it('subtitles: a wide shot where the text band covers the actors, or a close shot where it covers a face, is caught', () => {
     expect(broken((p) => { p.subtitleTop = 670; })).toContain('cadre.sous-titres');

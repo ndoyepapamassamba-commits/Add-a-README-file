@@ -12,6 +12,11 @@
 - **Veille → combiner → créer et innover** (consigne du 15/10/2026) : la veille de chaque requête (technique, DESIGN,
   ANALYSE) n'est jamais reprise telle quelle ; elle est combinée aux outils natifs pour créer du neuf, et la réponse dit
   ce qui a été innové (`.claude/skills/veille-permanente`, §00).
+- **Tout blocage de fluidité ou d'écart aux normes → un OUTIL GRATUIT GREFFÉ au moteur** (consigne du 16/10/2026, film
+  de la troupe) : à chaque écart mesuré avec les TikTok de l'utilisateur, les vidéos de Ladjagaï ou l'animation 3D (Pixar,
+  Illumination ; mêmes outils de mesure : `mesure2.py`, `measure.ts`, `grammaire_plans.py`), chercher sur Internet l'outil
+  gratuit qui le résout, l'apprendre, le REPRODUIRE dans notre moteur (licence MIT, Apache-2.0 ou BSD, ou méthode publiée
+  réécrite), puis remesurer. Objectif : plus de 100 % des références, dépasser Pixar et Disney.
 - **Chaque point faible sans solution fiable → veille Internet et outils puissants d'abord** (dépôts GitHub, modèles
   ouverts), méthode maison seulement en dernier recours.
 - Modèles et code exécutés chez nous : licences MIT, Apache-2.0 ou BSD seulement (`.claude/skills/modeles-libres-moteur`).

@@ -19,6 +19,10 @@ hors règle sont signalés ci-dessous, avec la façon dont ils sont isolés et c
 | Poids de peau par diffusion de chaleur (`boneHeat.ts`) | maison | — | méthode Pinocchio, Baran & Popović 2007 (publication) | poids de chaque os sur le maillage du dessin |
 | Ressorts analytiques (`server/jev/studio/actor/ressorts.ts`) | maison, 16/10/2026 | — | repris du « moteur fluide » du même dépôt (branche `claude/youthful-pasteur-7wbiqt`, même auteur) ; paramétrage (f, ζ, r) de t3ssel8r (vidéo « Giving Personality to Procedural Animations using Math », méthode) | dépassement, retour au calme, chevauchement des os, en forme fermée |
 | Membres séparés (`limbs.ts`) | maison | — | code de l'app | coupe du maillage entre parties non articulées (option, désactivée par défaut) |
+| Caméra qui accompagne (film de la troupe) | maison, 16/10/2026 | — (réécrit) | méthode de Phantom Camera (Godot), **MIT** (github.com/ramokz/phantom-camera, lu pour la méthode : zone morte « cadrée », SmoothDamp) | travelling qui suit la tête, immobile sur les temps comiques |
+| Corps entier vivant | maison | — | méthode de Perlin, « Real Time Responsive Animation with Personality » (IEEE TVCG 1995, publication) | transfert du poids, buste, élan vers l'autre |
+| Mâchoire, tête qui tourne, regard (déformeurs paramétriques) | maison | — | méthode des paramètres de Live2D / Inochi2D (**BSD-2**, méthode seulement) ; ComfyUI-AdvancedLivePortrait consulté (aucune licence publiée : rien repris) | bouche lisible, tête et yeux vers l'autre |
+| Composition « format de la chaîne » (`scripts/blenderfilm/compose_chaine.py`) | maison | — | mesurée sur la vidéo TikTok la plus vue de l'utilisateur | clip au centre, fond flouté, sous-titres karaoké |
 | jevlib (`server/jev/sandbox/jevlib*.ts`) | 1.1 | — | code de l'app | parole, cinéma, contrôle qualité |
 
 ## Outils lancés en processus séparé (pas liés à notre code)
@@ -52,6 +56,7 @@ hors règle sont signalés ci-dessous, avec la façon dont ils sont isolés et c
 | Planches, décors et voix de la troupe | propriété de l'utilisateur | jamais dans le dépôt public (`workbench/.private/`) |
 | Capture de mouvement CMU (mocap.cs.cmu.edu, essais 13, 14, 18, 19, 22, 23, 77, 113, 141) | usage libre, y compris commercial, selon la page de la base ; remerciement demandé (« The data used in this project was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217. ») | retargetée en 2D par `scripts/blenderfilm/mocap2d.py` (méthode d'Animated Drawings, Meta, **MIT**) ; remerciement à mettre au générique de fin |
 | Police des sous-titres DejaVu Sans Bold | licence Bitstream Vera / DejaVu (permissive) | — |
+| Police Montserrat (sous-titres karaoké) | SIL Open Font License 1.1 | police libre, redistribuable avec sa licence ; téléchargée dans le cache local, pas dans le dépôt |
 
 ## Évalués par la veille, non utilisés dans le film
 
