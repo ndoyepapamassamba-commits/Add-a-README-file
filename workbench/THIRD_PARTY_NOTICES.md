@@ -1,0 +1,61 @@
+# Avis de tiers — chaîne d'animation MASSAMBA Workbench
+
+Établi le 16/10/2026 pour la spécification « Moteur d'animation fluide et chaîne de production libre » (§5 et §9).
+L'état réel de chaque outil (version lue sur la machine, test de santé, conformité) est dans `tool-manifest.json`,
+produit par `python3 scripts/tool-health.py`.
+
+**Règle maison :** le code et les modèles exécutés chez nous doivent être sous MIT, Apache-2.0 ou BSD. Les composants
+hors règle sont signalés ci-dessous, avec la façon dont ils sont isolés et ce qui les remplacera.
+
+## Composants embarqués ou chargés par l'app (navigateur)
+
+| Composant | Version | Licence | Amont | Rôle |
+|---|---|---|---|---|
+| three.js | 0.186.1 | MIT | github.com/mrdoob/three.js | décor en relief, personnages maillés, étalonnage |
+| mp4-muxer | 5.2.2 | MIT | github.com/Vanilagy/mp4-muxer | MP4 depuis WebCodecs dans la page |
+| mediabunny | 1.61.3 | MPL-2.0 | github.com/Vanilagy/mediabunny | muxage dans l'app — **copyleft faible au niveau fichier** : fichiers non modifiés, source amont citée |
+| Marionnette ARAP (`server/jev/studio/actor/arap.ts`, `puppetMotion.ts`) | maison | — | code de l'app | dessins pliés autour du squelette (Sorkine & Alexa 2007) |
+| jevlib (`server/jev/sandbox/jevlib*.ts`) | 1.1 | — | code de l'app | parole, cinéma, contrôle qualité |
+
+## Outils lancés en processus séparé (pas liés à notre code)
+
+| Outil | Version | Licence | Amont | Rôle | Statut |
+|---|---|---|---|---|---|
+| Chromium (headless, Playwright) | 141.0.7390.37 | BSD-3-Clause (+ tiers) | chromium.org | rendu image par image | conforme |
+| Playwright | 1.56.1 | Apache-2.0 | github.com/microsoft/playwright | pilotage du navigateur | conforme |
+| MediaPipe (Pose Landmarker) | 1.1.0 | Apache-2.0 (code) | github.com/google-ai-edge/mediapipe | squelette mesuré sur chaque dessin | conforme ; fiche du modèle à relire |
+| MediaPipe Hand Landmarker (`hand_landmarker.task`) | 0.10 | Apache-2.0 | github.com/google-ai-edge/mediapipe | mains des planches (scripts/troupe_poses.py) | conforme |
+| MediaPipe Interactive Segmenter « MagicTouch » | 0.10 | Apache-2.0 | github.com/google-ai-edge/mediapipe | découpe des figurants guidée par le squelette (scripts/scene_layers.py) | conforme |
+| BiRefNet-lite | — | MIT | github.com/ZhengPeng7/BiRefNet | masque des sujets (atlas des décors) | conforme |
+| UperNet ConvNeXt ADE20K (ONNX) | — | MIT | github.com/open-mmlab/mmsegmentation | analyse de scène (atlas des décors) | conforme |
+| pyloudnorm | 0.2.0 | MIT | github.com/csteinmetz1/pyloudnorm | mesure et réglage de la sonie (−14 LUFS) | conforme ; hors app (chaîne de film) |
+| yt-dlp | 2026.08.19 | Unlicense | github.com/yt-dlp/yt-dlp | veille seulement (mesure de vidéos publiques, rien redistribué) | hors app |
+| MediaPipe Selfie multiclass | — | Apache-2.0 | github.com/google-ai-edge/mediapipe | évalué puis écarté (fragmente les figures peintes) | non utilisé |
+| OpenCV | 5.0 | Apache-2.0 | opencv.org/license | retouche de couture du décor (Telea) | conforme |
+| NumPy | 2.4 | BSD-3-Clause | numpy.org | synthèse du sol (quilting), contrôles | conforme |
+| onnxruntime | 1.31 | MIT | github.com/microsoft/onnxruntime | inférence CPU | conforme |
+| Rhubarb Lip Sync | 1.14.0 | MIT | github.com/DanielSWolf/rhubarb-lip-sync | contrôle indépendant des bouches | conforme |
+| FFmpeg / ffprobe (paquet Ubuntu) | 6.1.1 | **GPL-2.0-or-later** (compilé avec `--enable-gpl`, libx264) | ffmpeg.org/legal.html | encodage H.264/AAC, sous-titres, contrôle | **hors règle** — lancé comme programme séparé, jamais lié ni redistribué. Voie conforme existante : WebCodecs VP9/AV1 + Opus (BSD) et mp4-muxer (MIT) |
+| piper-tts (piper1-gpl) | 1.8.0 | **GPL-3.0-or-later** | github.com/OHF-voice/piper1-gpl | synthèse vocale FR et durées de phonèmes | **hors règle** — à remplacer (Kokoro-82M Apache-2.0, Pocket TTS code MIT) |
+
+## Données et modèles (licences distinctes du code)
+
+| Ressource | Licence | Obligation / statut |
+|---|---|---|
+| Voix Piper `fr_FR-siwis-medium` | CC-BY-4.0 | **attribution** : crédit incrusté en fin de film |
+| Voix Piper `fr_FR-tom-medium` | données d'entraînement **AGPL-3.0** (fiche du modèle) | **à remplacer avant toute diffusion** |
+| Couches de visage générées avec LivePortrait | code MIT ; détecteur de visage tiers à licence distincte | à vérifier avant diffusion commerciale |
+| Planches, décors et voix de la troupe | propriété de l'utilisateur | jamais dans le dépôt public (`workbench/.private/`) |
+| Police des sous-titres DejaVu Sans Bold | licence Bitstream Vera / DejaVu (permissive) | — |
+
+## Évalués par la veille, non utilisés dans le film
+
+| Outil | Licence | Constat |
+|---|---|---|
+| Synfig | GPL-3.0-or-later | rendu cut-out en ligne de commande possible ; déformation par os non documentée |
+| MLT / melt | LGPL-2.1-or-later | rendu de timeline sans écran (attention : 720×576 à 25 i/s par défaut) |
+| OpenTimelineIO | Apache-2.0 | timeline d'échange ; pas de piste de sous-titres native |
+
+**Rappel :** les films produits ne deviennent pas GPL parce qu'un outil GPL les a encodés. Redistribuer un logiciel GPL
+modifié, ou lier sa bibliothèque à notre code, imposerait en revanche ses obligations. C'est pourquoi les outils GPL
+restent des programmes séparés, que l'app ne livre pas.

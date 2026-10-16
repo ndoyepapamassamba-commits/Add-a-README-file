@@ -173,6 +173,17 @@ describe('jev 1.1 — contrôle qualité du mouvement', () => {
     const late = Array.from({ length: n }, (_, i) => Math.max(0, Math.sin((i - 6) / 3)));
     expect(jev.qa.lipSync(late, energy, fps).verdict).not.toBe('imperceptible');
   });
+  it('synchro labiale : un pic plat ne prouve pas un décalage, une corrélation trop faible est « indéterminée »', () => {
+    const fps = 24, n = 96;
+    const energy = Array.from({ length: n }, (_, i) => 0.5 + 0.5 * Math.sin(i / 2.5));
+    // bouche en marches (phonèmes) : presque la même corrélation à 0 et à −6 images
+    const mouth = energy.map((e, i) => Math.round(e * 4) / 4 + (i % 13 === 0 ? 0.02 : 0));
+    const r = jev.qa.lipSync(mouth, energy, fps);
+    expect(Math.abs(r.offset)).toBeLessThan(0.05);
+    expect(r.atZero).toBeGreaterThan(0.9);
+    const noise = Array.from({ length: n }, (_, i) => ((i * 7919) % 11) / 11);
+    expect(jev.qa.lipSync(noise, energy, fps).verdict).toBe('indéterminé');
+  });
 });
 
 describe('jev 1.1 — cinéma', () => {

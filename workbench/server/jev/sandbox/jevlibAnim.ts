@@ -416,17 +416,21 @@ export const qa = {
   lipSync(mouth, energy, fps, maxLag = 0.25) {
     const n = Math.min(mouth.length, energy.length), L = Math.round(maxLag * fps);
     const mean = (a) => a.reduce((s, x) => s + x, 0) / a.length, mm = mean(mouth.slice(0, n)), me = mean(energy.slice(0, n));
-    let best = -2, bestLag = 0;
+    let best = -2, bestLag = 0, r0 = 0;
     for (let lag = -L; lag <= L; lag++) {
       let c = 0, a = 0, b = 0;
       for (let i = 0; i < n; i++) { const j = i + lag; if (j < 0 || j >= n) continue; const x = mouth[i] - mm, y = energy[j] - me; c += x * y; a += x * x; b += y * y; }
       const r = a && b ? c / Math.sqrt(a * b) : 0;
+      if (lag === 0) r0 = r;
       if (r > best) { best = r; bestLag = lag; }
     }
+    // pic plat (bouche pilotée par les phonèmes : consonnes sonores bouche fermée, etc.) : un décalage qui ne gagne pas
+    // au moins 0,03 de corrélation sur le zéro n'est pas une preuve de décalage — on garde zéro
+    if (best - r0 < 0.03) bestLag = 0;
     const offset = bestLag / fps; // > 0 : la bouche précède le son
     const soundLeads = offset < 0 ? -offset : 0, soundLags = offset > 0 ? offset : 0;
-    const verdict = soundLeads > 0.09 || soundLags > 0.185 ? 'inacceptable' : soundLeads > 0.045 || soundLags > 0.125 ? 'détectable' : 'imperceptible';
-    return { offset, correlation: best, verdict };
+    const verdict = best < 0.25 ? 'indéterminé' : soundLeads > 0.09 || soundLags > 0.185 ? 'inacceptable' : soundLeads > 0.045 || soundLags > 0.125 ? 'détectable' : 'imperceptible';
+    return { offset, correlation: best, atZero: r0, verdict };
   },
   /** Amplitudes articulaires : angles (degrés) hors des limites normales de jev.human.limits. */
   limits(pose) {

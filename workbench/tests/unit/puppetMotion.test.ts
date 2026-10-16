@@ -42,6 +42,34 @@ describe('jeu du corps de la marionnette souple', () => {
     const sh = puppetTargets(body, W, H, drive({ pose: 'haussement', age: 0.25, t: 0 }));
     expect(sh.get(BP.lSh)![1]).toBeLessThan(0.22 * H - 0.01 * H);
   });
+  it('a directed body leans and jabs TOWARDS the partner, never away (16/10: the accuser leaned away from the accused)', () => {
+    const mid = (m: Map<number, [number, number]>) => (m.get(BP.lSh)![0] + m.get(BP.rSh)![0]) / 2;
+    for (const t of [0, 0.7, 1.9, 3.3, 5.1]) {
+      for (const to of [1, -1] as const) {
+        const rest = puppetTargets(body, W, H, drive({ pose: 'accuse', beat: 0, t, toward: to }));
+        const hit = puppetTargets(body, W, H, drive({ pose: 'accuse', beat: 1, t, toward: to }));
+        // whatever the phase of the idle sway, the shoulders sit on the partner's side of the rest pose…
+        expect(to * (mid(rest) - 0.5 * W)).toBeGreaterThan(0);
+        // …and the accent thrusts them, and the pointing hand, further towards the partner
+        expect(to * (mid(hit) - mid(rest))).toBeGreaterThan(0.01 * H);
+        expect(to * (hit.get(BP.rWr)![0] - rest.get(BP.rWr)![0])).toBeGreaterThan(0.01 * H);
+      }
+    }
+    // a listener leans in a little; the feet never move
+    const li = puppetTargets(body, W, H, drive({ talking: false, listening: true, t: 0.7, toward: -1 }));
+    expect(mid(li)).toBeLessThan(0.5 * W);
+    expect(li.get(BP.lAn)).toEqual([0.58 * W, 0.97 * H]);
+  });
+  it('the end of a line never jumps: a ramped talk weight moves the hands and the lean smoothly (16/10)', () => {
+    let prev: Map<number, [number, number]> | null = null, worst = 0;
+    for (let k = 0; k <= 12; k++) { // 0.36 s at 30 i/s, the talk weight going from 1 to 0
+      const t = 3 + k / 30, tw = Math.max(0, 1 - k / 10);
+      const m = puppetTargets(body, W, H, drive({ t, talking: tw > 0.5, listening: tw <= 0.5, talkW: tw, beat: 0.4 * tw, toward: 1, pose: 'accuse' }));
+      if (prev) for (const kk of [BP.lWr, BP.rWr, BP.lSh, BP.rSh]) worst = Math.max(worst, Math.hypot(m.get(kk)![0] - prev.get(kk)![0], m.get(kk)![1] - prev.get(kk)![1]));
+      prev = m;
+    }
+    expect(worst).toBeLessThan(4);
+  });
   it('a hand on the face moves with the head (the face is never pulled)', () => {
     const choc: SheetBody = { ...body, [BP.lWr]: [0.56, 0.12], [BP.lEl]: [0.7, 0.25] };
     const m = puppetTargets(choc, W, H, drive({ pose: 'choc', age: 0.1, t: 0.3 }));
