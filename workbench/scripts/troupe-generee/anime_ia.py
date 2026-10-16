@@ -6,7 +6,7 @@
 # du film (montage, sous-titres, cartes, son) ne change pas. Si l'outil ne répond pas, le plan du moteur maison reste.
 #
 #   python3 anime_ia.py prepare  v16 timeline.json            → v16/ia/<t0>.png + <t0>.wav (+ plans.json)
-#   python3 anime_ia.py genere   v16 [dashscope|hf] [N max]   → v16/ia/<t0>.mp4
+#   python3 anime_ia.py genere   v16 [dashscope|hf|comfy|kaggle] [N max]   → v16/ia/<t0>.mp4
 #   python3 anime_ia.py insere   v16                          → remplace les images des plans animés dans v16/clip
 #
 # Fournisseurs :
@@ -14,6 +14,9 @@
 #               clé lue dans la variable d'environnement DASHSCOPE_API_KEY (jamais écrite ni affichée) ;
 #               DASHSCOPE_REGION=intl (Singapour) ou cn (Pékin, défaut du Space officiel).
 #   hf        : le Space public Wan-AI/Wan2.2-S2V (gratuit, sans compte) — refusé d'office si sa file dépasse HF_FILE_MAX.
+#   comfy     : un serveur ComfyUI (COMFY_URL, défaut http://127.0.0.1:8188) avec les fichiers Wan2.2-S2V — sans abonnement ni coût par génération.
+#   kaggle    : la même chaîne ComfyUI + Wan sur une carte T4 GRATUITE du compte Kaggle de l'utilisateur, pilotée d'ici
+#               (kaggle_moteur.py + noyau_kaggle.py) : rien à installer sur le PC ; jeton KAGGLE_API_TOKEN dans l'environnement.
 import json, os, subprocess, sys, time, wave
 import numpy as np, cv2
 
@@ -71,7 +74,20 @@ elif cmd == 'genere':
         if q.get('queue_size', 0) > int(os.environ.get('HF_FILE_MAX', '30')): raise RuntimeError(f"file publique trop longue : {q.get('queue_size')}")
         r = Client('Wan-AI/Wan2.2-S2V', verbose=False).predict(ref_img=handle_file(img), audio=handle_file(wav), resolution='480P', api_name='/predict')
         return r['video'] if isinstance(r, dict) else r
-    fn = {'dashscope': dashscope_s2v, 'hf': hf_s2v}[prov]
+    def comfy_s2v(img, wav):
+        """ComfyUI local (ou sur le PC de l'utilisateur, COMFY_URL) avec Wan2.2-S2V : aucun abonnement, aucun coût par génération."""
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import comfy_wan as C
+        im = cv2.imread(img); h, w = im.shape[:2]
+        W, H = (w // 16) * 16, (h // 16) * 16            # Wan travaille par blocs de 16 px
+        with wave.open(wav) as f: sec = f.getnframes() / f.getframerate()
+        texte = os.environ.get('COMFY_PROMPT', "Personnages africains d'un film d'animation 3D ; celui qui est au centre parle avec des gestes naturels, les autres écoutent et réagissent ; le décor reste identique")
+        r = C.soumet(C.graphe_s2v(C.envoie(img), C.envoie(wav), W, H, sec, texte, graine=int(time.time()) % 100000))
+        if 'prompt_id' not in r: raise RuntimeError(json.dumps(r.get('node_errors') or r.get('error'), ensure_ascii=False)[:400])
+        return C.attend_video(r['prompt_id'], img.replace('.png', '.comfy.mp4'))
+    if prov == 'kaggle':       # tout le lot part d'un coup sur la carte gratuite, puis revient dans IA/<cle>.mp4
+        r = subprocess.run([os.environ.get('KAGGLE_PY', sys.executable), os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kaggle_moteur.py'), 'tout', D])
+        sys.exit(r.returncode)
+    fn = {'dashscope': dashscope_s2v, 'hf': hf_s2v, 'comfy': comfy_s2v}[prov]
     for p in P:
         out = f'{IA}/{p["cle"]}.mp4'
         if os.path.isfile(out): continue
