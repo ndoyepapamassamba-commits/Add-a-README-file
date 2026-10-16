@@ -22,7 +22,9 @@
   ouverts), méthode maison seulement en dernier recours.
 - Modèles et code exécutés chez nous : licences MIT, Apache-2.0 ou BSD seulement (`.claude/skills/modeles-libres-moteur`).
 - Ne jamais fabriquer de données, d'économies ni de performances ; « plafond DUR » seulement s'il est appliqué par le code.
-- Ne jamais afficher ni demander de clés, secrets ou jetons ; ne jamais créer de compte au nom de l'utilisateur.
+- Ne jamais afficher ni demander de clés, secrets ou jetons. Création de comptes au nom de l'utilisateur **autorisée**
+  (consigne du 16/10/2026, « carte blanche ») quand la tâche l'exige, sans jamais contourner un contrôle anti-robot
+  (CAPTCHA, code SMS) ni afficher un mot de passe ; ces gestes de vérification restent faits par l'utilisateur.
 - Le dépôt est public : images et vidéos de l'utilisateur seulement dans `workbench/.private/` (ignoré par git) ou le
   scratchpad.
 - **Livraison de l'app = seulement les fichiers modifiés** (consignes du 15/10/2026) : `npm run build:direct` produit le
