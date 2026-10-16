@@ -8,6 +8,7 @@
 #   python3 anime_ia.py prepare  v16 timeline.json            → v16/ia/<t0>.png + <t0>.wav (+ plans.json)
 #   python3 anime_ia.py genere   v16 [dashscope|hf|comfy|kaggle] [N max]   → v16/ia/<t0>.mp4
 #   python3 anime_ia.py insere   v16                          → remplace les images des plans animés dans v16/clip
+#   python3 anime_ia.py juge     v16 <dossier de .mp4>        → verdicts JEV (3 moments par plan) sans rien insérer
 #
 # Fournisseurs :
 #   dashscope : Alibaba Model Studio, modèle « wan2.2-s2v » (protocole lu dans le code du Space officiel Wan-AI) ;
@@ -118,23 +119,51 @@ def arbitre_jev(outil, moteur, reference):
     v['garde_outil'] = v['identite'] >= 0.6 and v['deforme'] < 0.5 and v['vivant'] == 'outil'
     return v
 
+def lit_video(mp4):
+    cap = cv2.VideoCapture(mp4); fps = cap.get(cv2.CAP_PROP_FPS) or 25; fr = []
+    while True:
+        ok, f = cap.read()
+        if not ok: break
+        fr.append(f)
+    return fr, fps
+
+def cadre(f):                                   # même cadre que le plan d'origine : recadrage au centre, sans étirer
+    h, w = f.shape[:2]; s = max(CW / w, CH / h); im = cv2.resize(f, (int(round(w * s)), int(round(h * s))), interpolation=cv2.INTER_AREA)
+    y0, x0 = (im.shape[0] - CH) // 2, (im.shape[1] - CW) // 2; return im[y0:y0 + CH, x0:x0 + CW]
+
+def verdict(fr, p):
+    """JEV regarde TROIS moments du plan (25 %, 50 %, 75 %) et non le seul milieu : une déformation passagère (visage
+    qui fond une seconde chez un personnage secondaire) suffit à refuser le plan. Identité = la plus faible des trois,
+    déformation = la plus forte, « plus vivant » = majorité."""
+    f0, f1 = int(round(p['t0'] * FPS)), int(round(p['t1'] * FPS)); vs = []
+    for q in (0.25, 0.5, 0.75):
+        vs.append(arbitre_jev(cadre(fr[min(len(fr) - 1, int(q * len(fr)))]), cv2.imread(f'{D}/clip/f{int(f0 + q * (f1 - f0)):05d}.jpg'), cv2.imread(f'{IA}/{p["cle"]}.png')))
+    v = {'identite': min(x['identite'] for x in vs), 'deforme': max(x['deforme'] for x in vs),
+         'vivant': 'outil' if sum(x['vivant'] == 'outil' for x in vs) >= 2 else 'moteur', 'detail': vs}
+    v['garde_outil'] = v['identite'] >= 0.6 and v['deforme'] < 0.5 and v['vivant'] == 'outil'
+    return v
+
+if cmd == 'juge':                               # juger les plans d'un moteur sans rien insérer (comparaison Wan / EchoMimic)
+    P = {p['cle']: p for p in json.load(open(f'{IA}/plans.json'))}; dos = sys.argv[3]; R = {}
+    for mp4 in sorted(f for f in os.listdir(dos) if f.endswith('.mp4')):
+        k = mp4[:-4]
+        if k not in P: continue
+        fr, _ = lit_video(f'{dos}/{mp4}'); R[k] = verdict(fr, P[k])
+        print(k, P[k]['qui'], {x: R[k][x] for x in ('identite', 'deforme', 'vivant', 'garde_outil')}, flush=True)
+    json.dump(R, open(f'{dos}/jev.json', 'w'), ensure_ascii=False, indent=1)
+
 if cmd == 'insere':
     P = json.load(open(f'{IA}/plans.json')); n = 0
     for p in P:
         mp4 = f'{IA}/{p["cle"]}.mp4'
         if not os.path.isfile(mp4): continue
-        cap = cv2.VideoCapture(mp4); fps = cap.get(cv2.CAP_PROP_FPS) or 25; fr = []
-        while True:
-            ok, f = cap.read()
-            if not ok: break
-            fr.append(f)
+        fr, fps = lit_video(mp4)
         if not fr: continue
         h, w = fr[0].shape[:2]; s = max(CW / w, CH / h)   # même cadre que le plan d'origine : on recadre au centre, sans étirer
         f0, f1 = int(round(p['t0'] * FPS)), int(round(p['t1'] * FPS))
         if os.environ.get('ARBITRE', '1') == '1':
-            mid = fr[len(fr) // 2]; im = cv2.resize(mid, (int(round(w * s)), int(round(h * s)))); y0, x0 = (im.shape[0] - CH) // 2, (im.shape[1] - CW) // 2
-            v = arbitre_jev(im[y0:y0 + CH, x0:x0 + CW], cv2.imread(f'{D}/clip/f{(f0 + f1) // 2:05d}.jpg'), cv2.imread(f'{IA}/{p["cle"]}.png'))
-            print(f'{p["cle"]} {p["qui"]} : JEV {v}', flush=True)
+            v = verdict(fr, p)
+            print(f'{p["cle"]} {p["qui"]} : JEV', {x: v[x] for x in ('identite', 'deforme', 'vivant', 'garde_outil')}, flush=True)
             if not v['garde_outil']: continue
         for k in range(f0, f1):
             src = fr[min(len(fr) - 1, int((k - f0) / FPS * fps))]
