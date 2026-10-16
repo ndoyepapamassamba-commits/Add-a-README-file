@@ -1,0 +1,1331 @@
+{
+  "source": "branche claude/relaxed-noether-svkgiu, commit d869966 (universe.ts + characters.json)",
+  "style": "3D animated cartoon, Pixar/DreamWorks style, West-African characters, exaggerated comedic expressions, vibrant saturated colours, warm sunlight, 9:16 vertical",
+  "personnages": [
+    {
+      "nom": "MAMAN NOUNOU",
+      "role": "reine du marchandage, la mère qui gère tout",
+      "genre": "femme",
+      "age": "50 ans",
+      "groupe": "The family of the account (its most frequent cast).",
+      "visuel": "plump West-African woman in her 50s, red and yellow sunflower wax-print dress with matching red wax head-wrap, green-and-white gingham apron, black belt bag stuffed with banknotes, gold hoop earrings, black flip-flops",
+      "details": {
+        "body": "plump, round",
+        "hair": "red wax headwrap",
+        "accessories": "red headwrap, gold hoop earrings, belt bag",
+        "face": "big warm eyes, loud laugh"
+      },
+      "dessin": "planche",
+      "voix_piper": "siwis",
+      "hauteur_voix": 0.95,
+      "taille_m": 1.6,
+      "lieux": [
+        "Marché",
+        "Salon",
+        "Cour",
+        "Cérémonie"
+      ],
+      "activite": "compte ses billets derrière son étal, interpelle les clients"
+    },
+    {
+      "nom": "BAYE NDIAYE",
+      "role": "le grand-père riche et radin de mauvaise foi",
+      "genre": "homme",
+      "age": "62 ans",
+      "groupe": "The family of the account (its most frequent cast).",
+      "visuel": "plump grey-haired West-African grandfather, short grey beard, shiny royal-blue boubou with gold embroidery, brown prayer beads, brown leather sandals",
+      "details": {
+        "body": "plump",
+        "hair": "short grey hair",
+        "accessories": "prayer beads, grey beard",
+        "face": "smug innocent face",
+        "prop": "chapelet"
+      },
+      "dessin": "planche",
+      "voix_piper": "gilles",
+      "hauteur_voix": 1.0,
+      "taille_m": 1.72,
+      "lieux": [
+        "Salon",
+        "Cour",
+        "Cérémonie",
+        "Village"
+      ],
+      "activite": "égrène son chapelet sur une chaise, surveille sa poche"
+    },
+    {
+      "nom": "COUMBA",
+      "role": "la fille stratège, reine du regard caméra",
+      "genre": "femme",
+      "age": "26 ans",
+      "groupe": "The family of the account (its most frequent cast).",
+      "visuel": "curvy young West-African woman, long braids, off-shoulder pink-and-purple wax-print fitted long dress with ruffled sleeves and a side slit, gold hoop earrings, thin gold necklace, pink block-heel sandals",
+      "details": {
+        "body": "curvy",
+        "hair": "long braided hair",
+        "accessories": "gold hoop earrings",
+        "face": "raised eyebrow, unimpressed expression"
+      },
+      "dessin": "planche",
+      "voix_piper": "jessica",
+      "hauteur_voix": 1.0,
+      "taille_m": 1.7,
+      "lieux": [
+        "Salon de coiffure",
+        "Maquis",
+        "Cérémonie",
+        "Salon"
+      ],
+      "activite": "se prend en selfie, jauge les hommes qui passent"
+    },
+    {
+      "nom": "PETIT MAMADOU",
+      "role": "l’enfant plus malin que les adultes",
+      "genre": "garçon",
+      "age": "8 ans",
+      "groupe": "The family of the account (its most frequent cast).",
+      "visuel": "small West-African boy around 8, short curly hair, oversized yellow football jersey number 10 with green collar, blue shorts with white stripes, black-and-white slide sandals",
+      "details": {
+        "hair": "short curly hair",
+        "face": "big curious eyes, cheeky smile"
+      },
+      "dessin": "planche",
+      "voix_piper": "jessica",
+      "hauteur_voix": 1.22,
+      "taille_m": 1.15,
+      "lieux": [
+        "Cour",
+        "École",
+        "Salon",
+        "Marché"
+      ],
+      "activite": "dribble un ballon, court entre les adultes"
+    },
+    {
+      "nom": "MODOU",
+      "role": "le débrouillard malchanceux",
+      "genre": "homme",
+      "age": "35 ans",
+      "groupe": "The family of the account (its most frequent cast).",
+      "visuel": "thin lanky West-African man, short hair, thin moustache and goatee, faded worn green t-shirt, brown cargo trousers rolled at the ankle, black sandals",
+      "details": {
+        "body": "thin, lanky",
+        "hair": "short hair",
+        "accessories": "moustache, goatee",
+        "face": "expressive tired eyes"
+      },
+      "dessin": "planche",
+      "voix_piper": "tom",
+      "hauteur_voix": 1.0,
+      "taille_m": 1.76,
+      "lieux": [
+        "Cour",
+        "Maquis",
+        "Marché",
+        "Taxi"
+      ],
+      "activite": "grignote quelque chose en cachette, cherche un plan"
+    },
+    {
+      "nom": "TANTIE AWA",
+      "role": "la belle-mère / voisine redoutable",
+      "genre": "femme",
+      "age": "52 ans",
+      "groupe": "The family of the account (its most frequent cast).",
+      "visuel": "plump West-African woman in her 50s, orange-and-yellow floral wax dress with ruffled short sleeves and matching orange head-wrap, gold hoop earrings, black flip-flops",
+      "details": {
+        "body": "large, plump",
+        "hair": "orange headwrap",
+        "accessories": "orange headwrap, gold hoop earrings",
+        "face": "piercing judgmental stare"
+      },
+      "dessin": "planche",
+      "voix_piper": "siwis",
+      "hauteur_voix": 1.0,
+      "taille_m": 1.62,
+      "lieux": [
+        "Salon",
+        "Cour",
+        "Marché"
+      ],
+      "activite": "balaie la cour en surveillant tout le monde"
+    },
+    {
+      "nom": "TONTON DIENG",
+      "role": "le vantard mythomane",
+      "genre": "homme",
+      "age": "50 ans",
+      "groupe": "The family of the account (its most frequent cast).",
+      "visuel": "middle-aged West-African man, grey stubble, beige flat cap, open red floral shirt over a white vest, blue jeans, gold-tone watch",
+      "details": {
+        "body": "lanky with a pot belly",
+        "hair": "short hair",
+        "accessories": "flat cap, gold-tone watch",
+        "face": "storytelling grin"
+      },
+      "dessin": "galerie",
+      "voix_piper": "gilles",
+      "hauteur_voix": 1.04,
+      "taille_m": 1.73,
+      "lieux": [
+        "Maquis",
+        "Taxi",
+        "Cour",
+        "Cérémonie"
+      ],
+      "activite": "raconte une histoire à un groupe, bras grands ouverts"
+    },
+    {
+      "nom": "MONSIEUR DIARRA",
+      "role": "comptable qui compte tout",
+      "genre": "homme",
+      "age": "45 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "thin West-African man, cream kufi cap, thin moustache and goatee, beige shirt with a sleeveless vest, holding a calculator and files",
+      "details": {
+        "body": "thin",
+        "accessories": "kufi cap, moustache",
+        "prop": "journal"
+      },
+      "dessin": "catalogue",
+      "voix_piper": "tom",
+      "hauteur_voix": 1.05,
+      "taille_m": 1.7,
+      "lieux": [
+        "Bureau",
+        "Marché",
+        "Cérémonie"
+      ],
+      "activite": "tape sur sa calculatrice en marmonnant des chiffres"
+    },
+    {
+      "nom": "MAÎTRE COULIBALY",
+      "role": "avocate qui complique tout",
+      "genre": "femme",
+      "age": "40 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "West-African woman lawyer, blue-and-yellow wax head-wrap, gold hoop earrings, black lawyer robe with white jabot, holding folders",
+      "details": {
+        "accessories": "blue and yellow headwrap, gold hoop earrings",
+        "face": "stern raised eyebrow",
+        "prop": "journal"
+      },
+      "dessin": "galerie",
+      "voix_piper": "jessica",
+      "hauteur_voix": 0.94,
+      "taille_m": 1.68,
+      "lieux": [
+        "Tribunal",
+        "Bureau",
+        "Cérémonie"
+      ],
+      "activite": "feuillette un dossier en marchant, téléphone coincé contre l’épaule"
+    },
+    {
+      "nom": "AGENT BAKARY",
+      "role": "douanier qui trouve toujours quelque chose",
+      "genre": "homme",
+      "age": "40 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "West-African customs officer, green cap marked DOUANE, green uniform with epaulettes, short beard, holding a passport",
+      "details": {
+        "accessories": "green cap, beard",
+        "face": "suspicious squint"
+      },
+      "dessin": "galerie",
+      "voix_piper": "pierre",
+      "hauteur_voix": 0.95,
+      "taille_m": 1.78,
+      "lieux": [
+        "Douane",
+        "Taxi"
+      ],
+      "activite": "fouille une valise et lève un objet au soleil"
+    },
+    {
+      "nom": "TANTIE AWA SARR",
+      "role": "restauratrice qui régale tout le quartier",
+      "genre": "femme",
+      "age": "50 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "plump West-African woman, red-orange wax head-wrap, yellow wax dress, black apron, stirring a big pot with a wooden spoon",
+      "details": {
+        "body": "plump",
+        "accessories": "red headwrap, gold earrings",
+        "face": "big delighted smile",
+        "prop": "assiette"
+      },
+      "dessin": "galerie",
+      "voix_piper": "siwis",
+      "hauteur_voix": 1.04,
+      "taille_m": 1.62,
+      "lieux": [
+        "Maquis",
+        "Marché",
+        "Cérémonie",
+        "Cour",
+        "Village"
+      ],
+      "activite": "remue une grande marmite fumante et goûte à la cuillère"
+    },
+    {
+      "nom": "PROFESSEUR SAMBA",
+      "role": "intellectuel qui sait tout (ou presque)",
+      "genre": "homme",
+      "age": "55 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "thin West-African man, embroidered kufi cap, thin moustache and goatee, purple boubou with gold embroidery, holding a newspaper and a coffee cup",
+      "details": {
+        "body": "thin",
+        "accessories": "kufi cap, moustache",
+        "face": "smug knowing look",
+        "prop": "journal"
+      },
+      "dessin": "galerie",
+      "voix_piper": "gilles",
+      "hauteur_voix": 1.06,
+      "taille_m": 1.74,
+      "lieux": [
+        "Taxi",
+        "École",
+        "Bureau",
+        "Cour"
+      ],
+      "activite": "lit le journal en sirotant son café, l’index levé"
+    },
+    {
+      "nom": "MADAME COUMBA",
+      "role": "voisine curieuse et indiscrète",
+      "genre": "femme",
+      "age": "50 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "plump West-African woman, blue-and-orange floral head-wrap and matching floral wax dress, gold earrings, finger on her lips",
+      "details": {
+        "body": "plump",
+        "accessories": "floral headwrap, gold earrings",
+        "face": "sly gossiping eyes"
+      },
+      "dessin": "catalogue",
+      "voix_piper": "siwis",
+      "hauteur_voix": 1.08,
+      "taille_m": 1.6,
+      "lieux": [
+        "Cour",
+        "Salon",
+        "Marché"
+      ],
+      "activite": "épie par-dessus le mur, main en écran"
+    },
+    {
+      "nom": "DJECKY",
+      "role": "jeune du quartier toujours dans les plans",
+      "genre": "homme",
+      "age": "22 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "athletic young West-African man, backwards black cap, red basketball jersey number 23, goatee, gold chain, holding a basketball",
+      "details": {
+        "body": "athletic",
+        "accessories": "backwards cap, gold chain",
+        "face": "cocky grin"
+      },
+      "dessin": "galerie",
+      "voix_piper": "tom",
+      "hauteur_voix": 1.08,
+      "taille_m": 1.82,
+      "lieux": [
+        "Maquis",
+        "Cour",
+        "Plage",
+        "Marché"
+      ],
+      "activite": "dribble son ballon et tente un panier imaginaire"
+    },
+    {
+      "nom": "PETIT IBRAHIMA",
+      "role": "enfant intelligent qui veut réussir",
+      "genre": "garçon",
+      "age": "9 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "small West-African schoolboy, short curly hair, white school shirt, navy shorts, backpack, holding a blue notebook with a rocket",
+      "details": {
+        "face": "big bright eyes, proud smile"
+      },
+      "dessin": "galerie",
+      "voix_piper": "jessica",
+      "hauteur_voix": 1.18,
+      "taille_m": 1.25,
+      "lieux": [
+        "École",
+        "Hôpital",
+        "Cour"
+      ],
+      "activite": "lit son cahier à fusée en marchant"
+    },
+    {
+      "nom": "PETITE KHADIJA",
+      "role": "enfant rêveuse qui pose mille questions",
+      "genre": "fille",
+      "age": "7 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "small West-African girl, two afro puffs with pink bows, pink floral dress, books and a pencil",
+      "details": {
+        "hair": "two afro puffs with pink bows",
+        "face": "dreamy curious eyes"
+      },
+      "dessin": "galerie",
+      "voix_piper": "siwis",
+      "hauteur_voix": 1.25,
+      "taille_m": 1.18,
+      "lieux": [
+        "École",
+        "Cour",
+        "Hôpital",
+        "Salon",
+        "Village"
+      ],
+      "activite": "parle à son nounours en tournant sur elle-même"
+    },
+    {
+      "nom": "AGENT GORA",
+      "role": "vigile très débrouillard et philosophe de la vie",
+      "genre": "homme",
+      "age": "45 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "stocky West-African security guard, navy cap marked SÉCURITÉ, light-blue security shirt, short beard, flashlight and a bunch of keys",
+      "details": {
+        "body": "stocky",
+        "accessories": "navy cap, beard",
+        "face": "wink and thumbs up"
+      },
+      "dessin": "catalogue",
+      "voix_piper": "pierre",
+      "hauteur_voix": 0.9,
+      "taille_m": 1.8,
+      "lieux": [
+        "Bureau",
+        "Marché"
+      ],
+      "activite": "fait une ronde en balançant sa lampe torche"
+    },
+    {
+      "nom": "GÉNÉRAL ZONGO",
+      "role": "entrepreneur toujours en chantier",
+      "genre": "homme",
+      "age": "45 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "West-African contractor, yellow hard hat, orange high-visibility vest over a denim shirt, short beard, rolled blueprints and a phone",
+      "details": {
+        "accessories": "yellow hard hat, beard",
+        "face": "over-excited grin",
+        "prop": "téléphone"
+      },
+      "dessin": "galerie",
+      "voix_piper": "tom",
+      "hauteur_voix": 0.94,
+      "taille_m": 1.8,
+      "lieux": [
+        "Taxi",
+        "Bureau",
+        "Village",
+        "Cour"
+      ],
+      "activite": "déroule des plans et crie dans son téléphone"
+    },
+    {
+      "nom": "TATA PRISCA",
+      "role": "coiffeuse qui sait tout sur tout le monde",
+      "genre": "femme",
+      "age": "35 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "curvy West-African hairdresser, big afro with a pink headband, pink apron over a black top, gold hoop earrings, hairdryer and brush",
+      "details": {
+        "body": "curvy",
+        "hair": "big afro",
+        "accessories": "pink headband, gold hoop earrings",
+        "face": "gossip smirk"
+      },
+      "dessin": "galerie",
+      "voix_piper": "jessica",
+      "hauteur_voix": 1.06,
+      "taille_m": 1.64,
+      "lieux": [
+        "Salon de coiffure",
+        "Cérémonie",
+        "Marché"
+      ],
+      "activite": "coiffe une cliente en parlant fort, sèche-cheveux à la main"
+    },
+    {
+      "nom": "AGENT DOUMBIA",
+      "role": "policier qui cherche toujours à « arranger »",
+      "genre": "homme",
+      "age": "45 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "plump West-African policeman, navy police cap, light-blue police shirt, short beard, writing in a notebook",
+      "details": {
+        "body": "plump",
+        "accessories": "navy cap, beard",
+        "face": "shifty sideways look",
+        "prop": "journal"
+      },
+      "dessin": "galerie",
+      "voix_piper": "pierre",
+      "hauteur_voix": 1.04,
+      "taille_m": 1.74,
+      "lieux": [
+        "Taxi",
+        "Marché",
+        "Douane"
+      ],
+      "activite": "note une plaque dans son carnet en sifflant"
+    },
+    {
+      "nom": "MÉCANO ISSA",
+      "role": "mécanicien qui bricole tout même l’impossible",
+      "genre": "homme",
+      "age": "35 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "West-African mechanic, grey cap worn backwards, greasy blue overalls, holding a wrench",
+      "details": {
+        "accessories": "backwards cap",
+        "face": "confident smirk",
+        "prop": "bâton"
+      },
+      "dessin": "galerie",
+      "voix_piper": "tom",
+      "hauteur_voix": 0.97,
+      "taille_m": 1.78,
+      "lieux": [
+        "Taxi",
+        "Marché",
+        "Cour"
+      ],
+      "activite": "tape sur un moteur avec sa clé et écoute"
+    },
+    {
+      "nom": "SŒUR AWA",
+      "role": "infirmière au grand cœur mais très directe",
+      "genre": "femme",
+      "age": "35 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "West-African nurse, braided bun, white-and-pink nurse uniform, stethoscope, tablet",
+      "details": {
+        "hair": "braided bun",
+        "accessories": "stethoscope",
+        "face": "kind but stern"
+      },
+      "dessin": "galerie",
+      "voix_piper": "jessica",
+      "hauteur_voix": 1,
+      "taille_m": 1.64,
+      "lieux": [
+        "Hôpital",
+        "École",
+        "Cour"
+      ],
+      "activite": "prend la tension d’un patient en notant sur sa tablette"
+    },
+    {
+      "nom": "TIÉKORO",
+      "role": "vendeur de gadgets et roi des bons plans",
+      "genre": "homme",
+      "age": "25 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "young West-African hustler, red cap worn backwards, red graphic t-shirt, headphones around the neck, selfie stick with a phone, camera",
+      "details": {
+        "accessories": "backwards red cap, headphones",
+        "face": "salesman grin",
+        "prop": "téléphone"
+      },
+      "dessin": "galerie",
+      "voix_piper": "tom",
+      "hauteur_voix": 1.12,
+      "taille_m": 1.75,
+      "lieux": [
+        "Marché",
+        "Taxi",
+        "Maquis",
+        "Plage"
+      ],
+      "activite": "fait une démonstration de gadget filmée au selfie"
+    },
+    {
+      "nom": "PETIT MOUSSA",
+      "role": "enfant malin et espiègle",
+      "genre": "garçon",
+      "age": "8 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "small West-African schoolboy, short curly hair, white school shirt, navy shorts, backpack, running",
+      "details": {
+        "face": "mischievous grin"
+      },
+      "dessin": "galerie",
+      "voix_piper": "siwis",
+      "hauteur_voix": 1.3,
+      "taille_m": 1.2,
+      "lieux": [
+        "École",
+        "Cour",
+        "Taxi",
+        "Village"
+      ],
+      "activite": "court entre les adultes avec un objet démonté"
+    },
+    {
+      "nom": "PETITE AYA",
+      "role": "enfant curieuse qui pose trop de questions",
+      "genre": "fille",
+      "age": "6 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "small West-African girl, two afro puffs with pink bows, pink floral dress, purple backpack, teddy bear",
+      "details": {
+        "hair": "two afro puffs with pink bows",
+        "face": "wide curious eyes"
+      },
+      "dessin": "galerie",
+      "voix_piper": "siwis",
+      "hauteur_voix": 1.32,
+      "taille_m": 1.08,
+      "lieux": [
+        "École",
+        "Cour",
+        "Hôpital"
+      ],
+      "activite": "fait danser son nounours"
+    },
+    {
+      "nom": "SORCIÈRE MAMA DÉDÉ",
+      "role": "vendeuse de remèdes et de solutions miracles",
+      "genre": "femme",
+      "age": "60 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "older West-African woman, colourful wax head-wrap and wax dress, many bead necklaces, holding herbs and a calabash of potion",
+      "details": {
+        "accessories": "headwrap, bead necklaces",
+        "face": "mysterious wink"
+      },
+      "dessin": "catalogue",
+      "voix_piper": "siwis",
+      "hauteur_voix": 0.88,
+      "taille_m": 1.6,
+      "lieux": [
+        "Marché",
+        "Village"
+      ],
+      "activite": "agite une calebasse fumante devant un client"
+    },
+    {
+      "nom": "IMAM KARIM",
+      "role": "sage du quartier qui remet tout le monde sur le droit chemin",
+      "genre": "homme",
+      "age": "50 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "West-African man, white embroidered kufi cap, white boubou with an embroidered stole, short beard, holding a book",
+      "details": {
+        "accessories": "white kufi, beard",
+        "face": "calm wise smile",
+        "prop": "journal"
+      },
+      "dessin": "galerie",
+      "voix_piper": "gilles",
+      "hauteur_voix": 0.98,
+      "taille_m": 1.76,
+      "lieux": [
+        "Cérémonie",
+        "Cour",
+        "Village"
+      ],
+      "activite": "sert le thé à deux hommes qui se disputent"
+    },
+    {
+      "nom": "MAÎTRE KONÉ",
+      "role": "instituteur pédant",
+      "genre": "homme",
+      "age": "58 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "thin older West-African teacher, glasses, receding hairline, white shirt, blue tie, brown trousers, red book",
+      "details": {
+        "body": "thin",
+        "hair": "receding hairline",
+        "accessories": "glasses",
+        "face": "pedantic frown",
+        "prop": "journal"
+      },
+      "dessin": "galerie",
+      "voix_piper": "gilles",
+      "hauteur_voix": 1.08,
+      "taille_m": 1.72,
+      "lieux": [
+        "École",
+        "Bureau",
+        "Cour"
+      ],
+      "activite": "corrige des cahiers au stylo rouge en secouant la tête"
+    },
+    {
+      "nom": "DOCTEUR SYLLA",
+      "role": "médecin qui facture tout",
+      "genre": "homme",
+      "age": "45 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "West-African doctor, glasses, short beard, white coat over a blue shirt and tie, stethoscope, holding an invoice",
+      "details": {
+        "accessories": "glasses, stethoscope, beard",
+        "face": "greedy grin",
+        "prop": "journal"
+      },
+      "dessin": "galerie",
+      "voix_piper": "gilles",
+      "hauteur_voix": 1.0,
+      "taille_m": 1.76,
+      "lieux": [
+        "Hôpital",
+        "Bureau"
+      ],
+      "activite": "tend une facture à un patient qui recule"
+    },
+    {
+      "nom": "FATOU",
+      "role": "commère qui filme tout",
+      "genre": "femme",
+      "age": "40 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "plump West-African woman, purple-and-yellow sunflower wax dress and matching head-wrap, gold hoop earrings, phone on a selfie stick",
+      "details": {
+        "body": "plump",
+        "accessories": "headwrap, gold hoop earrings",
+        "face": "thrilled gossip",
+        "prop": "téléphone"
+      },
+      "dessin": "catalogue",
+      "voix_piper": "siwis",
+      "hauteur_voix": 1.1,
+      "taille_m": 1.62,
+      "lieux": [
+        "Marché",
+        "Cérémonie",
+        "Taxi",
+        "Maquis"
+      ],
+      "activite": "filme la scène avec sa perche en commentant"
+    },
+    {
+      "nom": "ADJOUA",
+      "role": "go qui réclame du crédit",
+      "genre": "femme",
+      "age": "24 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "curvy young West-African woman, long straight hair, pink crop top, pink trousers, gold hoop earrings, holding a paper « demande de crédit »",
+      "details": {
+        "body": "curvy",
+        "hair": "long straight hair",
+        "face": "pouting puppy eyes",
+        "prop": "journal"
+      },
+      "dessin": "galerie",
+      "voix_piper": "jessica",
+      "hauteur_voix": 1.12,
+      "taille_m": 1.68,
+      "lieux": [
+        "Maquis",
+        "Salon de coiffure",
+        "Plage",
+        "Taxi"
+      ],
+      "activite": "se prend en selfie en cherchant du réseau"
+    },
+    {
+      "nom": "KOFFI",
+      "role": "faux riche fauché",
+      "genre": "homme",
+      "age": "30 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "West-African man, sunglasses, black shirt under a patterned blazer, gold chains, black trousers, empty pockets turned out",
+      "details": {
+        "accessories": "sunglasses, gold chains",
+        "face": "fake confident smirk"
+      },
+      "dessin": "planche",
+      "voix_piper": "pierre",
+      "hauteur_voix": 1.0,
+      "taille_m": 1.78,
+      "lieux": [
+        "Maquis",
+        "Cérémonie",
+        "Bureau"
+      ],
+      "activite": "pose devant une voiture qui n’est pas à lui, téléphone à l’oreille"
+    },
+    {
+      "nom": "GRAND-PÈRE NDIAYE",
+      "role": "dur d’oreille",
+      "genre": "homme",
+      "age": "75 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "old West-African man, white beard, brown kufi cap, blue patterned boubou, walking cane, hand cupped behind his ear",
+      "details": {
+        "hair": "white hair",
+        "accessories": "kufi cap, white beard",
+        "face": "confused squint",
+        "prop": "bâton"
+      },
+      "dessin": "galerie",
+      "voix_piper": "gilles",
+      "hauteur_voix": 0.92,
+      "taille_m": 1.68,
+      "lieux": [
+        "Cour",
+        "Village",
+        "Cérémonie"
+      ],
+      "activite": "somnole sur un banc, main derrière l’oreille"
+    },
+    {
+      "nom": "MAMIE BINTOU",
+      "role": "balance tout",
+      "genre": "femme",
+      "age": "65 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "plump older West-African woman, red glasses, blue-and-orange floral head-wrap and floral wax dress, gold earrings, whispering behind her hand",
+      "details": {
+        "body": "plump",
+        "accessories": "red glasses, headwrap",
+        "face": "mischievous gossip"
+      },
+      "dessin": "galerie",
+      "voix_piper": "siwis",
+      "hauteur_voix": 0.9,
+      "taille_m": 1.58,
+      "lieux": [
+        "Salon de coiffure",
+        "Cour",
+        "Marché",
+        "Cérémonie",
+        "Village"
+      ],
+      "activite": "chuchote à l’oreille d’une voisine en riant"
+    },
+    {
+      "nom": "ALIOU",
+      "role": "taximan philosophe",
+      "genre": "homme",
+      "age": "40 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "West-African taxi driver, blue-and-yellow cap, blue-and-yellow floral shirt, leaning out of a yellow taxi",
+      "details": {
+        "accessories": "cap",
+        "face": "wise grin"
+      },
+      "dessin": "galerie",
+      "voix_piper": "tom",
+      "hauteur_voix": 0.96,
+      "taille_m": 1.75,
+      "lieux": [
+        "Taxi",
+        "Marché",
+        "Plage"
+      ],
+      "activite": "hèle des clients en tapotant le toit de son taxi"
+    },
+    {
+      "nom": "CHEF TRAORÉ",
+      "role": "chef de quartier pompeux",
+      "genre": "homme",
+      "age": "60 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "plump West-African chief, embroidered kufi cap, sunglasses, burgundy boubou with gold embroidery, coral bead necklace, golden scepter",
+      "details": {
+        "body": "plump",
+        "accessories": "sunglasses, coral necklace, kufi cap",
+        "face": "pompous pout",
+        "prop": "bâton"
+      },
+      "dessin": "galerie",
+      "voix_piper": "pierre",
+      "hauteur_voix": 0.9,
+      "taille_m": 1.74,
+      "lieux": [
+        "Cérémonie",
+        "Village",
+        "Cour"
+      ],
+      "activite": "préside un petit groupe en levant son sceptre"
+    },
+    {
+      "nom": "AMINATA",
+      "role": "ado influenceuse",
+      "genre": "fille",
+      "age": "16 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "teenage West-African girl, very long braids, black crop top, ripped jeans, gold hoop earrings, pink phone, peace sign",
+      "details": {
+        "hair": "very long braids",
+        "accessories": "gold hoop earrings",
+        "face": "duck-face selfie pout",
+        "prop": "téléphone"
+      },
+      "dessin": "galerie",
+      "voix_piper": "jessica",
+      "hauteur_voix": 1.15,
+      "taille_m": 1.62,
+      "lieux": [
+        "Plage",
+        "Maquis",
+        "Cérémonie",
+        "École"
+      ],
+      "activite": "danse une tendance devant son téléphone posé"
+    },
+    {
+      "nom": "BOUBACAR",
+      "role": "gourmand",
+      "genre": "homme",
+      "age": "40 ans",
+      "groupe": "The neighbourhood (character catalogues).",
+      "visuel": "very plump West-African man, short beard, yellow embroidered boubou, eating a chicken leg",
+      "details": {
+        "body": "very plump, big belly",
+        "accessories": "beard",
+        "face": "blissful greedy smile",
+        "prop": "assiette"
+      },
+      "dessin": "galerie",
+      "voix_piper": "pierre",
+      "hauteur_voix": 0.93,
+      "taille_m": 1.74,
+      "lieux": [
+        "Maquis",
+        "Cérémonie",
+        "Marché",
+        "Hôpital"
+      ],
+      "activite": "dévore une cuisse de poulet en souriant aux anges"
+    },
+    {
+      "nom": "LE FRIMEUR",
+      "role": "frimeur du quartier (rôle proposé)",
+      "genre": "homme",
+      "age": "25 ans",
+      "groupe": "Figures of the green galleries of the account that no catalogue names (rôle proposé, à renommer librement).",
+      "visuel": "slim young West-African man, short twisted hair, black-and-gold baroque patterned shirt open over a black t-shirt, gold chain, black ripped jeans, black-and-gold sneakers",
+      "details": {
+        "body": "slim",
+        "accessories": "gold chain",
+        "face": "cocky grin"
+      },
+      "dessin": "galerie",
+      "voix_piper": "tom",
+      "hauteur_voix": 1.1,
+      "taille_m": 1.78,
+      "lieux": [
+        "Maquis",
+        "Cérémonie",
+        "Plage",
+        "Salon de coiffure"
+      ],
+      "activite": "danse quelques pas en se regardant dans une vitre"
+    },
+    {
+      "nom": "LE PATRIARCHE",
+      "role": "doyen du quartier (rôle proposé)",
+      "genre": "homme",
+      "age": "80 ans",
+      "groupe": "Figures of the green galleries of the account that no catalogue names (rôle proposé, à renommer librement).",
+      "visuel": "very old West-African man, long white beard, white embroidered kufi cap, long cream boubou, wooden walking cane, brown sandals",
+      "details": {
+        "hair": "white hair",
+        "accessories": "white kufi, long white beard, cane",
+        "face": "toothy delighted laugh"
+      },
+      "dessin": "galerie",
+      "voix_piper": "gilles",
+      "hauteur_voix": 0.88,
+      "taille_m": 1.66,
+      "lieux": [
+        "Village",
+        "Cour",
+        "Cérémonie"
+      ],
+      "activite": "rit sur un banc en tapant sa canne"
+    },
+    {
+      "nom": "LA LYCÉENNE",
+      "role": "lycéenne qui sait tout (rôle proposé)",
+      "genre": "fille",
+      "age": "15 ans",
+      "groupe": "Figures of the green galleries of the account that no catalogue names (rôle proposé, à renommer librement).",
+      "visuel": "teenage West-African schoolgirl, long braids in a ponytail, white school shirt, navy pleated skirt, white socks, black shoes, backpack, holding a blue notebook",
+      "details": {
+        "hair": "long braids in a ponytail",
+        "face": "bright confident smile"
+      },
+      "dessin": "galerie",
+      "voix_piper": "jessica",
+      "hauteur_voix": 1.12,
+      "taille_m": 1.6,
+      "lieux": [
+        "École",
+        "Cour",
+        "Bureau"
+      ],
+      "activite": "révise ses cahiers en marchant, lèvres qui bougent"
+    },
+    {
+      "nom": "LA GO LÉOPARD",
+      "role": "go chic qui cherche un mari riche (rôle proposé)",
+      "genre": "femme",
+      "age": "28 ans",
+      "groupe": "Figures of the green galleries of the account that no catalogue names (rôle proposé, à renommer librement).",
+      "visuel": "glamorous curvy young West-African woman, long wavy hair, leopard-print dress with a high slit, gold sandals, black handbag",
+      "details": {
+        "body": "curvy",
+        "hair": "long wavy hair",
+        "face": "flirty smile"
+      },
+      "dessin": "galerie",
+      "voix_piper": "siwis",
+      "hauteur_voix": 1.06,
+      "taille_m": 1.7,
+      "lieux": [
+        "Maquis",
+        "Cérémonie",
+        "Bureau",
+        "Plage"
+      ],
+      "activite": "défile en regardant les chaussures des hommes"
+    },
+    {
+      "nom": "LA FUTURE MAMAN",
+      "role": "future maman aux envies impossibles (rôle proposé)",
+      "genre": "femme",
+      "age": "30 ans",
+      "groupe": "Figures of the green galleries of the account that no catalogue names (rôle proposé, à renommer librement).",
+      "visuel": "pregnant West-African woman, orange-and-gold wax head-wrap, long orange-and-yellow floral wax dress, gold earrings, hands on her round belly",
+      "details": {
+        "body": "pregnant, round belly",
+        "accessories": "head-wrap, gold earrings",
+        "face": "sweet smile"
+      },
+      "dessin": "galerie",
+      "voix_piper": "siwis",
+      "hauteur_voix": 1,
+      "taille_m": 1.65,
+      "lieux": [
+        "Hôpital",
+        "Salon",
+        "Marché",
+        "Cour"
+      ],
+      "activite": "se masse le ventre en montrant un étal du doigt"
+    },
+    {
+      "nom": "LE BANQUIER",
+      "role": "banquier qui refuse tous les crédits (rôle proposé)",
+      "genre": "homme",
+      "age": "45 ans",
+      "groupe": "Figures of the green galleries of the account that no catalogue names (rôle proposé, à renommer librement).",
+      "visuel": "bald West-African man with glasses and a thin moustache, black suit, white shirt, black tie, holding a laptop",
+      "details": {
+        "hair": "bald",
+        "accessories": "glasses, moustache",
+        "face": "smug smile"
+      },
+      "dessin": "galerie",
+      "voix_piper": "tom",
+      "hauteur_voix": 0.94,
+      "taille_m": 1.75,
+      "lieux": [
+        "Bureau"
+      ],
+      "activite": "tape sur son ordinateur en secouant la tête « non »"
+    },
+    {
+      "nom": "MADAME KONAN",
+      "role": "présidente de la tontine qui retarde le tour de chacun",
+      "genre": "femme",
+      "age": "55 ans",
+      "groupe": "New roles of the character bible (not drawn yet: written in the stories and the image prompts).",
+      "visuel": "imposing West-African woman in her 50s, half-moon reading glasses, purple embroidered bazin boubou with a matching purple head-wrap tied like a crown, holding a big ledger and a padlocked metal cash box",
+      "details": {
+        "body": "imposing",
+        "accessories": "half-moon glasses, purple headwrap",
+        "face": "severe appraising look",
+        "prop": "journal"
+      },
+      "dessin": "à dessiner",
+      "voix_piper": "siwis",
+      "hauteur_voix": 0.92,
+      "taille_m": 1.66,
+      "lieux": [
+        "Cour",
+        "Marché",
+        "Bureau"
+      ],
+      "activite": "compte les billets de la tontine devant une file de cotisantes"
+    },
+    {
+      "nom": "PATRON SÉRY",
+      "role": "patron du maquis qui fait crédit à tous sauf à Koffi",
+      "genre": "homme",
+      "age": "50 ans",
+      "groupe": "New roles of the character bible (not drawn yet: written in the stories and the image prompts).",
+      "visuel": "stout West-African bar owner, shaved head, thick moustache, towel over the shoulder, checked shirt open over a white vest, canvas trousers, sandals, holding a small chalk slate",
+      "details": {
+        "body": "stout",
+        "hair": "shaved head",
+        "accessories": "thick moustache, towel",
+        "face": "commercial smile"
+      },
+      "dessin": "à dessiner",
+      "voix_piper": "pierre",
+      "hauteur_voix": 0.96,
+      "taille_m": 1.76,
+      "lieux": [
+        "Maquis"
+      ],
+      "activite": "note une dette à la craie derrière son comptoir"
+    },
+    {
+      "nom": "MADEMOISELLE ROSINE",
+      "role": "agent de mairie pour qui il manque toujours un papier",
+      "genre": "femme",
+      "age": "32 ans",
+      "groupe": "New roles of the character bible (not drawn yet: written in the stories and the image prompts).",
+      "visuel": "neat young West-African civil servant, tight bun, thin-rimmed glasses, red nail polish, navy skirt suit, white blouse, town-hall badge, holding a rubber stamp over a pile of forms",
+      "details": {
+        "hair": "tight bun",
+        "accessories": "thin glasses, badge",
+        "face": "bored unimpressed look",
+        "prop": "journal"
+      },
+      "dessin": "à dessiner",
+      "voix_piper": "jessica",
+      "hauteur_voix": 0.98,
+      "taille_m": 1.66,
+      "lieux": [
+        "Bureau",
+        "Tribunal"
+      ],
+      "activite": "tamponne lentement une pile de formulaires"
+    },
+    {
+      "nom": "YAYA L’APPRENTI",
+      "role": "apprenti gbaka qui n’a jamais la monnaie",
+      "genre": "homme",
+      "age": "19 ans",
+      "groupe": "New roles of the character bible (not drawn yet: written in the stories and the image prompts).",
+      "visuel": "wiry young West-African minibus conductor, faded football jersey, shorts, slide sandals, whistle around the neck, crumpled banknotes between his fingers, hanging out of a green minibus door",
+      "details": {
+        "body": "wiry",
+        "face": "breathless quick grin"
+      },
+      "dessin": "à dessiner",
+      "voix_piper": "tom",
+      "hauteur_voix": 1.16,
+      "taille_m": 1.72,
+      "lieux": [
+        "Taxi",
+        "Marché"
+      ],
+      "activite": "crie les destinations en tapant sur la carrosserie"
+    },
+    {
+      "nom": "SALIF LE PARISIEN",
+      "role": "le cousin revenu de Paris qui frime",
+      "genre": "homme",
+      "age": "34 ans",
+      "groupe": "New roles of the character bible (not drawn yet: written in the stories and the image prompts).",
+      "visuel": "slim West-African man back from Paris, trimmed beard, sunglasses pushed up on the forehead, light puffer jacket and scarf despite the heat, skinny jeans, spotless white sneakers, rolling suitcase",
+      "details": {
+        "body": "slim",
+        "accessories": "sunglasses on forehead, scarf",
+        "face": "superior smile"
+      },
+      "dessin": "à dessiner",
+      "voix_piper": "tom",
+      "hauteur_voix": 1.02,
+      "taille_m": 1.8,
+      "lieux": [
+        "Douane",
+        "Maquis",
+        "Cérémonie",
+        "Taxi"
+      ],
+      "activite": "tire sa valise en s’éventant"
+    },
+    {
+      "nom": "COACH DIABATÉ",
+      "role": "coach de foot du quartier, supporter fanatique",
+      "genre": "homme",
+      "age": "50 ans",
+      "groupe": "New roles of the character bible (not drawn yet: written in the stories and the image prompts).",
+      "visuel": "stocky West-African football coach, orange-and-green tracksuit, cap, whistle in the mouth, stopwatch around the neck, tactics clipboard",
+      "details": {
+        "body": "stocky",
+        "accessories": "cap, whistle",
+        "face": "dramatic passionate face"
+      },
+      "dessin": "à dessiner",
+      "voix_piper": "gilles",
+      "hauteur_voix": 1.1,
+      "taille_m": 1.74,
+      "lieux": [
+        "École",
+        "Cour",
+        "Plage"
+      ],
+      "activite": "siffle et mime une tactique avec de grands gestes"
+    },
+    {
+      "nom": "DJ KÉVIN",
+      "role": "DJ des mariages qui vend les dédicaces",
+      "genre": "homme",
+      "age": "27 ans",
+      "groupe": "New roles of the character bible (not drawn yet: written in the stories and the image prompts).",
+      "visuel": "skinny young West-African DJ, neon sunglasses, small bleached mohawk, sequinned shirt, huge headphones around the neck, wireless microphone, portable DJ deck",
+      "details": {
+        "body": "skinny",
+        "hair": "bleached mohawk",
+        "accessories": "neon sunglasses, headphones",
+        "face": "showman grin",
+        "prop": "téléphone"
+      },
+      "dessin": "à dessiner",
+      "voix_piper": "tom",
+      "hauteur_voix": 1.06,
+      "taille_m": 1.76,
+      "lieux": [
+        "Maquis",
+        "Cérémonie",
+        "Plage"
+      ],
+      "activite": "mixe derrière sa platine, casque sur une oreille"
+    },
+    {
+      "nom": "MAMAN BRIGITTE",
+      "role": "vendeuse d’attiéké, rivale de Maman Nounou",
+      "genre": "femme",
+      "age": "45 ans",
+      "groupe": "New roles of the character bible (not drawn yet: written in the stories and the image prompts).",
+      "visuel": "sturdy West-African market woman, green-and-yellow wax wrapper and tightly tied head-wrap, white apron, big basin of attiéké balanced on her head",
+      "details": {
+        "body": "sturdy",
+        "accessories": "green headwrap",
+        "face": "fierce commercial smile",
+        "prop": "assiette"
+      },
+      "dessin": "à dessiner",
+      "voix_piper": "jessica",
+      "hauteur_voix": 0.9,
+      "taille_m": 1.64,
+      "lieux": [
+        "Marché"
+      ],
+      "activite": "porte une bassine d’attiéké sur la tête en criant les prix"
+    },
+    {
+      "nom": "LA VOISINE",
+      "role": "la voisine qui crie",
+      "genre": "femme",
+      "age": "35 ans",
+      "groupe": "The duo of the reference clip 041701.",
+      "visuel": "curvy West-African woman, natural twists with a red headband, fitted sleeveless pink long dress, barefoot in flip-flops",
+      "details": {
+        "body": "curvy with a round belly",
+        "hair": "twists",
+        "accessories": "red headband",
+        "face": "loud wide mouth"
+      },
+      "dessin": "catalogue",
+      "voix_piper": "jessica",
+      "hauteur_voix": 0.96,
+      "taille_m": 1.66,
+      "lieux": [
+        "Cour",
+        "Salon"
+      ],
+      "activite": "crie depuis le pas de sa porte, mains sur les hanches"
+    },
+    {
+      "nom": "LE TONTON",
+      "role": "le tonton aux bouteilles",
+      "genre": "homme",
+      "age": "45 ans",
+      "groupe": "The duo of the reference clip 041701.",
+      "visuel": "lanky West-African man with a round pot belly, receding hairline, long face and chin, blue long-sleeve polo, navy trousers, big shoes, a green bottle in each hand",
+      "details": {
+        "body": "lanky with a pot belly",
+        "hair": "receding hairline",
+        "face": "long face, prominent chin, sleepy eyes",
+        "prop": "bouteille"
+      },
+      "dessin": "catalogue",
+      "voix_piper": "pierre",
+      "hauteur_voix": 0.9,
+      "taille_m": 1.84,
+      "lieux": [
+        "Cour",
+        "Maquis"
+      ],
+      "activite": "traverse lentement avec une bouteille dans chaque main"
+    }
+  ],
+  "decors": [
+    {
+      "nom": "Salon de coiffure",
+      "visuel": "pink West-African hair salon, mirrors with bulbs, wig heads on shelves, hair dryers"
+    },
+    {
+      "nom": "Maquis",
+      "visuel": "lively Ivorian maquis at night, string lights, blue plastic tables and chairs, chalkboard menu, football on a big TV, grilled fish and brochettes"
+    },
+    {
+      "nom": "Marché",
+      "visuel": "busy colourful West-African street market, wax fabric stalls, baskets of tomatoes and onions, multicoloured umbrellas, warm sunlight"
+    },
+    {
+      "nom": "Cérémonie",
+      "visuel": "festive West-African wedding courtyard, white-and-gold draped tents, flower arches, white chairs with gold bows, red carpet"
+    },
+    {
+      "nom": "Hôpital",
+      "visuel": "small West-African hospital room, mint-green walls, hospital bed with blue sheets, IV stand, monitor, health posters"
+    },
+    {
+      "nom": "École",
+      "visuel": "West-African classroom, chalkboard, wooden desks, world map and posters, sunny windows"
+    },
+    {
+      "nom": "Tribunal",
+      "visuel": "West-African courtroom, wooden judge bench with scales of justice, wooden benches, flag"
+    },
+    {
+      "nom": "Douane",
+      "visuel": "West-African customs checkpoint, barrier pole, inspection table with suitcases, containers"
+    },
+    {
+      "nom": "Bureau",
+      "visuel": "cluttered West-African office, piles of files and folders, old computer, calculator, shelves of binders"
+    },
+    {
+      "nom": "Plage",
+      "visuel": "tropical West-African beach, colourful painted wooden pirogues, palm trees, fishermen with nets, turquoise sea"
+    },
+    {
+      "nom": "Village",
+      "visuel": "West-African village, thatched mud huts, giant baobab tree, red laterite ground, chickens, blue sky"
+    },
+    {
+      "nom": "Salon",
+      "visuel": "modest West-African living room, teal walls with framed family photos and a wall clock, patterned brown-and-gold sofa, lace tablecloth on a wooden coffee table with a teapot and tea glasses, old CRT television, standing fan, lace curtains, warm evening light"
+    },
+    {
+      "nom": "Cour",
+      "visuel": "Abidjan courtyard, grey cement-block house with a corrugated roof, yellow curtain in the doorway, wooden shutters, laundry line, plastic chairs, sandy ground"
+    },
+    {
+      "nom": "Taxi",
+      "visuel": "busy Abidjan street with a yellow taxi, motorbikes, shop signs, palm trees"
+    }
+  ]
+}
