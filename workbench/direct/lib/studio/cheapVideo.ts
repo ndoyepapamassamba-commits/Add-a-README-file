@@ -5,6 +5,7 @@
 //  - Hugging Face Space « Wan 2.2 14B Fast » (ZeroGPU): free within the GPU quota of the user's Hugging Face account
 //    (optional token). Anonymous calls from servers are refused by ZeroGPU: it is labelled « selon votre quota ».
 import { useStore } from '../store';
+import { priorQuality } from '../../../server/jev/studio/director';
 
 export const POLLINATIONS_VIDEO = 'pollinations:alibaba/wan-2.2-fast';
 export const HF_VIDEO = 'hf:wan-2.2-14b-fast';
@@ -16,6 +17,11 @@ export const POLLINATIONS_MODELS: { id: string; model: string; name: string; usd
   { id: 'pollinations:x-ai/grok-imagine-video-1.5-lite', model: 'x-ai/grok-imagine-video-1.5-lite', name: 'Grok Imagine Video 1.5 Lite (qualité Grok, ≈ 0,03 $/s)', usdPerS: 0.03, quality: 8.6 },
   { id: 'pollinations:x-ai/grok-imagine-video', model: 'x-ai/grok-imagine-video', name: 'Grok Imagine Video (≈ 0,07 $/s)', usdPerS: 0.07, quality: 8.9 },
   { id: 'pollinations:bytedance/seedance-2.0-fast', model: 'bytedance/seedance-2.0-fast', name: 'Seedance 2.0 Fast (≈ 0,07 $/s)', usdPerS: 0.07, quality: 8.7 },
+  // Veille du 16/10/2026 (catalogue Pollinations lu en direct, prix en pollen/s) : modèles qui animent un personnage AVEC
+  // le son de la scène (dialogue, bruitages). Qualité = a priori de famille (director.priorQuality), à mesurer sur nos plans.
+  { id: 'pollinations:x-ai/grok-imagine-video-1.5', model: 'x-ai/grok-imagine-video-1.5', name: 'Grok Imagine Video 1.5 avec son (≈ 0,15 $/s)', usdPerS: 0.15, quality: priorQuality('video', 'x-ai/grok-imagine-video-1.5') },
+  { id: 'pollinations:alibaba/wan-3.0', model: 'alibaba/wan-3.0', name: 'Wan 3.0 — image, voix ou vidéo → vidéo avec son (≈ 0,068 $/s)', usdPerS: 0.068, quality: priorQuality('video', 'alibaba/wan-3.0') },
+  { id: 'pollinations:kandinskylab/kandinsky-6.0-lite', model: 'kandinskylab/kandinsky-6.0-lite', name: 'Kandinsky 6.0 Lite avec son (≈ 0,032 $/s)', usdPerS: 0.032, quality: priorQuality('video', 'kandinskylab/kandinsky-6.0-lite') },
   { id: POLLINATIONS_VIDEO, model: 'alibaba/wan-2.2-fast', name: 'Wan 2.2 Fast (≈ 0,01 $/s)', usdPerS: 0.01, quality: 7.2 },
 ];
 /** Price per second of the cheapest engine. */
