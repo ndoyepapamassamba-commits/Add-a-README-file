@@ -165,10 +165,10 @@ if cmd == 'insere':
             v = verdict(fr, p)
             print(f'{p["cle"]} {p["qui"]} : JEV', {x: v[x] for x in ('identite', 'deforme', 'vivant', 'garde_outil')}, flush=True)
             if not v['garde_outil']: continue
-        for k in range(f0, f1):
-            src = fr[min(len(fr) - 1, int((k - f0) / FPS * fps))]
-            im = cv2.resize(src, (int(round(w * s)), int(round(h * s))), interpolation=cv2.INTER_AREA)
-            y0, x0 = (im.shape[0] - CH) // 2, (im.shape[1] - CW) // 2
-            cv2.imwrite(f'{D}/clip/f{k:05d}.jpg', im[y0:y0 + CH, x0:x0 + CW], [cv2.IMWRITE_JPEG_QUALITY, 94])
-        n += 1; print(f'{p["cle"]} {p["qui"]} : {len(fr)} images de l’outil ({fps:.0f} i/s) → {f1 - f0} images du film')
+        # FLUIDE (fluide.py) : couleur recalée sur l'image de départ du plan, chaque image du film interpolée à son instant
+        # exact (RIFE, ou flux optique DIS sans PyTorch) — plus aucune image dupliquée (saccade à 25 → 30 i/s)
+        import fluide
+        imgs, mes = fluide.plan_fluide(mp4, f'{IA}/{p["cle"]}.png', f1 - f0)
+        for k in range(f0, f1): cv2.imwrite(f'{D}/clip/f{k:05d}.jpg', imgs[k - f0], [cv2.IMWRITE_JPEG_QUALITY, 94])
+        n += 1; print(f'{p["cle"]} {p["qui"]} : {len(fr)} images de l’outil ({fps:.0f} i/s) → {f1 - f0} images du film, {mes["interpolation"]}, figées {mes["avant"]["images_figees_%"]} % → {mes["apres"]["images_figees_%"]} %')
     print(f'{n} plans remplacés par l’outil d’animation')

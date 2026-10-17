@@ -27,4 +27,9 @@ k = ~cut
 med = np.array([np.median(dif[max(0, i - 7):i + 8]) for i in range(len(dif))])
 pops = ((dif > 3 * med) & k).sum()
 sm = np.abs(np.diff(loc, 2))[(k[2:] & k[1:-1] & k[:-2])]
-print(f"{path.split('/')[-1][:34]:34} | caméra {cam[k].mean():.2f} px/i | jeu vivant {live[k].mean()*100:4.1f} % | jeu {loc[k].mean():.2f} px/i | sautes {pops / (len(dif) / fps):.2f}/s | régularité du jeu {sm.mean() / (loc[k].mean() + 1e-9):.2f} | coupes {int(cut.sum())}")
+R = {'camera': round(float(cam[k].mean()), 3), 'jeuVivant': round(float(live[k].mean()) * 100, 1), 'jeu': round(float(loc[k].mean()), 3),
+     'sautes': round(float(pops / (len(dif) / fps)), 3), 'regularite': round(float(sm.mean() / (loc[k].mean() + 1e-9)), 3), 'coupes': int(cut.sum())}
+if len(sys.argv) > 4 and sys.argv[4] == 'json':   # pour le juge « à la mesure de vos TikTok » (cadre.py)
+    import json; print(json.dumps({'file': path.split('/')[-1], **R}))
+else:
+    print(f"{path.split('/')[-1][:34]:34} | caméra {R['camera']:.2f} px/i | jeu vivant {R['jeuVivant']:4.1f} % | jeu {R['jeu']:.2f} px/i | sautes {R['sautes']:.2f}/s | régularité du jeu {R['regularite']:.2f} | coupes {R['coupes']}")

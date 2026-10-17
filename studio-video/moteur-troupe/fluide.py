@@ -76,6 +76,31 @@ def retime(fr, fps_src, n_out, fps_out=FPS, profondeur=3):
         out.append(noeud(i, a, q))
     return out, len(cache)
 
+def retime_flux(fr, fps_src, n_out, fps_out=FPS):
+    """RIFE absent (pas de PyTorch) : même principe par flux optique DIS d'OpenCV (BSD) — l'image du temps t est
+    reconstruite entre les deux images du moteur qui l'encadrent, chacune déplacée vers t le long du flux puis mêlées
+    au prorata de la distance (Baker et al. 2011, « A Database and Evaluation Methodology for Optical Flow », §
+    interpolation). Jamais de duplication : une image différente à chaque instant du film."""
+    dis = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_MEDIUM); flux = {}; out = []
+    h, w = fr[0].shape[:2]; gx, gy = np.meshgrid(np.arange(w, dtype=np.float32), np.arange(h, dtype=np.float32))
+    gris = lambda f: cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
+    for k in range(n_out):
+        x = k / fps_out * fps_src; i = min(int(x), len(fr) - 1); a = x - i
+        if i >= len(fr) - 1 or a < 1e-3: out.append(fr[i]); continue
+        if i not in flux: flux[i] = (dis.calc(gris(fr[i]), gris(fr[i + 1]), None), dis.calc(gris(fr[i + 1]), gris(fr[i]), None))
+        F01, F10 = flux[i]
+        w0 = cv2.remap(fr[i], gx - a * F01[..., 0], gy - a * F01[..., 1], cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+        w1 = cv2.remap(fr[i + 1], gx - (1 - a) * F10[..., 0], gy - (1 - a) * F10[..., 1], cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+        out.append(cv2.addWeighted(w0, 1 - a, w1, a, 0))
+    return out, len(flux)
+
+def rife_present():
+    try:
+        import torch  # noqa: F401
+        return os.path.exists(os.path.join(RIFE, 'flownet.safetensors'))
+    except ImportError:
+        return False
+
 def saccade(frames):
     """mesure de fluidité : part des images identiques à la précédente (gel d'une image = saccade) et irrégularité du
     mouvement (écart-type / moyenne de la différence image à image) — plus bas = plus fluide."""
@@ -90,5 +115,7 @@ def plan_fluide(mp4, ref_png, n_out):
     ref = cv2.imread(ref_png); col = reglage_couleur(cadre(fr[0], ref.shape[1], ref.shape[0]), ref)
     fr = [col(f) for f in fr]                                            # interpolation à la définition du moteur, puis cadre
     avant = [cadre(fr[min(len(fr) - 1, int(k / FPS * fps))]) for k in range(n_out)]   # ce que faisait l'ancienne insertion
-    apres, n_rife = retime(fr, fps, n_out); apres = [cadre(f) for f in apres]
-    return apres, {'fps_moteur': round(fps, 2), 'images_rife': n_rife, 'avant': saccade(avant), 'apres': saccade(apres)}
+    rife = rife_present()
+    apres, n_int = (retime if rife else retime_flux)(fr, fps, n_out); apres = [cadre(f) for f in apres]
+    return apres, {'fps_moteur': round(fps, 2), 'interpolation': 'RIFE' if rife else 'flux DIS (OpenCV)', 'intervalles': n_int,
+                   'avant': saccade(avant), 'apres': saccade(apres)}

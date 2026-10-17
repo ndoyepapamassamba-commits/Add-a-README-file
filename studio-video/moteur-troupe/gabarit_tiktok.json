@@ -1,0 +1,308 @@
+{
+ "date": "17/10/2026",
+ "source": "12 TikTok de l’utilisateur (Grok) ; 5 extraits de studios 3D",
+ "tiktok": {
+  "plansParMinute": {
+   "q1": 10.425,
+   "mediane": 11.4,
+   "q3": 15.55
+  },
+  "planMedianS": {
+   "q1": 3.04,
+   "mediane": 5.17,
+   "q3": 6.02
+  },
+  "mouvement": {
+   "q1": 0.0158,
+   "mediane": 0.01845,
+   "q3": 0.02625
+  },
+  "couverture": {
+   "q1": 0.1875,
+   "mediane": 0.215,
+   "q3": 0.2525
+  },
+  "figeesParMinute": {
+   "q1": 2.99891,
+   "mediane": 4.45913,
+   "q3": 5.15969
+  },
+  "camera": {
+   "q1": 0.19025,
+   "mediane": 0.327,
+   "q3": 0.5855
+  },
+  "jeuVivant": {
+   "q1": 16.075,
+   "mediane": 19.7,
+   "q3": 26.3
+  },
+  "jeu": {
+   "q1": 0.34475,
+   "mediane": 0.7425,
+   "q3": 0.904
+  },
+  "sautes": {
+   "q1": 1.12725,
+   "mediane": 1.82,
+   "q3": 2.1315
+  }
+ },
+ "studios": {
+  "plansParMinute": {
+   "q1": 10.9,
+   "mediane": 18.4,
+   "q3": 25.6
+  },
+  "planMedianS": {
+   "q1": 2.25,
+   "mediane": 2.58,
+   "q3": 4.0
+  },
+  "mouvement": {
+   "q1": 0.0329,
+   "mediane": 0.0338,
+   "q3": 0.0355
+  },
+  "couverture": {
+   "q1": 0.46,
+   "mediane": 0.52,
+   "q3": 0.56
+  },
+  "figeesParMinute": {
+   "q1": 0.0,
+   "mediane": 4.48598,
+   "q3": 5.30488
+  },
+  "camera": {
+   "q1": 0.77,
+   "mediane": 1.327,
+   "q3": 1.778
+  },
+  "jeuVivant": {
+   "q1": 42.6,
+   "mediane": 48.8,
+   "q3": 66.7
+  },
+  "jeu": {
+   "q1": 1.377,
+   "mediane": 2.476,
+   "q3": 2.748
+  },
+  "sautes": {
+   "q1": 0.431,
+   "mediane": 0.443,
+   "q3": 0.885
+  }
+ },
+ "detail": {
+  "tiktok": {
+   "tiktok-00": {
+    "secondes": 61,
+    "plansParMinute": 15.7,
+    "planMedianS": 3.58,
+    "mouvement": 0.0098,
+    "couverture": 0.15,
+    "figeesParMinute": 15.344262295081966,
+    "camera": 0.012,
+    "jeuVivant": 9.3,
+    "jeu": 0.18,
+    "sautes": 1.854
+   },
+   "tiktok-01": {
+    "secondes": 60.8,
+    "plansParMinute": 8.9,
+    "planMedianS": 9.17,
+    "mouvement": 0.0264,
+    "couverture": 0.26,
+    "figeesParMinute": 2.368421052631579,
+    "camera": 1.315,
+    "jeuVivant": 26.2,
+    "jeu": 1.105,
+    "sautes": 1.974
+   },
+   "tiktok-02": {
+    "secondes": 68.5,
+    "plansParMinute": 9.6,
+    "planMedianS": 6.08,
+    "mouvement": 0.027,
+    "couverture": 0.27,
+    "figeesParMinute": 1.313868613138686,
+    "camera": 1.611,
+    "jeuVivant": 33.3,
+    "jeu": 1.236,
+    "sautes": 1.008
+   },
+   "tiktok-03": {
+    "secondes": 64.7,
+    "plansParMinute": 8.4,
+    "planMedianS": 6.5,
+    "mouvement": 0.0209,
+    "couverture": 0.21,
+    "figeesParMinute": 5.193199381761978,
+    "camera": 0.036,
+    "jeuVivant": 12.3,
+    "jeu": 0.335,
+    "sautes": 2.413
+   },
+   "tiktok-04": {
+    "secondes": 70.6,
+    "plansParMinute": 11.1,
+    "planMedianS": 6,
+    "mouvement": 0.0189,
+    "couverture": 0.22,
+    "figeesParMinute": 4.8441926345609065,
+    "camera": 0.059,
+    "jeuVivant": 14.2,
+    "jeu": 0.296,
+    "sautes": 0.978
+   },
+   "tiktok-05": {
+    "secondes": 60.7,
+    "plansParMinute": 15.8,
+    "planMedianS": 2.25,
+    "mouvement": 0.016,
+    "couverture": 0.29,
+    "figeesParMinute": 5.041186161449753,
+    "camera": 0.361,
+    "jeuVivant": 34.1,
+    "jeu": 0.837,
+    "sautes": 1.238
+   },
+   "tiktok-06": {
+    "secondes": 64.8,
+    "plansParMinute": 23.2,
+    "planMedianS": 1.17,
+    "mouvement": 0.0152,
+    "couverture": 0.23,
+    "figeesParMinute": 4.074074074074074,
+    "camera": 0.701,
+    "jeuVivant": 23.0,
+    "jeu": 0.778,
+    "sautes": 1.035
+   },
+   "tiktok-07": {
+    "secondes": 60.6,
+    "plansParMinute": 10.9,
+    "planMedianS": 2.92,
+    "mouvement": 0.0167,
+    "couverture": 0.18,
+    "figeesParMinute": 5.148514851485149,
+    "camera": 0.29,
+    "jeuVivant": 17.9,
+    "jeu": 0.707,
+    "sautes": 2.196
+   },
+   "tiktok-08": {
+    "secondes": 64.8,
+    "plansParMinute": 13,
+    "planMedianS": 5.17,
+    "mouvement": 0.0268,
+    "couverture": 0.25,
+    "figeesParMinute": 1.8518518518518519,
+    "camera": 0.547,
+    "jeuVivant": 26.6,
+    "jeu": 1.283,
+    "sautes": 1.158
+   },
+   "tiktok-09": {
+    "secondes": 66.7,
+    "plansParMinute": 11.7,
+    "planMedianS": 5.67,
+    "mouvement": 0.011,
+    "couverture": 0.17,
+    "figeesParMinute": 10.344827586206897,
+    "camera": 0.234,
+    "jeuVivant": 16.7,
+    "jeu": 0.348,
+    "sautes": 1.786
+   },
+   "tiktok-10": {
+    "secondes": 62,
+    "plansParMinute": 15.5,
+    "planMedianS": 3.08,
+    "mouvement": 0.0262,
+    "couverture": 0.21,
+    "figeesParMinute": 3.3870967741935485,
+    "camera": 0.435,
+    "jeuVivant": 21.5,
+    "jeu": 0.828,
+    "sautes": 2.679
+   },
+   "tiktok-11": {
+    "secondes": 61.7,
+    "plansParMinute": 10.7,
+    "planMedianS": 5.17,
+    "mouvement": 0.018,
+    "couverture": 0.19,
+    "figeesParMinute": 3.2090761750405186,
+    "camera": 0.293,
+    "jeuVivant": 17.2,
+    "jeu": 0.659,
+    "sautes": 2.11
+   }
+  },
+  "studios": {
+   "studio-00": {
+    "secondes": 44.1,
+    "plansParMinute": 10.9,
+    "planMedianS": 4,
+    "mouvement": 0.007,
+    "couverture": 0.16,
+    "figeesParMinute": 14.285714285714285,
+    "camera": 0.77,
+    "jeuVivant": 32.0,
+    "jeu": 0.744,
+    "sautes": 0.431
+   },
+   "studio-01": {
+    "secondes": 49.5,
+    "plansParMinute": 6.1,
+    "planMedianS": 4.25,
+    "mouvement": 0.0338,
+    "couverture": 0.52,
+    "figeesParMinute": 0.0,
+    "camera": 1.778,
+    "jeuVivant": 42.6,
+    "jeu": 1.377,
+    "sautes": 0.101
+   },
+   "studio-02": {
+    "secondes": 32.1,
+    "plansParMinute": 28.1,
+    "planMedianS": 1.75,
+    "mouvement": 0.0555,
+    "couverture": 0.68,
+    "figeesParMinute": 4.485981308411215,
+    "camera": 1.327,
+    "jeuVivant": 69.3,
+    "jeu": 2.748,
+    "sautes": 0.904
+   },
+   "studio-03": {
+    "secondes": 32.8,
+    "plansParMinute": 25.6,
+    "planMedianS": 2.58,
+    "mouvement": 0.0329,
+    "couverture": 0.46,
+    "figeesParMinute": 5.3048780487804885,
+    "camera": 0.735,
+    "jeuVivant": 48.8,
+    "jeu": 2.476,
+    "sautes": 0.885
+   },
+   "studio-04": {
+    "secondes": 29.3,
+    "plansParMinute": 18.4,
+    "planMedianS": 2.25,
+    "mouvement": 0.0355,
+    "couverture": 0.56,
+    "figeesParMinute": 0.0,
+    "camera": 3.223,
+    "jeuVivant": 66.7,
+    "jeu": 3.082,
+    "sautes": 0.443
+   }
+  }
+ }
+}
