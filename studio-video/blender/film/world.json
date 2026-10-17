@@ -24,6 +24,7 @@
   "ville",
   "rue"
  ],
+ "lead": "\\b(au|aux|a la|a l|dans (le|la|l|les|un|une)|chez|sur (le|la)|vers (le|la))\\s+",
  "places": [
   {
    "id": "salon",
@@ -2478,7 +2479,7 @@
   {
    "id": "imaginaire",
    "nom": "Monde imaginaire",
-   "match": "\\b(reve|imaginaire|magique|conte|fantastique|paradis|autre monde|planete|futur)\\b",
+   "match": "\\b(reve|(monde|pays|univers|royaume|ile|ville) imaginaire|magique|conte|fantastique|paradis|autre monde|planete|futur)\\b",
    "exterieur": true,
    "template": "imaginaire",
    "palette": [

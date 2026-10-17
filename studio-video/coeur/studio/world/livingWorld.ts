@@ -760,7 +760,8 @@ PLACES.push(
   {
     id: 'imaginaire',
     nom: 'Monde imaginaire',
-    match: /\b(reve|imaginaire|magique|conte|fantastique|paradis|autre monde|planete|futur)\b/,
+    // « imaginaire » alone is an adjective (« un transfert imaginaire ») : only a world that is called imaginary.
+    match: /\b(reve|(monde|pays|univers|royaume|ile|ville) imaginaire|magique|conte|fantastique|paradis|autre monde|planete|futur)\b/,
     exterieur: true,
     template: 'imaginaire',
     palette: ['#7e57c2', '#26c6da', '#ffca28'],
@@ -825,13 +826,20 @@ const PRIORITY = [
   'ville',
   'rue',
 ];
+/** A place NAMED as the location (« au maquis », « à la gare », « au salon de coiffure »): the words from the earliest
+ *  such phrase to the next punctuation decide, by priority (« Au maquis, Koffi … un transfert imaginaire » is at the
+ *  maquis). Same rule in Blender (world.json `lead`, world.py). */
+const LEAD = String.raw`\b(au|aux|a la|a l|dans (le|la|l|les|un|une)|chez|sur (le|la)|vers (le|la))\s+`;
+const byPriority = (t: string) =>
+  PRIORITY.map((id) => PLACES.find((x) => x.id === id)!).find((p) => p.match.test(t)) ?? null;
 export function placeOf(text: string): Place | null {
   const t = fold(text);
-  for (const id of PRIORITY) {
-    const p = PLACES.find((x) => x.id === id)!;
-    if (p.match.test(t)) return p;
+  let at = -1;
+  for (const p of PLACES) {
+    const m = new RegExp(LEAD + p.match.source).exec(t);
+    if (m && (at < 0 || m.index < at)) at = m.index;
   }
-  return null;
+  return (at >= 0 && byPriority(t.slice(at).split(/[,.;:!?]/)[0]!)) || byPriority(t);
 }
 /** Any location, even unknown: the catalogue place, else a new place built on the closest template. */
 export function placeFor(text: string): Place {
@@ -893,6 +901,7 @@ export function placeBrief(text: string): string {
 export function worldJson(): Record<string, unknown> {
   return {
     priority: PRIORITY,
+    lead: LEAD,
     places: PLACES.map((p) => ({ ...p, match: p.match.source })),
   };
 }

@@ -66,11 +66,12 @@ Studio Vidéo réutilise le socle de Workbench sans le copier, par l'alias `@wor
 ## Défauts corrigés au passage (relevés par les tests de bout en bout du studio, rejoués ici)
 
 Ces tests ne tournaient plus dans Workbench depuis la refonte de la navigation ; dans Studio Vidéo ils tournent de nouveau
-et ont relevé quatre défauts :
+et ont relevé cinq défauts :
 
 | Défaut | Correction |
 |---|---|
 | Avec une clé OpenRouter, l'écriture du film pouvait être confiée à un service gratuit sans clé (LLM7, Pollinations) ou au petit modèle intégré au navigateur (Qwen3 0,6 B, recommandé « 8,6/10 a priori » par le plan de modèles) : sans eux, l'histoire restait bloquée | une seule règle, `writingCatalog` (`navigateur/studio/textModel.ts`), pour le choix automatique **et** le plan de modèles : avec une clé, le film s'écrit avec le catalogue OpenRouter (mode JSON, coût mesuré, plafond) ; les services sans clé restent le filet de secours automatique du client |
 | Le journal du montage ne disait pas quel moteur de rendu tournait ; le test attendait encore une pause « onglet caché » que le rendu image par image (WebCodecs) ne fait plus | le journal du MONTAGE note « rendu du film image par image (30 i/s) : un onglet caché ne fige aucune image », ou « en temps réel » quand l'enregistreur de secours tourne (`preview.ts`, option `onMode`) |
 | Les tests des acteurs 3D attendaient 25 min un écran caché (la chaîne 3D est éteinte, `VIDEO_3D = false`) | ces tests sont sautés tant que la chaîne 3D est éteinte, et tournent dès qu'elle est rallumée |
+| Le lieu du film venait d'un mot isolé : « Au maquis, Koffi … avec un transfert *imaginaire* » partait dans le « Monde imaginaire » (deux lunes, champignons lumineux) au lieu du maquis | le lieu NOMMÉ (« au maquis », « à la gare », « au salon de coiffure ») décide, puis l'ordre de spécificité ; « imaginaire » seul n'est plus un monde. Même règle dans l'app (`coeur/studio/world/livingWorld.ts`) et dans Blender (`blender/film/world.py`, motif `lead` de `world.json`) |
 | Les scripts d'initialisation des tests écrivaient dans `localStorage` jusque dans les iframes isolées du bac à sable (origine opaque) | écriture protégée ; l'app elle-même n'y touche pas |

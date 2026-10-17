@@ -160,6 +160,11 @@ describe('MONDE VIVANT — lieux, figurants, animaux, objets, ambiance', () => {
       ['à l’école', 'ecole'],
     ];
     for (const [t, id] of cases) expect(placeOf(t)?.id, t).toBe(id);
+    // The place NAMED as the location wins; « imaginaire » as an adjective is not the imaginary world.
+    expect(placeOf('Au maquis, Koffi veut épouser Coumba avec un transfert imaginaire')?.id).toBe('maquis');
+    expect(placeOf('Le transfert imaginaire de Koffi')).toBeNull();
+    expect(placeOf('Un rêve : Koffi au marché')?.id).toBe('marche');
+    expect(placeOf('Dans un monde imaginaire, deux lunes')?.id).toBe('imaginaire');
     const n = placeFor('sur le chantier du stade');
     expect(n.template).toBe('rue');
     expect(n.exterieur).toBe(true);

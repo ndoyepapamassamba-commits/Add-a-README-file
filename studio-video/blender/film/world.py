@@ -38,6 +38,16 @@ def load_catalogue():
 def place_of(text, world):
     t = fold(text)
     by_id = {p['id']: p for p in world['places']}
+    # A place NAMED as the location (« au maquis », « au salon de coiffure »): the words from the earliest such phrase
+    # to the next punctuation decide, by priority (same rule as livingWorld.placeOf in the app).
+    lead = world.get('lead')
+    if lead:
+        starts = [m.start() for p in world['places'] for m in [re.search(lead + p['match'], t)] if m]
+        if starts:
+            clause = re.split(r'[,.;:!?]', t[min(starts):])[0]
+            for pid in world['priority']:
+                if re.search(by_id[pid]['match'], clause):
+                    return by_id[pid]
     for pid in world['priority']:
         p = by_id[pid]
         if re.search(p['match'], t):
