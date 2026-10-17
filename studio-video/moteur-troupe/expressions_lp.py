@@ -43,7 +43,8 @@ TOL_DURE = 0.12   # défaut au-delà du neutre qui marque un visage ABÎMÉ (vu 
                   # tolérance de 0,08 adoucissait à tort la colère de Petit Mamadou (lisible 0,76 → 0,24)
 SUFFIT = 0.8      # lisible à 80 % : la recherche de recette s'arrête
 CLOS = {'regard_y': 34}    # yeux clos : commande « regard » vers le bas poussée jusqu'à fermer la paupière
-BOUCHE = [0, 22, 45, 70]   # ouverture de la bouche (commande « lèvres 3 » des auteurs) : fermée … grande ouverte
+BOUCHE = [0, 30, 62, 100]  # ouverture de la bouche (commande « lèvres 3 » des auteurs) : fermée … grande ouverte ; 70 → 100 le 17/10 :
+                           # « le vieux assis ne parle pas » — à 52 px de visage, la bouche à 70 ne se lisait pas (Baye : propre jusqu'à 130)
 OVALE = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109]
 SOURCILS = ('froncer', 'inquiet', 'hausser', 'sourcils')
 # RECETTES DE RECHANGE : chaque visage ne répond pas pareil (barbe, trois quarts, profil, sourire de base) ; la recherche
@@ -129,14 +130,26 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev'):
     os.makedirs(dossier, exist_ok=True); src = LP.Source(img, v3); x, y, s = src.box
     taille = int(round(min(512, max(96, s))))
     ancien = json.load(open(f'{dossier}/meta.json')) if os.path.isfile(f'{dossier}/meta.json') else {}
-    compat = ancien.get('bouche') == BOUCHE and ancien.get('taille') == taille and ancien.get('version') == VERSION
+    compat = ancien.get('taille') == taille and ancien.get('version') == VERSION   # recettes réutilisables
+    neuf_bouche = ancien.get('bouche') != BOUCHE   # seules les bouches ouvertes sont redessinées (recettes gardées, pas de JEV)
     vieux = ancien.get('commandes', {}) if compat else {}; v_rec = ancien.get('recettes', {}) if compat else {}; v_jev = ancien.get('jev', {}) if compat else {}
+    # reprise d'une construction interrompue (minuterie, machine reprise) : les émotions déjà cherchées ET dessinées avec les
+    # bouches actuelles sont gardées telles quelles (partiel.json, écrit après chaque émotion)
+    fp = f'{dossier}/partiel.json'; P = json.load(open(fp)) if os.path.isfile(fp) else {}; repris = set()
+    if P.get('taille') == taille and P.get('version') == VERSION and P.get('bouche') == BOUCHE:
+        vieux = dict(vieux); v_rec = dict(v_rec); v_jev = dict(v_jev)
+        for e in P.get('emotions', []):
+            vieux[e] = P['commandes'][e]; v_rec[e] = P['recettes'][e]; repris.add(e)
+            if e in P.get('jev', {}): v_jev[e] = P['jev'][e]
+        if 'neutre' in P.get('jev', {}): v_jev['neutre'] = P['jev']['neutre']
+        if repris: journal(f'  reprise : {len(repris)} émotions déjà faites')
     juger = _juge_jev() if juge == 'jev' else (juge if callable(juge) else None)
     meta = {'version': VERSION, 'box': [x, y, s], 'taille': taille, 'bouche': BOUCHE, 'emotions': [], 'commandes': {}, 'recettes': {}, 'intensite': {}, 'jev': {}}
     rend = lambda c, m: cv2.resize(src.rendu(_commande(c, m)), (taille, taille), interpolation=cv2.INTER_AREA)
     ecrit = lambda f, o: cv2.imwrite(f, cv2.cvtColor(o, cv2.COLOR_RGB2BGR))
     lire = lambda f: cv2.cvtColor(cv2.imread(f), cv2.COLOR_BGR2RGB)
-    base = None
+    base = (v_jev.get('neutre') or {}).get('abime') if repris else None
+    if base is not None: meta['jev']['neutre'] = v_jev['neutre']
     for e in (emotions or EMO):
         meme = vieux.get(e) == EMO[e] and e in v_rec; c = v_rec[e] if meme else dict(EMO[e]); fait0 = None
         if meme and e in v_jev: meta['jev'][e] = v_jev[e]
@@ -155,14 +168,16 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev'):
         for i, m in enumerate(BOUCHE):
             f = f'{dossier}/{e}_{i}.png'
             if i == 0 and fait0 is not None: ecrit(f, fait0); continue
-            if neuf or not os.path.isfile(f): ecrit(f, rend(c, m))
+            if neuf or (neuf_bouche and i > 0 and e not in repris) or not os.path.isfile(f): ecrit(f, rend(c, m))
         meta['emotions'].append(e); meta['commandes'][e] = EMO[e]; meta['recettes'][e] = c
         meta['intensite'][e] = meta['jev'].get(e, {}).get('intensite', 1.0)
+        json.dump(meta, open(fp, 'w'))
         journal(f"  {e} : recette {c}{' (redessinée)' if neuf else ''} {meta['jev'].get(e, '')}")
     f = f'{dossier}/clos.png'
     if vieux.get('_clos') != CLOS or not os.path.isfile(f): ecrit(f, cv2.resize(src.rendu(LP.edits(**CLOS)), (taille, taille), interpolation=cv2.INTER_AREA))
     meta['commandes']['_clos'] = CLOS
     json.dump(meta, open(f'{dossier}/meta.json', 'w'))
+    if os.path.isfile(fp): os.remove(fp)
     return meta
 
 

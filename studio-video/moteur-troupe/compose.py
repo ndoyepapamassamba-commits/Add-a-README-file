@@ -69,7 +69,13 @@ def draw_caption(ov, t):
                 x += F1.getlength(w + ' ')
             y += 50
         return
-credit = 'Voix : Piper « siwis » (CC BY 4.0, SIWIS), « gilles » (CC0) · Images : Z-Image-Turbo (Apache-2.0) · Visages : LivePortrait (MIT)'
+# crédit des voix d'après le moteur réellement utilisé pour chaque réplique (voix.py écrit « moteur » dans la frise)
+_mot = {L.get('moteur', 'piper') for L in T['lines']}
+_v = (["Qwen3-TTS (Apache-2.0) d'après OpenSLR 57 (Apache-2.0)"] if 'qwen3' in _mot else []) + \
+     (['Piper « siwis » (CC BY 4.0, SIWIS), « gilles » (CC0)'] if 'piper' in _mot else [])
+credit = 'Voix : ' + ', '.join(_v) + ' · Images : Z-Image-Turbo (Apache-2.0) · Visages : LivePortrait (MIT)'
+# bande son : dialogue sec + jingles des cartes (musique.py) s'ils ont été posés
+BANDE = 'voix/mix-musique.wav' if os.path.isfile('voix/mix-musique.wav') and os.path.getmtime('voix/mix-musique.wav') >= os.path.getmtime('voix/mix.wav') else 'voix/mix.wav'
 frames = sorted(glob.glob(f'{D}/clip/f*.jpg')); os.makedirs(f'{D}/compose', exist_ok=True); total = T['total']; c0 = total - 2.0
 for k, fp in enumerate(frames):
     t = k / 30; fr = cv2.imread(fp)
@@ -83,7 +89,7 @@ for k, fp in enumerate(frames):
         dr = ImageDraw.Draw(ov); lines = [credit[:credit.index('·', 60) + 1].strip(' ·'), credit[credit.index('·', 60) + 1:].strip()]
         for i, ln in enumerate(lines): dr.text(((W - FC.getlength(ln)) / 2, 66 + 20 * i), ln, font=FC, fill=(255, 255, 255, 230), stroke_width=2, stroke_fill=(0, 0, 0, 200))
     Image.alpha_composite(img, ov).convert('RGB').save(f'{D}/compose/c{k:05d}.jpg', quality=92)
-subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-framerate', '30', '-i', f'{D}/compose/c%05d.jpg', '-i', 'voix/mix.wav',
+subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-framerate', '30', '-i', f'{D}/compose/c%05d.jpg', '-i', BANDE,
                 '-af', f'loudnorm=I=-14:TP=-1:LRA=7,afade=t=out:st={total - 0.4:.2f}:d=0.4', '-vf', 'format=yuv420p',
                 '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-t', f'{len(frames) / 30:.3f}', '-movflags', '+faststart', OUTMP4], check=True)
 print(f'{len(caps)} groupes de sous-titres, tous dans la zone sûre ; {len(frames)} images ; {OUTMP4}')

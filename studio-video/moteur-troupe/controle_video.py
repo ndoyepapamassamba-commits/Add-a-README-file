@@ -103,13 +103,9 @@ from faster_whisper import WhisperModel
 run(['ffmpeg', '-v', 'error', '-y', '-i', MP4, '-ac', '1', '-ar', '16000', '/tmp/controle_son.wav'])
 wm = WhisperModel('small', device='cpu', compute_type='int8', download_root=os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/whisper')
 hyp = ' '.join(s_.text for s_ in wm.transcribe('/tmp/controle_son.wav', language='fr', beam_size=3)[0])
-norm = lambda s_: re.sub(r'\s+', ' ', re.sub(r"[^a-z0-9' ]", ' ', unicodedata.normalize('NFD', s_.lower()).encode('ascii', 'ignore').decode())).strip().split()
-ref = norm(' '.join(L['texte'] for L in T['lines'])); hy = norm(hyp)
-d = list(range(len(hy) + 1))
-for i in range(1, len(ref) + 1):
-    p_, d[0] = d[0], i
-    for j in range(1, len(hy) + 1): p_, d[j] = d[j], min(d[j] + 1, d[j - 1] + 1, p_ + (ref[i - 1] != hy[j - 1]))
-R['intelligibilite'] = {'taux_erreur_mots': round(d[len(hy)] / len(ref), 2), 'transcription': hyp.strip()[:600]}
+# chiffres écrits en lettres et mots du parler ivoirien retirés des deux côtés (mots.py) : « 500 » = « cinq cents »
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import mots
+R['intelligibilite'] = {'taux_erreur_mots': round(mots.erreur_mots(' '.join(L['texte'] for L in T['lines']), hyp), 2), 'transcription': hyp.strip()[:600]}
 R['intelligibilite']['ok'] = R['intelligibilite']['taux_erreur_mots'] <= 0.35
 ''', 'test6', 'exec'))
 json.dump(R, open(OUT, 'w'), ensure_ascii=False, indent=1, default=lambda o: o.item() if hasattr(o, 'item') else str(o))  # numpy 2 : np.bool → bool

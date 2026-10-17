@@ -80,3 +80,24 @@ python3 cadre.py juge sortie/film.mp4            # tableau film / TikTok / studi
 Mesures du 17/10/2026 (sketch « la cachette », 22,5 s) : étirement du corps (99e centile, médiane des images) Baye 4,2 %,
 Maman 3,7 %, Petit Mamadou 2,9 % ; 8 mesures sur 9 dans la fourchette des TikTok de l'utilisateur ; rendu 670 images en
 ≈ 2 min 30 sur 4 cœurs ; colère de Petit Mamadou lisible à 0,76 selon JEV (défaut 0,27).
+
+### Voix d'Afrique de l'Ouest, jingle, juge qualité à 10 portes, machine à blagues (17/10/2026, soir)
+
+| Étape | Module | Ce qui est fait | Outils (licences) |
+|---|---|---|---|
+| Voix clonées | `voix.py` (`VOIX_MOTEUR=qwen3`), `voix_qwen.py` | chaque personnage reçoit une voix de référence (`VOIX_REFS/refs.json`, hors dépôt : extraits des TikTok de l'utilisateur, ou du corpus OpenSLR 57 « African Accented French ») ; toutes les répliques en un seul passage du modèle ; **chaque prise réécoutée par Whisper** et refaite avec une autre graine si elle est mal comprise ; hauteur poussée à mi-chemin du registre visé, débit ramené vers celui de la chaîne (×1,3 au plus, jamais sur une chute) ; repli Piper pour un personnage sans référence | Qwen3-TTS 0,6 B Base (Apache-2.0), OpenSLR 57 (Apache-2.0), Whisper small (MIT), WORLD (BSD) |
+| Comparer dit / écrit | `mots.py` | chiffres écrits en lettres (« 500 » = « cinq cents »), mots du parler ivoirien retirés des deux côtés, erreur de mots | — |
+| Formes de bouche | `levres.py` | après les voix : visèmes lus dans l'audio de chaque réplique | Rhubarb Lip Sync (MIT) |
+| Jingle | `musique.py` | jingle d'1 s synthétisé (balafon pentatonique + appel de djembé), varié à chaque carte et en fin ; la bande dialogue reste sèche comme dans les TikTok | code maison |
+| Réaction tenue | `voix.py` | 2 s de réaction après une chute finale, 0,9 s après une réplique de rattrapage : le plan de réaction existe vraiment | — |
+| Bibliothèques reprises | `expressions_lp.py` | `partiel.json` écrit après chaque émotion : une construction coupée (minuterie, machine reprise) repart où elle s'était arrêtée | — |
+| Juge qualité | `qualite.py` | 10 portes : A rythme, B bouche lisible, C étirement, D écoute, E automate, F arrière-plan vivant, G œil de JEV, H technique et son (sautes ≤ 0,6/s), **I fluidité** (aucun à-coup de tête, de buste ou d'expression d'une image à l'autre), **J humour** (chaque sketch noté par JEV) ; film livré seulement à 10/10 | JEV 1.14, Whisper |
+| Histoires et blagues | `histoires.py`, `exporte_bible.ts` | brouillons contrôlés par le code, notés par JEV (drôle, chute, parler ivoirien jugé sur les répliques seules, clarté, méchanceté), échelle de champions par duels dans les deux ordres | JEV 1.14 ; modèle d'écriture : celui du routeur de l'app, ou gratuit sans clé |
+
+```
+VOIX_MOTEUR=qwen3 QWEN_PY=<python avec torch> python3 voix.py   # voix clonées + frise (timeline.json)
+python3 levres.py timeline.json                                  # formes de bouche lues dans l'audio
+python3 musique.py timeline.json voix/mix.wav voix/mix-musique.wav
+ETIREMENT=1 TOURNE_PROCS=4 python3 tourne.py montage.json film && python3 compose.py film film/film.mp4
+python3 qualite.py film film/film.mp4 montage.json               # 10 portes → film/qualite.json
+```

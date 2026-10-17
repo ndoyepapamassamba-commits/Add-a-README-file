@@ -35,7 +35,7 @@
 # Réglages (montage.json → "reglages") : plan_s, cam_px, pousse (travelling avant par plan), parallaxe, jeu_gain, corps, whip_s, ouverture, decor, gestes, carte_sur_scene, rig.
 # python3 tourne.py montage.json sortie_dir
 import json, math, os, sys, zlib, numpy as np, cv2
-import decor_vivant, gestes, rig2d, regard, expressions, expressions_lp, jeu, prepare_rig
+import decor_vivant, entites, gestes, rig2d, regard, expressions, expressions_lp, jeu, prepare_rig
 FPS, CW, CH = 30, 576, 460
 cfg = json.load(open(sys.argv[1])); OUT = sys.argv[2]; os.makedirs(f'{OUT}/clip', exist_ok=True)
 REG = {'plan_s': 5.0, 'cam_px': 2.5, 'pousse': 1.10, 'parallaxe': 0.35, 'jeu_gain': 2.3, 'corps': 0.1, 'whip_s': 0.45, 'ouverture': 2.2, 'decor': 1.0, 'gestes': 1.0, 'carte_sur_scene': 1, 'rig': 1}
@@ -212,7 +212,9 @@ for sk in T['sketchs']:
     ys_, xs_ = np.mgrid[0:img.shape[0], 0:img.shape[1]].astype(np.float32)
     kpar = facteur_parallaxe(profondeur(d, plate), acts, img.shape[0], img.shape[1]) if REG['parallaxe'] > 0 else None
     vie = decor_vivant.prepare(d, plate, [A_['mask'] for A_ in acts.values()]) if REG['decor'] > 0 else None
-    SC[sk['id']] = dict(img=img, plate=plate, acts=acts, H=img.shape[0], W=img.shape[1], sk=sk, xs=xs_, ys=ys_, kpar=kpar, vie=vie)
+    n_ent = int((REG.get('entites') or {}).get(sk['id'], 0))   # bêtes du décor (poules) : nombre choisi par sketch dans le montage
+    ents = entites.prepare(d, img.shape[0], img.shape[1], [(A_['bbox'], not A_.get('assis')) for A_ in acts.values()], n=n_ent) if n_ent else []
+    SC[sk['id']] = dict(img=img, plate=plate, acts=acts, H=img.shape[0], W=img.shape[1], sk=sk, xs=xs_, ys=ys_, kpar=kpar, vie=vie, ents=ents)
 gestes.ferme()
 if REG['rig']:   # pistes de jeu et ressenti de chaque personnage, image par image, pour tout le film
     for sid, S_ in SC.items():
@@ -419,9 +421,13 @@ def frame_scene(S, t, off=None, zoom=None):
         plate = cv2.remap(plate, mx.astype(np.float32), my.astype(np.float32), cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
         if V is not None: plate = np.clip(plate.astype(np.float32) * gain[..., None], 0, 255)
     can = plate.astype(np.float32).copy()
+    poses = entites.etat(S['ents'], t) if S.get('ents') else []
+    pieds = min((A['bbox'][3] for A in S['acts'].values()), default=1e9)
+    if poses: entites.dessine(can, poses, lambda p: p['y'] <= pieds)   # bêtes derrière les acteurs, puis devant après eux
     for name, A in sorted(S['acts'].items(), key=lambda kv: kv[1]['hip'][1]):
         (X0, Y0, X1, Y1), rgb, al = warp_actor(S, A, t, name)
         sub = can[Y0:Y1, X0:X1]; al3 = al[..., None]; sub[:] = sub * (1 - al3) + rgb.astype(np.float32) * al3
+    if poses: entites.dessine(can, poses, lambda p: p['y'] > pieds)
     return np.clip(can, 0, 255).astype(np.uint8)
 # ── découpage : un plan par réplique (coupe au changement de locuteur) ──
 def crop_for(S, kind, who=None):
@@ -436,7 +442,13 @@ def crop_for(S, kind, who=None):
         if h > H: h = H; w = h * asp
         return ((x0 + x1) / 2, y0 + 0.40 * h, w, h)
     A = S['acts'][who]; cx, cy = A['head'][0], A['head'][1] + 1.1 * A['sh']
-    h = {'moyen': 2.5, 'serre': 2.0, 'gros': 1.6}[kind] * 2 * A['sh']; h = min(H, max(260, h)); w = h * asp   # resserrés : visages plus grands, bouches lisibles
+    h = {'moyen': 2.5, 'serre': 2.0, 'gros': 1.6}[kind] * 2 * A['sh']; h = min(H, max(260, h))   # resserrés : visages plus grands, bouches lisibles
+    v_ = A['a'].get('visage')
+    if v_ and kind == 'moyen':   # « bouche lisible » : celui qui parle a au moins VISAGE_MIN px de visage dans l'image finale
+        # plancher 200 px de décor (agrandissement ×2,3 au plus, moins que le plan serré de la chute) : à 260, le petit visage
+        # de Petit Mamadou plafonnait à 56 px et celui de Baye à 66 (simulation des cadres du 17/10)
+        h = max(MOYEN_MIN, min(h, (v_['box'][3] - v_['box'][1]) * CH / (1.06 * VISAGE_MIN))); cy = min(cy, A['head'][1] + 0.42 * h)   # 6 % de marge
+    w = h * asp
     if w > W: w = W; h = w / asp
     return (cx, cy, w, h)
 def clamp_crop(S, c):
@@ -526,6 +538,15 @@ def faces_ok(S, c, keep=None):
             cx, cy, w, h = clamp_crop(S, (cx, (top + btm) / 2, max(w, nw), max(h, nh)))
     return cx, cy, w, h
 SH = []  # (t0, t1, sketch, kind, who, punch_t)
+VISAGE_MIN = float(os.environ.get('VISAGE_MIN', 72)); MOYEN_MIN = float(os.environ.get('MOYEN_MIN', 200))   # visage qui parle : au moins 72 px de haut sur 460 (bouche ouverte ≈ 12 px, lisible)
+def taille_visage(S, nom, c):
+    """hauteur du VISAGE (front → menton, sans cheveux ni marge) dans l'image finale, en pixels."""
+    v = S['acts'][nom]['a'].get('visage'); return 0.0 if not v else (v['box'][3] - v['box'][1]) * CH / c[3]
+def bouche_lisible(sid, qui):
+    """le plan à deux de `qui` montre-t-il chaque visage assez grand pour lire la bouche ?"""
+    if sid not in SC: return True
+    S = SC[sid]; c = faces_ok(S, clamp_crop(S, crop_for(S, 'duo', qui)), qui[0])
+    return min(taille_visage(S, n, c) for n in qui if n in S['acts']) >= VISAGE_MIN
 def echanges(Ls, plan_s):
     """RYTHME DE VOS TIKTOK : les répliques d'un même échange dans un seul plan (~plan_s secondes) ; la chute garde son plan."""
     G, cur = [], []
@@ -550,6 +571,20 @@ for sk in (T['sketchs'] if REG['plan_s'] > 0 else []):
             SH.append((L['t0'] + L['dur'] + 0.05, t1, sk['id'], 'gros', vict, None)); continue
         qui = tuple(dict.fromkeys(x['qui'] for x in Gr))
         kind, who = ('duo', qui) if len(qui) > 1 else ('moyen', qui[0])
+        if kind == 'duo' and not bouche_lisible(sk['id'], qui):
+            # RÈGLE « BOUCHE LISIBLE » (17/10, « on dirait que le vieux assis ne parle pas ») : quand les deux qui se parlent sont
+            # trop loin l'un de l'autre, le plan à deux rend les visages trop petits (Baye : 52 px) ; on passe au champ-contrechamp
+            # (un plan par prise de parole, comme Afrikatoon), les répliques consécutives d'un même personnage restant ensemble
+            tours = []
+            for x in Gr:
+                if tours and tours[-1][0] == x['qui']: tours[-1][1].append(x)
+                else: tours.append((x['qui'], [x]))
+            for k_, (n_, Lx) in enumerate(tours):
+                a_ = t0 if k_ == 0 else Lx[0]['t0'] - 0.12
+                b_ = t1 if k_ == len(tours) - 1 else tours[k_ + 1][1][0]['t0'] - 0.12
+                kd = ('ouvre-moyen' if (gi == 0 and k_ == 0 and REG['ouverture'] > 0) else 'moyen')
+                SH.append((a_, b_, sk['id'], kd, n_, None))
+            continue
         if gi == 0 and REG['ouverture'] > 0:   # on situe en large PUIS la caméra pousse vers l'échange, sans couper
             SH.append((t0, t1, sk['id'], 'ouvre-' + kind, who, None)); continue
         if gi == 0:   # plan d'ensemble pour situer, puis le plan de l'échange
@@ -622,13 +657,30 @@ CADRES = {}
 RANGE = range(NF)
 if ONLY:
     sk = [k for k in T['sketchs'] if k['id'] == ONLY][0]; RANGE = range(int((sk['t0'] - 0.3) * FPS), int((sk['t1'] + 0.25) * FPS))
+def cadre_lisible(S, s, keep):
+    """cadre de départ d'un plan. Plan moyen sur celui qui parle : quand la tête d'un voisin dépasse à moitié, la règle
+    « tête entière ou absente » élargissait le cadre pour la prendre (Baye : 66 px de visage) ; on essaie d'abord de
+    RESSERRER pour la sortir du cadre (même règle respectée, visage plus grand) et on garde le plus large cadre qui rend la
+    bouche lisible (≥ VISAGE_MIN), sinon celui qui donne le plus grand visage."""
+    base = crop_for(S, s[3], s[4])
+    if s[3] not in ('moyen', 'ouvre-moyen') or not keep or keep not in S['acts']: return faces_ok(S, clamp_crop(S, base), keep)
+    best = None
+    for f in (1.0, 0.94, 0.88, 0.82, 0.76, 0.70, 0.64):
+        cx, cy, w, h = base; h2 = max(MOYEN_MIN, h * f); w2 = h2 * w / h
+        c = faces_ok(S, clamp_crop(S, (cx, cy, w2, h2)), keep); px = taille_visage(S, keep, c)
+        if px >= VISAGE_MIN: return c
+        if best is None or px > best[0]: best = (px, c)
+        if h2 <= MOYEN_MIN: break
+    return best[1]
 def cadres_du_plan(S, s, keep):
     """CADRAGE SOUS-PIXEL CONTINU : les cadres sont validés UNE fois par plan (début, fin du mouvement, punch de la chute)
     puis interpolés en flottant ; l'image est prise par transformation affine (filtre anti-crénelage), jamais par découpe
     au pixel entier (qui faisait trembler toute l'image d'un pixel à chaque image — mesuré : 1,42 saute/s)."""
     key = tuple(s[:5])
     if key not in CADRES:
-        c0 = faces_ok(S, clamp_crop(S, crop_for(S, s[3], s[4])), keep)
+        c0 = cadre_lisible(S, s, keep)
+        if os.environ.get('TOURNE_DEBUG_CADRE'):   # diagnostic : cadre voulu → borné → après la règle des têtes
+            print('cadre', s[2], s[3], s[4], [round(v) for v in crop_for(S, s[3], s[4])], [round(v) for v in clamp_crop(S, crop_for(S, s[3], s[4]))], [round(v) for v in c0], flush=True)
         # CAMÉRA VIVANTE : glissement latéral (cam_px pixels d'écran par image) vers le côté qui a de la place, petite
         # montée un plan sur deux, poussée de 6 % ; validée par les mêmes règles de cadrage (têtes entières ou absentes)
         nfr = (s[1] - s[0]) * FPS; sc0_ = CW / c0[2]; dep_ = REG['cam_px'] * nfr / sc0_
@@ -696,7 +748,9 @@ import time; T0 = time.time()
 for s in SH:   # cadres calculés une fois AVANT le partage : chaque processeur en hérite et tournage.json les garde (diagnostic caméra)
     if s[2] in SC and int(s[1] * FPS) >= RANGE[0] and int(s[0] * FPS) <= RANGE[-1]: cadres_du_plan(SC[s[2]], s, s[4][0] if isinstance(s[4], tuple) else s[4])
 if os.environ.get('TOURNE_CADRES') == '1':   # diagnostic : les cadres seuls (début, fin, chute) de chaque plan, sans rendu
-    json.dump({f'{k[0]:.2f} {k[3]}': [None if c is None else [round(v, 1) for v in c] for c in v_] for k, v_ in CADRES.items()}, open(f'{OUT}/cadres.json', 'w'), indent=1)
+    json.dump({f'{k[0]:.2f} {k[3]}': {'cadres': [None if c is None else [round(v, 1) for v in c] for c in v_],
+                                       'visages_px': {n: round(taille_visage(SC[k[2]], n, v_[1]), 1) for n in SC[k[2]]['acts']}} for k, v_ in CADRES.items()},
+              open(f'{OUT}/cadres.json', 'w'), indent=1, ensure_ascii=False)
     print('cadres écrits', len(CADRES)); raise SystemExit(0)
 # RENDU PARALLÈLE : les images sont indépendantes ; chaque processeur tourne des blocs de 24 images (TOURNE_PROCS)
 NPROC = int(os.environ.get('TOURNE_PROCS', os.cpu_count() or 1)); blocs = [list(RANGE[i:i + 24]) for i in range(0, len(RANGE), 24)]

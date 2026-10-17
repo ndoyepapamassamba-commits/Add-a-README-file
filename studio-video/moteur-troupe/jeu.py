@@ -34,6 +34,25 @@ def _bruit(t, graine):   # bruit doux (somme de sinus incommensurables, Perlin 1
     return 0.5 * math.sin(1.31 * t + graine) + 0.3 * math.sin(2.17 * t + 1.7 * graine) + 0.2 * math.sin(3.73 * t + 0.3 * graine)
 
 
+def attaques(L, graine, garder=0.45):
+    """instants (s, depuis le début de la réplique) des attaques de syllabes FORTES de la réplique L (énergie à 100 Hz),
+    dont on garde une part au hasard (graine) : de quoi placer des hochements qui suivent la voix sans jamais se répéter."""
+    e = np.asarray(L.get('env') or [0.0], np.float32)
+    if len(e) < 10: return []
+    d = e[8:] - e[:-8]; seuil = max(0.08, float(np.percentile(d, 85)))
+    pics = [i + 8 for i in range(1, len(d) - 1) if d[i] >= seuil and d[i] >= d[i - 1] and d[i] >= d[i + 1]]
+    rng = np.random.default_rng(int(graine * 1000) + len(e)); out, dernier = [], -1.0
+    for i in pics:
+        t = i / 100.0
+        if t - dernier >= 0.45 and rng.random() < garder: out.append(t); dernier = t
+    return out
+
+
+def bosse(u, duree=0.38):
+    """un hochement : creux doux (0 → 1 → 0) de `duree` secondes ; 0 hors de la fenêtre."""
+    return math.sin(math.pi * u / duree) ** 2 if 0.0 <= u <= duree else 0.0
+
+
 def ressort(cible, fps, omega, x0=None):
     """filtre à amortissement critique (x'' = ω²(c − x) − 2ω x'), quatre sous-pas par image."""
     x = float(cible[0] if x0 is None else x0); v = 0.0; out = np.empty(len(cible), np.float32); h = 1.0 / fps / 4
@@ -89,6 +108,7 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
             else: evenement(t0 + 0.4, t1, REACTION_TEMOIN.get(j, {}), 0.6)
             if L.get('chute') and L['qui'] != nom:
                 tc = t0 + 0.7 * L['dur']; evenement(tc, tc + 0.6, {'surprise': 1.0}, 1.0)
+        ATT = {(nom, id(x)): attaques(x, g + 0.37 * k) for k, x in enumerate(L_sk) if x['qui'] != nom}
         # ── cibles des canaux, image par image
         for i, t in enumerate(T):
             L = next((x for x in L_sk if x['t0'] <= t <= x['t0'] + x['dur'] and x['qui'] == nom), None)
@@ -109,7 +129,7 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
                 u = t - L['t0']; e = L['env'][min(len(L['env']) - 1, max(0, int(u * 100)))]
                 e2 = L['env'][min(len(L['env']) - 1, max(0, int((u - 0.08) * 100)))]
                 tang += 5.0 * max(0.0, e - e2) * 6 + 1.5 * e          # hochements sur les attaques de syllabes
-                roll += 2.0 * e * math.sin(2 * math.pi * 1.7 * u)
+                roll += 2.4 * e * _bruit(2.3 * u, g + 7)              # la tête accompagne la phrase, sans balancier régulier (17/10)
                 souffle += 0.006 * (1 - min(1.0, u / max(0.5, L['dur'])))   # on parle en expirant
                 j = L.get('jeu', ''); k = min(1.0, u / 0.3) * (1 - max(0.0, min(1.0, (u - L['dur'] + 0.3) / 0.4)))
                 if j in ('accuse', 'marchande', 'soupcon'): buste += 2.5 * sd * k; bx += 3.0 * sd * k
@@ -120,7 +140,10 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
             else:
                 prochaine = next((x for x in apres_ if x['qui'] == nom), None)
                 if prochaine and 0 <= prochaine['t0'] - t < 0.4: souffle += 0.012 * (1 - (prochaine['t0'] - t) / 0.4)   # inspiration avant de parler
-                if S: roll += 2.0 * sd; tang += 2.5 * math.sin(2 * math.pi * 0.8 * (t - S['t0'])) * min(1.0, (t - S['t0']) / 0.5)   # on écoute en hochant la tête
+                if S:   # ON ÉCOUTE : la tête penche vers celui qui parle et HOCHE sur ses syllabes fortes, 0,25 s après (réaction),
+                        # jamais à intervalle fixe — l'ancien sinus à 0,8 Hz faisait « automate » (remarque du 17/10)
+                    roll += 2.0 * sd; uS = t - S['t0']
+                    tang += 3.0 * sum(bosse(uS - (a_ + 0.25)) for a_ in ATT[(nom, id(S))])
             # silence avant la chute (0,5 s) : tout le monde se fige, le souffle reste
             for x in L_sk:
                 if x.get('chute') and -0.5 <= t - x['t0'] < 0: roll *= 0.3; tang *= 0.3; buste *= 0.3
