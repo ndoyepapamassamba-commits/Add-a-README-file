@@ -89,7 +89,11 @@ for k, fp in enumerate(frames):
         dr = ImageDraw.Draw(ov); lines = [credit[:credit.index('·', 60) + 1].strip(' ·'), credit[credit.index('·', 60) + 1:].strip()]
         for i, ln in enumerate(lines): dr.text(((W - FC.getlength(ln)) / 2, 66 + 20 * i), ln, font=FC, fill=(255, 255, 255, 230), stroke_width=2, stroke_fill=(0, 0, 0, 200))
     Image.alpha_composite(img, ov).convert('RGB').save(f'{D}/compose/c{k:05d}.jpg', quality=92)
-subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-framerate', '30', '-i', f'{D}/compose/c%05d.jpg', '-i', BANDE,
-                '-af', f'loudnorm=I=-14:TP=-1:LRA=7,afade=t=out:st={total - 0.4:.2f}:d=0.4', '-vf', 'format=yuv420p',
+# son du fichier livré : fondu de fin, puis sonie −14 LUFS et crête vraie ≤ −2,3 dBTP mesurées en boucle (sonie.py ; le
+# loudnorm d'ffmpeg en une passe laissait −15,3 LUFS et −0,7 dBTP, porte H refusée)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import sonie
+y_, sr_ = sonie.lit(BANDE); y_ = y_[:int(total * sr_)]; nf_ = int(0.4 * sr_); y_[-nf_:] *= np.linspace(1, 0, nf_)
+sonie.ecrit(f'{D}/bande.wav', sonie.masterise(y_, sr_))
+subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-framerate', '30', '-i', f'{D}/compose/c%05d.jpg', '-i', f'{D}/bande.wav', '-vf', 'format=yuv420p',
                 '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-t', f'{len(frames) / 30:.3f}', '-movflags', '+faststart', OUTMP4], check=True)
 print(f'{len(caps)} groupes de sous-titres, tous dans la zone sûre ; {len(frames)} images ; {OUTMP4}')

@@ -18,7 +18,7 @@ for L in T['lines']:
     a = [x for x in S['acteurs'] if x['nom'] == L['qui']][0]; v = a['visage']; x0, y0, x1, y1 = [int(t) for t in v['box']]
     tpl = img[y0:y1, x0:x1]; fh = y1 - y0; sx, sy = v['seam'][0] - x0, v['seam'][1] - y0; mw = max(v['mouthWidth'], 0.3 * (x1 - x0))
     a0, a1 = int(L['t0'] * FPS), min(len(frames), int((L['t0'] + L['dur']) * FPS))
-    op, ks, pos = [], [], None
+    op, ks, pos = [], [], None; ec_ = []; dt_ = []
     for k in range(a0, a1):
         fr = frames[k]
         if pos is None or k % 15 == 0:   # recherche multi-échelle (début et toutes les 0,5 s : le cadre dérive lentement)
@@ -38,11 +38,20 @@ for L in T['lines']:
             if mv < 0.45: pos = None; continue
             pos = (X0 + ml[0], Y0 + ml[1])
         X, Y = pos; cxm, cym = X + sx * sc, Y + sy * sc; hw, h0, h1 = 0.6 * mw * sc, 0.06 * fh * sc, 0.24 * fh * sc
-        roi = fr[int(cym - h0):int(cym + h1), int(cxm - hw):int(cxm + hw)]
-        if roi.size == 0: continue
-        lum = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY).astype(np.float32)
+        # zone bouche, bornée à l'image ET au visage d'origine (même rectangle des deux côtés : écart pixel à pixel)
+        x0r, x1r = max(int(cxm - hw), X, 0), min(int(cxm + hw), X + t2.shape[1], fr.shape[1])
+        y0r, y1r = max(int(cym - h0), Y, 0), min(int(cym + h1), Y + t2.shape[0], fr.shape[0])
+        if x1r - x0r < 4 or y1r - y0r < 4: continue
+        lum = cv2.cvtColor(fr[y0r:y1r, x0r:x1r], cv2.COLOR_BGR2GRAY).astype(np.float32)
+        ref_ = cv2.cvtColor(t2[y0r - Y:y1r - Y, x0r - X:x1r - X], cv2.COLOR_BGR2GRAY).astype(np.float32)
         face = cv2.cvtColor(fr[Y:Y + t2.shape[0], X:X + t2.shape[1]], cv2.COLOR_BGR2GRAY).astype(np.float32)
         op.append(float((lum < 0.45 * np.median(face)).mean())); ks.append(k)
+        # bouche qui bouge même quand elle montre les DENTS (sourire de Coumba, Koffi) et non un intérieur sombre :
+        # écart de la zone bouche à la bouche fermée du dessin d'origine (luminance centrée, lissée)
+        ec_.append(float(np.abs(cv2.GaussianBlur(lum - np.median(lum), (0, 0), 1) - cv2.GaussianBlur(ref_ - np.median(ref_), (0, 0), 1)).mean()))
+        # DENTS : pixels de la zone bouche nettement plus clairs que la peau ET que la même zone bouche fermée (une barbe
+        # claire est déjà claire dans le dessin d'origine : elle ne compte pas)
+        dt_.append(float(((lum > 1.6 * np.median(face)) & (lum > ref_ + 40)).mean()))
     if len(op) < 0.5 * (a1 - a0) or len(op) < 10: res.append({'qui': L['qui'], 'texte': L['texte'][:40], 'corr': None, 'images_suivies_%': round(100 * len(op) / max(1, a1 - a0))}); continue
     env = np.array(L['env'])
     def env_at(k):   # énergie moyenne de la voix pendant l'image k (33 ms)
@@ -52,7 +61,13 @@ for L in T['lines']:
     o = np.array(op)
     if o.std() < 1e-4: corr = 0.0
     else: corr = max(np.corrcoef(o[max(0, -dd):len(o) - max(0, dd)], e[max(0, dd):len(e) - max(0, -dd)])[0, 1] for dd in range(-3, 4))
-    res.append({'qui': L['qui'], 'texte': L['texte'][:40], 'corr': round(float(corr), 2), 'images_suivies_%': round(100 * len(op) / (a1 - a0)), 'ouverture_max': round(float(o.max()), 3)})
+    d_ = np.array(ec_)
+    corr_e = 0.0 if d_.std() < 1e-4 else max(np.corrcoef(d_[max(0, -dd):len(d_) - max(0, dd)], e[max(0, dd):len(e) - max(0, -dd)])[0, 1] for dd in range(-3, 4))
+    t_ = np.array(dt_)
+    corr_d = 0.0 if t_.std() < 1e-4 else max(np.corrcoef(t_[max(0, -dd):len(t_) - max(0, dd)], e[max(0, dd):len(e) - max(0, -dd)])[0, 1] for dd in range(-3, 4))
+    res.append({'qui': L['qui'], 'texte': L['texte'][:40], 'corr': round(float(corr), 2), 'images_suivies_%': round(100 * len(op) / (a1 - a0)), 'ouverture_max': round(float(o.max()), 3),
+                'corr_ecart': round(float(corr_e), 2), 'ecart_amplitude': round(float(np.percentile(d_, 95) - np.percentile(d_, 5)), 2),
+                'corr_dents': round(float(corr_d), 2), 'dents_max': round(float(t_.max()), 3)})
 cs = [r['corr'] for r in res if r['corr'] is not None]
 out = {'repliques_mesurees': len(cs), 'sur': len(res), 'correlation_mediane': round(float(np.median(cs)), 2), 'repliques_corr_sup_0_3': int(sum(c >= 0.3 for c in cs)), 'detail': res}
 out['ok'] = bool(len(cs) >= 0.8 * len(res) and np.median(cs) >= 0.3)

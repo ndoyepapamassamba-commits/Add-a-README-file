@@ -47,6 +47,7 @@ BOUCHE = [0, 30, 62, 100]  # ouverture de la bouche (commande « lèvres 3 » de
                            # « le vieux assis ne parle pas » — à 52 px de visage, la bouche à 70 ne se lisait pas (Baye : propre jusqu'à 130)
 OVALE = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109]
 SOURCILS = ('froncer', 'inquiet', 'hausser', 'sourcils')
+LEVRES = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185]   # contour extérieur des lèvres (FaceMesh)
 # RECETTES DE RECHANGE : chaque visage ne répond pas pareil (barbe, trois quarts, profil, sourire de base) ; la recherche
 # essaie la recette de base, « sourcils + » / « bouche + », puis celles-ci, et garde la plus lisible qui n'abîme pas CE visage
 ALT = {
@@ -88,11 +89,21 @@ def _juge_jev():
         return None
 
 
-def masque_visage(v3, box, taille):
-    """ovale du visage (repères Face Landmarker) dans le carré de rendu, rétréci de 4 %, bord fondu."""
+def masque_visage(v3, box, taille, ouverte=None, fermee=None):
+    """zone greffée dans le carré de rendu : enveloppe convexe de TOUS les repères du visage (yeux, sourcils, nez, lèvres,
+    menton), plus la mâchoire qui descend quand la bouche s'ouvre (là où la bouche grande ouverte diffère de la bouche
+    fermée, près du visage) ; bord fondu.
+    17/10 (v25) : l'ancien masque suivait l'OVALE du visage ; de trois quarts, le contour du côté caché se replie sur le
+    nez et le polygone devient un croissant qui laissait la bouche DEHORS (Baye, Coumba, Koffi : bouche ouverte dans la
+    bibliothèque, fermée à l'écran — « le vieux assis ne parle pas »)."""
     x, y, s = box; k = taille / s
-    o = (np.asarray(v3[OVALE, :2]) - [x, y]) * k; c = o.mean(0); o = c + (o - c) * 0.96
-    m = np.zeros((taille, taille), np.float32); cv2.fillPoly(m, [np.round(o).astype(np.int32)], 1.0)
+    p = (np.asarray(v3[:, :2]) - [x, y]) * k
+    m = np.zeros((taille, taille), np.float32); cv2.fillConvexPoly(m, cv2.convexHull(np.round(p).astype(np.int32)), 1.0)
+    if ouverte is not None and fermee is not None:
+        d = cv2.GaussianBlur(np.abs(ouverte - fermee).max(2), (0, 0), 1.5) > 18
+        r = max(3, int(0.12 * taille)); pres = cv2.dilate(m, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1))) > 0
+        m = np.maximum(m, (d & pres).astype(np.float32))
+        r = max(2, int(0.03 * taille)); m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1)))
     return cv2.GaussianBlur(m, (0, 0), max(1.5, 0.025 * taille))
 
 
@@ -197,9 +208,15 @@ def charge(dossier, img, v3):
     dis = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_MEDIUM); g0 = _gris(imgs[('neutre', 0)])
     flux = {k_: (np.zeros((t, t, 2), np.float32) if k_ == ('neutre', 0) else dis.calc(g0, _gris(v), None)) for k_, v in imgs.items()}
     flux['clos'] = dis.calc(g0, _gris(clos), None)
+    # flux DIRECTS entre ouvertures voisines d'une même émotion (v25) : depuis la bouche fermée, l'intérieur de la bouche
+    # (dents, langue) n'existe pas et le flux y est faux ; d'une ouverture à la suivante il existe des deux côtés
+    paires = {}
+    for e in meta['emotions']:
+        for k in range(len(meta['bouche']) - 1):
+            ga, gb = _gris(imgs[(e, k)]), _gris(imgs[(e, k + 1)]); paires[(e, k)] = (dis.calc(ga, gb, None), dis.calc(gb, ga, None))
     M = np.float32([[t / s, 0, -x * t / s], [0, t / s, -y * t / s]])
     orig = cv2.warpAffine(img, M, (t, t), flags=cv2.INTER_AREA, borderMode=cv2.BORDER_REPLICATE).astype(np.float32)
-    masque = masque_visage(v3, (x, y, s), t)
+    masque = masque_visage(v3, (x, y, s), t, imgs[('neutre', len(meta['bouche']) - 1)], imgs[('neutre', 0)])
     # recalage : l'écart de couleur basse fréquence entre le dessin et le rendu neutre (bouche fermée), ajouté à tout
     ecart = cv2.GaussianBlur(orig - imgs[('neutre', 0)], (0, 0), max(3.0, 0.04 * t))
     for k_ in imgs: imgs[k_] = imgs[k_] + ecart
@@ -210,36 +227,95 @@ def charge(dossier, img, v3):
         p = (np.asarray(v3[c_, :2]) - [x, y]) * t / s; m_ = p.mean(0); r = max(4.0, 0.9 * float(np.ptp(p[:, 0])))
         cv2.ellipse(yeux, (int(m_[0]), int(m_[1])), (int(r), int(0.75 * r)), 0, 0, 360, 1.0, -1)
     yeux = cv2.GaussianBlur(yeux, (0, 0), max(1.5, 0.02 * t)) * masque
+    # zone de la BOUCHE (lèvres, menton, barbiche) : là, l'émotion dominante seule (voir visage)
+    p = (np.asarray(v3[LEVRES, :2]) - [x, y]) * t / s; c_ = p.mean(0); lw = max(4.0, float(np.ptp(p[:, 0])))
+    bm = np.zeros((t, t), np.float32)
+    cv2.ellipse(bm, (int(c_[0]), int(c_[1] + 0.25 * lw)), (int(0.85 * lw), int(0.95 * lw)), 0, 0, 360, 1.0, -1)
+    bm = cv2.GaussianBlur(bm, (0, 0), max(1.5, 0.15 * lw)) * masque   # bord plus net (avis de JEV sur Modou : « adoucir moins le bord de la zone bouche », 0,83)
+    # OUVERTURE PERÇUE, mesurée par JEV sur la bibliothèque (audit_bouches.py) : probabilité « bouche franchement ouverte »
+    # de chaque ouverture stockée, par émotion (rendue croissante)
+    ouv, fa = {}, f'{dossier}/audit.json'
+    if os.path.isfile(fa):
+        A_ = json.load(open(fa))
+        if A_.get('bouche') == meta['bouche']:
+            ouv = {e: np.maximum.accumulate(np.asarray(v['ouverte'], np.float64)) for e, v in A_['emotions'].items() if e in meta['emotions']}
     gx, gy = np.meshgrid(np.arange(t, dtype=np.float32), np.arange(t, dtype=np.float32))
-    return dict(meta=meta, imgs=imgs, clos=clos, flux=flux, masque=masque, yeux=yeux, box=(x, y, s), taille=t, grille=(gx, gy))
+    return dict(meta=meta, imgs=imgs, clos=clos, flux=flux, paires=paires, masque=masque, yeux=yeux, box=(x, y, s), taille=t, grille=(gx, gy),
+                bouche_masque=bm, ouv=ouv)
 
 
-def _poids(B, emotions, bouche):
-    n = len(B['meta']['bouche']) - 1; m = float(np.clip(bouche, 0, 1)) * n; k0 = int(min(n - 1, np.floor(m))); f = m - k0
+def _poids(B, emotions):
+    """poids des émotions (le neutre complète à 1)."""
     w = {e: float(v) for e, v in emotions.items() if v > 0.02 and e in B['meta']['emotions'] and e != 'neutre'}
     tot = sum(w.values())
     if tot > 1: w = {e: v / tot for e, v in w.items()}; tot = 1.0
     w['neutre'] = 1.0 - tot
-    out = {}
-    for e, v in w.items():
-        for k, fk in ((k0, 1 - f), (k0 + 1, f)):
-            if v * fk > 1e-3: out[(e, k)] = out.get((e, k), 0.0) + v * fk
-    return out
+    return {e: v for e, v in w.items() if v > 1e-3}
+
+
+def _niveau(B, e, k0, f):
+    """visage de l'émotion e entre les ouvertures k0 et k0 + 1 (fraction f), et son flux depuis le neutre fermé.
+    Morphing par les flux DIRECTS entre ces deux ouvertures : lèvres et dents glissent d'une forme à l'autre au lieu de se
+    dédoubler (vu le 17/10 : dents du bas fantômes de Petit Mamadou et menton blanc de Modou au fondu de deux ouvertures)."""
+    A, FA = B['imgs'][(e, k0)], B['flux'][(e, k0)]
+    if f < 1e-3 or (e, k0 + 1) not in B['imgs']: return A, FA
+    C, FC = B['imgs'][(e, k0 + 1)], B['flux'][(e, k0 + 1)]
+    if f > 1 - 1e-3: return C, FC
+    gx, gy = B['grille']; fab, fba = B['paires'][(e, k0)]
+    a = cv2.remap(A, gx - f * fab[..., 0], gy - f * fab[..., 1], cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+    c = cv2.remap(C, gx - (1 - f) * fba[..., 0], gy - (1 - f) * fba[..., 1], cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+    fc = f * f * (3 - 2 * f)   # couleurs fondues plus vite que la forme ne glisse : jamais deux bouches à moitié visibles
+    return a * (1 - fc) + c * fc, FA * (1 - f) + FC * f
+
+
+def _position(B, e, bouche):
+    """position (0..n) entre les ouvertures stockées de l'émotion e pour une commande de bouche 0..1. Avis de JEV sur la
+    v25 (17/10) : la bouche malicieuse de Coumba ne s'ouvrait pas sur les syllabes fortes — remède désigné « ouvrir la
+    mâchoire » (0,90). Le niveau 1 de « malice » paraît fermé (0,06), le 2 à moitié (0,49) : une commande linéaire
+    laissait la bouche presque close. Avec l'audit, la commande b vise l'ouverture PERÇUE b : chaque émotion s'ouvre
+    autant à l'œil (le rire, déjà ouvert au repos, s'ouvre moins ; la malice davantage)."""
+    n = len(B['meta']['bouche']) - 1; b = float(np.clip(bouche, 0, 1)); o = B.get('ouv', {}).get(e)
+    if o is None or o[-1] - o[0] < 0.2: return b * n   # sans audit : commande linéaire
+    if b <= o[0]: return 0.0
+    if b >= o[-1]: return float(n)
+    k = int(min(n - 1, max(0, np.searchsorted(o, b, side='right') - 1)))
+    return k + float(np.clip((b - o[k]) / max(1e-3, o[k + 1] - o[k]), 0, 1))
 
 
 def visage(B, emotions, bouche, clignement=0.0):
     """image du visage (carré de rendu) : émotions (poids), ouverture de bouche 0..1, clignement 0..1 — par morphing."""
-    W = _poids(B, emotions, bouche); gx, gy = B['grille']; F = B['flux']
-    D = sum(w * F[k_] for k_, w in W.items())                                   # géométrie mélangée (déplacements)
+    n = len(B['meta']['bouche']) - 1; W = _poids(B, emotions); gx, gy = B['grille']; V = {}
+    for e in W:
+        m = _position(B, e, bouche); k0 = int(min(n - 1, np.floor(m))); V[e] = _niveau(B, e, k0, m - k0)
+    D = sum(w * V[e][1] for e, w in W.items())                                  # géométrie mélangée (déplacements)
     p0x, p0y = gx - D[..., 0], gy - D[..., 1]                                    # point du neutre qui arrive en q
     D1 = cv2.remap(D, p0x, p0y, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)   # une itération de point fixe
     px, py = gx - D1[..., 0], gy - D1[..., 1]
     def tire(im, fl):   # l'image amenée sur la géométrie mélangée
         d = cv2.remap(fl, px, py, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
         return cv2.remap(im, px + d[..., 0], py + d[..., 1], cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
-    out = sum(w * tire(B['imgs'][k_], F[k_]) for k_, w in W.items())
+    out = sum(w * tire(*V[e]) for e, w in W.items())
+    # ZONE DE LA BOUCHE SANS FLUX DEPUIS LA BOUCHE FERMÉE (avis de JEV, 17/10 : la bouche de Koffi « bave » dans le film et
+    # pas dans la bibliothèque — 0,86). Rejouée : amener une bouche OUVERTE sur la géométrie mélangée passe par le flux depuis
+    # la bouche fermée, faux à l'intérieur de la bouche (dents et langue n'y existent pas) : dents déchirées (0,61–0,83).
+    # Dans la zone de la bouche, chaque émotion garde ses propres traits (images de la bibliothèque, ouvertures voisines
+    # morphées par leurs flux directs) et les émotions sont fondues avec des poids aiguisés (puissance 4 : 0,69/0,20 →
+    # 0,99/0,01 ; deux poids voisins restent fondus, un changement de dominante ne saute pas). Sourcils et yeux gardent le
+    # mélange des géométries.
+    mm = B.get('bouche_masque')
+    if mm is not None:
+        Wb = {e: w ** 4 for e, w in W.items()}; sb = sum(Wb.values()); bo = 0.0; b_ = float(np.clip(bouche, 0, 1)); n0 = B['imgs'].get(('neutre', 0))
+        for e in W:
+            im_e = V[e][0]; o = B.get('ouv', {}).get(e)
+            # LÈVRES JOINTES MÊME EN RIANT (17/10) : la bouche la moins ouverte du rire ou de la surprise paraît déjà ouverte
+            # (audit JEV : 0,41–0,67) ; quand la piste demande moins (m, b, p, silences), la zone de la bouche rejoint la
+            # bouche neutre fermée, en proportion de ce qui manque
+            if o is not None and n0 is not None and b_ < o[0]:
+                lam = float(np.clip((o[0] - b_) / max(1e-3, o[0]), 0, 1)); im_e = im_e * (1 - lam) + n0 * lam
+            bo = bo + (Wb[e] / sb) * im_e
+        a_ = mm[..., None]; out = out * (1 - a_) + bo * a_
     if clignement > 0.02:
-        a = (B['yeux'] * float(np.clip(clignement, 0, 1)))[..., None]; out = out * (1 - a) + tire(B['clos'], F['clos']) * a
+        a = (B['yeux'] * float(np.clip(clignement, 0, 1)))[..., None]; out = out * (1 - a) + tire(B['clos'], B['flux']['clos']) * a
     return out
 
 

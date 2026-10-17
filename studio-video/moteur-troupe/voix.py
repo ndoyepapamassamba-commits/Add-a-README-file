@@ -199,8 +199,10 @@ def main():
     H = json.load(open('histoire.json'))
     os.makedirs('voix', exist_ok=True)
     if REFS: qwen_lot(H)
-    TURN, PRE_CHUTE, CARD, LEAD, TAIL = 0.26, 0.31, 1.0, 0.5, 1.4
-    REACTION, REACTION_TAG = 2.0, 0.9   # tenue après une chute finale / après la réplique qui suit la chute
+    TURN, PRE_CHUTE, CARD, LEAD, TAIL = 0.26, 0.31, 1.0, 0.3, 1.4
+    PRE = float(os.environ.get('VOIX_PRE', 0.8))   # avant le 1er mot d'un sketch : la caméra finit de pousser du large vers celui qui
+                                                  # parle (tourne.py, ouverture 1,2 s) ; sinon la 1re réplique est dite visage minuscule (v24)
+    REACTION, REACTION_TAG = float(os.environ.get('VOIX_REACTION', 2.0)), 0.9   # tenue après une chute finale / après la réplique qui suit la chute (compilation de blagues : 0,8 s)
     t = LEAD; lines = []; cards = []
     for si, S in enumerate(H['sketchs']):
         if si > 0: cards.append({'t0': t, 't1': t + CARD, 'apres': S['id']}); t += CARD + 0.25
@@ -216,6 +218,7 @@ def main():
             f = f'voix/{S["id"]}-{li}.wav'
             with wave.open(f, 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes(y.tobytes())
             if L.get('chute'): t += PRE_CHUTE
+            if li == 0: t += PRE
             # enveloppe d'énergie à 100 Hz (bouche)
             hop = SR // 100; env = [float(np.sqrt(np.mean((y[k:k + hop].astype(np.float32) / 32768) ** 2))) for k in range(0, len(y), hop)]
             mx = max(env) or 1; env = [round(min(1, e / mx), 3) for e in env]

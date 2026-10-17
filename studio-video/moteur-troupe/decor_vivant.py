@@ -99,21 +99,140 @@ def prepare(d, plaque, masques=(), jev=True):
     return V_
 
 
+def _pre(V, q=2):
+    """précalculs du champ (une fois par scène) : couches à mi-résolution, cos/sin des phases (sin(ωt + φ) = sin ωt·cos φ +
+    cos ωt·sin φ : plus aucun sinus par pixel à chaque image) ; les bêtes et les ampoules, rares, sont gardées en liste de
+    pixels. Mesuré le 17/10 : 250 ms → ~15 ms par image, écart au calcul complet < 0,3 px."""
+    if '_pre' in V: return V['_pre']
+    H, W = V['feuil'].shape; h, w = (H + q - 1) // q, (W + q - 1) // q; r = lambda a: cv2.resize(a.astype(np.float32), (w, h), interpolation=cv2.INTER_AREA)
+    ys = (np.arange(h, dtype=np.float32) * q + (q - 1) / 2)[:, None] * np.ones((1, w), np.float32)
+    ph1, ph2 = r(V['ph1']), r(V['ph2'])
+    cs = lambda P: (np.cos(P).astype(np.float32), np.sin(P).astype(np.float32))
+    P = dict(H=H, W=W, h=h, w=w, feuil=r(V['feuil']), tissu=r(V['tissu']), fumee=r(V['fumee']), bete=r(V['bete']), amp=r(V['ampoules']),
+             p1=cs(ph1), p2=cs(ph2), p2b=cs(ph2 + 1.3), pt=cs(ph1 - ys / 35.0), pf=cs(ph2 + ys / 22.0))
+    ib = np.nonzero(P['bete'] > 1e-3); P['ib'] = ib; P['bfr'], P['bph'] = r(V['fr_b'])[ib], r(V['ph_b'])[ib]
+    ia = np.nonzero(P['amp'] > 1e-3); P['ia'] = ia; P['afr'], P['aph'] = r(V['fr_l'])[ia], r(V['ph_l'])[ia]
+    V['_pre'] = P
+    return P
+
+
 def champ(V, t, ampl=1.0):
     """déplacements (dx, dy) en pixels du décor et gain de lumière à l'instant t (textures de mouvement stochastiques :
     somme de sinusoïdes à phases spatiales lisses, une famille par nature de couche)."""
-    tp = 2 * np.pi * t; a = np.float32(ampl)
-    # feuillage : bruissement (deux fréquences, la phase voyage dans l'espace comme une rafale)
-    fx = 2.2 * np.sin(tp * 0.35 + V['ph1']) + 0.8 * np.sin(tp * 0.9 + V['ph2'])
-    fy = 0.9 * np.sin(tp * 0.5 + V['ph2'] + 1.3)
-    # linge : onde qui descend le long de chaque pièce
-    ys = np.arange(V['tissu'].shape[0], dtype=np.float32)[:, None]
-    tx = 3.0 * np.sin(tp * 0.6 - ys / 35.0 + V['ph1'])
-    # fumée : volutes qui montent (la phase défile vers le haut)
-    mx = 3.2 * np.sin(tp * 0.45 + ys / 22.0 + V['ph2']) ; my = 2.0 + 1.5 * np.sin(tp * 0.3 + V['ph1'])
-    # bêtes : coups de bec (creux brefs) et petits pas
-    pk = np.maximum(0, np.sin(tp * V['fr_b'] + V['ph_b'])) ** 3
-    dx = a * (V['feuil'] * fx + V['tissu'] * tx + V['fumee'] * mx + V['bete'] * 1.2 * np.sin(tp * 0.3 * V['fr_b'] + V['ph_b']))
-    dy = a * (V['feuil'] * fy + V['fumee'] * my + V['bete'] * (-2.6) * pk)
-    gain = 1 + a * V['ampoules'] * 0.16 * np.sin(tp * V['fr_l'] + V['ph_l'])
-    return dx.astype(np.float32), dy.astype(np.float32), gain.astype(np.float32)
+    P = _pre(V); tp = 2 * np.pi * t; a = np.float32(ampl)
+    S = lambda om, cs: np.float32(np.sin(tp * om)) * cs[0] + np.float32(np.cos(tp * om)) * cs[1]   # sin(ω·2πt + φ)
+    fx = 2.2 * S(0.35, P['p1']) + 0.8 * S(0.9, P['p2']); fy = 0.9 * S(0.5, P['p2b'])   # feuillage : bruissement
+    tx = 3.0 * S(0.6, P['pt'])                                                           # linge : onde qui descend
+    mx = 3.2 * S(0.45, P['pf']); my = 2.0 + 1.5 * S(0.3, P['p1'])                        # fumée : volutes qui montent
+    dx = P['feuil'] * fx + P['tissu'] * tx + P['fumee'] * mx; dy = P['feuil'] * fy + P['fumee'] * my
+    if len(P['ib'][0]):   # bêtes : coups de bec et petits pas, chacune à son rythme
+        bx = 1.2 * np.sin(tp * 0.3 * P['bfr'] + P['bph']); pk = np.maximum(0, np.sin(tp * P['bfr'] + P['bph'])) ** 3
+        dx[P['ib']] += P['bete'][P['ib']] * bx; dy[P['ib']] += P['bete'][P['ib']] * (-2.6) * pk
+    gain = np.ones((P['h'], P['w']), np.float32)
+    if len(P['ia'][0]): gain[P['ia']] += np.float32(min(float(a), 1.0)) * P['amp'][P['ia']] * 0.16 * np.sin(tp * P['afr'] + P['aph'])   # ampoules : jamais amplifiées
+    up = lambda x: cv2.resize(x, (P['W'], P['H']), interpolation=cv2.INTER_LINEAR)
+    return up(a * dx).astype(np.float32), up(a * dy).astype(np.float32), up(gain).astype(np.float32)
+
+
+# ── PANACHE DE FUMÉE PHYSIQUE (17/10/2026, v25 — « inclure la physique, la mécanique et tout ») ──
+# Au maquis, la fumée du grill à braise ne fait pas que frémir sur place : elle MONTE. Modèle du panache thermique de
+# Morton, Taylor & Turner (1956) : demi-largeur b = 0,12 (z + z0) (entraînement α ≈ 0,1), vitesse sur l'axe ∝ (z + z0)^(-1/3)
+# (la bouffée ralentit en montant), concentration ∝ (z + z0)^(-5/3) (elle se dilue) ; z0 = origine virtuelle qui donne à la
+# base la largeur du grill peint. Des bouffées naissent en continu (12 par seconde, 3,5 s de vie), chacune ondule (méandres
+# turbulents dont l'amplitude croît avec b) et porte une texture de volutes ; la fumée passe DERRIÈRE les acteurs.
+def panache(V, plaque=None):
+    """source (pied du panache peint), largeur de base, couleur ; None s'il n'y a pas de fumée peinte."""
+    if '_panache' in V: return V['_panache']
+    m = (V['fumee'] > 0.15).astype(np.uint8); n, lab, st, _ = cv2.connectedComponentsWithStats(m); P = None
+    if n > 1:
+        k = 1 + int(np.argmax(st[1:, cv2.CC_STAT_AREA]))
+        if st[k, cv2.CC_STAT_AREA] >= 400:
+            ys, xs = np.nonzero(lab == k); hh = st[k, cv2.CC_STAT_HEIGHT]; bas = ys > ys.max() - 0.15 * hh
+            b0 = 0.5 * float(xs[bas].max() - xs[bas].min() + 1)
+            col = plaque[lab == k].astype(np.float32).mean(0) if plaque is not None else np.array([200.0, 195, 200])
+            col = 0.5 * col + 0.5 * np.array([235.0, 232, 235])   # la fumée vue en épaisseur est plus claire que ses bords peints
+            P = dict(x=float(np.median(xs[bas])), y=float(ys.max()), b0=b0, z0=b0 / 0.12, hauteur=float(max(hh * 2.2, 200)), couleur=col.tolist())
+    V['_panache'] = P
+    return P
+
+
+def _texture_volutes(n=128, graine=21):
+    rng = np.random.default_rng(graine); t = np.zeros((n, n), np.float32)
+    for o in range(4):   # bruit fractal (somme d'octaves), valeurs 0..1
+        g = rng.uniform(0, 1, (4 * 2 ** o, 4 * 2 ** o)).astype(np.float32)
+        t += cv2.resize(g, (n, n), interpolation=cv2.INTER_CUBIC) / 2 ** o
+    t -= t.min(); return t / max(1e-6, t.max())
+
+
+_TEX = None
+
+
+def fumee(V, plaque, t, taux=12.0, vie=3.5, alpha0=0.55):
+    """dessine le panache à l'instant t sur la plaque (RGB float32 ou uint8) → plaque float32."""
+    global _TEX
+    P = panache(V)
+    if P is None: return plaque
+    if _TEX is None: _TEX = _texture_volutes()
+    can = plaque.astype(np.float32); H, W = can.shape[:2]; z0 = P['z0']; zmax = P['hauteur']
+    C = ((zmax + z0) ** (4 / 3) - z0 ** (4 / 3)) * 0.75 / vie          # (z + z0)^(4/3) = z0^(4/3) + (4/3)·C·âge
+    bmax = 0.12 * (zmax + z0); x0, x1 = int(max(0, P['x'] - 2.2 * bmax)), int(min(W, P['x'] + 2.2 * bmax))
+    y0, y1 = int(max(0, P['y'] - zmax - bmax)), int(min(H, P['y'] + 0.2 * P['b0']))
+    if x1 - x0 < 4 or y1 - y0 < 4: return can
+    q = 2   # la fumée est floue : calculée sur une grille deux fois plus lâche puis agrandie (×4 plus rapide, mesuré)
+    yy, xx = np.mgrid[y0:y1:q, x0:x1:q].astype(np.float32); A = np.zeros(xx.shape, np.float32)
+    i0, i1 = int(np.floor((t - vie) * taux)), int(np.floor(t * taux))
+    for i in range(i0, i1 + 1):
+        rng = np.random.default_rng(1000003 + i); tn = (i + rng.uniform(0, 1)) / taux; age = t - tn
+        if age < 0 or age > vie: continue
+        z = (z0 ** (4 / 3) + (4 / 3) * C * age) ** 0.75 - z0
+        b = 0.12 * (z + z0); dil = (z0 / (z + z0)) ** (5 / 3)
+        ph = rng.uniform(0, 2 * np.pi); off = rng.normal(0, 0.35)
+        cx = P['x'] + b * (off + 0.45 * np.sin(1.3 * age + ph)) + 0.08 * z; cy = P['y'] - z
+        r = 0.75 * b * rng.uniform(0.8, 1.2)
+        a = alpha0 * dil ** 0.6 * min(1.0, age / 0.35) * (1 - age / vie) ** 1.5
+        d2 = ((xx - cx) ** 2 + (yy - cy) ** 2) / (r * r)
+        if d2.min() > 9: continue
+        u = ((xx - cx) / (2.5 * r) * 0.5 + 0.5 + 0.37 * i) % 1.0; v = ((yy - cy) / (2.5 * r) * 0.5 + 0.5 + 0.21 * i + 0.15 * age) % 1.0
+        tex = _TEX[(v * 127).astype(np.int32), (u * 127).astype(np.int32)]
+        A = 1 - (1 - A) * (1 - np.clip(a * np.exp(-d2) * (0.45 + 0.75 * tex), 0, 1))
+    A = cv2.resize(cv2.GaussianBlur(A, (0, 0), 0.6), (x1 - x0, y1 - y0), interpolation=cv2.INTER_LINEAR)
+    can[y0:y1, x0:x1] = can[y0:y1, x0:x1] * (1 - A[..., None]) + np.asarray(P['couleur'], np.float32)[None, None, :] * A[..., None]
+    return can
+
+
+def couverture_panache(V, H, W, duree=6.0):
+    """part de l'image où le panache bouge visiblement (alpha > 0,15 à un instant au moins d'une fenêtre de 6 s)."""
+    if panache(V) is None: return np.zeros((H, W), bool)
+    vide = np.zeros((H, W, 3), np.float32); m = np.zeros((H, W), bool)
+    for t in np.linspace(10.0, 10.0 + duree, 25):
+        m |= fumee(V, vide, t).mean(2) > 0.15 * float(np.mean(panache(V)['couleur']))
+    return m
+
+
+# ── OMBRES DE FEUILLAGE QUI PASSENT (« komorebi ») — 17/10/2026, porte L de JEV (seconde par seconde) : la cour et la
+# concession étaient jugées « décor mort » sur 31 secondes. Essai A/B jugé par JEV (4 instants à 0,25 s, décor seul) :
+# l'amplitude seule ne suffisait pas (×6 : « mort » 0,52) ; avec des taches de lumière qui dérivent avec le vent sur le sol et
+# les murs ensoleillés : « mort » 0,42 (cour) et 0,36 (concession), objets rigides intacts (« caoutchouc » 0,18–0,21).
+_SOLEIL = {}
+
+
+def soleil(plaque):
+    """zones ensoleillées de la plaque (où des ombres de feuilles peuvent passer), 0..1, mise en cache par plaque."""
+    k = id(plaque)
+    if k not in _SOLEIL:
+        lum = cv2.cvtColor(np.clip(plaque, 0, 255).astype(np.uint8), cv2.COLOR_RGB2GRAY).astype(np.float32)
+        lo, hi = np.percentile(lum, 45), np.percentile(lum, 85)
+        _SOLEIL[k] = (cv2.GaussianBlur(np.clip((lum - lo) / (hi - lo + 1e-3), 0, 1), (0, 0), 6), float(lum.mean()))
+    return _SOLEIL[k]
+
+
+def tachete(H, W, t, graine=3, force=0.16, vitesse=(14.0, 5.0)):
+    """facteur de lumière (≤ 1) : deux couches de taches d'ombre floues qui dérivent avec le vent et frémissent (calcul à
+    demi-résolution, remonté)."""
+    h, w = H // 2, W // 2; rng = np.random.default_rng(graine); G = np.zeros((h, w), np.float32)
+    for n, r, sp in ((70, 0.06, 1.0), (140, 0.03, 1.7)):
+        P = rng.uniform(0, 1, (n, 2)) * [w, h]; R = rng.uniform(0.5, 1.5, n) * r * w; ph = rng.uniform(0, 6.28, n)
+        cx = (P[:, 0] + 0.5 * vitesse[0] * sp * t + 3 * np.sin(2.1 * t + ph)) % w; cy = (P[:, 1] + 0.5 * vitesse[1] * sp * t + 2 * np.cos(1.7 * t + ph)) % h
+        for x, y, rr, p in zip(cx, cy, R, ph): cv2.circle(G, (int(x), int(y)), max(1, int(rr * (1 + 0.15 * np.sin(3.0 * t + p)))), 1.0, -1)
+    G = cv2.GaussianBlur(G, (0, 0), 0.035 * w * 0.35); G = G / max(1e-6, float(G.max()))
+    return cv2.resize(1.0 - force * G, (W, H), interpolation=cv2.INTER_LINEAR)

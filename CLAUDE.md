@@ -2,6 +2,17 @@
 
 **Premier skill à appeler, toujours, avant tout autre skill : `methode-veille-creation` — application stricte, sans exception (liste de contrôle du skill cochée avant chaque réponse).** (consigne du 15/10/2026, venue de la discussion « Ecobank Covenant Trigger Intelligence Pack »)
 
+- **Tout doit être parfait** (consigne du 17/10/2026) : aucune livraison tant qu'un contrôle échoue ; chaque défaut vu par
+  l'utilisateur (ex. l'ombre de la poule) devient un contrôle automatique qui l'aurait arrêté ; JEV crée (genèse : variantes
+  physiques jugées contre un objectif écrit et une référence d'artiste) et juge (portes A–K du film, batterie physique),
+  avec la physique, la mécanique et la lumière du décor respectées (`studio-video/moteur-troupe/physique.py`, `genese.py`).
+- **Tout est appuyé par le jugement de JEV** (consignes du 17/10/2026, trois messages) :
+  - *JEV d'abord, avant de coder* : un défaut mesuré est montré à JEV (images, contexte chiffré, liste fermée des causes et
+    des remèdes) et seul le remède qu'il désigne est codé (`studio-video/moteur-troupe/jev_conseil.py`) ; s'il hésite, un
+    essai A/B rendu par le moteur et jugé par lui tranche, pas un tâtonnement ;
+  - *aucune tolérance* : chaque contrôle JEV doit rendre la décision « conforme » sur CHAQUE image contrôlée (défaut :
+    probabilité < 0,5 ; conformité : > 0,5), sans marge relative à la peinture d'origine ni médiane qui cache une image ;
+  - *dans tout le projet* : choix, réglages, livrables et vérifications s'appuient sur une réponse de JEV citée (valeurs).
 - **Zéro limite** (consigne du 16/10/2026) : ne jamais livrer de partie « limites » ni dire qu'une tâche confiée dépasse nos moyens ; chaque obstacle est contourné par la veille, l'ajout d'un moteur ou l'adaptation d'un moteur externe, puis mesuré — écrit comme « greffe en cours » avec son plan, jamais comme une impossibilité (`.claude/skills/zero-limite`).
 - **Ne plus rien pousser sur le dépôt** (consigne du 15/10/2026, confirmée dans la discussion « OpenRouter API integration ») : commits en local seulement ; TOUS les résultats (fichiers, mesures, rapports) sont donnés dans le chat (envoi de fichiers + résumé).
 - Répondre en **français**.

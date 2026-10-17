@@ -6,7 +6,8 @@ import re, unicodedata
 UNITES = ['zero', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize',
           'quatorze', 'quinze', 'seize']
 DIZAINES = {2: 'vingt', 3: 'trente', 4: 'quarante', 5: 'cinquante', 6: 'soixante'}
-IVOIRIEN = {'dje', 'deh', 'eh', 'ehh', 'ehhh', 'hein', 'gbess', 'bedou', 'yafor', 'tantie', 'woro', 'gbaka', 'tch', 'tchip'}
+IVOIRIEN = {'dje', 'deh', 'eh', 'ehh', 'ehhh', 'hein', 'gbess', 'bedou', 'yafor', 'tantie', 'woro', 'gbaka', 'tch', 'tchip',
+            'attieke', 'alloco', 'garba', 'foutou', 'placali', 'kedjenou', 'gbofloto', 'braise'}   # plats d'Abidjan inconnus de Whisper
 
 
 def en_lettres(n):
@@ -26,17 +27,22 @@ def en_lettres(n):
     return str(n)
 
 
-def normalise(t):
-    """minuscules sans accents, chiffres écrits en lettres, mots du parler ivoirien retirés → liste de mots."""
-    t = re.sub(r'(\d)[   .](?=\d{3}\b)', r'\1', t)            # 10 000 / 10.000 → 10000
+def normalise(t, joker=False):
+    """minuscules sans accents, chiffres écrits en lettres → liste de mots ; les mots du parler ivoirien sont retirés, ou
+    remplacés par un joker « * » (joker=True : côté texte, pour absorber ce que Whisper en a entendu)."""
+    t = re.sub('(\\d)[ \u202f\u00a0.](?=\\d{3}\\b)', r'\1', t)            # 10 000 / 10.000 → 10000
     t = re.sub(r'\d+', lambda m: ' ' + en_lettres(int(m.group(0))) + ' ', t)
     t = unicodedata.normalize('NFKD', t.lower()).encode('ascii', 'ignore').decode()
-    return [w for w in re.sub(r"[^a-z0-9 ]", ' ', t).split() if w not in IVOIRIEN]
+    m = re.sub(r"[^a-z0-9 ]", ' ', t).split()
+    return [('*' if w in IVOIRIEN else w) for w in m] if joker else [w for w in m if w not in IVOIRIEN]
 
 
 def erreur_mots(ref, hyp):
-    r, h = normalise(ref), normalise(hyp); d = list(range(len(h) + 1))
+    """taux d'erreur de mots ; un mot du parler ivoirien du texte (joker) peut correspondre à n'importe quels mots entendus
+    (« attiéké » entendu « à tiéké ») sans compter d'erreur."""
+    r, h = normalise(ref, joker=True), normalise(hyp); d = list(range(len(h) + 1))
     for i, x in enumerate(r, 1):
-        p = d[:]; d[0] = i
-        for j, y in enumerate(h, 1): d[j] = min(p[j] + 1, d[j - 1] + 1, p[j - 1] + (x != y))
-    return d[-1] / max(1, len(r))
+        p = d[:]; j_ = x == '*'; d[0] = p[0] + (0 if j_ else 1)
+        for j, y in enumerate(h, 1):
+            d[j] = min(p[j] + (0 if j_ else 1), d[j - 1] + (0 if j_ else 1), p[j - 1] + (0 if (j_ or x == y) else 1))
+    return d[-1] / max(1, sum(w != '*' for w in r))
