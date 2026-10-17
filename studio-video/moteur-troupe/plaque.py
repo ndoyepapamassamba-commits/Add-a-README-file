@@ -146,6 +146,9 @@ def fils(img, plaque_, alphas, longueur_min=90, angle_max=30):
     H, W = img.shape[:2]; un = np.zeros((H, W), np.float32)
     for a in alphas: un = np.maximum(un, a)
     acteur = un > 0.3; g = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    hauteurs = []   # étendue verticale de chaque acteur : un fil coupé par un acteur passe à hauteur de tête ou de buste
+    for a in alphas:
+        ys_ = np.nonzero((a > 0.5).any(1))[0]; hauteurs.append((float(ys_.min()), float(ys_.max())) if len(ys_) else (0.0, float(H)))
     segs = cv2.createLineSegmentDetector().detect(g)[0]
     if segs is None: return plaque_, []
     gx = np.abs(cv2.Sobel(cv2.GaussianBlur(g, (0, 0), 1.2).astype(np.float32), cv2.CV_32F, 1, 0))
@@ -196,6 +199,9 @@ def fils(img, plaque_, alphas, longueur_min=90, angle_max=30):
                 if acteur[int(round(q[1])), int(round(q[0]))]: touche = True; break
                 t += 1
             if not touche: continue
+            # vu le 17/10 (chambre) : un bord d'ombre au sol, coupé par les pieds de Tantie Awa, était « réparé » en fil noir
+            k_ = int(np.argmax([float(a_[int(round(q[1])), int(round(q[0]))]) for a_ in alphas])); y0_, y1_ = hauteurs[k_]
+            if q[1] > y0_ + 0.6 * (y1_ - y0_): continue
             debut = e + u * max(0.0, t - 4)
             while dedans(e + u * t) and acteur[int(round((e + u * t)[1])), int(round((e + u * t)[0]))] and t < 900: t += 1
             sortie = e + u * t

@@ -120,7 +120,7 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
             else:
                 prochaine = next((x for x in apres_ if x['qui'] == nom), None)
                 if prochaine and 0 <= prochaine['t0'] - t < 0.4: souffle += 0.012 * (1 - (prochaine['t0'] - t) / 0.4)   # inspiration avant de parler
-                if S: roll += 2.0 * sd; tang += 1.5 * math.sin(2 * math.pi * 0.8 * (t - S['t0'])) * min(1.0, (t - S['t0']) / 0.5)
+                if S: roll += 2.0 * sd; tang += 2.5 * math.sin(2 * math.pi * 0.8 * (t - S['t0'])) * min(1.0, (t - S['t0']) / 0.5)   # on écoute en hochant la tête
             # silence avant la chute (0,5 s) : tout le monde se fige, le souffle reste
             for x in L_sk:
                 if x.get('chute') and -0.5 <= t - x['t0'] < 0: roll *= 0.3; tang *= 0.3; buste *= 0.3
@@ -134,6 +134,10 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
                 mes = [x for x in L_sk if x['qui'] == nom]; rang = mes.index(L) if L in mes else 0
                 b = rang % bras[nom]; amp = {'accuse': 1.0, 'marchande': 0.8, 'choc': 0.9, 'panique': 0.7, 'frime': 0.7}.get(L.get('jeu', ''), 0.6)
                 C[f'geste_{b}'][i] = amp * k
+            # réaction des mains au ressenti (sursaut, peur, colère), même sans parler : le bras le plus libre se lève un peu
+            if bras and bras.get(nom):
+                r_ = min(1.0, 0.6 * E['surprise'][i] + 0.5 * E['peur'][i] + 0.4 * E['colere'][i] + 0.3 * E['rire'][i])
+                C['geste_0'][i] = max(C['geste_0'][i], 0.55 * r_)
         # ── ressorts, puis bornes de l'enveloppe du personnage
         R = {k: ressort(v, fps, OMEGA[k]) for k, v in C.items()}
         R['buste'] = borne(R['buste'], env.get('buste', 3.0)); R['tete'] = borne(R['tete'], env.get('tete', 6.0))

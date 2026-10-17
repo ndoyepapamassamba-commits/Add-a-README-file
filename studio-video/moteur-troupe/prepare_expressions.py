@@ -1,5 +1,6 @@
 # BIBLIOTHÈQUES D'EXPRESSIONS DESSINÉES D'UNE SCÈNE (17/10/2026) : pour chaque personnage, une fois, toutes les émotions
-# (expressions_lp.EMO) × 4 ouvertures de bouche + yeux clos, par LivePortrait (MIT) en ONNX sur le processeur.
+# (expressions_lp.EMO) × 4 ouvertures de bouche + yeux clos, par LivePortrait (MIT) en ONNX sur le processeur ; la recette
+# de chaque émotion est cherchée pour CE visage par l'œil de JEV (expressions_lp.cherche_recette).
 # Réutilisées par tous les épisodes tournés dans la scène ; tourne.py les prend si elles existent.
 #   python3 prepare_expressions.py prep/cour [slug …]   (seulement ces personnages)
 import json, os, sys, time
@@ -14,4 +15,6 @@ for a in S['acteurs']:
     f3 = f"{d}/rig/visage3d-{a['slug']}.npy"
     if not os.path.isfile(f3): print(a['nom'], ': visage non lu (préparer la scène avec prepare_rig.py)'); continue
     t0 = time.time(); meta = XL.bibliotheque(img, np.load(f3), f"{d}/expressions/{a['slug']}", journal=lambda *_: None)
-    print(a['nom'], len(meta['emotions']), 'émotions ×', len(meta['bouche']), 'bouches,', round(time.time() - t0), 's', flush=True)
+    J = meta['jev']; autre = [e for e in meta['emotions'] if e != 'neutre' and meta['recettes'][e] != XL.EMO[e]]
+    print(a['nom'], len(meta['emotions']), 'émotions ×', len(meta['bouche']), 'bouches,', round(time.time() - t0), 's ; lisibilité',
+          {e: J[e]['lisible'] for e in meta['emotions'] if 'lisible' in J.get(e, {})}, '; recette changée :', autre, flush=True)

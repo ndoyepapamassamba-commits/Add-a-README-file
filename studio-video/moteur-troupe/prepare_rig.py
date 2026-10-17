@@ -27,6 +27,13 @@ def visage3d(img, box):
     return np.array([[p.x * w + x0, p.y * h + y0, -p.z * w] for p in r.face_landmarks[0]], np.float64)
 
 
+VERSION_PLAQUE = 2   # à augmenter quand le calcul de la plaque change : le cache des scènes est alors refait
+
+
+def empreinte_decoupes(alphas):
+    return hashlib.md5(str(VERSION_PLAQUE).encode() + b''.join(np.clip(al * 65535, 0, 65535).astype(np.uint16).tobytes() for al in alphas)).hexdigest()
+
+
 CLES = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]   # épaules, coudes, poignets, hanches, genoux, chevilles
 
 
@@ -137,7 +144,7 @@ def prepare(d, jev=True, force=False):
     for k, a in enumerate(acts): decoupes[k]['orphelins_rattaches'] = orph[k]
     # le décor sans acteur et les parties cachées ne dépendent que des découpes : repris tels quels si elles n'ont pas
     # changé (corriger un squelette ou des bras ne refait pas 7 minutes de reconstitution)
-    empreinte = hashlib.md5(b''.join(np.clip(al * 65535, 0, 65535).astype(np.uint16).tobytes() for al in alphas)).hexdigest()
+    empreinte = empreinte_decoupes(alphas)
     ancien = json.load(open(f'{R}/scene_rig.json')) if os.path.isfile(f'{R}/scene_rig.json') else {}
     cache = ancien.get('empreinte_alphas') == empreinte and all(os.path.isfile(f'{R}/{f}') for f in ('plaque.png', 'trou.png', 'coherence.json')) \
         and all(os.path.isfile(f"{R}/alpha-{a['slug']}.png") for a in acts)

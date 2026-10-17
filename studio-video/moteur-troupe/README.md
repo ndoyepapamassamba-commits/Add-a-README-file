@@ -51,3 +51,32 @@ L'organisation de l'utilisateur interdit l'installation par PowerShell : la cart
 | `modeles_wan.json`, `installer_comfyui_wan.sh` | Manifeste des fichiers du kit (liens vérifiés) et installation Linux/macOS. `installer_comfyui_wan.ps1` reste pour les postes Windows où PowerShell est permis. |
 
 Contrôles du 16/10/2026 sur le ComfyUI d'essai : graphes S2V et InfiniteTalk en GGUF acceptés par le serveur (`node_errors` vide), exécution lancée jusqu'au chargement des fichiers ; noyau exécuté de bout en bout en mode essai (21 plans, 51,7 s à animer) ; paquet de 10,5 Mo ; récupération des versions figées vérifiée ; refus propre sans jeton ou avec un jeton invalide. Le temps réel sur T4 sera celui écrit par le noyau dans `kaggle_mesures.json` au premier passage.
+
+### Corps entier, visage dessiné, regard et décor contrôlé (17/10/2026)
+
+Chaque scène est préparée **une fois** (`prepare_rig.py prep/<scène>`, résultat dans `<scène>/rig/`), puis tous les épisodes
+tournés dans ce lieu la réutilisent. `tourne.py` l'utilise dès que `"rig": 1` est dans les réglages du montage.
+
+| Étape | Module | Ce qui est fait | Outils (licences) |
+|---|---|---|---|
+| Découpe de chaque personne entière | `rig2d.decoupe` | segmentation « personne », pièce reliée au cœur de l'ancien masque, bords par filtre guidé ; **les meubles restent au décor** : là où MediaPipe dit « personne » et ADE20K dit « chaise », la couleur tranche (GrabCut local) | MediaPipe (Apache-2.0), UperNet ConvNeXt ADE20K (MIT, ONNX), OpenCV GrabCut (Apache-2.0) |
+| Pixels orphelins | `prepare_rig.orphelins` | tout pixel « personne » sans propriétaire est rattaché à l'acteur le plus proche (bande de robe coincée entre deux acteurs) | — |
+| Squelette affiné | `prepare_rig.squelette` | pose re-détectée sur le recadrage agrandi ×2 de chaque acteur, gardée si elle est meilleure (visibilité × articulations dans la découpe) | Pose Landmarker heavy (Apache-2.0) |
+| Décor sans acteur | `plaque.py` | remplissage progressif à pleine résolution, grain rendu, **restes et objets inventés rebouchés** (couleur absente du décor autour, ou personne), fils prolongés jusqu'à leur appui, parties cachées complétées | LaMa (Apache-2.0), LSD (OpenCV) |
+| Contrôle de cohérence | `coherence.py` | restes de personne, netteté reconstituée, découpes, et l'œil de JEV (fil dans le vide, objet coupé, flotte, membre, texte, ombres, échelle ; taches et restes dans la plaque) | JEV 1.14 (TypeSafe) |
+| Squelette 2D de la tête aux pieds | `rig2d.py` | ARAP sur grille (cœurs rigides, articulations libres), mains et avant-bras en calques, tête en 3D (relief du visage), **enveloppe mesurée** de chaque mouvement (buste, tête, épaules, bassin, souffle, lacets de tête et de buste) que le jeu ne dépasse jamais | SciPy (BSD) |
+| Expressions dessinées | `expressions_lp.py`, `lp_onnx.py`, `prepare_expressions.py` | 15 émotions × 4 ouvertures de bouche + yeux clos par personnage ; **recette cherchée pour chaque visage** (recette de base, « sourcils + », « bouche + », recettes de rechange, jugées en parallèle par l'œil de JEV : la plus lisible qui n'abîme pas ce visage, défaut toléré +0,12 au neutre) ; passage d'une émotion à l'autre par **morphing** (flux optique DIS), pas de fondu | LivePortrait (MIT, ONNX Runtime), JEV 1.14 |
+| Jeu | `jeu.py` | ressenti (événements des répliques), orientation de la tête et du regard vers l'interlocuteur, regard vers le bas quand on est triste, ressorts amortis | — |
+| Caméra | `tourne.py` (`cadres_du_plan`, `frame_scene`) | glissement vers le côté libre, **grue** (toute la place en hauteur, un plan sur deux) et **travelling avant** (`pousse`, 10 %) validés par la règle « tête entière ou absente » ; parallaxe latérale ET avant : pendant la poussée le décor lointain grossit moins que les acteurs (z^kpar, carte de profondeur) ; `TOURNE_CADRES=1` écrit les cadres de chaque plan sans rien rendre | Depth Anything V2 (Apache-2.0, carte déjà préparée) |
+| Mesure | `cadre.py`, `mesure2.py` | mêmes instruments que pour les TikTok de l'utilisateur | — |
+
+```
+python3 prepare_rig.py prep/cour                 # une fois par scène (cache : la plaque est reprise si les découpes n'ont pas changé)
+python3 prepare_expressions.py prep/cour         # une fois par personnage et par scène (≈ 6 min par personnage sur 4 cœurs)
+ETIREMENT=1 python3 tourne.py montage.json sortie [sketch]   # ETIREMENT=1 : étirement, pose et ressenti mesurés image par image
+python3 cadre.py juge sortie/film.mp4            # tableau film / TikTok / studios
+```
+
+Mesures du 17/10/2026 (sketch « la cachette », 22,5 s) : étirement du corps (99e centile, médiane des images) Baye 4,2 %,
+Maman 3,7 %, Petit Mamadou 2,9 % ; 8 mesures sur 9 dans la fourchette des TikTok de l'utilisateur ; rendu 670 images en
+≈ 2 min 30 sur 4 cœurs ; colère de Petit Mamadou lisible à 0,76 selon JEV (défaut 0,27).

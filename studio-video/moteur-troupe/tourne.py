@@ -32,13 +32,13 @@
 #    (regard.py), émotions qui naissent de ce qui est dit et entendu, ressorts critiques (aucun à-coup) ;
 #  · VRAIES EXPRESSIONS (expressions_lp.py : LivePortrait MIT en ONNX, bibliothèque par personnage), sinon déformation
 #    FACS du visage (expressions.py).
-# Réglages (montage.json → "reglages") : plan_s, cam_px, parallaxe, jeu_gain, corps, whip_s, ouverture, decor, gestes, carte_sur_scene, rig.
+# Réglages (montage.json → "reglages") : plan_s, cam_px, pousse (travelling avant par plan), parallaxe, jeu_gain, corps, whip_s, ouverture, decor, gestes, carte_sur_scene, rig.
 # python3 tourne.py montage.json sortie_dir
 import json, math, os, sys, zlib, numpy as np, cv2
 import decor_vivant, gestes, rig2d, regard, expressions, expressions_lp, jeu, prepare_rig
 FPS, CW, CH = 30, 576, 460
 cfg = json.load(open(sys.argv[1])); OUT = sys.argv[2]; os.makedirs(f'{OUT}/clip', exist_ok=True)
-REG = {'plan_s': 5.0, 'cam_px': 2.5, 'parallaxe': 0.35, 'jeu_gain': 2.3, 'corps': 0.1, 'whip_s': 0.45, 'ouverture': 2.2, 'decor': 1.0, 'gestes': 1.0, 'carte_sur_scene': 1, 'rig': 1}
+REG = {'plan_s': 5.0, 'cam_px': 2.5, 'pousse': 1.10, 'parallaxe': 0.35, 'jeu_gain': 2.3, 'corps': 0.1, 'whip_s': 0.45, 'ouverture': 2.2, 'decor': 1.0, 'gestes': 1.0, 'carte_sur_scene': 1, 'rig': 1}
 REG.update(cfg.get('reglages', {}))
 ONLY = sys.argv[3] if len(sys.argv) > 3 else None  # essai : un seul sketch
 T = json.load(open(cfg['timeline'])); total = T['total']; NF = int(math.ceil(total * FPS))
@@ -399,16 +399,21 @@ def warp_actor(S, A, t, name):
     if MESURE: MESURES.append(dict(qui=name, t=round(t, 3), etirement=etirement(sx2, sy2, al), bouche=round(float(jj), 3), lib=bool(lib),
                                    buste=round(float(ang), 2), tete=round(float(hd), 2), souffle=round(float(br), 4), pas=(round(float(cdx), 2), round(float(cdy), 2))))
     return (X0, Y0, X1, Y1), rgb, al
-def frame_scene(S, t, off=None):
+def frame_scene(S, t, off=None, zoom=None):
     plate = S['plate']; V = S.get('vie')
     par = off is not None and S.get('kpar') is not None and (abs(off[0]) > 0.05 or abs(off[1]) > 0.05)
-    if par or V is not None:
+    zpar = zoom is not None and S.get('kpar') is not None and abs(zoom[0] - 1) > 1e-3
+    if par or zpar or V is not None:
         mx, my = S['xs'], S['ys']
         if par:
             g = 1 - S['kpar']   # le décor glisse avec la caméra selon sa profondeur : vu à l'écran, le loin bouge moins
             # cartes en float32 : un décalage numpy float64 (venu des règles de cadrage) en ferait des cartes 64 bits, et
             # OpenCV passe alors par un chemin des centaines de fois plus lent (7 min par image mesurées le 17/10)
             ox_, oy_ = np.float32(off[0]), np.float32(off[1]); mx = mx - ox_ * g; my = my - oy_ * g
+        if zpar:   # TRAVELLING AVANT À PARALLAXE : un zoom seul n'en crée pas ; ici le loin grossit moins que les acteurs
+            # (z^kpar au lieu de z, le premier plan davantage), comme quand la caméra avance vraiment dans la scène
+            k_ = np.exp((1 - S['kpar']) * np.float32(math.log(zoom[0]))).astype(np.float32); zx_, zy_ = np.float32(zoom[1]), np.float32(zoom[2])
+            mx = zx_ + (mx - zx_) * k_; my = zy_ + (my - zy_) * k_
         if V is not None:   # le décor vit : feuillages, linge, fumée, bêtes (déplacements) et ampoules (lumière)
             dx, dy, gain = decor_vivant.champ(V, t, REG['decor']); mx = mx - dx; my = my - dy
         plate = cv2.remap(plate, mx.astype(np.float32), my.astype(np.float32), cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
@@ -627,8 +632,11 @@ def cadres_du_plan(S, s, keep):
         # CAMÉRA VIVANTE : glissement latéral (cam_px pixels d'écran par image) vers le côté qui a de la place, petite
         # montée un plan sur deux, poussée de 6 % ; validée par les mêmes règles de cadrage (têtes entières ou absentes)
         nfr = (s[1] - s[0]) * FPS; sc0_ = CW / c0[2]; dep_ = REG['cam_px'] * nfr / sc0_
-        dirn = 1.0 if S['W'] - (c0[0] + c0[2] / 2) >= c0[0] - c0[2] / 2 else -1.0; up = 0.15 * dep_ if SH.index(s) % 2 else 0.0
-        c1 = faces_ok(S, clamp_crop(S, (c0[0] + dirn * dep_, c0[1] - up, c0[2] / 1.06, c0[3] / 1.06)), keep)
+        dirn = 1.0 if S['W'] - (c0[0] + c0[2] / 2) >= c0[0] - c0[2] / 2 else -1.0
+        # plans à deux : la largeur du décor borne le glissement (mesuré le 17/10 : 0,5 px/image au lieu de 2,5) → la caméra
+        # monte ou descend aussi (un plan sur deux, toute la place en hauteur) et pousse de 10 % : grue + travelling avant
+        sens_v = -1.0 if SH.index(s) % 2 else 1.0; up = sens_v * min(0.15 * dep_, 0.5 * max(0.0, S['H'] - c0[3] / REG['pousse']))
+        c1 = faces_ok(S, clamp_crop(S, (c0[0] + dirn * dep_, c0[1] - up, c0[2] / REG['pousse'], c0[3] / REG['pousse'])), keep)
         cp = faces_ok(S, clamp_crop(S, (c1[0], c1[1], c1[2] / 1.15, c1[3] / 1.15)), keep)
         cs = faces_ok(S, clamp_crop(S, crop_for(S, 'large')), None) if s[3].startswith('ouvre-') else None
         CADRES[key] = (None if cs is None else tuple(float(v) for v in cs),) + tuple(tuple(float(v) for v in c) for c in (c0, c1, cp))   # flottants Python
@@ -659,10 +667,11 @@ def rend(f):
     if cs is not None:   # ouverture : du plan d'ensemble au cadre de l'échange (la poussée ne crée pas de parallaxe, seul le glissement)
         v_o = ease(min(1.0, (t - s[0]) / max(0.3, REG['ouverture'])))
         ref = [a_ + (b_ - a_) * v_o for a_, b_ in zip(cs, c0)]; cx, cy, w2, h2 = [a_ + (b_ - a_) * v_o for a_, b_ in zip(cs, (cx, cy, w2, h2))]
+    zp = (ref[2] / w2, cx, cy)   # poussée de la caméra (le coup de zoom de la chute, lui, est un zoom d'objectif : sans parallaxe)
     if s[5] is not None and t >= s[5]:   # coup de zoom sur la chute, fluide (whip_s) au lieu d'un saut d'image
         v_ = ease((t - s[5]) / max(0.05, REG['whip_s'])); cx, cy, w2, h2 = [a_ + (b_ - a_) * v_ for a_, b_ in zip((cx, cy, w2, h2), cp)]
     assert abs((w2 / h2) / (CW / CH) - 1) < 0.01, 'cadre étiré'
-    fr = frame_scene(S, t, (cx - ref[0], cy - ref[1]))   # le décor suit la caméra à sa profondeur (parallaxe)
+    fr = frame_scene(S, t, (cx - ref[0], cy - ref[1]), zp)   # le décor suit la caméra à sa profondeur (parallaxe latérale et avant)
     sc = CW / w2; src_ = fr
     if sc < 0.95: src_ = cv2.GaussianBlur(fr, (0, 0), 0.45 / sc)
     Maff = np.float32([[sc, 0, -(cx - w2 / 2) * sc], [0, sc, -(cy - h2 / 2) * sc]])
@@ -684,6 +693,11 @@ for f in RANGE:
     if s[2] not in SC: continue
     if s != prev: cut_count += 1; prev = s
 import time; T0 = time.time()
+for s in SH:   # cadres calculés une fois AVANT le partage : chaque processeur en hérite et tournage.json les garde (diagnostic caméra)
+    if s[2] in SC and int(s[1] * FPS) >= RANGE[0] and int(s[0] * FPS) <= RANGE[-1]: cadres_du_plan(SC[s[2]], s, s[4][0] if isinstance(s[4], tuple) else s[4])
+if os.environ.get('TOURNE_CADRES') == '1':   # diagnostic : les cadres seuls (début, fin, chute) de chaque plan, sans rendu
+    json.dump({f'{k[0]:.2f} {k[3]}': [None if c is None else [round(v, 1) for v in c] for c in v_] for k, v_ in CADRES.items()}, open(f'{OUT}/cadres.json', 'w'), indent=1)
+    print('cadres écrits', len(CADRES)); raise SystemExit(0)
 # RENDU PARALLÈLE : les images sont indépendantes ; chaque processeur tourne des blocs de 24 images (TOURNE_PROCS)
 NPROC = int(os.environ.get('TOURNE_PROCS', os.cpu_count() or 1)); blocs = [list(RANGE[i:i + 24]) for i in range(0, len(RANGE), 24)]
 if NPROC > 1:
@@ -698,6 +712,7 @@ if NPROC > 1:
             if fait % 240 < 24: print(f'{fait}/{len(RANGE)}', flush=True)
 else:
     for b in blocs: morceau(b)
-json.dump({'images': NF, 'plans': cut_count, 'plans_par_minute': round(cut_count / (total / 60), 1), 'reglages': REG, 'decoupage': [list(map(lambda v: round(v, 2) if isinstance(v, float) else (list(v) if isinstance(v, tuple) else v), s)) for s in SH]},
+json.dump({'images': NF, 'plans': cut_count, 'plans_par_minute': round(cut_count / (total / 60), 1), 'reglages': REG, 'decoupage': [list(map(lambda v: round(v, 2) if isinstance(v, float) else (list(v) if isinstance(v, tuple) else v), s)) for s in SH],
+           'cadres': {f'{k[0]:.2f}': [None if c is None else [round(v, 1) for v in c] for c in v_] for k, v_ in CADRES.items()}},
           open(f'{OUT}/tournage.json', 'w'), ensure_ascii=False, indent=1)
 print('ok', len(RANGE), 'images,', cut_count, 'plans,', round(time.time() - T0), 's')
