@@ -50,8 +50,7 @@ import type { JevMode } from '../../server/jev/tools';
 import type { TaskType } from '../../server/llm/routing';
 import { classificationConfidence } from '../../server/llm/routing';
 import { useStore } from './store';
-import { callJevQuestions } from '../../server/jev/provider';
-import { jevSceneQuestions, jevSceneState, parseSceneLocal, specFromJev, type SceneSpec } from '../../server/jev/realize/sceneKit';
+import { callJevQuestions, type JevAnswers, type JevQuestion } from '../../server/jev/provider';
 
 export interface JevSettings extends JevApiConfig {
   enabled: boolean;
@@ -695,22 +694,19 @@ export async function jevSeeBlob(
 }
 
 /**
- * JEV READS A SCENE (moteur de scène instantané, v64): one typed call (≈ 0,0001 $) refines the local reading —
- * universe, components named or implied, counts, time, season, framing, mood. The local reading is kept as is when JEV
- * cannot answer (provider local, no key, daily budget, error). The universe JEV picks with confidence re-reads the
- * request with that universe's catalogue.
+ * ONE TYPED JEV CALL under the daily budget: questions over a state → the answers (cost added to the day's JEV spend),
+ * or null when JEV cannot answer (provider local, no key, daily budget reached, error). Socle API, also used by the
+ * Studio Vidéo app to read a scene prompt (its scene engine left Workbench on 16/10/2026).
  */
-export async function jevSceneSpec(prompt: string, local: SceneSpec): Promise<SceneSpec> {
+export async function jevAsk(state: Record<string, unknown>, questions: Record<string, JevQuestion>): Promise<JevAnswers['answers'] | null> {
   const s = jevSettings();
-  if (s.provider === 'local' || !getJevKey()) return local;
-  if ((useStore.getState().jevSpend[today()] ?? 0) >= s.budgetDaily) return local;
+  if (s.provider === 'local' || !getJevKey()) return null;
+  if ((useStore.getState().jevSpend[today()] ?? 0) >= s.budgetDaily) return null;
   try {
-    const r = await callJevQuestions(s, getJevKey(), jevSceneState(prompt), jevSceneQuestions(), (url, init) => fetch(url, init));
+    const r = await callJevQuestions(s, getJevKey(), state, questions, (url, init) => fetch(url, init));
     addJevSpend(r.costUsd);
-    const th = r.answers.theme;
-    const base = th?.choice && th.choice !== local.theme && (th.confidence ?? 0) >= 0.7 ? parseSceneLocal(prompt, { theme: th.choice as SceneSpec['theme'] }) : local;
-    return specFromJev(base, r.answers, prompt);
+    return r.answers;
   } catch {
-    return local;
+    return null;
   }
 }

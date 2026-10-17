@@ -33,3 +33,8 @@
   diffèrent de la dernière livraison envoyée. Envoyer exactement ce dossier « A ENVOYER » (le plus souvent l'app seule ;
   les paquets seulement si les décors changent), puis `npm run livraison:envoyee`. Dossier complet sur demande ou si
   l'utilisateur l'a perdu : `npm run livraison:complet`.
+- **Deux applications depuis le 17/10/2026** (séparation demandée le 16/10/2026) : Workbench (`workbench/`, `npm run
+  build:direct`, plus de paquets de décors) et **Studio Vidéo** (`studio-video/` : Film Autopilot, Vidéo IA, Réalisation,
+  Studio 3D, moteur de la troupe, pont Blender, carnets ; `npm run preparer` puis `npm run build` → `dist/livraison/MASSAMBA
+  Studio Video/` et `dist/livraison/A ENVOYER/`, même règle des seuls fichiers modifiés, puis `npm run livraison:envoyee`).
+  Le travail vidéo se fait dans `studio-video/` ; ses images privées restent dans `workbench/.private/` (lien `.private`).

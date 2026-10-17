@@ -23,7 +23,7 @@ Deux éditions, chacune en **un seul fichier HTML** : l'**accès direct**, qui f
 | Fichiers          | espace de travail dans le navigateur (import, création, export .zip)                                                                                                                                                                                                                                                                                                   | vrais dossiers de projet sur le disque                                                          |
 | Code              | JavaScript / Python (Pyodide) dans un bac à sable + **terminal intégré** (tubes, redirections, node, python, curl)                                                                                                                                                                                                                                                     | terminal, git, aperçu en direct                                                                 |
 | Navigateur piloté | **navigateur intégré** : applications de l'espace de travail pilotables (clics, saisies, chargement de fichiers, exports récupérés) ; pages web en mode lecture                                                                                                                                                                                                        | Playwright (vue en direct)                                                                      |
-| Plugins MCP       | 11 plugins intégrés (Studio 3D → Blender, diagrammes, images IA, taux XOF, Banque mondiale…) + MCP en ligne compatibles navigateur (Context7, DeepWiki, Microsoft Learn, GitMCP, Jina, Excalidraw, Mermaid, GitHub…)                                                                                                                                                   | ~55 préréglages : Blender, FreeCAD, KiCad, Excel, Word, PowerPoint, Canva, Figma, stdio, OAuth… |
+| Plugins MCP       | plugins intégrés (diagrammes, images IA, taux XOF, Banque mondiale…) + MCP en ligne compatibles navigateur (Context7, DeepWiki, Microsoft Learn, GitMCP, Jina, Excalidraw, Mermaid, GitHub…)                                                                                                                                                   | ~55 préréglages : Blender, FreeCAD, KiCad, Excel, Word, PowerPoint, Canva, Figma, stdio, OAuth… |
 | Commun            | chat agentique en streaming, agents (intégrés + personnalisés Claude Code), skills obligatoires, modèle AUTO + niveau d'effort, mode PLAN, approbations SAFE / NORMAL / AUTONOME, sous-agents, données CSV / Excel / JSON + graphiques, documents PDF / Word / PowerPoint, photos (vision), recherche web, artefacts, jauge de crédits et coûts réels, budgets, export |                                                                                                 |
 
 ### Accès direct (le plus simple)
@@ -33,7 +33,7 @@ Deux éditions, chacune en **un seul fichier HTML** : l'**accès direct**, qui f
 
 La clé n'est jamais écrite dans le fichier : elle reste dans le stockage local du navigateur et n'est envoyée qu'à `openrouter.ai`. Décochez « Se souvenir de la clé » sur un ordinateur partagé, et fixez une limite de dépenses sur la clé côté OpenRouter. Le code exécuté par l'agent et les aperçus HTML tournent dans des iframes isolées, sans accès à la clé. Jev (TypeSafe) n'est pas disponible dans cette édition : son API n'accepte pas les appels depuis un navigateur ; le routage AUTO utilise alors l'heuristique intégrée.
 
-Pour la reconstruire : `npm run build:direct` → `dist/livraison/MASSAMBA Workbench/` : l'app `massamba-workbench-direct.html`, les paquets de décors `massamba-troupe-N.js` (moins de 30 Mio chacun) et `LISEZ-MOI.txt`. Ce dossier entier se pose sur le Bureau ; l'app charge les paquets voisins toute seule. Les mises à jour ne contiennent que les fichiers modifiés : `dist/livraison/A ENVOYER/` (le plus souvent l'app seule) ; après l'envoi, `npm run livraison:envoyee` ; dossier complet : `npm run livraison:complet`. `npm run build:direct:single` produit l'ancienne version en un seul fichier (125 Mo avec les décors).
+Pour la reconstruire : `npm run build:direct` → `dist/livraison/MASSAMBA Workbench/` : l'app `massamba-workbench-direct.html`, le serveur MCP « massamba » et `LISEZ-MOI.txt`. Les mises à jour ne contiennent que les fichiers modifiés : `dist/livraison/A ENVOYER/` (le plus souvent l'app seule) ; après l'envoi, `npm run livraison:envoyee` ; dossier complet : `npm run livraison:complet`. Les paquets de décors `massamba-troupe-N.js` appartiennent depuis le 16/10/2026 à l'application **Studio Vidéo** (`../studio-video/`).
 
 ## Orchestration autonome
 
@@ -180,15 +180,15 @@ JEV est la couche de décision placée autour du LLM. Vue **JEV** : Control Cent
   - intégré au build (édition directe) ;
   - ou importé en `.zip` (Plugins → Kit maison).
 
-## Studio 3D → Blender
+## Vidéo et 3D : application Studio Vidéo (16/10/2026)
 
-`blender.scene` (édition directe) : une description de scène donne trois sorties.
-
-- Un aperçu interactif three.js.
-- Un fichier `.glb` (Blender : Fichier → Importer → glTF 2.0).
-- Un script Python Blender (onglet Scripting → Exécuter) qui reconstruit la scène : formes, matériaux, lumières, caméra, animation.
-
-Le script a été vérifié dans Blender 5 (exécution, rendu Cycles, import du `.glb`). L'édition serveur pilote aussi Blender en direct (préréglage MCP `blender-mcp`).
+Film Autopilot (studio de film IA), Vidéo IA, bac à sable « Réalisation », Studio 3D (three.js, physique, GLB),
+outils `three.run` / `blender.scene`, pont Blender local, moteur Python de la troupe, carnets Colab / Kaggle, juge JEV
+des plans, fluidité RIFE et montage ont quitté Workbench pour leur propre application, **`../studio-video/`** (son
+lanceur, sa construction, ses tests et sa livraison). Workbench garde le chat, les agents, les données, les exports,
+JEV (dont l'œil de JEV et `jevAsk`, partagés avec Studio Vidéo), les outils et **Prompt Studio** (rubrique Outils).
+Le préréglage MCP tiers `blender-mcp` reste disponible comme connecteur. Inventaire détaillé :
+`../studio-video/docs/SEPARATION.md`.
 
 ## Fonctionnalités
 
@@ -206,7 +206,7 @@ Le script a été vérifié dans Blender 5 (exécution, rendu Cycles, import du 
   - **Carte du portefeuille** jointe à chaque fichier de données : noms exacts des colonnes, codes avec leur libellé (segment 8200 = Entreprises locales, via la codification APEX), descriptions de la feuille dictionnaire du fichier (« ColumnDescription »…), colonnes les plus utilisées sur cette forme de fichier.
   - **Requêtes tolérantes** : les formes écrites par les modèles sont comprises (`"sum(X)"`, `{sum:"X"}`, `==`, `not in`, `between`, JSON en texte, tri sur l'alias d'une agrégation…) et les mots métier aussi (« expo », « encours », « statut », « provision IFRS 9 »). Deux colonnes possibles = liste courte, ou arbitrage JEV quand il est sûr (p ≥ 0,85) ; le choix fait ensuite est **appris** pour les extractions suivantes (navigateur seulement).
   - **« continue »** reprend la mission du chat telle quelle (même demande, même design, fichiers déjà produits) ; les chiffres d'une réponse sont toujours confrontés aux résultats des outils.
-- **Bac à sable « Réalisation »** : une demande d'image ou de scène devient un **cahier des charges** (`realize-spec`) que la page doit tenir ; chaque élément nommé est mesuré au pixel (présence, taille, position) et les écarts reviennent au modèle. Une vidéo doit être filmable (canvas à la taille demandée) ; l'aperçu redevient vivant après le tournage.
+- **Bac à sable « Réalisation »** : parti dans l'application Studio Vidéo (16/10/2026).
 - **Téléversement** de fichiers, textes, documents (PDF, Word, PowerPoint…), photos (vision).
 - Mémoire de projet (`PROJECT_CONTEXT.md`), artefacts, palette de commandes `Ctrl+K`, sessions persistantes, export Markdown / JSON / PDF, journal d'audit.
 
@@ -315,11 +315,11 @@ Laboratoire Champion ↔ Challenger ↔ Premium avec statistiques réelles (IC, 
 - Limites : barres d'écart à la limite signées + / − (grille du Financial Times et règles IBCS).
 - Cockpit : le chiffre critique (l'encours) en haut à gauche.
 
-## Économie JEV ÷100 et savoirs du bac à sable (v64)
+## Économie JEV ÷100 (v64) — les savoirs du bac à sable sont partis dans Studio Vidéo
 
 - **Économie ÷100** (`server/jev/economy.ts`, `direct/lib/economy.ts`, Paramètres → « Économie JEV ÷100 », à activer) : le modèle payant ultra puissant choisi ne fait plus le travail entier. Les plus gros modèles gratuits (OpenRouter avec votre clé : Nemotron 3 Ultra 550B, Super 120B, Gemma 4 31B… ; sinon LLM7, Pollinations) écrivent, nourris par JEV et par les points de vigilance déjà relevés par le modèle payant. Les étapes d'outils bien formées passent telles quelles (0 $) ; la réponse finale est **vérifiée** par le modèle payant, sans outils ni historique, et **corrigée par patchs** ; il ne réécrit tout que si le brouillon est faux. Une famille de demandes validée ≥ 8 fois (borne basse de Wilson ≥ 80 %) n'est plus vérifiée qu'une fois sur 5 ; les sujets à risque (chiffres, réglementation, décision, contrat, santé) toujours. Vos données (fichiers, résultats d'analyse) ne vont jamais vers un modèle gratuit sans votre accord. Sans modèle payant : un second modèle gratuit relit le premier.
 - **Mesuré** (registre : prix standard = requête brute au tarif public, sans cache ; payé = facturé) : `tests/e2e/economy.spec.ts`, faux OpenRouter qui facture comme le vrai. Mission de 6 étapes (5 outils + réponse validée) : **0,323 $ → 0,0034 $ (÷95)**. Réponse validée ÷27, corrigée par patchs ÷17 ; brouillon refusé : +8 % ; tour sur vos données : ×1. Le panneau affiche le facteur sur une **règle par décades** (÷1 → ÷1000, objectif ÷100 en repère aux 2/3, zones rouge / orange / vert, « il manque ×N ») plutôt que deux barres linéaires où « payé » devenait invisible, avec le **taux d'économie effectif** (ESR, indicateur de la FinOps Foundation) et le facteur de chaque chemin.
-- **Bac à sable dirigé par JEV** (`server/jev/sandbox/`) : bibliothèque scientifique `jev` importée par chaque page de Réalisation (`import * as jev from "jev"`) — mouvement humain (cycle de marche, proportions, amplitudes, respiration, clignements), physique (projectile, ressort amorti, pendule, Verlet pour cordes et tissus, chocs, Kepler), **quantique** (orbitales de l'hydrogène en nuage de points, oscillateur, puits, fentes de Young, effet tunnel, paquet d'ondes, sphère de Bloch), mathématiques (quaternions, splines, bruit de Perlin, RK4, Fourier), **projection 3D** (perspective, lookAt, projection / rayon, focale ↔ champ). Formules vérifiées numériquement (`tests/unit/sandboxKnowledge.test.ts`) ; valeurs de marche = approximations de manuel signalées comme telles. Des fiches de savoirs par domaine sont ajoutées aux consignes selon la demande ; Rapier 0.21 (Apache-2.0) ajouté au moteur.
+- **Bac à sable dirigé par JEV** (désormais `studio-video/coeur/sandbox/`) : bibliothèque scientifique `jev` importée par chaque page de Réalisation (`import * as jev from "jev"`) — mouvement humain (cycle de marche, proportions, amplitudes, respiration, clignements), physique (projectile, ressort amorti, pendule, Verlet pour cordes et tissus, chocs, Kepler), **quantique** (orbitales de l'hydrogène en nuage de points, oscillateur, puits, fentes de Young, effet tunnel, paquet d'ondes, sphère de Bloch), mathématiques (quaternions, splines, bruit de Perlin, RK4, Fourier), **projection 3D** (perspective, lookAt, projection / rayon, focale ↔ champ). Formules vérifiées numériquement (`tests/unit/sandboxKnowledge.test.ts`) ; valeurs de marche = approximations de manuel signalées comme telles. Des fiches de savoirs par domaine sont ajoutées aux consignes selon la demande ; Rapier 0.21 (Apache-2.0) ajouté au moteur.
 
 ## JEV, cerveau de l'app — gratuit, sans clé (v63)
 

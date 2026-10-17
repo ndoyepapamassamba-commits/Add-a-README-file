@@ -11,8 +11,6 @@ export type View =
   | 'home'
   | 'chat'
   | 'prompts'
-  | 'realize'
-  | 'videogen'
   | 'files'
   | 'data'
   | 'terminal'
@@ -27,8 +25,6 @@ export type View =
   | 'observability'
   | 'intelligence'
   | 'jev'
-  | 'studio'
-  | 'lab3d'
   | 'providers'
   | 'cognitive'
   | 'settings';
@@ -277,16 +273,6 @@ export interface Settings {
   columnAliases?: Record<string, Record<string, string>>;
   /** How often each column served the analyses of a data file shape (the portfolio card lists the most used first). */
   columnUsage?: Record<string, Record<string, number>>;
-  /** Pollinations key (sk_…): cheap image → video (Wan 2.2 Fast ≈ 0,01 $ / s). Stays in this browser. */
-  pollinationsKey?: string;
-  /** fal.ai key (kept in this browser): skeletal performance → character (Wan2.2-Animate, motion transfer). */
-  falKey?: string;
-  /** Hugging Face token (optional): free Wan 2.2 Space within the account's ZeroGPU quota. */
-  hfToken?: string;
-  /** Local Blender bridge (scripts/blender-bridge.py on the user's machine): URL, default http://127.0.0.1:8765. */
-  blenderBridgeUrl?: string;
-  /** Optional token the bridge was started with (--token); stays in this browser. */
-  blenderBridgeToken?: string;
   /** Tavily API key (free monthly credits; callable from the browser, no relay). */
   tavilyKey?: string;
   /** Serper API key (Google results; free queries on signup; callable from the browser). */

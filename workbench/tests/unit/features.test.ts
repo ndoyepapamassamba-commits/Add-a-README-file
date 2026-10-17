@@ -1,15 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { VIDEO_3D } from '../../direct/lib/features';
 import { NAV_GROUPS, NAV_ITEMS, NAV_VIEWS, groupOf } from '../../direct/lib/nav';
 import baseline from '../../direct/lib/inventoryBaseline.json';
 
-describe('Drapeaux de fonctionnalités et navigation (lib/features.ts, lib/nav.ts)', () => {
-  it('la vidéo 3D est hors de l’app (sujet à part) ; le bac à sable WebGL « Studio 3D » reste dans « Bac à sable »', () => {
-    expect(VIDEO_3D).toBe(false);
-    expect(groupOf('lab3d').label).toBe('Bac à sable');
+describe('Navigation (lib/nav.ts)', () => {
+  it('la vidéo et la 3D sont parties dans leur propre application (studio-video) : plus de rubrique « Bac à sable »', () => {
+    for (const v of ['videogen', 'realize', 'lab3d', 'studio']) expect(NAV_VIEWS).not.toContain(v);
+    expect(NAV_GROUPS.map((g) => g.label)).not.toContain('Bac à sable');
+    expect(groupOf('prompts').label).toBe('Outils'); // Prompt Studio reste dans Workbench
   });
-  it('refonte : AI Film Studio retiré de la navigation, douze rubriques comme sur la maquette', () => {
-    expect(NAV_VIEWS).not.toContain('studio');
+  it('onze rubriques, dans l’ordre de la maquette', () => {
     expect(NAV_GROUPS.map((g) => g.label)).toEqual([
       'Cockpit IA',
       'Chats',
@@ -19,7 +18,6 @@ describe('Drapeaux de fonctionnalités et navigation (lib/features.ts, lib/nav.t
       'Workspace',
       'Fichiers',
       'Outils',
-      'Bac à sable',
       'Observabilité',
       'Coûts',
       'Paramètres',
@@ -31,7 +29,6 @@ describe('Drapeaux de fonctionnalités et navigation (lib/features.ts, lib/nav.t
     expect(groupOf('jev').label).toBe('Observabilité');
     expect(groupOf('terminal').label).toBe('Workspace');
     expect(groupOf('plugins').label).toBe('Outils');
-    expect(groupOf('studio').label).toBe('Cockpit IA'); // hors navigation → retour au cockpit
   });
   it('chaque écran n’appartient qu’à une seule rubrique', () => {
     expect(new Set(NAV_VIEWS).size).toBe(NAV_VIEWS.length);

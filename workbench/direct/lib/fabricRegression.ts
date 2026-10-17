@@ -45,15 +45,6 @@ import * as LAB_TEACH from '../../server/jev/apprentice/teacherLearning';
 import * as LAB_PAT from '../../server/jev/apprentice/failurePatterns';
 import * as LAB_EXP from '../../server/jev/apprentice/experiment';
 import * as LAB_VIEW from '../../server/jev/apprentice/labView';
-import * as ST_CAP from '../../server/jev/studio/capabilities';
-import * as ST_COST from '../../server/jev/studio/cost';
-import * as ST_JOBS from '../../server/jev/studio/jobs';
-import * as ST_GENOME from '../../server/jev/studio/genome';
-import * as ST_KIT from '../../server/jev/studio/kit';
-import * as ST_QA from '../../server/jev/studio/qa';
-import * as ST_FILM from '../../server/jev/studio/film';
-import * as ST_VIDEO from '../../server/jev/studio/video';
-import * as ST_SMOKE from '../../server/jev/studio/smoke';
 import * as JEV_LOCAL from '../../server/jev/local';
 import { useStore } from './store';
 import { runLabScenario, A as SCENARIO_A } from '../../server/jev/apprentice/labScenario';
@@ -118,18 +109,6 @@ const REQUIRED: [string, string, unknown][] = [
   ['Champion Science', 'failurePatterns.detectFailurePatterns', LAB_PAT.detectFailurePatterns],
   ['Champion Science', 'experiment.runChampionChallengerExperiment', LAB_EXP.runChampionChallengerExperiment],
   ['Champion Science', 'labView.labKpis', LAB_VIEW.labKpis],
-  ['AI Visual Studio', 'capabilities.buildRegistry', ST_CAP.buildRegistry],
-  ['AI Visual Studio', 'cost.checkBudget', ST_COST.checkBudget],
-  ['AI Visual Studio', 'jobs.recoverJobs', ST_JOBS.recoverJobs],
-  ['AI Visual Studio', 'genome.compose', ST_GENOME.compose],
-  ['AI Visual Studio', 'kit.buildKitZip', ST_KIT.buildKitZip],
-  ['AI Visual Studio', 'qa.buildQAReport', ST_QA.buildQAReport],
-  ['AI Film Studio', 'film.videoGate', ST_FILM.videoGate],
-  ['AI Film Studio', 'film.budgetTier', ST_FILM.budgetTier],
-  ['AI Film Studio', 'film.assetGraph', ST_FILM.assetGraph],
-  ['AI Film Studio', 'film.snapshotVersion', ST_FILM.snapshotVersion],
-  ['AI Film Studio', 'video.talkRoutes', ST_VIDEO.talkRoutes],
-  ['AI Film Studio', 'smoke.filmSmokeTest', ST_SMOKE.filmSmokeTest],
   ['JEV-0', 'local.localSkill', JEV_LOCAL.localSkill],
   ['Exports', 'houseXlsx', HOUSE.houseXlsx],
   ['Exports', 'markdownToDocx', DOCX.markdownToDocx],

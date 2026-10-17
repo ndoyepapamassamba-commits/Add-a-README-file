@@ -33,7 +33,7 @@ export const TOOL_FAMILIES: Record<string, string[]> = {
   history: ['timemachine.list', 'timemachine.diff', 'timemachine.restore'],
   apex: ['apex.guide', 'apex.reference', 'apex.build_app', 'apex.qa'],
   finance: ['fx.rates', 'fx.ecb', 'worldbank.indicator', 'entity.lookup'],
-  visual: ['diagram.render', 'image.generate', 'blender.scene'],
+  visual: ['diagram.render', 'image.generate'],
   geo: ['geo.search', 'weather.forecast', 'holidays.list', 'crypto.price'],
 };
 

@@ -6,7 +6,6 @@ import {
   Bot,
   ChevronsLeft,
   ChevronsRight,
-  FlaskConical,
   FolderOpen,
   KeyRound,
   LayoutDashboard,
@@ -62,9 +61,6 @@ import { CognitiveOS } from './views/CognitiveOS';
 import { exportArchive, importArchive, setArchived } from './lib/vault';
 import { NAV_GROUPS, groupOf, type Group } from './lib/nav';
 import { ProvidersView } from './views/ProvidersView';
-import { Lab3DView } from './views/Lab3DView';
-import { RealizeView } from './views/RealizeView';
-import { VideoGenView } from './views/VideoGenView';
 
 const ICONS: Record<Group, React.ReactNode> = {
   cockpit: <LayoutDashboard size={17} />,
@@ -75,7 +71,6 @@ const ICONS: Record<Group, React.ReactNode> = {
   workspace: <Layers size={17} />,
   files: <FolderOpen size={17} />,
   tools: <Wrench size={17} />,
-  sandbox: <FlaskConical size={17} />,
   observability: <Activity size={17} />,
   costs: <Wallet size={17} />,
   settings: <SettingsIcon size={17} />,
@@ -239,7 +234,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
   const [drawer, setDrawer] = useState(false);
   const [help, setHelp] = useState(false);
   const group = groupOf(view);
-  // A screen out of the navigation (former AI Film Studio, Studio 3D Pro) falls back to the cockpit.
+  // A screen out of the navigation (the video screens now live in the Studio Vidéo app) falls back to the cockpit.
   const shown: View = group.views.some((v) => v.id === view) ? view : 'home';
 
   useEffect(() => {
@@ -373,10 +368,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           <div className="min-h-0 flex-1">
             {shown === 'home' && <CockpitView />}
             {shown === 'chat' && <ChatView />}
-            {shown === 'videogen' && <VideoGenView />}
-            {shown === 'realize' && <RealizeView />}
             {shown === 'prompts' && <PromptStudioView />}
-            {shown === 'lab3d' && <Lab3DView />}
             {shown === 'catalogue' && <ModelCatalogue />}
             {shown === 'models' && <ModelsView />}
             {shown === 'orchestration' && <Orchestration />}

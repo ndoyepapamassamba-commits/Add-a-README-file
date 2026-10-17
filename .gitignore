@@ -1,3 +1,4 @@
-
 __pycache__/
 *.pyc
+# Lien vers workbench/node_modules créé par studio-video/outils/preparer.mjs (socle partagé)
+/node_modules

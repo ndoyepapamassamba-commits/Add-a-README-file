@@ -1,7 +1,7 @@
 // Navigation of the direct edition, after the redesign (mockup « Cockpit IA / Catalogue LLM / Orchestration /
-// Observabilité »): twelve sections in a labelled sidebar; a section that gathers several screens shows them as tabs.
-// The AI Film Studio and the 3D video chain (Blender director, local Blender bridge) left the navigation; the WebGL
-// sandbox « Studio 3D » stays in « Bac à sable » (their code stays in the repository).
+// Observabilité »): eleven sections in a labelled sidebar; a section that gathers several screens shows them as tabs.
+// The video and 3D screens (Vidéo IA, Réalisation, Studio 3D, Film Autopilot, Blender bridge) left Workbench on
+// 16/10/2026 for their own app, studio-video/ at the root of the repository; Prompt Studio joined « Outils ».
 import type { View } from './types';
 
 export type Group =
@@ -13,7 +13,6 @@ export type Group =
   | 'workspace'
   | 'files'
   | 'tools'
-  | 'sandbox'
   | 'observability'
   | 'costs'
   | 'settings';
@@ -63,21 +62,11 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'tools',
     label: 'Outils',
-    hint: 'Skills (savoir-faire réutilisable) et plugins (connecteurs, outils).',
+    hint: 'Skills (savoir-faire réutilisable), plugins (connecteurs, outils) et Prompt Studio (composer et tester des prompts).',
     views: [
       { id: 'skills', label: 'Skills' },
       { id: 'plugins', label: 'Plugins' },
-    ],
-  },
-  {
-    id: 'sandbox',
-    label: 'Bac à sable',
-    hint: 'Tout prompt devient une réalisation exécutée et corrigée (apps, tableaux de bord, jeux, 3D, schémas) ; composer et tester des prompts ; Studio 3D WebGL.',
-    views: [
-      { id: 'videogen', label: 'Vidéo IA' },
-      { id: 'realize', label: 'Réalisation' },
       { id: 'prompts', label: 'Prompt Studio' },
-      { id: 'lab3d', label: 'Studio 3D' },
     ],
   },
   {
@@ -100,7 +89,7 @@ export function groupOf(view: View): NavGroup {
   return NAV_GROUPS.find((g) => g.views.some((v) => v.id === view)) ?? NAV_GROUPS[0]!;
 }
 
-/** Screens reachable from the navigation (the AI Film Studio is not). */
+/** Screens reachable from the navigation. */
 export const NAV_VIEWS: View[] = NAV_GROUPS.flatMap((g) => g.views.map((v) => v.id));
 
 /** Flat list kept for older callers: one entry per section, its first screen. */

@@ -124,12 +124,35 @@ export interface JevLogEntry {
   fabric?: FabricTag;
   /** JEV Apprentice (free-first) record of the mission; absent when the Apprentice did not take part. */
   apprentice?: ApprenticeTag;
-  /** AI Visual Studio production record (media job); absent on every other entry. */
-  studio?: import('./studio/types').StudioTag;
+  /** Media production record (written by the Studio Vidéo app, and by the former AI Visual Studio in older logs): kept
+   *  apart from the text runs by every analysis; absent on every other entry. */
+  studio?: MediaLogTag;
   /** JEV Cognitive OS record of the mission (additive); absent when the layer was off. */
   cognitive?: import('./cognitive/types').CognitiveTag;
   /** OMNIPOTENT V4.1 record (firewalls, lane, HARD/POLICY); absent when the governor was off. */
   omni?: import('./omni/trace').OmniTag;
+}
+
+/** Media job record of a JEV log entry (the Studio Vidéo app's StudioTag is a narrower version of it). */
+export interface MediaLogTag {
+  project_id: string;
+  scene_id?: string;
+  job_id: string;
+  media_type: string;
+  task_family: string;
+  model: string;
+  champion_or_challenger: 'champion' | 'challenger' | 'none';
+  prompt_version: string;
+  quality: number | null;
+  success: boolean;
+  latency: number;
+  cost: number | null;
+  fallback: boolean;
+  retry: number;
+  correction: boolean;
+  teacher: boolean;
+  JEV_cost: number;
+  total_cost: number | null;
 }
 
 export interface Kpi {

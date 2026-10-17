@@ -1175,53 +1175,6 @@ export const TOOLS: DirectTool[] = [
     },
   },
   {
-    name: 'three.run',
-    description:
-      'Run three.js code in the isolated 3D sandbox (Studio 3D Pro) and get the REAL result: JS exceptions with their line, console.error, WebGL GLSL compiler logs, physics errors, plus stats (meshes, triangles, draw calls, bodies). No import: THREE (r186 + OrbitControls, GLTFExporter, GLTFLoader, DRACOLoader), CANNON (cannon-es), scene (lit), camera, renderer, controls are given; animate with onFrame((dt, t) => …); physics.ground(y), physics.add(mesh, {mass, kinematic, restitution}), physics.path(body, points, speed); helpers.shaderPreview(vertex, fragment, shape). On error the answer includes the faulty lines and the matching documentation: fix and call again. save_glb: path of a .glb to write when the scene runs (draco: true compresses it).',
-    parameters: obj(
-      {
-        code: str('JavaScript body (async allowed)'),
-        save_glb: str('Optional workspace path of the .glb to save, e.g. outputs/scene.glb'),
-        draco: { type: 'boolean', description: 'Draco-compress the saved .glb (KHR_draco_mesh_compression)' },
-      },
-      ['code'],
-    ),
-    risk: 'execute',
-    readOnly: false,
-    label: (a) => `Exécuter du three.js${a.save_glb ? ` → ${S(a.save_glb)}` : ''}`,
-    async preview(a) {
-      return { text: S(a.code) };
-    },
-    async run(a) {
-      const { backgroundLab } = await import('./lab3d/runner');
-      const { feedbackFor } = await import('../../server/jev/lab3d/selfCorrect');
-      const lab = backgroundLab();
-      const r = await lab.run(S(a.code));
-      const st = `${r.stats.meshes} mesh · ${r.stats.triangles} triangles · ${r.stats.drawCalls} draw calls · ${r.stats.bodies} corps physiques · ${r.ms} ms`;
-      if (!r.ok || r.stats.meshes === 0) {
-        const fb = feedbackFor(S(a.code), r);
-        return {
-          ok: false,
-          summary: `${r.errors.length} erreur(s) au rendu`,
-          forModel: clip(fb, 20_000),
-          output: clip(fb, 8000),
-        };
-      }
-      let saved = '';
-      if (S(a.save_glb)) {
-        const g = await lab.exportGlb(a.draco === true);
-        if ('error' in g) saved = `\nExport GLB impossible : ${g.error}`;
-        else {
-          const path = uniquePath(S(a.save_glb).endsWith('.glb') ? S(a.save_glb) : `${S(a.save_glb)}.glb`);
-          writeBytes(path, g.bytes, 'model/gltf-binary');
-          saved = `\nGLB enregistré : ${path} (${(g.bytes.byteLength / 1024).toFixed(1)} Ko${a.draco ? (g.draco ? `, Draco : ${(g.before / 1024).toFixed(1)} Ko avant` : ', Draco indisponible : non compressé') : ''})`;
-        }
-      }
-      const text = `Rendu sans erreur : ${st}${r.warnings.length ? `\nAvertissements : ${r.warnings.slice(0, 3).join(' | ')}` : ''}${saved}`;
-      return { ok: true, summary: 'scène 3D valide', forModel: text, output: text };
-    },
-  },
-  {
     name: 'web.search',
     description:
       'Search the web (current information, documentation, news). Returns a synthesis with source links.',

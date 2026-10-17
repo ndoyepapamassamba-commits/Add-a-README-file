@@ -1,9 +1,9 @@
 // LIVRAISON — consignes de l'utilisateur (15/10/2026) : « tu livreras désormais l'app avec les paquets », puis
 // « limiter la règle aux livrables modifiés seulement ».
-// Assemble dist/livraison/MASSAMBA Workbench/ (le dossier complet : app, paquets massamba-troupe-N.js, LISEZ-MOI.txt) et
+// Assemble dist/livraison/MASSAMBA Workbench/ (le dossier complet : app, serveur MCP, LISEZ-MOI.txt) et
 // dist/livraison/A ENVOYER/ : SEULEMENT les fichiers qui diffèrent de la dernière livraison envoyée (empreintes gardées
-// dans .private/livraison-envoyee.json, ignoré par git). Contrôles bloquants : chaque fichier sous 30 Mio, paquets de la
-// même version que l'app.
+// dans .private/livraison-envoyee.json, ignoré par git). Contrôle bloquant : chaque fichier sous 30 Mio. Depuis le
+// 16/10/2026 les paquets de décors (massamba-troupe-N.js) appartiennent à l'application Studio Vidéo (studio-video/).
 //   node scripts/livraison.mjs            → prépare « A ENVOYER » (fichiers modifiés)
 //   node scripts/livraison.mjs --complet  → « A ENVOYER » = tout le dossier (première fois, dossier perdu)
 //   node scripts/livraison.mjs --envoyee  → enregistre la livraison qui vient d'être envoyée
@@ -23,27 +23,13 @@ if (!fs.existsSync(path.join('dist', APP))) {
   console.error(`livraison : dist/${APP} absent — lancez d'abord la construction`);
   process.exit(1);
 }
-const packs = fs
-  .readdirSync('dist')
-  .filter((f) => /^massamba-troupe-\d+\.js$/.test(f))
-  .sort((a, b) => Number(/\d+/.exec(a)[0]) - Number(/\d+/.exec(b)[0]));
+const packs = []; // les décors de la troupe sont livrés avec Studio Vidéo
 // v63: the « massamba » MCP server (JEV's tools in Claude Desktop / Claude Code), when built.
 const MCP = ['massamba-jev.mcpb', 'massamba-mcp.mjs'].filter((f) => fs.existsSync(path.join('dist', 'mcp', f)));
 const files = [APP, ...packs, ...MCP];
 const srcOf = (f) => (MCP.includes(f) ? path.join('dist', 'mcp', f) : path.join('dist', f));
 
-// Same version on both sides: the app refuses packs of another build.
-const app = fs.readFileSync(path.join('dist', APP), 'utf8');
-const want = /packs:\{version:[`'"]([0-9a-f]{16})[`'"],count:(\d+)/.exec(app);
 const errors = [];
-if (want) {
-  if (Number(want[2]) !== packs.length) errors.push(`l'app attend ${want[2]} paquet(s), ${packs.length} trouvé(s)`);
-  for (const p of packs) {
-    const head = fs.readFileSync(path.join('dist', p), 'utf8').slice(0, 300);
-    const v = /"version":"([0-9a-f]{16})"/.exec(head)?.[1];
-    if (v !== want[1]) errors.push(`${p} : version ${v ?? '?'} ≠ app ${want[1]}`);
-  }
-} else if (packs.length) errors.push('paquets présents mais app construite sans paquets (build simple)');
 
 fs.rmSync(path.dirname(OUT), { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
@@ -61,43 +47,29 @@ for (const f of files) {
   rows.push({ f, size, sha });
   if (size > LIMIT) errors.push(`${f} : ${(size / 1048576).toFixed(1)} Mio dépasse la limite d'envoi de 30 Mio`);
   // The packs are split automatically under the limit; the app itself grows with each version.
-  else if (f === APP && size > WARN)
-    console.warn(`livraison : attention, l'app approche la limite (${(size / 1048576).toFixed(1)} Mio) — déplacer planches et galeries dans les paquets`);
+  else if (f === APP && size > WARN) console.warn(`livraison : attention, l'app approche la limite (${(size / 1048576).toFixed(1)} Mio)`);
 }
 
-const n = packs.length;
-// The notice only depends on the packs (no date, no app fingerprint): it changes — and is sent again — only when they do.
+// The notice changes only when its text does (no date, no app fingerprint): it is sent again only then.
 const notice = [
   'MASSAMBA WORKBENCH - DOSSIER A ENREGISTRER SUR LE BUREAU',
-  want ? `Paquets de decors version ${want[1]}` : 'App sans paquets de decors',
   '',
   'INSTALLATION (premiere fois)',
   '1. Sur le Bureau, creez un dossier nomme : MASSAMBA Workbench',
-  `2. Enregistrez-y ${APP}${n ? `, les ${n} paquets massamba-troupe-*.js` : ''} et ce fichier, sans les renommer.`,
+  `2. Enregistrez-y ${APP} et ce fichier, sans les renommer.`,
   `3. Double-cliquez sur ${APP} (Chrome ou Edge conseilles).`,
   '',
   'MISES A JOUR',
   'Une livraison ne contient que les fichiers modifies : remplacez seulement ceux-la dans le dossier.',
-  "Le plus souvent, c'est l'app seule ; les paquets ne changent que si les decors changent.",
   '',
-  ...(n
-    ? [
-        'VERIFICATION',
-        'Ouvrez Video IA, puis Image, puis Images du projet.',
-        "Le message doit indiquer : decors charges depuis les paquets a cote de l'app.",
-        '',
-        'SI LES DECORS NE SE CHARGENT PAS TOUT SEULS',
-        `- Verifiez les noms : massamba-troupe-1.js a massamba-troupe-${n}.js, exactement.`,
-        "  Un navigateur peut ajouter (1) au nom d'un fichier telecharge deux fois.",
-        '- Sinon, dans la galerie Images du projet, cliquez sur Importer les paquets de decors',
-        `  et choisissez les ${n} fichiers .js. A faire une seule fois : ils restent dans le navigateur.`,
-        '- Une app plus recente refuse des paquets d une autre version : remplacez-les par la livraison indiquee.',
-        '',
-        'PAQUETS DE DECORS (taille en octets, empreinte SHA-256)',
-        ...rows.filter((r) => r.f !== APP).map((r) => `${r.f}  ${r.size}  ${r.sha}`),
-        '',
-      ]
-    : []),
+  'CHANGEMENT DU 16/10/2026 : LA VIDEO A SA PROPRE APPLICATION',
+  'Film Autopilot, Video IA, Realisation, Studio 3D, le moteur de la troupe et le pont Blender sont',
+  'maintenant dans MASSAMBA Studio Video (livre a part). Workbench garde le chat, les agents, les analyses,',
+  'les exports, JEV, les outils et Prompt Studio (rubrique Outils).',
+  '- Les fichiers massamba-troupe-1.js a massamba-troupe-4.js de ce dossier ne servent plus a Workbench :',
+  '  deplacez-les dans le dossier MASSAMBA Studio Video.',
+  '- Vos projets video sont repris automatiquement par Studio Video a son premier lancement.',
+  '',
   ...(MCP.length
     ? [
         'JEV DANS CLAUDE (FACULTATIF) - SERVEUR MCP MASSAMBA',
@@ -109,10 +81,6 @@ const notice = [
         '',
       ]
     : []),
-  'CONFIDENTIALITE',
-  'Ces fichiers contiennent vos propres images (planches, galeries, decors).',
-  'Gardez-les sur votre poste ; ne les publiez pas.',
-  '',
 ].join('\r\n');
 fs.writeFileSync(path.join(OUT, 'LISEZ-MOI.txt'), notice);
 rows.push({ f: 'LISEZ-MOI.txt', size: Buffer.byteLength(notice), sha: createHash('sha256').update(notice).digest('hex') });

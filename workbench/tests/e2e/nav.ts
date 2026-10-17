@@ -1,4 +1,4 @@
-// Navigation helper of the redesigned direct edition: twelve sections in the sidebar, some with tabs.
+// Navigation helper of the redesigned direct edition: eleven sections in the sidebar, some with tabs.
 // Old screen names (before the redesign) are mapped to « section › tab ».
 import type { Page } from '@playwright/test';
 
@@ -17,10 +17,7 @@ const MAP: Record<string, [string, string?]> = {
   Fichiers: ['Fichiers'],
   Skills: ['Outils', 'Skills'],
   Plugins: ['Outils', 'Plugins'],
-  'Vidéo IA': ['Bac à sable', 'Vidéo IA'],
-  Réalisation: ['Bac à sable', 'Réalisation'],
-  'Prompt Studio': ['Bac à sable', 'Prompt Studio'],
-  'Studio 3D': ['Bac à sable', 'Studio 3D'],
+  'Prompt Studio': ['Outils', 'Prompt Studio'],
   Observabilité: ['Observabilité', 'Vue d’ensemble'],
   Intelligence: ['Observabilité', 'Intelligence'],
   JEV: ['Observabilité', 'JEV'],

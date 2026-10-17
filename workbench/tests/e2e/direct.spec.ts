@@ -444,11 +444,12 @@ test('COCKPIT IA: catalogue with measured columns (« — » when never called),
   await expect(page.getByTestId('catalogue-table').getByText('choisi', { exact: true })).toBeVisible();
 });
 
-test('REDESIGN: twelve labelled sections, no AI Film Studio, help dialog, collapsible sidebar, mobile drawer', async ({ page }) => {
+test('REDESIGN: eleven labelled sections (video in its own app), help dialog, collapsible sidebar, mobile drawer', async ({ page }) => {
   await open(page);
   const nav = page.getByTestId('main-nav');
-  for (const label of ['Cockpit IA', 'Chats', 'Agents', 'Catalogue LLM', 'Orchestration', 'Workspace', 'Fichiers', 'Outils', 'Bac à sable', 'Observabilité', 'Coûts', 'Paramètres'])
+  for (const label of ['Cockpit IA', 'Chats', 'Agents', 'Catalogue LLM', 'Orchestration', 'Workspace', 'Fichiers', 'Outils', 'Observabilité', 'Coûts', 'Paramètres'])
     await expect(nav.getByRole('button', { name: label, exact: true })).toBeVisible();
+  await expect(nav.getByRole('button', { name: 'Bac à sable', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'AI Film Studio' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Studio 3D Pro' })).toHaveCount(0);
   // Grouped screens show their tabs.
@@ -580,7 +581,7 @@ document.getElementById('x').onclick = () => { const a = document.createElement(
   await expect(page.frameLocator('iframe[title="Navigateur intégré"]').getByText('3 lignes')).toBeVisible();
 });
 
-test('built-in plugins: 3D studio (preview + .glb + Blender script) and exchange rates', async ({ page }) => {
+test('built-in plugins: exchange rates; the 3D studio → Blender plugin left with the Studio Vidéo app', async ({ page }) => {
   await page.route('https://open.er-api.com/**', (r) =>
     r.fulfill({
       headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' },
@@ -594,36 +595,17 @@ test('built-in plugins: 3D studio (preview + .glb + Blender script) and exchange
   await open(page);
   await page.getByTitle('Mode de permissions', { exact: true }).click();
   await page.getByText('AUTONOME').click();
-  mock.push(
-    {
-      toolCalls: [
-        {
-          name: 'blender.scene',
-          args: {
-            name: 'agence',
-            title: 'Agence',
-            objects: [{ type: 'roundedbox', size: 2, position: [0, 1, 0], color: '#005C83' }],
-          },
-        },
-      ],
-    },
-    { toolCalls: [{ name: 'fx.rates', args: { base: 'EUR', symbols: ['XOF'] } }] },
-    { text: 'Scène et taux prêts.' },
-  );
+  mock.push({ toolCalls: [{ name: 'fx.rates', args: { base: 'EUR', symbols: ['XOF'] } }] }, { text: 'Taux prêt.' });
   await send(page, 'Fais une maquette 3D et donne le taux EUR/XOF');
-  await expect(page.getByText('Scène et taux prêts.')).toBeVisible({ timeout: 40_000 });
+  await expect(page.getByText('Taux prêt.')).toBeVisible({ timeout: 40_000 });
   const tools = (mock.requests[0]!.tools as { function: { name: string } }[]).map((t) => t.function.name);
-  // JEV tool pack: the 3D and exchange-rate tools are selected, unrelated plugins are not sent.
-  expect(tools).toEqual(expect.arrayContaining(['blender__scene', 'fx__rates']));
+  // JEV tool pack: the exchange-rate tool is selected; no 3D / Blender tool exists any more in Workbench.
+  expect(tools).toContain('fx__rates');
+  expect(tools.filter((t) => /blender|three/.test(t))).toEqual([]);
   expect(tools).not.toContain('weather__forecast');
-  const msgs = JSON.stringify(mock.requests.at(-1)!.messages);
-  expect(msgs).toContain('3d/agence.html');
-  expect(msgs).toContain('glTF 3d/agence.glb');
-  expect(msgs).toContain('3d/agence_blender.py');
-  expect(msgs).toContain('XOF: 655.957');
-  // Switching a plugin off removes its tools.
+  expect(JSON.stringify(mock.requests.at(-1)!.messages)).toContain('XOF: 655.957');
   await openView(page, 'Plugins');
-  await expect(page.getByText('Studio 3D → Blender')).toBeVisible();
+  await expect(page.getByText('Studio 3D → Blender')).toHaveCount(0);
 });
 
 test('Intelligence Engine: strategy, shadow alert, evidence check, manual, learning, time machine', async ({

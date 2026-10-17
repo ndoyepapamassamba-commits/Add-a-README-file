@@ -383,7 +383,7 @@ export interface ShadowAlert {
 const VERIFY_TOOLS =
   /^(code\.run|terminal\.(execute|run)|apex\.qa|browser\.|data\.(query|inspect)|regression\.run|visualization|filesystem\.read)/;
 const WRITE_TOOLS =
-  /^(filesystem\.(write|edit|multi_edit|delete|move)|report\.export|data\.(export|transform)|apex\.build_app|artifact\.create|blender\.scene)/;
+  /^(filesystem\.(write|edit|multi_edit|delete|move)|report\.export|data\.(export|transform)|apex\.build_app|artifact\.create)/;
 
 export class ShadowMonitor {
   private failures = new Map<string, number>();

@@ -455,24 +455,6 @@ export function SettingsView({ onLogout }: { onLogout: () => void }) {
             />
           </Field>
           </div>
-          <div className="mb-2 mt-4 text-[12px] font-semibold uppercase tracking-wide text-faint">Vidéo et 3D (hors de l’app pour l’instant, réglages conservés)</div>
-          <div className="grid gap-x-3 sm:grid-cols-2">
-          <Field label="Clé Pollinations (recommandé : ≈ 0,05 $ le plan de 5 s)" hint="enter.pollinations.ai → compte → clé sk_… et un petit solde (les pollens de « quêtes » gratuites ne paient pas la vidéo). Moteur : Wan 2.2 Fast, image → vidéo. La clé reste dans ce navigateur.">
-            <Input type="password" value={s.pollinationsKey ?? ''} onChange={(e) => patch({ pollinationsKey: e.target.value.trim() })} placeholder="sk_…" data-testid="pollinations-key" />
-          </Field>
-          <Field label="Jeton Hugging Face (option gratuite, selon quota)" hint="huggingface.co → Settings → Access Tokens (lecture). Utilise le Space gratuit « Wan 2.2 14B Fast » dans la limite du quota GPU gratuit de votre compte.">
-            <Input type="password" value={s.hfToken ?? ''} onChange={(e) => patch({ hfToken: e.target.value.trim() })} placeholder="hf_…" data-testid="hf-token" />
-          </Field>
-          <Field label="Pont Blender local (rendu 3D sur votre machine, 0 $)" hint="Sur votre PC : python3 scripts/blender-bridge.py --blender <chemin de blender> (ou sans --blender après pip install bpy). L’app envoie la scène, Blender rend avec votre GPU (EEVEE) et renvoie l’image de vérification et le MP4. Rien ne quitte votre machine.">
-            <Input value={s.blenderBridgeUrl ?? ''} onChange={(e) => patch({ blenderBridgeUrl: e.target.value.trim() })} placeholder="http://127.0.0.1:8765" data-testid="blender-bridge-url" />
-          </Field>
-          <Field label="Jeton du pont Blender (si démarré avec --token)" hint="Reste dans ce navigateur ; envoyé dans l’en-tête X-Bridge-Token.">
-            <Input type="password" value={s.blenderBridgeToken ?? ''} onChange={(e) => patch({ blenderBridgeToken: e.target.value.trim() })} placeholder="(optionnel)" data-testid="blender-bridge-token" />
-          </Field>
-          <Field label="Clé fal.ai (acteur 3D → personnage, ≈ 0,04–0,08 $ / s)" hint="fal.ai → Dashboard → Keys. L’acteur virtuel 3D joue la scène (squelette complet), puis Wan2.2-Animate transfère ses mouvements au personnage de l’image (corps entier, rendu génératif). La clé reste dans ce navigateur.">
-            <Input type="password" value={s.falKey ?? ''} onChange={(e) => patch({ falKey: e.target.value.trim() })} placeholder="clé fal" data-testid="fal-key" />
-          </Field>
-        </div>
         </div>
       </details>
 

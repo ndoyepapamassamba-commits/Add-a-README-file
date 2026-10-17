@@ -1,5 +1,8 @@
 // Tiny IndexedDB key/value store (sessions, files, skills… stay on this computer).
-const DB = 'openrouter-workbench-direct';
+// Another app built on this socle (the Studio Vidéo app) names its own base before loading it, so the two apps never
+// write into each other's data.
+export const WORKBENCH_DB = 'openrouter-workbench-direct';
+const DB = (globalThis as { __MASSAMBA_DB__?: string }).__MASSAMBA_DB__ ?? WORKBENCH_DB;
 const STORE = 'kv';
 let dbPromise: Promise<IDBDatabase> | null = null;
 

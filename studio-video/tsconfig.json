@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false,
+    "allowImportingTsExtensions": false,
+    "types": ["node", "vite/client"],
+    "paths": {
+      "@workbench/*": ["../workbench/*"],
+      "@shared/*": ["../workbench/shared/*"],
+      "@web/*": ["../workbench/web/*"]
+    }
+  },
+  "include": ["app", "interface", "navigateur", "coeur", "tests", "outils", "blender", "*.config.ts", "../workbench/direct/house-kit.d.ts"]
+}

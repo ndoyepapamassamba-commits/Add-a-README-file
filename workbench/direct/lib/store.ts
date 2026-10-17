@@ -48,8 +48,8 @@ export interface FabricState {
     policies?: import('../../server/jev/cognitive/policy').PolicyRecord[];
     microExperts?: import('../../server/jev/cognitive/strategies').MicroExpert[];
   };
-  /** AI Visual Studio: media capability summary (add-only entry of the Capability Fabric). */
-  media?: ReturnType<typeof import('../../server/jev/studio/capabilities').fabricEntry>;
+  /** Media capability summary written by the Studio Vidéo app (add-only entry of the Capability Fabric). */
+  media?: Record<string, unknown>;
 }
 export const EMPTY_FABRIC: FabricState = {
   skills: [],

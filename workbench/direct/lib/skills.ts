@@ -66,7 +66,6 @@ export const DIRECT_TOOLS = [
   'data.query',
   'data.chart',
   'code.run',
-  'three.run',
   'web.search',
   'knowledge.save',
   'artifact.create',

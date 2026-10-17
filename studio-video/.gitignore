@@ -1,0 +1,7 @@
+node_modules/
+dist/
+test-results/
+.private
+.filmbench/
+__pycache__/
+*.pyc
