@@ -30,7 +30,7 @@ Renfort du 17/10/2026, mot pour mot :
 4. **Exactitude inchangée** (consignes permanentes) : ne jamais présenter comme fait ce qui ne l'est pas, ne jamais
    inventer un chiffre. « Pas encore » se dit avec le plan qui y mène, pas avec un « je ne peux pas ».
 5. Les garde-fous restent : aucune clé demandée ni affichée dans la discussion (l'utilisateur l'ajoute lui-même dans les
-   réglages de l'environnement ou le coffre de l'app), rien poussé sur le dépôt public, aucune donnée client sur
+   réglages de l'environnement ou le coffre de l'app), pousser autorisé depuis le 17/10/2026 après contrôle (aucun secret, rien de `.private/`), aucune donnée client sur
    Internet. Création de comptes autorisée (« carte blanche » du 16/10/2026) sans jamais contourner un contrôle
    anti-robot (CAPTCHA, code SMS) ni afficher un mot de passe. Quand un contournement exige l'utilisateur (son compte,
    sa carte), le proposer avec son coût mesuré et continuer en parallèle avec les moyens gratuits.

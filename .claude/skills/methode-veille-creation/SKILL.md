@@ -75,6 +75,6 @@ Dans la réponse : ce que la veille a appris (2-3 lignes), ce qui a été **amé
 ## Garde-fous permanents (rappel)
 
 - **Jamais de donnée client dans une requête web** : aucun nom, code client ou montant individuel ; la veille porte sur les concepts, textes et outils.
-- **Ne rien pousser** sur le dépôt public `Add-a-README-file` ; aucune clé d'API dans un fichier HTML ; aucun identifiant de modèle dans les commits.
+- **Pousser autorisé depuis le 17/10/2026** (« je t'autorise désormais à tout pousser ») sur le dépôt public `Add-a-README-file`, après contrôle : aucun secret, rien de `workbench/.private/`, pas de gros binaire, avance simple ; aucune clé d'API dans un fichier HTML ; aucun identifiant de modèle dans les commits.
 - **Ne jamais inventer de chiffres** : tout chiffre vient des données chargées ou d'une source citée.
 - Français, formats fr-FR, charte Ecobank (voir les skills `ecobank-documents-premium`, `ecobank-god-export-studio`, `ecobank-credit-risk-engine`).
