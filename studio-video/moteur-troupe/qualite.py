@@ -17,6 +17,9 @@
 #     du buste ≤ 2,5°/image² (un hochement dessiné reste sous 1,5), aucune expression qui saute de plus de 0,2 en une image
 #  J. HUMOUR : chaque sketch de l'histoire noté par l'œil de JEV (histoires.juge) — « fait vraiment rire » (≥ 2 sur 4),
 #     une vraie chute (≥ 0,7), du français ivoirien (≥ 0,5), rien de méchant (≤ 0,3)
+#  K. PHYSIQUE ET NATURE : l'ombre de chaque bête se voit au sol (mesurée au tournage), aucune espèce hors de son milieu,
+#     et la batterie physique de JEV (flotte, ombre manquante, échelle, lumière, hors contexte, physique impossible) ne
+#     trouve aucun défaut AJOUTÉ par l'animation (plan comparé à son image source)
 import glob, json, os, subprocess, sys
 import numpy as np
 
@@ -27,9 +30,14 @@ M = json.load(open(MONTAGE)); T = json.load(open(TL)); TO = json.load(open(f'{D}
 G = {}
 
 
+DUREES = {}   # temps de chaque juge (vitesse : savoir où vont les secondes du contrôle)
+
+
 def lance(args, sortie):
+    import time as _t; t0 = _t.time()
     if not os.path.isfile(sortie) or os.environ.get('QUALITE_REFAIT'):
         subprocess.run([sys.executable, *args], capture_output=True, text=True)
+    DUREES[os.path.basename(args[0])] = round(_t.time() - t0, 1)
     return json.load(open(sortie)) if os.path.isfile(sortie) else None
 
 
@@ -49,21 +57,26 @@ G['A_rythme'] = {'ok': bool(lignes) and all(x['ok'] for x in lignes), 'detail': 
 
 # ── B. bouche lisible ──
 L_all = T['lines']; dec = TO['decoupage']; cad = TO.get('cadres', {})
-lr = lance([f'{ICI}/levres_roi.py', MP4, TL, MONTAGE, f'{D}/levres_roi.json'], f'{D}/levres_roi.json') or {}
-det = lr.get('detail', []); rep = []
+# BOUCHE JUGÉE PAR JEV (17/10/2026, « tout appuyé par le jugement de JEV », aucune tolérance) : aux trois instants les plus
+# ouverts de la piste de bouche JEV voit la bouche ouverte, aux trois instants fermés (m, b, p, silences) il la voit fermée
+# (jev_levres.py ; témoin négatif v24 : 0/18). La mesure par pixels sombres (levres_roi, 255 s) n'est plus le juge.
+jl = lance([f'{ICI}/jev_levres.py', MP4, TL, MONTAGE, f'{D}/jev_levres.json'], f'{D}/jev_levres.json') or {}
+det = jl.get('detail', []); rep = []
 for i, L in enumerate(L_all):
     mid = L['t0'] + L['dur'] / 2; s = next((x for x in dec if x[0] <= mid < x[1]), None)
     S = scene(L['sketch']); a = next(x for x in S['acteurs'] if x['nom'] == L['qui']); fh = a['visage']['box'][3] - a['visage']['box'][1]
     c = cad.get(f'{s[0]:.2f}') if s else None
     px = None if not c else round(min(fh * CH / cc[3] for cc in c[1:3] if cc), 1)
     m = det[i] if i < len(det) else {}
-    bouge = (m.get('corr') or 0) >= 0.2 or (m.get('ouverture_max') or 0) >= 0.02
-    ok = (px is None or px >= VISAGE_MIN) and (bouge or m.get('corr') is None)
-    rep.append({'qui': L['qui'], 'texte': L['texte'][:40], 'visage_px': px, 'corr': m.get('corr'), 'ouverture_max': m.get('ouverture_max'), 'ok': ok})
+    juge_ = m.get('ok')   # None : réplique trop courte pour trois instants ouverts et trois fermés
+    ok = (px is None or px >= VISAGE_MIN) and juge_ is not False and bool(jl)
+    rep.append({'qui': L['qui'], 'texte': L['texte'][:40], 'visage_px': px, 'ouverte_aux_voyelles': m.get('ouverte_aux_voyelles'),
+                'fermee_aux_consonnes': m.get('fermee_aux_consonnes'), 'ok': ok})
 G['B_bouche'] = {'ok': all(r['ok'] for r in rep), 'repliques_ok': f"{sum(r['ok'] for r in rep)}/{len(rep)}", 'detail': rep}
 
 # ── C, D, E : mesures image par image du tournage ──
 MES = [json.loads(x) for f in glob.glob(f'{D}/mesures-*.jsonl') for x in open(f)]
+ENT = [m for m in MES if m.get('qui') == 'entite']; MES = [m for m in MES if m.get('qui') != 'entite']   # bêtes : porte K
 par = {}
 for m in MES: par.setdefault(m['qui'], []).append(m)
 for k in par: par[k].sort(key=lambda m: m['t'])
@@ -113,15 +126,18 @@ for sid, d in M['scenes'].items():
     f = f'{d}/vie.npz'
     if not os.path.isfile(f): vie[sid] = 0.0; continue
     z = np.load(f); tout = sum(z[k] for k in ('feuil', 'tissu', 'fumee', 'bete', 'ampoules') if k in z.files)
-    ent = os.path.isfile(f'{d}/entites.json') and len(json.load(open(f'{d}/entites.json'))) > 0
-    vie[sid] = {'part_animee': round(float((tout > 0.15).mean()), 4), 'entites': ent}
+    sys.path.insert(0, ICI); import decor_vivant
+    pan = decor_vivant.couverture_panache({k: z[k] for k in z.files}, *tout.shape)   # fumée qui monte (panache physique)
+    ent = any(m.get('sketch') == sid for m in ENT)   # bêtes réellement tournées dans ce sketch (mesures du tournage)
+    vie[sid] = {'part_animee': round(float(((tout > 0.15) | pan).mean()), 4), 'panache': round(float(pan.mean()), 4), 'entites': ent}
 G['F_arriere_plan'] = {'ok': all(isinstance(x, dict) and (x['part_animee'] >= 0.04 or x['entites']) for x in vie.values()), 'detail': vie}
 
 # ── G. œil de JEV ──
-j = lance([f'{ICI}/jev_plans.py', MP4, f'{D}/tournage.json', f'{D}/jev_plans.json'], f'{D}/jev_plans.json') or {}
+# toute la vidéo, image par image (jev_film.py v2 : questions recalibrées, cascade, cache par plan), aucune tolérance
+j = lance([f'{ICI}/jev_film.py', MP4, f'{D}/tournage.json', TL, f'{D}/jev_film.json'], f'{D}/jev_film.json') or {}
 sy = j.get('synthese', {})
-G['G_jev'] = {'ok': bool(sy) and not sy.get('tetes_coupees') and not sy.get('visages_deformes') and not sy.get('style_incoherent'),
-              'detail': {k: sy.get(k) for k in ('plans_juges', 'tetes_coupees', 'visages_deformes', 'artefacts', 'style_incoherent')}}
+G['G_jev'] = {'ok': bool(sy) and not any(sy.get(k) for k in ('tetes_coupees', 'visages_deformes', 'artefacts', 'style_incoherent', 'titres_illisibles')),
+              'detail': {k: sy.get(k) for k in ('images_jugees', 'images_fautives', 'plans_fautifs', 'tetes_coupees', 'visages_deformes', 'artefacts', 'style_incoherent', 'titres_illisibles')}}
 
 # ── H. technique et son ──
 cv = lance([f'{ICI}/controle_video.py', MP4, TL, f'{D}/tournage.json', f'{D}/controle.json'], f'{D}/controle.json') or {}
@@ -147,30 +163,52 @@ for n, ms in par.items():
     flu[n] = dict(pire, ok=all(v <= ACC_MAX for k, v in pire.items() if k != 'expression') and pire.get('expression', 0.0) <= EMO_MAX)
 G['I_fluidite'] = {'ok': bool(flu) and all(x['ok'] for x in flu.values()), 'detail': flu}
 
-# ── J. humour : notes de JEV pour chaque sketch de l'histoire tournée ──
-hum = None
-fh = f'{D}/humour.json'
-if os.path.isfile(fh) and not os.environ.get('QUALITE_REFAIT'): hum = json.load(open(fh))
-else:
-    try:
-        sys.path.insert(0, ICI); import histoires
-        HIST = json.load(open(M.get('histoire', 'histoire.json'), encoding='utf-8'))
-        def moyenne(s, k=2):   # deux avis par sketch (le juge varie de ±0,05 d'une requête à l'autre)
-            L = [histoires.juge(s) for _ in range(k)]
-            return {m: round(float(np.mean([n[m] for n in L])), 3) for m in L[0]}
-        hum = {s['id']: moyenne(s) for s in HIST['sketchs'] if s['id'] in M['scenes']}
-        json.dump(hum, open(fh, 'w'), ensure_ascii=False, indent=1)
-    except Exception as ex: hum = {'erreur': str(ex)[:120]}
-okh = lambda n: n['drole'] >= 2.0 and n['chute'] >= 0.7 and n['ivoirien'] >= 0.5 and n['mechant'] <= 0.3
-G['J_humour'] = {'ok': bool(hum) and 'erreur' not in hum and all(okh(n) for n in hum.values()), 'detail': hum}
+# ── J. humour et écriture : décisions de JEV sur le texte de chaque sketch (jev_texte.py, aucune tolérance) ──
+HI_ = M.get('histoire', 'histoire.json')
+jt = lance([f'{ICI}/jev_texte.py', MP4, TL, HI_, f'{D}/jev_texte.json'], f'{D}/jev_texte.json') or {}
+G['J_humour'] = {'ok': bool(jt) and not jt.get('synthese', {}).get('sketchs_fautifs'), 'detail': {r['sketch']: {k: r[k] for k in r if k != 'sketch'} for r in jt.get('sketchs', [])}}
+
+# ── K. PHYSIQUE ET NATURE (17/10/2026 : « l'ombre de la poule ne devait pas passer le contrôle ») ──
+#   mesuré au tournage : l'ombre de chaque bête assombrit vraiment le sol (≥ 8 % sur TOUTES ses images) ;
+#   aucune espèce hors de son milieu (pas de poule au maquis) ; JEV : batterie physique, pire image de chaque plan, sans
+#   marge relative à la source (aucune tolérance, consigne du 17/10/2026)
+sys.path.insert(0, ICI); import entites
+ombres = {}
+for sid in sorted({m['sketch'] for m in ENT}):
+    c_ = [m['contraste_ombre'] for m in ENT if m['sketch'] == sid]
+    ombres[sid] = {'images': len(c_), 'part_ombre_visible': round(float(np.mean([x >= 0.08 for x in c_])), 3), 'contraste_median': round(float(np.median(c_)), 3)}
+lieux = {s_['id']: s_.get('lieu') for s_ in T['sketchs']}
+hors_milieu = sorted({sid for sid in {m['sketch'] for m in ENT} if not entites.permise('poule', lieux.get(sid))})
+phy = (j.get('synthese') or {}).get('physique', {})
+G['K_physique'] = {'ok': all(o['part_ombre_visible'] >= 1.0 for o in ombres.values()) and not hors_milieu and bool(j) and not any(phy.values()),
+                   'detail': {'ombres_des_betes': ombres, 'especes_hors_milieu': hors_milieu, 'jev_physique': phy}}
+
+# ── L. MOUVEMENT, SECONDE PAR SECONDE (jev_mouvement.py) : à-coups, personnages figés, décor mort, naturel, raccords ──
+jm = lance([f'{ICI}/jev_mouvement.py', MP4, f'{D}/tournage.json', TL, f'{D}/jev_mouvement.json'], f'{D}/jev_mouvement.json') or {}
+G['L_mouvement'] = {'ok': bool(jm) and not jm.get('synthese', {}).get('secondes_fautives'), 'detail': {k: v for k, v in jm.get('synthese', {}).items() if k != 'cout'}}
+# ── M. RÉALISATION, PLAN PAR PLAN : cadre de chaque plan choisi par JEV réalisateur (sans tête coupée, visage lisible) ──
+rj = TO.get('realisateur_jev', {})
+G['M_realisation'] = {'ok': bool(rj) and all(v.get('conforme', False) for v in rj.values()),
+                      'detail': {k: {'choix': v.get('choix'), 'conforme': v.get('conforme'), 'proposes': v.get('proposes')} for k, v in rj.items()}}
+# ── N. SON ET MUSIQUE jugés par JEV sur la feuille de son mesurée et le spectrogramme (jev_son.py) ──
+mus_ = 'voix/mix-musique.wav' if os.path.isfile('voix/mix-musique.wav') else 'voix/mix.wav'
+js = lance([f'{ICI}/jev_son.py', TL, 'voix/mix.wav', mus_, f'{D}/bande.wav', f'{D}/jev_son.json'], f'{D}/jev_son.json') or {}
+G['N_son'] = {'ok': bool(js) and js.get('synthese', {}).get('ok', False), 'detail': js.get('synthese')}
+# ── O. SOUS-TITRES ET TITRES tels qu'affichés, jugés par JEV (jev_texte.py) ──
+G['O_textes'] = {'ok': bool(jt) and not jt.get('synthese', {}).get('sous_titres_fautifs') and not jt.get('synthese', {}).get('titres_fautifs'),
+                 'detail': {k: jt.get('synthese', {}).get(k) for k in ('sous_titres_fautifs', 'titres_fautifs')}}
 
 passees = sum(g['ok'] for g in G.values())
-R = {'film': os.path.basename(MP4), 'portes': G, 'passees': passees, 'total': len(G), 'pourcent': round(100 * passees / len(G)),
+R = {'film': os.path.basename(MP4), 'portes': G, 'passees': passees, 'total': len(G), 'pourcent': round(100 * passees / len(G)), 'durees_s': DUREES,
      'verdict': 'LIVRABLE (100 %)' if passees == len(G) else 'À REPRENDRE'}
 json.dump(R, open(f'{D}/qualite.json', 'w'), ensure_ascii=False, indent=1, default=lambda o: o.item() if hasattr(o, 'item') else str(o))
 print(f"| Porte | Verdict | Détail |\n|---|---|---|")
 for k, g in G.items():
     d_ = g['detail']
-    if k == 'B_bouche': d_ = g['repliques_ok'] + ' répliques ; faibles : ' + ', '.join(f"{r['qui'].split()[0]} « {r['texte'][:18]}… » ({r['visage_px']} px, corr {r['corr']})" for r in g['detail'] if not r['ok'])[:400]
+    if k == 'B_bouche':   # avis de JEV (jev_levres) : ouverte aux voyelles, fermée aux consonnes ; l'ancienne corrélation n'existe plus
+        d_ = g['repliques_ok'] + ' répliques ; faibles : ' + ', '.join(
+            f"{r['qui'].split()[0]} « {r['texte'][:18]}… » ({r['visage_px']} px, ouverte {min(r.get('ouverte_aux_voyelles') or [0]):.2f}, "
+            f"fermée {min(r.get('fermee_aux_consonnes') or [0]):.2f})" for r in g['detail'] if not r['ok'])[:400]
     print(f"| {k} | {'✅' if g['ok'] else '❌'} | {str(d_)[:400]} |")
 print(f"\n{R['verdict']} : {passees}/{len(G)} portes")
+print("durées des juges (s) :", DUREES)

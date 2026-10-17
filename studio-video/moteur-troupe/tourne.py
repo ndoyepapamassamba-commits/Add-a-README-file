@@ -38,7 +38,7 @@ import json, math, os, sys, zlib, numpy as np, cv2
 import decor_vivant, entites, gestes, rig2d, regard, expressions, expressions_lp, jeu, prepare_rig
 FPS, CW, CH = 30, 576, 460
 cfg = json.load(open(sys.argv[1])); OUT = sys.argv[2]; os.makedirs(f'{OUT}/clip', exist_ok=True)
-REG = {'plan_s': 5.0, 'cam_px': 2.5, 'pousse': 1.10, 'parallaxe': 0.35, 'jeu_gain': 2.3, 'corps': 0.1, 'whip_s': 0.45, 'ouverture': 2.2, 'decor': 1.0, 'gestes': 1.0, 'carte_sur_scene': 1, 'rig': 1}
+REG = {'plan_s': 5.0, 'cam_px': 2.5, 'pousse': 1.10, 'parallaxe': 0.35, 'jeu_gain': 2.3, 'corps': 0.1, 'whip_s': 0.45, 'ouverture': 1.2, 'decor': 1.0, 'gestes': 1.0, 'carte_sur_scene': 1, 'rig': 1}
 REG.update(cfg.get('reglages', {}))
 ONLY = sys.argv[3] if len(sys.argv) > 3 else None  # essai : un seul sketch
 T = json.load(open(cfg['timeline'])); total = T['total']; NF = int(math.ceil(total * FPS))
@@ -197,7 +197,22 @@ for sk in T['sketchs']:
             if A_['xl']: src00 = expressions_lp.colle(im_a, A_['xl'], expressions_lp.visage(A_['xl'], {}, 0.0))
             elif lib:
                 Rr = lib['roi']; src00 = im_a.copy(); src00[Rr[1]:Rr[3], Rr[0]:Rr[2]] = np.clip(lib[(0, 0)], 0, 255).astype(np.uint8)
-            A_.update(rig=R_, img=im_a, mask=cv2.GaussianBlur(al, (0, 0), 0.5), assis=assis_, env=rig2d.enveloppe(R_), bras=[], marge_bras=0)
+            env_ = rig2d.enveloppe(R_)
+            # AVIS DE JEV (17/10, contrôle image par image de la v26) :
+            # — main POSÉE sur le corps (poing sur la hanche) : le geste pliait l'avant-bras et la main glissait sur la robe
+            #   (Maman, « bras ou mains » 0,73 ; remède désigné « garder la main posée ») → ce bras suit le buste, sans geste ;
+            P_ = np.asarray(a['pts'], np.float64); epw = max(1.0, abs(P_[11, 0] - P_[12, 0]))
+            for b_ in R_['bras']:
+                x0b, y0b, x1b, y1b = b_['box']; poings = [i for i in (15, 16) if x0b - 0.1 * epw <= P_[i, 0] <= x1b + 0.1 * epw and y0b - 0.1 * epw <= P_[i, 1] <= y1b + 0.1 * epw]
+                if any(min(np.hypot(*(P_[i, :2] - P_[h, :2])) for h in (23, 24)) < 0.55 * epw for i in poings):
+                    b_['amax'], b_['emax'] = 0.0, 1.0; print(f"{a['nom']}: main posée sur la hanche — bras sans geste (suit le buste)", flush=True)
+            # — visage DÉJÀ de trois quarts : le lacet ajouté étirait le menton et décollait la barbiche (Koffi, 0,83 ; remède
+            #   désigné « lacet au plus 6° pour les visages de trois quarts »)
+            if v3 is not None:
+                r_ = (v3[1, 0] - v3[33, 0]) / max(1e-6, v3[263, 0] - v3[33, 0])
+                if abs(r_ - 0.5) > 0.12 and env_.get('tete_lacet', 0) > 6.0:
+                    env_['tete_lacet'] = 6.0; print(f"{a['nom']}: visage de trois quarts (nez à {r_:.2f} entre les yeux) — lacet limité à 6°", flush=True)
+            A_.update(rig=R_, img=im_a, mask=cv2.GaussianBlur(al, (0, 0), 0.5), assis=assis_, env=env_, bras=[], marge_bras=0)
             A_['yeux'] = regard.prepare(src00, v3)
             A_['expr'] = expressions.prepare(im_a, v3, yeux=A_['yeux'])
             print(f"{a['nom']}: squelette ({'assis' if assis_ else 'debout'}, enveloppe {A_['env']}, {len(R_['bras'])} avant-bras détourés, "
@@ -213,14 +228,24 @@ for sk in T['sketchs']:
     kpar = facteur_parallaxe(profondeur(d, plate), acts, img.shape[0], img.shape[1]) if REG['parallaxe'] > 0 else None
     vie = decor_vivant.prepare(d, plate, [A_['mask'] for A_ in acts.values()]) if REG['decor'] > 0 else None
     n_ent = int((REG.get('entites') or {}).get(sk['id'], 0))   # bêtes du décor (poules) : nombre choisi par sketch dans le montage
-    ents = entites.prepare(d, img.shape[0], img.shape[1], [(A_['bbox'], not A_.get('assis')) for A_ in acts.values()], n=n_ent) if n_ent else []
-    SC[sk['id']] = dict(img=img, plate=plate, acts=acts, H=img.shape[0], W=img.shape[1], sk=sk, xs=xs_, ys=ys_, kpar=kpar, vie=vie, ents=ents)
+    ents = entites.prepare(d, img.shape[0], img.shape[1], [(A_['bbox'], not A_.get('assis')) for A_ in acts.values()], n=n_ent, lieu=sk.get('lieu')) if n_ent else []
+    gen = entites.genese_poule(d, img, [(A_['mask'] if A_['mask'].ndim == 2 else A_['mask'][..., 0], A_['bbox'], not A_.get('assis')) for A_ in acts.values()], ents) if ents else {}
+    if ents: print(f"{sk['id']}: poule créée par JEV (genèse) : {gen.get('style', {}).get('sprite')}, note {gen.get('note')} / référence {gen.get('reference')}", flush=True)
+    SC[sk['id']] = dict(img=img, plate=plate, acts=acts, H=img.shape[0], W=img.shape[1], sk=sk, xs=xs_, ys=ys_, kpar=kpar, vie=vie, ents=ents,
+                        lum=gen.get('L'), style_ent=gen.get('style'))
 gestes.ferme()
+JOURNAL_JEU = []
 if REG['rig']:   # pistes de jeu et ressenti de chaque personnage, image par image, pour tout le film
+    # MOTEUR IMAGE → VIDÉO (17/10) : couche « vrai humain » (capture CMU calée sur les syllabes), dynamique du second ordre,
+    # regard vivant ; réglages mocap / dyn / yeux / suivi_tete (tous à 0 : jeu de la v27, pour les essais A/B jugés par JEV)
+    RJ = {k: REG.get(k, d) for k, d in (('mocap', 1.0), ('dyn', 1), ('yeux', 1), ('suivi_tete', 1), ('ampleur', 1.0))}
     for sid, S_ in SC.items():
         A2 = S_['acts']
         S_['pistes'] = jeu.pistes(T['lines'], sid, list(A2), {n: float(A['hip'][0]) for n, A in A2.items()}, {n: A.get('assis', False) for n, A in A2.items()},
-                                  {n: A.get('env', {}) for n, A in A2.items()}, NF, FPS, {n: len(A['rig']['bras']) if A.get('rig') else 0 for n, A in A2.items()})
+                                  {n: A.get('env', {}) for n, A in A2.items()}, NF, FPS, {n: len(A['rig']['bras']) if A.get('rig') else 0 for n, A in A2.items()},
+                                  echelles={n: float(A['rig']['M']['sw']) / 0.38 for n, A in A2.items() if A.get('rig')},   # largeur d'épaules humaine ≈ 0,38 m
+                                  cotes_bras={n: [b['cote'] for b in A['rig']['bras']] for n, A in A2.items() if A.get('rig')},
+                                  reglages=RJ, journal=JOURNAL_JEU)
 LIPS, EYES = (0.0, 0.25, 0.5, 0.75, 1.0), (0.0, 0.5, 1.0)
 SEATED = {'BAYE NDIAYE': True, 'KOFFI': True, 'COUMBA': True}
 lines = T['lines']
@@ -236,6 +261,14 @@ def jaw(L, t):
         for p in L['phonemes']:
             if p['t0'] <= u + dt < p['t1']: v = p['open'] / 4; break
         acc += v * w; wsum += w
+    # LÈVRES JOINTES SUR M, B, P (forme A de Rhubarb) ET AUX SILENCES (X) — avis de JEV sur la v25 (17/10) : aux centres des
+    # consonnes fermées, il voyait la bouche OUVERTE (« fermée » 0,04–0,36) : le lissage ±50 ms et le terme d'énergie
+    # laissaient ≈ 0,45 d'ouverture au cœur d'un « m » court entre deux voyelles. Règle des animateurs : la bouche se ferme
+    # sur chaque bilabiale ; le lissage ne joue qu'aux transitions (images voisines), pas au cœur de la consonne.
+    for p in L['phonemes']:
+        if p['t0'] <= u < p['t1']:
+            if p['ph'] in ('A', 'X'): return 0.0
+            break
     e = L['env'][min(len(L['env']) - 1, max(0, int((t - L['t0']) * 100)))]
     # amplitude exagérée (les visages font 40 à 80 px dans les plans moyens : une bouche à mi-ouverture y est invisible,
     # mesuré le 16/10) ; la puissance < 1 relève les ouvertures moyennes, les consonnes fermées restent fermées
@@ -334,7 +367,7 @@ def warp_rig(S, A, t, name):
     jj = 0.0; wsum = 0.0
     for dt, w_ in ((-2, 0.1), (-1, 0.2), (0, 0.4), (1, 0.2), (2, 0.1)):
         tt = t + dt / FPS; Lx = line_at(tt, name); jj += w_ * (jaw(Lx, tt) if Lx else 0.0); wsum += w_
-    jj /= wsum; bb = blink(name, t)
+    jj /= wsum; bb = v('cligne') if 'cligne' in P else blink(name, t)   # clignements du regard vivant (jeu.yeux)
     emo = {e: v('emo_' + e) for e in jeu.EMOS if P['emo_' + e][f] > 0.02}
     src = A['img']; lib = A['lib']
     if A.get('xl'):   # visage redessiné (LivePortrait) : émotions × bouche × clignement
@@ -403,6 +436,7 @@ def warp_actor(S, A, t, name):
     return (X0, Y0, X1, Y1), rgb, al
 def frame_scene(S, t, off=None, zoom=None):
     plate = S['plate']; V = S.get('vie')
+    if V is not None and decor_vivant.panache(V, plate) is not None: plate = decor_vivant.fumee(V, plate, t)   # la fumée du grill MONTE (panache physique), avant la parallaxe
     par = off is not None and S.get('kpar') is not None and (abs(off[0]) > 0.05 or abs(off[1]) > 0.05)
     zpar = zoom is not None and S.get('kpar') is not None and abs(zoom[0] - 1) > 1e-3
     if par or zpar or V is not None:
@@ -416,18 +450,23 @@ def frame_scene(S, t, off=None, zoom=None):
             # (z^kpar au lieu de z, le premier plan davantage), comme quand la caméra avance vraiment dans la scène
             k_ = np.exp((1 - S['kpar']) * np.float32(math.log(zoom[0]))).astype(np.float32); zx_, zy_ = np.float32(zoom[1]), np.float32(zoom[2])
             mx = zx_ + (mx - zx_) * k_; my = zy_ + (my - zy_) * k_
+        sol_ = decor_vivant.soleil(S['plate']) if V is not None else None; jour_ = sol_ is not None and sol_[1] > 110   # scène de jour (pas le maquis de nuit)
         if V is not None:   # le décor vit : feuillages, linge, fumée, bêtes (déplacements) et ampoules (lumière)
-            dx, dy, gain = decor_vivant.champ(V, t, REG['decor']); mx = mx - dx; my = my - dy
+            # de jour, mouvement ×6 (essai A/B jugé par JEV, 17/10 : à ×1 la cour était un « décor mort »), lumière inchangée
+            dx, dy, gain = decor_vivant.champ(V, t, REG['decor'] * (6.0 if jour_ else 1.0)); mx = mx - dx; my = my - dy
+            if jour_: gain = gain * (1 - sol_[0] * (1 - decor_vivant.tachete(gain.shape[0], gain.shape[1], t)))   # ombres de feuillage qui passent
         plate = cv2.remap(plate, mx.astype(np.float32), my.astype(np.float32), cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
         if V is not None: plate = np.clip(plate.astype(np.float32) * gain[..., None], 0, 255)
     can = plate.astype(np.float32).copy()
     poses = entites.etat(S['ents'], t) if S.get('ents') else []
     pieds = min((A['bbox'][3] for A in S['acts'].values()), default=1e9)
-    if poses: entites.dessine(can, poses, lambda p: p['y'] <= pieds)   # bêtes derrière les acteurs, puis devant après eux
+    em = [] if (MESURE and poses) else None
+    if poses: entites.dessine(can, poses, lambda p: p['y'] <= pieds, S.get('lum'), S.get('style_ent'), em)   # bêtes derrière les acteurs, puis devant après eux
     for name, A in sorted(S['acts'].items(), key=lambda kv: kv[1]['hip'][1]):
         (X0, Y0, X1, Y1), rgb, al = warp_actor(S, A, t, name)
         sub = can[Y0:Y1, X0:X1]; al3 = al[..., None]; sub[:] = sub * (1 - al3) + rgb.astype(np.float32) * al3
-    if poses: entites.dessine(can, poses, lambda p: p['y'] > pieds)
+    if poses: entites.dessine(can, poses, lambda p: p['y'] > pieds, S.get('lum'), S.get('style_ent'), em)
+    if em: MESURES.extend(dict(qui='entite', sketch=S['sk']['id'], t=round(t, 3), **m_) for m_ in em)
     return np.clip(can, 0, 255).astype(np.uint8)
 # ── découpage : un plan par réplique (coupe au changement de locuteur) ──
 def crop_for(S, kind, who=None):
@@ -655,8 +694,11 @@ def carte(c, t, rgba=False):
     return np.array(im)
 CADRES = {}
 RANGE = range(NF)
-if ONLY:
-    sk = [k for k in T['sketchs'] if k['id'] == ONLY][0]; RANGE = range(int((sk['t0'] - 0.3) * FPS), int((sk['t1'] + 0.25) * FPS))
+if os.environ.get('TOURNE_PLAGE'):   # « a-b » : seulement ces images (profilage, essais rapides)
+    _a, _b = map(int, os.environ['TOURNE_PLAGE'].split('-')); RANGE = range(max(0, _a), min(NF, _b))
+if ONLY:   # un seul sketch (et, avec TOURNE_PLAGE, seulement la part de la plage qui lui appartient : essais A/B rapides)
+    sk = [k for k in T['sketchs'] if k['id'] == ONLY][0]; _r = range(int((sk['t0'] - 0.3) * FPS), int((sk['t1'] + 0.25) * FPS))
+    RANGE = range(max(_r.start, RANGE.start), min(_r.stop, RANGE.stop)) if os.environ.get('TOURNE_PLAGE') else _r
 def cadre_lisible(S, s, keep):
     """cadre de départ d'un plan. Plan moyen sur celui qui parle : quand la tête d'un voisin dépasse à moitié, la règle
     « tête entière ou absente » élargissait le cadre pour la prendre (Baye : 66 px de visage) ; on essaie d'abord de
@@ -672,13 +714,32 @@ def cadre_lisible(S, s, keep):
         if best is None or px > best[0]: best = (px, c)
         if h2 <= MOYEN_MIN: break
     return best[1]
+def tete_coupee(S, c, keep, marge=0.05):
+    """une tête est-elle à moitié dans le cadre c (boîte de tête élargie de 5 % pour le jeu de la tête) ? celle de `keep`
+    doit être entière."""
+    cx, cy, w, h = c; l, r, t, b = cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2
+    for n, A in S['acts'].items():
+        hb = head_box(A)
+        if not hb: continue
+        mx_, my_ = marge * (hb[2] - hb[0]), marge * (hb[3] - hb[1]); x0, y0, x1, y1 = hb[0] - mx_, hb[1] - my_, hb[2] + mx_, hb[3] + my_
+        ix = max(0, min(r, x1) - max(l, x0)) / (x1 - x0); iy = max(0, min(b, y1) - max(t, y0)) / (y1 - y0)
+        if n == keep:
+            if ix < 0.97 or iy < 0.97: return True
+        elif ix * iy > 0.03 and (ix < 0.97 or iy < 0.97): return True
+    return False
+def chemin_ok(S, a, b, keep, n=12):
+    """tout le trajet de caméra de a à b (avec la même courbe d'aisance que le rendu) garde les têtes entières ou absentes."""
+    for k in range(1, n):
+        u = ease(k / n); c = [a_ + (b_ - a_) * u for a_, b_ in zip(a, b)]
+        if tete_coupee(S, c, keep): return False
+    return True
 def cadres_du_plan(S, s, keep):
     """CADRAGE SOUS-PIXEL CONTINU : les cadres sont validés UNE fois par plan (début, fin du mouvement, punch de la chute)
     puis interpolés en flottant ; l'image est prise par transformation affine (filtre anti-crénelage), jamais par découpe
     au pixel entier (qui faisait trembler toute l'image d'un pixel à chaque image — mesuré : 1,42 saute/s)."""
     key = tuple(s[:5])
     if key not in CADRES:
-        c0 = cadre_lisible(S, s, keep)
+        c0 = C0_JEV.get(key) or cadre_lisible(S, s, keep)   # cadre choisi par JEV réalisateur, sinon la règle du moteur
         if os.environ.get('TOURNE_DEBUG_CADRE'):   # diagnostic : cadre voulu → borné → après la règle des têtes
             print('cadre', s[2], s[3], s[4], [round(v) for v in crop_for(S, s[3], s[4])], [round(v) for v in clamp_crop(S, crop_for(S, s[3], s[4]))], [round(v) for v in c0], flush=True)
         # CAMÉRA VIVANTE : glissement latéral (cam_px pixels d'écran par image) vers le côté qui a de la place, petite
@@ -688,16 +749,40 @@ def cadres_du_plan(S, s, keep):
         # plans à deux : la largeur du décor borne le glissement (mesuré le 17/10 : 0,5 px/image au lieu de 2,5) → la caméra
         # monte ou descend aussi (un plan sur deux, toute la place en hauteur) et pousse de 10 % : grue + travelling avant
         sens_v = -1.0 if SH.index(s) % 2 else 1.0; up = sens_v * min(0.15 * dep_, 0.5 * max(0.0, S['H'] - c0[3] / REG['pousse']))
-        c1 = faces_ok(S, clamp_crop(S, (c0[0] + dirn * dep_, c0[1] - up, c0[2] / REG['pousse'], c0[3] / REG['pousse'])), keep)
-        cp = faces_ok(S, clamp_crop(S, (c1[0], c1[1], c1[2] / 1.15, c1[3] / 1.15)), keep)
+        # TRAJET VALIDÉ (v25) : les cadres de départ et d'arrivée respectaient la règle des têtes, mais pas le chemin entre les
+        # deux — à mi-glissement, la tête de Maman ou de Baye était à moitié dans le cadre pendant une seconde (JEV : 0,8,
+        # vu sur v24 à 8,81 s et v25 à 2,34 / 9,41 / 16,32 s). Le glissement est réduit jusqu'à ce que tout le trajet passe.
+        # CAMÉRA VIVANTE ET SANS TÊTE COUPÉE (v27) : réduire le glissement pour sauver les têtes avait figé le film (v26 : caméra
+        # 0,30 au lieu de 0,55, 6,4 images figées par minute au lieu de 1,1 — porte A). Le moteur essaie d'autres mouvements
+        # valides (glissement de l'autre côté, grue, travelling avant ou arrière) et garde celui qui rend le plus de vie à
+        # l'écran (pixels parcourus) sans dépasser la cible, trajet entier validé (têtes entières ou absentes).
+        cible = REG['cam_px'] * nfr; essais = []
+        for g_, dr, vv, pz in ([(g, dirn, 1.0, z) for g in (1.0, 0.7, 0.45, 0.25) for z in (REG['pousse'], 1.0)] + [(g, -dirn, 1.0, z) for g in (1.0, 0.7, 0.45) for z in (REG['pousse'], 1.0)]
+                               + [(0.0, dirn, k, z) for k in (2.5, -2.5, 1.5, -1.5) for z in (REG['pousse'], 1.0)] + [(0.0, dirn, 0.0, z) for z in (1.2, 1.15, REG['pousse'], 1 / 1.08, 1 / 1.12, 1.0)]):
+            ux = dr * dep_ * g_; uy = -up * (g_ if g_ > 0 else vv)
+            c1 = faces_ok(S, clamp_crop(S, (c0[0] + ux, c0[1] + uy, c0[2] / pz, c0[3] / pz)), keep)
+            cp = faces_ok(S, clamp_crop(S, (c1[0], c1[1], c1[2] / 1.15, c1[3] / 1.15)), keep)
+            if not (chemin_ok(S, c0, c1, keep) and (s[5] is None or chemin_ok(S, c1, cp, keep))): continue
+            vie_ = math.hypot(c1[0] - c0[0], c1[1] - c0[1]) * sc0_ + 0.5 * abs(1 - c0[2] / c1[2]) * CW
+            essais.append((min(vie_, cible), -abs(vie_ - cible), g_ == 1.0 and dr == dirn, c1, cp, (g_, dr == dirn, vv, pz)))
+            if g_ == 1.0 and dr == dirn and pz == REG['pousse']: break   # le mouvement voulu passe : inutile d'en chercher un autre
+        if essais:
+            _, _, _, c1, cp, choix_ = max(essais, key=lambda e: (e[0], e[2], e[1]))
+        else:
+            c1, cp, choix_ = c0, faces_ok(S, clamp_crop(S, (c0[0], c0[1], c0[2] / 1.15, c0[3] / 1.15)), keep), (0.0, True, 0.0, 1.0)
+        if choix_ != (1.0, True, 1.0, REG['pousse']):
+            print(f"plan {s[0]:.2f} {s[3]} {s[4]} : mouvement {'glissement ' + str(round(choix_[0] * 100)) + '%' + ('' if choix_[1] else ' (autre côté)') if choix_[0] else ('grue' if choix_[2] else 'travelling')}, poussée {choix_[3]:.2f} (trajet sans tête coupée)", flush=True)
         cs = faces_ok(S, clamp_crop(S, crop_for(S, 'large')), None) if s[3].startswith('ouvre-') else None
         CADRES[key] = (None if cs is None else tuple(float(v) for v in cs),) + tuple(tuple(float(v) for v in c) for c in (c0, c1, cp))   # flottants Python
     return CADRES[key]
 def sur_scene(img, c, t):
     """la carte posée sur la fin du sketch : image assombrie qui continue de vivre, émoji + titre par-dessus. Fondu de 0,6 s :
     à 0,25 s l'instrument des TikTok le comptait encore comme une coupe (mesuré le 17/10 sur v19)."""
-    k = ease((t - (c['t0'] - 0.05)) / 0.6); cal = carte(c, t, rgba=True).astype(np.float32)
-    a_ = cal[..., 3:] / 255.0 * k; cal = cal[..., :3]                                   # émoji et titre (contour noir compris)
+    # CARTE OPAQUE D'UN COUP (17/10, contrôle image par image de JEV) : pendant le fondu de 0,6 s, l'émoji à moitié transparent
+    # posé sur les visages faisait un « fantôme » (rendu abîmé 0,85) et le titre translucide était illisible (22 images) :
+    # émoji et titre entrent opaques sur la coupe (comme les cartes de Ladjagaï), seul l'assombrissement du décor se fond (0,15 s)
+    k = ease((t - (c['t0'] - 0.05)) / 0.15); cal = carte(c, t, rgba=True).astype(np.float32)
+    a_ = cal[..., 3:] / 255.0; cal = cal[..., :3]                                       # émoji et titre (contour noir compris)
     base = img.astype(np.float32) * (1 - 0.35 * k)
     return np.clip(base * (1 - a_) + cal * a_, 0, 255).astype(np.uint8)
 def rend(f):
@@ -745,6 +830,66 @@ for f in RANGE:
     if s[2] not in SC: continue
     if s != prev: cut_count += 1; prev = s
 import time; T0 = time.time()
+# JEV RÉALISATEUR (17/10/2026 : « fais de JEV le cadre de la vidéo, le réalisateur »). Avant le tournage, pour chaque plan,
+# le moteur propose des cadres VALIDES (le sien, plus serré, plan moyen, plan à deux, plus large — têtes entières ou
+# absentes) ; le moment central du plan est rendu dans chacun et JEV choisit celui qu'un grand réalisateur prendrait
+# (Choice), sous condition stricte : aucune tête coupée (< 0,5) et visage de celui qui parle lisible (> 0,5). Décision mise
+# en cache par empreinte (scène, plan, cadres proposés). TOURNE_REALISATEUR=0 : la règle du moteur seule.
+C0_JEV, REALISATION = {}, {}
+def realise(plans):
+    import hashlib, uuid
+    from concurrent.futures import ThreadPoolExecutor
+    import jev_api
+    CR = os.path.expanduser('~/.cache/massamba-jev/realisateur'); os.makedirs(CR, exist_ok=True)
+    def candidats(S, s, keep):
+        cs_ = {'moteur': cadre_lisible(S, s, keep)}
+        base = cs_['moteur']
+        for nom, c in (('serre', crop_for(S, 'serre', keep) if keep in S['acts'] else None), ('moyen', crop_for(S, 'moyen', keep) if keep in S['acts'] else None),
+                       ('deux', crop_for(S, 'duo', s[4] if isinstance(s[4], tuple) else (keep,))), ('large', (base[0], base[1], base[2] * 1.25, base[3] * 1.25))):
+            if c is None: continue
+            c = faces_ok(S, clamp_crop(S, c), keep)
+            if tete_coupee(S, c, keep): continue
+            if all(abs(c[2] / v[2] - 1) > 0.06 or abs(c[0] - v[0]) > 0.08 * v[2] for v in cs_.values()): cs_[nom] = c
+        return cs_
+    def un(s):
+        S = SC[s[2]]; keep = s[4][0] if isinstance(s[4], tuple) else s[4]; cs_ = candidats(S, s, keep)
+        if len(cs_) < 2: return s, 'moteur', cs_, None
+        cle = hashlib.sha1(json.dumps([list(s[:5]), {k: [round(x, 1) for x in v] for k, v in cs_.items()}, cfg['scenes'][s[2]],
+                                       os.path.getmtime(os.path.join(cfg['scenes'][s[2]], 'image.png'))], default=str).encode()).hexdigest()[:20]
+        f_ = f'{CR}/{cle}.json'
+        if os.path.isfile(f_): d_ = json.load(open(f_)); return s, d_['choix'], cs_, d_
+        tm = (s[0] + s[1]) / 2; fr = frame_scene(S, tm)
+        ims = {}
+        for nom, (cx, cy, w2, h2) in cs_.items():
+            sc = CW / w2; M_ = np.float32([[sc, 0, -(cx - w2 / 2) * sc], [0, sc, -(cy - h2 / 2) * sc]])
+            ims[nom] = cv2.cvtColor(cv2.warpAffine(fr, M_, (CW, CH), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT), cv2.COLOR_RGB2BGR)
+        A = S['acts'].get(keep); hb = head_box(A) if A else None
+        if hb:
+            x0, y0, x1, y1 = [int(v) for v in hb]; ims['parleur'] = cv2.cvtColor(S['img'][max(0, y0):y1, max(0, x0):x1], cv2.COLOR_RGB2BGR)
+        ids, assets = {}, {}
+        for k_, im in ims.items():
+            ids[k_] = f'{k_}-{uuid.uuid4().hex[:6]}'; assets[ids[k_]] = {'type': 'image', 'format': 'jpg', 'data_base64': jev_api.b64(im)}
+        noms = [k_ for k_ in cs_]
+        Q = {'choix': {'type': 'choice', 'instructions': 'The images ' + ', '.join(f'`{k_}`' for k_ in noms) + ' are alternative framings of the same moment of a '
+                       'dialogue scene in an animated film' + (' ; `parleur` shows the head of the character who is speaking' if 'parleur' in ims else '') + '. '
+                       'Which framing would a great film director choose: the speaker well framed with a readable face, the reaction of the other '
+                       'character readable when it matters, balanced composition, no head or important part cut by the frame edge?',
+                       'criteria': {k_: f'image `{k_}`' for k_ in noms}}}
+        for k_ in noms:
+            Q[f'coupe_{k_}'] = {'type': 'noul', 'instructions': f'In image `{k_}`, is any character\'s head or face partly cut by the edge of the frame?'}
+            Q[f'lisible_{k_}'] = {'type': 'noul', 'instructions': f'In image `{k_}`, is the face of the speaking character' + (' (shown in `parleur`)' if 'parleur' in ims else '') + ' large and clear enough to read the expression and the mouth?'}
+        a = jev_api.demande(ids, Q, assets, outil='jev_realisateur')
+        pr = a['choix']['probabilities']; ok_ = [k_ for k_ in noms if a[f'coupe_{k_}']['noul'] < 0.5 and a[f'lisible_{k_}']['noul'] > 0.5]
+        choix = max(ok_ or noms, key=lambda k_: pr.get(k_, 0.0))
+        d_ = {'choix': choix, 'conforme': bool(ok_), 'probabilites': pr, 'coupe': {k_: round(a[f'coupe_{k_}']['noul'], 2) for k_ in noms},
+              'lisible': {k_: round(a[f'lisible_{k_}']['noul'], 2) for k_ in noms}}
+        json.dump(d_, open(f_, 'w')); return s, choix, cs_, d_
+    with ThreadPoolExecutor(8) as ex: res = list(ex.map(un, [s for s in plans if s[2] in SC]))
+    for s, choix, cs_, d_ in res:
+        C0_JEV[tuple(s[:5])] = cs_[choix]; REALISATION[f'{s[0]:.2f}'] = dict(d_ or {}, choix=choix, proposes=list(cs_))
+        print(f"réalisateur JEV — plan {s[0]:.2f} {s[3]} {s[4]} : {choix}" + ('' if not d_ else f" (choix {d_['probabilites'].get(choix, 0):.2f}{'' if d_['conforme'] else ', AUCUN CADRE CONFORME'})"), flush=True)
+if os.environ.get('TOURNE_REALISATEUR', '1') == '1' and os.environ.get('TOURNE_CADRES') != '1':
+    realise([s for s in SH if int(s[1] * FPS) >= RANGE[0] and int(s[0] * FPS) <= RANGE[-1]])
 for s in SH:   # cadres calculés une fois AVANT le partage : chaque processeur en hérite et tournage.json les garde (diagnostic caméra)
     if s[2] in SC and int(s[1] * FPS) >= RANGE[0] and int(s[0] * FPS) <= RANGE[-1]: cadres_du_plan(SC[s[2]], s, s[4][0] if isinstance(s[4], tuple) else s[4])
 if os.environ.get('TOURNE_CADRES') == '1':   # diagnostic : les cadres seuls (début, fin, chute) de chaque plan, sans rendu
@@ -752,8 +897,64 @@ if os.environ.get('TOURNE_CADRES') == '1':   # diagnostic : les cadres seuls (d�
                                        'visages_px': {n: round(taille_visage(SC[k[2]], n, v_[1]), 1) for n in SC[k[2]]['acts']}} for k, v_ in CADRES.items()},
               open(f'{OUT}/cadres.json', 'w'), indent=1, ensure_ascii=False)
     print('cadres écrits', len(CADRES)); raise SystemExit(0)
+# TOURNAGE INCRÉMENTAL (avis de JEV du 17/10/2026 sur la vitesse : « ne refaire et ne recontrôler que les plans qui ont
+# changé », 0,85 ; gain attendu 2,73/4). Chaque plan reçoit une EMPREINTE de tout ce qui fait ses images : code du moteur
+# (les bêtes et leur physique à part : elles ne touchent que les sketchs qui en ont), fichiers de sa scène (dessin, rig,
+# visages, audit, genèse, bêtes, vie), images des bêtes, réglages, cadres, bornes du plan, répliques et visèmes de son
+# sketch, cartes qui le recouvrent. Un plan dont l'empreinte est au cache est recopié par liens physiques (0 octet de plus)
+# avec ses mesures et son image source ; seuls les autres sont tournés, puis rangés. TOURNE_CACHE=0 : tout retourner.
+import hashlib, shutil
+CACHE = os.environ.get('TOURNE_CACHE', os.path.expanduser('~/.cache/massamba-tournage'))
+def _h(*parts): return hashlib.sha1(json.dumps(parts, sort_keys=True, default=str).encode()).hexdigest()[:24]
+_ICI = os.path.dirname(os.path.abspath(__file__)); _ENT = {'entites.py', 'genese.py', 'physique.py'}
+_MODS = sorted(f for f in os.listdir(_ICI) if f.endswith('.py'))
+def _code(noms): return _h([(f, hashlib.sha1(open(os.path.join(_ICI, f), 'rb').read()).hexdigest()) for f in noms])
+CODE_BASE, CODE_ENT = _code([f for f in _MODS if f not in _ENT]), _code([f for f in _MODS if f in _ENT])
+# la couche « vrai humain » dépend aussi du lecteur de capture, de l'index des gestes et des prises présentes en cache
+_FILM = os.path.join(_ICI, '..', 'blender', 'film'); _CMU = os.path.expanduser('~/.cache/massamba-models/cmu-mocap')
+CODE_BASE = _h(CODE_BASE, [hashlib.sha1(open(os.path.join(_FILM, f), 'rb').read()).hexdigest() for f in ('mocap.py', 'direction-vocab.json') if os.path.isfile(os.path.join(_FILM, f))],
+               sorted((f, os.path.getsize(os.path.join(_CMU, f))) for f in os.listdir(_CMU)) if os.path.isdir(_CMU) else None)
+def _dossier(d):
+    L_ = []
+    for r_, _, fs in os.walk(d):
+        for f in fs:
+            st = os.stat(os.path.join(r_, f)); L_.append((os.path.relpath(os.path.join(r_, f), d), st.st_size, st.st_mtime_ns))
+    return _h(sorted(L_))
+_DOSS = {}
+def empreinte(s):
+    sid = s[2]; S_ = SC[sid]; ent = bool(S_.get('ents'))
+    if sid not in _DOSS: _DOSS[sid] = (_dossier(cfg['scenes'][sid]), _dossier(entites.DOSSIER) if ent and os.path.isdir(entites.DOSSIER) else None)
+    keep_ = s[4][0] if isinstance(s[4], tuple) else s[4]
+    cartes = [c for c in T['cartes'] if c['t0'] - 0.05 < s[1] and c['t1'] + 0.2 > s[0]]
+    return _h(CODE_BASE, CODE_ENT if ent else None, _DOSS[sid], REG, MESURE, list(s), cadres_du_plan(S_, s, keep_), FPS, CW, CH,
+              [L for L in T['lines'] if L.get('sketch') == sid], [k for k in T['sketchs'] if k['id'] == sid], cartes)
+def _lien(a, b):
+    if os.path.lexists(b): os.remove(b)
+    try: os.link(a, b)
+    except OSError: shutil.copy2(a, b)
+CLES, REPRIS = {}, []
+if CACHE != '0':
+    os.makedirs(CACHE, exist_ok=True); par_plan = {}
+    for f in RANGE:
+        t_ = f / FPS
+        if in_card(t_) and not REG['carte_sur_scene']: continue
+        s_ = shot_at(t_)
+        if s_[2] in SC: par_plan.setdefault(SH.index(s_), []).append(f)
+    for i, fr in par_plan.items():
+        cle = empreinte(SH[i]); CLES[i] = (cle, fr); dc = f'{CACHE}/{cle}'
+        if os.path.isfile(f'{dc}/ok') and all(os.path.isfile(f'{dc}/f{k:05d}.jpg') for k in range(len(fr))):
+            for k, f in enumerate(fr): _lien(f'{dc}/f{k:05d}.jpg', f'{OUT}/clip/f{f:05d}.jpg')
+            if os.path.isfile(f'{dc}/source.jpg'): os.makedirs(f'{OUT}/source', exist_ok=True); _lien(f'{dc}/source.jpg', f"{OUT}/source/{SH[i][0]:06.2f}.jpg")
+            if os.path.isfile(f'{dc}/mesures.jsonl'):
+                with open(f'{OUT}/mesures-cache.jsonl', 'a') as fh: fh.write(open(f'{dc}/mesures.jsonl').read())
+            os.utime(f'{dc}/ok'); REPRIS.append(i)
+    deja = {f for i in REPRIS for f in CLES[i][1]}
+    print(f'incrémental : {len(REPRIS)}/{len(CLES)} plans repris du cache ({len(deja)} images), {len(CLES) - len(REPRIS)} à tourner', flush=True)
+    RANGE_T = [f for f in RANGE if f not in deja]
+else:
+    RANGE_T = list(RANGE)
 # RENDU PARALLÈLE : les images sont indépendantes ; chaque processeur tourne des blocs de 24 images (TOURNE_PROCS)
-NPROC = int(os.environ.get('TOURNE_PROCS', os.cpu_count() or 1)); blocs = [list(RANGE[i:i + 24]) for i in range(0, len(RANGE), 24)]
+NPROC = int(os.environ.get('TOURNE_PROCS', os.cpu_count() or 1)); blocs = [list(RANGE_T[i:i + 24]) for i in range(0, len(RANGE_T), 24)]
 if NPROC > 1:
     import multiprocessing as mpr
     # le réservoir de fils d'OpenCV est vidé AVANT le fork : un fils hérite sinon de fils d'exécution qui n'existent pas
@@ -763,10 +964,37 @@ if NPROC > 1:
         fait = 0
         for n in pool.imap_unordered(morceau, blocs):
             fait += n
-            if fait % 240 < 24: print(f'{fait}/{len(RANGE)}', flush=True)
+            if fait % 240 < 24: print(f'{fait}/{len(RANGE_T)}', flush=True)
 else:
     for b in blocs: morceau(b)
+if CLES:   # les plans tournés rejoignent le cache (images, image source, mesures du plan)
+    import glob as _glob
+    MES_ = [json.loads(l) for f_ in _glob.glob(f'{OUT}/mesures-*.jsonl') if not f_.endswith('mesures-cache.jsonl') for l in open(f_) if l.strip()]
+    for i, (cle, fr) in CLES.items():
+        if i in REPRIS: continue
+        s_ = SH[i]; dc = f'{CACHE}/{cle}'; tmp = dc + '.tmp'; shutil.rmtree(tmp, ignore_errors=True); os.makedirs(tmp)
+        if not all(os.path.isfile(f'{OUT}/clip/f{f:05d}.jpg') for f in fr): shutil.rmtree(tmp); continue
+        for k, f in enumerate(fr): _lien(f'{OUT}/clip/f{f:05d}.jpg', f'{tmp}/f{k:05d}.jpg')
+        if os.path.isfile(f"{OUT}/source/{s_[0]:06.2f}.jpg"): _lien(f"{OUT}/source/{s_[0]:06.2f}.jpg", f'{tmp}/source.jpg')
+        t0_, t1_ = fr[0] / FPS - 1e-6, (fr[-1] + 1) / FPS
+        with open(f'{tmp}/mesures.jsonl', 'w') as fh:
+            for m_ in MES_:
+                if t0_ <= float(m_.get('t', -1)) < t1_: fh.write(json.dumps(m_, ensure_ascii=False) + '\n')
+        open(f'{tmp}/ok', 'w').write(json.dumps({'plan': list(s_), 'images': len(fr)}, default=str))
+        shutil.rmtree(dc, ignore_errors=True); os.rename(tmp, dc)
+    # cache borné (TOURNE_CACHE_GO, 3 Go par défaut, et jamais plus de 30 % de l'espace dont dispose la session — disque
+    # plein à 98 % le 17/10) : les plans les moins récemment servis partent d'abord
+    tailles = []
+    for e_ in os.listdir(CACHE):
+        p_ = f'{CACHE}/{e_}'
+        if os.path.isfile(f'{p_}/ok'): tailles.append((os.path.getmtime(f'{p_}/ok'), sum(os.path.getsize(f'{p_}/{x}') for x in os.listdir(p_)), p_))
+    tot = sum(t[1] for t in tailles)
+    lim = min(float(os.environ.get('TOURNE_CACHE_GO', 3)) * 1e9, 0.3 * (shutil.disk_usage(CACHE).free + tot))
+    for _, sz, p_ in sorted(tailles):
+        if tot <= lim: break
+        shutil.rmtree(p_, ignore_errors=True); tot -= sz
 json.dump({'images': NF, 'plans': cut_count, 'plans_par_minute': round(cut_count / (total / 60), 1), 'reglages': REG, 'decoupage': [list(map(lambda v: round(v, 2) if isinstance(v, float) else (list(v) if isinstance(v, tuple) else v), s)) for s in SH],
-           'cadres': {f'{k[0]:.2f}': [None if c is None else [round(v, 1) for v in c] for c in v_] for k, v_ in CADRES.items()}},
+           'cadres': {f'{k[0]:.2f}': [None if c is None else [round(v, 1) for v in c] for c in v_] for k, v_ in CADRES.items()},
+           'empreintes': {f'{SH[i][0]:.2f}': c_[0] for i, c_ in CLES.items()}, 'repris_du_cache': [round(SH[i][0], 2) for i in REPRIS], 'realisateur_jev': REALISATION, 'jeu_humain': JOURNAL_JEU},
           open(f'{OUT}/tournage.json', 'w'), ensure_ascii=False, indent=1)
-print('ok', len(RANGE), 'images,', cut_count, 'plans,', round(time.time() - T0), 's')
+print('ok', len(RANGE), 'images,', cut_count, 'plans,', round(time.time() - T0), 's', f'({len(RANGE_T)} tournées, {len(RANGE) - len(RANGE_T)} reprises du cache)')
