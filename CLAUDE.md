@@ -18,7 +18,10 @@
   de fond en comble** pour les outils qui manquent ; vidéos produites en **temps record** (minutes, tous les plans en
   parallèle), jamais des heures d'attente sur une plateforme que l'utilisateur ne connaît pas ; plateformes connues
   d'abord (OpenRouter de son application, Grok de ses TikTok).
-- **Ne plus rien pousser sur le dépôt** (consigne du 15/10/2026, confirmée dans la discussion « OpenRouter API integration ») : commits en local seulement ; TOUS les résultats (fichiers, mesures, rapports) sont donnés dans le chat (envoi de fichiers + résumé).
+- **Pousser sur le dépôt : AUTORISÉ** (consigne du 17/10/2026, « je t'autorise désormais à tout pousser à partir de
+  maintenant », qui remplace « ne plus rien pousser » du 15/10/2026) : pousser la branche de travail après les contrôles
+  (aucun secret, rien de `workbench/.private/`, pas de gros binaire, avance simple sur le remote). TOUS les résultats
+  (fichiers, mesures, rapports) restent aussi donnés dans le chat (envoi de fichiers + résumé).
 - **Rien de payant** (consigne du 17/10/2026, « Je veux rien de payant ») : voies gratuites d'abord (GPU distant appelé depuis le
   navigateur de l'utilisateur avec son propre quota, crédits mensuels gratuits type Modal avec budget plafonné, Kaggle) ; toute
   voie payante reste désactivée dans le code (`OR_PAYANT_AUTORISE`), jamais activée sans accord explicite.
