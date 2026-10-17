@@ -18,13 +18,16 @@ SR = 22050
 # personnage : (modèle, locuteur, hauteur visée Hz, facteur d'étendue, vitesse (length_scale), dilatation des formants)
 CAST = {  # deux voix sources propres et libres : siwis (CC-BY 4.0) et gilles (CC0) ; chaque personnage = hauteur + étendue + timbre (WORLD)
   # (MLS écartée : charabia mesuré par Whisper même sans transformation ; tom : données AGPL ; upmc : CC-BY-SA)
-  'MAMAN NOUNOU':  ('fr_FR-siwis-medium', None, 285, 1.35, 0.85, 1.00),
-  'TANTIE AWA':    ('fr_FR-siwis-medium', None, 245, 1.45, 0.85, 0.93),
-  'COUMBA':        ('fr_FR-siwis-medium', None, 320, 1.25, 0.85, 1.05),
-  'PETIT MAMADOU': ('fr_FR-siwis-medium', None, 350, 1.30, 0.85, 1.16),
-  'BAYE NDIAYE':   ('fr_FR-gilles-low', None, 150, 1.60, 0.85, 0.95),
-  'MODOU':         ('fr_FR-gilles-low', None, 200, 1.60, 0.85, 1.00),
-  'KOFFI':         ('fr_FR-gilles-low', None, 185, 1.40, 0.85, 1.04),
+  # HAUTEURS NATURELLES (17/10/2026) — « le son est encore très aigu » : mesuré dans la v27 (Coumba 343 Hz, Tantie 311,
+  # Maman 296, Petit Mamadou 309, Modou 189, Koffi 163, Baye 161) ; conseil de JEV (moteur-iv/conseil_voix_v28.json) :
+  # cause « cibles trop hautes » 0,91, remède « hauteurs naturelles, voix posée entièrement sur sa cible » 0,91.
+  'MAMAN NOUNOU':  ('fr_FR-siwis-medium', None, 195, 1.35, 0.85, 1.00),
+  'TANTIE AWA':    ('fr_FR-siwis-medium', None, 200, 1.45, 0.85, 0.93),
+  'COUMBA':        ('fr_FR-siwis-medium', None, 215, 1.25, 0.85, 1.05),
+  'PETIT MAMADOU': ('fr_FR-siwis-medium', None, 275, 1.30, 0.85, 1.16),
+  'BAYE NDIAYE':   ('fr_FR-gilles-low', None, 115, 1.60, 0.85, 0.95),
+  'MODOU':         ('fr_FR-gilles-low', None, 125, 1.60, 0.85, 1.00),
+  'KOFFI':         ('fr_FR-gilles-low', None, 120, 1.40, 0.85, 1.04),
 }
 # débit visé (syllabes par seconde de parole) : chaîne 5,92 (hommes) / 4,71 (femmes), Ladjagaï 6,3–6,7 → un cran au-dessus de la chaîne
 DEBIT = {'MAMAN NOUNOU': 5.4, 'TANTIE AWA': 5.4, 'COUMBA': 5.4, 'PETIT MAMADOU': 5.6, 'BAYE NDIAYE': 6.0, 'MODOU': 6.2, 'KOFFI': 6.2}
@@ -185,12 +188,12 @@ def synth_qwen(qui, texte, chute=False):
     with wave.open(PRISES.get((qui, texte)) or qwen_fichier(qui, texte)) as w: sr = w.getframerate(); a = np.frombuffer(w.readframes(w.getnframes()), np.int16)
     _, _, f0t, spread, _, fm = CAST[qui]
     f0, _ = pw.harvest(a.astype(np.float64) / 32768, sr, f0_floor=60, f0_ceil=600, frame_period=10.0); v = f0[f0 > 0]
-    cible = float(np.sqrt(np.median(v) * f0t)) if len(v) > 10 else f0t   # mi-chemin entre la voix réelle et le registre visé
+    cible = f0t   # remède désigné par JEV (17/10) : la voix est posée ENTIÈREMENT sur sa hauteur naturelle (plus de mi-chemin)
     # débit de la chaîne (DEBIT) : la voix clonée garde le débit de sa référence ; on l'accélère jusqu'à ×1,3 au plus, jamais
     # sur une chute (dite calmement, et comprise)
     debit = len(SYL.findall(texte)) / max(0.3, len(a) / sr * 0.82)   # ≈ part parlée de la prise (silences de bord retirés ensuite)
     tempo = 1.0 if chute else float(np.clip(DEBIT[qui] / max(1e-3, debit), 1.0, 1.3))
-    y = shape(a, sr, cible, min(spread, 1.2), 1.0, '?' in texte, '!' in texte, tempo)   # timbre gardé : la référence est choisie pour le rôle
+    y = shape(a, sr, cible, 1.0, 1.0, '?' in texte, '!' in texte, tempo)   # étendue 1,0 : l'intonation propre de la voix est gardée (JEV)
     y, _ = _finit(y, sr)
     return y, []   # formes de bouche : levres.py (Rhubarb) lit l'audio ensuite
 

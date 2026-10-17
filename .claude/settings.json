@@ -1,0 +1,12 @@
+{
+  "enabledMcpjsonServers": ["rea"],
+  "permissions": {
+    "allow": [
+      "mcp__rea",
+      "Bash(rea doctor:*)",
+      "Bash(rea setup:*)",
+      "Bash(rea analyze-javascript-application:*)",
+      "Bash(npx -y rea-agents@6.5.0:*)"
+    ]
+  }
+}

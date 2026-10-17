@@ -45,7 +45,8 @@ if cmd == 'prepare':
         cv2.imwrite(f'{IA}/{k}.png', cv2.imread(src))
         seg = mix[int(s[0] * sr):int(s[1] * sr)]
         with wave.open(f'{IA}/{k}.wav', 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes(seg.tobytes())
-        P.append({'cle': k, 't0': s[0], 't1': s[1], 'plan': s[3], 'qui': s[4]})
+        rep = [{x: L.get(x) for x in ('qui', 'texte', 'jeu', 'role')} for L in T['lines'] if L['t0'] < s[1] and L['t0'] + L['dur'] > s[0]]
+        P.append({'cle': k, 't0': s[0], 't1': s[1], 'plan': s[3], 'qui': s[4], 'sketch': s[2], 'repliques': rep})
     json.dump(P, open(f'{IA}/plans.json', 'w'), ensure_ascii=False, indent=1)
     print(f'{len(P)} plans parlants préparés ({sum(p["t1"] - p["t0"] for p in P):.1f} s à animer sur {T["total"]:.1f} s)')
 
@@ -85,6 +86,11 @@ elif cmd == 'genere':
         r = C.soumet(C.graphe_s2v(C.envoie(img), C.envoie(wav), W, H, sec, texte, graine=int(time.time()) % 100000))
         if 'prompt_id' not in r: raise RuntimeError(json.dumps(r.get('node_errors') or r.get('error'), ensure_ascii=False)[:400])
         return C.attend_video(r['prompt_id'], img.replace('.png', '.comfy.mp4'))
+    if prov == 'openrouter':   # TEMPS RECORD : tous les plans en même temps sur les grands modèles vidéo (openrouter_video.py)
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import openrouter_video as OV
+        OV.lot(P, IA, os.environ.get('OR_MODELES', 'google/veo-3.1-lite').split(','), os.environ.get('OR_RESOLUTION', '720p'),
+               os.environ.get('OR_SON', '1') == '1', float(os.environ.get('PLAFOND_USD', '3.00')), os.environ.get('OR_SECHE') == '1')
+        sys.exit(0)
     if prov == 'kaggle':       # tout le lot part d'un coup sur la carte gratuite, puis revient dans IA/<cle>.mp4
         r = subprocess.run([os.environ.get('KAGGLE_PY', sys.executable), os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kaggle_moteur.py'), 'tout', D])
         sys.exit(r.returncode)

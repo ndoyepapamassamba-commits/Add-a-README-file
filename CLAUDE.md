@@ -14,7 +14,14 @@
     probabilité < 0,5 ; conformité : > 0,5), sans marge relative à la peinture d'origine ni médiane qui cache une image ;
   - *dans tout le projet* : choix, réglages, livrables et vérifications s'appuient sur une réponse de JEV citée (valeurs).
 - **Zéro limite** (consigne du 16/10/2026) : ne jamais livrer de partie « limites » ni dire qu'une tâche confiée dépasse nos moyens ; chaque obstacle est contourné par la veille, l'ajout d'un moteur ou l'adaptation d'un moteur externe, puis mesuré — écrit comme « greffe en cours » avec son plan, jamais comme une impossibilité (`.claude/skills/zero-limite`).
+  Renfort du 17/10/2026 : « aucune limite que tu ne pourrais contourner, tu dois **toujours innover** » ; **fouiller GitHub
+  de fond en comble** pour les outils qui manquent ; vidéos produites en **temps record** (minutes, tous les plans en
+  parallèle), jamais des heures d'attente sur une plateforme que l'utilisateur ne connaît pas ; plateformes connues
+  d'abord (OpenRouter de son application, Grok de ses TikTok).
 - **Ne plus rien pousser sur le dépôt** (consigne du 15/10/2026, confirmée dans la discussion « OpenRouter API integration ») : commits en local seulement ; TOUS les résultats (fichiers, mesures, rapports) sont donnés dans le chat (envoi de fichiers + résumé).
+- **Rien de payant** (consigne du 17/10/2026, « Je veux rien de payant ») : voies gratuites d'abord (GPU distant appelé depuis le
+  navigateur de l'utilisateur avec son propre quota, crédits mensuels gratuits type Modal avec budget plafonné, Kaggle) ; toute
+  voie payante reste désactivée dans le code (`OR_PAYANT_AUTORISE`), jamais activée sans accord explicite.
 - Répondre en **français**.
 - **À chaque requête, chercher d'abord les outils les plus puissants**, mesurer qualité / vitesse / coût / licence sur
   nos propres données, puis les améliorer et les intégrer dans la tâche en cours : compétence

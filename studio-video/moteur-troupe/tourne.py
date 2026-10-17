@@ -36,6 +36,7 @@
 # python3 tourne.py montage.json sortie_dir
 import json, math, os, sys, zlib, numpy as np, cv2
 import decor_vivant, entites, gestes, rig2d, regard, expressions, expressions_lp, jeu, prepare_rig
+import poses_dessinees as PD   # gestes dessinés : animation pose à pose (17/10/2026)
 FPS, CW, CH = 30, 576, 460
 cfg = json.load(open(sys.argv[1])); OUT = sys.argv[2]; os.makedirs(f'{OUT}/clip', exist_ok=True)
 REG = {'plan_s': 5.0, 'cam_px': 2.5, 'pousse': 1.10, 'parallaxe': 0.35, 'jeu_gain': 2.3, 'corps': 0.1, 'whip_s': 0.45, 'ouverture': 1.2, 'decor': 1.0, 'gestes': 1.0, 'carte_sur_scene': 1, 'rig': 1}
@@ -213,6 +214,12 @@ for sk in T['sketchs']:
                 if abs(r_ - 0.5) > 0.12 and env_.get('tete_lacet', 0) > 6.0:
                     env_['tete_lacet'] = 6.0; print(f"{a['nom']}: visage de trois quarts (nez à {r_:.2f} entre les yeux) — lacet limité à 6°", flush=True)
             A_.update(rig=R_, img=im_a, mask=cv2.GaussianBlur(al, (0, 0), 0.5), assis=assis_, env=env_, bras=[], marge_bras=0)
+            # GESTES DESSINÉS COLLÉS : RETIRÉS (17/10/2026). L'utilisateur : « Mais ça a changé le personnage ». JEV, sur les 8
+            # poses collées dans la cour : identité 0,15 à 0,29 (cause « planche dessinée avec un autre visage, un autre âge,
+            # d'autres détails de costume » 0,99) ; remède désigné : garder les pixels du personnage et ne prendre de la
+            # planche que la cible du squelette (bras_articules.py). Ces bras articulés n'entrent au tournage que lorsque la
+            # porte de JEV (identité > 0,5 ET défaut < 0,5 sur chaque pose) les accepte — 17/10 : défaut 0,64 à 0,93, refusés.
+            A_['dessins'] = {}
             A_['yeux'] = regard.prepare(src00, v3)
             A_['expr'] = expressions.prepare(im_a, v3, yeux=A_['yeux'])
             print(f"{a['nom']}: squelette ({'assis' if assis_ else 'debout'}, enveloppe {A_['env']}, {len(R_['bras'])} avant-bras détourés, "
@@ -434,6 +441,17 @@ def warp_actor(S, A, t, name):
     if MESURE: MESURES.append(dict(qui=name, t=round(t, 3), etirement=etirement(sx2, sy2, al), bouche=round(float(jj), 3), lib=bool(lib),
                                    buste=round(float(ang), 2), tete=round(float(hd), 2), souffle=round(float(br), 4), pas=(round(float(cdx), 2), round(float(cdy), 2))))
     return (X0, Y0, X1, Y1), rgb, al
+def geste_dessine(S, A, t, name, R):
+    """pose dessinée du jeu de la réplique (ou choc à la chute d'un autre) ; intervalle par flux optique depuis la pose
+    rendue par le moteur ; la bouche continue de suivre la voix, le corps garde ses pas (corps())."""
+    if 'cal' not in A: A['cal'] = PD.calendrier(name, lines, CHUTES, S['sk']['id'], A['dessins'], {n: float(B['hip'][0]) for n, B in S['acts'].items()})
+    p, w, arrivee = PD.poids(A['cal'], t)
+    if not p: return R
+    jj = 0.0; wsum = 0.0
+    for dt, w_ in ((-2, 0.1), (-1, 0.2), (0, 0.4), (1, 0.2), (2, 0.1)):
+        tt = t + dt / FPS; Lx = line_at(tt, name); jj += w_ * (jaw(Lx, tt) if Lx else 0.0); wsum += w_
+    cdx, cdy = corps(name, t, S['sk']['id'], A)
+    return PD.intervalle(R, PD.rend(A['dessins'][p], jj / wsum, cdx, cdy, t, arrivee), w)
 def frame_scene(S, t, off=None, zoom=None):
     plate = S['plate']; V = S.get('vie')
     if V is not None and decor_vivant.panache(V, plate) is not None: plate = decor_vivant.fumee(V, plate, t)   # la fumée du grill MONTE (panache physique), avant la parallaxe
@@ -463,7 +481,9 @@ def frame_scene(S, t, off=None, zoom=None):
     em = [] if (MESURE and poses) else None
     if poses: entites.dessine(can, poses, lambda p: p['y'] <= pieds, S.get('lum'), S.get('style_ent'), em)   # bêtes derrière les acteurs, puis devant après eux
     for name, A in sorted(S['acts'].items(), key=lambda kv: kv[1]['hip'][1]):
-        (X0, Y0, X1, Y1), rgb, al = warp_actor(S, A, t, name)
+        R_ = warp_actor(S, A, t, name)
+        if A.get('dessins'): R_ = geste_dessine(S, A, t, name, R_)
+        (X0, Y0, X1, Y1), rgb, al = R_
         sub = can[Y0:Y1, X0:X1]; al3 = al[..., None]; sub[:] = sub * (1 - al3) + rgb.astype(np.float32) * al3
     if poses: entites.dessine(can, poses, lambda p: p['y'] > pieds, S.get('lum'), S.get('style_ent'), em)
     if em: MESURES.extend(dict(qui='entite', sketch=S['sk']['id'], t=round(t, 3), **m_) for m_ in em)
@@ -914,6 +934,8 @@ CODE_BASE, CODE_ENT = _code([f for f in _MODS if f not in _ENT]), _code([f for f
 _FILM = os.path.join(_ICI, '..', 'blender', 'film'); _CMU = os.path.expanduser('~/.cache/massamba-models/cmu-mocap')
 CODE_BASE = _h(CODE_BASE, [hashlib.sha1(open(os.path.join(_FILM, f), 'rb').read()).hexdigest() for f in ('mocap.py', 'direction-vocab.json') if os.path.isfile(os.path.join(_FILM, f))],
                sorted((f, os.path.getsize(os.path.join(_CMU, f))) for f in os.listdir(_CMU)) if os.path.isdir(_CMU) else None)
+CODE_BASE = _h(CODE_BASE, sorted((os.path.relpath(os.path.join(r, f), PD.RACINE), os.path.getsize(os.path.join(r, f))) for r, _, fs in os.walk(PD.RACINE) for f in fs)
+               if os.path.isdir(PD.RACINE) and PD.ACTIF else None)   # planches de poses : un geste dessiné change le plan
 def _dossier(d):
     L_ = []
     for r_, _, fs in os.walk(d):

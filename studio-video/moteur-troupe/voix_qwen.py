@@ -21,7 +21,17 @@ for k, j in enumerate(J):
     if cle not in invites:
         invites[cle] = m.create_voice_clone_prompt(ref_audio=j['ref'], ref_text=j.get('ref_texte'), x_vector_only_mode=not j.get('ref_texte'))
     t1 = time.time()
-    torch.manual_seed(int(j.get('graine', 7)))   # même texte, même voix → même prise (reproductible)
-    w, sr = m.generate_voice_clone(text=j['texte'], language='French', voice_clone_prompt=invites[cle])
-    sf.write(j['sortie'], w[0], sr)
-    print(f"{k + 1}/{len(J)} {j['id']} : {len(w[0]) / sr:.1f} s en {time.time() - t1:.0f} s", flush=True)
+    # PLAFOND DE DURÉE (17/10/2026) : sans plafond, une prise qui ne trouve pas sa fin tourne jusqu'à 2 048 jetons
+    # (164 s de son, 17 min de calcul : « Ah bon ? Et les plumes… » bloquée 8 min). Plafond = débit lent du français
+    # (7 caractères/s) + 1,5 s, à 12,5 jetons/s ; une prise qui touche le plafond est une fuite : nouvelle graine.
+    plafond_s = max(3.0, 1.5 + len(j['texte']) / 7); essais = []
+    for e in range(3):
+        torch.manual_seed(int(j.get('graine', 7)) + 101 * e)   # même texte, même voix → même prise (reproductible)
+        w, sr = m.generate_voice_clone(text=j['texte'], language='French', voice_clone_prompt=invites[cle],
+                                       max_new_tokens=int(12.5 * plafond_s))
+        essais.append(w[0])
+        if len(w[0]) / sr < plafond_s - 0.25: break
+        print(f"   {j['id']} : prise {e + 1} au plafond ({plafond_s:.1f} s), nouvelle graine", flush=True)
+    w0 = min(essais, key=len)
+    sf.write(j['sortie'], w0, sr)
+    print(f"{k + 1}/{len(J)} {j['id']} : {len(w0) / sr:.1f} s en {time.time() - t1:.0f} s ({len(essais)} prise(s))", flush=True)

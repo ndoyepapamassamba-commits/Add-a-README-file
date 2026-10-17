@@ -76,6 +76,8 @@ _v = (["Qwen3-TTS (Apache-2.0) d'après OpenSLR 57 (Apache-2.0)"] if 'qwen3' in 
 credit = 'Voix : ' + ', '.join(_v) + ' · Images : Z-Image-Turbo (Apache-2.0) · Visages : LivePortrait (MIT)'
 # bande son : dialogue sec + jingles des cartes (musique.py) s'ils ont été posés
 BANDE = 'voix/mix-musique.wav' if os.path.isfile('voix/mix-musique.wav') and os.path.getmtime('voix/mix-musique.wav') >= os.path.getmtime('voix/mix.wav') else 'voix/mix.wav'
+# ambiance réelle (ambiance.py : coqs, poules, oiseaux, vent, maquis) posée sous la bande si elle est à jour
+if os.path.isfile('voix/mix-ambiance.wav') and os.path.getmtime('voix/mix-ambiance.wav') >= os.path.getmtime(BANDE): BANDE = 'voix/mix-ambiance.wav'
 frames = sorted(glob.glob(f'{D}/clip/f*.jpg')); os.makedirs(f'{D}/compose', exist_ok=True); total = T['total']; c0 = total - 2.0
 for k, fp in enumerate(frames):
     t = k / 30; fr = cv2.imread(fp)

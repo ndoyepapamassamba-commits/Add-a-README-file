@@ -380,6 +380,8 @@ def _calques_bras(img, alpha, bras, plaque, segmente, box):
         x0, y0, x1, y1 = b['box']; t = b['trou']
         m = np.clip(b['sil'], 0, 1).astype(np.float32); f = np.clip(b['fondu'], 0, 1).astype(np.float32); mf = m * f
         a = np.clip(alpha[y0:y1, x0:x1], 0, 1).astype(np.float32); m = np.minimum(m, a)
+        if b.get('sil_bras') is not None:   # BRAS ARTICULÉ : couleur décontaminée et corps dessous pris sur le bras ENTIER
+            m = np.minimum(np.clip(b['sil_bras'], 0, 1).astype(np.float32), a)   # (aucune couture interne bras / avant-bras)
         der = derriere[y0:y1, x0:x1] if derriere is not None else a
         der = cv2.GaussianBlur((der > 0.5).astype(np.float32), (0, 0), 1.0)
         fond = b['fond'].astype(np.float32); pl = plaque[y0:y1, x0:x1].astype(np.float32) if plaque is not None else fond
@@ -389,16 +391,18 @@ def _calques_bras(img, alpha, bras, plaque, segmente, box):
         wb = np.clip((m3 - 0.3) / 0.3, 0, 1)
         P = (1 - wb) * b['rgb_ext'].astype(np.float32) + wb * np.clip((src - (1 - m3) * bg) / np.maximum(m3, 1e-3), 0, 255)
         # corps dessous : « bras par-dessus corps » = l'acteur d'origine, exactement (algèbre de la composition RGBA)
-        A_f = np.clip((a - mf) / np.maximum(1 - mf, 1e-3), 0, 1)
-        B_f = np.clip((a[..., None] * src - mf[..., None] * P) / np.maximum(a - mf, 1e-3)[..., None], 0, 255)
-        w = np.clip((mf - 0.9) / 0.1, 0, 1); w3 = w[..., None]   # cœur du bras : derrière lui, le corps reconstitué (ou rien)
+        mc = m if b.get('sil_bras') is not None else mf
+        A_f = np.clip((a - mc) / np.maximum(1 - mc, 1e-3), 0, 1)
+        B_f = np.clip((a[..., None] * src - mc[..., None] * P) / np.maximum(a - mc, 1e-3)[..., None], 0, 255)
+        w = np.clip((mc - 0.9) / 0.1, 0, 1); w3 = w[..., None]   # cœur du bras : derrière lui, le corps reconstitué (ou rien)
         A_B = (1 - w) * A_f + w * der * (a > 0.02); B_c = (1 - w3) * B_f + w3 * fond
-        tt = np.clip(mf / 0.005, 0, 1)
+        tt = np.clip(mc / 0.005, 0, 1)
+        if b.get('sil_bras') is not None: mf = np.minimum(mf, a)   # le calque ne couvre que SA partie du bras
         al = alpha_c[y0:y1, x0:x1]
         alpha_c[y0:y1, x0:x1] = al * (1 - tt) + A_B * tt
         side = 'l' if b['cote'] == 'gauche' else 'r'
         out.append(dict(cote=side, nu=b['nu'], piv=np.asarray(b['piv'], np.float64), box=(x0, y0, x1, y1), rgb=P.astype(np.float32),
-                        calque=mf, sens=b['sens'], amax=b.get('amax', 0.0), emax=b.get('emax', 1.0), trou=t))
+                        calque=mf, sens=b['sens'], amax=b.get('amax', 0.0), emax=b.get('emax', 1.0), trou=t, part=b.get('part')))
         src_c.append(((x0, y0, x1, y1), B_c, tt))
     return out, alpha_c, src_c
 
@@ -482,11 +486,15 @@ def pose_bras(R, pose, mats):
     """transformation (3 × 3) de chaque calque d'avant-bras / main : porté par sa chaîne (épaule → coude → poignet) ;
     main en appui (genoux, table) : l'avant-bras pivote au coude pour que la main reste posée ; puis le geste demandé
     (angle, avancée vers la caméra) dans l'enveloppe sans défaut du bras."""
-    M = R['M']; P = M['P']; I = M['idx']; out = []; gestes = pose.get('gestes') or []
+    M = R['M']; P = M['P']; I = M['idx']; out = []; gestes = pose.get('gestes') or []; haut = {}
     for k, b in enumerate(R['bras']):
-        s = b['cote']; piv = b['piv']; ch = mats[I[s + 'Up']] if b['nu'] else mats[I[s + 'Lo']]
+        s = b['cote']; piv = b['piv']
+        if b.get('part') == 'bas' and s in haut:   # BRAS ARTICULÉ (bras_articules.py) : l'avant-bras est porté par le bras
+            a, e = (gestes[k] if k < len(gestes) else (0.0, 1.0)); Th, thh = haut[s]
+            out.append(_tr(_app(Th, piv) - piv) @ _rot(piv, thh - math.radians(a * b['sens']))); continue
+        ch = mats[I[s + 'Up']] if b['nu'] else mats[I[s + 'Lo']]
         P1 = _app(ch, piv); th = math.atan2(ch[1, 0], ch[0, 0])
-        typ, sup = R['contacts'][s]; w = float(pose.get('appui', {}).get(s, 1.0)) if typ in ('cuisse', 'monde') else 0.0
+        typ, sup = R['contacts'][s]; w = float(pose.get('appui', {}).get(s, 1.0)) if typ in ('cuisse', 'monde') and not b.get('part') else 0.0
         if w > 0:
             ref = P[s + 'Wr'] if b['nu'] else P[s + 'Hand']; Mc = np.eye(3) if typ == 'monde' else mats[sup]
             cible = _app(Mc, ref); thc = _ang(cible - P1) - _ang(ref - piv)
@@ -495,6 +503,7 @@ def pose_bras(R, pose, mats):
         tg = -math.radians(a * b['sens'])   # gestes : degrés, sens d'OpenCV (positif = anti-horaire à l'écran)
         Sc = np.eye(3); Sc[:2, :2] *= e; Sc[:2, 2] = piv - e * piv
         out.append(_tr(P1 - piv) @ _rot(piv, th + tg) @ Sc)
+        if b.get('part') == 'haut': haut[s] = (out[-1], th + tg)
     return out
 
 
