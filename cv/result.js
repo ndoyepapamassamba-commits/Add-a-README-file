@@ -83,20 +83,23 @@
 
   function showWaiting(res) {
     state("wait");
-    var manual = res.order.status === "awaiting_manual";
+    // Manual transfer: the customer said "J'ai envoyé l'argent", or opened this page while the order waits for it.
+    var claimed = res.order.status === "awaiting_manual";
+    var manual = claimed || (res.order.status === "checkout" && !!(config && config.payment.manual));
     setText($("#wait-ref"), res.order.id);
     setText($("#wait-title"), manual ? "Paiement en cours de vérification" : "Confirmation du paiement Wave…");
     setText($("#wait-text"), manual
-      ? "Merci ! Dès que la réception de votre transfert Wave est vérifiée, vos documents s'affichent ici automatiquement."
+      ? "Merci ! Dès que votre transfert Wave est reçu, vos documents s'affichent ici tout seuls. Gardez cette page ouverte."
       : "Nous attendons la confirmation de Wave. Cela prend en général quelques secondes après la validation dans Wave.");
     var wa = $("#wait-whatsapp");
     var owner = config && config.payment.ownerWhatsapp;
     wa.hidden = !(manual && owner);
     if (manual && owner) {
-      wa.href = TCV.whatsappLink(owner, "Bonjour, j'ai payé " + TCV.fmt.fcfa(res.order.amount) + " par Wave pour ma commande Teranga CV " + res.order.id + ".");
+      wa.href = TCV.whatsappLink(owner, "Bonjour, j'ai envoyé le paiement par Wave pour ma commande Teranga CV " + res.order.id + ".");
     }
     var back = $("#wait-back");
-    back.hidden = manual;
+    back.hidden = claimed;
+    setText(back, manual ? "Revoir le montant exact à envoyer" : "Revenir à l'aperçu pour payer");
     back.href = previewUrl();
     if (!waitPreviewShown && res.preview) {
       waitPreviewShown = true;

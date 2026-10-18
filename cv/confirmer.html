@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confirmer un paiement — Teranga CV</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="theme-color" content="#0b6b4e">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+<script src="config.js" defer></script>
+<script src="app.js" defer></script>
+<script src="confirmer.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="Teranga CV, accueil">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0b6b4e"/><path d="M10 7h8.5L23 11.5V25H10z" fill="#fff"/><path d="M18.5 7v4.5H23z" fill="#bfe0d2"/><rect x="12.5" y="14.6" width="8" height="1.9" rx=".95" fill="#d38c0b"/><rect x="12.5" y="18.3" width="8" height="1.6" rx=".8" fill="#9cc8b5"/><rect x="12.5" y="21.6" width="5.2" height="1.6" rx=".8" fill="#9cc8b5"/></svg>
+      <span>Teranga CV <small>vendeur</small></span>
+    </a>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <section class="card center-card" aria-labelledby="cf-title">
+    <h1 id="cf-title" tabindex="-1">Confirmer un paiement</h1>
+    <p>Commande&nbsp;: <strong id="cf-ref">—</strong></p>
+    <p class="hint" id="cf-hint">Touchez le bouton seulement si vous avez bien reçu l'argent de ce client sur votre Wave. Ses documents seront débloqués aussitôt.</p>
+    <button type="button" class="btn btn-primary btn-block" id="cf-btn"><span class="btn-label">Confirmer la réception</span></button>
+    <p class="status" id="cf-status" role="status" aria-live="polite"></p>
+    <p class="error-text" id="cf-error" role="alert"></p>
+  </section>
+</main>
+</body>
+</html>

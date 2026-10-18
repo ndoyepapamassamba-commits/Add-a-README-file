@@ -164,6 +164,9 @@ Deno.test("checkout (manual): returns the transfer instructions", async () => {
     mode: "manual",
     waveNumber: "+221 77 000 11 22",
     amount: 1000,
+    exactAmount: 999,
+    exactAmountFormatted: "999 FCFA",
+    autoUnlock: false,
     reference: id,
     whatsapp: "221770001122",
   }]);

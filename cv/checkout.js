@@ -7,7 +7,7 @@
   var $$ = TCV.dom.$$;
   var setText = TCV.dom.setText;
 
-  var ctx = null; // { order, token, preview, template, tab, whatsapp }
+  var ctx = null; // { order, token, preview, template, tab, whatsapp, exact }
   var views = {};
   var paying = false;
 
@@ -110,9 +110,16 @@
 
   function showManual(res) {
     ctx.whatsapp = res.whatsapp || null;
-    setText($("#m-amount"), TCV.fmt.fcfa(res.amount || ctx.order.amount));
+    // The exact amount is unique to this order: it is how the transfer is recognised automatically.
+    ctx.exact = res.exactAmount || res.amount || ctx.order.amount;
+    setText($("#m-amount"), TCV.fmt.fcfa(ctx.exact));
+    setText($("#m-amount-raw"), String(ctx.exact));
     setText($("#m-number"), res.waveNumber || "");
     setText($("#m-ref"), res.reference || ctx.order.id);
+    setText($("#manual-after"), res.autoUnlock
+      ? "Vos documents se débloquent tout seuls dès que votre transfert arrive, en général en moins d'une minute."
+      : "Vos documents se débloquent dès que le vendeur a vérifié la réception. Pour aller plus vite, prévenez-le sur WhatsApp.");
+    $("#manual-whatsapp").hidden = !ctx.whatsapp;
     $("#manual-panel").hidden = false;
     $("#paybar").hidden = true;
     var title = $("#manual-title");
@@ -120,28 +127,40 @@
     title.focus({ preventScroll: true });
   }
 
-  function manualPaid() {
+  /** The payer's number is optional; when typed it must be a valid Senegal mobile. Returns null if invalid. */
+  function payerPhone() {
     var input = $("#payer-phone");
     var err = $("#payer-phone-error");
     var phone = TCV.validate.line(input.value);
-    if (!TCV.validate.normalizeSnMobile(phone)) {
-      setText(err, "Numéro Wave invalide. Exemple : 77 123 45 67.");
+    if (phone && !TCV.validate.normalizeSnMobile(phone)) {
+      setText(err, "Numéro Wave invalide. Exemple : 77 123 45 67. Vous pouvez aussi laisser ce champ vide.");
       input.setAttribute("aria-invalid", "true");
       input.focus();
-      return;
+      return null;
     }
     setText(err, "");
     input.removeAttribute("aria-invalid");
+    return phone;
+  }
+
+  /** Optional: tells the owner on WhatsApp (the transfer is recognised without it). */
+  function notifySeller() {
+    var phone = payerPhone();
+    if (phone === null || !ctx.whatsapp) return;
+    var msg = "Bonjour, je viens d'envoyer " + TCV.fmt.fcfa(ctx.exact || ctx.order.amount) + " par Wave pour ma commande Teranga CV " +
+      ctx.order.id + "." + (phone ? " Numéro Wave utilisé : " + phone + "." : "");
+    window.open(TCV.whatsappLink(ctx.whatsapp, msg), "_blank", "noopener");
+  }
+
+  function manualPaid() {
+    var err = $("#payer-phone-error");
+    var phone = payerPhone();
+    if (phone === null) return;
     var btn = $("#manual-paid-btn");
     TCV.dom.busy(btn, true, "Envoi…");
     TCV.api
       .request("POST", orderPath("/manual-paid"), { body: { t: ctx.token, payerPhone: phone } })
       .then(function () {
-        if (ctx.whatsapp) {
-          var msg = "Bonjour, je viens d'envoyer " + TCV.fmt.fcfa(ctx.order.amount) + " par Wave pour ma commande Teranga CV " +
-            ctx.order.id + ". Numéro Wave utilisé : " + phone + ".";
-          window.open(TCV.whatsappLink(ctx.whatsapp, msg), "_blank", "noopener");
-        }
         window.location.href = TCV.url.resultUrl(ctx.order.id, ctx.token);
       })
       .catch(function (e) {
@@ -190,6 +209,7 @@
       b.addEventListener("click", pay);
     });
     $("#manual-paid-btn").addEventListener("click", manualPaid);
+    $("#manual-whatsapp").addEventListener("click", notifySeller);
     bindCopy();
     watchPaybar();
   }

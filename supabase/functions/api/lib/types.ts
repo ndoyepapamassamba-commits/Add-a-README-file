@@ -124,6 +124,9 @@ export interface OrderRow {
   wave_transaction_id: string | null;
   payment_method: PaymentMethod | null;
   manual_payer_phone: string | null;
+  manual_amount: number | null; // unique amount (base price − 1..49) the customer must send in manual mode
+  payment_detected_at: string | null; // ISO; when the owner's phone reported a matching Wave notification
+  payment_detected_text: string | null; // the notification text that matched (kept 30 days, purged with the order)
   paid_amount: number | null;
   paid_at: string | null; // ISO
   payout_id: string | null;
@@ -214,6 +217,16 @@ export interface Store {
   /** Delete personal data: unpaid orders older than unpaidBeforeIso, paid orders older than paidBeforeIso. Returns count. */
   purge(unpaidBeforeIso: string, paidBeforeIso: string, nowIso: string): Promise<number>;
   stats(nowIso: string): Promise<Stats>;
+  /**
+   * Atomically give order `id` a unique manual amount: base − k with the smallest k in 1..maxOffset not used by
+   * another manual order still awaiting payment (status checkout/awaiting_manual, created after sinceIso).
+   * Idempotent: returns the existing manual_amount when already set. Returns null when every offset is taken.
+   */
+  assignManualAmount(id: string, base: number, maxOffset: number, sinceIso: string): Promise<number | null>;
+  /** Unpaid manual orders (status checkout/awaiting_manual, payment_method null) created after sinceIso. */
+  listOpenManualOrders(sinceIso: string): Promise<OrderRow[]>;
+  /** Store the matched notification on the order (does NOT mark it paid). */
+  recordPaymentDetection(id: string, text: string, nowIso: string): Promise<void>;
   /** Key/value settings from tcv.settings (same keys as the env vars). MemoryStore returns what it was seeded with. */
   getSettings(): Promise<Record<string, string>>;
 }
@@ -278,6 +291,8 @@ export interface Config {
   waveFeeRate: number; // default 0.01
   payoutFeeRate: number; // default 0.01
   manualWaveNumber: string | null; // display number for manual Wave transfers (bridge mode), null => disabled
+  phoneHookKey: string | null; // PHONE_HOOK_KEY: secret the owner's phone (MacroDroid) sends to POST /payments/notify
+  manualAutoConfirm: boolean; // MANUAL_AUTO_CONFIRM (default true): a matching Wave notification unlocks the order at once
   ownerWhatsapp: string | null; // digits only, international, no "+"
   adminKey: string | null;
   cronSecret: string | null;

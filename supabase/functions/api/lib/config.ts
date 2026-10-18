@@ -71,6 +71,8 @@ export function loadConfig(envGet: EnvGet, settings: Record<string, string> = {}
     waveFeeRate: rate(get, "WAVE_FEE_RATE", 0.01),
     payoutFeeRate: rate(get, "PAYOUT_FEE_RATE", 0.01),
     manualWaveNumber,
+    phoneHookKey: get("PHONE_HOOK_KEY"),
+    manualAutoConfirm: !/^(false|0|no|non|off)$/i.test(get("MANUAL_AUTO_CONFIRM") ?? ""),
     ownerWhatsapp: digits(get("OWNER_WHATSAPP")) ?? digits(manualWaveNumber ?? ownerWaveMobile),
     adminKey: get("ADMIN_KEY"),
     cronSecret: get("CRON_SECRET"),

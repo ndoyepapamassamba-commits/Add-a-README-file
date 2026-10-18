@@ -4,6 +4,7 @@
 // deno-lint-ignore-file require-await
 import type { OrderRow, OrderStatus, PayoutRow, PayoutStatus, Stats, Store } from "./types.ts";
 import { computePayoutAmount } from "./payout.ts";
+import { PHONE_EVENT_TYPE } from "./autopay.ts";
 
 export const ORDER_PATCH_KEYS: ReadonlySet<string> = new Set([
   "template",
@@ -181,7 +182,14 @@ export class MemoryStore implements Store {
         ? ms(o.paid_at ?? o.created_at) < paidBefore
         : ms(o.created_at) < unpaidBefore;
       if (!expired) continue;
-      Object.assign(o, { input: null, document: null, manual_payer_phone: null, ip_hash: null, purged_at: new Date(now).toISOString() });
+      Object.assign(o, {
+        input: null,
+        document: null,
+        manual_payer_phone: null,
+        payment_detected_text: null,
+        ip_hash: null,
+        purged_at: new Date(now).toISOString(),
+      });
       count++;
     }
     for (const [id, e] of this.events) if (ms(e.createdAt) < now - EVENT_RETENTION_DAYS * DAY_MS) this.events.delete(id);
@@ -218,12 +226,47 @@ export class MemoryStore implements Store {
         status: o.status,
         payment_method: o.payment_method,
         manual_payer_phone: o.manual_payer_phone,
+        manual_amount: o.manual_amount,
+        payment_detected_at: o.payment_detected_at,
         created_at: o.created_at,
         paid_at: o.paid_at,
       })),
       payouts: [...this.payouts.values()].sort((a, b) => b.day.localeCompare(a.day)).slice(0, RECENT_PAYOUTS_LIMIT),
     };
-    return structuredClone(stats);
+    const phoneTimes = [...this.events.values()].filter((e) => e.type === PHONE_EVENT_TYPE).map((e) => e.createdAt).sort();
+    return structuredClone({ ...stats, lastPhoneNotificationAt: phoneTimes.at(-1) ?? null });
+  }
+
+  async assignManualAmount(id: string, base: number, maxOffset: number, sinceIso: string): Promise<number | null> {
+    const o = this.orders.get(id);
+    if (!o) return null;
+    if (o.manual_amount !== null) return o.manual_amount;
+    const since = ms(sinceIso);
+    const used = new Set(
+      [...this.orders.values()]
+        .filter((x) => x.id !== id && isOpenManual(x) && x.manual_amount !== null && ms(x.created_at) > since)
+        .map((x) => x.manual_amount),
+    );
+    for (let k = 1; k <= maxOffset && base - k > 0; k++) {
+      if (!used.has(base - k)) {
+        o.manual_amount = base - k;
+        return o.manual_amount;
+      }
+    }
+    return null;
+  }
+
+  async listOpenManualOrders(sinceIso: string): Promise<OrderRow[]> {
+    const since = ms(sinceIso);
+    const rows = [...this.orders.values()].filter((o) => isOpenManual(o) && ms(o.created_at) > since).sort(byCreatedDesc);
+    return structuredClone(rows);
+  }
+
+  async recordPaymentDetection(id: string, text: string, nowIso: string): Promise<void> {
+    const o = this.orders.get(id);
+    if (!o) return;
+    o.payment_detected_at = new Date(nowIso).toISOString();
+    o.payment_detected_text = text;
   }
 
   async getSettings(): Promise<Record<string, string>> {
@@ -238,6 +281,11 @@ export class MemoryStore implements Store {
       }
     }
   }
+}
+
+/** A manual order still waiting for its transfer (same filter as tcv_list_open_manual_orders). */
+function isOpenManual(o: OrderRow): boolean {
+  return (o.status === "checkout" || o.status === "awaiting_manual") && o.payment_method === null;
 }
 
 function byCreatedDesc(a: OrderRow, b: OrderRow): number {

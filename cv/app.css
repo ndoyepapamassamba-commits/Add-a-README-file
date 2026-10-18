@@ -365,6 +365,11 @@ fieldset { border: 0; padding: 0; margin: 0 0 16px; min-width: 0; }
 .copy-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
 .copy-line strong { font-size: 1.12rem; letter-spacing: .01em; }
 .copy-btn { min-height: 44px; padding: 0 12px; border: 1.5px solid #c9bfae; border-radius: 10px; background: #fff; font-weight: 700; font-size: .88rem; cursor: pointer; }
+.exact-box { background: var(--brand-tint); border: 1px solid #b9dccb; border-radius: var(--radius-sm); padding: 12px 14px; margin: 10px 0 16px; }
+.exact-label { margin: 0; font-weight: 700; color: var(--brand-dark); }
+.copy-line .exact-amount { font-size: clamp(1.6rem, 8vw, 2rem); font-weight: 800; letter-spacing: -.01em; color: var(--ink); }
+.exact-why { margin: 6px 0 0; font-size: .9rem; color: var(--ink-2); }
+.manual #m-ref { white-space: nowrap; }
 
 /* Document viewer: an A4 page scaled to the available width. */
 .doc-frame { position: relative; width: 100%; overflow: hidden; background: #fff; border-radius: 6px; box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 10px 30px rgba(18, 32, 45, .14); }
@@ -441,6 +446,7 @@ table.data tr:last-child td { border-bottom: 0; }
 .badge-paid { background: var(--ok-bg); color: var(--ok); }
 .badge-wait { background: var(--warn-bg); color: #7a4b00; }
 .badge-fail { background: var(--danger-bg); color: var(--danger); }
+.badge-detected { background: #e3f6fd; color: var(--wave-ink); }
 .login-card { max-width: 440px; margin: 32px auto; }
 
 /* =====================================================================

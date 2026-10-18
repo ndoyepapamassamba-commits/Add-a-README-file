@@ -37,6 +37,10 @@ export const RPC_SIGNATURES: Record<string, ReadonlyArray<readonly [string, ArgT
   tcv_purge: [["p_unpaid_before", "timestamptz"], ["p_paid_before", "timestamptz"], ["p_now", "timestamptz"]],
   tcv_stats: [["p_now", "timestamptz"]],
   tcv_get_settings: [],
+  // 20261018000005_autopay.sql
+  tcv_assign_manual_amount: [["p_id", "text"], ["p_base", "integer"], ["p_max_offset", "integer"], ["p_since", "timestamptz"]],
+  tcv_list_open_manual_orders: [["p_since", "timestamptz"]],
+  tcv_record_payment_detection: [["p_id", "text"], ["p_text", "text"], ["p_now", "timestamptz"]],
 };
 
 /** Calls `public.<fn>` with named arguments and returns its JSON result (null for SQL NULL / void). */
@@ -156,6 +160,20 @@ export class RpcStore implements Store {
   async getSettings(): Promise<Record<string, string>> {
     const r = await this.call("tcv_get_settings");
     return r && typeof r === "object" ? (r as Record<string, string>) : {};
+  }
+
+  async assignManualAmount(id: string, base: number, maxOffset: number, sinceIso: string): Promise<number | null> {
+    const r = await this.call("tcv_assign_manual_amount", { p_id: id, p_base: base, p_max_offset: maxOffset, p_since: sinceIso });
+    return r === null || r === undefined ? null : Number(r);
+  }
+
+  async listOpenManualOrders(sinceIso: string): Promise<OrderRow[]> {
+    const r = await this.call("tcv_list_open_manual_orders", { p_since: sinceIso });
+    return Array.isArray(r) ? r.map(toOrder) : [];
+  }
+
+  async recordPaymentDetection(id: string, text: string, nowIso: string): Promise<void> {
+    await this.call("tcv_record_payment_detection", { p_id: id, p_text: text, p_now: nowIso });
   }
 }
 

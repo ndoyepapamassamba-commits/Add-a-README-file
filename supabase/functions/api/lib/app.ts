@@ -1,6 +1,6 @@
 // HTTP API of the `api` Edge Function: createApp(deps) => (req) => Response. Routes follow SPEC.md.
 import { WaveError } from "./types.ts";
-import type { Config, Deps, Document, OrderRow, Store, WaveCheckoutSession } from "./types.ts";
+import type { Config, Deps, Document, OrderRow, Stats, Store, WaveCheckoutSession } from "./types.ts";
 import {
   bearerToken,
   clientIp,
@@ -24,6 +24,7 @@ import { confirmPayment, runReconcile } from "./reconcile.ts";
 import { runDaily } from "./payout.ts";
 import { generateDocument } from "./generator/index.ts";
 import { redactDocument } from "./redact.ts";
+import { formatFcfa, handlePaymentConfirm, handlePaymentNotify, prepareManualCheckout } from "./autopay.ts";
 
 export const GLOBAL_DAILY_PREVIEW_LIMIT = 5000;
 export const CHECKOUT_REUSE_MARGIN_MS = 2 * 60_000;
@@ -170,6 +171,9 @@ const createOrder: Handler = async (deps, req) => {
     wave_transaction_id: null,
     payment_method: null,
     manual_payer_phone: null,
+    manual_amount: null,
+    payment_detected_at: null,
+    payment_detected_text: null,
     paid_amount: null,
     paid_at: null,
     payout_id: null,
@@ -255,10 +259,15 @@ const checkout: Handler = async (deps, req, [id]) => {
 
   const c = deps.config;
   if (c.manualWaveNumber) {
+    // A unique amount per order lets the owner's phone recognise the transfer (see autopay.ts).
+    const exactAmount = await prepareManualCheckout(deps, order);
     return json(200, {
       mode: "manual",
       waveNumber: formatSnMobile(c.manualWaveNumber),
       amount: order.amount,
+      exactAmount,
+      exactAmountFormatted: formatFcfa(exactAmount),
+      autoUnlock: c.phoneHookKey !== null && c.manualAutoConfirm,
       reference: order.id,
       whatsapp: c.ownerWhatsapp,
     });
@@ -273,14 +282,16 @@ const manualPaid: Handler = async (deps, req, [id]) => {
     throw new HttpError(409, "not_manual", "Le paiement manuel n'est pas disponible.");
   }
   if (order.status === "paid") return json(200, { order: publicOrder(order) });
-  const phone = normalizeSnMobile(typeof body.payerPhone === "string" ? body.payerPhone : "");
-  if (!phone) {
+  // The payer's number is optional: the transfer is recognised by its unique amount (autopay.ts).
+  const typed = typeof body.payerPhone === "string" ? body.payerPhone.trim() : "";
+  const phone = typed ? normalizeSnMobile(typed) : null;
+  if (typed && !phone) {
     throw new HttpError(400, "validation", "Numéro Wave invalide.", {
       payerPhone: "Entrez le numéro Wave qui a envoyé l'argent (ex. 77 123 45 67).",
     });
   }
-  await deps.store.updateOrder(id, { status: "awaiting_manual", manual_payer_phone: phone });
-  return json(200, { order: publicOrder({ ...order, status: "awaiting_manual", manual_payer_phone: phone }) });
+  await deps.store.updateOrder(id, phone ? { status: "awaiting_manual", manual_payer_phone: phone } : { status: "awaiting_manual" });
+  return json(200, { order: publicOrder({ ...order, status: "awaiting_manual" }) });
 };
 
 const waveWebhook: Handler = async (deps, req) => {
@@ -357,7 +368,10 @@ const cronDaily: Handler = async (deps, req) => {
 const adminStats: Handler = async (deps, req) => {
   requireAdmin(deps, req);
   const c = deps.config;
-  const stats = await deps.store.stats(deps.now().toISOString());
+  // The stores add the time of the last phone notification to the stats snapshot; it belongs to health.
+  const { lastPhoneNotificationAt = null, ...stats } = (await deps.store.stats(deps.now().toISOString())) as Stats & {
+    lastPhoneNotificationAt?: string | null;
+  };
   return json(200, {
     stats,
     health: {
@@ -367,6 +381,8 @@ const adminStats: Handler = async (deps, req) => {
       manual: deps.wave === null && c.manualWaveNumber !== null,
       llm: deps.enhance !== undefined,
       ownerWaveMobile: c.ownerWaveMobile ? formatSnMobile(c.ownerWaveMobile) : null,
+      phoneHook: c.phoneHookKey !== null,
+      lastPhoneNotificationAt,
     },
   });
 };
@@ -377,7 +393,7 @@ const adminUnlock: Handler = async (deps, req, [id]) => {
   if (!order) throw notFound();
   const changed = await deps.store.markPaid(id, {
     method: "manual",
-    paidAmount: order.amount,
+    paidAmount: order.manual_amount ?? order.amount, // what the customer was asked to send
     transactionId: null,
     sessionId: null,
     paidAt: deps.now().toISOString(),
@@ -398,6 +414,8 @@ const ROUTES: Array<[method: string, pattern: RegExp, handler: Handler]> = [
   ["POST", /^\/cron\/daily$/, cronDaily],
   ["GET", /^\/admin\/stats$/, adminStats],
   ["POST", /^\/admin\/orders\/([^/]+)\/unlock$/, adminUnlock],
+  ["POST", /^\/payments\/notify$/, handlePaymentNotify],
+  ["POST", /^\/payments\/confirm$/, handlePaymentConfirm],
 ];
 
 function decodeSegment(segment: string): string {

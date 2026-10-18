@@ -6,6 +6,16 @@ import { SupabaseStore } from "../../lib/store_supabase.ts";
 import type { RpcClient } from "../../lib/store_supabase.ts";
 
 export const SCHEMA_MIGRATION = new URL("../../../../migrations/20261018000001_schema.sql", import.meta.url);
+const MIGRATIONS_DIR = new URL("../../../../migrations/", import.meta.url);
+
+/** Every migration in file-name order, except the pg_cron/pg_net jobs (Supabase only). */
+export async function migrationFiles(): Promise<URL[]> {
+  const names: string[] = [];
+  for await (const e of Deno.readDir(MIGRATIONS_DIR)) {
+    if (e.isFile && e.name.endsWith(".sql") && !e.name.includes("cron")) names.push(e.name);
+  }
+  return names.sort().map((n) => new URL(n, MIGRATIONS_DIR));
+}
 
 const ROLES = `do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
@@ -28,7 +38,7 @@ export async function openTestDb(): Promise<TestDb> {
     return { rows: res.rows };
   };
   const migrate = async () => {
-    await db.exec(await Deno.readTextFile(SCHEMA_MIGRATION));
+    for (const file of await migrationFiles()) await db.exec(await Deno.readTextFile(file));
   };
   await db.exec(ROLES);
   await migrate();
