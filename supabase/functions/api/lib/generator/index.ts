@@ -304,6 +304,23 @@ function namesSector(text: string, sector: Sector): boolean {
   return SECTOR_KEYWORDS[sector].some((k) => key.includes(k));
 }
 
+/**
+ * IT tools for a sentence where they appear in brackets: inner brackets dropped
+ * ("Messagerie (Gmail, Outlook)" → "Messagerie"), duplicates and tools already cited as skills removed.
+ */
+function itForSentence(it: string[], citedSkills: string[]): string[] {
+  const seen = new Set(citedSkills.map(foldKey));
+  const out: string[] = [];
+  for (const raw of it) {
+    const tool = collapse(raw.replace(/\([^)]*\)/g, " ")).replace(/[()]/g, "");
+    const key = foldKey(tool);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(tool);
+  }
+  return out.slice(0, 4);
+}
+
 function dedupeSkills(skills: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -335,6 +352,7 @@ function buildContext(input: OrderInput, now: Date): Ctx {
     : SECTORS[sector].domain;
   const exp = buildExperience(input);
   const degree = buildDegree(input, { g }, now.getUTCFullYear());
+  const skills = dedupeSkills(input.skills);
   return {
     g,
     level,
@@ -351,8 +369,8 @@ function buildContext(input: OrderInput, now: Date): Ctx {
     exp,
     expCount: input.experiences.length,
     // A skill containing "et" reads best first: "hygiène et asepsie, soins de base et prise de constantes".
-    skills: dedupeSkills(input.skills).slice(0, 3).map(inSentence).sort((x, y) => Number(/ et /.test(y)) - Number(/ et /.test(x))),
-    it: input.it.map(collapse).filter(Boolean).slice(0, 4),
+    skills: skills.slice(0, 3).map(inSentence).sort((x, y) => Number(/ et /.test(y)) - Number(/ et /.test(x))),
+    it: itForSentence(input.it, skills.slice(0, 3)),
     company: withArticle(input.letter?.company ?? ""),
     source: parseSource(input.letter?.source),
   };
@@ -454,6 +472,13 @@ function resolveQualities(typed: string[], c: Ctx, picker: Picker): { phrases: s
   return { phrases: phrases.slice(0, 4), others: others.slice(0, Math.max(0, 4 - phrases.length)) };
 }
 
+/** "sens de l'écoute" → "un sens de l'écoute", so that "preuve d'un sens de l'écoute" reads well. */
+function qualityNoun(q: string): string {
+  if (/^(bonne|grande|réelle|excellente|vraie)\b/i.test(q)) return `une ${q}`;
+  if (/^(sens|esprit|goût|bon|grand|réel|excellent|vrai)\b/i.test(q)) return `un ${q}`;
+  return q;
+}
+
 function buildParagraphs(input: OrderInput, c: Ctx, picker: Picker): string[] {
   const motivation = cleanFreeText(input.letter?.motivation);
   const w = new Composer(picker, c, [c.role, c.domain], [motivation]);
@@ -476,6 +501,7 @@ function buildParagraphs(input: OrderInput, c: Ctx, picker: Picker): string[] {
     if (!c.exp || c.exp.internship) p2Parts.push(w.pick("p2.beginner", LETTRE_BEGINNER));
   } else if (!c.exp) {
     p2Parts.push(w.pick("p2.background", LETTRE_BACKGROUND));
+    if (!c.degree) p2Parts.push(w.pick("p2.background2", LETTRE_BACKGROUND.filter((v) => !p2Parts.includes(v(c) || null))));
   }
   const p2 = joinSentences(p2Parts);
 
@@ -483,7 +509,7 @@ function buildParagraphs(input: OrderInput, c: Ctx, picker: Picker): string[] {
   const p3 = joinSentences([
     c.skills.length > 0 ? w.pick("p3.skills", LETTRE_SKILLS) : c.it.length > 0 && w.pick("p3.it", LETTRE_IT),
     phrases.length > 0 && w.choose("p3.qualities", LETTRE_QUALITIES.map((intro) => intro(joinList(phrases)))),
-    others.length > 0 && `Je fais ${phrases.length ? "également " : ""}preuve ${joinList(others.map(de))}`,
+    others.length > 0 && `Je fais ${phrases.length ? "également " : ""}preuve ${joinList(others.map(qualityNoun).map(de))}`,
     motivation,
     w.pick("p3.interest", LETTRE_INTEREST),
   ]);

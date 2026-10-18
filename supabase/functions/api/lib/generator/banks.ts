@@ -632,6 +632,7 @@ export const LETTRE_BACKGROUND: Variant[] = [
   },
   (c) => `Mon parcours dans ${c.domain} m'a permis de développer ${c.gain}`,
   (c) => `Au fil de mon parcours dans ${c.domain}, j'ai appris à travailler avec rigueur et à m'adapter aux exigences du terrain`,
+  (c) => `Je suis ${c.g("habitué", "habituée")} à travailler en autonomie comme en équipe, dans le respect des consignes et des délais`,
 ];
 
 /** IT tools in brackets: " (Word, Excel, Sage)". */

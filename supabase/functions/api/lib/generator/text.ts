@@ -109,16 +109,22 @@ function foldWord(w: string): string {
  */
 export function withArticle(name: string): string {
   const n = collapse(name);
-  if (/^(le|la|les)\s|^l['’]/i.test(n)) return n;
-  const kind = ORGANISATION_NOUNS[foldWord(n.split(/\s/)[0] ?? "")];
+  const words = n.split(/\s/);
+  const typed = /^(le|la|les)$/i.test(words[0] ?? "") ? words[0] : /^l['’]/i.test(n) ? "l'" : null;
+  if (typed) {
+    // "Le Groupe Sonatel" → "le Groupe Sonatel"; an article that is part of a brand ("La Poste") stays.
+    const head = typed === "l'" ? n.slice(2).split(/\s/)[0] : words[1] ?? "";
+    return ORGANISATION_NOUNS[foldWord(head)] ? n.replace(/^\p{L}/u, (ch) => ch.toLocaleLowerCase("fr")) : n;
+  }
+  const kind = ORGANISATION_NOUNS[foldWord(words[0] ?? "")];
   if (!kind) return n;
   if (kind === "p") return `les ${n}`;
   return elide(kind === "m" ? "le" : "la", n);
 }
 
-/** True when the organisation name reads with an article ("La Poste", "Cabinet Diallo"). */
+/** True when the organisation name reads with an article ("La Poste", "Cabinet Diallo", "l'Hôpital"). */
 export function takesArticle(name: string): boolean {
-  return withArticle(name) !== collapse(name);
+  return /^(le|la|les)\s|^l['’]/i.test(withArticle(name));
 }
 
 /** "en tant que comptable", "en tant qu'électricien". */
