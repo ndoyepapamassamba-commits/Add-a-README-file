@@ -1,6 +1,6 @@
 // HTTP API of the `api` Edge Function: createApp(deps) => (req) => Response. Routes follow SPEC.md.
 import { WaveError } from "./types.ts";
-import type { Deps, Document, OrderRow, WaveCheckoutSession } from "./types.ts";
+import type { Config, Deps, Document, OrderRow, Store, WaveCheckoutSession } from "./types.ts";
 import {
   bearerToken,
   clientIp,
@@ -18,6 +18,8 @@ import { formatSnMobile, normalizeSnMobile } from "./phone.ts";
 import { isTemplate, priceOf } from "./pricing.ts";
 import { normalizeReturnBase, validateOrderRequest } from "./validate.ts";
 import { verifySharedSecret, verifyWaveSignature, withDeadline } from "./wave.ts";
+import { loadConfig, SETTINGS_TTL_MS } from "./config.ts";
+import type { EnvGet } from "./config.ts";
 import { confirmPayment, runReconcile } from "./reconcile.ts";
 import { runDaily } from "./payout.ts";
 import { generateDocument } from "./generator/index.ts";
@@ -386,5 +388,48 @@ export function createApp(deps: Deps): (req: Request) => Promise<Response> {
       log.error("unhandled error", err);
       return errorResponse(500, "internal", "Une erreur interne est survenue. Réessayez dans un instant.");
     }
+  };
+}
+
+export interface ReloadingAppOptions {
+  store: Store;
+  envGet: EnvGet;
+  /** Builds the config-dependent services (Wave client, LLM enhancer). */
+  services: (config: Config) => Pick<Deps, "wave" | "enhance">;
+  ttlMs?: number;
+  now?: () => Date;
+}
+
+/**
+ * The production entry point: Config = env (wins) over tcv.settings, with the settings snapshot reloaded at
+ * most once per `ttlMs`. Concurrent requests share one reload; a failed reload keeps the previous snapshot.
+ */
+export function createReloadingApp(opts: ReloadingAppOptions): (req: Request) => Promise<Response> {
+  const ttlMs = opts.ttlMs ?? SETTINGS_TTL_MS;
+  const now = opts.now ?? (() => new Date());
+  let current: { app: (req: Request) => Promise<Response>; settings: Record<string, string>; loadedAt: number } | null = null;
+  let loading: Promise<(req: Request) => Promise<Response>> | null = null;
+
+  async function rebuild() {
+    let settings = current?.settings ?? {};
+    try {
+      settings = await opts.store.getSettings();
+    } catch (err) {
+      log.error("settings reload failed, keeping the previous values", err);
+    }
+    const config = loadConfig(opts.envGet, settings);
+    const app = createApp({ store: opts.store, config, now, ...opts.services(config) });
+    current = { app, settings, loadedAt: now().getTime() };
+    return app;
+  }
+
+  return async (req) => {
+    if (!current || now().getTime() - current.loadedAt >= ttlMs) {
+      loading ??= rebuild().finally(() => {
+        loading = null;
+      });
+      return (await loading)(req);
+    }
+    return current.app(req);
   };
 }

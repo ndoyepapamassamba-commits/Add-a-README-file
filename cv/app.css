@@ -443,9 +443,10 @@ table.data tr:last-child td { border-bottom: 0; }
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
-.tcv-page h1, .tcv-page h2, .tcv-page h3, .tcv-page p, .tcv-page ul { margin: 0; padding: 0; }
-.tcv-page h1, .tcv-page h2, .tcv-page h3 { line-height: 1.2; }
-.tcv-page ul { list-style: none; }
+/* One-class reset: beats the site's element rules (p, h1…) while every template rule below wins by order. */
+.tcv-page :where(h1, h2, h3, p, ul) { margin: 0; padding: 0; }
+.tcv-page :where(h1, h2, h3) { line-height: 1.2; }
+.tcv-page :where(ul) { list-style: none; }
 .tcv-sec { margin-bottom: 1.15em; }
 .tcv-sec:last-child { margin-bottom: 0; }
 .tcv-item { margin-bottom: .8em; break-inside: avoid; page-break-inside: avoid; }
@@ -455,19 +456,17 @@ table.data tr:last-child td { border-bottom: 0; }
 .tcv-period { font-size: .9em; color: #5a6875; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .tcv-org { color: #3b4a58; margin-top: .1em; }
 .tcv-detail { color: #5a6875; font-size: .94em; margin-top: .1em; }
-.tcv-bullets { margin-top: .35em !important; padding-left: 1.15em !important; list-style: disc outside !important; }
+.tcv-bullets { margin-top: .35em; padding-left: 1.15em; list-style: disc outside; }
 .tcv-bullets li { margin: .14em 0; padding-left: .15em; }
-.tcv-list { list-style: square outside !important; padding-left: 1.05em !important; }
+.tcv-list { list-style: square outside; padding-left: 1.05em; }
 .tcv-list li { margin: .16em 0; }
 .tcv-plain li { margin: .2em 0; }
 .tcv-inline { margin: 0; }
 .tcv-sep { color: #9aa5b0; white-space: pre; }
 .tcv-langs li { margin: .16em 0; }
-.tcv-langs-inline li { display: inline; }
-.tcv-langs-inline li + li::before { content: " · "; color: #9aa5b0; }
 .tcv-lang-name { font-weight: 600; }
 .tcv-lang-level { color: #5a6875; }
-.tcv-profile { text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.tcv-profile { text-align: left; }
 
 /* Masked runs (preview only). */
 .tcv-mask { white-space: normal; }
@@ -555,17 +554,19 @@ table.data tr:last-child td { border-bottom: 0; }
 .tpl-elegant .tcv-col { flex: 1; min-width: 0; }
 .tpl-elegant .tcv-side-sec { margin-bottom: 1.1em; }
 .tpl-elegant .tcv-list li::marker { color: #b39361; }
+.tpl-elegant .tcv-detail, .tpl-elegant .tcv-lang-level { color: #7a6d62; }
+.tpl-elegant .tcv-sep { color: #b8a689; }
 
 /* ----- Lettre de motivation ----- */
-.tcv-lettre { padding: 20mm 22mm 18mm; line-height: 1.5; }
+.tcv-lettre { padding: 22mm 22mm 18mm; line-height: 1.55; }
 .tcv-sender .tcv-line-first { font-weight: 700; font-size: 1.12em; }
-.tcv-recipient { margin: 11mm 0 0 50%; }
+.tcv-recipient { margin: 14mm 0 0 50%; }
 .tcv-recipient .tcv-line-first { font-weight: 600; }
-.tcv-place-date { margin: 8mm 0 0 50%; }
-.tcv-subject { margin-top: 11mm; font-weight: 700; }
-.tcv-salutation { margin-top: 7mm; }
-.tcv-para { margin-top: .9em; text-align: justify; hyphens: auto; -webkit-hyphens: auto; break-inside: avoid; }
-.tcv-signature { margin: 12mm 0 0 50%; font-weight: 700; }
+.tcv-place-date { margin: 9mm 0 0 50%; }
+.tcv-subject { margin-top: 13mm; font-weight: 700; }
+.tcv-salutation { margin-top: 8mm; }
+.tcv-para { margin-top: 1em; text-align: justify; hyphens: auto; -webkit-hyphens: auto; break-inside: avoid; }
+.tcv-signature { margin: 14mm 0 0 50%; font-weight: 700; }
 .tcv-sender-details { font-size: .92em; }
 
 .tpl-classique.tcv-lettre .tcv-subject { color: #16304f; }
@@ -575,7 +576,7 @@ table.data tr:last-child td { border-bottom: 0; }
 .tpl-moderne.tcv-lettre .tcv-name { font-size: 2em; }
 .tpl-moderne.tcv-lettre .tcv-sender-details { color: #d7e5ea; margin-top: .55em; }
 .tpl-moderne.tcv-lettre .tcv-sender-details .tcv-sep { color: #7fa6b5; }
-.tpl-moderne .tcv-letter-body { padding: 4mm 22mm 18mm; }
+.tpl-moderne .tcv-letter-body { padding: 2mm 22mm 18mm; }
 .tpl-moderne.tcv-lettre .tcv-subject { color: #123d50; border-left: 3px solid #e0a63a; padding-left: .6em; }
 
 .tpl-elegant.tcv-lettre { padding: 18mm 22mm 18mm; }

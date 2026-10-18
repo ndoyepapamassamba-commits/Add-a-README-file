@@ -18,7 +18,10 @@
   ];
   // Fonts Word can find on a typical Windows/Mac install (the screen stack starts with system-ui).
   var WORD_FONTS = { classique: "Calibri, Arial, sans-serif", moderne: "Calibri, Arial, sans-serif", elegant: "Georgia, 'Times New Roman', serif" };
-  var BASE_PT = { classique: 10, moderne: 9.75, elegant: 10.5 };
+  var BASE_PT = {
+    cv: { classique: 10, moderne: 9.75, elegant: 10.5 },
+    lettre: { classique: 11, moderne: 10.75, elegant: 11.5 }
+  };
 
   function normTemplate(t) {
     return t === "moderne" || t === "elegant" ? t : "classique";
@@ -86,13 +89,14 @@
     return s;
   }
 
-  /** "a · b · c" with real separator characters so they survive copy/paste and the Word export. */
+  /** "a · b · c" with real separator characters so they survive copy/paste and the Word export.
+   *  The default separator starts with a no-break space so a line never begins with "·". */
   function inlineList(items, path, sep) {
     var p = el("p", "tcv-inline");
     items.forEach(function (item, i) {
       if (i > 0) {
         var s = el("span", "tcv-sep", { "aria-hidden": "true" });
-        s.textContent = sep || " · ";
+        s.textContent = sep || "\u00a0· ";
         p.appendChild(s);
       }
       p.appendChild(field("span", "tcv-inline-item", item, path + "." + i));
@@ -108,20 +112,39 @@
     return ul;
   }
 
+  function languageEntry(tag, l, i) {
+    var n = el(tag, "tcv-lang");
+    n.appendChild(field("span", "tcv-lang-name", l.name, "cv.languages." + i + ".name"));
+    if (!isBlank(l.level)) {
+      var sep = el("span", "tcv-sep", { "aria-hidden": "true" });
+      sep.textContent = " — ";
+      n.appendChild(sep);
+      n.appendChild(field("span", "tcv-lang-level", l.level, "cv.languages." + i + ".level"));
+    }
+    return n;
+  }
+
+  /** One language per line ("Wolof — Langue maternelle"). */
   function languageList(langs, cls) {
     var ul = el("ul", cls || "tcv-langs");
     langs.forEach(function (l, i) {
-      var li = el("li");
-      li.appendChild(field("span", "tcv-lang-name", l.name, "cv.languages." + i + ".name"));
-      if (!isBlank(l.level)) {
-        var sep = el("span", "tcv-sep", { "aria-hidden": "true" });
-        sep.textContent = " — ";
-        li.appendChild(sep);
-        li.appendChild(field("span", "tcv-lang-level", l.level, "cv.languages." + i + ".level"));
-      }
-      ul.appendChild(li);
+      ul.appendChild(languageEntry("li", l, i));
     });
     return ul;
+  }
+
+  /** Languages on one line, separated like inlineList(). */
+  function languageInline(langs) {
+    var p = el("p", "tcv-inline");
+    langs.forEach(function (l, i) {
+      if (i > 0) {
+        var s = el("span", "tcv-sep", { "aria-hidden": "true" });
+        s.textContent = "\u00a0· ";
+        p.appendChild(s);
+      }
+      p.appendChild(languageEntry("span", l, i));
+    });
+    return p;
   }
 
   /** "Company, Place" line of an experience. */
@@ -240,7 +263,7 @@
       label.textContent = r[0];
       row.appendChild(label);
       var val = el("div", "tcv-fact-value");
-      val.appendChild(isLang ? languageList(list, "tcv-langs tcv-langs-inline") : inlineList(list, r[2]));
+      val.appendChild(isLang ? languageInline(list) : inlineList(list, r[2]));
       row.appendChild(val);
       s.appendChild(row);
     });
@@ -268,7 +291,7 @@
       "data-word-font": WORD_FONTS[t],
       lang: "fr"
     });
-    p.style.fontSize = BASE_PT[t] + "pt";
+    p.style.fontSize = BASE_PT[kind][t] + "pt";
     return p;
   }
 
@@ -429,15 +452,14 @@
   }
 
   /**
-   * Shrinks the type (down to 86 %) until a CV fits on one A4 page. The page must be in the DOM.
+   * Shrinks the type (down to 86 %) until the page fits on one A4 sheet. The page must be in the DOM.
    * Returns true when the content fits on one page.
    */
   function fit(p) {
-    var t = p.getAttribute("data-template") || "classique";
-    var base = BASE_PT[t] || 10;
+    var kind = p.getAttribute("data-kind") === "lettre" ? "lettre" : "cv";
+    var base = BASE_PT[kind][normTemplate(p.getAttribute("data-template"))];
     var size = base;
     p.style.fontSize = size + "pt";
-    if (p.getAttribute("data-kind") !== "cv") return p.scrollHeight <= A4_H_PX + 1;
     while (p.scrollHeight > A4_H_PX + 1 && size > base * 0.86) {
       size = Math.round((size - 0.25) * 100) / 100;
       p.style.fontSize = size + "pt";

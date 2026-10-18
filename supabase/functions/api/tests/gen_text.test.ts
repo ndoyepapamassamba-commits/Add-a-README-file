@@ -97,7 +97,7 @@ Deno.test("text in-sentence casing keeps acronyms, brands and place names", () =
   assertEquals(inSentence("Assistante comptable"), "assistante comptable");
   assertEquals(inSentence("Assistant De Direction"), "assistant de direction");
   assertEquals(inSentence("Développeur Web"), "développeur web");
-  assertEquals(inSentence("BTS en Comptabilité"), "BTS en Comptabilité");
+  assertEquals(inSentence("BTS en Comptabilité"), "BTS en comptabilité");
   assertEquals(inSentence("Licence En Gestion Des Entreprises"), "licence en gestion des entreprises");
   assertEquals(inSentence("Diplôme d'État d'infirmier"), "diplôme d'État d'infirmier");
   assertEquals(inSentence("Baccalauréat série G"), "baccalauréat série G");
