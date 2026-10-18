@@ -120,6 +120,9 @@ def charge_bras(f):
     return out
 
 
+AMODAL = 2   # 18/10/2026 : complétion amodale opaque + couverture au contact de deux personnes (plaque.amodal)
+
+
 def prepare(d, jev=True, force=False):
     R = f'{d}/rig'; os.makedirs(R, exist_ok=True)
     S = json.load(open(f'{d}/scene.json')); img = cv2.cvtColor(cv2.imread(f'{d}/image.png'), cv2.COLOR_BGR2RGB)
@@ -157,7 +160,8 @@ def prepare(d, jev=True, force=False):
         pl, inventes = PQ.nettoie(img, pl, trou)   # restes d'acteur et objets inventés par le remplissage : rebouchés
         pl, faits = PQ.fils(img, pl, alphas)
         cv2.imwrite(f'{R}/plaque.png', cv2.cvtColor(pl, cv2.COLOR_RGB2BGR)); cv2.imwrite(f'{R}/trou.png', trou * 255)
-        am, ordre = PQ.amodal(img, alphas); ordre_noms = [acts[k]['nom'] for k in ordre]; finals = []
+    if not cache or ancien.get('amodal') != AMODAL:   # complétion amodale refaite seule quand sa méthode change (plaque gardée)
+        am, ordre = PQ.amodal(img, alphas, personne=pers_tous); ordre_noms = [acts[k]['nom'] for k in ordre]; finals = []
         for k, a in enumerate(acts):
             a2, im2 = am[k]; comp = None; fin = alphas[k]
             if (a2 > alphas[k] + 0.01).any():
@@ -168,7 +172,7 @@ def prepare(d, jev=True, force=False):
                     cv2.imwrite(f"{R}/complete-{a['slug']}.png", cv2.cvtColor(im2[y0:y1, x0:x1], cv2.COLOR_RGB2BGR)); comp = [x0, y0, x1, y1]
                 fin = a2
             cv2.imwrite(f"{R}/alpha-{a['slug']}.png", np.clip(fin * 65535, 0, 65535).astype(np.uint16)); finals.append((fin, comp))
-    info = {'acteurs': {}, 'ordre': ordre_noms, 'fils': faits, 'inventes': inventes, 'empreinte_alphas': empreinte, 'plaque_reprise': bool(cache)}
+    info = {'acteurs': {}, 'ordre': ordre_noms, 'fils': faits, 'inventes': inventes, 'empreinte_alphas': empreinte, 'plaque_reprise': bool(cache), 'amodal': AMODAL}
     for k, a in enumerate(acts):
         s = a['slug']; alphas[k], comp = finals[k]; ent = {'assis': assis(a), 'decoupe': decoupes[k], 'pts': a['pts']}
         if a['nom'] in pts_fins: ent['squelette_affine'] = {'score_avant': pts_fins[a['nom']][0], 'score_apres': pts_fins[a['nom']][1]}

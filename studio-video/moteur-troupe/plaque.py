@@ -116,10 +116,17 @@ def ordre_profondeur(alphas):
     return list(np.argsort(bas))
 
 
-def amodal(img, alphas, bande=16):
+def amodal(img, alphas, bande=16, personne=None, opaque=True, fondu=4, contact=12):
     """pour chaque acteur caché en partie par un acteur plus proche : (alpha étendue, image complétée). Seule la bande où
     un petit mouvement de celui de devant peut découvrir celui de derrière est reconstituée (LaMa continue la robe à
-    partir de son bord visible), en fondu : quand Petit Mamadou bouge, on voit la robe de Maman, pas le mur."""
+    partir de son bord visible) : quand Petit Mamadou bouge, on voit la robe de Maman, pas le mur.
+    OPAQUE ET SANS TROU ENTRE DEUX PERSONNES (18/10/2026) : v29 et v30 jugées par JEV — 260 des 399 images « rendu » de la
+    v29 venaient du bras de Maman Nounou vu EN TRANSPARENCE contre Petit Mamadou. La bande reconstituée s'effaçait sur
+    toute sa largeur (1 − d/16 : à moitié transparente à 8 px du bord visible) et la découpe du bras collé à l'enfant
+    restait partielle (alpha 0,02–0,98 sur tout l'avant-bras) : dès que l'un ou l'autre bougeait, le mur apparaissait à
+    travers. Désormais la partie reconstituée est opaque jusqu'à `fondu` px de sa limite, et au contact de celui de
+    devant (à `contact` px), là où la segmentation voit une personne (`personne` > 0,7), celui de derrière est opaque :
+    entre deux personnes il n'y a pas de décor. opaque=False : l'ancien fondu (banc de comparaison)."""
     n = len(alphas); ordre = ordre_profondeur(alphas); rang = {k: i for i, k in enumerate(ordre)}; out = []
     for i in range(n):
         A = (alphas[i] > 0.5).astype(np.uint8)
@@ -132,8 +139,12 @@ def amodal(img, alphas, bande=16):
         zone = (cache > 0) & (d < bande)
         if zone.sum() < 30: out.append((alphas[i], img)); continue
         sans = remplit_progressif(img, cv2.dilate(cache, np.ones((5, 5), np.uint8)), bande=bande + 8, passes=1)
-        ext = np.clip(1 - d / bande, 0, 1) * zone
+        ext = (np.clip((bande - d) / fondu, 0, 1) if opaque else np.clip(1 - d / bande, 0, 1)) * zone
         a2 = np.maximum(alphas[i], cv2.GaussianBlur(ext.astype(np.float32), (0, 0), 0.8))
+        if opaque and personne is not None:   # au contact de celui de devant, hors de lui : sa propre découpe partielle comblée
+            pres = cv2.dilate(cache, np.ones((2 * contact + 1, 2 * contact + 1), np.uint8)) > 0
+            couvre = pres & (cache == 0) & (d < 6) & (personne > 0.7)
+            a2 = np.where(couvre, np.maximum(a2, np.clip((personne - 0.7) / 0.2, 0, 1)), a2)
         im2 = np.where((ext > 0)[..., None], sans, img)
         out.append((a2.astype(np.float32), im2))
     return out, ordre

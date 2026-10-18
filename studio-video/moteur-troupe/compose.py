@@ -28,20 +28,49 @@ def words_of(L):
     n = [max(1, len(re.findall(r'[aeiouyéèêëàâîïôûœ]+', w.lower()))) for w in ws]; tot = sum(n); out, c = [], a0
     for w, k in zip(ws, n): dt = (a1 - a0) * k / tot; out.append((w, c, c + dt)); c += dt
     return out
-def chunks(tw):
-    out, cur = [], []
-    for w in tw:
-        cur.append(w)
-        if len(cur) >= 4 or re.search(r'[.!?…,]$', w[0]): out.append(cur); cur = []
-    if cur: out.append(cur)
-    return out
-def layout(ch):
-    up = [w.upper() for w, _, _ in ch]; best = None
+# BLOCS PAR GROUPES DE SENS (18/10/2026). v29 : « LE POULET / A FAIT » (coupé avant « l'université ? », 4 mots au plus par
+# bloc) — JEV « conforme » 0,28 ; la proposition entière « LE POULET A FAIT / L'UNIVERSITÉ ? » 0,84. Règle des sous-titreurs
+# (BBC, Netflix) : couper aux ponctuations, garder ensemble ce qui va ensemble, ne jamais finir un bloc sur un mot-outil
+# (article, préposition, auxiliaire, pronom, conjonction) qui appelle la suite.
+OUTILS = set("le la les l' un une des du de d' au aux à a ai as avons avez ont suis es est sommes êtes sont va vais vas vont "
+             "en dans sur sous pour par avec sans chez vers entre contre et ou mais donc car ni que qu' comme si quand "
+             "je j' tu il elle on nous vous ils elles me m' te t' se s' ce c' cet cette ces qui dont ne n' mon ma mes ton ta tes "
+             "son sa ses notre nos votre vos leur leurs quel quelle quels quelles chaque très monsieur madame mademoiselle".split())
+NOMBRE = re.compile(r"\d+|(un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|vingt|"
+                    r"trente|quarante|cinquante|soixante|cent|cents|mille)([-‑](et-)?\w+)*", re.I)
+def outil(w, suivant=''):   # le mot appelle la suite : mot-outil, ou nombre suivi d'un nombre (« cinq | cents », « dix | mille »)
+    if re.search(r'[.!?…,;:»]$', w): return False
+    return w.lower().replace('’', "'") in OUTILS or bool(NOMBRE.fullmatch(w) and suivant and NOMBRE.fullmatch(re.sub(r'[.!?…,;:»]+$', '', suivant)))
+LARGEUR = 2 * (SAFE['right'] + 1) - W   # 450 px : ligne centrée dans la zone sûre (celle que vérifient les assertions)
+def coupes(ch):   # dispositions sur une ou deux lignes dans la zone sûre : (coût, k) ; une ligne finie sur un mot-outil coûte 1000
+    up = [w.upper() for w, _, _ in ch]; r = []
     for k in range(1, len(up) + 1):
         w1 = F1.getlength(' '.join(up[:k])); w2 = F1.getlength(' '.join(up[k:])) if up[k:] else 0
-        if max(w1, w2) <= 470 and (best is None or max(w1, w2) < best[0]): best = (max(w1, w2), k)
-    k = best[1] if best else len(up)
-    return [list(range(0, k)), list(range(k, len(up)))] if k < len(up) else [list(range(len(up)))]
+        if max(w1, w2) <= LARGEUR: r.append((max(w1, w2) + (1000 if k < len(up) and outil(ch[k - 1][0], ch[k][0]) else 0), k))
+    return r
+tient = lambda ch: bool(coupes(ch))
+def chunks(tw):
+    props, cur = [], []
+    for w in tw:
+        cur.append(w)
+        if re.search(r'[.!?…,;:]$', w[0]): props.append(cur); cur = []
+    if cur: props.append(cur)
+    out = []
+    for p in props:   # découpe la moins coûteuse : peu de blocs, ≤ 4 mots de préférence, jamais sur un mot-outil
+        n = len(p); best = [0.0] + [None] * n; cut = [0] * (n + 1)
+        for i in range(1, n + 1):
+            for j in range(max(0, i - 6), i):
+                if best[j] is None or not tient(p[j:i]): continue
+                c = best[j] + 10 + 3 * max(0, i - j - 4) + (100 if i < n and outil(p[i - 1][0], p[i][0]) else 0) \
+                    + (50 if min(coupes(p[j:i]))[0] >= 1000 else 0)   # bloc visible d'un coup : ligne sur un mot-outil tolérée en dernier recours
+                if best[i] is None or c <= best[i]: best[i], cut[i] = c, j   # à égalité, premier groupe le plus long (groupe nominal entier)
+        i, morceaux = n, []
+        while i > 0: morceaux.append(p[cut[i]:i]); i = cut[i]
+        out += morceaux[::-1]
+    return out
+def layout(ch):
+    r = coupes(ch); k = min(r)[1] if r else len(ch)   # deux lignes équilibrées, sans ligne finie sur un mot-outil si possible
+    return [list(range(0, k)), list(range(k, len(ch)))] if k < len(ch) else [list(range(len(ch)))]
 caps = []
 for L in T['lines']:
     cs = chunks(words_of(L))

@@ -260,26 +260,50 @@ def line_at(t, qui=None):
     for L in lines:
         if L['t0'] - 0.02 <= t <= L['t0'] + L['dur'] + 0.02 and (qui is None or L['qui'] == qui): return L
     return None
+def montre(L, x):
+    """phonème montré à l'image x (s depuis le début de la réplique). Exposition des animateurs 2D : la bouche devance le son
+    d'une image (40 ms), SAUF au cœur de chaque phonème, montré tel quel jusqu'à une image après son centre. v29 : JEV
+    prélève l'image ceil(t × 30) au centre de chaque segment (0 à 33 ms après) ; l'anticipation de 40 ms y montrait souvent
+    le phonème suivant — une voyelle courte devant un « m » était déjà fermée, un « m » court déjà rouvert."""
+    P = L['phonemes']
+    if P and x < P[0]['t0']: x += 0.04
+    for i, p in enumerate(P):
+        if p['t0'] <= x < p['t1']:
+            if x < (p['t0'] + p['t1']) / 2 + 1 / FPS: return p
+            for q in P[i:]:
+                if q['t0'] <= x + 0.04 < q['t1']: return q
+            return None
+    return None
 def jaw(L, t):
-    # ouverture visée par phonème, anticipée de 40 ms (coarticulation), lissée sur ±50 ms, modulée par l'énergie réelle
-    u = t - L['t0'] + 0.04; acc = 0.0; wsum = 0.0
-    for dt, w in ((-0.05, 0.25), (0.0, 0.5), (0.05, 0.25)):
-        v = 0.0
-        for p in L['phonemes']:
-            if p['t0'] <= u + dt < p['t1']: v = p['open'] / 4; break
-        acc += v * w; wsum += w
-    # LÈVRES JOINTES SUR M, B, P (forme A de Rhubarb) ET AUX SILENCES (X) — avis de JEV sur la v25 (17/10) : aux centres des
-    # consonnes fermées, il voyait la bouche OUVERTE (« fermée » 0,04–0,36) : le lissage ±50 ms et le terme d'énergie
-    # laissaient ≈ 0,45 d'ouverture au cœur d'un « m » court entre deux voyelles. Règle des animateurs : la bouche se ferme
-    # sur chaque bilabiale ; le lissage ne joue qu'aux transitions (images voisines), pas au cœur de la consonne.
-    for p in L['phonemes']:
-        if p['t0'] <= u < p['t1']:
-            if p['ph'] in ('A', 'X'): return 0.0
-            break
-    e = L['env'][min(len(L['env']) - 1, max(0, int((t - L['t0']) * 100)))]
+    # ouverture visée par le phonème montré, adoucie sur ±50 ms, modulée par l'énergie réelle de la voix
+    x = t - L['t0']; p = montre(L, x)
+    # LÈVRES JOINTES SUR M, B, P (forme A de Rhubarb) ET AUX SILENCES (X) — avis de JEV sur la v25 (17/10) puis la v29
+    # (18/10) : bouche vue fermée 16 fois sur 17 quand la commande vaut ≤ 0,05, 8 fois sur 31 au-delà. Règle des
+    # animateurs : la bouche se ferme sur chaque bilabiale ; le lissage ne joue qu'aux transitions, pas au cœur de la consonne.
+    if p is None or p['ph'] in ('A', 'X'): return 0.0
+    acc = 0.0
+    for dx, w in ((-0.05, 0.25), (0.0, 0.5), (0.05, 0.25)):
+        q = montre(L, x + dx); acc += w * (q['open'] / 4 if q else 0.0)
+    e = L['env'][min(len(L['env']) - 1, max(0, int(x * 100)))]
     # amplitude exagérée (les visages font 40 à 80 px dans les plans moyens : une bouche à mi-ouverture y est invisible,
     # mesuré le 16/10) ; la puissance < 1 relève les ouvertures moyennes, les consonnes fermées restent fermées
-    return float(np.clip((acc / wsum * (0.55 + 0.6 * e)) * 1.5 + 0.1 * e, 0, 1) ** 0.85)
+    return float(np.clip((acc * (0.55 + 0.6 * e)) * 1.5 + 0.1 * e, 0, 1) ** 0.85)
+VOYELLE_OUVERTE = 0.85   # v29 jugée par JEV : bouche vue « ouverte » 16/16 à commande ≥ 0,8 ; 13/16 entre 0,6 et 0,8 ; 7/11 entre 0,4 et 0,6
+def machoire(name, t):
+    """ouverture de la bouche lissée sur ±2 images (aucun saut d'un état à l'autre) entre deux cœurs de phonèmes ; au cœur,
+    la forme est TENUE : lèvres jointes sur m, b, p et silences, voyelle ouverte (a, è, o : formes C, D, E de Rhubarb)
+    franchement ouverte. v29 : le lissage rouvrait les « m » courts à 0,3–0,6 (31 instants jugés sur 48) et laissait les
+    voyelles à 0,4–0,7, que JEV ne voyait pas ouvertes."""
+    Lc = line_at(t, name)
+    if Lc and jaw(Lc, t) == 0.0: return 0.0
+    jj = wsum = 0.0
+    for dt, w_ in ((-2, 0.1), (-1, 0.2), (0, 0.4), (1, 0.2), (2, 0.1)):
+        tt = t + dt / FPS; Lx = line_at(tt, name); jj += w_ * (jaw(Lx, tt) if Lx else 0.0); wsum += w_
+    jj /= wsum
+    if Lc:
+        x = t - Lc['t0']; p = montre(Lc, x)
+        if p and p['open'] >= 2.2 and abs(x - (p['t0'] + p['t1']) / 2) <= 1 / FPS: jj = max(jj, VOYELLE_OUVERTE, jaw(Lc, t))
+    return jj
 def blink(name, t):
     rng = np.random.default_rng(zlib.crc32(name.encode())); ts = np.cumsum(rng.uniform(2.2, 5.0, 80))
     return max([max(0.0, 1 - abs(t - b) / 0.12) for b in ts if abs(t - b) < 0.2] + [0.0])
@@ -371,10 +395,7 @@ def etirement(sx, sy, al):
 def warp_rig(S, A, t, name):
     """acteur posé par son squelette : visage (expression dessinée ou déformée, bouche, clignement, regard), puis corps."""
     f = min(NF - 1, max(0, int(round(t * FPS)))); P = S['pistes'][name]; v = lambda k: float(P[k][f])
-    jj = 0.0; wsum = 0.0
-    for dt, w_ in ((-2, 0.1), (-1, 0.2), (0, 0.4), (1, 0.2), (2, 0.1)):
-        tt = t + dt / FPS; Lx = line_at(tt, name); jj += w_ * (jaw(Lx, tt) if Lx else 0.0); wsum += w_
-    jj /= wsum; bb = v('cligne') if 'cligne' in P else blink(name, t)   # clignements du regard vivant (jeu.yeux)
+    jj = machoire(name, t); bb = v('cligne') if 'cligne' in P else blink(name, t)   # clignements du regard vivant (jeu.yeux)
     emo = {e: v('emo_' + e) for e in jeu.EMOS if P['emo_' + e][f] > 0.02}
     src = A['img']; lib = A['lib']
     if A.get('xl'):   # visage redessiné (LivePortrait) : émotions × bouche × clignement
@@ -407,10 +428,7 @@ def warp_actor(S, A, t, name):
     if A.get('rig'): return warp_rig(S, A, t, name)
     ang, hd, br = pose(name, t, S['sk']['id'])
     # FONDU entre états voisins (bouche × yeux) + mâchoire lissée sur ±2 images : plus de saut d'un état à l'autre
-    jj = 0.0; wsum = 0.0
-    for dt, w_ in ((-2, 0.1), (-1, 0.2), (0, 0.4), (1, 0.2), (2, 0.1)):
-        tt = t + dt / FPS; Lx = line_at(tt, name); jj += w_ * (jaw(Lx, tt) if Lx else 0.0); wsum += w_
-    jj /= wsum; bb = blink(name, t)
+    jj = machoire(name, t); bb = blink(name, t)
     src = S['img']; lib = A['lib']
     if lib:
         x = jj * 4; i0 = int(min(3, math.floor(x))); fa = x - i0
@@ -447,11 +465,9 @@ def geste_dessine(S, A, t, name, R):
     if 'cal' not in A: A['cal'] = PD.calendrier(name, lines, CHUTES, S['sk']['id'], A['dessins'], {n: float(B['hip'][0]) for n, B in S['acts'].items()})
     p, w, arrivee = PD.poids(A['cal'], t)
     if not p: return R
-    jj = 0.0; wsum = 0.0
-    for dt, w_ in ((-2, 0.1), (-1, 0.2), (0, 0.4), (1, 0.2), (2, 0.1)):
-        tt = t + dt / FPS; Lx = line_at(tt, name); jj += w_ * (jaw(Lx, tt) if Lx else 0.0); wsum += w_
+    jj = machoire(name, t)
     cdx, cdy = corps(name, t, S['sk']['id'], A)
-    return PD.intervalle(R, PD.rend(A['dessins'][p], jj / wsum, cdx, cdy, t, arrivee), w)
+    return PD.intervalle(R, PD.rend(A['dessins'][p], jj, cdx, cdy, t, arrivee), w)
 def frame_scene(S, t, off=None, zoom=None):
     plate = S['plate']; V = S.get('vie')
     if V is not None and decor_vivant.panache(V, plate) is not None: plate = decor_vivant.fumee(V, plate, t)   # la fumée du grill MONTE (panache physique), avant la parallaxe

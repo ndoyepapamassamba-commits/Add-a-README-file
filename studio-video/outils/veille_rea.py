@@ -50,14 +50,18 @@ verrou = threading.Lock()
 # des lecteurs vidéo et des composants d'interface ; chaque moteur reçoit une note (mots de son nom et de sa description,
 # pondérés par ce qui manque au moteur de la troupe) multipliée par sa popularité. REA démonte d'abord les mieux notés et
 # le résumé les classe en tête ; une note sous SEUIL_REA ne va pas jusqu'à REA (catalogué seulement).
-PERTINENT = [(r'lip.?sync|visem|phonem', 6), (r'talking.?(head|face|avatar)|audio.?driven', 6), (r'skelet|\bbones?\b|skinning|\brig(ging)?\b', 4),
+PERTINENT = [(r'lip.?sync|visem|phonem', 6), (r'talking.?(head|face|avatar)|audio.?driven', 6), (r'skeletal|skeleton.{0,12}(anim|rig|pose|track)|\bbones?\b|skinning|\brig(ging)?\b', 4),
              (r'inverse.?kinematic|\bik\b|\bccd\b|\bfabrik\b', 4), (r'spring|damping', 3), (r'mocap|motion.?capture|\bbvh\b|retarget', 5),
-             (r'pose|landmark|holistic|blend.?shape', 3), (r'facial|face.?(mesh|anim|track)|expression|blink|gaze', 4),
-             (r'live2d|spine|dragonbones|\brive\b|lottie|puppet|\barap\b|mesh.?deform', 4), (r'avatar|\bvrm\b|character', 3),
+             (r'pose|landmark|holistic|blend.?shape', 3), (r'facial|face.?(mesh|anim|track)|(face|facial).{0,15}expression|blink|gaze', 4),
+             (r'live2d|esotericsoftware|spine.?(runtime|anim|2d)|dragonbones|\brive\b|lottie|puppet|\barap\b|mesh.?deform', 4), (r'\bavatars?\b|\bvrm\b|character.{0,15}anim', 3),
              (r'tween|easing|bezier|keyframe', 2), (r'kinematic', 2), (r'\bface\b|\beyes?\b|\bmouth\b', 2), (r'physic|cloth|soft.?body|collision|ragdoll', 2), (r'animat', 2),
              (r'image.?to.?video|video.?(generat|diffusion)|frame.?interpol|optical.?flow', 4), (r'segment|matting|depth', 2)]
-BRUIT = re.compile(r'(?i)player|viewer|upload|download|thumbnail|crop|ckeditor|wordpress|cms|cordova|theme|template|boilerplate|test-')
+BRUIT = re.compile(r'(?i)player|viewer|upload|download|thumbnail|crop|ckeditor|wordpress|cms|cordova|theme|template|boilerplate|test-|'
+                   r'\bcron|\bglob|\benv\b|loader|placeholder|storage|datastore|mysql|deployment|schema|validation|form state')
 SEUIL_REA = 4
+# MODÈLE TÉLÉCHARGÉ PAR LE PAQUET (18/10/2026) : audio2afan est sous MIT mais télécharge le modèle Audio2Face-3D de NVIDIA
+# (« NVIDIA Open Model License ») — la licence du code ne vaut pas pour les poids ; ces paquets sont signalés « poids à vérifier »
+POIDS = re.compile(r'https?://[^\s\'"`]+\.(?:onnx|safetensors|gguf|tflite|pt|pth|ckpt|bin)\b')
 
 
 _NOTES = {}
@@ -202,7 +206,9 @@ def analyser(nom, version):
         for nd in (nr.get('semantic_graph') or {}).get('nodes', []):
             for m in CAPACITES.finditer(json.dumps(nd.get('identity', {}), ensure_ascii=False)):
                 k = m.group(0).lower(); compte[k] = compte.get(k, 0) + 1
-        return {'preuve': ev.get('evidence_id'), 'source_js': src, 'duree_s': round(time.time() - t0, 1),
+        poids = sorted({m.group(0)[:160] for d, _, fs in os.walk(racine) for f in fs if f.endswith(('.js', '.mjs', '.cjs'))
+                        for m in POIDS.finditer(open(os.path.join(d, f), errors='ignore').read())})[:5]
+        return {'preuve': ev.get('evidence_id'), 'source_js': src, 'duree_s': round(time.time() - t0, 1), 'poids_telecharges': poids,
                 'stats': {k: st.get(k) for k in ('visited_ast_nodes', 'findings', 'parsed_javascript_files')},
                 'motifs': [{'mot': k, 'n': n} for k, n in sorted(compte.items(), key=lambda kv: -kv[1])[:12]]}
     except Exception as ex:

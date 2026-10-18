@@ -49,6 +49,11 @@ BOUCHE = [-25, 0, 30, 62, 100]  # ouverture de la bouche (commande « lèvres 3 
 # Mamadou, Maman Nounou, Koffi) ; JEV voyait donc la bouche ouverte aux m, b, p et aux silences de la v28 (« fermée »
 # 0,06–0,55). Les auteurs de LivePortrait ferment les lèvres par « lèvres 3 » négatif ; planche essai_fermeture (7 visages,
 # 0 à −80) : −20 à −40 joignent les lèvres, −60 et au-delà gonflent les joues → −25 en tête, la bouche peinte reste au rang 1.
+# RANGS PROPRES À UN VISAGE (18/10/2026, v30 jugée par JEV, gros plans réduits à la taille du visage dans le film) :
+# Baye (moustache et barbe, visage de 60 px) — « fermée » 0,63 à −25, 0,70 à −40, 0,66 à −55 (plus abîmée) ; Modou (trois
+# quarts, moustache) — « franchement ouverte » 0,58 à 100, 0,87 à 140 (abîmée 0,49), 0,92 à 170 (0,50), 0,95 à 200 (0,57).
+BOUCHE_PERSO = {'baye-ndiaye': [-40, 0, 30, 62, 100], 'modou': [-25, 0, 30, 62, 100, 140]}
+def bouches(slug): return BOUCHE_PERSO.get(slug, BOUCHE)
 OVALE = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109]
 SOURCILS = ('froncer', 'inquiet', 'hausser', 'sourcils')
 LEVRES = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185]   # contour extérieur des lèvres (FaceMesh)
@@ -143,7 +148,7 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev'):
     """rend et range la bibliothèque d'expressions d'un personnage (une fois ; une émotion dont la recette de base a changé
     est recherchée et redessinée). Chaque émotion reçoit la RECETTE la plus lisible qui n'abîme pas CE visage
     (cherche_recette, œil de JEV) ; sans juge, la recette de base à pleine intensité. → méta-données."""
-    os.makedirs(dossier, exist_ok=True); src = LP.Source(img, v3); x, y, s = src.box
+    os.makedirs(dossier, exist_ok=True); src = LP.Source(img, v3); x, y, s = src.box; BOUCHE = bouches(os.path.basename(os.path.normpath(dossier)))
     taille = int(round(min(512, max(96, s))))
     ancien = json.load(open(f'{dossier}/meta.json')) if os.path.isfile(f'{dossier}/meta.json') else {}
     compat = ancien.get('taille') == taille and ancien.get('version') == VERSION   # recettes réutilisables
@@ -183,7 +188,8 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev'):
         for i, m in enumerate(BOUCHE):
             f = f'{dossier}/{e}_{i}.png'
             if m == 0 and fait0 is not None: ecrit(f, fait0); continue   # la recette est jugée à la bouche peinte (0)
-            if neuf or (neuf_bouche and e not in repris) or not os.path.isfile(f): ecrit(f, rend(c, m))
+            ab = ancien.get('bouche') or []   # bouches changées : seuls les rangs dont la valeur change sont redessinés
+            if neuf or (neuf_bouche and e not in repris and (i >= len(ab) or ab[i] != m)) or not os.path.isfile(f): ecrit(f, rend(c, m))
         meta['emotions'].append(e); meta['commandes'][e] = EMO[e]; meta['recettes'][e] = c
         meta['intensite'][e] = meta['jev'].get(e, {}).get('intensite', 1.0)
         json.dump(meta, open(fp, 'w'))
@@ -243,11 +249,14 @@ def charge(dossier, img, v3):
     ouv, fa = {}, f'{dossier}/audit.json'
     if os.path.isfile(fa):
         A_ = json.load(open(fa)); b0 = A_.get('bouche') or []; bl = meta['bouche']
-        # audit fait avant l'ajout des lèvres jointes en tête (18/10) : les ouvertures communes sont les mêmes images (rendu
-        # déterministe, mêmes recettes), les nouvelles bouches fermées comptent pour une ouverture perçue nulle
-        if b0 and bl[len(bl) - len(b0):] == b0:
-            pre = [0.0] * (len(bl) - len(b0))
-            ouv = {e: np.maximum.accumulate(np.asarray(pre + list(v['ouverte']), np.float64)) for e, v in A_['emotions'].items() if e in meta['emotions']}
+        # audit fait avant un changement de rangs (lèvres jointes en tête le 18/10, rang plus ouvert pour un visage) : les
+        # rangs communs sont les mêmes images (rendu déterministe, mêmes recettes) ; une bouche fermée ajoutée devant compte
+        # pour une ouverture perçue nulle, un rang plus ouvert ajouté derrière pour au moins la dernière mesurée
+        off = next((o_ for o_ in range(len(bl) - len(b0) + 1) if bl[o_:o_ + len(b0)] == b0), None) if b0 else None
+        if off is not None:
+            pre, post = [0.0] * off, len(bl) - off - len(b0)
+            ouv = {e: np.maximum.accumulate(np.asarray(pre + list(v['ouverte']) + [v['ouverte'][-1]] * post, np.float64))
+                   for e, v in A_['emotions'].items() if e in meta['emotions']}
     gx, gy = np.meshgrid(np.arange(t, dtype=np.float32), np.arange(t, dtype=np.float32))
     return dict(meta=meta, imgs=imgs, clos=clos, flux=flux, paires=paires, masque=masque, yeux=yeux, box=(x, y, s), taille=t, grille=(gx, gy),
                 bouche_masque=bm, ouv=ouv)
