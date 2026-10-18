@@ -52,9 +52,13 @@ const FOREIGN_PHONE_RE = /^[+0-9 ]{8,20}$/;
 // deno-lint-ignore no-control-regex
 const CONTROL_RE = /[\u0000-\u0009\u000B-\u001F\u007F-\u009F\u200B-\u200F\u2028\u2029\uFEFF]/g;
 
-/** Trim, collapse whitespace runs, strip control chars. Multiline keeps one "\n" between non-empty lines. */
+/**
+ * Trim, collapse whitespace runs, strip control chars. Multiline keeps one "\n" between non-empty lines.
+ * Accents are composed (NFC): text pasted with decomposed accents ("e" + U+0301) would otherwise be split into
+ * two words by the copy-editor, which then added a second accent.
+ */
 export function cleanText(value: string, multiline = false): string {
-  const unified = value.replace(/\r\n?/g, "\n").replace(/\t/g, " ").replace(CONTROL_RE, "");
+  const unified = value.normalize("NFC").replace(/\r\n?/g, "\n").replace(/\t/g, " ").replace(CONTROL_RE, "");
   const collapse = (s: string) => s.replace(/[^\S\n]+/g, " ").trim();
   if (!multiline) return collapse(unified.replace(/\n/g, " "));
   return unified.split("\n").map(collapse).filter(Boolean).join("\n");

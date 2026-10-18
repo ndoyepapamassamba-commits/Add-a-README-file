@@ -143,8 +143,8 @@ Token comparison: sha256(token) compared to `access_token_hash` in constant time
 ### Validation (`validate.ts`)
 
 `validateOrderRequest(body) → { ok:true, product, template, data } | { ok:false, fields }`.
-Trim every string, collapse internal whitespace runs to one space (keep newlines in `missions` /
-`motivation`), strip control chars except `\n`. Empty optional strings → `undefined`.
+Compose accents (Unicode NFC), trim every string, collapse internal whitespace runs to one space (keep newlines
+in `missions` / `motivation`), strip control chars except `\n`. Empty optional strings → `undefined`.
 Limits: firstName/lastName ≤ 40 (required); phone required, must satisfy `normalizeSnMobile` OR be
 8–20 chars of `+ 0-9 space` (foreign numbers allowed); email optional ≤ 80, simple regex; city
 required ≤ 60; address ≤ 80; jobTitle required ≤ 80; kind/sector/level/civility must be enum values;

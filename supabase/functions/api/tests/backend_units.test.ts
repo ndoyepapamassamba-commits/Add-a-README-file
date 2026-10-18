@@ -4,7 +4,8 @@ import { formatSnMobile, normalizeSnMobile } from "../lib/phone.ts";
 import { DEFAULT_RETURN_PREFIXES, envFrom, loadConfig } from "../lib/config.ts";
 import { constantTimeEqual, hashIp, newAccessToken, newOrderId, ORDER_ID_RE, sha256Hex } from "../lib/ids.ts";
 import { routePath } from "../lib/http.ts";
-import { cleanText } from "../lib/validate.ts";
+import { cleanText, validateOrderRequest } from "../lib/validate.ts";
+import { generateDocument } from "../lib/generator/index.ts";
 import { serviceKeyFromEnv } from "../lib/store_supabase.ts";
 
 Deno.test("normalizeSnMobile accepts the usual ways of writing a Senegal mobile", () => {
@@ -128,4 +129,31 @@ Deno.test("cleanText", () => {
   assertEquals(cleanText("a\nb"), "a b");
   assertEquals(cleanText(" a \n\n  b  \r\n c ", true), "a\nb\nc");
   assertEquals(cleanText("x\u0000y\u001fz\u007f"), "xyz");
+  // Decomposed accents (e + U+0301, as pasted from some documents) are composed: "é" is one character.
+  assertEquals(cleanText("Université Assane Seck"), "Université Assane Seck");
+  assertEquals(cleanText("Diplôme\npièces", true), "Diplôme\npièces");
+});
+
+Deno.test("decomposed accents typed by the customer are never doubled in the documents", () => {
+  // Regression: the copy-editor restores accents on words typed without one, and its word pattern stops at a
+  // combining mark, so "Universite" + U+0301 came out as "Université" + U+0301 (two accents on the "e").
+  const data = {
+    identity: { civility: "M", firstName: "Sékou", lastName: "Diatta", phone: "77 900 12 12", city: "Ziguinchor" },
+    target: { jobTitle: "Comptable", kind: "emploi", sector: "comptabilite", level: "junior" },
+    education: [{ degree: "Diplôme universitaire de technologie", school: "Université Assane Seck", year: "2022" }],
+    experiences: [{ title: "Aide-comptable", company: "Groupe Kirène", missions: "Préparation des déclarations" }],
+    skills: ["Comptabilité générale"],
+    it: [],
+    languages: [],
+    interests: [],
+    letter: { company: "Société générale", qualities: ["Rigueur"], motivation: "Votre réseau d'agences me motive." },
+  };
+  const v = validateOrderRequest({ product: "pack", template: "classique", data });
+  assert(v.ok);
+  const doc = generateDocument(v.data, "pack", { seed: "TCV-NFC00001", now: new Date("2026-10-18T10:00:00Z") });
+  const text = JSON.stringify(doc);
+  assert(!/\p{M}/u.test(text), "no combining mark left in the document");
+  for (const w of ["Université Assane Seck", "Comptabilité générale", "Diplôme universitaire", "Groupe Kirène", "Sékou", "réseau"]) {
+    assert(text.includes(w), w);
+  }
 });
