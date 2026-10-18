@@ -31,9 +31,9 @@ supabase/
   SPEC.md                         (this file)
   config.toml                     [functions.api] verify_jwt = false                 — backend
   migrations/20261018000001_schema.sql   tables + tcv_* SQL functions (PGlite-testable) — backend
-  migrations/20261018000002_cron.sql     pg_cron/pg_net/vault jobs (Supabase only)    — backend
+  migrations/20261018000002_cron.sql     pg_cron/pg_net jobs, secret read from tcv.settings (Supabase only) — backend
   functions/api/
-    index.ts                      Deno.serve(createApp(loadDeps(Deno.env)))          — backend
+    index.ts                      Deno.serve(createReloadingApp(…)): env over tcv.settings, reloaded ≤ every 60 s — backend
     dev.ts                        local server: real app + MemoryStore + FakeWave + serves ../../../cv  — backend
     lib/types.ts                  contract (do not change shapes without updating all users)
     lib/app.ts                    createApp(deps) => (req: Request) => Promise<Response>  — backend
@@ -86,9 +86,10 @@ Other settings: `WAVE_API_KEY`, `WAVE_WEBHOOK_SECRET`, `WAVE_WEBHOOK_MODE` (`sig
 `PAYOUT_ENABLED` (`"true"` to enable), `MANUAL_WAVE_NUMBER`, `OWNER_WHATSAPP` (digits, e.g. `221771234567`;
 defaults to the digits of MANUAL_WAVE_NUMBER/OWNER_WAVE_MOBILE), `ADMIN_KEY`, `CRON_SECRET`,
 `ALLOWED_RETURN_PREFIXES` (comma list; default:
-`https://ndoyepapamassamba-commits.github.io/Add-a-README-file/,https://rawcdn.githack.com/ndoyepapamassamba-commits/Add-a-README-file/,https://raw.githack.com/ndoyepapamassamba-commits/Add-a-README-file/,http://localhost:8787/`),
+`https://ndoyepapamassamba-commits.github.io/Add-a-README-file/,https://rawcdn.githack.com/ndoyepapamassamba-commits/Add-a-README-file/,https://raw.githack.com/ndoyepapamassamba-commits/Add-a-README-file/`;
+non-https entries are dropped),
 `OPENROUTER_API_KEY`, `LLM_MODEL` (default `google/gemini-2.5-flash`).
-Note `http://localhost:8787/` is allowed ONLY by dev.ts config, never by the production default — the
+`http://localhost:<port>/` is added ONLY by dev.ts config, never by the production default — the
 production default list contains https prefixes only and validation rejects non-https outside dev.
 
 Senegal mobile numbers: 9 digits starting with 70, 71, 75, 76, 77 or 78. `phone.ts` exports
@@ -105,7 +106,9 @@ The router strips everything up to and including the first `/api` path segment, 
 All bodies are JSON (`content-type: application/json; charset=utf-8`). Errors:
 `{ "error": "<code>", "message": "<French sentence for the customer>", "fields"?: {"<path>": "<French message>"} }`.
 Request bodies larger than 32 KB → 413. Unknown route → 404 `not_found`. Uncaught error → 500 `internal`
-(log the error, never leak stack traces).
+(log the error, never leak stack traces). Other codes: 400 `bad_request` (unreadable JSON), 413
+`payload_too_large`, 401 `unauthorized` (cron/admin), 401 `bad_signature` and 503 `webhook_disabled` (webhook);
+a known path with the wrong method → 404 `not_found`.
 
 Order lookup failures (unknown id OR wrong token) both return **404 `not_found`** (no enumeration).
 Token comparison: sha256(token) compared to `access_token_hash` in constant time.
@@ -113,11 +116,11 @@ Token comparison: sha256(token) compared to `access_token_hash` in constant time
 | Method & path | Auth | Behaviour |
 |---|---|---|
 | `GET /health` | – | `{ ok: true, time }` |
-| `GET /config` | – | `{ brandName, currency:"XOF", prices:{cv,lettre,pack}, payment:{ wave: bool, manual: bool, manualWaveNumber: string\|null (formatted "+221 77 …"), ownerWhatsapp: string\|null } }` |
+| `GET /config` | – | `{ brandName, currency:"XOF", prices:{cv,lettre,pack}, payment:{ wave: bool, manual: bool, manualWaveNumber: string\|null (formatted "+221 77 …"), ownerWhatsapp: string\|null } }`. `manual` is true only when manual mode is the one in use (no Wave client); `manualWaveNumber` is returned whenever configured. |
 | `POST /orders` | – | body `{ product, template, data: OrderInput, website?: "" }`. `website` is a honeypot: non-empty → 400 `validation`. Rate limit key `preview:<ipHash>` (3600 s, `previewRateLimitPerHour`) and `preview:global:<YYYY-MM-DD>` (86400 s, max 5000) → 429 `rate_limited`. Validate (see below) → 400. Generate document (seed = order id), optionally `deps.enhance` (ignore null), insert order (status `preview`, amount = price). → **201** `{ order: PublicOrder & { token }, preview: Document(redacted) }` |
 | `GET /orders/:id?t=TOKEN` | token | If purged → 410 `purged`. If status `checkout` and Wave client present: fetch the session, and if it is paid (see "Payment confirmation") mark paid. → 200 `{ order: PublicOrder, document?: Document (only when paid), preview?: Document (redacted, when not paid) }` |
 | `POST /orders/:id/template` | body `t` | `{ t, template }` → updates template (allowed in any status) → 200 `{ order: PublicOrder }` |
-| `POST /orders/:id/checkout` | body `t` | `{ t, returnBase }`. Paid → 409 `already_paid`. `returnBase` must be an absolute https URL starting with one of `allowedReturnPrefixes` (no query, no fragment; strip trailing `/`) → else 400 `bad_return_url`. **Wave mode** (wave client present): reuse the stored session if status is `checkout` and `checkout_expires_at` > now + 2 min; else create one: `amount` = order.amount, `clientReference` = order.id, `successUrl` = `${returnBase}/resultat.html?o=${id}&t=${t}`, `errorUrl` = `${returnBase}/index.html?o=${id}&t=${t}&paiement=echec`; store session id, launch url, `checkout_expires_at` (= `when_expires` or now + 30 min), status `checkout`. → 200 `{ mode:"wave", launchUrl }`. WaveError → 502 `wave_error`. **Manual mode** (no wave client, `manualWaveNumber` set) → 200 `{ mode:"manual", waveNumber (formatted), amount, reference: id, whatsapp: ownerWhatsapp }`. Neither → 503 `payment_unavailable` ("Le paiement en ligne arrive très bientôt."). |
+| `POST /orders/:id/checkout` | body `t` | `{ t, returnBase }`. Paid → 409 `already_paid`. `returnBase` (checked before choosing the mode, so in both modes) must be an absolute https URL starting with one of `allowedReturnPrefixes` (no query, no fragment; strip trailing `/`) → else 400 `bad_return_url`. **Wave mode** (wave client present): reuse the stored session if status is `checkout` and `checkout_expires_at` > now + 2 min; else create one: `amount` = order.amount, `clientReference` = order.id, `successUrl` = `${returnBase}/resultat.html?o=${id}&t=${t}`, `errorUrl` = `${returnBase}/index.html?o=${id}&t=${t}&paiement=echec`; store session id, launch url, `checkout_expires_at` (= `when_expires` or now + 30 min), status `checkout`. → 200 `{ mode:"wave", launchUrl }`. WaveError → 502 `wave_error`. **Manual mode** (no wave client, `manualWaveNumber` set) → 200 `{ mode:"manual", waveNumber (formatted), amount, reference: id, whatsapp: ownerWhatsapp }`. Neither → 503 `payment_unavailable` ("Le paiement en ligne arrive très bientôt."). |
 | `POST /orders/:id/manual-paid` | body `t` | Manual mode only (else 409 `not_manual`). `{ t, payerPhone }` → `normalizeSnMobile` else 400. Status → `awaiting_manual`, store `manual_payer_phone` (E.164). → 200 `{ order: PublicOrder }` |
 | `POST /wave/webhook` | Wave | See "Webhook". |
 | `POST /cron/reconcile` | `x-cron-secret` | See "Reconcile". 401 if header ≠ `cronSecret` (constant time) or `cronSecret` unset. |
@@ -140,7 +143,7 @@ required ≤ 80, company ≤ 80, place ≤ 60, start/end ≤ 20, missions ≤ 80
 it ≤ 15 × 40; languages ≤ 6 (name ≤ 30, level enum); interests ≤ 8 × 40; letter required with
 company (≤ 100) when product ∈ {lettre, pack}; recipient ≤ 100; companyCity ≤ 60; source ≤ 100;
 qualities ≤ 4 × 40; motivation ≤ 600. For product `cv`, `letter` is ignored. At least one education
-OR one experience is required for products cv/pack. `fields` keys are dotted paths (`identity.firstName`,
+OR one experience is required for products cv/pack (error key `experiences`). `fields` keys are dotted paths (`identity.firstName`,
 `experiences.2.title`) with French messages.
 
 ### Payment confirmation (shared by GET order, webhook, reconcile)
@@ -166,7 +169,8 @@ Anything else (processing, cancelled, failed, expired, amount mismatch) = not pa
 4. `checkout.session.completed`: load order by `data.client_reference` (missing → 200 ignored). If a Wave
    client exists, re-fetch the session by `data.id` with a 3 s timeout and use the fetched object when
    it succeeds (fall back to the signed payload on timeout/network error). Apply "Payment confirmation".
-5. Every other event type → 200 `{ ok:true, ignored:true }`. Always answer within 5 s.
+5. Every other event type → 200 `{ ok:true, ignored:true }`; a handled completion → 200 `{ ok:true, paid: bool }`.
+   Always answer within 5 s.
 
 ### Reconcile (`POST /cron/reconcile`)
 
@@ -191,7 +195,7 @@ client_reference = payout id, `payment_reason` = `"Revenus Teranga CV"`.
    `failed` → `failPayout(id, payout_error.error_code)`. WaveError retryable → status `unknown`
    (retried next run with the same key); non-retryable → `failPayout(id, code)`.
 4. **Purge** personal data: unpaid orders older than 3 days, paid orders older than 30 days.
-5. → `{ ok:true, payout: row|null, settled: n, purged: n }`. Never throws; errors are logged and reported.
+5. → `{ ok:true, payout: row|null, settled: n, purged: n, errors: string[] }`. Never throws; errors are logged and reported.
 
 `computePayoutAmount(gross, feeRate, payoutFeeRate, maxAmount)` (exported from payout.ts and mirrored in
 SQL): `net = floor(gross*(1-feeRate))`; `base = maxAmount==null ? net : min(net, maxAmount)`;
@@ -216,7 +220,7 @@ p_paid_amount, p_transaction_id, p_session_id, p_paid_at) → boolean` (single `
 (locks candidate orders `FOR UPDATE`, inserts payout, attaches orders — all-or-nothing; returns null on
 existing day or amount < min), `tcv_update_payout(p_id, p_patch jsonb)`, `tcv_fail_payout(p_id, p_error, p_now)`
 (status failed + detach orders), `tcv_list_unsettled_payouts() → jsonb array`, `tcv_purge(p_unpaid_before,
-p_paid_before, p_now) → int` (sets input/document NULL, purged_at = now; deletes events older than 30 days
+p_paid_before, p_now) → int` (sets input/document/manual_payer_phone/ip_hash NULL, purged_at = now; deletes events older than 30 days
 and stale rate_limits), `tcv_stats(p_now) → jsonb` (`Stats`; day boundaries in UTC),
 `tcv_get_settings() → jsonb` (object of all key → value).
 `revoke all on function … from public, anon, authenticated; grant execute … to service_role;`
@@ -256,7 +260,7 @@ Hard rules:
   parue sur …"); P2 background (latest degree + school; latest experience; débutant → training,
   internships, eagerness); P3 skills + 2–4 qualities (mapped phrases) + interest for the company
   (+ customer's `motivation` text, cleaned, if given); P4 availability + interview request. `subject`:
-  emploi "Objet : Candidature au poste de/d' <jobTitle>", stage "Objet : Demande de stage — <jobTitle>",
+  emploi "Objet : Candidature au poste de/d' <jobTitle, in-sentence case: first letter lower-cased unless acronym>", stage "Objet : Demande de stage — <jobTitle>",
   alternance "Objet : Candidature en alternance — <jobTitle>". `recipient` = [recipient || "À l'attention
   du Responsable des Ressources Humaines", company, companyCity?]. `sender` = [fullName, address/city,
   phone, email?]. `salutation` "Madame, Monsieur,". `closing` one of ≥ 3 formal formulas.
@@ -331,8 +335,8 @@ customer or API data**. `config.js` sets
 * Reach in Senegal (DataReportal 2026): Facebook 3.6 M, YouTube 5.4 M, LinkedIn 1.5 M, Instagram 1.45 M;
   TikTok not measured. Marketing order: Facebook job groups, WhatsApp status/channels, YouTube Shorts/TikTok,
   LinkedIn.
-* Do NOT market letters for Campus France applications (Campus France asks applicants to write their
-  own letter). Senegal only (cross-border Wave payments may be refused).
+* Do NOT market letters for Campus France / study applications (such a letter must present the applicant's
+  own project; do not attribute a formal rule to Campus France, it is unverified). Senegal only (cross-border Wave payments may be refused).
 * Owner legal minimum: NINEA (E-NINEA online), declaration to the CDP (law 2008-12) because CVs are
   personal data; data is hosted by Supabase in the EU (Paris) — mention in the privacy notice; collect no
   sensitive data (ethnicity, religion, health, political opinions); retention 30 days.

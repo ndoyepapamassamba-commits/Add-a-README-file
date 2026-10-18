@@ -105,7 +105,7 @@ Sen Distribution
 
 Thiès, le 1er octobre 2026
 
-**Objet : Candidature au poste de Chauffeur-livreur**
+**Objet : Candidature au poste de chauffeur-livreur**
 
 Madame, Monsieur,
 
@@ -169,7 +169,7 @@ Hôpital Principal de Dakar
 
 Dakar, le 1er octobre 2026
 
-**Objet : Candidature au poste d'Infirmière**
+**Objet : Candidature au poste d'infirmière**
 
 Madame, Monsieur,
 
@@ -232,7 +232,7 @@ Wave Mobile Money
 
 Dakar, le 1er octobre 2026
 
-**Objet : Candidature au poste de Développeur web**
+**Objet : Candidature au poste de développeur web**
 
 Madame, Monsieur,
 
@@ -297,7 +297,7 @@ Les Moulins Sentenac
 
 Dakar, le 1er octobre 2026
 
-**Objet : Candidature au poste de Responsable commerciale**
+**Objet : Candidature au poste de responsable commerciale**
 
 Madame, Monsieur,
 
@@ -359,7 +359,7 @@ Dakar
 
 Guédiawaye, le 1er octobre 2026
 
-**Objet : Candidature au poste d'Agent de sécurité**
+**Objet : Candidature au poste d'agent de sécurité**
 
 Madame, Monsieur,
 
@@ -419,7 +419,7 @@ Royal Saly Hôtel
 
 Mbour, le 1er octobre 2026
 
-**Objet : Candidature au poste de Serveuse**
+**Objet : Candidature au poste de serveuse**
 
 Madame, Monsieur,
 
@@ -485,7 +485,7 @@ Thiès
 
 Thiès, le 1er octobre 2026
 
-**Objet : Candidature au poste de Professeur de français**
+**Objet : Candidature au poste de professeur de français**
 
 Madame, Monsieur,
 

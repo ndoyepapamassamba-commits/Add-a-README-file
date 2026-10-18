@@ -272,9 +272,8 @@ export function validateOrderRequest(body: unknown): ValidationResult {
   };
 
   if (needsLetter(product)) data.letter = validateLetter(c, src.letter);
-  if (needsCv(product) && education.length === 0 && experiences.length === 0 && !("education" in c.fields)) {
-    c.fail("education", MSG.oneOf);
-  }
+  // Reported on "experiences": the wizard checks it when leaving the experiences step, after both lists.
+  if (needsCv(product) && education.length === 0 && experiences.length === 0) c.fail("experiences", MSG.oneOf);
 
   if (Object.keys(c.fields).length) return { ok: false, fields: c.fields };
   return { ok: true, product, template, data };

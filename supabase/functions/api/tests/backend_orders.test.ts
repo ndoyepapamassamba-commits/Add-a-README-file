@@ -130,7 +130,7 @@ Deno.test("POST /orders: product rules (education or experience; letter only whe
   cv.education = [];
   cv.experiences = [{ title: "", company: " ", missions: "" }];
   const res = await h.call("POST", "/orders", { body: { product: "cv", data: cv } });
-  assertEquals(res.body.fields, { education: "Ajoutez au moins une formation ou une expérience." });
+  assertEquals(res.body.fields, { experiences: "Ajoutez au moins une formation ou une expérience." });
 
   const lettre = orderData("lettre") as Json;
   lettre.education = [];

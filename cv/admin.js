@@ -14,17 +14,18 @@
   var adminKey = null;
   var refreshTimer = null;
 
+  // Every label on this page matches the owner guide (LANCEMENT-CV.md, section 7): keep both in sync.
   var STATUS = {
     preview: ["Aperçu", ""],
-    checkout: ["Paiement Wave en cours", "badge-wait"],
-    awaiting_manual: ["À vérifier", "badge-wait"],
-    paid: ["Payée", "badge-paid"]
+    checkout: ["Paiement en cours", "badge-wait"],
+    awaiting_manual: ["En attente", "badge-wait"],
+    paid: ["Payé", "badge-paid"]
   };
   var PAYOUT_STATUS = {
     pending: ["En attente", "badge-wait"],
     processing: ["En cours", "badge-wait"],
-    succeeded: ["Versé", "badge-paid"],
-    failed: ["Échec", "badge-fail"],
+    succeeded: ["Réussi", "badge-paid"],
+    failed: ["Échoué", "badge-fail"],
     unknown: ["À confirmer (nouvel essai automatique)", "badge-wait"]
   };
 
@@ -73,34 +74,39 @@
     box.appendChild(kpi("Hier", stats.yesterday.revenue, periodSub(stats.yesterday)));
     box.appendChild(kpi("7 jours", stats.last7.revenue, periodSub(stats.last7)));
     box.appendChild(kpi("30 jours", stats.last30.revenue, periodSub(stats.last30)));
-    box.appendChild(kpi("Total", stats.allTime.revenue, stats.allTime.paid + " commande" + (stats.allTime.paid > 1 ? "s" : "") + " payée" + (stats.allTime.paid > 1 ? "s" : "")));
+    box.appendChild(kpi("Depuis le début", stats.allTime.revenue, stats.allTime.paid + " commande" + (stats.allTime.paid > 1 ? "s" : "") + " payée" + (stats.allTime.paid > 1 ? "s" : "")));
   }
 
   function renderHealth(h) {
+    var number = h.ownerWaveMobile || "";
+    // [on, label, state when on, state when off, hint when on, hint when off]
     var items = [
-      [h.wave, "Paiement Wave automatique actif", "Paiement Wave automatique inactif",
+      [h.wave, "Wave", "Paiement automatique actif", "Paiement automatique pas encore actif",
         "Les clients paient dans Wave et leurs documents se débloquent tout seuls.",
         "Ajoutez la clé API Wave Business (WAVE_API_KEY) dans les secrets de la fonction Supabase."],
-      [h.webhook, "Notifications Wave reçues (webhook)", "Notifications Wave non configurées",
-        "Wave prévient le site à chaque paiement.",
+      [h.webhook, "Webhook", "Wave prévient le site à chaque paiement", "Pas encore configuré",
+        "Les paiements sont confirmés en quelques secondes.",
         "Ajoutez le secret du webhook Wave (WAVE_WEBHOOK_SECRET). Sans lui, les paiements sont quand même vérifiés toutes les 10 minutes."],
-      [h.payout, "Reversement automatique chaque soir", "Reversement automatique désactivé",
-        "Les revenus du jour partent vers 20 h 30 sur " + (h.ownerWaveMobile || "votre numéro Wave") + ".",
+      [h.payout, "Versement", "Envoi automatique chaque soir à 20 h 30", "Désactivé",
+        "Les revenus du jour partent vers " + (number || "votre numéro Wave") + ".",
         "Renseignez votre numéro Wave (OWNER_WAVE_MOBILE) et PAYOUT_ENABLED=true. Il faut aussi le paiement Wave automatique."],
-      [h.manual, "Paiement par transfert Wave actif", "Paiement par transfert désactivé",
+      [h.manual, "Mode manuel", "Paiement par transfert Wave actif", "Désactivé",
         "Les clients envoient l'argent sur votre Wave : vérifiez la réception puis touchez « Débloquer ».",
         "Facultatif : renseignez MANUAL_WAVE_NUMBER pour accepter les transferts en attendant l'API Wave."],
-      [h.llm, "Rédaction enrichie par IA active", "Rédaction enrichie par IA désactivée",
+      [h.llm, "IA", "Rédaction enrichie active", "Désactivée (facultatif)",
         "Le texte est retravaillé par l'IA avant d'être livré.",
-        "Facultatif : les documents sont rédigés sans IA externe. Pour l'activer, ajoutez OPENROUTER_API_KEY."]
+        "Les documents sont rédigés sans IA externe. Pour l'activer, ajoutez OPENROUTER_API_KEY."],
+      [!!number, "Votre numéro Wave", number, "Non renseigné",
+        "Le numéro qui reçoit l'argent du soir.",
+        "Renseignez votre numéro Wave personnel (OWNER_WAVE_MOBILE) pour recevoir les versements."]
     ];
     var ul = TCV.dom.clear($("#health"));
     items.forEach(function (it) {
       var on = !!it[0];
       ul.appendChild(el("li", { class: on ? "on" : "off" }, [
         el("span", { class: "dot", "aria-hidden": "true" }),
-        el("div", null, [el("strong", { text: on ? it[1] : it[2] }), el("span", { class: "sr-only", text: on ? " (actif)" : " (inactif)" })]),
-        el("p", { class: "hint", text: on ? it[3] : it[4] })
+        el("div", null, [el("strong", { text: it[1] }), on ? it[2] : it[3], el("span", { class: "sr-only", text: on ? " (actif)" : " (inactif)" })]),
+        el("p", { class: "hint", text: on ? it[4] : it[5] })
       ]));
     });
     $("#no-payment").hidden = !!(h.wave || h.manual);

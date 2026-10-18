@@ -573,7 +573,7 @@ function buildLettre(input: OrderInput, c: Ctx, picker: Picker, now: Date): Lett
     ? `Objet : Demande de stage — ${capitalize(jobTitle)}`
     : c.kind === "alternance"
     ? `Objet : Candidature en alternance — ${capitalize(jobTitle)}`
-    : `Objet : Candidature au poste ${elide("de", jobTitle)}`;
+    : `Objet : Candidature au ${c.posteNoun}`; // in-sentence case: "au poste d'assistante comptable", "de DAF"
   const letter = input.letter;
   return {
     sender: [fullName, addressLine(input), formatSnMobile(input.identity.phone), email].filter(Boolean),

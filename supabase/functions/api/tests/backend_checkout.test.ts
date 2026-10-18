@@ -64,6 +64,38 @@ Deno.test("checkout (wave): a new session after expiry, unless the old one was p
   assertEquals(h.wave!.callsOf("createCheckoutSession").length, 2, "no third session");
 });
 
+Deno.test("checkout (wave): after a cancelled payment, a retry gets a fresh Wave session", async () => {
+  const h = makeHarness();
+  const { id, token } = await createOrder(h);
+  const first = await checkout(h, id, token);
+  h.wave!.cancelSession((await h.store.getOrder(id))!.checkout_session_id!);
+  const retry = await checkout(h, id, token);
+  assertEquals(retry.status, 200);
+  assert(retry.body.launchUrl !== first.body.launchUrl);
+  assertEquals(h.wave!.callsOf("createCheckoutSession").length, 2);
+  assertEquals((await h.store.getOrder(id))!.wave_launch_url, retry.body.launchUrl);
+});
+
+Deno.test("checkout (wave): a session paid before the webhook arrives is never handed out again", async () => {
+  const h = makeHarness();
+  const { id, token } = await createOrder(h);
+  await checkout(h, id, token);
+  h.wave!.completeSession((await h.store.getOrder(id))!.checkout_session_id!);
+  const res = await checkout(h, id, token);
+  assertEquals([res.status, res.body.error], [409, "already_paid"]);
+  assertEquals((await h.store.getOrder(id))!.status, "paid");
+});
+
+Deno.test("checkout (wave): if Wave cannot be reached, the stored session is reused until it expires", async () => {
+  const h = makeHarness();
+  const { id, token } = await createOrder(h);
+  const first = await checkout(h, id, token);
+  h.wave!.failNext("getCheckoutSession", new WaveError("down", 503, "service-unavailable", true));
+  const second = await checkout(h, id, token);
+  assertEquals([second.status, second.body.launchUrl], [200, first.body.launchUrl]);
+  assertEquals(h.wave!.callsOf("createCheckoutSession").length, 1);
+});
+
 Deno.test("checkout: a paid order is 409 already_paid", async () => {
   const h = makeHarness();
   const { id, token } = await createOrder(h);

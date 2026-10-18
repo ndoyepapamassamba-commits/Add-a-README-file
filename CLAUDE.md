@@ -19,6 +19,12 @@ Teranga CV vend des CV et lettres de motivation (1 000 / 1 000 / 1 500 FCFA), pa
 livrés automatiquement. Spécification complète : `supabase/SPEC.md`. Guide du propriétaire :
 `LANCEMENT-CV.md`. Plan de promotion : `MARKETING-CV.md`.
 
-- Backend : Supabase, projet `teranga-cv` (ref `seegnylaubuularegmku`), fonction Edge `api`.
-- Site : dossier `cv/` (GitHub Pages ou githack).
+- Backend : Supabase, projet `teranga-cv` (ref `seegnylaubuularegmku`), fonction Edge `api`
+  (`verify_jwt = false`). Déploiement : `deno bundle --external 'npm:*' --minify supabase/functions/api/index.ts -o /tmp/index.js`
+  puis `deploy_edge_function` (fichier unique `index.ts`). Réglages privés dans `tcv.settings`
+  (jamais dans le dépôt). Tâches pg_cron : `tcv-reconcile` (10 min) et `tcv-daily` (20 h 30).
+  La fonction SQL `tcv_purge` demande une confirmation Supabase (elle contient un DELETE).
+- Site : dossier `cv/`, publié par GitHub Pages depuis la branche `gh-pages`
+  (https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/). Publier = pousser un commit
+  testé sur `gh-pages`. Ne pas utiliser githack (page d'avertissement devant le site).
 - Tests : `deno test -A supabase/functions/api/tests/` et `cd e2e && node flow.mjs`.

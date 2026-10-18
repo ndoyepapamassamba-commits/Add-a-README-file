@@ -26,8 +26,8 @@ Le site travaille seul, jour et nuit. Vous n'écrivez aucun CV.
 
 ## 2. Vos deux liens
 
-- **Le site** (à partager partout) : {LIEN_SITE}
-- **Votre page admin** (SECRÈTE) : {LIEN_ADMIN}
+- **Le site** (à partager partout) : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
+- **Votre page admin** (SECRÈTE) : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/admin.html (la clé secrète vous a été donnée en privé ; ne la publiez jamais)
 
 La page admin est **pour vous seul**.
 Ne la partagez avec personne. Ne l'envoyez dans aucun groupe.
@@ -66,7 +66,7 @@ L'argent arrive **directement sur votre Wave personnel**. Mais vous devez déblo
 3. Il clique sur « J'ai payé » et donne son numéro.
 4. WhatsApp s'ouvre chez lui avec un message pour vous : la référence, le montant et son numéro.
 5. **Vous ouvrez votre application Wave.** Vous vérifiez que le bon montant est bien arrivé, depuis ce numéro.
-6. Vous ouvrez la page admin. La commande est marquée « en attente » (le client dit avoir payé).
+6. Vous ouvrez la page admin. La commande est tout en haut, dans « Paiements à vérifier », marquée « En attente » (le client dit avoir payé).
 7. Vous cliquez sur **« Débloquer »**.
 8. Chez le client, le document complet apparaît tout seul. C'est fini.
 
@@ -83,7 +83,7 @@ Vous n'avez plus rien à faire pour les ventes.
 1. Le client paie sur la page officielle de Wave.
 2. Le site reçoit la confirmation de Wave et débloque le document **tout seul**, tout de suite.
 3. L'argent de la vente arrive sur votre **compte Wave Business** (le compte de votre activité).
-4. **Chaque soir à 21 h** (heure de Dakar), le système envoie l'argent des ventes du jour sur **votre numéro Wave personnel**.
+4. **Chaque soir à 20 h 30** (heure de Dakar), le système envoie l'argent des ventes du jour sur **votre numéro Wave personnel**.
 
 Les frais de Wave :
 
@@ -170,9 +170,11 @@ Ensuite, faites **un achat test vous-même** pour vérifier que tout marche.
 
 ## 7. Comment lire la page admin
 
-Ouvrez {LIEN_ADMIN}. La page se souvient de votre clé sur ce téléphone.
+Ouvrez https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/admin.html (la clé secrète vous a été donnée en privé ; ne la publiez jamais). La page se souvient de votre clé sur ce téléphone.
 
-### Les voyants (en haut)
+En mode manuel, les commandes à débloquer s'affichent tout en haut, dans **Paiements à vérifier**.
+
+### Les voyants (« État du système »)
 
 Ils disent si chaque partie du système est prête.
 
@@ -187,11 +189,10 @@ En mode manuel, il est normal que Wave, Webhook et Versement ne soient pas encor
 
 ### Les chiffres
 
-Pour **aujourd'hui**, **hier**, **7 jours**, **30 jours** et **depuis le début** :
+Une case pour **aujourd'hui**, **hier**, **7 jours**, **30 jours** et **depuis le début** :
 
-- **Commandes** : le nombre d'aperçus créés (payés ou non) ;
-- **Payées** : le nombre de commandes payées ;
-- **Revenus** : l'argent des commandes payées, en FCFA, avant les frais Wave.
+- le grand chiffre : les **revenus**, l'argent des commandes payées, en FCFA, avant les frais Wave ;
+- en dessous : le nombre de commandes **payées** sur le nombre de **commandes** (aperçus créés, payés ou non).
 
 **À reverser ce soir** : l'argent des ventes automatiques pas encore envoyé sur votre Wave personnel.
 
@@ -206,7 +207,8 @@ Chaque ligne est une commande, avec sa référence (TCV-…), le produit, le mon
 
 ### Les versements
 
-Une ligne par soir : la date, le montant envoyé et l'état (réussi, en cours, échoué).
+Tableau « Versements vers votre Wave ». Une ligne par soir : la date, le montant envoyé et l'état
+(réussi, en cours, échoué, ou « à confirmer » : le système réessaie tout seul le soir suivant).
 Si un versement est « échoué », prévenez l'assistant. L'argent reste en sécurité sur votre compte Wave Business.
 
 ---

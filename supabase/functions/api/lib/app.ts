@@ -78,16 +78,27 @@ async function loadCustomerOrder(deps: Deps, id: string, token: unknown): Promis
   return order;
 }
 
-/** Looks up the order's Wave session and marks it paid when Wave confirms. Errors are logged, not thrown. */
-async function refreshFromWave(deps: Deps, order: OrderRow, timeoutMs: number): Promise<boolean> {
-  if (!deps.wave || !order.checkout_session_id) return false;
+/**
+ * Looks up the order's Wave session and marks the order paid when Wave confirms it.
+ * `session` is null when there is none or the lookup failed (logged, never thrown).
+ */
+async function syncWithWave(
+  deps: Deps,
+  order: OrderRow,
+  timeoutMs: number,
+): Promise<{ session: WaveCheckoutSession | null; paid: boolean }> {
+  if (!deps.wave || !order.checkout_session_id) return { session: null, paid: false };
   try {
     const session = await withDeadline(deps.wave.getCheckoutSession(order.checkout_session_id), timeoutMs);
-    return (await confirmPayment(deps, order, session)).confirmed;
+    return { session, paid: (await confirmPayment(deps, order, session)).confirmed };
   } catch (err) {
     log.warn(`wave lookup for ${order.id} failed`, err instanceof WaveError ? `${err.code} (${err.status})` : err);
-    return false;
+    return { session: null, paid: false };
   }
+}
+
+async function refreshFromWave(deps: Deps, order: OrderRow, timeoutMs: number): Promise<boolean> {
+  return (await syncWithWave(deps, order, timeoutMs)).paid;
 }
 
 const health: Handler = (deps) => Promise.resolve(json(200, { ok: true, time: deps.now().toISOString() }));
@@ -197,11 +208,17 @@ const checkout: Handler = async (deps, req, [id]) => {
 
   if (deps.wave) {
     const now = deps.now();
-    const reusable = order.status === "checkout" && order.checkout_session_id && order.wave_launch_url &&
-      order.checkout_expires_at && Date.parse(order.checkout_expires_at) > now.getTime() + CHECKOUT_REUSE_MARGIN_MS;
-    if (reusable) return json(200, { mode: "wave", launchUrl: order.wave_launch_url });
-    // A session that is about to expire may still have been paid: never let the customer pay twice.
-    if (order.checkout_session_id && await refreshFromWave(deps, order, ORDER_REFRESH_TIMEOUT_MS)) throw alreadyPaid();
+    if (order.checkout_session_id) {
+      // The stored session may be paid (webhook still on its way) or closed by Wave (cancelled payment):
+      // never let the customer pay twice, never hand back a dead payment page. A failed lookup falls back
+      // to the stored expiry.
+      const { session, paid } = await syncWithWave(deps, order, ORDER_REFRESH_TIMEOUT_MS);
+      if (paid) throw alreadyPaid();
+      const reusable = order.status === "checkout" && order.wave_launch_url && order.checkout_expires_at &&
+        Date.parse(order.checkout_expires_at) > now.getTime() + CHECKOUT_REUSE_MARGIN_MS &&
+        (session === null || session.checkout_status === "open");
+      if (reusable) return json(200, { mode: "wave", launchUrl: order.wave_launch_url });
+    }
 
     let session: WaveCheckoutSession;
     try {

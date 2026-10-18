@@ -1,11 +1,10 @@
 # Teranga CV — Plan marketing de 30 jours (prêt à copier)
 
 Ce document contient tout ce qu'il faut publier pendant 30 jours : les textes, l'ordre et le calendrier.
-Vous copiez, vous remplacez `{LIEN}`, vous publiez.
+Vous copiez, vous publiez : le lien est déjà dedans.
 
-**`{LIEN}`** = l'adresse du site, qui se termine par `/`
-(exemple : `https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/`).
-Les guides gratuits sont à `{LIEN}guides/…` (voir la liste en bas de page).
+**Adresse du site** : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
+Les guides gratuits sont à `https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/…` (voir la liste en bas de page).
 
 Ordre des canaux, du plus important au moins important :
 
@@ -120,9 +119,9 @@ directe. Le lien arrive à la fin.
 > 4. Une photo de soirée ou un selfie. Pas de photo, c'est mieux qu'une mauvaise photo.
 > 5. Un fichier Word ou une photo du CV. Envoyez un PDF.
 >
-> Le guide complet (gratuit) : {LIEN}guides/modele-cv-senegal.html
+> Le guide complet (gratuit) : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/modele-cv-senegal.html
 >
-> Si vous voulez un CV propre en français professionnel, le site Teranga CV le fait sur téléphone, avec un aperçu gratuit. CV 1 000 FCFA, payé avec Wave : {LIEN}
+> Si vous voulez un CV propre en français professionnel, le site Teranga CV le fait sur téléphone, avec un aperçu gratuit. CV 1 000 FCFA, payé avec Wave : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
 
 ### F2 — BFEM, BAC, licence : comment les écrire sur un CV
 
@@ -137,7 +136,7 @@ directe. Le lien arrive à la fin.
 > Vous avez le BAC ? Le BFEM n'est plus indispensable.
 > Vous êtes encore en formation ? Écrivez « (en cours) ».
 >
-> Tous les détails, gratuitement : {LIEN}guides/modele-cv-senegal.html
+> Tous les détails, gratuitement : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/modele-cv-senegal.html
 
 ### F3 — Le message à copier pour envoyer sa candidature par email
 
@@ -152,7 +151,7 @@ directe. Le lien arrive à la fin.
 >
 > N'oubliez pas : CV et lettre en PDF, avec un nom clair (CV-Prenom-Nom.pdf).
 >
-> Besoin du CV et de la lettre ? Aperçu gratuit, pack 1 500 FCFA avec Wave : {LIEN}
+> Besoin du CV et de la lettre ? Aperçu gratuit, pack 1 500 FCFA avec Wave : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
 
 ### F4 — Pas d'expérience ? Ce que vous pouvez quand même mettre
 
@@ -167,7 +166,7 @@ directe. Le lien arrive à la fin.
 >
 > Appelez la rubrique « Stages et activités » et décrivez ce que vous avez vraiment fait.
 >
-> Guide gratuit pour un premier emploi : {LIEN}guides/cv-premier-emploi.html
+> Guide gratuit pour un premier emploi : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/cv-premier-emploi.html
 
 ### F5 — Lettre de motivation de stage : la structure en 4 paragraphes
 
@@ -180,7 +179,7 @@ directe. Le lien arrive à la fin.
 >
 > Objet à copier : « Objet : Demande de stage — [poste] »
 >
-> Exemple complet et gratuit : {LIEN}guides/lettre-de-motivation-stage.html
+> Exemple complet et gratuit : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/lettre-de-motivation-stage.html
 
 ### F6 — Attention aux arnaques à l'emploi
 
@@ -195,7 +194,7 @@ directe. Le lien arrive à la fin.
 >
 > En cas de doute, ne payez pas. Partagez ce message pour protéger les autres.
 >
-> (Plus de conseils pour candidater : {LIEN}guides/cv-premier-emploi.html)
+> (Plus de conseils pour candidater : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/cv-premier-emploi.html)
 
 *Ce post ne contient volontairement pas de publicité : il construit la confiance.*
 
@@ -210,7 +209,7 @@ directe. Le lien arrive à la fin.
 >
 > Utilisez toujours la même échelle : Langue maternelle, Courant, Bon niveau, Intermédiaire, Notions. Et soyez honnête : on peut vous tester en entretien.
 >
-> Guide gratuit : {LIEN}guides/modele-cv-senegal.html
+> Guide gratuit : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/modele-cv-senegal.html
 
 ### F8 — Lettre de motivation sans expérience : les phrases à éviter
 
@@ -220,7 +219,7 @@ directe. Le lien arrive à la fin.
 > « Malgré mon manque d'expérience… » → Ne commencez pas par une faiblesse.
 > « Je maîtrise parfaitement l'informatique. » → Soyez précis : Word, Excel, Canva…
 >
-> Exemple complet de lettre sans expérience : {LIEN}guides/lettre-de-motivation-sans-experience.html
+> Exemple complet de lettre sans expérience : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/lettre-de-motivation-sans-experience.html
 
 ### F9 — La check-list avant d'envoyer un CV
 
@@ -235,7 +234,7 @@ directe. Le lien arrive à la fin.
 > ☐ Le fichier est en PDF : CV-Prenom-Nom.pdf
 >
 > Enregistrez ce post pour la prochaine candidature.
-> Pour gagner du temps : {LIEN} (aperçu gratuit, CV 1 000 FCFA avec Wave)
+> Pour gagner du temps : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/ (aperçu gratuit, CV 1 000 FCFA avec Wave)
 
 ### F10 — Présentation directe du service
 
@@ -250,7 +249,7 @@ directe. Le lien arrive à la fin.
 > - Vos données sont supprimées après 30 jours
 >
 > Le site n'invente rien : il rédige à partir de ce que vous écrivez.
-> {LIEN}
+> https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
 
 ---
 
@@ -258,21 +257,21 @@ directe. Le lien arrive à la fin.
 
 Un statut = un texte court, sur fond de couleur, ou sur une capture de l'exemple du site.
 
-- **W1** — Votre CV est prêt en quelques minutes, sur votre téléphone. Aperçu gratuit. {LIEN}
-- **W2** — Conseil du jour : envoyez votre CV en PDF, jamais en photo. Plus de conseils : {LIEN}guides/modele-cv-senegal.html
-- **W3** — CV 1 000 FCFA. Lettre 1 000 FCFA. Les deux : 1 500 FCFA. Payé avec Wave. Aperçu gratuit avant de payer. {LIEN}
-- **W4** — Conseil du jour : une adresse email sérieuse (prenom.nom@gmail.com) fait meilleure impression. {LIEN}
-- **W5** — Vous cherchez un stage ? Lettre de motivation de stage : modèle gratuit ici {LIEN}guides/lettre-de-motivation-stage.html
-- **W6** — Pas besoin de créer un compte. Vous remplissez, vous voyez l'aperçu, vous décidez. {LIEN}
-- **W7** — Conseil du jour : le wolof et les autres langues nationales vont dans la rubrique Langues de votre CV. {LIEN}
-- **W8** — Premier emploi ? Votre CV n'est pas vide : stages, projets, associations, commerce familial comptent. Guide : {LIEN}guides/cv-premier-emploi.html
+- **W1** — Votre CV est prêt en quelques minutes, sur votre téléphone. Aperçu gratuit. https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
+- **W2** — Conseil du jour : envoyez votre CV en PDF, jamais en photo. Plus de conseils : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/modele-cv-senegal.html
+- **W3** — CV 1 000 FCFA. Lettre 1 000 FCFA. Les deux : 1 500 FCFA. Payé avec Wave. Aperçu gratuit avant de payer. https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
+- **W4** — Conseil du jour : une adresse email sérieuse (prenom.nom@gmail.com) fait meilleure impression. https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
+- **W5** — Vous cherchez un stage ? Lettre de motivation de stage : modèle gratuit ici https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/lettre-de-motivation-stage.html
+- **W6** — Pas besoin de créer un compte. Vous remplissez, vous voyez l'aperçu, vous décidez. https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
+- **W7** — Conseil du jour : le wolof et les autres langues nationales vont dans la rubrique Langues de votre CV. https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
+- **W8** — Premier emploi ? Votre CV n'est pas vide : stages, projets, associations, commerce familial comptent. Guide : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/cv-premier-emploi.html
 - **W9** — Un employeur sérieux ne demande jamais d'argent pour un entretien. Faites attention aux arnaques.
-- **W10** — Vous connaissez quelqu'un qui cherche du travail ? Envoyez-lui ce lien : {LIEN}
-- **W11** — Votre lettre de motivation, rédigée en français professionnel à partir de vos vraies informations. Aperçu gratuit. {LIEN}
-- **W12** — Conseil du jour : adaptez le titre de votre CV à chaque offre. {LIEN}guides/modele-cv-senegal.html
-- **W13** — Sans expérience ? Voici comment écrire une lettre qui convainc : {LIEN}guides/lettre-de-motivation-sans-experience.html
-- **W14** — Téléchargez votre CV en PDF ou en Word, imprimez-le au secrétariat le plus proche. {LIEN}
-- **W15** — Vos données sont supprimées après 30 jours. Votre CV, payé avec Wave, sans compte. {LIEN}
+- **W10** — Vous connaissez quelqu'un qui cherche du travail ? Envoyez-lui ce lien : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
+- **W11** — Votre lettre de motivation, rédigée en français professionnel à partir de vos vraies informations. Aperçu gratuit. https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
+- **W12** — Conseil du jour : adaptez le titre de votre CV à chaque offre. https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/modele-cv-senegal.html
+- **W13** — Sans expérience ? Voici comment écrire une lettre qui convainc : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/lettre-de-motivation-sans-experience.html
+- **W14** — Téléchargez votre CV en PDF ou en Word, imprimez-le au secrétariat le plus proche. https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
+- **W15** — Vos données sont supprimées après 30 jours. Votre CV, payé avec Wave, sans compte. https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
 
 ---
 
@@ -280,7 +279,7 @@ Un statut = un texte court, sur fond de couleur, ou sur une capture de l'exemple
 
 Format : vertical, 20 à 40 secondes. Vous parlez face caméra **ou** vous filmez l'écran du téléphone.
 L'**accroche** se dit en moins de 2 secondes. Puis **3 temps**, puis l'**appel à l'action**.
-Mettez le texte à l'écran (beaucoup regardent sans le son). Lien : dans la bio du compte ({LIEN}).
+Mettez le texte à l'écran (beaucoup regardent sans le son). Lien : dans la bio du compte (https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/).
 Pour les démonstrations, utilisez un **faux nom** (exemple : « Awa Ndiaye ») et un faux numéro.
 
 **V1 — 3 erreurs sur ton CV**
@@ -398,15 +397,15 @@ Pour les démonstrations, utilisez un **faux nom** (exemple : « Awa Ndiaye ») 
 >
 > Une formation bien détaillée (matières, projet de fin d'études), des stages même courts, des responsabilités associatives : c'est exactement ce qu'un recruteur regarde pour un premier poste.
 >
-> J'ai rassemblé les conseils dans un guide gratuit : {LIEN}guides/cv-premier-emploi.html
+> J'ai rassemblé les conseils dans un guide gratuit : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/cv-premier-emploi.html
 >
-> Et si vous voulez gagner du temps, Teranga CV met en forme votre CV en français professionnel, à partir de vos vraies informations (aperçu gratuit, paiement Wave) : {LIEN}
+> Et si vous voulez gagner du temps, Teranga CV met en forme votre CV en français professionnel, à partir de vos vraies informations (aperçu gratuit, paiement Wave) : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
 
 ### L2 — Pour les écoles et centres de formation
 
 > Écoles, instituts et centres de formation : vos étudiants cherchent des stages et un premier emploi.
 >
-> Nos guides gratuits (modèle de CV, lettre de stage, lettre sans expérience) peuvent servir de support à un atelier CV. Ils sont libres d'accès : {LIEN}guides/modele-cv-senegal.html
+> Nos guides gratuits (modèle de CV, lettre de stage, lettre sans expérience) peuvent servir de support à un atelier CV. Ils sont libres d'accès : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/modele-cv-senegal.html
 >
 > Je suis disponible pour en parler : écrivez-moi en message privé.
 
@@ -414,7 +413,7 @@ Pour les démonstrations, utilisez un **faux nom** (exemple : « Awa Ndiaye ») 
 
 > Recruteurs : quels sont les défauts que vous voyez le plus souvent dans les CV de jeunes candidats ?
 >
-> Je travaille sur des guides gratuits pour aider les candidats sénégalais à présenter leur parcours clairement. Vos retours m'aident à les améliorer : {LIEN}guides/modele-cv-senegal.html
+> Je travaille sur des guides gratuits pour aider les candidats sénégalais à présenter leur parcours clairement. Vos retours m'aident à les améliorer : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/modele-cv-senegal.html
 
 ---
 
@@ -436,7 +435,7 @@ Pour les démonstrations, utilisez un **faux nom** (exemple : « Awa Ndiaye ») 
 > Bonjour [nom du secrétariat / de l'école]. Je suis [prénom], fondateur de Teranga CV, un site qui aide les jeunes à faire leur CV et leur lettre de motivation sur téléphone (aperçu gratuit, paiement Wave, PDF prêt à imprimer).
 > Je vous propose une affiche gratuite avec un QR code pour vos clients ou vos étudiants. Ils font leur CV eux-mêmes, et l'impriment chez vous.
 > Puis-je passer vous la déposer cette semaine ?
-> Le site : {LIEN}
+> Le site : https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
 
 ### Le pitch pour une école ou un centre de formation
 
@@ -454,10 +453,10 @@ Pour les démonstrations, utilisez un **faux nom** (exemple : « Awa Ndiaye ») 
 > CV 1 000 FCFA · Lettre 1 000 FCFA · Les deux 1 500 FCFA
 > Imprimez-le ici !
 >
-> [QR code vers {LIEN}]
-> Teranga CV — {LIEN}
+> [QR code vers https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/]
+> Teranga CV — https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/
 
-Pour le QR code : utilisez n'importe quel générateur de QR code gratuit avec l'adresse `{LIEN}`, ou demandez-le à l'assistant.
+Pour le QR code : utilisez n'importe quel générateur de QR code gratuit avec l'adresse `https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/`, ou demandez-le à l'assistant.
 
 ### Rythme
 
@@ -478,7 +477,7 @@ Pour le QR code : utilisez n'importe quel générateur de QR code gratuit avec l
 
 ## Liens des guides gratuits (à partager)
 
-- Modèle de CV au Sénégal : `{LIEN}guides/modele-cv-senegal.html`
-- CV pour un premier emploi : `{LIEN}guides/cv-premier-emploi.html`
-- Lettre de motivation pour un stage : `{LIEN}guides/lettre-de-motivation-stage.html`
-- Lettre de motivation sans expérience : `{LIEN}guides/lettre-de-motivation-sans-experience.html`
+- Modèle de CV au Sénégal : `https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/modele-cv-senegal.html`
+- CV pour un premier emploi : `https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/cv-premier-emploi.html`
+- Lettre de motivation pour un stage : `https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/lettre-de-motivation-stage.html`
+- Lettre de motivation sans expérience : `https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/guides/lettre-de-motivation-sans-experience.html`

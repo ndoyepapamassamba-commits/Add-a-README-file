@@ -1,0 +1,13 @@
+{
+  "name": "teranga-cv-e2e",
+  "private": true,
+  "description": "End-to-end flow of Teranga CV against the local dev server (supabase/functions/api/dev.ts).",
+  "type": "module",
+  "scripts": {
+    "test": "node flow.mjs"
+  },
+  "devDependencies": {
+    "html2pdf.js": "0.10.1",
+    "playwright": "1.56.1"
+  }
+}

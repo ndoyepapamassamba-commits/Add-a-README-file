@@ -446,7 +446,7 @@ Deno.test("gen elision: poste d'assistante, d'hôtesse, au sein d'Orange, du/des
     seed: "X",
     now: NOW,
   });
-  assertEquals(emploiHotesse.lettre!.subject, "Objet : Candidature au poste d'Hôtesse d'accueil");
+  assertEquals(emploiHotesse.lettre!.subject, "Objet : Candidature au poste d'hôtesse d'accueil");
 
   const groupe = allSeeds(baseInput({}, { company: "Le Groupe Sonatel" }));
   assert(groupe.includes("du Groupe Sonatel"));
@@ -500,9 +500,13 @@ Deno.test("gen lettre: source phrasing, qualities, motivation", () => {
 Deno.test("gen lettre layout: subject per kind, recipient, sender, date", () => {
   const make = (kind: OrderInput["target"]["kind"], letter = {}) =>
     generateDocument(baseInput({ kind }, letter), "lettre", { seed: "L", now: NOW }).lettre!;
-  assertEquals(make("emploi").subject, "Objet : Candidature au poste d'Assistante comptable");
+  assertEquals(make("emploi").subject, "Objet : Candidature au poste d'assistante comptable");
   assertEquals(make("stage").subject, "Objet : Demande de stage — Assistante comptable");
   assertEquals(make("alternance").subject, "Objet : Candidature en alternance — Assistante comptable");
+  const subjectOf = (jobTitle: string) =>
+    generateDocument(baseInput({ jobTitle }), "lettre", { seed: "L", now: NOW }).lettre!.subject;
+  assertEquals(subjectOf("DAF"), "Objet : Candidature au poste de DAF");
+  assertEquals(subjectOf("Poste de Chauffeur"), "Objet : Candidature au poste de chauffeur");
   const l = make("emploi", { recipient: "Monsieur le Directeur Général", companyCity: "Diamniadio" });
   assertEquals(l.recipient, ["Monsieur le Directeur Général", "Orange", "Diamniadio"]);
   assertEquals(make("emploi").recipient, ["À l'attention du Responsable des Ressources Humaines", "Orange"]);
