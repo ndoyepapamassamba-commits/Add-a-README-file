@@ -83,10 +83,12 @@ def _largeur_peau(peau, A, B, defaut):
     return float(np.clip(np.median(v), 0.5 * defaut, 1.6 * defaut)) if len(v) >= 2 else None
 
 
-def prepare(img, alpha, pts, bbox, autres=None, conf_min=0.5):
+def prepare(img, alpha, pts, bbox, autres=None, conf_min=0.5, ponderee=False):
     """deux calques par bras (bras, avant-bras + main) au format de gestes.prepare, plus 'part', 'S', 'E', 'W', 'M'.
     Un bras n'est articulé que si ses repères sont sûrs (épaule, coude, poignet ≥ conf_min) et s'il n'est pas caché par
-    un autre acteur (`autres` : alpha des autres, > 8 % du bras recouvert → bras laissé au squelette)."""
+    un autre acteur (`autres` : alpha des autres, > 8 % du bras recouvert → bras laissé au squelette).
+    ponderee=True : le calque « haut » porte aussi la PEAU PONDÉRÉE du bras entier (peau_ponderee.py, remède JEV du 18/10) ;
+    rig2d.rendre déforme alors le bras d'un seul tenant (corps, bras, avant-bras) au lieu de deux calques rigides."""
     import rig2d
     H, W = img.shape[:2]; M = rig2d.modele(pts, bbox); P = M['P']; p = np.asarray(pts, np.float64); out = []
     sw = float(M['sw']); cou = np.asarray(P['neck'], np.float64)
@@ -129,13 +131,18 @@ def prepare(img, alpha, pts, bbox, autres=None, conf_min=0.5):
         seul = (sil_bras > 0.3).astype(np.uint8)
         rgb_ext = cv2.inpaint(reg, (1 - seul) * cv2.dilate(seul, np.ones((11, 11), np.uint8)), 4, cv2.INPAINT_TELEA)
         haut_d = haut & ~cv2.erode((bas & ~haut).astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)
+        sk = None
+        if ponderee:                       # (« peau » désigne ici le masque de peau nue de gestes.peau_corps)
+            import peau_ponderee
+            o = np.array([x0, y0], np.float64)
+            sk = peau_ponderee.maillage(S - o, E - o, Wr - o, Mh - o, (sil_bras > 0.05))
         for part, m, piv in (('haut', haut_d, S), ('bas', bas, E)):
             sil = (cv2.GaussianBlur((m & (a > 0.3)).astype(np.float32), (0, 0), 0.8) * a).astype(np.float32)
             out.append(dict(cote=cote, part=part, nu=True, piv=np.asarray(piv, np.float32), x=float(piv[0]), lf=L2, box=(x0, y0, x1, y1),
                             rgb=reg, calque=sil, sil=sil, sil_bras=sil_bras.astype(np.float32), fondu=np.ones_like(sil), fond=fond, trou=trou.astype(bool), sens=-1.0,
                             Hc=np.asarray(Mh, np.float32), empreinte=sil, rgb_ext=rgb_ext, calque_ext=sil, amax=0.0, emax=1.0,
                             S=S.astype(np.float32), E=E.astype(np.float32), W=Wr.astype(np.float32), M=Mh.astype(np.float32),
-                            r=np.float32(r1 if part == 'haut' else r2)))
+                            r=np.float32(r1 if part == 'haut' else r2), peau=sk if part == 'haut' else None))
     return out
 
 

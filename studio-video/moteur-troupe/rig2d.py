@@ -402,7 +402,8 @@ def _calques_bras(img, alpha, bras, plaque, segmente, box):
         alpha_c[y0:y1, x0:x1] = al * (1 - tt) + A_B * tt
         side = 'l' if b['cote'] == 'gauche' else 'r'
         out.append(dict(cote=side, nu=b['nu'], piv=np.asarray(b['piv'], np.float64), box=(x0, y0, x1, y1), rgb=P.astype(np.float32),
-                        calque=mf, sens=b['sens'], amax=b.get('amax', 0.0), emax=b.get('emax', 1.0), trou=t, part=b.get('part')))
+                        calque=mf, sens=b['sens'], amax=b.get('amax', 0.0), emax=b.get('emax', 1.0), trou=t, part=b.get('part'),
+                        peau=b.get('peau'), calque_bras=m if b.get('sil_bras') is not None else None))
         src_c.append(((x0, y0, x1, y1), B_c, tt))
     return out, alpha_c, src_c
 
@@ -591,12 +592,24 @@ def rendre(R, pose, src, alpha=None):
     rgb = cv2.remap(src, sx, sy, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
     al = cv2.remap(a, sx, sy, cv2.INTER_LINEAR, borderValue=0)
     if R['bras']:
-        w, h = X1 - X0, Y1 - Y0; acc = rgb * al[..., None]
-        for b, T in zip(R['bras'], pose_bras(R, pose, mats)):
+        w, h = X1 - X0, Y1 - Y0; acc = rgb * al[..., None]; Ts = pose_bras(R, pose, mats)
+        # PEAU PONDÉRÉE (peau_ponderee.py) : un bras qui en porte une est déformé d'un seul tenant par trois os — corps
+        # (près de l'épaule), bras, avant-bras — au lieu de ses deux calques rigides
+        peaux = {b['cote'] for b in R['bras'] if b.get('peau') is not None}
+        T_bas = {b['cote']: T for b, T in zip(R['bras'], Ts) if b.get('part') == 'bas'}
+        for b, T in zip(R['bras'], Ts):
             x0, y0, x1, y1 = b['box']
             A = _tr((-X0, -Y0)) @ T @ _tr((x0, y0))
-            cb = cv2.warpAffine(b['calque'], A[:2], (w, h), flags=cv2.INTER_LINEAR, borderValue=0)
-            rb = cv2.warpAffine(b['rgb'], A[:2], (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+            if b['cote'] in peaux:
+                if b.get('peau') is None: continue                 # avant-bras : déjà dans la peau du bras
+                import peau_ponderee
+                ch = mats[R['M']['idx'][b['cote'] + 'Up']]; piv = b['piv']
+                T_corps = _tr(_app(ch, piv) - piv) @ _rot(piv, math.atan2(ch[1, 0], ch[0, 0]))   # suit le buste, sans le geste
+                cadre = lambda M_: _tr((-X0, -Y0)) @ M_ @ _tr((x0, y0))
+                cb, rb = peau_ponderee.rendre(b['peau'], (cadre(T_corps), A, cadre(T_bas.get(b['cote'], T))), b['rgb'], b['calque_bras'], (w, h))
+            else:
+                cb = cv2.warpAffine(b['calque'], A[:2], (w, h), flags=cv2.INTER_LINEAR, borderValue=0)
+                rb = cv2.warpAffine(b['rgb'], A[:2], (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
             acc = acc * (1 - cb[..., None]) + rb * cb[..., None]; al = al * (1 - cb) + cb
         rgb = acc / np.maximum(al, 1e-4)[..., None]
     return (X0, Y0, X1, Y1), np.clip(rgb, 0, 255).astype(np.uint8), al.astype(np.float32), sx, sy
