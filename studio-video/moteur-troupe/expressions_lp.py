@@ -43,8 +43,12 @@ TOL_DURE = 0.12   # défaut au-delà du neutre qui marque un visage ABÎMÉ (vu 
                   # tolérance de 0,08 adoucissait à tort la colère de Petit Mamadou (lisible 0,76 → 0,24)
 SUFFIT = 0.8      # lisible à 80 % : la recherche de recette s'arrête
 CLOS = {'regard_y': 34}    # yeux clos : commande « regard » vers le bas poussée jusqu'à fermer la paupière
-BOUCHE = [0, 30, 62, 100]  # ouverture de la bouche (commande « lèvres 3 » des auteurs) : fermée … grande ouverte ; 70 → 100 le 17/10 :
+BOUCHE = [-25, 0, 30, 62, 100]  # ouverture de la bouche (commande « lèvres 3 » des auteurs) : fermée … grande ouverte ; 70 → 100 le 17/10 :
                            # « le vieux assis ne parle pas » — à 52 px de visage, la bouche à 70 ne se lisait pas (Baye : propre jusqu'à 130)
+# LÈVRES JOINTES (18/10/2026) : la bouche PEINTE (0) est entrouverte chez 5 personnages sur 7 (sourires à dents de Petit
+# Mamadou, Maman Nounou, Koffi) ; JEV voyait donc la bouche ouverte aux m, b, p et aux silences de la v28 (« fermée »
+# 0,06–0,55). Les auteurs de LivePortrait ferment les lèvres par « lèvres 3 » négatif ; planche essai_fermeture (7 visages,
+# 0 à −80) : −20 à −40 joignent les lèvres, −60 et au-delà gonflent les joues → −25 en tête, la bouche peinte reste au rang 1.
 OVALE = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109]
 SOURCILS = ('froncer', 'inquiet', 'hausser', 'sourcils')
 LEVRES = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185]   # contour extérieur des lèvres (FaceMesh)
@@ -69,7 +73,8 @@ ALT = {
 
 
 def _commande(c, m):
-    c = dict(c); c['levre3'] = c.get('levre3', 0) + m; return LP.edits(**c)
+    # une bouche FERMÉE (m < 0) l'est quelle que soit l'émotion : le rire aussi a les lèvres jointes sur m, b, p (18/10)
+    c = dict(c); c['levre3'] = m if m < 0 else c.get('levre3', 0) + m; return LP.edits(**c)
 
 
 def variantes(e):
@@ -114,14 +119,14 @@ def cherche_recette(e, rend, juger, base, journal=print):
     from concurrent.futures import ThreadPoolExecutor
     Q = {'abime': ABIME, 'lisible': f'Does this cartoon face clearly look {DESC[e]}?'}; V = variantes(e)
     abime = lambda x: x[2]['abime'] - base > TOL_DURE
-    o = rend(dict(V[0]), BOUCHE[0]); r = juger(o, Q); essais = [(dict(V[0]), o, r, 1.0, V[0])]   # la recette de base d'abord
+    o = rend(dict(V[0]), 0); r = juger(o, Q); essais = [(dict(V[0]), o, r, 1.0, V[0])]   # la recette de base d'abord
     if not abime(essais[0]) and r['lisible'] >= SUFFIT: return dict(V[0]), o, dict(r, intensite=1.0), 1
     a_adoucir = [V[0]] if abime(essais[0]) else []; a_faire = V[1:]
     with ThreadPoolExecutor(8) as pool:
         for k in INTENSITES:
             if k != 1.0: a_faire, a_adoucir = a_adoucir, []   # seules les recettes abîmées sont adoucies
             if not a_faire: break
-            cs = [{n: round(v * k, 4) for n, v in R.items()} for R in a_faire]; ims = [rend(c, BOUCHE[0]) for c in cs]
+            cs = [{n: round(v * k, 4) for n, v in R.items()} for R in a_faire]; ims = [rend(c, 0) for c in cs]
             rs = list(pool.map(lambda o: juger(o, Q), ims))
             lot = list(zip(cs, ims, rs, [k] * len(cs), a_faire)); essais += lot; a_adoucir += [x[4] for x in lot if abime(x)]
             propres = [x for x in essais if not abime(x)]
@@ -166,9 +171,8 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev'):
         if meme and e in v_jev: meta['jev'][e] = v_jev[e]
         elif juger and e != 'neutre':
             try:
-                if base is None:   # défaut du neutre : moyenne de deux avis (le juge varie de ±0,03 d'une requête à l'autre)
-                    if not os.path.isfile(f'{dossier}/neutre_0.png'): ecrit(f'{dossier}/neutre_0.png', rend({}, BOUCHE[0]))
-                    n0 = lire(f'{dossier}/neutre_0.png'); base = float(np.mean([juger(n0, {'abime': ABIME})['abime'] for _ in range(2)]))
+                if base is None:   # défaut du neutre à la bouche peinte, comme les recettes : moyenne de deux avis (±0,03 par requête)
+                    n0 = rend({}, 0); base = float(np.mean([juger(n0, {'abime': ABIME})['abime'] for _ in range(2)]))
                     meta['jev']['neutre'] = {'abime': round(base, 3)}
                 c, fait0, r, n = cherche_recette(e, rend, juger, base, journal)
                 meta['jev'][e] = dict(r, essais=n)
@@ -178,8 +182,8 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev'):
         neuf = not meme
         for i, m in enumerate(BOUCHE):
             f = f'{dossier}/{e}_{i}.png'
-            if i == 0 and fait0 is not None: ecrit(f, fait0); continue
-            if neuf or (neuf_bouche and i > 0 and e not in repris) or not os.path.isfile(f): ecrit(f, rend(c, m))
+            if m == 0 and fait0 is not None: ecrit(f, fait0); continue   # la recette est jugée à la bouche peinte (0)
+            if neuf or (neuf_bouche and e not in repris) or not os.path.isfile(f): ecrit(f, rend(c, m))
         meta['emotions'].append(e); meta['commandes'][e] = EMO[e]; meta['recettes'][e] = c
         meta['intensite'][e] = meta['jev'].get(e, {}).get('intensite', 1.0)
         json.dump(meta, open(fp, 'w'))
@@ -217,8 +221,10 @@ def charge(dossier, img, v3):
     M = np.float32([[t / s, 0, -x * t / s], [0, t / s, -y * t / s]])
     orig = cv2.warpAffine(img, M, (t, t), flags=cv2.INTER_AREA, borderMode=cv2.BORDER_REPLICATE).astype(np.float32)
     masque = masque_visage(v3, (x, y, s), t, imgs[('neutre', len(meta['bouche']) - 1)], imgs[('neutre', 0)])
-    # recalage : l'écart de couleur basse fréquence entre le dessin et le rendu neutre (bouche fermée), ajouté à tout
-    ecart = cv2.GaussianBlur(orig - imgs[('neutre', 0)], (0, 0), max(3.0, 0.04 * t))
+    # recalage : l'écart de couleur basse fréquence entre le dessin et le rendu neutre à la bouche PEINTE (commande 0 ; la
+    # bouche aux lèvres jointes diffère du dessin à la bouche : son écart flouté y laisserait une tache), ajouté à tout
+    kp = meta['bouche'].index(0) if 0 in meta['bouche'] else 0
+    ecart = cv2.GaussianBlur(orig - imgs[('neutre', kp)], (0, 0), max(3.0, 0.04 * t))
     for k_ in imgs: imgs[k_] = imgs[k_] + ecart
     clos = clos + ecart
     # zone des yeux (pour le clignement) : autour des deux yeux
@@ -236,9 +242,12 @@ def charge(dossier, img, v3):
     # de chaque ouverture stockée, par émotion (rendue croissante)
     ouv, fa = {}, f'{dossier}/audit.json'
     if os.path.isfile(fa):
-        A_ = json.load(open(fa))
-        if A_.get('bouche') == meta['bouche']:
-            ouv = {e: np.maximum.accumulate(np.asarray(v['ouverte'], np.float64)) for e, v in A_['emotions'].items() if e in meta['emotions']}
+        A_ = json.load(open(fa)); b0 = A_.get('bouche') or []; bm = meta['bouche']
+        # audit fait avant l'ajout des lèvres jointes en tête (18/10) : les ouvertures communes sont les mêmes images (rendu
+        # déterministe, mêmes recettes), les nouvelles bouches fermées comptent pour une ouverture perçue nulle
+        if b0 and bm[len(bm) - len(b0):] == b0:
+            pre = [0.0] * (len(bm) - len(b0))
+            ouv = {e: np.maximum.accumulate(np.asarray(pre + list(v['ouverte']), np.float64)) for e, v in A_['emotions'].items() if e in meta['emotions']}
     gx, gy = np.meshgrid(np.arange(t, dtype=np.float32), np.arange(t, dtype=np.float32))
     return dict(meta=meta, imgs=imgs, clos=clos, flux=flux, paires=paires, masque=masque, yeux=yeux, box=(x, y, s), taille=t, grille=(gx, gy),
                 bouche_masque=bm, ouv=ouv)

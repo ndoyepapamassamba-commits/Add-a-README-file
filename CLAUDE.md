@@ -5,15 +5,20 @@
 **Juste après : `rea-d-abord`** (consigne du 17/10/2026, « utilise REA tout le temps au début de toutes tes réflexions pour
 de la rétro-ingénierie rapide ») : avant de deviner comment marche un outil, un paquet, une app ou un format, le démonter avec
 REA (`rea` en ligne de commande, MCP `rea` déclaré dans `.mcp.json`) et raisonner sur ses preuves (`.claude/skills/rea-d-abord`).
+**Veille REA permanente, sans limite** (consignes du 18/10/2026, « veille permanente REA chaque minute », « ne donne pas
+de limite à REA, demande-lui de chercher tous les moteurs disponibles du monde ») : `studio-video/outils/veille_rea.py`
+tourne en continu (cycle d'une minute) — npm, GitHub, Hugging Face sur tous nos thèmes, REA sur tout ce qu'il sait
+démonter, journal daté ; à relancer au début de chaque session et à lire avant chaque greffe.
 
 - **Tout doit être parfait** (consigne du 17/10/2026) : aucune livraison tant qu'un contrôle échoue ; chaque défaut vu par
   l'utilisateur (ex. l'ombre de la poule) devient un contrôle automatique qui l'aurait arrêté ; JEV crée (genèse : variantes
   physiques jugées contre un objectif écrit et une référence d'artiste) et juge (portes A–K du film, batterie physique),
   avec la physique, la mécanique et la lumière du décor respectées (`studio-video/moteur-troupe/physique.py`, `genese.py`).
 - **Tout est appuyé par le jugement de JEV** (consignes du 17/10/2026, trois messages) :
-  - *JEV d'abord, avant de coder* : un défaut mesuré est montré à JEV (images, contexte chiffré, liste fermée des causes et
-    des remèdes) et seul le remède qu'il désigne est codé (`studio-video/moteur-troupe/jev_conseil.py`) ; s'il hésite, un
-    essai A/B rendu par le moteur et jugé par lui tranche, pas un tâtonnement ;
+  - *greffer d'abord, JEV juge le rendu* (consignes du 18/10/2026, « greffe directement les trouvailles REA et JEV verra
+    après rendu » ; « désormais, tu grefferas d'abord les outils nécessaires, JEV ne jugera que le rendu ») : les outils
+    nécessaires sont greffés tout de suite, sans consultation préalable ; JEV juge le rendu (portes du film, images) et
+    ce qui ne passe pas est repris (`jev_conseil.py` reste disponible pour diagnostiquer un échec, plus avant de coder) ;
   - *aucune tolérance* : chaque contrôle JEV doit rendre la décision « conforme » sur CHAQUE image contrôlée (défaut :
     probabilité < 0,5 ; conformité : > 0,5), sans marge relative à la peinture d'origine ni médiane qui cache une image ;
   - *dans tout le projet* : choix, réglages, livrables et vérifications s'appuient sur une réponse de JEV citée (valeurs).

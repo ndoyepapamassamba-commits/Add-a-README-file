@@ -27,6 +27,12 @@ dans les fiches npm ; Spine écarté (licence propriétaire). Chaque ligne cite 
 | popmotion 11.0.5 (MIT) | `ev_adc4b165…` | 8,8 s | 7 252 | ressort amorti (`dampingRatio`, raideur, masse, `restDelta`, l. 56-153) | gestes et tête au rythme naturel (porte I « fluidité ») |
 | three.js CCDIKSolver (MIT) | `ev_c35b9a59…` | 3,7 s | 1 688 | IK CCD avec bornes de rotation (l. 146-227), `chainBlend` | coudes et genoux bornés (jamais à l'envers) |
 
+## Services payants : SDK publics démontés par REA (interopérabilité seulement)
+
+| Service | Preuve REA | Durée | Ce que REA a montré | Usage chez nous |
+|---|---|---|---|---|
+| Higgsfield (`@higgsfield/client` 0.2.6, SDK MIT ; service et modèles fermés, payants) | `ev_a6850ae2…` | 3,6 s | `https://api.higgsfield.ai` (config.js l. 13) ; catalogue de mouvements `GET /v1/motions` (id, nom, description, aperçu ; client.js l. 127-131) ; `inputMotion(id, force 0..1)` (helpers.js l. 56-69) ; modèle « DoP » TURBO / STANDARD (l. 136-141) ; Soul ID, Speak | aucune voie payante ; l'idée « mouvement de caméra + force » est reprise gratuitement : 8 mouvements de cinéma et une force douce / normale / forte dans « Animer mon image » (consignes Wan 2.2) |
+
 ## Première greffe mesurée : la peau pondérée (DragonBones)
 
 JEV a désigné ce remède pour les gestes articulés (`conseil/bras_conseil_rea.json` : cause « bras découpé » 0,68,

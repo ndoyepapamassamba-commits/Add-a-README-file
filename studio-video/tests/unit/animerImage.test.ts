@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CAMERAS,
   ErreurQuotaGpu,
+  INTENSITES,
   QUOTA_JOUR_S,
   bilanQuota,
   clipsRestants,
@@ -52,6 +54,15 @@ describe('consigne Wan 2.2 « un seul temps » (veille du 18/10 : action → cam
     const c = consigneWan({ action: 'Salue de la main', camera: 'Zoom avant lent', rythme: 'Naturel', libre: 'she holds a calabash' });
     expect(c).toBe('The character raises one hand and waves hello. Slow dolly in toward the character. natural, realistic pace. she holds a calabash. Keep the same character, face, clothes and colors as in the image.');
     expect(consigneWan({})).toBe('Keep the same character, face, clothes and colors as in the image.');
+  });
+  it('mouvements de cinéma façon Higgsfield, avec leur force (texte de la force 0..1)', () => {
+    expect(Object.keys(CAMERAS).length).toBeGreaterThanOrEqual(13);
+    expect(consigneWan({ camera: 'Zoom éclair', intensite: 'Forte' })).toBe('Strong, dramatic fast crash zoom in on the character’s face. Keep the same character, face, clothes and colors as in the image.');
+    expect(consigneWan({ camera: 'Orbite 360°', intensite: 'Douce' })).toMatch(/^Subtle, gentle the camera orbits a full 360 degrees/);
+    expect(consigneWan({ camera: 'Effet vertigo', intensite: 'Normale' })).toMatch(/^Dolly zoom vertigo effect/);
+    // un plan fixe n'a pas de force
+    expect(consigneWan({ camera: 'Plan fixe', intensite: 'Forte' })).toBe('Static camera. Keep the same character, face, clothes and colors as in the image.');
+    for (const k of Object.keys(INTENSITES)) expect(consigneWan({ camera: 'Drone FPV', intensite: k })).toMatch(/fpv drone shot/i);
   });
 });
 

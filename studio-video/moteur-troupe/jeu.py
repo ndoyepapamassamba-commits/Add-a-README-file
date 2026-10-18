@@ -68,6 +68,23 @@ def borne(x, lim):
     return lim * np.tanh(np.asarray(x) / lim) if lim > 1e-6 else np.zeros_like(np.asarray(x, np.float32))
 
 
+ACC_FLUIDE = 2.2   # à-coup maximal d'une piste de pose (2e différence, degrés par image²) ; la porte I du film admet 2,5
+
+
+def lisse_acc(x, fps, acc=ACC_FLUIDE):
+    """GARDE DE FLUIDITÉ (18/10/2026) — porte I de la v28 : seul le tangage de la tête dépassait (2e différence 2,6 à 4,9
+    pour 2,5 admis), à cause des hochements captés ajoutés sans filtre. Le ressort critique est passé dans les deux sens
+    (aucun retard sur la parole), du plus raide au plus doux, jusqu'à ce que l'à-coup tienne sous `acc` ; une piste déjà
+    fluide n'est pas touchée et le hochement garde son ampleur, seule sa pointe d'accélération est arrondie."""
+    x = np.asarray(x, np.float32)
+    pire = lambda y: float(np.abs(y[2:] - 2 * y[1:-1] + y[:-2]).max()) if len(y) > 2 else 0.0
+    if pire(x) <= acc: return x
+    for om in (60.0, 45.0, 34.0, 26.0, 20.0, 15.0, 11.0):
+        y = ressort(ressort(x, fps, om)[::-1], fps, om)[::-1]
+        if pire(y) <= acc: break
+    return np.ascontiguousarray(y, np.float32)
+
+
 # ── MOTEUR IMAGE → VIDÉO (17/10/2026) : DYNAMIQUE DU SECOND ORDRE, avec anticipation et dépassement. Les ressorts critiques
 # (ci-dessus) n'ont ni l'un ni l'autre : les mouvements démarrent et s'arrêtent « sans poids » (avis de JEV : « aucune
 # anticipation, aucun dépassement, aucun mouvement qui suit », vrai à 0,74–0,75). Système y + k1·y' + k2·y'' = x + k3·x'
@@ -347,6 +364,7 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         R['souffle'] = np.clip(R['souffle'], -env.get('souffle', 0.02), env.get('souffle', 0.02)); R['tete_lacet'] = borne(R['tete_lacet'], env.get('tete_lacet', 20.0)); R['tete_tangage'] = borne(R['tete_tangage'], 9.0); R['buste_lacet'] = borne(R['buste_lacet'], env.get('buste_lacet', 9.0))
         R['regard_x'] = np.clip(R['regard_x'], -1, 1); R['regard_y'] = np.clip(R['regard_y'], -1, 1)
         for k_ in [k_ for k_ in R if k_.startswith('geste_')]: R[k_] = np.clip(R[k_], 0, 1)
+        for c_ in ('tete_tangage', 'tete', 'tete_lacet', 'buste', 'buste_lacet'): R[c_] = lisse_acc(R[c_], fps)   # garde de fluidité
         for e in EMOS: R['emo_' + e] = ressort(np.clip(E[e], 0, 1), fps, 10.0)
         if cl is not None: R['cligne'] = cl
         out[nom] = R

@@ -17,6 +17,7 @@ import {
   ACTIONS,
   CAMERAS,
   ErreurQuotaGpu,
+  INTENSITES,
   QUOTA_JOUR_S,
   RYTHMES,
   animerSurGpuDistant,
@@ -92,6 +93,7 @@ export function AnimerImage() {
   const [dims, setDims] = useState<[number, number]>([1080, 1920]);
   const [action, setAction] = useState('Parle en souriant');
   const [camera, setCamera] = useState('Plan fixe');
+  const [intensite, setIntensite] = useState('Normale');
   const [rythme, setRythme] = useState('Naturel');
   const [libre, setLibre] = useState('');
   const [duree, setDuree] = useState(3);
@@ -119,7 +121,7 @@ export function AnimerImage() {
   const parClip = quotaClip(duree, ETAPES, dims[0], dims[1]);
   const bilan = bilanQuota(registre, maintenant);
   const restants = clipsRestants(quotaJour, bilan.utiliseS, parClip);
-  const consigne = useMemo(() => consigneWan({ action, camera, rythme, libre }), [action, camera, rythme, libre]);
+  const consigne = useMemo(() => consigneWan({ action, camera, intensite, rythme, libre }), [action, camera, intensite, rythme, libre]);
   const [l, h] = tailleSpace(dims[0], dims[1]);
   const coutUtile = gpuParClipUtilisable(essais.map((e) => ({ reserveS: e.reserveS, conforme: e.verdict ? e.verdict.conforme : null })));
   const dernier = essais[0];
@@ -297,6 +299,16 @@ export function AnimerImage() {
                       </Chip>
                     ))}
                   </div>
+                  {camera !== 'Plan fixe' && (
+                    <div className="mt-1 flex flex-wrap items-center gap-1" data-testid="animer-intensite">
+                      <span className="text-[11.5px] text-faint">Force</span>
+                      {Object.keys(INTENSITES).map((k) => (
+                        <Chip key={k} active={intensite === k} onClick={() => setIntensite(k)}>
+                          {k}
+                        </Chip>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <div className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-faint">Rythme et durée</div>

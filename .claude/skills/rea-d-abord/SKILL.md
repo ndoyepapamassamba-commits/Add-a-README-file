@@ -46,6 +46,15 @@ Question : comment le client officiel de Gradio fait-il compter un appel sur le 
 - conséquence codée : hors de huggingface.co, l'app envoie le jeton de l'utilisateur en `Authorization` (pré-vols CORS
   vérifiés pour une page locale, origine `null` : `whoami-v2` et `queue/join` autorisent l'en-tête `authorization`).
 
+## Veille permanente sans limite (18/10/2026)
+
+Consignes : « veille permanente REA chaque minute » ; « ne donne pas de limite à REA, demande-lui de chercher tous les
+moteurs disponibles du monde » ; « greffe d'abord les outils nécessaires, JEV ne juge que le rendu ».
+- `studio-video/outils/veille_rea.py <dossier>` tourne en continu (cycle d'une minute) : npm (recherche paginée sur
+  ~70 thèmes + nouvelles versions des moteurs suivis), GitHub (sujets triés par étoiles), Hugging Face (modèles par tâche) ;
+  REA démonte tout paquet JavaScript greffable sur deux voies parallèles ; journal `journal.jsonl` + résumé `veille.md`.
+- Au début de chaque session : relancer le veilleur ; avant chaque greffe : lire son journal.
+
 ## Liste de contrôle
 
 - [ ] REA lancé (ou absence d'artefact pertinent constatée) avant de coder ou de conclure ;

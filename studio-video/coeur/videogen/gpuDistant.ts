@@ -116,6 +116,22 @@ export const CAMERAS: Record<string, string> = {
   'Zoom arrière lent': 'Slow dolly out revealing the scene',
   'Travelling latéral': 'Smooth lateral tracking shot from left to right',
   'Orbite légère': 'Gentle orbital arc around the character',
+  // mouvements de cinéma façon préréglages Higgsfield (18/10/2026 ; REA sur leur SDK MIT @higgsfield/client 0.2.6, preuve
+  // ev_a6850ae2… : un catalogue /v1/motions + une force 0..1 par mouvement, côté serveur payant) — ici en consignes Wan 2.2
+  'Zoom éclair': 'Fast crash zoom in on the character’s face',
+  'Effet vertigo': 'Dolly zoom vertigo effect: the camera pulls back while zooming in, the background stretches behind the character',
+  'Orbite 360°': 'The camera orbits a full 360 degrees around the character',
+  'Grue montante': 'Crane shot rising up, revealing the scene from above',
+  'Drone FPV': 'FPV drone shot swooping fast toward the character',
+  'Caméra à l’épaule': 'Handheld camera with natural slight shake, documentary style',
+  'Panoramique filé': 'Quick whip pan landing on the character',
+  'Contre-plongée': 'Low-angle camera slowly tilting up toward the character',
+};
+/** force du mouvement de caméra (équivalent texte de la force 0..1 des préréglages Higgsfield). */
+export const INTENSITES: Record<string, string> = {
+  Douce: 'Subtle, gentle',
+  Normale: '',
+  Forte: 'Strong, dramatic',
 };
 export const RYTHMES: Record<string, string> = {
   Lent: 'slow, gentle pace',
@@ -123,8 +139,11 @@ export const RYTHMES: Record<string, string> = {
   Vif: 'lively, energetic pace',
 };
 /** consigne Wan 2.2 « un seul temps » : action, caméra, rythme, puis le texte libre de l'utilisateur. */
-export function consigneWan(c: { action?: string; camera?: string; rythme?: string; libre?: string }): string {
-  const parts = [c.action && ACTIONS[c.action], c.camera && CAMERAS[c.camera], c.rythme && RYTHMES[c.rythme]]
+export function consigneWan(c: { action?: string; camera?: string; intensite?: string; rythme?: string; libre?: string }): string {
+  let cam = c.camera ? CAMERAS[c.camera] : undefined;
+  const force = c.intensite ? INTENSITES[c.intensite] : '';
+  if (cam && force && c.camera !== 'Plan fixe') cam = `${force} ${cam.charAt(0).toLowerCase()}${cam.slice(1)}`;
+  const parts = [c.action && ACTIONS[c.action], cam, c.rythme && RYTHMES[c.rythme]]
     .filter(Boolean)
     .map((s) => String(s).replace(/\.$/, ''));
   const libre = (c.libre ?? '').trim().replace(/\s+/g, ' ');
