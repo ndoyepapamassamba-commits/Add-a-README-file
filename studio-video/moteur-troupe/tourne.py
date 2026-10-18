@@ -678,6 +678,11 @@ def crop_for(S, kind, who=None):
     w = h * asp
     if w > W: w = W; h = w / asp
     return (cx, cy, w, h)
+# GROS PLANS MOINS ZOOMÉS (18/10/2026, v3 : « dans les sketchs l'arrière-plan comporte encore des flous » ; « le visage du petit
+# Mamadou se déforme ») : le gros plan visage descendait à 200 px de décor pour 460 à l'écran (×2,3) — le décor, déjà peint
+# avec une profondeur de champ, devenait une bouillie, et chaque défaut du visage était grossi d'autant. Plancher 260 px
+# (×1,77 au plus), puis netteté rendue à l'agrandissement (NETTETE, ci-dessous).
+GROS_PLAN_MIN = float(os.environ.get('GROS_PLAN_MIN', 260))
 def crop_visage(S, who, part=0.22):
     """gros plan calé sur le VISAGE de celui qui parle : le visage occupe `part` de la hauteur de l'image (≈ 100 px sur 460).
     v30 jugée par JEV (réalisateur) : pour Baye assis, le plan « serré » calé sur la largeur d'épaules (boubou ample)
@@ -685,7 +690,7 @@ def crop_visage(S, who, part=0.22):
     proposé n'était conforme (porte M)."""
     A = S['acts'].get(who); v_ = A['a'].get('visage') if A else None
     if not v_: return None
-    fx0, fy0, fx1, fy1 = v_['box']; h = max(200.0, (fy1 - fy0) / part); w = h * CW / CH
+    fx0, fy0, fx1, fy1 = v_['box']; h = max(GROS_PLAN_MIN, (fy1 - fy0) / part); w = h * CW / CH
     return ((fx0 + fx1) / 2, (fy0 + fy1) / 2 + 0.12 * h, w, h)   # les yeux un peu au-dessus du centre (règle des tiers)
 def crop_visage_ok(S, who):
     """le gros plan « visage » le plus large que la règle des têtes entières (faces_ok) laisse tel quel : sinon elle le
@@ -881,6 +886,11 @@ FONT = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-m
 def carte(c, t, rgba=False, place=None):
     """place : (centre x de l'émoji, centre y de l'émoji, haut du titre, taille de base de l'émoji) — par défaut l'émoji au
     centre en haut et le titre dessous (cartes de Ladjagaï)."""
+    if rgba and os.environ.get('CARTES_FX', '1') == '1':   # cartes redessinées (cartes_fx.py, 18/10/2026)
+        import cartes_fx
+        ids_ = [k_['id'] for k_ in H_['sketchs']]; rang_ = ids_.index(c['apres']) + 1 if c['apres'] in ids_ else 1
+        titre_ = [k_ for k_ in H_['sketchs'] if k_['id'] == c['apres']][0]['titre'].upper()
+        return cartes_fx.carte(CW, CH, t - c['t0'], titre_, rang_, len(ids_), place or (CW / 2, 145, 290, 210))
     im = PImage.new('RGBA' if rgba else 'RGB', (CW, CH), (0, 0, 0, 0) if rgba else (0, 0, 0)); u = (t - c['t0']) / (c['t1'] - c['t0'])
     e = PImage.open(EMO.get(c['apres'], 'emoji/face_with_tears_of_joy.png')).convert('RGBA')
     ex, ey, ty, base = place or (CW / 2, 145, 290, 210)
@@ -1079,9 +1089,18 @@ def rend(f):
     if sc < 0.95: src_ = cv2.GaussianBlur(fr, (0, 0), 0.45 / sc)
     Maff = np.float32([[sc, 0, -(cx - w2 / 2) * sc], [0, sc, -(cy - h2 / 2) * sc]])
     out = cv2.warpAffine(src_, Maff, (CW, CH), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)  # acteur en bicubique + cadre en bilinéaire : netteté la plus proche de la source (mesurée)
+    if sc > 1.15 and NETTETE > 0: out = nettete(out, sc)
     if c:   # visages pris au début de la carte (même placement dans tous les processus de rendu)
         t_r = max(s[0], c['t0'] - 0.05); out = sur_scene(out, c, t, visages_ecran(S, cadre_t(s, (cs, c0, c1, cp), t_r)))
     cv2.imwrite(f'{OUT}/clip/f{f:05d}.jpg', cv2.cvtColor(out, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, 94])
+# NETTETÉ RENDUE À L'AGRANDISSEMENT (18/10/2026) : un plan agrandi ×k par interpolation perd les détails fins en proportion ;
+# masque flou classique (détail = image − image adoucie σ 1,1), gain croissant avec k (0,35 par unité au-delà de ×1, borné
+# à 0,5), seuil de 3 niveaux pour ne pas relever le grain du JPEG ni le bruit des aplats.
+NETTETE = float(os.environ.get('NETTETE', 0.35))
+def nettete(im, k):
+    a = min(0.5, NETTETE * (k - 1.0)); f = im.astype(np.float32); d = f - cv2.GaussianBlur(f, (0, 0), 1.1)
+    d = np.where(np.abs(d) > 3.0, d, 0.0)
+    return np.clip(f + a * d, 0, 255).astype(np.uint8)
 def morceau(bloc):
     for f in bloc: rend(f)
     if MESURE and MESURES:

@@ -466,7 +466,13 @@ def visage(B, emotions, bouche, clignement=0.0, visage_px=None, avec_alpha=False
     def tire(im, fl):   # l'image amenée sur la géométrie mélangée
         d = cv2.remap(fl, px, py, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
         return cv2.remap(im, px + d[..., 0], py + d[..., 1], cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
-    out = sum(w * tire(*V[e]) for e, w in W.items())
+    # COULEURS AIGUISÉES HORS DE LA BOUCHE (18/10/2026, v3 : « les sourcils de la femme au maquis semblent dupliqués lors du
+    # choc de fin »). À la prise de choc, la surprise monte pendant que les autres émotions retombent : trois images aux
+    # sourcils différemment placés étaient fondues à parts presque égales, et le flux (imparfait sur un dessin) ne les
+    # superposait pas exactement — deux sourcils. La géométrie reste le mélange doux des émotions (aucun saut de forme) ;
+    # les couleurs viennent de l'émotion dominante (poids au cube : 0,6/0,4 → 0,77/0,23 ; 0,7/0,3 → 0,93/0,07).
+    Wc = {e: w ** 3 for e, w in W.items()}; sc_ = sum(Wc.values()); Wc = {e: v / sc_ for e, v in Wc.items() if v / sc_ > 0.01}
+    sc_ = sum(Wc.values()); out = sum((w / sc_) * tire(*V[e]) for e, w in Wc.items())
     # ZONE DE LA BOUCHE SANS FLUX DEPUIS LA BOUCHE FERMÉE (avis de JEV, 17/10 : la bouche de Koffi « bave » dans le film et
     # pas dans la bibliothèque — 0,86). Rejouée : amener une bouche OUVERTE sur la géométrie mélangée passe par le flux depuis
     # la bouche fermée, faux à l'intérieur de la bouche (dents et langue n'y existent pas) : dents déchirées (0,61–0,83).
@@ -513,10 +519,31 @@ def visage(B, emotions, bouche, clignement=0.0, visage_px=None, avec_alpha=False
 LACETS = (-24.0, -12.0, 12.0, 24.0)   # degrés ; + = la tête tourne vers la droite de l'écran (convention du jeu)
 
 
+# CHAMP DE ROTATION LISSÉ (18/10/2026, v3 : « le visage de Mamie en tournant vers Baye a perdu un peu » ; A/B du plan de Baye :
+# 40 images fautives sur 47 à 22°, 9 sans rotation). Le flux optique DIS entre la tête neutre et la tête tournée de
+# LivePortrait est bruité sur un dessin (aplats sans texture) : appliqué tel quel au visage composé, il tord sourcils, yeux
+# et bouche localement. Une tête qui tourne de 10 à 25° est un champ LISSE (chaque trait glisse selon sa profondeur) : le
+# flux est remplacé par son meilleur polynôme de degré 3 en (x, y) — moindres carrés pondérés par le poids de la tête —
+# borné aux déplacements réellement observés. Les traits glissent ensemble, plus de torsion locale.
+LACET_LISSE = os.environ.get('LACET_LISSE', '1') == '1'
+
+
+def _lisse_flux(F, w, deg=3):
+    t = F.shape[0]; u = np.linspace(-1, 1, t, dtype=np.float32); X, Y = np.meshgrid(u, u)
+    termes = [X ** i * Y ** j for i in range(deg + 1) for j in range(deg + 1 - i)]
+    A = np.stack([m.ravel() for m in termes], 1); sw = np.sqrt(np.clip(w, 0, 1).ravel())[:, None]
+    out = np.empty_like(F)
+    for k in range(2):
+        f = F[..., k].ravel(); c, *_ = np.linalg.lstsq(A * sw, f * sw[:, 0], rcond=None)
+        m = w.ravel() > 0.3; lo, hi = (np.percentile(f[m], [1, 99]) if m.any() else (f.min(), f.max()))
+        out[..., k] = np.clip((A @ c).reshape(t, t), lo, hi)
+    return out
+
+
 def lacets(dossier, img, v3, B, journal=print):
     """champs de rotation de la tête {angle: flux (taille, taille, 2) du visage tourné vers le neutre}, en cache disque."""
     f = f'{dossier}/lacet.npz'; x, y, s = B['box']; t = B['taille']
-    cle = json.dumps([VERSION, [round(float(v), 2) for v in (x, y, s)], t, LACETS])
+    cle = json.dumps([VERSION, [round(float(v), 2) for v in (x, y, s)], t, LACETS, LACET_LISSE])
     if os.path.isfile(f):
         z = np.load(f)
         if str(z['cle']) == cle: return {a: z[f'f{i}'].astype(np.float32) for i, a in enumerate(LACETS)}
@@ -527,6 +554,7 @@ def lacets(dossier, img, v3, B, journal=print):
     # visage tourné vers le neutre pointe à gauche (x < 0) dans le masque du visage
     essai = dis.calc(rend(-12.0), n0, None); signe = -1.0 if float(essai[..., 0][m].mean()) < 0 else 1.0
     F = {a: dis.calc(rend(signe * a), n0, None) for a in LACETS}
+    if LACET_LISSE: F = {a: _lisse_flux(f_, poids_tete(B)) for a, f_ in F.items()}
     np.savez_compressed(f, cle=np.array(cle), **{f'f{i}': F[a].astype(np.float16) for i, a in enumerate(LACETS)})
     journal(f"  lacets LivePortrait : {', '.join(f'{a:+.0f}°' for a in LACETS)} (sens LivePortrait {signe:+.0f}), "
             f"déplacement médian à ±24° {np.median(np.abs(F[LACETS[-1]][..., 0][m])):.1f} px")

@@ -47,6 +47,51 @@ def limiteur(y, sr=SR, plafond_db=-2.0, anticipation=0.003, relache=0.04):
     return y * out
 
 
+# ADOUCISSEUR DES AIGUS (18/10/2026, « le son est aigu par moments, pas tout le temps ») : un dé-esseur spectral. Trame par
+# trame (STFT 1 024 / 256), si la part d'énergie au-dessus de 5 kHz dépasse PART_AIGUS, les composantes au-dessus de 4,5 kHz
+# (rampe douce 4 → 5 kHz) sont baissées juste assez pour la ramener au seuil (au plus −9 dB), gain lissé dans le temps
+# (attaque immédiate, relâche ≈ 50 ms). Ailleurs, rien ne change. Mesure de contrôle : aigus().
+PART_AIGUS = 0.06
+
+
+def adoucit(y, sr, part=PART_AIGUS, plancher_db=-9.0):
+    from scipy.signal import stft, istft
+    n = len(y); f, t, Z = stft(y, sr, nperseg=1024, noverlap=768); P = np.abs(Z) ** 2
+    hf = f >= 5000; tot = P.sum(0) + 1e-12; r = P[hf].sum(0) / tot
+    g = np.where(r > part, np.sqrt(part / np.maximum(r, 1e-9)), 1.0); g = np.maximum(g, 10 ** (plancher_db / 20))
+    k = max(1, int(round(0.05 * sr / 256)))                      # relâche ≈ 50 ms : le gain remonte doucement
+    g = minimum_filter1d(g, 3); g = np.minimum(g, uniform_filter1d(g, 2 * k + 1))
+    rampe = np.clip((f - 4000.0) / 1000.0, 0, 1)[:, None]
+    Z = Z * (1 - rampe + rampe * g[None, :])
+    _, out = istft(Z, sr, nperseg=1024, noverlap=768)
+    return np.pad(out, (0, max(0, n - len(out))))[:n]
+
+
+def aigus(y, sr, lignes=None, cibles=None, seuil_db=-10.0, rapport_f0=1.6):
+    """contrôle : fenêtres de 0,1 s où l'énergie au-dessus de 5 kHz (sifflantes, souffles) dépasse `seuil_db` sous le niveau
+    médian de la parole (v3 : jusqu'à −2,7 dB, « aigu par moments » ; après adoucit() : −11,6 dB au pire), et répliques dont
+    la hauteur p95 dépasse `rapport_f0` × la hauteur visée du personnage → liste des fautes (vide = conforme)."""
+    import scipy.signal as ss_
+    fautes = []; w = int(0.1 * sr)
+    yh = ss_.sosfiltfilt(ss_.butter(4, 5000, 'high', fs=sr, output='sos'), y)
+    r = np.array([np.sqrt(np.mean(y[i:i + w] ** 2)) for i in range(0, len(y) - w, w)])
+    h = np.array([np.sqrt(np.mean(yh[i:i + w] ** 2)) for i in range(0, len(y) - w, w)])
+    ref = float(np.median(r[r > 0.1 * r.max()])) if r.size and r.max() > 0 else 1.0
+    for k, v in enumerate(20 * np.log10(h / ref + 1e-9)):
+        if v > seuil_db: fautes.append({'t': round(k * w / sr, 2), 'sorte': 'sifflante', 'db_sous_la_parole': round(float(v), 1)})
+    if lignes and cibles:
+        import pyworld as pw
+        for L in lignes:
+            c = cibles.get(L['qui'])
+            if not c: continue
+            x = y[int(L['t0'] * sr):int((L['t0'] + L['dur']) * sr)].astype(np.float64)
+            if len(x) < sr // 5: continue
+            f0, _ = pw.harvest(x, sr, f0_floor=60, f0_ceil=900, frame_period=10); v = f0[f0 > 0]
+            if len(v) > 10 and np.percentile(v, 95) > rapport_f0 * c:
+                fautes.append({'t': round(L['t0'], 2), 'sorte': 'hauteur', 'qui': L['qui'], 'p95_hz': round(float(np.percentile(v, 95))), 'cible_hz': c})
+    return fautes
+
+
 def masterise(y, sr_in, cible=-14.0, plafond=-2.3, journal=print):
     """gain avant limiteur cherché sur la bande D'ORIGINE (le limiteur mange de la sonie : on la mesure après lui)."""
     y0 = resample_poly(y, SR, sr_in) if sr_in != SR else y

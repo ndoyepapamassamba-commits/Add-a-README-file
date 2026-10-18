@@ -72,6 +72,7 @@ def voice(m):
     if m not in _voices: _voices[m] = PiperVoice.load(P + m + '.onnx')
     return _voices[m]
 
+PLAFOND_F0 = float(os.environ.get('PLAFOND_F0', 1.35))
 def shape(x, sr, f0_target, spread, formant, question, exclam, tempo=1.0):
     x = x.astype(np.float64) / 32768
     f0, t = pw.harvest(x, sr, f0_floor=60, f0_ceil=600, frame_period=5.0)
@@ -83,6 +84,11 @@ def shape(x, sr, f0_target, spread, formant, question, exclam, tempo=1.0):
     n = len(f0); idx = np.nonzero(v)[0]; pos = (idx - idx[0]) / max(1, idx[-1] - idx[0])
     if question: lf2 += np.where(pos > 0.72, (pos - 0.72) / 0.28 * np.log(1.32), 0)          # montée finale
     if exclam: lf2 += np.log(1.06) * np.exp(-((pos - 0.25) / 0.2) ** 2) + np.log(1.10) * np.exp(-((pos - 0.85) / 0.12) ** 2)
+    # PLAFOND DOUX DE LA HAUTEUR (18/10/2026, « le son est aigu par moments, pas tout le temps ») : mesuré sur la v3, les
+    # pointes partaient très au-dessus de la voix de chaque personnage — Petit Mamadou 538 Hz pour 275 visés (« Papi ! »),
+    # accusations de Maman, Tantie Awa, Coumba à 350 Hz pour 195-215. Au-delà de PLAFOND_F0 × la hauteur visée, l'excès est
+    # réduit à 35 % (genou doux) : l'exclamation monte encore, sans percer.
+    plaf = np.log(f0_target * PLAFOND_F0); lf2 = np.where(lf2 > plaf, plaf + (lf2 - plaf) * 0.35, lf2)
     f0n = f0.copy(); f0n[v] = np.exp(lf2)
     if formant != 1.0:  # dilate l'enveloppe spectrale (formants plus hauts = timbre d'enfant)
         fb = sp.shape[1]; src = np.clip(np.arange(fb) / formant, 0, fb - 1)

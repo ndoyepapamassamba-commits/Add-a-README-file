@@ -218,7 +218,7 @@ PRISE_TEMPS = 0.25   # s : temps où l'on « encaisse » la chute avant la prise
                      # de la chute : la prise se voit EN ENTIER à l'écran au lieu d'arriver avant la coupe, comme dans la v2)
 def prise_t(L): return L['t0'] + L['dur'] + 0.05 + PRISE_TEMPS
 BOUCHE_BEE = 0.6   # commande de mâchoire au sommet de la prise de choc (0,6 : bouche franchement ouverte sans crier)
-LACET_VISAGE = 22.0   # degrés : rotation de tête confiée au visage (LivePortrait), au plus (rendus à ±12° et ±24°)
+LACET_VISAGE = 14.0   # 18/10/2026 : 14° avec le champ de rotation lissé (expressions_lp._lisse_flux) — A/B JEV du plan de Baye : 25 images fautives sur 47 et 0 déformée contre la source (22° brut : 40 et 3)
 LACET_ECOUTE_MIN = 3.5   # degrés : plancher d'écoute après toutes les couches (porte D : > 2° dans 75 % des images)
 LIM = {'buste': 3.0, 'buste_lacet': 9.0, 'tete': 6.0, 'tete_lacet': 20.0, 'tete_tangage': 9.0, 'bassin_x': 4.0}
 

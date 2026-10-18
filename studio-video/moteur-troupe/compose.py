@@ -1,6 +1,9 @@
-# MONTAGE AU FORMAT DE LA CHAÎNE (mesuré sur la vidéo la plus vue) : clip 576×460 à y = 282 dans un 9:16 576×1024, fond =
-# même image agrandie et floutée, sous-titres karaoké SOUS le clip (Montserrat Black, OFL), mot prononcé en vert, mots de
-# la chute en rouge, crédit des voix en fin (CC-BY). Vérifications par le calcul avant d'écrire une image.
+# MONTAGE AU FORMAT DE LA CHAÎNE (mesuré sur la vidéo la plus vue) : clip 576×460 à y = 282 dans un 9:16 576×1024,
+# sous-titres karaoké SOUS le clip (Montserrat Black, OFL), mot prononcé en vert, mots de la chute en rouge.
+# 18/10/2026 (remarques sur la v3) : plus AUCUN flou — les bandes ne sont plus l'image agrandie et floutée mais l'habillage
+# net de la chaîne (marque.py : signature logo + @pseudo, titre du sketch, carte de signature en fin) ; le crédit des moteurs
+# quitte l'image : celui des voix (CC-BY, obligatoire) passe dans la légende de la publication (legende.txt).
+# Vérifications par le calcul avant d'écrire une image.
 # python3 compose.py tournage_dir sortie.mp4
 import json, os, re, subprocess, sys, glob, numpy as np, cv2, unicodedata
 from PIL import Image, ImageDraw, ImageFont
@@ -73,12 +76,12 @@ def chunks(tw):
 def layout(ch):
     r = coupes(ch); k = min(r)[1] if r else len(ch)   # deux lignes équilibrées, sans ligne finie sur un mot-outil si possible
     return [list(range(0, k)), list(range(k, len(ch)))] if k < len(ch) else [list(range(len(ch)))]
-caps = []
+caps = []; CAP_QUI = {}
 for L in T['lines']:
     cs = chunks(words_of(L))
     for i, ch in enumerate(cs):
         a = ch[0][1] - 0.05; b = cs[i + 1][0][1] - 0.05 if i + 1 < len(cs) else ch[-1][2] + 0.3
-        caps.append([a, b, ch, layout(ch)])
+        caps.append([a, b, ch, layout(ch)]); CAP_QUI[id(ch)] = L['qui']
 caps.sort(key=lambda c: c[0])
 for i in range(len(caps) - 1):
     if caps[i][1] > caps[i + 1][0]: caps[i][1] = caps[i + 1][0]
@@ -88,23 +91,71 @@ for a, b, ch, rows in caps:  # vérifications par le calcul
         assert (W - wl) / 2 >= SAFE['left'] - 1 and (W + wl) / 2 <= SAFE['right'] + 1, f'hors zone sûre : {[ch[i][0] for i in r]}'
     assert 752 + len(rows) * 50 <= SAFE['bottom'], 'sous-titre trop bas'
 norm = lambda w: re.sub(r'[^A-ZÀ-ÖØ-Þ]', '', unicodedata.normalize('NFC', w.upper()))
+# SOUS-TITRES STYLÉS ET ÉMOJIS QUI TRADUISENT (18/10/2026, « même les textes de la vidéo doivent être stylés ; traduire ce qui se
+# dit en émoji parfois ; quand on est choqué, le choc ; un jeu de couleurs brillant, fluide, pas trop agressif ») :
+#   · le mot prononcé est posé sur une PASTILLE arrondie à la couleur douce du personnage qui parle (repère de qui parle),
+#     lettres sombres ; les autres mots en blanc à contour adouci et ombre légère ; mots de la chute en jaune chaud ;
+#   · un ÉMOJI ANIMÉ (Noto, CC BY 4.0) jaillit au-dessus du mot qui l'appelle au moment où il est dit (argent → 💰,
+#     lunettes → 🕶️, choc → 😱, loyer → 🏠…), et reste jusqu'à la fin du bloc.
+COUL_PERSO = {'COUMBA': (255, 128, 190), 'KOFFI': (255, 200, 80), 'MAMAN NOUNOU': (110, 225, 150), 'BAYE NDIAYE': (120, 180, 255),
+              'PETIT MAMADOU': (255, 228, 100), 'TANTIE AWA': (255, 160, 100), 'MODOU': (90, 225, 230)}
+EMOJI_MOTS = {   # racine du mot (sans accent, minuscule) → émoji ANIMÉ disponible chez Noto (vérifié dans api.json)
+    'argent': '1f4b8', 'dje': '1f4b8', 'barre': '1f4b8', 'paie': '1f4b8', 'payer': '1f4b8', 'paye': '1f4b8', 'facture': '1f4b8',
+    'banque': '1f4b8', 'portefeuille': '1f4b8', 'bedou': '1f4b8', 'riche': '1f911', 'lunette': '1f60e', 'classe': '1f60e',
+    'brillent': '1f60e', 'poisson': '1f41f', 'patron': '1f440', 'peur': '1f628', 'bulletin': '1f440', 'premier': '1f947',
+    'termite': '1f41c', 'cache': '1f648', 'confidentiel': '1f92b', 'loyer': '1f3e0', 'maison': '1f3e0', 'route': '1f6a6',
+    'embouteillage': '1f6a6', 'gbaka': '1f697', 'voiture': '1f697', 'garage': '1f697', 'courant': '1f4a1', 'foot': '26bd',
+    'ballon': '26bd', 'documentaire': '1f4fa', 'radio': '1f3b6', 'ronfle': '1f634', 'dort': '1f634', 'regime': '1f957',
+    'docteur': '1fa7a', 'gratuit': '1f193', 'marche': '1f6d2', 'malade': '1f912', 'tomate': '1f345', 'quoi': '1f631',
+}
+_sans = lambda w: unicodedata.normalize('NFD', w.lower()).encode('ascii', 'ignore').decode()
+def emoji_de(w):
+    m = re.sub(r"[^a-z]", '', _sans(w.split("'")[-1]))
+    if len(m) < 3: return None
+    for k, cp in EMOJI_MOTS.items():
+        if m == k or (len(k) >= 4 and m.startswith(k)) or (len(m) >= 5 and k.startswith(m)): return cp
+    return None
+PUNCH_N = {norm(p) for p in PUNCH}
+import cartes_fx
 def draw_caption(ov, t):
     for a, b, ch, rows in caps:
         if not (a <= t < b): continue
         act = max([i for i, (w, s, e) in enumerate(ch) if s - 0.02 <= t] or [0]); dr = ImageDraw.Draw(ov); y = 752
+        c_ = COUL_PERSO.get(CAP_QUI.get(id(ch)), (255, 210, 63)); emo = []
         for r in rows:
             txt = [ch[i][0].upper() for i in r]; wl = F1.getlength(' '.join(txt)); x = (W - wl) / 2
             for j, i in enumerate(r):
-                w = txt[j]; col = (RED if norm(w) in {norm(p) for p in PUNCH} else GREEN) if i == act else WHITE
-                dr.text((x + 2, y + 3), w, font=F1, fill=(0, 0, 0, 140)); dr.text((x, y), w, font=F1, fill=col, stroke_width=5, stroke_fill=(0, 0, 0))
+                w = txt[j]; ww = F1.getlength(w); punch = norm(w) in PUNCH_N
+                if i == act:
+                    u_ = max(0.0, t - ch[i][1]); k_ = 1.0 + 0.06 * max(0.0, 1 - u_ / 0.12)   # petite impulsion à l'attaque
+                    pad = 7 * k_; fond = (255, 120, 110) if punch else c_
+                    dr.rounded_rectangle((x - pad, y - 3 * k_, x + ww + pad, y + 47 * k_), radius=13, fill=fond + (235,))
+                    dr.text((x, y), w, font=F1, fill=(28, 14, 40))
+                else:
+                    col = (255, 222, 110) if punch else WHITE
+                    dr.text((x + 2, y + 3), w, font=F1, fill=(0, 0, 0, 110)); dr.text((x, y), w, font=F1, fill=col, stroke_width=4, stroke_fill=(24, 12, 34))
+                cp = emoji_de(ch[i][0])
+                if cp and ch[i][1] - 0.02 <= t: emo.append((cp, x + ww / 2, t - ch[i][1]))
                 x += F1.getlength(w + ' ')
             y += 50
+        for k_, (cp, xc, u_) in enumerate(emo[:2]):   # deux émojis au plus par bloc
+            d = max(8, int(52 * cartes_fx._pop(u_)))
+            e = cartes_fx._image_emoji(cp, d, u_) if d > 8 else None
+            if e is not None: ov.alpha_composite(e, (int(min(max(xc - e.width / 2, 4), W - e.width - 4)), int(752 - 56 - e.height / 2 + 26)))
         return
 # crédit des voix d'après le moteur réellement utilisé pour chaque réplique (voix.py écrit « moteur » dans la frise)
 _mot = {L.get('moteur', 'piper') for L in T['lines']}
 _v = (["Qwen3-TTS (Apache-2.0) d'après OpenSLR 57 (Apache-2.0)"] if 'qwen3' in _mot else []) + \
      (['Piper « siwis » (CC BY 4.0, SIWIS), « gilles » (CC0)'] if 'piper' in _mot else [])
-credit = 'Voix : ' + ', '.join(_v) + ' · Images : Z-Image-Turbo (Apache-2.0) · Visages : LivePortrait (MIT)'
+credit = 'Voix : ' + ', '.join(_v) + ' · Images : Z-Image-Turbo (Apache-2.0) · Visages : LivePortrait (MIT) · Émojis animés : Noto Emoji, Google (CC BY 4.0)'
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import marque
+import jeu as _jeu
+HAB = marque.Habillage(W, H, CLIP_Y, CH_, T['sketchs'], T['total'], SAFE['left'], SAFE['right'], fps=FPS,
+                       chutes=[_jeu.prise_t(L) for L in T['lines'] if L.get('chute')])
+# légende de publication : accroche, mots-clés de la chaîne, crédit CC-BY des voix (attribution exigée par la licence)
+_tit = ' · '.join(s_['titre'].capitalize() for s_ in T['sketchs'] if s_.get('titre'))
+open(f'{D}/legende.txt', 'w', encoding='utf-8').write(f"{_tit} 😂🤣\nTu es team qui ? Dis-le en commentaire 👇\n"
+    f"#drole #comedy #funny #humour #afrique #pourtoi #fyp\n\nCrédits — {credit}\n")
 # bande son : dialogue sec + jingles des cartes (musique.py) s'ils ont été posés
 BANDE = 'voix/mix-musique.wav' if os.path.isfile('voix/mix-musique.wav') and os.path.getmtime('voix/mix-musique.wav') >= os.path.getmtime('voix/mix.wav') else 'voix/mix.wav'
 # ambiance réelle (ambiance.py : coqs, poules, oiseaux, vent, maquis) posée sous la bande si elle est à jour
@@ -112,26 +163,27 @@ if os.path.isfile('voix/mix-ambiance.wav') and os.path.getmtime('voix/mix-ambian
 frames = sorted(glob.glob(f'{D}/clip/f*.jpg')); os.makedirs(f'{D}/compose', exist_ok=True); total = T['total']; c0 = total - 2.0
 def une_image(k):
     fp = frames[k]; t = k / FPS; fr = cv2.imread(fp)
-    sc = H / fr.shape[0]; bw = int(round(fr.shape[1] * sc))
-    small = cv2.GaussianBlur(cv2.resize(fr, (bw // 4, H // 4), interpolation=cv2.INTER_AREA), (0, 0), 4.5)
-    bg = cv2.resize(small, (bw, H)); x0 = (bw - W) // 2; bg = (bg[:, x0:x0 + W].astype(np.float32) * 0.92).astype(np.uint8)
-    bg[CLIP_Y:CLIP_Y + fr.shape[0], :] = fr
+    bg = HAB.fond.copy(); bg[CLIP_Y:CLIP_Y + fr.shape[0], :] = fr   # bandes nettes de la chaîne (plus de copie floutée)
     img = Image.fromarray(cv2.cvtColor(bg, cv2.COLOR_BGR2RGB)).convert('RGBA'); ov = Image.new('RGBA', img.size, (0, 0, 0, 0))
     draw_caption(ov, t)
-    if t >= c0:
-        dr = ImageDraw.Draw(ov); lines = [credit[:credit.index('·', 60) + 1].strip(' ·'), credit[credit.index('·', 60) + 1:].strip()]
-        for i, ln in enumerate(lines): dr.text(((W - FC.getlength(ln)) / 2, 66 + 20 * i), ln, font=FC, fill=(255, 255, 255, 230), stroke_width=2, stroke_fill=(0, 0, 0, 200))
+    ov.alpha_composite(HAB.calque(t), (0, 0))   # signature + titre du sketch ; carte de signature en fin de film
+    a_ = HAB.autocollant(t)                       # émoji animé qui jaillit sur chaque chute
+    if a_ is not None: ov.alpha_composite(a_[0], a_[1])
     Image.alpha_composite(img, ov).convert('RGB').save(f'{D}/compose/c{k:05d}.jpg', quality=92)
 # MONTAGE EN PARALLÈLE (18/10/2026) : à 60 i/s, 4 047 images composées une à une prenaient environ 4 min ; chaque image est
 # indépendante (fond flouté, sous-titre, générique), elles sont réparties sur les processeurs
 import multiprocessing as _mp
 cv2.setNumThreads(1)
+if os.environ.get('COMPOSE_IMAGES'):   # essai : seulement ces images (numéros), sans son ni encodage
+    for k_ in map(int, os.environ['COMPOSE_IMAGES'].split(',')): une_image(k_)
+    sys.exit(0)
 with _mp.get_context('fork').Pool(int(os.environ.get('COMPOSE_PROCS', os.cpu_count() or 1))) as _p:
     _p.map(une_image, range(len(frames)), chunksize=32)
 # son du fichier livré : fondu de fin, puis sonie −14 LUFS et crête vraie ≤ −2,3 dBTP mesurées en boucle (sonie.py ; le
 # loudnorm d'ffmpeg en une passe laissait −15,3 LUFS et −0,7 dBTP, porte H refusée)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import sonie
 y_, sr_ = sonie.lit(BANDE); y_ = y_[:int(total * sr_)]; nf_ = int(0.4 * sr_); y_[-nf_:] *= np.linspace(1, 0, nf_)
+y_ = sonie.adoucit(y_, sr_)   # dé-esseur (18/10/2026, « le son est aigu par moments »)
 sonie.ecrit(f'{D}/bande.wav', sonie.masterise(y_, sr_))
 # encodage « veryfast » CRF 18 (18/10/2026, « réduire drastiquement le temps de production ») : 31 s au lieu de 56,5 s pour les
 # 4 047 images de l'épisode 1, PSNR 44,3 dB entre les deux encodages (identiques à l'œil)

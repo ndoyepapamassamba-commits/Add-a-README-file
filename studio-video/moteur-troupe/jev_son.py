@@ -89,7 +89,14 @@ if __name__ == '__main__':
                               'niveau_rire_db': round(db(act_), 1), 'niveau_median_des_voix_db': round(voix_med, 1),
                               'ecart_rire_moins_voix_db': round(db(act_) - voix_med, 1),
                               'chevauche_une_replique': any(L['debut'] < r_['fin'] and r_['debut'] < L['fin'] for L in lignes)})
-    feuille = {'repliques': lignes, 'rires_mesures': rires_mesures, 'accompagnement': {k_: acc.get(k_) for k_ in ('rires', 'jingles')}, 'rires_entendus_yamnet': entendus,
+    # AIGUS MESURÉS (18/10/2026, « le son est aigu par moments ») : sifflantes au-dessus de 5 kHz et pointes de hauteur au-delà
+    # de 1,6 × la voix visée de chaque personnage, sur la bande livrée — contrôle dur
+    try:
+        import sonie, voix as voix_
+        aigus_ = sonie.aigus(m_, sr, T['lines'], {k_: c_[2] for k_, c_ in voix_.CAST.items()})
+    except Exception as e_:
+        aigus_ = [{'erreur': str(e_)[:120]}]
+    feuille = {'repliques': lignes, 'rires_mesures': rires_mesures, 'aigus_mesures': aigus_, 'accompagnement': {k_: acc.get(k_) for k_ in ('rires', 'jingles')}, 'rires_entendus_yamnet': entendus,
                'reference_tiktok': acc.get('reference_tiktok'), 'musique_rires_et_jingles': seg, 'jingles_mesures': jingles, 'rythme_mesure': rythme,
                'silences_entre_repliques_plus_de_0_8_s': silences,
                'ecarts_de_niveau_entre_repliques_db': sauts, 'fichier_livre': {'sonie_integree_lufs': round(I, 1), 'crete_vraie_dbtp': round(TP, 1)}}
@@ -108,5 +115,6 @@ if __name__ == '__main__':
     r = {k: round(float(a[k]['noul']), 3) for k in Q}; defauts = sorted(k for k, (att, _) in Q.items() if (r[k] <= 0.5 if att else r[k] >= 0.5))
     if acc.get('rires') is not None and (len(acc['rires']) < len(T['sketchs']) or not all(e_.get('entendu') for e_ in entendus)):
         defauts = sorted(set(defauts) | {'rires_absents'})   # contrôle dur (mesuré) : chaque sketch finit sur des rires entendus
+    if aigus_: defauts = sorted(set(defauts) | {'son_aigu'})
     json.dump({'synthese': {'ok': not defauts, 'defauts': defauts, 'reponses': r}, 'feuille': feuille}, open(OUT, 'w'), ensure_ascii=False, indent=1)
     print('jev_son', 'OK' if not defauts else 'À REPRENDRE', defauts, r)

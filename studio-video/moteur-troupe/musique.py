@@ -55,9 +55,11 @@ def jingle(graine=0, dur=1.0):
     return out
 
 
-RIRES = [429, 460, 427, 424]   # classés par similarité au rire des TikTok × force du rire (YAMNet, meilleur passage : 0,67 0,47 0,41 0,42)
+RIRES = [460, 427, 424]   # 18/10/2026 (« aigu par moments ») : le 429 (hauteur médiane 466 Hz, pointes 753 Hz) est retiré ;
+                          # gardés : rires reconnus par YAMNet (Laughter 0,13 à 0,16) aux hauteurs les plus basses mesurées
+PASSE_BAS_RIRE = 5000.0
 RIRES_CACHE = os.path.expanduser(os.environ.get('RIRES_CACHE', '~/.cache/massamba-models/rires'))
-RIRE_VS_VOIX_DB = -1.0          # TikTok : rires au niveau des voix (écart médian −0,7 dB)
+RIRE_VS_VOIX_DB = -2.0          # TikTok : rires au niveau des voix (écart médian −0,7 dB) ; −2 depuis le 18/10 (« aigu par moments »)
 RIRE_APRES_PRISE = 0.2          # s : le public rit 0,2 s après la prise de choc (le visage a « encaissé »)
 
 
@@ -102,6 +104,7 @@ def rires(T, y):
         dur = float(np.clip(suivante - t0, 1.0, 2.6))   # TikTok : 0,5 à 1,5 s le plus souvent, jusqu'à 3,4 s ; jamais sur la réplique suivante
         r = _rire(RIRES[k % len(RIRES)]); i0 = _meilleur_passage(RIRES[k % len(RIRES)], r, dur)
         seg = r[i0:i0 + int(dur * SR)].copy(); m = len(seg)
+        import scipy.signal as ss_; seg = ss_.sosfiltfilt(ss_.butter(4, PASSE_BAS_RIRE, 'low', fs=SR, output='sos'), seg).astype(np.float32)
         if m < int(0.5 * SR): continue
         f_in = np.minimum(1.0, np.arange(m) / (0.06 * SR)); f_out = np.clip((m - np.arange(m)) / (0.7 * SR), 0, 1)
         seg *= f_in * f_out ** 1.5
