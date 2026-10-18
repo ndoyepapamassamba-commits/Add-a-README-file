@@ -242,11 +242,11 @@ def charge(dossier, img, v3):
     # de chaque ouverture stockée, par émotion (rendue croissante)
     ouv, fa = {}, f'{dossier}/audit.json'
     if os.path.isfile(fa):
-        A_ = json.load(open(fa)); b0 = A_.get('bouche') or []; bm = meta['bouche']
+        A_ = json.load(open(fa)); b0 = A_.get('bouche') or []; bl = meta['bouche']
         # audit fait avant l'ajout des lèvres jointes en tête (18/10) : les ouvertures communes sont les mêmes images (rendu
         # déterministe, mêmes recettes), les nouvelles bouches fermées comptent pour une ouverture perçue nulle
-        if b0 and bm[len(bm) - len(b0):] == b0:
-            pre = [0.0] * (len(bm) - len(b0))
+        if b0 and bl[len(bl) - len(b0):] == b0:
+            pre = [0.0] * (len(bl) - len(b0))
             ouv = {e: np.maximum.accumulate(np.asarray(pre + list(v['ouverte']), np.float64)) for e, v in A_['emotions'].items() if e in meta['emotions']}
     gx, gy = np.meshgrid(np.arange(t, dtype=np.float32), np.arange(t, dtype=np.float32))
     return dict(meta=meta, imgs=imgs, clos=clos, flux=flux, paires=paires, masque=masque, yeux=yeux, box=(x, y, s), taille=t, grille=(gx, gy),
