@@ -80,6 +80,39 @@ except Exception as e:
 finally:
     shutil.rmtree(tmp, ignore_errors=True)
 
+# ── 4. JUGE LOCAL (18/10/2026, « arrête les appels vers JEV ») : aucun appel ne part vers JEV, règles du son, lissage par
+#       plan, mouvement mesuré (seconde figée contre seconde qui bouge), « non jugé » honnête pour une question sans voie.
+try:
+    import json as _j, urllib.request as _u, numpy as _np, cv2
+    import jev_api, juge_local as jl
+    os.environ.pop('JEV_AUTORISE', None); os.environ['JUGE_LLM'] = '/inexistant.gguf'; jl.LLM = '/inexistant.gguf'
+    n0 = sum(1 for _ in open(jev_api.REGISTRE)) if os.path.isfile(jev_api.REGISTRE) else 0
+    try:
+        jev_api.demande({'x': 'y'}, {'q': {'type': 'noul', 'instructions': 'Is the sky blue today?'}}, outil='verif')
+        echecs.append('juge local : une question sans voie a reçu une réponse')
+    except jl.NonJuge:
+        pass
+    try:
+        jev_api.ouvre(_u.Request(jev_api.API, data=_j.dumps({'state': {}, 'questions': {'q': {'type': 'noul', 'instructions': 'Is it fine?'}}}).encode()), outil='verif')
+        echecs.append('juge local : la garde des modules directs a laissé passer')
+    except jl.NonJuge:
+        pass
+    if (sum(1 for _ in open(jev_api.REGISTRE)) if os.path.isfile(jev_api.REGISTRE) else 0) != n0: echecs.append('juge local : un appel à JEV a été inscrit au registre')
+    F = {'repliques': [{'sketch': 'a', 'ecart_voix_musique_db': 30}], 'fichier_livre': {'sonie_integree_lufs': -14.0, 'crete_vraie_dbtp': -1.2},
+         'silences_entre_repliques_plus_de_0_8_s': [{'duree_s': 1.7}], 'ecarts_de_niveau_entre_repliques_db': [{'saut_db': 2.0}]}
+    r = jl.regles_son(F)
+    if not (r['technique']['noul'] == 1.0 and r['silence']['noul'] == 1.0 and r['saut']['noul'] == 0.0 and r['musique_couvre']['noul'] == 0.0):
+        echecs.append(f'juge local : règles du son fausses ({ {k: v["noul"] for k, v in r.items()} })')
+    l_ = jl.lisse_plan([0.1, 0.9, 0.1, 0.8, 0.9, 0.85], [0, 0, 0, 1, 1, 1], rayon=1)
+    if not (l_[1] < 0.5 and l_[4] > 0.5): echecs.append(f'juge local : lissage par plan faux ({l_})')
+    rng_ = _np.random.default_rng(1); im = (rng_.random((460, 576, 3)) * 255).astype(_np.uint8); im = cv2.GaussianBlur(im, (0, 0), 3)
+    fige, _ = jl.mouvement_local([im] * 8, tmp, 0.0, 0.3)
+    bouge, _ = jl.mouvement_local([_np.roll(im, 3 * k, axis=1) for k in range(4)] + [_np.roll(im, k, axis=1) for k in range(4)], tmp, 0.0, 0.3)
+    if not (fige['fige'] == 1.0 and bouge['fige'] == 0.0): echecs.append(f"juge local : figé {fige['fige']} / mouvement {bouge['fige']} mal distingués")
+    print('juge local : JEV coupé (0 appel), règles du son, lissage par plan, mouvement mesuré et « non jugé » vérifiés')
+except Exception as e:
+    echecs.append(f'juge local : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

@@ -52,16 +52,27 @@ import time
 EN_COURS = {}
 for _a, _s in JUGES.values():
     if not os.path.isfile(_s) or os.environ.get('QUALITE_REFAIT'):
-        EN_COURS[_a[0]] = (subprocess.Popen([sys.executable, *_a], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL), time.time())
+        # erreurs gardées (18/10/2026) : JEV coupé, un juge dont une question n'a pas encore de tête locale s'arrête sur
+        # « NonJuge » — la porte est alors déclarée NON JUGÉE avec sa raison, au lieu d'un échec muet
+        os.makedirs(f'{D}/juges', exist_ok=True)
+        EN_COURS[_a[0]] = (subprocess.Popen([sys.executable, *_a], stdout=subprocess.DEVNULL, stderr=open(f"{D}/juges/{os.path.basename(_a[0])}.err", 'w')), time.time())
 
 
 def lance(args, sortie):
     t0 = time.time(); p = EN_COURS.pop(args[0], None)
     if p: p[0].wait(); t0 = p[1]
     elif not os.path.isfile(sortie) or os.environ.get('QUALITE_REFAIT'):
-        subprocess.run([sys.executable, *args], capture_output=True, text=True)
+        r_ = subprocess.run([sys.executable, *args], capture_output=True, text=True); os.makedirs(f'{D}/juges', exist_ok=True)
+        open(f"{D}/juges/{os.path.basename(args[0])}.err", 'w').write(r_.stderr or '')
     DUREES[os.path.basename(args[0])] = round(time.time() - t0, 1)
+    if not os.path.isfile(sortie):
+        e_ = f"{D}/juges/{os.path.basename(args[0])}.err"; t_ = open(e_).read() if os.path.isfile(e_) else ''
+        m_ = [l for l in t_.splitlines() if 'NonJuge' in l]
+        NON_JUGES[os.path.basename(args[0])] = m_[-1].split('NonJuge:', 1)[-1].strip() if m_ else (t_.strip().splitlines() or ['sortie absente'])[-1][:200]
     return json.load(open(sortie)) if os.path.isfile(sortie) else None
+
+
+NON_JUGES = {}
 
 
 def scene(sid):
@@ -235,6 +246,7 @@ G['P_choc'] = {'ok': bool(jc) and jc.get('synthese', {}).get('ok', False), 'deta
 
 passees = sum(g['ok'] for g in G.values())
 R = {'film': os.path.basename(MP4), 'portes': G, 'passees': passees, 'total': len(G), 'pourcent': round(100 * passees / len(G)), 'durees_s': DUREES,
+     'juges_non_disponibles': NON_JUGES,   # JEV coupé : juges dont une question attend sa tête locale (greffe en cours)
      'verdict': 'LIVRABLE (100 %)' if passees == len(G) else 'À REPRENDRE'}
 json.dump(R, open(f'{D}/qualite.json', 'w'), ensure_ascii=False, indent=1, default=lambda o: o.item() if hasattr(o, 'item') else str(o))
 print(f"| Porte | Verdict | Détail |\n|---|---|---|")

@@ -125,6 +125,7 @@ def finit(d, v):
     rap = {'episode': os.path.basename(d), 'version': v, 'durees_s': T, 'total_s': round(time.time() - t0, 1),
            'portes': f"{q.get('passees')}/{q.get('total')}", 'a_publier': q.get('passees') == q.get('total') and bool(q),
            'echecs': [k for k, p in q.get('portes', {}).items() if not p.get('ok')],
+           'juges_non_disponibles': q.get('juges_non_disponibles', {}),   # JEV coupé : juge local en cours de greffe pour ces portes
            'fichiers': {'tiktok': f'{D}/tiktok-1080x1920.mp4', 'legende': f'{D}/legende.txt', 'planche': f'{D}/planche.jpg'}}
     try:
         rap['controles_utilisateur'] = controles_utilisateur(D, q)

@@ -157,6 +157,85 @@ def extrait_mouvement(dossiers):
         print(f'{d} : {len(X)} secondes, {time.time() - t0:.0f} s', flush=True)
 
 
+# ── CE QUE LE MOTEUR SAIT DE L'IMAGE (« plus fort que JEV ») : JEV ne voyait que les pixels ; le tournage note pour chaque
+#    personnage et chaque instant l'étirement de la peau (médiane, 95e centile), la bouche, les émotions jouées, les rotations
+#    de tête et de visage, le regard (mesures-*.jsonl). Ces grandeurs, au même instant, s'ajoutent aux pixels.
+EMO_M = ('surprise', 'colere', 'peur', 'joie', 'rire', 'malice')
+
+
+def traits_moteur(dossier):
+    """→ fonction t → 12 nombres (pires valeurs parmi les personnages présents à ±0,05 s) ; zéros si rien n'est noté."""
+    import glob
+    E = []
+    for f in glob.glob(f'{dossier}/mesures-*.jsonl'):
+        for l in open(f):
+            try: E.append(json.loads(l))
+            except Exception: pass
+    E.sort(key=lambda e: e.get('t', 0)); ts = np.array([e.get('t', 0) for e in E])
+
+    def f(t):
+        if not len(ts): return np.zeros(12, np.float32)
+        a, b = np.searchsorted(ts, t - 0.05), np.searchsorted(ts, t + 0.05); L = E[a:b]
+        if not L: return np.zeros(12, np.float32)
+        g = lambda fn: max(fn(e) for e in L)
+        return np.array([g(lambda e: (e.get('etirement') or [0, 0])[0]), g(lambda e: (e.get('etirement') or [0, 0])[1]), g(lambda e: e.get('bouche', 0)),
+                         g(lambda e: abs((e.get('pose') or {}).get('lacet_visage', 0))), g(lambda e: abs((e.get('pose') or {}).get('tete_lacet', 0))),
+                         g(lambda e: abs((e.get('pose') or {}).get('tete_tangage', 0)))] +
+                        [g(lambda e, k=k: (e.get('emotions') or {}).get(k, 0)) for k in EMO_M], np.float32)
+    return f
+
+
+# ── MOUVEMENT MESURÉ (« plus précis que JEV ») : banc de vérité terrain du 17/10 rejoué (animation 3D pro et Grok contre la
+#    même seconde figée, même tirage) — JEV reconnaissait le mouvement sur 10 secondes pro sur 21, la mesure locale sur 21/21
+#    (AUC 0,90 contre 1,00). Sur nos films, la tête tourne de 3° ou plus dans 90 % des secondes et JEV répond « la tête bouge »
+#    avec la même probabilité qu'elle bouge ou non (0,54 contre 0,50) : ses verdicts de mouvement ne suivent pas le mouvement
+#    réel. Le juge local mesure ce que chaque question énonce : amplitudes réelles du moteur (mesures-*.jsonl), flux optique
+#    (décor hors mouvement de caméra), sauts et changements brusques entre images consécutives.
+SEUIL_TETE, SEUIL_BUSTE = 3.0, 2.0   # degrés : ≈ 3 px pour un visage de 60 px, ≈ 5 px pour un buste de 150 px (visibles)
+_PISTES = {}
+
+
+def _pistes(dossier):
+    import glob
+    if dossier not in _PISTES:
+        E = {}
+        for f in glob.glob(f'{dossier}/mesures-*.jsonl'):
+            for l in open(f):
+                try: e = json.loads(l)
+                except Exception: continue
+                E.setdefault(e.get('qui', '?'), []).append(e)
+        _PISTES[dossier] = E
+    return _PISTES[dossier]
+
+
+def mouvement_local(ims, dossier, ta, td):
+    """8 images (a–d espacées, e–h consécutives) + dossier de la version + bornes (s) → réponses brutes « oui » aux 8
+    questions de jev_mouvement (même sens que celles de JEV)."""
+    p = [cv2.cvtColor(cv2.resize(im, (144, 115), interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2GRAY) for im in ims]
+    fl = [cv2.calcOpticalFlowFarneback(p[i], p[i + 1], None, 0.5, 3, 15, 3, 5, 1.2, 0) for i in range(3)]
+    part = float(np.mean([(np.hypot(f[..., 0], f[..., 1]) > 0.5).mean() for f in fl]))
+    f = cv2.calcOpticalFlowFarneback(p[0], p[3], None, 0.5, 3, 15, 3, 5, 1.2, 0); f = f - np.median(f.reshape(-1, 2), 0)   # caméra retirée
+    bord = np.ones((115, 144), bool); bord[20:95, 30:114] = False
+    decor = float((np.hypot(f[..., 0], f[..., 1])[bord] > 0.3).mean())
+    d = [float(np.abs(p[k + 1].astype(np.float32) - p[k]).mean()) for k in range(4, 7)]
+    saut = max(d) > 4.0 and max(d) > 3.0 * (sorted(d)[1] + 0.3)
+    h = [cv2.calcHist([cv2.cvtColor(ims[k], cv2.COLOR_BGR2HSV)], [0, 1], None, [30, 32], [0, 180, 0, 256]) for k in range(4, 8)]
+    raccord = max(cv2.compareHist(cv2.normalize(h[k], h[k]), cv2.normalize(h[k + 1], h[k + 1]), cv2.HISTCMP_BHATTACHARYYA) for k in range(3)) > 0.3
+    tete = buste = ens = 0.0
+    for L in _pistes(dossier).values():
+        s = [e for e in L if ta - 0.02 <= e.get('t', -1) <= td + 0.02]
+        if len(s) < 2: continue
+        po = lambda c: float(np.ptp([(e.get('pose') or {}).get(c, 0.0) for e in s]))
+        rt = max(po('tete_lacet'), po('tete_tangage'), po('tete')); rb = max(po('buste'), po('buste_lacet'))
+        tete, buste = max(tete, rt), max(buste, rb); ens = max(ens, float(rt >= SEUIL_TETE and rb >= SEUIL_BUSTE))
+    connu = bool(_pistes(dossier))
+    r = {'saccade': float(saut), 'raccord': float(raccord), 'fige': float(part < 0.005 and tete < 0.5), 'fond_mort': float(decor < 0.002),
+         'ensemble': ens if connu else float(part > 0.02), 'tete': float(tete >= SEUIL_TETE) if connu else float(part > 0.02),
+         'buste': float(buste >= SEUIL_BUSTE) if connu else float(part > 0.02), 'bras': float(part > 0.02)}
+    return r, {'part_en_mouvement': round(part, 4), 'decor_hors_camera': round(decor, 4), 'sauts': [round(x, 2) for x in d],
+               'tete_deg': round(tete, 2), 'buste_deg': round(buste, 2), 'pistes_moteur': connu}
+
+
 # ── SON (jev_son) : JEV lisait une FEUILLE de mesures et appliquait les seuils écrits dans ses questions ; le juge local
 #    applique ces mêmes seuils, mot pour mot, sur la même feuille (probabilité 1 = « oui »).
 def regles_son(F):
@@ -183,6 +262,7 @@ class NonJuge(RuntimeError):
 
 # ── apprentissage : une tête par question de jev_film, sur la probabilité de JEV (étiquettes souples)
 TENUES = ('ep02/v1', 'ep01/v5')   # versions les plus récentes, jamais vues à l'apprentissage : la mesure d'accord
+LISSE = os.environ.get('JUGE_LISSE', '1') == '1'   # lissage par plan évalué (et appliqué en production par jev_film)
 
 
 def _questions_film():
@@ -221,12 +301,39 @@ def _mesure(p_loc, p_jev):
             'rappel_defauts': round(rp, 3), 'specificite': round(rn, 3), 'equilibre': round((rp + rn) / 2, 3), 'auc': None if auc is None else round(auc, 3)}
 
 
+def _avis(d, ns, plans):
+    """avis INDIVIDUELS de JEV (cache de jev_film) pour les images extraites : [{question: [avis…]}…] ; {} si absent."""
+    try:
+        TO = json.load(open(f'{d}/tournage.json')); SH = TO['decoupage']; EMP = TO.get('empreintes', {})
+    except Exception:
+        return [{} for _ in ns]
+    if 'index' not in _AVIS:   # index du cache une seule fois : (empreinte, décalage) → fichier
+        C = os.path.expanduser('~/.cache/massamba-jev/images'); idx = {}
+        for f in os.listdir(C):
+            p_ = f.split('_')
+            if len(p_) == 4 and p_[3] == '0.json': idx.setdefault((p_[0], p_[1]), f'{C}/{f}')
+        _AVIS['index'] = idx
+    idx = _AVIS['index']; out = []
+    for n, i in zip(ns, plans):
+        cle = EMP.get(f'{SH[int(i)][0]:.2f}'); r = {}
+        f = idx.get((cle, str(int(n) - int(round(SH[int(i)][0] * 30))))) if cle else None
+        if f:
+            try: r = json.load(open(f))
+            except Exception: pass
+        out.append(r)
+    return out
+
+
+_AVIS = {}
+
+
 def _donnees():
     D = []
     for f in sorted(os.listdir(f'{DOSSIER}/donnees')):
         z = np.load(f'{DOSSIER}/donnees/{f}', allow_pickle=True); d = str(z['dossier'])
         refs = dict(zip(z['plans_ref'].tolist(), z['XR']))
         D.append({'dossier': d, 'tenue': any(d.endswith(t) for t in TENUES), 'X': z['X'], 'Y': z['Y'], 'cles': list(z['cles']),
+                  'avis': _avis(d, z['n'], z['plan']) if any(d.endswith(t) for t in TENUES) else None,
                   'plan': z['plan'], 'XR': np.stack([refs.get(int(p), np.full(z['X'].shape[1], np.nan, np.float32)) for p in z['plan']]) if len(z['plan']) else z['X']})
     return D
 
@@ -239,6 +346,7 @@ def apprend():
             for d in D:
                 if d['tenue'] != tenue or k not in d['cles']: continue
                 y = d['Y'][:, d['cles'].index(k)]; ok = ~np.isnan(y)
+                if not defaut_si_vrai.get(k, False) is False: y = 1 - y   # question de conformité : verdict stocké = 1 − réponse brute
                 if roles == 'frame+ref': ok &= ~np.isnan(d['XR']).any(1)
                 if ok.sum(): Xs.append(_entree(d['X'][ok], d['XR'][ok] if roles == 'frame+ref' else None)); ps.append(y[ok])
             return (np.concatenate(Xs), np.concatenate(ps)) if Xs else (None, None)
@@ -251,7 +359,26 @@ def apprend():
         sc = [((pa_loc > s) & ya).sum() / max(1, ya.sum()) + ((pa_loc <= s) & ~ya).sum() / max(1, (~ya).sum()) for s in seuils]
         s_ = float(seuils[int(np.argmax(sc))]); t['decale'] = float(np.log(s_ / (1 - s_)))
         m_app = _mesure(_proba(t, Xa), pa); m_ten = _mesure(_proba(t, Xt), pt) if Xt is not None else None
-        valide = bool(m_ten) and m_ten['accord'] >= ACCORD_MIN and m_ten['equilibre'] >= 0.75
+        # JEV FACE À LUI-MÊME : sur les images tenues à l'écart où JEV a donné deux avis, l'accord du juge local avec le
+        # premier avis est comparé à l'accord du second avis avec le premier (le plafond honnête : un second appel à JEV)
+        rep = {'paires': 0}
+        L1, L2, LL = [], [], []
+        for d in D:
+            if not d['tenue'] or k not in d['cles'] or not d.get('avis'): continue
+            ok = np.ones(len(d['X']), bool)
+            if roles == 'frame+ref': ok &= ~np.isnan(d['XR']).any(1)
+            pl = _proba(t, _entree(d['X'], d['XR'] if roles == 'frame+ref' else None))
+            if LISSE: pl = lisse_plan(pl, d['plan'], rayon=1)   # images extraites une sur trois : ±1 = ±0,1 s
+            for j in np.where(ok)[0]:
+                a_ = d['avis'][j].get(k)
+                if isinstance(a_, list) and len(a_) >= 2: L1.append(a_[0] > 0.5); L2.append(a_[1] > 0.5); LL.append(pl[j] > 0.5)
+        if L1:
+            L1, L2, LL = map(np.array, (L1, L2, LL))
+            rep = {'paires': int(len(L1)), 'accord_jev_jev': round(float((L1 == L2).mean()), 3), 'accord_local_jev': round(float((LL == L1).mean()), 3),
+                   'rappel_jev_jev': round(float((L2 & L1).sum() / max(1, L1.sum())), 3), 'rappel_local_jev': round(float((LL & L1).sum() / max(1, L1.sum())), 3)}
+        valide = bool(m_ten) and ((rep['paires'] >= 30 and rep['accord_local_jev'] >= rep['accord_jev_jev'] - 0.02 and rep['rappel_local_jev'] >= rep['rappel_jev_jev'] - 0.05
+                                   and m_ten['accord'] >= 0.70) or (m_ten['accord'] >= ACCORD_MIN and m_ten['equilibre'] >= 0.75))
+        m_ten = dict(m_ten or {}, jev_face_a_lui_meme=rep)
         tetes[cle_question(txt)] = dict(t, nom=k, roles=roles, valide=valide)
         rapport[k] = {'question': txt[:90], 'roles': roles, 'apprentissage': m_app, 'versions_tenues_a_l_ecart': m_ten, 'seuil_jev_equivalent': round(s_, 2),
                       'statut': 'confiée au juge local' if valide else 'greffe en cours (accord insuffisant)'}
@@ -282,6 +409,22 @@ def apprend():
         rapport[k] = {'question': txt[:90], 'roles': 'mouvement', 'apprentissage': m_app, 'versions_tenues_a_l_ecart': m_ten,
                       'seuil_jev_equivalent': round(s_, 2), 'statut': 'confiée au juge local' if valide else 'greffe en cours (accord insuffisant)'}
         print(f"{k:22s} {rapport[k]['statut']:40s} tenues : {m_ten}", flush=True)
+    # DOMAINE APPRIS par rôle : ACP à 32 dimensions des images d'apprentissage, distance au plus proche voisin ; le seuil est
+    # le 99e centile des distances entre images d'apprentissage (une image plus loin que ça = jamais vu → voie suivante)
+    rng = np.random.default_rng(0); dom = {}
+    pools = {'frame': [d['X'] for d in D if not d['tenue']], 'frame+ref': [_entree(d['X'][~np.isnan(d['XR']).any(1)], d['XR'][~np.isnan(d['XR']).any(1)]) for d in D if not d['tenue']],
+             'mouvement': [d['X'] for d in M if not d['tenue'] and len(d['X'])]}
+    for role, L_ in pools.items():
+        L_ = [x for x in L_ if len(x)]
+        if not L_: continue
+        X_ = np.concatenate(L_); mu, sd = X_.mean(0), X_.std(0) + 1e-6; Z = (X_ - mu) / sd
+        _, _, Vt = np.linalg.svd(Z[rng.choice(len(Z), min(len(Z), 4000), replace=False)], full_matrices=False); P = Vt[:32].T
+        pts = (Z @ P)[rng.choice(len(Z), min(len(Z), 3000), replace=False)]
+        q_ = pts[rng.choice(len(pts), min(len(pts), 500), replace=False)]
+        dd = np.sqrt(((q_[:, None, :] - pts[None]) ** 2).sum(-1)); dd[dd == 0] = np.inf
+        dom[role] = {'mu': mu.astype(np.float32), 'sd': sd.astype(np.float32), 'P': P.astype(np.float32), 'pts': pts.astype(np.float32),
+                     'seuil': float(np.percentile(dd.min(1), 99))}
+    tetes['_domaines'] = dom
     os.makedirs(DOSSIER, exist_ok=True)
     np.save(f'{DOSSIER}/tetes.npy', tetes, allow_pickle=True)
     json.dump({'date': time.strftime('%Y-%m-%d %H:%M'), 'modele': MODELE, 'accord_min': ACCORD_MIN, 'versions_tenues': TENUES, 'questions': rapport},
@@ -302,28 +445,141 @@ def _image(a):
     return cv2.imdecode(np.frombuffer(base64.b64decode(a['data_base64']), np.uint8), cv2.IMREAD_COLOR)
 
 
+# ── CASCADE (18/10/2026, « prévoir tous les cas, même non encore rencontrés » ; « plus fort et plus précis que JEV ») :
+#    1. règle exacte quand la question énonce un seuil mesuré (son) ;
+#    2. tête apprise sur les verdicts de JEV, validée contre JEV face à lui-même, ET image dans le domaine appris (distance au
+#       plus proche voisin des images d'apprentissage sous son 99e centile : un lieu, un personnage, un défaut jamais vus
+#       font sortir du domaine) ;
+#    3. sinon, modèle vision-langage local (SmolVLM, Apache-2.0) pour toute question sur des images, ou modèle de langage
+#       local (Qwen3-1.7B, Apache-2.0) pour une question sur du texte — oui/non lu dans les probabilités des jetons ;
+#    4. sinon NonJuge (la porte est « non jugée », jamais une réponse inventée).
+#    Chaque réponse locale est inscrite au journal (voie, question, probabilité) : audit et apprentissage continu.
+VLM = os.environ.get('JUGE_VLM', 'HuggingFaceTB/SmolVLM-256M-Instruct')
+LLM = os.path.expanduser(os.environ.get('JUGE_LLM', '~/.cache/massamba-models/llm/Qwen3-1.7B-Q4_K_M.gguf'))
+
+
+def _domaine(role, X):
+    """vrai si les caractéristiques X (une ligne) sont dans le domaine appris pour ce rôle."""
+    D_ = tetes().get('_domaines', {}).get(role)
+    if not D_: return True
+    z = ((X - D_['mu']) / D_['sd']) @ D_['P']
+    return float(np.sqrt(((D_['pts'] - z) ** 2).sum(1)).min()) <= D_['seuil']
+
+
+def _vlm():
+    if 'vlm' not in _M:
+        import torch
+        from transformers import AutoProcessor, AutoModelForVision2Seq
+        # une seule tuile de 512 px par image (sans découpage) : ~64 jetons d'image au lieu de plusieurs centaines
+        _M['vlm'] = (AutoProcessor.from_pretrained(VLM, do_image_splitting=False), AutoModelForVision2Seq.from_pretrained(VLM, torch_dtype=torch.float32).eval(), torch)
+    return _M['vlm']
+
+
+VLM_MAX = int(os.environ.get('JUGE_VLM_MAX', 400))   # appels de la voie de secours par contrôle ; au-delà : « non jugé »
+
+
+def _oui_non_ids(tok):
+    y = {tok.encode(w, add_special_tokens=False)[0] for w in ('Yes', 'yes', ' Yes', ' yes')}
+    n = {tok.encode(w, add_special_tokens=False)[0] for w in ('No', 'no', ' No', ' no')}
+    return sorted(y), sorted(n)
+
+
+def vlm_oui(ims, texte, contexte=''):
+    """probabilité de « oui » du modèle vision-langage local ; ims : {nom: image BGR} cités dans la question (≤ 4)."""
+    from PIL import Image
+    _M['n_vlm'] = _M.get('n_vlm', 0) + 1
+    if _M['n_vlm'] > VLM_MAX: raise NonJuge(f'budget de la voie de secours atteint ({VLM_MAX} questions) : tête apprise à compléter')
+    proc, m, torch = _vlm()
+    noms = [k for k in re.findall(r'`([^`]+)`', texte) if k in ims][:4] or list(ims)[:1]
+    noms = list(dict.fromkeys(noms))
+    intro = ' '.join(f'Image {i + 1} is `{k}`.' for i, k in enumerate(noms))
+    msgs = [{'role': 'user', 'content': [{'type': 'image'} for _ in noms] + [{'type': 'text', 'text': f'{contexte} {intro} {texte} Answer yes or no.'.strip()}]}]
+    x = proc(text=proc.apply_chat_template(msgs, add_generation_prompt=True), images=[Image.fromarray(cv2.cvtColor(ims[k], cv2.COLOR_BGR2RGB)) for k in noms], return_tensors='pt')
+    with torch.no_grad(): lg = m(**x).logits[0, -1]
+    y, n = _oui_non_ids(proc.tokenizer)
+    return float(torch.sigmoid(torch.logsumexp(lg[y], 0) - torch.logsumexp(lg[n], 0)))
+
+
+def llm_oui(etat, texte):
+    """probabilité de « oui » du modèle de langage local pour une question sur des données en texte (état JSON)."""
+    if 'llm' not in _M:
+        from llama_cpp import Llama
+        _M['llm'] = Llama(model_path=LLM, n_ctx=8192, n_threads=os.cpu_count() or 4, logits_all=False, verbose=False)
+    L = _M['llm']; etat_ = json.dumps(etat, ensure_ascii=False)[:20000]
+    p = (f"<|im_start|>user\nState (JSON):\n{etat_}\n\nQuestion: {texte}\nAnswer with Yes or No only. /no_think<|im_end|>\n"
+         f"<|im_start|>assistant\n<think>\n\n</think>\n\n")
+    r = L.create_completion(p, max_tokens=1, logprobs=20, temperature=0.0)
+    top = (r['choices'][0].get('logprobs') or {}).get('top_logprobs') or [{}]
+    py = sum(np.exp(v) for k, v in top[0].items() if k.strip().lower() == 'yes'); pn = sum(np.exp(v) for k, v in top[0].items() if k.strip().lower() == 'no')
+    return float(py / (py + pn)) if py + pn > 0 else 0.5
+
+
+def _journal(ligne):
+    try:
+        os.makedirs(DOSSIER, exist_ok=True)
+        with open(f'{DOSSIER}/journal.jsonl', 'a') as f: f.write(json.dumps(ligne, ensure_ascii=False) + '\n')
+    except OSError:
+        pass
+
+
+def _texte(q):
+    i_ = q.get('instructions', '')
+    return i_ if isinstance(i_, str) else json.dumps(i_, ensure_ascii=False)
+
+
 def demande(etat, questions, assets=None, outil='?'):
-    """même contrat que jev_api.demande : {id: {'noul': p}} pour chaque question ; NonJuge si une question n'a pas de tête
-    validée sur versions tenues à l'écart (la porte correspondante est alors « non jugée »)."""
-    if outil == 'jev_son' and isinstance(etat.get('feuille'), dict):   # règles écrites des questions, sur la feuille mesurée
+    """même contrat que jev_api.demande : {id: {'noul': p}} (ou choice) pour chaque question, par la cascade ci-dessus."""
+    if outil == 'jev_son' and isinstance(etat.get('feuille'), dict):   # voie 1 : règles écrites des questions, feuille mesurée
         r = regles_son(etat['feuille'])
         if set(questions) <= set(r): return {k: r[k] for k in questions}
-    T = tetes(); manque = []
-    for qid, q in questions.items():
-        t = T.get(cle_question(q.get('instructions', '') if isinstance(q.get('instructions'), str) else json.dumps(q.get('instructions'))))
-        if q.get('type') != 'noul' or not t or not t.get('valide'): manque.append(qid)
-    if manque:
-        raise NonJuge(f"{outil} : {len(manque)}/{len(questions)} question(s) sans tête locale validée ({', '.join(manque[:4])}{'…' if len(manque) > 4 else ''})")
+    T = tetes()
     ims = {k: _image(assets[v]) for k, v in etat.items() if isinstance(v, str) and assets and v in assets}
-    roles = {T[cle_question(q['instructions'])]['roles'] for q in questions.values()}
-    F = {k: caracteristiques([im])[0] for k, im in ims.items()} if roles & {'frame', 'frame+ref'} else {}
-    if 'mouvement' in roles: F['mouvement'] = traits_mouvement([ims[c] for c in 'abcdefgh'])
-    out = {}
+    F, dom = {}, {}
+
+    def traits(role):
+        if role in F: return F[role]
+        if role == 'mouvement': F[role] = traits_mouvement([ims[c] for c in 'abcdefgh'])
+        else:
+            for k in ('frame', 'reference'):
+                if k in ims and k not in F: F[k] = caracteristiques([ims[k]])[0]
+            F[role] = F['frame'] if role == 'frame' else np.concatenate([F['frame'], F['frame'] - F['reference']])
+        dom[role] = _domaine(role, F[role])
+        return F[role]
+    out, contexte = {}, (etat.get('contexte') if isinstance(etat.get('contexte'), str) else '')
     for qid, q in questions.items():
-        t = T[cle_question(q['instructions'])]
-        x = (F['mouvement'] if t['roles'] == 'mouvement' else F['frame'] if t['roles'] == 'frame'
-             else np.concatenate([F['frame'], F['frame'] - F['reference']]))
-        out[qid] = {'noul': float(_proba(t, x[None])[0]), 'juge': 'local'}
+        txt = _texte(q); t = T.get(cle_question(txt)); voie = None; err = ''
+        try:
+            if q.get('type') == 'noul' and t and t.get('valide'):   # voie 2 : tête apprise, dans son domaine
+                x = traits(t['roles'])
+                if dom[t['roles']]: out[qid] = {'noul': float(_proba(t, x[None])[0]), 'juge': 'local'}; voie = 'tete'
+            if voie is None and ims and q.get('type') in ('noul', 'choice'):   # voie 3a : question ou image inédite
+                if q.get('type') == 'noul': out[qid] = {'noul': vlm_oui(ims, txt, contexte), 'juge': 'vlm-local'}
+                else:
+                    C = q.get('criteria') or {}
+                    pr = {c: vlm_oui(ims, f'{txt} Is the answer: {d if isinstance(d, str) else json.dumps(d)}?', contexte) for c, d in C.items()}
+                    tot = sum(pr.values()) or 1.0; pr = {c: v / tot for c, v in pr.items()}
+                    out[qid] = {'choice': max(pr, key=pr.get), 'probabilities': pr, 'juge': 'vlm-local'}
+                voie = 'vlm'
+            if voie is None and not ims and q.get('type') == 'noul' and os.path.isfile(LLM):   # voie 3b : question sur du texte
+                out[qid] = {'noul': llm_oui(etat, txt), 'juge': 'llm-local'}; voie = 'llm'
+        except NonJuge:
+            raise
+        except Exception as e:
+            voie = None; err = str(e)[:120]
+        if voie is None:
+            raise NonJuge(f"{outil} : question « {qid} » sans voie locale ({q.get('type')}{', ' + err if err else ''})")
+        _journal({'date': time.strftime('%Y-%m-%dT%H:%M:%S'), 'outil': outil, 'question': qid, 'cle': cle_question(txt), 'voie': voie,
+                  **{k: v for k, v in out[qid].items() if k in ('noul', 'choice')}})
+    return out
+
+
+def lisse_plan(p, plans, rayon=2):
+    """PLUS PRÉCIS QUE JEV : un défaut réel persiste sur les images voisines d'un même plan (JEV juge chaque image seule et se
+    contredit 1 fois sur 3 sur « rendu ») — médiane glissante de ±rayon images, sans franchir une coupe."""
+    p = np.asarray(p, np.float64); out = p.copy(); plans = np.asarray(plans)
+    for i in range(len(p)):
+        a, b = max(0, i - rayon), min(len(p), i + rayon + 1); m = plans[a:b] == plans[i]
+        out[i] = float(np.median(p[a:b][m]))
     return out
 
 

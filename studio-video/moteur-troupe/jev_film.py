@@ -97,6 +97,15 @@ if __name__ == '__main__':
     print(f"jev_film : {N} images, {len(AV)} reprises du cache, {len(a_faire)} à juger — niveau 1 prévu {pr['cout_usd']} $", flush=True)
     with ThreadPoolExecutor(THREADS) as ex:
         for x, r in zip(a_faire, ex.map(lambda x: demande(images[x['n']], x['Q']), a_faire)): AV[x['n']] = r
+    if not jev_api.autorise() and a_faire:
+        # JUGE LOCAL (18/10/2026) : un défaut réel persiste sur les images voisines d'un même plan ; JEV jugeait chaque image
+        # seule et se contredisait 1 fois sur 3 sur « rendu » — médiane sur ±2 images du même plan (juge_local.lisse_plan)
+        import juge_local
+        loc = sorted(x['n'] for x in a_faire)
+        for k in N1:
+            v = [AV[n][k][0] if k in AV[n] else np.nan for n in loc]
+            if any(np.isnan(v)): continue
+            for n, p in zip(loc, juge_local.lisse_plan(v, [taches[n]['plan'] for n in loc])): AV[n][k] = [round(float(p), 3)]
     # niveau 2 : images suspectes (une réponse de défaut ≥ 0,4), contrôle détaillé avec l'image source, questions reposées
     def suspecte(x):
         v = verdict(AV[x['n']], {**x['Q'], **(N2 if not x['carte'] else {})})

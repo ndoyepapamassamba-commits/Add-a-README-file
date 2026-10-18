@@ -86,13 +86,20 @@ if __name__ == '__main__':
         g = segment(sec, SH, cartes, N)
         if g: taches.append({'seconde': sec, 'images': g[0], 'dt': g[1], 'plan': f'{g[2][2]}/{g[2][3]}/{g[2][4]}', 'suite': plus_vif(images, *g[3])})
     print(f"jev_mouvement : {len(taches)} secondes — prévu {jev_api.prevoir([('secondes', len(taches), 8, len(Q), 0.265)])['cout_usd']} $", flush=True)
-    un = lambda x: demande([images[n] for n in x['images']], [images[n] for n in x['suite']], x['dt'])
-    with ThreadPoolExecutor(12) as ex: R = list(ex.map(un, taches))
     decide = [k for k in Q if k not in DIAGNOSTIC]
-    sign = [i for i, r in enumerate(R) if min(r[k] for k in decide) <= 0.5]
-    with ThreadPoolExecutor(12) as ex: rr = list(ex.map(lambda i: [un(taches[i]) for _ in range(2)], sign))
-    for i, r2 in zip(sign, rr):
-        R[i] = {k: round(float(np.mean([R[i][k]] + [x[k] for x in r2])), 3) for k in R[i]}; R[i]['confirme'] = 3
+    if jev_api.autorise():
+        un = lambda x: demande([images[n] for n in x['images']], [images[n] for n in x['suite']], x['dt'])
+        with ThreadPoolExecutor(12) as ex: R = list(ex.map(un, taches))
+        sign = [i for i, r in enumerate(R) if min(r[k] for k in decide) <= 0.5]
+        with ThreadPoolExecutor(12) as ex: rr = list(ex.map(lambda i: [un(taches[i]) for _ in range(2)], sign))
+        for i, r2 in zip(sign, rr):
+            R[i] = {k: round(float(np.mean([R[i][k]] + [x[k] for x in r2])), 3) for k in R[i]}; R[i]['confirme'] = 3
+    else:   # JEV coupé : le juge local MESURE ce que chaque question énonce (juge_local.mouvement_local), déterministe
+        import juge_local
+        D_ = os.path.dirname(os.path.abspath(TOUR)); R = []
+        for x in taches:
+            r_, m_ = juge_local.mouvement_local([images[n] for n in x['images'] + x['suite']], D_, x['images'][0] / FPS, x['images'][-1] / FPS)
+            R.append({**{k: round(r_[k] if att else 1.0 - r_[k], 3) for k, (att, _) in Q.items()}, 'mesures': m_, 'juge': 'local'})
     par_seconde = [dict(x, **r, defauts=[k for k in decide if r[k] <= 0.5], a_ameliorer=[k for k in DIAGNOSTIC if r[k] <= 0.5]) for x, r in zip(taches, R)]
     synth = {'secondes_jugees': len(par_seconde), 'secondes_fautives': [x['seconde'] for x in par_seconde if x['defauts']],
              **{k: [x['seconde'] for x in par_seconde if k in x['defauts']] for k in decide},
