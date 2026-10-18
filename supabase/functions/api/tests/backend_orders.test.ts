@@ -148,7 +148,7 @@ Deno.test("POST /orders cleans the input (trim, whitespace, control characters, 
   const h = makeHarness();
   const data = orderData("pack") as Record<string, any>;
   data.identity.firstName = "  Awa \u0007 ";
-  data.identity.lastName = "Ndiaye​";
+  data.identity.lastName = "Ndiaye\u200b";
   data.identity.address = "   ";
   data.identity.phone = "+33 6 12 34 56 78";
   data.target.jobTitle = "Assistante\t  comptable";

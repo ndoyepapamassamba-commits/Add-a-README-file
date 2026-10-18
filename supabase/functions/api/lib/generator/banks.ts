@@ -50,6 +50,8 @@ export interface Ctx {
   /** "stage d'assistante comptable", "stage en comptabilité". */
   stageNoun: string;
   domain: string;
+  /** The domain once the degree already named it ("ce domaine"), otherwise the same as `domain`. */
+  field: string;
   practice: string;
   stake: string;
   gain: string;
@@ -374,22 +376,22 @@ function expSubject(c: Ctx, span: boolean): { subject: string; verb: string } {
 
 export const PROFILE_INTRO: Record<Level, Variant[]> = {
   debutant: [
-    (c) => c.degree && `${c.degree.lead}, je suis ${c.g("motivé", "motivée")} à l'idée de faire mes premiers pas dans ${c.domain}`,
-    (c) => c.degree && `${c.degree.lead}, je souhaite mettre mes connaissances en pratique dans ${c.domain}`,
+    (c) => c.degree && `${c.degree.lead}, je suis ${c.g("motivé", "motivée")} à l'idée de faire mes premiers pas dans ${c.field}`,
+    (c) => c.degree && `${c.degree.lead}, je souhaite mettre mes connaissances en pratique dans ${c.field}`,
     (c) =>
       c.degree &&
-      `${c.degree.lead}, ${c.g("sérieux", "sérieuse")} et ${c.g("désireux", "désireuse")} d'apprendre, je nourris un vif intérêt pour ${c.domain}`,
+      `${c.degree.lead}, ${c.g("sérieux", "sérieuse")} et ${c.g("désireux", "désireuse")} d'apprendre, je nourris un vif intérêt pour ${c.field}`,
     (c) => !c.degree && `Jeune et ${c.g("motivé", "motivée")}, je souhaite faire mes premiers pas dans ${c.domain}`,
     (c) =>
       !c.degree &&
-      `${c.g("Sérieux", "Sérieuse")} et ${c.g("désireux", "désireuse")} d'apprendre, je nourris un vif intérêt pour ${c.domain}`,
+      `${c.g("Sérieux", "Sérieuse")} et ${c.g("désireux", "désireuse")} d'apprendre, je nourris un vif intérêt pour ${c.field}`,
     (c) => !c.degree && `${c.g("Motivé", "Motivée")} et volontaire, je souhaite démarrer ma carrière dans ${c.domain}`,
   ],
   junior: [
     (c) =>
       c.expCount > 0 &&
       `${c.g("Fort", "Forte")} d'une première expérience dans ${c.domain}, je suis ${c.g("un professionnel motivé", "une professionnelle motivée")} et ${c.g("rapidement opérationnel", "rapidement opérationnelle")}`,
-    (c) => c.degree && `${c.degree.lead}, je dispose de bases solides dans ${c.domain}`,
+    (c) => c.degree && `${c.degree.lead}, je dispose de bases solides dans ${c.field}`,
     (c) => `${c.g("Jeune professionnel", "Jeune professionnelle")} dynamique, je souhaite consolider mon parcours dans ${c.domain}`,
     (c) =>
       c.expCount > 0 &&
@@ -408,7 +410,7 @@ export const PROFILE_INTRO: Record<Level, Variant[]> = {
     (c) => `${c.g("Professionnel expérimenté", "Professionnelle expérimentée")}, je justifie d'un parcours riche dans ${c.domain}`,
     (c) => `Riche de nombreuses années d'expérience dans ${c.domain}, j'ai acquis une vision globale du métier ${de(c.role)}`,
     (c) => `${c.g("Fort", "Forte")} d'une longue expérience dans ${c.domain}, je sais conjuguer expertise métier et sens des responsabilités`,
-    (c) => c.degree && `${c.degree.lead}, je cumule une longue expérience dans ${c.domain}`,
+    (c) => c.degree && `${c.degree.lead}, je cumule une longue expérience dans ${c.field}`,
   ],
 };
 
@@ -529,23 +531,23 @@ export const LETTRE_DEGREE: Variant[] = [
   (c) => {
     const d = c.degree;
     if (!d) return null;
-    return `${d.leadFull}, ${d.status === "ongoing" ? "j'acquiers progressivement" : "j'ai acquis"} des bases solides dans ${c.domain}`;
+    return `${d.leadFull}, ${d.status === "ongoing" ? "j'acquiers progressivement" : "j'ai acquis"} des bases solides dans ${c.field}`;
   },
   (c) => {
     const d = c.degree;
     if (!d || d.status === "level") return null;
     return d.status === "done"
-      ? `J'ai obtenu ${d.article} ${d.name}${d.where}, une formation qui m'a permis d'acquérir des connaissances solides dans ${c.domain}`
-      : `Je poursuis actuellement ${d.article} ${d.name}${d.where}, une formation qui me permet d'acquérir des connaissances solides dans ${c.domain}`;
+      ? `J'ai obtenu ${d.article} ${d.name}${d.where}, une formation qui m'a permis d'acquérir des connaissances solides dans ${c.field}`
+      : `Je poursuis actuellement ${d.article} ${d.name}${d.where}, une formation qui me permet d'acquérir des connaissances solides dans ${c.field}`;
   },
   (c) => {
     const d = c.degree;
     if (!d) return null;
     if (d.status === "done") {
-      return `Mon parcours académique, couronné par ${d.article} ${d.name}${d.where}, m'a apporté de solides connaissances dans ${c.domain}`;
+      return `Mon parcours académique, couronné par ${d.article} ${d.name}${d.where}, m'a apporté de solides connaissances dans ${c.field}`;
     }
     if (d.status === "ongoing") {
-      return `${c.g("Inscrit", "Inscrite")} en ${d.name}${d.where}, je consolide chaque jour mes connaissances dans ${c.domain}`;
+      return `${c.g("Inscrit", "Inscrite")} en ${d.name}${d.where}, je consolide chaque jour mes connaissances dans ${c.field}`;
     }
     return `Mon parcours scolaire, mené jusqu'au ${d.name}${d.where}, m'a apporté de bonnes bases`;
   },
@@ -564,7 +566,8 @@ export const LETTRE_EXPERIENCE: Variant[] = [
   (c) => {
     if (!c.exp) return null;
     const { subject, verb } = expSubject(c, true);
-    return `${subject} ${verb} de mettre en pratique mes connaissances et de développer ${c.gain}`;
+    const use = senior(c) ? "mettre à profit mon savoir-faire" : "mettre en pratique mes connaissances";
+    return `${subject} ${verb} de ${use} et de développer ${c.gain}`;
   },
 ];
 
@@ -607,24 +610,43 @@ export const LETTRE_BACKGROUND: Variant[] = [
   (c) => `Au fil de mon parcours dans ${c.domain}, j'ai appris à travailler avec rigueur et à m'adapter aux exigences du terrain`,
 ];
 
-/** P3: skills (the IT clause is appended by index.ts). */
+/** IT tools in brackets: " (Word, Excel, Sage)". */
+const itList = (c: Ctx) => `(${c.it.join(", ")})`;
+
+/** P3: skills, each variant with its own way of adding the IT tools. */
 export const LETTRE_SKILLS: Variant[] = [
-  (c) => c.skills.length > 0 && `Je pourrai mettre à votre service mes compétences en ${skillList(c)}`,
-  (c) => c.skills.length > 0 && `Je dispose notamment de compétences en ${skillList(c)}`,
   (c) =>
     c.skills.length > 0 &&
-    `Vous trouverez en moi ${c.g("un collaborateur compétent", "une collaboratrice compétente")} en ${skillList(c)}`,
-  (c) => c.skills.length > 0 && c.level !== "debutant" && `Au fil de mon parcours, j'ai développé des compétences en ${skillList(c)}`,
+    `Je pourrai mettre à votre service mes compétences en ${skillList(c)}${
+      c.it.length ? `, ainsi que ma maîtrise de l'outil informatique ${itList(c)}` : ""
+    }`,
+  (c) =>
+    c.skills.length > 0 &&
+    `Je dispose notamment de compétences en ${skillList(c)}${
+      c.it.length ? `, et je suis à l'aise avec l'outil informatique ${itList(c)}` : ""
+    }`,
+  (c) =>
+    c.skills.length > 0 &&
+    `Vous trouverez en moi ${c.g("un collaborateur compétent", "une collaboratrice compétente")} en ${skillList(c)}${
+      c.it.length ? `, à l'aise avec l'outil informatique ${itList(c)}` : ""
+    }`,
+  (c) =>
+    c.skills.length > 0 && c.level !== "debutant" &&
+    `Au fil de mon parcours, j'ai développé des compétences en ${skillList(c)}${
+      c.it.length ? `, sans oublier la maîtrise de l'outil informatique ${itList(c)}` : ""
+    }`,
   (c) =>
     c.skills.length > 0 && c.level === "debutant" && c.degree &&
-    `Ma formation m'a permis d'acquérir des compétences en ${skillList(c)}`,
+    `Ma formation m'a permis d'acquérir des compétences en ${skillList(c)}${
+      c.it.length ? `, ainsi qu'une bonne maîtrise de l'outil informatique ${itList(c)}` : ""
+    }`,
 ];
 
-/** P3: IT tools as typed by the customer. */
+/** P3: IT tools, when the customer listed no skills. */
 export const LETTRE_IT: Variant[] = [
-  (c) => `Je suis également à l'aise avec l'outil informatique (${c.it.join(", ")})`,
-  (c) => `Je maîtrise par ailleurs les outils informatiques courants (${c.it.join(", ")})`,
-  (c) => `J'utilise au quotidien l'outil informatique (${c.it.join(", ")})`,
+  (c) => `Je suis à l'aise avec l'outil informatique ${itList(c)}`,
+  (c) => `Je maîtrise les outils informatiques courants ${itList(c)}`,
+  (c) => `J'utilise au quotidien l'outil informatique ${itList(c)}`,
 ];
 
 /** P3: lead-in for the list of quality phrases ("Je suis A, B et C"). */
@@ -674,5 +696,5 @@ export const REPEAT_STEMS = [
   "mettre en pratique", "mes connaissances en pratique", "sens des responsabilités", "travail bien fait",
   "concrètement", "motivé", "m'investir", "exigence", "vif intérêt", "environnement", "au contact",
   "aux côtés", "mon objectif", "compétences en", "réelle", "permis de développer", "permet de développer",
-  "j'ai l'honneur", "je me permets", "rapidement opérationnel",
+  "j'ai l'honneur", "je me permets", "rapidement opérationnel", "par ailleurs", "au sein", "aujourd'hui",
 ];

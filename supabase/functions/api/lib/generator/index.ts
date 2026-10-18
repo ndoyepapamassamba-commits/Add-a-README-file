@@ -1,6 +1,6 @@
 // Deterministic French CV + lettre de motivation generator. Pure: same input and seed ⇒ same document.
 // Facts come only from the customer's input; banks.ts only phrases them.
-import type { CvDoc, Document, LettreDoc, OrderInput, Product } from "../types.ts";
+import type { CvDoc, Document, LettreDoc, OrderInput, Product, Sector } from "../types.ts";
 import { formatSnMobile } from "../phone.ts";
 import {
   CLOSINGS,
@@ -109,22 +109,35 @@ class Picker {
     }
     return out;
   }
+}
 
-  /**
-   * Picks one applicable variant. Variants repeating an expression already used in the document
-   * (REPEAT_STEMS) are avoided when another one applies.
-   */
-  sentence(slot: string, variants: Variant[], c: Ctx, used: string[]): string | null {
-    const texts = variants.map((v) => v(c)).filter((t): t is string => typeof t === "string" && t !== "");
+/**
+ * Writes one document (CV or lettre): picks one variant per slot and avoids repeating an expression
+ * already used in that document (REPEAT_STEMS plus the job title) whenever another variant applies.
+ */
+class Composer {
+  private readonly used: string[] = [];
+  private readonly stems: string[];
+
+  constructor(private readonly picker: Picker, private readonly c: Ctx, extraStems: string[] = []) {
+    this.stems = [...REPEAT_STEMS, ...extraStems.map((s) => s.toLocaleLowerCase("fr")).filter((s) => s.length >= 4)];
+  }
+
+  pick(slot: string, variants: Variant[]): string | null {
+    const texts = variants.map((v) => v(this.c)).filter((t): t is string => typeof t === "string" && t !== "");
+    return this.choose(slot, texts);
+  }
+
+  choose(slot: string, texts: string[]): string | null {
     if (texts.length === 0) return null;
-    const usedText = used.join(" ").toLocaleLowerCase("fr");
+    const usedText = this.used.join(" ").toLocaleLowerCase("fr");
     const fresh = texts.filter((t) => {
       const lower = t.toLocaleLowerCase("fr");
-      return !REPEAT_STEMS.some((stem) => usedText.includes(stem) && lower.includes(stem));
+      return !this.stems.some((stem) => usedText.includes(stem) && lower.includes(stem));
     });
     const pool = fresh.length > 0 ? fresh : texts;
-    const chosen = pool[this.index(slot, pool.length)];
-    used.push(chosen);
+    const chosen = pool[this.picker.index(slot, pool.length)];
+    this.used.push(chosen);
     return chosen;
   }
 }
@@ -259,6 +272,28 @@ function parseSource(raw: string | undefined): Ctx["source"] {
   return { mode: "media", text: PRESS_RE.test(s) ? `dans ${s}` : `sur ${s}` };
 }
 
+/** Folded word stems showing that a degree already names the sector ("licence en comptabilité"). */
+const SECTOR_KEYWORDS: Record<Sector, string[]> = {
+  commerce: ["commerc", "vente", "negoce"],
+  comptabilite: ["compta", "financ", "audit", "fiscal"],
+  informatique: ["informati", "numerique", "reseau", "logiciel", "developpement web", "data"],
+  sante: ["sante", "infirm", "soins", "medic", "sage-femme", "pharma", "aide-soignant"],
+  enseignement: ["enseign", "education", "pedagog"],
+  administration: ["administ", "secretari", "assistanat", "bureautique"],
+  btp: ["batiment", "genie civil", "btp", "travaux publics", "construction"],
+  hotellerie: ["hotel", "restaura", "cuisine", "tourisme"],
+  logistique: ["logisti", "transport"],
+  communication: ["communic", "marketing", "journalis"],
+  agriculture: ["agri", "agro", "elevage", "horticult"],
+  securite: ["securite", "gardiennage"],
+  autre: [],
+};
+
+function namesSector(text: string, sector: Sector): boolean {
+  const key = foldKey(text);
+  return SECTOR_KEYWORDS[sector].some((k) => key.includes(k));
+}
+
 function dedupeSkills(skills: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -289,6 +324,7 @@ function buildContext(input: OrderInput, now: Date): Ctx {
     ? (isStageTitle || /^stagiaire\b/i.test(job) ? "ce domaine" : `le métier ${de(role)}`)
     : SECTORS[sector].domain;
   const exp = buildExperience(input);
+  const degree = buildDegree(input, { g }, now.getUTCFullYear());
   return {
     g,
     level,
@@ -299,8 +335,9 @@ function buildContext(input: OrderInput, now: Date): Ctx {
     posteNoun,
     stageNoun,
     domain,
+    field: degree && namesSector(degree.name, sector) ? "ce domaine" : domain,
     ...SECTOR_CONTEXT[sector],
-    degree: buildDegree(input, { g }, now.getUTCFullYear()),
+    degree,
     exp,
     expCount: input.experiences.length,
     skills: dedupeSkills(input.skills).slice(0, 3).map(inSentence),
@@ -337,12 +374,11 @@ export function formatPeriod(start: string | undefined, end: string | undefined)
 }
 
 function buildProfile(c: Ctx, picker: Picker): string {
-  const used: string[] = [];
-  const intro = picker.sentence("profile.intro", PROFILE_INTRO[c.level], c, used);
-  const asset = c.exp
-    ? picker.sentence("profile.experience", PROFILE_EXPERIENCE, c, used)
-    : picker.sentence("profile.skills", PROFILE_SKILLS, c, used);
-  const aim = picker.sentence(`profile.aim`, PROFILE_AIM[c.kind], c, used);
+  // The aim must name the job, so it is chosen first; the other slots then avoid repeating it.
+  const w = new Composer(picker, c, [c.role]);
+  const aim = w.pick("profile.aim", PROFILE_AIM[c.kind]);
+  const asset = c.exp ? w.pick("profile.experience", PROFILE_EXPERIENCE) : w.pick("profile.skills", PROFILE_SKILLS);
+  const intro = w.pick("profile.intro", PROFILE_INTRO[c.level]);
   return joinSentences([intro, asset, aim]);
 }
 
@@ -408,42 +444,39 @@ function resolveQualities(typed: string[], c: Ctx, picker: Picker): { phrases: s
 }
 
 function buildParagraphs(input: OrderInput, c: Ctx, picker: Picker): string[] {
-  const used: string[] = [];
-  const pick = (slot: string, variants: Variant[]) => picker.sentence(slot, variants, c, used);
+  const w = new Composer(picker, c, [c.role]);
 
   const openBank = c.source?.mode === "media"
     ? LETTRE_OPEN_ADVERT
     : c.source?.mode === "referral"
     ? LETTRE_OPEN_REFERRAL
     : LETTRE_OPEN_SPONTANEOUS;
-  const p1 = joinSentences([pick("p1.open", openBank), pick("p1.fit", LETTRE_FIT[c.kind])]);
+  const p1 = joinSentences([w.pick("p1.open", openBank), w.pick("p1.fit", LETTRE_FIT[c.kind])]);
 
   const p2Parts: Array<string | null> = [];
-  if (c.degree) p2Parts.push(pick("p2.degree", LETTRE_DEGREE));
+  if (c.degree) p2Parts.push(w.pick("p2.degree", LETTRE_DEGREE));
   if (c.exp) {
-    p2Parts.push(pick("p2.experience", LETTRE_EXPERIENCE));
-    if (c.exp.missions.length > 0) p2Parts.push(pick("p2.missions", LETTRE_MISSIONS));
+    p2Parts.push(w.pick("p2.experience", LETTRE_EXPERIENCE));
+    if (c.exp.missions.length > 0) p2Parts.push(w.pick("p2.missions", LETTRE_MISSIONS));
   }
   if (c.level === "debutant") {
-    if (!c.degree && !c.exp) p2Parts.push(pick("p2.interest", LETTRE_BEGINNER_INTEREST));
-    if (!c.exp || c.exp.internship) p2Parts.push(pick("p2.beginner", LETTRE_BEGINNER));
+    if (!c.degree && !c.exp) p2Parts.push(w.pick("p2.interest", LETTRE_BEGINNER_INTEREST));
+    if (!c.exp || c.exp.internship) p2Parts.push(w.pick("p2.beginner", LETTRE_BEGINNER));
   } else if (!c.exp) {
-    p2Parts.push(pick("p2.background", LETTRE_BACKGROUND));
+    p2Parts.push(w.pick("p2.background", LETTRE_BACKGROUND));
   }
   const p2 = joinSentences(p2Parts);
 
   const { phrases, others } = resolveQualities(input.letter?.qualities ?? [], c, picker);
-  const qualityIntro = LETTRE_QUALITIES[picker.index("p3.qualities", LETTRE_QUALITIES.length)];
   const p3 = joinSentences([
-    pick("p3.skills", LETTRE_SKILLS),
-    c.it.length > 0 && pick("p3.it", LETTRE_IT),
-    phrases.length > 0 && qualityIntro(joinList(phrases)),
+    c.skills.length > 0 ? w.pick("p3.skills", LETTRE_SKILLS) : c.it.length > 0 && w.pick("p3.it", LETTRE_IT),
+    phrases.length > 0 && w.choose("p3.qualities", LETTRE_QUALITIES.map((intro) => intro(joinList(phrases)))),
     others.length > 0 && `Je fais ${phrases.length ? "également " : ""}preuve ${joinList(others.map(de))}`,
-    pick("p3.interest", LETTRE_INTEREST),
     cleanFreeText(input.letter?.motivation),
+    w.pick("p3.interest", LETTRE_INTEREST),
   ]);
 
-  const p4 = joinSentences([pick("p4.close", LETTRE_CLOSE)]);
+  const p4 = joinSentences([w.pick("p4.close", LETTRE_CLOSE)]);
   return [p1, p2, p3, p4];
 }
 

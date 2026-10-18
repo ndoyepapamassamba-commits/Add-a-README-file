@@ -203,7 +203,7 @@
   }
 
   function contactsInline(cv) {
-    return inlineList(cv.contacts || [], "cv.contacts", "  |  ");
+    return inlineList(cv.contacts || [], "cv.contacts", "\u2002|\u2002");
   }
 
   function profileSection(cv, label) {
@@ -404,7 +404,7 @@
         if (isBlank(line)) return;
         if (details.childNodes.length) {
           var sep = el("span", "tcv-sep", { "aria-hidden": "true" });
-          sep.textContent = "  |  ";
+          sep.textContent = "\u2002|\u2002";
           details.appendChild(sep);
         }
         details.appendChild(field("span", "tcv-inline-item", line, "lettre.sender." + (i + 1)));
