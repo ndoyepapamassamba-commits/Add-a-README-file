@@ -596,6 +596,7 @@
     steps: steps,
     setTemplate: setTemplate,
     current: function () { return current; },
-    product: function () { return state.product; }
+    product: function () { return state.product; },
+    phone: function () { return state.identity.phone; }
   };
 })();

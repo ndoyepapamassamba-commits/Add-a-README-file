@@ -211,47 +211,49 @@
   }
 
   /**
-   * A side-by-side part as a one-row table; each cell is a flow of its own. Cell paddings are written as
-   * longhands (LibreOffice ignores the shorthand) and carry the space above the row and its indentation.
+   * A side-by-side part as a one-row table; each cell is a flow of its own. LibreOffice ignores cell padding,
+   * table margins and horizontal paragraph margins inside cells, so indentation and column gaps become empty
+   * spacer cells, and the space above the row becomes the top margin of each cell's first paragraph.
    */
   function table(src, flow, out, kind) {
     var box = src.getBoundingClientRect();
     var cells = kind === "box" ? [src] : Array.prototype.filter.call(src.children, shown);
-    var space = pt(flow.gap(flow.y, box.top));
+    var gap = kind === "box" ? 0 : (parseFloat(css(src).columnGap) || 0) * flow.scale;
+    var left = Math.min(flow.left, box.left);
+    var total = Math.max(flow.right, box.right) - left || 1;
+    var tr = out.createElement("tr");
+    var addCell = function (from, to, bg, spacer) {
+      var pct = Math.max(1, Math.round(((to - from) / total) * 100));
+      var td = out.createElement("td");
+      td.setAttribute("width", pct + "%");
+      td.setAttribute("valign", "top");
+      if (bg) td.setAttribute("bgcolor", bg);
+      // An empty spacer cell still holds one paragraph mark: keep it tiny so it never makes the row taller.
+      td.setAttribute("style", "vertical-align:top;width:" + pct + "%" + (bg ? ";background:" + bg : "") + (spacer ? ";font-size:1pt" : ""));
+      tr.appendChild(td);
+      return td;
+    };
+    if (box.left - left >= 2 * flow.scale) addCell(left, box.left, null, true); // indented block (Moderne items)
+    cells.forEach(function (cell, i) {
+      var last = i === cells.length - 1;
+      var r = cell.getBoundingClientRect();
+      // A cell runs up to the next column gap, so free space (title rows) stays inside the cell on its left.
+      var end = last ? box.right : cells[i + 1].getBoundingClientRect().left - gap;
+      var td = addCell(r.left, end, hex(css(cell).backgroundColor));
+      var inner = new Flow(td, { left: r.left, right: end, top: flow.y }, NO_INSET, flow.scale, flow.font);
+      // The date of a title row sits on the right edge.
+      if (kind !== "box" && isLeaf(cell)) paragraph(cell, inner, out, kind === "row" && i > 0 && last ? "right" : null);
+      else walk(cell, inner, out);
+      // Keep the cell's bottom padding (header band), not the height a column is stretched to on screen.
+      var rest = Math.min(inner.gap(inner.y, r.bottom), parseFloat(css(cell).paddingBottom) || 0);
+      if (rest >= 1) inner.extendLast(r.bottom, ["margin-bottom:" + pt(rest)]);
+      if (!last && gap >= 2 * flow.scale) addCell(end, end + gap, null, true);
+    });
     var t = out.createElement("table");
     t.setAttribute("width", "100%");
     t.setAttribute("cellspacing", "0");
     t.setAttribute("cellpadding", "0");
     t.setAttribute("style", "width:100%;border-collapse:collapse");
-    var tr = out.createElement("tr");
-    cells.forEach(function (cell, i) {
-      var last = i === cells.length - 1;
-      var r = cell.getBoundingClientRect();
-      // A cell runs up to the next one, so the gap between columns stays inside the cell on its left.
-      var end = last ? box.right : cells[i + 1].getBoundingClientRect().left;
-      var pct = Math.max(1, Math.round(((end - r.left) / (box.width || 1)) * 100));
-      var bg = hex(css(cell).backgroundColor);
-      var td = out.createElement("td");
-      td.setAttribute("width", pct + "%");
-      td.setAttribute("valign", "top");
-      if (bg) td.setAttribute("bgcolor", bg);
-      td.setAttribute("style", [
-        "vertical-align:top", "width:" + pct + "%",
-        "padding-top:" + space, "padding-bottom:0pt",
-        "padding-left:" + (i === 0 ? pt(flow.gap(flow.left, box.left)) : "0pt"),
-        "padding-right:" + (last ? pt(flow.gap(box.right, flow.right)) : "0pt")
-      ].concat(bg ? ["background:" + bg] : []).join(";"));
-      if (kind !== "box" && isLeaf(cell)) {
-        // The date of a title row sits on the right edge.
-        paragraph(cell, new Flow(td, r, NO_INSET, flow.scale, flow.font), out, kind === "row" && i > 0 && last ? "right" : null);
-      } else {
-        var inner = new Flow(td, { left: r.left, right: end, top: r.top }, NO_INSET, flow.scale, flow.font);
-        walk(cell, inner, out);
-        var rest = inner.gap(inner.y, r.bottom);
-        if (rest >= 1) inner.extendLast(r.bottom, ["margin-bottom:" + pt(rest)]);
-      }
-      tr.appendChild(td);
-    });
     t.appendChild(tr);
     flow.target.appendChild(t);
     flow.y = box.bottom;

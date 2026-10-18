@@ -337,6 +337,7 @@ fieldset { border: 0; padding: 0; margin: 0 0 16px; min-width: 0; }
 .preview-title { font-size: clamp(1.45rem, 5.5vw, 2rem); margin: 4px 0 .3em; }
 .preview-layout { display: grid; gap: 22px; margin-top: 12px; }
 .preview-tools { display: grid; gap: 10px; margin-bottom: 14px; }
+.preview-tools .zoom-btn { justify-self: start; }
 .tool-label { font-weight: 700; font-size: .92rem; color: var(--ink-2); margin: 0 0 6px; }
 @media (min-width: 960px) {
   .preview-layout { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; gap: 32px; }
@@ -606,9 +607,14 @@ table.data tr:last-child td { border-bottom: 0; }
 .tpl-elegant.tcv-lettre .tcv-subject { font-weight: 700; color: #1e1915; }
 .tpl-elegant.tcv-lettre .tcv-head { margin-bottom: 0; }
 
-/* Export helpers. */
+/* Export helpers. A multi-page PDF gets its page margins from html2pdf: the page's own bottom padding would
+   only spill onto an extra blank page. */
 .tcv-page.is-multipage { min-height: 0; }
-.tcv-page.is-exporting { min-height: 1122px; }
+.tcv-page.is-multipage, .tcv-page.is-multipage .tcv-side, .tcv-page.is-multipage .tcv-main,
+.tcv-page.is-multipage .tcv-letter-body { padding-bottom: 0; }
+/* One-page PDF: fit() accepts up to 1123.5 px, but html2pdf turns anything over 1122 px into a blank 2nd page.
+   The extra pixel is always inside the bottom padding, so it is cut. */
+.tcv-page.is-exporting { min-height: 1122px; height: 1122px; overflow: hidden; }
 
 /* ---------- Print ---------- */
 
@@ -621,6 +627,10 @@ table.data tr:last-child td { border-bottom: 0; }
   #print-root .tcv-page {
     min-height: 296mm; margin: 0; box-shadow: none;
     break-after: page; page-break-after: always;
+    -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  }
+  /* Moderne keeps its padding on the columns: repeat it on every printed page so no line touches the paper edge. */
+  #print-root .tcv-side, #print-root .tcv-main, #print-root .tcv-letter-body {
     -webkit-box-decoration-break: clone; box-decoration-break: clone;
   }
   #print-root .tcv-page:last-child { break-after: auto; page-break-after: auto; }

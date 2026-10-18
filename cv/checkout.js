@@ -70,7 +70,10 @@
       setText(n, payLabel());
     });
     $("#manual-panel").hidden = true;
+    $("#pay-btn").hidden = false;
     $("#paybar").hidden = false;
+    $("#pay-return").hidden = true;
+    $("#pay-return-link").href = TCV.url.resultUrl(order.id, token);
     setText($("#pay-status"), "");
     setText($("#pay-error"), "");
     setPayBusy(false);
@@ -92,6 +95,7 @@
         if (res && res.mode === "wave" && isSafeLaunchUrl(res.launchUrl || "")) {
           setText($("#pay-status"), "Ouverture de Wave…");
           window.location.href = res.launchUrl;
+          watchReturn();
           return;
         }
         setPayBusy(false);
@@ -108,13 +112,49 @@
       });
   }
 
+  /**
+   * On Android the Wave app can take over the payment link while this tab stays open, and the Back button can
+   * restore this page from the browser cache: either way the customer would come back to a stuck "Connexion
+   * à Wave…" button. When the page is shown again (or after 10 s) payment is re-enabled, a link to the
+   * documents is offered, and a payment that already went through opens the documents.
+   */
+  function watchReturn() {
+    var done = false;
+    var timer = setTimeout(back, 10000);
+    function onShow() {
+      if (!document.hidden) back();
+    }
+    function back() {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onShow);
+      window.removeEventListener("pageshow", onShow);
+      setPayBusy(false);
+      setText($("#pay-status"), "");
+      $("#pay-return").hidden = false;
+      TCV.api.request("GET", orderPath("?t=" + encodeURIComponent(ctx.token))).then(function (res) {
+        if (res.order.status === "paid") window.location.href = TCV.url.resultUrl(ctx.order.id, ctx.token);
+      }, function () {
+        /* the "Afficher mes documents" link still works */
+      });
+    }
+    document.addEventListener("visibilitychange", onShow);
+    window.addEventListener("pageshow", onShow);
+  }
+
   function showManual(res) {
     ctx.whatsapp = res.whatsapp || null;
     setText($("#m-amount"), TCV.fmt.fcfa(res.amount || ctx.order.amount));
     setText($("#m-number"), res.waveNumber || "");
     setText($("#m-ref"), res.reference || ctx.order.id);
     $("#manual-panel").hidden = false;
+    // The transfer instructions replace the pay buttons: "J'ai payé" is the only next step.
+    $("#pay-btn").hidden = true;
     $("#paybar").hidden = true;
+    var payer = $("#payer-phone");
+    var typed = TCV.wizard ? TCV.wizard.phone() : "";
+    if (!payer.value && TCV.validate.normalizeSnMobile(typed)) payer.value = typed;
     var title = $("#manual-title");
     title.scrollIntoView({ block: "start", behavior: "smooth" });
     title.focus({ preventScroll: true });
@@ -181,11 +221,25 @@
     }).observe($("#pay-btn"));
   }
 
+  /** On a phone the A4 preview is shrunk to the screen width; "Agrandir" shows it at real size (scrolls sideways). */
+  function bindZoom() {
+    var btn = $("#pv-zoom");
+    btn.addEventListener("click", function () {
+      var on = btn.getAttribute("aria-pressed") !== "true";
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      setText(btn, on ? "Réduire l'aperçu" : "Agrandir l'aperçu");
+      Object.keys(views).forEach(function (k) {
+        views[k].setZoom(on);
+      });
+    });
+  }
+
   function init() {
     var docs = $("#pv-docs");
     docs.classList.add("doc-stack");
     views.cv = new TCV.DocView(docs, "cv");
     views.lettre = new TCV.DocView(docs, "lettre");
+    bindZoom();
     payButtons().forEach(function (b) {
       b.addEventListener("click", pay);
     });

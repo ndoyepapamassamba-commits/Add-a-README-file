@@ -46,11 +46,16 @@
     }
   }
 
-  function openPreview(order, token, preview, failed) {
+  /**
+   * Shows the preview under ?o=ID&t=TOKEN#apercu (a reload or a shared link reopens the same order).
+   * opts.push adds a history entry so that Back returns to the last form step; opts.failed shows the retry banner.
+   */
+  function openPreview(order, token, preview, opts) {
     hasOrder = true;
-    TCV.checkout.show(order, token, preview, { failed: failed });
-    var url = "?o=" + encodeURIComponent(order.id) + "&t=" + encodeURIComponent(token) + "#apercu";
-    history.replaceState(null, "", window.location.pathname + url);
+    TCV.checkout.show(order, token, preview, { failed: opts.failed });
+    var url = window.location.pathname + "?o=" + encodeURIComponent(order.id) + "&t=" + encodeURIComponent(token) + "#apercu";
+    if (opts.push) history.pushState(null, "", url);
+    else history.replaceState(null, "", url);
     route();
   }
 
@@ -59,7 +64,7 @@
       var order = res.order;
       TCV.orders.save({ id: order.id, token: order.token, product: order.product, createdAt: order.createdAt });
       renderMyDocs();
-      openPreview(order, order.token, res.preview, false);
+      openPreview(order, order.token, res.preview, { push: true });
     });
   }
 
@@ -74,7 +79,7 @@
           window.location.replace(TCV.url.resultUrl(order.id, token));
           return;
         }
-        openPreview(order, token, res.preview, failed);
+        openPreview(order, token, res.preview, { failed: failed });
       },
       function (err) {
         history.replaceState(null, "", window.location.pathname);

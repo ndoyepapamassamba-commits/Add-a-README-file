@@ -315,7 +315,7 @@
   function cvModerne(cv, p) {
     p.appendChild(header(cv, "tcv-band"));
     var cols = el("div", "tcv-cols", { "data-w": "cols" });
-    var side = el("aside", "tcv-side");
+    var side = el("div", "tcv-side"); // not <aside>: a landmark inside the page's own landmarks
     var main = el("div", "tcv-main");
     appendAll(side, [
       sideSection("Contact", nonEmpty(cv.contacts) && bulletList(cv.contacts, "cv.contacts", "tcv-plain")),

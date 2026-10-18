@@ -17,6 +17,7 @@ import {
   screenshotter,
 } from "./lib/harness.mjs";
 import { hiddenFragments } from "./lib/leaks.mjs";
+import { libreOfficePages, pdfPageCount } from "./lib/office.mjs";
 import { fillWizard, PERSONA } from "./lib/wizard.mjs";
 
 const OUT = process.env.SHOTS_DIR || path.join(os.tmpdir(), "teranga-cv-e2e");
@@ -72,6 +73,15 @@ async function wavePack(browser, server) {
   const order = created.order;
   check(order.product === "pack" && order.amount === 1500 && order.status === "preview", `A: pack order ${order.id} created at 1 500 FCFA`);
   await checkPreviewScreen(page, "A", { amount: "1 500", docs: 2 });
+  await page.click("#pv-zoom");
+  check(await page.locator("#pv-docs .doc-frame.is-zoomed").count() === 1, "A: « Agrandir l'aperçu » shows the CV at real size");
+  await assertNoHorizontalScroll(page, "A index/preview zoomed");
+  await page.click("#pv-zoom");
+  await page.goBack();
+  await page.waitForSelector('#wizard .step[data-step="lettre"]:not([hidden])');
+  check(true, "A: Back from the preview returns to the last form step");
+  await page.goForward();
+  await page.waitForSelector('[data-view="preview"]:not([hidden])');
 
   const saved = page.waitForResponse((r) => r.request().method() === "POST" && r.url().endsWith("/template"));
   await page.click('#pv-templates label:has(input[value="moderne"])');
@@ -119,6 +129,7 @@ async function wavePack(browser, server) {
     const pdf = await saveDownload(await pdfEvent, OUT);
     check(pdf.name === `${prefix}-${PERSONA.fileBase}.pdf`, `A: ${kind} PDF download event (${pdf.name})`);
     check(pdf.bytes.subarray(0, 5).toString() === "%PDF-" && pdf.bytes.length > 20_000, `A: ${kind} PDF is a real PDF (${pdf.bytes.length} bytes)`);
+    check(pdfPageCount(pdf.bytes) === 1, `A: ${kind} PDF is exactly one A4 page`);
 
     const wordEvent = page.waitForEvent("download");
     await card.locator('[data-act="word"]').click();
@@ -126,6 +137,9 @@ async function wavePack(browser, server) {
     const html = word.bytes.toString("utf8");
     check(word.name === `${prefix}-${PERSONA.fileBase}.doc`, `A: ${kind} Word download event (${word.name})`);
     check(html.includes("urn:schemas-microsoft-com:office:word") && html.includes(PERSONA.fullName), `A: ${kind} Word file is Word HTML with the customer's name`);
+    const loPages = libreOfficePages(path.join(OUT, word.name), path.join(OUT, "libreoffice"));
+    if (loPages === null) console.log(`# skip: LibreOffice (soffice) not installed, ${kind} Word file not opened`);
+    else check(loPages === 1, `A: ${kind} Word file opens in LibreOffice as one A4 page (got ${loPages})`);
   }
 
   await page.reload();
@@ -145,6 +159,16 @@ async function waveCancel(browser, server) {
   const { order } = await fillWizard(page, server.site, "lettre", async () => {});
   check(order.product === "lettre" && order.amount === 1000, `B: lettre order ${order.id} created at 1 000 FCFA`);
   await checkPreviewScreen(page, "B", { amount: "1 000", docs: 1 });
+
+  // On Android the Wave app can take over the payment link: this tab never leaves the preview (a 204 here).
+  await page.route(/\/fake-wave\/pay\//, (route) => route.fulfill({ status: 204 }), { times: 1 });
+  await page.click("#pay-btn");
+  await page.waitForFunction(() => document.querySelector("#pay-status").textContent === "Ouverture de Wave…");
+  check(await page.locator("#pay-btn").isDisabled(), "B: while Wave opens, the pay button is busy");
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange"))); // back from the Wave app
+  await page.waitForSelector("#pay-return:not([hidden])");
+  check(!(await page.locator("#pay-btn").isDisabled()), "B: back from the Wave app, the pay button works again");
+  check(await page.getAttribute("#pay-return-link", "href") === `resultat.html?o=${order.id}&t=${encodeURIComponent(order.token)}`, "B: « Afficher mes documents » links to the order");
 
   await page.click("#pay-btn");
   await page.waitForURL(/\/fake-wave\/pay\//);
@@ -197,6 +221,8 @@ async function manualCv(browser, server) {
   check(norm(await page.locator("#m-number").innerText()) === "+221 77 000 00 00", "C: manual instructions show the formatted Wave number +221 77 000 00 00");
   check(norm(await page.locator("#m-amount").innerText()) === "1 000 FCFA", "C: manual instructions show the exact amount 1 000 FCFA");
   check(norm(await page.locator("#m-ref").innerText()) === order.id, "C: manual instructions show the order reference");
+  check(await page.locator("#pay-btn").isHidden(), "C: the transfer instructions replace the Wave pay button");
+  check(await page.inputValue("#payer-phone") === PERSONA.phone, "C: the payer number is prefilled with the phone typed in the form");
   await assertNoHorizontalScroll(page, "C index/manual instructions");
   await shot("manual-instructions");
 
@@ -277,6 +303,51 @@ async function revenueAndCron(browser, server, paidOrders) {
   await context.close();
 }
 
+/** F — manual mode, blocked storage (private browsing) and markup typed as a name: everything stays plain text. */
+async function hostileAndPrivate(browser, server) {
+  const context = await phoneContext(browser, problems, "F");
+  await context.addInitScript(() => {
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      get() {
+        throw new DOMException("The operation is insecure.", "SecurityError");
+      },
+    });
+    window.open = () => null; // « J'ai payé » opens WhatsApp: covered in C
+  });
+  const page = await context.newPage();
+  const dialogs = [];
+  page.on("dialog", (dialog) => {
+    dialogs.push(dialog.message());
+    return dialog.dismiss();
+  });
+  const hostile = { ...PERSONA, firstName: "<img src=x onerror=alert(1)>", lastName: '"><svg onload=alert(2)>', jobTitle: "Comptable <b>senior</b>" };
+  const injected = (root) => page.locator(`${root} img, ${root} script, ${root} [onerror], ${root} [onload], ${root} b`).count();
+
+  const { order } = await fillWizard(page, server.site, "cv", async () => {}, hostile);
+  check(order.product === "cv", `F: with localStorage blocked the form still creates order ${order.id}`);
+  check(await injected("#pv-docs") === 0 && (await pageText(page, "#view-wizard")).includes('"><SVG ONLOAD=ALERT(2)>'), "F: markup typed in the form is shown as text in the preview");
+
+  await page.click("#pay-btn");
+  await page.waitForSelector("#manual-panel:not([hidden])");
+  await page.click("#manual-paid-btn");
+  await page.waitForSelector("#st-wait:not([hidden])");
+  const unlocked = await api(server, "POST", `/admin/orders/${order.id}/unlock`, { ...ADMIN_AUTH, body: {} });
+  check(unlocked.status === 200 && unlocked.body.changed === true, "F: owner unlocks the order");
+  await page.click("#check-now");
+  await page.waitForSelector("#st-ready:not([hidden])");
+  check(await injected("#docs") === 0 && (await pageText(page)).includes("Comptable <b>senior</b>"), "F: the paid CV shows the markup as text");
+
+  const wordEvent = page.waitForEvent("download");
+  await page.locator('#docs [data-act="word"]').click();
+  const word = await saveDownload(await wordEvent, OUT);
+  const html = word.bytes.toString("utf8");
+  check(!/<(img|svg|script|b)\b/i.test(html) && html.includes("&lt;SVG ONLOAD=ALERT(2)&gt;"), `F: the Word file escapes the markup (${word.name})`);
+  check(dialogs.length === 0, "F: no script ran (zero alert dialogs)");
+  await assertNoHorizontalScroll(page, "F resultat");
+  await context.close();
+}
+
 async function main() {
   fs.mkdirSync(OUT, { recursive: true });
   const started = await Promise.allSettled(
@@ -301,6 +372,8 @@ async function main() {
     console.log("# D — revenue and nightly cron");
     await revenueAndCron(browser, wave, [a, b]);
     await revenueAndCron(browser, manual, [c]);
+    console.log("# F — private browsing and markup typed in the form");
+    await hostileAndPrivate(browser, manual);
     console.log("# E — console errors on every page");
     check(problems.length === 0, `E: zero console errors, page errors or unexpected requests${problems.length ? `:\n  ${problems.join("\n  ")}` : ""}`);
     console.log(`\nPASS — ${passedCount()} checks`);

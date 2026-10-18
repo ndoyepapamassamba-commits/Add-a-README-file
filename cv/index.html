@@ -7,6 +7,8 @@
 <meta name="description" content="Créez un CV et une lettre de motivation professionnels en français, pensés pour le marché de l'emploi au Sénégal. Aperçu gratuit, paiement Wave, PDF et Word immédiats. Sans compte.">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="theme-color" content="#0b6b4e">
+<!-- The preview URL carries the order token (?o=…&t=…): other sites (Wave, WhatsApp) only ever get the origin. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="canonical" href="https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_SN">
@@ -284,7 +286,7 @@
 
         <section class="step" data-step="experiences" data-title="Expériences" hidden aria-labelledby="h-experiences">
           <h2 id="h-experiences" tabindex="-1">Vos expériences</h2>
-          <p class="step-intro">Emplois, stages, petits boulots, bénévolat&nbsp;: tout compte. Commencez par la plus récente. Si vous n'avez pas encore d'expérience, supprimez le bloc et continuez.</p>
+          <p class="step-intro">Emplois, stages, petits boulots, bénévolat&nbsp;: tout compte. Commencez par la plus récente. Pas encore d'expérience&nbsp;? Laissez le bloc vide et touchez «&nbsp;Continuer&nbsp;».</p>
           <p class="error-text step-summary" data-error-for="experiences" role="alert"></p>
           <div id="exp-list"></div>
           <button type="button" class="btn btn-secondary add-btn" id="exp-add">+ Ajouter une expérience</button>
@@ -407,6 +409,7 @@
               <p class="tool-label" id="pv-doc-label">Document</p>
               <div class="seg" role="radiogroup" aria-labelledby="pv-doc-label" id="pv-doc-tabs"></div>
             </div>
+            <button type="button" class="btn btn-sm zoom-btn" id="pv-zoom" aria-pressed="false">Agrandir l'aperçu</button>
           </div>
           <div id="pv-docs"></div>
         </div>
@@ -426,6 +429,7 @@
           <p class="secure-note">Paiement par Wave. Aucun compte à créer.</p>
           <p class="status" id="pay-status" role="status" aria-live="polite"></p>
           <p class="error-text" id="pay-error" role="alert"></p>
+          <p class="hint" id="pay-return" hidden>Vous avez validé le paiement dans Wave&nbsp;? <a id="pay-return-link" href="resultat.html">Afficher mes documents</a></p>
 
           <div class="manual" id="manual-panel" hidden>
             <h3 id="manual-title" tabindex="-1">Payer par transfert Wave</h3>
