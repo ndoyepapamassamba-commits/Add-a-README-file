@@ -179,7 +179,7 @@ BANDE = 'voix/mix-musique.wav' if os.path.isfile('voix/mix-musique.wav') and os.
 # ambiance réelle (ambiance.py : coqs, poules, oiseaux, vent, maquis) posée sous la bande si elle est à jour
 if os.path.isfile('voix/mix-ambiance.wav') and os.path.getmtime('voix/mix-ambiance.wav') >= os.path.getmtime(BANDE): BANDE = 'voix/mix-ambiance.wav'
 frames = sorted(glob.glob(f'{D}/clip/f*.jpg')); os.makedirs(f'{D}/compose', exist_ok=True); total = T['total']; c0 = total - 2.0
-def une_image(k):
+def image_composee(k):
     fp = frames[k]; t = k / FPS; fr = cv2.imread(fp)
     bg = HAB.fond.copy(); bg[CLIP_Y:CLIP_Y + fr.shape[0], :] = fr   # bandes nettes de la chaîne (plus de copie floutée)
     img = Image.fromarray(cv2.cvtColor(bg, cv2.COLOR_BGR2RGB)).convert('RGBA'); ov = Image.new('RGBA', img.size, (0, 0, 0, 0))
@@ -187,7 +187,18 @@ def une_image(k):
     ov.alpha_composite(HAB.calque(t), (0, 0))   # signature + titre du sketch ; carte de signature en fin de film
     a_ = HAB.autocollant(t)                       # émoji animé qui jaillit sur chaque chute
     if a_ is not None: ov.alpha_composite(a_[0], a_[1])
-    Image.alpha_composite(img, ov).convert('RGB').save(f'{D}/compose/c{k:05d}.jpg', quality=92)
+    return Image.alpha_composite(img, ov).convert('RGB')
+# BOUCLE SANS COUPURE (18/10/2026, « que mes vidéos passent en boucle partout ») : TikTok relance la vidéo d'elle-même ;
+# un revisionnage est un signal fort. Les BOUCLE_S dernières secondes se fondent dans la toute première image (l'accroche),
+# si bien que la relance ne montre aucune coupure : contrôle « boucle_sans_coupure » (dernière ≈ première image).
+BOUCLE_S = float(os.environ.get('BOUCLE_S', 0.5)); _PREMIERE = []
+def une_image(k):
+    im = image_composee(k); u = (k / FPS - (len(frames) / FPS - BOUCLE_S)) / BOUCLE_S if BOUCLE_S > 0 else -1
+    if u > 0:
+        if not _PREMIERE: _PREMIERE.append(image_composee(0))
+        a = min(1.0, (k + 1 - (len(frames) - BOUCLE_S * FPS)) / (BOUCLE_S * FPS)); a = a * a * (3 - 2 * a)
+        im = Image.blend(im, _PREMIERE[0], a)
+    im.save(f'{D}/compose/c{k:05d}.jpg', quality=92)
 # MONTAGE EN PARALLÈLE (18/10/2026) : à 60 i/s, 4 047 images composées une à une prenaient environ 4 min ; chaque image est
 # indépendante (fond flouté, sous-titre, générique), elles sont réparties sur les processeurs
 import multiprocessing as _mp

@@ -2,8 +2,11 @@
 #   1. tous les scripts Python de l'app se compilent (moteur-troupe, blender, outils) ;
 #   2. la fluidité (moteur-troupe/fluide.py) : cadre exact sans déformation, réglage de couleur constant qui rapproche
 #      la source de la cible, mesure de saccade (une image figée sur deux = 50 %), retiming exact quand RIFE est présent
-#      (RIFE_DIR) ; sinon le retiming est sauté et le dit.
-import os, sys, glob, importlib.util
+#      (RIFE_DIR) ; sinon le retiming est sauté et le dit ;
+#   3. la publication TikTok (moteur-troupe/publie_tiktok.py, viral.py), sans réseau ni compte : découpe des morceaux
+#      (Media Transfer Guide), défi PKCE en hexadécimal (Login Kit for Desktop), épisode non « à publier » retenu, kit
+#      écrit, fichier hors normes retenu, étiquette IA désactivée par défaut, légendes vraies et ≤ 5 mots-dièse.
+import os, sys, glob, importlib.util, json, tempfile, shutil, hashlib
 
 ICI = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 echecs, n = [], 0
@@ -46,6 +49,36 @@ if np is not None:
             print('fluidité : cadre, couleur, saccade et retiming RIFE vérifiés')
         else:
             print('fluidité : cadre, couleur et saccade vérifiés (RIFE absent : retiming sauté, poser RIFE_DIR)')
+
+tmp = tempfile.mkdtemp(); os.environ['MASSAMBA_PRIVE_TIKTOK'] = os.path.join(tmp, 'prive')
+for k in ('TIKTOK_CLIENT_KEY', 'TIKTOK_CLIENT_SECRET', 'TIKTOK_REFRESH_TOKEN'): os.environ.pop(k, None)
+sys.path.insert(0, os.path.join(ICI, 'moteur-troupe'))
+try:
+    import publie_tiktok as pt, viral
+    M = 2 ** 20
+    if pt.decoupe(3 * M) != (3 * M, 1) or pt.decoupe(60 * M) != (60 * M, 1): echecs.append('publication : un fichier ≤ 64 Mo doit partir en un morceau')
+    cs, k = pt.decoupe(200 * M)
+    if not (5 * M <= cs <= 64 * M and 200 * M - cs * (k - 1) <= 128 * M): echecs.append(f'publication : découpe {cs} × {k} hors des règles TikTok')
+    if pt.reglages()['aigc'] is not False: echecs.append('publication : étiquette IA activée par défaut (consigne : désactivée)')
+    if not pt.reglages()['redirect_uri'].startswith('http://127.0.0.1:'): echecs.append('publication : rappel hors 127.0.0.1 (Login Kit for Desktop)')
+    E = os.path.join(tmp, 'ep07'); D = os.path.join(E, 'v1'); os.makedirs(D)
+    open(os.path.join(D, 'tiktok-1080x1920.mp4'), 'wb').write(b'\0' * 1000); open(os.path.join(D, 'legende.txt'), 'w').write('Essai\n\nCrédits — x')
+    json.dump({'a_publier': False, 'echecs': ['G_jev']}, open(os.path.join(D, 'rapport.json'), 'w'))
+    if pt.publie(D).get('voie') is not None: echecs.append('publication : un épisode pas « à publier » est parti')
+    json.dump({'a_publier': True}, open(os.path.join(D, 'rapport.json'), 'w'))
+    H = {'sketchs': [{'titre': 'LE LOYER', 'acteurs': ['TANTIE AWA', 'MODOU'], 'ressort': {'qui': 'MODOU', 'trait': 'mauvais payeur'}, 'repliques': []}]}
+    json.dump(H, open(os.path.join(E, 'histoire.json'), 'w')); json.dump({'lines': []}, open(os.path.join(E, 'timeline.json'), 'w'))
+    os.environ['VIRAL_SANS_JEV'] = '1'   # aucun appel réseau dans le contrôle
+    V = viral.variantes(H, 7, {'nom': 'machaine'})
+    if any(v.count('#') > 6 or 'Épisode 7' not in v for v in V.values()): echecs.append('viralité : légende sans « Épisode N » ou trop de mots-dièse')
+    if not pt.publie(D, voie='kit').get('normes'): echecs.append('publication : un fichier hors normes (faux MP4) n’a pas été retenu')
+    r = pt.publie(D, voie='kit', force=True)
+    if r.get('voie') != 'kit' or not os.path.isfile(os.path.join(r.get('kit', ''), 'legende.txt')): echecs.append(f'publication : kit non écrit ({r})')
+    print('publication TikTok : découpe, PKCE, garde « à publier », normes du fichier, kit, étiquette IA et légendes vérifiés')
+except Exception as e:
+    echecs.append(f'publication : {e}')
+finally:
+    shutil.rmtree(tmp, ignore_errors=True)
 
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)

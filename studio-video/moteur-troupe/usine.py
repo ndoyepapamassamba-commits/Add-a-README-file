@@ -9,7 +9,7 @@
 #                                                    → planche → export TikTok → rapport.json
 #   python3 usine.py exporte <film.mp4> <sortie>   → 1080 × 1920, H.264 High, AAC 48 kHz, −14 LUFS (déjà masterisé)
 # Bibliothèque (lieux préparés, fiches, émojis) : MASSAMBA_BIBLIO (hors dépôt : images de la troupe privées).
-import glob, json, os, shutil, subprocess, sys, time
+import re, glob, json, os, shutil, subprocess, sys, time
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 BIBLIO = os.path.expanduser(os.environ.get('MASSAMBA_BIBLIO', '~/massamba-bibliotheque'))
@@ -139,7 +139,18 @@ def finit(d, v):
         rap['non_regression'] = compare(json.load(open(refs[-1])), q); rap['non_regression']['reference'] = os.path.basename(os.path.dirname(refs[-1]))
         if rap['non_regression']['regressions']: rap['a_publier'] = False
     json.dump(rap, open(f'{D}/rapport.json', 'w'), ensure_ascii=False, indent=1)
-    for x in ('compose',):   # disque : les images composées ne servent plus une fois le film encodé et jugé
+    # PUBLICATION AUTOMATIQUE (18/10/2026, « fais automatiquement la voie retenue, sans risque et gratuite ») : un épisode
+    # « à publier » part par la voie officielle disponible (publication directe si l'app TikTok est auditée, sinon brouillon
+    # dans la boîte de réception TikTok, sinon kit « A PUBLIER ») ; le compte reste public, jamais d'étiquette IA imposée.
+    if os.environ.get('USINE_PUBLIE', '1') == '1':
+        try:
+            import publie_tiktok
+            rap['publication'] = publie_tiktok.publie(D)
+        except Exception as ex:
+            rap['publication'] = {'statut': 'erreur : ' + str(ex)[:200]}
+        json.dump(rap, open(f'{D}/rapport.json', 'w'), ensure_ascii=False, indent=1)
+    a_corriger(d, v, rap)
+    for x in ('compose',):   # disque : les images composées ne servent plus une fois le film encodé et jugé (le FILM reste)
         shutil.rmtree(f'{D}/{x}', ignore_errors=True)
     return rap
 
@@ -206,13 +217,16 @@ def compare(ref, nouv):
 # production en masse, pour ne pas avoir à revenir sur des détails déjà réglés ») : chaque remarque devient une vérification
 # exécutée sur CHAQUE épisode ; une seule en échec → l'épisode n'est pas « à publier ».
 def controles_utilisateur(D, q):
-    import cv2, marque
+    import cv2, marque, numpy as np
     R = {}
     cap = cv2.VideoCapture(f'{D}/film.mp4'); n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)); flous = []
     for k in range(1, 9):
         cap.set(cv2.CAP_PROP_POS_FRAMES, int(n * k / 9)); ok, im = cap.read()
         if ok: ok_, r_ = marque.aucun_flou(im, 282, 460); flous.append(r_) if not ok_ else None
     R['arriere_plan_sans_flou (18/10)'] = (not flous, flous[:3])
+    cap.set(cv2.CAP_PROP_POS_FRAMES, 0); ok0, i0 = cap.read(); cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, n - 1)); ok1, i1 = cap.read()
+    if ok0 and ok1:   # boucle : la relance automatique de TikTok ne doit montrer aucune coupure (écart moyen < 6 niveaux)
+        ec = float(np.abs(i0.astype(np.float32) - i1.astype(np.float32)).mean()); R['boucle_sans_coupure (18/10)'] = (ec < 6.0, round(ec, 2))
     leg = open(f'{D}/legende.txt', encoding='utf-8').read() if os.path.isfile(f'{D}/legende.txt') else ''
     R['credits_dans_la_legende_pas_a_l_image (18/10)'] = ('CC BY' in leg, None)
     P = q.get('portes', {})
@@ -237,6 +251,29 @@ def exporte(src, dst):
     return dst
 
 
+# FILE DE CORRECTION (18/10/2026, « les vidéos qui échouent aux contrôles sont corrigées, il ne faut pas les supprimer ») :
+# un épisode refusé n'est JAMAIS effacé (film, fichier TikTok, rapport restent) ; il entre dans la file avec ses portes
+# en échec et ses régressions, et `corrige` le retourne en version suivante avec le moteur du jour, comparé à la
+# version de référence, jusqu'à ce qu'il soit « à publier » ; il sort alors de la file.
+def a_corriger(d, v, rap):
+    f = os.path.join(os.path.dirname(os.path.abspath(d)), 'a-corriger.json'); ep = os.path.basename(os.path.abspath(d))
+    F = json.load(open(f, encoding='utf-8')) if os.path.isfile(f) else {}
+    if rap.get('a_publier'): F.pop(ep, None)
+    else:
+        F[ep] = {'version': v, 'date': time.strftime('%Y-%m-%d %H:%M'), 'portes': rap.get('portes'), 'echecs': rap.get('echecs'),
+                 'regressions': (rap.get('non_regression') or {}).get('regressions', []),
+                 'controles': [k for k, c in (rap.get('controles_utilisateur') or {}).items() if isinstance(c, dict) and not c.get('ok')],
+                 'essais': (F.get(ep) or {}).get('essais', 0) + 1}
+    json.dump(F, open(f, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+
+
+def corrige(d):
+    """retourne l'épisode en version suivante (v1 → v2 …) avec le moteur corrigé ; rien n'est supprimé."""
+    d = os.path.abspath(d); vs = sorted(int(x[1:]) for x in os.listdir(d) if re.fullmatch(r'v\d+', x) and os.path.isdir(os.path.join(d, x)))
+    v = f'v{(vs[-1] + 1) if vs else 1}'
+    return tourne(d, v)
+
+
 if __name__ == '__main__':
     c = sys.argv[1]
     if c == 'pret':
@@ -245,3 +282,6 @@ if __name__ == '__main__':
     elif c == 'tourne': print(json.dumps(tourne(sys.argv[2], sys.argv[3]), ensure_ascii=False, indent=1))
     elif c == 'exporte': print(exporte(sys.argv[2], sys.argv[3]))
     elif c == 'finit': print(json.dumps(finit(sys.argv[2], sys.argv[3]), ensure_ascii=False, indent=1))
+    elif c == 'a_corriger':
+        f = os.path.join(BIBLIO, 'a-corriger.json'); print(open(f, encoding='utf-8').read() if os.path.isfile(f) else '{}')
+    elif c == 'corrige': print(json.dumps(corrige(sys.argv[2]), ensure_ascii=False, indent=1))

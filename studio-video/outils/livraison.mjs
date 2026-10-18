@@ -64,6 +64,14 @@ const LANCEURS = {
     'pause',
     '',
   ].join('\r\n'),
+  'Connecter mon TikTok.cmd': [
+    '@echo off',
+    'rem Autorisation officielle TikTok (une fois) : la page s ouvre dans VOTRE navigateur, vous acceptez, c est tout.',
+    'rem La cle de votre app TikTok et les jetons restent dans le dossier prive de ce poste (jamais envoyes ailleurs).',
+    'python "%~dp0moteur-troupe\\publie_tiktok.py" connecte',
+    'pause',
+    '',
+  ].join('\r\n'),
   'lancer-studio-video.sh': ['#!/bin/sh', '# Ouvre MASSAMBA Studio Video (Mac : open ; Linux : xdg-open).', `cd "$(dirname "$0")"`, `if command -v open >/dev/null 2>&1; then open "${APP}"; else xdg-open "${APP}"; fi`, ''].join('\n'),
 };
 

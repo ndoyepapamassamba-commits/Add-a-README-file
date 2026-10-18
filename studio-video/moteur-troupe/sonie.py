@@ -55,7 +55,7 @@ def limiteur(y, sr=SR, plafond_db=-2.0, anticipation=0.003, relache=0.04):
 PART_AIGUS = 0.06
 
 
-def adoucit(y, sr, part=PART_AIGUS, plancher_db=-12.0):   # −12 dB (v4 : à −9, « celle » de Maman restait à −9,7 dB sous la parole après mastering)
+def adoucit(y, sr, part=PART_AIGUS, plancher_db=-15.0):   # −15 dB (v4 à −9 : « celle » de Maman −9,7 dB ; v5 à −12 : une sifflante à −9,9 dB)
     from scipy.signal import stft, istft
     n = len(y); f, t, Z = stft(y, sr, nperseg=1024, noverlap=768); P = np.abs(Z) ** 2
     hf = f >= 5000; tot = P.sum(0) + 1e-12; r = P[hf].sum(0) / tot

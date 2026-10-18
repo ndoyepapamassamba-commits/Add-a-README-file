@@ -2,7 +2,7 @@
 // Vidéo IA, bac à sable « Réalisation », Studio 3D, moteur de la troupe et réglages propres à la vidéo. Elle s'appuie sur
 // le socle de Workbench (client OpenRouter, JEV, composants) sans en contenir les écrans.
 import { useEffect, useState } from 'react';
-import { Box, Clapperboard, Film, ImagePlay, KeyRound, Moon, Settings as SettingsIcon, Sparkles, Sun, Wand2, Workflow } from 'lucide-react';
+import { Box, Clapperboard, Coins, Film, ImagePlay, KeyRound, Moon, Settings as SettingsIcon, Sparkles, Sun, Wand2, Workflow } from 'lucide-react';
 import { Button, Field, IconButton, Input, Spinner, Toggle } from '@workbench/web/components/ui';
 import { cx } from '@workbench/web/lib/format';
 import { getKey, loadCatalog, maskKey, provider, setKey } from '@workbench/direct/lib/llm';
@@ -16,6 +16,7 @@ import { AnimerImage } from '../interface/AnimerImage';
 import { RealizeView } from '../interface/RealizeView';
 import { Lab3DView } from '../interface/Lab3DView';
 import { MoteurTroupe } from '../interface/MoteurTroupe';
+import { Monetisation } from '../interface/Monetisation';
 import { CHAMPS, useReglages, type ReglagesVideo } from '../navigateur/reglages';
 import { reprendreDeWorkbench } from './reprise';
 import { ECRANS, type Ecran } from './ecrans';
@@ -27,6 +28,7 @@ const ICONES: Record<Ecran, React.ReactNode> = {
   realize: <Wand2 size={17} />,
   lab3d: <Box size={17} />,
   troupe: <Workflow size={17} />,
+  monetisation: <Coins size={17} />,
   reglages: <SettingsIcon size={17} />,
 };
 const ECRAN = 'sv.ecran';
@@ -211,6 +213,7 @@ function Coquille() {
           {ecran === 'realize' && <RealizeView />}
           {ecran === 'lab3d' && <Lab3DView />}
           {ecran === 'troupe' && <MoteurTroupe />}
+          {ecran === 'monetisation' && <Monetisation />}
           {ecran === 'reglages' && <Reglages />}
         </main>
       </div>

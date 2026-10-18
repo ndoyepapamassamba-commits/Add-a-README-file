@@ -1211,7 +1211,11 @@ def realise(plans):
         if propres: choix = max(propres, key=lambda k_: pr.get(k_, 0.0))
         else:   # aucun cadre propre : le moins douteux parmi les conformes, sinon parmi les lisibles sans tête coupée
             ok2 = [k_ for k_ in noms if a[f'coupe_{k_}']['noul'] < 0.5 and a[f'lisible_{k_}']['noul'] > 0.5]
-            choix = min(ok_ or ok2 or noms, key=sale)
+            # BOUCHE LISIBLE AVANT TOUT (18/10/2026, v5) : sans cadre conforme, le repli prenait le plus « propre » — le plan large
+            # du loyer (visages de 66 px) — et la porte B tombait (17/22) alors qu'un cadre à 82 px existait ; la règle
+            # géométrique de la porte B passe donc avant la propreté du rendu
+            g_ = [k_ for k_ in noms if grand(k_) and a[f'coupe_{k_}']['noul'] < 0.5]
+            choix = min(ok_ or [k_ for k_ in ok2 if grand(k_)] or g_ or ok2 or noms, key=sale)
         d_ = {'choix': choix, 'conforme': bool(propres), 'probabilites': pr, 'coupe': {k_: round(a[f'coupe_{k_}']['noul'], 2) for k_ in noms},
               'lisible': {k_: round(a[f'lisible_{k_}']['noul'], 2) for k_ in noms}, 'rendu': {k_: round(a[f'propre_{k_}']['noul'], 2) for k_ in noms},
               'mains': {k_: round(a[f'mains_{k_}']['noul'], 2) for k_ in noms},

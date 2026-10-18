@@ -9,6 +9,7 @@ const NOMS: Record<string, string> = {
   'AI Film Studio': 'Film Autopilot',
   'Film Autopilot': 'Film Autopilot',
   'Moteur de la troupe': 'Moteur de la troupe',
+  Monétisation: 'Monétisation',
   Réglages: 'Réglages',
 };
 

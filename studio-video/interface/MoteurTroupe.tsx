@@ -31,6 +31,34 @@ const ETAPES: Etape[] = [
     cmd: 'python3 moteur-troupe/controle_video.py sortie/film.mp4 timeline.json sortie/tournage.json sortie/controle.json',
   },
   { titre: '10. Œil de JEV sur le film', quoi: 'tête coupée, visage déformé, artefacts, style : une image par plan (test 7)', cmd: 'python3 moteur-troupe/jev_plans.py sortie/film.mp4 sortie/tournage.json sortie/jev_plans.json' },
+  {
+    titre: '11. Usine : un épisode complet, d’un bouton',
+    quoi: 'voix → bouches → rires → ambiance → visages → tournage → montage → fichier TikTok 1080 × 1920 ; 17 portes, non-régression contre la dernière version livrée, puis publication si tout passe',
+    cmd: 'python3 moteur-troupe/usine.py tourne <dossier de l’épisode> v1',
+  },
+  {
+    titre: '12. Connecter TikTok (une fois)',
+    quoi: 'autorisation officielle TikTok dans VOTRE navigateur ; la clé et les jetons restent dans le dossier privé de votre poste',
+    cmd: 'python3 moteur-troupe/publie_tiktok.py connecte',
+  },
+  {
+    titre: '13. Publication TikTok automatique',
+    quoi: 'voie officielle, gratuite, compte public conservé : publication directe (app auditée), sinon brouillon dans votre boîte TikTok, sinon kit « A PUBLIER » ; légende choisie par JEV, couverture au premier choc',
+    cmd: 'python3 moteur-troupe/publie_tiktok.py publie <dossier de l’épisode>/v1',
+  },
+  { titre: '14. Créneaux appris', quoi: 'vues, partages et commentaires de vos vidéos (API officielle) → créneaux de publication qui marchent sur votre public', cmd: 'python3 moteur-troupe/publie_tiktok.py apprend' },
+];
+
+// PUBLICATION ET VIRALITÉ (18/10/2026) : ce que TikTok dit mesurer d'abord (finir une vidéo longue, partager, commenter,
+// s'abonner) et ce que l'usine en fait à chaque épisode.
+const VIRAL: [string, string][] = [
+  ['Accroche', 'les 2,5 premières secondes et « ATTENDS LE DERNIER » gardent le spectateur jusqu’au bout (signal le plus fort).'],
+  ['Partage', 'la légende propose de l’envoyer à quelqu’un qui ressemble au personnage.'],
+  ['Commentaire', 'question à camps (« team Coumba ou team Koffi ? ») ; JEV choisit la meilleure légende parmi quatre.'],
+  ['Recherche', 'les sujets dits dans le film en tête de légende ; cinq mots-dièse au plus (niche, large, chaîne).'],
+  ['Couverture', 'l’instant du premier choc, pas la première image.'],
+  ['Créneaux', 'midi et soir à Abidjan au départ, puis appris sur les chiffres réels du compte.'],
+  ['Compte', 'toujours public (monétisation) ; étiquette « généré par IA » désactivée par défaut, réglable.'],
 ];
 
 const CARNETS: [string, string][] = [
@@ -82,6 +110,18 @@ export function MoteurTroupe() {
               <Commande cmd={e.cmd} />
             </div>
           ))}
+        </section>
+        <section className="rounded-xl border border-line bg-elev p-4" data-testid="publication-tiktok">
+          <div className="mb-2 flex items-center gap-2 text-[13.5px] font-semibold">
+            Publication TikTok et viralité <Badge tone="accent">officiel · gratuit</Badge>
+          </div>
+          <ul className="grid gap-1.5 text-[12.5px]">
+            {VIRAL.map(([t, d]) => (
+              <li key={t}>
+                <b>{t}</b> <span className="text-muted">— {d}</span>
+              </li>
+            ))}
+          </ul>
         </section>
         <section className="rounded-xl border border-line bg-elev p-4">
           <div className="mb-2 flex items-center gap-2 text-[13.5px] font-semibold">

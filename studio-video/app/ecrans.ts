@@ -1,5 +1,5 @@
 // Les écrans de Studio Vidéo, dans l'ordre de la navigation.
-export type Ecran = 'animer' | 'film' | 'videogen' | 'realize' | 'lab3d' | 'troupe' | 'reglages';
+export type Ecran = 'animer' | 'film' | 'videogen' | 'realize' | 'lab3d' | 'troupe' | 'monetisation' | 'reglages';
 export const ECRANS: { id: Ecran; label: string; aide: string }[] = [
   { id: 'animer', label: 'Animer mon image', aide: 'Votre image + un mouvement → un clip calculé sur un vrai GPU distant (Wan 2.2, gratuit, votre quota du jour), jugé par JEV.' },
   { id: 'film', label: 'Film Autopilot', aide: 'Une idée → histoire, scènes, images, animation, montage : le studio de film IA complet.' },
@@ -7,5 +7,6 @@ export const ECRANS: { id: Ecran; label: string; aide: string }[] = [
   { id: 'realize', label: 'Réalisation', aide: 'Bac à sable : tout prompt devient une réalisation exécutée, corrigée et filmée.' },
   { id: 'lab3d', label: 'Studio 3D', aide: 'Bac à sable three.js : physique, shaders, export GLB, génération IA corrigée, pont Blender.' },
   { id: 'troupe', label: 'Moteur de la troupe', aide: 'La chaîne Python des films de la troupe et ses carnets GPU gratuits.' },
+  { id: 'monetisation', label: 'Monétisation', aide: 'Programmes de rémunération de chaque plateforme, progression de vos comptes, revenus notés.' },
   { id: 'reglages', label: 'Réglages', aide: 'Clés OpenRouter et JEV, clés des moteurs vidéo, pont Blender local.' },
 ];

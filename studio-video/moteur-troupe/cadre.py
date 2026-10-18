@@ -42,6 +42,23 @@ def mesurer(fichiers):
     return res
 
 
+def image_seule(film):
+    """film 9:16 HABILLÉ (576 × 1024 : bandes de la chaîne au-dessus et au-dessous, marque.py) → la zone de l'image des
+    acteurs (y 282–742), seule comparable aux TikTok de référence (image plein cadre). 18/10/2026 : les bandes fixes
+    couvrent 55 % de l'écran ; la caméra (flux MÉDIAN de l'image) tombait à 0,10 px/i et les coupes n'étaient plus vues
+    (13,9 plans/min) alors que le découpage n'avait pas changé — l'instrument mesurait l'habillage, pas le film."""
+    try:
+        w, h = map(int, subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', film],
+                                       capture_output=True, text=True, check=True).stdout.strip().split(','))
+    except Exception:
+        return film
+    if (w, h) != (576, 1024) or os.environ.get('CADRE_ZONE', '1') != '1': return film
+    sortie = film[:-4] + '-image.mp4'
+    if not os.path.isfile(sortie) or os.path.getmtime(sortie) < os.path.getmtime(film):
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', film, '-vf', 'crop=576:460:0:282', '-an', '-c:v', 'libx264', '-crf', '16', '-preset', 'veryfast', sortie], check=True)
+    return sortie
+
+
 def fourchettes(mesures):
     v = list(mesures.values()); g = {}
     for k, *_ in METRIQUES:
@@ -68,7 +85,7 @@ if __name__ == '__main__':
         print(f'gabarit écrit : {dest}')
     elif cmd == 'juge':
         film = sys.argv[2]; gab = sys.argv[3] if len(sys.argv) > 3 else os.path.join(ICI, 'gabarit_tiktok.json')
-        G = json.load(open(gab)); m = list(mesurer([film]).values())[0]; lignes = []; ok = 0
+        G = json.load(open(gab)); m = list(mesurer([image_seule(film)]).values())[0]; lignes = []; ok = 0
         print(f"| Mesure | Ce film | Vos TikTok (quart bas – médiane – quart haut) | Studios 3D (médiane) | Verdict |\n|---|---|---|---|---|")
         for k, nom, sens, fmt in METRIQUES:
             r = G['tiktok'][k]; s = G['studios'][k]['mediane'] if G.get('studios') else None; v = verdict(m[k], r, sens); ok += v == '✅'
