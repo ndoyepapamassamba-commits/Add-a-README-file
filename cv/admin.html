@@ -36,7 +36,7 @@
       </div>
       <button type="submit" class="btn btn-primary btn-block" id="login-btn"><span class="btn-label">Se connecter</span></button>
     </form>
-    <p class="hint" style="margin-top:12px">La clé est gardée sur cet appareil uniquement. Ne la partagez pas.</p>
+    <p class="hint mt">La clé est gardée sur cet appareil uniquement. Ne la partagez pas.</p>
   </section>
 
   <section id="dash" hidden aria-labelledby="dash-title">
@@ -68,7 +68,7 @@
     <ul class="health" id="health"></ul>
 
     <h2>Commandes récentes</h2>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Commandes récentes (défilement horizontal)">
       <table class="data">
         <thead><tr><th scope="col">Référence</th><th scope="col">Statut</th><th scope="col">Montant</th><th scope="col">Produit</th><th scope="col">Paiement</th><th scope="col">Numéro payeur</th><th scope="col">Date</th></tr></thead>
         <tbody id="orders-body"></tbody>
@@ -76,7 +76,7 @@
     </div>
 
     <h2>Reversements vers votre Wave</h2>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Reversements (défilement horizontal)">
       <table class="data">
         <thead><tr><th scope="col">Jour</th><th scope="col">Montant</th><th scope="col">Numéro</th><th scope="col">Statut</th><th scope="col">Détail</th></tr></thead>
         <tbody id="payouts-body"></tbody>

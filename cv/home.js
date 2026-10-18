@@ -144,7 +144,9 @@
     });
     var id = TCV.url.param("o");
     var token = TCV.url.param("t");
-    if (id && token) resumeOrder(id, token, TCV.url.param("paiement") === "echec");
+    // A reload while editing (#creer/…) stays in the wizard even though the URL still names the order.
+    var editing = /^#creer/.test(window.location.hash);
+    if (id && token && !editing) resumeOrder(id, token, TCV.url.param("paiement") === "echec");
     else route();
   }
 

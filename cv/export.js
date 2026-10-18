@@ -35,7 +35,8 @@
   function pdf(page, filename) {
     return loadHtml2pdf().then(function (html2pdf) {
       var multi = page.scrollHeight > window.TCVRender.A4_H_PX + 1;
-      if (multi) page.classList.add("is-multipage");
+      // A single page is exported 1 px shorter than 297 mm: html2pdf rounds 1123 px up to a blank 2nd page.
+      page.classList.add(multi ? "is-multipage" : "is-exporting");
       var opt = {
         margin: multi ? [8, 0, 10, 0] : 0,
         filename: filename,
@@ -45,7 +46,7 @@
         pagebreak: { mode: ["css", "legacy"], avoid: [".tcv-item", ".tcv-para", ".tcv-h", "li"] }
       };
       var restore = function () {
-        page.classList.remove("is-multipage");
+        page.classList.remove("is-multipage", "is-exporting");
       };
       return html2pdf().set(opt).from(page).save().then(restore, function (e) {
         restore();
@@ -71,7 +72,7 @@
     return "#" + [m[1], m[2], m[3]].map(function (v) { return ("0" + Number(v).toString(16)).slice(-2); }).join("");
   }
 
-  function styleOf(node, isBlock) {
+  function styleOf(node, isBlock, isContainer) {
     var cs = window.getComputedStyle(node);
     var out = [];
     TEXT_PROPS.forEach(function (p) {
@@ -83,9 +84,8 @@
     });
     var color = hex(cs.color);
     if (color) out.push("color:" + color);
-    var lh = parseFloat(cs.lineHeight);
-    var fs = parseFloat(cs.fontSize);
-    if (lh && fs) out.push("line-height:" + Math.round((lh / fs) * 100) + "%");
+    // line-height is left to Word's own single spacing: percentage values also inflate paragraph spacing
+    // in some importers (a one-page letter became two in LibreOffice).
     if (isBlock) {
       BLOCK_PROPS.forEach(function (p) {
         var v = cs.getPropertyValue(p);
@@ -93,6 +93,8 @@
         out.push(p + ":" + v);
       });
       BORDER_SIDES.forEach(function (side) {
+        // Word/LibreOffice repeat a container's side borders on every paragraph inside it.
+        if (isContainer && (side === "left" || side === "right")) return;
         var w = parseFloat(cs.getPropertyValue("border-" + side + "-width"));
         var c = hex(cs.getPropertyValue("border-" + side + "-color"));
         if (w && c && cs.getPropertyValue("border-" + side + "-style") !== "none") out.push("border-" + side + ":" + pt(w) + " solid " + c);
@@ -157,13 +159,13 @@
     if (cs.display === "none") return null;
     var w = src.getAttribute("data-w");
     if (w && !asCell) return cellsTable(src, out, w);
-    var inline = cs.display === "inline" || !BLOCK_TAGS[src.tagName];
-    var name = inline ? "span" : BLOCK_TAGS[src.tagName];
+    var inline = cs.display === "inline" || cs.display === "inline-block";
+    var name = inline ? "span" : BLOCK_TAGS[src.tagName] || "p";
     // Lists without markers (contacts, languages) become plain paragraphs so Word adds no bullets.
     if (name === "ul" && cs.listStyleType === "none") name = "div";
     if (name === "li" && window.getComputedStyle(src.parentNode).listStyleType === "none") name = "p";
     var node = out.createElement(name);
-    node.setAttribute("style", styleOf(src, !inline));
+    node.setAttribute("style", styleOf(src, !inline, name === "div"));
     convertChildren(src, node, out);
     return node;
   }

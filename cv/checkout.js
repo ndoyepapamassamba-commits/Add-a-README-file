@@ -177,7 +177,6 @@
     if (typeof IntersectionObserver !== "function") return;
     var bar = $("#paybar");
     new IntersectionObserver(function (entries) {
-      bar.classList.toggle("is-away", entries[0].isIntersecting);
       bar.style.visibility = entries[0].isIntersecting ? "hidden" : "";
     }).observe($("#pay-btn"));
   }

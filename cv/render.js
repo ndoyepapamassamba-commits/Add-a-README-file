@@ -107,7 +107,8 @@
   function bulletList(items, path, cls) {
     var ul = el("ul", cls || "tcv-list");
     items.forEach(function (item, i) {
-      ul.appendChild(field("li", null, item, path + "." + i));
+      // E-mail addresses may break anywhere; html2canvas (PDF) ignores overflow-wrap:anywhere.
+      ul.appendChild(field("li", /@/.test(item) ? "tcv-email" : null, item, path + "." + i));
     });
     return ul;
   }
@@ -493,7 +494,10 @@
       size = Math.round((size - 0.25) * 100) / 100;
       p.style.fontSize = size + "pt";
     }
-    return p.scrollHeight <= A4_H_PX + 1;
+    if (p.scrollHeight <= A4_H_PX + 1) return true;
+    // Two pages are needed anyway: keep the comfortable reading size.
+    p.style.fontSize = base + "pt";
+    return false;
   }
 
   window.TCVRender = {
