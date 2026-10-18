@@ -641,8 +641,11 @@ def enveloppe(R, seuil=0.04):
               # vu le 17/10 : le souffle étirait les poignets de Baye posés sur les accoudoirs, le lacet son col
               'souffle': ([0.004, 0.008, 0.012, 0.016, 0.02], lambda v: {'souffle': v}), 'tete_lacet': ([6, 10, 14, 18], lambda v: {'tete_lacet': v}),
               # le buste qui tourne (cylindre) : vu le 17/10, −5,9° étiraient de 7 % le bras de Maman, poing sur la hanche
-              'buste_lacet': ([2, 4, 6, 8], lambda v: {'buste_lacet': v})}
-    tol = {'tete_lacet': 1.5 * seuil}
+              'buste_lacet': ([2, 4, 6, 8], lambda v: {'buste_lacet': v}),
+              # le hochement (tangage) : vu le 18/10 sur la v32, le cou de Maman, devenu opaque sous le menton, s'étirait
+              # à chaque hochement (corrélation 0,79 avec le tangage, porte C) — même tolérance que le lacet (le cou plie)
+              'tete_tangage': ([1, 2, 3, 4, 6, 9], lambda v: {'tete_tangage': v})}
+    tol = {'tete_lacet': 1.5 * seuil, 'tete_tangage': 1.5 * seuil}
     for canal, (vals, f) in essais.items():
         if canal == 'bassin_x' and R['assis']: out[canal] = 0.0; continue
         best = 0.0

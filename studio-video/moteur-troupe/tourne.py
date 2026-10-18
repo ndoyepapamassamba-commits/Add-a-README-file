@@ -193,7 +193,7 @@ for sk in T['sketchs']:
             assis_ = prepare_rig.assis(a); box_ = rig2d.boite(a['bbox'], img.shape)
             R_ = rig2d.preparer(im_a, al, a['pts'], a['bbox'], gestes.classes(img, box_), plaque=plate, bras=bras_, segmente=gestes.classes, visage3d=v3, assis=assis_)
             dl = f'{d}/expressions/{sl}'
-            A_['xl'] = expressions_lp.charge(dl, im_a, v3) if os.path.isfile(f'{dl}/meta.json') and v3 is not None else None
+            A_['xl'] = expressions_lp.charge(dl, im_a, v3, alpha=R_['alpha_corps']) if os.path.isfile(f'{dl}/meta.json') and v3 is not None else None   # la découpe suit le visage
             src00 = im_a   # le visage tel qu'il sera tourné au repos : les yeux du regard sont pris dessus (pas de saut au premier coup d'œil)
             if A_['xl']: src00 = expressions_lp.colle(im_a, A_['xl'], expressions_lp.visage(A_['xl'], {}, 0.0))
             elif lib:
@@ -404,10 +404,12 @@ def warp_rig(S, A, t, name):
     f = min(NF - 1, max(0, int(round(t * FPS)))); P = S['pistes'][name]; v = lambda k: float(P[k][f])
     jj = machoire(name, t); bb = v('cligne') if 'cligne' in P else blink(name, t)   # clignements du regard vivant (jeu.yeux)
     emo = {e: v('emo_' + e) for e in jeu.EMOS if P['emo_' + e][f] > 0.02}
-    src = A['img']; lib = A['lib']
+    src = A['img']; lib = A['lib']; al_v = None
     if A.get('xl'):   # visage redessiné (LivePortrait) : émotions × bouche × clignement
         vb = A['a'].get('visage', {}).get('box'); vpx = (vb[3] - vb[1]) * ECHELLE_PLAN[0] if vb else None
-        src = expressions_lp.colle(src, A['xl'], expressions_lp.visage(A["xl"], emo, jj, bb, vpx))
+        face, a_v = expressions_lp.visage(A["xl"], emo, jj, bb, vpx, avec_alpha=True)
+        src = expressions_lp.colle(src, A['xl'], face)
+        if a_v is not None: al_v = expressions_lp.colle_alpha(A['rig']['alpha_corps'], A['xl'], a_v)   # découpe qui suit le visage (v33)
     else:
         if lib:
             x = jj * 4; i0 = int(min(3, math.floor(x))); fa = x - i0
@@ -422,7 +424,7 @@ def warp_rig(S, A, t, name):
     gest = [(v(f'geste_{k}') * b['amax'], 1 + v(f'geste_{k}') * (b['emax'] - 1)) for k, b in enumerate(R_['bras'])]
     pose = dict(buste=v('buste'), buste_lacet=v('buste_lacet'), tete=v('tete'), tete_lacet=v('tete_lacet'), tete_tangage=v('tete_tangage'),
                 souffle=v('souffle'), epaules=v('epaules'), bassin=(v('bassin_x'), v('bassin_y')), gestes=gest)
-    box, rgb, al, sx, sy = rig2d.rendre(R_, pose, src)
+    box, rgb, al, sx, sy = rig2d.rendre(R_, pose, src, al_v)
     if MESURE:
         I_ = R_['M']['idx']
         gx = ((sx - R_['gx'][0]) / R_['cell']).round().astype(int).clip(0, len(R_['gx']) - 1); gy = ((sy - R_['gy'][0]) / R_['cell']).round().astype(int).clip(0, len(R_['gy']) - 1)

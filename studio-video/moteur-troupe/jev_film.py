@@ -72,7 +72,9 @@ if __name__ == '__main__':
     MP4, TOUR, TL, OUT = sys.argv[1:5]
     TO = json.load(open(TOUR)); T = json.load(open(TL)); SH = TO['decoupage']; EMP = TO.get('empreintes', {})
     SRC = os.path.join(os.path.dirname(os.path.abspath(TOUR)), 'source')
-    cartes = [(c['t0'] - 0.05, c['t1'] + 0.2) for c in T.get('cartes', [])]
+    # la carte s'arrête sur la coupe vers le sketch suivant (tourne.rend) : les images de ce plan ne sont plus des cartes —
+    # v32 : 16 images du plan d'ouverture du maquis et de la cour jugées « titre illisible » alors qu'aucun titre n'y est
+    cartes = [(c['t0'] - 0.05, c['t1'] + 0.2, c.get('apres')) for c in T.get('cartes', [])]
     cap = cv2.VideoCapture(MP4); images = []
     while True:
         ok, f = cap.read()
@@ -83,7 +85,7 @@ if __name__ == '__main__':
     refs = {i: (cv2.imread(os.path.join(SRC, f'{s[0]:06.2f}.jpg')) if os.path.isfile(os.path.join(SRC, f'{s[0]:06.2f}.jpg')) else None) for i, s in enumerate(SH)}
     taches = []
     for n in range(N):
-        t = n / FPS; i = plan_de(t); carte = any(a <= t < b for a, b in cartes); cle = EMP.get(f'{SH[i][0]:.2f}')
+        t = n / FPS; i = plan_de(t); carte = any(a <= t < b and SH[i][2] != ap for a, b, ap in cartes); cle = EMP.get(f'{SH[i][0]:.2f}')
         taches.append({'n': n, 't': round(t, 3), 'plan': i, 'carte': carte, 'Q': CARTE if carte else N1,
                        'cache': f"{CJ}/{cle}_{n - int(round(SH[i][0] * FPS))}_{QV}_{int(carte)}.json" if cle else None})
     AV = {x['n']: json.load(open(x['cache'])) for x in taches if x['cache'] and os.path.isfile(x['cache'])}

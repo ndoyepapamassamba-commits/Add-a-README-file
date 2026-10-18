@@ -189,6 +189,7 @@ def interlocuteur(L, lignes, acteurs):
 
 
 FRAC = {'buste': 0.8, 'buste_lacet': 0.6, 'tete': 0.8, 'tete_lacet': 0.45, 'tete_tangage': 0.7, 'bassin_x': 0.8}
+LACET_ECOUTE = 4.0   # degrés : lacet minimal de l'écouteur vers celui qui parle (porte D : > 2° dans 75 % des images)
 LIM = {'buste': 3.0, 'buste_lacet': 9.0, 'tete': 6.0, 'tete_lacet': 20.0, 'tete_tangage': 9.0, 'bassin_x': 4.0}
 
 
@@ -281,7 +282,9 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
             parle = L is not None
             if aparte: sd = 0.0
             vers[i] = sd; parle_[i] = parle
-            C['tete_lacet'][i] = sd * max(0.0, (18.0 if parle else 12.0) - sd * env.get('lacet_peint', 0.0))   # ce qui manque au visage peint
+            # ce qui manque au visage peint — mais l'écouteur tourne TOUJOURS un peu la tête vers celui qui parle (18/10, v33 :
+            # visage déjà peint de trois quarts → lacet ajouté nul, l'écoute ne se voyait plus ; porte D 0,00–0,54 au lieu de ≥ 0,75)
+            C['tete_lacet'][i] = sd * max(0.0 if parle else LACET_ECOUTE, (18.0 if parle else 12.0) - sd * env.get('lacet_peint', 0.0))
             C['regard_x'][i] = sd * (0.85 if parle else 0.95)
             C['buste_lacet'][i] = sd * (7.0 if parle else 4.0)
             roll = kb * 1.2 * _bruit(0.6 * t, g + 1); tang = kb * 0.8 * _bruit(0.7 * t, g + 2); buste = kb * 0.8 * _bruit(0.35 * t, g + 3)
@@ -308,9 +311,14 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
                         # capture, les hochements sont de VRAIS hochements humains, posés après la boucle
                     roll += 2.0 * sd; uS = t - S['t0']
                     if not humain: tang += 3.0 * sum(bosse(uS - (a_ + 0.25)) for a_ in ATT[(nom, id(S))])
-            # silence avant la chute (0,5 s) : tout le monde se fige, le souffle reste
+            # silence avant la chute (0,5 s) : MAINTIEN VIVANT (« moving hold » des animateurs de Disney) — la v32 y figeait tout
+            # (× 0,3) : 0,8 s figée mesurée, seconde 62 jugée « figée » par JEV (18/10). On garde 60 % du jeu ; celui qui va
+            # lancer la chute l'anticipe : il inspire et se penche vers l'autre.
             for x in L_sk:
-                if x.get('chute') and -0.5 <= t - x['t0'] < 0: roll *= 0.3; tang *= 0.3; buste *= 0.3
+                if x.get('chute') and -0.5 <= t - x['t0'] < 0:
+                    roll *= 0.6; tang *= 0.6; buste *= 0.6
+                    if x['qui'] == nom:
+                        u_ = (t - x['t0'] + 0.5) / 0.5; buste += 1.5 * (sd or 1.0) * u_; tang += 1.0 * u_; souffle += 0.008 * u_
             C['regard_y'][i] = 0.5 * E['tristesse'][i] + 0.25 * E['emu'][i] - 0.45 * E['innocent'][i]   # + = vers le bas
             tang += 3.0 * E['tristesse'][i] - 2.0 * E['innocent'][i]   # la tête suit le regard
             C['tete'][i] = roll; C['tete_tangage'][i] = tang; C['buste'][i] = buste; C['souffle'][i] = souffle; C['epaules'][i] = ep
@@ -366,7 +374,7 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         # ── bornes de l'enveloppe du personnage
         R['buste'] = borne(R['buste'], env.get('buste', 3.0)); R['tete'] = borne(R['tete'], env.get('tete', 6.0))
         R['epaules'] = borne(R['epaules'], env.get('epaules', 3.0)); R['bassin_x'] = borne(R['bassin_x'], env.get('bassin_x', 4.0))
-        R['souffle'] = np.clip(R['souffle'], -env.get('souffle', 0.02), env.get('souffle', 0.02)); R['tete_lacet'] = borne(R['tete_lacet'], env.get('tete_lacet', 20.0)); R['tete_tangage'] = borne(R['tete_tangage'], 9.0); R['buste_lacet'] = borne(R['buste_lacet'], env.get('buste_lacet', 9.0))
+        R['souffle'] = np.clip(R['souffle'], -env.get('souffle', 0.02), env.get('souffle', 0.02)); R['tete_lacet'] = borne(R['tete_lacet'], env.get('tete_lacet', 20.0)); R['tete_tangage'] = borne(R['tete_tangage'], env.get('tete_tangage', 9.0)); R['buste_lacet'] = borne(R['buste_lacet'], env.get('buste_lacet', 9.0))
         R['regard_x'] = np.clip(R['regard_x'], -1, 1); R['regard_y'] = np.clip(R['regard_y'], -1, 1)
         for k_ in [k_ for k_ in R if k_.startswith('geste_')]: R[k_] = np.clip(R[k_], 0, 1)
         for c_ in ('tete_tangage', 'tete', 'tete_lacet', 'buste', 'buste_lacet'): R[c_] = lisse_acc(R[c_], fps)   # garde de fluidité

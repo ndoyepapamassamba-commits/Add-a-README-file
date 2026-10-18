@@ -144,10 +144,61 @@ def cherche_recette(e, rend, juger, base, journal=print):
     return c, o, dict(r, intensite=k), len(essais)
 
 
-def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev'):
+# GARDE DE SILHOUETTE (18/10/2026, v33) — vu sur la v32 : la commande « lèvres 0 » (décalage latéral de la mâchoire, point 19
+# des auteurs) de la recette « frime » de Modou (−0,07) poussait sa barbiche HORS de la silhouette dessinée, sur le ciel :
+# LivePortrait l'y inventait floue (halo clair, « rendu » 0,82 pour JEV, image 1777). Mesure sur les 7 personnages : la
+# découpe dessinée amenée sur chaque expression (flux DIS inverse) sort de 4,7 ‰ du carré chez Modou (frime), 1,6 à 3,4 ‰
+# chez cinq autres ; sans décalage, la même frime sort de 0,2 ‰ et reste lisible. Au-delà de GARDE_DEBORDE, le décalage
+# est divisé par deux, puis supprimé, et la recette gardée est rejugée par JEV.
+GARDE_DEBORDE = 1.5   # ‰ du carré de rendu
+
+
+def zone_visage(v3, box, taille):
+    """découpe dessinée et voisinage du visage (enveloppe des repères élargie), dans le carré de rendu."""
+    x, y, s = box; p = (np.asarray(v3[:, :2]) - [x, y]) * taille / s
+    h = np.zeros((taille, taille), np.uint8); cv2.fillConvexPoly(h, cv2.convexHull(np.round(p).astype(np.int32)), 1)
+    return cv2.dilate(h, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (int(0.16 * taille) | 1,) * 2)) > 0
+
+
+def debordement(n0, o, an, pres):
+    """(sorti, rentré) en ‰ du carré : la découpe dessinée an (carré de rendu) amenée sur le visage o par le flux inverse
+    depuis le neutre n0 ; seulement près du visage (pres)."""
+    t = an.shape[0]; gx, gy = np.meshgrid(np.arange(t, dtype=np.float32), np.arange(t, dtype=np.float32))
+    fi = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_MEDIUM).calc(_gris(o), _gris(n0), None)
+    ae = cv2.remap(an, gx + fi[..., 0], gy + fi[..., 1], cv2.INTER_LINEAR, borderValue=0)
+    return (round(1000 * float(((ae > 0.5) & (an < 0.5) & pres).sum()) / t / t, 2),
+            round(1000 * float(((ae < 0.5) & (an > 0.5) & pres).sum()) / t / t, 2))
+
+
+# GARDE DES LUNETTES (18/10/2026, v33) — vu sur la v32 : les commandes de sourcils (inquiet 1,3, hausser 1,0) de la peur de
+# Koffi pliaient la monture de ses lunettes noires (écart du flux à une transformation affine dans la zone des yeux :
+# 2,63 px ; « rendu » et « déformé » pour JEV sur 68 images de 71). Sans sourcils : 0,03 px. Un personnage à lunettes
+# (question posée une fois à JEV sur le neutre) voit ses commandes de sourcils divisées par deux, puis supprimées, tant que
+# la zone des yeux ne reste pas rigide (GARDE_RIGIDE).
+GARDE_RIGIDE = 0.5   # px (carré de rendu) : écart moyen du flux à la meilleure affine dans la zone des yeux
+LUNETTES = 'Is this cartoon character wearing glasses or sunglasses over the eyes?'
+
+
+def zone_yeux(v3, box, taille):
+    """yeux et sourcils (enveloppes élargies) dans le carré de rendu : là où une monture de lunettes doit rester rigide."""
+    x, y, s = box; p = (np.asarray(v3[:, :2]) - [x, y]) * taille / s; z = np.zeros((taille, taille), np.uint8)
+    for c_ in ([33, 133, 159, 145, 70, 105, 107], [263, 362, 386, 374, 300, 334, 336]):
+        cv2.fillConvexPoly(z, cv2.convexHull(np.round(p[c_]).astype(np.int32)), 1)
+    return cv2.dilate(z, np.ones((15, 15), np.uint8)) > 0
+
+
+def rigidite(n0, o, zone):
+    """écart moyen (px) du flux neutre → o à sa meilleure transformation affine, dans la zone : 0 = monture rigide."""
+    ys, xs = np.nonzero(zone); f = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_MEDIUM).calc(_gris(n0), _gris(o), None)[ys, xs]
+    A = np.c_[xs, ys, np.ones(len(xs))]; sol, *_ = np.linalg.lstsq(A, f, rcond=None); r = f - A @ sol
+    return round(float(np.sqrt((r ** 2).sum(1)).mean()), 2)
+
+
+def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alpha=None):
     """rend et range la bibliothèque d'expressions d'un personnage (une fois ; une émotion dont la recette de base a changé
     est recherchée et redessinée). Chaque émotion reçoit la RECETTE la plus lisible qui n'abîme pas CE visage
-    (cherche_recette, œil de JEV) ; sans juge, la recette de base à pleine intensité. → méta-données."""
+    (cherche_recette, œil de JEV) ; sans juge, la recette de base à pleine intensité. alpha (découpe de l'acteur, image
+    entière) : garde de silhouette (GARDE_DEBORDE). → méta-données."""
     os.makedirs(dossier, exist_ok=True); src = LP.Source(img, v3); x, y, s = src.box; BOUCHE = bouches(os.path.basename(os.path.normpath(dossier)))
     taille = int(round(min(512, max(96, s))))
     ancien = json.load(open(f'{dossier}/meta.json')) if os.path.isfile(f'{dossier}/meta.json') else {}
@@ -165,7 +216,12 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev'):
         if 'neutre' in P.get('jev', {}): v_jev['neutre'] = P['jev']['neutre']
         if repris: journal(f'  reprise : {len(repris)} émotions déjà faites')
     juger = _juge_jev() if juge == 'jev' else (juge if callable(juge) else None)
-    meta = {'version': VERSION, 'box': [x, y, s], 'taille': taille, 'bouche': BOUCHE, 'emotions': [], 'commandes': {}, 'recettes': {}, 'intensite': {}, 'jev': {}}
+    meta = {'version': VERSION, 'box': [x, y, s], 'taille': taille, 'bouche': BOUCHE, 'emotions': [], 'commandes': {}, 'recettes': {}, 'intensite': {}, 'jev': {},
+            'garde': dict(ancien.get('garde', {})) if compat else {}}
+    an = pres = None; k0 = BOUCHE.index(0) if 0 in BOUCHE else 0; zy = zone_yeux(v3, (x, y, s), taille); lun = ancien.get('lunettes') if compat else None
+    if alpha is not None:
+        Mg = np.float32([[taille / s, 0, -x * taille / s], [0, taille / s, -y * taille / s]])
+        an = cv2.warpAffine(np.asarray(alpha, np.float32), Mg, (taille, taille), flags=cv2.INTER_LINEAR, borderValue=0); pres = zone_visage(v3, (x, y, s), taille)
     rend = lambda c, m: cv2.resize(src.rendu(_commande(c, m)), (taille, taille), interpolation=cv2.INTER_AREA)
     ecrit = lambda f, o: cv2.imwrite(f, cv2.cvtColor(o, cv2.COLOR_RGB2BGR))
     lire = lambda f: cv2.cvtColor(cv2.imread(f), cv2.COLOR_BGR2RGB)
@@ -184,7 +240,39 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev'):
             except Exception as ex:
                 journal(f'  {e} : juge indisponible ({str(ex)[:80]}), recette de base')
         if e == 'neutre' and 'neutre' in v_jev and meme: meta['jev']['neutre'] = v_jev['neutre']
-        neuf = not meme
+        garde = False
+        if an is not None and e != 'neutre' and abs(c.get('levre0', 0.0)) > 1e-4 and os.path.isfile(f'{dossier}/neutre_{k0}.png'):
+            n0 = lire(f'{dossier}/neutre_{k0}.png'); f0 = f'{dossier}/{e}_{k0}.png'
+            o = fait0 if fait0 is not None else (lire(f0) if meme and os.path.isfile(f0) else rend(c, 0))
+            d0 = debordement(n0, o, an, pres); c0 = dict(c); d_ = d0
+            while d_[0] > GARDE_DEBORDE and abs(c.get('levre0', 0.0)) > 1e-4:
+                c = dict(c); c['levre0'] = round(c['levre0'] * 0.5, 4) if abs(c['levre0']) > 0.03 else 0.0
+                o = rend(c, 0); d_ = debordement(n0, o, an, pres)
+            if c != c0:
+                garde = True; fait0 = o; g_ = {'avant': c0, 'deborde_avant': d0, 'deborde': d_}
+                if juger:
+                    try: g_['jev'] = {k_: round(v_, 3) for k_, v_ in juger(o, {'abime': ABIME, 'lisible': f'Does this cartoon face clearly look {DESC[e]}?'}).items()}
+                    except Exception as ex: journal(f'  {e} : juge indisponible pour la garde ({str(ex)[:60]})')
+                meta['garde'][e] = g_; journal(f"  {e} : garde de silhouette, lèvres 0 {c0.get('levre0')} → {c.get('levre0')}, débordement {d0} → {d_} {g_.get('jev', '')}")
+        if e != 'neutre' and any(abs(c.get(k_, 0.0)) > 1e-4 for k_ in SOURCILS) and os.path.isfile(f'{dossier}/neutre_{k0}.png'):
+            n0 = lire(f'{dossier}/neutre_{k0}.png')
+            if lun is None and juger:
+                try: lun = round(float(juger(n0, {'lunettes': LUNETTES})['lunettes']), 3); journal(f'  lunettes (JEV) : {lun}')
+                except Exception as ex: journal(f'  lunettes : juge indisponible ({str(ex)[:60]})')
+            if lun is not None and lun > 0.5:
+                f0 = f'{dossier}/{e}_{k0}.png'
+                o = fait0 if fait0 is not None else (lire(f0) if meme and not garde and os.path.isfile(f0) else rend(c, 0))
+                r0 = rigidite(n0, o, zy); r_ = r0; c1 = dict(c)
+                while r_ > GARDE_RIGIDE and any(abs(c.get(k_, 0.0)) > 1e-4 for k_ in SOURCILS):
+                    c = {k_: ((round(v_ * 0.5, 4) if abs(v_ * 0.5) >= 0.1 else 0.0) if k_ in SOURCILS else v_) for k_, v_ in c.items()}
+                    o = rend(c, 0); r_ = rigidite(n0, o, zy)
+                if c != c1:
+                    garde = True; fait0 = o; g_ = meta['garde'].setdefault(e, {}); g_.update(sourcils_avant={k_: c1[k_] for k_ in SOURCILS if k_ in c1}, rigide_avant=r0, rigide=r_)
+                    if juger:
+                        try: g_['jev'] = {k_: round(v_, 3) for k_, v_ in juger(o, {'abime': ABIME, 'lisible': f'Does this cartoon face clearly look {DESC[e]}?'}).items()}
+                        except Exception as ex: journal(f'  {e} : juge indisponible pour la garde ({str(ex)[:60]})')
+                    journal(f"  {e} : garde des lunettes, écart {r0} → {r_} px, sourcils {g_['sourcils_avant']} → {({k_: c[k_] for k_ in SOURCILS if k_ in c})} {g_.get('jev', '')}")
+        neuf = not meme or garde
         for i, m in enumerate(BOUCHE):
             f = f'{dossier}/{e}_{i}.png'
             if m == 0 and fait0 is not None: ecrit(f, fait0); continue   # la recette est jugée à la bouche peinte (0)
@@ -197,6 +285,7 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev'):
     f = f'{dossier}/clos.png'
     if vieux.get('_clos') != CLOS or not os.path.isfile(f): ecrit(f, cv2.resize(src.rendu(LP.edits(**CLOS)), (taille, taille), interpolation=cv2.INTER_AREA))
     meta['commandes']['_clos'] = CLOS
+    if lun is not None: meta['lunettes'] = lun
     json.dump(meta, open(f'{dossier}/meta.json', 'w'))
     if os.path.isfile(fp): os.remove(fp)
     return meta
@@ -207,9 +296,9 @@ def _gris(im):
     return cv2.createCLAHE(2.0, (4, 4)).apply(l)
 
 
-def charge(dossier, img, v3):
+def charge(dossier, img, v3, alpha=None):
     """bibliothèque prête au tournage : images (float32), flux depuis le neutre, masque du visage, couleur recalée sur le
-    dessin d'origine."""
+    dessin d'origine. alpha (découpe de l'acteur, image entière) : la découpe suivra le visage collé (voir visage)."""
     meta = json.load(open(f'{dossier}/meta.json')); x, y, s = meta['box']; t = meta['taille']
     lire = lambda f: cv2.cvtColor(cv2.imread(f), cv2.COLOR_BGR2RGB).astype(np.float32)
     imgs = {(e, k): lire(f'{dossier}/{e}_{k}.png') for e in meta['emotions'] for k in range(len(meta['bouche']))}
@@ -262,8 +351,9 @@ def charge(dossier, img, v3):
             ouv = {e: np.maximum.accumulate(np.asarray(pre + list(v['ouverte']) + [v['ouverte'][-1]] * post, np.float64))
                    for e, v in A_['emotions'].items() if e in meta['emotions']}
     gx, gy = np.meshgrid(np.arange(t, dtype=np.float32), np.arange(t, dtype=np.float32))
+    a_c = None if alpha is None else cv2.warpAffine(np.asarray(alpha, np.float32), M, (t, t), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
     return dict(meta=meta, imgs=imgs, clos=clos, flux=flux, paires=paires, masque=masque, yeux=yeux, box=(x, y, s), taille=t, grille=(gx, gy),
-                bouche_masque=bm, ouv=ouv)
+                bouche_masque=bm, ouv=ouv, alpha=a_c, orig=orig)
 
 
 def _poids(B, emotions):
@@ -306,9 +396,10 @@ def _position(B, e, bouche):
 
 RANG_PETIT_VISAGE = 100   # v31 : le rang 140 de Modou, propre à 64 px (audit à l'échelle du film), se voyait abîmé en plan serré
                           # (visage > 150 px, « rendu » 0,77) — au-delà de 100, réservé aux visages de moins de 100 px à l'écran
-def visage(B, emotions, bouche, clignement=0.0, visage_px=None):
+def visage(B, emotions, bouche, clignement=0.0, visage_px=None, avec_alpha=False):
     """image du visage (carré de rendu) : émotions (poids), ouverture de bouche 0..1, clignement 0..1 — par morphing.
-    visage_px : hauteur du visage à l'écran dans ce plan (les plus grands rangs ne servent qu'aux petits visages)."""
+    visage_px : hauteur du visage à l'écran dans ce plan (les plus grands rangs ne servent qu'aux petits visages).
+    avec_alpha : rend aussi (image, découpe) — la découpe de l'acteur amenée sur la géométrie de l'expression."""
     n = len(B['meta']['bouche']) - 1; W = _poids(B, emotions); gx, gy = B['grille']; V = {}
     n_max = n if visage_px is None or visage_px < 100 else max([k for k, r in enumerate(B['meta']['bouche']) if r <= RANG_PETIT_VISAGE] or [n])
     for e in W:
@@ -342,6 +433,32 @@ def visage(B, emotions, bouche, clignement=0.0, visage_px=None):
         a_ = mm[..., None]; out = out * (1 - a_) + bo * a_
     if clignement > 0.02:
         a = (B['yeux'] * float(np.clip(clignement, 0, 1)))[..., None]; out = out * (1 - a) + tire(B['clos'], B['flux']['clos']) * a
+    if not avec_alpha: return out
+    # DÉCOUPE QUI SUIT LE VISAGE (18/10/2026, v33) — vu sur la v32 (Modou, image 1777, « rendu » 0,82 pour JEV) : en
+    # « frime », le menton et la barbiche remontent ; LivePortrait remplit leur ancienne place avec le ciel pâle de son carré,
+    # que la découpe d'origine gardait opaque : un halo clair au bord de la barbiche. La découpe est amenée sur la géométrie
+    # de l'expression par le même champ que l'image (point du neutre qui arrive en q) : là où le menton s'est retiré au-dessus
+    # du décor, la plaque réapparaît ; là où la mâchoire descend plus bas que le dessin, la découpe s'étend. Elle ne change
+    # que là où le visage collé diffère du dessin (un flux sans texture ailleurs — ciel, oreilles — ne la fait pas trembler).
+    if B.get('alpha') is None: return out, None
+    a0 = B['alpha']; a_t = cv2.remap(a0, px, py, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+    t = B['taille']; ch = np.clip((np.abs(out - B['orig']).max(2) - 12.0) / 24.0, 0, 1)
+    ch = cv2.GaussianBlur(ch.astype(np.float32), (0, 0), max(1.0, 0.006 * t))
+    d = (a_t - a0) * ch; m = B['masque']
+    d = np.where(d > 0, d * m, d * np.clip(2 * m, 0, 1))   # s'étendre : seulement où le visage est collé ; se retirer : jusqu'au bord du masque
+    return out, a0 + d
+
+
+def colle_alpha(alpha, B, a_face):
+    """découpe de l'acteur (image entière) mise à jour par celle du visage (visage(..., avec_alpha=True)) : seul l'écart
+    est reporté, la découpe reste au pixel près là où le visage n'a pas changé."""
+    if a_face is None: return alpha
+    x, y, s = B['box']; t = B['taille']; H, W = alpha.shape[:2]
+    M = np.float32([[s / t, 0, x], [0, s / t, y]])
+    x0, y0, x1, y1 = max(0, int(np.floor(x))), max(0, int(np.floor(y))), min(W, int(np.ceil(x + s))), min(H, int(np.ceil(y + s)))
+    Mi = M.copy(); Mi[0, 2] -= x0; Mi[1, 2] -= y0
+    d = cv2.warpAffine((a_face - B['alpha']).astype(np.float32), Mi, (x1 - x0, y1 - y0), flags=cv2.INTER_LINEAR, borderValue=0)
+    out = alpha.copy(); out[y0:y1, x0:x1] = np.clip(out[y0:y1, x0:x1] + d, 0, 1)
     return out
 
 
