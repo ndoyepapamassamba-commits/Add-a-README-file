@@ -45,5 +45,20 @@ window.TCV_DATA = {
   languageLevels: ["Langue maternelle", "Courant", "Bon niveau", "Intermédiaire", "Notions"],
   interests: ["Lecture", "Football", "Bénévolat", "Musique", "Sport", "Voyages", "Cuisine", "Informatique", "Vie associative", "Basket-ball"],
   cities: ["Dakar", "Pikine", "Guédiawaye", "Rufisque", "Keur Massar", "Thiès", "Mbour", "Saint-Louis", "Kaolack", "Touba", "Ziguinchor", "Diourbel", "Louga", "Tambacounda", "Kolda", "Fatick", "Kaffrine", "Matam", "Sédhiou", "Kédougou"],
-  sources: ["Emploi Dakar", "Senjob", "LinkedIn", "Facebook", "votre site internet"]
+  sources: ["Emploi Dakar", "Senjob", "LinkedIn", "Facebook", "votre site internet"],
+  // Pack Stage. Values are sent as typed (internship.studyLevel is free text, ≤ 40); "Autre" asks for a precision.
+  studyLevels: ["BTS", "DUT/ISEP", "Licence 1", "Licence 2", "Licence 3", "Licence pro", "Master 1", "Master 2", "Autre"],
+  // Keys mirror InternshipType; `label` completes "Stage …" and the letter subject "Demande de stage …".
+  internshipTypes: [
+    { key: "academique", label: "académique", hint: "Pendant l'année, demandé par votre école" },
+    { key: "fin_etudes", label: "de fin d'études", hint: "Pour valider votre diplôme (rapport, mémoire)" },
+    { key: "vacances", label: "de vacances", hint: "Pendant les vacances scolaires ou universitaires" },
+    { key: "perfectionnement", label: "de perfectionnement", hint: "Après le diplôme, pour gagner en pratique" }
+  ],
+  // Keys mirror SendChannel.
+  channels: [
+    { key: "email", label: "E-mail" },
+    { key: "whatsapp", label: "WhatsApp" },
+    { key: "depot", label: "Dépôt en main propre" }
+  ]
 };

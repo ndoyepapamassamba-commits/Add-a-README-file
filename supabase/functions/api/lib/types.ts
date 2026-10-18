@@ -1,7 +1,9 @@
 // Shared contract for the Teranga CV backend. Every module imports from here.
 // Changing a type here changes the API contract with the frontend (cv/*.js) — keep in sync with SPEC.md.
 
-export type Product = "cv" | "lettre" | "pack";
+export type Product = "cv" | "lettre" | "pack" | "stage";
+export type InternshipType = "academique" | "fin_etudes" | "vacances" | "perfectionnement";
+export type SendChannel = "email" | "whatsapp" | "depot";
 export type Template = "classique" | "moderne" | "elegant";
 export type Civility = "M" | "Mme";
 export type JobKind = "emploi" | "stage" | "alternance";
@@ -66,6 +68,23 @@ export interface OrderInput {
     qualities: string[];
     motivation?: string;
   };
+  /** Required when product is "stage" (Pack Stage). `letter` is ignored for "stage". */
+  internship?: {
+    school: string;
+    program: string; // filière, e.g. "Comptabilité et gestion"
+    studyLevel: string; // e.g. "BTS", "Licence 3", "Master 1"
+    internshipType: InternshipType;
+    start?: string; // free text, e.g. "janvier 2027"
+    end?: string;
+    durationText?: string; // e.g. "3 mois"
+    conventionProvided: boolean;
+    department?: string; // service visé, e.g. "Comptabilité"
+    projects: string[]; // academic projects / associative activities typed by the student (facts only)
+    qualities: string[];
+    channel: SendChannel;
+    /** 1 to 5 target companies. `reason` = the student's own words on why this company (20–300 chars). */
+    companies: Array<{ name: string; city?: string; recipient?: string; department?: string; reason: string }>;
+  };
 }
 
 export interface CvDoc {
@@ -92,10 +111,23 @@ export interface LettreDoc {
   signature: string;
 }
 
-/** Generated document. `cv` is null when product is "lettre"; `lettre` is null when product is "cv". */
+/** Sending message for the Pack Stage (deterministic). */
+export interface EnvoiDoc {
+  emailSubject: string;
+  emailBody: string; // 4–8 lines, ends with the list of attachments
+  whatsapp: string; // ≤ 600 chars
+}
+
+/**
+ * Generated document. `cv` is null when product is "lettre"; `lettre` is null when product is "cv".
+ * Product "stage": `cv` = student CV, `lettre` = null, `lettres` = one letter per company (same order
+ * as internship.companies), `envoi` = sending message. For other products `lettres`/`envoi` are absent.
+ */
 export interface Document {
   cv: CvDoc | null;
   lettre: LettreDoc | null;
+  lettres?: LettreDoc[];
+  envoi?: EnvoiDoc | null;
 }
 
 /**
@@ -282,7 +314,8 @@ export interface Config {
   adminKey: string | null;
   cronSecret: string | null;
   allowedReturnPrefixes: string[]; // success/error URLs must start with one of these (https only)
-  prices: Record<Product, number>;
+  prices: Record<Product, number>; // prices.stage = Pack Stage for 1 company (PRICE_STAGE, default 1500)
+  stageMultiPrice: number; // Pack Stage for 2–5 companies (PRICE_STAGE_MULTI, default 2500)
   openrouterApiKey: string | null;
   llmModel: string;
   previewRateLimitPerHour: number; // default 12

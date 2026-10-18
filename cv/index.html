@@ -24,6 +24,7 @@
 <script src="render.js" defer></script>
 <script src="app.js" defer></script>
 <script src="validate.js" defer></script>
+<script src="stage.js" defer></script>
 <script src="wizard.js" defer></script>
 <script src="checkout.js" defer></script>
 <script src="home.js" defer></script>
@@ -139,6 +140,24 @@
             </ul>
             <a class="btn btn-secondary btn-block" href="#creer" data-start="lettre">Choisir la lettre</a>
           </article>
+          <article class="offer offer-stage" id="stage" aria-labelledby="h-offer-stage">
+            <span class="offer-badge">Saison des stages</span>
+            <div class="offer-stage-main">
+              <h3 id="h-offer-stage">Pack Stage</h3>
+              <p class="offer-stage-sub">Pour les étudiants qui demandent un stage dans 1 à 5 entreprises.</p>
+              <ul>
+                <li><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>CV étudiant d'une page, formation et projets en avant</li>
+                <li><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Une lettre de demande de stage pour chaque entreprise</li>
+                <li><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Le message d'envoi prêt à copier&nbsp;: e-mail et WhatsApp</li>
+              </ul>
+            </div>
+            <div class="offer-stage-side">
+              <p class="price"><span data-price="stage">1&nbsp;500&nbsp;FCFA</span> <small>pour 1 entreprise</small></p>
+              <p class="saving"><span data-price="stageMulti">2&nbsp;500&nbsp;FCFA</span> pour 2 à 5 entreprises</p>
+              <a class="btn btn-primary btn-block" href="#creer" data-start="stage">Choisir le Pack Stage</a>
+              <p class="hint">La convention de stage reste établie par votre école.</p>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -169,6 +188,7 @@
         <details><summary>Dans quels formats je reçois mes documents&nbsp;?</summary><p>En PDF au format A4, prêt à imprimer ou à envoyer par e-mail ou WhatsApp, et en Word (.doc) modifiable. Vous pouvez aussi imprimer directement depuis la page.</p></details>
         <details><summary>Que deviennent mes données&nbsp;?</summary><p>Elles servent uniquement à rédiger vos documents. Elles sont hébergées dans l'Union européenne (Paris) et supprimées automatiquement après 30 jours (3 jours si la commande n'est pas payée). Nous ne demandons aucune donnée sensible&nbsp;: ni religion, ni ethnie, ni santé.</p></details>
         <details><summary>Le paiement n'a pas fonctionné, que faire&nbsp;?</summary><p>Revenez sur l'aperçu et réessayez. Si votre compte Wave a été débité mais que vos documents ne s'affichent pas, ouvrez « Mes documents » sur ce téléphone<span data-whatsapp hidden> ou <a href="#">écrivez-nous sur WhatsApp</a></span> en indiquant votre référence (TCV-…).</p></details>
+        <details><summary>Qu'est-ce que le Pack Stage&nbsp;?</summary><p>Pour les étudiants qui cherchent un stage&nbsp;: un CV étudiant d'une page, une lettre de demande de stage pour chaque entreprise choisie (1 à 5) et un message d'envoi prêt à copier pour l'e-mail ou WhatsApp. <span data-price="stage">1&nbsp;500&nbsp;FCFA</span> pour 1 entreprise, <span data-price="stageMulti">2&nbsp;500&nbsp;FCFA</span> de 2 à 5. La convention de stage est établie par votre école et l'entreprise&nbsp;: nous ne la rédigeons pas, et personne ne peut garantir l'obtention d'un stage.</p></details>
         <details><summary>Faites-vous des lettres pour Campus France&nbsp;?</summary><p>Non. Une lettre pour des études (Campus France, par exemple) doit présenter votre projet personnel&nbsp;: écrivez-la vous-même. Nos lettres sont destinées aux candidatures à un emploi, un stage ou une alternance au Sénégal.</p></details>
       </section>
     </div>
@@ -197,6 +217,7 @@
               <label><input type="radio" name="product" value="pack"><span class="c-title">CV + lettre de motivation <span class="c-badge">Meilleure offre</span></span><span class="c-price" data-price="pack">1&nbsp;500&nbsp;FCFA</span><span class="c-desc">Les deux documents assortis, pour une candidature complète.</span></label>
               <label><input type="radio" name="product" value="cv"><span class="c-title">CV seul</span><span class="c-price" data-price="cv">1&nbsp;000&nbsp;FCFA</span><span class="c-desc">Un CV d'une page, clair et professionnel.</span></label>
               <label><input type="radio" name="product" value="lettre"><span class="c-title">Lettre de motivation seule</span><span class="c-price" data-price="lettre">1&nbsp;000&nbsp;FCFA</span><span class="c-desc">Une lettre adressée à l'entreprise de votre choix.</span></label>
+              <label><input type="radio" name="product" value="stage"><span class="c-title">Pack Stage <span class="c-badge">Saison des stages</span></span><span class="c-price" data-price="stage">1&nbsp;500&nbsp;FCFA</span><span class="c-desc">CV étudiant + une lettre de demande de stage par entreprise + message d'envoi. <span data-price="stageMulti">2&nbsp;500&nbsp;FCFA</span> pour 2 à 5 entreprises.</span></label>
             </div>
           </fieldset>
           <p class="field-error" data-error-for="product"></p>
@@ -249,6 +270,90 @@
           </div>
         </section>
 
+        <section class="step" data-step="etudes" data-title="Études" hidden aria-labelledby="h-etudes">
+          <h2 id="h-etudes" tabindex="-1">Vos études</h2>
+          <p class="step-intro">Votre formation actuelle&nbsp;: elle sera reprise dans votre CV et dans chaque lettre.</p>
+          <div class="field">
+            <label for="f-school">École ou université <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" id="f-school" name="internship.school" maxlength="100" autocomplete="organization" placeholder="Ex. : UCAD, ISM, ISEP de Thiès" aria-describedby="e-school">
+            <p class="field-error" id="e-school" data-error-for="internship.school"></p>
+          </div>
+          <div class="field">
+            <label for="f-program">Filière <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" id="f-program" name="internship.program" maxlength="100" placeholder="Ex. : Comptabilité et gestion" aria-describedby="e-program">
+            <p class="field-error" id="e-program" data-error-for="internship.program"></p>
+          </div>
+          <div class="field">
+            <label for="f-studyLevel">Niveau d'études <span class="req" aria-hidden="true">*</span></label>
+            <select id="f-studyLevel" name="internship.studyLevel" aria-describedby="e-studyLevel"><option value="">Choisir votre niveau…</option></select>
+            <div class="sub-field" id="study-level-other" hidden>
+              <label for="f-studyLevelOther">Précisez votre niveau</label>
+              <input type="text" id="f-studyLevelOther" name="internship.studyLevelOther" maxlength="40" placeholder="Ex. : BT, Ingénieur 2e année" aria-describedby="e-studyLevel">
+            </div>
+            <p class="field-error" id="e-studyLevel" data-error-for="internship.studyLevel"></p>
+          </div>
+          <div class="field">
+            <label for="f-stage-sector">Domaine de votre filière <span class="req" aria-hidden="true">*</span></label>
+            <span class="field-hint" id="h-stage-sector">Il sert à vous proposer des compétences adaptées.</span>
+            <select id="f-stage-sector" name="target.sector" aria-describedby="h-stage-sector e-stage-sector"><option value="">Choisir un domaine…</option></select>
+            <p class="field-error" id="e-stage-sector" data-error-for="target.sector"></p>
+          </div>
+        </section>
+
+        <section class="step" data-step="stage" data-title="Stage" hidden aria-labelledby="h-stage">
+          <h2 id="h-stage" tabindex="-1">Le stage que vous cherchez</h2>
+          <fieldset class="field">
+            <legend>Type de stage <span class="req" aria-hidden="true">*</span></legend>
+            <div class="choice choice-compact" id="stage-type-options"></div>
+            <p class="field-error" id="e-internshipType" data-error-for="internship.internshipType"></p>
+          </fieldset>
+          <fieldset class="field">
+            <legend>Période <span class="opt">(facultatif, mais conseillé)</span></legend>
+            <span class="field-hint">L'entreprise doit savoir quand vous êtes disponible&nbsp;: indiquez les dates ou la durée.</span>
+            <div class="grid-2">
+              <div class="field">
+                <label for="f-start">Début</label>
+                <input type="text" id="f-start" name="internship.start" maxlength="30" placeholder="Ex. : janvier 2027" aria-describedby="e-start">
+                <p class="field-error" id="e-start" data-error-for="internship.start"></p>
+              </div>
+              <div class="field">
+                <label for="f-end">Fin</label>
+                <input type="text" id="f-end" name="internship.end" maxlength="30" placeholder="Ex. : mars 2027" aria-describedby="e-end">
+                <p class="field-error" id="e-end" data-error-for="internship.end"></p>
+              </div>
+            </div>
+            <div class="field">
+              <label for="f-durationText">Durée</label>
+              <input type="text" id="f-durationText" name="internship.durationText" maxlength="30" placeholder="Ex. : 3 mois" aria-describedby="e-durationText">
+              <p class="field-error" id="e-durationText" data-error-for="internship.durationText"></p>
+            </div>
+          </fieldset>
+          <div class="field">
+            <label for="f-department">Service visé <span class="opt">(facultatif)</span></label>
+            <input type="text" id="f-department" name="internship.department" maxlength="80" placeholder="Ex. : Comptabilité, Ressources humaines" aria-describedby="e-department">
+            <p class="field-error" id="e-department" data-error-for="internship.department"></p>
+          </div>
+          <fieldset class="field">
+            <legend>Votre école fournit-elle une convention de stage&nbsp;? <span class="req" aria-hidden="true">*</span></legend>
+            <div class="seg">
+              <label><input type="radio" name="internship.conventionProvided" value="oui" aria-describedby="e-convention"><span>Oui</span></label>
+              <label><input type="radio" name="internship.conventionProvided" value="non" aria-describedby="e-convention"><span>Non ou je ne sais pas</span></label>
+            </div>
+            <p class="field-error" id="e-convention" data-error-for="internship.conventionProvided"></p>
+          </fieldset>
+          <fieldset class="field">
+            <legend>Comment enverrez-vous vos candidatures&nbsp;? <span class="req" aria-hidden="true">*</span></legend>
+            <div class="seg" id="stage-channel-options"></div>
+            <p class="field-error" data-error-for="internship.channel"></p>
+          </fieldset>
+          <div class="field">
+            <label for="f-cvTitle">Titre en haut de votre CV <span class="opt">(facultatif)</span></label>
+            <span class="field-hint" id="h-cvTitle">Laissez vide pour garder le titre proposé.</span>
+            <input type="text" id="f-cvTitle" name="internship.cvTitle" maxlength="80" aria-describedby="h-cvTitle e-cvTitle">
+            <p class="field-error" id="e-cvTitle" data-error-for="internship.cvTitle"></p>
+          </div>
+        </section>
+
         <section class="step" data-step="objectif" data-title="Objectif" hidden aria-labelledby="h-objectif">
           <h2 id="h-objectif" tabindex="-1">Le poste que vous visez</h2>
           <div class="field">
@@ -276,16 +381,25 @@
 
         <section class="step" data-step="formation" data-title="Formation" hidden aria-labelledby="h-formation">
           <h2 id="h-formation" tabindex="-1">Votre formation</h2>
-          <p class="step-intro">Commencez par la plus récente&nbsp;: diplôme, formation professionnelle, certificat…</p>
+          <p class="step-intro" data-not="stage">Commencez par la plus récente&nbsp;: diplôme, formation professionnelle, certificat…</p>
+          <p class="step-intro" data-only="stage" hidden>Votre formation actuelle est déjà remplie à partir de vos études&nbsp;: vérifiez-la, puis ajoutez vos diplômes précédents (Bac, BFEM…).</p>
           <p class="error-text step-summary" data-error-for="education" role="alert"></p>
           <div id="edu-list"></div>
           <button type="button" class="btn btn-secondary add-btn" id="edu-add">+ Ajouter une formation</button>
         </section>
 
-        <section class="step" data-step="experiences" data-title="Expériences" hidden aria-labelledby="h-experiences">
-          <h2 id="h-experiences" tabindex="-1">Vos expériences</h2>
-          <p class="step-intro">Emplois, stages, petits boulots, bénévolat&nbsp;: tout compte. Commencez par la plus récente. Si vous n'avez pas encore d'expérience, supprimez le bloc et continuez.</p>
+        <section class="step" data-step="experiences" data-title="Expériences" data-title-stage="Projets et expériences" hidden aria-labelledby="h-experiences">
+          <h2 id="h-experiences" tabindex="-1"><span data-not="stage">Vos expériences</span><span data-only="stage" hidden>Vos projets et expériences</span></h2>
+          <p class="step-intro" data-only="stage" hidden>Projets de cours, mémoire, exposés, club, association, bénévolat&nbsp;: écrivez seulement ce que vous avez vraiment fait. Ils apparaissent dans votre CV et vos lettres.</p>
+          <p class="step-intro" data-not="stage">Emplois, stages, petits boulots, bénévolat&nbsp;: tout compte. Commencez par la plus récente. Si vous n'avez pas encore d'expérience, supprimez le bloc et continuez.</p>
           <p class="error-text step-summary" data-error-for="experiences" role="alert"></p>
+          <div class="field" data-only="stage" hidden>
+            <p class="label" id="l-projects">Projets académiques et activités <span class="opt">(4 maximum)</span></p>
+            <p class="field-error" data-error-for="internship.projects"></p>
+            <div id="proj-list" role="group" aria-labelledby="l-projects"></div>
+            <button type="button" class="btn btn-secondary btn-sm add-btn" id="proj-add">+ Ajouter un projet</button>
+          </div>
+          <h3 class="sub-title" data-only="stage" hidden>Expériences <span class="opt">(facultatif&nbsp;: stage, job de vacances, bénévolat)</span></h3>
           <div id="exp-list"></div>
           <button type="button" class="btn btn-secondary add-btn" id="exp-add">+ Ajouter une expérience</button>
         </section>
@@ -312,6 +426,11 @@
               <button type="button" class="btn btn-secondary btn-sm" data-add-for="add-it">Ajouter</button>
             </div>
             <p class="field-error" data-error-for="it"></p>
+          </div>
+          <div class="field" data-only="stage" hidden>
+            <p class="label" id="l-stage-qualities">Vos qualités <span class="opt">(jusqu'à 4, reprises dans vos lettres)</span></p>
+            <div class="chips" id="chips-stage-qualities" role="group" aria-labelledby="l-stage-qualities"></div>
+            <p class="field-error" data-error-for="internship.qualities"></p>
           </div>
         </section>
 
@@ -373,6 +492,19 @@
             <span class="counter" id="c-motivation" data-counter-for="f-motivation">0 / 600</span>
             <p class="field-error" id="e-motivation" data-error-for="letter.motivation"></p>
           </div>
+        </section>
+
+        <section class="step" data-step="entreprises" data-title="Entreprises" hidden aria-labelledby="h-entreprises">
+          <h2 id="h-entreprises" tabindex="-1">Les entreprises visées</h2>
+          <p class="step-intro">Une lettre est rédigée pour chaque entreprise (5 maximum). Seule la raison que vous écrivez personnalise la lettre&nbsp;: nous n'ajoutons aucune information sur l'entreprise.</p>
+          <p class="error-text step-summary" data-error-for="internship.companies" role="alert"></p>
+          <div id="company-list"></div>
+          <button type="button" class="btn btn-secondary add-btn" id="company-add">+ Ajouter une entreprise</button>
+          <div class="stage-price" id="stage-price" role="status">
+            <span id="stage-price-count">Prix pour 1 entreprise</span>
+            <strong id="stage-price-amount">1&nbsp;500&nbsp;FCFA</strong>
+          </div>
+          <p class="hint"><span data-price="stage">1&nbsp;500&nbsp;FCFA</span> pour 1 entreprise, <span data-price="stageMulti">2&nbsp;500&nbsp;FCFA</span> de 2 à 5 entreprises. L'aperçu reste gratuit.</p>
         </section>
 
         <p class="error-text" id="wz-error" role="alert"></p>
@@ -555,6 +687,42 @@
       <textarea data-field="missions" maxlength="800" rows="4" placeholder="Accueil et conseil des clients&#10;Gestion de la caisse&#10;Suivi des stocks"></textarea>
       <span class="counter" data-counter>0 / 800</span>
       <p class="field-error" data-error="missions"></p>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-company">
+  <div class="repeat-card">
+    <div class="repeat-head"><h3 data-card-title>Entreprise</h3><button type="button" class="btn-danger-link" data-remove>Supprimer</button></div>
+    <div class="field">
+      <label data-for="name">Nom de l'entreprise <span class="req" aria-hidden="true">*</span></label>
+      <input type="text" data-field="name" maxlength="100" autocomplete="organization">
+      <p class="field-error" data-error="name"></p>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label data-for="city">Ville <span class="opt">(facultatif)</span></label>
+        <input type="text" data-field="city" maxlength="60" list="dl-cities">
+        <p class="field-error" data-error="city"></p>
+      </div>
+      <div class="field">
+        <label data-for="department">Service visé <span class="opt">(facultatif)</span></label>
+        <input type="text" data-field="department" maxlength="80" placeholder="Ex. : Comptabilité">
+        <p class="field-error" data-error="department"></p>
+      </div>
+    </div>
+    <div class="field">
+      <label data-for="recipient">Destinataire <span class="opt">(facultatif)</span></label>
+      <span class="field-hint" data-hint="recipient">Exemple&nbsp;: Madame la Directrice des ressources humaines</span>
+      <input type="text" data-field="recipient" maxlength="100">
+      <p class="field-error" data-error="recipient"></p>
+    </div>
+    <div class="field">
+      <label data-for="reason">Pourquoi cette entreprise&nbsp;? <span class="req" aria-hidden="true">*</span></label>
+      <span class="field-hint" data-hint="reason">Avec vos mots, de 20 à 300 caractères&nbsp;: son activité, ce que vous voulez y apprendre…</span>
+      <textarea data-field="reason" maxlength="300" rows="4" placeholder="Ex. : Votre cabinet accompagne des PME et je veux apprendre la tenue des comptes sur de vrais dossiers."></textarea>
+      <span class="counter" data-counter="reason" data-min="20">0 / 300</span>
+      <p class="field-error" data-error="reason"></p>
     </div>
   </div>
 </template>

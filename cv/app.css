@@ -626,3 +626,64 @@ table.data tr:last-child td { border-bottom: 0; }
   #print-root .tcv-page:last-child { break-after: auto; page-break-after: auto; }
   #print-root [contenteditable] { outline: none !important; background: none !important; box-shadow: none !important; }
 }
+
+/* ---------- Pack Stage ---------- */
+
+/* Home card: under the three offers, full width with two columns on larger screens. */
+.offer-stage { border: 2px solid var(--ochre); margin-top: 8px; }
+.offer-stage-main { display: flex; flex-direction: column; gap: 10px; }
+.offer-stage-sub { color: var(--muted); margin: 0; }
+.offer-stage .price { line-height: 1.1; }
+.offer-stage .price small { display: block; margin-top: 4px; }
+.offer-stage-side { display: flex; flex-direction: column; gap: 8px; }
+.offer-stage-side .hint { margin: 0; text-align: center; }
+@media (min-width: 760px) {
+  .offer-stage { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px 36px; align-items: center; padding: 26px 26px 22px; }
+  .offer-stage .btn { margin-top: 4px; }
+}
+
+/* Wizard parts. */
+.choice-compact label { grid-template-columns: 26px 1fr; min-height: 56px; padding: 12px 14px; }
+.choice-compact .c-desc { grid-column: 2; }
+.sub-field { margin-top: 10px; }
+.sub-title { font-size: 1.05rem; margin: 24px 0 10px; }
+.sub-title .opt { font-weight: 500; color: var(--muted); font-size: .88rem; }
+.proj-field { margin-bottom: 12px; }
+.proj-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.proj-head label { margin: 0; }
+.proj-field textarea { min-height: 92px; }
+.stage-price {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px;
+  margin: 18px 0 8px; padding: 14px 16px; border-radius: 12px; background: var(--brand-tint); border: 1px solid #b9dccb;
+  font-weight: 700; color: var(--brand-dark);
+}
+.stage-price strong { font-size: 1.35rem; color: var(--ink); white-space: nowrap; }
+
+/* Document tabs (CV · Lettre 1…N · Message d'envoi). */
+.doc-tabs { flex: 1 1 100%; }
+.seg.seg-tabs label { min-height: 44px; }
+
+/* Sending message: screen card (preview) and editable fields (result page). */
+.envoi-frame { width: 100%; max-width: 210mm; margin: 0 auto; }
+.tcv-envoi {
+  background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 8px 22px rgba(18, 32, 45, .08); color: var(--ink); font-size: .97rem;
+}
+.tcv-envoi-block + .tcv-envoi-block { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--line); }
+.tcv-envoi-title { font-size: 1.05rem; margin: 0 0 6px; color: var(--brand-dark); }
+.tcv-envoi-label { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 10px 0 4px; }
+.tcv-envoi-subject { font-weight: 700; margin: 0; }
+.tcv-envoi-text { white-space: pre-wrap; margin: 0; line-height: 1.5; }
+.tcv-envoi-lock { margin: 16px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--sand); font-size: .92rem; color: var(--ink-2); }
+.doc-card-sub { margin: 2px 0 0; color: var(--muted); font-size: .92rem; }
+.doc-card-hint { margin: -6px 0 12px; }
+.envoi-block { margin-top: 14px; }
+.envoi-block + .envoi-block { border-top: 1px dashed var(--line); padding-top: 16px; margin-top: 18px; }
+.envoi-block h3 { font-size: 1.08rem; margin-bottom: 10px; }
+.envoi-card textarea.env-subject { min-height: 0; resize: none; font-weight: 600; }
+.envoi-actions { display: grid; gap: 8px; }
+.envoi-actions.envoi-actions-sm { display: flex; justify-content: flex-end; margin-top: 8px; }
+@media (min-width: 600px) { .envoi-actions { display: flex; flex-wrap: wrap; } }
+
+/* Off-screen host where export pages are laid out and measured. */
+.export-host { position: absolute; left: -10000px; top: 0; width: 210mm; }

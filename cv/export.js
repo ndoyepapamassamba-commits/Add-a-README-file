@@ -55,6 +55,45 @@
     });
   }
 
+  /**
+   * One A4 PDF holding several pages (Pack Stage letters), one sheet per page. Each page gets its own canvas
+   * (same settings as pdf()), appended to the same jsPDF document: memory stays low on phones.
+   */
+  function pdfPages(pages, filename) {
+    return loadHtml2pdf().then(function (html2pdf) {
+      pages.forEach(function (page) {
+        page.classList.add(page.scrollHeight > window.TCVRender.A4_H_PX + 1 ? "is-multipage" : "is-exporting");
+      });
+      var opt = {
+        margin: 0,
+        filename: filename,
+        image: { type: "jpeg", quality: 0.96 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false, scrollX: 0, scrollY: 0 },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait", compress: true },
+        pagebreak: { mode: ["css", "legacy"], avoid: [".tcv-item", ".tcv-para", ".tcv-h", "li"] }
+      };
+      var restore = function () {
+        pages.forEach(function (page) {
+          page.classList.remove("is-multipage", "is-exporting");
+        });
+      };
+      var worker = html2pdf().set(opt).from(pages[0]).toPdf();
+      pages.slice(1).forEach(function (page) {
+        worker = worker
+          .get("pdf")
+          .then(function (doc) { doc.addPage(); })
+          .from(page)
+          .toContainer()
+          .toCanvas()
+          .toPdf();
+      });
+      return worker.save().then(restore, function (e) {
+        restore();
+        throw e;
+      });
+    });
+  }
+
   /* ---------- Word ---------- */
 
   var BLOCK_PROPS = ["margin-top", "margin-bottom", "margin-left", "margin-right", "padding-top", "padding-bottom", "padding-left", "padding-right", "text-align"];
@@ -207,6 +246,27 @@
     download(blob, filename);
   }
 
+  // Word's own page-break markup; LibreOffice honours it too and the next page starts at the top margin.
+  var WORD_PAGE_BREAK = '<br clear="all" style="mso-special-character:line-break;page-break-before:always">';
+
+  /** One Word file holding several pages (Pack Stage letters), with a page break between pages. */
+  function wordPagesHtml(pages) {
+    var out = document.implementation.createHTMLDocument("");
+    var html = pages.map(function (page) {
+      var section = out.createElement("div");
+      section.className = "WordSection1";
+      section.setAttribute("style", "font-family:" + (page.getAttribute("data-word-font") || "Calibri, Arial, sans-serif"));
+      convertChildren(page, section, out);
+      return section.outerHTML;
+    });
+    return WORD_HEAD + '<body lang="FR">' + html.join(WORD_PAGE_BREAK) + "</body></html>";
+  }
+
+  function wordPages(pages, filename) {
+    var blob = new Blob(["﻿", wordPagesHtml(pages)], { type: "application/msword" });
+    download(blob, filename);
+  }
+
   /* ---------- Print ---------- */
 
   /** Prints the given pages only (copies go into #print-root, the only thing visible in print CSS). */
@@ -242,5 +302,15 @@
     return blocks.join("\n\n");
   }
 
-  window.TCVExport = { pdf: pdf, word: word, wordHtml: wordHtml, print: print, letterText: letterText, loadHtml2pdf: loadHtml2pdf };
+  window.TCVExport = {
+    pdf: pdf,
+    pdfPages: pdfPages,
+    word: word,
+    wordHtml: wordHtml,
+    wordPages: wordPages,
+    wordPagesHtml: wordPagesHtml,
+    print: print,
+    letterText: letterText,
+    loadHtml2pdf: loadHtml2pdf
+  };
 })();

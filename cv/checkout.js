@@ -7,8 +7,8 @@
   var $$ = TCV.dom.$$;
   var setText = TCV.dom.setText;
 
-  var ctx = null; // { order, token, preview, template, tab, whatsapp }
-  var views = {};
+  var ctx = null; // { order, token, preview, parts, template, tab, whatsapp }
+  var views = {}; // part key → DocView, or { frame, envoi: true } for the Pack Stage sending message
   var paying = false;
 
   function orderPath(suffix) {
@@ -26,13 +26,42 @@
     });
   }
 
-  function renderDocs() {
-    ["cv", "lettre"].forEach(function (kind) {
-      var part = ctx.preview && ctx.preview[kind];
-      var view = views[kind];
-      view.frame.hidden = !part || ctx.tab !== kind;
-      if (part) view.show(part, ctx.template);
+  /** One view per part (CV, lettre or Pack Stage letters, sending message), in display order. */
+  function buildViews() {
+    var docs = $("#pv-docs");
+    TCV.dom.clear(docs);
+    views = {};
+    ctx.parts.forEach(function (part) {
+      if (part.kind === "envoi") {
+        var frame = TCV.dom.el("div", { class: "envoi-frame", "data-doc": "envoi" });
+        docs.appendChild(frame);
+        views[part.key] = { frame: frame, envoi: true };
+      } else {
+        views[part.key] = new TCV.DocView(docs, part.kind);
+      }
     });
+  }
+
+  function showTab() {
+    ctx.parts.forEach(function (part) {
+      var view = views[part.key];
+      view.frame.hidden = ctx.tab !== part.key;
+      if (!view.frame.hidden && view.layout) view.layout();
+    });
+  }
+
+  function renderDocs() {
+    ctx.parts.forEach(function (part) {
+      var view = views[part.key];
+      var data = TCV.getPath(ctx.preview, part.path);
+      if (view.envoi) {
+        TCV.dom.clear(view.frame);
+        view.frame.appendChild(window.TCVRender.envoi(data));
+      } else {
+        view.show(data, ctx.template);
+      }
+    });
+    showTab();
   }
 
   function renderSwitchers() {
@@ -44,14 +73,22 @@
         /* the choice can still be changed after payment */
       });
     });
-    var both = !!(ctx.preview.cv && ctx.preview.lettre);
-    $("#pv-doc-tabs-wrap").hidden = !both;
-    if (both) {
-      TCV.dom.segRadios($("#pv-doc-tabs"), "pv-doc", [{ key: "cv", label: "CV" }, { key: "lettre", label: "Lettre" }], ctx.tab, function (k) {
+    var tabs = ctx.parts.length > 1;
+    $("#pv-doc-tabs-wrap").hidden = !tabs;
+    $("#pv-doc-tabs").classList.toggle("seg-tabs", ctx.parts.length > 3);
+    if (tabs) {
+      var options = ctx.parts.map(function (p) { return { key: p.key, label: p.label }; });
+      TCV.dom.segRadios($("#pv-doc-tabs"), "pv-doc", options, ctx.tab, function (k) {
         ctx.tab = k;
-        renderDocs();
+        showTab();
       });
     }
+  }
+
+  function productLine(order, preview) {
+    var label = TCV.fmt.productLabel(order.product);
+    var n = preview && Array.isArray(preview.lettres) ? preview.lettres.length : 0;
+    return order.product === "stage" && n ? label + " · " + n + (n > 1 ? " entreprises" : " entreprise") : label;
   }
 
   function payLabel() {
@@ -61,9 +98,10 @@
   /** Shows the preview of an unpaid order. opts.failed displays the "payment not completed" banner. */
   function show(order, token, preview, opts) {
     opts = opts || {};
-    ctx = { order: order, token: token, preview: preview || {}, template: order.template || "classique", tab: preview && preview.cv ? "cv" : "lettre", whatsapp: null };
+    var parts = TCV.docParts(preview || {});
+    ctx = { order: order, token: token, preview: preview || {}, parts: parts, template: order.template || "classique", tab: parts.length ? parts[0].key : null, whatsapp: null };
     $("#pay-failed").hidden = !opts.failed;
-    setText($("#pv-product"), TCV.fmt.productLabel(order.product));
+    setText($("#pv-product"), productLine(order, preview));
     setText($("#pv-amount"), TCV.fmt.fcfa(order.amount));
     setText($("#pv-ref"), order.id);
     $$("[data-pay-label]").forEach(function (n) {
@@ -74,6 +112,7 @@
     setText($("#pay-status"), "");
     setText($("#pay-error"), "");
     setPayBusy(false);
+    buildViews();
     renderSwitchers();
     renderDocs();
   }
@@ -182,10 +221,7 @@
   }
 
   function init() {
-    var docs = $("#pv-docs");
-    docs.classList.add("doc-stack");
-    views.cv = new TCV.DocView(docs, "cv");
-    views.lettre = new TCV.DocView(docs, "lettre");
+    $("#pv-docs").classList.add("doc-stack");
     payButtons().forEach(function (b) {
       b.addEventListener("click", pay);
     });
@@ -202,7 +238,7 @@
 
   function relayout() {
     Object.keys(views).forEach(function (k) {
-      views[k].layout();
+      if (views[k].layout) views[k].layout();
     });
   }
 
