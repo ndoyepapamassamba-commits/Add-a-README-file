@@ -2,6 +2,7 @@
 // Facts come only from the customer's input; banks.ts only phrases them.
 import type { CvDoc, Document, LettreDoc, OrderInput, Product, Sector } from "../types.ts";
 import { formatSnMobile } from "../phone.ts";
+import { premiumDocument } from "./premium.ts";
 import {
   CLOSINGS,
   type Ctx,
@@ -67,6 +68,7 @@ export function generateDocument(raw: OrderInput, product: Product, opts: { seed
   const picker = new Picker(opts.seed);
   const input = polishInput(raw);
   const facts = buildContext(input, opts.now);
+  if (product === "premium") return premiumDocument(buildCv(input, facts, picker), raw, facts, picker);
   return {
     cv: product === "lettre" ? null : buildCv(input, facts, picker),
     lettre: product === "cv" ? null : buildLettre(input, facts, picker, opts.now),

@@ -79,6 +79,7 @@ export function loadConfig(envGet: EnvGet, settings: Record<string, string> = {}
       cv: int(get, "PRICE_CV", 1000, 1),
       lettre: int(get, "PRICE_LETTRE", 1000, 1),
       pack: int(get, "PRICE_PACK", 1500, 1),
+      premium: int(get, "PRICE_PREMIUM", 5000, 1),
     },
     openrouterApiKey: get("OPENROUTER_API_KEY"),
     llmModel: get("LLM_MODEL") ?? DEFAULT_LLM_MODEL,

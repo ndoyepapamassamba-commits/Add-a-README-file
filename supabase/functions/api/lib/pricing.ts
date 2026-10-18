@@ -1,7 +1,7 @@
 // Catalogue: products, templates and their prices.
 import type { Config, Product, Template } from "./types.ts";
 
-export const PRODUCTS: readonly Product[] = ["cv", "lettre", "pack"];
+export const PRODUCTS: readonly Product[] = ["cv", "lettre", "pack", "premium"];
 export const TEMPLATES: readonly Template[] = ["classique", "moderne", "elegant"];
 export const DEFAULT_TEMPLATE: Template = "classique";
 
@@ -22,5 +22,5 @@ export function needsCv(product: Product): boolean {
 }
 
 export function needsLetter(product: Product): boolean {
-  return product !== "cv";
+  return product === "lettre" || product === "pack";
 }

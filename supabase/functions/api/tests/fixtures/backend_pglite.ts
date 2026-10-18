@@ -6,6 +6,20 @@ import { SupabaseStore } from "../../lib/store_supabase.ts";
 import type { RpcClient } from "../../lib/store_supabase.ts";
 
 export const SCHEMA_MIGRATION = new URL("../../../../migrations/20261018000001_schema.sql", import.meta.url);
+export const MIGRATIONS_DIR = new URL("../../../../migrations/", import.meta.url);
+
+/**
+ * Every migration PGlite can run, in file-name order: the schema, then the product migrations
+ * (20261018000003_stage.sql, 20261018000004_premium.sql, …). The cron migration needs pg_cron and pg_net
+ * (Supabase only) and is skipped.
+ */
+export async function testMigrations(): Promise<URL[]> {
+  const names: string[] = [];
+  for await (const entry of Deno.readDir(MIGRATIONS_DIR)) {
+    if (entry.isFile && entry.name.endsWith(".sql") && !entry.name.includes("_cron")) names.push(entry.name);
+  }
+  return names.sort().map((name) => new URL(name, MIGRATIONS_DIR));
+}
 
 const ROLES = `do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
@@ -28,7 +42,7 @@ export async function openTestDb(): Promise<TestDb> {
     return { rows: res.rows };
   };
   const migrate = async () => {
-    await db.exec(await Deno.readTextFile(SCHEMA_MIGRATION));
+    for (const file of await testMigrations()) await db.exec(await Deno.readTextFile(file));
   };
   await db.exec(ROLES);
   await migrate();

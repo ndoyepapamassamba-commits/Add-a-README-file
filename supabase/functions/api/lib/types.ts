@@ -1,7 +1,9 @@
 // Shared contract for the Teranga CV backend. Every module imports from here.
 // Changing a type here changes the API contract with the frontend (cv/*.js) — keep in sync with SPEC.md.
 
-export type Product = "cv" | "lettre" | "pack";
+export type Product = "cv" | "lettre" | "pack" | "premium";
+export type SkillLevel = "Expert" | "Avancé" | "Bon" | "Notions";
+export type PremiumAccent = "marine" | "bordeaux" | "foret";
 export type Template = "classique" | "moderne" | "elegant";
 export type Civility = "M" | "Mme";
 export type JobKind = "emploi" | "stage" | "alternance";
@@ -66,6 +68,19 @@ export interface OrderInput {
     qualities: string[];
     motivation?: string;
   };
+  /** Required when product is "premium" (CV Premium). Everything here is typed by the customer. */
+  premium?: {
+    headline: string; // accroche under the name, ≤ 160
+    pitch?: string; // the customer's own summary, ≤ 500
+    quote?: string; // personal approach / motto in the customer's words, ≤ 220
+    keyFigures: Array<{ value: string; label: string }>; // 0–4; value ≤ 12 ("15+", "16 359"), label ≤ 70
+    domains: Array<{ title: string; detail: string }>; // 0–3 areas of expertise; title ≤ 40, detail ≤ 120
+    achievements: Array<{ title: string; detail: string; tags: string[] }>; // 0–6; title ≤ 70, detail ≤ 240, tags ≤ 4 × 30
+    skillLevels: Array<{ name: string; level: SkillLevel }>; // 0–8; name ≤ 40
+    qualities: string[]; // ≤ 6 × 40
+    personal?: { age?: string; situation?: string }; // optional, ≤ 30 each
+    accent: PremiumAccent;
+  };
 }
 
 export interface CvDoc {
@@ -79,6 +94,18 @@ export interface CvDoc {
   it: string[];
   languages: Array<{ name: string; level: string }>;
   interests: string[];
+  /** Present only for product "premium". */
+  premium?: {
+    headline: string;
+    quote: string; // customer's quote cleaned, or a generic first-person approach sentence from the banks
+    keyFigures: Array<{ value: string; label: string }>;
+    domains: Array<{ title: string; detail: string }>;
+    achievements: Array<{ title: string; detail: string; tags: string[] }>;
+    skillLevels: Array<{ name: string; level: string }>;
+    qualities: string[];
+    personal: string[]; // e.g. ["Âge : 41 ans", "Situation : Marié, deux enfants"]
+    accent: string;
+  };
 }
 
 export interface LettreDoc {
@@ -282,7 +309,7 @@ export interface Config {
   adminKey: string | null;
   cronSecret: string | null;
   allowedReturnPrefixes: string[]; // success/error URLs must start with one of these (https only)
-  prices: Record<Product, number>;
+  prices: Record<Product, number>; // prices.premium = PRICE_PREMIUM, default 5000
   openrouterApiKey: string | null;
   llmModel: string;
   previewRateLimitPerHour: number; // default 12
