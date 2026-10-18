@@ -154,7 +154,8 @@ function isBlankItem(item: Obj): boolean {
 
 function validateIdentity(c: Collector, src: Obj): OrderInput["identity"] {
   const phonePath = "identity.phone";
-  let phone = c.required(src, "phone", phonePath, 20);
+  // Generous raw limit: separators are allowed before normalisation; the formats themselves are checked below.
+  let phone = c.required(src, "phone", phonePath, 30);
   if (phone) {
     const sn = normalizeSnMobile(phone);
     if (sn) phone = sn;

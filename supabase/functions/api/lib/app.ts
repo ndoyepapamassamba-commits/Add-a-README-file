@@ -67,7 +67,11 @@ async function loadCustomerOrder(deps: Deps, id: string, token: unknown): Promis
   const order = await deps.store.getOrder(id);
   if (!order || !constantTimeEqual(hash, order.access_token_hash)) throw notFound();
   if (order.purged_at) {
-    throw new HttpError(410, "purged", "Ces données ont été supprimées : nous effaçons les documents après 30 jours.");
+    throw new HttpError(
+      410,
+      "purged",
+      "Ce document a été supprimé : nous effaçons les données 3 jours après l'aperçu sans paiement, 30 jours après un paiement.",
+    );
   }
   return order;
 }
