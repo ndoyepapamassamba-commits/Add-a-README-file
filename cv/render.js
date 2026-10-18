@@ -196,7 +196,7 @@
   }
 
   function header(cv, cls) {
-    var head = el("header", "tcv-head " + (cls || ""));
+    var head = el("header", "tcv-head " + (cls || ""), cls === "tcv-band" ? { "data-w": "box" } : null);
     head.appendChild(field("h1", "tcv-name", cv.fullName, "cv.fullName"));
     if (!isBlank(cv.title)) head.appendChild(field("p", "tcv-title", cv.title, "cv.title"));
     return head;
@@ -397,7 +397,7 @@
     var t = normTemplate(template);
     var sender = doc.sender || [];
     if (t === "moderne" || t === "elegant") {
-      var head = el("header", "tcv-head " + (t === "moderne" ? "tcv-band" : ""));
+      var head = el("header", "tcv-head " + (t === "moderne" ? "tcv-band" : ""), t === "moderne" ? { "data-w": "box" } : null);
       if (sender.length) head.appendChild(field("h1", "tcv-name", sender[0], "lettre.sender.0"));
       var details = el("p", "tcv-inline tcv-sender-details");
       sender.slice(1).forEach(function (line, i) {
