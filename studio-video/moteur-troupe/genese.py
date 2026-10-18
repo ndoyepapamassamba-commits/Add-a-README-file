@@ -9,6 +9,7 @@
 # les notes d'un même lot sont comparables (JEV varie de ±0,05 d'une requête à l'autre).
 #   evolue(objectif, niveaux, espace, rend, ...) → (meilleurs paramètres, historique)
 import base64, json, uuid, urllib.request
+import jev_api   # juge_lot l’appelait sans import (18/10/2026 : premier lieu neuf depuis, la cour réelle, arrêté net)
 import numpy as np, cv2
 
 API = 'https://api.typesafe.ai/v1/systemone'

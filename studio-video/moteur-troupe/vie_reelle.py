@@ -103,7 +103,8 @@ def lieu(prep, nom, identite='', journal=print, **kw):
                                ('prepare_rig.py', [dst], lambda: os.path.isfile(f'{dst}/rig/scene_rig.json')),   # écrit en dernier
                                ('prepare_expressions.py', [dst], lambda: all(os.path.isfile(f'{dst}/expressions/{s}/meta.json') for s in slugs()))):
         if fait(): continue
-        t0 = time.time(); r = subprocess.run([sys.executable, os.path.join(ici, script), *args], capture_output=True, text=True, cwd=ici)
+        env = dict(os.environ, EXPRESSIONS_RECETTES_DE=src)   # mêmes personnages : recettes du lieu dessiné reprises
+        t0 = time.time(); r = subprocess.run([sys.executable, os.path.join(ici, script), *args], capture_output=True, text=True, cwd=ici, env=env)
         if r.returncode: raise RuntimeError(f'{script} en échec sur {dst} :\n{(r.stderr or r.stdout)[-1200:]}')
         T[script] = round(time.time() - t0); journal(f'{script} : {T[script]} s · {r.stdout.strip()[-300:]}')
     return {'lieu': dst, 'acteurs': noms, 'durees_s': T}
