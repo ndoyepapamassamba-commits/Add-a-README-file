@@ -56,14 +56,22 @@
   }
 
   /* ---------- Word ---------- */
+  // Word and LibreOffice disagree on nested blocks: LibreOffice repeats a container's margins and borders on
+  // every paragraph inside it, gives h1–h3 its own heading spacing and does not pass the font into tables.
+  // So the export is flat: containers are dissolved, each text block becomes one <p> (or a bulleted <ul>)
+  // carrying its own font and the spacing measured on the laid-out page, and side-by-side parts
+  // (data-w="row|cols|box") become one-row tables.
 
-  var BLOCK_PROPS = ["margin-top", "margin-bottom", "margin-left", "margin-right", "padding-top", "padding-bottom", "padding-left", "padding-right", "text-align"];
-  var BORDER_SIDES = ["top", "right", "bottom", "left"];
+  var XHTML = "http://www.w3.org/1999/xhtml";
+  var PX_PER_CM = 96 / 2.54;
+  var WORD_MARGIN_CM = { top: 1.5, side: 1.7 };
+  var NO_INSET = { top: 0, side: 0 };
   var TEXT_PROPS = ["font-size", "font-weight", "font-style", "text-transform", "letter-spacing"];
+  var SIDES = ["top", "right", "bottom", "left"];
 
   function pt(px) {
     var n = parseFloat(px);
-    return isNaN(n) ? null : Math.round(n * 0.75 * 10) / 10 + "pt";
+    return isNaN(n) ? "0pt" : Math.round(n * 0.75 * 10) / 10 + "pt";
   }
 
   function hex(rgb) {
@@ -72,8 +80,24 @@
     return "#" + [m[1], m[2], m[3]].map(function (v) { return ("0" + Number(v).toString(16)).slice(-2); }).join("");
   }
 
-  function styleOf(node, isBlock, isContainer) {
-    var cs = window.getComputedStyle(node);
+  function css(node) {
+    return window.getComputedStyle(node);
+  }
+
+  function shown(node) {
+    return node.nodeType === 1 && node.namespaceURI === XHTML && !node.classList.contains("tcv-lock") && css(node).display !== "none";
+  }
+
+  /** An element whose visible children are all inline becomes one Word paragraph. */
+  function isLeaf(node) {
+    for (var c = node.firstElementChild; c; c = c.nextElementSibling) {
+      if (shown(c) && !/^inline/.test(css(c).display)) return false;
+    }
+    return true;
+  }
+
+  function textStyle(node) {
+    var cs = css(node);
     var out = [];
     TEXT_PROPS.forEach(function (p) {
       var v = cs.getPropertyValue(p);
@@ -84,98 +108,190 @@
     });
     var color = hex(cs.color);
     if (color) out.push("color:" + color);
-    // line-height is left to Word's own single spacing: percentage values also inflate paragraph spacing
-    // in some importers (a one-page letter became two in LibreOffice).
-    if (isBlock) {
-      BLOCK_PROPS.forEach(function (p) {
-        var v = cs.getPropertyValue(p);
-        if (p !== "text-align") v = parseFloat(v) ? pt(v) : "0";
-        out.push(p + ":" + v);
-      });
-      BORDER_SIDES.forEach(function (side) {
-        // Word/LibreOffice repeat a container's side borders on every paragraph inside it.
-        if (isContainer && (side === "left" || side === "right")) return;
-        var w = parseFloat(cs.getPropertyValue("border-" + side + "-width"));
-        var c = hex(cs.getPropertyValue("border-" + side + "-color"));
-        if (w && c && cs.getPropertyValue("border-" + side + "-style") !== "none") out.push("border-" + side + ":" + pt(w) + " solid " + c);
-      });
-    }
+    // line-height is left to Word's single spacing: percentage values inflate paragraph spacing in some importers.
+    return out;
+  }
+
+  /** The block's own box (padding, borders, background, alignment); its margins are measured by Flow. */
+  function boxStyle(node, align) {
+    var cs = css(node);
+    var a = align || cs.textAlign;
+    var out = ["text-align:" + (a === "start" ? "left" : a === "end" ? "right" : a)];
+    SIDES.forEach(function (side) {
+      out.push("padding-" + side + ":" + pt(cs.getPropertyValue("padding-" + side)));
+      var w = parseFloat(cs.getPropertyValue("border-" + side + "-width"));
+      var c = hex(cs.getPropertyValue("border-" + side + "-color"));
+      if (w && c && cs.getPropertyValue("border-" + side + "-style") !== "none") out.push("border-" + side + ":" + pt(w) + " solid " + c);
+    });
     var bg = hex(cs.backgroundColor);
     if (bg && bg !== "#ffffff") out.push("background:" + bg);
-    return out.join(";");
+    return out;
   }
 
-  var BLOCK_TAGS = { H1: "h1", H2: "h2", H3: "h3", P: "p", UL: "ul", LI: "li", DIV: "div", SECTION: "div", HEADER: "div", ASIDE: "div", ARTICLE: "div" };
+  /**
+   * Where blocks go: an output node plus the screen box its content is laid out in (`inset` in CSS px is
+   * taken off when the Word page margins already provide that space). Screen coordinates are divided by
+   * `scale` because the page may be shown shrunk.
+   */
+  function Flow(target, box, inset, scale, font) {
+    this.target = target;
+    this.left = box.left + inset.side * scale;
+    this.right = box.right - inset.side * scale;
+    this.y = box.top + inset.top * scale;
+    this.scale = scale;
+    this.font = font;
+    this.last = null; // last paragraph placed, which can still take a bottom border or space
+  }
 
-  function convertChildren(src, dst, out) {
+  Flow.prototype.gap = function (from, to) {
+    return Math.max(0, (to - from) / this.scale);
+  };
+
+  /** Appends a block spaced and indented as on the page. Zero lengths keep their unit: LibreOffice ignores a bare 0. */
+  Flow.prototype.place = function (node, src, styles) {
+    var r = src.getBoundingClientRect();
+    styles.push(
+      "margin-top:" + pt(this.gap(this.y, r.top)),
+      "margin-bottom:0pt",
+      "margin-left:" + pt(this.gap(this.left, r.left)),
+      "margin-right:" + pt(this.gap(r.right, this.right)),
+      "font-family:" + this.font
+    );
+    node.setAttribute("style", styles.join(";"));
+    this.target.appendChild(node);
+    this.y = r.bottom;
+    this.last = node;
+  };
+
+  /** Adds declarations to the last paragraph (later declarations win) and moves the flow down to `bottom`. */
+  Flow.prototype.extendLast = function (bottom, extra) {
+    if (!this.last) return;
+    this.last.setAttribute("style", this.last.getAttribute("style") + ";" + extra.join(";"));
+    this.y = bottom;
+  };
+
+  function appendInline(src, dst, out) {
     for (var c = src.firstChild; c; c = c.nextSibling) {
-      var n = convert(c, out);
-      if (n) dst.appendChild(n);
+      if (c.nodeType === 3) dst.appendChild(out.createTextNode(c.nodeValue));
+      else if (c.nodeName === "BR") dst.appendChild(out.createElement("br"));
+      else if (shown(c)) {
+        var span = out.createElement("span");
+        span.setAttribute("style", textStyle(c).join(";"));
+        appendInline(c, span, out);
+        dst.appendChild(span);
+      }
     }
   }
 
-  function cellsTable(src, out, kind) {
-    var table = out.createElement("table");
-    table.setAttribute("width", "100%");
-    table.setAttribute("cellspacing", "0");
-    table.setAttribute("cellpadding", "0");
-    table.setAttribute("style", "width:100%;border-collapse:collapse;" + (kind === "box" ? "" : "margin-bottom:" + (pt(window.getComputedStyle(src).marginBottom) || "0")));
+  function paragraph(src, flow, out, align) {
+    if (!src.textContent.trim()) return;
+    var p = out.createElement("p");
+    var styles = textStyle(src).concat(boxStyle(src, align));
+    if (/^H\d$/.test(src.tagName)) styles.push("page-break-after:avoid");
+    appendInline(src, p, out);
+    flow.place(p, src, styles);
+  }
+
+  function bulletList(src, flow, out) {
+    var ul = out.createElement("ul");
+    var prev = null;
+    for (var li = src.firstElementChild; li; li = li.nextElementSibling) {
+      if (!shown(li)) continue;
+      var r = li.getBoundingClientRect();
+      var item = out.createElement("li");
+      var styles = textStyle(li);
+      styles.push("margin-top:" + pt(prev ? flow.gap(prev.bottom, r.top) : 0), "margin-bottom:0pt", "font-family:" + flow.font);
+      item.setAttribute("style", styles.join(";"));
+      appendInline(li, item, out);
+      ul.appendChild(item);
+      prev = r;
+    }
+    var cs = css(src);
+    flow.place(ul, src, textStyle(src).concat(["list-style-type:" + cs.listStyleType, "padding-left:" + pt(cs.paddingLeft)]));
+  }
+
+  /**
+   * A side-by-side part as a one-row table; each cell is a flow of its own. Cell paddings are written as
+   * longhands (LibreOffice ignores the shorthand) and carry the space above the row and its indentation.
+   */
+  function table(src, flow, out, kind) {
+    var box = src.getBoundingClientRect();
+    var cells = kind === "box" ? [src] : Array.prototype.filter.call(src.children, shown);
+    var space = pt(flow.gap(flow.y, box.top));
+    var t = out.createElement("table");
+    t.setAttribute("width", "100%");
+    t.setAttribute("cellspacing", "0");
+    t.setAttribute("cellpadding", "0");
+    t.setAttribute("style", "width:100%;border-collapse:collapse");
     var tr = out.createElement("tr");
-    var cells = kind === "box" ? [src] : Array.prototype.slice.call(src.children);
-    var total = src.getBoundingClientRect().width || 1;
     cells.forEach(function (cell, i) {
+      var last = i === cells.length - 1;
+      var r = cell.getBoundingClientRect();
+      // A cell runs up to the next one, so the gap between columns stays inside the cell on its left.
+      var end = last ? box.right : cells[i + 1].getBoundingClientRect().left;
+      var pct = Math.max(1, Math.round(((end - r.left) / (box.width || 1)) * 100));
+      var bg = hex(css(cell).backgroundColor);
       var td = out.createElement("td");
-      var cs = window.getComputedStyle(cell);
-      var pct = Math.round((cell.getBoundingClientRect().width / total) * 100);
-      var style = ["vertical-align:top", "width:" + pct + "%"];
-      ["padding-top", "padding-right", "padding-bottom", "padding-left"].forEach(function (p) {
-        style.push(p + ":" + (pt(cs.getPropertyValue(p)) || "0"));
-      });
-      if (kind === "row" && i === cells.length - 1 && cells.length > 1 && !cell.classList.contains("tcv-what")) style.push("text-align:right");
-      var bg = hex(cs.backgroundColor);
-      if (bg) {
-        style.push("background:" + bg);
-        td.setAttribute("bgcolor", bg);
-      }
       td.setAttribute("width", pct + "%");
       td.setAttribute("valign", "top");
-      td.setAttribute("style", style.join(";"));
-      if (kind === "box") convertChildren(cell, td, out);
-      else {
-        var inner = convert(cell, out, true);
-        if (inner) td.appendChild(inner);
+      if (bg) td.setAttribute("bgcolor", bg);
+      td.setAttribute("style", [
+        "vertical-align:top", "width:" + pct + "%",
+        "padding-top:" + space, "padding-bottom:0pt",
+        "padding-left:" + (i === 0 ? pt(flow.gap(flow.left, box.left)) : "0pt"),
+        "padding-right:" + (last ? pt(flow.gap(box.right, flow.right)) : "0pt")
+      ].concat(bg ? ["background:" + bg] : []).join(";"));
+      if (kind !== "box" && isLeaf(cell)) {
+        // The date of a title row sits on the right edge.
+        paragraph(cell, new Flow(td, r, NO_INSET, flow.scale, flow.font), out, kind === "row" && i > 0 && last ? "right" : null);
+      } else {
+        var inner = new Flow(td, { left: r.left, right: end, top: r.top }, NO_INSET, flow.scale, flow.font);
+        walk(cell, inner, out);
+        var rest = inner.gap(inner.y, r.bottom);
+        if (rest >= 1) inner.extendLast(r.bottom, ["margin-bottom:" + pt(rest)]);
       }
       tr.appendChild(td);
     });
-    table.appendChild(tr);
-    return table;
+    t.appendChild(tr);
+    flow.target.appendChild(t);
+    flow.y = box.bottom;
+    flow.last = null;
   }
 
-  function convert(src, out, asCell) {
-    if (src.nodeType === 3) return out.createTextNode(src.nodeValue);
-    if (src.nodeType !== 1) return null;
-    if (src.namespaceURI !== "http://www.w3.org/1999/xhtml" || src.classList.contains("tcv-lock")) return null;
-    var cs = window.getComputedStyle(src);
-    if (cs.display === "none") return null;
-    var w = src.getAttribute("data-w");
-    if (w && !asCell) return cellsTable(src, out, w);
-    var inline = cs.display === "inline" || cs.display === "inline-block";
-    var name = inline ? "span" : BLOCK_TAGS[src.tagName] || "p";
-    // Lists without markers (contacts, languages) become plain paragraphs so Word adds no bullets.
-    if (name === "ul" && cs.listStyleType === "none") name = "div";
-    if (name === "li" && window.getComputedStyle(src.parentNode).listStyleType === "none") name = "p";
-    var node = out.createElement(name);
-    node.setAttribute("style", styleOf(src, !inline, name === "div"));
-    convertChildren(src, node, out);
-    return node;
+  /** A dissolved container's bottom rule (CV header) moves to its last paragraph. */
+  function underline(src, flow) {
+    var cs = css(src);
+    var w = parseFloat(cs.borderBottomWidth);
+    var color = hex(cs.borderBottomColor);
+    if (!w || !color || cs.borderBottomStyle === "none") return;
+    var r = src.getBoundingClientRect();
+    flow.extendLast(r.bottom, [
+      "padding-bottom:" + pt(flow.gap(flow.y, r.bottom - w * flow.scale)),
+      "border-bottom:" + pt(w) + " solid " + color
+    ]);
+  }
+
+  function walk(src, flow, out) {
+    for (var c = src.firstElementChild; c; c = c.nextElementSibling) {
+      if (!shown(c)) continue;
+      var kind = c.getAttribute("data-w");
+      if (kind) table(c, flow, out, kind);
+      else if (c.tagName === "UL" && css(c).listStyleType !== "none") bulletList(c, flow, out);
+      else if (isLeaf(c)) paragraph(c, flow, out);
+      else {
+        flow.last = null;
+        walk(c, flow, out);
+        underline(c, flow);
+      }
+    }
   }
 
   var WORD_HEAD =
     '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
     '<head><meta charset="utf-8"><meta name="ProgId" content="Word.Document"><title>Document</title>' +
     "<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->" +
-    "<style>@page WordSection1{size:21cm 29.7cm;margin:1.5cm 1.7cm 1.5cm 1.7cm;mso-page-orientation:portrait}" +
-    "div.WordSection1{page:WordSection1}p,h1,h2,h3{margin:0}table{border-collapse:collapse}</style></head>";
+    "<style>@page WordSection1{size:21cm 29.7cm;margin:" + WORD_MARGIN_CM.top + "cm " + WORD_MARGIN_CM.side + "cm;mso-page-orientation:portrait}" +
+    "div.WordSection1{page:WordSection1}p,li{margin:0pt}table{border-collapse:collapse}</style></head>";
 
   /** Word-compatible HTML of a rendered page (text serialized by the DOM, never concatenated). */
   function wordHtml(page) {
@@ -184,7 +300,9 @@
     section.className = "WordSection1";
     var font = page.getAttribute("data-word-font") || "Calibri, Arial, sans-serif";
     section.setAttribute("style", "font-family:" + font);
-    convertChildren(page, section, out);
+    var box = page.getBoundingClientRect();
+    var margins = { top: WORD_MARGIN_CM.top * PX_PER_CM, side: WORD_MARGIN_CM.side * PX_PER_CM };
+    walk(page, new Flow(section, box, margins, box.width / page.offsetWidth || 1, font), out);
     return WORD_HEAD + '<body lang="FR">' + section.outerHTML + "</body></html>";
   }
 
