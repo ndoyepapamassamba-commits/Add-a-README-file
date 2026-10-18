@@ -111,6 +111,10 @@ def lieu(prep, nom, identite='', journal=print, **kw):
     photo — acteurs et masques (prepare_scene), squelettes et visages (prepare_rig), expressions (prepare_expressions).
     Les acteurs gardent leurs noms, de gauche à droite comme dans la scène peinte ; un film prend ce lieu en changeant
     seulement son dossier dans montage.json. Chaque étape est sautée si son résultat existe (reprise après arrêt)."""
+    # calcul allégé par défaut (18/10/2026, « c'est trop long ») : 864 px, 3 pas, référence 576 px — mesuré 1 026 à 1 071 s par
+    # lieu (contours 0,938 maquis, 0,975 chambre) contre 2 685 s en pleine taille (cour, 0,852) ; VIE_REELLE_PLEINE=1 pour 1152 px
+    if os.environ.get('VIE_REELLE_PLEINE') != '1':
+        kw.setdefault('largeur', 864); kw.setdefault('pas', 3); kw.setdefault('ref_largeur', 576)
     src, dst = os.path.join(prep, nom), os.path.join(prep, f'{nom}-reel'); os.makedirs(dst, exist_ok=True)
     S = json.load(open(f'{src}/scene.json')); noms = [a['nom'] for a in sorted(S['acteurs'], key=lambda a: a['bbox'][0])]
     ph, T = f'{dst}/photo.png', {}
