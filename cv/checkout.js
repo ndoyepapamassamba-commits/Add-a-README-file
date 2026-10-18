@@ -7,7 +7,7 @@
   var $$ = TCV.dom.$$;
   var setText = TCV.dom.setText;
 
-  var ctx = null; // { order, token, preview, parts, template, tab, whatsapp, exact }
+  var ctx = null; // { order, token, preview, parts, template, tab, whatsapp, exact, accent }
   var views = {}; // part key → DocView, or { frame, envoi: true } for the Pack Stage sending message
   var zoomed = false; // "Agrandir l'aperçu" state, kept when the views are rebuilt
   var paying = false;
@@ -25,6 +25,19 @@
     payButtons().forEach(function (b) {
       TCV.dom.busy(b, on, text);
     });
+  }
+
+  /** CV Premium: one « Prestige » document, a colour instead of a template, the photo kept on this phone. */
+  function isPremium() {
+    return !!(ctx && ctx.order.product === "premium" && window.TCVPremium && ctx.preview && ctx.preview.cv);
+  }
+
+  /** The parts shown: CV, lettre or Pack Stage letters and sending message; a CV Premium is one Prestige part. */
+  function partsOf(order, preview) {
+    if (order.product === "premium" && window.TCVPremium && preview && preview.cv) {
+      return [{ key: "premium", kind: "premium", label: "CV Premium", path: "cv" }];
+    }
+    return TCV.docParts(preview || {});
   }
 
   /** One view per part (CV, lettre or Pack Stage letters, sending message), in display order. */
@@ -59,6 +72,8 @@
       if (view.envoi) {
         TCV.dom.clear(view.frame);
         view.frame.appendChild(window.TCVRender.envoi(data));
+      } else if (part.kind === "premium") {
+        view.show(data, ctx.accent, window.TCVPremium.photo.get(ctx.order.id));
       } else {
         view.show(data, ctx.template);
       }
@@ -67,6 +82,18 @@
   }
 
   function renderSwitchers() {
+    if (TCV.premiumWizard) TCV.premiumWizard.decoratePreview(isPremium());
+    if (isPremium()) {
+      setText($("#pv-tpl-label"), "Couleur");
+      TCV.dom.segRadios($("#pv-templates"), "pv-template", window.TCVPremium.ACCENTS, ctx.accent, function (a) {
+        ctx.accent = a;
+        window.TCVPremium.accent.set(ctx.order.id, a); // kept on this phone, picked up by the result page
+        renderDocs();
+      });
+      $("#pv-doc-tabs-wrap").hidden = true;
+      return;
+    }
+    setText($("#pv-tpl-label"), "Modèle");
     TCV.dom.segRadios($("#pv-templates"), "pv-template", window.TCVRender.TEMPLATES, ctx.template, function (t) {
       ctx.template = t;
       renderDocs();
@@ -100,8 +127,12 @@
   /** Shows the preview of an unpaid order. opts.failed displays the "payment not completed" banner. */
   function show(order, token, preview, opts) {
     opts = opts || {};
-    var parts = TCV.docParts(preview || {});
+    var parts = partsOf(order, preview);
     ctx = { order: order, token: token, preview: preview || {}, parts: parts, template: order.template || "classique", tab: parts.length ? parts[0].key : null, whatsapp: null };
+    if (window.TCVPremium) {
+      var pm = preview && preview.cv && preview.cv.premium;
+      ctx.accent = window.TCVPremium.accent.get(order.id) || (pm && pm.accent) || "marine";
+    }
     $("#pay-failed").hidden = !opts.failed;
     setText($("#pv-product"), productLine(order, preview));
     setText($("#pv-amount"), TCV.fmt.fcfa(order.amount));

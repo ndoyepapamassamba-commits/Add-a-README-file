@@ -63,6 +63,7 @@
     return TCV.api.request("POST", "/orders", { body: body, timeout: 45000 }).then(function (res) {
       var order = res.order;
       TCV.orders.save({ id: order.id, token: order.token, product: order.product, createdAt: order.createdAt });
+      if (TCV.premiumWizard) TCV.premiumWizard.onOrderCreated(order); // CV Premium photo stays on this phone
       renderMyDocs();
       openPreview(order, order.token, res.preview, { push: true });
     });

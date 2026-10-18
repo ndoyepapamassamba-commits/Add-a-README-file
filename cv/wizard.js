@@ -19,6 +19,11 @@
   };
   var LANGUAGES = ["Français", "Wolof", "Anglais", "Arabe", "Pulaar", "Sérère", "Diola", "Mandinka", "Soninké", "Espagnol", "Portugais", "Italien", "Allemand", "Chinois"];
 
+  // CV Premium steps live in premium-wizard.js (loaded after this file); looked up lazily.
+  function PW() {
+    return TCV.premiumWizard || null;
+  }
+
   var form;
   var state;
   var current = null;
@@ -54,7 +59,8 @@
       ],
       interests: [],
       letter: { company: "", recipient: "", companyCity: "", source: "", qualities: [], motivation: "" },
-      internship: S ? S.defaults() : null
+      internship: S ? S.defaults() : null,
+      premium: PW() ? PW().defaults() : null
     };
   }
 
@@ -75,7 +81,7 @@
   function restore(saved) {
     var s = defaults();
     if (!saved || typeof saved !== "object") return s;
-    if (["cv", "lettre", "pack", "stage"].indexOf(saved.product) !== -1) s.product = saved.product;
+    if (["cv", "lettre", "pack", "stage", "premium"].indexOf(saved.product) !== -1) s.product = saved.product;
     if (["classique", "moderne", "elegant"].indexOf(saved.template) !== -1) s.template = saved.template;
     copyStrings(s.identity, saved.identity);
     copyStrings(s.target, saved.target);
@@ -93,6 +99,7 @@
     s.it = stringList(saved.it, 15);
     s.interests = stringList(saved.interests, 8);
     if (S) s.internship = S.restore(saved.internship);
+    if (PW()) s.premium = PW().restore(saved.premium);
     return s;
   }
 
@@ -388,6 +395,7 @@
   }
 
   function stepOf(path) {
+    if (PW() && /^premium(\.|$)/.test(path)) return PW().stepOf(path);
     if (S && state.product === "stage") {
       var st = S.stepOf(path);
       if (st !== undefined) return st;
@@ -399,8 +407,9 @@
   function toScreenPaths(fields, index) {
     var out = {};
     Object.keys(fields || {}).forEach(function (path) {
-      var m = /^(education|experiences|languages|internship\.companies|internship\.projects)\.(\d+)(\..*)?$/.exec(path);
-      var key = m ? m[1].replace(/^internship\./, "") : null;
+      var m = /^(.+?)\.(\d+)(\..*)?$/.exec(path); // education.2.title, internship.companies.1.reason, premium.achievements.1.tags.0…
+      // Pack Stage cards are indexed as "companies" / "projects"; premium lists under their full path.
+      var key = m ? (index[m[1]] ? m[1] : m[1].replace(/^internship\./, "")) : null;
       var screen = path;
       if (m && index[key] && index[key][Number(m[2])] != null) screen = m[1] + "." + index[key][Number(m[2])] + (m[3] || "");
       if (S && state.product === "stage") screen = S.screenPath(screen);
@@ -437,6 +446,7 @@
   /* ---------- Steps ---------- */
 
   function steps() {
+    if (state.product === "premium" && PW()) return PW().steps();
     if (S && state.product === "stage") return S.STEPS.slice();
     return ALL_STEPS.filter(function (k) {
       if (k === "lettre") return state.product !== "cv";
@@ -463,6 +473,7 @@
     TCV.dom.setText($("#wz-back"), i === 0 ? "Accueil" : "Retour");
     TCV.dom.setText($(".btn-label", $("#wz-next")), i === list.length - 1 ? "Voir mon aperçu gratuit" : "Continuer");
     if (key === "competences") chipGroups[0].render();
+    if (PW()) PW().onShow(key, state.product);
     showErrorsFor(key);
     window.scrollTo(0, 0);
     var hasErrors = $$("[data-error-for]", section).some(function (n) { return n.textContent; });
@@ -632,12 +643,13 @@
     if (S) S.init({ state: function () { return state; }, save: save, clearError: clearError });
     buildChipGroups();
     bind();
+    if (PW()) PW().attach({ state: function () { return state; }, save: save, setError: setError, clearError: clearError, ChipGroup: ChipGroup });
     renderAll();
   }
 
   /** Starts the wizard, optionally with a product chosen on the landing page. */
   function start(product) {
-    if (["cv", "lettre", "pack", "stage"].indexOf(product) !== -1) {
+    if (["cv", "lettre", "pack", "stage", "premium"].indexOf(product) !== -1) {
       state.product = product;
       writeSimpleFields();
       save();

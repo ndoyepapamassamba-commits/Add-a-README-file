@@ -97,7 +97,7 @@
     return m ? "+221 " + m[1] + " " + m[2] + " " + m[3] + " " + m[4] : e164 || "";
   }
 
-  var PRODUCT_LABELS = { cv: "CV", lettre: "Lettre de motivation", pack: "Pack CV + lettre", stage: "Pack Stage" };
+  var PRODUCT_LABELS = { cv: "CV", lettre: "Lettre de motivation", pack: "Pack CV + lettre", stage: "Pack Stage", premium: "CV Premium" };
 
   function productLabel(p) {
     return PRODUCT_LABELS[p] || p;
@@ -185,7 +185,7 @@
   var DEFAULT_CONFIG = {
     brandName: "Teranga CV",
     currency: "XOF",
-    prices: { cv: 1000, lettre: 1000, pack: 1500, stage: 1500, stageMulti: 2500 },
+    prices: { cv: 1000, lettre: 1000, pack: 1500, stage: 1500, stageMulti: 2500, premium: 5000 },
     payment: { wave: false, manual: false, manualWaveNumber: null, ownerWhatsapp: null },
     loaded: false
   };
@@ -204,7 +204,8 @@
               lettre: Number(prices.lettre) || DEFAULT_CONFIG.prices.lettre,
               pack: Number(prices.pack) || DEFAULT_CONFIG.prices.pack,
               stage: Number(prices.stage) || DEFAULT_CONFIG.prices.stage,
-              stageMulti: Number(prices.stageMulti) || DEFAULT_CONFIG.prices.stageMulti
+              stageMulti: Number(prices.stageMulti) || DEFAULT_CONFIG.prices.stageMulti,
+              premium: Number(prices.premium) || DEFAULT_CONFIG.prices.premium
             },
             payment: Object.assign({}, DEFAULT_CONFIG.payment, (c && c.payment) || {}),
             loaded: true
@@ -368,9 +369,10 @@
     views.push(this);
   }
 
-  DocView.prototype.show = function (part, template) {
+  /** `extra` is passed through to the renderer (the CV Premium photo). */
+  DocView.prototype.show = function (part, template, extra) {
     clear(this.scaler);
-    this.page = window.TCVRender[this.kind](part, template);
+    this.page = window.TCVRender[this.kind](part, template, extra);
     this.scaler.appendChild(this.page);
     if (this.opts.editable) this.enableEditing();
     this.layout();

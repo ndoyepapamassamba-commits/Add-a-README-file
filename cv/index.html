@@ -20,15 +20,18 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="premium.css">
 <script src="config.js" defer></script>
 <script src="data.js" defer></script>
 <script src="sample.js" defer></script>
 <script src="render.js" defer></script>
+<script src="premium-render.js" defer></script>
 <script src="app.js" defer></script>
 <script src="validate.js" defer></script>
 <script src="stage.js" defer></script>
 <script src="wizard.js" defer></script>
 <script src="checkout.js" defer></script>
+<script src="premium-wizard.js" defer></script>
 <script src="home.js" defer></script>
 <script type="application/ld+json">
 {
@@ -160,6 +163,33 @@
               <p class="hint">La convention de stage reste établie par votre école.</p>
             </div>
           </article>
+        </div>
+      </section>
+
+      <section class="section" id="premium" aria-labelledby="h-premium">
+        <div class="pm">
+          <div class="pm-grid">
+            <div>
+              <p class="pm-eyebrow">Nouveau · Pour les professionnels expérimentés</p>
+              <h2 class="pm-title" id="h-premium">CV Premium</h2>
+              <p class="pm-for">Le design Prestige, sur deux pages</p>
+              <p class="pm-lead">Cadres, banque, télécoms, ONG, administration&nbsp;: un CV qui se remarque, avec votre photo, vos chiffres clés, vos réalisations et votre parcours en frise.</p>
+              <p class="pm-price"><strong data-price="premium">5&nbsp;000&nbsp;FCFA</strong><span>payé une seule fois avec Wave</span></p>
+              <ul class="pm-list">
+                <li><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Mise en page Prestige A4, deux pages au maximum, 3 couleurs au choix</span></li>
+                <li><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Chiffres clés, domaines d'expertise et réalisations mis en valeur</span></li>
+                <li><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PDF, Word et CV web (.html) à envoyer ou à mettre en ligne</span></li>
+                <li><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Votre photo reste sur votre téléphone&nbsp;: elle n'est jamais envoyée sur nos serveurs</span></li>
+              </ul>
+              <a class="btn btn-pm btn-lg" href="#creer" data-start="premium">Créer mon CV Premium</a>
+              <p class="pm-note">Aperçu gratuit avant de payer. Nous ne rédigeons que ce que vous indiquez&nbsp;: aucun chiffre ni résultat n'est inventé.</p>
+            </div>
+            <div class="pm-visual">
+              <span class="pm-tag">Exemple — personne fictive</span>
+              <div class="pm-peek" id="premium-sample" role="img" aria-label="Exemple de CV Premium au design Prestige, réalisé pour une personne fictive"></div>
+              <div class="pm-swatches" id="premium-swatches" role="group" aria-label="Couleur de l'exemple"></div>
+            </div>
+          </div>
         </div>
       </section>
 

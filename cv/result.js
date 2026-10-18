@@ -30,6 +30,7 @@
   var pollTimer = null;
   var waitPreviewShown = false;
   var config = null;
+  var premium = null; // CV Premium card (premium-export.js), when the order is a CV Premium
 
   function editsKey() {
     return "tcv:edits:" + id;
@@ -109,6 +110,10 @@
     back.href = previewUrl();
     if (!waitPreviewShown && res.preview) {
       waitPreviewShown = true;
+      if (res.order.product === "premium" && TCV.premiumResult) {
+        TCV.premiumResult.preview($("#wait-preview"), res.preview.cv, res.order.id);
+        return;
+      }
       // CV and lettre; for the Pack Stage, the CV and the first letter only.
       TCV.docParts(res.preview).forEach(function (part) {
         if (part.kind === "envoi" || part.index > 0) return;
@@ -434,6 +439,10 @@
   /* ---------- Rendering ---------- */
 
   function renderDocs() {
+    if (premium) {
+      premium.render();
+      return;
+    }
     parts.forEach(function (part) {
       if (views[part.key]) views[part.key].show(TCV.getPath(doc, part.path), template);
     });
@@ -458,9 +467,18 @@
     views = {};
     refreshEnvoi = null;
     layoutEnvoi = null;
-    parts = TCV.docParts(doc);
-    parts.forEach(docCard);
-    TCV.dom.segRadios($("#rs-templates"), "rs-template", window.TCVRender.TEMPLATES, template, function (t) {
+    premium = order.product === "premium" && doc.cv && TCV.premiumResult
+      ? TCV.premiumResult.mount({ root: $("#docs"), id: id, doc: function () { return doc; }, onEdit: editHandler({ key: "cv", path: "cv" }) })
+      : null;
+    $("#rs-templates").parentNode.hidden = !!premium; // CV Premium: colour switcher inside its card
+    if (premium) {
+      parts = [{ key: "cv", kind: "premium", label: "CV Premium", path: "cv" }];
+      views.cv = premium.view;
+    } else {
+      parts = TCV.docParts(doc);
+      parts.forEach(docCard);
+    }
+    if (!premium) TCV.dom.segRadios($("#rs-templates"), "rs-template", window.TCVRender.TEMPLATES, template, function (t) {
       template = t;
       renderDocs();
       TCV.api.request("POST", "/orders/" + encodeURIComponent(id) + "/template", { body: { t: token, template: t } }).catch(function () {
@@ -509,12 +527,17 @@
     window.addEventListener("beforeprint", function () {
       var root = document.getElementById("print-root");
       if (root.firstChild || !doc) return;
-      // Fresh, fitted pages: Pack Stage letters on hidden tabs have never been laid out on screen.
-      var set = freshPages(parts.filter(function (p) { return p.kind !== "envoi"; }));
-      set.pages.forEach(function (p) {
-        root.appendChild(p.cloneNode(true));
-      });
-      set.done();
+      if (premium) {
+        // The CV Premium page carries its colour and photo: the one on screen is printed.
+        if (premium.view && premium.view.page) root.appendChild(premium.view.page.cloneNode(true));
+      } else {
+        // Fresh, fitted pages: Pack Stage letters on hidden tabs have never been laid out on screen.
+        var set = freshPages(parts.filter(function (p) { return p.kind !== "envoi"; }));
+        set.pages.forEach(function (p) {
+          root.appendChild(p.cloneNode(true));
+        });
+        set.done();
+      }
       window.addEventListener("afterprint", function clean() {
         window.removeEventListener("afterprint", clean);
         TCV.dom.clear(root);
