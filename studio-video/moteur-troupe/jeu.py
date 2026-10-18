@@ -127,13 +127,18 @@ def yeux(T, parle, debut_phrase, fin_phrase, vers, fps, graine):
     n = len(T); rng = np.random.default_rng(int(graine * 1000) + 7)
     gx = np.zeros(n); gy = np.zeros(n); i = 0; cible = (0.0, 0.0); depart = (0.0, 0.0); d_sac = 1; sacc = []
     debuts = sorted(debut_phrase); i_debuts = [int(round(d * fps)) for d in debuts]
+    # QUAND UN AUTRE PREND LA PAROLE, le regard le rejoint ~150 ms après (porte D de la v28 : Maman Nounou fixait encore Baye
+    # pendant les répliques de Petit Mamadou, 28 % des images d'écoute ; les auditeurs suivent le changement de locuteur au
+    # moment de la prise de parole — Holler & Kendrick 2015) : la fixation en cours est interrompue, la suivante est mutuelle
+    i_vers = sorted({min(n - 1, k + int(round(0.15 * fps))) for k in range(1, n) if abs(float(vers[k]) - float(vers[k - 1])) > 0.5})
+    rejoint = set(i_vers)
     while i < n:
         t = T[i]; p = bool(parle[i]); base = 0.88 * float(vers[i])
         d0 = next((d for d in debuts if 0 <= t - d < 0.25), None)
         if d0 is not None and rng.random() < 0.6:    # je commence à parler : je détourne les yeux le temps de penser
             ax = -np.sign(base or 1.0) * rng.uniform(0.25, 0.5); ay = rng.choice([0.25, -0.15, 0.35]) * rng.uniform(0.5, 1.0)
             nouveau = (base * 0.3 + ax, ay); duree = rng.uniform(0.45, 0.9)
-        elif rng.random() < (0.41 if p else 0.75):   # regard mutuel : une micro-fixation sur le visage du partenaire
+        elif i in rejoint or rng.random() < (0.41 if p else 0.75):   # regard mutuel : micro-fixation sur le visage du partenaire
             nouveau = (base + rng.normal(0, 0.05), rng.normal(0.04, 0.035)); duree = rng.gamma(2.0, (0.85 if p else 1.4) / 2.0)
         else:                                          # ailleurs : amplitude exponentielle, souvent de côté ou vers le bas
             A_ = float(np.clip(rng.exponential(0.3), 0.12, 0.6)); a = rng.choice([0.0, np.pi, 0.5 * np.pi, 0.75 * np.pi, 0.25 * np.pi, -0.5 * np.pi], p=[0.25, 0.25, 0.2, 0.1, 0.1, 0.1])
@@ -143,7 +148,7 @@ def yeux(T, parle, debut_phrase, fin_phrase, vers, fps, graine):
         d_sac = max(1, int(round((0.025 + 0.0024 * 30.0 * amp) * fps)))   # course complète des yeux ≈ 30°
         sacc.append((i, amp)); cible = nouveau
         j1 = min(n, i + max(d_sac + 1, int(duree * fps)))
-        j1 = min([j1] + [k for k in i_debuts if i + d_sac < k < j1])   # une phrase qui commence interrompt la fixation
+        j1 = min([j1] + [k for k in i_debuts + i_vers if i + d_sac < k < j1])   # une phrase qui commence interrompt la fixation
         for j in range(i, j1):
             u = min(1.0, (j - i + 1) / d_sac); e = u * u * (3 - 2 * u)
             gx[j] = depart[0] + (cible[0] - depart[0]) * e; gy[j] = depart[1] + (cible[1] - depart[1]) * e
