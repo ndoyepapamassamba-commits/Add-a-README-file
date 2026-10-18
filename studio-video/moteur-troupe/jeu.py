@@ -159,14 +159,19 @@ def yeux(T, parle, debut_phrase, fin_phrase, vers, fps, graine, vers_y=None, pei
     while i < n:
         t = T[i]; p = bool(parle[i]); base = float(bx_[i]); base_y = float(by_[i])
         d0 = next((d for d in debuts if 0 <= t - d < 0.25), None)
-        if d0 is not None and rng.random() < 0.6:    # je commence à parler : je détourne les yeux le temps de penser
-            ax = -np.sign(base or 1.0) * rng.uniform(0.25, 0.5); ay = rng.choice([0.25, -0.15, 0.35]) * rng.uniform(0.5, 1.0)
-            nouveau = (base * 0.3 + ax, base_y * 0.3 + ay); duree = rng.uniform(0.45, 0.9)
-        elif i in rejoint or rng.random() < (0.41 if p else 0.75):   # regard mutuel : micro-fixation sur le visage du partenaire
+        # CELUI QUI PARLE S'ADRESSE À SON PARTENAIRE (18/10/2026, porte D « regards vers le partenaire ») : avec les chiffres de
+        # la conversation réelle (Kendon : l'orateur regarde ~40 % du temps, détourne les yeux en prenant la parole), ceux qui
+        # parlent étaient sous ceux qui écoutent sur les trois versions mesurées (JEV, moyenne 0,62–0,65 contre 0,67–0,71) ;
+        # en ep01 v3 les 4 fautes étaient des orateurs, en ep02 v1 Tantie Awa « parle à » Modou 0,33–0,50 et l'écoute 0,62–0,66.
+        # Dans un sketch filmé, on parle EN REGARDANT l'autre : détour bref et rare en prenant la parole, fixation majoritaire
+        if d0 is not None and rng.random() < 0.3:    # je commence à parler : je détourne brièvement les yeux le temps de penser
+            ax = -np.sign(base or 1.0) * rng.uniform(0.2, 0.35); ay = rng.choice([0.25, -0.15, 0.35]) * rng.uniform(0.5, 1.0)
+            nouveau = (base * 0.5 + ax, base_y * 0.5 + ay); duree = rng.uniform(0.3, 0.5)
+        elif i in rejoint or rng.random() < (0.7 if p else 0.75):   # regard mutuel : micro-fixation sur le visage du partenaire
             nouveau = (base + rng.normal(0, 0.05), base_y + rng.normal(0.04, 0.035)); duree = rng.gamma(2.0, (0.85 if p else 1.4) / 2.0)
         else:                                          # ailleurs : amplitude exponentielle, souvent de côté ou vers le bas
             A_ = float(np.clip(rng.exponential(0.3), 0.12, 0.6)); a = rng.choice([0.0, np.pi, 0.5 * np.pi, 0.75 * np.pi, 0.25 * np.pi, -0.5 * np.pi], p=[0.25, 0.25, 0.2, 0.1, 0.1, 0.1])
-            nouveau = (base * 0.5 + A_ * math.cos(a), base_y * 0.5 + A_ * math.sin(a) * 0.7); duree = rng.gamma(2.0, (0.75 if p else 0.5) / 2.0)
+            nouveau = (base * 0.5 + A_ * math.cos(a), base_y * 0.5 + A_ * math.sin(a) * 0.7); duree = rng.gamma(2.0, (0.45 if p else 0.5) / 2.0)
         nouveau = (float(np.clip(nouveau[0], -2.2, 2.2)), float(np.clip(nouveau[1], -2.2, 2.2)))   # bornes finales : regard.applique
         amp = math.hypot(nouveau[0] - cible[0], nouveau[1] - cible[1]); depart = (gx[i - 1], gy[i - 1]) if i else cible
         d_sac = max(1, int(round((0.025 + 0.0024 * 30.0 * amp) * fps)))   # course complète des yeux ≈ 30°

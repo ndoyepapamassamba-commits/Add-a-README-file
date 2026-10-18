@@ -1127,6 +1127,7 @@ import time; T0 = time.time()
 # en cache par empreinte (scène, plan, cadres proposés). TOURNE_REALISATEUR=0 : la règle du moteur seule.
 C0_JEV, REALISATION = {}, {}
 SEUIL_MAINS = 0.60    # mains d'un cadre candidat nettement ratées (v34)
+REACTION_MIN = float(os.environ.get('REACTION_MIN', 96))   # visage de celui qui subit la chute dans le gros plan de réaction (px sur 460)
 SEUIL_PROPRE = 0.42   # « rendu » de la porte G sur l'image d'un cadre candidat (sans marge, la porte tombe à 0,5 ; l'animation
                       # ajoute jusqu'à 0,17 — mesuré sur les plans de Koffi de la v31)
 def realise(plans):
@@ -1221,7 +1222,19 @@ def realise(plans):
               'mains': {k_: round(a[f'mains_{k_}']['noul'], 2) for k_ in noms},
               'visage_px': {k_: round(taille_visage(S, keep, cs_[k_]), 1) for k_ in noms} if keep in S['acts'] else {}}
         json.dump(d_, open(f_, 'w')); return s, choix, cs_, d_
-    with ThreadPoolExecutor(8) as ex: res = list(ex.map(un, [s for s in plans if s[2] in SC]))
+    def reaction(s, choix, d_):
+        """GROS PLAN DE RÉACTION LISIBLE (18/10/2026, ep02 v1, porte P) : sur le plan de réaction à la chute des assiettes,
+        personne ne parle ; JEV « réalisateur » préférait le plan à deux (0,40) et le cadre moteur l'a emporté — Baye à 81 px,
+        « choquée » 0,25 sur les trois images contrôlées. Les chocs qui passent la porte P (ep01 v5 : Maman 99,7 px, Coumba
+        105,8 px, Tantie Awa 128,6 px) ont tous le visage à 96 px au moins : dans un plan de réaction muet, seul un cadre propre
+        qui donne ce visage peut être retenu, le préféré de JEV parmi eux. Recalculé sur les réponses gardées en cache."""
+        if s[3] != 'gros' or not d_ or not d_.get('visage_px') or parleurs_de(SC[s[2]], s): return choix
+        px = d_['visage_px']
+        if px.get(choix, 0) >= REACTION_MIN: return choix
+        sale_ = lambda k_: max(d_['rendu'][k_], d_['mains'][k_] if d_['mains'][k_] >= SEUIL_MAINS else 0.0)
+        ok = [k_ for k_ in px if px[k_] >= REACTION_MIN and d_['coupe'][k_] < 0.5 and d_['lisible'][k_] > 0.5 and sale_(k_) < SEUIL_PROPRE]
+        return max(ok, key=lambda k_: d_['probabilites'].get(k_, 0.0)) if ok else choix
+    with ThreadPoolExecutor(8) as ex: res = [(s, reaction(s, choix, d_), cs_, d_) for s, choix, cs_, d_ in ex.map(un, [s for s in plans if s[2] in SC])]
     for s, choix, cs_, d_ in res:
         C0_JEV[tuple(s[:5])] = cs_[choix]; REALISATION[f'{s[0]:.2f}'] = dict(d_ or {}, choix=choix, proposes=list(cs_))
         print(f"réalisateur JEV — plan {s[0]:.2f} {s[3]} {s[4]} : {choix}" + ('' if not d_ else f" (choix {d_['probabilites'].get(choix, 0):.2f}, rendu {d_.get('rendu', {}).get(choix, '?')}{'' if d_['conforme'] else ', AUCUN CADRE PROPRE'})"), flush=True)
