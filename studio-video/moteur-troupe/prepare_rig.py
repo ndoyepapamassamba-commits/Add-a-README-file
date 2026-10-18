@@ -28,6 +28,8 @@ def visage3d(img, box):
 
 
 VERSION_PLAQUE = 2   # à augmenter quand le calcul de la plaque change : le cache des scènes est alors refait
+VERSION_DECOUPE = 2  # 18/10/2026 : membres rendus à leur corps (membres_rendus) — les scènes déjà préparées sont refaites,
+                     # plaque et calques des acteurs inchangés repris
 
 
 def empreinte_decoupes(alphas):
@@ -99,6 +101,86 @@ def orphelins(img, alphas, pers, meuble=None, personne=None, portee=25):
     return out
 
 
+def sans_couture(a, k=5):
+    """INTÉRIEUR OPAQUE (18/10/2026) : le filtre guidé de la découpe et le bord de la complétion amodale laissaient, À
+    L'INTÉRIEUR des personnages, des pixels d'alpha 0,5–0,9 (3 000 à 7 600 par acteur, coutures et voiles) où la plaque
+    de fond transparaît — lignes fines sur le bras de Maman, voile sur les visages. Ce qui est à plus de 2 px du bord de la
+    silhouette fermée (fentes de moins de `k` px comblées, vrais jours entre bras et corps gardés) devient opaque ; le bord
+    garde son fondu."""
+    m = cv2.morphologyEx((a > 0.5).astype(np.uint8), cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k)))
+    dedans = cv2.erode(m, np.ones((5, 5), np.uint8)).astype(np.float32)
+    return np.maximum(a, cv2.GaussianBlur(dedans, (0, 0), 0.8)).astype(np.float32)
+
+OS_CORPS = ((11, 13), (13, 15), (15, 17), (15, 19), (15, 21), (12, 14), (14, 16), (16, 18), (16, 20), (16, 22), (11, 12), (11, 23),
+            (12, 24), (23, 24), (23, 25), (25, 27), (27, 29), (29, 31), (27, 31), (24, 26), (26, 28), (28, 30), (30, 32), (28, 32))
+_MT = {}
+def magic_touch(img, box, point):
+    """MediaPipe Interactive Segmenter (MagicTouch, Apache-2.0) sur le recadrage `box`, invité par UN point de l'image :
+    probabilité « même objet que ce point », à la taille de l'image (0 hors du recadrage)."""
+    import mediapipe as mp
+    from mediapipe.tasks.python import vision, BaseOptions
+    from mediapipe.tasks.python.components import containers
+    if 's' not in _MT:
+        p = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/magic_touch.tflite'
+        _MT['s'] = vision.InteractiveSegmenterLegacy.create_from_options(vision.InteractiveSegmenterLegacyOptions(base_options=BaseOptions(model_asset_path=p), output_confidence_masks=True))
+    H, W = img.shape[:2]; x0, y0, x1, y1 = [int(v) for v in box]; x0, y0, x1, y1 = max(0, x0), max(0, y0), min(W, x1), min(H, y1)
+    c = np.ascontiguousarray(img[y0:y1, x0:x1]); h, w = c.shape[:2]; R = vision.InteractiveSegmenterLegacyRegionOfInterest
+    r = _MT['s'].segment(mp.Image(image_format=mp.ImageFormat.SRGB, data=c),
+                         R(format=R.Format.KEYPOINT, keypoint=containers.keypoint.NormalizedKeypoint(float((point[0] - x0) / w), float((point[1] - y0) / h))))
+    out = np.zeros((H, W), np.float32); out[y0:y1, x0:x1] = cv2.resize(r.confidence_masks[0].numpy_view().astype(np.float32), (w, h)); return out
+
+
+def membres_rendus(img, alphas, acts, portee=25, aire_min=40):
+    """MEMBRE RENDU À SON CORPS (18/10/2026). Le masque d'origine de Petit Mamadou contenait l'avant-bras de Maman Nounou
+    posé contre sa tête (main sur la hanche) : la découpe de Maman l'excluait (« autres acteurs »), la complétion amodale
+    le repeignait délavé derrière l'enfant (LaMa) et le vrai bras suivait la tête de l'enfant — bras translucide jugé
+    « rendu » et « artefacts » par JEV sur les plans de la cachette (v31 : 50 + 50 + 18 images). Squelette (coude posé sur
+    le tablier) et classes de la segmentation (peau contre peau) ne tranchent pas ; MagicTouch, invité par un point, si :
+    le nez de l'enfant donne l'enfant seul, un point de l'avant-bras donne le bras entier de Maman (planche essai du 18/10).
+    Règle : pour chaque acteur B qui a un visage, sa découpe hors de « l'objet de son nez » (MagicTouch) et à moins de
+    `portee` px de la découpe d'un autre acteur forme des pièces douteuses ; chaque pièce est confiée à MagicTouch par son
+    point le plus intérieur : si l'objet trouvé déborde dans le corps SÛR d'un autre acteur A (sa découpe sans ses propres
+    pièces douteuses) et presque pas dans l'objet du nez de B, la pièce est un membre de A — elle lui est rendue (alpha
+    déplacée, bord flou compris). → pixels rendus, par acteur qui les perd (alphas modifiées sur place)."""
+    n = len(alphas); out = [0] * n
+    if n < 2: return out
+    pres = [cv2.distanceTransform((al < 0.5).astype(np.uint8), cv2.DIST_L2, 5) <= portee for al in alphas]
+    objet, cand, boites = [None] * n, [np.zeros(alphas[0].shape, bool) for _ in range(n)], [None] * n
+    for k in range(n):   # « l'objet de son nez » et les pièces douteuses (hors de cet objet, au contact d'un autre acteur)
+        vb = acts[k].get('visage', {}).get('box') if acts[k].get('visage') else None
+        if not vb: continue
+        boites[k] = rig2d.boite(acts[k]['bbox'], img.shape, marge=0.3)
+        objet[k] = magic_touch(img, boites[k], ((vb[0] + vb[2]) / 2, (vb[1] + vb[3]) / 2))
+        autres = np.zeros(alphas[0].shape, bool)
+        for j in range(n):
+            if j != k: autres |= pres[j]
+        cand[k] = (alphas[k] > 0.5) & (objet[k] < 0.3) & autres
+    # le corps SÛR de chaque acteur : sa découpe sans ses pièces douteuses — sinon un membre mal attribué (le bras de Maman
+    # dans la découpe de l'enfant) servirait de preuve pour lui prendre ce qui la touche (aller-retour vu à l'essai)
+    sur = [(alphas[k] > 0.5) & ~cand[k] for k in range(n)]
+    for b in range(n):
+        if objet[b] is None: continue
+        # garde : une pièce posée sur un os de B (bras, tronc, jambes, pieds) reste à B — à l'essai, MagicTouch invité sur les
+        # orteils de Maman rendait aussi la sandale voisine de l'enfant
+        P = np.asarray(acts[b]['pts'], np.float64); os_b = np.full(alphas[b].shape, 255, np.uint8)
+        for i, j in OS_CORPS: cv2.line(os_b, tuple(int(round(v)) for v in P[i, :2]), tuple(int(round(v)) for v in P[j, :2]), 0, 1)
+        loin_os = cv2.distanceTransform(os_b, cv2.DIST_L2, 5) > 0.3 * max(8.0, abs(P[11, 0] - P[12, 0]))
+        ncc, lab, st, _ = cv2.connectedComponentsWithStats(cand[b].astype(np.uint8), connectivity=8)
+        for c in range(1, ncc):
+            if st[c, cv2.CC_STAT_AREA] < aire_min: continue
+            m = lab == c; dt = cv2.distanceTransform(m.astype(np.uint8), cv2.DIST_L2, 5)
+            py, px = np.unravel_index(int(np.argmax(dt)), dt.shape)
+            if not loin_os[py, px]: continue
+            mK = magic_touch(img, boites[b], (px, py)) > 0.5
+            dans_b = int((mK & (objet[b] > 0.5)).sum())
+            if dans_b > 0.2 * max(1, int(mK.sum())): continue
+            a_ = max((j for j in range(n) if j != b), key=lambda j: int((mK & sur[j]).sum()))
+            if int((mK & sur[a_]).sum()) < 0.3 * m.sum(): continue
+            zone = (cv2.dilate(m.astype(np.uint8), np.ones((5, 5), np.uint8)) > 0) & (objet[b] < 0.5)
+            alphas[a_][zone] = np.maximum(alphas[a_][zone], alphas[b][zone]); alphas[b][zone] = 0.0; out[b] += int(m.sum())
+    if 's' in _MT: _MT.pop('s').close()
+    return out
+
 def _sauve_bras(f, bras):
     d = {}
     for i, b in enumerate(bras):
@@ -120,13 +202,16 @@ def charge_bras(f):
     return out
 
 
-AMODAL = 2   # 18/10/2026 : complétion amodale opaque + couverture au contact de deux personnes (plaque.amodal)
+AMODAL = 3   # 18/10/2026 : complétion amodale opaque + couverture au contact de deux personnes (plaque.amodal) ;
+             # v3 : intérieur sans couture (sans_couture)
 
 
 def prepare(d, jev=True, force=False):
     R = f'{d}/rig'; os.makedirs(R, exist_ok=True)
     S = json.load(open(f'{d}/scene.json')); img = cv2.cvtColor(cv2.imread(f'{d}/image.png'), cv2.COLOR_BGR2RGB)
-    if os.path.isfile(f'{R}/scene_rig.json') and not force: return json.load(open(f'{R}/scene_rig.json'))
+    if os.path.isfile(f'{R}/scene_rig.json') and not force:
+        info0 = json.load(open(f'{R}/scene_rig.json'))
+        if info0.get('version_decoupe', 1) == VERSION_DECOUPE and info0.get('amodal') == AMODAL: return info0
     t0 = time.time(); acts = S['acteurs']
     m0s = [cv2.imread(f"{d}/{a['slug']}-masque.png", 0).astype(np.float32) / 255 for a in acts]
     alphas, boites, decoupes = [], [], []
@@ -138,28 +223,42 @@ def prepare(d, jev=True, force=False):
         ajoute = float(((m0s[k] < 0.5) & (al > 0.5)).sum() / max(1, (m0s[k] > 0.5).sum()))
         alphas.append(al); boites.append(box); decoupes.append({'decor_retire': round(perdu, 3), 'personne_ajoutee': round(ajoute, 3)})
         x0, y0, x1, y1 = [int(v) for v in box]; pers_tous[y0:y1, x0:x1] = np.maximum(pers_tous[y0:y1, x0:x1], np.clip(1 - C[0], 0, 1)[y0:y1, x0:x1])
+    rendus = membres_rendus(img, alphas, acts)   # avant les orphelins : un membre mal attribué n'en est pas un
     orph = orphelins(img, alphas, pers_tous, meuble, personne)
     pts_fins = {}
     for k, a in enumerate(acts):   # squelette re-détecté sur le recadrage agrandi, gardé s'il est meilleur
         L, sc_ = squelette(img, a, alphas[k]); s0 = _score_pts(a['pts'], alphas[k])
         if L is not None and sc_ > s0 + 0.02:
             a['pts'] = L.round(2).tolist(); pts_fins[a['nom']] = (round(s0, 3), round(sc_, 3))
-    for k, a in enumerate(acts): decoupes[k]['orphelins_rattaches'] = orph[k]
+    for k, a in enumerate(acts): decoupes[k]['orphelins_rattaches'] = orph[k]; decoupes[k]['membres_rendus'] = rendus[k]
     # le décor sans acteur et les parties cachées ne dépendent que des découpes : repris tels quels si elles n'ont pas
     # changé (corriger un squelette ou des bras ne refait pas 7 minutes de reconstitution)
     empreinte = empreinte_decoupes(alphas)
     ancien = json.load(open(f'{R}/scene_rig.json')) if os.path.isfile(f'{R}/scene_rig.json') else {}
     cache = ancien.get('empreinte_alphas') == empreinte and all(os.path.isfile(f'{R}/{f}') for f in ('plaque.png', 'trou.png', 'coherence.json')) \
         and all(os.path.isfile(f"{R}/alpha-{a['slug']}.png") for a in acts)
-    if cache:
+    # PLAQUE GARDÉE quand le trou des acteurs n'a pas grandi : un membre passé d'un acteur à l'autre ne change pas l'union
+    # des découpes, donc pas le décor à reconstituer (7 minutes épargnées, décor identique)
+    plaque_gardee = False
+    if not cache and ancien and all(os.path.isfile(f'{R}/{f}') for f in ('plaque.png', 'trou.png')):
+        t_new = np.zeros(img.shape[:2], np.uint8)
+        for al_ in alphas: t_new |= (al_ > 0.02).astype(np.uint8)
+        t_new = cv2.dilate(t_new, np.ones((13, 13), np.uint8)) > 0   # même halo que plaque.plaque_pleine (6 px)
+        plaque_gardee = not (t_new & ~(cv2.imread(f'{R}/trou.png', 0) > 0)).any()
+    if cache or plaque_gardee:
         pl = cv2.cvtColor(cv2.imread(f'{R}/plaque.png'), cv2.COLOR_BGR2RGB); trou = (cv2.imread(f'{R}/trou.png', 0) > 0).astype(np.uint8)
         inventes = [tuple(x) for x in ancien.get('inventes', [])]; faits = ancien.get('fils', []); ordre_noms = ancien.get('ordre', [a['nom'] for a in acts])
+    if cache:
         finals = [(cv2.imread(f"{R}/alpha-{a['slug']}.png", cv2.IMREAD_UNCHANGED).astype(np.float32) / 65535, ancien.get('acteurs', {}).get(a['nom'], {}).get('complete')) for a in acts]
-    else:
+    elif not plaque_gardee:
         pl, trou = PQ.plaque_pleine(img, alphas)
         pl, inventes = PQ.nettoie(img, pl, trou)   # restes d'acteur et objets inventés par le remplissage : rebouchés
         pl, faits = PQ.fils(img, pl, alphas)
         cv2.imwrite(f'{R}/plaque.png', cv2.cvtColor(pl, cv2.COLOR_RGB2BGR)); cv2.imwrite(f'{R}/trou.png', trou * 255)
+    alphas_avant = {}
+    for a in acts:
+        fa_ = f"{R}/alpha-{a['slug']}.png"
+        if os.path.isfile(fa_): alphas_avant[a['nom']] = hashlib.md5(cv2.imread(fa_, cv2.IMREAD_UNCHANGED).astype(np.uint16).tobytes()).hexdigest()
     if not cache or ancien.get('amodal') != AMODAL:   # complétion amodale refaite seule quand sa méthode change (plaque gardée)
         am, ordre = PQ.amodal(img, alphas, personne=pers_tous); ordre_noms = [acts[k]['nom'] for k in ordre]; finals = []
         for k, a in enumerate(acts):
@@ -171,13 +270,22 @@ def prepare(d, jev=True, force=False):
                     x0, y0, x1, y1 = int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1
                     cv2.imwrite(f"{R}/complete-{a['slug']}.png", cv2.cvtColor(im2[y0:y1, x0:x1], cv2.COLOR_RGB2BGR)); comp = [x0, y0, x1, y1]
                 fin = a2
+            fin = sans_couture(fin)
             cv2.imwrite(f"{R}/alpha-{a['slug']}.png", np.clip(fin * 65535, 0, 65535).astype(np.uint16)); finals.append((fin, comp))
-    info = {'acteurs': {}, 'ordre': ordre_noms, 'fils': faits, 'inventes': inventes, 'empreinte_alphas': empreinte, 'plaque_reprise': bool(cache), 'amodal': AMODAL}
+    info = {'acteurs': {}, 'ordre': ordre_noms, 'fils': faits, 'inventes': inventes, 'empreinte_alphas': empreinte, 'plaque_reprise': bool(cache or plaque_gardee),
+            'amodal': AMODAL, 'version_decoupe': VERSION_DECOUPE}
     for k, a in enumerate(acts):
         s = a['slug']; alphas[k], comp = finals[k]; ent = {'assis': assis(a), 'decoupe': decoupes[k], 'pts': a['pts']}
         if a['nom'] in pts_fins: ent['squelette_affine'] = {'score_avant': pts_fins[a['nom']][0], 'score_apres': pts_fins[a['nom']][1]}
         if comp: ent['complete'] = comp
         fb = a['visage']['box'] if a.get('visage') else None
+        ent['empreinte_alpha'] = hashlib.md5(np.clip(alphas[k] * 65535, 0, 65535).astype(np.uint16).tobytes()).hexdigest()
+        av = ancien.get('acteurs', {}).get(a['nom'], {})
+        if av.get('bras') is not None and os.path.isfile(f'{R}/bras-{s}.npz') and av.get('empreinte_alpha', alphas_avant.get(a['nom'])) == ent['empreinte_alpha'] \
+                and av.get('pts') == a['pts']:
+            ent['bras'] = av['bras']   # découpe et squelette inchangés : calques des bras repris tels quels (rien ne bouge chez lui)
+            if av.get('visage3d'): ent['visage3d'] = True
+            info['acteurs'][a['nom']] = ent; continue
         bras = gestes.prepare(img, alphas[k], a['pts'], fb, a['bbox'])
         _sauve_bras(f'{R}/bras-{s}.npz', bras); ent['bras'] = [(b['cote'], 'avant-bras' if b['nu'] else 'main', b['amax'], b['emax']) for b in bras]
         if fb:

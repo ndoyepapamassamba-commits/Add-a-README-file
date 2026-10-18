@@ -300,11 +300,15 @@ def _position(B, e, bouche):
     return k + float(np.clip((b - o[k]) / max(1e-3, o[k + 1] - o[k]), 0, 1))
 
 
-def visage(B, emotions, bouche, clignement=0.0):
-    """image du visage (carré de rendu) : émotions (poids), ouverture de bouche 0..1, clignement 0..1 — par morphing."""
+RANG_PETIT_VISAGE = 100   # v31 : le rang 140 de Modou, propre à 64 px (audit à l'échelle du film), se voyait abîmé en plan serré
+                          # (visage > 150 px, « rendu » 0,77) — au-delà de 100, réservé aux visages de moins de 100 px à l'écran
+def visage(B, emotions, bouche, clignement=0.0, visage_px=None):
+    """image du visage (carré de rendu) : émotions (poids), ouverture de bouche 0..1, clignement 0..1 — par morphing.
+    visage_px : hauteur du visage à l'écran dans ce plan (les plus grands rangs ne servent qu'aux petits visages)."""
     n = len(B['meta']['bouche']) - 1; W = _poids(B, emotions); gx, gy = B['grille']; V = {}
+    n_max = n if visage_px is None or visage_px < 100 else max([k for k, r in enumerate(B['meta']['bouche']) if r <= RANG_PETIT_VISAGE] or [n])
     for e in W:
-        m = _position(B, e, bouche); k0 = int(min(n - 1, np.floor(m))); V[e] = _niveau(B, e, k0, m - k0)
+        m = min(_position(B, e, bouche), float(n_max)); k0 = int(min(n - 1, np.floor(m))); V[e] = _niveau(B, e, k0, m - k0)
     D = sum(w * V[e][1] for e, w in W.items())                                  # géométrie mélangée (déplacements)
     p0x, p0y = gx - D[..., 0], gy - D[..., 1]                                    # point du neutre qui arrive en q
     D1 = cv2.remap(D, p0x, p0y, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)   # une itération de point fixe

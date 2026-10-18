@@ -242,7 +242,7 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
     → {nom: {canal: array}} (+ « cligne » quand le regard vivant est actif)."""
     RG = {'mocap': 1.0, 'dyn': 1, 'yeux': 1, 'suivi_tete': 1, 'ampleur': 1.0}; RG.update(reglages or {})
     if RG['ampleur'] != 1.0:   # essai de diagnostic (JEV) : enveloppes agrandies — le corps peut-il jouer plus grand ?
-        enveloppes = {n: {k: (v * RG['ampleur'] if isinstance(v, (int, float)) else v) for k, v in e.items()} for n, e in enveloppes.items()}
+        enveloppes = {n: {k: (v * RG['ampleur'] if isinstance(v, (int, float)) and k != 'lacet_peint' else v) for k, v in e.items()} for n, e in enveloppes.items()}
     T = np.arange(nf) / fps; L_sk = [L for L in lignes if L['sketch'] == sketch]
     a_qui = {id(L): interlocuteur(L, lignes, acteurs) for L in L_sk}
     out = {}; journal = [] if journal is None else journal
@@ -281,7 +281,7 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
             parle = L is not None
             if aparte: sd = 0.0
             vers[i] = sd; parle_[i] = parle
-            C['tete_lacet'][i] = sd * (18.0 if parle else 12.0)
+            C['tete_lacet'][i] = sd * max(0.0, (18.0 if parle else 12.0) - sd * env.get('lacet_peint', 0.0))   # ce qui manque au visage peint
             C['regard_x'][i] = sd * (0.85 if parle else 0.95)
             C['buste_lacet'][i] = sd * (7.0 if parle else 4.0)
             roll = kb * 1.2 * _bruit(0.6 * t, g + 1); tang = kb * 0.8 * _bruit(0.7 * t, g + 2); buste = kb * 0.8 * _bruit(0.35 * t, g + 3)

@@ -211,6 +211,12 @@ for sk in T['sketchs']:
             #   désigné « lacet au plus 6° pour les visages de trois quarts »)
             if v3 is not None:
                 r_ = (v3[1, 0] - v3[33, 0]) / max(1e-6, v3[263, 0] - v3[33, 0])
+                # ORIENTATION DÉJÀ PEINTE (18/10/2026) : nez entre les yeux → lacet du visage dessiné (+ = vers la droite de
+                # l'écran ; modèle tête ronde, nez en avant de 0,55 × l'écart des yeux : tan θ = 1,8 (r − 0,5)). Le jeu ne
+                # tourne la tête que de ce qui MANQUE pour regarder l'autre : Koffi et Baye, peints de trois quarts vers leur
+                # partenaire, restaient collés à la borne de 6° (5,96–5,98 sur tous leurs plans de la v31) et le relief 3D
+                # étirait nez, menton et barbiche (carte d'étirement : 24 % sur le visage de Baye à 6°)
+                env_['lacet_peint'] = round(math.degrees(math.atan(1.8 * (r_ - 0.5))), 1)
                 if abs(r_ - 0.5) > 0.12 and env_.get('tete_lacet', 0) > 6.0:
                     env_['tete_lacet'] = 6.0; print(f"{a['nom']}: visage de trois quarts (nez à {r_:.2f} entre les yeux) — lacet limité à 6°", flush=True)
             A_.update(rig=R_, img=im_a, mask=cv2.GaussianBlur(al, (0, 0), 0.5), assis=assis_, env=env_, bras=[], marge_bras=0)
@@ -392,6 +398,7 @@ def etirement(sx, sy, al):
     s1 = np.sqrt((E + r) / 2); s2 = np.sqrt(np.maximum((E - r) / 2, 1e-9))
     st = np.maximum(s1, 1 / s2) - 1; m = al > 0.5
     return (round(float(np.percentile(st[m], 99)), 4), round(float(st[m].max()), 4)) if m.any() else (0.0, 0.0)
+ECHELLE_PLAN = [1.0]
 def warp_rig(S, A, t, name):
     """acteur posé par son squelette : visage (expression dessinée ou déformée, bouche, clignement, regard), puis corps."""
     f = min(NF - 1, max(0, int(round(t * FPS)))); P = S['pistes'][name]; v = lambda k: float(P[k][f])
@@ -399,7 +406,8 @@ def warp_rig(S, A, t, name):
     emo = {e: v('emo_' + e) for e in jeu.EMOS if P['emo_' + e][f] > 0.02}
     src = A['img']; lib = A['lib']
     if A.get('xl'):   # visage redessiné (LivePortrait) : émotions × bouche × clignement
-        src = expressions_lp.colle(src, A['xl'], expressions_lp.visage(A["xl"], emo, jj, bb))
+        vb = A['a'].get('visage', {}).get('box'); vpx = (vb[3] - vb[1]) * ECHELLE_PLAN[0] if vb else None
+        src = expressions_lp.colle(src, A['xl'], expressions_lp.visage(A["xl"], emo, jj, bb, vpx))
     else:
         if lib:
             x = jj * 4; i0 = int(min(3, math.floor(x))); fa = x - i0
@@ -862,6 +870,7 @@ def rend(f):
     if s[5] is not None and t >= s[5]:   # coup de zoom sur la chute, fluide (whip_s) au lieu d'un saut d'image
         v_ = ease((t - s[5]) / max(0.05, REG['whip_s'])); cx, cy, w2, h2 = [a_ + (b_ - a_) * v_ for a_, b_ in zip((cx, cy, w2, h2), cp)]
     assert abs((w2 / h2) / (CW / CH) - 1) < 0.01, 'cadre étiré'
+    ECHELLE_PLAN[0] = CW / w2   # agrandissement scène → écran de ce plan (taille des visages à l'écran)
     fr = frame_scene(S, t, (cx - ref[0], cy - ref[1]), zp)   # le décor suit la caméra à sa profondeur (parallaxe latérale et avant)
     sc = CW / w2; src_ = fr
     if sc < 0.95: src_ = cv2.GaussianBlur(fr, (0, 0), 0.45 / sc)
@@ -890,10 +899,12 @@ import time; T0 = time.time()
 # (Choice), sous condition stricte : aucune tête coupée (< 0,5) et visage de celui qui parle lisible (> 0,5). Décision mise
 # en cache par empreinte (scène, plan, cadres proposés). TOURNE_REALISATEUR=0 : la règle du moteur seule.
 C0_JEV, REALISATION = {}, {}
+SEUIL_PROPRE = 0.42   # « rendu » de la porte G sur l'image d'un cadre candidat (sans marge, la porte tombe à 0,5 ; l'animation
+                      # ajoute jusqu'à 0,17 — mesuré sur les plans de Koffi de la v31)
 def realise(plans):
     import hashlib, uuid
     from concurrent.futures import ThreadPoolExecutor
-    import jev_api
+    import jev_api, jev_film
     CR = os.path.expanduser('~/.cache/massamba-jev/realisateur'); os.makedirs(CR, exist_ok=True)
     def candidats(S, s, keep):
         cs_ = {'moteur': cadre_lisible(S, s, keep)}
@@ -909,7 +920,7 @@ def realise(plans):
     def un(s):
         S = SC[s[2]]; keep = s[4][0] if isinstance(s[4], tuple) else s[4]; cs_ = candidats(S, s, keep)
         cle = hashlib.sha1(json.dumps([list(s[:5]), {k: [round(x, 1) for x in v] for k, v in cs_.items()}, cfg['scenes'][s[2]],
-                                       os.path.getmtime(os.path.join(cfg['scenes'][s[2]], 'image.png'))], default=str).encode()).hexdigest()[:20]
+                                       os.path.getmtime(os.path.join(cfg['scenes'][s[2]], 'image.png')), 'propre-1'], default=str).encode()).hexdigest()[:20]
         f_ = f'{CR}/{cle}.json'; diag = os.environ.get('TOURNE_CANDIDATS')   # diagnostic : images des cadres proposés
         if os.path.isfile(f_) and not diag: d_ = json.load(open(f_)); return s, d_['choix'], cs_, d_
         tm = (s[0] + s[1]) / 2; fr = frame_scene(S, tm)
@@ -936,19 +947,27 @@ def realise(plans):
                        'Which framing would a great film director choose: the speaker well framed with a readable face, the reaction of the other '
                        'character readable when it matters, balanced composition, no head or important part cut by the frame edge?',
                        'criteria': {k_: f'image `{k_}`' for k_ in noms}}}
+        # CADRE PROPRE (18/10/2026, v31) : la porte G juge chaque image du film ; la peinture d'origine elle-même frôle le
+        # défaut dans certains cadres (maquis entier : table et jambes de Koffi, « rendu » 0,45–0,50 sur l'image source sans
+        # animation ; tête de Koffi seule 0,30) — l'animation y ajoute 0,04 à 0,17 et fait tomber le plan. La question de la
+        # porte G, mot pour mot, est posée sur chaque cadre candidat ; un cadre déjà à SEUIL_PROPRE ou plus est écarté
+        ids['contexte'] = jev_film.STYLE
         for k_ in noms:
+            Q[f'propre_{k_}'] = {'type': 'noul', 'instructions': jev_film.N1['rendu'][1].replace('`frame`', f'`{k_}`')}
             Q[f'coupe_{k_}'] = {'type': 'noul', 'instructions': f'In image `{k_}`, is any character\'s head or face partly cut by the edge of the frame?'}
             Q[f'lisible_{k_}'] = {'type': 'noul', 'instructions': f'In image `{k_}`, is the face of the speaking character' + (' (shown in `parleur`)' if 'parleur' in ims else '') + ' large and clear enough to read the expression and the mouth?'}
         a = jev_api.demande(ids, Q, assets, outil='jev_realisateur')
         pr = a['choix']['probabilities'] if 'choix' in a else {noms[0]: 1.0}; ok_ = [k_ for k_ in noms if a[f'coupe_{k_}']['noul'] < 0.5 and a[f'lisible_{k_}']['noul'] > 0.5]
-        choix = max(ok_ or noms, key=lambda k_: pr.get(k_, 0.0))
-        d_ = {'choix': choix, 'conforme': bool(ok_), 'probabilites': pr, 'coupe': {k_: round(a[f'coupe_{k_}']['noul'], 2) for k_ in noms},
-              'lisible': {k_: round(a[f'lisible_{k_}']['noul'], 2) for k_ in noms}}
+        propres = [k_ for k_ in ok_ if a[f'propre_{k_}']['noul'] < SEUIL_PROPRE]
+        if propres: choix = max(propres, key=lambda k_: pr.get(k_, 0.0))
+        else: choix = min(ok_ or noms, key=lambda k_: a[f'propre_{k_}']['noul'])   # aucun cadre propre : le moins douteux
+        d_ = {'choix': choix, 'conforme': bool(propres), 'probabilites': pr, 'coupe': {k_: round(a[f'coupe_{k_}']['noul'], 2) for k_ in noms},
+              'lisible': {k_: round(a[f'lisible_{k_}']['noul'], 2) for k_ in noms}, 'rendu': {k_: round(a[f'propre_{k_}']['noul'], 2) for k_ in noms}}
         json.dump(d_, open(f_, 'w')); return s, choix, cs_, d_
     with ThreadPoolExecutor(8) as ex: res = list(ex.map(un, [s for s in plans if s[2] in SC]))
     for s, choix, cs_, d_ in res:
         C0_JEV[tuple(s[:5])] = cs_[choix]; REALISATION[f'{s[0]:.2f}'] = dict(d_ or {}, choix=choix, proposes=list(cs_))
-        print(f"réalisateur JEV — plan {s[0]:.2f} {s[3]} {s[4]} : {choix}" + ('' if not d_ else f" (choix {d_['probabilites'].get(choix, 0):.2f}{'' if d_['conforme'] else ', AUCUN CADRE CONFORME'})"), flush=True)
+        print(f"réalisateur JEV — plan {s[0]:.2f} {s[3]} {s[4]} : {choix}" + ('' if not d_ else f" (choix {d_['probabilites'].get(choix, 0):.2f}, rendu {d_.get('rendu', {}).get(choix, '?')}{'' if d_['conforme'] else ', AUCUN CADRE PROPRE'})"), flush=True)
 if os.environ.get('TOURNE_REALISATEUR', '1') == '1' and os.environ.get('TOURNE_CADRES') != '1':
     realise([s for s in SH if int(s[1] * FPS) >= RANGE[0] and int(s[0] * FPS) <= RANGE[-1]])
     if os.environ.get('TOURNE_CANDIDATS'): print('cadres proposés écrits dans', os.environ['TOURNE_CANDIDATS']); raise SystemExit(0)
