@@ -23,6 +23,8 @@ const OUT = process.env.SHOTS_DIR || path.join(os.tmpdir(), "teranga-cv-e2e");
 const shoot = screenshotter(OUT);
 const problems = []; // console errors, page errors, unexpected external requests (scenario E)
 const ADMIN_AUTH = { headers: { authorization: `Bearer ${DEV_ADMIN_KEY}` } };
+// The owner guide (LANCEMENT-CV.md, section 7) names these status lights; the admin page must use the same words.
+const GUIDE_HEALTH_LABELS = ["Wave", "Webhook", "Versement", "Mode manuel", "IA", "Votre numéro Wave"];
 
 /** Whole-page text, hidden parts included, minus the nodes matching `except`. */
 const pageText = (page, except = null) =>
@@ -249,6 +251,8 @@ async function revenueAndCron(browser, server, paidOrders) {
   const stats = (await api(server, "GET", "/admin/stats", ADMIN_AUTH)).body.stats;
   check(stats.today.paid === paidOrders.length && stats.today.revenue === revenue, `${label}: API today = ${paidOrders.length} paid, ${revenue} FCFA`);
   check(await kpiAmount(admin, "Aujourd'hui") === revenue, `${label}: admin card « Aujourd'hui » shows ${revenue} FCFA`);
+  const healthLabels = await admin.locator("#health strong").allTextContents();
+  check(healthLabels.join("|") === GUIDE_HEALTH_LABELS.join("|"), `${label}: admin health labels match LANCEMENT-CV.md (${healthLabels.join(", ")})`);
   const pendingBefore = server.payment === "wave" ? revenue : 0;
   check(await kpiAmount(admin, "À reverser ce soir") === pendingBefore, `${label}: « À reverser ce soir » shows ${pendingBefore} FCFA`);
 
