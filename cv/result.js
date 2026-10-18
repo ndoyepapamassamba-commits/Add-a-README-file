@@ -24,6 +24,7 @@
   var pollTimer = null;
   var waitPreviewShown = false;
   var config = null;
+  var premium = null; // CV Premium card (premium-export.js), when the order is a CV Premium
 
   function editsKey() {
     return "tcv:edits:" + id;
@@ -100,6 +101,10 @@
     back.href = previewUrl();
     if (!waitPreviewShown && res.preview) {
       waitPreviewShown = true;
+      if (res.order.product === "premium" && TCV.premiumResult) {
+        TCV.premiumResult.preview($("#wait-preview"), res.preview.cv, res.order.id);
+        return;
+      }
       ["cv", "lettre"].forEach(function (kind) {
         if (res.preview[kind]) new TCV.DocView($("#wait-preview"), kind).show(res.preview[kind], res.order.template);
       });
@@ -227,6 +232,10 @@
   }
 
   function renderDocs() {
+    if (premium) {
+      premium.render();
+      return;
+    }
     ["cv", "lettre"].forEach(function (kind) {
       if (doc[kind] && views[kind]) views[kind].show(doc[kind], template);
     });
@@ -239,10 +248,15 @@
     state("ready");
     TCV.dom.clear($("#docs"));
     views = {};
-    ["cv", "lettre"].forEach(function (kind) {
+    premium = order.product === "premium" && doc.cv && TCV.premiumResult
+      ? TCV.premiumResult.mount({ root: $("#docs"), id: id, doc: function () { return doc; }, onEdit: onEdit })
+      : null;
+    $("#rs-templates").parentNode.hidden = !!premium; // CV Premium: colour switcher inside its card
+    if (premium) views.cv = premium.view;
+    else ["cv", "lettre"].forEach(function (kind) {
       if (doc[kind]) docCard(kind);
     });
-    TCV.dom.segRadios($("#rs-templates"), "rs-template", window.TCVRender.TEMPLATES, template, function (t) {
+    if (!premium) TCV.dom.segRadios($("#rs-templates"), "rs-template", window.TCVRender.TEMPLATES, template, function (t) {
       template = t;
       renderDocs();
       TCV.api.request("POST", "/orders/" + encodeURIComponent(id) + "/template", { body: { t: token, template: t } }).catch(function () {

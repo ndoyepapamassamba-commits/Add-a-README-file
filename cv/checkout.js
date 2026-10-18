@@ -7,7 +7,7 @@
   var $$ = TCV.dom.$$;
   var setText = TCV.dom.setText;
 
-  var ctx = null; // { order, token, preview, template, tab, whatsapp }
+  var ctx = null; // { order, token, preview, template, tab, whatsapp, accent }
   var views = {};
   var paying = false;
 
@@ -26,9 +26,17 @@
     });
   }
 
+  /** CV Premium: one « Prestige » document, a colour instead of a template, the photo kept on this phone. */
+  function isPremium() {
+    return !!(ctx && ctx.order.product === "premium" && window.TCVPremium && ctx.preview && ctx.preview.cv);
+  }
+
   function renderDocs() {
+    var premium = isPremium();
+    views.premium.frame.hidden = !premium;
+    if (premium) views.premium.show(ctx.preview.cv, ctx.accent, window.TCVPremium.photo.get(ctx.order.id));
     ["cv", "lettre"].forEach(function (kind) {
-      var part = ctx.preview && ctx.preview[kind];
+      var part = !premium && ctx.preview && ctx.preview[kind];
       var view = views[kind];
       view.frame.hidden = !part || ctx.tab !== kind;
       if (part) view.show(part, ctx.template);
@@ -36,6 +44,18 @@
   }
 
   function renderSwitchers() {
+    if (TCV.premiumWizard) TCV.premiumWizard.decoratePreview(isPremium());
+    if (isPremium()) {
+      setText($("#pv-tpl-label"), "Couleur");
+      TCV.dom.segRadios($("#pv-templates"), "pv-template", window.TCVPremium.ACCENTS, ctx.accent, function (a) {
+        ctx.accent = a;
+        window.TCVPremium.accent.set(ctx.order.id, a); // kept on this phone, picked up by the result page
+        renderDocs();
+      });
+      $("#pv-doc-tabs-wrap").hidden = true;
+      return;
+    }
+    setText($("#pv-tpl-label"), "Modèle");
     TCV.dom.segRadios($("#pv-templates"), "pv-template", window.TCVRender.TEMPLATES, ctx.template, function (t) {
       ctx.template = t;
       renderDocs();
@@ -62,6 +82,10 @@
   function show(order, token, preview, opts) {
     opts = opts || {};
     ctx = { order: order, token: token, preview: preview || {}, template: order.template || "classique", tab: preview && preview.cv ? "cv" : "lettre", whatsapp: null };
+    if (window.TCVPremium) {
+      var pm = preview && preview.cv && preview.cv.premium;
+      ctx.accent = window.TCVPremium.accent.get(order.id) || (pm && pm.accent) || "marine";
+    }
     $("#pay-failed").hidden = !opts.failed;
     setText($("#pv-product"), TCV.fmt.productLabel(order.product));
     setText($("#pv-amount"), TCV.fmt.fcfa(order.amount));
@@ -186,6 +210,8 @@
     docs.classList.add("doc-stack");
     views.cv = new TCV.DocView(docs, "cv");
     views.lettre = new TCV.DocView(docs, "lettre");
+    views.premium = new TCV.DocView(docs, "premium");
+    views.premium.frame.hidden = true;
     payButtons().forEach(function (b) {
       b.addEventListener("click", pay);
     });

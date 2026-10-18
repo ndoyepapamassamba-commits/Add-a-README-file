@@ -18,6 +18,11 @@
   };
   var LANGUAGES = ["Français", "Wolof", "Anglais", "Arabe", "Pulaar", "Sérère", "Diola", "Mandinka", "Soninké", "Espagnol", "Portugais", "Italien", "Allemand", "Chinois"];
 
+  // CV Premium steps live in premium-wizard.js (loaded after this file); looked up lazily.
+  function PW() {
+    return TCV.premiumWizard || null;
+  }
+
   var form;
   var state;
   var current = null;
@@ -52,7 +57,8 @@
         { name: "Anglais", level: "Notions" }
       ],
       interests: [],
-      letter: { company: "", recipient: "", companyCity: "", source: "", qualities: [], motivation: "" }
+      letter: { company: "", recipient: "", companyCity: "", source: "", qualities: [], motivation: "" },
+      premium: PW() ? PW().defaults() : null
     };
   }
 
@@ -73,7 +79,7 @@
   function restore(saved) {
     var s = defaults();
     if (!saved || typeof saved !== "object") return s;
-    if (["cv", "lettre", "pack"].indexOf(saved.product) !== -1) s.product = saved.product;
+    if (["cv", "lettre", "pack", "premium"].indexOf(saved.product) !== -1) s.product = saved.product;
     if (["classique", "moderne", "elegant"].indexOf(saved.template) !== -1) s.template = saved.template;
     copyStrings(s.identity, saved.identity);
     copyStrings(s.target, saved.target);
@@ -90,6 +96,7 @@
     s.skills = stringList(saved.skills, 20);
     s.it = stringList(saved.it, 15);
     s.interests = stringList(saved.interests, 8);
+    if (PW()) s.premium = PW().restore(saved.premium);
     return s;
   }
 
@@ -374,6 +381,7 @@
   }
 
   function stepOf(path) {
+    if (PW() && /^premium(\.|$)/.test(path)) return PW().stepOf(path);
     return STEP_OF[path.split(".")[0]] || null;
   }
 
@@ -381,7 +389,7 @@
   function toScreenPaths(fields, index) {
     var out = {};
     Object.keys(fields || {}).forEach(function (path) {
-      var m = /^(education|experiences|languages)\.(\d+)(\..*)?$/.exec(path);
+      var m = /^(.+?)\.(\d+)(\..*)?$/.exec(path); // education.2.title, premium.achievements.1.tags.0…
       var screen = path;
       if (m && index[m[1]] && index[m[1]][Number(m[2])] != null) screen = m[1] + "." + index[m[1]][Number(m[2])] + (m[3] || "");
       out[screen] = fields[path];
@@ -417,6 +425,7 @@
   /* ---------- Steps ---------- */
 
   function steps() {
+    if (state.product === "premium" && PW()) return PW().steps();
     return ALL_STEPS.filter(function (k) {
       if (k === "lettre") return state.product !== "cv";
       if (k === "langues") return state.product !== "lettre";
@@ -439,6 +448,7 @@
     TCV.dom.setText($("#wz-back"), i === 0 ? "Accueil" : "Retour");
     TCV.dom.setText($(".btn-label", $("#wz-next")), i === list.length - 1 ? "Voir mon aperçu gratuit" : "Continuer");
     if (key === "competences") chipGroups[0].render();
+    if (PW()) PW().onShow(key, state.product);
     showErrorsFor(key);
     window.scrollTo(0, 0);
     var hasErrors = $$("[data-error-for]", section).some(function (n) { return n.textContent; });
@@ -569,12 +579,13 @@
     fillStatic();
     buildChipGroups();
     bind();
+    if (PW()) PW().attach({ state: function () { return state; }, save: save, setError: setError, clearError: clearError, ChipGroup: ChipGroup });
     renderAll();
   }
 
   /** Starts the wizard, optionally with a product chosen on the landing page. */
   function start(product) {
-    if (["cv", "lettre", "pack"].indexOf(product) !== -1) {
+    if (["cv", "lettre", "pack", "premium"].indexOf(product) !== -1) {
       state.product = product;
       writeSimpleFields();
       save();

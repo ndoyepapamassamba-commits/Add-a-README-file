@@ -41,7 +41,7 @@ Deno.test("loadConfig: defaults from SPEC.md", () => {
     adminKey: null,
     cronSecret: null,
     allowedReturnPrefixes: [...DEFAULT_RETURN_PREFIXES],
-    prices: { cv: 1000, lettre: 1000, pack: 1500 },
+    prices: { cv: 1000, lettre: 1000, pack: 1500, premium: 5000 },
     openrouterApiKey: null,
     llmModel: "google/gemini-2.5-flash",
     previewRateLimitPerHour: 12,
