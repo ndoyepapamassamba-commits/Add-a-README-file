@@ -52,9 +52,11 @@ import {
   joinSentences,
   lowerMonths,
   splitMissions,
+  takesArticle,
   tidy,
   titleCaseName,
   upperName,
+  withArticle,
 } from "./text.ts";
 
 export function generateDocument(input: OrderInput, product: Product, opts: { seed: string; now: Date }): Document {
@@ -183,25 +185,19 @@ function degreeArticle(name: string): "un" | "une" {
   return FEMININE_DEGREE_WORDS.has(first) ? "une" : "un";
 }
 
-const SCHOOL_ELIDED = new Set(["universite", "institut", "ecole", "academie", "iut"]);
-const SCHOOL_MASCULINE = new Set([
-  "lycee", "centre", "college", "groupe", "complexe", "cours", "conservatoire", "cabinet", "prytanee", "pole",
-]);
-
 /** " à l'ISM", " au Lycée Blaise Diagne", " à l'Université Cheikh Anta Diop"; " (SUPDECO)" when unsure. */
 function atSchool(school: string | undefined): string {
   const s = collapse(school ?? "");
   if (!s) return "";
-  if (/^(le|la|les)\s|^l['’]/i.test(s)) return ` ${a(s.replace(/^(\p{L}+)/u, (w) => w.toLocaleLowerCase("fr")))}`;
-  const firstRaw = s.split(/[\s'’-]/)[0];
-  const first = foldKey(firstRaw);
-  if (SCHOOL_ELIDED.has(first)) return ` à l'${s}`;
-  if (SCHOOL_MASCULINE.has(first)) return ` au ${s}`;
-  if (first === "faculte") return ` à la ${s}`;
-  const isAcronym = firstRaw.length >= 2 && /^[\p{Lu}\d]+$/u.test(firstRaw);
-  if (isAcronym && /^[AEIOU]/.test(firstRaw)) return ` à l'${s}`;
+  if (takesArticle(s)) return ` ${a(withArticle(s))}`;
+  const first = s.split(/[\s'’-]/)[0];
+  const isAcronym = first.length >= 2 && /^[\p{Lu}\d]+$/u.test(first);
+  if (isAcronym && /^[AEIOU]/.test(first)) return ` à l'${s}`;
   return ` (${s})`;
 }
+
+/** Licences and certificates are qualifications, not an academic path. */
+const NON_ACADEMIC_FIRST_WORDS = new Set(["permis", "attestation", "certificat", "certification", "habilitation", "carte"]);
 
 function buildDegree(input: OrderInput, c: Pick<Ctx, "g">, nowYear: number): DegreeFacts | null {
   const list = input.education.filter((e) => collapse(e.degree ?? "") !== "");
@@ -233,7 +229,8 @@ function buildDegree(input: OrderInput, c: Pick<Ctx, "g">, nowYear: number): Deg
     lead = `Avec un ${name}`;
     leadFull = `${lead}${at}`;
   }
-  return { status, name, article, lead, leadFull, where: `${at}${when}` };
+  const academic = !NON_ACADEMIC_FIRST_WORDS.has(foldKey(name.split(/\s/)[0] ?? ""));
+  return { status, academic, name, article, lead, leadFull, where: `${at}${when}` };
 }
 
 const MAX_MISSION_WORDS = 10;
@@ -250,7 +247,7 @@ function buildExperience(input: OrderInput): ExpFacts | null {
 
   const title = inSentence(collapse(e.title).replace(/[\s.,;:]+$/u, ""));
   const company = collapse(e.company ?? "");
-  const at = !company ? "" : /^(le|la|les)\s|^l['’]/i.test(company) ? ` ${auSeinDe(company)}` : ` chez ${company}`;
+  const at = !company ? "" : takesArticle(company) ? ` ${auSeinDe(withArticle(company))}` : ` chez ${company}`;
   const start = lowerMonths(collapse(e.start ?? ""));
   const end = lowerMonths(collapse(e.end ?? ""));
   const current = isCurrent(e);
@@ -349,9 +346,10 @@ function buildContext(input: OrderInput, now: Date): Ctx {
     degree,
     exp,
     expCount: input.experiences.length,
-    skills: dedupeSkills(input.skills).slice(0, 3).map(inSentence),
+    // A skill containing "et" reads best first: "hygiène et asepsie, soins de base et prise de constantes".
+    skills: dedupeSkills(input.skills).slice(0, 3).map(inSentence).sort((x, y) => Number(/ et /.test(y)) - Number(/ et /.test(x))),
     it: input.it.map(collapse).filter(Boolean).slice(0, 4),
-    company: collapse(input.letter?.company ?? ""),
+    company: withArticle(input.letter?.company ?? ""),
     source: parseSource(input.letter?.source),
   };
 }
@@ -384,7 +382,7 @@ export function formatPeriod(start: string | undefined, end: string | undefined)
 
 function buildProfile(c: Ctx, picker: Picker): string {
   // The aim must name the job, so it is chosen first; the other slots then avoid repeating it.
-  const w = new Composer(picker, c, [c.role], [c.exp?.at ?? ""]);
+  const w = new Composer(picker, c, [c.role, c.domain], [c.exp?.at ?? ""]);
   const aim = w.pick("profile.aim", PROFILE_AIM[c.kind]);
   const asset = c.exp ? w.pick("profile.experience", PROFILE_EXPERIENCE) : w.pick("profile.skills", PROFILE_SKILLS);
   const intro = w.pick("profile.intro", PROFILE_INTRO[c.level]);
@@ -453,7 +451,8 @@ function resolveQualities(typed: string[], c: Ctx, picker: Picker): { phrases: s
 }
 
 function buildParagraphs(input: OrderInput, c: Ctx, picker: Picker): string[] {
-  const w = new Composer(picker, c, [c.role]);
+  const motivation = cleanFreeText(input.letter?.motivation);
+  const w = new Composer(picker, c, [c.role, c.domain], [motivation]);
 
   const openBank = c.source?.mode === "media"
     ? LETTRE_OPEN_ADVERT
@@ -481,7 +480,7 @@ function buildParagraphs(input: OrderInput, c: Ctx, picker: Picker): string[] {
     c.skills.length > 0 ? w.pick("p3.skills", LETTRE_SKILLS) : c.it.length > 0 && w.pick("p3.it", LETTRE_IT),
     phrases.length > 0 && w.choose("p3.qualities", LETTRE_QUALITIES.map((intro) => intro(joinList(phrases)))),
     others.length > 0 && `Je fais ${phrases.length ? "également " : ""}preuve ${joinList(others.map(de))}`,
-    cleanFreeText(input.letter?.motivation),
+    motivation,
     w.pick("p3.interest", LETTRE_INTEREST),
   ]);
 
