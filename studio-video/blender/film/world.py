@@ -183,7 +183,12 @@ def plan_life(story, timeline, cast_names, rig, fps, nF, seed=None):
             life['animals'].append({'species': a['espece'], 'behavior': a['comportement'], 'u': u, 'depth': dep,
                                     'phase': round(rnd.uniform(0, 6.28), 2), 'dir': rnd.choice([-1, 1]), 'speed': round(rnd.uniform(0.7, 1.3), 2)})
     # Props the lines mention, set from the first frame next to the actor who first speaks of them (no object popping in).
+    # A story may name each prop's owner (vers_blender.py, 18/10/2026) : the bowl and the sugar stay with Baye, not with
+    # whoever names them first.
     seen = set()
+    for pr in story.get('props', []):
+        nom = next((o['nom'] for o in place.get('objets', []) + EXTRA_PROPS if o['id'] == pr['kind']), pr['kind'])
+        seen.add(pr['kind']); life['props'].append({'kind': pr['kind'], 'near': pr['near'], 'beat': 0, 'at': 0.0, 'nom': nom})
     for i, b in enumerate(story.get('beats', [])):
         t = fold(b['text'])
         for o in place.get('objets', []) + EXTRA_PROPS:
@@ -205,7 +210,11 @@ EXTRA_PROPS = [
     {'id': 'gateau', 'nom': 'gâteau', 'mots': ['gâteau', 'anniversaire']},
     {'id': 'bouteilles', 'nom': 'bouteilles', 'mots': ['bouteille']},
     {'id': 'valise', 'nom': 'valise', 'mots': ['valise']},
-    {'id': 'tomates', 'nom': 'tomates', 'mots': ['tomate']},
+    {'id': 'boite_tomate', 'nom': 'boîte de tomate', 'mots': ['boîte de tomate', 'boite de tomate']},
+    {'id': 'billets', 'nom': 'billets', 'mots': ['billet', 'une barre', 'deux barres', 'mille francs']},
+    {'id': 'bol', 'nom': 'bol de bouillie', 'mots': ['bouillie', 'bol']},
+    {'id': 'boite_sucre', 'nom': 'boîte de sucre', 'mots': ['sucre']},
+    {'id': 'tomates', 'nom': 'tomates', 'mots': ['tomates']},
     {'id': 'papiers', 'nom': 'papiers', 'mots': ['bulletin', 'facture', 'papier', 'dossier']},
     {'id': 'assiette', 'nom': 'assiette', 'mots': ['garba', 'attiéké', 'alloco', 'poisson']},
 ]
@@ -1209,7 +1218,8 @@ class World:
             'ballon': lambda: A.ballon(n), 'orange': lambda: A.orange(n), 'bouteilles': lambda: A.bouteilles(n),
             'valise': lambda: A.valise(n), 'tomates': lambda: A.caisse_de_tomates(n, (0, 0, 0), None, tas=False),
             'billets': lambda: A.billets(n), 'gateau': lambda: A.gateau(n), 'papiers': lambda: A.papiers(n),
-            'marmite': lambda: A.marmite(n),
+            'marmite': lambda: A.marmite(n), 'bol': lambda: A.bol(n), 'boite_sucre': lambda: A.boite_sucre(n),
+            'boite_tomate': lambda: A.boite_tomate(n),
         }.get(kind)
         return (build(), 0.0) if build else (None, 0.0)
 

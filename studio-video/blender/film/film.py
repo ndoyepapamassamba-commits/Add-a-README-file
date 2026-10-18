@@ -31,7 +31,10 @@ def main():
     ap.add_argument('--voices', default=os.environ.get('PIPER_VOICES', os.path.expanduser('~/piper')))
     ap.add_argument('--blender', default=os.environ.get('BLENDER') or shutil.which('blender'))
     ap.add_argument('--engine', default='')
-    ap.add_argument('--samples', type=int, default=10)
+    # 3 échantillons (18/10/2026, « trouve une solution à la rapidité de génération via Blender ») : acteurs et décor sont des
+    # peintures émissives, sans lumière à intégrer ; mesuré sur la cour : 2 échantillons = 0,4 s/image contre 5,75 s à 10
+    # (×14), même netteté (PSNR 36 dB, aucun bruit visible) ; le 3e lisse les bords des découpes. 10 reste possible.
+    ap.add_argument('--samples', type=int, default=3)
     ap.add_argument('--seconds', type=float, default=64, help='durée visée (> 60 s : programme de rémunération TikTok ; vos vidéos : 60,6 à 70,6 s)')
     ap.add_argument('--sans-realisateur', action='store_true',
                     help='sans le réalisateur (director.py : gestes, énergie, réactions, caméra par réplique) — comparaison A/B')

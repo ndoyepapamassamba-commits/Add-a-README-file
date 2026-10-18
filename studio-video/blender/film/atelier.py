@@ -883,6 +883,33 @@ def _atelier_extend():
             ob.rotation_euler = (0, 0, math.radians(-4 + 3 * j))
         return root
 
+    def bol(self, name, parent=None):
+        """bol émaillé de bouillie (18/10/2026, sketch L'ORDONNANCE) : Ø 15 cm, bouillie de mil beige, bord bleu."""
+        root = self.empty(name, parent)
+        root['atelier'] = 'bol'
+        email = self.matiere((242, 240, 232), gloss=0.7, grain=0.02, var=0.03, rgb2=(60, 100, 180))
+        self.revolve(f'{name}-coque', [(0.0, 0.0), (0.045, 0.0), (0.07, 0.03), (0.078, 0.07), (0.074, 0.072), (0.065, 0.035), (0.0, 0.012)], email, root)
+        self.revolve(f'{name}-bord', [(0.074, 0.07), (0.079, 0.07), (0.079, 0.075), (0.074, 0.075)], self.matiere((40, 80, 170), gloss=0.6), root, subsurf=0)
+        self.revolve(f'{name}-bouillie', [(0.0, 0.055), (0.068, 0.055), (0.0, 0.06)], self.matiere((214, 188, 140), gloss=0.25, grain=0.10, var=0.05, scale=400), root)
+        return root
+
+    def boite_sucre(self, name, parent=None):
+        """boîte de sucre en poudre (carton jaune et bleu) : 10 × 6 × 16 cm."""
+        root = self.empty(name, parent)
+        root['atelier'] = 'boite_sucre'
+        self.box(f'{name}-carton', (0, 0, 0.08), (0.10, 0.06, 0.16), self.matiere((246, 206, 40), grain=0.06, var=0.04, rgb2=(30, 80, 170)), root, bevel=0.003)
+        self.box(f'{name}-bande', (0, 0, 0.11), (0.102, 0.062, 0.04), self.matiere((30, 80, 170), grain=0.05), root, bevel=0.002)
+        return root
+
+    def boite_tomate(self, name, parent=None):
+        """boîte de concentré de tomate (fer-blanc, étiquette rouge) : Ø 7,5 cm × 11 cm — la cachette de Baye."""
+        root = self.empty(name, parent)
+        root['atelier'] = 'boite_tomate'
+        fer = self.matiere((196, 198, 200), gloss=0.85, grain=0.03, var=0.04)
+        self.revolve(f'{name}-fut', [(0.0, 0.0), (0.0375, 0.0), (0.0375, 0.11), (0.0, 0.11)], fer, root, seg=32)
+        self.revolve(f'{name}-etiquette', [(0.0379, 0.015), (0.0379, 0.095)], self.matiere((206, 34, 30), gloss=0.4, grain=0.04, rgb2=(246, 220, 60)), root, seg=32, subsurf=0)
+        return root
+
     def marmite(self, name, parent=None):
         root = self.empty(name, parent)
         root['atelier'] = 'marmite'

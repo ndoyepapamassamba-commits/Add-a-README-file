@@ -22,8 +22,10 @@
    },
    "mise_en_scene": "Baye assis sur sa chaise en plastique, Nounou debout, poings sur les hanches, face à Petit Mamadou ; le cartable de Mamadou est posé à part sur le banc",
    "objets": [
-    "chaise",
-    "cartable"
+    {
+     "quoi": "papiers",
+     "a": "PETIT MAMADOU"
+    }
    ],
    "repliques": [
     {
@@ -89,8 +91,14 @@
    },
    "mise_en_scene": "Baye entraîne Petit Mamadou au coin de la cour et chuchote ; Nounou entre à la fin, la boîte de tomate vide à la main",
    "objets": [
-    "boîte de tomate",
-    "billets"
+    {
+     "quoi": "boite_tomate",
+     "a": "MAMAN NOUNOU"
+    },
+    {
+     "quoi": "billets",
+     "a": "BAYE NDIAYE"
+    }
    ],
    "repliques": [
     {
@@ -156,10 +164,18 @@
    },
    "mise_en_scene": "Baye assis, un bol de bouillie sur les genoux, verse du sucre ; Nounou arrive avec l'ordonnance ; Petit Mamadou mange sa bouillie sur le banc et regarde tout",
    "objets": [
-    "chaise",
-    "bol",
-    "boîte de sucre",
-    "ordonnance"
+    {
+     "quoi": "bol",
+     "a": "BAYE NDIAYE"
+    },
+    {
+     "quoi": "boite_sucre",
+     "a": "BAYE NDIAYE"
+    },
+    {
+     "quoi": "papiers",
+     "a": "MAMAN NOUNOU"
+    }
    ],
    "repliques": [
     {

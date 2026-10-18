@@ -33,7 +33,9 @@ def convertit(s):
         beats.append(b)
     return {'title': s.get('titre', s['id']), 'hook': s['repliques'][0]['texte'], 'decor': DECOR.get(s.get('lieu', 'cour'), 'Cour'),
             'fps': 25, 'size': [576, 1024], 'music': False, 'cast': cast, 'beats': beats,
-            'reaction_s': (s.get('reaction') or {}).get('duree_s'), 'source': {'sketch': s['id'], 'mecanique': s.get('mecanique')}}
+            'reaction_s': (s.get('reaction') or {}).get('duree_s'), 'source': {'sketch': s['id'], 'mecanique': s.get('mecanique')},
+            # objets de l'action posés près de leur propriétaire dès la première image (atelier.py : formes et tailles réelles)
+            'props': [{'kind': o['quoi'], 'near': ids[o['a']]} for o in s.get('objets', []) if isinstance(o, dict) and o.get('a') in ids]}
 
 
 if __name__ == '__main__':
