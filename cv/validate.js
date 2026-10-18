@@ -122,6 +122,7 @@
         data.languages.push({ name: line(l.name), level: l.level });
       });
     }
+    if (product === "stage" && TCV.stageForm) TCV.stageForm.build(state, data, index);
     if (product === "lettre" || product === "pack") {
       var lt = state.letter || {};
       data.letter = {
@@ -185,7 +186,7 @@
       cap(p + "end", e.end, 20);
       cap(p + "missions", e.missions, 800);
     });
-    if (product !== "lettre" && !data.education.length && !data.experiences.length && !f.experiences) {
+    if (product !== "lettre" && product !== "stage" && !data.education.length && !data.experiences.length && !f.experiences) {
       f.experiences = "Ajoutez au moins une formation ou une expérience (stage, petit boulot, bénévolat…).";
     }
 
@@ -206,6 +207,7 @@
       cap("letter.motivation", lt.motivation, 600);
       lt.qualities.forEach(function (q, i) { cap("letter.qualities." + i, q, 40); });
     }
+    if (product === "stage" && TCV.stageForm) TCV.stageForm.validate(data, f);
     return f;
   }
 
@@ -213,6 +215,8 @@
     ENUMS: ENUMS,
     line: line,
     text: text,
+    opt: opt,
+    cleanList: cleanList,
     normalizeSnMobile: normalizeSnMobile,
     isPhone: isPhone,
     buildInput: buildInput,

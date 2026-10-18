@@ -190,10 +190,11 @@
     return frag;
   }
 
-  /** Item list where the period sits on the title row (classique, moderne). */
-  function stackedItems(items, kind) {
+  /** Item list where the period sits on the title row (classique, moderne). `indexes`: positions in the CvDoc list. */
+  function stackedItems(items, kind, indexes) {
     var wrap = el("div", "tcv-items");
-    items.forEach(function (it, i) {
+    items.forEach(function (it, n) {
+      var i = indexes ? indexes[n] : n;
       var item = el("div", "tcv-item");
       item.appendChild(kind === "exp" ? experienceBody(it, i, true) : educationBody(it, i, true));
       wrap.appendChild(item);
@@ -202,9 +203,10 @@
   }
 
   /** Item list with a left date column (élégant). */
-  function datedItems(items, kind) {
+  function datedItems(items, kind, indexes) {
     var wrap = el("div", "tcv-items");
-    items.forEach(function (it, i) {
+    items.forEach(function (it, n) {
+      var i = indexes ? indexes[n] : n;
       var item = el("div", "tcv-item tcv-dated", { "data-w": "row" });
       var when = el("div", "tcv-when");
       var period = kind === "exp" ? it.period : it.year;
@@ -237,11 +239,33 @@
     return s;
   }
 
-  function itemsSection(items, kind, label, dated) {
+  function itemsSection(items, kind, label, dated, indexes) {
     if (!items || !items.length) return null;
     var s = section(kind === "exp" ? "tcv-sec-exp" : "tcv-sec-edu", label);
-    s.appendChild(dated ? datedItems(items, kind) : stackedItems(items, kind));
+    s.appendChild(dated ? datedItems(items, kind, indexes) : stackedItems(items, kind, indexes));
     return s;
+  }
+
+  // Pack Stage: the generator appends the student's projects to cv.experiences under these titles.
+  var PROJECT_TITLE = /^(projets? académiques?|activités? associatives?)$/i;
+
+  /**
+   * Main sections in order. A student CV (Pack Stage: at least one project entry) shows Formation first, then
+   * "Projets académiques et activités", then the real experiences; other CVs are unchanged.
+   */
+  function mainSections(cv, dated) {
+    var pro = { items: [], idx: [] };
+    var projects = { items: [], idx: [] };
+    (cv.experiences || []).forEach(function (e, i) {
+      var bucket = e && typeof e.title === "string" && PROJECT_TITLE.test(e.title.trim()) ? projects : pro;
+      bucket.items.push(e);
+      bucket.idx.push(i);
+    });
+    var edu = itemsSection(cv.education, "edu", "Formation", dated);
+    if (!projects.items.length) return [itemsSection(cv.experiences, "exp", "Expérience professionnelle", dated), edu];
+    var proj = itemsSection(projects.items, "exp", "Projets académiques et activités", dated, projects.idx);
+    if (proj) proj.classList.add("tcv-sec-projects");
+    return [edu, proj, itemsSection(pro.items, "exp", "Expérience professionnelle", dated, pro.idx)];
   }
 
   /** Label / value rows ("Compétences : a · b"), used by classique. */
@@ -303,13 +327,7 @@
   function cvClassique(cv, p) {
     var head = header(cv);
     if (cv.contacts && cv.contacts.length) head.appendChild(contactsInline(cv));
-    appendAll(p, [
-      head,
-      profileSection(cv),
-      itemsSection(cv.experiences, "exp", "Expérience professionnelle"),
-      itemsSection(cv.education, "edu", "Formation"),
-      factsSection(cv)
-    ]);
+    appendAll(p, [head, profileSection(cv)].concat(mainSections(cv, false), [factsSection(cv)]));
   }
 
   function cvModerne(cv, p) {
@@ -324,11 +342,7 @@
       sideSection("Langues", nonEmpty(cv.languages) && languageList(cv.languages, "tcv-langs tcv-langs-stack")),
       sideSection("Centres d'intérêt", nonEmpty(cv.interests) && bulletList(cv.interests, "cv.interests", "tcv-list"))
     ]);
-    appendAll(main, [
-      profileSection(cv),
-      itemsSection(cv.experiences, "exp", "Expérience professionnelle"),
-      itemsSection(cv.education, "edu", "Formation")
-    ]);
+    appendAll(main, [profileSection(cv)].concat(mainSections(cv, false)));
     cols.appendChild(side);
     cols.appendChild(main);
     p.appendChild(cols);
@@ -337,12 +351,7 @@
   function cvElegant(cv, p) {
     var head = header(cv);
     if (cv.contacts && cv.contacts.length) head.appendChild(contactsInline(cv));
-    appendAll(p, [
-      head,
-      profileSection(cv),
-      itemsSection(cv.experiences, "exp", "Expérience professionnelle", true),
-      itemsSection(cv.education, "edu", "Formation", true)
-    ]);
+    appendAll(p, [head, profileSection(cv)].concat(mainSections(cv, true)));
     var left = el("div", "tcv-col");
     var right = el("div", "tcv-col");
     appendAll(left, [sideSection("Compétences", nonEmpty(cv.skills) && bulletList(cv.skills, "cv.skills", "tcv-list"))]);
@@ -481,6 +490,44 @@
     return finish(p);
   }
 
+  function envoiPart(title, rows) {
+    var s = el("section", "tcv-envoi-block");
+    var h = el("h3", "tcv-envoi-title");
+    h.textContent = title;
+    s.appendChild(h);
+    rows.forEach(function (r) {
+      if (isBlank(r[1])) return;
+      if (r[0]) {
+        var label = el("p", "tcv-envoi-label");
+        label.textContent = r[0];
+        s.appendChild(label);
+      }
+      s.appendChild(field(r[2] === "subject" ? "p" : "div", r[2] === "subject" ? "tcv-envoi-subject" : "tcv-envoi-text", r[1], r[3]));
+    });
+    return s;
+  }
+
+  /**
+   * Pack Stage sending message (EnvoiDoc) as a screen card, not an A4 page: e-mail (subject + body) then
+   * WhatsApp. Line breaks are kept; masked runs are blurred like in the documents.
+   */
+  function envoi(doc) {
+    var box = el("div", "tcv-envoi", { lang: "fr" });
+    if (!doc) return box;
+    box.appendChild(envoiPart("E-mail", [["Objet", doc.emailSubject, "subject", "envoi.emailSubject"], ["Message", doc.emailBody, "text", "envoi.emailBody"]]));
+    box.appendChild(envoiPart("WhatsApp", [["", doc.whatsapp, "text", "envoi.whatsapp"]]));
+    if (box.querySelector(".tcv-mask")) {
+      box.classList.add("is-preview");
+      var note = el("p", "tcv-envoi-lock");
+      var strong = el("strong");
+      strong.textContent = "Aperçu gratuit";
+      note.appendChild(strong);
+      note.appendChild(document.createTextNode(" · Message complet après paiement, prêt à copier."));
+      box.appendChild(note);
+    }
+    return box;
+  }
+
   /**
    * Shrinks the type (down to 86 %) until the page fits on one A4 sheet. The page must be in the DOM.
    * Returns true when the content fits on one page.
@@ -506,6 +553,7 @@
     A4_H_PX: A4_H_PX,
     cv: cv,
     lettre: lettre,
+    envoi: envoi,
     fit: fit,
     hasMask: hasMask
   };

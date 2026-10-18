@@ -97,7 +97,7 @@
     return m ? "+221 " + m[1] + " " + m[2] + " " + m[3] + " " + m[4] : e164 || "";
   }
 
-  var PRODUCT_LABELS = { cv: "CV", lettre: "Lettre de motivation", pack: "Pack CV + lettre" };
+  var PRODUCT_LABELS = { cv: "CV", lettre: "Lettre de motivation", pack: "Pack CV + lettre", stage: "Pack Stage" };
 
   function productLabel(p) {
     return PRODUCT_LABELS[p] || p;
@@ -185,7 +185,7 @@
   var DEFAULT_CONFIG = {
     brandName: "Teranga CV",
     currency: "XOF",
-    prices: { cv: 1000, lettre: 1000, pack: 1500 },
+    prices: { cv: 1000, lettre: 1000, pack: 1500, stage: 1500, stageMulti: 2500 },
     payment: { wave: false, manual: false, manualWaveNumber: null, ownerWhatsapp: null },
     loaded: false
   };
@@ -202,7 +202,9 @@
             prices: {
               cv: Number(prices.cv) || DEFAULT_CONFIG.prices.cv,
               lettre: Number(prices.lettre) || DEFAULT_CONFIG.prices.lettre,
-              pack: Number(prices.pack) || DEFAULT_CONFIG.prices.pack
+              pack: Number(prices.pack) || DEFAULT_CONFIG.prices.pack,
+              stage: Number(prices.stage) || DEFAULT_CONFIG.prices.stage,
+              stageMulti: Number(prices.stageMulti) || DEFAULT_CONFIG.prices.stageMulti
             },
             payment: Object.assign({}, DEFAULT_CONFIG.payment, (c && c.payment) || {}),
             loaded: true
@@ -308,6 +310,27 @@
       cur = cur[keys[i]];
     }
     if (cur != null) cur[keys[keys.length - 1]] = value;
+  }
+
+  function getPath(obj, path) {
+    return path.split(".").reduce(function (o, k) { return o == null ? undefined : o[k]; }, obj);
+  }
+
+  /**
+   * The parts of a Document in display order: CV, lettre (cv/lettre/pack) or the Pack Stage letters
+   * (one per company) and the sending message. `path` locates the part inside the document.
+   */
+  function docParts(doc) {
+    var parts = [];
+    if (!doc) return parts;
+    if (doc.cv) parts.push({ key: "cv", kind: "cv", label: "CV", path: "cv" });
+    if (doc.lettre) parts.push({ key: "lettre", kind: "lettre", label: "Lettre", path: "lettre" });
+    var many = Array.isArray(doc.lettres) ? doc.lettres : [];
+    many.forEach(function (l, i) {
+      if (l) parts.push({ key: "lettre-" + i, kind: "lettre", label: many.length > 1 ? "Lettre " + (i + 1) : "Lettre", path: "lettres." + i, index: i, count: many.length });
+    });
+    if (doc.envoi) parts.push({ key: "envoi", kind: "envoi", label: "Message d'envoi", path: "envoi" });
+    return parts;
   }
 
   /* ---------- Scaled A4 view ---------- */
@@ -497,6 +520,8 @@
   TCV.orders = orders;
   TCV.url = { param: param, returnBase: returnBase, resultUrl: resultUrl, siteUrl: siteUrl };
   TCV.setPath = setPath;
+  TCV.getPath = getPath;
+  TCV.docParts = docParts;
   TCV.DocView = DocView;
   TCV.copyText = copyText;
 })();

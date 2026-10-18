@@ -6,6 +6,7 @@
   var TCV = window.TCV;
   var D = window.TCV_DATA;
   var V = TCV.validate;
+  var S = TCV.stageForm || null; // Pack Stage parts (stage.js)
   var $ = TCV.dom.$;
   var $$ = TCV.dom.$$;
   var el = TCV.dom.el;
@@ -52,7 +53,8 @@
         { name: "Anglais", level: "Notions" }
       ],
       interests: [],
-      letter: { company: "", recipient: "", companyCity: "", source: "", qualities: [], motivation: "" }
+      letter: { company: "", recipient: "", companyCity: "", source: "", qualities: [], motivation: "" },
+      internship: S ? S.defaults() : null
     };
   }
 
@@ -73,7 +75,7 @@
   function restore(saved) {
     var s = defaults();
     if (!saved || typeof saved !== "object") return s;
-    if (["cv", "lettre", "pack"].indexOf(saved.product) !== -1) s.product = saved.product;
+    if (["cv", "lettre", "pack", "stage"].indexOf(saved.product) !== -1) s.product = saved.product;
     if (["classique", "moderne", "elegant"].indexOf(saved.template) !== -1) s.template = saved.template;
     copyStrings(s.identity, saved.identity);
     copyStrings(s.target, saved.target);
@@ -90,6 +92,7 @@
     s.skills = stringList(saved.skills, 20);
     s.it = stringList(saved.it, 15);
     s.interests = stringList(saved.interests, 8);
+    if (S) s.internship = S.restore(saved.internship);
     return s;
   }
 
@@ -141,7 +144,7 @@
   function writeSimpleFields() {
     $$("[name]", form).forEach(function (input) {
       var name = input.name;
-      if (!name || name === "website" || /^(education|experiences|languages)\./.test(name)) return;
+      if (!name || name === "website" || /^(education|experiences|languages|internship\.companies|internship\.projects)\./.test(name)) return;
       var v = getPath(name);
       if (input.type === "radio") input.checked = input.value === v;
       else input.value = typeof v === "string" ? v : "";
@@ -152,7 +155,8 @@
   function updateCounters(root) {
     $$("[data-counter-for]", root).forEach(function (c) {
       var t = document.getElementById(c.getAttribute("data-counter-for"));
-      if (t) c.textContent = t.value.length + " / " + t.maxLength;
+      var min = Number(c.getAttribute("data-min")) || 0;
+      if (t) c.textContent = t.value.length + " / " + t.maxLength + (min && t.value.length < min ? " (" + min + " minimum)" : "");
     });
   }
 
@@ -325,6 +329,9 @@
       new ChipGroup({ root: $("#chips-interests"), path: "interests", max: 8, input: $("#add-interest"), suggestions: function () { return D.interests; } }),
       new ChipGroup({ root: $("#chips-qualities"), path: "letter.qualities", max: 4, suggestions: function () { return D.qualities; } })
     ];
+    if (S && $("#chips-stage-qualities")) {
+      chipGroups.push(new ChipGroup({ root: $("#chips-stage-qualities"), path: "internship.qualities", max: 4, suggestions: function () { return D.qualities; } }));
+    }
   }
 
   function renderAll() {
@@ -333,12 +340,19 @@
     renderCards("experiences");
     renderLanguages();
     chipGroups.forEach(function (g) { g.render(); });
+    if (S) S.render();
   }
 
   /* ---------- Errors ---------- */
 
+  /** Error node for `path`, looked up in the step on screen first (some paths have a node in two steps). */
   function errorTarget(path) {
-    var nodes = $$("[data-error-for]", form);
+    var section = current ? $('.step[data-step="' + current + '"]', form) : null;
+    return (section && findErrorNode(section, path)) || findErrorNode(form, path);
+  }
+
+  function findErrorNode(root, path) {
+    var nodes = $$("[data-error-for]", root);
     var p = path;
     while (p) {
       for (var i = 0; i < nodes.length; i++) {
@@ -374,6 +388,10 @@
   }
 
   function stepOf(path) {
+    if (S && state.product === "stage") {
+      var st = S.stepOf(path);
+      if (st !== undefined) return st;
+    }
     return STEP_OF[path.split(".")[0]] || null;
   }
 
@@ -381,9 +399,11 @@
   function toScreenPaths(fields, index) {
     var out = {};
     Object.keys(fields || {}).forEach(function (path) {
-      var m = /^(education|experiences|languages)\.(\d+)(\..*)?$/.exec(path);
+      var m = /^(education|experiences|languages|internship\.companies|internship\.projects)\.(\d+)(\..*)?$/.exec(path);
+      var key = m ? m[1].replace(/^internship\./, "") : null;
       var screen = path;
-      if (m && index[m[1]] && index[m[1]][Number(m[2])] != null) screen = m[1] + "." + index[m[1]][Number(m[2])] + (m[3] || "");
+      if (m && index[key] && index[key][Number(m[2])] != null) screen = m[1] + "." + index[key][Number(m[2])] + (m[3] || "");
+      if (S && state.product === "stage") screen = S.screenPath(screen);
       out[screen] = fields[path];
     });
     return out;
@@ -417,6 +437,7 @@
   /* ---------- Steps ---------- */
 
   function steps() {
+    if (S && state.product === "stage") return S.STEPS.slice();
     return ALL_STEPS.filter(function (k) {
       if (k === "lettre") return state.product !== "cv";
       if (k === "langues") return state.product !== "lettre";
@@ -433,8 +454,11 @@
       s.hidden = s.getAttribute("data-step") !== key;
     });
     var section = $('.step[data-step="' + key + '"]', form);
+    var isStage = state.product === "stage";
+    applyProductParts();
+    if (isStage) stageStepHooks(key);
     TCV.dom.setText($("#wz-count"), "Étape " + (i + 1) + " sur " + list.length);
-    TCV.dom.setText($("#wz-name"), section.getAttribute("data-title"));
+    TCV.dom.setText($("#wz-name"), section.getAttribute(isStage && section.hasAttribute("data-title-stage") ? "data-title-stage" : "data-title"));
     $("#wz-bar").style.width = Math.round(((i + 1) / list.length) * 100) + "%";
     TCV.dom.setText($("#wz-back"), i === 0 ? "Accueil" : "Retour");
     TCV.dom.setText($(".btn-label", $("#wz-next")), i === list.length - 1 ? "Voir mon aperçu gratuit" : "Continuer");
@@ -448,6 +472,43 @@
     }
     var h = $("h2", section);
     if (h) h.focus({ preventScroll: true });
+  }
+
+  /** Blocks marked data-only="<product>" / data-not="<product>" follow the chosen product. */
+  function applyProductParts() {
+    $$("[data-only]", form).forEach(function (n) { n.hidden = n.getAttribute("data-only") !== state.product; });
+    $$("[data-not]", form).forEach(function (n) { n.hidden = n.getAttribute("data-not") === state.product; });
+  }
+
+  function sameEdu(a, b) {
+    return !!a && !!b && ["degree", "school", "year", "detail"].every(function (k) { return (a[k] || "") === (b[k] || ""); });
+  }
+
+  /** Pack Stage: prefill "Formation" from "Études" (until the student edits it), hide the blank experience card. */
+  function stageStepHooks(key) {
+    var st = state.internship;
+    if (key === "formation") {
+      var pre = S.formationPrefill(state);
+      var blank = state.education.every(function (e) { return V.line([e.degree, e.school, e.year, e.detail].join(" ")) === ""; });
+      if (pre.degree && (blank || sameEdu(state.education[0], st.prefill)) && !sameEdu(state.education[0], pre)) {
+        if (!state.education.length) state.education.push(emptyEdu());
+        state.education[0] = copyStrings(emptyEdu(), pre);
+        st.prefill = copyStrings(emptyEdu(), pre);
+        renderCards("education");
+        save();
+      }
+    } else if (key === "experiences") {
+      var noExp = state.experiences.every(function (e) { return V.line([e.title, e.company, e.place, e.start, e.end, e.missions].join(" ")) === ""; });
+      if (noExp && state.experiences.length) {
+        state.experiences = [];
+        renderCards("experiences");
+        save();
+      }
+    } else if (key === "stage") {
+      S.updateTitleHint();
+    } else if (key === "entreprises") {
+      S.updatePrice();
+    }
   }
 
   function navigate(key) {
@@ -532,6 +593,7 @@
     if (t.tagName === "TEXTAREA") updateCounters(t.parentNode);
     if (name === "product") show(current);
     if (name === "target.sector") chipGroups[0].render();
+    if (S && name.indexOf("internship.") === 0) S.onField(name, t);
     save();
   }
 
@@ -567,6 +629,7 @@
     form = $("#wizard");
     state = restore(TCV.store.get(DRAFT_KEY, null));
     fillStatic();
+    if (S) S.init({ state: function () { return state; }, save: save, clearError: clearError });
     buildChipGroups();
     bind();
     renderAll();
@@ -574,7 +637,7 @@
 
   /** Starts the wizard, optionally with a product chosen on the landing page. */
   function start(product) {
-    if (["cv", "lettre", "pack"].indexOf(product) !== -1) {
+    if (["cv", "lettre", "pack", "stage"].indexOf(product) !== -1) {
       state.product = product;
       writeSimpleFields();
       save();
