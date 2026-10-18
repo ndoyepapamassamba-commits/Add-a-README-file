@@ -45,5 +45,5 @@ window.TCV_DATA = {
   languageLevels: ["Langue maternelle", "Courant", "Bon niveau", "Intermédiaire", "Notions"],
   interests: ["Lecture", "Football", "Bénévolat", "Musique", "Sport", "Voyages", "Cuisine", "Informatique", "Vie associative", "Basket-ball"],
   cities: ["Dakar", "Pikine", "Guédiawaye", "Rufisque", "Keur Massar", "Thiès", "Mbour", "Saint-Louis", "Kaolack", "Touba", "Ziguinchor", "Diourbel", "Louga", "Tambacounda", "Kolda", "Fatick", "Kaffrine", "Matam", "Sédhiou", "Kédougou"],
-  sources: ["Emploi Dakar", "LinkedIn", "Facebook", "le site de l'entreprise", "une connaissance", "Senjob"]
+  sources: ["Emploi Dakar", "Senjob", "LinkedIn", "Facebook", "votre site internet"]
 };
