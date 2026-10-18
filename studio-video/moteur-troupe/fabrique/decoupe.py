@@ -133,8 +133,27 @@ def decoupe(feuille, sortie, genre):
     for nom, (x0, y0, x1, y1) in zip(noms, boites):
         p = int(0.04 * H); X0, Y0, X1, Y1 = max(0, x0 - p), max(0, y0 - p), min(W, x1 + p), min(H, y1 + p)
         crop = rgb[Y0:Y1, X0:X1]; a = birefnet(crop)
-        cm = cv2.dilate(m[Y0:Y1, X0:X1], np.ones((9, 9), np.uint8)).astype(np.float32)
-        a = np.clip(a * cm, 0, 1); rgba = np.dstack([crop, (a * 255).astype(np.uint8)])
+        # zone permise : la silhouette trouvée par écart au fond, TROUS BOUCHÉS (un bonnet blanc sur fond gris clair était
+        # pris pour du fond : bonnet de Baye troué, 18/10) puis élargie ; le bord fin vient de BiRefNet
+        z = m[Y0:Y1, X0:X1].copy(); cnt, _ = cv2.findContours(z, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        z = cv2.drawContours(np.zeros_like(z), cnt, -1, 1, -1)
+        z = cv2.morphologyEx(z, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (31, 31)))
+        cm = cv2.dilate(z, np.ones((15, 15), np.uint8)).astype(np.float32)
+        a = np.clip(a * cm, 0, 1)
+        # TROUS INTÉRIEURS bouchés (bonnet blanc de Baye : BiRefNet laissait un trou fermé, 18/10) — seuls les trous entourés
+        # de personnage sont remplis, le contour fin de BiRefNet reste
+        # (le trou du bonnet touchait le bord par un fil : on comble, DANS la silhouette fermée, ce qui n'a pas la couleur
+        # du fond ; les jours entre bras et buste gardent la couleur du fond et restent vides ; pieds exclus : ombres au sol)
+        dur = (a > 0.5).astype(np.uint8)
+        ferme = cv2.morphologyEx(dur, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (25, 25)))
+        cnt, _ = cv2.findContours(ferme, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE); plein = cv2.drawContours(np.zeros_like(dur), cnt, -1, 1, -1)
+        coul = cv2.erode(m[Y0:Y1, X0:X1], np.ones((3, 3), np.uint8)); ys = np.nonzero(dur.any(1))[0]
+        if len(ys):
+            h_ = ys.max() - ys.min(); plein[int(ys.max() - 0.06 * h_):] = 0
+            tete = np.zeros_like(plein); tete[:int(ys.min() + 0.22 * h_)] = 1   # tête et coiffe : aucun vrai jour possible,
+            coul = np.maximum(coul, tete)                                      # même un bonnet blanc couleur du fond (212/212)
+        a = np.maximum(a, cv2.GaussianBlur((plein * coul).astype(np.float32), (0, 0), 1.0))
+        rgba = np.dstack([crop, (a * 255).astype(np.uint8)])
         mes, vis = mesures(rgba)
         if genre in ('tour', 'assis'):   # nom tiré de l'orientation mesurée ; doublons numérotés
             cl, cote, dv = orientation(mes); pre = 'assis_' if genre == 'assis' else ''

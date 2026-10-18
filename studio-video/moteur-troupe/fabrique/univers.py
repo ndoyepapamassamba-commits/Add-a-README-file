@@ -19,7 +19,16 @@ STYLE = ('3D animated feature film character design in the style of Pixar and Di
          'with clearly visible white sclera, soft subsurface skin shading, detailed fabric textures, warm and joyful. ')
 PEAU = 'Black West African (Ivorian) {genre} with dark brown skin. '
 CONTRAINTES = ('Mouth closed and fully visible, eyes open and unobstructed, arms slightly away from the body with open relaxed hands, '
-               'plain flat light grey studio background, soft even front lighting, no props, no furniture except when asked, no text, no labels, no logo.')
+               'plain flat {fond} studio background, soft even front lighting, no props, no furniture except when asked, no text, no labels, no logo.')
+# FOND CONTRASTÉ PAR PERSONNAGE (18/10/2026) : sur fond gris clair, le bonnet blanc de Baye (gris ombré 212 contre un fond à
+# 212) était indécoupable — comme un fond vert de studio, le fond prend une couleur que la tenue n'a pas.
+def fond(adn):
+    t = adn.lower(); blanc = any(w in t for w in ('white', 'grey', 'gray', 'silver')); vert = 'green' in t
+    rose = any(w in t for w in ('pink', 'purple', 'magenta', 'violet')); bleu = 'blue' in t
+    if not blanc: return 'light grey'
+    if not vert: return 'solid saturated chroma green'
+    if not rose: return 'solid saturated magenta'
+    return 'solid saturated blue' if not bleu else 'solid saturated orange'
 
 # VUES (une planche = une rangée de vues du MÊME personnage : l'identité tient d'une vue à l'autre ; la droite = la gauche retournée)
 VUES = {
@@ -162,7 +171,7 @@ def invite_perso(cle, vue='tour', age=None):
     p = P[cle]; adn = p['ages'][age] if age else p['adn']
     g = p['genre'] if not age else ('baby' if age == 'bebe' else p['genre'])
     txt, w, h = VUES[vue]
-    return STYLE + PEAU.format(genre=g) + f"{p['nom']}, " + adn + '. ' + txt + ' ' + CONTRAINTES, w, h
+    return STYLE + PEAU.format(genre=g) + f"{p['nom']}, " + adn + '. ' + txt + ' ' + CONTRAINTES.format(fond=fond(adn)), w, h
 
 
 def invite_decor(lieu, moment='apres_midi'):
