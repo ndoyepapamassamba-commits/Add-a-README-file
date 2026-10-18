@@ -957,12 +957,18 @@ def realise(plans):
             Q[f'coupe_{k_}'] = {'type': 'noul', 'instructions': f'In image `{k_}`, is any character\'s head or face partly cut by the edge of the frame?'}
             Q[f'lisible_{k_}'] = {'type': 'noul', 'instructions': f'In image `{k_}`, is the face of the speaking character' + (' (shown in `parleur`)' if 'parleur' in ims else '') + ' large and clear enough to read the expression and the mouth?'}
         a = jev_api.demande(ids, Q, assets, outil='jev_realisateur')
-        pr = a['choix']['probabilities'] if 'choix' in a else {noms[0]: 1.0}; ok_ = [k_ for k_ in noms if a[f'coupe_{k_}']['noul'] < 0.5 and a[f'lisible_{k_}']['noul'] > 0.5]
+        # la règle géométrique de la porte B aussi (visage de celui qui parle ≥ VISAGE_MIN px) : v31, Baye à 60 px et Petit
+        # Mamadou à 57 px faisaient tomber la porte B malgré des lèvres justes (JEV « lisible » les acceptait)
+        grand = lambda k_: keep not in S['acts'] or taille_visage(S, keep, cs_[k_]) >= VISAGE_MIN
+        pr = a['choix']['probabilities'] if 'choix' in a else {noms[0]: 1.0}; ok_ = [k_ for k_ in noms if a[f'coupe_{k_}']['noul'] < 0.5 and a[f'lisible_{k_}']['noul'] > 0.5 and grand(k_)]
         propres = [k_ for k_ in ok_ if a[f'propre_{k_}']['noul'] < SEUIL_PROPRE]
         if propres: choix = max(propres, key=lambda k_: pr.get(k_, 0.0))
-        else: choix = min(ok_ or noms, key=lambda k_: a[f'propre_{k_}']['noul'])   # aucun cadre propre : le moins douteux
+        else:   # aucun cadre propre : le moins douteux parmi les conformes, sinon parmi les lisibles sans tête coupée
+            ok2 = [k_ for k_ in noms if a[f'coupe_{k_}']['noul'] < 0.5 and a[f'lisible_{k_}']['noul'] > 0.5]
+            choix = min(ok_ or ok2 or noms, key=lambda k_: a[f'propre_{k_}']['noul'])
         d_ = {'choix': choix, 'conforme': bool(propres), 'probabilites': pr, 'coupe': {k_: round(a[f'coupe_{k_}']['noul'], 2) for k_ in noms},
-              'lisible': {k_: round(a[f'lisible_{k_}']['noul'], 2) for k_ in noms}, 'rendu': {k_: round(a[f'propre_{k_}']['noul'], 2) for k_ in noms}}
+              'lisible': {k_: round(a[f'lisible_{k_}']['noul'], 2) for k_ in noms}, 'rendu': {k_: round(a[f'propre_{k_}']['noul'], 2) for k_ in noms},
+              'visage_px': {k_: round(taille_visage(S, keep, cs_[k_]), 1) for k_ in noms} if keep in S['acts'] else {}}
         json.dump(d_, open(f_, 'w')); return s, choix, cs_, d_
     with ThreadPoolExecutor(8) as ex: res = list(ex.map(un, [s for s in plans if s[2] in SC]))
     for s, choix, cs_, d_ in res:

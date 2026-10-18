@@ -226,7 +226,11 @@ def charge(dossier, img, v3):
             ga, gb = _gris(imgs[(e, k)]), _gris(imgs[(e, k + 1)]); paires[(e, k)] = (dis.calc(ga, gb, None), dis.calc(gb, ga, None))
     M = np.float32([[t / s, 0, -x * t / s], [0, t / s, -y * t / s]])
     orig = cv2.warpAffine(img, M, (t, t), flags=cv2.INTER_AREA, borderMode=cv2.BORDER_REPLICATE).astype(np.float32)
-    masque = masque_visage(v3, (x, y, s), t, imgs[('neutre', len(meta['bouche']) - 1)], imgs[('neutre', 0)])
+    # masque de collage : la mâchoire qui descend, pour CHAQUE émotion (18/10/2026 — avec la seule mâchoire neutre, la
+    # barbiche de Koffi qui descend plus bas en surprise, peur ou rire passait sous le bord du masque : barbiche dédoublée,
+    # menton barbouillé, jugés « rendu » 0,50–0,63 par JEV sur ses plans de la v31)
+    nb = len(meta['bouche']) - 1
+    masque = np.max(np.stack([masque_visage(v3, (x, y, s), t, imgs[(e, nb)], imgs[(e, 0)]) for e in meta['emotions']]), 0)
     # recalage : l'écart de couleur basse fréquence entre le dessin et le rendu neutre à la bouche PEINTE (commande 0 ; la
     # bouche aux lèvres jointes diffère du dessin à la bouche : son écart flouté y laisserait une tache), ajouté à tout
     kp = meta['bouche'].index(0) if 0 in meta['bouche'] else 0
