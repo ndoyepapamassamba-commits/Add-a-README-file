@@ -368,6 +368,7 @@ fieldset { border: 0; padding: 0; margin: 0 0 16px; min-width: 0; }
 .doc-scaler { width: 210mm; transform-origin: 0 0; }
 .doc-frame.is-zoomed { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .doc-stack { display: grid; gap: 22px; }
+.doc-stack > * { min-width: 0; }
 
 /* ---------- Result page ---------- */
 

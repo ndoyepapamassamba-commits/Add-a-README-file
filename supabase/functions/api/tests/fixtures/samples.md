@@ -50,7 +50,7 @@ Suite à votre annonce parue sur LinkedIn, j'ai l'honneur de vous soumettre ma c
 
 Inscrite en licence 3 en comptabilité à l'ISM, je consolide chaque jour mes connaissances dans ce domaine. Ce qui me manque encore en expérience, je le compense par une forte motivation, une grande capacité d'apprentissage et le goût du travail bien fait.
 
-Je dispose notamment de compétences en saisie comptable, SYSCOHADA et facturation, et je suis à l'aise avec l'outil informatique (Word, Excel, Sage). Je suis par ailleurs rigoureuse dans mon travail, discrète dans le traitement des informations confidentielles et méthodique dans l'organisation de mes tâches. Je souhaite découvrir le métier aux côtés de professionnels exigeants. C'est avec enthousiasme que je mettrais mon énergie au service du Cabinet Diallo Expertise.
+Je dispose notamment de compétences en saisie comptable, SYSCOHADA et facturation, et je suis à l'aise avec l'outil informatique (Word, Excel, Sage). Je suis par ailleurs rigoureuse dans mon travail, discrète dans le traitement des informations confidentielles et méthodique dans l'organisation de mes tâches. Je souhaite découvrir le métier aux côtés de professionnels exigeants. Je serais fière de mettre tout mon engagement au profit du Cabinet Diallo Expertise.
 
 Convaincue que mon profil peut répondre à vos attentes, je reste à votre disposition pour un entretien à la date qui vous conviendra.
 
@@ -113,7 +113,7 @@ Vivement intéressé par Sen Distribution, je me permets de vous adresser ma can
 
 Je suis titulaire d'un permis poids lourds (C) obtenu à l'Auto-école Thiessoise en 2016, un atout concret pour exercer dans le transport et la logistique. Mon poste actuel de chauffeur-livreur au sein des Transports Rapides du Cap-Vert me permet de mettre à profit mon savoir-faire et de développer le sens de l'organisation et du respect des délais. Parmi mes principales missions : livraison des clients à Dakar et Thiès, chargement et déchargement des marchandises et vérification des bons de livraison.
 
-Je pourrai mettre à votre service mes compétences en conduite de véhicule, respect du Code de la route et planification des livraisons. Je suis par ailleurs d'une grande ponctualité et d'une honnêteté irréprochable. Je fais également preuve de patience. C'est avec enthousiasme que je mettrais mon énergie au service de Sen Distribution.
+Je pourrai mettre à votre service mes compétences en conduite de véhicule, respect du Code de la route et planification des livraisons. Je suis par ailleurs d'une grande ponctualité et d'une honnêteté irréprochable. Je fais également preuve de patience. Intégrer votre structure serait pour moi l'occasion de m'investir pleinement dans un environnement exigeant et formateur.
 
 Motivé et disponible, je me tiens à votre entière disposition pour un entretien afin de vous présenter plus en détail mon parcours.
 
@@ -240,7 +240,7 @@ C'est avec un vif intérêt que j'ai découvert votre annonce parue sur Senjob e
 
 Ma formation, sanctionnée par une licence professionnelle en Génie logiciel à l'UCAD en 2024, m'a apporté de solides connaissances dans ce domaine. Mon stage en développement web chez Sen Digital de mars 2024 à août 2024 m'a permis de mettre en pratique mes connaissances et de développer une bonne capacité d'analyse et de résolution de problèmes. J'y étais notamment chargé des missions suivantes : développement d'un site vitrine avec Laravel, intégration de maquettes Figma et corrections de bugs.
 
-Au fil de mon parcours, j'ai développé des compétences en HTML/CSS, JavaScript et PHP, sans oublier la maîtrise de l'outil informatique (Windows, Linux, Figma). Sur le plan humain, je suis autonome dans l'exécution de mes missions et créatif dans la recherche de solutions. J'utilise vos services chaque jour et j'aimerais contribuer à les améliorer. C'est avec enthousiasme que je mettrais mon énergie au service de Wave Mobile Money.
+Au fil de mon parcours, j'ai développé des compétences en HTML/CSS, JavaScript et PHP, sans oublier la maîtrise de l'outil informatique (Windows, Linux, Figma). Sur le plan humain, je suis autonome dans l'exécution de mes missions et créatif dans la recherche de solutions. J'utilise vos services chaque jour et j'aimerais contribuer à les améliorer. Je suis persuadé que mon engagement serait un véritable atout pour Wave Mobile Money.
 
 Convaincu que mon profil peut répondre à vos attentes, je reste à votre disposition pour un entretien à la date qui vous conviendra.
 
@@ -327,7 +327,7 @@ Graine `TCV-SAMPLE06`, produit `pack`.
 
 **Profil**
 
-Expérimenté et polyvalent, j'ai consolidé mes compétences au fil de mon parcours dans la sécurité et le gardiennage. Mon expérience d'agent de sécurité chez Teranga Gardiennage m'a permis de développer des compétences en surveillance de site, contrôle d'accès et premiers secours. Je suis à la recherche d'un poste d'agent de sécurité au sein d'une structure où je pourrai m'investir pleinement.
+Professionnel confirmé dans la sécurité et le gardiennage, je dispose d'une expérience solide et variée. Mon expérience d'agent de sécurité chez Teranga Gardiennage m'a permis de développer des compétences en surveillance de site, contrôle d'accès et premiers secours. Je suis à la recherche d'un poste d'agent de sécurité au sein d'une structure où je pourrai m'investir pleinement.
 
 **Expériences professionnelles**
 
@@ -367,7 +367,7 @@ Désireux de rejoindre la Banque de l'Habitat, je vous soumets ma candidature sp
 
 Je suis titulaire d'une attestation de formation en secourisme obtenue à la Croix-Rouge sénégalaise en 2021, un atout concret pour exercer dans la sécurité et le gardiennage. Mon expérience d'agent de sécurité chez Teranga Gardiennage de 2017 à 2024 m'a permis de mettre à profit mon savoir-faire et de développer une grande vigilance et un sens aigu des responsabilités. Parmi mes principales missions : contrôle des accès, rondes de jour et de nuit et rédaction des rapports de poste.
 
-Je pourrai mettre à votre service mes compétences en surveillance de site, contrôle d'accès et premiers secours. Sur le plan humain, je suis d'une honnêteté irréprochable et d'une grande ponctualité. C'est avec enthousiasme que je mettrais mon énergie au service de la Banque de l'Habitat.
+Je pourrai mettre à votre service mes compétences en surveillance de site, contrôle d'accès et premiers secours. Sur le plan humain, je suis d'une honnêteté irréprochable et d'une grande ponctualité. Travailler aux côtés de vos équipes serait pour moi une source de motivation supplémentaire.
 
 Je serais ravi de vous rencontrer lors d'un entretien afin de vous démontrer ma motivation et ma capacité à m'intégrer rapidement à votre équipe.
 
@@ -427,7 +427,7 @@ Ayant pris connaissance de votre annonce parue dans le journal Le Soleil, je me 
 
 Titulaire d'un CAP restauration obtenu au Centre de formation professionnelle de Saly en 2025, j'ai acquis des bases solides dans ce domaine. Sur le plan professionnel, j'ai effectué un stage en restauration au sein de l'Hôtel Le Lagon Bleu de juin 2025 à août 2025. Parmi mes principales missions : service en salle, mise en place des tables et accueil des clients. Je suis désireuse de mettre en pratique mes acquis et de progresser au contact de professionnels expérimentés.
 
-Je dispose notamment de compétences en service en salle, accueil des clients et hygiène alimentaire. Je suis par ailleurs dotée d'un excellent sens du contact et d'une grande ponctualité. J'aime accueillir les gens et les mettre à l'aise. C'est avec enthousiasme que je mettrais mon énergie au service de Royal Saly Hôtel.
+Je dispose notamment de compétences en service en salle, accueil des clients et hygiène alimentaire. Je suis par ailleurs dotée d'un excellent sens du contact et d'une grande ponctualité. J'aime accueillir les gens et les mettre à l'aise. Travailler aux côtés de vos équipes serait pour moi une source de motivation supplémentaire.
 
 Motivée et disponible, je me tiens à votre entière disposition pour un entretien afin de vous présenter plus en détail mon parcours.
 
@@ -527,9 +527,9 @@ Vivement intéressée par l'Agence Kër Com, je me permets de vous adresser ma c
 
 Actuellement étudiante en licence 2 en communication à l'Université Gaston Berger, j'acquiers progressivement des bases solides dans ce domaine. Ce qui me manque encore en expérience, je le compense par une forte motivation, une grande capacité d'apprentissage et le goût du travail bien fait.
 
-Ma formation m'a permis d'acquérir des compétences en réseaux sociaux et création de visuels, ainsi qu'une bonne maîtrise de l'outil informatique (Canva, Photoshop). Sur le plan humain, je suis créative dans la recherche de solutions et dynamique dans tout ce que j'entreprends. Je fais également preuve de curiosité. Rejoindre l'Agence Kër Com représenterait pour moi l'opportunité de contribuer à vos objectifs tout en poursuivant mon développement professionnel.
+Ma formation m'a permis d'acquérir des compétences en réseaux sociaux et création de visuels, ainsi qu'une bonne maîtrise de l'outil informatique (Canva, Photoshop). Sur le plan humain, je suis créative dans la recherche de solutions et dynamique dans tout ce que j'entreprends. Je fais également preuve de curiosité. C'est avec enthousiasme que je mettrais mon énergie au service de l'Agence Kër Com.
 
-Convaincue que mon profil peut répondre à vos attentes, je reste à votre disposition pour un entretien à la date qui vous conviendra.
+Très motivée à l'idée de rejoindre votre équipe, je souhaiterais vous rencontrer afin d'échanger sur ma candidature.
 
 Je vous prie d'agréer, Madame, Monsieur, l'expression de mes salutations distinguées.
 

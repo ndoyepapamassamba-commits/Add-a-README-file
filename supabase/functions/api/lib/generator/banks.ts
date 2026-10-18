@@ -682,11 +682,14 @@ export const LETTRE_QUALITIES: Array<(list: string) => string> = [
 
 /** P3: interest for the company. */
 export const LETTRE_INTEREST: Variant[] = [
-  (c) => `Je sais combien ${c.stake} comptent dans ${c.domain}, et c'est avec cette exigence que je souhaite rejoindre votre équipe`,
+  (c) => `Je sais combien ${c.stake} comptent dans notre métier, et c'est dans cet esprit que j'aborde cette candidature`,
   (c) =>
     `Rejoindre ${c.company} représenterait pour moi l'opportunité de contribuer à vos objectifs tout en poursuivant mon développement professionnel`,
   (c) => `C'est avec enthousiasme que je mettrais mon énergie au service ${de(c.company)}`,
   () => "Intégrer votre structure serait pour moi l'occasion de m'investir pleinement dans un environnement exigeant et formateur",
+  (c) => `Je serais ${c.g("fier", "fière")} de mettre tout mon engagement au profit ${de(c.company)}`,
+  (c) => `Je suis ${c.g("persuadé", "persuadée")} que mon engagement serait un véritable atout pour ${c.company}`,
+  () => "Travailler aux côtés de vos équipes serait pour moi une source de motivation supplémentaire",
 ];
 
 /** P4: availability and interview request. Each variant carries a gender mark. */
@@ -719,7 +722,7 @@ export const REPEAT_STEMS = [
   "convaincu", "rejoindre", "opportunité", "occasion", "pleinement", "au service", "solide",
   "mettre en pratique", "mes connaissances en pratique", "sens des responsabilités", "travail bien fait",
   "concrètement", "motivé", "m'investir", "exigence", "vif intérêt", "environnement", "au contact",
-  "aux côtés", "mon objectif", "compétences en", "réelle", "permis de développer", "permet de développer",
+  "aux côtés", "mon objectif", "compétences", "réelle", "permis de développer", "permet de développer",
   "j'ai l'honneur", "je me permets", "rapidement opérationnel", "par ailleurs", "au sein", "aujourd'hui",
-  "mon parcours dans", "votre structure", "à l'aise", "ce domaine", "je souhaite", "mes compétences",
+  "mon parcours dans", "votre structure", "à l'aise", "ce domaine", "je souhaite",
 ];

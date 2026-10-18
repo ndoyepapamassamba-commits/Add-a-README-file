@@ -227,13 +227,13 @@ const MASCULINE = [
   "motivé", "prêt", "convaincu", "intéressé", "désireux", "rigoureux", "ravi", "sérieux", "doté", "inscrit",
   "débutant", "expérimenté", "confirmé", "polyvalent", "opérationnel", "étudiant", "discret", "créatif",
   "résistant", "collaborateur", "compétent", "chargé", "passionné", "orienté", "prompt", "Fort d'",
-  "Jeune professionnel", "un professionnel", "Professionnel",
+  "Jeune professionnel", "un professionnel", "Professionnel", "fier", "persuadé", "attaché",
 ];
 const FEMININE = [
   "motivée", "prête", "convaincue", "intéressée", "désireuse", "rigoureuse", "ravie", "sérieuse", "dotée",
   "inscrite", "débutante", "expérimentée", "confirmée", "polyvalente", "opérationnelle", "étudiante", "discrète",
   "créative", "résistante", "collaboratrice", "compétente", "chargée", "passionnée", "orientée", "prompte",
-  "Forte d'", "Jeune professionnelle", "une professionnelle", "Professionnelle",
+  "Forte d'", "Jeune professionnelle", "une professionnelle", "Professionnelle", "fière", "persuadée", "attachée",
 ];
 
 function genderInputs(): OrderInput[] {
