@@ -21,8 +21,8 @@ Shared types: `supabase/functions/api/lib/types.ts` (read it first — it is the
   (`https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/`) and, until Pages is enabled, by
   `https://rawcdn.githack.com/ndoyepapamassamba-commits/Add-a-README-file/<commit-sha>/cv/index.html`.
   All asset links in `cv/` MUST be relative.
-* Cron: `pg_cron` + `pg_net` call `POST /cron/reconcile` every 10 min and `POST /cron/daily` at 21:00 UTC
-  (= 21:00 Dakar, Senegal is UTC+0), header `x-cron-secret` read from Supabase Vault.
+* Cron: `pg_cron` + `pg_net` call `POST /cron/reconcile` every 10 min and `POST /cron/daily` at 20:30 UTC
+  (= 20:30 Dakar, Senegal is UTC+0), header `x-cron-secret` read from `tcv.settings`.
 
 ## Repository layout and ownership
 
@@ -225,7 +225,7 @@ and stale rate_limits), `tcv_stats(p_now) → jsonb` (`Stats`; day boundaries in
 
 The cron migration enables `pg_cron`, `pg_net` and schedules the jobs. It does NOT contain the secret:
 the deployer inserts `CRON_SECRET` into `tcv.settings` out-of-band (one-off SQL, never committed).
-Jobs: `tcv-reconcile` (`*/10 * * * *`) and `tcv-daily` (`0 21 * * *`) with
+Jobs: `tcv-reconcile` (`*/10 * * * *`) and `tcv-daily` (`30 20 * * *`) with
 `net.http_post(url := 'https://seegnylaubuularegmku.supabase.co/functions/v1/api/cron/…', headers :=
 jsonb_build_object('content-type','application/json','x-cron-secret', (select value from tcv.settings
 where key = 'CRON_SECRET')), body := '{}'::jsonb, timeout_milliseconds := 20000)`.

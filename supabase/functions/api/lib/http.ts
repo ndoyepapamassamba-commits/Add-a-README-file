@@ -10,6 +10,19 @@ export const CORS_HEADERS: Record<string, string> = {
 
 const JSON_TYPE = "application/json; charset=utf-8";
 
+type LogFn = (message: string, detail?: unknown) => void;
+
+/** Process-wide logger; tests swap the sink to keep their output quiet or to assert on it. */
+export const log: { warn: LogFn; error: LogFn } = {
+  warn: (message, detail) => console.warn(`[tcv] ${message}`, detail ?? ""),
+  error: (message, detail) => console.error(`[tcv] ${message}`, detail ?? ""),
+};
+
+export function setLogSink(sink: { warn: LogFn; error: LogFn }): void {
+  log.warn = sink.warn;
+  log.error = sink.error;
+}
+
 /** Thrown by route handlers; converted to the standard error body by the app. */
 export class HttpError extends Error {
   constructor(
