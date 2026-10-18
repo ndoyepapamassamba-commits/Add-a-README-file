@@ -116,7 +116,7 @@ def ordre_profondeur(alphas):
     return list(np.argsort(bas))
 
 
-def amodal(img, alphas, bande=16, personne=None, opaque=True, fondu=4, contact=12):
+def amodal(img, alphas, bande=16, personne=None, opaque=True, fondu=4, contact=12, liseré=6):
     """pour chaque acteur caché en partie par un acteur plus proche : (alpha étendue, image complétée). Seule la bande où
     un petit mouvement de celui de devant peut découvrir celui de derrière est reconstituée (LaMa continue la robe à
     partir de son bord visible) : quand Petit Mamadou bouge, on voit la robe de Maman, pas le mur.
@@ -126,7 +126,12 @@ def amodal(img, alphas, bande=16, personne=None, opaque=True, fondu=4, contact=1
     restait partielle (alpha 0,02–0,98 sur tout l'avant-bras) : dès que l'un ou l'autre bougeait, le mur apparaissait à
     travers. Désormais la partie reconstituée est opaque jusqu'à `fondu` px de sa limite, et au contact de celui de
     devant (à `contact` px), là où la segmentation voit une personne (`personne` > 0,7), celui de derrière est opaque :
-    entre deux personnes il n'y a pas de décor. opaque=False : l'ancien fondu (banc de comparaison)."""
+    entre deux personnes il n'y a pas de décor. opaque=False : l'ancien fondu (banc de comparaison).
+    LISERÉ DE CELUI DE DEVANT (18/10/2026, v34) : v33 jugée par JEV — « bras de Maman » 0,54 à 0,74 dès que Petit Mamadou
+    bouge (0,11 sur la peinture d'origine). La lumière de contour peinte autour de ses cheveux et de son oreille (3 à 6 px)
+    n'est pas dans sa découpe : elle restait sur le bras de Maman (traits blancs, cercle d'oreille fantôme) et LaMa, qui la
+    voyait, la recopiait dans la partie reconstituée. Désormais LaMa ne voit pas ce liseré (trou élargi de `liseré` px) et,
+    chez celui de derrière, l'anneau de `liseré` px autour de celui de devant est repeint par la même reconstitution."""
     n = len(alphas); ordre = ordre_profondeur(alphas); rang = {k: i for i, k in enumerate(ordre)}; out = []
     for i in range(n):
         A = (alphas[i] > 0.5).astype(np.uint8)
@@ -138,7 +143,8 @@ def amodal(img, alphas, bande=16, personne=None, opaque=True, fondu=4, contact=1
         d = cv2.distanceTransform((1 - visible).astype(np.uint8), cv2.DIST_L2, 5)
         zone = (cache > 0) & (d < bande)
         if zone.sum() < 30: out.append((alphas[i], img)); continue
-        sans = remplit_progressif(img, cv2.dilate(cache, np.ones((5, 5), np.uint8)), bande=bande + 8, passes=1)
+        r_ = max(2, int(liseré)); cache_l = cv2.dilate(cache, np.ones((2 * r_ + 1, 2 * r_ + 1), np.uint8))
+        sans = remplit_progressif(img, cache_l, bande=bande + 8 + r_, passes=1)
         ext = (np.clip((bande - d) / fondu, 0, 1) if opaque else np.clip(1 - d / bande, 0, 1)) * zone
         a2 = np.maximum(alphas[i], cv2.GaussianBlur(ext.astype(np.float32), (0, 0), 0.8))
         if opaque and personne is not None:   # au contact de celui de devant, hors de lui : sa propre découpe partielle comblée
@@ -146,8 +152,61 @@ def amodal(img, alphas, bande=16, personne=None, opaque=True, fondu=4, contact=1
             couvre = pres & (cache == 0) & (d < 6) & (personne > 0.7)
             a2 = np.where(couvre, np.maximum(a2, np.clip((personne - 0.7) / 0.2, 0, 1)), a2)
         im2 = np.where((ext > 0)[..., None], sans, img)
+        if liseré:   # l'anneau autour de celui de devant, chez celui de derrière : repeint (fondu sur ses 2 derniers px)
+            dc = cv2.distanceTransform((1 - cache).astype(np.uint8), cv2.DIST_L2, 5)
+            w_ = (np.clip((r_ + 1 - dc) / 2.0, 0, 1) * ((cache == 0) & (A > 0)))[..., None]
+            im2 = np.clip(im2.astype(np.float32) * (1 - w_) + sans.astype(np.float32) * w_, 0, 255).astype(img.dtype)
         out.append((a2.astype(np.float32), im2))
     return out, ordre
+
+
+def retracte_fils(img, plaque_, faits, alphas, juge=None, journal=print):
+    """FIL RACCOURCI À UN APPUI CHOISI PAR JEV (18/10/2026, v35) — v33 jugée par JEV : le fil à linge prolongé jusqu'à la
+    fenêtre « traverse la tête » de Maman (0,88–0,91 sur ses plans) ; tel que peint, il s'arrêtait déjà dans sa tête
+    (0,50–0,60). Un fil qui entre dans un acteur à HAUTEUR DE TÊTE n'est plus prolongé derrière lui : il est raccourci à un
+    appui vertical franc AVANT la tête (montant de porte, bord de rideau, poteau), noué là, et tout ce qui suivait (bout
+    peint jusqu'à la tête, prolongement) est effacé (Telea, bande mince). Les appuis candidats (jusqu'à 4, en remontant le
+    fil) sont jugés par `juge(images)` (probabilité de défaut de chaque image : la scène autour de la tête, fil raccourci) ;
+    le plus sûr est gardé. → (plaque, fils restants, fils raccourcis)"""
+    H, W = img.shape[:2]; g = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    gx = np.abs(cv2.Sobel(cv2.GaussianBlur(g, (0, 0), 1.2).astype(np.float32), cv2.CV_32F, 1, 0))
+    un = np.zeros((H, W), np.float32)
+    for a in alphas: un = np.maximum(un, a)
+    acteur = un > 0.3; out = plaque_.copy(); gardes, coupes = [], []
+    dedans = lambda p: 0 <= int(round(p[1])) < H and 0 <= int(round(p[0])) < W
+    def efface(im, de_, a_, d, e):
+        mk = np.zeros((H, W), np.uint8)
+        A = tuple(int(round(v * 16)) for v in de_ + d * 2); B = tuple(int(round(v * 16)) for v in a_ + d * 6)
+        cv2.line(mk, A, B, 255, int(round(e + 6)), cv2.LINE_8, 4)
+        cv2.circle(mk, (int(round(a_[0])), int(round(a_[1]))), int(round(e)) + 5, 255, -1)
+        return cv2.inpaint(im, mk, 5, cv2.INPAINT_TELEA)
+    def noeud(im, p_, coul, e):
+        im = im.copy(); cv2.circle(im, (int(round(p_[0])), int(round(p_[1]))), max(2, int(round(e)) + 1), coul, -1, cv2.LINE_AA); return im
+    for f_ in faits:
+        de, a_ = np.array(f_['de'], np.float64), np.array(f_['a'], np.float64); d = (a_ - de) / max(1e-6, np.linalg.norm(a_ - de))
+        q = de + d * 6; k_ = int(np.argmax([float(al[int(round(q[1])), int(round(q[0]))]) for al in alphas])) if dedans(q) else 0
+        ys_ = np.nonzero((alphas[k_] > 0.5).any(1))[0]; y0_, y1_ = (float(ys_.min()), float(ys_.max())) if len(ys_) else (0.0, float(H))
+        if de[1] > y0_ + 0.25 * (y1_ - y0_): gardes.append(f_); continue   # à hauteur de buste : le prolongement reste
+        appuis, k = [], 6
+        while k < 420 and len(appuis) < 4:   # en remontant le fil, les bords verticaux francs hors des acteurs
+            p_ = de - d * k
+            if not dedans(p_): break
+            yy, xx = int(round(p_[1])), int(round(p_[0]))
+            if not acteur[yy, xx] and np.median(gx[max(0, yy - 6):yy + 7, xx]) > 25: appuis.append(p_); k += 20; continue
+            k += 1
+        if not appuis: gardes.append(f_); continue
+        e = float(f_.get('epaisseur', 3.0)); coul = tuple(float(c) * 0.5 for c in f_.get('couleur', (120, 100, 80)))
+        choix, notes = 0, None
+        if juge is not None and len(appuis) > 1:
+            hy = 0.5 * (y1_ - y0_); cx, cy = float(de[0]), float(de[1]); w_ = int(1.1 * hy); h_ = int(0.88 * hy)
+            x0, y0 = int(max(0, min(W - 2 * w_, cx - w_))), int(max(0, min(H - 2 * h_, cy - 0.8 * h_)))
+            vues = [noeud(efface(img, ap, de, d, e), ap, coul, e)[y0:y0 + 2 * h_, x0:x0 + 2 * w_] for ap in appuis]
+            notes = [round(float(n_), 2) for n_ in juge(vues)]; choix = int(np.argmin(notes))
+        appui = appuis[choix]
+        out = noeud(efface(out, appui, a_, d, e), appui, coul, e)
+        coupes.append(dict(de=[round(float(v), 1) for v in appui], efface_jusqua=[round(float(v), 1) for v in a_], appuis=[[round(float(v), 1) for v in ap] for ap in appuis], notes_jev=notes))
+        journal(f'fil raccourci à son appui ({appui[0]:.0f}, {appui[1]:.0f}) : il entrait dans une tête à ({de[0]:.0f}, {de[1]:.0f}) ; appuis jugés {notes}')
+    return out, gardes, coupes
 
 
 def fils(img, plaque_, alphas, longueur_min=90, angle_max=30):

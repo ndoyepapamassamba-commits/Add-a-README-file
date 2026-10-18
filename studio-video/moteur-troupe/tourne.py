@@ -35,7 +35,7 @@
 # Réglages (montage.json → "reglages") : plan_s, cam_px, pousse (travelling avant par plan), parallaxe, jeu_gain, corps, whip_s, ouverture, decor, gestes, carte_sur_scene, rig.
 # python3 tourne.py montage.json sortie_dir
 import json, math, os, sys, zlib, numpy as np, cv2
-import decor_vivant, entites, gestes, linge, rig2d, regard, expressions, expressions_lp, jeu, prepare_rig
+import decor_vivant, entites, gestes, linge, rig2d, regard, expressions, expressions_lp, jeu, prepare_rig, vie_fond
 import poses_dessinees as PD   # gestes dessinés : animation pose à pose (17/10/2026)
 FPS, CW, CH = 30, 576, 460
 cfg = json.load(open(sys.argv[1])); OUT = sys.argv[2]; os.makedirs(f'{OUT}/clip', exist_ok=True)
@@ -138,7 +138,12 @@ def ouverture_lib(img, lib, box):
     return out
 # ── PROFONDEUR DU DÉCOR (Depth Anything V2 Small, Apache-2.0, ONNX) : calculée une fois par scène, gardée en cache ──
 def profondeur(d, plate):
-    cache = f'{d}/profondeur.png'
+    # cache à l'EMPREINTE DE LA PLAQUE (v34) : v33 jugée par JEV — derrière Tantie Awa, « tête et mur au-dessus » 0,85 ; la
+    # profondeur gardée datait d'une plaque où les acteurs étaient encore là (17/10, 9 h 49 ; plaque propre à 14 h 47) : leurs
+    # silhouettes y étaient « proches » et, en parallaxe, le décor derrière eux glissait comme un objet du premier plan
+    import hashlib
+    cle = hashlib.md5(cv2.resize(plate, (96, 96), interpolation=cv2.INTER_AREA).tobytes()).hexdigest()[:10]
+    cache = f'{d}/profondeur-{cle}.png'
     if os.path.isfile(cache): return cv2.imread(cache, 0).astype(np.float32) / 255
     import onnxruntime as ort
     s_ = ort.InferenceSession(os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/depth-anything-v2-small.onnx', providers=['CPUExecutionProvider'])
@@ -148,7 +153,8 @@ def profondeur(d, plate):
     dd = s_.run(None, {'pixel_values': x.transpose(2, 0, 1)[None]})[0][0]
     lo, hi = np.percentile(dd, 1), np.percentile(dd, 99); dd = np.clip((dd - lo) / max(1e-6, hi - lo), 0, 1)   # 1 = près
     dd = cv2.resize(dd.astype(np.float32), (W_, H_), interpolation=cv2.INTER_CUBIC)
-    cv2.imwrite(cache, (dd * 255).astype(np.uint8)); return dd
+    cv2.imwrite(cache, (dd * 255).astype(np.uint8)); cv2.imwrite(f'{d}/profondeur.png', (dd * 255).astype(np.uint8))   # la courante, lue par entites
+    return dd
 def facteur_parallaxe(dep, acts, H_, W_):
     """vitesse apparente de chaque point du décor par rapport aux acteurs : 1 au niveau de leurs pieds, 1 − P au plus
     loin, jusqu'à 1 + P/2 au premier plan ; lissée pour ne jamais déchirer l'image."""
@@ -158,6 +164,25 @@ def facteur_parallaxe(dep, acts, H_, W_):
     df = float(np.median(pieds)) if pieds else 0.6; lo, hi = float(dep.min()), float(dep.max())
     k = np.where(dep <= df, 1 - P * (df - dep) / max(1e-3, df - lo), 1 + 0.5 * P * (dep - df) / max(1e-3, hi - df))
     return cv2.GaussianBlur(k.astype(np.float32), (0, 0), 6)
+def main_posee_jev(d, img, P_, cote, nom, epw):
+    """JEV regarde la main (recadrage autour du poignet) : posée sur une table, un comptoir, ou tenant un objet ? (cache
+    <scène>/rig/mains_jev.json). Probabilité de « posée » ; 0 si le poignet est hors de l'image."""
+    f = f'{d}/rig/mains_jev.json'; C = json.load(open(f)) if os.path.isfile(f) else {}
+    cle = f'{nom}|{cote}'
+    if cle in C: return C[cle]
+    i = 15 if cote == 'l' else 16; H_, W_ = img.shape[:2]; x, y = float(P_[i, 0]), float(P_[i, 1]); r = int(0.55 * epw)
+    if not (0 <= x < W_ and 0 <= y < H_): return 0.0
+    cr = img[max(0, int(y) - r):int(y) + r, max(0, int(x) - r):int(x) + r]
+    if cr.size == 0: return 0.0
+    import uuid, jev_api
+    fid = 'frame-' + uuid.uuid4().hex[:10]; im = cv2.cvtColor(cv2.resize(cr, (384, 384), interpolation=cv2.INTER_CUBIC), cv2.COLOR_RGB2BGR)
+    try:
+        a_ = jev_api.demande({'frame': fid}, {'posee': {'type': 'noul', 'instructions': 'In `frame` (a close-up around a cartoon character\'s hand), is the hand resting on a table, a counter or a plate, or holding an object such as cutlery, a cup, a glass or a phone? A hand on the hip, on the body or free in the air does not count.'}},
+                             {fid: {'type': 'image', 'format': 'jpg', 'data_base64': jev_api.b64(im)}}, outil='main_posee')
+        p_ = round(float(a_['posee']['noul']), 3)
+    except Exception as e_:
+        print(f'{nom}: main {cote} non jugée ({e_})', flush=True); return 0.0
+    C[cle] = p_; json.dump(C, open(f, 'w'), indent=1, ensure_ascii=False); return p_
 # ── scènes préparées ──
 SC = {}
 for sk in T['sketchs']:
@@ -166,7 +191,9 @@ for sk in T['sketchs']:
     img = cv2.cvtColor(cv2.imread(f'{d}/image.png'), cv2.COLOR_BGR2RGB); plate = cv2.cvtColor(cv2.imread(f'{d}/plaque.png'), cv2.COLOR_BGR2RGB)
     rinfo = prepare_rig.prepare(d) if REG['rig'] else None   # une fois par scène (cache <scène>/rig/)
     if rinfo: plate = cv2.cvtColor(cv2.imread(f'{d}/rig/plaque.png'), cv2.COLOR_BGR2RGB)
-    plate, betes = entites.betes_peintes(d, img, plate) if REG['decor'] > 0 else (plate, [])   # bêtes peintes du décor rendues vivantes (v34)
+    # bêtes peintes du décor rendues vivantes (v34) — REPRISES (v35) : jugées par JEV dans la chambre, « poules » 0,81–0,88
+    # (sans ombre, mauvaise taille, qui flottent ; plan de Tantie Awa 38 → 79 images refusées) : désactivées par défaut
+    plate, betes = entites.betes_peintes(d, img, plate) if REG['decor'] > 0 and REG.get('betes_peintes', 0) else (plate, [])
     acts = {}
     for a in S['acteurs']:
         if rinfo and rinfo['acteurs'].get(a['nom'], {}).get('pts'): a['pts'] = rinfo['acteurs'][a['nom']]['pts']   # squelette affiné à la préparation
@@ -208,6 +235,14 @@ for sk in T['sketchs']:
                 x0b, y0b, x1b, y1b = b_['box']; poings = [i for i in (15, 16) if x0b - 0.1 * epw <= P_[i, 0] <= x1b + 0.1 * epw and y0b - 0.1 * epw <= P_[i, 1] <= y1b + 0.1 * epw]
                 if any(min(np.hypot(*(P_[i, :2] - P_[h, :2])) for h in (23, 24)) < 0.55 * epw for i in poings):
                     b_['amax'], b_['emax'] = 0.0, 1.0; print(f"{a['nom']}: main posée sur la hanche — bras sans geste (suit le buste)", flush=True)
+            # — main POSÉE SUR LA TABLE (v34) : v33, plan de Koffi à 34,71 — 55 images « rendu » ; JEV, partie par partie, y montrait
+            #   les mains à table (0,63–0,74) : elles pivotaient jusqu'à 14° (geste du bras) en tenant les couverts → sans geste
+            #   v34 : le contact « monde » du squelette ne la voyait pas (la main est dans la découpe de l'acteur) → JEV regarde
+            #   chaque main (une fois, en cache) : posée sur une table ou tenant un objet → sans geste
+            for b_ in R_['bras']:
+                posee = R_['contacts'].get(b_['cote'], ('libre', None))[0] == 'monde' or main_posee_jev(d, img, P_, b_['cote'], a['nom'], epw) > 0.6
+                if posee and b_.get('amax', 0) > 0:
+                    b_['amax'], b_['emax'] = 0.0, 1.0; print(f"{a['nom']}: main posée sur la table — bras sans geste", flush=True)
             # — visage DÉJÀ de trois quarts : le lacet ajouté étirait le menton et décollait la barbiche (Koffi, 0,83 ; remède
             #   désigné « lacet au plus 6° pour les visages de trois quarts »)
             if v3 is not None:
@@ -239,15 +274,25 @@ for sk in T['sketchs']:
         autres = [B for m_, B in acts.items() if m_ != n_]
         A_['cote'] = 0.0 if not autres else float(np.sign(min(autres, key=lambda B: abs(B['hip'][0] - A_['hip'][0]))['hip'][0] - A_['hip'][0]) or 1.0)
     ys_, xs_ = np.mgrid[0:img.shape[0], 0:img.shape[1]].astype(np.float32)
-    kpar = facteur_parallaxe(profondeur(d, plate), acts, img.shape[0], img.shape[1]) if REG['parallaxe'] > 0 else None
+    prof_ = profondeur(d, plate) if REG['parallaxe'] > 0 or REG['decor'] > 0 else None
+    kpar = facteur_parallaxe(prof_, acts, img.shape[0], img.shape[1]) if REG['parallaxe'] > 0 else None
     vie = decor_vivant.prepare(d, plate, [A_['mask'] for A_ in acts.values()]) if REG['decor'] > 0 else None
     lin = linge.prepare(d, plate, [A_['mask'] for A_ in acts.values()]) if REG['decor'] > 0 else None   # linge détouré par SAM 2.1, épinglé, au vent (v34)
     n_ent = int((REG.get('entites') or {}).get(sk['id'], 0))   # bêtes du décor (poules) : nombre choisi par sketch dans le montage
     ents = betes or (entites.prepare(d, img.shape[0], img.shape[1], [(A_['bbox'], not A_.get('assis')) for A_ in acts.values()], n=n_ent, lieu=sk.get('lieu')) if n_ent else [])
     gen = entites.genese_poule(d, img, [(A_['mask'] if A_['mask'].ndim == 2 else A_['mask'][..., 0], A_['bbox'], not A_.get('assis')) for A_ in acts.values()], ents) if ents else {}
     if ents: print(f"{sk['id']}: poule créée par JEV (genèse) : {gen.get('style', {}).get('sprite')}, note {gen.get('note')} / référence {gen.get('reference')}", flush=True)
+    # VIE DU FOND GARANTIE (v35, vie_fond.py) : ombre de feuillage sur la moitié haute du mur, oiseaux dans le ciel du cadre
+    vf = vie_fond.prepare(plate, prof_, [A_['mask'] for A_ in acts.values()]) if REG['decor'] > 0 and REG.get('vie_fond', 1) and prof_ is not None else None
+    if vf is not None and not betes:   # bêtes peintes restées dans la plaque : leur ombre physique (v35, vie_fond.ombres_peintes)
+        Lp_ = (json.load(open(f'{d}/genese.json')).get('L') if os.path.isfile(f'{d}/genese.json') else None) or \
+              entites.physique.lumiere(img, [(A_['mask'] if A_['mask'].ndim == 2 else A_['mask'][..., 0], A_['bbox'], not A_.get('assis')) for A_ in acts.values()])
+        plate = vie_fond.ombres_peintes(img, plate, Lp_, [A_['mask'] for A_ in acts.values()])
     SC[sk['id']] = dict(img=img, plate=plate, acts=acts, H=img.shape[0], W=img.shape[1], sk=sk, xs=xs_, ys=ys_, kpar=kpar, vie=vie, ents=ents, linge=lin,
-                        lum=gen.get('L'), style_ent=gen.get('style'))
+                        lum=gen.get('L'), style_ent=gen.get('style'), vf=vf)
+    if vf is not None:   # carte de contrôle hors du dossier de la scène (son empreinte entre dans celle des plans)
+        print(f"{sk['id']}: vie du fond — {len(vf['feuilles'])} feuilles en ombre sur {int(vf['mur'].sum())} px de mur (bas du houppier y = {int(vf['y_lim'].min())}–{int(vf['y_lim'].max())} / {vf['H']}), ciel {100 * vf['ciel'].mean():.0f} %", flush=True)
+        cv2.imwrite(f"{OUT}/vie_fond-{sk['id']}.jpg", cv2.cvtColor(vie_fond.carte(vf, plate), cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, 88])
 gestes.ferme()
 JOURNAL_JEU = []
 if REG['rig']:   # pistes de jeu et ressenti de chaque personnage, image par image, pour tout le film
@@ -480,10 +525,18 @@ def geste_dessine(S, A, t, name, R):
     jj = machoire(name, t)
     cdx, cdy = corps(name, t, S['sk']['id'], A)
     return PD.intervalle(R, PD.rend(A['dessins'][p], jj, cdx, cdy, t, arrivee), w)
-def frame_scene(S, t, off=None, zoom=None):
+def frame_scene(S, t, off=None, zoom=None, vis=None, t0=None):
     plate = S['plate']; V = S.get('vie')
     if V is not None and decor_vivant.panache(V, plate) is not None: plate = decor_vivant.fumee(V, plate, t)   # la fumée du grill MONTE (panache physique), avant la parallaxe
     if S.get('linge') is not None: plate = linge.compose(S['linge'], plate, t)   # linge épinglé qui flotte au vent (v34), sous la couche « tissu »
+    VF = S.get('vf')
+    if VF is not None and S.setdefault('jour', (lambda s_: s_ is not None and s_[1] > 110)(decor_vivant.soleil(S['plate']))):
+        # VIE DU FOND (v35) : ombre des rameaux sur le haut du mur (elle suit la parallaxe du mur), oiseaux du ciel du cadre
+        psi_ = float(S['linge']['psi']) if S.get('linge') is not None else 0.0
+        plate = plate.astype(np.float32) * vie_fond.feuillage(VF, t, psi_)[..., None]
+        if vis is not None:
+            plate = vie_fond.oiseaux(VF, plate, t, vis, t0 if t0 is not None else 0.0)
+            plate = vie_fond.papillons(VF, plate, t, vis, t0 if t0 is not None else 0.0)   # devant le mur, derrière les acteurs
     par = off is not None and S.get('kpar') is not None and (abs(off[0]) > 0.05 or abs(off[1]) > 0.05)
     zpar = zoom is not None and S.get('kpar') is not None and abs(zoom[0] - 1) > 1e-3
     if par or zpar or V is not None:
@@ -501,7 +554,7 @@ def frame_scene(S, t, off=None, zoom=None):
         if V is not None:   # le décor vit : feuillages, linge, fumée, bêtes (déplacements) et ampoules (lumière)
             # de jour, mouvement ×6 (essai A/B jugé par JEV, 17/10 : à ×1 la cour était un « décor mort »), lumière inchangée
             dx, dy, gain = decor_vivant.champ(V, t, REG['decor'] * (6.0 if jour_ else 1.0)); mx = mx - dx; my = my - dy
-            if jour_: gain = gain * (1 - sol_[0] * (1 - decor_vivant.tachete(gain.shape[0], gain.shape[1], t)))   # ombres de feuillage qui passent
+            if jour_ and S.get('vf') is None: gain = gain * (1 - sol_[0] * (1 - decor_vivant.tachete(gain.shape[0], gain.shape[1], t)))   # ombres de feuillage qui passent (remplacées par vie_fond)
         plate = cv2.remap(plate, mx.astype(np.float32), my.astype(np.float32), cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
         if V is not None: plate = np.clip(plate.astype(np.float32) * gain[..., None], 0, 255)
     can = plate.astype(np.float32).copy()
@@ -516,7 +569,20 @@ def frame_scene(S, t, off=None, zoom=None):
         sub = can[Y0:Y1, X0:X1]; al3 = al[..., None]; sub[:] = sub * (1 - al3) + rgb.astype(np.float32) * al3
     if poses: entites.dessine(can, poses, lambda p: p['y'] > pieds, S.get('lum'), S.get('style_ent'), em)
     if em: MESURES.extend(dict(qui='entite', sketch=S['sk']['id'], t=round(t, 3), **m_) for m_ in em)
+    if REG.get('nuages', 0) > 0 and S.setdefault('jour', (lambda s_: s_ is not None and s_[1] > 110)(decor_vivant.soleil(S['plate']))):
+        can *= ombre_nuage(S, t)[..., None]   # toute la scène, acteurs compris : une seule lumière
     return np.clip(can, 0, 255).astype(np.uint8)
+def ombre_nuage(S, t):
+    """OMBRE DE NUAGE QUI PASSE (v35) : v34, porte L — « décor mort » sur 22 secondes de la cour : le rideau détouré par
+    SAM 2.1 bouge, mais les cadres de Maman n'en montrent que le haut, épinglé. Par beau temps, l'ombre douce d'un nuage
+    glisse sur la cour (bande oblique, venue du côté du soleil) : la lumière vit dans TOUS les cadres. Scènes de jour
+    seulement ; gain appliqué à toute l'image (décor et acteurs : une seule lumière, porte K « lumière »)."""
+    H, W = S['plate'].shape[:2]; q = 8; h, w = (H + q - 1) // q, (W + q - 1) // q
+    if '_nuage' not in S: S['_nuage'] = tuple(a_.astype(np.float32) for a_ in np.meshgrid(np.arange(w) * q, np.arange(h) * q))
+    X, Y = S['_nuage']; L = 1.4 * W; v = REG.get('nuage_vitesse', 0.06) * W; sig = 0.22 * W
+    u = np.mod((X + 0.35 * Y) - v * t + 0.5 * L, L); d = np.minimum(u, L - u)   # distance au cœur de l'ombre
+    g = 1.0 - REG['nuages'] * np.exp(-0.5 * (d / sig) ** 2)
+    return cv2.resize(g.astype(np.float32), (W, H), interpolation=cv2.INTER_LINEAR)
 # ── découpage : un plan par réplique (coupe au changement de locuteur) ──
 def crop_for(S, kind, who=None):
     W, H = S['W'], S['H']; asp = CW / CH
@@ -739,13 +805,16 @@ def in_card(t):
 from PIL import Image as PImage, ImageDraw, ImageFont
 EMO = {'addition': 'emoji/face_with_tears_of_joy.png', 'poulet': 'emoji/face_screaming_in_fear.png'}
 FONT = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/fonts/Montserrat.ttf'
-def carte(c, t, rgba=False):
+def carte(c, t, rgba=False, place=None):
+    """place : (centre x de l'émoji, centre y de l'émoji, haut du titre, taille de base de l'émoji) — par défaut l'émoji au
+    centre en haut et le titre dessous (cartes de Ladjagaï)."""
     im = PImage.new('RGBA' if rgba else 'RGB', (CW, CH), (0, 0, 0, 0) if rgba else (0, 0, 0)); u = (t - c['t0']) / (c['t1'] - c['t0'])
     e = PImage.open(EMO.get(c['apres'], 'emoji/face_with_tears_of_joy.png')).convert('RGBA')
+    ex, ey, ty, base = place or (CW / 2, 145, 290, 210)
     k = 1.32 if u < 0.25 else (1.15 if u < 0.5 else 1.0)  # le logo grossit par coupes (×1,32 puis ×1,15, mesuré chez Ladjagaï)
-    sz = int(210 * k); e = e.resize((sz, sz), PImage.LANCZOS)
-    if rgba: im.alpha_composite(e, ((CW - sz) // 2, 40 + (210 - sz) // 2))
-    else: im.paste(e, ((CW - sz) // 2, 40 + (210 - sz) // 2), e)
+    sz = int(base * k); e = e.resize((sz, sz), PImage.LANCZOS)
+    if rgba: im.alpha_composite(e, (int(ex - sz / 2), int(ey - sz / 2)))
+    else: im.paste(e, (int(ex - sz / 2), int(ey - sz / 2)), e)
     titre = [k_ for k_ in H_['sketchs'] if k_['id'] == c['apres']][0]['titre'].upper()
     d = ImageDraw.Draw(im); f = ImageFont.truetype(FONT, 34)
     try: f.set_variation_by_name(b'Black')
@@ -755,17 +824,18 @@ def carte(c, t, rgba=False):
         if f.getlength((cur + ' ' + w_).strip()) > CW - 60: lines_.append(cur); cur = w_
         else: cur = (cur + ' ' + w_).strip()
     lines_.append(cur)
-    y = 290
+    y = ty
     for ln in lines_:
         d.text(((CW - f.getlength(ln)) / 2, y), ln, font=f, fill=(255, 214, 0, 255), stroke_width=4, stroke_fill=(0, 0, 0, 255)); y += 44
     return np.array(im)
 CADRES = {}
 RANGE = range(NF)
-if os.environ.get('TOURNE_PLAGE'):   # « a-b » : seulement ces images (profilage, essais rapides)
-    _a, _b = map(int, os.environ['TOURNE_PLAGE'].split('-')); RANGE = range(max(0, _a), min(NF, _b))
+if os.environ.get('TOURNE_PLAGE'):   # « a-b » (ou « a-b,c-d ») : seulement ces images (profilage, essais rapides)
+    _pl = [tuple(map(int, p_.split('-'))) for p_ in os.environ['TOURNE_PLAGE'].split(',')]
+    RANGE = sorted({f_ for _a, _b in _pl for f_ in range(max(0, _a), min(NF, _b))})
 if ONLY:   # un seul sketch (et, avec TOURNE_PLAGE, seulement la part de la plage qui lui appartient : essais A/B rapides)
     sk = [k for k in T['sketchs'] if k['id'] == ONLY][0]; _r = range(int((sk['t0'] - 0.3) * FPS), int((sk['t1'] + 0.25) * FPS))
-    RANGE = range(max(_r.start, RANGE.start), min(_r.stop, RANGE.stop)) if os.environ.get('TOURNE_PLAGE') else _r
+    RANGE = [f_ for f_ in RANGE if f_ in _r] if os.environ.get('TOURNE_PLAGE') else _r
 def cadre_lisible(S, s, keep):
     """cadre de départ d'un plan. Plan moyen sur celui qui parle : quand la tête d'un voisin dépasse à moitié, la règle
     « tête entière ou absente » élargissait le cadre pour la prendre (Baye : 66 px de visage) ; on essaie d'abord de
@@ -794,6 +864,12 @@ def tete_coupee(S, c, keep, marge=0.05):
             if ix < 0.97 or iy < 0.97: return True
         elif ix * iy > 0.03 and (ix < 0.97 or iy < 0.97): return True
     return False
+def tete_dedans(S, c, n):
+    """la tête entière de n dans le cadre c."""
+    A = S['acts'].get(n); hb = head_box(A) if A else None
+    if not hb: return True
+    cx, cy, w, h = c
+    return hb[0] >= cx - w / 2 - 1 and hb[2] <= cx + w / 2 + 1 and hb[1] >= cy - h / 2 - 1 and hb[3] <= cy + h / 2 + 1
 def chemin_ok(S, a, b, keep, n=12):
     """tout le trajet de caméra de a à b (avec la même courbe d'aisance que le rendu) garde les têtes entières ou absentes."""
     for k in range(1, n):
@@ -842,16 +918,70 @@ def cadres_du_plan(S, s, keep):
         cs = faces_ok(S, clamp_crop(S, crop_for(S, 'large')), None) if s[3].startswith('ouvre-') else None
         CADRES[key] = (None if cs is None else tuple(float(v) for v in cs),) + tuple(tuple(float(v) for v in c) for c in (c0, c1, cp))   # flottants Python
     return CADRES[key]
-def sur_scene(img, c, t):
+def titre_lignes(c):
+    f = ImageFont.truetype(FONT, 34)
+    try: f.set_variation_by_name(b'Black')
+    except Exception: pass
+    titre = [k_ for k_ in H_['sketchs'] if k_['id'] == c['apres']][0]['titre'].upper(); n_, cur = 1, ''
+    for w_ in titre.split():
+        if f.getlength((cur + ' ' + w_).strip()) > CW - 60: n_ += 1; cur = w_
+        else: cur = (cur + ' ' + w_).strip()
+    return n_
+def place_carte(c, visages):
+    """CARTE HORS DES VISAGES (v34) : v33 jugée par JEV — sur la carte du maquis, l'émoji couvrait le visage de Coumba
+    (« tête cachée par l'émoji » 0,82–0,89) ; sur celle de la cour, le titre passait sur la tête de Petit Mamadou (0,56–0,66).
+    L'émoji (à sa plus grande taille, ×1,32) et le titre sont posés là où ils couvrent le moins de visage (boîtes des têtes à
+    l'écran, élargies de 15 %), au même endroit pendant toute la carte ; l'émoji rapetisse s'il ne trouve aucune place."""
+    th = 44 * titre_lignes(c)
+    def couvre(r):
+        x0, y0, x1, y1 = r; tot = 0.0
+        for v in visages:
+            mx, my = 0.15 * (v[2] - v[0]), 0.15 * (v[3] - v[1])
+            tot += max(0.0, min(x1, v[2] + mx) - max(x0, v[0] - mx)) * max(0.0, min(y1, v[3] + my) - max(y0, v[1] - my))
+        return tot
+    best = None
+    for base in (210, 170, 140):
+        sz = 1.32 * base
+        for k_, (ex, ey, ty) in enumerate(((CW / 2, 145, 290), (CW * 0.27, 30 + sz / 2, CH - th - 14), (CW * 0.73, 30 + sz / 2, CH - th - 14),
+                                         (CW * 0.27, CH - 14 - sz / 2, 18), (CW * 0.73, CH - 14 - sz / 2, 18), (CW / 2, CH - 14 - sz / 2, 18))):
+            ex = min(CW - sz / 2 - 4, max(sz / 2 + 4, ex))
+            cout = couvre((ex - sz / 2, ey - sz / 2, ex + sz / 2, ey + sz / 2)) + couvre((30, ty - 6, CW - 30, ty + th))
+            cle_ = (cout, 210 - base, k_)
+            if best is None or cle_ < best[0]: best = (cle_, (ex, ey, ty, base))
+        if best[0][0] == 0: break
+    return best[1]
+PLACES = {}
+def sur_scene(img, c, t, visages=()):
     """la carte posée sur la fin du sketch : image assombrie qui continue de vivre, émoji + titre par-dessus. Fondu de 0,6 s :
     à 0,25 s l'instrument des TikTok le comptait encore comme une coupe (mesuré le 17/10 sur v19)."""
     # CARTE OPAQUE D'UN COUP (17/10, contrôle image par image de JEV) : pendant le fondu de 0,6 s, l'émoji à moitié transparent
     # posé sur les visages faisait un « fantôme » (rendu abîmé 0,85) et le titre translucide était illisible (22 images) :
     # émoji et titre entrent opaques sur la coupe (comme les cartes de Ladjagaï), seul l'assombrissement du décor se fond (0,15 s)
-    k = ease((t - (c['t0'] - 0.05)) / 0.15); cal = carte(c, t, rgba=True).astype(np.float32)
+    cle_ = round(c['t0'], 2)
+    if cle_ not in PLACES: PLACES[cle_] = place_carte(c, visages)
+    k = ease((t - (c['t0'] - 0.05)) / 0.15); cal = carte(c, t, rgba=True, place=PLACES[cle_]).astype(np.float32)
     a_ = cal[..., 3:] / 255.0; cal = cal[..., :3]                                       # émoji et titre (contour noir compris)
     base = img.astype(np.float32) * (1 - 0.35 * k)
     return np.clip(base * (1 - a_) + cal * a_, 0, 255).astype(np.uint8)
+def cadre_t(s, cadres, t):
+    """cadre de la caméra au temps t dans le plan s : (cx, cy, w, h, cadre de référence, poussée)."""
+    cs, c0, c1, cp = cadres
+    u = ease((t - s[0]) / max(0.5, s[1] - s[0]))
+    cx, cy, w2, h2 = [a_ + (b_ - a_) * u for a_, b_ in zip(c0, c1)]; ref = c0
+    if cs is not None:   # ouverture : du plan d'ensemble au cadre de l'échange (la poussée ne crée pas de parallaxe, seul le glissement)
+        v_o = ease(min(1.0, (t - s[0]) / max(0.3, REG['ouverture'])))
+        ref = [a_ + (b_ - a_) * v_o for a_, b_ in zip(cs, c0)]; cx, cy, w2, h2 = [a_ + (b_ - a_) * v_o for a_, b_ in zip(cs, (cx, cy, w2, h2))]
+    zp = (ref[2] / w2, cx, cy)   # poussée de la caméra (le coup de zoom de la chute, lui, est un zoom d'objectif : sans parallaxe)
+    if s[5] is not None and t >= s[5]:   # coup de zoom sur la chute, fluide (whip_s) au lieu d'un saut d'image
+        v_ = ease((t - s[5]) / max(0.05, REG['whip_s'])); cx, cy, w2, h2 = [a_ + (b_ - a_) * v_ for a_, b_ in zip((cx, cy, w2, h2), cp)]
+    return cx, cy, w2, h2, ref, zp
+def visages_ecran(S, cad):
+    """boîtes des têtes de la scène à l'écran pour le cadre cad = (cx, cy, w, h)."""
+    cx, cy, w2, h2 = cad[:4]; sc = CW / w2; out = []
+    for A in S['acts'].values():
+        hb = head_box(A)
+        if hb: out.append(((hb[0] - (cx - w2 / 2)) * sc, (hb[1] - (cy - h2 / 2)) * sc, (hb[2] - (cx - w2 / 2)) * sc, (hb[3] - (cy - h2 / 2)) * sc))
+    return out
 def rend(f):
     t = f / FPS; c = in_card(t)
     if c and not REG['carte_sur_scene']:
@@ -866,22 +996,18 @@ def rend(f):
         M0 = np.float32([[sc0, 0, -(c0[0] - c0[2] / 2) * sc0], [0, sc0, -(c0[1] - c0[3] / 2) * sc0]])
         src0 = cv2.GaussianBlur(S['img'], (0, 0), 0.45 / sc0) if sc0 < 0.95 else S['img']
         cv2.imwrite(f"{OUT}/source/{s[0]:06.2f}.jpg", cv2.cvtColor(cv2.warpAffine(src0, M0, (CW, CH), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT), cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, 94])
-    u = ease((t - s[0]) / max(0.5, s[1] - s[0]))
-    cx, cy, w2, h2 = [a_ + (b_ - a_) * u for a_, b_ in zip(c0, c1)]; ref = c0
-    if cs is not None:   # ouverture : du plan d'ensemble au cadre de l'échange (la poussée ne crée pas de parallaxe, seul le glissement)
-        v_o = ease(min(1.0, (t - s[0]) / max(0.3, REG['ouverture'])))
-        ref = [a_ + (b_ - a_) * v_o for a_, b_ in zip(cs, c0)]; cx, cy, w2, h2 = [a_ + (b_ - a_) * v_o for a_, b_ in zip(cs, (cx, cy, w2, h2))]
-    zp = (ref[2] / w2, cx, cy)   # poussée de la caméra (le coup de zoom de la chute, lui, est un zoom d'objectif : sans parallaxe)
-    if s[5] is not None and t >= s[5]:   # coup de zoom sur la chute, fluide (whip_s) au lieu d'un saut d'image
-        v_ = ease((t - s[5]) / max(0.05, REG['whip_s'])); cx, cy, w2, h2 = [a_ + (b_ - a_) * v_ for a_, b_ in zip((cx, cy, w2, h2), cp)]
+    cx, cy, w2, h2, ref, zp = cadre_t(s, (cs, c0, c1, cp), t)
     assert abs((w2 / h2) / (CW / CH) - 1) < 0.01, 'cadre étiré'
     ECHELLE_PLAN[0] = CW / w2   # agrandissement scène → écran de ce plan (taille des visages à l'écran)
-    fr = frame_scene(S, t, (cx - ref[0], cy - ref[1]), zp)   # le décor suit la caméra à sa profondeur (parallaxe latérale et avant)
+    vis_ = (max(c0[0] - c0[2] / 2, c1[0] - c1[2] / 2), max(c0[1] - c0[3] / 2, c1[1] - c1[3] / 2),
+            min(c0[0] + c0[2] / 2, c1[0] + c1[2] / 2), min(c0[1] + c0[3] / 2, c1[1] + c1[3] / 2))   # partie de la plaque visible tout le plan
+    fr = frame_scene(S, t, (cx - ref[0], cy - ref[1]), zp, vis=vis_, t0=s[0])   # le décor suit la caméra à sa profondeur (parallaxe latérale et avant)
     sc = CW / w2; src_ = fr
     if sc < 0.95: src_ = cv2.GaussianBlur(fr, (0, 0), 0.45 / sc)
     Maff = np.float32([[sc, 0, -(cx - w2 / 2) * sc], [0, sc, -(cy - h2 / 2) * sc]])
     out = cv2.warpAffine(src_, Maff, (CW, CH), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)  # acteur en bicubique + cadre en bilinéaire : netteté la plus proche de la source (mesurée)
-    if c: out = sur_scene(out, c, t)
+    if c:   # visages pris au début de la carte (même placement dans tous les processus de rendu)
+        t_r = max(s[0], c['t0'] - 0.05); out = sur_scene(out, c, t, visages_ecran(S, cadre_t(s, (cs, c0, c1, cp), t_r)))
     cv2.imwrite(f'{OUT}/clip/f{f:05d}.jpg', cv2.cvtColor(out, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, 94])
 def morceau(bloc):
     for f in bloc: rend(f)
@@ -904,6 +1030,7 @@ import time; T0 = time.time()
 # (Choice), sous condition stricte : aucune tête coupée (< 0,5) et visage de celui qui parle lisible (> 0,5). Décision mise
 # en cache par empreinte (scène, plan, cadres proposés). TOURNE_REALISATEUR=0 : la règle du moteur seule.
 C0_JEV, REALISATION = {}, {}
+SEUIL_MAINS = 0.60    # mains d'un cadre candidat nettement ratées (v34)
 SEUIL_PROPRE = 0.42   # « rendu » de la porte G sur l'image d'un cadre candidat (sans marge, la porte tombe à 0,5 ; l'animation
                       # ajoute jusqu'à 0,17 — mesuré sur les plans de Koffi de la v31)
 def realise(plans):
@@ -911,21 +1038,31 @@ def realise(plans):
     from concurrent.futures import ThreadPoolExecutor
     import jev_api, jev_film
     CR = os.path.expanduser('~/.cache/massamba-jev/realisateur'); os.makedirs(CR, exist_ok=True)
+    def parleurs_de(S, s):
+        return sorted({L['qui'] for L in T['lines'] if L.get('sketch') == s[2] and L['t0'] < s[1] - 0.2 and L['t0'] + L['dur'] > s[0] + 0.2 and L['qui'] in S['acts']})
     def candidats(S, s, keep):
+        # PARLEURS À L'IMAGE (v35) : v33, porte B — pendant « Et ta marmite… » (60,7–63,3 s), le plan à deux Modou / Tantie Awa
+        # était cadré sur Modou seul (« moyen ») : Tantie parlait hors champ et JEV jugeait des lèvres fermées (0,08). Dans un
+        # plan, tout cadre proposé montre la tête entière de chacun de ceux qui y parlent.
+        parleurs = parleurs_de(S, s)
         cs_ = {'moteur': cadre_lisible(S, s, keep)}
         base = cs_['moteur']
-        for nom, c in (('visage', crop_visage_ok(S, keep) if keep in S['acts'] else None), ('serre', crop_for(S, 'serre', keep) if keep in S['acts'] else None), ('moyen', crop_for(S, 'moyen', keep) if keep in S['acts'] else None),
+        # GROS PLAN (v35) : v34, plan serré de Koffi à 39,61 — ses deux cadres (serré, moyen) montraient ses mains peintes à table
+        # (JEV 0,61) : aucun cadre propre, porte M. Un cadre plus serré, le visage sur 38 % de la hauteur, sort la table du champ
+        for nom, c in (('visage', crop_visage_ok(S, keep) if keep in S['acts'] else None), ('gros', crop_visage(S, keep, 0.38) if keep in S['acts'] else None),
+                       ('serre', crop_for(S, 'serre', keep) if keep in S['acts'] else None), ('moyen', crop_for(S, 'moyen', keep) if keep in S['acts'] else None),
                        ('deux', crop_for(S, 'duo', s[4] if isinstance(s[4], tuple) else (keep,))), ('large', (base[0], base[1], base[2] * 1.25, base[3] * 1.25))):
             if c is None: continue
             c0_ = c; c = faces_ok(S, clamp_crop(S, c), keep)
             if os.environ.get('TOURNE_CANDIDATS'): print(f"  cadre {s[0]:.2f} {keep} {nom} : {[round(v) for v in c0_]} → {[round(v) for v in c]}, tête coupée {tete_coupee(S, c, keep)}", flush=True)
             if tete_coupee(S, c, keep): continue
+            if any(not tete_dedans(S, c, n_) for n_ in parleurs): continue   # celui qui parle dans le plan reste à l'image
             if all(abs(c[2] / v[2] - 1) > 0.06 or abs(c[0] - v[0]) > 0.08 * v[2] for v in cs_.values()): cs_[nom] = c
         return cs_
     def un(s):
         S = SC[s[2]]; keep = s[4][0] if isinstance(s[4], tuple) else s[4]; cs_ = candidats(S, s, keep)
         cle = hashlib.sha1(json.dumps([list(s[:5]), {k: [round(x, 1) for x in v] for k, v in cs_.items()}, cfg['scenes'][s[2]],
-                                       os.path.getmtime(os.path.join(cfg['scenes'][s[2]], 'image.png')), 'propre-1'], default=str).encode()).hexdigest()[:20]
+                                       os.path.getmtime(os.path.join(cfg['scenes'][s[2]], 'image.png')), 'propre-4-parleurs'], default=str).encode()).hexdigest()[:20]
         f_ = f'{CR}/{cle}.json'; diag = os.environ.get('TOURNE_CANDIDATS')   # diagnostic : images des cadres proposés
         if os.path.isfile(f_) and not diag: d_ = json.load(open(f_)); return s, d_['choix'], cs_, d_
         tm = (s[0] + s[1]) / 2; fr = frame_scene(S, tm)
@@ -961,18 +1098,27 @@ def realise(plans):
             Q[f'propre_{k_}'] = {'type': 'noul', 'instructions': jev_film.N1['rendu'][1].replace('`frame`', f'`{k_}`')}
             Q[f'coupe_{k_}'] = {'type': 'noul', 'instructions': f'In image `{k_}`, is any character\'s head or face partly cut by the edge of the frame?'}
             Q[f'lisible_{k_}'] = {'type': 'noul', 'instructions': f'In image `{k_}`, is the face of the speaking character' + (' (shown in `parleur`)' if 'parleur' in ims else '') + ' large and clear enough to read the expression and the mouth?'}
+            # MAINS PEINTES (v34) : v33, plan de Koffi à 34,71 — 55 images « rendu » ; JEV, interrogé sur chaque partie, y montrait
+            # les mains à table (0,63 à 0,74), déjà mal dessinées sur la peinture d'origine (0,67), le visage restant sous 0,5. Un
+            # réalisateur cadre hors champ des mains ratées : la question est posée sur chaque cadre candidat
+            Q[f'mains_{k_}'] = {'type': 'noul', 'instructions': f'Read `contexte`. In image `{k_}`, look only at the HANDS and fingers that are visible: is any hand deformed, melted into an object, bent unnaturally, with wrong or merged fingers, or doubled? Hands outside the picture do not count.'}
         a = jev_api.demande(ids, Q, assets, outil='jev_realisateur')
         # la règle géométrique de la porte B aussi (visage de celui qui parle ≥ VISAGE_MIN px) : v31, Baye à 60 px et Petit
         # Mamadou à 57 px faisaient tomber la porte B malgré des lèvres justes (JEV « lisible » les acceptait)
-        grand = lambda k_: keep not in S['acts'] or taille_visage(S, keep, cs_[k_]) >= VISAGE_MIN
+        # … et pour CHACUN de ceux qui parlent dans le plan (v35 : la porte B mesure le visage de celui qui parle)
+        grand = lambda k_: all(taille_visage(S, n_, cs_[k_]) >= VISAGE_MIN for n_ in (parleurs_de(S, s) or ([keep] if keep in S['acts'] else [])))
         pr = a['choix']['probabilities'] if 'choix' in a else {noms[0]: 1.0}; ok_ = [k_ for k_ in noms if a[f'coupe_{k_}']['noul'] < 0.5 and a[f'lisible_{k_}']['noul'] > 0.5 and grand(k_)]
-        propres = [k_ for k_ in ok_ if a[f'propre_{k_}']['noul'] < SEUIL_PROPRE]
+        # rendu de la porte G, et les mains quand elles sont nettement ratées (SEUIL_MAINS) : mesuré au premier essai v34, les
+        # mains simplement posées (hanches, genoux) donnent 0,44–0,58 et la porte G ne les compte pas ; Koffi à table, 0,63–0,74
+        sale = lambda k_: max(a[f'propre_{k_}']['noul'], a[f'mains_{k_}']['noul'] if a[f'mains_{k_}']['noul'] >= SEUIL_MAINS else 0.0)
+        propres = [k_ for k_ in ok_ if sale(k_) < SEUIL_PROPRE]
         if propres: choix = max(propres, key=lambda k_: pr.get(k_, 0.0))
         else:   # aucun cadre propre : le moins douteux parmi les conformes, sinon parmi les lisibles sans tête coupée
             ok2 = [k_ for k_ in noms if a[f'coupe_{k_}']['noul'] < 0.5 and a[f'lisible_{k_}']['noul'] > 0.5]
-            choix = min(ok_ or ok2 or noms, key=lambda k_: a[f'propre_{k_}']['noul'])
+            choix = min(ok_ or ok2 or noms, key=sale)
         d_ = {'choix': choix, 'conforme': bool(propres), 'probabilites': pr, 'coupe': {k_: round(a[f'coupe_{k_}']['noul'], 2) for k_ in noms},
               'lisible': {k_: round(a[f'lisible_{k_}']['noul'], 2) for k_ in noms}, 'rendu': {k_: round(a[f'propre_{k_}']['noul'], 2) for k_ in noms},
+              'mains': {k_: round(a[f'mains_{k_}']['noul'], 2) for k_ in noms},
               'visage_px': {k_: round(taille_visage(S, keep, cs_[k_]), 1) for k_ in noms} if keep in S['acts'] else {}}
         json.dump(d_, open(f_, 'w')); return s, choix, cs_, d_
     with ThreadPoolExecutor(8) as ex: res = list(ex.map(un, [s for s in plans if s[2] in SC]))

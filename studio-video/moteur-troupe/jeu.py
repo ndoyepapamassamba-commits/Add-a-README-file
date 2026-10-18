@@ -190,6 +190,7 @@ def interlocuteur(L, lignes, acteurs):
 
 FRAC = {'buste': 0.8, 'buste_lacet': 0.6, 'tete': 0.8, 'tete_lacet': 0.45, 'tete_tangage': 0.7, 'bassin_x': 0.8}
 LACET_ECOUTE = 4.0   # degrés : lacet minimal de l'écouteur vers celui qui parle (porte D : > 2° dans 75 % des images)
+LACET_ECOUTE_MIN = 3.5   # degrés : plancher d'écoute après toutes les couches (porte D : > 2° dans 75 % des images)
 LIM = {'buste': 3.0, 'buste_lacet': 9.0, 'tete': 6.0, 'tete_lacet': 20.0, 'tete_tangage': 9.0, 'bassin_x': 4.0}
 
 
@@ -368,6 +369,14 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
                 R[c_] = R[c_] + (gain * v_).astype(np.float32)
             for b, gm in enumerate(Gm):
                 if f'geste_{b}' in R: R[f'geste_{b}'] = (1 - (1 - np.clip(R[f'geste_{b}'], 0, 1)) * (1 - np.clip(RG['mocap'] * gm, 0, 1))).astype(np.float32)
+        # ── ÉCOUTE GARANTIE (v34) : v33, porte D — Coumba écoutait Koffi la tête tournée du bon côté mais de 0,4° à 2° seulement
+        # (34,9–35,5 s et 39,9–41,1 s, 0,676 au lieu de 0,75) : la capture de mouvement et les regards détournés, ajoutés APRÈS la
+        # cible d'écoute, la rognaient. Plancher doux appliqué après toutes les couches : vers celui qui parle, au moins
+        # LACET_ECOUTE_MIN, qui monte et descend avec l'écoute (ressort), sans marche ni coin (max adouci)
+        ecoute_ = np.array([0.0 if parle_[i] else float(vers[i]) for i in range(nf)], np.float32)
+        Fs = ressort(ecoute_ * LACET_ECOUTE_MIN, fps, 6.0); w_ = np.clip(np.abs(Fs) / LACET_ECOUTE_MIN, 0, 1); s_ = np.sign(Fs)
+        x_ = s_ * (Fs - R['tete_lacet']); pousse_ = 0.5 * (x_ + np.sqrt(x_ * x_ + 0.25)) - 0.25   # ≈ max(0, x), lisse en 0
+        R['tete_lacet'] = (R['tete_lacet'] + w_ * s_ * pousse_).astype(np.float32)
         # ── action décalée : la tête traîne derrière le buste et le rattrape avec un léger dépassement (follow-through)
         if RG['suivi_tete']:
             monde = R['buste'] + R['tete']; R['tete'] = (dynamique(monde, fps, 2.6, 0.5, 0.0) - R['buste']).astype(np.float32)

@@ -91,7 +91,9 @@ def compose(L, plaque, t):
     out[zone] = L['fond'][zone]
     H, W = lab.shape; g = float(0.65 + 0.35 * (0.5 + 0.5 * np.sin(2 * np.pi * 0.11 * t + float(L['psi']))))   # rafales communes
     for k, (x0, y0, x1, y1) in enumerate(L['pieces'].astype(int), 1):
-        bw, bh = x1 - x0, y1 - y0; A = float(np.clip(0.12 * min(bw, bh), 4.0, 14.0)); mg = int(A) + 4
+        # v35 : amplitude 0,15 × la plus petite dimension, jusqu'à 22 px (v34 : 0,12 et 14 px — le rideau de la porte, 135 px de
+        # large, plafonnait à 14 px : JEV ne le voyait pas bouger dans le cadre de Maman)
+        bw, bh = x1 - x0, y1 - y0; A = float(np.clip(0.15 * min(bw, bh), 4.0, 22.0)); mg = int(A) + 4
         X0, Y0, X1, Y1 = max(0, x0 - mg), max(0, y0 - 2), min(W, x1 + mg), min(H, y1 + mg)
         ys, xs = np.mgrid[Y0:Y1, X0:X1].astype(np.float32)
         u = np.clip((ys - y0) / max(1, bh), 0, 1); w = u ** 1.5                 # épinglé en haut, libre en bas

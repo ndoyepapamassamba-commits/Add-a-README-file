@@ -202,8 +202,37 @@ def charge_bras(f):
     return out
 
 
-AMODAL = 3   # 18/10/2026 : complétion amodale opaque + couverture au contact de deux personnes (plaque.amodal) ;
-             # v3 : intérieur sans couture (sans_couture)
+AMODAL = 4   # 18/10/2026 : complétion amodale opaque + couverture au contact de deux personnes (plaque.amodal) ;
+             # v3 : intérieur sans couture (sans_couture) ; v4 : liseré de celui de devant ôté de celui de derrière (v34)
+
+
+VERSION_FILS = 2   # v35 : fil entrant dans une tête raccourci à un appui choisi par JEV (plaque.retracte_fils)
+
+
+def juge_fil(vues):
+    """JEV : probabilité de défaut de chaque vue (fil faux — traverse une tête, flotte, attaché à rien — ou rendu abîmé)."""
+    import uuid
+    from concurrent.futures import ThreadPoolExecutor
+    import jev_api, jev_film
+    Q = {'fil': {'type': 'noul', 'instructions': 'Read `contexte`. Look at the thin rope (clothesline) in `frame`. Does it look wrong: passing through a head, floating, ending in the air or attached to nothing?'},
+         'rendu': {'type': 'noul', 'instructions': jev_film.N1['rendu'][1]}}
+    def un(v):
+        fid = 'frame-' + uuid.uuid4().hex[:10]; im = cv2.cvtColor(cv2.resize(v, (576, 460), interpolation=cv2.INTER_CUBIC), cv2.COLOR_RGB2BGR)
+        a = jev_api.demande({'frame': fid, 'contexte': jev_film.STYLE}, Q, {fid: {'type': 'image', 'format': 'jpg', 'data_base64': jev_api.b64(im)}}, outil='juge_fil')
+        return max(float(a['fil']['noul']), float(a['rendu']['noul']))
+    with ThreadPoolExecutor(4) as ex: return list(ex.map(un, vues))
+
+
+def fils_v2(d, R, img, info0, jev=True):
+    """passage léger (plaque gardée) : les fils prolongés à travers une tête sont raccourcis (VERSION_FILS)."""
+    S = json.load(open(f'{d}/scene.json')); acts = S['acteurs']
+    alphas = [cv2.imread(f"{R}/alpha-{a['slug']}.png", cv2.IMREAD_UNCHANGED).astype(np.float32) / 65535 for a in acts]
+    pl = cv2.cvtColor(cv2.imread(f'{R}/plaque.png'), cv2.COLOR_BGR2RGB)
+    pl, gardes, coupes = PQ.retracte_fils(img, pl, info0.get('fils', []), alphas, juge=juge_fil if jev else None)
+    if coupes: cv2.imwrite(f'{R}/plaque.png', cv2.cvtColor(pl, cv2.COLOR_RGB2BGR))
+    info0.update(fils=gardes, fils_coupes=info0.get('fils_coupes', []) + coupes, version_fils=VERSION_FILS)
+    json.dump(info0, open(f'{R}/scene_rig.json', 'w'), indent=1, ensure_ascii=False)
+    return info0
 
 
 def prepare(d, jev=True, force=False):
@@ -211,7 +240,8 @@ def prepare(d, jev=True, force=False):
     S = json.load(open(f'{d}/scene.json')); img = cv2.cvtColor(cv2.imread(f'{d}/image.png'), cv2.COLOR_BGR2RGB)
     if os.path.isfile(f'{R}/scene_rig.json') and not force:
         info0 = json.load(open(f'{R}/scene_rig.json'))
-        if info0.get('version_decoupe', 1) == VERSION_DECOUPE and info0.get('amodal') == AMODAL: return info0
+        if info0.get('version_decoupe', 1) == VERSION_DECOUPE and info0.get('amodal') == AMODAL:
+            return info0 if info0.get('version_fils', 1) == VERSION_FILS else fils_v2(d, R, img, info0, jev)
     t0 = time.time(); acts = S['acteurs']
     m0s = [cv2.imread(f"{d}/{a['slug']}-masque.png", 0).astype(np.float32) / 255 for a in acts]
     alphas, boites, decoupes = [], [], []
@@ -254,7 +284,13 @@ def prepare(d, jev=True, force=False):
         pl, trou = PQ.plaque_pleine(img, alphas)
         pl, inventes = PQ.nettoie(img, pl, trou)   # restes d'acteur et objets inventés par le remplissage : rebouchés
         pl, faits = PQ.fils(img, pl, alphas)
+        pl, faits, coupes_ = PQ.retracte_fils(img, pl, faits, alphas, juge=juge_fil if jev else None)   # fil entrant dans une tête (v35)
         cv2.imwrite(f'{R}/plaque.png', cv2.cvtColor(pl, cv2.COLOR_RGB2BGR)); cv2.imwrite(f'{R}/trou.png', trou * 255)
+    if cache or plaque_gardee:   # plaque gardée d'avant la v35 : fil prolongé à travers une tête encore dessiné
+        coupes_ = ancien.get('fils_coupes', [])
+        if ancien.get('version_fils', 1) < VERSION_FILS:
+            pl, faits, c2_ = PQ.retracte_fils(img, pl, faits, alphas, juge=juge_fil if jev else None); coupes_ = coupes_ + c2_
+            if c2_: cv2.imwrite(f'{R}/plaque.png', cv2.cvtColor(pl, cv2.COLOR_RGB2BGR))
     alphas_avant = {}
     for a in acts:
         fa_ = f"{R}/alpha-{a['slug']}.png"
@@ -273,6 +309,7 @@ def prepare(d, jev=True, force=False):
             fin = sans_couture(fin)
             cv2.imwrite(f"{R}/alpha-{a['slug']}.png", np.clip(fin * 65535, 0, 65535).astype(np.uint16)); finals.append((fin, comp))
     info = {'acteurs': {}, 'ordre': ordre_noms, 'fils': faits, 'inventes': inventes, 'empreinte_alphas': empreinte, 'plaque_reprise': bool(cache or plaque_gardee),
+            'version_fils': VERSION_FILS, 'fils_coupes': coupes_,
             'amodal': AMODAL, 'version_decoupe': VERSION_DECOUPE}
     for k, a in enumerate(acts):
         s = a['slug']; alphas[k], comp = finals[k]; ent = {'assis': assis(a), 'decoupe': decoupes[k], 'pts': a['pts']}

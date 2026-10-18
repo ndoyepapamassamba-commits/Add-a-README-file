@@ -92,10 +92,15 @@ def betes_peintes(d, img, plaque, seuil=0.985, journal=print):
     avec son ombre au sol (LaMa, plaque.remplit_progressif) et devient une entité qui marche et picore autour de sa place,
     dessinée avec une découpe valide (pattes entières) à sa taille peinte.
     → (plaque sans les bêtes peintes, entités) ; cache <scène>/betes.json + plaque-betes.png."""
-    fj, fp = f'{d}/betes.json', f'{d}/plaque-betes.png'
-    if os.path.isfile(fj):
+    import hashlib
+    fj, fp, fs = f'{d}/betes.json', f'{d}/plaque-betes.png', f'{d}/betes-source.txt'
+    # cache valable pour CETTE plaque (v35) : une plaque corrigée (fil raccourci, parallaxe…) n'est jamais remplacée par
+    # l'ancienne copie sans bêtes
+    src_ = hashlib.md5(cv2.resize(plaque, (96, 96), interpolation=cv2.INTER_AREA).tobytes()).hexdigest()[:12]
+    if os.path.isfile(fj) and (not os.path.isfile(fp) or (os.path.isfile(fs) and open(fs).read().strip() == src_)):
         E = json.load(open(fj))
         return (cv2.cvtColor(cv2.imread(fp), cv2.COLOR_BGR2RGB) if E and os.path.isfile(fp) else plaque), E
+    open(fs, 'w').write(src_)
     H, W = plaque.shape[:2]; trou = np.zeros((H, W), np.uint8); trouvees = []
     for nom in ('peinte-1', 'peinte-2'):
         f = f'{DOSSIER}/{nom}.png'

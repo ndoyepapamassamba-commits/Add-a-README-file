@@ -128,6 +128,16 @@ def champ(V, t, ampl=1.0):
     if len(P['ib'][0]):   # bêtes : coups de bec et petits pas, chacune à son rythme
         bx = 1.2 * np.sin(tp * 0.3 * P['bfr'] + P['bph']); pk = np.maximum(0, np.sin(tp * P['bfr'] + P['bph'])) ** 3
         dx[P['ib']] += P['bete'][P['ib']] * bx; dy[P['ib']] += P['bete'][P['ib']] * (-2.6) * pk
+    # GARDE DE COUCHE (18/10/2026, v34) : v33 jugée par JEV — « tête et mur au-dessus » de Tantie Awa 0,85 : au bord des
+    # palmiers, le feuillage (×6 de jour, jusqu'à 18 px) allait chercher la couleur du MUR voisin et l'étirait dans les arbres,
+    # en suivant le contour de la couche (une bosse de mur en forme de tête). Un pixel qui bouge ne prend plus sa couleur hors de
+    # sa couche : son déplacement est réduit d'autant que l'endroit où il la prendrait sort de la couche.
+    if 'garde' not in P:
+        P['garde'] = np.clip(P['feuil'] + P['tissu'] + P['fumee'] + P['bete'], 0, 1).astype(np.float32)
+        P['grille'] = np.meshgrid(np.arange(P['w'], dtype=np.float32), np.arange(P['h'], dtype=np.float32))
+    M_ = P['garde']; gx_, gy_ = P['grille']; q_ = np.float32(P['W'] / P['w'])
+    Ms_ = cv2.remap(M_, (gx_ - a * dx / q_).astype(np.float32), (gy_ - a * dy / q_).astype(np.float32), cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+    f_ = np.clip(Ms_ / np.maximum(M_, 0.05), 0, 1).astype(np.float32); dx = dx * f_; dy = dy * f_
     gain = np.ones((P['h'], P['w']), np.float32)
     if len(P['ia'][0]): gain[P['ia']] += np.float32(min(float(a), 1.0)) * P['amp'][P['ia']] * 0.16 * np.sin(tp * P['afr'] + P['aph'])   # ampoules : jamais amplifiées
     up = lambda x: cv2.resize(x, (P['W'], P['H']), interpolation=cv2.INTER_LINEAR)
