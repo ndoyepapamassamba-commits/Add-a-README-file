@@ -3,7 +3,14 @@
 # (lame de bois : partiels inharmoniques ≈ 1 : 3,9 : 9,6 qui s'éteignent d'autant plus vite qu'ils sont aigus, bourdonnement
 # de la calebasse) sur un appel de djembé (claqué, tonique, basse). Chaque carte a sa variante (graine), même signature.
 #   python3 musique.py timeline.json voix/mix.wav voix/mix-musique.wav   → la bande dialogue + les jingles aux cartes et en fin
-import json, sys, wave
+# CALÉ SUR LES TIKTOK DE L'UTILISATEUR (18/10/2026) — « le son d'accompagnement du film, il faut le revoir et le caler sur mes
+# vidéos TikTok ; après le choc de fin de chaque sketch, ça doit être accompagné de rire comme dans mes TikTok ». Mesure des
+# 12 TikTok par YAMNet (oreille.py, Apache-2.0) : AUCUNE musique sous les dialogues (musique entendue 0 à 1,6 % du temps), et
+# après chaque blague une salve de RIRES (rire + ricanement, 0,5 à 1,5 s, jusqu'à 3,4 s) au niveau des voix (écart médian
+# −0,7 dB). Donc : plus de jingle par défaut (MUSIQUE_JINGLES=1 les remet), et des rires de public après la prise de choc
+# de chaque sketch (jeu.prise_t), choisis parmi les sons Mixkit dont le profil YAMNet est le plus proche des rires des TikTok
+# (429, 460, 427, 424 : similarité × force du rire 0,41 à 0,67 ; usage gratuit en vidéo, fichiers bruts jamais redistribués, cache hors dépôt).
+import json, os, subprocess, sys, wave
 import numpy as np
 
 SR = 22050
@@ -48,18 +55,90 @@ def jingle(graine=0, dur=1.0):
     return out
 
 
+RIRES = [429, 460, 427, 424]   # classés par similarité au rire des TikTok × force du rire (YAMNet, meilleur passage : 0,67 0,47 0,41 0,42)
+RIRES_CACHE = os.path.expanduser(os.environ.get('RIRES_CACHE', '~/.cache/massamba-models/rires'))
+RIRE_VS_VOIX_DB = -1.0          # TikTok : rires au niveau des voix (écart médian −0,7 dB)
+RIRE_APRES_PRISE = 0.2          # s : le public rit 0,2 s après la prise de choc (le visage a « encaissé »)
+
+
+def _rire(i):
+    os.makedirs(RIRES_CACHE, exist_ok=True); f = f'{RIRES_CACHE}/{i}.mp3'
+    if not os.path.isfile(f): subprocess.run(['curl', '-s', '-L', '-m', '60', '-o', f, f'https://assets.mixkit.co/active_storage/sfx/{i}/{i}-preview.mp3'], check=True)
+    pcm = subprocess.run(['ffmpeg', '-v', 'error', '-i', f, '-ac', '1', '-ar', str(SR), '-f', 's16le', '-'], capture_output=True, check=True).stdout
+    return np.frombuffer(pcm, np.int16).astype(np.float32) / 32768
+
+
+def _meilleur_passage(i, r, dur):
+    """début (échantillons) du passage de `dur` s le plus RIEUR du son, choisi par YAMNet (oreille.py : même outil que pour
+    les TikTok) — la v3 posait le début du son, parfois un brouhaha (« bulletin » : Laughter 0,08, Chatter 0,11). En cache."""
+    f = f'{RIRES_CACHE}/passages.json'; P = json.load(open(f)) if os.path.isfile(f) else {}; cle = f'{i}:{dur:.1f}'
+    if cle not in P:
+        try:
+            import oreille as ecoute
+            x16 = ecoute.pcm(f'{RIRES_CACHE}/{i}.mp3'); T_, F_, _ = ecoute.classe(x16)
+            rire = np.array([f_['rire'] for f_ in F_]); pas = float(T_[1] - T_[0]) if len(T_) > 1 else 0.975
+            w = max(1, int(round(dur / pas))); sc = np.convolve(rire, np.ones(w) / w, 'valid') if len(rire) >= w else rire[:1]
+            P[cle] = float(T_[int(np.argmax(sc))])
+        except Exception:
+            e = np.abs(r); n_ = int(0.05 * SR); env = np.convolve(e, np.ones(n_) / n_, 'same')
+            P[cle] = max(0.0, float(np.argmax(env > 0.25 * env.max())) / SR - 0.03)
+        json.dump(P, open(f, 'w'))
+    return int(P[cle] * SR)
+
+
+def _rms_db(x): return float(20 * np.log10(np.sqrt(np.mean(np.square(x))) + 1e-9)) if len(x) else -120.0
+
+
+def rires(T, y):
+    """pose une salve de rires de public après la prise de choc de chaque sketch ; → liste des rires posés (pour jev_son)."""
+    voix = [_rms_db(y[int(L['t0'] * SR):int((L['t0'] + L['dur']) * SR)]) for L in T['lines']]
+    ref_db = float(np.median([v for v in voix if v > -60])) if voix else -20.0
+    poses = []; cartes = sorted(c['t0'] for c in T.get('cartes', []))
+    for k, sk in enumerate(T['sketchs']):
+        Ls = [L for L in T['lines'] if L['sketch'] == sk['id']]; ch = [L for L in Ls if L.get('chute')]
+        if not ch: continue
+        c = ch[-1]; t0 = jeu_prise_t(c) + RIRE_APRES_PRISE
+        suivante = min([L['t0'] for L in T['lines'] if L['t0'] > c['t0']] + [x + 0.6 for x in cartes if x > t0] + [T.get('total', len(y) / SR)])
+        dur = float(np.clip(suivante - t0, 1.0, 2.6))   # TikTok : 0,5 à 1,5 s le plus souvent, jusqu'à 3,4 s ; jamais sur la réplique suivante
+        r = _rire(RIRES[k % len(RIRES)]); i0 = _meilleur_passage(RIRES[k % len(RIRES)], r, dur)
+        seg = r[i0:i0 + int(dur * SR)].copy(); m = len(seg)
+        if m < int(0.5 * SR): continue
+        f_in = np.minimum(1.0, np.arange(m) / (0.06 * SR)); f_out = np.clip((m - np.arange(m)) / (0.7 * SR), 0, 1)
+        seg *= f_in * f_out ** 1.5
+        actif = seg[np.abs(seg) > 0.02 * np.abs(seg).max()] if np.abs(seg).max() > 0 else seg
+        g = 10 ** ((ref_db + RIRE_VS_VOIX_DB - _rms_db(actif)) / 20)
+        i = int(t0 * SR); j = min(len(y), i + m); y[i:j] += g * seg[:j - i]
+        poses.append({'sketch': sk['id'], 'debut': round(t0, 2), 'fin': round(t0 + m / SR, 2), 'son': f'mixkit-{RIRES[k % len(RIRES)]}',
+                      'prise_de_choc': round(jeu_prise_t(c), 2), 'niveau_vs_voix_db': RIRE_VS_VOIX_DB})
+    return poses
+
+
+def jeu_prise_t(L):
+    try:
+        import jeu
+        return jeu.prise_t(L)
+    except Exception:
+        return L['t0'] + L['dur'] + 0.30
+
+
 if __name__ == '__main__':
     T = json.load(open(sys.argv[1])); src, dst = sys.argv[2], sys.argv[3]
     with wave.open(src) as w: sr = w.getframerate(); y = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
     assert sr == SR, 'la bande dialogue doit être à 22 050 Hz (voix.py)'
-    instants = [c['t0'] + 0.05 for c in T.get('cartes', [])]
-    fin = max(L['t0'] + L['dur'] for L in T['lines']) + 0.35                # sur la dernière réaction, avant le fondu
-    if fin + 1.2 < len(y) / SR + 1.5: instants.append(fin)
     y = np.concatenate([y, np.zeros(int(1.5 * SR), np.float32)])
-    for k, t0 in enumerate(instants):
-        j = jingle(graine=k).astype(np.float32) * 0.5      # ≈ −8 dB sous la crête des voix : un jingle, pas un tapis
-        i = int(t0 * SR); y[i:i + len(j)] += j[:len(y) - i]
+    instants = []
+    if os.environ.get('MUSIQUE_JINGLES', '0') == '1':   # jingles aux cartes (avant le 18/10 : absents des TikTok de l'utilisateur)
+        instants = [c['t0'] + 0.05 for c in T.get('cartes', [])]
+        fin = max(L['t0'] + L['dur'] for L in T['lines']) + 0.35                # sur la dernière réaction, avant le fondu
+        if fin + 1.2 < len(y) / SR: instants.append(fin)
+        for k, t0 in enumerate(instants):
+            j = jingle(graine=k).astype(np.float32) * 0.5      # ≈ −8 dB sous la crête des voix : un jingle, pas un tapis
+            i = int(t0 * SR); y[i:i + len(j)] += j[:len(y) - i]
+    poses = rires(T, y)
     y = y[:int((T['total'] + 0.0) * SR)] if T.get('total') else y
     with wave.open(dst, 'wb') as w:
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((np.clip(y, -1, 1) * 32767).astype(np.int16).tobytes())
-    print(f'{len(instants)} jingles posés à', [round(t, 2) for t in instants])
+    json.dump({'rires': poses, 'jingles': [round(t, 2) for t in instants],
+               'reference_tiktok': {'videos': 12, 'musique_du_temps': '0 à 1,6 %', 'rire_apres_chaque_blague': True, 'duree_rire_s': '0,5 à 1,5 (jusqu\'à 3,4)',
+                                    'niveau_rire_vs_voix_db': -0.7, 'outil': 'YAMNet (oreille.py)'}}, open(dst + '.json', 'w'), ensure_ascii=False, indent=1)
+    print(f'{len(poses)} rires posés', [(p_['sketch'], p_['debut'], p_['fin']) for p_ in poses], f'; {len(instants)} jingles')

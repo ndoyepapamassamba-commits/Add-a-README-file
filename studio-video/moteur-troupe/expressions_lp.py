@@ -533,6 +533,19 @@ def lacets(dossier, img, v3, B, journal=print):
     return F
 
 
+def poids_tete(B):
+    """TÊTE ENTIÈRE QUI TOURNE (18/10/2026, porte G de l'épisode 1 v2 : visages « déformés » doublés, 60 → 125 images ; A/B
+    sur le plan de Baye : 39 images fautives sur 47 à 22°, 15 sans rotation). Le champ de rotation n'était appliqué qu'au
+    MASQUE DU VISAGE : le visage glissait dans une tête immobile (foulard, oreilles, contour) et le fondu du masque étirait
+    une bande de peau. Poids = toute la tête du carré de LivePortrait (le rendu tourne la tête entière), fondu vers le cou
+    (dernier quart du carré) et sur les bords ; la découpe de l'acteur suit (alpha remappé), le décor reste derrière."""
+    if 'poids_tete' in B: return B['poids_tete']
+    t = B['taille']; y = np.linspace(0, 1, t, dtype=np.float32); x = y.copy()
+    lis = lambda u: u * u * (3 - 2 * u)
+    wy = lis(np.clip((0.92 - y) / 0.22, 0, 1)); wx = lis(np.clip(np.minimum(x, 1 - x) / 0.12, 0, 1))
+    B['poids_tete'] = np.maximum(np.outer(wy, wx), B['masque']).astype(np.float32); return B['poids_tete']
+
+
 def tourne(src, B, lacet, alpha=None):
     """la tête tournée de `lacet` degrés (+ = vers la droite de l'écran) : champ interpolé entre les angles rendus, appliqué
     au visage collé (src RGB uint8, image entière) et à la découpe (alpha, image entière), pondéré par le masque du visage."""
@@ -546,7 +559,7 @@ def tourne(src, B, lacet, alpha=None):
     x0, y0, x1, y1 = max(0, int(np.floor(x))), max(0, int(np.floor(y))), min(W, int(np.ceil(x + s))), min(H, int(np.ceil(y + s)))
     Mi = np.float32([[s / t, 0, x - x0], [0, s / t, y - y0]]); taille_r = (x1 - x0, y1 - y0)
     Fr = cv2.warpAffine(np.ascontiguousarray(F), Mi, taille_r, flags=cv2.INTER_LINEAR, borderValue=0) * np.float32(s / t)
-    mr = cv2.warpAffine(B['masque'], Mi, taille_r, flags=cv2.INTER_LINEAR, borderValue=0)
+    mr = cv2.warpAffine(poids_tete(B) if os.environ.get('LACET_TETE', '1') == '1' else B['masque'], Mi, taille_r, flags=cv2.INTER_LINEAR, borderValue=0)
     gx, gy = np.meshgrid(np.arange(taille_r[0], dtype=np.float32), np.arange(taille_r[1], dtype=np.float32))
     mx, my = gx + Fr[..., 0] * mr, gy + Fr[..., 1] * mr
     out = src.copy(); out[y0:y1, x0:x1] = cv2.remap(np.ascontiguousarray(src[y0:y1, x0:x1]), mx, my, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)

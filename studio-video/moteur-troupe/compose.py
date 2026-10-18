@@ -133,6 +133,8 @@ with _mp.get_context('fork').Pool(int(os.environ.get('COMPOSE_PROCS', os.cpu_cou
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import sonie
 y_, sr_ = sonie.lit(BANDE); y_ = y_[:int(total * sr_)]; nf_ = int(0.4 * sr_); y_[-nf_:] *= np.linspace(1, 0, nf_)
 sonie.ecrit(f'{D}/bande.wav', sonie.masterise(y_, sr_))
+# encodage « veryfast » CRF 18 (18/10/2026, « réduire drastiquement le temps de production ») : 31 s au lieu de 56,5 s pour les
+# 4 047 images de l'épisode 1, PSNR 44,3 dB entre les deux encodages (identiques à l'œil)
 subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-framerate', str(FPS), '-i', f'{D}/compose/c%05d.jpg', '-i', f'{D}/bande.wav', '-vf', 'format=yuv420p',
-                '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-t', f'{len(frames) / FPS:.3f}', '-movflags', '+faststart', OUTMP4], check=True)
+                '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-t', f'{len(frames) / FPS:.3f}', '-movflags', '+faststart', OUTMP4], check=True)
 print(f'{len(caps)} groupes de sous-titres, tous dans la zone sûre ; {len(frames)} images ; {OUTMP4}')

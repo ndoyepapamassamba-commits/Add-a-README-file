@@ -214,6 +214,10 @@ def interlocuteur(L, lignes, acteurs):
 
 FRAC = {'buste': 0.8, 'buste_lacet': 0.6, 'tete': 0.8, 'tete_lacet': 0.45, 'tete_tangage': 0.7, 'bassin_x': 0.8}
 LACET_ECOUTE = 4.0   # degrés : lacet minimal de l'écouteur vers celui qui parle (porte D : > 2° dans 75 % des images)
+PRISE_TEMPS = 0.25   # s : temps où l'on « encaisse » la chute avant la prise (le gros plan de réaction commence 0,05 s après la fin
+                     # de la chute : la prise se voit EN ENTIER à l'écran au lieu d'arriver avant la coupe, comme dans la v2)
+def prise_t(L): return L['t0'] + L['dur'] + 0.05 + PRISE_TEMPS
+BOUCHE_BEE = 0.6   # commande de mâchoire au sommet de la prise de choc (0,6 : bouche franchement ouverte sans crier)
 LACET_VISAGE = 22.0   # degrés : rotation de tête confiée au visage (LivePortrait), au plus (rendus à ±12° et ±24°)
 LACET_ECOUTE_MIN = 3.5   # degrés : plancher d'écoute après toutes les couches (porte D : > 2° dans 75 % des images)
 LIM = {'buste': 3.0, 'buste_lacet': 9.0, 'tete': 6.0, 'tete_lacet': 20.0, 'tete_tangage': 9.0, 'bassin_x': 4.0}
@@ -270,7 +274,7 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
     → {nom: {canal: array}} (+ « cligne » quand le regard vivant est actif). visee : {nom: {autre: (hauteur de regard en
     fraction de course, inclinaison en degrés)}} — où est le VISAGE de l'autre vu de mes yeux ; peints : {nom: (x, y)}
     direction du regard peint dans le dessin (v36)."""
-    RG = {'mocap': 1.0, 'dyn': 1, 'yeux': 1, 'suivi_tete': 1, 'ampleur': 1.0}; RG.update(reglages or {})
+    RG = {'mocap': 1.0, 'dyn': 1, 'yeux': 1, 'suivi_tete': 1, 'ampleur': 1.0, 'lacet_visage': LACET_VISAGE}; RG.update(reglages or {})
     if RG['ampleur'] != 1.0:   # essai de diagnostic (JEV) : enveloppes agrandies — le corps peut-il jouer plus grand ?
         enveloppes = {n: {k: (v * RG['ampleur'] if isinstance(v, (int, float)) and k != 'lacet_peint' else v) for k, v in e.items()} for n, e in enveloppes.items()}
     T = np.arange(nf) / fps; L_sk = [L for L in lignes if L['sketch'] == sketch]
@@ -295,8 +299,23 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
             if L['qui'] == nom: evenement(t0 - 0.4, t1, JEU_EMO.get(j, {}), 1.0)
             elif a_qui[id(L)] == nom: evenement(t0 + 0.3, t1, REACTION_CIBLE.get(j, {}), 0.85)
             else: evenement(t0 + 0.4, t1, REACTION_TEMOIN.get(j, {}), 0.6)
+        # ── PRISE DE CHOC (« take » des animateurs) sur la chute, pour ceux qui la subissent (18/10/2026 : « revoir le visage
+        #    du choc de la fin — Maman, la femme du maquis, la dame du loyer sont choquées ») : la v2 posait bien la surprise
+        #    (0,91–0,94 mesurés au début du gros plan) mais rien ne se voyait — bouche close (aucune réplique : lèvres jointes)
+        #    et sourcils haussés annulés par la colère et le soupçon mêlés. La prise : la surprise domine (les autres ressentis
+        #    s'effacent), la mâchoire tombe (bouche bée), dépassement puis tenue vivante qui retombe doucement.
+        prise = np.zeros(nf, np.float32)
+        for L in L_sk:
             if L.get('chute') and L['qui'] != nom:
-                tc = t0 + 0.7 * L['dur']; evenement(tc, tc + 0.6, {'surprise': 1.0}, 1.0)
+                u = T - prise_t(L)
+                attaque = np.clip(u / 0.18, 0, 1); attaque = attaque * attaque * (3 - 2 * attaque)
+                retombe = np.clip((u - 0.18) / 0.3, 0, 1); retombe = retombe * retombe * (3 - 2 * retombe)
+                tenue = 1.0 - 0.18 * np.clip((u - 0.48) / 3.0, 0, 1)
+                prise = np.maximum(prise, np.where(u < 0, 0.0, attaque * (1.12 - 0.17 * retombe) * tenue).astype(np.float32))
+        if prise.any():
+            for e in EMOS:
+                if e != 'surprise': E[e] = (E[e] * (1 - 0.85 * np.clip(prise, 0, 1))).astype(np.float32)
+            E['surprise'] = np.maximum(E['surprise'], np.clip(prise, 0, 1)).astype(np.float32)
         ATT = {(nom, id(x)): attaques(x, g + 0.37 * k) for k, x in enumerate(L_sk) if x['qui'] != nom}
         MOI = {id(x): attaques(x, g + 0.11 * k, garder=0.6) for k, x in enumerate(L_sk) if x['qui'] == nom}   # mes syllabes fortes
         # ── cibles des canaux, image par image
@@ -353,7 +372,16 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
             C['regard_y'][i] = 0.5 * E['tristesse'][i] + 0.25 * E['emu'][i] - 0.45 * E['innocent'][i]   # + = vers le bas
             if not RG['yeux']: C['regard_y'][i] += 0.9 * vers_y[i] - pk[1]   # sans regard vivant : droit sur le visage visé
             tang += 3.0 * E['tristesse'][i] - 2.0 * E['innocent'][i]   # la tête suit le regard
-            tang += 0.6 * incl_   # v36 : la tête s'incline vers le visage visé (un assis : vers le bas), les yeux font le reste
+            if prise[i] > 0: tang -= 5.0 * prise[i]; buste -= 1.5 * (sd or 1.0) * prise[i]   # la prise : la tête recule et monte
+            for x in L_sk:   # anticipation de la prise : la tête s'abaisse un peu pendant le temps où l'on « encaisse » (0,25 s)
+                if x.get('chute') and x['qui'] != nom and -PRISE_TEMPS <= t - prise_t(x) < 0: tang += 2.0 * bosse(t - prise_t(x) + PRISE_TEMPS, PRISE_TEMPS)
+            # v36 : la tête s'incline vers le visage visé (un assis : vers le bas), les yeux font le reste. HAUTEUR PARTAGÉE
+            # (18/10/2026, porte D : Tantie Awa → Modou 0,30–0,47 ; JEV : « elle regarde au-dessus de lui » 0,55 sur l'image
+            # d'origine → 0,88 animée) : l'iris peint regardait déjà vers le haut (−0,38 de course) et la tête montait EN PLUS
+            # de 6° — la tête ne prend que 60 % de ce que le dessin ne regarde pas encore, les yeux le reste (pas de double compte)
+            reste_ = incl_ - 30.0 * pk[1] if vise[i] else 0.0
+            part_ = float(np.clip(0.6 * reste_, -env.get('tete_tangage', 9.0), env.get('tete_tangage', 9.0)))   # ce que la tête PEUT faire
+            tang += part_; vers_y[i] = vers_y[i] - part_ / 30.0
             if focus and not aparte: roll += 0.12 * incl_ * sd   # et penche un peu de son côté (écoute attentive)
             C['tete'][i] = roll; C['tete_tangage'][i] = tang; C['buste'][i] = buste; C['souffle'][i] = souffle; C['epaules'][i] = ep
             C['bassin_x'][i] = 0.0 if assis.get(nom) else bx; C['bassin_y'][i] = by
@@ -425,8 +453,16 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         R['regard_x'] = np.clip(R['regard_x'], -2.2, 2.2); R['regard_y'] = np.clip(R['regard_y'], -2.2, 2.2)
         for k_ in [k_ for k_ in R if k_.startswith('geste_')]: R[k_] = np.clip(R[k_], 0, 1)
         for c_ in ('tete_tangage', 'tete', 'tete_lacet', 'buste', 'buste_lacet'): R[c_] = lisse_acc(R[c_], fps)   # garde de fluidité
-        R['lacet_visage'] = lisse_acc(borne(voulu_ - 0.5 * R['tete_lacet'], LACET_VISAGE), fps)
+        R['lacet_visage'] = lisse_acc(borne(voulu_ - 0.5 * R['tete_lacet'], RG['lacet_visage']), fps)
         for e in EMOS: R['emo_' + e] = ressort(np.clip(E[e], 0, 1), fps, 10.0)
-        if cl is not None: R['cligne'] = cl
+        if cl is not None: R['cligne'] = cl * (1 - 0.7 * np.clip(prise, 0, 1))   # yeux écarquillés : on cligne peu pendant la prise
+        # bouche bée de la prise (commande de mâchoire 0..1, prise au maximum avec celle de la parole) ; fermée dès que le
+        # personnage reparle, avec un fondu de 0,2 s
+        pb = np.clip(prise, 0, 1) * BOUCHE_BEE
+        if parle_.any():
+            idx = np.flatnonzero(parle_)
+            pos = np.searchsorted(idx, np.arange(nf)); g_ = np.minimum(np.abs(np.arange(nf) - idx[np.clip(pos - 1, 0, len(idx) - 1)]), np.abs(np.arange(nf) - idx[np.clip(pos, 0, len(idx) - 1)]))
+            pb = pb * np.clip(g_ / max(1.0, 0.2 * fps), 0, 1)
+        R['bouche_bee'] = pb.astype(np.float32)
         out[nom] = R
     return out

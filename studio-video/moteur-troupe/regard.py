@@ -102,6 +102,9 @@ def peint(yeux):
     return tuple(float(np.clip(np.mean([e['peint'][k] for e in yeux]), -1.5, 1.5)) for k in (0, 1))
 
 
+DEPLACEMENT_MAX = (1.1, 0.9)   # courses (horizontale, verticale) depuis la position peinte de l'iris
+
+
 def applique(src, yeux, gx, gy, ouverture=1.0):
     """iris décalés de (gx, gy) ∈ [−1, 1] (fraction de la course possible) ; ouverture = 1 − clignement."""
     if not yeux or ouverture <= 0.05 or (abs(gx) < 0.02 and abs(gy) < 0.02): return src
@@ -112,6 +115,11 @@ def applique(src, yeux, gx, gy, ouverture=1.0):
         # l'iris reste dans l'œil : position finale (peinte + commande) dans [−1, 1] courses, sans jamais pousser un regard
         # peint déjà hors de ces bornes quand la commande est nulle
         gx_ = float(np.clip(gx, min(0.0, -1 - p_[0]), max(0.0, 1 - p_[0]))); gy_ = float(np.clip(gy, min(0.0, -1 - p_[1]), max(0.0, 1 - p_[1])))
+        # DÉPLACEMENT RELATIF BORNÉ (18/10/2026, porte G de l'épisode 1 : œil de Maman Nounou BLANC, sans iris, sur les plans
+        # de Baye — regard peint en haut à droite (0,87 ; −0,88), Baye en bas à gauche : l'iris traversait l'œil de 1,72
+        # course et sortait de la fente de l'œil lointain, plus étroite de trois quarts). Au plus DEPLACEMENT_MAX course
+        # depuis la position peinte : la tête (lacet, tangage) fait le reste du chemin
+        gx_ = float(np.clip(gx_, -DEPLACEMENT_MAX[0], DEPLACEMENT_MAX[0])); gy_ = float(np.clip(gy_, -DEPLACEMENT_MAX[1], DEPLACEMENT_MAX[1]))
         dx, dy = gx_ * cx_, gy_ * cy_
         M = np.float32([[1, 0, dx], [0, 1, dy]])
         ir = cv2.warpAffine(e['iris'], M, (w, h), flags=cv2.INTER_LINEAR, borderValue=0)

@@ -577,11 +577,17 @@ def carte(R, U, iters=6):
     return sx, sy
 
 
-def rendre(R, pose, src, alpha=None):
+def cartes(R, pose):
+    """carte inverse (sx, sy) de la boîte pour la pose (champ ARAP + point fixe) — la partie lourde de rendre()."""
+    U, _ = champ(R, pose); return carte(R, U)
+
+
+def rendre(R, pose, src, alpha=None, sxsy=None):
     """acteur posé : (boîte, rgb, alpha, sx, sy). src = image de la scène (bouche, yeux déjà posés) ; alpha = découpe
     (par défaut celle de la préparation). Couche 1 : le corps (champ ARAP), avec, sous les avant-bras détourés, ce qui est
     derrière eux ; couche 2 : les avant-bras / mains, transformations rigides, par-dessus."""
-    U, mats = champ(R, pose); sx, sy = carte(R, U)
+    if sxsy is not None: sx, sy = sxsy; mats = _fk(R, pose)   # carte déjà calculée (interpolée entre deux images, tourne.py)
+    else: U, mats = champ(R, pose); sx, sy = carte(R, U)
     X0, Y0, X1, Y1 = R['box']
     a = R['alpha_corps'] if alpha is None else alpha
     if R['src_corps']:

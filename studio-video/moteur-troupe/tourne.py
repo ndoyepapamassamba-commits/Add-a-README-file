@@ -35,7 +35,7 @@
 # Réglages (montage.json → "reglages") : plan_s, cam_px, pousse (travelling avant par plan), parallaxe, jeu_gain, corps, whip_s, ouverture, decor, gestes, carte_sur_scene, rig.
 # python3 tourne.py montage.json sortie_dir
 import json, math, os, sys, zlib, numpy as np, cv2
-import decor_vivant, entites, gestes, linge, rig2d, regard, expressions, expressions_lp, jeu, prepare_rig, vie_fond
+import decor_vivant, entites, gestes, linge, rig2d, regard, expressions, expressions_lp, jeu, memo, prepare_rig, vie_fond
 import poses_dessinees as PD   # gestes dessinés : animation pose à pose (17/10/2026)
 # 60 IMAGES PAR SECONDE (18/10/2026, « on doit aller à 60 images par seconde pour améliorer la fluidité ») : chaque image est
 # tournée à son instant exact (bouche, regard, décor, bêtes, caméra) ; FILM_FPS=30 rend l'ancienne cadence
@@ -210,7 +210,7 @@ for sk in T['sketchs']:
             m = cv2.imread(f"{d}/{a['slug']}-masque.png", 0).astype(np.float32) / 255
             lib = {}; vd = f"{d}/visages/{a['slug']}"
             if os.path.isfile(f'{vd}/etats.json'):
-                lib = greffe_visage(img, vd, a)
+                lib = memo.memo(greffe_visage, img, vd, a, _cle=(img, memo.dossier(vd), a), _fonction_seule=True)   # cache disque (18/10)
             if a.get('visage'):
                 bx = a['visage']['box']; mg = bx[2] - bx[0]; box = [bx[0] - mg, bx[1] - mg, bx[2] + mg, bx[3] + mg]
                 o0, o4 = ouverture_lib(img, lib, box) if lib else (None, None)
@@ -229,14 +229,14 @@ for sk in T['sketchs']:
                 v3 = np.load(f'{d}/rig/visage3d-{sl}.npy') if os.path.isfile(f'{d}/rig/visage3d-{sl}.npy') else None
                 bras_ = prepare_rig.charge_bras(f'{d}/rig/bras-{sl}.npz') if os.path.isfile(f'{d}/rig/bras-{sl}.npz') else []
                 assis_ = prepare_rig.assis(a); box_ = rig2d.boite(a['bbox'], img.shape)
-                R_ = rig2d.preparer(im_a, al, a['pts'], a['bbox'], gestes.classes(img, box_), plaque=plate, bras=bras_, segmente=gestes.classes, visage3d=v3, assis=assis_)
+                R_ = rig2d.preparer(im_a, al, a['pts'], a['bbox'], memo.memo(gestes.classes, img, box_), plaque=plate, bras=bras_, segmente=gestes.classes, visage3d=v3, assis=assis_)
                 dl = f'{d}/expressions/{sl}'
                 A_['xl'] = expressions_lp.charge(dl, im_a, v3, alpha=R_['alpha_corps']) if os.path.isfile(f'{dl}/meta.json') and v3 is not None else None   # la découpe suit le visage
                 src00 = im_a   # le visage tel qu'il sera tourné au repos : les yeux du regard sont pris dessus (pas de saut au premier coup d'œil)
                 if A_['xl']: src00 = expressions_lp.colle(im_a, A_['xl'], expressions_lp.visage(A_['xl'], {}, 0.0))
                 elif lib:
                     Rr = lib['roi']; src00 = im_a.copy(); src00[Rr[1]:Rr[3], Rr[0]:Rr[2]] = np.clip(lib[(0, 0)], 0, 255).astype(np.uint8)
-                env_ = rig2d.enveloppe(R_)
+                env_ = memo.memo(rig2d.enveloppe, R_, _cle=(im_a, al, a['pts'], a['bbox'], plate, bras_, v3, assis_, box_), _deps=('gestes.py', 'prepare_rig.py'))   # 21 s → 0 au 2e tour
                 # AVIS DE JEV (17/10, contrôle image par image de la v26) :
                 # — main POSÉE sur le corps (poing sur la hanche) : le geste pliait l'avant-bras et la main glissait sur la robe
                 #   (Maman, « bras ou mains » 0,73 ; remède désigné « garder la main posée ») → ce bras suit le buste, sans geste ;
@@ -273,7 +273,7 @@ for sk in T['sketchs']:
                 # porte de JEV (identité > 0,5 ET défaut < 0,5 sur chaque pose) les accepte — 17/10 : défaut 0,64 à 0,93, refusés.
                 A_['dessins'] = {}
                 A_['yeux'] = regard.prepare(src00, v3)
-                A_['expr'] = expressions.prepare(im_a, v3, yeux=A_['yeux'])
+                A_['expr'] = memo.memo(expressions.prepare, im_a, v3, yeux=A_['yeux'])
                 print(f"{a['nom']}: squelette ({'assis' if assis_ else 'debout'}, enveloppe {A_['env']}, {len(R_['bras'])} avant-bras détourés, "
                       f"regard {'oui' if A_['yeux'] else 'non'}, expressions {'dessinées' if A_['xl'] else 'déformées'})", flush=True)
                 continue
@@ -293,7 +293,7 @@ for sk in T['sketchs']:
         if vf is not None and not betes:   # bêtes peintes restées dans la plaque : leur ombre physique (v35, vie_fond.ombres_peintes)
             Lp_ = (json.load(open(f'{d}/genese.json')).get('L') if os.path.isfile(f'{d}/genese.json') else None) or \
                   entites.physique.lumiere(img, [(A_['mask'] if A_['mask'].ndim == 2 else A_['mask'][..., 0], A_['bbox'], not A_.get('assis')) for A_ in acts.values()])
-            plate = vie_fond.ombres_peintes(img, plate, Lp_, [A_['mask'] for A_ in acts.values()])
+            plate = memo.memo(vie_fond.ombres_peintes, img, plate, Lp_, [A_['mask'] for A_ in acts.values()], _deps=('linge.py',))   # SAM : 15 s → 0 au 2e tour
         _PREP[d] = (S, img, plate, betes, acts, prof_, kpar, vie, lin, vf, xs_, ys_)
     n_ent = int((REG.get('entites') or {}).get(sk['id'], 0))   # bêtes du décor (poules) : nombre choisi par sketch dans le montage
     ents = betes or (entites.prepare(d, img.shape[0], img.shape[1], [(A_['bbox'], not A_.get('assis')) for A_ in acts.values()], n=n_ent, lieu=sk.get('lieu')) if n_ent else [])
@@ -330,7 +330,7 @@ def visee_(A2):
 if REG['rig']:   # pistes de jeu et ressenti de chaque personnage, image par image, pour tout le film
     # MOTEUR IMAGE → VIDÉO (17/10) : couche « vrai humain » (capture CMU calée sur les syllabes), dynamique du second ordre,
     # regard vivant ; réglages mocap / dyn / yeux / suivi_tete (tous à 0 : jeu de la v27, pour les essais A/B jugés par JEV)
-    RJ = {k: REG.get(k, d) for k, d in (('mocap', 1.0), ('dyn', 1), ('yeux', 1), ('suivi_tete', 1), ('ampleur', 1.0))}
+    RJ = {k: REG.get(k, d) for k, d in (('mocap', 1.0), ('dyn', 1), ('yeux', 1), ('suivi_tete', 1), ('ampleur', 1.0), ('lacet_visage', jeu.LACET_VISAGE))}
     def _a_la_cadence(P):
         """pistes du jeu calculées à 30 i/s (la capture CMU, les ressorts et la garde de fluidité y sont réglés) → cadence du
         film par interpolation cubique monotone (PCHIP : vitesse continue, aucun dépassement sur un clignement ou une saccade)"""
@@ -428,7 +428,7 @@ def pose(name, t, sk):
     # réaction des autres à la chute : recul de choc tenu 1,5 s (sauf le gagnant)
     for C in CHUTES:
         if C['sketch'] == sk and C['qui'] != name:
-            u = t - (C['t0'] + C['dur'] * 0.7)
+            u = t - jeu.prise_t(C)   # même instant que la prise de choc du visage (jeu.py)
             if 0 <= u < 1.8: lean -= 4.5 * ease(u / 0.2) * (1 - ease((u - 1.3) / 0.5)); rot = 0
     # immobilité avant la chute (15 images) : seul le souffle reste, très bas
     for C in CHUTES:
@@ -450,7 +450,7 @@ def corps(name, t, sk, A):
         if j == 'panique': dx += 0.4 * g * math.sin(2 * math.pi * 5 * u) * k
     for C in CHUTES:
         if C['sketch'] == sk and C['qui'] != name:
-            u = t - (C['t0'] + C['dur'] * 0.7)
+            u = t - jeu.prise_t(C)   # même instant que la prise de choc du visage (jeu.py)
             if 0 <= u < 1.8: dx -= 0.9 * g * ease(u / 0.2) * (1 - ease((u - 1.3) / 0.5)) * side; dy -= 0.6 * g * max(0.0, math.sin(math.pi * min(1.0, u / 0.3)))
     return dx * amp, dy * amp
 GESTE_AMPL = {'accuse': 42, 'marchande': 34, 'choc': 38, 'panique': 30, 'frime': 30, 'camera': 28, 'innocent': 26, 'rire': 22, 'soupcon': 18}
@@ -472,7 +472,7 @@ def gestes_de(name, t, sk, A):
         ang[i] = G * min(1.0, amp / 42) * k * (1 + 0.2 * e * math.sin(2 * math.pi * 2.2 * u))
     for C in CHUTES:
         if C['sketch'] == sk and C['qui'] != name:
-            u = t - (C['t0'] + C['dur'] * 0.7)
+            u = t - jeu.prise_t(C)   # même instant que la prise de choc du visage (jeu.py)
             if 0 <= u < 1.8:
                 k = ease(u / 0.25) * (1 - ease((u - 1.3) / 0.5)); ang = [max(a_, G * 0.55 * k) for a_ in ang]
     # fraction du geste (0 → 1) → (angle, avancée) dans l'enveloppe sans défaut du bras
@@ -489,10 +489,33 @@ def etirement(sx, sy, al):
     st = np.maximum(s1, 1 / s2) - 1; m = al > 0.5
     return (round(float(np.percentile(st[m], 99)), 4), round(float(st[m].max()), 4)) if m.any() else (0.0, 0.0)
 ECHELLE_PLAN = [1.0]
+def pose_rig(R_, P, f):
+    v = lambda k: float(P[k][f])
+    gest = [(v(f'geste_{k}') * b['amax'], 1 + v(f'geste_{k}') * (b['emax'] - 1)) for k, b in enumerate(R_['bras'])]
+    return dict(buste=v('buste'), buste_lacet=v('buste_lacet'), tete=v('tete'), tete_lacet=v('tete_lacet'), tete_tangage=v('tete_tangage'),
+                souffle=v('souffle'), epaules=v('epaules'), bassin=(v('bassin_x'), v('bassin_y')), gestes=gest)
+# CARTES DU SQUELETTE À 30 Hz (18/10/2026, « réduire drastiquement le temps de production ») : les pistes de jeu sont
+# calculées à 30 i/s puis rééchantillonnées (PCHIP) ; à 60 i/s, la carte de déformation d'une image impaire est la moyenne de
+# celles des deux images paires voisines (déjà calculées dans le même bloc du même processus) — l'ARAP et le point fixe de la
+# carte, 0,033 s par acteur et par image, ne tournent plus qu'une image sur deux. Visage, bouche et regard restent calculés à
+# CHAQUE image (synchro labiale intacte). TOURNE_CARTES_30=0 : toutes les cartes calculées.
+_CARTES = {}
+def cartes_rig(R_, P, f, name):
+    if FPS <= 30 or os.environ.get('TOURNE_CARTES_30', '1') == '0': return None
+    def paire(k):
+        k = int(min(max(k, 0), NF - 1)); c = _CARTES.get((name, k))
+        if c is None:
+            c = rig2d.cartes(R_, pose_rig(R_, P, k)); _CARTES[(name, k)] = c
+            for k_ in [k_ for k_ in _CARTES if k_[0] == name and abs(k_[1] - k) > 4]: del _CARTES[k_]   # mémoire : 2 cartes par acteur
+        return c
+    if f % 2 == 0 or f + 1 >= NF: return paire(f)
+    (ax, ay), (bx, by) = paire(f - 1), paire(f + 1)
+    return 0.5 * (ax + bx), 0.5 * (ay + by)
 def warp_rig(S, A, t, name):
     """acteur posé par son squelette : visage (expression dessinée ou déformée, bouche, clignement, regard), puis corps."""
     f = min(NF - 1, max(0, int(round(t * FPS)))); P = S['pistes'][name]; v = lambda k: float(P[k][f])
     jj = machoire(name, t); bb = v('cligne') if 'cligne' in P else blink(name, t)   # clignements du regard vivant (jeu.yeux)
+    if 'bouche_bee' in P: jj = max(jj, v('bouche_bee'))   # prise de choc : la mâchoire tombe (jeu.py)
     emo = {e: v('emo_' + e) for e in jeu.EMOS if P['emo_' + e][f] > 0.02}
     src = A['img']; lib = A['lib']; al_v = None
     if A.get('xl'):   # visage redessiné (LivePortrait) : émotions × bouche × clignement
@@ -511,11 +534,8 @@ def warp_rig(S, A, t, name):
         if A.get('expr') and emo: src = expressions.applique(src, A['expr'], emo)
     if A.get('yeux'): src = regard.applique(src, A['yeux'], v('regard_x'), v('regard_y'), 1 - bb)
     if A.get('xl') and 'lacet_visage' in P: src, al_v = expressions_lp.tourne(src, A['xl'], v('lacet_visage'), al_v)   # tête tournée par LivePortrait (18/10)
-    R_ = A['rig']
-    gest = [(v(f'geste_{k}') * b['amax'], 1 + v(f'geste_{k}') * (b['emax'] - 1)) for k, b in enumerate(R_['bras'])]
-    pose = dict(buste=v('buste'), buste_lacet=v('buste_lacet'), tete=v('tete'), tete_lacet=v('tete_lacet'), tete_tangage=v('tete_tangage'),
-                souffle=v('souffle'), epaules=v('epaules'), bassin=(v('bassin_x'), v('bassin_y')), gestes=gest)
-    box, rgb, al, sx, sy = rig2d.rendre(R_, pose, src, al_v)
+    R_ = A['rig']; pose = pose_rig(R_, P, f)
+    box, rgb, al, sx, sy = rig2d.rendre(R_, pose, src, al_v, sxsy=cartes_rig(R_, P, f, name))
     if mesure_ici(t):
         I_ = R_['M']['idx']
         gx = ((sx - R_['gx'][0]) / R_['cell']).round().astype(int).clip(0, len(R_['gx']) - 1); gy = ((sy - R_['gy'][0]) / R_['cell']).round().astype(int).clip(0, len(R_['gy']) - 1)

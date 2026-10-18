@@ -206,10 +206,11 @@ def main():
     PRE = float(os.environ.get('VOIX_PRE', 0.8))   # avant le 1er mot d'un sketch : la caméra finit de pousser du large vers celui qui
                                                   # parle (tourne.py, ouverture 1,2 s) ; sinon la 1re réplique est dite visage minuscule (v24)
     REACTION, REACTION_TAG = float(os.environ.get('VOIX_REACTION', 2.0)), 0.9   # tenue après une chute finale / après la réplique qui suit la chute (compilation de blagues : 0,8 s)
-    t = LEAD; lines = []; cards = []
+    t = LEAD; lines = []; cards = []; sons = []   # sons : interjections d'intonation (intonations.py, 18/10/2026)
+    import intonations as IT
     for si, S in enumerate(H['sketchs']):
         if si > 0: cards.append({'t0': t, 't1': t + CARD, 'apres': S['id']}); t += CARD + 0.25
-        S['t0'] = t
+        S['t0'] = t; grogne_fait = set()
         for li, L in enumerate(S['repliques']):
             clone = L['qui'] in REFS
             y, ph = synth_qwen(L['qui'], L['texte'], bool(L.get('chute'))) if clone else synth(L['qui'], L['texte'])
@@ -227,11 +228,29 @@ def main():
             mx = max(env) or 1; env = [round(min(1, e / mx), 3) for e in env]
             lines.append(dict(L, sketch=S['id'], wav=f, t0=round(t, 3), dur=round(len(y) / SR, 3), phonemes=ph, env=env))
             t += len(y) / SR + TURN
+            # GROGNEMENT D'ÉCOUTE : celui à qui l'on fait une réplique de frime ou d'excuse fait « hmm… » avant de répondre
+            # (inséré dans le minutage : rien n'est couvert) — au plus un par sketch (TikTok : ≈ 5 sons vocaux par minute)
+            g = IT.grognement(L, S['repliques'][li + 1] if li + 1 < len(S['repliques']) else None, grogne_fait) if not grogne_fait else None
+            if g and os.environ.get('VOIX_INTONATIONS', '1') == '1':
+                yg = IT.son(g, 'grogne', len(sons)); fg = f'voix/{S["id"]}-{li}-grogne.wav'
+                with wave.open(fg, 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes(yg.tobytes())
+                t0g = t - TURN + 0.12; sons.append({'sketch': S['id'], 'qui': g, 'sorte': 'grogne', 't0': round(t0g, 3), 'dur': round(len(yg) / SR, 3), 'wav': fg})
+                t = t0g + len(yg) / SR + 0.12; grogne_fait.add(g)
         # RÉACTION TENUE après la chute (Afrikatoon : gros plan immobile 2,2–3,4 s ; récapitulatif comique, règle 5) : le plan
         # de réaction existe vraiment (sinon il fait moins de 0,5 s et le montage le fond dans le plan précédent)
         # la durée vient du sketch quand il la déclare (ton.py : témoin figé 2,2 à 4,5 s), sinon la valeur par défaut
         t += float((S.get('reaction') or {}).get('duree_s', REACTION)) if S['repliques'][-1].get('chute') else REACTION_TAG
         S['t1'] = t
+        # SOUFFLE DE CHOC sur la prise de fin de sketch (jeu.prise_t), dit par celui que montre le gros plan de réaction
+        # (tourne.py : le premier autre acteur de la scène)
+        ch = [x for x in lines if x['sketch'] == S['id'] and x.get('chute')]
+        if ch and os.environ.get('VOIX_INTONATIONS', '1') == '1':
+            c = ch[-1]; v_ = [n for n in S['acteurs'] if n != c['qui']]
+            if v_:
+                import jeu
+                yc = IT.son(v_[0], 'choc', si); fc = f'voix/{S["id"]}-choc.wav'
+                with wave.open(fc, 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes(yc.tobytes())
+                sons.append({'sketch': S['id'], 'qui': v_[0], 'sorte': 'choc', 't0': round(jeu.prise_t(c), 3), 'dur': round(len(yc) / SR, 3), 'wav': fc})
     # TIMBRE (18/10/2026, « la sortie son trop aiguë ») : chaque personnage égalisé sur la courbe spectrale des voix des TikTok
     # de son registre (timbre.py ; 12 à 15 dB de souffle en trop vers 8–10 kHz), puis l'enveloppe de la bouche recalculée
     if os.environ.get('VOIX_TIMBRE', '1') == '1':
@@ -247,14 +266,15 @@ def main():
                 mx = max(env) or 1; lines[k]['env'] = [round(min(1, e / mx), 3) for e in env]
     total = t + TAIL
     mix = np.zeros(int(total * SR) + 1, np.float32)
-    for L in lines:
+    for L in lines + sons:
         with wave.open(L['wav']) as w: y = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
-        i = int(L['t0'] * SR); mix[i:i + len(y)] += y
+        i = int(L['t0'] * SR); mix[i:i + len(y)] += y[:len(mix) - i]
     mix = np.clip(mix, -1, 1)
     with wave.open('voix/mix.wav', 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((mix * 32767).astype(np.int16).tobytes())
-    json.dump({'total': round(total, 3), 'sketchs': [{k: S[k] for k in ('id', 'titre', 'lieu', 'image', 'acteurs', 't0', 't1')} for S in H['sketchs']], 'cartes': cards, 'lines': lines},
+    json.dump({'total': round(total, 3), 'sketchs': [{k: S[k] for k in ('id', 'titre', 'lieu', 'image', 'acteurs', 't0', 't1')} for S in H['sketchs']], 'cartes': cards, 'lines': lines, 'intonations': sons},
               open('timeline.json', 'w'), ensure_ascii=False)
-    print(f'{len(lines)} répliques, durée {total:.1f} s')
+    resume = ', '.join(f"{x['qui'].split()[0]} {x['sorte']} {x['t0']:.1f}" for x in sons)
+    print(f'{len(lines)} répliques, {len(sons)} sons d\'intonation ({resume}), durée {total:.1f} s')
 
 if __name__ == '__main__':
     main()

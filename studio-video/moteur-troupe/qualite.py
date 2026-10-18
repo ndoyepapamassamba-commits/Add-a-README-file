@@ -46,7 +46,8 @@ JUGES = {'cadre': ([f'{ICI}/cadre.py', 'juge', MP4, f'{ICI}/gabarit_tiktok.json'
          'controle': ([f'{ICI}/controle_video.py', MP4, TL, f'{D}/tournage.json', f'{D}/controle.json'], f'{D}/controle.json'),
          'texte': ([f'{ICI}/jev_texte.py', MP4, TL, HI_, f'{D}/jev_texte.json'], f'{D}/jev_texte.json'),
          'mouvement': ([f'{ICI}/jev_mouvement.py', MP4, f'{D}/tournage.json', TL, f'{D}/jev_mouvement.json'], f'{D}/jev_mouvement.json'),
-         'son': ([f'{ICI}/jev_son.py', TL, 'voix/mix.wav', mus_, f'{D}/bande.wav', f'{D}/jev_son.json'], f'{D}/jev_son.json')}
+         'son': ([f'{ICI}/jev_son.py', TL, 'voix/mix.wav', mus_, f'{D}/bande.wav', f'{D}/jev_son.json'], f'{D}/jev_son.json'),
+         'choc': ([f'{ICI}/jev_choc.py', MP4, f'{D}/tournage.json', TL, f'{D}/jev_choc.json'], f'{D}/jev_choc.json')}
 import time
 EN_COURS = {}
 for _a, _s in JUGES.values():
@@ -226,6 +227,11 @@ G['N_son'] = {'ok': bool(js) and js.get('synthese', {}).get('ok', False), 'detai
 # ── O. SOUS-TITRES ET TITRES tels qu'affichés, jugés par JEV (jev_texte.py) ──
 G['O_textes'] = {'ok': bool(jt) and not jt.get('synthese', {}).get('sous_titres_fautifs') and not jt.get('synthese', {}).get('titres_fautifs'),
                  'detail': {k: jt.get('synthese', {}).get(k) for k in ('sous_titres_fautifs', 'titres_fautifs')}}
+
+# ── P. PRISE DE CHOC DE FIN DE SKETCH (18/10/2026, « revoir le visage du choc de la fin ») : JEV juge chaque gros plan de
+#    réaction — choquée > 0,5 et visage non abîmé sur chaque image (jev_choc.py) ──
+jc = lance(*JUGES['choc']) or {}
+G['P_choc'] = {'ok': bool(jc) and jc.get('synthese', {}).get('ok', False), 'detail': jc.get('synthese')}
 
 passees = sum(g['ok'] for g in G.values())
 R = {'film': os.path.basename(MP4), 'portes': G, 'passees': passees, 'total': len(G), 'pourcent': round(100 * passees / len(G)), 'durees_s': DUREES,

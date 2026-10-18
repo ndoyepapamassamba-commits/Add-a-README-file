@@ -132,9 +132,10 @@ def champ(V, t, ampl=1.0):
     # palmiers, le feuillage (×6 de jour, jusqu'à 18 px) allait chercher la couleur du MUR voisin et l'étirait dans les arbres,
     # en suivant le contour de la couche (une bosse de mur en forme de tête). Un pixel qui bouge ne prend plus sa couleur hors de
     # sa couche : son déplacement est réduit d'autant que l'endroit où il la prendrait sort de la couche.
-    if 'garde' not in P:
-        P['garde'] = np.clip(P['feuil'] + P['tissu'] + P['fumee'] + P['bete'], 0, 1).astype(np.float32)
+    if 'garde' not in P:   # « grille » d'abord, « garde » (la clé témoin) en dernier : le réalisateur JEV rend des images dans
+                           # plusieurs fils à la fois (18/10/2026 : KeyError 'grille' quand un fil voyait « garde » seule)
         P['grille'] = np.meshgrid(np.arange(P['w'], dtype=np.float32), np.arange(P['h'], dtype=np.float32))
+        P['garde'] = np.clip(P['feuil'] + P['tissu'] + P['fumee'] + P['bete'], 0, 1).astype(np.float32)
     M_ = P['garde']; gx_, gy_ = P['grille']; q_ = np.float32(P['W'] / P['w'])
     Ms_ = cv2.remap(M_, (gx_ - a * dx / q_).astype(np.float32), (gy_ - a * dy / q_).astype(np.float32), cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
     f_ = np.clip(Ms_ / np.maximum(M_, 0.05), 0, 1).astype(np.float32); dx = dx * f_; dy = dy * f_
