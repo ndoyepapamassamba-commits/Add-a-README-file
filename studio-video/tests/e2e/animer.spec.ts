@@ -67,6 +67,9 @@ test('Animer mon image : image → GPU distant → clip, quota du jour, compte g
   await page.getByTestId('animer-fichier').setInputFiles({ name: 'depart.png', mimeType: 'image/png', buffer: png });
   await page.getByText('Salue de la main').click();
   await page.getByText('Zoom avant lent').click();
+  // force du mouvement (préréglages façon Higgsfield) : proposée dès qu'une caméra bouge, « Normale » par défaut
+  await expect(page.getByTestId('animer-intensite')).toBeVisible();
+  await expect(page.getByText('Zoom éclair')).toBeVisible();
   await expect(page.getByTestId('animer-go')).toBeEnabled();
   await page.screenshot({ path: path.join(OUT, 'bureau-avant.png'), fullPage: true });
   await page.getByTestId('animer-go').click();
