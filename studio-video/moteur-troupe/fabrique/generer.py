@@ -96,6 +96,7 @@ def lance(sortie, filtre='', en_vol=8):
 
     def un(j):
         i, txt, w, h, g = j; f = f'{sortie}/{i}.png'; os.makedirs(os.path.dirname(f), exist_ok=True)
+        import glob as _g; g = g + 7919 * len(_g.glob(f"{sortie}/rejets/{i.replace('/', '__')}*"))   # planche rejetée par l'analyse : autre graine
         with sem:
             for k, (nom, _, appel) in enumerate(C):
                 for e in range(2):
