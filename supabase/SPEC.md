@@ -5,9 +5,11 @@ professional French CV and/or lettre de motivation, pays **by Wave** (1 000–1 
 downloads the full document (PDF / Word / print). Every night the day's Wave revenue is **paid out
 automatically** to the owner's personal Wave number (Wave Payout API). No human in the loop.
 
-Bridge mode (until the owner's Wave Business API key exists): "manual" payment — the customer sends the
-amount by normal Wave transfer to the owner's number, clicks "J'ai payé", the owner unlocks it from
-`admin.html`. Both modes coexist; automatic Wave wins when `WAVE_API_KEY` is set.
+Bridge mode (until the owner's Wave Business API key exists): "manual" payment — the customer sends a unique
+amount by normal Wave transfer to the owner's number; the owner's phone reports the Wave notification and the
+order unlocks by itself (see "Autopay"), the owner can still unlock it from `admin.html`. Both modes coexist;
+automatic Wave wins when `WAVE_API_KEY` is set. Products: cv, lettre, pack (see below), stage ("Pack Stage") and
+premium ("CV Premium"), each described in its own section at the end.
 
 Shared types: `supabase/functions/api/lib/types.ts` (read it first — it is the contract).
 
@@ -32,6 +34,8 @@ supabase/
   config.toml                     [functions.api] verify_jwt = false                 — backend
   migrations/20261018000001_schema.sql   tables + tcv_* SQL functions (PGlite-testable) — backend
   migrations/20261018000002_cron.sql     pg_cron/pg_net jobs, secret read from tcv.settings (Supabase only) — backend
+  migrations/20261018000003_stage.sql    product check accepts 'stage'                                — backend
+  migrations/20261018000004_premium.sql  product check accepts all five products                      — backend
   migrations/20261018000005_autopay.sql  unique manual amounts + phone detections (see "Autopay")    — backend
   functions/api/
     index.ts                      Deno.serve(createReloadingApp(…)): env over tcv.settings, reloaded ≤ every 60 s — backend
@@ -47,11 +51,16 @@ supabase/
     lib/generator/index.ts        generateDocument()                                   — generator
     lib/generator/banks.ts        French phrase banks, SECTORS, QUALITIES               — generator
     lib/generator/text.ts         French text helpers                                  — generator
+    lib/generator/polish.ts       copy-editing of typed input (casing, missing accents, acronyms) — generator
+    lib/generator/stage.ts, stage_banks.ts      Pack Stage (see "Pack Stage")           — generator
+    lib/generator/premium.ts, banks_premium.ts  CV Premium (see "CV Premium")           — generator
+    lib/validate_stage.ts, lib/autopay.ts                                              — backend
     lib/redact.ts                 redactDocument()                                     — generator
     lib/llm.ts                    optional OpenRouter rewriter (makeEnhancer)          — generator
     tests/*.test.ts               deno tests (each owner writes tests for their modules)
 cv/                                                                                    — frontend
-  index.html  resultat.html  admin.html  config.js  data.js  render.js  app.css  app.js
+  index.html  resultat.html  admin.html  confirmer.html  config.js  data.js  render.js  app.css  app.js
+  stage.js (Pack Stage wizard parts)  premium-render.js  premium-wizard.js  premium-export.js  premium.css
   guides/*.html  sitemap.xml                                                           — content
 LANCEMENT-CV.md  MARKETING-CV.md  (repo root)                                          — content
 ```
@@ -65,7 +74,7 @@ supabase-js is imported ONLY in `lib/store_supabase.ts` and `index.ts`.
 
 | Key | Default | Env override |
 |---|---|---|
-| prices | cv 1000, lettre 1000, pack 1500 XOF | `PRICE_CV`, `PRICE_LETTRE`, `PRICE_PACK` |
+| prices | cv 1000, lettre 1000, pack 1500, stage 1500 (1 company) / 2500 (2–5), premium 5000 XOF | `PRICE_CV`, `PRICE_LETTRE`, `PRICE_PACK`, `PRICE_STAGE`, `PRICE_STAGE_MULTI`, `PRICE_PREMIUM` |
 | brand | "Teranga CV" | `BRAND_NAME` |
 | preview rate limit | 12 / hour / IP | `PREVIEW_RATE_LIMIT_PER_HOUR` |
 | payout min | 1000 XOF | `PAYOUT_MIN` |
@@ -117,7 +126,7 @@ Token comparison: sha256(token) compared to `access_token_hash` in constant time
 | Method & path | Auth | Behaviour |
 |---|---|---|
 | `GET /health` | – | `{ ok: true, time }` |
-| `GET /config` | – | `{ brandName, currency:"XOF", prices:{cv,lettre,pack}, payment:{ wave: bool, manual: bool, manualWaveNumber: string\|null (formatted "+221 77 …"), ownerWhatsapp: string\|null } }`. `manual` is true only when manual mode is the one in use (no Wave client); `manualWaveNumber` is returned whenever configured. |
+| `GET /config` | – | `{ brandName, currency:"XOF", prices:{cv,lettre,pack,stage,premium,stageMulti}, payment:{ wave: bool, manual: bool, manualWaveNumber: string\|null (formatted "+221 77 …"), ownerWhatsapp: string\|null } }`. `manual` is true only when manual mode is the one in use (no Wave client); `manualWaveNumber` is returned whenever configured. |
 | `POST /orders` | – | body `{ product, template, data: OrderInput, website?: "" }`. `website` is a honeypot: non-empty → 400 `validation`. Rate limit key `preview:<ipHash>` (3600 s, `previewRateLimitPerHour`) and `preview:global:<YYYY-MM-DD>` (86400 s, max 5000) → 429 `rate_limited`. Validate (see below) → 400. Generate document (seed = order id), optionally `deps.enhance` (ignore null), insert order (status `preview`, amount = price). → **201** `{ order: PublicOrder & { token }, preview: Document(redacted) }` |
 | `GET /orders/:id?t=TOKEN` | token | If purged → 410 `purged`. If status `checkout` and Wave client present: fetch the session, and if it is paid (see "Payment confirmation") mark paid. → 200 `{ order: PublicOrder, document?: Document (only when paid), preview?: Document (redacted, when not paid) }` |
 | `POST /orders/:id/template` | body `t` | `{ t, template }` → updates template (allowed in any status) → 200 `{ order: PublicOrder }` |
@@ -202,39 +211,6 @@ client_reference = payout id, `payment_reason` = `"Revenus Teranga CV"`.
 SQL): `net = floor(gross*(1-feeRate))`; `base = maxAmount==null ? net : min(net, maxAmount)`;
 `amount = floor((base-1)/(1+payoutFeeRate))`; `amount < 0 → 0`.
 
-### Autopay: manual transfers detected by the owner's phone (`lib/autopay.ts`)
-
-Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disabled) and `MANUAL_AUTO_CONFIRM`
-(default true; `false`/`0`/`no`/`non`/`off` → detections are only flagged). Owner guide: `MACRODROID.md`.
-
-* **Unique amount.** Manual checkout moves a `preview` order to `checkout` and calls
-  `store.assignManualAmount(id, amount, 49, now − 48 h)`: `manual_amount = amount − k`, smallest free k among
-  unpaid checkout/awaiting_manual orders created in the last 48 h (advisory lock + `FOR UPDATE` in SQL; no
-  index, amounts repeat after 48 h). All taken (or order older than 48 h) → catalogue price, logged. The
-  manual response adds `exactAmount`, `exactAmountFormatted` ("1 487 FCFA") and `autoUnlock`
-  (`PHONE_HOOK_KEY` set and auto-confirm on); `amount` stays the catalogue price. `manual-paid` is optional
-  and `payerPhone` may be empty (a non-empty invalid number is still 400). Admin unlock and confirm record
-  `manual_amount ?? amount`.
-* **`POST /payments/notify`** — key in `?k=` or `x-hook-key` (constant time; unset → 503 `hook_disabled`,
-  wrong → 401). Body ≤ 4 KB: JSON `{ title?, text }`, `text/plain`, or form `text=…&title=…`. The text
-  (title + text) is normalised (accents, NBSP/narrow NBSP) and must look like money received ("reçu",
-  "received", "vous a envoyé", "sent you") and not an own operation ("vous avez envoyé", "envoyé à", "payé à",
-  "retrait", "dépôt", English equivalents) → else `{ok:true, ignored:"not_incoming"}`. Amount = number with
-  thousand separators (space, NBSP, ".", ",") followed by F/FCFA/F CFA/CFA/XOF (or preceded by it), skipping
-  balances/fees, preferring the first after the keyword → else `{ignored:"no_amount"}`. Every authenticated
-  call records event `phone:<sha256(normalised text|minute)>` of type `phone.notification` (the admin
-  heartbeat; payload `{text}` only for incoming money) → already recorded → `{ok:true, duplicate:true}`.
-  Match among `listOpenManualOrders(now − 48 h)` with a `manual_amount`: exact, else a single order created
-  in the last 2 h with `manual_amount < amount ≤ amount_catalogue + 100`; several → none. Matched →
-  `recordPaymentDetection` and, with auto-confirm, `markPaid(manual, paidAmount = amount received)`.
-  → `{ ok:true, matched: id|null, amount, paid }`. The text is never logged.
-* **`POST /payments/confirm`** `{ o, c }`, `c = confirmToken(ADMIN_KEY, o)` = first 32 hex of
-  HMAC-SHA256(ADMIN_KEY, "confirm:" + o) → `markPaid` → `{ ok:true, changed }`; invalid or no ADMIN_KEY → 401,
-  unknown order → 404. Page `cv/confirmer.html?o=…&c=…` confirms only on a button press (never on GET).
-* **Admin.** `recentOrders` add `manual_amount`, `payment_detected_at`; `health` adds `phoneHook` and
-  `lastPhoneNotificationAt` (newest `phone.notification` event, carried by `tcv_stats`).
-* **dev.ts** sets `PHONE_HOOK_KEY=dev-phone` and serves `/fake-phone` (GET page that posts a notification).
-
 ## Database (schema `tcv`, functions in `public`)
 
 Tables (schema `tcv`, RLS enabled, no policies): `orders` (columns = `OrderRow`, `id` PK,
@@ -254,8 +230,9 @@ p_paid_amount, p_transaction_id, p_session_id, p_paid_at) → boolean` (single `
 (locks candidate orders `FOR UPDATE`, inserts payout, attaches orders — all-or-nothing; returns null on
 existing day or amount < min), `tcv_update_payout(p_id, p_patch jsonb)`, `tcv_fail_payout(p_id, p_error, p_now)`
 (status failed + detach orders), `tcv_list_unsettled_payouts() → jsonb array`, `tcv_purge(p_unpaid_before,
-p_paid_before, p_now) → int` (sets input/document/manual_payer_phone/ip_hash NULL, purged_at = now; deletes events older than 30 days
-and stale rate_limits), `tcv_stats(p_now) → jsonb` (`Stats`; day boundaries in UTC),
+p_paid_before, p_now) → int` (sets input/document/manual_payer_phone/payment_detected_text/ip_hash NULL, purged_at = now;
+events older than 30 days keep their row but lose their payload; rate_limits are left alone — since 000005 it uses
+UPDATE only, see "Migrations"), `tcv_stats(p_now) → jsonb` (`Stats`; day boundaries in UTC),
 `tcv_get_settings() → jsonb` (object of all key → value).
 Autopay (`20261018000005_autopay.sql`): columns `manual_amount`, `payment_detected_at`, `payment_detected_text`
 (cleared by `tcv_purge`), `tcv_assign_manual_amount(p_id, p_base, p_max_offset, p_since) → int|null`,
@@ -391,3 +368,102 @@ customer or API data**. `config.js` sets
 * `LANCEMENT-CV.md` — owner guide in very simple French: what exists, the links (site, admin), what only
   the owner can do (Wave Business account + API key + webhook; then the system pays them nightly), how
   revenue reaches their Wave, how to read the admin page, FAQ. No promises of income.
+
+## Migrations and deployment
+
+Applied in file-name order, idempotent (the PGlite contract tests run `001`, `003`, `004`, `005`; `002` needs
+pg_cron/pg_net): `001` schema, `002` cron jobs, `003` product check with `'stage'`, `004` product check with all
+five products, `005` autopay columns/functions and new definitions of `tcv.order_json`, `tcv_insert_order`,
+`tcv_purge`, `tcv_stats` (every column and block of `001` kept). The live project already ran `001` and `002`.
+**Rule:** the deployment tool asks for an interactive confirmation before any SQL containing the keyword that
+removes rows, so no migration from `003` on may contain that word (in any case, comments included): personal data
+is erased with UPDATEs only (`tests/backend_migrations.test.ts` checks it, and that `003`→`005` keep the rows of a
+database that only ran `001`).
+
+## Pack Stage (product `stage`)
+
+For students looking for an internship: a one-page student CV, one *lettre de demande de stage* per company
+(1–5) and a sending message. Price `prices.stage` (1 company) or `stageMultiPrice` (2–5), computed server-side
+from `internship.companies.length` (`orderPrice`). Never a convention or an attestation, no promise, no fact about
+a company: the only company-specific text is the student's own `reason`.
+
+* **Input** `OrderInput.internship` (types.ts): school, program ≤ 100, studyLevel ≤ 40, internshipType
+  (`academique|fin_etudes|vacances|perfectionnement`), start/end/durationText ≤ 30, conventionProvided (boolean;
+  "oui"/"non" accepted), department ≤ 80, projects ≤ 4 × 200, qualities ≤ 4 × 40, channel (`email|whatsapp|depot`),
+  companies 1–5 { name ≤ 100, city ≤ 60, recipient ≤ 100, department ≤ 80, reason 20–300 }. `letter` is ignored;
+  `target.kind` is forced to "stage", jobTitle defaults to department or program, sector to "autre", level to
+  "debutant". Education, a project or an experience is required. Paths like `internship.companies.2.reason`
+  (`lib/validate_stage.ts`).
+* **Generation** (`lib/generator/stage.ts`, after `polishInput`): `cv` = the regular CV builder plus each project
+  as an experience "Projet académique" / "Activité associative"; `lettre` = null; `lettres[i]` with seed
+  `${orderSeed}:${i}` (subject "Objet : Demande de stage {type} — {department or program}", recipient or "Monsieur
+  le Directeur des Ressources Humaines", P1 who/request, P2 skills/qualities/projects, P3 the cleaned reason, P4
+  availability, convention only if provided, interview); `envoi` = { emailSubject "Candidature — Stage … — Prénom
+  NOM", emailBody ending with "Pièces jointes : CV, lettre de motivation", whatsapp ≤ 600 chars }. No LLM rewrite.
+* **Preview** (`redact.ts`): `lettres[0]` like a lettre, `lettres[1..]` recipient + subject only, `envoi` subject only.
+* **Site**: home card "Pack Stage" (`#stage`), wizard steps from `cv/stage.js` (Identité → Études → Stage →
+  Formation prefilled → Projets & expériences → Compétences → Langues → Entreprises with live price), preview and
+  result tabs CV · Lettre 1…N · Message d'envoi, ONE PDF (one letter per page) and ONE Word file for all letters,
+  the CV as its own file, copy buttons for the e-mail and the WhatsApp message.
+
+## CV Premium (product `premium`)
+
+For experienced professionals: a two-page A4 "Prestige" CV plus a self-contained web version, `prices.premium`
+(5 000 XOF). Every figure, achievement, tag, domain and quote is typed by the customer.
+
+* **Input** `OrderInput.premium`: headline ≤ 160 (required), pitch ≤ 500, quote ≤ 220, keyFigures ≤ 4 { value ≤ 12
+  with a digit, "+" or "%" and no letter but k/K/M, label ≤ 70 }, domains ≤ 3 { title ≤ 40, detail ≤ 120 },
+  achievements ≤ 6 { title ≤ 70, detail ≤ 240, tags ≤ 4 × 30 }, skillLevels ≤ 8 { name ≤ 40,
+  level `Expert|Avancé|Bon|Notions` }, qualities ≤ 6 × 40, personal { age, situation ≤ 30 }, accent
+  `marine|bordeaux|foret` (default marine). Blank list items are dropped; `letter` is ignored.
+* **Generation** (`lib/generator/premium.ts`): `cv` = regular CV + `cv.premium` (customer text copy-edited only;
+  the profile is the pitch, plus one aim sentence when the pitch is a single sentence, else the regular profile; a generic first-person
+  `quote` from `banks_premium.ts` when none was typed; `personal` lines "Âge : …" / "Situation : …"); `lettre` null.
+* **Preview**: headline, key figures, domain and achievement titles, first tag per card, skills and levels,
+  qualities visible; quote, details, other tags and personal lines masked (plus the regular CV rules).
+* **Site**: home card with a fictional sample, extra wizard steps (accroche & chiffres clés, domaines &
+  réalisations, niveaux, photo, couleur — `premium-wizard.js`), `TCVRender.premium(cv, accent, photo)`
+  (`premium-render.js`). The photo is resized on the phone (400 × 400 JPEG ≤ 150 KB), kept in localStorage under
+  the order id and never sent; resultat.html offers "Ajouter ma photo" when missing. Result (`premium-export.js`):
+  colour switcher, PDF of two pages at most, Word (.doc), "CV web (.html)" (inline CSS, photo as data URL, no
+  script, `noindex`, only optional Google Fonts), Cormorant Garamond + Manrope loaded on the result page only.
+
+## Autopay: manual transfers detected by the owner's phone (`lib/autopay.ts`)
+
+Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disabled) and `MANUAL_AUTO_CONFIRM`
+(default true; `false`/`0`/`no`/`non`/`off` → detections are only flagged). Owner guide: `MACRODROID.md`.
+
+* **Unique amount.** Manual checkout moves a `preview` order to `checkout` and calls
+  `store.assignManualAmount(id, amount, 49, now − 48 h)`: `manual_amount = amount − k`, smallest free k among
+  unpaid checkout/awaiting_manual orders created in the last 48 h (advisory lock + `FOR UPDATE` in SQL; no
+  index, amounts repeat after 48 h). All taken (or order older than 48 h) → catalogue price, logged. The
+  manual response adds `exactAmount`, `exactAmountFormatted` ("1 487 FCFA") and `autoUnlock`
+  (`PHONE_HOOK_KEY` set and auto-confirm on); `amount` stays the catalogue price. `manual-paid` is optional
+  and `payerPhone` may be empty (a non-empty invalid number is still 400). Admin unlock and confirm record
+  `manual_amount ?? amount`.
+* **`POST /payments/notify`** — key in `?k=` or `x-hook-key` (constant time; unset → 503 `hook_disabled`,
+  wrong → 401). Body ≤ 4 KB: JSON `{ title?, text }`, `text/plain`, or form `text=…&title=…`. The text
+  (title + text) is normalised (accents, NBSP/narrow NBSP) and must look like money received ("reçu",
+  "received", "vous a envoyé", "sent you") and not an own operation ("vous avez envoyé", "envoyé à", "payé à",
+  "retrait", "dépôt", English equivalents) → else `{ok:true, ignored:"not_incoming"}`. Amount = number with
+  thousand separators (space, NBSP, ".", ",") followed by F/FCFA/F CFA/CFA/XOF (or preceded by it), skipping
+  balances/fees, preferring the first after the keyword → else `{ignored:"no_amount"}`. Every authenticated
+  call records event `phone:<sha256(normalised text|minute)>` of type `phone.notification` (the admin
+  heartbeat; payload `{text}` only for incoming money) → already recorded → `{ok:true, duplicate:true}`.
+  Match among `listOpenManualOrders(now − 48 h)` with a `manual_amount`: exact, else a single order created
+  in the last 2 h with `manual_amount < amount ≤ amount_catalogue + 100`; several → none. Matched →
+  `recordPaymentDetection` and, with auto-confirm, `markPaid(manual, paidAmount = amount received)`.
+  → `{ ok:true, matched: id|null, amount, paid }`. The text is never logged.
+* **`POST /payments/confirm`** `{ o, c }`, `c = confirmToken(ADMIN_KEY, o)` = first 32 hex of
+  HMAC-SHA256(ADMIN_KEY, "confirm:" + o) → `markPaid` → `{ ok:true, changed }`; invalid or no ADMIN_KEY → 401,
+  unknown order → 404. Page `cv/confirmer.html?o=…&c=…` confirms only on a button press (never on GET).
+* **Admin.** `recentOrders` add `manual_amount`, `payment_detected_at`; `health` adds `phoneHook` and
+  `lastPhoneNotificationAt` (newest `phone.notification` event, carried by `tcv_stats`).
+* **dev.ts** sets `PHONE_HOOK_KEY=dev-phone` and serves `/fake-phone` (GET page that posts a notification).
+* **Customer panel**: "Envoyez exactement 1 487 FCFA" with a copy button, why the amount is exact, one line
+  "Les frais de transfert Wave sont à votre charge." (Wave charges the sender about 1 %), the number, "J'ai envoyé
+  l'argent" → resultat.html polls and unlocks by itself; "Prévenir le vendeur sur WhatsApp" is optional.
+* **Database** (`20261018000005_autopay.sql`): columns `manual_amount`, `payment_detected_at`,
+  `payment_detected_text`; `tcv_assign_manual_amount`, `tcv_list_open_manual_orders`, `tcv_record_payment_detection`
+  (service role only). The notification text is purged with the order; the dedupe event loses its payload after
+  30 days (row kept).
