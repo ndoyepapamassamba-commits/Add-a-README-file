@@ -229,7 +229,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ---------- Wizard ---------- */
 
-.wizard-wrap { padding: 20px 0 8px; }
+.wizard-wrap { padding-top: 20px; padding-bottom: 8px; }
 .progress { margin-bottom: 18px; }
 .progress-label { display: flex; justify-content: space-between; font-size: .9rem; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
 .progress-bar { height: 8px; background: var(--sand-2); border-radius: 999px; overflow: hidden; }
@@ -328,7 +328,7 @@ fieldset { border: 0; padding: 0; margin: 0 0 16px; min-width: 0; }
 
 /* ---------- Preview / checkout ---------- */
 
-.preview-wrap { padding: 18px 0 8px; }
+.preview-wrap { padding-top: 18px; padding-bottom: 8px; }
 .back-link { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; text-decoration: none; }
 .preview-title { font-size: clamp(1.45rem, 5.5vw, 2rem); margin: 4px 0 .3em; }
 .preview-layout { display: grid; gap: 22px; margin-top: 12px; }
@@ -372,7 +372,7 @@ fieldset { border: 0; padding: 0; margin: 0 0 16px; min-width: 0; }
 
 /* ---------- Result page ---------- */
 
-.result { padding: 20px 0 8px; }
+.result { padding-top: 20px; padding-bottom: 8px; }
 .center-card { max-width: 560px; margin: 24px auto; text-align: center; }
 .center-card .btn { margin-top: 8px; }
 .big-spinner { width: 44px; height: 44px; border-width: 4px; margin: 6px auto 16px; color: var(--brand); }
@@ -396,7 +396,7 @@ fieldset { border: 0; padding: 0; margin: 0 0 16px; min-width: 0; }
 
 /* ---------- Admin ---------- */
 
-.admin { padding: 20px 0 8px; }
+.admin { padding-top: 20px; padding-bottom: 8px; }
 .admin h1 { font-size: 1.6rem; }
 .admin-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
 .kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0 22px; }

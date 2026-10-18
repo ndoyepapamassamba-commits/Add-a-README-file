@@ -72,7 +72,7 @@ Graine `TCV-SAMPLE02`, produit `pack`.
 
 **Profil**
 
-Professionnel confirmé dans le transport et la logistique, je dispose d'une expérience solide et variée. J'exerce actuellement en tant que chauffeur-livreur au sein des Transports Rapides du Cap-Vert. Je souhaite aujourd'hui mettre mes compétences au service d'une entreprise en tant que chauffeur-livreur.
+Expérimenté et polyvalent, j'ai consolidé mon savoir-faire au fil de mon parcours dans le transport et la logistique. J'occupe actuellement le poste de chauffeur-livreur au sein des Transports Rapides du Cap-Vert. Je souhaite aujourd'hui mettre mes compétences au service d'une entreprise en tant que chauffeur-livreur.
 
 **Expériences professionnelles**
 
@@ -135,7 +135,7 @@ Graine `TCV-SAMPLE03`, produit `pack`.
 
 **Profil**
 
-Titulaire d'un diplôme d'État d'infirmier, je dispose de bases solides dans ce domaine. Mon expérience d'infirmière au sein de la Clinique Al Amine m'a permis de développer des compétences en hygiène et asepsie, soins de base et prise de constantes. Je souhaite aujourd'hui mettre mes compétences au service d'un établissement de santé en tant qu'infirmière.
+Titulaire d'un diplôme d'État d'infirmier, je dispose de bases solides dans ce domaine. J'ai notamment exercé en tant qu'infirmière au sein de la Clinique Al Amine. Je souhaite aujourd'hui mettre mes compétences au service d'un établissement de santé en tant qu'infirmière.
 
 **Expériences professionnelles**
 
@@ -327,7 +327,7 @@ Graine `TCV-SAMPLE06`, produit `pack`.
 
 **Profil**
 
-Professionnel confirmé dans la sécurité et le gardiennage, je dispose d'une expérience solide et variée. Mon expérience d'agent de sécurité chez Teranga Gardiennage m'a permis de développer des compétences en surveillance de site, contrôle d'accès et premiers secours. Je suis à la recherche d'un poste d'agent de sécurité au sein d'une structure où je pourrai m'investir pleinement.
+Expérimenté et polyvalent, j'ai consolidé mon savoir-faire au fil de mon parcours dans la sécurité et le gardiennage. Mon expérience d'agent de sécurité chez Teranga Gardiennage m'a permis de développer des compétences en surveillance de site, contrôle d'accès et premiers secours. Je suis à la recherche d'un poste d'agent de sécurité au sein d'une structure où je pourrai m'investir pleinement.
 
 **Expériences professionnelles**
 
@@ -449,7 +449,7 @@ Graine `TCV-SAMPLE08`, produit `pack`.
 
 **Profil**
 
-Professionnel confirmé dans l'enseignement et la formation, je dispose d'une expérience solide et variée. J'occupe actuellement le poste de professeur de français au sein du Cours Privé Les Pionniers. Mon objectif : contribuer efficacement à la réussite d'un établissement scolaire en tant que professeur de français.
+Professionnel confirmé dans l'enseignement et la formation, je dispose d'un savoir-faire solide et éprouvé. J'occupe actuellement le poste de professeur de français au sein du Cours Privé Les Pionniers. Mon objectif : contribuer efficacement à la réussite d'un établissement scolaire en tant que professeur de français.
 
 **Expériences professionnelles**
 
@@ -525,7 +525,7 @@ Madame, Monsieur,
 
 Vivement intéressée par l'Agence Kër Com, je me permets de vous adresser ma candidature spontanée pour un poste d'assistante community manager en alternance. Cette alternance me permettrait de concilier formation théorique et expérience concrète en entreprise.
 
-Actuellement étudiante en licence 2 en communication à l'Université Gaston Berger, j'acquiers progressivement des bases solides dans ce domaine. Ce qui me manque encore en expérience, je le compense par une forte motivation, une grande capacité d'apprentissage et le goût du travail bien fait.
+Actuellement étudiante en licence 2 en communication à l'Université Gaston Berger, j'acquiers progressivement des bases solides dans ce domaine. Je suis désireuse de mettre en pratique mes acquis et de progresser au contact de professionnels expérimentés.
 
 Ma formation m'a permis d'acquérir des compétences en réseaux sociaux et création de visuels, ainsi qu'une bonne maîtrise de l'outil informatique (Canva, Photoshop). Sur le plan humain, je suis créative dans la recherche de solutions et dynamique dans tout ce que j'entreprends. Je fais également preuve de curiosité. C'est avec enthousiasme que je mettrais mon énergie au service de l'Agence Kër Com.
 

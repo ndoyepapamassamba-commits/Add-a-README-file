@@ -115,12 +115,13 @@ class Picker {
 }
 
 /**
- * Writes one document (CV or lettre): picks one variant per slot and avoids repeating an expression
- * already used in that document (REPEAT_STEMS plus the job title) whenever another variant applies.
+ * Writes one document (CV or lettre): picks one variant per slot, preferring the variants that repeat
+ * the fewest expressions already used in that document (REPEAT_STEMS plus job title and domain).
  */
 class Composer {
   private readonly used: string[] = [];
-  private readonly stems: string[];
+  /** Expressions to avoid repeating, with their weight: the job title and domain weigh double. */
+  private readonly stems: Array<[string, number]>;
 
   /**
    * @param extraStems document-specific expressions to avoid repeating (the job title)
@@ -132,7 +133,10 @@ class Composer {
     extraStems: string[] = [],
     private readonly planned: string[] = [],
   ) {
-    this.stems = [...REPEAT_STEMS, ...extraStems.map((s) => s.toLocaleLowerCase("fr")).filter((s) => s.length >= 4)];
+    this.stems = [
+      ...REPEAT_STEMS.map((s): [string, number] => [s, 1]),
+      ...extraStems.map((s) => s.toLocaleLowerCase("fr")).filter((s) => s.length >= 4).map((s): [string, number] => [s, 2]),
+    ];
   }
 
   pick(slot: string, variants: Variant[]): string | null {
@@ -143,11 +147,14 @@ class Composer {
   choose(slot: string, texts: string[]): string | null {
     if (texts.length === 0) return null;
     const usedText = [...this.planned, ...this.used].join(" ").toLocaleLowerCase("fr");
-    const fresh = texts.filter((t) => {
+    const active = this.stems.filter(([stem]) => usedText.includes(stem));
+    // Fewest repeated expressions wins; a repeat every candidate shares does not decide anything.
+    const repeats = texts.map((t) => {
       const lower = t.toLocaleLowerCase("fr");
-      return !this.stems.some((stem) => usedText.includes(stem) && lower.includes(stem));
+      return active.reduce((sum, [stem, weight]) => sum + (lower.includes(stem) ? weight : 0), 0);
     });
-    const pool = fresh.length > 0 ? fresh : texts;
+    const fewest = Math.min(...repeats);
+    const pool = texts.filter((_, i) => repeats[i] === fewest);
     const chosen = pool[this.picker.index(slot, pool.length)];
     this.used.push(chosen);
     return chosen;

@@ -424,11 +424,11 @@ export const PROFILE_INTRO: Record<Level, Variant[]> = {
     (c) => `${c.g("Professionnel motivé", "Professionnelle motivée")} en début de carrière, j'ai à cœur de progresser dans ${c.domain}`,
   ],
   confirme: [
-    (c) => `${c.g("Professionnel confirmé", "Professionnelle confirmée")} dans ${c.domain}, je dispose d'une expérience solide et variée`,
+    (c) => `${c.g("Professionnel confirmé", "Professionnelle confirmée")} dans ${c.domain}, je dispose d'un savoir-faire solide et éprouvé`,
     (c) => `${c.g("Fort", "Forte")} d'une solide expérience dans ${c.domain}, je maîtrise les exigences du métier ${de(c.role)}`,
     (c) =>
       c.expCount > 0 &&
-      `${c.g("Expérimenté", "Expérimentée")} et ${c.g("polyvalent", "polyvalente")}, j'ai consolidé mes compétences au fil de mon parcours dans ${c.domain}`,
+      `${c.g("Expérimenté", "Expérimentée")} et ${c.g("polyvalent", "polyvalente")}, j'ai consolidé mon savoir-faire au fil de mon parcours dans ${c.domain}`,
     (c) => c.degree && `${c.degree.lead}, j'ai développé au fil de mon parcours une réelle maîtrise du métier ${de(c.role)}`,
   ],
   senior: [
@@ -736,8 +736,8 @@ export const DEFAULT_RECIPIENT = "À l'attention du Responsable des Ressources H
 export const SALUTATION = "Madame, Monsieur,";
 
 /**
- * Expressions that should not appear twice in the same document. When a slot's variant would repeat
- * one already used, another variant is preferred.
+ * Expressions that should not appear twice in the same document: for each slot, the variants that
+ * repeat the fewest of them are preferred.
  */
 export const REPEAT_STEMS = [
   "convaincu", "rejoindre", "opportunité", "occasion", "pleinement", "au service", "solide",
@@ -745,5 +745,5 @@ export const REPEAT_STEMS = [
   "concrètement", "motivé", "m'investir", "exigence", "vif intérêt", "environnement", "au contact",
   "aux côtés", "mon objectif", "compétences", "réelle", "permis de développer", "permet de développer",
   "j'ai l'honneur", "je me permets", "rapidement opérationnel", "par ailleurs", "au sein", "aujourd'hui",
-  "mon parcours dans", "votre structure", "à l'aise", "ce domaine", "je souhaite",
+  "mon parcours dans", "votre structure", "à l'aise", "ce domaine", "je souhaite", "expérience", "savoir-faire",
 ];
