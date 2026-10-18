@@ -35,7 +35,7 @@
 # Réglages (montage.json → "reglages") : plan_s, cam_px, pousse (travelling avant par plan), parallaxe, jeu_gain, corps, whip_s, ouverture, decor, gestes, carte_sur_scene, rig.
 # python3 tourne.py montage.json sortie_dir
 import json, math, os, sys, zlib, numpy as np, cv2
-import decor_vivant, entites, gestes, rig2d, regard, expressions, expressions_lp, jeu, prepare_rig
+import decor_vivant, entites, gestes, linge, rig2d, regard, expressions, expressions_lp, jeu, prepare_rig
 import poses_dessinees as PD   # gestes dessinés : animation pose à pose (17/10/2026)
 FPS, CW, CH = 30, 576, 460
 cfg = json.load(open(sys.argv[1])); OUT = sys.argv[2]; os.makedirs(f'{OUT}/clip', exist_ok=True)
@@ -166,6 +166,7 @@ for sk in T['sketchs']:
     img = cv2.cvtColor(cv2.imread(f'{d}/image.png'), cv2.COLOR_BGR2RGB); plate = cv2.cvtColor(cv2.imread(f'{d}/plaque.png'), cv2.COLOR_BGR2RGB)
     rinfo = prepare_rig.prepare(d) if REG['rig'] else None   # une fois par scène (cache <scène>/rig/)
     if rinfo: plate = cv2.cvtColor(cv2.imread(f'{d}/rig/plaque.png'), cv2.COLOR_BGR2RGB)
+    plate, betes = entites.betes_peintes(d, img, plate) if REG['decor'] > 0 else (plate, [])   # bêtes peintes du décor rendues vivantes (v34)
     acts = {}
     for a in S['acteurs']:
         if rinfo and rinfo['acteurs'].get(a['nom'], {}).get('pts'): a['pts'] = rinfo['acteurs'][a['nom']]['pts']   # squelette affiné à la préparation
@@ -240,11 +241,12 @@ for sk in T['sketchs']:
     ys_, xs_ = np.mgrid[0:img.shape[0], 0:img.shape[1]].astype(np.float32)
     kpar = facteur_parallaxe(profondeur(d, plate), acts, img.shape[0], img.shape[1]) if REG['parallaxe'] > 0 else None
     vie = decor_vivant.prepare(d, plate, [A_['mask'] for A_ in acts.values()]) if REG['decor'] > 0 else None
+    lin = linge.prepare(d, plate, [A_['mask'] for A_ in acts.values()]) if REG['decor'] > 0 else None   # linge détouré par SAM 2.1, épinglé, au vent (v34)
     n_ent = int((REG.get('entites') or {}).get(sk['id'], 0))   # bêtes du décor (poules) : nombre choisi par sketch dans le montage
-    ents = entites.prepare(d, img.shape[0], img.shape[1], [(A_['bbox'], not A_.get('assis')) for A_ in acts.values()], n=n_ent, lieu=sk.get('lieu')) if n_ent else []
+    ents = betes or (entites.prepare(d, img.shape[0], img.shape[1], [(A_['bbox'], not A_.get('assis')) for A_ in acts.values()], n=n_ent, lieu=sk.get('lieu')) if n_ent else [])
     gen = entites.genese_poule(d, img, [(A_['mask'] if A_['mask'].ndim == 2 else A_['mask'][..., 0], A_['bbox'], not A_.get('assis')) for A_ in acts.values()], ents) if ents else {}
     if ents: print(f"{sk['id']}: poule créée par JEV (genèse) : {gen.get('style', {}).get('sprite')}, note {gen.get('note')} / référence {gen.get('reference')}", flush=True)
-    SC[sk['id']] = dict(img=img, plate=plate, acts=acts, H=img.shape[0], W=img.shape[1], sk=sk, xs=xs_, ys=ys_, kpar=kpar, vie=vie, ents=ents,
+    SC[sk['id']] = dict(img=img, plate=plate, acts=acts, H=img.shape[0], W=img.shape[1], sk=sk, xs=xs_, ys=ys_, kpar=kpar, vie=vie, ents=ents, linge=lin,
                         lum=gen.get('L'), style_ent=gen.get('style'))
 gestes.ferme()
 JOURNAL_JEU = []
@@ -481,6 +483,7 @@ def geste_dessine(S, A, t, name, R):
 def frame_scene(S, t, off=None, zoom=None):
     plate = S['plate']; V = S.get('vie')
     if V is not None and decor_vivant.panache(V, plate) is not None: plate = decor_vivant.fumee(V, plate, t)   # la fumée du grill MONTE (panache physique), avant la parallaxe
+    if S.get('linge') is not None: plate = linge.compose(S['linge'], plate, t)   # linge épinglé qui flotte au vent (v34), sous la couche « tissu »
     par = off is not None and S.get('kpar') is not None and (abs(off[0]) > 0.05 or abs(off[1]) > 0.05)
     zpar = zoom is not None and S.get('kpar') is not None and abs(zoom[0] - 1) > 1e-3
     if par or zpar or V is not None:

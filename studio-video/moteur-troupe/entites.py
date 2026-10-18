@@ -84,6 +84,45 @@ def prepare(d, H, W, acteurs, n=2, graine=7, lieu=None, journal=print):
     return E
 
 
+def betes_peintes(d, img, plaque, seuil=0.985, journal=print):
+    """BÊTES PEINTES RENDUES VIVANTES (18/10/2026, v34) — vu sur la v32 : dans le décor du sketch « Le poulet a payé le
+    loyer », deux poules peintes restaient figées (la porte L de JEV y jugeait le fond « mort », 0,23 à 0,78), et l'une, en
+    partie effacée avec Modou, laissait une bavure dans la plaque. Les découpes des poules peintes de la troupe (peinte-1/2)
+    sont cherchées dans l'image de la scène (corrélation masquée ≥ seuil) ; chaque poule trouvée est effacée de la plaque
+    avec son ombre au sol (LaMa, plaque.remplit_progressif) et devient une entité qui marche et picore autour de sa place,
+    dessinée avec une découpe valide (pattes entières) à sa taille peinte.
+    → (plaque sans les bêtes peintes, entités) ; cache <scène>/betes.json + plaque-betes.png."""
+    fj, fp = f'{d}/betes.json', f'{d}/plaque-betes.png'
+    if os.path.isfile(fj):
+        E = json.load(open(fj))
+        return (cv2.cvtColor(cv2.imread(fp), cv2.COLOR_BGR2RGB) if E and os.path.isfile(fp) else plaque), E
+    H, W = plaque.shape[:2]; trou = np.zeros((H, W), np.uint8); trouvees = []
+    for nom in ('peinte-1', 'peinte-2'):
+        f = f'{DOSSIER}/{nom}.png'
+        if not os.path.isfile(f): continue
+        sp = cv2.imread(f, cv2.IMREAD_UNCHANGED); h, w = sp.shape[:2]; m = (sp[..., 3] > 128).astype(np.uint8)
+        if h >= H or w >= W: continue
+        r = cv2.matchTemplate(cv2.cvtColor(img, cv2.COLOR_RGB2BGR), sp[..., :3], cv2.TM_CCORR_NORMED, mask=np.dstack([m] * 3))
+        _, v, _, (x, y) = cv2.minMaxLoc(r)
+        if v < seuil: continue
+        ys, xs = np.nonzero(m); pied = (x + float(np.median(xs[ys > ys.max() - 0.06 * (ys.max() - ys.min())])), y + float(ys.max()))
+        sub = trou[y:y + h, x:x + w]; sub[:] = np.maximum(sub, cv2.dilate(m, np.ones((9, 9), np.uint8)))
+        cv2.ellipse(trou, (int(pied[0]), int(pied[1])), (int(0.45 * w), int(0.12 * h)), 0, 0, 360, 1, -1)   # l'ombre au sol, peinte avec elle
+        trouvees.append((nom, float(v), pied, float(ys.max() - ys.min())))
+    if not trouvees:
+        json.dump([], open(fj, 'w')); return plaque, []
+    import plaque as PQ
+    sans = PQ.remplit_progressif(plaque, trou); cv2.imwrite(fp, cv2.cvtColor(sans, cv2.COLOR_RGB2BGR))
+    valide = next((n_ for n_ in ('peinte-2', 'peinte-1', 'photo') if _sprite(n_) is not None), 'photo')
+    E = []
+    for k, (nom, v, (px, py), haut) in enumerate(trouvees):
+        ech = haut / (PIVOT[1] - 18)   # _place : taille réelle rapportée à la découpe photo → la poule garde sa taille peinte
+        E.append({'espece': 'poule', 'x0': float(max(0, px - 70)), 'x1': float(min(W, px + 70)), 'y': float(py), 'echelle': float(ech),
+                  'graine': 1000 + 37 * k, 'peinte': nom, 'score': round(v, 4), 'sprite': valide})
+    json.dump(E, open(fj, 'w'), indent=1); journal(f"bêtes peintes rendues vivantes : {[(e['peinte'], e['score']) for e in E]}")
+    return sans, E
+
+
 def sol_haut(prof, x0, x1, pieds, pas=8):
     """LOI DU SOL PRATICABLE (18/10/2026) : le bord le plus lointain du sol au-dessus de la ligne des pieds, lu dans la carte
     de profondeur (proche = clair) — le sol se rapproche régulièrement vers le bas de l'image, un mur ou une contremarche
