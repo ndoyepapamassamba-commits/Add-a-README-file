@@ -10,10 +10,14 @@ import { capitalize, collapse, genderOf, lowerMonths } from "./text.ts";
 // ---------------------------------------------------------------------------
 
 const fold = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
+/** True when the word carries any diacritic (é, ô, ç, ï…): the customer chose its spelling. */
+const hasAccent = (w: string) => /\p{M}/u.test(w.normalize("NFD"));
 
 /**
  * Accented spellings restored when a customer typed the word without accents. Only words whose
  * unaccented form is not itself a French word ("marche", "eleve", "cote" are deliberately absent).
+ * The table holds ONE accented form per unaccented spelling, so it is applied only to words typed with no
+ * accent at all: a word that already has one ("diplômé", "diplômés", "Déja") is never changed.
  */
 // deno-fmt-ignore
 const ACCENTED = `
@@ -151,13 +155,13 @@ function hasUpper(s: string): boolean {
   return /\p{Lu}/u.test(s);
 }
 
-/** Accents, acronyms, brands and place names for one word typed without accents. */
+/** Accents (only for a word typed without any), acronyms, brands and place names for one word. */
 function fixWord(w: string, brands: Record<string, string>): string {
   const lower = w.toLocaleLowerCase("fr");
   const upper = w.toLocaleUpperCase("fr");
   if (brands[lower] && w === lower) return brands[lower];
   if (ACRONYMS.has(upper) && w === lower) return upper;
-  const accented = w === lower || w === capitalize(lower) ? ACCENT_BY_KEY.get(fold(w)) : undefined;
+  const accented = (w === lower || w === capitalize(lower)) && !hasAccent(w) ? ACCENT_BY_KEY.get(fold(w)) : undefined;
   const out = accented ? caseLike(w, accented) : w;
   return PROPER_NOUNS.has(out) ? capitalize(out) : out;
 }
@@ -247,6 +251,7 @@ export function polishName(raw: string, opts: { place?: boolean } = {}): string 
     if (shouting ? keepsCapitals(w) : ACRONYMS.has(w.toLocaleUpperCase("fr"))) return w.toLocaleUpperCase("fr");
     if (lowerOnly && !VOWEL_RE.test(w) && /^\p{L}{2,5}$/u.test(w)) return w.toLocaleUpperCase("fr"); // "sgs"
     if (!atStart && (elided || (FUNCTION_WORDS.has(lower) && !/-$/.test(before)))) return lower;
+    if (hasAccent(w)) return capitalize(lower);
     const key = fold(w);
     return capitalize(ACCENT_BY_KEY.get(key) ?? NAME_ACCENTS.get(key) ?? lower);
   });

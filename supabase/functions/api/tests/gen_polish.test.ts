@@ -81,6 +81,35 @@ Deno.test("polish phrases: capitals typed by accident, accents, compounds, brand
   }
 });
 
+Deno.test("polish never rewrites a word typed with an accent (regression: diplômé / diplômés / Diplôme d'État)", () => {
+  // The accent table keeps one accented form per unaccented key: applying it to a word that already has an
+  // accent turned correct words into other words.
+  for (const typed of [
+    "Diplômé d'État",
+    "Diplôme d'État",
+    "Infirmier diplômé d'État",
+    "Diplômée d'État de sage-femme",
+    "les élèves diplômés",
+    "Mentorat de jeunes diplômés",
+    "Diplômés en gestion",
+    "Agent de sécurité diplômé",
+    "Électricité générale",
+  ]) {
+    assertEquals(polishPhrase(typed), typed, typed);
+  }
+  // A word with an accent stays as typed, even when another spelling exists in the table.
+  assertEquals(polishPhrase("Déja deux ans"), "Déja deux ans");
+  assertEquals(polishPhrase("DIPLÔMÉS EN GESTION"), "diplômés en gestion", "capitals lowered, accents kept");
+  assertEquals(polishName("les élèves diplômés"), "Les Élèves Diplômés");
+  assertEquals(polishName("Hôpital régional"), "Hôpital régional");
+  assertEquals(polishRecipient("monsieur le directeur général"), "Monsieur le Directeur général");
+  // Words typed with no accent at all are still restored.
+  assertEquals(polishPhrase("diplome d'etat"), "diplôme d'État");
+  assertEquals(polishPhrase("infirmiere diplomee d'etat"), "infirmière diplômée d'État");
+  assertEquals(polishPhrase("jeunes diplomes"), "jeunes diplômes", "unaccented 'diplomes' is the noun");
+  assertEquals(polishName("hopital regional"), "Hôpital Régional");
+});
+
 Deno.test("polish recipients: civility title capitalised, acronyms, accents", () => {
   assertEquals(polishRecipient("monsieur le directeur general"), "Monsieur le Directeur général");
   assertEquals(

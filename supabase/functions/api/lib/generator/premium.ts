@@ -54,8 +54,8 @@ function isShouted(s: string): boolean {
 const hasAccent = (w: string) => /\p{M}/u.test(w.normalize("NFD"));
 
 /**
- * A word the customer typed with its accents keeps them: the accent restorer works on unaccented keys and
- * would otherwise turn "diplômés" into "diplômes" or "Diplôme" into "Diplômé". Casing comes from `polished`.
+ * A word the customer typed with its accents keeps them (polish.ts now never touches such a word; this guard
+ * stays so the premium block cannot regress if the shared corrector changes). Casing comes from `polished`.
  */
 function keepTypedAccents(typed: string, polished: string): string {
   const typedWords = typed.match(/[\p{L}\p{N}]+/gu) ?? [];
