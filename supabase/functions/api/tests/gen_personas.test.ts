@@ -319,7 +319,7 @@ const TIDY: Persona[] = [
 const TYPED_ON_A_PHONE: Persona[] = [
   {
     id: "TCV-REVIEW01",
-    label: "comptable débutant, tout en minuscules, bac s2 2019, aucune expérience",
+    label: "Comptable débutant, tout en minuscules, bac s2 2019, aucune expérience",
     product: "pack",
     input: {
       identity: { civility: "M", firstName: "mamadou", lastName: "ndiaye", phone: "771234567", city: "dakar" },
@@ -335,7 +335,7 @@ const TYPED_ON_A_PHONE: Persona[] = [
   },
   {
     id: "TCV-REVIEW02",
-    label: "vendeuse, saisie minimale sur une ligne, bfem, facebook",
+    label: "Vendeuse, saisie minimale sur une ligne, bfem, facebook",
     product: "pack",
     input: {
       identity: { civility: "Mme", firstName: "bineta", lastName: "gueye", phone: "76 000 11 22", city: "pikine" },
@@ -363,7 +363,12 @@ const TYPED_ON_A_PHONE: Persona[] = [
         city: "Dakar",
         address: "Villa 45, Cité Keur Gorgui",
       },
-      target: { jobTitle: "Directeur administratif et financier", kind: "emploi", sector: "comptabilite", level: "senior" },
+      target: {
+        jobTitle: "Directeur administratif et financier",
+        kind: "emploi",
+        sector: "comptabilite",
+        level: "senior",
+      },
       education: [
         { degree: "Master en Audit et Contrôle de gestion", school: "CESAG", year: "2008" },
         { degree: "DESCF", school: "ENEA", year: "2005", detail: "Major de promotion" },
@@ -415,7 +420,7 @@ const TYPED_ON_A_PHONE: Persona[] = [
   },
   {
     id: "TCV-REVIEW04",
-    label: "aide-soignante junior, minuscules sans accents, recommandée par une amie",
+    label: "Aide-soignante junior, minuscules sans accents, recommandée par une amie",
     product: "pack",
     input: {
       identity: { civility: "Mme", firstName: "coumba", lastName: "diouf", phone: "781112233", city: "ziguinchor" },
@@ -441,7 +446,7 @@ const TYPED_ON_A_PHONE: Persona[] = [
   },
   {
     id: "TCV-REVIEW05",
-    label: "électricien bâtiment confirmé, sans entreprise ni dates, sans accents",
+    label: "Électricien bâtiment confirmé, sans entreprise ni dates, sans accents",
     product: "pack",
     input: {
       identity: { civility: "M", firstName: "ousmane", lastName: "FAYE", phone: "70 456 78 90", city: "Rufisque" },
@@ -460,7 +465,7 @@ const TYPED_ON_A_PHONE: Persona[] = [
   },
   {
     id: "TCV-REVIEW06",
-    label: "stagiaire marketing digital, débutante, aucune expérience, instagram",
+    label: "Stagiaire marketing digital, débutante, aucune expérience, instagram",
     product: "pack",
     input: {
       identity: {
@@ -483,7 +488,7 @@ const TYPED_ON_A_PHONE: Persona[] = [
   },
   {
     id: "TCV-REVIEW07",
-    label: "technicien réseau en alternance, lettre seule",
+    label: "Technicien réseau en alternance, lettre seule",
     product: "lettre",
     input: {
       identity: { civility: "M", firstName: "Babacar", lastName: "Seck", phone: "76 777 88 99", city: "Thiès" },
@@ -505,7 +510,7 @@ const TYPED_ON_A_PHONE: Persona[] = [
   },
   {
     id: "TCV-REVIEW08",
-    label: "institutrice senior, CV seul",
+    label: "Institutrice senior, CV seul",
     product: "cv",
     input: {
       identity: { civility: "Mme", firstName: "khady", lastName: "ka", phone: "77 999 00 11", city: "Kaolack" },
@@ -529,7 +534,7 @@ const TYPED_ON_A_PHONE: Persona[] = [
   },
   {
     id: "TCV-REVIEW09",
-    label: "gardien débutant, niveau 3ème, bouche à oreille",
+    label: "Gardien débutant, niveau 3ème, bouche à oreille",
     product: "pack",
     input: {
       identity: { civility: "M", firstName: "samba", lastName: "ba", phone: "70 333 22 11", city: "keur massar" },
@@ -545,7 +550,7 @@ const TYPED_ON_A_PHONE: Persona[] = [
   },
   {
     id: "TCV-REVIEW10",
-    label: "réceptionniste junior, motivation tapée sans ponctuation",
+    label: "Réceptionniste junior, motivation tapée sans ponctuation",
     product: "pack",
     input: {
       identity: {
@@ -581,7 +586,7 @@ const TYPED_ON_A_PHONE: Persona[] = [
   },
   {
     id: "TCV-REVIEW11",
-    label: "agent commercial confirmé, compétences tapées dans une seule case",
+    label: "Agent commercial confirmé, compétences tapées dans une seule case",
     product: "pack",
     input: {
       identity: { civility: "M", firstName: "Pape", lastName: "Diagne", phone: "78 123 98 76", city: "Saint-Louis" },
@@ -606,7 +611,7 @@ const TYPED_ON_A_PHONE: Persona[] = [
   },
   {
     id: "TCV-REVIEW12",
-    label: "ingénieure agronome junior, stage de fin d'études, site de l'ANPEJ",
+    label: "Ingénieure agronome junior, stage de fin d'études, site de l'ANPEJ",
     product: "pack",
     input: {
       identity: {
@@ -641,7 +646,7 @@ const TYPED_ON_A_PHONE: Persona[] = [
   },
   {
     id: "TCV-REVIEW13",
-    label: "mécanicien auto confirmé, secteur autre, expérience avec seulement une date de fin",
+    label: "Mécanicien auto confirmé, secteur autre, expérience avec seulement une date de fin",
     product: "pack",
     input: {
       identity: { civility: "M", firstName: "Aliou", lastName: "Cissé", phone: "77 101 20 30", city: "Kaolack" },
@@ -662,7 +667,7 @@ const TYPED_ON_A_PHONE: Persona[] = [
   },
   {
     id: "TCV-REVIEW14",
-    label: "secrétaire de direction senior, tout en MAJUSCULES",
+    label: "Secrétaire de direction senior, tout en MAJUSCULES",
     product: "pack",
     input: {
       identity: {
@@ -691,7 +696,7 @@ const TYPED_ON_A_PHONE: Persona[] = [
   },
   {
     id: "TCV-REVIEW15",
-    label: "chauffeur junior, permis b, pas d'entreprise pour l'expérience",
+    label: "Chauffeur junior, permis b, pas d'entreprise pour l'expérience",
     product: "pack",
     input: {
       identity: { civility: "M", firstName: "modou", lastName: "sarr", phone: "77 321 54 76", city: "mbour" },
@@ -707,7 +712,7 @@ const TYPED_ON_A_PHONE: Persona[] = [
   },
   {
     id: "TCV-REVIEW16",
-    label: "alternance junior, lettre seule, ni formation ni expérience",
+    label: "Alternance junior, lettre seule, ni formation ni expérience",
     product: "lettre",
     input: {
       identity: { civility: "Mme", firstName: "Oumy", lastName: "Kane", phone: "76 543 21 09", city: "Louga" },

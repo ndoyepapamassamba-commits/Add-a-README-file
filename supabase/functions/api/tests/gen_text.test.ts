@@ -20,6 +20,7 @@ import {
   tidy,
   titleCaseName,
   upperName,
+  withArticle,
 } from "../lib/generator/text.ts";
 
 Deno.test("text elision before vowels and mute h, not before aspirated h", () => {
@@ -72,6 +73,12 @@ Deno.test("text contractions with articles: du, des, au, aux, de la, de l'", () 
   assertEquals(auSeinDe("Kirène"), "au sein de Kirène");
   assertEquals(chez("Orange"), "chez Orange");
   assertEquals(chez(" Auchan Sénégal "), "chez Auchan Sénégal");
+  // Institutions known by an acronym starting with a vowel take "l'"; brands do not.
+  assertEquals(withArticle("ISRA"), "l'ISRA");
+  assertEquals(auSeinDe(withArticle("IPRES")), "au sein de l'IPRES");
+  assertEquals(a(withArticle("UCAD")), "à l'UCAD");
+  assertEquals(withArticle("IBM"), "IBM");
+  assertEquals(withArticle("SODAGRI"), "SODAGRI");
 });
 
 Deno.test("text gender helper", () => {
@@ -109,6 +116,12 @@ Deno.test("text in-sentence casing keeps acronyms, brands and place names", () =
   assertEquals(inSentence("CAISSIÈRE PRINCIPALE"), "caissière principale");
   assertEquals(inSentence("Chargé RH"), "chargé RH");
   assertEquals(inSentence("Chauffeur-Livreur"), "chauffeur-livreur");
+  // Text typed in capitals: function words are never left shouting ("secretaire DE direction").
+  assertEquals(inSentence("SECRETAIRE DE DIRECTION"), "secretaire de direction");
+  assertEquals(inSentence("GESTION DE L'AGENDA DU DIRECTEUR"), "gestion de l'agenda du directeur");
+  // A brand typed alone keeps its capital ("compétences en Cisco").
+  assertEquals(inSentence("Cisco"), "Cisco");
+  assertEquals(inSentence("Power BI"), "Power BI");
 });
 
 Deno.test("text French dates", () => {
@@ -151,6 +164,21 @@ Deno.test("text sentence joining and typography", () => {
   assertEquals(joinList(["Word"]), "Word");
   assertEquals(joinList(["Word", "Excel"]), "Word et Excel");
   assertEquals(joinList(["Word", "Excel", "Canva"]), "Word, Excel et Canva");
+  // Never two "et" in a row: the last link becomes "ainsi que" (elided before a vowel).
+  assertEquals(
+    joinList(["diagnostic des pannes", "vidange et entretien", "réparation des freins"]),
+    "diagnostic des pannes, vidange et entretien, ainsi que réparation des freins",
+  );
+  assertEquals(
+    joinList(["collecte et saisie", "animation du réseau"]),
+    "collecte et saisie ainsi qu'animation du réseau",
+  );
+  assertEquals(
+    joinList(["hygiène et asepsie", "soins de base", "prise de constantes"]),
+    "hygiène et asepsie, soins de base et prise de constantes",
+    "an 'et' far from the last link is unambiguous",
+  );
+  assertEquals(joinList(["a", "b et c"], "ou"), "a ou b et c");
   assertEquals(tidy("Bonjour ( ) , le monde ."), "Bonjour, le monde.");
   assertEquals(tidy("Fin.. Vraiment ?."), "Fin. Vraiment ?");
   assertEquals(tidy("A,B"), "A, B");

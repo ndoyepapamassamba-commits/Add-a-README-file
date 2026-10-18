@@ -1,9 +1,18 @@
 // Adversarial review of document access: nobody obtains the full document without a Wave payment that
 // matches the order, and the payment endpoints cannot be turned against the customer or Wave's quota.
 import { assert, assertEquals } from "jsr:@std/assert@1.0.13";
+import { WaveError } from "../lib/types.ts";
 import type { Document, WaveCheckoutSession } from "../lib/types.ts";
 import { checkoutCompletedEvent, signedWebhookRequest } from "../lib/wave.ts";
-import { createCheckout, createOrder, makeHarness, MIN, orderData, RETURN_BASE, WEBHOOK_SECRET } from "./fixtures/backend_harness.ts";
+import {
+  createCheckout,
+  createOrder,
+  makeHarness,
+  MIN,
+  orderData,
+  RETURN_BASE,
+  WEBHOOK_SECRET,
+} from "./fixtures/backend_harness.ts";
 import type { Harness, Json } from "./fixtures/backend_harness.ts";
 
 /** Every string of the full document that the preview is supposed to hide. */
@@ -22,9 +31,14 @@ function leaks(body: Json, doc: Document): string[] {
 }
 
 async function webhook(h: Harness, session: WaveCheckoutSession) {
-  const req = await signedWebhookRequest("http://localhost/functions/v1/api/wave/webhook", WEBHOOK_SECRET, checkoutCompletedEvent(session), {
-    timestamp: Math.floor(h.clock.t / 1000),
-  });
+  const req = await signedWebhookRequest(
+    "http://localhost/functions/v1/api/wave/webhook",
+    WEBHOOK_SECRET,
+    checkoutCompletedEvent(session),
+    {
+      timestamp: Math.floor(h.clock.t / 1000),
+    },
+  );
   return h.app(req);
 }
 
@@ -43,7 +57,10 @@ Deno.test("review access: no unpaid response anywhere carries the hidden text", 
     ["template", await h.call("POST", `/orders/${a.id}/template`, { body: { t: a.token, template: "moderne" } })],
     ["checkout", await h.call("POST", `/orders/${a.id}/checkout`, { body: { t: a.token, returnBase: RETURN_BASE } })],
     ["checkout again", await h.call("POST", `/orders/${a.id}/checkout`, { body: { t: a.token, returnBase: RETURN_BASE } })],
-    ["unlock without key", await h.call("POST", `/admin/orders/${a.id}/unlock`, { headers: { authorization: `Bearer ${a.token}` } })],
+    [
+      "unlock without key",
+      await h.call("POST", `/admin/orders/${a.id}/unlock`, { headers: { authorization: `Bearer ${a.token}` } }),
+    ],
     ["stats with the order token", await h.call("GET", "/admin/stats", { headers: { authorization: `Bearer ${a.token}` } })],
   ];
   // The customer comes back on success_url without having paid (cancelled in the Wave app).
@@ -122,4 +139,33 @@ Deno.test("review quota: hammering GET /orders/:id cannot turn into unbounded Wa
   h.clock.advance(61_000);
   const res = await h.call("GET", `/orders/${id}?t=${token}`);
   assertEquals([res.body.order.status, "document" in res.body], ["paid", true]);
+});
+
+Deno.test("review webhook: a leaked webhook secret alone cannot unlock an order while Wave can be asked", async () => {
+  const h = makeHarness({ env: { WAVE_WEBHOOK_MODE: "shared" } });
+  const { id } = await createCheckout(h, "pack");
+  const forge = (sessionId: string, eventId: string) => {
+    const event = checkoutCompletedEvent({
+      id: sessionId,
+      amount: "1500",
+      currency: "XOF",
+      checkout_status: "complete",
+      payment_status: "succeeded",
+      client_reference: id,
+      transaction_id: "TCN-forged",
+      wave_launch_url: `https://pay.wave.com/c/${sessionId}`,
+    }, eventId);
+    return h.call("POST", "/wave/webhook", {
+      rawBody: JSON.stringify(event),
+      headers: { "content-type": "application/json", authorization: `Bearer ${WEBHOOK_SECRET}` },
+    });
+  };
+  // Wave answers 404 for a session it never created: the payload is a forgery, not a fallback.
+  const invented = await forge("cos-invented", "AE_forged_1");
+  assertEquals([invented.status, invented.body.paid], [200, false]);
+  // Any definitive refusal from Wave (here our key) is not a reason to believe the payload either.
+  h.wave!.failNext("getCheckoutSession", new WaveError("Invalid API key", 401, "missing-auth-header", false));
+  const refused = await forge("cos-invented-2", "AE_forged_2");
+  assertEquals(refused.body.paid, false);
+  assertEquals((await h.store.getOrder(id))!.status, "checkout");
 });

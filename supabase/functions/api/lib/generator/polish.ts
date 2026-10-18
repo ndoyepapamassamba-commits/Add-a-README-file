@@ -40,7 +40,7 @@ const ACCENTED = `
   entrepôt expédition expéditions référent crèche puériculture puéricultrice esthétique esthéticienne couturière
   décoration création édition communauté référencement rôle être méthodique créatif créative réactif réactive
   persévérant persévérante agréable énergique discrète dévoué dévouée accès sénégal thiès guédiawaye kédougou
-  sédhiou mbacké kébémer linguère vélingara médina liberté sérère soninké
+  sédhiou mbacké kébémer linguère vélingara médina liberté sérère soninké baccalauréat clientèle
 `;
 const ACCENT_BY_KEY = buildAccentMap(ACCENTED);
 
@@ -82,17 +82,17 @@ const ACRONYMS = new Set([
 /** Brands and tools written with their usual casing ("whatsapp" → "WhatsApp"). */
 // deno-fmt-ignore
 const BRANDS: Record<string, string> = Object.fromEntries([
-  "Word", "Excel", "PowerPoint", "Outlook", "Internet", "Gmail", "Canva", "Photoshop", "Illustrator", "InDesign",
+  "Word", "Excel", "PowerPoint", "Outlook", "Gmail", "Canva", "Photoshop", "Illustrator", "InDesign",
   "CapCut", "Lightroom", "Odoo", "QuickBooks", "AutoCAD", "ArchiCAD", "Revit", "SketchUp", "WordPress", "Facebook",
   "Instagram", "LinkedIn", "WhatsApp", "TikTok", "Twitter", "YouTube", "Snapchat", "Google", "Windows", "Linux",
   "Ubuntu", "Android", "iOS", "Python", "Java", "JavaScript", "MySQL", "Git", "GitHub", "Cisco", "Oracle", "Senjob",
   "Expat-Dakar", "Wave",
 ].map((b) => [b.toLocaleLowerCase("fr"), b]));
 
-/** Software names that are also French words ("sage", "ciel"): recognised in the IT list only. */
+/** Tool names that are also ordinary words ("sage", "ciel", "site internet"): recognised in the IT list only. */
 // deno-fmt-ignore
 const IT_ONLY_BRANDS: Record<string, string> = Object.fromEntries([
-  "Sage", "Ciel", "Access", "Publisher", "Office", "Zoom", "Teams",
+  "Sage", "Ciel", "Access", "Publisher", "Office", "Zoom", "Teams", "Internet",
 ].map((b) => [b.toLocaleLowerCase("fr"), b]));
 
 /** Multi-word spellings fixed before word-level corrections (hyphens of compound nouns, names). */
@@ -267,7 +267,10 @@ export function polishRecipient(raw: string): string {
 /** "Chargé de clientèle" agreed with the civility when the title opens with "charge(e) de". */
 function agreeChargeDe(title: string, civility: Civility): string {
   const g = genderOf(civility);
-  return title.replace(/^(c)harg(?:é|e)e?(?=\s+(?:de|d['’]|du|des)\b)/iu, (_m, c: string) => `${c}${g("hargé", "hargée")}`);
+  return title.replace(
+    /^(c)harg(?:é|e)e?(?=\s+(?:de|d['’]|du|des)\b)/iu,
+    (_m, c: string) => `${c}${g("hargé", "hargée")}`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -311,7 +314,10 @@ function polishDegreeName(raw: string): string {
       (_m, word: string, sp: string, serie: string) => `${word}${sp}${serie.toLocaleUpperCase("fr")}`,
     )
     .replace(/\bserie\b/giu, (m) => caseLike(m, "série"))
-    .replace(/\b(permis)(\s+)([a-e]\d?)\b/giu, (_m, word: string, sp: string, cat: string) => `${word}${sp}${cat.toUpperCase()}`);
+    .replace(
+      /\b(permis)(\s+)([a-e]\d?)\b/giu,
+      (_m, word: string, sp: string, cat: string) => `${word}${sp}${cat.toUpperCase()}`,
+    );
 }
 
 function polishEducation(e: OrderInput["education"][number]): OrderInput["education"][number] {

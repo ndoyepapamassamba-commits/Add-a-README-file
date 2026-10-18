@@ -29,6 +29,7 @@ import {
   SECTOR_CONTEXT,
   SECTORS,
 } from "../lib/generator/banks.ts";
+import { polishName } from "../lib/generator/polish.ts";
 import { validateOrderRequest } from "../lib/validate.ts";
 import { randomInput } from "./gen_inputs.test.ts";
 
@@ -83,17 +84,19 @@ function assertNoInventedDigits(doc: Document, input: OrderInput, ctx: string) {
   }
 }
 
-/** Capitalised words that do not start a sentence must come from the input (no invented names). */
+/**
+ * Capitalised words that do not start a sentence must come from the input (no invented names). Compared
+ * without accents: the generator restores accents the customer did not type ("hopital" → "Hôpital").
+ */
 const BANK_PROPER_WORDS = new Set(["madame", "monsieur", "responsable", "ressources", "humaines"]);
+const foldWord = (w: string) => w.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
 function assertNoInventedNames(doc: Document, input: OrderInput, ctx: string) {
-  const known = new Set(
-    (JSON.stringify(input).match(/\p{L}[\p{L}'’-]*/gu) ?? []).map((w) => w.toLocaleLowerCase("fr")),
-  );
+  const known = new Set((JSON.stringify(input).match(/\p{L}[\p{L}'’-]*/gu) ?? []).map(foldWord));
   for (const [path, s] of strings(doc)) {
     for (const sentence of s.split(/(?<=[.!?:;—])\s+/)) {
       for (const w of (sentence.match(/\p{L}[\p{L}'’-]*/gu) ?? []).slice(1)) {
         if (!/^\p{Lu}/u.test(w)) continue;
-        const key = w.toLocaleLowerCase("fr");
+        const key = foldWord(w);
         const bare = key.replace(/^\p{L}['’]/u, "");
         assert(
           known.has(key) || known.has(bare) || BANK_PROPER_WORDS.has(key),
@@ -176,7 +179,7 @@ Deno.test("gen fuzz: 240 random orders satisfy every invariant", () => {
       assert(CLOSINGS.includes(l.closing), ctx);
       assertMatch(l.placeDate, /^\p{Lu}.*, le (1er|[12]?\d|3[01]) [a-zéû]+ \d{4}$/u, ctx);
       assertEquals(l.signature, l.sender[0], ctx);
-      assertEquals(l.recipient[1], input.letter!.company, ctx);
+      assertEquals(l.recipient[1], polishName(input.letter!.company), ctx);
     }
   }
 });
@@ -289,6 +292,8 @@ const MASCULINE = [
   "persuadé",
   "attaché",
   "habitué",
+  "Habitué",
+  "initié",
 ];
 const FEMININE = [
   "motivée",
@@ -324,6 +329,8 @@ const FEMININE = [
   "persuadée",
   "attachée",
   "habituée",
+  "Habituée",
+  "initiée",
 ];
 
 function genderInputs(): OrderInput[] {
@@ -494,7 +501,8 @@ Deno.test("gen lettre: source phrasing, qualities, motivation", () => {
     "lettre",
     { seed: "M", now: NOW },
   ).lettre!.paragraphs[2];
-  assert(motivated.includes("Votre entreprise est une référence au Sénégal et je veux apprendre."), motivated);
+  // The customer's words are kept; only the informal "je veux" is lifted to the register of a letter.
+  assert(motivated.includes("Votre entreprise est une référence au Sénégal et je souhaite apprendre."), motivated);
 });
 
 Deno.test("gen lettre layout: subject per kind, recipient, sender, date", () => {

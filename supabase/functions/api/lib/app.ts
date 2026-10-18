@@ -319,7 +319,15 @@ const waveWebhook: Handler = async (deps, req) => {
     try {
       session = await withDeadline(deps.wave.getCheckoutSession(ref), WEBHOOK_REFETCH_TIMEOUT_MS);
     } catch (err) {
-      log.warn(`webhook ${event.id}: re-fetch failed, using the signed payload`, err instanceof WaveError ? err.code : err);
+      // Only an unreachable Wave (timeout, network, 429, 5xx) justifies trusting the payload alone. A definitive
+      // answer such as 404 for a session Wave never created means the event cannot be confirmed: reconcile
+      // and the result page will still pick up a genuine payment.
+      if (!(err instanceof WaveError && err.retryable)) {
+        const reason = err instanceof WaveError ? err.code : err;
+        log.warn(`webhook ${event.id}: Wave refused the re-fetch, payload not trusted`, reason);
+        return json(200, { ok: true, paid: false });
+      }
+      log.warn(`webhook ${event.id}: re-fetch failed, using the signed payload`, err.code);
     }
   }
   const { confirmed } = await confirmPayment(deps, order, session);

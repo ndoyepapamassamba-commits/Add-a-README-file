@@ -5,7 +5,9 @@
 --   on conflict (key) do update set value = excluded.value, updated_at = now();
 
 create extension if not exists pg_cron with schema pg_catalog;
-create extension if not exists pg_net;
+-- Its functions live in schema net either way; registering it in extensions keeps public free of extensions
+-- (Supabase security advisor 0014). On a project where it already sits in public this line is a no-op.
+create extension if not exists pg_net with schema extensions;
 
 grant usage on schema cron to postgres;
 grant all privileges on all tables in schema cron to postgres;

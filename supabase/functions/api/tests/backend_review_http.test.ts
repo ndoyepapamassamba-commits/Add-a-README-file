@@ -17,7 +17,10 @@ import { makeHarness, orderBody } from "./fixtures/backend_harness.ts";
 const req = (headers: Record<string, string>) => new Request("https://x.test/api/health", { headers });
 
 Deno.test("review clientIp: trusts cf-connecting-ip, then x-real-ip, never the client-controlled x-forwarded-for", () => {
-  assertEquals(clientIp(req({ "cf-connecting-ip": "41.82.1.1", "x-real-ip": "10.0.0.1", "x-forwarded-for": "1.1.1.1" })), "41.82.1.1");
+  assertEquals(
+    clientIp(req({ "cf-connecting-ip": "41.82.1.1", "x-real-ip": "10.0.0.1", "x-forwarded-for": "1.1.1.1" })),
+    "41.82.1.1",
+  );
   assertEquals(clientIp(req({ "x-real-ip": "41.82.1.2", "x-forwarded-for": "1.1.1.1, 41.82.1.2" })), "41.82.1.2");
   assertEquals(clientIp(req({ "x-forwarded-for": "1.1.1.1" })), "unknown");
   assertEquals(clientIp(req({})), "unknown");
@@ -26,11 +29,13 @@ Deno.test("review clientIp: trusts cf-connecting-ip, then x-real-ip, never the c
 Deno.test("review rate limit: rotating X-Forwarded-For does not buy more previews", async () => {
   const h = makeHarness({ env: { PREVIEW_RATE_LIMIT_PER_HOUR: "3" } });
   const post = (headers: Record<string, string>) =>
-    h.app(new Request("https://x.test/functions/v1/api/orders", {
-      method: "POST",
-      headers: { "content-type": "application/json", ...headers },
-      body: JSON.stringify(orderBody("cv")),
-    }));
+    h.app(
+      new Request("https://x.test/functions/v1/api/orders", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...headers },
+        body: JSON.stringify(orderBody("cv")),
+      }),
+    );
   const behindCloudflare = [] as number[];
   const noTrustedHeader = [] as number[];
   for (let i = 0; i < 5; i++) {
@@ -83,7 +88,11 @@ Deno.test("review Wave errors: all three documented body shapes keep their error
   const stringCode = waveErrorFromResponse(400, '{"error":"request-validation-error","message":"Invalid phone number."}');
   assertEquals([flat.code, flat.message, flat.retryable], ["request-validation-error", "Request invalid", false]);
   assertEquals([nested.code, nested.message], ["ip-not-allowed", "Not in allowlist"]);
-  assertEquals([stringCode.code, stringCode.message, stringCode.status], ["request-validation-error", "Invalid phone number.", 400]);
+  assertEquals([stringCode.code, stringCode.message, stringCode.status], [
+    "request-validation-error",
+    "Invalid phone number.",
+    400,
+  ]);
   assertEquals(waveErrorFromResponse(502, "<html>Bad gateway</html>").code, "http_502");
 });
 

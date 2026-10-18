@@ -69,7 +69,12 @@ const daily = (h: Harness) => h.call("POST", "/cron/daily", { headers: { "x-cron
 
 function scenario(name: string, fn: (makeStore: () => Promise<Store>) => Promise<void>, stores = STORES.slice(0, 2)) {
   for (const [storeName, makeStore] of stores) {
-    Deno.test({ name: `review payout [${storeName}] ${name}`, sanitizeOps: false, sanitizeResources: false, fn: () => fn(makeStore) });
+    Deno.test({
+      name: `review payout [${storeName}] ${name}`,
+      sanitizeOps: false,
+      sanitizeResources: false,
+      fn: () => fn(makeStore),
+    });
   }
 }
 
@@ -109,7 +114,7 @@ scenario("idempotency-mismatch never fails a payout, whatever HTTP status Wave u
   }
 });
 
-scenario("Wave's {error: \"<code>\"} body shape is understood end to end", async (makeStore) => {
+scenario('Wave\'s {error: "<code>"} body shape is understood end to end', async (makeStore) => {
   const clock = new Clock(EVENING);
   const store = await makeStore();
   const order = await insertPaid(store, { amount: 5000, paidAt: "2026-10-18T09:00:00.000Z" });
@@ -223,7 +228,12 @@ scenario("a succeeded or failed payout is final in the store", async (makeStore)
   assertEquals(await store.listUnsettledPayouts(), []);
 
   const o2 = await insertPaid(store, { amount: 5000 });
-  const lost = await store.createPayout({ ...args, day: "2026-10-19", id: "PO-20261019", idempotencyKey: "teranga-cv-PO-20261019" });
+  const lost = await store.createPayout({
+    ...args,
+    day: "2026-10-19",
+    id: "PO-20261019",
+    idempotencyKey: "teranga-cv-PO-20261019",
+  });
   assert(lost);
   await store.failPayout(lost.id, "insufficient-funds", "2026-10-19T20:30:00.000Z");
   assertEquals((await store.getOrder(o2.id))?.payout_id, null);

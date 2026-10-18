@@ -202,8 +202,8 @@ export const SECTORS: Record<Sector, { label: string; domain: string; skills: st
   },
 };
 
-/** What any experience develops, used when the latest job is outside the target trade. */
-export const NEUTRAL_GAIN = "le sens des responsabilités et une réelle capacité d'adaptation";
+/** What any experience develops, used when the latest job is outside the target trade (names no QUALITIES label). */
+export const NEUTRAL_GAIN = "le sens des responsabilités et une bonne connaissance du monde professionnel";
 
 /**
  * Sector colour for the letters. practice: what a trainee discovers ("découvrir concrètement …");
@@ -314,6 +314,22 @@ export const QUALITIES: Array<{ label: string; phrase: (g: Gender) => string }> 
   { label: "Créativité", phrase: (g) => `${g("créatif", "créative")} dans la recherche de solutions` },
   { label: "Résistance au stress", phrase: (g) => `${g("résistant", "résistante")} au stress` },
 ];
+
+/** Words showing that a text already states a quality: a default quality is not added on top of it. */
+export const QUALITY_STEMS: Record<string, RegExp> = {
+  "Rigueur": /rigu/i,
+  "Sens de l'organisation": /organis/i,
+  "Esprit d'équipe": /équipe/i,
+  "Ponctualité": /ponctu/i,
+  "Sens du contact": /contact/i,
+  "Autonomie": /autonom/i,
+  "Capacité d'adaptation": /adapt/i,
+  "Dynamisme": /dynami/i,
+  "Honnêteté": /honnêt/i,
+  "Discrétion": /discr[eè]|confidenti/i,
+  "Créativité": /créati/i,
+  "Résistance au stress": /stress/i,
+};
 
 /** Typed variants recognised as one of the QUALITIES (keys folded: lower-case, no accents). */
 // deno-fmt-ignore
@@ -432,11 +448,9 @@ export const PROFILE_INTRO: Record<Level, Variant[]> = {
       !c.degree && !c.hasJob &&
       `${c.g("Motivé", "Motivée")} et volontaire, je souhaite démarrer ma carrière dans ${c.domain}`,
     (c) =>
-      !c.degree && c.hasJob &&
-      `Déjà ${c.g("initié", "initiée")} aux réalités du terrain, je souhaite progresser dans ${c.domain}`,
+      c.hasJob && `Déjà ${c.g("initié", "initiée")} aux réalités du terrain, je souhaite progresser dans ${c.domain}`,
     (c) =>
-      !c.degree && c.hasJob &&
-      `${c.g("Motivé", "Motivée")} et volontaire, je souhaite poursuivre mon parcours dans ${c.domain}`,
+      c.hasJob && `${c.g("Motivé", "Motivée")} et volontaire, je souhaite poursuivre mon parcours dans ${c.domain}`,
   ],
   junior: [
     (c) =>
@@ -483,7 +497,9 @@ export const PROFILE_INTRO: Record<Level, Variant[]> = {
       }, je justifie d'un parcours riche dans ${c.domain}`,
     (c) =>
       `Riche de nombreuses années d'expérience dans ${c.domain}, ${
-        domainIsTrade(c) ? "j'en ai acquis une vision globale" : `j'ai acquis une vision globale du métier ${de(c.role)}`
+        domainIsTrade(c)
+          ? "j'en ai acquis une vision globale"
+          : `j'ai acquis une vision globale du métier ${de(c.role)}`
       }`,
     (c) =>
       `${
@@ -504,7 +520,9 @@ export const PROFILE_EXPERIENCE: Variant[] = [
       return `${subject} ${verb} de développer ${c.skills.length ? `des compétences en ${skillList(c)}` : c.expGain}`;
     }
     return c.skills.length
-      ? `${subject} ${verb} ${c.exp.current ? "de mettre à profit" : "d'approfondir"} mes compétences en ${skillList(c)}`
+      ? `${subject} ${verb} ${c.exp.current ? "de mettre à profit" : "d'approfondir"} mes compétences en ${
+        skillList(c)
+      }`
       : `${subject} ${verb} d'affirmer ${c.expGain}`;
   },
 ];
@@ -796,11 +814,11 @@ export const LETTRE_BACKGROUND: Variant[] = [
   },
   (c) => `Mon parcours dans ${c.domain} m'a permis de développer ${c.gain}`,
   (c) =>
-    `Au fil de mon parcours dans ${c.domain}, j'ai appris à travailler avec rigueur et à m'adapter aux exigences du terrain`,
+    `Au fil de mon parcours dans ${c.domain}, j'ai appris à faire preuve de rigueur et à m'adapter aux exigences du terrain`,
   (c) =>
-    `Je suis ${
-      c.g("habitué", "habituée")
-    } à travailler en autonomie comme en équipe, dans le respect des consignes et des délais`,
+    `${
+      c.g("Habitué", "Habituée")
+    } à travailler en autonomie comme en équipe, je veille au respect des consignes et des délais`,
 ];
 
 /** IT tools in brackets: " (Word, Excel, Sage)". */
@@ -940,5 +958,6 @@ export const REPEAT_STEMS = [
   "m'investir", "exigence", "vif intérêt", "environnement", "au contact", "aux côtés", "mon objectif", "compétences",
   "réelle", "permis de développer", "permet de développer", "j'ai l'honneur", "je me permets",
   "rapidement opérationnel", "par ailleurs", "au sein", "aujourd'hui", "mon parcours dans", "votre structure",
-  "à l'aise", "ce domaine", "je souhaite", "expérience", "savoir-faire", "consolid", "affirmer",
+  "à l'aise", "ce domaine", "je souhaite", "expérience", "savoir-faire", "consolid", "affirmer", "travailler",
+  "je suis",
 ];

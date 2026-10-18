@@ -33,6 +33,7 @@ import {
   QUALITIES,
   QUALITY_ADJECTIVES,
   QUALITY_ALIASES,
+  QUALITY_STEMS,
   REPEAT_STEMS,
   SALUTATION,
   SECTOR_CONTEXT,
@@ -519,9 +520,15 @@ function isAdjective(text: string): boolean {
 
 /**
  * Known labels and typed adjectives become "Je suis …" phrases (adjectives agreed with the civility);
- * other typed qualities are nouns for "Je fais preuve de …". Topped up to two from the sector defaults.
+ * other typed qualities are nouns for "Je fais preuve de …". Topped up to two from the sector defaults,
+ * skipping any default the letter already states (`written`: "travailler avec rigueur" ⇒ no "Rigueur").
  */
-function resolveQualities(typed: string[], c: Ctx, picker: Picker): { phrases: string[]; others: string[] } {
+function resolveQualities(
+  typed: string[],
+  c: Ctx,
+  picker: Picker,
+  written: string,
+): { phrases: string[]; others: string[] } {
   const labels: string[] = [];
   const adjectives: string[] = [];
   const others: string[] = [];
@@ -541,7 +548,7 @@ function resolveQualities(typed: string[], c: Ctx, picker: Picker): { phrases: s
   }
   for (const label of picker.shuffle("qualities", DEFAULT_QUALITIES[c.sector])) {
     if (labels.length + adjectives.length + others.length >= 2) break;
-    if (!labels.includes(label)) labels.push(label);
+    if (!labels.includes(label) && !QUALITY_STEMS[label].test(written)) labels.push(label);
   }
   const phrases = [...labels.map((l) => QUALITY_BY_KEY.get(qualityKey(l))!.phrase(c.g)), ...adjectives].slice(0, 4);
   return { phrases, others: others.slice(0, Math.max(0, 4 - phrases.length)) };
@@ -582,12 +589,15 @@ function buildParagraphs(input: OrderInput, c: Ctx, picker: Picker): string[] {
   }
   const p2 = joinSentences(p2Parts);
 
-  const { phrases, others } = resolveQualities(input.letter?.qualities ?? [], c, picker);
   const skillsSentence = c.skills.length > 0
     ? w.pick("p3.skills", LETTRE_SKILLS)
     : c.it.length > 0 && w.pick("p3.it", LETTRE_IT);
+  const written = [p1, p2, skillsSentence || "", motivation].join(" ");
+  const { phrases, others } = resolveQualities(input.letter?.qualities ?? [], c, picker, written);
   // "Je suis par ailleurs…" needs a sentence before it; without one the qualities open the paragraph.
-  const qualityIntros = skillsSentence ? [...LETTRE_QUALITIES, ...LETTRE_QUALITIES_AFTER] : LETTRE_QUALITIES;
+  // Nor does a sentence open with "Je suis" right after one that already says "je suis".
+  const qualityIntros = (skillsSentence ? [...LETTRE_QUALITIES, ...LETTRE_QUALITIES_AFTER] : LETTRE_QUALITIES)
+    .filter((intro) => !(skillsSentence && /\bje suis\b/i.test(skillsSentence) && /^Je suis/.test(intro(""))));
   const p3 = joinSentences([
     skillsSentence,
     phrases.length > 0 && w.choose("p3.qualities", qualityIntros.map((intro) => intro(joinList(phrases)))),
