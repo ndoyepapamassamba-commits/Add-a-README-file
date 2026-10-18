@@ -278,3 +278,29 @@ export function validateOrderRequest(body: unknown): ValidationResult {
   if (Object.keys(c.fields).length) return { ok: false, fields: c.fields };
   return { ok: true, product, template, data };
 }
+
+const RETURN_BASE_CHARS = /^[A-Za-z0-9._~\-\/:%]+$/;
+
+/**
+ * Checkout return base: absolute URL in canonical form (no query, fragment, credentials or dot segments),
+ * https except http://localhost when a dev prefix allows it, starting with one of `prefixes`.
+ * Returns it without trailing "/", or null when refused.
+ */
+export function normalizeReturnBase(value: unknown, prefixes: readonly string[]): string | null {
+  if (typeof value !== "string") return null;
+  const raw = value.trim();
+  if (!raw || raw.length > 300 || !RETURN_BASE_CHARS.test(raw)) return null;
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  const localDev = url.protocol === "http:" && (url.hostname === "localhost" || url.hostname === "127.0.0.1");
+  if (url.protocol !== "https:" && !localDev) return null;
+  if (url.username || url.password || url.search || url.hash) return null;
+  const base = raw.replace(/\/+$/, "");
+  if ((url.origin + url.pathname).replace(/\/+$/, "") !== base) return null;
+  const withSlash = base + "/";
+  return prefixes.some((p) => withSlash.startsWith(p)) ? base : null;
+}

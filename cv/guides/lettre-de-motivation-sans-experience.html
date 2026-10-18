@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -34,7 +34,60 @@
 }
 </script>
 <style>
-/*@@CSS@@*/
+:root{--bg:#f7f7f4;--surface:#fff;--text:#1d2420;--muted:#59635e;--line:#dfe3de;--brand:#0b6e4f;--brand-ink:#fff;--brand-soft:#e7f3ee;--accent-soft:#fff5d1;--warn-soft:#fdecea;--radius:12px}
+@media (prefers-color-scheme:dark){:root{--bg:#111513;--surface:#1a1f1c;--text:#e8ece9;--muted:#a4aea8;--line:#2f3732;--brand:#45c493;--brand-ink:#08130e;--brand-soft:#16302566;--accent-soft:#2b2616;--warn-soft:#331d1b}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;overflow-wrap:break-word}
+a{color:var(--brand)}
+.top{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{font-weight:800;font-size:18px;text-decoration:none;color:var(--text)}
+.brand b{color:var(--brand)}
+.top-cta{font-size:15px;font-weight:700;text-decoration:none;color:var(--brand-ink);background:var(--brand);padding:8px 14px;border-radius:999px;white-space:nowrap}
+main{max-width:720px;margin:0 auto;padding:12px 16px 32px}
+.crumbs{font-size:14px;color:var(--muted);margin-top:4px}
+.crumbs a{color:var(--muted)}
+h1{font-size:1.7rem;line-height:1.25;margin:.4em 0 .4em}
+h2{font-size:1.32rem;line-height:1.3;margin:2em 0 .5em}
+h3{font-size:1.08rem;line-height:1.35;margin:1.4em 0 .4em}
+.lead{font-size:1.1rem}
+.meta{font-size:14px;color:var(--muted)}
+ul,ol{padding-left:1.3em}
+li{margin:.35em 0}
+.toc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;margin:1.2em 0}
+.toc strong{display:block}
+.toc ol{margin:.4em 0 0}
+.example{background:var(--surface);border-left:4px solid var(--brand);border-radius:0 var(--radius) var(--radius) 0;padding:12px 16px;margin:1em 0}
+.example p{margin:.4em 0}
+.label{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--brand)}
+.tip{background:var(--accent-soft);border-radius:var(--radius);padding:12px 16px;margin:1em 0}
+.warn{background:var(--warn-soft);border-radius:var(--radius);padding:12px 16px;margin:1em 0}
+.table-wrap{overflow-x:auto;margin:1em 0}
+table{width:100%;border-collapse:collapse;font-size:15px;background:var(--surface)}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-size:14px}
+.doc{background:#fff;color:#1d2420;border:1px solid #d5dad5;border-radius:var(--radius);padding:18px 16px;margin:1em 0;font-size:15px;line-height:1.5;box-shadow:0 2px 10px #0000000f}
+.doc .doc-name{font-size:1.3rem;font-weight:800;margin:0}
+.doc .doc-title{color:#0b6e4f;font-weight:700;margin:0 0 .4em}
+.doc .doc-contact{font-size:14px;color:#4a524d;margin:0 0 .6em}
+.doc h4{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#0b6e4f;border-bottom:1px solid #d5dad5;margin:1em 0 .4em;padding-bottom:2px}
+.doc p,.doc ul{margin:.3em 0}
+.doc .stamp{display:inline-block;font-size:12px;font-weight:700;color:#8a5a00;background:#fff2c6;border-radius:6px;padding:2px 8px;margin-bottom:8px}
+.cta{background:var(--brand-soft);border:1px solid var(--brand);border-radius:var(--radius);padding:16px;margin:2em 0;text-align:center}
+.cta p{margin:.2em 0 .8em}
+.btn{display:inline-block;background:var(--brand);color:var(--brand-ink);font-weight:800;text-decoration:none;padding:13px 20px;border-radius:999px;line-height:1.3;max-width:100%}
+.btn:focus-visible,.top-cta:focus-visible{outline:3px solid var(--text);outline-offset:2px}
+.small{font-size:14px;color:var(--muted)}
+details{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px;margin:.6em 0}
+summary{font-weight:700;cursor:pointer}
+.related{border-top:1px solid var(--line);margin-top:2.5em;padding-top:1em}
+.related ul{list-style:none;padding:0}
+.related li{margin:.6em 0}
+footer{max-width:720px;margin:0 auto;padding:16px 16px 40px;font-size:14px;color:var(--muted)}
+@media (min-width:720px){h1{font-size:2.2rem}main{padding-top:20px}}
+@media print{.top,.cta,.related,footer{display:none}body{background:#fff;color:#000}}
+.doc .right{text-align:right}
+.checklist{list-style:none;padding-left:0}
 </style>
 </head>
 <body>
@@ -45,8 +98,8 @@
 <main>
 <article>
   <nav class="crumbs" aria-label="Fil d'Ariane"><a href="../index.html">Accueil</a> › Guides › Lettre sans expérience</nav>
-  <h1>Lettre de motivation sans expérience : comment convaincre quand on débute</h1>
-  <p class="lead">Tout le monde a commencé un jour sans expérience, et l'employeur le sait. Ce qu'il cherche dans votre lettre, ce sont des signes : du sérieux, une vraie envie de faire ce travail, la capacité d'apprendre vite. Ce guide vous montre comment prouver tout cela avec ce que vous avez déjà vécu, même si vous n'avez jamais eu de contrat.</p>
+  <h1>Lettre de motivation sans expérience : comment convaincre quand on débute</h1>
+  <p class="lead">Tout le monde a commencé un jour sans expérience, et l'employeur le sait. Ce qu'il cherche dans votre lettre, ce sont des signes : du sérieux, une vraie envie de faire ce travail, la capacité d'apprendre vite. Ce guide vous montre comment prouver tout cela avec ce que vous avez déjà vécu, même si vous n'avez jamais eu de contrat.</p>
   <p class="meta">Guide pratique · Mis à jour le 18 octobre 2026</p>
 
   <nav class="toc" aria-label="Sommaire">
@@ -64,20 +117,20 @@
   </nav>
 
   <h2 id="attentes">1. Ce que l'employeur cherche chez un débutant</h2>
-  <p>Quand un recruteur lit la lettre d'un candidat sans expérience, il ne cherche pas un expert. Il se pose quatre questions simples :</p>
+  <p>Quand un recruteur lit la lettre d'un candidat sans expérience, il ne cherche pas un expert. Il se pose quatre questions simples :</p>
   <ul>
-    <li><strong>Est-ce que cette personne est fiable ?</strong> Viendra-t-elle à l'heure, tous les jours, et fera-t-elle ce qu'on lui demande ?</li>
-    <li><strong>Est-ce qu'elle veut vraiment ce poste ?</strong> Ou envoie-t-elle la même lettre partout ?</li>
-    <li><strong>Est-ce qu'elle apprend vite ?</strong> Pourra-t-on la former sans y passer des mois ?</li>
-    <li><strong>Est-ce qu'elle sait se comporter ?</strong> Politesse, présentation, respect des clients et des collègues.</li>
+    <li><strong>Est-ce que cette personne est fiable ?</strong> Viendra-t-elle à l'heure, tous les jours, et fera-t-elle ce qu'on lui demande ?</li>
+    <li><strong>Est-ce qu'elle veut vraiment ce poste ?</strong> Ou envoie-t-elle la même lettre partout ?</li>
+    <li><strong>Est-ce qu'elle apprend vite ?</strong> Pourra-t-on la former sans y passer des mois ?</li>
+    <li><strong>Est-ce qu'elle sait se comporter ?</strong> Politesse, présentation, respect des clients et des collègues.</li>
   </ul>
-  <p>Votre lettre doit répondre « oui » à ces quatre questions, avec des exemples. C'est tout à fait possible sans avoir jamais travaillé dans une entreprise.</p>
+  <p>Votre lettre doit répondre « oui » à ces quatre questions, avec des exemples. C'est tout à fait possible sans avoir jamais travaillé dans une entreprise.</p>
 
   <h2 id="inventaire">2. L'inventaire de ce que vous avez déjà</h2>
-  <p>Prenez une feuille et listez tout ce que vous avez fait ces dernières années, sans juger si c'est « assez bien ». Vous serez surpris. Voici ce qui compte vraiment :</p>
+  <p>Prenez une feuille et listez tout ce que vous avez fait ces dernières années, sans juger si c'est « assez bien ». Vous serez surpris. Voici ce qui compte vraiment :</p>
   <div class="table-wrap">
   <table>
-    <thead><tr><th>Ce que vous avez fait</th><th>Ce que cela prouve</th></tr></thead>
+    <thead><tr><th scope="col">Ce que vous avez fait</th><th scope="col">Ce que cela prouve</th></tr></thead>
     <tbody>
       <tr><td>Votre formation (BAC, BTS, licence, formation professionnelle) et ses projets, exposés ou mémoire</td><td>Connaissances de base, capacité à finir ce qu'on commence, travail en groupe</td></tr>
       <tr><td>Un stage, même d'une semaine ou d'observation</td><td>Vous connaissez déjà le monde du travail et ses règles</td></tr>
@@ -90,120 +143,120 @@
     </tbody>
   </table>
   </div>
-  <p>Choisissez les deux ou trois éléments les plus proches du poste visé. Ce sont eux qui iront dans votre lettre. Pensez aussi à les faire apparaître sur votre CV : notre guide <a href="cv-premier-emploi.html">CV pour un premier emploi</a> explique comment.</p>
+  <p>Choisissez les deux ou trois éléments les plus proches du poste visé. Ce sont eux qui iront dans votre lettre. Pensez aussi à les faire apparaître sur votre CV : notre guide <a href="cv-premier-emploi.html">CV pour un premier emploi</a> explique comment.</p>
 
   <h2 id="preuves">3. Des qualités prouvées, pas seulement annoncées</h2>
-  <p>« Je suis sérieux, dynamique et motivé » : toutes les lettres disent la même chose. Pour sortir du lot, utilisez une méthode simple en trois temps : <strong>la qualité, l'exemple, le résultat</strong>.</p>
+  <p>« Je suis sérieux, dynamique et motivé » : toutes les lettres disent la même chose. Pour sortir du lot, utilisez une méthode simple en trois temps : <strong>la qualité, l'exemple, le résultat</strong>.</p>
   <div class="example">
     <span class="label">Au lieu de</span>
-    <p>« Je suis organisée. »</p>
+    <p>« Je suis organisée. »</p>
     <span class="label">Écrivez</span>
-    <p>« Trésorière de l'association des étudiants de ma promotion, j'ai tenu le cahier des cotisations pendant un an, sans aucune erreur lors du contrôle de fin d'année. »</p>
+    <p>« Trésorière de l'association des étudiants de ma promotion, j'ai tenu le cahier des cotisations pendant un an, sans aucune erreur lors du contrôle de fin d'année. »</p>
   </div>
   <div class="example">
     <span class="label">Au lieu de</span>
-    <p>« J'ai le sens du contact. »</p>
+    <p>« J'ai le sens du contact. »</p>
     <span class="label">Écrivez</span>
-    <p>« Chaque été, je tiens la boutique familiale à Mbour : j'y accueille les clients en wolof et en français, et j'ai appris à garder le sourire même aux heures les plus chargées. »</p>
+    <p>« Chaque été, je tiens la boutique familiale à Mbour : j'y accueille les clients en wolof et en français, et j'ai appris à garder le sourire même aux heures les plus chargées. »</p>
   </div>
-  <p>Un seul exemple vrai et précis vaut mieux que cinq adjectifs. Et n'inventez rien : en entretien, on vous posera des questions sur ce que vous avez écrit.</p>
+  <p>Un seul exemple vrai et précis vaut mieux que cinq adjectifs. Et n'inventez rien : en entretien, on vous posera des questions sur ce que vous avez écrit.</p>
 
   <div class="cta">
-    <p><strong>Vous avez les idées mais pas les mots ?</strong> Teranga CV transforme vos informations en une lettre claire et professionnelle, sans rien inventer. Aperçu gratuit avant de payer.</p>
+    <p><strong>Vous avez les idées mais pas les mots ?</strong> Teranga CV transforme vos informations en une lettre claire et professionnelle, sans rien inventer. Aperçu gratuit avant de payer.</p>
     <a class="btn" href="../index.html">Créer mon CV maintenant — aperçu gratuit</a>
   </div>
 
   <h2 id="structure">4. La structure de la lettre</h2>
-  <p>Une page, quatre paragraphes courts, après vos coordonnées, celles de l'entreprise, le lieu et la date, l'objet (« Objet : Candidature au poste de conseillère clientèle ») et « Madame, Monsieur, ».</p>
+  <p>Une page, quatre paragraphes courts, après vos coordonnées, celles de l'entreprise, le lieu et la date, l'objet (« Objet : Candidature au poste de conseillère clientèle ») et « Madame, Monsieur, ».</p>
   <ol>
-    <li><strong>Votre candidature</strong> : le poste, l'entreprise, comment vous avez connu l'offre.</li>
-    <li><strong>Votre parcours</strong> : votre formation et les deux ou trois éléments de votre inventaire, avec leurs preuves.</li>
-    <li><strong>Ce que vous apportez</strong> : vos qualités utiles pour ce poste, et pourquoi cette entreprise vous intéresse.</li>
-    <li><strong>La suite</strong> : vos disponibilités et la demande d'entretien.</li>
+    <li><strong>Votre candidature</strong> : le poste, l'entreprise, comment vous avez connu l'offre.</li>
+    <li><strong>Votre parcours</strong> : votre formation et les deux ou trois éléments de votre inventaire, avec leurs preuves.</li>
+    <li><strong>Ce que vous apportez</strong> : vos qualités utiles pour ce poste, et pourquoi cette entreprise vous intéresse.</li>
+    <li><strong>La suite</strong> : vos disponibilités et la demande d'entretien.</li>
   </ol>
-  <p>Chaque partie est détaillée, avec la mise en page complète, dans notre guide <a href="lettre-de-motivation-stage.html">lettre de motivation pour un stage</a> : la structure est la même pour un emploi.</p>
+  <p>Chaque partie est détaillée, avec la mise en page complète, dans notre guide <a href="lettre-de-motivation-stage.html">lettre de motivation pour un stage</a> : la structure est la même pour un emploi.</p>
 
   <h2 id="phrases">5. Phrases utiles et phrases à éviter</h2>
   <h3>Pour commencer</h3>
   <ul>
-    <li>« Récemment diplômée d'un BTS en commerce, je vous adresse ma candidature au poste de vendeuse publié sur votre page Facebook. »</li>
-    <li>« Titulaire du baccalauréat et d'un certificat en bureautique, je souhaite rejoindre votre entreprise comme agent de saisie. »</li>
+    <li>« Récemment diplômée d'un BTS en commerce, je vous adresse ma candidature au poste de vendeuse publié sur votre page Facebook. »</li>
+    <li>« Titulaire du baccalauréat et d'un certificat en bureautique, je souhaite rejoindre votre entreprise comme agent de saisie. »</li>
   </ul>
   <h3>Pour parler de vous sans expérience</h3>
   <ul>
-    <li>« Ma formation m'a donné des bases solides en… que j'ai mises en pratique lors de… »</li>
-    <li>« Mon engagement dans… m'a appris à… »</li>
-    <li>« Je n'ai pas encore travaillé en entreprise, mais j'ai déjà… »</li>
+    <li>« Ma formation m'a donné des bases solides en… que j'ai mises en pratique lors de… »</li>
+    <li>« Mon engagement dans… m'a appris à… »</li>
+    <li>« Je n'ai pas encore travaillé en entreprise, mais j'ai déjà… »</li>
   </ul>
   <h3>Pour conclure</h3>
   <ul>
-    <li>« Disponible immédiatement, je serais heureuse de vous présenter ma motivation lors d'un entretien. »</li>
-    <li>« Je suis prête à suivre toute formation nécessaire pour être rapidement opérationnelle. »</li>
+    <li>« Disponible immédiatement, je serais heureuse de vous présenter ma motivation lors d'un entretien. »</li>
+    <li>« Je suis prête à suivre toute formation nécessaire pour être rapidement opérationnelle. »</li>
   </ul>
   <div class="warn">
     <p><strong>Phrases à éviter</strong></p>
     <ul>
-      <li>« Je suis prêt à faire n'importe quel travail » : l'employeur veut quelqu'un qui a choisi son poste.</li>
-      <li>« Malgré mon manque d'expérience… » : ne commencez pas par une faiblesse, parlez de ce que vous avez.</li>
-      <li>« J'ai vraiment besoin de ce travail » : c'est sincère, mais ce n'est pas un argument pour l'entreprise.</li>
-      <li>« Je maîtrise parfaitement l'informatique » : soyez précis (Word, Excel, Canva…) et honnête.</li>
+      <li>« Je suis prêt à faire n'importe quel travail » : l'employeur veut quelqu'un qui a choisi son poste.</li>
+      <li>« Malgré mon manque d'expérience… » : ne commencez pas par une faiblesse, parlez de ce que vous avez.</li>
+      <li>« J'ai vraiment besoin de ce travail » : c'est sincère, mais ce n'est pas un argument pour l'entreprise.</li>
+      <li>« Je maîtrise parfaitement l'informatique » : soyez précis (Word, Excel, Canva…) et honnête.</li>
     </ul>
   </div>
 
   <h2 id="exemple">6. Exemple complet de lettre sans expérience</h2>
-  <div class="doc" role="figure" aria-label="Exemple de lettre de motivation fictive">
+  <figure class="doc" aria-label="Exemple de lettre de motivation fictive">
     <span class="stamp">Exemple fictif — personnes, écoles et entreprises inventées</span>
-    <p>Aïssatou BA<br>Grand Yoff, Dakar<br>+221 76 000 00 00<br>aissatou.ba@example.com</p>
+    <p>Aïssatou BA<br>Grand Yoff, Dakar<br>+221 76 000 00 00<br>aissatou.ba@example.com</p>
     <p class="right">À l'attention du Responsable des Ressources Humaines<br>Exemple Relation Client<br>Dakar</p>
     <p class="right">Dakar, le 18 octobre 2026</p>
-    <p><strong>Objet : Candidature au poste de conseillère clientèle</strong></p>
+    <p><strong>Objet : Candidature au poste de conseillère clientèle</strong></p>
     <p>Madame, Monsieur,</p>
     <p>Titulaire du baccalauréat série L2 et d'un certificat en bureautique, je vous adresse ma candidature au poste de conseillère clientèle publié sur votre page Facebook. Votre centre accompagne les clients d'entreprises de services au quotidien, et c'est précisément ce métier de contact que je souhaite exercer.</p>
-    <p>Je n'ai pas encore travaillé en entreprise, mais j'ai déjà l'habitude de servir des clients : depuis trois ans, je tiens la boutique de ma famille pendant les vacances scolaires, où j'accueille, conseille et encaisse les clients en wolof comme en français. J'ai aussi suivi une formation de six mois en bureautique, qui m'a permis de maîtriser Word, Excel et l'envoi de courriers électroniques.</p>
+    <p>Je n'ai pas encore travaillé en entreprise, mais j'ai déjà l'habitude de servir des clients : depuis trois ans, je tiens la boutique de ma famille pendant les vacances scolaires, où j'accueille, conseille et encaisse les clients en wolof comme en français. J'ai aussi suivi une formation de six mois en bureautique, qui m'a permis de maîtriser Word, Excel et l'envoi de courriers électroniques.</p>
     <p>Patiente et souriante, je sais garder mon calme face à un client mécontent et chercher une solution plutôt que de m'énerver. Ponctuelle et disponible, je peux m'adapter à des horaires décalés. Je suis prête à suivre la formation que vous proposez à vos nouveaux conseillers pour être rapidement opérationnelle.</p>
     <p>Disponible immédiatement, je serais heureuse de vous présenter ma motivation lors d'un entretien, à la date qui vous conviendra.</p>
     <p>Veuillez recevoir, Madame, Monsieur, mes respectueuses salutations.</p>
     <p>Aïssatou BA</p>
-  </div>
-  <p>Ce qui rend cette lettre efficace : pas d'excuse sur le manque d'expérience, des faits concrets (la boutique, la formation), des qualités utiles pour un centre d'appels, et une phrase qui montre l'envie d'apprendre.</p>
+  </figure>
+  <p>Ce qui rend cette lettre efficace : pas d'excuse sur le manque d'expérience, des faits concrets (la boutique, la formation), des qualités utiles pour un centre d'appels, et une phrase qui montre l'envie d'apprendre.</p>
 
   <h2 id="spontanee">7. La candidature spontanée quand on débute</h2>
   <p>Tous les postes ne sont pas publiés. Une candidature spontanée bien ciblée peut ouvrir des portes, surtout dans les PME, les commerces, les hôtels ou les cliniques de votre quartier.</p>
   <ul>
-    <li>Dans le premier paragraphe, remplacez « suite à votre annonce » par une phrase qui montre que vous connaissez l'entreprise : « Cliente de votre magasin des Parcelles depuis longtemps, j'apprécie la qualité de votre accueil… ».</li>
-    <li>Indiquez clairement le type de poste recherché : « un poste de vendeuse ou de caissière ».</li>
+    <li>Dans le premier paragraphe, remplacez « suite à votre annonce » par une phrase qui montre que vous connaissez l'entreprise : « Cliente de votre magasin des Parcelles depuis longtemps, j'apprécie la qualité de votre accueil… ».</li>
+    <li>Indiquez clairement le type de poste recherché : « un poste de vendeuse ou de caissière ».</li>
     <li>Déposez votre lettre et votre CV en main propre quand c'est possible, en tenue correcte, et demandez le nom de la personne qui s'occupe du recrutement.</li>
     <li>Gardez une liste des entreprises contactées, avec la date, pour relancer une à deux semaines plus tard.</li>
   </ul>
 
   <h2 id="erreurs">8. Les erreurs fréquentes</h2>
   <ul>
-    <li><strong>Recopier un modèle trouvé sur Internet</strong> : les recruteurs reconnaissent les phrases toutes faites.</li>
-    <li><strong>Une lettre trop longue</strong> : une page, pas plus.</li>
-    <li><strong>Oublier le nom de l'entreprise ou du poste</strong> : la lettre semble envoyée au hasard.</li>
-    <li><strong>Des fautes d'orthographe</strong> : faites relire votre lettre par une autre personne.</li>
-    <li><strong>Une adresse email fantaisiste</strong> : créez une adresse du type prenom.nom@gmail.com.</li>
+    <li><strong>Recopier un modèle trouvé sur Internet</strong> : les recruteurs reconnaissent les phrases toutes faites.</li>
+    <li><strong>Une lettre trop longue</strong> : une page, pas plus.</li>
+    <li><strong>Oublier le nom de l'entreprise ou du poste</strong> : la lettre semble envoyée au hasard.</li>
+    <li><strong>Des fautes d'orthographe</strong> : faites relire votre lettre par une autre personne.</li>
+    <li><strong>Une adresse email fantaisiste</strong> : créez une adresse du type prenom.nom@gmail.com.</li>
     <li><strong>Envoyer une photo de la lettre</strong> au lieu d'un PDF, par email ou par WhatsApp.</li>
-    <li><strong>Inventer une expérience</strong> : cela se voit en entretien et ferme la porte.</li>
+    <li><strong>Inventer une expérience</strong> : cela se voit en entretien et ferme la porte.</li>
   </ul>
   <p>Pour la présentation du CV qui accompagne votre lettre, consultez notre <a href="modele-cv-senegal.html">modèle de CV au Sénégal</a>.</p>
 
   <div class="cta">
-    <p><strong>Votre lettre et votre CV, prêts à envoyer.</strong> Lettre 1 000 FCFA, CV 1 000 FCFA, pack CV + lettre 1 500 FCFA, payé avec Wave. Vous voyez un aperçu gratuit avant de payer, sans créer de compte.</p>
+    <p><strong>Votre lettre et votre CV, prêts à envoyer.</strong> Lettre 1 000 FCFA, CV 1 000 FCFA, pack CV + lettre 1 500 FCFA, payé avec Wave. Vous voyez un aperçu gratuit avant de payer, sans créer de compte.</p>
     <a class="btn" href="../index.html">Créer ma lettre de motivation — aperçu gratuit</a>
   </div>
 
   <h2 id="faq">Questions fréquentes</h2>
   <details>
-    <summary>Dois-je parler de mes petits boulots informels ?</summary>
-    <p>Oui, s'ils ont un lien avec le poste et si vous les présentez sérieusement. Aider au commerce familial ou vendre en ligne montre des qualités réelles : contact client, honnêteté, organisation.</p>
+    <summary>Dois-je parler de mes petits boulots informels ?</summary>
+    <p>Oui, s'ils ont un lien avec le poste et si vous les présentez sérieusement. Aider au commerce familial ou vendre en ligne montre des qualités réelles : contact client, honnêteté, organisation.</p>
   </details>
   <details>
-    <summary>Faut-il mentionner mes notes ?</summary>
+    <summary>Faut-il mentionner mes notes ?</summary>
     <p>Seulement si elles sont un vrai point fort, par exemple une mention au BAC ou de très bonnes notes dans une matière liée au poste. Sinon, parlez plutôt de vos projets et de vos activités.</p>
   </details>
   <details>
-    <summary>Teranga CV invente-t-il des expériences ?</summary>
+    <summary>Teranga CV invente-t-il des expériences ?</summary>
     <p>Non. Le texte est rédigé uniquement à partir de ce que vous écrivez dans le formulaire. Vous relisez l'aperçu, puis vous pouvez encore corriger le texte avant de télécharger.</p>
   </details>
 </article>
@@ -211,9 +264,9 @@
 <section class="related" aria-labelledby="autres-guides">
   <h2 id="autres-guides">Autres guides utiles</h2>
   <ul>
-    <li><a href="lettre-de-motivation-stage.html">Lettre de motivation pour un stage : modèle et exemple</a></li>
-    <li><a href="cv-premier-emploi.html">CV pour un premier emploi : le guide pour les jeunes diplômés</a></li>
-    <li><a href="modele-cv-senegal.html">Modèle de CV au Sénégal : structure, exemple et conseils</a></li>
+    <li><a href="lettre-de-motivation-stage.html">Lettre de motivation pour un stage : modèle et exemple</a></li>
+    <li><a href="cv-premier-emploi.html">CV pour un premier emploi : le guide pour les jeunes diplômés</a></li>
+    <li><a href="modele-cv-senegal.html">Modèle de CV au Sénégal : structure, exemple et conseils</a></li>
   </ul>
   <div class="cta">
     <p>Lancez-vous, même sans expérience.</p>

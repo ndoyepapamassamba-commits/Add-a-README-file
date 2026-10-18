@@ -43,7 +43,6 @@ export class MemoryStore implements Store {
     if (this.orders.has(row.id)) throw new Error(`duplicate order id ${row.id}`);
     this.assertUniqueSession(row.id, row.checkout_session_id);
     this.orders.set(row.id, structuredClone(row));
-    return;
   }
 
   async getOrder(id: string): Promise<OrderRow | null> {
@@ -52,23 +51,18 @@ export class MemoryStore implements Store {
   }
 
   async updateOrder(id: string, patch: Partial<OrderRow>): Promise<void> {
-    try {
-      for (const key of Object.keys(patch)) {
-        if (!ORDER_PATCH_KEYS.has(key)) throw new Error(`updateOrder: column ${key} cannot be patched`);
-      }
-      if ("status" in patch && !PATCHABLE_ORDER_STATUSES.has(patch.status as OrderStatus)) {
-        throw new Error(`updateOrder: status ${patch.status} not allowed`);
-      }
-      const o = this.orders.get(id);
-      if (!o) return;
-      if ("checkout_session_id" in patch) this.assertUniqueSession(id, patch.checkout_session_id ?? null);
-      const { status, ...rest } = patch;
-      Object.assign(o, structuredClone(rest));
-      if (status !== undefined && o.status !== "paid") o.status = status;
-      return;
-    } catch (err) {
-      throw err;
+    for (const key of Object.keys(patch)) {
+      if (!ORDER_PATCH_KEYS.has(key)) throw new Error(`updateOrder: column ${key} cannot be patched`);
     }
+    if ("status" in patch && !PATCHABLE_ORDER_STATUSES.has(patch.status as OrderStatus)) {
+      throw new Error(`updateOrder: status ${patch.status} not allowed`);
+    }
+    const o = this.orders.get(id);
+    if (!o) return;
+    if ("checkout_session_id" in patch) this.assertUniqueSession(id, patch.checkout_session_id ?? null);
+    const { status, ...rest } = patch;
+    Object.assign(o, structuredClone(rest));
+    if (status !== undefined && o.status !== "paid") o.status = status;
   }
 
   async markPaid(id: string, p: Parameters<Store["markPaid"]>[1]): Promise<boolean> {
@@ -151,14 +145,12 @@ export class MemoryStore implements Store {
     if (!row) return;
     Object.assign(row, structuredClone(patch));
     row.updated_at = new Date(patch.updated_at ?? Date.now()).toISOString();
-    return;
   }
 
   async failPayout(id: string, error: string, nowIso: string): Promise<void> {
     const row = this.payouts.get(id);
     if (row) Object.assign(row, { status: "failed", error, updated_at: new Date(nowIso).toISOString() });
     for (const o of this.orders.values()) if (o.payout_id === id) o.payout_id = null;
-    return;
   }
 
   async listUnsettledPayouts(): Promise<PayoutRow[]> {
