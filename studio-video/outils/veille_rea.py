@@ -46,6 +46,54 @@ CAPACITES = re.compile(r'(?i)\b(viseme|lipsync|phoneme|spring|damping|stiffness|
 DISQUE_MIN = 300e6
 VOIES = 2
 verrou = threading.Lock()
+# PERTINENCE POUR L'ANIMATION (18/10/2026, « cherche les outils d'animation très rapidement ») : la recherche ramène surtout
+# des lecteurs vidéo et des composants d'interface ; chaque moteur reçoit une note (mots de son nom et de sa description,
+# pondérés par ce qui manque au moteur de la troupe) multipliée par sa popularité. REA démonte d'abord les mieux notés et
+# le résumé les classe en tête ; une note sous SEUIL_REA ne va pas jusqu'à REA (catalogué seulement).
+PERTINENT = [(r'lip.?sync|visem|phonem', 6), (r'talking.?(head|face|avatar)|audio.?driven', 6), (r'skelet|\bbones?\b|skinning|\brig(ging)?\b', 4),
+             (r'inverse.?kinematic|\bik\b|\bccd\b|\bfabrik\b', 4), (r'spring|damping', 3), (r'mocap|motion.?capture|\bbvh\b|retarget', 5),
+             (r'pose|landmark|holistic|blend.?shape', 3), (r'facial|face.?(mesh|anim|track)|expression|blink|gaze', 4),
+             (r'live2d|spine|dragonbones|\brive\b|lottie|puppet|\barap\b|mesh.?deform', 4), (r'avatar|\bvrm\b|character', 3),
+             (r'tween|easing|bezier|keyframe', 2), (r'kinematic', 2), (r'\bface\b|\beyes?\b|\bmouth\b', 2), (r'physic|cloth|soft.?body|collision|ragdoll', 2), (r'animat', 2),
+             (r'image.?to.?video|video.?(generat|diffusion)|frame.?interpol|optical.?flow', 4), (r'segment|matting|depth', 2)]
+BRUIT = re.compile(r'(?i)player|viewer|upload|download|thumbnail|crop|ckeditor|wordpress|cms|cordova|theme|template|boilerplate|test-')
+SEUIL_REA = 4
+
+
+_NOTES = {}
+
+
+def renoter(e):
+    """file héritée d'avant la notation : chaque moteur est noté sur la description gardée au journal ; le bruit sort de la file
+    (il reste catalogué)."""
+    desc = {}
+    try:
+        for l in open(JOURNAL):
+            x = json.loads(l)
+            if x.get('evenement') == 'nouveau moteur': desc[x.get('paquet')] = x.get('description') or ''
+    except Exception:
+        pass
+    garde = []
+    for nom in dict.fromkeys(e['file']):
+        if nom in SUIVIS: e['notes'][nom] = 1e6; garde.append(nom); continue
+        if nom not in e['notes']:
+            p = pertinence(nom, desc.get(nom, ''))
+            if p < SEUIL_REA: continue
+            e['notes'][nom] = note_finale(p, 0)
+        garde.append(nom)
+    print(f'file renotée : {len(e["file"])} → {len(garde)} moteurs (seuil {SEUIL_REA})', flush=True)
+    e['file'] = garde
+
+
+def pertinence(nom, description=''):
+    t = f'{nom} {description}'.lower()
+    note = sum(p for motif, p in PERTINENT if re.search(motif, t))
+    return max(0, note - (3 if BRUIT.search(t) else 0))
+
+
+def note_finale(pert, populaire):
+    import math
+    return round(pert * (1 + math.log10(1 + max(0, populaire or 0))), 1)
 
 
 def get_json(url, timeout=25):
@@ -58,7 +106,7 @@ def lire_etat():
         e = json.load(open(ETAT))
     except Exception:
         e = {}
-    for k, v in (('versions', {}), ('analyses', {}), ('file', []), ('connus', []), ('catalogue', {}), ('curseurs', {})):
+    for k, v in (('versions', {}), ('analyses', {}), ('file', []), ('connus', []), ('catalogue', {}), ('curseurs', {}), ('notes', {})):
         e.setdefault(k, v)
     return e
 
@@ -84,11 +132,30 @@ def resume(e):
     for x in lignes:
         par_source[x.get('source', 'npm')] = par_source.get(x.get('source', 'npm'), 0) + 1
     rea = [x for x in lignes if x.get('evenement') == 'analyse REA' and x.get('preuve')]
+    # classement « animation » : note de pertinence × popularité (recalculée une fois par moteur pour l'ancien journal)
+    infos = {}
+    for x in lignes:
+        if x.get('evenement') != 'nouveau moteur': continue
+        nom = x.get('paquet') or ''
+        if nom not in _NOTES:
+            ctx = x.get('description') or ''
+            if x.get('source') != 'npm': ctx += ' ' + str(x.get('theme', '')).replace('-', ' ')
+            _NOTES[nom] = x['note'] if x.get('note') is not None else note_finale(pertinence(nom, ctx), x.get('etoiles') or x.get('telechargements') or x.get('telechargements_mois') or 0)
+        if _NOTES[nom] > 0: infos[nom] = x
+    preuves = {x.get('paquet'): x for x in rea}
+    top = sorted(infos.values(), key=lambda x: -_NOTES[x.get('paquet') or ''])[:40]
     out = ['# Veille permanente REA, sans limite', '',
            f"Événements : {len(lignes)} ({', '.join(f'{k} {v}' for k, v in sorted(par_source.items()))}) · moteurs connus : "
            f"{len(e['connus']) + len(e['catalogue'])} · analysés par REA : {len(rea)} · en file : {len(e['file'])}", '',
-           '| Heure | Événement | Source | Moteur | Version | Licence | Greffable | Preuve REA | Capacités vues |', '|---|---|---|---|---|---|---|---|---|']
-    for x in reversed(lignes[-60:]):
+           '## Classement animation (les mieux notés d\'abord : pertinence pour la troupe × popularité)', '',
+           '| Rang | Moteur | Source | Licence | Greffable | Note | Popularité | Preuve REA | Description |', '|---|---|---|---|---|---|---|---|---|']
+    for i, x in enumerate(top, 1):
+        nom = x.get('paquet'); pop = x.get('etoiles') or x.get('telechargements') or x.get('telechargements_mois') or ''
+        out.append(f"| {i} | {nom} | {x.get('source', 'npm')} | {x.get('licence', '')} | {'oui' if GREFFABLE.match(str(x.get('licence', ''))) else 'non'} | "
+                   f"{_NOTES[nom]} | {pop} | {((preuves.get(nom) or {}).get('preuve') or '')[:14]} | {(x.get('description') or '')[:90].replace('|', '/')} |")
+    out += ['', '## Derniers événements', '',
+            '| Heure | Événement | Source | Moteur | Version | Licence | Greffable | Preuve REA | Capacités vues |', '|---|---|---|---|---|---|---|---|---|']
+    for x in reversed(lignes[-25:]):
         caps = ', '.join(m['mot'] for m in (x.get('motifs') or [])[:6])
         out.append(f"| {x['t']} | {x.get('evenement')} | {x.get('source', 'npm')} | {x.get('paquet')} | {x.get('version', '')} | "
                    f"{x.get('licence', '')} | {'oui' if GREFFABLE.match(str(x.get('licence', ''))) else 'non'} | {(x.get('preuve') or '')[:14]} | {caps} |")
@@ -158,9 +225,12 @@ def chercher_npm(e, th):
         pk = o['package']; nom = pk['name']; lic = str(pk.get('license', ''))
         if nom in e['connus'] or nom in SUIVIS: continue
         e['connus'].append(nom); e['versions'][nom] = pk.get('version')
+        dl = (o.get('downloads') or {}).get('monthly') or 0
+        pert = pertinence(nom, pk.get('description') or ''); note = note_finale(pert, dl)
+        e['notes'][nom] = note
         noter({'evenement': 'nouveau moteur', 'source': 'npm', 'paquet': nom, 'version': pk.get('version'), 'licence': lic,
-               'theme': th, 'description': (pk.get('description') or '')[:160]})
-        if GREFFABLE.match(lic): e['file'].append(nom)
+               'theme': th, 'description': (pk.get('description') or '')[:160], 'telechargements_mois': dl, 'note': note})
+        if GREFFABLE.match(lic) and pert >= SEUIL_REA: e['file'].append(nom)
 
 
 def chercher_github(e, sujet):
@@ -172,9 +242,11 @@ def chercher_github(e, sujet):
         nom = it['full_name']
         if nom in e['catalogue']: continue
         lic = (it.get('license') or {}).get('spdx_id') or ''
-        e['catalogue'][nom] = {'source': 'github', 'licence': lic, 'etoiles': it.get('stargazers_count'), 'sujet': sujet}
+        note = note_finale(pertinence(nom, f"{it.get('description') or ''} {' '.join(it.get('topics') or [])}"), it.get('stargazers_count'))
+        e['catalogue'][nom] = {'source': 'github', 'licence': lic, 'etoiles': it.get('stargazers_count'), 'sujet': sujet, 'note': note,
+                               'description': (it.get('description') or '')[:160]}
         noter({'evenement': 'nouveau moteur', 'source': 'github', 'paquet': nom, 'licence': lic, 'etoiles': it.get('stargazers_count'),
-               'theme': sujet, 'description': (it.get('description') or '')[:160], 'langage': it.get('language')})
+               'theme': sujet, 'description': (it.get('description') or '')[:160], 'langage': it.get('language'), 'note': note})
 
 
 def chercher_hf(e, tache):
@@ -184,9 +256,10 @@ def chercher_hf(e, tache):
         nom = m.get('id') or m.get('modelId')
         if not nom or nom in e['catalogue']: continue
         lic = next((t.split(':', 1)[1] for t in m.get('tags', []) if t.startswith('license:')), '')
-        e['catalogue'][nom] = {'source': 'huggingface', 'licence': lic, 'telechargements': m.get('downloads'), 'tache': tache}
+        note = note_finale(pertinence(nom, tache.replace('-', ' ')), m.get('downloads'))
+        e['catalogue'][nom] = {'source': 'huggingface', 'licence': lic, 'telechargements': m.get('downloads'), 'tache': tache, 'note': note}
         noter({'evenement': 'nouveau moteur', 'source': 'huggingface', 'paquet': nom, 'licence': lic, 'theme': tache,
-               'telechargements': m.get('downloads')})
+               'telechargements': m.get('downloads'), 'note': note})
     e['curseurs'][cle] = time.time()
 
 
@@ -210,7 +283,7 @@ def cycle(e, pool, en_cours):
             if nom in e['versions']:
                 noter({'evenement': 'nouvelle version', 'source': 'npm', 'paquet': nom, 'version': v, 'avant': e['versions'][nom], 'licence': d.get('license')})
             e['versions'][nom] = v
-            if f'{nom}@{v}' not in e['analyses'] and nom not in e['file']: e['file'].insert(0, nom)
+            if f'{nom}@{v}' not in e['analyses'] and nom not in e['file']: e['file'].insert(0, nom); e['notes'][nom] = 1e6
     # 2. recherches : page suivante de chaque thème npm, 8 sujets GitHub (quota sans compte : 10 recherches / min), 2 tâches HF
     k = int(e['curseurs'].get('tour', 0)); e['curseurs']['tour'] = k + 1
     for th in THEMES:
@@ -222,7 +295,8 @@ def cycle(e, pool, en_cours):
     for tache in [TACHES_HF[(k * 2 + i) % len(TACHES_HF)] for i in range(2)]:
         try: chercher_hf(e, tache)
         except Exception: pass
-    # 3. REA en continu : les voies libres prennent la suite de la file
+    # 3. REA en continu : les voies libres prennent les moteurs les mieux notés
+    with verrou: e['file'].sort(key=lambda n: -e['notes'].get(n, 0))
     en_cours[:] = [f for f in en_cours if not f.done()]
     while e['file'] and len(en_cours) < VOIES:
         en_cours.append(pool.submit(travailleur, e, e['file'].pop(0)))
@@ -230,7 +304,7 @@ def cycle(e, pool, en_cours):
 
 
 if __name__ == '__main__':
-    etat = lire_etat(); en_cours = []
+    etat = lire_etat(); renoter(etat); en_cours = []
     with ThreadPoolExecutor(VOIES) as pool:
         while True:
             debut = time.time()
