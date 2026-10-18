@@ -10,7 +10,8 @@ import expressions_lp as XL
 
 # RECETTES REPRISES (18/10/2026, vie réelle) : un lieu réel (prep/<lieu>-reel, vie_reelle.lieu) montre les MÊMES personnages
 # que le lieu dessiné ; avec EXPRESSIONS_RECETTES_DE=<lieu dessiné>, les recettes déjà jugées pour chacun sont reprises au
-# lieu d'être recherchées de nouveau par le juge (mesuré sur Baye : ≈ 35 min par personnage avec la recherche locale) ;
+# lieu d'être recherchées de nouveau par le juge (Baye avec la recherche locale : 46 images sur 79 en 21 min, soit ≈ 35 min
+# projetées par personnage ; avec les recettes reprises : 3 personnages en 1 431 s, fin de Baye comprise) ;
 # la bibliothèque ne fait plus que dessiner. Provenance notée dans expressions/<slug>/recettes-reprises.json.
 import lp_onnx as LP
 

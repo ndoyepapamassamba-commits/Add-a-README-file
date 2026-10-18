@@ -87,6 +87,25 @@ def photo(src, out, largeur=None, graine=1871, pas=4, identite='', consigne=None
     return res
 
 
+def identite_auto(scene_json, W):
+    """identité de chaque acteur pour la consigne, tirée des cartes d'adn.py et placée par sa position dans l'image : l'âge
+    (1re proposition de la carte) et la pilosité (barbe, bouc, moustache, cheveux gris). Le reste de la carte (coiffure,
+    tenue) n'est pas repris : la scène dessinée fait foi. Défaut corrigé (18/10/2026, maquis) : sans elle, Coumba (26 ans)
+    sortait adolescente et Koffi (petit bouc) avec une barbe pleine."""
+    import re, adn
+    S = json.load(open(scene_json)); A = sorted(S['acteurs'], key=lambda a: a['bbox'][0]); out = []
+    for i, a in enumerate(A):
+        carte = adn.ADN.get(a['nom'], '')
+        if not carte: continue
+        bouts = [b.strip() for b in carte.split(',')]
+        poils = [b for b in bouts[1:] if re.search(r'beard|goatee|moustache|grey hair|white hair|bald', b)]
+        cx = (a['bbox'][0] + a['bbox'][2]) / 2 / W
+        ou = 'on the left' if cx < 0.38 else ('on the right' if cx > 0.62 else 'in the middle')
+        if len(A) > 1 and sum(1 for b in A if abs((b['bbox'][0] + b['bbox'][2]) / 2 / W - cx) < 0.12) > 1: ou = f'person {i + 1} from the left'
+        out.append(f"{ou}: {', '.join([bouts[1]] + poils)}")
+    return '; '.join(out)
+
+
 def lieu(prep, nom, identite='', journal=print, **kw):
     """lieu préparé `prep/<nom>` → `prep/<nom>-reel` : photo de la scène (voie 1), puis la chaîne habituelle du moteur sur la
     photo — acteurs et masques (prepare_scene), squelettes et visages (prepare_rig), expressions (prepare_expressions).
@@ -95,6 +114,8 @@ def lieu(prep, nom, identite='', journal=print, **kw):
     src, dst = os.path.join(prep, nom), os.path.join(prep, f'{nom}-reel'); os.makedirs(dst, exist_ok=True)
     S = json.load(open(f'{src}/scene.json')); noms = [a['nom'] for a in sorted(S['acteurs'], key=lambda a: a['bbox'][0])]
     ph, T = f'{dst}/photo.png', {}
+    if not identite:
+        identite = identite_auto(f'{src}/scene.json', cv2.imread(f'{src}/image.png').shape[1]); journal(f'identité : {identite}')
     if not os.path.isfile(ph):
         json.dump(photo(f'{src}/image.png', ph, identite=identite, journal=journal, **kw), open(f'{dst}/photo.json', 'w'), ensure_ascii=False)
     ici = os.path.dirname(os.path.abspath(__file__))
