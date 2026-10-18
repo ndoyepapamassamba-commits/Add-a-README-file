@@ -73,7 +73,15 @@ supabase-js is imported ONLY in `lib/store_supabase.ts` and `index.ts`.
 | Wave payout fee (paid on top of receive_amount) | 0.01 | `PAYOUT_FEE_RATE` |
 | data retention | unpaid 3 days, paid 30 days | — |
 
-Other env (secrets): `WAVE_API_KEY`, `WAVE_WEBHOOK_SECRET`, `WAVE_WEBHOOK_MODE` (`signing` default | `shared`),
+**Where settings come from.** Every key below can be set either as an Edge Function env var/secret or
+as a row in the private table `tcv.settings(key text primary key, value text not null, updated_at)`,
+read through `tcv_get_settings() → jsonb object` (Store.getSettings). Env wins over the table.
+`index.ts` loads settings at most once per 60 s per function instance (cache in module scope) and builds
+`Config` with `loadConfig(envGet, settings)`. Reason: the deployer can only write private values
+(owner phone, ADMIN_KEY, CRON_SECRET) into the database, not into function secrets. The Wave API key
+should preferably be entered by the owner as a function secret in the Supabase dashboard.
+
+Other settings: `WAVE_API_KEY`, `WAVE_WEBHOOK_SECRET`, `WAVE_WEBHOOK_MODE` (`signing` default | `shared`),
 `OWNER_WAVE_MOBILE` (normalised to E.164 `+2217XXXXXXXX`; invalid → payouts disabled),
 `PAYOUT_ENABLED` (`"true"` to enable), `MANUAL_WAVE_NUMBER`, `OWNER_WHATSAPP` (digits, e.g. `221771234567`;
 defaults to the digits of MANUAL_WAVE_NUMBER/OWNER_WAVE_MOBILE), `ADMIN_KEY`, `CRON_SECRET`,
@@ -194,7 +202,8 @@ SQL): `net = floor(gross*(1-feeRate))`; `base = maxAmount==null ? net : min(net,
 Tables (schema `tcv`, RLS enabled, no policies): `orders` (columns = `OrderRow`, `id` PK,
 `checkout_session_id` unique, indexes on `(status, created_at)`, `paid_at`, `payout_id`), `payouts`
 (`PayoutRow`, `day` unique, `idempotency_key` unique), `events` (`id` PK, type, ref, payload jsonb,
-created_at), `rate_limits` (`key` PK, `window_start` timestamptz, `count` int).
+created_at), `rate_limits` (`key` PK, `window_start` timestamptz, `count` int), `settings` (`key` PK,
+`value` text not null, `updated_at` timestamptz default now()).
 
 One SQL function per Store method, `security definer`, `set search_path = ''` (fully-qualified names),
 args prefixed `p_`, jsonb in/out using the `OrderRow`/`PayoutRow` field names:
@@ -208,18 +217,18 @@ p_paid_amount, p_transaction_id, p_session_id, p_paid_at) → boolean` (single `
 existing day or amount < min), `tcv_update_payout(p_id, p_patch jsonb)`, `tcv_fail_payout(p_id, p_error, p_now)`
 (status failed + detach orders), `tcv_list_unsettled_payouts() → jsonb array`, `tcv_purge(p_unpaid_before,
 p_paid_before, p_now) → int` (sets input/document NULL, purged_at = now; deletes events older than 30 days
-and stale rate_limits), `tcv_stats(p_now) → jsonb` (`Stats`; day boundaries in UTC).
+and stale rate_limits), `tcv_stats(p_now) → jsonb` (`Stats`; day boundaries in UTC),
+`tcv_get_settings() → jsonb` (object of all key → value).
 `revoke all on function … from public, anon, authenticated; grant execute … to service_role;`
 (tests create those roles in PGlite if missing). Prefix-free, idempotent migrations (`create … if not exists`,
 `create or replace function`).
 
 The cron migration enables `pg_cron`, `pg_net` and schedules the jobs. It does NOT contain the secret:
-the deployer stores it out-of-band with `select vault.create_secret('<generated>', 'tcv_cron_secret')`
-(run through a one-off SQL call, never committed). Jobs: `tcv-reconcile` (`*/10 * * * *`) and
-`tcv-daily` (`0 21 * * *`) with
+the deployer inserts `CRON_SECRET` into `tcv.settings` out-of-band (one-off SQL, never committed).
+Jobs: `tcv-reconcile` (`*/10 * * * *`) and `tcv-daily` (`0 21 * * *`) with
 `net.http_post(url := 'https://seegnylaubuularegmku.supabase.co/functions/v1/api/cron/…', headers :=
-jsonb_build_object('content-type','application/json','x-cron-secret', (select decrypted_secret from
-vault.decrypted_secrets where name = 'tcv_cron_secret')), body := '{}'::jsonb, timeout_milliseconds := 20000)`.
+jsonb_build_object('content-type','application/json','x-cron-secret', (select value from tcv.settings
+where key = 'CRON_SECRET')), body := '{}'::jsonb, timeout_milliseconds := 20000)`.
 `cron.schedule` with the same job name replaces the job (idempotent).
 
 ## Document generation (generator owner)
@@ -313,6 +322,20 @@ customer or API data**. `config.js` sets
   (`/█[█ ]*/g`) rendered as blurred grey spans with a lock overlay on the preview.
 * `data.js` — `TCV_DATA = { sectors: [{key,label,skills[]}], levels, kinds, qualities, itSkills, languageLevels }`
   using exactly the enum keys from types.ts and the QUALITIES labels above.
+
+## Market facts to respect (from verified research, 2026-10)
+
+* Youth (15–34) unemployment 27.4 % (ANSD ENES T4 2025). Competitor Africarrieres sells an AI CV for
+  ~4 900 FCFA and a letter for ~2 450 FCFA (accepts Wave); free CV builders exist (AfroTools, Simoon CV),
+  so our edge is: French written for Senegal's job market, no account, instant, paid by Wave, very cheap.
+* Reach in Senegal (DataReportal 2026): Facebook 3.6 M, YouTube 5.4 M, LinkedIn 1.5 M, Instagram 1.45 M;
+  TikTok not measured. Marketing order: Facebook job groups, WhatsApp status/channels, YouTube Shorts/TikTok,
+  LinkedIn.
+* Do NOT market letters for Campus France applications (Campus France asks applicants to write their
+  own letter). Senegal only (cross-border Wave payments may be refused).
+* Owner legal minimum: NINEA (E-NINEA online), declaration to the CDP (law 2008-12) because CVs are
+  personal data; data is hosted by Supabase in the EU (Paris) — mention in the privacy notice; collect no
+  sensitive data (ethnicity, religion, health, political opinions); retention 30 days.
 
 ## Content (content owner)
 

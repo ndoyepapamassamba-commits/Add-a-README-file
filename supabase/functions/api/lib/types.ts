@@ -214,6 +214,8 @@ export interface Store {
   /** Delete personal data: unpaid orders older than unpaidBeforeIso, paid orders older than paidBeforeIso. Returns count. */
   purge(unpaidBeforeIso: string, paidBeforeIso: string, nowIso: string): Promise<number>;
   stats(nowIso: string): Promise<Stats>;
+  /** Key/value settings from tcv.settings (same keys as the env vars). MemoryStore returns what it was seeded with. */
+  getSettings(): Promise<Record<string, string>>;
 }
 
 export interface WaveCheckoutSession {
