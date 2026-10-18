@@ -114,7 +114,7 @@ except Exception as e:
     echecs.append(f'juge local : {e}')
 
 # ── 5. FLUIDITÉ ET SOUPLESSE (18/10/2026, « la vidéo doit respecter tous les critères de fluidité à 100 % ») : lissage des
-#       articulations sans déphasage (bornes gardées, tremblement coupé, prise de choc intacte), indice SPARC (un geste en
+#       articulations sans déphasage (bornes gardées, tremblement coupé, prise de choc vive sans tremblement), indice SPARC (un geste en
 #       cloche est plus souple qu'un geste haché), flou de bougé qui ne touche pas une image immobile.
 try:
     import numpy as _np, cv2 as _cv2, jeu as _jeu, fluidite as _fl
@@ -122,8 +122,13 @@ try:
     y_ = _jeu.souple(x_, 60, 2.0)
     if not (y_.min() >= x_.min() - 1e-6 and y_.max() <= x_.max() + 1e-6): echecs.append('souplesse : le lissage sort des bornes')
     if not _np.std(y_[400:] - 10) < 0.2 * _np.std(x_[400:] - 10): echecs.append('souplesse : le tremblement de 7 Hz n’est pas coupé')
-    g_ = _np.zeros(600); g_[170:200] = 1
-    if _np.abs(_jeu.souple(x_, 60, 2.0, g_)[175:195] - x_[175:195]).max() > 1e-6: echecs.append('souplesse : la prise de choc a été lissée')
+    # prise de choc (18/10/2026) : lissée à PRISE_HZ, elle reste plus vive que le jeu courant (90 % du saut atteint plus tôt)
+    # et son tremblement est coupé au moins de moitié
+    g_ = _np.zeros(600); g_[162:211] = 1; pas_ = _np.where(t_ > 3, 10.0, 0.0)
+    yg_, yc_ = _jeu.souple(x_, 60, 2.0, g_), _jeu.souple(x_, 60, 2.0)
+    if not _np.argmax(yg_ >= 9.0) < _np.argmax(yc_ >= 9.0): echecs.append('souplesse : la prise de choc a perdu son claquement')
+    tr_ = 0.5 * _np.sin(2 * _np.pi * 7 * t_)   # tremblement seul, pendant la prise
+    if not _np.std(_jeu.souple(tr_, 60, 2.0, g_)[175:200]) < 0.5 * _np.std(tr_[175:200]): echecs.append('souplesse : la prise de choc tremble encore')
     cloche = _np.exp(-((_np.arange(120) - 60) / 15.0) ** 2); hache = cloche * (1 + 0.6 * _np.sign(_np.sin(_np.arange(120) * 1.3)))
     if not _fl.sparc(cloche, 30.0) > _fl.sparc(_np.abs(hache), 30.0): echecs.append('SPARC : un geste haché ne paraît pas moins souple')
     d_ = tempfile.mkdtemp(); im_ = (_np.random.default_rng(3).random((92, 116, 3)) * 255).astype(_np.uint8)

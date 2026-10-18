@@ -12,7 +12,7 @@
 #   python3 juge_local.py extrait <version>…        caractéristiques des images jugées par JEV (cache disque)
 #   python3 juge_local.py apprend                   têtes par question + accord mesuré sur versions tenues à l'écart
 #   python3 juge_local.py etat                      questions confiées au juge local et leur accord avec JEV
-import hashlib, json, os, re, sys, time
+import hashlib, json, os, re, subprocess, sys, time
 import numpy as np, cv2
 
 ICI = os.path.dirname(os.path.abspath(__file__))
@@ -653,8 +653,25 @@ def etat():
         print(f"{k:22s} {r['statut']:40s} accord {m.get('accord')} équilibre {m.get('equilibre')} rappel {m.get('rappel_defauts')} AUC {m.get('auc')}")
 
 
+def arriere_plan():
+    """TÂCHE DE FOND QUI NE FREINE JAMAIS LA PRODUCTION (18/10/2026, mesuré : l'extraction lancée en « nice 19 » prenait
+    190 % du processeur et laissait 40 à 60 % à chacun des 4 ouvriers du tournage). Le noyau partage le temps entre
+    GROUPES de session (autogroup) et `nice` ne joue qu'à l'intérieur d'un groupe : on ouvre une session à soi (nouveau
+    groupe) et on met ce groupe au plus bas (19). Après le correctif : ouvriers à 100 %, l'extraction ne prend que le reste."""
+    try: os.setsid()
+    except OSError:   # chef de son groupe (lancé par « exec » d'un shell) : son groupe est celui de l'appelant, on ne le
+        if os.environ.get('JUGE_FOND') != '1':   # baisse JAMAIS ; on se relance dans une session neuve et on s'efface
+            raise SystemExit(subprocess.run([sys.executable, *sys.argv], env={**os.environ, 'JUGE_FOND': '1'}, start_new_session=True).returncode)
+    try:
+        with open('/proc/self/autogroup', 'w') as f: f.write('19')
+    except OSError: pass
+    try: os.nice(19)
+    except OSError: pass
+
+
 if __name__ == '__main__':
     cmd = sys.argv[1] if len(sys.argv) > 1 else ''
+    if cmd.startswith('extrait') or cmd == 'apprend': arriere_plan()
     if cmd == 'extrait': extrait(sys.argv[2:])
     elif cmd == 'extrait-mouvement': extrait_mouvement(sys.argv[2:])
     elif cmd == 'apprend': apprend()

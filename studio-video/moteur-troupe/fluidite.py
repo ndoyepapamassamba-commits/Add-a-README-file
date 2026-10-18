@@ -176,28 +176,23 @@ def souplesse(dossier, seuils=SEUILS):
 OBTURATEUR = 7
 
 
-def flou_bouge(dossier, sortie=None, angle=180.0, coupes=(), fps=60.0):
-    """dossier/f*.jpg → sortie (défaut : dossier, les nettes gardées dans dossier + '-net') ; coupes : instants (s)."""
+def _flou_plage(fr, sortie, a, b, raccord, angle):
+    """images [a, b) de fr floutées (chaque tranche lit elle-même ses voisines a − 1 et b : résultat identique au tour unique)."""
     import shutil
-    fr = sorted(glob.glob(os.path.join(dossier, 'f*.jpg')))
-    if not fr: return {'images': 0}
-    if sortie is None:
-        net = dossier.rstrip('/') + '-net'
-        if not os.path.isdir(net): shutil.copytree(dossier, net)
-        src, sortie = net, dossier
-    else:
-        src = dossier; os.makedirs(sortie, exist_ok=True)
-    fr = sorted(glob.glob(os.path.join(src, 'f*.jpg'))); n = len(fr)
-    raccord = {int(round(t * fps)) for t in coupes} | {int(round(t * fps)) - 1 for t in coupes}
-    dis = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_FAST)
+    cv2.setNumThreads(1)
+    n = len(fr); dis = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_FAST)
     lire = lambda k: cv2.imread(fr[k])
     demi = lambda im: cv2.cvtColor(cv2.resize(im, (im.shape[1] // 2, im.shape[0] // 2), interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2GRAY)
-    k_ = 0.5 * angle / 360.0; flous = 0; prev = None; cur = lire(0); g_cur = demi(cur)
-    for i in range(n):
+    k_ = 0.5 * angle / 360.0; flous = 0; grille = {}
+    prev = lire(a - 1) if a > 0 else None; g_prev = demi(prev) if prev is not None else None
+    cur = lire(a); g_cur = demi(cur)
+    for i in range(a, b):
         nxt = lire(i + 1) if i + 1 < n else None; g_nxt = demi(nxt) if nxt is not None else None
-        h, w = cur.shape[:2]; gx, gy = np.meshgrid(np.arange(w, dtype=np.float32), np.arange(h, dtype=np.float32))
+        h, w = cur.shape[:2]
+        if (h, w) not in grille: grille[(h, w)] = np.meshgrid(np.arange(w, dtype=np.float32), np.arange(h, dtype=np.float32))
+        gx, gy = grille[(h, w)]
         flux = []
-        for voisin, g_v, coupe in ((prev, g_prev if prev is not None else None, i in raccord or (i - 1) in raccord), (nxt, g_nxt, (i + 1) in raccord or i in raccord)):
+        for voisin, g_v, coupe in ((prev, g_prev, i in raccord or (i - 1) in raccord), (nxt, g_nxt, (i + 1) in raccord or i in raccord)):
             if voisin is None or coupe or np.abs(g_cur.astype(np.int16) - g_v).mean() > 20: flux.append(None); continue
             f = cv2.resize(dis.calc(g_cur, g_v, None), (w, h)) * 2.0
             flux.append(f)
@@ -211,14 +206,43 @@ def flou_bouge(dossier, sortie=None, angle=180.0, coupes=(), fps=60.0):
                     if f is None or s == 0: acc += cur; m_ += 1; continue
                     # flou vectoriel : le contenu qui part vers le voisin de f(x) occupait, à la fraction s, la place x − s·f
                     a_ = np.float32(abs(s)); acc += cv2.remap(cur, gx - a_ * f[..., 0], gy - a_ * f[..., 1], cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE).astype(np.float32); m_ += 1
-                b = acc / m_; wgt = np.clip((mag - 0.3) / 0.7, 0, 1)[..., None]
-                out = np.clip(cur * (1 - wgt) + b * wgt, 0, 255).astype(np.uint8); flous += 1
+                b_ = acc / m_; wgt = np.clip((mag - 0.3) / 0.7, 0, 1)[..., None]
+                out = np.clip(cur * (1 - wgt) + b_ * wgt, 0, 255).astype(np.uint8); flous += 1
         dst = os.path.join(sortie, os.path.basename(fr[i]))
         if out is cur: shutil.copyfile(fr[i], dst)   # rien ne bouge : l'image d'origine, octet pour octet (pas de JPEG refait)
         else: cv2.imwrite(dst, out, [cv2.IMWRITE_JPEG_QUALITY, 95])
         prev, g_prev, cur, g_cur = cur, g_cur, nxt, g_nxt
-    return {'images': n, 'avec_flou': flous, 'obturateur_deg': angle}
+    return flous
 
+
+def _flou_tache(arg):
+    return _flou_plage(*arg)
+
+
+def flou_bouge(dossier, sortie=None, angle=180.0, coupes=(), fps=60.0, procs=None):
+    """dossier/f*.jpg → sortie (défaut : dossier, les nettes gardées dans dossier + '-net') ; coupes : instants (s).
+    EN PARALLÈLE (18/10/2026, v7 : 3 min 50 s sur un seul processus, 56 ms par image) : tranches confiées à `procs`
+    processus (défaut : tous les cœurs), chacune lisant ses voisines ; résultat identique octet pour octet au tour unique."""
+    import shutil
+    from concurrent.futures import ProcessPoolExecutor
+    fr = sorted(glob.glob(os.path.join(dossier, 'f*.jpg')))
+    if not fr: return {'images': 0}
+    if sortie is None:
+        net = dossier.rstrip('/') + '-net'
+        if not os.path.isdir(net): shutil.copytree(dossier, net)
+        src, sortie = net, dossier
+    else:
+        src = dossier; os.makedirs(sortie, exist_ok=True)
+    fr = sorted(glob.glob(os.path.join(src, 'f*.jpg'))); n = len(fr)
+    raccord = {int(round(t * fps)) for t in coupes} | {int(round(t * fps)) - 1 for t in coupes}
+    procs = max(1, min(procs or os.cpu_count() or 1, n // 24 or 1))
+    bornes = [round(k * n / procs) for k in range(procs + 1)]
+    taches = [(fr, sortie, a, b, raccord, angle) for a, b in zip(bornes, bornes[1:]) if b > a]
+    if len(taches) == 1: flous = _flou_tache(taches[0])
+    else:
+        import multiprocessing as mp   # « spawn » : un fork après le démarrage des fils d'OpenCV se bloque sur leur verrou (vu le 18/10)
+        with ProcessPoolExecutor(len(taches), mp_context=mp.get_context('spawn')) as ex: flous = sum(ex.map(_flou_tache, taches))
+    return {'images': n, 'avec_flou': flous, 'obturateur_deg': angle, 'processus': len(taches)}
 
 if __name__ == '__main__':
     import argparse

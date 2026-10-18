@@ -669,7 +669,7 @@ def crop_for(S, kind, who=None):
         As = [S['acts'][n] for n in who if n in S['acts']]; hbs = [head_box(A) for A in As if head_box(A)]
         if not hbs: return (W / 2, H / 2, min(W, H * asp), H)
         x0 = min(h_[0] for h_ in hbs); x1 = max(h_[2] for h_ in hbs); y0 = min(h_[1] for h_ in hbs); sh = max(A['sh'] for A in As)
-        w = max((x1 - x0) * 1.5, 2.5 * 2 * sh * asp); h = w / asp
+        w = max((x1 - x0) * REG.get('duo_air', 1.5), 2.5 * 2 * sh * asp); h = w / asp
         if h > H: h = H; w = h * asp
         return ((x0 + x1) / 2, y0 + 0.40 * h, w, h)
     A = S['acts'][who]; cx, cy = A['head'][0], A['head'][1] + 1.1 * A['sh']
@@ -804,7 +804,9 @@ def bouche_lisible(sid, qui):
     """le plan à deux de `qui` montre-t-il chaque visage assez grand pour lire la bouche ?"""
     if sid not in SC: return True
     S = SC[sid]; c = faces_ok(S, clamp_crop(S, crop_for(S, 'duo', qui)), qui[0])
-    return min(taille_visage(S, n, c) for n in qui if n in S['acts']) >= VISAGE_MIN
+    px_ = min(taille_visage(S, n, c) for n in qui if n in S['acts'])
+    if os.environ.get('TOURNE_DEBUG_DUO'): print('duo', sid, qui, round(px_, 1), [round(v) for v in c], flush=True)
+    return px_ >= VISAGE_MIN
 def echanges(Ls, plan_s):
     """RYTHME DE VOS TIKTOK : les répliques d'un même échange dans un seul plan (~plan_s secondes) ; la chute garde son plan."""
     G, cur = [], []
@@ -837,11 +839,22 @@ for sk in (T['sketchs'] if REG['plan_s'] > 0 else []):
             for x in Gr:
                 if tours and tours[-1][0] == x['qui']: tours[-1][1].append(x)
                 else: tours.append((x['qui'], [x]))
-            for k_, (n_, Lx) in enumerate(tours):
+            # PAIRES LISIBLES (18/10/2026, porte A de la v6 : 19,6 plans/min contre 10,4–18,4 pour vos TikTok et les studios,
+            # plan médian 3,0 s contre ≥ 3,04) : quand, dans un groupe à trois, deux personnages se répondent plusieurs fois et
+            # que LEUR plan à deux garde les deux bouches lisibles (même règle VISAGE_MIN), on tient un seul plan à deux au lieu
+            # d'une coupe par réplique ; les autres tours restent en champ-contrechamp
+            runs = []
+            for n_, Lx in tours:
+                if runs and (n_ in runs[-1][0] or (len(runs[-1][0]) == 1 and bouche_lisible(sk['id'], (runs[-1][0][0], n_)))):
+                    if n_ not in runs[-1][0]: runs[-1][0].append(n_)
+                    runs[-1][1].extend(Lx)
+                else: runs.append(([n_], list(Lx)))
+            for k_, (ns_, Lx) in enumerate(runs):
                 a_ = t0 if k_ == 0 else Lx[0]['t0'] - 0.12
-                b_ = t1 if k_ == len(tours) - 1 else tours[k_ + 1][1][0]['t0'] - 0.12
-                kd = ('ouvre-moyen' if (gi == 0 and k_ == 0 and REG['ouverture'] > 0) else 'moyen')
-                SH.append((a_, b_, sk['id'], kd, n_, None))
+                b_ = t1 if k_ == len(runs) - 1 else runs[k_ + 1][1][0]['t0'] - 0.12
+                kd_ = 'duo' if len(ns_) > 1 else 'moyen'
+                kd = ('ouvre-' + kd_ if (gi == 0 and k_ == 0 and REG['ouverture'] > 0) else kd_)
+                SH.append((a_, b_, sk['id'], kd, tuple(ns_) if len(ns_) > 1 else ns_[0], None))
             continue
         if gi == 0 and REG['ouverture'] > 0:   # on situe en large PUIS la caméra pousse vers l'échange, sans couper
             SH.append((t0, t1, sk['id'], 'ouvre-' + kind, who, None)); continue

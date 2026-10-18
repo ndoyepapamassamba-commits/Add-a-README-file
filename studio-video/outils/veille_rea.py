@@ -310,6 +310,14 @@ def cycle(e, pool, en_cours):
 
 
 if __name__ == '__main__':
+    # veille permanente = tâche de fond : session et groupe à elle, au plus bas (voir juge_local.arriere_plan, 18/10/2026)
+    try: os.setsid()
+    except OSError:   # chef de son groupe : on ne baisse jamais le groupe de l'appelant, on se relance dans une session neuve
+        if os.environ.get('VEILLE_FOND') != '1':
+            raise SystemExit(subprocess.run([sys.executable, *sys.argv], env={**os.environ, 'VEILLE_FOND': '1'}, start_new_session=True).returncode)
+    try:
+        with open('/proc/self/autogroup', 'w') as f: f.write('19')
+    except OSError: pass
     etat = lire_etat(); renoter(etat); en_cours = []
     with ThreadPoolExecutor(VOIES) as pool:
         while True:

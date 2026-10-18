@@ -112,6 +112,7 @@ def lisse_acc(x, fps, acc=ACC_FLUIDE):
 # hochements, inclinaisons et buste 2,5 Hz (le hochement garde plus de vivacité). La prise de choc (take comique) garde
 # son claquement : là où elle joue, la piste brute est reprise en fondu.
 SUIVI_TETE_HZ = 4.5   # action décalée tête/buste au retard humain mesuré (33 ms CMU ; 35 ms ici)
+PRISE_HZ = 3.0
 SOUPLESSE = {'tete_lacet': 2.0, 'buste_lacet': 2.0, 'lacet_visage': 2.0, 'tete': 2.5, 'tete_tangage': 2.5, 'buste': 2.5}
 
 
@@ -121,7 +122,13 @@ def souple(x, fps, fc, garde=None):
     if len(x) < 16 or fc >= 0.45 * fps: return x.astype(np.float32)
     y = filtfilt(*butter(2, fc / (fps / 2.0)), x)
     y = np.clip(y, x.min(), x.max())                       # aucun extrême nouveau : les bornes de l'enveloppe tiennent
-    if garde is not None: y = y * (1 - garde) + x * garde
+    if garde is not None:
+        # PRISE DE CHOC VIVE MAIS SANS TREMBLEMENT (18/10/2026, mesuré sur la v7) : la piste brute reprise pendant la prise
+        # laissait les 10 % de fenêtres les plus raides sous le niveau humain (tête tournée −5,22 contre −5,15 ; tête −5,60
+        # contre −5,51). Lissée à PRISE_HZ (3 Hz, plus vive que le jeu à 2–2,5 Hz), simulation sur les pistes de la v7 :
+        # −5,01 et −5,19, toutes les articulations au niveau humain, ampleur gardée à 99,3–100,4 %.
+        xr = np.clip(filtfilt(*butter(2, min(PRISE_HZ, 0.45 * fps) / (fps / 2.0)), x), x.min(), x.max())
+        y = y * (1 - garde) + xr * garde
     return y.astype(np.float32)
 
 
