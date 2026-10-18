@@ -137,7 +137,14 @@ Deno.test("text bullets: markers stripped, capitalised, no trailing period", () 
 
 Deno.test("text sentence joining and typography", () => {
   assertEquals(
-    joinSentences(["je suis motivée ", null, "", "Mon objectif : apprendre.", false, "j'ai  le sens du contact , et du service"]),
+    joinSentences([
+      "je suis motivée ",
+      null,
+      "",
+      "Mon objectif : apprendre.",
+      false,
+      "j'ai  le sens du contact , et du service",
+    ]),
     "Je suis motivée. Mon objectif : apprendre. J'ai le sens du contact, et du service.",
   );
   assertEquals(joinList([]), "");

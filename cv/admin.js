@@ -51,10 +51,10 @@
     return el("span", { class: "badge " + entry[1], text: entry[0] });
   }
 
-  function kpi(title, value, sub, highlight) {
+  function kpi(title, amount, sub, highlight) {
     return el("div", { class: "kpi" + (highlight ? " kpi-hl" : "") }, [
       el("h3", { text: title }),
-      el("div", { class: "v", text: value }),
+      el("div", { class: "v" }, [TCV.fmt.fcfa(amount).replace(/\u00a0FCFA$/, ""), el("span", { class: "unit", text: " FCFA" })]),
       sub ? el("div", { class: "s", text: sub }) : null
     ]);
   }
@@ -68,12 +68,12 @@
     var payoutSub = health.payout
       ? "Versé automatiquement vers 20 h 30 sur " + (health.ownerWaveMobile || "votre Wave") + ", frais Wave déduits"
       : "Reversement automatique désactivé";
-    box.appendChild(kpi("À reverser ce soir", fcfa(stats.pendingPayout), payoutSub, true));
-    box.appendChild(kpi("Aujourd'hui", fcfa(stats.today.revenue), periodSub(stats.today)));
-    box.appendChild(kpi("Hier", fcfa(stats.yesterday.revenue), periodSub(stats.yesterday)));
-    box.appendChild(kpi("7 jours", fcfa(stats.last7.revenue), periodSub(stats.last7)));
-    box.appendChild(kpi("30 jours", fcfa(stats.last30.revenue), periodSub(stats.last30)));
-    box.appendChild(kpi("Total", fcfa(stats.allTime.revenue), stats.allTime.paid + " commande" + (stats.allTime.paid > 1 ? "s" : "") + " payée" + (stats.allTime.paid > 1 ? "s" : "")));
+    box.appendChild(kpi("À reverser ce soir", stats.pendingPayout, payoutSub, true));
+    box.appendChild(kpi("Aujourd'hui", stats.today.revenue, periodSub(stats.today)));
+    box.appendChild(kpi("Hier", stats.yesterday.revenue, periodSub(stats.yesterday)));
+    box.appendChild(kpi("7 jours", stats.last7.revenue, periodSub(stats.last7)));
+    box.appendChild(kpi("30 jours", stats.last30.revenue, periodSub(stats.last30)));
+    box.appendChild(kpi("Total", stats.allTime.revenue, stats.allTime.paid + " commande" + (stats.allTime.paid > 1 ? "s" : "") + " payée" + (stats.allTime.paid > 1 ? "s" : "")));
   }
 
   function renderHealth(h) {
@@ -110,24 +110,41 @@
     return el("tr", null, [el("td", { colspan: cols, class: "hint", text: text })]);
   }
 
+  function unlockButton(o) {
+    var btn = el("button", { type: "button", class: "btn btn-primary btn-sm", "aria-label": "Débloquer la commande " + o.id }, [el("span", { class: "btn-label", text: "Débloquer" })]);
+    btn.addEventListener("click", function () { unlock(o, btn); });
+    return btn;
+  }
+
+  /** Orders paid by manual Wave transfer that the owner must confirm: shown first, as cards. */
+  function renderUnlock(list) {
+    var waiting = list.filter(function (o) { return o.status === "awaiting_manual"; });
+    var ul = TCV.dom.clear($("#unlock-list"));
+    waiting.forEach(function (o) {
+      ul.appendChild(el("li", { class: "unlock-card" }, [
+        el("div", null, [
+          el("strong", { class: "unlock-amount", text: fcfa(o.amount) }),
+          el("div", { text: (o.manual_payer_phone ? "Envoyé par le " + TCV.fmt.snPhone(o.manual_payer_phone) : "Numéro du payeur non indiqué") }),
+          el("div", { class: "hint", text: o.id + " · " + TCV.fmt.productLabel(o.product) + " · " + TCV.fmt.dateTime(o.created_at) })
+        ]),
+        unlockButton(o)
+      ]));
+    });
+    $("#to-unlock").hidden = !waiting.length;
+  }
+
   function renderOrders(list) {
     var body = TCV.dom.clear($("#orders-body"));
-    if (!list.length) body.appendChild(emptyRow(8, "Aucune commande pour le moment."));
+    if (!list.length) body.appendChild(emptyRow(7, "Aucune commande pour le moment."));
     list.forEach(function (o) {
-      var action = null;
-      if (o.status === "awaiting_manual") {
-        action = el("button", { type: "button", class: "btn btn-primary btn-sm", "aria-label": "Débloquer la commande " + o.id }, [el("span", { class: "btn-label", text: "Débloquer" })]);
-        action.addEventListener("click", function () { unlock(o, action); });
-      }
       body.appendChild(el("tr", null, [
         el("td", null, [el("strong", { text: o.id })]),
-        el("td", { text: TCV.fmt.dateTime(o.created_at) }),
-        el("td", { text: TCV.fmt.productLabel(o.product) }),
-        el("td", { text: fcfa(o.amount) }),
         el("td", null, [badge(STATUS, o.status)]),
+        el("td", { text: fcfa(o.amount) }),
+        el("td", { text: TCV.fmt.productLabel(o.product) }),
         el("td", { text: o.payment_method === "wave" ? "Wave" : o.payment_method === "manual" ? "Transfert Wave" : "—" }),
         el("td", { text: o.manual_payer_phone ? TCV.fmt.snPhone(o.manual_payer_phone) : "—" }),
-        el("td", null, [action])
+        el("td", { text: TCV.fmt.dateTime(o.created_at) })
       ]));
     });
   }
@@ -154,6 +171,7 @@
     var health = res.health || {};
     renderKpis(stats, health);
     renderHealth(health);
+    renderUnlock(stats.recentOrders || []);
     renderOrders(stats.recentOrders || []);
     renderPayouts(stats.payouts || []);
     setText($("#dash-updated"), "Mis à jour à " + TCV.fmt.dateTime(new Date().toISOString()).split(" ")[1]);

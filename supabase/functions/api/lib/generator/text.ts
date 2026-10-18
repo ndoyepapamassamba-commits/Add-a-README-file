@@ -19,17 +19,20 @@ const VOWEL_RE = /^[aeiouàâäéèêëîïôöùûüæœ]/;
  * Words starting with an aspirated "h" (no elision: "de haut niveau", "le héros").
  * Matched as prefixes, so "hiérarch" covers "hiérarchie" and "hiérarchique".
  */
+// deno-fmt-ignore
 const ASPIRATED_H_PREFIXES = [
-  "hach", "hagard", "haie", "haill", "hain", "haïr", "hâl", "halet", "halte", "hamac", "hameau",
-  "hamburg", "hampe", "hanche", "hand", "hangar", "hant", "happ", "haran", "haras", "harcel",
-  "harcèl", "hard", "hareng", "hargn", "haricot", "harnais", "harpe", "harpon", "hasard", "hât",
-  "hauss", "haut", "havre", "hennir", "hennis", "hernie", "hérisson", "hiérarch", "hiss", "hocher",
-  "hockey", "hollandais", "homard", "hongr", "honte", "honteu", "hoquet", "horde", "hors", "hotte",
-  "houblon", "houl", "houpp", "hourra", "housse", "hublot", "hue", "huée", "huer", "huit", "hurl",
-  "hutte",
+  "hach", "hagard", "haie", "haill", "hain", "haïr", "hâl", "halet", "halte", "hamac", "hameau", "hamburg", "hampe",
+  "hanche", "hand", "hangar", "hant", "happ", "haran", "haras", "harcel", "harcèl", "hard", "hareng", "hargn",
+  "haricot", "harnais", "harpe", "harpon", "hasard", "hât", "hauss", "haut", "havre", "hennir", "hennis", "hernie",
+  "hérisson", "hiérarch", "hiss", "hocher", "hockey", "hollandais", "homard", "hongr", "honte", "honteu", "hoquet",
+  "horde", "hors", "hotte", "houblon", "houl", "houpp", "hourra", "housse", "hublot", "hue", "huée", "huer", "huit",
+  "hurl", "hutte",
 ];
 /** Aspirated-h words that must match exactly (their longer relatives have a mute h: "l'héroïne"). */
-const ASPIRATED_H_EXACT = new Set(["hall", "halls", "halle", "halles", "héros", "héron", "hérons", "hêtre", "hêtres"]);
+// deno-fmt-ignore
+const ASPIRATED_H_EXACT = new Set([
+  "hall", "halls", "halle", "halles", "héros", "héron", "hérons", "hêtre", "hêtres",
+]);
 
 function firstWordLower(phrase: string): string {
   const m = /[\p{L}\p{N}]+/u.exec(phrase.trimStart());
@@ -84,19 +87,19 @@ export function a(phrase: string): string {
  * Gender/number of common nouns that open organisation names ("Cabinet Diallo", "Clinique Pasteur",
  * "Transports Ndiaye"). Such names take a definite article in a sentence: "au sein du Cabinet Diallo".
  */
+// deno-fmt-ignore
 const ORGANISATION_NOUNS: Record<string, "m" | "f" | "p"> = {
   "academie": "f", "agence": "f", "association": "f", "atelier": "m", "auto-ecole": "f", "banque": "f",
-  "boulangerie": "f", "boutique": "f", "bureau": "m", "cabinet": "m", "caisse": "f", "centre": "m",
-  "chambre": "f", "clinique": "f", "college": "m", "compagnie": "f", "complexe": "m", "comptoir": "m",
-  "conseil": "m", "conservatoire": "m", "cooperative": "f", "cours": "m", "croix-rouge": "f", "direction": "f",
-  "dispensaire": "m",
+  "boulangerie": "f", "boutique": "f", "bureau": "m", "cabinet": "m", "caisse": "f", "centre": "m", "chambre": "f",
+  "clinique": "f", "college": "m", "compagnie": "f", "complexe": "m", "comptoir": "m", "conseil": "m",
+  "conservatoire": "m", "cooperative": "f", "cours": "m", "croix-rouge": "f", "direction": "f", "dispensaire": "m",
   "ecole": "f", "entreprise": "f", "etablissement": "m", "etablissements": "p", "faculte": "f", "ferme": "f",
-  "federation": "f", "fondation": "f", "garage": "m", "groupe": "m", "hopital": "m", "hotel": "m",
-  "imprimerie": "f", "industries": "p", "institut": "m", "laboratoire": "m", "laiterie": "f", "librairie": "f",
-  "lycee": "m", "magasin": "m", "mairie": "f", "maison": "f", "menuiserie": "f", "ministere": "m",
-  "mutuelle": "f", "office": "m", "ong": "f", "pharmacie": "f", "pole": "m", "port": "m", "prytanee": "m",
-  "quincaillerie": "f", "residence": "f", "restaurant": "m", "salon": "m", "societe": "f", "station": "f",
-  "supermarche": "m", "transports": "p", "universite": "f", "usine": "f",
+  "federation": "f", "fondation": "f", "garage": "m", "groupe": "m", "hopital": "m", "hotel": "m", "imprimerie": "f",
+  "industries": "p", "institut": "m", "laboratoire": "m", "laiterie": "f", "librairie": "f", "lycee": "m",
+  "magasin": "m", "mairie": "f", "maison": "f", "menuiserie": "f", "ministere": "m", "mutuelle": "f", "office": "m",
+  "ong": "f", "pharmacie": "f", "pole": "m", "port": "m", "prytanee": "m", "quincaillerie": "f", "residence": "f",
+  "restaurant": "m", "salon": "m", "societe": "f", "station": "f", "supermarche": "m", "transports": "p",
+  "universite": "f", "usine": "f",
 };
 
 function foldWord(w: string): string {
@@ -147,13 +150,14 @@ export function chez(company: string): string {
 // ---------------------------------------------------------------------------
 
 /** Words whose capitalisation is kept inside a sentence (brands, software, proper nouns). */
+// deno-fmt-ignore
 const KEEP_CASE = new Set([
-  "access", "android", "archicad", "autocad", "canva", "ciel", "django", "dreamweaver", "excel", "facebook",
-  "figma", "flutter", "free", "gmail", "google", "illustrator", "instagram", "internet explorer", "java",
-  "laravel", "linux", "mac", "microsoft", "money", "odoo", "office", "orange", "outlook", "photoshop",
-  "premiere", "python", "react", "revit", "saari", "sage", "sénégal", "senegal", "dakar", "tiktok",
-  "twitter", "ubuntu", "wave", "windows", "word", "wordpress", "youtube", "état", "etat", "afrique",
-  "expresso", "yas", "zoom", "teams", "kotlin", "swift", "angular", "vue", "node", "symfony",
+  "access", "android", "archicad", "autocad", "canva", "ciel", "django", "dreamweaver", "excel", "facebook", "figma",
+  "flutter", "free", "gmail", "google", "illustrator", "instagram", "internet explorer", "java", "laravel", "linux",
+  "mac", "microsoft", "money", "odoo", "office", "orange", "outlook", "photoshop", "premiere", "python", "react",
+  "revit", "saari", "sage", "sénégal", "senegal", "dakar", "tiktok", "twitter", "ubuntu", "wave", "windows", "word",
+  "wordpress", "youtube", "état", "etat", "afrique", "expresso", "yas", "zoom", "teams", "kotlin", "swift", "angular",
+  "vue", "node", "symfony",
 ]);
 
 /** First letter uppercase, rest untouched. */
@@ -173,9 +177,10 @@ function isKeptWord(word: string): boolean {
   return /\p{Ll}\p{Lu}/u.test(letters);
 }
 
+// deno-fmt-ignore
 const FUNCTION_WORDS = new Set([
-  "à", "a", "au", "aux", "d", "de", "des", "du", "en", "et", "l", "la", "le", "les", "ou", "par", "pour",
-  "sur", "un", "une", "avec", "dans", "chez",
+  "à", "a", "au", "aux", "d", "de", "des", "du", "en", "et", "l", "la", "le", "les", "ou", "par", "pour", "sur", "un",
+  "une", "avec", "dans", "chez",
 ]);
 
 /**
@@ -225,9 +230,10 @@ export function upperName(s: string): string {
 // Dates
 // ---------------------------------------------------------------------------
 
+// deno-fmt-ignore
 export const FRENCH_MONTHS = [
-  "janvier", "février", "mars", "avril", "mai", "juin",
-  "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+  "janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre",
+  "décembre",
 ] as const;
 
 /** "1er octobre 2026", "18 octobre 2026" — UTC calendar day (Dakar is UTC+0). */

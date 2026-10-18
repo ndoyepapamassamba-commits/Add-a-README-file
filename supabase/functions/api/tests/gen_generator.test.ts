@@ -6,9 +6,9 @@ import { formatSnMobile } from "../lib/phone.ts";
 import { formatPeriod, generateDocument } from "../lib/generator/index.ts";
 import {
   CLOSINGS,
+  LETTRE_BACKGROUND,
   LETTRE_BEGINNER,
   LETTRE_BEGINNER_INTEREST,
-  LETTRE_BACKGROUND,
   LETTRE_CLOSE,
   LETTRE_DEGREE,
   LETTRE_EXPERIENCE,
@@ -40,15 +40,14 @@ function strings(doc: Document): Array<[string, string]> {
   const walk = (v: unknown, path: string) => {
     if (typeof v === "string") out.push([path, v]);
     else if (Array.isArray(v)) v.forEach((x, i) => walk(x, `${path}.${i}`));
-    else if (v && typeof v === "object") for (const [k, x] of Object.entries(v)) walk(x, `${path}.${k}`);
+    else if (v && typeof v === "object") { for (const [k, x] of Object.entries(v)) walk(x, `${path}.${k}`); }
   };
   walk(doc, "doc");
   return out;
 }
 
 /** `w` as a whole word: no letter before it, and none after it when it ends with a letter. */
-const word = (w: string, flags = "u") =>
-  new RegExp(`(?<!\\p{L})${w}${/\p{L}$/u.test(w) ? "(?!\\p{L})" : ""}`, flags);
+const word = (w: string, flags = "u") => new RegExp(`(?<!\\p{L})${w}${/\p{L}$/u.test(w) ? "(?!\\p{L})" : ""}`, flags);
 
 /** "de assistant", "que il", "le hôtel", "de hygiène": an elision is missing. */
 const MISSING_ELISION =
@@ -78,7 +77,9 @@ function assertNoInventedDigits(doc: Document, input: OrderInput, ctx: string) {
   const allowed = new Set(`${JSON.stringify(input)} ${formatSnMobile(input.identity.phone)}`.match(/\d+/g) ?? []);
   for (const [path, s] of strings(doc)) {
     if (path.endsWith(".placeDate")) continue;
-    for (const d of s.match(/\d+/g) ?? []) assert(allowed.has(d), `${ctx} ${path}: invented number ${d} in ${JSON.stringify(s)}`);
+    for (const d of s.match(/\d+/g) ?? []) {
+      assert(allowed.has(d), `${ctx} ${path}: invented number ${d} in ${JSON.stringify(s)}`);
+    }
   }
 }
 
@@ -114,8 +115,12 @@ Deno.test("gen fixtures: every random input is accepted by the real form validat
 });
 
 Deno.test("gen test helpers detect the faults they look for", () => {
-  assert(MISSING_ELISION.test("poste de assistant") && MISSING_ELISION.test("de hôtesse") && MISSING_ELISION.test("de Yves"));
-  assert(!MISSING_ELISION.test("de Yacine") && !MISSING_ELISION.test("de haut niveau") && !MISSING_ELISION.test("d'hôtesse"));
+  assert(
+    MISSING_ELISION.test("poste de assistant") && MISSING_ELISION.test("de hôtesse") && MISSING_ELISION.test("de Yves"),
+  );
+  assert(
+    !MISSING_ELISION.test("de Yacine") && !MISSING_ELISION.test("de haut niveau") && !MISSING_ELISION.test("d'hôtesse"),
+  );
   assert(word("motivé").test("je suis motivé, et") && !word("motivé").test("je suis motivée"));
   assert(word("Fort d'").test("Fort d'une") && !word("Fort d'").test("Forte d'une"));
 
@@ -192,14 +197,30 @@ Deno.test("gen determinism and variety across seeds", () => {
 
 Deno.test("gen banks: at least 3 variants per slot, 13 sectors, exact quality labels, no digits", () => {
   const slots: Record<string, unknown[]> = {
-    LETTRE_OPEN_ADVERT, LETTRE_OPEN_REFERRAL, LETTRE_OPEN_SPONTANEOUS, LETTRE_DEGREE, LETTRE_EXPERIENCE,
-    LETTRE_MISSIONS, LETTRE_BEGINNER, LETTRE_BEGINNER_INTEREST, LETTRE_BACKGROUND, LETTRE_SKILLS, LETTRE_IT,
-    LETTRE_QUALITIES, LETTRE_INTEREST, LETTRE_CLOSE, PROFILE_EXPERIENCE, PROFILE_SKILLS, CLOSINGS,
+    LETTRE_OPEN_ADVERT,
+    LETTRE_OPEN_REFERRAL,
+    LETTRE_OPEN_SPONTANEOUS,
+    LETTRE_DEGREE,
+    LETTRE_EXPERIENCE,
+    LETTRE_MISSIONS,
+    LETTRE_BEGINNER,
+    LETTRE_BEGINNER_INTEREST,
+    LETTRE_BACKGROUND,
+    LETTRE_SKILLS,
+    LETTRE_IT,
+    LETTRE_QUALITIES,
+    LETTRE_INTEREST,
+    LETTRE_CLOSE,
+    PROFILE_EXPERIENCE,
+    PROFILE_SKILLS,
+    CLOSINGS,
   };
   for (const [k, v] of Object.entries(PROFILE_INTRO)) slots[`PROFILE_INTRO.${k}`] = v;
   for (const [k, v] of Object.entries(PROFILE_AIM)) slots[`PROFILE_AIM.${k}`] = v;
   for (const [k, v] of Object.entries(LETTRE_FIT)) slots[`LETTRE_FIT.${k}`] = v;
-  for (const [name, variants] of Object.entries(slots)) assert(variants.length >= 3, `${name} has ${variants.length} variants`);
+  for (const [name, variants] of Object.entries(slots)) {
+    assert(variants.length >= 3, `${name} has ${variants.length} variants`);
+  }
 
   assertEquals(Object.keys(SECTORS).length, 13);
   for (const [key, s] of Object.entries(SECTORS)) {
@@ -208,8 +229,18 @@ Deno.test("gen banks: at least 3 variants per slot, 13 sectors, exact quality la
     assert(!/\d/.test(JSON.stringify(s)), `${key} contains a digit`);
   }
   assertEquals(QUALITIES.map((q) => q.label), [
-    "Rigueur", "Sens de l'organisation", "Esprit d'équipe", "Ponctualité", "Sens du contact", "Autonomie",
-    "Capacité d'adaptation", "Dynamisme", "Honnêteté", "Discrétion", "Créativité", "Résistance au stress",
+    "Rigueur",
+    "Sens de l'organisation",
+    "Esprit d'équipe",
+    "Ponctualité",
+    "Sens du contact",
+    "Autonomie",
+    "Capacité d'adaptation",
+    "Dynamisme",
+    "Honnêteté",
+    "Discrétion",
+    "Créativité",
+    "Résistance au stress",
   ]);
   const g = (m: string, _f: string) => m;
   const f = (_m: string, fem: string) => fem;
@@ -225,16 +256,74 @@ Deno.test("gen banks: at least 3 variants per slot, 13 sectors, exact quality la
 // ---------------------------------------------------------------------------
 
 const MASCULINE = [
-  "motivé", "prêt", "convaincu", "intéressé", "désireux", "rigoureux", "ravi", "sérieux", "doté", "inscrit",
-  "débutant", "expérimenté", "confirmé", "polyvalent", "opérationnel", "étudiant", "discret", "créatif",
-  "résistant", "collaborateur", "compétent", "chargé", "passionné", "orienté", "prompt", "Fort d'",
-  "Jeune professionnel", "un professionnel", "Professionnel", "fier", "persuadé", "attaché", "habitué",
+  "motivé",
+  "prêt",
+  "convaincu",
+  "intéressé",
+  "désireux",
+  "rigoureux",
+  "ravi",
+  "sérieux",
+  "doté",
+  "inscrit",
+  "débutant",
+  "expérimenté",
+  "confirmé",
+  "polyvalent",
+  "opérationnel",
+  "étudiant",
+  "discret",
+  "créatif",
+  "résistant",
+  "collaborateur",
+  "compétent",
+  "chargé",
+  "passionné",
+  "orienté",
+  "prompt",
+  "Fort d'",
+  "Jeune professionnel",
+  "un professionnel",
+  "Professionnel",
+  "fier",
+  "persuadé",
+  "attaché",
+  "habitué",
 ];
 const FEMININE = [
-  "motivée", "prête", "convaincue", "intéressée", "désireuse", "rigoureuse", "ravie", "sérieuse", "dotée",
-  "inscrite", "débutante", "expérimentée", "confirmée", "polyvalente", "opérationnelle", "étudiante", "discrète",
-  "créative", "résistante", "collaboratrice", "compétente", "chargée", "passionnée", "orientée", "prompte",
-  "Forte d'", "Jeune professionnelle", "une professionnelle", "Professionnelle", "fière", "persuadée", "attachée", "habituée",
+  "motivée",
+  "prête",
+  "convaincue",
+  "intéressée",
+  "désireuse",
+  "rigoureuse",
+  "ravie",
+  "sérieuse",
+  "dotée",
+  "inscrite",
+  "débutante",
+  "expérimentée",
+  "confirmée",
+  "polyvalente",
+  "opérationnelle",
+  "étudiante",
+  "discrète",
+  "créative",
+  "résistante",
+  "collaboratrice",
+  "compétente",
+  "chargée",
+  "passionnée",
+  "orientée",
+  "prompte",
+  "Forte d'",
+  "Jeune professionnelle",
+  "une professionnelle",
+  "Professionnelle",
+  "fière",
+  "persuadée",
+  "attachée",
+  "habituée",
 ];
 
 function genderInputs(): OrderInput[] {
@@ -251,7 +340,13 @@ function genderInputs(): OrderInput[] {
             ? [{ degree: "Licence 3 en gestion", school: "UCAD", year: "En cours" }]
             : [],
           experiences: shape === "experience"
-            ? [{ title: "Aide comptable", company: "Cabinet Sall", start: "2022", end: "2024", missions: "Saisie des pièces" }]
+            ? [{
+              title: "Aide comptable",
+              company: "Cabinet Sall",
+              start: "2022",
+              end: "2024",
+              missions: "Saisie des pièces",
+            }]
             : shape === "internship"
             ? [{ title: "Stage en comptabilité", company: "Cabinet Sall", start: "2024", end: "2024" }]
             : [],
@@ -284,7 +379,9 @@ Deno.test("gen gender agreement: Mme ⇒ feminine forms only, M ⇒ masculine fo
         input.identity.civility = civility;
         const text = docText(generateDocument(input, "pack", { seed: `G${s}`, now: NOW }));
         const forbidden = civility === "Mme" ? MASCULINE : FEMININE;
-        for (const w of forbidden) assert(!word(w).test(text), `${civility} ${base.target.kind}/${base.target.level}: "${w}" in ${text}`);
+        for (const w of forbidden) {
+          assert(!word(w).test(text), `${civility} ${base.target.kind}/${base.target.level}: "${w}" in ${text}`);
+        }
         if (civility === "Mme" && word("motivée").test(text)) femMotivee++;
         if (civility === "M" && word("motivé").test(text)) mascMotive++;
       }
@@ -298,16 +395,27 @@ Deno.test("gen gender agreement: Mme ⇒ feminine forms only, M ⇒ masculine fo
 // Elision, contractions, facts
 // ---------------------------------------------------------------------------
 
-function baseInput(over: Partial<OrderInput["target"]> = {}, letter: Partial<NonNullable<OrderInput["letter"]>> = {}): OrderInput {
+function baseInput(
+  over: Partial<OrderInput["target"]> = {},
+  letter: Partial<NonNullable<OrderInput["letter"]>> = {},
+): OrderInput {
   return {
     identity: {
-      civility: "Mme", firstName: "ndèye fatou", lastName: "faye", phone: "77 123 45 67", city: "Dakar",
+      civility: "Mme",
+      firstName: "ndèye fatou",
+      lastName: "faye",
+      phone: "77 123 45 67",
+      city: "Dakar",
       email: "ndeye.faye@gmail.com",
     },
     target: { jobTitle: "Assistante comptable", kind: "emploi", sector: "comptabilite", level: "junior", ...over },
     education: [{ degree: "BTS en Comptabilité", school: "ISM", year: "2023" }],
     experiences: [{
-      title: "Aide comptable", company: "Cabinet Sall", place: "Dakar", start: "2023", end: "aujourd'hui",
+      title: "Aide comptable",
+      company: "Cabinet Sall",
+      place: "Dakar",
+      start: "2023",
+      end: "aujourd'hui",
       missions: "- saisie des factures.\n* Rapprochements bancaires;• Déclarations fiscales",
     }],
     skills: ["Saisie comptable", "SYSCOHADA", "excel", "Excel"],
@@ -319,7 +427,8 @@ function baseInput(over: Partial<OrderInput["target"]> = {}, letter: Partial<Non
 }
 
 function allSeeds(input: OrderInput, product: Product = "pack", n = 40): string {
-  return Array.from({ length: n }, (_, i) => docText(generateDocument(input, product, { seed: `E${i}`, now: NOW }))).join("\n");
+  return Array.from({ length: n }, (_, i) => docText(generateDocument(input, product, { seed: `E${i}`, now: NOW })))
+    .join("\n");
 }
 
 Deno.test("gen elision: poste d'assistante, d'hôtesse, au sein d'Orange, du/des for articles", () => {
@@ -375,7 +484,8 @@ Deno.test("gen lettre: source phrasing, qualities, motivation", () => {
   assert(known.includes("d'une grande ponctualité"), known);
   assert(known.includes("preuve de leadership"), known);
 
-  const none = generateDocument(baseInput({}, { qualities: [] }), "lettre", { seed: "Q", now: NOW }).lettre!.paragraphs[2];
+  const none =
+    generateDocument(baseInput({}, { qualities: [] }), "lettre", { seed: "Q", now: NOW }).lettre!.paragraphs[2];
   const phrases = QUALITIES.map((q) => q.phrase((_m, f) => f)).filter((p) => none.includes(p));
   assert(phrases.length >= 2, `defaults not applied: ${none}`);
 
@@ -480,10 +590,16 @@ Deno.test("gen career change: an unrelated degree or job is never tied to the ta
   bac.education = [{ degree: "Baccalauréat série L", school: "Lycée Limamoulaye", year: "2021" }];
   bac.experiences = [];
   const bacText = allSeeds(bac, "lettre", 40);
-  assert(!/baccalauréat[^.]*(connaissances|bases solides) dans/.test(bacText), "secondary diploma credited with trade knowledge");
+  assert(
+    !/baccalauréat[^.]*(connaissances|bases solides) dans/.test(bacText),
+    "secondary diploma credited with trade knowledge",
+  );
 
   const related = allSeeds(baseInput(), "lettre", 40);
-  assert(/BTS en comptabilité[^.]*(dans ce domaine|de terrain)/.test(related), "related degree should be tied to the trade");
+  assert(
+    /BTS en comptabilité[^.]*(dans ce domaine|de terrain)/.test(related),
+    "related degree should be tied to the trade",
+  );
 });
 
 Deno.test("gen robustness: a lettre without company or letter block still reads as whole sentences", () => {

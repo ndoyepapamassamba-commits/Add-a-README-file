@@ -8,13 +8,21 @@ const NOW = new Date("2026-10-01T09:30:00Z");
 
 const INPUT: OrderInput = {
   identity: {
-    civility: "Mme", firstName: "Fatou", lastName: "Sarr", phone: "77 123 45 67", email: "fatou@gmail.com",
-    city: "Dakar", address: "Parcelles Assainies U15",
+    civility: "Mme",
+    firstName: "Fatou",
+    lastName: "Sarr",
+    phone: "77 123 45 67",
+    email: "fatou@gmail.com",
+    city: "Dakar",
+    address: "Parcelles Assainies U15",
   },
   target: { jobTitle: "Infirmière", kind: "emploi", sector: "sante", level: "junior" },
   education: [{ degree: "Diplôme d'État d'infirmier", school: "ENDSS", year: "2022" }],
   experiences: [{
-    title: "Infirmière", company: "Clinique Al Amine", start: "2022", end: "2024",
+    title: "Infirmière",
+    company: "Clinique Al Amine",
+    start: "2022",
+    end: "2024",
     missions: "Soins aux patients\nPrise des constantes\nSuivi des dossiers",
   }],
   skills: ["Soins de base", "Prise de constantes"],
@@ -32,12 +40,17 @@ interface Call {
 }
 
 /** A fetch returning `content` as the model's message (or a raw response when `raw` is given). */
-function fakeFetch(content: unknown, opts: { status?: number; raw?: string } = {}): { fetchFn: typeof fetch; calls: Call[] } {
+function fakeFetch(
+  content: unknown,
+  opts: { status?: number; raw?: string } = {},
+): { fetchFn: typeof fetch; calls: Call[] } {
   const calls: Call[] = [];
   const fetchFn = ((url: string | URL | Request, init?: RequestInit) => {
     calls.push({ url: String(url), init: init ?? {} });
     const body = opts.raw ??
-      JSON.stringify({ choices: [{ message: { content: typeof content === "string" ? content : JSON.stringify(content) } }] });
+      JSON.stringify({
+        choices: [{ message: { content: typeof content === "string" ? content : JSON.stringify(content) } }],
+      });
     return Promise.resolve(new Response(body, { status: opts.status ?? 200 }));
   }) as typeof fetch;
   return { fetchFn, calls };
@@ -113,7 +126,10 @@ Deno.test("llm: invalid JSON, wrong shapes and HTTP errors ⇒ null", async () =
 
 Deno.test("llm: invented numbers or names, and length drift ⇒ null", async () => {
   const good = goodRewrite(DOC);
-  const withParagraph = (i: number, text: string) => ({ ...good, paragraphs: good.paragraphs.map((p, j) => (j === i ? text : p)) });
+  const withParagraph = (i: number, text: string) => ({
+    ...good,
+    paragraphs: good.paragraphs.map((p, j) => (j === i ? text : p)),
+  });
   const p2 = DOC.lettre!.paragraphs[1];
   const cases: Array<[string, unknown]> = [
     ["invented percentage", withParagraph(1, `${p2.slice(0, -1)} et j'ai réduit les délais de 20 %.`)],
@@ -143,7 +159,8 @@ Deno.test("llm: timeout, network error and a fetch that ignores abort ⇒ null, 
   assert(Date.now() - started < 2000, "the timeout must cut the request short");
 
   let release: () => void = () => {};
-  const deaf = (() => new Promise<Response>((resolve) => (release = () => resolve(new Response("{}"))))) as typeof fetch;
+  const deaf =
+    (() => new Promise<Response>((resolve) => (release = () => resolve(new Response("{}"))))) as typeof fetch;
   assertEquals(await enhancer(deaf, 30)(DOC, INPUT, "pack"), null);
   release();
 

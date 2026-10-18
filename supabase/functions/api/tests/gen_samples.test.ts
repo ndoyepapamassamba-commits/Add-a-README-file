@@ -22,8 +22,13 @@ export const PERSONAS: Persona[] = [
     product: "pack",
     input: {
       identity: {
-        civility: "Mme", firstName: "awa", lastName: "Ndiaye", phone: "77 123 45 67", email: "awa.ndiaye@gmail.com",
-        city: "Dakar", address: "Sicap Liberté 6",
+        civility: "Mme",
+        firstName: "awa",
+        lastName: "Ndiaye",
+        phone: "77 123 45 67",
+        email: "awa.ndiaye@gmail.com",
+        city: "Dakar",
+        address: "Sicap Liberté 6",
       },
       target: { jobTitle: "Assistante comptable", kind: "stage", sector: "comptabilite", level: "debutant" },
       education: [
@@ -39,7 +44,9 @@ export const PERSONAS: Persona[] = [
       }],
       interests: ["Lecture", "Bénévolat"],
       letter: {
-        company: "Cabinet Diallo Expertise", source: "LinkedIn", qualities: ["Rigueur", "Discrétion", "Sens de l'organisation"],
+        company: "Cabinet Diallo Expertise",
+        source: "LinkedIn",
+        qualities: ["Rigueur", "Discrétion", "Sens de l'organisation"],
         motivation: "je souhaite découvrir le métier aux côtés de professionnels exigeants",
       },
     },
@@ -54,7 +61,10 @@ export const PERSONAS: Persona[] = [
       education: [{ degree: "Permis poids lourds (C)", school: "Auto-école Thiessoise", year: "2016" }],
       experiences: [
         {
-          title: "Chauffeur-livreur", company: "Transports Rapides du Cap-Vert", place: "Dakar", start: "2019",
+          title: "Chauffeur-livreur",
+          company: "Transports Rapides du Cap-Vert",
+          place: "Dakar",
+          start: "2019",
           end: "aujourd'hui",
           missions:
             "- Livraison des clients à Dakar et Thiès\n- Chargement et déchargement des marchandises;\n• Vérification des bons de livraison\n• Entretien courant du véhicule.",
@@ -74,14 +84,24 @@ export const PERSONAS: Persona[] = [
     product: "pack",
     input: {
       identity: {
-        civility: "Mme", firstName: "Fatou", lastName: "Sarr", phone: "76 222 33 44", email: "fatou.sarr@yahoo.fr",
-        city: "Dakar", address: "Parcelles Assainies U15",
+        civility: "Mme",
+        firstName: "Fatou",
+        lastName: "Sarr",
+        phone: "76 222 33 44",
+        email: "fatou.sarr@yahoo.fr",
+        city: "Dakar",
+        address: "Parcelles Assainies U15",
       },
       target: { jobTitle: "Infirmière", kind: "emploi", sector: "sante", level: "junior" },
       education: [{ degree: "Diplôme d'État d'infirmier", school: "ENDSS", year: "2022" }],
       experiences: [{
-        title: "Infirmière", company: "Clinique Al Amine", place: "Dakar", start: "2022", end: "2024",
-        missions: "Soins aux patients hospitalisés\nPrise des constantes\nTenue des dossiers de soins\nAccueil des familles",
+        title: "Infirmière",
+        company: "Clinique Al Amine",
+        place: "Dakar",
+        start: "2022",
+        end: "2024",
+        missions:
+          "Soins aux patients hospitalisés\nPrise des constantes\nTenue des dossiers de soins\nAccueil des familles",
       }],
       skills: ["Soins de base", "Prise de constantes", "Hygiène et asepsie", "Gestion des urgences"],
       it: ["Word", "Internet"],
@@ -91,7 +111,9 @@ export const PERSONAS: Persona[] = [
       }],
       interests: ["Bénévolat", "Lecture"],
       letter: {
-        company: "Hôpital Principal de Dakar", source: "Facebook", recipient: "Monsieur le Directeur des Soins",
+        company: "Hôpital Principal de Dakar",
+        source: "Facebook",
+        recipient: "Monsieur le Directeur des Soins",
         qualities: ["Rigueur", "Résistance au stress", "Sens du contact"],
       },
     },
@@ -102,14 +124,21 @@ export const PERSONAS: Persona[] = [
     product: "pack",
     input: {
       identity: {
-        civility: "M", firstName: "Ibrahima", lastName: "Fall", phone: "78 444 55 66", email: "ibrahima.fall.dev@gmail.com",
+        civility: "M",
+        firstName: "Ibrahima",
+        lastName: "Fall",
+        phone: "78 444 55 66",
+        email: "ibrahima.fall.dev@gmail.com",
         city: "Dakar",
       },
       target: { jobTitle: "Développeur web", kind: "emploi", sector: "informatique", level: "junior" },
       education: [{ degree: "Licence professionnelle en Génie logiciel", school: "UCAD", year: "2024" }],
       experiences: [
         {
-          title: "Stage en développement web", company: "Sen Digital", start: "Mars 2024", end: "Août 2024",
+          title: "Stage en développement web",
+          company: "Sen Digital",
+          start: "Mars 2024",
+          end: "Août 2024",
           missions: "Développement d'un site vitrine avec Laravel; intégration de maquettes Figma; corrections de bugs",
         },
       ],
@@ -118,7 +147,9 @@ export const PERSONAS: Persona[] = [
       languages: [{ name: "Français", level: "Courant" }, { name: "Anglais", level: "Bon niveau" }],
       interests: ["Jeux vidéo", "Football"],
       letter: {
-        company: "Wave Mobile Money", source: "Senjob", qualities: ["Autonomie", "Créativité"],
+        company: "Wave Mobile Money",
+        source: "Senjob",
+        qualities: ["Autonomie", "Créativité"],
         motivation: "J'utilise vos services chaque jour et j'aimerais contribuer à les améliorer.",
       },
     },
@@ -129,15 +160,24 @@ export const PERSONAS: Persona[] = [
     product: "pack",
     input: {
       identity: {
-        civility: "Mme", firstName: "MAME DIARRA", lastName: "Bâ", phone: "77 987 65 43", email: "mamediarra.ba@gmail.com",
-        city: "Dakar", address: "Mermoz Pyrotechnie",
+        civility: "Mme",
+        firstName: "MAME DIARRA",
+        lastName: "Bâ",
+        phone: "77 987 65 43",
+        email: "mamediarra.ba@gmail.com",
+        city: "Dakar",
+        address: "Mermoz Pyrotechnie",
       },
       target: { jobTitle: "Responsable commerciale", kind: "emploi", sector: "commerce", level: "senior" },
       education: [{ degree: "Master 2 Marketing", school: "SUPDECO", year: "2011" }],
       experiences: [
         {
-          title: "Responsable commerciale", company: "Groupe Baobab Distribution", start: "2016", end: "",
-          missions: "Encadrement d'une équipe de commerciaux\nNégociation avec les grands comptes\nSuivi des objectifs de vente",
+          title: "Responsable commerciale",
+          company: "Groupe Baobab Distribution",
+          start: "2016",
+          end: "",
+          missions:
+            "Encadrement d'une équipe de commerciaux\nNégociation avec les grands comptes\nSuivi des objectifs de vente",
         },
         { title: "Commerciale terrain", company: "Laiterie du Fleuve", start: "2011", end: "2016" },
       ],
@@ -149,7 +189,8 @@ export const PERSONAS: Persona[] = [
       }],
       interests: ["Vie associative", "Voyages"],
       letter: {
-        company: "Les Moulins Sentenac", source: "un ancien collègue",
+        company: "Les Moulins Sentenac",
+        source: "un ancien collègue",
         qualities: ["Dynamisme", "Sens du contact", "Résistance au stress", "Leadership"],
       },
     },
@@ -166,7 +207,10 @@ export const PERSONAS: Persona[] = [
         { degree: "Niveau Terminale", school: "Lycée de Guédiawaye", year: "2012" },
       ],
       experiences: [{
-        title: "Agent de sécurité", company: "Teranga Gardiennage", start: "2017", end: "2024",
+        title: "Agent de sécurité",
+        company: "Teranga Gardiennage",
+        start: "2017",
+        end: "2024",
         missions: "* Contrôle des accès\n* Rondes de jour et de nuit\n* Rédaction des rapports de poste",
       }],
       skills: ["Surveillance de site", "Contrôle d'accès", "Premiers secours"],
@@ -185,8 +229,12 @@ export const PERSONAS: Persona[] = [
       target: { jobTitle: "Serveuse", kind: "emploi", sector: "hotellerie", level: "debutant" },
       education: [{ degree: "CAP Restauration", school: "Centre de formation professionnelle de Saly", year: "2025" }],
       experiences: [{
-        title: "Stage en restauration", company: "Hôtel Le Lagon Bleu", place: "Saly", start: "Juin 2025",
-        end: "Août 2025", missions: "Service en salle\nMise en place des tables\nAccueil des clients",
+        title: "Stage en restauration",
+        company: "Hôtel Le Lagon Bleu",
+        place: "Saly",
+        start: "Juin 2025",
+        end: "Août 2025",
+        missions: "Service en salle\nMise en place des tables\nAccueil des clients",
       }],
       skills: ["Service en salle", "Accueil des clients", "Hygiène alimentaire"],
       it: [],
@@ -196,7 +244,9 @@ export const PERSONAS: Persona[] = [
       }],
       interests: ["Cuisine", "Danse"],
       letter: {
-        company: "Royal Saly Hôtel", source: "le journal Le Soleil", qualities: ["Sens du contact", "Ponctualité"],
+        company: "Royal Saly Hôtel",
+        source: "le journal Le Soleil",
+        qualities: ["Sens du contact", "Ponctualité"],
         motivation: "J'aime accueillir les gens et les mettre à l'aise",
       },
     },
@@ -207,15 +257,23 @@ export const PERSONAS: Persona[] = [
     product: "pack",
     input: {
       identity: {
-        civility: "M", firstName: "cheikh tidiane", lastName: "Mbaye", phone: "77 654 32 10",
-        email: "ct.mbaye@gmail.com", city: "Thiès",
+        civility: "M",
+        firstName: "cheikh tidiane",
+        lastName: "Mbaye",
+        phone: "77 654 32 10",
+        email: "ct.mbaye@gmail.com",
+        city: "Thiès",
       },
       target: { jobTitle: "Professeur de français", kind: "emploi", sector: "enseignement", level: "confirme" },
       education: [{ degree: "Licence en Lettres modernes", school: "Université Cheikh Anta Diop", year: "2012" }],
       experiences: [
         {
-          title: "Professeur de français", company: "Cours Privé Les Pionniers", start: "2015", end: "En cours",
-          missions: "Préparation et animation des cours de la 6e à la 3e\nÉvaluation des élèves\nRencontres avec les parents",
+          title: "Professeur de français",
+          company: "Cours Privé Les Pionniers",
+          start: "2015",
+          end: "En cours",
+          missions:
+            "Préparation et animation des cours de la 6e à la 3e\nÉvaluation des élèves\nRencontres avec les parents",
         },
         { title: "Enseignant vacataire", company: "Collège Saint-Gabriel", start: "2012", end: "2015" },
       ],
@@ -224,8 +282,11 @@ export const PERSONAS: Persona[] = [
       languages: [{ name: "Français", level: "Courant" }, { name: "Wolof", level: "Langue maternelle" }],
       interests: ["Lecture", "Théâtre"],
       letter: {
-        company: "Groupe Scolaire Excellence", recipient: "Monsieur le Directeur", companyCity: "Thiès",
-        source: "votre site internet", qualities: ["Sens de l'organisation", "Capacité d'adaptation", "Patience"],
+        company: "Groupe Scolaire Excellence",
+        recipient: "Monsieur le Directeur",
+        companyCity: "Thiès",
+        source: "votre site internet",
+        qualities: ["Sens de l'organisation", "Capacité d'adaptation", "Patience"],
       },
     },
   },
@@ -235,10 +296,19 @@ export const PERSONAS: Persona[] = [
     product: "lettre",
     input: {
       identity: {
-        civility: "Mme", firstName: "Aïssatou", lastName: "Diallo", phone: "+221 76 808 90 10",
-        email: "aissatou.diallo@gmail.com", city: "Saint-Louis",
+        civility: "Mme",
+        firstName: "Aïssatou",
+        lastName: "Diallo",
+        phone: "+221 76 808 90 10",
+        email: "aissatou.diallo@gmail.com",
+        city: "Saint-Louis",
       },
-      target: { jobTitle: "Assistante community manager", kind: "alternance", sector: "communication", level: "debutant" },
+      target: {
+        jobTitle: "Assistante community manager",
+        kind: "alternance",
+        sector: "communication",
+        level: "debutant",
+      },
       education: [{ degree: "Licence 2 en Communication", school: "Université Gaston Berger", year: "En cours" }],
       experiences: [],
       skills: ["Réseaux sociaux", "Création de visuels"],
@@ -266,7 +336,12 @@ function renderCv(cv: CvDoc): string[] {
   }
   if (cv.skills.length) out.push("", `**Compétences** : ${cv.skills.join(", ")}`);
   if (cv.it.length) out.push("", `**Informatique** : ${cv.it.join(", ")}`);
-  if (cv.languages.length) out.push("", `**Langues** : ${cv.languages.map((l) => `${l.name} (${l.level})`).join(", ")}`);
+  if (cv.languages.length) {
+    out.push(
+      "",
+      `**Langues** : ${cv.languages.map((l) => `${l.name} (${l.level})`).join(", ")}`,
+    );
+  }
   if (cv.interests.length) out.push("", `**Centres d'intérêt** : ${cv.interests.join(", ")}`);
   return out;
 }

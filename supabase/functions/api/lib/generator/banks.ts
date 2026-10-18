@@ -84,22 +84,22 @@ export type Variant = (c: Ctx) => string | null | false | undefined;
 // ---------------------------------------------------------------------------
 
 /** `domain` reads after "dans" / "pour": "dans le commerce et la vente". */
+// deno-fmt-ignore
 export const SECTORS: Record<Sector, { label: string; domain: string; skills: string[] }> = {
   commerce: {
     label: "Commerce, vente",
     domain: "le commerce et la vente",
     skills: [
-      "Accueil client", "Techniques de vente", "Encaissement", "Gestion des stocks", "Mise en rayon",
-      "Prospection", "Négociation", "Fidélisation client", "Relation client", "Suivi des commandes",
+      "Accueil client", "Techniques de vente", "Encaissement", "Gestion des stocks", "Mise en rayon", "Prospection",
+      "Négociation", "Fidélisation client", "Relation client", "Suivi des commandes",
     ],
   },
   comptabilite: {
     label: "Comptabilité, finance",
     domain: "la comptabilité et la finance",
     skills: [
-      "Saisie comptable", "SYSCOHADA", "Rapprochement bancaire", "Facturation", "Déclarations fiscales",
-      "Paie", "Suivi de trésorerie", "Gestion de caisse", "États financiers",
-      "Suivi des comptes clients et fournisseurs",
+      "Saisie comptable", "SYSCOHADA", "Rapprochement bancaire", "Facturation", "Déclarations fiscales", "Paie",
+      "Suivi de trésorerie", "Gestion de caisse", "États financiers", "Suivi des comptes clients et fournisseurs",
     ],
   },
   informatique: {
@@ -133,9 +133,9 @@ export const SECTORS: Record<Sector, { label: string; domain: string; skills: st
     label: "Administration, secrétariat",
     domain: "l'administration et le secrétariat",
     skills: [
-      "Accueil physique et téléphonique", "Rédaction de courriers", "Classement et archivage",
-      "Gestion d'agenda", "Saisie de documents", "Organisation de réunions", "Gestion du courrier",
-      "Tenue de dossiers", "Suivi administratif", "Gestion des fournitures",
+      "Accueil physique et téléphonique", "Rédaction de courriers", "Classement et archivage", "Gestion d'agenda",
+      "Saisie de documents", "Organisation de réunions", "Gestion du courrier", "Tenue de dossiers",
+      "Suivi administratif", "Gestion des fournitures",
     ],
   },
   btp: {
@@ -150,9 +150,8 @@ export const SECTORS: Record<Sector, { label: string; domain: string; skills: st
     label: "Hôtellerie, restauration",
     domain: "l'hôtellerie et la restauration",
     skills: [
-      "Accueil des clients", "Service en salle", "Réservations", "Cuisine", "Hygiène alimentaire",
-      "Room service", "Tenue de caisse", "Gestion des réclamations", "Mise en place de la salle",
-      "Service au bar",
+      "Accueil des clients", "Service en salle", "Réservations", "Cuisine", "Hygiène alimentaire", "Room service",
+      "Tenue de caisse", "Gestion des réclamations", "Mise en place de la salle", "Service au bar",
     ],
   },
   logistique: {
@@ -160,17 +159,16 @@ export const SECTORS: Record<Sector, { label: string; domain: string; skills: st
     domain: "le transport et la logistique",
     skills: [
       "Réception des marchandises", "Gestion des stocks", "Préparation de commandes", "Inventaire",
-      "Conduite de véhicule", "Planification des livraisons", "Suivi des expéditions",
-      "Chargement et déchargement", "Entretien courant du véhicule", "Respect du Code de la route",
+      "Conduite de véhicule", "Planification des livraisons", "Suivi des expéditions", "Chargement et déchargement",
+      "Entretien courant du véhicule", "Respect du Code de la route",
     ],
   },
   communication: {
     label: "Communication, marketing",
     domain: "la communication et le marketing",
     skills: [
-      "Réseaux sociaux", "Rédaction web", "Création de visuels", "Organisation d'événements",
-      "Relations presse", "Marketing digital", "Prise de parole", "Photographie", "Community management",
-      "Montage vidéo",
+      "Réseaux sociaux", "Rédaction web", "Création de visuels", "Organisation d'événements", "Relations presse",
+      "Marketing digital", "Prise de parole", "Photographie", "Community management", "Montage vidéo",
     ],
   },
   agriculture: {
@@ -202,14 +200,14 @@ export const SECTORS: Record<Sector, { label: string; domain: string; skills: st
   },
 };
 
+/** What any experience develops, used when the latest job is outside the target trade. */
+export const NEUTRAL_GAIN = "le sens des responsabilités et une réelle capacité d'adaptation";
+
 /**
  * Sector colour for the letters. practice: what a trainee discovers ("découvrir concrètement …");
  * stake: two things that matter in the trade (plural verb: "… comptent"); gain: what experience
  * there develops ("m'a permis de développer …"); org: the employer in general ("au service d'une entreprise").
  */
-/** What any experience develops, used when the latest job is outside the target trade. */
-export const NEUTRAL_GAIN = "le sens des responsabilités et une réelle capacité d'adaptation";
-
 export const SECTOR_CONTEXT: Record<Sector, { practice: string; stake: string; gain: string; org: string }> = {
   commerce: {
     practice: "les techniques de vente et la relation client",
@@ -306,28 +304,30 @@ export const QUALITIES: Array<{ label: string; phrase: (g: Gender) => string }> 
   { label: "Capacité d'adaptation", phrase: (g) => `${g("prompt", "prompte")} à m'adapter aux situations nouvelles` },
   { label: "Dynamisme", phrase: () => "dynamique dans tout ce que j'entreprends" },
   { label: "Honnêteté", phrase: () => "d'une honnêteté irréprochable" },
-  { label: "Discrétion", phrase: (g) => `${g("discret", "discrète")} dans le traitement des informations confidentielles` },
+  {
+    label: "Discrétion",
+    phrase: (g) => `${g("discret", "discrète")} dans le traitement des informations confidentielles`,
+  },
   { label: "Créativité", phrase: (g) => `${g("créatif", "créative")} dans la recherche de solutions` },
   { label: "Résistance au stress", phrase: (g) => `${g("résistant", "résistante")} au stress` },
 ];
 
 /** Typed variants recognised as one of the QUALITIES (keys folded: lower-case, no accents). */
+// deno-fmt-ignore
 export const QUALITY_ALIASES: Record<string, string> = {
   "rigueur": "Rigueur", "rigoureux": "Rigueur", "rigoureuse": "Rigueur",
   "sens de l'organisation": "Sens de l'organisation", "organisation": "Sens de l'organisation",
   "organise": "Sens de l'organisation", "organisee": "Sens de l'organisation", "methodique": "Sens de l'organisation",
-  "esprit d'equipe": "Esprit d'équipe", "travail en equipe": "Esprit d'équipe",
-  "ponctualite": "Ponctualité", "ponctuel": "Ponctualité", "ponctuelle": "Ponctualité",
-  "sens du contact": "Sens du contact", "contact": "Sens du contact",
-  "autonomie": "Autonomie", "autonome": "Autonomie",
+  "esprit d'equipe": "Esprit d'équipe", "travail en equipe": "Esprit d'équipe", "ponctualite": "Ponctualité",
+  "ponctuel": "Ponctualité", "ponctuelle": "Ponctualité", "sens du contact": "Sens du contact",
+  "contact": "Sens du contact", "autonomie": "Autonomie", "autonome": "Autonomie",
   "capacite d'adaptation": "Capacité d'adaptation", "adaptation": "Capacité d'adaptation",
-  "adaptabilite": "Capacité d'adaptation", "adaptable": "Capacité d'adaptation",
-  "dynamisme": "Dynamisme", "dynamique": "Dynamisme",
-  "honnetete": "Honnêteté", "honnete": "Honnêteté",
-  "discretion": "Discrétion", "discret": "Discrétion", "discrete": "Discrétion",
-  "creativite": "Créativité", "creatif": "Créativité", "creative": "Créativité",
-  "resistance au stress": "Résistance au stress", "resistant au stress": "Résistance au stress",
-  "resistante au stress": "Résistance au stress", "gestion du stress": "Résistance au stress",
+  "adaptabilite": "Capacité d'adaptation", "adaptable": "Capacité d'adaptation", "dynamisme": "Dynamisme",
+  "dynamique": "Dynamisme", "honnetete": "Honnêteté", "honnete": "Honnêteté", "discretion": "Discrétion",
+  "discret": "Discrétion", "discrete": "Discrétion", "creativite": "Créativité", "creatif": "Créativité",
+  "creative": "Créativité", "resistance au stress": "Résistance au stress",
+  "resistant au stress": "Résistance au stress", "resistante au stress": "Résistance au stress",
+  "gestion du stress": "Résistance au stress",
 };
 
 /** Qualities added when the customer chose fewer than two (soft skills typical of the trade). */
@@ -370,11 +370,15 @@ export function expClause(c: Ctx, style: 0 | 1, opts: { span: boolean; notamment
   const span = opts.span ? e.span : "";
   const nb = opts.notamment ? " notamment" : "";
   if (e.internship) {
-    return e.current ? `j'effectue actuellement un ${e.title}${e.at}` : `j'ai${nb} effectué un ${e.title}${e.at}${span}`;
+    return e.current
+      ? `j'effectue actuellement un ${e.title}${e.at}`
+      : `j'ai${nb} effectué un ${e.title}${e.at}${span}`;
   }
   if (e.current) {
     const when = span || " actuellement";
-    return style === 0 ? `j'occupe${when} le poste ${de(e.title)}${e.at}` : `j'exerce${when} ${enTantQue(e.title)}${e.at}`;
+    return style === 0
+      ? `j'occupe${when} le poste ${de(e.title)}${e.at}`
+      : `j'exerce${when} ${enTantQue(e.title)}${e.at}`;
   }
   return style === 0
     ? `j'ai${nb} occupé le poste ${de(e.title)}${e.at}${span}`
@@ -401,40 +405,74 @@ function expSubject(c: Ctx, span: boolean): { subject: string; verb: string } {
 
 export const PROFILE_INTRO: Record<Level, Variant[]> = {
   debutant: [
-    (c) => c.degree && `${c.degree.lead}, je suis ${c.g("motivé", "motivée")} à l'idée de faire mes premiers pas dans ${c.field}`,
+    (c) =>
+      c.degree &&
+      `${c.degree.lead}, je suis ${c.g("motivé", "motivée")} à l'idée de faire mes premiers pas dans ${c.field}`,
     (c) => c.degree?.linked && `${c.degree.lead}, je souhaite mettre mes connaissances en pratique dans ${c.field}`,
     (c) =>
       c.degree &&
-      `${c.degree.lead}, ${c.g("sérieux", "sérieuse")} et ${c.g("désireux", "désireuse")} d'apprendre, je nourris un vif intérêt pour ${c.field}`,
+      `${c.degree.lead}, ${c.g("sérieux", "sérieuse")} et ${
+        c.g("désireux", "désireuse")
+      } d'apprendre, je nourris un vif intérêt pour ${c.field}`,
     (c) => !c.degree && `Jeune et ${c.g("motivé", "motivée")}, je souhaite faire mes premiers pas dans ${c.domain}`,
     (c) =>
       !c.degree &&
-      `${c.g("Sérieux", "Sérieuse")} et ${c.g("désireux", "désireuse")} d'apprendre, je nourris un vif intérêt pour ${c.field}`,
+      `${c.g("Sérieux", "Sérieuse")} et ${
+        c.g("désireux", "désireuse")
+      } d'apprendre, je nourris un vif intérêt pour ${c.field}`,
     (c) => !c.degree && `${c.g("Motivé", "Motivée")} et volontaire, je souhaite démarrer ma carrière dans ${c.domain}`,
   ],
   junior: [
     (c) =>
       c.expCount > 0 &&
-      `${c.g("Fort", "Forte")} d'une première expérience dans ${c.domain}, je suis ${c.g("un professionnel motivé", "une professionnelle motivée")} et ${c.g("rapidement opérationnel", "rapidement opérationnelle")}`,
+      `${c.g("Fort", "Forte")} d'une première expérience dans ${c.domain}, je suis ${
+        c.g("un professionnel motivé", "une professionnelle motivée")
+      } et ${c.g("rapidement opérationnel", "rapidement opérationnelle")}`,
     (c) => c.degree?.linked && `${c.degree.lead}, je dispose de bases solides dans ${c.field}`,
-    (c) => `${c.g("Jeune professionnel", "Jeune professionnelle")} dynamique, je souhaite consolider mon parcours dans ${c.domain}`,
+    (c) =>
+      `${
+        c.g("Jeune professionnel", "Jeune professionnelle")
+      } dynamique, je souhaite consolider mon parcours dans ${c.domain}`,
     (c) =>
       c.expCount > 0 &&
-      `${c.expCount > 1 ? "Mes premières expériences" : "Ma première expérience"} dans ${c.domain} ${c.expCount > 1 ? "m'ont" : "m'a"} permis de développer rigueur et sens des responsabilités`,
-    (c) => `${c.g("Professionnel motivé", "Professionnelle motivée")} en début de carrière, j'ai à cœur de progresser dans ${c.domain}`,
+      `${c.expCount > 1 ? "Mes premières expériences" : "Ma première expérience"} dans ${c.domain} ${
+        c.expCount > 1 ? "m'ont" : "m'a"
+      } permis de développer rigueur et sens des responsabilités`,
+    (c) =>
+      `${
+        c.g("Professionnel motivé", "Professionnelle motivée")
+      } en début de carrière, j'ai à cœur de progresser dans ${c.domain}`,
   ],
   confirme: [
-    (c) => `${c.g("Professionnel confirmé", "Professionnelle confirmée")} dans ${c.domain}, je dispose d'un savoir-faire solide et éprouvé`,
-    (c) => `${c.g("Fort", "Forte")} d'une solide expérience dans ${c.domain}, je maîtrise les exigences du métier ${de(c.role)}`,
+    (c) =>
+      `${
+        c.g("Professionnel confirmé", "Professionnelle confirmée")
+      } dans ${c.domain}, je dispose d'un savoir-faire solide et éprouvé`,
+    (c) =>
+      `${c.g("Fort", "Forte")} d'une solide expérience dans ${c.domain}, je maîtrise les exigences du métier ${
+        de(c.role)
+      }`,
     (c) =>
       c.expCount > 0 &&
-      `${c.g("Expérimenté", "Expérimentée")} et ${c.g("polyvalent", "polyvalente")}, j'ai consolidé mon savoir-faire au fil de mon parcours dans ${c.domain}`,
-    (c) => c.degree && `${c.degree.lead}, j'ai développé au fil de mon parcours une réelle maîtrise du métier ${de(c.role)}`,
+      `${c.g("Expérimenté", "Expérimentée")} et ${
+        c.g("polyvalent", "polyvalente")
+      }, j'ai consolidé mon savoir-faire au fil de mon parcours dans ${c.domain}`,
+    (c) =>
+      c.degree && `${c.degree.lead}, j'ai développé au fil de mon parcours une réelle maîtrise du métier ${de(c.role)}`,
   ],
   senior: [
-    (c) => `${c.g("Professionnel expérimenté", "Professionnelle expérimentée")}, je justifie d'un parcours riche dans ${c.domain}`,
-    (c) => `Riche de nombreuses années d'expérience dans ${c.domain}, j'ai acquis une vision globale du métier ${de(c.role)}`,
-    (c) => `${c.g("Fort", "Forte")} d'une longue expérience dans ${c.domain}, je sais conjuguer expertise métier et sens des responsabilités`,
+    (c) =>
+      `${
+        c.g("Professionnel expérimenté", "Professionnelle expérimentée")
+      }, je justifie d'un parcours riche dans ${c.domain}`,
+    (c) =>
+      `Riche de nombreuses années d'expérience dans ${c.domain}, j'ai acquis une vision globale du métier ${
+        de(c.role)
+      }`,
+    (c) =>
+      `${
+        c.g("Fort", "Forte")
+      } d'une longue expérience dans ${c.domain}, je sais conjuguer expertise métier et sens des responsabilités`,
     (c) => c.degree && `${c.degree.lead}, je cumule une longue expérience dans ${c.field}`,
   ],
 };
@@ -472,18 +510,29 @@ export const PROFILE_AIM: Record<JobKind, Variant[]> = {
         ? `Je souhaite aujourd'hui mettre mon énergie et mes connaissances au service ${de(c.org)} ${enTantQue(c.role)}`
         : `Je souhaite aujourd'hui mettre mes compétences au service ${de(c.org)} ${enTantQue(c.role)}`,
     (c) => `Mon objectif : contribuer efficacement à la réussite ${de(c.org)} ${enTantQue(c.role)}`,
-    (c) => senior(c) && `Je souhaite désormais mettre mon expertise au service d'une structure ambitieuse ${enTantQue(c.role)}`,
+    (c) =>
+      senior(c) &&
+      `Je souhaite désormais mettre mon expertise au service d'une structure ambitieuse ${enTantQue(c.role)}`,
   ],
   stage: [
     (c) => `Je recherche aujourd'hui un ${c.stageNoun} afin de découvrir concrètement ${c.practice}`,
     (c) => `Je souhaite effectuer un ${c.stageNoun} pour compléter ma formation par une expérience de terrain`,
-    (c) => `Mon objectif : obtenir un ${c.stageNoun} qui me permettra de progresser au sein d'une équipe professionnelle`,
+    (c) =>
+      `Mon objectif : obtenir un ${c.stageNoun} qui me permettra de progresser au sein d'une équipe professionnelle`,
   ],
   alternance: [
     (c) =>
-      `Je recherche une entreprise d'accueil pour une alternance ${enTantQue(c.role)}, afin d'allier formation théorique et pratique professionnelle`,
-    (c) => `Je souhaite intégrer une entreprise en alternance ${enTantQue(c.role)} pour consolider mes connaissances sur le terrain`,
-    (c) => `Mon objectif : trouver une alternance ${enTantQue(c.role)} afin de me former au plus près des réalités du métier`,
+      `Je recherche une entreprise d'accueil pour une alternance ${
+        enTantQue(c.role)
+      }, afin d'allier formation théorique et pratique professionnelle`,
+    (c) =>
+      `Je souhaite intégrer une entreprise en alternance ${
+        enTantQue(c.role)
+      } pour consolider mes connaissances sur le terrain`,
+    (c) =>
+      `Mon objectif : trouver une alternance ${
+        enTantQue(c.role)
+      } afin de me former au plus près des réalités du métier`,
   ],
 };
 
@@ -494,28 +543,51 @@ export const PROFILE_AIM: Record<JobKind, Variant[]> = {
 /** P1, first sentence, when the customer saw an advert (`source.text` = "sur LinkedIn"). */
 export const LETTRE_OPEN_ADVERT: Variant[] = [
   (c) =>
-    `Suite à votre annonce parue ${c.source!.text}, j'ai l'honneur de vous soumettre ma candidature ${applyAdvert(c)} au sein ${de(c.company)}`,
+    `Suite à votre annonce parue ${c.source!.text}, j'ai l'honneur de vous soumettre ma candidature ${
+      applyAdvert(c)
+    } au sein ${de(c.company)}`,
   (c) =>
-    `Ayant pris connaissance de votre annonce parue ${c.source!.text}, je me permets de vous adresser ma candidature ${applyAdvert(c)} au sein ${de(c.company)}`,
-  (c) => `En réponse à votre annonce parue ${c.source!.text}, je vous propose ma candidature ${applyAdvert(c)} au sein ${de(c.company)}`,
+    `Ayant pris connaissance de votre annonce parue ${c.source!.text}, je me permets de vous adresser ma candidature ${
+      applyAdvert(c)
+    } au sein ${de(c.company)}`,
   (c) =>
-    `C'est avec un vif intérêt que j'ai découvert votre annonce parue ${c.source!.text} et que je vous adresse ma candidature ${applyAdvert(c)} au sein ${de(c.company)}`,
+    `En réponse à votre annonce parue ${c.source!.text}, je vous propose ma candidature ${applyAdvert(c)} au sein ${
+      de(c.company)
+    }`,
+  (c) =>
+    `C'est avec un vif intérêt que j'ai découvert votre annonce parue ${
+      c.source!.text
+    } et que je vous adresse ma candidature ${applyAdvert(c)} au sein ${de(c.company)}`,
 ];
 
 /** P1, first sentence, when someone recommended the company (`source.text` = "d'un ami"). */
 export const LETTRE_OPEN_REFERRAL: Variant[] = [
-  (c) => `Sur les conseils ${c.source!.text}, je me permets de vous adresser ma candidature ${applyOpen(c)} au sein ${de(c.company)}`,
-  (c) => `Sur la recommandation ${c.source!.text}, j'ai l'honneur de vous soumettre ma candidature ${applyOpen(c)} au sein ${de(c.company)}`,
   (c) =>
-    `C'est sur les conseils ${c.source!.text} que je vous adresse aujourd'hui ma candidature ${applyOpen(c)} au sein ${de(c.company)}`,
+    `Sur les conseils ${c.source!.text}, je me permets de vous adresser ma candidature ${applyOpen(c)} au sein ${
+      de(c.company)
+    }`,
+  (c) =>
+    `Sur la recommandation ${c.source!.text}, j'ai l'honneur de vous soumettre ma candidature ${applyOpen(c)} au sein ${
+      de(c.company)
+    }`,
+  (c) =>
+    `C'est sur les conseils ${c.source!.text} que je vous adresse aujourd'hui ma candidature ${applyOpen(c)} au sein ${
+      de(c.company)
+    }`,
 ];
 
 /** P1, first sentence, spontaneous application (no source given). */
 export const LETTRE_OPEN_SPONTANEOUS: Variant[] = [
-  (c) => `Vivement ${c.g("intéressé", "intéressée")} par ${c.company}, je me permets de vous adresser ma candidature spontanée ${applyOpen(c)}`,
+  (c) =>
+    `Vivement ${
+      c.g("intéressé", "intéressée")
+    } par ${c.company}, je me permets de vous adresser ma candidature spontanée ${applyOpen(c)}`,
   (c) => `J'ai l'honneur de solliciter de votre haute bienveillance un ${wanted(c)} au sein ${de(c.company)}`,
   (c) => `Par la présente, je vous adresse ma candidature spontanée ${applyOpen(c)} au sein ${de(c.company)}`,
-  (c) => `${c.g("Désireux", "Désireuse")} de rejoindre ${c.company}, je vous soumets ma candidature spontanée ${applyOpen(c)}`,
+  (c) =>
+    `${c.g("Désireux", "Désireuse")} de rejoindre ${c.company}, je vous soumets ma candidature spontanée ${
+      applyOpen(c)
+    }`,
 ];
 
 /** "au poste de comptable" (advertised position). */
@@ -535,9 +607,17 @@ export const LETTRE_FIT: Record<JobKind, Variant[]> = {
       c.degree?.linked
         ? "Ce poste correspond pleinement à ma formation ainsi qu'à mon projet professionnel"
         : "Ce poste correspond pleinement à mon projet professionnel et à mes aspirations",
-    (c) => `Je suis ${c.g("convaincu", "convaincue")} de pouvoir contribuer efficacement au bon fonctionnement de votre structure`,
-    () => "Rejoindre votre équipe représenterait pour moi une réelle opportunité de m'investir dans un environnement stimulant",
-    (c) => senior(c) && `Mon parcours dans ${c.domain} me permettra d'être rapidement ${c.g("opérationnel", "opérationnelle")} à ce poste`,
+    (c) =>
+      `Je suis ${
+        c.g("convaincu", "convaincue")
+      } de pouvoir contribuer efficacement au bon fonctionnement de votre structure`,
+    () =>
+      "Rejoindre votre équipe représenterait pour moi une réelle opportunité de m'investir dans un environnement stimulant",
+    (c) =>
+      senior(c) &&
+      `Mon parcours dans ${c.domain} me permettra d'être rapidement ${
+        c.g("opérationnel", "opérationnelle")
+      } à ce poste`,
   ],
   stage: [
     () => "Ce stage représente pour moi une étape essentielle de ma formation",
@@ -546,8 +626,12 @@ export const LETTRE_FIT: Record<JobKind, Variant[]> = {
   ],
   alternance: [
     () => "Cette alternance me permettrait de concilier formation théorique et expérience concrète en entreprise",
-    () => "Ce mode de formation correspond parfaitement à ma volonté d'apprendre au contact de professionnels expérimentés",
-    (c) => `Je suis ${c.g("convaincu", "convaincue")} que l'alternance est la meilleure voie pour maîtriser le métier ${de(c.role)}`,
+    () =>
+      "Ce mode de formation correspond parfaitement à ma volonté d'apprendre au contact de professionnels expérimentés",
+    (c) =>
+      `Je suis ${c.g("convaincu", "convaincue")} que l'alternance est la meilleure voie pour maîtriser le métier ${
+        de(c.role)
+      }`,
   ],
 };
 
@@ -558,22 +642,34 @@ export const LETTRE_DEGREE: Variant[] = [
     if (!d) return null;
     if (d.status === "level") return `${d.leadFull}, j'ai acquis de bonnes bases générales`;
     if (d.category === "certificate") {
-      return `${d.leadFull}, je dispose d'une qualification ${d.linked ? `directement utile dans ${c.field}` : "complémentaire appréciable"}`;
+      return `${d.leadFull}, je dispose d'une qualification ${
+        d.linked ? `directement utile dans ${c.field}` : "complémentaire appréciable"
+      }`;
     }
-    if (d.category === "secondary") return `${d.leadFull}, j'ai acquis de bonnes bases générales et le goût de l'effort`;
+    if (d.category === "secondary") {
+      return `${d.leadFull}, j'ai acquis de bonnes bases générales et le goût de l'effort`;
+    }
     if (d.status === "ongoing") {
-      return `${d.leadFull}, j'acquiers progressivement des bases solides${d.linked ? ` dans ${c.field}` : " et une méthode de travail rigoureuse"}`;
+      return `${d.leadFull}, j'acquiers progressivement des bases solides${
+        d.linked ? ` dans ${c.field}` : " et une méthode de travail rigoureuse"
+      }`;
     }
     if (senior(c)) return `${d.leadFull}, j'ai ensuite consolidé ces acquis par une solide expérience de terrain`;
-    return `${d.leadFull}, j'ai acquis des bases solides${d.linked ? ` dans ${c.field}` : " et une méthode de travail rigoureuse"}`;
+    return `${d.leadFull}, j'ai acquis des bases solides${
+      d.linked ? ` dans ${c.field}` : " et une méthode de travail rigoureuse"
+    }`;
   },
   (c) => {
     const d = c.degree;
     if (!d || d.status === "level") return null;
     if (d.category === "certificate") {
-      return `J'ai obtenu ${d.article} ${d.name}${d.where}, une qualification ${d.linked ? `directement utile dans ${c.field}` : "que je saurai mettre à profit"}`;
+      return `J'ai obtenu ${d.article} ${d.name}${d.where}, une qualification ${
+        d.linked ? `directement utile dans ${c.field}` : "que je saurai mettre à profit"
+      }`;
     }
-    if (d.category === "secondary") return `J'ai obtenu ${d.article} ${d.name}${d.where}, qui m'a ${c.g("doté", "dotée")} de solides bases générales`;
+    if (d.category === "secondary") {
+      return `J'ai obtenu ${d.article} ${d.name}${d.where}, qui m'a ${c.g("doté", "dotée")} de solides bases générales`;
+    }
     const gained = d.linked ? `des connaissances solides dans ${c.field}` : "rigueur et méthode";
     return d.status === "done"
       ? `J'ai obtenu ${d.article} ${d.name}${d.where}, une formation qui m'a permis d'acquérir ${gained}`
@@ -582,22 +678,31 @@ export const LETTRE_DEGREE: Variant[] = [
   (c) => {
     const d = c.degree;
     if (!d) return null;
-    if (d.status === "level") return `Mon parcours scolaire, mené jusqu'au ${d.name}${d.where}, m'a apporté de bonnes bases`;
+    if (d.status === "level") {
+      return `Mon parcours scolaire, mené jusqu'au ${d.name}${d.where}, m'a apporté de bonnes bases`;
+    }
     if (d.category === "certificate") {
-      return `Je suis titulaire ${de(`${d.article} ${d.name}`)}${d.obtainedWhere}, un atout concret ${d.linked ? `pour exercer dans ${c.field}` : "dans l'exercice de mes fonctions"}`;
+      return `Je suis titulaire ${de(`${d.article} ${d.name}`)}${d.obtainedWhere}, un atout concret ${
+        d.linked ? `pour exercer dans ${c.field}` : "dans l'exercice de mes fonctions"
+      }`;
     }
     if (d.category === "secondary") {
       return `Mon parcours scolaire, sanctionné par ${d.article} ${d.name}${d.where}, m'a apporté de bonnes bases générales`;
     }
     if (d.status === "ongoing") {
-      return `${c.g("Inscrit", "Inscrite")} en ${d.name}${d.where}, je consolide chaque jour mes ${d.linked ? `connaissances dans ${c.field}` : "acquis"}`;
+      return `${c.g("Inscrit", "Inscrite")} en ${d.name}${d.where}, je consolide chaque jour mes ${
+        d.linked ? `connaissances dans ${c.field}` : "acquis"
+      }`;
     }
-    const gained = d.linked ? `de solides connaissances dans ${c.field}` : "de solides capacités d'analyse et d'organisation";
+    const gained = d.linked
+      ? `de solides connaissances dans ${c.field}`
+      : "de solides capacités d'analyse et d'organisation";
     return `Ma formation, sanctionnée par ${d.article} ${d.name}${d.where}, m'a apporté ${gained}`;
   },
   (c) => {
     const d = c.degree;
-    return d?.status === "level" && `J'ai suivi ma scolarité jusqu'au ${d.name}${d.where}, ce qui m'a permis d'acquérir de bonnes bases générales`;
+    return d?.status === "level" &&
+      `J'ai suivi ma scolarité jusqu'au ${d.name}${d.where}, ce qui m'a permis d'acquérir de bonnes bases générales`;
   },
 ];
 
@@ -606,7 +711,9 @@ export const LETTRE_EXPERIENCE: Variant[] = [
   (c) => c.exp && `Sur le plan professionnel, ${expClause(c, 0, { span: true, notamment: false })}`,
   (c) =>
     c.exp &&
-    `${expClause(c, 1, { span: true, notamment: false })}, une expérience qui ${c.exp.current ? "me permet" : "m'a permis"} de développer ${c.expGain}`,
+    `${expClause(c, 1, { span: true, notamment: false })}, une expérience qui ${
+      c.exp.current ? "me permet" : "m'a permis"
+    } de développer ${c.expGain}`,
   (c) => {
     if (!c.exp) return null;
     const { subject, verb } = expSubject(c, true);
@@ -619,7 +726,9 @@ export const LETTRE_EXPERIENCE: Variant[] = [
 export const LETTRE_MISSIONS: Variant[] = [
   (c) =>
     !!c.exp?.missions.length &&
-    `J'y ${c.exp.current ? "suis" : "étais"} notamment ${c.g("chargé", "chargée")} des missions suivantes : ${joinList(c.exp.missions)}`,
+    `J'y ${c.exp.current ? "suis" : "étais"} notamment ${c.g("chargé", "chargée")} des missions suivantes : ${
+      joinList(c.exp.missions)
+    }`,
   (c) => !!c.exp?.missions.length && `Parmi mes principales missions : ${joinList(c.exp.missions)}`,
   (c) =>
     !!c.exp?.missions.length &&
@@ -629,17 +738,23 @@ export const LETTRE_MISSIONS: Variant[] = [
 /** P2: eagerness of a beginner. */
 export const LETTRE_BEGINNER: Variant[] = [
   (c) =>
-    `Bien que ${c.g("débutant", "débutante")}, je suis ${c.g("prêt", "prête")} à m'investir pleinement et à apprendre rapidement aux côtés de vos équipes`,
+    `Bien que ${c.g("débutant", "débutante")}, je suis ${
+      c.g("prêt", "prête")
+    } à m'investir pleinement et à apprendre rapidement aux côtés de vos équipes`,
   () =>
     "Ce qui me manque encore en expérience, je le compense par une forte motivation, une grande capacité d'apprentissage et le goût du travail bien fait",
   (c) =>
-    `Je suis ${c.g("désireux", "désireuse")} de mettre en pratique mes acquis et de progresser au contact de professionnels expérimentés`,
+    `Je suis ${
+      c.g("désireux", "désireuse")
+    } de mettre en pratique mes acquis et de progresser au contact de professionnels expérimentés`,
 ];
 
 /** P2: beginner with neither degree nor experience typed: interest for the trade. */
 export const LETTRE_BEGINNER_INTEREST: Variant[] = [
   (c) =>
-    `${c.g("Passionné", "Passionnée")} par ${c.domain}, je souhaite aujourd'hui transformer cet intérêt en une véritable expérience professionnelle`,
+    `${
+      c.g("Passionné", "Passionnée")
+    } par ${c.domain}, je souhaite aujourd'hui transformer cet intérêt en une véritable expérience professionnelle`,
   (c) => `Mon intérêt pour ${c.domain} m'a naturellement ${c.g("orienté", "orientée")} vers le métier ${de(c.role)}`,
   (c) => `J'ai choisi de m'orienter vers ${c.domain}, un domaine dans lequel je souhaite construire ma carrière`,
 ];
@@ -648,11 +763,17 @@ export const LETTRE_BEGINNER_INTEREST: Variant[] = [
 export const LETTRE_BACKGROUND: Variant[] = [
   (c) => {
     const lead = c.level === "senior" ? "longue" : c.level === "confirme" ? "solide" : "première";
-    return `${c.g("Fort", "Forte")} d'une ${lead} expérience dans ${c.domain}, je connais les exigences du métier ${de(c.role)}`;
+    return `${c.g("Fort", "Forte")} d'une ${lead} expérience dans ${c.domain}, je connais les exigences du métier ${
+      de(c.role)
+    }`;
   },
   (c) => `Mon parcours dans ${c.domain} m'a permis de développer ${c.gain}`,
-  (c) => `Au fil de mon parcours dans ${c.domain}, j'ai appris à travailler avec rigueur et à m'adapter aux exigences du terrain`,
-  (c) => `Je suis ${c.g("habitué", "habituée")} à travailler en autonomie comme en équipe, dans le respect des consignes et des délais`,
+  (c) =>
+    `Au fil de mon parcours dans ${c.domain}, j'ai appris à travailler avec rigueur et à m'adapter aux exigences du terrain`,
+  (c) =>
+    `Je suis ${
+      c.g("habitué", "habituée")
+    } à travailler en autonomie comme en équipe, dans le respect des consignes et des délais`,
 ];
 
 /** IT tools in brackets: " (Word, Excel, Sage)". */
@@ -703,11 +824,13 @@ export const LETTRE_QUALITIES: Array<(list: string) => string> = [
 
 /** P3: interest for the company. */
 export const LETTRE_INTEREST: Variant[] = [
-  (c) => `Je sais combien ${c.stake} comptent dans notre métier, et c'est dans cet esprit que j'aborde cette candidature`,
+  (c) =>
+    `Je sais combien ${c.stake} comptent dans notre métier, et c'est dans cet esprit que j'aborde cette candidature`,
   (c) =>
     `Rejoindre ${c.company} représenterait pour moi l'opportunité de contribuer à vos objectifs tout en poursuivant mon développement professionnel`,
   (c) => `C'est avec enthousiasme que je mettrais mon énergie au service ${de(c.company)}`,
-  () => "Intégrer votre structure serait pour moi l'occasion de m'investir pleinement dans un environnement exigeant et formateur",
+  () =>
+    "Intégrer votre structure serait pour moi l'occasion de m'investir pleinement dans un environnement exigeant et formateur",
   (c) => `Je serais ${c.g("fier", "fière")} de mettre tout mon engagement au profit ${de(c.company)}`,
   (c) => `Je suis ${c.g("persuadé", "persuadée")} que mon engagement serait un véritable atout pour ${c.company}`,
   () => "Travailler aux côtés de vos équipes serait pour moi une source de motivation supplémentaire",
@@ -716,13 +839,21 @@ export const LETTRE_INTEREST: Variant[] = [
 /** P4: availability and interview request. Each variant carries a gender mark. */
 export const LETTRE_CLOSE: Variant[] = [
   (c) =>
-    `${c.g("Motivé", "Motivée")} et disponible, je me tiens à votre entière disposition pour un entretien afin de vous présenter plus en détail mon parcours`,
+    `${
+      c.g("Motivé", "Motivée")
+    } et disponible, je me tiens à votre entière disposition pour un entretien afin de vous présenter plus en détail mon parcours`,
   (c) =>
-    `Je serais ${c.g("ravi", "ravie")} de vous rencontrer lors d'un entretien afin de vous démontrer ma motivation et ma capacité à m'intégrer rapidement à votre équipe`,
+    `Je serais ${
+      c.g("ravi", "ravie")
+    } de vous rencontrer lors d'un entretien afin de vous démontrer ma motivation et ma capacité à m'intégrer rapidement à votre équipe`,
   (c) =>
-    `${c.g("Convaincu", "Convaincue")} que mon profil peut répondre à vos attentes, je reste à votre disposition pour un entretien à la date qui vous conviendra`,
+    `${
+      c.g("Convaincu", "Convaincue")
+    } que mon profil peut répondre à vos attentes, je reste à votre disposition pour un entretien à la date qui vous conviendra`,
   (c) =>
-    `Très ${c.g("motivé", "motivée")} à l'idée de rejoindre votre équipe, je souhaiterais vous rencontrer afin d'échanger sur ma candidature`,
+    `Très ${
+      c.g("motivé", "motivée")
+    } à l'idée de rejoindre votre équipe, je souhaiterais vous rencontrer afin d'échanger sur ma candidature`,
 ];
 
 export const CLOSINGS = [
@@ -739,11 +870,12 @@ export const SALUTATION = "Madame, Monsieur,";
  * Expressions that should not appear twice in the same document: for each slot, the variants that
  * repeat the fewest of them are preferred.
  */
+// deno-fmt-ignore
 export const REPEAT_STEMS = [
-  "convaincu", "rejoindre", "opportunité", "occasion", "pleinement", "au service", "solide",
-  "mettre en pratique", "mes connaissances en pratique", "sens des responsabilités", "travail bien fait",
-  "concrètement", "motivé", "m'investir", "exigence", "vif intérêt", "environnement", "au contact",
-  "aux côtés", "mon objectif", "compétences", "réelle", "permis de développer", "permet de développer",
-  "j'ai l'honneur", "je me permets", "rapidement opérationnel", "par ailleurs", "au sein", "aujourd'hui",
-  "mon parcours dans", "votre structure", "à l'aise", "ce domaine", "je souhaite", "expérience", "savoir-faire",
+  "convaincu", "rejoindre", "opportunité", "occasion", "pleinement", "au service", "solide", "mettre en pratique",
+  "mes connaissances en pratique", "sens des responsabilités", "travail bien fait", "concrètement", "motivé",
+  "m'investir", "exigence", "vif intérêt", "environnement", "au contact", "aux côtés", "mon objectif", "compétences",
+  "réelle", "permis de développer", "permet de développer", "j'ai l'honneur", "je me permets",
+  "rapidement opérationnel", "par ailleurs", "au sein", "aujourd'hui", "mon parcours dans", "votre structure",
+  "à l'aise", "ce domaine", "je souhaite", "expérience", "savoir-faire",
 ];

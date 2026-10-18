@@ -24,23 +24,65 @@ const some = <T>(r: R, xs: readonly T[], max: number): T[] => {
 };
 
 const FIRST_NAMES = [
-  "Awa", "ndèye fatou", "MAME DIARRA", "abdou-karim", "El Hadji", "Aïssatou", "Cheikh Tidiane", "Yves",
-  "Ousmane", "Héloïse", "Fatou Bintou", "Seynabou", "Ibrahima", "Khadija", "Pape Malick", "n'deye",
+  "Awa",
+  "ndèye fatou",
+  "MAME DIARRA",
+  "abdou-karim",
+  "El Hadji",
+  "Aïssatou",
+  "Cheikh Tidiane",
+  "Yves",
+  "Ousmane",
+  "Héloïse",
+  "Fatou Bintou",
+  "Seynabou",
+  "Ibrahima",
+  "Khadija",
+  "Pape Malick",
+  "n'deye",
 ];
 const LAST_NAMES = ["Ndiaye", "DIOP", "fall", "N'Diaye", "Sène", "Bâ", "Ka", "Mbaye", "Gueye", "Diallo", "Sow"];
 const PHONES = ["77 123 45 67", "+221 70 000 11 22", "00221781234567", "+33 6 12 34 56 78", "76 555 44 33"];
 const CITIES = ["Dakar", "Thiès", "Saint-Louis", "Guédiawaye", "Ziguinchor", "Mbour", "keur massar"];
 const ADDRESSES = ["Sicap Liberté 6, Villa 12", "Parcelles Assainies U15", "Cité Keur Gorgui", "Dakar Plateau"];
 const JOBS = [
-  "Assistante comptable", "Comptable", "Hôtesse d'accueil", "Agent de sécurité", "Infirmière", "Développeur web",
-  "Chauffeur-livreur", "Commerciale terrain", "Enseignant de français", "Électricien bâtiment",
-  "Ingénieur agronome", "Serveuse", "Stage en comptabilité", "Stagiaire RH", "Community manager",
-  "Assistant De Direction", "CAISSIÈRE PRINCIPALE", "Technicien en hygiène", "Responsable logistique",
-  "Opérateur de saisie", "Yaourtier", "Hydraulicien",
+  "Assistante comptable",
+  "Comptable",
+  "Hôtesse d'accueil",
+  "Agent de sécurité",
+  "Infirmière",
+  "Développeur web",
+  "Chauffeur-livreur",
+  "Commerciale terrain",
+  "Enseignant de français",
+  "Électricien bâtiment",
+  "Ingénieur agronome",
+  "Serveuse",
+  "Stage en comptabilité",
+  "Stagiaire RH",
+  "Community manager",
+  "Assistant De Direction",
+  "CAISSIÈRE PRINCIPALE",
+  "Technicien en hygiène",
+  "Responsable logistique",
+  "Opérateur de saisie",
+  "Yaourtier",
+  "Hydraulicien",
 ];
 const SECTORS: Sector[] = [
-  "commerce", "comptabilite", "informatique", "sante", "enseignement", "administration", "btp", "hotellerie",
-  "logistique", "communication", "agriculture", "securite", "autre",
+  "commerce",
+  "comptabilite",
+  "informatique",
+  "sante",
+  "enseignement",
+  "administration",
+  "btp",
+  "hotellerie",
+  "logistique",
+  "communication",
+  "agriculture",
+  "securite",
+  "autre",
 ];
 const DEGREES: OrderInput["education"] = [
   { degree: "BTS en Comptabilité", school: "ISM", year: "2023" },
@@ -57,19 +99,52 @@ const DEGREES: OrderInput["education"] = [
   { degree: "Master 1 Finance", school: "Université Cheikh Anta Diop", year: "2027" },
 ];
 const EXP_TITLES = [
-  "Caissière", "Stage en comptabilité", "Agent de sécurité", "Chauffeur", "Vendeuse", "Assistant administratif",
-  "Serveur", "Enseignant vacataire", "Développeur web freelance", "Aide-soignante", "Technicien réseau",
+  "Caissière",
+  "Stage en comptabilité",
+  "Agent de sécurité",
+  "Chauffeur",
+  "Vendeuse",
+  "Assistant administratif",
+  "Serveur",
+  "Enseignant vacataire",
+  "Développeur web freelance",
+  "Aide-soignante",
+  "Technicien réseau",
   "Hôtesse d'accueil",
 ];
 const COMPANIES = [
-  "Auchan Sénégal", "Orange", "La Poste", "Le Groupe Sonatel", "Les Ciments du Sahel", "l'Hôpital Principal",
-  "Hôtel Terrou-Bi", "Kirène", "Cabinet Diop & Associés", "Ecobank", "Eiffage Sénégal", "Institut Pasteur de Dakar",
+  "Auchan Sénégal",
+  "Orange",
+  "La Poste",
+  "Le Groupe Sonatel",
+  "Les Ciments du Sahel",
+  "l'Hôpital Principal",
+  "Hôtel Terrou-Bi",
+  "Kirène",
+  "Cabinet Diop & Associés",
+  "Ecobank",
+  "Eiffage Sénégal",
+  "Institut Pasteur de Dakar",
 ];
-const DATES = ["2018", "2019", "2020", "2021", "2022", "Janvier 2023", "mars 2024", "", "aujourd'hui", "En cours", "Actuellement"];
+const DATES = [
+  "2018",
+  "2019",
+  "2020",
+  "2021",
+  "2022",
+  "Janvier 2023",
+  "mars 2024",
+  "",
+  "aujourd'hui",
+  "En cours",
+  "Actuellement",
+];
 const LONG_MISSIONS = Array.from(
   { length: 9 },
   (_, i) =>
-    `- Mission ${i + 1} : accompagnement quotidien de l'équipe commerciale dans le suivi des dossiers clients, la préparation des tournées et la mise à jour des fichiers.`,
+    `- Mission ${
+      i + 1
+    } : accompagnement quotidien de l'équipe commerciale dans le suivi des dossiers clients, la préparation des tournées et la mise à jour des fichiers.`,
 ).join("\n").slice(0, 800);
 const MISSIONS = [
   "- Saisie des factures\n- Rapprochements bancaires.",
@@ -82,9 +157,24 @@ const MISSIONS = [
   LONG_MISSIONS,
 ];
 const SKILLS = [
-  "Excel", "excel", "Gestion des stocks", "gestion des stocks", "Négociation", "Accueil client", "SYSCOHADA",
-  "Permis B", "Travail en équipe", "Prise de parole en public", "Vente", "Service client", "Rédaction de rapports",
-  "Saisie comptable", "Sens de l'écoute", "Hygiène et asepsie", "Montage vidéo", "Maçonnerie",
+  "Excel",
+  "excel",
+  "Gestion des stocks",
+  "gestion des stocks",
+  "Négociation",
+  "Accueil client",
+  "SYSCOHADA",
+  "Permis B",
+  "Travail en équipe",
+  "Prise de parole en public",
+  "Vente",
+  "Service client",
+  "Rédaction de rapports",
+  "Saisie comptable",
+  "Sens de l'écoute",
+  "Hygiène et asepsie",
+  "Montage vidéo",
+  "Maçonnerie",
 ];
 const IT = ["Word", "Excel", "PowerPoint", "Internet", "Canva", "Sage", "Messagerie (Gmail, Outlook)"];
 const LANGUAGES: OrderInput["languages"] = [
@@ -95,17 +185,48 @@ const LANGUAGES: OrderInput["languages"] = [
 ];
 const INTERESTS = ["Lecture", "Football", "Bénévolat", "Musique", "Vie associative"];
 const LETTER_COMPANIES = [
-  "Orange", "Auchan Sénégal", "Hôtel Terrou-Bi", "La Poste", "Le Groupe Sonatel", "Les Ciments du Sahel",
-  "l'Hôpital Principal", "Wave Mobile Money", "Ecobank", "Institut Pasteur de Dakar", "Eiffage Sénégal", "Yoff Services",
+  "Orange",
+  "Auchan Sénégal",
+  "Hôtel Terrou-Bi",
+  "La Poste",
+  "Le Groupe Sonatel",
+  "Les Ciments du Sahel",
+  "l'Hôpital Principal",
+  "Wave Mobile Money",
+  "Ecobank",
+  "Institut Pasteur de Dakar",
+  "Eiffage Sénégal",
+  "Yoff Services",
 ];
 const SOURCES = [
-  "LinkedIn", "Facebook", "un ami", "le journal Le Soleil", "votre site internet", "Emploi Dakar", "Senjob",
-  "bouche à oreille", "ma cousine", "Expat-Dakar",
+  "LinkedIn",
+  "Facebook",
+  "un ami",
+  "le journal Le Soleil",
+  "votre site internet",
+  "Emploi Dakar",
+  "Senjob",
+  "bouche à oreille",
+  "ma cousine",
+  "Expat-Dakar",
 ];
 const QUALITY_CHOICES = [
-  "Rigueur", "Sens de l'organisation", "Esprit d'équipe", "Ponctualité", "Sens du contact", "Autonomie",
-  "Capacité d'adaptation", "Dynamisme", "Honnêteté", "Discrétion", "Créativité", "Résistance au stress",
-  "Patience", "Leadership", "rigoureux", "Sens de l'écoute",
+  "Rigueur",
+  "Sens de l'organisation",
+  "Esprit d'équipe",
+  "Ponctualité",
+  "Sens du contact",
+  "Autonomie",
+  "Capacité d'adaptation",
+  "Dynamisme",
+  "Honnêteté",
+  "Discrétion",
+  "Créativité",
+  "Résistance au stress",
+  "Patience",
+  "Leadership",
+  "rigoureux",
+  "Sens de l'écoute",
 ];
 const MOTIVATIONS = [
   "Je souhaite travailler dans une entreprise qui forme ses jeunes.",
@@ -152,7 +273,11 @@ export function randomInput(seed: number): { input: OrderInput; product: Product
     interests: [...new Set(some(r, INTERESTS, 4))],
     letter: {
       company: one(r, LETTER_COMPANIES),
-      recipient: maybe(r, one(r, ["Monsieur le Directeur Général", "Madame la Directrice des Ressources Humaines"]), 0.3),
+      recipient: maybe(
+        r,
+        one(r, ["Monsieur le Directeur Général", "Madame la Directrice des Ressources Humaines"]),
+        0.3,
+      ),
       companyCity: maybe(r, one(r, ["Dakar", "Diamniadio"]), 0.4),
       source: maybe(r, one(r, SOURCES), 0.6),
       qualities: [...new Set(some(r, QUALITY_CHOICES, 4))],

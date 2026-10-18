@@ -133,10 +133,9 @@ class Composer {
     extraStems: string[] = [],
     private readonly planned: string[] = [],
   ) {
-    this.stems = [
-      ...REPEAT_STEMS.map((s): [string, number] => [s, 1]),
-      ...extraStems.map((s) => s.toLocaleLowerCase("fr")).filter((s) => s.length >= 4).map((s): [string, number] => [s, 2]),
-    ];
+    const weighted = (stems: string[], weight: number) => stems.map((stem): [string, number] => [stem, weight]);
+    const extra = extraStems.map((stem) => stem.toLocaleLowerCase("fr")).filter((stem) => stem.length >= 4);
+    this.stems = [...weighted(REPEAT_STEMS, 1), ...weighted(extra, 2)];
   }
 
   pick(slot: string, variants: Variant[]): string | null {
@@ -182,9 +181,10 @@ function latestIndex<T>(items: T[], score: (t: T) => number): number {
   return best;
 }
 
+// deno-fmt-ignore
 const FEMININE_DEGREE_WORDS = new Set([
-  "licence", "maitrise", "attestation", "formation", "certification", "capacite", "agregation",
-  "specialisation", "classe", "terminale", "premiere", "seconde", "these", "habilitation", "ecole",
+  "licence", "maitrise", "attestation", "formation", "certification", "capacite", "agregation", "specialisation",
+  "classe", "terminale", "premiere", "seconde", "these", "habilitation", "ecole",
 ]);
 
 function degreeArticle(name: string): "un" | "une" {
@@ -205,7 +205,10 @@ function atSchool(school: string | undefined): string {
 }
 
 /** Licences and certificates are qualifications, not an academic path. */
-const CERTIFICATE_FIRST_WORDS = new Set(["permis", "attestation", "certificat", "certification", "habilitation", "carte"]);
+// deno-fmt-ignore
+const CERTIFICATE_FIRST_WORDS = new Set([
+  "permis", "attestation", "certificat", "certification", "habilitation", "carte",
+]);
 /** Secondary-school diplomas give general grounding, not trade knowledge ("Bac+2" is higher education). */
 const SECONDARY_FIRST_WORDS = new Set(["bac", "baccalaureat", "bfem", "cfee", "brevet", "terminale"]);
 
@@ -217,7 +220,8 @@ function buildDegree(input: OrderInput, c: Pick<Ctx, "g">, nowYear: number): Deg
     ONGOING_DEGREE_RE.test(`${e.degree} ${e.year ?? ""} ${e.detail ?? ""}`) || yearOf(e.year) > nowYear;
   const e = list[latestIndex(list, (x) => (isOngoing(x) ? 9999 : yearOf(x.year)))];
 
-  const raw = collapse(e.degree.replace(/\(?\s*\b(en cours|en préparation)\b\s*\)?/gi, " ")).replace(/[\s.,;:–—-]+$/u, "");
+  const withoutOngoing = collapse(e.degree.replace(/\(?\s*\b(en cours|en préparation)\b\s*\)?/gi, " "));
+  const raw = withoutOngoing.replace(/[\s.,;:–—-]+$/u, "");
   const name = inSentence(raw);
   if (!name) return null;
   const status: DegreeFacts["status"] = /^niveau\b/i.test(name) ? "level" : isOngoing(e) ? "ongoing" : "done";
@@ -300,20 +304,34 @@ function parseSource(raw: string | undefined): Ctx["source"] {
 }
 
 /** Folded stems showing that a degree or a job title belongs to a sector. */
+// deno-fmt-ignore
 const SECTOR_KEYWORDS: Record<Sector, string[]> = {
   commerce: ["commerc", "vente", "vend", "negoce", "marketing", "caiss", "magasin", "boutique", "rayon"],
   comptabilite: ["compta", "financ", "audit", "fiscal", "gestion", "factur", "tresor", "banque", "credit"],
-  informatique: ["informati", "numerique", "reseau", "logiciel", "developp", "web", "data", "system", "programm", "telecom"],
-  sante: ["sante", "infirm", "soins", "soign", "medic", "sage-femme", "pharma", "laborant", "hopital", "clinique"],
-  enseignement: ["enseign", "education", "pedagog", "professeur", "instituteur", "formateur", "repetiteur", "lettres"],
-  administration: ["administ", "secretari", "assistan", "bureautique", "accueil", "standard", "archiv", "ressources humaines"],
-  btp: [
-    "batiment", "genie civil", "btp", "travaux publics", "construction", "macon", "electric", "plomb", "chantier", "menuis",
-    "soud", "carrel", "topograph",
+  informatique: [
+    "informati", "numerique", "reseau", "logiciel", "developp", "web", "data", "system", "programm", "telecom",
   ],
-  hotellerie: ["hotel", "restaura", "cuisin", "tourisme", "serveu", "serveur", "barman", "reception", "hotesse", "patiss"],
-  logistique: ["logisti", "transport", "chauffeur", "livr", "magasinier", "cariste", "manutention", "permis", "conduite", "transit"],
-  communication: ["communic", "marketing", "journalis", "community", "graphi", "redact", "photo", "video", "audiovisuel"],
+  sante: ["sante", "infirm", "soins", "soign", "medic", "sage-femme", "pharma", "laborant", "hopital", "clinique"],
+  enseignement: [
+    "enseign", "education", "pedagog", "professeur", "instituteur", "formateur", "repetiteur", "lettres",
+  ],
+  administration: [
+    "administ", "secretari", "assistan", "bureautique", "accueil", "standard", "archiv", "ressources humaines",
+  ],
+  btp: [
+    "batiment", "genie civil", "btp", "travaux publics", "construction", "macon", "electric", "plomb", "chantier",
+    "menuis", "soud", "carrel", "topograph",
+  ],
+  hotellerie: [
+    "hotel", "restaura", "cuisin", "tourisme", "serveu", "serveur", "barman", "reception", "hotesse", "patiss",
+  ],
+  logistique: [
+    "logisti", "transport", "chauffeur", "livr", "magasinier", "cariste", "manutention", "permis", "conduite",
+    "transit",
+  ],
+  communication: [
+    "communic", "marketing", "journalis", "community", "graphi", "redact", "photo", "video", "audiovisuel",
+  ],
   agriculture: ["agri", "agro", "elevage", "eleveur", "horticult", "maraich", "veterinai", "peche"],
   securite: ["securite", "gardiennage", "gardien", "vigile", "surveillance", "secour", "incendie"],
   autre: [],
@@ -526,8 +544,10 @@ function buildParagraphs(input: OrderInput, c: Ctx, picker: Picker): string[] {
     if (!c.degree && !c.exp) p2Parts.push(w.pick("p2.interest", LETTRE_BEGINNER_INTEREST));
     if (!c.exp || c.exp.internship) p2Parts.push(w.pick("p2.beginner", LETTRE_BEGINNER));
   } else if (!c.exp) {
-    p2Parts.push(w.pick("p2.background", LETTRE_BACKGROUND));
-    if (!c.degree) p2Parts.push(w.pick("p2.background2", LETTRE_BACKGROUND.filter((v) => !p2Parts.includes(v(c) || null))));
+    const first = w.pick("p2.background", LETTRE_BACKGROUND);
+    p2Parts.push(first);
+    // Without a degree either, a second background sentence keeps the paragraph substantial.
+    if (!c.degree) p2Parts.push(w.pick("p2.background2", LETTRE_BACKGROUND.filter((v) => v(c) !== first)));
   }
   const p2 = joinSentences(p2Parts);
 
@@ -535,7 +555,8 @@ function buildParagraphs(input: OrderInput, c: Ctx, picker: Picker): string[] {
   const p3 = joinSentences([
     c.skills.length > 0 ? w.pick("p3.skills", LETTRE_SKILLS) : c.it.length > 0 && w.pick("p3.it", LETTRE_IT),
     phrases.length > 0 && w.choose("p3.qualities", LETTRE_QUALITIES.map((intro) => intro(joinList(phrases)))),
-    others.length > 0 && `Je fais ${phrases.length ? "également " : ""}preuve ${joinList(others.map(qualityNoun).map(de))}`,
+    others.length > 0 &&
+    `Je fais ${phrases.length ? "également " : ""}preuve ${joinList(others.map(qualityNoun).map(de))}`,
     motivation,
     w.pick("p3.interest", LETTRE_INTEREST),
   ]);

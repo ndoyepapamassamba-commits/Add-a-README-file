@@ -55,6 +55,12 @@
       <p>Les clients voient leur aperçu mais ne peuvent pas payer. Activez Wave (WAVE_API_KEY) ou le paiement manuel (MANUAL_WAVE_NUMBER).</p>
     </div>
 
+    <section id="to-unlock" hidden aria-labelledby="to-unlock-title">
+      <h2 id="to-unlock-title">Paiements à vérifier</h2>
+      <p class="hint">Vérifiez dans votre application Wave que vous avez bien reçu le montant, puis touchez « Débloquer ».</p>
+      <ul class="unlock-list" id="unlock-list"></ul>
+    </section>
+
     <h2>Revenus</h2>
     <div class="kpis" id="kpis"></div>
 
@@ -64,7 +70,7 @@
     <h2>Commandes récentes</h2>
     <div class="table-wrap">
       <table class="data">
-        <thead><tr><th scope="col">Référence</th><th scope="col">Date</th><th scope="col">Produit</th><th scope="col">Montant</th><th scope="col">Statut</th><th scope="col">Paiement</th><th scope="col">Numéro payeur</th><th scope="col"><span class="sr-only">Action</span></th></tr></thead>
+        <thead><tr><th scope="col">Référence</th><th scope="col">Statut</th><th scope="col">Montant</th><th scope="col">Produit</th><th scope="col">Paiement</th><th scope="col">Numéro payeur</th><th scope="col">Date</th></tr></thead>
         <tbody id="orders-body"></tbody>
       </table>
     </div>
