@@ -614,9 +614,28 @@ def rendre(R, pose, src, alpha=None, sxsy=None):
                 cadre = lambda M_: _tr((-X0, -Y0)) @ M_ @ _tr((x0, y0))
                 cb, rb = peau_ponderee.rendre(b['peau'], (cadre(T_corps), A, cadre(T_bas.get(b['cote'], T))), b['rgb'], b['calque_bras'], (w, h))
             else:
-                cb = cv2.warpAffine(b['calque'], A[:2], (w, h), flags=cv2.INTER_LINEAR, borderValue=0)
-                rb = cv2.warpAffine(b['rgb'], A[:2], (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
-            acc = acc * (1 - cb[..., None]) + rb * cb[..., None]; al = al * (1 - cb) + cb
+                # DÉFORMATION LIMITÉE AU RECTANGLE D'ARRIVÉE DU BRAS (18/10/2026, profil du tournage) : les quatre coins du calque
+                # transformés bornent l'endroit où il peut couvrir ; la même transformation, décalée d'un nombre entier de pixels,
+                # y est appliquée — hors du rectangle la couverture est nulle ; dedans, écart ≤ 0,9 niveau de gris (texture
+                # aléatoire, pire cas : arrondi sous-pixel d'OpenCV au 1/32 de pixel) ; ×4,2 sur la déformation + fusion
+                bh_, bw_ = b['calque'].shape[:2]
+                q_ = A[:2] @ np.array([[0, bw_, 0, bw_], [0, 0, bh_, bh_], [1, 1, 1, 1]], np.float64)
+                rx0, ry0 = max(0, int(np.floor(q_[0].min())) - 3), max(0, int(np.floor(q_[1].min())) - 3)
+                rx1, ry1 = min(w, int(np.ceil(q_[0].max())) + 3), min(h, int(np.ceil(q_[1].max())) + 3)
+                if rx1 <= rx0 or ry1 <= ry0: continue
+                As_ = _tr((-rx0, -ry0)) @ A
+                k_ = cv2.warpAffine(b['calque'], As_[:2], (rx1 - rx0, ry1 - ry0), flags=cv2.INTER_LINEAR, borderValue=0)
+                r_ = cv2.warpAffine(b['rgb'], As_[:2], (rx1 - rx0, ry1 - ry0), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+                acc[ry0:ry1, rx0:rx1] = acc[ry0:ry1, rx0:rx1] * (1 - k_[..., None]) + r_ * k_[..., None]
+                al[ry0:ry1, rx0:rx1] = al[ry0:ry1, rx0:rx1] * (1 - k_) + k_
+                continue
+            # FUSION LIMITÉE AU CALQUE (18/10/2026, profil du tournage : rendre = 50 % du temps, surtout cette ligne) : hors du
+            # rectangle où le calque du bras existe, sa couverture est nulle et la fusion ne change rien — même image, au pixel près
+            ys_, xs_ = np.nonzero(cb > 0)
+            if len(ys_) == 0: continue
+            r0, r1, c0, c1 = ys_.min(), ys_.max() + 1, xs_.min(), xs_.max() + 1
+            k_ = cb[r0:r1, c0:c1]; acc[r0:r1, c0:c1] = acc[r0:r1, c0:c1] * (1 - k_[..., None]) + rb[r0:r1, c0:c1] * k_[..., None]
+            al[r0:r1, c0:c1] = al[r0:r1, c0:c1] * (1 - k_) + k_
         rgb = acc / np.maximum(al, 1e-4)[..., None]
     return (X0, Y0, X1, Y1), np.clip(rgb, 0, 255).astype(np.uint8), al.astype(np.float32), sx, sy
 

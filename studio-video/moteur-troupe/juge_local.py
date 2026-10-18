@@ -555,10 +555,16 @@ def llm_oui(etat, texte):
         _M['llm'] = Llama(model_path=LLM, n_ctx=8192, n_threads=os.cpu_count() or 4, logits_all=False, verbose=False)
     L = _M['llm']; etat_ = json.dumps(etat, ensure_ascii=False)[:20000]
     p = (f"<|im_start|>user\nState (JSON):\n{etat_}\n\nQuestion: {texte}\nAnswer with Yes or No only. /no_think<|im_end|>\n"
-         f"<|im_start|>assistant\n<think>\n\n</think>\n\n")
-    r = L.create_completion(p, max_tokens=1, logprobs=20, temperature=0.0)
-    top = (r['choices'][0].get('logprobs') or {}).get('top_logprobs') or [{}]
-    py = sum(np.exp(v) for k, v in top[0].items() if k.strip().lower() == 'yes'); pn = sum(np.exp(v) for k, v in top[0].items() if k.strip().lower() == 'no')
+         f"<|im_start|>assistant\n<think>\n\n</think>\n\n{{\"answer\": \"")   # Qwen3 répond en JSON face à un état JSON : on pré-remplit
+    # llama-cpp ≥ 0.3 refuse logprobs sans logits_all (8192 × 151k flottants, ≈ 5 Go) : on lit les logits du dernier jeton
+    toks = L.tokenize(p.encode(), add_bos=False, special=True)
+    L.reset(); L.eval(toks)
+    lg = np.ctypeslib.as_array(L._ctx.get_logits(), shape=(L.n_vocab(),)).astype(np.float64)
+    if 'oui_non' not in _M:
+        ids = lambda mots: sorted({t for w in mots for t in L.tokenize(w.encode(), add_bos=False, special=False)[:1]})
+        _M['oui_non'] = (ids(['Yes', ' Yes', 'yes', ' yes', 'YES']), ids(['No', ' No', 'no', ' no', 'NO']))
+    y, n = _M['oui_non']
+    m = lg.max(); py = np.exp(lg[y] - m).sum(); pn = np.exp(lg[n] - m).sum()
     return float(py / (py + pn)) if py + pn > 0 else 0.5
 
 

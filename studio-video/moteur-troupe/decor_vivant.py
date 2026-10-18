@@ -202,11 +202,17 @@ def fumee(V, plaque, t, taux=12.0, vie=3.5, alpha0=0.55):
         cx = P['x'] + b * (off + 0.45 * np.sin(1.3 * age + ph)) + 0.08 * z; cy = P['y'] - z
         r = 0.75 * b * rng.uniform(0.8, 1.2)
         a = alpha0 * dil ** 0.6 * min(1.0, age / 0.35) * (1 - age / vie) ** 1.5
-        d2 = ((xx - cx) ** 2 + (yy - cy) ** 2) / (r * r)
+        # VOLUTE LOCALE (18/10/2026, profil : fumée = 25 % du tournage) : chaque bouffée n'est calculée que dans son voisinage
+        # (4 rayons : au-delà sa contribution est sous exp(−16) ≈ 1e−7) au lieu de toute la zone du panache
+        j0 = max(0, int((cx - 4 * r - x0) // q)); j1 = min(xx.shape[1], int((cx + 4 * r - x0) // q) + 2)
+        k0 = max(0, int((cy - 4 * r - y0) // q)); k1 = min(xx.shape[0], int((cy + 4 * r - y0) // q) + 2)
+        if j1 <= j0 or k1 <= k0: continue
+        xs_, ys_ = xx[k0:k1, j0:j1], yy[k0:k1, j0:j1]
+        d2 = ((xs_ - cx) ** 2 + (ys_ - cy) ** 2) / (r * r)
         if d2.min() > 9: continue
-        u = ((xx - cx) / (2.5 * r) * 0.5 + 0.5 + 0.37 * i) % 1.0; v = ((yy - cy) / (2.5 * r) * 0.5 + 0.5 + 0.21 * i + 0.15 * age) % 1.0
+        u = ((xs_ - cx) / (2.5 * r) * 0.5 + 0.5 + 0.37 * i) % 1.0; v = ((ys_ - cy) / (2.5 * r) * 0.5 + 0.5 + 0.21 * i + 0.15 * age) % 1.0
         tex = _TEX[(v * 127).astype(np.int32), (u * 127).astype(np.int32)]
-        A = 1 - (1 - A) * (1 - np.clip(a * np.exp(-d2) * (0.45 + 0.75 * tex), 0, 1))
+        A[k0:k1, j0:j1] = 1 - (1 - A[k0:k1, j0:j1]) * (1 - np.clip(a * np.exp(-d2) * (0.45 + 0.75 * tex), 0, 1))
     A = cv2.resize(cv2.GaussianBlur(A, (0, 0), 0.6), (x1 - x0, y1 - y0), interpolation=cv2.INTER_LINEAR)
     can[y0:y1, x0:x1] = can[y0:y1, x0:x1] * (1 - A[..., None]) + np.asarray(P['couleur'], np.float32)[None, None, :] * A[..., None]
     return can

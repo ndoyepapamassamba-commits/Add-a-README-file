@@ -111,6 +111,7 @@ def lisse_acc(x, fps, acc=ACC_FLUIDE):
 # ou mieux, médiane ET 10 % les plus raides, en gardant 94 à 96 % de l'ampleur du jeu de moins de 2 s : rotations 2 Hz,
 # hochements, inclinaisons et buste 2,5 Hz (le hochement garde plus de vivacité). La prise de choc (take comique) garde
 # son claquement : là où elle joue, la piste brute est reprise en fondu.
+SUIVI_TETE_HZ = 4.5   # action décalée tête/buste au retard humain mesuré (33 ms CMU ; 35 ms ici)
 SOUPLESSE = {'tete_lacet': 2.0, 'buste_lacet': 2.0, 'lacet_visage': 2.0, 'tete': 2.5, 'tete_tangage': 2.5, 'buste': 2.5}
 
 
@@ -471,7 +472,10 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         R['tete_lacet'] = (R['tete_lacet'] + w_ * s_ * pousse_).astype(np.float32)
         # ── action décalée : la tête traîne derrière le buste et le rattrape avec un léger dépassement (follow-through)
         if RG['suivi_tete']:
-            monde = R['buste'] + R['tete']; R['tete'] = (dynamique(monde, fps, 2.6, 0.5, 0.0) - R['buste']).astype(np.float32)
+            # ACTION DÉCALÉE AU RETARD HUMAIN (18/10/2026) : corrélation croisée des vitesses buste → tête, 39 prises CMU : la
+            # tête suit à 33 ms ; nos pistes : 150 ms (tête qui « flotte » derrière le corps, effet marionnette). Retard d'un
+            # ressort amorti ≈ ζ / (π f) : 61 ms à 2,6 Hz, 35 ms à 4,5 Hz — le léger dépassement (ζ = 0,5) reste
+            monde = R['buste'] + R['tete']; R['tete'] = (dynamique(monde, fps, SUIVI_TETE_HZ, 0.5, 0.0) - R['buste']).astype(np.float32)
         # ── bornes de l'enveloppe du personnage
         R['buste'] = borne(R['buste'], env.get('buste', 3.0)); R['tete'] = borne(R['tete'], env.get('tete', 6.0))
         R['epaules'] = borne(R['epaules'], env.get('epaules', 3.0)); R['bassin_x'] = borne(R['bassin_x'], env.get('bassin_x', 4.0))
