@@ -67,6 +67,8 @@ export interface Ctx {
   degree: DegreeFacts | null;
   exp: ExpFacts | null;
   expCount: number;
+  /** True when at least one experience is a job, not an internship: no "first steps" talk then. */
+  hasJob: boolean;
   /** Up to 3 customer skills, in-sentence form. */
   skills: string[];
   /** Up to 4 IT tools as typed. */
@@ -406,7 +408,7 @@ function expSubject(c: Ctx, span: boolean): { subject: string; verb: string } {
 export const PROFILE_INTRO: Record<Level, Variant[]> = {
   debutant: [
     (c) =>
-      c.degree &&
+      c.degree && !c.hasJob &&
       `${c.degree.lead}, je suis ${c.g("motivé", "motivée")} à l'idée de faire mes premiers pas dans ${c.field}`,
     (c) => c.degree?.linked && `${c.degree.lead}, je souhaite mettre mes connaissances en pratique dans ${c.field}`,
     (c) =>
@@ -414,13 +416,24 @@ export const PROFILE_INTRO: Record<Level, Variant[]> = {
       `${c.degree.lead}, ${c.g("sérieux", "sérieuse")} et ${
         c.g("désireux", "désireuse")
       } d'apprendre, je nourris un vif intérêt pour ${c.field}`,
-    (c) => !c.degree && `Jeune et ${c.g("motivé", "motivée")}, je souhaite faire mes premiers pas dans ${c.domain}`,
+    (c) => c.degree && c.hasJob && `${c.degree.lead}, je souhaite consolider mes premiers acquis dans ${c.field}`,
+    (c) =>
+      !c.degree && !c.hasJob &&
+      `Jeune et ${c.g("motivé", "motivée")}, je souhaite faire mes premiers pas dans ${c.domain}`,
     (c) =>
       !c.degree &&
       `${c.g("Sérieux", "Sérieuse")} et ${
         c.g("désireux", "désireuse")
       } d'apprendre, je nourris un vif intérêt pour ${c.field}`,
-    (c) => !c.degree && `${c.g("Motivé", "Motivée")} et volontaire, je souhaite démarrer ma carrière dans ${c.domain}`,
+    (c) =>
+      !c.degree && !c.hasJob &&
+      `${c.g("Motivé", "Motivée")} et volontaire, je souhaite démarrer ma carrière dans ${c.domain}`,
+    (c) =>
+      !c.degree && c.hasJob &&
+      `Déjà ${c.g("initié", "initiée")} aux réalités du terrain, je souhaite progresser dans ${c.domain}`,
+    (c) =>
+      !c.degree && c.hasJob &&
+      `${c.g("Motivé", "Motivée")} et volontaire, je souhaite poursuivre mon parcours dans ${c.domain}`,
   ],
   junior: [
     (c) =>
@@ -483,7 +496,13 @@ export const PROFILE_EXPERIENCE: Variant[] = [
   (c) => {
     if (!c.exp) return null;
     const { subject, verb } = expSubject(c, false);
-    return `${subject} ${verb} de développer ${c.skills.length ? `des compétences en ${skillList(c)}` : c.expGain}`;
+    // An experienced candidate builds on skills already acquired; a newcomer develops them.
+    if (!senior(c)) {
+      return `${subject} ${verb} de développer ${c.skills.length ? `des compétences en ${skillList(c)}` : c.expGain}`;
+    }
+    return c.skills.length
+      ? `${subject} ${verb} ${c.exp.current ? "de mettre à profit" : "de consolider"} mes compétences en ${skillList(c)}`
+      : `${subject} ${verb} de renforcer ${c.expGain}`;
   },
 ];
 
@@ -502,7 +521,7 @@ export const PROFILE_SKILLS: Variant[] = [
 export const PROFILE_AIM: Record<JobKind, Variant[]> = {
   emploi: [
     (c) =>
-      c.level === "debutant"
+      c.level === "debutant" && !c.hasJob
         ? `Je suis à la recherche d'un premier emploi ${enTantQue(c.role)}`
         : `Je suis à la recherche d'un ${c.posteNoun} au sein d'une structure où je pourrai m'investir pleinement`,
     (c) =>
@@ -604,7 +623,9 @@ function applyOpen(c: Ctx): string {
 export const LETTRE_FIT: Record<JobKind, Variant[]> = {
   emploi: [
     (c) =>
-      c.degree?.linked
+      senior(c)
+        ? "Ce poste correspond pleinement à mon expérience ainsi qu'à mon projet professionnel"
+        : c.degree?.linked
         ? "Ce poste correspond pleinement à ma formation ainsi qu'à mon projet professionnel"
         : "Ce poste correspond pleinement à mon projet professionnel et à mes aspirations",
     (c) =>
@@ -713,7 +734,7 @@ export const LETTRE_EXPERIENCE: Variant[] = [
     c.exp &&
     `${expClause(c, 1, { span: true, notamment: false })}, une expérience qui ${
       c.exp.current ? "me permet" : "m'a permis"
-    } de développer ${c.expGain}`,
+    } ${senior(c) ? "de renforcer" : "de développer"} ${c.expGain}`,
   (c) => {
     if (!c.exp) return null;
     const { subject, verb } = expSubject(c, true);
@@ -815,12 +836,46 @@ export const LETTRE_IT: Variant[] = [
   (c) => `J'utilise au quotidien l'outil informatique ${itList(c)}`,
 ];
 
-/** P3: lead-in for the list of quality phrases ("Je suis A, B et C"). */
+/** P3: lead-in for the list of quality phrases ("Je suis A, B et C"), able to open the paragraph. */
 export const LETTRE_QUALITIES: Array<(list: string) => string> = [
   (list) => `Sur le plan personnel, je suis ${list}`,
   (list) => `Sur le plan humain, je suis ${list}`,
-  (list) => `Je suis par ailleurs ${list}`,
+  (list) => `Au quotidien, je suis ${list}`,
 ];
+
+/** P3: lead-ins that link back to a previous sentence; only used after the skills sentence. */
+export const LETTRE_QUALITIES_AFTER: Array<(list: string) => string> = [
+  (list) => `Je suis par ailleurs ${list}`,
+  (list) => `Je suis en outre ${list}`,
+  (list) => `De plus, je suis ${list}`,
+];
+
+/**
+ * Qualities typed as adjectives ("patiente", "serieux"), beyond the QUALITY_ALIASES of the twelve labels:
+ * both forms, keyed by either folded spelling. They complete "Je suis …" like the QUALITIES phrases.
+ */
+// deno-fmt-ignore
+const ADJECTIVE_PAIRS: Array<[string, string]> = [
+  ["patient", "patiente"], ["sérieux", "sérieuse"], ["curieux", "curieuse"], ["courageux", "courageuse"],
+  ["travailleur", "travailleuse"], ["souriant", "souriante"], ["poli", "polie"], ["respectueux", "respectueuse"],
+  ["calme", "calme"], ["disponible", "disponible"], ["motivé", "motivée"], ["persévérant", "persévérante"],
+  ["minutieux", "minutieuse"], ["méticuleux", "méticuleuse"], ["loyal", "loyale"], ["fiable", "fiable"],
+  ["responsable", "responsable"], ["polyvalent", "polyvalente"], ["endurant", "endurante"], ["flexible", "flexible"],
+  ["communicatif", "communicative"], ["empathique", "empathique"], ["accueillant", "accueillante"],
+  ["aimable", "aimable"], ["assidu", "assidue"], ["vigilant", "vigilante"], ["attentif", "attentive"],
+  ["volontaire", "volontaire"], ["ambitieux", "ambitieuse"], ["efficace", "efficace"], ["réactif", "réactive"],
+  ["consciencieux", "consciencieuse"], ["discipliné", "disciplinée"], ["sociable", "sociable"],
+  ["enthousiaste", "enthousiaste"], ["déterminé", "déterminée"], ["passionné", "passionnée"], ["humble", "humble"],
+  ["ordonné", "ordonnée"], ["appliqué", "appliquée"], ["dévoué", "dévouée"], ["bienveillant", "bienveillante"],
+  ["diplomate", "diplomate"], ["agréable", "agréable"], ["énergique", "énergique"],
+];
+
+const foldAdj = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
+
+/** Folded adjective (either gender) → its two forms. */
+export const QUALITY_ADJECTIVES: Map<string, [string, string]> = new Map(
+  ADJECTIVE_PAIRS.flatMap(([m, f]): Array<[string, [string, string]]> => [[foldAdj(m), [m, f]], [foldAdj(f), [m, f]]]),
+);
 
 /** P3: interest for the company. */
 export const LETTRE_INTEREST: Variant[] = [

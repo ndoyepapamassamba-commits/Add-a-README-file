@@ -23,6 +23,7 @@ import {
   LETTRE_OPEN_REFERRAL,
   LETTRE_OPEN_SPONTANEOUS,
   LETTRE_QUALITIES,
+  LETTRE_QUALITIES_AFTER,
   LETTRE_SKILLS,
   NEUTRAL_GAIN,
   PROFILE_AIM,
@@ -30,6 +31,7 @@ import {
   PROFILE_INTRO,
   PROFILE_SKILLS,
   QUALITIES,
+  QUALITY_ADJECTIVES,
   QUALITY_ALIASES,
   REPEAT_STEMS,
   SALUTATION,
@@ -59,9 +61,11 @@ import {
   upperName,
   withArticle,
 } from "./text.ts";
+import { isGenericEmployer, polishInput } from "./polish.ts";
 
-export function generateDocument(input: OrderInput, product: Product, opts: { seed: string; now: Date }): Document {
+export function generateDocument(raw: OrderInput, product: Product, opts: { seed: string; now: Date }): Document {
   const picker = new Picker(opts.seed);
+  const input = polishInput(raw);
   const facts = buildContext(input, opts.now);
   return {
     cv: product === "lettre" ? null : buildCv(input, facts, picker),
@@ -164,7 +168,8 @@ class Composer {
 // Facts → generation context
 // ---------------------------------------------------------------------------
 
-const CURRENT_RE = /aujourd|actuel|en cours|présent|present|now/i;
+/** An end date meaning "still in this job": "aujourd'hui", "jusqu'à maintenant", "à ce jour", "toujours"… */
+const CURRENT_RE = /aujourd|actuel|en cours|présent|present|now|maintenant|ce jour|toujours/i;
 const ONGOING_DEGREE_RE = /\b(en cours|actuellement|en préparation)\b/i;
 
 function yearOf(s: string | undefined): number {
@@ -272,7 +277,12 @@ function buildExperience(input: OrderInput): ExpFacts | null {
 
   const title = inSentence(collapse(e.title).replace(/[\s.,;:]+$/u, ""));
   const company = collapse(e.company ?? "");
-  const at = !company ? "" : takesArticle(company) ? ` ${auSeinDe(withArticle(company))}` : ` chez ${company}`;
+  // "chez chantier privé" is not French: a generic employer stays on the CV but out of the sentences.
+  const at = !company || isGenericEmployer(company)
+    ? ""
+    : takesArticle(company)
+    ? ` ${auSeinDe(withArticle(company))}`
+    : ` chez ${company}`;
   const start = lowerMonths(collapse(e.start ?? ""));
   const end = lowerMonths(collapse(e.end ?? ""));
   const current = isCurrent(e);
@@ -411,6 +421,7 @@ function buildContext(input: OrderInput, now: Date): Ctx {
     degree,
     exp,
     expCount: input.experiences.length,
+    hasJob: input.experiences.some((e) => collapse(e.title ?? "") !== "" && !/^stage|^stagiaire/i.test(e.title)),
     // A skill containing "et" reads best first: "hygiène et asepsie, soins de base et prise de constantes".
     skills: skills.slice(0, 3).map(inSentence).sort((x, y) => Number(/ et /.test(y)) - Number(/ et /.test(x))),
     it: itForSentence(input.it, skills.slice(0, 3)),
@@ -494,9 +505,25 @@ function qualityKey(s: string): string {
   return foldKey(s).replace(/’/g, "'");
 }
 
-/** Known labels (mapped phrases) and verbatim unknown qualities; topped up to two from the sector defaults. */
+/** Adjective endings ("souriante", "attentif") as opposed to noun endings ("curiosité", "patience"). */
+const ADJECTIVE_END_RE = /(eux|euse|if|ive|ant|ante|ent|ente|é|ée|ible|able|ique|el|elle|ien|ienne)$/u;
+const NOUN_END_RE = /(ment|té|tion|sion|ance|ence|isme|ude|ise|eur|esse|ship)$/u;
+
+/** A typed quality that completes "Je suis …" ("patiente", "très souriante") rather than "preuve de …". */
+function isAdjective(text: string): boolean {
+  const words = text.split(" ");
+  const last = words[words.length - 1].toLocaleLowerCase("fr");
+  if (words.length > 2 || (words.length === 2 && !/^(très|vraiment|toujours)$/i.test(words[0]))) return false;
+  return ADJECTIVE_END_RE.test(last) && !NOUN_END_RE.test(last);
+}
+
+/**
+ * Known labels and typed adjectives become "Je suis …" phrases (adjectives agreed with the civility);
+ * other typed qualities are nouns for "Je fais preuve de …". Topped up to two from the sector defaults.
+ */
 function resolveQualities(typed: string[], c: Ctx, picker: Picker): { phrases: string[]; others: string[] } {
   const labels: string[] = [];
+  const adjectives: string[] = [];
   const others: string[] = [];
   const seen = new Set<string>();
   for (const raw of typed) {
@@ -505,15 +532,19 @@ function resolveQualities(typed: string[], c: Ctx, picker: Picker): { phrases: s
     if (!key || seen.has(key)) continue;
     seen.add(key);
     const label = QUALITY_BY_KEY.get(key)?.label ?? QUALITY_ALIASES[key];
-    if (label && !labels.includes(label)) labels.push(label);
-    else if (!label) others.push(inSentence(text));
+    const pair = QUALITY_ADJECTIVES.get(key);
+    if (label) {
+      if (!labels.includes(label)) labels.push(label);
+    } else if (pair) adjectives.push(c.g(pair[0], pair[1]));
+    else if (isAdjective(inSentence(text))) adjectives.push(inSentence(text));
+    else others.push(inSentence(text));
   }
   for (const label of picker.shuffle("qualities", DEFAULT_QUALITIES[c.sector])) {
-    if (labels.length + others.length >= 2) break;
+    if (labels.length + adjectives.length + others.length >= 2) break;
     if (!labels.includes(label)) labels.push(label);
   }
-  const phrases = labels.map((l) => QUALITY_BY_KEY.get(qualityKey(l))!.phrase(c.g));
-  return { phrases: phrases.slice(0, 4), others: others.slice(0, Math.max(0, 4 - phrases.length)) };
+  const phrases = [...labels.map((l) => QUALITY_BY_KEY.get(qualityKey(l))!.phrase(c.g)), ...adjectives].slice(0, 4);
+  return { phrases, others: others.slice(0, Math.max(0, 4 - phrases.length)) };
 }
 
 /** "sens de l'écoute" → "un sens de l'écoute", so that "preuve d'un sens de l'écoute" reads well. */
@@ -552,9 +583,14 @@ function buildParagraphs(input: OrderInput, c: Ctx, picker: Picker): string[] {
   const p2 = joinSentences(p2Parts);
 
   const { phrases, others } = resolveQualities(input.letter?.qualities ?? [], c, picker);
+  const skillsSentence = c.skills.length > 0
+    ? w.pick("p3.skills", LETTRE_SKILLS)
+    : c.it.length > 0 && w.pick("p3.it", LETTRE_IT);
+  // "Je suis par ailleurs…" needs a sentence before it; without one the qualities open the paragraph.
+  const qualityIntros = skillsSentence ? [...LETTRE_QUALITIES, ...LETTRE_QUALITIES_AFTER] : LETTRE_QUALITIES;
   const p3 = joinSentences([
-    c.skills.length > 0 ? w.pick("p3.skills", LETTRE_SKILLS) : c.it.length > 0 && w.pick("p3.it", LETTRE_IT),
-    phrases.length > 0 && w.choose("p3.qualities", LETTRE_QUALITIES.map((intro) => intro(joinList(phrases)))),
+    skillsSentence,
+    phrases.length > 0 && w.choose("p3.qualities", qualityIntros.map((intro) => intro(joinList(phrases)))),
     others.length > 0 &&
     `Je fais ${phrases.length ? "également " : ""}preuve ${joinList(others.map(qualityNoun).map(de))}`,
     motivation,

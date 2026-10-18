@@ -157,7 +157,8 @@ const KEEP_CASE = new Set([
   "mac", "microsoft", "money", "odoo", "office", "orange", "outlook", "photoshop", "premiere", "python", "react",
   "revit", "saari", "sage", "sénégal", "senegal", "dakar", "tiktok", "twitter", "ubuntu", "wave", "windows", "word",
   "wordpress", "youtube", "état", "etat", "afrique", "expresso", "yas", "zoom", "teams", "kotlin", "swift", "angular",
-  "vue", "node", "symfony",
+  "vue", "node", "symfony", "cisco", "git", "github", "gitlab", "docker", "oracle", "unix", "jira", "trello", "slack",
+  "capcut", "lightroom", "power", "whatsapp", "linkedin", "snapchat", "senjob", "thiès", "thies", "saint-louis",
 ]);
 
 /** First letter uppercase, rest untouched. */
@@ -203,7 +204,7 @@ export function inSentence(s: string): string {
     return word.split(/(['’-])/).map((part) => {
       if (!part || /['’-]/.test(part)) return part;
       const lower = part.toLocaleLowerCase("fr");
-      if (shouting) return part.length >= 5 && !KEEP_CASE.has(lower) ? lower : part;
+      if (shouting) return FUNCTION_WORDS.has(lower) || (part.length >= 5 && !KEEP_CASE.has(lower)) ? lower : part;
       if (!isFirst && !titleCased && !FUNCTION_WORDS.has(lower)) return part;
       return isKeptWord(part) ? part : lower;
     }).join("");
@@ -327,11 +328,19 @@ export function joinSentences(parts: Array<string | null | undefined | false>): 
     .join(" ");
 }
 
-/** ["A"] → "A"; ["A", "B"] → "A et B"; ["A", "B", "C"] → "A, B et C". */
+/**
+ * ["A"] → "A"; ["A", "B"] → "A et B"; ["A", "B", "C"] → "A, B et C". When one of the last two items
+ * already contains "et", the final link becomes "ainsi que" so that two "et" never follow each other:
+ * "diagnostic des pannes, vidange et entretien, ainsi que réparation des freins".
+ */
 export function joinList(items: string[], conj = "et"): string {
   const xs = items.map((x) => x.trim()).filter(Boolean);
   if (xs.length <= 1) return xs[0] ?? "";
-  return `${xs.slice(0, -1).join(", ")} ${conj} ${xs[xs.length - 1]}`;
+  const head = xs.slice(0, -1).join(", ");
+  const last = xs[xs.length - 1];
+  const ambiguous = conj === "et" && xs.slice(-2).some((x) => /(?<!\p{L})et(?!\p{L})/u.test(x));
+  if (!ambiguous) return `${head} ${conj} ${last}`;
+  return `${head}${xs.length > 2 ? "," : ""} ainsi ${elide("que", last)}`;
 }
 
 /** Case- and accent-insensitive key, used for de-duplication and label matching. */
