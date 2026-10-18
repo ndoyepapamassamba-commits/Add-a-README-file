@@ -61,14 +61,19 @@ Plus tard, quand votre compte Wave Business sera prêt, ce sera le **mode automa
 
 L'argent arrive **directement sur votre Wave personnel**. Mais vous devez débloquer chaque commande.
 
-1. Le client clique sur « Payer ». Le site lui montre **votre numéro Wave**, le **montant exact** et une **référence** (par exemple TCV-7K2M9QXA).
-2. Le client vous envoie l'argent avec Wave, comme un transfert normal.
-3. Il clique sur « J'ai payé » et donne son numéro.
-4. WhatsApp s'ouvre chez lui avec un message pour vous : la référence, le montant et son numéro.
+1. Le client clique sur « Payer ». Le site lui montre **votre numéro Wave**, un **montant exact propre à sa commande** (par exemple 1 487 FCFA au lieu de 1 500) et une **référence** (par exemple TCV-7K2M9QXA).
+2. Le client vous envoie ce montant avec Wave, comme un transfert normal.
+3. Il clique sur « J'ai envoyé l'argent ». Il peut donner son numéro (facultatif).
+4. S'il le veut, il vous prévient sur WhatsApp : la référence, le montant et son numéro.
 5. **Vous ouvrez votre application Wave.** Vous vérifiez que le bon montant est bien arrivé, depuis ce numéro.
 6. Vous ouvrez la page admin. La commande est tout en haut, dans « Paiements à vérifier », marquée « En attente » (le client dit avoir payé).
 7. Vous cliquez sur **« Débloquer »**.
 8. Chez le client, le document complet apparaît tout seul. C'est fini.
+
+**Encore plus simple : reliez votre téléphone.** Avec l'application gratuite MacroDroid (guide pas à pas :
+`MACRODROID.md`), votre téléphone transmet au site chaque notification Wave « Vous avez reçu … ».
+Le montant exact désigne la commande, qui se débloque toute seule, en général en moins d'une minute.
+Vous n'avez plus rien à faire. Seuls les cas douteux restent dans « Paiements à vérifier ».
 
 **Règle d'or : ne débloquez jamais avant d'avoir vu l'argent dans votre application Wave.**
 Une capture d'écran peut être fausse. Seule votre application Wave compte.
@@ -182,6 +187,7 @@ Ils disent si chaque partie du système est prête.
 - **Webhook** : Wave peut prévenir le site quand un client paie.
 - **Versement** : l'envoi automatique du soir vers votre Wave personnel est activé.
 - **Mode manuel** : les clients peuvent payer par transfert Wave sur votre numéro.
+- **Téléphone relié (MacroDroid)** : votre téléphone transmet les notifications Wave au site. L'heure du dernier signal s'affiche.
 - **IA** : une aide qui améliore le style du texte. C'est optionnel. Le site marche sans.
 - **Votre numéro Wave** : le numéro qui reçoit l'argent du soir.
 
@@ -204,6 +210,8 @@ Chaque ligne est une commande, avec sa référence (TCV-…), le produit, le mon
 - **Paiement en cours** : le client est sur la page de paiement Wave. Rien à faire.
 - **En attente** : en mode manuel, le client dit avoir payé. **Vérifiez votre Wave**, puis cliquez sur **Débloquer**.
 - **Payé** : tout est bon.
+- **Paiement détecté** (étiquette bleue, à côté de l'état) : votre téléphone a vu arriver le montant exact de cette commande.
+  Normalement, elle passe aussitôt à « Payé ».
 
 ### Les versements
 

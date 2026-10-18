@@ -1,7 +1,9 @@
-// Local server: the real API (MemoryStore + FakeWave) at /api/*, the static site from cv/ at /, and a fake
-// Wave payment page at /fake-wave/pay/<sessionId>.  Run: deno run -A supabase/functions/api/dev.ts
+// Local server: the real API (MemoryStore + FakeWave) at /api/*, the static site from cv/ at /, a fake
+// Wave payment page at /fake-wave/pay/<sessionId> and a fake owner phone at /fake-phone (manual mode: posts a
+// Wave notification to /api/payments/notify).  Run: deno run -A supabase/functions/api/dev.ts
 // Env: PORT (default 8787), DEV_PAYMENT = wave (default) | manual | none.
 import { createApp } from "./lib/app.ts";
+import { MANUAL_WINDOW_MS } from "./lib/autopay.ts";
 import { DEFAULT_RETURN_PREFIXES, envFrom, loadConfig } from "./lib/config.ts";
 import { MemoryStore } from "./lib/store_memory.ts";
 import { checkoutCompletedEvent, FakeWave, signedWebhookRequest } from "./lib/wave.ts";
@@ -13,6 +15,7 @@ export const DEV_ADMIN_KEY = "dev-admin";
 export const DEV_CRON_SECRET = "dev-cron";
 export const DEV_WEBHOOK_SECRET = "dev-wave-webhook-secret";
 export const DEV_MANUAL_NUMBER = "+221770000000";
+export const DEV_PHONE_HOOK_KEY = "dev-phone";
 
 const CONTENT_TYPES: Record<string, string> = {
   html: "text/html; charset=utf-8",
@@ -49,6 +52,7 @@ export function devConfig(port: number, payment: DevPayment): Config {
     PAYOUT_ENABLED: "true",
     ADMIN_KEY: DEV_ADMIN_KEY,
     CRON_SECRET: DEV_CRON_SECRET,
+    PHONE_HOOK_KEY: DEV_PHONE_HOOK_KEY,
   }));
   // The only place where an http:// return URL is accepted.
   const local = [`http://localhost:${port}/`, "http://localhost:8787/"];
@@ -72,6 +76,45 @@ button{display:block;width:100%;padding:14px;margin-top:12px;border:0;border-rad
 <form method="post" action="/fake-wave/pay/${id}/payer"><button class="pay">Payer</button></form>
 <form method="post" action="/fake-wave/pay/${id}/annuler"><button class="cancel">Annuler</button></form>
 </main></body></html>`;
+  return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+}
+
+/** Dev-only stand-in for the owner's phone (MacroDroid): posts a Wave notification text to the API. */
+function fakePhonePage(open: Array<{ id: string; amount: number }>): Response {
+  const rows = open.length
+    ? open.map((o) =>
+      `<li><strong>${escapeHtml(String(o.amount))} F</strong> — ${escapeHtml(o.id)} ` +
+      `<button type="button" data-amount="${escapeHtml(String(o.amount))}">Remplir</button></li>`
+    ).join("")
+    : "<li>Aucune commande manuelle en attente.</li>";
+  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Téléphone du vendeur (simulation)</title>
+<style>body{font-family:system-ui,sans-serif;margin:0;padding:16px;max-width:520px}textarea{width:100%;box-sizing:border-box;font:inherit;padding:8px}
+button{padding:10px 14px;border-radius:8px;border:1px solid #888;background:#fff;cursor:pointer}#send{background:#1dc4ff;color:#fff;border:0;margin-top:8px}
+pre{background:#f4f4f4;padding:8px;white-space:pre-wrap}</style></head><body>
+<h1>Téléphone du vendeur <small>(simulation locale)</small></h1>
+<p>Comme MacroDroid : envoie le texte d'une notification Wave à <code>/api/payments/notify</code>.</p>
+<h2>Commandes manuelles en attente</h2><ul id="open">${rows}</ul>
+<form id="form" method="post" action="/api/payments/notify?k=${escapeHtml(DEV_PHONE_HOOK_KEY)}">
+<label for="text">Texte de la notification</label>
+<textarea id="text" name="text" rows="4">Vous avez reçu 1 000F de Awa Ndiaye (77 123 45 67). Nouveau solde : 25 300F</textarea>
+<button id="send" type="submit">Envoyer la notification</button></form>
+<pre id="result" aria-live="polite"></pre>
+<script>
+document.querySelectorAll("#open button").forEach(function (b) {
+  b.addEventListener("click", function () {
+    document.getElementById("text").value = "Vous avez reçu " + b.dataset.amount.replace(/\\B(?=(\\d{3})+(?!\\d))/g, "\\u00a0") +
+      "F de Awa Ndiaye (77 123 45 67). Nouveau solde : 25 300F";
+  });
+});
+document.getElementById("form").addEventListener("submit", function (e) {
+  e.preventDefault();
+  fetch(this.action, { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ title: "Wave", text: document.getElementById("text").value }) })
+    .then(function (r) { return r.text(); })
+    .then(function (t) { document.getElementById("result").textContent = t; });
+});
+</script></body></html>`;
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
 }
 
@@ -138,6 +181,11 @@ export function createDevServer(opts: { port: number; payment: DevPayment; cvRoo
     const fake = /^\/fake-wave\/pay\/([^/]+)(?:\/(payer|annuler))?$/.exec(path);
     if (fake) return fakeWave(req, decodeURIComponent(fake[1]), fake[2]);
     if (req.method !== "GET" && req.method !== "HEAD") return text(405, "Méthode non autorisée.");
+    if (path === "/fake-phone") {
+      const since = new Date(Date.now() - MANUAL_WINDOW_MS).toISOString();
+      const open = (await store.listOpenManualOrders(since)).filter((o) => o.manual_amount !== null);
+      return fakePhonePage(open.map((o) => ({ id: o.id, amount: o.manual_amount as number })));
+    }
     if (path === "/config.js") {
       const js = `window.TCV_CONFIG = { apiBase: ${JSON.stringify(`${origin}/api`)} };\n`;
       return new Response(js, { headers: { "content-type": CONTENT_TYPES.js, "cache-control": "no-store" } });
@@ -167,6 +215,7 @@ if (import.meta.main) {
       console.log(`  API       ${origin}/api/health   ${origin}/api/config`);
       console.log(`  Cron      curl -X POST -H 'x-cron-secret: ${DEV_CRON_SECRET}' ${origin}/api/cron/daily`);
       if (payment === "wave") console.log(`  Wave      ${origin}/fake-wave/pay/<sessionId> (simulation)`);
+      if (payment === "manual") console.log(`  Phone     ${origin}/fake-phone (notification Wave simulée)`);
     },
   }, handler);
 }

@@ -77,6 +77,17 @@
     box.appendChild(kpi("Depuis le début", stats.allTime.revenue, stats.allTime.paid + " commande" + (stats.allTime.paid > 1 ? "s" : "") + " payée" + (stats.allTime.paid > 1 ? "s" : "")));
   }
 
+  /** "Téléphone relié (MacroDroid)": on once the phone has sent at least one notification (MACRODROID.md). */
+  function phoneItem(h) {
+    var last = h.lastPhoneNotificationAt ? TCV.fmt.dateTime(h.lastPhoneNotificationAt) : "";
+    return [h.phoneHook && !!last, "Téléphone relié (MacroDroid)", "Dernier signal reçu le " + last,
+      h.phoneHook ? "Aucun signal reçu pour le moment" : "Pas encore relié",
+      "Chaque transfert Wave reçu sur votre téléphone débloque tout seul la commande qui a ce montant exact.",
+      h.phoneHook
+        ? "Dans MacroDroid, touchez « Tester l'action » : l'heure doit s'afficher ici (guide MACRODROID.md)."
+        : "Facultatif : reliez votre téléphone (guide MACRODROID.md) pour que les transferts Wave débloquent les commandes tout seuls. Il faut la clé PHONE_HOOK_KEY."];
+  }
+
   function renderHealth(h) {
     var number = h.ownerWaveMobile || "";
     // [on, label, state when on, state when off, hint when on, hint when off]
@@ -93,6 +104,7 @@
       [h.manual, "Mode manuel", "Paiement par transfert Wave actif", "Désactivé",
         "Les clients envoient l'argent sur votre Wave : vérifiez la réception puis touchez « Débloquer ».",
         "Facultatif : renseignez MANUAL_WAVE_NUMBER pour accepter les transferts en attendant l'API Wave."],
+      phoneItem(h),
       [h.llm, "IA", "Rédaction enrichie active", "Désactivée (facultatif)",
         "Le texte est retravaillé par l'IA avant d'être livré.",
         "Les documents sont rédigés sans IA externe. Pour l'activer, ajoutez OPENROUTER_API_KEY."],
@@ -122,14 +134,27 @@
     return btn;
   }
 
+  /** Amount the customer was asked to send: the order's unique amount when it has one. */
+  function exactAmount(o) {
+    return o.manual_amount || o.amount;
+  }
+
+  function detectedBadge(o) {
+    return o.payment_detected_at ? el("span", { class: "badge badge-detected", text: "Paiement détecté" }) : null;
+  }
+
   /** Orders paid by manual Wave transfer that the owner must confirm: shown first, as cards. */
   function renderUnlock(list) {
-    var waiting = list.filter(function (o) { return o.status === "awaiting_manual"; });
+    var waiting = list.filter(function (o) {
+      return o.status !== "paid" && (o.status === "awaiting_manual" || !!o.payment_detected_at);
+    });
     var ul = TCV.dom.clear($("#unlock-list"));
     waiting.forEach(function (o) {
       ul.appendChild(el("li", { class: "unlock-card" }, [
         el("div", null, [
-          el("strong", { class: "unlock-amount", text: fcfa(o.amount) }),
+          el("strong", { class: "unlock-amount", text: fcfa(exactAmount(o)) }),
+          o.payment_detected_at ? " " : null,
+          detectedBadge(o),
           el("div", { text: (o.manual_payer_phone ? "Envoyé par le " + TCV.fmt.snPhone(o.manual_payer_phone) : "Numéro du payeur non indiqué") }),
           el("div", { class: "hint", text: o.id + " · " + TCV.fmt.productLabel(o.product) + " · " + TCV.fmt.dateTime(o.created_at) })
         ]),
@@ -145,7 +170,7 @@
     list.forEach(function (o) {
       body.appendChild(el("tr", null, [
         el("td", null, [el("strong", { text: o.id })]),
-        el("td", null, [badge(STATUS, o.status)]),
+        el("td", null, [badge(STATUS, o.status), o.payment_detected_at ? " " : null, detectedBadge(o)]),
         el("td", { text: fcfa(o.amount) }),
         el("td", { text: TCV.fmt.productLabel(o.product) }),
         el("td", { text: o.payment_method === "wave" ? "Wave" : o.payment_method === "manual" ? "Transfert Wave" : "—" }),
@@ -206,7 +231,7 @@
 
   function unlock(order, btn) {
     var who = order.manual_payer_phone ? " du " + TCV.fmt.snPhone(order.manual_payer_phone) : "";
-    if (!window.confirm("Avez-vous bien reçu " + fcfa(order.amount) + who + " sur votre Wave ?\n\nLa commande " + order.id + " sera débloquée pour le client.")) return;
+    if (!window.confirm("Avez-vous bien reçu " + fcfa(exactAmount(order)) + who + " sur votre Wave ?\n\nLa commande " + order.id + " sera débloquée pour le client.")) return;
     TCV.dom.busy(btn, true, "…");
     TCV.api
       .request("POST", "/admin/orders/" + encodeURIComponent(order.id) + "/unlock", { adminKey: adminKey, body: {} })

@@ -433,22 +433,27 @@
 
           <div class="manual" id="manual-panel" hidden>
             <h3 id="manual-title" tabindex="-1">Payer par transfert Wave</h3>
+            <div class="exact-box">
+              <p class="exact-label">Envoyez exactement</p>
+              <div class="copy-line"><strong class="exact-amount" id="m-amount">—</strong><button type="button" class="copy-btn" data-copy="m-amount-raw" aria-label="Copier le montant">Copier</button></div>
+              <span id="m-amount-raw" hidden></span>
+              <p class="exact-why">Ce montant précis permet de reconnaître votre paiement automatiquement. Envoyez-le au franc près, sans arrondir.</p>
+            </div>
             <ol>
-              <li>Ouvrez Wave et envoyez exactement <strong id="m-amount">—</strong> au numéro&nbsp;:
+              <li>Ouvrez Wave et envoyez ce montant au numéro&nbsp;:
                 <div class="copy-line"><strong id="m-number">—</strong><button type="button" class="copy-btn" data-copy="m-number">Copier</button></div>
               </li>
-              <li>Gardez votre référence de commande&nbsp;:
-                <div class="copy-line"><strong id="m-ref">—</strong><button type="button" class="copy-btn" data-copy="m-ref">Copier</button></div>
-              </li>
-              <li>Indiquez le numéro Wave qui a envoyé l'argent, puis touchez « J'ai payé ».</li>
+              <li>Revenez ici et touchez « J'ai envoyé l'argent ».</li>
             </ol>
             <div class="field">
-              <label for="payer-phone">Numéro Wave utilisé pour payer</label>
+              <label for="payer-phone">Numéro Wave utilisé (facultatif)</label>
               <input type="tel" id="payer-phone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="77 123 45 67" aria-describedby="payer-phone-error">
               <p class="field-error" id="payer-phone-error"></p>
             </div>
-            <button type="button" class="btn btn-primary btn-block" id="manual-paid-btn"><span class="btn-label">J'ai payé</span></button>
-            <p class="hint mt">Vos documents se débloquent dès que la réception du paiement est vérifiée. Vous serez redirigé vers la page de vos documents.</p>
+            <button type="button" class="btn btn-primary btn-block" id="manual-paid-btn"><span class="btn-label">J'ai envoyé l'argent</span></button>
+            <p class="hint mt" id="manual-after">Vos documents se débloquent dès que la réception du paiement est vérifiée.</p>
+            <button type="button" class="btn btn-ghost btn-block" id="manual-whatsapp" hidden>Prévenir le vendeur sur WhatsApp (facultatif)</button>
+            <p class="hint">Référence de commande&nbsp;: <strong id="m-ref">—</strong></p>
           </div>
         </aside>
       </div>

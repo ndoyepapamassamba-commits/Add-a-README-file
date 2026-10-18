@@ -25,7 +25,7 @@ const shoot = screenshotter(OUT);
 const problems = []; // console errors, page errors, unexpected external requests (scenario E)
 const ADMIN_AUTH = { headers: { authorization: `Bearer ${DEV_ADMIN_KEY}` } };
 // The owner guide (LANCEMENT-CV.md, section 7) names these status lights; the admin page must use the same words.
-const GUIDE_HEALTH_LABELS = ["Wave", "Webhook", "Versement", "Mode manuel", "IA", "Votre numéro Wave"];
+const GUIDE_HEALTH_LABELS = ["Wave", "Webhook", "Versement", "Mode manuel", "Téléphone relié (MacroDroid)", "IA", "Votre numéro Wave"];
 
 /** Whole-page text, hidden parts included, minus the nodes matching `except`. */
 const pageText = (page, except = null) =>
@@ -219,7 +219,7 @@ async function manualCv(browser, server) {
   await page.click("#pay-btn");
   await page.waitForSelector("#manual-panel:not([hidden])");
   check(norm(await page.locator("#m-number").innerText()) === "+221 77 000 00 00", "C: manual instructions show the formatted Wave number +221 77 000 00 00");
-  check(norm(await page.locator("#m-amount").innerText()) === "1 000 FCFA", "C: manual instructions show the exact amount 1 000 FCFA");
+  check(norm(await page.locator("#m-amount").innerText()) === "999 FCFA", "C: manual instructions show the unique exact amount 999 FCFA");
   check(norm(await page.locator("#m-ref").innerText()) === order.id, "C: manual instructions show the order reference");
   check(await page.locator("#pay-btn").isHidden(), "C: the transfer instructions replace the Wave pay button");
   check(await page.inputValue("#payer-phone") === PERSONA.phone, "C: the payer number is prefilled with the phone typed in the form");
@@ -227,14 +227,16 @@ async function manualCv(browser, server) {
   await shot("manual-instructions");
 
   await page.fill("#payer-phone", "76 555 44 33");
-  await page.click("#manual-paid-btn");
-  await page.waitForURL(/\/resultat\.html\?o=/);
+  await page.click("#manual-whatsapp");
   for (let i = 0; i < 20 && opened.length === 0; i++) await sleep(100);
-  check(opened.length === 1, "C: « J'ai payé » opened WhatsApp once");
+  check(opened.length === 1, "C: « Prévenir le vendeur » opened WhatsApp once");
   const wa = new URL(opened[0]);
   check(wa.origin === "https://wa.me" && wa.pathname === "/221770000000", `C: WhatsApp goes to the owner (${wa.origin}${wa.pathname})`);
   const message = wa.searchParams.get("text") ?? "";
-  check(message.includes(order.id) && message.includes("76 555 44 33"), "C: the WhatsApp message contains the reference and the payer number");
+  check(message.includes(order.id) && message.includes("76 555 44 33") && message.includes("999"), "C: the WhatsApp message contains the reference, the exact amount and the payer number");
+  await page.click("#manual-paid-btn");
+  await page.waitForURL(/\/resultat\.html\?o=/);
+  check(opened.length === 1, "C: « J'ai envoyé l'argent » does not open WhatsApp by itself");
 
   await page.waitForSelector("#st-wait:not([hidden])");
   check(norm(await page.locator("#wait-title").innerText()) === "Paiement en cours de vérification", "C: resultat shows the pending state");
@@ -266,13 +268,13 @@ async function manualCv(browser, server) {
   await assertNoHorizontalScroll(page, "C resultat/paid");
   await shot("resultat-paid");
   await context.close();
-  return order;
+  return { ...order, paidAmount: 999 }; // the unique amount asked and recorded by « Débloquer »
 }
 
 /** D — admin revenue for today matches the paid orders; the nightly cron answers ok (and pays out in Wave mode). */
 async function revenueAndCron(browser, server, paidOrders) {
   const label = `D ${server.payment}`;
-  const revenue = paidOrders.reduce((sum, o) => sum + o.amount, 0);
+  const revenue = paidOrders.reduce((sum, o) => sum + (o.paidAmount ?? o.amount), 0);
   const { context, admin } = await openAdmin(browser, server, label);
   const stats = (await api(server, "GET", "/admin/stats", ADMIN_AUTH)).body.stats;
   check(stats.today.paid === paidOrders.length && stats.today.revenue === revenue, `${label}: API today = ${paidOrders.length} paid, ${revenue} FCFA`);

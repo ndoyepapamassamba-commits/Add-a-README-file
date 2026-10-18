@@ -32,6 +32,7 @@ supabase/
   config.toml                     [functions.api] verify_jwt = false                 — backend
   migrations/20261018000001_schema.sql   tables + tcv_* SQL functions (PGlite-testable) — backend
   migrations/20261018000002_cron.sql     pg_cron/pg_net jobs, secret read from tcv.settings (Supabase only) — backend
+  migrations/20261018000005_autopay.sql  unique manual amounts + phone detections (see "Autopay")    — backend
   functions/api/
     index.ts                      Deno.serve(createReloadingApp(…)): env over tcv.settings, reloaded ≤ every 60 s — backend
     dev.ts                        local server: real app + MemoryStore + FakeWave + serves ../../../cv  — backend
@@ -201,6 +202,39 @@ client_reference = payout id, `payment_reason` = `"Revenus Teranga CV"`.
 SQL): `net = floor(gross*(1-feeRate))`; `base = maxAmount==null ? net : min(net, maxAmount)`;
 `amount = floor((base-1)/(1+payoutFeeRate))`; `amount < 0 → 0`.
 
+### Autopay: manual transfers detected by the owner's phone (`lib/autopay.ts`)
+
+Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disabled) and `MANUAL_AUTO_CONFIRM`
+(default true; `false`/`0`/`no`/`non`/`off` → detections are only flagged). Owner guide: `MACRODROID.md`.
+
+* **Unique amount.** Manual checkout moves a `preview` order to `checkout` and calls
+  `store.assignManualAmount(id, amount, 49, now − 48 h)`: `manual_amount = amount − k`, smallest free k among
+  unpaid checkout/awaiting_manual orders created in the last 48 h (advisory lock + `FOR UPDATE` in SQL; no
+  index, amounts repeat after 48 h). All taken (or order older than 48 h) → catalogue price, logged. The
+  manual response adds `exactAmount`, `exactAmountFormatted` ("1 487 FCFA") and `autoUnlock`
+  (`PHONE_HOOK_KEY` set and auto-confirm on); `amount` stays the catalogue price. `manual-paid` is optional
+  and `payerPhone` may be empty (a non-empty invalid number is still 400). Admin unlock and confirm record
+  `manual_amount ?? amount`.
+* **`POST /payments/notify`** — key in `?k=` or `x-hook-key` (constant time; unset → 503 `hook_disabled`,
+  wrong → 401). Body ≤ 4 KB: JSON `{ title?, text }`, `text/plain`, or form `text=…&title=…`. The text
+  (title + text) is normalised (accents, NBSP/narrow NBSP) and must look like money received ("reçu",
+  "received", "vous a envoyé", "sent you") and not an own operation ("vous avez envoyé", "envoyé à", "payé à",
+  "retrait", "dépôt", English equivalents) → else `{ok:true, ignored:"not_incoming"}`. Amount = number with
+  thousand separators (space, NBSP, ".", ",") followed by F/FCFA/F CFA/CFA/XOF (or preceded by it), skipping
+  balances/fees, preferring the first after the keyword → else `{ignored:"no_amount"}`. Every authenticated
+  call records event `phone:<sha256(normalised text|minute)>` of type `phone.notification` (the admin
+  heartbeat; payload `{text}` only for incoming money) → already recorded → `{ok:true, duplicate:true}`.
+  Match among `listOpenManualOrders(now − 48 h)` with a `manual_amount`: exact, else a single order created
+  in the last 2 h with `manual_amount < amount ≤ amount_catalogue + 100`; several → none. Matched →
+  `recordPaymentDetection` and, with auto-confirm, `markPaid(manual, paidAmount = amount received)`.
+  → `{ ok:true, matched: id|null, amount, paid }`. The text is never logged.
+* **`POST /payments/confirm`** `{ o, c }`, `c = confirmToken(ADMIN_KEY, o)` = first 32 hex of
+  HMAC-SHA256(ADMIN_KEY, "confirm:" + o) → `markPaid` → `{ ok:true, changed }`; invalid or no ADMIN_KEY → 401,
+  unknown order → 404. Page `cv/confirmer.html?o=…&c=…` confirms only on a button press (never on GET).
+* **Admin.** `recentOrders` add `manual_amount`, `payment_detected_at`; `health` adds `phoneHook` and
+  `lastPhoneNotificationAt` (newest `phone.notification` event, carried by `tcv_stats`).
+* **dev.ts** sets `PHONE_HOOK_KEY=dev-phone` and serves `/fake-phone` (GET page that posts a notification).
+
 ## Database (schema `tcv`, functions in `public`)
 
 Tables (schema `tcv`, RLS enabled, no policies): `orders` (columns = `OrderRow`, `id` PK,
@@ -223,6 +257,9 @@ existing day or amount < min), `tcv_update_payout(p_id, p_patch jsonb)`, `tcv_fa
 p_paid_before, p_now) → int` (sets input/document/manual_payer_phone/ip_hash NULL, purged_at = now; deletes events older than 30 days
 and stale rate_limits), `tcv_stats(p_now) → jsonb` (`Stats`; day boundaries in UTC),
 `tcv_get_settings() → jsonb` (object of all key → value).
+Autopay (`20261018000005_autopay.sql`): columns `manual_amount`, `payment_detected_at`, `payment_detected_text`
+(cleared by `tcv_purge`), `tcv_assign_manual_amount(p_id, p_base, p_max_offset, p_since) → int|null`,
+`tcv_list_open_manual_orders(p_since) → jsonb array`, `tcv_record_payment_detection(p_id, p_text, p_now)`.
 `revoke all on function … from public, anon, authenticated; grant execute … to service_role;`
 (tests create those roles in PGlite if missing). Prefix-free, idempotent migrations (`create … if not exists`,
 `create or replace function`).

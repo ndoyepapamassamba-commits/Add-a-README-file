@@ -37,6 +37,8 @@ Deno.test("loadConfig: defaults from SPEC.md", () => {
     waveFeeRate: 0.01,
     payoutFeeRate: 0.01,
     manualWaveNumber: null,
+    phoneHookKey: null,
+    manualAutoConfirm: true,
     ownerWhatsapp: null,
     adminKey: null,
     cronSecret: null,

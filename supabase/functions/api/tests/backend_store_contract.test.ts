@@ -3,6 +3,7 @@
 import { assert, assertEquals, assertRejects } from "jsr:@std/assert@1.0.13";
 import { MemoryStore } from "../lib/store_memory.ts";
 import { computePayoutAmount } from "../lib/payout.ts";
+import { RPC_SIGNATURES } from "../lib/store_sql.ts";
 import type { OrderRow, Store } from "../lib/types.ts";
 import { insertPaid, orderRow, T0 } from "./fixtures/backend_harness.ts";
 import { openTestDb, sqlStore, supabaseStore } from "./fixtures/backend_pglite.ts";
@@ -339,7 +340,18 @@ contract("stats aggregates by UTC day", async (store) => {
   assertEquals(s.recentOrders.length, 8);
   assertEquals(s.recentOrders[0].paid_at, "2026-10-18T20:59:00.000Z", "newest first");
   assertEquals(s.recentOrders.find((o) => o.status === "awaiting_manual")?.manual_payer_phone, "+221770000001");
-  assertEquals(Object.keys(s.recentOrders[0]).sort(), ["amount", "created_at", "id", "manual_payer_phone", "paid_at", "payment_method", "product", "status"]);
+  assertEquals(Object.keys(s.recentOrders[0]).sort(), [
+    "amount",
+    "created_at",
+    "id",
+    "manual_amount",
+    "manual_payer_phone",
+    "paid_at",
+    "payment_detected_at",
+    "payment_method",
+    "product",
+    "status",
+  ]);
   assert(s.recentOrders.some((o) => o.id === attached.id));
 
   await insertPaid(store, { amount: 1500, paidAt: "2026-10-18T20:00:00.000Z" });
@@ -408,7 +420,7 @@ Deno.test({
         where n.nspname = 'public' and p.proname like 'tcv\\_%'`,
       [],
     );
-    assertEquals(fns.rows.length, 14);
+    assertEquals(fns.rows.length, Object.keys(RPC_SIGNATURES).length);
     for (const f of fns.rows) {
       assertEquals([f.anon, f.authenticated, f.service_role, f.definer], [false, false, true, true], String(f.sig));
       assertEquals(f.config, 'search_path=""', String(f.sig));
