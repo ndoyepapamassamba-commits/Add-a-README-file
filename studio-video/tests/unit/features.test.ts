@@ -6,8 +6,8 @@ describe('Studio Vidéo : écrans et drapeaux', () => {
   it('la chaîne vidéo 3D Blender reste en retrait (VIDEO_3D) jusqu’à sa reprise', () => {
     expect(VIDEO_3D).toBe(false);
   });
-  it('six écrans : film, vidéo IA, réalisation, studio 3D, moteur de la troupe, réglages — chacun une seule fois', () => {
-    expect(ECRANS.map((e) => e.label)).toEqual(['Film Autopilot', 'Vidéo IA', 'Réalisation', 'Studio 3D', 'Moteur de la troupe', 'Réglages']);
+  it('sept écrans : animer mon image (GPU distant, 17/10/2026), film, vidéo IA, réalisation, studio 3D, moteur de la troupe, réglages — chacun une seule fois', () => {
+    expect(ECRANS.map((e) => e.label)).toEqual(['Animer mon image', 'Film Autopilot', 'Vidéo IA', 'Réalisation', 'Studio 3D', 'Moteur de la troupe', 'Réglages']);
     expect(new Set(ECRANS.map((e) => e.id)).size).toBe(ECRANS.length);
   });
 });

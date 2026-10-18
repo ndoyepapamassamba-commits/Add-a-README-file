@@ -1,6 +1,7 @@
 // Les écrans de Studio Vidéo, dans l'ordre de la navigation.
-export type Ecran = 'film' | 'videogen' | 'realize' | 'lab3d' | 'troupe' | 'reglages';
+export type Ecran = 'animer' | 'film' | 'videogen' | 'realize' | 'lab3d' | 'troupe' | 'reglages';
 export const ECRANS: { id: Ecran; label: string; aide: string }[] = [
+  { id: 'animer', label: 'Animer mon image', aide: 'Votre image + un mouvement → un clip calculé sur un vrai GPU distant (Wan 2.2, gratuit, votre quota du jour), jugé par JEV.' },
   { id: 'film', label: 'Film Autopilot', aide: 'Une idée → histoire, scènes, images, animation, montage : le studio de film IA complet.' },
   { id: 'videogen', label: 'Vidéo IA', aide: 'Vidéo → scène 3D, idée → plan → MP4, image → profondeur → animation ; décors de la troupe.' },
   { id: 'realize', label: 'Réalisation', aide: 'Bac à sable : tout prompt devient une réalisation exécutée, corrigée et filmée.' },

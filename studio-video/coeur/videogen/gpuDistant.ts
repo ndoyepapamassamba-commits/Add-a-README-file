@@ -39,19 +39,108 @@ export function clipsParJour(quotaMin: number, dureeS: number, etapes: number, l
   return Math.floor((quotaMin * 60) / quotaClip(dureeS, etapes, l, h));
 }
 
-export interface EtatGpu { phase: 'envoi' | 'file' | 'calcul' | 'reception' | 'fini'; rang?: number; attenteS?: number; progression?: number }
+export interface EtatGpu { phase: 'envoi' | 'file' | 'calcul' | 'reception' | 'fini'; rang?: number; attenteS?: number; progression?: number; graine?: number }
 export interface OptionsGpu {
   space?: string; dureeS?: number; etapes?: number; graine?: number;
   jeton?: string;                       // compte Hugging Face gratuit de l'utilisateur (5 min/jour) ; jamais affiché
   fetchImpl?: typeof fetch; onEtat?: (e: EtatGpu) => void; signal?: AbortSignal;
 }
 
+// QUOTA DU JOUR (docs ZeroGPU lues le 18/10/2026) : 2 min sans compte, 5 min avec un compte gratuit ; « included daily
+// quota resets exactly 24 hours after your first GPU usage ». REA sur @gradio/client 2.7.1 (17/10) : hors de
+// huggingface.co, le client officiel s'identifie par « Authorization: Bearer <jeton> » ; pré-vols CORS vérifiés pour une
+// page locale (origine null) sur whoami-v2 et queue/join.
+export const QUOTA_JOUR_S = { anonyme: 120, gratuit: 300 } as const;
+const JOUR_MS = 24 * 3600 * 1000;
+
+/** quota épuisé : ce que le Space a dit (secondes demandées, secondes restantes), pour recaler le registre local. */
+export class ErreurQuotaGpu extends Error {
+  constructor(message: string, readonly demandeS?: number, readonly resteS?: number) { super(message); this.name = 'ErreurQuotaGpu'; }
+}
+/** « You have exceeded your GPU quota (60s requested vs. 12s left) » → { demandeS: 60, resteS: 12 }. */
+export function lireQuotaRestant(t: string): { demandeS?: number; resteS?: number } {
+  const m = /\((\d+(?:\.\d+)?)\s*s\s+requested\s+vs\.?\s+(\d+(?:\.\d+)?)\s*s\s+left\)/i.exec(t);
+  return m ? { demandeS: Number(m[1]), resteS: Number(m[2]) } : {};
+}
+
 /** message clair pour l'utilisateur (quota épuisé, file pleine, Space en pause…). */
 export function messageErreur(e?: string | null): string {
   const t = String(e ?? '');
-  if (/quota/i.test(t)) return 'Quota GPU gratuit du jour épuisé : il revient 24 h après la première utilisation (5 min/jour avec un compte Hugging Face gratuit).';
+  if (/quota/i.test(t)) {
+    const q = lireQuotaRestant(t);
+    const detail = q.resteS != null ? ` Il reste ${Math.round(q.resteS)} s, ce clip en demande ${Math.round(q.demandeS ?? 0)}.` : '';
+    return `Quota GPU gratuit du jour épuisé : il revient 24 h après la première utilisation (5 min/jour avec un compte Hugging Face gratuit).${detail}`;
+  }
   if (/sleep|paused|building/i.test(t)) return 'Le GPU distant se réveille : réessayez dans une minute.';
   return t ? `GPU distant : ${t}` : 'GPU distant : erreur sans message.';
+}
+
+/** une utilisation du GPU distant enregistrée sur cet appareil : instant (ms) et secondes réservées. */
+export interface UsageGpu { t: number; s: number }
+/**
+ * Bilan du quota du jour selon la règle de ZeroGPU (fenêtre de 24 h ouverte par la première utilisation) : secondes déjà
+ * réservées dans la fenêtre en cours et instant de la remise à zéro (null si aucune fenêtre ouverte).
+ */
+export function bilanQuota(registre: UsageGpu[], maintenant: number): { utiliseS: number; remiseA: number | null } {
+  let debut: number | null = null; let utilise = 0;
+  for (const u of [...registre].sort((a, b) => a.t - b.t)) {
+    if (u.t > maintenant) continue;
+    if (debut === null || u.t >= debut + JOUR_MS) { debut = u.t; utilise = 0; }
+    utilise += u.s;
+  }
+  if (debut === null || maintenant >= debut + JOUR_MS) return { utiliseS: 0, remiseA: null };
+  return { utiliseS: utilise, remiseA: debut + JOUR_MS };
+}
+/** clips encore possibles aujourd'hui avec le quota restant. */
+export function clipsRestants(quotaJourS: number, utiliseS: number, parClipS: number): number {
+  return parClipS > 0 ? Math.max(0, Math.floor((quotaJourS - utiliseS) / parClipS)) : 0;
+}
+
+// CONSIGNE DE MOUVEMENT (veille du 18/10/2026, guides Wan 2.2 image → vidéo de VEED, Unifically, Scenario, Cliprise) :
+// décrire le MOUVEMENT et non la scène, dans l'ordre action → caméra → rythme, UN SEUL temps par clip, des verbes
+// concrets, n'animer que ce qui est dans l'image ; le style vient de l'image. Libellés en français, consigne en anglais.
+export const ACTIONS: Record<string, string> = {
+  'Parle en souriant': 'The character talks to the camera with a warm smile, lips moving naturally',
+  'Salue de la main': 'The character raises one hand and waves hello',
+  'Éclate de rire': 'The character bursts out laughing, shoulders shaking',
+  'Tourne la tête': 'The character slowly turns their head toward the camera',
+  'Hoche la tête': 'The character nods slowly in agreement',
+  'Pointe du doigt': 'The character points a finger forward with an outstretched arm',
+  'Marche vers la caméra': 'The character walks a few steps toward the camera',
+  'Danse sur place': 'The character dances in place with relaxed, rhythmic body movement',
+  'Le vent dans le décor': 'A light breeze moves the leaves, clothes and hair; the scene stays still otherwise',
+};
+export const CAMERAS: Record<string, string> = {
+  'Plan fixe': 'Static camera',
+  'Zoom avant lent': 'Slow dolly in toward the character',
+  'Zoom arrière lent': 'Slow dolly out revealing the scene',
+  'Travelling latéral': 'Smooth lateral tracking shot from left to right',
+  'Orbite légère': 'Gentle orbital arc around the character',
+};
+export const RYTHMES: Record<string, string> = {
+  Lent: 'slow, gentle pace',
+  Naturel: 'natural, realistic pace',
+  Vif: 'lively, energetic pace',
+};
+/** consigne Wan 2.2 « un seul temps » : action, caméra, rythme, puis le texte libre de l'utilisateur. */
+export function consigneWan(c: { action?: string; camera?: string; rythme?: string; libre?: string }): string {
+  const parts = [c.action && ACTIONS[c.action], c.camera && CAMERAS[c.camera], c.rythme && RYTHMES[c.rythme]]
+    .filter(Boolean)
+    .map((s) => String(s).replace(/\.$/, ''));
+  const libre = (c.libre ?? '').trim().replace(/\s+/g, ' ');
+  if (libre) parts.push(libre.replace(/\.$/, ''));
+  parts.push('Keep the same character, face, clothes and colors as in the image');
+  return parts.join('. ') + '.';
+}
+
+/** vérifie le jeton Hugging Face de l'utilisateur (whoami-v2) ; ne renvoie jamais le jeton, seulement le compte. */
+export async function verifierJetonHf(jeton: string, fetchImpl: typeof fetch = fetch): Promise<{ nom: string; pro: boolean; role?: string }> {
+  const r = await fetchImpl('https://huggingface.co/api/whoami-v2', { headers: { Authorization: `Bearer ${jeton.trim()}` } });
+  if (r.status === 401) throw new Error('Jeton Hugging Face refusé : recréez-le (type « Read ») sur huggingface.co/settings/tokens.');
+  if (!r.ok) throw new Error(`Hugging Face : vérification impossible (${r.status}).`);
+  const j = (await r.json()) as { name?: string; isPro?: boolean; auth?: { accessToken?: { role?: string } } };
+  if (!j.name) throw new Error('Hugging Face : compte introuvable pour ce jeton.');
+  return { nom: j.name, pro: Boolean(j.isPro), role: j.auth?.accessToken?.role };
 }
 
 /** lit le flux SSE de la file de Gradio jusqu'au résultat ; renvoie la sortie de generate_video. */
@@ -71,7 +160,11 @@ export async function lireFlux(corps: ReadableStream<Uint8Array>, onEtat?: (e: E
         const p = m.progress_data?.[0];
         if (p && p.length) onEtat?.({ phase: 'calcul', progression: p.index / p.length });
       } else if (m.msg === 'process_completed') {
-        if (!m.success) throw new Error(messageErreur(m.output?.error ?? m.output?.title));
+        if (!m.success) {
+          const brut = String(m.output?.error ?? m.output?.title ?? '');
+          if (/quota/i.test(brut)) { const q = lireQuotaRestant(brut); throw new ErreurQuotaGpu(messageErreur(brut), q.demandeS, q.resteS); }
+          throw new Error(messageErreur(brut));
+        }
         return m.output;
       } else if (m.msg === 'unexpected_error') throw new Error(messageErreur(m.message));
     }
@@ -110,5 +203,6 @@ export async function animerSurGpuDistant(image: Blob, consigne: string, o: Opti
   o.onEtat?.({ phase: 'reception' });
   const clip = await f(url, { headers: h, signal: o.signal });
   if (!clip.ok) throw new Error(messageErreur(`téléchargement du clip refusé (${clip.status})`));
-  const b = await clip.blob(); o.onEtat?.({ phase: 'fini' }); return b;
+  const graine = typeof sortie.data[1] === 'number' ? sortie.data[1] : undefined;   // graine tirée par le Space
+  const b = await clip.blob(); o.onEtat?.({ phase: 'fini', graine }); return b;
 }

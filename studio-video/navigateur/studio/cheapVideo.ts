@@ -6,6 +6,7 @@
 //    (optional token). Anonymous calls from servers are refused by ZeroGPU: it is labelled « selon votre quota ».
 import { priorQuality } from '../../coeur/studio/director';
 import { reglages } from '../reglages';
+import { animerSurGpuDistant } from '../../coeur/videogen/gpuDistant';
 
 export const POLLINATIONS_VIDEO = 'pollinations:alibaba/wan-2.2-fast';
 export const HF_VIDEO = 'hf:wan-2.2-14b-fast';
@@ -27,7 +28,6 @@ export const POLLINATIONS_MODELS: { id: string; model: string; name: string; usd
 /** Price per second of the cheapest engine. */
 export const POLLINATIONS_USD_PER_S = 0.01;
 export const pollinationsModel = (id: string | undefined | null) => POLLINATIONS_MODELS.find((m) => m.id === id);
-const HF_BASE = 'https://zerogpu-aoti-wan2-2-fp8da-aoti-faster.hf.space';
 
 export const isCheapVideo = (id: string | undefined | null) => Boolean(pollinationsModel(id)) || id === HF_VIDEO;
 
@@ -64,28 +64,12 @@ export async function pollinationsVideo(img: Blob, prompt: string, seconds: numb
   return { blob, usd: Math.round(dur * pm.usdPerS * 1000) / 1000 };
 }
 
-/** Hugging Face Space (Gradio API): upload, queue the job, read the event stream, download the MP4. */
+/**
+ * Hugging Face Space « Wan 2.2 14B Fast » : same code path as « Animer mon image » (coeur/videogen/gpuDistant.ts —
+ * Gradio queue protocol on one connection, progress, quota errors in French, the user's token when present).
+ */
 export async function hfSpaceVideo(img: Blob, prompt: string, seconds: number, signal?: AbortSignal): Promise<{ blob: Blob; usd: number }> {
-  const token = reglages().hfToken?.trim();
-  const auth: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-  const fd = new FormData();
-  fd.append('files', img, 'scene.png');
-  const up = await fetch(`${HF_BASE}/gradio_api/upload`, { method: 'POST', headers: auth, body: fd, signal });
-  if (!up.ok) throw new Error(`Hugging Face (envoi de l'image) : HTTP ${up.status}`);
-  const path = ((await up.json()) as string[])[0];
-  const body = { data: [{ path, meta: { _type: 'gradio.FileData' } }, prompt.slice(0, 600), 6, '', Math.max(2, Math.min(5, seconds)), 1, 1, 42, true] };
-  const call = await fetch(`${HF_BASE}/gradio_api/call/generate_video`, { method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal });
-  if (!call.ok) throw new Error(`Hugging Face : HTTP ${call.status}`);
-  const { event_id } = (await call.json()) as { event_id: string };
-  const ev = await fetch(`${HF_BASE}/gradio_api/call/generate_video/${event_id}`, { headers: auth, signal });
-  const text = await ev.text();
-  const done = /event: complete\s*\ndata: (.*)/.exec(text);
-  if (!done) throw new Error(`Hugging Face : le Space a refusé (quota GPU gratuit épuisé ou compte requis${token ? '' : ' — ajoutez un jeton Hugging Face dans Réglages'}).`);
-  const out = JSON.parse(done[1]!) as [{ video?: { url?: string; path?: string }; url?: string }, number];
-  const v = out[0];
-  const vurl = v.video?.url ?? v.url ?? (v.video?.path ? `${HF_BASE}/gradio_api/file=${v.video.path}` : '');
-  if (!vurl) throw new Error('Hugging Face : vidéo non renvoyée');
-  const r = await fetch(vurl, { headers: auth, signal });
-  if (!r.ok) throw new Error(`Hugging Face (téléchargement) : HTTP ${r.status}`);
-  return { blob: await r.blob(), usd: 0 };
+  const jeton = reglages().hfToken?.trim() || undefined;
+  const blob = await animerSurGpuDistant(img, prompt.slice(0, 600), { jeton, dureeS: Math.max(2, Math.min(5, seconds)), signal });
+  return { blob, usd: 0 };
 }

@@ -2,7 +2,7 @@
 // Vidéo IA, bac à sable « Réalisation », Studio 3D, moteur de la troupe et réglages propres à la vidéo. Elle s'appuie sur
 // le socle de Workbench (client OpenRouter, JEV, composants) sans en contenir les écrans.
 import { useEffect, useState } from 'react';
-import { Box, Clapperboard, Film, KeyRound, Moon, Settings as SettingsIcon, Sparkles, Sun, Wand2, Workflow } from 'lucide-react';
+import { Box, Clapperboard, Film, ImagePlay, KeyRound, Moon, Settings as SettingsIcon, Sparkles, Sun, Wand2, Workflow } from 'lucide-react';
 import { Button, Field, IconButton, Input, Spinner, Toggle } from '@workbench/web/components/ui';
 import { cx } from '@workbench/web/lib/format';
 import { getKey, loadCatalog, maskKey, provider, setKey } from '@workbench/direct/lib/llm';
@@ -12,6 +12,7 @@ import { hydrate, useStore } from '@workbench/direct/lib/store';
 import { PageHeader } from '@workbench/direct/views/PageHeader';
 import { StudioView } from '../interface/studio/StudioView';
 import { VideoGenView } from '../interface/VideoGenView';
+import { AnimerImage } from '../interface/AnimerImage';
 import { RealizeView } from '../interface/RealizeView';
 import { Lab3DView } from '../interface/Lab3DView';
 import { MoteurTroupe } from '../interface/MoteurTroupe';
@@ -20,6 +21,7 @@ import { reprendreDeWorkbench } from './reprise';
 import { ECRANS, type Ecran } from './ecrans';
 
 const ICONES: Record<Ecran, React.ReactNode> = {
+  animer: <ImagePlay size={17} />,
   film: <Clapperboard size={17} />,
   videogen: <Film size={17} />,
   realize: <Wand2 size={17} />,
@@ -203,6 +205,7 @@ function Coquille() {
           ))}
         </nav>
         <main className="min-h-0 min-w-0 flex-1">
+          {ecran === 'animer' && <AnimerImage />}
           {ecran === 'film' && <StudioView />}
           {ecran === 'videogen' && <VideoGenView />}
           {ecran === 'realize' && <RealizeView />}

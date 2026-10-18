@@ -2,6 +2,7 @@
 import type { Page } from '@playwright/test';
 
 const NOMS: Record<string, string> = {
+  'Animer mon image': 'Animer mon image',
   'Vidéo IA': 'Vidéo IA',
   Réalisation: 'Réalisation',
   'Studio 3D': 'Studio 3D',
