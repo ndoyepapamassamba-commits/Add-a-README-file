@@ -12,7 +12,7 @@
 #   python3 juge_local.py extrait <version>…        caractéristiques des images jugées par JEV (cache disque)
 #   python3 juge_local.py apprend                   têtes par question + accord mesuré sur versions tenues à l'écart
 #   python3 juge_local.py etat                      questions confiées au juge local et leur accord avec JEV
-import hashlib, json, os, re, subprocess, sys, time
+import hashlib, json, os, re, subprocess, sys, threading, time
 import numpy as np, cv2
 
 ICI = os.path.dirname(os.path.abspath(__file__))
@@ -548,8 +548,35 @@ def vlm_oui(ims, texte, contexte=''):
     return float(torch.sigmoid(torch.logsumexp(lg[y], 0) - torch.logsumexp(lg[n], 0)))
 
 
+_VERROU_LLM = threading.Lock()
+
+
 def llm_oui(etat, texte):
-    """probabilité de « oui » du modèle de langage local pour une question sur des données en texte (état JSON)."""
+    """probabilité de « oui » du modèle de langage local pour une question sur des données en texte (état JSON).
+    UN APPEL À LA FOIS (18/10/2026) : jev_texte interroge sur 8 fils ; llama-cpp n'est pas sûr entre fils (chargement et
+    évaluation simultanés) — le juge mourait sans trace Python (journal vide, « sortie absente » sur v6 et v7)."""
+    with _VERROU_LLM:
+        return _llm_oui(etat, texte)
+
+
+PIEGES = (('Is the text in this state written in German?', False), ('Does this state contain at least one line written in French?', True))
+
+
+def pieges_llm(etat):
+    """QUESTIONS PIÈGES (18/10/2026, consigne : « prévoir les coups des petits modèles comme aux échecs ») : sur la v8, Qwen3
+    1,7B répondait « oui » à toutes les questions d'un sketch (drôle 1,0 mais aussi méchant 1,0 et faute 1,0). Avant de le
+    croire sur un état, deux questions dont la réponse est connue (texte français, pas allemand) : un seul raté et ses
+    verdicts sur cet état sont déclarés NON JUGÉS (jamais comptés comme défauts ni comme réussites)."""
+    cle = hashlib.sha1(json.dumps(etat, ensure_ascii=False, sort_keys=True, default=str).encode()).hexdigest()
+    if cle not in _M.setdefault('pieges', {}):
+        rate = [q for q, attendu in PIEGES if (llm_oui(etat, q) > 0.5) != attendu]
+        _M['pieges'][cle] = rate
+        _journal({'date': time.strftime('%Y-%m-%dT%H:%M:%S'), 'outil': 'pieges_llm', 'rates': rate})
+    if _M['pieges'][cle]:
+        raise NonJuge(f"modèle de langage local non fiable sur cet état (questions pièges ratées : {'; '.join(_M['pieges'][cle])})")
+
+
+def _llm_oui(etat, texte):
     if 'llm' not in _M:
         from llama_cpp import Llama
         _M['llm'] = Llama(model_path=LLM, n_ctx=8192, n_threads=os.cpu_count() or 4, logits_all=False, verbose=False)
@@ -623,7 +650,13 @@ def demande(etat, questions, assets=None, outil='?'):
                     out[qid] = {'choice': max(pr, key=pr.get), 'probabilities': pr, 'juge': 'vlm-local'}
                 voie = 'vlm'
             if voie is None and not ims and q.get('type') == 'noul' and os.path.isfile(LLM):   # voie 3b : question sur du texte
-                out[qid] = {'noul': llm_oui(etat, txt), 'juge': 'llm-local'}; voie = 'llm'
+                pieges_llm(etat)   # le petit modèle n'est cru que s'il réussit ses questions pièges sur CET état
+                # COHÉRENCE (18/10/2026, v8) : la même question posée en sens inverse ; Qwen3 répondait « oui » aux deux pour
+                # « méchant » (1,00 et 0,96) et « faute » (1,00 et 0,77) — il ne sait pas, ce n'est pas un défaut : NON JUGÉ
+                p1 = llm_oui(etat, txt); p2 = llm_oui(etat, f"Is the correct answer to the following question 'No'? Question: {txt}")
+                if (p1 > 0.5) == (p2 > 0.5):
+                    raise NonJuge(f"{outil} : question « {qid} » — réponses contradictoires du modèle local ({p1:.2f} et {p2:.2f} à l'inverse)")
+                out[qid] = {'noul': round(0.5 * (p1 + 1.0 - p2), 3), 'juge': 'llm-local (cohérent)'}; voie = 'llm'
         except NonJuge:
             raise
         except Exception as e:
