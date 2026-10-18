@@ -133,9 +133,8 @@ const VOWEL_RE = /[aeiouyàâäéèêëîïôöùûü]/i;
 // ---------------------------------------------------------------------------
 
 /** Applies `fn` to every word of `s` (hyphen and apostrophe parts separately) and keeps the rest intact. */
-function mapWords(s: string, fn: (word: string, index: number) => string): string {
-  let i = 0;
-  return s.replace(/[\p{L}\p{N}]+/gu, (w) => fn(w, i++));
+function mapWords(s: string, fn: (word: string) => string): string {
+  return s.replace(/[\p{L}\p{N}]+/gu, (w) => fn(w));
 }
 
 /** Same casing pattern as `model` (lower, Capitalised or UPPER) applied to `word`. */
