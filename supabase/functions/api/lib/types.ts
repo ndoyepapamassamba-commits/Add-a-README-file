@@ -214,7 +214,11 @@ export interface Store {
   failPayout(id: string, error: string, nowIso: string): Promise<void>;
   /** Payouts whose outcome is unknown/processing/pending and must be re-checked or retried. */
   listUnsettledPayouts(): Promise<PayoutRow[]>;
-  /** Delete personal data: unpaid orders older than unpaidBeforeIso, paid orders older than paidBeforeIso. Returns count. */
+  /**
+   * Erase personal data in place: unpaid orders older than unpaidBeforeIso, paid orders older than paidBeforeIso
+   * (input, document, payer phone, notification text, ip hash → null; purged_at = now). Events older than 30 days
+   * lose their payload. Rows are never removed. Returns the number of orders purged.
+   */
   purge(unpaidBeforeIso: string, paidBeforeIso: string, nowIso: string): Promise<number>;
   stats(nowIso: string): Promise<Stats>;
   /**

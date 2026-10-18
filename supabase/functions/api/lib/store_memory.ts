@@ -26,7 +26,6 @@ export const PAID_ORDER_PATCH_KEYS: ReadonlySet<string> = new Set(["template"]);
 export const RECENT_ORDERS_LIMIT = 50;
 export const RECENT_PAYOUTS_LIMIT = 30;
 export const EVENT_RETENTION_DAYS = 30;
-export const RATE_LIMIT_RETENTION_DAYS = 2;
 const DAY_MS = 86_400_000;
 
 const ms = (iso: string) => Date.parse(iso);
@@ -192,8 +191,9 @@ export class MemoryStore implements Store {
       });
       count++;
     }
-    for (const [id, e] of this.events) if (ms(e.createdAt) < now - EVENT_RETENTION_DAYS * DAY_MS) this.events.delete(id);
-    for (const [key, b] of this.rateLimits) if (b.windowStart < now - RATE_LIMIT_RETENTION_DAYS * DAY_MS) this.rateLimits.delete(key);
+    // Like tcv_purge: old events keep their id (duplicate detection) but lose their payload; rate-limit
+    // buckets (hashed key + counter) are left alone.
+    for (const e of this.events.values()) if (ms(e.createdAt) < now - EVENT_RETENTION_DAYS * DAY_MS) e.payload = null;
     return count;
   }
 

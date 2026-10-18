@@ -1,7 +1,10 @@
 -- Teranga CV "autopay": manual Wave transfers recognised by a unique amount, reported by the owner's phone.
--- Applies on top of 20261018000001_schema.sql. Idempotent; runs on Supabase Postgres 17 and in PGlite.
+-- Applies on top of 20261018000001_schema.sql (+ 000003 stage, 000004 premium). Idempotent; runs on Supabase
+-- Postgres 17 and in PGlite.
 -- New: three order columns, tcv_assign_manual_amount / tcv_list_open_manual_orders /
 -- tcv_record_payment_detection, and updated order_json, tcv_insert_order, tcv_purge, tcv_stats.
+-- Deployment rule: from 000003 on, migrations use UPDATE only to erase data (the deployment tool asks for an
+-- interactive confirmation before any statement that removes rows), so tcv_purge below empties rows in place.
 
 alter table tcv.orders add column if not exists manual_amount integer;
 alter table tcv.orders add column if not exists payment_detected_at timestamptz;
@@ -81,7 +84,13 @@ begin
 end;
 $$;
 
--- The notification text names the payer: purged with the rest of the personal data.
+-- Personal data is erased in place (UPDATE only, see the header):
+-- * expired orders lose input, document, payer phone, notification text (it names the payer) and ip hash;
+--   the payment facts (amounts, dates, status) stay for the accounts;
+-- * events older than 30 days lose their payload (Wave event bodies, phone notification texts); the row
+--   itself is kept, so a replayed webhook or notification id is still recognised as a duplicate;
+-- * rate_limits rows hold only a hashed key and a counter: they are left as they are (a stale window is
+--   restarted by tcv_hit_rate_limit).
 create or replace function public.tcv_purge(p_unpaid_before timestamptz, p_paid_before timestamptz, p_now timestamptz)
 returns integer
 language plpgsql security definer set search_path = '' as $$
@@ -95,8 +104,8 @@ begin
     and ((status <> 'paid' and created_at < p_unpaid_before)
       or (status = 'paid' and coalesce(paid_at, created_at) < p_paid_before));
   get diagnostics v_count = row_count;
-  delete from tcv.events where created_at < p_now - interval '30 days';
-  delete from tcv.rate_limits where window_start < p_now - interval '2 days';
+  update tcv.events set payload = null
+  where created_at < p_now - interval '30 days' and payload is not null;
   return v_count;
 end;
 $$;

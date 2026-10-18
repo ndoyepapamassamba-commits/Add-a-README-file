@@ -4,7 +4,7 @@
 // POST /payments/notify; the amount alone identifies the order, which is then unlocked. POST /payments/confirm
 // is the owner's one-tap confirmation (link carrying an HMAC of the order id).
 // Privacy: the notification text contains the payer's name and number. It is never logged; it is kept only
-// on the matched order (purged with it) and in the dedupe event (events are deleted after 30 days).
+// on the matched order (purged with it) and in the dedupe event (its payload is erased after 30 days).
 import type { Deps, OrderRow } from "./types.ts";
 import { HttpError, json, log, readBodyText, readJsonObject } from "./http.ts";
 import { constantTimeEqual, hmacSha256Hex, ORDER_ID_RE, sha256Hex } from "./ids.ts";

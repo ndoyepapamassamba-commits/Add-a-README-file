@@ -317,6 +317,35 @@ contract("purge removes personal data by age and status", async (store) => {
   assertEquals(await store.purge(daysAgo(3), daysAgo(30), now), 0, "already purged rows are not counted again");
 });
 
+/** What the store keeps for an event / a rate-limit bucket (null when the row does not exist). */
+async function eventRow(store: Store, id: string): Promise<{ payload: unknown } | null> {
+  if (store instanceof MemoryStore) {
+    const e = store.events.get(id);
+    return e ? { payload: e.payload } : null;
+  }
+  const r = await db.query("select payload from tcv.events where id = $1", [id]);
+  return r.rows.length ? { payload: r.rows[0].payload } : null;
+}
+async function rateLimitExists(store: Store, key: string): Promise<boolean> {
+  if (store instanceof MemoryStore) return store.rateLimits.has(key);
+  return (await db.query("select 1 from tcv.rate_limits where key = $1", [key])).rows.length === 1;
+}
+
+contract("purge erases old event payloads in place and never removes rows", async (store) => {
+  // Events are timestamped by the store's own clock: purge "now" is moved forward instead.
+  const later = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString();
+  assert(await store.recordEvent("evt-old", "checkout.session.completed", "cos-1", { data: { client_reference: "TCV-1" } }));
+  assert(await store.hitRateLimit("preview:abc", 3600, 12, "2026-01-01T00:00:00.000Z"));
+
+  await store.purge(later(-1), later(-1), later(29));
+  assertEquals(await eventRow(store, "evt-old"), { payload: { data: { client_reference: "TCV-1" } } }, "kept for 30 days");
+
+  await store.purge(later(-1), later(-1), later(31));
+  assertEquals(await eventRow(store, "evt-old"), { payload: null }, "payload erased, row kept");
+  assertEquals(await store.recordEvent("evt-old", "checkout.session.completed", "cos-1", {}), false, "a replay is still a duplicate");
+  assert(await rateLimitExists(store, "preview:abc"), "rate-limit buckets are left alone");
+});
+
 contract("stats aggregates by UTC day", async (store) => {
   const now = "2026-10-18T21:00:00.000Z";
   await insertPaid(store, { amount: 1500, paidAt: "2026-10-18T00:00:00.000Z" }); // today, first instant
