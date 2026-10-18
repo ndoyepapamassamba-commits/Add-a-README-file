@@ -8,7 +8,8 @@
 #  B. BOUCHE LISIBLE, réplique par réplique : le visage de celui qui parle fait au moins VISAGE_MIN px dans le cadre ET sa
 #     bouche, retrouvée sur l'image rendue, bouge avec sa voix (levres_roi.py)
 #  C. Corps sans étirement : médiane du 99e centile ≤ 5 %, 95e centile ≤ 8 %, pour chaque personnage
-#  D. ÉCOUTE : pendant qu'un autre parle, chaque personnage tourne la tête vers lui (≥ 75 % du temps)
+#  D. ÉCOUTE : pendant qu'un autre parle, chaque personnage tourne la tête vers lui (≥ 75 % du temps) ; D bis (v36) : JEV voit
+#     chacun REGARDER celui qui lui parle et celui à qui il parle (jev_regard.py)
 #  E. PAS D'AUTOMATE : aucune piste de tête ou de buste périodique (autocorrélation ≤ 0,75 entre 0,5 et 3 s)
 #  F. ARRIÈRE-PLAN VIVANT : part animée du décor (decor_vivant) ≥ 4 % de l'image, ou une entité vivante (bête, figurant)
 #  G. ŒIL DE JEV, un plan sur un : ni tête coupée, ni visage déformé, style cohérent (jev_plans.py)
@@ -100,6 +101,11 @@ for n, ms in par.items():
         tot += 1; bon += int(y * attendu > 2.0)
     if tot: ecoute[n] = round(bon / tot, 3)
 G['D_ecoute'] = {'ok': bool(ecoute) and all(x >= 0.75 for x in ecoute.values()), 'detail': ecoute}
+# ── D bis. REGARDS JUGÉS PAR JEV (v36, « Mamie ne regarde pas Baye ») : chacun regarde celui qui lui parle, et celui qui parle
+# regarde celui à qui il s'adresse, réplique par réplique, quand les deux sont à l'image (jev_regard.py) ──
+jr = lance([f'{ICI}/jev_regard.py', MP4, TL, MONTAGE, f'{D}/jev_regard.json'], f'{D}/jev_regard.json') or {}
+G['D_regard'] = {'ok': bool(jr) and jr.get('synthese', {}).get('paires_jugees', 0) > 0 and not jr.get('synthese', {}).get('fautes'),
+                 'detail': {k: v for k, v in jr.get('synthese', {}).items() if k != 'cout'}}
 
 
 def periodicite(x, fps=FPS):

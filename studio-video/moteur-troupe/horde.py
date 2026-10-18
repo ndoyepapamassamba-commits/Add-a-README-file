@@ -1,6 +1,6 @@
 # Client AI Horde (réseau communautaire, usage anonyme sans compte : clé publique 0000000000).
 # python3 horde.py "<prompt>" sortie.png [largeur] [hauteur] [modèle] [graine] [pas]
-import json, sys, time, urllib.request, base64
+import json, os, sys, time, urllib.request, base64
 API = 'https://aihorde.net/api/v2'
 H = {'apikey': '0000000000', 'Content-Type': 'application/json', 'Client-Agent': 'massamba-troupe:1.0:anonymous', 'User-Agent': 'massamba-troupe/1.0 (+anonymous)'}
 def call(method, path, body=None):
@@ -22,7 +22,7 @@ def generate(prompt, out, w=832, h=1216, model='Z-Image-Turbo', seed=None, steps
         s = call('GET', f'/generate/check/{jid}')
         if s.get('faulted'): raise SystemExit('faulted')
         if s.get('done'): break
-        if time.time() - t0 > 900: raise SystemExit('timeout')
+        if time.time() - t0 > float(os.environ.get('HORDE_DELAI', 900)): raise SystemExit('timeout')
         print(f"  queue {s.get('queue_position')} wait {s.get('wait_time')} proc {s.get('processing')}", flush=True)
     r = call('GET', f'/generate/status/{jid}')
     g = r['generations'][0]

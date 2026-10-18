@@ -231,6 +231,19 @@ def main():
         # de réaction existe vraiment (sinon il fait moins de 0,5 s et le montage le fond dans le plan précédent)
         t += REACTION if S['repliques'][-1].get('chute') else REACTION_TAG
         S['t1'] = t
+    # TIMBRE (18/10/2026, « la sortie son trop aiguë ») : chaque personnage égalisé sur la courbe spectrale des voix des TikTok
+    # de son registre (timbre.py ; 12 à 15 dB de souffle en trop vers 8–10 kHz), puis l'enveloppe de la bouche recalculée
+    if os.environ.get('VOIX_TIMBRE', '1') == '1':
+        import timbre
+        par = {}
+        for k, L in enumerate(lines): par.setdefault(L['qui'], []).append(k)
+        for q, ks in par.items():
+            ys = [timbre.lire(lines[k]['wav'])[0] for k in ks]
+            zs, _ = timbre.applique(ys, timbre.registre(CAST[q][2]), SR)
+            for k, z in zip(ks, zs):
+                timbre.ecrire(lines[k]['wav'], z, SR); y = (np.clip(z, -1, 1) * 32767).astype(np.int16)
+                hop = SR // 100; env = [float(np.sqrt(np.mean((y[j:j + hop].astype(np.float32) / 32768) ** 2))) for j in range(0, len(y), hop)]
+                mx = max(env) or 1; lines[k]['env'] = [round(min(1, e / mx), 3) for e in env]
     total = t + TAIL
     mix = np.zeros(int(total * SR) + 1, np.float32)
     for L in lines:

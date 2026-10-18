@@ -55,6 +55,22 @@ Renfort du 17/10/2026, mot pour mot :
 10. **Le niveau visé est celui des meilleurs** (Grok, Veo 3, Kling, Pixar) : une contrainte matérielle (pas de carte
     graphique dans le conteneur) n'est jamais une fin ; elle se dit en une ligne avec sa greffe et sa mesure.
 
+## Renfort du 18/10/2026 : cent voies, jamais une seule
+
+Consigne de l'utilisateur, mot pour mot :
+> « Il faut toujours chercher une solution alternative. Il ne faut pas être figé sur une voie. Il faut toujours chercher
+> 100 voies pour t'en sortir. »
+
+11. **Chaîne de secours, pas une voie unique.** Chaque étape qui dépend d'un service ou d'un modèle a, dans le code, une liste
+    ordonnée de voies, essayées l'une après l'autre automatiquement. Exemple de la fabrique : Pollinations avec la clé de
+    l'utilisateur, puis AI Horde, puis Cloudflare, puis Kaggle, puis le processeur local. Une voie qui échoue ou qui traîne
+    passe la main sans attendre l'utilisateur.
+12. **Veille large avant de choisir.** Pour chaque manque, viser au moins 5 voies réellement testées : services gratuits,
+    modèles ouverts, GitHub, catalogues live (`/models`), notre propre code. Les noter avec une mesure (vitesse, qualité,
+    coût, licence), puis garder les meilleures en secours plutôt que de les jeter.
+13. **Une voie bloquée n'est jamais un arrêt** : on dit en une ligne ce qui bloque, on ajoute la voie suivante, et on
+    continue le reste du travail en parallèle.
+
 ## Exemples
 
 | Obstacle rencontré | Greffe qui l'a contourné |
@@ -73,4 +89,5 @@ Renfort du 17/10/2026, mot pour mot :
 - [ ] ce qui a été **innové** est dit, avec son critère mesuré ;
 - [ ] GitHub fouillé pour chaque manque (licences code + poids vérifiées) ;
 - [ ] temps de production mesuré (objectif : minutes) ;
+- [ ] chaque dépendance a une chaîne de secours de plusieurs voies, essayées automatiquement ;
 - [ ] mesures réelles, sources citées.

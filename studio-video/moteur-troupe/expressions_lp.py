@@ -42,7 +42,9 @@ TOL_DURE = 0.12   # défaut au-delà du neutre qui marque un visage ABÎMÉ (vu 
                   # dessous c'est le bruit du juge (±0,03 d'une requête à l'autre sur 30 rendus de Petit Mamadou, 17/10) : la
                   # tolérance de 0,08 adoucissait à tort la colère de Petit Mamadou (lisible 0,76 → 0,24)
 SUFFIT = 0.8      # lisible à 80 % : la recherche de recette s'arrête
-CLOS = {'regard_y': 34}    # yeux clos : commande « regard » vers le bas poussée jusqu'à fermer la paupière
+CLOS = {'yeux': -0.05}    # yeux clos (18/10/2026) : module de reciblage des yeux des auteurs (lp_onnx.rendu, yeux=…) ; la
+                           # commande « regard vers le bas » (34) ne fermait les paupières d'AUCUN personnage — aucun clignement visible
+SCLERE_CLOS = 0.35   # contrôle : indice de fermeture de l'image « yeux clos » (fermeture) ≤ 0,35, sinon ERREUR
 BOUCHE = [-25, 0, 30, 62, 100]  # ouverture de la bouche (commande « lèvres 3 » des auteurs) : fermée … grande ouverte ; 70 → 100 le 17/10 :
                            # « le vieux assis ne parle pas » — à 52 px de visage, la bouche à 70 ne se lisait pas (Baye : propre jusqu'à 130)
 # LÈVRES JOINTES (18/10/2026) : la bouche PEINTE (0) est entrouverte chez 5 personnages sur 7 (sourires à dents de Petit
@@ -283,12 +285,62 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
         json.dump(meta, open(fp, 'w'))
         journal(f"  {e} : recette {c}{' (redessinée)' if neuf else ''} {meta['jev'].get(e, '')}")
     f = f'{dossier}/clos.png'
-    if vieux.get('_clos') != CLOS or not os.path.isfile(f): ecrit(f, cv2.resize(src.rendu(LP.edits(**CLOS)), (taille, taille), interpolation=cv2.INTER_AREA))
+    if vieux.get('_clos') != CLOS or not os.path.isfile(f):
+        o, y_ = clos_auto(src, v3, (x, y, s), taille, lire(f'{dossier}/neutre_{k0}.png') if os.path.isfile(f'{dossier}/neutre_{k0}.png') else None)
+        ecrit(f, o); meta['clos_yeux'] = y_; journal(f'  yeux clos : ouverture visée {y_}')
+    elif ancien.get('clos_yeux') is not None: meta['clos_yeux'] = ancien['clos_yeux']
     meta['commandes']['_clos'] = CLOS
     if lun is not None: meta['lunettes'] = lun
     json.dump(meta, open(f'{dossier}/meta.json', 'w'))
     if os.path.isfile(fp): os.remove(fp)
     return meta
+
+
+def sclere(im, zone):
+    """part de pixels « blanc de l'œil » (clairs et peu saturés) dans la zone des yeux (0..1)."""
+    hsv = cv2.cvtColor(np.clip(im, 0, 255).astype(np.uint8), cv2.COLOR_RGB2HSV)
+    b = ((hsv[..., 2] > 165) & (hsv[..., 1] < 70)).astype(np.float32)
+    return float((b * zone).sum() / max(1e-6, zone.sum()))
+
+
+def fermeture(neutre, clos, zone):
+    """les yeux se ferment-ils ? → (indice 0..1 : part du blanc des yeux qui reste, ou 1 − changement relatif de la zone des
+    yeux quand le dessin montre trop peu de blanc pour le mesurer, blanc des yeux du neutre). Mesures écartées après essai
+    (18/10) : l'ouverture par repères MediaPipe (le modèle « voit » des yeux ouverts sur les paupières dessinées fermées de
+    Tantie Awa) et le blanc des yeux seul sur les petits yeux (Modou, Baye : 2 à 3 % de blanc, le bruit domine)."""
+    z = zone / max(1e-6, zone.max()); o = sclere(neutre, z); c = sclere(clos, z)
+    if o >= 0.05: return round(c / o, 3), round(o, 4)
+    d = float((np.abs(np.asarray(clos, np.float32) - np.asarray(neutre, np.float32)).mean(2) * z).sum() / max(1e-6, z.sum()))
+    return round(float(np.clip(1 - d / 25.0, 0, 1)), 3), round(o, 4)   # 25 niveaux de gris de changement moyen = paupière tombée
+
+
+def paupieres(B):
+    """CONTRÔLE DU CLIGNEMENT (18/10/2026, « aucun clignement des yeux ») : indice de fermeture de l'image « yeux clos »
+    (voir fermeture) ; au-dessus de SCLERE_CLOS, le clignement ne se voit pas. → (indice, blanc des yeux du neutre)."""
+    kp = B['meta']['bouche'].index(0) if 0 in B['meta']['bouche'] else 0
+    return fermeture(B['imgs'][('neutre', kp)], B['clos'], B['yeux'])
+
+
+def zone_paupieres(v3, box, t):
+    """les deux yeux (ellipses autour des repères FaceMesh), dans le carré de rendu de côté t."""
+    x, y, s = box; z = np.zeros((t, t), np.float32)
+    for c_ in ([33, 133, 159, 145], [263, 362, 386, 374]):
+        p = (np.asarray(v3[c_, :2]) - [x, y]) * t / s; m_ = p.mean(0); r = max(4.0, 0.9 * float(np.ptp(p[:, 0])))
+        cv2.ellipse(z, (int(m_[0]), int(m_[1])), (int(r), int(0.75 * r)), 0, 0, 360, 1.0, -1)
+    return z
+
+
+def clos_auto(src, v3, box, taille, neutre=None):
+    """YEUX CLOS CHERCHÉS PAR VISAGE (18/10/2026) : contrôle des paupières sur les 7 personnages — Modou (0,96) et Baye (0,40)
+    gardaient du blanc des yeux à l'ouverture visée −0,05 (petits yeux, paupières lourdes). L'ouverture visée descend
+    jusqu'à ce que le blanc des yeux tombe sous 0,8 × SCLERE_CLOS du neutre. → (image, ouverture retenue)."""
+    rend = lambda v: cv2.resize(src.rendu(yeux=v), (taille, taille), interpolation=cv2.INTER_AREA)
+    if neutre is None: neutre = cv2.resize(src.rendu(), (taille, taille), interpolation=cv2.INTER_AREA)
+    z = zone_paupieres(v3, box, taille); o = None
+    for v in (CLOS['yeux'], -0.12, -0.2, -0.3, -0.45):
+        o = rend(v)
+        if fermeture(neutre.astype(np.float32), o.astype(np.float32), z)[0] <= 0.8 * SCLERE_CLOS: return o, v
+    return o, v
 
 
 def _gris(im):

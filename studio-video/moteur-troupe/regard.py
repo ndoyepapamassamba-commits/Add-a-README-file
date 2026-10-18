@@ -84,9 +84,22 @@ def prepare(img, v3):
         modele = np.stack([xx - cx, yy - cy, np.ones_like(xx)], -1) @ coef
         modele = np.clip(modele, np.percentile(reg[blanc], 5, axis=0), np.percentile(reg[blanc], 98, axis=0))
         d3 = disque[..., None]; sans = reg * (1 - d3) + modele * d3
+        # REGARD PEINT ET COURSE RÉELLE (v36) : « Mamie ne regarde pas Baye » (remarque de l'utilisateur, 18/10) — l'iris peint de
+        # Maman Nounou est en haut de l'œil (elle regarde le ciel) ; le moteur ne déplaçait l'iris que de 0,14 × la hauteur de
+        # l'œil, sans savoir d'où il partait. On garde le centre de l'ouverture et la place réelle de l'iris dans l'œil.
+        oy, ox = np.nonzero(ouv); co = (x0 + float(ox.mean()), y0 + float(oy.mean())) if len(ox) else (cx, cy)
+        demi = (0.5 * float(ox.max() - ox.min() + 1), 0.5 * float(oy.max() - oy.min() + 1)) if len(ox) else (0.5 * larg, 0.5 * e['haut'])
+        course = (max(0.22 * larg, 0.8 * (demi[0] - r)), max(0.14 * e['haut'], 0.8 * (demi[1] - r)))
         yeux.append(dict(box=(x0, y0, x1, y1), ouv=cv2.GaussianBlur(ouv.astype(np.float32), (0, 0), 0.6), iris=iris, rgb=reg, sans=sans,
-                         larg=larg, haut=e['haut'], c=np.array([cx, cy])))
+                         larg=larg, haut=e['haut'], c=np.array([cx, cy]), centre=np.array(co), course=course,
+                         peint=((cx - co[0]) / course[0], (cy - co[1]) / course[1])))
     return yeux if len(yeux) == 2 else None   # les deux yeux ou aucun (un seul qui bouge : regard qui louche)
+
+
+def peint(yeux):
+    """direction du regard PEINT (moyenne des deux yeux), en fraction de la course de l'iris : (x, y), y > 0 = vers le bas."""
+    if not yeux or 'peint' not in yeux[0]: return (0.0, 0.0)
+    return tuple(float(np.clip(np.mean([e['peint'][k] for e in yeux]), -1.5, 1.5)) for k in (0, 1))
 
 
 def applique(src, yeux, gx, gy, ouverture=1.0):
@@ -95,7 +108,11 @@ def applique(src, yeux, gx, gy, ouverture=1.0):
     src = src.copy()
     for e in yeux:
         x0, y0, x1, y1 = e['box']; w, h = x1 - x0, y1 - y0
-        dx, dy = gx * 0.22 * e['larg'], gy * 0.14 * e['haut']
+        cx_, cy_ = e.get('course', (0.22 * e['larg'], 0.14 * e['haut'])); p_ = e.get('peint', (0.0, 0.0))
+        # l'iris reste dans l'œil : position finale (peinte + commande) dans [−1, 1] courses, sans jamais pousser un regard
+        # peint déjà hors de ces bornes quand la commande est nulle
+        gx_ = float(np.clip(gx, min(0.0, -1 - p_[0]), max(0.0, 1 - p_[0]))); gy_ = float(np.clip(gy, min(0.0, -1 - p_[1]), max(0.0, 1 - p_[1])))
+        dx, dy = gx_ * cx_, gy_ * cy_
         M = np.float32([[1, 0, dx], [0, 1, dy]])
         ir = cv2.warpAffine(e['iris'], M, (w, h), flags=cv2.INTER_LINEAR, borderValue=0)
         rg = cv2.warpAffine(e['rgb'], M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)

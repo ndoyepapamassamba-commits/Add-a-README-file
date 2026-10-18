@@ -295,17 +295,39 @@ for sk in T['sketchs']:
         cv2.imwrite(f"{OUT}/vie_fond-{sk['id']}.jpg", cv2.cvtColor(vie_fond.carte(vf, plate), cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, 88])
 gestes.ferme()
 JOURNAL_JEU = []
+def visee_(A2):
+    """REGARD DANS L'AXE (v36) — « Mamie ne regarde pas Baye » : pour chaque personnage, où est le VISAGE de chacun des
+    autres vu de ses yeux, en hauteur (le côté, jeu.py le prend déjà) : inclinaison en degrés (> 0 = plus bas, un assis) et
+    hauteur de regard en fraction de la course de l'iris (course complète ≈ 30°)."""
+    def yeux_de(A):
+        if A.get('yeux'): return np.mean([e['c'] for e in A['yeux']], 0)
+        v = A['a'].get('visage')
+        return None if not v else np.array([(v['box'][0] + v['box'][2]) / 2, v['box'][1] + 0.45 * (v['box'][3] - v['box'][1])])
+    def visage_de(A):
+        v = A['a'].get('visage')
+        return None if not v else np.array([(v['box'][0] + v['box'][2]) / 2, (v['box'][1] + v['box'][3]) / 2])
+    out = {}
+    for n, A in A2.items():
+        e = yeux_de(A); out[n] = {}
+        if e is None: continue
+        for m, B in A2.items():
+            f = visage_de(B)
+            if m == n or f is None: continue
+            incl = math.degrees(math.atan2(float(f[1] - e[1]), max(1.0, abs(float(f[0] - e[0])))))
+            out[n][m] = (float(np.clip(incl / 30.0, -0.8, 1.0)), float(np.clip(incl, -20.0, 20.0)))
+    return out
 if REG['rig']:   # pistes de jeu et ressenti de chaque personnage, image par image, pour tout le film
     # MOTEUR IMAGE → VIDÉO (17/10) : couche « vrai humain » (capture CMU calée sur les syllabes), dynamique du second ordre,
     # regard vivant ; réglages mocap / dyn / yeux / suivi_tete (tous à 0 : jeu de la v27, pour les essais A/B jugés par JEV)
     RJ = {k: REG.get(k, d) for k, d in (('mocap', 1.0), ('dyn', 1), ('yeux', 1), ('suivi_tete', 1), ('ampleur', 1.0))}
     for sid, S_ in SC.items():
         A2 = S_['acts']
+        print(f"{sid}: regard peint", {n: [round(v, 2) for v in regard.peint(A.get('yeux'))] for n, A in A2.items()}, "; visée", {n: {m: [round(x, 2) for x in v] for m, v in d.items()} for n, d in visee_(A2).items()}, flush=True)
         S_['pistes'] = jeu.pistes(T['lines'], sid, list(A2), {n: float(A['hip'][0]) for n, A in A2.items()}, {n: A.get('assis', False) for n, A in A2.items()},
                                   {n: A.get('env', {}) for n, A in A2.items()}, NF, FPS, {n: len(A['rig']['bras']) if A.get('rig') else 0 for n, A in A2.items()},
                                   echelles={n: float(A['rig']['M']['sw']) / 0.38 for n, A in A2.items() if A.get('rig')},   # largeur d'épaules humaine ≈ 0,38 m
                                   cotes_bras={n: [b['cote'] for b in A['rig']['bras']] for n, A in A2.items() if A.get('rig')},
-                                  reglages=RJ, journal=JOURNAL_JEU)
+                                  reglages=RJ, journal=JOURNAL_JEU, visee=visee_(A2), peints={n: regard.peint(A.get('yeux')) for n, A in A2.items()})
 LIPS, EYES = (0.0, 0.25, 0.5, 0.75, 1.0), (0.0, 0.5, 1.0)
 SEATED = {'BAYE NDIAYE': True, 'KOFFI': True, 'COUMBA': True}
 lines = T['lines']

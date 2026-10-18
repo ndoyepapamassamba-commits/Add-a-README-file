@@ -52,15 +52,27 @@ class Source:
         self.pose = (_deg(m['pitch']), _deg(m['yaw']), _deg(m['roll']))
         self.kp = m['kp'].reshape(21, 3); self.exp = m['exp'].reshape(21, 3); self.t = m['t'].reshape(3); self.scale = float(m['scale'].reshape(-1)[0])
         self.R = rotation(*self.pose); self.xs = self._x(self.exp, self.R)
+        # ouverture des yeux du dessin (hauteur / largeur de la fente, repères MediaPipe), entrée du module de reciblage des yeux
+        V = np.asarray(v3)[:, :2]; r_ = lambda h, b_, g, d: float(np.linalg.norm(V[h] - V[b_]) / (np.linalg.norm(V[g] - V[d]) + 1e-6))
+        self.oeil = (r_(159, 145, 33, 133), r_(386, 374, 362, 263))
 
     def _x(self, exp, R):
         x = self.scale * (self.kp @ R + exp); x[:, :2] += self.t[:2]; return x
 
-    def rendu(self, edits=None, dpose=(0.0, 0.0, 0.0), couture=True):
-        """image 512 × 512 du carré du visage avec l'expression demandée (edits : delta d'expression 21 × 3)."""
+    def rendu(self, edits=None, dpose=(0.0, 0.0, 0.0), couture=True, yeux=None):
+        """image 512 × 512 du carré du visage avec l'expression demandée (edits : delta d'expression 21 × 3), la tête
+        tournée de dpose (tangage, lacet, roulis en degrés ; tangage > 0 : la tête baisse) et les yeux ouverts à yeux
+        (rapport hauteur / largeur de la fente ; 0 = fermés ; None = ceux du dessin).
+        PAUPIÈRES (18/10/2026, « aucun clignement des yeux ») : la commande « regard vers le bas » ne fermait les yeux d'aucun
+        des 7 personnages (planche essai-gen/v36/clos.jpg) ; les auteurs ferment les paupières avec leur module de reciblage
+        des yeux (live_portrait_wrapper.retarget_eye : [x_s, ouverture source gauche, droite, ouverture voulue] → delta des
+        21 points, ajouté avant la couture), présent dans nos poids (stitching_eye.onnx)."""
         exp = self.exp + (edits if edits is not None else 0)
         R = rotation(*(np.array(self.pose) + np.array(dpose)))
         xd = self._x(exp, R)
+        if yeux is not None:
+            f = np.concatenate([self.xs.reshape(-1), [self.oeil[0], self.oeil[1], float(yeux)]])[None].astype(np.float32)
+            xd = xd + _sess('stitching_eye').run(None, {'input': f})[0].reshape(21, 3)
         if couture:   # recousu au reste de la tête (module « stitching » des auteurs)
             d = _sess('stitching').run(None, {'input': np.concatenate([self.xs.reshape(-1), xd.reshape(-1)])[None].astype(np.float32)})[0][0]
             xd = xd + d[:63].reshape(21, 3); xd[:, :2] += d[63:65]

@@ -144,14 +144,21 @@ def oiseaux(V, img, t, vis, t0):
     img = img.astype(np.float32); rng = np.random.default_rng(int(round(t0 * 100)) + 7); u = t - t0
     dist = cv2.distanceTransform(C.astype(np.uint8), cv2.DIST_L2, 5)
     cy_, cx_ = np.unravel_index(int(np.argmax(dist)), dist.shape); R = float(dist[cy_, cx_])
-    # MILAN : cercles lents au cœur du ciel du cadre (période 7 à 10 s), quelques battements toutes les ~3 s
-    env = 0.034 * W * rng.uniform(0.9, 1.1); rx = float(np.clip(1.2 * R, 1.0 * env, 0.4 * (x1 - x0))); ry = 0.35 * rx
+    # MILAN : cercles lents au cœur du ciel du cadre (période 7 à 10 s), quelques battements toutes les ~3 s.
+    # v36 (porte K de la v35 : milan « énorme, noir, net » dans les gros plans de Tantie, physique/échelle/hors contexte
+    # sous 0,5) : envergure plafonnée à 2,5 % de la largeur VISIBLE (un rapace à 100 m reste petit même cadré serré),
+    # couleur tirée vers le ciel du cadre (perspective aérienne : 40 %), et pas de milan si le ciel du cadre ne le contient pas.
+    vw = x1 - x0; env = min(0.034 * W, 0.025 * vw) * rng.uniform(0.9, 1.1)
+    cie = img[y0:y1, x0:x1][C > 0.5].reshape(-1, 3).mean(0) if (C > 0.5).any() else np.float32((200, 200, 200))
+    c_milan = tuple(float(v) for v in 0.6 * np.float32((52, 44, 38)) + 0.4 * cie); c_hir = tuple(float(v) for v in 0.7 * np.float32((46, 42, 40)) + 0.3 * cie)
+    rx = float(np.clip(1.2 * R, 1.0 * env, 0.4 * (x1 - x0))); ry = 0.35 * rx
+    if R < 0.7 * env: rx = 0.0   # ciel trop mince pour lui : on ne garde que les hirondelles
     om = 2 * math.pi / rng.uniform(7, 10) * rng.choice([-1, 1]); th = rng.uniform(0, 2 * math.pi) + om * u
     mx, my = x0 + cx_ + rx * math.cos(th), y0 + cy_ + ry * math.sin(th)
     k = (u + rng.uniform(0, 3)) % 3.2; bat = math.sin(2 * math.pi * 2.6 * k) if k < 0.75 else 0.08 * math.sin(2 * math.pi * 0.5 * u)
     vx = -om * rx * math.sin(th); sg = 1.0 if vx >= 0 else -1.0   # queue fourchue derrière, du côté d'où il vient
     queue = [(mx - sg * 0.05 * env, my + 0.02 * env), (mx - sg * 0.24 * env, my - 0.03 * env), (mx - sg * 0.22 * env, my + 0.07 * env)]
-    _trace(img, _oiseau(mx, my, env, bat), 0.07 * env, ((mx, my + 0.02 * env), (0.11 * env, 0.05 * env)), (52, 44, 38), V['far'], queue)
+    if rx > 0: _trace(img, _oiseau(mx, my, env, bat), 0.07 * env, ((mx, my + 0.02 * env), (0.11 * env, 0.05 * env)), c_milan, V['far'], queue)
     # HIRONDELLES : traversées du ciel du cadre, une toutes les ~2,4 s, à deux ou trois
     rows = np.nonzero(C.mean(1) > 0.5)[0]
     if len(rows):
@@ -159,13 +166,13 @@ def oiseaux(V, img, t, vis, t0):
         for n in range(int(u // 2.4) - 1, int(u // 2.4) + 2):
             r2 = np.random.default_rng(int(round(t0 * 100)) * 31 + n + 1000); tn = n * 2.4 + r2.uniform(0, 0.8); dur = r2.uniform(1.4, 2.2)
             if not 0 <= u - tn <= dur: continue
-            s_ = r2.choice([-1, 1]); yv = r2.uniform(ya + 0.15 * (yb - ya), ya + 0.85 * (yb - ya)); e2 = 0.012 * W * r2.uniform(0.85, 1.15)
+            s_ = r2.choice([-1, 1]); yv = r2.uniform(ya + 0.15 * (yb - ya), ya + 0.85 * (yb - ya)); e2 = min(0.012 * W, 0.012 * vw) * r2.uniform(0.85, 1.15)
             for j in range(int(r2.integers(2, 4))):
                 p = (u - tn - 0.12 * j) / dur
                 if not 0 <= p <= 1: continue
                 bx = x0 - e2 + (x1 - x0 + 2 * e2) * (p if s_ > 0 else 1 - p); by = yv + 0.06 * (yb - ya) * math.sin(2 * math.pi * (0.7 * p + 0.2 * j)) + 0.6 * e2 * j
                 b2 = math.sin(2 * math.pi * 7.0 * (u + 0.05 * j)) if (u + 0.3 * j) % 0.9 < 0.55 else 0.25
-                _trace(img, _oiseau(bx, by, e2, b2), 0.09 * e2, ((bx, by + 0.03 * e2), (0.10 * e2, 0.06 * e2)), (46, 42, 40), V['far'])
+                _trace(img, _oiseau(bx, by, e2, b2), 0.09 * e2, ((bx, by + 0.03 * e2), (0.10 * e2, 0.06 * e2)), c_hir, V['far'])
     return img
 
 

@@ -120,11 +120,17 @@ def dynamique(x, fps, f, zeta, r, sous_pas=4):
 # ~26 par minute en conversation, un tiers de plus en écoutant qu'en parlant ; un clignement accompagne souvent un grand
 # changement de regard et la fin d'une phrase ; fermeture 75 ms, tenue 25 ms, ouverture 150 ms (la paupière remonte plus
 # lentement qu'elle ne tombe).
-def yeux(T, parle, debut_phrase, fin_phrase, vers, fps, graine):
+def yeux(T, parle, debut_phrase, fin_phrase, vers, fps, graine, vers_y=None, peint=(0.0, 0.0), vise=None):
     """→ (regard_x, regard_y, apport au lacet de tête en degrés, clignement 0..1), une valeur par image.
     parle : bool par image ; debut_phrase / fin_phrase : instants (s) de mes répliques ; vers : direction du partenaire
-    (−1 … 1, 0 = caméra) par image."""
+    (−1 … 1, 0 = caméra) par image ; vers_y : hauteur de son visage (> 0 = plus bas que mes yeux) ; peint : direction
+    du regard déjà peinte dans le dessin (fraction de la course de l'iris) ; vise : bool par image (quelqu'un à regarder).
+    REGARD DANS L'AXE (v36) : la cible est le VISAGE du partenaire (côté ET hauteur), moins ce que le dessin regarde déjà —
+    « Mamie ne regarde pas Baye » : iris peint en haut de l'œil, Baye assis plus bas, le moteur ne visait que le côté."""
     n = len(T); rng = np.random.default_rng(int(graine * 1000) + 7)
+    vy = np.zeros(n) if vers_y is None else np.asarray(vers_y, np.float64)
+    ok = (np.abs(np.asarray(vers, np.float64)) > 0) if vise is None else np.asarray(vise, bool)
+    bx_ = np.where(ok, 0.88 * np.asarray(vers, np.float64) - peint[0], 0.0); by_ = np.where(ok, 0.88 * vy - peint[1], 0.0)
     gx = np.zeros(n); gy = np.zeros(n); i = 0; cible = (0.0, 0.0); depart = (0.0, 0.0); d_sac = 1; sacc = []
     debuts = sorted(debut_phrase); i_debuts = [int(round(d * fps)) for d in debuts]
     # QUAND UN AUTRE PREND LA PAROLE, le regard le rejoint ~150 ms après (porte D de la v28 : Maman Nounou fixait encore Baye
@@ -133,17 +139,17 @@ def yeux(T, parle, debut_phrase, fin_phrase, vers, fps, graine):
     i_vers = sorted({min(n - 1, k + int(round(0.15 * fps))) for k in range(1, n) if abs(float(vers[k]) - float(vers[k - 1])) > 0.5})
     rejoint = set(i_vers)
     while i < n:
-        t = T[i]; p = bool(parle[i]); base = 0.88 * float(vers[i])
+        t = T[i]; p = bool(parle[i]); base = float(bx_[i]); base_y = float(by_[i])
         d0 = next((d for d in debuts if 0 <= t - d < 0.25), None)
         if d0 is not None and rng.random() < 0.6:    # je commence à parler : je détourne les yeux le temps de penser
             ax = -np.sign(base or 1.0) * rng.uniform(0.25, 0.5); ay = rng.choice([0.25, -0.15, 0.35]) * rng.uniform(0.5, 1.0)
-            nouveau = (base * 0.3 + ax, ay); duree = rng.uniform(0.45, 0.9)
+            nouveau = (base * 0.3 + ax, base_y * 0.3 + ay); duree = rng.uniform(0.45, 0.9)
         elif i in rejoint or rng.random() < (0.41 if p else 0.75):   # regard mutuel : micro-fixation sur le visage du partenaire
-            nouveau = (base + rng.normal(0, 0.05), rng.normal(0.04, 0.035)); duree = rng.gamma(2.0, (0.85 if p else 1.4) / 2.0)
+            nouveau = (base + rng.normal(0, 0.05), base_y + rng.normal(0.04, 0.035)); duree = rng.gamma(2.0, (0.85 if p else 1.4) / 2.0)
         else:                                          # ailleurs : amplitude exponentielle, souvent de côté ou vers le bas
             A_ = float(np.clip(rng.exponential(0.3), 0.12, 0.6)); a = rng.choice([0.0, np.pi, 0.5 * np.pi, 0.75 * np.pi, 0.25 * np.pi, -0.5 * np.pi], p=[0.25, 0.25, 0.2, 0.1, 0.1, 0.1])
-            nouveau = (base * 0.5 + A_ * math.cos(a), A_ * math.sin(a) * 0.7); duree = rng.gamma(2.0, (0.75 if p else 0.5) / 2.0)
-        nouveau = (float(np.clip(nouveau[0], -1, 1)), float(np.clip(nouveau[1], -0.6, 0.8)))
+            nouveau = (base * 0.5 + A_ * math.cos(a), base_y * 0.5 + A_ * math.sin(a) * 0.7); duree = rng.gamma(2.0, (0.75 if p else 0.5) / 2.0)
+        nouveau = (float(np.clip(nouveau[0], -2.2, 2.2)), float(np.clip(nouveau[1], -2.2, 2.2)))   # bornes finales : regard.applique
         amp = math.hypot(nouveau[0] - cible[0], nouveau[1] - cible[1]); depart = (gx[i - 1], gy[i - 1]) if i else cible
         d_sac = max(1, int(round((0.025 + 0.0024 * 30.0 * amp) * fps)))   # course complète des yeux ≈ 30°
         sacc.append((i, amp)); cible = nouveau
@@ -154,7 +160,7 @@ def yeux(T, parle, debut_phrase, fin_phrase, vers, fps, graine):
             gx[j] = depart[0] + (cible[0] - depart[0]) * e; gy[j] = depart[1] + (cible[1] - depart[1]) * e
         i = j1
     # la tête accompagne les grands déplacements du regard (≈ 30 % au-delà de la position de base, 80 ms après les yeux)
-    lacet = 0.3 * 25.0 * np.r_[np.zeros(int(0.08 * fps)), (gx - 0.88 * np.asarray(vers, np.float64))[:n - int(0.08 * fps)]]
+    lacet = 0.3 * 25.0 * np.r_[np.zeros(int(0.08 * fps)), (gx - bx_)[:n - int(0.08 * fps)]]
     # clignements : processus de Poisson (18/min en parlant, 26/min en écoutant), réfractaire 0,6 s, + regard et fin de phrase
     cl = np.zeros(n); dernier = -9.0; evts = []
     for k in range(n):
@@ -237,11 +243,14 @@ def couche_humaine(nom, L_sk, a_qui, cote, nf, fps, echelle, cotes_bras, graine,
     return M, G
 
 
-def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=None, echelles=None, cotes_bras=None, reglages=None, journal=None):
+def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=None, echelles=None, cotes_bras=None, reglages=None, journal=None,
+           visee=None, peints=None):
     """pistes de jeu du sketch. acteurs : noms ; position : {nom: x écran} ; assis : {nom: bool} ;
     enveloppes : {nom: {buste, tete, epaules, bassin_x}} ; bras : {nom: nombre de calques de bras} ; echelles : {nom: pixels
     par mètre} ; cotes_bras : {nom: ['l'|'r', …] par calque} ; reglages : {mocap (gain max, 0 = sans), dyn, yeux, suivi_tete}
-    → {nom: {canal: array}} (+ « cligne » quand le regard vivant est actif)."""
+    → {nom: {canal: array}} (+ « cligne » quand le regard vivant est actif). visee : {nom: {autre: (hauteur de regard en
+    fraction de course, inclinaison en degrés)}} — où est le VISAGE de l'autre vu de mes yeux ; peints : {nom: (x, y)}
+    direction du regard peint dans le dessin (v36)."""
     RG = {'mocap': 1.0, 'dyn': 1, 'yeux': 1, 'suivi_tete': 1, 'ampleur': 1.0}; RG.update(reglages or {})
     if RG['ampleur'] != 1.0:   # essai de diagnostic (JEV) : enveloppes agrandies — le corps peut-il jouer plus grand ?
         enveloppes = {n: {k: (v * RG['ampleur'] if isinstance(v, (int, float)) and k != 'lacet_peint' else v) for k, v in e.items()} for n, e in enveloppes.items()}
@@ -255,7 +264,7 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         # « Je ne veux rien de procédural, je veux que tout soit naturel » (17/10) : avec la capture, plus aucun bruit de
         # synthèse — balancements, hochements et gestes viennent tous de vrais humains
         humain = RG['mocap'] > 0; kb = 0.0 if humain else 1.0
-        vers = np.zeros(nf); parle_ = np.zeros(nf, bool)
+        vers = np.zeros(nf); parle_ = np.zeros(nf, bool); vers_y = np.zeros(nf); vise = np.zeros(nf, bool); VI = (visee or {}).get(nom, {})
         # ── ressenti : événements (rise 0,25 s, tient, demi-vie 2 s), anticipation 0,4 s avant ma réplique
         def evenement(t0, t1, emo, k):
             for e, v in emo.items():
@@ -283,10 +292,12 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
             parle = L is not None
             if aparte: sd = 0.0
             vers[i] = sd; parle_[i] = parle
+            vy_, incl_ = VI.get(focus, (0.0, 0.0)) if (focus and not aparte) else (0.0, 0.0); vers_y[i] = vy_; vise[i] = bool(focus) or aparte
             # ce qui manque au visage peint — mais l'écouteur tourne TOUJOURS un peu la tête vers celui qui parle (18/10, v33 :
             # visage déjà peint de trois quarts → lacet ajouté nul, l'écoute ne se voyait plus ; porte D 0,00–0,54 au lieu de ≥ 0,75)
             C['tete_lacet'][i] = sd * max(0.0 if parle else LACET_ECOUTE, (18.0 if parle else 12.0) - sd * env.get('lacet_peint', 0.0))
-            C['regard_x'][i] = sd * (0.85 if parle else 0.95)
+            pk = (peints or {}).get(nom, (0.0, 0.0)) if vise[i] else (0.0, 0.0)
+            C['regard_x'][i] = sd * (0.85 if parle else 0.95) - pk[0]
             C['buste_lacet'][i] = sd * (7.0 if parle else 4.0)
             roll = kb * 1.2 * _bruit(0.6 * t, g + 1); tang = kb * 0.8 * _bruit(0.7 * t, g + 2); buste = kb * 0.8 * _bruit(0.35 * t, g + 3)
             souffle = 0.006 * math.sin(2 * math.pi * 0.25 * t + g); ep = 0.0; bx = kb * 1.5 * _bruit(0.12 * t, g + 4); by = 0.0
@@ -321,7 +332,10 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
                     if x['qui'] == nom:
                         u_ = (t - x['t0'] + 0.5) / 0.5; buste += 1.5 * (sd or 1.0) * u_; tang += 1.0 * u_; souffle += 0.008 * u_
             C['regard_y'][i] = 0.5 * E['tristesse'][i] + 0.25 * E['emu'][i] - 0.45 * E['innocent'][i]   # + = vers le bas
+            if not RG['yeux']: C['regard_y'][i] += 0.9 * vers_y[i] - pk[1]   # sans regard vivant : droit sur le visage visé
             tang += 3.0 * E['tristesse'][i] - 2.0 * E['innocent'][i]   # la tête suit le regard
+            tang += 0.6 * incl_   # v36 : la tête s'incline vers le visage visé (un assis : vers le bas), les yeux font le reste
+            if focus and not aparte: roll += 0.12 * incl_ * sd   # et penche un peu de son côté (écoute attentive)
             C['tete'][i] = roll; C['tete_tangage'][i] = tang; C['buste'][i] = buste; C['souffle'][i] = souffle; C['epaules'][i] = ep
             C['bassin_x'][i] = 0.0 if assis.get(nom) else bx; C['bassin_y'][i] = by
             # gestes : le bras du côté de l'interlocuteur se lève sur ma réplique, retombe en fin de phrase (sans capture
@@ -351,7 +365,7 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         cl = None
         if RG['yeux']:
             mes = [x for x in L_sk if x['qui'] == nom]
-            gx, gy, lac, cl = yeux(T, parle_, [x['t0'] for x in mes], [x['t0'] + x['dur'] for x in mes], vers, fps, g)
+            gx, gy, lac, cl = yeux(T, parle_, [x['t0'] for x in mes], [x['t0'] + x['dur'] for x in mes], vers, fps, g, vers_y, (peints or {}).get(nom, (0.0, 0.0)), vise)
             C['regard_x'] = gx; C['regard_y'] = C['regard_y'] + gy; C['tete_lacet'] = C['tete_lacet'] + lac
         # ── dynamique du second ordre (anticipation, dépassement) ou ressorts critiques (réglage dyn = 0 : moteur v27)
         if RG['dyn']: R = {k: dynamique(v, fps, *DYN[k]) for k, v in C.items()}
@@ -384,7 +398,8 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         R['buste'] = borne(R['buste'], env.get('buste', 3.0)); R['tete'] = borne(R['tete'], env.get('tete', 6.0))
         R['epaules'] = borne(R['epaules'], env.get('epaules', 3.0)); R['bassin_x'] = borne(R['bassin_x'], env.get('bassin_x', 4.0))
         R['souffle'] = np.clip(R['souffle'], -env.get('souffle', 0.02), env.get('souffle', 0.02)); R['tete_lacet'] = borne(R['tete_lacet'], env.get('tete_lacet', 20.0)); R['tete_tangage'] = borne(R['tete_tangage'], env.get('tete_tangage', 9.0)); R['buste_lacet'] = borne(R['buste_lacet'], env.get('buste_lacet', 9.0))
-        R['regard_x'] = np.clip(R['regard_x'], -1, 1); R['regard_y'] = np.clip(R['regard_y'], -1, 1)
+        # v36 : la commande peut dépasser ±1 (regard peint compensé) ; regard.applique borne la position FINALE de l'iris dans l'œil
+        R['regard_x'] = np.clip(R['regard_x'], -2.2, 2.2); R['regard_y'] = np.clip(R['regard_y'], -2.2, 2.2)
         for k_ in [k_ for k_ in R if k_.startswith('geste_')]: R[k_] = np.clip(R[k_], 0, 1)
         for c_ in ('tete_tangage', 'tete', 'tete_lacet', 'buste', 'buste_lacet'): R[c_] = lisse_acc(R[c_], fps)   # garde de fluidité
         for e in EMOS: R['emo_' + e] = ressort(np.clip(E[e], 0, 1), fps, 10.0)
