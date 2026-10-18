@@ -26,6 +26,10 @@ import numpy as np
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 D, MP4, MONTAGE = sys.argv[1:4]; TL = sys.argv[4] if len(sys.argv) > 4 else 'timeline.json'
+# PORTES SANS MODÈLE D'IMAGES NON VALIDÉ (18/10/2026) : JEV coupé, SmolVLM répondait 8 questions en 10 minutes sur le
+# processeur et son accord avec JEV n'a jamais été mesuré ; en production, une question sans tête apprise validée rend sa
+# porte « non jugée » avec sa raison (JUGE_VLM_MAX > 0 pour rouvrir la voie de secours sur une machine plus rapide)
+os.environ.setdefault('JUGE_VLM_MAX', '0')
 VISAGE_MIN = float(os.environ.get('VISAGE_MIN', 72)); CH = 460
 FPS = 30   # cadence des MESURES du tournage (grille des 30 i/s, même quand le film est tourné à 60 i/s : tourne.mesure_ici)
 M = json.load(open(MONTAGE)); T = json.load(open(TL)); TO = json.load(open(f'{D}/tournage.json'))
@@ -243,6 +247,18 @@ G['O_textes'] = {'ok': bool(jt) and not jt.get('synthese', {}).get('sous_titres_
 #    réaction — choquée > 0,5 et visage non abîmé sur chaque image (jev_choc.py) ──
 jc = lance(*JUGES['choc']) or {}
 G['P_choc'] = {'ok': bool(jc) and jc.get('synthese', {}).get('ok', False), 'detail': jc.get('synthese')}
+
+# ── Q. FLUIDITÉ ET SOUPLESSE MESURÉES (18/10/2026, « la vidéo doit respecter tous les critères de fluidité, de mouvement et
+#    d'animation à 100 % ») — fluidite.py : (1) pixels du film, raccords du moteur exclus : aucune image figée en plein
+#    mouvement, aucun saut, aucun à-coup ni secousse de caméra au-delà de ce que les animations 3D pro de référence ne
+#    dépassent que 0,5 % du temps ; (2) souplesse SPARC de chaque articulation au moins égale à celle de vrais corps (CMU) ──
+try:
+    import fluidite as FL_
+    fq_ = FL_.juge(MP4, f'{D}/fluidite.json', bande=(282, 742), coupes=FL_.coupes_du_moteur(f'{D}/tournage.json', TL))
+    sq_ = FL_.souplesse(D)
+    G['Q_fluidite'] = {'ok': fq_['ok'] and sq_['ok'], 'detail': {'pixels': fq_['defauts'], 'souplesse': {k: (v.get('mediane'), v.get('p10'), v['ok']) for k, v in sq_['par_articulation'].items()}}}
+except Exception as ex_:
+    G['Q_fluidite'] = {'ok': False, 'detail': f'non mesurée : {str(ex_)[:160]}'}
 
 passees = sum(g['ok'] for g in G.values())
 R = {'film': os.path.basename(MP4), 'portes': G, 'passees': passees, 'total': len(G), 'pourcent': round(100 * passees / len(G)), 'durees_s': DUREES,

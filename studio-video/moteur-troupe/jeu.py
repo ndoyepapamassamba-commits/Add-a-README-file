@@ -103,6 +103,27 @@ def lisse_acc(x, fps, acc=ACC_FLUIDE):
     return np.ascontiguousarray(y, np.float32)
 
 
+# SOUPLESSE MESURÉE CONTRE DE VRAIS HUMAINS (18/10/2026) — remarque de l'utilisateur : « Affine les mouvements en les rendant
+# plus souples ». Indice SPARC (Balasubramanian et al., 2015, arc spectral de la vitesse : plus proche de 0 = plus souple)
+# par fenêtre de 4 s, sur les pistes des ep01 v5 et ep02 v1 contre 39 prises de capture CMU (vrais corps) : tête tournée
+# −4,17 contre −3,58 (10 % les plus raides −6,61 contre −5,14), buste tourné −3,99 contre −3,73 (−7,30 contre −5,16).
+# Lissage SANS DÉPHASAGE (Butterworth d'ordre 2, aller-retour) à la coupure qui ramène chaque articulation au niveau humain
+# ou mieux, médiane ET 10 % les plus raides, en gardant 94 à 96 % de l'ampleur du jeu de moins de 2 s : rotations 2 Hz,
+# hochements, inclinaisons et buste 2,5 Hz (le hochement garde plus de vivacité). La prise de choc (take comique) garde
+# son claquement : là où elle joue, la piste brute est reprise en fondu.
+SOUPLESSE = {'tete_lacet': 2.0, 'buste_lacet': 2.0, 'lacet_visage': 2.0, 'tete': 2.5, 'tete_tangage': 2.5, 'buste': 2.5}
+
+
+def souple(x, fps, fc, garde=None):
+    from scipy.signal import butter, filtfilt
+    x = np.asarray(x, np.float64)
+    if len(x) < 16 or fc >= 0.45 * fps: return x.astype(np.float32)
+    y = filtfilt(*butter(2, fc / (fps / 2.0)), x)
+    y = np.clip(y, x.min(), x.max())                       # aucun extrême nouveau : les bornes de l'enveloppe tiennent
+    if garde is not None: y = y * (1 - garde) + x * garde
+    return y.astype(np.float32)
+
+
 # ── MOTEUR IMAGE → VIDÉO (17/10/2026) : DYNAMIQUE DU SECOND ORDRE, avec anticipation et dépassement. Les ressorts critiques
 # (ci-dessus) n'ont ni l'un ni l'autre : les mouvements démarrent et s'arrêtent « sans poids » (avis de JEV : « aucune
 # anticipation, aucun dépassement, aucun mouvement qui suit », vrai à 0,74–0,75). Système y + k1·y' + k2·y'' = x + k3·x'
@@ -217,7 +238,12 @@ def interlocuteur(L, lignes, acteurs):
     return autres[0] if autres else None
 
 
-FRAC = {'buste': 0.8, 'buste_lacet': 0.6, 'tete': 0.8, 'tete_lacet': 0.45, 'tete_tangage': 0.7, 'bassin_x': 0.8}
+# AMPLEUR DU JEU (18/10/2026, « l'animation des personnages, les mouvements des personnages ») : mesurés contre 39 prises de
+# conversation captées (CMU), nos personnages bougeaient ~10 fois moins que des humains (tête tournée : vitesse médiane
+# 0,9 °/s contre 18,8 ; ampleur sur 3 s 1,7° contre 17,9). La capture humaine n'utilisait que 45 à 80 % de l'enveloppe
+# validée contre l'étirement des dessins : la TÊTE (hors mesure d'étirement du corps) en prend désormais 90 à 100 % — les
+# extrêmes restent bornés par l'enveloppe ; le buste, déjà à la limite d'étirement (Maman Nounou 0,06), ne change pas
+FRAC = {'buste': 0.8, 'buste_lacet': 0.8, 'tete': 1.0, 'tete_lacet': 0.9, 'tete_tangage': 0.9, 'bassin_x': 0.8}
 LACET_ECOUTE = 4.0   # degrés : lacet minimal de l'écouteur vers celui qui parle (porte D : > 2° dans 75 % des images)
 PRISE_TEMPS = 0.25   # s : temps où l'on « encaisse » la chute avant la prise (le gros plan de réaction commence 0,05 s après la fin
                      # de la chute : la prise se voit EN ENTIER à l'écran au lieu d'arriver avant la coupe, comme dans la v2)
@@ -459,6 +485,10 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         for k_ in [k_ for k_ in R if k_.startswith('geste_')]: R[k_] = np.clip(R[k_], 0, 1)
         for c_ in ('tete_tangage', 'tete', 'tete_lacet', 'buste', 'buste_lacet'): R[c_] = lisse_acc(R[c_], fps)   # garde de fluidité
         R['lacet_visage'] = lisse_acc(borne(voulu_ - 0.5 * R['tete_lacet'], RG['lacet_visage']), fps)
+        if RG.get('souple', 1):   # souplesse au niveau humain (SPARC), prise de choc gardée vive
+            k_ = max(1, int(0.2 * fps)); garde_ = np.clip(np.convolve(np.clip(prise, 0, 1), np.ones(k_) / k_, 'same'), 0, 1)
+            for c_, fc_ in SOUPLESSE.items():
+                if c_ in R: R[c_] = souple(R[c_], fps, fc_, garde_)
         for e in EMOS: R['emo_' + e] = ressort(np.clip(E[e], 0, 1), fps, 10.0)
         if cl is not None: R['cligne'] = cl * (1 - 0.7 * np.clip(prise, 0, 1))   # yeux écarquillés : on cligne peu pendant la prise
         # bouche bée de la prise (commande de mâchoire 0..1, prise au maximum avec celle de la parole) ; fermée dès que le

@@ -180,7 +180,7 @@ def direct(chemin, J, legende, R):
 
 
 # ── 3. KIT « A PUBLIER » (toujours écrit : c'est aussi la trace de ce qui est parti) ──
-def kit(D, legende, R, sortie=None):
+def kit(D, legende, R, sortie=None, etat_controles='contrôles passés'):
     ep = os.path.basename(os.path.dirname(os.path.abspath(D))); v = os.path.basename(os.path.abspath(D))
     K = sortie or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(D))), 'A PUBLIER', f'{ep}-{v}')
     os.makedirs(K, exist_ok=True)
@@ -189,7 +189,7 @@ def kit(D, legende, R, sortie=None):
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-ss', f"{R['couverture_ms'] / 1000:.2f}", '-i', os.path.join(D, 'tiktok-1080x1920.mp4'),
                     '-frames:v', '1', '-q:v', '2', os.path.join(K, 'couverture.jpg')], check=False, capture_output=True)
     open(os.path.join(K, 'LISEZ-MOI.txt'), 'w', encoding='utf-8').write(
-        f"Épisode prêt à publier (contrôles passés).\n1. Ouvrez TikTok Studio : {STUDIO}\n2. Déposez {ep}-{v}.mp4, collez legende.txt.\n"
+        f"Épisode prêt à publier ({etat_controles}).\n1. Ouvrez TikTok Studio : {STUDIO}\n2. Déposez {ep}-{v}.mp4, collez legende.txt.\n"
         f"3. Visibilité : Tout le monde. Étiquette « généré par IA » : {'activée' if R['aigc'] else 'désactivée (votre choix)'}.\n"
         f"4. Couverture : l'image à {R['couverture_ms'] / 1000:.1f} s (premier choc), fournie dans couverture.jpg.\n")
     return K
@@ -262,7 +262,10 @@ def publie(D, force=False, voie=None, maintenant=False):
         leg, style, cren, pourquoi = _legende(D), 'legende.txt', None, f'viral indisponible ({str(ex)[:60]})'
     manque = normes(D, leg)
     if manque and not force: return {'voie': None, 'statut': 'retenu : normes de publication non respectées', 'normes': manque}
-    K = kit(D, leg, R); J = jeton() if voie != 'kit' else None
+    # kit forcé (--force) : son LISEZ-MOI dit l'état RÉEL des contrôles (18/10/2026 : jamais « contrôles passés » à tort)
+    etat_ = 'contrôles passés' if rap.get('a_publier') else ('envoyé à la demande AVANT la fin des contrôles — voir rapport.json' if not rap else
+             'envoyé à la demande, portes non passées : ' + ', '.join(rap.get('echecs') or []))
+    K = kit(D, leg, R, etat_controles=etat_); J = jeton() if voie != 'kit' else None
     if J and R['audite'] and cren and not maintenant and not _dans_creneau(cren):   # publication directe : au créneau choisi
         _attente_ajoute(D, cren); return {'voie': 'direct', 'statut': f'en attente du créneau {cren} ({pourquoi})', 'kit': K}
     essais = [v for v in (['direct'] if R['audite'] else []) + ['brouillon'] if voie in (None, v) and J]

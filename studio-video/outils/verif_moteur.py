@@ -113,6 +113,28 @@ try:
 except Exception as e:
     echecs.append(f'juge local : {e}')
 
+# ── 5. FLUIDITÉ ET SOUPLESSE (18/10/2026, « la vidéo doit respecter tous les critères de fluidité à 100 % ») : lissage des
+#       articulations sans déphasage (bornes gardées, tremblement coupé, prise de choc intacte), indice SPARC (un geste en
+#       cloche est plus souple qu'un geste haché), flou de bougé qui ne touche pas une image immobile.
+try:
+    import numpy as _np, cv2 as _cv2, jeu as _jeu, fluidite as _fl
+    t_ = _np.arange(600) / 60.0; x_ = _np.where(t_ > 3, 10.0, 0.0) + 0.5 * _np.sin(2 * _np.pi * 7 * t_)
+    y_ = _jeu.souple(x_, 60, 2.0)
+    if not (y_.min() >= x_.min() - 1e-6 and y_.max() <= x_.max() + 1e-6): echecs.append('souplesse : le lissage sort des bornes')
+    if not _np.std(y_[400:] - 10) < 0.2 * _np.std(x_[400:] - 10): echecs.append('souplesse : le tremblement de 7 Hz n’est pas coupé')
+    g_ = _np.zeros(600); g_[170:200] = 1
+    if _np.abs(_jeu.souple(x_, 60, 2.0, g_)[175:195] - x_[175:195]).max() > 1e-6: echecs.append('souplesse : la prise de choc a été lissée')
+    cloche = _np.exp(-((_np.arange(120) - 60) / 15.0) ** 2); hache = cloche * (1 + 0.6 * _np.sign(_np.sin(_np.arange(120) * 1.3)))
+    if not _fl.sparc(cloche, 30.0) > _fl.sparc(_np.abs(hache), 30.0): echecs.append('SPARC : un geste haché ne paraît pas moins souple')
+    d_ = tempfile.mkdtemp(); im_ = (_np.random.default_rng(3).random((92, 116, 3)) * 255).astype(_np.uint8)
+    for k in range(3): _cv2.imwrite(f'{d_}/f{k:05d}.jpg', im_)
+    _fl.flou_bouge(d_, d_ + '-flou')
+    if _np.abs(_cv2.imread(f'{d_}-flou/f00001.jpg').astype(int) - _cv2.imread(f'{d_}/f00001.jpg').astype(int)).max() > 0: echecs.append('flou de bougé : une image immobile a été modifiée')
+    shutil.rmtree(d_, ignore_errors=True); shutil.rmtree(d_ + '-flou', ignore_errors=True)
+    print('fluidité : lissage sans déphasage, prise de choc gardée, SPARC et flou de bougé vérifiés')
+except Exception as e:
+    echecs.append(f'fluidité : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

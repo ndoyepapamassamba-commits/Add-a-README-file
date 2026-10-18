@@ -543,7 +543,11 @@ def warp_rig(S, A, t, name):
         MESURES.append(dict(qui=name, t=round(t, 3), etirement=(p99, mx), bouche=round(float(jj), 3), emotions={k: round(x_, 2) for k, x_ in emo.items()},
                             pose={**{k: (round(x_, 2) if not isinstance(x_, (tuple, list)) else [round(float(y_), 2) for y_ in x_]) for k, x_ in pose.items() if k != 'gestes'},
                                   **({'lacet_visage': round(v('lacet_visage'), 2)} if 'lacet_visage' in P else {})},
-                            regard=round(v('regard_x'), 2)))
+                            regard=round(v('regard_x'), 2),
+                            # REGARD COMPLET (18/10/2026, juge local, porte D) : commande verticale, regard déjà peint et lacet
+                            # peint — de quoi rejouer exactement où pointe l'iris rendu, sans regarder l'image
+                            regard_y=round(v('regard_y'), 2) if 'regard_y' in P else 0.0, regard_peint=[round(x_, 2) for x_ in regard.peint(A.get('yeux'))],
+                            lacet_peint=A.get('env', {}).get('lacet_peint')))
     return box, rgb, al
 def warp_actor(S, A, t, name):
     """le haut du corps plié autour du bassin, la tête autour du cou ; jambes immobiles (aucune couture)."""
@@ -1133,6 +1137,11 @@ SEUIL_PROPRE = 0.42   # « rendu » de la porte G sur l'image d'un cadre candida
 def realise(plans):
     import hashlib, uuid
     from concurrent.futures import ThreadPoolExecutor
+    # RÉALISATEUR SANS MODÈLE D'IMAGES (18/10/2026, ep01 v6) : JEV coupé, les questions « tête coupée », « visage lisible »,
+    # « mains » partaient vers SmolVLM sur le processeur — 8 réponses en 10 minutes, aucune image tournée. Pendant le
+    # tournage, la voie de secours est fermée : le réalisateur décide par ses règles mesurées (taille du visage de chaque
+    # orateur, têtes entières, réaction ≥ REACTION_MIN) et la tête « rendu » apprise quand elle est validée
+    os.environ.setdefault('JUGE_VLM_MAX', '0')
     import jev_api, jev_film, juge_local
     CR = os.path.expanduser('~/.cache/massamba-jev/realisateur'); os.makedirs(CR, exist_ok=True)
     def parleurs_de(S, s):

@@ -101,6 +101,11 @@ def tourne(d, v):
     etape('ambiance', f'{ICI}/ambiance.py', 'timeline.json', 'voix/mix-musique.wav', 'voix/mix-ambiance.wav')
     etape('visages', f'{ICI}/fume_visages.py', 'prep', f'{d}/{v}-visages.jpg')
     etape('tournage', f'{ICI}/tourne.py', 'montage.json', D, e={'ETIREMENT': '1', 'TOURNE_PROCS': str(os.cpu_count() or 4)})
+    # FLOU DE BOUGÉ PHYSIQUE (18/10/2026, « au niveau de Pixar ») : obturateur 180° le long du flux optique, raccords du
+    # moteur respectés, images nettes gardées dans clip-net (fluidite.flou_bouge) ; USINE_FLOU=0 pour s'en passer
+    if os.environ.get('USINE_FLOU', '1') == '1':
+        etape('flou', '-c', f"import sys; sys.path.insert(0, {ICI!r}); import fluidite as F; "
+                            f"print(F.flou_bouge({D + '/clip'!r}, coupes=F.coupes_du_moteur({D + '/tournage.json'!r})))")
     etape('montage', f'{ICI}/compose.py', D, f'{D}/film.mp4')
     etape('planche', f'{ICI}/planche_repliques.py', f'{D}/film.mp4', 'timeline.json', f'{D}/planche.jpg')
     exporte(f'{D}/film.mp4', f'{D}/tiktok-1080x1920.mp4'); shutil.copy(f'{D}/legende.txt', f'{d}/{v}-legende.txt')

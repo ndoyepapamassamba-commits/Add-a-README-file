@@ -1,0 +1,37 @@
+{
+ "acc": 4371.741,
+ "secousse": 5576.335,
+ "residu": 14.381,
+ "references": 5,
+ "images": 3995,
+ "centile": 99.5,
+ "dossier": "anim3d",
+ "souplesse": {
+  "tete_lacet": {
+   "mediane": -3.576,
+   "p10": -5.145,
+   "fenetres": 310
+  },
+  "tete_tangage": {
+   "mediane": -4.224,
+   "p10": -5.721,
+   "fenetres": 310
+  },
+  "tete": {
+   "mediane": -4.055,
+   "p10": -5.505,
+   "fenetres": 310
+  },
+  "buste": {
+   "mediane": -3.625,
+   "p10": -5.045,
+   "fenetres": 310
+  },
+  "buste_lacet": {
+   "mediane": -3.733,
+   "p10": -5.162,
+   "fenetres": 310
+  }
+ },
+ "souplesse_reference": "capture CMU (39 prises)"
+}

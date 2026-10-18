@@ -55,6 +55,19 @@ moteurs disponibles du monde » ; « greffe d'abord les outils nécessaires, JEV
   REA démonte tout paquet JavaScript greffable sur deux voies parallèles ; journal `journal.jsonl` + résumé `veille.md`.
 - Au début de chaque session : relancer le veilleur ; avant chaque greffe : lire son journal.
 
+## Outils libres et gratuits pour avancer vite, REA à chaque instant (18/10/2026)
+
+Consigne, mot pour mot : « Toujours chercher des outils libres et gratuits pour avancer vite. […] Et pour cela, tu
+utiliseras REA chaque instant. Mets ça comme skills. »
+- **À chaque étape lente ou manquante** (production vidéo, juge, rendu, publication), avant d'écrire du code maison :
+  chercher l'outil **libre** (MIT, Apache-2.0, BSD pour ce qui tourne chez nous) et **gratuit** qui fait déjà le travail
+  plus vite — npm, PyPI, GitHub, Hugging Face, journal du veilleur — puis le **démonter avec REA** (paquet JavaScript,
+  binaire, WASM, base SQLite, notre propre build) pour savoir exactement comment il marche avant de le greffer.
+- **Mesurer le gain** sur nos données (secondes par minute de film, qualité, licence) et garder les voies battues en
+  secours ; ce qui est plus lent ou payant n'est pas retenu.
+- REA sert aussi à **nos propres artefacts** (journaux de l'usine, mesures par image, films rendus) pour trouver où
+  le temps passe avant d'accélérer.
+
 ## Liste de contrôle
 
 - [ ] REA lancé (ou absence d'artefact pertinent constatée) avant de coder ou de conclure ;

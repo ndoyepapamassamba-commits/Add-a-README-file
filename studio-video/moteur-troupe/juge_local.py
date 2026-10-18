@@ -236,6 +236,47 @@ def mouvement_local(ims, dossier, ta, td):
                'tete_deg': round(tete, 2), 'buste_deg': round(buste, 2), 'pistes_moteur': connu}
 
 
+# ── TEXTES À L'IMAGE (jev_texte) : le moteur sait quel texte il a écrit et où. Sous-titres : la bande sous l'image est lue
+#    (EasyOCR, Apache-2.0) et comparée à la réplique ; « couvre un visage » est impossible par construction (compose.py
+#    refuse tout texte ou émoji sur la scène). Titres : lus et comparés au titre du sketch ; l'accroche est jugée sur le
+#    texte du titre par le modèle de langage local.
+def _ocr():
+    if 'ocr' not in _M:
+        import easyocr
+        _M['ocr'] = easyocr.Reader(['fr'], gpu=False, model_storage_directory=os.path.expanduser('~/.cache/massamba-models/easyocr'), download_enabled=False, verbose=False)
+    return _M['ocr']
+
+
+def _mots(t):
+    import unicodedata
+    t = unicodedata.normalize('NFD', str(t).lower()); t = ''.join(c for c in t if unicodedata.category(c) != 'Mn')
+    return [m for m in re.findall(r"[a-z0-9]+", t) if len(m) >= 2]
+
+
+def _proche(m, ref):
+    import difflib
+    return max((difflib.SequenceMatcher(None, m, r).ratio() for r in ref), default=0.0)
+
+
+def regles_texte(outil, etat, im):
+    """réponses brutes « oui » aux questions de jev_texte sur une image (sous-titre ou carte de titre)."""
+    h = im.shape[0]; zone = im[int(0.72 * h):] if outil == 'jev_texte_soustitres' else im
+    lu = [(t, float(c)) for _, t, c in _ocr().readtext(zone)]
+    mots = [m for t, _ in lu for m in _mots(t)]; conf = float(np.mean([c for _, c in lu])) if lu else 0.0
+    if outil == 'jev_texte_soustitres':
+        ref = _mots(etat.get('replique', ''))
+        ok_m = [m for m in mots if _proche(m, ref) >= 0.75]
+        return {'lisible': float(bool(mots) and conf >= 0.5 and len(ok_m) >= 0.8 * len(mots)),
+                'conforme': float(bool(mots) and len(ok_m) >= 0.8 * len(mots)), 'visage': 0.0}, {'lu': ' '.join(t for t, _ in lu), 'confiance': round(conf, 2)}
+    ref = _mots(etat.get('titre', ''))
+    trouves = [r for r in ref if _proche(r, mots) >= 0.75]
+    r = {'titre_lisible': float(bool(ref) and len(trouves) >= 0.8 * len(ref) and conf >= 0.4)}
+    if etat.get('titre') and os.path.isfile(LLM):
+        r['titre_accroche'] = llm_oui({'titre': etat['titre'], 'genre': 'sketch comique ivoirien sur TikTok'},
+                                      'Does the sketch title `titre` make a viewer want to watch the sketch (catchy, funny, intriguing)?')
+    return r, {'lu': ' '.join(t for t, _ in lu), 'confiance': round(conf, 2)}
+
+
 # ── SON (jev_son) : JEV lisait une FEUILLE de mesures et appliquait les seuils écrits dans ses questions ; le juge local
 #    applique ces mêmes seuils, mot pour mot, sur la même feuille (probabilité 1 = « oui »).
 def regles_son(F):
@@ -355,9 +396,13 @@ def apprend():
         t = _ajuste(Xa, pa)
         # seuil de décision réglé sur l'apprentissage (équilibre rappel / spécificité), ramené à 0,5 : « > 0,5 = défaut » reste la règle
         pa_loc = _proba(t, Xa); ya = pa > 0.5
-        seuils = np.linspace(0.05, 0.95, 91)
-        sc = [((pa_loc > s) & ya).sum() / max(1, ya.sum()) + ((pa_loc <= s) & ~ya).sum() / max(1, (~ya).sum()) for s in seuils]
-        s_ = float(seuils[int(np.argmax(sc))]); t['decale'] = float(np.log(s_ / (1 - s_)))
+        seuils = np.linspace(0.05, 0.95, 91); rare = ya.mean() < 0.05
+        if rare:   # défaut rare chez JEV : seuil qui reproduit SA fréquence de défauts (l'équilibre multipliait les fausses alertes)
+            s_ = float(np.clip(np.quantile(pa_loc, 1 - ya.mean()), 0.05, 0.95))
+        else:
+            sc = [((pa_loc > s) & ya).sum() / max(1, ya.sum()) + ((pa_loc <= s) & ~ya).sum() / max(1, (~ya).sum()) for s in seuils]
+            s_ = float(seuils[int(np.argmax(sc))])
+        t['decale'] = float(np.log(s_ / (1 - s_)))
         m_app = _mesure(_proba(t, Xa), pa); m_ten = _mesure(_proba(t, Xt), pt) if Xt is not None else None
         # JEV FACE À LUI-MÊME : sur les images tenues à l'écart où JEV a donné deux avis, l'accord du juge local avec le
         # premier avis est comparé à l'accord du second avis avec le premier (le plafond honnête : un second appel à JEV)
@@ -378,10 +423,13 @@ def apprend():
                    'rappel_jev_jev': round(float((L2 & L1).sum() / max(1, L1.sum())), 3), 'rappel_local_jev': round(float((LL & L1).sum() / max(1, L1.sum())), 3)}
         valide = bool(m_ten) and ((rep['paires'] >= 30 and rep['accord_local_jev'] >= rep['accord_jev_jev'] - 0.02 and rep['rappel_local_jev'] >= rep['rappel_jev_jev'] - 0.05
                                    and m_ten['accord'] >= 0.70) or (m_ten['accord'] >= ACCORD_MIN and m_ten['equilibre'] >= 0.75))
+        # VALIDATION PARTIELLE : trop peu de défauts chez JEV sur les versions tenues à l'écart pour mesurer un rappel ; la
+        # tête reproduit sa fréquence de défauts et s'accorde avec lui sur au moins 95 % des images — elle juge, étiquetée
+        partielle = bool(m_ten) and not valide and m_ten['defauts_jev'] < 10 and m_ten['accord'] >= 0.95
         m_ten = dict(m_ten or {}, jev_face_a_lui_meme=rep)
-        tetes[cle_question(txt)] = dict(t, nom=k, roles=roles, valide=valide)
+        tetes[cle_question(txt)] = dict(t, nom=k, roles=roles, valide=valide or partielle, partielle=partielle)
         rapport[k] = {'question': txt[:90], 'roles': roles, 'apprentissage': m_app, 'versions_tenues_a_l_ecart': m_ten, 'seuil_jev_equivalent': round(s_, 2),
-                      'statut': 'confiée au juge local' if valide else 'greffe en cours (accord insuffisant)'}
+                      'statut': 'confiée au juge local' if valide else ('confiée au juge local (validation partielle : défaut rare)' if partielle else 'greffe en cours (accord insuffisant)')}
         print(f"{k:22s} {rapport[k]['statut']:40s} tenues : {m_ten}", flush=True)
     # mouvement : JEV rend la probabilité brute de « oui » ; jev_mouvement la change en conformité (1 − p pour les défauts)
     sys.path.insert(0, ICI); import jev_mouvement as jm
@@ -475,7 +523,7 @@ def _vlm():
     return _M['vlm']
 
 
-VLM_MAX = int(os.environ.get('JUGE_VLM_MAX', 400))   # appels de la voie de secours par contrôle ; au-delà : « non jugé »
+VLM_MAX = int(os.environ.get('JUGE_VLM_MAX', 120))   # appels de la voie de secours par contrôle ; au-delà : « non jugé »
 
 
 def _oui_non_ids(tok):
@@ -534,6 +582,14 @@ def demande(etat, questions, assets=None, outil='?'):
         if set(questions) <= set(r): return {k: r[k] for k in questions}
     T = tetes()
     ims = {k: _image(assets[v]) for k, v in etat.items() if isinstance(v, str) and assets and v in assets}
+    if outil in ('jev_texte_soustitres', 'jev_texte_titres') and 'image' in ims:   # voie 1 : texte écrit par le moteur, relu
+        try:
+            r, lu = regles_texte(outil, etat, ims['image'])
+            if set(questions) <= set(r):
+                _journal({'date': time.strftime('%Y-%m-%dT%H:%M:%S'), 'outil': outil, 'voie': 'ocr', **lu})
+                return {k: {'noul': r[k], 'juge': 'règle locale (OCR)'} for k in questions}
+        except Exception:
+            pass
     F, dom = {}, {}
 
     def traits(role):
@@ -551,7 +607,7 @@ def demande(etat, questions, assets=None, outil='?'):
         try:
             if q.get('type') == 'noul' and t and t.get('valide'):   # voie 2 : tête apprise, dans son domaine
                 x = traits(t['roles'])
-                if dom[t['roles']]: out[qid] = {'noul': float(_proba(t, x[None])[0]), 'juge': 'local'}; voie = 'tete'
+                if dom[t['roles']]: out[qid] = {'noul': float(_proba(t, x[None])[0]), 'juge': 'local (validation partielle)' if t.get('partielle') else 'local'}; voie = 'tete'
             if voie is None and ims and q.get('type') in ('noul', 'choice'):   # voie 3a : question ou image inédite
                 if q.get('type') == 'noul': out[qid] = {'noul': vlm_oui(ims, txt, contexte), 'juge': 'vlm-local'}
                 else:

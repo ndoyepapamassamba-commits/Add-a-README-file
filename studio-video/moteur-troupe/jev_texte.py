@@ -69,7 +69,7 @@ if __name__ == '__main__':
         t = L['t0'] + 0.5 * L['dur']; r = juge({'replique': L['texte']}, QST, {'image': image(MP4, t)}, outil='jev_texte_soustitres')
         return {'qui': L['qui'], 'texte': L['texte'][:40], 't': round(t, 2), **r, 'defauts': decide(r, QST)}
     def carte(c):
-        t = 0.5 * (c['t0'] + c['t1']); r = juge({}, QT, {'image': image(MP4, t)}, outil='jev_texte_titres')
+        t = 0.5 * (c['t0'] + c['t1']); r = juge({'titre': titres.get(c.get('apres'), '')}, QT, {'image': image(MP4, t)}, outil='jev_texte_titres')   # titre attendu : relu par le juge local
         return {'apres': c.get('apres'), 't': round(t, 2), **r, 'defauts': decide(r, QT)}
     with ThreadPoolExecutor(8) as ex:
         R1 = list(ex.map(texte, sketchs)); R2 = list(ex.map(st, T['lines'])); R3 = list(ex.map(carte, T.get('cartes', [])))
