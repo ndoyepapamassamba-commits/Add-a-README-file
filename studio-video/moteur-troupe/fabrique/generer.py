@@ -77,7 +77,7 @@ VOIES = [   # (nom, disponible ?, appel)
      lambda txt, f, w, h, g: pollinations.genere(txt, f, w, h, os.environ.get('FABRIQUE_MODELE', 'z'), g)),
     ('cloudflare', lambda: bool(os.environ.get('CLOUDFLARE_API_TOKEN') and os.environ.get('CLOUDFLARE_ACCOUNT_ID')), _cloudflare),
     ('huggingface', lambda: True, _hf),
-    ('horde', lambda: True, lambda txt, f, w, h, g: horde.generate(txt, f, w, h, 'Z-Image-Turbo', g)),
+    ('horde', lambda: True, lambda txt, f, w, h, g: horde.generate(txt, f, w, h, horde.meilleur_modele(), g)),
     ('openrouter', lambda: bool(os.environ.get('OPENROUTER_API_KEY')) and os.environ.get('OR_PAYANT_AUTORISE') == '1' and PLAFOND > 0, _openrouter),
 ]
 

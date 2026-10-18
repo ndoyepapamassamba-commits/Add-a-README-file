@@ -229,7 +229,8 @@ def main():
             t += len(y) / SR + TURN
         # RÉACTION TENUE après la chute (Afrikatoon : gros plan immobile 2,2–3,4 s ; récapitulatif comique, règle 5) : le plan
         # de réaction existe vraiment (sinon il fait moins de 0,5 s et le montage le fond dans le plan précédent)
-        t += REACTION if S['repliques'][-1].get('chute') else REACTION_TAG
+        # la durée vient du sketch quand il la déclare (ton.py : témoin figé 2,2 à 4,5 s), sinon la valeur par défaut
+        t += float((S.get('reaction') or {}).get('duree_s', REACTION)) if S['repliques'][-1].get('chute') else REACTION_TAG
         S['t1'] = t
     # TIMBRE (18/10/2026, « la sortie son trop aiguë ») : chaque personnage égalisé sur la courbe spectrale des voix des TikTok
     # de son registre (timbre.py ; 12 à 15 dB de souffle en trop vers 8–10 kHz), puis l'enveloppe de la bouche recalculée

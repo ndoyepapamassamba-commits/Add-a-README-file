@@ -539,6 +539,21 @@ def main():
     acoustic = 'dry'
     if life:
         acoustic = 'exterieur' if life.get('exterieur') else ('hall' if life.get('template') == 'hall' or life.get('place') in ('tribunal', 'aeroport', 'centre-commercial') else 'piece')
+    # TIMBRE (18/10/2026, « la sortie son trop aiguë ») : chaque personnage égalisé sur la courbe spectrale des voix des
+    # TikTok de son registre (moteur-troupe/timbre.py, déjà validé sur le film v36), avant la pièce et le mixage.
+    if os.environ.get('VOIX_TIMBRE', '1') == '1':
+        try:
+            sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'moteur-troupe'))
+            import timbre
+            par = {}
+            for i in range(min(len(timeline), len(lines))): par.setdefault(beats[i]['who'], []).append(i)
+            for who, ks in par.items():
+                f0 = 200 if cast[who].get('voice') in ('siwis', 'jessica', 'upmc') else 115
+                zs, _ = timbre.applique([np.asarray(lines[k], np.float64) for k in ks], timbre.registre(f0), SR)
+                for k, z in zip(ks, zs): lines[k] = np.asarray(z, np.float32)
+            print('[timbre] voix égalisées sur les TikTok :', ', '.join(cast[w]['name'] for w in par), flush=True)
+        except Exception as e:
+            print('[timbre] non appliqué :', e, flush=True)
     rrng = np.random.default_rng(5)
     for i, seg in enumerate(timeline):
         i0 = int(seg['speak0'] * SR)

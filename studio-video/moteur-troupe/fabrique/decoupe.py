@@ -9,6 +9,7 @@
 #   python3 decoupe.py feuille.png sortie/ tour|assis|marche|face
 import json, os, sys
 import numpy as np, cv2
+ICI = os.path.dirname(os.path.abspath(__file__))
 
 M = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/'
 NOMS = {'tour': ['face', 'trois_quarts_g', 'profil_g', 'dos'], 'assis': ['assis_face', 'assis_trois_quarts_g', 'assis_profil_g'],
@@ -153,6 +154,20 @@ def decoupe(feuille, sortie, genre):
             tete = np.zeros_like(plein); tete[:int(ys.min() + 0.22 * h_)] = 1   # tête et coiffe : aucun vrai jour possible,
             coul = np.maximum(coul, tete)                                      # même un bonnet blanc couleur du fond (212/212)
         a = np.maximum(a, cv2.GaussianBlur((plein * coul).astype(np.float32), (0, 0), 1.0))
+        # COIFFE PAR SAM 2.1 (18/10, remarque de l'utilisateur : « le bonnet de Baye a toujours un trou, dû au plissement ») :
+        # le pli ombré du bonnet blanc a la couleur du fond (212/212) et touche le bord ; SAM, guidé par un point au sommet
+        # de la tête, rend la coiffe entière (2 759 px comblés pour 1 036 px de trou) — appliqué à la zone de la tête seulement
+        if len(ys) and os.environ.get('DECOUPE_SAM', '1') == '1':
+            try:
+                sys.path.insert(0, os.path.dirname(ICI)); import linge
+                dur = a > 0.5; ys2, xs2 = np.nonzero(dur); y0_ = ys2.min(); h2 = ys2.max() - y0_
+                yy, xx = np.nonzero(dur[y0_:int(y0_ + 0.06 * h2) + 1]); graine = (int(xx.mean()), int(y0_ + yy.mean()))
+                mk, sc = linge.detoure(crop, [graine]); j = int(np.argmax(sc[0])); m_ = mk[0][j]
+                if m_.mean() < 0.15:   # une coiffe, pas tout le corps
+                    zt = np.zeros_like(m_); zt[:int(y0_ + 0.25 * h2)] = True
+                    a = np.maximum(a, cv2.GaussianBlur((m_ & zt).astype(np.float32), (0, 0), 1.0))
+            except Exception as ex:
+                print('  coiffe SAM indisponible :', repr(ex)[:80], flush=True)
         rgba = np.dstack([crop, (a * 255).astype(np.uint8)])
         mes, vis = mesures(rgba)
         if genre in ('tour', 'assis'):   # nom tiré de l'orientation mesurée ; doublons numérotés

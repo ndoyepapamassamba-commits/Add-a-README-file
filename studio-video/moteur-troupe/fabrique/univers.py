@@ -15,6 +15,7 @@
 #  · décors VIDES (ni personne ni animal) : plaque propre, parallaxe sans fantôme, place pour jouer et se déplacer.
 import hashlib
 
+import os
 STYLE = ('3D animated feature film character design in the style of Pixar and Disney, stylized proportions, big expressive eyes '
          'with clearly visible white sclera, soft subsurface skin shading, detailed fabric textures, warm and joyful. ')
 PEAU = 'Black West African (Ivorian) {genre} with dark brown skin. '
@@ -50,33 +51,35 @@ P = {}
 def perso(cle, nom, genre, age, adn, taille, couleur, ressort, f0, foyer, ages=()):
     P[cle] = dict(cle=cle, nom=nom, genre=genre, age=age, adn=adn, taille=taille, couleur=couleur, ressort=ressort, f0=f0, foyer=foyer, ages=dict(ages))
 
-# ── FAMILLE DIABATÉ (la cour) : la vie de Petit Mamadou, de la naissance à la vieillesse, est la colonne vertébrale
+# ── LA CONCESSION NDIAYE (la cour ; bible comique, relations ci-dessous) : la vie de Petit Mamadou, de la naissance à la vieillesse,
+#    est la colonne vertébrale. Ses parents travaillent à Paris et envoient l'argent ; Mamie Nounou le gère, Papi Baye le cache,
+#    Tantie Awa l'élève au quotidien ; Coumba (la fille de Baye et Nounou) et Modou (le locataire) vivent dans la cour.
 perso('mamadou', 'PETIT MAMADOU', 'boy', 8, 'an 8-year-old boy, short curly black hair, big curious eyes, big ears, cheeky grin with closed lips, '
-      'plain bright yellow football jersey with a green collar and no number, blue shorts, black slides', 128, 'jaune', 'excuses impossibles, logique d’enfant imparable', 280, 'diabate',
+      'plain bright yellow football jersey with a green collar and no number, blue shorts, black slides', 128, 'jaune', 'plus malin que les adultes : excuses impossibles, vérité au pire moment, fait chanter Papi', 280, 'ndiaye',
       ages={'bebe': 'a 1-year-old baby boy, chubby cheeks, tiny curly hair, big round eyes, yellow onesie with green trim, barefoot',
             'ado': 'a 15-year-old lanky teenage boy, short curly hair with a small side part, big eyes, big ears, yellow jersey with green collar, blue jeans, white sneakers',
             'etudiant': 'a 21-year-old slim young man, short curly hair, big expressive eyes, big ears, yellow polo shirt with green collar, beige chinos, white sneakers, backpack straps',
             'marie': 'a 29-year-old young man, short neat curly hair, big ears, warm smile with closed lips, yellow and green wax print shirt, beige trousers, brown loafers',
             'papa': 'a 40-year-old man with a small round belly, short hair with a receding hairline, big ears, yellow short-sleeved shirt, dark trousers, brown sandals',
             'vieux': 'a 70-year-old man, short white hair, big ears, kind wrinkled face, yellow and green grand boubou, white kufi cap, wooden cane'})
-perso('nounou', 'MAMIE NOUNOU', 'woman', 55, 'a plump cheerful woman in her fifties, round face, big warm eyes, golden hoop earrings, red and yellow wax print dress '
-      'with big sunflower motifs, tall red headwrap, green gingham apron, black flip-flops', 160, 'rouge', 'accuse tout le monde, gère l’argent de la maison', 200, 'diabate',
+perso('nounou', 'MAMAN NOUNOU', 'woman', 55, 'a plump cheerful woman in her fifties, round face, big warm eyes, golden hoop earrings, red and yellow wax print dress '
+      'with big sunflower motifs, tall red headwrap, green gingham apron, black flip-flops', 160, 'rouge', 'reine du marchandage : gère l’argent de la maison, fait payer « la fatigue », accuse tout le monde', 200, 'ndiaye',
       ages={'jeune': 'a 30-year-old plump young mother, round face, big warm eyes, golden hoop earrings, red and yellow wax dress, small red headwrap, black flip-flops',
             'vieille': 'an 80-year-old plump grandmother, round wrinkled face, big warm eyes, white hair under a red headwrap, red and yellow wax dress, walking stick'})
 perso('baye', 'BAYE NDIAYE', 'man', 62, 'a round jolly man in his early sixties, clean-shaven round face with full cheeks, short white hair, small white kufi cap, '
-      'shiny royal blue grand boubou with gold embroidery on the chest, matching trousers, brown leather sandals', 172, 'bleu roi', 'mauvaise foi innocente', 115, 'diabate',
+      'shiny royal blue grand boubou with gold embroidery on the chest, matching trousers, brown leather sandals', 172, 'bleu roi', 'riche et radin, mauvaise foi sereine : cache son argent partout, donne des conseils au lieu de billets', 115, 'ndiaye',
       ages={'jeune': 'a 35-year-old round man, clean-shaven, short black hair, royal blue shirt with gold embroidery, blue trousers, brown sandals'})
 perso('meme', 'MÉMÉ AMA', 'woman', 85, 'a tiny 85-year-old great-grandmother, wrinkled face, big eyes, toothless smile, white and indigo wax wrapper and blouse, '
-      'indigo headwrap, wooden walking stick, barefoot', 145, 'indigo', 'sourde quand ça l’arrange, sagesse absurde', 220, 'diabate')
-perso('aya', 'BÉBÉ AYA', 'girl', 3, 'a 3-year-old girl, two puffy hair buns, huge round eyes, pink dress with white polka dots, pink sandals', 95, 'rose', 'répète tout au pire moment', 330, 'diabate')
+      'indigo headwrap, wooden walking stick, barefoot', 145, 'indigo', 'sourde quand ça l’arrange, sagesse absurde', 220, 'ndiaye')
+perso('aya', 'BÉBÉ AYA', 'girl', 3, 'a 3-year-old girl, two puffy hair buns, huge round eyes, pink dress with white polka dots, pink sandals', 95, 'rose', 'répète tout au pire moment', 330, 'ndiaye')
 
 # ── VOISINS DE LA COUR
 perso('awa', 'TANTIE AWA', 'woman', 52, 'a strong woman in her early fifties, round face, piercing judging eyes, small pursed mouth, golden hoop earrings, '
-      'orange and yellow wax dress with big flowers, matching orange headwrap, black flip-flops', 165, 'orange', 'commère du quartier, sait tout avant tout le monde', 200, 'voisins')
+      'orange and yellow wax dress with big flowers, matching orange headwrap, black flip-flops', 165, 'orange', 'sœur cadette de Baye, détectrice de mensonges, dramatique, sait tout avant tout le monde', 200, 'ndiaye')
 perso('modou', 'MODOU', 'man', 35, 'a skinny lanky man about 35, very short hair, long neck, clean-shaven, expressive tired eyes, faded green T-shirt, '
-      'brown cargo trousers rolled at the ankles, black sandals', 185, 'vert', 'chômeur débrouillard, combines ratées', 125, 'voisins')
+      'brown cargo trousers rolled at the ankles, black sandals', 185, 'vert', 'locataire de la cour, loyer toujours « demain », combines ratées', 125, 'ndiaye')
 perso('coumba', 'COUMBA', 'woman', 26, 'a curvy young woman about 26, long thin braids tied in a high ponytail, big almond eyes, golden hoop earrings, '
-      'pink and purple wax dress with short puffed sleeves, pink sandals', 168, 'rose et violet', 'influenceuse, tout pour le like', 215, 'voisins')
+      'pink and purple wax dress with short puffed sleeves, pink sandals', 168, 'rose et violet', 'stratège : teste les prétendants, prend le public à témoin ; filme tout pour le like', 215, 'ndiaye')
 perso('koffi', 'KOFFI', 'man', 30, 'a slim flashy man about 30, neat short hair with a fade, black sunglasses pushed up on top of his head, clean-shaven, '
       'black shirt under a black and gold baroque pattern jacket, one thin gold chain, slim black trousers, shiny black loafers', 178, 'noir et or', 'faux riche, vrai fauché', 120, 'voisins')
 perso('junior', 'JUNIOR', 'boy', 16, 'a 16-year-old show-off teenage boy, high-top fade haircut, big eyes, oversized red hoodie with no print, black joggers, '
@@ -178,12 +181,58 @@ def invite_decor(lieu, moment='apres_midi'):
     return DECOR + L[lieu] + ', ' + MOMENTS[moment] + '.', 768, 1344
 
 
+# RELATIONS (18/10/2026, « recadre ta vue ») : la bible comique (bible_comique.json, validée avec l'utilisateur) reste la source
+# des liens et des dynamiques ; seules s'y ajoutent celles des nouveaux venus. Les duos récurrents portent les sketchs
+# (Afrikatoon 2026 : séries à duos ≈ 3 fois plus vues que les blagues isolées).
+def _relations():
+    import json as _j
+    noms = {p['nom'] for p in P.values()}
+    b = _j.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'bible_comique.json'), encoding='utf-8'))
+    R = [dict(a=r['a'], b=r['b'], lien=r['lien'], dynamique=r['dynamique']) for r in b['relations'] if r['a'] in noms and r['b'] in noms]
+    R += [dict(a='MÉMÉ AMA', b='MAMAN NOUNOU', lien='mère', dynamique='Mémé est sourde quand on parle de travail, entend tout quand on parle d’argent'),
+          dict(a='MÉMÉ AMA', b='PETIT MAMADOU', lien='arrière-grand-mère (« Mémé »)', dynamique='complices contre les adultes ; elle oublie tout sauf les secrets des autres'),
+          dict(a='PETIT MAMADOU', b='BÉBÉ AYA', lien='grand frère', dynamique='elle répète ses secrets au pire moment, mot pour mot'),
+          dict(a='MAMAN NOUNOU', b='BÉBÉ AYA', lien='grand-mère (« Mamie »)', dynamique='Aya répète devant les invités ce que Mamie dit en cachette'),
+          dict(a='BAYE NDIAYE', b='BÉBÉ AYA', lien='grand-père (« Papi »)', dynamique='elle trouve ses cachettes en jouant')]
+    return R
+RELATIONS = _relations()
+# vocatifs : (qui parle, à qui) → comment il l'appelle ; ton.py refuse toute autre adresse (défaut du 18/10 : « Papa », « Maman »
+# dans la bouche de Petit Mamadou, qui vit chez ses grands-parents)
+ADRESSE = {('PETIT MAMADOU', 'BAYE NDIAYE'): 'Papi', ('PETIT MAMADOU', 'MAMAN NOUNOU'): 'Mamie', ('PETIT MAMADOU', 'TANTIE AWA'): 'Tantie',
+           ('PETIT MAMADOU', 'MODOU'): 'Tonton', ('PETIT MAMADOU', 'COUMBA'): 'Tantie', ('PETIT MAMADOU', 'MÉMÉ AMA'): 'Mémé',
+           ('BÉBÉ AYA', 'MAMAN NOUNOU'): 'Mamie', ('BÉBÉ AYA', 'BAYE NDIAYE'): 'Papi', ('BÉBÉ AYA', 'MÉMÉ AMA'): 'Mémé',
+           ('COUMBA', 'BAYE NDIAYE'): 'Papa', ('COUMBA', 'MAMAN NOUNOU'): 'Maman', ('MAMAN NOUNOU', 'MÉMÉ AMA'): 'Maman'}
+
+
 def invite_objet(o):
     return OBJ + O[o] + '.', 1024, 1024
 
 
+PRINCIPAUX = ('mamadou', 'nounou', 'baye', 'awa', 'modou', 'coumba', 'koffi')
+LIEUX_CLES = ('cour', 'salon', 'maquis', 'classe', 'rue', 'cour_ecole')
+OBJETS_CLES = ('chaise', 'tabouret', 'banc', 'table', 'plat_attieke', 'marmite', 'fourneau', 'telephone', 'pupitre', 'cartable')
+
+
+def priorite(i):
+    """ordre de fabrication (18/10, « recadre ta vue ») : d'abord ce qu'il faut pour la PREMIÈRE VIDÉO de la nouvelle troupe —
+    rotations et vues assises des 7 personnages principaux, décors et objets clés — puis le reste de la distribution, la marche,
+    les âges, les décors de nuit et les autres objets."""
+    g, n = i.split('/'); vue = n.rsplit('-', 1)[-1]; cle = n.rsplit('-', 1)[0]
+    if g == 'perso':
+        base, age = (cle.split('-', 1) + [None])[:2]
+        r = (0 if base in PRINCIPAUX and not age else 3 if not age else 5) + (0 if vue in ('tour', 'assis') else 1)
+        return (r, PRINCIPAUX.index(base) if base in PRINCIPAUX else 9, ('tour', 'assis', 'marche').index(vue))
+    if g == 'decor':
+        lieu, moment = n.rsplit('-', 1); return (1 if lieu in LIEUX_CLES and moment == 'apres_midi' else 6, 0, 0)
+    return (2 if n in OBJETS_CLES else 7, 0, 0)
+
+
 def catalogue():
-    """toutes les planches à produire : (id, invite, largeur, hauteur, graine)."""
+    """toutes les planches à produire, dans l'ordre de fabrication : (id, invite, largeur, hauteur, graine)."""
+    return sorted(_catalogue(), key=lambda j: priorite(j[0]))
+
+
+def _catalogue():
     J = []
     for c, p in P.items():
         for age in [None] + list(p['ages']):

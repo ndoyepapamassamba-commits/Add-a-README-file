@@ -1,0 +1,212 @@
+{
+ "titre": "La cour des Ndiaye — saison 1, épisode 1",
+ "univers": "Africa Toon Troll",
+ "duree_cible_s": 50,
+ "reference": "TON.md : un seul retournement par sketch, chute courte en dernier (≤ 9 syllabes), rappel de l'accroche, témoin figé 2,2 à 4,5 s, duos récurrents de la bible (Baye cache son argent, Nounou le trouve toujours ; Mamadou fait chanter Papi avec ses cachettes)",
+ "ecriture": "trois sketchs de la cour, contrôlés par ton.py et histoires.controle, jugés par JEV au contrôle final (drôle, chute, ivoirien, clair, méchant) et en duel contre la version précédente",
+ "sketchs": [
+  {
+   "id": "bulletin",
+   "titre": "LE BULLETIN",
+   "lieu": "cour",
+   "image": "cour",
+   "acteurs": [
+    "MAMAN NOUNOU",
+    "PETIT MAMADOU",
+    "BAYE NDIAYE"
+   ],
+   "mecanique": "vantardise contredite",
+   "ressort": {
+    "qui": "BAYE NDIAYE",
+    "trait": "mauvaise foi sereine : il donne des leçons qu'il n'a jamais suivies"
+   },
+   "mise_en_scene": "Baye assis sur sa chaise en plastique, Nounou debout, poings sur les hanches, face à Petit Mamadou ; le cartable de Mamadou est posé à part sur le banc",
+   "objets": [
+    "chaise",
+    "cartable"
+   ],
+   "repliques": [
+    {
+     "qui": "MAMAN NOUNOU",
+     "texte": "Mamadou ! Ton bulletin là, tu l'as caché où ?",
+     "jeu": "accuse",
+     "a": "PETIT MAMADOU"
+    },
+    {
+     "qui": "PETIT MAMADOU",
+     "texte": "Mamie, la maîtresse a dit que c'est confidentiel.",
+     "jeu": "innocent",
+     "a": "MAMAN NOUNOU"
+    },
+    {
+     "qui": "MAMAN NOUNOU",
+     "texte": "Confidentiel ? Même pour celle qui paie l'école ?",
+     "jeu": "soupcon",
+     "a": "PETIT MAMADOU"
+    },
+    {
+     "qui": "PETIT MAMADOU",
+     "texte": "Surtout pour celle qui paie, Mamie.",
+     "jeu": "malice",
+     "a": "MAMAN NOUNOU"
+    },
+    {
+     "qui": "BAYE NDIAYE",
+     "texte": "Laisse l'enfant, hein ! À son âge, moi, j'étais toujours premier !",
+     "jeu": "frime",
+     "a": "MAMAN NOUNOU"
+    },
+    {
+     "qui": "MAMAN NOUNOU",
+     "texte": "Premier à cacher son bulletin.",
+     "jeu": "camera",
+     "a": "BAYE NDIAYE",
+     "chute": true
+    }
+   ],
+   "reaction": {
+    "qui": "BAYE NDIAYE",
+    "jeu": "choc",
+    "duree_s": 3.0,
+    "plan": "gros plan fixe",
+    "note": "Mamadou tourne lentement la tête vers Papi pendant que Baye reste figé"
+   }
+  },
+  {
+   "id": "cachette",
+   "titre": "LA CACHETTE",
+   "lieu": "cour",
+   "image": "cour",
+   "acteurs": [
+    "BAYE NDIAYE",
+    "PETIT MAMADOU",
+    "MAMAN NOUNOU"
+   ],
+   "mecanique": "contre-pied",
+   "ressort": {
+    "qui": "MAMAN NOUNOU",
+    "trait": "elle trouve toujours l'argent que Baye cache"
+   },
+   "mise_en_scene": "Baye entraîne Petit Mamadou au coin de la cour et chuchote ; Nounou entre à la fin, la boîte de tomate vide à la main",
+   "objets": [
+    "boîte de tomate",
+    "billets"
+   ],
+   "repliques": [
+    {
+     "qui": "BAYE NDIAYE",
+     "texte": "Petit, ce matin là, tu as rien vu, hein ?",
+     "jeu": "soupcon",
+     "a": "PETIT MAMADOU"
+    },
+    {
+     "qui": "PETIT MAMADOU",
+     "texte": "Rien vu dêh, Papi. Même pas ta boîte de tomate sous le lit là.",
+     "jeu": "malice",
+     "a": "BAYE NDIAYE"
+    },
+    {
+     "qui": "BAYE NDIAYE",
+     "texte": "Chut ! Tiens, une barre. Ta bouche est fermée.",
+     "jeu": "panique",
+     "a": "PETIT MAMADOU"
+    },
+    {
+     "qui": "PETIT MAMADOU",
+     "texte": "Une barre, c'est pour la bouche. Les yeux, c'est deux barres.",
+     "jeu": "marchande",
+     "a": "BAYE NDIAYE"
+    },
+    {
+     "qui": "BAYE NDIAYE",
+     "texte": "Tiens, voilà. Affaire finie, on se connaît pas !",
+     "jeu": "frime",
+     "a": "PETIT MAMADOU"
+    },
+    {
+     "qui": "MAMAN NOUNOU",
+     "texte": "Moi, j'ai tout vu ce matin.",
+     "jeu": "camera",
+     "a": "BAYE NDIAYE",
+     "chute": true
+    }
+   ],
+   "reaction": {
+    "qui": "BAYE NDIAYE",
+    "jeu": "choc",
+    "duree_s": 3.0,
+    "plan": "gros plan fixe",
+    "note": "Nounou secoue la boîte vide ; Mamadou range ses billets dans sa poche, très lentement"
+   }
+  },
+  {
+   "id": "ordonnance",
+   "titre": "L'ORDONNANCE",
+   "lieu": "cour",
+   "image": "cour",
+   "acteurs": [
+    "MAMAN NOUNOU",
+    "BAYE NDIAYE",
+    "PETIT MAMADOU"
+   ],
+   "mecanique": "pied de la lettre",
+   "ressort": {
+    "qui": "PETIT MAMADOU",
+    "trait": "logique d'enfant imparable : il retourne aussitôt la mauvaise foi de Papi à son profit"
+   },
+   "mise_en_scene": "Baye assis, un bol de bouillie sur les genoux, verse du sucre ; Nounou arrive avec l'ordonnance ; Petit Mamadou mange sa bouillie sur le banc et regarde tout",
+   "objets": [
+    "chaise",
+    "bol",
+    "boîte de sucre",
+    "ordonnance"
+   ],
+   "repliques": [
+    {
+     "qui": "MAMAN NOUNOU",
+     "texte": "Baye ! Le docteur a dit quoi pour ton sucre là ?",
+     "jeu": "accuse",
+     "a": "BAYE NDIAYE"
+    },
+    {
+     "qui": "BAYE NDIAYE",
+     "texte": "Dieu merci, il a été clair : plus de sucre.",
+     "jeu": "innocent",
+     "a": "MAMAN NOUNOU"
+    },
+    {
+     "qui": "MAMAN NOUNOU",
+     "texte": "Et pourquoi tu en verses encore ?",
+     "jeu": "soupcon",
+     "a": "BAYE NDIAYE"
+    },
+    {
+     "qui": "BAYE NDIAYE",
+     "texte": "Plus de sucre. Donc j'en remets.",
+     "jeu": "camera",
+     "a": "MAMAN NOUNOU"
+    },
+    {
+     "qui": "MAMAN NOUNOU",
+     "texte": "Ehhh Dieu ! Devant l'enfant, en plus !",
+     "jeu": "choc",
+     "a": "BAYE NDIAYE"
+    },
+    {
+     "qui": "PETIT MAMADOU",
+     "texte": "Docteur a dit : plus de bonbons !",
+     "jeu": "joie",
+     "a": "MAMAN NOUNOU",
+     "chute": true
+    }
+   ],
+   "reaction": {
+    "qui": "MAMAN NOUNOU",
+    "jeu": "choc",
+    "duree_s": 3.0,
+    "plan": "gros plan fixe",
+    "note": "Mamadou tend la main vers la boîte de bonbons ; Baye, derrière, continue de verser le sucre"
+   }
+  }
+ ]
+}
