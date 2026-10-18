@@ -93,11 +93,16 @@
     return s;
   }
 
+  function flush() {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    TCV.store.set(DRAFT_KEY, state);
+  }
+
+  /** Debounced draft save; flush() runs on every step change and when the page is hidden. */
   function save() {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(function () {
-      TCV.store.set(DRAFT_KEY, state);
-    }, 300);
+    saveTimer = setTimeout(flush, 300);
   }
 
   function getPath(path) {
@@ -446,6 +451,7 @@
   }
 
   function navigate(key) {
+    flush();
     if (opts.navigate) opts.navigate(key);
     else show(key);
   }
@@ -492,6 +498,7 @@
   }
 
   function submit(built) {
+    flush();
     var btn = $("#wz-next");
     TCV.dom.busy(btn, true, "Préparation de votre aperçu…");
     $("#wz-back").disabled = true;
@@ -536,6 +543,12 @@
       next();
     });
     $("#wz-back").addEventListener("click", back);
+    window.addEventListener("pagehide", function () {
+      if (saveTimer) flush();
+    });
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden && saveTimer) flush();
+    });
     $("#edu-add").addEventListener("click", function () { addCard("education"); });
     $("#exp-add").addEventListener("click", function () { addCard("experiences"); });
     $("#lang-add").addEventListener("click", function () {

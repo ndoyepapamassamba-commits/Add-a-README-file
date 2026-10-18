@@ -24,6 +24,7 @@ import {
   LETTRE_OPEN_SPONTANEOUS,
   LETTRE_QUALITIES,
   LETTRE_SKILLS,
+  NEUTRAL_GAIN,
   PROFILE_AIM,
   PROFILE_EXPERIENCE,
   PROFILE_INTRO,
@@ -197,9 +198,12 @@ function atSchool(school: string | undefined): string {
 }
 
 /** Licences and certificates are qualifications, not an academic path. */
-const NON_ACADEMIC_FIRST_WORDS = new Set(["permis", "attestation", "certificat", "certification", "habilitation", "carte"]);
+const CERTIFICATE_FIRST_WORDS = new Set(["permis", "attestation", "certificat", "certification", "habilitation", "carte"]);
+/** Secondary-school diplomas give general grounding, not trade knowledge ("Bac+2" is higher education). */
+const SECONDARY_FIRST_WORDS = new Set(["bac", "baccalaureat", "bfem", "cfee", "brevet", "terminale"]);
 
 function buildDegree(input: OrderInput, c: Pick<Ctx, "g">, nowYear: number): DegreeFacts | null {
+  const { sector, jobTitle } = input.target;
   const list = input.education.filter((e) => collapse(e.degree ?? "") !== "");
   if (list.length === 0) return null;
   const isOngoing = (e: OrderInput["education"][number]) =>
@@ -233,8 +237,14 @@ function buildDegree(input: OrderInput, c: Pick<Ctx, "g">, nowYear: number): Deg
     lead = `Avec un ${name}`;
     leadFull = `${lead}${at}`;
   }
-  const academic = !NON_ACADEMIC_FIRST_WORDS.has(foldKey(name.split(/\s/)[0] ?? ""));
-  return { status, academic, name, article, lead, leadFull, where: `${at}${when}`, obtainedWhere };
+  const first = foldKey(name.split(/[\s+]/)[0] ?? "");
+  const category: DegreeFacts["category"] = CERTIFICATE_FIRST_WORDS.has(first)
+    ? "certificate"
+    : SECONDARY_FIRST_WORDS.has(first) && !/\+\s*\d/.test(name)
+    ? "secondary"
+    : "higher";
+  const linked = category !== "secondary" && relatesTo(name, sector, jobTitle);
+  return { status, category, linked, name, article, lead, leadFull, where: `${at}${when}`, obtainedWhere };
 }
 
 const MAX_MISSION_WORDS = 10;
@@ -282,26 +292,33 @@ function parseSource(raw: string | undefined): Ctx["source"] {
   return { mode: "media", text: PRESS_RE.test(s) ? `dans ${s}` : `sur ${s}` };
 }
 
-/** Folded word stems showing that a degree already names the sector ("licence en comptabilité"). */
+/** Folded stems showing that a degree or a job title belongs to a sector. */
 const SECTOR_KEYWORDS: Record<Sector, string[]> = {
-  commerce: ["commerc", "vente", "negoce"],
-  comptabilite: ["compta", "financ", "audit", "fiscal"],
-  informatique: ["informati", "numerique", "reseau", "logiciel", "developpement web", "data"],
-  sante: ["sante", "infirm", "soins", "medic", "sage-femme", "pharma", "aide-soignant"],
-  enseignement: ["enseign", "education", "pedagog"],
-  administration: ["administ", "secretari", "assistanat", "bureautique"],
-  btp: ["batiment", "genie civil", "btp", "travaux publics", "construction"],
-  hotellerie: ["hotel", "restaura", "cuisine", "tourisme"],
-  logistique: ["logisti", "transport"],
-  communication: ["communic", "marketing", "journalis"],
-  agriculture: ["agri", "agro", "elevage", "horticult"],
-  securite: ["securite", "gardiennage"],
+  commerce: ["commerc", "vente", "vend", "negoce", "marketing", "caiss", "magasin", "boutique", "rayon"],
+  comptabilite: ["compta", "financ", "audit", "fiscal", "gestion", "factur", "tresor", "banque", "credit"],
+  informatique: ["informati", "numerique", "reseau", "logiciel", "developp", "web", "data", "system", "programm", "telecom"],
+  sante: ["sante", "infirm", "soins", "soign", "medic", "sage-femme", "pharma", "laborant", "hopital", "clinique"],
+  enseignement: ["enseign", "education", "pedagog", "professeur", "instituteur", "formateur", "repetiteur", "lettres"],
+  administration: ["administ", "secretari", "assistan", "bureautique", "accueil", "standard", "archiv", "ressources humaines"],
+  btp: [
+    "batiment", "genie civil", "btp", "travaux publics", "construction", "macon", "electric", "plomb", "chantier", "menuis",
+    "soud", "carrel", "topograph",
+  ],
+  hotellerie: ["hotel", "restaura", "cuisin", "tourisme", "serveu", "serveur", "barman", "reception", "hotesse", "patiss"],
+  logistique: ["logisti", "transport", "chauffeur", "livr", "magasinier", "cariste", "manutention", "permis", "conduite", "transit"],
+  communication: ["communic", "marketing", "journalis", "community", "graphi", "redact", "photo", "video", "audiovisuel"],
+  agriculture: ["agri", "agro", "elevage", "eleveur", "horticult", "maraich", "veterinai", "peche"],
+  securite: ["securite", "gardiennage", "gardien", "vigile", "surveillance", "secour", "incendie"],
   autre: [],
 };
 
-function namesSector(text: string, sector: Sector): boolean {
+/** True when `text` names the target sector or shares a significant word with the target job. */
+function relatesTo(text: string, sector: Sector, jobTitle: string): boolean {
   const key = foldKey(text);
-  return SECTOR_KEYWORDS[sector].some((k) => key.includes(k));
+  if (SECTOR_KEYWORDS[sector].some((k) => key.includes(k))) return true;
+  const stems = (s: string) => new Set((foldKey(s).match(/\p{L}{5,}/gu) ?? []).map((w) => w.slice(0, 5)));
+  const jobStems = stems(jobTitle);
+  return [...stems(text)].some((st) => jobStems.has(st));
 }
 
 /**
@@ -363,8 +380,9 @@ function buildContext(input: OrderInput, now: Date): Ctx {
     posteNoun,
     stageNoun,
     domain,
-    field: degree && namesSector(degree.name, sector) ? "ce domaine" : domain,
+    field: degree?.linked && degree.category === "higher" ? "ce domaine" : domain,
     ...SECTOR_CONTEXT[sector],
+    expGain: exp && relatesTo(exp.title, sector, jobRaw) ? SECTOR_CONTEXT[sector].gain : NEUTRAL_GAIN,
     degree,
     exp,
     expCount: input.experiences.length,

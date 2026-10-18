@@ -262,7 +262,7 @@ Graine `TCV-SAMPLE05`, produit `pack`.
 
 **Profil**
 
-Titulaire d'un master 2 marketing, je cumule une longue expérience dans le commerce et la vente. J'occupe actuellement le poste de responsable commerciale au sein du Groupe Baobab Distribution. Mon objectif : contribuer efficacement à la réussite d'une entreprise en tant que responsable commerciale.
+Titulaire d'un master 2 marketing, je cumule une longue expérience dans ce domaine. J'occupe actuellement le poste de responsable commerciale au sein du Groupe Baobab Distribution. Mon objectif : contribuer efficacement à la réussite d'une entreprise en tant que responsable commerciale.
 
 **Expériences professionnelles**
 
@@ -491,7 +491,7 @@ Madame, Monsieur,
 
 C'est avec un vif intérêt que j'ai découvert votre annonce parue sur votre site internet et que je vous adresse ma candidature au poste de professeur de français au sein du Groupe Scolaire Excellence. Mon parcours dans l'enseignement et la formation me permettra d'être rapidement opérationnel à ce poste.
 
-Titulaire d'une licence en Lettres modernes obtenue à l'Université Cheikh Anta Diop en 2012, j'ai ensuite consolidé ces acquis par une solide expérience de terrain. J'exerce depuis 2015 en tant que professeur de français au sein du Cours Privé Les Pionniers, une expérience qui me permet de développer de réelles aptitudes pédagogiques et un bon contact avec les élèves. Mes missions comprennent notamment : évaluation des élèves et rencontres avec les parents.
+Ma formation, sanctionnée par une licence en Lettres modernes à l'Université Cheikh Anta Diop en 2012, m'a apporté de solides connaissances dans ce domaine. J'exerce depuis 2015 en tant que professeur de français au sein du Cours Privé Les Pionniers, une expérience qui me permet de développer de réelles aptitudes pédagogiques et un bon contact avec les élèves. Mes missions comprennent notamment : évaluation des élèves et rencontres avec les parents.
 
 Vous trouverez en moi un collaborateur compétent en préparation de cours, gestion de classe et évaluation des élèves, à l'aise avec l'outil informatique (Word, PowerPoint). Sur le plan personnel, je suis méthodique dans l'organisation de mes tâches et prompt à m'adapter aux situations nouvelles. Je fais également preuve de patience. Rejoindre le Groupe Scolaire Excellence représenterait pour moi l'opportunité de contribuer à vos objectifs tout en poursuivant mon développement professionnel.
 

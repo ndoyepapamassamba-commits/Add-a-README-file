@@ -26,6 +26,7 @@ import {
   PROFILE_INTRO,
   PROFILE_SKILLS,
   QUALITIES,
+  SECTOR_CONTEXT,
   SECTORS,
 } from "../lib/generator/banks.ts";
 import { validateOrderRequest } from "../lib/validate.ts";
@@ -464,4 +465,23 @@ Deno.test("gen never states an experience, school or year the customer did not t
   const text = allSeeds(input, "pack", 30);
   assert(!/chez |\bobtenu|\bdepuis \d|\ben \d{4}/.test(text), text);
   assertNotEquals(text.length, 0);
+});
+
+Deno.test("gen career change: an unrelated degree or job is never tied to the target trade", () => {
+  const input = baseInput({ jobTitle: "Développeur web", sector: "informatique", level: "junior" });
+  input.education = [{ degree: "Diplôme d'État d'infirmier", school: "ENDSS", year: "2019" }];
+  input.experiences = [{ title: "Serveuse", company: "Hôtel Terrou-Bi", start: "2020", end: "2023" }];
+  const text = allSeeds(input, "pack", 40);
+  assert(!/infirmier[^.]*(dans l'informatique|dans ce domaine)/.test(text), "degree tied to IT");
+  assert(!text.includes(SECTOR_CONTEXT.informatique.gain), "waitress job credited with IT skills");
+  assert(!text.includes("correspond pleinement à ma formation"), "unrelated degree presented as matching");
+
+  const bac = baseInput({ jobTitle: "Maçon", sector: "btp", level: "debutant" });
+  bac.education = [{ degree: "Baccalauréat série L", school: "Lycée Limamoulaye", year: "2021" }];
+  bac.experiences = [];
+  const bacText = allSeeds(bac, "lettre", 40);
+  assert(!/baccalauréat[^.]*(connaissances|bases solides) dans/.test(bacText), "secondary diploma credited with trade knowledge");
+
+  const related = allSeeds(baseInput(), "lettre", 40);
+  assert(/BTS en comptabilité[^.]*(dans ce domaine|de terrain)/.test(related), "related degree should be tied to the trade");
 });

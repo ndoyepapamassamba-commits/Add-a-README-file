@@ -11,8 +11,10 @@ import { de, enTantQue, type Gender, joinList } from "./text.ts";
 export interface DegreeFacts {
   /** done = diploma obtained, ongoing = currently studying, level = "Niveau terminale". */
   status: "done" | "ongoing" | "level";
-  /** False for licences and certificates ("Permis C", "Attestation de secourisme"). */
-  academic: boolean;
+  /** higher: BTS, licence, master…; secondary: bac, BFEM; certificate: permis, attestation… */
+  category: "higher" | "secondary" | "certificate";
+  /** True when the degree names the target sector or job ("BTS en comptabilité" for a comptable). */
+  linked: boolean;
   /** In-sentence name without article: "BTS en comptabilité", "niveau terminale". */
   name: string;
   article: "un" | "une";
@@ -54,11 +56,13 @@ export interface Ctx {
   /** "stage d'assistante comptable", "stage en comptabilité". */
   stageNoun: string;
   domain: string;
-  /** The domain once the degree already named it ("ce domaine"), otherwise the same as `domain`. */
+  /** The domain once a linked degree already named it ("ce domaine"), otherwise the same as `domain`. */
   field: string;
   practice: string;
   stake: string;
   gain: string;
+  /** What the latest experience developed: `gain` when it is in the target trade, a neutral phrase otherwise. */
+  expGain: string;
   org: string;
   degree: DegreeFacts | null;
   exp: ExpFacts | null;
@@ -203,6 +207,9 @@ export const SECTORS: Record<Sector, { label: string; domain: string; skills: st
  * stake: two things that matter in the trade (plural verb: "… comptent"); gain: what experience
  * there develops ("m'a permis de développer …"); org: the employer in general ("au service d'une entreprise").
  */
+/** What any experience develops, used when the latest job is outside the target trade. */
+export const NEUTRAL_GAIN = "le sens des responsabilités et une réelle capacité d'adaptation";
+
 export const SECTOR_CONTEXT: Record<Sector, { practice: string; stake: string; gain: string; org: string }> = {
   commerce: {
     practice: "les techniques de vente et la relation client",
@@ -395,7 +402,7 @@ function expSubject(c: Ctx, span: boolean): { subject: string; verb: string } {
 export const PROFILE_INTRO: Record<Level, Variant[]> = {
   debutant: [
     (c) => c.degree && `${c.degree.lead}, je suis ${c.g("motivé", "motivée")} à l'idée de faire mes premiers pas dans ${c.field}`,
-    (c) => c.degree && `${c.degree.lead}, je souhaite mettre mes connaissances en pratique dans ${c.field}`,
+    (c) => c.degree?.linked && `${c.degree.lead}, je souhaite mettre mes connaissances en pratique dans ${c.field}`,
     (c) =>
       c.degree &&
       `${c.degree.lead}, ${c.g("sérieux", "sérieuse")} et ${c.g("désireux", "désireuse")} d'apprendre, je nourris un vif intérêt pour ${c.field}`,
@@ -409,7 +416,7 @@ export const PROFILE_INTRO: Record<Level, Variant[]> = {
     (c) =>
       c.expCount > 0 &&
       `${c.g("Fort", "Forte")} d'une première expérience dans ${c.domain}, je suis ${c.g("un professionnel motivé", "une professionnelle motivée")} et ${c.g("rapidement opérationnel", "rapidement opérationnelle")}`,
-    (c) => c.degree && `${c.degree.lead}, je dispose de bases solides dans ${c.field}`,
+    (c) => c.degree?.linked && `${c.degree.lead}, je dispose de bases solides dans ${c.field}`,
     (c) => `${c.g("Jeune professionnel", "Jeune professionnelle")} dynamique, je souhaite consolider mon parcours dans ${c.domain}`,
     (c) =>
       c.expCount > 0 &&
@@ -438,7 +445,7 @@ export const PROFILE_EXPERIENCE: Variant[] = [
   (c) => {
     if (!c.exp) return null;
     const { subject, verb } = expSubject(c, false);
-    return `${subject} ${verb} de développer ${c.skills.length ? `des compétences en ${skillList(c)}` : c.gain}`;
+    return `${subject} ${verb} de développer ${c.skills.length ? `des compétences en ${skillList(c)}` : c.expGain}`;
   },
 ];
 
@@ -525,7 +532,7 @@ function applyOpen(c: Ctx): string {
 export const LETTRE_FIT: Record<JobKind, Variant[]> = {
   emploi: [
     (c) =>
-      c.degree
+      c.degree?.linked
         ? "Ce poste correspond pleinement à ma formation ainsi qu'à mon projet professionnel"
         : "Ce poste correspond pleinement à mon projet professionnel et à mes aspirations",
     (c) => `Je suis ${c.g("convaincu", "convaincue")} de pouvoir contribuer efficacement au bon fonctionnement de votre structure`,
@@ -544,36 +551,49 @@ export const LETTRE_FIT: Record<JobKind, Variant[]> = {
   ],
 };
 
-/** P2: latest degree (or licence / certificate). */
+/** P2: latest degree, certificate or school level. Only a linked degree is tied to the target domain. */
 export const LETTRE_DEGREE: Variant[] = [
   (c) => {
     const d = c.degree;
     if (!d) return null;
-    if (!d.academic) return `${d.leadFull}, je dispose d'une qualification directement utile dans ${c.field}`;
-    if (d.status === "ongoing") return `${d.leadFull}, j'acquiers progressivement des bases solides dans ${c.field}`;
-    return senior(c)
-      ? `${d.leadFull}, j'ai ensuite consolidé ces acquis par une solide expérience de terrain`
-      : `${d.leadFull}, j'ai acquis des bases solides dans ${c.field}`;
+    if (d.status === "level") return `${d.leadFull}, j'ai acquis de bonnes bases générales`;
+    if (d.category === "certificate") {
+      return `${d.leadFull}, je dispose d'une qualification ${d.linked ? `directement utile dans ${c.field}` : "complémentaire appréciable"}`;
+    }
+    if (d.category === "secondary") return `${d.leadFull}, j'ai acquis de bonnes bases générales et le goût de l'effort`;
+    if (d.status === "ongoing") {
+      return `${d.leadFull}, j'acquiers progressivement des bases solides${d.linked ? ` dans ${c.field}` : " et une méthode de travail rigoureuse"}`;
+    }
+    if (senior(c)) return `${d.leadFull}, j'ai ensuite consolidé ces acquis par une solide expérience de terrain`;
+    return `${d.leadFull}, j'ai acquis des bases solides${d.linked ? ` dans ${c.field}` : " et une méthode de travail rigoureuse"}`;
   },
   (c) => {
     const d = c.degree;
     if (!d || d.status === "level") return null;
-    if (!d.academic) return `J'ai obtenu ${d.article} ${d.name}${d.where}, une qualification directement utile dans ${c.field}`;
+    if (d.category === "certificate") {
+      return `J'ai obtenu ${d.article} ${d.name}${d.where}, une qualification ${d.linked ? `directement utile dans ${c.field}` : "que je saurai mettre à profit"}`;
+    }
+    if (d.category === "secondary") return `J'ai obtenu ${d.article} ${d.name}${d.where}, qui m'a ${c.g("doté", "dotée")} de solides bases générales`;
+    const gained = d.linked ? `des connaissances solides dans ${c.field}` : "rigueur et méthode";
     return d.status === "done"
-      ? `J'ai obtenu ${d.article} ${d.name}${d.where}, une formation qui m'a permis d'acquérir des connaissances solides dans ${c.field}`
-      : `Je poursuis actuellement ${d.article} ${d.name}${d.where}, une formation qui me permet d'acquérir des connaissances solides dans ${c.field}`;
+      ? `J'ai obtenu ${d.article} ${d.name}${d.where}, une formation qui m'a permis d'acquérir ${gained}`
+      : `Je poursuis actuellement ${d.article} ${d.name}${d.where}, une formation qui me permet d'acquérir ${gained}`;
   },
   (c) => {
     const d = c.degree;
     if (!d) return null;
-    if (!d.academic) return `Je suis titulaire ${de(`${d.article} ${d.name}`)}${d.obtainedWhere}, un atout concret pour exercer dans ${c.field}`;
-    if (d.status === "done") {
-      return `Ma formation, sanctionnée par ${d.article} ${d.name}${d.where}, m'a apporté de solides connaissances dans ${c.field}`;
+    if (d.status === "level") return `Mon parcours scolaire, mené jusqu'au ${d.name}${d.where}, m'a apporté de bonnes bases`;
+    if (d.category === "certificate") {
+      return `Je suis titulaire ${de(`${d.article} ${d.name}`)}${d.obtainedWhere}, un atout concret ${d.linked ? `pour exercer dans ${c.field}` : "dans l'exercice de mes fonctions"}`;
+    }
+    if (d.category === "secondary") {
+      return `Mon parcours scolaire, sanctionné par ${d.article} ${d.name}${d.where}, m'a apporté de bonnes bases générales`;
     }
     if (d.status === "ongoing") {
-      return `${c.g("Inscrit", "Inscrite")} en ${d.name}${d.where}, je consolide chaque jour mes connaissances dans ${c.field}`;
+      return `${c.g("Inscrit", "Inscrite")} en ${d.name}${d.where}, je consolide chaque jour mes ${d.linked ? `connaissances dans ${c.field}` : "acquis"}`;
     }
-    return `Mon parcours scolaire, mené jusqu'au ${d.name}${d.where}, m'a apporté de bonnes bases`;
+    const gained = d.linked ? `de solides connaissances dans ${c.field}` : "de solides capacités d'analyse et d'organisation";
+    return `Ma formation, sanctionnée par ${d.article} ${d.name}${d.where}, m'a apporté ${gained}`;
   },
   (c) => {
     const d = c.degree;
@@ -586,12 +606,12 @@ export const LETTRE_EXPERIENCE: Variant[] = [
   (c) => c.exp && `Sur le plan professionnel, ${expClause(c, 0, { span: true, notamment: false })}`,
   (c) =>
     c.exp &&
-    `${expClause(c, 1, { span: true, notamment: false })}, une expérience qui ${c.exp.current ? "me permet" : "m'a permis"} de développer ${c.gain}`,
+    `${expClause(c, 1, { span: true, notamment: false })}, une expérience qui ${c.exp.current ? "me permet" : "m'a permis"} de développer ${c.expGain}`,
   (c) => {
     if (!c.exp) return null;
     const { subject, verb } = expSubject(c, true);
     const use = senior(c) ? "mettre à profit mon savoir-faire" : "mettre en pratique mes connaissances";
-    return `${subject} ${verb} de ${use} et de développer ${c.gain}`;
+    return `${subject} ${verb} de ${use} et de développer ${c.expGain}`;
   },
 ];
 
