@@ -216,12 +216,16 @@ function buildDegree(input: OrderInput, c: Pick<Ctx, "g">, nowYear: number): Deg
   const when = status === "done" && /^(\p{L}+\s)?\d{4}$/u.test(yearText) ? ` en ${yearText}` : "";
   const obtained = article === "une" ? "obtenue" : "obtenu";
 
+  let obtainedWhere = "";
+  if (status === "done") {
+    if (at.startsWith(" (")) obtainedWhere = `${at}${when ? ` ${obtained}${when}` : ""}`;
+    else if (at || when) obtainedWhere = ` ${obtained}${at}${when}`;
+  }
   let lead: string;
   let leadFull: string;
   if (status === "done") {
     lead = `Titulaire ${elide("de", `${article} ${name}`)}`;
-    if (at.startsWith(" (")) leadFull = `${lead}${at}${when ? ` ${obtained}${when}` : ""}`;
-    else leadFull = at || when ? `${lead} ${obtained}${at}${when}` : lead;
+    leadFull = `${lead}${obtainedWhere}`;
   } else if (status === "ongoing") {
     lead = `Actuellement ${c.g("étudiant", "étudiante")} en ${name}`;
     leadFull = `${lead}${at}`;
@@ -230,7 +234,7 @@ function buildDegree(input: OrderInput, c: Pick<Ctx, "g">, nowYear: number): Deg
     leadFull = `${lead}${at}`;
   }
   const academic = !NON_ACADEMIC_FIRST_WORDS.has(foldKey(name.split(/\s/)[0] ?? ""));
-  return { status, academic, name, article, lead, leadFull, where: `${at}${when}` };
+  return { status, academic, name, article, lead, leadFull, where: `${at}${when}`, obtainedWhere };
 }
 
 const MAX_MISSION_WORDS = 10;
@@ -502,7 +506,7 @@ function buildLettre(input: OrderInput, c: Ctx, picker: Picker, now: Date): Lett
     sender: [fullName, addressLine(input), formatSnMobile(input.identity.phone), email].filter(Boolean),
     recipient: [
       capitalize(collapse(letter?.recipient ?? "")) || DEFAULT_RECIPIENT,
-      c.company,
+      collapse(letter?.company ?? ""),
       capitalize(collapse(letter?.companyCity ?? "")),
     ].filter(Boolean),
     placeDate: `${capitalize(collapse(input.identity.city))}, le ${frenchDate(now)}`,

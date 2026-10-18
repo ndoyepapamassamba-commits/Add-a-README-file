@@ -415,7 +415,7 @@ fieldset { border: 0; padding: 0; margin: 0 0 16px; min-width: 0; }
 .health strong { display: block; }
 .health .hint { grid-column: 2; margin: 0; }
 @media (min-width: 760px) { .health { grid-template-columns: 1fr 1fr; } }
-.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 12px; background: #fff; margin-bottom: 24px; }
+.table-wrap { position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 12px; background: #fff; margin-bottom: 24px; }
 table.data { width: 100%; border-collapse: collapse; font-size: .92rem; }
 table.data th, table.data td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; vertical-align: middle; }
 table.data th { background: var(--sand); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); }

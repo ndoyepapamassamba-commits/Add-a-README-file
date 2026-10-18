@@ -235,16 +235,27 @@
     });
   }
 
+  /** Takes a key passed as #k=… (first visit or a new link opened in the same tab), then hides it. */
+  function takeKeyFromUrl() {
+    var fromUrl = keyFromFragment();
+    if (!fromUrl) return null;
+    TCV.store.set(KEY_STORE, fromUrl);
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    return fromUrl;
+  }
+
   function boot() {
     bind();
-    var fromUrl = keyFromFragment();
-    if (fromUrl) {
-      TCV.store.set(KEY_STORE, fromUrl);
-      history.replaceState(null, "", window.location.pathname + window.location.search);
-    }
-    adminKey = fromUrl || TCV.store.get(KEY_STORE, null);
+    adminKey = takeKeyFromUrl() || TCV.store.get(KEY_STORE, null);
     if (adminKey) load();
     else showLogin("");
+    window.addEventListener("hashchange", function () {
+      var k = takeKeyFromUrl();
+      if (k) {
+        adminKey = k;
+        load();
+      }
+    });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

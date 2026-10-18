@@ -22,6 +22,8 @@ export interface DegreeFacts {
   leadFull: string;
   /** School and year after the name: " à l'ISM en 2023", " (SUPDECO)", "". */
   where: string;
+  /** Same with the participle for an obtained diploma: " obtenu à l'ISM en 2023", " (SUPDECO) obtenu en 2011". */
+  obtainedWhere: string;
 }
 
 export interface ExpFacts {
@@ -564,7 +566,7 @@ export const LETTRE_DEGREE: Variant[] = [
   (c) => {
     const d = c.degree;
     if (!d) return null;
-    if (!d.academic) return `Je suis titulaire ${de(`${d.article} ${d.name}`)}${d.where}, un atout concret pour exercer dans ${c.field}`;
+    if (!d.academic) return `Je suis titulaire ${de(`${d.article} ${d.name}`)}${d.obtainedWhere}, un atout concret pour exercer dans ${c.field}`;
     if (d.status === "done") {
       return `Ma formation, sanctionnée par ${d.article} ${d.name}${d.where}, m'a apporté de solides connaissances dans ${c.field}`;
     }
@@ -719,5 +721,5 @@ export const REPEAT_STEMS = [
   "concrètement", "motivé", "m'investir", "exigence", "vif intérêt", "environnement", "au contact",
   "aux côtés", "mon objectif", "compétences en", "réelle", "permis de développer", "permet de développer",
   "j'ai l'honneur", "je me permets", "rapidement opérationnel", "par ailleurs", "au sein", "aujourd'hui",
-  "mon parcours dans", "votre structure", "à l'aise", "ce domaine", "je souhaite",
+  "mon parcours dans", "votre structure", "à l'aise", "ce domaine", "je souhaite", "mes compétences",
 ];

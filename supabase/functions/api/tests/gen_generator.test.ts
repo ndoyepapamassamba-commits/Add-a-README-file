@@ -411,7 +411,7 @@ Deno.test("gen lettre P2 uses the latest degree with its school and the latest e
   const text = allSeeds(input, "lettre", 30);
   assert(/BTS en comptabilité (obtenu )?à l'ISM/.test(text), "degree + school");
   assert(!text.includes("baccalauréat série G"), "older degree must not be chosen");
-  assert(text.includes("aide comptable") && text.includes("chez Cabinet Sall"), "latest experience");
+  assert(text.includes("aide comptable") && text.includes("au sein du Cabinet Sall"), "latest experience");
 });
 
 Deno.test("gen CV layout: name, contacts, period, bullets, skills, product selection", () => {

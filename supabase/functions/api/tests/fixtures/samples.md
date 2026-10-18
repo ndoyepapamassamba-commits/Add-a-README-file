@@ -46,13 +46,13 @@ Dakar, le 1er octobre 2026
 
 Madame, Monsieur,
 
-Suite à votre annonce parue sur LinkedIn, j'ai l'honneur de vous soumettre ma candidature pour le stage d'assistante comptable au sein de Cabinet Diallo Expertise. Ce stage serait pour moi l'occasion idéale de découvrir concrètement le fonctionnement d'un service comptable.
+Suite à votre annonce parue sur LinkedIn, j'ai l'honneur de vous soumettre ma candidature pour le stage d'assistante comptable au sein du Cabinet Diallo Expertise. Ce stage serait pour moi l'occasion idéale de découvrir concrètement le fonctionnement d'un service comptable.
 
-Inscrite en licence 3 en comptabilité à l'ISM, je consolide chaque jour mes connaissances dans ce domaine. Bien que débutante, je suis prête à m'investir pleinement et à apprendre rapidement aux côtés de vos équipes.
+Inscrite en licence 3 en comptabilité à l'ISM, je consolide chaque jour mes connaissances dans ce domaine. Ce qui me manque encore en expérience, je le compense par une forte motivation, une grande capacité d'apprentissage et le goût du travail bien fait.
 
-Je dispose notamment de compétences en saisie comptable, SYSCOHADA et facturation, et je suis à l'aise avec l'outil informatique (Word, Excel, Sage). Je suis par ailleurs rigoureuse dans mon travail, discrète dans le traitement des informations confidentielles et méthodique dans l'organisation de mes tâches. Je souhaite découvrir le métier aux côtés de professionnels exigeants. C'est avec enthousiasme que je souhaite mettre mon énergie au service de Cabinet Diallo Expertise.
+Je dispose notamment de compétences en saisie comptable, SYSCOHADA et facturation, et je suis à l'aise avec l'outil informatique (Word, Excel, Sage). Je suis par ailleurs rigoureuse dans mon travail, discrète dans le traitement des informations confidentielles et méthodique dans l'organisation de mes tâches. Je souhaite découvrir le métier aux côtés de professionnels exigeants. C'est avec enthousiasme que je mettrais mon énergie au service du Cabinet Diallo Expertise.
 
-Très motivée à l'idée de rejoindre votre équipe, je souhaiterais vous rencontrer afin d'échanger sur ma candidature.
+Convaincue que mon profil peut répondre à vos attentes, je reste à votre disposition pour un entretien à la date qui vous conviendra.
 
 Je vous prie de recevoir, Madame, Monsieur, l'assurance de ma haute considération.
 
@@ -72,7 +72,7 @@ Graine `TCV-SAMPLE02`, produit `pack`.
 
 **Profil**
 
-Expérimenté et polyvalent, j'ai consolidé mes compétences au fil de mon parcours dans le transport et la logistique. J'exerce actuellement en tant que chauffeur-livreur chez Transports Rapides du Cap-Vert. Je suis à la recherche d'un poste de chauffeur-livreur au sein d'une structure où je pourrai m'investir pleinement.
+Professionnel confirmé dans le transport et la logistique, je dispose d'une expérience solide et variée. J'exerce actuellement en tant que chauffeur-livreur au sein des Transports Rapides du Cap-Vert. Je souhaite aujourd'hui mettre mes compétences au service d'une entreprise en tant que chauffeur-livreur.
 
 **Expériences professionnelles**
 
@@ -111,9 +111,9 @@ Madame, Monsieur,
 
 Vivement intéressé par Sen Distribution, je me permets de vous adresser ma candidature spontanée pour un poste de chauffeur-livreur. Mon parcours dans le transport et la logistique me permettra d'être rapidement opérationnel à ce poste.
 
-Mon parcours académique, couronné par un permis poids lourds (C) (Auto-école Thiessoise) en 2016, m'a apporté de solides connaissances dans le transport et la logistique. Mon poste actuel de chauffeur-livreur chez Transports Rapides du Cap-Vert me permet de mettre à profit mon savoir-faire et de développer le sens de l'organisation et du respect des délais. Parmi mes principales missions : livraison des clients à Dakar et Thiès, chargement et déchargement des marchandises et vérification des bons de livraison.
+Je suis titulaire d'un permis poids lourds (C) obtenu à l'Auto-école Thiessoise en 2016, un atout concret pour exercer dans le transport et la logistique. Mon poste actuel de chauffeur-livreur au sein des Transports Rapides du Cap-Vert me permet de mettre à profit mon savoir-faire et de développer le sens de l'organisation et du respect des délais. Parmi mes principales missions : livraison des clients à Dakar et Thiès, chargement et déchargement des marchandises et vérification des bons de livraison.
 
-Je pourrai mettre à votre service mes compétences en conduite de véhicule, respect du Code de la route et planification des livraisons. Je suis par ailleurs d'une grande ponctualité et d'une honnêteté irréprochable. Je fais également preuve de patience. C'est avec enthousiasme que je souhaite mettre mon énergie au service de Sen Distribution.
+Je pourrai mettre à votre service mes compétences en conduite de véhicule, respect du Code de la route et planification des livraisons. Je suis par ailleurs d'une grande ponctualité et d'une honnêteté irréprochable. Je fais également preuve de patience. C'est avec enthousiasme que je mettrais mon énergie au service de Sen Distribution.
 
 Motivé et disponible, je me tiens à votre entière disposition pour un entretien afin de vous présenter plus en détail mon parcours.
 
@@ -135,7 +135,7 @@ Graine `TCV-SAMPLE03`, produit `pack`.
 
 **Profil**
 
-Titulaire d'un diplôme d'État d'infirmier, je dispose de bases solides dans ce domaine. Mon expérience d'infirmière chez Clinique Al Amine m'a permis de développer des compétences en soins de base, prise de constantes et hygiène et asepsie. Je souhaite aujourd'hui mettre mes compétences au service d'une entreprise en tant qu'infirmière.
+Titulaire d'un diplôme d'État d'infirmier, je dispose de bases solides dans ce domaine. Mon expérience d'infirmière au sein de la Clinique Al Amine m'a permis de développer des compétences en hygiène et asepsie, soins de base et prise de constantes. Je souhaite aujourd'hui mettre mes compétences au service d'un établissement de santé en tant qu'infirmière.
 
 **Expériences professionnelles**
 
@@ -173,11 +173,11 @@ Dakar, le 1er octobre 2026
 
 Madame, Monsieur,
 
-Suite à votre annonce parue sur Facebook, j'ai l'honneur de vous soumettre ma candidature au poste d'infirmière au sein d'Hôpital Principal de Dakar. Rejoindre votre équipe représenterait pour moi une réelle opportunité de m'investir dans un environnement stimulant.
+Suite à votre annonce parue sur Facebook, j'ai l'honneur de vous soumettre ma candidature au poste d'infirmière au sein de l'Hôpital Principal de Dakar. Rejoindre votre équipe représenterait pour moi une réelle opportunité de m'investir dans un environnement stimulant.
 
-Mon parcours académique, couronné par un diplôme d'État d'infirmier à l'ENDSS en 2022, m'a apporté de solides connaissances dans ce domaine. Sur le plan professionnel, j'ai occupé le poste d'infirmière chez Clinique Al Amine de 2022 à 2024. J'y étais notamment chargée des missions suivantes : soins aux patients hospitalisés, prise des constantes et tenue des dossiers de soins.
+Ma formation, sanctionnée par un diplôme d'État d'infirmier à l'ENDSS en 2022, m'a apporté de solides connaissances dans ce domaine. Sur le plan professionnel, j'ai occupé le poste d'infirmière au sein de la Clinique Al Amine de 2022 à 2024. J'y étais notamment chargée des missions suivantes : soins aux patients hospitalisés, prise des constantes et tenue des dossiers de soins.
 
-Je dispose notamment de compétences en soins de base, prise de constantes et hygiène et asepsie, et je suis à l'aise avec l'outil informatique (Word, Internet). Sur le plan personnel, je suis rigoureuse dans mon travail, résistante au stress et à l'aise dans la relation avec le public. C'est avec enthousiasme que je souhaite mettre mon énergie au service d'Hôpital Principal de Dakar.
+Je dispose notamment de compétences en hygiène et asepsie, soins de base et prise de constantes, et je suis à l'aise avec l'outil informatique (Word, Internet). Sur le plan personnel, je suis rigoureuse dans mon travail, résistante au stress et dotée d'un excellent sens du contact. C'est avec enthousiasme que je mettrais mon énergie au service de l'Hôpital Principal de Dakar.
 
 Motivée et disponible, je me tiens à votre entière disposition pour un entretien afin de vous présenter plus en détail mon parcours.
 
@@ -238,9 +238,9 @@ Madame, Monsieur,
 
 C'est avec un vif intérêt que j'ai découvert votre annonce parue sur Senjob et que je vous adresse ma candidature au poste de développeur web au sein de Wave Mobile Money. Rejoindre votre équipe représenterait pour moi une réelle opportunité de m'investir dans un environnement stimulant.
 
-Mon parcours académique, couronné par une licence professionnelle en Génie logiciel à l'UCAD en 2024, m'a apporté de solides connaissances dans ce domaine. Mon stage en développement web chez Sen Digital de mars 2024 à août 2024 m'a permis de mettre en pratique mes connaissances et de développer une bonne capacité d'analyse et de résolution de problèmes. J'y étais notamment chargé des missions suivantes : développement d'un site vitrine avec Laravel, intégration de maquettes Figma et corrections de bugs.
+Ma formation, sanctionnée par une licence professionnelle en Génie logiciel à l'UCAD en 2024, m'a apporté de solides connaissances dans ce domaine. Mon stage en développement web chez Sen Digital de mars 2024 à août 2024 m'a permis de mettre en pratique mes connaissances et de développer une bonne capacité d'analyse et de résolution de problèmes. J'y étais notamment chargé des missions suivantes : développement d'un site vitrine avec Laravel, intégration de maquettes Figma et corrections de bugs.
 
-Au fil de mon parcours, j'ai développé des compétences en HTML/CSS, JavaScript et PHP, sans oublier la maîtrise de l'outil informatique (Windows, Linux, Figma). Sur le plan humain, je suis autonome dans l'exécution de mes missions et créatif dans la recherche de solutions. J'utilise vos services chaque jour et j'aimerais contribuer à les améliorer. C'est avec enthousiasme que je souhaite mettre mon énergie au service de Wave Mobile Money.
+Au fil de mon parcours, j'ai développé des compétences en HTML/CSS, JavaScript et PHP, sans oublier la maîtrise de l'outil informatique (Windows, Linux, Figma). Sur le plan humain, je suis autonome dans l'exécution de mes missions et créatif dans la recherche de solutions. J'utilise vos services chaque jour et j'aimerais contribuer à les améliorer. C'est avec enthousiasme que je mettrais mon énergie au service de Wave Mobile Money.
 
 Convaincu que mon profil peut répondre à vos attentes, je reste à votre disposition pour un entretien à la date qui vous conviendra.
 
@@ -262,7 +262,7 @@ Graine `TCV-SAMPLE05`, produit `pack`.
 
 **Profil**
 
-Titulaire d'un master 2 marketing, je cumule une longue expérience dans le commerce et la vente. J'occupe actuellement le poste de responsable commerciale chez Groupe Baobab Distribution. Mon objectif : contribuer efficacement à la réussite d'une entreprise en tant que responsable commerciale.
+Titulaire d'un master 2 marketing, je cumule une longue expérience dans le commerce et la vente. J'occupe actuellement le poste de responsable commerciale au sein du Groupe Baobab Distribution. Mon objectif : contribuer efficacement à la réussite d'une entreprise en tant que responsable commerciale.
 
 **Expériences professionnelles**
 
@@ -303,9 +303,9 @@ Madame, Monsieur,
 
 C'est sur les conseils d'un ancien collègue que je vous adresse aujourd'hui ma candidature pour un poste de responsable commerciale au sein des Moulins Sentenac. Mon parcours dans le commerce et la vente me permettra d'être rapidement opérationnelle à ce poste.
 
-Titulaire d'un master 2 marketing (SUPDECO) obtenu en 2011, j'ai acquis des bases solides dans le commerce et la vente. Sur le plan professionnel, j'occupe depuis 2016 le poste de responsable commerciale chez Groupe Baobab Distribution. Mes missions comprennent notamment : encadrement d'une équipe de commerciaux, négociation avec les grands comptes et suivi des objectifs de vente.
+Titulaire d'un master 2 marketing (SUPDECO) obtenu en 2011, j'ai ensuite consolidé ces acquis par une solide expérience de terrain. Sur le plan professionnel, j'occupe depuis 2016 le poste de responsable commerciale au sein du Groupe Baobab Distribution. Mes missions comprennent notamment : encadrement d'une équipe de commerciaux, négociation avec les grands comptes et suivi des objectifs de vente.
 
-Vous trouverez en moi une collaboratrice compétente en négociation, management d'équipe et prospection, à l'aise avec l'outil informatique (Excel, PowerPoint). Je suis par ailleurs dynamique dans tout ce que j'entreprends, à l'aise dans la relation avec le public et résistante au stress. Je fais également preuve de leadership. Rejoindre Les Moulins Sentenac représenterait pour moi l'opportunité de contribuer à vos objectifs tout en poursuivant mon développement professionnel.
+Vous trouverez en moi une collaboratrice compétente en négociation, management d'équipe et prospection, à l'aise avec l'outil informatique (Excel, PowerPoint). Je suis par ailleurs dynamique dans tout ce que j'entreprends, dotée d'un excellent sens du contact et résistante au stress. Je fais également preuve de leadership. Rejoindre Les Moulins Sentenac représenterait pour moi l'opportunité de contribuer à vos objectifs tout en poursuivant mon développement professionnel.
 
 Motivée et disponible, je me tiens à votre entière disposition pour un entretien afin de vous présenter plus en détail mon parcours.
 
@@ -363,11 +363,11 @@ Guédiawaye, le 1er octobre 2026
 
 Madame, Monsieur,
 
-Désireux de rejoindre Banque de l'Habitat, je vous soumets ma candidature spontanée pour un poste d'agent de sécurité. Je suis convaincu de pouvoir contribuer efficacement au bon fonctionnement de votre structure.
+Désireux de rejoindre la Banque de l'Habitat, je vous soumets ma candidature spontanée pour un poste d'agent de sécurité. Je suis convaincu de pouvoir contribuer efficacement au bon fonctionnement de votre structure.
 
-Mon parcours académique, couronné par une attestation de formation en secourisme (Croix-Rouge sénégalaise) en 2021, m'a apporté de solides connaissances dans la sécurité et le gardiennage. Mon expérience d'agent de sécurité chez Teranga Gardiennage de 2017 à 2024 m'a permis de mettre à profit mon savoir-faire et de développer une grande vigilance et un sens aigu des responsabilités. Parmi mes principales missions : contrôle des accès, rondes de jour et de nuit et rédaction des rapports de poste.
+Je suis titulaire d'une attestation de formation en secourisme obtenue à la Croix-Rouge sénégalaise en 2021, un atout concret pour exercer dans la sécurité et le gardiennage. Mon expérience d'agent de sécurité chez Teranga Gardiennage de 2017 à 2024 m'a permis de mettre à profit mon savoir-faire et de développer une grande vigilance et un sens aigu des responsabilités. Parmi mes principales missions : contrôle des accès, rondes de jour et de nuit et rédaction des rapports de poste.
 
-Je pourrai mettre à votre service mes compétences en surveillance de site, contrôle d'accès et premiers secours. Sur le plan humain, je suis d'une honnêteté irréprochable et d'une grande ponctualité. Intégrer votre structure serait pour moi l'occasion de m'investir pleinement dans un environnement exigeant et formateur.
+Je pourrai mettre à votre service mes compétences en surveillance de site, contrôle d'accès et premiers secours. Sur le plan humain, je suis d'une honnêteté irréprochable et d'une grande ponctualité. C'est avec enthousiasme que je mettrais mon énergie au service de la Banque de l'Habitat.
 
 Je serais ravi de vous rencontrer lors d'un entretien afin de vous démontrer ma motivation et ma capacité à m'intégrer rapidement à votre équipe.
 
@@ -389,7 +389,7 @@ Graine `TCV-SAMPLE07`, produit `pack`.
 
 **Profil**
 
-Titulaire d'un CAP restauration, je suis motivée à l'idée de faire mes premiers pas dans ce domaine. J'ai notamment effectué un stage en restauration chez Hôtel Le Lagon Bleu. Mon objectif : contribuer efficacement à la réussite d'une entreprise en tant que serveuse.
+Titulaire d'un CAP restauration, je suis motivée à l'idée de faire mes premiers pas dans ce domaine. J'ai notamment effectué un stage en restauration au sein de l'Hôtel Le Lagon Bleu. Mon objectif : contribuer efficacement à la réussite d'un établissement hôtelier en tant que serveuse.
 
 **Expériences professionnelles**
 
@@ -425,9 +425,9 @@ Madame, Monsieur,
 
 Ayant pris connaissance de votre annonce parue dans le journal Le Soleil, je me permets de vous adresser ma candidature au poste de serveuse au sein de Royal Saly Hôtel. Ce poste correspond pleinement à ma formation ainsi qu'à mon projet professionnel.
 
-Titulaire d'un CAP restauration obtenu au Centre de formation professionnelle de Saly en 2025, j'ai acquis des bases solides dans ce domaine. Sur le plan professionnel, j'ai effectué un stage en restauration chez Hôtel Le Lagon Bleu de juin 2025 à août 2025. Parmi mes principales missions : service en salle, mise en place des tables et accueil des clients. Je suis désireuse de mettre en pratique mes acquis et de progresser au contact de professionnels expérimentés.
+Titulaire d'un CAP restauration obtenu au Centre de formation professionnelle de Saly en 2025, j'ai acquis des bases solides dans ce domaine. Sur le plan professionnel, j'ai effectué un stage en restauration au sein de l'Hôtel Le Lagon Bleu de juin 2025 à août 2025. Parmi mes principales missions : service en salle, mise en place des tables et accueil des clients. Je suis désireuse de mettre en pratique mes acquis et de progresser au contact de professionnels expérimentés.
 
-Je dispose notamment de compétences en service en salle, accueil des clients et hygiène alimentaire. Je suis par ailleurs à l'aise dans la relation avec le public et d'une grande ponctualité. J'aime accueillir les gens et les mettre à l'aise. C'est avec enthousiasme que je souhaite mettre mon énergie au service de Royal Saly Hôtel.
+Je dispose notamment de compétences en service en salle, accueil des clients et hygiène alimentaire. Je suis par ailleurs dotée d'un excellent sens du contact et d'une grande ponctualité. J'aime accueillir les gens et les mettre à l'aise. C'est avec enthousiasme que je mettrais mon énergie au service de Royal Saly Hôtel.
 
 Motivée et disponible, je me tiens à votre entière disposition pour un entretien afin de vous présenter plus en détail mon parcours.
 
@@ -449,7 +449,7 @@ Graine `TCV-SAMPLE08`, produit `pack`.
 
 **Profil**
 
-Professionnel confirmé dans l'enseignement et la formation, je dispose d'une expérience solide et variée. J'occupe actuellement le poste de professeur de français chez Cours Privé Les Pionniers. Mon objectif : contribuer efficacement à la réussite d'une entreprise en tant que professeur de français.
+Professionnel confirmé dans l'enseignement et la formation, je dispose d'une expérience solide et variée. J'occupe actuellement le poste de professeur de français au sein du Cours Privé Les Pionniers. Mon objectif : contribuer efficacement à la réussite d'un établissement scolaire en tant que professeur de français.
 
 **Expériences professionnelles**
 
@@ -489,11 +489,11 @@ Thiès, le 1er octobre 2026
 
 Madame, Monsieur,
 
-C'est avec un vif intérêt que j'ai découvert votre annonce parue sur votre site internet et que je vous adresse ma candidature au poste de professeur de français au sein de Groupe Scolaire Excellence. Mon parcours dans l'enseignement et la formation me permettra d'être rapidement opérationnel à ce poste.
+C'est avec un vif intérêt que j'ai découvert votre annonce parue sur votre site internet et que je vous adresse ma candidature au poste de professeur de français au sein du Groupe Scolaire Excellence. Mon parcours dans l'enseignement et la formation me permettra d'être rapidement opérationnel à ce poste.
 
-Mon parcours académique, couronné par une licence en Lettres modernes à l'Université Cheikh Anta Diop en 2012, m'a apporté de solides connaissances dans l'enseignement et la formation. J'exerce depuis 2015 en tant que professeur de français chez Cours Privé Les Pionniers, une expérience qui me permet de développer de réelles aptitudes pédagogiques et un bon contact avec les élèves. Mes missions comprennent notamment : évaluation des élèves et rencontres avec les parents.
+Titulaire d'une licence en Lettres modernes obtenue à l'Université Cheikh Anta Diop en 2012, j'ai ensuite consolidé ces acquis par une solide expérience de terrain. J'exerce depuis 2015 en tant que professeur de français au sein du Cours Privé Les Pionniers, une expérience qui me permet de développer de réelles aptitudes pédagogiques et un bon contact avec les élèves. Mes missions comprennent notamment : évaluation des élèves et rencontres avec les parents.
 
-Vous trouverez en moi un collaborateur compétent en préparation de cours, gestion de classe et évaluation des élèves, à l'aise avec l'outil informatique (Word, PowerPoint). Sur le plan personnel, je suis méthodique dans l'organisation de mes tâches et prompt à m'adapter aux situations nouvelles. Je fais également preuve de patience. Je sais combien la réussite et l'épanouissement des élèves comptent dans l'enseignement et la formation, et c'est avec cette exigence que je souhaite rejoindre votre équipe.
+Vous trouverez en moi un collaborateur compétent en préparation de cours, gestion de classe et évaluation des élèves, à l'aise avec l'outil informatique (Word, PowerPoint). Sur le plan personnel, je suis méthodique dans l'organisation de mes tâches et prompt à m'adapter aux situations nouvelles. Je fais également preuve de patience. Rejoindre le Groupe Scolaire Excellence représenterait pour moi l'opportunité de contribuer à vos objectifs tout en poursuivant mon développement professionnel.
 
 Motivé et disponible, je me tiens à votre entière disposition pour un entretien afin de vous présenter plus en détail mon parcours.
 
@@ -523,11 +523,11 @@ Saint-Louis, le 1er octobre 2026
 
 Madame, Monsieur,
 
-Vivement intéressée par Agence Kër Com, je me permets de vous adresser ma candidature spontanée pour un poste d'assistante community manager en alternance. Cette alternance me permettrait de concilier formation théorique et expérience concrète en entreprise.
+Vivement intéressée par l'Agence Kër Com, je me permets de vous adresser ma candidature spontanée pour un poste d'assistante community manager en alternance. Cette alternance me permettrait de concilier formation théorique et expérience concrète en entreprise.
 
 Actuellement étudiante en licence 2 en communication à l'Université Gaston Berger, j'acquiers progressivement des bases solides dans ce domaine. Ce qui me manque encore en expérience, je le compense par une forte motivation, une grande capacité d'apprentissage et le goût du travail bien fait.
 
-Ma formation m'a permis d'acquérir des compétences en réseaux sociaux et création de visuels, ainsi qu'une bonne maîtrise de l'outil informatique (Canva, Photoshop). Sur le plan humain, je suis créative dans la recherche de solutions et dynamique dans tout ce que j'entreprends. Je fais également preuve de curiosité. Rejoindre Agence Kër Com représenterait pour moi l'opportunité de contribuer à vos objectifs tout en poursuivant mon développement professionnel.
+Ma formation m'a permis d'acquérir des compétences en réseaux sociaux et création de visuels, ainsi qu'une bonne maîtrise de l'outil informatique (Canva, Photoshop). Sur le plan humain, je suis créative dans la recherche de solutions et dynamique dans tout ce que j'entreprends. Je fais également preuve de curiosité. Rejoindre l'Agence Kër Com représenterait pour moi l'opportunité de contribuer à vos objectifs tout en poursuivant mon développement professionnel.
 
 Convaincue que mon profil peut répondre à vos attentes, je reste à votre disposition pour un entretien à la date qui vous conviendra.
 
