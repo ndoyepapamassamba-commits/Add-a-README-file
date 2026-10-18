@@ -220,6 +220,7 @@ async function manualCv(browser, server) {
   await page.waitForSelector("#manual-panel:not([hidden])");
   check(norm(await page.locator("#m-number").innerText()) === "+221 77 000 00 00", "C: manual instructions show the formatted Wave number +221 77 000 00 00");
   check(norm(await page.locator("#m-amount").innerText()) === "999 FCFA", "C: manual instructions show the unique exact amount 999 FCFA");
+  check(norm(await page.locator("#m-fee").innerText()) === "Les frais de transfert Wave sont à votre charge.", "C: manual instructions say the Wave transfer fee is paid by the customer");
   check(norm(await page.locator("#m-ref").innerText()) === order.id, "C: manual instructions show the order reference");
   check(await page.locator("#pay-btn").isHidden(), "C: the transfer instructions replace the Wave pay button");
   check(await page.inputValue("#payer-phone") === PERSONA.phone, "C: the payer number is prefilled with the phone typed in the form");
