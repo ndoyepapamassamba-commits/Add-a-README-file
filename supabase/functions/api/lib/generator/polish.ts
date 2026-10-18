@@ -398,5 +398,7 @@ export function polishInput(input: OrderInput): OrderInput {
       qualities: (input.letter.qualities ?? []).map((q) => polishPhrase(q)),
       motivation: opt(input.letter.motivation, polishMotivation),
     }),
+    // Product blocks with their own copy-editing (stage.ts) are passed through untouched.
+    ...(input.internship ? { internship: input.internship } : {}),
   };
 }

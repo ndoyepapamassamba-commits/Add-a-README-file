@@ -1,7 +1,8 @@
 // Validation and normalisation of the order form (POST /orders). Field errors use dotted paths.
 import type { Civility, JobKind, LanguageLevel, Level, OrderInput, Product, Sector, Template } from "./types.ts";
-import { DEFAULT_TEMPLATE, isProduct, isTemplate, needsCv, needsLetter } from "./pricing.ts";
+import { DEFAULT_TEMPLATE, isProduct, isTemplate, needsCv, needsInternship, needsLetter } from "./pricing.ts";
 import { normalizeSnMobile } from "./phone.ts";
+import { STAGE_MSG, validateInternship, validateStageTarget } from "./validate_stage.ts";
 
 export const CIVILITIES: readonly Civility[] = ["M", "Mme"];
 export const JOB_KINDS: readonly JobKind[] = ["emploi", "stage", "alternance"];
@@ -59,17 +60,17 @@ export function cleanText(value: string, multiline = false): string {
   return unified.split("\n").map(collapse).filter(Boolean).join("\n");
 }
 
-type Obj = Record<string, unknown>;
+export type Obj = Record<string, unknown>;
 
-const isObj = (v: unknown): v is Obj => !!v && typeof v === "object" && !Array.isArray(v);
+export const isObj = (v: unknown): v is Obj => !!v && typeof v === "object" && !Array.isArray(v);
 
 /** Drops keys whose value is undefined so stored JSON stays tidy. */
-function compact<T extends Obj>(o: T): T {
+export function compact<T extends Obj>(o: T): T {
   for (const k of Object.keys(o)) if (o[k] === undefined) delete o[k];
   return o;
 }
 
-class Collector {
+export class Collector {
   fields: Record<string, string> = {};
 
   fail(path: string, message: string): void {
@@ -184,7 +185,7 @@ function validateTarget(c: Collector, src: Obj): OrderInput["target"] {
 }
 
 /** Runs `fn` on every non-blank object item of a list, reporting non-objects. */
-function eachItem<T>(c: Collector, items: unknown[], path: string, fn: (item: Obj, p: string) => T): T[] {
+export function eachItem<T>(c: Collector, items: unknown[], path: string, fn: (item: Obj, p: string) => T): T[] {
   const out: T[] = [];
   items.forEach((item, i) => {
     const p = `${path}.${i}`;
@@ -235,7 +236,11 @@ export function validateOrderRequest(body: unknown): ValidationResult {
   const src = root.data;
 
   const identity = validateIdentity(c, c.object(src, "identity"));
-  const target = validateTarget(c, c.object(src, "target"));
+  const stage = needsInternship(product);
+  const internship = stage ? validateInternship(c, src.internship) : undefined;
+  const target = stage
+    ? validateStageTarget(c, c.object(src, "target"), internship)
+    : validateTarget(c, c.object(src, "target"));
 
   const education = eachItem(c, c.list(src, "education", "education", 6), "education", (e, p) =>
     compact({
@@ -272,8 +277,11 @@ export function validateOrderRequest(body: unknown): ValidationResult {
   };
 
   if (needsLetter(product)) data.letter = validateLetter(c, src.letter);
+  if (internship) data.internship = internship;
   // Reported on "experiences": the wizard checks it when leaving the experiences step, after both lists.
-  if (needsCv(product) && education.length === 0 && experiences.length === 0) c.fail("experiences", MSG.oneOf);
+  if (needsCv(product) && education.length === 0 && experiences.length === 0 && !internship?.projects.length) {
+    c.fail("experiences", stage ? STAGE_MSG.oneOf : MSG.oneOf);
+  }
 
   if (Object.keys(c.fields).length) return { ok: false, fields: c.fields };
   return { ok: true, product, template, data };

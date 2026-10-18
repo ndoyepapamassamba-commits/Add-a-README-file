@@ -6,6 +6,8 @@ import { SupabaseStore } from "../../lib/store_supabase.ts";
 import type { RpcClient } from "../../lib/store_supabase.ts";
 
 export const SCHEMA_MIGRATION = new URL("../../../../migrations/20261018000001_schema.sql", import.meta.url);
+/** Pack Stage: product check constraint including 'stage'. */
+export const STAGE_MIGRATION = new URL("../../../../migrations/20261018000003_stage.sql", import.meta.url);
 const MIGRATIONS_DIR = new URL("../../../../migrations/", import.meta.url);
 
 /** Every migration in file-name order, except the pg_cron/pg_net jobs (Supabase only). */

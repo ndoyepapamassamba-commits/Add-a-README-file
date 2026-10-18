@@ -15,7 +15,7 @@ import {
 } from "./http.ts";
 import { constantTimeEqual, hashIp, newAccessToken, newOrderId, ORDER_ID_RE, sha256Hex } from "./ids.ts";
 import { formatSnMobile, normalizeSnMobile } from "./phone.ts";
-import { isTemplate, priceOf } from "./pricing.ts";
+import { isTemplate, orderPrice } from "./pricing.ts";
 import { normalizeReturnBase, validateOrderRequest } from "./validate.ts";
 import { verifySharedSecret, verifyWaveSignature, withDeadline } from "./wave.ts";
 import { loadConfig, SETTINGS_TTL_MS } from "./config.ts";
@@ -116,7 +116,7 @@ const publicConfig: Handler = (deps) => {
   return Promise.resolve(json(200, {
     brandName: c.brandName,
     currency: "XOF",
-    prices: { ...c.prices },
+    prices: { ...c.prices, stageMulti: c.stageMultiPrice },
     payment: {
       wave: deps.wave !== null,
       manual: deps.wave === null && c.manualWaveNumber !== null,
@@ -160,7 +160,7 @@ const createOrder: Handler = async (deps, req) => {
     access_token_hash: await sha256Hex(token),
     product: v.product,
     template: v.template,
-    amount: priceOf(v.product, deps.config),
+    amount: orderPrice(v.product, v.data, deps.config),
     currency: "XOF",
     status: "preview",
     input: v.data,
