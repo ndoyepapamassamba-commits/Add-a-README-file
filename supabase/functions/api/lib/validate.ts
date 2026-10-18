@@ -49,7 +49,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const FOREIGN_PHONE_RE = /^[+0-9 ]{8,20}$/;
 // Control characters except "\n" (tab and CR are folded into spaces / newlines beforehand).
 // deno-lint-ignore no-control-regex
-const CONTROL_RE = /[\u0000-\u0009\u000B-\u001F\u007F-\u009F​-‏  ﻿]/g;
+const CONTROL_RE = /[\u0000-\u0009\u000B-\u001F\u007F-\u009F\u200B-\u200F\u2028\u2029\uFEFF]/g;
 
 /** Trim, collapse whitespace runs, strip control chars. Multiline keeps one "\n" between non-empty lines. */
 export function cleanText(value: string, multiline = false): string {

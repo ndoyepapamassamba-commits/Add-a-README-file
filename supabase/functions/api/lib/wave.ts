@@ -13,7 +13,7 @@ export function isRetryableStatus(status: number): boolean {
 
 /** Rejects with a retryable WaveError when `promise` does not settle within `ms`. */
 export function withDeadline<T>(promise: Promise<T>, ms: number): Promise<T> {
-  let timer: number | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new WaveError("Wave request timed out", 0, "timeout", true)), ms);
   });
