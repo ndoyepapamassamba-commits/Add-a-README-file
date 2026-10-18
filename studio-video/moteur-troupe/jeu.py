@@ -11,7 +11,7 @@
 #      0,4 s AVANT qu'un personnage ne parle (il réagit d'abord) ; la chute surprend tout le monde.
 #   3. FLUIDITÉ : chaque canal suit sa cible par un ressort à amortissement critique (second ordre) — aucune vitesse ne saute,
 #      l'accélération est bornée ; amplitudes bornées par l'ENVELOPPE mesurée du personnage (rig2d.enveloppe).
-import math, re, zlib
+import math, os, re, zlib
 import numpy as np
 
 OMEGA = {'buste': 7.0, 'buste_lacet': 6.0, 'tete': 10.0, 'tete_lacet': 9.0, 'tete_tangage': 12.0, 'regard_x': 24.0, 'regard_y': 24.0,
@@ -257,6 +257,7 @@ PRISE_TEMPS = 0.25   # s : temps où l'on « encaisse » la chute avant la prise
                      # de la chute : la prise se voit EN ENTIER à l'écran au lieu d'arriver avant la coupe, comme dans la v2)
 def prise_t(L): return L['t0'] + L['dur'] + 0.05 + PRISE_TEMPS
 BOUCHE_BEE = 0.6   # commande de mâchoire au sommet de la prise de choc (0,6 : bouche franchement ouverte sans crier)
+VISAGE_PART = float(os.environ.get('VISAGE_PART', 0.5))   # part de la rotation du visage (LACET_VISAGE) donnée à la capture humaine
 LACET_VISAGE = 18.0   # 18/10/2026 : champ de rotation lissé (expressions_lp._lisse_flux) ; A/B JEV du plan de Baye (47 images) : 18° → 24 fautives, 0 déformée, rendu moyen 0,46 ; 14° → 25 et 0 (regard trop faible, porte D : Maman → Baye 0,36) ; 22° brut → 40 et 3
 LACET_ECOUTE_MIN = 3.5   # degrés : plancher d'écoute après toutes les couches (porte D : > 2° dans 75 % des images)
 LIM = {'buste': 3.0, 'buste_lacet': 9.0, 'tete': 6.0, 'tete_lacet': 20.0, 'tete_tangage': 9.0, 'bassin_x': 4.0}
@@ -464,6 +465,12 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
             M, Gm = couche_humaine(nom, L_sk, a_qui, cote, nf, fps, ech, cb, g, journal)
             for c_, v_ in M.items():
                 lim = 0.0 if (c_ == 'bassin_x' and assis.get(nom)) else env.get(c_, LIM[c_])
+                # TÊTE QUI TOURNE COMME UN HUMAIN (18/10/2026, mesuré sur la v7, crête à crête sur 3 s contre 39 conversations
+                # CMU) : 6,1° au squelette, 10,8° avec le visage, contre 40,3° chez l'humain. La capture était réduite pour tenir
+                # dans l'enveloppe du SQUELETTE (6° pour un dessin de trois quarts) et le visage (LivePortrait, 18°) ne recevait
+                # que le peu qui dépassait. Elle est désormais dimensionnée sur le squelette + VISAGE_PART du visage : le
+                # squelette reste borné (aucun étirement nouveau), le visage porte le reste
+                if c_ == 'tete_lacet' and RG.get('lacet_visage', 0) > 0: lim = lim + VISAGE_PART * RG['lacet_visage']
                 nz = np.abs(v_[np.abs(v_) > 1e-6]); p95 = float(np.percentile(nz, 95)) if len(nz) else 0.0
                 gain = min(RG['mocap'], FRAC[c_] * lim / p95) if p95 > 1e-6 else 0.0
                 R[c_] = R[c_] + (gain * v_).astype(np.float32)
