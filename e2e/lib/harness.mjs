@@ -29,11 +29,15 @@ export function launchBrowser() {
   return chromium.launch();
 }
 
+// The CV Premium result page may load Cormorant Garamond + Manrope from Google Fonts (optional, system fonts are
+// the fallback). With `{ fonts: true }` those requests are answered offline with an empty stylesheet / no font.
+const GOOGLE_FONTS = /^https:\/\/fonts\.(googleapis|gstatic)\.com\//;
+
 /**
  * A fresh phone-sized context (own storage, like a separate device). Every console error, uncaught page error
  * and unexpected external request of every page it opens is appended to `problems`.
  */
-export async function phoneContext(browser, problems, label) {
+export async function phoneContext(browser, problems, label, { fonts = false } = {}) {
   const context = await browser.newContext({
     viewport: PHONE,
     deviceScaleFactor: 2,
@@ -51,6 +55,10 @@ export async function phoneContext(browser, problems, label) {
         body: HTML2PDF,
         headers: { "content-type": "text/javascript; charset=utf-8", "access-control-allow-origin": "*" },
       });
+    }
+    if (fonts && GOOGLE_FONTS.test(url)) {
+      const css = url.includes("googleapis");
+      return route.fulfill({ status: css ? 200 : 404, body: css ? "/* fonts offline in the e2e test */" : "", headers: { "content-type": css ? "text/css" : "text/plain", "access-control-allow-origin": "*" } });
     }
     problems.push(`[${label}] unexpected external request ${url}`);
     return route.abort();

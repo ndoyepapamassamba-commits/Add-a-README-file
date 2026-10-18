@@ -38,9 +38,9 @@ export const PERSONA = {
   },
 };
 
-const stepSelector = (step) => `#wizard .step[data-step="${step}"]:not([hidden])`;
+export const stepSelector = (step) => `#wizard .step[data-step="${step}"]:not([hidden])`;
 
-async function next(page, step) {
+export async function next(page, step) {
   await page.click("#wz-next");
   await page.waitForSelector(stepSelector(step));
 }
@@ -48,7 +48,7 @@ async function next(page, step) {
 const exactly = (text) => new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
 
 // Matched on text content: a pressed chip's CSS "✓" (::before) becomes part of its accessible name.
-async function tapChips(page, groupSelector, labels) {
+export async function tapChips(page, groupSelector, labels) {
   for (const name of labels) {
     const chip = page.locator(`${groupSelector} button.chip`).filter({ hasText: exactly(name) });
     await chip.click();

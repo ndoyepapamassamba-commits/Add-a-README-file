@@ -1,5 +1,6 @@
 // End-to-end flow of Teranga CV on a 360 px phone against the real API (supabase/functions/api/dev.ts:
 // MemoryStore + FakeWave), started here as two child processes (DEV_PAYMENT=wave and DEV_PAYMENT=manual).
+// A–F cover cv / lettre / pack (regression), G–H (products.mjs) the Pack Stage and the CV Premium.
 // Run: cd e2e && npm install && node flow.mjs      Screenshots and server logs go to $SHOTS_DIR (default: tmp).
 import fs from "node:fs";
 import os from "node:os";
@@ -19,6 +20,7 @@ import {
 import { hiddenFragments } from "./lib/leaks.mjs";
 import { libreOfficePages, pdfPageCount } from "./lib/office.mjs";
 import { fillWizard, PERSONA } from "./lib/wizard.mjs";
+import { premiumFlows, stageManual } from "./products.mjs";
 
 const OUT = process.env.SHOTS_DIR || path.join(os.tmpdir(), "teranga-cv-e2e");
 const shoot = screenshotter(OUT);
@@ -377,6 +379,10 @@ async function main() {
     await revenueAndCron(browser, manual, [c]);
     console.log("# F — private browsing and markup typed in the form");
     await hostileAndPrivate(browser, manual);
+    console.log("# G — Pack Stage, manual mode unlocked by the owner's phone (products.mjs)");
+    await stageManual(browser, manual, { problems, shoot, out: OUT });
+    console.log("# H — CV Premium, Wave mode, then the unique manual amount (products.mjs)");
+    await premiumFlows(browser, { wave, manual }, { problems, shoot, out: OUT });
     console.log("# E — console errors on every page");
     check(problems.length === 0, `E: zero console errors, page errors or unexpected requests${problems.length ? `:\n  ${problems.join("\n  ")}` : ""}`);
     console.log(`\nPASS — ${passedCount()} checks`);
