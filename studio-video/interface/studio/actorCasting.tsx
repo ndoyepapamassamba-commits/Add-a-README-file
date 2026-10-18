@@ -360,15 +360,15 @@ export function ActorCasting({ projectId }: { projectId?: string }) {
           <Button
             size="sm"
             data-testid="actors3d-troupe"
-            title={`Les ${TROUPE.length} acteurs récurrents de @comedyvideos_100 (bible des personnages, catalogues de la chaîne, clip 041701) : mêmes noms, mêmes rôles, mêmes tenues dans chaque film.`}
+            title={`Les ${TROUPE.length} acteurs récurrents de la chaîne (bible des personnages, catalogues de la chaîne, clip 041701) : mêmes noms, mêmes rôles, mêmes tenues dans chaque film.`}
             onClick={() => {
               const lib = useStudio.getState().actors;
               const missing = TROUPE.filter((c) => !lib[speakerKey(c.name)]).map((c) => ({ ...lookFromSheet(c), source: 'troupe' as const, updatedAt: Date.now(), films: 0 }));
               useStudio.getState().upsertActors(missing);
-              setNote(missing.length ? `univers @comedyvideos_100 : ${missing.length} acteur(s) ajouté(s)` : 'l’univers est déjà dans la bibliothèque');
+              setNote(missing.length ? `univers de la chaîne : ${missing.length} acteur(s) ajouté(s)` : 'l’univers est déjà dans la bibliothèque');
             }}
           >
-            Ajouter l’univers @comedyvideos_100 ({TROUPE.length} personnages)
+            Ajouter l’univers de la chaîne ({TROUPE.length} personnages)
           </Button>
           {troupeKit && (
             <Button

@@ -104,7 +104,7 @@ describe('découpage des plans', () => {
   });
 });
 
-describe('troupe @comedyvideos_100 (bible des personnages + clip 041701)', () => {
+describe('troupe de la chaîne (bible des personnages + clip 041701)', () => {
   const look = (n: string) => lookFromSheet(TROUPE.find((c) => c.name === n)!);
   it('the tonton of the reference clip: lanky, pot belly, receding hairline, long face, a bottle in hand', () => {
     const t = look('LE TONTON');

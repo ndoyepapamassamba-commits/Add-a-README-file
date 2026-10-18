@@ -1,5 +1,5 @@
 /**
- * L'UNIVERS @comedyvideos_100 — the recurring cast and sets of the account, read on its own character catalogues,
+ * L'UNIVERS de la chaîne — the recurring cast and sets of the account, read on its own character catalogues,
  * sheets and set boards (Pixar-like 3D, warm West-African light). Each character: name, comic role (FR), visual
  * description (EN, copied VERBATIM into every image / video prompt so the character looks the same in every film) and
  * the fields of a character sheet. Each set: the description of the empty décor. The writer gets the cast with the roles;

@@ -1,4 +1,4 @@
-// CORPS DES ACTEURS 3D — l'acteur procédural « façon @comedyvideos_100 » : silhouettes des sketchs (femmes en
+// CORPS DES ACTEURS 3D — l'acteur procédural « façon de la chaîne » : silhouettes des sketchs (femmes en
 // courbes, hommes élancés au ventre rond, tatas et tontons ronds, enfants à grosse tête), visage expressif à
 // paupières (yeux mi-clos au repos, exorbités dans le choc), mâchoire qui tombe, lèvres des visèmes, coiffures
 // (twists + bandeau, tresses, foulard / gélé, dégarni…), tenues imprimées (wax, pois, fleurs, broderie, maillot),

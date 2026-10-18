@@ -133,6 +133,8 @@ def finit(d, v):
         rap['controles_utilisateur'] = {'erreur': str(ex)[:200]}; rap['a_publier'] = False
     refs = sorted(glob.glob(f'{d}/v*/qualite.json'), key=os.path.getmtime)
     refs = [r for r in refs if os.path.dirname(r) != D]
+    if os.environ.get('USINE_REF') and os.path.isfile(f"{d}/{os.environ['USINE_REF']}/qualite.json"):   # référence = la dernière version LIVRÉE
+        refs = [f"{d}/{os.environ['USINE_REF']}/qualite.json"]
     if refs and q:
         rap['non_regression'] = compare(json.load(open(refs[-1])), q); rap['non_regression']['reference'] = os.path.basename(os.path.dirname(refs[-1]))
         if rap['non_regression']['regressions']: rap['a_publier'] = False
@@ -148,7 +150,8 @@ def finit(d, v):
 MESURES_SUIVIES = {   # (porte, chemin dans le détail, sens : +1 plus haut = mieux, −1 plus bas = mieux)
     'images_fautives_jev': ('G_jev', ('images_fautives',), -1),
     'visages_deformes': ('G_jev', ('visages_deformes',), -1),
-    'plans_par_minute': ('A_rythme', ('detail', 'plansParMinute'), +1),
+    'plans_par_minute': ('A_rythme', ('detail', 'plansParMinute'), 0),   # 0 : cible en bande (TikTok q1 → studios), on compte l'écart à la bande
+    'camera': ('A_rythme', ('detail', 'camera'), +1),
     'secondes_mouvement_fautives': ('L_mouvement', ('secondes_fautives',), -1),
     'pire_bras': ('L_mouvement', ('pire', 'bras'), +1),
     'pire_buste': ('L_mouvement', ('pire', 'buste'), +1),
@@ -177,11 +180,23 @@ def compare(ref, nouv):
         d = q.get('portes', {}).get('I_fluidite', {}).get('detail') or {}
         v = [x for p_ in d.values() if isinstance(p_, dict) for k_, x in p_.items() if isinstance(x, (int, float)) and k_ != 'ok']
         return round(sum(v), 2) if v else None
-    calc = {'fluidite_saccades_total': (saccades(ref), saccades(nouv), -1)}
+    def bouches(q):   # porte B : répliques dont la bouche est lisible et juste (« 19/22 » → 19)
+        r_ = str(q.get('portes', {}).get('B_bouche', {}).get('repliques_ok', ''))
+        return int(r_.split('/')[0]) if '/' in r_ else None
+    def compte(q, porte, cle):   # nombre d'éléments fautifs listés par une porte
+        d = q.get('portes', {}).get(porte, {}).get('detail') or {}
+        v = d.get(cle) if isinstance(d, dict) else None
+        return len(v) if isinstance(v, list) else None
+    calc = {'fluidite_saccades_total': (saccades(ref), saccades(nouv), -1), 'bouches_lisibles': (bouches(ref), bouches(nouv), +1),
+            'regards_fautifs': (compte(ref, 'D_regard', 'fautes'), compte(nouv, 'D_regard', 'fautes'), -1),
+            'sous_titres_fautifs': (compte(ref, 'O_textes', 'sous_titres_fautifs'), compte(nouv, 'O_textes', 'sous_titres_fautifs'), -1)}
+    BANDE_PPM = (10.425, 18.4)   # gabarit_tiktok.json : quart bas des TikTok de l'utilisateur → médiane des studios 3D
+    ecart = lambda x: max(0.0, BANDE_PPM[0] - x, x - BANDE_PPM[1])
     for nom, (porte, chemin, sens) in list(MESURES_SUIVIES.items()) + [(k, (None, None, c[2])) for k, c in calc.items()]:
         a, b = (calc[nom][0], calc[nom][1]) if nom in calc else (_val(ref, porte, chemin), _val(nouv, porte, chemin))
         if not isinstance(a, (int, float)) or not isinstance(b, (int, float)): continue
-        etat = 'égal' if abs(b - a) < 1e-9 else ('progrès' if (b - a) * sens > 0 else 'RÉGRESSION')
+        if sens == 0: a_, b_ = ecart(a), ecart(b); etat = 'égal' if abs(b_ - a_) < 1e-9 else ('progrès' if b_ < a_ else 'RÉGRESSION')
+        else: etat = 'égal' if abs(b - a) < 1e-9 else ('progrès' if (b - a) * sens > 0 else 'RÉGRESSION')
         R['mesures'][nom] = (a, b, etat)
         if etat == 'RÉGRESSION': R['regressions'].append(f'{nom} : {a} → {b}')
     return R

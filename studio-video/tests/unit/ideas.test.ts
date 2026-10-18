@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { IDEA_FAMILIES, IDEA_LIBRARY, ideaBrief, newsIdeasPrompt, parseIdeas } from '../../coeur/studio/ideas';
 import { pool } from '../../navigateur/studio/filmAutopilot';
 
-describe('BIBLIOTHÈQUE D’IDÉES (style @comedyvideos_100, actualité)', () => {
+describe('BIBLIOTHÈQUE D’IDÉES (style de la chaîne, actualité)', () => {
   it('has original sketches in every family, each with a setup, an escalation and a short punchline', () => {
     expect(IDEA_LIBRARY.length).toBeGreaterThanOrEqual(30);
     for (const f of IDEA_FAMILIES) expect(IDEA_LIBRARY.some((i) => i.family === f)).toBe(true);

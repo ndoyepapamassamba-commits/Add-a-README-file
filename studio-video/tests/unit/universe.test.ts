@@ -3,7 +3,7 @@ import { UNIVERSE, UNIVERSE_SETS, castBrief, universeCharacter, universeSetOf } 
 import { lookFromSheet } from '../../coeur/studio/actor/cast3d';
 import { storyMessages } from '../../coeur/studio/story';
 
-describe('univers @comedyvideos_100', () => {
+describe('univers de la chaîne', () => {
   it('every recurring character has a role and a verbatim visual description; names are unique', () => {
     expect(UNIVERSE.length).toBeGreaterThanOrEqual(35);
     expect(new Set(UNIVERSE.map((c) => c.name)).size).toBe(UNIVERSE.length);

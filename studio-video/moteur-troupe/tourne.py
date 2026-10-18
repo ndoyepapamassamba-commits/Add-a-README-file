@@ -682,7 +682,11 @@ def crop_for(S, kind, who=None):
 # Mamadou se déforme ») : le gros plan visage descendait à 200 px de décor pour 460 à l'écran (×2,3) — le décor, déjà peint
 # avec une profondeur de champ, devenait une bouillie, et chaque défaut du visage était grossi d'autant. Plancher 260 px
 # (×1,77 au plus), puis netteté rendue à l'agrandissement (NETTETE, ci-dessous).
-GROS_PLAN_MIN = float(os.environ.get('GROS_PLAN_MIN', 260))
+# RETOUR À 200 px (18/10/2026, v4 → v5) : à 260, le gros plan visage de Tantie Awa (visage 66 px) prenait la tête de Modou
+# dans le cadre, la règle des têtes entières le refusait et tout le sketch du loyer passait en plan large — bouches
+# illisibles (porte B 15/22 contre 19/22), découpage non conforme (M), caméra immobile (0,10 px/i contre 0,75). Le flou
+# des agrandissements est traité par la netteté rendue (NETTETE) ; les bandes floues, par l'habillage net (marque.py).
+GROS_PLAN_MIN = float(os.environ.get('GROS_PLAN_MIN', 200))
 def crop_visage(S, who, part=0.22):
     """gros plan calé sur le VISAGE de celui qui parle : le visage occupe `part` de la hauteur de l'image (≈ 100 px sur 460).
     v30 jugée par JEV (réalisateur) : pour Baye assis, le plan « serré » calé sur la largeur d'épaules (boubou ample)

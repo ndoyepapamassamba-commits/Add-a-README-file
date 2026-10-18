@@ -1,3 +1,4 @@
+import os
 # SONIE ET CRÊTE DU FILM (17/10/2026, v25) — la porte H exige, sur le FICHIER livré, −14 ± 1 LUFS et une crête vraie
 # ≤ −0,9 dBTP (consensus TikTok / EBU R128). Le loudnorm d'ffmpeg en une passe laissait −15,3 LUFS et −0,7 dBTP : la
 # parole crête 17 dB au-dessus de sa sonie, un gain seul ne peut pas tenir les deux. Ici, en boucle jusqu'à la cible :
@@ -54,7 +55,7 @@ def limiteur(y, sr=SR, plafond_db=-2.0, anticipation=0.003, relache=0.04):
 PART_AIGUS = 0.06
 
 
-def adoucit(y, sr, part=PART_AIGUS, plancher_db=-9.0):
+def adoucit(y, sr, part=PART_AIGUS, plancher_db=-12.0):   # −12 dB (v4 : à −9, « celle » de Maman restait à −9,7 dB sous la parole après mastering)
     from scipy.signal import stft, istft
     n = len(y); f, t, Z = stft(y, sr, nperseg=1024, noverlap=768); P = np.abs(Z) ** 2
     hf = f >= 5000; tot = P.sum(0) + 1e-12; r = P[hf].sum(0) / tot
@@ -84,9 +85,20 @@ def aigus(y, sr, lignes=None, cibles=None, seuil_db=-10.0, rapport_f0=1.6):
         for L in lignes:
             c = cibles.get(L['qui'])
             if not c: continue
-            x = y[int(L['t0'] * sr):int((L['t0'] + L['dur']) * sr)].astype(np.float64)
-            if len(x) < sr // 5: continue
-            f0, _ = pw.harvest(x, sr, f0_floor=60, f0_ceil=900, frame_period=10); v = f0[f0 > 0]
+            # la VOIX SEULE du personnage (fichier de la réplique) : dans la bande, la fin de la réplique précédente d'une autre
+            # voix chevauche le début (v4 : Modou « à 266 Hz » = 80 ms de Tantie Awa ; sa propre voix : p95 180 Hz)
+            if L.get('wav') and os.path.isfile(L['wav']):
+                import soundfile as sf_; x, sr_l = sf_.read(L['wav']); x = (x.mean(1) if x.ndim > 1 else x).astype(np.float64)
+            else:
+                x, sr_l = y[int(L['t0'] * sr):int((L['t0'] + L['dur']) * sr)].astype(np.float64), sr
+            if len(x) < sr_l // 5: continue
+            # hauteur ROBUSTE : trames fortes (> 30 % du pic de la réplique) où deux estimateurs s'accordent à 15 % près —
+            # Harvest seul prend l'octave au-dessus sur les attaques faibles (Modou « 266 Hz » : 179 Hz sur ces trames)
+            f0, tf = pw.harvest(x, sr_l, f0_floor=60, f0_ceil=900, frame_period=10)
+            fd, td = pw.dio(x, sr_l, f0_floor=60, f0_ceil=900, frame_period=10); fd = pw.stonemask(x, fd, td, sr_l)
+            hp = int(0.01 * sr_l); e = np.array([np.sqrt(np.mean(x[max(0, int(t_ * sr_l) - hp):int(t_ * sr_l) + hp] ** 2)) for t_ in tf])
+            m = min(len(f0), len(fd)); f0, fd, e = f0[:m], fd[:m], e[:m]
+            v = f0[(f0 > 0) & (fd > 0) & (np.abs(np.log(np.maximum(fd, 1) / np.maximum(f0, 1))) < 0.15) & (e > 0.3 * (e.max() + 1e-12))]
             if len(v) > 10 and np.percentile(v, 95) > rapport_f0 * c:
                 fautes.append({'t': round(L['t0'], 2), 'sorte': 'hauteur', 'qui': L['qui'], 'p95_hz': round(float(np.percentile(v, 95))), 'cible_hz': c})
     return fautes

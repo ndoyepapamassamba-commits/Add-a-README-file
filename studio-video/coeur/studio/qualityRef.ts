@@ -21,7 +21,7 @@ export interface ReferenceProfile {
 }
 /**
  * Measured on 10/2026 (frames 180×320, first 12 s, 25 i/s): target = clip 041701 (the user's reference); band = 041701
- * + 5 most viewed @comedyvideos_100 videos + 2 most viewed of the niche (8.3 M and 1.9 M views).
+ * + 5 most viewed channel videos + 2 most viewed of the niche (8.3 M and 1.9 M views).
  */
 export const REFERENCE_041701: ReferenceProfile = {
   name: '041701 + vidéos TikTok de référence',

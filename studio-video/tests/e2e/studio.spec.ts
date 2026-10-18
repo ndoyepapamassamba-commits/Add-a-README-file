@@ -1354,7 +1354,7 @@ test('Circuit Grok allégé + acteurs 3D: Grok on the key shot only, EVERY other
   await page.getByTestId('actor-casting').locator('summary').click();
   await page.getByTestId('actors3d-troupe').click();
   await expect(page.getByTestId('actors3d-note')).toContainText(
-    /univers @comedyvideos_100 : (3\d|4\d) acteur\(s\) ajouté\(s\)/,
+    /univers de la chaîne : (3\d|4\d) acteur\(s\) ajouté\(s\)/,
   );
   await page.getByTestId('actor-casting').locator('summary').click();
   const L = (speaker: string, text: string, emotion: string, gesture?: string) => ({
@@ -1448,7 +1448,7 @@ test('Circuit Grok allégé + acteurs 3D: Grok on the key shot only, EVERY other
   expect(errors.filter((e) => !/favicon|ERR_|net::/i.test(e))).toEqual([]);
 });
 
-test('Acteurs 3D: the @comedyvideos_100 troupe in the library, option ON → every scene played by the 3D actors (WebGL, lip-sync, chute), the film moves; the same actors come back', async ({
+test('Acteurs 3D: the channel troupe in the library, option ON → every scene played by the 3D actors (WebGL, lip-sync, chute), the film moves; the same actors come back', async ({
   page,
 }) => {
   test.skip(!VIDEO_3D, SANS_3D);
@@ -1461,7 +1461,7 @@ test('Acteurs 3D: the @comedyvideos_100 troupe in the library, option ON → eve
   await page.getByTestId('actor-casting').locator('summary').click();
   await page.getByTestId('actors3d-troupe').click();
   await expect(page.getByTestId('actors3d-note')).toContainText(
-    /univers @comedyvideos_100 : (3\d|4\d) acteur\(s\) ajouté\(s\)/,
+    /univers de la chaîne : (3\d|4\d) acteur\(s\) ajouté\(s\)/,
   );
   // The owner's own drawn character: a green-screen sheet (5 poses) cut out in the browser, then played in the film.
   const planche = await page.evaluate(() => {

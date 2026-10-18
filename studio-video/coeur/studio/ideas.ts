@@ -1,5 +1,5 @@
 /**
- * BIBLIOTHÈQUE D'IDÉES — sketches « à mourir de rire » dans le style du compte @comedyvideos_100 (familles de situations
+ * BIBLIOTHÈQUE D'IDÉES — sketches « à mourir de rire » dans le style de la chaîne (familles de situations
  * relevées sur ses vidéos les plus vues : le mari paresseux, la jalousie à la maison, la révélation de grossesse, le
  * vieux qui drague devant le jeune, le panier de la marchande, les voleurs qui s'accusent, l'ex qui revient riche…).
  * Les sketchs ci-dessous sont ORIGINAUX (aucune réplique copiée) : deux personnages, une situation du quotidien

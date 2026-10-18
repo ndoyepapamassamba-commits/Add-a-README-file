@@ -46,11 +46,50 @@ NOMBRE = re.compile(r"\d+|(un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|
 def outil(w, suivant=''):   # le mot appelle la suite : mot-outil, ou nombre suivi d'un nombre (« cinq | cents », « dix | mille »)
     if re.search(r'[.!?…,;:»]$', w): return False
     return w.lower().replace('’', "'") in OUTILS or bool(NOMBRE.fullmatch(w) and suivant and NOMBRE.fullmatch(re.sub(r'[.!?…,;:»]+$', '', suivant)))
+# SOUS-TITRES STYLÉS ET ÉMOJIS QUI TRADUISENT (18/10/2026, « même les textes de la vidéo doivent être stylés ; traduire ce qui se
+# dit en émoji parfois ; quand on est choqué, le choc ; un jeu de couleurs brillant, fluide, pas trop agressif ») :
+#   · le mot prononcé est posé sur une PASTILLE arrondie à la couleur douce du personnage qui parle (repère de qui parle),
+#     lettres sombres ; les autres mots en blanc à contour adouci et ombre légère ; mots de la chute en jaune chaud ;
+#   · un ÉMOJI ANIMÉ (Noto, CC BY 4.0) jaillit DANS LA LIGNE, juste après le mot qui l'appelle, au moment où il est dit
+#     (argent → 💸, lunettes → 😎, loyer → 🏠…), et reste jusqu'à la fin du bloc.
+# ÉMOJIS DANS LA LIGNE, JAMAIS SUR LA SCÈNE (18/10/2026, v4 → v5) : posés au-dessus des mots, ils débordaient de 30 px dans
+# l'image des acteurs (💸 sur la robe de Tantie Awa, 🚦 sur son pagne) ; JEV les voyait comme des objets qui flottent ou hors
+# de propos (« physique » 387 images, « hors contexte » 301, « style » 448 : 650 images fautives contre 238 en v3) et
+# trois sous-titres devenaient « illisibles ». Leur place est réservée dans la largeur de la ligne (découpe comprise) et
+# un contrôle refuse tout émoji qui toucherait l'image des acteurs.
+COUL_PERSO = {'COUMBA': (255, 128, 190), 'KOFFI': (255, 200, 80), 'MAMAN NOUNOU': (110, 225, 150), 'BAYE NDIAYE': (120, 180, 255),
+              'PETIT MAMADOU': (255, 228, 100), 'TANTIE AWA': (255, 160, 100), 'MODOU': (90, 225, 230)}
+EMOJI_MOTS = {   # racine du mot (sans accent, minuscule) → émoji ANIMÉ disponible chez Noto (vérifié dans api.json)
+    'argent': '1f4b8', 'dje': '1f4b8', 'barre': '1f4b8', 'paie': '1f4b8', 'payer': '1f4b8', 'paye': '1f4b8', 'facture': '1f4b8',
+    'banque': '1f4b8', 'portefeuille': '1f4b8', 'bedou': '1f4b8', 'riche': '1f911', 'lunette': '1f60e', 'classe': '1f60e',
+    'brillent': '1f60e', 'poisson': '1f41f', 'patron': '1f440', 'peur': '1f628', 'bulletin': '1f440', 'premier': '1f947',
+    'termite': '1f41c', 'cache': '1f648', 'confidentiel': '1f92b', 'loyer': '1f3e0', 'maison': '1f3e0', 'route': '1f6a6',
+    'embouteillage': '1f6a6', 'gbaka': '1f697', 'voiture': '1f697', 'garage': '1f697', 'courant': '1f4a1', 'foot': '26bd',
+    'ballon': '26bd', 'documentaire': '1f4fa', 'radio': '1f3b6', 'ronfle': '1f634', 'dort': '1f634', 'regime': '1f957',
+    'docteur': '1fa7a', 'gratuit': '1f193', 'marche': '1f6d2', 'malade': '1f912', 'tomate': '1f345', 'quoi': '1f631',
+}
+_sans = lambda w: unicodedata.normalize('NFD', w.lower()).encode('ascii', 'ignore').decode()
+def emoji_de(w):
+    m = re.sub(r"[^a-z]", '', _sans(w.split("'")[-1]))
+    if len(m) < 3: return None
+    for k, cp in EMOJI_MOTS.items():
+        if m == k or (len(k) >= 4 and m.startswith(k)) or (len(m) >= 5 and k.startswith(m)): return cp
+    return None
+EMO_W = 50   # place d'un émoji dans la ligne (42 px, élastique jusqu'à 53, + marges)
+def emo_rangs(ch):   # mots du bloc qui portent un émoji : deux au plus, un seul par émoji
+    r, vus = [], set()
+    for i, (w, _, _) in enumerate(ch):
+        cp = emoji_de(w)
+        if cp and cp not in vus and len(r) < 2 and F1.getlength(w.upper()) + EMO_W <= LARGEUR: r.append(i); vus.add(cp)   # mot trop long : pas de place, pas d'émoji
+    return r
+def largeur(ch, idx, em):   # largeur d'une ligne (mots idx du bloc ch), émojis compris
+    idx = list(idx)
+    return F1.getlength(' '.join(ch[i][0].upper() for i in idx)) + EMO_W * sum(1 for i in idx if i in em)
 LARGEUR = 2 * (SAFE['right'] + 1) - W   # 450 px : ligne centrée dans la zone sûre (celle que vérifient les assertions)
 def coupes(ch):   # dispositions sur une ou deux lignes dans la zone sûre : (coût, k) ; une ligne finie sur un mot-outil coûte 1000
-    up = [w.upper() for w, _, _ in ch]; r = []
+    up = [w.upper() for w, _, _ in ch]; r = []; em = set(emo_rangs(ch))
     for k in range(1, len(up) + 1):
-        w1 = F1.getlength(' '.join(up[:k])); w2 = F1.getlength(' '.join(up[k:])) if up[k:] else 0
+        w1 = largeur(ch, range(k), em); w2 = largeur(ch, range(k, len(up)), em) if up[k:] else 0
         if max(w1, w2) <= LARGEUR: r.append((max(w1, w2) + (1000 if k < len(up) and outil(ch[k - 1][0], ch[k][0]) else 0), k))
     return r
 tient = lambda ch: bool(coupes(ch))
@@ -87,43 +126,19 @@ for i in range(len(caps) - 1):
     if caps[i][1] > caps[i + 1][0]: caps[i][1] = caps[i + 1][0]
 for a, b, ch, rows in caps:  # vérifications par le calcul
     for r in rows:
-        wl = F1.getlength(' '.join(ch[i][0].upper() for i in r))
+        wl = largeur(ch, r, set(emo_rangs(ch)))
         assert (W - wl) / 2 >= SAFE['left'] - 1 and (W + wl) / 2 <= SAFE['right'] + 1, f'hors zone sûre : {[ch[i][0] for i in r]}'
     assert 752 + len(rows) * 50 <= SAFE['bottom'], 'sous-titre trop bas'
 norm = lambda w: re.sub(r'[^A-ZÀ-ÖØ-Þ]', '', unicodedata.normalize('NFC', w.upper()))
-# SOUS-TITRES STYLÉS ET ÉMOJIS QUI TRADUISENT (18/10/2026, « même les textes de la vidéo doivent être stylés ; traduire ce qui se
-# dit en émoji parfois ; quand on est choqué, le choc ; un jeu de couleurs brillant, fluide, pas trop agressif ») :
-#   · le mot prononcé est posé sur une PASTILLE arrondie à la couleur douce du personnage qui parle (repère de qui parle),
-#     lettres sombres ; les autres mots en blanc à contour adouci et ombre légère ; mots de la chute en jaune chaud ;
-#   · un ÉMOJI ANIMÉ (Noto, CC BY 4.0) jaillit au-dessus du mot qui l'appelle au moment où il est dit (argent → 💰,
-#     lunettes → 🕶️, choc → 😱, loyer → 🏠…), et reste jusqu'à la fin du bloc.
-COUL_PERSO = {'COUMBA': (255, 128, 190), 'KOFFI': (255, 200, 80), 'MAMAN NOUNOU': (110, 225, 150), 'BAYE NDIAYE': (120, 180, 255),
-              'PETIT MAMADOU': (255, 228, 100), 'TANTIE AWA': (255, 160, 100), 'MODOU': (90, 225, 230)}
-EMOJI_MOTS = {   # racine du mot (sans accent, minuscule) → émoji ANIMÉ disponible chez Noto (vérifié dans api.json)
-    'argent': '1f4b8', 'dje': '1f4b8', 'barre': '1f4b8', 'paie': '1f4b8', 'payer': '1f4b8', 'paye': '1f4b8', 'facture': '1f4b8',
-    'banque': '1f4b8', 'portefeuille': '1f4b8', 'bedou': '1f4b8', 'riche': '1f911', 'lunette': '1f60e', 'classe': '1f60e',
-    'brillent': '1f60e', 'poisson': '1f41f', 'patron': '1f440', 'peur': '1f628', 'bulletin': '1f440', 'premier': '1f947',
-    'termite': '1f41c', 'cache': '1f648', 'confidentiel': '1f92b', 'loyer': '1f3e0', 'maison': '1f3e0', 'route': '1f6a6',
-    'embouteillage': '1f6a6', 'gbaka': '1f697', 'voiture': '1f697', 'garage': '1f697', 'courant': '1f4a1', 'foot': '26bd',
-    'ballon': '26bd', 'documentaire': '1f4fa', 'radio': '1f3b6', 'ronfle': '1f634', 'dort': '1f634', 'regime': '1f957',
-    'docteur': '1fa7a', 'gratuit': '1f193', 'marche': '1f6d2', 'malade': '1f912', 'tomate': '1f345', 'quoi': '1f631',
-}
-_sans = lambda w: unicodedata.normalize('NFD', w.lower()).encode('ascii', 'ignore').decode()
-def emoji_de(w):
-    m = re.sub(r"[^a-z]", '', _sans(w.split("'")[-1]))
-    if len(m) < 3: return None
-    for k, cp in EMOJI_MOTS.items():
-        if m == k or (len(k) >= 4 and m.startswith(k)) or (len(m) >= 5 and k.startswith(m)): return cp
-    return None
 PUNCH_N = {norm(p) for p in PUNCH}
 import cartes_fx
 def draw_caption(ov, t):
     for a, b, ch, rows in caps:
         if not (a <= t < b): continue
         act = max([i for i, (w, s, e) in enumerate(ch) if s - 0.02 <= t] or [0]); dr = ImageDraw.Draw(ov); y = 752
-        c_ = COUL_PERSO.get(CAP_QUI.get(id(ch)), (255, 210, 63)); emo = []
+        c_ = COUL_PERSO.get(CAP_QUI.get(id(ch)), (255, 210, 63)); em = emo_rangs(ch); sp = F1.getlength(' ')
         for r in rows:
-            txt = [ch[i][0].upper() for i in r]; wl = F1.getlength(' '.join(txt)); x = (W - wl) / 2
+            txt = [ch[i][0].upper() for i in r]; x = (W - largeur(ch, r, em)) / 2
             for j, i in enumerate(r):
                 w = txt[j]; ww = F1.getlength(w); punch = norm(w) in PUNCH_N
                 if i == act:
@@ -134,14 +149,17 @@ def draw_caption(ov, t):
                 else:
                     col = (255, 222, 110) if punch else WHITE
                     dr.text((x + 2, y + 3), w, font=F1, fill=(0, 0, 0, 110)); dr.text((x, y), w, font=F1, fill=col, stroke_width=4, stroke_fill=(24, 12, 34))
-                cp = emoji_de(ch[i][0])
-                if cp and ch[i][1] - 0.02 <= t: emo.append((cp, x + ww / 2, t - ch[i][1]))
-                x += F1.getlength(w + ' ')
+                x += ww
+                if i in em:   # l'émoji jaillit dans sa place réservée quand le mot est dit
+                    u_ = t - ch[i][1] + 0.02; d = int(42 * cartes_fx._pop(u_)) if u_ > 0 else 0
+                    e = cartes_fx._image_emoji(emoji_de(ch[i][0]), d, u_) if d > 8 else None
+                    if e is not None:
+                        ex_, ey_ = int(x + EMO_W / 2 - e.width / 2), int(y + 22 - e.height / 2)
+                        assert ey_ >= CLIP_Y + CH_, f'émoji sur la scène ({ey_} < {CLIP_Y + CH_})'   # contrôle : jamais sur les acteurs
+                        ov.alpha_composite(e, (ex_, ey_))
+                    x += EMO_W
+                x += sp
             y += 50
-        for k_, (cp, xc, u_) in enumerate(emo[:2]):   # deux émojis au plus par bloc
-            d = max(8, int(52 * cartes_fx._pop(u_)))
-            e = cartes_fx._image_emoji(cp, d, u_) if d > 8 else None
-            if e is not None: ov.alpha_composite(e, (int(min(max(xc - e.width / 2, 4), W - e.width - 4)), int(752 - 56 - e.height / 2 + 26)))
         return
 # crédit des voix d'après le moteur réellement utilisé pour chaque réplique (voix.py écrit « moteur » dans la frise)
 _mot = {L.get('moteur', 'piper') for L in T['lines']}

@@ -162,7 +162,9 @@ def carte(W, H, u, titre, rang, total, place, nom_emoji=None):
         ft = f
         while ft.getlength(titre) > larg - 30 and ft.size > 18: ft = _police(ft.size - 2)
         dr2.text((larg / 2, h / 2), titre, font=ft, fill=(255, 255, 255, 255), anchor='mm', stroke_width=3, stroke_fill=(30, 10, 40, 255))
-        v = min(1.0, max(0.0, (u - 0.08) / 0.25)); k_ = 0.85 + 0.15 * (1 - (1 - v) ** 3)
+        # TITRE LISIBLE DÈS LA PREMIÈRE IMAGE (18/10/2026, v4 : le ruban entrait en fondu 0,08–0,33 s, JEV jugeait le titre
+        # « illisible » sur les 5 premières images de chaque carte) : opaque d'emblée, seule son échelle s'anime (0,9 → 1)
+        v = 1.0; e_ = min(1.0, max(0.0, u / 0.2)); k_ = 0.9 + 0.1 * (1 - (1 - e_) ** 3)
         rub = rub.resize((max(1, int(rub.width * k_)), max(1, int(rub.height * k_))), Image.LANCZOS).rotate(-4, resample=Image.BICUBIC, expand=True)
         if v > 0:
             al = np.array(rub); al[..., 3] = (al[..., 3] * v).astype(np.uint8); rub = Image.fromarray(al)

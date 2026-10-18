@@ -14,7 +14,7 @@ export const plain = (s: string) => (s ?? '').normalize('NFD').replace(/[\u0300-
 
 export type HairStyle = 'court' | 'afro' | 'chauve' | 'dégarni' | 'tresses' | 'twists' | 'chignon' | 'foulard';
 export type AgeGroup = 'enfant' | 'ado' | 'adulte' | 'senior';
-/** Silhouettes of the @comedyvideos_100 sketches: curvy women, lanky men (often with a pot belly), round uncles / aunties. */
+/** Silhouettes of the channel sketches: curvy women, lanky men (often with a pot belly), round uncles / aunties. */
 export type BodyShape = 'courbes' | 'élancé' | 'rond' | 'standard';
 export type Pattern = 'uni' | 'wax' | 'pois' | 'fleurs' | 'brodé' | 'maillot';
 export type Footwear = 'tongs' | 'chaussures' | 'baskets';

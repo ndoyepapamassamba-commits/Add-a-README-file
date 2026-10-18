@@ -1,5 +1,5 @@
 // ACTEURS 3D AFRIKATOON — le THÉÂTRE qui joue chaque scène du film avec les acteurs réutilisables : corps procédural
-// « façon @comedyvideos_100 » (actorBody.ts) ou modèle .vrm importé (VRoid…) piloté par le même squelette ; mise en
+// « façon de la chaîne » (actorBody.ts) ou modèle .vrm importé (VRoid…) piloté par le même squelette ; mise en
 // place, jeu du moteur d'acteur (regards, gestes de la réplique, émotions, entrées), jeu piloté par la voix (battements,
 // hochements), lip-sync mot par mot, CHUTE des sketchs (choc : saut, yeux exorbités, mâchoire qui tombe, regard caméra ;
 // rire plié en arrière), objet du gag en main, décors des sketchs (cours en parpaings ou en banco avec rideau, villages
