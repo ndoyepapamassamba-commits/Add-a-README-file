@@ -95,6 +95,27 @@ def choisit(V, H, outil='viral'):
     return 'camp', V['camp'], {}
 
 
+def titres(sketchs, candidats, outil='viral_titres'):
+    """TITRES QUI DONNENT ENVIE (18/10/2026, épisode 2 : « LES ASSIETTES » 0,38 et « LE COURANT » 0,42 à la porte O,
+    « titre_accroche ») : pour chaque sketch, JEV note les titres candidats — envie de regarder ET chute non dévoilée —
+    et garde le meilleur au-dessus de 0,5 ; sinon le titre d'origine reste et la porte O le signalera.
+    sketchs : liste de sketchs (histoire.json) ; candidats : {id: [titres]} → {id: (titre retenu, score, {titre: score})}."""
+    import jev_api
+    out = {}
+    for S in sketchs:
+        C = [c.upper() for c in candidats.get(S['id'], [])] + [S.get('titre', '').upper()]
+        etat = {'sketch': {'repliques': [r.get('texte') for r in S.get('repliques', [])]}, 'titres': {f't{i}': c for i, c in enumerate(C)}}
+        Q = {}
+        for i in range(len(C)):
+            Q[f'envie|{i}'] = {'type': 'noul', 'instructions': f'`titres.t{i}` is the title card of the short comedy sketch `sketch` (Côte d\'Ivoire). Does this title make a viewer want to watch the sketch (catchy, funny, intriguing)?'}
+            Q[f'devoile|{i}'] = {'type': 'noul', 'instructions': f'Does the title `titres.t{i}` give away the final punchline of `sketch` before it is said?'}
+        r = jev_api.demande(etat, Q, outil=outil)
+        sc = {i: round(float(r[f'envie|{i}']['noul']), 3) for i in range(len(C)) if float(r[f'devoile|{i}']['noul']) < 0.5}
+        i = max(sc, key=sc.get) if sc else len(C) - 1
+        out[S['id']] = (C[i], sc.get(i, 0.0), {C[k]: v for k, v in sc.items()})
+    return out
+
+
 def couverture_ms(T, defaut=1200):
     """instant du premier choc (réaction la plus expressive, bande « LE CHOC ! ») ; défaut : l'accroche."""
     try:

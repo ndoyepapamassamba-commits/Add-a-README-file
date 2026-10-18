@@ -270,6 +270,23 @@ def main():
                 timbre.ecrire(lines[k]['wav'], z, SR); y = (np.clip(z, -1, 1) * 32767).astype(np.int16)
                 hop = SR // 100; env = [float(np.sqrt(np.mean((y[j:j + hop].astype(np.float32) / 32768) ** 2))) for j in range(0, len(y), hop)]
                 mx = max(env) or 1; lines[k]['env'] = [round(min(1, e / mx), 3) for e in env]
+    # DURÉE MINIMALE (18/10/2026, épisodes 2 et 3 à 59,6 et 59,2 s : la rémunération TikTok exige PLUS d'une minute ;
+    # contrôle technique et normes de publication les refusaient) : il manque du temps → la réaction tenue après chaque
+    # chute s'allonge à parts égales (au plus +1,5 s par sketch, un temps comique de plus, jamais de vide en fin de film) ;
+    # tout ce qui suit est décalé d'autant (répliques, sons, cartes, bornes des sketchs)
+    cible = float(H.get('duree_cible_s') or 0) + 0.5
+    manque = cible - (t + TAIL)
+    if manque > 0 and H['sketchs']:
+        d_ = min(1.5, manque / len(H['sketchs'])); dec = 0.0
+        for S in H['sketchs']:
+            t1 = S['t1']; S['t0'] += dec
+            for L in lines + sons:
+                if L['sketch'] == S['id']: L['t0'] = round(L['t0'] + dec, 3)
+            for c in cards:
+                if c['apres'] == S['id']: c['t0'] += dec; c['t1'] += dec
+            dec += d_; S['t1'] = t1 + dec
+        t += dec
+        print(f'durée : +{dec:.2f} s de réaction tenue ({len(H["sketchs"])} sketchs) pour atteindre {cible:.1f} s', flush=True)
     total = t + TAIL
     mix = np.zeros(int(total * SR) + 1, np.float32)
     for L in lines + sons:
