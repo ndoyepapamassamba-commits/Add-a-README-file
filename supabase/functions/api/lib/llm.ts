@@ -45,6 +45,8 @@ export function makeEnhancer(opts: EnhancerOptions): Enhancer {
 }
 
 function draftOf(doc: Document, product: Product): Draft | null {
+  // Pack Stage: the letters quote the student's own reasons per company; keep the deterministic draft.
+  if (product === "stage") return null;
   const draft: Draft = {};
   if (doc.cv && product !== "lettre") {
     draft.profile = doc.cv.profile;

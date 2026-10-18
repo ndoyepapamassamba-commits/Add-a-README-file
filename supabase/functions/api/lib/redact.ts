@@ -1,6 +1,6 @@
 // Preview redaction: keeps the parts of a document that sell it and masks the rest with "█" runs.
 // A masked run contains only MASK_CHAR and spaces, so no hidden word can leak into the preview.
-import { type CvDoc, type Document, type LettreDoc, MASK_CHAR } from "./types.ts";
+import { type CvDoc, type Document, type EnvoiDoc, type LettreDoc, MASK_CHAR } from "./types.ts";
 
 const MAX_RUN = 12;
 const PROFILE_VISIBLE_WORDS = 8;
@@ -62,10 +62,23 @@ function redactLettre(l: LettreDoc): LettreDoc {
   };
 }
 
+/** Pack Stage letters after the first: recipient and subject stay visible, every paragraph is masked. */
+function redactOtherLettre(l: LettreDoc): LettreDoc {
+  return { ...redactLettre(l), paragraphs: l.paragraphs.map(maskText) };
+}
+
+/** Pack Stage sending message: only the e-mail subject stays visible. */
+function redactEnvoi(e: EnvoiDoc): EnvoiDoc {
+  return { emailSubject: e.emailSubject, emailBody: maskText(e.emailBody), whatsapp: maskText(e.whatsapp) };
+}
+
 /** Same shape as `doc`; hidden text replaced by masked runs (see SPEC "redactDocument"). */
 export function redactDocument(doc: Document): Document {
-  return {
+  const out: Document = {
     cv: doc.cv ? redactCv(doc.cv) : null,
     lettre: doc.lettre ? redactLettre(doc.lettre) : null,
   };
+  if (doc.lettres) out.lettres = doc.lettres.map((l, i) => (i === 0 ? redactLettre(l) : redactOtherLettre(l)));
+  if (doc.envoi !== undefined) out.envoi = doc.envoi ? redactEnvoi(doc.envoi) : null;
+  return out;
 }

@@ -6,6 +6,8 @@ import { SupabaseStore } from "../../lib/store_supabase.ts";
 import type { RpcClient } from "../../lib/store_supabase.ts";
 
 export const SCHEMA_MIGRATION = new URL("../../../../migrations/20261018000001_schema.sql", import.meta.url);
+/** Pack Stage: product check constraint including 'stage'. */
+export const STAGE_MIGRATION = new URL("../../../../migrations/20261018000003_stage.sql", import.meta.url);
 
 const ROLES = `do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
@@ -29,6 +31,7 @@ export async function openTestDb(): Promise<TestDb> {
   };
   const migrate = async () => {
     await db.exec(await Deno.readTextFile(SCHEMA_MIGRATION));
+    await db.exec(await Deno.readTextFile(STAGE_MIGRATION));
   };
   await db.exec(ROLES);
   await migrate();

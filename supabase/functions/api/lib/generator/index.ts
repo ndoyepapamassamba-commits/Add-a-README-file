@@ -59,8 +59,10 @@ import {
   upperName,
   withArticle,
 } from "./text.ts";
+import { generateStageDocument } from "./stage.ts";
 
 export function generateDocument(input: OrderInput, product: Product, opts: { seed: string; now: Date }): Document {
+  if (product === "stage") return generateStageDocument(input, opts);
   const picker = new Picker(opts.seed);
   const facts = buildContext(input, opts.now);
   return {
@@ -96,7 +98,7 @@ export function mulberry32(seed: number): () => number {
 }
 
 /** Each slot draws from its own stream, so adding a slot never changes the choices of the others. */
-class Picker {
+export class Picker {
   constructor(private readonly seed: string) {}
 
   index(slot: string, n: number): number {
@@ -194,7 +196,7 @@ function degreeArticle(name: string): "un" | "une" {
 }
 
 /** " à l'ISM", " au Lycée Blaise Diagne", " à l'Université Cheikh Anta Diop"; " (SUPDECO)" when unsure. */
-function atSchool(school: string | undefined): string {
+export function atSchool(school: string | undefined): string {
   const s = collapse(school ?? "");
   if (!s) return "";
   if (takesArticle(s)) return ` ${a(withArticle(s))}`;
@@ -305,7 +307,7 @@ function parseSource(raw: string | undefined): Ctx["source"] {
 
 /** Folded stems showing that a degree or a job title belongs to a sector. */
 // deno-fmt-ignore
-const SECTOR_KEYWORDS: Record<Sector, string[]> = {
+export const SECTOR_KEYWORDS: Record<Sector, string[]> = {
   commerce: ["commerc", "vente", "vend", "negoce", "marketing", "caiss", "magasin", "boutique", "rayon"],
   comptabilite: ["compta", "financ", "audit", "fiscal", "gestion", "factur", "tresor", "banque", "credit"],
   informatique: [
@@ -376,7 +378,7 @@ function dedupeSkills(skills: string[]): string[] {
   return out.slice(0, 12);
 }
 
-function buildContext(input: OrderInput, now: Date): Ctx {
+export function buildContext(input: OrderInput, now: Date): Ctx {
   const g = genderOf(input.identity.civility);
   const { kind, sector, level } = input.target;
   const jobRaw = collapse(input.target.jobTitle);
@@ -424,11 +426,11 @@ function buildContext(input: OrderInput, now: Date): Ctx {
 // CV
 // ---------------------------------------------------------------------------
 
-function fullNameOf(input: OrderInput): string {
+export function fullNameOf(input: OrderInput): string {
   return `${titleCaseName(input.identity.firstName)} ${upperName(input.identity.lastName)}`;
 }
 
-function addressLine(input: OrderInput): string {
+export function addressLine(input: OrderInput): string {
   const city = capitalize(collapse(input.identity.city));
   const address = collapse(input.identity.address ?? "");
   if (!address) return city;
@@ -455,7 +457,7 @@ function buildProfile(c: Ctx, picker: Picker): string {
   return joinSentences([intro, asset, aim]);
 }
 
-function buildCv(input: OrderInput, c: Ctx, picker: Picker): CvDoc {
+export function buildCv(input: OrderInput, c: Ctx, picker: Picker): CvDoc {
   const email = collapse(input.identity.email ?? "");
   return {
     fullName: fullNameOf(input),
@@ -495,7 +497,7 @@ function qualityKey(s: string): string {
 }
 
 /** Known labels (mapped phrases) and verbatim unknown qualities; topped up to two from the sector defaults. */
-function resolveQualities(typed: string[], c: Ctx, picker: Picker): { phrases: string[]; others: string[] } {
+export function resolveQualities(typed: string[], c: Ctx, picker: Picker): { phrases: string[]; others: string[] } {
   const labels: string[] = [];
   const others: string[] = [];
   const seen = new Set<string>();
@@ -517,7 +519,7 @@ function resolveQualities(typed: string[], c: Ctx, picker: Picker): { phrases: s
 }
 
 /** "sens de l'écoute" → "un sens de l'écoute", so that "preuve d'un sens de l'écoute" reads well. */
-function qualityNoun(q: string): string {
+export function qualityNoun(q: string): string {
   if (/^(bonne|grande|réelle|excellente|vraie)\b/i.test(q)) return `une ${q}`;
   if (/^(sens|esprit|goût|bon|grand|réel|excellent|vrai)\b/i.test(q)) return `un ${q}`;
   return q;
