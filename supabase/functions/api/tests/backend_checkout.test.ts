@@ -55,7 +55,7 @@ Deno.test("checkout (wave): a new session after expiry, unless the old one was p
   const renewed = await checkout(h, id, token);
   assertEquals([renewed.status, h.wave!.callsOf("createCheckoutSession").length], [200, 2]);
 
-  const { sessionId } = { sessionId: (await h.store.getOrder(id))!.checkout_session_id! };
+  const sessionId = (await h.store.getOrder(id))!.checkout_session_id!;
   h.wave!.completeSession(sessionId);
   h.clock.advance(31 * MIN);
   const res = await checkout(h, id, token);

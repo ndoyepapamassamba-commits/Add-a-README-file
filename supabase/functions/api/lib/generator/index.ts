@@ -119,7 +119,16 @@ class Composer {
   private readonly used: string[] = [];
   private readonly stems: string[];
 
-  constructor(private readonly picker: Picker, private readonly c: Ctx, extraStems: string[] = []) {
+  /**
+   * @param extraStems document-specific expressions to avoid repeating (the job title)
+   * @param planned text that will appear in the document whatever the choices (the latest employer)
+   */
+  constructor(
+    private readonly picker: Picker,
+    private readonly c: Ctx,
+    extraStems: string[] = [],
+    private readonly planned: string[] = [],
+  ) {
     this.stems = [...REPEAT_STEMS, ...extraStems.map((s) => s.toLocaleLowerCase("fr")).filter((s) => s.length >= 4)];
   }
 
@@ -130,7 +139,7 @@ class Composer {
 
   choose(slot: string, texts: string[]): string | null {
     if (texts.length === 0) return null;
-    const usedText = this.used.join(" ").toLocaleLowerCase("fr");
+    const usedText = [...this.planned, ...this.used].join(" ").toLocaleLowerCase("fr");
     const fresh = texts.filter((t) => {
       const lower = t.toLocaleLowerCase("fr");
       return !this.stems.some((stem) => usedText.includes(stem) && lower.includes(stem));
@@ -375,7 +384,7 @@ export function formatPeriod(start: string | undefined, end: string | undefined)
 
 function buildProfile(c: Ctx, picker: Picker): string {
   // The aim must name the job, so it is chosen first; the other slots then avoid repeating it.
-  const w = new Composer(picker, c, [c.role]);
+  const w = new Composer(picker, c, [c.role], [c.exp?.at ?? ""]);
   const aim = w.pick("profile.aim", PROFILE_AIM[c.kind]);
   const asset = c.exp ? w.pick("profile.experience", PROFILE_EXPERIENCE) : w.pick("profile.skills", PROFILE_SKILLS);
   const intro = w.pick("profile.intro", PROFILE_INTRO[c.level]);

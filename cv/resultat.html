@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vos documents — Teranga CV</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="theme-color" content="#0b6b4e">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+<script src="config.js" defer></script>
+<script src="render.js" defer></script>
+<script src="app.js" defer></script>
+<script src="export.js" defer></script>
+<script src="result.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="Teranga CV, accueil">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0b6b4e"/><path d="M10 7h8.5L23 11.5V25H10z" fill="#fff"/><path d="M18.5 7v4.5H23z" fill="#bfe0d2"/><rect x="12.5" y="14.6" width="8" height="1.9" rx=".95" fill="#d38c0b"/><rect x="12.5" y="18.3" width="8" height="1.6" rx=".8" fill="#9cc8b5"/><rect x="12.5" y="21.6" width="5.2" height="1.6" rx=".8" fill="#9cc8b5"/></svg>
+      <span>Teranga CV</span>
+    </a>
+    <a class="header-link" href="index.html#creer">Nouveau document</a>
+  </div>
+</header>
+
+<main id="main" class="wrap result">
+  <div class="card center-card" id="st-loading" role="status">
+    <span class="spinner big-spinner" aria-hidden="true"></span>
+    <p>Chargement de votre commande…</p>
+  </div>
+
+  <section class="card center-card" id="st-error" hidden aria-labelledby="err-title">
+    <h1 id="err-title" tabindex="-1">Commande introuvable</h1>
+    <p id="err-text"></p>
+    <a class="btn btn-primary" href="index.html">Créer un document</a>
+  </section>
+
+  <section id="st-wait" hidden aria-labelledby="wait-title">
+    <div class="card center-card">
+      <span class="spinner big-spinner" aria-hidden="true"></span>
+      <h1 id="wait-title" tabindex="-1">Confirmation du paiement…</h1>
+      <p id="wait-text"></p>
+      <button type="button" class="btn btn-primary btn-block" id="check-now"><span class="btn-label">Vérifier maintenant</span></button>
+      <a class="btn btn-secondary btn-block" id="wait-whatsapp" href="#" target="_blank" rel="noopener" hidden>Envoyer la confirmation sur WhatsApp</a>
+      <a class="btn btn-ghost btn-block" id="wait-back" href="index.html" hidden>Revenir à l'aperçu pour payer</a>
+      <p class="status" id="wait-status" role="status" aria-live="polite"></p>
+      <p class="hint">Référence : <strong id="wait-ref">—</strong>. Ce lien est gardé dans « Mes documents » sur ce téléphone : vous pouvez fermer la page et revenir plus tard.</p>
+    </div>
+    <div id="wait-preview" class="doc-stack"></div>
+  </section>
+
+  <section id="st-ready" hidden aria-labelledby="ready-title">
+    <div class="banner banner-ok" role="status"><strong>Paiement confirmé.</strong> Vos documents sont prêts : téléchargez-les ci-dessous.</div>
+    <h1 id="ready-title" tabindex="-1">Vos documents</h1>
+    <div class="result-tools">
+      <div>
+        <p class="tool-label" id="rs-tpl-label">Modèle</p>
+        <div class="seg" role="radiogroup" aria-labelledby="rs-tpl-label" id="rs-templates"></div>
+      </div>
+      <a class="btn btn-secondary" id="share-btn" href="#" target="_blank" rel="noopener">Partager le site sur WhatsApp</a>
+    </div>
+    <div class="edit-hint">
+      <svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 17l1-4 9-9 3 3-9 9-4 1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      <p>Touchez un texte du document pour le corriger avant de télécharger. Vos corrections sont gardées sur ce téléphone.
+        <button type="button" class="btn-danger-link" id="reset-edits" hidden>Annuler mes corrections</button></p>
+    </div>
+    <div id="docs" class="doc-stack"></div>
+  </section>
+</main>
+
+<div id="print-root"></div>
+</body>
+</html>

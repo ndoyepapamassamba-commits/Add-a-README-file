@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administration — Teranga CV</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; object-src 'none'; base-uri 'self'; form-action 'self'">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+<script src="config.js" defer></script>
+<script src="app.js" defer></script>
+<script src="admin.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="Teranga CV, accueil">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0b6b4e"/><path d="M10 7h8.5L23 11.5V25H10z" fill="#fff"/><path d="M18.5 7v4.5H23z" fill="#bfe0d2"/><rect x="12.5" y="14.6" width="8" height="1.9" rx=".95" fill="#d38c0b"/><rect x="12.5" y="18.3" width="8" height="1.6" rx=".8" fill="#9cc8b5"/><rect x="12.5" y="21.6" width="5.2" height="1.6" rx=".8" fill="#9cc8b5"/></svg>
+      <span>Teranga CV <small>admin</small></span>
+    </a>
+  </div>
+</header>
+
+<main id="main" class="wrap admin">
+  <section class="card login-card" id="login" hidden aria-labelledby="login-title">
+    <h1 id="login-title">Administration</h1>
+    <form id="login-form" novalidate>
+      <div class="field">
+        <label for="admin-key">Clé d'administration</label>
+        <input type="password" id="admin-key" autocomplete="current-password" spellcheck="false" autocapitalize="off" aria-describedby="login-error">
+        <p class="field-error" id="login-error" role="alert"></p>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="login-btn"><span class="btn-label">Se connecter</span></button>
+    </form>
+    <p class="hint" style="margin-top:12px">La clé est gardée sur cet appareil uniquement. Ne la partagez pas.</p>
+  </section>
+
+  <section id="dash" hidden aria-labelledby="dash-title">
+    <div class="admin-bar">
+      <h1 id="dash-title">Tableau de bord</h1>
+      <div>
+        <button type="button" class="btn btn-secondary btn-sm" id="refresh"><span class="btn-label">Actualiser</span></button>
+        <button type="button" class="btn btn-ghost btn-sm" id="logout">Se déconnecter</button>
+      </div>
+    </div>
+    <p class="status" id="dash-status" role="status" aria-live="polite"></p>
+    <p class="error-text" id="dash-error" role="alert"></p>
+    <div class="banner banner-error" id="no-payment" hidden>
+      <h2>Aucun moyen de paiement actif</h2>
+      <p>Les clients voient leur aperçu mais ne peuvent pas payer. Activez Wave (WAVE_API_KEY) ou le paiement manuel (MANUAL_WAVE_NUMBER).</p>
+    </div>
+
+    <h2>Revenus</h2>
+    <div class="kpis" id="kpis"></div>
+
+    <h2>État du système</h2>
+    <ul class="health" id="health"></ul>
+
+    <h2>Commandes récentes</h2>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th scope="col">Référence</th><th scope="col">Date</th><th scope="col">Produit</th><th scope="col">Montant</th><th scope="col">Statut</th><th scope="col">Paiement</th><th scope="col">Numéro payeur</th><th scope="col"><span class="sr-only">Action</span></th></tr></thead>
+        <tbody id="orders-body"></tbody>
+      </table>
+    </div>
+
+    <h2>Reversements vers votre Wave</h2>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th scope="col">Jour</th><th scope="col">Montant</th><th scope="col">Numéro</th><th scope="col">Statut</th><th scope="col">Détail</th></tr></thead>
+        <tbody id="payouts-body"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+</body>
+</html>
