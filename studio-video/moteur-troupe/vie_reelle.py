@@ -4,12 +4,109 @@
 # notre processeur, avec les mêmes squelettes : la cohérence d'une image à l'autre est garantie par construction.
 # Référence : RealMaster (arXiv 2603.23462, 2026) retouche des images-clés de rendus puis propage leur aspect ; ici, la
 # propagation est faite par le moteur lui-même (squelette, déformations, visages), à coût nul.
-# Voie gratuite : AI Horde (GPU communautaires, sans compte, clé anonyme), img2img guidé par les contours (ControlNet canny)
-# pour garder la composition au pixel près. Aucun appel payant.
-#   python3 vie_reelle.py essai <scene.png> <sortie.png> [modèle] [force] [controle]
+# VOIE 1, par défaut (18/10/2026 soir, « je ne veux pas quelque chose où j'ai quelque chose à faire ») : NOTRE processeur.
+# Rien ne sort du conteneur, aucun compte, aucun jeton, rien de payant. stable-diffusion.cpp (MIT, compilé ici) +
+# FLUX.2 [klein] 4B (Apache-2.0, GGUF Q4_0) + Qwen3-4B (Apache-2.0, encodeur de texte) + VAE FLUX.2 (Apache-2.0).
+# Édition par référence : la scène peinte entre en image de référence, la consigne demande la même composition en photo.
+# Voie 2, secours : AI Horde (GPU de volontaires) — l'image sortirait du conteneur, donc seulement avec accord explicite.
+#   python3 vie_reelle.py installe                               → modèles + moteur (une fois ; ≈ 1 min de téléchargement)
+#   python3 vie_reelle.py photo <scene.png> <sortie.png> [largeur] [graine] [identité…]   → voie 1
+#   python3 vie_reelle.py lieu <dossier prep> <lieu> [identité…]  → prep/<lieu>-reel prêt à tourner (photo + préparation)
+#   python3 vie_reelle.py essai <scene.png> <sortie.png> [modèle] [force] [controle]    → voie 2 (accord requis)
 #   python3 vie_reelle.py mesure <origine.png> <photo.png>      → alignement des contours (la condition pour réutiliser le rig)
-import base64, io, json, os, sys, time, urllib.request
+import base64, io, json, os, shutil, subprocess, sys, time, urllib.request
 import numpy as np, cv2
+
+PHOTO = os.path.expanduser(os.environ.get('VIE_REELLE_MODELES', '~/.cache/massamba-models/photo'))
+TEXTE = os.environ.get('VIE_REELLE_TEXTE', '/dev/shm/massamba')   # encodeur de texte en mémoire vive : 2,5 Go de disque épargnés
+HF = 'https://huggingface.co'
+FICHIERS = {   # nom local → (dossier, adresse) ; licences vérifiées sur les fiches des dépôts (Apache-2.0, sans accès restreint)
+    'flux-2-klein-4b-Q4_0.gguf': (PHOTO, f'{HF}/leejet/FLUX.2-klein-4B-GGUF/resolve/main/flux-2-klein-4b-Q4_0.gguf'),
+    'flux2-vae-diffusers.safetensors': (PHOTO, f'{HF}/black-forest-labs/FLUX.2-klein-4B/resolve/main/vae/diffusion_pytorch_model.safetensors'),
+    'Qwen3-4B-Q4_K_M.gguf': (TEXTE, f'{HF}/unsloth/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf'),
+}
+SDCPP = ('https://github.com/leejet/stable-diffusion.cpp', 'b13a48219d5cdf408edcb93da6cd69b612ed03d3')   # version mesurée
+CONSIGNE = ('Make this a real photograph of real people. Same composition and framing, the same people at the same places '
+            'with the same poses, gestures and clothes, the same buildings, objects and ground. Each person keeps exactly the '
+            'same age, hair color and beard as in the image{identite}. Real human faces with realistic adult and child '
+            'proportions and normal-sized eyes, real skin texture with pores, not a cartoon, not a 3D render. Natural light '
+            'in Abidjan, Ivory Coast, documentary photo shot on a 35 mm lens, fine film grain.')
+
+
+def _chemin(nom):
+    return os.path.join(FICHIERS[nom][0], nom)
+
+
+def installe(journal=print):
+    """modèles manquants téléchargés en parallèle, moteur compilé pour ce processeur (une fois) ; idempotent."""
+    t0 = time.time(); procs = []
+    for nom, (d, url) in FICHIERS.items():
+        if os.path.isfile(_chemin(nom)): continue
+        os.makedirs(d, exist_ok=True)
+        procs.append((nom, subprocess.Popen(['curl', '-sSLf', '--retry', '4', '-o', _chemin(nom) + '.part', url])))
+    sd = os.path.join(PHOTO, 'bin', 'sd-cli')
+    if not os.path.isfile(sd):
+        src = os.path.join(PHOTO, 'sdcpp-src'); shutil.rmtree(src, ignore_errors=True)
+        subprocess.run(['git', 'clone', '--recursive', '--shallow-submodules', SDCPP[0], src], check=True, capture_output=True)
+        subprocess.run(['git', '-C', src, 'checkout', '--recurse-submodules', SDCPP[1]], check=True, capture_output=True)
+        subprocess.run(['cmake', '-B', 'build', '-DCMAKE_BUILD_TYPE=Release', '-DSD_WEBP=OFF', '-DSD_WEBM=OFF'], cwd=src, check=True, capture_output=True)
+        subprocess.run(['cmake', '--build', 'build', '--config', 'Release', '-j', str(os.cpu_count() or 4), '--target', 'sd-cli'], cwd=src, check=True, capture_output=True)
+        os.makedirs(os.path.dirname(sd), exist_ok=True); shutil.copy2(os.path.join(src, 'build', 'bin', 'sd-cli'), sd)
+        shutil.rmtree(src, ignore_errors=True)   # 700 Mo de compilation rendus au disque
+    for nom, p in procs:
+        if p.wait() != 0: raise RuntimeError(f'téléchargement de {nom} en échec (code {p.returncode})')
+        os.replace(_chemin(nom) + '.part', _chemin(nom))
+    journal(f'vie réelle : moteur et modèles prêts en {time.time() - t0:.0f} s')
+    return sd
+
+
+def photo(src, out, largeur=None, graine=1871, pas=4, identite='', consigne=None, fils=None, ref_largeur=768, journal=print):
+    """VOIE 1 : la scène peinte devient une photo, même cadre, sur notre processeur. Dimensions multiples de 16 au plus
+    près de l'origine (largeur = côté horizontal visé ; défaut : celui de l'origine) ; la photo est remise à la taille
+    exacte de l'origine pour que tout le moteur (masques, squelettes, visages) s'y applique. La référence est réduite à
+    ref_largeur : le coût d'un pas suit le nombre total de jetons (image + référence) ; mesuré sur la cour avec une
+    référence de 768 px : 1152×896 en 2 685 s, contours 0,852, identité gardée."""
+    sd = installe(journal=lambda *a: None)
+    im = cv2.imread(src, cv2.IMREAD_COLOR); h, w = im.shape[:2]; L = int(largeur or w)
+    W, H = int(round(L / 16)) * 16, int(round(L * h / w / 16)) * 16
+    os.makedirs(os.path.dirname(os.path.abspath(out)) or '.', exist_ok=True)
+    RW = min(W, int(round(ref_largeur / 16)) * 16); RH = int(round(RW * h / w / 16)) * 16
+    ref = os.path.splitext(out)[0] + '-reference.png'; cv2.imwrite(ref, cv2.resize(im, (RW, RH), interpolation=cv2.INTER_AREA))
+    p = (consigne or CONSIGNE).format(identite=f': {identite}' if identite else '')
+    cmd = [sd, '--diffusion-model', _chemin('flux-2-klein-4b-Q4_0.gguf'), '--vae', _chemin('flux2-vae-diffusers.safetensors'),
+           '--llm', _chemin('Qwen3-4B-Q4_K_M.gguf'), '--mmap', '-r', ref, '-p', p, '--cfg-scale', '1.0', '--sampling-method', 'euler',
+           '--steps', str(pas), '-W', str(W), '-H', str(H), '--seed', str(graine), '-t', str(fils or os.cpu_count() or 4), '-o', out + '.brut.png']
+    t0 = time.time(); r = subprocess.run(cmd, capture_output=True, text=True)
+    if r.returncode != 0 or not os.path.isfile(out + '.brut.png'):
+        raise RuntimeError(f'vie réelle (voie 1) en échec : {(r.stderr or r.stdout)[-600:]}')
+    ph = cv2.imread(out + '.brut.png', cv2.IMREAD_COLOR); os.remove(out + '.brut.png'); os.remove(ref)
+    cv2.imwrite(out, cv2.resize(ph, (w, h), interpolation=cv2.INTER_LANCZOS4))
+    res = {'voie': 'local · FLUX.2 klein 4B', 'taille_calcul': [W, H], 'reference': [RW, RH], 'graine': graine, 'pas': pas, 'secondes': round(time.time() - t0, 1),
+           **mesure(src, out)}
+    journal(f'vie réelle : {os.path.basename(src)} → {os.path.basename(out)} en {res["secondes"]} s, contours {res["contours_retrouves"]}')
+    return res
+
+
+def lieu(prep, nom, identite='', journal=print, **kw):
+    """lieu préparé `prep/<nom>` → `prep/<nom>-reel` : photo de la scène (voie 1), puis la chaîne habituelle du moteur sur la
+    photo — acteurs et masques (prepare_scene), squelettes et visages (prepare_rig), expressions (prepare_expressions).
+    Les acteurs gardent leurs noms, de gauche à droite comme dans la scène peinte ; un film prend ce lieu en changeant
+    seulement son dossier dans montage.json. Chaque étape est sautée si son résultat existe (reprise après arrêt)."""
+    src, dst = os.path.join(prep, nom), os.path.join(prep, f'{nom}-reel'); os.makedirs(dst, exist_ok=True)
+    S = json.load(open(f'{src}/scene.json')); noms = [a['nom'] for a in sorted(S['acteurs'], key=lambda a: a['bbox'][0])]
+    ph, T = f'{dst}/photo.png', {}
+    if not os.path.isfile(ph):
+        json.dump(photo(f'{src}/image.png', ph, identite=identite, journal=journal, **kw), open(f'{dst}/photo.json', 'w'), ensure_ascii=False)
+    ici = os.path.dirname(os.path.abspath(__file__))
+    slugs = lambda: [a['slug'] for a in json.load(open(f'{dst}/scene.json'))['acteurs']]
+    for script, args, fait in (('prepare_scene.py', [ph, dst, ','.join(noms)], lambda: os.path.isfile(f'{dst}/scene.json')),
+                               ('prepare_rig.py', [dst], lambda: os.path.isfile(f'{dst}/rig/scene_rig.json')),   # écrit en dernier
+                               ('prepare_expressions.py', [dst], lambda: all(os.path.isfile(f'{dst}/expressions/{s}/meta.json') for s in slugs()))):
+        if fait(): continue
+        t0 = time.time(); r = subprocess.run([sys.executable, os.path.join(ici, script), *args], capture_output=True, text=True, cwd=ici)
+        if r.returncode: raise RuntimeError(f'{script} en échec sur {dst} :\n{(r.stderr or r.stdout)[-1200:]}')
+        T[script] = round(time.time() - t0); journal(f'{script} : {T[script]} s · {r.stdout.strip()[-300:]}')
+    return {'lieu': dst, 'acteurs': noms, 'durees_s': T}
 
 HORDE = 'https://aihorde.net/api/v2'
 CLE = os.environ.get('AIHORDE_KEY', '0000000000')   # anonyme par défaut (gratuit) ; une clé personnelle ne s'affiche jamais
@@ -70,7 +167,12 @@ def mesure(a, b):
 
 if __name__ == '__main__':
     a = sys.argv[1:]
-    if a[0] == 'essai':
+    if a[0] == 'installe': installe()
+    elif a[0] == 'lieu': print(json.dumps(lieu(a[1], a[2], identite=' '.join(a[3:])), ensure_ascii=False))
+    elif a[0] == 'photo':
+        print(json.dumps(photo(a[1], a[2], *([int(a[3])] if len(a) > 3 else []), *([int(a[4])] if len(a) > 4 else []),
+                               identite=' '.join(a[5:])), ensure_ascii=False))
+    elif a[0] == 'essai':
         print(json.dumps(essai(a[1], a[2], *(a[3:4] or ["ICBINP - I Can't Believe It's Not Photography"]),
                                *( [float(a[4])] if len(a) > 4 else []), *([a[5] if a[5] != '-' else None] if len(a) > 5 else [])), ensure_ascii=False))
     elif a[0] == 'mesure': print(json.dumps(mesure(a[1], a[2])))

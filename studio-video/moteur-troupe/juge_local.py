@@ -514,12 +514,18 @@ def _domaine(role, X):
     return float(np.sqrt(((D_['pts'] - z) ** 2).sum(1)).min()) <= D_['seuil']
 
 
+_VERROU_VLM = threading.Lock()
+
+
 def _vlm():
-    if 'vlm' not in _M:
-        import torch
-        from transformers import AutoProcessor, AutoModelForVision2Seq
-        # une seule tuile de 512 px par image (sans découpage) : ~64 jetons d'image au lieu de plusieurs centaines
-        _M['vlm'] = (AutoProcessor.from_pretrained(VLM, do_image_splitting=False), AutoModelForVision2Seq.from_pretrained(VLM, torch_dtype=torch.float32).eval(), torch)
+    # verrou (18/10/2026) : des contrôles jugés en parallèle importaient transformers ensemble ; son import paresseux,
+    # interrompu par un autre fil, répondait « cannot import name 'AutoProcessor' » (préparation de la cour réelle arrêtée)
+    with _VERROU_VLM:
+        if 'vlm' not in _M:
+            import torch
+            from transformers import AutoProcessor, AutoModelForVision2Seq
+            # une seule tuile de 512 px par image (sans découpage) : ~64 jetons d'image au lieu de plusieurs centaines
+            _M['vlm'] = (AutoProcessor.from_pretrained(VLM, do_image_splitting=False), AutoModelForVision2Seq.from_pretrained(VLM, torch_dtype=torch.float32).eval(), torch)
     return _M['vlm']
 
 

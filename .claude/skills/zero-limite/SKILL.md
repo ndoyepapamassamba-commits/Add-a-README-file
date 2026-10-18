@@ -103,6 +103,7 @@ Ce que cela veut dire dans le travail :
 | Personnages générés de taille incohérente | JEV (TypeSafe) juge chaque image : identité, taille, cadrage, texte parasite, lieu |
 | Disque plein | purge des caches et des images intermédiaires des anciennes versions + rétention automatique |
 | Pas de carte graphique dans le conteneur ; serveurs GPU gratuits sans compte épuisés (17/10 : « ZeroGPU runs limit ») | GPU distant GRATUIT appelé par l'application dans le navigateur de l'utilisateur (Space « Wan2.2 14B Fast », CORS ouvert, quota quotidien de l'utilisateur ; un clip de 3 s en 4 étapes réserve ≈ 37 s de GPU, mesuré dans le code du Space), crédits mensuels Modal en appui, arbitre JEV par plan ; voies payantes désactivées |
+| Voie « vie réelle » qui demandait un geste de l'utilisateur (jeton Kaggle) puis refusée (« je ne veux pas quelque chose où j'ai quelque chose à faire », 18/10) ; envoi d'images vers des GPU de volontaires bloqué | photo réelle calculée sur NOTRE processeur : stable-diffusion.cpp (MIT) compilé ici + FLUX.2 [klein] 4B (Apache-2.0, GGUF Q4_0) + Qwen3-4B en mémoire vive (disque épargné) ; installation automatique (`vie_reelle.py installe`), rien ne sort du conteneur, 0 compte, 0 € |
 
 ## Liste de contrôle avant d'envoyer
 
