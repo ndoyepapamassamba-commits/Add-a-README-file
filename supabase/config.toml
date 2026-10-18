@@ -1,0 +1,7 @@
+# Supabase CLI configuration for Teranga CV (project ref seegnylaubuularegmku).
+project_id = "teranga-cv"
+
+# The `api` function authenticates its callers itself (order tokens, Wave signatures, x-cron-secret,
+# admin key), so the gateway must not require a Supabase JWT.
+[functions.api]
+verify_jwt = false
