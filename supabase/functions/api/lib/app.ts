@@ -30,6 +30,8 @@ export const CHECKOUT_REUSE_MARGIN_MS = 2 * 60_000;
 export const CHECKOUT_DEFAULT_TTL_MS = 30 * 60_000;
 export const WEBHOOK_REFETCH_TIMEOUT_MS = 3_000;
 export const ORDER_REFRESH_TIMEOUT_MS = 5_000;
+/** Wave session lookups per order per minute (the result page polls every 4 s, i.e. 15 per minute). */
+export const WAVE_SYNC_PER_MINUTE = 30;
 
 type Handler = (deps: Deps, req: Request, params: string[]) => Promise<Response>;
 
@@ -80,7 +82,8 @@ async function loadCustomerOrder(deps: Deps, id: string, token: unknown): Promis
 
 /**
  * Looks up the order's Wave session and marks the order paid when Wave confirms it.
- * `session` is null when there is none or the lookup failed (logged, never thrown).
+ * `session` is null when there is none, the lookup failed (logged, never thrown) or the order already used
+ * its share of Wave lookups: page loads cannot be turned into unbounded calls on the merchant's API key.
  */
 async function syncWithWave(
   deps: Deps,
@@ -88,6 +91,10 @@ async function syncWithWave(
   timeoutMs: number,
 ): Promise<{ session: WaveCheckoutSession | null; paid: boolean }> {
   if (!deps.wave || !order.checkout_session_id) return { session: null, paid: false };
+  const key = `wave-sync:${order.id}`;
+  if (!(await deps.store.hitRateLimit(key, 60, WAVE_SYNC_PER_MINUTE, deps.now().toISOString()))) {
+    return { session: null, paid: false };
+  }
   try {
     const session = await withDeadline(deps.wave.getCheckoutSession(order.checkout_session_id), timeoutMs);
     return { session, paid: (await confirmPayment(deps, order, session)).confirmed };
@@ -240,6 +247,9 @@ const checkout: Handler = async (deps, req, [id]) => {
       wave_launch_url: session.wave_launch_url,
       checkout_expires_at: sessionExpiry(session, now),
     });
+    // The previous session may have been paid while this one was being created (other tab, webhook):
+    // the store keeps the paying session, and the customer must not be sent to a second payment page.
+    if ((await deps.store.getOrder(id))?.status === "paid") throw alreadyPaid();
     return json(200, { mode: "wave", launchUrl: session.wave_launch_url });
   }
 

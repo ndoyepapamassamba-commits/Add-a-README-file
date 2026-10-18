@@ -208,7 +208,8 @@ language sql stable security definer set search_path = '' as $$
   select tcv.order_json(o) from tcv.orders o where o.id = p_id
 $$;
 
--- Payment fields can only change through tcv_mark_paid; a paid order never leaves "paid".
+-- Payment fields can only change through tcv_mark_paid; a paid order never leaves "paid" and keeps the
+-- checkout fields of the session that paid it (only its template may still change).
 create or replace function public.tcv_update_order(p_id text, p_patch jsonb) returns void
 language plpgsql security definer set search_path = '' as $$
 declare
@@ -226,12 +227,13 @@ begin
   update tcv.orders o set
     template = case when p_patch ? 'template' then p_patch ->> 'template' else o.template end,
     status = case when o.status = 'paid' or not (p_patch ? 'status') then o.status else p_patch ->> 'status' end,
-    checkout_session_id = case when p_patch ? 'checkout_session_id'
+    checkout_session_id = case when o.status <> 'paid' and p_patch ? 'checkout_session_id'
       then p_patch ->> 'checkout_session_id' else o.checkout_session_id end,
-    wave_launch_url = case when p_patch ? 'wave_launch_url' then p_patch ->> 'wave_launch_url' else o.wave_launch_url end,
-    checkout_expires_at = case when p_patch ? 'checkout_expires_at'
+    wave_launch_url = case when o.status <> 'paid' and p_patch ? 'wave_launch_url'
+      then p_patch ->> 'wave_launch_url' else o.wave_launch_url end,
+    checkout_expires_at = case when o.status <> 'paid' and p_patch ? 'checkout_expires_at'
       then (p_patch ->> 'checkout_expires_at')::timestamptz else o.checkout_expires_at end,
-    manual_payer_phone = case when p_patch ? 'manual_payer_phone'
+    manual_payer_phone = case when o.status <> 'paid' and p_patch ? 'manual_payer_phone'
       then p_patch ->> 'manual_payer_phone' else o.manual_payer_phone end
   where o.id = p_id;
 end;
@@ -336,6 +338,7 @@ begin
 end;
 $$;
 
+-- succeeded and failed are final: a stale cron run can neither reopen nor rewrite them.
 create or replace function public.tcv_update_payout(p_id text, p_patch jsonb) returns void
 language plpgsql security definer set search_path = '' as $$
 declare
@@ -353,15 +356,19 @@ begin
     fee = case when p_patch ? 'fee' then (p_patch ->> 'fee')::numeric else p.fee end,
     error = case when p_patch ? 'error' then p_patch ->> 'error' else p.error end,
     updated_at = coalesce((p_patch ->> 'updated_at')::timestamptz, now())
-  where p.id = p_id;
+  where p.id = p_id and p.status not in ('succeeded', 'failed');
 end;
 $$;
 
+-- Detaching the orders of a payout that succeeded would pay them a second time: refused.
 create or replace function public.tcv_fail_payout(p_id text, p_error text, p_now timestamptz) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
-  update tcv.payouts set status = 'failed', error = p_error, updated_at = p_now where id = p_id;
-  update tcv.orders set payout_id = null where payout_id = p_id;
+  update tcv.payouts set status = 'failed', error = p_error, updated_at = p_now
+  where id = p_id and status <> 'succeeded';
+  if found then
+    update tcv.orders set payout_id = null where payout_id = p_id;
+  end if;
 end;
 $$;
 

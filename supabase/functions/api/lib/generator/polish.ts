@@ -26,14 +26,14 @@ const ACCENTED = `
   opératrice employé employée guichetière comptabilité trésorerie trésorier trésorière fiscalité négociation
   négociateur médecin médical médicale médicaux santé hôpital hôpitaux préparateur préparatrice éducateur
   éducatrice éducation élémentaire collège lycée université faculté école écoles études étudiant étudiante
-  diplôme diplômes diplômé diplômée maîtrise supérieur supérieure spécialité spécialisé spécialisée spécialisation
+  diplôme diplômes diplômée maîtrise supérieur supérieure spécialité spécialisé spécialisée spécialisation
   expérience expériences compétence compétences qualité qualités réseau réseaux système systèmes données numérique
   dépannage câble câbles câblage véhicule véhicules matériel matériels matériaux béton métallique tôlerie hygiène
   écoute équipe équipes réunion réunions rédaction rédacteur rédactrice événementiel événement événements régional
   régionale général générale générales frères associés société sociétés ministère région département préfecture
   privé privée privés privées coopérative crédit épargne élevage maraîchage théâtre cinéma bénévolat activités
   randonnée découverte français française sénégalais sénégalaise série deuxième troisième quatrième cinquième
-  année années débutant débutante déjà très après réalisation réparation réparations opération opérations
+  année années débutant débutante déjà très après réalisation réparation réparations réservation réservations opération opérations
   procédure procédures géographie économie économique économiste mathématiques littéraire énergie énergétique
   électrification vidéo vidéos créativité honnêteté ponctualité sérieux sérieuse présentation prévention élèves
   stratégie stratégique médiation métier métiers agréé agréée caméra carrière géomètre dédouanement déclarant
@@ -42,7 +42,18 @@ const ACCENTED = `
   persévérant persévérante agréable énergique discrète dévoué dévouée accès sénégal thiès guédiawaye kédougou
   sédhiou mbacké kébémer linguère vélingara médina liberté sérère soninké
 `;
-const ACCENT_BY_KEY = new Map(ACCENTED.split(/\s+/).filter(Boolean).map((w) => [fold(w), w]));
+const ACCENT_BY_KEY = buildAccentMap(ACCENTED);
+
+/** Folded spelling → accented word; a folded spelling shared by two words would be ambiguous and throws. */
+function buildAccentMap(list: string): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const word of list.split(/\s+/).filter(Boolean)) {
+    const key = fold(word);
+    if (map.has(key) && map.get(key) !== word) throw new Error(`ambiguous accent entry: ${word} / ${map.get(key)}`);
+    map.set(key, word);
+  }
+  return map;
+}
 
 /** Words that are other French words without accents ("cite", "marche") but not inside a proper name. */
 const NAME_ACCENTS = new Map([["cite", "cité"], ["marche", "marché"], ["cote", "côte"]]);
@@ -213,17 +224,20 @@ export function isGenericEmployer(company: string): boolean {
   return t.split(" ").slice(1).every((w) => !hasUpper(w));
 }
 
+const polishPlace = (raw: string) => polishName(raw, { place: true });
+
 /**
  * A proper name (company, school, city, address): typed all in lower case or all in capitals, it is
  * Title-Cased with function words in lower case and acronyms in capitals ("port autonome de dakar" →
  * "Port Autonome de Dakar", "HLM GRAND YOFF" → "HLM Grand Yoff"). A single word in capitals ("SODAGRI")
  * is taken for an acronym. Names typed with mixed case only get their missing accents.
  */
-export function polishName(raw: string): string {
+export function polishName(raw: string, opts: { place?: boolean } = {}): string {
   const t = applyCompounds(collapse(raw));
   if (!t) return t;
   const lowerOnly = !hasUpper(t);
-  const shouting = !hasLower(t) && /\s/.test(t) && isShouting(t);
+  // One word in capitals is an acronym for a company ("SODAGRI") but a name for a place ("DAKAR").
+  const shouting = !hasLower(t) && (/\s/.test(t) || opts.place === true) && isShouting(t);
   if (lowerOnly && isGenericEmployer(t)) return capitalize(polishPhrase(t));
   if (!lowerOnly && !shouting) return mapWords(t, (w) => fixWord(w, BRANDS));
   return t.replace(/[\p{L}\p{N}]+/gu, (w, offset: number) => {
@@ -352,8 +366,8 @@ export function polishInput(input: OrderInput): OrderInput {
   return {
     identity: compactObj({
       ...input.identity,
-      city: polishName(input.identity.city),
-      address: opt(input.identity.address, polishName),
+      city: polishPlace(input.identity.city),
+      address: opt(input.identity.address, polishPlace),
     }),
     target: { ...input.target, jobTitle: title(input.target.jobTitle) },
     education: input.education.map(polishEducation),
@@ -361,7 +375,7 @@ export function polishInput(input: OrderInput): OrderInput {
       compactObj({
         title: title(e.title),
         company: opt(e.company, polishName),
-        place: opt(e.place, polishName),
+        place: opt(e.place, polishPlace),
         start: e.start,
         end: e.end,
         missions: polishLines(e.missions),
@@ -374,7 +388,7 @@ export function polishInput(input: OrderInput): OrderInput {
     letter: input.letter && compactObj({
       company: polishName(input.letter.company),
       recipient: opt(input.letter.recipient, polishRecipient),
-      companyCity: opt(input.letter.companyCity, polishName),
+      companyCity: opt(input.letter.companyCity, polishPlace),
       source: opt(input.letter.source, (s) => polishPhrase(s)),
       qualities: (input.letter.qualities ?? []).map((q) => polishPhrase(q)),
       motivation: opt(input.letter.motivation, polishMotivation),

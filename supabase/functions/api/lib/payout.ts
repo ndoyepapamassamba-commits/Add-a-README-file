@@ -72,19 +72,28 @@ async function applyWaveResult(deps: Deps, row: PayoutRow, res: WavePayout, nowI
 }
 
 /**
- * Sends (or re-sends) a payout with its idempotency key. Only a definitive answer from Wave fails the payout;
- * anything ambiguous leaves it `unknown` so the next run retries with the same key and body, because failing
- * detaches its orders and they would then be paid a second time.
+ * True only when Wave refused the request before acting on it: a 4xx other than timeout, conflict, rate
+ * limit or idempotency mismatch (whose HTTP status Wave does not document). A 2xx whose body could not be
+ * read, or any other surprise, may hide a payout that was executed.
+ */
+export function isDefinitiveRefusal(err: unknown): err is WaveError {
+  return err instanceof WaveError && !err.retryable && err.status >= 400 && err.status < 500 &&
+    err.status !== 409 && err.code !== "idempotency-mismatch";
+}
+
+/**
+ * Sends (or re-sends) a payout with its idempotency key. Only a definitive refusal fails the payout; anything
+ * ambiguous leaves it `unknown` so the next run retries with the same key and the same stored bytes, because
+ * failing detaches its orders and they would then be paid a second time.
  */
 async function sendPayout(deps: Deps, row: PayoutRow, nowIso: string): Promise<PayoutRow> {
-  const body = buildPayoutBody(row);
+  const body = row.request_body || buildPayoutBody(row);
   if (row.request_body !== body) await deps.store.updatePayout(row.id, { request_body: body, updated_at: nowIso });
   const sent = { ...row, request_body: body };
   try {
     return await applyWaveResult(deps, sent, await deps.wave!.createPayout(body, row.idempotency_key), nowIso);
   } catch (err) {
-    const definitive = err instanceof WaveError && !err.retryable && err.status !== 409;
-    if (definitive) {
+    if (isDefinitiveRefusal(err)) {
       await deps.store.failPayout(row.id, err.code, nowIso);
       return { ...sent, status: "failed", error: err.code, updated_at: nowIso };
     }

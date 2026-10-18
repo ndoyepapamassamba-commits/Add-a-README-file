@@ -20,7 +20,10 @@ export function withDeadline<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([promise, deadline]).finally(() => clearTimeout(timer));
 }
 
-/** Maps both Wave error shapes, `{code, message}` and `{error: {code, message, httpcode}}`. */
+/**
+ * Maps the documented Wave error shapes: `{code, message}`, `{error: {code, message, httpcode}}` and the
+ * payout API's `{error: "<code>", message}`.
+ */
 export function waveErrorFromResponse(status: number, bodyText: string): WaveError {
   let code = `http_${status}`;
   let message = `Wave API error ${status}`;
@@ -28,6 +31,7 @@ export function waveErrorFromResponse(status: number, bodyText: string): WaveErr
     const parsed = JSON.parse(bodyText);
     const src = parsed && typeof parsed.error === "object" && parsed.error ? parsed.error : parsed;
     if (src && typeof src.code === "string") code = src.code;
+    else if (parsed && typeof parsed.error === "string" && parsed.error) code = parsed.error;
     if (src && typeof src.message === "string") message = src.message;
   } catch {
     // Non-JSON body (proxy error page…): keep the generic code.

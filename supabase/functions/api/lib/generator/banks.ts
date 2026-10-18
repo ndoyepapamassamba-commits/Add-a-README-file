@@ -220,7 +220,8 @@ export const SECTOR_CONTEXT: Record<Sector, { practice: string; stake: string; g
   comptabilite: {
     practice: "le fonctionnement d'un service comptable",
     stake: "la fiabilité des comptes et le respect des échéances",
-    gain: "une grande rigueur dans le traitement des opérations",
+    // Gains never restate a default quality of the sector, which P3 may add ("rigoureux dans mon travail").
+    gain: "une bonne maîtrise du traitement des opérations comptables",
     org: "une entreprise",
   },
   informatique: {
@@ -244,7 +245,7 @@ export const SECTOR_CONTEXT: Record<Sector, { practice: string; stake: string; g
   administration: {
     practice: "la gestion administrative au sein d'une organisation",
     stake: "la bonne tenue des dossiers et la fluidité du travail administratif",
-    gain: "un sens aigu de l'organisation et de la confidentialité",
+    gain: "une bonne maîtrise des procédures administratives",
     org: "une structure",
   },
   btp: {
@@ -355,6 +356,8 @@ export const DEFAULT_QUALITIES: Record<Sector, string[]> = {
 
 const senior = (c: Ctx) => c.level === "confirme" || c.level === "senior";
 const skillList = (c: Ctx) => joinList(c.skills);
+/** Sector "autre": the domain already reads "le métier de <poste>", so a sentence must not name it twice. */
+const domainIsTrade = (c: Ctx) => c.sector === "autre";
 
 /** What the candidate applies for, without article: "poste de comptable", "stage en comptabilité". */
 export function wanted(c: Ctx): string {
@@ -462,8 +465,8 @@ export const PROFILE_INTRO: Record<Level, Variant[]> = {
         c.g("Professionnel confirmé", "Professionnelle confirmée")
       } dans ${c.domain}, je dispose d'un savoir-faire solide et éprouvé`,
     (c) =>
-      `${c.g("Fort", "Forte")} d'une solide expérience dans ${c.domain}, je maîtrise les exigences du métier ${
-        de(c.role)
+      `${c.g("Fort", "Forte")} d'une solide expérience dans ${c.domain}, ${
+        domainIsTrade(c) ? "j'en maîtrise toutes les exigences" : `je maîtrise les exigences du métier ${de(c.role)}`
       }`,
     (c) =>
       c.expCount > 0 &&
@@ -479,8 +482,8 @@ export const PROFILE_INTRO: Record<Level, Variant[]> = {
         c.g("Professionnel expérimenté", "Professionnelle expérimentée")
       }, je justifie d'un parcours riche dans ${c.domain}`,
     (c) =>
-      `Riche de nombreuses années d'expérience dans ${c.domain}, j'ai acquis une vision globale du métier ${
-        de(c.role)
+      `Riche de nombreuses années d'expérience dans ${c.domain}, ${
+        domainIsTrade(c) ? "j'en ai acquis une vision globale" : `j'ai acquis une vision globale du métier ${de(c.role)}`
       }`,
     (c) =>
       `${
@@ -501,8 +504,8 @@ export const PROFILE_EXPERIENCE: Variant[] = [
       return `${subject} ${verb} de développer ${c.skills.length ? `des compétences en ${skillList(c)}` : c.expGain}`;
     }
     return c.skills.length
-      ? `${subject} ${verb} ${c.exp.current ? "de mettre à profit" : "de consolider"} mes compétences en ${skillList(c)}`
-      : `${subject} ${verb} de renforcer ${c.expGain}`;
+      ? `${subject} ${verb} ${c.exp.current ? "de mettre à profit" : "d'approfondir"} mes compétences en ${skillList(c)}`
+      : `${subject} ${verb} d'affirmer ${c.expGain}`;
   },
 ];
 
@@ -625,7 +628,7 @@ export const LETTRE_FIT: Record<JobKind, Variant[]> = {
     (c) =>
       senior(c)
         ? "Ce poste correspond pleinement à mon expérience ainsi qu'à mon projet professionnel"
-        : c.degree?.linked
+        : c.degree?.linked && c.degree.category === "higher"
         ? "Ce poste correspond pleinement à ma formation ainsi qu'à mon projet professionnel"
         : "Ce poste correspond pleinement à mon projet professionnel et à mes aspirations",
     (c) =>
@@ -734,12 +737,14 @@ export const LETTRE_EXPERIENCE: Variant[] = [
     c.exp &&
     `${expClause(c, 1, { span: true, notamment: false })}, une expérience qui ${
       c.exp.current ? "me permet" : "m'a permis"
-    } ${senior(c) ? "de renforcer" : "de développer"} ${c.expGain}`,
+    } ${senior(c) ? "d'affirmer" : "de développer"} ${c.expGain}`,
   (c) => {
     if (!c.exp) return null;
     const { subject, verb } = expSubject(c, true);
-    const use = senior(c) ? "mettre à profit mon savoir-faire" : "mettre en pratique mes connaissances";
-    return `${subject} ${verb} de ${use} et de développer ${c.expGain}`;
+    const use = senior(c)
+      ? `mettre à profit mon savoir-faire et d'affirmer ${c.expGain}`
+      : `mettre en pratique mes connaissances et de développer ${c.expGain}`;
+    return `${subject} ${verb} de ${use}`;
   },
 ];
 
@@ -776,7 +781,9 @@ export const LETTRE_BEGINNER_INTEREST: Variant[] = [
     `${
       c.g("Passionné", "Passionnée")
     } par ${c.domain}, je souhaite aujourd'hui transformer cet intérêt en une véritable expérience professionnelle`,
-  (c) => `Mon intérêt pour ${c.domain} m'a naturellement ${c.g("orienté", "orientée")} vers le métier ${de(c.role)}`,
+  (c) =>
+    !domainIsTrade(c) &&
+    `Mon intérêt pour ${c.domain} m'a naturellement ${c.g("orienté", "orientée")} vers le métier ${de(c.role)}`,
   (c) => `J'ai choisi de m'orienter vers ${c.domain}, un domaine dans lequel je souhaite construire ma carrière`,
 ];
 
@@ -784,9 +791,8 @@ export const LETTRE_BEGINNER_INTEREST: Variant[] = [
 export const LETTRE_BACKGROUND: Variant[] = [
   (c) => {
     const lead = c.level === "senior" ? "longue" : c.level === "confirme" ? "solide" : "première";
-    return `${c.g("Fort", "Forte")} d'une ${lead} expérience dans ${c.domain}, je connais les exigences du métier ${
-      de(c.role)
-    }`;
+    const know = domainIsTrade(c) ? "j'en connais les exigences" : `je connais les exigences du métier ${de(c.role)}`;
+    return `${c.g("Fort", "Forte")} d'une ${lead} expérience dans ${c.domain}, ${know}`;
   },
   (c) => `Mon parcours dans ${c.domain} m'a permis de développer ${c.gain}`,
   (c) =>
@@ -880,7 +886,9 @@ export const QUALITY_ADJECTIVES: Map<string, [string, string]> = new Map(
 /** P3: interest for the company. */
 export const LETTRE_INTEREST: Variant[] = [
   (c) =>
-    `Je sais combien ${c.stake} comptent dans notre métier, et c'est dans cet esprit que j'aborde cette candidature`,
+    `Je sais combien ${c.stake} comptent dans ${
+      c.level === "debutant" ? "ce métier" : "notre métier"
+    }, et c'est dans cet esprit que j'aborde cette candidature`,
   (c) =>
     `Rejoindre ${c.company} représenterait pour moi l'opportunité de contribuer à vos objectifs tout en poursuivant mon développement professionnel`,
   (c) => `C'est avec enthousiasme que je mettrais mon énergie au service ${de(c.company)}`,
@@ -932,5 +940,5 @@ export const REPEAT_STEMS = [
   "m'investir", "exigence", "vif intérêt", "environnement", "au contact", "aux côtés", "mon objectif", "compétences",
   "réelle", "permis de développer", "permet de développer", "j'ai l'honneur", "je me permets",
   "rapidement opérationnel", "par ailleurs", "au sein", "aujourd'hui", "mon parcours dans", "votre structure",
-  "à l'aise", "ce domaine", "je souhaite", "expérience", "savoir-faire",
+  "à l'aise", "ce domaine", "je souhaite", "expérience", "savoir-faire", "consolid", "affirmer",
 ];

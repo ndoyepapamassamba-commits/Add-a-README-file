@@ -108,14 +108,16 @@ export async function readJsonObject(req: Request): Promise<Record<string, unkno
   return parsed as Record<string, unknown>;
 }
 
-/** Best-effort client IP behind Supabase's proxy. */
+/**
+ * Client IP for rate limiting, from the headers Supabase's edge controls (verified on the live project):
+ * Cloudflare sets cf-connecting-ip and refuses requests that bring their own; the Supabase edge overwrites
+ * x-real-ip. x-forwarded-for reaches the function exactly as the client sent it, so it is never trusted:
+ * without a trusted header every request shares the "unknown" bucket.
+ */
 export function clientIp(req: Request): string {
   const h = req.headers;
-  const direct = h.get("cf-connecting-ip") ?? h.get("x-real-ip");
-  if (direct) return direct.trim();
-  const forwarded = h.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return "unknown";
+  const ip = (h.get("cf-connecting-ip") ?? h.get("x-real-ip") ?? "").trim();
+  return ip || "unknown";
 }
 
 export function bearerToken(req: Request): string | null {

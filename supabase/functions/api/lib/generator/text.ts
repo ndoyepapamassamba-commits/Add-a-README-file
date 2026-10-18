@@ -106,12 +106,20 @@ function foldWord(w: string): string {
   return w.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
 }
 
+/** Senegalese institutions known by an acronym starting with a vowel: "à l'ISRA", "au sein de l'IPRES". */
+// deno-fmt-ignore
+const ELIDED_INSTITUTIONS = new Set([
+  "ISRA", "IPRES", "ANPEJ", "UCAD", "UGB", "UASZ", "UADB", "UIDT", "ISM", "ESP", "ENSA", "ENEA", "IAM", "IPG", "ISI",
+  "ESMT", "EPT", "ISEP", "ONAS", "AIBD", "APIX", "ASER", "ARTP", "OMS", "UNICEF", "IFAN", "UNESCO", "ASECNA",
+]);
+
 /**
  * Organisation name as it reads in a sentence: "Cabinet Diallo" → "le Cabinet Diallo",
- * "Hôpital Principal" → "l'Hôpital Principal", "Orange" → "Orange" (proper name, no article).
+ * "Hôpital Principal" → "l'Hôpital Principal", "ISRA" → "l'ISRA", "Orange" → "Orange" (no article).
  */
 export function withArticle(name: string): string {
   const n = collapse(name);
+  if (ELIDED_INSTITUTIONS.has(n)) return `l'${n}`;
   const words = n.split(/\s/);
   const typed = /^(le|la|les)$/i.test(words[0] ?? "") ? words[0] : /^l['’]/i.test(n) ? "l'" : null;
   if (typed) {

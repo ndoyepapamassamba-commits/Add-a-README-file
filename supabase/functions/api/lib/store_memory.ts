@@ -17,6 +17,10 @@ export const PATCHABLE_ORDER_STATUSES: ReadonlySet<OrderStatus> = new Set(["prev
 export const PAYOUT_PATCH_KEYS: ReadonlySet<string> = new Set(["status", "request_body", "wave_payout_id", "fee", "error", "updated_at"]);
 export const PAYOUT_STATUSES: ReadonlySet<PayoutStatus> = new Set(["pending", "processing", "succeeded", "failed", "unknown"]);
 const UNSETTLED: ReadonlySet<PayoutStatus> = new Set(["pending", "processing", "unknown"]);
+/** Final payout states: never modified again (a stale cron run must not reopen or fail them). */
+export const FINAL_PAYOUT: ReadonlySet<PayoutStatus> = new Set(["succeeded", "failed"]);
+/** Columns a paid order still accepts; its checkout fields keep the session that paid it. */
+export const PAID_ORDER_PATCH_KEYS: ReadonlySet<string> = new Set(["template"]);
 
 export const RECENT_ORDERS_LIMIT = 50;
 export const RECENT_PAYOUTS_LIMIT = 30;
@@ -62,9 +66,12 @@ export class MemoryStore implements Store {
     }
     const o = this.orders.get(id);
     if (!o) return;
-    if ("checkout_session_id" in patch) this.assertUniqueSession(id, patch.checkout_session_id ?? null);
+    if ("checkout_session_id" in patch && o.status !== "paid") this.assertUniqueSession(id, patch.checkout_session_id ?? null);
     const { status, ...rest } = patch;
-    Object.assign(o, structuredClone(rest));
+    const allowed = o.status === "paid"
+      ? Object.fromEntries(Object.entries(rest).filter(([k]) => PAID_ORDER_PATCH_KEYS.has(k)))
+      : rest;
+    Object.assign(o, structuredClone(allowed));
     if (status !== undefined && o.status !== "paid") o.status = status;
   }
 
@@ -145,14 +152,15 @@ export class MemoryStore implements Store {
       throw new Error(`updatePayout: status ${patch.status} not allowed`);
     }
     const row = this.payouts.get(id);
-    if (!row) return;
+    if (!row || FINAL_PAYOUT.has(row.status)) return;
     Object.assign(row, structuredClone(patch));
     row.updated_at = new Date(patch.updated_at ?? Date.now()).toISOString();
   }
 
   async failPayout(id: string, error: string, nowIso: string): Promise<void> {
     const row = this.payouts.get(id);
-    if (row) Object.assign(row, { status: "failed", error, updated_at: new Date(nowIso).toISOString() });
+    if (!row || row.status === "succeeded") return;
+    Object.assign(row, { status: "failed", error, updated_at: new Date(nowIso).toISOString() });
     for (const o of this.orders.values()) if (o.payout_id === id) o.payout_id = null;
   }
 

@@ -109,7 +109,7 @@ export function makeHarness(opts: HarnessOptions = {}): Harness {
   const app = createApp(deps);
   const logs = captureLogs();
   async function call(method: string, path: string, o: CallOptions = {}): Promise<ApiResponse> {
-    const headers: Record<string, string> = { "x-forwarded-for": o.ip ?? "203.0.113.7", ...o.headers };
+    const headers: Record<string, string> = { "cf-connecting-ip": o.ip ?? "203.0.113.7", ...o.headers };
     let body: string | undefined = o.rawBody;
     if (body === undefined && o.body !== undefined) {
       body = JSON.stringify(o.body);

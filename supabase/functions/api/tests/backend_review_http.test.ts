@@ -63,7 +63,6 @@ Deno.test("review return URL: prefix look-alikes, dot segments, encodings and us
     "http://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv",
     "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv?next=https://evil.com",
     "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv#https://evil.com",
-    "https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv\n",
     " https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/\t?x",
     "https://rawcdn.githack.com/someone-else/Add-a-README-file/main/cv",
     "https://rawcdn.githack.com/ndoyepapamassamba-commits/Add-a-README-file.evil/main/cv",
@@ -72,6 +71,8 @@ Deno.test("review return URL: prefix look-alikes, dot segments, encodings and us
     "http://localhost:8787/cv",
   ];
   for (const url of evil) assertEquals(normalizeReturnBase(url, prefixes), null, JSON.stringify(url));
+  // Surrounding whitespace is trimmed, never carried into the Wave success/error URLs.
+  assertEquals(normalizeReturnBase(` ${good}/\n`, prefixes), good);
 });
 
 Deno.test("review Wave errors: all three documented body shapes keep their error code", () => {
