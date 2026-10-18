@@ -469,7 +469,20 @@
     }
   }
 
-  TCV.dom = { $: $, $$: $$, el: el, clear: clear, setText: setText, busy: busy };
+  /** Segmented control made of native radio buttons (keyboard arrows work out of the box). */
+  function segRadios(container, name, options, value, onChange) {
+    clear(container);
+    options.forEach(function (o) {
+      var input = el("input", { type: "radio", name: name, value: o.key });
+      input.checked = o.key === value;
+      input.addEventListener("change", function () {
+        if (input.checked) onChange(o.key);
+      });
+      container.appendChild(el("label", null, [input, el("span", { text: o.label })]));
+    });
+  }
+
+  TCV.dom = { $: $, $$: $$, el: el, clear: clear, setText: setText, busy: busy, segRadios: segRadios };
   TCV.store = store;
   TCV.fmt = { fcfa: fcfa, dateTime: dateTime, snPhone: snPhone, productLabel: productLabel, fileBase: fileBase };
   TCV.api = { request: request, ApiError: ApiError };

@@ -436,6 +436,11 @@
     if (key === "competences") chipGroups[0].render();
     showErrorsFor(key);
     window.scrollTo(0, 0);
+    var hasErrors = $$("[data-error-for]", section).some(function (n) { return n.textContent; });
+    if (hasErrors) {
+      focusFirstError();
+      return;
+    }
     var h = $("h2", section);
     if (h) h.focus({ preventScroll: true });
   }
@@ -498,8 +503,6 @@
         if (first) {
           pendingErrors = fields;
           navigate(first);
-          TCV.dom.setText($("#wz-error"), "Corrigez les champs signalés en rouge.");
-          focusFirstError();
         } else {
           TCV.dom.setText($("#wz-error"), (err && err.message) || "Un problème est survenu. Réessayez.");
         }
