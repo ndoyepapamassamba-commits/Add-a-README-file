@@ -284,14 +284,14 @@ Mettez le texte à l'écran (beaucoup regardent sans le son). Lien : dans la bio
 Pour les démonstrations, utilisez un **faux nom** (exemple : « Awa Ndiaye ») et un faux numéro.
 
 **V1 — 3 erreurs sur ton CV**
-- Accroche : « Stop ! Ne fais pas ça sur ton CV. »
+- Accroche : « Stop ! Pas ça sur ton CV. »
 - Temps 1 : « Un numéro faux ou toujours éteint. »
 - Temps 2 : « Une adresse email pas sérieuse. »
 - Temps 3 : « Une photo de toi en soirée. »
 - Appel à l'action : « Le guide gratuit est dans ma bio. »
 
 **V2 — Comment écrire ses diplômes**
-- Accroche : « BFEM, BAC, licence : tu les écris comment ? »
+- Accroche : « BFEM, BAC : tu les écris comment ? »
 - Temps 1 : « Du plus récent au plus ancien. »
 - Temps 2 : « Diplôme, école, ville, année. » (montrer un exemple à l'écran)
 - Temps 3 : « Tu as le BAC ? Le BFEM n'est plus obligatoire. »
@@ -361,7 +361,7 @@ Pour les démonstrations, utilisez un **faux nom** (exemple : « Awa Ndiaye ») 
 - Appel à l'action : « Lien en bio. »
 
 **V12 — Photo ou pas photo ?**
-- Accroche : « Photo sur le CV : oui ou non ? »
+- Accroche : « Photo sur ton CV ? »
 - Temps 1 : « Ce n'est pas obligatoire. »
 - Temps 2 : « Si tu en mets une : de face, fond clair, tenue correcte. »
 - Temps 3 : « Pas de selfie, pas de filtre. »
