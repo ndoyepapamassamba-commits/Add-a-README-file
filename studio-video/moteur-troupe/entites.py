@@ -70,14 +70,29 @@ def prepare(d, H, W, acteurs, n=2, graine=7, lieu=None, journal=print):
         x += 1
     rng = np.random.default_rng(graine); E = []
     zones = sorted(zones, key=lambda z: -(z[1] - z[0]))
+    prof = cv2.imread(f'{d}/profondeur.png', cv2.IMREAD_UNCHANGED)
+    if prof is not None and prof.ndim == 3: prof = prof[..., 0]
+    if prof is not None: prof = cv2.resize(prof.astype(np.float32), (W, H))
     places = [(z, 'devant') for z in zones] + [(z, 'fond') for z in zones]   # puis au fond (plus petite, derrière les acteurs)
     for k, ((x0, x1), ou) in enumerate(places[:n]):
         y = min(H - 12.0, pieds + 0.03 * H) if ou == 'devant' else pieds - 0.14 * H   # au sol : devant la ligne des pieds, ou au fond
+        if ou == 'fond' and prof is not None: y = max(y, sol_haut(prof, x0, x1, pieds) + 0.12 * H)   # la poule entière (≈ 85 px) sur le sol, pas sur l'arête
         ech = HAUTEUR_M * px_m * (y - horizon) / (pieds - horizon) / (PIVOT[1] - 18)   # échelle rapportée à la découpe photo
         E.append({'espece': 'poule', 'x0': float(x0 + 0.15 * (x1 - x0)), 'x1': float(x1 - 0.15 * (x1 - x0)), 'y': float(y),
                   'echelle': float(ech), 'graine': int(rng.integers(1, 10 ** 6))})
     json.dump(E, open(f, 'w'), indent=1)
     return E
+
+
+def sol_haut(prof, x0, x1, pieds, pas=8):
+    """LOI DU SOL PRATICABLE (18/10/2026) : le bord le plus lointain du sol au-dessus de la ligne des pieds, lu dans la carte
+    de profondeur (proche = clair) — le sol se rapproche régulièrement vers le bas de l'image, un mur ou une contremarche
+    garde la même profondeur. v30 jugée par JEV : la poule « du fond » de la cour marchait sur l'arête de la marche au pied
+    du mur (« flotte » 0,55 à 22,9 s) : la carte y montre le mur (≈ 70) jusqu'à y = 600, la marche (78–89) jusqu'à
+    y ≈ 690, puis le sol (103 → 246)."""
+    cols = prof[:, max(0, int(x0)):max(int(x0) + 1, int(x1))].mean(1); y = int(min(len(cols) - 1, pieds))
+    while y - pas > 0 and cols[y] - cols[y - pas] > 0.35 * pas: y -= pas   # tant que la profondeur décroît vers le haut : c'est le sol
+    return float(y)
 
 
 def _programme(e, duree=120.0):

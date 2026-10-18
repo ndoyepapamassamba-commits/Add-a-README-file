@@ -526,6 +526,24 @@ def crop_for(S, kind, who=None):
     w = h * asp
     if w > W: w = W; h = w / asp
     return (cx, cy, w, h)
+def crop_visage(S, who, part=0.22):
+    """gros plan calé sur le VISAGE de celui qui parle : le visage occupe `part` de la hauteur de l'image (≈ 100 px sur 460).
+    v30 jugée par JEV (réalisateur) : pour Baye assis, le plan « serré » calé sur la largeur d'épaules (boubou ample)
+    faisait 655 px de haut — plus large que le cadre du moteur — et son visage restait illisible (0,29) ; aucun cadre
+    proposé n'était conforme (porte M)."""
+    A = S['acts'].get(who); v_ = A['a'].get('visage') if A else None
+    if not v_: return None
+    fx0, fy0, fx1, fy1 = v_['box']; h = max(200.0, (fy1 - fy0) / part); w = h * CW / CH
+    return ((fx0 + fx1) / 2, (fy0 + fy1) / 2 + 0.12 * h, w, h)   # les yeux un peu au-dessus du centre (règle des tiers)
+def crop_visage_ok(S, who):
+    """le gros plan « visage » le plus large que la règle des têtes entières (faces_ok) laisse tel quel : sinon elle le
+    repousse loin d'un voisin ou l'élargit jusqu'à redevenir le plan large du moteur (Baye, v30)."""
+    for part in (0.22, 0.28, 0.34, 0.40):
+        c = crop_visage(S, who, part)
+        if c is None: return None
+        c1 = clamp_crop(S, c); c2 = faces_ok(S, c1, who)
+        if abs(c2[2] / c1[2] - 1) < 0.06 and abs(c2[0] - c1[0]) < 0.08 * c1[2] and not tete_coupee(S, c2, who): return c2
+    return None
 def clamp_crop(S, c):
     cx, cy, w, h = c; k = min(1.0, S['W'] / w, S['H'] / h); w, h = w * k, h * k
     cx = min(max(cx, w / 2), S['W'] - w / 2); cy = min(max(cy, h / 2), S['H'] - h / 2); return cx, cy, w, h
@@ -880,25 +898,30 @@ def realise(plans):
     def candidats(S, s, keep):
         cs_ = {'moteur': cadre_lisible(S, s, keep)}
         base = cs_['moteur']
-        for nom, c in (('serre', crop_for(S, 'serre', keep) if keep in S['acts'] else None), ('moyen', crop_for(S, 'moyen', keep) if keep in S['acts'] else None),
+        for nom, c in (('visage', crop_visage_ok(S, keep) if keep in S['acts'] else None), ('serre', crop_for(S, 'serre', keep) if keep in S['acts'] else None), ('moyen', crop_for(S, 'moyen', keep) if keep in S['acts'] else None),
                        ('deux', crop_for(S, 'duo', s[4] if isinstance(s[4], tuple) else (keep,))), ('large', (base[0], base[1], base[2] * 1.25, base[3] * 1.25))):
             if c is None: continue
-            c = faces_ok(S, clamp_crop(S, c), keep)
+            c0_ = c; c = faces_ok(S, clamp_crop(S, c), keep)
+            if os.environ.get('TOURNE_CANDIDATS'): print(f"  cadre {s[0]:.2f} {keep} {nom} : {[round(v) for v in c0_]} → {[round(v) for v in c]}, tête coupée {tete_coupee(S, c, keep)}", flush=True)
             if tete_coupee(S, c, keep): continue
             if all(abs(c[2] / v[2] - 1) > 0.06 or abs(c[0] - v[0]) > 0.08 * v[2] for v in cs_.values()): cs_[nom] = c
         return cs_
     def un(s):
         S = SC[s[2]]; keep = s[4][0] if isinstance(s[4], tuple) else s[4]; cs_ = candidats(S, s, keep)
-        if len(cs_) < 2: return s, 'moteur', cs_, None
         cle = hashlib.sha1(json.dumps([list(s[:5]), {k: [round(x, 1) for x in v] for k, v in cs_.items()}, cfg['scenes'][s[2]],
                                        os.path.getmtime(os.path.join(cfg['scenes'][s[2]], 'image.png'))], default=str).encode()).hexdigest()[:20]
-        f_ = f'{CR}/{cle}.json'
-        if os.path.isfile(f_): d_ = json.load(open(f_)); return s, d_['choix'], cs_, d_
+        f_ = f'{CR}/{cle}.json'; diag = os.environ.get('TOURNE_CANDIDATS')   # diagnostic : images des cadres proposés
+        if os.path.isfile(f_) and not diag: d_ = json.load(open(f_)); return s, d_['choix'], cs_, d_
         tm = (s[0] + s[1]) / 2; fr = frame_scene(S, tm)
         ims = {}
         for nom, (cx, cy, w2, h2) in cs_.items():
             sc = CW / w2; M_ = np.float32([[sc, 0, -(cx - w2 / 2) * sc], [0, sc, -(cy - h2 / 2) * sc]])
             ims[nom] = cv2.cvtColor(cv2.warpAffine(fr, M_, (CW, CH), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT), cv2.COLOR_RGB2BGR)
+        if diag:
+            os.makedirs(diag, exist_ok=True)
+            for nom, im in ims.items(): cv2.imwrite(f'{diag}/{s[0]:05.2f}-{nom}.jpg', im)
+            json.dump({k_: [round(x, 1) for x in v] for k_, v in cs_.items()}, open(f'{diag}/{s[0]:05.2f}.json', 'w'))
+            return s, 'moteur', cs_, None
         A = S['acts'].get(keep); hb = head_box(A) if A else None
         if hb:
             x0, y0, x1, y1 = [int(v) for v in hb]; ims['parleur'] = cv2.cvtColor(S['img'][max(0, y0):y1, max(0, x0):x1], cv2.COLOR_RGB2BGR)
@@ -906,7 +929,9 @@ def realise(plans):
         for k_, im in ims.items():
             ids[k_] = f'{k_}-{uuid.uuid4().hex[:6]}'; assets[ids[k_]] = {'type': 'image', 'format': 'jpg', 'data_base64': jev_api.b64(im)}
         noms = [k_ for k_ in cs_]
-        Q = {'choix': {'type': 'choice', 'instructions': 'The images ' + ', '.join(f'`{k_}`' for k_ in noms) + ' are alternative framings of the same moment of a '
+        # v30 : les plans à un seul cadre possible (Maman à 0,00, 14,16, 24,56) n'étaient pas jugés — conformité vide, porte M
+        # perdue d'avance ; ils le sont désormais (têtes coupées, visage lisible), sans question de choix
+        Q = {} if len(noms) < 2 else {'choix': {'type': 'choice', 'instructions': 'The images ' + ', '.join(f'`{k_}`' for k_ in noms) + ' are alternative framings of the same moment of a '
                        'dialogue scene in an animated film' + (' ; `parleur` shows the head of the character who is speaking' if 'parleur' in ims else '') + '. '
                        'Which framing would a great film director choose: the speaker well framed with a readable face, the reaction of the other '
                        'character readable when it matters, balanced composition, no head or important part cut by the frame edge?',
@@ -915,7 +940,7 @@ def realise(plans):
             Q[f'coupe_{k_}'] = {'type': 'noul', 'instructions': f'In image `{k_}`, is any character\'s head or face partly cut by the edge of the frame?'}
             Q[f'lisible_{k_}'] = {'type': 'noul', 'instructions': f'In image `{k_}`, is the face of the speaking character' + (' (shown in `parleur`)' if 'parleur' in ims else '') + ' large and clear enough to read the expression and the mouth?'}
         a = jev_api.demande(ids, Q, assets, outil='jev_realisateur')
-        pr = a['choix']['probabilities']; ok_ = [k_ for k_ in noms if a[f'coupe_{k_}']['noul'] < 0.5 and a[f'lisible_{k_}']['noul'] > 0.5]
+        pr = a['choix']['probabilities'] if 'choix' in a else {noms[0]: 1.0}; ok_ = [k_ for k_ in noms if a[f'coupe_{k_}']['noul'] < 0.5 and a[f'lisible_{k_}']['noul'] > 0.5]
         choix = max(ok_ or noms, key=lambda k_: pr.get(k_, 0.0))
         d_ = {'choix': choix, 'conforme': bool(ok_), 'probabilites': pr, 'coupe': {k_: round(a[f'coupe_{k_}']['noul'], 2) for k_ in noms},
               'lisible': {k_: round(a[f'lisible_{k_}']['noul'], 2) for k_ in noms}}
@@ -926,6 +951,7 @@ def realise(plans):
         print(f"réalisateur JEV — plan {s[0]:.2f} {s[3]} {s[4]} : {choix}" + ('' if not d_ else f" (choix {d_['probabilites'].get(choix, 0):.2f}{'' if d_['conforme'] else ', AUCUN CADRE CONFORME'})"), flush=True)
 if os.environ.get('TOURNE_REALISATEUR', '1') == '1' and os.environ.get('TOURNE_CADRES') != '1':
     realise([s for s in SH if int(s[1] * FPS) >= RANGE[0] and int(s[0] * FPS) <= RANGE[-1]])
+    if os.environ.get('TOURNE_CANDIDATS'): print('cadres proposés écrits dans', os.environ['TOURNE_CANDIDATS']); raise SystemExit(0)
 for s in SH:   # cadres calculés une fois AVANT le partage : chaque processeur en hérite et tournage.json les garde (diagnostic caméra)
     if s[2] in SC and int(s[1] * FPS) >= RANGE[0] and int(s[0] * FPS) <= RANGE[-1]: cadres_du_plan(SC[s[2]], s, s[4][0] if isinstance(s[4], tuple) else s[4])
 if os.environ.get('TOURNE_CADRES') == '1':   # diagnostic : les cadres seuls (début, fin, chute) de chaque plan, sans rendu

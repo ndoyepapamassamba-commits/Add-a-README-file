@@ -9,11 +9,17 @@ import numpy as np, cv2
 import jev_api, sonie
 
 Q = {'musique_couvre': (False, 'Read `feuille`. Does any music or jingle play during a spoken line at a level less than 10 dB below the voice, so that it could cover the words?'),
-     'jingle_place': (True, 'Read `feuille`. Does each jingle start right after the punchline of a sketch (within about 1.5 s) without overlapping any spoken line?'),
+     # LA RELANCE APRÈS LA CHUTE (18/10/2026) : nos sketchs finissent comme les sketchs TikTok professionnels — chute, puis une
+     # relance d'un autre personnage (« button » des comiques : « Ha ha ha ! Garçon, la note à Monsieur Dehors ! ») — et le
+     # jingle ponctue cette DERNIÈRE réplique. La question visait la ligne « chute » seule : jingle à 1,1–4,2 s d'elle, mais
+     # à 0,3–1,2 s de la fin de chaque sketch (v30). Elle juge désormais le jingle après la dernière réplique du sketch.
+     'jingle_place': (True, 'Read `feuille`. Does each jingle start right after the LAST line of a sketch (`derniere`: its final punchline or the '
+                      'comeback that caps it), within about 1.5 s, without overlapping any spoken line?'),
      'silence': (False, 'Read `feuille`. Inside a sketch, is there an awkward silence longer than 1.5 s between two lines?'),
      'saut': (False, 'Read `feuille`. Does the loudness of the voices jump abruptly (more than 6 dB) from one line to the next?'),
      'rythme': (True, 'Read `feuille` and look at `spectre` (green = spoken lines, orange = music). Does the sound timing support the comedy like a '
-                'professional TikTok sketch: tight dialogue, a short beat before each punchline, a jingle as a sting after it?'),
+                'professional TikTok sketch: tight dialogue, a short beat before each punchline (`chute`), a jingle as a sting after the last line of '
+                'each sketch (`derniere`)?'),
      'technique': (True, 'Read `feuille`. Is the delivered sound technically correct for TikTok: integrated loudness between -16 and -12 LUFS and true '
                    'peak at or below -1 dBTP?')}
 
@@ -41,11 +47,28 @@ if __name__ == '__main__':
     for L in T['lines']:
         a, b = int(L['t0'] * sr), int((L['t0'] + L['dur']) * sr); v_ = db(d[a:b]); mu = db(mus[a:b])
         lignes.append({'sketch': L['sketch'], 'personnage': L['qui'].title(), 'debut': round(L['t0'], 2), 'fin': round(L['t0'] + L['dur'], 2),
-                       'voix_db': round(v_, 1), 'musique_pendant_db': round(mu, 1), 'ecart_voix_musique_db': round(v_ - mu, 1), 'chute': bool(L.get('chute'))})
+                       'voix_db': round(v_, 1), 'musique_pendant_db': round(mu, 1), 'ecart_voix_musique_db': round(v_ - mu, 1), 'chute': bool(L.get('chute')),
+                       'derniere': L is max((x for x in T['lines'] if x['sketch'] == L['sketch']), key=lambda x: x['t0'])})
     silences = [{'sketch': a['sketch'], 'apres': a['fin'], 'duree_s': round(b['debut'] - a['fin'], 2)} for a, b in zip(lignes, lignes[1:]) if a['sketch'] == b['sketch'] and b['debut'] - a['fin'] > 0.8]
     sauts = [{'de': a['debut'], 'a': b['debut'], 'saut_db': round(b['voix_db'] - a['voix_db'], 1)} for a, b in zip(lignes, lignes[1:]) if a['sketch'] == b['sketch']]
     yb_, srb_ = sonie.lit(BANDE); I, TP = sonie.mesure(yb_, srb_)
-    feuille = {'repliques': lignes, 'musique_et_jingles': seg, 'silences_entre_repliques_plus_de_0_8_s': silences,
+    # MESURES DÉRIVÉES (18/10/2026) : JEV n'entend pas et ne calcule pas — v30, les jingles tombaient 0,3–1,2 s après la fin
+    # de chaque sketch mais il fallait le déduire de dizaines de bornes (« jingle bien placé » 0,35–0,45) ; chaque grandeur
+    # que juge une question est désormais mesurée et écrite telle quelle
+    fins = {}
+    for L in lignes: fins[L['sketch']] = max(fins.get(L['sketch'], 0.0), L['fin'])
+    jingles = []
+    for s_ in seg:
+        avant = [(f_, sk) for sk, f_ in fins.items() if f_ <= s_['debut'] + 0.05]
+        f_, sk = max(avant) if avant else (None, None)
+        jingles.append({'debut': s_['debut'], 'fin': s_['fin'], 'apres_le_sketch': sk, 'fin_de_sa_derniere_replique': f_,
+                        'ecart_apres_la_derniere_replique_s': None if f_ is None else round(s_['debut'] - f_, 2),
+                        'chevauche_une_replique': any(L['debut'] < s_['fin'] and s_['debut'] < L['fin'] for L in lignes)})
+    ecarts = [round(b['debut'] - a['fin'], 2) for a, b in zip(lignes, lignes[1:]) if a['sketch'] == b['sketch']]
+    rythme = {'ecart_median_entre_repliques_s': float(np.median(ecarts)) if ecarts else None,
+              'pause_avant_chaque_chute_s': [round(b['debut'] - a['fin'], 2) for a, b in zip(lignes, lignes[1:]) if a['sketch'] == b['sketch'] and b['chute']]}
+    feuille = {'repliques': lignes, 'musique_et_jingles': seg, 'jingles_mesures': jingles, 'rythme_mesure': rythme,
+               'silences_entre_repliques_plus_de_0_8_s': silences,
                'ecarts_de_niveau_entre_repliques_db': sauts, 'fichier_livre': {'sonie_integree_lufs': round(I, 1), 'crete_vraie_dbtp': round(TP, 1)}}
     # spectrogramme annoté (log-fréquence, 0–8 kHz), répliques en vert, musique en orange
     x = m_[::max(1, sr // 16000)]; srx = sr // max(1, sr // 16000); win = 512; hopx = srx // 50
