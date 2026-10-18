@@ -571,11 +571,11 @@ export const LETTRE_EXPERIENCE: Variant[] = [
 /** P2: missions of the latest experience, as the customer typed them. */
 export const LETTRE_MISSIONS: Variant[] = [
   (c) =>
-    c.exp?.missions.length &&
+    !!c.exp?.missions.length &&
     `J'y ${c.exp.current ? "suis" : "étais"} notamment ${c.g("chargé", "chargée")} des missions suivantes : ${joinList(c.exp.missions)}`,
-  (c) => c.exp?.missions.length && `Parmi mes principales missions : ${joinList(c.exp.missions)}`,
+  (c) => !!c.exp?.missions.length && `Parmi mes principales missions : ${joinList(c.exp.missions)}`,
   (c) =>
-    c.exp?.missions.length &&
+    !!c.exp?.missions.length &&
     `Mes missions ${c.exp.current ? "comprennent" : "comprenaient"} notamment : ${joinList(c.exp.missions)}`,
 ];
 
@@ -587,6 +587,14 @@ export const LETTRE_BEGINNER: Variant[] = [
     "Ce qui me manque encore en expérience, je le compense par une forte motivation, une grande capacité d'apprentissage et le goût du travail bien fait",
   (c) =>
     `Je suis ${c.g("désireux", "désireuse")} de mettre en pratique mes acquis et de progresser au contact de professionnels expérimentés`,
+];
+
+/** P2: beginner with neither degree nor experience typed: interest for the trade. */
+export const LETTRE_BEGINNER_INTEREST: Variant[] = [
+  (c) =>
+    `${c.g("Passionné", "Passionnée")} par ${c.domain}, je souhaite aujourd'hui transformer cet intérêt en une véritable expérience professionnelle`,
+  (c) => `Mon intérêt pour ${c.domain} m'a naturellement ${c.g("orienté", "orientée")} vers le métier ${de(c.role)}`,
+  (c) => `J'ai choisi de m'orienter vers ${c.domain}, un domaine dans lequel je souhaite construire ma carrière`,
 ];
 
 /** P2: experienced candidate who listed no degree and no experience (lettre-only orders). */
@@ -612,9 +620,9 @@ export const LETTRE_SKILLS: Variant[] = [
     `Ma formation m'a permis d'acquérir des compétences en ${skillList(c)}`,
 ];
 
-/** P3: IT tools when the customer listed no skills. */
-export const LETTRE_IT_ONLY: Variant[] = [
-  (c) => `Je suis par ailleurs à l'aise avec l'outil informatique (${c.it.join(", ")})`,
+/** P3: IT tools as typed by the customer. */
+export const LETTRE_IT: Variant[] = [
+  (c) => `Je suis également à l'aise avec l'outil informatique (${c.it.join(", ")})`,
   (c) => `Je maîtrise par ailleurs les outils informatiques courants (${c.it.join(", ")})`,
   (c) => `J'utilise au quotidien l'outil informatique (${c.it.join(", ")})`,
 ];
