@@ -15,6 +15,7 @@
 #   5. normes  : vitesse, accélération et part d'images figées des films de studio (flux optique) → cibles de fluidité.
 #   python3 ecole_jev.py <dossier_ecole> corpus|defauts|batterie|apprend|normes|tout
 import base64, glob, json, os, random, subprocess, sys, uuid, urllib.request
+import jev_api   # garde JEV (18/10/2026) : coupé par défaut, le juge local répond
 import numpy as np, cv2
 from concurrent.futures import ThreadPoolExecutor
 
@@ -109,7 +110,7 @@ def batterie(E, extra=()):
         for essai in range(3):
             try:
                 req = urllib.request.Request(API, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json', 'TypeSafe-Danger-Zone-Images': 'true'})
-                a = json.loads(urllib.request.urlopen(req, timeout=180).read())['answers']
+                a = json.loads(jev_api.ouvre(req, outil='ecole_jev', timeout=180).read())['answers']
                 return {'image': f, **{k: round(float(a[k]['noul']), 4) for k in Q}}
             except Exception: pass
         return None

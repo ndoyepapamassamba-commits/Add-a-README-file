@@ -91,8 +91,31 @@ def choisit(V, H, outil='viral'):
         sc = {k: round(float(r[f'partage|{k}']['noul']) + float(r[f'commente|{k}']['noul']), 3) for k in V if float(r[f'leurre|{k}']['noul']) < 0.5}
         if sc: k = max(sc, key=sc.get); return k, V[k], sc
     except Exception as e:
-        return 'camp', V['camp'], {'jev': f'indisponible ({str(e)[:80]})'}
+        k, pourquoi = style_appris(list(V))
+        return k, V[k], {'jev': f'coupé ({str(e)[:60]})', 'choix_local': pourquoi}
     return 'camp', V['camp'], {}
+
+
+def style_appris(styles, graine=None):
+    """JEV COUPÉ (18/10/2026) : le style de légende se choisit sur les chiffres RÉELS du compte — tant que moins de 8 vidéos
+    sont mesurées, les styles tournent (chacun est essayé) ; ensuite Thompson sur (partages + commentaires) / vues par style,
+    comme pour les créneaux. Toutes les légendes restent vraies (elles décrivent ce que la vidéo montre)."""
+    try:
+        import publie_tiktok as pt
+        P, stats = pt.journal(), (pt._lit('stats.json') or {})
+    except Exception:
+        P, stats = [], {}
+    par = {s: [1.0, 1.0] for s in styles}; mesures = 0
+    for p in P:
+        s_, st = p.get('style'), stats.get(p.get('video_id') or '')
+        if s_ in par and st:
+            v = max(1, int(st.get('view_count', 0))); k = int(st.get('share_count', 0)) + int(st.get('comment_count', 0))
+            par[s_][0] += k; par[s_][1] += max(0, v - k); mesures += 1
+    if mesures < 8:
+        n = sum(1 for p in P if p.get('style') in par)
+        return styles[n % len(styles)], f'essai tournant ({mesures} vidéo(s) mesurée(s))'
+    rng = random.Random(graine); tir = {s: rng.betavariate(a, b) for s, (a, b) in par.items()}
+    return max(tir, key=tir.get), f'appris sur {mesures} vidéos'
 
 
 def titres(sketchs, candidats, outil='viral_titres'):

@@ -1,6 +1,7 @@
 # Test témoin JEV : mêmes questions que jev_diff.py, sur des paires (source, essai) prises dans deux dossiers.
 # python3 jev_paires.py dossier_source dossier_essai sortie.json
 import base64, json, os, sys, uuid, urllib.request, cv2
+import jev_api   # garde JEV (18/10/2026) : coupé par défaut, le juge local répond
 from concurrent.futures import ThreadPoolExecutor
 sys.path.insert(0, os.path.dirname(__file__))
 API = 'https://api.typesafe.ai/v1/systemone'
@@ -14,7 +15,7 @@ def judge(fn):
             'assets': {r1: {'type': 'image', 'format': 'jpg', 'data_base64': b64(cv2.imread(f'{ESS}/{fn}'))}, r2: {'type': 'image', 'format': 'jpg', 'data_base64': b64(cv2.imread(f'{SRC}/{fn}'))}},
             'questions': Q}
     req = urllib.request.Request(API, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json', 'TypeSafe-Danger-Zone-Images': 'true'})
-    a = json.loads(urllib.request.urlopen(req, timeout=180).read())['answers']
+    a = json.loads(jev_api.ouvre(req, outil='jev_paires', timeout=180).read())['answers']
     return {'f': fn, **{k: round(a[k]['noul'], 2) for k in Q}}
 fs = sorted(f for f in os.listdir(ESS) if f.endswith('.jpg') and os.path.isfile(f'{SRC}/{f}'))
 with ThreadPoolExecutor(4) as ex: res = list(ex.map(judge, fs))

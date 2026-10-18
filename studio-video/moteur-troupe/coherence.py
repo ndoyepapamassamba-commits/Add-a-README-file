@@ -12,6 +12,7 @@
 # Un point au-dessus du seuil est une INCOHÉRENCE : réparée quand le code sait faire (fils, plaque), sinon signalée avec
 # l'endroit, pour la greffe suivante (régénérer la zone, ou la scène).
 import base64, json, uuid, urllib.request
+import jev_api   # garde JEV (18/10/2026) : coupé par défaut, le juge local répond
 import numpy as np, cv2
 
 API = 'https://api.typesafe.ai/v1/systemone'
@@ -42,7 +43,7 @@ def jev_noul(img, questions, nom='scene'):
     Q = {k: {'type': 'noul', 'instructions': f'`{nom}` is a frame of an animated comedy film (3D, Pixar-like style). ' + q} for k, q in questions.items()}
     body = {'model': 'jev-1.14.0', 'state': {nom: ident}, 'questions': Q, 'assets': {ident: {'type': 'image', 'format': 'jpg', 'data_base64': _b64(img)}}}
     req = urllib.request.Request(API, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json', 'TypeSafe-Danger-Zone-Images': 'true'})
-    a = json.loads(urllib.request.urlopen(req, timeout=180).read())['answers']
+    a = json.loads(jev_api.ouvre(req, outil='coherence', timeout=180).read())['answers']
     out = {}
     for k in Q:
         v = a[k]; out[k] = round(float(v['noul'] if isinstance(v, dict) and 'noul' in v else v), 3)

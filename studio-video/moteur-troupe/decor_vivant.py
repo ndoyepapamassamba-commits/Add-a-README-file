@@ -7,6 +7,7 @@
 # couleur ; les zones des acteurs sont exclues (aucun reste d'acteur ne peut bouger derrière eux).
 #   prepare(d, plaque, masques_acteurs) → couches (mises en cache dans d/vie.npz) ; champ(V, t) → (dx, dy, gain)
 import base64, json, os, uuid, urllib.request
+import jev_api   # garde JEV (18/10/2026) : coupé par défaut, le juge local répond
 import numpy as np, cv2
 
 ETIQ = {'feuillage': 'leaves, palm fronds, a plant or a tree', 'tissu': 'hanging cloth: laundry on a line, a curtain, a flag',
@@ -29,7 +30,7 @@ def etiquettes_jev(plaque):
     body = {'model': 'jev-1.14.0', 'state': ids, 'questions': Q, 'assets': assets}
     req = urllib.request.Request('https://api.typesafe.ai/v1/systemone', data=json.dumps(body).encode(),
                                  headers={'Content-Type': 'application/json', 'TypeSafe-Danger-Zone-Images': 'true'})
-    a = json.loads(urllib.request.urlopen(req, timeout=180).read())['answers']
+    a = json.loads(jev_api.ouvre(req, outil='decor_vivant', timeout=180).read())['answers']
     return {k: a[k]['probabilities'] for k in Q}
 
 

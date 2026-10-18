@@ -32,7 +32,7 @@ def juge_lot(objectif, niveaux, images, reference=None, timeout=240):
                           + objectif.replace('`image`', 'the image'), 'criteria': crit}
     body = {'model': 'jev-1.14.0', 'state': ids, 'assets': assets, 'questions': Q}
     req = urllib.request.Request(API, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json', 'TypeSafe-Danger-Zone-Images': 'true'})
-    a = json.loads(urllib.request.urlopen(req, timeout=timeout).read())['answers']
+    a = json.loads(jev_api.ouvre(req, outil='genese', timeout=timeout).read())['answers']
     notes = [float(a[f'note_{k + 1}']['score']) for k in range(len(images))]
     choix = [float(a['meilleure']['probabilities'].get(f'{k + 1}', 0.0)) for k in range(len(images))] if len(images) > 1 else [1.0]
     ref = float(a['note_R']['score']) if reference is not None else None

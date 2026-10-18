@@ -11,6 +11,7 @@
 #   conseil(sujet, contexte, causes, remedes, images={nom: image BGR}) → dict
 #   python3 jev_conseil.py dossier.json [sortie.json]   (dossier : sujet, contexte, causes, remedes, images {nom: chemin})
 import base64, json, sys, uuid, urllib.error, urllib.request
+import jev_api   # garde JEV (18/10/2026) : coupé par défaut, le juge local répond
 import cv2
 
 API = 'https://api.typesafe.ai/v1/systemone'
@@ -48,7 +49,7 @@ def conseil(sujet, contexte, causes, remedes, images=None, timeout=240, essais=3
     for e in range(essais):
         try:
             req = urllib.request.Request(API, data=body, headers={'Content-Type': 'application/json', 'TypeSafe-Danger-Zone-Images': 'true'})
-            a = json.loads(urllib.request.urlopen(req, timeout=timeout).read())['answers']
+            a = json.loads(jev_api.ouvre(req, outil='jev_conseil', timeout=timeout).read())['answers']
             break
         except urllib.error.HTTPError as x:
             if x.code < 500: raise RuntimeError(f'JEV {x.code} : {x.read().decode()[:400]}')   # requête invalide : inutile de réessayer

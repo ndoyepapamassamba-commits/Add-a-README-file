@@ -2,6 +2,7 @@
 # est-il bien celui de sa fiche, à la bonne taille, entier ; le lieu est-il celui de l'histoire ; pas de texte parasite,
 # pas de figurant en trop. La clé d'API n'est jamais dans ce fichier : le mandataire du conteneur l'injecte.
 import base64, io, json, sys, uuid, urllib.request
+import jev_api   # garde JEV (18/10/2026) : coupé par défaut, le juge local répond
 from PIL import Image
 API = 'https://api.typesafe.ai/v1/systemone'
 def asset(path, side=768):
@@ -26,7 +27,7 @@ def juge(scene, acteurs, lieu, fiches_dir='fiches'):
     Q['style'] = {'type': 'noul', 'instructions': '`scene` looks like a still from a 3D animated feature film (Pixar style), with consistent lighting and one coherent style for characters and background.'}
     body = {'model': 'jev-1.14.0', 'state': {'scene': ref_s}, 'assets': assets, 'questions': Q}
     req = urllib.request.Request(API, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json', 'TypeSafe-Danger-Zone-Images': 'true'})
-    a = json.loads(urllib.request.urlopen(req, timeout=120).read())['answers']
+    a = json.loads(jev_api.ouvre(req, outil='jev_juge', timeout=120).read())['answers']
     g = lambda k: a[k].get('noul', 0)
     res = {'identite': [round(g(f'id_{k}'), 2) for k in range(len(acteurs))], 'description': [round(g(f'age_{k}'), 2) for k in range(len(acteurs))],
            'entiers': round(g('entiers'), 2), 'texte': round(g('texte'), 2), 'nombre_exact': round(g('nombre'), 2), 'style': round(g('style'), 2),

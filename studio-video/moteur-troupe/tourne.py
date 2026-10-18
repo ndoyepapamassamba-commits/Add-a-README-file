@@ -1133,7 +1133,7 @@ SEUIL_PROPRE = 0.42   # « rendu » de la porte G sur l'image d'un cadre candida
 def realise(plans):
     import hashlib, uuid
     from concurrent.futures import ThreadPoolExecutor
-    import jev_api, jev_film
+    import jev_api, jev_film, juge_local
     CR = os.path.expanduser('~/.cache/massamba-jev/realisateur'); os.makedirs(CR, exist_ok=True)
     def parleurs_de(S, s):
         return sorted({L['qui'] for L in T['lines'] if L.get('sketch') == s[2] and L['t0'] < s[1] - 0.2 and L['t0'] + L['dur'] > s[0] + 0.2 and L['qui'] in S['acts']})
@@ -1199,11 +1199,30 @@ def realise(plans):
             # les mains à table (0,63 à 0,74), déjà mal dessinées sur la peinture d'origine (0,67), le visage restant sous 0,5. Un
             # réalisateur cadre hors champ des mains ratées : la question est posée sur chaque cadre candidat
             Q[f'mains_{k_}'] = {'type': 'noul', 'instructions': f'Read `contexte`. In image `{k_}`, look only at the HANDS and fingers that are visible: is any hand deformed, melted into an object, bent unnaturally, with wrong or merged fingers, or doubled? Hands outside the picture do not count.'}
-        a = jev_api.demande(ids, Q, assets, outil='jev_realisateur')
         # la règle géométrique de la porte B aussi (visage de celui qui parle ≥ VISAGE_MIN px) : v31, Baye à 60 px et Petit
         # Mamadou à 57 px faisaient tomber la porte B malgré des lèvres justes (JEV « lisible » les acceptait)
         # … et pour CHACUN de ceux qui parlent dans le plan (v35 : la porte B mesure le visage de celui qui parle)
         grand = lambda k_: all(taille_visage(S, n_, cs_[k_]) >= VISAGE_MIN for n_ in (parleurs_de(S, s) or ([keep] if keep in S['acts'] else [])))
+        try:
+            a = jev_api.demande(ids, Q, assets, outil='jev_realisateur')
+        except juge_local.NonJuge:
+            # JEV COUPÉ (18/10/2026) — la décision du réalisateur reproduite en règles, d'après ses 268 décisions gardées : le
+            # cadre du moteur 44 % des fois (puis visage 20 %, moyen 13 %), un cadre conforme 88 % des fois. Le cadre du moteur
+            # s'il rend la bouche de chaque orateur lisible (≥ VISAGE_MIN), sinon le plus petit cadre qui la rend lisible ;
+            # sa propreté (question « rendu » de la porte G) par la tête locale quand elle est validée, sinon « non jugée »
+            ok_g = [k_ for k_ in noms if grand(k_)]
+            vpx = {k_: round(taille_visage(S, keep, cs_[k_]), 1) for k_ in noms} if keep in S['acts'] else {}
+            choix = 'moteur' if ('moteur' in ok_g or not ok_g) else min(ok_g, key=lambda k_: vpx.get(k_, 0.0))
+            rendu = {}
+            try:
+                r_ = jev_api.demande({'frame': ids[choix], 'contexte': jev_film.STYLE}, {'propre': {'type': 'noul', 'instructions': jev_film.N1['rendu'][1]}},
+                                     {ids[choix]: assets[ids[choix]]}, outil='jev_realisateur')
+                rendu = {choix: round(r_['propre']['noul'], 2)}
+            except juge_local.NonJuge:
+                pass
+            d_ = {'choix': choix, 'conforme': (rendu[choix] < SEUIL_PROPRE and choix in ok_g) if rendu else None, 'juge': 'règles locales',
+                  'probabilites': {k_: float(k_ == choix) for k_ in noms}, 'coupe': {}, 'lisible': {}, 'rendu': rendu, 'mains': {}, 'visage_px': vpx}
+            json.dump(d_, open(f_, 'w')); return s, choix, cs_, d_
         pr = a['choix']['probabilities'] if 'choix' in a else {noms[0]: 1.0}; ok_ = [k_ for k_ in noms if a[f'coupe_{k_}']['noul'] < 0.5 and a[f'lisible_{k_}']['noul'] > 0.5 and grand(k_)]
         # rendu de la porte G, et les mains quand elles sont nettement ratées (SEUIL_MAINS) : mesuré au premier essai v34, les
         # mains simplement posées (hanches, genoux) donnent 0,44–0,58 et la porte G ne les compte pas ; Koffi à table, 0,63–0,74
@@ -1231,6 +1250,9 @@ def realise(plans):
         if s[3] != 'gros' or not d_ or not d_.get('visage_px') or parleurs_de(SC[s[2]], s): return choix
         px = d_['visage_px']
         if px.get(choix, 0) >= REACTION_MIN: return choix
+        if d_.get('juge') == 'règles locales':   # JEV coupé : le plus petit cadre qui donne REACTION_MIN (têtes coupées déjà écartées)
+            ok = [k_ for k_ in px if px[k_] >= REACTION_MIN]
+            return min(ok, key=lambda k_: px[k_]) if ok else choix
         sale_ = lambda k_: max(d_['rendu'][k_], d_['mains'][k_] if d_['mains'][k_] >= SEUIL_MAINS else 0.0)
         ok = [k_ for k_ in px if px[k_] >= REACTION_MIN and d_['coupe'][k_] < 0.5 and d_['lisible'][k_] > 0.5 and sale_(k_) < SEUIL_PROPRE]
         return max(ok, key=lambda k_: d_['probabilites'].get(k_, 0.0)) if ok else choix

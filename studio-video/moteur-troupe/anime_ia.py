@@ -19,6 +19,7 @@
 #   kaggle    : la même chaîne ComfyUI + Wan sur une carte T4 GRATUITE du compte Kaggle de l'utilisateur, pilotée d'ici
 #               (kaggle_moteur.py + noyau_kaggle.py) : rien à installer sur le PC ; jeton KAGGLE_API_TOKEN dans l'environnement.
 import json, os, subprocess, sys, time, wave
+import jev_api   # garde JEV (18/10/2026) : coupé par défaut, le juge local répond
 import numpy as np, cv2
 
 CW, CH, FPS = 576, 460, 30
@@ -120,7 +121,7 @@ def arbitre_jev(outil, moteur, reference):
     body = {'model': 'jev-1.14.0', 'state': {k: v for k, v in r.items()},
             'assets': {r[k]: {'type': 'image', 'format': 'jpg', 'data_base64': enc(im)} for k, im in (('outil', outil), ('moteur', moteur), ('reference', reference))}, 'questions': Q}
     req = urllib.request.Request('https://api.typesafe.ai/v1/systemone', data=json.dumps(body).encode(), headers={'Content-Type': 'application/json', 'TypeSafe-Danger-Zone-Images': 'true'})
-    a = json.loads(urllib.request.urlopen(req, timeout=120).read())['answers']
+    a = json.loads(jev_api.ouvre(req, outil='anime_ia', timeout=120).read())['answers']
     v = {'identite': round(a['identite']['noul'], 2), 'deforme': round(a['deforme']['noul'], 2), 'vivant': a['vivant'].get('choice')}
     v['garde_outil'] = v['identite'] >= 0.6 and v['deforme'] < 0.5 and v['vivant'] == 'outil'
     return v

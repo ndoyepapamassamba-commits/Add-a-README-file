@@ -34,9 +34,35 @@ def _pixels(assets):
     return tot
 
 
+def autorise():
+    """JEV COUPÉ PAR DÉFAUT (18/10/2026, consigne de l'utilisateur : « arrête les appels vers JEV. Ça coûte beaucoup […]
+    j'en ai besoin pour d'autres tâches ») : le moteur juge avec juge_local.py ; JEV n'est appelé que si JEV_AUTORISE=1 est
+    posé explicitement pour une commande (calibrage ponctuel décidé par l'utilisateur)."""
+    return os.environ.get('JEV_AUTORISE') == '1'
+
+
+class _Reponse:
+    def __init__(self, d): self._d = json.dumps(d).encode()
+    def read(self): return self._d
+
+
+def ouvre(req, timeout=180, outil='?'):
+    """GARDE UNIQUE des modules qui parlent à JEV par leur propre requête (genese, coherence, jev_juge, audit_bouches…) :
+    JEV coupé, le corps de la requête (state, questions, assets) part au juge local et la réponse revient au même format
+    ({'answers': …}) — aucun de ces modules ne peut plus joindre JEV sans JEV_AUTORISE=1."""
+    if autorise(): return urllib.request.urlopen(req, timeout=timeout)
+    import juge_local
+    b = json.loads(req.data)
+    return _Reponse({'answers': juge_local.demande(b.get('state', {}), b.get('questions', {}), b.get('assets'), outil)})
+
+
 def demande(etat, questions, assets=None, outil='?', timeout=240, essais=4):
     """une requête à JEV → réponses ; inscrit jetons et coût au registre. 4xx : erreur immédiate avec le message du
-    service ; 429/5xx/réseau : nouvel essai après 2, 4, 8 s."""
+    service ; 429/5xx/réseau : nouvel essai après 2, 4, 8 s. JEV coupé (défaut) : le juge local répond, ou lève
+    juge_local.NonJuge si une question n'a pas encore de tête validée — jamais de réponse inventée."""
+    if not autorise():
+        import juge_local
+        return juge_local.demande(etat, questions, assets, outil)
     body = {'model': MODELE, 'state': etat, 'questions': questions}
     if assets: body['assets'] = assets
     data = json.dumps(body).encode(); t0 = time.time()

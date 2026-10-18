@@ -15,6 +15,7 @@
 #    pour annuler le biais de position) ; il n'entre au registre que s'il gagne. Chaque histoire acceptée est donc plus drôle
 #    que la précédente pour le même juge ; un tour perdu renvoie au scénariste les faiblesses relevées.
 import json, os, re, sys, time, uuid, base64, unicodedata, urllib.request
+import jev_api   # garde JEV (18/10/2026) : coupé par défaut, le juge local répond
 from concurrent.futures import ThreadPoolExecutor
 
 ICI = os.path.dirname(os.path.abspath(__file__))
@@ -207,7 +208,7 @@ def _jev(state, questions):
     body = {'model': 'jev-1.14.0', 'state': state, 'questions': questions}
     req = urllib.request.Request(JEV_API, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json'})
     for essai in range(3):
-        try: return json.loads(urllib.request.urlopen(req, timeout=120).read())['answers']
+        try: return json.loads(jev_api.ouvre(req, outil='histoires', timeout=120).read())['answers']
         except Exception:
             time.sleep(3 * (essai + 1))
     raise RuntimeError('JEV injoignable')

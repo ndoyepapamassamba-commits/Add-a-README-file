@@ -5,6 +5,9 @@ import { readFileSync } from 'node:fs';
 import { callEye, eyeBody, eyeProblems, fidelityQuestions, readEye } from '@workbench/server/jev/eye';
 import { promptItems } from '../coeur/realize/realize';
 
+// JEV coupé dans le studio (18/10/2026, consigne de l'utilisateur : « arrête les appels vers JEV, ça coûte beaucoup ») :
+// cet outil ne l'appelle que si JEV_AUTORISE=1 est posé explicitement pour la commande.
+if (process.env.JEV_AUTORISE !== '1') throw new Error('JEV coupé dans le studio : poser JEV_AUTORISE=1 pour cet appel ponctuel');
 const [file, prompt = '', list] = process.argv.slice(2);
 if (!file) throw new Error('usage : eye-check <image> "<demande>" [élément1|élément2]');
 const { items, circumstances } = promptItems(prompt);

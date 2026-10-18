@@ -8,6 +8,7 @@
 #   python3 vues360.py valide http://127.0.0.1:8188           → le graphe accepté par un ComfyUI (fichiers factices)
 #   python3 vues360.py juge sortie-vues/ fiches/ choix.json   → vues gardées (identité, défauts) par JEV
 import json, os, sys, zipfile
+import jev_api   # garde JEV (18/10/2026) : coupé par défaut, le juge local répond
 
 AZIMUTS = {'face': 'front view', 'trois_quarts_droite': 'front-right quarter view', 'profil_droit': 'right side view',
            'dos_droit': 'back-right quarter view', 'dos': 'back view', 'dos_gauche': 'back-left quarter view',
@@ -138,7 +139,7 @@ def juge(dossier, fiches, sortie, seuil_id=0.6, seuil_abime=0.5):
                     'assets': {a: {'type': 'image', 'format': 'png', 'data_base64': b64(ref)}, b: {'type': 'image', 'format': 'png', 'data_base64': b64(p)}}}
             req = urllib.request.Request(API, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json', 'TypeSafe-Danger-Zone-Images': 'true'})
             try:
-                ans = json.loads(urllib.request.urlopen(req, timeout=180).read())['answers']
+                ans = json.loads(jev_api.ouvre(req, outil='vues360', timeout=180).read())['answers']
                 v = {k: round(float(x['noul'] if isinstance(x, dict) else x), 3) for k, x in ans.items()}
             except Exception as e:
                 v = {'erreur': str(e)[:120]}

@@ -8,6 +8,7 @@
 # agrandie comme le gros plan de jev_levres (360 px). v30 : la bouche de Modou au rang 100, « ouverte » 0,88 à 243 px,
 # n'était vue ouverte qu'à 0,46–0,56 dans le film (visage de 64 px) ; la commande vise alors l'ouverture vue à l'écran.
 import base64, json, os, sys, uuid, urllib.request
+import jev_api   # garde JEV (18/10/2026) : coupé par défaut, le juge local répond
 from concurrent.futures import ThreadPoolExecutor
 import cv2
 
@@ -44,7 +45,7 @@ def juge_emotion(dossier, e, n, ref=None, k=None):
     for essai in range(3):
         try:
             req = urllib.request.Request(API, data=body, headers={'Content-Type': 'application/json', 'TypeSafe-Danger-Zone-Images': 'true'})
-            a = json.loads(urllib.request.urlopen(req, timeout=180).read())['answers']; break
+            a = json.loads(jev_api.ouvre(req, outil='audit_bouches', timeout=180).read())['answers']; break
         except Exception:
             if essai == 2: raise
     return {'bave': [round(a[f'bave_{k}']['noul'], 2) for k in range(n)], 'ouverte': [round(a[f'ouverte_{k}']['noul'], 2) for k in range(n)]}

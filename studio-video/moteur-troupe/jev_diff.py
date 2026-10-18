@@ -3,6 +3,7 @@
 # l'image générée ; un défaut présent seulement dans l'animée vient du moteur. C'est ce second chiffre qui compte.
 # python3 jev_diff.py v11/troupe-v11.mp4 v11/tournage.json v11/source v11/jev_diff.json
 import base64, io, json, os, sys, uuid, urllib.request, cv2
+import jev_api   # garde JEV (18/10/2026) : coupé par défaut, le juge local répond
 from concurrent.futures import ThreadPoolExecutor
 API = 'https://api.typesafe.ai/v1/systemone'
 MP4, SHOTS, SRC, OUT = sys.argv[1:5]
@@ -31,7 +32,7 @@ def judge(s):
             'assets': {r1: {'type': 'image', 'format': 'jpg', 'data_base64': b64(rendu)}, r2: {'type': 'image', 'format': 'jpg', 'data_base64': b64(source)}},
             'questions': Q}
     req = urllib.request.Request(API, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json', 'TypeSafe-Danger-Zone-Images': 'true'})
-    a = json.loads(urllib.request.urlopen(req, timeout=180).read())['answers']
+    a = json.loads(jev_api.ouvre(req, outil='jev_diff', timeout=180).read())['answers']
     cv2.imwrite(OUT.replace('.json', f'_{s[0]:06.2f}.jpg'), cv2.hconcat([source, rendu]))
     return {'t0': s[0], 'plan': f'{s[2]}/{s[3]}/{s[4]}', **{k: round(a[k]['noul'], 2) for k in Q}}
 with ThreadPoolExecutor(4) as ex: res = [r for r in ex.map(judge, SH) if r]

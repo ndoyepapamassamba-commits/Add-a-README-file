@@ -17,6 +17,7 @@
 #     3 = lieu animé : figurants, vent, fumée, véhicules).
 #   python3 jev_tiktok.py film.mp4 dossier_tiktok [n] [sortie.json]
 import base64, json, os, random, subprocess, sys, uuid, urllib.request
+import jev_api   # garde JEV (18/10/2026) : coupé par défaut, le juge local répond
 from concurrent.futures import ThreadPoolExecutor
 
 API = 'https://api.typesafe.ai/v1/systemone'
@@ -42,7 +43,7 @@ def jev(state, imgs, questions):
             'assets': {ids[k]: {'type': 'image', 'format': 'jpg', 'data_base64': v} for k, v in imgs.items()}}
     req = urllib.request.Request(API, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json', 'TypeSafe-Danger-Zone-Images': 'true'})
     for essai in range(3):
-        try: return json.loads(urllib.request.urlopen(req, timeout=180).read())['answers']
+        try: return json.loads(jev_api.ouvre(req, outil='jev_tiktok', timeout=180).read())['answers']
         except Exception:
             if essai == 2: raise
 
