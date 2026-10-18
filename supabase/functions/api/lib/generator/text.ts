@@ -80,6 +80,46 @@ export function a(phrase: string): string {
   return `à ${p}`;
 }
 
+/**
+ * Gender/number of common nouns that open organisation names ("Cabinet Diallo", "Clinique Pasteur",
+ * "Transports Ndiaye"). Such names take a definite article in a sentence: "au sein du Cabinet Diallo".
+ */
+const ORGANISATION_NOUNS: Record<string, "m" | "f" | "p"> = {
+  "academie": "f", "agence": "f", "association": "f", "atelier": "m", "auto-ecole": "f", "banque": "f",
+  "boulangerie": "f", "boutique": "f", "bureau": "m", "cabinet": "m", "caisse": "f", "centre": "m",
+  "chambre": "f", "clinique": "f", "college": "m", "compagnie": "f", "complexe": "m", "comptoir": "m",
+  "conseil": "m", "conservatoire": "m", "cooperative": "f", "cours": "m", "direction": "f", "dispensaire": "m",
+  "ecole": "f", "entreprise": "f", "etablissement": "m", "etablissements": "p", "faculte": "f", "ferme": "f",
+  "federation": "f", "fondation": "f", "garage": "m", "groupe": "m", "hopital": "m", "hotel": "m",
+  "imprimerie": "f", "industries": "p", "institut": "m", "laboratoire": "m", "laiterie": "f", "librairie": "f",
+  "lycee": "m", "magasin": "m", "mairie": "f", "maison": "f", "menuiserie": "f", "ministere": "m",
+  "mutuelle": "f", "office": "m", "ong": "f", "pharmacie": "f", "pole": "m", "port": "m", "prytanee": "m",
+  "quincaillerie": "f", "residence": "f", "restaurant": "m", "salon": "m", "societe": "f", "station": "f",
+  "supermarche": "m", "transports": "p", "universite": "f", "usine": "f",
+};
+
+function foldWord(w: string): string {
+  return w.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
+}
+
+/**
+ * Organisation name as it reads in a sentence: "Cabinet Diallo" → "le Cabinet Diallo",
+ * "Hôpital Principal" → "l'Hôpital Principal", "Orange" → "Orange" (proper name, no article).
+ */
+export function withArticle(name: string): string {
+  const n = collapse(name);
+  if (/^(le|la|les)\s|^l['’]/i.test(n)) return n;
+  const kind = ORGANISATION_NOUNS[foldWord(n.split(/\s/)[0] ?? "")];
+  if (!kind) return n;
+  if (kind === "p") return `les ${n}`;
+  return elide(kind === "m" ? "le" : "la", n);
+}
+
+/** True when the organisation name reads with an article ("La Poste", "Cabinet Diallo"). */
+export function takesArticle(name: string): boolean {
+  return withArticle(name) !== collapse(name);
+}
+
 /** "en tant que comptable", "en tant qu'électricien". */
 export function enTantQue(role: string): string {
   return `en tant ${elide("que", role)}`;

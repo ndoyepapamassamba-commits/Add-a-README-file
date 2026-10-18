@@ -156,7 +156,7 @@
     renderHealth(health);
     renderOrders(stats.recentOrders || []);
     renderPayouts(stats.payouts || []);
-    setText($("#dash-status"), "Mis à jour à " + TCV.fmt.dateTime(new Date().toISOString()).split(" ")[1]);
+    setText($("#dash-updated"), "Mis à jour à " + TCV.fmt.dateTime(new Date().toISOString()).split(" ")[1]);
   }
 
   function load() {

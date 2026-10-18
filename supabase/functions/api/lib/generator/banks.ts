@@ -11,6 +11,8 @@ import { de, enTantQue, type Gender, joinList } from "./text.ts";
 export interface DegreeFacts {
   /** done = diploma obtained, ongoing = currently studying, level = "Niveau terminale". */
   status: "done" | "ongoing" | "level";
+  /** False for licences and certificates ("Permis C", "Attestation de secourisme"). */
+  academic: boolean;
   /** In-sentence name without article: "BTS en comptabilité", "niveau terminale". */
   name: string;
   article: "un" | "une";
@@ -55,6 +57,7 @@ export interface Ctx {
   practice: string;
   stake: string;
   gain: string;
+  org: string;
   degree: DegreeFacts | null;
   exp: ExpFacts | null;
   expCount: number;
@@ -62,7 +65,7 @@ export interface Ctx {
   skills: string[];
   /** Up to 4 IT tools as typed. */
   it: string[];
-  /** Company as typed ("" for a CV-only order). */
+  /** Company as it reads in a sentence: "Orange", "le Cabinet Diallo", "La Poste" ("" for a CV). */
   company: string;
   source: { mode: "media" | "referral"; text: string } | null;
 }
@@ -196,73 +199,86 @@ export const SECTORS: Record<Sector, { label: string; domain: string; skills: st
 /**
  * Sector colour for the letters. practice: what a trainee discovers ("découvrir concrètement …");
  * stake: two things that matter in the trade (plural verb: "… comptent"); gain: what experience
- * there develops ("m'a permis de développer …").
+ * there develops ("m'a permis de développer …"); org: the employer in general ("au service d'une entreprise").
  */
-export const SECTOR_CONTEXT: Record<Sector, { practice: string; stake: string; gain: string }> = {
+export const SECTOR_CONTEXT: Record<Sector, { practice: string; stake: string; gain: string; org: string }> = {
   commerce: {
     practice: "les techniques de vente et la relation client",
     stake: "la qualité de l'accueil et la satisfaction de la clientèle",
     gain: "un vrai sens du service et de la négociation",
+    org: "une entreprise",
   },
   comptabilite: {
     practice: "le fonctionnement d'un service comptable",
     stake: "la fiabilité des comptes et le respect des échéances",
     gain: "une grande rigueur dans le traitement des opérations",
+    org: "une entreprise",
   },
   informatique: {
     practice: "les méthodes de travail d'une équipe technique",
     stake: "la fiabilité des systèmes et la satisfaction des utilisateurs",
     gain: "une bonne capacité d'analyse et de résolution de problèmes",
+    org: "une entreprise",
   },
   sante: {
     practice: "la prise en charge des patients en milieu professionnel",
     stake: "la qualité des soins et le bien-être des patients",
     gain: "un sens aigu de l'écoute et de la prise en charge des patients",
+    org: "un établissement de santé",
   },
   enseignement: {
     practice: "la conduite de classe et la pédagogie au quotidien",
     stake: "la réussite et l'épanouissement des élèves",
     gain: "de réelles aptitudes pédagogiques et un bon contact avec les élèves",
+    org: "un établissement scolaire",
   },
   administration: {
     practice: "la gestion administrative au sein d'une organisation",
     stake: "la bonne tenue des dossiers et la fluidité du travail administratif",
     gain: "un sens aigu de l'organisation et de la confidentialité",
+    org: "une structure",
   },
   btp: {
     practice: "le déroulement d'un chantier",
     stake: "la qualité des ouvrages et le respect des règles de sécurité",
     gain: "une bonne connaissance des réalités du chantier",
+    org: "une entreprise",
   },
   hotellerie: {
     practice: "les standards de service d'un établissement hôtelier",
     stake: "la qualité du service et la satisfaction de la clientèle",
     gain: "le sens de l'accueil et du service client",
+    org: "un établissement hôtelier",
   },
   logistique: {
     practice: "l'organisation des flux et des livraisons",
     stake: "le respect des délais et la sécurité des marchandises",
     gain: "le sens de l'organisation et du respect des délais",
+    org: "une entreprise",
   },
   communication: {
     practice: "la conduite de projets de communication",
     stake: "la cohérence de l'image de marque et la qualité des contenus",
     gain: "une bonne sensibilité à l'image de marque et à la qualité des contenus",
+    org: "une structure",
   },
   agriculture: {
     practice: "les techniques de production sur le terrain",
     stake: "la qualité de la production et la bonne gestion des ressources",
     gain: "une bonne connaissance des réalités du terrain",
+    org: "une structure",
   },
   securite: {
     practice: "les procédures de sécurité sur site",
     stake: "la protection des personnes et la sécurité des biens",
     gain: "une grande vigilance et un sens aigu des responsabilités",
+    org: "une structure",
   },
   autre: {
     practice: "les réalités du métier",
     stake: "la qualité du travail et le respect des engagements",
     gain: "le sens des responsabilités et du travail bien fait",
+    org: "une structure",
   },
 };
 
@@ -274,9 +290,9 @@ export const SECTOR_CONTEXT: Record<Sector, { practice: string; stake: string; g
 export const QUALITIES: Array<{ label: string; phrase: (g: Gender) => string }> = [
   { label: "Rigueur", phrase: (g) => `${g("rigoureux", "rigoureuse")} dans mon travail` },
   { label: "Sens de l'organisation", phrase: () => "méthodique dans l'organisation de mes tâches" },
-  { label: "Esprit d'équipe", phrase: (g) => `${g("doté", "dotée")} d'un réel esprit d'équipe` },
+  { label: "Esprit d'équipe", phrase: (g) => `très ${g("attaché", "attachée")} au travail en équipe` },
   { label: "Ponctualité", phrase: () => "d'une grande ponctualité" },
-  { label: "Sens du contact", phrase: () => "à l'aise dans la relation avec le public" },
+  { label: "Sens du contact", phrase: (g) => `${g("doté", "dotée")} d'un excellent sens du contact` },
   { label: "Autonomie", phrase: () => "autonome dans l'exécution de mes missions" },
   { label: "Capacité d'adaptation", phrase: (g) => `${g("prompt", "prompte")} à m'adapter aux situations nouvelles` },
   { label: "Dynamisme", phrase: () => "dynamique dans tout ce que j'entreprends" },
@@ -444,9 +460,9 @@ export const PROFILE_AIM: Record<JobKind, Variant[]> = {
         : `Je suis à la recherche d'un ${c.posteNoun} au sein d'une structure où je pourrai m'investir pleinement`,
     (c) =>
       c.level === "debutant"
-        ? `Je souhaite aujourd'hui mettre mon énergie et mes connaissances au service d'une entreprise ${enTantQue(c.role)}`
-        : `Je souhaite aujourd'hui mettre mes compétences au service d'une entreprise ${enTantQue(c.role)}`,
-    (c) => `Mon objectif : contribuer efficacement à la réussite d'une entreprise ${enTantQue(c.role)}`,
+        ? `Je souhaite aujourd'hui mettre mon énergie et mes connaissances au service ${de(c.org)} ${enTantQue(c.role)}`
+        : `Je souhaite aujourd'hui mettre mes compétences au service ${de(c.org)} ${enTantQue(c.role)}`,
+    (c) => `Mon objectif : contribuer efficacement à la réussite ${de(c.org)} ${enTantQue(c.role)}`,
     (c) => senior(c) && `Je souhaite désormais mettre mon expertise au service d'une structure ambitieuse ${enTantQue(c.role)}`,
   ],
   stage: [
@@ -526,16 +542,21 @@ export const LETTRE_FIT: Record<JobKind, Variant[]> = {
   ],
 };
 
-/** P2: latest degree. */
+/** P2: latest degree (or licence / certificate). */
 export const LETTRE_DEGREE: Variant[] = [
   (c) => {
     const d = c.degree;
     if (!d) return null;
-    return `${d.leadFull}, ${d.status === "ongoing" ? "j'acquiers progressivement" : "j'ai acquis"} des bases solides dans ${c.field}`;
+    if (!d.academic) return `${d.leadFull}, je dispose d'une qualification directement utile dans ${c.field}`;
+    if (d.status === "ongoing") return `${d.leadFull}, j'acquiers progressivement des bases solides dans ${c.field}`;
+    return senior(c)
+      ? `${d.leadFull}, j'ai ensuite consolidé ces acquis par une solide expérience de terrain`
+      : `${d.leadFull}, j'ai acquis des bases solides dans ${c.field}`;
   },
   (c) => {
     const d = c.degree;
     if (!d || d.status === "level") return null;
+    if (!d.academic) return `J'ai obtenu ${d.article} ${d.name}${d.where}, une qualification directement utile dans ${c.field}`;
     return d.status === "done"
       ? `J'ai obtenu ${d.article} ${d.name}${d.where}, une formation qui m'a permis d'acquérir des connaissances solides dans ${c.field}`
       : `Je poursuis actuellement ${d.article} ${d.name}${d.where}, une formation qui me permet d'acquérir des connaissances solides dans ${c.field}`;
@@ -543,8 +564,9 @@ export const LETTRE_DEGREE: Variant[] = [
   (c) => {
     const d = c.degree;
     if (!d) return null;
+    if (!d.academic) return `Je suis titulaire ${de(`${d.article} ${d.name}`)}${d.where}, un atout concret pour exercer dans ${c.field}`;
     if (d.status === "done") {
-      return `Mon parcours académique, couronné par ${d.article} ${d.name}${d.where}, m'a apporté de solides connaissances dans ${c.field}`;
+      return `Ma formation, sanctionnée par ${d.article} ${d.name}${d.where}, m'a apporté de solides connaissances dans ${c.field}`;
     }
     if (d.status === "ongoing") {
       return `${c.g("Inscrit", "Inscrite")} en ${d.name}${d.where}, je consolide chaque jour mes connaissances dans ${c.field}`;
@@ -661,7 +683,7 @@ export const LETTRE_INTEREST: Variant[] = [
   (c) => `Je sais combien ${c.stake} comptent dans ${c.domain}, et c'est avec cette exigence que je souhaite rejoindre votre équipe`,
   (c) =>
     `Rejoindre ${c.company} représenterait pour moi l'opportunité de contribuer à vos objectifs tout en poursuivant mon développement professionnel`,
-  (c) => `C'est avec enthousiasme que je souhaite mettre mon énergie au service ${de(c.company)}`,
+  (c) => `C'est avec enthousiasme que je mettrais mon énergie au service ${de(c.company)}`,
   () => "Intégrer votre structure serait pour moi l'occasion de m'investir pleinement dans un environnement exigeant et formateur",
 ];
 
@@ -697,4 +719,5 @@ export const REPEAT_STEMS = [
   "concrètement", "motivé", "m'investir", "exigence", "vif intérêt", "environnement", "au contact",
   "aux côtés", "mon objectif", "compétences en", "réelle", "permis de développer", "permet de développer",
   "j'ai l'honneur", "je me permets", "rapidement opérationnel", "par ailleurs", "au sein", "aujourd'hui",
+  "mon parcours dans", "votre structure", "à l'aise", "ce domaine", "je souhaite",
 ];
