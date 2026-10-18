@@ -1,8 +1,6 @@
-// Seeded random OrderInputs for the generator, redaction and LLM tests, plus a check that they are
-// realistic: each one passes the real form validator unchanged in substance.
-import { assert } from "jsr:@std/assert@1.0.13";
+// Seeded random OrderInputs shared by the gen_* tests (fixture module: it registers no test itself;
+// gen_generator.test.ts checks that every input passes the real form validator).
 import type { OrderInput, Product, Sector } from "../lib/types.ts";
-import { validateOrderRequest } from "../lib/validate.ts";
 
 /** Small independent PRNG so the fixtures do not depend on the generator's own. */
 export function rng(seed: number): () => number {
@@ -163,11 +161,3 @@ export function randomInput(seed: number): { input: OrderInput; product: Product
   };
   return { input, product };
 }
-
-Deno.test("gen fixtures: every random input is accepted by the real form validator", () => {
-  for (let i = 0; i < 300; i++) {
-    const { input, product } = randomInput(i);
-    const res = validateOrderRequest({ product, template: "classique", data: input });
-    assert(res.ok, `seed ${i}: ${JSON.stringify(!res.ok && res.fields)}`);
-  }
-});

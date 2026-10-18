@@ -1,4 +1,7 @@
 // In-memory Store (tests and dev.ts). Mirrors the semantics of the tcv_* SQL functions exactly.
+// Methods are async without awaiting anything: each one runs to completion in a single tick (hence atomic)
+// and a thrown error surfaces as a rejected promise, like the SQL stores.
+// deno-lint-ignore-file require-await
 import type { OrderRow, OrderStatus, PayoutRow, PayoutStatus, Stats, Store } from "./types.ts";
 import { computePayoutAmount } from "./payout.ts";
 

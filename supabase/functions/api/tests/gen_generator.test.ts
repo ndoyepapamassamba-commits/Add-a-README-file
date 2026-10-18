@@ -1,6 +1,6 @@
 // Document generator: fuzz invariants, determinism, variety, no invented facts, gender agreement,
 // elision and the CV / lettre layout rules from SPEC.md.
-import { assert, assertEquals, assertMatch, assertNotEquals } from "jsr:@std/assert@1.0.13";
+import { assert, assertEquals, assertMatch, assertNotEquals, assertThrows } from "jsr:@std/assert@1.0.13";
 import type { Document, OrderInput, Product } from "../lib/types.ts";
 import { formatSnMobile } from "../lib/phone.ts";
 import { formatPeriod, generateDocument } from "../lib/generator/index.ts";
@@ -28,6 +28,7 @@ import {
   QUALITIES,
   SECTORS,
 } from "../lib/generator/banks.ts";
+import { validateOrderRequest } from "../lib/validate.ts";
 import { randomInput } from "./gen_inputs.test.ts";
 
 const NOW = new Date("2026-10-01T09:30:00Z");
@@ -44,7 +45,13 @@ function strings(doc: Document): Array<[string, string]> {
   return out;
 }
 
-const word = (w: string, flags = "u") => new RegExp(`(?<!\\p{L})${w}(?!\\p{L})`, flags);
+/** `w` as a whole word: no letter before it, and none after it when it ends with a letter. */
+const word = (w: string, flags = "u") =>
+  new RegExp(`(?<!\\p{L})${w}${/\p{L}$/u.test(w) ? "(?!\\p{L})" : ""}`, flags);
+
+/** "de assistant", "que il", "le hôtel", "de hygiène": an elision is missing. */
+const MISSING_ELISION =
+  /(?<!\p{L})(de|que|je|le|la) (?:[aeiouéèêàâîôûœ]|y(?![aeiouéèêy])|h(?:ôt|ôp|yg|ydr|abit|ist|uman|orai|onn|éberg|ui))/iu;
 
 /** Typographic invariants every generated string must satisfy. */
 function assertClean(doc: Document, ctx: string) {
@@ -60,7 +67,7 @@ function assertClean(doc: Document, ctx: string) {
     assertEquals((s.match(/«/g) ?? []).length, (s.match(/»/g) ?? []).length, `unbalanced « » — ${where}`);
     assertEquals((s.match(/\(/g) ?? []).length, (s.match(/\)/g) ?? []).length, `unbalanced () — ${where}`);
     assert(!/\n/.test(s), `newline — ${where}`);
-    assert(!word("(de|que|je|le|la) (?:[aeiouéèêàâîôûœ]|y(?![aeiouéèêy]))", "iu").test(s), `missing elision — ${where}`);
+    assert(!MISSING_ELISION.test(s), `missing elision — ${where}`);
     assert(!/(?<!\p{L})d' /u.test(s), `dangling elision — ${where}`);
   }
 }
@@ -96,6 +103,31 @@ function assertNoInventedNames(doc: Document, input: OrderInput, ctx: string) {
 }
 
 const sentenceCount = (s: string) => (s.match(/[.!?](?=\s|$)/g) ?? []).length;
+
+Deno.test("gen fixtures: every random input is accepted by the real form validator", () => {
+  for (let i = 0; i < 300; i++) {
+    const { input, product } = randomInput(i);
+    const res = validateOrderRequest({ product, template: "classique", data: input });
+    assert(res.ok, `seed ${i}: ${JSON.stringify(!res.ok && res.fields)}`);
+  }
+});
+
+Deno.test("gen test helpers detect the faults they look for", () => {
+  assert(MISSING_ELISION.test("poste de assistant") && MISSING_ELISION.test("de hôtesse") && MISSING_ELISION.test("de Yves"));
+  assert(!MISSING_ELISION.test("de Yacine") && !MISSING_ELISION.test("de haut niveau") && !MISSING_ELISION.test("d'hôtesse"));
+  assert(word("motivé").test("je suis motivé, et") && !word("motivé").test("je suis motivée"));
+  assert(word("Fort d'").test("Fort d'une") && !word("Fort d'").test("Forte d'une"));
+
+  const { input } = randomInput(1);
+  const doc = generateDocument(input, "pack", { seed: "H", now: NOW });
+  const tampered = structuredClone(doc);
+  tampered.lettre!.paragraphs[1] = "J'ai travaillé chez Totalenergies pendant des années.";
+  assertThrows(() => assertNoInventedNames(tampered, input, "tampered"));
+  tampered.lettre!.paragraphs[1] = "J'ai augmenté les ventes de 37 %.";
+  assertThrows(() => assertNoInventedDigits(tampered, input, "tampered"));
+  tampered.lettre!.paragraphs[1] = "Une phrase  avec un double espace.";
+  assertThrows(() => assertClean(tampered, "tampered"));
+});
 
 Deno.test("gen fuzz: 240 random orders satisfy every invariant", () => {
   for (let i = 0; i < 240; i++) {

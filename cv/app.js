@@ -74,11 +74,11 @@
   /* ---------- Formatting ---------- */
 
   function groupThousands(n) {
-    return String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0");
   }
 
   function fcfa(n) {
-    return groupThousands(n) + " FCFA";
+    return groupThousands(n) + "\u00a0FCFA";
   }
 
   function two(n) {

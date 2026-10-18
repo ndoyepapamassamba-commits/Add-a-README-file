@@ -145,7 +145,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .wave-dot { width: 22px; height: 22px; flex: none; }
 
 .hero-visual { position: relative; }
-.hero-visual .sample-tag { position: absolute; top: 10px; left: 10px; z-index: 2; }
+.hero-visual .sample-tag { position: absolute; top: 10px; right: 10px; z-index: 2; }
 .peek { position: relative; max-height: 330px; overflow: hidden; border-radius: 12px; box-shadow: var(--shadow); background: #fff; }
 .peek::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: linear-gradient(rgba(255, 253, 249, 0), var(--bg)); }
 .tag { display: inline-block; background: var(--ink); color: #fff; font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; }
@@ -178,18 +178,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
   padding: 22px 20px 20px; display: flex; flex-direction: column; gap: 10px;
 }
 .offer h3 { font-size: 1.15rem; margin: 0; }
-.offer .price { font-size: 1.9rem; font-weight: 800; letter-spacing: -.02em; }
+.offer .price { font-size: 1.9rem; font-weight: 800; letter-spacing: -.02em; margin: 0; }
 .offer .price small { font-size: 1rem; font-weight: 700; color: var(--muted); }
 .offer ul { list-style: none; padding: 0; margin: 0 0 6px; color: var(--ink-2); }
 .offer li { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 6px; }
 .offer li .tick { margin-top: 3px; }
 .offer .btn { margin-top: auto; }
-.offer-best { border: 2px solid var(--brand); box-shadow: var(--shadow); }
+.offer-best { border: 2px solid var(--brand); box-shadow: var(--shadow); order: -1; margin-top: 8px; }
 .offer-badge { position: absolute; top: -13px; left: 20px; background: var(--ochre); color: #231400; font-weight: 800; font-size: .8rem; padding: 4px 12px; border-radius: 999px; }
 .saving { color: var(--brand-dark); font-weight: 700; font-size: .95rem; margin: 0; }
 @media (min-width: 760px) {
   .offers { grid-template-columns: repeat(3, 1fr); align-items: stretch; }
-  .offer-best { transform: translateY(-6px); }
+  .offer-best { order: 0; margin-top: 0; transform: translateY(-6px); }
 }
 
 .samples { display: grid; gap: 18px; align-items: start; }

@@ -3,6 +3,7 @@ import { assert, assertEquals, assertMatch, assertNotEquals } from "jsr:@std/ass
 import { ORDER_ID_RE } from "../lib/ids.ts";
 import type { Document } from "../lib/types.ts";
 import { ADMIN_KEY, createOrder, DAY, HOUR, makeHarness, orderBody, orderData } from "./fixtures/backend_harness.ts";
+import type { Json } from "./fixtures/backend_harness.ts";
 
 const MASKED = /^[█\s]*$/;
 
@@ -97,7 +98,7 @@ Deno.test("POST /orders/:id/template changes the template in any status", async 
 
 Deno.test("POST /orders: validation errors carry dotted field paths in French", async () => {
   const h = makeHarness();
-  const data = orderData("pack") as Record<string, any>;
+  const data = orderData("pack") as Json;
   data.identity.firstName = "   ";
   data.identity.email = "pas-un-email";
   data.identity.phone = "12";
@@ -125,13 +126,13 @@ Deno.test("POST /orders: validation errors carry dotted field paths in French", 
 
 Deno.test("POST /orders: product rules (education or experience; letter only when needed)", async () => {
   const h = makeHarness();
-  const cv = orderData("cv") as Record<string, any>;
+  const cv = orderData("cv") as Json;
   cv.education = [];
   cv.experiences = [{ title: "", company: " ", missions: "" }];
   const res = await h.call("POST", "/orders", { body: { product: "cv", data: cv } });
   assertEquals(res.body.fields, { education: "Ajoutez au moins une formation ou une expérience." });
 
-  const lettre = orderData("lettre") as Record<string, any>;
+  const lettre = orderData("lettre") as Json;
   lettre.education = [];
   lettre.experiences = [];
   delete lettre.letter;
@@ -146,7 +147,7 @@ Deno.test("POST /orders: product rules (education or experience; letter only whe
 
 Deno.test("POST /orders cleans the input (trim, whitespace, control characters, empty optionals)", async () => {
   const h = makeHarness();
-  const data = orderData("pack") as Record<string, any>;
+  const data = orderData("pack") as Json;
   data.identity.firstName = "  Awa \u0007 ";
   data.identity.lastName = "Ndiaye\u200b";
   data.identity.address = "   ";

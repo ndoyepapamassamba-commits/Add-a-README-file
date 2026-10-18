@@ -80,6 +80,11 @@ export function a(phrase: string): string {
   return `à ${p}`;
 }
 
+/** "en tant que comptable", "en tant qu'électricien". */
+export function enTantQue(role: string): string {
+  return `en tant ${elide("que", role)}`;
+}
+
 /** "au sein de/d'/du/des" + company. */
 export function auSeinDe(company: string): string {
   return `au sein ${de(company)}`;

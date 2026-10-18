@@ -2,7 +2,7 @@
 // Every variant only *phrases* facts the customer typed (job, sector, level, degree, experience,
 // skills, qualities). Never put a digit, an employer, a diploma or an achievement in this file.
 import type { JobKind, Level, Sector } from "../types.ts";
-import { de, type Gender, joinList } from "./text.ts";
+import { de, enTantQue, type Gender, joinList } from "./text.ts";
 
 // ---------------------------------------------------------------------------
 // Generation context (built by index.ts from the customer's input)
@@ -349,11 +349,11 @@ export function expClause(c: Ctx, style: 0 | 1, opts: { span: boolean; notamment
   }
   if (e.current) {
     const when = span || " actuellement";
-    return style === 0 ? `j'occupe${when} le poste ${de(e.title)}${e.at}` : `j'exerce${when} en tant que ${e.title}${e.at}`;
+    return style === 0 ? `j'occupe${when} le poste ${de(e.title)}${e.at}` : `j'exerce${when} ${enTantQue(e.title)}${e.at}`;
   }
   return style === 0
     ? `j'ai${nb} occupé le poste ${de(e.title)}${e.at}${span}`
-    : `j'ai${nb} exercé en tant que ${e.title}${e.at}${span}`;
+    : `j'ai${nb} exercé ${enTantQue(e.title)}${e.at}${span}`;
 }
 
 /** "Mon expérience de caissière chez Auchan m'a permis de" / "Mon poste actuel de … me permet de". */
@@ -440,14 +440,14 @@ export const PROFILE_AIM: Record<JobKind, Variant[]> = {
   emploi: [
     (c) =>
       c.level === "debutant"
-        ? `Je suis à la recherche d'un premier emploi en tant que ${c.role}`
+        ? `Je suis à la recherche d'un premier emploi ${enTantQue(c.role)}`
         : `Je suis à la recherche d'un ${c.posteNoun} au sein d'une structure où je pourrai m'investir pleinement`,
     (c) =>
       c.level === "debutant"
-        ? `Je souhaite aujourd'hui mettre mon énergie et mes connaissances au service d'une entreprise en tant que ${c.role}`
-        : `Je souhaite aujourd'hui mettre mes compétences au service d'une entreprise en tant que ${c.role}`,
-    (c) => `Mon objectif : contribuer efficacement à la réussite d'une entreprise en tant que ${c.role}`,
-    (c) => senior(c) && `Je souhaite désormais mettre mon expertise au service d'une structure ambitieuse en tant que ${c.role}`,
+        ? `Je souhaite aujourd'hui mettre mon énergie et mes connaissances au service d'une entreprise ${enTantQue(c.role)}`
+        : `Je souhaite aujourd'hui mettre mes compétences au service d'une entreprise ${enTantQue(c.role)}`,
+    (c) => `Mon objectif : contribuer efficacement à la réussite d'une entreprise ${enTantQue(c.role)}`,
+    (c) => senior(c) && `Je souhaite désormais mettre mon expertise au service d'une structure ambitieuse ${enTantQue(c.role)}`,
   ],
   stage: [
     (c) => `Je recherche aujourd'hui un ${c.stageNoun} afin de découvrir concrètement ${c.practice}`,
@@ -456,9 +456,9 @@ export const PROFILE_AIM: Record<JobKind, Variant[]> = {
   ],
   alternance: [
     (c) =>
-      `Je recherche une entreprise d'accueil pour une alternance en tant que ${c.role}, afin d'allier formation théorique et pratique professionnelle`,
-    (c) => `Je souhaite intégrer une entreprise en alternance en tant que ${c.role} pour consolider mes connaissances sur le terrain`,
-    (c) => `Mon objectif : trouver une alternance en tant que ${c.role} afin de me former au plus près des réalités du métier`,
+      `Je recherche une entreprise d'accueil pour une alternance ${enTantQue(c.role)}, afin d'allier formation théorique et pratique professionnelle`,
+    (c) => `Je souhaite intégrer une entreprise en alternance ${enTantQue(c.role)} pour consolider mes connaissances sur le terrain`,
+    (c) => `Mon objectif : trouver une alternance ${enTantQue(c.role)} afin de me former au plus près des réalités du métier`,
   ],
 };
 

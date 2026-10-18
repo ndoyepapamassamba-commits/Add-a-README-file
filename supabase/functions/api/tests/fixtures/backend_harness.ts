@@ -75,11 +75,14 @@ export interface CallOptions {
   ip?: string;
 }
 
+/** Parsed JSON of unknown shape, for terse assertions. */
+// deno-lint-ignore no-explicit-any
+export type Json = any;
+
 export interface ApiResponse {
   status: number;
   headers: Headers;
-  // deno-lint-ignore no-explicit-any
-  body: any;
+  body: Json;
 }
 
 export interface HarnessOptions {
