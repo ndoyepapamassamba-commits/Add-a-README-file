@@ -266,6 +266,8 @@ function balanceQuotes(s: string): string {
  * no space inside parentheses, no empty "()", no doubled full stops.
  */
 export function tidy(s: string): string {
+  // Control characters (except newline, which collapse() turns into a space) never belong in a document.
+  // deno-lint-ignore no-control-regex
   const t = balanceQuotes(s.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, ""))
     .replace(/,(?=[^\s\d])/g, ", ")
     .replace(/\(\s*\)/g, "")

@@ -396,7 +396,8 @@ function buildContext(input: OrderInput, now: Date): Ctx {
     // A skill containing "et" reads best first: "hygiène et asepsie, soins de base et prise de constantes".
     skills: skills.slice(0, 3).map(inSentence).sort((x, y) => Number(/ et /.test(y)) - Number(/ et /.test(x))),
     it: itForSentence(input.it, skills.slice(0, 3)),
-    company: withArticle(input.letter?.company ?? ""),
+    // Validation requires a company for letters; the fallback only keeps sentences whole.
+    company: collapse(input.letter?.company ?? "") ? withArticle(input.letter!.company) : "votre entreprise",
     source: parseSource(input.letter?.source),
   };
 }

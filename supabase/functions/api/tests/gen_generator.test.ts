@@ -485,3 +485,12 @@ Deno.test("gen career change: an unrelated degree or job is never tied to the ta
   const related = allSeeds(baseInput(), "lettre", 40);
   assert(/BTS en comptabilité[^.]*(dans ce domaine|de terrain)/.test(related), "related degree should be tied to the trade");
 });
+
+Deno.test("gen robustness: a lettre without company or letter block still reads as whole sentences", () => {
+  const input = baseInput();
+  input.letter = undefined;
+  const doc = generateDocument(input, "lettre", { seed: "N", now: NOW });
+  assertClean(doc, "no letter");
+  assertEquals(doc.lettre!.recipient, ["À l'attention du Responsable des Ressources Humaines"]);
+  assert(!/au sein de\.|au sein de ,|par ,|service de\./.test(docText(doc)), docText(doc));
+});
