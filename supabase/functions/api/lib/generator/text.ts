@@ -121,21 +121,33 @@ function isKeptWord(word: string): boolean {
   return /\p{Ll}\p{Lu}/u.test(letters);
 }
 
+const FUNCTION_WORDS = new Set([
+  "à", "a", "au", "aux", "d", "de", "des", "du", "en", "et", "l", "la", "le", "les", "ou", "par", "pour",
+  "sur", "un", "une", "avec", "dans", "chez",
+]);
+
 /**
- * Text typed in a form ("Assistante De Direction", "Gestion des stocks") rewritten for use inside a
- * sentence: plain capitalised words are lower-cased, acronyms, CamelCase and known brands are kept.
- * Text typed entirely in capitals is treated as shouting: only short words (acronyms) stay upper-case.
+ * Text typed in a form, rewritten for use inside a sentence. Acronyms, CamelCase and known brands
+ * keep their case. Title-Cased input ("Assistante De Direction") is lower-cased word by word;
+ * ordinary input ("Livraison des clients à Thiès") only loses the capital of its first word, so
+ * place and company names survive. Text typed entirely in capitals keeps only its short words.
  */
 export function inSentence(s: string): string {
   const t = s.trim();
   const letters = t.replace(/[^\p{L}]/gu, "");
   const shouting = letters.length > 0 && letters === letters.toLocaleUpperCase("fr") && /\s/.test(t) &&
     /\p{L}{5,}/u.test(t);
+  const contentWords = (t.match(/\p{L}{2,}/gu) ?? []).filter((w) => !FUNCTION_WORDS.has(w.toLocaleLowerCase("fr")));
+  const titleCased = contentWords.length >= 2 && contentWords.every((w) => /^\p{Lu}/u.test(w));
+  let first = true;
   return t.replace(/[\p{L}][\p{L}\p{N}'’-]*/gu, (word) => {
+    const isFirst = first;
+    first = false;
     return word.split(/(['’-])/).map((part) => {
       if (!part || /['’-]/.test(part)) return part;
       const lower = part.toLocaleLowerCase("fr");
       if (shouting) return part.length >= 5 && !KEEP_CASE.has(lower) ? lower : part;
+      if (!isFirst && !titleCased && !FUNCTION_WORDS.has(lower)) return part;
       return isKeptWord(part) ? part : lower;
     }).join("");
   });

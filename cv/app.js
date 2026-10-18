@@ -356,14 +356,18 @@
 
   DocView.prototype.layout = function () {
     if (!this.page) return;
-    window.TCVRender.fit(this.page);
+    this.needsFit = true;
     this.rescale();
   };
 
   DocView.prototype.rescale = function () {
     if (!this.page) return;
     var width = this.frame.clientWidth;
-    if (!width) return;
+    if (!width) return; // hidden: measured again when it becomes visible (ResizeObserver / resize)
+    if (this.needsFit) {
+      this.needsFit = false;
+      window.TCVRender.fit(this.page);
+    }
     var natural = this.scaler.offsetWidth || window.TCVRender.A4_W_PX;
     var s = this.zoomed ? 1 : Math.min(1, width / natural);
     this.scaler.style.transform = s === 1 ? "none" : "scale(" + s + ")";
