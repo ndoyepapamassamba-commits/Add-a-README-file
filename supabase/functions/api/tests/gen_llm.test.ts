@@ -2,7 +2,7 @@
 import { assert, assertEquals } from "jsr:@std/assert@1.0.13";
 import type { Document, OrderInput } from "../lib/types.ts";
 import { generateDocument } from "../lib/generator/index.ts";
-import { makeEnhancer, OPENROUTER_URL } from "../lib/llm.ts";
+import { DEFAULT_TIMEOUT_MS, makeEnhancer, OPENROUTER_URL } from "../lib/llm.ts";
 
 const NOW = new Date("2026-10-01T09:30:00Z");
 
@@ -156,7 +156,5 @@ Deno.test("llm: timeout, network error and a fetch that ignores abort ⇒ null, 
 });
 
 Deno.test("llm: the default timeout is 20 seconds", () => {
-  // Guards the SPEC value without waiting 20 s: the constant is read from the module source.
-  const src = Deno.readTextFileSync(new URL("../lib/llm.ts", import.meta.url));
-  assert(/DEFAULT_TIMEOUT_MS = 20_000/.test(src));
+  assertEquals(DEFAULT_TIMEOUT_MS, 20_000);
 });

@@ -5,7 +5,7 @@ import type { Document, OrderInput, Product } from "./types.ts";
 import { cleanBullet, tidy } from "./generator/text.ts";
 
 export const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_TIMEOUT_MS = 20_000;
+export const DEFAULT_TIMEOUT_MS = 20_000;
 const MIN_RATIO = 0.5;
 const MAX_RATIO = 2;
 

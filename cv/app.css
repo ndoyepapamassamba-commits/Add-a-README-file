@@ -479,15 +479,17 @@ table.data tr:last-child td { border-bottom: 0; }
   user-select: none;
   letter-spacing: -.05em;
 }
-.tcv-lock { position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.tcv-lock { position: absolute; bottom: 8mm; right: 8mm; pointer-events: none; z-index: 1; }
+.tcv-lock-host { position: relative; }
+.tcv-lock.tcv-lock-center { bottom: auto; right: auto; left: 50%; top: 50%; transform: translate(-50%, -50%); }
 .tcv-lock-badge {
-  display: flex; align-items: center; gap: 18px; max-width: 78%;
-  background: rgba(255, 255, 255, .95); border: 2px solid #d6dee6; border-radius: 22px; padding: 22px 30px;
-  box-shadow: 0 16px 40px rgba(18, 32, 45, .18);
-  font: 500 21px/1.35 var(--font); color: #12202d;
+  display: flex; align-items: center; gap: 14px; width: max-content; max-width: 98mm; text-align: left;
+  background: rgba(255, 255, 255, .96); border: 2px solid #d6dee6; border-radius: 18px; padding: 14px 20px;
+  box-shadow: 0 12px 32px rgba(18, 32, 45, .2);
+  font: 500 17px/1.3 var(--font); color: #12202d;
 }
-.tcv-lock-badge strong { font-size: 25px; font-weight: 800; }
-.tcv-lock-icon { width: 54px; height: 54px; flex: none; stroke: #0b6b4e; stroke-width: 2.2; stroke-linejoin: round; }
+.tcv-lock-badge strong { font-size: 22px; font-weight: 800; }
+.tcv-lock-icon { width: 40px; height: 40px; flex: none; stroke: #0b6b4e; stroke-width: 2.2; stroke-linejoin: round; }
 .tcv-lock-icon rect { fill: #0b6b4e; }
 .tcv-lock-text { margin: 0; }
 
@@ -565,7 +567,8 @@ table.data tr:last-child td { border-bottom: 0; }
 .tcv-place-date { margin: 9mm 0 0 50%; }
 .tcv-subject { margin-top: 13mm; font-weight: 700; }
 .tcv-salutation { margin-top: 8mm; }
-.tcv-para { margin-top: 1em; text-align: justify; hyphens: auto; -webkit-hyphens: auto; break-inside: avoid; }
+.tcv-para { margin-top: 1em; text-wrap: pretty; break-inside: avoid; }
+.tpl-elegant .tcv-para { text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
 .tcv-signature { margin: 14mm 0 0 50%; font-weight: 700; }
 .tcv-sender-details { font-size: .92em; }
 

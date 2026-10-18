@@ -380,17 +380,46 @@
     strong.textContent = "Aperçu gratuit";
     text.appendChild(strong);
     text.appendChild(el("br"));
-    text.appendChild(document.createTextNode("Le texte flouté s'affiche en entier après paiement"));
+    text.appendChild(document.createTextNode("Texte complet après paiement"));
     badge.appendChild(svg);
     badge.appendChild(text);
     lock.appendChild(badge);
     return lock;
   }
 
+  /** Visible (non-masked) letters of a node, ignoring punctuation and separators. */
+  function visibleLetters(node) {
+    var out = "";
+    var walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null);
+    for (var t = walker.nextNode(); t; t = walker.nextNode()) {
+      if (!t.parentNode.closest(".tcv-mask")) out += t.nodeValue;
+    }
+    return out.replace(/[\s·,.;:|—–-]/g, "");
+  }
+
+  /**
+   * Preview pages get a lock badge. It sits on the largest fully masked block (bullets, letter paragraph)
+   * so it never hides text the customer can read; without such a block it goes to the bottom corner.
+   */
   function finish(p) {
-    if (p.querySelector(".tcv-mask")) {
-      p.classList.add("is-preview");
-      p.appendChild(lockBadge());
+    if (!p.querySelector(".tcv-mask")) return p;
+    p.classList.add("is-preview");
+    var best = null;
+    var bestCount = 0;
+    Array.prototype.forEach.call(p.querySelectorAll("p, ul"), function (n) {
+      var count = n.querySelectorAll(".tcv-mask-w").length;
+      if (count > bestCount && !visibleLetters(n)) {
+        best = n;
+        bestCount = count;
+      }
+    });
+    var badge = lockBadge();
+    if (best && bestCount >= 6) {
+      best.classList.add("tcv-lock-host");
+      badge.classList.add("tcv-lock-center");
+      best.appendChild(badge);
+    } else {
+      p.appendChild(badge);
     }
     return p;
   }
