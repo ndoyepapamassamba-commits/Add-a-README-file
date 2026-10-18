@@ -2,6 +2,10 @@
 
 **Premier skill à appeler, toujours, avant tout autre skill : `methode-veille-creation` — application stricte, sans exception (liste de contrôle du skill cochée avant chaque réponse).** (consigne du 15/10/2026, venue de la discussion « Ecobank Covenant Trigger Intelligence Pack »)
 
+**Juste après : `rea-d-abord`** (consigne du 17/10/2026, « utilise REA tout le temps au début de toutes tes réflexions pour
+de la rétro-ingénierie rapide ») : avant de deviner comment marche un outil, un paquet, une app ou un format, le démonter avec
+REA (`rea` en ligne de commande, MCP `rea` déclaré dans `.mcp.json`) et raisonner sur ses preuves (`.claude/skills/rea-d-abord`).
+
 - **Tout doit être parfait** (consigne du 17/10/2026) : aucune livraison tant qu'un contrôle échoue ; chaque défaut vu par
   l'utilisateur (ex. l'ombre de la poule) devient un contrôle automatique qui l'aurait arrêté ; JEV crée (genèse : variantes
   physiques jugées contre un objectif écrit et une référence d'artiste) et juge (portes A–K du film, batterie physique),
