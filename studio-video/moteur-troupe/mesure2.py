@@ -4,11 +4,15 @@
 import sys, cv2, numpy as np
 path, y0, y1 = sys.argv[1], float(sys.argv[2]), float(sys.argv[3])
 cap = cv2.VideoCapture(path); fps = cap.get(cv2.CAP_PROP_FPS)
+# film à 60 i/s : mesuré sur une image sur deux (30 i/s), comme les références TikTok et les versions précédentes
+PAS = max(1, int(round(fps / 30))); fps = fps / PAS; n_ = -1
 dis = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_MEDIUM)
 prev = None; cam, live, loc, dif = [], [], [], []
 while True:
     ok, f = cap.read()
     if not ok: break
+    n_ += 1
+    if n_ % PAS: continue
     h = f.shape[0]; f = f[int(h * y0):int(h * y1)]
     g = cv2.cvtColor(cv2.resize(f, (288, int(288 * f.shape[0] / f.shape[1]))), cv2.COLOR_BGR2GRAY)
     if prev is not None:

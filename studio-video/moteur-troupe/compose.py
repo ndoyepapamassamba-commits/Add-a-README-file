@@ -5,6 +5,8 @@
 import json, os, re, subprocess, sys, glob, numpy as np, cv2, unicodedata
 from PIL import Image, ImageDraw, ImageFont
 D, OUTMP4 = sys.argv[1], sys.argv[2]
+# cadence du tournage (60 i/s depuis le 18/10/2026 ; 30 pour les tournages plus anciens)
+FPS = json.load(open(f'{D}/tournage.json')).get('fps', 30) if os.path.isfile(f'{D}/tournage.json') else 30
 W, H, CLIP_Y, CH_ = 576, 1024, 282, 460
 SAFE = dict(left=60 / 1080 * W, right=W - 120 / 1080 * W, bottom=H - 320 / 1920 * H)
 FONT = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/fonts/Montserrat.ttf'
@@ -108,8 +110,8 @@ BANDE = 'voix/mix-musique.wav' if os.path.isfile('voix/mix-musique.wav') and os.
 # ambiance réelle (ambiance.py : coqs, poules, oiseaux, vent, maquis) posée sous la bande si elle est à jour
 if os.path.isfile('voix/mix-ambiance.wav') and os.path.getmtime('voix/mix-ambiance.wav') >= os.path.getmtime(BANDE): BANDE = 'voix/mix-ambiance.wav'
 frames = sorted(glob.glob(f'{D}/clip/f*.jpg')); os.makedirs(f'{D}/compose', exist_ok=True); total = T['total']; c0 = total - 2.0
-for k, fp in enumerate(frames):
-    t = k / 30; fr = cv2.imread(fp)
+def une_image(k):
+    fp = frames[k]; t = k / FPS; fr = cv2.imread(fp)
     sc = H / fr.shape[0]; bw = int(round(fr.shape[1] * sc))
     small = cv2.GaussianBlur(cv2.resize(fr, (bw // 4, H // 4), interpolation=cv2.INTER_AREA), (0, 0), 4.5)
     bg = cv2.resize(small, (bw, H)); x0 = (bw - W) // 2; bg = (bg[:, x0:x0 + W].astype(np.float32) * 0.92).astype(np.uint8)
@@ -120,11 +122,17 @@ for k, fp in enumerate(frames):
         dr = ImageDraw.Draw(ov); lines = [credit[:credit.index('·', 60) + 1].strip(' ·'), credit[credit.index('·', 60) + 1:].strip()]
         for i, ln in enumerate(lines): dr.text(((W - FC.getlength(ln)) / 2, 66 + 20 * i), ln, font=FC, fill=(255, 255, 255, 230), stroke_width=2, stroke_fill=(0, 0, 0, 200))
     Image.alpha_composite(img, ov).convert('RGB').save(f'{D}/compose/c{k:05d}.jpg', quality=92)
+# MONTAGE EN PARALLÈLE (18/10/2026) : à 60 i/s, 4 047 images composées une à une prenaient environ 4 min ; chaque image est
+# indépendante (fond flouté, sous-titre, générique), elles sont réparties sur les processeurs
+import multiprocessing as _mp
+cv2.setNumThreads(1)
+with _mp.get_context('fork').Pool(int(os.environ.get('COMPOSE_PROCS', os.cpu_count() or 1))) as _p:
+    _p.map(une_image, range(len(frames)), chunksize=32)
 # son du fichier livré : fondu de fin, puis sonie −14 LUFS et crête vraie ≤ −2,3 dBTP mesurées en boucle (sonie.py ; le
 # loudnorm d'ffmpeg en une passe laissait −15,3 LUFS et −0,7 dBTP, porte H refusée)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import sonie
 y_, sr_ = sonie.lit(BANDE); y_ = y_[:int(total * sr_)]; nf_ = int(0.4 * sr_); y_[-nf_:] *= np.linspace(1, 0, nf_)
 sonie.ecrit(f'{D}/bande.wav', sonie.masterise(y_, sr_))
-subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-framerate', '30', '-i', f'{D}/compose/c%05d.jpg', '-i', f'{D}/bande.wav', '-vf', 'format=yuv420p',
-                '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-t', f'{len(frames) / 30:.3f}', '-movflags', '+faststart', OUTMP4], check=True)
+subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-framerate', str(FPS), '-i', f'{D}/compose/c%05d.jpg', '-i', f'{D}/bande.wav', '-vf', 'format=yuv420p',
+                '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-t', f'{len(frames) / FPS:.3f}', '-movflags', '+faststart', OUTMP4], check=True)
 print(f'{len(caps)} groupes de sous-titres, tous dans la zone sûre ; {len(frames)} images ; {OUTMP4}')

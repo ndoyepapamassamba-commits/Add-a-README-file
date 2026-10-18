@@ -73,11 +73,14 @@ if __name__ == '__main__':
     MP4, TOUR, TL, OUT = sys.argv[1:5]
     TO = json.load(open(TOUR)); T = json.load(open(TL)); SH = TO['decoupage']
     cartes = [(c['t0'] - 0.05, c['t1'] + 0.2) for c in T.get('cartes', [])]
-    cap = cv2.VideoCapture(MP4); images = []
+    # film à 60 i/s (18/10/2026) : JEV juge la grille des 30 i/s (une image sur deux), comme toutes les versions précédentes —
+    # mêmes questions calibrées, même nombre d'images par seconde ; FPS reste celui de cette grille
+    cap = cv2.VideoCapture(MP4); images = []; PAS = max(1, int(round((cap.get(cv2.CAP_PROP_FPS) or 30) / FPS))); n_ = -1
     while True:
         ok, f = cap.read()
         if not ok: break
-        images.append(f[CLIP])
+        n_ += 1
+        if n_ % PAS == 0: images.append(f[CLIP])
     N = len(images); taches = []
     for sec in range(math.ceil(N / FPS)):
         g = segment(sec, SH, cartes, N)

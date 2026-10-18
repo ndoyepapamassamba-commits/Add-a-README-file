@@ -31,6 +31,7 @@ def args():
     ap.add_argument('--engine', default='CYCLES')
     ap.add_argument('--samples', type=int, default=10)
     ap.add_argument('--frames', default='')
+    ap.add_argument('--threads', type=int, default=0, help='fils de rendu de ce processus (rendu réparti de film.py ; 0 = tous)')
     ap.add_argument('--still', default='')
     ap.add_argument('--scale', type=float, default=1.0, help='résolution relative (0.5 = aperçu rapide)')
     ap.add_argument('--blend', default='', help='enregistre aussi le .blend')
@@ -1117,6 +1118,7 @@ def main():
         sc.cycles.max_bounces = 0
         sc.cycles.transparent_max_bounces = 24
         sc.render.use_persistent_data = True
+        if A.threads > 0: sc.render.threads_mode, sc.render.threads = 'FIXED', A.threads
         try:
             sc.cycles.device = 'GPU' if bpy.context.preferences.addons['cycles'].preferences.has_active_device() else 'CPU'
         except Exception:
@@ -1840,7 +1842,12 @@ def screen_shots(sc, actors, plan, path, span=None):
                     boxes.append([round(min(v.x for v in uv), 3), round(min(1 - v.y for v in uv), 3),
                                   round(max(v.x for v in uv), 3), round(max(1 - v.y for v in uv), 3)])
         out[str(k)] = boxes
-    json.dump(out, open(path, 'w'), indent=0)
+    import fcntl
+    with open(path + '.verrou', 'w') as v_:   # rendu réparti (film.py --procs) : chaque processus fusionne ses plans sous verrou
+        fcntl.flock(v_, fcntl.LOCK_EX)
+        try: deja = json.load(open(path))
+        except (OSError, ValueError): deja = {}
+        deja.update(out); json.dump(deja, open(path, 'w'), indent=0)
 
 
 def follow_faces(plan, actors, fps, span=None, follow=1.0, dead=0.06):

@@ -10,7 +10,9 @@
 # python3 controle_video.py v10/troupe-v10.mp4 timeline.json v10/tournage.json rapport.json
 import json, os, re, subprocess, sys, unicodedata, numpy as np, cv2
 MP4, TL, SHOTS, OUT = sys.argv[1:5]
-T = json.load(open(TL)); SH = json.load(open(SHOTS))['decoupage']; R = {}; FPS = 30
+T = json.load(open(TL)); SH = json.load(open(SHOTS))['decoupage']; R = {}
+# cadence : celle du fichier (60 i/s depuis le 18/10/2026), attendue égale à celle du tournage
+FPS = round(cv2.VideoCapture(MP4).get(cv2.CAP_PROP_FPS)) or 30; FPS_VOULU = json.load(open(SHOTS)).get('fps', 30); PAS = max(1, FPS // 30)
 def run(cmd): return subprocess.run(cmd, capture_output=True, text=True)
 SEUL = os.environ.get('SEUL')
 # ── 1. technique ──
@@ -23,7 +25,7 @@ dur = float(pr['format']['duration'])
 R['technique'] = {'duree_s': round(dur, 2), 'images': int(v.get('nb_frames', 0)), 'cadence': v['r_frame_rate'], 'taille': f"{v['width']}x{v['height']}",
                   'video': v['codec_name'], 'audio': f"{a['codec_name']} {a.get('sample_rate')} Hz", 'ecart_son_image_s': round(abs(float(v['duration']) - float(a['duration'])), 3),
                   'erreurs_decodage': len(dec.stderr.strip().splitlines())}
-R['technique']['ok'] = dur > 60.0 and v['r_frame_rate'] == '30/1' and v['width'] == 576 and v['height'] == 1024 and R['technique']['erreurs_decodage'] == 0 and R['technique']['ecart_son_image_s'] <= 1 / FPS + 0.03
+R['technique']['ok'] = dur > 60.0 and v['r_frame_rate'] == f'{FPS_VOULU}/1' and v['width'] == 576 and v['height'] == 1024 and R['technique']['erreurs_decodage'] == 0 and R['technique']['ecart_son_image_s'] <= 1 / FPS + 0.03
 # ── 2. son ──
 eb = run(['ffmpeg', '-nostats', '-i', MP4, '-filter_complex', 'ebur128=peak=true', '-f', 'null', '-']).stderr
 I = float(re.findall(r'I:\s+(-?[\d.]+) LUFS', eb)[-1]); TP = float(re.findall(r'Peak:\s+(-?[\d.]+) dBFS', eb)[-1])
@@ -37,6 +39,8 @@ while True:
     if prev is not None: diffs.append(float(np.abs(s.astype(np.int16) - prev.astype(np.int16)).mean()))
     prev = s
 diffs = np.array(diffs); lum = np.array(lum)
+# gel : écart mesuré sur 1/30 s (à 60 i/s, deux images voisines diffèrent deux fois moins : même seuil, même sens)
+if PAS > 1: diffs = np.array([float(np.abs(frames_small[k + PAS].astype(np.int16) - frames_small[k].astype(np.int16)).mean()) for k in range(len(frames_small) - PAS)])
 cards = [(c_['t0'], c_['t1'] + 0.2) for c_ in T['cartes']]
 in_card = lambda t: any(a_ <= t <= b_ for a_, b_ in cards)
 frozen, run_, longest = 0, 0, 0.0

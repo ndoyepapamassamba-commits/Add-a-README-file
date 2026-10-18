@@ -27,6 +27,10 @@ QT = {'titre_lisible': (True, '`image` shows a title card over a scene of an ani
       'titre_accroche': (True, '`image` shows a title card over a scene of an animated comedy. Does the title make you want to watch the sketch (catchy, funny)?')}
 
 
+JEU_FR = {'soupcon': 'soupçonneux', 'camera': 'regard caméra', 'accuse': 'accusateur', 'innocent': 'faussement innocent', 'malice': 'malicieux',
+          'frime': 'frimeur', 'panique': 'paniqué', 'choc': 'choqué', 'marchande': 'marchandage', 'joie': 'joyeux', 'rire': 'rieur', 'neutre': 'neutre'}
+
+
 def image(mp4, t):
     r = subprocess.run(['ffmpeg', '-v', 'error', '-ss', f'{t:.3f}', '-i', mp4, '-frames:v', '1', '-f', 'image2pipe', '-vcodec', 'png', '-'], capture_output=True).stdout
     return cv2.imdecode(np.frombuffer(r, np.uint8), 1)
@@ -51,8 +55,16 @@ if __name__ == '__main__':
     sketchs = sorted({L['sketch'] for L in T['lines']}, key=lambda s: min(L['t0'] for L in T['lines'] if L['sketch'] == s))
     def texte(sid):
         L_ = [L for L in T['lines'] if L['sketch'] == sid]
-        etat = {'sketch': {'titre': titres.get(sid, sid), 'repliques': [{'personnage': L['qui'].title(), 'texte': L['texte'], 'jeu': L.get('jeu', '')} for L in L_]}}
-        r = juge(etat, QS, outil='jev_texte_sketch'); return {'sketch': sid, **r, 'defauts': decide(r, QS)}
+        # jeu en français lisible (18/10/2026) : les étiquettes internes sans accents (« soupcon », « camera ») étaient lues par JEV
+        # comme des fautes d'orthographe du sketch (porte « faute » à 0,51 sur le bulletin, dont chaque réplique seule est à ≤ 0,36)
+        etat = {'sketch': {'titre': titres.get(sid, sid), 'repliques': [{'personnage': L['qui'].title(), 'texte': L['texte'], 'jeu': JEU_FR.get(L.get('jeu', ''), L.get('jeu', ''))} for L in L_]}}
+        # LE PARLER EST JUGÉ SUR LES RÉPLIQUES SEULES (18/10/2026) : les noms de la troupe (fixés par l'utilisateur, d'origines
+        # diverses : Baye Ndiaye, Nounou…) ne disent rien du français parlé et faussaient la note — même texte jugé 0,26 avec
+        # les noms et 0,64 sans (histoires.juge) ; l'épisode 1 recevait 0,45 et 0,36 ici contre 0,64 à 0,71 à l'écriture
+        QI = {'ivoirien': QS['ivoirien']}; QA = {k: v for k, v in QS.items() if k != 'ivoirien'}
+        r = juge(etat, QA, outil='jev_texte_sketch')
+        r.update(juge({'sketch': {'repliques': [L['texte'] for L in L_]}}, QI, outil='jev_texte_parler'))
+        return {'sketch': sid, **r, 'defauts': decide(r, QS)}
     def st(L):
         t = L['t0'] + 0.5 * L['dur']; r = juge({'replique': L['texte']}, QST, {'image': image(MP4, t)}, outil='jev_texte_soustitres')
         return {'qui': L['qui'], 'texte': L['texte'][:40], 't': round(t, 2), **r, 'defauts': decide(r, QST)}

@@ -35,6 +35,8 @@ def main():
     # peintures émissives, sans lumière à intégrer ; mesuré sur la cour : 2 échantillons = 0,4 s/image contre 5,75 s à 10
     # (×14), même netteté (PSNR 36 dB, aucun bruit visible) ; le 3e lisse les bords des découpes. 10 reste possible.
     ap.add_argument('--samples', type=int, default=3)
+    ap.add_argument('--procs', type=int, default=int(os.environ.get('BLENDER_PROCS', 0)),
+                    help='processus Blender en parallèle (0 = automatique : un par paire de cœurs) ; morceaux faits de plans entiers')
     ap.add_argument('--seconds', type=float, default=64, help='durée visée (> 60 s : programme de rémunération TikTok ; vos vidéos : 60,6 à 70,6 s)')
     ap.add_argument('--sans-realisateur', action='store_true',
                     help='sans le réalisateur (director.py : gestes, énergie, réactions, caméra par réplique) — comparaison A/B')
@@ -78,13 +80,31 @@ def main():
              '--samples', str(4 if a.apercu else a.samples)] + (['--scale', '0.5', '--pas', str(a.pas or 3)] if a.apercu else [])
     # Several views of one place: each run of shots is rendered in its view (same actors, same sound — a cut).
     coupes = json.load(open(os.path.join(out, 'plan.json'), encoding='utf-8')).get('coupes') or [None]
+    # RENDU RÉPARTI (18/10/2026, « réduis encore le temps de traitement via Blender ») : à 3 échantillons, une image Cycles
+    # passe une bonne part de son temps hors du calcul parallèle (mise à jour de la scène, poses, écriture du PNG) ; plusieurs
+    # processus de quelques fils chacun gardent les cœurs occupés. Les morceaux sont faits de PLANS ENTIERS (la caméra qui
+    # suit les visages est lissée sur tout le plan : un plan coupé en deux aurait deux lissages et un saut à la jointure).
+    plan_ = json.load(open(os.path.join(out, 'plan.json'), encoding='utf-8'))
+    n_cpu = os.cpu_count() or 2; procs = a.procs or max(1, n_cpu // 2)
+    def morceaux(lo, hi):
+        bords = sorted({lo} | {s['start'] + 1 for s in plan_['shots'] if lo < s['start'] + 1 <= hi})
+        cible = (hi - lo + 1) / procs; M, a0 = [], lo
+        for b in bords[1:] + [hi + 1]:
+            if b - a0 >= cible * 0.9 or b == hi + 1:
+                M.append((a0, b - 1)); a0 = b
+        return M
     with open(os.path.join(out, 'render.log'), 'a', encoding='utf-8') as log:
         for c in coupes:
-            part = scene + (['--decor', c['decor'], '--frames', f"{c['start'] + 1}-{c['end']}"] if c else [])
-            if a.blender:
-                run([a.blender, '-b', '--python', part[0], '--'] + part[1:], log)
-            else:
-                run([sys.executable] + part, log)
+            lo, hi = (c['start'] + 1, c['end']) if c else (1, plan_['frames'])
+            base = scene + (['--decor', c['decor']] if c else [])
+            cmds = []
+            for f0, f1 in morceaux(lo, hi):
+                part = base + ['--frames', f'{f0}-{f1}', '--threads', str(max(1, n_cpu // procs))]
+                cmds.append(([a.blender, '-b', '--python', part[0], '--'] + part[1:]) if a.blender else ([sys.executable] + part))
+            print(f"[film] rendu de {hi - lo + 1} images en {len(cmds)} processus parallèles ({max(1, n_cpu // procs)} fils chacun)", flush=True)
+            ps = [subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT) for cmd in cmds]
+            if any(p.wait() for p in ps):
+                raise SystemExit('étape en échec : rendu Blender (voir render.log)')
     film = os.path.join(out, 'apercu.mp4' if a.apercu else 'film.mp4')
     run([sys.executable, os.path.join(HERE, 'finish.py'), '--plan', os.path.join(out, 'plan.json'), '--frames', frames_dir, '--out', film])
     qa_p = os.path.splitext(film)[0] + '.qa.json'

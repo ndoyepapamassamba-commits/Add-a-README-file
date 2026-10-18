@@ -94,3 +94,38 @@ Les anciennes versions obtenaient :
 **Les deux refus de JEV pendant l'écriture :**
 - **L'ordonnance** a d'abord perdu son duel (0,40), car elle livrait le malentendu trop tôt et privait l'enfant de sa réplique. Elle a été reconstruite autour de l'escalade vers Petit Mamadou.
 - **La cachette** a d'abord obtenu 0,48 et 0,50 en « ivoirien ». La variante gardée, avec « dêh », « sous le lit là » et « on se connaît pas », obtient 0,73 et 0,70.
+
+## 6. Épisode 1, deuxième écriture : trois décors, sept personnages
+
+18/10/2026. Retours de l'utilisateur sur la première version :
+- « Le degré d'humour, ce n'est pas encore ça » ;
+- « Varie scène et personnages comme avant ».
+
+Les trois sketchs de la cour passent dans `histoires/reserve-cour.json`. L'épisode prend un duo de la bible par décor :
+
+| Ordre | Sketch (titre à l'écran) | Décor, duo | Ressort de la bible | Chute |
+|---|---|---|---|---|
+| 1 | **KOFFI LE FAUX RICHE** | maquis : Coumba, Koffi | « elle teste sa richesse, il bluffe » | « Mes lunettes ? C'est pour fuir le patron. » La chute répond à l'accroche : « Pourquoi tu portes tes lunettes noires la nuit ? » |
+| 2 | **PAPI ÉTAIT PREMIER** | cour : Maman Nounou, Petit Mamadou, Baye | Baye donne des leçons qu'il n'a jamais suivies ; l'enfant le trahit | « Caché avec le tien, Papi ! » La chute répond à « tu l'as caché où ? » et dément les « termites ». |
+| 3 | **LE LOYER QUI MARCHE À PIED** | chambre : Tantie Awa, Modou | « elle le soupçonne de tout — et elle a souvent raison » | « Ça, c'était avec ton loyer, Tantie. » Elle vient après une escalade d'excuses : l'argent « en route », les embouteillages de Yopougon, la banque « gâtée ». |
+
+**Ce qui a été appris en écrivant :**
+- **La chute qui répond à la question d'accroche** a donné les meilleures notes. Le public attend la réponse depuis la première seconde.
+- **L'escalade en trois excuses** a fait gagner son duel au « Loyer » : 0,41 sans elle, 0,805 avec.
+- **Les titres « LE/LA + nom » seuls** obtiennent une note d'accroche faible : « LE BULLETIN » 0,25, « LE LOYER » 0,42. Un titre qui annonce le conflit fait mieux : « KOFFI LE FAUX RICHE » 0,68, « LE LOYER QUI MARCHE À PIED » 0,66.
+
+**Contrôle final par JEV** (décision > 0,5 sur chaque question) :
+
+| Sketch | Drôle (/4) | Chute | Parler ivoirien | Clair | Méchant | Duel contre le sketch remplacé |
+|---|---|---|---|---|---|---|
+| Koffi le faux riche | 2,45 | 0,87 | 0,81 | 0,78 | 0,12 | 0,56 contre la Cachette |
+| Papi était premier | 2,31 | 0,89 | 0,72 | 0,79 | 0,07 | 0,67 contre l'ancien Bulletin |
+| Le loyer qui marche à pied | **2,95** | 0,92 | 0,86 | 0,64 | 0,12 | 0,805 contre l'Ordonnance |
+
+La première écriture plafonnait à 2,24.
+
+**Porte « faute ».** Une réplique était jugée à 0,53 : « Montre ton bulletin d'avant, on va voir ». Elle est remplacée par « Ah bon ? Où est ton bulletin à toi, alors ? », jugée à 0,20.
+
+**Biais de mesure corrigé dans la porte finale (`jev_texte.py`).** Le parler ivoirien est désormais jugé sur les répliques seules :
+- les noms de la troupe, d'origines diverses, faisaient passer la même note de 0,64 à 0,26 ;
+- l'épisode 1 v1 recevait ainsi 0,45 et 0,36 à la porte finale, contre 0,64 à 0,71 à l'écriture.

@@ -12,7 +12,8 @@ import numpy as np, cv2
 import jev_api, jeu
 from mise_en_scene import QUI
 
-CLIP = (slice(282, 742), slice(None)); FPS = 30; INSTANTS = (0.4, 0.75)
+CLIP = (slice(282, 742), slice(None)); INSTANTS = (0.4, 0.75)
+FPS = round(cv2.VideoCapture(sys.argv[1]).get(cv2.CAP_PROP_FPS)) or 30   # cadence du fichier (60 i/s depuis le 18/10/2026)
 
 
 def question(x, y):

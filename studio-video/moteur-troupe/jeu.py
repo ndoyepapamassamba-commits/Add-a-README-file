@@ -30,6 +30,24 @@ REACTION_TEMOIN = {'accuse': {'soupcon': 0.4, 'malice': 0.2}, 'malice': {'malice
                    'soupcon': {'soupcon': 0.3}, 'innocent': {'soupcon': 0.5}}
 
 
+def _souffle(t, graine):
+    """respiration irrégulière (18/10/2026, « animation trop procédurale, pas naturelle » ; REA sur @met4citizen/talkinghead,
+    MIT, preuve ev_c88db888…, talkinghead.mjs l. 409-414) : inspiration 1,2 s, pause 0,5 s, expiration 1,0 s, repos 1,5 s,
+    chaque cycle allongé ou raccourci de ±20 % (au lieu d'une sinusoïde régulière à 0,25 Hz) → −1 (expiré) … 1 (inspiré)."""
+    k, t0 = 0, -((graine * 0.37) % 4.2)
+    while True:
+        j = 0.8 + 0.4 * ((math.sin(12.9898 * k + 78.233 * graine) * 43758.5453) % 1.0)
+        d = (1.2 * j, 0.5 * j, 1.0 * j, 1.5 * j)
+        if t < t0 + sum(d): break
+        t0 += sum(d); k += 1
+    u = t - t0
+    if u < d[0]: v = 0.5 - 0.5 * math.cos(math.pi * u / d[0])
+    elif u < d[0] + d[1]: v = 1.0
+    elif u < d[0] + d[1] + d[2]: v = 0.5 + 0.5 * math.cos(math.pi * (u - d[0] - d[1]) / d[2])
+    else: v = 0.0
+    return 2.0 * v - 1.0
+
+
 def _bruit(t, graine):   # bruit doux (somme de sinus incommensurables, Perlin 1995)
     return 0.5 * math.sin(1.31 * t + graine) + 0.3 * math.sin(2.17 * t + 1.7 * graine) + 0.2 * math.sin(3.73 * t + 0.3 * graine)
 
@@ -196,6 +214,7 @@ def interlocuteur(L, lignes, acteurs):
 
 FRAC = {'buste': 0.8, 'buste_lacet': 0.6, 'tete': 0.8, 'tete_lacet': 0.45, 'tete_tangage': 0.7, 'bassin_x': 0.8}
 LACET_ECOUTE = 4.0   # degrés : lacet minimal de l'écouteur vers celui qui parle (porte D : > 2° dans 75 % des images)
+LACET_VISAGE = 22.0   # degrés : rotation de tête confiée au visage (LivePortrait), au plus (rendus à ±12° et ±24°)
 LACET_ECOUTE_MIN = 3.5   # degrés : plancher d'écoute après toutes les couches (porte D : > 2° dans 75 % des images)
 LIM = {'buste': 3.0, 'buste_lacet': 9.0, 'tete': 6.0, 'tete_lacet': 20.0, 'tete_tangage': 9.0, 'bassin_x': 4.0}
 
@@ -300,7 +319,7 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
             C['regard_x'][i] = sd * (0.85 if parle else 0.95) - pk[0]
             C['buste_lacet'][i] = sd * (7.0 if parle else 4.0)
             roll = kb * 1.2 * _bruit(0.6 * t, g + 1); tang = kb * 0.8 * _bruit(0.7 * t, g + 2); buste = kb * 0.8 * _bruit(0.35 * t, g + 3)
-            souffle = 0.006 * math.sin(2 * math.pi * 0.25 * t + g); ep = 0.0; bx = kb * 1.5 * _bruit(0.12 * t, g + 4); by = 0.0
+            souffle = 0.006 * _souffle(t, g); ep = 0.0; bx = kb * 1.5 * _bruit(0.12 * t, g + 4); by = 0.0
             if parle:
                 u = t - L['t0']; e = L['env'][min(len(L['env']) - 1, max(0, int(u * 100)))]
                 # hochements sur MES syllabes fortes : une bosse douce de 0,34 s par attaque retenue (v25). L'ancienne cible
@@ -397,11 +416,16 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         # ── bornes de l'enveloppe du personnage
         R['buste'] = borne(R['buste'], env.get('buste', 3.0)); R['tete'] = borne(R['tete'], env.get('tete', 6.0))
         R['epaules'] = borne(R['epaules'], env.get('epaules', 3.0)); R['bassin_x'] = borne(R['bassin_x'], env.get('bassin_x', 4.0))
+        # TÊTE QUI TOURNE AU-DELÀ DU SQUELETTE (18/10/2026, « Maman ne tourne pas la tête vers Baye ») : ce que l'enveloppe du
+        # squelette refuse (6° pour un visage peint de trois quarts) est confié au visage, que LivePortrait fait tourner dans
+        # son carré (expressions_lp.tourne) ; la moitié de ce que fait déjà le squelette est retranchée (pas de double rotation)
+        voulu_ = R['tete_lacet'].copy()
         R['souffle'] = np.clip(R['souffle'], -env.get('souffle', 0.02), env.get('souffle', 0.02)); R['tete_lacet'] = borne(R['tete_lacet'], env.get('tete_lacet', 20.0)); R['tete_tangage'] = borne(R['tete_tangage'], env.get('tete_tangage', 9.0)); R['buste_lacet'] = borne(R['buste_lacet'], env.get('buste_lacet', 9.0))
         # v36 : la commande peut dépasser ±1 (regard peint compensé) ; regard.applique borne la position FINALE de l'iris dans l'œil
         R['regard_x'] = np.clip(R['regard_x'], -2.2, 2.2); R['regard_y'] = np.clip(R['regard_y'], -2.2, 2.2)
         for k_ in [k_ for k_ in R if k_.startswith('geste_')]: R[k_] = np.clip(R[k_], 0, 1)
         for c_ in ('tete_tangage', 'tete', 'tete_lacet', 'buste', 'buste_lacet'): R[c_] = lisse_acc(R[c_], fps)   # garde de fluidité
+        R['lacet_visage'] = lisse_acc(borne(voulu_ - 0.5 * R['tete_lacet'], LACET_VISAGE), fps)
         for e in EMOS: R['emo_' + e] = ressort(np.clip(E[e], 0, 1), fps, 10.0)
         if cl is not None: R['cligne'] = cl
         out[nom] = R

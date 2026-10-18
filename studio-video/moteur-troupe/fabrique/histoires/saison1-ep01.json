@@ -1,13 +1,76 @@
 {
- "titre": "La cour des Ndiaye — saison 1, épisode 1",
+ "titre": "Saison 1, épisode 1 — trois décors, sept personnages",
  "univers": "Africa Toon Troll",
- "duree_cible_s": 50,
- "reference": "TON.md : un seul retournement par sketch, chute courte en dernier (≤ 9 syllabes), rappel de l'accroche, témoin figé 2,2 à 4,5 s, duos récurrents de la bible (Baye cache son argent, Nounou le trouve toujours ; Mamadou fait chanter Papi avec ses cachettes)",
- "ecriture": "trois sketchs de la cour, contrôlés par ton.py et histoires.controle, jugés par JEV au contrôle final (drôle, chute, ivoirien, clair, méchant) et en duel contre la version précédente",
+ "duree_cible_s": 62,
+ "reference": "TON.md : un seul retournement par sketch, chute courte en dernier (≤ 9 syllabes), rappel de l'accroche, témoin figé 2,2 à 4,5 s, duos récurrents de la bible ; trois décors et sept personnages comme les versions précédentes (consigne du 18/10/2026)",
+ "ecriture": "trois duos de la bible (Coumba teste la richesse de Koffi ; Baye donne des leçons, Mamadou le trahit ; Tantie Awa soupçonne Modou — à raison), contrôlés par ton.py, jugés par JEV (drôle, chute, parler, clair, méchant, faute) et en duel contre les sketchs remplacés",
  "sketchs": [
   {
+   "id": "lunettes",
+   "titre": "KOFFI LE FAUX RICHE",
+   "lieu": "maquis",
+   "image": "maquis",
+   "acteurs": [
+    "COUMBA",
+    "KOFFI"
+   ],
+   "mecanique": "vantardise contredite",
+   "ressort": {
+    "qui": "KOFFI",
+    "trait": "faux riche fauché : il bluffe, et se trahit lui-même"
+   },
+   "mise_en_scene": "Maquis le soir ; Koffi en lunettes noires, poisson braisé fini devant lui ; Coumba, sourcil levé, l'addition à la main",
+   "objets": [],
+   "repliques": [
+    {
+     "qui": "COUMBA",
+     "texte": "Koffi, pourquoi tu portes tes lunettes noires la nuit ?",
+     "jeu": "soupcon",
+     "a": "KOFFI"
+    },
+    {
+     "qui": "KOFFI",
+     "texte": "Ma chérie, c'est la classe. Les gens riches brillent trop, dêh.",
+     "jeu": "frime",
+     "a": "COUMBA"
+    },
+    {
+     "qui": "COUMBA",
+     "texte": "Ah bon ? Alors c'est toi qui paies le poisson braisé.",
+     "jeu": "malice",
+     "a": "KOFFI"
+    },
+    {
+     "qui": "KOFFI",
+     "texte": "Doucement, parle pas fort, hein.",
+     "jeu": "panique",
+     "a": "COUMBA"
+    },
+    {
+     "qui": "COUMBA",
+     "texte": "Pourquoi ? Monsieur le riche a peur de qui ?",
+     "jeu": "soupcon",
+     "a": "KOFFI"
+    },
+    {
+     "qui": "KOFFI",
+     "texte": "Mes lunettes ? C'est pour fuir le patron.",
+     "jeu": "camera",
+     "a": "COUMBA",
+     "chute": true
+    }
+   ],
+   "reaction": {
+    "qui": "COUMBA",
+    "jeu": "choc",
+    "duree_s": 3.0,
+    "plan": "gros plan fixe",
+    "note": "Coumba figée, l'addition à la main ; Koffi remonte ses lunettes"
+   }
+  },
+  {
    "id": "bulletin",
-   "titre": "LE BULLETIN",
+   "titre": "PAPI ÉTAIT PREMIER",
    "lieu": "cour",
    "image": "cour",
    "acteurs": [
@@ -20,7 +83,7 @@
     "qui": "BAYE NDIAYE",
     "trait": "mauvaise foi sereine : il donne des leçons qu'il n'a jamais suivies"
    },
-   "mise_en_scene": "Baye assis sur sa chaise en plastique, Nounou debout, poings sur les hanches, face à Petit Mamadou ; le cartable de Mamadou est posé à part sur le banc",
+   "mise_en_scene": "Baye assis sur sa chaise en plastique, Nounou debout, poings sur les hanches, face à Petit Mamadou ; à la chute, Mamadou se tourne vers Papi, ravi",
    "objets": [
     {
      "quoi": "papiers",
@@ -36,7 +99,7 @@
     },
     {
      "qui": "PETIT MAMADOU",
-     "texte": "Mamie, la maîtresse a dit que c'est confidentiel.",
+     "texte": "Mamie, la maîtresse a dit : c'est confidentiel.",
      "jeu": "innocent",
      "a": "MAMAN NOUNOU"
     },
@@ -47,181 +110,118 @@
      "a": "PETIT MAMADOU"
     },
     {
-     "qui": "PETIT MAMADOU",
-     "texte": "Surtout pour celle qui paie, Mamie.",
-     "jeu": "malice",
-     "a": "MAMAN NOUNOU"
-    },
-    {
      "qui": "BAYE NDIAYE",
-     "texte": "Laisse l'enfant, hein ! À son âge, moi, j'étais toujours premier !",
+     "texte": "Laisse l'enfant, hein ! Moi, à son âge, j'étais toujours premier !",
      "jeu": "frime",
      "a": "MAMAN NOUNOU"
     },
     {
      "qui": "MAMAN NOUNOU",
-     "texte": "Premier à cacher son bulletin.",
-     "jeu": "camera",
-     "a": "BAYE NDIAYE",
-     "chute": true
-    }
-   ],
-   "reaction": {
-    "qui": "BAYE NDIAYE",
-    "jeu": "choc",
-    "duree_s": 3.0,
-    "plan": "gros plan fixe",
-    "note": "Mamadou tourne lentement la tête vers Papi pendant que Baye reste figé"
-   }
-  },
-  {
-   "id": "cachette",
-   "titre": "LA CACHETTE",
-   "lieu": "cour",
-   "image": "cour",
-   "acteurs": [
-    "BAYE NDIAYE",
-    "PETIT MAMADOU",
-    "MAMAN NOUNOU"
-   ],
-   "mecanique": "contre-pied",
-   "ressort": {
-    "qui": "MAMAN NOUNOU",
-    "trait": "elle trouve toujours l'argent que Baye cache"
-   },
-   "mise_en_scene": "Baye entraîne Petit Mamadou au coin de la cour et chuchote ; Nounou entre à la fin, la boîte de tomate vide à la main",
-   "objets": [
-    {
-     "quoi": "boite_tomate",
-     "a": "MAMAN NOUNOU"
-    },
-    {
-     "quoi": "billets",
-     "a": "BAYE NDIAYE"
-    }
-   ],
-   "repliques": [
-    {
-     "qui": "BAYE NDIAYE",
-     "texte": "Petit, ce matin là, tu as rien vu, hein ?",
+     "texte": "Ah bon ? Où est ton bulletin à toi, alors ?",
      "jeu": "soupcon",
-     "a": "PETIT MAMADOU"
-    },
-    {
-     "qui": "PETIT MAMADOU",
-     "texte": "Rien vu dêh, Papi. Même pas ta boîte de tomate sous le lit là.",
-     "jeu": "malice",
      "a": "BAYE NDIAYE"
     },
     {
      "qui": "BAYE NDIAYE",
-     "texte": "Chut ! Tiens, une barre. Ta bouche est fermée.",
-     "jeu": "panique",
-     "a": "PETIT MAMADOU"
-    },
-    {
-     "qui": "PETIT MAMADOU",
-     "texte": "Une barre, c'est pour la bouche. Les yeux, c'est deux barres.",
-     "jeu": "marchande",
-     "a": "BAYE NDIAYE"
-    },
-    {
-     "qui": "BAYE NDIAYE",
-     "texte": "Tiens, voilà. Affaire finie, on se connaît pas !",
-     "jeu": "frime",
-     "a": "PETIT MAMADOU"
-    },
-    {
-     "qui": "MAMAN NOUNOU",
-     "texte": "Moi, j'ai tout vu ce matin.",
-     "jeu": "camera",
-     "a": "BAYE NDIAYE",
-     "chute": true
-    }
-   ],
-   "reaction": {
-    "qui": "BAYE NDIAYE",
-    "jeu": "choc",
-    "duree_s": 3.0,
-    "plan": "gros plan fixe",
-    "note": "Nounou secoue la boîte vide ; Mamadou range ses billets dans sa poche, très lentement"
-   }
-  },
-  {
-   "id": "ordonnance",
-   "titre": "L'ORDONNANCE",
-   "lieu": "cour",
-   "image": "cour",
-   "acteurs": [
-    "MAMAN NOUNOU",
-    "BAYE NDIAYE",
-    "PETIT MAMADOU"
-   ],
-   "mecanique": "pied de la lettre",
-   "ressort": {
-    "qui": "PETIT MAMADOU",
-    "trait": "logique d'enfant imparable : il retourne aussitôt la mauvaise foi de Papi à son profit"
-   },
-   "mise_en_scene": "Baye assis, un bol de bouillie sur les genoux, verse du sucre ; Nounou arrive avec l'ordonnance ; Petit Mamadou mange sa bouillie sur le banc et regarde tout",
-   "objets": [
-    {
-     "quoi": "bol",
-     "a": "BAYE NDIAYE"
-    },
-    {
-     "quoi": "boite_sucre",
-     "a": "BAYE NDIAYE"
-    },
-    {
-     "quoi": "papiers",
-     "a": "MAMAN NOUNOU"
-    }
-   ],
-   "repliques": [
-    {
-     "qui": "MAMAN NOUNOU",
-     "texte": "Baye ! Le docteur a dit quoi pour ton sucre là ?",
-     "jeu": "accuse",
-     "a": "BAYE NDIAYE"
-    },
-    {
-     "qui": "BAYE NDIAYE",
-     "texte": "Dieu merci, il a été clair : plus de sucre.",
+     "texte": "Dêh ! Les termites ont tout mangé depuis.",
      "jeu": "innocent",
      "a": "MAMAN NOUNOU"
     },
     {
      "qui": "MAMAN NOUNOU",
-     "texte": "Et pourquoi tu en verses encore ?",
-     "jeu": "soupcon",
-     "a": "BAYE NDIAYE"
-    },
-    {
-     "qui": "BAYE NDIAYE",
-     "texte": "Plus de sucre. Donc j'en remets.",
-     "jeu": "camera",
-     "a": "MAMAN NOUNOU"
-    },
-    {
-     "qui": "MAMAN NOUNOU",
-     "texte": "Ehhh Dieu ! Devant l'enfant, en plus !",
-     "jeu": "choc",
-     "a": "BAYE NDIAYE"
+     "texte": "Mamadou, dernière fois : ton bulletin est où ?",
+     "jeu": "accuse",
+     "a": "PETIT MAMADOU"
     },
     {
      "qui": "PETIT MAMADOU",
-     "texte": "Docteur a dit : plus de bonbons !",
+     "texte": "Caché avec le tien, Papi !",
      "jeu": "joie",
-     "a": "MAMAN NOUNOU",
+     "a": "BAYE NDIAYE",
      "chute": true
     }
    ],
    "reaction": {
-    "qui": "MAMAN NOUNOU",
+    "qui": "BAYE NDIAYE",
     "jeu": "choc",
     "duree_s": 3.0,
     "plan": "gros plan fixe",
-    "note": "Mamadou tend la main vers la boîte de bonbons ; Baye, derrière, continue de verser le sucre"
+    "note": "Baye figé ; Maman tourne lentement la tête vers lui"
+   }
+  },
+  {
+   "id": "loyer",
+   "titre": "LE LOYER QUI MARCHE À PIED",
+   "lieu": "chambre",
+   "image": "chambre",
+   "acteurs": [
+    "TANTIE AWA",
+    "MODOU"
+   ],
+   "mecanique": "logique contradictoire",
+   "ressort": {
+    "qui": "TANTIE AWA",
+    "trait": "elle le soupçonne de tout — et elle a souvent raison"
+   },
+   "mise_en_scene": "Chambre de Modou ; Tantie Awa sur le pas de la porte, la main tendue ; Modou cherche ses excuses",
+   "objets": [],
+   "repliques": [
+    {
+     "qui": "TANTIE AWA",
+     "texte": "Modou ! Mon loyer là, c'est pour quand ?",
+     "jeu": "accuse",
+     "a": "MODOU"
+    },
+    {
+     "qui": "MODOU",
+     "texte": "Tantie, ça va aller. L'argent est en route.",
+     "jeu": "innocent",
+     "a": "TANTIE AWA"
+    },
+    {
+     "qui": "TANTIE AWA",
+     "texte": "En route depuis trois mois ? Il vient à pied ?",
+     "jeu": "soupcon",
+     "a": "MODOU"
+    },
+    {
+     "qui": "MODOU",
+     "texte": "Il est coincé dans les embouteillages de Yopougon.",
+     "jeu": "innocent",
+     "a": "TANTIE AWA"
+    },
+    {
+     "qui": "TANTIE AWA",
+     "texte": "Trois mois d'embouteillage ?",
+     "jeu": "soupcon",
+     "a": "MODOU"
+    },
+    {
+     "qui": "MODOU",
+     "texte": "Et la banque est gâtée aussi, Tantie.",
+     "jeu": "panique",
+     "a": "TANTIE AWA"
+    },
+    {
+     "qui": "TANTIE AWA",
+     "texte": "Mais hier, tu as payé garba à tout le quartier !",
+     "jeu": "accuse",
+     "a": "MODOU"
+    },
+    {
+     "qui": "MODOU",
+     "texte": "Ça, c'était avec ton loyer, Tantie.",
+     "jeu": "innocent",
+     "a": "TANTIE AWA",
+     "chute": true
+    }
+   ],
+   "reaction": {
+    "qui": "TANTIE AWA",
+    "jeu": "choc",
+    "duree_s": 3.0,
+    "plan": "gros plan fixe",
+    "note": "Tantie Awa figée, la main toujours tendue"
    }
   }
  ]

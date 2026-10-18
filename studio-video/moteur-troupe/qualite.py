@@ -26,19 +26,40 @@ import numpy as np
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 D, MP4, MONTAGE = sys.argv[1:4]; TL = sys.argv[4] if len(sys.argv) > 4 else 'timeline.json'
-VISAGE_MIN = float(os.environ.get('VISAGE_MIN', 72)); CH = 460; FPS = 30
+VISAGE_MIN = float(os.environ.get('VISAGE_MIN', 72)); CH = 460
+FPS = 30   # cadence des MESURES du tournage (grille des 30 i/s, même quand le film est tourné à 60 i/s : tourne.mesure_ici)
 M = json.load(open(MONTAGE)); T = json.load(open(TL)); TO = json.load(open(f'{D}/tournage.json'))
 G = {}
 
 
 DUREES = {}   # temps de chaque juge (vitesse : savoir où vont les secondes du contrôle)
+# JUGES EN PARALLÈLE (18/10/2026, « réduis encore le temps de traitement ») : les huit juges ne lisent que le film, la
+# chronologie, l'histoire et le tournage, jamais le verdict d'un autre ; lancés l'un après l'autre ils prenaient 269 s sur
+# l'épisode 1 (controle_video 102 s, jev_film 77 s, cadre 42 s, jev_levres 18 s…). Ils partent tous ensemble au début ;
+# chaque porte attend le sien (`lance`), le contrôle dure autant que le plus long.
+HI_ = M.get('histoire', 'histoire.json')
+mus_ = 'voix/mix-musique.wav' if os.path.isfile('voix/mix-musique.wav') else 'voix/mix.wav'
+JUGES = {'cadre': ([f'{ICI}/cadre.py', 'juge', MP4, f'{ICI}/gabarit_tiktok.json', f'{D}/verdict.json'], f'{D}/verdict.json'),
+         'levres': ([f'{ICI}/jev_levres.py', MP4, TL, MONTAGE, f'{D}/jev_levres.json'], f'{D}/jev_levres.json'),
+         'regard': ([f'{ICI}/jev_regard.py', MP4, TL, MONTAGE, f'{D}/jev_regard.json'], f'{D}/jev_regard.json'),
+         'film': ([f'{ICI}/jev_film.py', MP4, f'{D}/tournage.json', TL, f'{D}/jev_film.json'], f'{D}/jev_film.json'),
+         'controle': ([f'{ICI}/controle_video.py', MP4, TL, f'{D}/tournage.json', f'{D}/controle.json'], f'{D}/controle.json'),
+         'texte': ([f'{ICI}/jev_texte.py', MP4, TL, HI_, f'{D}/jev_texte.json'], f'{D}/jev_texte.json'),
+         'mouvement': ([f'{ICI}/jev_mouvement.py', MP4, f'{D}/tournage.json', TL, f'{D}/jev_mouvement.json'], f'{D}/jev_mouvement.json'),
+         'son': ([f'{ICI}/jev_son.py', TL, 'voix/mix.wav', mus_, f'{D}/bande.wav', f'{D}/jev_son.json'], f'{D}/jev_son.json')}
+import time
+EN_COURS = {}
+for _a, _s in JUGES.values():
+    if not os.path.isfile(_s) or os.environ.get('QUALITE_REFAIT'):
+        EN_COURS[_a[0]] = (subprocess.Popen([sys.executable, *_a], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL), time.time())
 
 
 def lance(args, sortie):
-    import time as _t; t0 = _t.time()
-    if not os.path.isfile(sortie) or os.environ.get('QUALITE_REFAIT'):
+    t0 = time.time(); p = EN_COURS.pop(args[0], None)
+    if p: p[0].wait(); t0 = p[1]
+    elif not os.path.isfile(sortie) or os.environ.get('QUALITE_REFAIT'):
         subprocess.run([sys.executable, *args], capture_output=True, text=True)
-    DUREES[os.path.basename(args[0])] = round(_t.time() - t0, 1)
+    DUREES[os.path.basename(args[0])] = round(time.time() - t0, 1)
     return json.load(open(sortie)) if os.path.isfile(sortie) else None
 
 
@@ -47,7 +68,7 @@ def scene(sid):
 
 
 # ── A. rythme et mouvement (cadre.py) ──
-v = lance([f'{ICI}/cadre.py', 'juge', MP4, f'{ICI}/gabarit_tiktok.json', f'{D}/verdict.json'], f'{D}/verdict.json')
+v = lance(*JUGES['cadre'])
 lignes = []
 for l in (v or {}).get('lignes', []):
     ok = l['verdict'] == '✅'
@@ -61,7 +82,7 @@ L_all = T['lines']; dec = TO['decoupage']; cad = TO.get('cadres', {})
 # BOUCHE JUGÉE PAR JEV (17/10/2026, « tout appuyé par le jugement de JEV », aucune tolérance) : aux trois instants les plus
 # ouverts de la piste de bouche JEV voit la bouche ouverte, aux trois instants fermés (m, b, p, silences) il la voit fermée
 # (jev_levres.py ; témoin négatif v24 : 0/18). La mesure par pixels sombres (levres_roi, 255 s) n'est plus le juge.
-jl = lance([f'{ICI}/jev_levres.py', MP4, TL, MONTAGE, f'{D}/jev_levres.json'], f'{D}/jev_levres.json') or {}
+jl = lance(*JUGES['levres']) or {}
 det = jl.get('detail', []); rep = []
 for i, L in enumerate(L_all):
     mid = L['t0'] + L['dur'] / 2; s = next((x for x in dec if x[0] <= mid < x[1]), None)
@@ -103,7 +124,7 @@ for n, ms in par.items():
 G['D_ecoute'] = {'ok': bool(ecoute) and all(x >= 0.75 for x in ecoute.values()), 'detail': ecoute}
 # ── D bis. REGARDS JUGÉS PAR JEV (v36, « Mamie ne regarde pas Baye ») : chacun regarde celui qui lui parle, et celui qui parle
 # regarde celui à qui il s'adresse, réplique par réplique, quand les deux sont à l'image (jev_regard.py) ──
-jr = lance([f'{ICI}/jev_regard.py', MP4, TL, MONTAGE, f'{D}/jev_regard.json'], f'{D}/jev_regard.json') or {}
+jr = lance(*JUGES['regard']) or {}
 G['D_regard'] = {'ok': bool(jr) and jr.get('synthese', {}).get('paires_jugees', 0) > 0 and not jr.get('synthese', {}).get('fautes'),
                  'detail': {k: v for k, v in jr.get('synthese', {}).items() if k != 'cout'}}
 
@@ -140,13 +161,13 @@ G['F_arriere_plan'] = {'ok': all(isinstance(x, dict) and (x['part_animee'] >= 0.
 
 # ── G. œil de JEV ──
 # toute la vidéo, image par image (jev_film.py v2 : questions recalibrées, cascade, cache par plan), aucune tolérance
-j = lance([f'{ICI}/jev_film.py', MP4, f'{D}/tournage.json', TL, f'{D}/jev_film.json'], f'{D}/jev_film.json') or {}
+j = lance(*JUGES['film']) or {}
 sy = j.get('synthese', {})
 G['G_jev'] = {'ok': bool(sy) and not any(sy.get(k) for k in ('tetes_coupees', 'visages_deformes', 'artefacts', 'style_incoherent', 'titres_illisibles')),
               'detail': {k: sy.get(k) for k in ('images_jugees', 'images_fautives', 'plans_fautifs', 'tetes_coupees', 'visages_deformes', 'artefacts', 'style_incoherent', 'titres_illisibles')}}
 
 # ── H. technique et son ──
-cv = lance([f'{ICI}/controle_video.py', MP4, TL, f'{D}/tournage.json', f'{D}/controle.json'], f'{D}/controle.json') or {}
+cv = lance(*JUGES['controle']) or {}
 H = {k: bool(cv.get(k, {}).get('ok')) for k in ('technique', 'son', 'images', 'intelligibilite', 'mouvement')}
 G['H_technique'] = {'ok': bool(cv) and all(H.values()), 'detail': H}
 
@@ -154,9 +175,13 @@ G['H_technique'] = {'ok': bool(cv) and all(H.values()), 'detail': H}
 ACC_MAX, EMO_MAX = 2.5, 0.2
 flu = {}
 for n, ms in par.items():
-    t = np.array([m['t'] for m in ms]); suite = np.r_[True, np.abs(np.diff(t) - 1 / FPS) < 2e-3]   # images contiguës seulement
+    # images contiguës D'UNE MÊME SCÈNE seulement (18/10/2026) : l'épisode 1 enchaîne trois sketchs ; au changement de sketch
+    # (coupe franche sous la carte de titre, 19,87 s) la pose de Maman passait de −0,3° à −6° d'une image à l'autre et
+    # comptait comme un à-coup de 5,65 alors que c'est un autre plan, dans une autre scène
+    t = np.array([m['t'] for m in ms]); sk_ = np.array([next((x[2] for x in TO['decoupage'] if x[0] <= tt < x[1]), '') for tt in t])
+    suite = np.r_[True, (np.abs(np.diff(t) - 1 / FPS) < 2e-3) & (sk_[1:] == sk_[:-1])]
     pire = {}
-    for canal in ('tete_tangage', 'tete', 'tete_lacet', 'buste', 'buste_lacet'):
+    for canal in ('tete_tangage', 'tete', 'tete_lacet', 'lacet_visage', 'buste', 'buste_lacet'):
         x = np.array([(m.get('pose') or {}).get(canal, 0.0) for m in ms], np.float32)
         if len(x) < 3: continue
         a = np.abs(x[2:] - 2 * x[1:-1] + x[:-2])[suite[1:-1] & suite[2:]]
@@ -170,8 +195,7 @@ for n, ms in par.items():
 G['I_fluidite'] = {'ok': bool(flu) and all(x['ok'] for x in flu.values()), 'detail': flu}
 
 # ── J. humour et écriture : décisions de JEV sur le texte de chaque sketch (jev_texte.py, aucune tolérance) ──
-HI_ = M.get('histoire', 'histoire.json')
-jt = lance([f'{ICI}/jev_texte.py', MP4, TL, HI_, f'{D}/jev_texte.json'], f'{D}/jev_texte.json') or {}
+jt = lance(*JUGES['texte']) or {}
 G['J_humour'] = {'ok': bool(jt) and not jt.get('synthese', {}).get('sketchs_fautifs'), 'detail': {r['sketch']: {k: r[k] for k in r if k != 'sketch'} for r in jt.get('sketchs', [])}}
 
 # ── K. PHYSIQUE ET NATURE (17/10/2026 : « l'ombre de la poule ne devait pas passer le contrôle ») ──
@@ -190,15 +214,14 @@ G['K_physique'] = {'ok': all(o['part_ombre_visible'] >= 1.0 for o in ombres.valu
                    'detail': {'ombres_des_betes': ombres, 'especes_hors_milieu': hors_milieu, 'jev_physique': phy}}
 
 # ── L. MOUVEMENT, SECONDE PAR SECONDE (jev_mouvement.py) : à-coups, personnages figés, décor mort, naturel, raccords ──
-jm = lance([f'{ICI}/jev_mouvement.py', MP4, f'{D}/tournage.json', TL, f'{D}/jev_mouvement.json'], f'{D}/jev_mouvement.json') or {}
+jm = lance(*JUGES['mouvement']) or {}
 G['L_mouvement'] = {'ok': bool(jm) and not jm.get('synthese', {}).get('secondes_fautives'), 'detail': {k: v for k, v in jm.get('synthese', {}).items() if k != 'cout'}}
 # ── M. RÉALISATION, PLAN PAR PLAN : cadre de chaque plan choisi par JEV réalisateur (sans tête coupée, visage lisible) ──
 rj = TO.get('realisateur_jev', {})
 G['M_realisation'] = {'ok': bool(rj) and all(v.get('conforme', False) for v in rj.values()),
                       'detail': {k: {'choix': v.get('choix'), 'conforme': v.get('conforme'), 'proposes': v.get('proposes')} for k, v in rj.items()}}
 # ── N. SON ET MUSIQUE jugés par JEV sur la feuille de son mesurée et le spectrogramme (jev_son.py) ──
-mus_ = 'voix/mix-musique.wav' if os.path.isfile('voix/mix-musique.wav') else 'voix/mix.wav'
-js = lance([f'{ICI}/jev_son.py', TL, 'voix/mix.wav', mus_, f'{D}/bande.wav', f'{D}/jev_son.json'], f'{D}/jev_son.json') or {}
+js = lance(*JUGES['son']) or {}
 G['N_son'] = {'ok': bool(js) and js.get('synthese', {}).get('ok', False), 'detail': js.get('synthese')}
 # ── O. SOUS-TITRES ET TITRES tels qu'affichés, jugés par JEV (jev_texte.py) ──
 G['O_textes'] = {'ok': bool(jt) and not jt.get('synthese', {}).get('sous_titres_fautifs') and not jt.get('synthese', {}).get('titres_fautifs'),

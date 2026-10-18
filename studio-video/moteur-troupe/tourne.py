@@ -37,12 +37,14 @@
 import json, math, os, sys, zlib, numpy as np, cv2
 import decor_vivant, entites, gestes, linge, rig2d, regard, expressions, expressions_lp, jeu, prepare_rig, vie_fond
 import poses_dessinees as PD   # gestes dessinés : animation pose à pose (17/10/2026)
-FPS, CW, CH = 30, 576, 460
+# 60 IMAGES PAR SECONDE (18/10/2026, « on doit aller à 60 images par seconde pour améliorer la fluidité ») : chaque image est
+# tournée à son instant exact (bouche, regard, décor, bêtes, caméra) ; FILM_FPS=30 rend l'ancienne cadence
+FPS, CW, CH = int(os.environ.get('FILM_FPS', 60)), 576, 460
 cfg = json.load(open(sys.argv[1])); OUT = sys.argv[2]; os.makedirs(f'{OUT}/clip', exist_ok=True)
 REG = {'plan_s': 5.0, 'cam_px': 2.5, 'pousse': 1.10, 'parallaxe': 0.35, 'jeu_gain': 2.3, 'corps': 0.1, 'whip_s': 0.45, 'ouverture': 1.2, 'decor': 1.0, 'gestes': 1.0, 'carte_sur_scene': 1, 'rig': 1}
 REG.update(cfg.get('reglages', {}))
 ONLY = sys.argv[3] if len(sys.argv) > 3 else None  # essai : un seul sketch
-T = json.load(open(cfg['timeline'])); total = T['total']; NF = int(math.ceil(total * FPS))
+T = json.load(open(cfg['timeline'])); total = T['total']; NF = int(math.ceil(total * FPS)); NF30 = int(math.ceil(total * 30))
 H_ = json.load(open(cfg['histoire']))
 # ── GREFFE DU VISAGE : LivePortrait (MIT) redessine toute la tête (entraîné sur de vrais visages, il « humanise » les
 # proportions Pixar : crâne plus gros, cheveux changés — vu sur Modou le 16/10). On ne prend donc que la BOUCHE et les
@@ -184,110 +186,119 @@ def main_posee_jev(d, img, P_, cote, nom, epw):
         print(f'{nom}: main {cote} non jugée ({e_})', flush=True); return 0.0
     C[cle] = p_; json.dump(C, open(f, 'w'), indent=1, ensure_ascii=False); return p_
 # ── scènes préparées ──
-SC = {}
+SC = {}; _PREP = {}
 for sk in T['sketchs']:
     if ONLY and sk['id'] != ONLY: continue
-    d = cfg['scenes'][sk['id']]; S = json.load(open(f'{d}/scene.json'))
-    img = cv2.cvtColor(cv2.imread(f'{d}/image.png'), cv2.COLOR_BGR2RGB); plate = cv2.cvtColor(cv2.imread(f'{d}/plaque.png'), cv2.COLOR_BGR2RGB)
-    rinfo = prepare_rig.prepare(d) if REG['rig'] else None   # une fois par scène (cache <scène>/rig/)
-    if rinfo: plate = cv2.cvtColor(cv2.imread(f'{d}/rig/plaque.png'), cv2.COLOR_BGR2RGB)
-    # bêtes peintes du décor rendues vivantes (v34) — REPRISES (v35) : jugées par JEV dans la chambre, « poules » 0,81–0,88
-    # (sans ombre, mauvaise taille, qui flottent ; plan de Tantie Awa 38 → 79 images refusées) : désactivées par défaut
-    plate, betes = entites.betes_peintes(d, img, plate) if REG['decor'] > 0 and REG.get('betes_peintes', 0) else (plate, [])
-    acts = {}
-    for a in S['acteurs']:
-        if rinfo and rinfo['acteurs'].get(a['nom'], {}).get('pts'): a['pts'] = rinfo['acteurs'][a['nom']]['pts']   # squelette affiné à la préparation
-        m = cv2.imread(f"{d}/{a['slug']}-masque.png", 0).astype(np.float32) / 255
-        lib = {}; vd = f"{d}/visages/{a['slug']}"
-        if os.path.isfile(f'{vd}/etats.json'):
-            lib = greffe_visage(img, vd, a)
-        if a.get('visage'):
-            bx = a['visage']['box']; mg = bx[2] - bx[0]; box = [bx[0] - mg, bx[1] - mg, bx[2] + mg, bx[3] + mg]
-            o0, o4 = ouverture_lib(img, lib, box) if lib else (None, None)
-            if not lib or o0 is None or o4 is None or o4 - o0 < 0.03:   # LivePortrait n'ouvre pas cette bouche
-                lib = bouche_param(img, a, lmk(img, box)); moteur = 'mâchoire paramétrique'
-            else: moteur = 'LivePortrait'
-            print(f"{a['nom']}: bouche par {moteur} (ouverture LivePortrait {o0} → {o4})", flush=True)
-        p = np.array(a['pts'])
-        acts[a['nom']] = dict(a=a, mask=cv2.GaussianBlur(m, (0, 0), 1.0), lib=lib, hip=np.array([p[[23, 24], 0].mean(), a['bassin_y']]),
-                              neck=p[[11, 12], :2].mean(0), head=np.array(a['tete']), sh=a['epaules'], bbox=a['bbox'])
-        if rinfo:   # squelette de la tête aux pieds (rig2d) sur la découpe de la personne entière
-            sl = a['slug']; A_ = acts[a['nom']]; ent = rinfo['acteurs'].get(a['nom'], {})
-            al = cv2.imread(f'{d}/rig/alpha-{sl}.png', cv2.IMREAD_UNCHANGED).astype(np.float32) / 65535; im_a = img
-            if ent.get('complete'):
-                x0c, y0c, x1c, y1c = ent['complete']; im_a = img.copy(); im_a[y0c:y1c, x0c:x1c] = cv2.cvtColor(cv2.imread(f'{d}/rig/complete-{sl}.png'), cv2.COLOR_BGR2RGB)
-            v3 = np.load(f'{d}/rig/visage3d-{sl}.npy') if os.path.isfile(f'{d}/rig/visage3d-{sl}.npy') else None
-            bras_ = prepare_rig.charge_bras(f'{d}/rig/bras-{sl}.npz') if os.path.isfile(f'{d}/rig/bras-{sl}.npz') else []
-            assis_ = prepare_rig.assis(a); box_ = rig2d.boite(a['bbox'], img.shape)
-            R_ = rig2d.preparer(im_a, al, a['pts'], a['bbox'], gestes.classes(img, box_), plaque=plate, bras=bras_, segmente=gestes.classes, visage3d=v3, assis=assis_)
-            dl = f'{d}/expressions/{sl}'
-            A_['xl'] = expressions_lp.charge(dl, im_a, v3, alpha=R_['alpha_corps']) if os.path.isfile(f'{dl}/meta.json') and v3 is not None else None   # la découpe suit le visage
-            src00 = im_a   # le visage tel qu'il sera tourné au repos : les yeux du regard sont pris dessus (pas de saut au premier coup d'œil)
-            if A_['xl']: src00 = expressions_lp.colle(im_a, A_['xl'], expressions_lp.visage(A_['xl'], {}, 0.0))
-            elif lib:
-                Rr = lib['roi']; src00 = im_a.copy(); src00[Rr[1]:Rr[3], Rr[0]:Rr[2]] = np.clip(lib[(0, 0)], 0, 255).astype(np.uint8)
-            env_ = rig2d.enveloppe(R_)
-            # AVIS DE JEV (17/10, contrôle image par image de la v26) :
-            # — main POSÉE sur le corps (poing sur la hanche) : le geste pliait l'avant-bras et la main glissait sur la robe
-            #   (Maman, « bras ou mains » 0,73 ; remède désigné « garder la main posée ») → ce bras suit le buste, sans geste ;
-            P_ = np.asarray(a['pts'], np.float64); epw = max(1.0, abs(P_[11, 0] - P_[12, 0]))
-            for b_ in R_['bras']:
-                x0b, y0b, x1b, y1b = b_['box']; poings = [i for i in (15, 16) if x0b - 0.1 * epw <= P_[i, 0] <= x1b + 0.1 * epw and y0b - 0.1 * epw <= P_[i, 1] <= y1b + 0.1 * epw]
-                if any(min(np.hypot(*(P_[i, :2] - P_[h, :2])) for h in (23, 24)) < 0.55 * epw for i in poings):
-                    b_['amax'], b_['emax'] = 0.0, 1.0; print(f"{a['nom']}: main posée sur la hanche — bras sans geste (suit le buste)", flush=True)
-            # — main POSÉE SUR LA TABLE (v34) : v33, plan de Koffi à 34,71 — 55 images « rendu » ; JEV, partie par partie, y montrait
-            #   les mains à table (0,63–0,74) : elles pivotaient jusqu'à 14° (geste du bras) en tenant les couverts → sans geste
-            #   v34 : le contact « monde » du squelette ne la voyait pas (la main est dans la découpe de l'acteur) → JEV regarde
-            #   chaque main (une fois, en cache) : posée sur une table ou tenant un objet → sans geste
-            for b_ in R_['bras']:
-                posee = R_['contacts'].get(b_['cote'], ('libre', None))[0] == 'monde' or main_posee_jev(d, img, P_, b_['cote'], a['nom'], epw) > 0.6
-                if posee and b_.get('amax', 0) > 0:
-                    b_['amax'], b_['emax'] = 0.0, 1.0; print(f"{a['nom']}: main posée sur la table — bras sans geste", flush=True)
-            # — visage DÉJÀ de trois quarts : le lacet ajouté étirait le menton et décollait la barbiche (Koffi, 0,83 ; remède
-            #   désigné « lacet au plus 6° pour les visages de trois quarts »)
-            if v3 is not None:
-                r_ = (v3[1, 0] - v3[33, 0]) / max(1e-6, v3[263, 0] - v3[33, 0])
-                # ORIENTATION DÉJÀ PEINTE (18/10/2026) : nez entre les yeux → lacet du visage dessiné (+ = vers la droite de
-                # l'écran ; modèle tête ronde, nez en avant de 0,55 × l'écart des yeux : tan θ = 1,8 (r − 0,5)). Le jeu ne
-                # tourne la tête que de ce qui MANQUE pour regarder l'autre : Koffi et Baye, peints de trois quarts vers leur
-                # partenaire, restaient collés à la borne de 6° (5,96–5,98 sur tous leurs plans de la v31) et le relief 3D
-                # étirait nez, menton et barbiche (carte d'étirement : 24 % sur le visage de Baye à 6°)
-                env_['lacet_peint'] = round(math.degrees(math.atan(1.8 * (r_ - 0.5))), 1)
-                if abs(r_ - 0.5) > 0.12 and env_.get('tete_lacet', 0) > 6.0:
-                    env_['tete_lacet'] = 6.0; print(f"{a['nom']}: visage de trois quarts (nez à {r_:.2f} entre les yeux) — lacet limité à 6°", flush=True)
-            A_.update(rig=R_, img=im_a, mask=cv2.GaussianBlur(al, (0, 0), 0.5), assis=assis_, env=env_, bras=[], marge_bras=0)
-            # GESTES DESSINÉS COLLÉS : RETIRÉS (17/10/2026). L'utilisateur : « Mais ça a changé le personnage ». JEV, sur les 8
-            # poses collées dans la cour : identité 0,15 à 0,29 (cause « planche dessinée avec un autre visage, un autre âge,
-            # d'autres détails de costume » 0,99) ; remède désigné : garder les pixels du personnage et ne prendre de la
-            # planche que la cible du squelette (bras_articules.py). Ces bras articulés n'entrent au tournage que lorsque la
-            # porte de JEV (identité > 0,5 ET défaut < 0,5 sur chaque pose) les accepte — 17/10 : défaut 0,64 à 0,93, refusés.
-            A_['dessins'] = {}
-            A_['yeux'] = regard.prepare(src00, v3)
-            A_['expr'] = expressions.prepare(im_a, v3, yeux=A_['yeux'])
-            print(f"{a['nom']}: squelette ({'assis' if assis_ else 'debout'}, enveloppe {A_['env']}, {len(R_['bras'])} avant-bras détourés, "
-                  f"regard {'oui' if A_['yeux'] else 'non'}, expressions {'dessinées' if A_['xl'] else 'déformées'})", flush=True)
-            continue
-        bras = gestes.prepare(img, acts[a['nom']]['mask'], a['pts'], a['visage']['box'] if a.get('visage') else None, a['bbox']) if REG['gestes'] > 0 else []
-        acts[a['nom']]['bras'] = bras; acts[a['nom']]['marge_bras'] = int(max([1.1 * b_['lf'] for b_ in bras], default=0))
-        print(f"{a['nom']}: gestes {[(b_['cote'], 'avant-bras' if b_['nu'] else 'main') for b_ in bras]}", flush=True)
-    for n_, A_ in acts.items():   # de quel côté est le partenaire le plus proche (le « pas vers l'autre »)
-        autres = [B for m_, B in acts.items() if m_ != n_]
-        A_['cote'] = 0.0 if not autres else float(np.sign(min(autres, key=lambda B: abs(B['hip'][0] - A_['hip'][0]))['hip'][0] - A_['hip'][0]) or 1.0)
-    ys_, xs_ = np.mgrid[0:img.shape[0], 0:img.shape[1]].astype(np.float32)
-    prof_ = profondeur(d, plate) if REG['parallaxe'] > 0 or REG['decor'] > 0 else None
-    kpar = facteur_parallaxe(prof_, acts, img.shape[0], img.shape[1]) if REG['parallaxe'] > 0 else None
-    vie = decor_vivant.prepare(d, plate, [A_['mask'] for A_ in acts.values()]) if REG['decor'] > 0 else None
-    lin = linge.prepare(d, plate, [A_['mask'] for A_ in acts.values()]) if REG['decor'] > 0 else None   # linge détouré par SAM 2.1, épinglé, au vent (v34)
+    d = cfg['scenes'][sk['id']]
+    # SCÈNE PRÉPARÉE UNE FOIS (18/10/2026, « réduis encore le temps de traitement ») : l'épisode 1 joue ses trois sketchs
+    # dans la même cour, que le tournage préparait trois fois (squelettes, bibliothèques de visages, enveloppes, profondeur,
+    # décor vivant, linge : 70 s sur 110 au profil de 60 images). Les sketchs suivants reprennent la préparation ; chacun
+    # garde ses propres fiches d'acteur (copie superficielle) et ses bêtes, choisies par sketch dans le montage.
+    if d in _PREP:
+        S, img, plate, betes, acts, prof_, kpar, vie, lin, vf, xs_, ys_ = _PREP[d]; acts = {n_: dict(A_) for n_, A_ in acts.items()}
+    else:
+        S = json.load(open(f'{d}/scene.json'))
+        img = cv2.cvtColor(cv2.imread(f'{d}/image.png'), cv2.COLOR_BGR2RGB); plate = cv2.cvtColor(cv2.imread(f'{d}/plaque.png'), cv2.COLOR_BGR2RGB)
+        rinfo = prepare_rig.prepare(d) if REG['rig'] else None   # une fois par scène (cache <scène>/rig/)
+        if rinfo: plate = cv2.cvtColor(cv2.imread(f'{d}/rig/plaque.png'), cv2.COLOR_BGR2RGB)
+        # bêtes peintes du décor rendues vivantes (v34) — REPRISES (v35) : jugées par JEV dans la chambre, « poules » 0,81–0,88
+        # (sans ombre, mauvaise taille, qui flottent ; plan de Tantie Awa 38 → 79 images refusées) : désactivées par défaut
+        plate, betes = entites.betes_peintes(d, img, plate) if REG['decor'] > 0 and REG.get('betes_peintes', 0) else (plate, [])
+        acts = {}
+        for a in S['acteurs']:
+            if rinfo and rinfo['acteurs'].get(a['nom'], {}).get('pts'): a['pts'] = rinfo['acteurs'][a['nom']]['pts']   # squelette affiné à la préparation
+            m = cv2.imread(f"{d}/{a['slug']}-masque.png", 0).astype(np.float32) / 255
+            lib = {}; vd = f"{d}/visages/{a['slug']}"
+            if os.path.isfile(f'{vd}/etats.json'):
+                lib = greffe_visage(img, vd, a)
+            if a.get('visage'):
+                bx = a['visage']['box']; mg = bx[2] - bx[0]; box = [bx[0] - mg, bx[1] - mg, bx[2] + mg, bx[3] + mg]
+                o0, o4 = ouverture_lib(img, lib, box) if lib else (None, None)
+                if not lib or o0 is None or o4 is None or o4 - o0 < 0.03:   # LivePortrait n'ouvre pas cette bouche
+                    lib = bouche_param(img, a, lmk(img, box)); moteur = 'mâchoire paramétrique'
+                else: moteur = 'LivePortrait'
+                print(f"{a['nom']}: bouche par {moteur} (ouverture LivePortrait {o0} → {o4})", flush=True)
+            p = np.array(a['pts'])
+            acts[a['nom']] = dict(a=a, mask=cv2.GaussianBlur(m, (0, 0), 1.0), lib=lib, hip=np.array([p[[23, 24], 0].mean(), a['bassin_y']]),
+                                  neck=p[[11, 12], :2].mean(0), head=np.array(a['tete']), sh=a['epaules'], bbox=a['bbox'])
+            if rinfo:   # squelette de la tête aux pieds (rig2d) sur la découpe de la personne entière
+                sl = a['slug']; A_ = acts[a['nom']]; ent = rinfo['acteurs'].get(a['nom'], {})
+                al = cv2.imread(f'{d}/rig/alpha-{sl}.png', cv2.IMREAD_UNCHANGED).astype(np.float32) / 65535; im_a = img
+                if ent.get('complete'):
+                    x0c, y0c, x1c, y1c = ent['complete']; im_a = img.copy(); im_a[y0c:y1c, x0c:x1c] = cv2.cvtColor(cv2.imread(f'{d}/rig/complete-{sl}.png'), cv2.COLOR_BGR2RGB)
+                v3 = np.load(f'{d}/rig/visage3d-{sl}.npy') if os.path.isfile(f'{d}/rig/visage3d-{sl}.npy') else None
+                bras_ = prepare_rig.charge_bras(f'{d}/rig/bras-{sl}.npz') if os.path.isfile(f'{d}/rig/bras-{sl}.npz') else []
+                assis_ = prepare_rig.assis(a); box_ = rig2d.boite(a['bbox'], img.shape)
+                R_ = rig2d.preparer(im_a, al, a['pts'], a['bbox'], gestes.classes(img, box_), plaque=plate, bras=bras_, segmente=gestes.classes, visage3d=v3, assis=assis_)
+                dl = f'{d}/expressions/{sl}'
+                A_['xl'] = expressions_lp.charge(dl, im_a, v3, alpha=R_['alpha_corps']) if os.path.isfile(f'{dl}/meta.json') and v3 is not None else None   # la découpe suit le visage
+                src00 = im_a   # le visage tel qu'il sera tourné au repos : les yeux du regard sont pris dessus (pas de saut au premier coup d'œil)
+                if A_['xl']: src00 = expressions_lp.colle(im_a, A_['xl'], expressions_lp.visage(A_['xl'], {}, 0.0))
+                elif lib:
+                    Rr = lib['roi']; src00 = im_a.copy(); src00[Rr[1]:Rr[3], Rr[0]:Rr[2]] = np.clip(lib[(0, 0)], 0, 255).astype(np.uint8)
+                env_ = rig2d.enveloppe(R_)
+                # AVIS DE JEV (17/10, contrôle image par image de la v26) :
+                # — main POSÉE sur le corps (poing sur la hanche) : le geste pliait l'avant-bras et la main glissait sur la robe
+                #   (Maman, « bras ou mains » 0,73 ; remède désigné « garder la main posée ») → ce bras suit le buste, sans geste ;
+                P_ = np.asarray(a['pts'], np.float64); epw = max(1.0, abs(P_[11, 0] - P_[12, 0]))
+                for b_ in R_['bras']:
+                    x0b, y0b, x1b, y1b = b_['box']; poings = [i for i in (15, 16) if x0b - 0.1 * epw <= P_[i, 0] <= x1b + 0.1 * epw and y0b - 0.1 * epw <= P_[i, 1] <= y1b + 0.1 * epw]
+                    if any(min(np.hypot(*(P_[i, :2] - P_[h, :2])) for h in (23, 24)) < 0.55 * epw for i in poings):
+                        b_['amax'], b_['emax'] = 0.0, 1.0; print(f"{a['nom']}: main posée sur la hanche — bras sans geste (suit le buste)", flush=True)
+                # — main POSÉE SUR LA TABLE (v34) : v33, plan de Koffi à 34,71 — 55 images « rendu » ; JEV, partie par partie, y montrait
+                #   les mains à table (0,63–0,74) : elles pivotaient jusqu'à 14° (geste du bras) en tenant les couverts → sans geste
+                #   v34 : le contact « monde » du squelette ne la voyait pas (la main est dans la découpe de l'acteur) → JEV regarde
+                #   chaque main (une fois, en cache) : posée sur une table ou tenant un objet → sans geste
+                for b_ in R_['bras']:
+                    posee = R_['contacts'].get(b_['cote'], ('libre', None))[0] == 'monde' or main_posee_jev(d, img, P_, b_['cote'], a['nom'], epw) > 0.6
+                    if posee and b_.get('amax', 0) > 0:
+                        b_['amax'], b_['emax'] = 0.0, 1.0; print(f"{a['nom']}: main posée sur la table — bras sans geste", flush=True)
+                # — visage DÉJÀ de trois quarts : le lacet ajouté étirait le menton et décollait la barbiche (Koffi, 0,83 ; remède
+                #   désigné « lacet au plus 6° pour les visages de trois quarts »)
+                if v3 is not None:
+                    r_ = (v3[1, 0] - v3[33, 0]) / max(1e-6, v3[263, 0] - v3[33, 0])
+                    # ORIENTATION DÉJÀ PEINTE (18/10/2026) : nez entre les yeux → lacet du visage dessiné (+ = vers la droite de
+                    # l'écran ; modèle tête ronde, nez en avant de 0,55 × l'écart des yeux : tan θ = 1,8 (r − 0,5)). Le jeu ne
+                    # tourne la tête que de ce qui MANQUE pour regarder l'autre : Koffi et Baye, peints de trois quarts vers leur
+                    # partenaire, restaient collés à la borne de 6° (5,96–5,98 sur tous leurs plans de la v31) et le relief 3D
+                    # étirait nez, menton et barbiche (carte d'étirement : 24 % sur le visage de Baye à 6°)
+                    env_['lacet_peint'] = round(math.degrees(math.atan(1.8 * (r_ - 0.5))), 1)
+                    if abs(r_ - 0.5) > 0.12 and env_.get('tete_lacet', 0) > 6.0:
+                        env_['tete_lacet'] = 6.0; print(f"{a['nom']}: visage de trois quarts (nez à {r_:.2f} entre les yeux) — lacet limité à 6°", flush=True)
+                A_.update(rig=R_, img=im_a, mask=cv2.GaussianBlur(al, (0, 0), 0.5), assis=assis_, env=env_, bras=[], marge_bras=0)
+                # GESTES DESSINÉS COLLÉS : RETIRÉS (17/10/2026). L'utilisateur : « Mais ça a changé le personnage ». JEV, sur les 8
+                # poses collées dans la cour : identité 0,15 à 0,29 (cause « planche dessinée avec un autre visage, un autre âge,
+                # d'autres détails de costume » 0,99) ; remède désigné : garder les pixels du personnage et ne prendre de la
+                # planche que la cible du squelette (bras_articules.py). Ces bras articulés n'entrent au tournage que lorsque la
+                # porte de JEV (identité > 0,5 ET défaut < 0,5 sur chaque pose) les accepte — 17/10 : défaut 0,64 à 0,93, refusés.
+                A_['dessins'] = {}
+                A_['yeux'] = regard.prepare(src00, v3)
+                A_['expr'] = expressions.prepare(im_a, v3, yeux=A_['yeux'])
+                print(f"{a['nom']}: squelette ({'assis' if assis_ else 'debout'}, enveloppe {A_['env']}, {len(R_['bras'])} avant-bras détourés, "
+                      f"regard {'oui' if A_['yeux'] else 'non'}, expressions {'dessinées' if A_['xl'] else 'déformées'})", flush=True)
+                continue
+            bras = gestes.prepare(img, acts[a['nom']]['mask'], a['pts'], a['visage']['box'] if a.get('visage') else None, a['bbox']) if REG['gestes'] > 0 else []
+            acts[a['nom']]['bras'] = bras; acts[a['nom']]['marge_bras'] = int(max([1.1 * b_['lf'] for b_ in bras], default=0))
+            print(f"{a['nom']}: gestes {[(b_['cote'], 'avant-bras' if b_['nu'] else 'main') for b_ in bras]}", flush=True)
+        for n_, A_ in acts.items():   # de quel côté est le partenaire le plus proche (le « pas vers l'autre »)
+            autres = [B for m_, B in acts.items() if m_ != n_]
+            A_['cote'] = 0.0 if not autres else float(np.sign(min(autres, key=lambda B: abs(B['hip'][0] - A_['hip'][0]))['hip'][0] - A_['hip'][0]) or 1.0)
+        ys_, xs_ = np.mgrid[0:img.shape[0], 0:img.shape[1]].astype(np.float32)
+        prof_ = profondeur(d, plate) if REG['parallaxe'] > 0 or REG['decor'] > 0 else None
+        kpar = facteur_parallaxe(prof_, acts, img.shape[0], img.shape[1]) if REG['parallaxe'] > 0 else None
+        vie = decor_vivant.prepare(d, plate, [A_['mask'] for A_ in acts.values()]) if REG['decor'] > 0 else None
+        lin = linge.prepare(d, plate, [A_['mask'] for A_ in acts.values()]) if REG['decor'] > 0 else None   # linge détouré par SAM 2.1, épinglé, au vent (v34)
+        # VIE DU FOND GARANTIE (v35, vie_fond.py) : ombre de feuillage sur la moitié haute du mur, oiseaux dans le ciel du cadre
+        vf = vie_fond.prepare(plate, prof_, [A_['mask'] for A_ in acts.values()]) if REG['decor'] > 0 and REG.get('vie_fond', 1) and prof_ is not None else None
+        if vf is not None and not betes:   # bêtes peintes restées dans la plaque : leur ombre physique (v35, vie_fond.ombres_peintes)
+            Lp_ = (json.load(open(f'{d}/genese.json')).get('L') if os.path.isfile(f'{d}/genese.json') else None) or \
+                  entites.physique.lumiere(img, [(A_['mask'] if A_['mask'].ndim == 2 else A_['mask'][..., 0], A_['bbox'], not A_.get('assis')) for A_ in acts.values()])
+            plate = vie_fond.ombres_peintes(img, plate, Lp_, [A_['mask'] for A_ in acts.values()])
+        _PREP[d] = (S, img, plate, betes, acts, prof_, kpar, vie, lin, vf, xs_, ys_)
     n_ent = int((REG.get('entites') or {}).get(sk['id'], 0))   # bêtes du décor (poules) : nombre choisi par sketch dans le montage
     ents = betes or (entites.prepare(d, img.shape[0], img.shape[1], [(A_['bbox'], not A_.get('assis')) for A_ in acts.values()], n=n_ent, lieu=sk.get('lieu')) if n_ent else [])
     gen = entites.genese_poule(d, img, [(A_['mask'] if A_['mask'].ndim == 2 else A_['mask'][..., 0], A_['bbox'], not A_.get('assis')) for A_ in acts.values()], ents) if ents else {}
     if ents: print(f"{sk['id']}: poule créée par JEV (genèse) : {gen.get('style', {}).get('sprite')}, note {gen.get('note')} / référence {gen.get('reference')}", flush=True)
-    # VIE DU FOND GARANTIE (v35, vie_fond.py) : ombre de feuillage sur la moitié haute du mur, oiseaux dans le ciel du cadre
-    vf = vie_fond.prepare(plate, prof_, [A_['mask'] for A_ in acts.values()]) if REG['decor'] > 0 and REG.get('vie_fond', 1) and prof_ is not None else None
-    if vf is not None and not betes:   # bêtes peintes restées dans la plaque : leur ombre physique (v35, vie_fond.ombres_peintes)
-        Lp_ = (json.load(open(f'{d}/genese.json')).get('L') if os.path.isfile(f'{d}/genese.json') else None) or \
-              entites.physique.lumiere(img, [(A_['mask'] if A_['mask'].ndim == 2 else A_['mask'][..., 0], A_['bbox'], not A_.get('assis')) for A_ in acts.values()])
-        plate = vie_fond.ombres_peintes(img, plate, Lp_, [A_['mask'] for A_ in acts.values()])
     SC[sk['id']] = dict(img=img, plate=plate, acts=acts, H=img.shape[0], W=img.shape[1], sk=sk, xs=xs_, ys=ys_, kpar=kpar, vie=vie, ents=ents, linge=lin,
                         lum=gen.get('L'), style_ent=gen.get('style'), vf=vf)
     if vf is not None:   # carte de contrôle hors du dossier de la scène (son empreinte entre dans celle des plans)
@@ -320,14 +331,22 @@ if REG['rig']:   # pistes de jeu et ressenti de chaque personnage, image par ima
     # MOTEUR IMAGE → VIDÉO (17/10) : couche « vrai humain » (capture CMU calée sur les syllabes), dynamique du second ordre,
     # regard vivant ; réglages mocap / dyn / yeux / suivi_tete (tous à 0 : jeu de la v27, pour les essais A/B jugés par JEV)
     RJ = {k: REG.get(k, d) for k, d in (('mocap', 1.0), ('dyn', 1), ('yeux', 1), ('suivi_tete', 1), ('ampleur', 1.0))}
+    def _a_la_cadence(P):
+        """pistes du jeu calculées à 30 i/s (la capture CMU, les ressorts et la garde de fluidité y sont réglés) → cadence du
+        film par interpolation cubique monotone (PCHIP : vitesse continue, aucun dépassement sur un clignement ou une saccade)"""
+        if FPS == 30: return P
+        from scipy.interpolate import PchipInterpolator
+        t30 = np.arange(NF30) / 30.0; tf = np.minimum(np.arange(NF) / FPS, t30[-1])
+        return {n: {k: (PchipInterpolator(t30, np.asarray(v, np.float64))(tf).astype(np.float32) if isinstance(v, np.ndarray) and len(v) == NF30 else v)
+                    for k, v in d.items()} for n, d in P.items()}
     for sid, S_ in SC.items():
         A2 = S_['acts']
         print(f"{sid}: regard peint", {n: [round(v, 2) for v in regard.peint(A.get('yeux'))] for n, A in A2.items()}, "; visée", {n: {m: [round(x, 2) for x in v] for m, v in d.items()} for n, d in visee_(A2).items()}, flush=True)
-        S_['pistes'] = jeu.pistes(T['lines'], sid, list(A2), {n: float(A['hip'][0]) for n, A in A2.items()}, {n: A.get('assis', False) for n, A in A2.items()},
-                                  {n: A.get('env', {}) for n, A in A2.items()}, NF, FPS, {n: len(A['rig']['bras']) if A.get('rig') else 0 for n, A in A2.items()},
+        S_['pistes'] = _a_la_cadence(jeu.pistes(T['lines'], sid, list(A2), {n: float(A['hip'][0]) for n, A in A2.items()}, {n: A.get('assis', False) for n, A in A2.items()},
+                                  {n: A.get('env', {}) for n, A in A2.items()}, NF30, 30, {n: len(A['rig']['bras']) if A.get('rig') else 0 for n, A in A2.items()},
                                   echelles={n: float(A['rig']['M']['sw']) / 0.38 for n, A in A2.items() if A.get('rig')},   # largeur d'épaules humaine ≈ 0,38 m
                                   cotes_bras={n: [b['cote'] for b in A['rig']['bras']] for n, A in A2.items() if A.get('rig')},
-                                  reglages=RJ, journal=JOURNAL_JEU, visee=visee_(A2), peints={n: regard.peint(A.get('yeux')) for n, A in A2.items()})
+                                  reglages=RJ, journal=JOURNAL_JEU, visee=visee_(A2), peints={n: regard.peint(A.get('yeux')) for n, A in A2.items()}))
 LIPS, EYES = (0.0, 0.25, 0.5, 0.75, 1.0), (0.0, 0.5, 1.0)
 SEATED = {'BAYE NDIAYE': True, 'KOFFI': True, 'COUMBA': True}
 lines = T['lines']
@@ -373,7 +392,7 @@ def machoire(name, t):
     if Lc and jaw(Lc, t) == 0.0: return 0.0
     jj = wsum = 0.0
     for dt, w_ in ((-2, 0.1), (-1, 0.2), (0, 0.4), (1, 0.2), (2, 0.1)):
-        tt = t + dt / FPS; Lx = line_at(tt, name); jj += w_ * (jaw(Lx, tt) if Lx else 0.0); wsum += w_
+        tt = t + dt / 30.0; Lx = line_at(tt, name); jj += w_ * (jaw(Lx, tt) if Lx else 0.0); wsum += w_
     jj /= wsum
     if Lc:
         x = t - Lc['t0']; p = montre(Lc, x)
@@ -459,6 +478,8 @@ def gestes_de(name, t, sk, A):
     # fraction du geste (0 → 1) → (angle, avancée) dans l'enveloppe sans défaut du bras
     return [(f_ * b_['amax'], 1 + f_ * (b_['emax'] - 1)) for f_, b_ in zip(ang, B)]
 MESURE = os.environ.get('ETIREMENT') == '1'; MESURES = []
+# mesures de contrôle (étirement, pose, bêtes) sur la grille des 30 i/s : même coût et mêmes unités que les versions à 30 i/s
+def mesure_ici(t): return MESURE and int(round(t * FPS)) % max(1, FPS // 30) == 0
 def etirement(sx, sy, al):
     """ÉTIREMENT EXACT du personnage dans cette image : valeurs singulières de la jacobienne de la déformation (carte
     inverse sx, sy) sur la silhouette ; 0 = rigide, 0,03 = 3 % d'étirement local (99e centile et maximum)."""
@@ -489,17 +510,19 @@ def warp_rig(S, A, t, name):
             R = lib['roi']; src = src.copy(); src[R[1]:R[3], R[0]:R[2]] = np.clip(roi, 0, 255).astype(np.uint8)
         if A.get('expr') and emo: src = expressions.applique(src, A['expr'], emo)
     if A.get('yeux'): src = regard.applique(src, A['yeux'], v('regard_x'), v('regard_y'), 1 - bb)
+    if A.get('xl') and 'lacet_visage' in P: src, al_v = expressions_lp.tourne(src, A['xl'], v('lacet_visage'), al_v)   # tête tournée par LivePortrait (18/10)
     R_ = A['rig']
     gest = [(v(f'geste_{k}') * b['amax'], 1 + v(f'geste_{k}') * (b['emax'] - 1)) for k, b in enumerate(R_['bras'])]
     pose = dict(buste=v('buste'), buste_lacet=v('buste_lacet'), tete=v('tete'), tete_lacet=v('tete_lacet'), tete_tangage=v('tete_tangage'),
                 souffle=v('souffle'), epaules=v('epaules'), bassin=(v('bassin_x'), v('bassin_y')), gestes=gest)
     box, rgb, al, sx, sy = rig2d.rendre(R_, pose, src, al_v)
-    if MESURE:
+    if mesure_ici(t):
         I_ = R_['M']['idx']
         gx = ((sx - R_['gx'][0]) / R_['cell']).round().astype(int).clip(0, len(R_['gx']) - 1); gy = ((sy - R_['gy'][0]) / R_['cell']).round().astype(int).clip(0, len(R_['gy']) - 1)
         (p99, mx), _ = rig2d.etirement(sx, sy, al, R_['own'][gy, gx] != I_['head'])
         MESURES.append(dict(qui=name, t=round(t, 3), etirement=(p99, mx), bouche=round(float(jj), 3), emotions={k: round(x_, 2) for k, x_ in emo.items()},
-                            pose={k: (round(x_, 2) if not isinstance(x_, (tuple, list)) else [round(float(y_), 2) for y_ in x_]) for k, x_ in pose.items() if k != 'gestes'},
+                            pose={**{k: (round(x_, 2) if not isinstance(x_, (tuple, list)) else [round(float(y_), 2) for y_ in x_]) for k, x_ in pose.items() if k != 'gestes'},
+                                  **({'lacet_visage': round(v('lacet_visage'), 2)} if 'lacet_visage' in P else {})},
                             regard=round(v('regard_x'), 2)))
     return box, rgb, al
 def warp_actor(S, A, t, name):
@@ -535,7 +558,7 @@ def warp_actor(S, A, t, name):
     sx2 = (sx2 - np.float32(cdx)).astype(np.float32); sy2 = (sy2 - np.float32(cdy)).astype(np.float32)   # tout le corps glisse (pas, sursaut, rebond)
     rgb = cv2.remap(src, sx2, sy2, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT)   # bicubique : −19 % de netteté mesurés en bilinéaire
     al = cv2.remap(msk, sx2, sy2, cv2.INTER_LINEAR, borderValue=0)
-    if MESURE: MESURES.append(dict(qui=name, t=round(t, 3), etirement=etirement(sx2, sy2, al), bouche=round(float(jj), 3), lib=bool(lib),
+    if mesure_ici(t): MESURES.append(dict(qui=name, t=round(t, 3), etirement=etirement(sx2, sy2, al), bouche=round(float(jj), 3), lib=bool(lib),
                                    buste=round(float(ang), 2), tete=round(float(hd), 2), souffle=round(float(br), 4), pas=(round(float(cdx), 2), round(float(cdy), 2))))
     return (X0, Y0, X1, Y1), rgb, al
 def geste_dessine(S, A, t, name, R):
@@ -547,7 +570,12 @@ def geste_dessine(S, A, t, name, R):
     jj = machoire(name, t)
     cdx, cdy = corps(name, t, S['sk']['id'], A)
     return PD.intervalle(R, PD.rend(A['dessins'][p], jj, cdx, cdy, t, arrivee), w)
-def frame_scene(S, t, off=None, zoom=None, vis=None, t0=None):
+def hors_champ(A, vue):
+    """acteur entièrement hors du cadre de cette image (boîte du dessin élargie de ses gestes, de son jeu et du flou de
+    réduction) : ses pixels ne peuvent pas atteindre l'écran, on ne le déforme pas."""
+    x0, y0, x1, y1 = A['bbox']; m = 0.25 * max(x1 - x0, y1 - y0) + 40 + A.get('marge_bras', 0)
+    return x1 + m < vue[0] or x0 - m > vue[2] or y1 + m < vue[1] or y0 - m > vue[3]
+def frame_scene(S, t, off=None, zoom=None, vis=None, t0=None, vue=None):
     plate = S['plate']; V = S.get('vie')
     if V is not None and decor_vivant.panache(V, plate) is not None: plate = decor_vivant.fumee(V, plate, t)   # la fumée du grill MONTE (panache physique), avant la parallaxe
     if S.get('linge') is not None: plate = linge.compose(S['linge'], plate, t)   # linge épinglé qui flotte au vent (v34), sous la couche « tissu »
@@ -582,14 +610,17 @@ def frame_scene(S, t, off=None, zoom=None, vis=None, t0=None):
     can = plate.astype(np.float32).copy()
     poses = entites.etat(S['ents'], t) if S.get('ents') else []
     pieds = min((A['bbox'][3] for A in S['acts'].values()), default=1e9)
-    em = [] if (MESURE and poses) else None
-    if poses: entites.dessine(can, poses, lambda p: p['y'] <= pieds, S.get('lum'), S.get('style_ent'), em)   # bêtes derrière les acteurs, puis devant après eux
+    em = [] if (mesure_ici(t) and poses) else None
+    vu_ = (lambda p: True) if vue is None else (lambda p: vue[0] - 150 <= p['x'] <= vue[2] + 150 and vue[1] - 150 <= p['y'] <= vue[3] + 150)   # bêtes hors cadre : rien à dessiner
+    if poses: entites.dessine(can, poses, lambda p: p['y'] <= pieds and vu_(p), S.get('lum'), S.get('style_ent'), em)   # bêtes derrière les acteurs, puis devant après eux
     for name, A in sorted(S['acts'].items(), key=lambda kv: kv[1]['hip'][1]):
+        # VITESSE (18/10/2026) : en plan serré, les acteurs hors du cadre ne sont plus déformés image par image
+        if vue is not None and hors_champ(A, vue): continue
         R_ = warp_actor(S, A, t, name)
         if A.get('dessins'): R_ = geste_dessine(S, A, t, name, R_)
         (X0, Y0, X1, Y1), rgb, al = R_
         sub = can[Y0:Y1, X0:X1]; al3 = al[..., None]; sub[:] = sub * (1 - al3) + rgb.astype(np.float32) * al3
-    if poses: entites.dessine(can, poses, lambda p: p['y'] > pieds, S.get('lum'), S.get('style_ent'), em)
+    if poses: entites.dessine(can, poses, lambda p: p['y'] > pieds and vu_(p), S.get('lum'), S.get('style_ent'), em)
     if em: MESURES.extend(dict(qui='entite', sketch=S['sk']['id'], t=round(t, 3), **m_) for m_ in em)
     if REG.get('nuages', 0) > 0 and S.setdefault('jour', (lambda s_: s_ is not None and s_[1] > 110)(decor_vivant.soleil(S['plate']))):
         can *= ombre_nuage(S, t)[..., None]   # toute la scène, acteurs compris : une seule lumière
@@ -909,7 +940,7 @@ def cadres_du_plan(S, s, keep):
             print('cadre', s[2], s[3], s[4], [round(v) for v in crop_for(S, s[3], s[4])], [round(v) for v in clamp_crop(S, crop_for(S, s[3], s[4]))], [round(v) for v in c0], flush=True)
         # CAMÉRA VIVANTE : glissement latéral (cam_px pixels d'écran par image) vers le côté qui a de la place, petite
         # montée un plan sur deux, poussée de 6 % ; validée par les mêmes règles de cadrage (têtes entières ou absentes)
-        nfr = (s[1] - s[0]) * FPS; sc0_ = CW / c0[2]; dep_ = REG['cam_px'] * nfr / sc0_
+        nfr = (s[1] - s[0]) * 30; sc0_ = CW / c0[2]; dep_ = REG['cam_px'] * nfr / sc0_   # cam_px : pixels d'écran par 1/30 s, quelle que soit la cadence
         dirn = 1.0 if S['W'] - (c0[0] + c0[2] / 2) >= c0[0] - c0[2] / 2 else -1.0
         # plans à deux : la largeur du décor borne le glissement (mesuré le 17/10 : 0,5 px/image au lieu de 2,5) → la caméra
         # monte ou descend aussi (un plan sur deux, toute la place en hauteur) et pousse de 10 % : grue + travelling avant
@@ -1023,7 +1054,7 @@ def rend(f):
     ECHELLE_PLAN[0] = CW / w2   # agrandissement scène → écran de ce plan (taille des visages à l'écran)
     vis_ = (max(c0[0] - c0[2] / 2, c1[0] - c1[2] / 2), max(c0[1] - c0[3] / 2, c1[1] - c1[3] / 2),
             min(c0[0] + c0[2] / 2, c1[0] + c1[2] / 2), min(c0[1] + c0[3] / 2, c1[1] + c1[3] / 2))   # partie de la plaque visible tout le plan
-    fr = frame_scene(S, t, (cx - ref[0], cy - ref[1]), zp, vis=vis_, t0=s[0])   # le décor suit la caméra à sa profondeur (parallaxe latérale et avant)
+    fr = frame_scene(S, t, (cx - ref[0], cy - ref[1]), zp, vis=vis_, t0=s[0], vue=(cx - w2 / 2, cy - h2 / 2, cx + w2 / 2, cy + h2 / 2))   # le décor suit la caméra à sa profondeur (parallaxe latérale et avant)
     sc = CW / w2; src_ = fr
     if sc < 0.95: src_ = cv2.GaussianBlur(fr, (0, 0), 0.45 / sc)
     Maff = np.float32([[sc, 0, -(cx - w2 / 2) * sc], [0, sc, -(cy - h2 / 2) * sc]])
@@ -1217,6 +1248,12 @@ else:
     RANGE_T = list(RANGE)
 # RENDU PARALLÈLE : les images sont indépendantes ; chaque processeur tourne des blocs de 24 images (TOURNE_PROCS)
 NPROC = int(os.environ.get('TOURNE_PROCS', os.cpu_count() or 1)); blocs = [list(RANGE_T[i:i + 24]) for i in range(0, len(RANGE_T), 24)]
+# REPRISE (18/10/2026 : le conteneur a redémarré au milieu du tournage de l'épisode 1, à 2 764 images sur 4 047) :
+# TOURNE_REPRISE=1 garde les blocs déjà tournés EN ENTIER (toutes leurs images présentes ; leurs mesures sont écrites à la fin
+# du bloc, morceau) ; un bloc commencé est retourné en entier
+if os.environ.get('TOURNE_REPRISE') == '1':
+    _n0 = len(blocs); blocs = [b for b in blocs if not all(os.path.isfile(f'{OUT}/clip/f{f:05d}.jpg') for f in b)]
+    print(f'reprise : {_n0 - len(blocs)} blocs de 24 images déjà tournés, {len(blocs)} à tourner', flush=True)
 if NPROC > 1:
     import multiprocessing as mpr
     # le réservoir de fils d'OpenCV est vidé AVANT le fork : un fils hérite sinon de fils d'exécution qui n'existent pas
@@ -1255,7 +1292,7 @@ if CLES:   # les plans tournés rejoignent le cache (images, image source, mesur
     for _, sz, p_ in sorted(tailles):
         if tot <= lim: break
         shutil.rmtree(p_, ignore_errors=True); tot -= sz
-json.dump({'images': NF, 'plans': cut_count, 'plans_par_minute': round(cut_count / (total / 60), 1), 'reglages': REG, 'decoupage': [list(map(lambda v: round(v, 2) if isinstance(v, float) else (list(v) if isinstance(v, tuple) else v), s)) for s in SH],
+json.dump({'images': NF, 'fps': FPS, 'plans': cut_count, 'plans_par_minute': round(cut_count / (total / 60), 1), 'reglages': REG, 'decoupage': [list(map(lambda v: round(v, 2) if isinstance(v, float) else (list(v) if isinstance(v, tuple) else v), s)) for s in SH],
            'cadres': {f'{k[0]:.2f}': [None if c is None else [round(v, 1) for v in c] for c in v_] for k, v_ in CADRES.items()},
            'empreintes': {f'{SH[i][0]:.2f}': c_[0] for i, c_ in CLES.items()}, 'repris_du_cache': [round(SH[i][0], 2) for i in REPRIS], 'realisateur_jev': REALISATION, 'jeu_humain': JOURNAL_JEU},
           open(f'{OUT}/tournage.json', 'w'), ensure_ascii=False, indent=1)

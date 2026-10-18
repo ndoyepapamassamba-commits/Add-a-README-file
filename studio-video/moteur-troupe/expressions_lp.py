@@ -404,8 +404,11 @@ def charge(dossier, img, v3, alpha=None):
                    for e, v in A_['emotions'].items() if e in meta['emotions']}
     gx, gy = np.meshgrid(np.arange(t, dtype=np.float32), np.arange(t, dtype=np.float32))
     a_c = None if alpha is None else cv2.warpAffine(np.asarray(alpha, np.float32), M, (t, t), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
-    return dict(meta=meta, imgs=imgs, clos=clos, flux=flux, paires=paires, masque=masque, yeux=yeux, box=(x, y, s), taille=t, grille=(gx, gy),
-                bouche_masque=bm, ouv=ouv, alpha=a_c, orig=orig)
+    B = dict(meta=meta, imgs=imgs, clos=clos, flux=flux, paires=paires, masque=masque, yeux=yeux, box=(x, y, s), taille=t, grille=(gx, gy),
+             bouche_masque=bm, ouv=ouv, alpha=a_c, orig=orig)
+    try: B['lacets'] = lacets(dossier, img, v3, B)
+    except Exception as ex: print(f'  lacets LivePortrait indisponibles ({str(ex)[:80]}) : tête tournée par le squelette seul', flush=True)
+    return B
 
 
 def _poids(B, emotions):
@@ -499,6 +502,57 @@ def visage(B, emotions, bouche, clignement=0.0, visage_px=None, avec_alpha=False
     d = (a_t - a0) * ch; m = B['masque']
     d = np.where(d > 0, d * m, d * np.clip(2 * m, 0, 1))   # s'étendre : seulement où le visage est collé ; se retirer : jusqu'au bord du masque
     return out, a0 + d
+
+
+# ── TÊTE QUI TOURNE (18/10/2026) — « Maman ne tourne pas la tête vers Baye ; Petit Mamadou ne tourne pas la tête vers ses
+# parents ». Le squelette 2D ne tourne un visage peint de trois quarts que de 6° (au-delà, le relief étire nez et menton : 24 %
+# sur Baye) ; LivePortrait fait tourner la tête DANS son carré (planche du 18/10, −25 à +25° sur les trois acteurs de la cour,
+# identité gardée). Une fois par personnage, la tête neutre est rendue à chaque angle de LACETS ; le flux de chaque rendu vers
+# le neutre devient un champ de déplacement, appliqué ensuite image par image au visage déjà composé (émotion, bouche,
+# paupières, iris) : quatre rendus par personnage au lieu d'une bibliothèque entière par angle.
+LACETS = (-24.0, -12.0, 12.0, 24.0)   # degrés ; + = la tête tourne vers la droite de l'écran (convention du jeu)
+
+
+def lacets(dossier, img, v3, B, journal=print):
+    """champs de rotation de la tête {angle: flux (taille, taille, 2) du visage tourné vers le neutre}, en cache disque."""
+    f = f'{dossier}/lacet.npz'; x, y, s = B['box']; t = B['taille']
+    cle = json.dumps([VERSION, [round(float(v), 2) for v in (x, y, s)], t, LACETS])
+    if os.path.isfile(f):
+        z = np.load(f)
+        if str(z['cle']) == cle: return {a: z[f'f{i}'].astype(np.float32) for i, a in enumerate(LACETS)}
+    src = LP.Source(img, v3); dis = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_MEDIUM)
+    rend = lambda lp: _gris(cv2.resize(src.rendu(_commande({}, 0), dpose=(0.0, lp, 0.0)), (t, t), interpolation=cv2.INTER_AREA))
+    n0 = rend(0.0); m = B['masque'] > 0.5
+    # sens de LivePortrait mesuré, pas supposé : tournée vers la droite de l'écran, les traits glissent à droite, donc le flux du
+    # visage tourné vers le neutre pointe à gauche (x < 0) dans le masque du visage
+    essai = dis.calc(rend(-12.0), n0, None); signe = -1.0 if float(essai[..., 0][m].mean()) < 0 else 1.0
+    F = {a: dis.calc(rend(signe * a), n0, None) for a in LACETS}
+    np.savez_compressed(f, cle=np.array(cle), **{f'f{i}': F[a].astype(np.float16) for i, a in enumerate(LACETS)})
+    journal(f"  lacets LivePortrait : {', '.join(f'{a:+.0f}°' for a in LACETS)} (sens LivePortrait {signe:+.0f}), "
+            f"déplacement médian à ±24° {np.median(np.abs(F[LACETS[-1]][..., 0][m])):.1f} px")
+    return F
+
+
+def tourne(src, B, lacet, alpha=None):
+    """la tête tournée de `lacet` degrés (+ = vers la droite de l'écran) : champ interpolé entre les angles rendus, appliqué
+    au visage collé (src RGB uint8, image entière) et à la découpe (alpha, image entière), pondéré par le masque du visage."""
+    L = B.get('lacets')
+    if not L or abs(lacet) < 0.2: return src, alpha
+    a = float(np.clip(lacet, LACETS[0], LACETS[-1])); pts = sorted(list(L) + [0.0])
+    i = max(0, min(len(pts) - 2, int(np.searchsorted(pts, a)) - 1)); a0, a1 = pts[i], pts[i + 1]; w = (a - a0) / (a1 - a0)
+    nul = lambda k: np.zeros_like(L[LACETS[0]]) if k == 0.0 else L[k]
+    F = (1 - w) * nul(a0) + w * nul(a1)
+    x, y, s = B['box']; t = B['taille']; H, W = src.shape[:2]
+    x0, y0, x1, y1 = max(0, int(np.floor(x))), max(0, int(np.floor(y))), min(W, int(np.ceil(x + s))), min(H, int(np.ceil(y + s)))
+    Mi = np.float32([[s / t, 0, x - x0], [0, s / t, y - y0]]); taille_r = (x1 - x0, y1 - y0)
+    Fr = cv2.warpAffine(np.ascontiguousarray(F), Mi, taille_r, flags=cv2.INTER_LINEAR, borderValue=0) * np.float32(s / t)
+    mr = cv2.warpAffine(B['masque'], Mi, taille_r, flags=cv2.INTER_LINEAR, borderValue=0)
+    gx, gy = np.meshgrid(np.arange(taille_r[0], dtype=np.float32), np.arange(taille_r[1], dtype=np.float32))
+    mx, my = gx + Fr[..., 0] * mr, gy + Fr[..., 1] * mr
+    out = src.copy(); out[y0:y1, x0:x1] = cv2.remap(np.ascontiguousarray(src[y0:y1, x0:x1]), mx, my, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+    if alpha is not None:
+        alpha = alpha.copy(); alpha[y0:y1, x0:x1] = cv2.remap(np.ascontiguousarray(alpha[y0:y1, x0:x1]), mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+    return out, alpha
 
 
 def colle_alpha(alpha, B, a_face):

@@ -75,11 +75,14 @@ if __name__ == '__main__':
     # la carte s'arrête sur la coupe vers le sketch suivant (tourne.rend) : les images de ce plan ne sont plus des cartes —
     # v32 : 16 images du plan d'ouverture du maquis et de la cour jugées « titre illisible » alors qu'aucun titre n'y est
     cartes = [(c['t0'] - 0.05, c['t1'] + 0.2, c.get('apres')) for c in T.get('cartes', [])]
-    cap = cv2.VideoCapture(MP4); images = []
+    # film à 60 i/s (18/10/2026) : JEV juge la grille des 30 i/s (une image sur deux), comme toutes les versions précédentes —
+    # mêmes questions calibrées, même nombre d'images par seconde ; FPS reste celui de cette grille
+    cap = cv2.VideoCapture(MP4); images = []; PAS = max(1, int(round((cap.get(cv2.CAP_PROP_FPS) or 30) / FPS))); n_ = -1
     while True:
         ok, f = cap.read()
         if not ok: break
-        images.append(f[CLIP])
+        n_ += 1
+        if n_ % PAS == 0: images.append(f[CLIP])
     N = len(images); os.makedirs(CJ, exist_ok=True)
     plan_de = lambda t: next((i for i, s in enumerate(SH) if s[0] <= t < s[1]), len(SH) - 1 if t >= SH[-1][0] else 0)
     refs = {i: (cv2.imread(os.path.join(SRC, f'{s[0]:06.2f}.jpg')) if os.path.isfile(os.path.join(SRC, f'{s[0]:06.2f}.jpg')) else None) for i, s in enumerate(SH)}
