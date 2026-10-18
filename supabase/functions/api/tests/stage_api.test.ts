@@ -7,7 +7,7 @@ import { makeEnhancer } from "../lib/llm.ts";
 import { generateDocument } from "../lib/generator/index.ts";
 import { ADMIN_KEY, makeHarness, orderRow, RETURN_BASE } from "./fixtures/backend_harness.ts";
 import type { Harness, Json } from "./fixtures/backend_harness.ts";
-import { openTestDb, sqlStore, STAGE_MIGRATION } from "./fixtures/backend_pglite.ts";
+import { migrationFiles, openTestDb, sqlStore, STAGE_MIGRATION } from "./fixtures/backend_pglite.ts";
 import { randomStageData, randomStageInput } from "./fixtures/stage_inputs.ts";
 import { STAGE_PERSONAS } from "./fixtures/stage_personas.ts";
 
@@ -95,7 +95,7 @@ Deno.test("stage API: prices follow PRICE_STAGE / PRICE_STAGE_MULTI and GET /con
   assertEquals((await createStage(h, randomStageData(1, { companies: 1 }))).body.order.amount, 2000);
   assertEquals((await createStage(h, randomStageData(2, { companies: 4 }))).body.order.amount, 3500);
   const config = await h.call("GET", "/config");
-  assertEquals(config.body.prices, { cv: 1000, lettre: 1000, pack: 1500, stage: 2000, stageMulti: 3500 });
+  assertEquals(config.body.prices, { cv: 1000, lettre: 1000, pack: 1500, stage: 2000, premium: 5000, stageMulti: 3500 });
   const defaults = await makeHarness().call("GET", "/config");
   assertEquals([defaults.body.prices.stage, defaults.body.prices.stageMulti], [1500, 2500]);
 });
@@ -184,9 +184,9 @@ Deno.test({
       const row = await db.query("select product, amount, status, jsonb_array_length(document->'lettres') as n from tcv.orders where id = $1", [id]);
       assertEquals(row.rows[0], { product: "stage", amount: 2500, status: "paid", n: 2 });
 
-      // Idempotent migration; the constraint still refuses unknown products.
-      await db.db.exec(await Deno.readTextFile(STAGE_MIGRATION));
-      await db.db.exec(await Deno.readTextFile(STAGE_MIGRATION));
+      // Idempotent migrations (the whole chain, in order, run again); the constraint still refuses unknown products.
+      assert((await migrationFiles()).some((u) => u.href === STAGE_MIGRATION.href));
+      await db.migrate();
       const constraint = await db.query(
         "select pg_get_constraintdef(oid) as def from pg_constraint where conname = 'orders_product_check'",
         [],
@@ -195,8 +195,8 @@ Deno.test({
       assertMatch(String(constraint.rows[0].def), /'stage'/);
       const store = sqlStore(db);
       await store.insertOrder(orderRow({ product: "stage" }));
-      for (const product of ["cv", "lettre", "pack"] as const) await store.insertOrder(orderRow({ product }));
-      await assertRejects(() => store.insertOrder(orderRow({ product: "premium" as "cv" })));
+      for (const product of ["cv", "lettre", "pack", "premium"] as const) await store.insertOrder(orderRow({ product }));
+      await assertRejects(() => store.insertOrder(orderRow({ product: "stages" as "cv" })));
     } finally {
       await db.close();
     }

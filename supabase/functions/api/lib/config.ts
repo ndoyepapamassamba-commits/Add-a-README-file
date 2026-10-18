@@ -82,6 +82,7 @@ export function loadConfig(envGet: EnvGet, settings: Record<string, string> = {}
       lettre: int(get, "PRICE_LETTRE", 1000, 1),
       pack: int(get, "PRICE_PACK", 1500, 1),
       stage: int(get, "PRICE_STAGE", 1500, 1),
+      premium: int(get, "PRICE_PREMIUM", 5000, 1),
     },
     stageMultiPrice: int(get, "PRICE_STAGE_MULTI", 2500, 1),
     openrouterApiKey: get("OPENROUTER_API_KEY"),

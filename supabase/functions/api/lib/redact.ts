@@ -6,6 +6,7 @@ const MAX_RUN = 12;
 const PROFILE_VISIBLE_WORDS = 8;
 const FIRST_PARAGRAPH_VISIBLE_WORDS = 12;
 const VISIBLE_SKILLS = 3;
+const VISIBLE_TAGS_PER_CARD = 1;
 
 /** One "█" per letter or digit of each word (max 12), words separated by one space. */
 export function maskText(text: string): string {
@@ -49,6 +50,34 @@ function redactCv(cv: CvDoc): CvDoc {
   };
 }
 
+/**
+ * CV Premium block: the headline, key figures, domain and achievement titles, the first tag of each card,
+ * skill names and levels and the qualities sell the design; the quote, the domain and achievement details,
+ * the other tags and the personal lines stay masked until payment.
+ */
+function redactPremium(p: NonNullable<CvDoc["premium"]>): NonNullable<CvDoc["premium"]> {
+  return {
+    headline: p.headline,
+    quote: maskText(p.quote),
+    keyFigures: p.keyFigures.map((f) => ({ ...f })),
+    domains: p.domains.map((d) => ({ title: d.title, detail: maskText(d.detail) })),
+    achievements: p.achievements.map((a) => ({
+      title: a.title,
+      detail: maskText(a.detail),
+      tags: a.tags.map((t, i) => (i < VISIBLE_TAGS_PER_CARD ? t : maskText(t))),
+    })),
+    skillLevels: p.skillLevels.map((s) => ({ ...s })),
+    qualities: [...p.qualities],
+    personal: p.personal.map(maskText),
+    accent: p.accent,
+  };
+}
+
+/** Adds the redacted premium block to a redacted CV; other products keep the exact same shape. */
+function withRedactedPremium(redacted: CvDoc, cv: CvDoc): CvDoc {
+  return cv.premium ? { ...redacted, premium: redactPremium(cv.premium) } : redacted;
+}
+
 function redactLettre(l: LettreDoc): LettreDoc {
   return {
     sender: [...l.sender],
@@ -75,7 +104,7 @@ function redactEnvoi(e: EnvoiDoc): EnvoiDoc {
 /** Same shape as `doc`; hidden text replaced by masked runs (see SPEC "redactDocument"). */
 export function redactDocument(doc: Document): Document {
   const out: Document = {
-    cv: doc.cv ? redactCv(doc.cv) : null,
+    cv: doc.cv ? withRedactedPremium(redactCv(doc.cv), doc.cv) : null,
     lettre: doc.lettre ? redactLettre(doc.lettre) : null,
   };
   if (doc.lettres) out.lettres = doc.lettres.map((l, i) => (i === 0 ? redactLettre(l) : redactOtherLettre(l)));

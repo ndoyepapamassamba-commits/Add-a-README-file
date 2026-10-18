@@ -257,7 +257,7 @@ Deno.test("GET /config exposes prices and the payment modes", async () => {
   assertEquals(wave.body, {
     brandName: "Teranga CV",
     currency: "XOF",
-    prices: { cv: 1000, lettre: 1000, pack: 1500, stage: 1500, stageMulti: 2500 },
+    prices: { cv: 1000, lettre: 1000, pack: 1500, stage: 1500, premium: 5000, stageMulti: 2500 },
     payment: { wave: true, manual: false, manualWaveNumber: null, ownerWhatsapp: "221771234567" },
   });
   const manual = await makeHarness({ wave: null, env: { MANUAL_WAVE_NUMBER: "77 000 11 22", OWNER_WHATSAPP: "+221 78 999 88 77", BRAND_NAME: "TCV" } })

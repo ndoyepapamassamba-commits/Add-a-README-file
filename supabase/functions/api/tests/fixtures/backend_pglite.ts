@@ -8,15 +8,18 @@ import type { RpcClient } from "../../lib/store_supabase.ts";
 export const SCHEMA_MIGRATION = new URL("../../../../migrations/20261018000001_schema.sql", import.meta.url);
 /** Pack Stage: product check constraint including 'stage'. */
 export const STAGE_MIGRATION = new URL("../../../../migrations/20261018000003_stage.sql", import.meta.url);
-const MIGRATIONS_DIR = new URL("../../../../migrations/", import.meta.url);
+export const MIGRATIONS_DIR = new URL("../../../../migrations/", import.meta.url);
 
-/** Every migration in file-name order, except the pg_cron/pg_net jobs (Supabase only). */
+/**
+ * Every migration PGlite can run, in file-name order: the schema, then 000003 stage, 000004 premium,
+ * 000005 autopay, … The cron migration needs pg_cron and pg_net (Supabase only) and is skipped.
+ */
 export async function migrationFiles(): Promise<URL[]> {
   const names: string[] = [];
-  for await (const e of Deno.readDir(MIGRATIONS_DIR)) {
-    if (e.isFile && e.name.endsWith(".sql") && !e.name.includes("cron")) names.push(e.name);
+  for await (const entry of Deno.readDir(MIGRATIONS_DIR)) {
+    if (entry.isFile && entry.name.endsWith(".sql") && !entry.name.includes("_cron")) names.push(entry.name);
   }
-  return names.sort().map((n) => new URL(n, MIGRATIONS_DIR));
+  return names.sort().map((name) => new URL(name, MIGRATIONS_DIR));
 }
 
 const ROLES = `do $$ begin

@@ -198,6 +198,117 @@ export function eachItem<T>(c: Collector, items: unknown[], path: string, fn: (i
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// CV Premium (product "premium"): every field is typed by the customer; the generator invents nothing.
+// ---------------------------------------------------------------------------
+
+type PremiumInput = NonNullable<OrderInput["premium"]>;
+
+type SkillLevelInput = PremiumInput["skillLevels"][number]["level"];
+
+export const SKILL_LEVELS: readonly SkillLevelInput[] = ["Expert", "Avancé", "Bon", "Notions"];
+export const PREMIUM_ACCENTS: readonly PremiumInput["accent"][] = ["marine", "bordeaux", "foret"];
+export const DEFAULT_PREMIUM_ACCENT: PremiumInput["accent"] = "marine";
+
+/**
+ * Key figure value: "15+", "16 359", "100 %", "7/7", "2,5 M", "+30 %". At least one digit, "+" or "%",
+ * and no letter other than k, K or M (so no hidden words: "15 ans" goes in the label).
+ */
+export function isKeyFigureValue(value: string): boolean {
+  return /[\d+%]/.test(value) && !/[^\P{L}kKM]/u.test(value);
+}
+
+const PREMIUM_MSG = {
+  missing: "Écrivez votre accroche : votre métier et votre valeur en une ligne.",
+  figure: "Un chiffre seulement (ex. 15+, 16 359, 100 %, 7/7) ; mettez les mots dans la légende.",
+};
+
+/** An item is blank when every string in it (nested lists included) is empty. */
+function isBlankDeep(v: unknown): boolean {
+  if (v === undefined || v === null) return true;
+  if (typeof v === "string") return !cleanText(v);
+  if (Array.isArray(v)) return v.every(isBlankDeep);
+  if (isObj(v)) return Object.values(v).every(isBlankDeep);
+  return false;
+}
+
+/** Like eachItem, but an item whose strings and lists are all empty is skipped. */
+function eachPremiumItem<T>(c: Collector, items: unknown[], path: string, fn: (item: Obj, p: string) => T): T[] {
+  const out: T[] = [];
+  items.forEach((item, i) => {
+    const p = `${path}.${i}`;
+    if (!isObj(item)) c.fail(p, MSG.invalid);
+    else if (!isBlankDeep(item)) out.push(fn(item, p));
+  });
+  return out;
+}
+
+function validatePremium(c: Collector, src: unknown): OrderInput["premium"] {
+  if (!isObj(src)) {
+    if (src === undefined || src === null) c.fail("premium.headline", PREMIUM_MSG.missing);
+    else c.fail("premium", MSG.invalid);
+    return undefined;
+  }
+  const P = "premium";
+  const keyFigures = eachPremiumItem(c, c.list(src, "keyFigures", `${P}.keyFigures`, 4), `${P}.keyFigures`, (f, p) => {
+    const value = c.required(f, "value", `${p}.value`, 12);
+    if (value && !isKeyFigureValue(value)) c.fail(`${p}.value`, PREMIUM_MSG.figure);
+    return { value, label: c.required(f, "label", `${p}.label`, 70) };
+  });
+  const domains = eachPremiumItem(c, c.list(src, "domains", `${P}.domains`, 3), `${P}.domains`, (d, p) => ({
+    title: c.required(d, "title", `${p}.title`, 40),
+    detail: c.text(d, "detail", `${p}.detail`, 120) ?? "",
+  }));
+  const achievements = eachPremiumItem(
+    c,
+    c.list(src, "achievements", `${P}.achievements`, 6),
+    `${P}.achievements`,
+    (a, p) => ({
+      title: c.required(a, "title", `${p}.title`, 70),
+      detail: c.text(a, "detail", `${p}.detail`, 240) ?? "",
+      tags: c.strings(a, "tags", `${p}.tags`, 4, 30),
+    }),
+  );
+  const skillLevels = eachPremiumItem(
+    c,
+    c.list(src, "skillLevels", `${P}.skillLevels`, 8),
+    `${P}.skillLevels`,
+    (s, p) => ({
+      name: c.required(s, "name", `${p}.name`, 40),
+      level: c.oneOf(s, "level", `${p}.level`, SKILL_LEVELS),
+    }),
+  );
+
+  let personal: PremiumInput["personal"];
+  const rawPersonal = src.personal;
+  if (rawPersonal !== undefined && rawPersonal !== null) {
+    if (!isObj(rawPersonal)) c.fail(`${P}.personal`, MSG.invalid);
+    else {
+      const age = c.text(rawPersonal, "age", `${P}.personal.age`, 30);
+      const situation = c.text(rawPersonal, "situation", `${P}.personal.situation`, 30);
+      if (age !== undefined || situation !== undefined) personal = compact({ age, situation });
+    }
+  }
+
+  const rawAccent = src.accent;
+  const accent = rawAccent === undefined || rawAccent === null || rawAccent === ""
+    ? DEFAULT_PREMIUM_ACCENT
+    : c.oneOf(src, "accent", `${P}.accent`, PREMIUM_ACCENTS);
+
+  return compact({
+    headline: c.required(src, "headline", `${P}.headline`, 160),
+    pitch: c.text(src, "pitch", `${P}.pitch`, 500),
+    quote: c.text(src, "quote", `${P}.quote`, 220),
+    keyFigures,
+    domains,
+    achievements,
+    skillLevels,
+    qualities: c.strings(src, "qualities", `${P}.qualities`, 6, 40),
+    personal,
+    accent,
+  });
+}
+
 function validateLetter(c: Collector, src: unknown): OrderInput["letter"] {
   if (!isObj(src)) {
     c.fail("letter.company", src === undefined || src === null ? MSG.company : MSG.invalid);
@@ -276,6 +387,7 @@ export function validateOrderRequest(body: unknown): ValidationResult {
     interests: c.strings(src, "interests", "interests", 8, 40),
   };
 
+  if (product === "premium") data.premium = validatePremium(c, src.premium);
   if (needsLetter(product)) data.letter = validateLetter(c, src.letter);
   if (internship) data.internship = internship;
   // Reported on "experiences": the wizard checks it when leaving the experiences step, after both lists.

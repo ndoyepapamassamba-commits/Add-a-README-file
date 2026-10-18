@@ -1,7 +1,7 @@
 // Catalogue: products, templates and their prices.
 import type { Config, OrderInput, Product, Template } from "./types.ts";
 
-export const PRODUCTS: readonly Product[] = ["cv", "lettre", "pack", "stage"];
+export const PRODUCTS: readonly Product[] = ["cv", "lettre", "pack", "stage", "premium"];
 export const TEMPLATES: readonly Template[] = ["classique", "moderne", "elegant"];
 export const DEFAULT_TEMPLATE: Template = "classique";
 

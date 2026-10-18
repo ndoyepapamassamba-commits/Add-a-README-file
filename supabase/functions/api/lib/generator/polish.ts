@@ -400,5 +400,6 @@ export function polishInput(input: OrderInput): OrderInput {
     }),
     // Product blocks with their own copy-editing (stage.ts) are passed through untouched.
     ...(input.internship ? { internship: input.internship } : {}),
+    ...(input.premium ? { premium: input.premium } : {}),
   };
 }

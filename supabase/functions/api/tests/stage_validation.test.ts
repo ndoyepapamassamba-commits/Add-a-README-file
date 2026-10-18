@@ -217,7 +217,7 @@ Deno.test("pricing: Pack Stage is 1 500 for one company and 2 500 for 2 to 5; ot
   assertEquals(orderPrice("lettre", {}, config), 1000);
   assertEquals(orderPrice("pack", withCompanies(5), config), 1500);
   assertEquals(priceOf("stage", config), 1500);
-  assertEquals(PRODUCTS, ["cv", "lettre", "pack", "stage"]);
+  assertEquals(PRODUCTS, ["cv", "lettre", "pack", "stage", "premium"]);
   assertEquals([needsCv("stage"), needsLetter("stage"), needsInternship("stage")], [true, false, true]);
   assertEquals([needsLetter("cv"), needsLetter("lettre"), needsLetter("pack"), needsInternship("pack")], [false, true, true, false]);
 });
