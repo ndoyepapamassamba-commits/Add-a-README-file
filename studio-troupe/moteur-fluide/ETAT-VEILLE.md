@@ -1,4 +1,4 @@
-# Moteur fluide — état au moment de la mise en veille (16/10/2026, 15 h 20)
+# Moteur fluide — état au moment de la mise en veille (16/10/2026, 15 h 20 ; chantier Blender : 18/10/2026, 10 h 20)
 
 Le projet est en **pause, à la demande du propriétaire**. Aucun calcul ne tourne. Tout le code est poussé sur la
 branche `claude/youthful-pasteur-7wbiqt` du dépôt `ndoyepapamassamba-commits/Add-a-README-file`, dossier
@@ -41,6 +41,7 @@ Notes de veille du moteur fluide :
 | 12 | Parole naturelle |
 | 13 | Visages |
 | 14 | Moteurs de squelette 2D (DragonBones, Rive, Godot) |
+| 21 | Outils gratuits à greffer à Blender (REA) |
 
 ## Ce qui est terminé
 
@@ -70,6 +71,67 @@ Notes de veille du moteur fluide :
   duaux, que la session « troupe village » a déjà.
 - Le décor est flou en gros plan, parce que la peinture ne fait que 1336×704.
 - La voix synthétique n'a pas l'accent ivoirien, et « Walay » est entendu « voilày ».
+
+## Chantier Blender (repris le 18/10/2026, remis en veille le même jour à 10 h 20)
+
+Demandes du propriétaire : « reconstituer la vidéo 041701 avec BLENDER », « utiliser REA pour chercher des outils à
+greffer au moteur BLENDER » (compris comme : recherche sur Internet, lecture du code, greffe), puis « trouver une
+solution à la rapidité de génération via BLENDER ». Tout a été arrêté proprement : aucun calcul ne tourne.
+
+### Installé et mesuré (scratchpad de la session, non versionné)
+
+- Blender 4.5.14 LTS, sans écran et sans GPU (4 cœurs).
+- **Durées mesurées par image**, sous la charge des autres agents :
+
+  | Moteur | Réglages | Format | Durée par image |
+  |---|---|---|---|
+  | Cycles | défaut, 32 échantillons + débruitage | 540×960 | ≈ 6 s |
+  | Cycles | « peinture exacte » (note 21) | bande 1080×860 | **0,8 à 1,2 s** (contre 20 à 28 s par défaut) |
+  | EEVEE | sans affichage, Mesa llvmpipe | 540×960 | inutilisable (EGL_BAD_MATCH, 43 s pour 1 image) ; ≈ 10 s sous Xvfb |
+  | EEVEE | Vulkan lavapipe | 540×960 | 11,4 s pour la 1re image (compilation des shaders), puis **2,4 à 2,7 s** |
+  | Workbench | sous Xvfb (`xvfb-run -a`) | 540×960 | **≈ 0,6 s, démarrage compris** (10 images d'un cube en 6,1 s) |
+
+  - Les réglages Cycles « peinture exacte » : émission + transparence, transformée Standard, rebonds 0, 2 à 4
+    échantillons, débruitage coupé.
+  - Pour Vulkan lavapipe : pilote extrait d'un paquet `mesa-vulkan-drivers` dans le scratchpad, chargé par
+    `VK_ICD_FILENAMES`, Blender lancé avec `--gpu-backend vulkan`.
+- **Fidélité des couleurs** (vs la peinture d'origine, erreur moyenne sur 255) : 0,16 en transformée « Standard », contre
+  7,4 en AgX (le réglage par défaut). Il faut toujours mettre la vue en Standard.
+
+### Terminé
+
+- `research_notes/Moteur d'animation fluide/21_rea_outils_blender.md` : 12 dépôts lus (licences vérifiées), classement
+  « à greffer maintenant ».
+  1. Personnage en pièces avec poids par chaleur restreints : un bras levé de 110° sans déchirure.
+  2. Réglages Cycles « peinture exacte ».
+  3. Vidéo → angles 2D → os : RTMW, filtres de Sports2D (BSD-3).
+  4. Bouches par atlas, pilotées par Rhubarb (MIT).
+  5. Mise en page TikTok par ffmpeg : bande à y = 530, fond agrandi ×2,23 et flouté.
+  6. Mouvement secondaire par nos ressorts analytiques.
+  7. Sol et ombres de contact.
+  8. Outils intégrés (Images as Planes, Lattice, NLA).
+- `studio-troupe/blender/outils/mesures.py` : mêmes définitions que le profil qualité de 041701, recalées au centième.
+
+### Arrêté en cours
+
+| Piste | Où elle en était | Fichiers |
+|---|---|---|
+| Analyse de 041701 | bande de scène mesurée, suivi RTMW des poses en cours, détourage en essai (ISNet, BiRefNet) ; transcription non faite | `blender/brouillons/analyse_041701/` ; données privées dans `.private/references/041701/travail/` (2,5 Go) |
+| Extraction des éléments (détourages, cour sans personnages, profondeur) | pas commencée (en file d'attente) | — |
+| Étude de vitesse | scène de banc presque finie ; bancs Workbench/EEVEE/Cycles, lanceur `rapide.py` et `VITESSE.md` pas faits | `blender/vitesse/scene_banc.py`, `blender/brouillons/vitesse/` |
+| Chaîne Blender de reconstitution, rendu, comparaison | pas commencée | plan dans `blender/brouillons/workflows/reconstitution-041701.js` |
+
+### Pour reprendre
+
+1. Finir l'étude de vitesse (`blender/brouillons/workflows/vitesse-blender.js`) :
+   - bancs Workbench (Xvfb), EEVEE (lavapipe) et Cycles « peinture exacte » sur `scene_banc.py` ;
+   - puis `rapide.py` : processus Blender persistants en parallèle, reprise, flou par sous-images, décor rendu une
+     seule fois.
+2. Reprendre la reconstitution (`blender/brouillons/workflows/reconstitution-041701.js`), dont le rendu passe déjà par
+   la route rapide : analyse et éléments, puis la chaîne bpy (pièces + poids par chaleur, angles RTMW filtrés,
+   bouches en atlas), puis le rendu et la comparaison avec `outils/mesures.py`.
+3. **Estimation à vérifier** : les 369 images de 041701 en bande 1080×860 prendraient de **5 à 7 min** en Cycles
+   « peinture exacte » (0,8 à 1,2 s par image), et probablement moins en Workbench.
 
 ## Retours de la session « troupe village », à intégrer à la reprise
 
