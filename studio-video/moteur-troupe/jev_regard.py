@@ -33,13 +33,12 @@ def question(x, y):
 TETE_MIN, IRIS_FORT, ECART_Y = 10.0, 0.5, 0.7
 
 
-def _iris(peint, cmd, borne=(1.1, 0.9)):
-    """position FINALE de l'iris (fraction de course), comme regard.applique : peinte + commande bornée."""
-    out = []
-    for k in (0, 1):
-        p = float(peint[k]) if peint else 0.0; g = float(cmd[k])
-        g = float(np.clip(g, min(0.0, -1 - p), max(0.0, 1 - p))); g = float(np.clip(g, -borne[k], borne[k])); out.append(p + g)
-    return out
+def _iris(peint, cmd):
+    """position FINALE de l'iris (fraction de course) : peinte + le déplacement que regard.applique applique vraiment."""
+    import regard
+    p = (float(peint[0]), float(peint[1])) if peint else (0.0, 0.0)
+    g = regard.deplacement(p, float(cmd[0]), float(cmd[1]))
+    return [p[0] + g[0], p[1] + g[1]]
 
 
 def local(dossier, T, M, acteurs):

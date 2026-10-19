@@ -11,7 +11,7 @@
 #      0,4 s AVANT qu'un personnage ne parle (il réagit d'abord) ; la chute surprend tout le monde.
 #   3. FLUIDITÉ : chaque canal suit sa cible par un ressort à amortissement critique (second ordre) — aucune vitesse ne saute,
 #      l'accélération est bornée ; amplitudes bornées par l'ENVELOPPE mesurée du personnage (rig2d.enveloppe).
-import math, os, re, zlib
+import json, math, os, re, zlib
 import numpy as np
 
 OMEGA = {'buste': 7.0, 'buste_lacet': 6.0, 'tete': 10.0, 'tete_lacet': 9.0, 'tete_tangage': 12.0, 'regard_x': 24.0, 'regard_y': 24.0,
@@ -129,6 +129,38 @@ def souple(x, fps, fc, garde=None):
         # −5,01 et −5,19, toutes les articulations au niveau humain, ampleur gardée à 99,3–100,4 %.
         xr = np.clip(filtfilt(*butter(2, min(PRISE_HZ, 0.45 * fps) / (fps / 2.0)), x), x.min(), x.max())
         y = y * (1 - garde) + xr * garde
+    return y.astype(np.float32)
+
+
+# ── GARDE DE SOUPLESSE (19/10/2026) — porte Q de l'épisode 1 v10 : les 10 % de fenêtres les plus raides de la tête (roulis)
+#    passaient sous le niveau humain (−5,97 contre −5,51), selon les prises de capture tirées pour chaque nouvelle frise ; le
+#    filtre fixe (souple) ne regarde pas le résultat. La garde calcule EXACTEMENT la mesure de la porte (SPARC sur fenêtres de
+#    4 s où l'articulation bouge, fluidite.sparc) et n'adoucit que les fenêtres plus raides que le seuil humain (+ marge),
+#    par un ressort critique passé dans les deux sens, fondu en cosinus sur la fenêtre : l'ampleur du reste est intacte.
+SOUPLESSE_MARGE = 0.2
+
+
+def garde_souplesse(x, fps, c):
+    import fluidite as FL
+    try: seuil = json.load(open(FL.SEUILS))['souplesse'][c]['p10'] + SOUPLESSE_MARGE
+    except Exception: return np.asarray(x, np.float32)
+    y = np.asarray(x, np.float64).copy(); fen = int(round(4.0 * fps)); n = len(y)
+    if n <= fen: return y.astype(np.float32)
+    def raides(z):
+        out = []
+        for i in range(0, n - fen, max(1, fen // 24)):   # pas fin : les fenêtres de la porte partent du début de chaque plan
+            v = np.abs(np.gradient(z[i:i + fen])) * fps
+            if v.mean() > 1.0 and FL.sparc(v, fps) < seuil: out.append(i)
+        return out
+    for om in (14.0, 10.0, 7.0, 5.0):
+        bad = raides(y)
+        if not bad: break
+        lisse = ressort(ressort(y, fps, om)[::-1], fps, om)[::-1].astype(np.float64)
+        w = np.zeros(n)
+        for i in bad:
+            a, b = max(0, i - fen // 4), min(n, i + fen + fen // 4); k = np.arange(b - a)
+            w[a:b] = np.maximum(w[a:b], 0.5 - 0.5 * np.cos(2 * np.pi * (k + 0.5) / (b - a)))
+        y = y * (1 - w) + lisse * w
     return y.astype(np.float32)
 
 
@@ -280,17 +312,22 @@ def couche_humaine(nom, L_sk, a_qui, cote, nf, fps, echelle, cotes_bras, graine,
     import mocap_jeu as mj
     M = {c: np.zeros(nf) for c in FRAC}; G = [np.zeros(nf) for _ in cotes_bras]; deja = set(); occupe = np.zeros(nf, bool)
     mes = [x for x in L_sk if x['qui'] == nom]
+    try:   # doublures BEAT2 : le style gestuel du personnage reste le même d'une réplique et d'un épisode à l'autre
+        import dictionnaire_humain as dh, controle_troupe as ct
+        dbl = dh.doublures(nom, ct.carte(nom)[0])
+    except Exception:
+        dbl = None
     for k, L in enumerate(mes):
         cib = attaques(L, graine + 0.11 * k, garder=1.0)
         i0 = int(round((L['t0'] - mj.PRE) * fps)); n_ = int(round((L['dur'] + mj.PRE + mj.POST) * fps))
         lay, info = mj.couche(L, cib, fps, n_, L.get('jeu', ''), graine=int(graine * 100) + k, echelle=echelle,
-                              cote=cote(a_qui[id(L)]), deja=deja, bras=cotes_bras)
+                              cote=cote(a_qui[id(L)]), deja=deja, bras=cotes_bras, doublures=dbl)
         if not lay: continue
         for c in M: _poser(M[c], lay.get(c, np.zeros(n_)), i0)
         for b in range(len(cotes_bras)): _poser(G[b], lay.get(f'geste_{b}', np.zeros(n_)), i0, 'max')
         occupe[max(0, i0):max(0, i0 + n_)] = True
         journal.append({'qui': nom, 't0': round(L['t0'], 2), 'role': 'parle', **info})
-    if not L_sk: return M, G
+    if not L_sk: return M, G, occupe
     t_deb = min(x['t0'] for x in L_sk) - 0.8; t_fin = max(x['t0'] + x['dur'] for x in L_sk) + 2.5
     i, b_ = max(0, int(t_deb * fps)), min(nf, int(t_fin * fps)); s_ = 0
     while i < b_:   # temps d'écoute : prises calmes, à cheval sur les fondus des répliques voisines
@@ -299,13 +336,14 @@ def couche_humaine(nom, L_sk, a_qui, cote, nf, fps, echelle, cotes_bras, graine,
         while j < b_ and not occupe[j] and j - i < 6 * fps: j += 1
         i0 = max(0, i - int(0.25 * fps)); n_ = min(nf, j + int(0.35 * fps)) - i0
         if n_ >= int(0.8 * fps):
-            lay, info = mj.couche(None, [], fps, n_, '', graine=int(graine * 100) + 50 + s_, ecoute=True, echelle=echelle, deja=deja)
+            lay, info = mj.couche(None, [], fps, n_, '', graine=int(graine * 100) + 50 + s_, ecoute=True, echelle=echelle, deja=deja,
+                                  doublures=dbl)
             for c in M:
                 if lay: _poser(M[c], lay.get(c, np.zeros(n_)), i0)
             if info: journal.append({'qui': nom, 't0': round(i0 / fps, 2), 'role': 'ecoute', **info})
             s_ += 1
         i = j
-    return M, G
+    return M, G, occupe
 
 
 def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=None, echelles=None, cotes_bras=None, reglages=None, journal=None,
@@ -464,7 +502,12 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         # ── couche « vrai humain » : capture de mouvement CMU calée sur les syllabes, à l'échelle de l'enveloppe
         if humain:
             ech = (echelles or {}).get(nom, 400.0); cb = (cotes_bras or {}).get(nom, [])
-            M, Gm = couche_humaine(nom, L_sk, a_qui, cote, nf, fps, ech, cb, g, journal)
+            M, Gm, occ = couche_humaine(nom, L_sk, a_qui, cote, nf, fps, ech, cb, g, journal)
+            # ÉCOUTE DÉCOUPLÉE DE LA PAROLE (19/10/2026) : un seul gain par canal, réglé sur les pics (95e centile) de toute la piste,
+            # faisait payer à l'écoute les pics des répliques — mesuré sur Baye (bulletin) : gain du lacet 0,98 → 0,66 dès que ses
+            # deux répliques prennent des gestes BEAT2, écoute identique mais 30 % plus petite. Gain de la parole et gain de l'écoute
+            # calculés chacun sur sa part, fondus en 0,3 s aux frontières
+            k_ = max(1, int(0.3 * fps)); w_occ = np.clip(np.convolve(occ.astype(float), np.ones(k_) / k_, 'same'), 0, 1)
             for c_, v_ in M.items():
                 lim = 0.0 if (c_ == 'bassin_x' and assis.get(nom)) else env.get(c_, LIM[c_])
                 # TÊTE QUI TOURNE COMME UN HUMAIN (18/10/2026, mesuré sur la v7, crête à crête sur 3 s contre 39 conversations
@@ -473,8 +516,12 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
                 # que le peu qui dépassait. Elle est désormais dimensionnée sur le squelette + VISAGE_PART du visage : le
                 # squelette reste borné (aucun étirement nouveau), le visage porte le reste
                 if c_ == 'tete_lacet' and RG.get('lacet_visage', 0) > 0: lim = lim + VISAGE_PART * RG['lacet_visage']
-                nz = np.abs(v_[np.abs(v_) > 1e-6]); p95 = float(np.percentile(nz, 95)) if len(nz) else 0.0
-                gain = min(RG['mocap'], FRAC[c_] * lim / p95) if p95 > 1e-6 else 0.0
+                def gain_(x):
+                    nz = np.abs(x[np.abs(x) > 1e-6]); p95 = float(np.percentile(nz, 95)) if len(nz) else 0.0
+                    return min(RG['mocap'], FRAC[c_] * lim / p95) if p95 > 1e-6 else 0.0
+                if RG.get('gain_ecoute', 1) and occ.any() and (~occ).any():
+                    gain = w_occ * gain_(v_[occ]) + (1 - w_occ) * gain_(v_[~occ])
+                else: gain = gain_(v_)
                 R[c_] = R[c_] + (gain * v_).astype(np.float32)
             for b, gm in enumerate(Gm):
                 if f'geste_{b}' in R: R[f'geste_{b}'] = (1 - (1 - np.clip(R[f'geste_{b}'], 0, 1)) * (1 - np.clip(RG['mocap'] * gm, 0, 1))).astype(np.float32)
@@ -527,6 +574,9 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
             k_ = max(1, int(0.2 * fps)); garde_ = np.clip(np.convolve(np.clip(prise, 0, 1), np.ones(k_) / k_, 'same'), 0, 1)
             for c_, fc_ in SOUPLESSE.items():
                 if c_ in R: R[c_] = souple(R[c_], fps, fc_, garde_)
+        if RG.get('garde_souplesse', 1):   # chaque articulation mesurée par la porte Q, au niveau humain sur toutes ses fenêtres
+            for c_ in ('tete_lacet', 'tete_tangage', 'tete', 'buste', 'buste_lacet'):
+                if c_ in R: R[c_] = garde_souplesse(R[c_], fps, c_)
         for e in EMOS: R['emo_' + e] = ressort(np.clip(E[e], 0, 1), fps, 10.0)
         if cl is not None: R['cligne'] = cl * (1 - 0.7 * np.clip(prise, 0, 1))   # yeux écarquillés : on cligne peu pendant la prise
         # bouche bée de la prise (commande de mâchoire 0..1, prise au maximum avec celle de la parole) ; fermée dès que le

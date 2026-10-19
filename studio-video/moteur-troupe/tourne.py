@@ -1327,6 +1327,11 @@ CODE_BASE = _h(CODE_BASE, [hashlib.sha1(open(os.path.join(_FILM, f), 'rb').read(
                sorted((f, os.path.getsize(os.path.join(_CMU, f))) for f in os.listdir(_CMU)) if os.path.isdir(_CMU) else None)
 CODE_BASE = _h(CODE_BASE, sorted((os.path.relpath(os.path.join(r, f), PD.RACINE), os.path.getsize(os.path.join(r, f))) for r, _, fs in os.walk(PD.RACINE) for f in fs)
                if os.path.isdir(PD.RACINE) and PD.ACTIF else None)   # planches de poses : un geste dessiné change le plan
+# dictionnaire humain (BEAT2) et réglages de la couche « vrai humain » par variables d'environnement : sans eux, un tournage
+# MOCAP_SOURCE=beat2+cmu reprenait les images d'un tournage MOCAP_SOURCE=cmu (constaté le 19/10/2026)
+_B2 = os.path.expanduser(os.environ.get('BEAT2_PISTES', '~/.cache/massamba-models/beat2-pistes'))
+CODE_BASE = _h(CODE_BASE, {k: os.environ.get(k) for k in ('MOCAP_SOURCE', 'MOCAP_BEAT_N', 'BEAT2_PISTES')},
+               (os.path.getsize(os.path.join(_B2, 'dictionnaire.json')), len(os.listdir(_B2))) if os.path.isfile(os.path.join(_B2, 'dictionnaire.json')) else None)
 def _dossier(d):
     L_ = []
     for r_, _, fs in os.walk(d):
