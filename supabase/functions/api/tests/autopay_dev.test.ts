@@ -56,6 +56,8 @@ Deno.test("autopay dev: manual checkout → exact amount → fake phone notifica
   assertEquals([paid.body.order.status, paid.body.order.paymentMethod, "document" in paid.body], ["paid", "manual", true]);
   const stats = await fetchJson("/api/admin/stats", { headers: { authorization: `Bearer ${DEV_ADMIN_KEY}` } });
   assertEquals(stats.body.health.phoneHook, true);
+  // In dev the admin page's MacroDroid link points at the local server, never at production.
+  assertEquals(stats.body.health.phoneHookUrl, `${ORIGIN}/api/payments/notify?k=${DEV_PHONE_HOOK_KEY}`);
   assert(stats.body.health.lastPhoneNotificationAt);
   assertEquals(stats.body.stats.today.revenue, 999);
   await Deno.remove(dir.replace(/\/cv$/, ""), { recursive: true });

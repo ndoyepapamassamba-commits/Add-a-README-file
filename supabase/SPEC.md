@@ -98,7 +98,9 @@ defaults to the digits of MANUAL_WAVE_NUMBER/OWNER_WAVE_MOBILE), `ADMIN_KEY`, `C
 `ALLOWED_RETURN_PREFIXES` (comma list; default:
 `https://ndoyepapamassamba-commits.github.io/Add-a-README-file/,https://rawcdn.githack.com/ndoyepapamassamba-commits/Add-a-README-file/,https://raw.githack.com/ndoyepapamassamba-commits/Add-a-README-file/`;
 non-https entries are dropped),
-`OPENROUTER_API_KEY`, `LLM_MODEL` (default `google/gemini-2.5-flash`).
+`OPENROUTER_API_KEY`, `LLM_MODEL` (default `google/gemini-2.5-flash`), `PUBLIC_API_BASE` (public https address
+of this function, default `https://seegnylaubuularegmku.supabase.co/functions/v1/api`, trailing slashes removed;
+non-https, query or fragment → default; dev.ts uses `http://localhost:<port>/api`).
 `http://localhost:<port>/` is added ONLY by dev.ts config, never by the production default — the
 production default list contains https prefixes only and validation rejects non-https outside dev.
 
@@ -135,7 +137,7 @@ Token comparison: sha256(token) compared to `access_token_hash` in constant time
 | `POST /wave/webhook` | Wave | See "Webhook". |
 | `POST /cron/reconcile` | `x-cron-secret` | See "Reconcile". 401 if header ≠ `cronSecret` (constant time) or `cronSecret` unset. |
 | `POST /cron/daily` | `x-cron-secret` | See "Daily payout". |
-| `GET /admin/stats` | `Authorization: Bearer ADMIN_KEY` | → 200 `{ stats: Stats, health: { wave, webhook, payout, manual, llm, ownerWaveMobile: formatted\|null } }`. 401 otherwise (also when ADMIN_KEY unset). |
+| `GET /admin/stats` | `Authorization: Bearer ADMIN_KEY` | → 200 `{ stats: Stats, health: { wave, webhook, payout, manual, llm, ownerWaveMobile: formatted\|null, phoneHook, phoneHookUrl, lastPhoneNotificationAt } }` (see "Autopay"). 401 otherwise (also when ADMIN_KEY unset). |
 | `POST /admin/orders/:id/unlock` | Bearer ADMIN_KEY | `markPaid(method "manual", paidAmount = order.amount)` → 200 `{ ok:true, changed }`. 404 if unknown. |
 
 `PublicOrder = { id, product, template, amount, currency, status, paymentMethod, paidAt, createdAt }`.
@@ -457,8 +459,13 @@ Settings `PHONE_HOOK_KEY` (secret sent by the owner's phone; unset → hook disa
 * **`POST /payments/confirm`** `{ o, c }`, `c = confirmToken(ADMIN_KEY, o)` = first 32 hex of
   HMAC-SHA256(ADMIN_KEY, "confirm:" + o) → `markPaid` → `{ ok:true, changed }`; invalid or no ADMIN_KEY → 401,
   unknown order → 404. Page `cv/confirmer.html?o=…&c=…` confirms only on a button press (never on GET).
-* **Admin.** `recentOrders` add `manual_amount`, `payment_detected_at`; `health` adds `phoneHook` and
-  `lastPhoneNotificationAt` (newest `phone.notification` event, carried by `tcv_stats`).
+* **Admin.** `recentOrders` add `manual_amount`, `payment_detected_at`; `health` adds `phoneHook`,
+  `lastPhoneNotificationAt` (newest `phone.notification` event, carried by `tcv_stats`) and `phoneHookUrl` =
+  `${PUBLIC_API_BASE}/payments/notify?k=${encodeURIComponent(PHONE_HOOK_KEY)}` (null without a key): the link the
+  owner pastes into MacroDroid. It is the only place the key leaves the server (never in `/config`, errors or logs).
+  admin.html shows it in the card "Relier mon téléphone (MacroDroid)": read-only monospace field that wraps,
+  "Copier le lien" (navigator.clipboard, else the field is selected), 6 short steps, "Ne partagez jamais ce lien",
+  and the same state as the "Téléphone relié" health line. Logging out empties the field.
 * **dev.ts** sets `PHONE_HOOK_KEY=dev-phone` and serves `/fake-phone` (GET page that posts a notification).
 * **Customer panel**: "Envoyez exactement 1 487 FCFA" with a copy button, why the amount is exact, one line
   "Les frais de transfert Wave sont à votre charge." (Wave charges the sender about 1 %), the number, "J'ai envoyé

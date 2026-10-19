@@ -6,7 +6,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
-import { api, DEV_ADMIN_KEY, DEV_CRON_SECRET, startDevServer } from "./lib/devserver.mjs";
+import { api, DEV_ADMIN_KEY, DEV_CRON_SECRET, DEV_PHONE_HOOK_KEY, startDevServer } from "./lib/devserver.mjs";
 import {
   assertNoHorizontalScroll,
   check,
@@ -274,6 +274,60 @@ async function manualCv(browser, server) {
   return { ...order, paidAmount: 999 }; // the unique amount asked and recorded by « Débloquer »
 }
 
+/**
+ * D — « Relier mon téléphone (MacroDroid) »: the secret link sent by GET /admin/stats only, « Copier le lien »
+ * (clipboard, then the select() fallback), the 6 steps, and MacroDroid's « Tester l'action » showing up on the
+ * « Téléphone relié » line after « Actualiser ». Ends logged out: the link must leave the page.
+ */
+async function phoneLinkCard(context, admin, server, label) {
+  await admin.waitForSelector("#phone-card:not([hidden])");
+  const field = admin.locator("#phone-url");
+  const link = await field.inputValue();
+  check(link === `${server.site}/api/payments/notify?k=${DEV_PHONE_HOOK_KEY}` && link.endsWith("k=dev-phone"), `${label}: « Relier mon téléphone » shows the MacroDroid link ${link}`);
+  check(await field.evaluate((f) => f.readOnly && getComputedStyle(f).fontFamily.includes("monospace")), `${label}: the link is in a read-only monospace field`);
+  const text = norm(await admin.locator("#phone-card").innerText());
+  check(text.includes("le site débloque ses documents tout seul") && text.includes("Ne partagez jamais ce lien"), `${label}: the card says why and « Ne partagez jamais ce lien »`);
+  check(await admin.locator("#phone-steps li").count() === 6, `${label}: the card lists the 6 MacroDroid steps`);
+  const box = await field.evaluate((f) => ({ sw: f.scrollWidth, cw: f.clientWidth, sh: f.scrollHeight, ch: f.clientHeight }));
+  check(box.sw <= box.cw && box.sh <= box.ch + 1, `${label}: the long link wraps inside its field and is fully visible (${box.cw} × ${box.ch} px)`);
+  await assertNoHorizontalScroll(admin, `${label} admin phone card`);
+  check(!JSON.stringify((await api(server, "GET", "/config")).body).includes(DEV_PHONE_HOOK_KEY), `${label}: /config never carries the phone key`);
+  await admin.locator("#phone-card").screenshot({ path: path.join(OUT, `D-phone-card-${server.payment}.png`) });
+
+  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: server.site });
+  await admin.click("#phone-copy");
+  await admin.waitForFunction(() => document.querySelector("#phone-copy").textContent.includes("Lien copié"));
+  check(await admin.evaluate(() => navigator.clipboard.readText()) === link, `${label}: « Copier le lien » puts the link on the clipboard and says « Lien copié »`);
+  // Clipboard refused (old browser, permission denied): the whole link is selected in its field instead.
+  await admin.evaluate(() => {
+    navigator.clipboard.writeText = () => Promise.reject(new DOMException("refused", "NotAllowedError"));
+    document.querySelector("#phone-copy-status").textContent = "";
+  });
+  await admin.click("#phone-copy");
+  await admin.waitForFunction(() => {
+    const f = document.activeElement;
+    return f?.id === "phone-url" && f.selectionStart === 0 && f.selectionEnd === f.value.length &&
+      document.querySelector("#phone-copy-status").textContent !== "";
+  });
+  check(true, `${label}: clipboard refused → the link is selected in its field (${norm(await admin.locator("#phone-copy-status").innerText())})`);
+
+  const phoneState = () => admin.locator("#phone-state").innerText().then(norm);
+  check((await phoneState()).includes("Aucun signal reçu pour le moment"), `${label}: before the test the card says « Aucun signal reçu pour le moment »`);
+  // MacroDroid « Tester l'action »: the notification text POSTed to the pasted link, from outside the browser.
+  const fromPhone = new URL(link);
+  fromPhone.hostname = "127.0.0.1";
+  const res = await fetch(fromPhone, { method: "POST", headers: { "content-type": "text/plain; charset=utf-8" }, body: "Test MacroDroid" });
+  check(res.status === 200 && (await res.json()).ok === true, `${label}: MacroDroid's test request to the copied link is accepted`);
+  await admin.click("#refresh");
+  await admin.waitForFunction(() => document.querySelector("#phone-state").textContent.includes("Dernier signal reçu le"));
+  const line = norm(await admin.locator("#health li", { hasText: "Téléphone relié (MacroDroid)" }).innerText());
+  check(line.includes("Dernier signal reçu le") && (await phoneState()).includes("Dernier signal reçu le"), `${label}: after « Actualiser » the « Téléphone relié » line shows the test (${line.split(" (actif)")[0]})`);
+
+  await admin.click("#logout");
+  await admin.waitForSelector("#login:not([hidden])");
+  check(await admin.locator("#phone-card").isHidden() && await field.inputValue() === "", `${label}: after « Se déconnecter » the link is gone from the page`);
+}
+
 /** D — admin revenue for today matches the paid orders; the nightly cron answers ok (and pays out in Wave mode). */
 async function revenueAndCron(browser, server, paidOrders) {
   const label = `D ${server.payment}`;
@@ -305,6 +359,7 @@ async function revenueAndCron(browser, server, paidOrders) {
   }
   await assertNoHorizontalScroll(admin, `${label} admin`);
   await shoot(admin, `D-admin-${server.payment}`, { fullPage: true });
+  await phoneLinkCard(context, admin, server, label);
   await context.close();
 }
 
@@ -374,7 +429,7 @@ async function main() {
     const b = await waveCancel(browser, wave);
     console.log("# C — manual mode, cv");
     const c = await manualCv(browser, manual);
-    console.log("# D — revenue and nightly cron");
+    console.log("# D — revenue, nightly cron and « Relier mon téléphone »");
     await revenueAndCron(browser, wave, [a, b]);
     await revenueAndCron(browser, manual, [c]);
     console.log("# F — private browsing and markup typed in the form");

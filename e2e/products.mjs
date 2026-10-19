@@ -4,14 +4,13 @@
 //   H — CV Premium, Wave mode: wizard with a photo kept on the phone, masked Prestige preview, fake Wave payment,
 //       PDF of at most 2 pages, Word and « CV web (.html) » downloads; manual mode asks 5 000 FCFA minus a unique offset.
 import path from "node:path";
-import { api, DEV_ADMIN_KEY } from "./lib/devserver.mjs";
+import { api, DEV_ADMIN_KEY, DEV_PHONE_HOOK_KEY } from "./lib/devserver.mjs";
 import { assertNoHorizontalScroll, check, norm, phoneContext, saveDownload } from "./lib/harness.mjs";
 import { hiddenFragments } from "./lib/leaks.mjs";
 import { libreOfficePages, pdfPageCount } from "./lib/office.mjs";
 import { next, stepSelector, tapChips } from "./lib/wizard.mjs";
 
 const ADMIN_AUTH = { headers: { authorization: `Bearer ${DEV_ADMIN_KEY}` } };
-const DEV_PHONE_HOOK_KEY = "dev-phone";
 const orderRoute = (order) => `/orders/${order.id}?t=${encodeURIComponent(order.token)}`;
 const fcfa = (n) => `${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} FCFA`;
 

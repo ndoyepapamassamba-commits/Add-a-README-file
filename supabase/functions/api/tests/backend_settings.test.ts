@@ -33,6 +33,21 @@ Deno.test("reloading app: settings rows configure the function, env vars win", a
   assertEquals((await s.stats("db-key")).status, 200, "ADMIN_KEY read from tcv.settings");
 });
 
+Deno.test("reloading app: PHONE_HOOK_KEY and PUBLIC_API_BASE from tcv.settings build the admin MacroDroid link", async () => {
+  const s = setup({}, {
+    ADMIN_KEY: "db-key",
+    PHONE_HOOK_KEY: "db-phone-secret",
+    PUBLIC_API_BASE: "https://api.example.org/functions/v1/api",
+  });
+  const stats = await s.stats("db-key");
+  assertEquals(stats.status, 200);
+  assertEquals((await stats.json()).health.phoneHookUrl, "https://api.example.org/functions/v1/api/payments/notify?k=db-phone-secret");
+  const refused = await s.stats("wrong");
+  assertEquals(refused.status, 401);
+  assertEquals((await refused.text()).includes("db-phone-secret"), false);
+  assertEquals(JSON.stringify(await s.config()).includes("db-phone-secret"), false, "/config never shows the key");
+});
+
 Deno.test("reloading app: settings are reloaded at most once per 60 s", async () => {
   const s = setup({}, { PRICE_CV: "1000" });
   assertEquals((await s.config()).prices.cv, 1000);

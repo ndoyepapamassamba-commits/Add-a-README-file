@@ -449,6 +449,22 @@ table.data tr:last-child td { border-bottom: 0; }
 .badge-fail { background: var(--danger-bg); color: var(--danger); }
 .badge-detected { background: #e3f6fd; color: var(--wave-ink); }
 .login-card { max-width: 440px; margin: 32px auto; }
+/* « Relier mon téléphone (MacroDroid) »: the long secret link wraps inside its field (no sideways scroll at 360 px). */
+.phone-card { margin: 0 0 24px; }
+.phone-card h2 { font-size: 1.2rem; }
+.phone-card h3 { font-size: 1.02rem; margin-top: 18px; }
+.phone-card .field { margin: 0 0 10px; }
+.phone-state { display: flex; gap: 10px; align-items: flex-start; background: var(--sand); border-radius: 10px; padding: 10px 12px; }
+.phone-state .dot { flex: none; width: 14px; height: 14px; border-radius: 50%; margin-top: 5px; background: #e0a100; }
+.phone-state.on .dot { background: #17a34a; }
+.phone-state > span:last-child { min-width: 0; }
+textarea.mono-field {
+  min-height: 0; resize: none; overflow: hidden; background: var(--sand);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", "DejaVu Sans Mono", monospace;
+  font-size: .9rem; line-height: 1.45; white-space: pre-wrap; word-break: break-all; overflow-wrap: anywhere;
+}
+.phone-steps { padding-left: 1.4em; margin: 0; }
+.phone-steps li { margin-bottom: 8px; }
 
 /* =====================================================================
    A4 documents. Font sizes are in em so TCVRender.fit() can scale the whole page from its root size.

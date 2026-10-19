@@ -72,6 +72,7 @@ L'argent arrive **directement sur votre Wave personnel**. Mais vous devez déblo
 
 **Encore plus simple : reliez votre téléphone.** Avec l'application gratuite MacroDroid (guide pas à pas :
 `MACRODROID.md`), votre téléphone transmet au site chaque notification Wave « Vous avez reçu … ».
+Le lien à coller dans MacroDroid est dans votre page admin, rubrique « Relier mon téléphone » (bouton « Copier le lien »).
 Le montant exact désigne la commande, qui se débloque toute seule, en général en moins d'une minute.
 Vous n'avez plus rien à faire. Seuls les cas douteux restent dans « Paiements à vérifier ».
 
@@ -188,6 +189,7 @@ Ils disent si chaque partie du système est prête.
 - **Versement** : l'envoi automatique du soir vers votre Wave personnel est activé.
 - **Mode manuel** : les clients peuvent payer par transfert Wave sur votre numéro.
 - **Téléphone relié (MacroDroid)** : votre téléphone transmet les notifications Wave au site. L'heure du dernier signal s'affiche.
+  Juste en dessous, la rubrique « Relier mon téléphone » donne votre lien secret et les 6 étapes. Ne partagez jamais ce lien.
 - **IA** : une aide qui améliore le style du texte. C'est optionnel. Le site marche sans.
 - **Votre numéro Wave** : le numéro qui reçoit l'argent du soir.
 

@@ -8,6 +8,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 export const REPO = path.resolve(import.meta.dirname, "../..");
 export const DEV_ADMIN_KEY = "dev-admin";
 export const DEV_CRON_SECRET = "dev-cron";
+export const DEV_PHONE_HOOK_KEY = "dev-phone";
 
 function freePort() {
   return new Promise((resolve, reject) => {

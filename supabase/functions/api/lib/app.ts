@@ -382,6 +382,10 @@ const adminStats: Handler = async (deps, req) => {
       llm: deps.enhance !== undefined,
       ownerWaveMobile: c.ownerWaveMobile ? formatSnMobile(c.ownerWaveMobile) : null,
       phoneHook: c.phoneHookKey !== null,
+      // The ready-to-paste MacroDroid address (it carries PHONE_HOOK_KEY): only ever sent here, behind ADMIN_KEY.
+      phoneHookUrl: c.phoneHookKey !== null
+        ? `${c.publicApiBase}/payments/notify?k=${encodeURIComponent(c.phoneHookKey)}`
+        : null,
       lastPhoneNotificationAt,
     },
   });

@@ -54,9 +54,14 @@ export function devConfig(port: number, payment: DevPayment): Config {
     CRON_SECRET: DEV_CRON_SECRET,
     PHONE_HOOK_KEY: DEV_PHONE_HOOK_KEY,
   }));
-  // The only place where an http:// return URL is accepted.
+  // The only place where an http:// return URL is accepted, and where the MacroDroid link of the admin page
+  // points at this local server instead of production.
   const local = [`http://localhost:${port}/`, "http://localhost:8787/"];
-  return { ...config, allowedReturnPrefixes: [...DEFAULT_RETURN_PREFIXES, ...new Set(local)] };
+  return {
+    ...config,
+    publicApiBase: `http://localhost:${port}/api`,
+    allowedReturnPrefixes: [...DEFAULT_RETURN_PREFIXES, ...new Set(local)],
+  };
 }
 
 const escapeHtml = (s: string) =>

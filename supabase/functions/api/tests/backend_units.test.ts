@@ -1,7 +1,7 @@
 // Small pure modules: phone numbers, configuration loading, identifiers and routing helpers.
 import { assert, assertEquals, assertMatch, assertNotEquals } from "jsr:@std/assert@1.0.13";
 import { formatSnMobile, normalizeSnMobile } from "../lib/phone.ts";
-import { DEFAULT_RETURN_PREFIXES, envFrom, loadConfig } from "../lib/config.ts";
+import { DEFAULT_PUBLIC_API_BASE, DEFAULT_RETURN_PREFIXES, envFrom, loadConfig } from "../lib/config.ts";
 import { constantTimeEqual, hashIp, newAccessToken, newOrderId, ORDER_ID_RE, sha256Hex } from "../lib/ids.ts";
 import { routePath } from "../lib/http.ts";
 import { cleanText, validateOrderRequest } from "../lib/validate.ts";
@@ -39,6 +39,7 @@ Deno.test("loadConfig: defaults from SPEC.md", () => {
     payoutFeeRate: 0.01,
     manualWaveNumber: null,
     phoneHookKey: null,
+    publicApiBase: "https://seegnylaubuularegmku.supabase.co/functions/v1/api",
     manualAutoConfirm: true,
     ownerWhatsapp: null,
     adminKey: null,
@@ -84,6 +85,18 @@ Deno.test("loadConfig: parsing rules and fallbacks", () => {
   assertEquals(c.allowedReturnPrefixes, ["https://example.org/site/", "https://ok.example/"]);
   assertEquals(loadConfig(envFrom({ ALLOWED_RETURN_PREFIXES: "http://x/" })).allowedReturnPrefixes, [...DEFAULT_RETURN_PREFIXES]);
   assertEquals(loadConfig(envFrom({ OWNER_WHATSAPP: "+221 70 111 22 33", MANUAL_WAVE_NUMBER: "770001122" })).ownerWhatsapp, "221701112233");
+});
+
+Deno.test("loadConfig: PUBLIC_API_BASE from env or tcv.settings, https only, trailing slashes removed", () => {
+  const base = (env: Record<string, string>, settings: Record<string, string> = {}) =>
+    loadConfig(envFrom(env), settings).publicApiBase;
+  assertEquals(DEFAULT_PUBLIC_API_BASE, "https://seegnylaubuularegmku.supabase.co/functions/v1/api");
+  assertEquals(base({}), DEFAULT_PUBLIC_API_BASE);
+  assertEquals(base({}, { PUBLIC_API_BASE: "https://api.example.org/functions/v1/api/" }), "https://api.example.org/functions/v1/api");
+  assertEquals(base({ PUBLIC_API_BASE: " https://env.example/api// " }, { PUBLIC_API_BASE: "https://db.example/api" }), "https://env.example/api");
+  for (const bad of ["http://plain.example/api", "not a url", "https://x.example/api?k=1", "https://x.example/api#f", "https://u:p@x.example/api", "ftp://x.example/"]) {
+    assertEquals(base({ PUBLIC_API_BASE: bad }), DEFAULT_PUBLIC_API_BASE, bad);
+  }
 });
 
 Deno.test("serviceKeyFromEnv: legacy service role key or SUPABASE_SECRET_KEYS.default", () => {

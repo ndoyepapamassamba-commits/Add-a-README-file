@@ -13,11 +13,10 @@ Le client voit ses documents en moins d'une minute. **Vous n'avez rien à faire.
 - Votre téléphone **Android**, celui où l'application Wave reçoit l'argent des clients.
 - Internet sur ce téléphone (données mobiles ou Wi-Fi).
 - 10 minutes.
-- Deux informations que l'assistant vous donne en privé :
-  - l'adresse du site : **{API}**
-  - votre clé secrète : **{CLÉ}**
+- **Votre lien secret** : le lien affiché dans votre page de compte rendu (la page admin), rubrique « Relier mon téléphone » (bouton « Copier le lien »).
+  Personne n'a besoin de vous l'envoyer. Ouvrez la page admin sur ce même téléphone : le copier-coller est plus simple.
 
-Ne montrez jamais la clé à personne.
+Ne montrez jamais ce lien à personne.
 
 ## Installer (une seule fois)
 
@@ -28,10 +27,8 @@ Ne montrez jamais la clé à personne.
    Pour le contenu, choisissez **« Tout contenu »**. Touchez **OK**.
 5. Dans **Actions**, touchez **+**. Ouvrez **« Connectivité »**, puis choisissez **« Requête HTTP »**.
 6. Méthode : choisissez **POST**.
-7. Adresse (URL) : écrivez exactement, sans espace :
-
-   `{API}/payments/notify?k={CLÉ}`
-
+7. Adresse (URL) : collez le lien affiché dans votre page de compte rendu (la page admin), rubrique « Relier mon téléphone » (bouton « Copier le lien »).
+   Ne changez rien. N'ajoutez pas d'espace.
 8. Corps de la requête : choisissez **« Texte »**.
    Touchez le bouton des **textes magiques** (souvent « … » ou une petite étiquette).
    Insérez **« Titre de la notification »**, tapez un espace, puis insérez **« Texte de la notification »**.
@@ -51,7 +48,7 @@ Ne montrez jamais la clé à personne.
 
 Si l'heure ne s'affiche pas :
 
-- vérifiez l'adresse : elle commence par `https://`, sans espace, avec `?k=` puis la clé ;
+- vérifiez l'adresse : copiez-la de nouveau avec le bouton « Copier le lien », puis collez-la sans rien changer ;
 - vérifiez que le téléphone a Internet ;
 - refaites l'étape 11 (accès aux notifications).
 
@@ -68,11 +65,14 @@ Si l'heure ne s'affiche pas :
 
 - Le texte de la notification contient le nom et le numéro du client. Il est gardé avec la commande,
   puis effacé automatiquement, comme le reste (30 jours au plus).
-- Si vous pensez que quelqu'un a vu votre clé, demandez une nouvelle clé à l'assistant.
-  L'ancienne ne marchera plus.
+- Si vous pensez que quelqu'un a vu votre lien, demandez un nouveau lien à l'assistant.
+  L'ancien ne marchera plus. Copiez le nouveau lien dans MacroDroid (étape 7).
 
 ---
 
-Note pour l'assistant (technique) : {API} = l'adresse de la fonction `api` (voir `supabase/SPEC.md`).
-{CLÉ} = la valeur de `PHONE_HOOK_KEY`, à créer (longue et aléatoire) dans `tcv.settings` ou dans les secrets
-de la fonction, jamais dans le dépôt. `MANUAL_AUTO_CONFIRM=false` garde la détection sans débloquer tout seul.
+Note pour l'assistant (technique) : le lien = `PUBLIC_API_BASE` (par défaut
+`https://seegnylaubuularegmku.supabase.co/functions/v1/api`) + `/payments/notify?k=` + `PHONE_HOOK_KEY` encodée.
+Il n'est renvoyé que par `GET /admin/stats` (clé admin) et affiché dans la rubrique « Relier mon téléphone ».
+`PHONE_HOOK_KEY` : longue et aléatoire, dans `tcv.settings` ou dans les secrets de la fonction, jamais dans le dépôt
+ni dans une discussion. Nouveau lien = nouvelle valeur de `PHONE_HOOK_KEY`. `MANUAL_AUTO_CONFIRM=false` garde la
+détection sans débloquer tout seul.

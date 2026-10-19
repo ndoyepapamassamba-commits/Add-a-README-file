@@ -248,3 +248,78 @@ Deno.test("admin stats: phoneHook and the last phone notification (also for igno
   assertEquals("lastPhoneNotificationAt" in after.stats, false, "reported in health only");
   assertEquals((await admin(manualHarness({ PHONE_HOOK_KEY: undefined }))).body.health.phoneHook, false);
 });
+
+// --- MacroDroid link: GET /admin/stats → health.phoneHookUrl (the only place the phone key is shown) ----
+
+/** Distinctive key with characters that must be URL-encoded ("Zq8" appears in it raw and encoded). */
+const SECRET_HOOK = "Zq8-hook+/=&?#é secret";
+
+Deno.test("admin stats: phoneHookUrl is the ready MacroDroid link (PUBLIC_API_BASE + encoded key)", async () => {
+  const h = manualHarness();
+  assertEquals(
+    (await admin(h)).body.health.phoneHookUrl,
+    "https://seegnylaubuularegmku.supabase.co/functions/v1/api/payments/notify?k=test-hook-key",
+    "default base: the production api function",
+  );
+
+  const custom = manualHarness({ PHONE_HOOK_KEY: SECRET_HOOK, PUBLIC_API_BASE: "https://api.example.org/functions/v1/api/" });
+  const link = (await admin(custom)).body.health.phoneHookUrl as string;
+  assertEquals(link, `https://api.example.org/functions/v1/api/payments/notify?k=${encodeURIComponent(SECRET_HOOK)}`);
+  const url = new URL(link);
+  assertEquals([...url.searchParams.keys()], ["k"]);
+  assertEquals(url.searchParams.get("k"), SECRET_HOOK, "the key survives the round trip (+, /, &, ?, #, é, space)");
+
+  // The link works exactly as copied into MacroDroid, and « Tester l'action » shows up in health.
+  const res = await custom.app(new Request(link, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ text: "Test MacroDroid" }),
+  }));
+  assertEquals([res.status, (await res.json()).ok], [200, true]);
+  assert(typeof (await admin(custom)).body.health.lastPhoneNotificationAt === "string");
+
+  assertEquals((await admin(manualHarness({ PHONE_HOOK_KEY: undefined }))).body.health.phoneHookUrl, null, "no key → no link");
+});
+
+Deno.test("admin stats: the MacroDroid link needs the right admin key", async () => {
+  const h = manualHarness({ PHONE_HOOK_KEY: SECRET_HOOK });
+  const tries: Record<string, string>[] = [{}, { authorization: "Bearer wrong" }, { authorization: ADMIN_KEY }, { authorization: `Bearer ${ADMIN_KEY}x` }];
+  for (const headers of tries) {
+    const res = await h.call("GET", "/admin/stats", { headers });
+    assertEquals(res.status, 401, JSON.stringify(headers));
+    assert(!JSON.stringify(res.body).includes("Zq8"));
+  }
+  assertEquals((await admin(h)).status, 200);
+  const noAdminKey = manualHarness({ PHONE_HOOK_KEY: SECRET_HOOK, ADMIN_KEY: undefined });
+  const refused = await noAdminKey.call("GET", "/admin/stats", { headers: { authorization: "Bearer " } });
+  assertEquals(refused.status, 401, "ADMIN_KEY unset → nobody gets the link");
+});
+
+Deno.test("the phone key never leaves GET /admin/stats: /config, customer routes, errors and logs", async () => {
+  const h = manualHarness({ PHONE_HOOK_KEY: SECRET_HOOK });
+  const seen: string[] = [];
+  const keep = <R extends { headers: Headers; body: unknown }>(r: R): R => {
+    seen.push(typeof r.body === "string" ? r.body : JSON.stringify(r.body));
+    r.headers.forEach((v) => seen.push(v));
+    return r;
+  };
+  const config = keep(await h.call("GET", "/config"));
+  assertEquals(config.status, 200);
+  assert(!JSON.stringify(config.body).includes("notify"), "/config carries no MacroDroid link");
+  keep(await h.call("GET", "/health"));
+  const o = await manualOrder(h);
+  seen.push(JSON.stringify(o.body));
+  keep(await h.call("GET", `/orders/${o.id}?t=${encodeURIComponent(o.token)}`));
+  keep(await h.call("POST", `/orders/${o.id}/manual-paid`, { body: { t: o.token } }));
+  keep(await h.call("GET", "/nope"));
+  keep(await h.call("GET", "/admin/stats", { headers: { authorization: "Bearer wrong" } }));
+  keep(await notify(h, { text: received("1 499") }, { key: "wrong" }));
+  keep(await notify(h, "{", { key: SECRET_HOOK, contentType: "application/json" }));
+  keep(await notify(h, { text: received("7 777") }, { key: SECRET_HOOK }));
+  keep(await notify(h, { text: received("1 499") }, { key: SECRET_HOOK, header: true }));
+  assertEquals((await h.store.getOrder(o.id))?.status, "paid");
+  const all = [...seen, ...h.logs.warn, ...h.logs.error].join("\n");
+  assert(h.logs.warn.length > 0, "the unmatched notification was logged");
+  assert(!all.includes("Zq8"), "the key appears in no response, header or log line");
+  assert(!all.includes(encodeURIComponent(SECRET_HOOK)));
+});

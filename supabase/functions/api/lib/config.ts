@@ -13,6 +13,9 @@ export const DEFAULT_RETURN_PREFIXES: readonly string[] = [
 
 export const DEFAULT_LLM_MODEL = "google/gemini-2.5-flash";
 
+/** Public address of the `api` function: base of the MacroDroid link shown to the owner in GET /admin/stats. */
+export const DEFAULT_PUBLIC_API_BASE = "https://seegnylaubuularegmku.supabase.co/functions/v1/api";
+
 /** How long index.ts keeps the tcv.settings snapshot before reloading it. */
 export const SETTINGS_TTL_MS = 60_000;
 
@@ -56,6 +59,22 @@ function returnPrefixes(get: Get): string[] {
   return list.length ? list : [...DEFAULT_RETURN_PREFIXES];
 }
 
+/** PUBLIC_API_BASE: an https address without query or fragment, trailing slashes removed; else the default. */
+function publicApiBase(get: Get): string {
+  const raw = get("PUBLIC_API_BASE");
+  if (raw === null) return DEFAULT_PUBLIC_API_BASE;
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return DEFAULT_PUBLIC_API_BASE;
+  }
+  if (url.protocol !== "https:" || !url.hostname || url.search || url.hash || url.username || url.password) {
+    return DEFAULT_PUBLIC_API_BASE;
+  }
+  return url.origin + url.pathname.replace(/\/+$/, "");
+}
+
 export function loadConfig(envGet: EnvGet, settings: Record<string, string> = {}): Config {
   const get = reader(envGet, settings);
   const ownerWaveMobile = normalizeSnMobile(get("OWNER_WAVE_MOBILE") ?? "");
@@ -72,6 +91,7 @@ export function loadConfig(envGet: EnvGet, settings: Record<string, string> = {}
     payoutFeeRate: rate(get, "PAYOUT_FEE_RATE", 0.01),
     manualWaveNumber,
     phoneHookKey: get("PHONE_HOOK_KEY"),
+    publicApiBase: publicApiBase(get),
     manualAutoConfirm: !/^(false|0|no|non|off)$/i.test(get("MANUAL_AUTO_CONFIRM") ?? ""),
     ownerWhatsapp: digits(get("OWNER_WHATSAPP")) ?? digits(manualWaveNumber ?? ownerWaveMobile),
     adminKey: get("ADMIN_KEY"),

@@ -355,6 +355,7 @@ export interface Config {
   payoutFeeRate: number; // default 0.01
   manualWaveNumber: string | null; // display number for manual Wave transfers (bridge mode), null => disabled
   phoneHookKey: string | null; // PHONE_HOOK_KEY: secret the owner's phone (MacroDroid) sends to POST /payments/notify
+  publicApiBase: string; // PUBLIC_API_BASE (https, no trailing slash): base of the MacroDroid link in GET /admin/stats
   manualAutoConfirm: boolean; // MANUAL_AUTO_CONFIRM (default true): a matching Wave notification unlocks the order at once
   ownerWhatsapp: string | null; // digits only, international, no "+"
   adminKey: string | null;

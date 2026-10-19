@@ -67,6 +67,29 @@
     <h2>État du système</h2>
     <ul class="health" id="health"></ul>
 
+    <section class="card phone-card" id="phone-card" hidden aria-labelledby="phone-title">
+      <h2 id="phone-title">Relier mon téléphone (MacroDroid)</h2>
+      <p class="phone-state" id="phone-state"></p>
+      <p>Ainsi, quand Wave vous prévient qu'un client vous a envoyé l'argent, le site débloque ses documents tout seul.</p>
+      <div class="field">
+        <label for="phone-url">Votre lien secret pour MacroDroid</label>
+        <textarea id="phone-url" class="mono-field" rows="3" readonly spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+      </div>
+      <button type="button" class="btn btn-primary btn-block" id="phone-copy"><span class="btn-label">Copier le lien</span></button>
+      <p class="status" id="phone-copy-status" role="status" aria-live="polite"></p>
+      <p class="banner banner-warn"><strong>Ne partagez jamais ce lien.</strong> Avec lui, quelqu'un pourrait débloquer des commandes sans payer. Si quelqu'un l'a vu, demandez un nouveau lien à l'assistant.</p>
+      <h3>Les étapes (une seule fois, 10 minutes)</h3>
+      <ol class="phone-steps" id="phone-steps">
+        <li>Sur le téléphone Android qui reçoit l'argent Wave, installez <strong>MacroDroid</strong> depuis le Play Store. C'est gratuit.</li>
+        <li>Ouvrez MacroDroid. Touchez «&nbsp;Ajouter une macro&nbsp;». Déclencheur&nbsp;: «&nbsp;Notification reçue&nbsp;», application <strong>Wave</strong>, «&nbsp;Tout contenu&nbsp;».</li>
+        <li>Action&nbsp;: «&nbsp;Connectivité&nbsp;», puis «&nbsp;Requête HTTP&nbsp;». Méthode&nbsp;: <strong>POST</strong>.</li>
+        <li>Adresse (URL)&nbsp;: collez le lien copié ci-dessus. Corps&nbsp;: «&nbsp;Texte&nbsp;», avec «&nbsp;Titre de la notification&nbsp;», un espace, puis «&nbsp;Texte de la notification&nbsp;».</li>
+        <li>Enregistrez la macro. Autorisez l'accès aux notifications. Batterie de MacroDroid&nbsp;: «&nbsp;Sans restriction&nbsp;».</li>
+        <li>Touchez «&nbsp;Tester l'action&nbsp;», puis «&nbsp;Actualiser&nbsp;» en haut de cette page&nbsp;: la ligne «&nbsp;Téléphone relié&nbsp;» affiche l'heure du test.</li>
+      </ol>
+      <p class="hint mt">Guide détaillé avec des explications&nbsp;: MACRODROID.md.</p>
+    </section>
+
     <h2>Commandes récentes</h2>
     <div class="table-wrap" tabindex="0" role="region" aria-label="Commandes récentes (défilement horizontal)">
       <table class="data">

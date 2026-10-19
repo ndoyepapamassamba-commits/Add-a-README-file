@@ -96,6 +96,7 @@ Deno.test("admin stats report revenue, orders and configuration health", async (
     llm: false,
     ownerWaveMobile: "+221 77 123 45 67",
     phoneHook: false,
+    phoneHookUrl: null,
     lastPhoneNotificationAt: null,
   });
   const bare = makeHarness({ wave: null, env: { MANUAL_WAVE_NUMBER: "770000000", OWNER_WAVE_MOBILE: "123", WAVE_WEBHOOK_SECRET: undefined } });
@@ -107,6 +108,7 @@ Deno.test("admin stats report revenue, orders and configuration health", async (
     llm: false,
     ownerWaveMobile: null,
     phoneHook: false,
+    phoneHookUrl: null,
     lastPhoneNotificationAt: null,
   });
 });

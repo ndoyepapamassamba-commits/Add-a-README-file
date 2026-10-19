@@ -13,6 +13,7 @@
   var REFRESH_MS = 60000;
   var adminKey = null;
   var refreshTimer = null;
+  var copyTimer = null;
 
   // Every label on this page matches the owner guide (LANCEMENT-CV.md, section 7): keep both in sync.
   var STATUS = {
@@ -41,6 +42,7 @@
 
   function showLogin(message) {
     stopRefresh();
+    hidePhoneCard();
     $("#dash").hidden = true;
     $("#login").hidden = false;
     setText($("#login-error"), message || "");
@@ -84,8 +86,87 @@
       h.phoneHook ? "Aucun signal reçu pour le moment" : "Pas encore relié",
       "Chaque transfert Wave reçu sur votre téléphone débloque tout seul la commande qui a ce montant exact.",
       h.phoneHook
-        ? "Dans MacroDroid, touchez « Tester l'action » : l'heure doit s'afficher ici (guide MACRODROID.md)."
+        ? "Suivez « Relier mon téléphone » juste en dessous, puis touchez « Tester l'action » dans MacroDroid : l'heure doit s'afficher ici."
         : "Facultatif : reliez votre téléphone (guide MACRODROID.md) pour que les transferts Wave débloquent les commandes tout seuls. Il faut la clé PHONE_HOOK_KEY."];
+  }
+
+  /** Grows the link field to its content so the whole link is visible (it wraps, never scrolls sideways). */
+  function fitField(field) {
+    field.style.height = "0px";
+    field.style.height = field.scrollHeight + (field.offsetHeight - field.clientHeight) + "px";
+  }
+
+  function resetCopy() {
+    clearTimeout(copyTimer);
+    setText($(".btn-label", $("#phone-copy")), "Copier le lien");
+    setText($("#phone-copy-status"), "");
+  }
+
+  /** Logged out: the secret link must not stay in the page. */
+  function hidePhoneCard() {
+    $("#phone-card").hidden = true;
+    $("#phone-url").value = "";
+    resetCopy();
+  }
+
+  /**
+   * « Relier mon téléphone (MacroDroid) »: the secret link (sent by GET /admin/stats only), the steps, and the
+   * same state as the « Téléphone relié » line, so the owner sees « Tester l'action » arrive after « Actualiser ».
+   */
+  function renderPhoneCard(h) {
+    if (!h.phoneHookUrl) {
+      hidePhoneCard();
+      return;
+    }
+    var item = phoneItem(h);
+    var on = !!item[0];
+    var state = TCV.dom.clear($("#phone-state"));
+    state.className = "phone-state " + (on ? "on" : "off");
+    state.appendChild(el("span", { class: "dot", "aria-hidden": "true" }));
+    state.appendChild(el("span", null, [
+      el("strong", { text: item[1] + "\u00a0: " }),
+      on ? item[2] : item[3],
+      el("span", { class: "sr-only", text: on ? " (actif)" : " (inactif)" })
+    ]));
+    var field = $("#phone-url");
+    if (field.value !== h.phoneHookUrl) {
+      field.value = h.phoneHookUrl;
+      resetCopy();
+    }
+    $("#phone-card").hidden = false;
+    fitField(field);
+  }
+
+  function selectLink(field) {
+    field.focus();
+    field.select();
+    field.setSelectionRange(0, field.value.length);
+  }
+
+  /** navigator.clipboard first; otherwise the link is selected in its field (and copied when the browser allows it). */
+  function copyPhoneLink() {
+    var field = $("#phone-url");
+    var label = $(".btn-label", $("#phone-copy"));
+    var status = $("#phone-copy-status");
+    function copied() {
+      setText(label, "Lien copié ✓");
+      setText(status, "Lien copié. Collez-le dans MacroDroid, à l'étape 4.");
+      clearTimeout(copyTimer);
+      copyTimer = setTimeout(function () { setText(label, "Copier le lien"); }, 3000);
+    }
+    function bySelection() {
+      selectLink(field);
+      var ok = false;
+      try {
+        ok = document.execCommand("copy");
+      } catch (e) {
+        ok = false;
+      }
+      if (ok) copied();
+      else setText(status, "Le lien est sélectionné\u00a0: appuyez longuement dessus, puis touchez «\u00a0Copier\u00a0».");
+    }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(field.value).then(copied, bySelection);
+    else bySelection();
   }
 
   function renderHealth(h) {
@@ -202,6 +283,7 @@
     var health = res.health || {};
     renderKpis(stats, health);
     renderHealth(health);
+    renderPhoneCard(health);
     renderUnlock(stats.recentOrders || []);
     renderOrders(stats.recentOrders || []);
     renderPayouts(stats.payouts || []);
@@ -276,6 +358,11 @@
       var btn = $("#refresh");
       TCV.dom.busy(btn, true, "Actualisation…");
       load().then(function () { TCV.dom.busy(btn, false); });
+    });
+    $("#phone-copy").addEventListener("click", copyPhoneLink);
+    $("#phone-url").addEventListener("click", function () { selectLink($("#phone-url")); });
+    window.addEventListener("resize", function () {
+      if (!$("#phone-card").hidden) fitField($("#phone-url"));
     });
     $("#logout").addEventListener("click", function () {
       TCV.store.remove(KEY_STORE);
