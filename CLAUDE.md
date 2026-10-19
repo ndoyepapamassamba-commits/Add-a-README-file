@@ -23,7 +23,11 @@ livrés automatiquement. Spécification complète : `supabase/SPEC.md`. Guide du
   (`verify_jwt = false`). Déploiement : `deno bundle --external 'npm:*' --minify supabase/functions/api/index.ts -o /tmp/index.js`
   puis `deploy_edge_function` (fichier unique `index.ts`). Réglages privés dans `tcv.settings`
   (jamais dans le dépôt). Tâches pg_cron : `tcv-reconcile` (10 min) et `tcv-daily` (20 h 30).
-  La fonction SQL `tcv_purge` demande une confirmation Supabase (elle contient un DELETE).
+  Les migrations à partir de 000003 ne contiennent jamais le mot DELETE (l'outil de déploiement
+  demande sinon une confirmation interactive) : `tcv_purge` efface les données par UPDATE.
+  Produits : cv, lettre, pack, stage (Pack Stage), premium (CV Premium, 5 000 FCFA).
+  Paiement manuel « autopay » : montant unique par commande + notification Wave relayée par le
+  téléphone du propriétaire (MacroDroid → POST /payments/notify, clé PHONE_HOOK_KEY dans tcv.settings).
 - Site : dossier `cv/`, publié par GitHub Pages depuis la branche `gh-pages`
   (https://ndoyepapamassamba-commits.github.io/Add-a-README-file/cv/). Publier = pousser un commit
   testé sur `gh-pages`. Ne pas utiliser githack (page d'avertissement devant le site).
