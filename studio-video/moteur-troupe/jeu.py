@@ -156,6 +156,21 @@ def lisse_acc(x, fps, acc=ACC_FLUIDE):
     return np.ascontiguousarray(y, np.float32)
 
 
+def remontee_ecoute(lacet, ecoute, fps, centre=None, borne=20.0):
+    """remontée finale de l'écoute : la composante LENTE du lacet est portée à `centre` degrés vers l'orateur (`ecoute` : −1
+    à gauche, +1 à droite, 0 sans orateur). Remontée signée (poids signé × manque, nulle quand l'écoute change de côté),
+    filtrée à 0,6 Hz, minimum doux avec la place restante jusqu'à la butée (aucun palier à coins), garde de fluidité."""
+    from scipy.signal import butter, filtfilt
+    centre = ECOUTE_CENTRE if centre is None else centre
+    Fe = ressort(np.asarray(ecoute, np.float64) * 1.0, fps, 6.0); ws = np.clip(Fe, -1, 1); se = np.sign(ws)
+    y_ = np.asarray(lacet, np.float64); ba_, aa_ = butter(2, RESERVE_HZ / (fps / 2.0))
+    leve = ws * np.clip(centre - se * filtfilt(ba_, aa_, y_), 0, None)
+    leve = filtfilt(*butter(2, 0.6 / (fps / 2.0)), leve)   # remontée lente
+    B_ = max(borne, float(np.abs(y_).max()))   # seule la remontée est bornée : la parole garde son ampleur
+    sl_ = np.sign(leve); m_ = np.abs(leve); place_ = np.clip(B_ - sl_ * y_, 0, None)
+    m_ = m_ * place_ / np.power(m_ ** 6 + place_ ** 6 + 1e-12, 1 / 6)   # min(m, place) arrondi
+    return lisse_acc((y_ + sl_ * m_).astype(np.float32), fps)
+
 # SOUPLESSE MESURÉE CONTRE DE VRAIS HUMAINS (18/10/2026) — remarque de l'utilisateur : « Affine les mouvements en les rendant
 # plus souples ». Indice SPARC (Balasubramanian et al., 2015, arc spectral de la vitesse : plus proche de 0 = plus souple)
 # par fenêtre de 4 s, sur les pistes des ep01 v5 et ep02 v1 contre 39 prises de capture CMU (vrais corps) : tête tournée
@@ -701,14 +716,12 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         #    d'écoute ci-dessus précède la réserve vive (moitié de l'enveloppe au mouvement lent) et l'ampleur humaine, qui
         #    rabotent la position tournée vers celui qui parle et y ajoutent des oscillations de ±2° : la tête repassait sous 2°.
         #    En dernier, seule la composante LENTE est remontée à ECOUTE_CENTRE vers l'orateur ; les oscillations restent intactes
+        #    v12 → porte I (Maman 2,89 > 2,5 à 36,3 s) : la remontée butait sur l'enveloppe (6° pour un visage de trois quarts)
+        #    et la borne franche faisait un palier à −6° avec deux coins ; et le signe de l'écoute basculait sous une remontée
+        #    non nulle. Remontée SIGNÉE (poids signé × manque : nulle quand l'écoute change de côté), filtrée, puis minimum
+        #    doux avec la place restante jusqu'à la butée (aucun coin) ; garde de fluidité en dernier
         if RG.get('ecoute_finale', 1) and RG.get('yeux', 1):
-            Fe = ressort(ecoute_ * 1.0, fps, 6.0); we = np.clip(np.abs(Fe), 0, 1); se = np.sign(Fe)
-            from scipy.signal import butter, filtfilt
-            y_ = R['tete_lacet'].astype(np.float64); ba_, aa_ = butter(2, RESERVE_HZ / (fps / 2.0))
-            manque = np.clip(we * RG.get('ecoute_centre', ECOUTE_CENTRE) - se * filtfilt(ba_, aa_, y_), 0, None)
-            manque = np.clip(filtfilt(*butter(2, 0.6 / (fps / 2.0)), manque), 0, None)   # remontée lente, sans coin
-            lim_ = env.get('tete_lacet', 20.0)   # seule la remontée est bornée : la parole garde son ampleur (pas de borne douce globale)
-            R['tete_lacet'] = np.clip(y_ + se * manque, -max(lim_, np.abs(y_).max()), max(lim_, np.abs(y_).max())).astype(np.float32)
+            R['tete_lacet'] = remontee_ecoute(R['tete_lacet'], ecoute_, fps, RG.get('ecoute_centre', ECOUTE_CENTRE), env.get('tete_lacet', 20.0))
         for e in EMOS: R['emo_' + e] = ressort(np.clip(E[e], 0, 1), fps, 10.0)
         if cl is not None: R['cligne'] = cl * (1 - 0.7 * np.clip(prise, 0, 1))   # yeux écarquillés : on cligne peu pendant la prise
         # bouche bée de la prise (commande de mâchoire 0..1, prise au maximum avec celle de la parole) ; fermée dès que le

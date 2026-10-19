@@ -63,9 +63,14 @@ for _a, _s in JUGES.values():
 
 
 def lance(args, sortie):
-    t0 = time.time(); p = EN_COURS.pop(args[0], None)
-    if p: p[0].wait(); t0 = p[1]
-    elif not os.path.isfile(sortie) or os.environ.get('QUALITE_REFAIT'):
+    t0 = time.time(); p = EN_COURS.pop(args[0], None); tue = False
+    if p:
+        p[0].wait(); t0 = p[1]
+        # JUGE TUÉ (19/10/2026, v12) : controle_video et jev_mouvement (3 à 7 Go chacun, en parallèle) tués par le noyau faute
+        # de mémoire, sans une ligne d'erreur → portes H et L muettes. Un juge tué par un signal est relancé SEUL, ici
+        tue = p[0].returncode is not None and p[0].returncode < 0 and not os.path.isfile(sortie)
+        if tue: print(f'{os.path.basename(args[0])} tué (signal {-p[0].returncode}) : relancé seul', flush=True)
+    if (not p or tue) and (tue or not os.path.isfile(sortie) or os.environ.get('QUALITE_REFAIT')):
         r_ = subprocess.run([sys.executable, *args], capture_output=True, text=True); os.makedirs(f'{D}/juges', exist_ok=True)
         open(f"{D}/juges/{os.path.basename(args[0])}.err", 'w').write(r_.stderr or '')
     DUREES[os.path.basename(args[0])] = round(time.time() - t0, 1)

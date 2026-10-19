@@ -68,6 +68,28 @@ def adoucit(y, sr, part=PART_AIGUS, plancher_db=-15.0):   # −15 dB (v4 à −9
     return np.pad(out, (0, max(0, n - len(out))))[:n]
 
 
+def garde_aigus(y, sr, seuil_db=-11.5, tours=4):
+    """BOUCLE FERMÉE SUR LE CONTRÔLE (19/10/2026, v12 : une sifflante à −9,8 dB à 40,9 s pour −10 admis). adoucit() juge
+    chaque trame à sa propre énergie ; aigus() juge l'énergie au-dessus de 5 kHz par rapport à la parole MÉDIANE : un mot
+    fort au timbre normal passait. Ici, sur les mêmes fenêtres de 0,1 s que le contrôle, la bande > 5 kHz est baissée de
+    l'excès exact au-dessus de `seuil_db` (1,5 dB de marge pour le mastering), gain lissé sur 30 ms (aucun clic), puis
+    remesurée jusqu'à conformité. Les fenêtres conformes ne sont pas touchées."""
+    import scipy.signal as ss_
+    y = np.asarray(y, np.float64); w = int(0.1 * sr); sos = ss_.butter(4, 5000, 'high', fs=sr, output='sos'); k = max(1, int(0.03 * sr))
+    for _ in range(tours):
+        yh = ss_.sosfiltfilt(sos, y, axis=0); n = len(range(0, len(y) - w, w))
+        if n == 0: break
+        r = np.array([np.sqrt(np.mean(y[i * w:i * w + w] ** 2)) for i in range(n)])
+        h = np.array([np.sqrt(np.mean(yh[i * w:i * w + w] ** 2)) for i in range(n)])
+        ref = float(np.median(r[r > 0.1 * r.max()])) if r.max() > 0 else 1.0
+        exces = 20 * np.log10(h / ref + 1e-9) - seuil_db
+        if (exces <= 0).all(): break
+        g = np.ones(len(y)); g[:n * w] = np.repeat(10 ** (-np.clip(exces + 0.3, 0, None) / 20), w)
+        g = uniform_filter1d(minimum_filter1d(g, 2 * k + 1), 2 * k + 1)   # la baisse couvre toute la fenêtre, bords en rampe
+        y = y - yh * (1 - (g[:, None] if y.ndim > 1 else g))
+    return y
+
+
 def aigus(y, sr, lignes=None, cibles=None, seuil_db=-10.0, rapport_f0=1.6):
     """contrôle : fenêtres de 0,1 s où l'énergie au-dessus de 5 kHz (sifflantes, souffles) dépasse `seuil_db` sous le niveau
     médian de la parole (v3 : jusqu'à −2,7 dB, « aigu par moments » ; après adoucit() : −11,6 dB au pire), et répliques dont

@@ -161,6 +161,34 @@ try:
 except Exception as e:
     echecs.append(f'bras : {e}')
 
+# régressions de la v12 devenues contrôles (19/10/2026) : (1) l'écoute qui bute sur l'enveloppe de 6° ne fait plus de palier à
+# coins (porte I : Maman 2,89 > 2,5) ; (2) une sifflante forte est ramenée sous le seuil du contrôle sans toucher le reste
+# (porte N : −9,8 dB à 40,9 s) ; (3) un juge tué par le noyau est relancé seul (portes H et L muettes)
+try:
+    import numpy as _np, importlib as _il
+    _je = _il.import_module('jeu'); _so = _il.import_module('sonie')
+    f_ = 30; t_ = _np.arange(20 * f_) / f_
+    ec_ = _np.where((t_ % 8) < 4, -1.0, 1.0); ec_[(t_ % 4) > 3.2] = 0.0                     # l'orateur change de côté
+    y0_ = 5.5 * _np.sign(_np.sin(2 * _np.pi * t_ / 8)) * -1 + 1.5 * _np.sin(2 * _np.pi * 0.9 * t_)   # déjà près de la butée
+    y_ = _je.remontee_ecoute(y0_.astype(_np.float32), ec_, f_, 4.0, 6.0)
+    acc_ = float(_np.abs(y_[2:] - 2 * y_[1:-1] + y_[:-2]).max())
+    if acc_ > 2.5: echecs.append(f'écoute : à-coup {acc_:.2f} > 2,5 quand la remontée bute sur l’enveloppe')
+    if _np.abs(y_).max() > max(6.0, _np.abs(y0_).max()) + 0.05: echecs.append('écoute : la remontée dépasse l’enveloppe')
+    sr_ = 48000; n_ = 4 * sr_; tt_ = _np.arange(n_) / sr_; rg_ = _np.random.default_rng(5)
+    voix_ = 0.3 * _np.sin(2 * _np.pi * 180 * tt_) * (1 + 0.5 * _np.sin(2 * _np.pi * 3 * tt_))
+    sif_ = _np.zeros(n_); sif_[int(1.5 * sr_):int(1.6 * sr_)] = 0.25 * rg_.standard_normal(int(0.1 * sr_))   # « s » trop fort
+    from scipy.signal import butter as _bu, sosfiltfilt as _sf
+    x_ = voix_ + _sf(_bu(4, 6000, 'high', fs=sr_, output='sos'), sif_)
+    if not _so.aigus(x_, sr_): echecs.append('son : le banc de sifflante n’est pas détecté (banc invalide)')
+    z_ = _so.garde_aigus(x_, sr_)
+    if _so.aigus(z_, sr_): echecs.append(f'son : sifflante encore au-dessus du seuil après la garde ({_so.aigus(z_, sr_)[:1]})')
+    if _np.abs(z_[:sr_] - x_[:sr_]).max() > 1e-6: echecs.append('son : la garde des sifflantes touche une parole conforme')
+    src_ = open(os.path.join(ICI, 'moteur-troupe', 'qualite.py'), encoding='utf-8').read()
+    if 'returncode < 0' not in src_ or 'relancé seul' not in src_: echecs.append('portes : un juge tué par le noyau n’est pas relancé')
+    print(f'écoute en butée sans à-coup ({acc_:.2f}), sifflante ramenée sous le seuil, juge tué relancé')
+except Exception as e:
+    echecs.append(f'v12 : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

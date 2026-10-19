@@ -246,15 +246,17 @@ def controles_utilisateur(D, q):
     leg = open(f'{D}/legende.txt', encoding='utf-8').read() if os.path.isfile(f'{D}/legende.txt') else ''
     R['credits_dans_la_legende_pas_a_l_image (18/10)'] = ('CC BY' in leg, None)
     P = q.get('portes', {})
+    det = lambda k: (P.get(k) or {}).get('detail') or {}   # porte non jugée : détail absent (v12 : P_choc → None)
     son = json.load(open(f'{D}/jev_son.json')) if os.path.isfile(f'{D}/jev_son.json') else {}
     def_son = son.get('synthese', {}).get('defauts', [])
     R['son_pas_aigu (18/10)'] = ('son_aigu' not in def_son, [a for a in son.get('feuille', {}).get('aigus_mesures', [])][:5])
     R['rires_apres_chaque_chute (18/10)'] = ('rires_absents' not in def_son, None)
-    R['visage_de_choc_net_sans_sourcils_doubles (18/10)'] = (bool(P.get('P_choc', {}).get('ok')), P.get('P_choc', {}).get('detail', {}).get('fautes'))
-    g = P.get('G_jev', {}).get('detail', {})
-    R['visages_non_deformes (18/10)'] = (len(g.get('visages_deformes', [])) == 0, len(g.get('visages_deformes', [])))
-    R['mouvements_souples_sans_saccade (18/10)'] = (not P.get('L_mouvement', {}).get('detail', {}).get('saccade'), P.get('L_mouvement', {}).get('detail', {}).get('saccade'))
-    R['regards_vers_le_partenaire (17/10)'] = (bool(P.get('D_regard', {}).get('ok')), P.get('D_regard', {}).get('detail', {}).get('fautes'))
+    R['visage_de_choc_net_sans_sourcils_doubles (18/10)'] = (bool((P.get('P_choc') or {}).get('ok')), det('P_choc').get('fautes'))
+    g = det('G_jev')
+    vd = g.get('visages_deformes')   # None = porte G non jugée : jamais compté comme conforme
+    R['visages_non_deformes (18/10)'] = (isinstance(vd, list) and not vd, len(vd) if isinstance(vd, list) else 'non jugé')
+    R['mouvements_souples_sans_saccade (18/10)'] = ('saccade' in det('L_mouvement') and not det('L_mouvement')['saccade'], det('L_mouvement').get('saccade', 'non jugé'))
+    R['regards_vers_le_partenaire (17/10)'] = (bool((P.get('D_regard') or {}).get('ok')), det('D_regard').get('fautes'))
     return {k: {'ok': bool(v[0]), 'detail': v[1]} for k, v in R.items()}
 
 

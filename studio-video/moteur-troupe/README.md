@@ -215,3 +215,17 @@ glissait encore jusqu'à 16°) : Tantie 28° → 8° et 4°, mains restées sur 
 tourne de 28° sur le tronc ; avec elle, 0°. Écoute : porte D de la v11 à 0,23–0,50 (normes humaines appliquées après le
 plancher d'écoute) ; la position lente de l'auditeur est désormais remontée en dernier (`ECOUTE_CENTRE` 4°) : 0,85 à 1,00
 hors tournage, mouvements de tête gardés (écoute 1,5 à 5,4° par seconde).
+
+v12 (19/10/2026) : les deux défauts signalés sont vérifiés absents sur toute leur scène (planches de contrôle à 2 images par
+seconde, maquis 0–19,5 s et loyer 46,4–68,3 s : une seule main de Coumba, mains de Tantie sur les hanches) et la porte D
+passe (0,83 à 1,00). Trois régressions de la v12 corrigées et devenues contrôles : (1) porte I — la remontée d'écoute de
+Maman butait sur son enveloppe de 6° (visage de trois quarts) et la borne franche faisait un palier à coins (2,89 pour 2,5
+admis, 36,3 s) ; `jeu.remontee_ecoute` signe la remontée (nulle quand l'écoute change de côté), la filtre et la plafonne
+par un minimum doux (2,13 sur le banc fidèle `pistes_fideles`, qui reproduit le 2,89 du film au centième ; l'ancien code
+donne 11,29 au contrôle, le nouveau 1,18) ; (2) porte N — une sifflante à −9,8 dB sous la parole médiane (seuil −10) à
+40,9 s : le dé-esseur juge chaque trame à sa propre énergie, le contrôle à la parole médiane, et le limiteur du mastering
+comprime la parole forte mais pas les sifflantes ; `sonie.garde_aigus`, après le mastering, baisse la bande > 5 kHz des
+seules fenêtres en excès (0,6 % des échantillons touchés ; −13,9 LUFS et −2,3 dBTP gardés) ; (3) portes H et L muettes —
+`controle_video` et `jev_mouvement` (3 à 7 Go chacun, en parallèle) tués par le noyau faute de mémoire, sans une ligne
+d'erreur ; `qualite.lance` relance seul un juge tué par un signal. Contrôles utilisateur : une porte non jugée (détail
+absent) n'est plus une erreur du rapport ni une réussite.
