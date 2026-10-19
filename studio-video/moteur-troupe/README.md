@@ -152,3 +152,14 @@ Tournage du bulletin (1 512 images, 3 min 53 s) : tête ≥ 3° Baye 31 → 69 %
 1,25 s → 0,73 s (humain 0,94), pointe 59 → 97°/s (humain 87) ; porte Q passée. Le dictionnaire passe en version 2 : angles des
 bras dans le plan de l'écran (`bras_f`, `coude_f`, `raccourci`) pour les bras à deux segments (1 428 enregistrements reconvertis
 en 577 s, 0 erreur).
+
+Bras à deux segments — essai du 19/10/2026 sur la cour (Maman, Baye, Petit Mamadou), refusé à l'image : bras fantômes,
+avant-bras « en nouille » (demi-largeur 5,6 px), bras manquant dès la pose de repos. Causes mesurées : les repères MediaPipe
+sont faux sur ces dessins (Baye : épaules, coudes et poignets décalés de 41 à 129 px, poignets posés sur la robe), et le
+dessous du bras reconstitué laisse un fantôme. Greffe en cours, dans l'ordre : (1) repères par RTMW (rtmlib, Apache-2.0,
+entraîné aussi sur des dessins, HumanArt) — mesuré : épaules et coudes de Baye à leur place, Maman à moins de 6 px de
+MediaPipe sauf un coude (43 px), un poignet de Petit Mamadou corrigé de 52 px ; (2) bras découpé par SAM 2.1 guidé par ces
+repères (déjà juste sur le bras nu de Maman ; manches du même tissu que le corps encore à séparer) ; (3) dessous du bras
+complété par FLUX.2 [klein] (local, Apache-2.0) et jugé par les contrôles existants (fantôme, couleur étrangère) ;
+(4) angles BEAT2 v2 sur les deux calques. Réussite : pose de repos identique au dessin, bras ≥ 6° sur plus de 60 % des
+secondes de parole, sans fantôme ni étirement (médiane ≤ 0,05).
