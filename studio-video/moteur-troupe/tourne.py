@@ -145,7 +145,7 @@ def profondeur(d, plate):
     # silhouettes y étaient « proches » et, en parallaxe, le décor derrière eux glissait comme un objet du premier plan
     import hashlib
     cle = hashlib.md5(cv2.resize(plate, (96, 96), interpolation=cv2.INTER_AREA).tobytes()).hexdigest()[:10]
-    cache = f'{d}/profondeur-{cle}.png'
+    cache = f'{d}/profondeur-{cle}-s1.png'   # -s1 : objets posés solidaires de leur support (19/10/2026)
     if os.path.isfile(cache): return cv2.imread(cache, 0).astype(np.float32) / 255
     import onnxruntime as ort
     s_ = ort.InferenceSession(os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/depth-anything-v2-small.onnx', providers=['CPUExecutionProvider'])
@@ -155,8 +155,32 @@ def profondeur(d, plate):
     dd = s_.run(None, {'pixel_values': x.transpose(2, 0, 1)[None]})[0][0]
     lo, hi = np.percentile(dd, 1), np.percentile(dd, 99); dd = np.clip((dd - lo) / max(1e-6, hi - lo), 0, 1)   # 1 = près
     dd = cv2.resize(dd.astype(np.float32), (W_, H_), interpolation=cv2.INTER_CUBIC)
+    dd = objets_solidaires(plate, dd)
     cv2.imwrite(cache, (dd * 255).astype(np.uint8)); cv2.imwrite(f'{d}/profondeur.png', (dd * 255).astype(np.uint8))   # la courante, lue par entites
     return dd
+def objets_solidaires(plate, dd):
+    """OBJETS SOLIDAIRES DE LEUR SUPPORT (19/10/2026) : sur le maquis, Depth Anything mettait la viande du plat plus loin
+    (0,62) que le bord du plat (0,89) ; en poussée de caméra la viande glissait sur le plat (0,3 px par image, mesuré). Un
+    objet posé (ADE20K : assiette, nourriture, verre, bouteille, plateau, marmite) prend la profondeur de son support : la
+    médiane d'une bande juste sous lui ; bord adouci."""
+    try:
+        import objets, prepare_rig
+        P_ = objets.probas(plate, {'objet': prepare_rig.OBJETS_POSES})
+    except Exception: return dd
+    if P_ is None: return dd
+    obj = cv2.morphologyEx((P_['objet'] > 0.5).astype(np.uint8), cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
+    n_, lab_, st_, _ = cv2.connectedComponentsWithStats(obj); out_ = dd.copy(); poids = np.zeros_like(dd)
+    for i_ in range(1, n_):
+        x_, y_, w_, h_, a_ = st_[i_]
+        if a_ < 80: continue
+        c_ = lab_ == i_; bas = np.zeros_like(c_); y1_ = min(dd.shape[0], y_ + h_ + max(4, h_ // 4))
+        bas[y_ + h_:y1_, x_:x_ + w_] = True; bas &= ~c_
+        if bas.sum() < 20: continue
+        out_[c_] = float(np.median(dd[bas])); poids[c_] = 1.0
+    if not poids.any(): return dd
+    poids = cv2.GaussianBlur(cv2.dilate(poids, np.ones((5, 5), np.uint8)), (0, 0), 2.0)
+    out_ = cv2.GaussianBlur(out_, (0, 0), 1.0)
+    return (dd * (1 - poids) + out_ * poids).astype(np.float32)
 def facteur_parallaxe(dep, acts, H_, W_):
     """vitesse apparente de chaque point du décor par rapport aux acteurs : 1 au niveau de leurs pieds, 1 − P au plus
     loin, jusqu'à 1 + P/2 au premier plan ; lissée pour ne jamais déchirer l'image."""
@@ -231,7 +255,7 @@ for sk in T['sketchs']:
                 assis_ = prepare_rig.assis(a); box_ = rig2d.boite(a['bbox'], img.shape)
                 R_ = rig2d.preparer(im_a, al, a['pts'], a['bbox'], memo.memo(gestes.classes, img, box_), plaque=plate, bras=bras_, segmente=gestes.classes, visage3d=v3, assis=assis_)
                 dl = f'{d}/expressions/{sl}'
-                A_['xl'] = expressions_lp.charge(dl, im_a, v3, alpha=R_['alpha_corps']) if os.path.isfile(f'{dl}/meta.json') and v3 is not None else None   # la découpe suit le visage
+                A_['xl'] = expressions_lp.charge_rapide(dl, im_a, v3, alpha=R_['alpha_corps']) if os.path.isfile(f'{dl}/meta.json') and v3 is not None else None   # la découpe suit le visage
                 src00 = im_a   # le visage tel qu'il sera tourné au repos : les yeux du regard sont pris dessus (pas de saut au premier coup d'œil)
                 if A_['xl']: src00 = expressions_lp.colle(im_a, A_['xl'], expressions_lp.visage(A_['xl'], {}, 0.0))
                 elif lib:
@@ -1142,7 +1166,7 @@ def nettete(im, k):
     d = np.where(np.abs(d) > 3.0, d, 0.0)
     return np.clip(f + a * d, 0, 255).astype(np.uint8)
 def morceau(bloc):
-    for f in bloc: rend(f)
+    for f in bloc: (mesure_seule if SANS_RENDU else rend)(f)
     if MESURE and MESURES:
         with open(f'{OUT}/mesures-{os.getpid()}.jsonl', 'a') as fh:
             for m_ in MESURES: fh.write(json.dumps(m_, ensure_ascii=False) + '\n')
@@ -1354,7 +1378,32 @@ def _lien(a, b):
     try: os.link(a, b)
     except OSError: shutil.copy2(a, b)
 CLES, REPRIS = {}, []
-if CACHE != '0':
+# TOURNAGE SANS RENDU (19/10/2026, « produire un film entier en 1 minute pour accélérer les tests ») : tout le jeu est calculé
+# (pistes, cadres, réalisateur, regards, visages) mais aucune image n'est dessinée ; seules les mesures image par image des
+# acteurs sont écrites, à la grille de 30 Hz, avec les MÊMES valeurs que le rendu (pose du squelette, lacet du visage, regard,
+# émotions, mâchoire) — de quoi juger en une minute les portes D (écoute, regards), E (automate), I (fluidité) et la
+# souplesse de Q. L'étirement (porte C) et tout ce qui se voit à l'image ne sont pas mesurés dans ce mode.
+SANS_RENDU = os.environ.get('TOURNE_SANS_RENDU') == '1'
+def mesure_seule(f):
+    t = f / FPS
+    if not mesure_ici(t) or (in_card(t) and not REG['carte_sur_scene']): return
+    s = shot_at(t)
+    if s[2] not in SC: return
+    S = SC[s[2]]
+    for name, A in S['acts'].items():
+        if not A.get('rig') or name not in S['pistes']: continue
+        P = S['pistes'][name]; k = min(NF - 1, max(0, int(round(t * FPS)))); v = lambda c: float(P[c][k])
+        jj = machoire(name, t)
+        if 'bouche_bee' in P: jj = max(jj, v('bouche_bee'))
+        emo = {e: v('emo_' + e) for e in jeu.EMOS if P['emo_' + e][k] > 0.02}
+        pose = pose_rig(A['rig'], P, k)
+        MESURES.append(dict(qui=name, t=round(t, 3), etirement=(0.0, 0.0), sans_rendu=True, bouche=round(float(jj), 3), emotions={c: round(x_, 2) for c, x_ in emo.items()},
+                            pose={**{c: (round(x_, 2) if not isinstance(x_, (tuple, list)) else [round(float(y_), 2) for y_ in x_]) for c, x_ in pose.items() if c != 'gestes'},
+                                  **({'lacet_visage': round(v('lacet_visage'), 2)} if 'lacet_visage' in P else {})},
+                            bras=[round(float(g_[0]), 1) for g_ in pose.get('gestes') or []], regard=round(v('regard_x'), 2),
+                            regard_y=round(v('regard_y'), 2) if 'regard_y' in P else 0.0, regard_peint=[round(x_, 2) for x_ in regard.peint(A.get('yeux'))],
+                            lacet_peint=A.get('env', {}).get('lacet_peint')))
+if CACHE != '0' and not SANS_RENDU:
     os.makedirs(CACHE, exist_ok=True); par_plan = {}
     for f in RANGE:
         t_ = f / FPS

@@ -38,7 +38,9 @@ def son(qui, sorte, k=0):
     a = max(0, int(np.argmax(e > thr)) - int(0.02 * sr)); b = min(len(x), len(x) - int(np.argmax(e[::-1] > thr)) + int(0.05 * sr))
     x = x[a:b][:int(DUREE_MAX[sorte] * sr)]
     _, _, f0t, spread, _, fm = voix.CAST[qui]
-    y = voix.shape(x, sr, f0t, min(spread, 1.2), fm, False, sorte == 'choc').astype(np.float64) / 32768
+    # NORME DE HAUTEUR (19/10/2026, « la voix est encore aiguë par moments ») : le souffle de choc de Maman montait à 1,24 fois
+    # sa hauteur (p95 1,32) — même boucle mesurée que les répliques (voix.forme_mesuree), sans la bosse d'exclamation
+    y = voix.forme_mesuree(x, sr, f0t, min(spread, 1.2), fm, False, False).astype(np.float64) / 32768
     import scipy.signal as ss_
     y = ss_.sosfiltfilt(ss_.butter(4, PASSE_BAS[sorte], 'low', fs=sr, output='sos'), y)
     n = len(y); y *= np.minimum(1, np.arange(n) / (0.01 * sr)) * np.minimum(1, (n - np.arange(n)) / (0.12 * sr))   # fondus

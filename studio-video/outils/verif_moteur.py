@@ -190,6 +190,47 @@ try:
 except Exception as e:
     echecs.append(f'v12 : {e}')
 
+# 19/10/2026 — (1) MUSIQUE DE FOND sous la parole : au moins 20 dB sous chaque fenêtre de parole (WCAG 1.4.7), présente entre
+# les répliques ; (2) NORME DE HAUTEUR : une réplique à 1,3 × la hauteur visée est une faute (contrôle resserré, ancien 1,6 ×) ;
+# (3) ESSAI ÉCLAIR câblé (tournage sans rendu, portes mesurables, bande son en temps masqué) ; (4) PERMANENCE DES OBJETS et
+# SOURCILS sur la scène du maquis quand la bibliothèque privée est présente (MASSAMBA_BIBLIO)
+try:
+    import numpy as _np, importlib as _il
+    _mu = _il.import_module('musique'); _so = _il.import_module('sonie')
+    sr_ = _mu.SR; n_ = 12 * sr_; tt_ = _np.arange(n_) / sr_
+    parle_ = ((tt_ % 3) < 2).astype(_np.float32)                                              # 2 s de parole, 1 s de silence
+    v_ = (0.3 * _np.sin(2 * _np.pi * 160 * tt_) * parle_).astype(_np.float32)
+    lit_ = (0.4 * _np.sin(2 * _np.pi * 98 * tt_) * (1 + _np.sin(2 * _np.pi * 1.7 * tt_))).astype(_np.float32)   # tapis bruyant
+    out_, mes_ = _mu.mixe_tapis(v_, lit_)
+    if mes_['pire_ecart_tapis_moins_parole_db'] > -20.0: echecs.append(f"musique : tapis à {mes_['pire_ecart_tapis_moins_parole_db']} dB de la parole (≤ −20 exigé)")
+    if not mes_.get('tapis_entre_les_repliques_vs_parole_mediane_db') or mes_['tapis_entre_les_repliques_vs_parole_mediane_db'] < -40:
+        echecs.append('musique : tapis inaudible entre les répliques')
+    import scipy.signal as _ss
+    sr2_ = 22050; t2_ = _np.arange(2 * sr2_) / sr2_; c_ = 150.0
+    def _voix(f):   # train d'impulsions glottiques avec vibrato (Harvest ne suit pas une sinusoïde pure)
+        ph_ = 2 * _np.pi * _np.cumsum(f * (1 + 0.02 * _np.sin(2 * _np.pi * 5 * t2_))) / sr2_
+        return _ss.sosfiltfilt(_ss.butter(4, 3000, 'low', fs=sr2_, output='sos'), 0.3 * _ss.sawtooth(ph_))
+    f_ = _so.aigus(_voix(1.3 * c_), sr2_, [{'qui': 'X', 't0': 0.0, 'dur': 2.0}], {'X': c_})
+    if not any(x_.get('sorte') == 'hauteur' for x_ in f_): echecs.append('voix : une réplique à 1,3 × la hauteur visée passe le contrôle')
+    if any(x_.get('sorte') == 'hauteur' for x_ in _so.aigus(_voix(c_), sr2_, [{'qui': 'X', 't0': 0.0, 'dur': 2.0}], {'X': c_})):
+        echecs.append('voix : une réplique à la hauteur visée est refusée')
+    src_u = open(os.path.join(ICI, 'moteur-troupe', 'usine.py'), encoding='utf-8').read()
+    src_t = open(os.path.join(ICI, 'moteur-troupe', 'tourne.py'), encoding='utf-8').read()
+    src_q = open(os.path.join(ICI, 'moteur-troupe', 'qualite.py'), encoding='utf-8').read()
+    if "def eclair(" not in src_u or "TOURNE_SANS_RENDU" not in src_t or "QUALITE_ECLAIR" not in src_q or 'bande_livree' not in src_u:
+        echecs.append('éclair : essai sans rendu non câblé (usine.eclair, tourne TOURNE_SANS_RENDU, qualite QUALITE_ECLAIR)')
+    if 'objets_attaches_aux_acteurs' not in src_q or 'sourcils_ecart_bibliotheque' not in src_q:
+        echecs.append('portes : permanence des objets (K) ou sourcils (P) absents')
+    bib_ = os.path.expanduser(os.environ.get('MASSAMBA_BIBLIO', ''))
+    mq_ = os.path.join(bib_, 'prep', 'maquis') if bib_ else ''
+    if mq_ and os.path.isfile(os.path.join(mq_, 'rig', 'scene_rig.json')):
+        _pr = _il.import_module('prepare_rig'); at_ = _pr.objets_attaches(mq_)
+        if at_ and any(at_.values()): echecs.append(f'objets : objets posés encore attachés aux acteurs du maquis {at_}')
+        print(f'maquis : objets attachés {at_}')
+    print(f"musique sous la parole ({mes_['pire_ecart_tapis_moins_parole_db']} dB au pire), hauteur 1,3 × refusée, essai éclair câblé")
+except Exception as e:
+    echecs.append(f'19/10 : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

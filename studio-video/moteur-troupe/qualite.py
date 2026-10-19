@@ -53,6 +53,12 @@ JUGES = {'cadre': ([f'{ICI}/cadre.py', 'juge', MP4, f'{ICI}/gabarit_tiktok.json'
          'son': ([f'{ICI}/jev_son.py', TL, 'voix/mix.wav', mus_, f'{D}/bande.wav', f'{D}/jev_son.json'], f'{D}/jev_son.json'),
          'choc': ([f'{ICI}/jev_choc.py', MP4, f'{D}/tournage.json', TL, f'{D}/jev_choc.json'], f'{D}/jev_choc.json')}
 import time
+# ESSAI ÉCLAIR (19/10/2026, « produire un film entier en 1 minute pour accélérer les tests ») : tournage sans rendu
+# (tourne.py TOURNE_SANS_RENDU=1) et bande son livrée ; seuls les juges qui ne regardent pas d'image sont lancés, les autres
+# portes sont déclarées « non mesurées (sans rendu) » — jamais réussies
+ECLAIR = os.environ.get('QUALITE_ECLAIR') == '1'
+JUGES_ECLAIR = ('regard', 'son')
+if ECLAIR: JUGES = {k: v for k, v in JUGES.items() if k in JUGES_ECLAIR}
 EN_COURS = {}
 for _a, _s in JUGES.values():
     if not os.path.isfile(_s) or os.environ.get('QUALITE_REFAIT'):
@@ -62,7 +68,8 @@ for _a, _s in JUGES.values():
         EN_COURS[_a[0]] = (subprocess.Popen([sys.executable, *_a], stdout=subprocess.DEVNULL, stderr=open(f"{D}/juges/{os.path.basename(_a[0])}.err", 'w')), time.time())
 
 
-def lance(args, sortie):
+def lance(args, sortie=None):
+    if args is None: return None   # juge écarté en essai éclair
     t0 = time.time(); p = EN_COURS.pop(args[0], None); tue = False
     if p:
         p[0].wait(); t0 = p[1]
@@ -91,7 +98,7 @@ def scene(sid):
 
 
 # ── A. rythme et mouvement (cadre.py) ──
-v = lance(*JUGES['cadre'])
+v = lance(*JUGES.get('cadre', (None,)))
 lignes = []
 for l in (v or {}).get('lignes', []):
     ok = l['verdict'] == '✅'
@@ -105,7 +112,7 @@ L_all = T['lines']; dec = TO['decoupage']; cad = TO.get('cadres', {})
 # BOUCHE JUGÉE PAR JEV (17/10/2026, « tout appuyé par le jugement de JEV », aucune tolérance) : aux trois instants les plus
 # ouverts de la piste de bouche JEV voit la bouche ouverte, aux trois instants fermés (m, b, p, silences) il la voit fermée
 # (jev_levres.py ; témoin négatif v24 : 0/18). La mesure par pixels sombres (levres_roi, 255 s) n'est plus le juge.
-jl = lance(*JUGES['levres']) or {}
+jl = lance(*JUGES.get('levres', (None,))) or {}
 det = jl.get('detail', []); rep = []
 for i, L in enumerate(L_all):
     mid = L['t0'] + L['dur'] / 2; s = next((x for x in dec if x[0] <= mid < x[1]), None)
@@ -129,6 +136,7 @@ etir = {}
 for n, ms in par.items():
     e = np.array([m['etirement'][0] for m in ms]); etir[n] = {'mediane': round(float(np.median(e)), 3), 'p95': round(float(np.percentile(e, 95)), 3)}
 G['C_etirement'] = {'ok': bool(etir) and all(x['mediane'] <= 0.05 and x['p95'] <= 0.08 for x in etir.values()), 'detail': etir}
+if ECLAIR: G['C_etirement'] = {'ok': False, 'detail': 'non mesurée (essai éclair sans rendu)'}
 
 pos = {}
 for sid in M['scenes']:
@@ -184,13 +192,13 @@ G['F_arriere_plan'] = {'ok': all(isinstance(x, dict) and (x['part_animee'] >= 0.
 
 # ── G. œil de JEV ──
 # toute la vidéo, image par image (jev_film.py v2 : questions recalibrées, cascade, cache par plan), aucune tolérance
-j = lance(*JUGES['film']) or {}
+j = lance(*JUGES.get('film', (None,))) or {}
 sy = j.get('synthese', {})
 G['G_jev'] = {'ok': bool(sy) and not any(sy.get(k) for k in ('tetes_coupees', 'visages_deformes', 'artefacts', 'style_incoherent', 'titres_illisibles')),
               'detail': {k: sy.get(k) for k in ('images_jugees', 'images_fautives', 'plans_fautifs', 'tetes_coupees', 'visages_deformes', 'artefacts', 'style_incoherent', 'titres_illisibles')}}
 
 # ── H. technique et son ──
-cv = lance(*JUGES['controle']) or {}
+cv = lance(*JUGES.get('controle', (None,))) or {}
 H = {k: bool(cv.get(k, {}).get('ok')) for k in ('technique', 'son', 'images', 'intelligibilite', 'mouvement')}
 G['H_technique'] = {'ok': bool(cv) and all(H.values()), 'detail': H}
 
@@ -218,7 +226,7 @@ for n, ms in par.items():
 G['I_fluidite'] = {'ok': bool(flu) and all(x['ok'] for x in flu.values()), 'detail': flu}
 
 # ── J. humour et écriture : décisions de JEV sur le texte de chaque sketch (jev_texte.py, aucune tolérance) ──
-jt = lance(*JUGES['texte']) or {}
+jt = lance(*JUGES.get('texte', (None,))) or {}
 G['J_humour'] = {'ok': bool(jt) and not jt.get('synthese', {}).get('sketchs_fautifs'), 'detail': {r['sketch']: {k: r[k] for k in r if k != 'sketch'} for r in jt.get('sketchs', [])}}
 
 # ── K. PHYSIQUE ET NATURE (17/10/2026 : « l'ombre de la poule ne devait pas passer le contrôle ») ──
@@ -233,11 +241,19 @@ for sid in sorted({m['sketch'] for m in ENT}):
 lieux = {s_['id']: s_.get('lieu') for s_ in T['sketchs']}
 hors_milieu = sorted({sid for sid in {m['sketch'] for m in ENT} if not entites.permise('poule', lieux.get(sid))})
 phy = (j.get('synthese') or {}).get('physique', {})
-G['K_physique'] = {'ok': all(o['part_ombre_visible'] >= 1.0 for o in ombres.values()) and not hors_milieu and bool(j) and not any(phy.values()),
-                   'detail': {'ombres_des_betes': ombres, 'especes_hors_milieu': hors_milieu, 'jev_physique': phy}}
+# PERMANENCE DES OBJETS (19/10/2026, « la nourriture dans le plat au maquis bouge sans que rien ne la manipule ») : aucun
+# objet posé ni meuble ne reste attaché à la découpe d'un acteur (prepare_rig.objets_attaches, règle rejouée à blanc)
+import prepare_rig as PR_
+attaches = {}
+for sid, d_ in M['scenes'].items():
+    try: attaches[sid] = PR_.objets_attaches(d_)
+    except Exception as ex_: attaches[sid] = f'non mesuré : {str(ex_)[:120]}'
+objets_ok = all(isinstance(v_, dict) and not any(v_.values()) for v_ in attaches.values())
+G['K_physique'] = {'ok': all(o['part_ombre_visible'] >= 1.0 for o in ombres.values()) and not hors_milieu and bool(j) and not any(phy.values()) and objets_ok,
+                   'detail': {'ombres_des_betes': ombres, 'especes_hors_milieu': hors_milieu, 'jev_physique': phy, 'objets_attaches_aux_acteurs': attaches}}
 
 # ── L. MOUVEMENT, SECONDE PAR SECONDE (jev_mouvement.py) : à-coups, personnages figés, décor mort, naturel, raccords ──
-jm = lance(*JUGES['mouvement']) or {}
+jm = lance(*JUGES.get('mouvement', (None,))) or {}
 G['L_mouvement'] = {'ok': bool(jm) and not jm.get('synthese', {}).get('secondes_fautives'), 'detail': {k: v for k, v in jm.get('synthese', {}).items() if k != 'cout'}}
 # ── M. RÉALISATION, PLAN PAR PLAN : cadre de chaque plan choisi par JEV réalisateur (sans tête coupée, visage lisible) ──
 rj = TO.get('realisateur_jev', {})
@@ -252,8 +268,30 @@ G['O_textes'] = {'ok': bool(jt) and not jt.get('synthese', {}).get('sous_titres_
 
 # ── P. PRISE DE CHOC DE FIN DE SKETCH (18/10/2026, « revoir le visage du choc de la fin ») : JEV juge chaque gros plan de
 #    réaction — choquée > 0,5 et visage non abîmé sur chaque image (jev_choc.py) ──
-jc = lance(*JUGES['choc']) or {}
-G['P_choc'] = {'ok': bool(jc) and jc.get('synthese', {}).get('ok', False), 'detail': jc.get('synthese')}
+jc = lance(*JUGES.get('choc', (None,))) or {}
+# SOURCILS DANS LA ZONE COLLÉE (19/10/2026, « les sourcils de la femme au maquis pendant le choc final du premier sketch ») :
+# pour chaque visage tourné, part du front qui change avec l'émotion et tombe hors de la partie pleine du collage (deux
+# sourcils à demi). Témoin v13 : Coumba 0,80 en surprise ; après la course des sourcils, ≤ 0,022 sur les sept visages
+# (bord de la bande) ; seuil 0,03.
+SOURCILS_MAX = 0.03
+sourcils = {}; sourcils_doubles = {}
+try:
+    import expressions_lp as XL_, cv2
+    for sid, d_ in M['scenes'].items():
+        Sc_ = scene(sid); im_ = cv2.cvtColor(cv2.imread(f'{d_}/image.png'), cv2.COLOR_BGR2RGB)
+        for a_ in Sc_['acteurs']:
+            e_, f_ = f"{d_}/expressions/{a_['slug']}", f"{d_}/rig/visage3d-{a_['slug']}.npy"
+            if os.path.isfile(f'{e_}/meta.json') and os.path.isfile(f_):
+                r_ = XL_.sourcils_hors_zone(e_, im_, np.load(f_)); sourcils[a_['nom']] = max(r_.values()) if r_ else 0.0
+                if not ECLAIR:   # sourcils étalés en deux traits par le morphing : écart à l'image propre de la bibliothèque
+                    d2_ = XL_.sourcils_doubles(XL_.charge(e_, im_, np.load(f_)))
+                    sourcils_doubles[a_['nom']] = max(d2_.values()) if d2_ else 0.0
+except Exception as ex_:
+    sourcils = {'erreur': str(ex_)[:160]}
+sourcils_ok = bool(sourcils) and all(isinstance(v_, float) and v_ <= SOURCILS_MAX for v_ in sourcils.values()) \
+    and all(v_ <= XL_.SOURCILS_ECART_MAX for v_ in sourcils_doubles.values())
+G['P_choc'] = {'ok': bool(jc) and jc.get('synthese', {}).get('ok', False) and sourcils_ok,
+               'detail': {'jev_choc': jc.get('synthese'), 'sourcils_hors_zone_collee': sourcils, 'sourcils_ecart_bibliotheque': sourcils_doubles, 'sourcils_ok': sourcils_ok}}
 
 # ── Q. FLUIDITÉ ET SOUPLESSE MESURÉES (18/10/2026, « la vidéo doit respecter tous les critères de fluidité, de mouvement et
 #    d'animation à 100 % ») — fluidite.py : (1) pixels du film, raccords du moteur exclus : aucune image figée en plein
@@ -261,7 +299,7 @@ G['P_choc'] = {'ok': bool(jc) and jc.get('synthese', {}).get('ok', False), 'deta
 #    dépassent que 0,5 % du temps ; (2) souplesse SPARC de chaque articulation au moins égale à celle de vrais corps (CMU) ──
 try:
     import fluidite as FL_
-    fq_ = FL_.juge(MP4, f'{D}/fluidite.json', bande=(282, 742), coupes=FL_.coupes_du_moteur(f'{D}/tournage.json', TL))
+    fq_ = {'ok': False, 'defauts': 'non mesurés (essai éclair sans rendu)'} if ECLAIR else FL_.juge(MP4, f'{D}/fluidite.json', bande=(282, 742), coupes=FL_.coupes_du_moteur(f'{D}/tournage.json', TL))
     sq_ = FL_.souplesse(D)
     G['Q_fluidite'] = {'ok': fq_['ok'] and sq_['ok'], 'detail': {'pixels': fq_['defauts'], 'souplesse': {k: (v.get('mediane'), v.get('p10'), v['ok']) for k, v in sq_['par_articulation'].items()}}}
 except Exception as ex_:
@@ -269,7 +307,9 @@ except Exception as ex_:
 
 passees = sum(g['ok'] for g in G.values())
 R = {'film': os.path.basename(MP4), 'portes': G, 'passees': passees, 'total': len(G), 'pourcent': round(100 * passees / len(G)), 'durees_s': DUREES,
-     'juges_non_disponibles': NON_JUGES,   # JEV coupé : juges dont une question attend sa tête locale (greffe en cours)
+     'juges_non_disponibles': NON_JUGES,
+     'eclair': None if not ECLAIR else {'portes_jugees': ['D_ecoute', 'D_regard', 'E_automate', 'F_arriere_plan', 'I_fluidite', 'M_realisation', 'N_son'],
+                                        'souplesse_Q': (G.get('Q_fluidite', {}).get('detail') or {}).get('souplesse') if isinstance(G.get('Q_fluidite', {}).get('detail'), dict) else None},   # JEV coupé : juges dont une question attend sa tête locale (greffe en cours)
      'verdict': 'LIVRABLE (100 %)' if passees == len(G) else 'À REPRENDRE'}
 json.dump(R, open(f'{D}/qualite.json', 'w'), ensure_ascii=False, indent=1, default=lambda o: o.item() if hasattr(o, 'item') else str(o))
 print(f"| Porte | Verdict | Détail |\n|---|---|---|")

@@ -242,19 +242,69 @@ def index():
 def est_cle(trial): return isinstance(trial, str) and trial[:3] in ('en_', 'zh_', 'ja_', 'es_')
 
 
+# PAQUET UNIQUE (19/10/2026, « produire un film entier en 1 minute pour accélérer les tests ») : un tournage lisait ~800
+# fichiers d'enregistrements (52,8 s sur 261 s de préparation, profil cProfile). Les 1 428 enregistrements sont rangés une
+# fois pour toutes dans un seul paquet ouvert en mémoire projetée (aucune copie) : séries image par image en float16 bout à
+# bout, mots et apex à part, index des débuts ; même contenu, octet pour octet (vérifié au montage du paquet).
+PAQUET = os.path.join(CACHE, f'paquet-v{VERSION}')
+_P = None
+
+
+def monte_paquet():
+    fs = sorted(f for f in os.listdir(CACHE) if f.endswith(f'-v{VERSION}.npz'))
+    cles, series, idx, mots_t, apex = [], None, {}, [], []
+    blocs = []; n_tot = m_tot = a_tot = 0
+    for f in fs:
+        z = np.load(os.path.join(CACHE, f), allow_pickle=False); cle = f[:-len(f'-v{VERSION}.npz')]
+        noms = sorted(k for k in z.files if z[k].dtype == np.float16)
+        series = series or noms
+        if noms != series: continue   # forme inattendue : lue à part (charge retombe sur le fichier)
+        n = int(z['n']); blocs.append(np.stack([z[k] for k in series]))
+        idx[cle] = [n_tot, n, m_tot, len(z['mots_t']), a_tot, len(z['apex'])]
+        mots_t.append(z['mots_t'].astype(np.float32)); apex.append(np.stack([z['apex'], z['apex_force']], 1).astype(np.float32))
+        n_tot += n; m_tot += len(z['mots_t']); a_tot += len(z['apex'])
+    np.save(PAQUET + '-series.npy', np.concatenate(blocs, 1).astype(np.float16))
+    np.save(PAQUET + '-mots.npy', np.concatenate(mots_t, 0)); np.save(PAQUET + '-apex.npy', np.concatenate(apex, 0))
+    json.dump({'series': series, 'index': idx}, open(PAQUET + '.json', 'w'))
+    return len(idx)
+
+
+def _paquet():
+    global _P
+    if _P is None:
+        if not os.path.isfile(PAQUET + '.json'):
+            try: monte_paquet()
+            except Exception as e_: print('paquet du dictionnaire non monté :', e_, flush=True); _P = False; return _P
+        m = json.load(open(PAQUET + '.json'))
+        _P = {'series': m['series'], 'index': m['index'], 's': np.load(PAQUET + '-series.npy', mmap_mode='r'),
+              'mots': np.load(PAQUET + '-mots.npy', mmap_mode='r'), 'apex': np.load(PAQUET + '-apex.npy', mmap_mode='r')}
+    return _P
+
+
+def _brut(cle):
+    """(séries en float32 + apex + n, mots_t) d'un enregistrement : depuis le paquet, sinon depuis son fichier."""
+    P = _paquet()
+    if P and cle in P['index']:
+        a, n, m0, nm, a0, na = P['index'][cle]; S = P['s'][:, a:a + n]
+        c = {k: np.asarray(S[i], np.float32) for i, k in enumerate(P['series'])}
+        ap = np.asarray(P['apex'][a0:a0 + na]); c['apex'] = ap[:, 0].copy(); c['apex_force'] = ap[:, 1].copy(); c['n'] = np.float32(n)
+        return c, np.asarray(P['mots'][m0:m0 + nm])
+    z = np.load(os.path.join(CACHE, f'{cle}-v{VERSION}.npz'), allow_pickle=False)
+    return {k: (z[k].astype(np.float32) if z[k].dtype == np.float16 else z[k]) for k in z.files if k not in ('mots', 'mots_t')}, z['mots_t']
+
+
 def charge(cle):
     """pistes d'un enregistrement (float32) + « parole » (vrai quand le locuteur prononce un mot) + « sem_type » /
     « sem_force » (geste annoté couvrant chaque image : type, force)."""
     if cle in _C: return _C[cle]
-    z = np.load(os.path.join(CACHE, f'{cle}-v{VERSION}.npz'), allow_pickle=False)
-    c = {k: (z[k].astype(np.float32) if z[k].dtype == np.float16 else z[k]) for k in z.files if k not in ('mots', 'mots_t')}
+    c, mots_t = _brut(cle)
     n = int(c['n']); t = np.arange(n) / FPS; parole = np.zeros(n, bool)
-    for a, b in z['mots_t']: parole[int(a * FPS):int(np.ceil(b * FPS))] = True
+    for a, b in mots_t: parole[int(a * FPS):int(np.ceil(b * FPS))] = True
     st = np.zeros(n, np.int8); sf = np.zeros(n, np.float32)
     for g in index().get(cle, {}).get('gestes', []):
         m = (t >= g['t0']) & (t <= g['t1']) & (sf < g['force']); st[m] = CODE_TYPE.get(g['type'], 0); sf[m] = g['force']
     c['parole'] = parole; c['sem_type'] = st; c['sem_force'] = sf
-    if len(_C) > 400: _C.clear()
+    if len(_C) > 2000: _C.clear()
     _C[cle] = c
     return c
 

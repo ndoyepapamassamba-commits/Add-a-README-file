@@ -127,6 +127,22 @@ def sparc(v, fs, pad=4, fc=10.0, seuil=0.05):
     return float(-np.sum(np.sqrt((np.diff(f) / (f[-1] - f[0])) ** 2 + np.diff(M) ** 2)))
 
 
+def sparc_lot(V, fs, pad=4, fc=10.0, seuil=0.05):
+    """sparc() de chaque ligne de V (fenêtres de même longueur) en un seul calcul (19/10/2026, « un film entier en 1 minute » :
+    64 538 appels un par un, 11 s par tournage) — mêmes valeurs que sparc(), contrôlées à 1e-9 près."""
+    V = np.asarray(V, np.float64)
+    if V.ndim != 2 or len(V) == 0: return np.zeros(len(V))
+    n = int(2 ** (np.ceil(np.log2(V.shape[1])) + pad)); f = np.arange(n // 2 + 1) * fs / n; s_ = f <= fc
+    M = np.abs(np.fft.rfft(V, n, axis=1)); M = M / np.maximum(M.max(1, keepdims=True), 1e-12)
+    # le maximum du spectre complet = celui du demi-spectre (spectre d'un signal réel symétrique)
+    f, M = f[s_], M[:, s_]; ok = M >= seuil
+    i0 = np.argmax(ok, 1); i1 = M.shape[1] - 1 - np.argmax(ok[:, ::-1], 1); assez = ok.sum(1) >= 2
+    k = np.arange(M.shape[1] - 1)[None, :]; dans = (k >= i0[:, None]) & (k < i1[:, None])
+    largeur = np.where(assez, f[np.minimum(i1, len(f) - 1)] - f[i0], 1.0)
+    seg = np.sqrt((np.diff(f)[None, :] / largeur[:, None]) ** 2 + np.diff(M, axis=1) ** 2)
+    return np.where(assez, -np.sum(np.where(dans, seg, 0.0), 1), 0.0)
+
+
 def _fenetres(x):
     out = []
     for i in range(0, len(x) - FEN, FEN // 2):

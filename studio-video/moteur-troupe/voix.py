@@ -72,8 +72,10 @@ def voice(m):
     if m not in _voices: _voices[m] = PiperVoice.load(P + m + '.onnx')
     return _voices[m]
 
-PLAFOND_F0 = float(os.environ.get('PLAFOND_F0', 1.30))   # v4 → v5 : 1,35 et 35 % laissaient Coumba à 1,62 × (question), Tantie Awa à 1,49 ×
-def shape(x, sr, f0_target, spread, formant, question, exclam, tempo=1.0):
+MONTEE_QUESTION = 1.15   # 19/10/2026 : 1,22 → 1,15 (une question monte d'environ 2,4 demi-tons, sans percer)
+PENTE_AU_DELA = 0.15     # 19/10/2026 : 0,25 → 0,15 (au-delà du plafond, il ne reste que 15 % de l'excès)
+PLAFOND_F0 = float(os.environ.get('PLAFOND_F0', 1.25))   # v4 → v5 : 1,35 et 35 % laissaient Coumba à 1,62 × (question), Tantie Awa à 1,49 ×
+def shape(x, sr, f0_target, spread, formant, question, exclam, tempo=1.0, phrases=None):
     x = x.astype(np.float64) / 32768
     f0, t = pw.harvest(x, sr, f0_floor=60, f0_ceil=600, frame_period=5.0)
     sp = pw.cheaptrick(x, f0, t, sr); ap = pw.d4c(x, f0, t, sr)
@@ -81,20 +83,68 @@ def shape(x, sr, f0_target, spread, formant, question, exclam, tempo=1.0):
     if v.sum() < 5: return (x * 32767).astype(np.int16)
     lf = np.log(f0[v]); mu = np.median(lf)
     lf2 = np.log(f0_target) + (lf - mu) * spread
-    n = len(f0); idx = np.nonzero(v)[0]; pos = (idx - idx[0]) / max(1, idx[-1] - idx[0])
-    if question: lf2 += np.where(pos > 0.72, (pos - 0.72) / 0.28 * np.log(1.22), 0)          # montée finale (1,32 → 1,22 : la question perçait, v4)
-    if exclam: lf2 += np.log(1.06) * np.exp(-((pos - 0.25) / 0.2) ** 2) + np.log(1.10) * np.exp(-((pos - 0.85) / 0.12) ** 2)
+    n = len(f0); idx = np.nonzero(v)[0]
+    # INTONATION PHRASE PAR PHRASE (19/10/2026, « Koffi aussi quand il dit que c'est pour fuir le patron, c'est aigu ») : la
+    # montée de question était posée à la fin de la RÉPLIQUE dès qu'elle contenait un « ? » — « Mes lunettes ? C'est pour fuir
+    # le patron. » montait sur « le patron » (167 Hz pour 120 visés). Chaque phrase garde désormais sa propre mélodie : montée
+    # sur la fin d'une question, appui sur une exclamation, légère descente en fin d'affirmation (déclinaison naturelle).
+    segs = []
+    if phrases:
+        tv = t[idx]
+        for ph_ in phrases:
+            k_ = np.nonzero((tv >= ph_['t0'] - 1e-3) & (tv < ph_['t1'] + 1e-3))[0]
+            if len(k_): segs.append((k_, ph_.get('fin', '.')))
+    if not segs: segs = [(np.arange(len(idx)), '?' if question else ('!' if exclam else '.'))]
+    for k_, fin_ in segs:
+        pos = (k_ - k_[0]) / max(1, k_[-1] - k_[0])
+        if fin_ == '?': lf2[k_] += np.where(pos > 0.72, (pos - 0.72) / 0.28 * np.log(MONTEE_QUESTION), 0)
+        elif fin_ == '!': lf2[k_] += np.log(1.05) * np.exp(-((pos - 0.25) / 0.2) ** 2) + np.log(1.07) * np.exp(-((pos - 0.85) / 0.12) ** 2)
+        else: lf2[k_] -= np.where(pos > 0.75, (pos - 0.75) / 0.25 * np.log(1.08), 0)
     # PLAFOND DOUX DE LA HAUTEUR (18/10/2026, « le son est aigu par moments, pas tout le temps ») : mesuré sur la v3, les
     # pointes partaient très au-dessus de la voix de chaque personnage — Petit Mamadou 538 Hz pour 275 visés (« Papi ! »),
     # accusations de Maman, Tantie Awa, Coumba à 350 Hz pour 195-215. Au-delà de PLAFOND_F0 × la hauteur visée, l'excès est
     # réduit à 35 % (genou doux) : l'exclamation monte encore, sans percer.
-    plaf = np.log(f0_target * PLAFOND_F0); lf2 = np.where(lf2 > plaf, plaf + (lf2 - plaf) * 0.25, lf2)
+    plaf = np.log(f0_target * PLAFOND_F0); lf2 = np.where(lf2 > plaf, plaf + (lf2 - plaf) * PENTE_AU_DELA, lf2)
     f0n = f0.copy(); f0n[v] = np.exp(lf2)
     if formant != 1.0:  # dilate l'enveloppe spectrale (formants plus hauts = timbre d'enfant)
         fb = sp.shape[1]; src = np.clip(np.arange(fb) / formant, 0, fb - 1)
         sp = np.array([np.interp(src, np.arange(fb), row) for row in sp])
     y = pw.synthesize(f0n, sp, ap, sr, frame_period=5.0 / tempo)   # tempo > 1 : même voix, même hauteur, dite plus vite
     return (np.clip(y, -1, 1) * 32767).astype(np.int16)
+
+def hauteur(y, sr):
+    """hauteur ROBUSTE (Hz) des trames voisées fortes où Harvest et DIO s'accordent à 15 % près — la même mesure que le
+    contrôle (sonie.aigus) : (médiane, p95, max) ou None si trop peu de trames."""
+    x = np.asarray(y, np.float64); x = x / 32768 if np.abs(x).max() > 2 else x
+    f0, t = pw.harvest(x, sr, f0_floor=60, f0_ceil=900, frame_period=10)
+    fd, td = pw.dio(x, sr, f0_floor=60, f0_ceil=900, frame_period=10); fd = pw.stonemask(x, fd, td, sr)
+    m = min(len(f0), len(fd)); f0, fd = f0[:m], fd[:m]
+    hp = int(0.01 * sr); e = np.array([np.sqrt(np.mean(x[max(0, int(tt * sr) - hp):int(tt * sr) + hp] ** 2)) for tt in t[:m]])
+    v = f0[(f0 > 0) & (fd > 0) & (np.abs(np.log(np.maximum(fd, 1) / np.maximum(f0, 1))) < 0.15) & (e > 0.1 * (e.max() + 1e-12))]
+    return (float(np.median(v)), float(np.percentile(v, 95)), float(v.max())) if len(v) >= 10 else None
+
+
+# NORME DE HAUTEUR DE CHAQUE RÉPLIQUE (19/10/2026, « la voix est encore aiguë par moments ») : mesurée APRÈS la synthèse avec
+# la mesure du contrôle, la réplique est refaite (cible recentrée, étendue resserrée) jusqu'à respecter la norme
+NORME_HAUTEUR = {'mediane': 0.06, 'p95': 1.25, 'max': 1.35}
+# la boucle vise plus serré que le contrôle (19/10/2026 : Tantie « Modou ! Mon loyer là… » sortait de la boucle à p95 1,227
+# et se mesurait 1,26 dans le fichier final, au débit de sa réplique) : marge de garde de 0,03
+NORME_SYNTHESE = {'mediane': 0.04, 'p95': 1.22, 'max': 1.32}
+
+
+def forme_mesuree(x, sr, f0t, spread, fm, question, exclam, tempo=1.0, phrases=None, tours=6):
+    cible, et = float(f0t), float(spread); y = shape(x, sr, cible, et, fm, question, exclam, tempo, phrases)
+    for _ in range(tours):
+        h = hauteur(y, sr)
+        if not h: break
+        med, p95, mx = h[0] / f0t, h[1] / f0t, h[2] / f0t
+        N_ = NORME_SYNTHESE
+        if abs(med - 1) <= N_['mediane'] and p95 <= N_['p95'] and mx <= N_['max']: break
+        cible /= med if abs(med - 1) > N_['mediane'] * 0.5 else 1.0
+        if p95 > N_['p95'] or mx > N_['max']: et *= 0.8
+        y = shape(x, sr, cible, et, fm, question, exclam, tempo, phrases)
+    return y
+
 
 def synth(qui, texte, ls=None):
     m, spk, f0t, spread, ls0, fm = CAST[qui]
@@ -105,14 +155,19 @@ def synth(qui, texte, ls=None):
     sr = chunks[0].sample_rate
     a = np.frombuffer(b''.join(c.audio_int16_bytes for c in chunks), np.int16)
     ph, tt = [], 0.0
+    phrases, tp = [], 0.0
+    for c in chunks:
+        d_ = len(c.audio_int16_bytes) / 2 / sr
+        phrases.append({'ph': '|', 't0': tp, 't1': tp + d_, 'open': 0, 'fin': next((q for q in reversed(c.phonemes or []) if q in '.?!'), '.')}); tp += d_
     for c in chunks:
         for al in (c.phoneme_alignments or []):
             d = al.num_samples / sr; s = al.phoneme
             if s in ('ˈ', 'ˌ', 'ː', '̃') and ph: ph[-1]['t1'] += d
             else: ph.append({'ph': s, 't0': tt, 't1': tt + d, 'open': OPEN.get(s, 0 if s in ' ^$_,.!?' else 1)})
             tt += d
-    a, ph = compress_silences(a, ph, sr)
-    y = shape(a, sr, f0t, spread, fm, '?' in texte, '!' in texte)
+    a, ph = compress_silences(a, ph + phrases, sr)
+    phrases = [p for p in ph if p.get('ph') == '|' and 'fin' in p]; ph = [p for p in ph if not (p.get('ph') == '|' and 'fin' in p)]
+    y = forme_mesuree(a, sr, f0t, spread, fm, '?' in texte, '!' in texte, phrases=phrases)
     if sr != SR:
         import scipy.signal as ss; y = ss.resample_poly(y.astype(np.float64), SR, sr).astype(np.int16); ph = [dict(p) for p in ph]
     meter = pyln.Meter(SR); yf = y.astype(np.float64) / 32768
@@ -125,6 +180,16 @@ def synth(qui, texte, ls=None):
     off = i0 / SR; y = y[i0:i1]
     ph = [dict(p, t0=max(0, p['t0'] - off), t1=max(0, p['t1'] - off)) for p in ph if p['t1'] - off > 0]
     return y, ph
+
+def synth_m(qui, texte, ls=None):
+    """synth() mémorisée sur disque par réplique (19/10/2026, « un film entier en 1 minute ») : clé = personnage, texte,
+    vitesse + source de ce module ; une réplique inchangée n'est plus refaite (22 répliques : 158 s → quelques secondes)."""
+    try:
+        import memo
+        return memo.memo(synth, qui, texte, ls)
+    except ImportError:
+        return synth(qui, texte, ls)
+
 
 def _finit(y, sr_in):
     """rééchantillonnage, sonie −16 LUFS, silences de tête et de queue retirés → (int16 à SR, décalage s)."""
@@ -199,7 +264,7 @@ def synth_qwen(qui, texte, chute=False):
     # sur une chute (dite calmement, et comprise)
     debit = len(SYL.findall(texte)) / max(0.3, len(a) / sr * 0.82)   # ≈ part parlée de la prise (silences de bord retirés ensuite)
     tempo = 1.0 if chute else float(np.clip(DEBIT[qui] / max(1e-3, debit), 1.0, 1.3))
-    y = shape(a, sr, cible, 1.0, 1.0, '?' in texte, '!' in texte, tempo)   # étendue 1,0 : l'intonation propre de la voix est gardée (JEV)
+    y = forme_mesuree(a, sr, cible, 1.0, 1.0, '?' in texte, '!' in texte, tempo)   # étendue 1,0 : l'intonation propre de la voix est gardée (JEV)
     y, _ = _finit(y, sr)
     return y, []   # formes de bouche : levres.py (Rhubarb) lit l'audio ensuite
 
@@ -219,11 +284,11 @@ def main():
         S['t0'] = t; grogne_fait = set()
         for li, L in enumerate(S['repliques']):
             clone = L['qui'] in REFS
-            y, ph = synth_qwen(L['qui'], L['texte'], bool(L.get('chute'))) if clone else synth(L['qui'], L['texte'])
+            y, ph = synth_qwen(L['qui'], L['texte'], bool(L.get('chute'))) if clone else synth_m(L['qui'], L['texte'])
             nsyl = len(SYL.findall(L['texte'])); rate = nsyl / (len(y) / SR)
             if not clone and abs(rate / DEBIT[L['qui']] - 1) > 0.08 and not (L.get('chute') and rate > DEBIT[L['qui']]):  # la vitesse suit le débit de la chaîne ; une chute n'est jamais accélérée (dite calmement, et comprise : Whisper)
                 ls = max(0.55, min(1.3, CAST[L['qui']][4] * rate / DEBIT[L['qui']]))
-                y, ph = synth(L['qui'], L['texte'], ls); rate = nsyl / (len(y) / SR)
+                y, ph = synth_m(L['qui'], L['texte'], ls); rate = nsyl / (len(y) / SR)
             L = dict(L, debit=round(rate, 2), moteur='qwen3' if clone else 'piper')
             f = f'voix/{S["id"]}-{li}.wav'
             with wave.open(f, 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes(y.tobytes())

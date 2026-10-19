@@ -104,7 +104,10 @@ def _juge_jev():
         return None
 
 
-def masque_visage(v3, box, taille, ouverte=None, fermee=None):
+SOURCILS_REPERES = [70, 63, 105, 66, 107, 55, 65, 52, 53, 46, 300, 293, 334, 296, 336, 285, 295, 282, 283, 276]   # FaceMesh
+
+
+def masque_visage(v3, box, taille, ouverte=None, fermee=None, neutre=None):
     """zone greffée dans le carré de rendu : enveloppe convexe de TOUS les repères du visage (yeux, sourcils, nez, lèvres,
     menton), plus la mâchoire qui descend quand la bouche s'ouvre (là où la bouche grande ouverte diffère de la bouche
     fermée, près du visage) ; bord fondu.
@@ -119,7 +122,56 @@ def masque_visage(v3, box, taille, ouverte=None, fermee=None):
         r = max(3, int(0.12 * taille)); pres = cv2.dilate(m, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1))) > 0
         m = np.maximum(m, (d & pres).astype(np.float32))
         r = max(2, int(0.03 * taille)); m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1)))
+    # COURSE DES SOURCILS (19/10/2026, « les sourcils de la femme au maquis pendant le choc final du premier sketch ») :
+    # l'enveloppe des repères s'arrête SUR les sourcils ; en surprise, le sourcil levé tombait dans le bord fondu du collage
+    # et s'y mêlait à moitié au sourcil peint resté en place — deux sourcils à 50 % (v13, 15,9–19,3 s). Comme pour la
+    # mâchoire : là où le front de l'émotion diffère du neutre (au-dessus des yeux, près du visage), la zone collée s'étend,
+    # avec une marge qui repousse le bord fondu sur le front nu.
+    if neutre is not None and fermee is not None:
+        if len(p) > 386:   # bande des sourcils : leur largeur (+ 5 %), de 10 % au-dessus de leur repère le plus haut aux yeux
+            sb = p[SOURCILS_REPERES]; yeux_haut = float(np.min(p[[159, 386], 1]))
+            x0_, x1_ = float(sb[:, 0].min()) - 0.05 * taille, float(sb[:, 0].max()) + 0.05 * taille; y0_ = float(sb[:, 1].min()) - 0.10 * taille
+            yy, xx = np.mgrid[0:taille, 0:taille]
+            bande = (yy >= y0_) & (yy < yeux_haut) & (xx >= x0_) & (xx <= x1_)
+            d = (cv2.GaussianBlur(np.abs(fermee - neutre).max(2), (0, 0), 1.5) > 18) & bande
+            r2 = max(2, int(0.05 * taille))
+            m = np.maximum(m, cv2.dilate(d.astype(np.float32), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r2 + 1, 2 * r2 + 1))))
     return cv2.GaussianBlur(m, (0, 0), max(1.5, 0.025 * taille))
+
+
+def sourcils_hors_zone(dossier, img, v3):
+    """CONTRÔLE (19/10/2026, sourcils doublés de Coumba au choc) : part des pixels du front qui CHANGENT entre le neutre et
+    une émotion (bande des sourcils) et qui tombent hors de la partie pleine de la zone collée (masque < 0,95) — là, le
+    sourcil levé se mêle au sourcil peint. 0 attendu pour chaque émotion. → {émotion: part}"""
+    meta = json.load(open(f'{dossier}/meta.json')); x, y, s = meta['box']; t = meta['taille']; nb = len(meta['bouche']) - 1
+    lit = lambda n: cv2.cvtColor(cv2.imread(f'{dossier}/{n}.png'), cv2.COLOR_BGR2RGB).astype(np.float32)
+    n0 = lit('neutre_0')
+    m = np.max(np.stack([masque_visage(v3, (x, y, s), t, lit(f'{e}_{nb}'), lit(f'{e}_0'), n0) for e in meta['emotions']]), 0)
+    p = (np.asarray(v3[:, :2]) - [x, y]) * t / s; sb = p[SOURCILS_REPERES]; yeux_haut = float(np.min(p[[159, 386], 1]))
+    yy, xx = np.mgrid[0:t, 0:t]
+    bande = (yy >= float(sb[:, 1].min()) - 0.10 * t) & (yy < yeux_haut) & (xx >= float(sb[:, 0].min()) - 0.05 * t) & (xx <= float(sb[:, 0].max()) + 0.05 * t)
+    out = {}
+    for e in meta['emotions']:
+        d = (cv2.GaussianBlur(np.abs(lit(f'{e}_0') - n0).max(2), (0, 0), 1.5) > 18) & bande
+        out[e] = round(float((d & (m < 0.95)).sum() / max(1, d.sum())), 4) if d.any() else 0.0
+    return out
+
+
+def sourcils_doubles(B, poids=0.92):
+    """CONTRÔLE (19/10/2026) : pour chaque émotion à `poids` (le neutre complète), écart moyen (niveaux 0–255) dans la bande des
+    sourcils entre le visage composé et l'image de bibliothèque de cette émotion — un sourcil étalé en deux traits s'écarte
+    de l'image propre. → {émotion: écart}. Seuil : SOURCILS_ECART_MAX."""
+    sz = B.get('sourcils_zone')
+    if sz is None: return {}
+    out = {}; m = sz > 0.5
+    for e in B['meta']['emotions']:
+        if e == 'neutre': continue
+        f = visage(B, {e: poids}, 0.0); ref = B['imgs'][(e, 0)]
+        out[e] = round(float(np.abs(f - ref).max(2)[m].mean()), 2)
+    return out
+
+
+SOURCILS_ECART_MAX = 3.0   # niveaux ; Coumba : v13 (inversion par point fixe) jusqu'à 5,70 (haussement), 5,36 (surprise) ; après : 1,65 au pire
 
 
 def cherche_recette(e, rend, juger, base, journal=print):
@@ -359,22 +411,33 @@ def charge(dossier, img, v3, alpha=None):
     imgs = {(e, k): lire(f'{dossier}/{e}_{k}.png') for e in meta['emotions'] for k in range(len(meta['bouche']))}
     clos = lire(f'{dossier}/clos.png')
     # flux optique neutre fermé → chaque image (DIS + raffinement variationnel ; luminance égalisée : sourcils, lèvres)
-    dis = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_MEDIUM); g0 = _gris(imgs[('neutre', 0)])
-    flux = {k_: (np.zeros((t, t, 2), np.float32) if k_ == ('neutre', 0) else dis.calc(g0, _gris(v), None)) for k_, v in imgs.items()}
-    flux['clos'] = dis.calc(g0, _gris(clos), None)
+    # 19/10/2026 (« un film entier en 1 minute ») : les flux sont calculés en parallèle (OpenCV relâche le verrou de Python ;
+    # un calculateur DIS par fil) — 18,7 s de préparation des 7 visages, mêmes flux
+    from concurrent.futures import ThreadPoolExecutor
+    import threading
+    _loc = threading.local()
+    def _dis(a_, b_):
+        if not hasattr(_loc, 'd'): _loc.d = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_MEDIUM)
+        return _loc.d.calc(a_, b_, None)
+    g0 = _gris(imgs[('neutre', 0)]); _pool = ThreadPoolExecutor(max(1, min(8, os.cpu_count() or 1)))
+    fut = {k_: _pool.submit(_dis, g0, _gris(v)) for k_, v in imgs.items() if k_ != ('neutre', 0)}
+    fut['clos'] = _pool.submit(_dis, g0, _gris(clos))
+    flux = {k_: (np.zeros((t, t, 2), np.float32) if k_ == ('neutre', 0) else fut[k_].result()) for k_ in imgs}
+    flux['clos'] = fut['clos'].result()
     # flux DIRECTS entre ouvertures voisines d'une même émotion (v25) : depuis la bouche fermée, l'intérieur de la bouche
     # (dents, langue) n'existe pas et le flux y est faux ; d'une ouverture à la suivante il existe des deux côtés
-    paires = {}
+    fp = {}
     for e in meta['emotions']:
         for k in range(len(meta['bouche']) - 1):
-            ga, gb = _gris(imgs[(e, k)]), _gris(imgs[(e, k + 1)]); paires[(e, k)] = (dis.calc(ga, gb, None), dis.calc(gb, ga, None))
+            ga, gb = _gris(imgs[(e, k)]), _gris(imgs[(e, k + 1)]); fp[(e, k)] = (_pool.submit(_dis, ga, gb), _pool.submit(_dis, gb, ga))
+    paires = {k_: (a_.result(), b_.result()) for k_, (a_, b_) in fp.items()}; _pool.shutdown()
     M = np.float32([[t / s, 0, -x * t / s], [0, t / s, -y * t / s]])
     orig = cv2.warpAffine(img, M, (t, t), flags=cv2.INTER_AREA, borderMode=cv2.BORDER_REPLICATE).astype(np.float32)
     # masque de collage : la mâchoire qui descend, pour CHAQUE émotion (18/10/2026 — avec la seule mâchoire neutre, la
     # barbiche de Koffi qui descend plus bas en surprise, peur ou rire passait sous le bord du masque : barbiche dédoublée,
     # menton barbouillé, jugés « rendu » 0,50–0,63 par JEV sur ses plans de la v31)
     nb = len(meta['bouche']) - 1
-    masque = np.max(np.stack([masque_visage(v3, (x, y, s), t, imgs[(e, nb)], imgs[(e, 0)]) for e in meta['emotions']]), 0)
+    masque = np.max(np.stack([masque_visage(v3, (x, y, s), t, imgs[(e, nb)], imgs[(e, 0)], imgs[('neutre', 0)]) for e in meta['emotions']]), 0)
     # recalage : l'écart de couleur basse fréquence entre le dessin et le rendu neutre à la bouche PEINTE (commande 0 ; la
     # bouche aux lèvres jointes diffère du dessin à la bouche : son écart flouté y laisserait une tache), ajouté à tout
     kp = meta['bouche'].index(0) if 0 in meta['bouche'] else 0
@@ -407,11 +470,44 @@ def charge(dossier, img, v3, alpha=None):
                    for e, v in A_['emotions'].items() if e in meta['emotions']}
     gx, gy = np.meshgrid(np.arange(t, dtype=np.float32), np.arange(t, dtype=np.float32))
     a_c = None if alpha is None else cv2.warpAffine(np.asarray(alpha, np.float32), M, (t, t), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+    # bande des sourcils (voir visage : sourcils sans inversion), du haut des yeux à 12 % au-dessus des sourcils, bord fondu
+    sz = None
+    if len(v3) > 386:
+        p_ = (np.asarray(v3[:, :2]) - [x, y]) * t / s; sb_ = p_[SOURCILS_REPERES]; yh_ = float(np.min(p_[[159, 386], 1]))
+        sz = np.zeros((t, t), np.float32)
+        x0_, x1_ = int(sb_[:, 0].min() - 0.06 * t), int(sb_[:, 0].max() + 0.06 * t); y0_, y1_ = int(sb_[:, 1].min() - 0.12 * t), int(yh_ - 0.01 * t)
+        sz[max(0, y0_):max(0, y1_), max(0, x0_):max(0, x1_)] = 1.0
+        sz = cv2.GaussianBlur(sz, (0, 0), max(1.5, 0.02 * t)) * masque
     B = dict(meta=meta, imgs=imgs, clos=clos, flux=flux, paires=paires, masque=masque, yeux=yeux, box=(x, y, s), taille=t, grille=(gx, gy),
-             bouche_masque=bm, ouv=ouv, alpha=a_c, orig=orig)
+             bouche_masque=bm, ouv=ouv, alpha=a_c, orig=orig, sourcils_zone=sz)
     try: B['lacets'] = lacets(dossier, img, v3, B)
     except Exception as ex: print(f'  lacets LivePortrait indisponibles ({str(ex)[:80]}) : tête tournée par le squelette seul', flush=True)
     return B
+
+
+def _compacte(x, demi):
+    """grands tableaux float32 ↔ float16 (images 0–255 : pas de 0,125 au pire ; flux de ±50 px : 0,03 px), récursivement."""
+    if isinstance(x, np.ndarray):
+        if demi and x.dtype == np.float32 and x.size > 4096: return x.astype(np.float16)
+        if not demi and x.dtype == np.float16: return x.astype(np.float32)
+        return x
+    if isinstance(x, dict): return {k: _compacte(v, demi) for k, v in x.items()}
+    if isinstance(x, (list, tuple)): return type(x)(_compacte(v, demi) for v in x)
+    return x
+
+
+def _charge_compacte(dossier, img, v3, alpha=None):
+    return _compacte(charge(dossier, img, v3, alpha=alpha), True)
+
+
+def charge_rapide(dossier, img, v3, alpha=None):
+    """charge() mémorisée sur disque (19/10/2026, « produire un film entier en 1 minute pour accélérer les tests » : 47,7 s de
+    préparation des 7 visages à chaque tournage) ; clé = fichiers de la bibliothèque + dessin + points + découpe + code.
+    Stockée en demi-précision (taille ÷ 2), rendue en float32."""
+    import memo
+    if os.environ.get('EXPR_MEMO', '0') != '1': return charge(dossier, img, v3, alpha=alpha)   # 158 Mo par visage pour 4,7 s : désactivé par défaut (disque)
+    B = memo.memo(_charge_compacte, dossier, img, v3, alpha=alpha, _cle=(memo.dossier(dossier), img, v3, alpha), _deps=('lp_onnx.py',))
+    return _compacte(B, False)
 
 
 def _poids(B, emotions):
@@ -476,6 +572,16 @@ def visage(B, emotions, bouche, clignement=0.0, visage_px=None, avec_alpha=False
     # les couleurs viennent de l'émotion dominante (poids au cube : 0,6/0,4 → 0,77/0,23 ; 0,7/0,3 → 0,93/0,07).
     Wc = {e: w ** 3 for e, w in W.items()}; sc_ = sum(Wc.values()); Wc = {e: v / sc_ for e, v in Wc.items() if v / sc_ > 0.01}
     sc_ = sum(Wc.values()); out = sum((w / sc_) * tire(*V[e]) for e, w in Wc.items())
+    # SOURCILS SANS INVERSION (19/10/2026, « les sourcils de la femme au maquis pendant le choc final du premier sketch ») :
+    # sur un front peint sans texture, le champ du sourcil qui monte se replie ; son inversion par point fixe (tire) laisse un
+    # résidu de 4 px au 99e centile (12 px au pire) et le sourcil s'étale en deux traits, même à 92 % de surprise. Dans la
+    # bande des sourcils, chaque émotion est prise TELLE QU'EN BIBLIOTHÈQUE et décalée seulement de l'écart entre sa géométrie
+    # et la géométrie mélangée (premier ordre, aucune inversion) : à 92 %, l'écart est de 8 % du mouvement — sourcil net.
+    sz = B.get('sourcils_zone')
+    if sz is not None:
+        br = sum((w / sc_) * cv2.remap(V[e][0], gx + V[e][1][..., 0] - D[..., 0], gy + V[e][1][..., 1] - D[..., 1], cv2.INTER_CUBIC,
+                                       borderMode=cv2.BORDER_REPLICATE) for e, w in Wc.items())
+        a_s = sz[..., None]; out = out * (1 - a_s) + br * a_s
     # ZONE DE LA BOUCHE SANS FLUX DEPUIS LA BOUCHE FERMÉE (avis de JEV, 17/10 : la bouche de Koffi « bave » dans le film et
     # pas dans la bibliothèque — 0,86). Rejouée : amener une bouche OUVERTE sur la géométrie mélangée passe par le flux depuis
     # la bouche fermée, faux à l'intérieur de la bouche (dents et langue n'y existent pas) : dents déchirées (0,61–0,83).

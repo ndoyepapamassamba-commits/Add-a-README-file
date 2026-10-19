@@ -116,6 +116,121 @@ def rires(T, y):
     return poses
 
 
+# ── MUSIQUE DE FOND COMIQUE (19/10/2026) — « une musique de fond comique doit accompagner le film sans nuire à l'écoute ;
+# mettre plus de rythme dans le film ». Tapis SYNTHÉTISÉ ici (aucun échantillon, aucun droit), couleur d'Abidjan et code du
+# dessin animé comique : basse pizzicato (corde pincée Karplus-Strong) racine-quinte en staccato, ostinato de balafon
+# pentatonique en croches à trous, shaker en croches (accent à contretemps), claqué de djembé sur 2 et 4 ; grille I–IV–V–I,
+# 104 à la noire. Code comique : « stop » — le tapis se tait 0,25 s avant la chute de chaque sketch (la chute tombe à sec),
+# ponctuation pizzicato descendante + tonique grave de balafon à la prise de choc, puis les rires ; il reprend au sketch
+# suivant. ÉCOUTE GARDÉE (WCAG 2.x, 1.4.7 « Low or No Background Audio » : fond au moins 20 dB sous la parole ; étude
+# BBC/Salford : 20 LU recommandés) : compresseur à clé sur la voix (attaque 40 ms, relâche 350 ms), puis vérification
+# fenêtre par fenêtre (0,1 s) — toute fenêtre de parole où le tapis n'est pas à −20 dB est rabaissée. TAPIS=0 pour s'en passer.
+TAPIS_BPM = 104.0
+TAPIS_SOUS_PAROLE_DB = -22.0    # visé pendant la parole (contrôle : ≤ −20 dB)
+TAPIS_HORS_PAROLE_DB = -15.0    # dans les silences : présent, toujours en fond
+TAPIS_ARRET_AVANT_CHUTE = 0.25  # s
+
+
+def _pince(f, dur, rng, amort=0.996, eclat=0.5):
+    """corde pincée (Karplus-Strong) : pizzicato court."""
+    n = int(dur * SR); p = max(2, int(SR / f)); buf = rng.uniform(-1, 1, p) * eclat + rng.uniform(-1, 1, p) * (1 - eclat) * 0.3
+    out = np.zeros(n, np.float32)
+    for i in range(n):
+        out[i] = buf[i % p]; buf[i % p] = amort * 0.5 * (buf[i % p] + buf[(i + 1) % p])
+    return out * np.exp(-np.arange(n) / (0.18 * SR))
+
+
+def _shaker(rng, fort=False):
+    n = int(0.05 * SR); b = rng.standard_normal(n); b = b - np.convolve(b, np.ones(4) / 4, 'same')   # passe-haut grossier
+    return (b * np.exp(-np.arange(n) / (0.012 * SR)) * (0.5 if fort else 0.3)).astype(np.float32)
+
+
+def tapis(T, total, graine=0):
+    """tapis comique continu sous tout le film (sans réglage de niveau) → (signal, journal des « stops » et ponctuations)."""
+    rng = np.random.default_rng(graine); out = np.zeros(int((total + 1.0) * SR), np.float32)
+    def pose(y, t0, g):
+        i = int(t0 * SR)
+        if i >= len(out) or i < 0: return
+        j = min(len(out), i + len(y)); out[i:j] += g * y[:j - i]
+    noire = 60.0 / TAPIS_BPM; croche = noire / 2; mesure = 4 * noire
+    grille = [0, 5, 7, 0]   # I–IV–V–I (demi-tons)
+    # zones muettes : de (chute − arrêt) jusqu'au sketch suivant (après les rires) ; ponctuation à la prise de choc
+    muets, ponct = [], []
+    for k, sk in enumerate(T['sketchs']):
+        ch = [L for L in T['lines'] if L['sketch'] == sk['id'] and L.get('chute')]
+        if not ch: continue
+        c = ch[-1]; t_stop = c['t0'] - TAPIS_ARRET_AVANT_CHUTE
+        suivants = [s_['t0'] for s_ in T['sketchs'] if s_['t0'] > c['t0']]
+        reprise = min(suivants) if suivants else total + 1
+        muets.append((t_stop, reprise)); ponct.append(jeu_prise_t(c))
+    muet = lambda t: any(a <= t < b for a, b in muets)
+    for k, sk in enumerate(T['sketchs']):
+        base = 98.0 * 2 ** (int(rng.choice([-2, 0, 2, 3])) / 12)   # tonalité de chaque sketch (sol grave ± 1 ton)
+        motif = [int(rng.choice(PENTA)) if rng.random() < 0.7 else None for _ in range(16)]   # 2 mesures de croches à trous
+        t = float(sk['t0']); fin = float(sk.get('t1', total)); m = 0
+        while t < fin:
+            ra = grille[m % 4]
+            for b in range(4):
+                tb = t + b * noire
+                if tb >= fin: break
+                if not muet(tb):
+                    if b in (0, 2):   # basse pizzicato racine / quinte, staccato
+                        pose(_pince(base / 2 * 2 ** ((ra + (7 if b == 2 else 0)) / 12), 0.22, rng), tb, 0.9)
+                    if b in (1, 3): pose(_djembe('claque', rng), tb, 0.18)
+                for h in range(2):
+                    th = tb + h * croche
+                    if th >= fin or muet(th): continue
+                    pose(_shaker(rng, fort=h == 1), th, 0.5)
+                    d = motif[(m % 2) * 8 + b * 2 + h]
+                    if d is not None: pose(_balafon(base * 2 * 2 ** ((ra + d) / 12), 0.25, rng) * np.exp(-np.arange(int(0.25 * SR)) / (0.06 * SR)), th, 0.22)
+            t += mesure; m += 1
+    for tp in ponct:   # ponctuation de la chute : « plonk » pizzicato descendant + tonique grave
+        for j, d in enumerate((7, 4, 0)):
+            pose(_pince(196.0 * 2 ** (d / 12), 0.3, rng, eclat=0.8), tp - 0.12 + 0.07 * j, 0.6)
+        pose(_balafon(98.0, 0.6, rng), tp + 0.1, 0.5)
+    out = out[:int(total * SR)]
+    import scipy.signal as ss_
+    out = ss_.sosfiltfilt(ss_.butter(2, 4500, 'low', fs=SR, output='sos'), out).astype(np.float32)   # rien dans la zone des sifflantes
+    return out, {'arrets_avant_chute': [round(a, 2) for a, _ in muets], 'ponctuations': [round(p_, 2) for p_ in ponct], 'bpm': TAPIS_BPM}
+
+
+def _env_db(x, w):
+    n = len(x) // w; r = np.sqrt(np.mean(np.square(x[:n * w].reshape(n, w)), 1) + 1e-12); return 20 * np.log10(r)
+
+
+def mixe_tapis(voix_seule, bed):
+    """niveau du tapis réglé sur la voix (clé) : −22 dB sous la parole, −15 dB sous la parole médiane dans les silences ;
+    puis garde fenêtre par fenêtre (0,1 s) : jamais au-dessus de −20 dB d'une fenêtre de parole. → (tapis réglé, mesure)."""
+    w = int(0.1 * SR); n = min(len(voix_seule), len(bed)) // w
+    v = _env_db(voix_seule[:n * w], w); b = _env_db(bed[:n * w], w)
+    parole = v > (np.median(v[v > -60]) if (v > -60).any() else -30) - 15
+    v_med = float(np.median(v[parole])) if parole.any() else -20.0
+    cible = np.where(parole, v + TAPIS_SOUS_PAROLE_DB, v_med + TAPIS_HORS_PAROLE_DB)   # dB voulus pour le tapis
+    # gain piloté par la VOIX seule, rapporté au niveau moyen du tapis (un gain fenêtre par fenêtre suivait aussi les notes du
+    # tapis et l'écrasait : −35 dB sous la parole, inaudible) ; les pointes du tapis sont tenues par la garde dure ci-dessous
+    b_ref = float(np.median(b[b > -60])) if (b > -60).any() else -30.0
+    g_db = np.minimum(cible - b_ref, 30.0)
+    # lissage asymétrique : on baisse vite (attaque 40 ms ≈ 0,4 fenêtre), on remonte lentement (relâche 350 ms)
+    lis = g_db.copy()
+    for i in range(1, n):
+        a = 0.9 if lis[i] < lis[i - 1] else 0.25
+        lis[i] = lis[i - 1] + a * (g_db[i] - lis[i - 1])
+    lis = np.minimum(lis, g_db + 0.0)   # jamais au-dessus du gain voulu (la relâche ne mord pas une parole)
+    k_ = int(0.02 * SR)
+    for _ in range(6):   # GARDE DURE : chaque fenêtre de parole où le tapis dépasse −20,5 dB est rabaissée (et ses voisines)
+        g = np.repeat(10 ** (lis / 20), w); g = np.convolve(g, np.ones(k_) / k_, 'same'); out = bed[:n * w] * g
+        ecart = _env_db(out, w) - v; viol = parole & (ecart > -20.5)
+        if not viol.any(): break
+        exces = np.where(viol, ecart + 21.0, 0.0); exces = np.maximum(exces, np.maximum(np.r_[0, exces[:-1]], np.r_[exces[1:], 0]))
+        lis = lis - exces
+    present = (b > -60) & ~parole
+    mesure = {'pire_ecart_tapis_moins_parole_db': round(float(ecart[parole].max()), 1) if parole.any() else None,
+              'mediane_ecart_parole_db': round(float(np.median(ecart[parole])), 1) if parole.any() else None,
+              'tapis_entre_les_repliques_vs_parole_mediane_db': round(float(np.median(_env_db(out, w)[present]) - v_med), 1) if present.any() else None,
+              'part_du_film_avec_tapis': round(float((b > -60).mean()), 3)}
+    return out, mesure
+
+
 def jeu_prise_t(L):
     try:
         import jeu
@@ -137,11 +252,16 @@ if __name__ == '__main__':
         for k, t0 in enumerate(instants):
             j = jingle(graine=k).astype(np.float32) * 0.5      # ≈ −8 dB sous la crête des voix : un jingle, pas un tapis
             i = int(t0 * SR); y[i:i + len(j)] += j[:len(y) - i]
+    tapis_info = None
+    if os.environ.get('TAPIS', '1') == '1':   # musique de fond comique réglée sur la voix seule (avant les rires)
+        bed, tapis_info = tapis(T, len(y) / SR)
+        bed, mes = mixe_tapis(y.copy(), bed); tapis_info['ecoute'] = mes
+        y[:len(bed)] += bed
     poses = rires(T, y)
     y = y[:int((T['total'] + 0.0) * SR)] if T.get('total') else y
     with wave.open(dst, 'wb') as w:
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((np.clip(y, -1, 1) * 32767).astype(np.int16).tobytes())
-    json.dump({'rires': poses, 'jingles': [round(t, 2) for t in instants],
+    json.dump({'rires': poses, 'jingles': [round(t, 2) for t in instants], 'tapis': tapis_info,
                'reference_tiktok': {'videos': 12, 'musique_du_temps': '0 à 1,6 %', 'rire_apres_chaque_blague': True, 'duree_rire_s': '0,5 à 1,5 (jusqu\'à 3,4)',
                                     'niveau_rire_vs_voix_db': -0.7, 'outil': 'YAMNet (oreille.py)'}}, open(dst + '.json', 'w'), ensure_ascii=False, indent=1)
-    print(f'{len(poses)} rires posés', [(p_['sketch'], p_['debut'], p_['fin']) for p_ in poses], f'; {len(instants)} jingles')
+    print(f'{len(poses)} rires posés', [(p_['sketch'], p_['debut'], p_['fin']) for p_ in poses], f'; {len(instants)} jingles ; tapis', (tapis_info or {}).get('ecoute'))

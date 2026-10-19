@@ -94,7 +94,7 @@ if __name__ == '__main__':
     try:
         import sonie, voix as voix_
         b_, sr_b = lit(BANDE) if os.path.isfile(BANDE) else (m_, sr)   # la bande LIVRÉE (après dé-esseur et mastering), plus le mixage brut
-        aigus_ = sonie.aigus(b_, sr_b, T['lines'], {k_: c_[2] for k_, c_ in voix_.CAST.items()})
+        aigus_ = sonie.aigus(b_, sr_b, T['lines'] + T.get('intonations', []), {k_: c_[2] for k_, c_ in voix_.CAST.items()})   # + grognements, souffles (19/10)
     except Exception as e_:
         aigus_ = [{'erreur': str(e_)[:120]}]
     feuille = {'repliques': lignes, 'rires_mesures': rires_mesures, 'aigus_mesures': aigus_, 'accompagnement': {k_: acc.get(k_) for k_ in ('rires', 'jingles')}, 'rires_entendus_yamnet': entendus,

@@ -114,6 +114,110 @@ def bras_v2(d, R, img, info):
     return info
 
 
+# PERMANENCE DES OBJETS (19/10/2026) — « la nourriture dans le plat au maquis bouge sans que rien ne la manipule » : la
+# découpe de Koffi avait pris la viande du plat central (couleur de peau, 11,8 % de pixels « personne » ajoutés à son masque
+# d'origine) ; posée sur la table, elle se déformait avec lui à chaque geste. C'est le défaut que les rapports de Sora
+# reconnaissent (objets qui bougent, apparaissent ou changent d'état sans cause) ; chez nous la règle est exacte : un objet
+# POSÉ (ADE20K : assiette, nourriture, verre, bouteille, plateau, marmite) que le masque d'origine de l'acteur ne contenait
+# pas appartient au décor — il quitte la découpe et revient, avec ses pixels d'origine, dans la plaque ; un objet tenu (dans
+# le masque d'origine) reste à l'acteur.
+VERSION_OBJETS = 1
+OBJETS_POSES = [98, 120, 125, 137, 142, 147]   # bouteille, nourriture, marmite, plateau, assiette, verre (ADE20K) ; meubles : objets.MEUBLES
+
+
+def objets_poses(img, m0s, alphas, acts=None, dist_min=10.0, aire_min=150, vote_max=0.5):
+    """→ (masque des objets rendus au décor, pixels retirés par acteur). Chaque MORCEAU que la découpe a ajouté au masque
+    d'origine (alpha > 0,5 hors du masque) est jugé entier : il revient au décor s'il est plus objet ou meuble (ADE20K) que
+    personne (≥ 0,4 et au-dessus de « personne ») ET loin du masque d'origine (médiane ≥ dist_min px : pas un liseré de
+    bord). Maquis, 19/10/2026 : la viande du plat (objet 0,43, personne 0,21, à 60 px du masque de Koffi) et la chaise
+    de Coumba (meuble 0,86, à 37 px) reviennent au décor ; les cheveux (objet 0,01) et les bords restent aux acteurs.
+    ARBITRE MAGICTOUCH : ADE20K voit « chaise » sur le dos de la robe de Baye posé contre le dossier, et sur une hanche de
+    Coumba ; chaque morceau candidat est donc soumis à MagicTouch (Apache-2.0) invité par quatre points du corps (torse,
+    nez, épaules, hanches) : part du morceau que MagicTouch range avec l'acteur, moyenne des quatre — ≥ vote_max, le
+    morceau reste à l'acteur (robe de Baye 0,75, hanche de Coumba 0,98) ; sinon il revient au décor (viande 0,35, chaise
+    de Coumba 0,02). Les alphas sont modifiées sur place ; bord fondu sur 1 px."""
+    P = objets.probas(img, {'objet': OBJETS_POSES, 'meuble': objets.MEUBLES, 'pers': [objets.PERSONNE]})
+    if P is None: return None, [0] * len(alphas)
+    dec = P['objet'] + P['meuble']; rendu = np.zeros(img.shape[:2], bool); retires = []
+    for k, al in enumerate(alphas):
+        m0 = m0s[k] > 0.5
+        aj = cv2.morphologyEx(((al > 0.5) & ~m0).astype(np.uint8), cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+        n, lab, st, _ = cv2.connectedComponentsWithStats(aj)
+        d0 = cv2.distanceTransform((~m0).astype(np.uint8), cv2.DIST_L2, 5); m = np.zeros(aj.shape, bool); mts = None
+        for i in range(1, n):
+            if st[i][4] < aire_min: continue
+            c = lab == i; sd, sp = float(dec[c].mean()), float(P['pers'][c].mean())
+            if not (sd >= 0.4 and sd > sp and float(np.median(d0[c])) >= dist_min): continue
+            if acts is not None:
+                if mts is None: mts = _corps_magic(img, acts[k])
+                if mts and float(np.mean([mt[c].mean() for mt in mts])) >= vote_max: continue   # MagicTouch : c'est l'acteur
+            m |= c
+        m = cv2.dilate(m.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool) & (al > 0.02) & ~m0   # halo du morceau
+        if mts and m.any():   # liseré de l'acteur pris dans le morceau (bord de robe, talon contre la chaise) : rendu à l'acteur
+            reste = (al > 0.5) & ~m; pres = cv2.distanceTransform((~reste).astype(np.uint8), cv2.DIST_L2, 3) <= 6
+            m &= ~(pres & (np.mean(mts, 0) >= vote_max))
+        retires.append(int(m.sum()))
+        if not m.any(): continue
+        f = cv2.GaussianBlur(m.astype(np.float32), (0, 0), 1.0)
+        alphas[k] = (al * (1 - np.where(m, 1.0, f))).astype(np.float32); rendu |= m
+    return rendu, retires
+
+
+def _corps_magic(img, a):
+    """MagicTouch invité par quatre points du corps de l'acteur (torse, nez, milieu des épaules, milieu des hanches) :
+    liste de masques « même objet que ce point » (vide si les articulations manquent)."""
+    try:
+        p = rig2d.completer(a['pts'], a['bbox']); x0, y0, x1, y1 = a['bbox']; m = 0.15 * (x1 - x0); box = (x0 - m, y0 - m, x1 + m, y1 + m)
+        graines = [p[[11, 12, 23, 24], :2].mean(0), p[0, :2], p[[11, 12], :2].mean(0), p[[23, 24], :2].mean(0)]
+        return [magic_touch(img, box, g) > 0.5 for g in graines]
+    except Exception as ex:
+        print(f"{a.get('nom')} : MagicTouch indisponible ({str(ex)[:80]}), objets jugés par ADE20K seul", flush=True); return []
+
+
+def objets_attaches(d):
+    """CONTRÔLE (porte K) : pixels d'objets posés ou de meubles encore attachés à un acteur dans <scène>/rig — la même règle
+    rejouée à blanc sur les découpes actuelles ; 0 attendu pour chaque acteur. → {nom: pixels} (None si non préparée)."""
+    R = f'{d}/rig'; S = json.load(open(f'{d}/scene.json')); acts = S['acteurs']
+    fas = [f"{R}/alpha-{a['slug']}.png" for a in acts]
+    if not all(os.path.isfile(f) for f in fas): return None
+    img = cv2.cvtColor(cv2.imread(f'{d}/image.png'), cv2.COLOR_BGR2RGB)
+    m0s = [cv2.imread(f"{d}/{a['slug']}-masque.png", 0).astype(np.float32) / 255 for a in acts]
+    alphas = [cv2.imread(f, cv2.IMREAD_UNCHANGED).astype(np.float32) / 65535 for f in fas]
+    _, ret = objets_poses(img, m0s, alphas, acts)
+    return {a['nom']: r for a, r in zip(acts, ret)}
+
+
+def objets_v1(d, R, img, info):
+    """scène déjà préparée : objets posés rendus au décor (découpes, plaque, trou, calques des bras), sans refaire la
+    préparation entière (quelques secondes)."""
+    S = json.load(open(f'{d}/scene.json')); acts = S['acteurs']
+    m0s = [cv2.imread(f"{d}/{a['slug']}-masque.png", 0).astype(np.float32) / 255 for a in acts]
+    fas = [f"{R}/alpha-{a['slug']}.png" for a in acts]
+    if not all(os.path.isfile(f) for f in fas): return info
+    alphas = [cv2.imread(f, cv2.IMREAD_UNCHANGED).astype(np.float32) / 65535 for f in fas]
+    rendu, retires = objets_poses(img, m0s, alphas, acts)
+    info['objets_rendus'] = {a['nom']: r for a, r in zip(acts, retires)}
+    if rendu is not None and rendu.any():
+        pl = cv2.cvtColor(cv2.imread(f'{R}/plaque.png'), cv2.COLOR_BGR2RGB)
+        couvert = np.max(np.stack(alphas), 0) > 0.5   # derrière un acteur, la plaque reconstituée reste
+        pl[rendu & ~couvert] = img[rendu & ~couvert]; cv2.imwrite(f'{R}/plaque.png', cv2.cvtColor(pl, cv2.COLOR_RGB2BGR))
+        if os.path.isfile(f'{R}/trou.png'):
+            tr = cv2.imread(f'{R}/trou.png', 0) > 0; tr[rendu & ~couvert] = False; cv2.imwrite(f'{R}/trou.png', tr.astype(np.uint8) * 255)
+        for k, a in enumerate(acts):
+            if not retires[k]: continue
+            cv2.imwrite(fas[k], np.clip(alphas[k] * 65535, 0, 65535).astype(np.uint16))
+            ent = info['acteurs'].get(a['nom'])
+            if not ent: continue
+            ent['empreinte_alpha'] = hashlib.md5(np.clip(alphas[k] * 65535, 0, 65535).astype(np.uint16).tobytes()).hexdigest()
+            bras = gestes.prepare(img, alphas[k], ent.get('pts', a['pts']), a['visage']['box'] if a.get('visage') else None, a['bbox'])
+            _sauve_bras(f"{R}/bras-{a['slug']}.npz", bras); ent['bras'] = [(b['cote'], 'avant-bras' if b['nu'] else 'main', b['amax'], b['emax']) for b in bras]
+        print(f"objets posés rendus au décor : {info['objets_rendus']}", flush=True)
+        gestes.ferme()
+    info['version_objets'] = VERSION_OBJETS
+    json.dump(info, open(f'{R}/scene_rig.json', 'w'), ensure_ascii=False, indent=1, default=lambda o: o.item() if hasattr(o, 'item') else str(o))
+    return info
+
+
 def _score_pts(pts, alpha):
     p = np.asarray(pts, np.float64); H, W = alpha.shape
     if p.shape[0] < 33: return 0.0
@@ -167,6 +271,8 @@ def sans_couture(a, k=5):
 OS_CORPS = ((11, 13), (13, 15), (15, 17), (15, 19), (15, 21), (12, 14), (14, 16), (16, 18), (16, 20), (16, 22), (11, 12), (11, 23),
             (12, 24), (23, 24), (23, 25), (25, 27), (27, 29), (29, 31), (27, 31), (24, 26), (26, 28), (28, 30), (30, 32), (28, 32))
 _MT = {}
+import atexit
+atexit.register(lambda: _MT.pop('s').close() if 's' in _MT else None)   # fermé avant le démontage de l'interprète (sinon trace MediaPipe à la sortie)
 def magic_touch(img, box, point):
     """MediaPipe Interactive Segmenter (MagicTouch, Apache-2.0) sur le recadrage `box`, invité par UN point de l'image :
     probabilité « même objet que ce point », à la taille de l'image (0 hors du recadrage)."""
@@ -296,6 +402,7 @@ def prepare(d, jev=True, force=False):
         if info0.get('version_decoupe', 1) == VERSION_DECOUPE and info0.get('amodal') == AMODAL:
             if info0.get('version_fils', 1) != VERSION_FILS: info0 = fils_v2(d, R, img, info0, jev)
             if info0.get('version_bras', 1) != VERSION_BRAS and os.environ.get('BRAS_RTMW', '1') == '1': info0 = bras_v2(d, R, img, info0)
+            if info0.get('version_objets', 0) != VERSION_OBJETS: info0 = objets_v1(d, R, img, info0)
             return info0
     t0 = time.time(); acts = S['acteurs']
     m0s = [cv2.imread(f"{d}/{a['slug']}-masque.png", 0).astype(np.float32) / 255 for a in acts]
@@ -399,7 +506,7 @@ def prepare(d, jev=True, force=False):
     cv2.imwrite(f'{R}/controle.jpg', cv2.cvtColor(np.hstack(row), cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, 85])
     json.dump(info, open(f'{R}/scene_rig.json', 'w'), ensure_ascii=False, indent=1, default=lambda o: o.item() if hasattr(o, 'item') else str(o))
     gestes.ferme()
-    return info
+    return objets_v1(d, R, img, info)   # préparation entière : les objets posés sont rendus au décor de la même façon
 
 
 if __name__ == '__main__':

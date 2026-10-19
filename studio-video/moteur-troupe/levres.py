@@ -9,10 +9,15 @@ RH = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-mod
 # ouverture (0 = fermée, 1 = grande ouverte) de chaque forme, d'après la documentation de Rhubarb
 OUV = {'A': 0.0, 'B': 0.3, 'C': 0.65, 'D': 1.0, 'E': 0.55, 'F': 0.3, 'G': 0.15, 'H': 0.45, 'X': 0.0}
 TL = sys.argv[1]; T = json.load(open(TL))
+CACHE = os.path.expanduser(os.environ.get('MEMO_CACHE', '~/.cache/massamba-memo'))
 def cues(L):
+    # 19/10/2026 (« un film entier en 1 minute ») : formes de bouche mémorisées par empreinte de l'audio de la réplique
+    import hashlib
+    h = hashlib.sha1(open(L['wav'], 'rb').read() + open(RH, 'rb').read(65536)).hexdigest()[:24]; fc = f'{CACHE}/rhubarb-{h}.json'
+    if os.path.isfile(fc): return json.load(open(fc))
     out = f"/tmp/rh_{os.path.basename(L['wav'])}.json"
     subprocess.run([RH, '-r', 'phonetic', '-f', 'json', '--extendedShapes', 'GHX', '-q', L['wav'], '-o', out], check=True)
-    return json.load(open(out))['mouthCues']
+    c = json.load(open(out))['mouthCues']; os.makedirs(CACHE, exist_ok=True); json.dump(c, open(fc, 'w')); return c
 with ThreadPoolExecutor(4) as ex: allc = list(ex.map(cues, T['lines']))
 for L, cs in zip(T['lines'], allc):
     L['visemes'] = [{'v': c['value'], 't0': c['start'], 't1': c['end']} for c in cs]

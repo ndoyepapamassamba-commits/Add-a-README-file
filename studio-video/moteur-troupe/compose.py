@@ -211,13 +211,9 @@ with _mp.get_context('fork').Pool(int(os.environ.get('COMPOSE_PROCS', os.cpu_cou
 # son du fichier livré : fondu de fin, puis sonie −14 LUFS et crête vraie ≤ −2,3 dBTP mesurées en boucle (sonie.py ; le
 # loudnorm d'ffmpeg en une passe laissait −15,3 LUFS et −0,7 dBTP, porte H refusée)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import sonie
-y_, sr_ = sonie.lit(BANDE); y_ = y_[:int(total * sr_)]; nf_ = int(0.4 * sr_); y_[-nf_:] *= np.linspace(1, 0, nf_)
-y_ = sonie.adoucit(y_, sr_)   # dé-esseur (18/10/2026, « le son est aigu par moments »)
-# boucle fermée sur le contrôle des sifflantes APRÈS le mastering (19/10/2026, v12 : −9,8 dB à 40,9 s) : le limiteur comprime
-# la parole forte, pas les sifflantes, qui remontaient de ~3 dB par rapport à la parole médiane ; crête revérifiée ensuite
-y_ = sonie.garde_aigus(sonie.masterise(y_, sr_), sonie.SR)
-if sonie.mesure(y_)[1] > -2.2: y_ = sonie.limiteur(y_, sonie.SR, -2.3)
-sonie.ecrit(f'{D}/bande.wav', y_)
+# dé-esseur (18/10), mastering, boucle fermée sur le contrôle des sifflantes APRÈS le mastering (19/10/2026, v12 : −9,8 dB à
+# 40,9 s ; le limiteur comprime la parole forte, pas les sifflantes), crête revérifiée : sonie.bande_livree
+sonie.ecrit(f'{D}/bande.wav', sonie.bande_livree(BANDE, total))
 # encodage « veryfast » CRF 18 (18/10/2026, « réduire drastiquement le temps de production ») : 31 s au lieu de 56,5 s pour les
 # 4 047 images de l'épisode 1, PSNR 44,3 dB entre les deux encodages (identiques à l'œil)
 subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-framerate', str(FPS), '-i', f'{D}/compose/c%05d.jpg', '-i', f'{D}/bande.wav', '-vf', 'format=yuv420p',

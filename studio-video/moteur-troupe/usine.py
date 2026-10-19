@@ -7,12 +7,13 @@
 #   python3 usine.py episode <dossier> [n]         → dossier d'épisode : histoire (sketchs non encore tournés), liens, montage
 #   python3 usine.py tourne <dossier> <version>    → voix → bouches → rires → ambiance → visages → tournage → montage → portes
 #                                                    → planche → export TikTok → rapport.json
+#   python3 usine.py eclair <dossier> <version>    → essai éclair : la même chaîne sans images, portes mesurables (≈ 1 min)
 #   python3 usine.py exporte <film.mp4> <sortie>   → 1080 × 1920, H.264 High, AAC 48 kHz, −14 LUFS (déjà masterisé)
 # Bibliothèque (lieux préparés, fiches, émojis) : MASSAMBA_BIBLIO (hors dépôt : images de la troupe privées).
 import re, glob, json, os, shutil, subprocess, sys, time
 
 ICI = os.path.dirname(os.path.abspath(__file__))
-BIBLIO = os.path.expanduser(os.environ.get('MASSAMBA_BIBLIO', '~/massamba-bibliotheque'))
+BIBLIO = os.path.realpath(os.path.expanduser(os.environ.get('MASSAMBA_BIBLIO', '~/massamba-bibliotheque')))   # « ep01/.. » accepté
 LIENS = ('prep', 'fiches', 'emoji', 'scenes', 'ltas.json', 'registre-repliques.json', 'voix-mls.json')
 LIEU_DOSSIER = {'maquis': 'prep/maquis', 'cour': 'prep/cour', 'chambre': 'prep/chambre'}
 BANQUES = ('fabrique/histoires/reserve-cour.json',)   # sketchs écrits et contrôlés, prêts à tourner (en plus des épisodes)
@@ -118,6 +119,51 @@ def tourne(d, v):
                          stdout=open(f'{d}/{v}-portes.log', 'w'), stderr=subprocess.STDOUT)
         return {'episode': os.path.basename(d), 'version': v, 'durees_s': T, 'portes': 'en cours (arrière-plan)', 'rapport': f'{D}/rapport.json'}
     return finit(d, v)
+
+
+# ── ESSAI ÉCLAIR (19/10/2026, « tu dois chercher un moyen de produire un film entier en 1 minute pour accélérer les tests ») ──
+# Même chaîne que `tourne`, sans les images : voix (mémo par réplique), bouches (repères Rhubarb en cache), rires, ambiance,
+# puis tourne.py en TOURNE_SANS_RENDU=1 (pistes, jeu, regards, mesures image par image sur la grille des 30 i/s, sans
+# déformer ni peindre une image) et la bande son livrée (sonie.bande_livree, la même que l'assemblage). Les portes qui ne
+# lisent que les mesures et le son sont jugées (D, E, F, I, M, N, souplesse de Q) ; les autres sont « non mesurées » —
+# jamais réussies : un essai éclair ne publie rien, il dit en une minute si une greffe fait avancer ou reculer.
+def eclair(d, v):
+    d = os.path.abspath(d); D = os.path.join(d, v); log = f'{d}/{v}-usine.log'; T = {}; t0 = time.time()
+    if not os.path.isfile(f'{d}/montage.json'): episode(d)
+    env = {'PIPER_VOICES': os.environ.get('PIPER_VOICES', os.path.join(os.path.dirname(BIBLIO), 'piper') + '/')}
+    etape = lambda nom, *a, e=None: T.__setitem__(nom, _py(*a, env=dict(env, **(e or {})), log=log, cwd=d)[0])
+    etape('voix', f'{ICI}/voix.py')
+    etape('bouches', f'{ICI}/levres.py', 'timeline.json')
+    etape('rires', f'{ICI}/musique.py', 'timeline.json', 'voix/mix.wav', 'voix/mix-musique.wav')
+    etape('ambiance', f'{ICI}/ambiance.py', 'timeline.json', 'voix/mix-musique.wav', 'voix/mix-ambiance.wav')
+    os.makedirs(D, exist_ok=True)
+    for f in glob.glob(f'{D}/mesures-*.jsonl') + [f'{D}/{x}' for x in ('jev_regard.json', 'jev_son.json', 'qualite.json')]:
+        if os.path.isfile(f): os.remove(f)   # résultats d'un essai précédent : jamais mélangés
+    # SON EN TEMPS MASQUÉ : la bande livrée et son juge (jev_son) ne dépendent pas des images ; ils tournent pendant le
+    # tournage (90 → ≈ 55 s à chaud sur l'épisode 1, mesuré)
+    import threading
+    def son_():
+        etape('bande', '-c', f"import sys, json; sys.path.insert(0, {ICI!r}); import sonie; "
+                             f"T = json.load(open('timeline.json')); "
+                             f"sonie.ecrit({D + '/bande.wav'!r}, sonie.bande_livree('voix/mix-ambiance.wav', float(T['total'])))")
+        mus = 'voix/mix-musique.wav' if os.path.isfile(f'{d}/voix/mix-musique.wav') else 'voix/mix.wav'
+        etape('juge_son', f'{ICI}/jev_son.py', 'timeline.json', 'voix/mix.wav', mus, f'{D}/bande.wav', f'{D}/jev_son.json')
+    def son_garde():
+        try: son_()
+        except Exception as ex: T['son'] = 'erreur : ' + str(ex)[:200]   # jamais muet : la porte N sera « non jugée »
+    fil = threading.Thread(target=son_garde); fil.start()
+    etape('tournage', f'{ICI}/tourne.py', 'montage.json', D, e={'ETIREMENT': '1', 'TOURNE_SANS_RENDU': '1', 'FILM_FPS': '30',
+                                                                 'TOURNE_PROCS': str(os.cpu_count() or 4)})
+    fil.join()
+    try: T['portes'] = _py(f'{ICI}/qualite.py', D, f'{D}/film.mp4', 'montage.json', env={'QUALITE_ECLAIR': '1'}, log=log, cwd=d)[0]
+    except RuntimeError as ex: T['portes'] = 'erreur : ' + str(ex)[:200]
+    q = json.load(open(f'{D}/qualite.json')) if os.path.isfile(f'{D}/qualite.json') else {}
+    jugees = (q.get('eclair') or {}).get('portes_jugees', [])
+    rap = {'episode': os.path.basename(d), 'version': v, 'mode': 'éclair (sans rendu)', 'durees_s': T, 'total_s': round(time.time() - t0, 1),
+           'portes_jugees': {k: q.get('portes', {}).get(k, {}).get('ok') for k in jugees},
+           'souplesse_Q': (q.get('eclair') or {}).get('souplesse_Q'), 'a_publier': False}
+    json.dump(rap, open(f'{D}/rapport-eclair.json', 'w'), ensure_ascii=False, indent=1)
+    return rap
 
 
 def finit(d, v):
@@ -251,7 +297,9 @@ def controles_utilisateur(D, q):
     def_son = son.get('synthese', {}).get('defauts', [])
     R['son_pas_aigu (18/10)'] = ('son_aigu' not in def_son, [a for a in son.get('feuille', {}).get('aigus_mesures', [])][:5])
     R['rires_apres_chaque_chute (18/10)'] = ('rires_absents' not in def_son, None)
-    R['visage_de_choc_net_sans_sourcils_doubles (18/10)'] = (bool((P.get('P_choc') or {}).get('ok')), det('P_choc').get('fautes'))
+    R['visage_de_choc_net_sans_sourcils_doubles (18/10, 19/10)'] = (bool(det('P_choc').get('sourcils_ok')), det('P_choc').get('sourcils_hors_zone_collee'))
+    att = det('K_physique').get('objets_attaches_aux_acteurs')   # « la nourriture du plat bouge sans que rien ne la touche »
+    R['objets_poses_immobiles_sans_contact (19/10)'] = (isinstance(att, dict) and bool(att) and all(isinstance(v, dict) and not any(v.values()) for v in att.values()), att)
     g = det('G_jev')
     vd = g.get('visages_deformes')   # None = porte G non jugée : jamais compté comme conforme
     R['visages_non_deformes (18/10)'] = (isinstance(vd, list) and not vd, len(vd) if isinstance(vd, list) else 'non jugé')
@@ -299,6 +347,7 @@ if __name__ == '__main__':
     elif c == 'episode': print(json.dumps(episode(sys.argv[2]), ensure_ascii=False))
     elif c == 'tourne': print(json.dumps(tourne(sys.argv[2], sys.argv[3]), ensure_ascii=False, indent=1))
     elif c == 'exporte': print(exporte(sys.argv[2], sys.argv[3]))
+    elif c == 'eclair': print(json.dumps(eclair(sys.argv[2], sys.argv[3]), ensure_ascii=False, indent=1))
     elif c == 'finit': print(json.dumps(finit(sys.argv[2], sys.argv[3]), ensure_ascii=False, indent=1))
     elif c == 'a_corriger':
         f = os.path.join(BIBLIO, 'a-corriger.json'); print(open(f, encoding='utf-8').read() if os.path.isfile(f) else '{}')

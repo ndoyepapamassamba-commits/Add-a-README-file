@@ -90,10 +90,14 @@ def garde_aigus(y, sr, seuil_db=-11.5, tours=4):
     return y
 
 
-def aigus(y, sr, lignes=None, cibles=None, seuil_db=-10.0, rapport_f0=1.6):
+def aigus(y, sr, lignes=None, cibles=None, seuil_db=-10.0, rapport_f0=None, rapport_max=None):
     """contrôle : fenêtres de 0,1 s où l'énergie au-dessus de 5 kHz (sifflantes, souffles) dépasse `seuil_db` sous le niveau
     médian de la parole (v3 : jusqu'à −2,7 dB, « aigu par moments » ; après adoucit() : −11,6 dB au pire), et répliques dont
-    la hauteur p95 dépasse `rapport_f0` × la hauteur visée du personnage → liste des fautes (vide = conforme)."""
+    la hauteur p95 dépasse `rapport_f0` × la hauteur visée du personnage → liste des fautes (vide = conforme).
+    19/10/2026 (« encore aiguë par moments ») : seuils = la norme de la synthèse (voix.NORME_HAUTEUR : p95 ≤ 1,25, max ≤ 1,35,
+    médiane à 6 % de la cible) au lieu de 1,6 × ; les sons d'intonation (grognements, souffles de choc) passent aussi."""
+    import voix as voix_
+    N_ = voix_.NORME_HAUTEUR; rapport_f0 = rapport_f0 or N_['p95']; rapport_max = rapport_max or N_['max']
     import scipy.signal as ss_
     fautes = []; w = int(0.1 * sr)
     yh = ss_.sosfiltfilt(ss_.butter(4, 5000, 'high', fs=sr, output='sos'), y)
@@ -121,8 +125,9 @@ def aigus(y, sr, lignes=None, cibles=None, seuil_db=-10.0, rapport_f0=1.6):
             hp = int(0.01 * sr_l); e = np.array([np.sqrt(np.mean(x[max(0, int(t_ * sr_l) - hp):int(t_ * sr_l) + hp] ** 2)) for t_ in tf])
             m = min(len(f0), len(fd)); f0, fd, e = f0[:m], fd[:m], e[:m]
             v = f0[(f0 > 0) & (fd > 0) & (np.abs(np.log(np.maximum(fd, 1) / np.maximum(f0, 1))) < 0.15) & (e > 0.3 * (e.max() + 1e-12))]
-            if len(v) > 10 and np.percentile(v, 95) > rapport_f0 * c:
-                fautes.append({'t': round(L['t0'], 2), 'sorte': 'hauteur', 'qui': L['qui'], 'p95_hz': round(float(np.percentile(v, 95))), 'cible_hz': c})
+            if len(v) > 10 and (np.percentile(v, 95) > rapport_f0 * c or v.max() > rapport_max * c or abs(np.median(v) / c - 1) > N_['mediane'] + 0.04):
+                fautes.append({'t': round(L['t0'], 2), 'sorte': 'hauteur', 'qui': L['qui'], 'mediane_hz': round(float(np.median(v))),
+                               'p95_hz': round(float(np.percentile(v, 95))), 'max_hz': round(float(v.max())), 'cible_hz': c})
     return fautes
 
 
@@ -139,6 +144,17 @@ def masterise(y, sr_in, cible=-14.0, plafond=-2.3, journal=print):
     G = 10 ** (g / 20)
     gr = 20 * np.log10(np.maximum(np.abs(y), 1e-9) / np.maximum(np.abs(y0 * G), 1e-9))
     journal(f'  limiteur : réduction > 3 dB sur {100 * float((gr[np.abs(y0 * G) > 0.05] < -3).mean()):.1f} % de la parole')
+    return y
+
+
+def bande_livree(src, total, journal=print):
+    """bande son LIVRÉE à partir de la bande de travail (voix + rires + ambiance) : fondu de fin, dé-esseur, mastering
+    (−14 LUFS, crête ≤ −2,3 dBTP), garde des sifflantes en boucle fermée, crête revérifiée. Même chaîne pour le film
+    (compose.py) et pour l'essai éclair (usine.py eclair), qui juge le son sans image."""
+    y, sr = lit(src); y = y[:int(total * sr)]; n = int(0.4 * sr); y[-n:] *= np.linspace(1, 0, n)
+    y = adoucit(y, sr)
+    y = garde_aigus(masterise(y, sr, journal=journal), SR)
+    if mesure(y)[1] > -2.2: y = limiteur(y, SR, -2.3)
     return y
 
 
