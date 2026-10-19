@@ -247,7 +247,11 @@ try:
     if "L.get('mots')" not in open(os.path.join(ICI, 'moteur-troupe', 'compose.py'), encoding='utf-8').read() or 'mots=bornes_mots(ph)' not in \
             open(os.path.join(ICI, 'moteur-troupe', 'voix.py'), encoding='utf-8').read():
         echecs.append('sous-titres : bornes de mots Piper non câblées (voix → timeline → compose.words_of)')
-    print('sous-titres : bornes de mots Piper (liaison, phonème hors table) vérifiées')
+    _vf = _il.import_module('visemes_fr')   # greffe TalkingHead (MIT) : bouche fermée sur m, b, p à l'instant exact de Piper
+    _c = _vf.depuis_piper([['^', 0, 0.05], ['m', 0.05, 0.12], ['a', 0.12, 0.3], [' ', 0.3, 0.33], ['p', 0.33, 0.4], ['a', 0.4, 0.55], ['.', 0.55, 0.8]], 0.8)
+    if [x['value'] for x in _c][:5] != ['X', 'A', 'D', 'A', 'D'] or _c[-1]['end'] != 0.8:
+        echecs.append(f'bouche : visèmes Piper/TalkingHead faux ({_c})')
+    print('sous-titres : bornes de mots Piper (liaison, phonème hors table) vérifiées ; bouche m-b-p fermée (TalkingHead)')
 except Exception as e:
     echecs.append(f'sous-titres 19/10 : {e}')
 

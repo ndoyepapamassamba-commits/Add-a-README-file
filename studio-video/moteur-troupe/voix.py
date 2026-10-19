@@ -151,7 +151,9 @@ def hauteur(y, sr):
     fd, td = pw.dio(x, sr, f0_floor=60, f0_ceil=900, frame_period=10); fd = pw.stonemask(x, fd, td, sr)
     m = min(len(f0), len(fd)); f0, fd = f0[:m], fd[:m]
     hp = int(0.01 * sr); e = np.array([np.sqrt(np.mean(x[max(0, int(tt * sr) - hp):int(tt * sr) + hp] ** 2)) for tt in t[:m]])
-    v = f0[(f0 > 0) & (fd > 0) & (np.abs(np.log(np.maximum(fd, 1) / np.maximum(f0, 1))) < 0.15) & (e > 0.1 * (e.max() + 1e-12))]
+    # MÊME MESURE QUE LE CONTRÔLE (19/10/2026) : trames > 30 % du pic, comme sonie.aigus — à 10 %, le souffle de choc de Maman
+    # mesurait 196 Hz ici et 233 Hz au contrôle (sa partie forte, la seule entendue, était aiguë)
+    v = f0[(f0 > 0) & (fd > 0) & (np.abs(np.log(np.maximum(fd, 1) / np.maximum(f0, 1))) < 0.15) & (e > 0.3 * (e.max() + 1e-12))]
     return (float(np.median(v)), float(np.percentile(v, 95)), float(v.max())) if len(v) >= 10 else None
 
 

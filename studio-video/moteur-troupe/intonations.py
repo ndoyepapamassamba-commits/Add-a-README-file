@@ -31,7 +31,21 @@ def _brut(i, sr):
 
 
 def son(qui, sorte, k=0):
-    """interjection `sorte` dans la voix de `qui` (int16 à voix.SR), silences de tête et de queue retirés, sonie réglée."""
+    """interjection `sorte` dans la voix de `qui` (int16 à voix.SR) : la première des variantes (à partir de k) que le contrôle
+    de hauteur (sonie.aigus) accepte — 19/10/2026, 17 variantes sur 18 passaient, le grognement 3 de Coumba restait à 245 Hz
+    pour 215 visés ; aucune ne passe : celle dont la médiane est la plus proche de la cible."""
+    import voix, sonie
+    n = len(SONS[sorte]); essais = []
+    for d in range(n):
+        y = _son1(qui, sorte, k + d)
+        f = [x for x in sonie.aigus(y.astype(np.float64) / 32768, voix.SR, [{'qui': qui, 't0': 0.0, 'dur': len(y) / voix.SR}], {qui: voix.CAST[qui][2]}) if x.get('sorte') == 'hauteur']
+        if not f: return y
+        essais.append((abs(f[0]['mediane_hz'] / f[0]['cible_hz'] - 1), d, y))
+    return min(essais, key=lambda e: e[:2])[2]
+
+
+def _son1(qui, sorte, k=0):
+    """une variante : silences de tête et de queue retirés, hauteur à la norme, sonie réglée."""
     import voix, pyloudnorm as pyln
     sr = voix.SR; i = SONS[sorte][k % len(SONS[sorte])]; x = _brut(i, sr)
     e = np.abs(x.astype(np.float32)); thr = 0.03 * (e.max() + 1)

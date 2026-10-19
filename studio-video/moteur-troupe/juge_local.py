@@ -12,7 +12,7 @@
 #   python3 juge_local.py extrait <version>…        caractéristiques des images jugées par JEV (cache disque)
 #   python3 juge_local.py apprend                   têtes par question + accord mesuré sur versions tenues à l'écart
 #   python3 juge_local.py etat                      questions confiées au juge local et leur accord avec JEV
-import hashlib, json, os, re, subprocess, sys, threading, time
+import hashlib, json, os, re, subprocess, sys, threading, time, unicodedata
 import numpy as np, cv2
 
 ICI = os.path.dirname(os.path.abspath(__file__))
@@ -271,10 +271,15 @@ def regles_texte(outil, etat, im):
     lu = [(t, float(c)) for _, t, c in _ocr().readtext(zone)]
     mots = [m for t, _ in lu for m in _mots(t)]; conf = float(np.mean([c for _, c in lu])) if lu else 0.0
     if outil == 'jev_texte_soustitres':
-        ref = _mots(etat.get('replique', ''))
-        ok_m = [m for m in mots if _proche(m, ref) >= 0.75]
-        return {'lisible': float(bool(mots) and conf >= 0.5 and len(ok_m) >= 0.8 * len(mots)),
-                'conforme': float(bool(mots) and len(ok_m) >= 0.8 * len(mots)), 'visage': 0.0}, {'lu': ' '.join(t for t, _ in lu), 'confiance': round(conf, 2)}
+        # LETTRE À LETTRE (19/10/2026) : la pastille du mot prononcé colle les mots voisins pour l'OCR (« TOIQUIPAIES »,
+        # « AVECLETIEN » — v14, sous-titres justes à l'image) ; le texte lu, sans espaces ni ponctuation, doit se retrouver
+        # dans la réplique : part des lettres lues appariées dans l'ordre ≥ 0,85 (difflib), au moins 3 lettres lues
+        from difflib import SequenceMatcher
+        colle = lambda x: re.sub(r'[^0-9a-zàâäçéèêëîïôöùûüœ]', '', unicodedata.normalize('NFC', x.lower()))
+        lu_c, ref_c = colle(' '.join(t for t, _ in lu)), colle(etat.get('replique', ''))
+        part = sum(b.size for b in SequenceMatcher(None, lu_c, ref_c, autojunk=False).get_matching_blocks()) / max(1, len(lu_c))
+        ok = len(lu_c) >= 3 and part >= 0.85
+        return {'lisible': float(ok and conf >= 0.5), 'conforme': float(ok), 'visage': 0.0}, {'lu': ' '.join(t for t, _ in lu), 'confiance': round(conf, 2), 'part_lettres': round(part, 3)}
     ref = _mots(etat.get('titre', ''))
     trouves = [r for r in ref if _proche(r, mots) >= 0.75]
     r = {'titre_lisible': float(bool(ref) and len(trouves) >= 0.8 * len(ref) and conf >= 0.4)}

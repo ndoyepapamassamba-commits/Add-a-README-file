@@ -18,7 +18,13 @@ def cues(L):
     out = f"/tmp/rh_{os.path.basename(L['wav'])}.json"
     subprocess.run([RH, '-r', 'phonetic', '-f', 'json', '--extendedShapes', 'GHX', '-q', L['wav'], '-o', out], check=True)
     c = json.load(open(out))['mouthCues']; os.makedirs(CACHE, exist_ok=True); json.dump(c, open(fc, 'w')); return c
-with ThreadPoolExecutor(4) as ex: allc = list(ex.map(cues, T['lines']))
+import visemes_fr
+def cues_ou_piper(L):
+    # PHONÈMES DU TEXTE D'ABORD (19/10/2026, greffe TalkingHead) : instants exacts de la voix Piper ; Rhubarb pour les voix sans
+    # alignement (clones Qwen3) ou une timeline d'avant le 19/10
+    if L.get('phonemes_piper') and os.environ.get('LEVRES_RHUBARB') != '1': return visemes_fr.depuis_piper(L['phonemes_piper'], L['dur'])
+    return cues(L)
+with ThreadPoolExecutor(4) as ex: allc = list(ex.map(cues_ou_piper, T['lines']))
 for L, cs in zip(T['lines'], allc):
     L['visemes'] = [{'v': c['value'], 't0': c['start'], 't1': c['end']} for c in cs]
     L['phonemes'] = [{'ph': c['value'], 't0': c['start'], 't1': c['end'], 'open': 4 * OUV[c['value']]} for c in cs]
