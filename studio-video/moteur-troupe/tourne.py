@@ -1312,6 +1312,10 @@ def realise(plans):
         # … et pour CHACUN de ceux qui parlent dans le plan (v35 : la porte B mesure le visage de celui qui parle)
         grand = lambda k_: all(taille_visage(S, n_, cs_[k_]) >= VISAGE_MIN for n_ in (parleurs_de(S, s) or ([keep] if keep in S['acts'] else [])))
         try:
+            # JEV COUPÉ (19/10/2026, mesure du cache ~/.cache/massamba-jev/realisateur) : depuis la coupure, 254 décisions sur
+            # 254 ont fini par les règles ci-dessous — le juge local ne sait pas répondre à tout le questionnaire et le refusait
+            # APRÈS une trentaine d'appels au modèle d'images par plan (plusieurs minutes par épisode) ; on va droit aux règles
+            if not jev_api.autorise(): raise juge_local.NonJuge('réalisateur : questionnaire complet réservé à JEV')
             a = jev_api.demande(ids, Q, assets, outil='jev_realisateur')
         except juge_local.NonJuge:
             # JEV COUPÉ (18/10/2026) — la décision du réalisateur reproduite en règles, d'après ses 268 décisions gardées : le

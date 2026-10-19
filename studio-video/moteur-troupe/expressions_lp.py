@@ -267,15 +267,23 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
     taille = int(round(min(512, max(96, s))))
     ancien = json.load(open(f'{dossier}/meta.json')) if os.path.isfile(f'{dossier}/meta.json') else {}
     compat = ancien.get('taille') == taille and ancien.get('version') == VERSION   # recettes réutilisables
+    # MÊME VISAGE, AUTRE TAILLE (19/10/2026) : une scène recomposée (scene_nouvelle.py) lit le même visage à 1 ou 2 % près
+    # (Maître Koné : carré de 218 → 221 px) ; les recettes déjà jugées pour CE visage restent valables : reprises sans
+    # nouveau jugement, seules les images sont redessinées à la nouvelle taille
+    proche = lambda d_: d_.get('version') == VERSION and d_.get('bouche') == BOUCHE and bool(d_.get('taille')) and abs(d_['taille'] - taille) <= 0.1 * taille
+    retaille = False
+    if not compat and proche(ancien): compat = retaille = True
     neuf_bouche = ancien.get('bouche') != BOUCHE   # seules les bouches ouvertes sont redessinées (recettes gardées, pas de JEV)
     vieux = ancien.get('commandes', {}) if compat else {}; v_rec = ancien.get('recettes', {}) if compat else {}; v_jev = ancien.get('jev', {}) if compat else {}
     # reprise d'une construction interrompue (minuterie, machine reprise) : les émotions déjà cherchées ET dessinées avec les
     # bouches actuelles sont gardées telles quelles (partiel.json, écrit après chaque émotion)
     fp = f'{dossier}/partiel.json'; P = json.load(open(fp)) if os.path.isfile(fp) else {}; repris = set()
-    if P.get('taille') == taille and P.get('version') == VERSION and P.get('bouche') == BOUCHE:
+    if (P.get('taille') == taille or proche(P)) and P.get('version') == VERSION and P.get('bouche') == BOUCHE:
+        if P.get('taille') != taille: retaille = True
         vieux = dict(vieux); v_rec = dict(v_rec); v_jev = dict(v_jev)
         for e in P.get('emotions', []):
-            vieux[e] = P['commandes'][e]; v_rec[e] = P['recettes'][e]; repris.add(e)
+            vieux[e] = P['commandes'][e]; v_rec[e] = P['recettes'][e]
+            if P.get('taille') == taille: repris.add(e)   # même taille : déjà dessinées ; sinon redessinées (recette gardée)
             if e in P.get('jev', {}): v_jev[e] = P['jev'][e]
         if 'neutre' in P.get('jev', {}): v_jev['neutre'] = P['jev']['neutre']
         if repris: journal(f'  reprise : {len(repris)} émotions déjà faites')
@@ -289,7 +297,7 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
     rend = lambda c, m: cv2.resize(src.rendu(_commande(c, m)), (taille, taille), interpolation=cv2.INTER_AREA)
     ecrit = lambda f, o: cv2.imwrite(f, cv2.cvtColor(o, cv2.COLOR_RGB2BGR))
     lire = lambda f: cv2.cvtColor(cv2.imread(f), cv2.COLOR_BGR2RGB)
-    base = (v_jev.get('neutre') or {}).get('abime') if repris else None
+    base = (v_jev.get('neutre') or {}).get('abime') if (repris or retaille) else None
     if base is not None: meta['jev']['neutre'] = v_jev['neutre']
     for e in (emotions or EMO):
         meme = vieux.get(e) == EMO[e] and e in v_rec; c = v_rec[e] if meme else dict(EMO[e]); fait0 = None
@@ -307,7 +315,7 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
         garde = False
         if an is not None and e != 'neutre' and abs(c.get('levre0', 0.0)) > 1e-4 and os.path.isfile(f'{dossier}/neutre_{k0}.png'):
             n0 = lire(f'{dossier}/neutre_{k0}.png'); f0 = f'{dossier}/{e}_{k0}.png'
-            o = fait0 if fait0 is not None else (lire(f0) if meme and os.path.isfile(f0) else rend(c, 0))
+            o = fait0 if fait0 is not None else (lire(f0) if meme and not retaille and os.path.isfile(f0) else rend(c, 0))
             d0 = debordement(n0, o, an, pres); c0 = dict(c); d_ = d0
             while d_[0] > GARDE_DEBORDE and abs(c.get('levre0', 0.0)) > 1e-4:
                 c = dict(c); c['levre0'] = round(c['levre0'] * 0.5, 4) if abs(c['levre0']) > 0.03 else 0.0
@@ -325,7 +333,7 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
                 except Exception as ex: journal(f'  lunettes : juge indisponible ({str(ex)[:60]})')
             if lun is not None and lun > 0.5:
                 f0 = f'{dossier}/{e}_{k0}.png'
-                o = fait0 if fait0 is not None else (lire(f0) if meme and not garde and os.path.isfile(f0) else rend(c, 0))
+                o = fait0 if fait0 is not None else (lire(f0) if meme and not garde and not retaille and os.path.isfile(f0) else rend(c, 0))
                 r0 = rigidite(n0, o, zy); r_ = r0; c1 = dict(c)
                 while r_ > GARDE_RIGIDE and any(abs(c.get(k_, 0.0)) > 1e-4 for k_ in SOURCILS):
                     c = {k_: ((round(v_ * 0.5, 4) if abs(v_ * 0.5) >= 0.1 else 0.0) if k_ in SOURCILS else v_) for k_, v_ in c.items()}
@@ -336,7 +344,7 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
                         try: g_['jev'] = {k_: round(v_, 3) for k_, v_ in juger(o, {'abime': ABIME, 'lisible': f'Does this cartoon face clearly look {DESC[e]}?'}).items()}
                         except Exception as ex: journal(f'  {e} : juge indisponible pour la garde ({str(ex)[:60]})')
                     journal(f"  {e} : garde des lunettes, écart {r0} → {r_} px, sourcils {g_['sourcils_avant']} → {({k_: c[k_] for k_ in SOURCILS if k_ in c})} {g_.get('jev', '')}")
-        neuf = not meme or garde
+        neuf = not meme or garde or (retaille and e not in repris)
         for i, m in enumerate(BOUCHE):
             f = f'{dossier}/{e}_{i}.png'
             if m == 0 and fait0 is not None: ecrit(f, fait0); continue   # la recette est jugée à la bouche peinte (0)
