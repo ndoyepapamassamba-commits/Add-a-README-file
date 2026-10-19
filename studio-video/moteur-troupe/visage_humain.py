@@ -106,10 +106,8 @@ def charge(nom):
     for a, b in z['mots_t']: parole[int(a * FPS):int(np.ceil(b * FPS))] = True
     c['parole'] = parole
     # haussements de sourcils : pics de la piste au-dessus de sa ligne de base glissante (2 s), d'au moins SEUIL_HAUSSE
-    s = c['sourcils_haut']; k = 2 * FPS + 1
-    base = np.array([np.percentile(s[max(0, i - k // 2):i + k // 2 + 1], 20) for i in range(n)], np.float32)
-    c['hausse'] = np.clip(s - base, 0, None)
-    pics = [i for i in range(1, n - 1) if c['hausse'][i] >= SEUIL_HAUSSE and c['hausse'][i] >= c['hausse'][i - 1] and c['hausse'][i] > c['hausse'][i + 1]]
+    s = c['sourcils_haut']; c['hausse'] = np.clip(s - _base_glissante(s, 2 * FPS + 1), 0, None)   # vectorisé (0,3 s → 0,01 s par minute)
+    h_ = c['hausse']; pics = (np.flatnonzero((h_[1:-1] >= SEUIL_HAUSSE) & (h_[1:-1] >= h_[:-2]) & (h_[1:-1] > h_[2:])) + 1).tolist()
     fus = []
     for i in pics:   # un haussement = un pic ; deux pics à moins de 0,4 s n'en font qu'un
         if fus and i - fus[-1] < int(0.4 * FPS):
@@ -124,7 +122,8 @@ def charge(nom):
 SEUIL_HAUSSE = 0.12   # coefficient ARKit au-dessus de la ligne de base : haussement visible (mesuré sur la normes())
 
 
-# ── LE VISAGE DU MÊME HUMAIN, AU MÊME INSTANT (19/10/2026). Mesure : un enregistrement BEAT2 « en_<id> » et l'enregistrement
+# ── LE JEU DU VISAGE DU MÊME ACTEUR, AU MÊME INSTANT (19/10/2026) — référence de jeu seulement : le personnage reste dessiné
+# (sa propre bibliothèque d'expressions dessinées) ; l'acteur capté ne donne que l'instant et la force des mouvements. Mesure : un enregistrement BEAT2 « en_<id> » et l'enregistrement
 # BEAT v1 « <id> » partagent la même horloge (6 enregistrements sur 6 : décalage 0 image, parole et silences identiques à
 # 100 %). Quand le corps d'une réplique vient d'une prise BEAT2 recalée sur nos syllabes (mocap_jeu.couche, rangs), le
 # visage est lu dans la MÊME prise aux MÊMES rangs : sourcils et sourire du même humain que les gestes et la tête.
