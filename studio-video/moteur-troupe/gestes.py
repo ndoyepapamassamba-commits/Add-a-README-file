@@ -190,6 +190,48 @@ def enveloppe(b):
     return dict(amax=best[0], emax=best[1], deplacement=round(best[2], 1), vide=round(best[3], 3))
 
 
+# GESTE QUI DÉCOUVRE SA PLACE (19/10/2026). L'utilisateur : « les personnages ne sont pas encore fluides dans leurs mouvements
+# et gestes ». Mesure : l'enveloppe ci-dessus (le bras doit recouvrir sa propre place, VIDE_MAX = 1 %) bornait les gestes à
+# 0–14° sur les 11 bras de l'épisode 1, et à 0° pour toute main posée (table, hanche) : des bras figés. Or le fond reconstitué
+# sous chaque bras (LaMa + grain du dessin) est propre — planche du 19/10 : bras effacé, robe, table et cuisse redessinées,
+# avant-bras levé de 25° lisible (Coumba lève sa fourchette, Tantie Awa décolle la main de la hanche). Comme chez les
+# conversants réels (l'orateur quitte la position de repos des mains pour gesticuler, l'auditeur la garde — Hladek et al.
+# 2025, arXiv 2512.03636), le bras peut désormais LAISSER VOIR sa place : jusqu'à ANGLE_REVELE quand le fond passe deux
+# contrôles mesurés — pas de bras fantôme redessiné par LaMa (couleurs du bras retrouvées au cœur du trou) et pas de couleur
+# étrangère au voisinage — et tant que le bras tourné reste dans sa boîte.
+ANGLE_REVELE = (28.0, 20.0)   # degrés : avant-bras nu (pivot au coude), main seule (pivot au poignet, manche longue)
+FANTOME_MAX, ETRANGER_MAX = 0.3, 0.15
+
+
+def qualite_fond(b):
+    """→ {fantome, etranger} : part du cœur du trou où le fond reconstitué garde la couleur du bras (ΔE Lab < 18), et part
+    dont la couleur est loin (ΔE > 28) des 12 couleurs dominantes du voisinage."""
+    rgb = np.asarray(b['rgb'], np.uint8); fond = np.asarray(b['fond'], np.uint8); t = np.asarray(b['trou'], np.uint8)
+    coeur = (np.asarray(b['calque']) > 0.6) & (cv2.erode(t, np.ones((5, 5), np.uint8)) > 0)
+    autour = (cv2.dilate(t, np.ones((31, 31), np.uint8)) > 0) & (t == 0)
+    if coeur.sum() < 30 or autour.sum() < 50: return dict(fantome=1.0, etranger=1.0)
+    lf = cv2.cvtColor(fond, cv2.COLOR_RGB2LAB).astype(np.float32); lo = cv2.cvtColor(rgb, cv2.COLOR_RGB2LAB).astype(np.float32)
+    fantome = float(np.mean(np.abs(lf[coeur] - lo[coeur]).sum(1) < 18))
+    crit = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0); cv2.setRNGSeed(7)
+    _, _, cen = cv2.kmeans(lo[autour].astype(np.float32), 12, None, crit, 2, cv2.KMEANS_PP_CENTERS)
+    etranger = float(np.mean(np.min(np.linalg.norm(lf[coeur][:, None, :] - cen[None], axis=2), 1) > 28))
+    return dict(fantome=round(fantome, 3), etranger=round(etranger, 3))
+
+
+def enveloppe_revelee(b):
+    """le geste le plus ample quand le bras peut découvrir sa place : angle (pas de 2°) jusqu'à ANGLE_REVELE, tant que 98 %
+    du calque tourné reste dans la boîte du bras ; refusé (revele=False) si le fond reconstitué échoue à un contrôle."""
+    q = qualite_fond(b)
+    if q['fantome'] > FANTOME_MAX or q['etranger'] > ETRANGER_MAX: return dict(q, revele=False)
+    x0, y0, x1, y1 = [int(v) for v in b['box']]; w, h = x1 - x0, y1 - y0; c = np.asarray(b['calque'], np.float32); n = max(1.0, float(c.sum()))
+    best = float(b.get('amax', 0.0)); lim = ANGLE_REVELE[0] if b['nu'] else ANGLE_REVELE[1]
+    for ang in np.arange(2.0, lim + 1e-6, 2.0):
+        M = cv2.getRotationMatrix2D((float(b['piv'][0] - x0), float(b['piv'][1] - y0)), float(ang * b['sens']), 1.0)
+        if float(cv2.warpAffine(c, M, (w, h)).sum()) / n < 0.98: break
+        best = max(best, float(ang))
+    return dict(q, revele=True, amax=best)
+
+
 def pose_geste(a):
     """(angle en degrés, échelle) d'un geste ; un nombre seul = angle, échelle 1."""
     return (float(a[0]), float(a[1])) if isinstance(a, (tuple, list)) else (float(a), 1.0)

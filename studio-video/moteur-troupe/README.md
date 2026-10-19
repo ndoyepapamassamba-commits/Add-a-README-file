@@ -101,3 +101,14 @@ python3 musique.py timeline.json voix/mix.wav voix/mix-musique.wav
 ETIREMENT=1 TOURNE_PROCS=4 python3 tourne.py montage.json film && python3 compose.py film film/film.mp4
 python3 qualite.py film film/film.mp4 montage.json               # 10 portes → film/qualite.json
 ```
+
+### Troupe en dessin animé : âge, proportions, gestes et regards (19/10/2026)
+
+| Étape | Module | Ce qui est fait | Outils (licences) |
+|---|---|---|---|
+| Contrôle de la troupe | `controle_troupe.py` | par lieu préparé : âge apparent du visage ET de la silhouette (tranches d'âge lues en zéro-coup, attendu tiré des cartes `adn.py`, conforme si > 0,5), têtes du crâne aux hanches (un adulte en compte plus que l'enfant de la scène), et partenaires que chacun peut regarder avec ce que le moteur ajoute au visage peint (24°). Bloque la publication (`usine.finit`) | SigLIP base (Apache-2.0) |
+| Retouche à la source | `retouche_troupe.py` | consigne d'édition écrite à partir des échecs du contrôle, scène éditée dans son propre style, seuls les personnages corrigés recollés, seconde passe sur le visage agrandi, contrôle refait, graines suivantes tant qu'il échoue → `prep/<lieu>-v2` préparé | FLUX.2 [klein] 4B (Apache-2.0) par stable-diffusion.cpp (MIT), sur processeur |
+| Gestes qui quittent leur appui | `gestes.enveloppe_revelee`, `tourne.py` | une main posée (table, hanche) se lève pendant la réplique et revient : le bras découvre sa place, reconstituée (LaMa + grain du dessin) et contrôlée (pas de bras fantôme, pas de couleur étrangère) ; jusqu'à 28° pour un avant-bras, 20° pour une main | LaMa (Apache-2.0) |
+| Penché d'engagement | `jeu.py` (`PENCHE_FRAC`, `PENCHE_JEU`) | l'orateur se penche vers son interlocuteur 0,25 s avant sa réplique, bat sur ses syllabes fortes, se redresse après ; recule sur le choc et le rire | méthode publiée réécrite |
+| Regards jugés en local | `jev_regard.local` | réplique par réplique, la géométrie exacte du regard rendu (lacet peint + squelette + visage, iris peint + commande, inclinaison de la tête) : chacun regarde-t-il la bonne personne plus de la moitié du temps ? Une porte qui ne juge rien échoue | — |
+| Iris borné en ellipse | `regard.py` | course relative élargie (1,8 ; 1,7), position finale gardée dans le disque de la course : l'iris peut descendre vers un enfant plus bas sans sortir de l'œil | — |

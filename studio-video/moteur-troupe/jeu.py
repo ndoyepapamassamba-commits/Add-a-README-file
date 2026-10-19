@@ -259,6 +259,8 @@ def prise_t(L): return L['t0'] + L['dur'] + 0.05 + PRISE_TEMPS
 BOUCHE_BEE = 0.6   # commande de mâchoire au sommet de la prise de choc (0,6 : bouche franchement ouverte sans crier)
 VISAGE_PART = float(os.environ.get('VISAGE_PART', 0.5))   # part de la rotation du visage (LACET_VISAGE) donnée à la capture humaine
 LACET_VISAGE = 18.0   # 18/10/2026 : champ de rotation lissé (expressions_lp._lisse_flux) ; A/B JEV du plan de Baye (47 images) : 18° → 24 fautives, 0 déformée, rendu moyen 0,46 ; 14° → 25 et 0 (regard trop faible, porte D : Maman → Baye 0,36) ; 22° brut → 40 et 3
+PENCHE_FRAC = 0.6   # part de l'enveloppe du buste prise par le penché d'engagement de l'orateur (19/10/2026)
+PENCHE_JEU = {'accuse': 1.0, 'marchande': 0.9, 'soupcon': 0.85, 'panique': 0.6, 'innocent': 0.5, 'choc': -0.7, 'rire': -0.5, 'frime': -0.6}   # < 0 : se redresse, recule
 LACET_ECOUTE_MIN = 3.5   # degrés : plancher d'écoute après toutes les couches (porte D : > 2° dans 75 % des images)
 LIM = {'buste': 3.0, 'buste_lacet': 9.0, 'tete': 6.0, 'tete_lacet': 20.0, 'tete_tangage': 9.0, 'bassin_x': 4.0}
 
@@ -476,6 +478,24 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
                 R[c_] = R[c_] + (gain * v_).astype(np.float32)
             for b, gm in enumerate(Gm):
                 if f'geste_{b}' in R: R[f'geste_{b}'] = (1 - (1 - np.clip(R[f'geste_{b}'], 0, 1)) * (1 - np.clip(RG['mocap'] * gm, 0, 1))).astype(np.float32)
+        # ── PENCHÉ D'ENGAGEMENT (19/10/2026) : « les personnages ne sont pas encore fluides dans leurs mouvements ». Mesuré sur la
+        #    v9 : buste 1,4° crête à crête par seconde (porte « buste » sous 2° dans 21 secondes sur 66) alors que l'enveloppe sans
+        #    étirement en permet 4 à 6° assis — la capture, mise à l'échelle sur ses PICS (95e centile), joue presque tout le temps
+        #    au tiers de l'enveloppe. Les conversants réels se penchent vers celui à qui ils parlent et se redressent ou reculent
+        #    sur la surprise et le rire (Hladek et al. 2025 : le penché avant est le mouvement du tronc qui accompagne l'effort de
+        #    se faire comprendre) : l'orateur se penche vers son interlocuteur 0,25 s avant sa réplique (anticipation), tient en
+        #    battant légèrement sur ses syllabes fortes, se redresse 0,6 s après ; PENCHE_FRAC de l'enveloppe, signe selon le jeu
+        if RG.get('penche', 1) and env.get('buste', 0) > 0:
+            pen = np.zeros(nf)
+            for x_ in [x for x in L_sk if x['qui'] == nom]:
+                sd_ = cote(a_qui[id(x_)])
+                if not sd_ or x_.get('jeu') == 'camera': continue
+                u_ = T - x_['t0']; at_ = np.clip((u_ + 0.25) / 0.45, 0, 1); re_ = np.clip((u_ - x_['dur']) / 0.6, 0, 1)
+                k_ = at_ * at_ * (3 - 2 * at_) * (1 - re_ * re_ * (3 - 2 * re_))
+                bat_ = sum(np.where((u_ - a_ >= 0) & (u_ - a_ <= 0.34), np.sin(np.pi * (u_ - a_) / 0.34) ** 2, 0.0) for a_ in MOI.get(id(x_), [])) if MOI.get(id(x_)) else 0.0
+                s_ = PENCHE_JEU.get(x_.get('jeu', ''), 0.7)
+                pen += sd_ * s_ * k_ * (1.0 + 0.25 * np.clip(bat_, 0, 1.5))
+            R['buste'] = (R['buste'] + PENCHE_FRAC * env['buste'] * pen).astype(np.float32)
         # ── ÉCOUTE GARANTIE (v34) : v33, porte D — Coumba écoutait Koffi la tête tournée du bon côté mais de 0,4° à 2° seulement
         # (34,9–35,5 s et 39,9–41,1 s, 0,676 au lieu de 0,75) : la capture de mouvement et les regards détournés, ajoutés APRÈS la
         # cible d'écoute, la rognaient. Plancher doux appliqué après toutes les couches : vers celui qui parle, au moins

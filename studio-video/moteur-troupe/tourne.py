@@ -241,18 +241,21 @@ for sk in T['sketchs']:
                 # — main POSÉE sur le corps (poing sur la hanche) : le geste pliait l'avant-bras et la main glissait sur la robe
                 #   (Maman, « bras ou mains » 0,73 ; remède désigné « garder la main posée ») → ce bras suit le buste, sans geste ;
                 P_ = np.asarray(a['pts'], np.float64); epw = max(1.0, abs(P_[11, 0] - P_[12, 0]))
-                for b_ in R_['bras']:
+                # — main posée (hanche, table) : 19/10/2026, « les personnages ne sont pas encore fluides dans leurs gestes » — la main
+                #   ne pivote plus SUR place (glissement vu par JEV, v26 et v33) : elle QUITTE son appui et se lève (gestes.enveloppe_revelee :
+                #   le bras découvre sa place, reconstituée et contrôlée), comme l'orateur réel qui quitte la position de repos pour
+                #   gesticuler. Seule une main seule (manche longue) sur la hanche reste sans geste : pivotée au poignet, elle glisserait.
+                for k_, b_ in enumerate(R_['bras']):
                     x0b, y0b, x1b, y1b = b_['box']; poings = [i for i in (15, 16) if x0b - 0.1 * epw <= P_[i, 0] <= x1b + 0.1 * epw and y0b - 0.1 * epw <= P_[i, 1] <= y1b + 0.1 * epw]
-                    if any(min(np.hypot(*(P_[i, :2] - P_[h, :2])) for h in (23, 24)) < 0.55 * epw for i in poings):
-                        b_['amax'], b_['emax'] = 0.0, 1.0; print(f"{a['nom']}: main posée sur la hanche — bras sans geste (suit le buste)", flush=True)
-                # — main POSÉE SUR LA TABLE (v34) : v33, plan de Koffi à 34,71 — 55 images « rendu » ; JEV, partie par partie, y montrait
-                #   les mains à table (0,63–0,74) : elles pivotaient jusqu'à 14° (geste du bras) en tenant les couverts → sans geste
-                #   v34 : le contact « monde » du squelette ne la voyait pas (la main est dans la découpe de l'acteur) → JEV regarde
-                #   chaque main (une fois, en cache) : posée sur une table ou tenant un objet → sans geste
-                for b_ in R_['bras']:
+                    hanche = any(min(np.hypot(*(P_[i, :2] - P_[h, :2])) for h in (23, 24)) < 0.55 * epw for i in poings)
                     posee = R_['contacts'].get(b_['cote'], ('libre', None))[0] == 'monde' or main_posee_jev(d, img, P_, b_['cote'], a['nom'], epw) > 0.6
-                    if posee and b_.get('amax', 0) > 0:
-                        b_['amax'], b_['emax'] = 0.0, 1.0; print(f"{a['nom']}: main posée sur la table — bras sans geste", flush=True)
+                    ev = gestes.enveloppe_revelee(bras_[k_]) if REG.get('geste_revele', 1) and k_ < len(bras_) and not (hanche and not b_['nu']) else {'revele': False}
+                    appui = 'hanche' if hanche else 'table' if posee else 'libre'
+                    if ev['revele']:
+                        b_['amax'] = max(float(b_.get('amax', 0.0)), ev['amax']); b_['revele'] = True
+                        print(f"{a['nom']}: {'avant-bras' if b_['nu'] else 'main'} {b_['cote']} (appui {appui}) — geste jusqu'à {b_['amax']:.0f}°, sa place reconstituée (fantôme {ev['fantome']}, couleur étrangère {ev['etranger']})", flush=True)
+                    elif hanche or posee:
+                        b_['amax'], b_['emax'] = 0.0, 1.0; print(f"{a['nom']}: main posée ({appui}) — bras sans geste ({'main seule' if not b_['nu'] else 'fond refusé ' + str(ev)})", flush=True)
                 # — visage DÉJÀ de trois quarts : le lacet ajouté étirait le menton et décollait la barbiche (Koffi, 0,83 ; remède
                 #   désigné « lacet au plus 6° pour les visages de trois quarts »)
                 if v3 is not None:
@@ -331,6 +334,18 @@ if REG['rig']:   # pistes de jeu et ressenti de chaque personnage, image par ima
     # MOTEUR IMAGE → VIDÉO (17/10) : couche « vrai humain » (capture CMU calée sur les syllabes), dynamique du second ordre,
     # regard vivant ; réglages mocap / dyn / yeux / suivi_tete (tous à 0 : jeu de la v27, pour les essais A/B jugés par JEV)
     RJ = {k: REG.get(k, d) for k, d in (('mocap', 1.0), ('dyn', 1), ('yeux', 1), ('suivi_tete', 1), ('ampleur', 1.0), ('lacet_visage', jeu.LACET_VISAGE))}
+    def gestes_fluides(A2, P):
+        """GARDE DE FLUIDITÉ DES BRAS (19/10/2026) : les gestes sont des fractions (0–1) de l'angle permis ; depuis que les bras
+        peuvent découvrir leur place (20–28° au lieu de 0–14°), la même piste donne des à-coups plus forts — essai du 19/10, bras
+        de Koffi : 2e différence 2,9°/image² pour 2,5 admis. La garde de la tête et du buste (jeu.lisse_acc, 30 i/s) est appliquée
+        à l'ANGLE réel de chaque bras, puis ramenée en fraction."""
+        for n, A in A2.items():
+            if not A.get('rig') or n not in P: continue
+            for k, b in enumerate(A['rig']['bras']):
+                c = f'geste_{k}'; am = float(b.get('amax', 0.0))
+                if c in P[n] and am > 1e-3:
+                    P[n][c] = np.clip(jeu.lisse_acc(np.asarray(P[n][c], np.float32) * am, 30) / am, 0, 1).astype(np.float32)
+        return P
     def _a_la_cadence(P):
         """pistes du jeu calculées à 30 i/s (la capture CMU, les ressorts et la garde de fluidité y sont réglés) → cadence du
         film par interpolation cubique monotone (PCHIP : vitesse continue, aucun dépassement sur un clignement ou une saccade)"""
@@ -342,11 +357,11 @@ if REG['rig']:   # pistes de jeu et ressenti de chaque personnage, image par ima
     for sid, S_ in SC.items():
         A2 = S_['acts']
         print(f"{sid}: regard peint", {n: [round(v, 2) for v in regard.peint(A.get('yeux'))] for n, A in A2.items()}, "; visée", {n: {m: [round(x, 2) for x in v] for m, v in d.items()} for n, d in visee_(A2).items()}, flush=True)
-        S_['pistes'] = _a_la_cadence(jeu.pistes(T['lines'], sid, list(A2), {n: float(A['hip'][0]) for n, A in A2.items()}, {n: A.get('assis', False) for n, A in A2.items()},
+        S_['pistes'] = _a_la_cadence(gestes_fluides(A2, jeu.pistes(T['lines'], sid, list(A2), {n: float(A['hip'][0]) for n, A in A2.items()}, {n: A.get('assis', False) for n, A in A2.items()},
                                   {n: A.get('env', {}) for n, A in A2.items()}, NF30, 30, {n: len(A['rig']['bras']) if A.get('rig') else 0 for n, A in A2.items()},
                                   echelles={n: float(A['rig']['M']['sw']) / 0.38 for n, A in A2.items() if A.get('rig')},   # largeur d'épaules humaine ≈ 0,38 m
                                   cotes_bras={n: [b['cote'] for b in A['rig']['bras']] for n, A in A2.items() if A.get('rig')},
-                                  reglages=RJ, journal=JOURNAL_JEU, visee=visee_(A2), peints={n: regard.peint(A.get('yeux')) for n, A in A2.items()}))
+                                  reglages=RJ, journal=JOURNAL_JEU, visee=visee_(A2), peints={n: regard.peint(A.get('yeux')) for n, A in A2.items()})))
 LIPS, EYES = (0.0, 0.25, 0.5, 0.75, 1.0), (0.0, 0.5, 1.0)
 SEATED = {'BAYE NDIAYE': True, 'KOFFI': True, 'COUMBA': True}
 lines = T['lines']
@@ -543,6 +558,7 @@ def warp_rig(S, A, t, name):
         MESURES.append(dict(qui=name, t=round(t, 3), etirement=(p99, mx), bouche=round(float(jj), 3), emotions={k: round(x_, 2) for k, x_ in emo.items()},
                             pose={**{k: (round(x_, 2) if not isinstance(x_, (tuple, list)) else [round(float(y_), 2) for y_ in x_]) for k, x_ in pose.items() if k != 'gestes'},
                                   **({'lacet_visage': round(v('lacet_visage'), 2)} if 'lacet_visage' in P else {})},
+                            bras=[round(float(g_[0]), 1) for g_ in pose.get('gestes') or []],   # angle de chaque geste (°), 19/10 : porte « bras » mesurée
                             regard=round(v('regard_x'), 2),
                             # REGARD COMPLET (18/10/2026, juge local, porte D) : commande verticale, regard déjà peint et lacet
                             # peint — de quoi rejouer exactement où pointe l'iris rendu, sans regarder l'image

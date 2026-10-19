@@ -22,6 +22,72 @@ def question(x, y):
             'presents': {'type': 'noul', 'instructions': f'Are both {QUI[x]} and {QUI[y]} visible in `frame`?'}}
 
 
+# ── JUGE LOCAL DES REGARDS (19/10/2026). Avec JEV coupé, cette porte ne jugeait plus aucune paire (v9 : détail vide) et
+#    passait. Le tournage note pour chaque personnage, image par image, tout ce qui fait son regard : lacet peint du visage
+#    dessiné, lacet ajouté au squelette et au visage (LivePortrait), position peinte de l'iris et commande des yeux
+#    (mesures-*.jsonl). Le juge rejoue cette géométrie : sur la durée de chaque réplique, chacun regarde-t-il la bonne
+#    personne (celui qui écoute → celui qui parle ; celui qui parle → celui à qui il s'adresse) ? Une image compte si le
+#    visage est tourné vers la cible d'au moins TETE_MIN degrés et que l'iris ne part pas de l'autre côté, ou si l'iris est
+#    nettement vers la cible (≥ IRIS_FORT) avec un visage au moins de face ; à la verticale, l'iris doit être à moins de
+#    ECART_Y course de la hauteur du visage visé. Note de la paire = part des images conformes ; conforme si > 0,5.
+TETE_MIN, IRIS_FORT, ECART_Y = 10.0, 0.5, 0.7
+
+
+def _iris(peint, cmd, borne=(1.1, 0.9)):
+    """position FINALE de l'iris (fraction de course), comme regard.applique : peinte + commande bornée."""
+    out = []
+    for k in (0, 1):
+        p = float(peint[k]) if peint else 0.0; g = float(cmd[k])
+        g = float(np.clip(g, min(0.0, -1 - p), max(0.0, 1 - p))); g = float(np.clip(g, -borne[k], borne[k])); out.append(p + g)
+    return out
+
+
+def local(dossier, T, M, acteurs):
+    import glob
+    E = {}
+    for f in glob.glob(f'{dossier}/mesures-*.jsonl'):
+        for l in open(f):
+            try: e = json.loads(l)
+            except Exception: continue
+            E.setdefault(e.get('qui'), []).append(e)
+    if not E: return []
+    geo = {}   # par sketch : centre des yeux et du visage de chaque acteur
+    for sid, d in M['scenes'].items():
+        try: S = json.load(open(f'{d}/scene.json'))
+        except Exception: continue
+        g = {}
+        for a in S['acteurs']:
+            v = a.get('visage') or {}; b = v.get('box') or a['bbox']
+            yeux = np.mean([e_['c'] for e_ in v['eyes']], 0) if v.get('eyes') else np.array([(b[0] + b[2]) / 2, b[1] + 0.45 * (b[3] - b[1])])
+            g[a['nom']] = (np.asarray(yeux, float), np.array([(b[0] + b[2]) / 2, (b[1] + b[3]) / 2], float))
+        geo[sid] = g
+    L_all = T['lines']; detail = []
+    for k, L in enumerate(L_all):
+        sid = L.get('sketch'); noms = [n for n in acteurs.get(sid, []) if n in geo.get(sid, {})]
+        if L['qui'] not in noms: continue
+        dest = jeu.interlocuteur(L, L_all, noms)
+        paires = [(n, L['qui'], 'écoute') for n in noms if n != L['qui']]
+        if dest in noms and L.get('jeu') != 'camera': paires.append((L['qui'], dest, 'parle à'))
+        for qui, vers, role in paires:
+            s = [e for e in E.get(qui, []) if L['t0'] <= e['t'] <= L['t0'] + L['dur']]
+            if not s: continue
+            (y_moi, _), (_, f_cible) = geo[sid][qui], geo[sid][vers]
+            sens = float(np.sign(f_cible[0] - y_moi[0]) or 1.0)
+            incl = float(np.degrees(np.arctan2(f_cible[1] - y_moi[1], max(1.0, abs(f_cible[0] - y_moi[0])))))
+            vise_y = float(np.clip(incl / 30.0, -0.8, 1.0)); ok = 0
+            for e in s:
+                po = e.get('pose') or {}
+                tete = sens * ((e.get('lacet_peint') or 0.0) + po.get('tete_lacet', 0.0) + po.get('lacet_visage', 0.0))
+                ix, iy = _iris(e.get('regard_peint'), (e.get('regard', 0.0), e.get('regard_y', 0.0)))
+                ix *= sens; iy += po.get('tete_tangage', 0.0) / 30.0   # le regard vertical = iris + tête qui s'incline (> 0 : vers le bas)
+                cote = (tete >= TETE_MIN and ix >= -0.1) or (tete >= 0.0 and ix >= IRIS_FORT)
+                ok += bool(cote and abs(iy - vise_y) <= ECART_Y)
+            m = round(ok / len(s), 3)
+            detail.append({'replique': k, 'texte': L.get('texte', '')[:40], 'qui': qui, 'regarde': vers, 'role': role, 'jev': m,
+                           'images': len(s), 'ok': m > 0.5, 'juge': 'local'})
+    return detail
+
+
 if __name__ == '__main__':
     MP4, TL, MONTAGE, OUT = sys.argv[1:5]
     T = json.load(open(TL)); M = json.load(open(MONTAGE)); L_all = T['lines']
@@ -41,6 +107,15 @@ if __name__ == '__main__':
             t = L['t0'] + u * L['dur']
             if any(c0 <= t < c1 for c0, c1 in cartes): continue
             for x, y, role in paires: taches.append({'replique': k, 't': round(t, 2), 'qui': x, 'vers': y, 'role': role, 'texte': L.get('texte', '')[:40]})
+    if not jev_api.autorise():   # JEV coupé (payant) : le juge local rejoue la géométrie exacte du regard rendu (19/10/2026)
+        detail = local(os.path.dirname(os.path.abspath(MP4)), T, M, acteurs)
+        fautes = [d for d in detail if not d['ok']]
+        synth = {'paires_jugees': len(detail), 'juge': 'local (mesures du tournage)',
+                 'fautes': [f"{d['qui']} → {d['regarde']} ({d['role']}, « {d['texte']} ») {d['jev']}" for d in fautes],
+                 'pire': min((d['jev'] for d in detail), default=None)}
+        if not detail: synth['fautes'] = ['aucune paire jugée : mesures du tournage absentes']   # une porte qui ne juge rien échoue
+        json.dump({'synthese': synth, 'detail': detail}, open(OUT, 'w'), ensure_ascii=False, indent=1)
+        print('SYNTHÈSE', json.dumps(synth, ensure_ascii=False)); sys.exit(0)
     voulu = {int(round(x['t'] * FPS)) for x in taches}; images = {}
     cap = cv2.VideoCapture(MP4); n = 0
     while True:

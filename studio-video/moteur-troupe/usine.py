@@ -137,6 +137,15 @@ def finit(d, v):
         if not all(c['ok'] for c in rap['controles_utilisateur'].values()): rap['a_publier'] = False
     except Exception as ex:
         rap['controles_utilisateur'] = {'erreur': str(ex)[:200]}; rap['a_publier'] = False
+    # CONTRÔLE DE LA TROUPE (19/10/2026, « un contrôle automatique de l'âge apparent, qui bloquera la publication tant qu'il
+    # échoue » ; regards entre personnages, taille des têtes par rapport au corps) : chaque lieu tourné passe controle_troupe
+    # (âge lu sur le visage et sur la silhouette, proportions, orientation vers un partenaire) ; un échec bloque la publication
+    try:
+        import controle_troupe as CT
+        rap['controle_troupe'] = {s: CT.controle_cache(os.path.join(d, p)) for s, p in json.load(open(f'{d}/montage.json'))['scenes'].items()}
+        if not all(r['conforme'] for r in rap['controle_troupe'].values()): rap['a_publier'] = False
+    except Exception as ex:
+        rap['controle_troupe'] = {'erreur': str(ex)[:200]}; rap['a_publier'] = False
     refs = sorted(glob.glob(f'{d}/v*/qualite.json'), key=os.path.getmtime)
     refs = [r for r in refs if os.path.dirname(r) != D]
     if os.environ.get('USINE_REF') and os.path.isfile(f"{d}/{os.environ['USINE_REF']}/qualite.json"):   # référence = la dernière version LIVRÉE

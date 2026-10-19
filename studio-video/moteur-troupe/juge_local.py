@@ -192,6 +192,7 @@ def traits_moteur(dossier):
 #    réel. Le juge local mesure ce que chaque question énonce : amplitudes réelles du moteur (mesures-*.jsonl), flux optique
 #    (décor hors mouvement de caméra), sauts et changements brusques entre images consécutives.
 SEUIL_TETE, SEUIL_BUSTE = 3.0, 2.0   # degrés : ≈ 3 px pour un visage de 60 px, ≈ 5 px pour un buste de 150 px (visibles)
+SEUIL_BRAS = 6.0   # degrés au coude : ≈ 6 px de déplacement de la main pour un avant-bras de 60 px (visible)
 _PISTES = {}
 
 
@@ -221,19 +222,25 @@ def mouvement_local(ims, dossier, ta, td):
     saut = max(d) > 4.0 and max(d) > 3.0 * (sorted(d)[1] + 0.3)
     h = [cv2.calcHist([cv2.cvtColor(ims[k], cv2.COLOR_BGR2HSV)], [0, 1], None, [30, 32], [0, 180, 0, 256]) for k in range(4, 8)]
     raccord = max(cv2.compareHist(cv2.normalize(h[k], h[k]), cv2.normalize(h[k + 1], h[k + 1]), cv2.HISTCMP_BHATTACHARYYA) for k in range(3)) > 0.3
-    tete = buste = ens = 0.0
+    tete = buste = bras = ens = 0.0; bras_connu = False
     for L in _pistes(dossier).values():
         s = [e for e in L if ta - 0.02 <= e.get('t', -1) <= td + 0.02]
         if len(s) < 2: continue
         po = lambda c: float(np.ptp([(e.get('pose') or {}).get(c, 0.0) for e in s]))
         rt = max(po('tete_lacet'), po('tete_tangage'), po('tete')); rb = max(po('buste'), po('buste_lacet'))
-        tete, buste = max(tete, rt), max(buste, rb); ens = max(ens, float(rt >= SEUIL_TETE and rb >= SEUIL_BUSTE))
+        # BRAS MESURÉS (19/10/2026) : « bras » valait « quelque chose bouge dans l'image » (flux > 0,02) — vrai sur 66 secondes
+        # sur 66 de la v9 alors que les bras y restaient à 0–14° : l'angle réel de chaque geste, noté par le tournage, décide
+        nb = max((len(e.get('bras') or []) for e in s), default=0); bras_connu = bras_connu or any('bras' in e for e in s)
+        ra = max([float(np.ptp([(e.get('bras') or [0.0] * nb)[k] if k < len(e.get('bras') or []) else 0.0 for e in s])) for k in range(nb)], default=0.0)
+        tete, buste, bras = max(tete, rt), max(buste, rb), max(bras, ra)
+        # « plusieurs parties du corps changent de pose ENSEMBLE » : au moins deux parmi tête, buste, bras, chez le même personnage
+        ens = max(ens, float((rt >= SEUIL_TETE) + (rb >= SEUIL_BUSTE) + (ra >= SEUIL_BRAS) >= 2))
     connu = bool(_pistes(dossier))
     r = {'saccade': float(saut), 'raccord': float(raccord), 'fige': float(part < 0.005 and tete < 0.5), 'fond_mort': float(decor < 0.002),
          'ensemble': ens if connu else float(part > 0.02), 'tete': float(tete >= SEUIL_TETE) if connu else float(part > 0.02),
-         'buste': float(buste >= SEUIL_BUSTE) if connu else float(part > 0.02), 'bras': float(part > 0.02)}
+         'buste': float(buste >= SEUIL_BUSTE) if connu else float(part > 0.02), 'bras': float(bras >= SEUIL_BRAS) if bras_connu else float(part > 0.02)}
     return r, {'part_en_mouvement': round(part, 4), 'decor_hors_camera': round(decor, 4), 'sauts': [round(x, 2) for x in d],
-               'tete_deg': round(tete, 2), 'buste_deg': round(buste, 2), 'pistes_moteur': connu}
+               'tete_deg': round(tete, 2), 'buste_deg': round(buste, 2), 'bras_deg': round(bras, 2), 'pistes_moteur': connu}
 
 
 # ── TEXTES À L'IMAGE (jev_texte) : le moteur sait quel texte il a écrit et où. Sous-titres : la bande sous l'image est lue

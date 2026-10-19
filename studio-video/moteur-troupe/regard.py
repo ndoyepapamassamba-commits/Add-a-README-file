@@ -4,7 +4,7 @@
 # Méthode : Face Landmarker (MediaPipe, Apache-2.0) donne le contour de chaque œil et le centre de l'iris (points 468, 473) ;
 # l'œil « sans iris » est préparé une fois (le blanc de l'œil reconstitué par sa propre couleur), puis à chaque image
 # l'iris est reposé, décalé, dans l'ouverture (bord adouci). Sur un clignement, le regard s'efface avec l'ouverture.
-import numpy as np, cv2
+import math, numpy as np, cv2
 
 OEIL = {'g': ([33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 145, 144, 163, 7], 468),
         'd': ([263, 466, 388, 387, 386, 385, 384, 398, 362, 382, 381, 380, 374, 373, 390, 249], 473)}
@@ -102,7 +102,12 @@ def peint(yeux):
     return tuple(float(np.clip(np.mean([e['peint'][k] for e in yeux]), -1.5, 1.5)) for k in (0, 1))
 
 
-DEPLACEMENT_MAX = (1.1, 0.9)   # courses (horizontale, verticale) depuis la position peinte de l'iris
+DEPLACEMENT_MAX = (1.8, 1.7)   # courses (horizontale, verticale) depuis la position peinte de l'iris
+# 19/10/2026 (juge local des regards, v9) : avec (1,1 ; 0,9), Maman Nounou — iris peint en haut à droite (0,87 ; −0,88) — ne
+# pouvait pas baisser les yeux vers Petit Mamadou, 55° plus bas : commande 1,7, iris final à 0,02, elle regardait par-dessus
+# sa tête dans les 8 répliques de la cour (0 image conforme). Le déplacement relatif est élargi et c'est l'ELLIPSE de la course
+# qui garde l'iris dans l'œil : la position finale reste dans le disque unité (en courses), ce que la borne carrée [−1, 1]²
+# ne garantissait pas aux coins — la cause de l'œil blanc de la porte G (iris poussé en diagonale hors de la fente).
 
 
 def applique(src, yeux, gx, gy, ouverture=1.0):
@@ -120,6 +125,9 @@ def applique(src, yeux, gx, gy, ouverture=1.0):
         # course et sortait de la fente de l'œil lointain, plus étroite de trois quarts). Au plus DEPLACEMENT_MAX course
         # depuis la position peinte : la tête (lacet, tangage) fait le reste du chemin
         gx_ = float(np.clip(gx_, -DEPLACEMENT_MAX[0], DEPLACEMENT_MAX[0])); gy_ = float(np.clip(gy_, -DEPLACEMENT_MAX[1], DEPLACEMENT_MAX[1]))
+        fx_, fy_ = p_[0] + gx_, p_[1] + gy_; r_ = math.hypot(fx_, fy_)
+        R_ = max(1.0, math.hypot(*p_) - math.hypot(gx_, gy_))   # un regard peint hors du disque n'est pas ramené d'un coup
+        if r_ > R_: gx_, gy_ = fx_ * R_ / r_ - p_[0], fy_ * R_ / r_ - p_[1]
         dx, dy = gx_ * cx_, gy_ * cy_
         M = np.float32([[1, 0, dx], [0, 1, dy]])
         ir = cv2.warpAffine(e['iris'], M, (w, h), flags=cv2.INTER_LINEAR, borderValue=0)
