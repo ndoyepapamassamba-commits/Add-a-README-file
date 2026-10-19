@@ -161,11 +161,37 @@ def prepare(img, alpha, pts, visage_box, bbox=None):
         bras_seul = (calque > 0.3).astype(np.uint8)   # le bras prolongé par SES couleurs : on ne connaît que lui, le reste est rempli depuis lui
         rgb_ext = cv2.inpaint(reg, (1 - bras_seul) * cv2.dilate(bras_seul, np.ones((11, 11), np.uint8)), 4, cv2.INPAINT_TELEA)
         calque_ext = cv2.GaussianBlur(cv2.dilate(calque, np.ones((9, 9), np.uint8)), (0, 0), 1.2)   # même fondu, 4 px de plus
-        b = dict(cote=cote, nu=nue >= 0.4, piv=piv.astype(np.float32), x=float(piv[0]), lf=lf, box=(x0, y0, x1, y1),
+        # tronc du personnage dans la boîte du bras : sa découpe sans ce bras, rognée d'un dixième d'avant-bras (bords tolérés)
+        e_ = max(3, int(0.1 * lf)) | 1
+        tronc = cv2.erode(((alpha[y0:y1, x0:x1] > 0.5) & ~(cv2.dilate((calque > 0.1).astype(np.uint8), np.ones((9, 9), np.uint8)) > 0)).astype(np.uint8),
+                          np.ones((e_, e_), np.uint8))
+        b = dict(cote=cote, nu=nue >= 0.4, piv=piv.astype(np.float32), x=float(piv[0]), lf=lf, box=(x0, y0, x1, y1), tronc=tronc,
                  rgb=reg, calque=calque, sil=sil, fondu=fondu.astype(np.float32), fond=fond, trou=trou.astype(bool), sens=sens, Hc=Hc.astype(np.float32),
                  empreinte=empreinte, rgb_ext=rgb_ext, calque_ext=calque_ext)
         b.update(enveloppe(b)); out.append(b)
-    return out
+    return sans_doublon(out, (H, W))
+
+
+# PAS DEUX CALQUES POUR UNE MÊME MAIN (19/10/2026, v11 : « dédoublement de main au maquis avec la femme »). Les repères RTMW ont
+# trouvé le bras droit de Coumba, presque caché derrière son bras gauche : son calque (3 400 px) reprenait la main posée près
+# de l'assiette, déjà dans le calque du bras gauche ; chaque calque la faisait pivoter de son côté — deux mains à l'image.
+# Deux calques d'un même acteur qui se recouvrent au-delà de RECOUVRE_MAX (part du plus petit) : seul le plus visible reste.
+RECOUVRE_MAX = 0.08
+
+
+def sans_doublon(bras, forme):
+    if len(bras) < 2: return bras
+    def plein(b):
+        m = np.zeros(forme, bool); x0, y0, x1, y1 = b['box']; m[y0:y1, x0:x1] = np.asarray(b['calque']) > 0.3; return m
+    M = [plein(b) for b in bras]; aire = [max(1, int(m.sum())) for m in M]; garde = list(range(len(bras)))
+    for i in range(len(bras)):
+        for j in range(i + 1, len(bras)):
+            if i not in garde or j not in garde: continue
+            r = float((M[i] & M[j]).sum()) / min(aire[i], aire[j])
+            if r > RECOUVRE_MAX:
+                k = i if aire[i] < aire[j] else j; garde.remove(k)
+                print(f"  calque de bras {bras[k]['cote']} retiré : il recouvre l'autre bras à {r:.0%} (même main peinte deux fois)", flush=True)
+    return [bras[k] for k in garde]
 
 
 VIDE_MAX = 0.01   # part de l'empreinte du bras qu'un geste peut laisser vide : le bruit du bord adouci, pas plus (« aucun défaut », 17/10)
@@ -201,6 +227,7 @@ def enveloppe(b):
 # étrangère au voisinage — et tant que le bras tourné reste dans sa boîte.
 ANGLE_REVELE = (28.0, 20.0)   # degrés : avant-bras nu (pivot au coude), main seule (pivot au poignet, manche longue)
 FANTOME_MAX, ETRANGER_MAX = 0.3, 0.15
+TRONC_MAX = 0.06   # part de la surface du bras qui peut venir couvrir le tronc en tournant (bord adouci, pas plus)
 
 
 def qualite_fond(b):
@@ -225,9 +252,14 @@ def enveloppe_revelee(b):
     if q['fantome'] > FANTOME_MAX or q['etranger'] > ETRANGER_MAX: return dict(q, revele=False)
     x0, y0, x1, y1 = [int(v) for v in b['box']]; w, h = x1 - x0, y1 - y0; c = np.asarray(b['calque'], np.float32); n = max(1.0, float(c.sum()))
     best = float(b.get('amax', 0.0)); lim = ANGLE_REVELE[0] if b['nu'] else ANGLE_REVELE[1]
+    tronc = np.asarray(b['tronc'], bool) if 'tronc' in b else None
     for ang in np.arange(2.0, lim + 1e-6, 2.0):
         M = cv2.getRotationMatrix2D((float(b['piv'][0] - x0), float(b['piv'][1] - y0)), float(ang * b['sens']), 1.0)
-        if float(cv2.warpAffine(c, M, (w, h)).sum()) / n < 0.98: break
+        r_ = cv2.warpAffine(c, M, (w, h))
+        if float(r_.sum()) / n < 0.98: break
+        # LA MAIN NE TRAVERSE PAS LE CORPS (19/10/2026, v11 : « la main de Tantie traverse son corps ») : le bras tourné ne vient
+        # pas couvrir le tronc au-delà de TRONC_MAX de sa propre surface
+        if tronc is not None and float(((r_ > 0.5) & tronc & ~(c > 0.5)).sum()) / n > TRONC_MAX: break
         best = max(best, float(ang))
     return dict(q, revele=True, amax=best)
 

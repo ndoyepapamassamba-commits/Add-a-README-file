@@ -140,6 +140,27 @@ try:
 except Exception as e:
     echecs.append(f'fluidité : {e}')
 
+# bras sans défaut (19/10/2026, défauts vus par l'utilisateur sur la v11) : une même main dans deux calques (Coumba au maquis)
+# est ramenée à un seul calque ; un avant-bras qui tournerait sur le tronc (Tantie Awa) voit son angle borné
+try:
+    import numpy as _np, importlib as _il
+    sys.path.insert(0, os.path.join(ICI, 'moteur-troupe')); _ge = _il.import_module('gestes')
+    def _calque(x0, y0, x1, y1, rect):
+        c = _np.zeros((y1 - y0, x1 - x0), _np.float32); a, b, c2, d = rect; c[b:d, a:c2] = 1.0; return c
+    b1 = dict(cote='gauche', box=(0, 0, 60, 60), calque=_calque(0, 0, 60, 60, (10, 10, 50, 40)))
+    b2 = dict(cote='droit', box=(20, 0, 80, 60), calque=_calque(20, 0, 80, 60, (0, 15, 25, 35)))
+    if len(_ge.sans_doublon([b1, b2], (80, 100))) != 1: echecs.append('bras : une main présente dans deux calques n’est pas dédoublonnée')
+    w_, h_ = 120, 120; c_ = _np.zeros((h_, w_), _np.float32); c_[56:64, 60:110] = 1.0   # avant-bras horizontal, coude en (60, 60)
+    tr_ = _np.zeros((h_, w_), _np.uint8); tr_[10:56, 60:120] = 1                          # tronc juste au-dessus du bras
+    bb = dict(nu=True, box=(0, 0, w_, h_), calque=c_, piv=_np.array([60.0, 60.0], _np.float32), sens=1.0, amax=0.0, tronc=tr_,
+              rgb=_np.zeros((h_, w_, 3), _np.uint8), fond=_np.zeros((h_, w_, 3), _np.uint8), trou=c_ > 0)
+    _ge.qualite_fond = lambda b: dict(fantome=0.0, etranger=0.0)
+    ev_ = _ge.enveloppe_revelee(bb)
+    if not ev_.get('amax', 99) < 10: echecs.append(f"bras : l'avant-bras peut tourner sur le tronc ({ev_.get('amax')}°)")
+    print('bras : main en double dédoublonnée, rotation sur le tronc bornée')
+except Exception as e:
+    echecs.append(f'bras : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

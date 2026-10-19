@@ -249,7 +249,10 @@ for sk in T['sketchs']:
                     x0b, y0b, x1b, y1b = b_['box']; poings = [i for i in (15, 16) if x0b - 0.1 * epw <= P_[i, 0] <= x1b + 0.1 * epw and y0b - 0.1 * epw <= P_[i, 1] <= y1b + 0.1 * epw]
                     hanche = any(min(np.hypot(*(P_[i, :2] - P_[h, :2])) for h in (23, 24)) < 0.55 * epw for i in poings)
                     posee = R_['contacts'].get(b_['cote'], ('libre', None))[0] == 'monde' or main_posee_jev(d, img, P_, b_['cote'], a['nom'], epw) > 0.6
-                    ev = gestes.enveloppe_revelee(bras_[k_]) if REG.get('geste_revele', 1) and k_ < len(bras_) and not (hanche and not b_['nu']) else {'revele': False}
+                    # MAIN SUR LA HANCHE : AUCUN GESTE, bras nu compris (19/10/2026, v11 : « la main de Tantie traverse son corps ») —
+                    # tourné au coude, l'avant-bras fait glisser la main sur la robe (16° encore visibles, 28° sur le ventre) ;
+                    # le poing reste posé et suit le buste, comme le demandait JEV dès la v26
+                    ev = gestes.enveloppe_revelee(bras_[k_]) if REG.get('geste_revele', 1) and k_ < len(bras_) and not hanche else {'revele': False}
                     appui = 'hanche' if hanche else 'table' if posee else 'libre'
                     if ev['revele']:
                         b_['amax'] = max(float(b_.get('amax', 0.0)), ev['amax']); b_['revele'] = True
