@@ -595,6 +595,11 @@ in vec2 p; in vec2 uv; out vec2 v; uniform vec2 taille;
 void main(){ v = uv; gl_Position = vec4(p / taille * 2.0 - 1.0, 0.0, 1.0); }"""
 _FS_BILIN = """#version 330
 in vec2 v; out vec4 c; uniform sampler2D t; uniform vec2 ttex; void main(){ c = texture(t, v); }"""
+# PERSONNAGE ENTIER EN UNE PASSE (19/10/2026, méthode Live2D / Spine : chaque calque est un maillage texturé dessiné dans
+# l'ordre avec le mélange alpha « over » prémultiplié) : le corps puis les avant-bras rigides vont dans la même image, au
+# lieu des mélanges numpy ; sortie prémultipliée (rgb·a, a) = l'accumulateur `acc` de l'ancien chemin, au même endroit
+_FS_PREMUL = """#version 330
+in vec2 v; out vec4 c; uniform sampler2D t; void main(){ vec4 s = texture(t, v); c = vec4(s.rgb * s.a, s.a); }"""
 # BICUBIQUE (RENDU_GL_CUBIQUE=1) : 20 lectures par pixel ; en rendu logiciel, 20 ms par acteur (profil du 19/10) — le filtrage
 # bilinéaire matériel des animateurs 2D (Live2D, Spine) en lit 4 ; la netteté perdue est rendue par tourne.nettete()
 _FS = """#version 330
@@ -623,7 +628,8 @@ def gl_actif():
         try:
             import moderngl
             ctx = moderngl.create_standalone_context(backend='egl')
-            _GL.update(ok=True, ctx=ctx, prog=ctx.program(vertex_shader=_VS, fragment_shader=_FS if os.environ.get('RENDU_GL_CUBIQUE') == '1' else _FS_BILIN), ibo={}, fbo={})
+            _GL.update(ok=True, ctx=ctx, prog=ctx.program(vertex_shader=_VS, fragment_shader=_FS if os.environ.get('RENDU_GL_CUBIQUE') == '1' else _FS_BILIN), ibo={}, fbo={},
+                       prem=ctx.program(vertex_shader=_VS, fragment_shader=_FS_PREMUL), tex={}, quad=ctx.buffer(np.array([0, 1, 2, 1, 3, 2], 'i4').tobytes()))
         except Exception as e:   # pas de Mesa/EGL ou de ModernGL : l'ancien chemin, sans bruit
             _GL['ok'] = False; _GL['err'] = str(e)[:200]
     return _GL['ok']
@@ -664,6 +670,64 @@ def rendre_maillage(R, U, src, a):
     return o[..., :3] * 255.0, o[..., 3].copy()
 
 
+def _tex_calque(b):
+    """texture RGBA flottante (rgb / 255, couverture) d'un calque de bras : créée une fois par processus, réutilisée à chaque image."""
+    k = id(b['calque'])
+    if k not in _GL['tex']:
+        # bordure d'UN pixel : couleur répliquée, couverture nulle — la demi-frange que warpAffine (borderValue=0) ajoute hors
+        # du calque est ainsi dessinée aussi (écart 3,7 niveaux sur le bord sans elle, contrôle de verif_moteur)
+        rgb_ = cv2.copyMakeBorder(np.asarray(b['rgb'], np.float32) / 255.0, 1, 1, 1, 1, cv2.BORDER_REPLICATE)
+        rgba = np.dstack([rgb_, np.pad(np.clip(np.asarray(b['calque'], np.float32), 0, 1), 1)])
+        t = _GL['ctx'].texture((rgba.shape[1], rgba.shape[0]), 4, np.ascontiguousarray(rgba).tobytes(), dtype='f4')
+        t.filter = (0x2601, 0x2601); t.repeat_x = t.repeat_y = False   # LINEAR, bord répliqué (BORDER_REPLICATE de l'ancien chemin)
+        _GL['tex'][k] = (t, b['calque'])                                 # la référence garde l'id valable tant que la texture vit
+    return _GL['tex'][k][0]
+
+
+def rendre_personnage(R, U, src, a, couches):
+    """corps (grille déformée) puis calques rigides `couches` = [(bras, A 3×3 dans le cadre de la boîte)], dessinés dans
+    l'ordre avec le mélange « over » prémultiplié : (acc float32 = rgb·alpha en niveaux 0-255, alpha float32)."""
+    ctx, prog = _GL['ctx'], _GL['prem']
+    X0, Y0, X1, Y1 = R['box']; w, h = X1 - X0, Y1 - Y0
+    gx, gy = np.asarray(R['gx'], np.float32), np.asarray(R['gy'], np.float32); ny, nx = len(gy), len(gx)
+    H_, W_ = src.shape[:2]
+    tx0, ty0 = max(0, int(np.floor(gx[0]))), max(0, int(np.floor(gy[0])))
+    tx1, ty1 = min(W_, int(np.ceil(gx[-1])) + 1), min(H_, int(np.ceil(gy[-1])) + 1)
+    crop = src[ty0:ty1, tx0:tx1]
+    if R['src_corps']:   # ce qui est derrière les avant-bras détourés, posé sur la seule découpe lue (pas toute la scène)
+        crop = crop.copy()
+        for (x0, y0, x1, y1), fond, tt in R['src_corps']:
+            ax0, ay0, ax1, ay1 = max(x0, tx0), max(y0, ty0), min(x1, tx1), min(y1, ty1)
+            if ax1 <= ax0 or ay1 <= ay0: continue
+            reg = crop[ay0 - ty0:ay1 - ty0, ax0 - tx0:ax1 - tx0].astype(np.float32); k = tt[ay0 - y0:ay1 - y0, ax0 - x0:ax1 - x0, None]
+            crop[ay0 - ty0:ay1 - ty0, ax0 - tx0:ax1 - tx0] = np.clip(reg * (1 - k) + fond[ay0 - y0:ay1 - y0, ax0 - x0:ax1 - x0] * k, 0, 255).astype(np.uint8)
+    rgba = np.dstack([crop, (np.clip(a[ty0:ty1, tx0:tx1], 0, 1) * 255).astype(np.uint8)])
+    tex = ctx.texture((tx1 - tx0, ty1 - ty0), 4, np.ascontiguousarray(rgba).tobytes()); tex.filter = (0x2601, 0x2601)
+    SX, SY = np.meshgrid(gx, gy)
+    P = np.stack([SX + U[..., 0] - X0 + 0.5, SY + U[..., 1] - Y0 + 0.5], -1)
+    T = np.stack([(SX - tx0 + 0.5) / (tx1 - tx0), (SY - ty0 + 0.5) / (ty1 - ty0)], -1)
+    vbo = ctx.buffer(np.concatenate([P.reshape(-1, 2), T.reshape(-1, 2)], 1).astype('f4').tobytes())
+    ibo, n = _indices(ny, nx); vao = ctx.vertex_array(prog, [(vbo, '2f 2f', 'p', 'uv')], ibo)
+    if (w, h) not in _GL['fbo']: _GL['fbo'][(w, h)] = ctx.framebuffer(color_attachments=[ctx.texture((w, h), 4, dtype='f4')])
+    fbo = _GL['fbo'][(w, h)]; fbo.use(); fbo.clear(0, 0, 0, 0)
+    prog['taille'] = (float(w), float(h)); tex.use(0)
+    import moderngl as _mgl   # drapeaux de ModernGL (BLEND = 1), pas les énumérations OpenGL brutes (0x0BE2 activait d'autres bits)
+    ctx.disable(_mgl.BLEND); vao.render(vertices=n)      # le corps : un seul calque, sans mélange (comme rendre_maillage)
+    vao.release(); vbo.release(); tex.release()
+    if couches:
+        ctx.enable(_mgl.BLEND); ctx.blend_func = (_mgl.ONE, _mgl.ONE_MINUS_SRC_ALPHA)   # acc·(1−k) + r·k, al·(1−k) + k
+        for b, A in couches:
+            bh_, bw_ = b['calque'].shape[:2]
+            # coins du calque bordé en coordonnées OpenCV (centres de pixels entiers → bords à −1,5 / n + 0,5), posés par A, + 0,5 côté OpenGL
+            q = (A[:2] @ np.array([[-1.5, bw_ + 0.5, -1.5, bw_ + 0.5], [-1.5, -1.5, bh_ + 0.5, bh_ + 0.5], [1, 1, 1, 1]])).T + 0.5   # + bordure
+            vb = ctx.buffer(np.concatenate([q, [[0, 0], [1, 0], [0, 1], [1, 1]]], 1).astype('f4').tobytes())
+            va = ctx.vertex_array(prog, [(vb, '2f 2f', 'p', 'uv')], _GL['quad']); _tex_calque(b).use(0); va.render(vertices=6)
+            va.release(); vb.release()
+        ctx.disable(_mgl.BLEND)
+    o = np.frombuffer(fbo.read(components=4, dtype='f4'), np.float32).reshape(h, w, 4)
+    return o[..., :3] * 255.0, o[..., 3].copy()
+
+
 def etirement_maillage(R, U, I_tete=None):
     """ÉTIREMENT par triangle (jacobienne exacte de la déformation affine par morceaux) : max(σ1, 1/σ2) − 1 est le même pour
     la carte et pour son inverse — même mesure que etirement(), sur les triangles du personnage hors tête (aire pondérée)."""
@@ -693,26 +757,41 @@ def rendre(R, pose, src, alpha=None, sxsy=None):
     else: U, mats = champ(R, pose); sx, sy = carte(R, U)
     X0, Y0, X1, Y1 = R['box']
     a = R['alpha_corps'] if alpha is None else alpha
-    if R['src_corps']:
-        src = src.copy()
-        for (x0, y0, x1, y1), fond, tt in R['src_corps']:
-            reg = src[y0:y1, x0:x1].astype(np.float32); k = tt[..., None]
-            src[y0:y1, x0:x1] = np.clip(reg * (1 - k) + fond * k, 0, 255).astype(np.uint8)
-    if gl_:
-        try: rgb, al = rendre_maillage(R, U, src, a)
-        except Exception as e:   # ERREUR PRÉVUE : pilote OpenGL perdu, mémoire, nuanceur — l'ancien chemin reprend, sans arrêt
-            _GL['ok'] = False; _GL['err'] = f'{type(e).__name__}: {str(e)[:160]}'; R.pop('_U', None); gl_ = False
+    Ts = pose_bras(R, pose, mats) if R['bras'] else []
+    paires = list(zip(R['bras'], Ts))
+    # PEAU PONDÉRÉE (peau_ponderee.py) : un bras qui en porte une est déformé d'un seul tenant par trois os — corps
+    # (près de l'épaule), bras, avant-bras — au lieu de ses deux calques rigides
+    peaux = {b['cote'] for b in R['bras'] if b.get('peau') is not None}
+    T_bas = {b['cote']: T for b, T in paires if b.get('part') == 'bas'}
+    # UNE PASSE (19/10/2026) : corps + calques rigides qui précèdent la première peau pondérée, dans l'ordre, par OpenGL ;
+    # la suite (peaux pondérées, calculées sur le processeur) se mêle ensuite à l'accumulateur relu, dans le même ordre
+    passe = gl_ and os.environ.get('RENDU_GL_CUBIQUE') != '1' and os.environ.get('RENDU_GL_PASSE', '1') == '1'
+    if passe:
+        k1 = next((i for i, (b, _) in enumerate(paires) if b['cote'] in peaux), len(paires))
+        try:
+            acc, al = rendre_personnage(R, U, src, a, [(b, _tr((-X0, -Y0)) @ T @ _tr(b['box'][:2])) for b, T in paires[:k1]])
+            paires = paires[k1:]
+        except Exception as e:   # ERREUR PRÉVUE : l'ancien chemin reprend la même image, sans arrêt
+            _GL['ok'] = False; _GL['err'] = f'{type(e).__name__}: {str(e)[:160]}'; R.pop('_U', None); passe = gl_ = False
             sx, sy = carte(R, U)
-    if not gl_:
-        rgb = cv2.remap(src, sx, sy, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
-        al = cv2.remap(a, sx, sy, cv2.INTER_LINEAR, borderValue=0)
-    if R['bras']:
-        w, h = X1 - X0, Y1 - Y0; acc = rgb * al[..., None]; Ts = pose_bras(R, pose, mats)
-        # PEAU PONDÉRÉE (peau_ponderee.py) : un bras qui en porte une est déformé d'un seul tenant par trois os — corps
-        # (près de l'épaule), bras, avant-bras — au lieu de ses deux calques rigides
-        peaux = {b['cote'] for b in R['bras'] if b.get('peau') is not None}
-        T_bas = {b['cote']: T for b, T in zip(R['bras'], Ts) if b.get('part') == 'bas'}
-        for b, T in zip(R['bras'], Ts):
+    if not passe:
+        if R['src_corps']:
+            src = src.copy()
+            for (x0, y0, x1, y1), fond, tt in R['src_corps']:
+                reg = src[y0:y1, x0:x1].astype(np.float32); k = tt[..., None]
+                src[y0:y1, x0:x1] = np.clip(reg * (1 - k) + fond * k, 0, 255).astype(np.uint8)
+        if gl_:
+            try: rgb, al = rendre_maillage(R, U, src, a)
+            except Exception as e:   # ERREUR PRÉVUE : pilote OpenGL perdu, mémoire, nuanceur — l'ancien chemin reprend, sans arrêt
+                _GL['ok'] = False; _GL['err'] = f'{type(e).__name__}: {str(e)[:160]}'; R.pop('_U', None); gl_ = False
+                sx, sy = carte(R, U)
+        if not gl_:
+            rgb = cv2.remap(src, sx, sy, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
+            al = cv2.remap(a, sx, sy, cv2.INTER_LINEAR, borderValue=0)
+        if R['bras']: acc = rgb * al[..., None]
+    if paires:
+        w, h = X1 - X0, Y1 - Y0
+        for b, T in paires:
             x0, y0, x1, y1 = b['box']
             A = _tr((-X0, -Y0)) @ T @ _tr((x0, y0))
             if b['cote'] in peaux:
@@ -745,7 +824,7 @@ def rendre(R, pose, src, alpha=None, sxsy=None):
             r0, r1, c0, c1 = ys_.min(), ys_.max() + 1, xs_.min(), xs_.max() + 1
             k_ = cb[r0:r1, c0:c1]; acc[r0:r1, c0:c1] = acc[r0:r1, c0:c1] * (1 - k_[..., None]) + rb[r0:r1, c0:c1] * k_[..., None]
             al[r0:r1, c0:c1] = al[r0:r1, c0:c1] * (1 - k_) + k_
-        rgb = acc / np.maximum(al, 1e-4)[..., None]
+    if passe or R['bras']: rgb = acc / np.maximum(al, 1e-4)[..., None]
     return (X0, Y0, X1, Y1), np.clip(rgb, 0, 255).astype(np.uint8), al.astype(np.float32), sx, sy
 
 

@@ -271,6 +271,18 @@ try:
         if _e0 > 1.0 or _e1 > 1.5 or float(_al[5:-5, 5:-5].min()) < 0.99:
             echecs.append(f'rendu par maillage : écart à la source {_e0:.2f}, translation {_e1:.2f}, alpha min {float(_al.min()):.2f}')
         print(f'rendu par maillage (OpenGL logiciel) : écart identité {_e0:.2f}, translation {_e1:.2f} niveaux')
+        # UNE PASSE (corps + calque de bras rigide mêlés par OpenGL) = corps + mélange numpy de l'ancien chemin
+        _cal = _n2.zeros((40, 30), _n2.float32); __import__('cv2').circle(_cal, (15, 20), 12, 1.0, -1); _cal = __import__('cv2').GaussianBlur(_cal, (0, 0), 1.5)
+        _b = {'calque': _cal, 'rgb': _n2.full((40, 30, 3), (30, 200, 90), _n2.uint8), 'box': (50, 50, 80, 90)}
+        _A = _rg._tr((-20, -20)) @ _rg._tr((7.3, -4.6)) @ _rg._tr((50, 50))
+        _U[...] = 0; _ac, _al1 = _rg.rendre_personnage(dict(_R, src_corps=[]), _U, _src, _a, [(_b, _A)])
+        _rgb0, _al0 = _rg.rendre_maillage(_R, _U, _src, _a); _acc0 = _rgb0 * _al0[..., None]
+        _k = __import__('cv2').warpAffine(_cal, _A[:2], (100, 100), flags=__import__('cv2').INTER_LINEAR, borderValue=0)
+        _r = __import__('cv2').warpAffine(_b['rgb'], _A[:2], (100, 100), flags=__import__('cv2').INTER_LINEAR, borderMode=__import__('cv2').BORDER_REPLICATE)
+        _acc0 = _acc0 * (1 - _k[..., None]) + _r * _k[..., None]; _al0 = _al0 * (1 - _k) + _k
+        _e2 = float(_n2.abs(_ac - _acc0).max()); _e3 = float(_n2.abs(_al1 - _al0).max())
+        if _e2 > 3.0 or _e3 > 0.02: echecs.append(f'personnage en une passe : écart {_e2:.2f} niveaux, alpha {_e3:.3f}')
+        print(f'personnage en une passe (corps + bras, mélange OpenGL) : écart {_e2:.2f} niveaux, alpha {_e3:.3f}')
     else:
         print('rendu par maillage indisponible : ancien chemin (repli prévu)', _rg._GL.get('err', ''))
 except Exception as e:
