@@ -13,6 +13,7 @@ import numpy as np, cv2
 ICI = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, ICI)
 import compositeur
 
+GARDE_MAX, GARDE_MOY = 12, 1.0
 COPIES = ('lumiere.json', 'genese.json', 'linge.npz', 'vie.json')   # ne dépendent que du décor (même plaque) : repris du lieu d'origine
 
 
@@ -25,7 +26,10 @@ def prepare(biblio, nom, plaque_p, ppm, sol_y, acteurs, L=None, ref=None, copie_
     alphas = [p_.pop('_alpha') for p_ in places]
     d = f'{B}/prep/{nom}'
     # SCÈNE RECOMPOSÉE (19/10/2026) : les visages déjà dessinés (expressions/, ≈ 25 min par personnage) d'un acteur resté
-    # identique au pixel près sont gardés ; ceux d'un acteur changé (miroir, place, taille) sont refaits
+    # le même sont gardés ; ceux d'un acteur changé (miroir, place, taille) sont refaits. « Le même » : écart au plus
+    # GARDE_MAX niveaux et en moyenne moins de GARDE_MOY sur sa boîte (mesuré : Maître Koné recomposé, même figure et mêmes
+    # réglages → au plus 9 niveaux, 0,35 en moyenne ; cause pas encore isolée : calcul de l'agrandissement ou version du code ;
+    # charge() recale de toute façon la couleur du visage sur le dessin de la scène)
     ancien = cv2.cvtColor(cv2.imread(f'{d}/image.png'), cv2.COLOR_BGR2RGB) if os.path.isfile(f'{d}/image.png') else None
     garde = f'{B}/prep/.{nom}-expressions'; shutil.rmtree(garde, ignore_errors=True)
     if ancien is not None and os.path.isdir(f'{d}/expressions'): shutil.move(f'{d}/expressions', garde)
@@ -49,7 +53,8 @@ def prepare(biblio, nom, plaque_p, ppm, sol_y, acteurs, L=None, ref=None, copie_
     if os.path.isdir(garde):
         for a, p_ in zip(S['acteurs'], places):
             X0, Y0, X1, Y1 = p_['bbox']
-            if os.path.isdir(f"{garde}/{a['slug']}") and ancien.shape == img.shape and np.array_equal(ancien[Y0:Y1, X0:X1], img[Y0:Y1, X0:X1]):
+            e_ = np.abs(ancien[Y0:Y1, X0:X1].astype(np.int16) - img[Y0:Y1, X0:X1].astype(np.int16)) if ancien.shape == img.shape else None
+            if os.path.isdir(f"{garde}/{a['slug']}") and e_ is not None and not p_.get('miroir') and e_.max() <= GARDE_MAX and e_.mean() < GARDE_MOY:
                 os.makedirs(f'{d}/expressions', exist_ok=True); shutil.move(f"{garde}/{a['slug']}", f"{d}/expressions/{a['slug']}")
                 journal(f"{a['nom']} : acteur inchangé, visages déjà dessinés gardés")
         shutil.rmtree(garde, ignore_errors=True)
