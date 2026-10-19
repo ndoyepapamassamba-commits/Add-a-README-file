@@ -22,7 +22,7 @@ Renfort du 17/10/2026, mot pour mot :
 1. **Jamais de section « Limites », « Ce que je ne peux pas faire », « Hors de portée »** dans une réponse ou un livrable.
 2. Devant un obstacle (outil manquant, quota, machine sans GPU, disque plein, modèle qui échoue, licence) :
    1. **veille** ciblée (outils libres et gratuits, dépôts GitHub, modèles ouverts, publications) ;
-   2. **greffe** : ajouter un moteur au pipeline ou adapter un moteur externe (licences MIT / Apache-2.0 / BSD pour ce
+   2. **greffe** : ajouter un moteur au pipeline ou adapter un moteur externe (licences acceptées par `modeles-libres-moteur` — élargies le 19/10/2026 — pour ce
       qui tourne chez nous ; service externe sinon, de préférence une plateforme que l'utilisateur connaît déjà) ;
    3. **mesure** avec nos outils (mêmes métriques que les références) ; si la greffe ne suffit pas, la suivante.
 3. Ce qui n'est pas encore atteint s'écrit comme **« greffe en cours »** : l'outil retenu, l'action lancée, la mesure

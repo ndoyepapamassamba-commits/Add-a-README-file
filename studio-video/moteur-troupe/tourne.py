@@ -645,7 +645,10 @@ def hors_champ(A, vue):
     réduction) : ses pixels ne peuvent pas atteindre l'écran, on ne le déforme pas."""
     x0, y0, x1, y1 = A['bbox']; m = 0.25 * max(x1 - x0, y1 - y0) + 40 + A.get('marge_bras', 0)
     return x1 + m < vue[0] or x0 - m > vue[2] or y1 + m < vue[1] or y0 - m > vue[3]
-def frame_scene(S, t, off=None, zoom=None, vis=None, t0=None, vue=None):
+def frame_scene(S, t, off=None, zoom=None, vis=None, t0=None, vue=None, zone=False):
+    """zone=True (avec vue) : SEULE LA PARTIE VUE PAR LA CAMÉRA est calculée (19/10/2026, principe des moteurs de jeu et de
+    Live2D : on ne dessine que le cadre, plus une marge de 16 px qui couvre le flou de réduction et l'interpolation) ; renvoie
+    alors (image de la zone, (x0, y0) de la zone dans la plaque). Mêmes valeurs, au pixel près, que la plaque entière recadrée."""
     plate = S['plate']; V = S.get('vie')
     if V is not None and decor_vivant.panache(V, plate) is not None: plate = decor_vivant.fumee(V, plate, t)   # la fumée du grill MONTE (panache physique), avant la parallaxe
     if S.get('linge') is not None: plate = linge.compose(S['linge'], plate, t)   # linge épinglé qui flotte au vent (v34), sous la couche « tissu »
@@ -657,27 +660,35 @@ def frame_scene(S, t, off=None, zoom=None, vis=None, t0=None, vue=None):
         if vis is not None:
             plate = vie_fond.oiseaux(VF, plate, t, vis, t0 if t0 is not None else 0.0)
             plate = vie_fond.papillons(VF, plate, t, vis, t0 if t0 is not None else 0.0)   # devant le mur, derrière les acteurs
+    H_, W_ = plate.shape[:2]
+    if zone and vue is not None and os.environ.get('RENDU_ZONE_VUE', '1') == '1':
+        rx0, ry0 = max(0, int(math.floor(vue[0])) - 16), max(0, int(math.floor(vue[1])) - 16)
+        rx1, ry1 = min(W_, int(math.ceil(vue[2])) + 16), min(H_, int(math.ceil(vue[3])) + 16)
+        if rx1 - rx0 < 8 or ry1 - ry0 < 8: rx0, ry0, rx1, ry1 = 0, 0, W_, H_   # ERREUR PRÉVUE : cadre hors de la plaque → plaque entière
+    else: rx0, ry0, rx1, ry1 = 0, 0, W_, H_
+    sl = (slice(ry0, ry1), slice(rx0, rx1))
     par = off is not None and S.get('kpar') is not None and (abs(off[0]) > 0.05 or abs(off[1]) > 0.05)
     zpar = zoom is not None and S.get('kpar') is not None and abs(zoom[0] - 1) > 1e-3
     if par or zpar or V is not None:
-        mx, my = S['xs'], S['ys']
+        mx, my = S['xs'][sl], S['ys'][sl]
         if par:
-            g = 1 - S['kpar']   # le décor glisse avec la caméra selon sa profondeur : vu à l'écran, le loin bouge moins
+            g = 1 - S['kpar'][sl]   # le décor glisse avec la caméra selon sa profondeur : vu à l'écran, le loin bouge moins
             # cartes en float32 : un décalage numpy float64 (venu des règles de cadrage) en ferait des cartes 64 bits, et
             # OpenCV passe alors par un chemin des centaines de fois plus lent (7 min par image mesurées le 17/10)
             ox_, oy_ = np.float32(off[0]), np.float32(off[1]); mx = mx - ox_ * g; my = my - oy_ * g
         if zpar:   # TRAVELLING AVANT À PARALLAXE : un zoom seul n'en crée pas ; ici le loin grossit moins que les acteurs
             # (z^kpar au lieu de z, le premier plan davantage), comme quand la caméra avance vraiment dans la scène
-            k_ = np.exp((1 - S['kpar']) * np.float32(math.log(zoom[0]))).astype(np.float32); zx_, zy_ = np.float32(zoom[1]), np.float32(zoom[2])
+            k_ = np.exp((1 - S['kpar'][sl]) * np.float32(math.log(zoom[0]))).astype(np.float32); zx_, zy_ = np.float32(zoom[1]), np.float32(zoom[2])
             mx = zx_ + (mx - zx_) * k_; my = zy_ + (my - zy_) * k_
         sol_ = decor_vivant.soleil(S['plate']) if V is not None else None; jour_ = sol_ is not None and sol_[1] > 110   # scène de jour (pas le maquis de nuit)
         if V is not None:   # le décor vit : feuillages, linge, fumée, bêtes (déplacements) et ampoules (lumière)
             # de jour, mouvement ×6 (essai A/B jugé par JEV, 17/10 : à ×1 la cour était un « décor mort »), lumière inchangée
-            dx, dy, gain = decor_vivant.champ(V, t, REG['decor'] * (6.0 if jour_ else 1.0)); mx = mx - dx; my = my - dy
+            dx, dy, gain = decor_vivant.champ(V, t, REG['decor'] * (6.0 if jour_ else 1.0)); mx = mx - dx[sl]; my = my - dy[sl]
             if jour_ and S.get('vf') is None: gain = gain * (1 - sol_[0] * (1 - decor_vivant.tachete(gain.shape[0], gain.shape[1], t)))   # ombres de feuillage qui passent (remplacées par vie_fond)
-        plate = cv2.remap(plate, mx.astype(np.float32), my.astype(np.float32), cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
-        if V is not None: plate = np.clip(plate.astype(np.float32) * gain[..., None], 0, 255)
-    can = plate.astype(np.float32).copy()
+        vu = cv2.remap(plate, mx.astype(np.float32), my.astype(np.float32), cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)   # la zone seule
+        if V is not None: vu = np.clip(vu.astype(np.float32) * gain[sl][..., None], 0, 255)
+    else: vu = plate[sl]
+    can = np.zeros((H_, W_, 3), np.float32); can[sl] = vu   # hors de la zone : jamais vu (acteurs et bêtes y écrivent sans effet)
     poses = entites.etat(S['ents'], t) if S.get('ents') else []
     pieds = min((A['bbox'][3] for A in S['acts'].values()), default=1e9)
     em = [] if (mesure_ici(t) and poses) else None
@@ -693,8 +704,9 @@ def frame_scene(S, t, off=None, zoom=None, vis=None, t0=None, vue=None):
     if poses: entites.dessine(can, poses, lambda p: p['y'] > pieds and vu_(p), S.get('lum'), S.get('style_ent'), em)
     if em: MESURES.extend(dict(qui='entite', sketch=S['sk']['id'], t=round(t, 3), **m_) for m_ in em)
     if REG.get('nuages', 0) > 0 and S.setdefault('jour', (lambda s_: s_ is not None and s_[1] > 110)(decor_vivant.soleil(S['plate']))):
-        can *= ombre_nuage(S, t)[..., None]   # toute la scène, acteurs compris : une seule lumière
-    return np.clip(can, 0, 255).astype(np.uint8)
+        can[sl] *= ombre_nuage(S, t)[sl][..., None]   # toute la scène, acteurs compris : une seule lumière
+    out = np.clip(can[sl], 0, 255).astype(np.uint8)
+    return (out, (rx0, ry0)) if zone else out
 def ombre_nuage(S, t):
     """OMBRE DE NUAGE QUI PASSE (v35) : v34, porte L — « décor mort » sur 22 secondes de la cour : le rideau détouré par
     SAM 2.1 bouge, mais les cadres de Maman n'en montrent que le haut, épinglé. Par beau temps, l'ombre douce d'un nuage
@@ -1151,10 +1163,10 @@ def rend(f):
     ECHELLE_PLAN[0] = CW / w2   # agrandissement scène → écran de ce plan (taille des visages à l'écran)
     vis_ = (max(c0[0] - c0[2] / 2, c1[0] - c1[2] / 2), max(c0[1] - c0[3] / 2, c1[1] - c1[3] / 2),
             min(c0[0] + c0[2] / 2, c1[0] + c1[2] / 2), min(c0[1] + c0[3] / 2, c1[1] + c1[3] / 2))   # partie de la plaque visible tout le plan
-    fr = frame_scene(S, t, (cx - ref[0], cy - ref[1]), zp, vis=vis_, t0=s[0], vue=(cx - w2 / 2, cy - h2 / 2, cx + w2 / 2, cy + h2 / 2))   # le décor suit la caméra à sa profondeur (parallaxe latérale et avant)
+    fr, (zx0, zy0) = frame_scene(S, t, (cx - ref[0], cy - ref[1]), zp, vis=vis_, t0=s[0], vue=(cx - w2 / 2, cy - h2 / 2, cx + w2 / 2, cy + h2 / 2), zone=True)   # le décor suit la caméra à sa profondeur (parallaxe latérale et avant)
     sc = CW / w2; src_ = fr
     if sc < 0.95: src_ = cv2.GaussianBlur(fr, (0, 0), 0.45 / sc)
-    Maff = np.float32([[sc, 0, -(cx - w2 / 2) * sc], [0, sc, -(cy - h2 / 2) * sc]])
+    Maff = np.float32([[sc, 0, -(cx - w2 / 2 - zx0) * sc], [0, sc, -(cy - h2 / 2 - zy0) * sc]])   # zone vue : origine (zx0, zy0)
     out = cv2.warpAffine(src_, Maff, (CW, CH), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)  # acteur en bicubique + cadre en bilinéaire : netteté la plus proche de la source (mesurée)
     if sc > 1.15 and NETTETE > 0: out = nettete(out, sc)
     if c:   # visages pris au début de la carte (même placement dans tous les processus de rendu)

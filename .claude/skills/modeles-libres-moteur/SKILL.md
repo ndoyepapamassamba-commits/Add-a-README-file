@@ -22,12 +22,28 @@ blocage », « chercher automatiquement une autre alternative »)
   soi-même depuis les poids OFFICIELS (jamais un export anonyme dont la provenance n'est pas vérifiable).
 
 ## 2. Licence vérifiée à la source (bloquant)
-- Accepté : **MIT, Apache-2.0, BSD** (poids ET code). Lire la licence du dépôt des poids, pas seulement celle du code.
-- Refusé pour les vidéos monétisées : non commercial (CC-BY-NC, licences « research only », NVIDIA Source Code License,
-  CPML…), même si le modèle est meilleur.
-- Modèle **privé** : on reproduit la MÉTHODE publiée (article, algorithme) avec des poids libres ou notre propre
+Consigne du 19/10/2026 (« élargis nos critères quand ils sont valables ») : on ne se limite plus à trois licences ; on
+accepte toute licence qui autorise RÉELLEMENT notre usage — vidéos produites chez nous, puis monétisées (TikTok,
+YouTube Shorts) — en lisant le texte de la licence du code ET celui des poids, à la source (dépôt, fiche du modèle).
+- **Accepté sans condition** : MIT, Apache-2.0, BSD, ISC, zlib, Unlicense, CC0 / domaine public, MPL-2.0 (copyleft limité
+  au fichier modifié).
+- **Accepté avec attribution** : CC-BY-4.0 (et CC-BY-SA pour une ressource utilisée telle quelle) ; le crédit est écrit
+  dans la légende ou le générique de la vidéo et dans l'en-tête du script.
+- **Accepté comme programme séparé** : GPL, LGPL, AGPL (Piper, espeak-ng, ComfyUI, FFmpeg en version GPL…). On l'appelle
+  comme outil ou serveur local, sans le lier au code de l'application livrée ; s'il est redistribué avec l'application,
+  sa licence et son code source l'accompagnent (le dépôt est public). Les vidéos produites ne sont pas concernées par la
+  licence de l'outil.
+- **Accepté si l'utilisateur respecte les seuils écrits** : licences communautaires ou « open weights » à plafond (LTX-2
+  Community License : plafond de chiffre d'affaires ; WanGP Community License : usage local libre, pas d'intégration en
+  marque blanche dans un produit payant ; Remotion : gratuit pour un particulier ou une entreprise de 3 personnes au
+  plus). Le seuil et sa source sont notés dans l'en-tête du script et dans le registre ; à revérifier si la situation de
+  l'utilisateur change (chiffre d'affaires, taille de l'entreprise, produit vendu à des tiers).
+- **Toujours refusé** : non commercial (CC-BY-NC, « research only », NVIDIA Source Code License, CPML…), dépôt sans
+  licence (tous droits réservés), licence nulle dans le pays de l'utilisateur, licence qui revendique les vidéos produites
+  ou interdit leur monétisation — même si le modèle est meilleur.
+- Modèle **privé** : on reproduit la MÉTHODE publiée (article, algorithme) avec des poids acceptés ci-dessus ou notre propre
   implémentation. Jamais de copie de poids propriétaires, jamais de contournement de conditions d'utilisation.
-- Noter le modèle, sa licence et sa source dans l'en-tête du script qui l'utilise.
+- Noter le modèle, sa licence (et sa catégorie ci-dessus) et sa source dans l'en-tête du script qui l'utilise.
 
 ## 3. Reproduire fidèlement
 - Conversion ONNX validée contre l'original : écart maximal des sorties et accord des décisions (ex. argmax ≥ 99,9 %).

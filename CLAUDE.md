@@ -50,11 +50,14 @@ démonter, journal daté ; à relancer au début de chaque session et à lire av
 - **Tout blocage de fluidité ou d'écart aux normes → un OUTIL GRATUIT GREFFÉ au moteur** (consigne du 16/10/2026, film
   de la troupe) : à chaque écart mesuré avec les TikTok de l'utilisateur, les vidéos de Ladjagaï ou l'animation 3D (Pixar,
   Illumination ; mêmes outils de mesure : `mesure2.py`, `measure.ts`, `grammaire_plans.py`), chercher sur Internet l'outil
-  gratuit qui le résout, l'apprendre, le REPRODUIRE dans notre moteur (licence MIT, Apache-2.0 ou BSD, ou méthode publiée
+  gratuit qui le résout, l'apprendre, le REPRODUIRE dans notre moteur (licence acceptée par `modeles-libres-moteur`, ou méthode publiée
   réécrite), puis remesurer. Objectif : plus de 100 % des références, dépasser Pixar et Disney.
 - **Chaque point faible sans solution fiable → veille Internet et outils puissants d'abord** (dépôts GitHub, modèles
   ouverts), méthode maison seulement en dernier recours.
-- Modèles et code exécutés chez nous : licences MIT, Apache-2.0 ou BSD seulement (`.claude/skills/modeles-libres-moteur`).
+- Modèles et code exécutés chez nous : licences vérifiées à la source qui autorisent réellement notre usage monétisé
+  (consigne du 19/10/2026, « élargis nos critères quand ils sont valables ») — permissives (MIT, Apache-2.0, BSD…),
+  CC-BY avec attribution, copyleft (GPL…) utilisé comme programme séparé, licences communautaires dont l'utilisateur
+  respecte les seuils ; jamais de licence non commerciale ni de dépôt sans licence (`.claude/skills/modeles-libres-moteur`).
 - Ne jamais fabriquer de données, d'économies ni de performances ; « plafond DUR » seulement s'il est appliqué par le code.
 - Ne jamais afficher ni demander de clés, secrets ou jetons. Création de comptes au nom de l'utilisateur **autorisée**
   (consigne du 16/10/2026, « carte blanche ») quand la tâche l'exige, sans jamais contourner un contrôle anti-robot

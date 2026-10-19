@@ -60,7 +60,7 @@ moteurs disponibles du monde » ; « greffe d'abord les outils nécessaires, JEV
 Consigne, mot pour mot : « Toujours chercher des outils libres et gratuits pour avancer vite. […] Et pour cela, tu
 utiliseras REA chaque instant. Mets ça comme skills. »
 - **À chaque étape lente ou manquante** (production vidéo, juge, rendu, publication), avant d'écrire du code maison :
-  chercher l'outil **libre** (MIT, Apache-2.0, BSD pour ce qui tourne chez nous) et **gratuit** qui fait déjà le travail
+  chercher l'outil **libre** (licence acceptée par `modeles-libres-moteur` pour ce qui tourne chez nous) et **gratuit** qui fait déjà le travail
   plus vite — npm, PyPI, GitHub, Hugging Face, journal du veilleur — puis le **démonter avec REA** (paquet JavaScript,
   binaire, WASM, base SQLite, notre propre build) pour savoir exactement comment il marche avant de le greffer.
 - **Mesurer le gain** sur nos données (secondes par minute de film, qualité, licence) et garder les voies battues en

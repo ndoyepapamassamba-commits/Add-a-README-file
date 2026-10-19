@@ -27,7 +27,7 @@ puis les améliorer ensuite et les intégrer dans la tâche en cours. » — « 
 
 ## 1 bis. GRATUIT et SANS ABONNEMENT (précisions de l'utilisateur, 14/10/2026)
 « Quand je parle d'outils, c'est d'outils puissants mais gratuits » — « sans que je doive m'abonner ».
-- D'abord : modèles OUVERTS (MIT / Apache-2.0 / BSD) exécutés sur du calcul gratuit SANS compte : le processeur du
+- D'abord : modèles OUVERTS (licences acceptées par `modeles-libres-moteur`) exécutés sur du calcul gratuit SANS compte : le processeur du
   conteneur, la machine de l'utilisateur (son GPU s'il en a un, via le pont Blender), des Spaces publics anonymes.
 - Les API payantes (Veo, Grok, Kling…) et les services à compte (Modal, Kaggle, Runpod…) ne sont PAS proposés par
   défaut ; seulement si l'utilisateur le demande.
