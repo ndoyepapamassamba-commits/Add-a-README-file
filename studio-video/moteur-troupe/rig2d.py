@@ -20,7 +20,7 @@ import os
 #   · rendu : champ de déplacement de la grille (bilinéaire, exact sur les parties rigides), inversé par point fixe,
 #     échantillonnage bicubique de l'image ; l'étirement (valeurs singulières de la jacobienne) est mesurable à chaque image.
 #   preparer(img, masque, pts, bbox, ...) → R ; rendre(R, pose, src, alpha) → (boîte, rgb, alpha) ; enveloppe(R) → limites
-import math
+import math, threading
 import numpy as np, cv2
 from scipy import ndimage, sparse
 from scipy.spatial import cKDTree
@@ -590,6 +590,13 @@ def cartes(R, pose):
 # déplacé de U — par OpenGL 4.5 en rendu logiciel (Mesa llvmpipe, 4 cœurs) via ModernGL (MIT) : 13 ms pour 4 000 triangles
 # à 700 × 900 (mesuré). Bicubique Catmull-Rom dans le nuanceur (même netteté que cv2.INTER_CUBIC). RENDU_GL=0 : ancien chemin.
 _GL = {}
+_LOC = threading.local()   # champ de déformation du dernier rendu OpenGL, par fil (tourne.py le relit pour l'étirement)
+
+
+def dernier_champ():
+    return getattr(_LOC, 'U', None)
+
+
 _VS = """#version 330
 in vec2 p; in vec2 uv; out vec2 v; uniform vec2 taille;
 void main(){ v = uv; gl_Position = vec4(p / taille * 2.0 - 1.0, 0.0, 1.0); }"""
@@ -623,6 +630,9 @@ void main(){
 
 def gl_actif():
     if os.environ.get('RENDU_GL', '1') != '1': return False
+    # UN SEUL FIL PAR CONTEXTE (19/10/2026) : un contexte EGL n'est courant que dans le fil qui l'a créé ; les fils de
+    # tourne.realise (choix des réactions, 8 plans à la fois) prennent le chemin processeur, sans toucher au contexte
+    if threading.current_thread() is not threading.main_thread(): return False
     if _GL.get('pid') != os.getpid(): _GL.clear(); _GL['pid'] = os.getpid()   # un contexte EGL ne survit pas au fork : un par processus
     if 'ok' not in _GL:
         try:
@@ -752,7 +762,7 @@ def rendre(R, pose, src, alpha=None, sxsy=None):
     (par défaut celle de la préparation). Couche 1 : le corps (champ ARAP), avec, sous les avant-bras détourés, ce qui est
     derrière eux ; couche 2 : les avant-bras / mains, transformations rigides, par-dessus."""
     gl_ = sxsy is None and gl_actif()
-    if gl_: U, mats = champ(R, pose); R['_U'] = U; sx = sy = None   # rendu direct : pas de carte inverse
+    if gl_: U, mats = champ(R, pose); _LOC.U = U; sx = sy = None   # rendu direct : pas de carte inverse (champ gardé par fil)
     elif sxsy is not None: sx, sy = sxsy; mats = _fk(R, pose)   # carte déjà calculée (interpolée entre deux images, tourne.py)
     else: U, mats = champ(R, pose); sx, sy = carte(R, U)
     X0, Y0, X1, Y1 = R['box']
@@ -772,7 +782,7 @@ def rendre(R, pose, src, alpha=None, sxsy=None):
             acc, al = rendre_personnage(R, U, src, a, [(b, _tr((-X0, -Y0)) @ T @ _tr(b['box'][:2])) for b, T in paires[:k1]])
             paires = paires[k1:]
         except Exception as e:   # ERREUR PRÉVUE : l'ancien chemin reprend la même image, sans arrêt
-            _GL['ok'] = False; _GL['err'] = f'{type(e).__name__}: {str(e)[:160]}'; R.pop('_U', None); passe = gl_ = False
+            _GL['ok'] = False; _GL['err'] = f'{type(e).__name__}: {str(e)[:160]}'; passe = gl_ = False
             sx, sy = carte(R, U)
     if not passe:
         if R['src_corps']:
@@ -783,7 +793,7 @@ def rendre(R, pose, src, alpha=None, sxsy=None):
         if gl_:
             try: rgb, al = rendre_maillage(R, U, src, a)
             except Exception as e:   # ERREUR PRÉVUE : pilote OpenGL perdu, mémoire, nuanceur — l'ancien chemin reprend, sans arrêt
-                _GL['ok'] = False; _GL['err'] = f'{type(e).__name__}: {str(e)[:160]}'; R.pop('_U', None); gl_ = False
+                _GL['ok'] = False; _GL['err'] = f'{type(e).__name__}: {str(e)[:160]}'; gl_ = False
                 sx, sy = carte(R, U)
         if not gl_:
             rgb = cv2.remap(src, sx, sy, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT).astype(np.float32)

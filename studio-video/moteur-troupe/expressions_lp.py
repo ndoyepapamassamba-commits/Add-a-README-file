@@ -174,15 +174,22 @@ def sourcils_doubles(B, poids=0.92):
 SOURCILS_ECART_MAX = 3.0   # niveaux ; Coumba : v13 (inversion par point fixe) jusqu'à 5,70 (haussement), 5,36 (surprise) ; après : 1,65 au pire
 
 
-def cherche_recette(e, rend, juger, base, journal=print):
+def cherche_recette(e, rend, juger, base, journal=print, parrain=None):
     """RECHERCHE DE RECETTE PAR PERSONNAGE : toutes les recettes candidates sont rendues à pleine intensité et jugées EN
     PARALLÈLE par l'œil de JEV ; seules celles qu'il dit abîmées (défaut > neutre + TOL_DURE) sont adoucies et rejugées.
-    On garde la plus lisible des propres (à 0,03 près, la moins abîmée). → (commande, image bouche fermée, jugement, essais)"""
+    On garde la plus lisible des propres (à 0,03 près, la moins abîmée). → (commande, image bouche fermée, jugement, essais)
+    parrain : recette déjà jugée sur un visage proche (même genre, âge voisin) : essayée en premier, gardée si elle est
+    propre ET lisible sur CE visage (un seul jugement), sinon la recherche complète reprend."""
     from concurrent.futures import ThreadPoolExecutor
     Q = {'abime': ABIME, 'lisible': f'Does this cartoon face clearly look {DESC[e]}?'}; V = variantes(e)
     abime = lambda x: x[2]['abime'] - base > TOL_DURE
-    o = rend(dict(V[0]), 0); r = juger(o, Q); essais = [(dict(V[0]), o, r, 1.0, V[0])]   # la recette de base d'abord
-    if not abime(essais[0]) and r['lisible'] >= SUFFIT: return dict(V[0]), o, dict(r, intensite=1.0), 1
+    essais = []
+    if parrain and parrain != V[0]:
+        o = rend(dict(parrain), 0); r = juger(o, Q); essais.append((dict(parrain), o, r, 1.0, parrain))
+        if not abime(essais[0]) and r['lisible'] >= SUFFIT: return dict(parrain), o, dict(r, intensite=1.0, parrain=True), 1
+    o = rend(dict(V[0]), 0); r = juger(o, Q); essais.append((dict(V[0]), o, r, 1.0, V[0]))   # la recette de base d'abord
+    if not abime(essais[-1]) and r['lisible'] >= SUFFIT: return dict(V[0]), o, dict(r, intensite=1.0), len(essais)
+    essais = essais[-1:] + essais[:-1]
     a_adoucir = [V[0]] if abime(essais[0]) else []; a_faire = V[1:]
     with ThreadPoolExecutor(8) as pool:
         for k in INTENSITES:
@@ -251,7 +258,7 @@ def rigidite(n0, o, zone):
     return round(float(np.sqrt((r ** 2).sum(1)).mean()), 2)
 
 
-def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alpha=None):
+def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alpha=None, parrain=None):
     """rend et range la bibliothèque d'expressions d'un personnage (une fois ; une émotion dont la recette de base a changé
     est recherchée et redessinée). Chaque émotion reçoit la RECETTE la plus lisible qui n'abîme pas CE visage
     (cherche_recette, œil de JEV) ; sans juge, la recette de base à pleine intensité. alpha (découpe de l'acteur, image
@@ -292,7 +299,7 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
                 if base is None:   # défaut du neutre à la bouche peinte, comme les recettes : moyenne de deux avis (±0,03 par requête)
                     n0 = rend({}, 0); base = float(np.mean([juger(n0, {'abime': ABIME})['abime'] for _ in range(2)]))
                     meta['jev']['neutre'] = {'abime': round(base, 3)}
-                c, fait0, r, n = cherche_recette(e, rend, juger, base, journal)
+                c, fait0, r, n = cherche_recette(e, rend, juger, base, journal, (parrain or {}).get(e))
                 meta['jev'][e] = dict(r, essais=n)
             except Exception as ex:
                 journal(f'  {e} : juge indisponible ({str(ex)[:80]}), recette de base')

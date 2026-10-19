@@ -57,7 +57,9 @@ def prepare(d, plaque, masques=(), jev=True):
         mm = (m if m.ndim == 2 else m[..., 0]).astype(np.float32); mm = mm / max(1.0, mm.max())
         hors_acteurs = np.minimum(hors_acteurs, 1 - np.clip(cv2.dilate(mm, np.ones((31, 31), np.uint8)), 0, 1))
     hors_acteurs = cv2.GaussianBlur(hors_acteurs, (0, 0), 6)
-    if jev:   # JEV ne voit que le décor : acteurs et restes d'acteurs peints en gris (sinon une robe fait « linge »)
+    if jev and os.path.isfile(f'{d}/vie.json'):   # étiquettes déjà lues pour ce décor (scène composée sur la même plaque,
+        P = json.load(open(f'{d}/vie.json'))       # scene_nouvelle.py : 280 questions au juge épargnées, 19/10/2026)
+    elif jev:   # JEV ne voit que le décor : acteurs et restes d'acteurs peints en gris (sinon une robe fait « linge »)
         vu = (plaque.astype(np.float32) * hors_acteurs[..., None] + 128 * (1 - hors_acteurs[..., None])).astype(np.uint8)
         try:
             P = etiquettes_jev(vu); json.dump(P, open(f'{d}/vie.json', 'w'), indent=0)

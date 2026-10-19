@@ -29,6 +29,10 @@ if len(P) < N:
         c = detect(rgb[:, x0:x1], x0)
         if c: P.append(min(c, key=lambda p: abs(p[0, 0] - (k + 0.5) * W / N)))
 FACEL = {}
+def slug_de(nom):   # 19/10/2026 : noms de la troupe élargie (MAÎTRE KONÉ, SŒUR AWA) → fichiers ASCII sûrs pour toute la chaîne
+    import unicodedata, re as _re
+    t = unicodedata.normalize('NFKD', nom.replace('Œ', 'OE').replace('œ', 'oe')).encode('ascii', 'ignore').decode().lower()
+    return _re.sub(r'[^a-z0-9]+', '-', t).strip('-')
 P = sorted(P, key=lambda p: p[0, 0])
 assert len(P) == N, f'{len(P)} acteurs trouvés pour {N} attendus'
 def plausible(p):  # tête au-dessus des épaules, épaules au-dessus des hanches
@@ -103,7 +107,7 @@ for kk, (name, p) in enumerate(zip(names, P)):
     s = float(np.linalg.norm(p[11, :2] - p[12, :2])); hx, hy = p[0, :2]
     fc = face_from(FACEL[kk]) if kk in FACEL else face5([max(0, hx - 1.5 * s), max(0, hy - 1.8 * s), min(W, hx + 1.5 * s), min(H, hy + 1.2 * s)])
     hip_y = float(p[[23, 24], 1].mean()) if p[[23, 24], 2].min() > 0.3 else float(p[[11, 12], 1].mean() + 2.0 * s)
-    info['acteurs'].append({'nom': name, 'slug': name.lower().replace(' ', '-'), 'pts': p.round(1).tolist(), 'visage': fc, 'epaules': round(s, 1),
+    info['acteurs'].append({'nom': name, 'slug': slug_de(name), 'pts': p.round(1).tolist(), 'visage': fc, 'epaules': round(s, 1),
                             'bassin_y': round(min(H - 2, hip_y), 1), 'tete': [round(hx, 1), round(hy, 1)]})
 # un pixel n'appartient qu'à un acteur : on retire aux autres ce qui touche le cœur de chacun
 for i in range(N):

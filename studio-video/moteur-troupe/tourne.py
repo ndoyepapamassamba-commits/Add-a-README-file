@@ -604,7 +604,7 @@ def warp_rig(S, A, t, name):
     box, rgb, al, sx, sy = rig2d.rendre(R_, pose, src, al_v, sxsy=None if rig2d.gl_actif() else cartes_rig(R_, P, f, name))   # rendu direct par maillage (rig2d.rendre_maillage)
     if mesure_ici(t):
         I_ = R_['M']['idx']
-        if sx is None: p99, mx = rig2d.etirement_maillage(R_, R_['_U'], I_['head'])   # même mesure, par triangle
+        if sx is None: p99, mx = rig2d.etirement_maillage(R_, rig2d.dernier_champ(), I_['head'])   # même mesure, par triangle
         else:
             gx = ((sx - R_['gx'][0]) / R_['cell']).round().astype(int).clip(0, len(R_['gx']) - 1); gy = ((sy - R_['gy'][0]) / R_['cell']).round().astype(int).clip(0, len(R_['gy']) - 1)
             (p99, mx), _ = rig2d.etirement(sx, sy, al, R_['own'][gy, gx] != I_['head'])

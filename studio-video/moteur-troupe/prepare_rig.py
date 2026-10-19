@@ -407,11 +407,16 @@ def prepare(d, jev=True, force=False):
     t0 = time.time(); acts = S['acteurs']
     m0s = [cv2.imread(f"{d}/{a['slug']}-masque.png", 0).astype(np.float32) / 255 for a in acts]
     alphas, boites, decoupes = [], [], []
+    # SCÈNE COMPOSÉE (19/10/2026, compositeur.py) : les découpes et le décor sans personne sont CONNUS au pixel près —
+    # exacte.json : {"plaque": fichier, "alphas": {slug: fichier 16 bits}} ; ni segmentation ni reconstitution devinées
+    EX = json.load(open(f'{d}/exacte.json')) if os.path.isfile(f'{d}/exacte.json') else None
     meuble, personne = objets.meubles(img)   # chaises, bancs, tables : restent dans le décor
     pers_tous = np.zeros(img.shape[:2], np.float32)
     for k, a in enumerate(acts):
         box = rig2d.boite(a['bbox'], img.shape); C = gestes.classes(img, box)
-        al, perdu = rig2d.decoupe(img, m0s[k], box, C, autres=[m for j, m in enumerate(m0s) if j != k], meuble=meuble, personne=personne)
+        if EX and a['slug'] in EX.get('alphas', {}):
+            al = cv2.imread(f"{d}/{EX['alphas'][a['slug']]}", cv2.IMREAD_UNCHANGED).astype(np.float32) / 65535; perdu = 0.0
+        else: al, perdu = rig2d.decoupe(img, m0s[k], box, C, autres=[m for j, m in enumerate(m0s) if j != k], meuble=meuble, personne=personne)
         ajoute = float(((m0s[k] < 0.5) & (al > 0.5)).sum() / max(1, (m0s[k] > 0.5).sum()))
         alphas.append(al); boites.append(box); decoupes.append({'decor_retire': round(perdu, 3), 'personne_ajoutee': round(ajoute, 3)})
         x0, y0, x1, y1 = [int(v) for v in box]; pers_tous[y0:y1, x0:x1] = np.maximum(pers_tous[y0:y1, x0:x1], np.clip(1 - C[0], 0, 1)[y0:y1, x0:x1])
@@ -445,6 +450,11 @@ def prepare(d, jev=True, force=False):
         inventes = [tuple(x) for x in ancien.get('inventes', [])]; faits = ancien.get('fils', []); ordre_noms = ancien.get('ordre', [a['nom'] for a in acts])
     if cache:
         finals = [(cv2.imread(f"{R}/alpha-{a['slug']}.png", cv2.IMREAD_UNCHANGED).astype(np.float32) / 65535, ancien.get('acteurs', {}).get(a['nom'], {}).get('complete')) for a in acts]
+    elif EX:   # décor exact, sans personne (ombres des personnages comprises) : rien à reconstituer ni à rebrancher
+        pl = cv2.cvtColor(cv2.imread(f"{d}/{EX['plaque']}"), cv2.COLOR_BGR2RGB); trou = np.zeros(img.shape[:2], np.uint8)
+        for al_ in alphas: trou |= (al_ > 0.02).astype(np.uint8)
+        trou = (cv2.dilate(trou, np.ones((13, 13), np.uint8)) > 0).astype(np.uint8); inventes, faits, coupes_ = [], [], []
+        cv2.imwrite(f'{R}/plaque.png', cv2.cvtColor(pl, cv2.COLOR_RGB2BGR)); cv2.imwrite(f'{R}/trou.png', trou * 255)
     elif not plaque_gardee:
         pl, trou = PQ.plaque_pleine(img, alphas)
         pl, inventes = PQ.nettoie(img, pl, trou)   # restes d'acteur et objets inventés par le remplissage : rebouchés
@@ -460,7 +470,11 @@ def prepare(d, jev=True, force=False):
     for a in acts:
         fa_ = f"{R}/alpha-{a['slug']}.png"
         if os.path.isfile(fa_): alphas_avant[a['nom']] = hashlib.md5(cv2.imread(fa_, cv2.IMREAD_UNCHANGED).astype(np.uint16).tobytes()).hexdigest()
-    if not cache or ancien.get('amodal') != AMODAL:   # complétion amodale refaite seule quand sa méthode change (plaque gardée)
+    if EX and not cache:   # figures entières posées par le compositeur : rien de caché à compléter
+        finals = []; ordre_noms = [a['nom'] for a in acts]
+        for k, a in enumerate(acts):
+            cv2.imwrite(f"{R}/alpha-{a['slug']}.png", np.clip(alphas[k] * 65535, 0, 65535).astype(np.uint16)); finals.append((alphas[k], None))
+    elif not cache or ancien.get('amodal') != AMODAL:   # complétion amodale refaite seule quand sa méthode change (plaque gardée)
         am, ordre = PQ.amodal(img, alphas, personne=pers_tous); ordre_noms = [acts[k]['nom'] for k in ordre]; finals = []
         for k, a in enumerate(acts):
             a2, im2 = am[k]; comp = None; fin = alphas[k]

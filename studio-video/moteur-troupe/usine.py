@@ -84,8 +84,9 @@ def episode(d):
     r = subprocess.run([sys.executable, os.path.join(ICI, 'fabrique', 'ton.py'), f'{d}/histoire.json'], capture_output=True, text=True)
     if r.returncode: raise RuntimeError('ton.py refuse l’histoire :\n' + r.stdout[-1500:])
     M = {'timeline': 'timeline.json', 'histoire': 'histoire.json',
-         'scenes': {s['id']: LIEU_DOSSIER[s['image']] for s in H['sketchs']},
-         'reglages': dict(REGLAGES, entites={s['id']: 2 for s in H['sketchs'] if s['image'] == 'cour'})}
+         # lieu inconnu du tableau : scène préparée par scene_nouvelle.py (prep/<image>, 19/10/2026) ; ses poules si c'est une cour
+         'scenes': {s['id']: LIEU_DOSSIER.get(s['image'], f"prep/{s['image']}") for s in H['sketchs']},
+         'reglages': dict(REGLAGES, entites={s['id']: 2 for s in H['sketchs'] if s['image'].split('-')[0] == 'cour'})}
     json.dump(M, open(f'{d}/montage.json', 'w'), ensure_ascii=False, indent=1)
     return M
 

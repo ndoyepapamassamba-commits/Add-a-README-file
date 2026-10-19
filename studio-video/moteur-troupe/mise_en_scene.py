@@ -10,6 +10,21 @@ QUI = {'BAYE NDIAYE': 'the grandfather with grey hair and a grey beard, in a roy
        'COUMBA': 'the young woman with a big curly bun and a pink-purple off-shoulder dress',
        'TANTIE AWA': 'the woman with an orange head wrap and an orange sunflower-print dress',
        'MODOU': 'the thin young man in a worn green t-shirt'}
+
+
+class _Qui(dict):
+    """TOUTE LA TROUPE (19/10/2026) : un personnage hors des 7 premiers est décrit depuis la bible du casting
+    (blender/film/characters.json : genre, âge, activité) — jamais de KeyError dans un juge ou une consigne."""
+    def __missing__(self, nom):
+        import json, os
+        try: c = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'blender', 'film', 'characters.json'), encoding='utf-8')).get(nom) or {}
+        except Exception: c = {}
+        g = {'femme': 'woman', 'homme': 'man', 'fille': 'girl', 'garcon': 'boy'}.get(c.get('genre'), 'person')
+        v = f"the {c['age']}-year-old {g} called {nom.title()}" if c.get('age') else f'the {g} called {nom.title()}'
+        self[nom] = v; return v
+
+
+QUI = _Qui(QUI)
 # consigne de jeu de la réplique (timeline : champ « jeu ») → jeu du corps entier
 JEU = {'accuse': 'points an accusing finger and leans forward, frowning',
        'camera': 'turns to the camera with a knowing look',

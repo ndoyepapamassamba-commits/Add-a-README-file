@@ -31,6 +31,50 @@ CAST = {  # deux voix sources propres et libres : siwis (CC-BY 4.0) et gilles (C
 }
 # débit visé (syllabes par seconde de parole) : chaîne 5,92 (hommes) / 4,71 (femmes), Ladjagaï 6,3–6,7 → un cran au-dessus de la chaîne
 DEBIT = {'MAMAN NOUNOU': 5.4, 'TANTIE AWA': 5.4, 'COUMBA': 5.4, 'PETIT MAMADOU': 5.6, 'BAYE NDIAYE': 6.0, 'MODOU': 6.2, 'KOFFI': 6.2}
+
+
+# TOUTE LA TROUPE A UNE VOIX (19/10/2026, « une solution globale ») : un personnage absent du tableau reçoit la sienne,
+# calculée une fois depuis sa fiche — hauteur naturelle de la fabrique (fabrique/univers.py, 28 personnages), sinon genre,
+# âge et facteur de hauteur de la bible du casting (blender/film/characters.json, 54 personnages) — avec les mêmes deux voix
+# sources libres que la troupe (siwis CC-BY 4.0 pour les femmes et les enfants, gilles CC0 pour les hommes) et les mêmes
+# réglages que les 7 personnages calibrés (étendue, vitesse, timbre d'enfant).
+def _fiche(nom):
+    ici = os.path.dirname(os.path.abspath(__file__)); f = {}
+    try:
+        sys.path.insert(0, os.path.join(ici, 'fabrique')); import univers as _u
+        for v in _u.P.values():
+            if v.get('nom') == nom: f.update(genre={'woman': 'femme', 'girl': 'fille', 'boy': 'garcon', 'man': 'homme', 'children': 'enfant'}.get(v['genre'], v['genre']), age=v['age'], f0=v['f0'])
+    except Exception: pass
+    try:
+        c = json.load(open(os.path.join(ici, '..', 'blender', 'film', 'characters.json'), encoding='utf-8')).get(nom)
+        if c:
+            f.setdefault('genre', c.get('genre')); f.setdefault('age', c.get('age')); f['pitch'] = float(c.get('pitch') or 1.0)
+    except Exception: pass
+    return f
+
+
+def cast_de(nom):
+    f = _fiche(nom)
+    if not f.get('genre'): raise KeyError(f'{nom} : ni dans le tableau des voix, ni dans les fiches de la troupe')
+    g, age = f['genre'], int(f.get('age') or 35); enfant = g in ('fille', 'garcon', 'enfant') and age < 13
+    femme = g in ('femme', 'fille') or enfant
+    f0 = f.get('f0') or ((275 if enfant else 205 if age < 55 else 192) if femme else (128 if age < 30 else 120 if age < 55 else 112)) * min(1.1, max(0.92, f.get('pitch', 1.0)))
+    return ('fr_FR-siwis-medium' if femme else 'fr_FR-gilles-low', None, round(float(f0)), 1.30 if enfant else 1.35 if femme else 1.50, 0.85,
+            1.16 if enfant else 1.0)
+
+
+class _Table(dict):
+    def __init__(self, base, calcul): super().__init__(base); self._calcul = calcul
+    def __missing__(self, k):
+        v = self._calcul(k); self[k] = v; return v
+    def __contains__(self, k):
+        if dict.__contains__(self, k): return True
+        try: self[k]; return True
+        except KeyError: return False
+
+
+CAST = _Table(CAST, cast_de)
+DEBIT = _Table(DEBIT, lambda nom: 5.6 if cast_de(nom)[5] > 1.0 else 5.4 if cast_de(nom)[0].startswith('fr_FR-siwis') else 6.1)
 SYL = re.compile(r'[aeiouyéèêëàâîïôûœ]+', re.I)
 MOTEUR = os.environ.get('VOIX_MOTEUR', 'piper')
 REFS_DIR = os.path.expanduser(os.environ.get('VOIX_REFS', '~/.cache/massamba-models/voix-refs'))

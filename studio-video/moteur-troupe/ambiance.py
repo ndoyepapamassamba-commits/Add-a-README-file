@@ -54,7 +54,7 @@ if __name__ == '__main__':
     parle = np.zeros(N, np.float32)
     for L in T['lines']: parle[int(L['t0'] * sr):int((L['t0'] + L['dur']) * sr)] = 1
     for S in T['sketchs']:
-        lieu = LIEUX.get(S.get('lieu'))
+        lieu = LIEUX.get(str(S.get('lieu') or '').strip().capitalize())   # « cour » (ep02, ep03, troupe élargie) = « Cour »
         if not lieu: continue
         a, b = int(S['t0'] * sr), min(N, int(S['t1'] * sr)); n = b - a
         if n <= sr: continue
