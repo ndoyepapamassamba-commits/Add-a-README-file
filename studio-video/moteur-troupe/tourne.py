@@ -382,14 +382,37 @@ if REG['rig']:   # pistes de jeu et ressenti de chaque personnage, image par ima
         t30 = np.arange(NF30) / 30.0; tf = np.minimum(np.arange(NF) / FPS, t30[-1])
         return {n: {k: (PchipInterpolator(t30, np.asarray(v, np.float64))(tf).astype(np.float32) if isinstance(v, np.ndarray) and len(v) == NF30 else v)
                     for k, v in d.items()} for n, d in P.items()}
+    def _pistes_sk(sid):
+        A2 = SC[sid]['acts']; J_ = []
+        return sid, jeu.pistes(T['lines'], sid, list(A2), {n: float(A['hip'][0]) for n, A in A2.items()}, {n: A.get('assis', False) for n, A in A2.items()},
+                               {n: A.get('env', {}) for n, A in A2.items()}, NF30, 30, {n: len(A['rig']['bras']) if A.get('rig') else 0 for n, A in A2.items()},
+                               echelles={n: float(A['rig']['M']['sw']) / 0.38 for n, A in A2.items() if A.get('rig')},   # largeur d'épaules humaine ≈ 0,38 m
+                               cotes_bras={n: [b['cote'] for b in A['rig']['bras']] for n, A in A2.items() if A.get('rig')},
+                               reglages=RJ, journal=J_, visee=visee_(A2), peints={n: regard.peint(A.get('yeux')) for n, A in A2.items()}), J_
     for sid, S_ in SC.items():
         A2 = S_['acts']
         print(f"{sid}: regard peint", {n: [round(v, 2) for v in regard.peint(A.get('yeux'))] for n, A in A2.items()}, "; visée", {n: {m: [round(x, 2) for x in v] for m, v in d.items()} for n, d in visee_(A2).items()}, flush=True)
-        S_['pistes'] = _a_la_cadence(gestes_fluides(A2, jeu.pistes(T['lines'], sid, list(A2), {n: float(A['hip'][0]) for n, A in A2.items()}, {n: A.get('assis', False) for n, A in A2.items()},
-                                  {n: A.get('env', {}) for n, A in A2.items()}, NF30, 30, {n: len(A['rig']['bras']) if A.get('rig') else 0 for n, A in A2.items()},
-                                  echelles={n: float(A['rig']['M']['sw']) / 0.38 for n, A in A2.items() if A.get('rig')},   # largeur d'épaules humaine ≈ 0,38 m
-                                  cotes_bras={n: [b['cote'] for b in A['rig']['bras']] for n, A in A2.items() if A.get('rig')},
-                                  reglages=RJ, journal=JOURNAL_JEU, visee=visee_(A2), peints={n: regard.peint(A.get('yeux')) for n, A in A2.items()})))
+    # PISTES DES SKETCHS EN PARALLÈLE (19/10/2026, « une production qui prend plusieurs minutes c'est trop ») : les sketchs
+    # sont indépendants (les caches de mocap_jeu et dictionnaire_humain ne servent qu'à la vitesse) ; un processus par
+    # sketch, résultats et journal du jeu repris dans l'ordre des sketchs — 16,7 s l'un après l'autre (profil du 19/10).
+    # ERREUR PRÉVUE : un processus qui échoue → calcul l'un après l'autre, comme avant. PISTES_PARALLELES=0 : sans.
+    import time as _tm; _sids = list(SC); _res = None; _t0p = _tm.time()
+    try:   # bibliothèques de mouvements chargées UNE fois avant le fork (sinon chaque processus les relit)
+        import mocap_jeu as _mj, dictionnaire_humain as _dh
+        _dh.index(); _dh._paquet(); _mj.hochements()
+    except Exception as _ex: print(f'préchargement des mouvements : {type(_ex).__name__}', flush=True)
+    if len(_sids) > 1 and os.environ.get('PISTES_PARALLELES', '1') == '1':
+        import multiprocessing as _mpr
+        _n0 = cv2.getNumThreads(); cv2.setNumThreads(1)   # réservoir de fils d'OpenCV vidé avant le fork (blocage vu le 17/10)
+        try:
+            with _mpr.get_context('fork').Pool(len(_sids)) as _pool: _res = _pool.map(_pistes_sk, _sids)
+        except Exception as _ex:
+            print(f'pistes en parallèle impossibles ({type(_ex).__name__}: {str(_ex)[:120]}) : calcul l’un après l’autre', flush=True); _res = None
+        finally: cv2.setNumThreads(_n0)
+    if _res is None: _res = [_pistes_sk(s_) for s_ in _sids]
+    print(f'pistes du jeu : {len(_sids)} sketchs en {_tm.time() - _t0p:.1f} s', flush=True)
+    for sid, P_, J_ in _res:
+        JOURNAL_JEU.extend(J_); SC[sid]['pistes'] = _a_la_cadence(gestes_fluides(SC[sid]['acts'], P_))
 LIPS, EYES = (0.0, 0.25, 0.5, 0.75, 1.0), (0.0, 0.5, 1.0)
 SEATED = {'BAYE NDIAYE': True, 'KOFFI': True, 'COUMBA': True}
 lines = T['lines']
