@@ -99,7 +99,8 @@ def tourne(d, v):
     etape('bouches', f'{ICI}/levres.py', 'timeline.json')
     etape('rires', f'{ICI}/musique.py', 'timeline.json', 'voix/mix.wav', 'voix/mix-musique.wav')
     etape('ambiance', f'{ICI}/ambiance.py', 'timeline.json', 'voix/mix-musique.wav', 'voix/mix-ambiance.wav')
-    etape('visages', f'{ICI}/fume_visages.py', 'prep', f'{d}/{v}-visages.jpg')
+    lieux = ','.join(sorted({os.path.basename(os.path.normpath(x)) for x in json.load(open(f'{d}/montage.json'))['scenes'].values()}))
+    etape('visages', f'{ICI}/fume_visages.py', 'prep', f'{d}/{v}-visages.jpg', lieux)   # seulement les lieux tournés
     etape('tournage', f'{ICI}/tourne.py', 'montage.json', D, e={'ETIREMENT': '1', 'TOURNE_PROCS': str(os.cpu_count() or 4)})
     # FLOU DE BOUGÉ PHYSIQUE (18/10/2026, « au niveau de Pixar ») : obturateur 180° le long du flux optique, raccords du
     # moteur respectés, images nettes gardées dans clip-net (fluidite.flou_bouge) ; USINE_FLOU=0 pour s'en passer

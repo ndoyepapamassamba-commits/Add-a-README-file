@@ -1,15 +1,17 @@
 """Essai de fumée des bibliothèques d'expressions (charge + visage) avant tout tournage : chaque personnage, bouche
-fermée / mi-ouverte / ouverte, neutre et en riant ; planche de contrôle.   python3 fume_visages.py <prep> <planche.jpg>"""
+fermée / mi-ouverte / ouverte, neutre et en riant ; planche de contrôle.   python3 fume_visages.py <prep> <planche.jpg> [lieu,lieu…]
+19/10/2026 : la liste des lieux de l'épisode limite l'essai à ceux qui seront tournés (les lieux « -reel », photos écartées par
+l'utilisateur, arrêtaient l'usine alors qu'aucun plan ne s'y tourne)."""
 import json, os, sys
 import numpy as np, cv2
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import expressions_lp as XL
 
-PREP, OUT = sys.argv[1], sys.argv[2]
+PREP, OUT = sys.argv[1], sys.argv[2]; LIEUX = set(sys.argv[3].split(',')) if len(sys.argv) > 3 and sys.argv[3] else None
 lignes, erreurs = [], []
 for sc in sorted(os.listdir(PREP)):
     fs = f'{PREP}/{sc}/scene.json'
-    if not os.path.isfile(fs): continue
+    if not os.path.isfile(fs) or (LIEUX is not None and sc not in LIEUX): continue
     S = json.load(open(fs)); img = cv2.cvtColor(cv2.imread(f'{PREP}/{sc}/image.png'), cv2.COLOR_BGR2RGB)
     for a in S['acteurs']:
         dl = f"{PREP}/{sc}/expressions/{a['slug']}"; f3 = f"{PREP}/{sc}/rig/visage3d-{a['slug']}.npy"
