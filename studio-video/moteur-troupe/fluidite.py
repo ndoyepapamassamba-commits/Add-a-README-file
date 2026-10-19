@@ -235,11 +235,16 @@ def _flou_tache(arg):
     return _flou_plage(*arg)
 
 
-def flou_bouge(dossier, sortie=None, angle=180.0, coupes=(), fps=60.0, procs=None):
+def flou_bouge(dossier, sortie=None, angle=180.0, coupes=(), fps=None, procs=None):
     """dossier/f*.jpg → sortie (défaut : dossier, les nettes gardées dans dossier + '-net') ; coupes : instants (s).
     EN PARALLÈLE (18/10/2026, v7 : 3 min 50 s sur un seul processus, 56 ms par image) : tranches confiées à `procs`
-    processus (défaut : tous les cœurs), chacune lisant ses voisines ; résultat identique octet pour octet au tour unique."""
+    processus (défaut : tous les cœurs), chacune lisant ses voisines ; résultat identique octet pour octet au tour unique.
+    fps : cadence des images ; par défaut celle écrite par le tournage (tournage.json voisin), sinon 30 — jamais supposée
+    (19/10/2026 : passage à 30 i/s, les raccords tombaient sinon sur la mauvaise image)."""
     import shutil
+    if fps is None:
+        tj = os.path.join(os.path.dirname(os.path.abspath(dossier).rstrip('/')), 'tournage.json')
+        fps = float(json.load(open(tj)).get('fps', 30)) if os.path.isfile(tj) else 30.0
     from concurrent.futures import ProcessPoolExecutor
     fr = sorted(glob.glob(os.path.join(dossier, 'f*.jpg')))
     if not fr: return {'images': 0}

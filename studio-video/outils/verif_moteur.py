@@ -276,6 +276,30 @@ try:
 except Exception as e:
     echecs.append(f'rendu par maillage : {e}')
 
+# CADENCE UNIQUE (19/10/2026, « oui pour 30 images par seconde ») : le tournage écrit sa cadence dans tournage.json et chaque
+# étape la relit ; aucune étape ne suppose 60 i/s (sinon le flou de bougé épargne la mauvaise image aux raccords)
+try:
+    import tempfile as _tf, json as _js, inspect as _ins
+    _fl = _il.import_module('fluidite'); _mq = _il.import_module('marque')
+    _src_t = open(os.path.join(ICI, 'moteur-troupe', 'tourne.py'), encoding='utf-8').read()
+    if "os.environ.get('FILM_FPS', 30)" not in _src_t: echecs.append('cadence : tourne.py ne tourne pas à 30 i/s par défaut')
+    if _ins.signature(_mq.Habillage.__init__).parameters['fps'].default != 30: echecs.append('cadence : marque.Habillage suppose encore 60 i/s')
+    with _tf.TemporaryDirectory() as _d:
+        os.makedirs(f'{_d}/clip'); _js.dump({'fps': 30}, open(f'{_d}/tournage.json', 'w'))
+        import cv2 as _cv, numpy as _n3
+        for _k in range(30):
+            _im = _n3.full((64, 64, 3), 40, _n3.uint8); _cv.rectangle(_im, (_k, 20), (_k + 12, 40), (230, 230, 230), -1)
+            _cv.imwrite(f'{_d}/clip/f{_k:05d}.jpg', _im)
+        _vu = {}
+        _orig = _fl._flou_tache
+        _fl._flou_tache = lambda a: (_vu.setdefault('r', a[4]), 0)[1]
+        try: _fl.flou_bouge(f'{_d}/clip', coupes=[0.5], procs=1)
+        finally: _fl._flou_tache = _orig
+        if _vu.get('r') != {14, 15}: echecs.append(f'cadence : flou de bougé, raccord à 0,5 s lu aux images {_vu.get("r")} (attendu 14-15 à 30 i/s)')
+    print('cadence : 30 i/s par défaut, relue par le flou de bougé et l\'habillage')
+except Exception as e:
+    echecs.append(f'cadence : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

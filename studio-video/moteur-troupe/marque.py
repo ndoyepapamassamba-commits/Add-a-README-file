@@ -75,7 +75,7 @@ def _lignes(txt, f, largeur):
 
 
 class Habillage:
-    def __init__(self, W, H, clip_y, ch, sketchs, total, safe_gauche=32, safe_droite=None, fps=60, chutes=()):
+    def __init__(self, W, H, clip_y, ch, sketchs, total, safe_gauche=32, safe_droite=None, fps=30, chutes=()):
         self.W, self.H, self.y0, self.y1, self.total, self.fps = W, H, clip_y, clip_y + ch, total, fps
         self.sg, self.sd = safe_gauche, (safe_droite if safe_droite is not None else W - 64)
         self.sk = [(s['t0'], s['t1'], (s.get('titre') or '').upper()) for s in sketchs]

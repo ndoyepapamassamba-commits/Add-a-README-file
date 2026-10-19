@@ -38,8 +38,9 @@ import json, math, os, sys, zlib, numpy as np, cv2
 import decor_vivant, entites, gestes, linge, rig2d, regard, expressions, expressions_lp, jeu, memo, prepare_rig, vie_fond
 import poses_dessinees as PD   # gestes dessinés : animation pose à pose (17/10/2026)
 # 60 IMAGES PAR SECONDE (18/10/2026, « on doit aller à 60 images par seconde pour améliorer la fluidité ») : chaque image est
-# tournée à son instant exact (bouche, regard, décor, bêtes, caméra) ; FILM_FPS=30 rend l'ancienne cadence
-FPS, CW, CH = int(os.environ.get('FILM_FPS', 60)), 576, 460
+# tournée à son instant exact (bouche, regard, décor, bêtes, caméra) ; 30 i/s par défaut depuis le 19/10/2026 (accord de
+# l'utilisateur : « oui pour 30 images par seconde », norme TikTok, deux fois moins d'images) ; FILM_FPS=60 rend la cadence double
+FPS, CW, CH = int(os.environ.get('FILM_FPS', 30)), 576, 460
 cfg = json.load(open(sys.argv[1])); OUT = sys.argv[2]; os.makedirs(f'{OUT}/clip', exist_ok=True)
 REG = {'plan_s': 5.0, 'cam_px': 2.5, 'pousse': 1.10, 'parallaxe': 0.35, 'jeu_gain': 2.3, 'corps': 0.1, 'whip_s': 0.45, 'ouverture': 1.2, 'decor': 1.0, 'gestes': 1.0, 'carte_sur_scene': 1, 'rig': 1}
 REG.update(cfg.get('reglages', {}))
