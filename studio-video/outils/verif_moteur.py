@@ -184,7 +184,8 @@ try:
     if _so.aigus(z_, sr_): echecs.append(f'son : sifflante encore au-dessus du seuil après la garde ({_so.aigus(z_, sr_)[:1]})')
     if _np.abs(z_[:sr_] - x_[:sr_]).max() > 1e-6: echecs.append('son : la garde des sifflantes touche une parole conforme')
     src_ = open(os.path.join(ICI, 'moteur-troupe', 'qualite.py'), encoding='utf-8').read()
-    if 'returncode < 0' not in src_ or 'relancé seul' not in src_: echecs.append('portes : un juge tué par le noyau n’est pas relancé')
+    if 'returncode < 0' not in src_ or 'relancé seul' not in src_ or 'q_[0].wait()' not in src_:
+        echecs.append('portes : un juge tué par le noyau n’est pas relancé seul (après les autres juges)')
     print(f'écoute en butée sans à-coup ({acc_:.2f}), sifflante ramenée sous le seuil, juge tué relancé')
 except Exception as e:
     echecs.append(f'v12 : {e}')

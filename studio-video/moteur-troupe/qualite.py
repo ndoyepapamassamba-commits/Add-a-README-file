@@ -69,10 +69,12 @@ def lance(args, sortie):
         # JUGE TUÉ (19/10/2026, v12) : controle_video et jev_mouvement (3 à 7 Go chacun, en parallèle) tués par le noyau faute
         # de mémoire, sans une ligne d'erreur → portes H et L muettes. Un juge tué par un signal est relancé SEUL, ici
         tue = p[0].returncode is not None and p[0].returncode < 0 and not os.path.isfile(sortie)
-        if tue: print(f'{os.path.basename(args[0])} tué (signal {-p[0].returncode}) : relancé seul', flush=True)
+        if tue:   # v13 : relancé pendant que les autres juges tournaient encore, il était tué une seconde fois → on attend qu'ils finissent
+            print(f'{os.path.basename(args[0])} tué (signal {-p[0].returncode}) : relancé seul, après les autres juges', flush=True)
+            for q_ in list(EN_COURS.values()): q_[0].wait()
     if (not p or tue) and (tue or not os.path.isfile(sortie) or os.environ.get('QUALITE_REFAIT')):
         r_ = subprocess.run([sys.executable, *args], capture_output=True, text=True); os.makedirs(f'{D}/juges', exist_ok=True)
-        open(f"{D}/juges/{os.path.basename(args[0])}.err", 'w').write(r_.stderr or '')
+        open(f"{D}/juges/{os.path.basename(args[0])}.err", 'w').write((r_.stderr or '') + (f'\nNonJuge: tué (signal {-r_.returncode}) même seul, faute de mémoire' if r_.returncode < 0 else ''))
     DUREES[os.path.basename(args[0])] = round(time.time() - t0, 1)
     if not os.path.isfile(sortie):
         e_ = f"{D}/juges/{os.path.basename(args[0])}.err"; t_ = open(e_).read() if os.path.isfile(e_) else ''
