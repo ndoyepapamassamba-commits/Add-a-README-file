@@ -38,9 +38,17 @@ YouTube Shorts) — en lisant le texte de la licence du code ET celui des poids,
   marque blanche dans un produit payant ; Remotion : gratuit pour un particulier ou une entreprise de 3 personnes au
   plus). Le seuil et sa source sont notés dans l'en-tête du script et dans le registre ; à revérifier si la situation de
   l'utilisateur change (chiffre d'affaires, taille de l'entreprise, produit vendu à des tiers).
-- **Toujours refusé** : non commercial (CC-BY-NC, « research only », NVIDIA Source Code License, CPML…), dépôt sans
-  licence (tous droits réservés), licence nulle dans le pays de l'utilisateur, licence qui revendique les vidéos produites
-  ou interdit leur monétisation — même si le modèle est meilleur.
+- **Non commercial (CC-BY-NC, S-Lab, CPML, « research only »…) : banc d'essai seulement** (précisé le 19/10/2026, après
+  « le non commercial n'apparaît pas dans mes vidéos finales ») — permis pour évaluer, mesurer et APPRENDRE la méthode
+  quand la licence l'autorise (la CPML de XTTS-v2 autorise en toutes lettres « testing, evaluation » aux entités à but
+  lucratif), puis la méthode est reproduite avec des poids acceptés ci-dessus. JAMAIS dans la chaîne qui produit les
+  vidéos publiées, même invisible dans l'image : ces licences visent l'USAGE du modèle, pas sa présence à l'écran (CPML :
+  « non-commercial use of a machine learning model and its outputs », exclu dès qu'il y a un paiement « direct or
+  indirect » ; CC-BY-NC : « not primarily intended for or directed towards commercial advantage or monetary
+  compensation » ; S-Lab de CodeFormer : « use for non-commercial purpose »). Les vidéos sont monétisées : ce serait une
+  violation de licence, avec un risque de réclamation sur les comptes de l'utilisateur.
+- **Toujours refusé** : dépôt sans licence (tous droits réservés), licence nulle dans le pays de l'utilisateur, licence
+  qui revendique les vidéos produites — même si le modèle est meilleur.
 - Modèle **privé** : on reproduit la MÉTHODE publiée (article, algorithme) avec des poids acceptés ci-dessus ou notre propre
   implémentation. Jamais de copie de poids propriétaires, jamais de contournement de conditions d'utilisation.
 - Noter le modèle, sa licence (et sa catégorie ci-dessus) et sa source dans l'en-tête du script qui l'utilise.
