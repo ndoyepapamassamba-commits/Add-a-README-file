@@ -577,11 +577,13 @@ def warp_rig(S, A, t, name):
     if A.get('yeux'): src = regard.applique(src, A['yeux'], v('regard_x'), v('regard_y'), 1 - bb)
     if A.get('xl') and 'lacet_visage' in P: src, al_v = expressions_lp.tourne(src, A['xl'], v('lacet_visage'), al_v)   # tête tournée par LivePortrait (18/10)
     R_ = A['rig']; pose = pose_rig(R_, P, f)
-    box, rgb, al, sx, sy = rig2d.rendre(R_, pose, src, al_v, sxsy=cartes_rig(R_, P, f, name))
+    box, rgb, al, sx, sy = rig2d.rendre(R_, pose, src, al_v, sxsy=None if rig2d.gl_actif() else cartes_rig(R_, P, f, name))   # rendu direct par maillage (rig2d.rendre_maillage)
     if mesure_ici(t):
         I_ = R_['M']['idx']
-        gx = ((sx - R_['gx'][0]) / R_['cell']).round().astype(int).clip(0, len(R_['gx']) - 1); gy = ((sy - R_['gy'][0]) / R_['cell']).round().astype(int).clip(0, len(R_['gy']) - 1)
-        (p99, mx), _ = rig2d.etirement(sx, sy, al, R_['own'][gy, gx] != I_['head'])
+        if sx is None: p99, mx = rig2d.etirement_maillage(R_, R_['_U'], I_['head'])   # même mesure, par triangle
+        else:
+            gx = ((sx - R_['gx'][0]) / R_['cell']).round().astype(int).clip(0, len(R_['gx']) - 1); gy = ((sy - R_['gy'][0]) / R_['cell']).round().astype(int).clip(0, len(R_['gy']) - 1)
+            (p99, mx), _ = rig2d.etirement(sx, sy, al, R_['own'][gy, gx] != I_['head'])
         MESURES.append(dict(qui=name, t=round(t, 3), etirement=(p99, mx), bouche=round(float(jj), 3), emotions={k: round(x_, 2) for k, x_ in emo.items()},
                             pose={**{k: (round(x_, 2) if not isinstance(x_, (tuple, list)) else [round(float(y_), 2) for y_ in x_]) for k, x_ in pose.items() if k != 'gestes'},
                                   **({'lacet_visage': round(v('lacet_visage'), 2)} if 'lacet_visage' in P else {})},

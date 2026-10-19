@@ -1,3 +1,4 @@
+import os
 # SQUELETTE 2D DE LA TÊTE AUX PIEDS — v3 (17/10/2026). Demande : « une parfaite maîtrise de tous les mouvements du corps
 # humain, de la tête aux pieds » ; « je vois encore beaucoup d'étirements » ; « l'homme en bleu bouge avec le linge ».
 # Mesuré sur v22 : la déformation par champs (buste plié selon la hauteur, tête tournée au-dessus du cou, corps glissé)
@@ -582,11 +583,113 @@ def cartes(R, pose):
     U, _ = champ(R, pose); return carte(R, U)
 
 
+# RENDU DIRECT PAR MAILLAGE (19/10/2026 — greffe « apprendre comment ça se fait », consigne de l'utilisateur) : Live2D, Spine,
+# Moho, PixiJS et la marionnette d'After Effects DÉFORMENT UN MAILLAGE puis DESSINENT SES TRIANGLES TEXTURÉS ; ce moteur
+# cherchait au contraire, pour chaque pixel, d'où il vient (carte inverse : point fixe de 6 remaps + remap bicubique, ≈ 80 ms
+# par acteur et par image, 50 % du tournage au profil du 19/10). Ici la grille ARAP est dessinée telle quelle — sommet (gx, gy)
+# déplacé de U — par OpenGL 4.5 en rendu logiciel (Mesa llvmpipe, 4 cœurs) via ModernGL (MIT) : 13 ms pour 4 000 triangles
+# à 700 × 900 (mesuré). Bicubique Catmull-Rom dans le nuanceur (même netteté que cv2.INTER_CUBIC). RENDU_GL=0 : ancien chemin.
+_GL = {}
+_VS = """#version 330
+in vec2 p; in vec2 uv; out vec2 v; uniform vec2 taille;
+void main(){ v = uv; gl_Position = vec4(p / taille * 2.0 - 1.0, 0.0, 1.0); }"""
+_FS_BILIN = """#version 330
+in vec2 v; out vec4 c; uniform sampler2D t; uniform vec2 ttex; void main(){ c = texture(t, v); }"""
+# BICUBIQUE (RENDU_GL_CUBIQUE=1) : 20 lectures par pixel ; en rendu logiciel, 20 ms par acteur (profil du 19/10) — le filtrage
+# bilinéaire matériel des animateurs 2D (Live2D, Spine) en lit 4 ; la netteté perdue est rendue par tourne.nettete()
+_FS = """#version 330
+in vec2 v; out vec4 c; uniform sampler2D t; uniform vec2 ttex;
+vec4 cr(vec4 a, vec4 b, vec4 c_, vec4 d, float x){   // Catmull-Rom (a = -0,5, comme OpenCV INTER_CUBIC à -0,75 près)
+  return b + 0.5 * x * (c_ - a + x * (2.0 * a - 5.0 * b + 4.0 * c_ - d + x * (3.0 * (b - c_) + d - a))); }
+void main(){
+  vec2 q = v * ttex - 0.5; vec2 i = floor(q); vec2 f = q - i; ivec2 b = ivec2(i); ivec2 m = ivec2(ttex) - 1;
+  vec4 r[4];
+  for (int k = 0; k < 4; k++) {
+    int y = clamp(b.y - 1 + k, 0, m.y);
+    vec4 p0 = texelFetch(t, ivec2(clamp(b.x - 1, 0, m.x), y), 0), p1 = texelFetch(t, ivec2(clamp(b.x, 0, m.x), y), 0);
+    vec4 p2 = texelFetch(t, ivec2(clamp(b.x + 1, 0, m.x), y), 0), p3 = texelFetch(t, ivec2(clamp(b.x + 2, 0, m.x), y), 0);
+    r[k] = cr(p0, p1, p2, p3, f.x); }
+  vec4 o = cr(r[0], r[1], r[2], r[3], f.y);
+  // l'alpha reste bilinéaire (comme cv2.INTER_LINEAR sur la découpe) : pas de dépassement autour de la silhouette
+  ivec2 b0 = ivec2(clamp(b.x, 0, m.x), clamp(b.y, 0, m.y)), b1 = ivec2(clamp(b.x + 1, 0, m.x), clamp(b.y + 1, 0, m.y));
+  float a00 = texelFetch(t, b0, 0).a, a10 = texelFetch(t, ivec2(b1.x, b0.y), 0).a, a01 = texelFetch(t, ivec2(b0.x, b1.y), 0).a, a11 = texelFetch(t, b1, 0).a;
+  c = vec4(o.rgb, mix(mix(a00, a10, f.x), mix(a01, a11, f.x), f.y)); }"""
+
+
+def gl_actif():
+    if os.environ.get('RENDU_GL', '1') != '1': return False
+    if _GL.get('pid') != os.getpid(): _GL.clear(); _GL['pid'] = os.getpid()   # un contexte EGL ne survit pas au fork : un par processus
+    if 'ok' not in _GL:
+        try:
+            import moderngl
+            ctx = moderngl.create_standalone_context(backend='egl')
+            _GL.update(ok=True, ctx=ctx, prog=ctx.program(vertex_shader=_VS, fragment_shader=_FS if os.environ.get('RENDU_GL_CUBIQUE') == '1' else _FS_BILIN), ibo={}, fbo={})
+        except Exception as e:   # pas de Mesa/EGL ou de ModernGL : l'ancien chemin, sans bruit
+            _GL['ok'] = False; _GL['err'] = str(e)[:200]
+    return _GL['ok']
+
+
+def _indices(ny, nx):
+    k = (ny, nx)
+    if k not in _GL['ibo']:
+        j, i = np.mgrid[0:ny - 1, 0:nx - 1]; a = (j * nx + i).ravel()
+        idx = np.stack([a, a + 1, a + nx, a + 1, a + nx + 1, a + nx], 1).astype('i4').ravel()
+        _GL['ibo'][k] = (_GL['ctx'].buffer(idx.tobytes()), len(idx))
+    return _GL['ibo'][k]
+
+
+def rendre_maillage(R, U, src, a):
+    """corps posé par dessin direct de la grille déformée : (rgb float32, alpha float32) dans la boîte R['box']."""
+    ctx, prog = _GL['ctx'], _GL['prog']
+    X0, Y0, X1, Y1 = R['box']; w, h = X1 - X0, Y1 - Y0
+    gx, gy = np.asarray(R['gx'], np.float32), np.asarray(R['gy'], np.float32); ny, nx = len(gy), len(gx)
+    H_, W_ = src.shape[:2]
+    tx0, ty0 = max(0, int(np.floor(gx[0]))), max(0, int(np.floor(gy[0])))
+    tx1, ty1 = min(W_, int(np.ceil(gx[-1])) + 1), min(H_, int(np.ceil(gy[-1])) + 1)
+    rgba = np.dstack([src[ty0:ty1, tx0:tx1], (np.clip(a[ty0:ty1, tx0:tx1], 0, 1) * 255).astype(np.uint8)])
+    tex = ctx.texture((tx1 - tx0, ty1 - ty0), 4, np.ascontiguousarray(rgba).tobytes())
+    tex.filter = (0x2600, 0x2600) if os.environ.get('RENDU_GL_CUBIQUE') == '1' else (0x2601, 0x2601)   # NEAREST (le nuanceur interpole) ou LINEAR
+    SX, SY = np.meshgrid(gx, gy)
+    P = np.stack([SX + U[..., 0] - X0 + 0.5, SY + U[..., 1] - Y0 + 0.5], -1)                       # centres de pixels (convention OpenCV)
+    T = np.stack([(SX - tx0 + 0.5) / (tx1 - tx0), (SY - ty0 + 0.5) / (ty1 - ty0)], -1)
+    vbo = ctx.buffer(np.concatenate([P.reshape(-1, 2), T.reshape(-1, 2)], 1).astype('f4').tobytes())
+    ibo, n = _indices(ny, nx); vao = ctx.vertex_array(prog, [(vbo, '2f 2f', 'p', 'uv')], ibo)
+    if (w, h) not in _GL['fbo']: _GL['fbo'][(w, h)] = ctx.framebuffer(color_attachments=[ctx.texture((w, h), 4, dtype='f4')])
+    fbo = _GL['fbo'][(w, h)]; fbo.use(); fbo.clear(0, 0, 0, 0)
+    prog['taille'] = (float(w), float(h)); tex.use(0)
+    if 'ttex' in prog: prog['ttex'] = (float(tx1 - tx0), float(ty1 - ty0))   # absent du nuanceur bilinéaire
+    vao.render(vertices=n)
+    o = np.frombuffer(fbo.read(components=4, dtype='f4'), np.float32).reshape(h, w, 4)
+    vao.release(); vbo.release(); tex.release()
+    return o[..., :3] * 255.0, o[..., 3].copy()
+
+
+def etirement_maillage(R, U, I_tete=None):
+    """ÉTIREMENT par triangle (jacobienne exacte de la déformation affine par morceaux) : max(σ1, 1/σ2) − 1 est le même pour
+    la carte et pour son inverse — même mesure que etirement(), sur les triangles du personnage hors tête (aire pondérée)."""
+    gx, gy = np.asarray(R['gx'], np.float64), np.asarray(R['gy'], np.float64); SX, SY = np.meshgrid(gx, gy)
+    D = np.stack([SX + U[..., 0], SY + U[..., 1]], -1); S = np.stack([SX, SY], -1)
+    ok = R['dedans'] & ((R['own'] != I_tete) if I_tete is not None else True)
+    res = []
+    for (a, b, c) in (((0, 0), (0, 1), (1, 0)), ((0, 1), (1, 1), (1, 0))):
+        sl = lambda d: (slice(d[0], D.shape[0] - 1 + d[0]), slice(d[1], D.shape[1] - 1 + d[1]))
+        m = ok[sl(a)] & ok[sl(b)] & ok[sl(c)]
+        if not m.any(): continue
+        Es = np.stack([S[sl(b)] - S[sl(a)], S[sl(c)] - S[sl(a)]], -1)[m]; Ed = np.stack([D[sl(b)] - D[sl(a)], D[sl(c)] - D[sl(a)]], -1)[m]
+        J = Ed @ np.linalg.inv(Es); sv = np.linalg.svd(J, compute_uv=False)
+        res.append(np.maximum(sv[:, 0], 1 / np.maximum(sv[:, 1], 1e-9)) - 1)
+    if not res: return (0.0, 0.0)
+    st = np.concatenate(res)
+    return round(float(np.percentile(st, 99)), 4), round(float(st.max()), 4)
+
+
 def rendre(R, pose, src, alpha=None, sxsy=None):
     """acteur posé : (boîte, rgb, alpha, sx, sy). src = image de la scène (bouche, yeux déjà posés) ; alpha = découpe
     (par défaut celle de la préparation). Couche 1 : le corps (champ ARAP), avec, sous les avant-bras détourés, ce qui est
     derrière eux ; couche 2 : les avant-bras / mains, transformations rigides, par-dessus."""
-    if sxsy is not None: sx, sy = sxsy; mats = _fk(R, pose)   # carte déjà calculée (interpolée entre deux images, tourne.py)
+    gl_ = sxsy is None and gl_actif()
+    if gl_: U, mats = champ(R, pose); R['_U'] = U; sx = sy = None   # rendu direct : pas de carte inverse
+    elif sxsy is not None: sx, sy = sxsy; mats = _fk(R, pose)   # carte déjà calculée (interpolée entre deux images, tourne.py)
     else: U, mats = champ(R, pose); sx, sy = carte(R, U)
     X0, Y0, X1, Y1 = R['box']
     a = R['alpha_corps'] if alpha is None else alpha
@@ -595,8 +698,14 @@ def rendre(R, pose, src, alpha=None, sxsy=None):
         for (x0, y0, x1, y1), fond, tt in R['src_corps']:
             reg = src[y0:y1, x0:x1].astype(np.float32); k = tt[..., None]
             src[y0:y1, x0:x1] = np.clip(reg * (1 - k) + fond * k, 0, 255).astype(np.uint8)
-    rgb = cv2.remap(src, sx, sy, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
-    al = cv2.remap(a, sx, sy, cv2.INTER_LINEAR, borderValue=0)
+    if gl_:
+        try: rgb, al = rendre_maillage(R, U, src, a)
+        except Exception as e:   # ERREUR PRÉVUE : pilote OpenGL perdu, mémoire, nuanceur — l'ancien chemin reprend, sans arrêt
+            _GL['ok'] = False; _GL['err'] = f'{type(e).__name__}: {str(e)[:160]}'; R.pop('_U', None); gl_ = False
+            sx, sy = carte(R, U)
+    if not gl_:
+        rgb = cv2.remap(src, sx, sy, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
+        al = cv2.remap(a, sx, sy, cv2.INTER_LINEAR, borderValue=0)
     if R['bras']:
         w, h = X1 - X0, Y1 - Y0; acc = rgb * al[..., None]; Ts = pose_bras(R, pose, mats)
         # PEAU PONDÉRÉE (peau_ponderee.py) : un bras qui en porte une est déformé d'un seul tenant par trois os — corps

@@ -255,6 +255,27 @@ try:
 except Exception as e:
     echecs.append(f'sous-titres 19/10 : {e}')
 
+# RENDU DIRECT PAR MAILLAGE (19/10/2026, greffe Live2D/Spine) : zéro déplacement redonne la source, une translation la décale
+# exactement (conventions de centres de pixels) ; sans OpenGL, l'ancien chemin doit rester disponible (repli automatique)
+try:
+    import numpy as _n2
+    _rg = _il.import_module('rig2d')
+    if _rg.gl_actif():
+        _src = (_n2.random.default_rng(3).random((140, 140, 3)) * 255).astype(_n2.uint8); _src = __import__('cv2').GaussianBlur(_src, (0, 0), 2)
+        _R = {'box': (20, 20, 120, 120), 'gx': _n2.arange(0, 141, 10, dtype=_n2.float32), 'gy': _n2.arange(0, 141, 10, dtype=_n2.float32)}
+        _a = _n2.ones((140, 140), _n2.float32); _U = _n2.zeros((15, 15, 2), _n2.float32)
+        _rgb, _al = _rg.rendre_maillage(_R, _U, _src, _a)
+        _e0 = float(_n2.abs(_rgb - _src[20:120, 20:120]).mean())
+        _U[..., 0], _U[..., 1] = 3.0, 2.0; _rgb2, _ = _rg.rendre_maillage(_R, _U, _src, _a)
+        _e1 = float(_n2.abs(_rgb2[2:-2, 3:-3] - _src[20:118, 20:117][: _rgb2[2:-2, 3:-3].shape[0], : _rgb2[2:-2, 3:-3].shape[1]]).mean())
+        if _e0 > 1.0 or _e1 > 1.5 or float(_al[5:-5, 5:-5].min()) < 0.99:
+            echecs.append(f'rendu par maillage : écart à la source {_e0:.2f}, translation {_e1:.2f}, alpha min {float(_al.min()):.2f}')
+        print(f'rendu par maillage (OpenGL logiciel) : écart identité {_e0:.2f}, translation {_e1:.2f} niveaux')
+    else:
+        print('rendu par maillage indisponible : ancien chemin (repli prévu)', _rg._GL.get('err', ''))
+except Exception as e:
+    echecs.append(f'rendu par maillage : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')
