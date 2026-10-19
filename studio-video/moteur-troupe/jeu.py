@@ -352,6 +352,7 @@ VISAGE_PART = float(os.environ.get('VISAGE_PART', 0.5))   # part de la rotation 
 LACET_VISAGE = 18.0   # 18/10/2026 : champ de rotation lissé (expressions_lp._lisse_flux) ; A/B JEV du plan de Baye (47 images) : 18° → 24 fautives, 0 déformée, rendu moyen 0,46 ; 14° → 25 et 0 (regard trop faible, porte D : Maman → Baye 0,36) ; 22° brut → 40 et 3
 PENCHE_FRAC = 0.6   # part de l'enveloppe du buste prise par le penché d'engagement de l'orateur (19/10/2026)
 PENCHE_JEU = {'accuse': 1.0, 'marchande': 0.9, 'soupcon': 0.85, 'panique': 0.6, 'innocent': 0.5, 'choc': -0.7, 'rire': -0.5, 'frime': -0.6}   # < 0 : se redresse, recule
+ECOUTE_CENTRE = 4.0     # degrés : position lente de l'auditeur vers l'orateur après les normes humaines (oscillations ±2° par-dessus)
 LACET_ECOUTE_MIN = 3.5   # degrés : plancher d'écoute après toutes les couches (porte D : > 2° dans 75 % des images)
 NEGATIFS = ('tristesse', 'mecontent', 'colere', 'frustration', 'peur', 'soupcon', 'degout')
 GAIN_HAUSSE, GAIN_SOURIRE = 1.0, 0.6   # sourire capté joué à 60 % de la « joie » dessinée : sourire de parole, pas éclat de joie
@@ -696,6 +697,18 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
             if L_sk: scene_[max(0, int((min(x['t0'] for x in L_sk) - 0.8) * fps)):min(nf, int((max(x['t0'] + x['dur'] for x in L_sk) + 2.5) * fps))] = True
             for c_ in NORME_SECONDE:
                 if c_ in R: R[c_] = ampleur_humaine(R[c_], parle_, fps, c_, env.get(c_, LIM[c_]), RG, scene_)
+        # ── ÉCOUTE GARANTIE APRÈS LES NORMES (19/10/2026, v11, porte D 0,23–0,50 au lieu de ≥ 0,75 ; v10 : 0,93–1,00). Le plancher
+        #    d'écoute ci-dessus précède la réserve vive (moitié de l'enveloppe au mouvement lent) et l'ampleur humaine, qui
+        #    rabotent la position tournée vers celui qui parle et y ajoutent des oscillations de ±2° : la tête repassait sous 2°.
+        #    En dernier, seule la composante LENTE est remontée à ECOUTE_CENTRE vers l'orateur ; les oscillations restent intactes
+        if RG.get('ecoute_finale', 1) and RG.get('yeux', 1):
+            Fe = ressort(ecoute_ * 1.0, fps, 6.0); we = np.clip(np.abs(Fe), 0, 1); se = np.sign(Fe)
+            from scipy.signal import butter, filtfilt
+            y_ = R['tete_lacet'].astype(np.float64); ba_, aa_ = butter(2, RESERVE_HZ / (fps / 2.0))
+            manque = np.clip(we * RG.get('ecoute_centre', ECOUTE_CENTRE) - se * filtfilt(ba_, aa_, y_), 0, None)
+            manque = np.clip(filtfilt(*butter(2, 0.6 / (fps / 2.0)), manque), 0, None)   # remontée lente, sans coin
+            lim_ = env.get('tete_lacet', 20.0)   # seule la remontée est bornée : la parole garde son ampleur (pas de borne douce globale)
+            R['tete_lacet'] = np.clip(y_ + se * manque, -max(lim_, np.abs(y_).max()), max(lim_, np.abs(y_).max())).astype(np.float32)
         for e in EMOS: R['emo_' + e] = ressort(np.clip(E[e], 0, 1), fps, 10.0)
         if cl is not None: R['cligne'] = cl * (1 - 0.7 * np.clip(prise, 0, 1))   # yeux écarquillés : on cligne peu pendant la prise
         # bouche bée de la prise (commande de mâchoire 0..1, prise au maximum avec celle de la parole) ; fermée dès que le
