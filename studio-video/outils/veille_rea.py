@@ -188,7 +188,9 @@ def analyser(nom, version):
         return {'erreur': 'disque sous 300 Mo : analyse remise'}
     tmp = tempfile.mkdtemp(prefix='rea-', dir=DOSSIER); t0 = time.time()
     try:
-        p = subprocess.run(['npm', 'pack', f'{nom}@{version}', '--silent'], cwd=tmp, capture_output=True, text=True, timeout=180)
+        # cache npm DANS le dossier temporaire (supprimé ensuite) : le cache global gonflait de ~500 Mo par jour (19/10/2026)
+        p = subprocess.run(['npm', 'pack', f'{nom}@{version}', '--silent', '--cache', os.path.join(tmp, '.npm')], cwd=tmp,
+                           capture_output=True, text=True, timeout=180)
         tgz = [f for f in os.listdir(tmp) if f.endswith('.tgz')]
         if not tgz: return {'erreur': 'npm pack : ' + p.stderr[-200:]}
         with tarfile.open(os.path.join(tmp, tgz[0])) as t:

@@ -16,7 +16,7 @@ import numpy as np
 
 OMEGA = {'buste': 7.0, 'buste_lacet': 6.0, 'tete': 10.0, 'tete_lacet': 9.0, 'tete_tangage': 12.0, 'regard_x': 24.0, 'regard_y': 24.0,
          'souffle': 9.0, 'epaules': 14.0, 'bassin_x': 5.0, 'bassin_y': 6.0, 'geste_0': 9.0, 'geste_1': 9.0}
-EMOS = ['joie', 'rire', 'tristesse', 'mecontent', 'colere', 'frustration', 'surprise', 'peur', 'malice', 'soupcon', 'innocent', 'frime', 'emu', 'degout']
+EMOS = ['joie', 'rire', 'tristesse', 'mecontent', 'colere', 'frustration', 'surprise', 'peur', 'malice', 'soupcon', 'innocent', 'frime', 'emu', 'degout', 'haussement']
 JEU_EMO = {'accuse': {'colere': 0.8, 'soupcon': 0.3}, 'innocent': {'innocent': 1.0}, 'malice': {'malice': 1.0}, 'panique': {'peur': 1.0},
            'marchande': {'malice': 0.6, 'soupcon': 0.4}, 'choc': {'surprise': 1.0}, 'rire': {'rire': 1.0}, 'frime': {'frime': 1.0},
            'soupcon': {'soupcon': 1.0}, 'camera': {'malice': 0.7, 'frime': 0.3}, 'colere': {'colere': 1.0}, 'tristesse': {'tristesse': 1.0},
@@ -353,6 +353,8 @@ LACET_VISAGE = 18.0   # 18/10/2026 : champ de rotation lissé (expressions_lp._l
 PENCHE_FRAC = 0.6   # part de l'enveloppe du buste prise par le penché d'engagement de l'orateur (19/10/2026)
 PENCHE_JEU = {'accuse': 1.0, 'marchande': 0.9, 'soupcon': 0.85, 'panique': 0.6, 'innocent': 0.5, 'choc': -0.7, 'rire': -0.5, 'frime': -0.6}   # < 0 : se redresse, recule
 LACET_ECOUTE_MIN = 3.5   # degrés : plancher d'écoute après toutes les couches (porte D : > 2° dans 75 % des images)
+NEGATIFS = ('tristesse', 'mecontent', 'colere', 'frustration', 'peur', 'soupcon', 'degout')
+GAIN_HAUSSE, GAIN_SOURIRE = 1.0, 0.6   # sourire capté joué à 60 % de la « joie » dessinée : sourire de parole, pas éclat de joie
 LIM = {'buste': 3.0, 'buste_lacet': 9.0, 'tete': 6.0, 'tete_lacet': 20.0, 'tete_tangage': 9.0, 'bassin_x': 4.0}
 
 
@@ -364,7 +366,7 @@ def _poser(dst, src, i0, mode='add'):
     else: dst[a:b] += src[a - i0:b - i0]
 
 
-def couche_humaine(nom, L_sk, a_qui, cote, nf, fps, echelle, cotes_bras, graine, journal):
+def couche_humaine(nom, L_sk, a_qui, cote, nf, fps, echelle, cotes_bras, graine, journal, visage=None):
     """couche « vrai humain » (mocap_jeu) du personnage pour tout le sketch : une prise par réplique (geste calé sur ses
     syllabes accentuées), une prise calme pour chaque temps d'écoute (≤ 6 s), fondues entre elles. Valeurs brutes
     (degrés, pixels), mises à l'échelle de l'enveloppe par pistes()."""
@@ -376,15 +378,28 @@ def couche_humaine(nom, L_sk, a_qui, cote, nf, fps, echelle, cotes_bras, graine,
         dbl = dh.doublures(nom, ct.carte(nom)[0])
     except Exception:
         dbl = None
+    vh = None   # visage du même humain (visage_humain) : rempli dans `visage` si demandé
+    if visage is not None:
+        try: import visage_humain as vh
+        except Exception: vh = None
+        visage.update(haussement=np.zeros(nf, np.float32), sourire=np.zeros(nf, np.float32)); v_occ = np.zeros(nf, bool)
     for k, L in enumerate(mes):
         cib = attaques(L, graine + 0.11 * k, garder=1.0)
         i0 = int(round((L['t0'] - mj.PRE) * fps)); n_ = int(round((L['dur'] + mj.PRE + mj.POST) * fps))
         lay, info = mj.couche(L, cib, fps, n_, L.get('jeu', ''), graine=int(graine * 100) + k, echelle=echelle,
                               cote=cote(a_qui[id(L)]), deja=deja, bras=cotes_bras, doublures=dbl)
         if not lay: continue
+        rangs = info.pop('_rangs', None)
         for c in M: _poser(M[c], lay.get(c, np.zeros(n_)), i0)
         for b in range(len(cotes_bras)): _poser(G[b], lay.get(f'geste_{b}', np.zeros(n_)), i0, 'max')
         occupe[max(0, i0):max(0, i0 + n_)] = True
+        if vh is not None:   # sourcils et sourire de la MÊME prise aux MÊMES rangs ; sinon une vraie parole de ses doublures
+            fv = vh.fenetre(info['prise'], rangs) if rangs is not None else None
+            if fv is None: fv = vh.segment(dbl, n_, graine=int(graine * 100) + k, parole=True); info['visage'] = 'BEAT v1, parole d\'une doublure'
+            else: info['visage'] = 'BEAT v1, même prise'
+            if fv is not None:
+                for c in visage: _poser(visage[c], fv[c], i0, 'max')
+                v_occ[max(0, i0):max(0, i0 + n_)] = True
         journal.append({'qui': nom, 't0': round(L['t0'], 2), 'role': 'parle', **info})
     if not L_sk: return M, G, occupe
     t_deb = min(x['t0'] for x in L_sk) - 0.8; t_fin = max(x['t0'] + x['dur'] for x in L_sk) + 2.5
@@ -397,11 +412,24 @@ def couche_humaine(nom, L_sk, a_qui, cote, nf, fps, echelle, cotes_bras, graine,
         if n_ >= int(0.8 * fps):
             lay, info = mj.couche(None, [], fps, n_, '', graine=int(graine * 100) + 50 + s_, ecoute=True, echelle=echelle, deja=deja,
                                   doublures=dbl)
+            if info: info.pop('_rangs', None)
             for c in M:
                 if lay: _poser(M[c], lay.get(c, np.zeros(n_)), i0)
             if info: journal.append({'qui': nom, 't0': round(i0 / fps, 2), 'role': 'ecoute', **info})
             s_ += 1
         i = j
+    if vh is not None:   # temps d'écoute : le visage d'un humain qui écoute (silences des conversations de ses doublures)
+        i, b_ = max(0, int(t_deb * fps)), min(nf, int(t_fin * fps)); s_ = 0; f_ = max(1, int(0.3 * fps))
+        while i < b_:
+            if v_occ[i]: i += 1; continue
+            j = i
+            while j < b_ and not v_occ[j]: j += 1
+            i0 = max(0, i - f_); n_ = min(nf, j + f_) - i0
+            fv = vh.segment(dbl, n_, graine=int(graine * 100) + 70 + s_, parole=False); s_ += 1
+            if fv is not None:
+                w = np.ones(n_, np.float32); w[:f_] = np.linspace(0, 1, f_); w[-f_:] = np.minimum(w[-f_:], np.linspace(1, 0, f_))
+                for c in visage: _poser(visage[c], fv[c] * w, i0, 'max')
+            i = j
     return M, G, occupe
 
 
@@ -561,7 +589,17 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         # ── couche « vrai humain » : capture de mouvement CMU calée sur les syllabes, à l'échelle de l'enveloppe
         if humain:
             ech = (echelles or {}).get(nom, 400.0); cb = (cotes_bras or {}).get(nom, [])
-            M, Gm, occ = couche_humaine(nom, L_sk, a_qui, cote, nf, fps, ech, cb, g, journal)
+            VF_ = {} if RG.get('visage_humain', 1) else None
+            M, Gm, occ = couche_humaine(nom, L_sk, a_qui, cote, nf, fps, ech, cb, g, journal, VF_)
+            # VISAGE DU MÊME HUMAIN (19/10/2026, « les expressions du visage […] ne sont pas encore exploitées ») : BEAT v1 a capté
+            # le visage des locuteurs de BEAT2 sur la même horloge ; haussements de sourcils et sourires de la prise qui donne les
+            # gestes (normes mesurées sur 182 conversations, 1 834 min : 6,5 haussements nets par minute, 3,4 sourires francs).
+            # Le haussement se joue avec l'entrée « haussement » (sourcils seuls) de la bibliothèque du personnage ; le sourire
+            # s'ajoute à la joie, jamais sur un ressenti négatif ni pendant la prise de choc
+            if VF_:
+                neg_ = np.clip(sum(E[e] for e in NEGATIFS if e in E), 0, 1); calme_ = 1 - np.clip(prise, 0, 1)
+                E['haussement'] = np.maximum(E['haussement'], (VF_['haussement'] * RG.get('gain_hausse', GAIN_HAUSSE) * calme_).astype(np.float32))
+                E['joie'] = np.maximum(E['joie'], (VF_['sourire'] * GAIN_SOURIRE * (1 - neg_) * calme_).astype(np.float32))
             # ÉCOUTE DÉCOUPLÉE DE LA PAROLE (19/10/2026) : un seul gain par canal, réglé sur les pics (95e centile) de toute la piste,
             # faisait payer à l'écoute les pics des répliques — mesuré sur Baye (bulletin) : gain du lacet 0,98 → 0,66 dès que ses
             # deux répliques prennent des gestes BEAT2, écoute identique mais 30 % plus petite. Gain de la parole et gain de l'écoute

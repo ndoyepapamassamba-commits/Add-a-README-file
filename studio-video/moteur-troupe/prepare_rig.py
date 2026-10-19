@@ -61,6 +61,59 @@ def squelette(img, a, alpha, echelle=2.0, marge=40):
     return L, vis * dedans
 
 
+# ARTICULATIONS DES BRAS PAR RTMW (19/10/2026, greffe « bras à deux segments », étape 1). Planche du 19/10 sur la cour :
+# MediaPipe (entraîné sur des photos) pose coudes et poignets des dessins à côté du bras — coude de Maman Nounou sur sa
+# hanche, poignets de Baye sur l'accoudoir ; RTMW (rtmlib 0.0.16, Apache-2.0, entraîné sur COCO-WholeBody ET HumanArt,
+# donc sur des dessins) les pose sur le bras. Les épaules, coudes, poignets et mains de MediaPipe sont remplacés par ceux de
+# RTMW quand RTMW est sûr (score ≥ RTMW_SUR) et que le point tombe dans la découpe ; sinon MediaPipe reste (secours).
+RTMW = os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/rtmw-dw-x-l_simcc-cocktail14_270e-384x288_20231122.onnx'
+RTMW_SUR = 0.45
+# MediaPipe ← COCO-WholeBody : coudes, poignets ; auriculaire, index, pouce (articulations de base de la main). Les ÉPAULES
+# restent celles de MediaPipe (écart ≤ 11 px sur la cour) : elles portent le buste du squelette, qui passe la porte d'étirement
+RTMW_MP = {13: 7, 14: 8, 15: 9, 16: 10, 17: 108, 19: 96, 21: 93, 18: 129, 20: 117, 22: 114}
+VERSION_BRAS = 2   # 19/10/2026 : coudes, poignets et mains RTMW ; les scènes déjà préparées ne refont que leurs bras (bras_v2)
+_RTMW = {}
+
+
+def bras_rtmw(img, a, alpha, pts):
+    """pts MediaPipe (33 × 3) → (pts corrigés, {indice MediaPipe: écart en px}) ; img en RVB."""
+    if not os.path.isfile(RTMW): return pts, {}
+    if 'm' not in _RTMW:
+        from rtmlib import RTMPose
+        _RTMW['m'] = RTMPose(RTMW, model_input_size=(288, 384), backend='onnxruntime', device='cpu')
+    kp, sc = _RTMW['m'](np.ascontiguousarray(img[..., ::-1]), bboxes=[[float(v) for v in a['bbox']]])   # BGR, comme les exemples de rtmlib
+    kp, sc = kp[0], sc[0]; H, W = alpha.shape; p = np.array(pts, np.float64); dil = cv2.dilate((alpha > 0.5).astype(np.uint8), np.ones((9, 9), np.uint8))
+    ecarts = {}
+    for im_, ir in RTMW_MP.items():
+        x, y = kp[ir]; s = float(sc[ir])
+        if s < RTMW_SUR or not (0 <= x < W and 0 <= y < H) or not dil[int(y), int(x)]: continue
+        ecarts[im_] = round(float(np.hypot(x - p[im_, 0], y - p[im_, 1])), 1)
+        p[im_, 0], p[im_, 1] = x, y
+        if p.shape[1] > 2: p[im_, 2] = max(float(p[im_, 2]), min(1.0, s))
+    return p.round(2).tolist(), ecarts
+
+
+def bras_v2(d, R, img, info):
+    """scène déjà préparée : articulations des bras relues par RTMW et calques des bras refaits, sans toucher aux découpes,
+    à la plaque ni au visage (quelques secondes par acteur au lieu de la préparation entière)."""
+    S = json.load(open(f'{d}/scene.json'))
+    for a in S['acteurs']:
+        ent = info['acteurs'].get(a['nom']); s = a['slug']; fa = f'{R}/alpha-{s}.png'
+        if not ent or not ent.get('pts') or not os.path.isfile(fa): continue
+        al = cv2.imread(fa, cv2.IMREAD_UNCHANGED).astype(np.float32) / 65535
+        try: pts, ec = bras_rtmw(img, dict(a, pts=ent['pts']), al, ent['pts'])
+        except Exception as ex: print(f"{a['nom']} : RTMW indisponible ({str(ex)[:80]})", flush=True); continue
+        if not ec: continue
+        ent['pts'] = pts; ent['bras_rtmw'] = {str(i): e for i, e in ec.items()}
+        bras = gestes.prepare(img, al, pts, a['visage']['box'] if a.get('visage') else None, a['bbox'])
+        _sauve_bras(f'{R}/bras-{s}.npz', bras); ent['bras'] = [(b['cote'], 'avant-bras' if b['nu'] else 'main', b['amax'], b['emax']) for b in bras]
+        print(f"{a['nom']} : bras RTMW — écarts {ec} → {ent['bras']}", flush=True)
+    info['version_bras'] = VERSION_BRAS
+    json.dump(info, open(f'{R}/scene_rig.json', 'w'), ensure_ascii=False, indent=1, default=lambda o: o.item() if hasattr(o, 'item') else str(o))
+    gestes.ferme()
+    return info
+
+
 def _score_pts(pts, alpha):
     p = np.asarray(pts, np.float64); H, W = alpha.shape
     if p.shape[0] < 33: return 0.0
@@ -241,7 +294,9 @@ def prepare(d, jev=True, force=False):
     if os.path.isfile(f'{R}/scene_rig.json') and not force:
         info0 = json.load(open(f'{R}/scene_rig.json'))
         if info0.get('version_decoupe', 1) == VERSION_DECOUPE and info0.get('amodal') == AMODAL:
-            return info0 if info0.get('version_fils', 1) == VERSION_FILS else fils_v2(d, R, img, info0, jev)
+            if info0.get('version_fils', 1) != VERSION_FILS: info0 = fils_v2(d, R, img, info0, jev)
+            if info0.get('version_bras', 1) != VERSION_BRAS and os.environ.get('BRAS_RTMW', '1') == '1': info0 = bras_v2(d, R, img, info0)
+            return info0
     t0 = time.time(); acts = S['acteurs']
     m0s = [cv2.imread(f"{d}/{a['slug']}-masque.png", 0).astype(np.float32) / 255 for a in acts]
     alphas, boites, decoupes = [], [], []
@@ -255,11 +310,14 @@ def prepare(d, jev=True, force=False):
         x0, y0, x1, y1 = [int(v) for v in box]; pers_tous[y0:y1, x0:x1] = np.maximum(pers_tous[y0:y1, x0:x1], np.clip(1 - C[0], 0, 1)[y0:y1, x0:x1])
     rendus = membres_rendus(img, alphas, acts)   # avant les orphelins : un membre mal attribué n'en est pas un
     orph = orphelins(img, alphas, pers_tous, meuble, personne)
-    pts_fins = {}
+    pts_fins = {}; ecarts_rtmw = {}
     for k, a in enumerate(acts):   # squelette re-détecté sur le recadrage agrandi, gardé s'il est meilleur
         L, sc_ = squelette(img, a, alphas[k]); s0 = _score_pts(a['pts'], alphas[k])
         if L is not None and sc_ > s0 + 0.02:
             a['pts'] = L.round(2).tolist(); pts_fins[a['nom']] = (round(s0, 3), round(sc_, 3))
+        if os.environ.get('BRAS_RTMW', '1') == '1':
+            try: a['pts'], ecarts_rtmw[a['nom']] = bras_rtmw(img, a, alphas[k], a['pts'])
+            except Exception as ex: print(f"{a['nom']} : RTMW indisponible ({str(ex)[:80]}), articulations MediaPipe", flush=True)
     for k, a in enumerate(acts): decoupes[k]['orphelins_rattaches'] = orph[k]; decoupes[k]['membres_rendus'] = rendus[k]
     # le décor sans acteur et les parties cachées ne dépendent que des découpes : repris tels quels si elles n'ont pas
     # changé (corriger un squelette ou des bras ne refait pas 7 minutes de reconstitution)
@@ -309,11 +367,13 @@ def prepare(d, jev=True, force=False):
             fin = sans_couture(fin)
             cv2.imwrite(f"{R}/alpha-{a['slug']}.png", np.clip(fin * 65535, 0, 65535).astype(np.uint16)); finals.append((fin, comp))
     info = {'acteurs': {}, 'ordre': ordre_noms, 'fils': faits, 'inventes': inventes, 'empreinte_alphas': empreinte, 'plaque_reprise': bool(cache or plaque_gardee),
+            'version_bras': VERSION_BRAS if os.environ.get('BRAS_RTMW', '1') == '1' else 1,
             'version_fils': VERSION_FILS, 'fils_coupes': coupes_,
             'amodal': AMODAL, 'version_decoupe': VERSION_DECOUPE}
     for k, a in enumerate(acts):
         s = a['slug']; alphas[k], comp = finals[k]; ent = {'assis': assis(a), 'decoupe': decoupes[k], 'pts': a['pts']}
         if a['nom'] in pts_fins: ent['squelette_affine'] = {'score_avant': pts_fins[a['nom']][0], 'score_apres': pts_fins[a['nom']][1]}
+        if ecarts_rtmw.get(a['nom']): ent['bras_rtmw'] = {str(i): e for i, e in ecarts_rtmw[a['nom']].items()}
         if comp: ent['complete'] = comp
         fb = a['visage']['box'] if a.get('visage') else None
         ent['empreinte_alpha'] = hashlib.md5(np.clip(alphas[k] * 65535, 0, 65535).astype(np.uint16).tobytes()).hexdigest()

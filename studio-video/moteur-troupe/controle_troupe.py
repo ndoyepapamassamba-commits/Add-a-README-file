@@ -76,6 +76,58 @@ def tranches(img_rgb, genre, style='dessin'):
     return {k: round(float(v), 3) for k, v in zip(TRANCHES, p)}
 
 
+# ÂGE RELATIF À LA PLANCHE VALIDÉE (19/10/2026). Mesuré sur les 51 planches d'origine de la troupe (workbench/.private/troupe :
+# portrait + poses de chaque personnage) : la règle absolue « tranche attendue > 0,5 » ne lit juste que 57 % des dessins
+# validés eux-mêmes (Tantie Awa lue « petite fille » 0,41, Maman Nounou 0,63 : le modèle confond les femmes du dessin animé
+# avec des fillettes ; ensemble de gabarits, phrases enrichies, sans préfixe : 14 à 61 %). L'âge ESPÉRÉ (somme des tranches
+# pondérées par leur âge central) range en revanche les planches dans le bon ordre (Baye 63, Tantie Awa 59, Maman 55,
+# Koffi 27, Modou 22, Coumba 21, Petit Mamadou 11) : le même modèle lit le personnage de la scène et SA planche validée, le
+# biais s'annule. Conforme si l'adulte n'est pas lu plus jeune que les 10 % les plus jeunes lectures de sa planche, sur le
+# visage ET sur le corps.
+PLANCHES = os.path.expanduser(os.environ.get('TROUPE_PLANCHES', os.path.join(ICI, '..', '..', 'workbench', '.private', 'troupe')))
+CENTRES = {'enfant': 8, 'ado': 16, 'vingtaine': 25, 'trentaine': 33, 'cinquantaine': 52, 'aine': 70}
+REF_CACHE = os.path.expanduser('~/.cache/massamba-models/age-planches.json')
+REGLE = 'age-relatif-planche-2026-10-19'
+
+
+def age_espere(p):
+    return float(sum(p[t] * CENTRES[t] for t in TRANCHES))
+
+
+def _visage_boite(img_rgb):
+    """boîte du visage (repères FaceLandmarker) agrandie comme dans controle() ; None si aucun visage."""
+    import mediapipe as mp
+    from mediapipe.tasks.python import BaseOptions, vision
+    if 'fl' not in _M:
+        _M['fl'] = vision.FaceLandmarker.create_from_options(vision.FaceLandmarkerOptions(base_options=BaseOptions(
+            model_asset_path=os.path.expanduser(os.environ.get('MASSAMBA_MODELS', '~/.cache/massamba-models')) + '/face_landmarker.task'),
+            num_faces=1, min_face_detection_confidence=0.2))
+    H, W = img_rgb.shape[:2]; r = _M['fl'].detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(img_rgb)))
+    if not r.face_landmarks: return None
+    L = np.array([[q.x * W, q.y * H] for q in r.face_landmarks[0]])
+    return _boite(L[:, 0].min(), L[:, 1].min(), L[:, 0].max(), L[:, 1].max(), W, H, 1.6)
+
+
+def references(nom):
+    """âges espérés (visage, corps) lus sur chaque image de la planche validée du personnage ; None sans planche."""
+    import glob, hashlib
+    sl = re.sub(r'[^a-z0-9]+', '-', nom.lower()).strip('-')
+    fs = [f for f in [os.path.join(PLANCHES, f'{sl}.jpg')] + sorted(glob.glob(os.path.join(PLANCHES, 'poses', sl, '*'))) if os.path.isfile(f)]
+    if not fs: return None
+    h = hashlib.sha1(''.join(f'{f}:{os.path.getsize(f)}' for f in fs).encode()).hexdigest()[:16]
+    C = json.load(open(REF_CACHE)) if os.path.isfile(REF_CACHE) else {}
+    if C.get(sl, {}).get('empreinte') == h: return C[sl]
+    g = carte(nom)[1]; vis, corps = [], []
+    for f in fs:
+        im = cv2.imread(f)
+        if im is None: continue
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB); corps.append(round(age_espere(tranches(im, g)), 1)); b = _visage_boite(im)
+        if b is not None: vis.append(round(age_espere(tranches(im[b[1]:b[3], b[0]:b[2]], g)), 1))
+    C[sl] = {'empreinte': h, 'visage': vis, 'corps': corps, 'images': len(fs)}
+    os.makedirs(os.path.dirname(REF_CACHE), exist_ok=True); json.dump(C, open(REF_CACHE, 'w'), indent=1)
+    return C[sl]
+
+
 def _boite(x0, y0, x1, y1, W, H, k=1.0):
     cx, cy, w, h = (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) * k, (y1 - y0) * k
     return int(max(0, cx - w / 2)), int(max(0, cy - h / 2)), int(min(W, cx + w / 2)), int(min(H, cy + h / 2))
@@ -97,8 +149,21 @@ def controle(d, style=None):
         pv = tranches(img[bx[1]:bx[3], bx[0]:bx[2]], genre, style); pc = tranches(img[bb[1]:bb[3], bb[0]:bb[2]], genre, style)
         r['age_visage'] = round(sum(pv[t] for t in att), 3); r['age_corps'] = round(sum(pc[t] for t in att), 3)
         r['tranche_visage'] = max(pv, key=pv.get); r['tranche_corps'] = max(pc, key=pc.get)
-        if r['age_visage'] <= 0.5: R['echecs'].append(f"{a['nom']} : visage lu « {r['tranche_visage']} » (attendu {'/'.join(sorted(att))}, {r['age_visage']})")
-        if r['age_corps'] <= 0.5: R['echecs'].append(f"{a['nom']} : silhouette lue « {r['tranche_corps']} » (attendu {'/'.join(sorted(att))}, {r['age_corps']})")
+        r['age_espere_visage'] = round(age_espere(pv), 1); r['age_espere_corps'] = round(age_espere(pc), 1)
+        ref = references(a['nom']) if style == 'dessin' else None
+        # l'ENFANT garde la règle absolue : elle lit juste ses 9 planches validées (« enfant » ≥ 0,70 sur chacune), alors que sa
+        # planche elle-même s'étale de 8,7 à 13,3 ans en âge espéré (bruit plus grand que l'écart à juger)
+        if ref and ref['corps'] and (age or 99) >= 13:   # adulte : âge relatif à la planche validée (voir plus haut)
+            for part, val in (('visage', r['age_espere_visage']), ('corps', r['age_espere_corps'])):
+                v = ref[part] or ref['corps']; seuil = float(np.percentile(v, 10)); r[f'seuil_{part}'] = round(seuil, 1)
+                if val < seuil:
+                    R['echecs'].append(f"{a['nom']} : {'visage' if part == 'visage' else 'silhouette'} lu à {val:.0f} ans, plus jeune que sa planche "
+                                       f"validée (au moins {seuil:.0f} ; tranche lue « {r['tranche_' + part]} »)")
+            r['regle_age'] = 'relative à la planche'
+        else:
+            r['regle_age'] = 'absolue'
+            if r['age_visage'] <= 0.5: R['echecs'].append(f"{a['nom']} : visage lu « {r['tranche_visage']} » (attendu {'/'.join(sorted(att))}, {r['age_visage']})")
+            if r['age_corps'] <= 0.5: R['echecs'].append(f"{a['nom']} : silhouette lue « {r['tranche_corps']} » (attendu {'/'.join(sorted(att))}, {r['age_corps']})")
         # — proportions : têtes du sommet du crâne aux hanches
         pts = np.array(a['pts'])[:, :2]
         if v3 is not None:
@@ -134,7 +199,7 @@ def controle(d, style=None):
 def controle_cache(d):
     """controle() gardé dans <lieu>/controle_troupe.json tant que l'image et les repères du lieu n'ont pas changé."""
     import hashlib
-    h = hashlib.sha1()
+    h = hashlib.sha1(REGLE.encode())   # la règle entre dans l'empreinte : un contrôle changé ne ressert pas d'anciens verdicts
     for f in [f'{d}/image.png', f'{d}/scene.json'] + sorted(__import__('glob').glob(f'{d}/rig/visage3d-*.npy')):
         if os.path.isfile(f): h.update(open(f, 'rb').read())
     h = h.hexdigest()[:16]; fc = f'{d}/controle_troupe.json'

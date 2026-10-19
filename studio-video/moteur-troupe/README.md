@@ -163,3 +163,39 @@ repères (déjà juste sur le bras nu de Maman ; manches du même tissu que le c
 complété par FLUX.2 [klein] (local, Apache-2.0) et jugé par les contrôles existants (fantôme, couleur étrangère) ;
 (4) angles BEAT2 v2 sur les deux calques. Réussite : pose de repos identique au dessin, bras ≥ 6° sur plus de 60 % des
 secondes de parole, sans fantôme ni étirement (médiane ≤ 0,05).
+
+### Visage du même humain que les gestes ; coudes et mains RTMW (19/10/2026)
+
+Demande : « les expressions du visage et les doigts de BEAT2 ne sont pas encore exploités : c'est une greffe possible ».
+Démontage d'une archive BEAT2 : la mâchoire et les yeux y sont presque immobiles, et le visage n'y est donné qu'en
+coefficients FLAME, illisibles sans le modèle FLAME (non commercial jusqu'à 2023 ; FLAME 2023 Open sous CC-BY-4.0 derrière
+une inscription). Voie retenue : BEAT (v1, même équipe, Apache-2.0), qui a capté le visage en 52 coefficients ARKit nommés à
+60 i/s. `visage_humain.py` télécharge chaque enregistrement en mémoire, n'en garde que sourcils, sourire, mâchoire,
+paupières et regard à 30 i/s, puis l'efface : 641 enregistrements (459 lectures, 182 conversations, 30 locuteurs) en
+378 s, 56 Mo, 0 erreur.
+
+Mesure clé : un enregistrement BEAT2 `en_<id>` et l'enregistrement BEAT v1 `<id>` ont la même horloge (6 sur 6 : décalage
+0 image, parole et silences identiques à 100 %). Quand une réplique prend ses gestes dans une prise BEAT2 recalée sur nos
+syllabes (`mocap_jeu.couche`, rangs), `jeu.py` lit le visage dans la MÊME prise aux MÊMES rangs : sourcils, sourire,
+tête et bras viennent du même humain au même instant. Écoute : silences des conversations des doublures du personnage.
+Le haussement se joue avec une nouvelle entrée « haussement » (sourcils seuls) de la bibliothèque de chaque personnage ;
+le sourire s'ajoute à la joie (60 %), jamais sur un ressenti négatif ni pendant la prise de choc. Garde des lunettes :
+Koffi garde un haussement réduit (0,25) pour ne pas déformer ses lunettes.
+
+Normes humaines (182 conversations, 1 834 min ; haussement net = 0,2 ARKit au-dessus de la base glissante de 2 s) :
+7,4 haussements par minute de parole, 3,6 par minute d'écoute ; 3,4 sourires francs par minute. Épisode 1, hors
+tournage, même mesure : troupe 2,7 → 4,0 par minute de parole et 2,7 → 3,8 par minute d'écoute (écoute au niveau humain ;
+0,75 min de parole par personnage seulement dans l'épisode, à confirmer sur la v11). Écarté : clignements et regard de BEAT
+(ARKit ne voit que 8 clignements par minute, contre 15 à 26 dans les études) — le regard vivant actuel reste.
+
+Bras, étape 1 de la greffe : coudes, poignets et mains lus par RTMW (`prepare_rig.bras_rtmw`, score ≥ 0,45 et dans la
+découpe ; MediaPipe en secours ; épaules gardées, elles portent le buste). Les scènes déjà préparées ne refont que leurs
+bras (`VERSION_BRAS = 2`, quelques secondes par acteur). Corrections mesurées : main droite de Coumba 37 à 39 px, coude
+droit 37 px ; coude de Koffi 26 px ; coude de Tantie Awa 18 px ; coude de Maman Nounou 17 px. Étape suivante : calque du
+bras entier pour les manches (aujourd'hui seule la main pivote) — SAM 2.1 guidé par RTMW, dessous complété par FLUX.2
+[klein], angles BEAT2 v2.
+
+Contrôle d'âge de la retouche (`controle_troupe.py`, règle `age-relatif-planche-2026-10-19`) : l'âge lu en zéro-coup par
+SigLIP se trompait sur les planches que l'utilisateur a lui-même validées. L'âge attendu d'un visage ou d'une silhouette
+(somme des probabilités par tranche × centre de la tranche) est désormais comparé à celui de SA planche validée : un adulte
+échoue seulement s'il paraît plus jeune que le 10e centile de sa planche (visage et corps) ; l'enfant garde la règle absolue.

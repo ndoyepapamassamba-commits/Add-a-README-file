@@ -30,11 +30,14 @@ EMO = {   # validées à l'œil sur Petit Mamadou (enfant, sourire de base) et M
     'innocent': {'inquiet': 0.8, 'sourire': 0.35},
     'frime': {'sourire': 0.6, 'hausser': 0.3, 'levre0': -0.04},
     'degout': {'froncer': 0.7, 'levre1': 12, 'sourire': -0.6, 'levre0': 0.05},
+    # HAUSSEMENT DE SOURCILS SEUL (19/10/2026) : le geste de parole le plus fréquent du visage humain (BEAT v1, 182
+    # conversations : 6,5 haussements nets par minute), joué par jeu.py avec le visage capté de la doublure (visage_humain)
+    'haussement': {'hausser': 1.0},
 }
 DESC = {'joie': 'happy and smiling', 'rire': 'laughing', 'colere': 'angry (eyebrows lowered and pulled together into a frown)',
         'frustration': 'frustrated or annoyed', 'mecontent': 'displeased or sulking', 'tristesse': 'sad', 'emu': 'moved, touched and tender',
         'surprise': 'surprised (eyebrows raised)', 'peur': 'afraid or worried', 'malice': 'mischievous, with a sly smile',
-        'soupcon': 'suspicious', 'innocent': 'innocent and pleading', 'frime': 'smug, showing off', 'degout': 'disgusted'}
+        'soupcon': 'suspicious', 'innocent': 'innocent and pleading', 'frime': 'smug, showing off', 'degout': 'disgusted', 'haussement': 'with raised eyebrows, attentive and expressive'}
 ABIME = ('Look closely at the eyebrows, eyes and mouth of this cartoon face. Is any of them smeared, blurred, dissolved into the '
          'skin, doubled or deformed (an artifact, not a normal drawn expression)?')
 INTENSITES = (1.0, 0.7, 0.45)   # du plus fort au plus doux : on n'adoucit que si le visage est abîmé

@@ -308,6 +308,7 @@ def couche(L, cibles, fps, nf, jeu='', graine=0, ecoute=False, echelle=400.0, co
     info = {'prise': trial, 'debut_s': round(s / FPS, 2), 'tempo': k, 'miroir': miroir, 'cout': round(float(ch[0]), 3)}
     if dh.est_cle(trial):
         I = dh.index().get(trial, {}); info.update(source='BEAT2', locuteur=I.get('locuteur'), emotion=dh.emotion(I))
+        info['_rangs'] = r   # rangs de la prise lus image par image : le visage du même humain y est lu (visage_humain.fenetre)
     return out, info
 
 
