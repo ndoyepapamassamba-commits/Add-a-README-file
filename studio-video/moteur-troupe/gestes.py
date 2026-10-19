@@ -161,10 +161,10 @@ def prepare(img, alpha, pts, visage_box, bbox=None):
         bras_seul = (calque > 0.3).astype(np.uint8)   # le bras prolongé par SES couleurs : on ne connaît que lui, le reste est rempli depuis lui
         rgb_ext = cv2.inpaint(reg, (1 - bras_seul) * cv2.dilate(bras_seul, np.ones((11, 11), np.uint8)), 4, cv2.INPAINT_TELEA)
         calque_ext = cv2.GaussianBlur(cv2.dilate(calque, np.ones((9, 9), np.uint8)), (0, 0), 1.2)   # même fondu, 4 px de plus
-        # tronc du personnage dans la boîte du bras : sa découpe sans ce bras, rognée d'un dixième d'avant-bras (bords tolérés)
-        e_ = max(3, int(0.1 * lf)) | 1
-        tronc = cv2.erode(((alpha[y0:y1, x0:x1] > 0.5) & ~(cv2.dilate((calque > 0.1).astype(np.uint8), np.ones((9, 9), np.uint8)) > 0)).astype(np.uint8),
-                          np.ones((e_, e_), np.uint8))
+        # corps du personnage dans la boîte du bras : sa découpe sans ce bras (3 px de bord tolérés). v12 : la version rognée
+        # d'un dixième d'avant-bras laissait la main de Tantie glisser sur sa robe jusqu'à 16° (zone voisine non comptée)
+        tronc = cv2.erode(((alpha[y0:y1, x0:x1] > 0.5) & ~(cv2.dilate((calque > 0.1).astype(np.uint8), np.ones((3, 3), np.uint8)) > 0)).astype(np.uint8),
+                          np.ones((3, 3), np.uint8))
         b = dict(cote=cote, nu=nue >= 0.4, piv=piv.astype(np.float32), x=float(piv[0]), lf=lf, box=(x0, y0, x1, y1), tronc=tronc,
                  rgb=reg, calque=calque, sil=sil, fondu=fondu.astype(np.float32), fond=fond, trou=trou.astype(bool), sens=sens, Hc=Hc.astype(np.float32),
                  empreinte=empreinte, rgb_ext=rgb_ext, calque_ext=calque_ext)

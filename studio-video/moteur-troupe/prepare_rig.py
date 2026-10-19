@@ -71,7 +71,7 @@ RTMW_SUR = 0.45
 # MediaPipe ← COCO-WholeBody : coudes, poignets ; auriculaire, index, pouce (articulations de base de la main). Les ÉPAULES
 # restent celles de MediaPipe (écart ≤ 11 px sur la cour) : elles portent le buste du squelette, qui passe la porte d'étirement
 RTMW_MP = {13: 7, 14: 8, 15: 9, 16: 10, 17: 108, 19: 96, 21: 93, 18: 129, 20: 117, 22: 114}
-VERSION_BRAS = 4   # 19/10/2026 : coudes, poignets et mains RTMW ; 3 : pas deux calques pour une même main (gestes.sans_doublon) ; 4 : tronc mémorisé (la main ne traverse pas le corps)
+VERSION_BRAS = 5   # 19/10/2026 : coudes, poignets et mains RTMW ; 3 : pas deux calques pour une même main (gestes.sans_doublon) ; 4-5 : corps mémorisé (la main ne glisse pas sur le corps)
 _RTMW = {}
 
 

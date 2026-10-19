@@ -209,8 +209,9 @@ Défauts vus par l'utilisateur sur la v11, corrigés et devenus contrôles (`npm
 au maquis — RTMW avait trouvé son bras droit, presque caché, et son calque reprenait la main déjà dans le calque du bras gauche
 (recouvrement 68 %) ; `gestes.sans_doublon` ne garde qu'un calque quand deux se recouvrent au-delà de 8 %. (2) Main de Tantie
 Awa qui traverse son corps — l'avant-bras posé sur la hanche, tourné au coude (jusqu'à 28°), glissait sur le ventre ; une main
-sur la hanche ne fait plus de geste (bras nu compris), et aucun avant-bras ne peut tourner sur le tronc (`TRONC_MAX`, 6 % de sa
-surface ; tronc mémorisé avec chaque calque, `VERSION_BRAS = 4`). Contrôle vérifié : sans la règle, l'avant-bras d'essai
+sur la hanche ne fait plus de geste (bras nu compris), et aucun bras ne peut tourner sur le corps (`TRONC_MAX`, 6 % de sa
+surface ; corps mémorisé avec chaque calque, à 3 px près, `VERSION_BRAS = 5` — à 0,1 avant-bras près, la main de Tantie
+glissait encore jusqu'à 16°) : Tantie 28° → 8° et 4°, mains restées sur les hanches. Contrôle vérifié : sans la règle, l'avant-bras d'essai
 tourne de 28° sur le tronc ; avec elle, 0°. Écoute : porte D de la v11 à 0,23–0,50 (normes humaines appliquées après le
 plancher d'écoute) ; la position lente de l'auditeur est désormais remontée en dernier (`ECOUTE_CENTRE` 4°) : 0,85 à 1,00
 hors tournage, mouvements de tête gardés (écoute 1,5 à 5,4° par seconde).
