@@ -128,3 +128,27 @@ python3 qualite.py film film/film.mp4 montage.json               # 10 portes →
 | Cache de tournage | `tourne.py` (empreinte) | la source des gestes (`MOCAP_SOURCE`, `MOCAP_BEAT_N`) et l'index du dictionnaire entrent dans l'empreinte des plans : un tournage BEAT2 ne reprend plus les images d'un tournage CMU | — |
 
 Mesuré le 19/10/2026 sur le sketch du bulletin (26 s, trois personnages, mêmes dessins, même code, seule la source change ; 1 512 images à 60 i/s, 3 min 50 s par version) : porte de souplesse Q au niveau humain des deux côtés ; Maman Nounou : avant-bras 8,1° → 11,4° de crête à crête par seconde (≥ 6° : 54 % → 58 % des secondes) ; Petit Mamadou : tête ≥ 3° 81 % → 85 %, buste ≥ 2° 27 % → 38 %, « ensemble » 42 % → 46 % ; Baye : tête ≥ 3° 46 % → 35 % (il parle peu : son écoute garde les prises CMU) ; 8 répliques sur 8 jouées par 8 enregistrements différents (contre des prises CMU reprises), émotion accordée au jeu (mépris 4, neutre 3, joie 1). Hors tournage, sur les 55 répliques de l'épisode : part des secondes avec un geste du bras ≥ 6° 42,7 % → 45,3 %, souplesse au niveau humain sur les cinq articulations. Greffe en cours : des bras à deux segments (épaule + coude, IK) pour que les mains quittent vraiment la hanche et la table — le dictionnaire fournit déjà les angles d'épaule (`lever`), de coude (`coude`) et l'avance de l'avant-bras ; mesure de réussite : bras ≥ 6° sur plus de 60 % des secondes de parole sans fantôme ni étirement.
+
+### Tête et buste aux normes humaines, par le squelette (19/10/2026)
+
+Demande : « revoir aussi les mouvements de la tête, qui doivent se tourner selon les normes humaines par le squelette ».
+Normes mesurées sur 204 enregistrements BEAT2 (crête à crête par seconde, parole / écoute) : lacet 4,7 / 3,8°, tangage
+4,1 / 3,6°, roulis 3,0 / 2,5°, buste penché 1,4 / 1,2°, buste en lacet 3,7 / 3,2° ; tête entière ≥ 3° sur 85 % des secondes
+de parole et 78 % d'écoute, buste ≥ 2° sur 74 % / 67 % ; lacet crête à crête sur 3 s : 9,3° ; virages : durée ≈ 0,554 s
++ 0,0143 s par degré ; sur les virages de 15° et plus, le buste suit à 0,32 de la tête (2 490 virages).
+
+| Cause trouvée (mesurée) | Remède (`jeu.py`) |
+|---|---|
+| Tourné vers celui qui parle (15° voulus pour 6° d'enveloppe), le squelette saturait sa borne douce : chaque mouvement autour de cette position écrasé ×0,07 (lacet d'écoute de Maman 0,8° par seconde, buste 0,1°) | `borne_vive` : la position lente (sous 0,3 Hz) ne prend plus que la moitié de l'enveloppe, le visage (LivePortrait) porte le reste du regard ; le mouvement vif garde l'autre moitié |
+| Les gardes de souplesse (filtre, garde SPARC de la porte Q) rabotaient l'ampleur : buste 3,2° par seconde de parole avant elles, 1,0° après | `ampleur_humaine` : la souplesse SPARC ne dépend pas de l'ampleur ; la part vive est remise à la norme humaine × 1,2 (dessin animé), parole et écoute séparées, dans l'enveloppe, puis garde de souplesse sans marge (seules les fenêtres plus raides que les 10 % les plus raides des humains sont lissées), deux tours |
+| Le lacet capté remplissait l'enveloppe à ses pics : 12,6 à 24° sur 3 s | `LACET_3S_HUMAIN` : ramené à 11° (9,3° × 1,2) |
+| Le buste ne suivait pas la tête (0,00 à 0,09 contre 0,32) | `BUSTE_SUIT` : le buste suit la tête entière à 0,32, en retard (ressort) |
+
+Hors tournage, 7 acteurs, 3 sketchs (avant → après) : tête ≥ 3° 93 → 98 % des secondes de parole et 68 → 77 % d'écoute ; buste
+≥ 2° 33 → 81 % et 40 → 72 % ; lacet sur 3 s 18,7° → 12,0° ; porte de souplesse Q au niveau humain sur les cinq articulations.
+Tournage du bulletin (1 512 images, 3 min 53 s) : tête ≥ 3° Baye 31 → 69 %, Maman 27 → 58 %, Petit Mamadou 69 → 88 % ; buste
+≥ 2° 27 → 54 %, 35 → 65 %, 12 → 81 % ; « ensemble » 23 → 58 %, 35 → 65 %, 31 → 85 % ; étirement (médiane du 99e centile)
+0,054 → 0,040, 0,063 → 0,039, 0,050 → 0,034 ; part du squelette dans les virages de tête 43 → 70 % ; virage de 20 à 40° :
+1,25 s → 0,73 s (humain 0,94), pointe 59 → 97°/s (humain 87) ; porte Q passée. Le dictionnaire passe en version 2 : angles des
+bras dans le plan de l'écran (`bras_f`, `coude_f`, `raccourci`) pour les bras à deux segments (1 428 enregistrements reconvertis
+en 577 s, 0 erreur).

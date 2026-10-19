@@ -86,6 +86,59 @@ def borne(x, lim):
     return lim * np.tanh(np.asarray(x) / lim) if lim > 1e-6 else np.zeros_like(np.asarray(x, np.float32))
 
 
+RESERVE_VIVE, RESERVE_HZ = 0.5, 0.3
+
+
+def borne_vive(x, lim, fps, RG=None):
+    """BORNE QUI GARDE LA VIE (19/10/2026) : la tête tournée vers celui qui parle (15° voulus pour 6° d'enveloppe chez Maman)
+    saturait la borne douce — tanh à plat, chaque mouvement autour de cette position écrasé ×0,07 : lacet d'écoute 0,8° par
+    seconde, buste 0,1°, contre 3,8° et 3,2° chez l'humain (BEAT2). La position lente (sous RESERVE_HZ) ne prend plus que
+    RESERVE_VIVE de l'enveloppe (le visage LivePortrait porte le reste du regard vers l'autre) ; le mouvement rapide garde
+    l'autre part, des deux côtés. Rien ne dépasse l'enveloppe."""
+    x = np.asarray(x, np.float64); r = (RG or {}).get('reserve_vive', RESERVE_VIVE)
+    if r >= 1.0 or len(x) < 16 or lim <= 1e-6: return borne(x, lim)
+    from scipy.signal import butter, filtfilt
+    lent = filtfilt(*butter(2, RESERVE_HZ / (fps / 2.0)), x)
+    return borne(borne(lent, r * lim) + (x - lent), lim)
+
+
+GAIN_VIF_MAX = 3.0   # l'ampleur rendue au mouvement rapide ne dépasse pas ×3 (au-delà, c'est du bruit qu'on grossirait)
+GAIN_VIF_MIN = 0.6   # ni ne descend sous ×0,6 (les virages vers l'interlocuteur restent francs)
+TOURS_AMPLEUR = 2    # ampleur rendue puis garde de souplesse, deux fois : la garde rabote, le second tour rend
+
+
+def ampleur_humaine(x, parle, fps, c, lim, RG=None, scene=None):
+    """AMPLEUR HUMAINE APRÈS LA SOUPLESSE (19/10/2026) : les gardes de souplesse (filtre, garde SPARC de la porte Q) rendent
+    la forme du mouvement aussi souple que l'humain mais en rabotent l'ampleur — mesuré sur les 7 acteurs de l'ep01 : buste
+    3,2° par seconde de parole avant les gardes, 1,0° après, contre 3,7° chez l'humain (BEAT2). L'indice SPARC ne dépend
+    pas de l'ampleur : la part rapide (au-dessus de RESERVE_HZ) est remise à la médiane humaine par seconde (NORME_SECONDE ×
+    MARGE_DESSIN, parole et écoute séparées, fondues en 0,3 s), entre ×GAIN_VIF_MIN et ×GAIN_VIF_MAX, puis bornée
+    dans l'enveloppe (borne_vive), passée à la garde d'à-coups, puis à la garde de souplesse SANS marge : seules les fenêtres
+    plus raides que les 10 % les plus raides des humains sont lissées (une petite enveloppe, roulis à 2°, se déforme contre sa
+    borne : SPARC p10 −5,71 contre −5,51 ; au tournage du bulletin, buste −5,29 contre −5,05 sans cette garde). La garde
+    rabotant l'ampleur, le tout est fait TOURS_AMPLEUR fois."""
+    x = np.asarray(x, np.float64)
+    if len(x) < 2 * fps or lim <= 1e-6: return x.astype(np.float32)
+    from scipy.signal import butter, filtfilt
+    n1 = int(fps); pa = np.asarray(parle, bool)[:len(x)]; sc = np.ones(len(x), bool) if scene is None else np.asarray(scene, bool)[:len(x)]
+    bornes = ((RG or {}).get('gain_vif_min', GAIN_VIF_MIN), (RG or {}).get('gain_vif_max', GAIN_VIF_MAX))
+    k_ = max(1, int(0.3 * fps)); w = np.clip(np.convolve(pa.astype(float), np.ones(k_) / k_, 'same'), 0, 1)
+    y = x
+    for tour in range(int((RG or {}).get('tours_ampleur', TOURS_AMPLEUR))):   # la garde rabote l'ampleur : on la rend, on regarde
+        lent = filtfilt(*butter(2, RESERVE_HZ / (fps / 2.0)), y); vif = y - lent; g = np.ones(2)
+        for k, m in ((0, pa & sc), (1, ~pa & sc)):
+            js = [j for j in range(0, len(x) - n1 + 1, n1) if m[j:j + n1].mean() > 0.5]
+            if not js: continue
+            for _ in range(4):   # médiane par seconde du signal ENTIER (comme la norme humaine et la porte), ajustée sur la part rapide
+                med = float(np.median([np.ptp(lent[j:j + n1] + g[k] * vif[j:j + n1]) for j in js]))
+                if med <= 1e-3: break
+                g[k] = float(np.clip(g[k] * MARGE_DESSIN * NORME_SECONDE[c][k] / med, *bornes))
+        y = lisse_acc(borne_vive(lent + (w * g[0] + (1 - w) * g[1]) * vif, lim, fps, RG), fps)
+        # seules les fenêtres plus raides que les 10 % les plus raides des humains sont lissées (garde sans marge)
+        if (RG or {}).get('garde_souplesse', 1): y = garde_souplesse(y, fps, c, marge=0.0)
+    return y
+
+
 ACC_FLUIDE = 2.2   # à-coup maximal d'une piste de pose (2e différence, degrés par image²) ; la porte I du film admet 2,5
 
 
@@ -140,9 +193,9 @@ def souple(x, fps, fc, garde=None):
 SOUPLESSE_MARGE = 0.2
 
 
-def garde_souplesse(x, fps, c):
+def garde_souplesse(x, fps, c, marge=SOUPLESSE_MARGE):
     import fluidite as FL
-    try: seuil = json.load(open(FL.SEUILS))['souplesse'][c]['p10'] + SOUPLESSE_MARGE
+    try: seuil = json.load(open(FL.SEUILS))['souplesse'][c]['p10'] + marge
     except Exception: return np.asarray(x, np.float32)
     y = np.asarray(x, np.float64).copy(); fen = int(round(4.0 * fps)); n = len(y)
     if n <= fen: return y.astype(np.float32)
@@ -289,6 +342,12 @@ PRISE_TEMPS = 0.25   # s : temps où l'on « encaisse » la chute avant la prise
                      # de la chute : la prise se voit EN ENTIER à l'écran au lieu d'arriver avant la coupe, comme dans la v2)
 def prise_t(L): return L['t0'] + L['dur'] + 0.05 + PRISE_TEMPS
 BOUCHE_BEE = 0.6   # commande de mâchoire au sommet de la prise de choc (0,6 : bouche franchement ouverte sans crier)
+BUSTE_SUIT, BUSTE_SUIT_OMEGA = 0.32, 6.0   # part de la rotation de la tête reprise par le buste ; vitesse du ressort (rad/s)
+LACET_3S_HUMAIN = 11.0   # ° : lacet de tête crête à crête sur 3 s, médiane humaine 9,3° (BEAT2) × 1,2 de marge dessin animé
+NORME_SECONDE = {'tete_lacet': (4.7, 3.8), 'tete_tangage': (4.1, 3.6), 'tete': (3.0, 2.5), 'buste': (1.4, 1.2), 'buste_lacet': (3.7, 3.2)}
+# ° crête à crête par seconde, médiane humaine (parole, écoute) : BEAT2, 204 enregistrements, 19/10/2026 (tête : lacet, tangage,
+# roulis ; buste : penché, lacet) ; tête entière ≥ 3° sur 85 % des secondes de parole et 78 % d'écoute, buste ≥ 2° sur 74 % / 67 %
+MARGE_DESSIN = 1.2   # le dessin animé joue un peu plus grand que nature (même marge que LACET_3S_HUMAIN)
 VISAGE_PART = float(os.environ.get('VISAGE_PART', 0.5))   # part de la rotation du visage (LACET_VISAGE) donnée à la capture humaine
 LACET_VISAGE = 18.0   # 18/10/2026 : champ de rotation lissé (expressions_lp._lisse_flux) ; A/B JEV du plan de Baye (47 images) : 18° → 24 fautives, 0 déformée, rendu moyen 0,46 ; 14° → 25 et 0 (regard trop faible, porte D : Maman → Baye 0,36) ; 22° brut → 40 et 3
 PENCHE_FRAC = 0.6   # part de l'enveloppe du buste prise par le penché d'engagement de l'orateur (19/10/2026)
@@ -522,6 +581,17 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
                 if RG.get('gain_ecoute', 1) and occ.any() and (~occ).any():
                     gain = w_occ * gain_(v_[occ]) + (1 - w_occ) * gain_(v_[~occ])
                 else: gain = gain_(v_)
+                # TÊTE AUX NORMES HUMAINES (19/10/2026, « la tête doit se tourner selon les normes humaines ») : le lacet de la
+                # capture remplissait l'enveloppe à ses pics (réglage du 18/10 sur le jeu d'acteur CMU, 38° crête à crête sur 3 s)
+                # — mesuré sur le bulletin : 12,6 à 24° sur 3 s et tête immobile 36 à 58 % du temps, contre 9,3° et 50 % chez
+                # l'humain en conversation (BEAT2, 250 enregistrements). Le lacet capté est ramené à LACET_3S_HUMAIN (médiane de
+                # ses crêtes à crête sur 3 s), marge dessin animé comprise ; les virages vers l'interlocuteur s'y ajoutent
+                if c_ == 'tete_lacet' and RG.get('lacet_humain', 1):
+                    act_ = np.flatnonzero(np.abs(v_) > 1e-6)
+                    if len(act_) > 3 * fps:
+                        g_ = np.asarray(gain, np.float64) * np.ones(len(v_)); y_ = (g_ * v_)[act_[0]:act_[-1] + 1]; n3 = int(3 * fps)
+                        m3 = float(np.median([np.ptp(y_[j:j + n3]) for j in range(0, len(y_) - n3, n3 // 2)]))
+                        if m3 > LACET_3S_HUMAIN: gain = g_ * (LACET_3S_HUMAIN / m3)
                 R[c_] = R[c_] + (gain * v_).astype(np.float32)
             for b, gm in enumerate(Gm):
                 if f'geste_{b}' in R: R[f'geste_{b}'] = (1 - (1 - np.clip(R[f'geste_{b}'], 0, 1)) * (1 - np.clip(RG['mocap'] * gm, 0, 1))).astype(np.float32)
@@ -558,18 +628,24 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
             # ressort amorti ≈ ζ / (π f) : 61 ms à 2,6 Hz, 35 ms à 4,5 Hz — le léger dépassement (ζ = 0,5) reste
             monde = R['buste'] + R['tete']; R['tete'] = (dynamique(monde, fps, SUIVI_TETE_HZ, 0.5, 0.0) - R['buste']).astype(np.float32)
         # ── bornes de l'enveloppe du personnage
-        R['buste'] = borne(R['buste'], env.get('buste', 3.0)); R['tete'] = borne(R['tete'], env.get('tete', 6.0))
+        R['buste'] = borne_vive(R['buste'], env.get('buste', 3.0), fps, RG); R['tete'] = borne_vive(R['tete'], env.get('tete', 6.0), fps, RG)
         R['epaules'] = borne(R['epaules'], env.get('epaules', 3.0)); R['bassin_x'] = borne(R['bassin_x'], env.get('bassin_x', 4.0))
         # TÊTE QUI TOURNE AU-DELÀ DU SQUELETTE (18/10/2026, « Maman ne tourne pas la tête vers Baye ») : ce que l'enveloppe du
         # squelette refuse (6° pour un visage peint de trois quarts) est confié au visage, que LivePortrait fait tourner dans
         # son carré (expressions_lp.tourne) ; la moitié de ce que fait déjà le squelette est retranchée (pas de double rotation)
         voulu_ = R['tete_lacet'].copy()
-        R['souffle'] = np.clip(R['souffle'], -env.get('souffle', 0.02), env.get('souffle', 0.02)); R['tete_lacet'] = borne(R['tete_lacet'], env.get('tete_lacet', 20.0)); R['tete_tangage'] = borne(R['tete_tangage'], env.get('tete_tangage', 9.0)); R['buste_lacet'] = borne(R['buste_lacet'], env.get('buste_lacet', 9.0))
+        R['souffle'] = np.clip(R['souffle'], -env.get('souffle', 0.02), env.get('souffle', 0.02)); R['tete_lacet'] = borne_vive(R['tete_lacet'], env.get('tete_lacet', 20.0), fps, RG); R['tete_tangage'] = borne_vive(R['tete_tangage'], env.get('tete_tangage', 9.0), fps, RG); R['buste_lacet'] = borne_vive(R['buste_lacet'], env.get('buste_lacet', 9.0), fps, RG)
         # v36 : la commande peut dépasser ±1 (regard peint compensé) ; regard.applique borne la position FINALE de l'iris dans l'œil
         R['regard_x'] = np.clip(R['regard_x'], -2.2, 2.2); R['regard_y'] = np.clip(R['regard_y'], -2.2, 2.2)
         for k_ in [k_ for k_ in R if k_.startswith('geste_')]: R[k_] = np.clip(R[k_], 0, 1)
         for c_ in ('tete_tangage', 'tete', 'tete_lacet', 'buste', 'buste_lacet'): R[c_] = lisse_acc(R[c_], fps)   # garde de fluidité
         R['lacet_visage'] = lisse_acc(borne(voulu_ - 0.5 * R['tete_lacet'], RG['lacet_visage']), fps)
+        # LE BUSTE SUIT LA TÊTE (19/10/2026, normes humaines) : sur les virages de tête de 15° et plus, le buste tourne d'un
+        # tiers de la tête chez l'humain (BEAT2, 2 490 virages : médiane 0,32) ; mesuré sur le bulletin : 0,00 à 0,09. Le buste
+        # suit la tête entière (squelette + visage) en retard (ressort critique), dans son enveloppe sans étirement
+        if RG.get('buste_suit', 1):
+            suit_ = ressort((R['tete_lacet'] + R['lacet_visage']).astype(np.float64), fps, BUSTE_SUIT_OMEGA)
+            R['buste_lacet'] = borne_vive(R['buste_lacet'] + BUSTE_SUIT * suit_, env.get('buste_lacet', 9.0), fps, RG).astype(np.float32)
         if RG.get('souple', 1):   # souplesse au niveau humain (SPARC), prise de choc gardée vive
             k_ = max(1, int(0.2 * fps)); garde_ = np.clip(np.convolve(np.clip(prise, 0, 1), np.ones(k_) / k_, 'same'), 0, 1)
             for c_, fc_ in SOUPLESSE.items():
@@ -577,6 +653,11 @@ def pistes(lignes, sketch, acteurs, position, assis, enveloppes, nf, fps, bras=N
         if RG.get('garde_souplesse', 1):   # chaque articulation mesurée par la porte Q, au niveau humain sur toutes ses fenêtres
             for c_ in ('tete_lacet', 'tete_tangage', 'tete', 'buste', 'buste_lacet'):
                 if c_ in R: R[c_] = garde_souplesse(R[c_], fps, c_)
+        if RG.get('ampleur_humaine', 1) and humain:
+            scene_ = np.zeros(nf, bool)   # le sketch du personnage : hors de lui, la piste est au repos (sinon médianes faussées)
+            if L_sk: scene_[max(0, int((min(x['t0'] for x in L_sk) - 0.8) * fps)):min(nf, int((max(x['t0'] + x['dur'] for x in L_sk) + 2.5) * fps))] = True
+            for c_ in NORME_SECONDE:
+                if c_ in R: R[c_] = ampleur_humaine(R[c_], parle_, fps, c_, env.get(c_, LIM[c_]), RG, scene_)
         for e in EMOS: R['emo_' + e] = ressort(np.clip(E[e], 0, 1), fps, 10.0)
         if cl is not None: R['cligne'] = cl * (1 - 0.7 * np.clip(prise, 0, 1))   # yeux écarquillés : on cligne peu pendant la prise
         # bouche bée de la prise (commande de mâchoire 0..1, prise au maximum avec celle de la parole) ; fermée dès que le

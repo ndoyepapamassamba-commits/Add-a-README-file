@@ -24,7 +24,7 @@ FPS = 30
 CACHE = os.path.expanduser(os.environ.get('BEAT2_PISTES', '~/.cache/massamba-models/beat2-pistes'))
 DEPOT = 'https://huggingface.co/datasets/H-Liu1997/BEAT2'
 LANGUE = os.environ.get('BEAT2_LANGUE', 'beat_english_v2.0.0')
-VERSION = 1
+VERSION = 2   # v2 (19/10/2026) : bras dans le plan de l'écran (bras_f, coude_f, raccourci)
 # arbre articulaire SMPL-X (22 articulations du corps) et os au repos (m ; y en haut, x = gauche du sujet, z = devant)
 PARENTS = [-1, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9, 12, 13, 14, 16, 17, 18, 19]
 OS = np.array([[0, 0, 0], [.06, -.09, 0], [-.06, -.09, 0], [0, .11, -.01], [.04, -.38, 0], [-.04, -.38, 0], [0, .13, .01],
@@ -89,6 +89,14 @@ def pistes(poses, trans=None):
         out[f'avance_{s}'] = dot(f, Fs)
         out[f'coude_{s}'] = np.degrees(np.arccos(np.clip(dot(a, -tU), -1, 1)))
         w = po - P[:, J['thorax']]; poignet[s] = np.stack([dot(w, Rs), -w[:, 1], dot(w, Fs)], 1)
+        # BRAS DANS LE PLAN DE L'ÉCRAN (v2, 19/10/2026 : bras à deux segments du dessin) : angle du bras depuis la verticale
+        # (0 = pendant, + = écarté du corps), angle du coude (avant-bras par rapport au bras, même sens) et raccourci de
+        # l'avant-bras (longueur projetée / longueur vraie : < 1 quand la main vient vers la caméra)
+        sg = 1.0 if s == 'l' else -1.0; Un_ = np.repeat(U[None], n, 0)
+        ba = np.degrees(np.unwrap(np.arctan2(sg * dot(co - ep, Rs), -dot(co - ep, Un_))))
+        fa = np.degrees(np.unwrap(np.arctan2(sg * dot(po - co, Rs), -dot(po - co, Un_))))
+        out[f'bras_f_{s}'] = ba; out[f'coude_f_{s}'] = fa - ba
+        out[f'raccourci_{s}'] = np.hypot(dot(po - co, Rs), dot(po - co, Un_)) / np.maximum(np.linalg.norm(po - co, axis=1), 1e-6)
     for k in ('buste', 'buste_tangage', 'buste_lacet', 'tete', 'tete_tangage', 'tete_lacet'):
         out[k] = np.degrees(np.unwrap(np.radians(out[k])))
     vb = np.r_[0, np.hypot(np.diff(out['bassin_x']), np.diff(out['bassin_z']))] * FPS
