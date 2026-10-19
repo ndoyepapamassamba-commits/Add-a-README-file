@@ -231,6 +231,26 @@ try:
 except Exception as e:
     echecs.append(f'19/10 : {e}')
 
+# SOUS-TITRES AU MOT PRÈS (19/10/2026) : bornes des mots tirées des durées de phonèmes Piper ; une liaison (« le-z ») ne coupe
+# pas le mot, un phonème absent de la table du modèle (« ̃ » de gilles-low) ne fait plus perdre l'alignement de toute la phrase.
+try:
+    import types as _ty
+    _vx = _il.import_module('voix')
+    _ph = lambda s_: [{'ph': c_, 't0': i_ * 0.1, 't1': i_ * 0.1 + 0.1} for i_, c_ in enumerate(s_)]
+    _g = _vx.bornes_mots(_ph('^le-z ɑbutɛjaʒ də- jopuɡɔ.$'))   # « les embouteillages de Yopougon » : 4 mots, « lez » d'un seul tenant
+    if len(_g) != 4 or abs(_g[0][1] - 0.5) > 1e-6: echecs.append(f'sous-titres : la liaison « le-z » coupe le mot ({_g})')
+    _idm = {'^': [1], '$': [2], '_': [0], 'a': [5], 'b': [6]}
+    _c = _ty.SimpleNamespace(phoneme_alignments=None, phonemes=['a', '̃', 'b'], phoneme_ids=[1, 0, 5, 0, 6, 0, 2],
+                             phoneme_id_samples=[10, 1, 20, 2, 30, 3, 40])
+    _al = _vx._alignements(_ty.SimpleNamespace(config=_ty.SimpleNamespace(phoneme_id_map=_idm)), _c)
+    if [n_ for _, n_ in _al] != [11, 22, 33, 40]: echecs.append(f'sous-titres : alignement Piper perdu sur un phonème hors table ({_al})')
+    if "L.get('mots')" not in open(os.path.join(ICI, 'moteur-troupe', 'compose.py'), encoding='utf-8').read() or 'mots=bornes_mots(ph)' not in \
+            open(os.path.join(ICI, 'moteur-troupe', 'voix.py'), encoding='utf-8').read():
+        echecs.append('sous-titres : bornes de mots Piper non câblées (voix → timeline → compose.words_of)')
+    print('sous-titres : bornes de mots Piper (liaison, phonème hors table) vérifiées')
+except Exception as e:
+    echecs.append(f'sous-titres 19/10 : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

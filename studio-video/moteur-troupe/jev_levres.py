@@ -49,7 +49,46 @@ def instants(L):
     return [c(p) for p in ouv], [c(p) for p in fer]
 
 
+# PIPER D'ABORD (19/10/2026) : les phonèmes du TEXTE, avec les durées que la voix a réellement utilisées (voix.phonemes_piper),
+# sont indépendants des visèmes Rhubarb qui animent la bouche — le contrôle n'est plus circulaire. Ancienne timeline : repères
+# Rhubarb (A = m, b, p fermés ; C, D = voyelles ouvertes).
+OUVERTS_PIPER, FERMES_PIPER = set('aɑɛɔ'), set('mbp')
+def instants_texte(L):
+    ph = L.get('phonemes_piper')
+    if not ph: return None
+    c = lambda p: L['t0'] + (p[1] + p[2]) / 2
+    bord = lambda p: 0.08 < (p[1] + p[2]) / 2 < L['dur'] - 0.08
+    ouv = sorted((p for p in ph if p[0] in OUVERTS_PIPER and p[2] - p[1] >= 0.06 and bord(p)), key=lambda p: -(p[2] - p[1]))[:3]
+    fer = sorted((p for p in ph if p[0] in FERMES_PIPER and p[2] - p[1] >= 0.05 and bord(p)), key=lambda p: -(p[2] - p[1]))[:3]
+    return [c(p) for p in ouv], [c(p) for p in fer]
+
+
+def instants_locaux(L):
+    it = instants_texte(L)
+    if it is not None: return it + ('piper',)
+    cues = L.get('phonemes', []); c = lambda p: L['t0'] + (p['t0'] + p['t1']) / 2
+    ouv = sorted((p for p in cues if p['ph'] in ('C', 'D') and p['t1'] - p['t0'] >= 0.06), key=lambda p: -(p['t1'] - p['t0']))[:3]
+    fer = sorted((p for p in cues if p['ph'] == 'A' and p['t1'] - p['t0'] >= 0.05), key=lambda p: -(p['t1'] - p['t0']))[:3]
+    return [c(p) for p in ouv], [c(p) for p in fer], 'rhubarb'
+
+
+def juge_ligne_local(mp4, L, tpl):
+    """JUGE LOCAL DE LA BOUCHE (19/10/2026, JEV coupé) : FaceLandmarker mesure l'écart des lèvres sur l'image rendue aux
+    voyelles ouvertes et aux consonnes fermées (visage_mesure, étalonné sur la v14) ; même règle sans tolérance que JEV —
+    chaque instant > 0,5. Moins de 2 instants ouverts ou de 1 fermé : réplique trop courte (non comptée)."""
+    import visage_mesure as VM
+    o, f, src = instants_locaux(L)
+    if len(o) < 2 or len(f) < 1: return {'qui': L['qui'], 'texte': L['texte'][:40], 'ok': None, 'raison': 'réplique trop courte', 'juge': 'local (FaceLandmarker)'}
+    mo = [VM.mesure(gros_plan(image(mp4, t), tpl)) for t in o]; mf = [VM.mesure(gros_plan(image(mp4, t), tpl)) for t in f]
+    po = [VM.p_ouverte(m) for m in mo]; pf = [VM.p_fermee(m) for m in mf]
+    return {'qui': L['qui'], 'texte': L['texte'][:40], 'ouverte_aux_voyelles': po, 'fermee_aux_consonnes': pf,
+            'ok': all(p > 0.5 for p in po) and all(p > 0.5 for p in pf), 'juge': f'local (FaceLandmarker, instants {src})',
+            'levres': {'ouverts': [m and m['levres'] for m in mo], 'fermes': [m and m['levres'] for m in mf]},
+            'instants': {'ouverts': [round(t, 2) for t in o], 'fermes': [round(t, 2) for t in f]}}
+
+
 def juge_ligne(mp4, L, tpl):
+    if not jev_api.autorise(): return juge_ligne_local(mp4, L, tpl)
     o, f = instants(L)
     if len(o) < 3 or len(f) < 3: return {'qui': L['qui'], 'texte': L['texte'][:40], 'ok': None, 'raison': 'réplique trop courte'}
     ims = {}
@@ -76,7 +115,7 @@ if __name__ == '__main__':
             d = M['scenes'][L['sketch']]; d = d if os.path.isabs(d) else os.path.join(base, d)
             S = json.load(open(f'{d}/scene.json')); img = cv2.imread(f'{d}/image.png')
             a = [x for x in S['acteurs'] if x['nom'] == L['qui']][0]; x0, y0, x1, y1 = [int(v) for v in a['visage']['box']]; tpls[k] = img[y0:y1, x0:x1]
-    with ThreadPoolExecutor(6) as ex: R = list(ex.map(lambda L: juge_ligne(MP4, L, tpls[(L['sketch'], L['qui'])]), T['lines']))
+    with ThreadPoolExecutor(1 if not jev_api.autorise() else 6) as ex: R = list(ex.map(lambda L: juge_ligne(MP4, L, tpls[(L['sketch'], L['qui'])]), T['lines']))   # FaceLandmarker : un seul fil
     ok = [r for r in R if r['ok'] is not None]
     out = {'repliques': len(R), 'jugees': len(ok), 'conformes': sum(bool(r['ok']) for r in ok), 'ok': bool(ok) and all(r['ok'] for r in ok), 'detail': R}
     json.dump(out, open(OUT, 'w'), ensure_ascii=False, indent=1)

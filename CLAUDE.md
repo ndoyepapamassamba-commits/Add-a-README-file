@@ -5,6 +5,10 @@
 **Juste après : `rea-d-abord`** (consigne du 17/10/2026, « utilise REA tout le temps au début de toutes tes réflexions pour
 de la rétro-ingénierie rapide ») : avant de deviner comment marche un outil, un paquet, une app ou un format, le démonter avec
 REA (`rea` en ligne de commande, MCP `rea` déclaré dans `.mcp.json`) et raisonner sur ses preuves (`.claude/skills/rea-d-abord`).
+**Puis : `greffer-par-rea`** (consigne du 19/10/2026, « tu dois désormais pour tout chercher des logiciels à greffer via REA avec
+précision et avancer, garde-le comme skill ») : pour CHAQUE besoin, trouver le logiciel libre qui le fait déjà, le démonter
+avec REA (fichier, ligne, preuve), le greffer, mesurer, pousser, passer au suivant — jamais de code maison avant cette recherche
+(`.claude/skills/greffer-par-rea`).
 **Veille REA permanente, sans limite** (consignes du 18/10/2026, « veille permanente REA chaque minute », « ne donne pas
 de limite à REA, demande-lui de chercher tous les moteurs disponibles du monde ») : `studio-video/outils/veille_rea.py`
 tourne en continu (cycle d'une minute) — npm, GitHub, Hugging Face sur tous nos thèmes, REA sur tout ce qu'il sait

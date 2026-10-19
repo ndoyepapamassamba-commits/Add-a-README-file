@@ -27,10 +27,26 @@ def words_of(L):
     for t in toks:
         if re.fullmatch(r'[!?.,;:…»«]+', t) and ws: ws[-1] += t; continue
         ws.append(t)
-    # temps des mots : partage des voyelles du texte sur la durée réelle de parole (phonèmes non muets)
+    n = [max(1, len(re.findall(r'[aeiouyéèêëàâîïôûœ]+', w.lower()))) for w in ws]; tot = sum(n)
+    # TEMPS RÉEL DES MOTS (19/10/2026) : bornes de chaque mot prononcé, tirées des durées de phonèmes de Piper (voix.bornes_mots).
+    # Même nombre de mots : chaque mot s'allume à l'instant où il est dit. Sinon (mots soudés par la phonétisation), les voyelles
+    # du texte sont partagées sur le temps PARLÉ seulement : les pauses (virgules, fins de phrase) ne décalent plus la suite.
+    G = [g for g in (L.get('mots') or []) if g[1] > g[0]]
+    if G and len(G) == len(ws): return [(w, L['t0'] + g[0], L['t0'] + g[1]) for w, g in zip(ws, G)]
+    if G:
+        S_ = sum(g[1] - g[0] for g in G)
+        def instant(f):   # fraction du temps parlé → instant absolu
+            r = f * S_
+            for g in G:
+                if r <= g[1] - g[0] + 1e-9: return L['t0'] + g[0] + r
+                r -= g[1] - g[0]
+            return L['t0'] + G[-1][1]
+        out, c = [], 0
+        for w, k in zip(ws, n): out.append((w, instant(c / tot), instant((c + k) / tot))); c += k
+        return out
+    # repli (moteur sans alignement : Qwen3) : partage des voyelles du texte sur la durée réelle de parole (phonèmes non muets)
     sp = [p for p in L['phonemes'] if p['ph'] not in (' ', '^', '$', '_', ',', '.', '!', '?', 'X')]  # X = bouche au repos (visèmes Rhubarb)
-    a0 = L['t0'] + (sp[0]['t0'] if sp else 0); a1 = L['t0'] + (sp[-1]['t1'] if sp else L['dur'])
-    n = [max(1, len(re.findall(r'[aeiouyéèêëàâîïôûœ]+', w.lower()))) for w in ws]; tot = sum(n); out, c = [], a0
+    a0 = L['t0'] + (sp[0]['t0'] if sp else 0); a1 = L['t0'] + (sp[-1]['t1'] if sp else L['dur']); out, c = [], a0
     for w, k in zip(ws, n): dt = (a1 - a0) * k / tot; out.append((w, c, c + dt)); c += dt
     return out
 # BLOCS PAR GROUPES DE SENS (18/10/2026). v29 : « LE POULET / A FAIT » (coupé avant « l'université ? », 4 mots au plus par

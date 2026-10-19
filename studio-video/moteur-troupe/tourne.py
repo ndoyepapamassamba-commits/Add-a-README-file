@@ -1226,7 +1226,12 @@ def realise(plans):
         cle = hashlib.sha1(json.dumps([list(s[:5]), {k: [round(x, 1) for x in v] for k, v in cs_.items()}, cfg['scenes'][s[2]],
                                        os.path.getmtime(os.path.join(cfg['scenes'][s[2]], 'image.png')), 'propre-4-parleurs'], default=str).encode()).hexdigest()[:20]
         f_ = f'{CR}/{cle}.json'; diag = os.environ.get('TOURNE_CANDIDATS')   # diagnostic : images des cadres proposés
-        if os.path.isfile(f_) and not diag: d_ = json.load(open(f_)); return s, d_['choix'], cs_, d_
+        if os.path.isfile(f_) and not diag:
+            d_ = json.load(open(f_))
+            if d_.get('conforme') is None and str(d_.get('juge', '')).startswith('règles locales') and d_.get('choix') in cs_:   # décision gardée d'avant le 19/10
+                vmin_ = all(taille_visage(S, n_, cs_[d_['choix']]) >= VISAGE_MIN for n_ in (parleurs_de(S, s) or ([keep] if keep in S['acts'] else [])))
+                d_['conforme'] = bool(vmin_ and not tete_coupee(S, cs_[d_['choix']], keep)); d_['juge'] = 'règles locales (géométrie mesurée)'
+            return s, d_['choix'], cs_, d_
         tm = (s[0] + s[1]) / 2; fr = frame_scene(S, tm)
         ims = {}
         for nom, (cx, cy, w2, h2) in cs_.items():
@@ -1285,8 +1290,13 @@ def realise(plans):
                 rendu = {choix: round(r_['propre']['noul'], 2)}
             except juge_local.NonJuge:
                 pass
-            d_ = {'choix': choix, 'conforme': (rendu[choix] < SEUIL_PROPRE and choix in ok_g) if rendu else None, 'juge': 'règles locales',
-                  'probabilites': {k_: float(k_ == choix) for k_ in noms}, 'coupe': {}, 'lisible': {}, 'rendu': rendu, 'mains': {}, 'visage_px': vpx}
+            # PORTE M MESURÉE (19/10/2026) : sa définition est géométrique — aucune tête coupée par le cadre choisi, visage de
+            # chaque orateur ≥ VISAGE_MIN ; la propreté de l'image reste à la porte G (jugée quand une tête locale l'est)
+            coupe_ = bool(tete_coupee(S, cs_[choix], keep))
+            conf_ = (choix in ok_g) and not coupe_ and (rendu[choix] < SEUIL_PROPRE if rendu else True)
+            d_ = {'choix': choix, 'conforme': conf_, 'juge': 'règles locales (géométrie mesurée)',
+                  'probabilites': {k_: float(k_ == choix) for k_ in noms}, 'coupe': {choix: coupe_}, 'lisible': {k_: k_ in ok_g for k_ in noms},
+                  'rendu': rendu, 'mains': {}, 'visage_px': vpx}
             json.dump(d_, open(f_, 'w')); return s, choix, cs_, d_
         pr = a['choix']['probabilities'] if 'choix' in a else {noms[0]: 1.0}; ok_ = [k_ for k_ in noms if a[f'coupe_{k_}']['noul'] < 0.5 and a[f'lisible_{k_}']['noul'] > 0.5 and grand(k_)]
         # rendu de la porte G, et les mains quand elles sont nettement ratées (SEUIL_MAINS) : mesuré au premier essai v34, les

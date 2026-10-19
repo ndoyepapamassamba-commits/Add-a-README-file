@@ -69,8 +69,39 @@ for ph in ['ɛ', 'œ', 'e']: OPEN[ph] = 3
 for ph in ['a', 'ɑ']: OPEN[ph] = 4
 _voices = {}
 def voice(m):
-    if m not in _voices: _voices[m] = PiperVoice.load(P + m + '.onnx')
+    # include_alignments (Piper ≥ 1.8, REA 19/10/2026 : piper/voice.py l. 165-185) : le modèle est patché EN MÉMOIRE pour
+    # sortir la durée de chaque phonème (tenseur w_ceil) ; le son reste identique à l'échantillon près (vérifié : Koffi,
+    # Coumba). Ces durées donnent l'instant réel de chaque mot aux sous-titres (compose.words_of).
+    if m not in _voices: _voices[m] = PiperVoice.load(P + m + '.onnx', include_alignments=True)
     return _voices[m]
+def _alignements(v, c):
+    """(phonème, échantillons) d'un morceau Piper. L'aligneur de Piper abandonne tout le morceau dès qu'un phonème manque
+    à la table du modèle (« ̃ » nasal de gilles-low : Koffi, Baye, Modou perdaient leur 2e phrase) ; ici ce phonème est
+    sauté (il ne produit aucun identifiant) et le reste est aligné ; au moindre désaccord, rien n'est inventé ([])."""
+    if c.phoneme_alignments: return [(a.phoneme, int(a.num_samples)) for a in c.phoneme_alignments]
+    if c.phoneme_id_samples is None or not c.phonemes: return []
+    idm = v.config.phoneme_id_map; pad = list(idm.get('_', [])); ids = list(c.phoneme_ids); smp = c.phoneme_id_samples
+    i, out = 0, []
+    for p in ['^'] + list(c.phonemes) + ['$']:
+        exp = idm.get(p)
+        if not exp: continue
+        j = i
+        for q in list(exp) + (pad if p != '$' else []):
+            if j >= len(ids) or ids[j] != q: return []
+            j += 1
+        out.append((p, int(sum(smp[i:j])))); i = j
+    return out if i == len(ids) else []
+def bornes_mots(ph):
+    """[[t0, t1], …] de chaque mot prononcé (groupes de phonèmes entre espaces et ponctuations), en secondes depuis le
+    début de la réplique ; [] si le moteur n'a pas donné d'alignement (Qwen3, Piper ancien)."""
+    G, cur = [], None
+    for p in ph:
+        if p['ph'] == '-': continue   # mot-outil soudé au suivant par espeak (« le-z ɑbutɛjaʒ » : liaison) : le mot ne se coupe pas là
+        if p['ph'] in SEPARATEURS_MOTS: cur = None; continue
+        if cur is None: cur = [round(p['t0'], 3), round(p['t1'], 3)]; G.append(cur)
+        else: cur[1] = round(p['t1'], 3)
+    return G
+SEPARATEURS_MOTS = set(' ^$_,.!?;:—…')
 
 MONTEE_QUESTION = 1.15   # 19/10/2026 : 1,22 → 1,15 (une question monte d'environ 2,4 demi-tons, sans percer)
 PENTE_AU_DELA = 0.15     # 19/10/2026 : 0,25 → 0,15 (au-delà du plafond, il ne reste que 15 % de l'excès)
@@ -160,8 +191,8 @@ def synth(qui, texte, ls=None):
         d_ = len(c.audio_int16_bytes) / 2 / sr
         phrases.append({'ph': '|', 't0': tp, 't1': tp + d_, 'open': 0, 'fin': next((q for q in reversed(c.phonemes or []) if q in '.?!'), '.')}); tp += d_
     for c in chunks:
-        for al in (c.phoneme_alignments or []):
-            d = al.num_samples / sr; s = al.phoneme
+        for s, n_ in _alignements(v, c):
+            d = n_ / sr
             if s in ('ˈ', 'ˌ', 'ː', '̃') and ph: ph[-1]['t1'] += d
             else: ph.append({'ph': s, 't0': tt, 't1': tt + d, 'open': OPEN.get(s, 0 if s in ' ^$_,.!?' else 1)})
             tt += d
@@ -184,11 +215,41 @@ def synth(qui, texte, ls=None):
 def synth_m(qui, texte, ls=None):
     """synth() mémorisée sur disque par réplique (19/10/2026, « un film entier en 1 minute ») : clé = personnage, texte,
     vitesse + source de ce module ; une réplique inchangée n'est plus refaite (22 répliques : 158 s → quelques secondes)."""
+    # CLÉ RESTREINTE À LA SYNTHÈSE (19/10/2026, « le temps de production est encore long ») : la v14 a refait ses 22 répliques
+    # (335 s) parce qu'une ligne de main() avait changé ; la clé ne prend plus que la partie du module qui fabrique le son (tout
+    # ce qui précède synth_m : voix, alignements, hauteur, forme, synth) — un changement là refait tout, ailleurs rien
     try:
         import memo
-        return memo.memo(synth, qui, texte, ls)
+        return memo.memo(synth, qui, texte, ls, _cle=(qui, texte, ls, _empreinte_synthese()), _fonction_seule=True)
     except ImportError:
         return synth(qui, texte, ls)
+_EMPREINTE = []
+def _empreinte_synthese():
+    if not _EMPREINTE:
+        import hashlib
+        src = open(os.path.abspath(__file__), encoding='utf-8').read()
+        _EMPREINTE.append(hashlib.sha1(src[:src.index('\ndef synth_m(')].encode()).hexdigest())
+    return _EMPREINTE[0]
+def vitesse_reprise(L, y):
+    """length_scale de la reprise quand le débit mesuré s'écarte de plus de 8 % de celui de la chaîne (None sinon) ; une chute
+    n'est jamais accélérée (dite calmement, et comprise : Whisper)."""
+    nsyl = len(SYL.findall(L['texte'])); rate = nsyl / (len(y) / SR)
+    if abs(rate / DEBIT[L['qui']] - 1) > 0.08 and not (L.get('chute') and rate > DEBIT[L['qui']]):
+        return max(0.55, min(1.3, CAST[L['qui']][4] * rate / DEBIT[L['qui']]))
+    return None
+def _une(qui, texte, ls):
+    return synth_m(qui, texte, ls)[0]
+def prechauffe(H):
+    """VOIX EN PARALLÈLE (19/10/2026) : les répliques Piper sont synthétisées sur tous les cœurs AVANT la boucle du minutage
+    (qui reste séquentielle : chaque réplique y retrouve sa voix dans la mémoire) — 1er passage, puis les reprises de vitesse."""
+    reps = [L for S in H['sketchs'] for L in S['repliques'] if L['qui'] not in REFS]
+    n = min(len(reps), os.cpu_count() or 1)
+    if n < 2 or os.environ.get('MEMO') == '0': return
+    import multiprocessing as mp_
+    with mp_.get_context('fork').Pool(n) as pool:
+        ys = pool.starmap(_une, [(L['qui'], L['texte'], None) for L in reps])
+        sec = [(L['qui'], L['texte'], v) for L, y in zip(reps, ys) for v in [vitesse_reprise(L, y)] if v is not None]
+        if sec: pool.starmap(_une, sec)
 
 
 def _finit(y, sr_in):
@@ -273,6 +334,7 @@ def main():
     H = json.load(open('histoire.json'))
     os.makedirs('voix', exist_ok=True)
     if REFS: qwen_lot(H)
+    prechauffe(H)
     TURN, PRE_CHUTE, CARD, LEAD, TAIL = 0.26, 0.31, 1.0, 0.3, 1.4
     PRE = float(os.environ.get('VOIX_PRE', 0.8))   # avant le 1er mot d'un sketch : la caméra finit de pousser du large vers celui qui
                                                   # parle (tourne.py, ouverture 1,2 s) ; sinon la 1re réplique est dite visage minuscule (v24)
@@ -286,9 +348,8 @@ def main():
             clone = L['qui'] in REFS
             y, ph = synth_qwen(L['qui'], L['texte'], bool(L.get('chute'))) if clone else synth_m(L['qui'], L['texte'])
             nsyl = len(SYL.findall(L['texte'])); rate = nsyl / (len(y) / SR)
-            if not clone and abs(rate / DEBIT[L['qui']] - 1) > 0.08 and not (L.get('chute') and rate > DEBIT[L['qui']]):  # la vitesse suit le débit de la chaîne ; une chute n'est jamais accélérée (dite calmement, et comprise : Whisper)
-                ls = max(0.55, min(1.3, CAST[L['qui']][4] * rate / DEBIT[L['qui']]))
-                y, ph = synth_m(L['qui'], L['texte'], ls); rate = nsyl / (len(y) / SR)
+            ls = None if clone else vitesse_reprise(L, y)   # la vitesse suit le débit de la chaîne
+            if ls is not None: y, ph = synth_m(L['qui'], L['texte'], ls); rate = nsyl / (len(y) / SR)
             L = dict(L, debit=round(rate, 2), moteur='qwen3' if clone else 'piper')
             f = f'voix/{S["id"]}-{li}.wav'
             with wave.open(f, 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes(y.tobytes())
@@ -297,7 +358,8 @@ def main():
             # enveloppe d'énergie à 100 Hz (bouche)
             hop = SR // 100; env = [float(np.sqrt(np.mean((y[k:k + hop].astype(np.float32) / 32768) ** 2))) for k in range(0, len(y), hop)]
             mx = max(env) or 1; env = [round(min(1, e / mx), 3) for e in env]
-            lines.append(dict(L, sketch=S['id'], wav=f, t0=round(t, 3), dur=round(len(y) / SR, 3), phonemes=ph, env=env))
+            lines.append(dict(L, sketch=S['id'], wav=f, t0=round(t, 3), dur=round(len(y) / SR, 3), phonemes=ph, mots=bornes_mots(ph), env=env,
+                              phonemes_piper=[[p_['ph'], round(p_['t0'], 3), round(p_['t1'], 3)] for p_ in ph]))   # levres.py remplace « phonemes » par les visèmes Rhubarb ; ceux du texte restent pour le juge de la bouche (porte B)
             t += len(y) / SR + TURN
             # GROGNEMENT D'ÉCOUTE : celui à qui l'on fait une réplique de frime ou d'excuse fait « hmm… » avant de répondre
             # (inséré dans le minutage : rien n'est couvert) — au plus un par sketch (TikTok : ≈ 5 sons vocaux par minute)

@@ -71,11 +71,20 @@ if __name__ == '__main__':
     def carte(c):
         t = 0.5 * (c['t0'] + c['t1']); r = juge({'titre': titres.get(c.get('apres'), '')}, QT, {'image': image(MP4, t)}, outil='jev_texte_titres')   # titre attendu : relu par le juge local
         return {'apres': c.get('apres'), 't': round(t, 2), **r, 'defauts': decide(r, QT)}
+    # CHAQUE PARTIE JUGÉE À PART (19/10/2026) : v13, la question d'humour « méchant » sans réponse locale cohérente (NonJuge)
+    # arrêtait tout le juge — les sous-titres et les titres, relus par OCR, n'étaient plus lus (porte O « non jugée »)
+    import juge_local
+    def garde(f, cle):
+        def g(x):
+            try: return f(x)
+            except juge_local.NonJuge as e: return {cle: x if isinstance(x, str) else (x.get('qui') or x.get('apres')), 'non_juge': str(e)[:200], 'defauts': []}
+        return g
     with ThreadPoolExecutor(8) as ex:
-        R1 = list(ex.map(texte, sketchs)); R2 = list(ex.map(st, T['lines'])); R3 = list(ex.map(carte, T.get('cartes', [])))
+        R1 = list(ex.map(garde(texte, 'sketch'), sketchs)); R2 = list(ex.map(garde(st, 'qui'), T['lines'])); R3 = list(ex.map(garde(carte, 'apres'), T.get('cartes', [])))
     synth = {'sketchs_fautifs': {r['sketch']: r['defauts'] for r in R1 if r['defauts']},
              'sous_titres_fautifs': [f"{r['t']} s {r['qui']} « {r['texte']} » {r['defauts']}" for r in R2 if r['defauts']],
-             'titres_fautifs': [f"{r['t']} s {r['apres']} {r['defauts']}" for r in R3 if r['defauts']]}
-    synth['ok'] = not (synth['sketchs_fautifs'] or synth['sous_titres_fautifs'] or synth['titres_fautifs'])
+             'titres_fautifs': [f"{r['t']} s {r['apres']} {r['defauts']}" for r in R3 if r['defauts']],
+             'non_juges': {'sketchs': sum('non_juge' in r for r in R1), 'sous_titres': sum('non_juge' in r for r in R2), 'titres': sum('non_juge' in r for r in R3)}}
+    synth['ok'] = not (synth['sketchs_fautifs'] or synth['sous_titres_fautifs'] or synth['titres_fautifs'] or any(synth['non_juges'].values()))
     json.dump({'synthese': synth, 'sketchs': R1, 'sous_titres': R2, 'titres': R3}, open(OUT, 'w'), ensure_ascii=False, indent=1)
     print('jev_texte', 'OK' if synth['ok'] else 'À REPRENDRE', json.dumps(synth, ensure_ascii=False)[:1500])

@@ -35,17 +35,41 @@ if __name__ == '__main__':
     cap = cv2.VideoCapture(MP4)
     ims = {(s, t): image(cap, t, fps) for s, _, t, _ in taches}
 
+    # JUGE LOCAL (19/10/2026, JEV coupé) : FaceLandmarker sur le gros plan du visage de celui qui subit la chute, comparé à son
+    # dessin neutre — bouche tombée ET (sourcils levés OU yeux écarquillés) ; visage introuvable ou géométrie aberrante
+    # (yeux ou sourcils hors de 0,4 à 3 fois le neutre) = visage abîmé. Même règle sans tolérance que JEV.
+    if not jev_api.autorise():
+        import jev_levres as JL, visage_mesure as VM
+        M_ = json.load(open('montage.json')) if os.path.isfile('montage.json') else {'scenes': {}}
+        tpl_, neutre_ = {}, {}
+        for s, qui, _, _ in taches:
+            if (s, qui) in tpl_ or s not in M_['scenes']: continue
+            d_ = M_['scenes'][s]; d_ = d_ if os.path.isabs(d_) else os.path.join(os.getcwd(), d_)
+            Sc = json.load(open(f'{d_}/scene.json')); img_ = cv2.imread(f'{d_}/image.png')
+            a_ = next((x for x in Sc['acteurs'] if x['nom'] == qui), None)
+            if a_ is None: continue
+            x0, y0, x1, y1 = [int(v) for v in a_['visage']['box']]; tpl_[(s, qui)] = img_[y0:y1, x0:x1]
+            k_ = 360 / max(tpl_[(s, qui)].shape[:2]); neutre_[(s, qui)] = VM.mesure(cv2.resize(tpl_[(s, qui)], None, fx=k_, fy=k_, interpolation=cv2.INTER_CUBIC))
+    def juge_local(x):
+        s, qui, t, t0 = x
+        g_ = JL.gros_plan(ims[(s, t)], tpl_[(s, qui)]) if (s, qui) in tpl_ else None
+        m_, n_ = VM.mesure(g_), neutre_.get((s, qui))
+        abime = m_ is None or n_ is None or not all(0.4 <= m_[k] / max(n_[k], 1e-4) <= 3.0 for k in ('yeux', 'sourcils'))
+        return {'sketch': s, 'qui': qui, 't': t, 'choc': VM.p_choc(m_, n_), 'rendu': 1.0 if abime else 0.0, 'juge': 'local (FaceLandmarker)',
+                'mesure': m_, 'neutre': n_}
+
     def juge(x):
+        if not jev_api.autorise(): return juge_local(x)
         s, qui, t, t0 = x
         ref = cv2.imread(f'{SRC}/{t0:06.2f}.jpg')
         Q = {'choc': (True, f'In `frame`, does {QUI[qui]} look shocked or stunned: eyebrows raised, eyes wide open, mouth dropped open?'),
              'rendu': jf.N1['rendu']}
         a = jf.demande(ims[(s, t)], Q, ref if ref is not None else None)
         return {'sketch': s, 'qui': qui, 't': t, 'choc': a['choc'][0], 'rendu': a['rendu'][0]}
-    with ThreadPoolExecutor(8) as ex: R = list(ex.map(juge, [x for x in taches if ims.get((x[0], x[2])) is not None]))
+    with ThreadPoolExecutor(8 if jev_api.autorise() else 1) as ex: R = list(ex.map(juge, [x for x in taches if ims.get((x[0], x[2])) is not None]))
     fautes = [r for r in R if r['choc'] <= 0.5 or r['rendu'] >= 0.5]
     synth = {'ok': bool(R) and not fautes and len({r['sketch'] for r in R}) == len([s for s in T['sketchs'] if any(L.get('chute') for L in T['lines'] if L['sketch'] == s['id'])]),
              'images_jugees': len(R), 'fautes': [f"{r['sketch']}/{r['qui']} à {r['t']} s : choquée {r['choc']:.2f}, rendu {r['rendu']:.2f}" for r in fautes],
-             'cout': jev_api.bilan()['par_outil'].get('jev_film')}
+             'cout': jev_api.bilan()['par_outil'].get('jev_film') if jev_api.autorise() else 0.0}
     json.dump({'synthese': synth, 'detail': R}, open(OUT, 'w'), ensure_ascii=False, indent=1)
     print('jev_choc', 'OK' if synth['ok'] else 'À REPRENDRE', len(R), 'images', synth['fautes'][:4])

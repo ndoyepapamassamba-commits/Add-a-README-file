@@ -227,7 +227,8 @@ G['I_fluidite'] = {'ok': bool(flu) and all(x['ok'] for x in flu.values()), 'deta
 
 # ── J. humour et écriture : décisions de JEV sur le texte de chaque sketch (jev_texte.py, aucune tolérance) ──
 jt = lance(*JUGES.get('texte', (None,))) or {}
-G['J_humour'] = {'ok': bool(jt) and not jt.get('synthese', {}).get('sketchs_fautifs'), 'detail': {r['sketch']: {k: r[k] for k in r if k != 'sketch'} for r in jt.get('sketchs', [])}}
+_nj = jt.get('synthese', {}).get('non_juges', {})   # partie sans réponse locale : jamais réussie, raison gardée au détail
+G['J_humour'] = {'ok': bool(jt) and not jt.get('synthese', {}).get('sketchs_fautifs') and not _nj.get('sketchs'), 'detail': {r['sketch']: {k: r[k] for k in r if k != 'sketch'} for r in jt.get('sketchs', [])}}
 
 # ── K. PHYSIQUE ET NATURE (17/10/2026 : « l'ombre de la poule ne devait pas passer le contrôle ») ──
 #   mesuré au tournage : l'ombre de chaque bête assombrit vraiment le sol (≥ 8 % sur TOUTES ses images) ;
@@ -263,8 +264,10 @@ G['M_realisation'] = {'ok': bool(rj) and all(v.get('conforme', False) for v in r
 js = lance(*JUGES['son']) or {}
 G['N_son'] = {'ok': bool(js) and js.get('synthese', {}).get('ok', False), 'detail': js.get('synthese')}
 # ── O. SOUS-TITRES ET TITRES tels qu'affichés, jugés par JEV (jev_texte.py) ──
-G['O_textes'] = {'ok': bool(jt) and not jt.get('synthese', {}).get('sous_titres_fautifs') and not jt.get('synthese', {}).get('titres_fautifs'),
-                 'detail': {k: jt.get('synthese', {}).get(k) for k in ('sous_titres_fautifs', 'titres_fautifs')}}
+G['O_textes'] = {'ok': bool(jt) and not jt.get('synthese', {}).get('sous_titres_fautifs') and not jt.get('synthese', {}).get('titres_fautifs')
+                       and not _nj.get('sous_titres') and not _nj.get('titres'),
+                 'detail': {**{k: jt.get('synthese', {}).get(k) for k in ('sous_titres_fautifs', 'titres_fautifs')},
+                            'non_juges': {k: _nj.get(k) for k in ('sous_titres', 'titres')}}}
 
 # ── P. PRISE DE CHOC DE FIN DE SKETCH (18/10/2026, « revoir le visage du choc de la fin ») : JEV juge chaque gros plan de
 #    réaction — choquée > 0,5 et visage non abîmé sur chaque image (jev_choc.py) ──
