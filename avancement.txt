@@ -6,3 +6,4 @@
 [728 s] 1 images · === maison-general-zongo-cuisine-large-jour   |==================================================| 4/4 - 133.09s/it[K · mémoire libre 6977 Mo
 [850 s] 1 images · === maison-general-zongo-cuisine-large-jour   |============>                                     | 1/4 - 137.28s/it[K · mémoire libre 6978 Mo
 [971 s] 1 images · === maison-general-zongo-cuisine-large-jour   |=========================>                        | 2/4 - 131.55s/it[K · mémoire libre 7007 Mo
+[1092 s] 1 images · === maison-general-zongo-cuisine-large-jour   |=====================================>            | 3/4 - 131.49s/it[K · mémoire libre 7012 Mo
