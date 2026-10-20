@@ -2,3 +2,4 @@
 [243 s] === coumba--parler (at_runtime)   |=====================================>            | 3/4 - 58.98s/it[K · mémoire libre 13764 Mo
 [364 s] === baye-ndiaye--colere (at_runtime)   |============>                                     | 1/4 - 62.32s/it[K · mémoire libre 13776 Mo
 [485 s] === baye-ndiaye--colere (at_runtime)   |=====================================>            | 3/4 - 59.86s/it[K · mémoire libre 13777 Mo
+[607 s] === petit-mamadou--hausser (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13759 Mo
