@@ -12,3 +12,4 @@
 [853 s] 2 images · === maison-mecano-issa-salon-large-jour   |============>                                     | 1/4 - 138.51s/it[K · mémoire libre 7007 Mo
 [975 s] 2 images · === maison-mecano-issa-salon-large-jour   |=========================>                        | 2/4 - 130.81s/it[K · mémoire libre 7001 Mo
 [1096 s] 2 images · === maison-mecano-issa-salon-large-jour   |=====================================>            | 3/4 - 130.47s/it[K · mémoire libre 6977 Mo
+[124 s] 2 images · === maison-mecano-issa-cuisine-large-jour  · mémoire libre 6990 Mo
