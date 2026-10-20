@@ -1,3 +1,4 @@
 [123 s] 0 images · === decor-cour-large-jour  · mémoire libre 7012 Mo
 [244 s] 0 images · === decor-cour-large-jour   |============>                                     | 1/4 - 128.19s/it[K · mémoire libre 7001 Mo
 [366 s] 0 images · === decor-cour-large-jour   |=========================>                        | 2/4 - 137.13s/it[K · mémoire libre 7003 Mo
+[487 s] 0 images · === decor-cour-large-jour   |=====================================>            | 3/4 - 138.77s/it[K · mémoire libre 6990 Mo
