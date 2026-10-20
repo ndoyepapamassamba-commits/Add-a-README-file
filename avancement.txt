@@ -12,3 +12,4 @@
 [1456 s] === maman-nounou--rire (at_runtime)   |============>                                     | 1/4 - 135.54s/it[K · mémoire libre 13695 Mo
 [1577 s] === maman-nounou--rire (at_runtime)   |=========================>                        | 2/4 - 135.39s/it[K · mémoire libre 13694 Mo
 [1699 s] === maman-nounou--rire (at_runtime)   |=====================================>            | 3/4 - 135.80s/it[K · mémoire libre 13696 Mo
+[1820 s] === tantie-awa--choc (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13788 Mo
