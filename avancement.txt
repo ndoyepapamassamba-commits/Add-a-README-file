@@ -50,3 +50,4 @@
 [6068 s] === B-mamie [I] loading tensors completed, taking 0.20s (read: 0.09s, memcpy: 0.00s, convert: 0.08s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 13043 Mo
 [6190 s] === C-maquis-vide [I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 14692 Mo
 [6311 s] === C-maquis-vide [I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 13429 Mo
+[6432 s] === C-maquis-vide [I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 13422 Mo
