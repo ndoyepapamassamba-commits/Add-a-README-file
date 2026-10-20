@@ -10,3 +10,4 @@
 [1215 s] 1 images · === decor-garage-large-jour   |==================================================| 4/4 - 133.99s/it[K · mémoire libre 5814 Mo
 [1337 s] 2 images · === maison-sur-awa-salon-large-jour   |==================================================| 4/4 - 133.99s/it[K · mémoire libre 7040 Mo
 [1459 s] 2 images · === maison-sur-awa-salon-large-jour   |============>                                     | 1/4 - 141.68s/it[K · mémoire libre 7041 Mo
+[122 s] 2 images · === maison-sur-awa-cuisine-large-jour  · mémoire libre 6912 Mo
