@@ -2,3 +2,4 @@
 [244 s] 0 images · === decor-plage-large-jour   |============>                                     | 1/4 - 157.40s/it[K · mémoire libre 6946 Mo
 [366 s] 0 images · === decor-plage-large-jour   |=========================>                        | 2/4 - 156.38s/it[K · mémoire libre 6942 Mo
 [487 s] 0 images · === decor-plage-large-jour   |=========================>                        | 2/4 - 156.38s/it[K · mémoire libre 6988 Mo
+[609 s] 0 images · === decor-plage-large-jour   |=====================================>            | 3/4 - 156.34s/it[K · mémoire libre 6990 Mo
