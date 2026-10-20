@@ -6,3 +6,4 @@
 [729 s] 1 images · === decor-boutique-large-jour   |==================================================| 4/4 - 132.74s/it[K · mémoire libre 7002 Mo
 [851 s] 1 images · === decor-boutique-large-jour   |============>                                     | 1/4 - 134.42s/it[K · mémoire libre 7014 Mo
 [972 s] 1 images · === decor-boutique-large-jour   |=========================>                        | 2/4 - 130.73s/it[K · mémoire libre 7028 Mo
+[1093 s] 1 images · === decor-boutique-large-jour   |=====================================>            | 3/4 - 130.44s/it[K · mémoire libre 7020 Mo
