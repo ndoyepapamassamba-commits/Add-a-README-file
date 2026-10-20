@@ -1,1 +1,2 @@
 [122 s] === coumba--choc (at_runtime)   |============>                                     | 1/4 - 81.88s/it[K · mémoire libre 13767 Mo
+[243 s] === coumba--choc (at_runtime)   |=========================>                        | 2/4 - 79.58s/it[K · mémoire libre 13784 Mo
