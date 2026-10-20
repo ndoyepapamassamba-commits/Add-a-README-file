@@ -28,3 +28,4 @@
 [3399 s] === B-mamie   |======>                                           | 1/8 - 193.98s/it[K · mémoire libre 4392 Mo
 [3521 s] === B-mamie   |============>                                     | 2/8 - 179.66s/it[K · mémoire libre 4392 Mo
 [3642 s] === B-mamie   |============>                                     | 2/8 - 179.66s/it[K · mémoire libre 4402 Mo
+[3763 s] === B-mamie   |==================>                               | 3/8 - 179.86s/it[K · mémoire libre 4401 Mo
