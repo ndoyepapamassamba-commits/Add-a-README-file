@@ -46,6 +46,7 @@ offrent en plus plusieurs vues par lieu.
 | Étape | Coût mesuré | Fréquence |
 |---|---|---|
 | Bibliothèque de visages d'un personnage | 11 à 28 min (Koné 645 à 1 667 s, Awa 1 311 s) | une fois par personnage (54) |
+| Visages par le casting (essai École, 20/10/2026) | quelques secondes au lieu de 11 à 28 min par personnage ; écart du visage neutre au dessin 23,1 et 29,3 niveaux contre 20,7 et 26,5 dessinés sur place (+ 2,4 à 2,9) ; cadre transféré à 5 px et 2 % du cadre LivePortrait de la scène | chaque scène |
 | Scène composée (duo dans un décor) | 3 à 13 min selon la charge du processeur | une fois par duo et par décor, ensuite en cache |
 | Épisode v15 (voix → export TikTok) | 12 min 43 s, dont tournage 8 min 14 s, pour 69 s de film (processeur partagé) | chaque épisode |
 | Épisode v16, processeur libre | tournage 5 min 34 s (rendu 290 s), flou 41 s, montage 59 s, essai des visages 15 s, planche 8 s | chaque épisode |
