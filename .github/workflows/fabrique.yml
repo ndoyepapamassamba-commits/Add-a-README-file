@@ -1,45 +1,30 @@
-# FABRIQUE MASSAMBA SUR GITHUB (20/10/2026) — « Je veux qu'elle soit indépendante de la machine Claude ».
-# La production tourne sur les machines gratuites de GitHub Actions (dépôt public : minutes illimitées ; mesuré le 20/10/2026 :
-# 4 processeurs, 15 Go de mémoire, 86 Go de disque libre, paquets du moteur installés en 50 s), dans le compte de l'utilisateur.
+# FABRIQUE MASSAMBA SUR GITHUB (20/10/2026) — « Je veux qu'elle soit indépendante de la machine Claude » ;
+# « je ne veux pas me limiter à 3 vidéos, jusqu'à 5 et 6 par jour ».
+# Production sur les machines gratuites de GitHub Actions (dépôt public : minutes illimitées ; mesuré le 20/10/2026 : 4 processeurs,
+# 15 Go de mémoire, 86 Go de disque libre, paquets du moteur installés en 50 s), dans le compte de l'utilisateur.
 # Rien de privé n'est posé en clair : bibliothèque, modèles dérivés, vidéos et fiches sont scellés (studio-video/fabrique/coffre.py)
-# avec la phrase FABRIQUE_CLE que l'utilisateur range lui-même dans les secrets du dépôt.
-#   · cles       : crée la paire de clés à partir de la phrase et publie la clé publique (une fois) ;
-#   · amorce     : verse dans la release « fabrique-coffre » les parts scellées de la bibliothèque poussées sur fabrique-amorce ;
-#   · production : chaque jour (ou « Run workflow ») — ouvre le coffre, `autopilot.py jour`, scelle les livraisons, publie
-#                  l'application et ses données sur gh-pages (GitHub Pages), range les vidéos sorties de la fenêtre en archives.
+# avec la phrase FABRIQUE_CLE rangée dans les secrets du dépôt. Données scellées : branche « fabrique-donnees » (lue par
+# l'application https://<compte>.github.io/<dépôt>/fabrique/ via raw.githubusercontent.com) ; coffre et archives : releases.
+# Une seule tâche, toutes les heures, qui fait ce qu'il y a à faire et s'arrête vite sinon :
+#   1. pas de clé publiée → crée la paire de clés depuis la phrase (si le secret existe) ;
+#   2. coffre absent → attend l'amorce (bibliothèque scellée versée par la machine de départ) ;
+#   3. réserve de vidéos insuffisante → journée de production (autopilot.py jour), scellement, publication.
 name: Fabrique MASSAMBA
 on:
   schedule:
-    - cron: '52 4 * * *'   # 4 h 52 heure d'Abidjan (UTC) ; GitHub ne lance les tâches planifiées que depuis la branche par défaut
+    - cron: '17 * * * *'
   workflow_dispatch:
     inputs:
-      etape: { description: 'production | cles', default: 'production' }
-      videos: { description: 'Vidéos par jour (vide = config.json)', default: '' }
+      videos: { description: 'Vidéos par jour (1 à 6, vide = config.json)', default: '' }
   push:
     branches: [fabrique-amorce]
 permissions: { contents: write }
 concurrency: { group: fabrique, cancel-in-progress: false }
 env:
+  CODE: claude/relaxed-noether-svkgiu          # branche du moteur
   BIBLIO: ${{ github.workspace }}/../bibliotheque
   MASSAMBA_MODELS: ${{ github.workspace }}/../modeles
 jobs:
-  cles:
-    if: github.event_name == 'workflow_dispatch' && inputs.etape == 'cles'
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.11' }
-      - run: pip install -q cryptography
-      - name: Paire de clés (la phrase reste dans les secrets)
-        env: { FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }
-        run: python3 studio-video/fabrique/coffre.py cles ../cles
-      - name: Publier la clé publique et la clé privée chiffrée (gh-pages)
-        run: |
-          git fetch origin gh-pages && git worktree add ../site origin/gh-pages || { git worktree add --detach ../site && cd ../site && git checkout --orphan gh-pages-neuf && git rm -rfq . ; cd -; }
-          cp ../cles/cle.pub.pem ../cles/cle.priv.json ../site/ && cp studio-video/fabrique/index.html ../site/ && touch ../site/.nojekyll
-          cd ../site && git add -A && git -c user.name=fabrique -c user.email=fabrique@users.noreply.github.com commit -qm "Fabrique : clés" && git push -f origin HEAD:gh-pages
-
   amorce:
     if: github.event_name == 'push'
     runs-on: ubuntu-24.04
@@ -49,36 +34,62 @@ jobs:
       - name: Parts scellées → release fabrique-coffre
         env: { GH_TOKEN: '${{ github.token }}' }
         run: |
-          gh release view fabrique-coffre >/dev/null 2>&1 || gh release create fabrique-coffre --title "Coffre de la fabrique (chiffré)" --notes "Bibliothèque et modèles de la troupe, scellés. Illisibles sans la phrase de la fabrique."
+          gh release view fabrique-coffre >/dev/null 2>&1 || gh release create fabrique-coffre --title "Coffre de la fabrique (chiffré)" --notes "Bibliothèque et modèles de la troupe, scellés : illisibles sans la phrase de la fabrique."
           gh release upload fabrique-coffre amorce/* --clobber
           gh release view fabrique-coffre --json assets --jq '.assets | length'
 
-  production:
-    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.etape != 'cles')
+  fabrique:
+    if: github.event_name != 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
+        with: { ref: '${{ env.CODE }}' }
+      - name: État de la fabrique
+        id: etat
+        env: { GH_TOKEN: '${{ github.token }}', PHRASE: '${{ secrets.FABRIQUE_CLE }}', INPUT_VIDEOS: '${{ inputs.videos }}' }
+        run: |
+          if git fetch -q origin fabrique-donnees 2>/dev/null; then git worktree add -q ../site FETCH_HEAD; else mkdir ../site; fi
+          if [ ! -f ../site/cle.priv.json ]; then
+            if [ -z "$PHRASE" ]; then echo "faire=attendre-phrase" >> $GITHUB_OUTPUT; echo "Secret FABRIQUE_CLE absent : rien à faire."; exit 0; fi
+            echo "faire=cles" >> $GITHUB_OUTPUT; exit 0
+          fi
+          if ! gh release view fabrique-coffre >/dev/null 2>&1; then echo "faire=attendre-amorce" >> $GITHUB_OUTPUT; echo "Coffre pas encore versé."; exit 0; fi
+          python3 - <<'EOF' >> $GITHUB_OUTPUT
+          import json, os, datetime
+          p = '../site/etat-public.json'; E = json.load(open(p)) if os.path.isfile(p) else {}
+          maintenant = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='minutes')
+          a_venir = [c for c in E.get('creneaux_a_venir', []) if c > maintenant]
+          cadence = int(os.environ.get('INPUT_VIDEOS') or json.load(open('studio-video/fabrique/config.json'))['cadence'])
+          print('faire=' + ('produire' if len(a_venir) < cadence or os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch' else 'rien'))
+          EOF
       - uses: actions/setup-python@v5
+        if: steps.etat.outputs.faire == 'cles' || steps.etat.outputs.faire == 'produire'
         with: { python-version: '3.11' }
+      - name: Paire de clés (la phrase reste dans les secrets)
+        if: steps.etat.outputs.faire == 'cles'
+        env: { FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }
+        run: |
+          pip install -q cryptography && python3 studio-video/fabrique/coffre.py cles ../site
+          cd ../site && git checkout -q --orphan publie && git add -A && git -c user.name=fabrique -c user.email=fabrique@users.noreply.github.com commit -qm "Fabrique : clés" && git push -q -f origin publie:fabrique-donnees
       - name: Logiciels du moteur
+        if: steps.etat.outputs.faire == 'produire'
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
           pip install -q -r studio-video/fabrique/requirements.txt
-      - name: Site et clés (gh-pages)
-        run: git fetch origin gh-pages && git worktree add ../site origin/gh-pages
       - name: Ouvrir le coffre (bibliothèque, modèles, état)
+        if: steps.etat.outputs.faire == 'produire'
         env: { GH_TOKEN: '${{ github.token }}', FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }
         run: |
           mkdir -p ../coffre && gh release download fabrique-coffre -D ../coffre --skip-existing
           for nom in $(cd ../coffre && ls *.json | sed 's/\.json$//'); do
             dest=$BIBLIO; [ "$nom" = modeles ] && dest=$MASSAMBA_MODELS
-            python3 studio-video/fabrique/coffre.py ouvre-dossier ../coffre "$nom" "$dest" ../site/cle.priv.json
-            rm -f ../coffre/$nom.*.msb
+            python3 studio-video/fabrique/coffre.py ouvre-dossier ../coffre "$nom" "$dest" ../site/cle.priv.json && rm -f ../coffre/$nom.*.msb
           done
           [ -f ../site/etat/etat.json ] && python3 studio-video/fabrique/coffre.py ouvre-dossier ../site/etat etat "$BIBLIO" ../site/cle.priv.json || echo "premier état"
           du -sh "$BIBLIO" "$MASSAMBA_MODELS"
       - name: Journée de production
+        if: steps.etat.outputs.faire == 'produire'
         env:
           MASSAMBA_BIBLIO: ${{ env.BIBLIO }}
           MASSAMBA_TROUPE: ${{ env.BIBLIO }}/troupe
@@ -86,9 +97,9 @@ jobs:
           FABRIQUE_CADENCE: ${{ inputs.videos }}
         run: |
           cd studio-video/moteur-troupe
-          python3 autopilot.py jour ${{ inputs.videos }} 2>&1 | grep -vE "onnxruntime|W0000|I0000|XNNPACK" | tail -200
-      - name: Sceller et publier (application, catalogue, vidéos, état)
-        if: always()
+          python3 autopilot.py jour 2>&1 | grep -vE "onnxruntime|W0000|I0000|XNNPACK" | tail -300
+      - name: Sceller et publier (catalogue, vidéos, état)
+        if: always() && steps.etat.outputs.faire == 'produire'
         env: { GH_TOKEN: '${{ github.token }}', FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }
         run: |
           python3 studio-video/fabrique/vitrine.py construit "$BIBLIO" ../site ../site
@@ -99,4 +110,4 @@ jobs:
             gh release view fabrique-archives >/dev/null 2>&1 || gh release create fabrique-archives --title "Archives de la fabrique (chiffrées)" --notes "Vidéos sorties de l'application ; à ouvrir dans l'application (« Ouvrir un fichier .msb »)."
             gh release upload fabrique-archives ../archiver/* --clobber
           fi
-          cd ../site && git checkout --orphan publie && git add -A && git -c user.name=fabrique -c user.email=fabrique@users.noreply.github.com commit -qm "Fabrique : production du $(date -u +%F)" && git push -f origin publie:gh-pages
+          cd ../site && git checkout -q --orphan publie && git add -A && git -c user.name=fabrique -c user.email=fabrique@users.noreply.github.com commit -qm "Fabrique : production du $(date -u +%F)" && git push -q -f origin publie:fabrique-donnees

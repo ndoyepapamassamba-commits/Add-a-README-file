@@ -48,6 +48,9 @@ def construit(biblio, site, cles):
                        ensure_ascii=False).encode()
     open(os.path.join(site, 'catalogue.msb'), 'wb').write(coffre.scelle_octets(corps, pub))
     json.dump(archives, open(os.path.join(site, 'archives.json'), 'w'), indent=1)
+    # état PUBLIC (rien de privé : des heures de créneaux et des nombres) — la tâche horaire de GitHub y lit s'il faut produire
+    json.dump({'maj': coffre_maj(), 'videos': len(cat), 'creneaux_a_venir': sorted(x['creneau'] for x in F if x.get('statut') == 'pret' and x.get('creneau'))},
+              open(os.path.join(site, 'etat-public.json'), 'w'), indent=1)
     return {'videos': len(cat), 'en_ligne': len(en_ligne), 'archives': len(archives)}
 
 

@@ -1,7 +1,14 @@
 {
- "cadence": 3,
- "creneaux": ["12:30", "18:30", "21:30"],
+ "cadence": 6,
+ "creneaux": [
+  "08:00",
+  "11:00",
+  "13:30",
+  "17:00",
+  "19:30",
+  "22:00"
+ ],
  "fuseau": "Africa/Abidjan",
- "fenetre_videos": 45,
- "note": "Réglages de la fabrique GitHub : vidéos par jour, heures de publication (heure d'Abidjan = UTC), nombre de vidéos gardées en ligne dans l'application. Modifiable depuis github.com (crayon « Edit »)."
+ "fenetre_videos": 30,
+ "note": "Réglages de la fabrique : vidéos par jour (1 à 6), heures de publication (heure d'Abidjan = UTC), nombre de vidéos gardées en ligne dans l'application (30 ≈ 5 jours à 6 par jour ; les plus anciennes passent dans les archives GitHub)."
 }

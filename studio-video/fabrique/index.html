@@ -159,12 +159,14 @@ const heure = (iso) => iso ? new Date(iso).toLocaleString("fr-FR", { weekday: "s
 const sans = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const nombre = (v) => { const x = parseFloat(String(v).replace(/\s/g, "").replace(",", ".")); return isNaN(x) ? null : x; };
 const depot = (() => { const o = location.hostname.split(".")[0]; const r = location.pathname.split("/").filter(Boolean)[0] || ""; return { o, r, gh: `https://github.com/${o}/${r}` }; })();
+// données chiffrées : branche « fabrique-donnees » du dépôt, servie par raw.githubusercontent.com (CORS ouvert) ; en essai local, à côté de la page
+const BASE = location.hostname.endsWith("github.io") ? `https://raw.githubusercontent.com/${depot.o}/${depot.r}/fabrique-donnees/` : "./";
 
 function lireLocal() { try { return JSON.parse(localStorage.getItem("fabrique-etat")) || { publiee: {}, statut: {}, releves: [] }; } catch { return { publiee: {}, statut: {}, releves: [] }; } }
 function garderLocal() { try { localStorage.setItem("fabrique-etat", JSON.stringify(S.local)); } catch {} }
 
 async function clePrivee(phrase) {
-  const J = await (await fetch("cle.priv.json", { cache: "no-store" })).json();
+  const rc = await fetch(BASE + "cle.priv.json", { cache: "no-store" }); if (!rc.ok) throw new Error("La fabrique GitHub n'est pas encore mise en route (clé absente)."); const J = await rc.json();
   const base = await sub.importKey("raw", new TextEncoder().encode(phrase), "PBKDF2", false, ["deriveKey"]);
   const k = await sub.deriveKey({ name: "PBKDF2", salt: b64(J.sel), iterations: J.tours, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
   const der = await sub.decrypt({ name: "AES-GCM", iv: b64(J.nonce) }, k, b64(J.chiffre));
@@ -179,7 +181,7 @@ async function ouvre(buf) {
 }
 async function blobDe(chemin, type) {
   if (S.url[chemin]) return S.url[chemin];
-  const r = await fetch(chemin); if (!r.ok) throw new Error("introuvable (" + r.status + ")");
+  const r = await fetch(BASE + chemin); if (!r.ok) throw new Error("introuvable (" + r.status + ")");
   const u = URL.createObjectURL(new Blob([await ouvre(await r.arrayBuffer())], { type })); S.url[chemin] = u; return u;
 }
 
@@ -244,7 +246,7 @@ function rendreTaux() {
 
 async function demarre(phrase) {
   S.priv = await clePrivee(phrase);
-  const r = await fetch("catalogue.msb", { cache: "no-store" }); if (!r.ok) throw new Error("catalogue absent : la première production n'a pas encore eu lieu");
+  const r = await fetch(BASE + "catalogue.msb", { cache: "no-store" }); if (!r.ok) throw new Error(r.status === 404 ? "La fabrique GitHub démarre : la première livraison n'est pas encore arrivée." : "catalogue illisible (" + r.status + ")");
   S.cat = JSON.parse(new TextDecoder().decode(await ouvre(await r.arrayBuffer())));
   $("porte").hidden = true; $("app").hidden = false;
   $("l-produire").href = `${depot.gh}/actions/workflows/fabrique.yml`; $("l-reglages").href = `${depot.gh}/blob/HEAD/studio-video/fabrique/config.json`; $("l-archives").href = `${depot.gh}/releases/tag/fabrique-archives`;

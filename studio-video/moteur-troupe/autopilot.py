@@ -25,7 +25,7 @@ import datetime, json, os, re, subprocess, sys, time
 ICI = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, ICI)
 import casting_troupe as CT, serie, doublons
 
-CADENCE = int(os.environ.get('FABRIQUE_CADENCE', '3'))            # vidéos publiées par jour (config.json la remplace si présent)
+CADENCE = int(os.environ.get('FABRIQUE_CADENCE') or 0) or None     # vidéos par jour : config.json (1 à 6), sauf variable FABRIQUE_CADENCE
 RESERVE_JOURS = float(os.environ.get('FABRIQUE_RESERVE_JOURS', '1'))  # jours de vidéos prêtes gardés d'avance
 CIBLE_MO = float(os.environ.get('FABRIQUE_CIBLE_MO', '14'))        # consigne « max 15 Mo » ; 14 visé (marge du débit variable)
 PLAFOND_MO = 15.0
@@ -48,8 +48,9 @@ CONFIG = os.path.join(ICI, '..', 'fabrique', 'config.json')
 
 
 def config():
-    C = {'cadence': CADENCE, 'creneaux': ['12:30', '18:30', '21:30'], 'fuseau': 'Africa/Abidjan'}
+    C = {'cadence': 6, 'creneaux': ['08:00', '11:00', '13:30', '17:00', '19:30', '22:00'], 'fuseau': 'Africa/Abidjan'}
     if os.path.isfile(CONFIG): C.update(json.load(open(CONFIG, encoding='utf-8')))
+    if CADENCE: C['cadence'] = CADENCE
     return C
 
 
@@ -145,7 +146,8 @@ def prochains_castings(k):
     return choix[:k]
 
 
-def jour(n=CADENCE, journal=print):
+def jour(n=None, journal=print):
+    n = int(n or os.environ.get('FABRIQUE_CADENCE') or config()['cadence'])   # 1 à 6 vidéos par jour (config.json)
     t0 = time.time(); F = serie.file()
     pret = len(reserve()); en_file = sum(1 for e in F.values() if e['etape'] not in ('termine',) and len(e['erreurs']) < 3)
     objectif = int(round(n * (1 + RESERVE_JOURS)))
@@ -172,18 +174,19 @@ def jour(n=CADENCE, journal=print):
 
 def etat():
     F = serie.file(); fi = fiches(); J = serie.jouables()
-    return {'cadence_par_jour': CADENCE, 'reserve_pretes': len(reserve()), 'jours_d_avance': round(len(reserve()) / max(1, CADENCE), 1),
+    c = int(os.environ.get('FABRIQUE_CADENCE') or config()['cadence'])
+    return {'cadence_par_jour': c, 'reserve_pretes': len(reserve()), 'jours_d_avance': round(len(reserve()) / max(1, c), 1),
             'livrees': len(fi), 'a_envoyer': len(a_envoyer()), 'publiees': sum(1 for f in fi if f.get('publiee')),
             'doublons': sum(1 for f in fi if f.get('statut') == 'doublon'), 'a_corriger': sum(1 for f in fi if f.get('statut') == 'a_corriger'),
             'file': {k: sum(1 for e in F.values() if e['etape'] == k) for k in (*serie.ETAPES, 'termine')},
             'en_echec': sum(1 for e in F.values() if len(e['erreurs']) >= 3),
             'personnages_jouables': len(J), 'personnages_bible': len(CT.bible()),
-            'jours_pour_10000_a_cette_cadence': round(max(0, 10000 - len(fi)) / max(1, CADENCE))}
+            'jours_pour_10000_a_cette_cadence': round(max(0, 10000 - len(fi)) / max(1, c))}
 
 
 if __name__ == '__main__':
     a = sys.argv[1:] or ['etat']
-    if a[0] == 'jour': jour(int(a[1]) if len(a) > 1 else CADENCE)
+    if a[0] == 'jour': jour(int(a[1]) if len(a) > 1 and a[1] else None)
     elif a[0] == 'livre': print(json.dumps(livre(a[1], a[2] if len(a) > 2 else None), ensure_ascii=False, indent=1))
     elif a[0] == 'a_envoyer': print(json.dumps(a_envoyer(), ensure_ascii=False, indent=1))
     elif a[0] == 'envoye': print(json.dumps(envoye(a[1], a[2]), ensure_ascii=False, indent=1))
