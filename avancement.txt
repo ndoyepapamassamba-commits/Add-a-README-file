@@ -1,2 +1,3 @@
 [122 s] === koffi--ecouter (at_runtime)  · mémoire libre 13796 Mo
 [243 s] === koffi--ecouter (at_runtime)   |============>                                     | 1/4 - 136.79s/it[K · mémoire libre 13790 Mo
+[364 s] === koffi--ecouter (at_runtime)   |=========================>                        | 2/4 - 135.74s/it[K · mémoire libre 13778 Mo
