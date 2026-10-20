@@ -1,0 +1,34 @@
+{
+ "part": 3,
+ "clips": [
+  {
+   "clip": "koffi--choc",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 595,
+   "memoire_max_go": 10.96
+  },
+  {
+   "clip": "baye-ndiaye--ecouter",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 593,
+   "memoire_max_go": 11.28
+  },
+  {
+   "clip": "maman-nounou--mentir",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 593,
+   "memoire_max_go": 11.28
+  },
+  {
+   "clip": "tantie-awa--rire",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 592,
+   "memoire_max_go": 11.28
+  }
+ ],
+ "run": "39510605985"
+}
