@@ -2,3 +2,4 @@
 [244 s] === koffi--hausser (at_runtime)   |=====================================>            | 3/4 - 67.29s/it[K · mémoire libre 13774 Mo
 [366 s] === baye-ndiaye--montrer (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13769 Mo
 [487 s] === baye-ndiaye--montrer (at_runtime)   |=========================>                        | 2/4 - 67.72s/it[K · mémoire libre 13765 Mo
+[608 s] === baye-ndiaye--montrer (at_runtime) [V] decode_video_outputs latent 24x40x9x48 --- video.cpp:1234 · mémoire libre 10424 Mo
