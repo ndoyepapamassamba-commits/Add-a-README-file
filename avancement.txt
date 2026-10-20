@@ -2,3 +2,4 @@
 [244 s] === coumba--hausser (at_runtime)   |=========================>                        | 2/4 - 77.48s/it[K · mémoire libre 13768 Mo
 [366 s] === maman-nounou--montrer (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14552 Mo
 [487 s] === maman-nounou--montrer (at_runtime)   |============>                                     | 1/4 - 79.09s/it[K · mémoire libre 13779 Mo
+[608 s] === maman-nounou--montrer (at_runtime)   |=====================================>            | 3/4 - 77.47s/it[K · mémoire libre 13767 Mo
