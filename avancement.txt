@@ -1,0 +1,1 @@
+[120 s] [I] generate_video 640x384x49 --- video.cpp:1612 · mémoire libre 7000 Mo
