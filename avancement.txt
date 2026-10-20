@@ -11,3 +11,4 @@
 [1336 s] === A-marche [I] loading tensors completed, taking 0.20s (read: 0.18s, memcpy: 0.00s, convert: 0.01s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 5741 Mo
 [1457 s] === A2-marche-planches [I] loading tensors completed, taking 4.81s (read: 4.72s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 6763 Mo
 [1578 s] === A2-marche-planches [I] loading tensors completed, taking 4.81s (read: 4.72s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 6381 Mo
+[1700 s] === A2-marche-planches [I] loading tensors completed, taking 4.81s (read: 4.72s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 6384 Mo
