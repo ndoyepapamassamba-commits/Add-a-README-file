@@ -4,3 +4,4 @@
 [487 s] === baye-ndiaye--parler (at_runtime)   |=========================>                        | 2/4 - 70.64s/it[K · mémoire libre 13789 Mo
 [608 s] === baye-ndiaye--parler (at_runtime)   |=====================================>            | 3/4 - 70.62s/it[K · mémoire libre 13782 Mo
 [730 s] === maman-nounou--colere (at_runtime)   |============>                                     | 1/4 - 71.24s/it[K · mémoire libre 13771 Mo
+[851 s] === maman-nounou--colere (at_runtime)   |=========================>                        | 2/4 - 70.83s/it[K · mémoire libre 13771 Mo
