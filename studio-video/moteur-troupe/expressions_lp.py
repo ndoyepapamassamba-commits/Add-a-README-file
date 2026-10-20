@@ -307,7 +307,8 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
                 if base is None:   # défaut du neutre à la bouche peinte, comme les recettes : moyenne de deux avis (±0,03 par requête)
                     n0 = rend({}, 0); base = float(np.mean([juger(n0, {'abime': ABIME})['abime'] for _ in range(2)]))
                     meta['jev']['neutre'] = {'abime': round(base, 3)}
-                c, fait0, r, n = cherche_recette(e, rend, juger, base, journal, (parrain or {}).get(e))
+                # recette déjà choisie mais pas encore jugée (budget du juge atteint au passage précédent) : essayée la première
+                c, fait0, r, n = cherche_recette(e, rend, juger, base, journal, (parrain or {}).get(e) or (v_rec.get(e) if meme else None))
                 meta['jev'][e] = dict(r, essais=n)
             except Exception as ex:
                 journal(f'  {e} : juge indisponible ({str(ex)[:80]}), recette de base')
@@ -344,7 +345,7 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
                         try: g_['jev'] = {k_: round(v_, 3) for k_, v_ in juger(o, {'abime': ABIME, 'lisible': f'Does this cartoon face clearly look {DESC[e]}?'}).items()}
                         except Exception as ex: journal(f'  {e} : juge indisponible pour la garde ({str(ex)[:60]})')
                     journal(f"  {e} : garde des lunettes, écart {r0} → {r_} px, sourcils {g_['sourcils_avant']} → {({k_: c[k_] for k_ in SOURCILS if k_ in c})} {g_.get('jev', '')}")
-        neuf = not meme or garde or (retaille and e not in repris)
+        neuf = not meme or garde or (retaille and e not in repris) or (meme and c != v_rec.get(e))   # recette changée par le juge : toutes les bouches
         for i, m in enumerate(BOUCHE):
             f = f'{dossier}/{e}_{i}.png'
             if m == 0 and fait0 is not None: ecrit(f, fait0); continue   # la recette est jugée à la bouche peinte (0)

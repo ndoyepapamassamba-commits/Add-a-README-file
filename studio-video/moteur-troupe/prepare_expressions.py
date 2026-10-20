@@ -4,6 +4,11 @@
 # Réutilisées par tous les épisodes tournés dans la scène ; tourne.py les prend si elles existent.
 #   python3 prepare_expressions.py prep/cour [slug …]   (seulement ces personnages)
 import json, os, sys, time
+# BUDGET DU JUGE (20/10/2026) : la voie de secours du juge local plafonne à 120 questions par processus (juge_local.VLM_MAX),
+# réglé pour un contrôle de film ; au premier essai de la troupe élargie, il a été atteint au milieu du 2e personnage :
+# Sœur Awa a eu 8 émotions sur 16 « non jugées ». Ici : 600 par personnage demandé (8 personnages si aucun n'est nommé).
+N_PERS = len(sys.argv) - 2 if len(sys.argv) > 2 else 8
+os.environ.setdefault('JUGE_VLM_MAX', str(600 * N_PERS))
 import numpy as np, cv2
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import expressions_lp as XL
