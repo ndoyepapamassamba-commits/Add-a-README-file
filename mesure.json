@@ -1,0 +1,34 @@
+{
+ "part": 8,
+ "clips": [
+  {
+   "clip": "coumba--parler",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 269,
+   "memoire_max_go": 10.99
+  },
+  {
+   "clip": "baye-ndiaye--colere",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 272,
+   "memoire_max_go": 11.28
+  },
+  {
+   "clip": "petit-mamadou--hausser",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 264,
+   "memoire_max_go": 11.28
+  },
+  {
+   "clip": "modou--montrer",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 267,
+   "memoire_max_go": 11.28
+  }
+ ],
+ "run": "39510605985"
+}
