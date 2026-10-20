@@ -1,1 +1,2 @@
 [122 s] === koffi--parler (at_runtime)  · mémoire libre 13805 Mo
+[244 s] === koffi--parler (at_runtime)   |============>                                     | 1/4 - 135.14s/it[K · mémoire libre 13786 Mo
