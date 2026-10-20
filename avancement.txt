@@ -10,3 +10,4 @@
 [729 s] 1 images · === maison-baye-ndiaye-cour-large-jour   |=====================================>            | 3/4 - 90.36s/it[K · mémoire libre 7009 Mo
 [851 s] 2 images · === maison-fatou-cour-large-jour   |==================================================| 4/4 - 89.37s/it[K · mémoire libre 7220 Mo
 [973 s] 2 images · === maison-fatou-cour-large-jour   |============>                                     | 1/4 - 93.61s/it[K · mémoire libre 7048 Mo
+[1094 s] 2 images · === maison-fatou-cour-large-jour   |=========================>                        | 2/4 - 87.20s/it[K · mémoire libre 7089 Mo
