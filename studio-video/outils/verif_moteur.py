@@ -403,6 +403,29 @@ try:
 except Exception as e:
     echecs.append(f'synchro / vote / viralité : {e}')
 
+# FABRIQUE (20/10/2026) : autopilote, doublons, version téléchargeable ≤ 15 Mo, distribution imposée et duos récurrents
+try:
+    import importlib as _il7, tempfile as _tf7, subprocess as _sp7
+    _db7 = _il7.import_module('doublons')
+    if _db7.ressemblance([1, 2, 3], [1, 2, 3]) != 1.0 or _db7.ressemblance([0], [2 ** 64 - 1]) != 0.0: echecs.append('doublons : ressemblance fausse')
+    if not (_db7.SEUIL_PROCHE < _db7.SEUIL_DOUBLON <= 0.612): echecs.append('doublons : seuils hors du calibrage (versions d’un même épisode ≥ 0,612)')
+    with _tf7.TemporaryDirectory() as _t7:
+        os.environ['MASSAMBA_BIBLIO'] = _t7
+        for _m in ('casting_troupe', 'serie', 'autopilot'): sys.modules.pop(_m, None)
+        _ap = _il7.import_module('autopilot')
+        _v7 = os.path.join(_t7, 'essai.mp4'); _o7 = os.path.join(_t7, 'tel.mp4')
+        _sp7.run(['ffmpeg', '-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=size=540x960:rate=30:duration=4', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=4',
+                  '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', '-shortest', _v7], check=True)
+        _r7 = _ap.version_tel(_v7, _o7, cible_mo=1.0)
+        if _r7['taille_mo'] > 1.0 or (_r7['ssim'] or 0) < 0.9: echecs.append(f'autopilote : version téléchargeable hors cible {_r7}')
+        os.makedirs(_ap.LIV, exist_ok=True); json.dump([1, 2], open(os.path.join(_ap.LIV, 'x.emp.json'), 'w'))
+        if _ap.fiches() != []: echecs.append('autopilote : empreintes lues comme fiches')
+    _s7 = open(os.path.join(ICI, 'moteur-troupe', 'serie.py'), encoding='utf-8').read()
+    if 'def impose(' not in _s7 or 'reprises' not in _s7: echecs.append('série : distribution imposée ou duos récurrents absents')
+    print(f"fabrique : doublons (seuil {_db7.SEUIL_DOUBLON}), version téléchargeable {_r7['taille_mo']} Mo SSIM {_r7['ssim']}, file : OK")
+except Exception as e:
+    echecs.append(f'fabrique : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

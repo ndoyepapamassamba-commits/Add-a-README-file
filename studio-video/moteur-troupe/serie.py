@@ -75,7 +75,20 @@ def jouables():
     return {r['nom']: r['lieux'] for r in CT.etat() if r['figure'] and r['visages']}
 
 
-def plan(n, graine=None, journal=print):
+def impose(sketchs, graine=None, journal=print):
+    """épisode à distribution imposée (autopilote, page « Fabrique ») : [(lieu, [acteurs]), …] ; décor tiré parmi ceux du lieu."""
+    F = file(); J = jouables(); rnd = random.Random(graine if graine is not None else len(F))
+    manque = [a for _, ac in sketchs for a in ac if a not in J]
+    if manque: raise RuntimeError(f'visages absents du casting : {manque}')
+    sk = [{'lieu': l, 'decor': rnd.choice(decors_du_lieu(l))['name'], 'acteurs': list(ac)} for l, ac in sketchs]
+    i = f'S{len(F) + 1:05d}'
+    F[i] = {'id': i, 'etape': 'scenes', 'sketchs': sk, 'durees_s': {}, 'erreurs': [], 'cree': time.strftime('%Y-%m-%d %H:%M')}
+    journal(f"{i} imposé : " + ' · '.join(f"{s['lieu']} ({', '.join(s['acteurs'])})" for s in sk)); return i
+
+
+def plan(n, graine=None, journal=print, reprises=False):
+    """reprises=True (10 000 épisodes, 20/10/2026) : quand tous les duos neufs d'un lieu sont joués, le duo le moins employé y
+    revient avec une histoire neuve (histoires.py refuse toute histoire déjà écrite), comme les duos récurrents d'une série."""
     F = file(); J = jouables(); B = CT.bible(); rnd = random.Random(graine if graine is not None else len(F))
     if len(J) < 2: raise RuntimeError(f'{len(J)} personnage(s) jouable(s) : bibliothèques de visages à dessiner (casting_troupe.py visages)')
     emploi = {n_: 0 for n_ in J}; duos = set()
@@ -96,6 +109,7 @@ def plan(n, graine=None, journal=print):
                     t = [cands[i], cands[j]] + ([c for c in cands if c not in (cands[i], cands[j])][:1] if k == 3 else [])
                     if (lieu, tuple(sorted(t))) not in duos: acteurs = t; break
                 if acteurs: break
+            if not acteurs and reprises: acteurs = cands[:k]
             if not acteurs: continue
             dec = rnd.choice(decors_du_lieu(lieu))
             sk.append({'lieu': lieu, 'decor': dec['name'], 'acteurs': acteurs}); duos.add((lieu, tuple(sorted(acteurs))))
@@ -225,7 +239,7 @@ def etat():
 
 if __name__ == '__main__':
     c = sys.argv[1] if len(sys.argv) > 1 else 'etat'
-    if c == 'plan': plan(int(sys.argv[2]))
+    if c == 'plan': plan(int(sys.argv[2]), reprises='--reprises' in sys.argv)
     elif c == 'marche': marche(int(sys.argv[2]) if len(sys.argv) > 2 else None)
     elif c == 'avance': avance(sys.argv[2])
     else: print(json.dumps(etat(), ensure_ascii=False, indent=1))

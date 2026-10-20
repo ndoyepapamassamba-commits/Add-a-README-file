@@ -1,0 +1,345 @@
+<title>Fabrique MASSAMBA</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..150,600..900&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Mise en page : poste de pilotage d'atelier — bandeau d'état, onglets de la vidéothèque (cartes 9:16), puis pilote, cadence et chiffres. Une colonne au téléphone, deux à l'écran. */
+:root{
+  --fond:#f3f1ec; --carte:#fffdf8; --encre:#1c1f2b; --doux:#5d6170; --trait:#dcd7cb;
+  --safran:#c98a07; --safran-fond:#fbefd0; --indigo:#2b3a8c; --menthe:#167a55; --menthe-fond:#dcf1e7; --brique:#b2412b; --brique-fond:#f8e1da;
+  --f-titre:"Anybody","Arial Narrow",sans-serif; --f-texte:"Atkinson Hyperlegible",system-ui,sans-serif; --f-chiffre:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --fond:#14161f; --carte:#1d2030; --encre:#eceae4; --doux:#a3a6b5; --trait:#33374a;
+  --safran:#f0b429; --safran-fond:#3a2f12; --indigo:#9aa8ff; --menthe:#4cd39b; --menthe-fond:#123326; --brique:#ff8a70; --brique-fond:#3d1d16; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --fond:#14161f; --carte:#1d2030; --encre:#eceae4; --doux:#a3a6b5; --trait:#33374a;
+  --safran:#f0b429; --safran-fond:#3a2f12; --indigo:#9aa8ff; --menthe:#4cd39b; --menthe-fond:#123326; --brique:#ff8a70; --brique-fond:#3d1d16; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--fond);color:var(--encre);font-family:var(--f-texte);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.page{max-width:1120px;margin:0 auto;display:grid;gap:22px}
+h1,h2{font-family:var(--f-titre);text-wrap:balance;margin:0;line-height:1.05}
+h1{font-size:clamp(30px,7vw,46px);font-weight:900;font-stretch:125%;letter-spacing:-.01em}
+h1 span{color:var(--safran)}
+h2{font-size:20px;font-weight:800;font-stretch:110%}
+.sur{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--doux);font-weight:700}
+.chiffre{font-family:var(--f-chiffre);font-variant-numeric:tabular-nums}
+header{display:grid;gap:12px}
+.bandeau{display:flex;flex-wrap:wrap;gap:10px}
+.jauge{background:var(--carte);border:1px solid var(--trait);border-radius:10px;padding:10px 14px;min-width:0;flex:1 1 150px}
+.jauge b{display:block;font-family:var(--f-chiffre);font-size:24px;font-weight:500}
+.jauge small{color:var(--doux);font-size:12.5px;font-family:var(--f-texte)}
+.pastille{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;font-family:var(--f-texte)}
+.pastille::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.ok{color:var(--menthe);background:var(--menthe-fond)} .att{color:var(--safran);background:var(--safran-fond)} .ko{color:var(--brique);background:var(--brique-fond)}
+.colonnes{display:grid;gap:22px;grid-template-columns:1fr}
+@media (min-width:920px){.colonnes{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}}
+section{display:grid;gap:12px;min-width:0}
+.onglets{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.onglets button{white-space:nowrap;padding:7px 12px;font-size:13.5px}
+.onglets button[aria-pressed="true"]{background:var(--encre);color:var(--fond);border-color:var(--encre)}
+.onglets .n{font-family:var(--f-chiffre);font-weight:500;margin-left:5px;opacity:.75}
+.videos{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.video{background:var(--carte);border:1px solid var(--trait);border-radius:14px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;min-width:0}
+.video.doublon{border-color:var(--brique)}
+.cadre{position:relative;aspect-ratio:9/16;max-width:100%;background:#000}
+.cadre video,.cadre img{width:100%;height:100%;object-fit:cover;display:block}
+.creneau{position:absolute;top:10px;left:10px;font-family:var(--f-chiffre);font-size:13px;background:rgba(10,12,20,.78);color:#fff;padding:3px 9px;border-radius:6px}
+.corps{padding:12px 14px 14px;display:grid;gap:9px;align-content:start;min-width:0}
+.titre{font-weight:700;font-size:15px;line-height:1.3}
+.ligne{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;font-weight:700;font-size:14px;border-radius:9px;padding:9px 13px;cursor:pointer;border:1px solid var(--trait);background:var(--carte);color:var(--encre)}
+button.fort{background:var(--encre);color:var(--fond);border-color:var(--encre)}
+button.safran{background:var(--safran);color:#1c1f2b;border-color:var(--safran)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--indigo);outline-offset:2px}
+.coche{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:var(--encre);cursor:pointer}
+.coche input{width:20px;height:20px;accent-color:var(--menthe);margin:0}
+.alerte{font-size:13px;border-radius:8px;padding:7px 10px}
+.alerte.ko{font-weight:400} .alerte.att{font-weight:400}
+.legende{font-size:13px;color:var(--doux);white-space:pre-line;max-height:4.6em;overflow:hidden}
+.boite{background:var(--carte);border:1px solid var(--trait);border-radius:14px;padding:16px;display:grid;gap:12px}
+.vide{border:1px dashed var(--trait);border-radius:14px;padding:22px;color:var(--doux)}
+.message{font-size:13px;color:var(--doux);min-height:1.2em}
+label{font-size:13px;color:var(--doux);display:grid;gap:4px}
+input,select{font:inherit;font-family:var(--f-chiffre);font-size:15px;padding:8px 10px;border-radius:8px;border:1px solid var(--trait);background:var(--fond);color:var(--encre);min-width:0;width:100%}
+input[type="search"]{font-family:var(--f-texte)}
+.grille{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
+.barre{height:10px;border-radius:6px;background:var(--trait);overflow:hidden}
+.barre i{display:block;height:100%;background:var(--safran)}
+.releve{font-size:13px;display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--doux)}
+.releve b{color:var(--encre);font-family:var(--f-chiffre);font-weight:500}
+.serie{display:inline-flex;gap:3px;flex-wrap:wrap;vertical-align:middle}
+.serie i{width:11px;height:11px;border-radius:3px;background:var(--trait)}
+.serie i.p{background:var(--menthe)} .serie i.m{background:var(--safran)}
+@media (prefers-reduced-motion:no-preference){.video{transition:transform .15s}.video:hover{transform:translateY(-2px)}}
+</style>
+
+<div class="page">
+  <header>
+    <div class="sur">Troupe MASSAMBA · autopilote · vidéothèque</div>
+    <h1>Fabrique <span>MASSAMBA</span></h1>
+    <div class="bandeau">
+      <div class="jauge"><small>Pilote</small><b id="j-pilote"><span class="pastille att">connexion…</span></b></div>
+      <div class="jauge"><small>Réserve prête</small><b id="j-reserve">—</b></div>
+      <div class="jauge"><small>Constance, 14 derniers jours</small><b id="j-serie">—</b></div>
+      <div class="jauge"><small>Vers 10 000 vidéos</small><b id="j-total">—</b></div>
+    </div>
+  </header>
+
+  <div class="colonnes">
+    <section aria-labelledby="t-videos">
+      <h2 id="t-videos">Vidéothèque</h2>
+      <div class="onglets" role="group" aria-label="Filtrer les vidéos">
+        <button data-f="pret" aria-pressed="true">À publier<span class="n" id="n-pret"></span></button>
+        <button data-f="publiee" aria-pressed="false">Publiées<span class="n" id="n-publiee"></span></button>
+        <button data-f="doublon" aria-pressed="false">Doublons<span class="n" id="n-doublon"></span></button>
+        <button data-f="a_corriger" aria-pressed="false">À corriger<span class="n" id="n-a_corriger"></span></button>
+        <button data-f="" aria-pressed="false">Toutes<span class="n" id="n-tout"></span></button>
+      </div>
+      <label for="cherche">Chercher un titre, un personnage ou un lieu<input type="search" id="cherche" placeholder="Koffi, marché, loyer…"></label>
+      <div class="videos" id="videos">
+        <div class="vide">Les vidéos arrivent ici chaque matin, prêtes à publier : vidéo de 15 Mo au plus, légende et créneau.</div>
+      </div>
+      <div class="ligne"><button id="b-plus" hidden>Voir plus</button><span class="message" id="m-videos"></span></div>
+    </section>
+
+    <aside style="display:grid;gap:22px;align-content:start;min-width:0">
+      <section class="boite" aria-labelledby="t-pilote">
+        <h2 id="t-pilote">Pilote automatique</h2>
+        <div class="releve" id="pilote-info">Chaque jour, sans vous : distribution, écriture, tournage, juge sur 9 contrôles, contrôle des doublons, livraison ici.</div>
+        <div class="ligne">
+          <button class="fort" id="b-produire" disabled>Produire maintenant</button>
+          <button id="b-pause" disabled>Mettre en pause</button>
+        </div>
+        <div class="ligne" id="confirme" hidden>
+          <span>Lancer une production complète maintenant ?</span>
+          <button class="safran" id="b-oui">Oui, lancer</button><button id="b-non">Annuler</button>
+        </div>
+        <div class="message" id="m-pilote"></div>
+      </section>
+
+      <section class="boite" aria-labelledby="t-reglages">
+        <h2 id="t-reglages">Cadence et créneaux</h2>
+        <label for="cadence">Vidéos publiées par jour
+          <select id="cadence"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select>
+        </label>
+        <div class="grille" id="creneaux"></div>
+        <div class="releve">Mettez les heures où vos abonnés sont en ligne (TikTok Studio → Statistiques → Abonnés). La Fabrique garde au moins une journée d'avance pour ne jamais laisser un créneau vide.</div>
+        <div class="ligne"><button class="fort" id="b-reglages">Enregistrer</button><span class="message" id="m-reglages"></span></div>
+      </section>
+
+      <section class="boite" aria-labelledby="t-chiffres">
+        <h2 id="t-chiffres">Chiffres TikTok</h2>
+        <label for="c-video">Vidéo publiée
+          <select id="c-video"><option value="">Aucune vidéo publiée pour l'instant</option></select>
+        </label>
+        <div class="grille">
+          <label for="c-vues">Vues<input id="c-vues" inputmode="numeric" placeholder="0"></label>
+          <label for="c-jaime">J'aime<input id="c-jaime" inputmode="numeric" placeholder="0"></label>
+          <label for="c-comm">Commentaires<input id="c-comm" inputmode="numeric" placeholder="0"></label>
+          <label for="c-part">Partages<input id="c-part" inputmode="numeric" placeholder="0"></label>
+          <label for="c-entier">Vue en entier %<input id="c-entier" inputmode="decimal" placeholder="0"></label>
+        </div>
+        <div class="ligne"><button class="fort" id="b-chiffres">Enregistrer les chiffres</button><span class="message" id="m-chiffres"></span></div>
+        <div class="releve" id="taux"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const S = { db: null, mcp: null, dl: null, filtre: "pret", n: 24, vues: [], publiees: [], releves: [], etat: null,
+  reglages: { cadence: 3, creneaux: ["12:30", "18:30", "21:30"] }, trigger: null, arret: null };
+const DEF_CR = ["12:30", "18:30", "21:30", "08:00", "15:00", "23:00"];
+const fmt = (n) => (n == null || isNaN(n)) ? "—" : Number(n).toLocaleString("fr-FR");
+const jour = (iso) => iso ? new Date(iso).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }) : "";
+const nombre = (v) => { const x = parseFloat(String(v).replace(/\s/g, "").replace(",", ".")); return isNaN(x) ? null : x; };
+const sans = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+function carte(v, rang) {
+  const d = document.createElement("article"); d.className = "video" + (v.statut === "doublon" ? " doublon" : "");
+  const cr = v.statut === "pret" && rang < S.reglages.cadence ? S.reglages.creneaux[rang] : "";
+  const mo = v.taille_mo ? ` (${String(v.taille_mo).replace(".", ",")} Mo)` : "";
+  d.innerHTML = `<div class="cadre">${v.url ? `<video controls playsinline preload="none"></video>` : `<img alt="">`}${cr ? `<span class="creneau">${cr}</span>` : ""}</div>
+    <div class="corps"><div class="titre"></div><div class="ligne etat"></div><div class="info"></div><div class="legende"></div>
+      <label class="coche"><input type="checkbox" data-a="publiee"> Déjà publiée</label>
+      <div class="ligne"><button class="fort" data-a="garde">Télécharger${mo}</button><button data-a="copie">Copier la légende</button></div>
+      <div class="ligne act"></div><div class="message"></div></div>`;
+  const media = d.querySelector("video,img");
+  if (v.url) { media.src = v.url; if (v.affiche) media.poster = v.affiche; } else if (v.affiche) media.src = v.affiche;
+  d.querySelector(".titre").textContent = v.titre || v.id;
+  const etat = d.querySelector(".etat"), p = document.createElement("span");
+  const lib = { pret: ["att", `Juge ${v.portes || "9/9"} · prête`], publiee: ["ok", `Publiée ${jour(v.publiee)}`], doublon: ["ko", "Doublon"], a_corriger: ["ko", "À corriger"] }[v.statut] || ["att", v.statut || "—"];
+  p.className = "pastille " + lib[0]; p.textContent = lib[1]; etat.append(p);
+  if (v.duree_s) { const t = document.createElement("span"); t.className = "chiffre"; t.style.fontSize = "13px"; t.textContent = `${Math.round(v.duree_s)} s`; etat.append(t); }
+  const info = d.querySelector(".info");
+  if (v.doublon_de && v.ressemblance != null) {
+    const a = document.createElement("div"); a.className = "alerte " + (v.statut === "doublon" ? "ko" : "att");
+    a.textContent = `${v.statut === "doublon" ? "Doublon de" : "Proche de"} « ${v.doublon_de} » : ${Math.round(v.ressemblance * 100)} % d'images jumelles.`;
+    info.append(a);
+  }
+  d.querySelector(".legende").textContent = v.legende || "";
+  const box = d.querySelector('input[data-a="publiee"]'); box.checked = v.statut === "publiee"; box.id = "pub-" + v.id;
+  const act = d.querySelector(".act");
+  if (v.statut === "doublon") act.innerHTML = `<button data-a="garder">Garder quand même</button>`;
+  if (v.statut === "pret") act.innerHTML = `<button data-a="doublon">Signaler un doublon</button>`;
+  const msg = d.querySelector(".message");
+  const statut = async (s, extra = {}) => {
+    if (!S.db) { msg.textContent = "Connectez-vous à claude.ai pour enregistrer."; return false; }
+    try { await S.db.doc("videos/" + v.id).update({ statut: s, ...extra }); return true; }
+    catch (er) { msg.textContent = "Enregistrement refusé (" + (er?.code || "erreur") + ")."; return false; }
+  };
+  box.addEventListener("change", async () => {
+    const ok = box.checked ? await statut("publiee", { publiee: new Date().toISOString() }) : await statut(v.a_publier === false ? "a_corriger" : "pret", { publiee: null });
+    if (!ok) box.checked = !box.checked; else msg.textContent = box.checked ? "Notée comme publiée." : "Remise dans « À publier ».";
+  });
+  d.addEventListener("click", async (e) => {
+    const a = e.target.closest("button")?.dataset.a; if (!a) return;
+    if (a === "copie") {
+      try { await navigator.clipboard.writeText(v.legende || ""); msg.textContent = "Légende copiée."; }
+      catch { const r = document.createRange(); r.selectNodeContents(d.querySelector(".legende")); getSelection().removeAllRanges(); getSelection().addRange(r); msg.textContent = "Légende sélectionnée : copiez-la avec votre téléphone."; }
+    }
+    if (a === "garde") {
+      if (!S.dl || !v.url) { msg.textContent = "Le téléchargement s'ouvre dans l'application Claude ou sur claude.ai."; return; }
+      msg.textContent = "Préparation de la vidéo…";
+      try { const b = await (await fetch(v.url)).blob(); const r = await S.dl.save({ filename: `${v.id}.mp4`, data: b }); msg.textContent = r.status === "saved" ? "Vidéo enregistrée. Ouvrez TikTok pour la publier." : "Vidéo transmise."; }
+      catch (er) { msg.textContent = er?.code === "declined" ? "Téléchargement annulé." : er?.code === "rate_limited" ? "Un téléchargement est déjà en cours." : "Téléchargement impossible ici (" + (er?.code || "réseau") + ")."; }
+    }
+    if (a === "garder" && await statut("pret")) msg.textContent = "Remise dans « À publier ».";
+    if (a === "doublon" && await statut("doublon")) msg.textContent = "Rangée dans « Doublons » : elle ne sera pas proposée.";
+  });
+  return d;
+}
+
+function rendreVideos() {
+  const q = sans($("cherche").value.trim());
+  const vs = S.vues.filter((v) => !q || sans([v.titre, v.legende, v.id, ...(v.sketchs || []).flatMap((s) => [s.lieu, ...(s.acteurs || [])])].join(" ")).includes(q));
+  const zone = $("videos"); zone.replaceChildren();
+  if (!vs.length) {
+    const e = document.createElement("div"); e.className = "vide";
+    e.textContent = q ? "Aucune vidéo ne correspond à cette recherche." : { pret: "Rien à publier pour l'instant : la prochaine production remplit la réserve.", publiee: "Aucune vidéo cochée « Déjà publiée ».", doublon: "Aucun doublon détecté.", a_corriger: "Aucune vidéo à corriger." }[S.filtre] || "La vidéothèque se remplit à chaque production.";
+    zone.append(e);
+  }
+  vs.forEach((v, i) => zone.append(carte(v, i)));
+  $("b-plus").hidden = S.vues.length < S.n;
+}
+
+function rendreBandeau() {
+  const E = S.etat || {}, c = Math.max(1, S.reglages.cadence);
+  const pret = E.reserve_pretes ?? (S.filtre === "pret" ? S.vues.length : null);
+  $("j-reserve").innerHTML = pret == null ? "—" : `<span class="chiffre">${pret}</span> <small>· ${(pret / c).toFixed(1).replace(".", ",")} j d'avance</small>`;
+  const tot = E.livrees ?? null;
+  $("j-total").innerHTML = tot == null ? "—" : `<span class="chiffre">${fmt(tot)}</span> <small>/ 10 000</small><div class="barre" style="margin-top:6px"><i style="width:${Math.min(100, tot / 100)}%"></i></div>`;
+  const n = { pret: E.reserve_pretes, publiee: E.publiees, doublon: E.doublons, a_corriger: E.a_corriger, tout: E.livrees };
+  for (const k in n) $("n-" + k).textContent = n[k] == null ? "" : n[k];
+  const parJour = {}; S.publiees.forEach((v) => { const k = String(v.publiee).slice(0, 10); parJour[k] = (parJour[k] || 0) + 1; });
+  const cases = []; let suite = 0, coupe = false;
+  for (let i = 13; i >= 0; i--) { const d = new Date(Date.now() - i * 864e5).toISOString().slice(0, 10); const k = parJour[d] || 0; cases.push(k >= c ? "p" : k ? "m" : ""); }
+  for (let i = 0; i <= 13 && !coupe; i++) { const d = new Date(Date.now() - i * 864e5).toISOString().slice(0, 10); if (parJour[d]) suite++; else if (i > 0) coupe = true; }
+  $("j-serie").innerHTML = `<span class="chiffre">${suite} j</span> <span class="serie" aria-label="vert : cadence tenue, safran : en partie">${cases.map((x) => `<i class="${x}"></i>`).join("")}</span>`;
+  const sel = $("c-video"), garde = sel.value; sel.replaceChildren();
+  if (!S.publiees.length) sel.append(new Option("Aucune vidéo publiée pour l'instant", ""));
+  S.publiees.forEach((v) => sel.append(new Option(`${v.titre || v.id} — ${jour(v.publiee)}`, v.id)));
+  if ([...sel.options].some((o) => o.value === garde)) sel.value = garde;
+  rendreTaux(); rendrePilote();
+}
+
+function rendreTaux() {
+  const id = $("c-video").value; const r = S.releves.filter((x) => x.video === id).sort((a, b) => String(b.quand).localeCompare(String(a.quand)))[0];
+  const t = $("taux"); t.replaceChildren();
+  if (!r) { t.textContent = id ? "Pas encore de chiffres pour cette vidéo." : ""; return; }
+  const v = Math.max(1, r.vues || 0), pc = (x) => ((100 * (x || 0)) / v).toFixed(2).replace(".", ",") + " %";
+  t.innerHTML = `<span>Relevé du ${jour(r.quand)} · <b>${fmt(r.vues)}</b> vues</span><span>Commentaires/vues <b>${pc(r.commentaires)}</b></span><span>Partages/vues <b>${pc(r.partages)}</b></span><span>J'aime/vues <b>${pc(r.jaime)}</b></span>${r.vu_en_entier_pct != null ? `<span>Vue en entier <b>${String(r.vu_en_entier_pct).replace(".", ",")} %</b></span>` : ""}`;
+}
+
+function rendrePilote() {
+  const T = S.trigger, E = S.etat || {};
+  $("j-pilote").innerHTML = T ? (T.enabled ? `<span class="pastille ok">actif</span>` : `<span class="pastille att">en pause</span>`) : E.trigger_id ? `<span class="pastille ok">programmé</span>` : `<span class="pastille att">en préparation</span>`;
+  const bits = [];
+  const h = (iso) => new Date(iso).toLocaleString("fr-FR", { weekday: "short", hour: "2-digit", minute: "2-digit" });
+  if (T?.next_run_at) bits.push(`<span>Prochaine production <b>${h(T.next_run_at)}</b></span>`);
+  else if (E.prochaine) bits.push(`<span>Production chaque jour <b>${E.prochaine}</b></span>`);
+  if (T?.last_run?.fired_at) bits.push(`<span>Dernière <b>${h(T.last_run.fired_at)}</b></span>`);
+  if (E.personnages_jouables != null) bits.push(`<span>Troupe prête <b>${E.personnages_jouables}/${E.personnages_bible || 54}</b></span>`);
+  if (E.maj) bits.push(`<span>État du ${jour(E.maj)}</span>`);
+  if (bits.length) $("pilote-info").innerHTML = bits.join("");
+  $("b-produire").disabled = !(S.mcp && E.trigger_id); $("b-pause").disabled = !(S.mcp && E.trigger_id);
+  $("b-pause").textContent = T && !T.enabled ? "Reprendre" : "Mettre en pause";
+}
+
+function rendreReglages() {
+  const n = Number($("cadence").value); const z = $("creneaux"); const anc = [...z.querySelectorAll("input")].map((i) => i.value);
+  z.replaceChildren();
+  for (let i = 0; i < n; i++) { const l = document.createElement("label"); l.htmlFor = "cr" + i; l.textContent = `Créneau ${i + 1}`; const inp = document.createElement("input"); inp.type = "time"; inp.id = "cr" + i; inp.value = anc[i] || S.reglages.creneaux[i] || DEF_CR[i]; l.append(inp); z.append(l); }
+}
+
+function abonne() {
+  if (!S.db) return; if (S.arret) S.arret();
+  let q = S.db.collection("videos"); if (S.filtre) q = q.where("statut", "==", S.filtre);
+  q = q.orderBy("ordre", S.filtre === "pret" ? "asc" : "desc").limit(S.n);
+  S.arret = q.onSnapshot((s) => { S.vues = s.docs.map((d) => ({ id: d.id, ...d.data() })); rendreVideos(); if (S.filtre === "pret") rendreBandeau(); },
+    (er) => { $("m-videos").textContent = "Lecture interrompue (" + (er?.code || "erreur") + ") : rechargez la page."; });
+}
+
+document.querySelector(".onglets").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  document.querySelectorAll(".onglets button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  S.filtre = b.dataset.f; S.n = 24; abonne();
+});
+$("b-plus").addEventListener("click", () => { S.n += 24; abonne(); });
+$("cherche").addEventListener("input", rendreVideos);
+$("cadence").addEventListener("change", rendreReglages);
+$("c-video").addEventListener("change", rendreTaux);
+
+$("b-reglages").addEventListener("click", async () => {
+  const m = $("m-reglages"); if (!S.db) { m.textContent = "Connectez-vous à claude.ai pour enregistrer."; return; }
+  const r = { cadence: Number($("cadence").value), creneaux: [...$("creneaux").querySelectorAll("input")].map((i) => i.value), mis_a_jour: new Date().toISOString() };
+  try { await S.db.doc("fabrique/reglages").set(r); m.textContent = "Enregistré : la prochaine production suit ces réglages."; }
+  catch (er) { m.textContent = "Refusé (" + (er?.code || "erreur") + ")."; }
+});
+
+$("b-chiffres").addEventListener("click", async () => {
+  const m = $("m-chiffres"), id = $("c-video").value;
+  if (!id) { m.textContent = "Choisissez d'abord une vidéo publiée."; return; }
+  if (!S.db) { m.textContent = "Connectez-vous à claude.ai pour enregistrer."; return; }
+  const r = { video: id, quand: new Date().toISOString(), vues: nombre($("c-vues").value), jaime: nombre($("c-jaime").value), commentaires: nombre($("c-comm").value), partages: nombre($("c-part").value), vu_en_entier_pct: nombre($("c-entier").value) };
+  if (r.vues == null) { m.textContent = "Le nombre de vues est nécessaire."; return; }
+  try { await S.db.collection("releves").add(r); m.textContent = "Chiffres enregistrés : la Fabrique en tient compte à la prochaine écriture."; ["c-vues", "c-jaime", "c-comm", "c-part", "c-entier"].forEach((x) => ($(x).value = "")); }
+  catch (er) { m.textContent = "Refusé (" + (er?.code || "erreur") + ")."; }
+});
+
+async function lireDeclencheur() {
+  const id = S.etat?.trigger_id; if (!S.mcp || !id) return;
+  try { const r = await S.mcp.callTool("Claude Code Remote", "get_trigger", { trigger_id: id }); const p = r.payload; S.trigger = (p && (p.trigger || p)) || null; }
+  catch (er) { if (["server_not_connected", "needs_reauth"].includes(er.code)) $("m-pilote").textContent = "Pour piloter d'ici, autorisez « Claude Code Remote » quand claude.ai le demande."; }
+  rendrePilote();
+}
+$("b-produire").addEventListener("click", () => { $("confirme").hidden = false; });
+$("b-non").addEventListener("click", () => { $("confirme").hidden = true; });
+$("b-oui").addEventListener("click", async () => {
+  $("confirme").hidden = true; const m = $("m-pilote"); m.textContent = "Lancement…";
+  try { await S.mcp.callTool("Claude Code Remote", "fire_trigger", { trigger_id: S.etat.trigger_id, text: "Production à la demande, lancée depuis la page Fabrique." }); m.textContent = "Production lancée. Les vidéos arrivent ici dès qu'elles passent le juge."; lireDeclencheur(); }
+  catch (er) { m.textContent = er.code === "approval_required" ? "Autorisation nécessaire : touchez à nouveau « Produire maintenant » et acceptez." : "Lancement non confirmé (" + er.code + ") : vérifiez l'état avant de relancer."; }
+});
+$("b-pause").addEventListener("click", async () => {
+  const m = $("m-pilote"); const actif = !(S.trigger && !S.trigger.enabled);
+  try { await S.mcp.callTool("Claude Code Remote", "update_trigger", { trigger_id: S.etat.trigger_id, enabled: !actif }); m.textContent = actif ? "Pilote en pause : aucune production jusqu'à la reprise." : "Pilote repris."; lireDeclencheur(); }
+  catch (er) { m.textContent = "Changement non confirmé (" + er.code + ")."; }
+});
+
+rendreReglages(); rendreBandeau();
+(async () => {
+  const c = window.claude; if (!c?.use) { $("j-pilote").innerHTML = `<span class="pastille att">hors claude.ai</span>`; return; }
+  const [db, mcp, dl] = await Promise.all([c.use("db"), c.use("mcp"), c.use("downloads")]);
+  S.db = db; S.mcp = mcp; S.dl = dl;
+  if (!db) { $("m-videos").textContent = "Connectez-vous à claude.ai pour voir la vidéothèque."; return; }
+  abonne();
+  db.collection("videos").where("statut", "==", "publiee").orderBy("publiee", "desc").limit(120).onSnapshot((s) => { S.publiees = s.docs.map((d) => ({ id: d.id, ...d.data() })); rendreBandeau(); });
+  db.collection("releves").orderBy("quand", "desc").limit(500).onSnapshot((s) => { S.releves = s.docs.map((d) => d.data()); rendreTaux(); });
+  db.doc("fabrique/etat").onSnapshot((s) => { const prem = !S.etat; S.etat = s.exists ? s.data() : null; rendreBandeau(); if (prem) lireDeclencheur(); });
+  db.doc("fabrique/reglages").onSnapshot((s) => { if (s.exists) { S.reglages = { ...S.reglages, ...s.data() }; $("cadence").value = String(S.reglages.cadence); rendreReglages(); rendreBandeau(); rendreVideos(); } });
+})();
+</script>

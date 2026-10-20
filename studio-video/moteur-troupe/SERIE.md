@@ -75,3 +75,41 @@ tiré des personnages qui portent les chutes.
 2. Rendu LivePortrait sur la carte graphique gratuite (crédits Modal du compte de l'utilisateur, plafond dur dans le code),
    dès que le jeton Modal est ajouté aux secrets de l'environnement.
 3. Les mêmes commandes sur une seconde machine gratuite, avec la bibliothèque copiée.
+
+## Fabrique : processus des 10 000 vidéos (20/10/2026)
+
+Demandes du 20/10/2026 : « une application de fabrique avec autopilot qui génère la vidéo de bout en bout, les 10000
+vidéos » ; « TikTok mise sur la constance » ; « tout dans une application html […] possibilité en cas de doublon ou bien de
+cocher déjà publié » ; « télécharger max 15 Mo ».
+
+| Pièce | Rôle |
+|---|---|
+| `autopilot.py jour` | journée complète, sans personne : réserve, distribution, casting d'avance, production, livraison |
+| `serie.py` | file reprenable ; `impose()` pour une distribution choisie ; `plan(reprises=True)` : duos récurrents avec histoires neuves quand tous les duos neufs sont joués |
+| `doublons.py` | empreinte perceptuelle (ImageHash, BSD-2) et seuils mesurés ci-dessous |
+| Page « Fabrique MASSAMBA » (artifact privé claude.ai) | vidéothèque (onglets À publier, Publiées, Doublons, À corriger), téléchargement ≤ 15 Mo, légende à copier, case « Déjà publiée », cadence et créneaux, chiffres TikTok, pilote (pause, reprise, « Produire maintenant ») |
+| Tâche planifiée quotidienne | 4 h 52 (heure d'Abidjan) : lit la page, lance `autopilot.py jour`, verse les vidéos et leurs fiches dans la page, notifie |
+
+**Constance** : la fabrique garde une réserve de `cadence × (1 + FABRIQUE_RESERVE_JOURS)` vidéos prêtes (3 × 2 par défaut) ;
+un jour de production raté ne laisse aucun créneau vide. La page affiche les 14 derniers jours (cadence tenue ou non).
+
+**Version téléchargeable (≤ 15 Mo)** : H.264 deux passes « slow », débit calculé sur la durée (14 Mo visés, second essai
+12 % plus bas au-delà de 15 Mo, refus sinon). Mesuré sur la V17 (75 s) : 50,6 Mo → 13,97 Mo, SSIM 0,989 contre le fichier
+TikTok d'origine. Ce fichier d'origine est lui-même un agrandissement du film rendu en 576 × 1024 (12,2 Mo).
+
+**Doublons** (calibrage du 20/10/2026, 8 films, part d'images jumelles, titre et carton de fin exclus) :
+
+| Paire | Ressemblance |
+|---|---|
+| même film recodé (V17 et sa version 14 Mo) | 1,000 |
+| versions d'un même épisode (v15, v16, v17) | 0,612 à 0,820 |
+| épisodes différents, mêmes acteurs et mêmes décors | 0,500 |
+| autres épisodes différents | 0,000 à 0,295 |
+
+Seuils : « doublon » à 0,6 et plus (la vidéo sort de la réserve et des créneaux, rien n'est supprimé), « proche » de 0,45 à 0,6
+(avertissement seulement). L'utilisateur peut garder une vidéo signalée ou en signaler une à la main.
+
+**Capacités mesurées de la page** : 1 Gio de fichiers par artifact (5 000 fichiers au plus), soit environ 70 vidéos de 14 Mo
+à la fois ; base de 25 000 documents, soit la fiche des 10 000 vidéos (titre, légende, statut, doublons, chiffres).
+Greffe en cours : archivage des vidéos publiées les plus anciennes hors de la page (Google Drive de l'utilisateur, 15 Go
+gratuits, environ 1 000 vidéos), pour que la page garde la réserve et les semaines récentes.
