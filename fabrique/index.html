@@ -196,10 +196,12 @@ function carte(v) {
       <div class="ligne act">${s === "doublon" ? `<button data-a="garder">Garder quand même</button>` : s === "pret" ? `<button data-a="doublon">Signaler un doublon</button>` : ""}</div>
       <div class="message"></div></div>`;
   d.querySelector(".titre").textContent = v.titre || v.id;
-  const lib = { pret: ["att", `Juge ${v.portes || "9/9"} · prête`], publiee: ["ok", `Publiée ${jour(S.local.publiee[v.id] || v.publiee)}`], doublon: ["ko", "Doublon"], a_corriger: ["ko", "À corriger"] }[s] || ["att", s];
+  const q = v.ssim ? ` · netteté ${(v.ssim * 100).toFixed(1).replace(".", ",")} %` : "";
+  const lib = { pret: ["att", `Juge ${v.portes || "9/9"}${q} · prête`], publiee: ["ok", `Publiée ${jour(S.local.publiee[v.id] || v.publiee)}`], doublon: ["ko", "Doublon"], a_corriger: ["ko", "À corriger"] }[s] || ["att", s];
   const p = document.createElement("span"); p.className = "pastille " + lib[0]; p.textContent = lib[1]; d.querySelector(".etat").append(p);
   if (v.duree_s) { const t = document.createElement("span"); t.className = "chiffre"; t.style.fontSize = "13px"; t.textContent = `${Math.round(v.duree_s)} s`; d.querySelector(".etat").append(t); }
   if (v.doublon_de && v.ressemblance != null) { const a = document.createElement("div"); a.className = "alerte " + (s === "doublon" ? "ko" : "att"); a.textContent = `${s === "doublon" ? "Doublon de" : "Proche de"} « ${v.doublon_de} » : ${Math.round(v.ressemblance * 100)} % d'images jumelles.`; d.querySelector(".info").append(a); }
+  if (s === "a_corriger" && v.motifs && v.motifs.length) { const a = document.createElement("div"); a.className = "alerte ko"; a.textContent = "À corriger : " + v.motifs.join(" ; "); d.querySelector(".info").append(a); }
   d.querySelector(".legende").textContent = v.legende || "";
   const box = d.querySelector('input[data-a="publiee"]'); box.checked = s === "publiee";
   const msg = d.querySelector(".message"), img = d.querySelector("img");
