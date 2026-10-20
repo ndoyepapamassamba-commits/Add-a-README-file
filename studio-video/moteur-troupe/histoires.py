@@ -92,7 +92,8 @@ LE CHOC FINAL (le plus important : tu es le plus grand comédien du monde) :
 - Prépare-la par une FAUSSE PISTE : l'accroche et les marches font croire à une autre fin.
 - La chute est dite par le personnage le plus inattendu (l'enfant, le timide, la victime) ou par le menteur qui se trahit seul.
 - Le mot qui fait exploser le rire est le DERNIER mot de la chute.
-- Ajoute un BOUTON : la réaction choquée de l'autre (3 à 6 mots, jeu « choc »), par ex. « Ehhh Dieu ! Mon propre fils ! ».
+- RIEN après la chute : l'autre personnage reste FIGÉ de choc, le moteur le montre en gros plan (2 à 4 s) ; la chute doit
+  tenir en 9 syllabes au plus (≈ 1,2 s) pour claquer.
 JEUX DE DIALOGUE QUI ACCROCHENT DÈS LA PREMIÈRE SECONDE (en combiner un ou deux) :
 - accroche = un reproche, un secret ou une accusation directe, jamais une salutation ;
 - escalade en trois marches : chaque excuse est plus énorme que la précédente ;
@@ -134,7 +135,7 @@ LEXIQUE (sens exact, n'en mets que 2 ou 3) : {lex}
 
 FORMAT : de {F['n'][0]} à {F['n'][1]} répliques, chacune de 14 mots au plus ; la CHUTE (dernière réplique avant le bouton éventuel) fait
 8 mots au plus{' et REPREND un mot de la première réplique avec un autre sens' if F['rappel'] else ', le mot drôle en DERNIER'} ;
-un bouton final de 3 à 6 mots est permis (réaction).
+{'la chute est la DERNIÈRE réplique (la réaction choquée est jouée en image) ; deux répliques de suite jamais du même personnage ; ' if fmt == 'sketch' else 'un bouton final de 3 à 6 mots est permis (réaction) ; '}2 à 4 marques du parler ivoirien, pas plus.
 Jeu de chaque réplique parmi : {', '.join(JEUX)}.
 """
     if fmt == 'sketch': txt += CHOC
@@ -153,7 +154,7 @@ Jeu de chaque réplique parmi : {', '.join(JEUX)}.
     if faiblesses: txt += f"\nLE DERNIER ESSAI A ÉTÉ REFUSÉ POUR : {faiblesses}. Corrige cela.\n"
     txt += """
 Réponds UNIQUEMENT par un objet JSON :
-{"titre": "...", "mecanique": "...", "repliques": [{"qui": "NOM EXACT", "texte": "...", "jeu": "...", "role": "accroche|marche 1|marche 2|réaction|chute|bouton"}]}
+{"titre": "...", "mecanique": "UNE de : """ + ' | '.join(MECANIQUES_TON) + """", "repliques": [{"qui": "NOM EXACT", "texte": "...", "jeu": "...", "role": "accroche|marche 1|marche 2|réaction|chute|bouton"}]}
 Une seule réplique porte "role": "chute"."""
     return txt
 
@@ -398,6 +399,24 @@ def _essai(f):
         print('  (échec :', str(e)[:120], ')', flush=True); return None
 
 
+# mécaniques reconnues par fabrique/ton.py (le contrôle de ton refuse toute autre étiquette)
+MECANIQUES_TON = ['pied de la lettre', 'logique contradictoire', 'ironie dramatique', 'croyance au bout', 'mauvaise foi', 'règle absurde',
+                  'compliment empoisonné', 'vantardise contredite', 'contre-pied', 'pince-sans-rire', 'surenchère', 'proverbe détourné']
+
+
+def _scene(s):
+    """sketch du registre → sketch d'épisode : mécanique, ressort et RÉACTION FIGÉE après la chute (exigés par fabrique/ton.py ;
+    20/10/2026 : sans eux, tout épisode écrit par la machine était refusé). Un témoin (l'autre personnage) reste figé de choc."""
+    R = s['repliques']; c = next((r for r in R if r.get('chute')), R[-1])
+    temoin = next((a for a in s['acteurs'] if a != c['qui']), c['qui'])
+    x = {'id': s['id'], 'titre': s.get('titre'), 'lieu': s['lieu'], 'image': s['image'], 'acteurs': s['acteurs'], 'repliques': R,
+         'mecanique': s.get('mecanique'), 'ressort': s.get('ressort') or {'qui': c['qui']},
+         'reaction': s.get('reaction') or {'qui': temoin, 'jeu': 'choc', 'duree_s': 3.0, 'plan': 'gros plan fixe'}}
+    for k in ('mise_en_scene', 'objets'):
+        if s.get(k): x[k] = s[k]
+    return x
+
+
 def episode(dossier, sortie, ids=None):
     """trois champions de trois lieux → histoire.json (60 s) que voix.py, tourne.py et compose.py prennent tel quel."""
     R = registre(dossier); A = R['acceptees']
@@ -409,8 +428,7 @@ def episode(dossier, sortie, ids=None):
     S = [charge(dossier, i) for i in ids]
     chutes = [w.upper() for s in S for r in s['repliques'] if r.get('chute') for w in mots(r['texte']) if len(w) > 3][-8:]
     H = {'titre': S[0].get('titre', 'Épisode'), 'duree_cible_s': 60, 'reference': 'machine à histoires (histoires.py) : champions du registre',
-         'sketchs': [{'id': s['id'], 'titre': s.get('titre'), 'lieu': s['lieu'], 'image': s['image'], 'acteurs': s['acteurs'],
-                      'repliques': s['repliques']} for s in S],
+         'sketchs': [_scene(s) for s in S],
          'mots_chute': chutes, 'ecriture': 'histoires.py : bible comique + juge JEV + duel contre le champion précédent'}
     json.dump(H, open(sortie, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     return H
