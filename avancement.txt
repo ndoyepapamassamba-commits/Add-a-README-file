@@ -8,3 +8,4 @@
 [972 s] === baye-ndiaye--ecouter (at_runtime)   |=========================>                        | 2/4 - 135.38s/it[K · mémoire libre 13800 Mo
 [1093 s] === baye-ndiaye--ecouter (at_runtime)   |=====================================>            | 3/4 - 135.64s/it[K · mémoire libre 13800 Mo
 [1214 s] === maman-nounou--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14482 Mo
+[1336 s] === maman-nounou--mentir (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13704 Mo
