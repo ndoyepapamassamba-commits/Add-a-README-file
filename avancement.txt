@@ -1,1 +1,2 @@
 [123 s] 0 images · === decor-banque-large-jour  · mémoire libre 7016 Mo
+[244 s] 0 images · === decor-banque-large-jour   |============>                                     | 1/4 - 158.77s/it[K · mémoire libre 7006 Mo
