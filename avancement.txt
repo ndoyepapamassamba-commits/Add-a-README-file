@@ -10,3 +10,4 @@
 [1215 s] 1 images · === maison-baye-ndiaye-salon-large-jour   |=====================================>            | 3/4 - 153.49s/it[K · mémoire libre 6990 Mo
 [122 s] 1 images · === maison-baye-ndiaye-cuisine-large-jour   |============>                                     | 1/4 - 87.70s/it[K · mémoire libre 7019 Mo
 [243 s] 1 images · === maison-baye-ndiaye-cuisine-large-jour   |=========================>                        | 2/4 - 87.25s/it[K · mémoire libre 7015 Mo
+[364 s] 1 images · === maison-baye-ndiaye-cuisine-large-jour   |=====================================>            | 3/4 - 86.49s/it[K · mémoire libre 7020 Mo
