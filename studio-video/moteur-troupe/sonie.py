@@ -131,19 +131,60 @@ def aigus(y, sr, lignes=None, cibles=None, seuil_db=-10.0, rapport_f0=None, rapp
     return fautes
 
 
+def _filtre_ffmpeg(y, filtre, sr=SR):
+    with tempfile.TemporaryDirectory() as d:
+        ecrit(f'{d}/a.wav', y, sr)
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', f'{d}/a.wav', '-af', filtre, '-ar', str(sr), f'{d}/b.wav'], check=True)
+        z, _ = lit(f'{d}/b.wav')
+    return z[:len(y)] if len(z) >= len(y) else np.pad(z, (0, len(y) - len(z)))
+
+
+def travail_limiteur(avant, apres, sr=SR, ms=10):
+    """part des fenêtres de PAROLE (10 ms, à moins de 15 dB du niveau fort de la bande, p95) que le limiteur baisse de plus
+    de 3 dB, et 5e centile de son gain — la mesure de la voix « écrasée » (le tapis musical, 24 dB sous la parole, est exclu)."""
+    w = int(sr * ms / 1000); n = len(avant) // w
+    a = np.sqrt((avant[:n * w].reshape(n, w) ** 2).mean(1) + 1e-12); b = np.sqrt((apres[:n * w].reshape(n, w) ** 2).mean(1) + 1e-12)
+    g = 20 * np.log10(b / a); p = 20 * np.log10(a) > 20 * np.log10(np.percentile(a, 95)) - 15
+    return round(100 * float((g[p] < -3).mean()), 1), round(float(np.percentile(g[p], 5)), 1)
+
+
+# COMPRESSEUR DE DIALOGUE AVANT LE LIMITEUR (20/10/2026, ep01 p5 : le limiteur seul baissait de plus de 3 dB 45,8 % des
+# fenêtres de parole, 5e centile −9,7 dB — voix écrasée). La parole de Piper crête 17,7 dB au-dessus de sa sonie, il en faut
+# 11,7 pour −14 LUFS sous −2,3 dBTP ; la pratique du mastering de dialogue répartit ce travail : un compresseur doux (2:1 à
+# 3:1, détection RMS, il travaille sur tout sauf les passages les plus faibles), puis le limiteur pour les seules crêtes
+# brèves. Greffe : acompressor de ffmpeg 6.1 (déjà installé, appelé comme programme séparé ; options lues dans
+# `ffmpeg -h filter=acompressor` : seuil LINÉAIRE 0,00098–1, ratio, attaque/relâche en ms, genou en dB, détection rms).
+# Deux étages, comme en mastering de dialogue : compresseur LENT (RMS 3:1, seuil −24 dBFS, 10/150 ms) qui égalise, puis
+# compresseur de CRÊTES rapide (4:1, attaque 0,5 ms, relâche 60 ms) — la parole de Piper a des transitoires trop brefs pour
+# le premier (mesuré sur ep01 p6 : RMS seul, même à −30 dBFS, laisse le limiteur sur 14,6 % des fenêtres). Boucle fermée : le
+# seuil des crêtes descend de 2 dB tant que le limiteur baisse de plus de 3 dB plus de LIMITEUR_MAX_PCT % des fenêtres de
+# parole. Mesuré sur ep01 à −2,3 dBTP : limiteur seul 45,8 % ; RMS seul 15,0 % ; RMS + crêtes −16 dBFS 3,7 % (5e centile
+# −2,7 dB), variation des compresseurs 4,3 dB.
+LIMITEUR_MAX_PCT = 5.0
+DERNIER = {}   # mesures du dernier mastering, écrites par compose.py dans son.json et lues par le juge unique (porte H)
+
+
 def masterise(y, sr_in, cible=-14.0, plafond=-2.3, journal=print):
-    """gain avant limiteur cherché sur la bande D'ORIGINE (le limiteur mange de la sonie : on la mesure après lui)."""
+    """compresseur de dialogue (seuil en boucle fermée) puis gain avant limiteur cherché sur la bande COMPRESSÉE (le limiteur
+    mange de la sonie : on la mesure après lui)."""
     y0 = resample_poly(y, SR, sr_in) if sr_in != SR else y
-    g, y, vus = 0.0, y0, []   # gain en dB ; le limiteur rend la sonie moins que proportionnelle au gain : pas de la sécante
-    for k in range(8):
-        I, tp = mesure(y); vus.append((g, I))
-        journal(f'  passe {k}: gain {g:+.2f} dB → {I:.2f} LUFS, crête {tp:.2f} dBTP')
-        if abs(I - cible) <= 0.15 and tp <= plafond + 0.1: break
-        pente = 1.0 if len(vus) < 2 else max(0.15, (vus[-1][1] - vus[-2][1]) / max(1e-3, vus[-1][0] - vus[-2][0]))
-        g += (cible - I) / pente; y = limiteur(y0 * 10 ** (g / 20), SR, plafond)
-    G = 10 ** (g / 20)
-    gr = 20 * np.log10(np.maximum(np.abs(y), 1e-9) / np.maximum(np.abs(y0 * G), 1e-9))
-    journal(f'  limiteur : réduction > 3 dB sur {100 * float((gr[np.abs(y0 * G) > 0.05] < -3).mean()):.1f} % de la parole')
+    I0, _ = mesure(y0); y0 = y0 * 10 ** ((-20.0 - I0) / 20)   # niveau de travail −20 LUFS : seuil du compresseur stable
+    for seuil in (-16.0, -18.0, -20.0, -22.0):   # seuil du compresseur de CRÊTES (dBFS, au niveau de travail −20 LUFS)
+        yc = _filtre_ffmpeg(y0, 'acompressor=threshold=0.063:ratio=3:attack=10:release=150:knee=4:detection=rms,'
+                                f'acompressor=threshold={10 ** (seuil / 20):.5f}:ratio=4:attack=0.5:release=60:knee=3:detection=peak')
+        g, y, vus = 0.0, yc, []   # gain en dB ; le limiteur rend la sonie moins que proportionnelle au gain : pas de la sécante
+        for k in range(8):
+            I, tp = mesure(y); vus.append((g, I))
+            journal(f'  crêtes {seuil:.0f} dBFS, passe {k}: gain {g:+.2f} dB → {I:.2f} LUFS, crête {tp:.2f} dBTP')
+            if abs(I - cible) <= 0.15 and tp <= plafond + 0.1: break
+            pente = 1.0 if len(vus) < 2 else max(0.15, (vus[-1][1] - vus[-2][1]) / max(1e-3, vus[-1][0] - vus[-2][0]))
+            g += (cible - I) / pente; y = limiteur(yc * 10 ** (g / 20), SR, plafond)
+        part, p5 = travail_limiteur(yc * 10 ** (g / 20), y)
+        comp = travail_limiteur(y0, yc, ms=50)
+        journal(f'  limiteur : réduction > 3 dB sur {part:.1f} % des fenêtres de parole (5e centile {p5:+.1f} dB)')
+        if part <= LIMITEUR_MAX_PCT: break
+    DERNIER.clear(); DERNIER.update(limiteur_part_pct=part, limiteur_p5_db=p5, compresseur_seuil_dbfs=seuil,   # seuil du compresseur de crêtes
+                                    compresseur_p5_db=comp[1], lufs=I, crete_dbtp=tp)
     return y
 
 

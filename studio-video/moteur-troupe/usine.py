@@ -128,7 +128,7 @@ def tourne(d, v):
 # dans la bible, bouches DESSINÉES, décor choisi d'après le texte, même lumière pour tous) et les portes deviennent un
 # seul juge (juge_unique.py, quelques secondes, aucun appel réseau). Mode « peint » (20/10/2026, « comme la version précédente
 # mais plus propre et animables ») : tourne_peint.py, les planches peintes de la troupe sans aucune déformation.
-def marionnettes(d, v, moteur='tourne_marionnettes.py'):
+def marionnettes(d, v, moteur='tourne_marionnettes.py', e_tournage=None):
     d = os.path.abspath(d); D = os.path.join(d, v); log = f'{d}/{v}-usine.log'; T = {}; t0 = time.time()
     if not os.path.isfile(f'{d}/montage.json'): episode(d)
     env = {'PIPER_VOICES': os.environ.get('PIPER_VOICES', os.path.join(os.path.dirname(BIBLIO), 'piper') + '/')}
@@ -137,7 +137,7 @@ def marionnettes(d, v, moteur='tourne_marionnettes.py'):
     etape('bouches', f'{ICI}/levres.py', 'timeline.json')
     etape('rires', f'{ICI}/musique.py', 'timeline.json', 'voix/mix.wav', 'voix/mix-musique.wav')
     etape('ambiance', f'{ICI}/ambiance.py', 'timeline.json', 'voix/mix-musique.wav', 'voix/mix-ambiance.wav')
-    etape('tournage', f'{ICI}/{moteur}', D, e={'TOURNE_PROCS': str(os.cpu_count() or 4)})
+    etape('tournage', f'{ICI}/{moteur}', D, e=dict({'TOURNE_PROCS': str(os.cpu_count() or 4)}, **(e_tournage or {})))
     etape('montage', f'{ICI}/compose.py', D, f'{D}/film.mp4')
     etape('planche', f'{ICI}/planche_repliques.py', f'{D}/film.mp4', 'timeline.json', f'{D}/planche.jpg')
     t1 = time.time(); exporte(f'{D}/film.mp4', f'{D}/tiktok-1080x1920.mp4'); T['export'] = round(time.time() - t1, 1)
@@ -176,7 +176,8 @@ def eclair(d, v):
     def son_():
         etape('bande', '-c', f"import sys, json; sys.path.insert(0, {ICI!r}); import sonie; "
                              f"T = json.load(open('timeline.json')); "
-                             f"sonie.ecrit({D + '/bande.wav'!r}, sonie.bande_livree('voix/mix-ambiance.wav', float(T['total'])))")
+                             f"sonie.ecrit({D + '/bande.wav'!r}, sonie.bande_livree('voix/mix-ambiance.wav', float(T['total']))); "
+                             f"json.dump(sonie.DERNIER, open({D + '/son.json'!r}, 'w'), indent=1)")
         mus = 'voix/mix-musique.wav' if os.path.isfile(f'{d}/voix/mix-musique.wav') else 'voix/mix.wav'
         etape('juge_son', f'{ICI}/jev_son.py', 'timeline.json', 'voix/mix.wav', mus, f'{D}/bande.wav', f'{D}/jev_son.json')
     def son_garde():
@@ -382,6 +383,8 @@ if __name__ == '__main__':
     elif c == 'exporte': print(exporte(sys.argv[2], sys.argv[3]))
     elif c == 'marionnettes': print(json.dumps(marionnettes(sys.argv[2], sys.argv[3]), ensure_ascii=False, indent=1))
     elif c == 'peint': print(json.dumps(marionnettes(sys.argv[2], sys.argv[3], 'tourne_peint.py'), ensure_ascii=False, indent=1))   # marionnettes peintes (planches de la troupe)
+    elif c == 'generatif':   # chaîne générative (20/10/2026) : plans animés par InfiniteTalk (generatif/), même montage et même juge
+        print(json.dumps(marionnettes(sys.argv[2], sys.argv[3], '../generatif/assemble_generatif.py', {'GENERATIF_DIR': os.path.abspath(sys.argv[4])}), ensure_ascii=False, indent=1))
     elif c == 'eclair': print(json.dumps(eclair(sys.argv[2], sys.argv[3]), ensure_ascii=False, indent=1))
     elif c == 'finit': print(json.dumps(finit(sys.argv[2], sys.argv[3]), ensure_ascii=False, indent=1))
     elif c == 'a_corriger':

@@ -58,7 +58,8 @@ démonter, journal daté ; à relancer au début de chaque session et à lire av
   (consigne du 19/10/2026, « élargis nos critères quand ils sont valables ») — permissives (MIT, Apache-2.0, BSD…),
   CC-BY avec attribution, copyleft (GPL…) utilisé comme programme séparé, licences communautaires dont l'utilisateur
   respecte les seuils ; licence non commerciale seulement au banc d'essai (évaluer, apprendre la méthode), jamais dans
-  la chaîne des vidéos publiées ; jamais de dépôt sans licence (`.claude/skills/modeles-libres-moteur`).
+  la chaîne des vidéos publiées ; dépôt sans licence : pour l'expertise et le banc d'essai seulement (consigne du 20/10/2026,
+  « utilise aussi les dépôts sans licence pour l'expertise »), jamais dans la chaîne publiée (`.claude/skills/modeles-libres-moteur`).
 - Ne jamais fabriquer de données, d'économies ni de performances ; « plafond DUR » seulement s'il est appliqué par le code.
 - Ne jamais afficher ni demander de clés, secrets ou jetons. Création de comptes au nom de l'utilisateur **autorisée**
   (consigne du 16/10/2026, « carte blanche ») quand la tâche l'exige, sans jamais contourner un contrôle anti-robot

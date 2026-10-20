@@ -196,7 +196,11 @@ def draw_caption(ov, t):
 _mot = {L.get('moteur', 'piper') for L in T['lines']}
 _v = (["Qwen3-TTS (Apache-2.0) d'après OpenSLR 57 (Apache-2.0)"] if 'qwen3' in _mot else []) + \
      (['Piper « siwis » (CC BY 4.0, SIWIS), « gilles » (CC0)'] if 'piper' in _mot else [])
-credit = 'Voix : ' + ', '.join(_v) + ' · Images : Z-Image-Turbo (Apache-2.0) · Visages : LivePortrait (MIT) · Émojis animés : Noto Emoji, Google (CC BY 4.0)'
+# crédit des images d'après le moteur réellement utilisé pour ce tournage (20/10/2026 : la p5 citait encore LivePortrait)
+_tg = json.load(open(f'{D}/tournage.json')) if os.path.isfile(f'{D}/tournage.json') else {}
+_anim = ('Animation : InfiniteTalk, MeiGen-AI (Apache-2.0) sur Wan2.1 (Apache-2.0)' if _tg.get('generatif') else
+         'Bouches et paupières : LaMa (Apache-2.0), MediaPipe (Apache-2.0)' if _tg.get('peint') else 'Visages : LivePortrait (MIT)')
+credit = 'Voix : ' + ', '.join(_v) + f' · Images : Z-Image-Turbo (Apache-2.0) · {_anim} · Émojis animés : Noto Emoji, Google (CC BY 4.0)'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import marque
 import jeu as _jeu
 HAB = marque.Habillage(W, H, CLIP_Y, CH_, T['sketchs'], T['total'], SAFE['left'], SAFE['right'], fps=FPS,
@@ -245,6 +249,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import sonie
 # dé-esseur (18/10), mastering, boucle fermée sur le contrôle des sifflantes APRÈS le mastering (19/10/2026, v12 : −9,8 dB à
 # 40,9 s ; le limiteur comprime la parole forte, pas les sifflantes), crête revérifiée : sonie.bande_livree
 sonie.ecrit(f'{D}/bande.wav', sonie.bande_livree(BANDE, total))
+json.dump(sonie.DERNIER, open(f'{D}/son.json', 'w'), indent=1)   # travail du limiteur, lu par le juge unique (porte H)
 # encodage « veryfast » CRF 18 (18/10/2026, « réduire drastiquement le temps de production ») : 31 s au lieu de 56,5 s pour les
 # 4 047 images de l'épisode 1, PSNR 44,3 dB entre les deux encodages (identiques à l'œil)
 subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-framerate', str(FPS), '-i', f'{D}/compose/c%05d.jpg', '-i', f'{D}/bande.wav', '-vf', 'format=yuv420p',

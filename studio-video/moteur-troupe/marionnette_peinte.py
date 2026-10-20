@@ -204,6 +204,9 @@ def charge(nom):
         x0, x1 = int(L_[:, 0].min()), int(L_[:, 0].max()) + 1; col = m['a'][:int(L_[152][1]), max(0, x0):x1] > 0.5
         rows = np.nonzero(col.any(1))[0]; m['coiffe'] = float(rows.min()) if len(rows) else m['crane']
         m['tete'] = [float(L_[:, 0].min()), min(m['coiffe'], m['crane']), float(L_[:, 0].max()), float(L_[152][1])]
+        ys_, xs_ = np.nonzero(m['a'] > 0.5)   # silhouette entière (bras compris) : cadrage et contrôle des coupes au bord
+        m['corps'] = [float(xs_.min()), float(ys_.min()), float(xs_.max() + 1), float(ys_.max() + 1)]
+        m['aire'] = float(m['a'].sum())
         for k, oe in enumerate(m['yeux']): oe['masque'] = cv2.imread(f'{d}/{nomp}-oeil{k}.png', 0) > 0
     return meta
 

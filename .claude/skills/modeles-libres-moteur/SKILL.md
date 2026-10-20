@@ -47,8 +47,13 @@ YouTube Shorts) — en lisant le texte de la licence du code ET celui des poids,
   indirect » ; CC-BY-NC : « not primarily intended for or directed towards commercial advantage or monetary
   compensation » ; S-Lab de CodeFormer : « use for non-commercial purpose »). Les vidéos sont monétisées : ce serait une
   violation de licence, avec un risque de réclamation sur les comptes de l'utilisateur.
-- **Toujours refusé** : dépôt sans licence (tous droits réservés), licence nulle dans le pays de l'utilisateur, licence
-  qui revendique les vidéos produites — même si le modèle est meilleur.
+- **Dépôt sans licence (tous droits réservés) : expertise et banc d'essai** (consigne du 20/10/2026, « utilise aussi les
+  dépôts sans licence pour l'expertise ») — on les lit, on les mesure, on en apprend les réglages et les méthodes (flux
+  ComfyUI, paramètres, astuces de Kijai, etc.), au même titre que le non commercial ci-dessus ; dans la chaîne des vidéos
+  publiées, on prend l'équivalent sous licence acceptée (exemple : LoRA lightx2v officielle Apache-2.0 au lieu de la copie
+  sans licence de Kijai/WanVideo_comfy) ou on réécrit la méthode.
+- **Toujours refusé** : licence nulle dans le pays de l'utilisateur, licence qui revendique les vidéos produites — même si
+  le modèle est meilleur.
 - Modèle **privé** : on reproduit la MÉTHODE publiée (article, algorithme) avec des poids acceptés ci-dessus ou notre propre
   implémentation. Jamais de copie de poids propriétaires, jamais de contournement de conditions d'utilisation.
 - Noter le modèle, sa licence (et sa catégorie ci-dessus) et sa source dans l'en-tête du script qui l'utilise.

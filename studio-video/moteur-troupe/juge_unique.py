@@ -6,12 +6,12 @@
 #   A. synchro labiale : décalage bouche ↔ voix mesuré par corrélation croisée, dans la tolérance de la radiodiffusion
 #      (UIT-R BT.1359 : son en avance de plus de 45 ms ou en retard de plus de 125 ms = détectable) ;
 #   B. parleur lisible : la bouche de celui qui parle est dans l'image et assez grande pour se lire sur un téléphone ;
-#   C. cadre : têtes entières (aucune tête coupée par le haut du cadre) ;
+#   C. cadre : têtes entières (ni par le haut ni par les côtés) et aucun BOUT de personnage au bord (bras, demi-visage) ;
 #   D. vie : aucune image figée plus d'une seconde ;
 #   E. fluidité : sauts, à-coups, secousses (fluidite.juge, seuils calibrés sur les références) ;
 #   F. rythme : plans par minute et durée médiane des plans dans la plage mesurée sur vos TikTok ;
 #   G. lieu : chaque sketch tourné dans un lieu que son texte appelle ;
-#   H. son : −14 LUFS ± 1 et crête vraie ≤ −1 dBTP (normes des plateformes) ;
+#   H. son : −14 LUFS ± 1 et crête vraie ≤ −1 dBTP (normes des plateformes), limiteur sur ≤ 5 % de la parole (voix non écrasée) ;
 #   I. fichier : 1080 × 1920, 30 i/s, H.264 + AAC 48 kHz, durée > 60 s (programme de rémunération TikTok).
 # python3 juge_unique.py DOSSIER_VERSION   (dans le dossier de l'épisode : timeline.json, voix/mix.wav)
 import json, os, re, subprocess, sys, time
@@ -73,7 +73,7 @@ def juge(D):
                                   decalage_ms=round(dec_ms, 1), correlation=round(cc[kb], 3), correlation_a_0=round(cc[0], 3),
                                   regle='UIT-R BT.1359 : son en avance ≤ 45 ms, en retard ≤ 125 ms')
     # B. parleur lisible / C. têtes entières
-    vus, lisibles, n_par = 0, 0, 0; coupees = []; petites = []
+    vus, lisibles, n_par = 0, 0, 0; coupees = []; petites = []; bouts = []
     decoup = TG['decoupage']
     for f in range(nf):
         b = BX.get(str(f), {}); t = f / fps
@@ -84,12 +84,16 @@ def juge(D):
             if dans and (x1 - x0) >= BOUCHE_MIN_PX: lisibles += 1
             elif dans: petites.append(round(t, 2))
         sujets = [sh[4]] if isinstance(sh[4], str) else (sh[4] or [])
-        for n in sujets:
-            if n in b and b[n]['tete'][1] < 0: coupees.append(round(t, 2))   # tous les plans, ouverture comprise
+        for n in sujets:   # tous les plans, ouverture comprise ; par le haut ET par les côtés (ep01 p5, 12 s : Koffi coupé à gauche)
+            if n in b and (b[n]['tete'][1] < 0 or b[n]['tete'][0] < 0 or b[n]['tete'][2] > CW): coupees.append(round(t, 2))
+        for n, v in b.items():   # BOUT d'un voisin au bord (ep01 p5 : bras de Maman à 41 s, moitié du visage de Modou à 66,5 s)
+            if n not in sujets and v.get('aire', 0) > 0.01 and not (v['tete'][0] >= 0 and v['tete'][2] <= CW and v['tete'][1] >= 0 and v['tete'][3] <= CH):
+                bouts.append(round(t, 2))
     R['B_parleur_lisible'] = dict(ok=bool(n_par and vus / n_par >= 0.98 and lisibles / n_par >= 0.85), dans_l_image=round(vus / max(1, n_par), 3),
                                   bouche_lisible=round(lisibles / max(1, n_par), 3), seuil_px=BOUCHE_MIN_PX,
                                   trop_petite_s=[petites[0], petites[-1]] if petites else [])
-    R['C_tetes_entieres'] = dict(ok=not coupees, images_coupees=len(coupees), premiers_s=coupees[:5])
+    R['C_tetes_entieres'] = dict(ok=not coupees and not bouts, images_coupees=len(coupees), premiers_s=coupees[:5],
+                                 bouts_de_personnage=len(bouts), bouts_premiers_s=bouts[:5])
     # D. vie : plus longue suite d'images identiques dans le clip
     prev, run, pire, t_pire = None, 0, 0, 0.0
     for f in range(0, nf):
@@ -121,7 +125,11 @@ def juge(D):
     # H. son / I. fichier
     tk = f'{D}/tiktok-1080x1920.mp4'; mp = tk if os.path.isfile(tk) else f'{D}/film.mp4'
     lufs, tp = _sonie(mp); sd = _sonde(mp)
-    R['H_son'] = dict(ok=bool(abs(lufs + 14) <= 1.0 and tp <= -1.0), lufs=lufs, crete_dbtp=tp)
+    # travail du limiteur (20/10/2026) : sonie et crête justes ne suffisent pas, une voix écrasée par le limiteur s'entend
+    import sonie; so = json.load(open(f'{D}/son.json')) if os.path.isfile(f'{D}/son.json') else {}
+    lim = so.get('limiteur_part_pct')
+    R['H_son'] = dict(ok=bool(abs(lufs + 14) <= 1.0 and tp <= -1.0 and lim is not None and lim <= sonie.LIMITEUR_MAX_PCT), lufs=lufs, crete_dbtp=tp,
+                      limiteur_part_pct=lim, limiteur_max_pct=sonie.LIMITEUR_MAX_PCT, compresseur_seuil_dbfs=so.get('compresseur_seuil_dbfs'))
     R['I_fichier'] = dict(ok=bool(sd['w'] == 1080 and sd['h'] == 1920 and abs(sd['fps'] - 30) < 0.01 and sd['vcodec'] == 'h264' and sd['acodec'] == 'aac'
                                   and sd['sr'] == 48000 and sd['duree'] > 60), **sd)
     raisons = [k for k, v in R.items() if not v['ok']]

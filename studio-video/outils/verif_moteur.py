@@ -312,6 +312,27 @@ try:
 except Exception as e:
     echecs.append(f'cadence : {e}')
 
+# SON NON ÉCRASÉ, CADRE SANS BOUT, CHAÎNE GÉNÉRATIVE (20/10/2026) : deux compresseurs avant le limiteur et sa mesure jugée ;
+# juge C sur les côtés et les bouts ; ordre [haut, gauche, bas, droite] des masques d'InfiniteTalk ; plafond dur Modal
+try:
+    _so = _il.import_module('sonie'); import numpy as _n4
+    _t = _n4.arange(48000 * 2) / 48000; _a = _n4.sin(2 * _n4.pi * 220 * _t) * 0.2; _b = _a.copy(); _b[48000:48480] *= 0.25
+    _p, _ = _so.travail_limiteur(_a, _b)
+    if not 0 < _p < 5: echecs.append(f'son : la mesure du travail du limiteur ne voit pas une baisse de 12 dB sur 10 ms ({_p} %)')
+    _src_s = open(os.path.join(ICI, 'moteur-troupe', 'sonie.py'), encoding='utf-8').read()
+    if 'detection=peak' not in _src_s or 'detection=rms' not in _src_s: echecs.append('son : les deux compresseurs (lent RMS, crêtes) manquent avant le limiteur')
+    _src_j = open(os.path.join(ICI, 'moteur-troupe', 'juge_unique.py'), encoding='utf-8').read()
+    if 'limiteur_part_pct' not in _src_j or 'bouts' not in _src_j: echecs.append('juge unique : travail du limiteur ou bouts de personnage non jugés')
+    _g = os.path.join(ICI, 'generatif')
+    _src_p = open(os.path.join(_g, 'plan_generatif.py'), encoding='utf-8').read()
+    if "round(max(0, c[1])), round(max(0, c[0])), round(min(KH, c[3])), round(min(KW, c[2]))" not in _src_p:
+        echecs.append('génératif : le masque d\'InfiniteTalk n\'est plus écrit [haut, gauche, bas, droite] (wan/multitalk.py l. 592-601)')
+    _src_m = open(os.path.join(_g, 'modal_studio.py'), encoding='utf-8').read()
+    if 'if deja + estime > PLAFOND_USD' not in _src_m or 'raise SystemExit' not in _src_m: echecs.append('génératif : plafond dur Modal absent')
+    print('son (deux compresseurs, limiteur mesuré), juge C étendu, génératif (masques, plafond) : OK')
+except Exception as e:
+    echecs.append(f'son / génératif : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

@@ -18,7 +18,8 @@ ICI = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, ICI)
 import marionnette_peinte as MP
 from tourne_marionnettes import decoupage, lisse
 
-FPS, CW, CH = 30, 576, 460
+FPS = 30
+CW, CH = int(os.environ.get('TOURNE_CW', 576)), int(os.environ.get('TOURNE_CH', 460))   # images clés de la chaîne générative : 1056 × 864
 ASP = CW / CH
 DECORS = os.environ.get('DECORS_PEINTS', os.path.join(os.environ.get('MASSAMBA_BIBLIO', '.'), 'decors-peints'))
 POSE_JEU = {'accuse': 'accuse', 'colere': 'accuse', 'mecontent': 'accuse', 'frustration': 'accuse', 'soupcon': 'accuse',
@@ -45,17 +46,57 @@ def borne(c, W, H):
     return (min(max(cx, w / 2), W - w / 2), min(max(cy, h / 2), H - h / 2), w, h)
 
 
-def cadre(kind, who, G, W, H):
+def cadre(kind, who, G, W, H, ex=None):
     if kind == 'large' or not who:
         h = min(H, W / ASP); return (W / 2, H - h / 2, h * ASP, h)
     if kind in ('duo', 'ouvre'):
         gs = [G[n] for n in (who if isinstance(who, list) else [who]) if n in G]
-        x0 = min(g['tete_box'][0] - g['hh'] * 0.5 for g in gs); x1 = max(g['tete_box'][2] + g['hh'] * 0.5 for g in gs)
+        # largeur : silhouettes ENTIÈRES (ep01 p5, 12 s : Koffi en pose de choc à moitié hors du plan à deux, le cadre ne
+        # tenait que les têtes ± ½ tête) ; ÷ 0,95 : la poussée de caméra (−5 % en fin de plan) ne doit couper personne
+        x0 = min(min(g['tete_box'][0] - g['hh'] * 0.5, g['corps'][0]) for g in gs); x1 = max(max(g['tete_box'][2] + g['hh'] * 0.5, g['corps'][2]) for g in gs)
         top = min(g['tete_box'][1] - g['hh'] * 0.22 for g in gs); bas = max(g['sol'] - g['H'] * 0.42 for g in gs)
-        h = max(bas - top, (x1 - x0) / ASP); return borne(((x0 + x1) / 2, top + h / 2, h * ASP, h), W, H)
+        h = max(bas - top, (x1 - x0) / ASP / 0.95); return borne(((x0 + x1) / 2, top + h / 2, h * ASP, h), W, H)
     g = G[who]; hh = g['hh']; h = {'moyen': 3.0, 'serre': 2.2, 'gros': 1.55}[kind] * hh; w = h * ASP; tb = g['tete_box']   # hh : coiffure comprise
     cx = (tb[0] + tb[2]) / 2 + g['face'] * w * 0.12; cy = tb[1] - {'moyen': 0.25, 'serre': 0.18, 'gros': 0.10}[kind] * hh + h / 2
-    return borne((cx, cy, w, h), W, H)
+    return sans_bout(borne((cx, cy, w, h), W, H), who, G, W, H, ex)
+
+
+def _coupe(c, who, G, ex=None):
+    """voisins dont un BOUT est dans le cadre c (corps qui touche le cadre, tête pas entière dedans)."""
+    cx, cy, w, h = c; X0, X1, Y0, Y1 = cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2; r = []
+    for o, g in G.items():
+        # silhouettes des poses que le voisin prend PENDANT le plan (p7 : bras du haussement de Modou à 64,8 s), sinon sa pose
+        # de repos (p6 : l'union de TOUTES ses poses, bras tendu d'« accuse » compris, bloquait le cadre à 40,4 s)
+        b, ot = (ex or {}).get(o) or g.get('corps_neutre', g['corps']), g['tete_box']
+        if o == who or b[2] <= X0 or b[0] >= X1 or b[3] <= Y0 or b[1] >= Y1: continue
+        if not (ot[0] >= X0 and ot[2] <= X1 and ot[1] >= Y0 and ot[3] <= Y1): r.append(o)
+    return r
+
+
+def sans_bout(c, who, G, W, H, ex=None):
+    """plan sur un seul personnage : aucun BOUT d'un autre au bord du cadre (ep01 p5 : un bras et une robe de Maman Nounou à
+    41 s, une moitié du visage de Modou à 66,5 s — règle de cadrage : un voisin est soit dehors, soit sa tête entière
+    dedans). Le cadre glisse pour sortir le voisin tant que la tête du sujet garde 6 % de marge et que son visage reste à
+    moins de 20 % de la largeur du centre ; sinon il se resserre (au plus 3 fois 10 %) autour du visage du sujet."""
+    tb = G[who]['tete_box']
+    for _ in range(4):
+        cx, cy, w, h = c; m = 0.06 * w
+        gene = _coupe(c, who, G, ex)
+        if not gene: return c
+        for o in gene:
+            b = (ex or {}).get(o) or G[o].get('corps_neutre', G[o]['corps']); ncx = b[0] - w / 2 if (b[0] + b[2]) / 2 > (tb[0] + tb[2]) / 2 else b[2] + w / 2
+            fx_ = (tb[0] + tb[2]) / 2   # visage gardé dans le tiers central élargi (p7 : Tantie poussée contre le bord où elle regarde)
+            if tb[0] - m >= ncx - w / 2 and tb[2] + m <= ncx + w / 2 and abs(fx_ - ncx) <= 0.2 * w:
+                n_ = borne((ncx, cy, w, h), W, H)
+                if not _coupe(n_, who, G, ex) or len(_coupe(n_, who, G, ex)) < len(gene): c = n_; break
+        else:
+            # resserrer en zoomant AUTOUR DU VISAGE (le visage garde sa place dans le cadre) : resserrer à « haut de cadre
+            # constant » coupait la bouche de Tantie Awa en gros plan (essai du 20/10/2026)
+            fx, fy = (tb[0] + tb[2]) / 2, (tb[1] + tb[3]) / 2; w2, h2 = w * 0.9, h * 0.9
+            haut, bas = tb[3] + 0.04 * h2 - h2 / 2, tb[1] - 0.04 * h2 + h2 / 2   # la tête entière (coiffure comprise) reste dedans
+            if haut > bas: return c   # la tête ne tiendrait plus : on garde le cadre précédent (le juge C tranchera)
+            c = borne((fx + (cx - fx) * 0.9, min(max(fy + (cy - fy) * 0.9, haut), bas), w2, h2), W, H)
+    return c
 
 
 def camera(sh, t, G, W, H):
@@ -63,7 +104,7 @@ def camera(sh, t, G, W, H):
     if kind == 'ouvre':
         a = cadre('large', None, G, W, H); b = cadre('duo', who, G, W, H); k = lisse((t - t0) / 2.4)
         return tuple(a[i] * (1 - k) + b[i] * k for i in range(4))
-    c = cadre(kind, who, G, W, H); z = 1.0 - 0.05 * lisse(u)
+    c = cadre(kind, who, G, W, H, EXCLU.get((sid, round(t0, 3)))); z = 1.0 - 0.05 * lisse(u)
     return borne((c[0], c[1], c[2] * z, c[3] * z), W, H)
 
 
@@ -108,7 +149,18 @@ def prepare_sketch(sk, acts, dec, fiches):
         Mx = placement(A[n], P0, 0.0, 1.0); tb = P0['tete']
         c = np.array([[tb[0], tb[1], 1], [tb[2], tb[1], 1], [tb[0], tb[3], 1], [tb[2], tb[3], 1]], np.float32) @ Mx.T
         box = [float(c[:, 0].min()), float(c[:, 1].min()), float(c[:, 0].max()), float(c[:, 1].max())]
-        G[n] = {'tete_box': box, 'hh': box[3] - box[1], 'sol': A[n]['sol'], 'H': A[n]['taille'] * ppm, 'face': A[n]['face']}
+        # silhouette de TOUTES les poses (un bras tendu d'« accuse » dépasse du neutre) + balancement (±1,5° aux pieds)
+        cs, par_pose = [], {}
+        mg = 0.03 * A[n]['taille'] * ppm
+        for nom_p, P_ in A[n]['M']['poses'].items():
+            b = P_['corps']; c_ = np.array([[b[0], b[1], 1], [b[2], b[1], 1], [b[0], b[3], 1], [b[2], b[3], 1]], np.float32) @ placement(A[n], P_, 0.0, 1.0).T
+            cs.append(c_); par_pose[nom_p] = [float(c_[:, 0].min() - mg), float(c_[:, 1].min()), float(c_[:, 0].max() + mg), float(c_[:, 1].max())]
+        cs = np.vstack(cs)
+        b = P0['corps']; cn = np.array([[b[0], b[1], 1], [b[2], b[1], 1], [b[0], b[3], 1], [b[2], b[3], 1]], np.float32) @ Mx.T
+        G[n] = {'tete_box': box, 'hh': box[3] - box[1], 'sol': A[n]['sol'], 'H': A[n]['taille'] * ppm, 'face': A[n]['face'],
+                'corps': [float(cs[:, 0].min() - mg), float(cs[:, 1].min()), float(cs[:, 0].max() + mg), float(cs[:, 1].max())],
+                'corps_neutre': [float(cn[:, 0].min() - mg), float(cn[:, 1].min()), float(cn[:, 0].max() + mg), float(cn[:, 1].max())],
+                'corps_poses': par_pose}
     return A, G
 
 
@@ -204,6 +256,7 @@ def cligne(n, t, changements):
 
 # ── rendu ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 _E = {}
+EXCLU = {}   # (sketch, début du plan) → {voisin: silhouette des poses qu'il prend pendant le plan}
 
 
 def _init(etat):
@@ -263,6 +316,7 @@ def image(f):
             src, srca = E['cache'][cle]; ds = 2.0
         Md = (M3 @ np.diag([ds, ds, 1]).astype(np.float32)).astype(np.float32)
         fig = _warp(src, Md).astype(np.float32); al = _warp(srca, Md)
+        s_al = float(al.sum()); vu = s_al / max(1.0, P['aire'] * abs(float(np.linalg.det(M3[:, :2]))))   # part de la silhouette dans l'image
         for x0, y0, im, pa in _patch(Ad['slug'], pose, pm, kc):   # bouche et paupières : petits calques, même transformation
             Mp = (M3 @ np.array([[1, 0, x0], [0, 1, y0], [0, 0, 1]], np.float32)).astype(np.float32)
             pi = _warp(im, Mp).astype(np.float32); pa_ = _warp(pa.astype(np.float32), Mp)[..., None]
@@ -274,7 +328,8 @@ def image(f):
             c_ = np.array([[b[0], b[1], 1], [b[2], b[1], 1], [b[0], b[3], 1], [b[2], b[3], 1]], np.float32) @ M3.T
             return [float(c_[:, 0].min()), float(c_[:, 1].min()), float(c_[:, 0].max()), float(c_[:, 1].max())]
         Lm = P['L']; bb = [float(Lm[61][0]), float(min(Lm[0][1], Lm[13][1])), float(Lm[291][0]), float(max(Lm[17][1], Lm[14][1]) + P['mw'] * 0.3)]
-        boites[n] = {'bouche': tr([min(bb[0], bb[2]), bb[1], max(bb[0], bb[2]), bb[3]]), 'tete': tr(P['tete']), 'pose': pose, 'vis': vis, 'ouv': round(float(pm[0]), 3)}
+        boites[n] = {'bouche': tr([min(bb[0], bb[2]), bb[1], max(bb[0], bb[2]), bb[3]]), 'tete': tr(P['tete']), 'pose': pose, 'vis': vis, 'ouv': round(float(pm[0]), 3),
+                     'corps': tr(P['corps']), 'vu': round(min(1.0, vu), 3), 'aire': round(s_al / (CW * CH), 4)}   # coupes au bord (juge C)
     cv2.imwrite(f"{E['D']}/clip/f{f:05d}.jpg", cv2.cvtColor(np.clip(out, 0, 255).astype(np.uint8), cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, 93])
     return f, boites
 
@@ -290,11 +345,11 @@ def tourne(D):
     sk_h = {s['id']: s for s in Hs['sketchs']}; sk_t = {s['id']: (max(0.0, s['t0'] - 0.3), s['t1'] + 0.25) for s in T['sketchs']}
     ids = list(sk_t); lim = [0.0] + [(sk_t[a][1] + sk_t[b][0]) / 2 for a, b in zip(ids, ids[1:])] + [T['total'] + 1]
     for i, sid in enumerate(ids): sk_t[sid] = (lim[i], lim[i + 1])
-    lieux, A_, G_, J_, acteurs, ppm = {}, {}, {}, {}, {}, {}
+    lieux, A_, G_, J_, acteurs, ppm, dims = {}, {}, {}, {}, {}, {}, {}
     for sid in ids:
         sk = sk_h.get(sid, {'id': sid}); acts = sk.get('acteurs') or list(dict.fromkeys(L['qui'] for L in T['lines'] if L['sketch'] == sid))
         lieu = (plateau.get(sid) or {}).get('lieu') or sk.get('image') or sk.get('lieu') or 'cour'
-        dec = decor(lieu); lieux[sid] = lieu; acteurs[sid] = acts; ppm[sid] = dec['ppm']
+        dec = decor(lieu); lieux[sid] = lieu; acteurs[sid] = acts; ppm[sid] = dec['ppm']; dims[sid] = dec['img'].shape[1], dec['img'].shape[0]
         A, G = prepare_sketch(sk, acts, dec, F); A_[sid], G_[sid] = A, G
         J = pistes_jeu(T, sid, acts, sk.get('reaction'), *sk_t[sid])
         for n in acts:   # instants des changements de pose
@@ -305,16 +360,33 @@ def tourne(D):
                 prev = p
             J[n]['changements'] = ch
         J_[sid] = J
-        for n in acts: A[n].pop('M')
+        for n in acts: A[n]['_poses'] = set(A[n].pop('M')['poses'])   # poses disponibles (pose_a), après le départ des images
     SH = decoupage(T, sk_t, acteurs, {s: sk_h.get(s, {}).get('reaction') for s in ids})
+    for sh in SH:   # plans sur un seul personnage : silhouettes des poses réellement prises par les voisins pendant le plan
+        if sh[3] in ('moyen', 'serre', 'gros') and isinstance(sh[4], str):
+            sid, ex = sh[2], {}
+            for n in acteurs[sid]:
+                if n == sh[4]: continue
+                ps = {pose_a(J_[sid], n, f / FPS, A_[sid][n]['_poses']) for f in range(int(sh[0] * FPS), int(sh[1] * FPS) + 1)}
+                bs = [G_[sid][n]['corps_poses'][p] for p in ps if p in G_[sid][n]['corps_poses']]
+                if bs: ex[n] = [min(b[0] for b in bs), min(b[1] for b in bs), max(b[2] for b in bs), max(b[3] for b in bs)]
+            EXCLU[(sid, round(sh[0], 3))] = ex
     etat = dict(D=os.path.abspath(D), SH=SH, lieux=lieux, A=A_, G=G_, J=J_, ppm=ppm, slugs=sorted({A_[s][n]['slug'] for s in ids for n in A_[s]}))
     t_prep = time.time() - t_dep
     from concurrent.futures import ProcessPoolExecutor
     import multiprocessing as mp
-    nproc = int(os.environ.get('TOURNE_PROCS', os.cpu_count() or 4)); blocs = [list(range(i, nf, nproc)) for i in range(nproc)]
+    choisies = [int(x) for x in os.environ['TOURNE_IMAGES'].split(',')] if os.environ.get('TOURNE_IMAGES') else list(range(nf))   # images clés seules
+    nproc = int(os.environ.get('TOURNE_PROCS', os.cpu_count() or 4)); blocs = [choisies[i::nproc] for i in range(nproc)]
     with ProcessPoolExecutor(nproc, mp_context=mp.get_context('fork'), initializer=_init, initargs=(etat,)) as ex:
         res = [r for b in ex.map(_bloc, blocs) for r in b]
     json.dump({str(f): b for f, b in sorted(res)}, open(f'{D}/boites.json', 'w'))
+    # trajet de caméra de CHAQUE image (plaque : centre, largeur, hauteur) : la chaîne générative anime l'image clé d'un plan
+    # caméra fixe, puis rejoue ce trajet en recadrant le plan généré (generatif/assemble_generatif.py)
+    cams = {}
+    for f in range(nf):
+        t = f / FPS; sh = next((s for s in SH if s[0] <= t < s[1]), SH[-1] if t >= SH[-1][0] else SH[0])
+        cams[str(f)] = [round(float(v), 2) for v in camera(sh, t, G_[sh[2]], *dims[sh[2]])]
+    json.dump(cams, open(f'{D}/cameras.json', 'w'))
     json.dump({'fps': FPS, 'peint': True, 'decoupage': SH, 'images': nf,
                'lieux': {s: {'lieu': l, 'scores': None} for s, l in lieux.items()},
                'placements': {s: {n: {'x': round(a['x'], 1), 'miroir': a['miroir'], 'echelle': round(a['echelle'], 4)} for n, a in A_[s].items()} for s in ids},
