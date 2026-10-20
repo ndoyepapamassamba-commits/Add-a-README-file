@@ -44,8 +44,8 @@ def extrait(img, box):
 
 
 class Source:
-    def __init__(self, img, v3):
-        self.box = recadre(img, v3); c = extrait(img, self.box)
+    def __init__(self, img, v3, box=None):
+        self.box = tuple(box) if box is not None else recadre(img, v3); c = extrait(img, self.box)
         x = (c.astype(np.float32) / 255).transpose(2, 0, 1)[None]
         self.feat = _sess('appearance_feature_extractor').run(None, {'img': x})[0]
         m = dict(zip(['pitch', 'yaw', 'roll', 't', 'exp', 'scale', 'kp'], _sess('motion_extractor').run(None, {'img': x})))

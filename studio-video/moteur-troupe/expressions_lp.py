@@ -308,9 +308,14 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
     est recherchée et redessinée). Chaque émotion reçoit la RECETTE la plus lisible qui n'abîme pas CE visage
     (cherche_recette, œil de JEV) ; sans juge, la recette de base à pleine intensité. alpha (découpe de l'acteur, image
     entière) : garde de silhouette (GARDE_DEBORDE). → méta-données."""
-    os.makedirs(dossier, exist_ok=True); src = LP.Source(img, v3); x, y, s = src.box; BOUCHE = bouches(os.path.basename(os.path.normpath(dossier)))
-    taille = int(round(min(512, max(96, s))))
+    os.makedirs(dossier, exist_ok=True)
     ancien = json.load(open(f'{dossier}/meta.json')) if os.path.isfile(f'{dossier}/meta.json') else {}
+    # CADRE GARDÉ (20/10/2026) : une bibliothèque déjà faite garde son carré de visage (décalé par scene_nouvelle quand l'acteur
+    # est seulement déplacé) ; les repères refaits après une recomposition donnaient à Maître Koné un carré de 191 px au lieu
+    # de 221 (−14 %), au-delà de « même visage » : toutes les recettes étaient recherchées de zéro par le juge local
+    bx_ = ancien.get('box') if ancien.get('version') == VERSION else None
+    src = LP.Source(img, v3, box=bx_); x, y, s = src.box; BOUCHE = bouches(os.path.basename(os.path.normpath(dossier)))
+    taille = int(round(min(512, max(96, s))))
     compat = ancien.get('taille') == taille and ancien.get('version') == VERSION   # recettes réutilisables
     # MÊME VISAGE, AUTRE TAILLE (19/10/2026) : une scène recomposée (scene_nouvelle.py) lit le même visage à 1 ou 2 % près
     # (Maître Koné : carré de 218 → 221 px) ; les recettes déjà jugées pour CE visage restent valables : reprises sans
