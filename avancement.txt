@@ -2,3 +2,4 @@
 [243 s] === koffi--choc (at_runtime)   |============>                                     | 1/4 - 137.78s/it[K · mémoire libre 13822 Mo
 [365 s] === koffi--choc (at_runtime)   |=========================>                        | 2/4 - 135.49s/it[K · mémoire libre 13812 Mo
 [486 s] === koffi--choc (at_runtime)   |=====================================>            | 3/4 - 135.60s/it[K · mémoire libre 13802 Mo
+[608 s] === baye-ndiaye--ecouter (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 14567 Mo
