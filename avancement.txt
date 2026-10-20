@@ -10,3 +10,4 @@
 [851 s] 1 images · === maison-professeur-samba-salon-large-jour   |============>                                     | 1/4 - 150.44s/it[K · mémoire libre 6996 Mo
 [972 s] 1 images · === maison-professeur-samba-salon-large-jour   |============>                                     | 1/4 - 150.44s/it[K · mémoire libre 6982 Mo
 [1093 s] 1 images · === maison-professeur-samba-salon-large-jour   |=========================>                        | 2/4 - 141.74s/it[K · mémoire libre 6973 Mo
+[122 s] 1 images · === maison-professeur-samba-cuisine-large-jour   |============>                                     | 1/4 - 88.23s/it[K · mémoire libre 7018 Mo
