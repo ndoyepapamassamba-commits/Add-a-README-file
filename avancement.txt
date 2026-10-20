@@ -11,3 +11,4 @@
 [1338 s] 2 images · === maison-la-voisine-chambre-large-jour   |==================================================| 4/4 - 135.41s/it[K · mémoire libre 7059 Mo
 [1460 s] 2 images · === maison-la-voisine-chambre-large-jour   |============>                                     | 1/4 - 145.37s/it[K · mémoire libre 7044 Mo
 [123 s] 2 images · === maison-general-zongo-salon-large-jour  · mémoire libre 7021 Mo
+[245 s] 2 images · === maison-general-zongo-salon-large-jour   |============>                                     | 1/4 - 135.92s/it[K · mémoire libre 7006 Mo
