@@ -5,3 +5,4 @@
 [609 s] 0 images · === decor-eglise-large-jour   |==================================================| 4/4 - 134.15s/it[K · mémoire libre 12299 Mo
 [731 s] 1 images · === maison-general-zongo-chambre-large-jour   |==================================================| 4/4 - 134.15s/it[K · mémoire libre 7015 Mo
 [852 s] 1 images · === maison-general-zongo-chambre-large-jour   |============>                                     | 1/4 - 140.72s/it[K · mémoire libre 6999 Mo
+[974 s] 1 images · === maison-general-zongo-chambre-large-jour   |=========================>                        | 2/4 - 135.68s/it[K · mémoire libre 6995 Mo
