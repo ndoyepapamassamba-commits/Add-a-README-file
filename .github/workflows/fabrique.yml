@@ -1,0 +1,39 @@
+# FABRIQUE MASSAMBA SUR GITHUB (20/10/2026) — « Je veux qu'elle soit indépendante de la machine Claude ».
+# La production quotidienne tourne sur les machines gratuites de GitHub Actions (dépôt public : minutes illimitées,
+# 4 processeurs, 16 Go de mémoire), dans le compte de l'utilisateur, sans Claude.
+# Étape 1 (ce fichier) : diagnostic de la machine GitHub (processeurs, mémoire, disque, Python, ffmpeg, paquets du moteur).
+# Étape 2 : coffre chiffré (bibliothèque privée de la troupe), production `autopilot.py jour`, livraison chiffrée.
+name: Fabrique MASSAMBA
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/relaxed-noether-svkgiu]
+    paths: [.github/workflows/fabrique.yml, studio-video/fabrique/**]
+  schedule:
+    - cron: '52 4 * * *'   # 4 h 52 heure d'Abidjan (UTC) ; ne tourne que depuis la branche par défaut
+concurrency: { group: fabrique, cancel-in-progress: false }
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - name: Machine
+        run: |
+          echo "processeurs: $(nproc)"; free -g | head -2; df -h / /mnt 2>/dev/null
+          python3 --version; (ffmpeg -version 2>/dev/null | head -1) || echo "ffmpeg absent"
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Paquets du moteur (temps mesuré)
+        run: |
+          t0=$(date +%s)
+          pip install -q numpy scipy opencv-python-headless mediapipe onnxruntime diskcache imagehash librosa soundfile pyworld piper-tts pillow
+          echo "installation: $(( $(date +%s) - t0 )) s"
+          python3 -c "import cv2, mediapipe, onnxruntime, piper, diskcache, imagehash; print('imports OK', cv2.__version__, mediapipe.__version__, onnxruntime.__version__)"
+      - name: Essai de la fabrique (doublons, version téléchargeable)
+        run: |
+          sudo apt-get install -y -qq ffmpeg > /dev/null
+          cd studio-video/moteur-troupe
+          python3 -c "
+          import doublons; print('doublons', doublons.ressemblance([1,2,3],[1,2,3]))"
