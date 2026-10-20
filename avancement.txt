@@ -1,0 +1,1 @@
+[122 s] === A-marche [I] loading tensors completed, taking 14.82s (read: 14.76s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 4414 Mo
