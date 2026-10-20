@@ -2,3 +2,4 @@
 [242 s]   |==>                                               | 1/20 - 118.91s/it[K · mémoire libre 7066 Mo
 [363 s]   |=====>                                            | 2/20 - 117.00s/it[K · mémoire libre 7088 Mo
 [484 s]   |=======>                                          | 3/20 - 116.85s/it[K · mémoire libre 7081 Mo
+[606 s]   |==========>                                       | 4/20 - 116.27s/it[K · mémoire libre 7046 Mo
