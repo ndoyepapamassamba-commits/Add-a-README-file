@@ -1,1 +1,2 @@
 [123 s] === coumba--hausser (at_runtime)   |============>                                     | 1/4 - 80.22s/it[K · mémoire libre 13769 Mo
+[244 s] === coumba--hausser (at_runtime)   |=========================>                        | 2/4 - 77.48s/it[K · mémoire libre 13768 Mo
