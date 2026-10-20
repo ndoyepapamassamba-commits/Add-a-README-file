@@ -15,3 +15,4 @@
 [1217 s] 1 images · === decor-atelier-de-couture-large-jour   |==================================================| 4/4 - 136.39s/it[K · mémoire libre 5881 Mo
 [1339 s] 2 images · === maison-sur-awa-cour-large-jour   |==================================================| 4/4 - 136.39s/it[K · mémoire libre 7058 Mo
 [1460 s] 2 images · === maison-sur-awa-cour-large-jour   |============>                                     | 1/4 - 145.65s/it[K · mémoire libre 7044 Mo
+[121 s] 2 images · === maison-sur-awa-cour-large-jour  · mémoire libre 7013 Mo
