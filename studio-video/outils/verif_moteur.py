@@ -449,6 +449,16 @@ try:
 except Exception as e:
     echecs.append(f'humour : {e}')
 
+# niveau de la V1 (20/10/2026) : la vidéo 2 (figures collées, animation 20,4 % < 24,3 %) doit être arrêtée par le contrôle
+try:
+    sys.path.insert(0, os.path.join(ICI, 'moteur-troupe')); import niveau_v1 as _nv9
+    _m9, _ = _nv9.motifs(os.devnull, ['DJECKY', 'KOFFI'])
+    if not any('DJECKY' in x for x in _m9): echecs.append('niveau V1 : personnage hors troupe V1 non arrêté')
+    if _nv9.REF['surface'] < 0.24 or not {'KOFFI', 'COUMBA'} <= _nv9.TROUPE_V1: echecs.append('niveau V1 : références absentes')
+    print('niveau V1 : animation comparée à la V1 et personnages hors troupe arrêtés : OK')
+except Exception as e:
+    echecs.append(f'niveau V1 : {e}')
+
 if echecs:
     print('ÉCHECS :\n- ' + '\n- '.join(echecs)); sys.exit(1)
 print('moteur : OK')

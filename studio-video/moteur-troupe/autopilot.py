@@ -117,8 +117,11 @@ def livre(i, D=None, journal=print):
          'duree_s': round(float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', tel])), 1),
          'version_tel': mesure, 'livree': _maintenant(), 'envoyee': None, 'publiee': None,
          'doublon_de': proche if r >= doublons.SEUIL_PROCHE else None, 'ressemblance': r}
+    import niveau_v1   # « pas moins que la V1 » : animation mesurée contre la V1 + personnages au rendu validé (20/10/2026)
+    acteurs = [a for s in (e.get('sketchs') or []) for a in s.get('acteurs', [])]
+    nv, F['niveau_v1'] = niveau_v1.motifs(os.path.join(D, 'film.mp4') if os.path.isfile(os.path.join(D, 'film.mp4')) else src, acteurs)
     F['motifs'] = ([] if F['a_publier'] else [f"juge : {', '.join(map(str, rap.get('echecs') or [])) or 'porte échouée'}"]) \
-        + ([] if (mesure['ssim'] or 0) >= SSIM_MIN else [f"qualité téléphone : SSIM {mesure['ssim']} < {SSIM_MIN}"])
+        + ([] if (mesure['ssim'] or 0) >= SSIM_MIN else [f"qualité téléphone : SSIM {mesure['ssim']} < {SSIM_MIN}"]) + nv
     F['statut'] = 'doublon' if r >= doublons.SEUIL_DOUBLON else ('a_corriger' if F['motifs'] else 'pret')
     if F['statut'] == 'pret': F['creneau'] = prochain_creneau({f.get('creneau') for f in fiches() if f.get('creneau')})
     json.dump(F, open(os.path.join(LIV, f'{i}.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
