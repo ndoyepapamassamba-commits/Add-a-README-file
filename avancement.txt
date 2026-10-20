@@ -7,3 +7,4 @@
 [850 s] === maman-nounou--parler (at_runtime)   |============>                                     | 1/4 - 134.94s/it[K · mémoire libre 13799 Mo
 [971 s] === maman-nounou--parler (at_runtime)   |=========================>                        | 2/4 - 134.56s/it[K · mémoire libre 13775 Mo
 [1092 s] === maman-nounou--parler (at_runtime)   |=====================================>            | 3/4 - 134.07s/it[K · mémoire libre 13779 Mo
+[1214 s] === petit-mamadou--colere (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13747 Mo
