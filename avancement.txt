@@ -8,3 +8,4 @@
 [971 s] === petit-mamadou--mentir (at_runtime)   |=========================>                        | 2/4 - 79.14s/it[K · mémoire libre 13760 Mo
 [1093 s] === modou--rire (at_runtime) [V] decode_video_outputs decoded 384x640x33x3 --- video.cpp:1248 · mémoire libre 13951 Mo
 [1214 s] === modou--rire (at_runtime)   |============>                                     | 1/4 - 80.80s/it[K · mémoire libre 13769 Mo
+[1336 s] === modou--rire (at_runtime)   |=====================================>            | 3/4 - 79.41s/it[K · mémoire libre 13766 Mo
