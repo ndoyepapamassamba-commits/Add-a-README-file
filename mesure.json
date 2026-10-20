@@ -1,0 +1,40 @@
+{
+ "modele": "klein4b",
+ "licence": "Apache-2.0 : FLUX.2 klein 4B, Qwen3-4B, FLUX.2 small decoder",
+ "sd_cpp": "0518b34374761cb82aeda5ad3c2f0686fdad2cec",
+ "run": "39502718862",
+ "taches": [
+  {
+   "tache": "A-marche",
+   "ok": true,
+   "code": 0,
+   "secondes": 1339,
+   "memoire_max_go": 9.52,
+   "references": true
+  },
+  {
+   "tache": "A2-marche-planches",
+   "ok": true,
+   "code": 0,
+   "secondes": 1351,
+   "memoire_max_go": 9.53,
+   "references": true
+  },
+  {
+   "tache": "B-mamie",
+   "ok": true,
+   "code": 0,
+   "secondes": 884,
+   "memoire_max_go": 9.5,
+   "references": true
+  },
+  {
+   "tache": "C-maquis-vide",
+   "ok": true,
+   "code": 0,
+   "secondes": 883,
+   "memoire_max_go": 9.49,
+   "references": true
+  }
+ ]
+}

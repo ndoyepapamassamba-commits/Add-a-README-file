@@ -1,0 +1,59 @@
+=== A-marche
+[I] loading tensors completed, taking 0.20s (read: 0.01s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae encode graph completed, taking 24.42s --- vae.hpp:310
+[V] computing vae encode graph completed, taking 24.50s --- vae.hpp:310
+[I] encode_first_stage completed, taking 49.03s --- image.cpp:398
+[I] loading tensors completed, taking 0.31s (read: 0.21s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 23967 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 23.97s --- image.cpp:529
+[I] loading tensors completed, taking 0.61s (read: 0.60s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 1232.46s --- image.cpp:899
+[I] generating 1 latent images completed, taking 1232.46s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.18s, memcpy: 0.00s, convert: 0.01s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 32.94s --- vae.hpp:384
+[I] decode_first_stage completed, taking 32.94s --- image.cpp:624
+[I] generate_image completed in 1338.51s --- image.cpp:1050
+=== A2-marche-planches
+[I] loading tensors completed, taking 0.40s (read: 0.23s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae encode graph completed, taking 24.79s --- vae.hpp:310
+[V] computing vae encode graph completed, taking 24.33s --- vae.hpp:310
+[I] encode_first_stage completed, taking 49.23s --- image.cpp:398
+[V] parse '<|im_start|>user\nPixar-style 3D animated film still. The man from image 1 (sunglasses, black jacket with orange and gold floral pattern, gold chains) and the woman from image 2 (pink and purple floral off-shoulder dress, long braids) argue face to face in a busy outdoor market in Abidjan, Ivory Coast, at sunset. Market stalls with tomatoes, onions and colorful wax fabrics behind them. Keep exactly the same faces, outfits, skin tones and proportions as in the reference images. Wide shot, both characters visible from the knees up, warm cinematic light.<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n' to [['<|im_start|>user\n', 1], ['Pixar-style 3D animated film still. The man from image 1 ', 1], ['sunglasses, black jacket with orange and gold floral pattern, gold chains', 1.1], [' and the woman from image 2 ', 1], ['pink and purple floral off-shoulder dress, long braids', 1.1], [' argue face to face in a busy outdoor market in Abidjan, Ivory Coast, at sunset. Market stalls with tomatoes, onions and colorful wax fabrics behind them. Keep exactly the same faces, outfits, skin tones and proportions as in the reference images. Wide shot, both characters visible from the knees up, warm cinematic light.', 1], ['<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n', 1], ] --- conditioner.hpp:2182
+[V] split prompt "sunglasses, black jacket with orange and gold floral pattern, gold chains" to 15 tokens ["s", "ung", "lasses", ",", "Ġblack", "Ġjacket", "Ġwith", "Ġorange", "Ġand", "Ġgold", "Ġfloral", "Ġpattern", ",", "Ġgold", "Ġchains", ] --- bpe_tokenizer.cpp:245
+[V] split prompt "pink and purple floral off-shoulder dress, long braids" to 13 tokens ["pink", "Ġand", "Ġpurple", "Ġfloral", "Ġoff", "-", "should", "er", "Ġdress", ",", "Ġlong", "Ġbra", "ids", ] --- bpe_tokenizer.cpp:245
+[I] loading tensors completed, taking 5.80s (read: 5.69s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 29221 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 29.22s --- image.cpp:529
+[I] loading tensors completed, taking 4.81s (read: 4.72s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 1238.42s --- image.cpp:899
+[I] generating 1 latent images completed, taking 1238.42s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.00s, memcpy: 0.00s, convert: 0.03s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 32.99s --- vae.hpp:384
+[I] decode_first_stage completed, taking 32.99s --- image.cpp:624
+[I] generate_image completed in 1349.97s --- image.cpp:1050
+=== B-mamie
+[V] computing vae encode graph completed, taking 24.08s --- vae.hpp:310
+[I] encode_first_stage completed, taking 24.12s --- image.cpp:398
+[I] loading tensors completed, taking 2.05s (read: 1.99s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing condition graph completed, taking 25679 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 25.68s --- image.cpp:529
+[I] loading tensors completed, taking 5.91s (read: 5.83s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 800.23s --- image.cpp:899
+[I] generating 1 latent images completed, taking 800.23s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.11s, memcpy: 0.00s, convert: 0.01s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 32.97s --- vae.hpp:384
+[I] decode_first_stage completed, taking 32.97s --- image.cpp:624
+[I] generate_image completed in 883.04s --- image.cpp:1050
+=== C-maquis-vide
+[I] loading tensors completed, taking 0.40s (read: 0.27s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae encode graph completed, taking 24.28s --- vae.hpp:310
+[I] encode_first_stage completed, taking 24.33s --- image.cpp:398
+[V] computing condition graph completed, taking 29104 ms --- conditioner.hpp:3245
+[I] get_learned_condition completed, taking 29.10s --- image.cpp:529
+[I] loading tensors completed, taking 0.61s (read: 0.59s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[I] sampling completed, taking 794.77s --- image.cpp:899
+[I] generating 1 latent images completed, taking 794.77s --- image.cpp:911
+[I] loading tensors completed, taking 0.20s (read: 0.04s, memcpy: 0.00s, convert: 0.02s, copy_to_backend: 0.00s) --- model_loader.cpp:1396
+[V] computing vae decode graph completed, taking 33.46s --- vae.hpp:384
+[I] decode_first_stage completed, taking 33.46s --- image.cpp:624
+[I] generate_image completed in 881.70s --- image.cpp:1050
