@@ -5,3 +5,4 @@
 [609 s] 0 images · === decor-taxi-large-jour   |=====================================>            | 3/4 - 157.09s/it[K · mémoire libre 6991 Mo
 [730 s] 1 images · === decor-cuisine-large-jour   |==================================================| 4/4 - 157.27s/it[K · mémoire libre 11553 Mo
 [853 s] 1 images · === decor-cuisine-large-jour   |==================================================| 4/4 - 157.27s/it[K · mémoire libre 7023 Mo
+[974 s] 1 images · === decor-cuisine-large-jour   |============>                                     | 1/4 - 161.24s/it[K · mémoire libre 7023 Mo
