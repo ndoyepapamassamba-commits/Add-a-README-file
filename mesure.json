@@ -1,0 +1,40 @@
+{
+ "modele": "qwen2511",
+ "licence": "Apache-2.0 : Qwen-Image-Edit-2511, Lightning (lightx2v), Qwen2.5-VL-7B",
+ "sd_cpp": "0518b34374761cb82aeda5ad3c2f0686fdad2cec",
+ "run": "39502718862",
+ "taches": [
+  {
+   "tache": "A-marche",
+   "ok": true,
+   "code": 0,
+   "secondes": 2382,
+   "memoire_max_go": 14.89,
+   "references": true
+  },
+  {
+   "tache": "A2-marche-planches",
+   "ok": true,
+   "code": 0,
+   "secondes": 2408,
+   "memoire_max_go": 14.96,
+   "references": true
+  },
+  {
+   "tache": "B-mamie",
+   "ok": true,
+   "code": 0,
+   "secondes": 1324,
+   "memoire_max_go": 15.18,
+   "references": true
+  },
+  {
+   "tache": "C-maquis-vide",
+   "ok": true,
+   "code": 0,
+   "secondes": 1319,
+   "memoire_max_go": 15.3,
+   "references": true
+  }
+ ]
+}
