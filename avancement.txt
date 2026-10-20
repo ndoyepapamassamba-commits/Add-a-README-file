@@ -8,3 +8,4 @@
 [730 s] 1 images · === decor-cyber-cafe-large-jour   |==================================================| 4/4 - 133.15s/it[K · mémoire libre 6991 Mo
 [852 s] 1 images · === decor-cyber-cafe-large-jour   |============>                                     | 1/4 - 137.60s/it[K · mémoire libre 7012 Mo
 [973 s] 1 images · === decor-cyber-cafe-large-jour   |=========================>                        | 2/4 - 131.12s/it[K · mémoire libre 7008 Mo
+[1094 s] 1 images · === decor-cyber-cafe-large-jour   |=====================================>            | 3/4 - 131.15s/it[K · mémoire libre 6993 Mo
