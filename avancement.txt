@@ -17,3 +17,4 @@
 [2065 s] === A-marche   |=====================================>            | 3/4 - 535.62s/it[K · mémoire libre 13331 Mo
 [2186 s] === A-marche   |=====================================>            | 3/4 - 535.62s/it[K · mémoire libre 13369 Mo
 [2308 s] === A-marche   |=====================================>            | 3/4 - 535.62s/it[K · mémoire libre 13367 Mo
+[2429 s] === A2-marche-planches [V] computing vae encode graph completed, taking 33.77s --- vae.hpp:310 · mémoire libre 12179 Mo
