@@ -3,3 +3,4 @@
 [364 s] 0 images · === decor-mosquee-large-jour   |=========================>                        | 2/4 - 133.43s/it[K · mémoire libre 6979 Mo
 [486 s] 0 images · === decor-mosquee-large-jour   |=====================================>            | 3/4 - 133.25s/it[K · mémoire libre 6977 Mo
 [607 s] 1 images · === maison-general-zongo-cuisine-large-jour   |==================================================| 4/4 - 133.09s/it[K · mémoire libre 14518 Mo
+[728 s] 1 images · === maison-general-zongo-cuisine-large-jour   |==================================================| 4/4 - 133.09s/it[K · mémoire libre 6977 Mo
