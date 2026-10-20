@@ -2,3 +2,4 @@
 [243 s] === A-marche [I] loading tensors completed, taking 0.61s (read: 0.60s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 6270 Mo
 [364 s] === A-marche [I] loading tensors completed, taking 0.61s (read: 0.60s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 6274 Mo
 [486 s] === A-marche   |============>                                     | 1/4 - 308.92s/it[K · mémoire libre 6304 Mo
+[607 s] === A-marche   |============>                                     | 1/4 - 308.92s/it[K · mémoire libre 6300 Mo
