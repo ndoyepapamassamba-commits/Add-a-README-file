@@ -9,3 +9,4 @@
 [850 s] 1 images · === decor-chambre-large-jour   |==================================================| 4/4 - 160.47s/it[K · mémoire libre 7050 Mo
 [971 s] 1 images · === decor-chambre-large-jour   |============>                                     | 1/4 - 169.04s/it[K · mémoire libre 7040 Mo
 [1092 s] 1 images · === decor-chambre-large-jour   |============>                                     | 1/4 - 169.04s/it[K · mémoire libre 7038 Mo
+[1214 s] 1 images · === decor-chambre-large-jour   |=========================>                        | 2/4 - 158.07s/it[K · mémoire libre 7034 Mo
