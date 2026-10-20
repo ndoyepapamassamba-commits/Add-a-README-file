@@ -5,3 +5,4 @@
 [606 s]   |=====================================>            | 3/4 - 158.36s/it[K · mémoire libre 6998 Mo
 [727 s] [V] decode_video_outputs latent 40x24x13x48 --- video.cpp:1234 · mémoire libre 5385 Mo
 [849 s] [V] decode_video_outputs latent 40x24x13x48 --- video.cpp:1234 · mémoire libre 3599 Mo
+[970 s] [V] decode_video_outputs latent 40x24x13x48 --- video.cpp:1234 · mémoire libre 611 Mo
