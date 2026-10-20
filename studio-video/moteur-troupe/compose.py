@@ -119,13 +119,24 @@ def chunks(tw):
         cur.append(w)
         if re.search(r'[.!?…,;:]$', w[0]): props.append(cur); cur = []
     if cur: props.append(cur)
+    # UN MOT NE S'AFFICHE PLUS SEUL (20/10/2026, ep-n1 v2, porte O : « LÀ. » et « MOI, » montrés seuls ≈ 0,3 s, illisibles pour
+    # l'OCR comme pour l'œil ; 15 blocs d'un mot dans l'épisode) : une proposition d'un seul mot rejoint sa voisine — la
+    # suivante quand elle ouvre la réplique ou finit par une virgule (« Moi, je n'ai peur… »), sinon la précédente
+    # (« encore, là. ») ; la découpe ci-dessous évite ensuite de la remettre seule (+25)
+    fus, attente = [], None
+    for k, p in enumerate(props):
+        if attente: p = attente + p; attente = None
+        if len(p) == 1 and k + 1 < len(props) and (not fus or re.search(r'[,:;]$', p[0][0])): attente = p; continue
+        if len(p) == 1 and fus: fus[-1] = fus[-1] + p; continue
+        fus.append(p)
+    props = fus
     out = []
     for p in props:   # découpe la moins coûteuse : peu de blocs, ≤ 4 mots de préférence, jamais sur un mot-outil
         n = len(p); best = [0.0] + [None] * n; cut = [0] * (n + 1)
         for i in range(1, n + 1):
             for j in range(max(0, i - 6), i):
                 if best[j] is None or not tient(p[j:i]): continue
-                c = best[j] + 10 + 3 * max(0, i - j - 4) + (100 if i < n and outil(p[i - 1][0], p[i][0]) else 0) \
+                c = best[j] + 10 + 3 * max(0, i - j - 4) + (100 if i < n and outil(p[i - 1][0], p[i][0]) else 0) + (25 if i - j == 1 and n > 1 else 0) \
                     + (50 if min(coupes(p[j:i]))[0] >= 1000 else 0)   # bloc visible d'un coup : ligne sur un mot-outil tolérée en dernier recours
                 if best[i] is None or c <= best[i]: best[i], cut[i] = c, j   # à égalité, premier groupe le plus long (groupe nominal entier)
         i, morceaux = n, []

@@ -1,6 +1,6 @@
 # JUGE LOCAL DU VISAGE RENDU (19/10/2026, portes B et P sans JEV) — MediaPipe FaceLandmarker (Apache-2.0) lit l'IMAGE du film,
-# jamais l'intention du moteur : écart des lèvres, hauteur des sourcils et ouverture des yeux, rapportés à la hauteur du
-# visage (front 10 → menton 152), comparés au dessin neutre de l'acteur.
+# jamais l'intention du moteur : écart des lèvres (rapporté à la hauteur du visage, front 10 → menton 152), hauteur des
+# sourcils et ouverture des yeux (rapportées à l'écart des coins des yeux), comparés au dessin neutre de l'acteur.
 # Étalonnage mesuré sur la v14 (22 répliques, gros plans de la bouche) : lèvres aux voyelles ouvertes 0,07–0,22 ; aux
 # consonnes fermées (m, b, p) 0,0006–0,026 ; dessin neutre 0,004–0,034 — les deux familles ne se recouvrent pas.
 import os
@@ -32,10 +32,15 @@ def mesure(im):
     if not r.face_landmarks: return None
     P = np.array([[p.x * im.shape[1], p.y * im.shape[0]] for p in r.face_landmarks[0]])
     h = float(np.linalg.norm(P[10] - P[152])) + 1e-6
+    # SOURCILS ET YEUX RAPPORTÉS À L'ÉCART DES COINS EXTERNES DES YEUX (33–263) (20/10/2026, porte P de l'épisode « cour-n1 ») :
+    # rapportés à la hauteur front → menton, ils baissaient dès que la mâchoire tombe — précisément le choc jugé. Mesuré sur
+    # les bibliothèques (surprise bouche ouverte contre neutre) : Coumba ×1,16 → ×1,31, Maman Nounou ×0,97 → ×1,16 ; Maître
+    # Koné au choc de la v3 (mâchoire 0,52–0,58) : ×0,78. Les lèvres restent rapportées à la hauteur (étalonnage de la porte B).
+    iod = float(np.linalg.norm(P[33] - P[263])) + 1e-6
     bs = {b.category_name: float(b.score) for b in r.face_blendshapes[0]} if r.face_blendshapes else {}
     return {'levres': round(float(np.linalg.norm(P[13] - P[14])) / h, 4),
-            'sourcils': round(float(np.linalg.norm(P[105] - P[159]) + np.linalg.norm(P[334] - P[386])) / (2 * h), 4),   # sourcil → paupière haute
-            'yeux': round(float(np.linalg.norm(P[159] - P[145]) + np.linalg.norm(P[386] - P[374])) / (2 * h), 4),       # ouverture des yeux
+            'sourcils': round(float(np.linalg.norm(P[105] - P[159]) + np.linalg.norm(P[334] - P[386])) / (2 * iod), 4),   # sourcil → paupière haute
+            'yeux': round(float(np.linalg.norm(P[159] - P[145]) + np.linalg.norm(P[386] - P[374])) / (2 * iod), 4),       # ouverture des yeux
             'machoire': round(bs.get('jawOpen', 0.0), 3)}
 
 

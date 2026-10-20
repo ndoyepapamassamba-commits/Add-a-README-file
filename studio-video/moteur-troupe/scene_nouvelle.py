@@ -31,6 +31,12 @@ def prepare(biblio, nom, plaque_p, ppm, sol_y, acteurs, L=None, ref=None, copie_
     # réglages → au plus 9 niveaux, 0,35 en moyenne ; cause pas encore isolée : calcul de l'agrandissement ou version du code ;
     # charge() recale de toute façon la couleur du visage sur le dessin de la scène)
     ancien = cv2.cvtColor(cv2.imread(f'{d}/image.png'), cv2.COLOR_BGR2RGB) if os.path.isfile(f'{d}/image.png') else None
+    # ACTEUR DÉPLACÉ (20/10/2026) : même figure, même taille, autre place (Maître Koné et Sœur Awa rapprochés de 0,2 m pour
+    # que leur plan à deux garde les bouches lisibles) — les visages sont gardés et leur cadre (meta « box ») décalé d'autant
+    places0 = {}
+    if os.path.isfile(f'{d}/scene.json'):
+        try: places0 = {p_['nom']: p_ for p_ in (json.load(open(f'{d}/scene.json')).get('compose') or {}).get('acteurs', [])}
+        except Exception: places0 = {}
     garde = f'{B}/prep/.{nom}-expressions'; shutil.rmtree(garde, ignore_errors=True)
     if ancien is not None and os.path.isdir(f'{d}/expressions'): shutil.move(f'{d}/expressions', garde)
     shutil.rmtree(d, ignore_errors=True)
@@ -51,12 +57,26 @@ def prepare(biblio, nom, plaque_p, ppm, sol_y, acteurs, L=None, ref=None, copie_
     S['compose'] = {'plaque': os.path.abspath(plaque_p), 'px_par_m': ppm, 'sol_y': sol_y, 'acteurs': places}
     json.dump(S, open(f'{d}/scene.json', 'w'), ensure_ascii=False, indent=1); json.dump(exacte, open(f'{d}/exacte.json', 'w'), indent=1)
     if os.path.isdir(garde):
-        for a, p_ in zip(S['acteurs'], places):
-            X0, Y0, X1, Y1 = p_['bbox']
-            e_ = np.abs(ancien[Y0:Y1, X0:X1].astype(np.int16) - img[Y0:Y1, X0:X1].astype(np.int16)) if ancien.shape == img.shape else None
-            if os.path.isdir(f"{garde}/{a['slug']}") and e_ is not None and not p_.get('miroir') and e_.max() <= GARDE_MAX and e_.mean() < GARDE_MOY:
+        for a, p_, al in zip(S['acteurs'], places, alphas):
+            X0, Y0, X1, Y1 = p_['bbox']; o_ = places0.get(a['nom'], {}); x0, y0, x1, y1 = o_.get('bbox') or (X0, Y0, X1, Y1)
+            dx, dy = int(X0 - x0), int(Y0 - y0); e_ = None
+            if ancien.shape == img.shape and (x1 - x0, y1 - y0) == (X1 - X0, Y1 - Y0) and bool(o_.get('miroir')) == bool(p_.get('miroir')):
+                # les pixels PLEINS de l'acteur seulement (découpe exacte) : le décor derrière lui change quand il se déplace, et
+                # le bord semi-transparent le laisse voir (mesuré 20/10/2026, Koné et Awa décalés de 40 px : alpha > 0,5 →
+                # jusqu'à 97 niveaux sur ce bord ; alpha > 0,98 → au plus 4 niveaux, 0,03 en moyenne)
+                m_ = al[Y0:Y1, X0:X1] > 0.98
+                e_ = np.abs(ancien[y0:y1, x0:x1].astype(np.int16) - img[Y0:Y1, X0:X1].astype(np.int16))[m_] if (dx or dy) else \
+                     np.abs(ancien[Y0:Y1, X0:X1].astype(np.int16) - img[Y0:Y1, X0:X1].astype(np.int16))
+            if os.path.isdir(f"{garde}/{a['slug']}") and e_ is not None and e_.size and e_.max() <= GARDE_MAX and e_.mean() < GARDE_MOY:
                 os.makedirs(f'{d}/expressions', exist_ok=True); shutil.move(f"{garde}/{a['slug']}", f"{d}/expressions/{a['slug']}")
-                journal(f"{a['nom']} : acteur inchangé, visages déjà dessinés gardés")
+                if dx or dy:
+                    for f_ in ('meta.json', 'partiel.json'):
+                        q_ = f"{d}/expressions/{a['slug']}/{f_}"
+                        if os.path.isfile(q_):
+                            M_ = json.load(open(q_))
+                            if M_.get('box'): M_['box'] = [M_['box'][0] + dx, M_['box'][1] + dy, M_['box'][2]]
+                            json.dump(M_, open(q_, 'w'))
+                journal(f"{a['nom']} : acteur inchangé{f' (déplacé de {dx:+d}, {dy:+d} px)' if dx or dy else ''}, visages déjà dessinés gardés")
         shutil.rmtree(garde, ignore_errors=True)
     if copie_de:
         for f in COPIES:

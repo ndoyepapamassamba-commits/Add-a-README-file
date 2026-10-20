@@ -751,7 +751,18 @@ def crop_for(S, kind, who=None):
         As = [S['acts'][n] for n in who if n in S['acts']]; hbs = [head_box(A) for A in As if head_box(A)]
         if not hbs: return (W / 2, H / 2, min(W, H * asp), H)
         x0 = min(h_[0] for h_ in hbs); x1 = max(h_[2] for h_ in hbs); y0 = min(h_[1] for h_ in hbs); sh = max(A['sh'] for A in As)
-        w = max((x1 - x0) * REG.get('duo_air', 1.5), 2.5 * 2 * sh * asp); h = w / asp
+        # BOUCHES LISIBLES À DEUX (20/10/2026, ep-n1 : Maître Koné et Sœur Awa, visages de 76 px) : le plancher « épaules »
+        # (2,5 × 2 × épaules de haut, comme le plan moyen) faisait 535 px de décor → visages à 65 px, plan à deux refusé et
+        # tout l'épisode en champ-contrechamp (19,6 plans/min contre 18,4 au plus) ; comme pour le plan moyen, ce plancher
+        # s'arrête où les bouches restent lisibles (VISAGE_MIN, 6 % de marge), jamais sous les deux têtes avec leur air
+        # PLAN À DEUX PLUS SERRÉ (20/10/2026, v3 de « cour-n1 ») : avec 1,5 d'air et des visages à peine lisibles (73 px),
+        # les acteurs paraissaient petits et leur jeu ne faisait plus que 0,331 px/image (porte A, au moins 0,345 pour le
+        # premier quart de vos TikTok ; 0,408 en v2 en champ-contrechamp) ; 1,3 d'air et des visages visés à 15 % au-dessus
+        # du seuil (≈ 83 px) : les épaules des deux acteurs restent dans le cadre
+        vh = [A['a']['visage']['box'][3] - A['a']['visage']['box'][1] for A in As if A['a'].get('visage')]
+        hp = 2.5 * 2 * sh
+        if vh: hp = max(MOYEN_MIN, min(hp, min(vh) * CH / (REG.get('duo_visage', 1.15) * VISAGE_MIN)))
+        w = max((x1 - x0) * REG.get('duo_air', 1.3), hp * asp); h = w / asp
         if h > H: h = H; w = h * asp
         return ((x0 + x1) / 2, y0 + 0.40 * h, w, h)
     A = S['acts'][who]; cx, cy = A['head'][0], A['head'][1] + 1.1 * A['sh']

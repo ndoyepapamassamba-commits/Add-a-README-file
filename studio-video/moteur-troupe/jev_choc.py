@@ -54,8 +54,7 @@ if __name__ == '__main__':
             k_ = 360 / max(tpl_[(s, qui)].shape[:2]); neutre_[(s, qui)] = VM.mesure(cv2.resize(tpl_[(s, qui)], None, fx=k_, fy=k_, interpolation=cv2.INTER_CUBIC))
     def juge_local(x):
         s, qui, t, t0 = x
-        g_ = JL.gros_plan(ims[(s, t)], tpl_[(s, qui)]) if (s, qui) in tpl_ else None
-        m_, n_ = VM.mesure(g_), neutre_.get((s, qui))
+        m_, n_ = (JL.mesure_gros_plan(ims[(s, t)], tpl_[(s, qui)]) if (s, qui) in tpl_ else None), neutre_.get((s, qui))
         abime = m_ is None or n_ is None or not all(0.4 <= m_[k] / max(n_[k], 1e-4) <= 3.0 for k in ('yeux', 'sourcils'))
         return {'sketch': s, 'qui': qui, 't': t, 'choc': VM.p_choc(m_, n_), 'rendu': 1.0 if abime else 0.0, 'juge': 'local (FaceLandmarker)',
                 'mesure': m_, 'neutre': n_}

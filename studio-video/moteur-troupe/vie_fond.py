@@ -20,8 +20,11 @@ import numpy as np, cv2
 
 CIEL_PROF = 0.08     # profondeur (1 = près) en dessous de laquelle un pixel clair relié au bord haut est du ciel
 LOIN = 0.14          # un oiseau n'est dessiné que devant ce qui est plus loin que lui
-FORCE = 0.50         # assombrissement au cœur de l'ombre d'un rameau (essai JEV à 0,42 → « fond vivant » 0,59 ; au soleil,
-                     # l'ombre ne reçoit que le ciel : 30 à 40 % de la lumière)
+FORCE = 0.30         # assombrissement au cœur de l'ombre d'un rameau (essai JEV à 0,42 → « fond vivant » 0,59 ; au soleil,
+                     # l'ombre ne reçoit que le ciel : 30 à 40 % de la lumière). 0,50 → 0,30 le 20/10/2026 : dans les plans
+                     # moyens de la cour (épisode « cour-n1 »), les grappes faisaient de grandes taches de « camouflage » sur
+                     # tout le mur (assombrissement moyen du mur 13 %, 42 % du mur sous plus de 10 %) ; à 0,30 : 8 % et 35 %,
+                     # pénombre d'un feuillage clairsemé. La porte F (vie du décor) ne dépend pas de cette ombre
 
 
 def rafale(t, psi=0.0):

@@ -31,12 +31,24 @@ def trouve(fr, tpl):
     return best
 
 
-def gros_plan(fr, tpl):
+def gros_plan(fr, tpl, marge=0.25):
     b = trouve(fr, tpl)
     if b is None or b[0] < 0.4: return None
-    _, x, y, w, h = b; m = int(0.25 * max(w, h))
+    _, x, y, w, h = b; m = int(marge * max(w, h))
     c = fr[max(0, y - m):y + h + m, max(0, x - m):x + w + m]
     k = 360 / max(c.shape[:2]); return cv2.resize(c, None, fx=k, fy=k, interpolation=cv2.INTER_CUBIC)
+
+
+# MARGES DE REPLI (20/10/2026, porte B de « cour-n1 » v3) : à 59,42 s, le visage de Maître Koné (de trois quarts) était bien
+# trouvé, mais le recadrage à 25 % coupait le menton et FaceLandmarker ne voyait plus de visage — instant compté faux.
+# Même image à 40 % : lèvres 0,013 (fermée). Le gros plan est repris plus large tant que le visage n'est pas lu.
+MARGES = (0.25, 0.4, 0.6)
+def mesure_gros_plan(fr, tpl):
+    import visage_mesure as VM
+    for mg in MARGES:
+        m = VM.mesure(gros_plan(fr, tpl, mg))
+        if m is not None: return m
+    return None
 
 
 def instants(L):
@@ -79,7 +91,7 @@ def juge_ligne_local(mp4, L, tpl):
     import visage_mesure as VM
     o, f, src = instants_locaux(L)
     if len(o) < 2 or len(f) < 1: return {'qui': L['qui'], 'texte': L['texte'][:40], 'ok': None, 'raison': 'réplique trop courte', 'juge': 'local (FaceLandmarker)'}
-    mo = [VM.mesure(gros_plan(image(mp4, t), tpl)) for t in o]; mf = [VM.mesure(gros_plan(image(mp4, t), tpl)) for t in f]
+    mo = [mesure_gros_plan(image(mp4, t), tpl) for t in o]; mf = [mesure_gros_plan(image(mp4, t), tpl) for t in f]
     po = [VM.p_ouverte(m) for m in mo]; pf = [VM.p_fermee(m) for m in mf]
     return {'qui': L['qui'], 'texte': L['texte'][:40], 'ouverte_aux_voyelles': po, 'fermee_aux_consonnes': pf,
             'ok': all(p > 0.5 for p in po) and all(p > 0.5 for p in pf), 'juge': f'local (FaceLandmarker, instants {src})',

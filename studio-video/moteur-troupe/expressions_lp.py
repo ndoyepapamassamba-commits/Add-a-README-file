@@ -82,9 +82,37 @@ ALT = {
 }
 
 
-def _commande(c, m):
+def _commande(c, m, sens=None):
     # une bouche FERMÉE (m < 0) l'est quelle que soit l'émotion : le rire aussi a les lèvres jointes sur m, b, p (18/10)
-    c = dict(c); c['levre3'] = m if m < 0 else c.get('levre3', 0) + m; return LP.edits(**c)
+    c = dict(c); c['levre3'] = m if m < 0 else c.get('levre3', 0) + m
+    if sens is None or tuple(sens) == SENS_SOURCILS[0] or not c.get('hausser'): return LP.edits(**c)
+    h = c.pop('hausser'); E = LP.edits(**c); E[1, 1] += 0.03 * h * sens[0]; E[2, 1] += 0.03 * h * sens[1]; return E
+
+
+# SENS DES SOURCILS PAR VISAGE (20/10/2026, porte P de l'épisode « cour-n1 ») : la commande « hausser » pousse les points 1 et
+# 2 de LivePortrait en sens contraires (balayage du 17/10 sur Petit Mamadou et Maman Nounou) ; sur les visages des galeries
+# ces points ne tiennent pas le même rôle. Balayage mesuré le 20/10 (bouche ouverte, sourcils rapportés à la hauteur du
+# visage) : Maître Koné, « hausser » ×0,975 (sourcils BAISSÉS), les deux points vers le haut ×1,17 bouche ouverte ;
+# l'inverse de « hausser » ×1,09 mais ferme la bouche (0,015). Le sens qui lève vraiment les sourcils de CE visage, bouche
+# ouverte, est mesuré (FaceLandmarker, sourcils rapportés aux coins des yeux : Koné ×0,85 → ×1,10) et sert à toutes les
+# émotions qui haussent les sourcils.
+SENS_SOURCILS = ((1, -1), (-1, 1), (-1, -1), (1, 1))   # (point 1, point 2) ; le premier : « hausser » tel que balayé le 17/10
+SENS_GAIN_MIN = 0.03   # un autre sens n'est retenu que s'il lève les sourcils d'au moins 3 % de plus
+
+
+def sens_sourcils(src, m):
+    """(sens retenu, {sens: sourcils / neutre}) : le sens des points 1 et 2 qui lève les sourcils de ce visage, bouche ouverte
+    m, la bouche restant ouverte (visage_mesure, sourcils rapportés à l'écart des coins des yeux)."""
+    import visage_mesure as VM
+    me = lambda E: VM.mesure(cv2.cvtColor(src.rendu(E), cv2.COLOR_RGB2BGR))
+    n0 = me(_commande({}, m)); r = {}
+    for sn in SENS_SOURCILS:
+        q = me(_commande({'hausser': 1.5}, m, sn) if sn != SENS_SOURCILS[0] else _commande({'hausser': 1.5}, m))
+        r[sn] = round(q['sourcils'] / n0['sourcils'], 3) if q and n0 and q['levres'] >= VM.OUVERTE_MIN else 0.0
+    b = max(r, key=r.get)
+    # un sens qui baisse moins les sourcils sans les lever n'est pas retenu (Sœur Awa, 20/10 : au mieux ×0,84, la paupière monte
+    # avec eux ; son choc passe par les yeux écarquillés, 6/6 images en v3) : la bibliothèque déjà jugée reste telle quelle
+    return (b if r[b] >= r[SENS_SOURCILS[0]] + SENS_GAIN_MIN and r[b] > 1.0 else SENS_SOURCILS[0]), {f'{a:+d}{c:+d}': v for (a, c), v in r.items()}
 
 
 # LÈVRES JOINTES CALIBRÉES PAR VISAGE (20/10/2026, porte B de l'épisode « cour-n1 » : Sœur Awa garde la bouche entrouverte
@@ -313,13 +341,18 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
         an = cv2.warpAffine(np.asarray(alpha, np.float32), Mg, (taille, taille), flags=cv2.INTER_LINEAR, borderValue=0); pres = zone_visage(v3, (x, y, s), taille)
     mf = min(BOUCHE) if min(BOUCHE) < 0 else None; J = jointes(src, mf) if mf is not None else {'levres': None}
     meta['jointes'] = dict(J); journal(f"  lèvres jointes : {J}")
-    rend = lambda c, m: cv2.resize(src.rendu(_commande(c, m), levres=J['levres'] if m < 0 else None), (taille, taille), interpolation=cv2.INTER_AREA)
+    SS, rs_ = sens_sourcils(src, max(BOUCHE)); meta['sourcils_sens'] = {'sens': list(SS), 'mesures': rs_}; journal(f'  sens des sourcils : {SS} {rs_}')
+    rend = lambda c, m: cv2.resize(src.rendu(_commande(c, m, SS), levres=J['levres'] if m < 0 else None), (taille, taille), interpolation=cv2.INTER_AREA)
     ecrit = lambda f, o: cv2.imwrite(f, cv2.cvtColor(o, cv2.COLOR_RGB2BGR))
     lire = lambda f: cv2.cvtColor(cv2.imread(f), cv2.COLOR_BGR2RGB)
     base = (v_jev.get('neutre') or {}).get('abime') if (repris or retaille) else None
     if base is not None: meta['jev']['neutre'] = v_jev['neutre']
     for e in (emotions or EMO):
-        meme = vieux.get(e) == EMO[e] and e in v_rec; c = v_rec[e] if meme else dict(EMO[e]); fait0 = None
+        # sens des sourcils changé : les émotions qui les haussent repartent de leur recette de base (la recette gardée avait
+        # été choisie sur un visage dont les sourcils baissaient) et sont redessinées
+        S0 = tuple(((P if e in repris else ancien).get('sourcils_sens') or {}).get('sens') or SENS_SOURCILS[0])
+        sn = S0 != tuple(SS) and any(abs(x_.get('hausser', 0.0)) > 1e-4 for x_ in (EMO[e], v_rec.get(e) or {}))
+        meme = vieux.get(e) == EMO[e] and e in v_rec and not sn; c = v_rec[e] if meme else dict(EMO[e]); fait0 = None
         if meme and e in v_jev: meta['jev'][e] = v_jev[e]
         elif juger and e != 'neutre':
             try:
@@ -382,7 +415,7 @@ def bibliotheque(img, v3, dossier, emotions=None, journal=print, juge='jev', alp
             # reciblées à 0) et la mieux fermée est gardée (mesuré : joie 0,009, rire 0,024 à −65, visage intact sur planche)
             if g_ is not None and g_ > JOINTES_CIBLE:
                 for m2 in (mf - 20, mf - 40):
-                    o = cv2.resize(src.rendu(_commande(c, m2), levres=0.0), (taille, taille), interpolation=cv2.INTER_AREA)
+                    o = cv2.resize(src.rendu(_commande(c, m2, SS), levres=0.0), (taille, taille), interpolation=cv2.INTER_AREA)
                     g2 = (VM.mesure(cv2.cvtColor(o, cv2.COLOR_RGB2BGR)) or {}).get('levres')
                     if g2 is not None and g2 < g_: ecrit(fz, o); g_ = g2; meta['jointes'].setdefault('renfort', {})[e] = m2
                     if g_ <= JOINTES_CIBLE: break
