@@ -17,3 +17,4 @@
 [2064 s] === A2-marche-planches   |=========================>                        | 2/4 - 308.23s/it[K · mémoire libre 6391 Mo
 [2185 s] === A2-marche-planches   |=========================>                        | 2/4 - 308.23s/it[K · mémoire libre 6388 Mo
 [2306 s] === A2-marche-planches   |=========================>                        | 2/4 - 308.23s/it[K · mémoire libre 6377 Mo
+[2428 s] === A2-marche-planches   |=====================================>            | 3/4 - 308.22s/it[K · mémoire libre 6362 Mo
