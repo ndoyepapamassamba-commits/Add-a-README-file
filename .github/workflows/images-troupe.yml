@@ -66,7 +66,7 @@ jobs:
         run: |
           O=$RUNNER_TEMP/sortie; mkdir -p $O; L=$O/journal.txt; : > $L; t1=$(date +%s)
           git fetch -q origin fabrique-donnees && git show FETCH_HEAD:cle.priv.json > $RUNNER_TEMP/cle.priv.json
-          git worktree add -q --detach ../progres HEAD && (cd ../progres && git checkout -q --orphan p && git rm -rq . && git clean -fdq)
+          git worktree add -q --detach ../progres HEAD && (cd ../progres && git checkout -q --orphan p && git rm -rqf . && git clean -fdq)
           ( while sleep 120; do
               l="[$(( $(date +%s) - t1 )) s] $(grep '^===' $L | tail -1) $(tr '\r' '\n' < $L | grep -E 's/it|it/s|taken|completed' | tail -1 | cut -c1-140) · mémoire libre $(free -m | awk '/Mem:/{print $7}') Mo"
               echo "$l"; echo "$l" >> ../progres/avancement.txt
@@ -84,6 +84,6 @@ jobs:
           cp $O/*.msb $O/mesure.json $R/ 2>/dev/null || true
           tr '\r' '\n' < $O/journal.txt 2>/dev/null | grep -i -E "^===|lora|error|warn|taken|completed" | awk '!seen[$0]++' | tail -120 > $R/journal.txt || true
           ls -la $R
-          git worktree add -q --detach ../rendu HEAD && cd ../rendu && git checkout -q --orphan publie && git rm -rq . && git clean -fdq
+          git worktree add -q --detach ../rendu HEAD && cd ../rendu && git checkout -q --orphan publie && git rm -rqf . && git clean -fdq
           cp $R/* . && git add -A && git -c user.name=images -c user.email=images@users.noreply.github.com commit -qm "Images : ${{ matrix.nom }} (run ${{ github.run_id }})"
           git push -q -f origin publie:images-sortie-${{ matrix.nom }}

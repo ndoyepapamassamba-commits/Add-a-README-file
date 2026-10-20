@@ -72,7 +72,7 @@ jobs:
           BIN=$RUNNER_TEMP/sd/build/bin/sd-cli; [ -x $BIN ] || BIN=$RUNNER_TEMP/sd/build/bin/sd
           t1=$(date +%s); L=$O/journal.txt; : > $L
           # avancement lisible PENDANT le calcul (GitHub ne rend le journal qu'à la fin) : branche animer-progres-<réglage>
-          git worktree add -q --detach ../progres HEAD && (cd ../progres && git checkout -q --orphan p && git rm -rq . && git clean -fdq)
+          git worktree add -q --detach ../progres HEAD && (cd ../progres && git checkout -q --orphan p && git rm -rqf . && git clean -fdq)
           ( while sleep 120; do
               l="[$(( $(date +%s) - t1 )) s] $(tr '\r' '\n' < $L | grep -E 's/it|it/s|decod|Decod|generat|taken' | tail -1 | cut -c1-160) · mémoire libre $(free -m | awk '/Mem:/{print $7}') Mo"
               echo "$l"; echo "$l" >> ../progres/avancement.txt
@@ -107,6 +107,6 @@ jobs:
                             'clip': os.path.isfile('$R/clip.msb'), 'run': '${{ github.run_id }}'}, indent=1))
           EOF
           cat $R/mesure.json
-          git worktree add -q --detach ../rendu HEAD && cd ../rendu && git checkout -q --orphan publie && git rm -rq . && git clean -fdq
+          git worktree add -q --detach ../rendu HEAD && cd ../rendu && git checkout -q --orphan publie && git rm -rqf . && git clean -fdq
           cp $R/* . && git add -A && git -c user.name=animer -c user.email=animer@users.noreply.github.com commit -qm "Animer : ${{ matrix.nom }} (run ${{ github.run_id }})"
           git push -q -f origin publie:animer-sortie-${{ matrix.nom }}
