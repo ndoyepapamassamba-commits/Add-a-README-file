@@ -1,1 +1,2 @@
 [122 s] 0 images · === decor-ecole-large-jour   |============>                                     | 1/4 - 93.25s/it[K · mémoire libre 6950 Mo
+[244 s] 0 images · === decor-ecole-large-jour   |=========================>                        | 2/4 - 91.90s/it[K · mémoire libre 6948 Mo
