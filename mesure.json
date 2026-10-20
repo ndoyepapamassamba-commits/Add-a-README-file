@@ -1,0 +1,34 @@
+{
+ "part": 7,
+ "clips": [
+  {
+   "clip": "koffi--mentir",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 361,
+   "memoire_max_go": 10.97
+  },
+  {
+   "clip": "baye-ndiaye--rire",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 359,
+   "memoire_max_go": 11.28
+  },
+  {
+   "clip": "petit-mamadou--choc",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 360,
+   "memoire_max_go": 11.27
+  },
+  {
+   "clip": "modou--ecouter",
+   "ok": true,
+   "lora": "at_runtime",
+   "secondes": 358,
+   "memoire_max_go": 11.28
+  }
+ ],
+ "run": "39510605985"
+}
