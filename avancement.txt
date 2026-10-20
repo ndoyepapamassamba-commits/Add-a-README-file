@@ -8,3 +8,4 @@
 [972 s] 1 images · === decor-boutique-large-jour   |=========================>                        | 2/4 - 130.73s/it[K · mémoire libre 7028 Mo
 [1093 s] 1 images · === decor-boutique-large-jour   |=====================================>            | 3/4 - 130.44s/it[K · mémoire libre 7020 Mo
 [1215 s] 2 images · === maison-professeur-samba-cuisine-large-jour   |==================================================| 4/4 - 130.45s/it[K · mémoire libre 11570 Mo
+[1336 s] 2 images · === maison-professeur-samba-cuisine-large-jour   |==================================================| 4/4 - 130.45s/it[K · mémoire libre 7044 Mo
