@@ -1,0 +1,77 @@
+# BIBLE V1 SUR LES MACHINES GRATUITES DE GITHUB (20/10/2026)
+# « Il faudra créer des dizaines de personnages, des centaines de scènes pour que l'ensemble de la production des 10 000 vidéos
+# soit cohérent » ; « tu devras créer des personnages et des scènes qui coïncident parfaitement avec ceux de la V1 ».
+# 445 images (47 nouveaux personnages en planches de 5 poses, 398 décors vides : 30 lieux × vues × jour/nuit, ambiances, la
+# maison de chaque famille) tirées de studio-video/images/bible.py, rendues par FLUX.2 [klein] 4B (Apache-2.0) avec une planche
+# ou l'image V1 comme référence de style. 20 machines en même temps, chacune sa part, dans l'ordre d'utilité (bible.rang).
+# Chaque image est scellée avec la clé de Claude et poussée sur bible-sortie-<part> dès qu'elle est prête (avec avancement.txt
+# et mesure.json) ; relancer le workflow reprend là où chaque part s'est arrêtée, sans rien refaire.
+# Programme : studio-video/images/bible_tourne.py.
+name: Bible V1 (FLUX.2 klein)
+on:
+  push:
+    branches: [claude/relaxed-noether-svkgiu]
+    paths: ['studio-video/images/bible/**', 'studio-video/images/bible_tourne.py', '.github/workflows/bible-v1.yml']
+  workflow_dispatch:
+permissions: { contents: write }
+concurrency: { group: bible, cancel-in-progress: true }
+defaults:
+  run: { shell: bash }
+env:
+  SD_CPP: 0518b34374761cb82aeda5ad3c2f0686fdad2cec
+  HF: https://huggingface.co
+  PARTS: 20
+jobs:
+  part:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Processeur de la machine
+        id: cpu
+        run: |
+          echo "cle=sdcpp-${SD_CPP:0:12}-$(lscpu | sed -n 's/^Model name: *//p' | tr -c 'A-Za-z0-9' '-')" >> $GITHUB_OUTPUT
+          lscpu | sed -n 's/^Model name: *//p'
+      - uses: actions/cache@v4
+        with: { path: ~/sdbin, key: '${{ steps.cpu.outputs.cle }}' }
+      - name: Moteur et poids (en même temps)
+        run: |
+          M=$RUNNER_TEMP/m; mkdir -p $M; echo "M=$M" >> $GITHUB_ENV; t0=$(date +%s)
+          dl() { curl -sfL --retry 5 --retry-delay 5 -o "$M/$1" "$HF/$2" && echo "poids : $1 $(du -h $M/$1 | cut -f1)"; }
+          dl klein.gguf leejet/FLUX.2-klein-4B-GGUF/resolve/main/flux-2-klein-4b-Q8_0.gguf &
+          dl llm.gguf unsloth/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q8_0.gguf &
+          dl vae.safetensors black-forest-labs/FLUX.2-small-decoder/resolve/main/full_encoder_small_decoder.safetensors &
+          sudo apt-get install -y -qq time > /dev/null 2>&1 || (sudo apt-get update -qq && sudo apt-get install -y -qq time > /dev/null)
+          pip install -q cryptography
+          if [ ! -x ~/sdbin/sd-cli ]; then
+            git init -q $RUNNER_TEMP/sd && cd $RUNNER_TEMP/sd && git remote add origin https://github.com/leejet/stable-diffusion.cpp
+            git fetch -q --depth 1 origin $SD_CPP && git checkout -q FETCH_HEAD && git submodule update -q --init --recursive --depth 1
+            cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON > $RUNNER_TEMP/build.log 2>&1 && cmake --build build -j 4 --config Release >> $RUNNER_TEMP/build.log 2>&1 || { tail -60 $RUNNER_TEMP/build.log; exit 1; }
+            mkdir -p ~/sdbin && cp build/bin/* ~/sdbin/ && echo "compilé en $(( $(date +%s) - t0 )) s"
+          else echo "moteur repris du cache"; fi
+          wait; ls -la $M
+          for f in $M/klein.gguf $M/llm.gguf $M/vae.safetensors; do [ -s $f ] || { echo "poids manquant : $f"; exit 1; }; done
+          echo "préparation : $(( $(date +%s) - t0 )) s"
+      - name: Images de la part ${{ matrix.part }}
+        env: { FABRIQUE_CLE: '${{ secrets.FABRIQUE_CLE }}' }
+        run: |
+          O=$RUNNER_TEMP/sortie; B=bible-sortie-${{ matrix.part }}; t1=$(date +%s)
+          git fetch -q origin fabrique-donnees && git show FETCH_HEAD:cle.priv.json > $RUNNER_TEMP/cle.priv.json
+          if git fetch -q origin $B 2>/dev/null; then git worktree add -q --detach $O FETCH_HEAD; echo "reprise : $(ls $O/*.msb 2>/dev/null | wc -l) images déjà faites"
+          else git worktree add -q --detach $O HEAD && (cd $O && git checkout -q --orphan p && git rm -rqf . && git clean -fdq); fi
+          echo '*.part' > $O/.gitignore
+          pousse() { (cd $O && git add -A && git -c user.name=bible -c user.email=bible@users.noreply.github.com commit -qm "Bible : part ${{ matrix.part }} (run ${{ github.run_id }})" && git push -q origin HEAD:refs/heads/$B) > /dev/null 2>&1 || true; }
+          ( while sleep 120; do
+              L=$RUNNER_TEMP/sortie-clair/journal.txt; [ -f $L ] || continue
+              echo "[$(( $(date +%s) - t1 )) s] $(ls $O/*.msb 2>/dev/null | wc -l) images · $(grep '^===' $L | tail -1) $(tr '\r' '\n' < $L | grep -E 's/it|taken' | tail -1 | cut -c1-110) · mémoire libre $(free -m | awk '/Mem:/{print $7}') Mo" >> $O/avancement.txt
+              pousse
+            done ) & P=$!
+          python3 studio-video/images/bible_tourne.py studio-video/images/bible/taches.json ${{ matrix.part }} $PARTS $M $O \
+            ~/sdbin/sd-cli $RUNNER_TEMP/cle.priv.json studio-video/animer/cle-claude.pub.pem 320 || true
+          kill $P 2>/dev/null || true; rm -f $RUNNER_TEMP/cle.priv.json; sleep 5
+          tr '\r' '\n' < $RUNNER_TEMP/sortie-clair/journal.txt 2>/dev/null | grep -i -E "^===|error|warn|resize vae ref|completed" | awk '!seen[$0]++' | tail -60 > $O/journal-${{ github.run_id }}.txt || true
+          pousse; ls $O | head -40

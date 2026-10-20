@@ -10,6 +10,8 @@
 #                 des lieux joués, et la MAISON de chaque foyer (monde.py) : cour, salon, chambre, cuisine, de jour et de nuit ;
 #                 avec l'image de la V1 comme référence de style ; contrôle « style V1 » (style_v1.py) avant d'entrer.
 # Chaque tâche reçoit un identifiant stable : la bible se complète sans jamais refaire ce qui est validé.
+# Tournage (20/10/2026) : FLUX.2 klein 4B sur les machines GitHub, par parts (bible_tourne.py, bible-v1.yml) ; planches des
+# nouveaux personnages en 1280×720 (5 poses de 720 px de haut, assez pour la banque de mouvements en 384×640).
 #   python3 bible.py taches [SORTIE.json]   → liste des tâches (personnages, décors) et leurs nombres
 import json, os, re, sys, unicodedata
 
@@ -88,7 +90,7 @@ def taches():
     for p in B['personnages']:
         nom = p['name']
         if nom in V1: continue
-        T.append({'id': 'perso-' + slug(nom), 'type': 'personnage', 'nom': nom, 'w': 1536, 'h': 1024,
+        T.append({'id': 'perso-' + slug(nom), 'type': 'personnage', 'nom': nom, 'w': 1280, 'h': 720,
                   'refs': [ref_style(p) + '.msb'],
                   'prompt': (f"Character model sheet in exactly the same 3D animated style, realistic proportions, face design and "
                              f"rendering as the character sheet in image 1 (same Ivorian comedy series). A new character, {nom.title()}: "
@@ -111,7 +113,18 @@ def taches():
                     T.append({'id': f"maison-{slug(f['foyer'])}-{piece}-{v}-{m}", 'type': 'decor', 'foyer': f['foyer'], 'w': 768, 'h': 448,
                               'refs': ['v1-maquis.msb'],
                               'prompt': f"{STYLE}: {pd} — {f['maison']}; {VUES[v]}, {md}, completely empty, no people."})
-    return T
+    return sorted(T, key=rang)
+
+
+def rang(t):
+    """Ordre de tournage : ce dont les premières vidéos ont besoin d'abord (lieux et maisons de jour en plan large, puis les
+    personnages, puis les autres vues, la nuit, les ambiances) ; le partage entre machines suit cet ordre."""
+    i = t['id']
+    if t['type'] == 'personnage': return 2
+    nuit, large = i.endswith('-nuit'), '-large-' in i
+    if large and not nuit and i.endswith('-jour'): return 0 if i.startswith('decor-') else 1
+    if not nuit and i.endswith('-jour'): return 3
+    return 4 if nuit else 5
 
 
 if __name__ == '__main__':
