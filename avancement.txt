@@ -3,3 +3,4 @@
 [365 s] 0 images · === decor-salon-de-coiffure-large-jour   |=========================>                        | 2/4 - 153.77s/it[K · mémoire libre 6908 Mo
 [487 s] 0 images · === decor-salon-de-coiffure-large-jour   |=========================>                        | 2/4 - 153.77s/it[K · mémoire libre 6922 Mo
 [608 s] 0 images · === decor-salon-de-coiffure-large-jour   |=====================================>            | 3/4 - 154.39s/it[K · mémoire libre 6917 Mo
+[729 s] 1 images · === maison-baye-ndiaye-salon-large-jour   |==================================================| 4/4 - 154.97s/it[K · mémoire libre 9740 Mo
