@@ -16,3 +16,4 @@
 [1944 s] === tantie-awa--mentir (at_runtime)   |============>                                     | 1/4 - 134.94s/it[K · mémoire libre 13777 Mo
 [2066 s] === tantie-awa--mentir (at_runtime)   |============>                                     | 1/4 - 134.94s/it[K · mémoire libre 13785 Mo
 [2187 s] === tantie-awa--mentir (at_runtime)   |=========================>                        | 2/4 - 134.87s/it[K · mémoire libre 13785 Mo
+[2309 s] === tantie-awa--mentir (at_runtime)   |=====================================>            | 3/4 - 134.62s/it[K · mémoire libre 13791 Mo
