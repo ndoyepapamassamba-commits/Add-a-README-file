@@ -9,6 +9,8 @@
 #            Wan2.2-TI2V-5B-Turbo (quanhaol, licence non déclarée en amont) : BANC D'ESSAI seulement, jamais dans la chaîne publiée.
 # Plusieurs réglages tournent EN PARALLÈLE (une machine chacun) ; chaque clip revient scellé avec la clé de Claude
 # (studio-video/animer/cle-claude.pub.pem) sur la branche animer-sortie-<réglage>, avec ses mesures (mesure.json, publiques).
+# 20/10 21:32, mesuré : 55 s par étape (640×384, 49 images, Turbo) → 4 étapes en 3,7 min ; machine arrêtée au décodage VAE
+# (mémoire) → décodage par tranches de temps (--temporal-tiling) ; avancement poussé toutes les 2 min.
 # L'image de départ arrive scellée avec la clé de la fabrique : ouverte par le secret FABRIQUE_CLE, jamais posée en clair.
 name: Animer une image (Wan 2.2)
 on:
@@ -17,7 +19,7 @@ on:
     paths: ['studio-video/animer/demandes/**', '.github/workflows/animer-wan22.yml']
   workflow_dispatch:
 permissions: { contents: write }
-concurrency: { group: animer, cancel-in-progress: true }
+concurrency: { group: animer-v2, cancel-in-progress: true }
 defaults:
   run: { shell: bash }
 env:
@@ -69,12 +71,19 @@ jobs:
           [ -n "${{ matrix.lora }}" ] && PROMPT="$PROMPT<lora:${{ matrix.lora }}:1>"
           BIN=$RUNNER_TEMP/sd/build/bin/sd-cli; [ -x $BIN ] || BIN=$RUNNER_TEMP/sd/build/bin/sd
           t1=$(date +%s); L=$O/journal.txt; : > $L
-          ( while sleep 120; do echo "[$(( $(date +%s) - t1 )) s] $(tr '\r' '\n' < $L | grep -E 's/it|it/s' | tail -1 | cut -c1-160)"; done ) & P=$!
+          # avancement lisible PENDANT le calcul (GitHub ne rend le journal qu'à la fin) : branche animer-progres-<réglage>
+          git worktree add -q --detach ../progres HEAD && (cd ../progres && git checkout -q --orphan p && git rm -rq . && git clean -fdq)
+          ( while sleep 120; do
+              l="[$(( $(date +%s) - t1 )) s] $(tr '\r' '\n' < $L | grep -E 's/it|it/s|decod|Decod|generat|taken' | tail -1 | cut -c1-160) · mémoire libre $(free -m | awk '/Mem:/{print $7}') Mo"
+              echo "$l"; echo "$l" >> ../progres/avancement.txt
+              (cd ../progres && git add -A && git -c user.name=animer -c user.email=animer@users.noreply.github.com commit -qm "${{ matrix.nom }}" && git push -qf origin HEAD:animer-progres-${{ matrix.nom }}) > /dev/null 2>&1 || true
+            done ) & P=$!
           rc=0
           /usr/bin/time -v -o $O/time.txt $BIN -M vid_gen --diffusion-model $M/${{ matrix.modele }}.gguf --vae $M/vae.safetensors \
             --t5xxl $M/umt5.gguf --lora-model-dir $M/lora -i $RUNNER_TEMP/entree.png -p "$PROMPT" -n "$NEG" \
             --cfg-scale ${{ matrix.cfg }} --sampling-method euler --steps ${{ matrix.steps }} -W ${{ matrix.w }} -H ${{ matrix.h }} \
-            --video-frames ${{ matrix.frames }} --flow-shift 5.0 --seed 42 -t 4 -o $O/clip.avi -v > $L 2>&1 || rc=$?
+            --video-frames ${{ matrix.frames }} --flow-shift 5.0 --seed 42 -t 4 --temporal-tiling \
+            -o $O/clip.avi -v > $L 2>&1 || rc=$?
           kill $P 2>/dev/null || true
           tr '\r' '\n' < $L | grep -v -E "^\s*$" | grep -i -E "lora|sampling|completed|error|warn|loaded|memory|decode|generat|taken|frame|s/it|it/s" | awk '!seen[$0]++' | tail -150 || true
           [ $rc = 0 ] || { echo "moteur : code $rc"; tail -40 $L; exit $rc; }
