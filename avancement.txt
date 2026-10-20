@@ -4,3 +4,4 @@
 [486 s] === A-marche   |============>                                     | 1/4 - 308.92s/it[K · mémoire libre 6304 Mo
 [607 s] === A-marche   |============>                                     | 1/4 - 308.92s/it[K · mémoire libre 6300 Mo
 [728 s] === A-marche   |=========================>                        | 2/4 - 308.26s/it[K · mémoire libre 6288 Mo
+[850 s] === A-marche   |=========================>                        | 2/4 - 308.26s/it[K · mémoire libre 6304 Mo
