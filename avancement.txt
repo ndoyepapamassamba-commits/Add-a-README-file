@@ -31,3 +31,4 @@
 [3763 s] === C-maquis-vide [I] loading tensors completed, taking 0.61s (read: 0.59s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 6761 Mo
 [3884 s] === C-maquis-vide   |============>                                     | 1/4 - 199.79s/it[K · mémoire libre 6769 Mo
 [4005 s] === C-maquis-vide   |============>                                     | 1/4 - 199.79s/it[K · mémoire libre 6753 Mo
+[4127 s] === C-maquis-vide   |=========================>                        | 2/4 - 198.55s/it[K · mémoire libre 6766 Mo
