@@ -37,3 +37,4 @@
 [4491 s] === B-mamie   |===========================================>      | 7/8 - 180.34s/it[K · mémoire libre 4398 Mo
 [4612 s] === B-mamie [I] loading tensors completed, taking 0.22s (read: 0.11s, memcpy: 0.00s, convert: 0.06s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 2348 Mo
 [4733 s] === C-maquis-vide [I] loading tensors completed, taking 14.03s (read: 14.02s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s) --- model_loader.cpp:1396 · mémoire libre 4396 Mo
+[4855 s] === C-maquis-vide   |======>                                           | 1/8 - 189.44s/it[K · mémoire libre 4398 Mo
