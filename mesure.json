@@ -1,0 +1,18 @@
+{
+ "part": 1,
+ "modele": "FLUX.2 klein 4B (Apache-2.0)",
+ "sd_cpp": "0518b34374761cb82aeda5ad3c2f0686fdad2cec",
+ "taches": [
+  {
+   "tache": "decor-marche-large-jour",
+   "type": "decor",
+   "ok": true,
+   "code": 0,
+   "secondes": 597,
+   "w": 768,
+   "h": 448,
+   "memoire_max_go": 9.48,
+   "run": "39514755738"
+  }
+ ]
+}
